@@ -22,9 +22,10 @@
  * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
  *                         conditionals, as the engine now fully supports
  *                         readonly databases.
+ * December 2001 Mike Nordell: Major overhaul to (try to) make it C++
  */
 /*
-$Id: dsql.cpp,v 1.6 2001-07-29 23:43:21 skywalker Exp $
+$Id: dsql.cpp,v 1.7 2001-12-24 02:50:48 tamlin Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -89,7 +90,9 @@ ASSERT_FILENAME
 #ifdef VMS
 #include <descrip.h>
 #endif
+
 extern "C" {
+
 #ifdef NETWARE_386
 #define PRINTF		ConsolePrintf
 #endif
@@ -106,13 +109,14 @@ extern "C" {
 				    return tdsql->tsql_status [1];\
 				    };\
 				}
-#define RETURN_SUCCESS		return return_success()
+
 #define SET_THREAD_DATA         {\
 				tdsql = &thd_context;\
 				THD_put_specific ((THDD) tdsql);\
 				tdsql->tsql_thd_data.thdd_type = THDD_TYPE_TSQL;\
 				}
 #define RESTORE_THREAD_DATA     THD_restore_specific()
+
 #ifdef STACK_REDUCTION
 #define FREE_MEM_RETURN		{\
 				if (buffer)\
@@ -125,32 +129,33 @@ extern "C" {
 #else
 #define FREE_MEM_RETURN		return
 #endif
-static void cleanup(void *);
-static void cleanup_database(SLONG **, SLONG);
-static void cleanup_transaction(SLONG *, SLONG);
-static void close_cursor(REQ);
-static USHORT convert(SLONG, SCHAR *);
-static STATUS error(void);
-static void execute_blob(REQ, USHORT, UCHAR *, USHORT, UCHAR *,
-						 USHORT, UCHAR *, USHORT, UCHAR *);
-static STATUS execute_request(REQ, isc_tr_handle*, USHORT, UCHAR *, USHORT, UCHAR *,
-							  USHORT, UCHAR *, USHORT, UCHAR *, USHORT);
-static SSHORT filter_sub_type(REQ, NOD);
-static BOOLEAN get_indices(SSHORT *, SCHAR **, SSHORT *, SCHAR **);
-static USHORT get_plan_info(REQ, SSHORT, SCHAR **);
-static USHORT get_request_info(REQ, SSHORT, SCHAR *);
-static BOOLEAN get_rsb_item(SSHORT *, SCHAR **, SSHORT *, SCHAR **, USHORT *,
-							USHORT *);
-static DBB init(SLONG **);
-static void map_in_out(REQ, MSG, USHORT, UCHAR *, USHORT, UCHAR *);
-static USHORT name_length(TEXT *);
-static USHORT parse_blr(USHORT, UCHAR *, USHORT, PAR);
-static REQ prepare(REQ, USHORT, TEXT *, USHORT, USHORT);
-static void punt(void);
-static SCHAR *put_item(SCHAR, USHORT, SCHAR *, SCHAR *, SCHAR *);
-static void release_request(REQ, USHORT);
-static STATUS return_success(void);
-static SCHAR *var_info(MSG, SCHAR *, SCHAR *, SCHAR *, SCHAR *, USHORT);
+
+static void		cleanup(void*);
+static void		cleanup_database(SLONG**, SLONG);
+static void		cleanup_transaction(SLONG*, SLONG);
+static void		close_cursor(REQ);
+static USHORT	convert(SLONG, SCHAR*);
+static STATUS	error();
+static void		execute_blob(REQ, USHORT, UCHAR*, USHORT, UCHAR*,
+						 USHORT, UCHAR*, USHORT, UCHAR*);
+static STATUS	execute_request(REQ, isc_tr_handle*, USHORT, UCHAR*, USHORT, UCHAR*,
+							  USHORT, UCHAR*, USHORT, UCHAR*, USHORT);
+static SSHORT	filter_sub_type(REQ, NOD);
+static BOOLEAN	get_indices(SSHORT*, SCHAR**, SSHORT*, SCHAR**);
+static USHORT	get_plan_info(REQ, SSHORT, SCHAR**);
+static USHORT	get_request_info(REQ, SSHORT, SCHAR*);
+static BOOLEAN	get_rsb_item(SSHORT*, SCHAR**, SSHORT*, SCHAR**, USHORT*,
+							USHORT*);
+static DBB		init(SLONG**);
+static void		map_in_out(REQ, MSG, USHORT, UCHAR*, USHORT, UCHAR*);
+static USHORT	name_length(TEXT*);
+static USHORT	parse_blr(USHORT, UCHAR*, USHORT, PAR);
+static REQ		prepare(REQ, USHORT, TEXT*, USHORT, USHORT);
+static void		punt(void);
+static SCHAR*	put_item(SCHAR, USHORT, SCHAR*, SCHAR*, SCHAR*);
+static void		release_request(REQ, USHORT);
+static STATUS	return_success(void);
+static SCHAR*	var_info(MSG, SCHAR*, SCHAR*, SCHAR*, SCHAR*, USHORT);
 
 extern NOD DSQL_parse;
 
@@ -182,26 +187,284 @@ static MUTX_T cursors_mutex;
 static USHORT mutex_inited = 0;
 #endif
 
-/* STUFF_INFO used in place of STUFF to avoid confusion with BLR STUFF
-   macro defined in dsql.h */
 
-#define STUFF_INFO_WORD(p,value)	{*p++ = (UCHAR)value; *p++ = value >> 8;}
-#define STUFF_INFO(p,value)		*p++ = value;
+//////////////////////////////////////////////////////////////////
+// declarations of the C++ implementations of the C API functions
+// with the matching name.
+//////////////////////////////////////////////////////////////////
 
-#define GDS_DSQL_ALLOCATE	dsql8_allocate_statement
-#define GDS_DSQL_EXECUTE	dsql8_execute
+static
+STATUS GDS_DSQL_ALLOCATE_CPP(	STATUS*	user_status,
+								int**	db_handle,
+								req**	req_handle);
+
+static
+STATUS GDS_DSQL_EXECUTE_CPP(	STATUS*			user_status,
+							   isc_tr_handle*	trans_handle,
+							   req**			req_handle,
+							   USHORT			in_blr_length,
+							   UCHAR*			in_blr,
+							   USHORT			in_msg_type,
+							   USHORT			in_msg_length,
+							   UCHAR*			in_msg,
+							   USHORT			out_blr_length,
+							   UCHAR*			out_blr,
+							   USHORT			out_msg_type,
+							   USHORT			out_msg_length,
+							   UCHAR*			out_msg);
+
+static
+STATUS GDS_DSQL_FETCH_CPP(	STATUS*		user_status,
+							 req**		req_handle,
+							 USHORT		blr_length,
+							 UCHAR*		blr,
+							 USHORT		msg_type,
+							 USHORT		msg_length,
+							 UCHAR*		msg
+#ifdef SCROLLABLE_CURSORS
+							 , USHORT direction, SLONG offset)
+#else
+							);
+#endif
+
+static
+STATUS GDS_DSQL_FREE_CPP(STATUS*	user_status,
+						 req**		req_handle,
+						 USHORT		option);
+
+static
+STATUS GDS_DSQL_INSERT_CPP(	STATUS*	user_status,
+							req**	req_handle,
+							USHORT	blr_length,
+							UCHAR*	blr,
+							USHORT	msg_type,
+							USHORT	msg_length,
+							UCHAR*	msg);
+
+static
+STATUS GDS_DSQL_PREPARE_CPP(STATUS*			user_status,
+							isc_tr_handle*	trans_handle,
+							req**			req_handle,
+							USHORT			length,
+							TEXT*			string,
+							USHORT			dialect,
+							USHORT			item_length,
+							UCHAR*			items,
+							USHORT			buffer_length,
+							UCHAR*			buffer);
+
+static
+STATUS GDS_DSQL_SQL_INFO_CPP(	STATUS*		user_status,
+								req**		req_handle,
+								USHORT		item_length,
+								SCHAR*		items,
+								USHORT		info_length,
+								SCHAR*		info);
+
+STATUS GDS_DSQL_SET_CURSOR_CPP(	STATUS*		user_status,
+								req**		req_handle,
+								TEXT*		input_cursor,
+								USHORT		type);
+
+#define GDS_DSQL_ALLOCATE		dsql8_allocate_statement
+#define GDS_DSQL_EXECUTE		dsql8_execute
 #define GDS_DSQL_EXECUTE_IMMED	dsql8_execute_immediate
-#define GDS_DSQL_FETCH		dsql8_fetch
-#define GDS_DSQL_FREE		dsql8_free_statement
-#define GDS_DSQL_INSERT		dsql8_insert
-#define GDS_DSQL_PREPARE	dsql8_prepare
-#define GDS_DSQL_SET_CURSOR	dsql8_set_cursor
-#define GDS_DSQL_SQL_INFO	dsql8_sql_info
+#define GDS_DSQL_FETCH			dsql8_fetch
+#define GDS_DSQL_FREE			dsql8_free_statement
+#define GDS_DSQL_INSERT			dsql8_insert
+#define GDS_DSQL_PREPARE		dsql8_prepare
+#define GDS_DSQL_SET_CURSOR		dsql8_set_cursor
+#define GDS_DSQL_SQL_INFO		dsql8_sql_info
+
+}	// extern "C"
+
+extern "C" {
+
+//////////////////////////////////////////////////////////////////
+// Begin : C API -> C++ wrapper functions
+// Note that we don't wrap GDS_DSQL_EXECUTE_IMMED since it
+// contains no req in its parameter list.
+//////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////
+
+STATUS DLL_EXPORT
+GDS_DSQL_ALLOCATE(	STATUS*				user_status,
+					int**				db_handle,
+					struct dsql_req**	req_handle)
+{
+	return GDS_DSQL_ALLOCATE_CPP(user_status,
+									db_handle,
+									reinterpret_cast<req**>(req_handle));
+}
+
+//////////////////////////////////////////////////////////////////
+
+STATUS DLL_EXPORT
+GDS_DSQL_EXECUTE(	STATUS*			user_status,
+					isc_tr_handle*	trans_handle,
+					struct dsql_req**	req_handle,
+					USHORT			in_blr_length,
+					UCHAR*			in_blr,
+					USHORT			in_msg_type,
+					USHORT			in_msg_length,
+					UCHAR*			in_msg,
+					USHORT			out_blr_length,
+					UCHAR*			out_blr,
+					USHORT			out_msg_type,
+					USHORT			out_msg_length,
+					UCHAR*			out_msg)
+{
+	return GDS_DSQL_EXECUTE_CPP(user_status,
+								trans_handle,
+								reinterpret_cast<req**>(req_handle),
+								in_blr_length,
+								in_blr,
+								in_msg_type,
+								in_msg_length,
+								in_msg,
+								out_blr_length,
+								out_blr,
+								out_msg_type,
+								out_msg_length,
+								out_msg);
+}
+
+//////////////////////////////////////////////////////////////////
+
+STATUS DLL_EXPORT
+GDS_DSQL_FETCH(	STATUS*				user_status,
+				 struct dsql_req**	req_handle,
+				 USHORT				blr_length,
+				 UCHAR*				blr,
+				 USHORT				msg_type,
+				 USHORT				msg_length,
+				 UCHAR*				msg
+#ifdef SCROLLABLE_CURSORS
+				 , USHORT direction, SLONG offset
+#endif
+				 )
+{
+	return GDS_DSQL_FETCH_CPP(	user_status,
+								reinterpret_cast<req**>(req_handle),
+								blr_length,
+								blr,
+								msg_type,
+								msg_length,
+								msg
+#ifdef SCROLLABLE_CURSORS
+								 , direction, offset
+#endif
+								);
+}
+
+//////////////////////////////////////////////////////////////////
+
+STATUS DLL_EXPORT
+GDS_DSQL_FREE(	STATUS*				user_status,
+				struct dsql_req**	req_handle,
+				USHORT				option)
+{
+	return GDS_DSQL_FREE_CPP(user_status,
+							reinterpret_cast<req**>(req_handle),
+							option);
+}
+
+//////////////////////////////////////////////////////////////////
+
+STATUS DLL_EXPORT
+GDS_DSQL_INSERT(STATUS*				user_status,
+				struct dsql_req**	req_handle,
+				USHORT				blr_length,
+				UCHAR*				blr,
+				USHORT				msg_type,
+				USHORT				msg_length,
+				UCHAR*				msg)
+{
+	return GDS_DSQL_INSERT_CPP(	user_status,
+								reinterpret_cast<req**>(req_handle),
+								blr_length,
+								blr,
+								msg_type,
+								msg_length,
+								msg);
+}
+
+//////////////////////////////////////////////////////////////////
+
+STATUS DLL_EXPORT
+GDS_DSQL_PREPARE(	STATUS*				user_status,
+					isc_tr_handle*		trans_handle,
+					struct dsql_req**	req_handle,
+					USHORT				length,
+					TEXT*				string,
+					USHORT				dialect,
+					USHORT				item_length,
+					UCHAR*				items,
+					USHORT				buffer_length,
+					UCHAR*				buffer)
+{
+	return GDS_DSQL_PREPARE_CPP(user_status,
+								trans_handle,
+								reinterpret_cast<req**>(req_handle),
+								length,
+								string,
+								dialect,
+								item_length,
+								items,
+								buffer_length,
+								buffer);
+
+}
+
+//////////////////////////////////////////////////////////////////
+
+STATUS DLL_EXPORT
+GDS_DSQL_SQL_INFO(	STATUS*				user_status,
+					struct dsql_req**	req_handle,
+					USHORT				item_length,
+					SCHAR*				items,
+					USHORT				info_length,
+					SCHAR*				info)
+{
+	return GDS_DSQL_SQL_INFO_CPP(	user_status,
+									reinterpret_cast<req**>(req_handle),
+									item_length,
+									items,
+									info_length,
+									info);
+}
+
+//////////////////////////////////////////////////////////////////
+
+STATUS DLL_EXPORT
+GDS_DSQL_SET_CURSOR(STATUS*		user_status,
+					dsql_req**	req_handle,
+					TEXT*		input_cursor,
+					USHORT		type)
+{
+	return GDS_DSQL_SET_CURSOR_CPP(user_status,
+									reinterpret_cast<req**>(req_handle),
+									input_cursor,
+									type);
+}
+
+//////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////
+// End : C API -> C++ wrapper functions
+//////////////////////////////////////////////////////////////////
 
 
-STATUS DLL_EXPORT GDS_DSQL_ALLOCATE(STATUS*	user_status,
-									int**	db_handle,
-									REQ*	req_handle)
+}	// extern "C"
+
+extern "C" {
+
+
+static STATUS
+GDS_DSQL_ALLOCATE_CPP(	STATUS*	user_status,
+						int**	db_handle,
+						req**	req_handle)
 {
 /**************************************
  *
@@ -227,32 +490,33 @@ STATUS DLL_EXPORT GDS_DSQL_ALLOCATE(STATUS*	user_status,
 
 	database = init((SLONG **) db_handle);
 
-	tdsql->tsql_default = ALLD_pool();
+	tdsql->tsql_default = new(*DSQL_permanent_pool) DsqlMemoryPool;
 
 /* allocate the request block */
 
-	request = (REQ) ALLOCD(type_req);
+	request = new(*tdsql->tsql_default) req;
 	request->req_dbb = database;
 	request->req_pool = tdsql->tsql_default;
 
 	*req_handle = request;
 
-	RETURN_SUCCESS;
+	return return_success();
 }
 
 
-STATUS DLL_EXPORT GDS_DSQL_EXECUTE(STATUS * user_status,
-								   isc_tr_handle * trans_handle,
-								   REQ * req_handle,
-								   USHORT in_blr_length,
-								   UCHAR * in_blr,
-								   USHORT in_msg_type,
-								   USHORT in_msg_length,
-								   UCHAR * in_msg,
-								   USHORT out_blr_length,
-								   UCHAR * out_blr,
-								   USHORT out_msg_type,
-								   USHORT out_msg_length, UCHAR * out_msg)
+STATUS DLL_EXPORT GDS_DSQL_EXECUTE_CPP(STATUS*		user_status,
+									   isc_tr_handle* trans_handle,
+									   req**		req_handle,
+									   USHORT		in_blr_length,
+									   UCHAR*		in_blr,
+									   USHORT		in_msg_type,
+									   USHORT		in_msg_length,
+									   UCHAR*		in_msg,
+									   USHORT		out_blr_length,
+									   UCHAR*		out_blr,
+									   USHORT		out_msg_type,
+									   USHORT		out_msg_length,
+									   UCHAR*		out_msg)
 {
 /**************************************
  *
@@ -339,7 +603,7 @@ STATUS DLL_EXPORT GDS_DSQL_EXECUTE(STATUS * user_status,
 			((request->
 			  req_type == REQ_EMBED_SELECT) ? REQ_embedded_sql_cursor : 0);
 
-		request->req_open_cursor = open_cursor = (OPN) ALLOCP(type_opn);
+		request->req_open_cursor = open_cursor = new(*DSQL_permanent_pool) opn;
 		open_cursor->opn_request = request;
 		open_cursor->opn_transaction = (SLONG *) * trans_handle;
 		THD_MUTEX_LOCK(&cursors_mutex);
@@ -353,31 +617,31 @@ STATUS DLL_EXPORT GDS_DSQL_EXECUTE(STATUS * user_status,
 		THREAD_ENTER;
 	}
 
-	if (!sing_status)
-		RETURN_SUCCESS;
-	else {
-		RESTORE_THREAD_DATA;
-		return sing_status;
+	if (!sing_status) {
+		return return_success();
 	}
+
+	RESTORE_THREAD_DATA;
+	return sing_status;
 }
 
 
-STATUS DLL_EXPORT GDS_DSQL_EXECUTE_IMMED(STATUS * user_status,
-										 int **db_handle,
-										 int **trans_handle,
-										 USHORT length,
-										 TEXT * string,
-										 USHORT dialect,
-										 USHORT in_blr_length,
-										 UCHAR * in_blr,
-										 USHORT in_msg_type,
-										 USHORT in_msg_length,
-										 UCHAR * in_msg,
-										 USHORT out_blr_length,
-										 UCHAR * out_blr,
-										 USHORT out_msg_type,
-										 USHORT out_msg_length,
-										 UCHAR * out_msg)
+STATUS DLL_EXPORT GDS_DSQL_EXECUTE_IMMED(STATUS*	user_status,
+										 int**		db_handle,
+										 int**		trans_handle,
+										 USHORT		length,
+										 TEXT*		string,
+										 USHORT		dialect,
+										 USHORT		in_blr_length,
+										 UCHAR*		in_blr,
+										 USHORT		in_msg_type,
+										 USHORT		in_msg_length,
+										 UCHAR*		in_msg,
+										 USHORT		out_blr_length,
+										 UCHAR*		out_blr,
+										 USHORT		out_msg_type,
+										 USHORT		out_msg_length,
+										 UCHAR*		out_msg)
 {
 /**************************************
  *
@@ -401,24 +665,20 @@ STATUS DLL_EXPORT GDS_DSQL_EXECUTE_IMMED(STATUS * user_status,
 	ERROR_INIT(env);
 	database = init(reinterpret_cast < long **>(db_handle));
 
-	tdsql->tsql_default = ALLD_pool();
+	tdsql->tsql_default = new(*DSQL_permanent_pool) DsqlMemoryPool;
 
 /* allocate the request block, then prepare the request */
 
-	request = (REQ) ALLOCD(type_req);
+	request = new(*tdsql->tsql_default) req;
 	request->req_dbb = database;
 	request->req_pool = tdsql->tsql_default;
 	request->req_trans = (int *) *trans_handle;
 
-	if (SETJMP(*tdsql->tsql_setjmp)) {
-		status = error();
-		release_request(request, TRUE);
-		RESTORE_THREAD_DATA;
-		return status;
-	}
+	try {
 
-	if (!length)
+	if (!length) {
 		length = strlen(string);
+	}
 
 /* Figure out which parser version to use */
 /* Since the API to GDS_DSQL_EXECUTE_IMMED is public and can not be changed, there needs to
@@ -468,21 +728,29 @@ STATUS DLL_EXPORT GDS_DSQL_EXECUTE_IMMED(STATUS * user_status,
 
 	release_request(request, TRUE);
 
-	RETURN_SUCCESS;
+	return return_success();
+
+	}	// try
+	catch (...) {
+		status = error();
+		release_request(request, TRUE);
+		RESTORE_THREAD_DATA;
+		return status;
+	}
 }
 
 
-STATUS DLL_EXPORT GDS_DSQL_FETCH(STATUS * user_status,
-								 REQ * req_handle,
-								 USHORT blr_length,
-								 UCHAR * blr,
-								 USHORT msg_type,
-								 USHORT msg_length, UCHAR * msg
+STATUS GDS_DSQL_FETCH_CPP(	STATUS*	user_status,
+							req**	req_handle,
+							USHORT	blr_length,
+							UCHAR*	blr,
+							USHORT	msg_type,
+							USHORT	msg_length,
+							UCHAR*	msg
 #ifdef SCROLLABLE_CURSORS
-								 , USHORT direction, SLONG offset)
-#else
-	)
+							, USHORT direction, SLONG offset
 #endif
+							)
 {
 /**************************************
  *
@@ -682,12 +950,13 @@ STATUS DLL_EXPORT GDS_DSQL_FETCH(STATUS * user_status,
 
 	map_in_out(NULL, message, 0, blr, msg_length, msg);
 
-	RETURN_SUCCESS;
+	return return_success();
 }
 
 
-STATUS DLL_EXPORT GDS_DSQL_FREE(STATUS * user_status,
-								REQ * req_handle, USHORT option)
+STATUS GDS_DSQL_FREE_CPP(STATUS*	user_status,
+						 req**		req_handle,
+						 USHORT		option)
 {
 /**************************************
  *
@@ -727,16 +996,17 @@ STATUS DLL_EXPORT GDS_DSQL_FREE(STATUS * user_status,
 		close_cursor(request);
 	}
 
-	RETURN_SUCCESS;
+	return return_success();
 }
 
 
-STATUS DLL_EXPORT GDS_DSQL_INSERT(STATUS * user_status,
-								  REQ * req_handle,
-								  USHORT blr_length,
-								  UCHAR * blr,
-								  USHORT msg_type,
-								  USHORT msg_length, UCHAR * msg)
+STATUS GDS_DSQL_INSERT_CPP(	STATUS*	user_status,
+							req**	req_handle,
+							USHORT	blr_length,
+							UCHAR*	blr,
+							USHORT	msg_type,
+							USHORT	msg_length,
+							UCHAR*	msg)
 {
 /**************************************
  *
@@ -797,19 +1067,20 @@ STATUS DLL_EXPORT GDS_DSQL_INSERT(STATUS * user_status,
 			punt();
 	}
 
-	RETURN_SUCCESS;
+	return return_success();
 }
 
 
-STATUS DLL_EXPORT GDS_DSQL_PREPARE(STATUS * user_status,
-								   isc_tr_handle * trans_handle,
-								   REQ * req_handle,
-								   USHORT length,
-								   TEXT * string,
-								   USHORT dialect,
-								   USHORT item_length,
-								   UCHAR * items,
-								   USHORT buffer_length, UCHAR * buffer)
+STATUS GDS_DSQL_PREPARE_CPP(STATUS*			user_status,
+							isc_tr_handle*	trans_handle,
+							req**			req_handle,
+							USHORT			length,
+							TEXT*			string,
+							USHORT			dialect,
+							USHORT			item_length,
+							UCHAR*			items,
+							USHORT			buffer_length,
+							UCHAR*			buffer)
 {
 /**************************************
  *
@@ -849,19 +1120,14 @@ STATUS DLL_EXPORT GDS_DSQL_PREPARE(STATUS * user_status,
 /* It would be really *nice* to know *why* we want to
    keep the old request around -- 1994-October-27 David Schnepper */
 
-	tdsql->tsql_default = ALLD_pool();
+	tdsql->tsql_default = new(*DSQL_permanent_pool) DsqlMemoryPool;
 
-	request = (REQ) ALLOCD(type_req);
+	request = new(*tdsql->tsql_default) req;
 	request->req_dbb = database;
 	request->req_pool = tdsql->tsql_default;
 	request->req_trans = (int *) *trans_handle;
 
-	if (SETJMP(*tdsql->tsql_setjmp)) {
-		status = error();
-		release_request(request, TRUE);
-		RESTORE_THREAD_DATA;
-		return status;
-	}
+	try {
 
 	if (!length)
 		length = strlen(string);
@@ -923,15 +1189,27 @@ STATUS DLL_EXPORT GDS_DSQL_PREPARE(STATUS * user_status,
 
 	RESTORE_THREAD_DATA;
 
-	return GDS_DSQL_SQL_INFO(user_status, req_handle, item_length,
-							 reinterpret_cast < char *>(items), buffer_length,
-							 reinterpret_cast < char *>(buffer));
+	return GDS_DSQL_SQL_INFO_CPP(	user_status,
+									req_handle,
+									item_length,
+									reinterpret_cast<char*>(items),
+									buffer_length,
+									reinterpret_cast<char*>(buffer));
+
+	}	// try
+	catch(...) {
+		status = error();
+		release_request(request, TRUE);
+		RESTORE_THREAD_DATA;
+		return status;
+	}
 }
 
 
-STATUS DLL_EXPORT GDS_DSQL_SET_CURSOR(STATUS * user_status,
-									  REQ * req_handle,
-									  TEXT * input_cursor, USHORT type)
+STATUS GDS_DSQL_SET_CURSOR_CPP(	STATUS*	user_status,
+								req**	req_handle,
+								TEXT*	input_cursor,
+								USHORT	type)
 {
 /*****************************************
  *
@@ -958,63 +1236,71 @@ STATUS DLL_EXPORT GDS_DSQL_SET_CURSOR(STATUS * user_status,
 
 	request = *req_handle;
 	tdsql->tsql_default = request->req_pool;
-	if (input_cursor[0] == '\"') {
-	/** Quoted cursor names eh? Strip'em.
-	Note that "" will be replaced with ".
-    **/
-		int ij;
-		for (ij = 0; *input_cursor; input_cursor++) {
-			if (*input_cursor == '\"')
+	if (input_cursor[0] == '\"')
+	{
+		// Quoted cursor names eh? Strip'em.
+		// Note that "" will be replaced with ".
+		//
+		int index;
+		for (index = 0; *input_cursor; input_cursor++) {
+			if (*input_cursor == '\"') {
 				input_cursor++;
-			cursor[ij++] = *input_cursor;
+			}
+			cursor[index++] = *input_cursor;
 		}
-		cursor[ij] = 0;
+		cursor[index] = 0;
 	}
-	else {
+	else	// not quoted name
+	{
 		USHORT i;
 		for (i = 0; i < sizeof(cursor) - 1	/* PJPG 20001013 */
 			 && input_cursor[i]	/* PJPG 20001013 */
-			 &&input_cursor[i] != ' '; i++)	/* PJPG 20001013 */
+			 && input_cursor[i] != ' '; ++i)	/* PJPG 20001013 */
+		{
 			cursor[i] = UPPER7(input_cursor[i]);
+		}
 		cursor[i] = '\0';
 	}
 	length = name_length(cursor);
 
-	if (length == 0)
+	if (length == 0) {
 		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 502,
 				  gds_arg_gds, gds_dsql_decl_err, 0);
+	}
 
 /* If there already is a different cursor by the same name, bitch */
 
 	if (symbol = HSHD_lookup(request->req_dbb, cursor, length, SYM_cursor, 0)) {
-		if (request->req_cursor == symbol)
-			RETURN_SUCCESS;
-		else
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 502,
-					  gds_arg_gds, gds_dsql_decl_err, 0);
+		if (request->req_cursor == symbol) {
+			return return_success();
+		}
+
+		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 502,
+				  gds_arg_gds, gds_dsql_decl_err, 0);
 	}
 
 /* If there already is a cursor and its name isn't the same, ditto.
    We already know there is no cursor by this name in the hash table */
 
-	if (!request->req_cursor)
+	if (!request->req_cursor) {
 		request->req_cursor = MAKE_symbol(request->req_dbb, cursor,
 										  length, SYM_cursor, request);
-	else {
+	} else {
 		assert(request->req_cursor != symbol);
 		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 502,
 				  gds_arg_gds, gds_dsql_decl_err, 0);
-	};
+	}
 
-	RETURN_SUCCESS;
+	return return_success();
 }
 
 
-STATUS DLL_EXPORT GDS_DSQL_SQL_INFO(STATUS * user_status,
-									REQ * req_handle,
-									USHORT item_length,
-									SCHAR * items,
-									USHORT info_length, SCHAR * info)
+STATUS GDS_DSQL_SQL_INFO_CPP(	STATUS*		user_status,
+								req**		req_handle,
+								USHORT		item_length,
+								SCHAR*		items,
+								USHORT		info_length,
+								SCHAR*		info)
 {
 /**************************************
  *
@@ -1048,18 +1334,21 @@ STATUS DLL_EXPORT GDS_DSQL_SQL_INFO(STATUS * user_status,
 	message = NULL;
 	first_index = 0;
 
-	while (items < end_items && *items != gds_info_end) {
+	while (items < end_items && *items != gds_info_end)
+	{
 		item = *items++;
-		if (item == gds_info_sql_select || item == gds_info_sql_bind) {
+		if (item == gds_info_sql_select || item == gds_info_sql_bind)
+		{
 			message = (item == gds_info_sql_select) ?
 				&request->req_receive : &request->req_send;
 			if (info + 1 >= end_info) {
 				*info = gds_info_truncated;
-				RETURN_SUCCESS;
+				return return_success();
 			}
 			*info++ = item;
 		}
-		else if (item == gds_info_sql_stmt_type) {
+		else if (item == gds_info_sql_stmt_type)
+		{
 			switch (request->req_type) {
 			case REQ_SELECT:
 			case REQ_EMBED_SELECT:
@@ -1109,16 +1398,17 @@ STATUS DLL_EXPORT GDS_DSQL_SQL_INFO(STATUS * user_status,
 				break;
 			}
 			length = convert((SLONG) number, buffer);
-			if (!(info = put_item(item, length, buffer, info, end_info))) {
-				RETURN_SUCCESS;
+			info = put_item(item, length, buffer, info, end_info);
+			if (!info) {
+				return return_success();
 			}
 		}
 		else if (item == gds_info_sql_sqlda_start) {
 			length = *items++;
 			first_index =
-				static_cast < USHORT >
+				static_cast<USHORT>
 				(gds__vax_integer
-				 (reinterpret_cast < UCHAR * >(items), length));
+				 (reinterpret_cast<UCHAR*>(items), length));
 			items += length;
 		}
 		else if (item == isc_info_sql_batch_fetch) {
@@ -1128,7 +1418,7 @@ STATUS DLL_EXPORT GDS_DSQL_SQL_INFO(STATUS * user_status,
 				number = TRUE;
 			length = convert((SLONG) number, buffer);
 			if (!(info = put_item(item, length, buffer, info, end_info))) {
-				RETURN_SUCCESS;
+				return return_success();
 			}
 		}
 		else if (item == gds_info_sql_records) {
@@ -1136,7 +1426,7 @@ STATUS DLL_EXPORT GDS_DSQL_SQL_INFO(STATUS * user_status,
 				get_request_info(request, (SSHORT) sizeof(buffer), buffer);
 			if (length
 				&& !(info = put_item(item, length, buffer, info, end_info))) {
-				RETURN_SUCCESS;
+				return return_success();
 			}
 		}
 		else if (item == gds_info_sql_get_plan) {
@@ -1154,53 +1444,60 @@ STATUS DLL_EXPORT GDS_DSQL_SQL_INFO(STATUS * user_status,
 				gds__free(buffer_ptr);
 
 			if (!info)
-				RETURN_SUCCESS;
+				return return_success();
 		}
 		else if (!message ||
 				 (item != gds_info_sql_num_variables
-				  && item != gds_info_sql_describe_vars)) {
+				  && item != gds_info_sql_describe_vars))
+		{
 			buffer[0] = item;
 			item = gds_info_error;
 			length = 1 + convert((SLONG) gds_infunk, buffer + 1);
 			if (!(info = put_item(item, length, buffer, info, end_info))) {
-				RETURN_SUCCESS;
+				return return_success();
 			}
 		}
-		else {
+		else
+		{
 			number = (*message) ? (*message)->msg_index : 0;
 			length = convert((SLONG) number, buffer);
 			if (!(info = put_item(item, length, buffer, info, end_info))) {
-				RETURN_SUCCESS;
+				return return_success();
 			}
-			if (item == gds_info_sql_num_variables)
+			if (item == gds_info_sql_num_variables) {
 				continue;
+			}
 
 			end_describe = items;
 			while (end_describe < end_items &&
 				   *end_describe != gds_info_end &&
 				   *end_describe != gds_info_sql_describe_end) end_describe++;
 
-			if (!
-				(info =
-				 var_info(*message, items, end_describe, info, end_info,
-						  first_index))) {
-				RETURN_SUCCESS;
+			info = var_info(*message,
+							items,
+							end_describe,
+							info,
+							end_info,
+							first_index);
+			if (!info) {
+				return return_success();
 			}
 
 			items = end_describe;
-			if (*items == gds_info_sql_describe_end)
+			if (*items == gds_info_sql_describe_end) {
 				items++;
+			}
 		}
 	}
 
 	*info++ = gds_info_end;
 
-	RETURN_SUCCESS;
+	return return_success();
 }
 
 
 #ifdef DEV_BUILD
-void DSQL_pretty( NOD node, int column)
+void DSQL_pretty(NOD node, int column)
 {
 /**************************************
  *
@@ -1213,32 +1510,34 @@ void DSQL_pretty( NOD node, int column)
 *
  **************************************/
 	MAP map;
-	NOD *ptr, *end;
 	DSQL_REL relation;
 	CTX context;
 	FLD field;
 	STR string;
 	VAR variable;
+
 #ifdef STACK_REDUCTION
-	TEXT *buffer, *p, *verb, s[64];
+	TEXT* buffer;
 #else
-	TEXT buffer[1024], *p, *verb, s[64];
+	TEXT buffer[1024];
 #endif
-	USHORT l;
+
+	TEXT* verb;
+	TEXT s[64];
 
 #ifdef STACK_REDUCTION
 	buffer = (TEXT *) gds__alloc(BUFFER_LARGE);
 #endif
 
-	p = buffer;
-	sprintf(p, "%.7X ", node);
-	while (*p)
-		p++;
+	TEXT* p = buffer;
+	p += sprintf(p, "%.7X ", node);
 
-	if ((l = column * 3) != NULL)
-		do
+	if (column) {
+		USHORT l = column * 3;
+		do {
 			*p++ = ' ';
-		while (--l);
+		} while (--l);
+	}
 
 	*p = 0;
 
@@ -1247,20 +1546,20 @@ void DSQL_pretty( NOD node, int column)
 		FREE_MEM_RETURN;
 	}
 
-	switch (node->nod_header.blk_type) {
-	case (TEXT) type_str:
+	switch (MemoryPool::blk_type(node)) {
+	case (TEXT) dsql_type_str:
 		PRINTF("%sSTRING: \"%s\"\n", buffer, ((STR) node)->str_data);
 		FREE_MEM_RETURN;
 
-	case (TEXT) type_fld:
+	case (TEXT) dsql_type_fld:
 		PRINTF("%sFIELD: %s\n", buffer, ((FLD) node)->fld_name);
 		FREE_MEM_RETURN;
 
-	case (TEXT) type_sym:
+	case (TEXT) dsql_type_sym:
 		PRINTF("%sSYMBOL: %s\n", buffer, ((SYM) node)->sym_string);
 		FREE_MEM_RETURN;
 
-	case (TEXT) type_nod:
+	case (TEXT) dsql_type_nod:
 		break;
 
 	default:
@@ -1268,8 +1567,8 @@ void DSQL_pretty( NOD node, int column)
 		FREE_MEM_RETURN;
 	}
 
-	ptr = node->nod_arg;
-	end = ptr + node->nod_count;
+	NOD* ptr = node->nod_arg;
+	NOD* end = ptr + node->nod_count;
 
 	switch (node->nod_type) {
 	case nod_abort:
@@ -1731,17 +2030,19 @@ void DSQL_pretty( NOD node, int column)
 		verb = s;
 	}
 
-	if (node->nod_desc.dsc_dtype)
+	if (node->nod_desc.dsc_dtype) {
 		PRINTF("%s%s (%d,%d,%x)\n",
 			   buffer, verb,
 			   node->nod_desc.dsc_dtype,
 			   node->nod_desc.dsc_length, node->nod_desc.dsc_address);
-	else
+	} else {
 		PRINTF("%s%s\n", buffer, verb);
+	}
 	++column;
 
-	while (ptr < end)
+	while (ptr < end) {
 		DSQL_pretty(*ptr++, column);
+	}
 
 	FREE_MEM_RETURN;
 }
@@ -1815,7 +2116,7 @@ static void cleanup_database( SLONG ** db_handle, SLONG flag)
 			THREAD_ENTER;
 		}
 		HSHD_finish(dbb);
-		ALLD_rlpool(dbb->dbb_pool);
+		delete dbb->dbb_pool;
 	}
 
 	if (!databases) {
@@ -1862,8 +2163,9 @@ static void cleanup_transaction( SLONG * tra_handle, SLONG arg)
 			 * call in why.c below the cleanup handlers. smistry 9-27-98
 			 */
 			THREAD_ENTER;
-			GDS_DSQL_FREE(local_status, &open_cursor->opn_request,
-						  DSQL_close);
+			GDS_DSQL_FREE_CPP(	local_status,
+								&open_cursor->opn_request,
+								DSQL_close);
 			THREAD_EXIT;
 			THD_MUTEX_LOCK(&cursors_mutex);
 			open_cursor_ptr = &open_cursors;
@@ -1921,7 +2223,7 @@ static void close_cursor( REQ request)
 	THD_MUTEX_UNLOCK(&cursors_mutex);
 
 	if (open_cursor) {
-		ALLD_release(reinterpret_cast<FRB>(open_cursor));
+		delete open_cursor;
 		request->req_open_cursor = NULL;
 	}
 }
@@ -1965,7 +2267,7 @@ static USHORT convert( SLONG number, SCHAR * buffer)
 }
 
 
-static STATUS error(void)
+static STATUS error()
 {
 /**************************************
  *
@@ -1977,9 +2279,8 @@ static STATUS error(void)
  *	An error returned has been trapped.
  *
  **************************************/
-	TSQL tdsql;
 
-	tdsql = GET_THREAD_DATA;
+	TSQL tdsql = GET_THREAD_DATA;
 
 	return tdsql->tsql_status[1];
 }
@@ -2035,47 +2336,49 @@ static void execute_blob(	REQ		request,
 		*p++ = filter >> 8;
 	}
 	bpb_length = p - bpb;
-	if (bpb_length == 1)
+	if (bpb_length == 1) {
 		bpb_length = 0;
+	}
 
 	parameter = blob->blb_blob_id;
 	null = parameter->par_null;
 
-	if (request->req_type == REQ_GET_SEGMENT) {
+	if (request->req_type == REQ_GET_SEGMENT)
+	{
 		blob_id = (GDS__QUAD *) parameter->par_desc.dsc_address;
-		if (null && *((SSHORT *) null->par_desc.dsc_address) < 0)
+		if (null && *((SSHORT *) null->par_desc.dsc_address) < 0) {
 			memset(blob_id, 0, sizeof(GDS__QUAD));
+		}
 		THREAD_EXIT;
 		s = isc_open_blob2(tdsql->tsql_status,
 						   reinterpret_cast<void**>(GDS_REF(request->req_dbb->dbb_database_handle)),
 						   reinterpret_cast<void**>(GDS_REF(request->req_trans)),
-						   reinterpret_cast<void **>(GDS_REF(request->req_handle)),
+						   reinterpret_cast<void**>(GDS_REF(request->req_handle)),
 						   GDS_VAL(blob_id),
 						   bpb_length,
 						   reinterpret_cast<UCHAR*>(bpb));
 		THREAD_ENTER;
-		if (s)
+		if (s) {
 			punt();
+		}
 	}
-	else {
+	else
+	{
 		request->req_handle = NULL;
 		blob_id = (GDS__QUAD *) parameter->par_desc.dsc_address;
 		memset(blob_id, 0, sizeof(GDS__QUAD));
 		THREAD_EXIT;
 		s = isc_create_blob2(tdsql->tsql_status,
-							 reinterpret_cast <
-							 void
-							 **>(GDS_REF
-								 (request->req_dbb->dbb_database_handle)),
-							 reinterpret_cast <
-							 void **>(GDS_REF(request->req_trans)),
-							 reinterpret_cast <
-							 void **>(GDS_REF(request->req_handle)),
+							 reinterpret_cast<void**>(
+								GDS_REF(request->req_dbb->dbb_database_handle)),
+							 reinterpret_cast<void**>(GDS_REF(request->req_trans)),
+							 reinterpret_cast<void**>(GDS_REF(request->req_handle)),
 							 GDS_VAL(blob_id), bpb_length,
-							 reinterpret_cast < char *>(bpb));
+							 reinterpret_cast<char*>(bpb));
 		THREAD_ENTER;
-		if (s)
+		if (s) {
 			punt();
+		}
 		map_in_out(NULL, blob->blb_open_out_msg, out_blr_length, out_blr,
 				   out_msg_length, out_msg);
 	}
@@ -2135,8 +2438,7 @@ static STATUS execute_request(REQ				request,
 	case REQ_COMMIT:
 		THREAD_EXIT;
 		s = isc_commit_transaction(tdsql->tsql_status,
-								   reinterpret_cast <
-								   void **>(&request->req_trans));
+								   reinterpret_cast<void**>(&request->req_trans));
 		THREAD_ENTER;
 		if (s)
 			punt();
@@ -2146,8 +2448,7 @@ static STATUS execute_request(REQ				request,
 	case REQ_COMMIT_RETAIN:
 		THREAD_EXIT;
 		s = isc_commit_retaining(tdsql->tsql_status,
-								 reinterpret_cast <
-								 void **>(&request->req_trans));
+								 reinterpret_cast<void**>(&request->req_trans));
 		THREAD_ENTER;
 		if (s)
 			punt();
@@ -2156,8 +2457,7 @@ static STATUS execute_request(REQ				request,
 	case REQ_ROLLBACK:
 		THREAD_EXIT;
 		s = isc_rollback_transaction(tdsql->tsql_status,
-									 reinterpret_cast <
-									 void **>(&request->req_trans));
+									 reinterpret_cast<void**>(&request->req_trans));
 		THREAD_ENTER;
 		if (s)
 			punt();
@@ -2204,9 +2504,10 @@ static STATUS execute_request(REQ				request,
 			in_msg = NULL;
 		}
 		if (out_msg_length && (message = (MSG) request->req_receive)) {
-			if (out_blr_length)
+			if (out_blr_length) {
 				parse_blr(out_blr_length, out_blr, out_msg_length,
 						  message->msg_parameters);
+			}
 			use_msg_length = message->msg_length;
 			use_msg = message->msg_buffer;
 		}
@@ -2296,9 +2597,10 @@ static STATUS execute_request(REQ				request,
 		/* Insure that the blr for the message is parsed, regardless of
 		   whether anything is found by the call to receive. */
 
-		if (out_blr_length)
+		if (out_blr_length) {
 			parse_blr(out_blr_length, out_blr, out_msg_length,
 					  message->msg_parameters);
+		}
 
 		THREAD_EXIT;
 		s = isc_receive(tdsql->tsql_status,
@@ -2308,8 +2610,9 @@ static STATUS execute_request(REQ				request,
 						message->msg_buffer,
 						0);
 		THREAD_ENTER;
-		if (s)
+		if (s) {
 			punt();
+		}
 
 		map_in_out(NULL, message, 0, out_blr, out_msg_length, out_msg);
 
@@ -2325,7 +2628,7 @@ static STATUS execute_request(REQ				request,
 			   In either case, there's more than one record. */
 
 			UCHAR* message_buffer =
-				(UCHAR*)ALLD_malloc((ULONG) message->msg_length);
+				(UCHAR*)MemoryPool::malloc_from_system((ULONG) message->msg_length);
 
 			s = 0;
 			THREAD_EXIT;
@@ -2339,7 +2642,7 @@ static STATUS execute_request(REQ				request,
 								0);
 			}
 			THREAD_ENTER;
-			ALLD_free(message_buffer);
+			MemoryPool::free_from_system(message_buffer);
 
 			/* two successful receives means more than one record
 			   a req_sync error on the first pass above means no records
@@ -2370,10 +2673,12 @@ static STATUS execute_request(REQ				request,
 	{
 		if (request->req_type == REQ_UPDATE_CURSOR)
 		{
-			GDS_DSQL_SQL_INFO(local_status, &request,
-							  sizeof(sql_records_info),
-							  const_cast < char *>(sql_records_info),
-							  sizeof(buffer), buffer);
+			GDS_DSQL_SQL_INFO_CPP(	local_status,
+									&request,
+									sizeof(sql_records_info),
+									const_cast<char*>(sql_records_info),
+									sizeof(buffer),
+									buffer);
 			if (!request->req_updates)
 			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 913,
@@ -2383,10 +2688,12 @@ static STATUS execute_request(REQ				request,
 		}
 		else if (request->req_type == REQ_DELETE_CURSOR)
 		{
-			GDS_DSQL_SQL_INFO(local_status, &request,
-							  sizeof(sql_records_info),
-							  const_cast < char *>(sql_records_info),
-							  sizeof(buffer), buffer);
+			GDS_DSQL_SQL_INFO_CPP(	local_status,
+									&request,
+									sizeof(sql_records_info),
+									const_cast<char*>(sql_records_info),
+									sizeof(buffer),
+									buffer);
 			if (!request->req_deletes)
 			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 913,
@@ -2680,11 +2987,12 @@ static USHORT get_request_info(
 }
 
 
-static BOOLEAN get_rsb_item(
-							SSHORT * explain_length_ptr,
-							SCHAR ** explain_ptr,
-							SSHORT * plan_length_ptr,
-SCHAR ** plan_ptr, USHORT * parent_join_count, USHORT * level_ptr)
+static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
+							SCHAR **	explain_ptr,
+							SSHORT*		plan_length_ptr,
+							SCHAR**		plan_ptr,
+							USHORT*		parent_join_count,
+							USHORT*		level_ptr)
 {
 /**************************************
  *
@@ -2968,9 +3276,9 @@ static DBB init( SLONG ** db_handle)
  *	Initialize dynamic SQL.  This is called only once.
  *
  **************************************/
-	DBB database;
+
 	STATUS user_status[ISC_STATUS_LENGTH];
-	PLB pool;
+	DsqlMemoryPool *pool;
 	SCHAR buffer[128], *data;
 	UCHAR p;
 	SSHORT l;
@@ -3005,16 +3313,19 @@ static DBB init( SLONG ** db_handle)
 		return NULL;
 	}
 
-/* Look for database block.  If we don't find one, allocate one. */
+	// Look for database block.  If we don't find one, allocate one.
 
+	DBB database;
 	for (database = databases; database; database = database->dbb_next)
+	{
 		if (database->dbb_database_handle == *db_handle) {
 			THD_MUTEX_UNLOCK(&databases_mutex);
 			return database;
 		}
+	}
 
-	pool = ALLD_pool();
-	database = (DBB) ALLOC(type_dbb, pool);
+	pool = new(*DSQL_permanent_pool) DsqlMemoryPool;
+	database = new(*pool) dbb;
 	database->dbb_pool = pool;
 	database->dbb_next = databases;
 	databases = database;
@@ -3466,8 +3777,8 @@ static REQ prepare(
 
 /* allocate the send and receive messages */
 
-	request->req_send = (MSG) ALLOCD(type_msg);
-	request->req_receive = message = (MSG) ALLOCD(type_msg);
+	request->req_send = new(*tdsql->tsql_default) msg;
+	request->req_receive = message = new(*tdsql->tsql_default) msg;
 	message->msg_number = 1;
 
 #ifdef SCROLLABLE_CURSORS
@@ -3475,7 +3786,7 @@ static REQ prepare(
 		/* allocate a message in which to send scrolling information
 		   outside of the normal send/receive protocol */
 
-		request->req_async = message = (MSG) ALLOCD(type_msg);
+		request->req_async = message = new(*tdsql->tsql_default) msg;
 		message->msg_number = 2;
 	}
 #endif
@@ -3524,13 +3835,13 @@ static REQ prepare(
 		request->req_type == REQ_EXEC_PROCEDURE) {
 		/* Allocate persistent blr string from request's pool. */
 
-		request->req_blr_string = (STR) ALLOCDV(type_str, 980);
+		request->req_blr_string = new(*tdsql->tsql_default, 980) str;
 	}
 	else {
 		/* Allocate transient blr string from permanent pool so
 		   as not to unnecessarily bloat the request's pool. */
 
-		request->req_blr_string = (STR) ALLOCPV(type_str, 980);
+		request->req_blr_string = new(*DSQL_permanent_pool, 980) str;
 	}
 	request->req_blr_string->str_length = 980;
 	request->req_blr = request->req_blr_string->str_data;
@@ -3607,7 +3918,7 @@ static REQ prepare(
 						sizeof(STATUS) * len);
 	}
 
-	ALLD_release(reinterpret_cast<FRB>(request->req_blr_string));
+	delete request->req_blr_string;
 	request->req_blr_string = NULL;
 
 	if (status)
@@ -3633,14 +3944,15 @@ static void punt(void)
 
 	tdsql = GET_THREAD_DATA;
 
-	LONGJMP(*tdsql->tsql_setjmp, (int) tdsql->tsql_status[1]);
+	Firebird::status_longjmp_error::raise(tdsql->tsql_status[1]);
 }
 
 
-static SCHAR *put_item(
-					   SCHAR item,
-					   USHORT length,
-					   SCHAR * string, SCHAR * ptr, SCHAR * end)
+static SCHAR* put_item(	SCHAR	item,
+						USHORT	length,
+						SCHAR*	string,
+						SCHAR*	ptr,
+						SCHAR*	end)
 {
 /**************************************
  *
@@ -3661,18 +3973,21 @@ static SCHAR *put_item(
 	}
 
 	*ptr++ = item;
-	STUFF_INFO_WORD(ptr, length);
 
-	if (length)
-		do
+	*ptr++ = (UCHAR)length;
+	*ptr++ = length >> 8;
+
+	if (length) {
+		do {
 			*ptr++ = *string++;
-		while (--length);
+		} while (--length);
+	}
 
 	return ptr;
 }
 
 
-static void release_request( REQ request, USHORT top_level)
+static void release_request(REQ request, USHORT top_level)
 {
 /**************************************
  *
@@ -3684,40 +3999,46 @@ static void release_request( REQ request, USHORT top_level)
  *	Release a dynamic request.
  *
  **************************************/
-	REQ *ptr, child, parent;
+
 	STATUS status_vector[ISC_STATUS_LENGTH];
-	PLB save_default;
-	struct tsql *tdsql;
 
-	tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
-/* If request is parent, orphan the children and release a portion
-   of their requests */
+	// If request is parent, orphan the children and
+	// release a portion of their requests
 
-	for (child = request->req_offspring; child; child = child->req_sibling) {
+	for (REQ child = request->req_offspring; child; child = child->req_sibling) {
 		child->req_flags |= REQ_orphan;
 		child->req_parent = NULL;
-		save_default = tdsql->tsql_default;
+		DsqlMemoryPool *save_default = tdsql->tsql_default;
 		tdsql->tsql_default = child->req_pool;
 		release_request(child, FALSE);
 		tdsql->tsql_default = save_default;
 	}
 
-/* For top level requests that are linked to a parent, unlink it */
+// For top level requests that are linked to a parent, unlink it
 
-	if (top_level && (parent = request->req_parent) != NULL)
-		for (ptr = &parent->req_offspring; *ptr; ptr = &(*ptr)->req_sibling)
+	if (top_level && request->req_parent)
+	{
+		REQ parent = request->req_parent;
+		for (REQ* ptr = &parent->req_offspring;
+			*ptr;
+			ptr = &(*ptr)->req_sibling)
+		{
 			if (*ptr == request) {
 				*ptr = request->req_sibling;
 				break;
 			}
+		}
+	}
 
-/* If the request had an open cursor, close it */
+// If the request had an open cursor, close it
 
-	if (request->req_open_cursor)
+	if (request->req_open_cursor) {
 		close_cursor(request);
+	}
 
-/* If request is named, clear it from the hash table */
+// If request is named, clear it from the hash table
 
 	if (request->req_name) {
 		HSHD_remove(request->req_name);
@@ -3730,11 +4051,11 @@ static void release_request( REQ request, USHORT top_level)
 	}
 
 	if (request->req_blr_string) {
-		ALLD_release(reinterpret_cast<FRB>(request->req_blr_string));
+		delete request->req_blr_string;
 		request->req_blr_string = NULL;
 	}
 
-/* If a request has been compiled, release it now */
+// If a request has been compiled, release it now
 
 	if (request->req_handle) {
 		THREAD_EXIT;
@@ -3747,7 +4068,7 @@ static void release_request( REQ request, USHORT top_level)
 /* Only release the entire request for top level requests */
 
 	if (top_level)
-		ALLD_rlpool(request->req_pool);
+		delete request->req_pool;
 }
 
 
@@ -3763,17 +4084,17 @@ static STATUS return_success(void)
  *	Set up status vector to reflect successful execution.
  *
  **************************************/
-	TSQL tdsql;
-	STATUS *p;
 
-	tdsql = GET_THREAD_DATA;
+	TSQL tdsql = GET_THREAD_DATA;
 
-	p = tdsql->tsql_status;
+	STATUS*p = tdsql->tsql_status;
 	*p++ = gds_arg_gds;
 	*p++ = SUCCESS;
-/* do not overwrite warnings */
-	if (*p != isc_arg_warning)
+
+	// do not overwrite warnings
+	if (*p != isc_arg_warning) {
 		*p = gds_arg_end;
+	}
 
 	RESTORE_THREAD_DATA;
 

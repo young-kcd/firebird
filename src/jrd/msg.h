@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: msg.h,v 1.1.1.1 2001-05-23 13:26:22 tamlin Exp $
+$Id: msg.h,v 1.2 2001-12-24 02:50:51 tamlin Exp $
 */
 
 #ifndef _JRD_MSG_H_

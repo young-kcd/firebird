@@ -16,6 +16,8 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
+#include "../jrd/common.h"
+#include "../jrd/isc.h"
 #include "../jrd/jrd.h"
 #include "../jrd/lck.h"
 #include "../jrd/ods.h"

@@ -24,6 +24,11 @@
 #ifndef _JRD_RSE_H_
 #define _JRD_RSE_H_
 
+#include "../jrd/jrd_blks.h"
+#include "../include/fb_blk.h"
+
+#include <vector>
+
 #include "../jrd/dsc.h"
 
 /* Record Source Block (RSB) types */
@@ -44,8 +49,9 @@ rsb_once /* (Gateway only) */ } RSB_T;
 
 /* Record Source Block */
 
-typedef struct rsb {
-	struct blk rsb_header;
+class Rsb : public pool_alloc_rpt<class Rsb*, type_rsb>
+{
+    public:
 	RSB_T rsb_type;				/* type of rsb */
 	UCHAR rsb_stream;			/* stream, if appropriate */
 	USHORT rsb_count;			/* number of sub arguments */
@@ -53,14 +59,15 @@ typedef struct rsb {
 	ULONG rsb_impure;			/* offset to impure area */
 	ULONG rsb_cardinality;		/* estimated cardinality of stream */
 	ULONG rsb_record_count;		/* count of records returned from rsb (not candidate records processed) */
-	struct rsb *rsb_next;		/* next rsb, if appropriate */
+	struct Rsb *rsb_next;		/* next rsb, if appropriate */
 	struct rel *rsb_relation;	/* relation, if appropriate */
 	struct str *rsb_alias;		/* SQL alias for relation */
 	struct prc *rsb_procedure;	/* procedure, if appropriate */
 	struct fmt *rsb_format;		/* format, if appropriate */
 	struct nod *rsb_any_boolean;	/* any/all boolean */
-	struct rsb *rsb_arg[1];
-} *RSB;
+	Rsb* rsb_arg[1];
+};
+typedef Rsb *RSB;
 
 /* bits for the rsb_flags field */
 
@@ -203,23 +210,26 @@ typedef struct irsb_nav {
 
 
 /* Sort map block */
-
-typedef struct smb {
-	struct blk smb_header;
-	USHORT smb_keys;			/* Number of keys */
-	USHORT smb_count;			/* Total number of fields */
-	USHORT smb_length;			/* Sort record length */
-	USHORT smb_key_length;		/* Key length in longwords */
-	struct skd *smb_key_desc;	/* Address of key descriptors */
-	USHORT smb_flags;			/* Misc sort flags */
 	struct smb_repeat {
 		DSC smb_desc;			/* Relative descriptor */
 		USHORT smb_flag_offset;	/* Offset of missing flag */
 		USHORT smb_stream;		/* Stream for field id */
 		SSHORT smb_field_id;	/* Id for field (-1 if dbkey) */
 		struct nod *smb_node;	/* Expression node */
-	} smb_rpt[1];
-} *SMB;
+	};
+
+class smb : public pool_alloc_rpt<smb_repeat, type_smb>
+{
+public:
+	USHORT smb_keys;			/* Number of keys */
+	USHORT smb_count;			/* Total number of fields */
+	USHORT smb_length;			/* Sort record length */
+	USHORT smb_key_length;		/* Key length in longwords */
+	struct skd *smb_key_desc;	/* Address of key descriptors */
+	USHORT smb_flags;			/* Misc sort flags */
+    smb_repeat smb_rpt[1];
+};
+typedef smb *SMB;
 
 /* values for smb_field_id */
 
@@ -236,12 +246,14 @@ typedef struct smb {
    Indexed relationships block (IRL) holds 
    information about potential join orders */
 
-typedef struct irl {
-	struct blk irl_header;
+class irl : public pool_alloc<type_irl>
+{
+    public:
 	struct irl *irl_next;		/* Next irl block for stream */
 	USHORT irl_stream;			/* Stream reachable by relation */
 	USHORT irl_unique;			/* Is this stream reachable by unique index? */
-} *IRL;
+};
+typedef irl *IRL;
 
 /* Types of simulated joins (Gateway only) */
 
@@ -252,12 +264,14 @@ typedef struct irl {
 
 /* Simulated relationships block holds information about potential joins (Gateway only) */
 
-typedef struct srl {
-	struct blk srl_header;
+class srl : public pool_alloc<type_srl>
+{
+    public:
 	struct srl *srl_next;		/* Next srl block for stream */
 	USHORT srl_stream;			/* Stream reachable by join */
 	USHORT srl_type;			/* Simulated join type */
-} *SRL;
+};
+typedef srl *SRL;
 
 
 /* the maximum number of opt items is the maximum
@@ -272,10 +286,10 @@ typedef struct srl {
 #define	OPT_BITS	(MAX_OPT_ITEMS/32)
 
 /* General optimizer block */
-
-typedef struct opt {
-	struct blk opt_header;
-	struct csb *opt_csb;		/* Compiler scratch block */
+class Opt : public pool_alloc<type_opt>
+{
+    public:
+	class Csb *opt_csb;		/* Compiler scratch block */
 	SLONG opt_combinations;		/* Number of partial orders considered */
 	double opt_best_cost;		/* Cost of best join order */
 	SSHORT opt_count;			/* Number of conjuncts */
@@ -298,8 +312,11 @@ typedef struct opt {
 		USHORT opt_best_stream;	/* stream in best join order seen so far */
 		USHORT opt_flags;
 		USHORT opt_stream;		/* Stream in position of join order */
-	} opt_rpt[MAX_OPT_ITEMS];
-} *OPT;
+	};
+
+	struct opt_repeat opt_rpt[MAX_OPT_ITEMS];
+};
+typedef Opt *OPT;
 
 /* stream-dependent bits used in opt_flags */
 
@@ -314,21 +331,24 @@ typedef struct opt {
 
 /* River block -- used to hold temporary information about a group of streams */
 
-typedef struct riv {
-	struct blk riv_header;
-	struct rsb *riv_rsb;		/* Record source block for river */
+class riv : public pool_alloc_rpt<SCHAR, type_riv>
+{
+    public:
+	struct Rsb *riv_rsb;		/* Record source block for river */
 	USHORT riv_number;			/* Temporary number for river */
 	UCHAR riv_count;			/* Count of streams */
 	UCHAR riv_streams[1];		/* Actual streams */
-} *RIV;
+};
+typedef riv *RIV;
 
 
 /* bookmark block, used to hold information about the current position 
    within an index; a pointer to this block is passed to the user as a
    handle to facilitate returning to this position */
 
-typedef struct bkm {
-	struct blk bkm_header;
+class bkm : public pool_alloc_rpt<SCHAR, type_bkm>
+{
+    public:
 	struct bkm *bkm_next;
 	struct dsc bkm_desc;		/* bookmark descriptor describing the bookmark handle */
 	ULONG bkm_handle;			/* bookmark handle containing pointer to this block */
@@ -340,7 +360,8 @@ typedef struct bkm {
 	USHORT bkm_flags;			/* flag values indicated below */
 	struct dsc bkm_key_desc;	/* descriptor containing current key value */
 	UCHAR bkm_key_data[1];		/* current key value */
-} *BKM;
+};
+typedef bkm *BKM;
 
 #define bkm_bof			1
 #define bkm_eof			2

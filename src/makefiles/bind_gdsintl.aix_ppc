@@ -16,6 +16,6 @@
 * Contributor(s):
 * Tom Coleman  tmcsys (AIX for C bind expects * comments)
 *
-* $Id: bind_gdsintl.aix_ppc,v 1.1 2001-07-12 06:32:03 bellardo Exp $
+* $Id: bind_gdsintl.aix_ppc,v 1.2 2001-12-24 02:50:52 tamlin Exp $
 *
 LD_lookup

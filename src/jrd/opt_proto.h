@@ -31,14 +31,14 @@
 
 
 extern BOOLEAN OPT_access_path(struct req *, SCHAR *, SSHORT, USHORT *);
-extern struct rsb *OPT_compile(TDBB, register struct csb *,
+extern class Rsb *OPT_compile(TDBB, register class Csb *,
 							   register struct rse *, struct lls *);
 extern struct nod *OPT_make_dbkey(register struct opt *, struct nod *,
 								  USHORT);
 extern struct nod *OPT_make_index(TDBB, struct opt *, struct rel *,
 								  struct idx *);
 extern int OPT_match_index(struct opt *, USHORT, struct idx *);
-extern void OPT_set_index(TDBB, struct req *, struct rsb **, struct rel *,
+extern void OPT_set_index(TDBB, struct req *, class Rsb **, struct rel *,
 						  struct idx *);
 
 #endif /* _JRD_OPT_PROTO_H_ */

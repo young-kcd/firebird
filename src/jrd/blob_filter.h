@@ -24,14 +24,18 @@
 #ifndef JRD_BLF_H
 #define JRD_BLF_H
 
+#include "../jrd/jrd_blks.h"
+#include "../include/fb_blk.h"
+
 /* Note: The CTL structure is the internal version of the
  * blob control structure (ISC_BLOB_CTL) which is in ibase.h.
  * Therefore this structure should be kept in sync with that one,
  * with the exception of the internal members, which are all the
  * once which appear after ctl_internal. */
 
-typedef struct ctl
+class ctl : public pool_alloc<type_ctl>
 {
+public:
 	STATUS	(*ctl_source)(USHORT, struct ctl*);		/* Source filter */
 	struct ctl*	ctl_source_handle;		/* Argument to pass to source filter */
 	SSHORT		ctl_to_sub_type;		/* Target type */
@@ -48,21 +52,23 @@ typedef struct ctl
 	IPTR		ctl_data[8];			/* Application specific data */
 	void*		ctl_internal[3];		/* InterBase internal-use only */
 	UCHAR*		ctl_exception_message;	/* Message to use in case of filter exception */
-} *CTL;
+};
+typedef ctl *CTL;
 
 typedef STATUS(*PTR) (USHORT, CTL);
 
 /* Blob filter management */
 
-typedef struct blf
+class blf : public pool_alloc<type_blf>
 {
-	struct blk	blf_header;
-	struct blf*	blf_next;				/* Next known filter */
+    public:
+	class blf*	blf_next;				/* Next known filter */
 	SSHORT		blf_from;				/* Source sub-type */
 	SSHORT		blf_to;					/* Target sub-type */
 	PTR		blf_filter;		/* Entrypoint of filter */
 	STR			blf_exception_message;	/* message to be used in case of filter exception */
-} *BLF;
+};
+typedef blf *BLF;
 
 #define ACTION_open			0
 #define ACTION_get_segment	1

@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: sqe.cpp,v 1.2 2001-07-29 23:43:22 skywalker Exp $
+//  $Id: sqe.cpp,v 1.3 2001-12-24 02:50:49 tamlin Exp $
 //  Revision 1.3  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -38,7 +38,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sqe.cpp,v 1.2 2001-07-29 23:43:22 skywalker Exp $
+//	$Id: sqe.cpp,v 1.3 2001-12-24 02:50:49 tamlin Exp $
 //
 #include "firebird.h"
 #include <stdio.h>
@@ -132,37 +132,37 @@ typedef struct ops {
 } OPS;
 
 static OPS rel_ops[] = {
-	nod_eq, KW_EQ, nod_ne,
-	nod_eq, KW_EQUALS, nod_ne,
-	nod_ne, KW_NE, nod_eq,
-	nod_gt, KW_GT, nod_le,
-	nod_ge, KW_GE, nod_lt,
-	nod_le, KW_LE, nod_gt,
-	nod_lt, KW_LT, nod_ge,
-	nod_containing, KW_CONTAINING, nod_any,
-	nod_starting, KW_STARTING, nod_any,
-	nod_matches, KW_MATCHES, nod_any,
-	nod_any, KW_none, nod_any,
-	nod_ansi_any, KW_none, nod_ansi_any,
-	nod_ansi_all, KW_none, nod_ansi_all
+	{ nod_eq, KW_EQ, nod_ne },
+	{ nod_eq, KW_EQUALS, nod_ne },
+	{ nod_ne, KW_NE, nod_eq },
+	{ nod_gt, KW_GT, nod_le },
+	{ nod_ge, KW_GE, nod_lt },
+	{ nod_le, KW_LE, nod_gt },
+	{ nod_lt, KW_LT, nod_ge },
+	{ nod_containing, KW_CONTAINING, nod_any },
+	{ nod_starting, KW_STARTING, nod_any },
+	{ nod_matches, KW_MATCHES, nod_any },
+	{ nod_any, KW_none, nod_any },
+	{ nod_ansi_any, KW_none, nod_ansi_any },
+	{ nod_ansi_all, KW_none, nod_ansi_all }
 }, scalar_stat_ops[] = {
-	nod_count, KW_COUNT, nod_any,
-		nod_max, KW_MAX, nod_any,
-		nod_min, KW_MIN, nod_any,
-		nod_total, KW_TOTAL, nod_any,
-		nod_total, KW_SUM, nod_any,
-		nod_average, KW_AVERAGE, nod_any,
+	{ nod_count, KW_COUNT, nod_any },
+		{ nod_max, KW_MAX, nod_any },
+		{ nod_min, KW_MIN, nod_any },
+		{ nod_total, KW_TOTAL, nod_any },
+		{ nod_total, KW_SUM, nod_any },
+		{ nod_average, KW_AVERAGE, nod_any },
 
-		nod_via, KW_none, nod_any}, stat_ops[] = {
-	nod_agg_count, KW_COUNT, nod_any,
-		nod_agg_max, KW_MAX, nod_any,
-		nod_agg_min, KW_MIN, nod_any,
-		nod_agg_total, KW_TOTAL, nod_any,
-		nod_agg_total, KW_SUM, nod_any,
-		nod_agg_average, KW_AVERAGE, nod_any,
-		nod_any, KW_none, nod_any,
-		nod_ansi_any, KW_none, nod_ansi_any,
-		nod_ansi_all, KW_none, nod_ansi_all};
+		{ nod_via, KW_none, nod_any} }, stat_ops[] = {
+	{ nod_agg_count, KW_COUNT, nod_any },
+		{ nod_agg_max, KW_MAX, nod_any },
+		{ nod_agg_min, KW_MIN, nod_any },
+		{ nod_agg_total, KW_TOTAL, nod_any },
+		{ nod_agg_total, KW_SUM, nod_any },
+		{ nod_agg_average, KW_AVERAGE, nod_any },
+		{ nod_any, KW_none, nod_any },
+		{ nod_ansi_any, KW_none, nod_ansi_any },
+		{ nod_ansi_all, KW_none, nod_ansi_all }};
 
 static NOD_T relationals[] = {
 	nod_eq, nod_ne, nod_gt, nod_ge, nod_le, nod_lt, nod_containing,

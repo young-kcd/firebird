@@ -432,7 +432,7 @@ void* ISC_make_signal(
 UCHAR * DLL_EXPORT ISC_map_file (
 	STATUS*	status_vector,
 	TEXT*	filename,
-#if 0
+#if 1
 	// TMN: Parameter is in errors!
 	void	(*init_routine)(void *, struct sh_mem *, int),
 #else
@@ -518,7 +518,7 @@ retry:
 		CloseHandle (event_handle);
 		CloseHandle (file_handle);
 		*status_vector++ = gds_arg_gds;
-		*status_vector++ = gds__unavailable;
+		*status_vector++ = gds_unavailable;
 		*status_vector++ = gds_arg_end;
 		return NULL;
 	}
@@ -870,7 +870,7 @@ void DLL_EXPORT ISC_unmap_file(
 static void error(STATUS* status_vector, TEXT* string, STATUS status)
 {
 	*status_vector++ = gds_arg_gds;
-	*status_vector++ = gds__sys_request;
+	*status_vector++ = gds_sys_request;
 	*status_vector++ = gds_arg_string;
 	*status_vector++ = reinterpret_cast<STATUS>(string);
 	*status_vector++ = SYS_ARG;

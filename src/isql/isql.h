@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.3 2001-08-27 15:29:18 skywalker Exp $
+ * $Id: isql.h,v 1.4 2001-12-24 02:50:50 tamlin Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -263,10 +263,7 @@ static SCHAR *alpha_months[] = {
 	"DEC"
 };
 
-typedef struct vary {
-	SSHORT vary_length;
-	SCHAR vary_string[1];
-} VARY;
+typedef vary VARY;
 
 typedef struct sqltypes {
 	SSHORT type;

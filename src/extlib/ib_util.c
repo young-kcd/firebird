@@ -16,11 +16,11 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-#include "../include/fb_config.h"
+#include "../include/firebird.h"
 #include <stdlib.h>
 #include "ib_udf.h"
 
-void *EXPORT ib_util_malloc( long size)
+void* EXPORT ib_util_malloc(long size)
 {
 	return malloc(size);
 }

@@ -28,7 +28,7 @@
 #include "../jrd/common.h"
 
 #ifndef INCLUDE_FB_BLK
-#include "../include/fb_blk.h"
+#include "../include/old_fb_blk.h"
 #endif
 
 #include "../wal/wal.h"

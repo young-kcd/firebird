@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.1.1.1 2001-05-23 13:25:31 tamlin Exp $
+ * $Id: gpre.h,v 1.2 2001-12-24 02:50:49 tamlin Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -408,9 +408,11 @@ typedef struct bas {
 
 /* Blob block.  Used for blob calls */
 
-typedef struct blb {
+class blb
+{
+public:
 	struct req *blb_request;	/* parent request */
-	struct blb *blb_next;		/* next blob in request */
+	blb*		blb_next;		/* next blob in request */
 	struct ref *blb_reference;	/* field reference for blob field */
 	struct sym *blb_symbol;		/* Blob context variable */
 	USHORT blb_ident;			/* Blob handle */
@@ -438,9 +440,10 @@ typedef struct blb {
 	USHORT blb_from_charset;	/* charset to translate from */
 	USHORT blb_to_charset;		/* charset to translate to */
 	UCHAR blb_bpb[24];
-} *BLB;
+};
+typedef blb* BLB;
 
-#define BLB_LEN sizeof (struct blb)
+#define BLB_LEN sizeof(blb)
 
 #define BLB_create		1
 #define BLB_symbol_released	2
@@ -1112,7 +1115,7 @@ typedef struct req {
 	struct por *req_aport;		/* port for asynchronous message */
 #endif
 	struct req *req_routine;	/* other requests in routine */
-	struct blb *req_blobs;		/* blobs in request */
+	blb*		req_blobs;		/* blobs in request */
 	struct form *req_form;		/* form for request */
 	struct slc *req_slice;		/* slice for request */
 	struct ref *req_array_references;	/* array fields referenced in context */

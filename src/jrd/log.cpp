@@ -652,9 +652,9 @@ static void open_log(TEXT * file_name, SSHORT file_length, SCHAR * mode)
 	if (!log_file)
 		error("can't open log file");
 	else {
-		dbb->dbb_log = log = (LOG) ALLOCP(type_log);
+		dbb->dbb_log = log = new(*dbb->dbb_permanent) log();
 		log->log_file = log_file;
-		log->log_string = (STR) ALLOCPV(type_str, LOG_BUFFER_LENGTH);
+		log->log_string = new(*dbb->dbb_permanent, LOG_BUFFER_LENGTH) str();
 		log->log_ptr = log->log_buffer = log->log_string->str_data;
 	}
 #ifdef STACK_REDUCTION

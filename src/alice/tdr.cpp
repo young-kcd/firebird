@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.3 2001-07-29 23:43:21 skywalker Exp $
+//	$Id: tdr.cpp,v 1.4 2001-12-24 02:50:47 tamlin Exp $
 //
 
 #include "firebird.h"
@@ -923,15 +923,15 @@ static void reattach_database(TDR trans)
 		p = buffer;
 		while (*p == ' ')
 			*p++;
-		if (TDR_attach_database
-			(status_vector, trans, reinterpret_cast < char *>(p))) {
-			string =
-				(STR) ALLOCDV(type_str,
-							  strlen(reinterpret_cast <
-									 const char *>(p)) + 1);
-			strcpy(reinterpret_cast < char *>(string->str_data),
-				   reinterpret_cast < const char *>(p));
-			string->str_length = strlen(reinterpret_cast < const char *>(p));
+		if (TDR_attach_database(status_vector,
+								trans,
+								reinterpret_cast<char*>(p)))
+		{
+			string = new(*tdgbl->ALICE_default_pool,
+						strlen(reinterpret_cast<const char*>(p)) + 1) str;
+			strcpy(reinterpret_cast<char*>(string->str_data),
+				   reinterpret_cast<const char*>(p));
+			string->str_length = strlen(reinterpret_cast<const char*>(p));
 			trans->tdr_fullpath = string;
 			trans->tdr_filename = (TEXT *) string->str_data;
 			return;

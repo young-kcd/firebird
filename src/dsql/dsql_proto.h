@@ -30,8 +30,8 @@ extern "C" {
 
 extern STATUS DLL_EXPORT dsql8_allocate_statement(	STATUS*,
 													int**,
-													struct req**);
-extern STATUS DLL_EXPORT dsql8_execute(STATUS *, void **, struct req**,
+													struct dsql_req**);
+extern STATUS DLL_EXPORT dsql8_execute(STATUS *, void **, struct dsql_req**,
 									   USHORT, UCHAR *, USHORT, USHORT,
 									   UCHAR *, USHORT, UCHAR *, USHORT,
 									   USHORT, UCHAR *);
@@ -42,22 +42,22 @@ extern STATUS DLL_EXPORT dsql8_execute_immediate(STATUS *, int **, int **,
 												 UCHAR *, USHORT, USHORT,
 												 UCHAR *);
 #ifdef SCROLLABLE_CURSORS
-extern STATUS DLL_EXPORT dsql8_fetch(STATUS *, struct req **, USHORT, UCHAR *,
+extern STATUS DLL_EXPORT dsql8_fetch(STATUS *, struct dsql_req**, USHORT, UCHAR *,
 									 USHORT, USHORT, UCHAR *, USHORT, SLONG);
 #else
-extern STATUS DLL_EXPORT dsql8_fetch(STATUS *, struct req **, USHORT, UCHAR *,
+extern STATUS DLL_EXPORT dsql8_fetch(STATUS *, struct dsql_req**, USHORT, UCHAR *,
 									 USHORT, USHORT, UCHAR *);
 #endif /* SCROLLABLE_CURSORS */
-extern STATUS DLL_EXPORT dsql8_free_statement(STATUS *, struct req **,
+extern STATUS DLL_EXPORT dsql8_free_statement(STATUS *, struct dsql_req**,
 											  USHORT);
-extern STATUS DLL_EXPORT dsql8_insert(STATUS *, struct req **, USHORT,
+extern STATUS DLL_EXPORT dsql8_insert(STATUS *, struct dsql_req**, USHORT,
 									  UCHAR *, USHORT, USHORT, UCHAR *);
-extern STATUS DLL_EXPORT dsql8_prepare(STATUS *, void **, struct req **,
+extern STATUS DLL_EXPORT dsql8_prepare(STATUS *, void **, struct dsql_req**,
 									   USHORT, TEXT *, USHORT, USHORT,
 									   UCHAR *, USHORT, UCHAR *);
-extern STATUS DLL_EXPORT dsql8_set_cursor(STATUS *, struct req **, TEXT *,
+extern STATUS DLL_EXPORT dsql8_set_cursor(STATUS *, struct dsql_req**, TEXT *,
 										  USHORT);
-extern STATUS DLL_EXPORT dsql8_sql_info(STATUS *, struct req **, USHORT,
+extern STATUS DLL_EXPORT dsql8_sql_info(STATUS *, struct dsql_req**, USHORT,
 										SCHAR *, USHORT, SCHAR *);
 extern void DSQL_pretty(struct nod *, int);
 

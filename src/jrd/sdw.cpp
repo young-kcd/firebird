@@ -122,30 +122,32 @@ int SDW_add_file(TEXT * file_name, SLONG start, USHORT shadow_number)
  *	Return the sequence number for the new file.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
+
 	FIL shadow_file, next, file;
 	SDW shadow;
 	struct bdb temp_bdb;
 	HDR header;
 	SLONG sequence;
 	SCHAR *spare_buffer = NULL, *spare_page;
-	JMP_BUF env, *old_env;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB  dbb  = tdbb->tdbb_database;
 
 /* Find the file to be extended */
 
 	for (shadow = dbb->dbb_shadow; shadow; shadow = shadow->sdw_next)
+	{
 		if ((shadow->sdw_number == shadow_number) &&
-			!(shadow->sdw_flags & (SDW_IGNORE | SDW_rollover))) {
+			!(shadow->sdw_flags & (SDW_IGNORE | SDW_rollover)))
+		{
 			shadow_file = shadow->sdw_file;
 			break;
 		}
+	}
 
-	if (!shadow)
+	if (!shadow) {
 		return 0;
+	}
 
 /* find the last file in the list, open the new file */
 
@@ -166,19 +168,13 @@ int SDW_add_file(TEXT * file_name, SLONG start, USHORT shadow_number)
    and set up to release it in case of error. Align
    the spare page buffer for raw disk access. */
 
-	spare_buffer =
-		ALL_malloc((SLONG) dbb->dbb_page_size + MIN_PAGE_SIZE, ERR_jmp);
+	spare_buffer = (SCHAR*)
+		MemoryPool::malloc_from_system((SLONG) dbb->dbb_page_size + MIN_PAGE_SIZE);
 	spare_page =
 		(SCHAR *) (((U_IPTR) spare_buffer + MIN_PAGE_SIZE - 1) &
 				   ~((U_IPTR) MIN_PAGE_SIZE - 1));
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
-	if (SETJMP(env)) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		if (spare_buffer)
-			ALL_free(spare_buffer);
-		ERR_punt();
-	}
+
+	try {
 
 /* create the header using the spare_buffer */
 
@@ -196,11 +192,14 @@ int SDW_add_file(TEXT * file_name, SLONG start, USHORT shadow_number)
 	temp_bdb.bdb_dbb = dbb;
 	temp_bdb.bdb_buffer = (PAG) header;
 	header->hdr_header.pag_checksum = CCH_checksum(&temp_bdb);
-	if (!PIO_write
-		(shadow_file, &temp_bdb, reinterpret_cast < pag * >(header), 0)) {
-		if (spare_buffer)
-			ALL_free(spare_buffer);
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+	if (!PIO_write(	shadow_file,
+					&temp_bdb,
+					reinterpret_cast<pag*>(header),
+					0))
+	{
+		if (spare_buffer) {
+			MemoryPool::free_from_system(spare_buffer);
+		}
 		return 0;
 	}
 	next->fil_fudge = 1;
@@ -225,9 +224,9 @@ else
 ===
 ************************/
 /** Tempeorarly reverting the change ------- Sudesh 07/07/95 *******/
-	if (shadow_file == file)
+	if (shadow_file == file) {
 		copy_header();
-	else {
+	} else {
 		--start;
 		header->hdr_data[0] = HDR_end;
 		header->hdr_end = HDR_SIZE;
@@ -240,23 +239,37 @@ else
 		file->fil_fudge = 0;
 		temp_bdb.bdb_page = file->fil_min_page;
 		header->hdr_header.pag_checksum = CCH_checksum(&temp_bdb);
-		if (!PIO_write
-			(shadow_file, &temp_bdb, reinterpret_cast < pag * >(header), 0)) {
-			if (spare_buffer)
-				ALL_free(spare_buffer);
-			tdbb->tdbb_setjmp = (UCHAR *) old_env;
+		if (!PIO_write(	shadow_file,
+						&temp_bdb,
+						reinterpret_cast<pag*>(header),
+						0))
+		{
+			if (spare_buffer) {
+				MemoryPool::free_from_system(spare_buffer);
+			}
 			return 0;
 		}
-		if (file->fil_min_page)
+		if (file->fil_min_page) {
 			file->fil_fudge = 1;
+		}
 	}
 
-	if (file->fil_min_page)
+	if (file->fil_min_page) {
 		file->fil_fudge = 1;
+	}
 
-	if (spare_buffer)
-		ALL_free(spare_buffer);
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+	if (spare_buffer) {
+		MemoryPool::free_from_system(spare_buffer);
+	}
+
+	}	// try
+	catch (...) {
+		if (spare_buffer) {
+			MemoryPool::free_from_system(spare_buffer);
+		}
+		ERR_punt();
+	}
+
 	return sequence;
 }
 
@@ -275,7 +288,7 @@ void SDW_check(void)
  *
  **************************************/
 	SDW shadow, next_shadow;
-	BOOLEAN start_conditional = TRUE;
+	//BOOLEAN start_conditional = TRUE;
 	TDBB tdbb;
 	DBB dbb;
 	LCK lock;
@@ -309,7 +322,7 @@ void SDW_check(void)
 	}
 	if (SDW_check_conditional()) {
 		if (SDW_lck_update((SLONG) 0)) {
-			lock = (LCK) ALLOCPV(type_lck, sizeof(SLONG));
+			lock = new(*dbb->dbb_permanent, sizeof(SLONG)) lck();
 			lock->lck_dbb = dbb;
 			lock->lck_attachment = tdbb->tdbb_attachment;
 			lock->lck_length = sizeof(SLONG);
@@ -326,7 +339,7 @@ void SDW_check(void)
 				SDW_dump_pages();
 				LCK_release(tdbb, lock);
 			}
-			ALL_release(reinterpret_cast < frb * >(lock));
+			delete lock;
 		}
 	}
 }
@@ -583,7 +596,7 @@ void SDW_init(USHORT activate, USHORT delete_, SBM sbm_rec)
 /* set up the lock block for synchronizing addition of new shadows */
 
 	key_length = sizeof(header->hdr_shadow_count);
-	dbb->dbb_shadow_lock = lock = (LCK) ALLOCPV(type_lck, key_length);
+	dbb->dbb_shadow_lock = lock = new(*dbb->dbb_permanent, key_length) lck();
 	lock->lck_type = LCK_shadow;
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 	lock->lck_parent = dbb->dbb_lock;
@@ -760,7 +773,7 @@ BOOLEAN SDW_rollover_to_shadow(FIL file, BOOLEAN inAst)
 
 	update_lock = &temp_lock;
 	MOVE_CLEAR(update_lock, sizeof(struct lck));
-	update_lock->lck_header.blk_type = type_lck;
+	//update_lock->blk_type = type_lck;
 	update_lock->lck_dbb = dbb;
 	update_lock->lck_attachment = tdbb->tdbb_attachment;
 	update_lock->lck_length = sizeof(SLONG);
@@ -814,9 +827,9 @@ BOOLEAN SDW_rollover_to_shadow(FIL file, BOOLEAN inAst)
 
 	PIO_close(dbb->dbb_file);
 
-	while (file = dbb->dbb_file) {
+	while ( (file = dbb->dbb_file) ) {
 		dbb->dbb_file = file->fil_next;
-		ALL_release(reinterpret_cast < frb * >(file));
+		delete file;
 	}
 
 /* point the main database file at the file of the first shadow
@@ -835,7 +848,7 @@ BOOLEAN SDW_rollover_to_shadow(FIL file, BOOLEAN inAst)
    successfull updating LCK_data we will be the only one doing so */
 
 	if (!inAst) {
-		if (start_conditional = SDW_check_conditional()) {
+		if ( (start_conditional = SDW_check_conditional()) ) {
 			sdw_update_flags = (SDW_rollover | SDW_conditional);
 			LCK_write_data(shadow_lock, sdw_update_flags);
 		}
@@ -844,7 +857,7 @@ BOOLEAN SDW_rollover_to_shadow(FIL file, BOOLEAN inAst)
 	SDW_notify();
 	LCK_write_data(shadow_lock, (SLONG) 0);
 	LCK_release(tdbb, shadow_lock);
-	ALL_release(reinterpret_cast < frb * >(shadow_lock));
+	delete shadow_lock;
 	dbb->dbb_shadow_lock = 0;
 	LCK_release(tdbb, update_lock);
 	if (start_conditional && !inAst) {
@@ -887,10 +900,10 @@ void SDW_shutdown_shadow(SDW shadow)
 
 	if (shadow) {
 		PIO_close(shadow->sdw_file);
-		for (free = shadow->sdw_file; file = free->fil_next; free = file)
-			ALL_release(reinterpret_cast < frb * >(free));
-		ALL_release(reinterpret_cast < frb * >(free));
-		ALL_release(reinterpret_cast < frb * >(shadow));
+		for (free = shadow->sdw_file; (file = free->fil_next); free = file)
+			delete free;
+		delete free;
+		delete shadow;
 	}
 }
 
@@ -919,7 +932,6 @@ void SDW_start(
 	SCHAR expanded_name[MAX_PATH_LENGTH];
 	UCHAR *p;
 	FIL dbb_file, shadow_file = 0;
-	JMP_BUF env, *old_env;
 	WIN window;
 	HDR database_header, shadow_header;
 	VOLATILE USHORT header_fetched = 0;
@@ -960,46 +972,25 @@ void SDW_start(
 
 	shadow = NULL;
 	spare_buffer =
-		(SLONG *) ALL_malloc((SLONG) dbb->dbb_page_size + MIN_PAGE_SIZE,
-							 ERR_jmp);
+		(SLONG *) MemoryPool::malloc_from_system((SLONG) dbb->dbb_page_size + MIN_PAGE_SIZE);
 	spare_page = reinterpret_cast < SLONG * >((SCHAR *)
 											  
 											  (((U_IPTR)
 												spare_buffer + MIN_PAGE_SIZE -
 												1) & ~((U_IPTR) MIN_PAGE_SIZE
 													   - 1)));
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
-	if (SETJMP(env)) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		if (header_fetched)
-			CCH_RELEASE(tdbb, &window);
-		if (shadow_file) {
-			PIO_close(shadow_file);
-			ALL_release(reinterpret_cast < frb * >(shadow_file));
-		}
-		if (spare_buffer)
-			ALL_free(reinterpret_cast < char *>(spare_buffer));
-		if (file_flags & FILE_manual && !delete_)
-			ERR_post(gds_shadow_missing, gds_arg_number,
-					 (SLONG) shadow_number, 0);
-		else {
-			MET_delete_shadow(tdbb, shadow_number);
-			gds__log
-				("shadow %s deleted from database %s due to unavailability on attach",
-				 expanded_name, dbb_file->fil_string);
-		}
-		return;
-	}
+	try {
 
 	shadow_file =
 		PIO_open(dbb, expanded_name, expanded_length, FALSE, 0, file_name,
 				 length);
 
-	if (dbb->dbb_flags & DBB_force_write)
+	if (dbb->dbb_flags & DBB_force_write) {
 		PIO_force_write(shadow_file, TRUE);
+	}
 
-	if (!(file_flags & FILE_conditional)) {
+	if (!(file_flags & FILE_conditional))
+	{
 		/* make some sanity checks on the database and shadow header pages:
 		   1. make sure that the proper database filename is accessing this shadow
 		   2. make sure the database and shadow are in sync by checking the creation time/transaction id
@@ -1056,15 +1047,41 @@ void SDW_start(
    dumped (except for the cases when it isn't) */
 
 	shadow = allocate_shadow(shadow_file, shadow_number, file_flags);
-	if (!(file_flags & FILE_conditional))
+	if (!(file_flags & FILE_conditional)) {
 		shadow->sdw_flags |= SDW_dumped;
+	}
 
 /* get the ancillary files and reset the error environment */
 
 	PAG_init2(shadow_number);
-	if (spare_buffer)
-		ALL_free(reinterpret_cast < char *>(spare_buffer));
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+	if (spare_buffer) {
+		MemoryPool::free_from_system(spare_buffer);
+	}
+
+	}	// try
+	catch (...) {
+		if (header_fetched) {
+			CCH_RELEASE(tdbb, &window);
+		}
+		if (shadow_file) {
+			PIO_close(shadow_file);
+			delete shadow_file;
+		}
+		if (spare_buffer) {
+			MemoryPool::free_from_system(spare_buffer);
+		}
+		if (file_flags & FILE_manual && !delete_) {
+			ERR_post(gds_shadow_missing, gds_arg_number,
+					 (SLONG) shadow_number, 0);
+		}
+		else
+		{
+			MET_delete_shadow(tdbb, shadow_number);
+			gds__log
+				("shadow %s deleted from database %s due to unavailability on attach",
+				 expanded_name, dbb_file->fil_string);
+		}
+	}
 }
 
 
@@ -1182,7 +1199,7 @@ static SDW allocate_shadow(
 
 	dbb = GET_DBB;
 
-	shadow = (SDW) ALLOCP(type_sdw);
+	shadow = new(*dbb->dbb_permanent) sdw();
 	shadow->sdw_file = shadow_file;
 	shadow->sdw_number = shadow_number;
 	if (file_flags & FILE_manual)
@@ -1223,26 +1240,18 @@ static BOOLEAN check_for_file(SCHAR * name, USHORT length)
  *	Return TRUE if it is there.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	JMP_BUF env, *old_env;
-	FIL temp_file;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB  dbb  = tdbb->tdbb_database;
 
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
-
-	if (SETJMP(env)) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+	try {
+		FIL temp_file = PIO_open(dbb, name, length, FALSE, 0, name, length);
+		PIO_close(temp_file);
+	}	// try
+	catch (...) {
 		return FALSE;
 	}
 
-	temp_file = PIO_open(dbb, name, length, FALSE, 0, name, length);
-	PIO_close(temp_file);
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 	return TRUE;
 }
 
@@ -1350,9 +1359,9 @@ static void update_dbb_to_sdw(DBB dbb)
 
 	PIO_close(dbb->dbb_file);
 
-	while (file = dbb->dbb_file) {
+	while ( (file = dbb->dbb_file) ) {
 		dbb->dbb_file = file->fil_next;
-		ALL_release(reinterpret_cast < frb * >(file));
+		delete file;
 	}
 
 	dbb->dbb_file = shadow->sdw_file;

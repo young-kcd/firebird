@@ -62,32 +62,68 @@ enum lck_owner_t {
 
 typedef int (*lck_ast_t)();    
 
-typedef struct lck {
-	struct blk lck_header;
-	struct lck *lck_parent;
-	struct lck *lck_next;		/* Next lock in chain owned by dbb */
-	struct lck *lck_att_next;	/* Next in chain owned by attachment */
-	struct lck *lck_prior;
-	struct lck *lck_collision;	/* collisions in compatibility table */
-	struct lck *lck_identical;	/* identical locks in compatibility table */
-	struct dbb *lck_dbb;		/* database object is contained in */
-	struct blk *lck_object;		/* argument to be passed to ast */
-	struct blk *lck_owner;		/* Logical owner block (transaction, etc.) */
-	struct blk *lck_compatible;	/* Enter into internal_enqueue() and treat as compatible */
-	struct blk *lck_compatible2;	/* Sub-level for internal compatibility */
-	struct att *lck_attachment;	/* Attachment that owns lock */
-	struct btb *lck_blocked_threads;	/* Threads blocked by lock */
-        lck_ast_t lck_ast;	        /* Blocking AST routine */
-	SLONG lck_id;				/* Lock id from lock manager */
-	SLONG lck_owner_handle;		/* Lock owner handle from the lock manager's point of view */
-	USHORT lck_count;			/* count of locks taken out by attachment */
-	SSHORT lck_length;			/* Length of lock string */
-	UCHAR lck_logical;			/* Logical lock level */
-	UCHAR lck_physical;			/* Physical lock level */
+extern void MP_GDB_print(MemoryPool*);
+
+class lck : public pool_alloc_rpt<SCHAR, type_lck>
+{
+public:
+	lck()
+	:	lck_test_field(666),
+		lck_parent(0),
+		lck_next(0),
+		lck_att_next(0),
+		lck_prior(0),
+		lck_collision(0),
+		lck_identical(0),
+		lck_dbb(0),
+		lck_object(0),
+		lck_owner(0),
+		lck_compatible(0),
+		lck_compatible2(0),
+		lck_attachment(0),
+		lck_blocked_threads(0),
+		lck_ast(0),
+		lck_id(0),
+		lck_owner_handle(0),
+		lck_count(0),
+		lck_length(0),
+		lck_logical(0),
+		lck_physical(0),
 #ifndef GATEWAY
-	SLONG lck_data;				/* Data associated with a lock */
+		lck_data(0)
 #else
-	SCHAR lck_reserved;			/* Logical level of reserving lock */
+		lck_reserved(0)
+#endif
+	{
+		lck_key.lck_long = 0;
+		lck_tail[0] = 0;
+	}
+
+	int			lck_test_field;
+	lck*	lck_parent;
+	lck*	lck_next;		/* Next lock in chain owned by dbb */
+	lck*	lck_att_next;	/* Next in chain owned by attachment */
+	lck*	lck_prior;
+	lck*	lck_collision;	/* collisions in compatibility table */
+	lck*	lck_identical;	/* identical locks in compatibility table */
+	class dbb*	lck_dbb;		/* database object is contained in */
+	class blk*	lck_object;		/* argument to be passed to ast */
+	class blk*	lck_owner;		/* Logical owner block (transaction, etc.) */
+	class blk*	lck_compatible;	/* Enter into internal_enqueue() and treat as compatible */
+	class blk*	lck_compatible2;	/* Sub-level for internal compatibility */
+	struct att* lck_attachment;	/* Attachment that owns lock */
+	struct btb* lck_blocked_threads;	/* Threads blocked by lock */
+	lck_ast_t	lck_ast;	        /* Blocking AST routine */
+	SLONG		lck_id;				/* Lock id from lock manager */
+	SLONG		lck_owner_handle;		/* Lock owner handle from the lock manager's point of view */
+	USHORT		lck_count;			/* count of locks taken out by attachment */
+	SSHORT		lck_length;			/* Length of lock string */
+	UCHAR		lck_logical;			/* Logical lock level */
+	UCHAR		lck_physical;			/* Physical lock level */
+#ifndef GATEWAY
+	SLONG		lck_data;				/* Data associated with a lock */
+#else
+	SCHAR		lck_reserved;			/* Logical level of reserving lock */
 #endif
 	enum lck_t lck_type;
 	union {
@@ -95,6 +131,7 @@ typedef struct lck {
 		SLONG lck_long;
 	} lck_key;
 	SCHAR lck_tail[1];			/* Makes the allocater happy */
-} *LCK;
+};
+typedef lck *LCK;
 
 #endif /* _JRD_LCK_H_ */

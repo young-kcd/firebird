@@ -58,11 +58,6 @@ extern jmp_buf QLI_env;
 
 extern USHORT QLI_prompt_count, QLI_reprompt;
 
-typedef struct vary {
-	USHORT vary_length;
-	UCHAR vary_string[1];
-} VARY;
-
 static DSC *assignment(NOD, DSC *, NOD, NOD, PAR);
 static void commit_retaining(NOD);
 static int copy_blob(NOD, PAR);
@@ -504,10 +499,11 @@ void EXEC_top( NOD node)
 }
 
 
-static DSC *assignment(
-					   NOD from_node,
-					   DSC * to_desc,
-					   NOD validation, NOD initial, PAR parameter)
+static DSC *assignment(	NOD		from_node,
+						DSC*	to_desc,
+						NOD		validation,
+						NOD		initial,
+						PAR		parameter)
 {
 /**************************************
  *
@@ -525,7 +521,6 @@ static DSC *assignment(
 	MSG message;
 	USHORT l, *missing_flag, trash;
 	jmp_buf old_env;
-    int status;
 	jmp_buf env;
 
 	old_env = QLI_env;
@@ -539,17 +534,7 @@ static DSC *assignment(
 			(USHORT *) (message->msg_buffer + parameter->par_offset);
 	}
 
-	status = setjmp(env);
-
-	if (status)
-		if (QLI_abort || !QLI_prompt_count) {
-			QLI_env = old_env;
-			longjmp(QLI_env, status);
-		}
-		else {
-			QLI_reprompt = TRUE;
-			QLI_prompt_count = 0;
-		}
+	try {
 
 #if (defined JPN_EUC || defined JPN_SJIS)
 	if (from_node->nod_type == nod_edit_blob) {
@@ -562,28 +547,43 @@ static DSC *assignment(
 	QLI_env = env;
 	from_desc = EVAL_value(from_node);
 
-	if (from_desc->dsc_missing & DSC_initial)
+	if (from_desc->dsc_missing & DSC_initial) {
 		from_desc = EVAL_value(initial);
+	}
 
 /* If there is a value present, do any assignment; otherwise null fill */
 
 	if (*missing_flag = to_desc->dsc_missing = from_desc->dsc_missing) {
 		p = from_desc->dsc_address;
-		if (l = from_desc->dsc_length)
-			do
+		if (l = from_desc->dsc_length) {
+			do {
 				*p++ = 0;
-			while (--l);
+			} while (--l);
+		}
 	}
-	else
+	else {
 		MOVQ_move(from_desc, to_desc);
+	}
 
-	if (validation && EVAL_boolean(validation) <= 0)
+	if (validation && EVAL_boolean(validation) <= 0) {
 		IBERROR(39);			/* Msg39 field validation error */
+	}
 
 	QLI_reprompt = FALSE;
 	QLI_env = old_env;
 
 	return from_desc;
+
+	}	// try
+	catch (...) {
+		if (QLI_abort || !QLI_prompt_count) {
+			QLI_env = old_env;
+			throw;
+		}
+
+		QLI_reprompt = TRUE;
+		QLI_prompt_count = 0;
+	}
 }
 
 
@@ -1006,7 +1006,6 @@ static void execute_output( NOD node)
  **************************************/
 	PRT print;
 	jmp_buf old_env;
-    int status;
 	jmp_buf env;
 
 	print = (PRT) node->nod_arg[e_out_print];
@@ -1017,20 +1016,22 @@ static void execute_output( NOD node)
 	old_env = QLI_env;
 	QLI_env = env;
 
-	status = setjmp(QLI_env);
-
-	if (status) {
-		if (print->prt_file)
-			ib_fclose((IB_FILE *) print->prt_file);
-		QLI_env = old_env;
-		longjmp(QLI_env, status);
-	}
+	try {
 
 /* Finally, execute the query */
 
 	EXEC_execute(node->nod_arg[e_out_statement]);
 	QLI_env = old_env;
 	ib_fclose((IB_FILE *) print->prt_file);
+
+	}	// try
+	catch (...) {
+		if (print->prt_file) {
+			ib_fclose((IB_FILE *) print->prt_file);
+		}
+		QLI_env = old_env;
+		throw;
+	}
 }
 
 

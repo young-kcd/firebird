@@ -21,81 +21,46 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_ALL_H_
-#define _JRD_ALL_H_
+#ifndef JRD_ALL_H
+#define JRD_ALL_H
 
-#if ALIGNMENT == 8
-#define MIN_ALLOC	8
-#else
-#define MIN_ALLOC	4
+#include "../jrd/jrd.h"
+#include "../common/memory/allocators.h"
+#include "../jrd/block_cache.h"
+#include "../jrd/lls.h"
+
+TEXT* ALL_cstring(TEXT* in_string);
+void ALL_fini(void);
+void ALL_init(void);
+//void ALL_push(BLK , LLS *);
+//BLK ALL_pop(LLS *);
+void ALL_print_memory_pool_info(IB_FILE*, class dbb*);
+
+#ifdef DEV_BUILD
+void ALL_check_memory(void);
 #endif
 
-/* MAX_BLOCK for OS/2 is calculated by taking the max memory
-   available in a segment (65534 bytes), subtracting 4 bytes
-   for a length, 8 bytes for a free block, and 2 bytes to 
-   allow rounding to a 4 byte boundary */
+class JrdMemoryPool : public MemoryPool
+{
+public:
+	JrdMemoryPool(int extSize = 0, MemoryPool* p = FB_MemoryPool)
+	:	MemoryPool(extSize, p),
+		plb_buckets(0),
+		plb_segments(0),
+		plb_dccs(0),
+		lls_cache(*this)
+	{
+	}
 
-#if (defined PC_PLATFORM && !defined NETWARE_386)
-#define MAX_BLOCK	65520
-#else
-#define MAX_BLOCK	(262144 - MIN_ALLOCATION - sizeof (struct hnk) - 8)
-#endif
+	static class blk* ALL_pop(class lls**);
+	static void       ALL_push(class blk*, class lls**);
 
-#define	FUDGE		1
+    struct sbm* plb_buckets;   /* available bit map buckets */
+    struct bms* plb_segments;  /* available bit map segments */
+	struct Dcc* plb_dccs;
 
-#define SHIFT		SHIFTLONG
+private:
+	BlockCache<lls> lls_cache;  /* Was plb_lls */
+};
 
-#define MIN_ALLOCATION	1024	/* Minimum allocation from operating system */
-
-/* Prevent shared memory pools from fragmenting into very long
-   free block lists. Any hunk residual larger than a free block
-   structure will lengthen the free list. A larger extend size
-   reduces the number of times the pool is extended and reduces
-   the length of the free block list. */
-
-#ifdef SUPERSERVER
-#define PERM_EXTEND_SIZE	(16 * MIN_ALLOCATION)
-#define CACH_EXTEND_SIZE	(16 * MIN_ALLOCATION)
-#else
-#define PERM_EXTEND_SIZE	MIN_ALLOCATION
-#define CACH_EXTEND_SIZE	MIN_ALLOCATION
-#endif
-
-#define EXTEND(vector_count)	vector_count + vector_count % 10
-
-
-
-/* Free block */
-
-typedef struct frb {
-	struct blk frb_header;
-	struct frb *frb_next;		/* Next free block in pool */
-} *FRB;
-
-/* Pool block */
-
-typedef struct plb {
-	struct blk plb_header;
-	USHORT plb_pool_id;			/* pool id */
-	USHORT plb_extend_size;		/* pool extend size */
-	struct frb *plb_free;		/* first free block */
-	struct hnk *plb_hunks;		/* first hunk block */
-	struct hnk *plb_huge_hunks;	/* first huge hunk block (blocks > MAX_BLOCK) */
-	struct lls *plb_lls;		/* available linked list stack nodes */
-	struct dcc *plb_dccs;		/* available data compression control blocks */
-	struct sbm *plb_buckets;	/* available bit map buckets */
-	struct bms *plb_segments;	/* available bit map segments */
-	MUTX plb_mutex[1];
-	SLONG *plb_blk_type_count;	/* array to keep track of block types */
-} *PLB;
-
-/* Hunk blocks */
-
-typedef struct hnk {
-	struct blk hnk_header;
-	SCHAR *hnk_address;			/* start of memory hunk */
-	SLONG hnk_length;			/* length of memory hunk */
-	struct hnk *hnk_next;		/* next memory hunk in structure */
-} *HNK;
-
-#endif /* _JRD_ALL_H_ */
+#endif	// JRD_ALL_H

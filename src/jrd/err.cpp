@@ -491,7 +491,7 @@ void DLL_EXPORT ERR_post(STATUS status, ...)
 #endif
 
 
-#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
+#if ( !defined( REQUESTER) && !defined(SUPERCLIENT))
 void DLL_EXPORT ERR_punt(void)
 {
 /**************************************
@@ -504,14 +504,14 @@ void DLL_EXPORT ERR_punt(void)
  *	Error stuff has been copied to status vector.  Now punt.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	TEXT *dbname;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB  dbb  = tdbb->tdbb_database;
 
-	if (dbb && (dbb->dbb_flags & DBB_bugcheck)) {
+	TEXT* dbname;
+
+	if (dbb && (dbb->dbb_flags & DBB_bugcheck))
+	{
 #ifndef GATEWAY
 		dbname = ((dbb->dbb_file) ? dbb->dbb_file->fil_string : NULL);
 #else
@@ -520,8 +520,9 @@ void DLL_EXPORT ERR_punt(void)
 		gds__log_status(dbname, tdbb->tdbb_status_vector);
 	}
 
-	LONGJMP( (JMP_BUF) tdbb->tdbb_setjmp,
-			(int) tdbb->tdbb_status_vector[1]);
+#pragma FB_COMPILER_MESSAGE("FIXME! C functions can not throw! FIXME!")
+
+	Firebird::status_longjmp_error::raise(tdbb->tdbb_status_vector[1]);
 }
 #endif
 

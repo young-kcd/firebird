@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-  $Id: isql.epp,v 1.5 2001-10-17 22:48:01 bellardo Exp $
+  $Id: isql.epp,v 1.6 2001-12-24 02:50:50 tamlin Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -31,12 +31,19 @@
   2001/05/20  Neil McCalden  add planonly option
 */
 
+#ifdef DARWIN
+#define _STLP_CCTYPE
+#endif
+
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
 #include <math.h>
+#ifdef DARWIN
+#include </usr/include/math.h>
+#endif
 #include <ctype.h>
 #include <errno.h>
 
@@ -288,7 +295,7 @@ static RI_ACTIONS ri_actions_all[] = {
 
 
 #ifndef GUI_TOOLS
-int CLIB_ROUTINE main( int argc, char *argv[])
+int CLIB_ROUTINE main(int argc, char* argv[])
 {
 /**************************************
  *
@@ -323,7 +330,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	Exit_value = ISQL_main(argc, argv);
 
-	exit(Exit_value);
+	return Exit_value;
 }
 #endif
 
@@ -2365,8 +2372,10 @@ static SSHORT add_row(TEXT * tabname)
  *
  **************************************/
 	SSHORT n_cols, length, type, nullable, i, j, i_cols, done;
-	SCHAR string[BUFFER_LENGTH120], name[WORDLENGTH],
-		buffer[BUFFER_LENGTH512], infobuf[BUFFER_LENGTH180];
+	SCHAR string[BUFFER_LENGTH120];
+	SCHAR name[WORDLENGTH];
+	// SCHAR buffer[BUFFER_LENGTH512];
+	SCHAR infobuf[BUFFER_LENGTH180];
 	SCHAR *insertstring = NULL, *stringvalue = NULL, cmd[5];
 	SSHORT *nullind = NULL, *nullp;
 /* Data types */
@@ -2375,7 +2384,7 @@ static SSHORT add_row(TEXT * tabname)
 	SLONG *integer;
 	SINT64 *pi64, n;
 	float *fvalue;
-	double *dvalue, numeric;
+	double *dvalue;
 	SCHAR bfile[120];
 	struct tm times;
 	XSQLDA *sqlda = NULL, *isqlda;
@@ -2977,7 +2986,7 @@ static SSHORT copy_table( TEXT * source, TEXT * destination, TEXT * otherdb)
  *  
  **************************************/
 	IB_FILE *holdout;
-	TEXT *p, ftmp[128];
+	TEXT ftmp[128];
 	TEXT errbuf[MSG_LENGTH];
 	TEXT cmd[512];
 	TEXT *altdb;
@@ -3001,7 +3010,7 @@ static SSHORT copy_table( TEXT * source, TEXT * destination, TEXT * otherdb)
    process!  So we will get a temp name on our own.  [Note that
    gds__temp_file returns -1 on error, not 0] */
 
-	p = tempnam(NULL, SCRATCH);
+	TEXT p = tempnam(NULL, SCRATCH);
 	strcpy(ftmp, p);
 	free(p);
 	Out = ib_fopen(ftmp, "w+");
@@ -3325,7 +3334,7 @@ static void do_isql(void)
  *	Process incoming SQL statements
  *
  **************************************/
-	TEXT *p;
+
 	TEXT *statement = NULL;
 	TEXT *errbuf;
 	USHORT bufsize = 0;
@@ -3350,14 +3359,16 @@ static void do_isql(void)
    process!  So we will get a temp name on our own.  [Note that
    gds__temp_file returns -1 on error, not 0] */
 
-	p = tempnam(NULL, SCRATCH);
+	TEXT* p = tempnam(NULL, SCRATCH);
 	strcpy(Tmpfile, p);
 	free(p);
 	Ofp = ib_fopen(Tmpfile, "w+");
-	if (!Ofp)
+	if (!Ofp) {
 		Ofp = (IB_FILE *) - 1;
+	}
 #endif
-	if (Ofp == (IB_FILE *) - 1) {
+	if (Ofp == (IB_FILE *) - 1)
+	{
 		/* If we can't open a temp file then bail */
 
 		gds__msg_format(NULL_PTR, ISQL_MSG_FAC, FILE_OPEN_ERR, MSG_LENGTH,
@@ -3729,7 +3740,9 @@ static int end_trans(void)
  *	Returns success or failure.
  *
  **************************************/
-	TEXT buffer[BUFFER_LENGTH80], infobuf[BUFFER_LENGTH60];
+
+	// TEXT buffer[BUFFER_LENGTH80];
+	TEXT infobuf[BUFFER_LENGTH60];
 	int ret;
 
 	ret = CONT;
@@ -3879,10 +3892,10 @@ static SSHORT frontend( TEXT * statement)
  *	Parameters: statement is the string typed by the user 
  *
  **************************************/
-	TEXT *p, *a, *cmd, *q;
+	TEXT *p, *a, *cmd;
 	TEXT *parms[MAX_TERMS], *lparms[MAX_TERMS], *buffer, *errbuf;
 	SSHORT lgth, i, j, length;
-	SSHORT ret = SKIP, slen;
+	SSHORT ret = SKIP;
 	TEXT *psw, *usr, *numbufs, *sql_role_nm;
 	TEXT end_quote;
 	SCHAR *dialect_str;
@@ -6403,7 +6416,6 @@ static SSHORT print_item( TEXT ** s, XSQLVAR * var, SLONG printlength)
 	SSHORT dscale;
 	struct tm times;
 	SLONG length;
-	double numeric, exponent;
 	ISC_QUAD blobid;
 	TEXT blobbuf[30];
 
@@ -6521,8 +6533,8 @@ static SSHORT print_item( TEXT ** s, XSQLVAR * var, SLONG printlength)
 			if (dscale) {
 				/* Handle floating scale and precision */
 
-				numeric = *(SQUAD *) (var->sqldata);
-				exponent = -dscale;
+				double numeric = *(SQUAD *) (var->sqldata);
+				double exponent = -dscale;
 				numeric = numeric / pow(10.0, exponent);
 				sprintf(p, "%*.*f ", (int) length, (int) -dscale, numeric);
 				if (List) {

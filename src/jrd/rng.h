@@ -27,8 +27,9 @@
 /* refresh range block used to store info about a particular
    set of records in a refresh range */
 
-typedef struct rng {
-	struct blk rng_header;
+class rng : public pool_alloc_rpt<SCHAR, type_rng>
+{
+    public:
 	struct rng *rng_next;		/* next in list of ranges being created */
 	struct att *rng_attachment;	/* attachment that owns range */
 	struct rng *rng_lck_next;	/* next in list of ranges interested in a lock */
@@ -45,7 +46,8 @@ typedef struct rng {
 	USHORT rng_flags;			/* see flags below */
 	USHORT rng_event_length;	/* length of event name */
 	UCHAR rng_event[1];			/* event name to post */
-} *RNG;
+};
+typedef rng *RNG;
 
 #define RNG_posted	1			/* range has already been posted */
 

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: par.cpp,v 1.3 2001-07-29 17:42:22 skywalker Exp $
+$Id: par.cpp,v 1.4 2001-12-24 02:50:52 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -137,7 +137,7 @@ NOD PAR_blr(TDBB	tdbb,
 	CSB csb;
 	NOD node;
 	SSHORT version, stream, count;
-	csb_repeat *t1, *t2, *end;
+	csb_repeat *t1, *t2;
 
 	SET_TDBB(tdbb);
 
@@ -145,7 +145,7 @@ NOD PAR_blr(TDBB	tdbb,
 		count = 5;
 		if (view_csb)
 			count += view_csb->csb_count;
-		csb = (CSB) ALLOCDV(type_csb, count);
+		csb = Csb::newCsb(*tdbb->tdbb_default, count);
 		csb->csb_count = count;
 		csb->csb_g_flags |= flags;
 	}
@@ -174,12 +174,12 @@ NOD PAR_blr(TDBB	tdbb,
 	csb->csb_running = csb->csb_blr = blr;
 
 	if (view_csb) {
-		t1 = view_csb->csb_rpt;
-		end = t1 + view_csb->csb_n_stream;
-		for (stream = 0; t1 < end; t1++, stream++) {
+		Csb::rpt_itr ptr = view_csb->csb_rpt.begin();
+		Csb::rpt_itr end = ptr + view_csb->csb_n_stream;
+		for (stream = 0; ptr != end; ++ptr, ++stream) {
 			t2 = CMP_csb_element(&csb, stream);
-			t2->csb_relation = t1->csb_relation;
-			t2->csb_stream = t1->csb_stream;
+			t2->csb_relation = ptr->csb_relation;
+			t2->csb_stream = ptr->csb_stream;
 		}
 		csb->csb_n_stream = view_csb->csb_n_stream;
 	}
@@ -207,7 +207,7 @@ NOD PAR_blr(TDBB	tdbb,
 	if (csb_ptr)
 		*csb_ptr = csb;
 	else
-		ALL_RELEASE(csb);
+		delete csb;
 
 	return node;
 }
@@ -361,7 +361,7 @@ NOD PAR_gen_field(TDBB tdbb, USHORT stream, USHORT id)
 
 	SET_TDBB(tdbb);
 
-	node = (NOD) ALLOCDV(type_nod, e_fld_length);
+	node = new(*tdbb->tdbb_default, e_fld_length) nod();
 	node->nod_type = nod_field;
 	node->nod_arg[e_fld_id] = (NOD) (SLONG) id;
 	node->nod_arg[e_fld_stream] = (NOD) (SLONG) stream;
@@ -427,7 +427,7 @@ NOD PAR_make_field(TDBB tdbb, CSB csb, USHORT context, TEXT * base_field)
 
 	temp_node = PAR_gen_field(tdbb, stream, id);
 
-	if (field = (FLD) temp_rel->rel_fields->vec_object[id]) {
+	if ( (field = (FLD) (*temp_rel->rel_fields)[id]) ) {
 		if (field->fld_default_value && field->fld_not_null)
 			temp_node->nod_arg[e_fld_default_value] =
 				field->fld_default_value;
@@ -487,7 +487,7 @@ NOD PAR_make_node(TDBB tdbb, int size)
 
 	SET_TDBB(tdbb);
 
-	node = (NOD) ALLOCDV(type_nod, size);
+	node = new(*tdbb->tdbb_default, size) nod();
 	node->nod_count = size;
 
 	return node;
@@ -512,8 +512,9 @@ CSB PAR_parse(TDBB tdbb, UCHAR* blr, USHORT internal_flag)
 
 	SET_TDBB(tdbb);
 
-	csb = (CSB) ALLOCDV(type_csb, 5);
+	csb = Csb::newCsb(*tdbb->tdbb_default, 5);
 	csb->csb_count = 5;
+	csb->csb_rpt.resize(5);	// vec always allocates one too many
 	csb->csb_running = csb->csb_blr = blr;
 	version = *csb->csb_running++;
 	if (internal_flag)
@@ -614,7 +615,7 @@ static void error(CSB csb, ...)
 
 /* Pick up remaining args */
 
-	while (*p++ = type = va_arg(args, int))
+	while ( (*p++ = type = va_arg(args, int)) )
 		switch (type) {
 		case gds_arg_gds:
 			*p++ = (STATUS) va_arg(args, STATUS);
@@ -666,11 +667,12 @@ static SSHORT find_proc_field(PRC procedure, TEXT * name)
  *
  **************************************/
 	VEC list;
-	BLK *ptr, *end;
+	vec::iterator ptr, end;
 	PRM param;
 
+	// JMB: Is there a reason we are skipping the last element in the array?
 	list = procedure->prc_output_fields;
-	for (ptr = list->vec_object, end = ptr + list->vec_count - 1; ptr < end;
+	for (ptr = list->begin(), end = list->end() - 1; ptr < end;
 		 ptr++) {
 		param = (PRM) * ptr;
 		if (!strcmp(name, param->prm_name))
@@ -734,7 +736,7 @@ static NOD par_cast(TDBB tdbb, CSB * csb)
 	node = PAR_make_node(tdbb, e_cast_length);
 	node->nod_count = count_table[blr_cast];
 
-	format = (FMT) ALLOCDV(type_fmt, 1);
+	format = fmt::newFmt(*tdbb->tdbb_default, 1);
 	format->fmt_count = 1;
 	node->nod_arg[e_cast_fmt] = (NOD) format;
 
@@ -770,7 +772,7 @@ static XCP par_condition(TDBB tdbb, CSB * csb)
 
 /* allocate a node to represent the conditions list */
 
-	exception_list = (XCP) ALLOCDV(type_xcp, 1);
+	exception_list = new(*tdbb->tdbb_default, 1) xcp();
 	exception_list->xcp_count = 1;
 	code_type = BLR_BYTE;
 	switch (code_type) {
@@ -837,7 +839,7 @@ static XCP par_conditions(TDBB tdbb, CSB * csb)
 /* allocate a node to represent the conditions list */
 
 	n = BLR_WORD;
-	exception_list = (XCP) ALLOCDV(type_xcp, n);
+	exception_list = new(*tdbb->tdbb_default, n) xcp();
 	exception_list->xcp_count = n;
 	for (i = 0; i < n; i++) {
 		code_type = BLR_BYTE;
@@ -964,7 +966,7 @@ static void par_dependency(
 		node->nod_arg[e_dep_field] = field_node = PAR_make_node(tdbb, 1);
 		field_node->nod_type = nod_literal;
 		length = strlen(field_name);
-		string = (STR) ALLOCDV(type_str, length);
+		string = new(*tdbb->tdbb_default, length) str();
 		string->str_length = length;
 		strcpy(reinterpret_cast < char *>(string->str_data), field_name);
 		field_node->nod_arg[0] = (NOD) string->str_data;
@@ -1198,8 +1200,8 @@ static NOD par_field(TDBB tdbb, CSB * csb, SSHORT operator_)
 	node->nod_flags |= flags;
 
 	if (is_column == TRUE) {
-		if (temp_rel = (*csb)->csb_rpt[stream].csb_relation) {
-			if (field = (FLD) temp_rel->rel_fields->vec_object[id]) {
+		if ( (temp_rel = (*csb)->csb_rpt[stream].csb_relation) ) {
+			if ( (field = (FLD) (*temp_rel->rel_fields)[id]) ) {
 				if (field->fld_default_value && field->fld_not_null)
 					node->nod_arg[e_fld_default_value] =
 						field->fld_default_value;
@@ -1360,7 +1362,7 @@ static NOD par_literal(TDBB tdbb, register CSB * csb)
 	default:
 		assert(FALSE);
 	case dtype_text:
-		if (count = l)
+		if ( (count = l) )
 			do
 				*p++ = *q++;
 			while (--count);
@@ -1429,7 +1431,7 @@ static NOD par_message(TDBB tdbb, CSB * csb)
  **************************************/
 	NOD node;
 	FMT format;
-	DSC *desc, *end;
+	fmt::fmt_desc_iterator desc, end;
 	USHORT n, alignment;
 	ULONG offset;
 	csb_repeat *tail;
@@ -1451,12 +1453,12 @@ static NOD par_message(TDBB tdbb, CSB * csb)
    out the format block */
 
 	n = BLR_WORD;
-	format = (FMT) ALLOCDV(type_fmt, n);
+	format = fmt::newFmt(*tdbb->tdbb_default, n);
 	node->nod_arg[e_msg_format] = (NOD) format;
 	format->fmt_count = n;
 	offset = 0;
 
-	for (desc = format->fmt_desc, end = desc + n; desc < end; desc++) {
+	for (desc = format->fmt_desc.begin(), end = desc + n; desc < end; desc++) {
 		alignment = PAR_desc(csb, desc);
 		if (alignment)
 			offset = FB_ALIGN(offset, alignment);
@@ -1535,7 +1537,7 @@ static USHORT par_name(CSB * csb, TEXT * string)
  **************************************/
 	USHORT count, l;
 
-	if (count = l = BLR_BYTE)
+	if ( (count = l = BLR_BYTE) )
 		do
 			*string++ = BLR_BYTE;
 		while (--l);
@@ -1902,7 +1904,7 @@ static NOD par_relation(
 		id = BLR_WORD;
 		if (operator_ == blr_rid2) {
 			length = BLR_PEEK;
-			alias_string = (STR) ALLOCDV(type_str, length + 1);
+			alias_string = new(*tdbb->tdbb_default, length + 1) str();
 			alias_string->str_length = length;
 			par_name(csb, reinterpret_cast < char *>(alias_string->str_data));
 		}
@@ -1914,8 +1916,8 @@ static NOD par_relation(
 #else
 		/* To use rid, the relation slot must already have been filled in */
 
-		if (id >= dbb->dbb_relations->vec_count
-			|| !dbb->dbb_relations->vec_object[id])
+		if (id >= dbb->dbb_relations->count()
+			|| !(*dbb->dbb_relations)[id])
 			error(*csb, gds_ctxnotdef, 0);
 		relation = MET_relation(tdbb, id);
 #endif
@@ -1924,7 +1926,7 @@ static NOD par_relation(
 		par_name(csb, name);
 		if (operator_ == blr_relation2) {
 			length = BLR_PEEK;
-			alias_string = (STR) ALLOCDV(type_str, length + 1);
+			alias_string = new(*tdbb->tdbb_default, length + 1) str();
 			alias_string->str_length = length;
 			par_name(csb, reinterpret_cast < char *>(alias_string->str_data));
 		}
@@ -2236,7 +2238,7 @@ static NOD parse(TDBB tdbb, register CSB * csb, USHORT expected)
    the node and set its count.  This saves an enormous amount of
    repetitive code. */
 
-	if (n = length_table[operator_]) {
+	if ( (n = length_table[operator_]) ) {
 		node = PAR_make_node(tdbb, n);
 		node->nod_count = count_table[operator_];
 		arg = node->nod_arg;
@@ -2510,9 +2512,17 @@ static NOD parse(TDBB tdbb, register CSB * csb, USHORT expected)
 			n = BLR_WORD;
 			node->nod_arg[e_dcl_id] = (NOD) (SLONG) n;
 			PAR_desc(csb, (DSC *) (node->nod_arg + e_dcl_desc));
-			vector =
-				ALL_vector(tdbb->tdbb_default, &(*csb)->csb_variables, n);
-			vector->vec_object[n] = (BLK) node;
+			vector = (*csb)->csb_variables;
+			if (!vector)
+			{
+				vector = (*csb)->csb_variables = 
+					vec::newVector(*tdbb->tdbb_default, n + 1);
+			}
+			if (n >= vector->count())
+			{
+				vector->resize(n + 1);
+			}
+			(*vector)[n] = (BLK) node;
 		}
 		break;
 
@@ -2523,9 +2533,9 @@ static NOD parse(TDBB tdbb, register CSB * csb, USHORT expected)
 			n = BLR_WORD;
 			node->nod_arg[e_var_id] = (NOD) (SLONG) n;
 			if (!(vector = (*csb)->csb_variables) ||
-				n >= vector->vec_count ||
+				n >= vector->count() ||
 				!(node->nod_arg[e_var_variable] =
-				  (NOD) vector->vec_object[n])) syntax_error(*csb,
+				  (NOD) (*vector)[n])) syntax_error(*csb,
 															 "variable identifier");
 		}
 		break;
@@ -2897,7 +2907,7 @@ static void warning(CSB csb, ...)
 
 /* Pick up remaining args */
 
-	while (*p++ = type = va_arg(args, int))
+	while ( (*p++ = type = va_arg(args, int)) )
 		switch (type) {
 		case gds_arg_gds:
 			*p++ = (STATUS) va_arg(args, STATUS);

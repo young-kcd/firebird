@@ -134,9 +134,6 @@ struct tgbl *gdgbl;
 #endif
 
 
-extern "C" {
-
-
 #define OUTPUT_SUPPRESS	"SUPPRESS"
 #define BURP_MSG_FAC    12
 
@@ -439,6 +436,8 @@ static int output_svc( SLONG output_data, UCHAR * output_buf)
 	return 0;
 }
 
+extern "C" {
+
 int DLL_EXPORT BURP_gbak(int		argc,
 						 char*		argv[],
 						 OUTPUTPROC	output_proc,
@@ -503,66 +502,11 @@ int DLL_EXPORT BURP_gbak(int		argc,
 	tdgbl->output_data = output_data;
 
 /* Initialize static data. */
-	for (in_sw_tab = burp_in_sw_table; in_sw_tab->in_sw_name; in_sw_tab++)
+	for (in_sw_tab = burp_in_sw_table; in_sw_tab->in_sw_name; in_sw_tab++) {
 		in_sw_tab->in_sw_state = FALSE;
-
-	if (SETJMP(env)) {
-		int exit_code;
-		UCHAR *mem;
-
-		/* All calls to EXIT(), normal and error exits, wind up here */
-
-		tdgbl->burp_env = NULL;
-		exit_code = tdgbl->exit_code;
-
-		/* Close the gbak file handles if they still open */
-		for (file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next) {
-			if (file->fil_fd != INVALID_HANDLE_VALUE)
-				CLOSE(file->fil_fd);
-			if (exit_code != 0
-				&& (tdgbl->action->act_action == ACT_backup_split
-					|| tdgbl->action->act_action == ACT_backup))
-				UNLINK(file->fil_name);
-		}
-
-		/* Detach from database to release system resources */
-		if (tdgbl->db_handle != 0) {
-			close_out_transaction(action,
-								  const_cast<isc_tr_handle*>(&tdgbl->tr_handle));
-			close_out_transaction(action,
-								  const_cast<isc_tr_handle*>(&tdgbl->global_trans));
-			if (isc_detach_database(const_cast<ISC_STATUS*>(tdgbl->status_vector),
-									const_cast<isc_db_handle*>(&tdgbl->db_handle)))
-			{
-				BURP_print_status(const_cast<STATUS*>(tdgbl->status_vector));
-			}
-		}
-
-		/* Close the status output file */
-		if (tdgbl->sw_redirect == TRUE && tdgbl->output_file != NULL) {
-			ib_fclose(tdgbl->output_file);
-			tdgbl->output_file = NULL;
-		}
-
-		/* Free all unfreed memory used by Gbak itself */
-		while (tdgbl->head_of_mem_list != NULL) {
-			mem = tdgbl->head_of_mem_list;
-			tdgbl->head_of_mem_list = *((UCHAR **) tdgbl->head_of_mem_list);
-			gds__free(mem);
-		}
-
-		RESTORE_THREAD_DATA;
-		if (tdgbl != NULL) {
-			gds__free((SLONG *) tdgbl);
-		}
-
-#if defined(DEBUG_GDS_ALLOC) && !defined(SUPERSERVER)
-		gds_alloc_report(0, __FILE__, __LINE__);
-#endif
-
-		/* All returns occur from this point - even normal returns */
-		return exit_code;
 	}
+
+	try {
 
 #ifdef VMS
 	argc = VMS_parse(&argv, argc);
@@ -1101,7 +1045,68 @@ int DLL_EXPORT BURP_gbak(int		argc,
 
 	EXIT(result);
 	return result;
+	}	// try
+
+	catch (...)
+	{
+		int exit_code;
+		UCHAR *mem;
+
+		/* All calls to EXIT(), normal and error exits, wind up here */
+
+		tdgbl->burp_env = NULL;
+		exit_code = tdgbl->exit_code;
+
+		/* Close the gbak file handles if they still open */
+		for (file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next) {
+			if (file->fil_fd != INVALID_HANDLE_VALUE)
+				CLOSE(file->fil_fd);
+			if (exit_code != 0
+				&& (tdgbl->action->act_action == ACT_backup_split
+					|| tdgbl->action->act_action == ACT_backup))
+				UNLINK(file->fil_name);
+		}
+
+		/* Detach from database to release system resources */
+		if (tdgbl->db_handle != 0) {
+			close_out_transaction(action,
+								  const_cast<isc_tr_handle*>(&tdgbl->tr_handle));
+			close_out_transaction(action,
+								  const_cast<isc_tr_handle*>(&tdgbl->global_trans));
+			if (isc_detach_database(const_cast<ISC_STATUS*>(tdgbl->status_vector),
+									const_cast<isc_db_handle*>(&tdgbl->db_handle)))
+			{
+				BURP_print_status(const_cast<STATUS*>(tdgbl->status_vector));
+			}
+		}
+
+		/* Close the status output file */
+		if (tdgbl->sw_redirect == TRUE && tdgbl->output_file != NULL) {
+			ib_fclose(tdgbl->output_file);
+			tdgbl->output_file = NULL;
+		}
+
+		/* Free all unfreed memory used by Gbak itself */
+		while (tdgbl->head_of_mem_list != NULL) {
+			mem = tdgbl->head_of_mem_list;
+			tdgbl->head_of_mem_list = *((UCHAR **) tdgbl->head_of_mem_list);
+			gds__free(mem);
+		}
+
+		RESTORE_THREAD_DATA;
+		if (tdgbl != NULL) {
+			gds__free((SLONG *) tdgbl);
+		}
+
+#if defined(DEBUG_GDS_ALLOC) && !defined(SUPERSERVER)
+		gds_alloc_report(0, __FILE__, __LINE__);
+#endif
+
+		/* All returns occur from this point - even normal returns */
+		return exit_code;
+	}
 }
+
 
 
 void BURP_abort(void)
@@ -1439,6 +1444,8 @@ void BURP_verbose(USHORT number,
 	else
 		burp_output("");
 }
+
+}	// extern "C"
 
 
 static void close_out_transaction(VOLATILE  SSHORT action,
@@ -2256,5 +2263,3 @@ static int api_gbak(int argc,
 
 #endif	// !SUPERSERVER
 
-
-} // extern "C"

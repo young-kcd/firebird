@@ -25,6 +25,8 @@
 #ifndef JRD_JRD_PROTO_H
 #define JRD_JRD_PROTO_H
 
+#ifndef __cplusplus
+
 /* included for the bid structure */
 #ifndef WIN_NT
 #include "../jrd/blb.h"
@@ -34,6 +36,8 @@
 #ifndef WIN_NT
 #include "../jrd/svc.h"
 #endif
+
+#endif	/* __cplusplus */
 
 #ifdef __cplusplus
 extern "C" {

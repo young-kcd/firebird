@@ -424,7 +424,7 @@ DSC *RNG_begin(NOD node, VLU impure)
 
 /* allocate the range block and move the event name into it */
 
-	refresh_range = (RNG) ALLOCDV(type_rng, p - event_name + 1);
+	refresh_range = new(*tdbb->tdbb_default, p - event_name + 1) rng();
 	refresh_range->rng_event_length = p - event_name;
 	strcpy(refresh_range->rng_event, event_name);
 

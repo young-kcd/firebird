@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_BLB_PROTO_H_
-#define _JRD_BLB_PROTO_H_
+#ifndef JRD_BLB_PROTO_H
+#define JRD_BLB_PROTO_H
 
 #include "../jrd/jrd.h"
 #include "../jrd/blb.h"
@@ -30,38 +30,43 @@
 #include "../jrd/lls.h"
 #include "../jrd/val.h"
 
-#ifdef __cplusplus
-//extern "C" {
+// fwd decl.
+class blb;
+struct tra;
+struct bid;
+struct lls;
+struct rel;
+struct dsc;
+struct arr;
+struct nod;
+struct vlu;
+struct ads;
+
+void   BLB_cancel(TDBB, blb*);
+void   BLB_close(TDBB, blb*);
+blb*   BLB_create(TDBB, tra*, bid*);
+blb*   BLB_create2(TDBB, tra*, bid*, USHORT, UCHAR*);
+void   BLB_garbage_collect(TDBB, lls*, lls*, SLONG, rel*);
+blb*   BLB_get_array(TDBB, tra*, bid*, ads*);
+SLONG  BLB_get_data(TDBB, blb*, UCHAR *, SLONG);
+USHORT BLB_get_segment(TDBB, blb*, UCHAR*, USHORT);
+SLONG  BLB_get_slice(TDBB, tra*, bid*, UCHAR*, USHORT, SLONG*, SLONG, UCHAR*);
+SLONG  BLB_lseek(blb*, USHORT, SLONG);
+
+void BLB_move(TDBB, dsc*, dsc*, nod*);
+blb* BLB_open(TDBB, tra*, bid*);
+blb* BLB_open2(TDBB, tra*, bid*, USHORT,
+						 UCHAR *);
+void BLB_put_segment(TDBB, blb*, UCHAR *, USHORT);
+void BLB_put_slice(TDBB, tra*, bid*, UCHAR*, USHORT, SLONG*, SLONG, UCHAR*);
+void BLB_release_array(arr*);
+void BLB_scalar(TDBB, tra*, bid*, USHORT, SLONG*, vlu*);
+
+
+#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
+extern "C" {
+void DLL_EXPORT BLB_map_blobs(TDBB, struct blb*, struct blb*);
+}
 #endif
 
-extern void BLB_cancel(TDBB, struct blb *);
-extern void BLB_close(TDBB, struct blb *);
-extern struct blb *BLB_create(TDBB, struct tra *, struct bid *);
-extern struct blb *BLB_create2(TDBB, struct tra *, struct bid *, USHORT,
-							   UCHAR *);
-extern void BLB_garbage_collect(TDBB, struct lls *, struct lls *, SLONG,
-								struct rel *);
-extern struct blb *BLB_get_array(TDBB, struct tra *, struct bid *,
-								 struct ads *);
-extern SLONG BLB_get_data(TDBB, struct blb *, UCHAR *, SLONG);
-extern USHORT BLB_get_segment(TDBB, struct blb *, UCHAR *, USHORT);
-extern SLONG BLB_get_slice(TDBB, struct tra *, struct bid *, UCHAR *, USHORT,
-						   SLONG *, SLONG, UCHAR *);
-extern SLONG BLB_lseek(struct blb *, USHORT, SLONG);
-extern void DLL_EXPORT BLB_map_blobs(TDBB, struct blb *, struct blb *);
-extern void BLB_move(TDBB, struct dsc *, struct dsc *, struct nod *);
-extern struct blb *BLB_open(TDBB, struct tra *, struct bid *);
-extern struct blb *BLB_open2(TDBB, struct tra *, struct bid *, USHORT,
-							 UCHAR *);
-extern void BLB_put_segment(TDBB, struct blb *, UCHAR *, USHORT);
-extern void BLB_put_slice(TDBB, struct tra *, struct bid *, UCHAR *, USHORT,
-						  SLONG *, SLONG, UCHAR *);
-extern void BLB_release_array(struct arr *);
-extern void BLB_scalar(TDBB, struct tra *, struct bid *, USHORT, SLONG *,
-					   struct vlu *);
-
-#ifdef __cplusplus
-//} /* extern "C" */
-#endif
-
-#endif /* _JRD_BLB_PROTO_H_ */
+#endif	// JRD_BLB_PROTO_H

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.3 2001-07-29 17:42:22 skywalker Exp $
+ * $Id: sort.cpp,v 1.4 2001-12-24 02:50:52 tamlin Exp $
  */
 
 #include "firebird.h"
@@ -102,13 +102,13 @@ extern double MTH$CVT_D_G(), MTH$CVT_G_D();
    (big endian) patforms, making the following CONST caused a core on the 
    Intel Platforms, while Solaris was working fine. */
 static ULONG low_key[] = { 0, 0, 0, 0, 0, 0 }, high_key[] = {
-	-1, -1, -1, -1, -1, -1, -1, -1,
-		-1, -1, -1, -1, -1, -1, -1, -1,
-		-1, -1, -1, -1, -1, -1, -1, -1,
-		-1, -1, -1, -1, -1, -1, -1, -1,
-		-1, -1, -1, -1, -1, -1, -1, -1,
-		-1, -1, -1, -1, -1, -1, -1, -1,
-		-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+	ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX,
+		ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX,
+		ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX,
+		ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX,
+		ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX,
+		ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX,
+		ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX};
 
 
 #ifdef SCROLLABLE_CURSORS
@@ -118,7 +118,7 @@ static void diddle_key(UCHAR *, SCB, USHORT);
 static SORT_RECORD *get_merge(MRG, SCB);
 #endif
 
-static UCHAR *alloc(SCB, ULONG);
+static UCHAR *sort_alloc(SCB, ULONG);
 static void error_memory(SCB);
 static ULONG find_file_space(SCB, ULONG, SFB *);
 static void free_file_space(SCB, SFB, ULONG, ULONG);
@@ -573,7 +573,7 @@ void SORT_fini(SCB scb, ATT att)
 /* --  Morgan Schweers (mrs)  */
 
 	if (rval == TRUE)
-		ALL_free(reinterpret_cast < char *>(scb));
+		MemoryPool::free_from_system(scb);
 }
 
 
@@ -701,7 +701,7 @@ void SORT_get(STATUS * status_vector, SCB scb, ULONG ** record_address)
 				break;
 			}
 			scb->scb_records--;
-			if (record = *scb->scb_next_pointer++)
+			if ( (record = *scb->scb_next_pointer++) )
 				break;
 		}
 	else
@@ -746,10 +746,11 @@ SCB SORT_init(STATUS * status_vector,
    longword, and add a longword to a pointer back to the pointer
    slot.  */
 
-	scb = (SCB) ALL_malloc((SLONG) SCB_LEN(keys), ERR_val);
+	try {
+		scb = (SCB) MemoryPool::malloc_from_system((SLONG) SCB_LEN(keys));
+	} catch(...) {
 /* FREE: scb is freed by SORT_fini(), called by higher level cleanup */
 /* FREE: or later in this module in error cases */
-	if (!scb) {
 		*status_vector++ = gds_arg_gds;
 		*status_vector++ = gds_sort_mem_err;
 		*status_vector = gds_arg_end;
@@ -777,34 +778,32 @@ SCB SORT_init(STATUS * status_vector,
 		ROUNDUP(p->skd_offset + p->skd_length, sizeof(SLONG)) >> SHIFTLONG;
 
 /* Next, try to allocate a "big block".  How big?  Big enough! */
+	try {
+		#ifdef DEBUG_MERGE
+		/* To debug the merge algorithm, force the in-memory pool to be VERY small */
+		scb->scb_size_memory = 2000;
+		scb->scb_memory =
+			(SORTP *) MemoryPool::malloc_from_system((SLONG) scb->scb_size_memory);
+		/* FREE: scb_memory is freed by local_fini() */
+		#else
+		/* Try to get a big chunk of memory, if we can't try smaller and
+		smaller chunks until we can get the memory.  If we get down to
+		too small a chunk - punt and report not enough memory. */
 
-#ifdef DEBUG_MERGE
-/* To debug the merge algorithm, force the in-memory pool to be VERY small */
-	scb->scb_size_memory = 2000;
-	scb->scb_memory =
-		(SORTP *) ALL_malloc((SLONG) scb->scb_size_memory, ERR_val);
-	/* FREE: scb_memory is freed by local_fini() */
-#else
-/* Try to get a big chunk of memory, if we can't try smaller and
-   smaller chunks until we can get the memory.  If we get down to
-   too small a chunk - punt and report not enough memory. */
-
-	for (scb->scb_size_memory = MAX_SORT_BUFFER_SIZE;;
-		 scb->scb_size_memory -= 5000) if (scb->scb_size_memory < 10000)
-			break;
-		else if (scb->scb_memory =
-				 (SORTP *) ALL_sys_alloc((SLONG) scb->scb_size_memory,
-										 ERR_val))
+		for (scb->scb_size_memory = MAX_SORT_BUFFER_SIZE;;
+			scb->scb_size_memory -= 5000) if (scb->scb_size_memory < 10000)
+				break;
+			else if ( (scb->scb_memory =
+				 (SORTP *) MemoryPool::malloc_from_system((SLONG) scb->scb_size_memory)) )
 			/* FREE: scb_memory is freed by local_fini() */
-			break;
-#endif /* DEBUG_MERGE */
-
-	if (!scb->scb_memory) {
+				break;
+		#endif /* DEBUG_MERGE */
+	} catch(...) {
 		*status_vector++ = gds_arg_gds;
 		*status_vector++ = gds_sort_mem_err;
 		/* Msg356: sort error: not enough memory */
 		*status_vector = gds_arg_end;
-		ALL_free(reinterpret_cast < char *>(scb));
+		MemoryPool::free_from_system(scb);
 		return NULL;
 	}
 
@@ -1066,20 +1065,20 @@ int SORT_sort(STATUS * status_vector, SCB scb)
 
 	for (run_count = 0, run = scb->scb_runs; run; run = run->run_next) {
 		if (run->run_buff_alloc) {
-			ALL_free(reinterpret_cast < char *>(run->run_buffer));
+			MemoryPool::free_from_system(run->run_buffer);
 			run->run_buff_alloc = 0;
 		}
 		++run_count;
 	}
 
-	if ((run_count * sizeof(RMH)) > sizeof(streams_local))
-		streams =
-			(RMH *) ALL_malloc((SLONG) run_count * sizeof(RMH), ERR_val);
+	try {
+		if ((run_count * sizeof(RMH)) > sizeof(streams_local))
+			streams =
+				(RMH *) MemoryPool::malloc_from_system((SLONG) run_count * sizeof(RMH));
 	/* FREE: streams is freed later in this routine */
-	else
-		streams = streams_local;
-
-	if (!streams) {
+		else
+			streams = streams_local;
+	} catch(...) {
 		*status_vector++ = gds_arg_gds;
 		*status_vector++ = gds_sort_mem_err;
 		*status_vector = gds_arg_end;
@@ -1096,14 +1095,14 @@ int SORT_sort(STATUS * status_vector, SCB scb)
  */
 	if (count > 1) {
 		assert(!scb->scb_merge_pool);	/* shouldn't have a pool */
-		scb->scb_merge_pool =
-			(MRG) ALL_malloc((SLONG) (count - 1) * sizeof(struct mrg),
-							 ERR_val);
+		try {
+			scb->scb_merge_pool =
+				(MRG) MemoryPool::malloc_from_system((SLONG) (count - 1)*sizeof(struct mrg));
 		/* FREE: smb_merge_pool freed in local_fini() when the scb is released */
 
-		merge_pool = scb->scb_merge_pool;
-		if (!merge_pool) {
-			ALL_free(reinterpret_cast < char *>(streams));
+			merge_pool = scb->scb_merge_pool;
+		} catch(...) {
+			MemoryPool::free_from_system(streams);
 			*status_vector++ = gds_arg_gds;
 			*status_vector++ = gds_sort_mem_err;
 			*status_vector = gds_arg_end;
@@ -1158,7 +1157,7 @@ int SORT_sort(STATUS * status_vector, SCB scb)
 	}
 
 	if (streams != streams_local)
-		ALL_free(reinterpret_cast < char *>(streams));
+		MemoryPool::free_from_system(streams);
 	buffer = (SORTP *) scb->scb_first_pointer;
 	merge->mrg_header.rmh_parent = NULL;
 	scb->scb_merge = merge;
@@ -1192,10 +1191,11 @@ int SORT_sort(STATUS * status_vector, SCB scb)
    allocating enough for the merge space plus a link */
 
 	for (; run; run = run->run_next) {
-		run->run_buffer =
-			(ULONG *) ALL_malloc((SLONG) (size * sizeof(ULONG)), ERR_val);
-		/* FREE: smb_merge_space freed in local_fini() when the scb is released */
-		if (!run->run_buffer) {
+		try {
+			run->run_buffer =
+				(ULONG *) MemoryPool::malloc_from_system((SLONG) (size * sizeof(ULONG)));
+			/* FREE: smb_merge_space freed in local_fini() when the scb is released */
+		} catch(...) {
 			*status_vector++ = gds_arg_gds;
 			*status_vector++ = gds_sort_mem_err;
 			*status_vector = gds_arg_end;
@@ -1278,7 +1278,7 @@ ULONG SORT_write_block(STATUS * status_vector,
 }
 
 
-static UCHAR *alloc(SCB scb, ULONG size)
+static UCHAR *sort_alloc(SCB scb, ULONG size)
 {
 /**************************************
  *
@@ -1311,15 +1311,18 @@ static UCHAR *alloc(SCB scb, ULONG size)
  *      1994-October-11 David Schnepper 
  *
  **************************************/
-	UCHAR *block;
+	UCHAR* block = 0;
 
-	if (!
-		(block =
-		 reinterpret_cast < UCHAR * >(ALL_malloc((SLONG) size, ERR_val))))
+	try {
+		block =
+			reinterpret_cast<UCHAR*>(MemoryPool::malloc_from_system((SLONG) size));
 /* FREE: caller responsible for freeing */
-	{
-		error_memory(scb);
-		return NULL;
+	} catch(...) {
+		if (!block)
+		{
+			error_memory(scb);
+			return NULL;
+		}
 	}
 
 	memset(block, 0, size);
@@ -1466,8 +1469,8 @@ static void diddle_key(UCHAR * record, SCB scb, USHORT direction)
  *
  **************************************/
 	register BLOB_PTR *p;
-	UCHAR c1, c2, fill_char, *fill_pos;
-	USHORT complement, n, w, l, fill;
+	UCHAR c1, fill_char, *fill_pos;
+	USHORT complement, n, l, fill;
 	USHORT HUGE_PTR *wp;
 	SSHORT longs, flag;
 	SORTP *lwp;
@@ -1475,6 +1478,9 @@ static void diddle_key(UCHAR * record, SCB scb, USHORT direction)
 	register SKD *key, *end;
 #ifdef  VMS
 	double *dp;
+#endif
+#ifndef IEEE
+	USHORT w;
 #endif
 
 	for (key = scb->scb_description, end = key + scb->scb_keys; key < end;
@@ -1730,8 +1736,8 @@ static ULONG find_file_space(SCB scb, ULONG size, SFB * ret_sfb)
 
 /* Search through the available space in the work file list. */
 
-	for (sfb_ptr = &scb->scb_sfb; sfb = *sfb_ptr; sfb_ptr = &sfb->sfb_next) {
-		for (ptr = &sfb->sfb_file_space; space = *ptr;
+	for (sfb_ptr = &scb->scb_sfb; (sfb = *sfb_ptr); sfb_ptr = &sfb->sfb_next) {
+		for (ptr = &sfb->sfb_file_space; (space = *ptr);
 			 ptr = &(*ptr)->wfs_next) {
 			/* if this is smaller than our previous best, use it */
 
@@ -1757,7 +1763,7 @@ static ULONG find_file_space(SCB scb, ULONG size, SFB * ret_sfb)
 		   and return. */
 
 		if (!sfb || !DLS_get_temp_space(size, sfb)) {
-			sfb = (SFB) alloc(scb, (ULONG) sizeof(struct sfb));
+			sfb = (SFB) sort_alloc(scb, (ULONG) sizeof(struct sfb));
 			/* FREE: scb_sfb chain is freed in local_fini() */
 
 			if (last_sfb)
@@ -1783,7 +1789,7 @@ static ULONG find_file_space(SCB scb, ULONG size, SFB * ret_sfb)
 			   This is released during local_fini(). */
 
 			sfb->sfb_file_name =
-				(TEXT *) alloc(scb, (ULONG) (strlen(file_name) + 1));
+				(TEXT *) sort_alloc(scb, (ULONG) (strlen(file_name) + 1));
 			/* FREE: sfb_file_name is freed in local_fini() */
 
 			strcpy(sfb->sfb_file_name, file_name);
@@ -1843,7 +1849,7 @@ static void free_file_space(SCB scb, SFB sfb, ULONG position, ULONG size)
 
 /* Search through work file space blocks looking for an adjacent block. */
 
-	for (ptr = &sfb->sfb_file_space; space = *ptr; ptr = &space->wfs_next) {
+	for (ptr = &sfb->sfb_file_space; (space = *ptr); ptr = &space->wfs_next) {
 		if (end >= space->wfs_position)
 			break;
 	}
@@ -1880,10 +1886,10 @@ static void free_file_space(SCB scb, SFB sfb, ULONG position, ULONG size)
 
 /* Block didn't seem to append nicely to an existing block */
 
-	if (space = sfb->sfb_free_wfs)
+	if ( (space = sfb->sfb_free_wfs) )
 		sfb->sfb_free_wfs = space->wfs_next;
 	else
-		space = (WFS) alloc(scb, (ULONG) sizeof(struct wfs));
+		space = (WFS) sort_alloc(scb, (ULONG) sizeof(struct wfs));
 	/* FREE: wfs_next chain is freed in local_fini() */
 
 	space->wfs_next = *ptr;
@@ -2068,7 +2074,7 @@ static SORT_RECORD *get_merge(MRG merge, SCB scb
 				merge = (MRG) merge->mrg_stream_b;
 				continue;
 			}
-			else if (record = merge->mrg_record_a) {
+			else if ( (record = merge->mrg_record_a) ) {
 				merge->mrg_record_a = (SORT_RECORD *) NULL;
 				merge = merge->mrg_header.rmh_parent;
 				continue;
@@ -2186,7 +2192,6 @@ static BOOLEAN local_fini(SCB scb, ATT att)
  **************************************/
 	WFS space;
 	RUN run;
-	UCHAR *p;
 	SFB sfb;
 	ULONG **merge_buf;
 	BOOLEAN found_it = TRUE;
@@ -2220,7 +2225,7 @@ static BOOLEAN local_fini(SCB scb, ATT att)
 
 /* Loop through the sfb list and close work files. */
 
-	while (sfb = scb->scb_sfb) {
+	while ( (sfb = scb->scb_sfb) ) {
 		scb->scb_sfb = sfb->sfb_next;
 		DLS_put_temp_space(sfb);
 
@@ -2228,28 +2233,28 @@ static BOOLEAN local_fini(SCB scb, ATT att)
 
 		if (sfb->sfb_file_name) {
 			unlink(sfb->sfb_file_name);
-			ALL_free(sfb->sfb_file_name);
+			MemoryPool::free_from_system(sfb->sfb_file_name);
 			sfb->sfb_file_name = NULL;
 		}
 
-		while (space = sfb->sfb_free_wfs) {
+		while ( (space = sfb->sfb_free_wfs) ) {
 			sfb->sfb_free_wfs = space->wfs_next;
-			ALL_free(reinterpret_cast < char *>(space));
+			MemoryPool::free_from_system(space);
 		}
 
-		while (space = sfb->sfb_file_space) {
+		while ( (space = sfb->sfb_file_space) ) {
 			sfb->sfb_file_space = space->wfs_next;
-			ALL_free(reinterpret_cast < char *>(space));
+			MemoryPool::free_from_system(space);
 		}
 
-		ALL_free(reinterpret_cast < char *>(sfb));
+		MemoryPool::free_from_system(sfb);
 	}
 
 /* get rid of extra merge space */
 
-	while (merge_buf = (ULONG **) scb->scb_merge_space) {
+	while ( (merge_buf = (ULONG **) scb->scb_merge_space) ) {
 		scb->scb_merge_space = *merge_buf;
-		ALL_free(reinterpret_cast < char *>(merge_buf));
+		MemoryPool::free_from_system(merge_buf);
 	}
 
 /* If runs are allocated and not in the big block, release them.  Then release
@@ -2257,31 +2262,31 @@ static BOOLEAN local_fini(SCB scb, ATT att)
 
 	if (scb->scb_memory) {
 #ifdef DEBUG_MERGE
-		ALL_free(scb->scb_memory);
+		MemoryPool::free_from_system(scb->scb_memory);
 #else
-		ALL_sys_free(reinterpret_cast < char *>(scb->scb_memory));
+		MemoryPool::free_from_system(scb->scb_memory);
 #endif
 		scb->scb_memory = NULL;
 	}
 
 /* Clean up the runs that were used */
-	while (run = scb->scb_runs) {
+	while ( (run = scb->scb_runs) ) {
 		scb->scb_runs = run->run_next;
 		if (run->run_buff_alloc)
-			ALL_free(reinterpret_cast < char *>(run->run_buffer));
-		ALL_free(reinterpret_cast < char *>(run));
+			MemoryPool::free_from_system(run->run_buffer);
+		MemoryPool::free_from_system(run);
 	}
 
 /* Clean up the free runs also */
-	while (run = scb->scb_free_runs) {
+	while ( (run = scb->scb_free_runs) ) {
 		scb->scb_free_runs = run->run_next;
 		if (run->run_buff_alloc)
-			ALL_free(reinterpret_cast < char *>(run->run_buffer));
-		ALL_free(reinterpret_cast < char *>(run));
+			MemoryPool::free_from_system(run->run_buffer);
+		MemoryPool::free_from_system(run);
 	}
 
 	if (scb->scb_merge_pool) {
-		ALL_free(reinterpret_cast < char *>(scb->scb_merge_pool));
+		MemoryPool::free_from_system(scb->scb_merge_pool);
 		scb->scb_merge_pool = NULL;
 	}
 
@@ -2340,11 +2345,14 @@ static void merge_runs(SCB scb, USHORT n)
 
 		if (!size) {
 			if (!run->run_buff_alloc) {
-				run->run_buffer =
-					(ULONG *) ALL_malloc((SLONG) rec_size * 2, ERR_val);
-				/* FREE: smb_merge_space freed in local_fini() when scb released */
-				if (!run->run_buffer)
-					error_memory(scb);
+				try {
+					run->run_buffer =
+						(ULONG *) MemoryPool::malloc_from_system((SLONG) rec_size * 2);
+				} catch (...) {
+					/* FREE: smb_merge_space freed in local_fini() when scb released */
+					if (!run->run_buffer)
+						error_memory(scb);
+				}
 				run->run_buff_alloc = 1;
 			}
 			run->run_end_buffer =
@@ -2409,7 +2417,7 @@ static void merge_runs(SCB scb, USHORT n)
 #ifdef SCROLLABLE_CURSORS
 	while (p = get_merge(merge, scb, RSE_get_forward))
 #else
-	while (p = get_merge(merge, scb))
+	while ( (p = get_merge(merge, scb)) )
 #endif
 	{
 		if (q >= (SORT_RECORD *) temp_run.run_end_buffer) {
@@ -2431,7 +2439,7 @@ static void merge_runs(SCB scb, USHORT n)
 
 /* Write the tail of the new run and return any unused space. */
 
-	if (size = (BLOB_PTR *) q - (BLOB_PTR *) temp_run.run_buffer)
+	if ( (size = (BLOB_PTR *) q - (BLOB_PTR *) temp_run.run_buffer) )
 		seek = SORT_write_block(scb->scb_status_vector, temp_run.run_sfb,
 								seek, (UCHAR *) temp_run.run_buffer, size);
 
@@ -2467,7 +2475,7 @@ static void merge_runs(SCB scb, USHORT n)
 
 	scb->scb_free_runs = run->run_next;
 	if (run->run_buff_alloc) {
-		ALL_free(reinterpret_cast < char *>(run->run_buffer));
+		MemoryPool::free_from_system(run->run_buffer);
 		run->run_buff_alloc = 0;
 	}
 	temp_run.run_header.rmh_type = TYPE_RUN;
@@ -2654,7 +2662,7 @@ static ULONG order(SCB scb)
 	register SORT_RECORD *output;
 	register SORT_PTR *lower_limit;
 	SORT_RECORD **ptr;
-	SORTP *buffer;
+	SORTP* buffer = 0;
 	SSHORT length;
 #ifndef STACK_EFFICIENT
 	ULONG temp[1024];
@@ -2669,22 +2677,22 @@ static ULONG order(SCB scb)
 												  sort_record *
 												  >(scb->scb_last_record));
 
+	try {
 #ifdef STACK_EFFICIENT
 	buffer =
-		(ULONG *) ALL_malloc((SLONG) (scb->scb_longs * sizeof(ULONG)),
-							 ERR_val);
+		(ULONG *) MemoryPool::malloc_from_system((SLONG) (scb->scb_longs * sizeof(ULONG)));
 #else
 	if ((scb->scb_longs * sizeof(ULONG)) > sizeof(temp))
 		buffer =
-			(ULONG *) ALL_malloc((SLONG) (scb->scb_longs * sizeof(ULONG)),
-								 ERR_val);
+			(ULONG *) MemoryPool::malloc_from_system((SLONG) (scb->scb_longs*sizeof(ULONG)));
 	/* FREE: buffer is freed later in this routine */
 	else
 		buffer = temp;
 #endif /* STACK_EFFICIENT */
-
-	if (!buffer)
-		error_memory(scb);
+	} catch(...) {
+		if (!buffer)
+			error_memory(scb);
+	}
 
 /* Check out the engine */
 
@@ -2769,7 +2777,7 @@ static ULONG order(SCB scb)
 	if (buffer != temp)
 #endif
 		if (buffer != NULL)
-			ALL_free(reinterpret_cast < char *>(buffer));
+			MemoryPool::free_from_system(buffer);
 
 	return (((SORTP *) output) -
 			((SORTP *) scb->scb_last_record)) / (scb->scb_longs -
@@ -2793,12 +2801,12 @@ static void put_run(SCB scb)
  *
  **************************************/
 	RUN run;
-	ULONG n, records;
+	//ULONG n, records;
 
-	if (run = scb->scb_free_runs)
+	if ( (run = scb->scb_free_runs) )
 		scb->scb_free_runs = run->run_next;
 	else {
-		run = (RUN) alloc(scb, (ULONG) sizeof(struct run));
+		run = (RUN) sort_alloc(scb, (ULONG) sizeof(struct run));
 		/* FREE: run will be either on the scb_runs or scb_free_runs list,
 		 *       which are freed in local_fini() */
 	}
@@ -2929,7 +2937,7 @@ static void sort(SCB scb)
 			q++;
 			tl--;
 		}
-		if ((p - *i) >= scb->scb_key_length) {
+		if ( ((p - *i) >= scb->scb_key_length) ) {
 #ifdef SCROLLABLE_CURSORS
 			SORT_diddle_key((UCHAR *) * i, scb, FALSE);
 			SORT_diddle_key((UCHAR *) * j, scb, FALSE);

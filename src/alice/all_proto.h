@@ -21,30 +21,9 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _ALICE_ALL_PROTO_H_
-#define _ALICE_ALL_PROTO_H_
+#ifndef ALICE_ALL_PROTO_H
+#define ALICE_ALL_PROTO_H
 
-#include "../alice/lls.h"
+#include "../alice/all.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-BLK		ALLA_alloc(PLB, UCHAR, int);
-BLK		ALLA_extend(BLK *, int);
-void	ALLA_fini(void);
-void	ALLA_free(SCHAR *);
-void	ALLA_init(void);
-SCHAR*	ALLA_malloc(SLONG);
-PLB		ALLA_pool(void);
-void	ALLA_push(BLK, register LLS *);
-BLK		ALLA_pop(register LLS *);
-void	ALLA_release(register FRB);
-void	ALLA_rlpool(PLB);
-VEC		ALLA_vector(PLB, VEC *, USHORT);
-
-#ifdef __cplusplus
-};
-#endif
-
-#endif /* _ALICE_ALL_PROTO_H_ */
+#endif /* ALICE_ALL_PROTO_H */

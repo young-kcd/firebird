@@ -24,18 +24,11 @@
 #ifndef _DSQL_DDL_PROTO_H_
 #define _DSQL_DDL_PROTO_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+void DDL_execute(class req*);
+void DDL_generate(class req*, struct nod*);
+int	DDL_ids(class req*);
+void DDL_put_field_dtype(class req*, class fld*, USHORT);
+void DDL_resolve_intl_type(class req*, class fld*, class str*);
 
-void DDL_execute(struct req *);
-void DDL_generate(struct req *, struct nod *);
-int DDL_ids(struct req *);
-void DDL_put_field_dtype(struct req *, struct fld *, USHORT);
-void DDL_resolve_intl_type(struct req *, struct fld *, struct str *);
-
-#ifdef __cplusplus
-}	/* extern "C" */
-#endif
 
 #endif /* _DSQL_DDL_PROTO_H_ */

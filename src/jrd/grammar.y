@@ -134,4 +134,6 @@ expr	: SYMBOL
 	;
 %%
 
+#define JLX_C_INCLUDED_BY_GRAMMAR_CPP
 #include "../jrd/jlx.c"
+#undef JLX_C_INCLUDED_BY_GRAMMAR_CPP

@@ -27,11 +27,13 @@
  *                         readonly databases.
  */
 /*
-$Id: common.h,v 1.5 2001-07-29 17:42:21 skywalker Exp $
+$Id: common.h,v 1.6 2001-12-24 02:50:51 tamlin Exp $
 */
 
 #ifndef JRD_COMMON_H
 #define JRD_COMMON_H
+
+#include "../include/gen/autoconfig.h"
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -105,6 +107,8 @@ $Id: common.h,v 1.5 2001-07-29 17:42:21 skywalker Exp $
 
 /* Darwin Platforms */
 #ifdef DARWIN  
+#define __LINE__IS_INT
+#define SLONGFORMAT	"ld"
 #define ALIGNMENT       4
 #define DOUBLE_ALIGN    4
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
@@ -629,8 +633,8 @@ typedef unsigned __int64 UINT64;
 #define DLL_EXPORT
 #endif
 
-#define BOOLEAN_DEFINED
-typedef unsigned char BOOLEAN;
+//#define BOOLEAN_DEFINED
+//typedef unsigned char BOOLEAN;
 
 #ifdef DEV_BUILD
 #define DEBUG_GDS_ALLOC
@@ -1154,11 +1158,13 @@ typedef unsigned long UATOM;
 #undef ATOM_DEFINED
 #endif
 
+/*
 #ifndef BOOLEAN_DEFINED
 typedef USHORT BOOLEAN;
 #else
 #undef BOOLEAN_DEFINED
 #endif
+*/
 
 #ifndef ISC_TIMESTAMP_DEFINED
 typedef SLONG ISC_DATE;
@@ -1182,6 +1188,11 @@ typedef struct
 
 #ifndef BLOB_PTR
 #define BLOB_PTR        UCHAR
+#endif
+
+
+#ifndef SLONGFORMAT
+#define SLONGFORMAT	"d"
 #endif
 
 

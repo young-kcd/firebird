@@ -24,10 +24,14 @@
 #ifndef _JRD_PIO_H_
 #define _JRD_PIO_H_
 
+#include "../jrd/jrd_blks.h"
+#include "../include/fb_blk.h"
+
 #ifdef UNIX
 
-typedef struct fil {
-	struct blk fil_header;
+class fil : public pool_alloc_rpt<SCHAR, type_fil>
+{
+    public:
 	struct fil *fil_next;		/* Next file in database */
 	ULONG fil_min_page;			/* Minimum page number in file */
 	ULONG fil_max_page;			/* Maximum page number in file */
@@ -39,15 +43,17 @@ typedef struct fil {
 	MUTX_T fil_mutex[1];
 	USHORT fil_length;			/* Length of expanded file name */
 	SCHAR fil_string[1];		/* Expanded file name */
-} *FIL;
+};
+typedef fil *FIL;
 
 #endif
 
 
 #ifdef VMS
 
-typedef struct fil {
-	struct blk fil_header;
+class fil : public pool_alloc_rpt<SCHAR, type_fil>
+{
+    public:
 	struct fil *fil_next;		/* Next file in database */
 	ULONG fil_min_page;			/* Minimum page number in file */
 	ULONG fil_max_page;			/* Maximum page number in file */
@@ -61,14 +67,16 @@ typedef struct fil {
 	USHORT fil_fid[3];			/* File id */
 	USHORT fil_did[3];			/* Directory id */
 	SCHAR fil_string[1];		/* Expanded file name */
-} *FIL;
+};
+tyepdef fil *FIL;
 
 #endif
 
 #if (defined PC_PLATFORM) && !(defined NETWARE_386)
 
-typedef struct fil {
-	struct blk fil_header;
+class fil : public pool_alloc_rpt<SCHAR, type_fil>
+{
+    public:
 	struct fil *fil_next;		/* Next file in database */
 	ULONG fil_min_page;			/* Minimum page number in file */
 	ULONG fil_max_page;			/* Maximum page number in file */
@@ -80,15 +88,17 @@ typedef struct fil {
 	MUTX_T fil_mutex[1];
 	USHORT fil_length;			/* Length of expanded file name */
 	SCHAR fil_string[1];		/* Expanded file name */
-} *FIL;
+};
+typedef fil *FIL;
 
 #endif
 
 
 #ifdef NETWARE_386
 
-typedef struct fil {
-	struct blk fil_header;
+class fil : public pool_alloc_rpt<SCHAR, type_fil>
+{
+    public:
 	struct fil *fil_next;		/* Next file in database */
 	ULONG fil_min_page;			/* Minimum page number in file */
 	ULONG fil_max_page;			/* Maximum page number in file */
@@ -107,7 +117,8 @@ typedef struct fil {
 	int dfs_last_block;
 	int dfs_volume;
 	SCHAR *dfs_buffer;
-} *FIL;
+};
+typedef fil *FIL;
 
 #endif
 
@@ -116,8 +127,9 @@ typedef struct fil {
 #define MAX_FILE_IO	32			/* Maximum "allocated" overlapped I/O events */
 #endif
 
-typedef struct fil {
-	struct blk fil_header;
+class fil : public pool_alloc_rpt<SCHAR, type_fil>
+{
+    public:
 	struct fil *fil_next;		/* Next file in database */
 	ULONG fil_min_page;			/* Minimum page number in file */
 	ULONG fil_max_page;			/* Maximum page number in file */
@@ -134,7 +146,8 @@ typedef struct fil {
 	USHORT fil_flags;
 	USHORT fil_length;			/* Length of expanded file name */
 	SCHAR fil_string[1];		/* Expanded file name */
-} *FIL;
+};
+typedef fil *FIL;
 
 #endif
 

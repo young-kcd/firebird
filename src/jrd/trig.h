@@ -78,15 +78,15 @@ typedef struct gen
 
 static CONST GEN generators[] =
 {
-	"RDB$SECURITY_CLASS", 0,
-	"SQL$DEFAULT", 0,
-	"RDB$PROCEDURES", 0,
-	"RDB$EXCEPTIONS", 0,
-	"RDB$CONSTRAINT_NAME", 0,
-	"RDB$FIELD_NAME", 0,
-	"RDB$INDEX_NAME", 0,
-	"RDB$TRIGGER_NAME", 0,
-	0, 0
+	{ "RDB$SECURITY_CLASS", 0 },
+	{ "SQL$DEFAULT", 0 },
+	{ "RDB$PROCEDURES", 0 },
+	{ "RDB$EXCEPTIONS", 0 },
+	{ "RDB$CONSTRAINT_NAME", 0 },
+	{ "RDB$FIELD_NAME", 0 },
+	{ "RDB$INDEX_NAME", 0 },
+	{ "RDB$TRIGGER_NAME", 0 },
+	{ 0, 0 }
 };
 
 

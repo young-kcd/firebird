@@ -41,7 +41,7 @@
 #include "../jrd/vio_proto.h"
 
 static LCK allocate_record_lock(TRA, RPB *);
-static LCK allocate_relation_lock(PLB, REL);
+static LCK allocate_relation_lock(MemoryPool*, REL);
 static LCK attachment_relation_lock(REL);
 static void drop_record_lock(LCK);
 static LCK find_record_lock(RPB *);
@@ -300,7 +300,7 @@ LCK RLCK_record_locking(REL relation)
 	tdbb = GET_THREAD_DATA;
 	dbb = GET_DBB;
 
-	lock = (LCK) ALLOCPV(type_lck, sizeof(SLONG));
+	lock = new(*dbb->dbb_permanent, sizeof(SLONG)) lck();
 	lock->lck_parent = dbb->dbb_lock;
 	lock->lck_dbb = dbb;
 	lock->lck_attachment = tdbb->tdbb_attachment;
@@ -377,20 +377,19 @@ void RLCK_release_locks(ATT attachment)
  *
  **************************************/
 	VEC vector;
-	LCK lock, *lptr, *lend;
+	LCK lock;
+	vec::iterator *lptr, *lend;
 /* unlock all explicit relation locks */
 	if (vector = attachment->att_relation_locks)
-		for (lptr = (LCK *) vector->vec_object, lend =
-			 lptr + vector->vec_count; lptr < lend; lptr++)
-			if (lock = *lptr)
+		for (lptr = vector->begin(), lend = vector->end(); lptr < lend; lptr++)
+			if (lock = ((LCK)(*lptr)) )
 				RLCK_unlock_relation(0, (REL) lock->lck_object);
 /* unlock all explicit record locks */
 	while (lock = attachment->att_record_locks)
 		RLCK_unlock_record(lock, 0);
 /* clear the vector of user locks */
 	if (vector = attachment->att_lck_quick_ref)
-		for (lptr = (LCK *) vector->vec_object, lend =
-			 lptr + vector->vec_count; lptr < lend; lptr++)
+		for (lptr = vector->begin(), lend = vector->end(); lptr < lend; lptr++)
 			*lptr = NULL;
 }
 #endif
@@ -470,20 +469,25 @@ void RLCK_shutdown_attachment(ATT attachment)
  *	and relation locks. This runs at AST level.
  *
  **************************************/
-	VEC lock_vector;
-	LCK *lock, record_lock;
-	USHORT i;
-	TDBB tdbb;
-	tdbb = GET_THREAD_DATA;
+
+	vec::iterator lock;
+
+	TDBB tdbb = GET_THREAD_DATA;
 /* Release child record locks before parent relation locks */
-	for (record_lock = attachment->att_record_locks; record_lock;
-		 record_lock = record_lock->lck_att_next)
+	for (LCK record_lock = attachment->att_record_locks;
+		record_lock;
+		record_lock = record_lock->lck_att_next)
+	{
 		LCK_release(tdbb, record_lock);
-	if (lock_vector = attachment->att_relation_locks)
-		for (i = 0, lock = (LCK *)
-			 lock_vector->vec_object; i < lock_vector->vec_count; i++, lock++)
-			if (*lock)
-				LCK_release(tdbb, *lock);
+	}
+	VEC lock_vector = attachment->att_relation_locks;
+	if (lock_vector) {
+		for (lock = lock_vector->begin(); lock != lock_vector->end(); ++lock) {
+			if (*lock) {
+				LCK_release(tdbb, (LCK)(*lock));
+			}
+		}
+	}
 }
 
 
@@ -501,15 +505,15 @@ void RLCK_shutdown_database(DBB dbb)
  *	at AST level.
  *
  **************************************/
-	REL relation, *ptr, *end;
+	REL relation;
+	vec::iterator ptr, end;
 	VEC vector;
 	TDBB tdbb;
 	tdbb = GET_THREAD_DATA;
 	if (!(vector = dbb->dbb_relations))
 		return;
-	for (ptr = (REL *) vector->vec_object, end =
-		 ptr + vector->vec_count; ptr < end; ptr++)
-		if (relation = *ptr) {
+	for (ptr = vector->begin(), end =  vector->end(); ptr < end; ptr++)
+		if ( (relation = ((REL)(*ptr)) ) ) {
 			if (relation->rel_record_locking)
 				LCK_release(tdbb, relation->rel_record_locking);
 			if (relation->rel_interest_lock)
@@ -551,7 +555,7 @@ void RLCK_signal_refresh(TRA transaction)
 
 		/* allocate a local lock */
 
-		local_lock = (LCK) ALLOCPV(type_lck, sizeof(SLONG));
+		local_lock = new(*dbb->dbb_permanent, sizeof(SLONG)) lck();
 		local_lock->lck_dbb = dbb;
 		local_lock->lck_attachment = tdbb->tdbb_attachment;
 		local_lock->lck_length = sizeof(SLONG);
@@ -560,8 +564,8 @@ void RLCK_signal_refresh(TRA transaction)
 			LCK_get_owner_handle(tdbb, local_lock->lck_type);
 		local_lock->lck_parent = dbb->dbb_lock;
 		local_lock->lck_compatible = (BLK) tdbb->tdbb_attachment;
-		for (i = 0; i < vector->vec_count; i++) {
-			lock = (LCK *) (vector->vec_object[i]);
+		for (i = 0; i < vector->count(); i++) {
+			lock = (LCK *) ((*vector)[i]);
 			if (lock) {
 				relation = (REL) lock->lck_object;
 				local_lock->lck_key.lck_long = relation->rel_id;
@@ -592,13 +596,17 @@ LCK RLCK_transaction_relation_lock(TRA transaction, REL relation)
 	LCK lock;
 	VEC vector;
 	if ((vector = transaction->tra_relation_locks) &&
-		(relation->rel_id < vector->vec_count) &&
-		(lock = (LCK) vector->vec_object[relation->rel_id]))
+		(relation->rel_id < vector->count()) &&
+		(lock = (LCK) (*vector)[relation->rel_id]))
 		return lock;
-	vector =
-		ALL_vector(transaction->tra_pool,
-				   &transaction->tra_relation_locks, relation->rel_id);
-	if (lock = (LCK) vector->vec_object[relation->rel_id])
+	if (!vector)
+		vector = transaction->tra_relation_locks =
+			vec::newVector(*transaction->tra_pool, relation->rel_id + 1);
+			
+	if (vector->count() < (relation->rel_id + 1) )
+		vector->resize(relation->rel_id + 1);
+		
+	if ( (lock = (LCK) (*vector)[relation->rel_id]) )
 		return lock;
 	lock = allocate_relation_lock(transaction->tra_pool, relation);
 	lock->lck_owner = (BLK) transaction;
@@ -607,7 +615,7 @@ LCK RLCK_transaction_relation_lock(TRA transaction, REL relation)
    that relation locks are incompatible with locks taken out by other
    transactions, if a transaction is specified */
 	lock->lck_compatible2 = (BLK) transaction;
-	vector->vec_object[relation->rel_id] = (BLK) lock;
+	(*vector)[relation->rel_id] = (BLK) lock;
 	return lock;
 }
 
@@ -738,13 +746,13 @@ void RLCK_unlock_relation(LCK lock, REL relation)
 		return;
 	if (relation) {
 		id = relation->rel_id;
-		if (id >= vector->vec_count)
+		if (id >= vector->count())
 			return;
-		lock = (LCK) vector->vec_object[id];
+		lock = (LCK) (*vector)[id];
 	}
 	else
-		for (id = 0; id < vector->vec_count; id++)
-			if (lock == (LCK) vector->vec_object[id])
+		for (id = 0; id < vector->count(); id++)
+			if (lock == (LCK) (*vector)[id])
 				break;
 	if (!lock)
 		return;
@@ -758,7 +766,7 @@ void RLCK_unlock_relation(LCK lock, REL relation)
 
 	LCK_release(tdbb, lock);
 	ALL_release(lock);
-	vector->vec_object[id] = NULL;
+	(*vector)[id] = NULL;
 }
 #endif
 
@@ -789,7 +797,7 @@ static LCK allocate_record_lock(TRA transaction, RPB * rpb)
 	if (!rpb->rpb_record)
 		ERR_post(gds_no_cur_rec, 0);
 /* allocate a lock block for the record lock */
-	lock = (LCK) ALLOCPV(type_lck, sizeof(SLONG));
+	lock = new(*dbb->dbb_permanent, sizeof(SLONG)) lck();
 	lock->lck_dbb = dbb;
 	lock->lck_attachment = attachment;
 	lock->lck_object = (BLK) dbb;
@@ -825,7 +833,7 @@ static LCK allocate_record_lock(TRA transaction, RPB * rpb)
 
 
 #endif
-static LCK allocate_relation_lock(PLB pool, REL relation)
+static LCK allocate_relation_lock(MemoryPool* pool, REL relation)
 {
 /**************************************
  *
@@ -842,7 +850,7 @@ static LCK allocate_relation_lock(PLB pool, REL relation)
 	LCK lock;
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
-	lock = (LCK) ALL_alloc(pool, type_lck, sizeof(SLONG), ERR_jmp);
+	lock = new(*pool, sizeof(SLONG)) lck();
 	lock->lck_dbb = dbb;
 	lock->lck_attachment = tdbb->tdbb_attachment;
 	lock->lck_length = sizeof(SLONG);
@@ -882,17 +890,24 @@ static LCK attachment_relation_lock(REL relation)
 	dbb = tdbb->tdbb_database;
 	attachment = tdbb->tdbb_attachment;
 	if ((vector = attachment->att_relation_locks) &&
-		(relation->rel_id < vector->vec_count) &&
-		(lock = (LCK) vector->vec_object[relation->rel_id]))
+		(relation->rel_id < vector->count()) &&
+		(lock = (LCK) (*vector)[relation->rel_id]))
 		return lock;
-	vector =
-		ALL_vector(dbb->dbb_permanent, &attachment->att_relation_locks,
-				   relation->rel_id);
-	if (lock = (LCK) vector->vec_object[relation->rel_id])
+	vector = attachment->att_relation_locks;
+	if (!vector)
+	{
+		vector = attachment->att_relation_locks =
+			vec::newVector(*dbb->dbb_permanent, relation->rel_id + 1);
+	}
+	if (relation->rel_id >= vector->count())
+	{
+		vector->resize(relation->rel_id + 1);
+	}
+	if ( (lock = (LCK) (*vector)[relation->rel_id]) )
 		return lock;
 	lock = allocate_relation_lock(dbb->dbb_permanent, relation);
 	lock->lck_owner = (BLK) attachment;
-	vector->vec_object[relation->rel_id] = (BLK) lock;
+	(*vector)[relation->rel_id] = (BLK) lock;
 	return lock;
 }
 

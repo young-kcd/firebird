@@ -24,13 +24,18 @@
 #ifndef _JRD_LLS_H_
 #define _JRD_LLS_H_
 
-#define LLS_PUSH(object, stack)		ALL_push ((struct blk *) object, stack)
-#define LLS_POP(stack)			ALL_pop (stack)
+#include "../jrd/jrd_blks.h"
+#include "../include/fb_blk.h"
 
-typedef struct lls {
-	struct blk lls_header;
-	struct blk *lls_object;
-	struct lls *lls_next;
-} *LLS;
+#define LLS_PUSH(object, stack)		(JrdMemoryPool::ALL_push((BLK)object,stack))
+#define LLS_POP(stack)			(JrdMemoryPool::ALL_pop(stack))
+
+class lls : public pool_alloc<type_lls>
+{
+    public:
+        BLK lls_object;
+        struct lls *lls_next;
+};
+typedef lls *LLS;
 
 #endif /* _JRD_LLS_H_ */

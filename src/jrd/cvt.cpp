@@ -52,6 +52,12 @@
 
 #ifdef HAVE_TIME_H
 #include <time.h>
+#ifdef DARWIN
+#include </usr/include/time.h>
+#endif
+#if defined DARWIN && !defined _TIME_H_
+#error john
+#endif
 #endif
 
 #if !(defined REQUESTER && defined SUPERCLIENT)
@@ -1161,7 +1167,7 @@ USHORT CVT_get_string_ptr(DSC * desc,
 					   desc->dsc_length - 1);
 		if (desc->dsc_dtype == dtype_varying) {
 			varying = (VARY *) desc->dsc_address;
-			*address = varying->vary_string;
+			*address = reinterpret_cast<UCHAR*>(varying->vary_string);
 			return MIN(varying->vary_length,
 					   desc->dsc_length - sizeof(USHORT));
 		}
@@ -1175,7 +1181,7 @@ USHORT CVT_get_string_ptr(DSC * desc,
 	INTL_ASSIGN_TTYPE(&temp_desc, ttype_ascii);
 	temp_desc.dsc_dtype = dtype_varying;
 	CVT_move(desc, &temp_desc, err);
-	*address = temp->vary_string;
+	*address = reinterpret_cast<UCHAR*>(temp->vary_string);
 	*ttype = INTL_TTYPE(&temp_desc);
 
 	return temp->vary_length;
@@ -1297,7 +1303,7 @@ USHORT CVT_make_string(DSC * desc,
 					   from_len - 1);
 		if (desc->dsc_dtype == dtype_varying) {
 			varying = (VARY *) desc->dsc_address;
-			*address = varying->vary_string;
+			*address = reinterpret_cast<UCHAR*>(varying->vary_string);
 			return MIN(varying->vary_length, from_len - sizeof(USHORT));
 		}
 	}
@@ -1310,7 +1316,7 @@ USHORT CVT_make_string(DSC * desc,
 	INTL_ASSIGN_TTYPE(&temp_desc, to_interp);
 	temp_desc.dsc_dtype = dtype_varying;
 	CVT_move(desc, &temp_desc, err);
-	*address = temp->vary_string;
+	*address = reinterpret_cast<UCHAR*>(temp->vary_string);
 
 	return temp->vary_length;
 }
@@ -1653,7 +1659,7 @@ void DLL_EXPORT CVT_move(DSC * from, DSC * to, FPTR_VOID err)
 				/* TMN: Here we should really have the following assert */
 				/* assert(length <= MAX_USHORT); */
 				((VARY *) p)->vary_length = (USHORT) length;
-				p = ((VARY *) p)->vary_string;
+				p = reinterpret_cast<UCHAR*>(((VARY *) p)->vary_string);
 				CVT_COPY_BUFF(q, p, length);
 				break;
 			}
@@ -2202,7 +2208,7 @@ static void float_to_text(DSC * from, DSC * to, FPTR_VOID err)
 
 /* Now move the result to the destination array. */
 
-	DSC intermediate = { 0 };
+	DSC intermediate;
 	intermediate.dsc_dtype = dtype_text;
 	intermediate.dsc_ttype = ttype_ascii;
 	intermediate.dsc_address = (UCHAR *) temp;

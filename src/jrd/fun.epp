@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: fun.epp,v 1.2 2001-07-29 17:42:22 skywalker Exp $
+$Id: fun.epp,v 1.3 2001-12-24 02:50:51 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -89,10 +89,10 @@ extern double MTH$CVT_D_G(), MTH$CVT_G_D();
 static SSHORT blob_get_segment(BLB, UCHAR *, USHORT, USHORT *);
 static void blob_put_segment(BLB, UCHAR *, USHORT);
 static SLONG blob_lseek(BLB, USHORT, SLONG);
-static SLONG get_scalar_array(fun::fun_repeat *, DSC *, SAD, LLS *);
+static SLONG get_scalar_array(fun_repeat *, DSC *, SAD, LLS *);
 
 
-void DLL_EXPORT FUN_evaluate( FUN function, NOD node, VLU value)
+void DLL_EXPORT FUN_evaluate(FUN function, NOD node, VLU value)
 {
 /**************************************
  *
@@ -104,31 +104,22 @@ void DLL_EXPORT FUN_evaluate( FUN function, NOD node, VLU value)
  *	Evaluate a function.
  *
  **************************************/
-	TDBB tdbb;
-	NOD *ptr;
-	DSC *input, temp_desc;
-	SLONG **ap, *arg_ptr, args[MAX_UDF_ARGUMENTS + 1], *ip;
-	SSHORT s, *sp;
-	SLONG l, *lp, null_quad[2], *blob_id;
-	SINT64 i64, *pi64;
-	USHORT length, null_flag;
-	float f, *fp;
-	double *dp, d;
-	UCHAR temp[800], *temp_ptr, *p;
-	STR string, temp_string;
-	LLS blob_stack, array_stack;
-	REQ request;
-	BLB blob;
-	BLOB blob_desc;
-	fun::fun_repeat *tail, *end, *return_ptr;
+
+	SLONG	args[MAX_UDF_ARGUMENTS + 1];
+	USHORT	length;
+	UCHAR	temp[800];
+	STR		temp_string;
+	SSHORT	unsup_datatype = 0;
+
 	JMP_BUF *old_env, env;
-	SSHORT unsup_datatype;
 
-	tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
 
-/* Start by constructing argument list */
+	// Start by constructing argument list
+	UCHAR* temp_ptr;
 
-	if (function->fun_temp_length < sizeof(temp)) {
+	if (function->fun_temp_length < sizeof(temp))
+	{
 		temp_string = NULL;
 		temp_ptr = temp;
 		MOVE_CLEAR(temp, sizeof(temp));
@@ -139,68 +130,76 @@ void DLL_EXPORT FUN_evaluate( FUN function, NOD node, VLU value)
 		   a number of data blocks with aligned length */
 
 		temp_string =
-			(STR) ALLOCDV(type_str,
-						  function->fun_temp_length + DOUBLE_ALIGN - 1);
+			new(*tdbb->tdbb_default,
+				function->fun_temp_length + DOUBLE_ALIGN - 1) str;
 		MOVE_CLEAR(temp_string->str_data, temp_string->str_length);
 		temp_ptr =
 			(UCHAR *) FB_ALIGN((U_IPTR) temp_string->str_data, DOUBLE_ALIGN);
 	}
 
 	MOVE_CLEAR(args, sizeof(args));
-	arg_ptr = args;
-	blob_stack = array_stack = NULL;
-	request = tdbb->tdbb_request;
-	null_flag = (USHORT)(request->req_flags & req_null);
-	return_ptr = function->fun_rpt + function->fun_return_arg;
+	SLONG*		arg_ptr		= args;
+	LLS			blob_stack	= 0;
+	LLS			array_stack = 0;
+	REQ			request		= tdbb->tdbb_request;
+	USHORT		null_flag	= (USHORT)(request->req_flags & req_null);
+	fun_repeat*	return_ptr	= function->fun_rpt + function->fun_return_arg;
+	NOD*		ptr			= node->nod_arg;
+
 	value->vlu_desc = return_ptr->fun_desc;
 	value->vlu_desc.dsc_address = (UCHAR *) & value->vlu_misc;
-	ptr = node->nod_arg;
 
 /* Trap any potential errors */
+
+#pragma FB_COMPILER_MESSAGE("Note that we cannot use C++ EH here for Win32 SS!")
+#if !defined(SUPERSERVER) && !defined(WINNT)
+	try {
+#endif
 
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
 
-	if (SETJMP(env)) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		if (temp_string)
-			ALL_release((FRB)temp_string);
-		while (array_stack)
-			ALL_free((SCHAR*)LLS_POP(&array_stack));
-		ERR_punt();
-	}
-
 	START_CHECK_FOR_EXCEPTIONS(function->fun_exception_message);
 
-/* If the return data type is any of the string types, allocate space to
-   hold value */
+	// If the return data type is any of the string types,
+	// allocate space to hold value
 
-	if (value->vlu_desc.dsc_dtype <= dtype_varying) {
+
+	if (value->vlu_desc.dsc_dtype <= dtype_varying)
+	{
 		length = value->vlu_desc.dsc_length;
-		if ((string = value->vlu_string) && string->str_length < length) {
-			ALL_release((FRB)string);
+		STR string = value->vlu_string;
+		if (string && string->str_length < length) {
+			delete string;
 			string = NULL;
 		}
 		if (!string) {
-			string = (STR) ALLOCDV(type_str, length);
+			string = new(*tdbb->tdbb_default, length) str;
 			string->str_length = length;
 			value->vlu_string = string;
 		}
 		value->vlu_desc.dsc_address = string->str_data;
 	}
 
-/* Process arguments */
 
-	for (tail = function->fun_rpt + 1, end = tail + function->fun_count;
-		 tail < end; tail++) {
-		if (tail == return_ptr)
+	DSC temp_desc;
+	double  d;
+	double* dp;
+
+	// Process arguments
+	const fun_repeat* end = function->fun_rpt + 1 + function->fun_count;
+	for (fun_repeat* tail = function->fun_rpt + 1; tail < end; ++tail)
+	{
+		DSC* input;
+		if (tail == return_ptr) {
 			input = (DSC *) value;
-		else
+		} else {
 			input = EVL_expr(tdbb, *ptr++);
-		ap = (SLONG **) arg_ptr;
+		}
+		SLONG**	ap = (SLONG **) arg_ptr;
 
-		/* If we're passing data type ISC descriptor, there's nothing left to
-		   be done */
+		// If we're passing data type ISC descriptor, there's
+		// nothing left to be done
 
 		if (tail->fun_mechanism == FUN_descriptor) {
 			*ap++ = (SLONG *) input;
@@ -218,7 +217,7 @@ void DLL_EXPORT FUN_evaluate( FUN function, NOD node, VLU value)
 		{
 			if (tail->fun_mechanism == FUN_value)
 			{
-				p = (UCHAR *) arg_ptr;
+				UCHAR* p = (UCHAR *) arg_ptr;
 				MOVE_CLEAR(p, (SLONG) length);
 				p += length;
 				arg_ptr = (SLONG *) p;
@@ -240,77 +239,94 @@ void DLL_EXPORT FUN_evaluate( FUN function, NOD node, VLU value)
 			switch (tail->fun_desc.dsc_dtype)
 			{
 			case dtype_short:
-				s = MOV_get_long(input, (SSHORT) tail->fun_desc.dsc_scale);
-				if (tail->fun_mechanism == FUN_value) {
-					/* For (apparent) portability reasons, SHORT by value
-					 * is always passed as a LONG.  See v3.2 release notes
-					 * Passing by value is not supported in SQL due to
-					 * these problems, but can still occur in GDML.
-					 * 1994-September-28 David Schnepper 
-					 */
-					*arg_ptr++ = (SLONG) s;
-					continue;
+				{
+					SSHORT s = MOV_get_long(input,
+											(SSHORT) tail->fun_desc.dsc_scale);
+					if (tail->fun_mechanism == FUN_value) {
+						/* For (apparent) portability reasons, SHORT by value
+						 * is always passed as a LONG.  See v3.2 release notes
+						 * Passing by value is not supported in SQL due to
+						 * these problems, but can still occur in GDML.
+						 * 1994-September-28 David Schnepper 
+						 */
+						*arg_ptr++ = (SLONG) s;
+						continue;
+					}
+					{
+						SSHORT* sp = (SSHORT *) temp_ptr;
+						*sp = s;
+					}
 				}
-				sp = (SSHORT *) temp_ptr;
-				*sp = s;
 				break;
 
 			case dtype_sql_time:
 			case dtype_sql_date:
 			case dtype_long:
-				/* this check added for bug 74193 */
-				if (tail->fun_desc.dsc_dtype == dtype_long)
 				{
-					l =
-						MOV_get_long(input,
-									 (SSHORT) tail->fun_desc.dsc_scale);
-				}
-				else
-				{
-					/* for sql_date and sql_time just move the value to a long, 
-					   scale does not mean anything for it */
-					l = *((SLONG *) (input->dsc_address));
-				}
+					SLONG l;
+					/* this check added for bug 74193 */
+					if (tail->fun_desc.dsc_dtype == dtype_long)
+					{
+						l =
+							MOV_get_long(input,
+										 (SSHORT) tail->fun_desc.dsc_scale);
+					}
+					else
+					{
+						/* for sql_date and sql_time just move the value to a long, 
+						   scale does not mean anything for it */
+						l = *((SLONG *) (input->dsc_address));
+					}
 
-				if (tail->fun_mechanism == FUN_value)
-				{
-					*arg_ptr++ = l;
-					continue;
+					if (tail->fun_mechanism == FUN_value)
+					{
+						*arg_ptr++ = l;
+						continue;
+					}
+					{
+						SLONG* lp = (SLONG *) temp_ptr;
+						*lp = l;
+					}
 				}
-				lp = (SLONG *) temp_ptr;
-				*lp = l;
 				break;
 
 			case dtype_int64:
-				i64 = MOV_get_int64(input, (SSHORT) tail->fun_desc.dsc_scale);
-				if (tail->fun_mechanism == FUN_value)
 				{
-					pi64 = (SINT64 *) arg_ptr;
-					*pi64++ = i64;
-					arg_ptr = (SLONG *) pi64;
-					continue;
+					SINT64* pi64;
+					SINT64 i64 =
+						MOV_get_int64(input, (SSHORT)tail->fun_desc.dsc_scale);
+
+					if (tail->fun_mechanism == FUN_value)
+					{
+						pi64 = (SINT64 *) arg_ptr;
+						*pi64++ = i64;
+						arg_ptr = (SLONG *) pi64;
+						continue;
+					}
+					pi64 = (SINT64 *) temp_ptr;
+					*pi64 = i64;
 				}
-				pi64 = (SINT64 *) temp_ptr;
-				*pi64 = i64;
 				break;
 
 			case dtype_real:
-				f = (float) MOV_get_double(input);
-				if (tail->fun_mechanism == FUN_value)
 				{
-					/* For (apparent) portability reasons, FLOAT by value
-					 * is always passed as a DOUBLE.  See v3.2 release notes
-					 * Passing by value is not supported in SQL due to
-					 * these problems, but can still occur in GDML.
-					 * 1994-September-28 David Schnepper 
-					 */
-					dp = (double *) arg_ptr;
-					*dp++ = (double) f;
-					arg_ptr = (SLONG *) dp;
-					continue;
+				float f = (float) MOV_get_double(input);
+					if (tail->fun_mechanism == FUN_value)
+					{
+						/* For (apparent) portability reasons, FLOAT by value
+						 * is always passed as a DOUBLE.  See v3.2 release notes
+						 * Passing by value is not supported in SQL due to
+						 * these problems, but can still occur in GDML.
+						 * 1994-September-28 David Schnepper 
+						 */
+						double* dp = (double *) arg_ptr;
+						*dp++ = (double) f;
+						arg_ptr = (SLONG *) dp;
+						continue;
+					}
+					float* fp = (float *) temp_ptr;
+					*fp = f;
 				}
-				fp = (float *) temp_ptr;
-				*fp = f;
 				break;
 
 			case dtype_double:
@@ -353,7 +369,9 @@ void DLL_EXPORT FUN_evaluate( FUN function, NOD node, VLU value)
 				break;
 
 			case dtype_blob:
-				blob_desc = (BLOB) temp_ptr;
+				{
+				BLOB blob_desc = (BLOB) temp_ptr;
+				BLB  blob;
 				length = sizeof(struct blob);
 				if (tail == return_ptr)
 				{
@@ -363,7 +381,10 @@ void DLL_EXPORT FUN_evaluate( FUN function, NOD node, VLU value)
 				}
 				else
 				{
-					if (request->req_flags & req_null) {
+					SLONG* blob_id;
+					if (request->req_flags & req_null)
+					{
+						SLONG null_quad[2];
 						null_quad[0] = null_quad[1] = 0;
 						blob_id = null_quad;
 					}
@@ -371,9 +392,11 @@ void DLL_EXPORT FUN_evaluate( FUN function, NOD node, VLU value)
 					{
 						if (input->dsc_dtype != dtype_quad &&
 							input->dsc_dtype != dtype_blob)
+						{
 							ERR_post(gds_wish_list,
 									 gds_arg_gds, gds_blobnotsup,
 									 gds_arg_string, "conversion", 0);
+						}
 						blob_id = (SLONG *) input->dsc_address;
 					}
 					blob = BLB_open(tdbb,
@@ -388,6 +411,7 @@ void DLL_EXPORT FUN_evaluate( FUN function, NOD node, VLU value)
 				blob_desc->blob_number_segments = blob->blb_count;
 				blob_desc->blob_max_segment = blob->blb_max_segment;
 				blob_desc->blob_total_length = blob->blb_length;
+				}
 				break;
 
 			default:
@@ -402,8 +426,6 @@ void DLL_EXPORT FUN_evaluate( FUN function, NOD node, VLU value)
 		arg_ptr = (SLONG *) ap;
 		temp_ptr += length;
 	}
-
-	unsup_datatype = 0;
 
 	if (function->fun_return_arg)
 	{
@@ -514,9 +536,11 @@ void DLL_EXPORT FUN_evaluate( FUN function, NOD node, VLU value)
 				break;
 
 			case dtype_timestamp:
-				ip = (SLONG *) temp_ptr;
-				value->vlu_misc.vlu_dbkey[0] = *ip++;
-				value->vlu_misc.vlu_dbkey[1] = *ip;
+				{
+					SLONG* ip = (SLONG *) temp_ptr;
+					value->vlu_misc.vlu_dbkey[0] = *ip++;
+					value->vlu_misc.vlu_dbkey[1] = *ip;
+				}
 				break;
 
 			default:
@@ -530,15 +554,27 @@ void DLL_EXPORT FUN_evaluate( FUN function, NOD node, VLU value)
 		}
 	}
 
-	END_CHECK_FOR_EXCEPTIONS(function->fun_exception_message);
+	END_CHECK_FOR_EXCEPTIONS((TEXT*)function->fun_exception_message);
 
-	if (unsup_datatype)
+	if (unsup_datatype) {
 		IBERROR(169);			/* msg 169 return data type not supported */
+	}
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 
-	if (temp_string)
-		ALL_release((FRB)temp_string);
+#if !defined(SUPERSERVER) && !defined(WINNT)
+	}
+	catch (...) {
+		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+		delete temp_string;
+		while (array_stack) {
+			delete LLS_POP(&array_stack);
+		}
+		ERR_punt();
+	}
+#endif
+
+	delete temp_string;
 
 	while (blob_stack)
 	{
@@ -547,7 +583,7 @@ void DLL_EXPORT FUN_evaluate( FUN function, NOD node, VLU value)
 
 	while (array_stack)
 	{
-		ALL_free((SCHAR*)LLS_POP(&array_stack));
+		delete LLS_POP(&array_stack);
 	}
 
 	if (temp_ptr == NULL)
@@ -622,7 +658,7 @@ FUN DLL_EXPORT FUN_lookup_function(TEXT * name)
 	LLS stack;
 	USHORT count, args, l;
 	ULONG length;
-	fun::fun_repeat *tail, temp[MAX_UDF_ARGUMENTS + 1];
+	fun_repeat *tail, temp[MAX_UDF_ARGUMENTS + 1];
 #ifdef GATEWAY
 	JMP_BUF *old_env, env;
 #endif
@@ -635,21 +671,20 @@ FUN DLL_EXPORT FUN_lookup_function(TEXT * name)
 	V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_udf);
 
 	for (symbol = SYM_lookup(name); symbol; symbol = symbol->sym_homonym)
+	{
 		if ((int) (symbol->sym_type = SYM_fun)) {
 			V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_udf);
 			return (FUN) symbol->sym_object;
 		}
+	}
 
 #ifdef GATEWAY
 /* Trap any potential errors */
 
+	try {
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
 
-	if (SETJMP(env)) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		return prior;
-	}
 #endif
 
 	prior = NULL;
@@ -688,14 +723,14 @@ FUN DLL_EXPORT FUN_lookup_function(TEXT * name)
 				l = sizeof(struct blob);
 			length += l;
         END_FOR;
-		function = (FUN) ALLOCPV(type_fun, count + 1);
+		function = new(*dbb->dbb_permanent, count + 1) fun;
 		function->fun_count = count;
 		function->fun_args = args;
 		function->fun_return_arg = X.RDB$RETURN_ARGUMENT;
 		function->fun_type = X.RDB$FUNCTION_TYPE;
 		function->fun_temp_length = length;
 		MOVE_FAST(temp, function->fun_rpt,
-				  (count + 1) * sizeof(fun::fun_repeat));
+				  (count + 1) * sizeof(fun_repeat));
 #ifndef	WIN_NT					/* NT allows blanks in file paths */
 		for (p = X.RDB$MODULE_NAME; *p && *p != ' '; p++);
 		*p = 0;
@@ -707,10 +742,10 @@ FUN DLL_EXPORT FUN_lookup_function(TEXT * name)
 		   causes an exception.  This is done at this time to save us from preparing
 		   (thus allocating) this message every time the function is called. */
 		exception_msg =
-			(STR) ALLOCPV(type_str,
+			new(*dbb->dbb_permanent,
 						  strlen(EXCEPTION_MESSAGE) + strlen(name) +
 						  strlen(X.RDB$ENTRYPOINT) +
-						  strlen(X.RDB$MODULE_NAME) + 1);
+						  strlen(X.RDB$MODULE_NAME) + 1) str;
 		sprintf((char*)exception_msg->str_data, EXCEPTION_MESSAGE, name,
 				X.RDB$ENTRYPOINT, X.RDB$MODULE_NAME);
 		function->fun_exception_message = exception_msg;
@@ -719,7 +754,7 @@ FUN DLL_EXPORT FUN_lookup_function(TEXT * name)
 			ISC_lookup_entrypoint(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT,
 								  ISC_EXT_LIB_PATH_ENV);
 
-		if (module = FLU_lookup_module(X.RDB$MODULE_NAME)) {
+		if ( (module = FLU_lookup_module(X.RDB$MODULE_NAME)) ) {
 			/* Register interest in the module by database. */
 
 			for (stack = dbb->dbb_modules; stack; stack = stack->lls_next)
@@ -737,7 +772,7 @@ FUN DLL_EXPORT FUN_lookup_function(TEXT * name)
 			}
 			else
 			{
-				PLB old_pool;
+				JrdMemoryPool *old_pool;
 
 				old_pool = tdbb->tdbb_default;
 				tdbb->tdbb_default = dbb->dbb_permanent;
@@ -760,9 +795,9 @@ FUN DLL_EXPORT FUN_lookup_function(TEXT * name)
 		else
 		{
 			prior = function;
-			function->fun_symbol = symbol = (SYM) ALLOCP(type_sym);
+			function->fun_symbol = symbol = new(*dbb->dbb_permanent) sym;
 			symbol->sym_object = (BLK) function;
-			string = (STR) ALLOCPV(type_str, strlen(name));
+			string = new(*dbb->dbb_permanent, strlen(name)) str;
 			strcpy((char*)string->str_data, name);
 			symbol->sym_string = (TEXT *) string->str_data;
 			symbol->sym_type = SYM_fun;
@@ -778,7 +813,15 @@ FUN DLL_EXPORT FUN_lookup_function(TEXT * name)
 	V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_udf);
 
 #ifdef GATEWAY
+
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}	// try
+	catch (...) {
+		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+		return prior;
+	}
+
 #endif
 
 	return prior;
@@ -801,7 +844,7 @@ FUN DLL_EXPORT FUN_resolve(CSB csb, FUN function, NOD args)
 	NOD *ptr, *end;
 	DSC arg;
 	int best_score, score;
-	fun::fun_repeat *tail;
+	fun_repeat *tail;
 	TDBB tdbb;
 
 	tdbb = GET_THREAD_DATA;
@@ -923,7 +966,7 @@ static SSHORT blob_get_segment(
 
 
 #ifndef GATEWAY
-static SLONG get_scalar_array(fun::fun_repeat*	arg,
+static SLONG get_scalar_array(fun_repeat*	arg,
 							  DSC*	value,
 							  SAD	scalar_desc,
 							  LLS*	stack)
@@ -959,7 +1002,7 @@ static SLONG get_scalar_array(fun::fun_repeat*	arg,
 						tdbb->tdbb_request->req_transaction,
 						(BID)value->dsc_address,
 						array_desc);
-	data = (UCHAR *) ALL_malloc(array_desc->ads_total_length, ERR_jmp);
+	data = (UCHAR *) MemoryPool::malloc_from_system(array_desc->ads_total_length);
 	BLB_get_data(tdbb, blob, data, array_desc->ads_total_length);
 	dimensions = array_desc->ads_dimensions;
 
@@ -972,12 +1015,12 @@ static SLONG get_scalar_array(fun::fun_repeat*	arg,
 		to.dsc_scale != from.dsc_scale || to.dsc_length != from.dsc_length) {
 		n = array_desc->ads_count;
 		to.dsc_address = temp =
-			(UCHAR *) ALL_malloc((SLONG) to.dsc_length * n, ERR_jmp);
+			(UCHAR *) MemoryPool::malloc_from_system((SLONG) to.dsc_length * n);
 		from.dsc_address = data;
 		for (; n; --n, to.dsc_address += to.dsc_length,
 			 from.dsc_address += array_desc->ads_element_length)
 				MOV_move(&from, &to);
-		ALL_free((SCHAR*)data);
+		MemoryPool::free_from_system((SCHAR*)data);
 		data = temp;
 	}
 

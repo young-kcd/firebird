@@ -1,17 +1,16 @@
 
-#ifndef _FirebirdConfigFile_H
-#define _FirebirdConfigFile_H
+#ifndef FIREBIRDCONFIGFILE_H
+#define FIREBIRDCONFIGFILE_H
 
-#include <iostream>
-#include <fstream>
 #include <map>
-#include <string>
+#include "../include/fb_string.h"
 
 #include "FirebirdConfig.h"
 
-class FirebirdConfigFile : public FirebirdConfig {
-public:
 
+class FirebirdConfigFile : public FirebirdConfig
+{
+public:
     FirebirdConfigFile();
 
     const string getConfigFile() { return configFile; }
@@ -29,11 +28,10 @@ public:
 private:
     string configFile;
     bool isLoadedFlg;
-    typedef pair<string, string> mypair;
-    typedef map<string, string> mymap_t;
+    typedef std::map<string, string> mymap_t;
 
     mymap_t parameters;
 
 };
 
-#endif
+#endif	// FIREBIRDCONFIGFILE_H

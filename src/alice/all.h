@@ -24,53 +24,35 @@
 #ifndef _ALICE_ALL_H_
 #define _ALICE_ALL_H_
 
-#if ALIGNMENT == 8
-#define MIN_ALLOC	8
-#else
-#define MIN_ALLOC	4
-#endif
+#include "../common/memory/memory_pool.h"
+#include "../jrd/block_cache.h"
+#include "../alice/lls.h"
 
-#define MAX_BLOCK	256000
-#define	FUDGE		1
-#define SHIFT		2
+void		ALLA_init();				/* initialize pool system */
+void		ALLA_fini();				/* get rid of everything */
 
-#define MIN_ALLOCATION 1024		/* Minimin allocation from operating system */
-
-/* This is the header to be used by all blocks to
-   specify the type of block, the pool in which it has
-   been allocated, and the length of its tail. */
-
-#ifndef INCLUDE_FB_BLK
-#include "../include/fb_blk.h"
-#endif
-
-/* Free block */
-
-typedef struct frb
+class AliceMemoryPool : public MemoryPool
 {
-	struct blk frb_header;
-	struct frb *frb_next;		/* Next free block in pool */
-} *FRB;
+public:
+//	static AliceMemoryPool *create_new_pool(MemoryPool* = 0);
+//	AliceMemoryPool(MemoryPool* p = 0)
+//	:	MemoryPool(0, p),
+//		lls_cache(*this)
+//	{}
+	AliceMemoryPool(int extSize = 0, MemoryPool* p = FB_MemoryPool)
+	:	MemoryPool(extSize, p),
+		lls_cache(*this)
+	{
+	}
 
-/* Pool block */
 
-typedef struct plb
-{
-	struct blk plb_header;
-	USHORT plb_pool_id;			/* pool id */
-	struct frb *plb_free;		/* first free block */
-	struct hnk *plb_hunks;		/* first hunk block */
-	struct lls *plb_lls;		/* avaiable linked list stack nodes */
-} *PLB;
+	~AliceMemoryPool();
 
-/* Hunk blocks */
+	static class blk* ALLA_pop(class lls**);
+	static void ALLA_push(class blk*, class lls**);
 
-typedef struct hnk
-{
-	struct blk hnk_header;
-	SCHAR *hnk_address;			/* start of memory hunk */
-	SLONG hnk_length;			/* length of memory hunk */
-	struct hnk *hnk_next;		/* next memory hunk in structure */
-} *HNK;
+private:
+	BlockCache<class lls> lls_cache;  /* Was plb_lls */
+};
 
 #endif /* _ALICE_ALL_H_ */

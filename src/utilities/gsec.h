@@ -87,7 +87,7 @@ typedef int (DLL_EXPORT* OUTPUTPROC) (SLONG, UCHAR *);
 
 #define EXIT(code)	            {  tdsec->tsec_exit_code = (code);          \
 					if (tdsec->tsec_env != NULL)        \
-					LONGJMP(*tdsec->tsec_env, 1);  }
+					Firebird::status_longjmp_error::raise(1);  }
 
 typedef struct user_data {
     int		operation;		/* what's to be done */

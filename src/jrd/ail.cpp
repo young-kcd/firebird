@@ -211,7 +211,7 @@ void AIL_commit(SLONG number)
 
 /* Prepare WAL message */
 
-	MOVE_CLEAR(&commit_rec, LTJC_SIZE);
+	MOVE_CLEAR((SLONG*)&commit_rec, LTJC_SIZE);
 
 	commit_rec.ltjc_header.jrnh_type = JRN_COMMIT;
 	commit_rec.ltjc_header.jrnh_length = LTJC_SIZE;
@@ -497,7 +497,7 @@ void AIL_enable(
 		for (i = 0; i < number; i++)
 			if (!(log_files[i]->lg_flags & LOG_serial)) {
 				for (i = 0; i < number; i++)
-					ALL_release(reinterpret_cast < frb * >(log_files[i]));
+					delete log_files[i];
 				ERR_post(gds_no_archive, 0);
 			}
 	}
@@ -639,8 +639,8 @@ void AIL_get_file_list(LLS * stack)
 				continue;
 			temp_fname = LOGF_NAME(logf);
 			fname_term_length = strlen(temp_fname) + 1;
-			fname = (STR) ALLOCPV(type_str, fname_term_length);
-			MOVE_FAST(temp_fname, fname->str_data, fname_term_length);
+			fname = new(*dbb->dbb_permanent, fname_term_length) str();
+			MOVE_FAST(temp_fname, (SCHAR*)fname->str_data, fname_term_length);
 			LLS_PUSH(fname, stack);
 		}
 	}
@@ -675,8 +675,8 @@ void AIL_get_file_list(LLS * stack)
 	while (TRUE) {
 		if (!(log_flags & WALFH_RAW)) {
 			fname_term_length = strlen(curr_name) + 1;
-			fname = (STR) ALLOCPV(type_str, fname_term_length);
-			MOVE_FAST(curr_name, fname->str_data, fname_term_length);
+			fname = new(*dbb->dbb_permanent, fname_term_length) str();
+			MOVE_FAST(curr_name, (SCHAR*)fname->str_data, fname_term_length);
 			LLS_PUSH(fname, stack);
 		}
 
@@ -1054,7 +1054,7 @@ void AIL_recover_page(SLONG page_no, PAG page)
 
 	for (p = logp->log_data; (*p != LOG_ctrl_file1); p += 2 + p[1]);
 
-	MOVE_FAST(p + 2, rwal, logp->log_cp_1.cp_fn_length);
+	MOVE_FAST((SCHAR*)(p + 2), rwal, logp->log_cp_1.cp_fn_length);
 
 	rwal[logp->log_cp_1.cp_fn_length] = 0;
 
@@ -1216,7 +1216,7 @@ void AIL_upd_cntrl_pt(
 	*p++ = LOG_ctrl_file2;
 	p++;
 	q = reinterpret_cast < UCHAR * >(walname);
-	if (len = w_len)
+	if ( (len = w_len) )
 		do
 			*p++ = *q++;
 		while (--len);
@@ -1230,7 +1230,7 @@ void AIL_upd_cntrl_pt(
 
 	p = p3 + 2;
 	q = reinterpret_cast < UCHAR * >(walname);
-	if (len = w_len)
+	if ( (len = w_len) )
 		do
 			*p++ = *q++;
 		while (--len);
@@ -1548,7 +1548,7 @@ USHORT activate_shadow, SBM * sbm_rec)
 
 /* Do some initial actions for setting up page */
 
-	if (first_time = logp->log_flags & log_add)
+	if ( (first_time = logp->log_flags & log_add) )
 		set_first_user(log_files, logp, walname);
 	else
 		get_walinfo(walname);
@@ -1627,7 +1627,7 @@ USHORT activate_shadow, SBM * sbm_rec)
  */
 
 	for (i = 0; i < number; i++)
-		ALL_release(reinterpret_cast < frb * >(log_files[i]));
+		delete log_files[i];
 #endif
 }
 
@@ -1711,7 +1711,7 @@ USHORT activate_shadow, SBM * sbm_rec)
 
 	for (p = logp->log_data; (*p != LOG_ctrl_file1); p += 2 + p[1]);
 
-	MOVE_FAST(p + 2, rwal, logp->log_cp_1.cp_fn_length);
+	MOVE_FAST((SCHAR*)(p + 2), rwal, logp->log_cp_1.cp_fn_length);
 
 	rwal[logp->log_cp_1.cp_fn_length] = 0;
 
@@ -1727,7 +1727,7 @@ USHORT activate_shadow, SBM * sbm_rec)
 		win.win_flags = 0;
 		hdr = (HDR) CCH_FETCH(tdbb, &win, LCK_read, pag_header);
 		for (p = hdr->hdr_data; (*p != HDR_root_file_name); p += 2 + p[1]);
-		MOVE_FAST(p + 2, root_db, p[1]);
+		MOVE_FAST((SCHAR*)(p + 2), root_db, p[1]);
 		root_db[p[1]] = 0;
 		CCH_RELEASE(tdbb, &win);
 		REC_recover(root_db, rwal, &cp1, sbm_rec, activate_shadow);
@@ -1798,15 +1798,15 @@ static void set_first_user(LGFILE ** log_files, LIP logp, TEXT * walname)
 	for (p = logp->log_data; (*p != LOG_end); p += 2 + p[1]) {
 		switch (*p) {
 		case LOG_ctrl_file1:
-			MOVE_FAST(walname, p + 2, len);
+			MOVE_FAST(walname, (SCHAR*)(p + 2), len);
 			break;
 
 		case LOG_ctrl_file2:
-			MOVE_FAST(walname, p + 2, len);
+			MOVE_FAST(walname, (SCHAR*)(p + 2), len);
 			break;
 
 		case LOG_logfile:
-			MOVE_FAST(walname, p + 2, len);
+			MOVE_FAST(walname, (SCHAR*)(p + 2), len);
 			break;
 		}
 	}

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: rse.cpp,v 1.3 2001-07-29 17:42:22 skywalker Exp $
+$Id: rse.cpp,v 1.4 2001-12-24 02:50:52 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -492,7 +492,7 @@ BOOLEAN RSE_get_record(TDBB tdbb, RSB rsb, RSE_GET_MODE mode)
 	count = (request->req_flags & req_count_records) != 0;
 	request->req_flags &= ~req_count_records;
 
-	if (result = get_record(tdbb, rsb, NULL, mode))
+	if ( (result = get_record(tdbb, rsb, NULL, mode)) )
 		if (count)
 			request->req_records_selected++;
 
@@ -602,11 +602,11 @@ void RSE_mark_crack(TDBB tdbb, RSB rsb, USHORT flags)
 	if (flags) {
 		rpb = &request->req_rpb[rsb->rsb_stream];
 		if (rpb->rpb_record) {
-			ALL_release(rpb->rpb_record);
+			delete rpb->rpb_record;
 			rpb->rpb_record = NULL;
 		}
 		if (rpb->rpb_copy) {
-			ALL_release(rpb->rpb_copy);
+			delete rpb->rpb_copy;
 			rpb->rpb_copy = NULL;
 		}
 	}
@@ -1004,17 +1004,17 @@ static void close_merge(TDBB tdbb, RSB rsb, IRSB_MRG impure)
 		   if one exists. */
 
 		mfb = &tail->irsb_mrg_file;
-		if (sfb = mfb->mfb_sfb) {
+		if ( (sfb = mfb->mfb_sfb) ) {
 			if (sfb->sfb_file_name) {
 				close(sfb->sfb_file);
 				unlink(sfb->sfb_file_name);
-				ALL_free(sfb->sfb_file_name);
+				MemoryPool::free_from_system(sfb->sfb_file_name);
 			}
-			ALL_free(reinterpret_cast < char *>(sfb));
+			delete sfb;
 			mfb->mfb_sfb = 0;
 		}
 		if (mfb->mfb_block_data) {
-			ALL_sys_free(reinterpret_cast < char *>(mfb->mfb_block_data));
+			MemoryPool::free_from_system(mfb->mfb_block_data);
 			mfb->mfb_block_data = 0;
 		}
 	}
@@ -1040,7 +1040,7 @@ static void close_procedure(TDBB tdbb, RSB rsb)
 
 	request = tdbb->tdbb_request;
 	impure = (IRSB_PROCEDURE) ((UCHAR *) request + rsb->rsb_impure);
-	if (proc_request = impure->irsb_req_handle) {
+	if ( (proc_request = impure->irsb_req_handle) ) {
 		/* bug #7884: at this point the transaction could already have
 		   been released, so null it out so as not to dereference it */
 
@@ -1052,7 +1052,7 @@ static void close_procedure(TDBB tdbb, RSB rsb)
 	}
 
 	if (impure->irsb_message) {
-		ALL_release((FRB) impure->irsb_message);
+		delete impure->irsb_message;
 		impure->irsb_message = NULL;
 	}
 }
@@ -1092,7 +1092,7 @@ static SSHORT compare(TDBB tdbb, NOD node1, NOD node2)
 		}
 		else if (request->req_flags & req_null)
 			return 1;
-		if (result = MOV_compare(desc1, desc2))
+		if ( (result = MOV_compare(desc1, desc2)) )
 			return result;
 	}
 
@@ -1429,9 +1429,9 @@ static BOOLEAN fetch_left(TDBB tdbb, RSB rsb, IRSB impure)
 			if (!get_record(tdbb, full, NULL, RSE_get_forward))
 				return FALSE;
 			RSE_open(tdbb, rsb->rsb_arg[RSB_LEFT_outer]);
-			while (found =
+			while ( (found =
 				   get_record(tdbb, rsb->rsb_arg[RSB_LEFT_outer], NULL,
-							  RSE_get_forward))
+							  RSE_get_forward)) )
 					if (
 						(!rsb->rsb_arg[RSB_LEFT_boolean]
 						 || EVL_boolean(tdbb,
@@ -1777,7 +1777,7 @@ static BOOLEAN get_merge_join(
 		mfb = &tail->irsb_mrg_file;
 		key_length = map->smb_key_length * sizeof(ULONG);
 		if (key_length > sizeof(key))
-			first_data = (UCHAR *) ALL_malloc(key_length, ERR_jmp);
+			first_data = (UCHAR *) MemoryPool::malloc_from_system(key_length);
 		else
 			first_data = (UCHAR *) key;
 		MOVE_FASTER(get_merge_data(tdbb, mfb, 0), first_data, key_length);
@@ -1794,7 +1794,7 @@ static BOOLEAN get_merge_join(
 		}
 
 		if (first_data != (UCHAR *) key)
-			ALL_free(first_data);
+			MemoryPool::free_from_system(first_data);
 		if (mfb->mfb_current_block)
 			write_merge_block(tdbb, mfb, mfb->mfb_current_block);
 	}
@@ -1920,8 +1920,8 @@ static BOOLEAN get_merge_join(TDBB tdbb, RSB rsb, IRSB_MRG impure)
 		for (ptr = rsb->rsb_arg, tail = impure->irsb_mrg_rpt;
 			 ptr < end; ptr += 2, tail++)
 			if (highest_ptr != ptr)
-				while (result =
-					   compare(tdbb, (NOD) highest_ptr[1], (NOD) ptr[1])) {
+				while ( (result =
+					   compare(tdbb, (NOD) highest_ptr[1], (NOD) ptr[1])) ) {
 					if (result < 0) {
 						highest_ptr = ptr;
 						goto recycle;
@@ -1952,7 +1952,7 @@ static BOOLEAN get_merge_join(TDBB tdbb, RSB rsb, IRSB_MRG impure)
 		mfb = &tail->irsb_mrg_file;
 		key_length = map->smb_key_length * sizeof(ULONG);
 		if (key_length > sizeof(key))
-			first_data = (UCHAR *) ALL_malloc(key_length, ERR_jmp);
+			first_data = (UCHAR *) MemoryPool::malloc_from_system(key_length);
 		else
 			first_data = (UCHAR *) key;
 		MOVE_FASTER(get_merge_data(tdbb, mfb, 0), first_data, key_length);
@@ -1969,7 +1969,7 @@ static BOOLEAN get_merge_join(TDBB tdbb, RSB rsb, IRSB_MRG impure)
 		}
 
 		if (first_data != (UCHAR *) key)
-			ALL_free(reinterpret_cast < char *>(first_data));
+			MemoryPool::free_from_system(first_data);
 		if (mfb->mfb_current_block)
 			write_merge_block(tdbb, mfb, mfb->mfb_current_block);
 	}
@@ -2112,7 +2112,7 @@ static BOOLEAN get_procedure(TDBB				tdbb,
 	if (!impure->irsb_message)
 	{
 		size = msg_format->fmt_length + ALIGNMENT;
-		impure->irsb_message = (STR) ALLOCDV(type_str, size);
+		impure->irsb_message = new(*tdbb->tdbb_default, size) str();
 		impure->irsb_message->str_length = size;
 	}
 	om =
@@ -2122,7 +2122,7 @@ static BOOLEAN get_procedure(TDBB				tdbb,
 
 	if (!rpb->rpb_record) {
 		record = rpb->rpb_record =
-			(REC) ALLOCDV(type_rec, rec_format->fmt_length);
+			new(*tdbb->tdbb_default, rec_format->fmt_length) rec();
 		record->rec_format = rec_format;
 		record->rec_length = rec_format->fmt_length;
 	}
@@ -2265,7 +2265,7 @@ static BOOLEAN get_record(TDBB			tdbb,
 			SBM *bitmap;
 			int result = FALSE;
 
-			if (bitmap = ((IRSB_INDEX) impure)->irsb_bitmap)
+			if ( (bitmap = ((IRSB_INDEX) impure)->irsb_bitmap) )
 			{
 				while (SBM_next(*bitmap, &rpb->rpb_number, mode))
 				{
@@ -2664,9 +2664,9 @@ static BOOLEAN get_record(TDBB			tdbb,
 		break;
 
 	case rsb_aggregate:
-		if (impure->irsb_count = EVL_group(tdbb, (BLK) rsb->rsb_next,
+		if ( (impure->irsb_count = EVL_group(tdbb, (BLK) rsb->rsb_next,
 										   (NOD) rsb->rsb_arg[0],
-										   impure->irsb_count)) break;
+										   impure->irsb_count)) ) break;
 		return FALSE;
 
 #ifndef GATEWAY
@@ -2900,7 +2900,7 @@ static void map_sort_data(REQ request, SMB map, UCHAR * data)
 	RPB *rpb;
 	NOD node;
 	REC record;
-	smb::smb_repeat * item, *end_item;
+	smb_repeat * item, *end_item;
 
 	end_item = map->smb_rpt + map->smb_count;
 
@@ -2993,7 +2993,7 @@ static void open_merge(TDBB tdbb, RSB rsb, IRSB_MRG impure)
 		if (!mfb->mfb_block_data)
 			mfb->mfb_block_data =
 				reinterpret_cast <
-				UCHAR * >(ALL_sys_alloc(mfb->mfb_block_size, ERR_jmp));
+				UCHAR * >(MemoryPool::malloc_from_system(mfb->mfb_block_size));
 	}
 }
 
@@ -3028,7 +3028,7 @@ static void open_procedure(TDBB tdbb, RSB rsb, IRSB_PROCEDURE impure)
 
 	rpb = request->req_rpb + rsb->rsb_stream;
 	if (rpb->rpb_record) {
-		ALL_release((FRB) rpb->rpb_record);
+		delete rpb->rpb_record;
 		rpb->rpb_record = NULL;
 	}
 
@@ -3085,7 +3085,7 @@ static void open_sort(TDBB tdbb, RSB rsb, IRSB_SORT impure)
 	int records;
 	SSHORT stream;
 	SCB handle;
-	smb::smb_repeat * item, *end_item;
+	smb_repeat * item, *end_item;
 
 	SET_TDBB(tdbb);
 	request = tdbb->tdbb_request;
@@ -3326,7 +3326,7 @@ static void pop_rpbs(REQ request, RSB rsb)
 		{
 			SSHORT i, streams[128];
 			SMB map;
-			smb::smb_repeat * item, *end_item;
+			smb_repeat * item, *end_item;
 
 			map = (SMB) rsb->rsb_arg[0];
 			for (i = 0; i < (SSHORT) request->req_count; i++)
@@ -3347,7 +3347,7 @@ static void pop_rpbs(REQ request, RSB rsb)
 			SSHORT i, streams[128];
 			SMB map;
 			RSB sort_rsb, *ptr, *end;
-			smb::smb_repeat * item, *end_item;
+			smb_repeat * item, *end_item;
 			irsb_mrg::irsb_mrg_repeat * tail;
 
 			for (i = 0; i < (SSHORT) request->req_count; i++)
@@ -3439,7 +3439,7 @@ static void push_rpbs(TDBB tdbb, REQ request, RSB rsb)
 		{
 			SSHORT i, streams[128];
 			SMB map;
-			smb::smb_repeat * item, *end_item;
+			smb_repeat * item, *end_item;
 
 			map = (SMB) rsb->rsb_arg[0];
 			for (i = 0; i < (SSHORT) request->req_count; i++)
@@ -3460,7 +3460,7 @@ static void push_rpbs(TDBB tdbb, REQ request, RSB rsb)
 			SSHORT i, streams[128];
 			SMB map;
 			RSB sort_rsb, *ptr, *end;
-			smb::smb_repeat * item, *end_item;
+			smb_repeat * item, *end_item;
 			irsb_mrg::irsb_mrg_repeat * tail;
 
 			for (i = 0; i < (SSHORT) request->req_count; i++)
@@ -3589,10 +3589,10 @@ static void restore_record(RPB * rpb)
 		MOVE_FAST(rpb_copy->srpb_rpb, rpb, sizeof(struct rpb));
 		rpb->rpb_record = record;
 
-		ALL_release((FRB) rec_copy);
+		delete rec_copy;
 	}
 	if (rpb_copy)
-		ALL_release((FRB) rpb_copy);
+		delete rpb_copy;
 
 	rpb->rpb_copy = NULL;
 }
@@ -3680,18 +3680,18 @@ static void save_record(TDBB tdbb, RPB * rpb)
 
 	SET_TDBB(tdbb);
 
-	if (record = rpb->rpb_record) {
+	if ( (record = rpb->rpb_record) ) {
 		size = record->rec_length;
-		if (rpb_copy = rpb->rpb_copy) {
-			if (rec_copy = rpb_copy->srpb_rpb->rpb_record)
-				ALL_release((FRB) rec_copy);
+		if ( (rpb_copy = rpb->rpb_copy) ) {
+			if ( (rec_copy = rpb_copy->srpb_rpb->rpb_record) )
+				delete rec_copy;
 		}
 		else
-			rpb->rpb_copy = rpb_copy = (SRPB) ALLOCDV(type_srpb, 0);
+			rpb->rpb_copy = rpb_copy = new(*tdbb->tdbb_default) srpb(); 
 
 		MOVE_FAST(rpb, rpb_copy->srpb_rpb, sizeof(struct rpb));
 		rpb_copy->srpb_rpb->rpb_record = rec_copy =
-			(REC) ALLOCDV(type_rec, size);
+			new(*tdbb->tdbb_default, size) rec();
 
 		rec_copy->rec_length = size;
 		rec_copy->rec_format = record->rec_format;
@@ -3743,27 +3743,25 @@ static void write_merge_block(TDBB tdbb, MFB mfb, ULONG block)
  *	the file doesn't exist, by all means, create one.
  *
  **************************************/
-	SFB sfb;
+	SFB sfb_;
 
-	if (!(sfb = mfb->mfb_sfb)) {
-		sfb = mfb->mfb_sfb =
-			(SFB) ALL_malloc((ULONG) sizeof(struct sfb), ERR_jmp);
-		MOVE_CLEAR(sfb, sizeof(struct sfb));
+	if (!(sfb_ = mfb->mfb_sfb)) {
+		sfb_ = mfb->mfb_sfb = new(*FB_MemoryPool) sfb;
 	}
-	if (!sfb->sfb_file_name) {
+	if (!sfb_->sfb_file_name) {
 		TEXT file_name[128];
 
-		sfb->sfb_file = (int) gds__temp_file(FALSE, SCRATCH, file_name);
-		if (sfb->sfb_file == -1)
-			SORT_error(tdbb->tdbb_status_vector, sfb, "open", isc_io_error,
+		sfb_->sfb_file = (int) gds__temp_file(FALSE, SCRATCH, file_name);
+		if (sfb_->sfb_file == -1)
+			SORT_error(tdbb->tdbb_status_vector, sfb_, "open", isc_io_error,
 					   errno);
-		sfb->sfb_file_name =
-			ALL_malloc((ULONG) (strlen(file_name) + 1), ERR_jmp);
-		strcpy(sfb->sfb_file_name, file_name);
+		sfb_->sfb_file_name = (SCHAR*)
+			MemoryPool::malloc_from_system((ULONG) (strlen(file_name) + 1));
+		strcpy(sfb_->sfb_file_name, file_name);
 	}
 
 	SORT_write_block(tdbb->tdbb_status_vector,
-					 sfb,
+					 sfb_,
 					 mfb->mfb_block_size * block,
 					 mfb->mfb_block_data, mfb->mfb_block_size);
 }

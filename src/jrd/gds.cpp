@@ -53,6 +53,7 @@
 #ifdef DARWIN
 #include <CoreFoundation/CFBundle.h>
 #include <CoreFoundation/CFURL.h>
+#include </usr/include/time.h>
 #endif
 
 #if (defined PC_PLATFORM && !defined NETWARE_386)
@@ -98,7 +99,7 @@
 #endif /* VMS */
 
 
-#include "fbutil/FirebirdConfig.h"
+#include "../fbutil/FirebirdConfig.h"
 
 /* Turn on V4 mutex protection for gds__alloc/free */
 
@@ -232,6 +233,7 @@ typedef struct free {
 	SLONG free_count;
 #endif
 } *FREE;
+
 
 
 #ifdef DEBUG_GDS_ALLOC
@@ -372,7 +374,6 @@ static char ib_prefix_msg_val[MAXPATHLEN];
 #include "../include/fb_types.h"
 #endif
 
-
 typedef struct msg
 {
 	ULONG msg_top_tree;
@@ -467,12 +468,10 @@ static struct
 
 
 #ifdef SHLIB_DEFS
-#define SETJMP		(*_libgds_setjmp)
 #define sprintf		(*_libgds_sprintf)
 #define vsprintf	(*_libgds_vsprintf)
 #define strlen		(*_libgds_strlen)
 #define strcpy		(*_libgds_strcpy)
-#define LONGJMP		(*_libgds_longjmp)
 #define _iob		(*_libgds__iob)
 #define getpid		(*_libgds_getpid)
 #define ib_fprintf	(*_libgds_fprintf)
@@ -503,12 +502,10 @@ static struct
 #define atexit		(*_libgds_atexit)
 #define ib_vfprintf	(*_libgds_vfprintf)
 
-extern int SETJMP();
 extern int sprintf();
 extern int vsprintf();
 extern int strlen();
 extern SCHAR *strcpy();
-extern void LONGJMP();
 extern IB_FILE _iob[];
 extern pid_t getpid();
 extern int ib_fprintf();
@@ -663,18 +660,27 @@ static const struct
 
 
 #ifdef SUPERSERVER
+
 extern SLONG allr_delta_alloc;
+
+} // extern "C"
+
 extern SLONG alld_delta_alloc;
 extern SLONG all_delta_alloc;
+
+extern "C" {
+
 SLONG trace_pools = 0;
 SLONG free_map_debug = 0;
 static void freemap(int cod);
 void gds_print_delta_counters(IB_FILE *);
-#endif
+
+#endif	// SUPERSERVER
 
 
 
 
+#if 0
 #ifdef DEBUG_GDS_ALLOC
 
 void* API_ROUTINE gds__alloc_debug(SLONG size_request,
@@ -915,7 +921,7 @@ void* API_ROUTINE gds__alloc(SLONG size_request)
 	V4_MUTEX_UNLOCK(&alloc_mutex);
 	return (UCHAR *) block + ALLOC_HEADER_SIZE;
 }
-
+#endif
 
 STATUS API_ROUTINE gds__decode(STATUS code, USHORT* fac, USHORT* class_)
 {
@@ -1155,6 +1161,7 @@ void API_ROUTINE isc_encode_timestamp(void *times_arg, GDS_TIMESTAMP * date)
 }
 
 
+#if 0
 ULONG API_ROUTINE gds__free(void* blk)
 {
 /**************************************
@@ -1227,6 +1234,7 @@ ULONG API_ROUTINE gds__free(void* blk)
 	V4_MUTEX_UNLOCK(&alloc_mutex);
 	return released;
 }
+#endif
 
 
 #ifdef DEV_BUILD
@@ -1328,6 +1336,8 @@ static void gds_alloc_validate(ALLOC p)
  *	Test a memory buffer to see if it appears intact.
  *
  **************************************/
+ // JMB:  Need to rework the code for the new pools
+ #if 0
 	USHORT errors = 0;
 
 /* This might be a garbage pointer, so try and validate it first */
@@ -1393,6 +1403,7 @@ static void gds_alloc_validate(ALLOC p)
 		DEV_REPORT(buffer);
 		BREAKPOINT(__LINE__);
 	}
+#endif
 }
 #endif
 
@@ -1415,6 +1426,8 @@ static BOOLEAN gds_alloc_validate_free_pattern(register UCHAR* ptr,
  *	been clobbered.
  *
  **************************************/
+ // JMB: Need to rework the code for the new pool
+ #if 0
 	while (len--)
 	{
 		if (*ptr++ != ALLOC_FREED_PATTERN)
@@ -1428,7 +1441,7 @@ static BOOLEAN gds_alloc_validate_free_pattern(register UCHAR* ptr,
 			return FALSE;
 		}
 	}
-
+#endif
 	return TRUE;
 }
 #endif /* DEBUG_GDS_ALLOC */
@@ -1447,6 +1460,8 @@ static void gds_alloc_validate_freed(ALLOC p)
  *	Test a memory buffer to see if it appears freed.
  *
  **************************************/
+ // JMB: need to rework this code for the new pool
+ #if 0
 	USHORT errors = 0;
 
 /* This might be a garbage pointer, so try and validate it first */
@@ -1481,6 +1496,7 @@ static void gds_alloc_validate_freed(ALLOC p)
 		DEV_REPORT(buffer);
 		BREAKPOINT(__LINE__);
 	}
+#endif
 }
 #endif
 
@@ -1499,7 +1515,8 @@ void gds_alloc_watch(void* p)
  *	Start watching a memory location.
  *
  **************************************/
-
+// JMB: need to rework this for new pools
+#if 0
 	gds_alloc_watch_call_count++;
 
 /* Do we have a new place to watch?  If so, set our watcher */
@@ -1514,6 +1531,7 @@ void gds_alloc_watch(void* p)
 	{
 		gds_alloc_validate(gds_alloc_watchpoint);
 	}
+#endif
 }
 #endif /* DEBUG_GDS_ALLOC */
 
@@ -1533,7 +1551,8 @@ void API_ROUTINE gds_alloc_flag_unfreed(void *blk)
  *	don't report it in gds_alloc_report
  *
  **************************************/
-
+// JMB: need to rework this for the new pools
+#if 0
 /* Point to the start of the block */
 	ALLOC p = (ALLOC) (((UCHAR *) blk) - ALLOC_HEADER_SIZE);
 
@@ -1542,7 +1561,7 @@ void API_ROUTINE gds_alloc_flag_unfreed(void *blk)
 
 /* Flag it as "already known" */
 	p->alloc_flags |= ALLOC_dont_report;
-
+#endif
 }
 #endif /* DEBUG_GDS_ALLOC */
 
@@ -1562,6 +1581,8 @@ void API_ROUTINE gds_alloc_report(ULONG flags, char* filename, int lineno)
  *	Or that might have been clobbered.
  *
  **************************************/
+ // JMB: needs to be reworked for new pools
+ #if 0
 	ALLOC p;
 	IB_FILE *f = NULL;
 	char buffer[150];
@@ -1649,6 +1670,7 @@ void API_ROUTINE gds_alloc_report(ULONG flags, char* filename, int lineno)
 	{
 		ib_fclose(f);
 	}
+#endif
 }
 #endif
 
@@ -2426,19 +2448,19 @@ void API_ROUTINE gds__prefix(TEXT * resultString, TEXT * root)
 #else	// WIN_NT
 #ifdef DARWIN
 			if ( (ibaseBundle = CFBundleGetBundleWithIdentifier(
-				CFSTR(DARWIN_FRAMEWORK_ID)) ) &&
-			(msgFileUrl = CFBundleCopyResourceURL(ibaseBundle,
-				CFSTR(DARWIN_GEN_DIR), NULL, NULL)) &&
-			(msgFilePath = CFURLCopyFileSystemPath(msgFileUrl,
-					kCFURLPOSIXPathStyle)) &&
-			(CFStringGetCString(msgFilePath, ib_prefix_val,
+				CFSTR(DARWIN_FRAMEWORK_ID)) ))
+			if ((msgFileUrl = CFBundleCopyResourceURL(ibaseBundle,
+				CFSTR(DARWIN_GEN_DIR), NULL, NULL)))
+			if ((msgFilePath = CFURLCopyFileSystemPath(msgFileUrl,
+					kCFURLPOSIXPathStyle)))
+			if ( (CFStringGetCString(msgFilePath, ib_prefix_val,
 				MAXPATHLEN, kCFStringEncodingMacRoman ))
 			) { }
 			else
 #endif
 			{
               // Try and get value from config file.
-              const string regPrefix = FirebirdConfig::getSysString("RootDirectory");
+              const Firebird::string regPrefix = FirebirdConfig::getSysString("RootDirectory");
               int len = regPrefix.length();
               if ( len > 0) {
                   if (len > sizeof(ib_prefix_val)) {
@@ -2891,8 +2913,7 @@ int API_ROUTINE gds__print_blr(
 	SLONG offset;
 	SSHORT version, level;
 
-	if (SETJMP(env))
-		return -1;
+	try {
 
 	control = &ctl;
 	level = 0;
@@ -2929,6 +2950,11 @@ int API_ROUTINE gds__print_blr(
 
 	blr_format(control, "blr_eoc");
 	PRINT_LINE;
+
+	}	// try
+	catch (...) {
+		return -1;
+	}
 
 	return 0;
 }
@@ -3137,7 +3163,8 @@ void* API_ROUTINE gds__sys_alloc(SLONG size)
  *	memory pool.
  *
  **************************************/
-
+	return MemoryPool::malloc_from_system(size);
+#if 0
 #ifndef SUPERSERVER
 	return gds__alloc(size);
 
@@ -3210,7 +3237,7 @@ void* API_ROUTINE gds__sys_alloc(SLONG size)
     if (error == ERROR_NOT_ENOUGH_MEMORY)
 	return NULL;
     else
-    	ERR_post (gds__sys_request, gds_arg_string, "VirtualAlloc",
+    	ERR_post (gds_sys_request, gds_arg_string, "VirtualAlloc",
         	  gds_arg_win32, error, 0);
 ***/
 	}
@@ -3226,6 +3253,7 @@ void* API_ROUTINE gds__sys_alloc(SLONG size)
 #endif
 
 #endif /* SUPERSERVER */
+#endif
 }
 
 
@@ -3241,6 +3269,8 @@ SLONG API_ROUTINE gds__sys_free(void* blk)
  *	Free system memory back where it came from.
  *
  **************************************/
+	return MemoryPool::free_from_system(blk);
+#if 0
 
 #ifndef SUPERSERVER
 	return gds__free(blk);
@@ -3283,7 +3313,7 @@ SLONG API_ROUTINE gds__sys_free(void* blk)
 	if (!VirtualFree((LPVOID) blk, (DWORD) 0, MEM_RELEASE))
 	{
 		const DWORD dwErr = GetLastError();
-		ERR_post(gds__sys_request, gds_arg_string, "VirtualFree",
+		ERR_post(gds_sys_request, gds_arg_string, "VirtualFree",
 				 gds_arg_win32, dwErr, 0);
 	}
 #define SYS_FREE_DEFINED
@@ -3295,6 +3325,7 @@ SLONG API_ROUTINE gds__sys_free(void* blk)
 	return 0L;
 #endif
 #endif /* SUPERSERVER */
+#endif
 }
 
 
@@ -3837,7 +3868,7 @@ static void blr_error(CTL control, TEXT * string, TEXT * arg1)
 	blr_format(control, string, arg1);
 	offset = 0;
 	PRINT_LINE;
-	LONGJMP(env, -1);
+	Firebird::status_longjmp_error::raise(-1);
 }
 
 

@@ -64,7 +64,7 @@ BKM BKM_allocate(RSB rsb, USHORT length)
 /* allocate the bookmark and link it into the 
    linked list hanging off the attachment block */
 
-	bookmark = (BKM) ALLOCPV(type_bkm, length);
+	bookmark = new(*dbb->dbb_permanent, length) bkm();
 
 	attachment = tdbb->tdbb_attachment;
 	bookmark->bkm_next = attachment->att_bookmarks;

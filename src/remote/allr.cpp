@@ -95,7 +95,7 @@ UCHAR* DLL_EXPORT ALLR_alloc(ULONG size)
 		*status_vector = gds_arg_end;
 	}
 
-	LONGJMP(*trdb->trdb_setjmp, gds_virmemexh);
+	Firebird::status_longjmp_error::raise(gds_virmemexh);
 	return NULL;	/* compiler silencer */
 }
 
@@ -138,7 +138,7 @@ BLK DLL_EXPORT ALLR_block(UCHAR type, ULONG count)
 			}
 		}
 
-		LONGJMP(*trdb->trdb_setjmp, gds_bug_check);
+		Firebird::status_longjmp_error::raise(gds_bug_check);
 	}
 
 	// Compute block length, recasting count to make sure the calculation

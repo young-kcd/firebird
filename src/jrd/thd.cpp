@@ -461,7 +461,7 @@ int THD_mutex_destroy(MUTX_T * mutex)
 
 #else
 
-	return pthread_mutex_destroy(mutex);
+	return pthread_mutex_destroy(&mutex->mutx_mutex);
 
 #endif /* HP10 */
 
@@ -493,7 +493,7 @@ int THD_mutex_init(MUTX_T * mutex)
 
 #else
 
-	return pthread_mutex_init(mutex, NULL);
+	return pthread_mutex_init(&mutex->mutx_mutex, NULL);
 
 #endif /* HP10 */
 }
@@ -524,7 +524,7 @@ int THD_mutex_lock(MUTX_T * mutex)
 
 #else
 
-	return pthread_mutex_lock(mutex);
+	return pthread_mutex_lock(&mutex->mutx_mutex);
 
 #endif /* HP10 */
 }
@@ -555,7 +555,7 @@ int THD_mutex_unlock(MUTX_T * mutex)
 
 #else
 
-	return pthread_mutex_unlock(mutex);
+	return pthread_mutex_unlock(&mutex->mutx_mutex);
 
 #endif /* HP10 */
 }
@@ -2059,7 +2059,7 @@ static int thread_start(
 	pthread_attr_setdetachstate(&pattr, PTHREAD_CREATE_DETACHED);
 #endif
 
-	state = pthread_create(&thread, &pattr, routine, arg);
+	state = pthread_create(&thread, &pattr, (void*(*)(void*))routine, arg);
 	pthread_attr_destroy(&pattr);
 	return state;
 

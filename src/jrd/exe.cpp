@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: exe.cpp,v 1.3 2001-07-29 17:42:22 skywalker Exp $
+$Id: exe.cpp,v 1.4 2001-12-24 02:50:51 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -77,6 +77,9 @@ $Id: exe.cpp,v 1.3 2001-07-29 17:42:22 skywalker Exp $
 #include "TestStck.h"
 #endif
 
+#ifdef DARWIN
+#include </usr/include/time.h>
+#endif
 
 extern "C" {
 
@@ -186,52 +189,60 @@ void EXE_assignment(TDBB tdbb, NOD node)
  *	Perform an assignment
  *
  **************************************/
-	register REQ request;
-	DSC *to_desc, *from_desc, *missing, *indicator, temp;
-	register NOD to;
-	REC record;
-	SSHORT null, id, len;
+
+	DSC temp;
 
 	DEV_BLKCHK(node, type_nod);
 
 	SET_TDBB(tdbb);
-	request = tdbb->tdbb_request;
+	REQ request = tdbb->tdbb_request;
 	BLKCHK(node, type_nod);
 
 /* Get descriptors of receiving and sending fields/parmaters, variables, etc. */
 
-	missing = NULL;
-	if (node->nod_arg[e_asgn_missing])
+	DSC* missing = NULL;
+	if (node->nod_arg[e_asgn_missing]) {
 		missing = EVL_expr(tdbb, node->nod_arg[e_asgn_missing]);
+	}
 
-	to = node->nod_arg[e_asgn_to];
-	to_desc = EVL_assign_to(tdbb, to);
+	NOD  to      = node->nod_arg[e_asgn_to];
+	DSC* to_desc = EVL_assign_to(tdbb, to);
+
 	request->req_flags &= ~req_null;
-	from_desc = EVL_expr(tdbb, node->nod_arg[e_asgn_from]);
-	null = (request->req_flags & req_null) ? -1 : 0;
 
-	if (!null && missing && MOV_compare(missing, from_desc) == 0)
+	DSC* from_desc = EVL_expr(tdbb, node->nod_arg[e_asgn_from]);
+
+	SSHORT null = (request->req_flags & req_null) ? -1 : 0;
+
+	if (!null && missing && MOV_compare(missing, from_desc) == 0) {
 		null = -1;
+	}
 
 /* If the value is non-missing, move/convert it.  Otherwise fill the
    field with appropriate nulls. */
 
-	if (!null) {
+	if (!null)
+	{
 		/* if necessary and appropriate, use the indicator variable */
 
-		if (to->nod_type == nod_argument && to->nod_arg[e_arg_indicator]) {
-			indicator = EVL_assign_to(tdbb, to->nod_arg[e_arg_indicator]);
-			temp.dsc_dtype = dtype_short;
-			temp.dsc_length = sizeof(SSHORT);
-			temp.dsc_scale = 0;
+		if (to->nod_type == nod_argument && to->nod_arg[e_arg_indicator])
+		{
+			DSC* indicator    = EVL_assign_to(tdbb, to->nod_arg[e_arg_indicator]);
+			temp.dsc_dtype    = dtype_short;
+			temp.dsc_length   = sizeof(SSHORT);
+			temp.dsc_scale    = 0;
 			temp.dsc_sub_type = 0;
+
+			SSHORT len;
 
 			if ((from_desc->dsc_dtype <= dtype_varying) &&
 				(to_desc->dsc_dtype <= dtype_varying) &&
 				(TEXT_LEN(from_desc) > TEXT_LEN(to_desc)))
+			{
 				len = TEXT_LEN(from_desc);
-			else
+			} else {
 				len = 0;
+			}
 
 			temp.dsc_address = (UCHAR *) & len;
 			MOV_move(&temp, indicator);
@@ -239,10 +250,11 @@ void EXE_assignment(TDBB tdbb, NOD node)
 			if (len) {
 				temp = *from_desc;
 				temp.dsc_length = TEXT_LEN(to_desc);
-				if (temp.dsc_dtype == dtype_cstring)
+				if (temp.dsc_dtype == dtype_cstring) {
 					temp.dsc_length += 1;
-				else if (temp.dsc_dtype == dtype_varying)
+				} else if (temp.dsc_dtype == dtype_varying) {
 					temp.dsc_length += 2;
+				}
 				from_desc = &temp;
 			}
 		}
@@ -281,11 +293,13 @@ void EXE_assignment(TDBB tdbb, NOD node)
 		to_desc->dsc_flags &= ~DSC_null;
 	}
 	else if (node->nod_arg[e_asgn_missing2] &&
-			 (missing = EVL_expr(tdbb, node->nod_arg[e_asgn_missing2]))) {
+			 (missing = EVL_expr(tdbb, node->nod_arg[e_asgn_missing2])))
+	{
 		MOV_move(missing, to_desc);
 		to_desc->dsc_flags |= DSC_null;
 	}
-	else {
+	else
+	{
 		UCHAR *p;
 		USHORT l;
 
@@ -295,10 +309,11 @@ void EXE_assignment(TDBB tdbb, NOD node)
 		case dtype_text:
 			/* YYY - not necessarily the right thing to do */
 			/* for text formats that don't have trailing spaces */
-			if (l)
-				do
+			if (l) {
+				do {
 					*p++ = ' ';
-				while (--l);
+				} while (--l);
+			}
 			break;
 
 		case dtype_cstring:
@@ -320,15 +335,18 @@ void EXE_assignment(TDBB tdbb, NOD node)
 
 /* Handle the null flag as appropriate for fields and message arguments. */
 
-	if (to->nod_type == nod_field) {
-		id = (USHORT) to->nod_arg[e_fld_id];
-		record = request->req_rpb[(int) to->nod_arg[e_fld_stream]].rpb_record;
-		if (null)
+	if (to->nod_type == nod_field)
+	{
+		SSHORT id = (USHORT) to->nod_arg[e_fld_id];
+		REC record = request->req_rpb[(int) to->nod_arg[e_fld_stream]].rpb_record;
+		if (null) {
 			SET_NULL(record, id);
-		else
+		} else {
 			CLEAR_NULL(record, id);
+		}
 	}
-	else if (to->nod_type == nod_argument && to->nod_arg[e_arg_flag]) {
+	else if (to->nod_type == nod_argument && to->nod_arg[e_arg_flag])
+	{
 		to_desc = EVL_assign_to(tdbb, to->nod_arg[e_arg_flag]);
 
 		/* If the null flag is a string with an effective length of one,
@@ -337,9 +355,12 @@ void EXE_assignment(TDBB tdbb, NOD node)
 		if (null &&
 			to_desc->dsc_dtype <= dtype_varying &&
 			to_desc->dsc_length <=
-			((to_desc->dsc_dtype == dtype_text) ? 1 : ((to_desc->dsc_dtype ==
-														dtype_cstring) ? 2 :
-													   3))) null = 1;
+			((to_desc->dsc_dtype == dtype_text) ? 1 :
+			((to_desc->dsc_dtype == dtype_cstring) ? 2 :
+													3)))
+		{
+			null = 1;
+		}
 
 		temp.dsc_dtype = dtype_short;
 		temp.dsc_length = sizeof(SSHORT);
@@ -444,7 +465,7 @@ REQ EXE_find_request(TDBB tdbb, REQ request, BOOLEAN validate)
 		   this attachment. If not found, return first inactive request. */
 
 		clones = (vector =
-				  request->req_sub_requests) ? (vector->vec_count - 1) : 0;
+				  request->req_sub_requests) ? (vector->count() - 1) : 0;
 
 		for (n = 1; n <= clones; n++) {
 			next = CMP_clone_request(tdbb, request, n, validate);
@@ -543,6 +564,8 @@ void EXE_receive(TDBB		tdbb,
 		ERR_post(gds_req_sync, 0);
 	}
 
+	try {
+
 	if (request->req_flags & req_proc_fetch)
 	{
 		/* request->req_proc_sav_point stores all the request savepoints.
@@ -563,16 +586,6 @@ void EXE_receive(TDBB		tdbb,
 		
 		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 		tdbb->tdbb_setjmp = (UCHAR *) env;
-
-		if (SETJMP(env))
-		{
-			tdbb->tdbb_setjmp = (UCHAR *) old_env;
-			save_sav_point = transaction->tra_save_point;
-			transaction->tra_save_point = request->req_proc_sav_point;
-			request->req_proc_sav_point = save_sav_point;
-			release_proc_save_points(request);
-			LONGJMP(reinterpret_cast < jmp_buf & >(old_env), -1);
-		}
 	}
 
 	if (request->req_message->nod_type == nod_stall
@@ -613,6 +626,17 @@ void EXE_receive(TDBB		tdbb,
 		request->req_proc_sav_point = save_sav_point;
 		VIO_merge_proc_sav_points(tdbb, transaction,
 								  &request->req_proc_sav_point);
+	}
+
+	}	//try
+	catch (...)
+	{
+		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+		save_sav_point = transaction->tra_save_point;
+		transaction->tra_save_point = request->req_proc_sav_point;
+		request->req_proc_sav_point = save_sav_point;
+		release_proc_save_points(request);
+		Firebird::status_longjmp_error::raise(-1);
 	}
 }
 
@@ -853,15 +877,14 @@ void EXE_start(TDBB tdbb, REQ request, TRA transaction)
 	if (request->req_invariants) {
 		/* Set all invariants to not computed. */
 
-		NOD *ptr, *end;
+		vec::iterator ptr, end;
 		USHORT *invariant_flags;
 		VLU impure;
 
-		ptr = (NOD *) request->req_invariants->vec_object;
-		end = ptr + request->req_invariants->vec_count;
-		for (; ptr < end; ptr++)
+		for (ptr = request->req_invariants->begin(),
+			end = request->req_invariants->end(); ptr < end; ptr++)
 			if (*ptr) {
-				impure = (VLU) ((SCHAR *) request + (*ptr)->nod_impure);
+				impure = (VLU) ((SCHAR *) request + ((NOD)(*ptr))->nod_impure);
 				invariant_flags = (USHORT *) & impure->vlu_string;
 				*invariant_flags = 0;
 			}
@@ -905,8 +928,8 @@ void EXE_unwind(TDBB tdbb, REQ request)
  *	simple since nothing really needs to be done.
  *
  **************************************/
-	BLK *ptr, *end;
-	struct plb *old_pool;
+	vec::iterator ptr, end;
+	JrdMemoryPool *old_pool;
 	REQ old_request;
 
 	DEV_BLKCHK(request, type_req);
@@ -920,10 +943,10 @@ void EXE_unwind(TDBB tdbb, REQ request)
 			old_request = tdbb->tdbb_request;
 			tdbb->tdbb_request = request;
 			tdbb->tdbb_transaction = request->req_transaction;
-			for (ptr = request->req_fors->vec_object, end =
-				 ptr + request->req_fors->vec_count; ptr < end; ptr++)
+			for (ptr = request->req_fors->begin(), end =
+				 request->req_fors->end(); ptr < end; ptr++)
 				if (*ptr)
-					RSE_close(tdbb, reinterpret_cast < struct rsb *>(*ptr));
+					RSE_close(tdbb, reinterpret_cast < class Rsb *>((Rsb*)(*ptr)));
 			tdbb->tdbb_default = old_pool;
 			tdbb->tdbb_request = old_request;
 		}
@@ -966,7 +989,7 @@ static NOD erase(TDBB tdbb, NOD node, SSHORT which_trig)
 	FMT format;
 	TRA transaction;
 #ifdef PC_ENGINE
-	LCK implicit_lock = NULL, record_locking;
+	LCK implicit_lock = NULL;
 	RSB rsb = NULL;
 	JMP_BUF env, *old_env;
 	IRSB impure;
@@ -1061,11 +1084,15 @@ static NOD erase(TDBB tdbb, NOD node, SSHORT which_trig)
    mode transaction, we already have an exclusive lock on
    the table, so don't bother */
 
-	if (!(transaction->tra_flags & TRA_degree3)) {
+	try {
+
+	if (!(transaction->tra_flags & TRA_degree3))
+	{
 		/* check whether record locking is turned on */
 
-		record_locking = RLCK_record_locking(relation);
-		if (record_locking->lck_physical != LCK_PR) {
+		LCK record_locking = RLCK_record_locking(relation);
+		if (record_locking->lck_physical != LCK_PR)
+		{
 			/* get an implicit lock on the record */
 
 			implicit_lock = implicit_record_lock(transaction, rpb);
@@ -1075,11 +1102,6 @@ static NOD erase(TDBB tdbb, NOD node, SSHORT which_trig)
 
 			old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 			tdbb->tdbb_setjmp = (UCHAR *) env;
-			if (SETJMP(env)) {
-				tdbb->tdbb_setjmp = (UCHAR *) old_env;
-				RLCK_unlock_record_implicit(implicit_lock, 0);
-				LONGJMP(old_env, -1);
-			}
 		}
 	}
 #endif
@@ -1106,30 +1128,44 @@ static NOD erase(TDBB tdbb, NOD node, SSHORT which_trig)
 		which_trig != PRE_TRIG &&
 		(trigger = execute_triggers(tdbb, &relation->rel_post_erase,
 									rpb->rpb_record, 0)))
-			trigger_failure(tdbb, trigger);
+	{
+		trigger_failure(tdbb, trigger);
+	}
 
 /* call IDX_erase (which checks constraints) after all post erase triggers 
    have fired. This is required for cascading referential integrity, which 
    can be implemented as post_erase triggers */
 
-	if (!relation->rel_file & !relation->rel_view_rse) {
+	if (!relation->rel_file & !relation->rel_view_rse)
+	{
 		REL bad_relation;
 		USHORT bad_index;
-		IDX_E error_code;
 
-		if (error_code =
-			IDX_erase(tdbb, rpb, transaction, &bad_relation,
-					  &bad_index)) ERR_duplicate_error(error_code,
-													   bad_relation,
-													   bad_index);
+		IDX_E error_code =
+			IDX_erase(tdbb, rpb, transaction, &bad_relation, &bad_index);
+
+		if (error_code) {
+			ERR_duplicate_error(error_code, bad_relation, bad_index);
+		}
 	}
 
 	request->req_records_deleted++;
 
-	if (transaction != dbb->dbb_sys_trans)
+	if (transaction != dbb->dbb_sys_trans) {
 		--transaction->tra_save_point->sav_verb_count;
+	}
 
 #ifdef PC_ENGINE
+
+	}	// try
+	catch (...) {
+		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+		if (implicit_lock) {
+			RLCK_unlock_record_implicit(implicit_lock, 0);
+		}
+		Firebird::status_longjmp_error::raise(-1);
+	}
+
 	if (implicit_lock) {
 		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		RLCK_unlock_record_implicit(implicit_lock, 0);
@@ -1137,8 +1173,9 @@ static NOD erase(TDBB tdbb, NOD node, SSHORT which_trig)
 
 /* if the stream is navigational, it is now positioned on a crack */
 
-	if (rsb)
+	if (rsb) {
 		RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
+	}
 #endif
 #else
 	VIO_erase(rpb, transaction, node->nod_arg[e_erase_sql]);
@@ -1218,14 +1255,14 @@ static void execute_procedure(TDBB tdbb, NOD node)
 	SLONG save_point_number;
 	TRA transaction;
 	JMP_BUF env, *old_env;
-	struct plb *old_pool;
+	JrdMemoryPool *old_pool;
 
 	SET_TDBB(tdbb);
 	BLKCHK(node, type_nod);
 
 	request = tdbb->tdbb_request;
 
-	if (temp = node->nod_arg[e_esp_inputs]) {
+	if ( (temp = node->nod_arg[e_esp_inputs]) ) {
 		NOD *ptr, *end;
 
 		for (ptr = temp->nod_arg, end = ptr + temp->nod_count; ptr < end;
@@ -1233,12 +1270,12 @@ static void execute_procedure(TDBB tdbb, NOD node)
 			EXE_assignment(tdbb, *ptr);
 	}
 
-	if (in_message = node->nod_arg[e_esp_in_msg]) {
+	if ( (in_message = node->nod_arg[e_esp_in_msg]) ) {
 		format = (FMT) in_message->nod_arg[e_msg_format];
 		in_msg_length = format->fmt_length;
 		in_msg = (SCHAR *) request + in_message->nod_impure;
 	}
-	if (out_message = node->nod_arg[e_esp_out_msg]) {
+	if ( (out_message = node->nod_arg[e_esp_out_msg]) ) {
 		format = (FMT) out_message->nod_arg[e_msg_format];
 		out_msg_length = format->fmt_length;
 		out_msg = (SCHAR *) request + out_message->nod_impure;
@@ -1251,7 +1288,7 @@ static void execute_procedure(TDBB tdbb, NOD node)
 		format = (FMT) procedure->prc_output_msg->nod_arg[e_msg_format];
 		out_msg_length = format->fmt_length;
 		temp_buffer =
-			(STR) ALLOCDV(type_str, out_msg_length + DOUBLE_ALIGN - 1);
+			new(*tdbb->tdbb_default, out_msg_length + DOUBLE_ALIGN - 1) str();
 		out_msg =
 			(SCHAR *) FB_ALIGN((U_IPTR) temp_buffer->str_data, DOUBLE_ALIGN);
 	}
@@ -1266,17 +1303,7 @@ static void execute_procedure(TDBB tdbb, NOD node)
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
 
-	if (SETJMP(env)) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		tdbb->tdbb_default = old_pool;
-		tdbb->tdbb_request = request;
-		EXE_unwind(tdbb, proc_request);
-		proc_request->req_flags &= ~(req_in_use | req_proc_fetch);
-		proc_request->req_timestamp = 0;
-		if (temp_buffer)
-			ALL_release(reinterpret_cast < frb * >(temp_buffer));
-		LONGJMP(reinterpret_cast < jmp_buf & >(old_env), -1);
-	}
+	try {
 
 	transaction = request->req_transaction;
 	save_point_number = transaction->tra_save_point->sav_number;
@@ -1302,11 +1329,23 @@ static void execute_procedure(TDBB tdbb, NOD node)
 			VIO_verb_cleanup(tdbb, transaction);
 	}
 
+	}	// try
+	catch (...) {
+		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+		tdbb->tdbb_default = old_pool;
+		tdbb->tdbb_request = request;
+		EXE_unwind(tdbb, proc_request);
+		proc_request->req_flags &= ~(req_in_use | req_proc_fetch);
+		proc_request->req_timestamp = 0;
+		delete temp_buffer;
+		Firebird::status_longjmp_error::raise(-1);
+	}
+
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 	tdbb->tdbb_default = old_pool;
 	EXE_unwind(tdbb, proc_request);
 	tdbb->tdbb_request = request;
-	if (temp = node->nod_arg[e_esp_outputs]) {
+	if ( (temp = node->nod_arg[e_esp_outputs]) ) {
 		NOD *ptr, *end;
 
 		for (ptr = temp->nod_arg, end = ptr + temp->nod_count; ptr < end;
@@ -1314,7 +1353,7 @@ static void execute_procedure(TDBB tdbb, NOD node)
 			EXE_assignment(tdbb, *ptr);
 	}
 	if (temp_buffer)
-		ALL_release(reinterpret_cast < frb * >(temp_buffer));
+		delete temp_buffer;
 	proc_request->req_attachment = NULL;
 	proc_request->req_flags &= ~(req_in_use | req_proc_fetch);
 	proc_request->req_timestamp = 0;
@@ -1337,7 +1376,8 @@ static REQ execute_triggers(
  *	if any blow up.
  *
  **************************************/
-	REQ *ptr, *end, result;
+	REQ result;
+	vec::iterator ptr, end;
 	VOLATILE REQ trigger = NULL;
 	TRA transaction;
 	VOLATILE VEC vector;
@@ -1359,19 +1399,10 @@ static REQ execute_triggers(
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
 
-	if (SETJMP(env)) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		if (vector != *triggers)
-			release_triggers(tdbb, vector);
-		if (!trigger)
-			LONGJMP(reinterpret_cast < jmp_buf & >(old_env), -1);
-		else
-			return trigger;
-	}
+	try {
 
-	for (ptr = (REQ *) vector->vec_object, end = ptr + vector->vec_count;
-		 ptr < end; ptr++) {
-		trigger = EXE_find_request(tdbb, *ptr, FALSE);
+	for (ptr = vector->begin(), end = vector->end(); ptr < end; ptr++) {
+		trigger = EXE_find_request(tdbb, (REQ)(*ptr), FALSE);
 		trigger->req_rpb[0].rpb_record = old_rec;
 		trigger->req_rpb[1].rpb_record = new_rec;
 		trigger->req_timestamp = tdbb->tdbb_request->req_timestamp;
@@ -1391,6 +1422,18 @@ static REQ execute_triggers(
 		release_triggers(tdbb, vector);
 
 	return result;
+
+	}	// try
+	catch (...) {
+		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+		if (vector != *triggers) {
+			release_triggers(tdbb, vector);
+		}
+		if (!trigger) {
+			Firebird::status_longjmp_error::raise(-1);
+		}
+		return trigger;
+	}
 }
 #endif
 
@@ -1521,16 +1564,13 @@ static LCK implicit_record_lock(TRA transaction, RPB * rpb)
  *	a record that someone has explicitly locked.
  *
  **************************************/
-	LCK lock, record_locking;
-	REL relation;
-	TDBB tdbb;
 
-	tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
 
 	DEV_BLKCHK(transaction, type_tra);
 
-	relation = rpb->rpb_relation;
-	record_locking = relation->rel_record_locking;
+	REL relation = rpb->rpb_relation;
+	LCK record_locking = relation->rel_record_locking;
 
 /* occasionally we should check whether we really still need to 
    do record locking; this is defined as RECORD_LOCK_CHECK_INTERVAL--
@@ -1540,10 +1580,14 @@ static LCK implicit_record_lock(TRA transaction, RPB * rpb)
 	if ((record_locking->lck_physical == LCK_none) &&
 		!(relation->rel_lock_total % RECORD_LOCK_CHECK_INTERVAL) &&
 		LCK_lock_non_blocking(tdbb, record_locking, LCK_PR, FALSE))
+	{
 		return NULL;
+	}
 
-	if (!(lock = RLCK_lock_record_implicit(transaction, rpb, LCK_SW, 0, 0)))
+	LCK lock = RLCK_lock_record_implicit(transaction, rpb, LCK_SW, 0, 0);
+	if (!lock) {
 		ERR_post(gds_record_lock, 0);
+	}
 
 	return lock;
 }
@@ -1572,7 +1616,7 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 	VOLATILE NOD node, top_node = NULL, prev_node;
 	TRA transaction;
 	JMP_BUF env, *old_env;
-	struct plb *old_pool;
+	JrdMemoryPool *old_pool;
 #if defined(DEBUG_GDS_ALLOC) && FALSE
 	int node_type;
 #endif
@@ -1630,34 +1674,7 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 	tdbb->tdbb_setjmp = (UCHAR *) env;
 	error_pending = FALSE;
 
-	if (SETJMP(env)) {
-		/* If the database is already bug-checked, then get out. */
-		if (dbb->dbb_flags & DBB_bugcheck)
-			LONGJMP(reinterpret_cast < jmp_buf & >(old_env),
-					(int) tdbb->tdbb_status_vector[1]);
-
-#ifdef GATEWAY
-		/* Unwind request from connected DBMS's point of view.
-		   Set up special error handling in case something
-		   happens there. */
-
-		if (!SETJMP(env))
-			FRGN_unwind(request);
-
-		/* Continue with normal JRD unwind */
-#endif
-
-		/* Since an error happened, the current savepoint needs to be undone. */
-		if (transaction != dbb->dbb_sys_trans) {
-			++transaction->tra_save_point->sav_verb_count;
-			VERB_CLEANUP;
-		}
-
-		error_pending = TRUE;
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		request->req_operation = req::req_unwind;
-		request->req_label = 0;
-	}
+	try {
 
 /* Execute stuff until we drop */
 
@@ -1703,8 +1720,8 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 				if (variable->vlu_desc.dsc_dtype <= dtype_varying
 					&& !variable->vlu_string) {
 					variable->vlu_string =
-						(STR) ALLOCDV(type_str,
-									  variable->vlu_desc.dsc_length);
+						new(*tdbb->tdbb_default,
+									  variable->vlu_desc.dsc_length) str();
 					variable->vlu_string->str_length =
 						variable->vlu_desc.dsc_length;
 					variable->vlu_desc.dsc_address =
@@ -1886,7 +1903,7 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 							VERB_CLEANUP;
 						}
 					}
-					if (handlers = node->nod_arg[e_blk_handlers]) {
+					if ( (handlers = node->nod_arg[e_blk_handlers]) ) {
 						ULONG prev_req_error_handler;
 
 						node = node->nod_parent;
@@ -2348,12 +2365,67 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
    longjmp'ed to the top of looper, and therefore that the last 
    savepoint has already been deleted */
 
-	if (request->req_flags & req_abort)
-		ERR_post(gds_req_sync, 0);
+		if (request->req_flags & req_abort) {
+			ERR_post(gds_req_sync, 0);
+		}
+
+	}	// try
+	catch (...) {
+		/* If the database is already bug-checked, then get out. */
+		if (dbb->dbb_flags & DBB_bugcheck) {
+			Firebird::status_longjmp_error::raise(tdbb->tdbb_status_vector[1]);
+		}
+
+#ifdef GATEWAY
+		try {
+
+			/* Unwind request from connected DBMS's point of view.
+			   Set up special error handling in case something
+			   happens there. */
+
+				FRGN_unwind(request);
+
+			/* Continue with normal JRD unwind */
+
+		}	// try
+		catch (...) {
+		}
+
+#endif
+
+		/* Since an error happened, the current savepoint needs to be undone. */
+		if (transaction != dbb->dbb_sys_trans) {
+			++transaction->tra_save_point->sav_verb_count;
+			VERB_CLEANUP;
+		}
+
+		error_pending = TRUE;
+		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+		request->req_operation = req::req_unwind;
+		request->req_label = 0;
+	}
 
 	return node;
 }
 
+
+#ifdef PC_ENGINE
+// TMN: Quick wrapper to remove one try/catch
+class LCK_RAII_wrapper
+{
+	explicit LCK_RAII_wrapper(LCK lock) : l(lock) {}
+	~LCK_RAII_wrapper() {
+		if (l) {
+		}
+	}
+
+	LCK l;
+
+private:
+	LCK_RAII_wrapper(const LCK_RAII_wrapper&);	// no impl.
+	void operator=(const LCK_RAII_wrapper&);	// no impl.
+};
+#endif
 
 static NOD modify(TDBB tdbb, register NOD node, SSHORT which_trig)
 {
@@ -2468,20 +2540,19 @@ static NOD modify(TDBB tdbb, register NOD node, SSHORT which_trig)
 		   will be able to read or write the record but not when an explicit
 		   lock has been taken out */
 
-		if (!(transaction->tra_flags & TRA_degree3)) {
+		try {
+
+		if (!(transaction->tra_flags & TRA_degree3))
+		{
 			record_locking = RLCK_record_locking(relation);
-			if (record_locking->lck_physical != LCK_PR) {
+			if (record_locking->lck_physical != LCK_PR)
+			{
 				implicit_lock = implicit_record_lock(transaction, org_rpb);
 
 				/* set up to catch any errors so that we can release the lock */
 
 				old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 				tdbb->tdbb_setjmp = (UCHAR *) env;
-				if (SETJMP(env)) {
-					tdbb->tdbb_setjmp = (UCHAR *) old_env;
-					RLCK_unlock_record_implicit(implicit_lock, 0);
-					LONGJMP(old_env, -1);
-				}
 			}
 		}
 #endif
@@ -2494,29 +2565,35 @@ static NOD modify(TDBB tdbb, register NOD node, SSHORT which_trig)
 			(trigger = execute_triggers(tdbb, &relation->rel_pre_modify,
 										org_rpb->rpb_record,
 										new_rpb->rpb_record)))
-				trigger_failure(tdbb, trigger);
+		{
+			trigger_failure(tdbb, trigger);
+		}
 
-		if (node->nod_arg[e_mod_validate])
+		if (node->nod_arg[e_mod_validate]) {
 			validate(tdbb, node->nod_arg[e_mod_validate]);
+		}
 
 		if (relation->rel_file)
+		{
 			EXT_modify(org_rpb, new_rpb,
-					   reinterpret_cast < int *>(transaction));
-		else if (!relation->rel_view_rse) {
+					   reinterpret_cast<int*>(transaction));
+		}
+		else if (!relation->rel_view_rse)
+		{
 			SSHORT bad_index;
 			REL bad_relation;
 			IDX_E error_code;
 
 			VIO_modify(tdbb, org_rpb, new_rpb, transaction);
-			if (error_code = IDX_modify(tdbb,
-										org_rpb,
-										new_rpb,
-										transaction,
-										&bad_relation,
-										reinterpret_cast <
-										USHORT *
-										>(&bad_index)))
-					ERR_duplicate_error(error_code, bad_relation, bad_index);
+			error_code = IDX_modify(tdbb,
+									org_rpb,
+									new_rpb,
+									transaction,
+									&bad_relation,
+									reinterpret_cast<USHORT*>(&bad_index));
+			if (error_code) {
+				ERR_duplicate_error(error_code, bad_relation, bad_index);
+			}
 		}
 
 		if (relation->rel_post_modify &&
@@ -2524,32 +2601,46 @@ static NOD modify(TDBB tdbb, register NOD node, SSHORT which_trig)
 			(trigger = execute_triggers(tdbb, &relation->rel_post_modify,
 										org_rpb->rpb_record,
 										new_rpb->rpb_record)))
-				trigger_failure(tdbb, trigger);
+		{
+			trigger_failure(tdbb, trigger);
+		}
 
 		/* now call IDX_modify_check_constrints after all post modify triggers 
 		   have fired.  This is required for cascading referential integrity, 
 		   which can be implemented as post_erase triggers */
 
-		if (!relation->rel_file && !relation->rel_view_rse) {
+		if (!relation->rel_file && !relation->rel_view_rse)
+		{
 			SSHORT bad_index;
 			REL bad_relation;
 			IDX_E error_code;
 
-			if (error_code = IDX_modify_check_constraints(tdbb,
+			if ( (error_code = IDX_modify_check_constraints(tdbb,
 														  org_rpb,
 														  new_rpb,
 														  transaction,
 														  &bad_relation,
 														  reinterpret_cast <
 														  USHORT *
-														  >(&bad_index)))
+														  >(&bad_index))) )
 					ERR_duplicate_error(error_code, bad_relation, bad_index);
 		}
 
-		if (transaction != dbb->dbb_sys_trans)
+		if (transaction != dbb->dbb_sys_trans) {
 			--transaction->tra_save_point->sav_verb_count;
+		}
 
 #ifdef PC_ENGINE
+
+		}	// try
+		catch (...) {
+			tdbb->tdbb_setjmp = (UCHAR *) old_env;
+			if (implicit_lock) {
+				RLCK_unlock_record_implicit(implicit_lock, 0);
+			}
+			Firebird::status_longjmp_error::raise(-1);
+		}
+
 		if (implicit_lock) {
 			tdbb->tdbb_setjmp = (UCHAR *) old_env;
 			RLCK_unlock_record_implicit(implicit_lock, 0);
@@ -2710,7 +2801,7 @@ static void release_blobs(TDBB tdbb, REQ request)
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(request, type_req);
 
-	if (transaction = request->req_transaction) {
+	if ( (transaction = request->req_transaction) ) {
 		DEV_BLKCHK(transaction, type_tra);
 
 		/* Release blobs assigned by this request */
@@ -2805,21 +2896,20 @@ static void release_triggers(TDBB tdbb, VEC vector)
  *	Release vector of triggers if inactive.
  *
  **************************************/
-	REQ *ptr, *end;
+	vec::iterator ptr, end;
 
 	SET_TDBB(tdbb);
 
-	for (ptr = (REQ *) vector->vec_object, end = ptr + vector->vec_count;
-		 ptr < end; ptr++)
-		if (*ptr && CMP_clone_active(*ptr))
+	// JMB todo: Fix data type in the vector
+	for (ptr = vector->begin(), end = vector->end(); ptr < end; ptr++)
+		if (*ptr && CMP_clone_active((REQ)(*ptr)))
 			return;
 
-	for (ptr = (REQ *) vector->vec_object, end = ptr + vector->vec_count;
-		 ptr < end; ptr++)
+	for (ptr = vector->begin(), end = vector->end(); ptr < end; ptr++)
 		if (*ptr)
-			CMP_release(tdbb, *ptr);
+			CMP_release(tdbb, (REQ)(*ptr));
 
-	ALL_release(reinterpret_cast < frb * >(vector));
+	delete vector;
 }
 
 
@@ -3403,7 +3493,7 @@ static NOD store(TDBB tdbb, register NOD node, SSHORT which_trig)
 				continue;
 			p = record->rec_data + (SLONG) desc->dsc_address;
 			if (TEST_NULL(record, n)) {
-				if (length = desc->dsc_length)
+				if ( (length = desc->dsc_length) )
 					do
 						*p++ = 0;
 					while (--length);
@@ -3414,7 +3504,7 @@ static NOD store(TDBB tdbb, register NOD node, SSHORT which_trig)
 				vary = (VARY *) p;
 				if ((length = desc->dsc_length - sizeof(USHORT)) >
 					vary->vary_length) {
-					p = vary->vary_string + vary->vary_length;
+					p = reinterpret_cast<UCHAR*>(vary->vary_string + vary->vary_length);
 					length -= vary->vary_length;
 					do
 						*p++ = 0;
@@ -3482,7 +3572,7 @@ static NOD store(TDBB tdbb, register NOD node, SSHORT which_trig)
 
 #ifndef GATEWAY
 	p = record->rec_data;
-	if (n = (format->fmt_count + 7) >> 3)
+	if ( (n = (format->fmt_count + 7) >> 3) )
 		do
 			*p++ = 0xff;
 		while (--n);
@@ -3703,8 +3793,8 @@ static void validate(TDBB tdbb, NOD list)
 				relation = request->req_rpb[stream].rpb_relation;
 
 				if ((vector = relation->rel_fields) &&
-					id < vector->vec_count &&
-					(field = (FLD) vector->vec_object[id]))
+					id < vector->count() &&
+					(field = (FLD) (*vector)[id]))
 				{
 					name = field->fld_name;
 				}

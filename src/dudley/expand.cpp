@@ -103,8 +103,7 @@ static void expand_action( ACT action)
 /* Set up an environment to catch syntax errors.  If one occurs, scan looking
    for semi-colon to continue processing. */
 
-	if (setjmp(exp_env))
-		return;
+	try {
 
 	DDL_line = action->act_line;
 
@@ -192,6 +191,11 @@ static void expand_action( ACT action)
 	default:
 		DDL_msg_put(97, NULL, NULL, NULL, NULL, NULL);	/* msg 97: object can not be resolved */
 	}
+
+	}	// try
+	catch (...) {
+	}
+
 	return;
 }
 
@@ -213,7 +217,7 @@ static void expand_error(
  **************************************/
 
 	DDL_err(number, arg1, arg2, arg3, arg4, arg5);
-	longjmp(exp_env, TRUE);
+	Firebird::status_longjmp_error::raise(TRUE);
 }
 
 

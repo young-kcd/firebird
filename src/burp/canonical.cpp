@@ -21,13 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: canonical.cpp,v 1.2 2001-07-29 23:43:21 skywalker Exp $
+$Id: canonical.cpp,v 1.3 2001-12-24 02:50:48 tamlin Exp $
 */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
-#include "../remote/remote.h"
 #include "../burp/burp.h"
 #include "../jrd/align.h"
 #include "../jrd/sdl.h"
@@ -35,6 +34,16 @@ $Id: canonical.cpp,v 1.2 2001-07-29 23:43:21 skywalker Exp $
 #include "../jrd/sdl_proto.h"
 #include "../remote/xdr_proto.h"
 #include "../jrd/gdsassert.h"
+#include "../include/fb_types.h"
+
+// TMN: Currently we can't include remote/remote.h because we'd get
+// conflicting blk_t definitions (we are gonna fix this, in due time).
+// Because this file needs the remote definition of VARY, which
+// coincidentally is different from _all_ other modules in the code,
+// we have to make the type definition here.
+
+typedef vary* VARY;
+
 
 #ifdef PC_PLATFORM
 #ifndef NETWARE_386

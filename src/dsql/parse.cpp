@@ -93,11 +93,15 @@ static CONST UCHAR
 static CONST UCHAR
 	NULL_STRING [] = "";	
 
+extern "C" {
+
 #ifndef SHLIB_DEFS
 NOD		DSQL_parse;
 #else
 extern NOD	DSQL_parse;
 #endif
+
+}	// extern "C"
 
 static FLD	field;
 static FIL	file;
@@ -147,6 +151,9 @@ static SSHORT	log_defined, cache_defined;
 #define DATABASE 295
 #define DATE 296
 #define DB_KEY 297
+#ifdef DEBUG
+#undef DEBUG
+#endif
 #define DEBUG 298
 #define DECIMAL 299
 #define DECLARE 300
@@ -3392,9 +3399,9 @@ static NOD	make_list (NOD);
 static NOD	make_node (NOD_TYPE, int, ...);
 static NOD	make_flag_node (NOD_TYPE, SSHORT, int, ...);
 static BOOLEAN	short_int (NOD, SLONG *, SSHORT);
-static void	stack_nodes (NOD, LLS *);
+static void	stack_nodes (NOD, DLLS*);
 static int	yylex (USHORT, USHORT, USHORT, BOOLEAN *);
-static void	yyerror (TEXT *);
+static void	yyerror (TEXT*);
 static void	yyabandon (SSHORT, STATUS);
 #ifndef WINDOWS_ONLY
 static void	check_log_file_attrs (void);
@@ -3402,6 +3409,12 @@ static void	check_log_file_attrs (void);
 
 static TEXT	*ptr, *end, *last_token, *line_start;
 static SSHORT	lines, att_charset;
+
+// TMN: Temp hack
+#if defined(_MSC_VER) && defined(CONST)
+#undef CONST
+#define CONST
+#endif
 
 typedef struct tok {
     USHORT	tok_ident;
@@ -3433,18 +3446,18 @@ CONST TOK	*token;
 for (token = tokens; token->tok_string; ++token)
     {
     SYM         symbol;
-    STR         str;
+    STR         str_;
 
-    symbol = (SYM) ALLOCPV (type_sym, 0);
+    symbol = new(*DSQL_permanent_pool, 0) sym;
     symbol->sym_string = (TEXT *) token->tok_string;
     symbol->sym_length = strlen (token->tok_string);
     symbol->sym_type = SYM_keyword;
     symbol->sym_keyword = token->tok_ident;
     symbol->sym_version = token->tok_version;
-    str = (STR) ALLOCPV (type_str, symbol->sym_length);
-    str->str_length = symbol->sym_length;
-    strncpy ((char*)str->str_data, (char*)symbol->sym_string, symbol->sym_length);
-    symbol->sym_object = (void *) str;
+    str_ = new(*DSQL_permanent_pool, symbol->sym_length) str;
+    str_->str_length = symbol->sym_length;
+    strncpy ((char*)str_->str_data, (char*)symbol->sym_string, symbol->sym_length);
+    symbol->sym_object = (void *) str_;
     HSHD_insert (symbol);
     }
 
@@ -3580,12 +3593,12 @@ tdsql = GET_THREAD_DATA;
        
 if (field_name == NULL)
    {
-    field = (FLD) ALLOCDV (type_fld, sizeof (INTERNAL_FIELD_NAME));
+    field = new(*tdsql->tsql_default, sizeof (INTERNAL_FIELD_NAME)) fld;
     strcpy (field->fld_name, (TEXT*) INTERNAL_FIELD_NAME);
     return field;
    }
 string = (STR) field_name->nod_arg [1];
-field = (FLD) ALLOCDV (type_fld, strlen ((SCHAR*) string->str_data));
+field = new(*tdsql->tsql_default, strlen ((SCHAR*) string->str_data)) fld;
 strcpy (field->fld_name, (TEXT*) string->str_data);
 
 return field;
@@ -3609,7 +3622,7 @@ TSQL    tdsql;
 
 tdsql = GET_THREAD_DATA;
        
-temp_file = (FIL) ALLOCD (type_fil);
+temp_file = new(*tdsql->tsql_default) fil;
 
 return temp_file;
 }
@@ -3628,8 +3641,8 @@ static NOD make_list (
  *	Collapse nested list nodes into single list.
  *
  **************************************/
-NOD	*ptr;
-LLS	stack, temp;
+NOD*	ptr;
+DLLS	stack, temp;
 USHORT	l;
 NOD	old;
 TSQL    tdsql;
@@ -3645,7 +3658,7 @@ for (l = 0, temp = stack; temp; temp = temp->lls_next)
     l++;
 
 old  = node;
-node = (NOD) ALLOCDV (type_nod, l);
+node = new(*tdsql->tsql_default, l) nod;
 node->nod_count = l;
 node->nod_type  = nod_list;
 node->nod_flags = old->nod_flags;
@@ -3680,7 +3693,7 @@ TSQL    tdsql;
 
 tdsql = GET_THREAD_DATA;
 
-node = (NOD) ALLOCDV (type_nod, count);
+node = new (*tdsql->tsql_default, count) nod;
 node->nod_type = type;
 node->nod_count = count;
 p = node->nod_arg;
@@ -3715,7 +3728,7 @@ TSQL    tdsql;
 
 tdsql = GET_THREAD_DATA;
 
-node = (NOD) ALLOCDV (type_nod, count);
+node = new(*tdsql->tsql_default, count) nod;
 node->nod_type = type;
 node->nod_flags = flag;
 node->nod_count = count;
@@ -3786,7 +3799,7 @@ return !return_value;
 
 static void stack_nodes (
     NOD		node,
-    LLS		*stack)
+    DLLS		*stack)
 {
 /**************************************
  *
@@ -4357,7 +4370,6 @@ dsql_yyparse(USHORT client_dialect, USHORT db_dialect, USHORT parser_version, BO
     register int yym, yyn, yystate;
 #if YYDEBUG
     register char *yys;
-    extern char *getenv();
 
     if (yys = getenv("YYDEBUG"))
     {
@@ -4418,13 +4430,13 @@ yyloop:
     if (DSQL_yyerrflag) goto yyinrecovery;
 #ifdef lint
     goto yynewerror;
-#endif
 yynewerror:
+#endif
     yyerror("syntax error");
 #ifdef lint
     goto yyerrlab;
-#endif
 yyerrlab:
+#endif
     ++yynerrs;
 yyinrecovery:
     if (DSQL_yyerrflag < 3)

@@ -35,7 +35,7 @@
 extern "C" {
 
 
-static SSHORT hash(register SCHAR *);
+static SSHORT hash_func(register SCHAR *);
 
 
 void SYM_insert(register SYM symbol)
@@ -56,7 +56,7 @@ void SYM_insert(register SYM symbol)
 
 	dbb = GET_DBB;
 
-	h = hash(symbol->sym_string);
+	h = hash_func(symbol->sym_string);
 
 	for (old = dbb->dbb_hash_table[h]; old; old = old->sym_collision)
 		if (!strcmp(symbol->sym_string, old->sym_string)) {
@@ -87,7 +87,7 @@ SYM SYM_lookup(register TEXT * string)
 
 	dbb = GET_DBB;
 
-	for (symbol = dbb->dbb_hash_table[hash(string)]; symbol;
+	for (symbol = dbb->dbb_hash_table[hash_func(string)]; symbol;
 		 symbol = symbol->sym_collision)
 			if (!strcmp(string, symbol->sym_string)) return symbol;
 
@@ -113,11 +113,11 @@ void SYM_remove(register SYM symbol)
 
 	dbb = GET_DBB;
 
-	h = hash(symbol->sym_string);
+	h = hash_func(symbol->sym_string);
 
 	for (next = &dbb->dbb_hash_table[h]; *next;
 		 next = &(*next)->sym_collision) if (symbol == *next)
-			if (homonym = symbol->sym_homonym) {
+			if ( (homonym = symbol->sym_homonym) ) {
 				homonym->sym_collision = symbol->sym_collision;
 				*next = homonym;
 				return;
@@ -137,7 +137,7 @@ void SYM_remove(register SYM symbol)
 }
 
 
-static SSHORT hash(register SCHAR * string)
+static SSHORT hash_func(register SCHAR * string)
 {
 /**************************************
  *
@@ -157,7 +157,7 @@ static SSHORT hash(register SCHAR * string)
 
 	value = 0;
 
-	while (c = *string++)
+	while ( (c = *string++) )
 		value = (value << 1) + UPPER7(c);
 
 	return ((value >= 0) ? value : -value) % HASH_SIZE;

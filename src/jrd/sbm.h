@@ -21,8 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_SBM_H_
-#define _JRD_SBM_H_
+#ifndef JRD_SBM_H
+#define JRD_SBM_H
+
+#include "../jrd/jrd_blks.h"
+#include "../include/fb_blk.h"
+#include "../include/fb_vector.h"
 
 #if (defined PC_PLATFORM && !defined NETWARE_386)
 #define BUNCH_BITS	4
@@ -33,27 +37,37 @@
 #endif
 
 #define SEGMENT_BITS	10
-#define BITS_BUNCH	(1 << BUNCH_BITS)
+#define BITS_BUNCH		(1 << BUNCH_BITS)
 #define BITS_SEGMENT	(1 << SEGMENT_BITS)
 #define BUNCH_SEGMENT	BITS_SEGMENT / BITS_BUNCH
 
-#define BUCKET_BITS	15
+#define BUCKET_BITS		15
 #define BUNCH_BUCKET	(1 << (BUCKET_BITS - SEGMENT_BITS))
 
-/* Sparse bit map */
+// Sparse bit map
 
-typedef struct sbm {
-	struct blk sbm_header;
-	struct sbm *sbm_next;
-	struct plb *sbm_pool;
-	UCHAR sbm_state;			/* State of bitmap */
-	UCHAR sbm_type;				/* Root or bucket */
-	USHORT sbm_count;			/* Slots allocated */
-	USHORT sbm_used;			/* Slots used */
-	USHORT sbm_high_water;		/* Maximum slot used */
-	SLONG sbm_number;			/* Value when singular */
-	struct bms *sbm_segments[1];
-} *SBM;
+class sbm : public pool_alloc<type_sbm>
+{
+    public:
+	sbm(MemoryPool& p, int len)
+	:	sbm_segments(len, p, type_sbm)
+	{
+	}
+
+	sbm*			sbm_next;
+	JrdMemoryPool*	sbm_pool;
+	UCHAR			sbm_state;			// State of bitmap
+	UCHAR			sbm_type;			// Root or bucket
+	USHORT			sbm_count;			// Slots allocated
+	USHORT			sbm_used;			// Slots used
+	USHORT			sbm_high_water;		// Maximum slot used
+	SLONG			sbm_number;			// Value when singular
+	typedef			Firebird::vector<bms*>	vector_type;
+	typedef			vector_type::iterator	iterator;
+
+	vector_type				sbm_segments;
+};
+typedef sbm* SBM;
 
 /* States */
 
@@ -68,13 +82,15 @@ typedef struct sbm {
 
 /* Bit map segment */
 
-typedef struct bms {
-	struct blk bms_header;
-	struct bms *bms_next;
-	struct plb *bms_pool;
-	SSHORT bms_min;				/* Minimum bit set in segment */
-	SSHORT bms_max;				/* Maximum bit set in segment */
-	BUNCH bms_bits[BUNCH_SEGMENT];
-} *BMS;
+class bms : public pool_alloc<type_bms>
+{
+public:
+	bms*			bms_next;
+	JrdMemoryPool*	bms_pool;
+	SSHORT			bms_min;			// Minimum bit set in segment
+	SSHORT			bms_max;			// Maximum bit set in segment
+	BUNCH			bms_bits[BUNCH_SEGMENT];
+};
+typedef bms* BMS;
 
-#endif /* _JRD_SBM_H_ */
+#endif	// JRD_SBM_H

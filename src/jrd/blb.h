@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_BLB_H_
-#define _JRD_BLB_H_
+#ifndef JRD_BLB_H
+#define JRD_BLB_H
 
 /* Blob id.  A blob has two states -- temporary and permanent.  In each
    case, the blob id is 8 bytes (2 longwords) long.  In the case of a
@@ -36,7 +36,7 @@ typedef struct bid {
 #ifndef DECOSF
 	ULONG bid_relation_id;		/* Relation id (or null) */
 	union {
-		struct blb *bid_blob;	/* Pointer to blob block */
+		class blb *bid_blob;	/* Pointer to blob block */
 		ULONG bid_number;		/* Record number */
 	} bid_stuff;
 #else
@@ -51,18 +51,19 @@ typedef struct bid {
 
 /* Your basic blob block. */
 
-typedef struct blb {
-	struct blk blb_header;
-	struct att *blb_attachment;	/* database attachment */
-	struct rel *blb_relation;	/* Relation, if known */
+class blb : public pool_alloc_rpt<SCHAR, type_blb>
+{
+    public:
+	att *blb_attachment;	/* database attachment */
+	rel *blb_relation;	/* Relation, if known */
 	struct tra *blb_transaction;	/* Parent transaction block */
-	struct blb *blb_next;		/* Next blob in transaction */
+	blb *blb_next;		/* Next blob in transaction */
 	UCHAR *blb_segment;			/* Next segment to be addressed */
 	struct ctl *blb_filter;		/* Blob filter control block, if any */
 	struct bid blb_blob_id;		/* Id of materialized blob */
 	struct req *blb_request;	/* request that assigned temporary blob */
 #ifndef GATEWAY
-	struct vcl *blb_pages;		/* Vector of pages */
+	vcl *blb_pages;		/* Vector of pages */
 	USHORT blb_pointers;		/* Max pointer on a page */
 #else
 	struct vec *blb_pages;		/* Vector of pages */
@@ -85,7 +86,8 @@ typedef struct blb {
 	ULONG blb_seek;				/* Seek location */
 	/* blb_data must be longword aligned */
 	UCHAR blb_data[1];			/* A page's worth of blob */
-} *BLB;
+};
+typedef blb *BLB;
 
 #define BLB_temporary	1		/* Newly created blob */
 #define BLB_eof		2			/* This blob is exhausted */
@@ -104,12 +106,13 @@ typedef struct blb {
 */
 
 /* mapping blob ids for REPLAY */
-
-typedef struct map {
-	struct blk map_header;
-	struct map *map_next;
-	struct blb *map_old_blob;
-	struct blb *map_new_blob;
-} *MAP;
+class map : public pool_alloc<type_map>
+{
+    public:
+	map *map_next;
+	blb *map_old_blob;
+	blb *map_new_blob;
+};
+typedef map *MAP;
 
 #endif /* _JRD_BLB_H_ */

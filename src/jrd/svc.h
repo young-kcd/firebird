@@ -23,12 +23,25 @@
 
 #ifndef JRD_SVC_H
 #define JRD_SVC_H
+
+// TMN: To be removed once the C++ conversion is completed
+#ifdef INCLUDE_OLD_FB_BLK
+#error You can not include both old_fb_blk.h and this file
+#endif
+
 #include "../jrd/pwd.h"
 #include "../jrd/isc.h"
 #include "../jrd/svc_undoc.h"
 #include "../jrd/svc_proto.h"
 #include "../jrd/isc_s_proto.h"
+
+#ifndef JRD_IBASE_H
 #include "../jrd/ibase.h"		/* needed for the C++ version of SVC_STATUS_ARG */
+#endif
+
+#include "../jrd/jrd_blks.h"
+#include "../include/fb_blk.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -98,7 +111,7 @@ extern "C" {
 
 #ifdef __cplusplus
 
-inline SVC_STATUS_ARG(STATUS * &status, USHORT type, void *value)
+inline void SVC_STATUS_ARG(STATUS*& status, USHORT type, void* value)
 {
 	if (value)
 	{
@@ -111,8 +124,8 @@ inline SVC_STATUS_ARG(STATUS * &status, USHORT type, void *value)
 		case isc_arg_string:
 			*status++ = type;
 			*status++ = (STATUS)
-			SVC_err_string(reinterpret_cast < char *>(value),
-						   strlen(static_cast < const char *>(value)));
+			SVC_err_string(reinterpret_cast<char*>(value),
+						   strlen(reinterpret_cast<const char*>(value)));
 			break;
 		default:
 			break;
@@ -138,7 +151,7 @@ inline SVC_STATUS_ARG(STATUS * &status, USHORT type, void *value)
 
 #endif /* __cplusplus */
 
-#endif
+#endif /* SUPERSERVER */
 
 
 #define CK_SPACE_FOR_NUMERIC 	{{if ((info + 1 + sizeof (ULONG)) > end) \
@@ -150,9 +163,9 @@ inline SVC_STATUS_ARG(STATUS * &status, USHORT type, void *value)
 				      }}}
 
 /* Service manager block */
-typedef struct svc
+class svc : public pool_alloc<type_svc>
 {
-	struct blk svc_header;
+public:
 	SLONG	svc_handle;			/* "handle" of process/thread running service */
 	STATUS*	svc_status;			/* status vector for svc_handle */
 	void*	svc_input;			/* input to service */
@@ -176,7 +189,8 @@ typedef struct svc
 	TEXT	svc_enc_password[MAX_PASSWORD_ENC_LENGTH];
 	TEXT	svc_reserved[1];
 	TEXT*	svc_switches;
-} *SVC;
+};
+typedef svc *SVC;
 
 typedef struct serv
 {

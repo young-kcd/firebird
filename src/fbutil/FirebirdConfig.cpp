@@ -1,4 +1,9 @@
 #include "firebird.h"
+
+#ifdef _MSC_VER
+#pragma warning (disable: 4786)	// debug identifier truncated
+#endif
+
 #include "FirebirdConfig.h"
 #include "FirebirdConfigFile.h"
 
@@ -22,7 +27,7 @@ static FirebirdConfigFile sysConfig;
 //
 //
 
-string FirebirdConfig::getSysString(const string& key) {
+FirebirdConfig::string FirebirdConfig::getSysString(const FirebirdConfig::string& key) {
   return sysConfig.getString(key);
 }
 
@@ -31,7 +36,7 @@ string FirebirdConfig::getSysString(const string& key) {
 //
 //
 
-int    FirebirdConfig::getSysInt(const string& key) {
+int    FirebirdConfig::getSysInt(const FirebirdConfig::string& key) {
   return sysConfig.getInt(key);
 }
 
@@ -40,7 +45,7 @@ int    FirebirdConfig::getSysInt(const string& key) {
 //
 //
 
-bool    FirebirdConfig::getSysBoolean(const string& key) {
+bool    FirebirdConfig::getSysBoolean(const FirebirdConfig::string& key) {
   return sysConfig.getBoolean(key);
 }
 
@@ -56,7 +61,7 @@ void FirebirdConfig::loadSysConfig() {
 //
 //
 //
-const string FirebirdConfig::getSysConfigFile() {
+const Firebird::string FirebirdConfig::getSysConfigFile() {
     return sysConfig.getConfigFile();
 }
 
@@ -64,7 +69,7 @@ const string FirebirdConfig::getSysConfigFile() {
 //
 //
 //
-void FirebirdConfig::setSysConfigFile(const string& newFile) {
+void FirebirdConfig::setSysConfigFile(const FirebirdConfig::string& newFile) {
     sysConfig.setConfigFile(newFile);
 }
 

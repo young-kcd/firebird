@@ -184,7 +184,7 @@ ULONG start_seqno, USHORT start_file, USHORT num_files, SCHAR ** files)
 
 /* dump all 'in use' pages in database.  */
 
-	temp_page = (PIP) ALL_malloc(dbb->dbb_page_size, ERR_jmp);
+	temp_page = (PIP) MemoryPool::malloc_from_system(dbb->dbb_page_size);
 
 	pgc = dbb->dbb_pcontrol;
 
@@ -220,7 +220,7 @@ ULONG start_seqno, USHORT start_file, USHORT num_files, SCHAR ** files)
 			break;
 	}
 
-	ALL_free(reinterpret_cast < char *>(temp_page));
+	MemoryPool::free_from_system(temp_page);
 
 	if (last_page) {
 		file_seqno = OLD_handle->old_file_seqno;
@@ -506,15 +506,15 @@ static void old_fini(OLD * OLD_handle, USHORT code)
 
 /* write a OLD_EOD record */
 
-	if (old = *OLD_handle) {
+	if ( (old = *OLD_handle) ) {
 		if (old->old_fd > 0) {
 			if (close_cur_file(old, code) == FAILURE)
 				return;
 		}
 
-		ALL_free(reinterpret_cast < char *>(old->old_block->ob_hdr));
-		ALL_free(reinterpret_cast < char *>(old->old_block));
-		ALL_free(reinterpret_cast < char *>(old));
+		MemoryPool::free_from_system(old->old_block->ob_hdr);
+		MemoryPool::free_from_system(old->old_block);
+		MemoryPool::free_from_system(old);
 	}
 
 	*OLD_handle = NULL;
@@ -548,13 +548,13 @@ SSHORT rec_size, ULONG log_seqno, ULONG log_offset, ULONG log_p_offset)
 	if (*OLD_handle != NULL)
 		return FAILURE;
 
-	*OLD_handle = old = (OLD) ALL_malloc(sizeof(struct old), ERR_jmp);
+	*OLD_handle = old = (OLD) MemoryPool::malloc_from_system(sizeof(struct old));
 	MOVE_CLEAR(old, sizeof(struct old));
 
-	old->old_block = (OLDBLK) ALL_malloc(sizeof(struct oldblk), ERR_jmp);
+	old->old_block = (OLDBLK) MemoryPool::malloc_from_system(sizeof(struct oldblk));
 	MOVE_CLEAR(old->old_block, sizeof(struct oldblk));
 
-	old->old_block->ob_hdr = (OLD_HDR) ALL_malloc(MAX_OLDBUFLEN, ERR_jmp);
+	old->old_block->ob_hdr = (OLD_HDR) MemoryPool::malloc_from_system(MAX_OLDBUFLEN);
 	MOVE_CLEAR(old->old_block->ob_hdr, MAX_OLDBUFLEN);
 
 	old->old_dump_id = dump_id;

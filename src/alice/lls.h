@@ -21,16 +21,15 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _ALICE_LLS_H_
-#define _ALICE_LLS_H_
+#ifndef ALICE_LLS_H
+#define ALICE_LLS_H
 
-#define LLS_PUSH(object, stack)		ALL_push (object, stack)
-#define LLS_POP(stack)			ALL_pop (stack)
+#define LLS_PUSH(object, stack)	AliceMemoryPool::ALLA_push(object, stack)
+#define LLS_POP(stack)			AliceMemoryPool::ALLA_pop(stack)
 
 typedef struct lls {
-	struct blk lls_header;
 	struct blk *lls_object;
 	struct lls *lls_next;
 } *LLS;
 
-#endif /* _ALICE_LLS_H_ */
+#endif	// ALICE_LLS_H

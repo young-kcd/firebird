@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: pwd_proto.h,v 1.1.1.1 2001-05-23 13:26:23 tamlin Exp $
+ * $Id: pwd_proto.h,v 1.2 2001-12-24 02:50:52 tamlin Exp $
  */
 
 #ifndef _JRD_PWD_PROTO_H_

@@ -24,15 +24,20 @@
 #ifndef _JRD_SDW_H_
 #define _JRD_SDW_H_
 
+#include "../jrd/jrd_blks.h"
+#include "../include/fb_blk.h"
+
 /* Shadowing block */
 
-typedef struct sdw {
-	struct blk sdw_header;
+class sdw : public pool_alloc<type_sdw>
+{
+    public:
 	struct sdw *sdw_next;		/* next in linked list */
 	struct fil *sdw_file;		/* Stack of shadow files */
 	USHORT sdw_number;			/* number of shadow */
 	USHORT sdw_flags;
-} *SDW;
+};
+typedef sdw *SDW;
 
 #define SDW_dumped	1			/* bit set when file has been copied */
 #define SDW_shutdown	2		/* stop shadowing on next cache flush */

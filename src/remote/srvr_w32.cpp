@@ -335,7 +335,7 @@ static void THREAD_ROUTINE wnet_connect_wait_thread( void *dummy)
 		port = WNET_connect(protocol_wnet, 0, status_vector, server_flag);
 		THREAD_EXIT;
 		if (!port) {
-			if (status_vector[1] != gds__io_error ||
+			if (status_vector[1] != gds_io_error ||
 				status_vector[6] != gds_arg_win32 ||
 				status_vector[7] != ERROR_CALL_NOT_IMPLEMENTED) {
 				gds__log_status(0, status_vector);

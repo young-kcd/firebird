@@ -70,6 +70,9 @@ static PTR filters[] = {
 	filter_trans				/* should be filter_external_file */
 };
 
+
+extern "C" {
+
 static STATUS open_blob(TDBB,
 						TRA,
 						CTL*,
@@ -79,7 +82,6 @@ static STATUS open_blob(TDBB,
 						PTR,
 						USHORT,
 						BLF);
-
 
 
 STATUS DLL_EXPORT BLF_close_blob(TDBB tdbb, CTL * filter_handle)
@@ -113,7 +115,7 @@ STATUS DLL_EXPORT BLF_close_blob(TDBB tdbb, CTL * filter_handle)
 
 /* Sign off from filter */
 /* Walk the chain again, telling each filter stage to close */
-		for (next = *filter_handle; control = next;) {
+		for (next = *filter_handle; (control = next);) {
 		/* Close this stage of the filter */
 
 		control->ctl_status = user_status;
@@ -132,7 +134,7 @@ STATUS DLL_EXPORT BLF_close_blob(TDBB tdbb, CTL * filter_handle)
 		(*callback) (ACTION_free, control);
 	}
 
-	END_CHECK_FOR_EXCEPTIONS(next->ctl_exception_message)
+	END_CHECK_FOR_EXCEPTIONS((TEXT*)next->ctl_exception_message)
 
 		return 0;
 }
@@ -206,7 +208,7 @@ STATUS DLL_EXPORT BLF_get_segment(TDBB tdbb,
 		user_status[2] = gds_arg_end;
 	}
 
-	END_CHECK_FOR_EXCEPTIONS(control->ctl_exception_message)
+	END_CHECK_FOR_EXCEPTIONS((TEXT*)control->ctl_exception_message)
 
 		return status;
 }
@@ -224,7 +226,7 @@ BLF DLL_EXPORT BLF_lookup_internal_filter(TDBB tdbb, SSHORT from, SSHORT to)
  *	Lookup blob filter in data structures.
  *
  **************************************/
-	BLF blf;
+	BLF result;
 	STR exception_msg;
 	DBB dbb;
 
@@ -234,18 +236,18 @@ BLF DLL_EXPORT BLF_lookup_internal_filter(TDBB tdbb, SSHORT from, SSHORT to)
 
 	if (to == BLOB_text && from >= 0
 		&& from < sizeof(filters) / sizeof(filters[0])) {
-		blf = (BLF) ALLOCP(type_blf);
-		blf->blf_next = NULL;
-		blf->blf_from = from;
-		blf->blf_to = to;
-		blf->blf_filter = filters[from];
-		exception_msg = (STR) ALLOCPV(type_str, 100);
+		result = new(*dbb->dbb_permanent) blf;
+		result->blf_next = NULL;
+		result->blf_from = from;
+		result->blf_to = to;
+		result->blf_filter = filters[from];
+		exception_msg = new(*dbb->dbb_permanent, 100) str;
 		// SIGN ISSUE, arg 1
 		sprintf((char*)exception_msg->str_data,
 				"Exception occurred in system provided internal filters for filtering internal subtype %d to text.",
 				from);
-		blf->blf_exception_message = exception_msg;
-		return blf;
+		result->blf_exception_message = exception_msg;
+		return result;
 	}
 
 	return NULL;
@@ -313,7 +315,7 @@ STATUS DLL_EXPORT BLF_put_segment(TDBB tdbb,
 		user_status[2] = gds_arg_end;
 	}
 
-	END_CHECK_FOR_EXCEPTIONS(control->ctl_exception_message)
+	END_CHECK_FOR_EXCEPTIONS((TEXT*)control->ctl_exception_message)
 
 		return status;
 }
@@ -416,7 +418,7 @@ USHORT bpb_length, UCHAR * bpb, PTR callback, USHORT action, BLF filter)
 /* Initialize filter */
 		status = (*filter->blf_filter) (action, control);
 
-	END_CHECK_FOR_EXCEPTIONS(control->ctl_exception_message)
+	END_CHECK_FOR_EXCEPTIONS((TEXT*)control->ctl_exception_message)
 
 		if (status) {
 		STATUS local_status[ISC_STATUS_LENGTH];
@@ -442,3 +444,5 @@ USHORT bpb_length, UCHAR * bpb, PTR callback, USHORT action, BLF filter)
 
 	return status;
 }
+
+}	// extern "C"

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# $Id: buildRefDatabases,v 1.1 2001-07-12 06:32:03 bellardo Exp $
+# $Id: buildRefDatabases,v 1.2 2001-12-24 02:50:52 tamlin Exp $
 
 # This file builds the reference databases for both the boot build
 # and the normal builds.

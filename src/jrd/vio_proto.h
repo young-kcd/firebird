@@ -29,7 +29,7 @@ extern "C" {
 #endif
 
 extern void VIO_backout(TDBB, struct rpb *, struct tra *);
-extern int VIO_chase_record_version(TDBB, struct rpb *, struct rsb *,
+extern int VIO_chase_record_version(TDBB, struct rpb *, class Rsb *,
 									struct tra *, struct blk *);
 #ifdef PC_ENGINE
 extern int VIO_check_if_updated(TDBB, struct rpb *);
@@ -41,7 +41,7 @@ extern void VIO_fini(TDBB);
 #endif
 extern int VIO_garbage_collect(TDBB, struct rpb *, struct tra *);
 extern struct rec *VIO_gc_record(TDBB, struct rel *);
-extern int VIO_get(TDBB, struct rpb *, struct rsb *, struct tra *,
+extern int VIO_get(TDBB, struct rpb *, class Rsb *, struct tra *,
 				   struct blk *);
 extern int VIO_get_current(TDBB, struct rpb *, struct tra *, struct blk *,
 						   USHORT);
@@ -50,10 +50,10 @@ extern void VIO_init(TDBB);
 #endif
 extern void VIO_merge_proc_sav_points(TDBB, struct tra *, struct sav **);
 extern void VIO_modify(TDBB, struct rpb *, struct rpb *, struct tra *);
-extern BOOLEAN VIO_next_record(TDBB, struct rpb *, struct rsb *, struct tra *,
+extern BOOLEAN VIO_next_record(TDBB, struct rpb *, class Rsb *, struct tra *,
 							   struct blk *, BOOLEAN, BOOLEAN);
 extern struct rec *VIO_record(TDBB, register struct rpb *, struct fmt *,
-							  struct plb *);
+							  JrdMemoryPool *);
 extern void VIO_start_save_point(TDBB, struct tra *);
 extern void VIO_store(TDBB, struct rpb *, struct tra *);
 extern BOOLEAN VIO_sweep(TDBB, struct tra *);

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: lock.cpp,v 1.3 2001-07-29 23:43:22 skywalker Exp $
+$Id: lock.cpp,v 1.4 2001-12-24 02:50:52 tamlin Exp $
 */
 
 #include "firebird.h"

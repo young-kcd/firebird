@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.intl,v 1.5 2001-10-17 22:48:01 bellardo Exp $
+#   $Id: Makefile.in.intl,v 1.6 2001-12-24 02:50:52 tamlin Exp $
 # 
 
 ROOT=../..

@@ -24,6 +24,9 @@
 #ifndef _JRD_JRN_H_
 #define _JRD_JRN_H_
 
+#include "../jrd/jrd_blks.h"
+#include "../include/fb_blk.h"
+
 #define MAX_RECORD		9000
 #define JOURNAL_VERSION3	3
 #define JOURNAL_VERSION4	4
@@ -40,8 +43,9 @@
 
 /* Journal block */
 
-typedef struct jrn {
-	struct blk jrn_header;
+class jrn : public pool_alloc_rpt<SCHAR, type_jrn>
+{
+    public:
 	STATUS *jrn_status_vector;	/* Status vector for errors */
 	int *jrn_channel;			/* Communication channel */
 	int jrn_iri;				/* RMS internal RAB id */
@@ -52,7 +56,8 @@ typedef struct jrn {
 	USHORT jrn_fid[3];			/* VMS file id */
 	USHORT jrn_did[3];			/* VMS directory id */
 	TEXT jrn_server[1];			/* Server name */
-} *JRN;
+};
+typedef jrn *JRN;
 
 /* Journal record types */
 
@@ -383,14 +388,16 @@ typedef struct jrnda {
 #define MAX_OLD_FILES   16
 #define MAX_LOG_FILES   16
 
-typedef struct logfiles {
-	struct blk lg_header;
+class logfiles : public pool_alloc_rpt<SCHAR, type_ail>
+{
+    public:
 	SLONG lg_size;
 	SSHORT lg_sequence;
 	SSHORT lg_partitions;
 	SSHORT lg_flags;
 	TEXT lg_name[2];
-} LGFILE;
+};
+typedef logfiles LGFILE;
 
 #define LGFILE_SIZE 	OFFSETA (LGFILE*, lg_name)
 

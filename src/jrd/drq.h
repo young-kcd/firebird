@@ -44,7 +44,7 @@
 #ifndef _JRD_DRQ_H_
 #define _JRD_DRQ_H_
 
-#define DYN_REQUEST(drt) dbb->dbb_dyn_req->vec_object[drt]
+#define DYN_REQUEST(drt) (*dbb->dbb_dyn_req)[drt]
 
 #define drq_l_prot_mask	0		/* lookup protection mask */
 #define drq_l_user_name	1		/* lookup user name */

@@ -49,6 +49,7 @@
 #include "../qli/parse_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/perf_proto.h"
+#include "../include/fb_exception.h"
 
 #ifdef VMS
 #define STARTUP_FILE	"QLI_STARTUP"
@@ -285,17 +286,17 @@ int CLIB_ROUTINE main( int argc, char **argv)
 																FALSE);
 #endif
 
-	for (got_started = 0; !got_started;) {
+	for (got_started = 0; !got_started;)
+	{
 		got_started = 1;
-		if (setjmp(env)) {
-			/* try again */
-
-			got_started = 0;
-			ERRQ_pending();
-		}
-		else {
+		try {
 			QLI_env = env;
 			PAR_token();
+		}
+		catch (...) {
+			/* try again */
+			got_started = 0;
+			ERRQ_pending();
 		}
 	}
 	memset(QLI_env, 0, sizeof(QLI_env));
@@ -370,7 +371,6 @@ static USHORT process_statement( USHORT flush_flag)
 	DBB dbb;
 	PERF statistics;
 	TEXT buffer[512], report[256], *p;
-	int status;
 	jmp_buf env;
 
 /* Clear database active flags in preparation for a new statement */
@@ -396,12 +396,7 @@ static USHORT process_statement( USHORT flush_flag)
 
 /* Enable error unwinding and enable the unwinding environment */
 
-	status = setjmp(env);
-
-	if (status) {
-		GEN_release();
-		return status;
-	}
+	try {
 
 	QLI_env =  env;
 
@@ -500,8 +495,11 @@ static USHORT process_statement( USHORT flush_flag)
 	EXEC_top((nod*) execution_tree);
 
 	if (QLI_statistics)
+	{
 		for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
-			if (dbb->dbb_flags & DBB_active) {
+		{
+			if (dbb->dbb_flags & DBB_active)
+			{
 #ifndef PC_PLATFORM
 				ERRQ_msg_get(505, report);
 				/* Msg505 "    reads = !r writes = !w fetches = !f marks = !m\n" */
@@ -514,12 +512,20 @@ static USHORT process_statement( USHORT flush_flag)
 				ERRQ_msg_put(26, dbb->dbb_filename, buffer, NULL, NULL, NULL);	/* Msg26 Statistics for database %s %s  */
 				QLI_skip_line = TRUE;
 			}
+		}
+	}
 
 /* Release resources associated with the request */
 
 	GEN_release();
 
 	return FALSE;
+
+	}	// try
+	catch (const Firebird::status_longjmp_error& e) {
+		GEN_release();
+		return e.value();
+	}
 }
 
 

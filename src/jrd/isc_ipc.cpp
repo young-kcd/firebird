@@ -22,7 +22,7 @@
  * Solaris x86 changes - Konstantin Kuznetsov, Neil McCalden
  */
 
- /* $Id: isc_ipc.cpp,v 1.5 2001-08-13 08:14:38 skywalker Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.6 2001-12-24 02:50:51 tamlin Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS

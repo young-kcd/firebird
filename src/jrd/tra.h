@@ -29,16 +29,14 @@
  * to define the types this header usus.
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+#include "../jrd/jrd_blks.h"
+#include "../include/fb_blk.h"
 
 /* Transaction block */
 
-typedef struct tra
+class tra : public pool_alloc_rpt<SCHAR, type_tra>
 {
-	struct blk tra_header;
+    public:
 	struct att *tra_attachment;	/* database attachment */
 	SLONG tra_number;			/* transaction number */
 	SLONG tra_top;				/* highest transaction in snapshot */
@@ -47,8 +45,8 @@ typedef struct tra
 								   gargage-collected by this tx */
 	struct tra *tra_next;		/* next transaction in database */
 	struct tra *tra_sibling;	/* next transaction in group */
-	struct plb *tra_pool;		/* pool for transaction */
-	struct blb *tra_blobs;		/* Linked list of active blobs */
+	JrdMemoryPool* tra_pool;		/* pool for transaction */
+	class blb *tra_blobs;		/* Linked list of active blobs */
 	struct arr *tra_arrays;		/* Linked list of active arrays */
 	struct lck *tra_lock;		/* lock for transaction */
 	struct vec *tra_relation_locks;	/* locks for relations */
@@ -61,10 +59,11 @@ typedef struct tra
 	SLONG tra_range_id;			/* unique id of cache range within transaction */
 #endif
 	struct dfw *tra_deferred_work;	/* work deferred to commit time */
-	struct rsc *tra_resources;	/* resource existence list */
+	class Rsc *tra_resources;	/* resource existence list */
 	UCHAR tra_use_count;		/* use count for safe AST delivery */
 	UCHAR tra_transactions[1];
-} *TRA;
+};
+typedef tra *TRA;
 
 #define TRA_system		1L		/* system transaction */
 #define TRA_update		2L		/* update is permitted */
@@ -120,15 +119,17 @@ typedef struct tra
 #define MAX_TRA_NUMBER		 (~(1L << (BITS_PER_LONG - 1)))
 /* Savepoint block */
 
-typedef struct sav {
-	struct blk sav_header;
+class sav : public pool_alloc<type_sav>
+{
+    public:
 	struct vct *sav_verb_actions;	/* verb action list */
 	struct vct *sav_verb_free;	/* free verb action block */
 	USHORT sav_verb_count;		/* Active verb count */
 	SLONG sav_number;			/* save point number */
 	struct sav *sav_next;
 	USHORT sav_flags;
-} *SAV;
+};
+typedef sav *SAV;
 
 /* Savepoint block flags. */
 
@@ -172,8 +173,9 @@ ENUM dfw_t {
 		dfw_delete_procedure,
 		dfw_delete_prm, dfw_delete_exception, dfw_unlink_file};
 
-typedef struct dfw {
-	struct blk dfw_header;
+class dfw : public pool_alloc_rpt<SCHAR, type_dfw>
+{
+    public:
 	ENUM dfw_t dfw_type;		/* type of work deferred */
 	struct dfw *dfw_next;		/* next block in transaction */
 	struct lck *dfw_lock;		/* relation creation lock */
@@ -182,22 +184,21 @@ typedef struct dfw {
 	USHORT dfw_id;				/* object id, if appropriate */
 	USHORT dfw_count;			/* count of block posts */
 	SCHAR dfw_name[2];			/* name of object */
-} *DFW;
+};
+typedef dfw *DFW;
 
 /* Verb actions */
 
-typedef struct vct {
-	struct blk vct_header;
+class vct : public pool_alloc<type_vct>
+{
+    public:
 	struct vct *vct_next;		/* Next action within verb */
 	struct rel *vct_relation;	/* Relation involved */
 	struct sbm *vct_records;	/* Record involved */
 	struct sbm *vct_undo;		/* Record involved that have to be replaced */
 	struct lls *vct_data;		/* Data for undo records */
-} *VCT;
+};
+typedef vct *VCT;
 
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif /* JRD_TRA_H */

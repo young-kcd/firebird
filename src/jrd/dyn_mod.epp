@@ -126,21 +126,16 @@ void DYN_modify_database( GBL gbl, UCHAR ** ptr)
 
 	request = NULL;
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-
-	if (SETJMP(env)) {
-		DYN_rundown_request(old_env, request, -1);
-		DYN_error_punt(TRUE, 84, NULL, NULL, NULL, NULL, NULL);
-		/* msg 84: "MODIFY DATABASE failed" */
-	}
 
 	INF_database_info((SCHAR*)alloc_info, sizeof(alloc_info), (SCHAR*)s, sizeof(s));
 
 	if (s[0] != gds_info_allocation) {
 		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		DYN_error_punt(TRUE, 84, NULL, NULL, NULL, NULL, NULL);
-		/* msg 84: "MODIFY DATABASE failed" */
+		goto dyn_punt_84;
 	}
 
 	request = (BLK) CMP_find_request(tdbb, drq_m_database, DYN_REQUESTS);
@@ -260,6 +255,19 @@ void DYN_modify_database( GBL gbl, UCHAR ** ptr)
 		DYN_REQUEST(drq_m_database) = request;
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}
+	catch (...) {
+		DYN_rundown_request(old_env, request, -1);
+		DYN_error_punt(TRUE, 84, NULL, NULL, NULL, NULL, NULL);
+		/* msg 84: "MODIFY DATABASE failed" */
+	}
+
+	return;
+
+dyn_punt_84:
+	DYN_error_punt(TRUE, 84, NULL, NULL, NULL, NULL, NULL);
+	/* msg 84: "MODIFY DATABASE failed" */
 }
 
 
@@ -288,14 +296,10 @@ void DYN_modify_exception( GBL gbl, UCHAR ** ptr)
 
 	request = (BLK) CMP_find_request(tdbb, drq_m_xcp, DYN_REQUESTS);
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-
-	if (SETJMP(env)) {
-		DYN_rundown_request(old_env, request, -1);
-		DYN_error_punt(TRUE, 145, NULL, NULL, NULL, NULL, NULL);
-		/* msg 145: "MODIFY EXCEPTION failed" */
-	}
 
 	GET_STRING(ptr, t);
 
@@ -334,9 +338,18 @@ void DYN_modify_exception( GBL gbl, UCHAR ** ptr)
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 
+	}
+	catch (...) {
+		DYN_rundown_request(old_env, request, -1);
+		DYN_error_punt(TRUE, 145, NULL, NULL, NULL, NULL, NULL);
+		/* msg 145: "MODIFY EXCEPTION failed" */
+	}
+
 	if (!found)
+	{
 		DYN_error_punt(FALSE, 144, NULL, NULL, NULL, NULL, NULL);
-	/* msg 144: "Exception not found" */
+		/* msg 144: "Exception not found" */
+	}
 }
 
 
@@ -365,9 +378,16 @@ void DYN_modify_global_field(
 	DYN_FLD orig_dom, new_dom;
 	BOOLEAN dtype, scale, prec, subtype, charlen, collation, fldlen, nullflg,
 		charset;
-	TEXT *qryname, *qryhdr, *qryhdr2, *edtstr, *edtstr2, *missingval,
-		*singvald, *fldvald, *fldvaldsrc, *fldvaldsrc2, *desc, *desc2,
-		*delvald, *deldflt, *flddftval, *flddfltsrc;
+	TEXT *qryname, *qryhdr, *edtstr, *missingval,
+		*fldvald, *fldvaldsrc, *desc,
+		*flddftval, *flddfltsrc;
+
+#if (defined JPN_SJIS || defined JPN_EUC)
+	TEXT* edtstr2;
+	TEXT* qryhdr2;
+	TEXT* desc2;
+	TEXT* fldvaldsrc2;
+#endif
 
 	BOOLEAN bqryname, bqryhdr, bqryhdr2, bedtstr, bedtstr2, bmissingval,
 		bsingvald, bfldvald, bfldvaldsrc, bfldvaldsrc2, bdesc, bdesc2,
@@ -387,31 +407,23 @@ void DYN_modify_global_field(
 
 	request = (BLK) CMP_find_request(tdbb, drq_m_gfield, DYN_REQUESTS);
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
 
-	if (SETJMP(env)) {
-		if (orig_dom)
-			gds__free((SLONG *) orig_dom);
-
-		if (new_dom)
-			gds__free((SLONG *) new_dom);
-
-		DYN_rundown_request(old_env, request, -1);
-		DYN_error_punt(TRUE, 87, NULL, NULL, NULL, NULL, NULL);
-		/* msg 87: "MODIFY RDB$FIELDS failed" */
-	}
-
 /* Allocate the field structures */
 	orig_dom = (DYN_FLD) gds__alloc(sizeof(struct dyn_fld));
-	if (!orig_dom)
+	if (!orig_dom) {
 		DYN_error_punt(TRUE, 211, NULL, NULL, NULL, NULL, NULL);
+	}
 
 	MOVE_CLEAR(orig_dom, sizeof(struct dyn_fld));
 
 	new_dom = (DYN_FLD) gds__alloc(sizeof(struct dyn_fld));
-	if (!new_dom)
+	if (!new_dom) {
 		DYN_error_punt(TRUE, 211, NULL, NULL, NULL, NULL, NULL);
+	}
 
 	MOVE_CLEAR(new_dom, sizeof(struct dyn_fld));
 
@@ -910,9 +922,26 @@ void DYN_modify_global_field(
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 
+	}
+	catch (...) {
+		if (orig_dom) {
+			gds__free((SLONG *) orig_dom);
+		}
+
+		if (new_dom) {
+			gds__free((SLONG *) new_dom);
+		}
+
+		DYN_rundown_request(old_env, request, -1);
+		DYN_error_punt(TRUE, 87, NULL, NULL, NULL, NULL, NULL);
+		/* msg 87: "MODIFY RDB$FIELDS failed" */
+	}
+
 	if (!found)
+	{
 		DYN_error_punt(FALSE, 89, NULL, NULL, NULL, NULL, NULL);
-	/* msg 89: "Global field not found" */
+		/* msg 89: "Global field not found" */
+	}
 }
 
 
@@ -941,14 +970,10 @@ void DYN_modify_index( GBL gbl, UCHAR ** ptr)
 
 	request = (BLK) CMP_find_request(tdbb, drq_m_index, DYN_REQUESTS);
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-
-	if (SETJMP(env)) {
-		DYN_rundown_request(old_env, request, -1);
-		DYN_error_punt(TRUE, 91, NULL, NULL, NULL, NULL, NULL);
-		/* msg 91: "MODIFY RDB$INDICES failed" */
-	}
 
 	GET_STRING(ptr, name);
 
@@ -1006,9 +1031,18 @@ void DYN_modify_index( GBL gbl, UCHAR ** ptr)
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 
+	}
+	catch (...) {
+		DYN_rundown_request(old_env, request, -1);
+		DYN_error_punt(TRUE, 91, NULL, NULL, NULL, NULL, NULL);
+		/* msg 91: "MODIFY RDB$INDICES failed" */
+	}
+
 	if (!found)
+	{
 		DYN_error_punt(FALSE, 93, NULL, NULL, NULL, NULL, NULL);
-	/* msg 93: "Index field not found" */
+		/* msg 93: "Index field not found" */
+	}
 }
 
 
@@ -1129,14 +1163,10 @@ void DYN_modify_local_field(
 
 	request = (BLK) CMP_find_request(tdbb, drq_m_lfield, DYN_REQUESTS);
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-
-	if (SETJMP(env)) {
-		DYN_rundown_request(old_env, request, -1);
-		DYN_error_punt(TRUE, 95, NULL, NULL, NULL, NULL, NULL);
-		/* msg 95: "MODIFY RDB$RELATION_FIELDS failed" */
-	}
 
 	found = FALSE;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -1235,9 +1265,18 @@ void DYN_modify_local_field(
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 
+	}
+	catch (...) {
+		DYN_rundown_request(old_env, request, -1);
+		DYN_error_punt(TRUE, 95, NULL, NULL, NULL, NULL, NULL);
+		/* msg 95: "MODIFY RDB$RELATION_FIELDS failed" */
+	}
+
 	if (!found)
+	{
 		DYN_error_punt(FALSE, 96, NULL, NULL, NULL, NULL, NULL);
-	/* msg 96: "Local column not found" */
+		/* msg 96: "Local column not found" */
+	}
 }
 
 
@@ -1268,13 +1307,10 @@ void DYN_modify_procedure( GBL gbl, UCHAR ** ptr)
 
 	request = NULL;
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-	if (SETJMP(env)) {
-		DYN_rundown_request(old_env, request, -1);
-		DYN_error_punt(TRUE, 141, NULL, NULL, NULL, NULL, NULL);
-		/* msg 141: "MODIFY RDB$PROCEDURES failed" */
-	}
 
 	request = (BLK) CMP_find_request(tdbb, drq_m_prcs, DYN_REQUESTS);
 
@@ -1346,9 +1382,18 @@ void DYN_modify_procedure( GBL gbl, UCHAR ** ptr)
 		DYN_REQUEST(drq_m_prcs) = request;
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-	if (!found)
+
+	}
+	catch (...) {
+		DYN_rundown_request(old_env, request, -1);
+		DYN_error_punt(TRUE, 141, NULL, NULL, NULL, NULL, NULL);
+		/* msg 141: "MODIFY RDB$PROCEDURES failed" */
+	}
+
+	if (!found) {
 		DYN_error_punt(FALSE, 140, procedure_name, NULL, NULL, NULL, NULL);
-	/* msg 140: "Procedure %s not found" */
+		/* msg 140: "Procedure %s not found" */
+	}
 }
 
 
@@ -1380,14 +1425,10 @@ void DYN_modify_relation( GBL gbl, UCHAR ** ptr)
 
 	request = (BLK) CMP_find_request(tdbb, drq_m_relation, DYN_REQUESTS);
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-
-	if (SETJMP(env)) {
-		DYN_rundown_request(old_env, request, -1);
-		DYN_error_punt(TRUE, 99, NULL, NULL, NULL, NULL, NULL);
-		/* msg 99: "MODIFY RDB$RELATIONS failed" */
-	}
 
 	found = FALSE;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -1457,9 +1498,18 @@ void DYN_modify_relation( GBL gbl, UCHAR ** ptr)
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 
+	}
+	catch (...) {
+		DYN_rundown_request(old_env, request, -1);
+		DYN_error_punt(TRUE, 99, NULL, NULL, NULL, NULL, NULL);
+		/* msg 99: "MODIFY RDB$RELATIONS failed" */
+	}
+
 	if (!found)
+	{
 		DYN_error_punt(FALSE, 101, NULL, NULL, NULL, NULL, NULL);
-	/* msg 101: "Relation field not found" */
+		/* msg 101: "Relation field not found" */
+	}
 }
 
 
@@ -1488,14 +1538,10 @@ void DYN_modify_trigger( GBL gbl, UCHAR ** ptr)
 
 	request = (BLK) CMP_find_request(tdbb, drq_m_trigger, DYN_REQUESTS);
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-
-	if (SETJMP(env)) {
-		DYN_rundown_request(old_env, request, -1);
-		DYN_error_punt(TRUE, 102, NULL, NULL, NULL, NULL, NULL);
-		/* msg 102: "MODIFY TRIGGER failed" */
-	}
 
 	GET_STRING(ptr, trigger_name);
 	source = NULL;
@@ -1505,8 +1551,9 @@ void DYN_modify_trigger( GBL gbl, UCHAR ** ptr)
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$TRIGGERS WITH X.RDB$TRIGGER_NAME EQ trigger_name
 
-        if (!DYN_REQUEST(drq_m_trigger))
+        if (!DYN_REQUEST(drq_m_trigger)) {
             DYN_REQUEST(drq_m_trigger) = request;
+		}
 
 		found = TRUE;
 		MODIFY X
@@ -1583,9 +1630,18 @@ void DYN_modify_trigger( GBL gbl, UCHAR ** ptr)
 		DYN_REQUEST(drq_m_trigger) = request;
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-	if (!found)
+
+	}
+	catch (...) {
+		DYN_rundown_request(old_env, request, -1);
+		DYN_error_punt(TRUE, 102, NULL, NULL, NULL, NULL, NULL);
+		/* msg 102: "MODIFY TRIGGER failed" */
+	}
+
+	if (!found) {
 		DYN_error_punt(FALSE, 147, trigger_name, NULL, NULL, NULL, NULL);
-	/* msg 147: "Trigger %s not found" */
+		/* msg 147: "Trigger %s not found" */
+	}
 }
 
 
@@ -1614,14 +1670,10 @@ void DYN_modify_trigger_msg( GBL gbl, UCHAR ** ptr, TEXT * trigger_name)
 
 	request = (BLK) CMP_find_request(tdbb, drq_m_trg_msg, DYN_REQUESTS);
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-
-	if (SETJMP(env)) {
-		DYN_rundown_request(old_env, request, -1);
-		DYN_error_punt(TRUE, 105, NULL, NULL, NULL, NULL, NULL);
-		/* msg 105: "MODIFY TRIGGER MESSAGE failed" */
-	}
 
 	number = DYN_get_number(ptr);
 	if (trigger_name)
@@ -1670,6 +1722,13 @@ void DYN_modify_trigger_msg( GBL gbl, UCHAR ** ptr, TEXT * trigger_name)
 		DYN_REQUEST(drq_m_trg_msg) = request;
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}
+	catch (...) {
+		DYN_rundown_request(old_env, request, -1);
+		DYN_error_punt(TRUE, 105, NULL, NULL, NULL, NULL, NULL);
+		/* msg 105: "MODIFY TRIGGER MESSAGE failed" */
+	}
 }
 
 
@@ -1696,13 +1755,10 @@ static void drop_cache( GBL gbl)
 
 	request = (BLK) CMP_find_request(tdbb, drq_d_cache, DYN_REQUESTS);
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-	if (SETJMP(env)) {
-		DYN_rundown_request(old_env, request, drq_s_cache);
-		DYN_error_punt(TRUE, 63, NULL, NULL, NULL, NULL, NULL);
-		/* msg 63: ERASE RDB$FILE failed */
-	}
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$FILES WITH X.RDB$FILE_FLAGS EQ FILE_cache 
@@ -1712,13 +1768,24 @@ static void drop_cache( GBL gbl)
 
 	END_FOR;
 
-	if (!DYN_REQUEST(drq_d_cache))
+	if (!DYN_REQUEST(drq_d_cache)) {
 		DYN_REQUEST(drq_d_cache) = request;
+	}
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}
+	catch (...) {
+		DYN_rundown_request(old_env, request, drq_s_cache);
+		DYN_error_punt(TRUE, 63, NULL, NULL, NULL, NULL, NULL);
+		/* msg 63: ERASE RDB$FILE failed */
+	}
+
 	if (!found)
+	{
 		DYN_error_punt(FALSE, 149, NULL, NULL, NULL, NULL, NULL);
-	/* msg 149: "Shared cache file not found" */
+		/* msg 149: "Shared cache file not found" */
+	}
 }
 
 
@@ -1745,13 +1812,10 @@ static void drop_log( GBL gbl)
 
 	request = (BLK) CMP_find_request(tdbb, drq_d_log, DYN_REQUESTS);
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-	if (SETJMP(env)) {
-		DYN_rundown_request(old_env, request, drq_d_log);
-		DYN_error_punt(TRUE, 153, NULL, NULL, NULL, NULL, NULL);
-		/* msg 153: ERASE RDB$LOG_FILE failed */
-	}
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$LOG_FILES 
@@ -1764,9 +1828,19 @@ static void drop_log( GBL gbl)
 		DYN_REQUEST(drq_d_log) = request;
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}
+	catch (...) {
+		DYN_rundown_request(old_env, request, drq_d_log);
+		DYN_error_punt(TRUE, 153, NULL, NULL, NULL, NULL, NULL);
+		/* msg 153: ERASE RDB$LOG_FILE failed */
+	}
+
 	if (!found)
+	{
 		DYN_error_punt(FALSE, 152, NULL, NULL, NULL, NULL, NULL);
-	/* msg 152: "Write ahead log not found" */
+		/* msg 152: "Write ahead log not found" */
+	}
 }
 
 static void modify_lfield_position(TDBB tdbb,
@@ -1809,13 +1883,10 @@ static void modify_lfield_position(TDBB tdbb,
 	JMP_BUF env, *old_env;
 	BOOLEAN move_down = FALSE;
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-
-	if (SETJMP(env)) {
-		DYN_error_punt(TRUE, 95, NULL, NULL, NULL, NULL, NULL);
-		/* msg 95: "MODIFY RDB$RELATION_FIELDS failed" */
-	}
 
 /* Find the position of the last field in the relation */
 	DYN_UTIL_generate_field_position(tdbb, gbl, relation_name, &max_position);
@@ -1883,6 +1954,12 @@ static void modify_lfield_position(TDBB tdbb,
 
 	CMP_release(tdbb, (REQ)request);
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}
+	catch (...) {
+		DYN_error_punt(TRUE, 95, NULL, NULL, NULL, NULL, NULL);
+		/* msg 95: "MODIFY RDB$RELATION_FIELDS failed" */
+	}
 }
 
 static BOOLEAN check_view_dependency(TDBB tdbb,
@@ -2115,26 +2192,13 @@ void DYN_modify_sql_field(GBL		gbl,
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	dtype = scale = prec = subtype = charlen = collation = fldlen = nullflg =
 		charset = FALSE;
-
-	if (SETJMP(env)) {
-		if (new_fld)
-			gds__free((SLONG *) new_fld);
-
-		if (dom_fld)
-			gds__free((SLONG *) dom_fld);
-
-		if (orig_fld)
-			gds__free((SLONG *) orig_fld);
-
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		DYN_error_punt(TRUE, 95, NULL, NULL, NULL, NULL, NULL);
-		/* msg 95: "MODIFY RDB$RELATION_FIELDS failed" */
-	}
 
 /* Allocate the field structures */
 	orig_fld = (DYN_FLD) gds__alloc(sizeof(struct dyn_fld));
@@ -2494,6 +2558,25 @@ void DYN_modify_sql_field(GBL		gbl,
 		gds__free((SLONG *) orig_fld);
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}
+	catch (...) {
+		if (new_fld) {
+			gds__free((SLONG *) new_fld);
+		}
+
+		if (dom_fld) {
+			gds__free((SLONG *) dom_fld);
+		}
+
+		if (orig_fld) {
+			gds__free((SLONG *) orig_fld);
+		}
+
+		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+		DYN_error_punt(TRUE, 95, NULL, NULL, NULL, NULL, NULL);
+		/* msg 95: "MODIFY RDB$RELATION_FIELDS failed" */
+	}
 }
 
 void get_domain_type(TDBB tdbb, DBB dbb, GBL gbl, DYN_FLD dom_fld)

@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.client,v 1.1 2001-07-29 23:43:23 skywalker Exp $
+#   $Id: Makefile.in.client,v 1.2 2001-12-24 02:50:52 tamlin Exp $
 # 
 
 ROOT=../..

@@ -21,12 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifdef N
-#include "firebird.h"ETWARE_386
-#include <sys/stat.h>
-#include <errno.h>
-#endif
-
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../jrd/common.h"

@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.2 2001-07-29 17:19:15 skywalker Exp $
+ *  $Id: fb_types.h,v 1.3 2001-12-24 02:50:49 tamlin Exp $
  *
  */
 
@@ -117,7 +117,28 @@ typedef struct GDS_QUAD_t GDS_QUAD;
 
 #endif /* DEFINED_GDS_QUAD */
 
+//
+// TMN: some misc data types from all over the place
+//
+struct vary
+{
+	SSHORT vary_length;
+	char   vary_string[1];
+};
+// TMN: Currently we can't do this, since remote uses a different
+// definition of VARY than the rest of the code! :-<
+//typedef vary* VARY;
 
+struct lstring
+{
+	ULONG	lstr_length;
+	ULONG	lstr_allocated;
+	UCHAR*	lstr_address;
+};
+typedef struct lstring LSTRING;
+
+
+typedef unsigned char BOOLEAN;
 typedef char TEXT;				/* To be expunged over time */
 typedef unsigned char STEXT;	/* Signed text - very rare */
 typedef unsigned char UTEXT;	/* Unsigned text - common */
@@ -147,6 +168,5 @@ typedef USHORT FLD_LENGTH;
 #define GDS_ULONG ULONG
 
 #define GDS_STATUS	long
-
 
 #endif /* INCLUDE_FB_TYPES_H */

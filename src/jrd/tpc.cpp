@@ -240,7 +240,7 @@ int TPC_snapshot_state(TDBB tdbb, SLONG number)
 			   then we know it is still active */
 
 			MOVE_CLEAR(&temp_lock, sizeof(struct lck));
-			temp_lock.lck_header.blk_type = type_lck;
+			//temp_lock.blk_type = type_lck;
 			temp_lock.lck_dbb = dbb;
 			temp_lock.lck_type = LCK_tra;
 			temp_lock.lck_owner_handle =
@@ -305,11 +305,11 @@ void TPC_update_cache(TDBB tdbb, TIP tip_page, SLONG sequence)
    any tip cache pages we can release--this is cheaper and 
    easier than finding out when a TIP page is dropped */
 
-	while (tip_cache = dbb->dbb_tip_cache)
+	while ( (tip_cache = dbb->dbb_tip_cache) )
 		if (dbb->dbb_oldest_transaction >=
 			tip_cache->tpc_base + trans_per_tip) {
 			dbb->dbb_tip_cache = tip_cache->tpc_next;
-			ALL_release(reinterpret_cast < frb * >(tip_cache));
+			delete tip_cache;
 		}
 		else
 			break;
@@ -356,7 +356,7 @@ static TPC allocate_tpc(TDBB tdbb, ULONG base)
 /* allocate a TIP cache block with enough room for 
    all desired transactions */
 
-	tip_cache = (TPC) ALLOCPV(type_tpc, trans_per_tip / 4);
+	tip_cache = new(*dbb->dbb_permanent, trans_per_tip / 4) tpc();
 	tip_cache->tpc_base = base;
 
 	return tip_cache;

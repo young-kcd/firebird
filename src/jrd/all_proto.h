@@ -24,38 +24,6 @@
 #ifndef JRD_ALL_PROTO_H
 #define JRD_ALL_PROTO_H
 
-#include "../jrd/jrd.h"
-#include "../jrd/all.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-struct blk *ALL_alloc(struct plb *, UCHAR, ULONG, enum err_t);
-#ifdef DEV_BUILD
-void ALL_check_memory(void);
-#endif
-TEXT *ALL_cstring(TEXT *);
-struct blk *ALL_extend(struct blk **, ULONG);
-void ALL_fini(void);
-void ALL_free(SCHAR *);
-ULONG ALL_get_free_object(struct plb *, struct vec **, USHORT);
-void ALL_init(void);
-SCHAR *ALL_malloc(ULONG, enum err_t);
-struct plb *ALL_pool(void);
-void ALL_push(struct blk *, register struct lls **);
-struct blk *ALL_pop(register struct lls **);
-void ALL_release(register struct frb *);
-void ALL_rlpool(struct plb *);
-SCHAR *ALL_sys_alloc(ULONG, enum err_t);
-void ALL_sys_free(SCHAR *);
-ULONG ALL_tail(UCHAR);
-struct vec *ALL_vector(struct plb *, struct vec **, USHORT);
-
-#define ALL_RELEASE(block)	ALL_release ((struct frb *) block)
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
+#include "../jrd/all.h" // everything is defined in all.h now.
 
 #endif /* JRD_ALL_PROTO_H */

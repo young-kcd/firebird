@@ -318,7 +318,7 @@ int PAG_add_clump(
 		if (entry_p[1] == len) {
 			entry_p += 2;
 			r = entry;
-			if (l = len) {
+			if ( (l = len) ) {
 				if (must_write)
 					CCH_MARK_MUST_WRITE(tdbb, &window);
 				else
@@ -657,7 +657,7 @@ PAG PAG_allocate(register WIN * window)
 		CCH_precedence(tdbb, window, pip_window.win_page);
 #ifdef VIO_DEBUG
 		if (debug_flag > DEBUG_WRITES_INFO)
-			ib_printf("\tPAG_allocate:  allocated page %d\n",
+			ib_printf("\tPAG_allocate:  allocated page %"SLONGFORMAT"\n",
 					  window->win_page);
 #endif
 		return new_page;
@@ -740,7 +740,7 @@ SLONG PAG_attachment_id(void)
 
 /* Take out lock on attachment id */
 
-	lock = attachment->att_id_lock = (LCK) ALLOCPV(type_lck, sizeof(SLONG));
+	lock = attachment->att_id_lock = new(*dbb->dbb_permanent, sizeof(SLONG)) lck();
 	lock->lck_type = LCK_attachment;
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 	lock->lck_parent = dbb->dbb_lock;
@@ -1033,18 +1033,14 @@ void PAG_header(TEXT * file_name, USHORT file_length)
    and unit of transfer is a multiple of physical disk
    sector for raw disk access. */
 
-	temp_buffer = ALL_malloc((SLONG) 2 * MIN_PAGE_SIZE, ERR_jmp);
+	temp_buffer = (SCHAR*)MemoryPool::malloc_from_system((SLONG) 2 * MIN_PAGE_SIZE);
 	temp_page =
 		(SCHAR *) (((U_IPTR) temp_buffer + MIN_PAGE_SIZE - 1) &
 				   ~((U_IPTR) MIN_PAGE_SIZE - 1));
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-	if (SETJMP(env)) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		if (temp_buffer)
-			ALL_free(temp_buffer);
-		ERR_punt();
-	}
+
+	try {
 
 	header = (HDR) temp_page;
 	PIO_header(dbb, temp_page, MIN_PAGE_SIZE);
@@ -1108,9 +1104,8 @@ if (header->hdr_implementation && header->hdr_implementation != CLASS)
 		dbb->dbb_flags |= DBB_DB_SQL_dialect_3;
 
 	relation = MET_relation(tdbb, 0);
-	relation->rel_pages = vector = (VCL) ALLOCPV(type_vcl, 1);
-	vector->vcl_count = 1;
-	vector->vcl_long[0] = header->hdr_PAGES;
+	relation->rel_pages = vector = vcl::newVector(*dbb->dbb_permanent, 1);
+	(*vector)[0] = header->hdr_PAGES;
 
 	dbb->dbb_page_size = header->hdr_page_size;
 	dbb->dbb_page_buffers = header->hdr_page_buffers;
@@ -1154,8 +1149,17 @@ if (header->hdr_implementation && header->hdr_implementation != CLASS)
 		dbb->dbb_ast_flags |= DBB_shutdown;
 
 	if (temp_buffer)
-		ALL_free(temp_buffer);
+		MemoryPool::free_from_system(temp_buffer);
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}	// try
+	catch (...) {
+		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+		if (temp_buffer) {
+			MemoryPool::free_from_system(temp_buffer);
+		}
+		ERR_punt();
+	}
 }
 
 
@@ -1179,7 +1183,7 @@ void PAG_init(void)
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	dbb->dbb_pcontrol = control = (PGC) ALLOCP(type_pgc);
+	dbb->dbb_pcontrol = control = new(*dbb->dbb_permanent) pgc();
 	control->pgc_bytes = dbb->dbb_page_size - OFFSETA(PIP, pip_bits);
 	control->pgc_ppp = control->pgc_bytes * 8;
 	control->pgc_tpt =
@@ -1254,19 +1258,15 @@ void PAG_init2(USHORT shadow_number)
    and set up to release it in case of error. Align
    the temporary page buffer for raw disk access. */
 
-	temp_buffer =
-		ALL_malloc((SLONG) dbb->dbb_page_size + MIN_PAGE_SIZE, ERR_jmp);
+	temp_buffer = (SCHAR*)
+		MemoryPool::malloc_from_system((SLONG) dbb->dbb_page_size + MIN_PAGE_SIZE);
 	temp_page =
 		(SCHAR *) (((U_IPTR) temp_buffer + MIN_PAGE_SIZE - 1) &
 				   ~((U_IPTR) MIN_PAGE_SIZE - 1));
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-	if (SETJMP(env)) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		if (temp_buffer)
-			ALL_free(temp_buffer);
-		ERR_punt();
-	}
+
+	try {
 
 	file = dbb->dbb_file;
 	if (shadow_number) {
@@ -1284,7 +1284,8 @@ void PAG_init2(USHORT shadow_number)
 
 /* Loop thru files and header pages until everything is open */
 
-	for (;;) {
+	for (;;)
+	{
 		file_name = NULL;
 		window.win_page = file->fil_min_page;
 		do {
@@ -1365,9 +1366,19 @@ void PAG_init2(USHORT shadow_number)
 		file->fil_sequence = sequence++;
 	}
 
-	if (temp_buffer)
-		ALL_free(temp_buffer);
+	if (temp_buffer) {
+		MemoryPool::free_from_system(temp_buffer);
+	}
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}	// try
+	catch (...) {
+		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+		if (temp_buffer) {
+			MemoryPool::free_from_system(temp_buffer);
+		}
+		ERR_punt();
+	}
 }
 
 
@@ -1501,7 +1512,7 @@ void PAG_release_page(SLONG number, SLONG prior_page)
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES_INFO)
-		ib_printf("\tPAG_release_page:  about to release page %d\n", number);
+		ib_printf("\tPAG_release_page:  about to release page %"SLONGFORMAT"\n", number);
 #endif
 
 	control = dbb->dbb_pcontrol;

@@ -27,6 +27,9 @@
 #include "../jrd/gdsassert.h"
 #include "../jrd/common.h"
 #include "../jrd/dsc.h"
+#include "../jrd/all.h"
+
+#include "../include/fb_vector.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,40 +48,23 @@ extern "C" {
 
 #define MAX_PATH_LENGTH         512
 
-#define BUGCHECK(number)        ERR_bugcheck (number)
+/* Moved to err_proto.h */
+/*#define BUGCHECK(number)        ERR_bugcheck (number)
 #define CORRUPT(number)         ERR_corrupt (number)
 #define IBERROR(number)         ERR_error (number)
+*/
 
-/* Error delivery type */
-
-typedef enum err_t {
-	ERR_jmp,					/* longjmp */
-	ERR_val,					/* value */
-	ERR_ref						/* reference */
-} ERR_T;
-
-#define BLKCHK(blk, type)       if (((BLK) (blk))->blk_type != (UCHAR) (type)) BUGCHECK (147)
+#define BLKCHK(blk, type)       if (MemoryPool::blk_type(blk) != (USHORT) (type)) BUGCHECK (147)
 
 /* DEV_BLKCHK is used for internal consistency checking - where
  * the performance hit in production build isn't desired.
  * (eg: scatter this everywhere)
  */
 #ifdef DEV_BUILD
-#define DEV_BLKCHK(blk,type)    if (((BLK) (blk)) != NULL) {BLKCHK (blk, type);}
+#define DEV_BLKCHK(blk,type)    if (blk) {BLKCHK (blk, type);}
 #else
 #define DEV_BLKCHK(blk,type)	/* nothing */
 #endif
-
-#define ALLOCB(type)            ALL_alloc (dbb->dbb_bufferpool, type, 0, ERR_jmp)
-#define ALLOCBV(type,repeat)    ALL_alloc (dbb->dbb_bufferpool, type, repeat, ERR_jmp)
-#define ALLOCBR(type)           ALL_alloc (dbb->dbb_bufferpool, type, 0, ERR_val)
-#define ALLOCBVR(type,repeat)   ALL_alloc (dbb->dbb_bufferpool, type, repeat, ERR_val)
-#define ALLOCD(type)            ALL_alloc (tdbb->tdbb_default, type, 0, ERR_jmp)
-#define ALLOCDV(type,repeat)    ALL_alloc (tdbb->tdbb_default, type, repeat, ERR_jmp)
-#define ALLOCP(type)            ALL_alloc (dbb->dbb_permanent, type, 0, ERR_jmp)
-#define ALLOCPV(type,repeat)    ALL_alloc (dbb->dbb_permanent, type, repeat, ERR_jmp)
-#define ALLOCT(type)            ALL_alloc (transaction->tra_pool, type, 0, ERR_jmp)
-#define ALLOCTV(type,repeat)    ALL_alloc (transaction->tra_pool, type, repeat, ERR_jmp)
 
 
 /* Thread data block / IPC related data blocks */
@@ -90,30 +76,9 @@ typedef enum err_t {
 #include "../jrd/thd.h"
 #include "../jrd/isc.h"
 
-/* definition of block types for data allocation */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
-#define BLKDEF(type, root, tail) type,
-enum blk_t {
-	type_MIN = 0,
-#ifndef GATEWAY
-#include "../jrd/blk.h"
-#else
-#include ".._gway/gway/blk.h"
-#endif
-	type_MAX
-};
-#undef BLKDEF
-
-/* Block types */
-
-#ifndef INCLUDE_FB_BLK
+/* definition of block types for data allocation in JRD */
+#include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
-#endif
 
 
 /* the database block, the topmost block in the metadata 
@@ -124,10 +89,13 @@ enum blk_t {
 #else
 #define HASH_SIZE 101
 
-typedef struct dbb {
-	struct blk dbb_header;
-	struct dbb *dbb_next;		/* Next database block in system */
-	struct att *dbb_attachments;	/* Active attachments */
+class dbb : private pool_alloc<type_dbb>
+{
+public:
+	static dbb* newDbb(MemoryPool& p) { return new(p) dbb(p); }
+
+	class dbb *dbb_next;		/* Next database block in system */
+	class att *dbb_attachments;	/* Active attachments */
 	struct bcb *dbb_bcb;		/* Buffer control block */
 	struct vec *dbb_relations;	/* relation vector */
 	struct vec *dbb_procedures;	/* scanned procedures */
@@ -140,8 +108,8 @@ typedef struct dbb {
 	struct lck *dbb_retaining_lock;	/* lock for preserving commit retaining snapshot */
 	struct plc *dbb_connection;	/* connection block */
 	struct pgc *dbb_pcontrol;	/* page control */
-	struct vcl *dbb_t_pages;	/* pages number for transactions */
-	struct vcl *dbb_gen_id_pages;	/* known pages for gen_id */
+	class vcl *dbb_t_pages;	/* pages number for transactions */
+	class vcl *dbb_gen_id_pages;	/* known pages for gen_id */
 	struct blf *dbb_blob_filters;	/* known blob filters */
 	struct lls *dbb_modules;	/* external function/filter modules */
 	MUTX_T *dbb_mutexes;		/* DBB block mutexes */
@@ -162,15 +130,20 @@ typedef struct dbb {
 	USHORT dbb_refresh_ranges;	/* active count of refresh ranges */
 	USHORT dbb_prefetch_sequence;	/* sequence to pace frequency of prefetch requests */
 	USHORT dbb_prefetch_pages;	/* prefetch pages per request */
-	struct str *dbb_spare_string;	/* random buffer */
-	struct str *dbb_filename;	/* filename string */
+	class str *dbb_spare_string;	/* random buffer */
+	class str *dbb_filename;	/* filename string */
 #ifdef ISC_DATABASE_ENCRYPTION
-	struct str *dbb_encrypt_key;	/* encryption key */
+	class str *dbb_encrypt_key;	/* encryption key */
 #endif
 
-	struct plb *dbb_permanent;
-	struct plb *dbb_bufferpool;
-	struct vec *dbb_pools;		/* pools */
+	JrdMemoryPool* dbb_permanent;
+	JrdMemoryPool* dbb_bufferpool;
+
+	typedef JrdMemoryPool* pool_ptr;
+	typedef Firebird::vector<pool_ptr> pool_vec_type;
+
+	pool_vec_type dbb_pools;		/* pools */
+    USHORT dbb_next_pool_id;
 	struct vec *dbb_internal;	/* internal requests */
 	struct vec *dbb_dyn_req;	/* internal dyn requests */
 	struct jrn *dbb_journal;	/* journal block */
@@ -188,9 +161,9 @@ typedef struct dbb {
 #ifdef GARBAGE_THREAD
 	EVENT_T dbb_gc_event[1];	/* Event to wake up garbage collector */
 #endif
-	struct att *dbb_update_attachment;	/* Attachment with update in process */
-	struct btb *dbb_update_que;	/* Attachments waiting for update */
-	struct btb *dbb_free_btbs;	/* Unused btb blocks */
+	class att *dbb_update_attachment;	/* Attachment with update in process */
+	class btb *dbb_update_que;	/* Attachments waiting for update */
+	class btb *dbb_free_btbs;	/* Unused btb blocks */
 
 	SLONG dbb_current_memory;
 	SLONG dbb_max_memory;
@@ -208,34 +181,44 @@ typedef struct dbb {
 	int (*dbb_decrypt) ();		/* External decryption routine */
 #endif
 
-	struct map *dbb_blob_map;	/* mapping of blobs for REPLAY */
+	class map *dbb_blob_map;	/* mapping of blobs for REPLAY */
 	struct log *dbb_log;		/* log file for REPLAY */
 	struct vec *dbb_text_objects;	/* intl text type descriptions */
 	struct vec *dbb_charsets;	/* intl character set descriptions */
 	struct wal *dbb_wal;		/* WAL handle for WAL API */
 	struct tpc *dbb_tip_cache;	/* cache of latest known state of all transactions in system */
-	struct vcl *dbb_pc_transactions;	/* active precommitted transactions */
-	struct sym *dbb_hash_table[HASH_SIZE];	/* keep this at the end */
-} *DBB;
+	class vcl *dbb_pc_transactions;	/* active precommitted transactions */
+	class sym *dbb_hash_table[HASH_SIZE];	/* keep this at the end */
 
-/* bit values for dbb_flags */
+private:
+	dbb(MemoryPool& p)
+	:	dbb_pools(10, p, type_dbb)
+	{
+	}
+	dbb(const dbb&);	// no impl.
+	const dbb& operator =(const dbb&) { return *this; }
+};
+typedef dbb* DBB;
 
+//
+// bit values for dbb_flags
+//
 #define DBB_no_garbage_collect 	0x1L
 #define DBB_damaged         	0x2L
 #define DBB_exclusive       	0x4L	/* Database is accessed in exclusive mode */
 #define DBB_bugcheck        	0x8L	/* Bugcheck has occurred */
 #ifdef GARBAGE_THREAD
 #define DBB_garbage_collector	0x10L	/* garbage collector thread exists */
-#define DBB_gc_active		0x20L	/* ... and is actively working. */
-#define DBB_gc_pending		0x40L	/* garbage collection requested */
+#define DBB_gc_active			0x20L	/* ... and is actively working. */
+#define DBB_gc_pending			0x40L	/* garbage collection requested */
 #endif
 #define DBB_force_write     	0x80L	/* Database is forced write */
-#define DBB_no_reserve     	0x100L	/* No reserve space for versions */
+#define DBB_no_reserve     		0x100L	/* No reserve space for versions */
 #define DBB_add_log         	0x200L	/* write ahead log has been added */
 #define DBB_delete_log      	0x400L	/* write ahead log has been deleted */
 #define DBB_cache_manager   	0x800L	/* Shared cache manager */
 #define DBB_DB_SQL_dialect_3 	0x1000L	/* database SQL dialect 3 */
-#define DBB_read_only    	0x2000L	/* DB is ReadOnly (RO). If not set, DB is RW */
+#define DBB_read_only    		0x2000L	/* DB is ReadOnly (RO). If not set, DB is RW */
 #define DBB_being_opened_read_only 0x4000L	/* DB is being opened RO. If unset, opened as RW */
 #define DBB_not_in_use      	0x8000L	/* DBB to be ignored while attaching */
 #define DBB_lck_init_done   	0x10000L	/* LCK_init() called for the database */
@@ -243,22 +226,24 @@ typedef struct dbb {
 #define DBB_sweep_in_progress 	0x40000L	/* A database sweep operation is in progress */
 #define DBB_security_db     	0x80000L	/* ISC security database */
 #define DBB_sweep_thread_started 0x100000L	/* A database sweep thread has been started */
-#define DBB_suspend_bgio	0x200000L	/* Suspend I/O by background threads */
+#define DBB_suspend_bgio		0x200000L	/* Suspend I/O by background threads */
 #define DBB_being_opened    	0x400000L	/* database is being attached to */
 
-/* dbb_ast_flags */
+//
+// dbb_ast_flags
+//
+#define DBB_blocking		0x1L	// Exclusive mode is blocking
+#define DBB_get_shadows		0x2L	// Signal received to check for new shadows
+#define DBB_assert_locks	0x4L	// Locks are to be asserted
+#define DBB_shutdown		0x8L	// Database is shutdown
+#define DBB_shut_attach		0x10L	// no new attachments accepted
+#define DBB_shut_tran		0x20L	// no new transactions accepted
+#define DBB_shut_force		0x40L	// forced shutdown in progress
+#define DBB_shutdown_locks	0x80L	// Database locks release by shutdown
 
-#define DBB_blocking        	0x1L	/* Exclusive mode is blocking */
-#define DBB_get_shadows     	0x2L	/* Signal received to check for new shadows */
-#define DBB_assert_locks    	0x4L	/* Locks are to be asserted */
-#define DBB_shutdown       	0x8L	/* Database is shutdown */
-#define DBB_shut_attach     	0x10L	/* no new attachments accepted */
-#define DBB_shut_tran       	0x20L	/* no new transactions accepted */
-#define DBB_shut_force      	0x40L	/* forced shutdown in progress */
-#define DBB_shutdown_locks  	0x80L	/* Database locks release by shutdown */
-
-/* Database attachments */
-
+//
+// Database attachments
+//
 #define DBB_read_seq_count      0
 #define DBB_read_idx_count      1
 #define DBB_update_count        2
@@ -269,37 +254,39 @@ typedef struct dbb {
 #define DBB_expunge_count       7
 #define DBB_max_count           8
 
-/* Database mutexes and read/write locks */
-
-#define DBB_MUTX_init_fini      0	/* During startup and shutdown */
-#define DBB_MUTX_statistics     1	/* Memory size and counts */
-#define DBB_MUTX_replay         2	/* Replay logging */
-#define DBB_MUTX_dyn            3	/* Dynamic ddl */
-#define DBB_MUTX_cache          4	/* Process-private cache management */
-#define DBB_MUTX_clone          5	/* Request cloning */
-#define DBB_MUTX_cmp_clone      6	/* Compiled request cloning */
+//
+// Database mutexes and read/write locks
+//
+#define DBB_MUTX_init_fini      0	// During startup and shutdown
+#define DBB_MUTX_statistics     1	// Memory size and counts
+#define DBB_MUTX_replay         2	// Replay logging
+#define DBB_MUTX_dyn            3	// Dynamic ddl
+#define DBB_MUTX_cache          4	// Process-private cache management
+#define DBB_MUTX_clone          5	// Request cloning
+#define DBB_MUTX_cmp_clone      6	// Compiled request cloning
 #ifndef NETWARE_386
 #define DBB_MUTX_max            7
 #else
-#define DBB_MUTX_udf            7	/* UDF lookup */
-#define DBB_MUTX_grant_priv     8	/* Generate user privileges */
-#define DBB_MUTX_get_class      9	/* Read a security class */
+#define DBB_MUTX_udf            7	// UDF lookup
+#define DBB_MUTX_grant_priv     8	// Generate user privileges
+#define DBB_MUTX_get_class      9	// Read a security class
 #define DBB_MUTX_max            10
 #endif
 
-#define DBB_WLCK_pools          0	/* Pool manipulation */
-#define DBB_WLCK_files          1	/* DB and shadow file manipulation */
+#define DBB_WLCK_pools          0	// Pool manipulation
+#define DBB_WLCK_files          1	// DB and shadow file manipulation
 #define DBB_WLCK_max            2
 
-/* Flags to indicate normal internal requests vs. dyn internal requests */
-
+//
+// Flags to indicate normal internal requests vs. dyn internal requests
+//
 #define IRQ_REQUESTS            1
 #define DYN_REQUESTS            2
 
 
-
-/* Errors during validation - will be returned on info calls */
-
+//
+// Errors during validation - will be returned on info calls
+//
 #define VAL_PAG_WRONG_TYPE          0
 #define VAL_PAG_CHECKSUM_ERR        1
 #define VAL_PAG_DOUBLE_ALLOC        2
@@ -329,57 +316,90 @@ typedef struct dbb {
 
 
 
-/* the attachment block; one is created for each attachment
-   to a database */
+//
+// the attachment block; one is created for each attachment to a database
+//
+class att : public pool_alloc<type_att>
+{
+public:
+	att()
+	:	att_database(0),
+		att_next(0),
+		att_blocking(0),
+		att_user(0),
+		att_transactions(0),
+		att_dbkey_trans(0),
+		att_requests(0),
+		att_active_sorts(0),
+		att_id_lock(0),
+		att_attachment_id(0),
+		att_lock_owner_handle(0),
+		att_event_session(0),
+		att_security_class(0),
+		att_security_classes(0),
+		att_relation_locks(0),
+		att_bookmarks(0),
+		att_record_locks(0),
+		att_bkm_quick_ref(0),
+		att_lck_quick_ref(0),
+		att_flags(0),
+		att_charset(0),
+		att_lc_messages(0),
+		att_long_locks(0),
+		att_compatibility_table(0),
+		att_val_errors(0),
+		att_working_directory(0)
+	{
+		att_counts[0] = 0;
+	}
 
-typedef struct att {
-	struct blk att_header;
-	struct dbb *att_database;	/* Parent databasea block */
-	struct att *att_next;		/* Next attachment to database */
-	struct att *att_blocking;	/* Blocking attachment, if any */
-	struct usr *att_user;		/* User identification */
-	struct tra *att_transactions;	/* Transactions belonging to attachment */
-	struct tra *att_dbkey_trans;	/* transaction to control db-key scope */
-	struct req *att_requests;	/* Requests belonging to attachment */
-	struct scb *att_active_sorts;	/* Active sorts */
-	struct lck *att_id_lock;	/* Attachment lock (if any) */
-	SLONG att_attachment_id;	/* Attachment ID */
-	SLONG att_lock_owner_handle;	/* Handle for the lock manager */
-	SLONG att_event_session;	/* Event session id, if any */
-	struct scl *att_security_class;	/* security class for database */
-	struct scl *att_security_classes;	/* security classes */
-	struct vcl *att_counts[DBB_max_count];
-	struct vec *att_relation_locks;	/* explicit persistent locks for relations */
-	struct bkm *att_bookmarks;	/* list of bookmarks taken out using this attachment */
-	struct lck *att_record_locks;	/* explicit or implicit record locks taken out during attachment */
-	struct vec *att_bkm_quick_ref;	/* correspondence table of bookmarks */
-	struct vec *att_lck_quick_ref;	/* correspondence table of locks */
-	ULONG att_flags;			/* Flags describing the state of the attachment */
-	SSHORT att_charset;			/* user's charset specified in dpb */
-	struct str *att_lc_messages;	/* attachment's preference for message natural language */
-	struct lck *att_long_locks;	/* outstanding two phased locks */
-	struct vec *att_compatibility_table;	/* hash table of compatible locks */
-	struct vcl *att_val_errors;
-	struct str *att_working_directory;	/* Current working directory is cached */
-} *ATT;
+	class dbb*	att_database;		// Parent databasea block
+	att*		att_next;			// Next attachment to database
+	att*		att_blocking;		// Blocking attachment, if any
+	class usr*	att_user;			// User identification
+	struct tra*	att_transactions;	// Transactions belonging to attachment
+	struct tra*	att_dbkey_trans;	// transaction to control db-key scope
+	struct req*	att_requests;		// Requests belonging to attachment
+	struct scb*	att_active_sorts;	// Active sorts
+	struct lck*	att_id_lock;		// Attachment lock (if any)
+	SLONG		att_attachment_id;	// Attachment ID
+	SLONG		att_lock_owner_handle;	// Handle for the lock manager
+	SLONG		att_event_session;	// Event session id, if any
+	class scl*	att_security_class;	// security class for database
+	class scl*	att_security_classes;	// security classes
+	class vcl*	att_counts[DBB_max_count];
+	struct vec*	att_relation_locks;	// explicit persistent locks for relations
+	struct bkm*	att_bookmarks;		// list of bookmarks taken out using this attachment
+	struct lck*	att_record_locks;	// explicit or implicit record locks taken out during attachment
+	struct vec*	att_bkm_quick_ref;	// correspondence table of bookmarks
+	struct vec*	att_lck_quick_ref;	// correspondence table of locks
+	ULONG		att_flags;			// Flags describing the state of the attachment
+	SSHORT		att_charset;		// user's charset specified in dpb
+	class str*	att_lc_messages;	// attachment's preference for message natural language
+	struct lck*	att_long_locks;		// outstanding two phased locks
+	struct vec*	att_compatibility_table;	// hash table of compatible locks
+	class vcl*	att_val_errors;
+	class str*	att_working_directory;	// Current working directory is cached
+};
+typedef att* ATT;
 
 
 /* Attachment flags */
 
-#define ATT_no_cleanup          1	/* Don't expunge, purge, or garbage collect */
-#define ATT_shutdown            2	/* attachment has been shutdown */
-#define ATT_shutdown_notify     4	/* attachment has notified client of shutdown */
-#define ATT_shutdown_manager    8	/* attachment requesting shutdown */
-#define ATT_lck_init_done       16	/* LCK_init() called for the attachment */
-#define ATT_exclusive           32	/* attachment wants exclusive database access */
-#define ATT_attach_pending      64	/* Indicate attachment is only pending */
-#define ATT_exclusive_pending   128	/* Indicate exclusive attachment pending */
-#define ATT_gbak_attachment	256	/* Indicate GBAK attachment */
-#define ATT_security_db		512	/* Indicates an implicit attachment to the security db */
+#define ATT_no_cleanup			1	// Don't expunge, purge, or garbage collect
+#define ATT_shutdown			2	// attachment has been shutdown
+#define ATT_shutdown_notify		4	// attachment has notified client of shutdown
+#define ATT_shutdown_manager	8	// attachment requesting shutdown
+#define ATT_lck_init_done		16	// LCK_init() called for the attachment
+#define ATT_exclusive			32	// attachment wants exclusive database access
+#define ATT_attach_pending		64	// Indicate attachment is only pending
+#define ATT_exclusive_pending   128	// Indicate exclusive attachment pending
+#define ATT_gbak_attachment		256	// Indicate GBAK attachment
+#define ATT_security_db			512	// Indicates an implicit attachment to the security db
 #ifdef GARBAGE_THREAD
-#define ATT_notify_gc		1024	/* Notify garbage collector to expunge, purge .. */
-#define ATT_disable_notify_gc	2048	/* Temporarily perform own garbage collection */
-#define ATT_garbage_collector	4096	/* I'm a garbage collector */
+#define ATT_notify_gc			1024	// Notify garbage collector to expunge, purge ..
+#define ATT_disable_notify_gc	2048	// Temporarily perform own garbage collection
+#define ATT_garbage_collector	4096	// I'm a garbage collector
 
 #define ATT_NO_CLEANUP	(ATT_no_cleanup | ATT_notify_gc)
 #else
@@ -387,18 +407,19 @@ typedef struct att {
 #endif
 
 #ifdef CANCEL_OPERATION
-#define ATT_cancel_raise	8192	/* Cancel currently running operation */
-#define ATT_cancel_disable	16384	/* Disable cancel operations */
+#define ATT_cancel_raise		8192	// Cancel currently running operation
+#define ATT_cancel_disable		16384	// Disable cancel operations
 #endif
 
-#define ATT_gfix_attachment	32768	/* Indicate a GFIX attachment */
-#define ATT_gstat_attachment	65536	/* Indicate a GSTAT attachment */
+#define ATT_gfix_attachment		32768	// Indicate a GFIX attachment
+#define ATT_gstat_attachment	65536	// Indicate a GSTAT attachment
 
 
 /* Procedure block */
 
-typedef struct prc {
-	struct blk prc_header;
+class prc : public pool_alloc_rpt<SCHAR, type_prc>
+{
+    public:
 	USHORT prc_id;
 	USHORT prc_flags;
 	USHORT prc_inputs;
@@ -411,18 +432,18 @@ typedef struct prc {
 	struct vec *prc_input_fields;	/* vector of field blocks */
 	struct vec *prc_output_fields;	/* vector of field blocks */
 	struct req *prc_request;	/* compiled procedure request */
-	struct str *prc_security_name;	/* pointer to security class name for procedure */
+	class str *prc_security_name;	/* pointer to security class name for procedure */
 	USHORT prc_use_count;		/* requests compiled with relation */
 	struct lck *prc_existence_lock;	/* existence lock, if any */
-	struct str *prc_name;		/* pointer to ascic name */
+	class str *prc_name;		/* pointer to ascic name */
 	USHORT prc_alter_count;		/* No. of times the procedure was altered */
+};
+typedef prc* PRC;
 
-} *PRC;
-
-#define PRC_scanned           1	/* Field expressions scanned */
+#define PRC_scanned           1		/* Field expressions scanned */
 #define PRC_system            2
-#define PRC_obsolete          4	/* Procedure known gonzo */
-#define PRC_being_scanned     8	/* New procedure needs dependencies during scan */
+#define PRC_obsolete          4		/* Procedure known gonzo */
+#define PRC_being_scanned     8		/* New procedure needs dependencies during scan */
 #define PRC_blocking          16	/* Blocking someone from dropping procedure */
 #define PRC_create            32	/* Newly created */
 #define PRC_being_altered     64	/* Procedure is getting altered */
@@ -433,13 +454,15 @@ typedef struct prc {
 
 /* Parameter block */
 
-typedef struct prm {
-	struct blk prm_header;
+class prm : public pool_alloc_rpt<SCHAR, type_prm>
+{
+    public:
 	USHORT prm_number;
 	struct dsc prm_desc;
 	TEXT *prm_name;				/* pointer to asciiz name */
 	TEXT prm_string[2];			/* one byte for ALLOC and one for the terminating null */
-} *PRM;
+};
+typedef prm* PRM;
 
 
 /* Primary dependencies from all foreign references to relation's
@@ -463,8 +486,9 @@ typedef struct frgn {
    in the database, though it is not really filled out until
    the relation is scanned */
 
-typedef struct rel {
-	struct blk rel_header;
+class rel : public pool_alloc<type_rel>
+{
+public:
 	USHORT rel_id;
 	USHORT rel_flags;
 	USHORT rel_current_fmt;		/* Current format number */
@@ -473,11 +497,11 @@ typedef struct rel {
 	TEXT *rel_name;				/* pointer to ascii relation name */
 	struct vec *rel_formats;	/* Known record formats */
 	TEXT *rel_owner_name;		/* pointer to ascii owner */
-	struct vcl *rel_pages;		/* vector of pointer page numbers */
+	class vcl *rel_pages;		/* vector of pointer page numbers */
 	struct vec *rel_fields;		/* vector of field blocks */
 
 	struct rse *rel_view_rse;	/* view record select expression */
-	struct vcx *rel_view_contexts;	/* linked list of view contexts */
+	class vcx *rel_view_contexts;	/* linked list of view contexts */
 
 	TEXT *rel_security_name;	/* pointer to security class name for relation */
 	struct ext *rel_file;		/* external file name */
@@ -514,7 +538,8 @@ typedef struct rel {
 	struct vec *rel_post_store;	/* Post-operation store trigger */
 	struct prim rel_primary_dpnds;	/* foreign dependencies on this relation's primary key */
 	struct frgn rel_foreign_refs;	/* foreign references to other relations' primary keys */
-} *REL;
+};
+typedef rel* REL;
 
 #define REL_scanned					1		/* Field expressions scanned (or being scanned) */
 #define REL_system					2
@@ -533,9 +558,9 @@ typedef struct rel {
 
 /* Field block, one for each field in a scanned relation */
 
-typedef struct fld
+class fld : public pool_alloc_rpt<SCHAR, type_fld>
 {
-	struct blk	fld_header;
+    public:
 	struct nod*	fld_validation;		/* validation clause, if any */
 	struct nod*	fld_not_null;		/* if field cannot be NULL */
 	struct nod*	fld_missing_value;	/* missing value, if any */
@@ -547,57 +572,114 @@ typedef struct fld
 	CONST TEXT*	fld_name;			/* Field name */
 	UCHAR		fld_length;			/* Field name length */
 	UCHAR		fld_string[2];		/* one byte for ALLOC and one for the terminating null */
-} *FLD;
+};
+typedef fld *FLD;
 
 
 
 /* Index block to cache index information */
 
-typedef struct idb
+class idb
 {
-	struct blk	idb_header;
+    public:
 	struct idb*	idb_next;
 	struct nod*	idb_expression;			/* node tree for index expression */
 	struct req*	idb_expression_request;	/* request in which index expression is evaluated */
 	struct dsc	idb_expression_desc;	/* descriptor for expression result */
 	struct lck*	idb_lock;				/* lock to synchronize changes to index */
 	UCHAR idb_id;
-} *IDB;
+};
+typedef idb *IDB;
 
 
 /* view context block to cache view aliases */
 
-typedef struct vcx {
-	struct blk vcx_header;
-	struct vcx *vcx_next;
-	struct str *vcx_context_name;
-	struct str *vcx_relation_name;
+class vcx: public pool_alloc<type_vcx>
+{
+    public:
+	class vcx *vcx_next;
+	class str *vcx_context_name;
+	class str *vcx_relation_name;
 	USHORT vcx_context;
-} *VCX;
+};
+typedef vcx *VCX;
 #endif
 
 
 /* general purpose vector */
+template <class T, USHORT TYPE = type_vec>
+class vec_base : protected pool_alloc<TYPE>
+{
+public:
+	typedef Firebird::vector<T>::iterator iterator;
 
-typedef struct vec {
-	struct blk vec_header;
-	ULONG vec_count;
-	struct blk *vec_object[1];
-} *VEC;
+	static vec_base* newVector(MemoryPool& p, int len)
+		{ return new(p) vec_base<T,TYPE>(p, len); }
+	static vec_base* newVector(MemoryPool& p, const vec_base& base)
+		{ return new(p) vec_base<T,TYPE>(p, base); }
+		
+	ULONG count() { return vector.size(); }
+	T& operator[](size_t index) { return vector[index]; }
 
-typedef struct vcl {
-	struct blk vcl_header;
-	ULONG vcl_count;
-	SLONG vcl_long[1];
-} *VCL;
+	iterator begin() { return vector.begin(); }
+	iterator end() { return vector.end(); }
+	
+	void clear() { vector.clear(); }
+	void prepend(int n) { vector.insert(vector.begin(), n); }
+	
+	T* memPtr() { return (T*)begin(); }
+
+	void resize(size_t n, T val = T()) { vector.resize(n, val); }
+
+	void operator delete(void *mem) { MemoryPool::deallocate(mem); }
+
+protected:
+	vec_base(MemoryPool& p, int len)
+		: vector(len, p, TYPE) {}
+	vec_base(MemoryPool& p, const vec_base& base)
+		: vector(p, TYPE) { vector = base.vector; }
+
+private:
+	Firebird::vector<T> vector;
+};
+
+class vec : public vec_base<BlkPtr, type_vec>
+{
+public:
+    static vec* newVector(MemoryPool& p, int len)
+        { return new(p) vec(p, len); }
+    static vec* newVector(MemoryPool& p, const vec& base)
+        { return new(p) vec(p, base); }
+
+private:
+    vec(MemoryPool& p, int len) : vec_base<BlkPtr, type_vec>(p, len) {}
+    vec(MemoryPool& p, const vec& base) : vec_base<BlkPtr, type_vec>(p, base) {}
+};
+typedef vec* VEC;
+
+class vcl : public vec_base<SLONG, type_vcl>
+{
+public:
+    static vcl* newVector(MemoryPool& p, int len)
+        { return new(p) vcl(p, len); }
+    static vcl* newVector(MemoryPool& p, const vcl& base)
+        { return new(p) vcl(p, base); }
+
+private:
+    vcl(MemoryPool& p, int len) : vec_base<SLONG, type_vcl>(p, len) {}
+    vcl(MemoryPool& p, const vcl& base) : vec_base<SLONG, type_vcl>(p, base) {}
+};
+typedef vcl* VCL;
 
 #define TEST_VECTOR(vector,number)      ((vector && number < vector->vec_count) ? \
 					  vector->vec_object [number] : NULL)
-/* general purpose queue */
 
+//
+// general purpose queue
+//
 typedef struct que {
-	struct que *que_forward;
-	struct que *que_backward;
+	struct que* que_forward;
+	struct que* que_backward;
 } *QUE;
 
 
@@ -611,27 +693,50 @@ typedef ENUM sym_t { SYM_rel,	/* relation block */
 	SYM_sql,					/* SQL request cache block */
 SYM_blr /* BLR request cache block */ } SYM_T;
 
-typedef struct sym {
-	struct blk sym_header;
+class sym : public pool_alloc<type_sym>
+{
+    public:
 	TEXT *sym_string;			/* address of asciz string */
 /*  USHORT	sym_length; *//* length of asciz string */
 	SYM_T sym_type;				/* symbol type */
-	struct blk *sym_object;		/* general pointer to object */
-	struct sym *sym_collision;	/* collision pointer */
-	struct sym *sym_homonym;	/* homonym pointer */
-} *SYM;
+	BLK sym_object;		/* general pointer to object */
+	sym *sym_collision;	/* collision pointer */
+	sym *sym_homonym;	/* homonym pointer */
+};
+typedef sym *SYM;
 
 /* Random string block -- jack of all kludges */
 
-typedef struct str {
-	struct blk str_header;
+class str : public pool_alloc_rpt<SCHAR, type_str>
+{
+public:
 	USHORT str_length;
 	UCHAR str_data[2];			/* one byte for ALLOC and one for the NULL */
-} *STR;
+
+	static bool extend(str*& s, size_t new_len)
+	{
+		gds_assert(s);
+		MemoryPool* pPool = MemoryPool::blk_pool(s);
+		gds_assert(pPool);
+		if (!pPool) {
+			return false;	// runtime safety
+		}
+		// TMN: Note that this violates "common sense" and should be fixed.
+		str* res = new(*pPool, new_len+1) str;
+		res->str_length = new_len;
+		memcpy(res->str_data, s->str_data, s->str_length+1);
+		str* old = s;
+		s = res;
+		delete old;
+		return s != 0;
+	}
+};
+typedef str *STR;
 
 
-/* Transaction element block */
-
+//
+// Transaction element block
+//
 typedef struct teb {
 	ATT *teb_database;
 	int teb_tpb_length;
@@ -640,11 +745,13 @@ typedef struct teb {
 
 /* Blocking Thread Block */
 
-typedef struct btb {
-	struct blk btb_header;
-	struct btb *btb_next;
+class btb : public pool_alloc<type_btb>
+{
+    public:
+	btb *btb_next;
 	SLONG btb_thread_id;
-} *BTB;
+};
+typedef btb *BTB;
 
 /* Lock levels */
 
@@ -699,11 +806,11 @@ typedef struct win {
 typedef struct tdbb
 {
 	struct thdd	tdbb_thd_data;
-	struct dbb*	tdbb_database;
-	struct att*	tdbb_attachment;
+	dbb*	tdbb_database;
+	att*	tdbb_attachment;
 	struct tra*	tdbb_transaction;
 	struct req*	tdbb_request;
-	struct plb*	tdbb_default;
+	JrdMemoryPool*	tdbb_default;
 	STATUS*		tdbb_status_vector;
 	void*		tdbb_setjmp;
 	USHORT		tdbb_inhibit;		/* Inhibit context switch if non-zero */
@@ -767,16 +874,16 @@ extern TDBB gdbb;
  */
 #ifdef DEV_BUILD
 #define GET_THREAD_DATA (((PLATFORM_GET_THREAD_DATA) && \
-			 (((THDD)(PLATFORM_GET_THREAD_DATA))->thdd_type == THDD_TYPE_TDBB) && \
+                         (((THDD)(PLATFORM_GET_THREAD_DATA))->thdd_type == THDD_TYPE_TDBB) && \
 			 (((TDBB)(PLATFORM_GET_THREAD_DATA))->tdbb_database)) \
-			 ? ((((TDBB)(PLATFORM_GET_THREAD_DATA))->tdbb_database->dbb_header.blk_type == type_dbb) \
+			 ? ((MemoryPool::blk_type(((TDBB)(PLATFORM_GET_THREAD_DATA))->tdbb_database) == type_dbb) \
 			    ? (PLATFORM_GET_THREAD_DATA) \
 			    : (BUGCHECK (147), (PLATFORM_GET_THREAD_DATA))) \
 			 : (PLATFORM_GET_THREAD_DATA))
-#define CHECK_DBB(dbb)   assert ((dbb) && ((dbb)->dbb_header.blk_type == type_dbb))
+#define CHECK_DBB(dbb)   assert ((dbb) && (MemoryPool::blk_type(dbb) == type_dbb) && ((dbb)->dbb_permanent->verify_pool()))
 #define CHECK_TDBB(tdbb) assert ((tdbb) && \
 	(((THDD)(tdbb))->thdd_type == THDD_TYPE_TDBB) && \
-	((!(tdbb)->tdbb_database)||(tdbb)->tdbb_database->dbb_header.blk_type == type_dbb))
+	((!(tdbb)->tdbb_database)||MemoryPool::blk_type((tdbb)->tdbb_database) == type_dbb))
 #else
 /* PROD_BUILD */
 #define GET_THREAD_DATA (PLATFORM_GET_THREAD_DATA)
@@ -852,9 +959,6 @@ extern IHNDL internal_db_handles;
 
 #endif /* !JRD_MAIN */
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 
 #endif /* JRD_JRD_H */

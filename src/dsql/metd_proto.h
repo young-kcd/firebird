@@ -24,28 +24,21 @@
 #ifndef _DSQL_METD_PROTO_H
 #define _DSQL_METD_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void METD_drop_procedure(struct req*, struct str *);
-void METD_drop_relation(struct req*, struct str *);
-INTLSYM METD_get_charset(struct req*, USHORT, UCHAR *);
-INTLSYM METD_get_collation(struct req*, struct str *);
+void METD_drop_procedure(class req*, class str*);
+void METD_drop_relation(class req*, class str*);
+INTLSYM METD_get_charset(class req*, USHORT, UCHAR *);
+INTLSYM METD_get_collation(class req*, class str*);
 void METD_get_col_default(REQ, TEXT*, TEXT*, BOOLEAN*, TEXT*, USHORT);
-STR METD_get_default_charset(struct req*);
-USHORT METD_get_domain(struct req*, struct fld*, UCHAR*);
-void METD_get_domain_default(REQ, TEXT*, BOOLEAN*, TEXT*, USHORT);
-UDF METD_get_function(struct req*, struct str*);
-NOD METD_get_primary_key(struct req*, struct str*);
-PRC METD_get_procedure(struct req*, struct str*);
-DSQL_REL METD_get_relation(struct req*, struct str*);
-STR METD_get_trigger_relation(struct req*, struct str*, USHORT*);
-USHORT METD_get_type(struct req*, struct str*, UCHAR*, SSHORT*);
-DSQL_REL METD_get_view_relation(struct req*, UCHAR*, UCHAR*, USHORT);
+STR METD_get_default_charset(class req*);
+USHORT METD_get_domain(class req*, class fld*, UCHAR*);
+void METD_get_domain_default(class req*, TEXT*, BOOLEAN*, TEXT*, USHORT);
+UDF METD_get_function(class req*, class str*);
+NOD METD_get_primary_key(class req*, class str*);
+PRC METD_get_procedure(class req*, class str*);
+DSQL_REL METD_get_relation(class req*, class str*);
+STR METD_get_trigger_relation(class req*, class str*, USHORT*);
+USHORT METD_get_type(class req*, class str*, UCHAR*, SSHORT*);
+DSQL_REL METD_get_view_relation(class req*, UCHAR*, UCHAR*, USHORT);
 
-#ifdef __cplusplus
-}	/* extern "C" */
-#endif
 
 #endif /*_DSQL_METD_PROTO_H */

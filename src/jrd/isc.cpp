@@ -24,8 +24,11 @@
  * Solaris x86 changes - Konstantin Kuznetsov, Neil McCalden
  */
 /*
-$Id: isc.cpp,v 1.4 2001-08-20 08:15:33 skywalker Exp $
+$Id: isc.cpp,v 1.5 2001-12-24 02:50:51 tamlin Exp $
 */
+#ifdef DARWIN
+#define _STLP_CCTYPE
+#endif
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -179,7 +182,11 @@ typedef unsigned int mode_t;
 typedef int pid_t;
 #endif
 
+#ifdef DARWIN
+#include </usr/include/pwd.h>
+#else
 extern struct passwd *getpwnam(), *getpwuid();
+#endif
 #endif
 
 void isc_internal_set_config_value(UCHAR, ULONG*, ULONG*);
@@ -219,7 +226,6 @@ extern void gethostname();
 extern void endpwent();
 extern gid_t getegid();
 #endif
-
 
 #ifndef REQUESTER
 void DLL_EXPORT ISC_ast_enter(void)
@@ -390,9 +396,9 @@ void DLL_EXPORT ISC_get_config(TEXT * config_file, IPCCFG config_table)
 		   from the in-memory copy rather than the disk copy */
 
 		ISC_cfg_tbl = ISC_def_cfg_tbl;
-		if (fd = ib_fopen(config_file, FOPEN_READ_TYPE))
+		if ( (fd = ib_fopen(config_file, FOPEN_READ_TYPE)) )
 		{
-			while (p = ib_fgets(buf, sizeof(buf), fd))
+			while ( (p = ib_fgets(buf, sizeof(buf), fd)) )
 			{
 				/* The same keyword can be used more than once  for
 				   temp directory definition hence it should be handled
@@ -456,7 +462,7 @@ void DLL_EXPORT ISC_get_config(TEXT * config_file, IPCCFG config_table)
 					continue;
 				}
 
-				for (tbl = ISC_cfg_tbl; q = tbl->cfgtbl_keyword; tbl++)
+				for (tbl = ISC_cfg_tbl; (q = tbl->cfgtbl_keyword) ; tbl++)
 				{
 					p = buf;
 
@@ -1483,7 +1489,7 @@ SLONG ISC_get_user_group_id(TEXT * user_group_name)
 	n = 0;
 
 
-	if (user_group = getgrnam(user_group_name))
+	if ( (user_group = getgrnam(user_group_name)) )
 		n = user_group->gr_gid;
 
 	return (n);

@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _ALICE_ALICE_H_
-#define _ALICE_ALICE_H_
+#ifndef ALICE_ALICE_H
+#define ALICE_ALICE_H
 
 #include "../jrd/ib_stdio.h"
 
@@ -31,22 +31,22 @@
 #include "../jrd/thd.h"
 #include "../alice/all.h"
 #include "../alice/alice_proto.h"
+#include "../include/fb_blk.h"
+#include "../common/memory/allocators.h"
 
-
-#ifdef __cplusplus
-//extern "C" {
-#endif
+#include <vector>
 
 #ifndef MAXPATHLEN
 #define MAXPATHLEN      1024
 #endif
 
 #define BLKDEF(type, root, tail) type,
-enum blk_t {
-	type_MIN = 0,
+enum alice_blk_t
+    {
+    alice_type_MIN = 0,
 #include "../alice/blk.h"
-	type_MAX
-};
+    alice_type_MAX
+    };
 #undef BLKDEF
 
 #define VAL_INVALID_DB_VERSION		0
@@ -82,18 +82,18 @@ typedef struct user_action
 
 /*  String block: used to store a string of constant length. */
 
-typedef struct str {
-	struct blk str_header;
+class str : public pool_alloc_rpt<UCHAR, alice_type_str>
+{
+public:
 	USHORT str_length;
 	UCHAR str_data[2];
-} *STR;
-
+};
+typedef str *STR;
 
 /*  Transaction block: used to store info about a multidatabase transaction. */
 
 typedef struct tdr
 {
-	struct blk tdr_header;
 	struct tdr *tdr_next;		/* next subtransaction */
 	SLONG tdr_id;				/* database-specific transaction id */
 	struct str *tdr_fullpath;	/* full (possibly) remote pathname */
@@ -131,32 +131,38 @@ typedef struct tdr
 
 /* a couple of obscure blocks used only in data allocator routines */
 
-typedef struct vec
+class vec : public pool_alloc_rpt<class blk*, alice_type_vec>
 {
-	struct blk vec_header;
+public:
 	ULONG vec_count;
 	struct blk *vec_object[1];
-} *VEC;
+};
+typedef vec *VEC;
 
-typedef struct vcl
+class vcl : public pool_alloc_rpt<SLONG, alice_type_vcl>
 {
-	struct blk vcl_header;
 	ULONG vcl_count;
 	SLONG vcl_long[1];
-} *VCL;
+};
+typedef vcl *VCL;
 
 /* Global switches and data */
 
 #include "../jrd/svc.h"
 
-typedef struct tgbl
+class tgbl
 {
+public:
+	tgbl(AliceMemoryPool *p) : pools(0, (AliceMemoryPool*)0,
+				pool_vec_t::allocator_type(*p)) {}
+	
 	struct thdd			tgbl_thd_data;
 	struct user_action ALICE_data;
-	PLB				ALICE_permanent_pool;
-	PLB				ALICE_default_pool;
+	AliceMemoryPool	*ALICE_permanent_pool;
+	AliceMemoryPool *ALICE_default_pool;
 	STATUS			status_vector[ISC_STATUS_LENGTH];
-	VEC				pools;
+	typedef			std::vector<AliceMemoryPool*, Firebird::allocator<AliceMemoryPool*> > pool_vec_t;
+	pool_vec_t		pools;
 	UCHAR*			alice_env;
 	int				exit_code;
 	OUTPUTPROC		output_proc;
@@ -169,10 +175,8 @@ typedef struct tgbl
 	USHORT			sw_redirect;
 	USHORT			sw_service;
 	USHORT			sw_service_thd;
-
-
-} *TGBL;
-
+};
+typedef tgbl *TGBL;
 
 #ifdef GET_THREAD_DATA
 #undef GET_THREAD_DATA
@@ -212,17 +216,11 @@ extern struct tgbl *gdgbl;
 #if defined(__cplusplus)
 #define EXIT(code)		{  tdgbl->exit_code = (code); \
 					if (tdgbl->alice_env != NULL) \
-					LONGJMP((jmp_buf)(tdgbl->alice_env), 1);  }
+						Firebird::status_longjmp_error::raise(1);  }
 #else
-#define EXIT(code)		{  tdgbl->exit_code = (code); \
-				   if (tdgbl->alice_env != NULL) \
-					LONGJMP(tdgbl->alice_env, 1);  }
-#endif /* __cplusplus */
+#error Dont do this, it hurts!
+#endif	// __cplusplus
 
 #define	NOOUTPUT	2
 
-#ifdef __cplusplus
-//} /* extern "C" */
-#endif
-
-#endif /* _ALICE_ALICE_H_ */
+#endif	// ALICE_ALICE_H

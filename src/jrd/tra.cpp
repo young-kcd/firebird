@@ -175,14 +175,14 @@ BOOLEAN TRA_active_transactions(TDBB tdbb, DBB dbb)
 
 	base = oldest & ~TRA_MASK;
 
-	trans = (TRA) ALLOCPV(type_tra, (number - base + TRA_MASK) / 4);
+	trans = new(*dbb->dbb_permanent, (number - base + TRA_MASK) / 4) tra();
 
 /* Build transaction bitmap to scan for active transactions. */
 
 	TRA_get_inventory(tdbb, trans->tra_transactions, base, number);
 
 	MOVE_CLEAR(&temp_lock, sizeof(struct lck));
-	temp_lock.lck_header.blk_type = type_lck;
+	temp_lock.blk_type = type_lck;
 	temp_lock.lck_dbb = dbb;
 	temp_lock.lck_object = (BLK) trans;
 	temp_lock.lck_type = LCK_tra;
@@ -198,14 +198,14 @@ BOOLEAN TRA_active_transactions(TDBB tdbb, DBB dbb)
 		if (state == tra_active) {
 			temp_lock.lck_key.lck_long = active;
 			if (!LCK_lock_non_blocking(tdbb, &temp_lock, LCK_read, FALSE)) {
-				ALL_release(trans);
+				delete trans;
 				return TRUE;
 			}
 			LCK_release(tdbb, &temp_lock);
 		}
 	}
 
-	ALL_release(trans);
+	delete trans;
 	return FALSE;
 #endif
 }
@@ -505,13 +505,11 @@ void TRA_extend_tip(TDBB tdbb, ULONG sequence, WIN * precedence_window)
 /* Link into internal data structures */
 
 	if (!(vector = dbb->dbb_t_pages))
-		vector = (VCL) ALLOCPV(type_vcl, sequence + 1);
-	else if (sequence >= vector->vcl_count)
-		vector =
-			(VCL) ALL_extend(reinterpret_cast < blk ** >(&dbb->dbb_t_pages),
-							 sequence + 1);
+		vector = vcl::newVector(*dbb->dbb_permanent, sequence + 1);
+	else if (sequence >= vector->count())
+		vector->resize(sequence + 1);
 
-	vector->vcl_long[sequence] = window.win_page;
+	(*vector)[sequence] = window.win_page;
 
 /* Write into pages relation */
 
@@ -602,7 +600,7 @@ void TRA_get_inventory(TDBB tdbb, UCHAR * bit_vector, ULONG base, ULONG top)
 
 /* move the first page into the bit vector */
 
-	if (p = bit_vector) {
+	if ( (p = bit_vector) ) {
 		l = base % trans_per_tip;
 		q = tip->tip_transactions + TRANS_OFFSET(l);
 		l = TRANS_OFFSET(MIN((top + TRA_MASK - base), trans_per_tip - l));
@@ -748,7 +746,7 @@ void TRA_init(TDBB tdbb)
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	dbb->dbb_sys_trans = trans = (TRA) ALLOCPV(type_tra, 0);
+	dbb->dbb_sys_trans = trans = new(*dbb->dbb_permanent, 0) tra();
 	trans->tra_flags |= TRA_system | TRA_ignore_limbo;
 	trans->tra_pool = dbb->dbb_permanent;
 }
@@ -824,7 +822,7 @@ void TRA_post_resources(TDBB tdbb, TRA transaction, RSC resources)
  *
  **************************************/
 	RSC rsc, tra_rsc, new_rsc;
-	PLB old_pool;
+	JrdMemoryPool *old_pool;
 
 	SET_TDBB(tdbb);
 
@@ -837,7 +835,7 @@ void TRA_post_resources(TDBB tdbb, TRA transaction, RSC resources)
 				 tra_rsc =
 				 tra_rsc->rsc_next) if (rsc->rsc_id == tra_rsc->rsc_id) break;
 			if (!tra_rsc) {
-				new_rsc = (RSC) ALLOCD(type_rsc);
+				new_rsc = new(*tdbb->tdbb_default) Rsc();
 				new_rsc->rsc_next = transaction->tra_resources;
 				transaction->tra_resources = new_rsc;
 				new_rsc->rsc_id = rsc->rsc_id;
@@ -860,6 +858,8 @@ void TRA_post_resources(TDBB tdbb, TRA transaction, RSC resources)
 					}
 #endif
 					break;
+                                default:   /* Shut up compiler warning */
+                                        break;
 				}
 			}
 		}
@@ -885,7 +885,8 @@ BOOLEAN TRA_precommited(TDBB tdbb, SLONG old_number, SLONG new_number)
  *	the vector.
  *
  **************************************/
-	SLONG *p, *end, *zp;
+	vcl::iterator p, end;
+	SLONG *zp;
 	VCL vector;
 	DBB dbb;
 
@@ -896,12 +897,11 @@ BOOLEAN TRA_precommited(TDBB tdbb, SLONG old_number, SLONG new_number)
 	if (!(vector = dbb->dbb_pc_transactions)) {
 		if (old_number == new_number)
 			return FALSE;
-		vector = dbb->dbb_pc_transactions = (VCL) ALLOCPV(type_vcl, 1);
-		vector->vcl_count = 1;
+		vector = dbb->dbb_pc_transactions = vcl::newVector(*dbb->dbb_permanent, 1);
 	}
 
 	zp = 0;
-	for (p = vector->vcl_long, end = p + vector->vcl_count; p < end; p++) {
+	for (p = vector->begin(), end = vector->end(); p < end; p++) {
 		if (*p == old_number)
 			return (*p = new_number) ? TRUE : FALSE;
 		if (!zp && !*p)
@@ -913,11 +913,8 @@ BOOLEAN TRA_precommited(TDBB tdbb, SLONG old_number, SLONG new_number)
 	if (zp)
 		*zp = new_number;
 	else {
-		vector =
-			(VCL) ALL_extend(reinterpret_cast <
-							 blk ** >(&dbb->dbb_pc_transactions),
-							 vector->vcl_count + 1);
-		vector->vcl_long[vector->vcl_count - 1] = new_number;
+		vector->resize(vector->count() + 1);
+		(*vector)[vector->count() - 1] = new_number;
 	}
 
 	return TRUE;
@@ -1026,8 +1023,8 @@ TRA TRA_reconnect(TDBB tdbb, UCHAR * id, USHORT length)
 		ERR_post(isc_read_only_database, 0);
 
 
-	tdbb->tdbb_default = ALL_pool();
-	trans = (TRA) ALLOCDV(type_tra, 0);
+	tdbb->tdbb_default = new(*dbb->dbb_permanent) JrdMemoryPool;
+	trans = new(*tdbb->tdbb_default, 0) tra();
 	trans->tra_pool = tdbb->tdbb_default;
 	trans->tra_number = gds__vax_integer(id, length);
 	trans->tra_flags |= TRA_prepared | TRA_reconnected | TRA_write;
@@ -1049,7 +1046,7 @@ TRA TRA_reconnect(TDBB tdbb, UCHAR * id, USHORT length)
 		}
 
 		number = trans->tra_number;
-		ALL_rlpool(trans->tra_pool);
+		delete trans->tra_pool;
 
 		gds__msg_lookup(0, JRD_BUGCHK, message, sizeof(text), text, &flags);
 
@@ -1081,11 +1078,11 @@ void TRA_release_transaction(TDBB tdbb, TRA transaction)
  *
  **************************************/
 	VEC vector;
-	LCK *lock;
+	vec::iterator lock;
 	TRA *ptr;
 	RSC rsc;
 	USHORT i;
-	PLB tra_pool;
+	JrdMemoryPool *tra_pool;
 
 	SET_TDBB(tdbb);
 
@@ -1112,11 +1109,11 @@ void TRA_release_transaction(TDBB tdbb, TRA transaction)
 
 /* Release the locks associated with the transaction */
 
-	if (vector = transaction->tra_relation_locks)
-		for (i = 0, lock = (LCK *) vector->vec_object; i < vector->vec_count;
+	if ( (vector = transaction->tra_relation_locks) )
+		for (i = 0, lock = vector->begin(); i < vector->count();
 			 i++, lock++)
 			if (*lock)
-				LCK_release(tdbb, *lock);
+				LCK_release(tdbb, (LCK)*lock);
 
 	++transaction->tra_use_count;
 	if (transaction->tra_lock)
@@ -1140,8 +1137,8 @@ void TRA_release_transaction(TDBB tdbb, TRA transaction)
 
 /* Release the transaction pool. */
 
-	if (tra_pool = transaction->tra_pool)
-		ALL_rlpool(tra_pool);
+	if ( (tra_pool = transaction->tra_pool) )
+		delete tra_pool;
 }
 
 
@@ -1179,7 +1176,8 @@ void TRA_rollback(TDBB tdbb, TRA transaction, USHORT retaining_flag)
    this transaction's work and mark it committed in the TIP page
    instead (avoids a need for a database sweep). */
 
-	if (transaction->tra_save_point) {
+	if (transaction->tra_save_point)
+	{
 		if (!(transaction->tra_save_point->sav_flags & SAV_trans_level))
 			BUGCHECK(287);		/* Too many savepoints */
 
@@ -1188,17 +1186,8 @@ void TRA_rollback(TDBB tdbb, TRA transaction, USHORT retaining_flag)
 
 		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 		tdbb->tdbb_setjmp = (UCHAR *) env;
-		if (SETJMP(env)) {
-			/* Prevent a bugcheck in TRA_set_state to cause a loop */
-			tdbb->tdbb_setjmp = (UCHAR *) old_env;
-			/* Clear the error because the rollback will succeed. */
-			tdbb->tdbb_status_vector[0] = gds_arg_gds;
-			tdbb->tdbb_status_vector[1] = 0;
-			tdbb->tdbb_status_vector[2] = gds_arg_end;
-			TRA_set_state(tdbb, transaction, transaction->tra_number,
-						  tra_dead);
-		}
-		else {
+		try {
+
 			/* In an attempt to avoid deadlocks, clear the precedence by writing
 			   all dirty buffers for this transaction. */
 
@@ -1222,6 +1211,16 @@ void TRA_rollback(TDBB tdbb, TRA transaction, USHORT retaining_flag)
 							  tra_committed);
 
 			tdbb->tdbb_setjmp = (UCHAR *) old_env;
+		}
+		catch (...) {
+			/* Prevent a bugcheck in TRA_set_state to cause a loop */
+			tdbb->tdbb_setjmp = (UCHAR *) old_env;
+			/* Clear the error because the rollback will succeed. */
+			tdbb->tdbb_status_vector[0] = gds_arg_gds;
+			tdbb->tdbb_status_vector[1] = 0;
+			tdbb->tdbb_status_vector[2] = gds_arg_end;
+			TRA_set_state(tdbb, transaction, transaction->tra_number,
+						  tra_dead);
 		}
 	}
 	else {
@@ -1365,7 +1364,7 @@ void TRA_shutdown_attachment(TDBB tdbb, ATT attachment)
  **************************************/
 	TRA transaction;
 	VEC vector;
-	LCK *lock;
+	vec::iterator lock;
 	USHORT i;
 
 	SET_TDBB(tdbb);
@@ -1374,11 +1373,11 @@ void TRA_shutdown_attachment(TDBB tdbb, ATT attachment)
 		 transaction = transaction->tra_next) {
 		/* Release the relation locks associated with the transaction */
 
-		if (vector = transaction->tra_relation_locks)
-			for (i = 0, lock = (LCK *) vector->vec_object;
-				 i < vector->vec_count; i++, lock++)
+		if ( (vector = transaction->tra_relation_locks) )
+			for (i = 0, lock = vector->begin();
+				 i < vector->count(); i++, lock++)
 				if (*lock)
-					LCK_release(tdbb, *lock);
+					LCK_release(tdbb, (LCK)*lock);
 
 		/* Release transaction lock itself */
 
@@ -1490,8 +1489,8 @@ TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
    transaction block first, sieze relation locks, the go ahead and
    make up the real transaction block. */
 
-	tdbb->tdbb_default = ALL_pool();
-	temp = (TRA) ALLOCDV(type_tra, 0);
+	tdbb->tdbb_default = new(*dbb->dbb_permanent) JrdMemoryPool;
+	temp = new(*tdbb->tdbb_default, 0) tra;
 	temp->tra_pool = tdbb->tdbb_default;
 	transaction_options(tdbb, temp, reinterpret_cast < UCHAR * >(tpb),
 						tpb_length);
@@ -1539,12 +1538,12 @@ TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
 	base = oldest & ~TRA_MASK;
 
 	if (temp->tra_flags & TRA_read_committed)
-		trans = (TRA) ALLOCDV(type_tra, 0);
+		trans = new(*tdbb->tdbb_default, 0) tra;
 	else {
-		trans = (TRA) ALLOCDV(type_tra, (number - base + TRA_MASK) / 4);
+		trans = new(*tdbb->tdbb_default, (number - base + TRA_MASK) / 4) tra;
 	}
 #else
-	trans = (TRA) ALLOCDV(type_tra, 0);
+	trans = new(*tdbb->tdbb_default) tra();
 #endif
 
 	trans->tra_pool = temp->tra_pool;
@@ -1554,7 +1553,7 @@ TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
 	trans->tra_top = number;
 	trans->tra_oldest = oldest;
 	trans->tra_oldest_active = active;
-	ALL_release(reinterpret_cast < frb * >(temp));
+	delete temp;
 
 #ifndef GATEWAY
 	trans->tra_lock = lock;
@@ -1577,7 +1576,7 @@ TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
 		if (!(dbb->dbb_flags & DBB_read_only))
 			CCH_RELEASE(tdbb, &window);
 #endif
-		ALL_release(reinterpret_cast < frb * >(trans));
+		delete trans;
 		ERR_post(gds_lock_conflict, 0);
 	}
 
@@ -1616,8 +1615,7 @@ TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
    more complicated by the fact that existing transaction may have oldest
    actives older than they are. */
 
-	MOVE_CLEAR(&temp_lock, sizeof(struct lck));
-	temp_lock.lck_header.blk_type = type_lck;
+	//MOVE_CLEAR(&temp_lock, sizeof(struct lck));   // Taken care of in lck constructor.
 	temp_lock.lck_dbb = dbb;
 	temp_lock.lck_object = (BLK) trans;
 	temp_lock.lck_type = LCK_tra;
@@ -1781,7 +1779,7 @@ TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
 		trans->tra_flags & TRA_read_committed) {
 		TRA_set_state(tdbb, trans, trans->tra_number, tra_committed);
 		LCK_release(tdbb, trans->tra_lock);
-		ALL_release(reinterpret_cast < frb * >(trans->tra_lock));
+		delete trans->tra_lock;
 		trans->tra_lock = 0;
 		trans->tra_flags |= TRA_precommitted;
 	}
@@ -1858,7 +1856,7 @@ int TRA_sweep(TDBB tdbb, TRA trans)
 /* fill out a lock block, zeroing it out first */
 
 	MOVE_CLEAR(&temp_lock, sizeof(struct lck));
-	temp_lock.lck_header.blk_type = type_lck;
+	//temp_lock.blk_type = type_lck;
 	temp_lock.lck_dbb = dbb;
 	temp_lock.lck_object = (BLK) trans;
 	temp_lock.lck_type = LCK_sweep;
@@ -1884,16 +1882,8 @@ int TRA_sweep(TDBB tdbb, TRA trans)
 
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-	if (SETJMP(env)) {
-		if (!SETJMP(env))
-			if (!trans)
-				TRA_commit(tdbb, transaction, FALSE);
-		LCK_release(tdbb, &temp_lock);
-		dbb->dbb_flags &= ~DBB_sweep_in_progress;
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		tdbb->tdbb_flags &= ~TDBB_sweeper;
-		return FALSE;
-	}
+
+	try {
 
 /* Identify ourselves as a sweeper thread. This accomplishes
    two goals: 1) Sweep transaction is started "precommitted"
@@ -1989,6 +1979,23 @@ int TRA_sweep(TDBB tdbb, TRA trans)
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 	tdbb->tdbb_flags &= ~TDBB_sweeper;
+	}	// try
+	catch (...) {
+		try {
+			if (!trans)
+			{
+				TRA_commit(tdbb, transaction, FALSE);
+			}
+		}
+		catch (...) {
+			LCK_release(tdbb, &temp_lock);
+			dbb->dbb_flags &= ~DBB_sweep_in_progress;
+			tdbb->tdbb_setjmp = (UCHAR *) old_env;
+			tdbb->tdbb_flags &= ~TDBB_sweeper;
+			return FALSE;
+		}
+	}
+
 	return TRUE;
 }
 #endif
@@ -2012,7 +2019,7 @@ LCK TRA_transaction_lock(TDBB tdbb, BLK object)
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
 
-	lock = (LCK) ALLOCDV(type_lck, sizeof(SLONG));
+	lock = new(*tdbb->tdbb_default, sizeof(SLONG)) lck();
 	lock->lck_type = LCK_tra;
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 	lock->lck_length = sizeof(SLONG);
@@ -2084,7 +2091,7 @@ int TRA_wait(TDBB tdbb, TRA trans, SLONG number, USHORT wait)
 
 	if (wait) {
 		MOVE_CLEAR(&temp_lock, sizeof(struct lck));
-		temp_lock.lck_header.blk_type = (UCHAR) type_lck;
+		//temp_lock.blk_type = (UCHAR) type_lck;
 		temp_lock.lck_dbb = dbb;
 		temp_lock.lck_type = LCK_tra;
 		temp_lock.lck_owner_handle =
@@ -2247,7 +2254,7 @@ static HDR bump_transaction_id(TDBB tdbb, WIN * window)
 
 /* If this is the first transaction on a TIP, allocate the TIP now. */
 
-	if (new_tip = ((number == 1)
+	if ( (new_tip = ((number == 1))
 				   || ((number % dbb->dbb_pcontrol->pgc_tpt) == 0)))
 		TRA_extend_tip(tdbb,
 					   (ULONG) (number / dbb->dbb_pcontrol->pgc_tpt), window);
@@ -2330,7 +2337,7 @@ static void compute_oldest_retaining(
 /* Get a commit retaining lock, if not present. */
 
 	if (!(lock = dbb->dbb_retaining_lock)) {
-		lock = (LCK) ALLOCPV(type_lck, sizeof(SLONG));
+		lock = new(*dbb->dbb_permanent, sizeof(SLONG)) lck();
 		lock->lck_dbb = dbb;
 		lock->lck_type = LCK_retaining;
 		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
@@ -2384,7 +2391,7 @@ static void compute_oldest_retaining(
 		/* fill out a lock block, zeroing it out first */
 
 		MOVE_CLEAR(&temp_lock, sizeof(struct lck));
-		temp_lock.lck_header.blk_type = type_lck;
+		temp_lock.blk_type = type_lck;
 		temp_lock.lck_dbb = dbb;
 		temp_lock.lck_type = LCK_tra;
 		temp_lock.lck_owner_handle =
@@ -2571,13 +2578,13 @@ static SLONG inventory_page(TDBB tdbb, int sequence)
 	CHECK_DBB(dbb);
 
 	window.win_flags = 0;
-	while (!(vector = dbb->dbb_t_pages) || sequence >= vector->vcl_count) {
+	while (!(vector = dbb->dbb_t_pages) || sequence >= vector->count()) {
 		DPM_scan_pages(tdbb);
-		if ((vector = dbb->dbb_t_pages) && sequence < vector->vcl_count)
+		if ((vector = dbb->dbb_t_pages) && sequence < vector->count())
 			break;
-		if (!vector || !vector->vcl_long)
+		if (!vector)
 			BUGCHECK(165);		/* msg 165 cannot find tip page */
-		window.win_page = vector->vcl_long[vector->vcl_count - 1];
+		window.win_page = (*vector)[vector->count() - 1];
 		tip = (TIP) CCH_FETCH(tdbb, &window, LCK_read, pag_transactions);
 		next = tip->tip_next;
 		CCH_RELEASE(tdbb, &window);
@@ -2585,11 +2592,11 @@ static SLONG inventory_page(TDBB tdbb, int sequence)
 			BUGCHECK(165);		/* msg 165 cannot find tip page */
 		tip = (TIP) CCH_FETCH(tdbb, &window, LCK_read, pag_transactions);	/* Type check it */
 		CCH_RELEASE(tdbb, &window);
-		DPM_pages(tdbb, 0, pag_transactions, vector->vcl_count,
+		DPM_pages(tdbb, 0, pag_transactions, vector->count(),
 				  window.win_page);
 	}
 
-	return vector->vcl_long[sequence];
+	return (*vector)[sequence];
 }
 #endif
 
@@ -2670,9 +2677,9 @@ static void restart_requests(TDBB tdbb, TRA trans)
 		/* now take care of any other request levels;
 		   start at level 1 since level 0 was just handled */
 
-		if (vector = request->req_sub_requests)
-			for (level = 1; level < vector->vec_count; level++)
-				if ((clone = (REQ) vector->vec_object[level]) &&
+		if ( (vector = request->req_sub_requests) )
+			for (level = 1; level < vector->count(); level++)
+				if ((clone = (REQ) (*vector)[level]) &&
 					clone->req_transaction) {
 					EXE_unwind(tdbb, clone);
 					EXE_start(tdbb, clone, trans);
@@ -2734,7 +2741,7 @@ static void retain_context(TDBB tdbb, TRA transaction, USHORT commit)
 	}
 #endif
 
-	if (old_lock = transaction->tra_lock) {
+	if ( (old_lock = transaction->tra_lock) ) {
 		new_lock =
 			TRA_transaction_lock(tdbb,
 								 reinterpret_cast < blk * >(transaction));
@@ -2790,7 +2797,7 @@ static void retain_context(TDBB tdbb, TRA transaction, USHORT commit)
 		LCK_release(tdbb, old_lock);
 		transaction->tra_lock = new_lock;
 		--transaction->tra_use_count;
-		ALL_release(reinterpret_cast < frb * >(old_lock));
+		delete old_lock;
 	}
 
 /* Perform any post commit work OR delete entries from deferred list */
@@ -2849,15 +2856,13 @@ static BOOLEAN start_sweeper(TDBB tdbb, DBB dbb)
 
 	SET_TDBB(tdbb);
 
-
-	/* fill out the lock block */
-	struct lck temp_lock = { 0 };
-	temp_lock.lck_header.blk_type = type_lck;
-	temp_lock.lck_dbb = dbb;
-	temp_lock.lck_type = LCK_sweep;
-	temp_lock.lck_owner_handle = LCK_get_owner_handle(tdbb, temp_lock.lck_type);
-	temp_lock.lck_parent = dbb->dbb_lock;
-	temp_lock.lck_length = sizeof(SLONG);
+	// fill out the lock block
+	lck temp_lock;
+	temp_lock.lck_dbb			= dbb;
+	temp_lock.lck_type			= LCK_sweep;
+	temp_lock.lck_owner_handle	= LCK_get_owner_handle(tdbb, temp_lock.lck_type);
+	temp_lock.lck_parent		= dbb->dbb_lock;
+	temp_lock.lck_length		= sizeof(SLONG);
 
 	if (!LCK_lock(tdbb, &temp_lock, LCK_EX, FALSE))
 	{
@@ -2893,7 +2898,7 @@ static BOOLEAN start_sweeper(TDBB tdbb, DBB dbb)
 }
 
 
-static void THREAD_ROUTINE sweep_database(UCHAR * database)
+static void THREAD_ROUTINE sweep_database(UCHAR* database)
 {
 /**************************************
  *
@@ -3074,7 +3079,7 @@ static void transaction_options(
 		case gds_tpb_lock_write:
 		case gds_tpb_lock_read:
 			p = reinterpret_cast < UCHAR * >(name);
-			if (l = *tpb++) {
+			if ( (l = *tpb++) ) {
 				if (l >= sizeof(name)) {
 					gds__msg_lookup(0, DYN_MSG_FAC, 159, sizeof(text),
 									text, &flags);
@@ -3138,14 +3143,14 @@ static void transaction_options(
 
 	id = 0;
 
-	for (; id < vector->vec_count; id++) {
-		if (!(lock = (LCK) vector->vec_object[id]))
+	for (; id < vector->count(); id++) {
+		if (!(lock = (LCK) (*vector)[id]))
 			continue;
 		level = lock->lck_logical;
 		if (level == LCK_none
 			|| LCK_lock_non_blocking(tdbb, lock, level, wait)) continue;
 		for (l = 0; l < id; l++)
-			if (lock = (LCK) vector->vec_object[l]) {
+			if ( (lock = (LCK) (*vector)[l]) ) {
 				level = lock->lck_logical;
 				LCK_release(tdbb, lock);
 				lock->lck_logical = level;

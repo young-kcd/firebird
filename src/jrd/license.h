@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: license.h,v 1.2 2001-07-12 05:46:05 bellardo Exp $
+ * $Id: license.h,v 1.3 2001-12-24 02:50:51 tamlin Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.

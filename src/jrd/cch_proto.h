@@ -55,7 +55,7 @@ void		CCH_journal_record(TDBB, struct win *, UCHAR *, USHORT, UCHAR *,
 void		CCH_mark(TDBB, struct win *, USHORT);
 void		CCH_mark_must_write(TDBB, struct win *);
 void		CCH_must_write(struct win *);
-struct lck*	CCH_page_lock(TDBB, enum err_t);
+struct lck*	CCH_page_lock(TDBB);
 void		CCH_precedence(TDBB, struct win *, SLONG);
 void		CCH_prefetch(struct tdbb *, SLONG *, SSHORT);
 BOOLEAN		CCH_prefetch_pages(TDBB);

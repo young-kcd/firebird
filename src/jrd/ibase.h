@@ -22,7 +22,7 @@
  * FSG 16.03.2001 
  */
 /*
-$Id: ibase.h,v 1.3 2001-07-29 17:42:22 skywalker Exp $
+$Id: ibase.h,v 1.4 2001-12-24 02:50:51 tamlin Exp $
  */
 
 #ifndef JRD_IBASE_H

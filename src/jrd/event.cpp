@@ -641,8 +641,9 @@ static FRB alloc_global(UCHAR type, ULONG length, BOOLEAN recurse)
 		}
 #endif /* WIN_NT */
 
+	EVH header = 0;
 #if !((defined SUPERSERVER) && (defined MMAP_SUPPORTED))
-		EVH header =
+		header =
 			reinterpret_cast < EVH >
 			(ISC_remap_file(status_vector, &EVENT_data, ev_length, TRUE));
 #endif

@@ -24,6 +24,7 @@
 #ifndef _ALICE_ALLOC_H_
 #define _ALICE_ALLOC_H_
 
+/*
 #define ALL_release(blk)	ALLA_release (blk)
 #define ALLOCD(type)		ALLA_alloc (tdgbl->ALICE_default_pool, type, 0)
 #define ALLOCDV(type,repeat)	ALLA_alloc (tdgbl->ALICE_default_pool, type, repeat)
@@ -31,5 +32,6 @@
 #define ALLOCPV(type,repeat)	ALLA_alloc (tdgbl->ALICE_permanent_pool, type, repeat)
 #define ALLOC(type,pool)	ALLA_alloc (pool, type, 0)
 #define ALLOCV(type,pool,repeat) ALLA_alloc (pool, type, repeat)
+*/
 
 #endif /* _ALICE_ALLOC_H_ */

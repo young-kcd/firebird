@@ -522,7 +522,10 @@ static unsigned int __stdcall win32_thread_start_thunk(void* p)
 {
 	const thunk_thread_start_t* pArg =
 		reinterpret_cast<const thunk_thread_start_t*>(p);
-	return (unsigned int) ((*pArg->pfn)(pArg->arg));
+	int		(*pfn)(void*)	= pArg->pfn;
+	void* arg				= pArg->arg;
+	free(p);
+	return (unsigned int) ((*pfn)(arg));
 }
 #endif
 
@@ -556,18 +559,28 @@ static int thread_start(FPTR_INT_VOID_PTR	routine,
 	 * CreateThread() can lead to memory leaks caused by C-runtime library.
 	 * Advanced Windows by Richter pg. # 109. */
 
+#if 0
 #pragma FB_COMPILER_MESSAGE("Fix! Bad, bad, bad function ptr type cast!!!")
-	thunk_thread_start_t thread_start_arg =
-	{
-		routine,
-		arg
-	};
+
+	thunk_thread_start_t* thread_start_arg =
+		(thunk_thread_start_t*)malloc(sizeof(thunk_thread_start_t));
+	thread_start_arg->pfn = routine;
+	thread_start_arg->arg = arg;
 	unsigned long real_handle = _beginthreadex(NULL,
 											   0,
 											   &win32_thread_start_thunk,
-											   &thread_start_arg,
+											   thread_start_arg,
 											   create,
 											   reinterpret_cast<unsigned*>(&thread_id));
+#else
+	unsigned long real_handle = _beginthreadex(NULL,
+											   0,
+											   reinterpret_cast<unsigned int(__stdcall*)(void*)>(routine),
+											   arg,
+											   create,
+											   reinterpret_cast<unsigned*>(&thread_id));
+#endif
+
 	if (!real_handle) {
 		return GetLastError();
 	}

@@ -24,12 +24,17 @@
 #ifndef _JRD_SQZ_H_
 #define _JRD_SQZ_H_
 
-typedef struct dcc {
-	struct blk dcc_header;
-	struct plb *dcc_pool;
-	struct dcc *dcc_next;		/* Next block if overflow */
+#include "../jrd/all.h"
+#include "../include/fb_blk.h"
+
+class Dcc : public pool_alloc<type_dcc>
+{
+    public:
+	JrdMemoryPool *dcc_pool;
+	class Dcc *dcc_next;		/* Next block if overflow */
 	SCHAR *dcc_end;				/* End of control string */
 	SCHAR dcc_string[128];
-} *DCC;
+};
+typedef Dcc *DCC;
 
 #endif /* _JRD_SQZ_H_ */

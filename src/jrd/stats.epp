@@ -46,18 +46,18 @@ typedef struct stats {
 } *STATS;
 
 static STATS expand_stats();
-static print_line();
+static int print_line();
 
 static SCHAR info_request[] = {
-	gds__info_read_seq_count,
-	gds__info_read_idx_count,
-	gds__info_insert_count,
-	gds__info_update_count,
-	gds__info_delete_count,
-	gds__info_backout_count,
-	gds__info_purge_count,
-	gds__info_expunge_count,
-	gds__info_end
+	gds_info_read_seq_count,
+	gds_info_read_idx_count,
+	gds_info_insert_count,
+	gds_info_update_count,
+	gds_info_delete_count,
+	gds_info_backout_count,
+	gds_info_purge_count,
+	gds_info_expunge_count,
+	gds_info_end
 };
 
 static SCHAR *headers[] = {
@@ -75,10 +75,7 @@ static int *database_handle;
 static int *request_handle;
 
 
-stats_analyze(before, after, callback, arg)
-	 STATS before, after;
-	 int (*callback) ();
-	 SCHAR *arg;
+int stats_analyze(STATS before, STATS after, int(*callback)(), SCHAR *arg)
 {
 /**************************************
  *
@@ -118,10 +115,7 @@ stats_analyze(before, after, callback, arg)
 }
 
 
-stats_fetch(status_vector, db_handle, stats_ptr)
-	 SLONG *status_vector;
-	 int **db_handle;
-	 STATS *stats_ptr;
+int stats_fetch(SLONG *status_vector, int **db_handle, STATS *stats_ptr)
 {
 /**************************************
  *
@@ -200,10 +194,7 @@ stats_fetch(status_vector, db_handle, stats_ptr)
 }
 
 
-stats_print(db_handle, tr_handle, before, after)
-	 int **db_handle;
-	 int **tr_handle;
-	 STATS before, after;
+int stats_print(int **db_handle, int **tr_handle, STATS before, STATS after)
 {
 /**************************************
  *
@@ -223,12 +214,11 @@ stats_print(db_handle, tr_handle, before, after)
 	gds__trans = *tr_handle;
 	init = 0;
 	stats_analyze(before, after, print_line, &init);
+	return 0;
 }
 
 
-static STATS expand_stats(ptr, count)
-	 STATS *ptr;
-	 SSHORT count;
+static STATS expand_stats(STATS *ptr, SSHORT count)
 {
 /**************************************
  *
@@ -271,12 +261,8 @@ static STATS expand_stats(ptr, count)
 }
 
 
-static get_counts(status_vector, info, length, stats_ptr, item)
-	 STATUS *status_vector;
-	 SCHAR *info;
-	 SSHORT length;
-	 STATS *stats_ptr;
-	 SSHORT item;
+static int get_counts(STATUS *status_vector, SCHAR *info, SSHORT length,
+		STATS *stats_ptr, SSHORT item)
 {
 /**************************************
  *
@@ -310,12 +296,8 @@ static get_counts(status_vector, info, length, stats_ptr, item)
 }
 
 
-static print_line(arg, relation_id, count, headers, counts)
-	 SCHAR *arg;
-	 SSHORT relation_id;
-	 SSHORT count;
-	 SCHAR **headers;
-	 SLONG *counts;
+static int print_line(SCHAR *arg, SSHORT relation_id, SSHORT count,
+				SCHAR **headers, SLONG *counts)
 {
 /**************************************
  *
@@ -348,12 +330,11 @@ static print_line(arg, relation_id, count, headers, counts)
 	ib_printf("\n");
 	end_for;
 
+	return 0;
 }
 
 
-static zap_longs(ptr, count)
-	 SLONG *ptr;
-	 SSHORT count;
+static int zap_longs(SLONG *ptr, SSHORT count)
 {
 /**************************************
  *
@@ -370,4 +351,6 @@ static zap_longs(ptr, count)
 		do
 			*ptr++ = 0;
 		while (--count);
+		
+	return 0;
 }

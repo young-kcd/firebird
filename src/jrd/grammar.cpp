@@ -59,7 +59,10 @@ YYSTYPE yylval, yyval;
 # line 159 "grammar.y"
 
 
+#define JLX_C_INCLUDED_BY_GRAMMAR_CPP
 #include "../jrd/jlx.c"
+#undef JLX_C_INCLUDED_BY_GRAMMAR_CPP
+
 int yyexca[] = {
 	-1, 1,
 	0, -1,

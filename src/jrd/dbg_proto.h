@@ -43,7 +43,7 @@ int DBG_eval(int);
 int DBG_examine(int *);
 int DBG_init(void);
 int DBG_open(void);
-int DBG_pool(int);
+int DBG_pool(class JrdMemoryPool*);
 int DBG_pretty(struct nod *, int);
 int DBG_rpb(struct rpb *);
 int DBG_smb(struct smb *, int);

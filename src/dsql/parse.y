@@ -3352,7 +3352,7 @@ static NOD	make_list (NOD);
 static NOD	make_node (NOD_TYPE, int, ...);
 static NOD	make_flag_node (NOD_TYPE, SSHORT, int, ...);
 static BOOLEAN	short_int (NOD, SLONG *, SSHORT);
-static void	stack_nodes (NOD, LLS *);
+static void	stack_nodes (NOD, DLLS *);
 static int	yylex (USHORT, USHORT, USHORT, BOOLEAN *);
 static void	yyerror (TEXT *);
 static void	yyabandon (SSHORT, STATUS);
@@ -3393,18 +3393,18 @@ CONST TOK	*token;
 for (token = tokens; token->tok_string; ++token)
     {
     SYM         symbol;
-    STR         str;
+    STR         str_;
 
-    symbol = (SYM) ALLOCPV (type_sym, 0);
+    symbol = new(*DSQL_permanent_pool, 0) sym;
     symbol->sym_string = (TEXT *) token->tok_string;
     symbol->sym_length = strlen (token->tok_string);
     symbol->sym_type = SYM_keyword;
     symbol->sym_keyword = token->tok_ident;
     symbol->sym_version = token->tok_version;
-    str = (STR) ALLOCPV (type_str, symbol->sym_length);
-    str->str_length = symbol->sym_length;
-    strncpy ((char*)str->str_data, (char*)symbol->sym_string, symbol->sym_length);
-    symbol->sym_object = (void *) str;
+    str_ = new(*DSQL_permanent_pool, symbol->sym_length) str;
+    str_->str_length = symbol->sym_length;
+    strncpy ((char*)str_->str_data, (char*)symbol->sym_string, symbol->sym_length);
+    symbol->sym_object = (void *) str_;
     HSHD_insert (symbol);
     }
 
@@ -3540,12 +3540,12 @@ tdsql = GET_THREAD_DATA;
        
 if (field_name == NULL)
    {
-    field = (FLD) ALLOCDV (type_fld, sizeof (INTERNAL_FIELD_NAME));
+    field = new (*tdsql->tsql_default, sizeof (INTERNAL_FIELD_NAME)) fld;
     strcpy (field->fld_name, (TEXT*) INTERNAL_FIELD_NAME);
     return field;
    }
 string = (STR) field_name->nod_arg [1];
-field = (FLD) ALLOCDV (type_fld, strlen ((SCHAR*) string->str_data));
+field = new(*tdsql->tsql_default, strlen ((SCHAR*) string->str_data)) fld;
 strcpy (field->fld_name, (TEXT*) string->str_data);
 
 return field;
@@ -3569,7 +3569,7 @@ TSQL    tdsql;
 
 tdsql = GET_THREAD_DATA;
        
-temp_file = (FIL) ALLOCD (type_fil);
+temp_file = new(*tdsql->tsql_default) fil;
 
 return temp_file;
 }
@@ -3589,7 +3589,7 @@ static NOD make_list (
  *
  **************************************/
 NOD	*ptr;
-LLS	stack, temp;
+DLLS	stack, temp;
 USHORT	l;
 NOD	old;
 TSQL    tdsql;
@@ -3605,7 +3605,7 @@ for (l = 0, temp = stack; temp; temp = temp->lls_next)
     l++;
 
 old  = node;
-node = (NOD) ALLOCDV (type_nod, l);
+node = new(*tdsql->tsql_default, l) nod;
 node->nod_count = l;
 node->nod_type  = nod_list;
 node->nod_flags = old->nod_flags;
@@ -3640,7 +3640,7 @@ TSQL    tdsql;
 
 tdsql = GET_THREAD_DATA;
 
-node = (NOD) ALLOCDV (type_nod, count);
+node = new(*tdsql->tsql_default, count) nod;
 node->nod_type = type;
 node->nod_count = count;
 p = node->nod_arg;
@@ -3675,7 +3675,7 @@ TSQL    tdsql;
 
 tdsql = GET_THREAD_DATA;
 
-node = (NOD) ALLOCDV (type_nod, count);
+node = new(*tdsql->tsql_default, count) nod;
 node->nod_type = type;
 node->nod_flags = flag;
 node->nod_count = count;
@@ -3746,7 +3746,7 @@ return !return_value;
 
 static void stack_nodes (
     NOD		node,
-    LLS		*stack)
+    DLLS		*stack)
 {
 /**************************************
  *

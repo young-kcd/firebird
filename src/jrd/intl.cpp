@@ -562,13 +562,11 @@ CSCONVERT DLL_EXPORT INTL_convert_lookup(TDBB tdbb,
 	vector = charset->charset_converters;
 
 	if (!(vector)) {
-		vector = charset->charset_converters = (VEC) ALLOCPV(type_vec, 10);
-		assert(vector != NULL);
-		vector->vec_count = 10;
+		vector = charset->charset_converters = vec::newVector(*dbb->dbb_permanent, 10);
 	}
 
-	for (i = 0; i < vector->vec_count; i++) {
-		converter = (CSCONVERT) (vector->vec_object[i]);
+	for (i = 0; i < vector->count(); i++) {
+		converter = (CSCONVERT) ((*vector)[i]);
 		if (converter == NULL)
 			break;
 		if (converter->csconvert_to == to_cs) {
@@ -579,10 +577,8 @@ CSCONVERT DLL_EXPORT INTL_convert_lookup(TDBB tdbb,
 		}
 	}
 
-	if (i >= vector->vec_count) {
-		vector =
-			(VEC) ALL_extend(reinterpret_cast <
-							 BLK * >(&charset->charset_converters), i + 10);
+	if (i >= vector->count()) {
+		vector->resize(i+11);
 		converter = NULL;
 	}
 
@@ -598,13 +594,14 @@ CSCONVERT DLL_EXPORT INTL_convert_lookup(TDBB tdbb,
 	}
 	else {
 		if (converter == NULL)
-			converter = (CSCONVERT) ALLOCP(type_csconvert);
+			//converter = (CSCONVERT) ALLOCP(type_csconvert);
+			converter = new(*dbb->dbb_permanent) csconvert;
 
 		if (obj_init(type_csconvert, to_cs, from_cs, converter, NULL, NULL)) {
 			/* Can't find a conversion object - cache that info in the
 			 * list of converters.
 			 */
-			vector->vec_object[i] = (BLK) converter;
+			(*vector)[i] = (BLK) converter;
 			converter->csconvert_flags = 0;
 			converter->csconvert_from = from_cs;
 			converter->csconvert_to = to_cs;
@@ -612,7 +609,7 @@ CSCONVERT DLL_EXPORT INTL_convert_lookup(TDBB tdbb,
 		}
 	}
 
-	vector->vec_object[i] = (BLK) converter;
+	(*vector)[i] = (BLK) converter;
 	converter->csconvert_flags |= CONVERTTYPE_init;
 
 	assert(converter->csconvert_from == from_cs);
@@ -719,7 +716,7 @@ int DLL_EXPORT INTL_convert_string(DSC * to, DSC * from, FPTR_VOID err)
 
 			to_len =
 				INTL_convert_bytes(tdbb, to_cs,
-								   ((VARY *) to->dsc_address)->vary_string,
+								   reinterpret_cast<UCHAR*>(((VARY *) to->dsc_address)->vary_string),
 								   to_size, from_cs, from_ptr, from_len, err);
 			((VARY *) to->dsc_address)->vary_length = to_len;
 			from_fill = 0;		/* Convert_bytes handles source truncation */
@@ -729,7 +726,7 @@ int DLL_EXPORT INTL_convert_string(DSC * to, DSC * from, FPTR_VOID err)
 			to_len = MIN(from_len, to_size);
 			from_fill = from_len - to_len;
 			((VARY *) p)->vary_length = to_len;
-			p = ((VARY *) p)->vary_string;
+			p = reinterpret_cast<UCHAR*>(((VARY *) p)->vary_string);
 			if (to_len)
 				do
 					*p++ = *q++;
@@ -992,13 +989,13 @@ typedef struct {
 } Tab;
 
 static CONST Tab tab[] = {
-	0x80, 0x00, 0 * 6, 0x7F, 0,	/* 1 byte sequence */
-	0xE0, 0xC0, 1 * 6, 0x7FF, 0x80,	/* 2 byte sequence */
-	0xF0, 0xE0, 2 * 6, 0xFFFF, 0x800,	/* 3 byte sequence */
-	0xF8, 0xF0, 3 * 6, 0x1FFFFF, 0x10000,	/* 4 byte sequence */
-	0xFC, 0xF8, 4 * 6, 0x3FFFFFF, 0x200000,	/* 5 byte sequence */
-	0xFE, 0xFC, 5 * 6, 0x7FFFFFFF, 0x4000000,	/* 6 byte sequence */
-	0,							/* end of table    */
+	{ 0x80, 0x00, 0 * 6, 0x7F, 0 },	/* 1 byte sequence */
+	{ 0xE0, 0xC0, 1 * 6, 0x7FF, 0x80 },	/* 2 byte sequence */
+	{ 0xF0, 0xE0, 2 * 6, 0xFFFF, 0x800 },	/* 3 byte sequence */
+	{ 0xF8, 0xF0, 3 * 6, 0x1FFFFF, 0x10000 },	/* 4 byte sequence */
+	{ 0xFC, 0xF8, 4 * 6, 0x3FFFFFF, 0x200000 },	/* 5 byte sequence */
+	{ 0xFE, 0xFC, 5 * 6, 0x7FFFFFFF, 0x4000000 },	/* 6 byte sequence */
+	{ 0, 0, 0, 0, 0 } 				/* end of table    */
 };
 
 
@@ -1219,12 +1216,10 @@ void DLL_EXPORT INTL_init(TDBB tdbb)
 	CHECK_DBB(dbb);
 
 	if (!(vector = dbb->dbb_text_objects)) {
-		vector = dbb->dbb_text_objects = (VEC) ALLOCPV(type_vec, 25);
-		vector->vec_count = 25;
+		vector = dbb->dbb_text_objects = vec::newVector(*dbb->dbb_permanent, 25);
 	}
 	if (!(vector = dbb->dbb_charsets)) {
-		vector = dbb->dbb_charsets = (VEC) ALLOCPV(type_vec, 25);
-		vector->vec_count = 25;
+		vector = dbb->dbb_charsets = vec::newVector(*dbb->dbb_permanent, 25);
 	}
 }
 
@@ -1334,13 +1329,18 @@ void *DLL_EXPORT INTL_obj_lookup(
 	vector = *pVector;
 	assert(vector != NULL);
 
-	if (id >= vector->vec_count)
-		vector =
-			(VEC) ALL_extend(reinterpret_cast < BLK * >(pVector), id + 10);
+	if (id >= vector->count())
+		vector->resize(id + 11);
 
-	if (!(cs_object = vector->vec_object[id])) {
-		cs_object = ALLOCP(objtype);
-		vector->vec_object[id] = (BLK) cs_object;
+	if (!(cs_object = (*vector)[id])) {
+		if (objtype == type_charset)
+		    cs_object = (BLK) new(*dbb->dbb_permanent) charset;
+		else if (objtype == type_texttype)
+		    cs_object = (BLK) new(*dbb->dbb_permanent) texttype;
+		else
+			assert(0);
+		
+		(*vector)[id] = (BLK) cs_object;
 	}
 
 	assert(cs_object != NULL);
@@ -1352,8 +1352,7 @@ void *DLL_EXPORT INTL_obj_lookup(
 			(objtype, TTYPE_TO_CHARSET(parm1), 0, cs_object, err,
 			 (STATUS *) status)) return (NULL);
 		((CHARSET) cs_object)->charset_collations =
-			(VEC) ALLOCPV(type_vec, 10);
-		((CHARSET) cs_object)->charset_collations->vec_count = 10;
+			vec::newVector(*dbb->dbb_permanent, 10);
 		((CHARSET) cs_object)->charset_flags |= CHARSET_init;
 		return (cs_object);
 	}
@@ -2338,8 +2337,8 @@ static BOOLEAN obj_init(
 		/* The flu.c uses searchpath which expects a file name not a path */
 		strcpy(reinterpret_cast < char *>(path), INTL_MODULE1);
 		INTL_TRACE(("INTL: trying %s %s\n", path, INTL_LOOKUP_ENTRY1));
-		if (lookup_fn = reinterpret_cast <USHORT(*)(USHORT, USHORT(**)(), short, short)>
-            (ISC_lookup_entrypoint(reinterpret_cast < char *>(path), INTL_LOOKUP_ENTRY1, NULL))) {
+		if ( (lookup_fn = reinterpret_cast <USHORT(*)(USHORT, USHORT(**)(), short, short)>
+            (ISC_lookup_entrypoint(reinterpret_cast < char *>(path), INTL_LOOKUP_ENTRY1, NULL))) ) {
 			INTL_TRACE(("INTL: calling lookup %s %s\n", path,
 						INTL_LOOKUP_ENTRY1));
 			if ((*lookup_fn) (objtype, &function, parm1, parm2) != 0) {
@@ -2358,11 +2357,11 @@ static BOOLEAN obj_init(
 #else
 		gds__prefix(reinterpret_cast < char *>(path), INTL_MODULE2);
 		INTL_TRACE(("INTL: trying %s %s\n", path, INTL_LOOKUP_ENTRY2));
-		if (lookup_fn =
+		if ( (lookup_fn =
 			reinterpret_cast < USHORT(*)(USHORT, USHORT(**)(), short,
 										 short)
 			>(ISC_lookup_entrypoint
-			  (reinterpret_cast < char *>(path), INTL_LOOKUP_ENTRY2, NULL))) {
+			  (reinterpret_cast < char *>(path), INTL_LOOKUP_ENTRY2, NULL))) ) {
 			INTL_TRACE(
 					   ("INTL: calling lookup %s %s\n", path,
 						INTL_LOOKUP_ENTRY2));
@@ -2396,7 +2395,7 @@ static BOOLEAN obj_init(
 			break;
 		}
 		INTL_TRACE(("INTL: trying user fn %s\n", entry));
-		if (function_block = FUN_lookup_function(entry)) {
+		if ( (function_block = FUN_lookup_function(entry)) ) {
 			INTL_TRACE(("INTL: found a user fn, validating\n"));
 			if ((function_block->fun_count == argcount) &&
 				(function_block->fun_args == argcount) &&

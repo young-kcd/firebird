@@ -28,18 +28,18 @@
 extern "C" {
 #endif
 
-extern void EXT_close(struct rsb *);
+extern void EXT_close(class Rsb *);
 extern void EXT_erase(struct rpb *, int *);
 extern struct ext *EXT_file(struct rel *, TEXT *, SLONG *);
 extern void EXT_fini(struct rel *);
-extern int EXT_get(struct rsb *);
+extern int EXT_get(class Rsb *);
 extern void EXT_modify(struct rpb *, struct rpb *, int *);
 #ifdef VMS
-extern int EXT_open(struct rsb *);
+extern int EXT_open(class Rsb *);
 #else
-extern void EXT_open(struct rsb *);
+extern void EXT_open(class Rsb *);
 #endif
-extern struct rsb *EXT_optimize(register struct opt *, SSHORT, struct nod **);
+extern class Rsb *EXT_optimize(register class Opt *, SSHORT, struct nod **);
 extern void EXT_ready(struct rel *);
 extern void EXT_store(struct rpb *, int *);
 extern void EXT_trans_commit(struct tra *);

@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_SDL_H_
-#define _JRD_SDL_H_
+#ifndef JRD_SDL_H
+#define JRD_SDL_H
 
 typedef struct sdl_info {
 	USHORT sdl_info_fid;
@@ -45,4 +45,4 @@ typedef struct slice {
 	SLONG slice_count;
 } *SLICE;
 
-#endif /* _JRD_SDL_H_ */
+#endif /* JRD_SDL_H */

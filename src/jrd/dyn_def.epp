@@ -108,6 +108,14 @@ static BOOLEAN get_who(TDBB, GBL, SCHAR *);
 static BOOLEAN is_it_user_name(GBL, TEXT *, TDBB);
 
 
+#pragma FB_COMPILER_MESSAGE("Remove once we updated gpre")
+static inline void gds__vtov(CONST UCHAR* s1, SCHAR* s2, SSHORT val)
+{
+	gds__vtov(reinterpret_cast<CONST SCHAR*>(s1), s2, val);
+}
+
+
+
 static int private_getODS()
 {
 	TDBB	tdbb = GET_THREAD_DATA;
@@ -144,25 +152,13 @@ void DYN_define_cache( GBL gbl, UCHAR ** ptr)
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
 	request = NULL;
+
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
 	id = -1;
 
-	if (SETJMP(env))
-	{
-		if (id == drq_s_cache)
-		{
-			DYN_rundown_request(old_env, request, drq_s_cache);
-			DYN_error_punt(TRUE, 150, NULL, NULL, NULL, NULL, NULL);
-			/* msg 150: STORE RDB$FILES failed */
-		}
-		else
-		{
-			DYN_rundown_request(old_env, request, drq_l_cache);
-			DYN_error_punt(TRUE, 156, NULL, NULL, NULL, NULL, NULL);
-			/* msg 156: Shared cache lookup failed */
-		}
-	}
 	id = drq_l_cache;
 	request = (BLK) CMP_find_request(tdbb, drq_l_cache, DYN_REQUESTS);
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -170,13 +166,13 @@ void DYN_define_cache( GBL gbl, UCHAR ** ptr)
         found = TRUE;
 	END_FOR;
 
-	if (!DYN_REQUEST(drq_l_cache))
+	if (!DYN_REQUEST(drq_l_cache)) {
 		DYN_REQUEST(drq_l_cache) = request;
+	}
 
 	if (found) {
 		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		DYN_error_punt(FALSE, 148, NULL, NULL, NULL, NULL, NULL);
-		/* msg 148: "Shared cache file already exists" */
+		goto dyn_punt_148;
 	}
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_cache, DYN_REQUESTS);
@@ -211,13 +207,35 @@ void DYN_define_cache( GBL gbl, UCHAR ** ptr)
 	}
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}
+	catch (...) {
+		if (id == drq_s_cache)
+		{
+			DYN_rundown_request(old_env, request, drq_s_cache);
+			DYN_error_punt(TRUE, 150, NULL, NULL, NULL, NULL, NULL);
+			/* msg 150: STORE RDB$FILES failed */
+		}
+		else
+		{
+			DYN_rundown_request(old_env, request, drq_l_cache);
+			DYN_error_punt(TRUE, 156, NULL, NULL, NULL, NULL, NULL);
+			/* msg 156: Shared cache lookup failed */
+		}
+	}
+
+	return;
+
+dyn_punt_148:
+	DYN_error_punt(FALSE, 148, NULL, NULL, NULL, NULL, NULL);
+	/* msg 148: "Shared cache file already exists" */
 }
 
 
-void DYN_define_constraint(
-						   GBL gbl,
-						   UCHAR ** ptr,
-						   TEXT * relation_name, TEXT * field_name)
+void DYN_define_constraint(GBL		gbl,
+						   UCHAR**	ptr,
+						   TEXT*	relation_name,
+						   TEXT*	field_name)
 {
 /**************************************
  *
@@ -241,7 +259,7 @@ void DYN_define_constraint(
 	TEXT null_field_name[32], trigger_name[32];
 	int all_count, unique_count;
 	LLS field_list = NULL, list_ptr;
-	STR str;
+	STR str_;
 	USHORT found, foreign_flag = FALSE, not_null;
 	JMP_BUF env;
 	JMP_BUF *VOLATILE old_env;
@@ -256,38 +274,10 @@ void DYN_define_constraint(
 	request = NULL;
 	id = -1;
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-	if (SETJMP(env))
-	{
-		if (id == drq_s_rel_con)
-		{
-			DYN_rundown_request(old_env, request, id);
-			DYN_error_punt(TRUE, 121, NULL, NULL, NULL, NULL, NULL);
-			/* msg 121: "STORE RDB$RELATION_CONSTRAINTS failed" */
-		}
-		else if (id == drq_s_ref_con)
-		{
-			DYN_rundown_request(old_env, request, id);
-			DYN_error_punt(TRUE, 127, NULL, NULL, NULL, NULL, NULL);
-			/* msg 127: "STORE RDB$REF_CONSTRAINTS failed" */
-		}
-
-		DYN_rundown_request(old_env, request, -1);
-		if (id == drq_c_unq_nam)
-			DYN_error_punt(TRUE, 121, NULL, NULL, NULL, NULL, NULL);
-		/* msg 121: "STORE RDB$RELATION_CONSTRAINTS failed" */
-		else if (id == drq_n_idx_seg)
-			DYN_error_punt(TRUE, 124, constraint_name, NULL, NULL, NULL,
-						   NULL);
-		/* msg 124: "A column name is repeated in the definition of constraint: %s" */
-		else if (id == drq_c_dup_con)
-			DYN_error_punt(TRUE, 125, NULL, NULL, NULL, NULL, NULL);
-		/* msg 125: "Integrity constraint lookup failed" */
-		else
-			DYN_error_punt(TRUE, 125, NULL, NULL, NULL, NULL, NULL);
-		/* msg 125: "Integrity constraint lookup failed" */
-	}
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_rel_con, DYN_REQUESTS);
 	id = drq_s_rel_con;
@@ -344,9 +334,40 @@ void DYN_define_constraint(
 	END_STORE;
 
 	if (!DYN_REQUEST(drq_s_rel_con))
+	{
 		DYN_REQUEST(drq_s_rel_con) = request;
+	}
 
-	if (verb == gds_dyn_def_trigger) {
+	}	// try
+	catch (...) {
+		SSHORT local_id = -1;
+		USHORT number;
+		// msg 121: "STORE RDB$RELATION_CONSTRAINTS failed"
+		// msg 124: "A column name is repeated in the definition of constraint: %s"
+		// msg 125: "Integrity constraint lookup failed"
+		// msg 127: "STORE RDB$REF_CONSTRAINTS failed"
+		switch (id) {
+			case drq_s_rel_con:	number = 121;	local_id = id;	break;
+			case drq_s_ref_con:	number = 127;	local_id = id;	break;
+			case drq_c_unq_nam:	number = 121;					break;
+			case drq_n_idx_seg:	number = 124;					break;
+			case drq_c_dup_con:	number = 125;					break;
+			default:			number = 125;					break;
+		}
+
+		DYN_rundown_request(old_env, request, local_id);
+		
+		DYN_error_punt(TRUE,
+						number,
+						number == 124 ? constraint_name : NULL,
+						NULL,
+						NULL,
+						NULL,
+						NULL);
+	}
+
+	if (verb == gds_dyn_def_trigger)
+	{
 		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		do {
 			DYN_define_trigger(gbl, ptr, relation_name, trigger_name, FALSE);
@@ -354,20 +375,25 @@ void DYN_define_constraint(
 											 trigger_name);
 		} while ((verb = *(*ptr)++) == gds_dyn_def_trigger);
 
-		if (verb != gds_dyn_end)
+		if (verb != gds_dyn_end) {
 			DYN_unsupported_verb();
+		}
 		return;
 	}
 
-	if (verb == gds_dyn_fld_not_null) {
+	if (verb == gds_dyn_fld_not_null)
+	{
 		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		DYN_UTIL_store_check_constraints(tdbb, gbl, constraint_name,
 										 field_name);
 
-		if (*(*ptr)++ != gds_dyn_end)
+		if (*(*ptr)++ != gds_dyn_end) {
 			DYN_unsupported_verb();
+		}
 		return;
 	}
+
+	try {
 
 /* Make sure unique field names were specified for UNIQUE/PRIMARY/FOREIGN */
 /* All fields must have the NOT NULL attribute specified for UNIQUE/PRIMARY. */
@@ -402,18 +428,18 @@ void DYN_define_constraint(
 		}
 
 		unique_count++;
-		str = (STR) ALLOCDV(type_str, sizeof(IDS.RDB$FIELD_NAME) - 1);
-		strcpy((char*)str->str_data, IDS.RDB$FIELD_NAME);
-		LLS_PUSH(str, &field_list);
+		str_ = new(*tdbb->tdbb_default, sizeof(IDS.RDB$FIELD_NAME) - 1) str();
+		strcpy((char*)str_->str_data, IDS.RDB$FIELD_NAME);
+		LLS_PUSH(str_, &field_list);
 	END_FOR;
-	if (!DYN_REQUEST(drq_c_unq_nam))
+	if (!DYN_REQUEST(drq_c_unq_nam)) {
 		DYN_REQUEST(drq_c_unq_nam) = request;
+	}
 
 	if (not_null == FALSE) {
 		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		DYN_error(FALSE, 123, null_field_name, NULL, NULL, NULL, NULL);
+		DYN_error_punt(FALSE, 123, null_field_name, NULL, NULL, NULL, NULL);
 		/* msg 123: "Field: %s not defined as NOT NULL - can't be used in PRIMARY KEY/UNIQUE constraint definition" */
-		ERR_punt();
 	}
 
 	request = (BLK) CMP_find_request(tdbb, drq_n_idx_seg, DYN_REQUESTS);
@@ -421,25 +447,26 @@ void DYN_define_constraint(
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		IDS IN RDB$INDEX_SEGMENTS WITH IDS.RDB$INDEX_NAME EQ index_name
-        if (!DYN_REQUEST(drq_n_idx_seg))
+        if (!DYN_REQUEST(drq_n_idx_seg)) {
             DYN_REQUEST(drq_n_idx_seg) = request;
+		}
 
 		all_count++;
 	END_FOR;
-	if (!DYN_REQUEST(drq_n_idx_seg))
+	if (!DYN_REQUEST(drq_n_idx_seg)) {
 		DYN_REQUEST(drq_n_idx_seg) = request;
+	}
 
 	if (unique_count != all_count) {
 		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		DYN_error(FALSE, 124, constraint_name, NULL, NULL, NULL, NULL);
-		/* msg 124: "A column name is repeated in the definition of constraint: %s" */
-		ERR_punt();
+		goto dyn_punt_false_124;
 	}
 
 /* For PRIMARY KEY/UNIQUE constraints, make sure same set of columns 
    is not used in another constraint of either type */
 
-	if (foreign_flag == FALSE) {
+	if (foreign_flag == FALSE)
+	{
 		request = (BLK) CMP_find_request(tdbb, drq_c_dup_con, DYN_REQUESTS);
 		id = drq_c_dup_con;
 
@@ -458,39 +485,47 @@ void DYN_define_constraint(
                 DYN_REQUEST(drq_c_dup_con) = request;
 
 			DYN_terminate(CRT.RDB$INDEX_NAME, sizeof(CRT.RDB$INDEX_NAME));
-			if (strcmp(index_name, CRT.RDB$INDEX_NAME)) {
-				if (list_ptr)
+			if (strcmp(index_name, CRT.RDB$INDEX_NAME))
+			{
+				if (list_ptr) {
 					found = FALSE;
-				if (found)
+				}
+				if (found) {
 					break;
+				}
 				list_ptr = field_list;
 				strcpy(index_name, CRT.RDB$INDEX_NAME);
 				found = TRUE;
 			}
 
-			if (list_ptr) {
-				if (strcmp
-					((char*)((STR) list_ptr->lls_object)->str_data,
-					 IDS.RDB$FIELD_NAME)) found = FALSE;
+			if (list_ptr)
+			{
+				if (strcmp((char*)((STR) list_ptr->lls_object)->str_data,
+							IDS.RDB$FIELD_NAME))
+				{
+					found = FALSE;
+				}
 				list_ptr = list_ptr->lls_next;
 			}
-			else
+			else {
 				found = FALSE;
+			}
 		END_FOR;
-		if (!DYN_REQUEST(drq_c_dup_con))
+		if (!DYN_REQUEST(drq_c_dup_con)) {
 			DYN_REQUEST(drq_c_dup_con) = request;
+		}
 
-		if (list_ptr)
+		if (list_ptr) {
 			found = FALSE;
+		}
 
 		if (found) {
 			tdbb->tdbb_setjmp = (UCHAR *) old_env;
-			DYN_error(FALSE, 126, NULL, NULL, NULL, NULL, NULL);
-			/* msg 126: "Same set of columns cannot be used in more than one PRIMARY KEY and/or UNIQUE constraint definition" */
-			ERR_punt();
+			goto dyn_punt_false_126;
 		}
 	}
-	else {						/* Foreign key being defined   */
+	else
+	{						/* Foreign key being defined   */
 
 		request = (BLK) CMP_find_request(tdbb, drq_s_ref_con, DYN_REQUESTS);
 		id = drq_s_ref_con;
@@ -556,13 +591,52 @@ void DYN_define_constraint(
 	}
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}	// try
+	catch (...) {
+		SSHORT local_id = -1;
+		USHORT number;
+		// msg 121: "STORE RDB$RELATION_CONSTRAINTS failed"
+		// msg 124: "A column name is repeated in the definition of constraint: %s"
+		// msg 125: "Integrity constraint lookup failed"
+		// msg 127: "STORE RDB$REF_CONSTRAINTS failed"
+		switch (id) {
+			case drq_s_rel_con:	number = 121;	local_id = id;	break;
+			case drq_s_ref_con:	number = 127;	local_id = id;	break;
+			case drq_c_unq_nam:	number = 121;					break;
+			case drq_n_idx_seg:	number = 124;					break;
+			case drq_c_dup_con:	number = 125;					break;
+			default:			number = 125;					break;
+		}
+
+		DYN_rundown_request(old_env, request, local_id);
+		
+		DYN_error_punt(TRUE,
+						number,
+						number == 124 ? constraint_name : NULL,
+						NULL,
+						NULL,
+						NULL,
+						NULL);
+	}
+
+	return;
+
+dyn_punt_false_124:
+	DYN_error_punt(FALSE, 124, constraint_name, NULL, NULL, NULL, NULL);
+	/* msg 124: "A column name is repeated in the definition of constraint: %s" */
+	return;
+
+dyn_punt_false_126:
+	DYN_error_punt(FALSE, 126, NULL, NULL, NULL, NULL, NULL);
+	/* msg 126: "Same set of columns cannot be used in more than one PRIMARY KEY and/or UNIQUE constraint definition" */
 }
 
 
-void DYN_define_dimension(
-						  GBL gbl,
-						  UCHAR ** ptr,
-						  TEXT * relation_name, TEXT * field_name)
+void DYN_define_dimension(GBL		gbl,
+						  UCHAR**	ptr,
+						  TEXT*		relation_name,
+						  TEXT*		field_name)
 {
 /**************************************
  *
@@ -620,6 +694,8 @@ void DYN_define_dimension(
 			}
 		}
 
+#pragma FB_COMPILER_MESSAGE("TMN: FIXME! SETJMP across scope!")
+
 		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 		tdbb->tdbb_setjmp = (UCHAR *) env;
 		if (SETJMP(env))
@@ -630,8 +706,9 @@ void DYN_define_dimension(
 		}
 	END_STORE;
 
-	if (!DYN_REQUEST(drq_s_dims))
+	if (!DYN_REQUEST(drq_s_dims)) {
 		DYN_REQUEST(drq_s_dims) = request;
+	}
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 }
@@ -686,6 +763,8 @@ void DYN_define_exception( GBL gbl, UCHAR ** ptr)
 			}
 		}
 
+#pragma FB_COMPILER_MESSAGE("TMN: FIXME! SETJMP across scope!")
+
 		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 		tdbb->tdbb_setjmp = (UCHAR *) env;
 		if (SETJMP(env))
@@ -696,17 +775,19 @@ void DYN_define_exception( GBL gbl, UCHAR ** ptr)
 		}
 	END_STORE;
 
-	if (!DYN_REQUEST(drq_s_xcp))
+	if (!DYN_REQUEST(drq_s_xcp)) {
 		DYN_REQUEST(drq_s_xcp) = request;
+	}
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 }
 
 
-void DYN_define_file(
-					 GBL gbl,
-					 UCHAR ** ptr,
-					 SLONG shadow_number, SLONG * start, USHORT msg)
+void DYN_define_file(GBL		gbl,
+					 UCHAR**	ptr,
+					 SLONG		shadow_number,
+					 SLONG*		start,
+					 USHORT		msg)
 {
 /**************************************
  *
@@ -733,23 +814,12 @@ void DYN_define_file(
 	dbb = tdbb->tdbb_database;
 
 	request = NULL;
+
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
 	id = -1;
-
-	if (SETJMP(env))
-	{
-		if (id == drq_l_files)
-		{
-			DYN_rundown_request(old_env, request, drq_l_files);
-			DYN_error_punt(FALSE, 166, NULL, NULL, NULL, NULL, NULL);
-		}
-		else
-		{
-			DYN_rundown_request(old_env, request, drq_s_files);
-			DYN_error_punt(TRUE, msg, NULL, NULL, NULL, NULL, NULL);
-		}
-	}
 
 	request = (BLK) CMP_find_request(tdbb, id = drq_l_files, DYN_REQUESTS);
 
@@ -813,6 +883,21 @@ void DYN_define_file(
 	}
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}
+	catch (...) {
+		if (id == drq_l_files)
+		{
+			DYN_rundown_request(old_env, request, drq_l_files);
+			DYN_error_punt(FALSE, 166, NULL, NULL, NULL, NULL, NULL);
+		}
+		else
+		{
+			DYN_rundown_request(old_env, request, drq_s_files);
+			DYN_error_punt(TRUE, msg, NULL, NULL, NULL, NULL, NULL);
+		}
+	}
+
 }
 
 
@@ -888,6 +973,8 @@ void DYN_define_filter( GBL gbl, UCHAR ** ptr)
 				DYN_unsupported_verb();
 			}
 		}
+
+#pragma FB_COMPILER_MESSAGE("TMN: FIXME! SETJMP across scope!")
 
 		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 		tdbb->tdbb_setjmp = (UCHAR *) env;
@@ -984,6 +1071,8 @@ void DYN_define_function( GBL gbl, UCHAR ** ptr)
 			}
 		}
 
+#pragma FB_COMPILER_MESSAGE("TMN: FIXME! SETJMP across scope!")
+
 		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 		tdbb->tdbb_setjmp = (UCHAR *) env;
 		if (SETJMP(env))
@@ -995,8 +1084,9 @@ void DYN_define_function( GBL gbl, UCHAR ** ptr)
 		}
 	END_STORE;
 
-	if (!DYN_REQUEST(drq_s_funcs))
+	if (!DYN_REQUEST(drq_s_funcs)) {
 		DYN_REQUEST(drq_s_funcs) = request;
+	}
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 }
@@ -1024,15 +1114,10 @@ void DYN_define_function_arg(GBL gbl, UCHAR** ptr, TEXT* function_name)
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-	if (SETJMP(env))
-	{
-		if (request)
-			DYN_rundown_request(old_env, request, drq_s_func_args);
-		DYN_error_punt(TRUE, 12, NULL, NULL, NULL, NULL, NULL);
-		/* msg 12: "DEFINE FUNCTION ARGUMENT failed" */
-	}
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_func_args, DYN_REQUESTS);
 
@@ -1126,6 +1211,15 @@ void DYN_define_function_arg(GBL gbl, UCHAR** ptr, TEXT* function_name)
 		DYN_REQUEST(drq_s_func_args) = request;
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}
+	catch (...) {
+		if (request) {
+			DYN_rundown_request(old_env, request, drq_s_func_args);
+		}
+		DYN_error_punt(TRUE, 12, NULL, NULL, NULL, NULL, NULL);
+		/* msg 12: "DEFINE FUNCTION ARGUMENT failed" */
+	}
 }
 
 
@@ -1157,6 +1251,8 @@ void DYN_define_generator( GBL gbl, UCHAR ** ptr)
 
         GET_STRING(ptr, X.RDB$GENERATOR_NAME);
 
+#pragma FB_COMPILER_MESSAGE("TMN: FIXME! SETJMP across scope!")
+
 		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 		tdbb->tdbb_setjmp = (UCHAR *) env;
 		if (SETJMP(env))
@@ -1173,8 +1269,10 @@ void DYN_define_generator( GBL gbl, UCHAR ** ptr)
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 
 	if (*(*ptr)++ != gds_dyn_end)
+	{
 		DYN_error_punt(TRUE, 9, NULL, NULL, NULL, NULL, NULL);
-	/* msg 9: "DEFINE GENERATOR unexpected dyn verb" */
+		/* msg 9: "DEFINE GENERATOR unexpected dyn verb" */
+	}
 }
 
 
@@ -1236,64 +1334,78 @@ void DYN_define_role( GBL gbl, UCHAR ** ptr)
 		ERR_punt();
 	}
 
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;	/* save environment */
-	tdbb->tdbb_setjmp = (UCHAR *) env;	/* get new environment */
+	try {
 
-	if (SETJMP(env))
-	{
-		if (request)
+		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;	/* save environment */
+		tdbb->tdbb_setjmp = (UCHAR *) env;	/* get new environment */
+
+
+		if (is_it_user_name(gbl, role_name, tdbb)) {
+		/************************************************
+		**
+		** user name could not be used for SQL role
+		**
+		*************************************************/
+			DYN_error(FALSE, 193, role_name, NULL, NULL, NULL, NULL);
+			tdbb->tdbb_setjmp = (UCHAR *) old_env;	/* restore environment */
+			goto do_err_punt;
+		}
+
+		if (DYN_is_it_sql_role(gbl, role_name, dummy_name, tdbb)) {
+		/************************************************
+		**
+		** SQL role already exist
+		**
+		*************************************************/
+			DYN_error(FALSE, 194, role_name, NULL, NULL, NULL, NULL);
+			tdbb->tdbb_setjmp = (UCHAR *) old_env;	/* restore environment */
+			goto do_err_punt;
+		}
+
+		request = (BLK) CMP_find_request(tdbb, drq_role_gens, DYN_REQUESTS);
+
+		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			X IN RDB$ROLES 
+			strcpy(X.RDB$ROLE_NAME, role_name);
+			strcpy(X.RDB$OWNER_NAME, owner_name);
+
+		END_STORE;
+
+		if (!DYN_REQUEST(drq_role_gens)) {
+			DYN_REQUEST(drq_role_gens) = request;
+		}
+
+		if (*(*ptr)++ != gds_dyn_end) {
+			goto do_error_punt_9;
+		}
+
+		tdbb->tdbb_setjmp = (UCHAR *) old_env;	/* restore environment */
+	}
+	catch (...) {
+		if (request) {
 			DYN_rundown_request(old_env, request, drq_role_gens);
+		}
 		tdbb->tdbb_setjmp = (UCHAR *) old_env;	/* restore environment */
 		DYN_error_punt(TRUE, 8, NULL, NULL, NULL, NULL, NULL);
 		/* msg 8: "DEFINE ROLE failed" */
 	}
 
-	if (is_it_user_name(gbl, role_name, tdbb)) {
-	/************************************************
-    **
-    ** user name could not be used for SQL role
-    **
-    *************************************************/
-		DYN_error(FALSE, 193, role_name, NULL, NULL, NULL, NULL);
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;	/* restore environment */
-		ERR_punt();
-	}
+	return;
 
-	if (DYN_is_it_sql_role(gbl, role_name, dummy_name, tdbb)) {
-	/************************************************
-    **
-    ** SQL role already exist
-    **
-    *************************************************/
-		DYN_error(FALSE, 194, role_name, NULL, NULL, NULL, NULL);
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;	/* restore environment */
-		ERR_punt();
-	}
+do_err_punt:
+	ERR_punt();
+	return;
 
-	request = (BLK) CMP_find_request(tdbb, drq_role_gens, DYN_REQUESTS);
-
-	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		X IN RDB$ROLES 
-        strcpy(X.RDB$ROLE_NAME, role_name);
-		strcpy(X.RDB$OWNER_NAME, owner_name);
-
-	END_STORE;
-
-	if (!DYN_REQUEST(drq_role_gens))
-		DYN_REQUEST(drq_role_gens) = request;
-
-	if (*(*ptr)++ != gds_dyn_end)
-		DYN_error_punt(TRUE, 9, NULL, NULL, NULL, NULL, NULL);
+do_error_punt_9:
+	DYN_error_punt(TRUE, 9, NULL, NULL, NULL, NULL, NULL);
 	/* msg 9: "DEFINE ROLE unexpected dyn verb" */
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;	/* restore environment */
 }
 
 
-void DYN_define_global_field(
-							 GBL gbl,
-							 UCHAR ** ptr,
-							 TEXT * relation_name, TEXT * field_name)
+void DYN_define_global_field(GBL		gbl,
+							 UCHAR**	ptr,
+							 TEXT*		relation_name,
+							 TEXT*		field_name)
 {
 /**************************************
  *
@@ -1305,24 +1417,24 @@ void DYN_define_global_field(
  *	Execute a dynamic ddl statement.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
+
 	UCHAR verb;
 	VOLATILE BLK request;
 	USHORT dtype;
 	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
+	JMP_BUF* VOLATILE old_env;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB  dbb  = tdbb->tdbb_database;
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_gfields, DYN_REQUESTS);
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FLD IN RDB$FIELDS USING 
 
-        if (!GET_STRING(ptr, FLD.RDB$FIELD_NAME))
+        if (!GET_STRING(ptr, FLD.RDB$FIELD_NAME)) {
             DYN_UTIL_generate_field_name(tdbb, gbl, FLD.RDB$FIELD_NAME);
+		}
 
 		FLD.RDB$SYSTEM_FLAG.NULL = TRUE;
 		FLD.RDB$FIELD_SCALE.NULL = TRUE;
@@ -1347,6 +1459,7 @@ void DYN_define_global_field(
 		FLD.RDB$FIELD_PRECISION.NULL = TRUE;
 
 		while ((verb = *(*ptr)++) != gds_dyn_end)
+		{
 			switch (verb)
 			{
 			case gds_dyn_system_flag:
@@ -1535,6 +1648,9 @@ void DYN_define_global_field(
 							(field_name) ? field_name : FLD.RDB$FIELD_NAME,
 							(TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
 			}
+		}
+
+#pragma FB_COMPILER_MESSAGE("TMN: FIXME! SETJMP across scope!")
 
 		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 		tdbb->tdbb_setjmp = (UCHAR *) env;
@@ -1546,8 +1662,9 @@ void DYN_define_global_field(
 		}
 	END_STORE;
 
-	if (!DYN_REQUEST(drq_s_gfields))
+	if (!DYN_REQUEST(drq_s_gfields)) {
 		DYN_REQUEST(drq_s_gfields) = request;
+	}
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 }
@@ -1582,7 +1699,7 @@ void DYN_define_index(GBL		gbl,
 	UCHAR index_name[32], referenced_relation[32];
 	UCHAR verb, seg_count, fld_count;
 	LLS field_list = NULL, seg_list = NULL, list_ptr;
-	STR str;
+	STR str_;
 	USHORT found, key_length, length, referred_cols = 0;
 	JMP_BUF env;
 	JMP_BUF *VOLATILE old_env;
@@ -1597,35 +1714,10 @@ void DYN_define_index(GBL		gbl,
 	request = NULL;
 	id = -1;
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-	if (SETJMP(env))
-	{
-		if (id == drq_s_indices) {
-			DYN_rundown_request(old_env, request, id);
-			DYN_error_punt(TRUE, 21, NULL, NULL, NULL, NULL, NULL);
-			/* msg 21: "STORE RDB$INDICES failed" */
-		}
-		else if (id == drq_s_idx_segs) {
-			DYN_rundown_request(old_env, request, id);
-			DYN_error_punt(TRUE, 15, NULL, NULL, NULL, NULL, NULL);
-			/* msg 15: "STORE RDB$INDICES failed" */
-		}
-
-		DYN_rundown_request(old_env, request, -1);
-		if (id == drq_l_lfield)
-			DYN_error_punt(TRUE, 15, NULL, NULL, NULL, NULL, NULL);
-		/* msg 15: "STORE RDB$INDICES failed" */
-		else if (id == drq_l_unq_idx)
-			DYN_error_punt(TRUE, 17, NULL, NULL, NULL, NULL, NULL);
-		/* msg 17: "Primary Key field lookup failed" */
-		else if (id == drq_l_view_idx)
-			DYN_error_punt(TRUE, 180, NULL, NULL, NULL, NULL, NULL);
-		/* msg 180: "Table Name lookup failed" */
-		else
-			DYN_error_punt(TRUE, 19, NULL, NULL, NULL, NULL, NULL);
-		/* msg 19: "Primary Key lookup failed" */
-	}
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_indices, DYN_REQUESTS);
 	id = drq_s_indices;
@@ -1704,17 +1796,17 @@ void DYN_define_index(GBL		gbl,
 				IDX.RDB$INDEX_TYPE = (SSHORT)DYN_get_number(ptr);
 				IDX.RDB$INDEX_TYPE.NULL = FALSE;
 				break;
-
+				
 			case gds_dyn_fld_name:
-				str = (STR) ALLOCDV(type_str, field_name_size - 1);
-				DYN_get_string((TEXT**)ptr, (TEXT*)str->str_data, field_name_size, TRUE);
-				LLS_PUSH(str, &seg_list);
+				str_ = new(*tdbb->tdbb_default, field_name_size - 1) str();
+				DYN_get_string((TEXT**)ptr, (TEXT*)str_->str_data, field_name_size, TRUE);
+				LLS_PUSH(str_, &seg_list);
 				seg_count++;
 
 				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 					F IN RDB$RELATION_FIELDS CROSS GF IN RDB$FIELDS
 						WITH GF.RDB$FIELD_NAME EQ F.RDB$FIELD_SOURCE AND
-						F.RDB$FIELD_NAME EQ str->str_data AND
+						F.RDB$FIELD_NAME EQ str_->str_data AND
 						IDX.RDB$RELATION_NAME EQ F.RDB$RELATION_NAME
                     if (!DYN_REQUEST(drq_l_lfield))
 					{
@@ -1810,9 +1902,9 @@ void DYN_define_index(GBL		gbl,
 				break;
 
 			case gds_dyn_idx_ref_column:
-				str = (STR) ALLOCDV(type_str, field_name_size - 1);
-				DYN_get_string((TEXT**)ptr, (TEXT*)str->str_data, field_name_size, TRUE);
-				LLS_PUSH(str, &field_list);
+				str_ = new(*tdbb->tdbb_default, field_name_size - 1) str();
+				DYN_get_string((TEXT**)ptr, (TEXT*)str_->str_data, field_name_size, TRUE);
+				LLS_PUSH(str_, &field_list);
 				referred_cols++;
 				break;
 
@@ -1949,13 +2041,13 @@ void DYN_define_index(GBL		gbl,
 				(BLK) CMP_find_request(tdbb, drq_s_idx_segs, DYN_REQUESTS);
 			id = drq_s_idx_segs;
 			while (seg_list) {
-				str = (STR) LLS_POP(&seg_list);
+				str_ = (STR) LLS_POP(&seg_list);
 				STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 					X IN RDB$INDEX_SEGMENTS
                     strcpy((char*)X.RDB$INDEX_NAME, (char*)IDX.RDB$INDEX_NAME);
-					strcpy(X.RDB$FIELD_NAME, (char*)str->str_data);
+					strcpy(X.RDB$FIELD_NAME, (char*)str_->str_data);
 					X.RDB$FIELD_POSITION = --fld_count;
-					ALL_release((FRB)str);
+					delete str_;
 				END_STORE;
 			}
 			if (!DYN_REQUEST(drq_s_idx_segs))
@@ -2093,10 +2185,39 @@ void DYN_define_index(GBL		gbl,
 		IDX.RDB$SEGMENT_COUNT = seg_count;
 	END_STORE;
 
-	if (!DYN_REQUEST(drq_s_indices))
+	if (!DYN_REQUEST(drq_s_indices)) {
 		DYN_REQUEST(drq_s_indices) = request;
+	}
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}	// try
+	catch (...) {
+		if (id == drq_s_indices) {
+			DYN_rundown_request(old_env, request, id);
+			DYN_error_punt(TRUE, 21, NULL, NULL, NULL, NULL, NULL);
+			/* msg 21: "STORE RDB$INDICES failed" */
+		}
+		else if (id == drq_s_idx_segs) {
+			DYN_rundown_request(old_env, request, id);
+			DYN_error_punt(TRUE, 15, NULL, NULL, NULL, NULL, NULL);
+			/* msg 15: "STORE RDB$INDICES failed" */
+		}
+
+		DYN_rundown_request(old_env, request, -1);
+		if (id == drq_l_lfield)
+			DYN_error_punt(TRUE, 15, NULL, NULL, NULL, NULL, NULL);
+		/* msg 15: "STORE RDB$INDICES failed" */
+		else if (id == drq_l_unq_idx)
+			DYN_error_punt(TRUE, 17, NULL, NULL, NULL, NULL, NULL);
+		/* msg 17: "Primary Key field lookup failed" */
+		else if (id == drq_l_view_idx)
+			DYN_error_punt(TRUE, 180, NULL, NULL, NULL, NULL, NULL);
+		/* msg 180: "Table Name lookup failed" */
+		else
+			DYN_error_punt(TRUE, 19, NULL, NULL, NULL, NULL, NULL);
+		/* msg 19: "Primary Key lookup failed" */
+	}
 }
 
 
@@ -2139,19 +2260,8 @@ void DYN_define_local_field(GBL		gbl,
 
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-	if (SETJMP(env))
-	{
-		if (id == drq_s_lfields) {
-			DYN_rundown_request(old_env, request, id);
-			DYN_error_punt(TRUE, 23, NULL, NULL, NULL, NULL, NULL);
-			/* msg 23: "STORE RDB$RELATION_FIELDS failed" */
-		}
-		else {
-			DYN_rundown_request(old_env, request, id);
-			DYN_error_punt(TRUE, 22, NULL, NULL, NULL, NULL, NULL);
-			/* msg 22: "STORE RDB$FIELDS failed" */
-		}
-	}
+
+	try {
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_lfields, DYN_REQUESTS);
 	id = drq_s_lfields;
@@ -2442,10 +2552,25 @@ void DYN_define_local_field(GBL		gbl,
 
 	END_STORE;
 
-	if (!DYN_REQUEST(drq_s_lfields))
+	if (!DYN_REQUEST(drq_s_lfields)) {
 		DYN_REQUEST(drq_s_lfields) = request;
+	}
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}	// try
+	catch (...) {
+		if (id == drq_s_lfields) {
+			DYN_rundown_request(old_env, request, id);
+			DYN_error_punt(TRUE, 23, NULL, NULL, NULL, NULL, NULL);
+			/* msg 23: "STORE RDB$RELATION_FIELDS failed" */
+		}
+		else {
+			DYN_rundown_request(old_env, request, id);
+			DYN_error_punt(TRUE, 22, NULL, NULL, NULL, NULL, NULL);
+			/* msg 22: "STORE RDB$FIELDS failed" */
+		}
+	}
 }
 
 
@@ -2480,23 +2605,13 @@ void DYN_define_log_file(
 	request = NULL;
 	id = -1;
 
+	try {
+	
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-	if (SETJMP(env))
-	{
-		if (id == drq_s_log_files) {
-			DYN_rundown_request(old_env, request, drq_s_log_files);
-			DYN_error_punt(TRUE, 154, NULL, NULL, NULL, NULL, NULL);
-			/* msg 154: STORE RDB$LOG_FILES failed */
-		}
-		else {
-			DYN_rundown_request(old_env, request, drq_l_log_files);
-			DYN_error_punt(TRUE, 155, NULL, NULL, NULL, NULL, NULL);
-			/* msg 155: Write ahead log lookup failed */
-		}
-	}
 
-	if (first_log_file) {
+	if (first_log_file)
+	{
 		id = drq_l_log_files;
 		request = (BLK) CMP_find_request(tdbb, drq_l_log_files, DYN_REQUESTS);
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -2508,9 +2623,8 @@ void DYN_define_log_file(
 
 		if (found) {
 			tdbb->tdbb_setjmp = (UCHAR *) old_env;
-			DYN_error_punt(FALSE, 151, NULL, NULL, NULL, NULL, NULL);
+			goto local_punt_false_151;
 		}
-		/* msg 151: "Write ahead log already exists" */
 	}
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_log_files, DYN_REQUESTS);
@@ -2586,6 +2700,26 @@ void DYN_define_log_file(
 		DYN_REQUEST(drq_s_log_files) = request;
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}
+	catch (...) {
+		if (id == drq_s_log_files) {
+			DYN_rundown_request(old_env, request, drq_s_log_files);
+			DYN_error_punt(TRUE, 154, NULL, NULL, NULL, NULL, NULL);
+			/* msg 154: STORE RDB$LOG_FILES failed */
+		}
+		else {
+			DYN_rundown_request(old_env, request, drq_l_log_files);
+			DYN_error_punt(TRUE, 155, NULL, NULL, NULL, NULL, NULL);
+			/* msg 155: Write ahead log lookup failed */
+		}
+	}
+
+	return;
+
+local_punt_false_151:
+	DYN_error_punt(FALSE, 151, NULL, NULL, NULL, NULL, NULL);
+	/* msg 151: "Write ahead log already exists" */
 }
 
 
@@ -2620,28 +2754,11 @@ void DYN_define_parameter( GBL gbl, UCHAR ** ptr, TEXT * procedure_name)
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_prms, DYN_REQUESTS);
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
 	id = -1;
-	if (SETJMP(env))
-	{
-		if (id == drq_s_prms) {
-			DYN_rundown_request(old_env, request, drq_s_prms);
-			DYN_error_punt(TRUE, 136, NULL, NULL, NULL, NULL, NULL);
-			/* msg 163: "STORE RDB$PROCEDURE_PARAMETERS failed" */
-		}
-		else if (id == drq_s_prm_src) {
-			DYN_rundown_request(old_env, request, drq_s_prm_src);
-			DYN_error_punt(TRUE, 136, NULL, NULL, NULL, NULL, NULL);
-			/* msg 136: "STORE RDB$PROCEDURE_PARAMETERS failed" */
-		}
-		DYN_rundown_request(old_env, request, -1);
-
-		/* Control should never reach this point,
-		   because id should always have one of the values tested above.  */
-		assert(0);
-		DYN_error_punt(TRUE, 0, NULL, NULL, NULL, NULL, NULL);
-	}
 
 	f_length = f_type = f_subtype = f_charlength = f_scale = f_seg_length = 0;
 	f_charset = f_collation = f_precision = 0;
@@ -2816,6 +2933,26 @@ void DYN_define_parameter( GBL gbl, UCHAR ** ptr, TEXT * procedure_name)
 		DYN_REQUEST(drq_s_prms) = request;
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}
+	catch (...) {
+		if (id == drq_s_prms) {
+			DYN_rundown_request(old_env, request, drq_s_prms);
+			DYN_error_punt(TRUE, 136, NULL, NULL, NULL, NULL, NULL);
+			/* msg 163: "STORE RDB$PROCEDURE_PARAMETERS failed" */
+		}
+		else if (id == drq_s_prm_src) {
+			DYN_rundown_request(old_env, request, drq_s_prm_src);
+			DYN_error_punt(TRUE, 136, NULL, NULL, NULL, NULL, NULL);
+			/* msg 136: "STORE RDB$PROCEDURE_PARAMETERS failed" */
+		}
+		DYN_rundown_request(old_env, request, -1);
+
+		/* Control should never reach this point,
+		   because id should always have one of the values tested above.  */
+		assert(0);
+		DYN_error_punt(TRUE, 0, NULL, NULL, NULL, NULL, NULL);
+	}
 }
 
 
@@ -2850,31 +2987,10 @@ void DYN_define_procedure( GBL gbl, UCHAR ** ptr)
 	request = NULL;
 	id = -1;
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-	if (SETJMP(env))
-	{
-		if (id == drq_s_prcs) {
-			DYN_rundown_request(old_env, request, id);
-			DYN_error_punt(TRUE, 134, NULL, NULL, NULL, NULL, NULL);
-			/* msg 134: "STORE RDB$PROCEDURES failed" */
-		}
-		else if (id == drq_s_prc_usr_prvs) {
-			DYN_rundown_request(old_env, request, id);
-			DYN_error_punt(TRUE, 25, NULL, NULL, NULL, NULL, NULL);
-			/* msg 25: "STORE RDB$USER_PRIVILEGES failed defining a relation" */
-		}
-
-		DYN_rundown_request(old_env, request, -1);
-		if (id == drq_l_prc_name)
-			DYN_error_punt(TRUE, 134, NULL, NULL, NULL, NULL, NULL);
-		/* msg 134: "STORE RDB$PROCEDURES failed" */
-
-		/* Control should never reach this point, because id should have
-		   one of the values tested-for above. */
-		assert(0);
-		DYN_error_punt(TRUE, 0, NULL, NULL, NULL, NULL, NULL);
-	}
 
 	id = drq_l_prc_name;
 	check_unique_name(tdbb, gbl, procedure_name, TRUE);
@@ -2982,6 +3098,30 @@ void DYN_define_procedure( GBL gbl, UCHAR ** ptr)
 	}
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}
+	catch (...) {
+		if (id == drq_s_prcs) {
+			DYN_rundown_request(old_env, request, id);
+			DYN_error_punt(TRUE, 134, NULL, NULL, NULL, NULL, NULL);
+			/* msg 134: "STORE RDB$PROCEDURES failed" */
+		}
+		else if (id == drq_s_prc_usr_prvs) {
+			DYN_rundown_request(old_env, request, id);
+			DYN_error_punt(TRUE, 25, NULL, NULL, NULL, NULL, NULL);
+			/* msg 25: "STORE RDB$USER_PRIVILEGES failed defining a relation" */
+		}
+
+		DYN_rundown_request(old_env, request, -1);
+		if (id == drq_l_prc_name)
+			DYN_error_punt(TRUE, 134, NULL, NULL, NULL, NULL, NULL);
+		/* msg 134: "STORE RDB$PROCEDURES failed" */
+
+		/* Control should never reach this point, because id should have
+		   one of the values tested-for above. */
+		assert(0);
+		DYN_error_punt(TRUE, 0, NULL, NULL, NULL, NULL, NULL);
+	}
 }
 
 
@@ -3018,34 +3158,10 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
 	request = NULL;
 	id = -1;
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-	if (SETJMP(env))
-	{
-		if (id == drq_s_rels) {
-			DYN_rundown_request(old_env, request, id);
-			DYN_error_punt(TRUE, 24, NULL, NULL, NULL, NULL, NULL);
-			/* msg 24: "STORE RDB$RELATIONS failed" */
-		}
-		else if (id == drq_s_usr_prvs) {
-			DYN_rundown_request(old_env, request, id);
-			DYN_error_punt(TRUE, 25, NULL, NULL, NULL, NULL, NULL);
-			/* msg 25: "STORE RDB$USER_PRIVILEGES failed defining a relation" */
-		}
-
-		DYN_rundown_request(old_env, request, -1);
-		if (id == drq_l_rel_name)
-			DYN_error_punt(TRUE, 24, NULL, NULL, NULL, NULL, NULL);
-		/* msg 24: "STORE RDB$RELATIONS failed" */
-		else if (id == drq_l_view_rels)
-			DYN_error_punt(TRUE, 115, NULL, NULL, NULL, NULL, NULL);
-		/* msg 115: "CREATE VIEW failed" */
-
-		/* Control should never reach this point, because id should
-		   always have one of the values test-for above. */
-		assert(0);
-		DYN_error_punt(TRUE, 0, NULL, NULL, NULL, NULL, NULL);
-	}
 
 	id = drq_l_rel_name;
 	check_unique_name(tdbb, gbl, relation_name, FALSE);
@@ -3211,6 +3327,33 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
 		}
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}
+	catch (...) {
+		if (id == drq_s_rels) {
+			DYN_rundown_request(old_env, request, id);
+			DYN_error_punt(TRUE, 24, NULL, NULL, NULL, NULL, NULL);
+			/* msg 24: "STORE RDB$RELATIONS failed" */
+		}
+		else if (id == drq_s_usr_prvs) {
+			DYN_rundown_request(old_env, request, id);
+			DYN_error_punt(TRUE, 25, NULL, NULL, NULL, NULL, NULL);
+			/* msg 25: "STORE RDB$USER_PRIVILEGES failed defining a relation" */
+		}
+
+		DYN_rundown_request(old_env, request, -1);
+		if (id == drq_l_rel_name)
+			DYN_error_punt(TRUE, 24, NULL, NULL, NULL, NULL, NULL);
+		/* msg 24: "STORE RDB$RELATIONS failed" */
+		else if (id == drq_l_view_rels)
+			DYN_error_punt(TRUE, 115, NULL, NULL, NULL, NULL, NULL);
+		/* msg 115: "CREATE VIEW failed" */
+
+		/* Control should never reach this point, because id should
+		   always have one of the values test-for above. */
+		assert(0);
+		DYN_error_punt(TRUE, 0, NULL, NULL, NULL, NULL, NULL);
+	}
 }
 
 
@@ -3267,6 +3410,8 @@ void DYN_define_security_class( GBL gbl, UCHAR ** ptr)
 				DYN_unsupported_verb();
 			}
 
+#pragma FB_COMPILER_MESSAGE("TMN: FIXME! SETJMP across scope!")
+
 		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 		tdbb->tdbb_setjmp = (UCHAR *) env;
 		if (SETJMP(env))
@@ -3317,21 +3462,10 @@ void DYN_define_sql_field(GBL		gbl,
 	request = NULL;
 	id = -1;
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-	if (SETJMP(env))
-	{
-		if (id == drq_s_sql_lfld) {
-			DYN_rundown_request(old_env, request, id);
-			DYN_error_punt(TRUE, 29, NULL, NULL, NULL, NULL, NULL);
-			/* msg 29: "STORE RDB$RELATION_FIELDS failed" */
-		}
-		else {
-			DYN_rundown_request(old_env, request, id);
-			DYN_error_punt(TRUE, 28, NULL, NULL, NULL, NULL, NULL);
-			/* msg 28: "STORE RDB$FIELDS failed" */
-		}
-	}
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_sql_lfld, DYN_REQUESTS);
 	id = drq_s_sql_lfld;
@@ -3580,6 +3714,20 @@ void DYN_define_sql_field(GBL		gbl,
 		DYN_REQUEST(drq_s_sql_lfld) = request;
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}
+	catch (...) {
+		if (id == drq_s_sql_lfld) {
+			DYN_rundown_request(old_env, request, id);
+			DYN_error_punt(TRUE, 29, NULL, NULL, NULL, NULL, NULL);
+			/* msg 29: "STORE RDB$RELATION_FIELDS failed" */
+		}
+		else {
+			DYN_rundown_request(old_env, request, id);
+			DYN_error_punt(TRUE, 28, NULL, NULL, NULL, NULL, NULL);
+			/* msg 28: "STORE RDB$FIELDS failed" */
+		}
+	}
 }
 
 
@@ -3614,27 +3762,32 @@ void DYN_define_shadow( GBL gbl, UCHAR ** ptr)
 
 	request = (BLK) CMP_find_request(tdbb, drq_l_shadow, DYN_REQUESTS);
 
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
-	if (SETJMP(env))
-	{
+	try {
+
+		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
+		tdbb->tdbb_setjmp = (UCHAR *) env;
+
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			FIRST 1 X IN RDB$FILES WITH X.RDB$SHADOW_NUMBER EQ shadow_number
+				found = TRUE;
+		END_FOR;
+
+		if (!DYN_REQUEST(drq_l_shadow)) {
+			DYN_REQUEST(drq_l_shadow) = request;
+		}
+
+		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+	}
+	catch (...) {
 		DYN_rundown_request(old_env, request, drq_l_shadow);
 		DYN_error_punt(TRUE, 164, NULL, NULL, NULL, NULL, NULL);
 		/* msg 164: "Shadow lookup failed" */
 	}
 
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		FIRST 1 X IN RDB$FILES WITH X.RDB$SHADOW_NUMBER EQ shadow_number
-			found = TRUE;
-	END_FOR;
-
-	if (!DYN_REQUEST(drq_l_shadow))
-		DYN_REQUEST(drq_l_shadow) = request;
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-	if (found)
+	if (found) {
 		DYN_error_punt(FALSE, 165, (TEXT *) shadow_number, NULL, NULL, NULL,
 					   NULL);
+	}
 	/* msg 165: "Shadow %ld already exists" */
 
 	start = 0;
@@ -3791,6 +3944,8 @@ void DYN_define_trigger(
 							t, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
 			}
 
+#pragma FB_COMPILER_MESSAGE("TMN: FIXME! SETJMP across scope!")
+
 		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 		tdbb->tdbb_setjmp = (UCHAR *) env;
 		if (SETJMP(env))
@@ -3879,6 +4034,8 @@ void DYN_define_trigger_msg( GBL gbl, UCHAR ** ptr, TEXT * trigger_name)
 				DYN_unsupported_verb();
 			}
 
+#pragma FB_COMPILER_MESSAGE("TMN: FIXME! SETJMP across scope!")
+
 		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 		tdbb->tdbb_setjmp = (UCHAR *) env;
 		if (SETJMP(env))
@@ -3945,6 +4102,8 @@ void DYN_define_view_relation( GBL gbl, UCHAR ** ptr, TEXT * view)
 							(TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
 			}
 
+#pragma FB_COMPILER_MESSAGE("TMN: FIXME! SETJMP across scope!")
+
 		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 		tdbb->tdbb_setjmp = (UCHAR *) env;
 		if (SETJMP(env))
@@ -3989,10 +4148,46 @@ static void check_unique_name(
 
 	request = NULL;
 
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
-	if (SETJMP(env))
-	{
+	try {
+
+		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
+		tdbb->tdbb_setjmp = (UCHAR *) env;
+
+		request = (BLK) CMP_find_request(tdbb, drq_l_rel_name, DYN_REQUESTS);
+
+		found = FALSE;
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			EREL IN RDB$RELATIONS WITH EREL.RDB$RELATION_NAME EQ object_name
+			if (!DYN_REQUEST(drq_l_rel_name))
+				DYN_REQUEST(drq_l_rel_name) = request;
+
+			found = TRUE;
+		END_FOR;
+		if (!DYN_REQUEST(drq_l_rel_name))
+			DYN_REQUEST(drq_l_rel_name) = request;
+
+		if (found) {
+			tdbb->tdbb_setjmp = (UCHAR *) old_env;
+			goto local_punt_false_132;
+		}
+
+		request = (BLK) CMP_find_request(tdbb, drq_l_prc_name, DYN_REQUESTS);
+
+		found = FALSE;
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			EPRC IN RDB$PROCEDURES WITH EPRC.RDB$PROCEDURE_NAME EQ object_name
+			if (!DYN_REQUEST(drq_l_prc_name))
+				DYN_REQUEST(drq_l_prc_name) = request;
+
+			found = TRUE;
+		END_FOR;
+		if (!DYN_REQUEST(drq_l_prc_name))
+			DYN_REQUEST(drq_l_prc_name) = request;
+
+		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}
+	catch (...) {
 		DYN_rundown_request(old_env, request, -1);
 		if (!proc_flag)
 			DYN_error_punt(TRUE, 24, NULL, NULL, NULL, NULL, NULL);
@@ -4000,49 +4195,23 @@ static void check_unique_name(
 		DYN_error_punt(TRUE, 134, NULL, NULL, NULL, NULL, NULL);
 	}
 
-	request = (BLK) CMP_find_request(tdbb, drq_l_rel_name, DYN_REQUESTS);
-
-	found = FALSE;
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		EREL IN RDB$RELATIONS WITH EREL.RDB$RELATION_NAME EQ object_name
-        if (!DYN_REQUEST(drq_l_rel_name))
-            DYN_REQUEST(drq_l_rel_name) = request;
-
-        found = TRUE;
-	END_FOR;
-	if (!DYN_REQUEST(drq_l_rel_name))
-		DYN_REQUEST(drq_l_rel_name) = request;
-
 	if (found) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		DYN_error_punt(FALSE, 132, object_name, NULL, NULL, NULL, NULL);
+		DYN_error_punt(FALSE, 135, object_name, NULL, NULL, NULL, NULL);
 	}
 
-	request = (BLK) CMP_find_request(tdbb, drq_l_prc_name, DYN_REQUESTS);
+	return;
 
-	found = FALSE;
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		EPRC IN RDB$PROCEDURES WITH EPRC.RDB$PROCEDURE_NAME EQ object_name
-        if (!DYN_REQUEST(drq_l_prc_name))
-            DYN_REQUEST(drq_l_prc_name) = request;
-
-		found = TRUE;
-	END_FOR;
-	if (!DYN_REQUEST(drq_l_prc_name))
-		DYN_REQUEST(drq_l_prc_name) = request;
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-	if (found)
-		DYN_error_punt(FALSE, 135, object_name, NULL, NULL, NULL, NULL);
+local_punt_false_132:
+	DYN_error_punt(FALSE, 132, object_name, NULL, NULL, NULL, NULL);
 }
 
 
-static BOOLEAN find_field_source(
-								 TDBB tdbb,
-								 GBL gbl,
-								 TEXT * view_name,
-								 USHORT context,
-								 TEXT * local_name, TEXT * field_name)
+static BOOLEAN find_field_source(TDBB	tdbb,
+								 GBL	gbl,
+								 TEXT*	view_name,
+								 USHORT	context,
+								 TEXT*	local_name,
+								 TEXT*	field_name)
 {
 /**************************************
  *
@@ -4054,26 +4223,21 @@ static BOOLEAN find_field_source(
  *	Find the original source for a view field.
  *
  **************************************/
-	DBB dbb;
+
 	VOLATILE BLK request;
 	BOOLEAN found;
 	JMP_BUF env;
 	JMP_BUF *VOLATILE old_env;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	request = (BLK) CMP_find_request(tdbb, drq_l_fld_src2, DYN_REQUESTS);
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-
-	if (SETJMP(env))
-	{
-		DYN_rundown_request(old_env, request, -1);
-		DYN_error_punt(TRUE, 80, NULL, NULL, NULL, NULL, NULL);
-		/* msg 80: "Specified domain or source field does not exist" */
-	}
 
 	found = FALSE;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -4094,6 +4258,13 @@ static BOOLEAN find_field_source(
 		DYN_REQUEST(drq_l_fld_src2) = request;
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}
+	catch (...) {
+		DYN_rundown_request(old_env, request, -1);
+		DYN_error_punt(TRUE, 80, NULL, NULL, NULL, NULL, NULL);
+		/* msg 80: "Specified domain or source field does not exist" */
+	}
 
 	return found;
 }
@@ -4119,23 +4290,24 @@ static BOOLEAN get_who( TDBB tdbb, GBL gbl, SCHAR * name)
 
 	request = (BLK) CMP_find_request(tdbb, drq_l_user_name, DYN_REQUESTS);
 
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
+	try {
 
-	if (SETJMP(env))
-	{
+		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
+		tdbb->tdbb_setjmp = (UCHAR *) env;
+
+		if (!request)
+		{
+			request = (BLK) CMP_compile2(tdbb, const_cast<UCHAR*>(who_blr), TRUE);
+		}
+		EXE_start(tdbb, (REQ) request, gbl->gbl_transaction);
+		EXE_receive(tdbb, (REQ) request, 0, 32, (UCHAR*)name);
+
+		DYN_rundown_request(old_env, request, drq_l_user_name);
+	}
+	catch (...) {
 		DYN_rundown_request(old_env, request, drq_l_user_name);
 		return FAILURE;
 	}
-
-	if (!request)
-	{
-		request = (BLK) CMP_compile2(tdbb, const_cast<UCHAR*>(who_blr), TRUE);
-	}
-	EXE_start(tdbb, (REQ) request, gbl->gbl_transaction);
-	EXE_receive(tdbb, (REQ) request, 0, 32, (UCHAR*)name);
-
-	DYN_rundown_request(old_env, request, drq_l_user_name);
 
 	return SUCCESS;
 }
@@ -4164,15 +4336,10 @@ BOOLEAN is_it_user_name(GBL gbl, TEXT * role_name, TDBB tdbb)
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;	/* save environment */
 	tdbb->tdbb_setjmp = (UCHAR *) env;	/* get new environment */
-	if (SETJMP(env))
-	{
-		if (request)
-			DYN_rundown_request(old_env, request, request_id);
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;	/* restore old env */
-		ERR_punt();
-	}
 
 /* If there is a user with privilege or a grantor on a relation we
    can infer there is a user with this name */
@@ -4215,5 +4382,15 @@ BOOLEAN is_it_user_name(GBL gbl, TEXT * role_name, TDBB tdbb)
 		DYN_REQUEST(drq_get_rel_owner) = request;
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;	/* restore environment */
+
+	}
+	catch (...) {
+		if (request) {
+			DYN_rundown_request(old_env, request, request_id);
+		}
+		tdbb->tdbb_setjmp = (UCHAR *) old_env;	/* restore old env */
+		ERR_punt();
+	}
+
 	return found;
 }

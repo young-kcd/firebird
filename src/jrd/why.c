@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: why.c,v 1.3 2001-07-29 17:42:23 skywalker Exp $
+$Id: why.c,v 1.4 2001-12-24 02:50:52 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -595,7 +595,7 @@ static CONST_IMAGE IMAGE images[] =
 	{"GDS_A", GDS_A_PATH},
 	{"GDS_B", GDS_B_PATH},
 	{"GDS_C", GDS_C_PATH},
-    {"GDS_D", GDS_D_PATH}
+    {"GDS_D", GDS_D_PATH},
 #endif
 #ifdef IPSERV
 #ifndef XNET

@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.isql,v 1.4 2001-08-13 08:14:38 skywalker Exp $
+#   $Id: Makefile.in.isql,v 1.5 2001-12-24 02:50:52 tamlin Exp $
 # 
 
 ROOT=../..

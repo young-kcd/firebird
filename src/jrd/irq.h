@@ -24,7 +24,7 @@
 #ifndef _JRD_IRQ_H_
 #define _JRD_IRQ_H_
 
-#define REQUEST(irt) dbb->dbb_internal->vec_object[irt]
+#define REQUEST(irt) (*dbb->dbb_internal)[irt]
 
 #define irq_s_pages	0			/* store PAGES */
 #define irq_r_pages	1			/* read PAGES */

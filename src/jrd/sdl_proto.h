@@ -21,8 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_SDL_PROTO_H_
-#define _JRD_SDL_PROTO_H_
+#ifndef JRD_SDL_PROTO_H
+#define JRD_SDL_PROTO_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 extern SLONG DLL_EXPORT SDL_compute_subscript(STATUS *, struct ads *, USHORT,
 											  SLONG *);
@@ -33,4 +37,8 @@ extern int DLL_EXPORT SDL_walk(STATUS *, UCHAR *, USHORT, UCHAR *,
 							   struct ads *, SLONG *, FPTR_VOID,
 							   struct slice *);
 
-#endif /* _JRD_SDL_PROTO_H_ */
+#ifdef __cplusplus
+}	// extern "C"
+#endif
+
+#endif /* JRD_SDL_PROTO_H */

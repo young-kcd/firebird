@@ -39,8 +39,8 @@ typedef ENUM sym_type {
 
 /* symbol block */
 
-typedef struct sym {
-	struct blk sym_header;
+class sym : public pool_alloc_rpt<UCHAR, dsql_type_sym> {
+public:
 	void *sym_dbb;				/* generic DB structure handle */
 	TEXT *sym_string;			/* address of asciz string */
 	USHORT sym_length;			/* length of string (exc. term.) */
@@ -51,6 +51,7 @@ typedef struct sym {
 	struct sym *sym_homonym;	/* homonym pointer */
 	TEXT sym_name[2];			/* space for name, if necessary */
 	USHORT sym_version;			/* dialect version the symbol was introduced */
-} *SYM;
+};
+typedef sym *SYM;
 
 #endif /* _DSQL_SYM_H_ */

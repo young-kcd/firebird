@@ -549,15 +549,21 @@ static void ipi_end_thread( ICC icc)
 	{
 		UnmapViewOfFile(ipm->ipm_address);
 		CloseHandle(ipm->ipm_handle);
-		if (ipserver_private_data.ipms == ipm)
+
+		if (ipserver_private_data.ipms == ipm){
 			ipserver_private_data.ipms = ipm->ipm_next;
-		else
-			for (pipm = ipserver_private_data.ipms; pipm->ipm_next; pipm = pipm->ipm_next)
+		} else {
+			for (pipm = ipserver_private_data.ipms;
+				 pipm->ipm_next;
+				 pipm = pipm->ipm_next)
+			{
 				if (pipm->ipm_next == ipm)
 				{
 					pipm->ipm_next = ipm->ipm_next;
 					break;
 				}
+			}
+		}
 		ALLI_free((UCHAR *) ipm);
 	}
 
@@ -585,22 +591,14 @@ static void ipi_server( ICC icc)
  **************************************/
 	ips_comm_area *comm;
 	TEXT *comm_ptr;
-	JMP_BUF env;
-#ifdef  IP_TRACE
-	char line[200];
-#endif
 
-	/* start this thread */
+	// start this thread
 
 	gds__thread_enable(-1);
 
 	/* error handler */
 
-	if (SETJMP(env))
-	{
-		gds__log("ipi_server: error during startup, shutting down");
-		return;
-	}
+	try {
 
 	/* request processing loop */
 
@@ -611,10 +609,13 @@ static void ipi_server( ICC icc)
 		GET_COMM_OBJECT;
 		comm->ips_ops_count++;
 #ifdef  IP_TRACE
-		sprintf(line, "%8lX %8lX %8lX %d ipserver %s",
-				(long) GetCurrentThreadId(), (long) icc,
-				comm, comm->ips_operation, op_strings[comm->ips_operation]);
-		gds__log(line);
+		{
+			char line[200];
+			sprintf(line, "%8lX %8lX %8lX %d ipserver %s",
+					(long) GetCurrentThreadId(), (long) icc,
+					comm, comm->ips_operation, op_strings[comm->ips_operation]);
+			gds__log(line);
+		}
 #endif
 		switch (comm->ips_operation)
 		{
@@ -796,6 +797,11 @@ static void ipi_server( ICC icc)
 
 	shutdown_attachments(icc);
 	ipi_end_thread(icc);
+
+	}	// try
+	catch (...) {
+		gds__log("ipi_server: error during startup, shutting down");
+	}
 }
 
 
@@ -845,8 +851,9 @@ static void allocate_statement( ICC icc)
 		statement->isr_packed = NULL;
 		idb->idb_sql_requests = statement;
 	}
-	else
+	else {
 		ips->ips_st_handle = NULL;
+	}
 	send_response(icc, status_vector);
 }
 

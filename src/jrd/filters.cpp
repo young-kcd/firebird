@@ -658,11 +658,9 @@ STATUS filter_transliterate_text(USHORT action, CTL control)
  *
  **************************************/
 	CTL source;
-	TEXT *p, *left_over;
-	USHORT length, l, left_length, buffer_used;
+	USHORT length;
 	USHORT unused_len;
 	STATUS status;
-	USHORT outlen;
 	SSHORT err_code;
 	USHORT err_position;
 	SSHORT can_use_more;

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase layered support library
- *	MODULE:		blob.e
+ *	MODULE:		blob.epp
  *	DESCRIPTION:	Dynamic blob support
  *
  * The contents of this file are subject to the Interbase Public
@@ -142,7 +142,7 @@ STATUS API_ROUTINE isc_blob_lookup_desc(STATUS * status,
 		RELEASE_REQUESTS;
 
 	DB = *db_handle;
-	gds__trans = *trans_handle;
+	gds_trans = *trans_handle;
 	get_name(field_name, desc->blob_desc_field_name);
 	get_name(relation_name, desc->blob_desc_relation_name);
 
@@ -159,7 +159,7 @@ STATUS API_ROUTINE isc_blob_lookup_desc(STATUS * status,
 
 	if (global)
 		get_name((UCHAR *) Y.RDB$FIELD_NAME, global);
-	END_FOR ON_ERROR return copy_status(gds__status, status);
+	END_FOR ON_ERROR return copy_status(gds_status, status);
 	END_ERROR;
 
 	if (!flag)

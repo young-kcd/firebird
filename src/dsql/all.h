@@ -21,20 +21,29 @@
  * Contributor(s): ______________________________________.
  */
 
-#include "../dsql/dsql.h"
+#ifndef DSQL_ALL_H
+#define DSQL_ALL_H
 
-/* alloc and init a block from a pool */
-BLK ALLD_alloc(PLB pool, UCHAR type, int count);
+#include "../common/memory/memory_pool.h"
+#include "../common/memory/allocators.h"
+#include "../jrd/block_cache.h"
 
-/* extend a block by given size */
-BLK ALLD_extend(BLK* pointer, int size);
+void		ALLD_init();				/* initialize pool system */
+void		ALLD_fini();				/* get rid of everything */
 
-int		ALLD_fini();				/* get rid of everything */
-int		ALLD_free(void* memory);	/* give space back to system */
-int		ALLD_init();				/* initialize pool system */
-void*	ALLD_malloc(int size);		/* get memory from system */
-PLB		ALLD_pool();				/* allocate a new pool */
-int		ALLD_push(BLK object, LLS * stack);	/* push object on LLS stack */
-BLK		ALLD_pop(LLS* stack);		/* pop object off LLS stack */
-int		ALLD_release(FRB block);	/* release a block to its pool */
-int		ALLD_rlpool(PLB pool);		/* release a pool */
+class DsqlMemoryPool : public MemoryPool
+{
+public:
+	DsqlMemoryPool(int extSize = 0, MemoryPool& p = *FB_MemoryPool);
+	~DsqlMemoryPool();
+
+	static class blk* ALLD_pop(class dsql_lls**);
+	static void ALLD_push(class blk*, class dsql_lls**);
+
+private:
+	BlockCache<class dsql_lls> lls_cache;  /* Was plb_lls */
+};
+
+extern DsqlMemoryPool *DSQL_permanent_pool;
+
+#endif	// DSQL_ALL_H

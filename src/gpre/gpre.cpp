@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.5 2001-07-31 18:34:05 skywalker Exp $
+//  $Id: gpre.cpp,v 1.6 2001-12-24 02:50:49 tamlin Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -38,7 +38,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.5 2001-07-31 18:34:05 skywalker Exp $
+//	$Id: gpre.cpp,v 1.6 2001-12-24 02:50:49 tamlin Exp $
 //
 
 #define GPRE_MAIN
@@ -158,70 +158,70 @@ typedef struct ext_table_t
 
 static struct ext_table_t dml_ext_table[] =
 {
-	lang_c, IN_SW_GPRE_C, ".e", ".c",
+	{ lang_c, IN_SW_GPRE_C, ".e", ".c" },
 
 #ifndef VMS
 #ifndef WIN_NT
-	lang_scxx, IN_SW_GPRE_SCXX, ".E", ".C",
+	{ lang_scxx, IN_SW_GPRE_SCXX, ".E", ".C" },
 #endif
 #endif
 
-	lang_cxx, IN_SW_GPRE_CXX, ".exx", ".cxx",
-	lang_cpp, IN_SW_GPRE_CXX, ".epp", ".cpp",
-	lang_internal, IN_SW_GPRE_G, ".e", ".c",
-	lang_pascal, IN_SW_GPRE_P, ".epas", ".pas",
+	{ lang_cxx, IN_SW_GPRE_CXX, ".exx", ".cxx" },
+	{ lang_cpp, IN_SW_GPRE_CXX, ".epp", ".cpp" },
+	{ lang_internal, IN_SW_GPRE_G, ".e", ".c" },
+	{ lang_pascal, IN_SW_GPRE_P, ".epas", ".pas" },
 
 #ifdef FORTRAN
 #ifdef VMS
 #define FORTRAN_EXTENSIONS
-	lang_fortran, IN_SW_GPRE_F, ".efor", ".for",
+	{ lang_fortran, IN_SW_GPRE_F, ".efor", ".for" },
 #endif
 
 #ifndef FORTRAN_EXTENSIONS
-	lang_fortran, IN_SW_GPRE_F, ".ef", ".f",
+	{ lang_fortran, IN_SW_GPRE_F, ".ef", ".f" },
 #endif
 #endif
 
 #ifdef COBOL
 #ifdef VMS
 #define COBOL_EXTENSIONS
-	lang_cobol, IN_SW_GPRE_COB, ".ecob", ".cob",
+	{ lang_cobol, IN_SW_GPRE_COB, ".ecob", ".cob" },
 #endif
 
 #ifndef COBOL_EXTENSIONS
 #define COBOL_EXTENSIONS
-	lang_cobol, IN_SW_GPRE_COB, ".ecbl", ".cbl",
+	{ lang_cobol, IN_SW_GPRE_COB, ".ecbl", ".cbl" },
 #endif
 #endif
 
 #ifdef BASIC
-	lang_basic, IN_SW_GPRE_BAS, ".ebas", ".bas",
+	{ lang_basic, IN_SW_GPRE_BAS, ".ebas", ".bas" },
 #endif
 
 #ifdef PLI
-	lang_pli, IN_SW_GPRE_PLI, ".epli", ".pli",
+	{ lang_pli, IN_SW_GPRE_PLI, ".epli", ".pli" },
 #endif
 
 #ifdef VMS
 #define ADA_EXTENSIONS
-	lang_ada, IN_SW_GPRE_ADA, ".eada", ".ada",
+	{ lang_ada, IN_SW_GPRE_ADA, ".eada", ".ada" },
 #endif
 #ifdef hpux
 #define ADA_EXTENSIONS
-	lang_ada, IN_SW_GPRE_ADA, ".eada", ".ada",
+	{ lang_ada, IN_SW_GPRE_ADA, ".eada", ".ada" },
 #endif
 #ifndef ADA_EXTENSIONS
-	lang_ada, IN_SW_GPRE_ADA, ".ea", ".a",
+	{ lang_ada, IN_SW_GPRE_ADA, ".ea", ".a" },
 #endif
 #ifdef ALSYS_ADA
-	lang_ada, IN_SW_GPRE_ALSYS, ".eada", ".ada",
+	{ lang_ada, IN_SW_GPRE_ALSYS, ".eada", ".ada" },
 #endif
 #if ( defined( PC_PLATFORM) || defined( WIN_NT))
-	lang_cplusplus, IN_SW_GPRE_CPLUSPLUS, ".epp", ".cpp",
+	{ lang_cplusplus, IN_SW_GPRE_CPLUSPLUS, ".epp", ".cpp" },
 #else
-	lang_cplusplus, IN_SW_GPRE_CPLUSPLUS, ".exx", ".cxx",
+	{ lang_cplusplus, IN_SW_GPRE_CPLUSPLUS, ".exx", ".cxx" },
 #endif
-	lang_undef, IN_SW_GPRE_0, NULL, NULL
+	{ lang_undef, IN_SW_GPRE_0, NULL, NULL }
 };
 
 #define CHR_LETTER	1
@@ -871,8 +871,10 @@ int main(int argc, char* argv[])
 
 	sw_databases = isc_databases;
 
-	if (!setjmp(fatal_env))
-		for (end_position = 0; end_position = compile_module(end_position););
+	try {
+		for (end_position = 0; end_position = compile_module(end_position););  // empty loop
+	}	// try
+	catch (...) {}  // fall through to the cleanup code
 
 #ifdef FTN_BLK_DATA
 	if (sw_language == lang_fortran)
@@ -910,6 +912,7 @@ int main(int argc, char* argv[])
 
 	CPR_exit((errors) ? FINI_ERROR : FINI_OK);
 	return 0;
+
 }
 
 
@@ -922,7 +925,7 @@ void CPR_abort()
 {
 
 	++fatals;
-	longjmp(fatal_env, 1);
+	Firebird::status_longjmp_error::raise(1);
 }
 
 

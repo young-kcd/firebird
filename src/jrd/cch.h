@@ -24,16 +24,23 @@
 #ifndef _JRD_CCH_H_
 #define _JRD_CCH_H_
 
+#include "../include/fb_blk.h"
+
 /* Page buffer cache size constraints. */
 
 #define MIN_PAGE_BUFFERS	50L
 #define MAX_PAGE_BUFFERS	65535L
 
 /* BCB -- Buffer control block -- one per system */
+	struct bcb_repeat
+	{
+		struct bdb*	bcb_bdb;		/* Buffer descriptor block */
+		struct que	bcb_page_mod;	/* Que of buffers with page mod n */
+	};
 
-typedef struct bcb
+class bcb : public pool_alloc_rpt<bcb_repeat, type_bcb>
 {
-	struct blk	bcb_header;
+    public:
 	struct lls*	bcb_memory;			/* Large block partitioned into buffers */
 	struct que	bcb_in_use;			/* Que of buffers in use */
 	struct que	bcb_empty;			/* Que of empty buffers */
@@ -45,12 +52,9 @@ typedef struct bcb
 	ULONG		bcb_count;			/* Number of buffers allocated */
 	ULONG		bcb_checkpoint;		/* Count of buffers to checkpoint */
 	struct sbm*	bcb_prefetch;		/* Bitmap of pages to prefetch */
-	struct bcb_repeat
-	{
-		struct bdb*	bcb_bdb;		/* Buffer descriptor block */
-		struct que	bcb_page_mod;	/* Que of buffers with page mod n */
-	} bcb_rpt[1];
-} *BCB;
+	bcb_repeat bcb_rpt[1];
+};
+typedef bcb *BCB;
 
 #define BCB_keep_pages		1	/* set during btc_flush(), pages not removed from dirty binary tree */
 #define BCB_cache_writer	2	/* cache writer thread has been started */
@@ -65,9 +69,9 @@ typedef struct bcb
 
 #define BDB_max_shared		20	/* maximum number of shared latch owners per bdb */
 
-typedef struct bdb
+class bdb : public pool_alloc<type_bdb>
 {
-	struct blk	bdb_header;
+    public:
 	struct dbb*	bdb_dbb;				/* Database block (for ASTs) */
 	struct lck*	bdb_lock;				/* Lock block for buffer */
 	struct que	bdb_que;				/* Buffer que */
@@ -95,7 +99,8 @@ typedef struct bdb
 	SSHORT		bdb_use_count;				/* Number of active users */
 	SSHORT		bdb_scan_count;				/* concurrent sequential scans */
 	struct tdbb*bdb_shared[BDB_max_shared];	/* threads holding shared latches */
-} *BDB;
+};
+typedef bdb *BDB;
 
 /* bdb_flags */
 
@@ -123,15 +128,16 @@ typedef struct bdb
 
 /* PRE -- Precedence block */
 
-typedef struct pre
+class pre : public pool_alloc<type_pre>
 {
-	struct blk	pre_header;
+    public:
 	struct bdb*	pre_hi;
 	struct bdb*	pre_low;
 	struct que	pre_lower;
 	struct que	pre_higher;
 	SSHORT		pre_flags;
-} *PRE;
+};
+typedef pre *PRE;
 
 #define PRE_cleared	1
 
@@ -172,15 +178,16 @@ typedef enum
 
 /* LWT -- Latch wait block */
 
-typedef struct lwt
+class lwt : public pool_alloc<type_lwt>
 {
-	struct blk		lwt_header;
+    public:
 	struct tdbb*	lwt_tdbb;
 	LATCH			lwt_latch;		/* latch type requested */
 	struct que		lwt_waiters;	/* latch queue */
 	struct event	lwt_event;		/* grant event to wait on */
 	USHORT			lwt_flags;
-} *LWT;
+};
+typedef lwt *LWT;
 
 #define LWT_pending	1			/* latch request is pending */
 
@@ -193,9 +200,9 @@ typedef struct lwt
 
 /* Prefetch block */
 
-typedef struct prf
+class prf : public pool_alloc<type_prf>
 {
-	struct blk	prf_header;
+    public:
 	struct tdbb*prf_tdbb;			/* thread database context */
 	SLONG		prf_start_page;		/* starting page of multipage prefetch */
 	USHORT		prf_max_prefetch;	/* maximum no. of pages to prefetch */
@@ -206,7 +213,8 @@ typedef struct prf
 	UCHAR		prf_flags;
 	struct bdb*	prf_bdbs[PREFETCH_MAX_TRANSFER / MIN_PAGE_SIZE];
 	SCHAR		prf_unaligned_buffer[PREFETCH_MAX_TRANSFER + MIN_PAGE_SIZE];
-} *PRF;
+};
+typedef prf *PRF;
 
 #define PRF_active	1			/* prefetch block currently in use */
 

@@ -157,9 +157,11 @@ static void post_error(
 
 	if (status_vector[1] == gds_db_corrupt ||
 		status_vector[1] == gds_bug_check)
+	{
 			gds__log_status(dbname, status_vector);
+	}
 
-	if (longjmp_addr)
-		LONGJMP(reinterpret_cast < jmp_buf & >(longjmp_addr),
-				(int) status_vector[1]);
+	if (longjmp_addr) {
+		Firebird::status_longjmp_error::raise(status_vector[1]);
+	}
 }

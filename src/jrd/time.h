@@ -28,6 +28,9 @@
 
 #ifdef HAVE_TIME_H
 #include <time.h>
+#ifdef DARWIN
+#include </usr/include/time.h>
+#endif
 #endif
 
 #ifdef HAVE_SYS_TIME_H

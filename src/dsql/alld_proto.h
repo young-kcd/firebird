@@ -24,24 +24,6 @@
 #ifndef _DSQL_ALLD_PROTO_H_
 #define _DSQL_ALLD_PROTO_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-BLK		ALLD_alloc(struct plb*, UCHAR, ULONG);
-BLK		ALLD_extend(struct blk**, ULONG);
-void	ALLD_fini(void);
-void	ALLD_free(void*);
-USHORT	ALLD_init(void);
-void*	ALLD_malloc(ULONG);
-PLB		ALLD_pool(void);
-BLK		ALLD_pop(register struct lls**);
-void	ALLD_push(struct blk*, register struct lls**);
-void	ALLD_release(register struct frb*);
-void	ALLD_rlpool(struct plb*);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
+#include "../dsql/all.h"
 
 #endif /* _DSQL_ALLD_PROTO_H_ */

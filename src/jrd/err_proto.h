@@ -25,9 +25,24 @@
 #define JRD_ERR_PROTO_H
 
 #ifndef REQUESTER
-#include "../jrd/jrd.h"
-#include "../jrd/btr.h"
+/*#include "../jrd/jrd.h"
+#include "../jrd/btr.h"*/
+#include "../include/fb_types.h"
 
+/* Index error types */
+
+typedef enum idx_e {
+    idx_e_ok = 0,
+    idx_e_duplicate,
+    idx_e_keytoobig,
+    idx_e_nullunique,
+    idx_e_conversion,
+    idx_e_foreign
+} IDX_E;
+
+#define BUGCHECK(number)        ERR_bugcheck (number)
+#define CORRUPT(number)         ERR_corrupt (number)
+#define IBERROR(number)         ERR_error (number)
 
 #ifdef __cplusplus
 extern "C" {

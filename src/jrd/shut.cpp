@@ -120,7 +120,6 @@ BOOLEAN SHUT_database(DBB dbb, SSHORT flag, SSHORT delay)
 	ATT attachment;
 	WIN window;
 	HDR header;
-	SDATA data;
 	SSHORT timeout, exclusive;
 	JMP_BUF env, *old_env;
 
@@ -130,20 +129,22 @@ BOOLEAN SHUT_database(DBB dbb, SSHORT flag, SSHORT delay)
 /* Only platform's user locksmith can shutdown or bring online
    a database. */
 
-	if (!attachment->att_user->usr_flags & (USR_locksmith | USR_owner))
+#pragma FB_COMPILER_MESSAGE("Locksmith?!")
+
+//	if (!attachment->att_user->usr_flags & (USR_locksmith | USR_owner)) {
+	if (!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner))) {
 		return FALSE;
+	}
 
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
 
-	if (SETJMP(env)) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		return FALSE;
-	}
+	try {
 
 /* If shutdown flag is zero then bring database online */
 
-	if (!flag) {
+	if (!flag)
+	{
 		/* Clear shutdown flag on database header page */
 
 		window.win_page = HEADER_PAGE;
@@ -185,13 +186,19 @@ BOOLEAN SHUT_database(DBB dbb, SSHORT flag, SSHORT delay)
 
 	exclusive = FALSE;
 	for (timeout = delay; timeout >= 0; timeout -= SHUT_WAIT_TIME)
+	{
 		if ((exclusive = notify_shutdown(dbb, flag, timeout)) ||
 			!(dbb->dbb_ast_flags & (DBB_shut_attach | DBB_shut_tran |
-									DBB_shut_force))) break;
+									DBB_shut_force)))
+		{
+			break;
+		}
+	}
 
 	if (!exclusive && (timeout > 0 ||
 					   flag & (gds_dpb_shut_attachment |
-							   gds_dpb_shut_transaction))) {
+							   gds_dpb_shut_transaction)))
+	{
 		notify_shutdown(dbb, 0, 0);	/* Tell everyone we're giving up */
 		SHUT_blocking_ast(dbb);
 		attachment->att_flags &= ~ATT_shutdown_manager;
@@ -209,8 +216,10 @@ BOOLEAN SHUT_database(DBB dbb, SSHORT flag, SSHORT delay)
 
 	dbb->dbb_ast_flags |= DBB_shutdown;
 
-	if (!exclusive && flag & gds_dpb_shut_force)
+	if (!exclusive && flag & gds_dpb_shut_force) {
+		// TMN: Ugly counting!
 		while (!notify_shutdown(dbb, flag, 0));
+	}
 
 	++dbb->dbb_use_count;
 	dbb->dbb_ast_flags &= ~(DBB_shut_force | DBB_shut_attach | DBB_shut_tran);
@@ -223,6 +232,13 @@ BOOLEAN SHUT_database(DBB dbb, SSHORT flag, SSHORT delay)
 	CCH_release_exclusive(tdbb);
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}	// try
+	catch (...) {
+		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+		return FALSE;
+	}
+
 	return TRUE;
 }
 
@@ -260,11 +276,9 @@ static BOOLEAN notify_shutdown(DBB dbb, SSHORT flag, SSHORT delay)
  *	flags and delay via lock data.
  *
  **************************************/
-	SDATA data;
-	ATT attachment;
-	TDBB tdbb;
 
-	tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
+	SDATA data;
 
 	data.data_items.flag = flag;
 	data.data_items.delay = delay;
@@ -273,15 +287,19 @@ static BOOLEAN notify_shutdown(DBB dbb, SSHORT flag, SSHORT delay)
 
 /* Send blocking ASTs to database users */
 
-	if (CCH_exclusive(tdbb, LCK_PW, ((SSHORT) - SHUT_WAIT_TIME)) && flag)
+	if (CCH_exclusive(tdbb, LCK_PW, ((SSHORT) - SHUT_WAIT_TIME)) && flag) {
 		return shutdown_locks(dbb);
-	else if ((flag & gds_dpb_shut_force) && !delay)
+	}
+	if ((flag & gds_dpb_shut_force) && !delay) {
 		return shutdown_locks(dbb);
-	else if ((flag & gds_dpb_shut_transaction)
-			 && !(TRA_active_transactions(tdbb, dbb)))
+	}
+	if ((flag & gds_dpb_shut_transaction) &&
+		!(TRA_active_transactions(tdbb, dbb)))
+	{
 		return TRUE;
-	else
-		return FALSE;
+	}
+
+	return FALSE;
 }
 
 

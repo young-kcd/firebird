@@ -54,8 +54,9 @@ typedef enum rsr_t {
 
 /* Temporary field block */
 
-typedef struct tfb {
-	struct blk tfb_header;
+class tfb : public pool_alloc<type_tfb>
+{
+    public:
 	struct tfb *tfb_next;		/* next block in chain */
 	USHORT tfb_id;				/* id of field in relation */
 	USHORT tfb_flags;
@@ -64,7 +65,8 @@ typedef struct tfb {
 	XDSC tfb_ext_desc;			/* external descriptor */
 	STR tfb_name;				/* name of field in relation */
 #endif
-} *TFB;
+};
+typedef tfb *TFB;
 
 #define TFB_computed	1
 #define TFB_array	2

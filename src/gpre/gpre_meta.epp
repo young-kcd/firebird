@@ -3,7 +3,7 @@
  *____________________________________________________________
  *  
  *		PROGRAM:	C preprocessor
- *		MODULE:		gpre_meta.e
+ *		MODULE:		gpre_meta.epp
  *		DESCRIPTION:	Meta data interface to system
  *  
  *  The contents of this file are subject to the Interbase Public
@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.2 2001-07-29 23:43:22 skywalker Exp $
+ *	$Id: gpre_meta.epp,v 1.3 2001-12-24 02:50:49 tamlin Exp $
  */
 
 #include "firebird.h"
@@ -82,7 +82,6 @@ FLD MET_context_field( CTX context, char *string)
 	PRC procedure;
 	FLD field;
 	SCHAR name[NAME_SIZE];
-	SSHORT length;
 
 	if (context->ctx_relation) {
 		return (MET_field(context->ctx_relation, string));
@@ -122,8 +121,6 @@ FLD MET_context_field( CTX context, char *string)
 BOOLEAN MET_database(DBB dbb, BOOLEAN print_version)
 {
 	SCHAR dpb[MAX_PASSWORD_LENGTH + MAX_USER_LENGTH + 5], *d, *p;
-	SCHAR buffer[16], *data;
-	SSHORT l;
 	static CONST UCHAR sql_version_info[] = { isc_info_base_level,
 		isc_info_ods_version,
 		isc_info_db_sql_dialect,
@@ -179,7 +176,7 @@ BOOLEAN MET_database(DBB dbb, BOOLEAN print_version)
 	}
 
 	if (gds__attach_database
-		(gds__status, 0, GDS_VAL(dbb->dbb_filename), GDS_REF(DB), d - &dpb[0],
+		(gds_status, 0, GDS_VAL(dbb->dbb_filename), GDS_REF(DB), d - &dpb[0],
 		 dpb)) {
 		/* We failed to attach, try in read only mode just in case 
 		if (d == dpb)
@@ -188,9 +185,9 @@ BOOLEAN MET_database(DBB dbb, BOOLEAN print_version)
 		*d++ = 1;
 		*d++ = TRUE;
 		if (gds__attach_database
-			(gds__status, 0, GDS_VAL(dbb->dbb_filename), GDS_REF(DB), d - &dpb[0],
+			(gds_status, 0, GDS_VAL(dbb->dbb_filename), GDS_REF(DB), d - &dpb[0],
 		 	dpb)) {*/
-				gds__print_status(gds__status);
+				gds__print_status(gds_status);
 				return FALSE;
 		//}
 	}
@@ -279,13 +276,16 @@ BOOLEAN MET_database(DBB dbb, BOOLEAN print_version)
 	\n\tClient Sql dialect set to    : %d\n\n", \sw_server_version, sw_ods_version, compiletime_db_dialect, \sw_sql_dialect);
 #endif
 #ifdef SCROLLABLE_CURSORS
+
+	SCHAR buffer[16];
+
 /*  get the base level of the engine  */
 
-	if (gds__database_info(gds__status,
+	if (gds__database_info(gds_status,
 						   GDS_REF(DB),
 						   sizeof(db_version_info),
 						   db_version_info, sizeof(buffer), buffer)) {
-		gds__print_status(gds__status);
+		gds__print_status(gds_status);
 		return FALSE;
 	}
 
@@ -294,7 +294,7 @@ BOOLEAN MET_database(DBB dbb, BOOLEAN print_version)
  *  more info items later 
  */
 
-	data = buffer;
+	SCHAR* data = buffer;
 	while ((p = *data++) != gds__info_end) {
 		l = isc_vax_integer(data, 2);
 		data += 2;
@@ -376,7 +376,7 @@ USHORT MET_domain_lookup(REQ request, FLD field, char *string)
 		return FALSE;
 
 	DB = dbb->dbb_handle;
-	gds__trans = dbb->dbb_transaction;
+	gds_trans = dbb->dbb_transaction;
 
 	if (!(dbb->dbb_flags & DBB_v3)) {
 		FOR(REQUEST_HANDLE dbb->dbb_domain_request)
@@ -457,7 +457,7 @@ BOOLEAN MET_get_domain_default(DBB dbb,
 							   TEXT * domain_name,
 							   TEXT * buffer, USHORT buff_length)
 {
-	SLONG *DB, *gds__trans;
+	SLONG *DB, *gds_trans;
 	SCHAR name[NAME_SIZE];
 	SSHORT length;
 	BOOLEAN has_default;
@@ -478,7 +478,7 @@ BOOLEAN MET_get_domain_default(DBB dbb,
 		CPR_exit(FINI_ERROR);
 
 	assert(dbb->dbb_transaction == NULL);
-	gds__trans = NULL;
+	gds_trans = NULL;
 
 	DB = dbb->dbb_handle;
 
@@ -490,7 +490,7 @@ BOOLEAN MET_get_domain_default(DBB dbb,
 		blob_id = &FLD.RDB$DEFAULT_VALUE;
 
 		/* open the blob */
-		stat = isc_open_blob2(status_vect, (void**) &DB, (void**) &gds__trans, (void**) &blob_handle,
+		stat = isc_open_blob2(status_vect, (void**) &DB, (void**) &gds_trans, (void**) &blob_handle,
 							  blob_id, sizeof(blr_bpb), const_cast<unsigned char*>(blr_bpb));
 		if (stat) {
 			gds__print_status(status_vect);
@@ -556,7 +556,7 @@ BOOLEAN MET_get_column_default(REL relation,
 							   TEXT * buffer, USHORT buff_length)
 {
 	DBB dbb;
-	SLONG *DB, *gds__trans;
+	SLONG *DB, *gds_trans;
 	SCHAR name[NAME_SIZE];
 	SSHORT length;
 	BOOLEAN has_default;
@@ -576,7 +576,7 @@ BOOLEAN MET_get_column_default(REL relation,
 		CPR_exit(FINI_ERROR);
 
 	assert(dbb->dbb_transaction == NULL);
-	gds__trans = NULL;
+	gds_trans = NULL;
 
 	DB = dbb->dbb_handle;
 
@@ -598,7 +598,7 @@ BOOLEAN MET_get_column_default(REL relation,
 
 	if (has_default) {
 		/* open the blob */
-		stat = isc_open_blob2(status_vect, (void**) &DB, (void**) &gds__trans,
+		stat = isc_open_blob2(status_vect, (void**) &DB, (void**) &gds_trans,
 							  (void**) &blob_handle, blob_id, sizeof(blr_bpb),
 							  const_cast<unsigned char*>(blr_bpb));
 		if (stat) {
@@ -658,7 +658,7 @@ BOOLEAN MET_get_column_default(REL relation,
 LLS MET_get_primary_key(DBB dbb, TEXT * relation_name)
 {
 	LLS fields = NULL, *ptr_fields;
-	SLONG *DB, *gds__trans;
+	SLONG *DB, *gds_trans;
 	SCHAR name[NAME_SIZE];
 	STR field_name;
 	TEXT *tmp;
@@ -672,7 +672,7 @@ LLS MET_get_primary_key(DBB dbb, TEXT * relation_name)
 		CPR_exit(FINI_ERROR);
 
 	assert(dbb->dbb_transaction == NULL);
-	gds__trans = NULL;
+	gds_trans = NULL;
 
 	DB = dbb->dbb_handle;
 
@@ -741,7 +741,7 @@ FLD MET_field(REL relation, char *string)
 		return NULL;
 
 	DB = dbb->dbb_handle;
-	gds__trans = dbb->dbb_transaction;
+	gds_trans = dbb->dbb_transaction;
 	field = NULL;
 
 	if (!(dbb->dbb_flags & DBB_v3)) {
@@ -903,7 +903,7 @@ NOD MET_fields(CTX context)
 
 	dbb = relation->rel_database;
 	DB = dbb->dbb_handle;
-	gds__trans = dbb->dbb_transaction;
+	gds_trans = dbb->dbb_transaction;
 
 	count = 0;
 	stack = NULL;
@@ -944,7 +944,7 @@ void MET_fini( DBB end)
 
 	for (dbb = isc_databases; dbb && dbb != end; dbb = dbb->dbb_next)
 		if (DB = dbb->dbb_handle) {
-			if (gds__trans = dbb->dbb_transaction)
+			if (gds_trans = dbb->dbb_transaction)
 				COMMIT;
 			FINISH;
 			dbb->dbb_handle = NULL;
@@ -981,7 +981,6 @@ SCHAR *MET_generator(TEXT * string, DBB dbb)
 	SYM symbol;
 	SCHAR *gen_name = NULL;
 	SCHAR name[NAME_SIZE];
-	SSHORT length;
 
 	strcpy(name, string);
 
@@ -1366,7 +1365,7 @@ REL MET_get_view_relation(REQ request,
 
 	dbb = request->req_database;
 	DB = dbb->dbb_handle;
-	gds__trans = dbb->dbb_transaction;
+	gds_trans = dbb->dbb_transaction;
 
 	relation = NULL;
 
@@ -1423,7 +1422,7 @@ IND MET_index(DBB dbb, TEXT * string)
 		return NULL;
 
 	DB = dbb->dbb_handle;
-	gds__trans = dbb->dbb_transaction;
+	gds_trans = dbb->dbb_transaction;
 	index = NULL;
 
 	FOR(REQUEST_HANDLE dbb->dbb_index_request)
@@ -1474,12 +1473,12 @@ void MET_load_hash_table( DBB dbb)
 		/* we must have already loaded this one */
 		return;
 
-	gds__trans = NULL;
+	gds_trans = NULL;
 	DB = dbb->dbb_handle;
 
 	START_TRANSACTION;
 
-	dbb->dbb_transaction = (SLONG*) gds__trans;
+	dbb->dbb_transaction = (SLONG*) gds_trans;
 	handle = handle2 = NULL;
 
 /*  Determine if the database is V3.  */
@@ -1492,7 +1491,7 @@ void MET_load_hash_table( DBB dbb)
 		X.RDB$SYSTEM_FLAG = 1 post_v3_flag = TRUE;
 
 	END_FOR;
-	gds__release_request(gds__status, (void**) GDS_REF(handle));
+	gds__release_request(gds_status, (void**) GDS_REF(handle));
 
 	if (!post_v3_flag)
 		dbb->dbb_flags |= DBB_v3;
@@ -1545,7 +1544,7 @@ void MET_load_hash_table( DBB dbb)
 		END_FOR;
 	}
 
-	gds__release_request(gds__status, (void**) GDS_REF(handle));
+	gds__release_request(gds_status, (void**) GDS_REF(handle));
 
 /*  Pick up all procedures (necessary to parse parts of the GDML grammar) */
 
@@ -1567,7 +1566,7 @@ void MET_load_hash_table( DBB dbb)
 		END_ERROR;
 
 	if (handle)
-		gds__release_request(gds__status, (void**) GDS_REF(handle));
+		gds__release_request(gds_status, (void**) GDS_REF(handle));
 
 /*  Pickup any user defined functions.  If the database does not support UDF's,
  *  this may fail
@@ -1620,9 +1619,9 @@ void MET_load_hash_table( DBB dbb)
 	}
 	END_FOR ON_ERROR END_ERROR;
 
-	gds__release_request(gds__status, (void**) GDS_REF(handle));
+	gds__release_request(gds_status, (void**) GDS_REF(handle));
 	if (handle2)
-		gds__release_request(gds__status, (void**) GDS_REF(handle2));
+		gds__release_request(gds_status, (void**) GDS_REF(handle2));
 
 /*  Pick up all Collation names, might have several collations
  *  for a given character set.
@@ -1672,9 +1671,9 @@ void MET_load_hash_table( DBB dbb)
 		/* assume pre V4 database, no collations */
 		END_ERROR;
 
-	gds__release_request(gds__status, (void**) GDS_REF(handle));
+	gds__release_request(gds_status, (void**) GDS_REF(handle));
 	if (handle2)
-		gds__release_request(gds__status, (void**) GDS_REF(handle2));
+		gds__release_request(gds_status, (void**) GDS_REF(handle2));
 
 /*  Now pick up all character set names - with the subtype set to
  *  the type of the default collation for the character set.
@@ -1720,9 +1719,9 @@ void MET_load_hash_table( DBB dbb)
 		/* assume pre V4 database, no character sets */
 		END_ERROR;
 
-	gds__release_request(gds__status, (void**) GDS_REF(handle));
+	gds__release_request(gds_status, (void**) GDS_REF(handle));
 	if (handle2)
-		gds__release_request(gds__status, (void**) GDS_REF(handle2));
+		gds__release_request(gds_status, (void**) GDS_REF(handle2));
 
 /*  Pick up name of database default character set for SQL  */
 
@@ -1740,7 +1739,7 @@ void MET_load_hash_table( DBB dbb)
 		/* Assume V3 Db, no default charset */
 		END_ERROR;
 
-	gds__release_request(gds__status, (void**) GDS_REF(handle));
+	gds__release_request(gds_status, (void**) GDS_REF(handle));
 
 /*  Pick up all generators for the database  */
 
@@ -1752,7 +1751,7 @@ void MET_load_hash_table( DBB dbb)
 
 	END_FOR ON_ERROR END_ERROR;
 
-	gds__release_request(gds__status, (void**) GDS_REF(handle));
+	gds__release_request(gds_status, (void**) GDS_REF(handle));
 
 /*  now that we have attached to the database, resolve the character set
  *  request (if any) (and if we can)
@@ -1857,7 +1856,7 @@ BOOLEAN MET_type(FLD field, TEXT * string, SSHORT * ptr)
 	relation = field->fld_relation;
 	dbb = relation->rel_database;
 	DB = dbb->dbb_handle;
-	gds__trans = dbb->dbb_transaction;
+	gds_trans = dbb->dbb_transaction;
 
 /*  Force the name to uppercase, using C locale rules for uppercasing  */
 	for (p = buffer; *string && p < &buffer[sizeof(buffer) - 1];
@@ -1888,15 +1887,14 @@ BOOLEAN MET_type(FLD field, TEXT * string, SSHORT * ptr)
  *		   FALSE otherwise
  */  
 
-BOOLEAN MET_trigger_exists(DBB dbb, TEXT * trigger_name)
+BOOLEAN MET_trigger_exists(DBB dbb, TEXT* trigger_name)
 {
-	SCHAR name[NAME_SIZE];
-	SSHORT length;
+	char name[NAME_SIZE];
 
 	strcpy(name, trigger_name);
 
 	DB = dbb->dbb_handle;
-	gds__trans = dbb->dbb_transaction;
+	gds_trans = dbb->dbb_transaction;
 
 	FOR(REQUEST_HANDLE dbb->dbb_trigger_request)
 	TRIG IN RDB$TRIGGERS WITH TRIG.RDB$TRIGGER_NAME EQ name return TRUE;
@@ -2021,7 +2019,7 @@ static int get_intl_char_subtype(
 	DB = dbb->dbb_handle;
 	if (!DB)
 		return (0);
-	gds__trans = dbb->dbb_transaction;
+	gds_trans = dbb->dbb_transaction;
 
 	end_name = name + length;
 /*  Force key to uppercase, following C locale rules for uppercasing 
@@ -2108,7 +2106,7 @@ static int resolve_charset_and_collation(
 				/* Assume V3 DB, without default character set */
 				END_ERROR;
 
-			gds__release_request(gds__status, (void**) GDS_REF(request));
+			gds__release_request(gds_status, (void**) GDS_REF(request));
 
 			if (charset == NULL)
 				charset = (UCHAR *) DEFAULT_CHARACTER_SET_NAME;
@@ -2129,7 +2127,7 @@ static int resolve_charset_and_collation(
 
 		END_FOR ON_ERROR END_ERROR;
 
-		gds__release_request(gds__status, (void**) GDS_REF(request));
+		gds__release_request(gds_status, (void**) GDS_REF(request));
 
 		return (found);
 	}
@@ -2144,7 +2142,7 @@ static int resolve_charset_and_collation(
 		*id = MAP_CHARSET_TO_TTYPE(CS.RDB$CHARACTER_SET_ID);
 		END_FOR ON_ERROR END_ERROR;
 
-		gds__release_request(gds__status, (void**) GDS_REF(request));
+		gds__release_request(gds_status, (void**) GDS_REF(request));
 
 		return (found);
 	}
@@ -2162,7 +2160,7 @@ static int resolve_charset_and_collation(
 	*id = MAP_CHARSET_TO_TTYPE(CS.RDB$CHARACTER_SET_ID);
 	END_FOR ON_ERROR END_ERROR;
 
-	gds__release_request(gds__status, (void**) GDS_REF(request));
+	gds__release_request(gds_status, (void**) GDS_REF(request));
 
 	return (found);
 }

@@ -111,7 +111,7 @@ typedef struct srvr
 {
 	struct srvr*	srvr_next;
 	struct port*	srvr_parent_port;
-	enum port_t		srvr_port_type;
+	enum rem_port_t	srvr_port_type;
 	USHORT			srvr_flags;
 } *SRVR;
 
@@ -274,18 +274,7 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
 	trdb->trdb_setjmp = &env;
 	trdb->trdb_status_vector = status_vector;
 
-	if (SETJMP(env)) {
-		/* Some kind of unhandled error occured during server setup.  In lieu
-		 * of anything we CAN do, log something (and we might be so hosed
-		 * we can't log anything) and give up.
-		 * The likely error here is out-of-memory.
-		 */
-		gds__log("SRVR_multi_thread: error during startup, shutting down");
-
-		RESTORE_THREAD_DATA;
-		THREAD_EXIT;
-		return;
-	}
+	try {
 
 	set_server(main_port, flags);
 
@@ -301,66 +290,11 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
  * server.
  */
 
-	if (SETJMP(env))
-	{
-		/* If we got as far as having a port allocated before the error, disconnect it
-		 * gracefully.
-		 */
-		if (port != NULL)
-		{
-#ifdef DEV_BUILD
-#ifdef DEBUG
-			ConsolePrintf("%%ISERVER-F-NOPORT, no port in a storm\r\n");
-#endif /* DEBUG */
-#endif /* DEV_BUILD */
-			gds__log("SRVR_multi_thread: forcefully disconnecting a port");
-
-			/* To handle recursion within the error handler */
-			trdb->trdb_setjmp = &inner_env;
-			if (SETJMP(inner_env))
-			{
-				port->disconnect(NULL, NULL);
-				port = NULL;
-			}
-			else
-			{
-				/* If we have a port, request really should be non-null, but just in case ... */
-				if (request != NULL) {
-					/* Send client a real status indication of why we disconnected them */
-					/* Note that send_response() can post errors that wind up in this same handler */
-#ifdef DEV_BUILD
-#ifdef DEBUG
-					ConsolePrintf
-						("%%ISERVER-F-NOMEM, virtual memory exhausted\r\n");
-#endif /* DEBUG */
-#endif /* DEV_BUILD */
-					port->send_response(&request->req_send, 0, 0,
-								  status_vector);
-					port->disconnect(&request->req_send, &request->req_receive);
-				}
-				else {
-					/* Can't tell the client much, just make 'em go away.  Their side should detect
-					 * a network error
-					 */
-					port->disconnect(NULL, NULL);
-				}
-				port = NULL;
-			}
-			trdb->trdb_setjmp = &env;
-		}
-
-		/* There was an error in the processing of the request, if we have allocated
-		 * a request, free it up and continue.
-		 */
-		if (request != NULL) {
-			request->req_next = free_requests;
-			free_requests = request;
-			request = NULL;
-		}
-	}
+	try {
 
 /* When this loop exits, the server will no longer receive requests */
-	while (TRUE) {
+	while (TRUE)
+	{
 		port = NULL;
 
 		/* Allocate a memory block to store the request in */
@@ -399,7 +333,7 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
 #ifdef DEV_BUILD
 #ifdef DEBUG
 		if ((request_count++ % 4) == 0) {
-			LONGJMP(*trdb->trdb_setjmp, gds__virmemexh);
+			Firebird::status_longjmp_error::raise(gds__virmemexh);
 		}
 #endif /* DEBUG */
 #endif /* DEV_BUILD */
@@ -423,7 +357,7 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
 #ifdef DEV_BUILD
 #ifdef DEBUG
 			if ((request_count % 5) == 0) {
-				LONGJMP(*trdb->trdb_setjmp, gds__virmemexh);
+				Firebird::status_longjmp_error::raise(gds__virmemexh);
 			}
 #endif /* DEBUG */
 #endif /* DEV_BUILD */
@@ -520,6 +454,78 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
 /* We should never get to this point */
 
 	THREAD_EXIT;
+
+	}	// try
+	catch (...)
+	{
+		/* If we got as far as having a port allocated before the error, disconnect it
+		 * gracefully.
+		 */
+		if (port != NULL)
+		{
+#ifdef DEV_BUILD
+#ifdef DEBUG
+			ConsolePrintf("%%ISERVER-F-NOPORT, no port in a storm\r\n");
+#endif /* DEBUG */
+#endif /* DEV_BUILD */
+			gds__log("SRVR_multi_thread: forcefully disconnecting a port");
+
+			/* To handle recursion within the error handler */
+			trdb->trdb_setjmp = &inner_env;
+			try {
+				/* If we have a port, request really should be non-null, but just in case ... */
+				if (request != NULL) {
+					/* Send client a real status indication of why we disconnected them */
+					/* Note that send_response() can post errors that wind up in this same handler */
+#ifdef DEV_BUILD
+#ifdef DEBUG
+					ConsolePrintf
+						("%%ISERVER-F-NOMEM, virtual memory exhausted\r\n");
+#endif /* DEBUG */
+#endif /* DEV_BUILD */
+					port->send_response(&request->req_send, 0, 0,
+								  status_vector);
+					port->disconnect(&request->req_send, &request->req_receive);
+				}
+				else {
+					/* Can't tell the client much, just make 'em go away.  Their side should detect
+					 * a network error
+					 */
+					port->disconnect(NULL, NULL);
+				}
+				port = NULL;
+
+				trdb->trdb_setjmp = &env;
+			}	// try
+			catch (...) {
+				port->disconnect(NULL, NULL);
+				port = NULL;
+			}
+		}
+
+		/* There was an error in the processing of the request, if we have allocated
+		 * a request, free it up and continue.
+		 */
+		if (request != NULL) {
+			request->req_next = free_requests;
+			free_requests = request;
+			request = NULL;
+		}
+	}
+
+	}	// try
+	catch (...) {
+		/* Some kind of unhandled error occured during server setup.  In lieu
+		 * of anything we CAN do, log something (and we might be so hosed
+		 * we can't log anything) and give up.
+		 * The likely error here is out-of-memory.
+		 */
+		gds__log("SRVR_multi_thread: error during startup, shutting down");
+
+		RESTORE_THREAD_DATA;
+		THREAD_EXIT;
+		return;
+	}
 
 #endif
 
@@ -3010,20 +3016,10 @@ BOOLEAN process_packet(PORT port,
 	THD_put_specific((THDD) trdb);
 	trdb->trdb_thd_data.thdd_type = THDD_TYPE_TRDB;
 
-	if (SETJMP(env)) {
-		/* There must be something better to do here.  BUT WHAT? */
+	try {
 
-		gds__log("SERVER/process_packet: out of memory", 0);
-
-		/*  It would be nice to log an error to the user, instead of just terminating them!  */
-		port->send_response(send, 0, 0, trdb->trdb_status_vector);
-		port->disconnect(send, receive);	/*  Well, how about this...  */
-
-		THD_restore_specific();
-		return FALSE;
-	}
-
-	switch (op = receive->p_operation) {
+	switch (op = receive->p_operation)
+	{
 	case op_connect:
 		if (!accept_connection(port, &receive->p_cnct, send)) {
 			if (string = port->port_user_name) {
@@ -3271,6 +3267,20 @@ BOOLEAN process_packet(PORT port,
 		*result = port;
 
 	THD_restore_specific();
+	
+	}	// try
+	catch (...) {
+		/* There must be something better to do here.  BUT WHAT? */
+
+		gds__log("SERVER/process_packet: out of memory", 0);
+
+		/*  It would be nice to log an error to the user, instead of just terminating them!  */
+		port->send_response(send, 0, 0, trdb->trdb_status_vector);
+		port->disconnect(send, receive);	/*  Well, how about this...  */
+
+		THD_restore_specific();
+		return FALSE;
+	}
 
 	return TRUE;
 }

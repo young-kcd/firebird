@@ -26,8 +26,9 @@
 
 /* External file access block */
 
-typedef struct ext {
-	struct blk ext_header;
+class ext : public pool_alloc_rpt<SCHAR, type_ext>
+{
+    public:
 	struct fmt *ext_format;		/* External format */
 	UCHAR *ext_stuff;			/* Random stuff */
 	USHORT ext_flags;			/* Misc and cruddy flags */
@@ -44,7 +45,8 @@ typedef struct ext {
 	UCHAR *ext_indices;			/* Index descriptions */
 	UCHAR ext_dbkey[8];			/* DBKEY */
 	UCHAR ext_filename[1];
-} *EXT;
+};
+typedef ext *EXT;
 
 #define EXT_opened	1			/* File has been opened */
 #define EXT_eof		2			/* Positioned at EOF */

@@ -354,33 +354,42 @@ SSHORT CVT2_compare(DSC * arg1, DSC * arg2, FPTR_VOID err)
 /* At this point, the type of arg1 is guaranteed to be "greater than" arg2,
    in the sense that it is the preferred type for comparing the two. */
 
-	switch (arg1->dsc_dtype) {
-		DSC desc;
+	switch (arg1->dsc_dtype)
+	{
 		SLONG date[2];
 
 	case dtype_timestamp:
+	{
+		DSC desc;
 		MOVE_CLEAR(&desc, sizeof(desc));
 		desc.dsc_dtype = dtype_timestamp;
 		desc.dsc_length = sizeof(date);
 		desc.dsc_address = (UCHAR *) date;
 		CVT_move(arg2, &desc, err);
 		return CVT2_compare(arg1, &desc, err);
+	}
 
 	case dtype_sql_time:
+	{
+		DSC desc;
 		MOVE_CLEAR(&desc, sizeof(desc));
 		desc.dsc_dtype = dtype_sql_time;
 		desc.dsc_length = sizeof(date[0]);
 		desc.dsc_address = (UCHAR *) date;
 		CVT_move(arg2, &desc, err);
 		return CVT2_compare(arg1, &desc, err);
+	}
 
 	case dtype_sql_date:
+	{
+		DSC desc;
 		MOVE_CLEAR(&desc, sizeof(desc));
 		desc.dsc_dtype = dtype_sql_date;
 		desc.dsc_length = sizeof(date[0]);
 		desc.dsc_address = (UCHAR *) date;
 		CVT_move(arg2, &desc, err);
 		return CVT2_compare(arg1, &desc, err);
+	}
 
 	case dtype_short:
 		{
@@ -556,7 +565,7 @@ USHORT CVT2_make_string2(DSC * desc,
 
 	else if (desc->dsc_dtype == dtype_varying) {
 		varying = (VARY *) desc->dsc_address;
-		from_buf = varying->vary_string;
+		from_buf = reinterpret_cast<UCHAR*>(varying->vary_string);
 		from_len =
 			MIN(varying->vary_length, desc->dsc_length - sizeof(SSHORT));
 		from_interp = INTL_TTYPE(desc);
@@ -585,7 +594,7 @@ USHORT CVT2_make_string2(DSC * desc,
 											cs2, from_buf, from_len, err);
 			tempptr = (UCHAR *) temp;
 			if (needed_len > length) {
-				*ptr = (STR) ALLOCDV(type_str, needed_len);
+				*ptr = new(*tdbb->tdbb_default, needed_len) str();
 				(*ptr)->str_length = needed_len;
 				tempptr = (*ptr)->str_data;
 				length = needed_len;
@@ -605,7 +614,7 @@ USHORT CVT2_make_string2(DSC * desc,
 	INTL_ASSIGN_TTYPE(&temp_desc, to_interp);
 	temp_desc.dsc_dtype = dtype_varying;
 	CVT_move(desc, &temp_desc, err);
-	*address = temp->vary_string;
+	*address = reinterpret_cast<UCHAR*>(temp->vary_string);
 
 	return temp->vary_length;
 }

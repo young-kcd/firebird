@@ -196,7 +196,7 @@ void PARSE_error( USHORT number, TEXT * arg1, TEXT * arg2)
  **************************************/
 
 	DDL_err(number, arg1, arg2, NULL, NULL, NULL);
-	longjmp(parse_env, TRUE);
+	Firebird::status_longjmp_error::raise(TRUE);
 }
 
 
@@ -2988,14 +2988,7 @@ static BOOLEAN parse_action(void)
 /* Set up an environment to catch syntax errors.  If one occurs, scan looking
    for semi-colon to continue processing. */
 
-	if (setjmp(parse_env)) {
-		if (DDL_interactive)
-			LEX_flush();
-		else
-			while (!DDL_eof && !KEYWORD(KW_SEMI))
-				LEX_token();
-		return TRUE;
-	}
+	try {
 
 	DDL_prompt = PROMPT;
 	LEX_token();
@@ -3154,6 +3147,16 @@ static BOOLEAN parse_action(void)
 
 	PARSE_error(186, DDL_token.tok_string, 0);	/* msg 186: expected command, encountered \"%s\" */
 	return FALSE;
+
+	}	// try
+	catch (...) {
+		if (DDL_interactive)
+			LEX_flush();
+		else
+			while (!DDL_eof && !KEYWORD(KW_SEMI))
+				LEX_token();
+		return TRUE;
+	}
 }
 
 

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gen.cpp,v 1.2 2001-07-29 23:43:21 skywalker Exp $
+$Id: gen.cpp,v 1.3 2001-12-24 02:50:48 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -90,31 +90,26 @@ UCHAR GEN_expand_buffer( REQ request, UCHAR byte)
  *	The blr buffer needs to be expanded.
  *
  **************************************/
-	ULONG length;
-	ULONG copy_length;
-	PLB pool;
-	STR new_buffer;
+
 	BLOB_PTR *p;				/* one huge pointer per line for LIBS */
 	BLOB_PTR *q;				/* one huge pointer per line for LIBS */
 	BLOB_PTR *end;				/* one huge pointer per line for LIBS */
-	TSQL tdsql;
 
-	tdsql = GET_THREAD_DATA;
+	TSQL tdsql = GET_THREAD_DATA;
 
-	length = request->req_blr_string->str_length + 2048;
-	pool = (request->req_blr_string->str_header.blk_pool_id ==
-			DSQL_permanent_pool->plb_pool_id) ?
+	ULONG length = request->req_blr_string->str_length + 2048;
+	DsqlMemoryPool *pool = (MemoryPool::blk_pool(request->req_blr_string) == DSQL_permanent_pool) ?
 		DSQL_permanent_pool : tdsql->tsql_default;
-	new_buffer = (STR) ALLOCV(type_str, pool, length);
+	STR new_buffer = new(*pool, length) str;
 	new_buffer->str_length = length;
 
 	p = new_buffer->str_data;
 	q = request->req_blr_string->str_data;
 	end = request->req_blr;
-	copy_length = (ULONG) (end - q);
+	ULONG copy_length = (ULONG) (end - q);
 	memcpy(p, q, copy_length);
 
-	ALLD_release(reinterpret_cast<FRB>(request->req_blr_string));
+	delete request->req_blr_string;
 	request->req_blr_string = new_buffer;
 	request->req_blr = p + copy_length;
 	request->req_blr_yellow = new_buffer->str_data + length;
@@ -636,7 +631,7 @@ void GEN_port( REQ request, MSG message)
 
 /* Allocate buffer for message */
 
-	buffer = (STR) ALLOCDV(type_str, message->msg_length + DOUBLE_ALIGN - 1);
+	buffer = new(*tdsql->tsql_default, message->msg_length + DOUBLE_ALIGN - 1) str;
 	message->msg_buffer =
 		(UCHAR *) FB_ALIGN((U_IPTR) buffer->str_data, DOUBLE_ALIGN);
 

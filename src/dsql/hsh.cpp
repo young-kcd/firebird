@@ -86,7 +86,7 @@ void HSHD_init(void)
 	}
 #endif
 
-	p = (UCHAR *) ALLD_malloc(sizeof(SYM) * HASH_SIZE);
+	p = (UCHAR *) MemoryPool::malloc_from_system(sizeof(SYM) * HASH_SIZE);
 	memset(p, 0, sizeof(SYM) * HASH_SIZE);
 
 	hash_table = (SYM *) p;
@@ -156,7 +156,7 @@ void HSHD_fini(void)
 		hash_table[i] = NULL;
 	}
 
-	ALLD_free(hash_table);
+	MemoryPool::free_from_system(hash_table);
 	hash_table = NULL;
 }
 

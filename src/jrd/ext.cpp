@@ -133,8 +133,8 @@ EXT EXT_file(REL relation, TEXT * file_name, SLONG * description)
 		EXT_fini(relation);
 	}
 	relation->rel_file = file =
-		(EXT) ALLOCPV(type_ext, strlen(file_name) + 1);
-	strcpy(reinterpret_cast < char *>(file->ext_filename), file_name);
+		new(*dbb->dbb_permanent, (strlen(file_name) + 1)) ext();
+	strcpy(reinterpret_cast<char*>(file->ext_filename), file_name);
 
 	file->ext_flags = 0;
 	file->ext_ifi = (int *) NULL;
@@ -181,7 +181,7 @@ void EXT_fini(REL relation)
 		if (file->ext_ifi)
 			ib_fclose((IB_FILE *) file->ext_ifi);
 		/* before zeroing out the rel_file we need to deallocate the memory */
-		ALL_release(reinterpret_cast < frb * >(relation->rel_file));
+		delete relation->rel_file;
 		relation->rel_file = 0;
 	}
 }
@@ -207,10 +207,11 @@ int EXT_get(RSB rsb)
 	REC record;
 	FMT format;
 	LIT literal;
-	DSC *desc_ptr, desc;
 	FLD field, *field_ptr;
+	DSC desc;
 	SSHORT c, l, offset, i;
 	UCHAR *p;
+	vec::iterator itr;
 
 	tdbb = GET_THREAD_DATA;
 
@@ -248,14 +249,15 @@ int EXT_get(RSB rsb)
 /* Loop thru fields setting missing fields to either blanks/zeros
    or the missing value */
 
-	field_ptr = (FLD *) relation->rel_fields->vec_object;
-	desc_ptr = format->fmt_desc;
+	fmt::fmt_desc_iterator desc_ptr = format->fmt_desc.begin();
 
-	for (i = 0; i < format->fmt_count; i++, field_ptr++, desc_ptr++) {
+	for (i = 0, itr = relation->rel_fields->begin();
+			i < format->fmt_count; i++, itr++, desc_ptr++) {
+	    field_ptr = (FLD *) (*itr);
 		SET_NULL(record, i);
 		if (!desc_ptr->dsc_length || !(field = *field_ptr))
 			continue;
-		if (literal = (LIT) field->fld_missing_value) {
+		if ( (literal = (LIT) field->fld_missing_value) ) {
 			desc = *desc_ptr;
 			desc.dsc_address = record->rec_data + (int) desc.dsc_address;
 			if (!MOV_compare(&literal->lit_desc, &desc))
@@ -336,7 +338,7 @@ RSB EXT_optimize(register OPT opt, SSHORT stream, NOD * sort_ptr)
 	TDBB tdbb;
 	register CSB csb;
 	REL relation;
-	RSB rsb;
+	RSB rsb_;
 /* all these are un refrenced due to the code commented below
 NOD		node, inversion;
 register opt::opt_repeat	*tail, *opt_end;
@@ -383,16 +385,16 @@ if (opt->opt_count)
 */
 
 
-	rsb = (RSB) ALLOCDV(type_rsb, 0);
-	rsb->rsb_type = rsb_ext_sequential;
+	rsb_ = new(*tdbb->tdbb_default,0) Rsb;
+	rsb_->rsb_type = rsb_ext_sequential;
 	size = sizeof(struct irsb);
 
-	rsb->rsb_stream = stream;
-	rsb->rsb_relation = relation;
-	rsb->rsb_impure = csb->csb_impure;
+	rsb_->rsb_stream = stream;
+	rsb_->rsb_relation = relation;
+	rsb_->rsb_impure = csb->csb_impure;
 	csb->csb_impure += size;
 
-	return rsb;
+	return rsb_;
 }
 
 
@@ -427,9 +429,9 @@ void EXT_store(RPB * rpb, int *transaction)
 	REC record;
 	FMT format;
 	EXT file;
-	FLD *field_ptr, field;
+	FLD field;
 	LIT literal;
-	DSC desc, *desc_ptr;
+	DSC desc;
 	UCHAR *p;
 	USHORT i, l, offset;
 
@@ -459,15 +461,19 @@ void EXT_store(RPB * rpb, int *transaction)
 					 gds_arg_gds, gds_ext_readonly_err, 0);
 	}
 
-	field_ptr = (FLD *) relation->rel_fields->vec_object;
-	desc_ptr = format->fmt_desc;
+	vec::iterator field_ptr = relation->rel_fields->begin();
+	fmt::fmt_desc_iterator desc_ptr = format->fmt_desc.begin();
 
 	for (i = 0; i < format->fmt_count; i++, field_ptr++, desc_ptr++)
-		if ((field = *field_ptr) &&
+	{
+		field = (FLD)*field_ptr;
+		if (field &&
 			!field->fld_computation &&
-			desc_ptr->dsc_length && TEST_NULL(record, i)) {
+			desc_ptr->dsc_length &&
+			TEST_NULL(record, i))
+		{
 			p = record->rec_data + (int) desc_ptr->dsc_address;
-			if (literal = (LIT) field->fld_missing_value) {
+			if ( (literal = (LIT) field->fld_missing_value) ) {
 				desc = *desc_ptr;
 				desc.dsc_address = p;
 				MOV_move(&literal->lit_desc, &desc);
@@ -480,6 +486,7 @@ void EXT_store(RPB * rpb, int *transaction)
 				while (--l);
 			}
 		}
+	}
 
 	offset = (USHORT) format->fmt_desc[0].dsc_address;
 	p = record->rec_data + offset;

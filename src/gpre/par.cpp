@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.3 2001-07-29 23:43:22 skywalker Exp $
+//  $Id: par.cpp,v 1.4 2001-12-24 02:50:49 tamlin Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: par.cpp,v 1.3 2001-07-29 23:43:22 skywalker Exp $
+//	$Id: par.cpp,v 1.4 2001-12-24 02:50:49 tamlin Exp $
 //
 
 #include "firebird.h"
@@ -208,12 +208,7 @@ ACT PAR_action()
 			CPR_token();
 		}
 
-		if (setjmp(env)) {
-			sw_sql = FALSE;
-			/* This is to force GPRE to get the next symbol. Fix for bug #274. DROOT */
-			token.tok_symbol = NULL;
-			return NULL;
-		}
+		try {
 
 		PAR_jmp_buf = &env;
 
@@ -379,6 +374,14 @@ ACT PAR_action()
 			break;
 		}
 
+		}	// try
+		catch (...) {
+			sw_sql = FALSE;
+			/* This is to force GPRE to get the next symbol. Fix for bug #274. DROOT */
+			token.tok_symbol = NULL;
+			return NULL;
+		}
+
 		cur_statement = NULL;
 		return NULL;
 	}
@@ -388,46 +391,60 @@ ACT PAR_action()
 		switch (symbol->sym_type)
 		{
 		case SYM_context:
-			if (setjmp(env))
-				return NULL;
-			PAR_jmp_buf = &env;
-			cur_statement = NULL;
-			return par_variable();
+			try {
+				PAR_jmp_buf = &env;
+				cur_statement = NULL;
+				return par_variable();
+			}
+			catch (...) {
+				return 0;
+			}
 
 		case SYM_form_map:
-			if (setjmp(env))
-				return NULL;
-			PAR_jmp_buf = &env;
-			cur_statement = NULL;
-			return par_form_field();
-
+			try {
+				PAR_jmp_buf = &env;
+				cur_statement = NULL;
+				return par_form_field();
+			}
+			catch (...) {
+				return 0;
+			}
 		case SYM_blob:
-			if (setjmp(env))
-				return NULL;
-			PAR_jmp_buf = &env;
-			cur_statement = NULL;
-			return par_blob_field();
-
+			try {
+				PAR_jmp_buf = &env;
+				cur_statement = NULL;
+				return par_blob_field();
+			}
+			catch (...) {
+				return 0;
+			}
 		case SYM_relation:
-			if (setjmp(env))
-				return NULL;
-			PAR_jmp_buf = &env;
-			cur_statement = NULL;
-			return par_type();
-
+			try {
+				PAR_jmp_buf = &env;
+				cur_statement = NULL;
+				return par_type();
+			}
+			catch (...) {
+				return 0;
+			}
 		case SYM_menu:
-			if (setjmp(env))
-				return NULL;
-			PAR_jmp_buf = &env;
-			cur_statement = NULL;
-			return par_menu_att();
-
+			try {
+				PAR_jmp_buf = &env;
+				cur_statement = NULL;
+				return par_menu_att();
+			}
+			catch (...) {
+				return 0;
+			}
 		case SYM_menu_map:
-			if (setjmp(env))
-				return NULL;
-			PAR_jmp_buf = &env;
-			cur_statement = NULL;
-			return par_menu_entree_att();
+			try {
+				PAR_jmp_buf = &env;
+				cur_statement = NULL;
+				return par_menu_entree_att();
+			}
+			catch (...) {
+				return 0;
+			}
 		default:
 			break;
 		}
@@ -1142,7 +1159,9 @@ void PAR_unwind()
 
 #pragma FB_COMPILER_MESSAGE("Fix! Wierd jmp_buf use! This might crash!")
 
-	longjmp(*PAR_jmp_buf, (SLONG) 1);
+	//longjmp(*PAR_jmp_buf, (SLONG) 1);
+
+	Firebird::status_longjmp_error::raise(1);
 }
 
 

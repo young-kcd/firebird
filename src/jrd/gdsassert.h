@@ -16,8 +16,8 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-#ifndef _JRD_GDSASSERT_H_
-#define _JRD_GDSASSERT_H_
+#ifndef JRD_GDSASSERT_H
+#define JRD_GDSASSERT_H
 
 
 #ifdef DEV_BUILD
@@ -25,6 +25,7 @@
 #include <stdlib.h>				// abort()
 
 #include "../jrd/ib_stdio.h"
+#include "../jrd/gds_proto.h"
 
 
 /* assert() has been made into a generic version that works across
@@ -32,29 +33,40 @@
  * usable within the engine.
  * 1996-Feb-09 David Schnepper 
  */
-#ifdef SUPERSERVER
-#define _assert(ex)	{if (!(ex)){(void) gds__log ("GDS Assertion failure: %s %ld\n", __FILE__, __LINE__); abort();}}
+
+#ifdef __LINE__IS_INT
+#define FB_GDS_ASSERT_FAILURE_STRING	"GDS Assertion failure: %s %d\n"
 #else
-#define _assert(ex)	{if (!(ex)){(void) ib_fprintf (ib_stderr, "GDS Assertion failure: %s %ld\n", __FILE__, __LINE__); abort();}}
+#define FB_GDS_ASSERT_FAILURE_STRING	"GDS Assertion failure: %s %ld\n"
 #endif
 
-#else
+#ifdef SUPERSERVER
 
-#define _assert(ex)				/* nothing */
+#define fb_assert(ex)	{if (!(ex)){(void) gds__log (FB_GDS_ASSERT_FAILURE_STRING, __FILE__, __LINE__); abort();}}
+
+#else	// !SUPERSERVER
+
+#define fb_assert(ex)	{if (!(ex)){(void) ib_fprintf (ib_stderr, FB_GDS_ASSERT_FAILURE_STRING, __FILE__, __LINE__); abort();}}
+
+#endif	// SUPERSERVER
+
+#else	// DEV_BUILD
+
+#define fb_assert(ex)				/* nothing */
 
 #endif /* DEV_BUILD */
 
-#define gds_assert(ex) _assert(ex)
+#define gds_assert(ex) fb_assert(ex)
 
 
-/* It's a bit poor, since asset is a standard function but this was the way it
+/* It's a bit poor, since assert is a standard macro but this was the way it
    was done.  It is preferable to use the gds_assert(x) function, but I've left
    the following for back compatibility since I don't want to wade through that
    much code at the moment.
 */
 
 #ifndef assert
-#define assert(ex)	_assert(ex)
+#define assert(ex)	fb_assert(ex)
 #endif /* assert */
 
-#endif /* _JRD_GDSASSERT_H_ */
+#endif /* JRD_GDSASSERT_H */

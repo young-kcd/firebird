@@ -37,13 +37,23 @@ extern "C" {
    See MET_format() and make_format() in MET.E for enlightenment.
 */
 
-typedef struct dsc {
-	UCHAR dsc_dtype;
-	SCHAR dsc_scale;
-	USHORT dsc_length;
-	SSHORT dsc_sub_type;
-	USHORT dsc_flags;
-	UCHAR *dsc_address;
+typedef struct dsc
+{
+	dsc()
+	:	dsc_dtype(0),
+		dsc_scale(0),
+		dsc_length(0),
+		dsc_sub_type(0),
+		dsc_flags(0),
+		dsc_address(0)
+	{}
+
+	UCHAR	dsc_dtype;
+	SCHAR	dsc_scale;
+	USHORT	dsc_length;
+	SSHORT	dsc_sub_type;
+	USHORT	dsc_flags;
+	UCHAR*	dsc_address;
 } DSC;
 
 /* values for dsc_flags */

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: cmp.cpp,v 1.3 2001-07-29 17:42:21 skywalker Exp $
+$Id: cmp.cpp,v 1.4 2001-12-24 02:50:51 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -82,8 +82,6 @@ rel_MAX} RIDS;
 #undef RELATION
 #undef FIELD
 #undef END_RELATION
-
-extern "C" {
 
 /* InterBase provides transparent conversion from string to date in
  * contexts where it makes sense.  This macro checks a descriptor to
@@ -162,18 +160,18 @@ int DLL_EXPORT CMP_clone_active(REQ request)
  *	Determine if a request or any of its clones are active.
  *
  **************************************/
-	REQ *sub_req, *end;
 	VEC vector;
+	vec::iterator sub_req, end;
 
 	DEV_BLKCHK(request, type_req);
 
 	if (request->req_flags & req_in_use)
 		return TRUE;
 
-	if (vector = request->req_sub_requests)
-		for (sub_req = (REQ *) vector->vec_object, end =
-			 sub_req + vector->vec_count; sub_req < end; sub_req++)
-			if (*sub_req && (*sub_req)->req_flags & req_in_use)
+	if ( (vector = request->req_sub_requests) )
+		for (sub_req = vector->begin(), end = vector->end();
+			 sub_req < end; sub_req++)
+			if (*sub_req && ((REQ)(*sub_req))->req_flags & req_in_use)
 				return TRUE;
 
 	return FALSE;
@@ -243,13 +241,13 @@ REQ DLL_EXPORT CMP_clone_request(TDBB tdbb,
 		return request;
 
 	if ((vector = request->req_sub_requests) &&
-		level < vector->vec_count &&
-		(clone = (REQ) vector->vec_object[level])) return clone;
+		level < vector->count() &&
+		(clone = (REQ) (*vector)[level])) return clone;
 
 /* We need to clone the request -- find someplace to put it */
 
 	if (validate) {
-		if (procedure = request->req_procedure) {
+		if ( (procedure = request->req_procedure) ) {
 			prc_sec_name = (procedure->prc_security_name ?
 							(TEXT *) procedure->
 							prc_security_name->str_data : (TEXT *) 0);
@@ -274,15 +272,22 @@ REQ DLL_EXPORT CMP_clone_request(TDBB tdbb,
 		}
 	}
 
-	vector = ALL_vector(request->req_pool, &request->req_sub_requests, level);
+	if (!vector)
+	{
+		vector = request->req_sub_requests =
+			vec::newVector(*request->req_pool, level+1);
+	}
+	
+	if (level >= vector->count())
+		vector->resize(level + 1);
 
 /* Clone the request */
 
 	n =
 		(USHORT) ((request->req_impure_size - REQ_SIZE + REQ_TAIL - 1) /
 				  REQ_TAIL);
-	clone = (REQ) ALL_alloc(request->req_pool, type_req, n, ERR_jmp);
-	vector->vec_object[level] = (BLK) clone;
+	clone = new(*request->req_pool, n) req;
+	(*vector)[level] = (BLK) clone;
 	clone->req_attachment = tdbb->tdbb_attachment;
 	clone->req_count = request->req_count;
 	clone->req_pool = request->req_pool;
@@ -345,59 +350,62 @@ REQ DLL_EXPORT CMP_compile2(TDBB tdbb, UCHAR* blr, USHORT internal_flag)
  *	Compile a BLR request.
  *
  **************************************/
-	CSB csb;
+
 	REQ request = 0;
-	PLB old_pool, new_pool;
 	ACC access;
-	SCL class_;
-	JMP_BUF env, *old_env;
 
 	SET_TDBB(tdbb);
 
-	old_pool = tdbb->tdbb_default;
-	tdbb->tdbb_default = new_pool = ALL_pool();
+	JrdMemoryPool* old_pool = tdbb->tdbb_default;
+	JrdMemoryPool* new_pool = new(*tdbb->tdbb_database->dbb_permanent)
+				JrdMemoryPool;
+	tdbb->tdbb_default = new_pool;
 
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
-	if (SETJMP(env)) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+	try {
+
+		CSB csb = PAR_parse(tdbb, blr, internal_flag);
+		request = CMP_make_request(tdbb, &csb);
+
+		if (internal_flag) {
+			request->req_flags |= req_internal;
+		}
+
+		for (access = request->req_access; access; access = access->acc_next)
+		{
+#ifndef GATEWAY
+			SCL class_ = SCL_get_class(access->acc_security_name);
+			SCL_check_access(class_, access->acc_view, access->acc_trg_name,
+							 access->acc_prc_name, access->acc_mask,
+							 access->acc_type, access->acc_name);
+#else
+			SCL_check_access(access->acc_security_name, access->acc_view,
+							 access->acc_trg_name, access->acc_prc_name,
+							 access->acc_mask, access->acc_type,
+							 access->acc_name);
+#endif
+		}
+
+		delete csb;
 		tdbb->tdbb_default = old_pool;
-		if (request)
+
+	}
+	catch (...) {
+		tdbb->tdbb_default = old_pool;
+		if (request) {
 			CMP_release(tdbb, request);
-		else if (new_pool)
-			ALL_rlpool(new_pool);
+		} else if (new_pool) {
+			// TMN: Are we not to release the pool, just beqause
+			// we have a request?!
+			delete new_pool;
+		}
 		ERR_punt();
 	}
-
-	csb = PAR_parse(tdbb, blr, internal_flag);
-	request = CMP_make_request(tdbb, &csb);
-
-	if (internal_flag)
-		request->req_flags |= req_internal;
-
-	for (access = request->req_access; access; access = access->acc_next) {
-#ifndef GATEWAY
-		class_ = SCL_get_class(access->acc_security_name);
-		SCL_check_access(class_, access->acc_view, access->acc_trg_name,
-						 access->acc_prc_name, access->acc_mask,
-						 access->acc_type, access->acc_name);
-#else
-		SCL_check_access(access->acc_security_name, access->acc_view,
-						 access->acc_trg_name, access->acc_prc_name,
-						 access->acc_mask, access->acc_type,
-						 access->acc_name);
-#endif
-	}
-
-	ALL_RELEASE(csb);
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-	tdbb->tdbb_default = old_pool;
 
 	return request;
 }
 
 
-csb_repeat *DLL_EXPORT CMP_csb_element(CSB * csb, USHORT element)
+csb_repeat* DLL_EXPORT CMP_csb_element(CSB* csb, USHORT element)
 {
 /**************************************
  *
@@ -413,8 +421,8 @@ csb_repeat *DLL_EXPORT CMP_csb_element(CSB * csb, USHORT element)
 
 	DEV_BLKCHK(*csb, type_csb);
 
-	if (element >= (*csb)->csb_count) {
-		*csb = (CSB) ALL_extend((BLK *) csb, element + 5);
+	if (element >= (*csb)->csb_rpt.size()) {
+		(*csb)->csb_rpt.resize(element + 5);
 		(*csb)->csb_count = element + 5;
 	}
 
@@ -436,7 +444,8 @@ void DLL_EXPORT CMP_expunge_transaction(TRA transaction)
  *
  **************************************/
 	VEC vector;
-	REQ request, *sub, *end;
+	REQ request;
+	vec::iterator sub, end;
 
 	DEV_BLKCHK(transaction, type_tra);
 
@@ -444,11 +453,11 @@ void DLL_EXPORT CMP_expunge_transaction(TRA transaction)
 		 request; request = request->req_request) {
 		if (request->req_transaction == transaction)
 			request->req_transaction = NULL;
-		if (vector = request->req_sub_requests)
-			for (sub = (REQ *) vector->vec_object, end =
-				 sub + vector->vec_count; sub < end; sub++)
-				if (*sub && (*sub)->req_transaction == transaction)
-					(*sub)->req_transaction = NULL;
+		if ( (vector = request->req_sub_requests) )
+			for (sub = vector->begin(), end = vector->end();
+				 sub < end; sub++)
+				if (*sub && ((REQ)(*sub))->req_transaction == transaction)
+					((REQ)(*sub))->req_transaction = NULL;
 	}
 }
 
@@ -1604,13 +1613,13 @@ IDL DLL_EXPORT CMP_get_index_lock(TDBB tdbb, REL relation, USHORT id)
 		if (index->idl_id == id)
 			return index;
 
-	index = (IDL) ALLOCP(type_idl);
+	index = new(*dbb->dbb_permanent) idl();
 	index->idl_next = relation->rel_index_locks;
 	relation->rel_index_locks = index;
 	index->idl_relation = relation;
 	index->idl_id = id;
 
-	index->idl_lock = lock = (LCK) ALLOCPV(type_lck, 0);
+	index->idl_lock = lock = new(*dbb->dbb_permanent, 0) lck;
 	lock->lck_parent = dbb->dbb_lock;
 	lock->lck_dbb = dbb;
 	lock->lck_key.lck_long = relation->rel_id * 1000 + id;
@@ -1660,49 +1669,30 @@ REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
  *	Turn a parsed request into an executable request.
  *
  **************************************/
-#ifdef GATEWAY
-	DBB dbb;
-#endif
-	RPB *rpb;
-	NOD node;
-	CSB csb;
-	IDL index;
-	RSC resource;
-	REL relation;
-	PRC procedure;
-	register REQ request, old_request;
-	int n;
-	csb_repeat *tail, *end;
+
+	REQ request = 0;
 	LLS temp;
-	USHORT count;
-	BLK *ptr;
-	JMP_BUF env, *old_env;
+	vec::iterator ptr;
 
 	DEV_BLKCHK(*csb_ptr, type_csb);
 
 	SET_TDBB(tdbb);
 #ifdef GATEWAY
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 #endif
 
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
-	old_request = tdbb->tdbb_request;
+	REQ old_request = tdbb->tdbb_request;
 	tdbb->tdbb_request = NULL;
 
-	if (SETJMP(env)) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		tdbb->tdbb_request = old_request;
-		ERR_punt();
-	}
+	try {
 
 /* Once any expansion required has been done, make a pass to assign offsets
    into the impure area and throw away any unnecessary crude.  Execution
    optimizations can be performed here */
 
 	DEBUG;
-	node = pass1(tdbb, csb_ptr, (*csb_ptr)->csb_node, 0, 0, FALSE);
-	csb = *csb_ptr;
+	NOD node = pass1(tdbb, csb_ptr, (*csb_ptr)->csb_node, 0, 0, FALSE);
+	CSB csb = *csb_ptr;
 	csb->csb_node = node;
 	csb->csb_impure = REQ_SIZE + REQ_TAIL * csb->csb_n_stream;
 	csb->csb_node = pass2(tdbb, csb, csb->csb_node, 0);
@@ -1717,8 +1707,8 @@ REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
 /* Build the final request block.  First, compute the "effective" repeat
    count of hold the impure areas. */
 
-	n = (csb->csb_impure - REQ_SIZE + REQ_TAIL - 1) / REQ_TAIL;
-	request = (REQ) ALLOCDV(type_req, n);
+	int n = (csb->csb_impure - REQ_SIZE + REQ_TAIL - 1) / REQ_TAIL;
+	request = new(*tdbb->tdbb_default, n) req;
 	request->req_count = csb->csb_n_stream;
 	request->req_pool = tdbb->tdbb_default;
 	request->req_impure_size = csb->csb_impure;
@@ -1726,8 +1716,9 @@ REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
 	request->req_access = csb->csb_access;
 	request->req_variables = csb->csb_variables;
 	request->req_resources = csb->csb_resources;
-	if (csb->csb_g_flags & csb_blr_version4)
+	if (csb->csb_g_flags & csb_blr_version4) {
 		request->req_flags |= req_blr_version4;
+	}
 
 #ifdef SCROLLABLE_CURSORS
 	request->req_async_message = csb->csb_async_message;
@@ -1743,30 +1734,38 @@ REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
    a little complicated since relation locks MUST be taken before
    index locks */
 
-	for (resource = request->req_resources; resource;
-		 resource = resource->rsc_next) {
-		switch (resource->rsc_type) {
+	for (RSC resource = request->req_resources; resource;
+		 resource = resource->rsc_next)
+	{
+		switch (resource->rsc_type)
+		{
 		case rsc_relation:
 			{
-				relation = resource->rsc_rel;
+				REL relation = resource->rsc_rel;
 				MET_post_existence(tdbb, relation);
 				break;
 			}
 		case rsc_index:
 			{
-				relation = resource->rsc_rel;
-				if (index =
-					CMP_get_index_lock(tdbb, relation, resource->rsc_id)) {
+				REL relation = resource->rsc_rel;
+				IDL index =
+					CMP_get_index_lock(tdbb, relation, resource->rsc_id);
+				if (index)
+				{
 					if (!index->idl_count)
-						LCK_lock_non_blocking(tdbb, index->idl_lock, LCK_SR,
-											  TRUE);
+					{
+						LCK_lock_non_blocking(	tdbb,
+												index->idl_lock,
+												LCK_SR,
+												TRUE);
+					}
 					++index->idl_count;
 				}
 				break;
 			}
 		case rsc_procedure:
 			{
-				procedure = resource->rsc_prc;
+				PRC procedure = resource->rsc_prc;
 				procedure->prc_use_count++;
 #ifdef DEBUG_PROCS
 				{
@@ -1784,11 +1783,12 @@ REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
 		}
 	}
 
-	tail = csb->csb_rpt;
-	end = tail + csb->csb_n_stream;
+	csb_repeat* tail = csb->csb_rpt.begin();
+	csb_repeat* end  = tail + csb->csb_n_stream;
 	DEBUG;
 
-	for (rpb = request->req_rpb; tail < end; rpb++, tail++) {
+	for (RPB* rpb = request->req_rpb; tail < end; rpb++, tail++)
+	{
 		/* Fetch input stream for update if all booleans matched against indices. */
 
 		if (tail->csb_flags & csb_update
@@ -1805,13 +1805,22 @@ REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
 #endif
 	}
 
-	for (temp = csb->csb_fors, count = 0; temp; count++)
+	USHORT count;
+	for (temp = csb->csb_fors, count = 0; temp; count++) {
 		temp = temp->lls_next;
+	}
 
 	if (count) {
-		request->req_fors =
-			ALL_vector(request->req_pool, &request->req_fors, count);
-		ptr = request->req_fors->vec_object;
+		if (!request->req_fors)
+		{
+			request->req_fors =
+				vec::newVector(*request->req_pool, count+1);
+		}
+		if (count >= request->req_fors->count())
+		{
+			request->req_fors->resize(count+1);
+		}
+		ptr = request->req_fors->begin();
 		while (csb->csb_fors)
 			*ptr++ = (BLK) LLS_POP(&csb->csb_fors);
 	}
@@ -1819,20 +1828,33 @@ REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
 /* make a vector of all invariant-type nodes, so that we will
    be able to easily reinitialize them when we restart the request */
 
-	for (temp = csb->csb_invariants, count = 0; temp; count++)
+	for (temp = csb->csb_invariants, count = 0; temp; count++) {
 		temp = temp->lls_next;
+	}
 
 	if (count) {
-		request->req_invariants =
-			ALL_vector(request->req_pool, &request->req_invariants, count);
-		ptr = request->req_invariants->vec_object;
+		if (!request->req_invariants)
+		{
+			request->req_invariants =
+				vec::newVector(*request->req_pool , count+1);
+		}
+		if (count >= request->req_invariants->count())
+		{
+			request->req_invariants->resize(count+1);
+		}
+		ptr = request->req_invariants->begin();
 		while (csb->csb_invariants)
 			*ptr++ = (BLK) LLS_POP(&csb->csb_invariants);
 	}
 
 	DEBUG;
 	tdbb->tdbb_request = old_request;
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}	// try
+	catch (...) {
+		tdbb->tdbb_request = old_request;
+		ERR_punt();
+	}
 
 	return request;
 }
@@ -1897,7 +1919,7 @@ int DLL_EXPORT CMP_post_access(TDBB			tdbb,
 	}
 
 
-	access = (ACC) ALLOCD(type_acc);
+	access = new(*tdbb->tdbb_default) acc;
 
 /* append the security class to the existing list */
 	if (last_entry)
@@ -1957,7 +1979,7 @@ void DLL_EXPORT CMP_post_resource(
 		if (resource->rsc_type == type && resource->rsc_id == id)
 			return;
 
-	resource = (RSC) ALLOCD(type_rsc);
+	resource = new(*tdbb->tdbb_default) Rsc;
 	resource->rsc_next = *rsc_ptr;
 	*rsc_ptr = resource;
 	resource->rsc_type = type;
@@ -1995,7 +2017,7 @@ void DLL_EXPORT CMP_release_resource(
 
 	DEV_BLKCHK(*rsc_ptr, type_rsc);
 
-	for (; resource = *rsc_ptr; rsc_ptr = &resource->rsc_next)
+	for (; (resource = *rsc_ptr); rsc_ptr = &resource->rsc_next)
 		if (resource->rsc_type == type && resource->rsc_id == id)
 			break;
 
@@ -2005,7 +2027,7 @@ void DLL_EXPORT CMP_release_resource(
 /* take out of the linked list and release */
 
 	*rsc_ptr = resource->rsc_next;
-	ALL_RELEASE(resource);
+	delete resource;
 }
 
 
@@ -2044,8 +2066,9 @@ void DLL_EXPORT CMP_decrement_prc_use_count(TDBB tdbb, PRC procedure)
    floating copy .i.e. an old copy or a deleted procedure.
 */
 	if ((procedure->prc_use_count == 0) &&
-		(tdbb->tdbb_database->dbb_procedures->vec_object[procedure->prc_id]
-		 != &procedure->prc_header)) {
+		( (*tdbb->tdbb_database->dbb_procedures)[procedure->prc_id]
+		 //!= &procedure->prc_header)) {
+		 != (BLK) procedure)) {
 		CMP_release(tdbb, procedure->prc_request);
 		procedure->prc_flags &= ~PRC_being_altered;
 		MET_remove_procedure(tdbb, procedure->prc_id, procedure);
@@ -2071,7 +2094,7 @@ void DLL_EXPORT CMP_release(TDBB tdbb, REQ request)
 	RSC resource;
 #ifdef GATEWAY
 	VEC vector;
-	REQ *sub_req, *end;
+	vec::iterator sub_req, end;
 #endif
 	ATT attachment;
 
@@ -2096,10 +2119,10 @@ void DLL_EXPORT CMP_release(TDBB tdbb, REQ request)
 			case rsc_index:
 				{
 					relation = resource->rsc_rel;
-					if (index =
+					if ( (index =
 						CMP_get_index_lock(tdbb, relation,
 										   resource->
-										   rsc_id)) if (!--index->idl_count)
+										   rsc_id)) ) if (!--index->idl_count)
 								LCK_release(tdbb, index->idl_lock);
 					break;
 				}
@@ -2119,11 +2142,11 @@ void DLL_EXPORT CMP_release(TDBB tdbb, REQ request)
 /* Unwind and release cursors of any sub-requests */
 
 	if (vector = request->req_sub_requests)
-		for (sub_req = (REQ *) vector->vec_object, end =
-			 sub_req + vector->vec_count; sub_req < end; sub_req++)
+		for (sub_req = vector->begin(), end = vector->end();
+			 sub_req < end; sub_req++)
 			if (*sub_req) {
-				EXE_unwind(tdbb, *sub_req);
-				FRGN_release_cursors(*sub_req);
+				EXE_unwind(tdbb, (REQ)*sub_req);
+				FRGN_release_cursors((REQ)*sub_req);
 			}
 
 /* Unwind and release cursors of top level request */
@@ -2147,7 +2170,7 @@ void DLL_EXPORT CMP_release(TDBB tdbb, REQ request)
 				break;
 			}
 
-	ALL_rlpool(request->req_pool);
+	delete request->req_pool;
 }
 
 
@@ -2165,8 +2188,10 @@ void DLL_EXPORT CMP_shutdown_database(TDBB tdbb)
  *	release any data structures.
  *
  **************************************/
-	REL relation, *ptr, *end;
-	PRC procedure, *pptr, *pend;
+	REL relation;
+	vec::iterator ptr, end;
+	PRC procedure;
+	vec::iterator pptr, pend;
 	IDL index;
 	VEC vector;
 	DBB dbb;
@@ -2183,9 +2208,8 @@ void DLL_EXPORT CMP_shutdown_database(TDBB tdbb)
 /* Go through relations and indeces and release
    all existence locks that might have been taken
 */
-	for (ptr = (REL *) vector->vec_object, end = ptr + vector->vec_count;
-		 ptr < end; ptr++)
-		if (relation = *ptr) {
+	for (ptr = vector->begin(), end = vector->end(); ptr < end; ptr++)
+		if ( (relation = (REL)*ptr) ) {
 			if (relation->rel_existence_lock) {
 				LCK_release(tdbb, relation->rel_existence_lock);
 				relation->rel_use_count = 0;
@@ -2203,9 +2227,8 @@ void DLL_EXPORT CMP_shutdown_database(TDBB tdbb)
 /* Release all procedure existence locks that
    might have been taken
 */
-	for (pptr = (PRC *) vector->vec_object, pend = pptr + vector->vec_count;
-		 pptr < pend; pptr++)
-		if (procedure = *pptr) {
+	for (pptr = vector->begin(), pend = vector->end(); pptr < pend; pptr++)
+		if ( (procedure = (PRC)*pptr) ) {
 			if (procedure->prc_existence_lock) {
 				LCK_release(tdbb, procedure->prc_existence_lock);
 				procedure->prc_use_count = 0;
@@ -2232,7 +2255,7 @@ static UCHAR *alloc_map(TDBB tdbb, CSB * csb, USHORT stream)
 
 	SET_TDBB(tdbb);
 
-	string = (STR) ALLOCDV(type_str, MAP_LENGTH);
+	string = new(*tdbb->tdbb_default, MAP_LENGTH) str;
 	string->str_length = MAP_LENGTH;
 	(*csb)->csb_rpt[stream].csb_map = (UCHAR *) string->str_data;
 /* TMN: Here we should really have the following assert */
@@ -2724,7 +2747,7 @@ static void expand_view_nodes(
 
 /* If the stream references a view, follow map */
 
-	if (map = csb->csb_rpt[stream].csb_map) {
+	if ( (map = csb->csb_rpt[stream].csb_map) ) {
 		++map;
 		while (*map)
 			expand_view_nodes(tdbb, csb, *map++, stack, type);
@@ -2775,8 +2798,8 @@ static void ignore_dbkey(TDBB tdbb, CSB csb, RSE rse, REL view)
 
 			stream = (USHORT) node->nod_arg[e_rel_stream];
 			csb->csb_rpt[stream].csb_flags |= csb_no_dbkey;
-			tail = csb->csb_rpt + stream;
-			if (relation = tail->csb_relation)
+			tail = &csb->csb_rpt[stream];
+			if ( (relation = tail->csb_relation) )
 				CMP_post_access(tdbb, csb, relation->rel_security_name,
 								(tail->csb_view) ? tail->csb_view : view,
 								0, 0, SCL_read, "table", relation->rel_name);
@@ -2812,7 +2835,7 @@ static NOD make_defaults(TDBB tdbb, CSB * csb, USHORT stream, NOD statement)
 	NOD node, value;
 	LLS stack;
 	VEC vector;
-	FLD *ptr1, *end;
+	vec::iterator ptr1, end;
 	REL relation;
 	USHORT field_id;
 	UCHAR *map, local_map[MAP_LENGTH];
@@ -2841,10 +2864,9 @@ static NOD make_defaults(TDBB tdbb, CSB * csb, USHORT stream, NOD statement)
 
 	stack = NULL;
 
-	for (ptr1 = (FLD *) vector->vec_object, end =
-		 ptr1 + vector->vec_count, field_id = 0; ptr1 < end;
-		 ptr1++, field_id++)
-		if (*ptr1 && (value = (*ptr1)->fld_default_value)) {
+	for (ptr1 = vector->begin(), end = vector->end(), field_id = 0;
+		     ptr1 < end; ptr1++, field_id++)
+		if (*ptr1 && (value = ((FLD)(*ptr1))->fld_default_value)) {
 			node = PAR_make_node(tdbb, e_asgn_length);
 			node->nod_type = nod_assignment;
 			node->nod_arg[e_asgn_from] =
@@ -2881,7 +2903,7 @@ static NOD make_validation(TDBB tdbb, CSB * csb, USHORT stream)
 	NOD node, validation;
 	LLS stack;
 	VEC vector;
-	FLD *ptr1, *end;
+	vec::iterator ptr1, end;
 	REL relation;
 	USHORT field_id;
 	UCHAR *map, local_map[MAP_LENGTH];
@@ -2908,10 +2930,9 @@ static NOD make_validation(TDBB tdbb, CSB * csb, USHORT stream)
 
 	stack = NULL;
 
-	for (ptr1 = (FLD *) vector->vec_object, end =
-		 ptr1 + vector->vec_count, field_id = 0; ptr1 < end;
-		 ptr1++, field_id++) {
-		if (*ptr1 && (validation = (*ptr1)->fld_validation)) {
+	for (ptr1 = vector->begin(), end = vector->end(), field_id = 0;
+		     ptr1 < end; ptr1++, field_id++) {
+		if (*ptr1 && (validation = ((FLD)(*ptr1))->fld_validation)) {
 			node = PAR_make_node(tdbb, e_val_length);
 			node->nod_type = nod_validate;
 			node->nod_arg[e_val_boolean] =
@@ -2922,7 +2943,7 @@ static NOD make_validation(TDBB tdbb, CSB * csb, USHORT stream)
 			LLS_PUSH(node, &stack);
 		}
 
-		if (*ptr1 && (validation = (*ptr1)->fld_not_null)) {
+		if (*ptr1 && (validation = ((FLD)(*ptr1))->fld_not_null)) {
 			node = PAR_make_node(tdbb, e_val_length);
 			node->nod_type = nod_validate;
 			node->nod_arg[e_val_boolean] =
@@ -3012,7 +3033,7 @@ static NOD pass1(
 					break;
 				rse->nod_flags |= rse_variant;
 			}
-			tail = (*csb)->csb_rpt + stream;
+			tail = &(*csb)->csb_rpt[stream];
 			if (!(relation = tail->csb_relation) ||
 				!(field =
 				  MET_get_field(relation,
@@ -3135,7 +3156,7 @@ static NOD pass1(
 			if (sub->nod_type != nod_field)
 				break;
 			stream = (USHORT) sub->nod_arg[e_fld_stream];
-			tail = (*csb)->csb_rpt + stream;
+			tail = &(*csb)->csb_rpt[stream];
 			if (!
 				(field =
 				 MET_get_field(tail->csb_relation,
@@ -3154,21 +3175,21 @@ static NOD pass1(
 
 	case nod_modify:
 		stream = (USHORT) node->nod_arg[e_mod_new_stream];
-		tail = (*csb)->csb_rpt + stream;
+		tail = &(*csb)->csb_rpt[stream];
 		tail->csb_flags |= csb_modify;
 		pass1_modify(tdbb, csb, node);
 		/* TMN: Here we should really have the following assert */
 		/* assert(node->nod_arg [e_mod_new_stream] <= MAX_USHORT); */
-		if (node->nod_arg[e_mod_validate] =
+		if ( (node->nod_arg[e_mod_validate] =
 			make_validation(tdbb, csb,
 							(USHORT) node->
-							nod_arg[e_mod_new_stream])) node->nod_count =
+							nod_arg[e_mod_new_stream])) ) node->nod_count =
 				MAX(node->nod_count, (USHORT) e_mod_validate + 1);
 		break;
 
 	case nod_erase:
 		stream = (USHORT) node->nod_arg[e_erase_stream];
-		tail = (*csb)->csb_rpt + stream;
+		tail = &(*csb)->csb_rpt[stream];
 		tail->csb_flags |= csb_erase;
 		pass1_erase(tdbb, csb, node);
 		break;
@@ -3183,7 +3204,7 @@ static NOD pass1(
 	case nod_store:
 		sub = node->nod_arg[e_sto_relation];
 		stream = (USHORT) sub->nod_arg[e_rel_stream];
-		tail = (*csb)->csb_rpt + stream;
+		tail = &(*csb)->csb_rpt[stream];
 		tail->csb_flags |= csb_store;
 		sub = pass1_store(tdbb, csb, node);
 		if (sub) {
@@ -3343,7 +3364,7 @@ static void pass1_erase(TDBB tdbb, CSB * csb, NOD node)
 
 	for (;;) {
 		stream = new_stream = (USHORT) node->nod_arg[e_erase_stream];
-		tail = (*csb)->csb_rpt + stream;
+		tail = &(*csb)->csb_rpt[stream];
 		tail->csb_flags |= csb_erase;
 		relation = (*csb)->csb_rpt[stream].csb_relation;
 		view = (relation->rel_view_rse) ? relation : view;
@@ -3433,7 +3454,8 @@ static NOD pass1_expand_view(
 	NOD assign, node;
 	REL relation;
 	VEC fields;
-	FLD *ptr, *end, field;
+	vec::iterator ptr, end;
+	FLD field;
 	LLS stack;
 	USHORT id = 0, new_id = 0;
 	DSC desc;
@@ -3447,9 +3469,9 @@ static NOD pass1_expand_view(
 	relation = csb->csb_rpt[org_stream].csb_relation;
 	fields = relation->rel_fields;
 
-	for (ptr = (FLD *) fields->vec_object, end = ptr + fields->vec_count, id =
-		 0; ptr < end; ptr++, id++)
-		if (*ptr && !(*ptr)->fld_computation) {
+	for (ptr = fields->begin(), end = fields->end(), id = 0;
+			ptr < end; ptr++, id++)
+		if (*ptr && !((FLD)(*ptr))->fld_computation) {
 			if (remap) {
 				field = MET_get_field(relation, id);
 				if (field->fld_source)
@@ -3463,7 +3485,7 @@ static NOD pass1_expand_view(
 			node = PAR_gen_field(tdbb, new_stream, new_id);
 			CMP_get_desc(tdbb, csb, node, &desc);
 			if (!desc.dsc_address) {
-				ALL_RELEASE(node);
+				delete node;
 				continue;
 			}
 			assign = PAR_make_node(tdbb, e_asgn_length);
@@ -3518,7 +3540,7 @@ static void pass1_modify(TDBB tdbb, CSB * csb, NOD node)
 	for (;;) {
 		stream = (USHORT) node->nod_arg[e_mod_org_stream];
 		new_stream = (USHORT) node->nod_arg[e_mod_new_stream];
-		tail = (*csb)->csb_rpt + new_stream;
+		tail = &(*csb)->csb_rpt[new_stream];
 		tail->csb_flags |= csb_modify;
 		relation = (*csb)->csb_rpt[stream].csb_relation;
 		view = (relation->rel_view_rse) ? relation : view;
@@ -4011,7 +4033,7 @@ static NOD pass1_store(TDBB tdbb, CSB * csb, NOD node)
 	for (;;) {
 		original = node->nod_arg[e_sto_relation];
 		stream = (USHORT) original->nod_arg[e_rel_stream];
-		tail = (*csb)->csb_rpt + stream;
+		tail = &(*csb)->csb_rpt[stream];
 		tail->csb_flags |= csb_store;
 		relation = (*csb)->csb_rpt[stream].csb_relation;
 		view = (relation->rel_view_rse) ? relation : view;
@@ -4428,7 +4450,7 @@ static NOD pass2(TDBB tdbb, register CSB csb, register NOD node, NOD parent)
 		{
 			NOD value;
 
-			if (value = node->nod_arg[e_asgn_missing2])
+			if ( (value = node->nod_arg[e_asgn_missing2]) )
 				pass2(tdbb, csb, value, node);
 		}
 		break;
@@ -4513,13 +4535,13 @@ static NOD pass2(TDBB tdbb, register CSB csb, register NOD node, NOD parent)
 	case nod_modify:
 		{
 			FMT format;
-			DSC *desc;
+			fmt::fmt_desc_iterator desc;
 
 			stream = (USHORT) node->nod_arg[e_mod_org_stream];
 			csb->csb_rpt[stream].csb_flags |= csb_update;
 #ifndef GATEWAY
 			format = CMP_format(tdbb, csb, stream);
-			desc = format->fmt_desc;
+			desc = format->fmt_desc.begin();
 			for (id = 0; id < format->fmt_count; id++, desc++)
 				if (desc->dsc_dtype)
 					SBM_set(tdbb, &csb->csb_rpt[stream].csb_fields, id);
@@ -4916,7 +4938,7 @@ static void plan_set(CSB csb, RSE rse, NOD plan)
 /* find the tail for the relation specified in the rse */
 
 	stream = (USHORT) plan_relation_node->nod_arg[e_rel_stream];
-	tail = csb->csb_rpt + stream;
+	tail = &csb->csb_rpt[stream];
 
 /* if the plan references a view, find the real base relation 
    we are interested in by searching the view map */
@@ -4944,9 +4966,9 @@ static void plan_set(CSB csb, RSE rse, NOD plan)
 
 		/* loop through potentially a stack of views to find the appropriate base table */
 
-		while (map_base = tail->csb_map) {
+		while ( (map_base = tail->csb_map) ) {
 			map = map_base;
-			tail = csb->csb_rpt + *map;
+			tail = &csb->csb_rpt[*map];
 			view_relation = tail->csb_relation;
 
 			/* if the plan references the view itself, make sure that
@@ -4956,7 +4978,7 @@ static void plan_set(CSB csb, RSE rse, NOD plan)
 			if (view_relation->rel_id == plan_relation->rel_id) {
 				if (!map_base[2]) {
 					map++;
-					tail = csb->csb_rpt + *map;
+					tail = &csb->csb_rpt[*map];
 				}
 				else
 					/* view %s has more than one base relation; use aliases to distinguish */
@@ -4977,7 +4999,7 @@ static void plan_set(CSB csb, RSE rse, NOD plan)
 				duplicate_map = map_base;
 				map = NULL;
 				for (duplicate_map++; *duplicate_map; duplicate_map++) {
-					duplicate_tail = csb->csb_rpt + *duplicate_map;
+					duplicate_tail = &csb->csb_rpt[*duplicate_map];
 					relation = duplicate_tail->csb_relation;
 					if (relation && relation->rel_id == plan_relation->rel_id) {
 						if (duplicate_relation)
@@ -5000,7 +5022,7 @@ static void plan_set(CSB csb, RSE rse, NOD plan)
 
 			map = map_base;
 			for (map++; *map; map++) {
-				tail = csb->csb_rpt + *map;
+				tail = &csb->csb_rpt[*map];
 				relation = tail->csb_relation;
 				alias = tail->csb_alias;
 
@@ -5200,7 +5222,7 @@ static void post_trigger_access(TDBB tdbb, CSB csb, VEC triggers, REL view)
  *
  **************************************/
 	ACC access;
-	REQ *ptr, *end;
+	vec::iterator ptr, end;
 	USHORT read_only;
 
 	SET_TDBB(tdbb);
@@ -5212,11 +5234,10 @@ static void post_trigger_access(TDBB tdbb, CSB csb, VEC triggers, REL view)
 	if (!triggers)
 		return;
 
-	for (ptr = (REQ *) triggers->vec_object, end = ptr + triggers->vec_count;
-		 ptr < end; ptr++)
+	for (ptr = triggers->begin(), end = triggers->end(); ptr < end; ptr++)
 		if (*ptr) {
 			read_only = TRUE;
-			for (access = (*ptr)->req_access; access;
+			for (access = ((REQ)(*ptr))->req_access; access;
 				 access = access->acc_next) if (access->acc_mask & ~SCL_read) {
 					read_only = FALSE;
 					break;
@@ -5226,7 +5247,7 @@ static void post_trigger_access(TDBB tdbb, CSB csb, VEC triggers, REL view)
 			   we must check for read-only to make sure people don't abuse the
 			   REFERENCES privilege */
 
-			for (access = (*ptr)->req_access; access;
+			for (access = ((REQ)(*ptr))->req_access; access;
 				 access = access->acc_next) {
 				if (read_only && (access->acc_mask & SCL_read)) {
 					access->acc_mask &= ~SCL_read;
@@ -5245,7 +5266,7 @@ static void post_trigger_access(TDBB tdbb, CSB csb, VEC triggers, REL view)
 					CMP_post_access(tdbb, csb, access->acc_security_name,
 									(access->
 									 acc_view) ? access->acc_view : view,
-									(*ptr)->req_trg_name, 0, access->acc_mask,
+									((REQ)(*ptr))->req_trg_name, 0, access->acc_mask,
 									access->acc_type, access->acc_name);
 			}
 		}
@@ -5267,7 +5288,7 @@ static void process_map(TDBB tdbb, CSB csb, NOD map, FMT * input_format)
  **************************************/
 	NOD *ptr, *end, assignment, field;
 	FMT format;
-	DSC *desc, *end_desc, desc2;
+	DSC *desc, desc2;
 	USHORT id, min, max, align;
 
 	DEV_BLKCHK(csb, type_csb);
@@ -5277,7 +5298,7 @@ static void process_map(TDBB tdbb, CSB csb, NOD map, FMT * input_format)
 	SET_TDBB(tdbb);
 
 	if (!(format = *input_format)) {
-		format = *input_format = (FMT) ALLOCDV(type_fmt, map->nod_count);
+		format = *input_format = fmt::newFmt(*tdbb->tdbb_default, map->nod_count);
 		format->fmt_count = map->nod_count;
 	}
 
@@ -5290,8 +5311,7 @@ static void process_map(TDBB tdbb, CSB csb, NOD map, FMT * input_format)
 		field = assignment->nod_arg[e_asgn_to];
 		id = (USHORT) field->nod_arg[e_fld_id];
 		if (id >= format->fmt_count) {
-			format = (FMT) ALL_extend((BLK *) input_format, id + 1);
-			format->fmt_count = id + 1;
+			format->fmt_desc.resize(id + 1);
 		}
 		desc = &format->fmt_desc[id];
 		CMP_get_desc(tdbb, csb, assignment->nod_arg[e_asgn_from], &desc2);
@@ -5357,14 +5377,15 @@ static void process_map(TDBB tdbb, CSB csb, NOD map, FMT * input_format)
 /* TMN: Here we should really have the following assert */
 /* assert(FLAG_BYTES (format->fmt_count) <= MAX_USHORT); */
 	format->fmt_length = (USHORT) FLAG_BYTES(format->fmt_count);
+	fmt::fmt_desc_iterator desc3, end_desc;
 
-	for (desc = format->fmt_desc, end_desc = desc + format->fmt_count;
-		 desc < end_desc; desc++) {
-		align = type_alignments[desc->dsc_dtype];
+	for (desc3 = format->fmt_desc.begin(), end_desc= format->fmt_desc.end();
+		 desc3 < end_desc; desc3++) {
+		align = type_alignments[desc3->dsc_dtype];
 		if (align)
 			format->fmt_length = FB_ALIGN(format->fmt_length, align);
-		desc->dsc_address = (UCHAR *) (SLONG) format->fmt_length;
-		format->fmt_length += desc->dsc_length;
+		desc3->dsc_address = (UCHAR *) (SLONG) format->fmt_length;
+		format->fmt_length += desc3->dsc_length;
 	}
 }
 
@@ -5436,5 +5457,3 @@ static BOOLEAN stream_in_rse(USHORT stream, RSE rse)
 
 	return FALSE;				/* mark this rse as variant */
 }
-
-} // extern "C"

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmp.cpp,v 1.3 2001-07-29 23:43:21 skywalker Exp $
+//	$Id: cmp.cpp,v 1.4 2001-12-24 02:50:49 tamlin Exp $
 //
 
 #include "firebird.h"
@@ -304,7 +304,6 @@ void CMP_compile_request( register REQ request)
 		case ACT_fetch:
 			cmp_fetch(action);
 			break;
-
 		}
 
 	cmp_blr(request);
@@ -1567,7 +1566,6 @@ static void cmp_sdl_fudge( REQ request, SLONG lower_bound)
 		break;
 	}
 }
-
 
 //____________________________________________________________
 //  

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.4 2001-07-29 17:42:22 skywalker Exp $ 
+  * $Id: evl.cpp,v 1.5 2001-12-24 02:50:51 tamlin Exp $ 
  */
 
 /*
@@ -91,6 +91,9 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/align.h"
 
+#ifdef DARWIN
+#include </usr/include/time.h>
+#endif
 
 extern "C" {
 
@@ -143,7 +146,7 @@ static DSC *lock_state(TDBB, NOD, VLU);
 static DSC *multiply(DSC *, VLU, NOD);
 static DSC *multiply2(DSC *, VLU, NOD);
 static DSC *divide2(DSC *, VLU, NOD);
-static DSC *negate(TDBB, DSC *, VLU);
+static DSC *negate_dsc(TDBB, DSC *, VLU);
 static DSC *record_version(TDBB, NOD, VLU);
 static BOOLEAN reject_duplicate(UCHAR *, UCHAR *, int);
 static DSC *scalar(TDBB, NOD, VLU);
@@ -433,6 +436,10 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, register NOD node)
 			|| (*ptr)->nod_type == nod_ansi_all) request->req_flags |=
 				req_ansi_not;
 		value = EVL_boolean(tdbb, *ptr++);
+                break;
+        
+        default:   /* Shut up some compiler warnings */
+            break;
 	}
 
 /* Evaluate node */
@@ -515,11 +522,11 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, register NOD node)
 			}
 			RSE_open(tdbb,
 					 reinterpret_cast <
-					 struct rsb *>(node->nod_arg[e_any_rsb]));
+					 struct Rsb *>(node->nod_arg[e_any_rsb]));
 			value =
 				RSE_get_record(tdbb,
 							   reinterpret_cast <
-							   struct rsb *>(node->nod_arg[e_any_rsb]),
+							   struct Rsb *>(node->nod_arg[e_any_rsb]),
 #ifdef SCROLLABLE_CURSORS
 							   RSE_get_next);
 #else
@@ -527,7 +534,7 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, register NOD node)
 #endif
 			RSE_close(tdbb,
 					  reinterpret_cast <
-					  struct rsb *>(node->nod_arg[e_any_rsb]));
+					  struct Rsb *>(node->nod_arg[e_any_rsb]));
 			if (node->nod_type == nod_any)
 				request->req_flags &= ~req_null;
 
@@ -632,27 +639,27 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, register NOD node)
 			}
 
 			RSE_open(tdbb,
-					 reinterpret_cast < rsb * >(node->nod_arg[e_any_rsb]));
-			if (value =
+					 reinterpret_cast < Rsb * >(node->nod_arg[e_any_rsb]));
+			if ( (value =
 				RSE_get_record(tdbb,
 							   reinterpret_cast <
-							   rsb * >(node->nod_arg[e_any_rsb]),
+							   Rsb * >(node->nod_arg[e_any_rsb]),
 #ifdef SCROLLABLE_CURSORS
-							   RSE_get_next))
+							   RSE_get_next)) )
 #else
-							   RSE_get_forward))
+							   RSE_get_forward)) )
 #endif
 				value =
 				!RSE_get_record(tdbb,
 								reinterpret_cast <
-								rsb * >(node->nod_arg[e_any_rsb]),
+								Rsb * >(node->nod_arg[e_any_rsb]),
 #ifdef SCROLLABLE_CURSORS
 								RSE_get_next);
 #else
 								RSE_get_forward);
 #endif
 			RSE_close(tdbb,
-					  reinterpret_cast < rsb * >(node->nod_arg[e_any_rsb]));
+					  reinterpret_cast < Rsb * >(node->nod_arg[e_any_rsb]));
 
 			/* If this is an invariant node, save the return value. */
 
@@ -690,7 +697,7 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, register NOD node)
 }
 
 
-DSC *DLL_EXPORT EVL_expr(TDBB tdbb, register NOD node)
+DSC* DLL_EXPORT EVL_expr(TDBB tdbb, register NOD node)
 {
 /**************************************
  *
@@ -767,28 +774,26 @@ DSC *DLL_EXPORT EVL_expr(TDBB tdbb, register NOD node)
 
 	case nod_field:
 		{
-			REC record;
-
-			record =
-				request->req_rpb[(int) node->
-								 nod_arg[e_fld_stream]].rpb_record;
+			REC record =
+				request->req_rpb[(int)node->nod_arg[e_fld_stream]].rpb_record;
 			/* In order to "map a null to a default" value (in EVL_field()), 
 			 * the relation block is referenced. 
 			 * Reference: Bug 10116, 10424 
 			 */
-			if (!EVL_field
-				(request->
-				 req_rpb[(USHORT) node->nod_arg[e_fld_stream]].rpb_relation,
-				 record, (USHORT) node->nod_arg[e_fld_id], &impure->vlu_desc))
+			if (!EVL_field(request->req_rpb[(USHORT) node->nod_arg[e_fld_stream]].rpb_relation,
+							record,
+							(USHORT) node->nod_arg[e_fld_id],
+							&impure->vlu_desc))
+			{
 				request->req_flags |= req_null;
+			}
 			return &impure->vlu_desc;
 		}
 
 	case nod_function:
-		FUN_evaluate(reinterpret_cast <
-					 fun * >(node->nod_arg[e_fun_function]),
+		FUN_evaluate(reinterpret_cast<fun*>(node->nod_arg[e_fun_function]),
 					 node->nod_arg[e_fun_args],
-					 reinterpret_cast < vlu * >(&impure->vlu_desc));
+					 reinterpret_cast<vlu*>(&impure->vlu_desc));
 		return &impure->vlu_desc;
 
 	case nod_literal:
@@ -1036,6 +1041,8 @@ DSC *DLL_EXPORT EVL_expr(TDBB tdbb, register NOD node)
 		impure->vlu_desc.dsc_address = (UCHAR *) & impure->vlu_misc.vlu_long;
 		return &impure->vlu_desc;
 #endif
+        default:   /* Shut up some compiler warnings */
+            break;
 	}
 
 	{
@@ -1087,7 +1094,7 @@ DSC *DLL_EXPORT EVL_expr(TDBB tdbb, register NOD node)
 			return &impure->vlu_desc;
 
 		case nod_negate:
-			return negate(tdbb, values[0], impure);
+			return negate_dsc(tdbb, values[0], impure);
 
 		case nod_substr:
 			return substring(tdbb, impure,
@@ -1132,7 +1139,7 @@ BOOLEAN DLL_EXPORT EVL_field(register REL relation,
 		return FALSE;
 	}
 
-	if (format = record->rec_format)
+	if ( (format = record->rec_format) )
 		*desc = format->fmt_desc[id];
 
 	if (!format || id >= format->fmt_count || !desc->dsc_length) {
@@ -1158,11 +1165,9 @@ BOOLEAN DLL_EXPORT EVL_field(register REL relation,
 				MET_scan_relation(tdbb, relation);
 			}
 
-			if (temp_field =
-				reinterpret_cast <
-				fld *
-				>(relation->rel_fields->
-				  vec_object[id])) if (temp_field->fld_default_value
+			if ( (temp_field =
+				reinterpret_cast <fld *>((fld*)(*relation->rel_fields)[id])) )
+					if (temp_field->fld_default_value
 									   && temp_field->fld_not_null) {
 					if (temp_field->fld_default_value->nod_type ==
 						nod_user_name) {
@@ -1399,19 +1404,22 @@ USHORT DLL_EXPORT EVL_group(TDBB tdbb, BLK rsb, NOD node, USHORT state)
 		case nod_literal:		/* pjpg 20001124 */
 			EXE_assignment(tdbb, *ptr);
 			break;
+
+                default:    /* Shut up some compiler warnings */
+                    break;
 		}
 	}
 
 /* If there isn't a record pending, open the stream and get one */
 
 	if ((state == 0) || (state == 3)) {
-		RSE_open(tdbb, reinterpret_cast < struct rsb *>(rsb));
+		RSE_open(tdbb, reinterpret_cast < struct Rsb *>(rsb));
 #ifdef SCROLLABLE_CURSORS
 		if (!RSE_get_record
-			(tdbb, reinterpret_cast < struct rsb *>(rsb), RSE_get_next))
+			(tdbb, reinterpret_cast < struct Rsb *>(rsb), RSE_get_next))
 #else
 		if (!RSE_get_record
-			(tdbb, reinterpret_cast < struct rsb *>(rsb), RSE_get_forward))
+			(tdbb, reinterpret_cast < struct Rsb *>(rsb), RSE_get_forward))
 #endif
 		{
 			if (group)
@@ -1564,7 +1572,7 @@ USHORT DLL_EXPORT EVL_group(TDBB tdbb, BLK rsb, NOD node, USHORT state)
 		if (!RSE_get_record(tdbb, rsb, RSE_get_next))
 #else
 		if (!RSE_get_record
-			(tdbb, reinterpret_cast < struct rsb *>(rsb), RSE_get_forward))
+			(tdbb, reinterpret_cast < struct Rsb *>(rsb), RSE_get_forward))
 #endif
 			  state = 2;
 	}
@@ -1574,7 +1582,7 @@ USHORT DLL_EXPORT EVL_group(TDBB tdbb, BLK rsb, NOD node, USHORT state)
 /* Finish up any residual computations and get out */
 
 	if (vtemp.vlu_string)
-		ALL_release(reinterpret_cast < frb * >(vtemp.vlu_string));
+		delete vtemp.vlu_string;
 
 	for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++) {
 		from = (*ptr)->nod_arg[e_asgn_from];
@@ -1658,6 +1666,9 @@ USHORT DLL_EXPORT EVL_group(TDBB tdbb, BLK rsb, NOD node, USHORT state)
 			}
 			MOV_move(&temp, EVL_expr(tdbb, field));
 			break;
+
+                default: /* Shut up some compiler warnings */
+                    break;
 		}
 	}
 
@@ -1743,12 +1754,12 @@ void DLL_EXPORT EVL_make_value(TDBB tdbb, DSC * desc, VLU value)
 /* Allocate a string block of sufficient size. */
 
 		if ((string = value->vlu_string) && string->str_length < length) {
-			ALL_release(reinterpret_cast < frb * >(string));
+			delete string;
 			string = NULL;
 		}
 
 		if (!string) {
-			string = value->vlu_string = (STR) ALLOCDV(type_str, length);
+			string = value->vlu_string = new(*tdbb->tdbb_default, length) str();
 			string->str_length = length;
 		}
 
@@ -1804,11 +1815,11 @@ USHORT DLL_EXPORT EVL_mb_contains(TDBB tdbb,
 																	  &err_pos);
 
 	if (len1 > sizeof(buffer1)) {
-		buf1 = (STR) ALLOCDV(type_str, len1);
+		buf1 = new(*tdbb->tdbb_default, len1) str();
 		pp1 = (USHORT *) buf1->str_data;
 	}
 	if (len2 > sizeof(buffer2)) {
-		buf2 = (STR) ALLOCDV(type_str, len2);
+		buf2 = new(*tdbb->tdbb_default, len2) str();
 		pp2 = (USHORT *) buf2->str_data;
 	}
 
@@ -1830,9 +1841,9 @@ USHORT DLL_EXPORT EVL_mb_contains(TDBB tdbb,
 	ret_val = EVL_wc_contains(tdbb, obj, pp1, len1, pp2, len2);
 
 	if (pp1 != buffer1)
-		ALL_release(reinterpret_cast < frb * >(buf1));
+		delete buf1;
 	if (pp2 != buffer2)
-		ALL_release(reinterpret_cast < frb * >(buf2));
+		delete buf2;
 
 	return ret_val;
 }
@@ -1883,11 +1894,11 @@ USHORT DLL_EXPORT EVL_mb_like(TDBB tdbb,
 																	&err_code,
 																	&err_pos);
 	if (len1 > sizeof(buffer1)) {
-		buf1 = (STR) ALLOCDV(type_str, len1);
+		buf1 = new(*tdbb->tdbb_default, len1) str();
 		pp1 = (USHORT *) buf1->str_data;
 	}
 	if (len2 > sizeof(buffer2)) {
-		buf2 = (STR) ALLOCDV(type_str, len2);
+		buf2 = new(*tdbb->tdbb_default, len2) str();
 		pp2 = (USHORT *) buf2->str_data;
 	}
 
@@ -1909,9 +1920,9 @@ USHORT DLL_EXPORT EVL_mb_like(TDBB tdbb,
 	ret_val = EVL_wc_like(tdbb, obj, pp1, len1, pp2, len2, escape_char);
 
 	if (pp1 != buffer1)
-		ALL_release(reinterpret_cast<frb*>(buf1));
+		delete buf1;
 	if (pp2 != buffer2)
-		ALL_release(reinterpret_cast<frb*>(buf2));
+		delete buf2;
 
 	return ret_val;
 }
@@ -1958,11 +1969,11 @@ USHORT DLL_EXPORT EVL_mb_matches(TDBB tdbb,
 																	  &err_code,
 																	  &err_pos);
 	if (len1 > sizeof(buffer1)) {
-		buf1 = (STR) ALLOCDV(type_str, len1);
+		buf1 = new(*tdbb->tdbb_default, len1) str();
 		pp1 = (USHORT *) buf1->str_data;
 	}
 	if (len2 > sizeof(buffer2)) {
-		buf2 = (STR) ALLOCDV(type_str, len2);
+		buf2 = new(*tdbb->tdbb_default, len2) str();
 		pp2 = (USHORT *) buf2->str_data;
 	}
 
@@ -1984,9 +1995,9 @@ USHORT DLL_EXPORT EVL_mb_matches(TDBB tdbb,
 	ret_val = EVL_wc_matches(tdbb, obj, pp1, len1, pp2, len2);
 
 	if (pp1 != buffer1)
-		ALL_release(reinterpret_cast < frb * >(buf1));
+		delete buf1;
 	if (pp2 != buffer2)
-		ALL_release(reinterpret_cast < frb * >(buf2));
+		delete buf2;
 
 	return ret_val;
 }
@@ -2037,7 +2048,7 @@ USHORT DLL_EXPORT EVL_mb_sleuth_check(TDBB tdbb,
 																	  &err_code,
 																	  &err_pos);
 	if (len1 > sizeof(buffer1)) {
-		buf1 = (STR) ALLOCDV(type_str, len1);
+		buf1 = new(*tdbb->tdbb_default, len1) str();
 		pp1 = (USHORT *) buf1->str_data;
 	}
 
@@ -2056,7 +2067,7 @@ USHORT DLL_EXPORT EVL_mb_sleuth_check(TDBB tdbb,
 							match_bytes);
 
 	if (pp1 != buffer1)
-		ALL_release(reinterpret_cast < frb * >(buf1));
+		delete buf1;
 
 	return ret_val;
 }
@@ -2111,11 +2122,11 @@ USHORT DLL_EXPORT EVL_mb_sleuth_merge(TDBB tdbb,
 																	  &err_code,
 																	  &err_pos);
 	if (len1 > sizeof(buffer1)) {
-		buf1 = (STR) ALLOCDV(type_str, len1);
+		buf1 = new(*tdbb->tdbb_default, len1) str();
 		pp1 = (USHORT *) buf1->str_data;
 	}
 	if (len2 > sizeof(buffer2)) {
-		buf2 = (STR) ALLOCDV(type_str, len2);
+		buf2 = new(*tdbb->tdbb_default, len2) str();
 		pp2 = (USHORT *) buf2->str_data;
 	}
 
@@ -2142,9 +2153,9 @@ USHORT DLL_EXPORT EVL_mb_sleuth_merge(TDBB tdbb,
 								  combined_bytes);
 
 	if (pp1 != buffer1)
-		ALL_release(reinterpret_cast < frb * >(buf1));
+		delete buf1;
 	if (pp2 != buffer2)
-		ALL_release(reinterpret_cast < frb * >(buf2));
+		delete buf2;
 
 	return ret_val;
 }
@@ -3123,12 +3134,12 @@ static DSC *cast(TDBB tdbb, DSC * value, NOD node, VLU impure)
 		/* Allocate a string block of sufficient size. */
 
 		if ((string = impure->vlu_string) && string->str_length < length) {
-			ALL_release(reinterpret_cast < frb * >(string));
+			delete string;
 			string = NULL;
 		}
 
 		if (!string) {
-			string = impure->vlu_string = (STR) ALLOCDV(type_str, length);
+			string = impure->vlu_string = new(*tdbb->tdbb_default, length) str();
 			string->str_length = length;
 		}
 
@@ -3217,6 +3228,9 @@ static SSHORT compute_agg_distinct(TDBB tdbb, NOD node)
 			++impure->vlux_count;
 			++impure->vlu_misc.vlu_long;
 			break;
+
+                default:  /* Shut up some warnings */
+                    break;
 		}
 	}
 
@@ -3315,7 +3329,7 @@ static DSC *concatenate(TDBB tdbb, NOD node, VLU impure)
 			while (--length2);
 
 		if (temp3)
-			ALL_release(reinterpret_cast < frb * >(temp3));
+			delete temp3;
 	}
 	return &impure->vlu_desc;
 }
@@ -3480,14 +3494,14 @@ static DSC *eval_statistical(TDBB tdbb, NOD node, VLU impure)
 	count = 0;
 
 	rsb = (BLK) node->nod_arg[e_stat_rsb];
-	RSE_open(tdbb, reinterpret_cast < struct rsb *>(rsb));
+	RSE_open(tdbb, reinterpret_cast < struct Rsb *>(rsb));
 
 /* Handle each variety separately */
 
 	switch (node->nod_type) {
 	case nod_count:
 		flag = 0;
-		while (RSE_get_record(tdbb, reinterpret_cast < struct rsb *>(rsb),
+		while (RSE_get_record(tdbb, reinterpret_cast < struct Rsb *>(rsb),
 #ifdef SCROLLABLE_CURSORS
 							  RSE_get_next))
 #else
@@ -3498,7 +3512,7 @@ static DSC *eval_statistical(TDBB tdbb, NOD node, VLU impure)
 
 	case nod_count2:
 		flag = 0;
-		while (RSE_get_record(tdbb, reinterpret_cast < struct rsb *>(rsb),
+		while (RSE_get_record(tdbb, reinterpret_cast < struct Rsb *>(rsb),
 #ifdef SCROLLABLE_CURSORS
 							  RSE_get_next))
 #else
@@ -3513,7 +3527,7 @@ static DSC *eval_statistical(TDBB tdbb, NOD node, VLU impure)
 
 	case nod_min:
 	case nod_max:
-		while (RSE_get_record(tdbb, reinterpret_cast < struct rsb *>(rsb),
+		while (RSE_get_record(tdbb, reinterpret_cast < struct Rsb *>(rsb),
 #ifdef SCROLLABLE_CURSORS
 							  RSE_get_next))
 #else
@@ -3534,7 +3548,7 @@ static DSC *eval_statistical(TDBB tdbb, NOD node, VLU impure)
 		break;
 
 	case nod_from:
-		if (RSE_get_record(tdbb, reinterpret_cast < struct rsb *>(rsb),
+		if (RSE_get_record(tdbb, reinterpret_cast < struct Rsb *>(rsb),
 #ifdef SCROLLABLE_CURSORS
 						   RSE_get_next))
 #else
@@ -3555,7 +3569,7 @@ static DSC *eval_statistical(TDBB tdbb, NOD node, VLU impure)
 
 	case nod_average:			/* total or average with dialect-1 semantics */
 	case nod_total:
-		while (RSE_get_record(tdbb, reinterpret_cast < struct rsb *>(rsb),
+		while (RSE_get_record(tdbb, reinterpret_cast < struct Rsb *>(rsb),
 #ifdef SCROLLABLE_CURSORS
 								RSE_get_next))
 #else
@@ -3588,7 +3602,7 @@ static DSC *eval_statistical(TDBB tdbb, NOD node, VLU impure)
 		break;
 
 	case nod_average2:			/* average with dialect-3 semantics */
-		while (RSE_get_record(tdbb, reinterpret_cast < struct rsb *>(rsb),
+		while (RSE_get_record(tdbb, reinterpret_cast < struct Rsb *>(rsb),
 #ifdef SCROLLABLE_CURSORS
 							  RSE_get_next))
 #else
@@ -3638,7 +3652,7 @@ static DSC *eval_statistical(TDBB tdbb, NOD node, VLU impure)
 
 /* Close stream and return value */
 
-	RSE_close(tdbb, reinterpret_cast < struct rsb *>(rsb));
+	RSE_close(tdbb, reinterpret_cast < struct Rsb *>(rsb));
 	request->req_flags &= ~req_null;
 	request->req_flags |= flag;
 
@@ -4022,7 +4036,6 @@ static DSC *lock_state(TDBB tdbb, NOD node, VLU impure)
 			/* fill out a lock block, zeroing it out first */
 
 			MOVE_CLEAR(&temp_lock, sizeof(struct lck));
-			temp_lock.lck_header.blk_type = type_lck;
 			temp_lock.lck_parent = dbb->dbb_lock;
 			temp_lock.lck_type = LCK_attachment;
 			temp_lock.lck_owner_handle =
@@ -4326,7 +4339,7 @@ static DSC *divide2(DSC * desc, VLU value, NOD node)
 }
 
 
-static DSC *negate(TDBB tdbb, DSC * desc, VLU value)
+static DSC *negate_dsc(TDBB tdbb, DSC * desc, VLU value)
 {
 /**************************************
  *
@@ -4553,10 +4566,10 @@ static SSHORT sleuth(TDBB tdbb, NOD node, DSC * desc1, DSC * desc2)
 
 #ifdef STACK_REDUCTION
 /* do a block allocate */
-	temp_str = (STR) ALLOCDV(type_str, ((SLONG)
+	temp_str = new(*tdbb->tdbb_default, ((SLONG)
 										(sizeof(UCHAR) *
 										 (2 * TEMP_LENGTH + BUFFER_LARGE +
-										  BUFFER_SMALL))));
+										  BUFFER_SMALL)))) str();
 	temp1 = temp_str->str_data;
 	temp2 = temp1 + TEMP_LENGTH;
 	buffer = temp2 + TEMP_LENGTH;
@@ -4640,15 +4653,15 @@ static SSHORT sleuth(TDBB tdbb, NOD node, DSC * desc1, DSC * desc2)
 	}
 
 	if (data_str)
-		ALL_release(reinterpret_cast < frb * >(data_str));
+		delete data_str;
 	if (sleuth_str)
-		ALL_release(reinterpret_cast < frb * >(sleuth_str));
+		delete sleuth_str;
 	if (match_str)
-		ALL_release(reinterpret_cast < frb * >(match_str));
+		delete match_str;
 
 #ifdef STACK_REDUCTION
 /*  block de-alloc all local variables */
-	ALL_release(temp_str);
+	delete temp_str;
 #endif
 	return ret_val;
 }
@@ -4688,9 +4701,9 @@ static SSHORT string_boolean(TDBB tdbb, NOD node, DSC * desc1, DSC * desc2)
 #ifdef STACK_REDUCTION
 /*  do a block allocation of local variables */
 	temp_str =
-		(STR) ALLOCDV(type_str,
+		new(*tdbb->tdbb_default,
 					  (SLONG) (sizeof(UCHAR) *
-							   (2 * TEMP_LENGTH + BUFFER_LARGE)));
+							   (2 * TEMP_LENGTH + BUFFER_LARGE))) str();
 	temp1 = temp_str->str_data;
 	temp2 = temp1 + TEMP_LENGTH;
 	buffer = temp2 + TEMP_LENGTH;
@@ -4764,11 +4777,11 @@ static SSHORT string_boolean(TDBB tdbb, NOD node, DSC * desc1, DSC * desc2)
 	}
 
 	if (match_str)
-		ALL_release(reinterpret_cast < frb * >(match_str));
+		delete match_str;
 
 #ifdef STACK_REDUCTION
 /*  do a block deallocation of local variables */
-	ALL_release(temp_str);
+	delete temp_str;
 #endif
 	return ret_val;
 }
@@ -4836,7 +4849,7 @@ static SSHORT string_function(
 			UCHAR *temp3;
 
 			SET_TDBB(tdbb);
-			temp_str = (STR) ALLOCDV(type_str, (sizeof(UCHAR) * TEMP_LENGTH));
+			temp_str = new(*tdbb->tdbb_default, (sizeof(UCHAR) * TEMP_LENGTH)) str();
 			temp3 = temp_str->str_data;
 #endif
 
@@ -4856,7 +4869,7 @@ static SSHORT string_function(
 				ERR_post(gds_like_escape_invalid, 0);
 
 #ifdef STACK_REDUCTION
-			ALL_release(temp_str);
+			delete temp_str;
 #endif
 		}
 		return reinterpret_cast < USHORT(*)(...) >

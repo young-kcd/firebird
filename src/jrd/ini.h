@@ -63,9 +63,9 @@ gfld_MAX} GFLDS;
 /* Pick up actual global fields */
 
 #ifndef GPRE
-#define FIELD(type,name,dtype,length,sub_type,ods,dflt_blr)	(UCHAR) type, (UCHAR) name, dtype, length, sub_type, ods, dflt_blr, sizeof (dflt_blr),
+#define FIELD(type,name,dtype,length,sub_type,ods,dflt_blr)	{ (UCHAR) type, (UCHAR) name, dtype, length, sub_type, ods, dflt_blr, sizeof (dflt_blr) },
 #else
-#define FIELD(type,name,dtype,length,sub_type,ods,dflt_blr)	(UCHAR) type, (UCHAR) name, dtype, length, sub_type, ods, NULL, 0,
+#define FIELD(type,name,dtype,length,sub_type,ods,dflt_blr)	{ (UCHAR) type, (UCHAR) name, dtype, length, sub_type, ods, NULL, 0 },
 #endif
 
 typedef struct gfld
@@ -82,7 +82,7 @@ typedef struct gfld
 
 static CONST struct gfld FAR_VARIABLE gfields[] = {
 #include "../jrd/fields.h"
-	0, 0, dtype_null, 0, 0, 0, NULL, 0
+	{ 0, 0, dtype_null, 0, 0, 0, NULL, 0 }
 };
 #undef FIELD
 

@@ -17,7 +17,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: align.cpp,v 1.2 2001-07-29 17:42:21 skywalker Exp $
+$Id: align.cpp,v 1.3 2001-12-24 02:50:50 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -137,26 +137,24 @@ static int check_double()
 	long vector[3];
 #endif
 
-	if (SETJMP(env))
+	try {
+		signal(SIGBUS, handler);
+		signal(SIGSEGV, handler);
+		p = (double *) &vector[0];
+		*p = 3;
+		*p *= 2.5;
+		p = (double *) &vector[1];
+		*p = 3;
+		*p *= 2.5;
+	}
+	catch(...) {
 		return 1;
-
-	signal(SIGBUS, handler);
-	signal(SIGSEGV, handler);
-	p = (double *) &vector[0];
-	*p = 3;
-	*p *= 2.5;
-	p = (double *) &vector[1];
-	*p = 3;
-	*p *= 2.5;
+	}
 
 	return 0;
 }
 
-#ifdef __STDC__
-static void handler(void)
-#else
 static void handler()
-#endif
 {
-	LONGJMP(env, 1);
+	Firebird::status_longjmp_error::raise(1);
 }

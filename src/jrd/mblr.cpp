@@ -213,7 +213,7 @@ static int index_def(MET mblr)
  *	Translate a index modify / update / delete.
  *
  **************************************/
-	int op, result;
+	int result;
 
 	result = TRUE;
 
@@ -263,7 +263,7 @@ static int relation_def(MET mblr)
  *	Translate a relation modify / update / delete.
  *
  **************************************/
-	int op, result;
+	int result;
 
 	level = result = TRUE;
 
@@ -306,7 +306,7 @@ static int view_def(MET mblr)
  *	Translate a view modify / update / delete.
  *
  **************************************/
-	int op, result;
+	int result;
 
 	result = TRUE;
 
@@ -508,7 +508,7 @@ static int parse_mblr(MET mblr)
  *	Primary recursive routine to translate mblr.
  *
  ***************************************************/
-	int op, result, i, save_area;
+	int op, result, save_area;
 	UCHAR *save_dyn;
 
 	if (!mblr->met_mblr_length)

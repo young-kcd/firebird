@@ -1,14 +1,14 @@
 
-#ifndef _FirebirdConfig_H
-#define _FirebirdConfig_H
+#ifndef FIREBIRDCONFIG_H
+#define FIREBIRDCONFIG_H
 
-#include <iostream>
-#include <fstream>
-#include <string>
+#include "../include/fb_types.h"
+#include "../include/fb_string.h"
 
-
-class FirebirdConfig {
+class FirebirdConfig
+{
 public:
+	typedef Firebird::string string;
 
     static string getSysString(const string& key);
     static int    getSysInt(const string& key);
@@ -35,4 +35,4 @@ public:
 
 };
 
-#endif
+#endif	// FIREBIRDCONFIG_H

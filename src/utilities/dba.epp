@@ -44,6 +44,7 @@
 #include "../jrd/enc_proto.h"
 #ifdef SUPERSERVER
 #include "../utilities/cmd_util_proto.h"
+#include "../jrd/thd_proto.h"
 #endif
 
 #ifdef HAVE_UNISTD_H
@@ -226,8 +227,11 @@ static struct tdba *gddba;
 #define RESTORE_THREAD_DATA
 #endif
 
+//#define EXIT(code)	            {  tddba->exit_code = code;        \
+//                                   LONGJMP(*reinterpret_cast<jmp_buf*>(&tddba->dba_env), 1);  }
+
 #define EXIT(code)	            {  tddba->exit_code = code;        \
-                                   LONGJMP((jmp_buf) tddba->dba_env, 1);  }
+									Firebird::status_longjmp_error::raise(0);  }
 
 #define GSTAT_MSG_FAC	21
 
@@ -245,7 +249,7 @@ static BOOLEAN fAnsiCP = FALSE;
 int main_gstat( SVC service)
 #else
 
-int CLIB_ROUTINE main( int argc, char **argv)
+int CLIB_ROUTINE main(int argc, char **argv)
 #endif
 {
 /**************************************
@@ -309,90 +313,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	argv = service->svc_argv;
 #endif
 
-	if (SETJMP(env)) {
-		int exit_code;
-
-		/* free mem */
-
-		if (status_vector[1]) {
-			STATUS *vector;
-			SCHAR s[1024];
-#ifdef SUPERSERVER
-			STATUS *status;
-			int i = 0, j;
-
-			status = tddba->dba_service_blk->svc_status;
-			if (status != status_vector) {
-				while (*status && (++i < ISC_STATUS_LENGTH))
-					status++;
-				for (j = 0; status_vector[j] && (i < ISC_STATUS_LENGTH);
-					 j++, i++)
-					*status++ = status_vector[j];
-			}
-#endif
-			vector = status_vector;
-			if (isc_interprete(s, &vector)) {
-				FPRINTF(tddba->sw_outfile, "%s\n", s);
-				s[0] = '-';
-				while (isc_interprete(s + 1, &vector))
-					FPRINTF(tddba->sw_outfile, "%s\n", s);
-			}
-		}
-
-		/* if there still exists a database handle, disconnect from the
-		 * server
-		 */
-		FINISH;
-
-#ifdef SUPERSERVER
-		SVC_STARTED(service);
-		alloced = tddba->head_of_mem_list;
-		while (alloced != 0) {
-			free(alloced->memory);
-			alloced = alloced->mem_next;
-		}
-
-		/* close files */
-		open_file = tddba->head_of_files_list;
-		while (open_file) {
-			db_close(open_file->desc);
-			open_file = open_file->open_files_next;
-		}
-
-		/* free linked lists */
-		while (tddba->head_of_files_list != 0) {
-			tmp1 = tddba->head_of_files_list;
-			tddba->head_of_files_list =
-				tddba->head_of_files_list->open_files_next;
-			free(tmp1);
-		}
-
-		while (tddba->head_of_mem_list != 0) {
-			tmp2 = tddba->head_of_mem_list;
-			tddba->head_of_mem_list = tddba->head_of_mem_list->mem_next;
-			free(tmp2);
-		}
-
-		service->svc_handle = 0;
-		if (service->svc_service->in_use != NULL)
-			*(service->svc_service->in_use) = FALSE;
-
-		/* Mark service thread as finished and cleanup memory being
-		 * used by service in case if client detached from the service
-		 */
-
-		SVC_finish(service, SVC_finished);
-#endif
-
-		exit_code = tddba->exit_code;
-		RESTORE_THREAD_DATA;
-
-#ifdef SUPERSERVER
-		return exit_code;
-#else
-		exit(exit_code);
-#endif
-	}
+	try {
 
 #ifdef SUPERSERVER
 	sw_outfile = tddba->sw_outfile = service;
@@ -595,8 +516,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 #ifdef SUPERSERVER
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
 								GSTAT_MSG_FAC, 3,
-								isc_arg_number, ODS_VERSION,
-								isc_arg_number, header->hdr_ods_version,
+								isc_arg_number, reinterpret_cast<void*>(ODS_VERSION),
+								isc_arg_number, reinterpret_cast<void*>(header->hdr_ods_version),
 								0, NULL, 0, NULL, 0, NULL);
 #endif
 		dba_error(3, (TEXT *) ODS_VERSION, (TEXT *) header->hdr_ods_version,
@@ -730,11 +651,15 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	FOR(TRANSACTION_HANDLE transact1 REQUEST_HANDLE request1)
 		X IN RDB$RELATIONS SORTED BY DESC X.RDB$RELATION_NAME
-			if (!sw_system && X.RDB$SYSTEM_FLAG)
-			  continue;
-		if (!X.RDB$VIEW_BLR.NULL || !X.RDB$EXTERNAL_FILE.NULL)
+
+		if (!sw_system && X.RDB$SYSTEM_FLAG) {
+		  continue;
+		}
+		if (!X.RDB$VIEW_BLR.NULL || !X.RDB$EXTERNAL_FILE.NULL) {
 			continue;
-		if (sw_relation) {
+		}
+		if (sw_relation)
+		{
 			truncate_name(X.RDB$RELATION_NAME);
 			for (relation = tddba->relations; relation; relation = relation->rel_next)
                 if (!(strcmp(relation->rel_name, X.RDB$RELATION_NAME))) {
@@ -744,7 +669,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			if (!relation)
 				continue;
 		}
-		else {
+		else
+		{
 			relation = (REL) ALLOC(sizeof(struct rel));
 			relation->rel_next = tddba->relations;
 			tddba->relations = relation;
@@ -757,10 +683,12 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			Y IN RDB$PAGES WITH Y.RDB$RELATION_ID EQ relation->rel_id AND
 				Y.RDB$PAGE_SEQUENCE EQ 0 
 
-            if (Y.RDB$PAGE_TYPE == pag_pointer)
+			if (Y.RDB$PAGE_TYPE == pag_pointer) {
 				relation->rel_pointer_page = Y.RDB$PAGE_NUMBER;
-            if (Y.RDB$PAGE_TYPE == pag_root)
+			}
+            if (Y.RDB$PAGE_TYPE == pag_root) {
 				relation->rel_index_root = Y.RDB$PAGE_NUMBER;
+			}
 		END_FOR;
 		ON_ERROR
 			EXIT(FINI_ERROR);
@@ -786,12 +714,15 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		EXIT(FINI_ERROR);
 	END_ERROR
 
-	if (request1)
+	if (request1) {
 		isc_release_request(status_vector, &request1);
-	if (request2)
+	}
+	if (request2) {
 		isc_release_request(status_vector, &request2);
-	if (request3)
+	}
+	if (request3) {
 		isc_release_request(status_vector, &request3);
+	}
 
 	COMMIT transact1;
 	ON_ERROR
@@ -805,23 +736,30 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	dba_print(10, 0, 0, 0, 0, 0);	/* msg 10: \nAnalyzing database pages ...\n */
 
-	for (relation = tddba->relations; relation; relation = relation->rel_next) {
-		if (relation->rel_id == -1)
+	for (relation = tddba->relations; relation; relation = relation->rel_next)
+	{
+		if (relation->rel_id == -1) {
 			continue;
-		if (sw_data)
+		}
+		if (sw_data) {
 			analyze_data(relation, sw_record);
-		for (index = relation->rel_indexes; index; index = index->idx_next)
+		}
+		for (index = relation->rel_indexes; index; index = index->idx_next) {
 			analyze_index(relation, index);
+		}
 	}
 
 /* Print results */
 
-	for (relation = tddba->relations; relation; relation = relation->rel_next) {
-		if (relation->rel_id == -1)
+	for (relation = tddba->relations; relation; relation = relation->rel_next)
+	{
+		if (relation->rel_id == -1) {
 			continue;
+		}
 		FPRINTF(sw_outfile, "%s (%d)\n", relation->rel_name,
 				relation->rel_id);
-		if (sw_data) {
+		if (sw_data)
+		{
 			dba_print(11, (TEXT *) relation->rel_pointer_page,
 					  (TEXT *) relation->rel_index_root, 0, 0, 0);	/* msg 11: "    Primary pointer page: %ld, Index root page: %ld" */
 			if (sw_record) {
@@ -857,7 +795,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			print_distribution("\t", relation->rel_fill_distribution);
 		}
 		FPRINTF(sw_outfile, "\n");
-		for (index = relation->rel_indexes; index; index = index->idx_next) {
+		for (index = relation->rel_indexes; index; index = index->idx_next)
+		{
 			dba_print(14, index->idx_name, (TEXT *) index->idx_id, 0, 0, 0);	/* msg 14: "    Index %s (%d)" */
 			dba_print(15, (TEXT *) index->idx_depth,
 					  (TEXT *) index->idx_leaf_buckets,
@@ -876,6 +815,98 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	EXIT(FINI_OK);
 
+	}	// try
+	catch (...)
+	{
+		/* free mem */
+
+		if (status_vector[1])
+		{
+			STATUS *vector;
+			SCHAR s[1024];
+#ifdef SUPERSERVER
+			STATUS *status;
+			int i = 0, j;
+
+			status = tddba->dba_service_blk->svc_status;
+			if (status != status_vector)
+			{
+				while (*status && (++i < ISC_STATUS_LENGTH)) {
+					status++;
+				}
+				for (j = 0; status_vector[j] && (i < ISC_STATUS_LENGTH);
+					 j++, i++)
+				{
+					*status++ = status_vector[j];
+				}
+			}
+#endif
+			vector = status_vector;
+			if (isc_interprete(s, &vector))
+			{
+				FPRINTF(tddba->sw_outfile, "%s\n", s);
+				s[0] = '-';
+				while (isc_interprete(s + 1, &vector)) {
+					FPRINTF(tddba->sw_outfile, "%s\n", s);
+				}
+			}
+		}
+
+		/* if there still exists a database handle, disconnect from the
+		 * server
+		 */
+		FINISH;
+
+#ifdef SUPERSERVER
+		SVC_STARTED(service);
+		alloced = tddba->head_of_mem_list;
+		while (alloced != 0) {
+			free(alloced->memory);
+			alloced = alloced->mem_next;
+		}
+
+		/* close files */
+		open_file = tddba->head_of_files_list;
+		while (open_file) {
+			db_close(open_file->desc);
+			open_file = open_file->open_files_next;
+		}
+
+		/* free linked lists */
+		while (tddba->head_of_files_list != 0) {
+			tmp1 = tddba->head_of_files_list;
+			tddba->head_of_files_list =
+				tddba->head_of_files_list->open_files_next;
+			free(tmp1);
+		}
+
+		while (tddba->head_of_mem_list != 0) {
+			tmp2 = tddba->head_of_mem_list;
+			tddba->head_of_mem_list = tddba->head_of_mem_list->mem_next;
+			free(tmp2);
+		}
+
+		service->svc_handle = 0;
+		if (service->svc_service->in_use != NULL)
+			*(service->svc_service->in_use) = FALSE;
+
+		/* Mark service thread as finished and cleanup memory being
+		 * used by service in case if client detached from the service
+		 */
+
+		SVC_finish(service, SVC_finished);
+#endif
+
+		int exit_code = tddba->exit_code;
+		RESTORE_THREAD_DATA;
+
+#ifdef SUPERSERVER
+		return exit_code;
+#else
+		exit(exit_code);
+#endif
+	}
+
 	return 0;
 }
 
@@ -893,11 +924,10 @@ static SCHAR *alloc( SLONG size)
  *
  **************************************/
 	SCHAR *block, *p;
-#ifdef SUPERSERVER
-	mem *mem_list;
-	TDBA tddba;
 
-	tddba = GET_THREAD_DATA;
+#ifdef SUPERSERVER
+
+	TDBA tddba = GET_THREAD_DATA;
 
 	block = p = (SCHAR*) malloc(size);
 	if (!p) {
@@ -909,7 +939,8 @@ static SCHAR *alloc( SLONG size)
 		*p++ = 0;
 	while (--size);
 
-	if (!(mem_list = malloc(sizeof(mem)))) {
+	mem* mem_list = (mem*)malloc(sizeof(mem));
+	if (!mem_list) {
 		/* NOMEM: return error */
 		dba_error(31, 0, 0, 0, 0, 0);
 	}
@@ -1462,13 +1493,10 @@ static DBA_FIL db_open( UCHAR * file_name, USHORT file_length)
  *	Open a database file.
  *
  **************************************/
-	DBA_FIL fil;
-	TDBA tddba;
-#ifdef SUPERSERVER
-	open_files *file_list;
-#endif
 
-	tddba = GET_THREAD_DATA;
+	TDBA tddba = GET_THREAD_DATA;
+	
+	DBA_FIL fil;
 
 	if (tddba->files) {
 		for (fil = tddba->files; fil->fil_next; fil = fil->fil_next);
@@ -1490,14 +1518,17 @@ static DBA_FIL db_open( UCHAR * file_name, USHORT file_length)
 	fil->fil_fudge = 0;
 	fil->fil_max_page = 0L;
 
-	if ((fil->fil_desc = CreateFile(file_name,
-									GENERIC_READ,
-									FILE_SHARE_READ | FILE_SHARE_WRITE,
-									NULL,
-									OPEN_EXISTING,
-									FILE_ATTRIBUTE_NORMAL |
-									FILE_FLAG_RANDOM_ACCESS,
-									0)) == INVALID_HANDLE_VALUE) {
+	fil->fil_desc = CreateFile(	reinterpret_cast<LPCTSTR>(file_name),
+								GENERIC_READ,
+								FILE_SHARE_READ | FILE_SHARE_WRITE,
+								NULL,
+								OPEN_EXISTING,
+								FILE_ATTRIBUTE_NORMAL |
+								FILE_FLAG_RANDOM_ACCESS,
+								0);
+
+	if (fil->fil_desc  == INVALID_HANDLE_VALUE)
+	{
 #ifdef SUPERSERVER
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
 								GSTAT_MSG_FAC, 29,
@@ -1508,11 +1539,12 @@ static DBA_FIL db_open( UCHAR * file_name, USHORT file_length)
 	}
 
 #ifdef SUPERSERVER
-	if (!(file_list = malloc(sizeof(*file_list)))) {
+	open_files* file_list = reinterpret_cast<open_files*>(malloc(sizeof(*file_list)));
+	if (!file_list) {
 		/* NOMEM: return error */
 		dba_error(31, 0, 0, 0, 0, 0);
 	}
-	file_list->desc = fil->fil_desc;
+	file_list->desc = reinterpret_cast<int>(fil->fil_desc);
 	file_list->open_files_next = 0;
 
 	if (tddba->head_of_files_list == 0)
@@ -1569,9 +1601,12 @@ static PAG db_read( SLONG page_number)
 		db_error(GetLastError());
 	}
 
-	if (!ReadFile
-		(fil->fil_desc, tddba->global_buffer, tddba->page_size,
-		 &actual_length, NULL)) {
+	if (!ReadFile(	fil->fil_desc,
+					tddba->global_buffer,
+					tddba->page_size,
+					reinterpret_cast<LPDWORD>(&actual_length),
+					NULL))
+	{
 #ifdef SUPERSERVER
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
 								GSTAT_MSG_FAC, 30,

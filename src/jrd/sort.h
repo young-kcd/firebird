@@ -27,6 +27,10 @@
 #include "../jrd/common.h"
 #include "../jrd/fil.h"
 
+#include "../jrd/jrd_blks.h"
+#include "../include/fb_blk.h"
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -275,7 +279,7 @@ typedef struct scb
 	void *scb_dup_callback_arg;	/* Duplicate handling callback arg */
 	struct dls *scb_dls;
 	struct mrg *scb_merge_pool;	/* ALLOC: pool of mrg blocks */
-	struct att *scb_attachment;	/* back pointer to attachment */
+	class att *scb_attachment;	/* back pointer to attachment */
 	SKD scb_description[1];
 } *SCB;
 

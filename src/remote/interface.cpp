@@ -4671,7 +4671,7 @@ static BOOLEAN batch_dsql_fetch(
 			statement->rsr_rows_pending = 0;
 			--statement->rsr_batch_count;
 			dequeue_receive(port);
-			LONGJMP(*trdb->trdb_setjmp, user_status[1]);
+			Firebird::status_longjmp_error::raise(user_status[1]);
 
 			/* we don't return from the LONGJMP - but put a
 			   return here to make the compiler happy. */
@@ -4831,7 +4831,7 @@ static BOOLEAN batch_gds_receive(
 			tail->rrq_rows_pending = 0;
 			--tail->rrq_batch_count;
 			dequeue_receive(port);
-			LONGJMP(*trdb->trdb_setjmp, user_status[1]);
+			Firebird::status_longjmp_error::raise(user_status[1]);
 
 			/* we don't return from the LONGJMP - but put a
 			   return here to make the compiler happy. */
@@ -5700,9 +5700,10 @@ static RTR make_transaction( RDB rdb, USHORT id)
 }
 
 
-static STATUS mov_dsql_message(
-							   UCHAR * from_msg,
-							   FMT from_fmt, UCHAR * to_msg, FMT to_fmt)
+static STATUS mov_dsql_message(	UCHAR*	from_msg,
+								FMT		from_fmt,
+								UCHAR*	to_msg,
+								FMT		to_fmt)
 {
 /**************************************
  *
@@ -5725,10 +5726,7 @@ static STATUS mov_dsql_message(
 	old_env = trdb->trdb_setjmp;
 	trdb->trdb_setjmp = &env;
 
-	if (SETJMP(env)) {
-		trdb->trdb_setjmp = old_env;
-		return FAILURE;
-	}
+	try {
 
 	if (!from_fmt || !to_fmt || from_fmt->fmt_count != to_fmt->fmt_count) {
 		move_error(gds_dsql_sqlda_err, gds_arg_end);
@@ -5744,6 +5742,12 @@ static STATUS mov_dsql_message(
 		from.dsc_address = from_msg + (SLONG) from.dsc_address;
 		to.dsc_address = to_msg + (SLONG) to.dsc_address;
 		CVT_move(&from, &to, (FPTR_VOID) move_error);
+	}
+
+	}	// try
+	catch (...) {
+		trdb->trdb_setjmp = old_env;
+		return FAILURE;
 	}
 
 	return SUCCESS;
@@ -5837,7 +5841,7 @@ static void move_error( STATUS status, ...)
 	if (p_args >= end_args)
 		end_args[-1] = gds_arg_end;
 
-	LONGJMP(*trdb->trdb_setjmp, trdb->trdb_status_vector[1]);
+	Firebird::status_longjmp_error::raise(trdb->trdb_status_vector[1]);
 }
 
 

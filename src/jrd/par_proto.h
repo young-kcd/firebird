@@ -28,14 +28,14 @@
 extern "C" {
 #endif
 
-struct nod *PAR_blr(TDBB, struct rel *, UCHAR *, struct csb *, struct csb **,
+struct nod *PAR_blr(TDBB, struct rel *, UCHAR *, class Csb *, class Csb **,
 					struct req **, BOOLEAN, USHORT);
-int PAR_desc(struct csb **, struct dsc *);
+int PAR_desc(class Csb **, struct dsc *);
 struct nod *PAR_gen_field(TDBB, USHORT, USHORT);
-struct nod *PAR_make_field(TDBB, struct csb *, USHORT, TEXT *);
+struct nod *PAR_make_field(TDBB, class Csb *, USHORT, TEXT *);
 struct nod *PAR_make_list(TDBB, struct lls *);
 struct nod *PAR_make_node(TDBB, int);
-struct csb *PAR_parse(TDBB, UCHAR *, USHORT);
+class Csb *PAR_parse(TDBB, UCHAR *, USHORT);
 SLONG PAR_symbol_to_gdscode(SCHAR *);
 
 #ifdef __cplusplus

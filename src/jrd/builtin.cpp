@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: builtin.cpp,v 1.2 2001-07-29 17:42:21 skywalker Exp $
+ * $Id: builtin.cpp,v 1.3 2001-12-24 02:50:50 tamlin Exp $
  */
 
 #include "firebird.h"

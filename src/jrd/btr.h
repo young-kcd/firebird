@@ -21,22 +21,18 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: btr.h,v 1.1.1.1 2001-05-23 13:26:06 tamlin Exp $
+$Id: btr.h,v 1.2 2001-12-24 02:50:50 tamlin Exp $
 */
 
 #ifndef _JRD_BTR_H_
 #define _JRD_BTR_H_
 
-/* Index error types */
+#include "../jrd/jrd_blks.h"
+#include "../include/fb_blk.h"
 
-typedef enum idx_e {
-	idx_e_ok = 0,
-	idx_e_duplicate,
-	idx_e_keytoobig,
-	idx_e_nullunique,
-	idx_e_conversion,
-	idx_e_foreign
-} IDX_E;
+#include <vector>
+
+#include "../jrd/err_proto.h"    /* Index error types */
 
 #define MAX_IDX		 64			/* that should be plenty of indexes */
 #define MAX_KEY		256
@@ -161,8 +157,9 @@ typedef struct isr {
 
 /* Index retrieval block -- hold stuff for index retrieval */
 
-typedef struct irb {
-	struct blk irb_header;
+class irb : public pool_alloc_rpt<nod*, type_irb>
+{
+    public:
 	IDX irb_desc;				/* Index descriptor */
 	USHORT irb_index;			/* Index id */
 	USHORT irb_generic;			/* Flags for generic search */
@@ -170,8 +167,9 @@ typedef struct irb {
 	USHORT irb_lower_count;		/* Number of segments for retrieval */
 	USHORT irb_upper_count;		/* Number of segments for retrieval */
 	KEY *irb_key;				/* key for equality retrival */
-	struct nod *irb_value[1];
-} *IRB;
+	nod* irb_value[1];
+};
+typedef irb *IRB;
 
 #define irb_partial	1			/* Partial match: not all segments or starting of key only */
 #define irb_starting	2		/* Only compute "starting with" key for index segment */

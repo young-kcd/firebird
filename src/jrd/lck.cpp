@@ -67,7 +67,7 @@ static BOOLEAN compatible(LCK, LCK, USHORT);
 static void enqueue(TDBB, LCK, USHORT, SSHORT);
 static void external_ast(LCK);
 static LCK find_block(LCK, USHORT);
-static USHORT hash(UCHAR *, USHORT);
+static USHORT hash_func(UCHAR *, USHORT);
 static void hash_allocate(LCK);
 static LCK hash_get_lock(LCK, USHORT *, LCK **);
 static void hash_insert_lock(LCK);
@@ -168,10 +168,16 @@ static CONST UCHAR compatibility[] = {
 	    as the logical lock.
    	If we don't have a lock ID, 
 	    then we better not have a physical lock at any level.
+
+JMB: As part of the c++ conversion I removed the check for lck block type.
+ There is no more blk_type field in the lck structure, and some stack allocated
+ lck's are passed into lock functions, so we can't do the check.
+ Here is the line I removed from the macro:
+				 (l->blk_type == type_lck) && \
  */
 #define LCK_CHECK_LOCK(l)	(((l) != NULL) && \
-				 (l->lck_header.blk_type == type_lck) && \
 				 (l->lck_dbb != NULL) && \
+				 (l->lck_test_field == 666) && \
 				 (l->lck_id || (l->lck_physical == LCK_none)))
 
 /* The following check should be part of LCK_CHECK_LOCK, but it fails
@@ -731,13 +737,11 @@ int LCK_lock_opt(TDBB tdbb, LCK lock, USHORT level, SSHORT wait)
  *	Assert a lock if the parent is not locked in exclusive mode.
  *
  **************************************/
-	LCK parent;
-	DBB dbb;
 
 	SET_TDBB(tdbb);
 	assert(LCK_CHECK_LOCK(lock));
 	lock->lck_logical = level;
-	dbb = lock->lck_dbb;
+	DBB dbb = lock->lck_dbb;
 
 	if (dbb->dbb_ast_flags & DBB_assert_locks) {
 		lock->lck_logical = LCK_none;
@@ -823,27 +827,25 @@ void LCK_release(TDBB tdbb, LCK lock)
  *	Release an existing lock.
  *
  **************************************/
-	BTB block;
-	LCK prior, next;
-#ifdef MULTI_THREAD
-	ATT attachment;
 
-	attachment = lock->lck_attachment;
+#ifdef MULTI_THREAD
+	ATT attachment = lock->lck_attachment;
 #endif
 
 	SET_TDBB(tdbb);
 	assert(LCK_CHECK_LOCK(lock));
 
-	if (lock->lck_physical != LCK_none)
+	if (lock->lck_physical != LCK_none) {
 		DEQUEUE(lock);
+	}
 
 	lock->lck_physical = lock->lck_logical = LCK_none;
 	lock->lck_id = lock->lck_data = 0;
 
 #ifdef MULTI_THREAD
 
-	next = lock->lck_next;
-	prior = lock->lck_prior;
+	LCK next = lock->lck_next;
+	LCK prior = lock->lck_prior;
 
 	if (prior) {
 		assert(prior->lck_next == lock);
@@ -1120,7 +1122,7 @@ static LCK find_block(LCK lock, USHORT level)
 #endif
 
 
-static USHORT hash(UCHAR * value, USHORT length)
+static USHORT hash_func(UCHAR * value, USHORT length)
 {
 /**************************************
  *
@@ -1173,10 +1175,9 @@ static void hash_allocate(LCK lock)
 
 	dbb = lock->lck_dbb;
 
-	if (att = lock->lck_attachment) {
+	if ( (att = lock->lck_attachment) ) {
 		att->att_compatibility_table =
-			(VEC) ALLOCPV(type_vec, LOCK_HASH_SIZE);
-		att->att_compatibility_table->vec_count = LOCK_HASH_SIZE;
+			vec::newVector(*dbb->dbb_permanent, LOCK_HASH_SIZE);
 	}
 }
 
@@ -1211,21 +1212,23 @@ static LCK hash_get_lock(LCK lock, USHORT * hash_slot, LCK ** prior)
 	if (!att->att_compatibility_table)
 		hash_allocate(lock);
 
-	hash_value = hash((UCHAR *) & lock->lck_key, lock->lck_length);
+	hash_value = hash_func((UCHAR *) & lock->lck_key, lock->lck_length);
 	if (hash_slot)
 		*hash_slot = hash_value;
 
 /* if no collisions found, we're done */
 
-	if (!(match = (LCK) att->att_compatibility_table->vec_object[hash_value]))
+	if (!(match = (LCK) (*att->att_compatibility_table)[hash_value]))
 		return NULL;
 	if (prior)
 		*prior =
-			(LCK *) & att->att_compatibility_table->vec_object[hash_value];
+			(LCK *) & (*att->att_compatibility_table)[hash_value];
 
 /* look for an identical lock */
 
+	assert(LCK_CHECK_LOCK(match));
 	for (collision = match; collision; collision = collision->lck_collision) {
+		assert(LCK_CHECK_LOCK(collision));
 		if (collision->lck_parent && lock->lck_parent &&
 			collision->lck_parent->lck_id == lock->lck_parent->lck_id &&
 			collision->lck_type == lock->lck_type &&
@@ -1275,8 +1278,8 @@ static void hash_insert_lock(LCK lock)
 
 	if (!(identical = hash_get_lock(lock, &hash_slot, 0))) {
 		lock->lck_collision =
-			(LCK) att->att_compatibility_table->vec_object[hash_slot];
-		att->att_compatibility_table->vec_object[hash_slot] = (BLK) lock;
+			(LCK) (*att->att_compatibility_table)[hash_slot];
+		(*att->att_compatibility_table)[hash_slot] = (BLK) lock;
 		return;
 	}
 
@@ -1541,7 +1544,7 @@ static BOOLEAN internal_enqueue(
 
 /* look for an identical lock */
 
-	if (match = hash_get_lock(lock, 0, 0)) {
+	if ( (match = hash_get_lock(lock, 0, 0)) ) {
 		/* if there are incompatible locks for which
 		   there are no blocking asts defined, give up */
 
@@ -1559,7 +1562,7 @@ static BOOLEAN internal_enqueue(
 		   convert the lock, otherwise fall
 		   through and enqueue a new one */
 
-		if (match = hash_get_lock(lock, 0, 0)) {
+		if ( (match = hash_get_lock(lock, 0, 0)) ) {
 			/* if a conversion is necessary, update all identical 
 			   locks to reflect the new physical lock level */
 

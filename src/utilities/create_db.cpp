@@ -17,7 +17,7 @@ int main(int argc, char **argv)
         printf("Usage: %s <new db name>\n", argv[0]);
         return -1;
     }
-
+	
     d = dpb;
     *d++ = (UCHAR) isc_dpb_version1;
     *d++ = (UCHAR) isc_dpb_set_db_readonly;

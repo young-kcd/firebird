@@ -21,41 +21,44 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_DPM_PROTO_H_
-#define _JRD_DPM_PROTO_H_
+#ifndef JRD_DPM_PROTO_H
+#define JRD_DPM_PROTO_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern struct pag *DPM_allocate(TDBB, struct win *);
-extern void DPM_backout(TDBB, struct rpb *);
-extern int DPM_chain(TDBB, struct rpb *, struct rpb *);
-extern int DPM_compress(TDBB, struct dpg *);
-extern void DPM_create_relation(TDBB, struct rel *);
-extern SLONG DPM_data_pages(TDBB, struct rel *);
-extern void DPM_delete(TDBB, struct rpb *, SLONG);
-extern void DPM_delete_relation(TDBB, struct rel *);
-extern BOOLEAN DPM_fetch(TDBB, register struct rpb *, USHORT);
-extern SSHORT DPM_fetch_back(TDBB, register struct rpb *, USHORT, SSHORT);
-extern void DPM_fetch_fragment(TDBB, register struct rpb *, USHORT);
-extern SINT64 DPM_gen_id(TDBB, SLONG, USHORT, SINT64);
-extern int DPM_get(TDBB, register struct rpb *, SSHORT);
-extern ULONG DPM_get_blob(TDBB, struct blb *, ULONG, USHORT, SLONG);
-extern BOOLEAN DPM_next(TDBB, register struct rpb *, USHORT, BOOLEAN,
-						BOOLEAN);
-extern void DPM_pages(TDBB, SSHORT, int, ULONG, SLONG);
-extern SLONG DPM_prefetch_bitmap(struct tdbb *, struct rel *, struct sbm *,
+// fwd. decl.
+class blb;
+
+struct pag* DPM_allocate(TDBB, struct win*);
+void	DPM_backout(TDBB, struct rpb *);
+int		DPM_chain(TDBB, struct rpb *, struct rpb *);
+int		DPM_compress(TDBB, struct dpg *);
+void	DPM_create_relation(TDBB, struct rel *);
+SLONG	DPM_data_pages(TDBB, struct rel *);
+void	DPM_delete(TDBB, struct rpb *, SLONG);
+void	DPM_delete_relation(TDBB, struct rel *);
+BOOLEAN	DPM_fetch(TDBB, register struct rpb *, USHORT);
+SSHORT	DPM_fetch_back(TDBB, register struct rpb *, USHORT, SSHORT);
+void	DPM_fetch_fragment(TDBB, register struct rpb *, USHORT);
+SINT64	DPM_gen_id(TDBB, SLONG, USHORT, SINT64);
+int		DPM_get(TDBB, register struct rpb *, SSHORT);
+ULONG	DPM_get_blob(TDBB, blb*, ULONG, USHORT, SLONG);
+BOOLEAN	DPM_next(TDBB, register struct rpb *, USHORT, BOOLEAN,
+					BOOLEAN);
+void	DPM_pages(TDBB, SSHORT, int, ULONG, SLONG);
+SLONG	DPM_prefetch_bitmap(struct tdbb *, struct rel *, struct sbm *,
 								 SLONG);
-extern void DPM_scan_pages(TDBB);
-extern void DPM_store(TDBB, register struct rpb *, struct lls **, USHORT);
-extern SLONG DPM_store_blob(TDBB, struct blb *, struct rec *);
-extern void DPM_rewrite_header(TDBB, struct rpb *);
-extern void DPM_update(TDBB, register struct rpb *, struct lls **,
+void	DPM_scan_pages(TDBB);
+void	DPM_store(TDBB, register struct rpb *, struct lls **, USHORT);
+SLONG	DPM_store_blob(TDBB, blb*, struct rec *);
+void	DPM_rewrite_header(TDBB, struct rpb *);
+void	DPM_update(TDBB, register struct rpb *, struct lls **,
 					   struct tra *);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-#endif /* _JRD_DPM_PROTO_H_ */
+#endif /* JRD_DPM_PROTO_H */

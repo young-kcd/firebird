@@ -38,6 +38,9 @@
 #ifndef	WIN_NT
 #include <unistd.h>
 #include <pwd.h>
+#ifdef DARWIN
+#include </usr/include/pwd.h>
+#endif
 #endif
 #include <errno.h>
 
@@ -116,7 +119,7 @@
 #include "../jrd/old_proto.h"
 
 
-#include "fbutil/FirebirdConfig.h"
+#include "../fbutil/FirebirdConfig.h"
 
 #ifdef GARBAGE_THREAD
 #include "vio_proto.h"
@@ -141,10 +144,10 @@ typedef struct dbf {
 #define V4_THREADING
 
 /*TMN: fwd. decl. SHOULD BE IN A HEADER FILE*/
-extern "C" {
-void gds_print_delta_counters(IB_FILE *);
 void ALL_print_memory_pool_info(IB_FILE * fptr, DBB databases);
 void ALLD_print_memory_pool_info(IB_FILE * fptr);
+extern "C" {
+void gds_print_delta_counters(IB_FILE *);
 } // extern "C"
 
 #endif /* SUPERSERVER */
@@ -340,9 +343,9 @@ static ULONG	JRD_cache_default;
 
 static struct ipccfg JRD_hdrtbl[] =
 {
-	ISCCFG_DBCACHE, -1, reinterpret_cast<SLONG*>(&JRD_cache_default), 0,
-	0,
-	NULL, 0, NULL, 0, 0
+	{ ISCCFG_DBCACHE, -1, reinterpret_cast<SLONG*>(&JRD_cache_default), 0,
+	0 },
+	{ NULL, 0, NULL, 0, 0 }
 };
 
 #ifdef GOVERNOR
@@ -404,7 +407,7 @@ static TDBB get_thread_data()
 	{
 		TDBB p2 = (TDBB)p1;
 		if (p2->tdbb_database &&
-			p2->tdbb_database->dbb_header.blk_type != type_dbb)
+			MemoryPool::blk_type(p2->tdbb_database) != type_dbb)
 		{
 			BUGCHECK(147);
 		}
@@ -417,7 +420,7 @@ static TDBB get_thread_data()
 inline static void CHECK_DBB(DBB dbb)
 {
 #ifdef DEV_BUILD
-	assert(dbb && dbb->dbb_header.blk_type == type_dbb);
+	assert(dbb && MemoryPool::blk_type(dbb) == type_dbb);
 #endif	// DEV_BUILD
 }
 
@@ -427,7 +430,7 @@ inline static void check_tdbb(TDBB tdbb)
 	assert(tdbb &&
 			(reinterpret_cast<THDD>(tdbb)->thdd_type == THDD_TYPE_TDBB) &&
 			(!tdbb->tdbb_database ||
-				tdbb->tdbb_database->dbb_header.blk_type == type_dbb));
+				MemoryPool::blk_type(tdbb->tdbb_database) == type_dbb));
 #endif	// DEV_BUILD
 }
 
@@ -451,7 +454,7 @@ static void SET_TDBB(TDBB& tdbb)
 	if (SETJMP (env)) return error (user_status);
 
 #define CHECK_HANDLE(blk,type,error)					\
-	if (!blk || ((BLK) blk)->blk_type != (UCHAR) type)	\
+	if (!blk || MemoryPool::blk_type(blk) != type)	\
 		return handle_error (user_status, error, tdbb)
 
 #define NULL_CHECK(ptr,code)									\
@@ -563,9 +566,6 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 	USHORT d_len, jd_len;
 	JMP_BUF env;
 
-#ifdef _PPC_
-	JMP_BUF env1;
-#endif
 	struct tdbb thd_context;
 
 	TEXT		local_role_name[BUFFER_LENGTH128];
@@ -626,48 +626,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 
 	attachment = *(&attachment);
 
-	if (SETJMP(env))
-	{
-#ifdef _PPC_
-		tdbb->tdbb_setjmp = env1;
-		if (!SETJMP(env1))
-#else
-		if (!SETJMP(env))
-#endif
-		{
-#ifdef V4_THREADING
-			if (initing_security)
-				V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
-#endif
-			tdbb->tdbb_status_vector = temp_status;
-			dbb->dbb_flags &= ~DBB_being_opened;
-			release_attachment(attachment);
-
-			/* At this point, mutex dbb->dbb_mutexes [DBB_MUTX_init_fini] has been
-			   unlocked and mutex databases_mutex has been locked. */
-#ifdef STACK_REDUCTION
-			if (allocated_space)
-			{
-				ALL_free(allocated_space);
-			}
-#endif
-			if (dbb->dbb_header.blk_type == (UCHAR) type_dbb)
-			{
-				if (!dbb->dbb_attachments)
-				{
-					shutdown_database(dbb, TRUE);
-				}
-				else if (attachment)
-				{
-					ALL_RELEASE(attachment);
-				}
-			}
-			V4_JRD_MUTEX_UNLOCK(databases_mutex);
-		}
-		tdbb->tdbb_status_vector = status;
-		JRD_SS_MUTEX_UNLOCK;
-		return error(user_status);
-	}
+	try {
 
 /* Allocate buffer space */
 
@@ -729,7 +688,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 	}
 #endif
 
-	tdbb->tdbb_attachment = attachment = (ATT) ALLOCP(type_att);
+	tdbb->tdbb_attachment = attachment = new(*dbb->dbb_permanent) att();
 	attachment->att_database = dbb;
 
 	attachment->att_next = dbb->dbb_attachments;
@@ -774,7 +733,8 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 
 	LCK_init(tdbb, LCK_OWNER_attachment);	/* For the attachment */
 	attachment->att_flags |= ATT_lck_init_done;
-	if (!dbb->dbb_filename) {
+	if (!dbb->dbb_filename)
+	{
 		first = TRUE;
 		dbb->dbb_filename = copy_string(expanded_filename, length_expanded);
 		/* Extra LCK_init() done to keep the lock table until the
@@ -830,13 +790,14 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 	}
 
     /* Attachments to a ReadOnly database need NOT do garbage collection */
-    if (dbb->dbb_flags & DBB_read_only)
+    if (dbb->dbb_flags & DBB_read_only) {
             attachment->att_flags |= ATT_no_cleanup;
+	}
 
     if (options.dpb_disable_wal) {
 		ERR_post(gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
 				 gds_arg_string, 
-                 ERR_string(reinterpret_cast < char *>(file_name), fl), 
+                 ERR_string(reinterpret_cast<char*>(file_name), fl), 
                  0);
 	}
 
@@ -1009,7 +970,8 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 	V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 #endif
 
-	if (options.dpb_shutdown || options.dpb_online) {
+	if (options.dpb_shutdown || options.dpb_online)
+	{
 		/* By releasing the DBB_MUTX_init_fini mutex here, we would be allowing
 		   other threads to proceed with their detachments, so that shutdown does
 		   not timeout for exclusive access and other threads don't have to wait
@@ -1057,31 +1019,39 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 /* If database is shutdown then kick 'em out. */
 
 	if (dbb->dbb_ast_flags & (DBB_shut_attach | DBB_shut_tran))
+	{
 		ERR_post(gds_shutinprog, gds_arg_string, 
                  ERR_string(reinterpret_cast < char *>(file_name), fl),
 				 0);
+	}
 
 	if (dbb->dbb_ast_flags & DBB_shutdown &&
 		!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner)))
+	{
 		ERR_post(gds_shutdown, gds_arg_string, 
                  ERR_string(reinterpret_cast < char *>(file_name), fl), 
                  0);
+	}
 
-	if (options.dpb_disable)
+	if (options.dpb_disable) {
 		AIL_disable();
+	}
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-	if (options.dpb_quit_log)
+	if (options.dpb_quit_log) {
 		LOG_disable();
+	}
 #endif
 
 /* Figure out what character set & collation this attachment prefers */
 
 	find_intl_charset(tdbb, attachment, &options);
 
-	if (options.dpb_verify) {
-		if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD))
+	if (options.dpb_verify)
+	{
+		if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD)) {
 			ERR_post(gds_bad_dpb_content, gds_arg_gds, gds_cant_validate, 0);
+		}
 
 #ifdef GARBAGE_THREAD
 		/* Can't allow garbage collection during database validation. */
@@ -1099,8 +1069,9 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 		V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 	}
 
-	if (options.dpb_journal)
-		if (first) {
+	if (options.dpb_journal) {
+		if (first)
+		{
 			archive_name[0] = 0;
 
 			if (options.dpb_wal_backup_dir)
@@ -1120,8 +1091,10 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 					 gds_arg_gds, gds_cant_start_journal,
 					 0);
 		}
+	}
 
-	if (options.dpb_wal_action) {
+	if (options.dpb_wal_action)
+	{
 		/* Make sure WAL enabled before taking any WAL action. */
 
 		if (!dbb->dbb_wal) {
@@ -1251,9 +1224,11 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 
 /* if there was an error, the status vector is all set */
 
-	if (options.dpb_sweep & gds_dpb_records) {
+	if (options.dpb_sweep & gds_dpb_records)
+	{
 		JRD_SS_MUTEX_UNLOCK;
-		if (!(TRA_sweep(tdbb, 0))) {
+		if (!(TRA_sweep(tdbb, 0)))
+		{
 			JRD_SS_MUTEX_LOCK;
 			ERR_punt();
 		}
@@ -1277,6 +1252,47 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 #endif
 
 	return return_success(tdbb);
+
+	}	// try
+	catch (...)
+	{
+		try
+		{
+#ifdef V4_THREADING
+			if (initing_security)
+			{
+				V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
+			}
+#endif
+			tdbb->tdbb_status_vector = temp_status;
+			dbb->dbb_flags &= ~DBB_being_opened;
+			release_attachment(attachment);
+
+			/* At this point, mutex dbb->dbb_mutexes [DBB_MUTX_init_fini] has been
+			   unlocked and mutex databases_mutex has been locked. */
+#ifdef STACK_REDUCTION
+			if (allocated_space) {
+				ALL_free(allocated_space);
+			}
+#endif
+			if (MemoryPool::blk_type(dbb) == type_dbb)
+			{
+				if (!dbb->dbb_attachments)
+				{
+					shutdown_database(dbb, TRUE);
+				}
+				else if (attachment)
+				{
+					delete attachment;
+				}
+			}
+			V4_JRD_MUTEX_UNLOCK(databases_mutex);
+		}	// try
+		catch (...) {}
+		tdbb->tdbb_status_vector = status;
+		JRD_SS_MUTEX_UNLOCK;
+		return error(user_status);
+	}
 }
 
 
@@ -1419,9 +1435,9 @@ STATUS DLL_EXPORT GDS_CANCEL_OPERATION(STATUS * user_status,
    the routine "check_database" */
 
 	if (!attachment ||
-		(attachment->att_header.blk_type != (UCHAR) type_att) ||
+		(MemoryPool::blk_type(attachment) != type_att) ||
 		!(dbb = attachment->att_database) ||
-		dbb->dbb_header.blk_type != (UCHAR) type_dbb)
+		MemoryPool::blk_type(dbb) != type_dbb)
 		return handle_error(user_status, gds_bad_db_handle, 0);
 
 /* Make sure this is a valid attachment */
@@ -1664,9 +1680,6 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 	STATUS temp_status[ISC_STATUS_LENGTH], *status;
 	DPB options;
 	JMP_BUF env;
-#ifdef _PPC_
-	JMP_BUF env1;
-#endif
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -1722,41 +1735,7 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 	BOOLEAN initing_security = FALSE;
 #endif
 
-	if (SETJMP(env))
-	{
-#ifdef _PPC_
-		tdbb->tdbb_setjmp = (UCHAR *) env1;
-		if (!SETJMP(env1))
-#else
-		if (!SETJMP(env))
-#endif
-		{
-#ifdef V4_THREADING
-			if (initing_security)
-				V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
-#endif
-			tdbb->tdbb_status_vector = temp_status;
-			dbb->dbb_flags &= ~DBB_being_opened;
-			release_attachment(attachment);
-
-			/* At this point, mutex dbb->dbb_mutexes [DBB_MUTX_init_fini] has been
-			   unlocked and mutex databases_mutex has been locked. */
-#ifdef STACK_REDUCTION
-			if (allocated_space) {
-				ALL_free(allocated_space);
-			}
-#endif
-			if (dbb->dbb_header.blk_type == (UCHAR) type_dbb)
-				if (!dbb->dbb_attachments)
-					shutdown_database(dbb, TRUE);
-				else if (attachment)
-					ALL_RELEASE(attachment);
-			V4_JRD_MUTEX_UNLOCK(databases_mutex);
-		}
-		tdbb->tdbb_status_vector = status;
-		JRD_SS_MUTEX_UNLOCK;
-		return error(user_status);
-	}
+	try {
 
 /* Process database parameter block */
 
@@ -1792,7 +1771,7 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 			copy_string(options.dpb_key, strlen(options.dpb_key));
 #endif
 
-	tdbb->tdbb_attachment = attachment = (ATT) ALLOCP(type_att);
+	tdbb->tdbb_attachment = attachment = new(*dbb->dbb_permanent) att();
 	attachment->att_database = dbb;
 	attachment->att_next = dbb->dbb_attachments;
 	dbb->dbb_attachments = attachment;
@@ -1996,6 +1975,47 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 #endif
 
 	return return_success(tdbb);
+
+	}	// try
+	catch (...)
+	{
+		try
+		{
+#ifdef V4_THREADING
+			if (initing_security)
+			{
+				V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
+			}
+#endif
+			tdbb->tdbb_status_vector = temp_status;
+			dbb->dbb_flags &= ~DBB_being_opened;
+			release_attachment(attachment);
+
+			/* At this point, mutex dbb->dbb_mutexes [DBB_MUTX_init_fini] has been
+			   unlocked and mutex databases_mutex has been locked. */
+#ifdef STACK_REDUCTION
+			if (allocated_space) {
+				ALL_free(allocated_space);
+			}
+#endif
+			if (MemoryPool::blk_type(dbb) == type_dbb)
+			{
+				if (!dbb->dbb_attachments)
+				{
+					shutdown_database(dbb, TRUE);
+				}
+				else if (attachment)
+				{
+					delete attachment;
+				}
+			}
+			V4_JRD_MUTEX_UNLOCK(databases_mutex);
+		}
+		catch (...) {}
+		tdbb->tdbb_status_vector = status;
+		JRD_SS_MUTEX_UNLOCK;
+		return error(user_status);
+	}
 }
 
 
@@ -2069,16 +2089,21 @@ STATUS DLL_EXPORT GDS_DDL(STATUS * user_status,
 
 	tdbb->tdbb_setjmp = (UCHAR *) env;
 	tdbb->tdbb_status_vector = user_status;
-	if (SETJMP(env)) {
-		if (tdbb->tdbb_status_vector == temp_status)
+
+	try {
+
+		transaction = find_transaction(tdbb, *tra_handle, gds_segstr_wrong_db);
+
+		DYN_ddl(attachment, transaction, ddl_length,
+				reinterpret_cast<UCHAR*>(ddl));
+
+	}	// try
+	catch (...) {
+		if (tdbb->tdbb_status_vector == temp_status) {
 			tdbb->tdbb_status_vector = user_status;
+		}
 		return error(user_status);
 	}
-
-	transaction = find_transaction(tdbb, *tra_handle, gds_segstr_wrong_db);
-
-	DYN_ddl(attachment, transaction, ddl_length,
-			reinterpret_cast < UCHAR * >(ddl));
 
 /*
  * Perform an auto commit for autocommit transactions.
@@ -2092,11 +2117,16 @@ STATUS DLL_EXPORT GDS_DDL(STATUS * user_status,
  * a new entry point may be added.
  */
 
-	if (transaction->tra_flags & TRA_perform_autocommit) {
+	if (transaction->tra_flags & TRA_perform_autocommit)
+	{
 		transaction->tra_flags &= ~TRA_perform_autocommit;
 		tdbb->tdbb_setjmp = (UCHAR *) rollback_env;
 
-		if (SETJMP(rollback_env)) {
+		try {
+			TRA_commit(tdbb, transaction, TRUE);
+			tdbb->tdbb_setjmp = (UCHAR *) env;
+		}
+		catch (...)  {
 			tdbb->tdbb_setjmp = (UCHAR *) env;
 			tdbb->tdbb_status_vector = temp_status;
 			TRA_rollback(tdbb, transaction, TRUE);
@@ -2105,9 +2135,6 @@ STATUS DLL_EXPORT GDS_DDL(STATUS * user_status,
 
 			return error(user_status);
 		}
-
-		TRA_commit(tdbb, transaction, TRUE);
-		tdbb->tdbb_setjmp = (UCHAR *) env;
 	};
 
 	return return_success(tdbb);
@@ -2144,9 +2171,9 @@ STATUS DLL_EXPORT GDS_DETACH(STATUS * user_status, ATT * handle)
    the routine "check_database" */
 
 	if (!attachment ||
-		(attachment->att_header.blk_type != (UCHAR) type_att) ||
+		(MemoryPool::blk_type(attachment) != type_att) ||
 		!(dbb = attachment->att_database) ||
-		dbb->dbb_header.blk_type != (UCHAR) type_dbb)
+		MemoryPool::blk_type(dbb) != type_dbb)
 		return handle_error(user_status, gds_bad_db_handle, tdbb);
 
 /* Make sure this is a valid attachment */
@@ -2187,10 +2214,8 @@ STATUS DLL_EXPORT GDS_DETACH(STATUS * user_status, ATT * handle)
 
 	tdbb->tdbb_setjmp = (UCHAR *) env;
 	tdbb->tdbb_status_vector = user_status;
-	if (SETJMP(env)) {
-		JRD_SS_MUTEX_UNLOCK;
-		return error(user_status);
-	}
+
+	try {
 
 /* Purge attachment, don't rollback open transactions */
 
@@ -2221,6 +2246,12 @@ STATUS DLL_EXPORT GDS_DETACH(STATUS * user_status, ATT * handle)
 	*handle = NULL;
 
 	return return_success(tdbb);
+
+	}	// try
+	catch (...) {
+		JRD_SS_MUTEX_UNLOCK;
+		return error(user_status);
+	}
 }
 
 
@@ -2256,9 +2287,9 @@ STATUS DLL_EXPORT GDS_DROP_DATABASE(STATUS * user_status, ATT * handle)
    the routine "check_database" */
 
 	if (!attachment ||
-		(attachment->att_header.blk_type != (UCHAR) type_att) ||
+		(MemoryPool::blk_type(attachment) != type_att) ||
 		!(dbb = attachment->att_database) ||
-		dbb->dbb_header.blk_type != (UCHAR) type_dbb)
+		MemoryPool::blk_type(dbb) != type_dbb)
 		return handle_error(user_status, gds_bad_db_handle, tdbb);
 
 /* Make sure this is a valid attachment */
@@ -2306,18 +2337,14 @@ STATUS DLL_EXPORT GDS_DROP_DATABASE(STATUS * user_status, ATT * handle)
 	V4_JRD_MUTEX_LOCK(databases_mutex);
 	V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 
-	if (SETJMP(env)) {
-		V4_JRD_MUTEX_UNLOCK(databases_mutex);
-		V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
-		JRD_SS_MUTEX_UNLOCK;
-		return error(user_status);
-	}
+	try {
 
 /* Check if same process has more attachments */
 
-	if ((attach = dbb->dbb_attachments) && (attach->att_next))
+	if ((attach = dbb->dbb_attachments) && (attach->att_next)) {
 		ERR_post(gds_no_meta_update, gds_arg_gds, gds_obj_in_use,
 				 gds_arg_string, "DATABASE", 0);
+	}
 
 #ifdef CANCEL_OPERATION
 	attachment->att_flags |= ATT_cancel_disable;
@@ -2335,11 +2362,20 @@ STATUS DLL_EXPORT GDS_DROP_DATABASE(STATUS * user_status, ATT * handle)
 	header->hdr_ods_version = 0;
 	CCH_RELEASE(tdbb, &window);
 
-/* A default catch all */
-	if (SETJMP(env)) {
+	}	// try
+	catch (...) {
+		// TMN: It might be that this catch should be moved
+		// to the very end of this function. Plese verify its
+		// behaviour and remove this comment - the original code
+		// using setjmp is in Firebird1 (InterBase "Open" Edition)
+		V4_JRD_MUTEX_UNLOCK(databases_mutex);
+		V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 		JRD_SS_MUTEX_UNLOCK;
 		return error(user_status);
 	}
+
+/* A default catch all */
+	try {
 
 /* This point on database is useless */
 
@@ -2376,8 +2412,9 @@ STATUS DLL_EXPORT GDS_DROP_DATABASE(STATUS * user_status, ATT * handle)
 /* drop the files here. */
 
 	err = drop_files(file);
-	for (; shadow; shadow = shadow->sdw_next)
+	for (; shadow; shadow = shadow->sdw_next) {
 		err |= drop_files(shadow->sdw_file);
+	}
 
 	V4_JRD_MUTEX_UNLOCK(databases_mutex);
 	JRD_SS_MUTEX_UNLOCK;
@@ -2392,6 +2429,12 @@ STATUS DLL_EXPORT GDS_DROP_DATABASE(STATUS * user_status, ATT * handle)
 	}
 
 	return return_success(tdbb);
+
+	}	// try
+	catch (...) {
+		JRD_SS_MUTEX_UNLOCK;
+		return error(user_status);
+	}
 }
 
 
@@ -2772,10 +2815,10 @@ STATUS DLL_EXPORT GDS_RECEIVE(STATUS * user_status,
 
 	ERROR_INIT(env);
 
-	if (lev = level)
+	if ( (lev = level) )
 		if (!(vector = request->req_sub_requests) ||
-			lev >= vector->vec_count ||
-			!(request = (REQ) vector->vec_object[lev]))
+			lev >= vector->count() ||
+			!(request = (REQ) (*vector)[lev]))
 				ERR_post(gds_req_sync, 0);
 
 #ifdef SCROLLABLE_CURSORS
@@ -2922,10 +2965,10 @@ STATUS DLL_EXPORT GDS_REQUEST_INFO(STATUS * user_status,
 
 	ERROR_INIT(env);
 
-	if (lev = level)
+	if ( (lev = level) )
 		if (!(vector = request->req_sub_requests) ||
-			lev >= vector->vec_count ||
-			!(request = (REQ) vector->vec_object[lev]))
+			lev >= vector->count() ||
+			!(request = (REQ) (*vector)[lev]))
 				ERR_post(gds_req_sync, 0);
 
 	INF_request_info(request, items, item_length, buffer, buffer_length);
@@ -3081,10 +3124,10 @@ STATUS DLL_EXPORT GDS_SEND(STATUS * user_status,
 
 	ERROR_INIT(env);
 
-	if (lev = level)
+	if ( (lev = level) )
 		if (!(vector = request->req_sub_requests) ||
-			lev >= vector->vec_count ||
-			!(request = (REQ) vector->vec_object[lev]))
+			lev >= vector->count() ||
+			!(request = (REQ) (*vector)[lev]))
 				ERR_post(gds_req_sync, 0);
 
 	EXE_send(tdbb, request, msg_type, msg_length,
@@ -3448,18 +3491,14 @@ STATUS DLL_EXPORT GDS_START_MULTIPLE(STATUS * user_status,
 
 	prior = NULL;
 
-	if (SETJMP(env)) {
-		dbb = tdbb->tdbb_database;
-		--dbb->dbb_use_count;
-		if (prior)
-			rollback(tdbb, prior, temp_status, FALSE);
-		return error(user_status);
-	}
+	try {
 
-	for (v = vector; v < end; v++) {
+	for (v = vector; v < end; v++)
+	{
 		attachment = *v->teb_database;
-		if (check_database(tdbb, attachment, user_status))
+		if (check_database(tdbb, attachment, user_status)) {
 			return user_status[1];
+		}
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 		LOG_call(log_start_multiple, *tra_handle, count, vector);
 #endif
@@ -3467,11 +3506,21 @@ STATUS DLL_EXPORT GDS_START_MULTIPLE(STATUS * user_status,
 		tdbb->tdbb_status_vector = user_status;
 		transaction =
 			TRA_start(tdbb, v->teb_tpb_length,
-					  reinterpret_cast < char *>(v->teb_tpb));
+					  reinterpret_cast<char*>(v->teb_tpb));
 		transaction->tra_sibling = prior;
 		prior = transaction;
 		dbb = tdbb->tdbb_database;
 		--dbb->dbb_use_count;
+	}
+
+	}	// try
+	catch (...) {
+		dbb = tdbb->tdbb_database;
+		--dbb->dbb_use_count;
+		if (prior) {
+			rollback(tdbb, prior, temp_status, FALSE);
+		}
+		return error(user_status);
 	}
 
 	*tra_handle = transaction;
@@ -3541,12 +3590,9 @@ STATUS DLL_EXPORT GDS_TRANSACT_REQUEST(STATUS*	user_status,
 	ACC access;
 	SCL class_;
 	FMT format;
-	PLB old_pool, new_pool;
+	JrdMemoryPool *old_pool, *new_pool;
 	USHORT i, len;
 	JMP_BUF env;
-#ifdef _PPC_
-	JMP_BUF env1;
-#endif
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -3567,34 +3613,20 @@ STATUS DLL_EXPORT GDS_TRANSACT_REQUEST(STATUS*	user_status,
 
 	tdbb->tdbb_setjmp = (UCHAR *) env;
 	tdbb->tdbb_status_vector = user_status;
-	if (SETJMP(env)) {
-		/* Set up to trap error in case release pool goes wrong. */
 
-#ifdef _PPC_
-		tdbb->tdbb_setjmp = (UCHAR *) env;
-		if (SETJMP(env1))
-#else
-		if (SETJMP(env))
-#endif
-			return error(user_status);
-		if (old_pool)
-			tdbb->tdbb_default = old_pool;
-		if (request)
-			CMP_release(tdbb, request);
-		else if (new_pool)
-			ALL_rlpool(new_pool);
-		return error(user_status);
-	}
+	try {
 
 	transaction = find_transaction(tdbb, *tra_handle, gds_req_wrong_db);
 
 	old_pool = tdbb->tdbb_default;
-	tdbb->tdbb_default = new_pool = ALL_pool();
+	tdbb->tdbb_default = new_pool = new(*tdbb->tdbb_database->dbb_permanent)
+				JrdMemoryPool;
 
 	csb = PAR_parse(tdbb, reinterpret_cast < UCHAR * >(blr), FALSE);
 	request = CMP_make_request(tdbb, &csb);
 
-	for (access = request->req_access; access; access = access->acc_next) {
+	for (access = request->req_access; access; access = access->acc_next)
+	{
 		class_ = SCL_get_class(access->acc_security_name);
 		SCL_check_access(class_, access->acc_view, access->acc_trg_name,
 						 access->acc_prc_name, access->acc_mask,
@@ -3603,35 +3635,45 @@ STATUS DLL_EXPORT GDS_TRANSACT_REQUEST(STATUS*	user_status,
 
 	in_message = out_message = NULL;
 	for (i = 0; i < csb->csb_count; i++)
-		if (node = csb->csb_rpt[i].csb_message) {
-			if ((int) node->nod_arg[e_msg_number] == 0)
+	{
+		if ( (node = csb->csb_rpt[i].csb_message) )
+		{
+			if ((int) node->nod_arg[e_msg_number] == 0) {
 				in_message = node;
-			else if ((int) node->nod_arg[e_msg_number] == 1)
+			} else if ((int) node->nod_arg[e_msg_number] == 1) {
 				out_message = node;
+			}
 		}
+	}
 
 	tdbb->tdbb_default = old_pool;
 	old_pool = NULL;
 
 	request->req_attachment = attachment;
 
-	if (in_msg_length) {
+	if (in_msg_length)
+	{
 		if (in_message) {
 			format = (FMT) in_message->nod_arg[e_msg_format];
 			len = format->fmt_length;
 		}
-		else
+		else {
 			len = 0;
+		}
 		if (in_msg_length != len)
+		{
 			ERR_post(gds_port_len,
 					 gds_arg_number, (SLONG) in_msg_length,
 					 gds_arg_number, (SLONG) len, 0);
-		if ((U_IPTR) in_msg & (ALIGNMENT - 1))
+		}
+		if ((U_IPTR) in_msg & (ALIGNMENT - 1)) {
 			MOVE_FAST(in_msg, (SCHAR *) request + in_message->nod_impure,
 					  in_msg_length);
-		else
+		}
+		else {
 			MOVE_FASTER(in_msg, (SCHAR *) request + in_message->nod_impure,
 						in_msg_length);
+		}
 	}
 
 	EXE_start(tdbb, request, transaction);
@@ -3640,26 +3682,52 @@ STATUS DLL_EXPORT GDS_TRANSACT_REQUEST(STATUS*	user_status,
 		format = (FMT) out_message->nod_arg[e_msg_format];
 		len = format->fmt_length;
 	}
-	else
+	else {
 		len = 0;
-	if (out_msg_length != len)
+	}
+	if (out_msg_length != len) {
 		ERR_post(gds_port_len,
 				 gds_arg_number, (SLONG) out_msg_length,
 				 gds_arg_number, (SLONG) len, 0);
+	}
 
-	if (out_msg_length)
-		if ((U_IPTR) out_msg & (ALIGNMENT - 1))
+	if (out_msg_length) {
+		if ((U_IPTR) out_msg & (ALIGNMENT - 1)) {
 			MOVE_FAST((SCHAR *) request + out_message->nod_impure, out_msg,
 					  out_msg_length);
-		else
+		}
+		else {
 			MOVE_FASTER((SCHAR *) request + out_message->nod_impure, out_msg,
 						out_msg_length);
+		}
+	}
 
 	check_autocommit(request, tdbb);
 
 	CMP_release(tdbb, request);
 
 	return return_success(tdbb);
+
+	}	// try
+	catch (...)
+	{
+		/* Set up to trap error in case release pool goes wrong. */
+
+		try {
+			if (old_pool) {
+				tdbb->tdbb_default = old_pool;
+			}
+			if (request) {
+				CMP_release(tdbb, request);
+			} else if (new_pool) {
+				delete new_pool;
+			}
+		}	// try
+		catch (...) {
+		}
+
+		return error(user_status);
+	}	// catch
 }
 
 
@@ -3739,19 +3807,25 @@ STATUS DLL_EXPORT GDS_UNWIND(STATUS * user_status,
 /* Make sure blocks look and feel kosher */
 
 	if (!(attachment = request->req_attachment) ||
-		(attachment->att_header.blk_type != (UCHAR) type_att) ||
+		(MemoryPool::blk_type(attachment) != type_att) ||
 		!(dbb = attachment->att_database) ||
-		dbb->dbb_header.blk_type != (UCHAR) type_dbb)
+		MemoryPool::blk_type(dbb) != type_dbb)
+	{
 		return handle_error(user_status, gds_bad_db_handle, tdbb);
+	}
 
 /* Make sure this is a valid attachment */
 
 	for (attach = dbb->dbb_attachments; attach; attach = attach->att_next)
-		if (attach == attachment)
+	{
+		if (attach == attachment) {
 			break;
+		}
+	}
 
-	if (!attach)
+	if (!attach) {
 		return handle_error(user_status, gds_bad_db_handle, tdbb);
+	}
 
 	tdbb->tdbb_database = dbb;
 
@@ -3765,18 +3839,18 @@ STATUS DLL_EXPORT GDS_UNWIND(STATUS * user_status,
 	tdbb->tdbb_status_vector = user_status;
 	tdbb->tdbb_attachment = attachment;
 
-	if (SETJMP(env)) {
-		JRD_restore_context();
-		return user_status[1];
-	}
+	try {
 
 /* Pick up and validate request level */
 
-	if (lev = level)
-		if (!(vector = request->req_sub_requests) ||
-			lev >= vector->vec_count ||
-			!(request = (REQ) vector->vec_object[lev]))
+		if ( (lev = level) ) {
+			if (!(vector = request->req_sub_requests) ||
+				lev >= vector->count() ||
+				!(request = (REQ) (*vector)[lev]))
+			{
 				ERR_post(gds_req_sync, 0);
+			}
+		}
 
 	tdbb->tdbb_request = NULL;
 	tdbb->tdbb_transaction = NULL;
@@ -3793,6 +3867,12 @@ STATUS DLL_EXPORT GDS_UNWIND(STATUS * user_status,
 	user_status[2] = gds_arg_end;
 
 	return (user_status[1] = SUCCESS);
+
+	}	// try
+	catch (...) {
+		JRD_restore_context();
+		return user_status[1];
+	}
 }
 
 
@@ -3831,7 +3911,7 @@ void JRD_blocked(ATT blocking, BTB * que)
 	if (block) {
 		dbb->dbb_free_btbs = block->btb_next;
 	} else {
-		block = (BTB) ALLOCP(type_btb);
+		block = new(*dbb->dbb_permanent) btb;
 	}
 
 	block->btb_thread_id = (SLONG) SCH_current_thread();
@@ -3992,7 +4072,7 @@ void JRD_print_all_counters(char *fname)
 	ib_fprintf(fptr, "==========================\n");
 	gds_print_delta_counters(fptr);
 	ALL_print_memory_pool_info(fptr, databases);
-	ALLD_print_memory_pool_info(fptr);
+//	ALLD_print_memory_pool_info(fptr);
 
 	V4_JRD_MUTEX_UNLOCK(databases_mutex);
 
@@ -4015,7 +4095,8 @@ void JRD_print_procedure_info(TDBB tdbb, char *mesg)
  ******************************************************/
 	IB_FILE *fptr;
 	TEXT fname[MAXPATHLEN];
-	PRC procedure, *ptr, *end;
+	PRC procedure;
+	vec::iterator ptr, end;
 	VEC procedures;
 
 	gds__prefix(fname, "proc_info.log");
@@ -4034,9 +4115,9 @@ void JRD_print_procedure_info(TDBB tdbb, char *mesg)
 	V4_JRD_MUTEX_LOCK(databases_mutex);
 
 	if (procedures = tdbb->tdbb_database->dbb_procedures) {
-		for (ptr = (PRC *) procedures->vec_object, end =
-			 ptr + procedures->vec_count; ptr < end; ptr++)
-			if (procedure = *ptr)
+		for (ptr = procedures->begin(), end = procedures->end();
+					ptr < end; ptr++)
+			if ( (procedure = *ptr) )
 				ib_fprintf(fptr, "%s  ,  %d,  %X,  %d, %d\n",
 						   (procedure->
 							prc_name) ? (char *) procedure->prc_name->
@@ -4337,10 +4418,10 @@ static BLB check_blob(TDBB tdbb, STATUS * user_status, BLB * blob_handle)
 	blob = *blob_handle;
 
 	if (!blob ||
-		(blob->blb_header.blk_type != (UCHAR) type_blb) ||
+		(MemoryPool::blk_type(blob) != type_blb) ||
 		check_database(tdbb, blob->blb_attachment, user_status) ||
 		!(transaction = blob->blb_transaction) ||
-		transaction->tra_header.blk_type != (UCHAR) type_tra) {
+		MemoryPool::blk_type(transaction) != type_tra) {
 		handle_error(user_status, gds_bad_segstr_handle, tdbb);
 		return NULL;
 	}
@@ -4377,9 +4458,9 @@ static STATUS check_database(TDBB tdbb, ATT attachment, STATUS * user_status)
 /* Make sure blocks look and feel kosher */
 
 	if (!attachment ||
-		(attachment->att_header.blk_type != (UCHAR) type_att) ||
+		(MemoryPool::blk_type(attachment) != type_att) ||
 		!(dbb = attachment->att_database) ||
-		dbb->dbb_header.blk_type != (UCHAR) type_dbb)
+		MemoryPool::blk_type(dbb)!= type_dbb)
 		return handle_error(user_status, gds_bad_db_handle, tdbb);
 
 /* Make sure this is a valid attachment */
@@ -4505,15 +4586,13 @@ static STATUS commit(
 	if (transaction->tra_sibling &&
 		!(transaction->tra_flags & TRA_prepared) &&
 		prepare(tdbb, transaction, ptr, 0, NULL))
-		return error(user_status);
-
-	if (SETJMP(env)) {
-		dbb = tdbb->tdbb_database;
-		--dbb->dbb_use_count;
+	{
 		return error(user_status);
 	}
 
-	while (transaction = next) {
+	try {
+
+	while ( (transaction = next) ) {
 		next = transaction->tra_sibling;
 		check_database(tdbb, transaction->tra_attachment, user_status);
 		tdbb->tdbb_setjmp = (UCHAR *) env;
@@ -4524,6 +4603,13 @@ static STATUS commit(
 	}
 
 	return return_success(tdbb);
+
+	}	// try
+	catch (...) {
+		dbb = tdbb->tdbb_database;
+		--dbb->dbb_use_count;
+		return error(user_status);
+	}
 }
 
 
@@ -4540,7 +4626,7 @@ static STR copy_string(TEXT * ptr, USHORT length)
  *
  **************************************/
 	DBB dbb = get_dbb();
-	STR string = (STR) ALLOCPV(type_str, length);
+	STR string = new(*dbb->dbb_permanent, length) str();
 
 	string->str_length = length;
 	MOVE_FAST(ptr, string->str_data, length);
@@ -4601,7 +4687,7 @@ static TRA find_transaction(TDBB tdbb, TRA transaction, STATUS error_code)
 
 	SET_TDBB(tdbb);
 
-	if (!transaction || transaction->tra_header.blk_type != (UCHAR) type_tra)
+	if (!transaction || MemoryPool::blk_type(transaction) != type_tra)
 		ERR_post(gds_bad_trans_handle, 0);
 
 	for (; transaction; transaction = transaction->tra_sibling)
@@ -4632,7 +4718,7 @@ static STATUS error(STATUS * user_status)
 
 /* Decrement count of active threads in database */
 
-	if (dbb = tdbb->tdbb_database) {
+	if ( (dbb = tdbb->tdbb_database) ) {
 		--dbb->dbb_use_count;
 	}
 
@@ -5130,7 +5216,7 @@ static TEXT* get_string_parameter(UCHAR** dpb_ptr, TEXT** opt_ptr)
 	opt = *opt_ptr;
 	dpb = *dpb_ptr;
 
-	if (l = *(dpb++))
+	if ( (l = *(dpb++)) )
 		do
 			*opt++ = *dpb++;
 		while (--l);
@@ -5219,10 +5305,9 @@ static DBB init(TDBB	tdbb,
  *	OPEN.
  *
  **************************************/
-	DBB dbb;
+	DBB dbb_;
 	STR string;
 	VEC vector;
-	struct dbb temp;
 	MUTX_T temp_mutx[DBB_MUTX_max];
 	WLCK_T temp_wlck[DBB_WLCK_max];
 	JMP_BUF env;
@@ -5259,67 +5344,65 @@ static DBB init(TDBB	tdbb,
 
 /* Check to see if the database is already actively attached */
 
-	for (dbb = databases; dbb; dbb = dbb->dbb_next)
+	for (dbb_ = databases; dbb_; dbb_ = dbb_->dbb_next)
 	{
-		if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use)) &&
+		if (!(dbb_->dbb_flags & (DBB_bugcheck | DBB_not_in_use)) &&
 #ifndef SUPERSERVER
-			!(dbb->dbb_ast_flags & DBB_shutdown &&
-			  dbb->dbb_ast_flags & DBB_shutdown_locks) &&
+			!(dbb_->dbb_ast_flags & DBB_shutdown &&
+			  dbb_->dbb_ast_flags & DBB_shutdown_locks) &&
 #endif
-			(string = dbb->dbb_filename) &&
+			(string = dbb_->dbb_filename) &&
 			!strcmp(reinterpret_cast<char*>(string->str_data),
 					expanded_filename))
 		{
-			return (attach_flag) ? dbb : NULL;
+			return (attach_flag) ? dbb_ : NULL;
 		}
 	}
 
 /* Clean up temporary DBB and initialize a SETJMP for error reporting */
 
-	MOVE_CLEAR(&temp, (SLONG) sizeof(struct dbb));
+	/* MOVE_CLEAR(&temp, (SLONG) sizeof(struct dbb)); */
 	THD_MUTEX_INIT_N(temp_mutx, DBB_MUTX_max);
 	V4_RW_LOCK_INIT_N(temp_wlck, DBB_WLCK_max);
 
 /* set up the temporary database block with fields that are
    required for doing the ALL_init() */
 
-	temp.dbb_header.blk_type = type_dbb;
-	temp.dbb_mutexes = temp_mutx;
-	temp.dbb_rw_locks = temp_wlck;
-
-	tdbb->tdbb_database = dbb = &temp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
 	tdbb->tdbb_status_vector = user_status;
-	if (SETJMP(env))
-		return 0;
-	ALL_init();
+	tdbb->tdbb_database = 0;
 
-	tdbb->tdbb_database = dbb = (DBB) ALLOCP(type_dbb);
+	try {
+
+	JrdMemoryPool* perm = new(*FB_MemoryPool) JrdMemoryPool;
+	dbb_ = dbb::newDbb(*perm);
+	//temp.blk_type = type_dbb;
+	dbb_->dbb_permanent = perm;
+	dbb_->dbb_mutexes = temp_mutx;
+	dbb_->dbb_rw_locks = temp_wlck;
+	tdbb->tdbb_database = dbb_;
+
+	ALL_init();
 
 	THD_MUTEX_DESTROY_N(temp_mutx, DBB_MUTX_max);
 	V4_RW_LOCK_DESTROY_N(temp_wlck, DBB_WLCK_max);
 
-	MOVE_FAST((UCHAR *) & temp + sizeof(struct blk),
-			  (UCHAR *) dbb + sizeof(struct blk),
-			  sizeof(struct dbb) - sizeof(struct blk));
-
-	dbb->dbb_next = databases;
-	databases = dbb;
+	dbb_->dbb_next = databases;
+	databases = dbb_;
 
 	string =
-		(STR) ALLOCPV(type_str, THREAD_STRUCT_SIZE(MUTX_T, DBB_MUTX_max));
-	dbb->dbb_mutexes = (MUTX) THREAD_STRUCT_ALIGN(string->str_data);
-	THD_MUTEX_INIT_N(dbb->dbb_mutexes, DBB_MUTX_max);
+		new(*dbb_->dbb_permanent, THREAD_STRUCT_SIZE(MUTX_T, DBB_MUTX_max)) str();
+
+	dbb_->dbb_mutexes = (MUTX) THREAD_STRUCT_ALIGN(string->str_data);
+	THD_MUTEX_INIT_N(dbb_->dbb_mutexes, DBB_MUTX_max);
 	string =
-		(STR) ALLOCPV(type_str, THREAD_STRUCT_SIZE(WLCK_T, DBB_WLCK_max));
-	dbb->dbb_rw_locks = (WLCK) THREAD_STRUCT_ALIGN(string->str_data);
-	V4_RW_LOCK_INIT_N(dbb->dbb_rw_locks, DBB_WLCK_max);
-	dbb->dbb_internal = vector = (VEC) ALLOCPV(type_vec, irq_MAX);
-	vector->vec_count = (SSHORT) irq_MAX;
-	dbb->dbb_dyn_req = vector = (VEC) ALLOCPV(type_vec, drq_MAX);
-	vector->vec_count = (SSHORT) drq_MAX;
-	dbb->dbb_flags |= DBB_exclusive;
-	dbb->dbb_sweep_interval = SWEEP_INTERVAL;
+		new(*dbb_->dbb_permanent, THREAD_STRUCT_SIZE(WLCK_T, DBB_WLCK_max)) str();
+	dbb_->dbb_rw_locks = (WLCK) THREAD_STRUCT_ALIGN(string->str_data);
+	V4_RW_LOCK_INIT_N(dbb_->dbb_rw_locks, DBB_WLCK_max);
+	dbb_->dbb_internal = vector = vec::newVector(*dbb_->dbb_permanent, irq_MAX);
+	dbb_->dbb_dyn_req = vector = vec::newVector(*dbb_->dbb_permanent, drq_MAX);
+	dbb_->dbb_flags |= DBB_exclusive;
+	dbb_->dbb_sweep_interval = SWEEP_INTERVAL;
 
 /* Initialize a number of subsystems */
 
@@ -5328,15 +5411,20 @@ static DBB init(TDBB	tdbb,
 #ifdef ISC_DATABASE_ENCRYPTION
 /* Lookup some external "hooks" */
 
-	if (dbb->dbb_encrypt = ISC_lookup_entrypoint(ENCRYPT_IMAGE, ENCRYPT, NULL))
+	if (dbb_->dbb_encrypt = ISC_lookup_entrypoint(ENCRYPT_IMAGE, ENCRYPT, NULL))
 	{
-		dbb->dbb_decrypt = ISC_lookup_entrypoint(ENCRYPT_IMAGE, DECRYPT, NULL);
+		dbb_->dbb_decrypt = ISC_lookup_entrypoint(ENCRYPT_IMAGE, DECRYPT, NULL);
 	}
 #endif
 
 	INTL_init(tdbb);
 
-	return dbb;
+	return dbb_;
+
+	}	// try
+	catch (...) {
+		return 0;
+	}
 }
 
 
@@ -5370,7 +5458,7 @@ static void make_jrn_data(UCHAR*	data,
 		} while (--len);
 	}
 
-	if (len = db_len) {
+	if ( (len = db_len) ) {
 		*t++ = JRNW_DB_NAME;
 		*t++ = (UCHAR) db_len;
 		const UCHAR* q = reinterpret_cast<UCHAR*>(db_name);
@@ -5406,11 +5494,7 @@ static STATUS prepare(TDBB		tdbb,
 
 	SET_TDBB(tdbb);
 
-	if (SETJMP(env)) {
-		dbb = tdbb->tdbb_database;
-		--dbb->dbb_use_count;
-		return status_vector[1];
-	}
+	try {
 
 	for (; transaction; transaction = transaction->tra_sibling) {
 		check_database(tdbb, transaction->tra_attachment, status_vector);
@@ -5419,6 +5503,13 @@ static STATUS prepare(TDBB		tdbb,
 		TRA_prepare(tdbb, transaction, length, msg);
 		dbb = tdbb->tdbb_database;
 		--dbb->dbb_use_count;
+	}
+
+	}	// try
+	catch (...) {
+		dbb = tdbb->tdbb_database;
+		--dbb->dbb_use_count;
+		return status_vector[1];
 	}
 
 	return SUCCESS;
@@ -5446,7 +5537,8 @@ static void release_attachment(ATT attachment)
 	ATT *ptr;
 	VCL *vector;
 	VEC lock_vector;
-	LCK *lock, record_lock;
+	LCK record_lock;
+	vec::iterator lock;
 	USHORT i;
 
 	TDBB tdbb = get_thread_data();
@@ -5468,35 +5560,35 @@ static void release_attachment(ATT attachment)
 	for (vector = attachment->att_counts;
 		 vector < attachment->att_counts + DBB_max_count; ++vector)
 		if (*vector)
-			ALL_RELEASE(*vector);
+			delete *vector;
 
 	if (attachment->att_working_directory)
-		ALL_RELEASE(attachment->att_working_directory);
+		delete attachment->att_working_directory;
 
 	if (attachment->att_lc_messages)
-		ALL_RELEASE(attachment->att_lc_messages);
+		delete attachment->att_lc_messages;
 
 /* Release any validation error vector allocated */
 
 	if (attachment->att_val_errors) {
-		ALL_RELEASE(attachment->att_val_errors);
+		delete attachment->att_val_errors;
 		attachment->att_val_errors = (VCL) 0;
 	}
 
 /* Release the persistent locks taken out during the attachment */
 
-	if (lock_vector = attachment->att_relation_locks)
+	if ( (lock_vector = attachment->att_relation_locks) )
 	{
-		for (i = 0, lock = (LCK *) lock_vector->vec_object;
-			 i < lock_vector->vec_count; i++, lock++)
+		for (i = 0, lock = lock_vector->begin();
+			 i < lock_vector->count(); i++, lock++)
 		{
 			if (*lock)
 			{
-				LCK_release(tdbb, *lock);
-				ALL_RELEASE(*lock);
+				LCK_release(tdbb, (LCK)(*lock));
+				delete *lock;
 			}
 		}
-		ALL_RELEASE(lock_vector);
+		delete lock_vector;
 	}
 
 	for (record_lock = attachment->att_record_locks; record_lock;
@@ -5519,12 +5611,12 @@ static void release_attachment(ATT attachment)
 		LCK_fini(tdbb, LCK_OWNER_attachment);	/* For the attachment */
 
 	if (attachment->att_compatibility_table)
-		ALL_RELEASE(attachment->att_compatibility_table);
+		delete attachment->att_compatibility_table;
 
 	V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 	V4_JRD_MUTEX_LOCK(databases_mutex);
 
-	if (dbb->dbb_header.blk_type != (UCHAR) type_dbb)
+	if (MemoryPool::blk_type(dbb) != type_dbb)
 		return;
 
 /* remove the attachment block from the dbb linked list */
@@ -5557,7 +5649,7 @@ static STATUS return_success(TDBB tdbb)
 
 /* Decrement count of active threads in database */
 
-	if (dbb = tdbb->tdbb_database)
+	if ( (dbb = tdbb->tdbb_database) )
 		--dbb->dbb_use_count;
 
 	p = user_status = tdbb->tdbb_status_vector;
@@ -5620,20 +5712,25 @@ static BOOLEAN rollback(TDBB	tdbb,
 
 	SET_TDBB(tdbb);
 
-	while (transaction = next) {
+	while ( (transaction = next) )
+	{
 		next = transaction->tra_sibling;
 		check_database(tdbb, transaction->tra_attachment, status_vector);
-		if (SETJMP(env)) {
-			status_vector = local_status;
-			dbb = tdbb->tdbb_database;
-			--dbb->dbb_use_count;
-			continue;
-		}
+
+		try {
 		tdbb->tdbb_setjmp = (UCHAR *) env;
 		tdbb->tdbb_status_vector = status_vector;
 		TRA_rollback(tdbb, transaction, retaining_flag);
 		dbb = tdbb->tdbb_database;
 		--dbb->dbb_use_count;
+
+		}	// try
+		catch (...) {
+			status_vector = local_status;
+			dbb = tdbb->tdbb_database;
+			--dbb->dbb_use_count;
+			continue;
+		}
 	}
 
 	return (status_vector == local_status);
@@ -5716,14 +5813,13 @@ static void shutdown_database(DBB dbb, BOOLEAN release_pools)
 	if (dbb->dbb_relations)
 	{
 		VEC vector = dbb->dbb_relations;
-		REL* ptr = (REL*)vector->vec_object;
-		const REL* end = ptr + vector->vec_count;
+		vec::iterator ptr = vector->begin(), end = vector->end();
 
 		for (; ptr < end; ++ptr)
 		{
-			if (*ptr && (*ptr)->rel_file)
+			if (*ptr && ((REL)(*ptr))->rel_file)
 			{
-				EXT_fini(*ptr);
+				EXT_fini((REL)(*ptr));
 			}
 		}
 	}
@@ -6087,17 +6183,20 @@ ULONG JRD_shutdown_all()
 
 				tdbb->tdbb_setjmp = (UCHAR *) env;
 				tdbb->tdbb_status_vector = user_status;
-				if (SETJMP(env)) {
-					if (initialized)
+
+				try {
+					/* purge_attachment, rollback any open transactions */
+
+					V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
+					purge_attachment(tdbb, user_status, att, TRUE);
+					V4_JRD_MUTEX_UNLOCK(databases_mutex);
+				}	// try
+				catch (...) {
+					if (initialized) {
 						JRD_SS_MUTEX_UNLOCK;
+					}
 					return error(user_status);
 				}
-
-				/* purge_attachment, rollback any open transactions */
-
-				V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
-				purge_attachment(tdbb, user_status, att, TRUE);
-				V4_JRD_MUTEX_UNLOCK(databases_mutex);
 			}
 		}
 	}
@@ -6171,7 +6270,7 @@ static void purge_attachment(TDBB		tdbb,
 
 		/* If there's a side transaction for db-key scope, get rid of it */
 
-		if (transaction = attachment->att_dbkey_trans)
+		if ( (transaction = attachment->att_dbkey_trans) )
 		{
 			attachment->att_dbkey_trans = NULL;
 			if (dbb->dbb_ast_flags & DBB_shutdown ||
@@ -6197,33 +6296,33 @@ static void purge_attachment(TDBB		tdbb,
 
 /* If there are still attachments, do a partial shutdown */
 
-	if (dbb->dbb_header.blk_type == (UCHAR) type_dbb)
+	if (MemoryPool::blk_type(dbb) == type_dbb)
 	{
 		if (dbb->dbb_attachments || (dbb->dbb_flags & DBB_being_opened))
 		{
 			/* There are still attachments so do a partial shutdown */
 
-			while (request = attachment->att_requests) {
+			while ( (request = attachment->att_requests) ) {
 				CMP_release(tdbb, request);
 			}
-			while (class_ = attachment->att_security_classes) {
+			while ( (class_ = attachment->att_security_classes) ) {
 				SCL_release(class_);
 			}
-			if (user = attachment->att_user) {
-				ALL_RELEASE(user);
+			if ( (user = attachment->att_user) ) {
+				delete user;
 			}
-			while (bookmark = attachment->att_bookmarks) {
+			while ( (bookmark = attachment->att_bookmarks) ) {
 				attachment->att_bookmarks = bookmark->bkm_next;
-				ALL_RELEASE(bookmark);
+				delete bookmark;
 			}
 			if (attachment->att_bkm_quick_ref) {
-				ALL_RELEASE(attachment->att_bkm_quick_ref);
+				delete attachment->att_bkm_quick_ref;
 			}
 			if (attachment->att_lck_quick_ref) {
-				ALL_RELEASE(attachment->att_lck_quick_ref);
+				delete attachment->att_lck_quick_ref;
 			}
 
-			ALL_RELEASE(attachment);
+			delete attachment;
 		}
 		else
 		{

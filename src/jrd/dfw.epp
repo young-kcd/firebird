@@ -131,35 +131,35 @@ DATABASE DB = FILENAME "ODS.RDB";
 **
 **==================================================================
 */
-static BOOLEAN add_file(TDBB, SSHORT, DFW, TRA);
-static BOOLEAN add_shadow(TDBB, SSHORT, DFW, TRA);
-static BOOLEAN delete_shadow(TDBB, SSHORT, DFW, TRA);
-static BOOLEAN compute_security(TDBB, SSHORT, DFW, TRA);
-static BOOLEAN create_index(TDBB, SSHORT, DFW, TRA);
-static BOOLEAN delete_index(TDBB, SSHORT, DFW, TRA);
-static BOOLEAN create_log(TDBB, SSHORT, DFW, TRA);
-static BOOLEAN delete_log(TDBB, SSHORT, DFW, TRA);
-static BOOLEAN create_procedure(TDBB, SSHORT, DFW, TRA);
-static BOOLEAN delete_procedure(TDBB, SSHORT, DFW, TRA);
-static BOOLEAN modify_procedure(TDBB, SSHORT, DFW, TRA);
-static BOOLEAN create_relation(TDBB, SSHORT, DFW, TRA);
-static BOOLEAN delete_relation(TDBB, SSHORT, DFW, TRA);
-static BOOLEAN scan_relation(TDBB, SSHORT, DFW, TRA);
-static BOOLEAN create_trigger(TDBB, SSHORT, DFW, TRA);
-static BOOLEAN delete_trigger(TDBB, SSHORT, DFW, TRA);
-static BOOLEAN modify_trigger(TDBB, SSHORT, DFW, TRA);
-static BOOLEAN delete_exception(TDBB, SSHORT, DFW, TRA);
-static BOOLEAN delete_field(TDBB, SSHORT, DFW, TRA);
-static BOOLEAN delete_global(TDBB, SSHORT, DFW, TRA);
-static BOOLEAN delete_parameter(TDBB, SSHORT, DFW, TRA);
-static BOOLEAN delete_rfr(TDBB, SSHORT, DFW, TRA);
-static BOOLEAN make_version(TDBB, SSHORT, DFW, TRA);
+static bool add_file(TDBB, SSHORT, DFW, TRA);
+static bool add_shadow(TDBB, SSHORT, DFW, TRA);
+static bool delete_shadow(TDBB, SSHORT, DFW, TRA);
+static bool compute_security(TDBB, SSHORT, DFW, TRA);
+static bool create_index(TDBB, SSHORT, DFW, TRA);
+static bool delete_index(TDBB, SSHORT, DFW, TRA);
+static bool create_log(TDBB, SSHORT, DFW, TRA);
+static bool delete_log(TDBB, SSHORT, DFW, TRA);
+static bool create_procedure(TDBB, SSHORT, DFW, TRA);
+static bool delete_procedure(TDBB, SSHORT, DFW, TRA);
+static bool modify_procedure(TDBB, SSHORT, DFW, TRA);
+static bool create_relation(TDBB, SSHORT, DFW, TRA);
+static bool delete_relation(TDBB, SSHORT, DFW, TRA);
+static bool scan_relation(TDBB, SSHORT, DFW, TRA);
+static bool create_trigger(TDBB, SSHORT, DFW, TRA);
+static bool delete_trigger(TDBB, SSHORT, DFW, TRA);
+static bool modify_trigger(TDBB, SSHORT, DFW, TRA);
+static bool delete_exception(TDBB, SSHORT, DFW, TRA);
+static bool delete_field(TDBB, SSHORT, DFW, TRA);
+static bool delete_global(TDBB, SSHORT, DFW, TRA);
+static bool delete_parameter(TDBB, SSHORT, DFW, TRA);
+static bool delete_rfr(TDBB, SSHORT, DFW, TRA);
+static bool make_version(TDBB, SSHORT, DFW, TRA);
 
 /* ---------------------------------------------------------------- */
 
 static void check_dependencies(TDBB, TEXT*, TEXT*, USHORT, TRA);
 static void check_filename(TEXT*, USHORT);
-static BOOLEAN find_depend_in_dfw(TDBB, TEXT*, USHORT, USHORT, TRA);
+static bool	find_depend_in_dfw(TDBB, TEXT*, USHORT, USHORT, TRA);
 static void get_array_desc(TDBB, TEXT*, ADS);
 static void get_procedure_dependencies(DFW);
 static void get_trigger_dependencies(DFW);
@@ -167,8 +167,8 @@ static FMT make_format(TDBB, REL, USHORT, TFB);
 static USHORT name_length(TEXT *);
 static void put_summary_blob(BLB, enum rsr_t, SLONG[2]);
 static void put_summary_record(BLB, enum rsr_t, UCHAR *, USHORT);
-static BOOLEAN shadow_defined(TDBB);
-static BOOLEAN wal_defined(TDBB);
+static bool shadow_defined(TDBB);
+static bool wal_defined(TDBB);
 
 static CONST UCHAR nonnull_validation_blr[] =
 {
@@ -182,40 +182,40 @@ static CONST UCHAR nonnull_validation_blr[] =
 typedef struct task
 {
 	ENUM dfw_t task_type;
-	  BOOLEAN(*task_routine) (TDBB, SSHORT, DFW, TRA);
+	bool (*task_routine) (TDBB, SSHORT, DFW, TRA);
 } TASK;
 
 static CONST TASK task_table[] =
 {
-	dfw_add_file, add_file,
-	dfw_add_shadow, add_shadow,
-	dfw_delete_index, delete_index,
-	dfw_delete_rfr, delete_rfr,
-	dfw_delete_relation, delete_relation,
-	dfw_delete_shadow, delete_shadow,
-	dfw_delete_field, delete_field,
-	dfw_delete_global, delete_global,
-	dfw_create_relation, create_relation,
-	dfw_update_format, make_version,
-	dfw_scan_relation, scan_relation,
-	dfw_compute_security, compute_security,
-	dfw_create_index, create_index,
+	{ dfw_add_file, add_file },
+	{ dfw_add_shadow, add_shadow },
+	{ dfw_delete_index, delete_index },
+	{ dfw_delete_rfr, delete_rfr },
+	{ dfw_delete_relation, delete_relation },
+	{ dfw_delete_shadow, delete_shadow },
+	{ dfw_delete_field, delete_field },
+	{ dfw_delete_global, delete_global },
+	{ dfw_create_relation, create_relation },
+	{ dfw_update_format, make_version },
+	{ dfw_scan_relation, scan_relation },
+	{ dfw_compute_security, compute_security },
+	{ dfw_create_index, create_index },
 #ifdef EXPRESSION_INDICES
-	dfw_create_expression_index, PCMET_expression_index,
+	{ dfw_create_expression_index, PCMET_expression_index },
 #endif
-	dfw_delete_expression_index, delete_index,
-	dfw_grant, (BOOLEAN(*)(TDBB, SSHORT, DFW, TRA))GRANT_privileges,
-	dfw_create_trigger, create_trigger,
-	dfw_delete_trigger, delete_trigger,
-	dfw_modify_trigger, modify_trigger,
-	dfw_create_log, create_log,
-	dfw_delete_log, delete_log,
-	dfw_create_procedure, create_procedure,
-	dfw_delete_procedure, delete_procedure,
-	dfw_modify_procedure, modify_procedure,
-	dfw_delete_prm, delete_parameter,
-	dfw_delete_exception, delete_exception,
-	dfw_null, NULL
+	{ dfw_delete_expression_index, delete_index },
+	{ dfw_grant, (bool(*)(TDBB, SSHORT, DFW, TRA))GRANT_privileges },
+	{ dfw_create_trigger, create_trigger },
+	{ dfw_delete_trigger, delete_trigger },
+	{ dfw_modify_trigger, modify_trigger },
+	{ dfw_create_log, create_log },
+	{ dfw_delete_log, delete_log },
+	{ dfw_create_procedure, create_procedure },
+	{ dfw_delete_procedure, delete_procedure },
+	{ dfw_modify_procedure, modify_procedure },
+	{ dfw_delete_prm, delete_parameter },
+	{ dfw_delete_exception, delete_exception },
+	{ dfw_null, NULL }
 };
 
 #ifdef SHLIB_DEFS
@@ -229,13 +229,12 @@ static CONST TASK task_table[] =
 #define _iob		(*_libgds__iob)
 #define ib_fprintf		(*_libgds_fprintf)
 
-extern int strlen();
-extern int strcmp();
-extern int SETJMP();
-extern int memcmp();
-extern int strncmp();
-extern SCHAR *strcpy();
-extern int unlink();
+extern int strlen(const char*);
+extern int strcmp(const char*, const char*);
+extern int memcmp(const void*, const void*, size_t);
+extern int strncmp(const char*, char*, size_t);
+extern char* strcpy(char* const char*);
+extern int unlink(const char*);
 extern IB_FILE _iob[];
 extern int ib_fprintf();
 #endif
@@ -258,7 +257,8 @@ USHORT DFW_assign_index_type(DFW work, SSHORT field_type, SSHORT ttype)
 
 	tdbb = GET_THREAD_DATA;
 
-	if (field_type == dtype_varying || field_type == dtype_text) {
+	if (field_type == dtype_varying || field_type == dtype_text)
+	{
 		STATUS status[20];
 
 		if (ttype == ttype_none)
@@ -331,12 +331,12 @@ void DFW_delete_deferred( TRA transaction, SLONG sav_number)
 
 /* Remove deferred work and events which are to be rolled back */
 
-	for (ptr = &transaction->tra_deferred_work; work = *ptr;)
+	for (ptr = &transaction->tra_deferred_work; (work = *ptr);)
 	{
 		if ((work->dfw_sav_number == sav_number) || (sav_number == -1))
 		{
 			*ptr = work->dfw_next;
-			ALL_release((FRB)work);
+			delete work;
 		}
 		else
 		{
@@ -379,7 +379,7 @@ void DFW_merge_work(TRA transaction,
  * i.e. merge with the previous level.
  */
 
-	for (ptr = &transaction->tra_deferred_work; work = *ptr;)
+	for (ptr = &transaction->tra_deferred_work; (work = *ptr);)
 	{
 		if (work->dfw_sav_number == old_sav_number)
 		{
@@ -413,18 +413,20 @@ void DFW_merge_work(TRA transaction,
 
 					*ptr = work->dfw_next;
 
-					if (work_m->dfw_name_length)
+					if (work_m->dfw_name_length) {
 						work_m->dfw_count += work->dfw_count;
+					}
 
-					ALL_release((FRB)work);
+					delete work;
 					work = (DFW) 0;
 					break;
 				}
 			}
 		}
 
-		if (work)
+		if (work) {
 			ptr = &(*ptr)->dfw_next;
+		}
 	}
 }
 
@@ -463,14 +465,11 @@ void DFW_perform_work(TRA transaction)
  *	come.
  *
  **************************************/
+
 	TDBB tdbb = GET_THREAD_DATA;
-	BOOLEAN		dump_shadow = FALSE;
+	bool		dump_shadow = false;
 	SSHORT		phase = 1;
-	JMP_BUF		env;
-	JMP_BUF*	old_env;
-	BOOLEAN		more;
 	DFW			work;
-	DFW*		ptr;
 
 /* If no deferred work or it's all deferred event posting
    don't bother */
@@ -491,53 +490,53 @@ void DFW_perform_work(TRA transaction)
    designated as the cleanup phase. If any non-zero phase punts, then phase 0
    is executed for all deferred work blocks to cleanup work-in-progress. */
 
-	old_env = (JMP_BUF*) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
-
-	if (SETJMP(env))
-	{
-		/* Do any necessary cleanup */
-
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		phase = 0;
-	}
+	bool more;
 
 	do
 	{
-		const TASK* task;
-		more = FALSE;
-		for (task = task_table; task->task_type != dfw_null; task++)
-		{
-			for (work = transaction->tra_deferred_work;
-				work;
-				 work = work->dfw_next)
+		more = false;
+		try {
+			const TASK* task;
+			for (task = task_table; task->task_type != dfw_null; ++task)
 			{
-				if (work->dfw_type == task->task_type)
+				for (work = transaction->tra_deferred_work;
+					work;
+					 work = work->dfw_next)
 				{
-					if (work->dfw_type == dfw_add_shadow)
+					if (work->dfw_type == task->task_type)
 					{
-						dump_shadow = TRUE;
-					}
-					if ((*task->task_routine)(tdbb, phase, work, transaction))
-					{
-						more = TRUE;
+						if (work->dfw_type == dfw_add_shadow)
+						{
+							dump_shadow = true;
+						}
+						if ((*task->task_routine)(tdbb, phase, work, transaction))
+						{
+							more = true;
+						}
 					}
 				}
 			}
+			if (!phase) {
+				ERR_punt();
+			}
+			++phase;
+		}	
+		catch (...) {
+			/* Do any necessary cleanup */
+			if (!phase) {
+				ERR_punt();
+			}
+			phase = 0;
+			more = true;
 		}
-		if (!phase) {
-			ERR_punt();
-		}
-		phase++;
-	} while (more);
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+	} while (more);
 
 /* Remove deferred work blocks so that system transaction and
    commit retaining transactions don't re-execute them. Leave
    events to be posted after commit */
 
-	for (ptr = &transaction->tra_deferred_work; work = *ptr;)
+	for (DFW* ptr = &transaction->tra_deferred_work; (work = *ptr);)
 	{
 		if ((work->dfw_type == dfw_post_event) ||
 			(work->dfw_type == dfw_delete_shadow))
@@ -547,7 +546,7 @@ void DFW_perform_work(TRA transaction)
 		else
 		{
 			*ptr = work->dfw_next;
-			ALL_release((FRB)work);
+			delete work;
 		}
 	}
 
@@ -590,7 +589,7 @@ void DFW_perform_post_commit_work(TRA transaction)
 	lock = dbb->dbb_lock;
 #endif
 
-	for (ptr = &transaction->tra_deferred_work; work = *ptr;)
+	for (ptr = &transaction->tra_deferred_work; (work = *ptr);)
 		if (work->dfw_type == dfw_post_event)
 		{
 #ifndef WINDOWS_ONLY			/* Events are not supported under LIBS */
@@ -602,13 +601,13 @@ void DFW_perform_post_commit_work(TRA transaction)
 						work->dfw_count);
 #endif
 			*ptr = work->dfw_next;
-			ALL_release((FRB)work);
+			delete work;
 		}
 		else if (work->dfw_type == dfw_delete_shadow)
 		{
 			unlink(work->dfw_name);
 			*ptr = work->dfw_next;
-			ALL_release((FRB)work);
+			delete work;
 		}
 		else
 		{
@@ -673,7 +672,7 @@ void DFW_post_work( TRA transaction, ENUM dfw_t type, DSC * desc, USHORT id)
 
 /* Check to see if work is already posted */
 
-	for (ptr = &transaction->tra_deferred_work; work = *ptr;
+	for (ptr = &transaction->tra_deferred_work; (work = *ptr);
 		 ptr = &(*ptr)->dfw_next)
 	{
 		if (work->dfw_type == type &&
@@ -692,7 +691,7 @@ void DFW_post_work( TRA transaction, ENUM dfw_t type, DSC * desc, USHORT id)
 
 /* Not already posted, so do so now. */
 
-	*ptr = work = (DFW) ALLOCTV(type_dfw, length);
+	*ptr = work = new(*transaction->tra_pool, length) dfw;
 	work->dfw_type = type;
 	work->dfw_id = id;
 	work->dfw_count = 1;
@@ -745,7 +744,7 @@ void DFW_update_index( DFW work, USHORT id, float selectivity)
 }
 
 
-static BOOLEAN add_file( TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
+static bool add_file(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 {
 /**************************************
  *
@@ -773,16 +772,16 @@ static BOOLEAN add_file( TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 	{
 	case 0:
 		CCH_release_exclusive(tdbb);
-		return FALSE;
+		return false;
 
 	case 1:
 	case 2:
-		return TRUE;
+		return true;
 
 	case 3:
 		if (CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD))
 		{
-			return TRUE;
+			return true;
 		}
 		else
 		{
@@ -791,7 +790,7 @@ static BOOLEAN add_file( TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 					 gds_arg_gds, gds_obj_in_use,
 					 gds_arg_string, ERR_cstring(dbb->dbb_file->fil_string),
 					 0);
-			return FALSE;
+			return false;
 		}
 	case 4:
 		CCH_flush(tdbb, (USHORT) FLUSH_FINI, 0L);
@@ -799,10 +798,11 @@ static BOOLEAN add_file( TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 		handle = handle2 = NULL;
 
 		/* Check the file name for node name.  This has already been done for 
-		   ** shadows in add_shadow () */
+		   ** shadows in add_shadow() */
 
-		if (work->dfw_type != dfw_add_shadow)
+		if (work->dfw_type != dfw_add_shadow) {
 			check_filename(work->dfw_name, work->dfw_name_length);
+		}
 
 		/* get any files to extend into */
 
@@ -872,12 +872,12 @@ static BOOLEAN add_file( TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 		break;
 	}
 
-	return FALSE;
+	return false;
 }
 
 
 
-static BOOLEAN add_shadow( TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
+static bool add_shadow( TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 {
 /**************************************
  *
@@ -892,32 +892,34 @@ static BOOLEAN add_shadow( TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
  *	in sequence order.
  *
  **************************************/
-	DBB dbb;
+
 	BLK handle;
 	SDW shadow;
 	USHORT sequence, add_sequence;
-	BOOLEAN finished;
+	bool finished;
 	ULONG min_page;
 	TEXT expanded_fname[1024];
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	switch (phase)
 	{
 	case 0:
 		CCH_release_exclusive(tdbb);
-		return FALSE;
+		return false;
 
 	case 1:
 	case 2:
 	case 3:
-		return TRUE;
+		return true;
 
 	case 4:
 		if (wal_defined(tdbb))
+		{
 			ERR_post(gds_no_meta_update,
 					 gds_arg_gds, gds_wal_shadow_err, 0);
+		}
 		/* Msg309: Write-Ahead Log with Shadowing configuration not allowed */
 
 		check_filename(work->dfw_name, work->dfw_name_length);
@@ -929,7 +931,7 @@ static BOOLEAN add_shadow( TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 		   fetched in totem and prepared for writing to, so just ignore it
 		 */
 
-		finished = FALSE;
+		finished = false;
 		handle = NULL;
 		FOR(REQUEST_HANDLE handle)
 			F IN RDB$FILES
@@ -944,10 +946,12 @@ static BOOLEAN add_shadow( TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 					!(shadow->sdw_flags & SDW_IGNORE))
 				{
 					if (F.RDB$FILE_FLAGS & FILE_shadow)
+					{
 						/* This is the case of a bogus duplicate posted
 						 * work when we added a multi-file shadow 
 						 */
-						finished = TRUE;
+						finished = true;
+					}
 					else if (shadow->sdw_flags & (SDW_dumped))
 					{
 						/* Case of adding a file to a currently active
@@ -964,7 +968,7 @@ static BOOLEAN add_shadow( TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 									 ERR_cstring(dbb->dbb_file->fil_string),
 									 0);
 						add_file(tdbb, phase, work, (TRA) 0);
-						finished = TRUE;
+						finished = true;
 					}
 					else
 					{
@@ -983,8 +987,9 @@ static BOOLEAN add_shadow( TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 		END_FOR;
 		CMP_release(tdbb, (REQ)handle);
 
-		if (finished)
-			return FALSE;
+		if (finished) {
+			return false;
+		}
 
 		/* this file is part of a new shadow, so get all files for the shadow
 		   in order of the starting page for the file */
@@ -1053,7 +1058,7 @@ static BOOLEAN add_shadow( TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 		break;
 	}
 
-	return FALSE;
+	return false;
 }
 
 
@@ -1210,10 +1215,10 @@ static void check_filename( TEXT * name, USHORT l)
 }
 
 
-static BOOLEAN compute_security(TDBB tdbb,
-								SSHORT phase,
-								DFW work,
-								TRA transaction)
+static bool compute_security(	TDBB	tdbb,
+								SSHORT	phase,
+								DFW		work,
+								TRA		transaction)
 {
 /**************************************
  *
@@ -1237,7 +1242,7 @@ static BOOLEAN compute_security(TDBB tdbb,
 	{
 	case 1:
 	case 2:
-		return TRUE;
+		return true;
 
 	case 3:
 		/* Get security class.  This may return NULL if it doesn't exist */
@@ -1255,7 +1260,7 @@ static BOOLEAN compute_security(TDBB tdbb,
 		break;
 	}
 
-	return FALSE;
+	return false;
 
 /**** OBSOLETE!!! Only security class name strings in relations and fields.
       Note: fld_security_class  --> fld_security_name
@@ -1285,10 +1290,10 @@ CMP_release (tdbb, handle);
 }
 
 
-static BOOLEAN create_index(TDBB tdbb,
-							SSHORT phase,
-							DFW work,
-							TRA transaction)
+static bool create_index(	TDBB	tdbb,
+							SSHORT	phase,
+							DFW		work,
+							TRA		transaction)
 {
 /**************************************
  *
@@ -1300,7 +1305,7 @@ static BOOLEAN create_index(TDBB tdbb,
  *	Create a new index or change the state of an index between active/inactive.
  *
  **************************************/
-	DBB dbb;
+
 	BLK request;
 	REL relation, partner_relation;
 	IDX idx;
@@ -1312,7 +1317,7 @@ static BOOLEAN create_index(TDBB tdbb,
 	WIN window;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	switch (phase)
 	{
@@ -1353,11 +1358,11 @@ static BOOLEAN create_index(TDBB tdbb,
 
 		CMP_release(tdbb, (REQ)handle);
 		CCH_release_exclusive(tdbb);
-		return FALSE;
+		return false;
 
 	case 1:
 	case 2:
-		return TRUE;
+		return true;
 
 	case 3:
 		key_count = 0;
@@ -1405,7 +1410,7 @@ static BOOLEAN create_index(TDBB tdbb,
 											(USHORT)(IDX.RDB$INDEX_ID - 1));
 					END_MODIFY;
 					EXE_unwind(tdbb, (REQ)request);
-					return FALSE;
+					return false;
 				}
 				if (IDX.RDB$INDEX_ID)
 				{
@@ -1419,7 +1424,7 @@ static BOOLEAN create_index(TDBB tdbb,
 				if (IDX.RDB$INDEX_INACTIVE)
 				{
 					EXE_unwind(tdbb, (REQ)request);
-					return FALSE;
+					return false;
 				}
 				idx.idx_count = IDX.RDB$SEGMENT_COUNT;
 				if (!idx.idx_count || idx.idx_count > 16)
@@ -1578,11 +1583,11 @@ static BOOLEAN create_index(TDBB tdbb,
 		break;
 	}
 
-	return FALSE;
+	return false;
 }
 
 
-static BOOLEAN create_log( TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
+static bool create_log(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 {
 /**************************************
  *
@@ -1605,15 +1610,15 @@ static BOOLEAN create_log( TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 	{
 	case 0:
 		CCH_release_exclusive(tdbb);
-		return 0;
+		return false;
 
 	case 1:
 	case 2:
-		return TRUE;
+		return true;
 
 	case 3:
 		if (CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD))
-			return TRUE;
+			return true;
 		else
 		{
 			ERR_post(gds_no_meta_update,
@@ -1621,15 +1626,17 @@ static BOOLEAN create_log( TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 					 gds_arg_gds, gds_obj_in_use,
 					 gds_arg_string, ERR_cstring(dbb->dbb_file->fil_string),
 					 0);
-			return FALSE;
+			return false;
 		}
 	case 4:
 
 		handle = NULL;
 		if (shadow_defined(tdbb))
+		{
 			ERR_post(gds_no_meta_update,
 					 gds_arg_gds, gds_wal_shadow_err,
 					 0);
+		}
 		/* Msg309: Write-Ahead Log with Shadowing configuration not allowed */
 		check_filename(work->dfw_name, work->dfw_name_length);
 
@@ -1646,18 +1653,18 @@ static BOOLEAN create_log( TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 
 		transaction->tra_flags |= TRA_add_log;
 		PAG_modify_log(transaction->tra_number, TRA_add_log);
-		return TRUE;
+		return true;
 
 	case 5:
 		CCH_release_exclusive(tdbb);
 		break;
 	}
 
-	return FALSE;
+	return false;
 }
 
 
-static BOOLEAN create_procedure(TDBB	tdbb,
+static bool create_procedure(	TDBB	tdbb,
 								SSHORT	phase,
 								DFW		work,
 								TRA		transaction)
@@ -1672,7 +1679,6 @@ static BOOLEAN create_procedure(TDBB	tdbb,
  *	Create a new procedure.
  *
  **************************************/
-	PRC procedure;
 
 	SET_TDBB(tdbb);
 
@@ -1680,24 +1686,28 @@ static BOOLEAN create_procedure(TDBB	tdbb,
 	{
 	case 1:
 	case 2:
-		return TRUE;
+		return true;
 
 	case 3:
-		get_procedure_dependencies(work);
-		if (!(procedure = MET_lookup_procedure(tdbb, work->dfw_name)))
-			return FALSE;
-		procedure->prc_flags |= PRC_create;
+		{
+			get_procedure_dependencies(work);
+			PRC procedure = MET_lookup_procedure(tdbb, work->dfw_name);
+			if (!procedure) {
+				return false;
+			}
+			procedure->prc_flags |= PRC_create;
+		}
 		break;
 	}
 
-	return FALSE;
+	return false;
 }
 
 
-static BOOLEAN create_relation(TDBB tdbb,
-							   SSHORT phase,
-							   DFW work,
-							   TRA transaction)
+static bool create_relation(TDBB	tdbb,
+							SSHORT	phase,
+							DFW		work,
+							TRA		transaction)
 {
 /**************************************
  *
@@ -1736,20 +1746,20 @@ static BOOLEAN create_relation(TDBB tdbb,
 		if (work->dfw_lock)
 		{
 			LCK_release(tdbb, work->dfw_lock);
-			ALL_release((FRB)work->dfw_lock);
+			delete work->dfw_lock;
 			work->dfw_lock = NULL;
 		}
 		break;
 
 	case 1:
 	case 2:
-		return TRUE;
+		return true;
 
 	case 3:
 		/* Take a relation lock on rel id -1 before actually
 		   generating a relation id. */
 
-		work->dfw_lock = lock = (LCK) ALLOCDV(type_lck, sizeof(SLONG));
+		work->dfw_lock = lock = new(*tdbb->tdbb_default, sizeof(SLONG)) lck;
 		lock->lck_dbb = dbb;
 		lock->lck_attachment = tdbb->tdbb_attachment;
 		lock->lck_length = sizeof(SLONG);
@@ -1789,7 +1799,7 @@ static BOOLEAN create_relation(TDBB tdbb,
 					rel_id = X.RDB$RELATION_ID = local_min_relation_id;
 				}
 
-				while (relation = MET_lookup_relation_id(tdbb, rel_id++, FALSE))
+				while ( (relation = MET_lookup_relation_id(tdbb, rel_id++, FALSE)) )
 				{
 					if (rel_id < local_min_relation_id ||
 						rel_id > MAX_RELATION_ID)
@@ -1834,7 +1844,7 @@ static BOOLEAN create_relation(TDBB tdbb,
 		END_FOR;
 
 		LCK_release(tdbb, lock);
-		ALL_release((FRB)lock);
+		delete lock;
 		work->dfw_lock = NULL;
 
 		if (!REQUEST(irq_c_relation))
@@ -1862,14 +1872,11 @@ static BOOLEAN create_relation(TDBB tdbb,
 		break;
 	}
 
-	return FALSE;
+	return false;
 }
 
 
-static BOOLEAN create_trigger(TDBB tdbb,
-							  SSHORT phase,
-							  DFW work,
-							  TRA transaction)
+static bool create_trigger(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 {
 /**************************************
  *
@@ -1888,21 +1895,21 @@ static BOOLEAN create_trigger(TDBB tdbb,
 	{
 	case 1:
 	case 2:
-		return TRUE;
+		return true;
 
 	case 3:
 		get_trigger_dependencies(work);
 		break;
 	}
 
-	return FALSE;
+	return false;
 }
 
 
-static BOOLEAN delete_exception(TDBB tdbb,
-								SSHORT phase,
-								DFW work,
-								TRA transaction)
+static bool delete_exception(	TDBB	tdbb,
+								SSHORT	phase,
+								DFW		work,
+								TRA		transaction)
 {
 /**************************************
  *
@@ -1921,31 +1928,31 @@ static BOOLEAN delete_exception(TDBB tdbb,
 	switch (phase)
 	{
 	case 0:
-		return FALSE;
+		return false;
 
 	case 1:
 		check_dependencies(tdbb, work->dfw_name, (TEXT*)NULL_PTR,
 						   obj_exception, transaction);
-		return TRUE;
+		return true;
 
 	case 2:
-		return TRUE;
+		return true;
 
 	case 3:
-		return TRUE;
+		return true;
 
 	case 4:
 		break;
 	}
 
-	return FALSE;
+	return false;
 }
 
 
-static BOOLEAN delete_field(TDBB tdbb,
-							SSHORT phase,
-							DFW work,
-							TRA transaction)
+static bool delete_field(	TDBB	tdbb,
+							SSHORT	phase,
+							DFW		work,
+							TRA		transaction)
 {
 /**************************************
  *
@@ -1959,12 +1966,12 @@ static BOOLEAN delete_field(TDBB tdbb,
  *	delete a global field that is in use
  *
  **************************************/
-	DBB dbb;
+
 	int field_count;
 	BLK handle;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	switch (phase)
 	{
@@ -2002,21 +2009,18 @@ static BOOLEAN delete_field(TDBB tdbb,
 					0);	/* Msg310: there are %ld dependencies */
 
 	case 2:
-		return TRUE;
+		return true;
 
 	case 3:
 		MET_delete_dependencies(tdbb, work->dfw_name, obj_computed);
 		break;
 	}
 
-	return FALSE;
+	return false;
 }
 
 
-static BOOLEAN delete_global(TDBB tdbb,
-							 SSHORT phase,
-							 DFW work,
-							 TRA transaction)
+static bool delete_global(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 {
 /**************************************
  *
@@ -2043,7 +2047,7 @@ static BOOLEAN delete_global(TDBB tdbb,
 	{
 	case 1:
 	case 2:
-		return TRUE;
+		return true;
 
 	case 3:
 		handle = NULL;
@@ -2059,14 +2063,11 @@ static BOOLEAN delete_global(TDBB tdbb,
 		break;
 	}
 
-	return FALSE;
+	return false;
 }
 
 
-static BOOLEAN delete_index(TDBB tdbb,
-							SSHORT phase,
-							DFW work,
-							TRA transaction)
+static bool delete_index(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 {
 /**************************************
  *
@@ -2087,29 +2088,37 @@ static BOOLEAN delete_index(TDBB tdbb,
 	switch (phase)
 	{
 	case 0:
-		if (!(relation = MET_lookup_relation(tdbb, work->dfw_name)))
-			return FALSE;
+		relation = MET_lookup_relation(tdbb, work->dfw_name);
+		if (!relation) {
+			return false;
+		}
 		id = work->dfw_id - 1;
-		if (index = CMP_get_index_lock(tdbb, relation, id))
-			if (!index->idl_count)
+		index = CMP_get_index_lock(tdbb, relation, id);
+		if (index) {
+			if (!index->idl_count) {
 				LCK_release(tdbb, index->idl_lock);
-		return FALSE;
+			}
+		}
+		return false;
 
 	case 1:
 	case 2:
-		return TRUE;
+		return true;
 
 	case 3:
 		/* Look up the relation.  If we can't find the relation,
 		   don't worry about the index. */
 
-		if (!(relation = MET_lookup_relation(tdbb, work->dfw_name)))
-			return FALSE;
+		relation = MET_lookup_relation(tdbb, work->dfw_name);
+		if (!relation) {
+			return false;
+		}
 
 		/* Make sure nobody is currently using the index */
 
 		id = work->dfw_id - 1;
-		if (index = CMP_get_index_lock(tdbb, relation, id))
+		index = CMP_get_index_lock(tdbb, relation, id);
+		if (index)
 		{
 			wait = (transaction->tra_flags & TRA_nowait) ? FALSE : TRUE;
 			if (index->idl_count ||
@@ -2123,19 +2132,23 @@ static BOOLEAN delete_index(TDBB tdbb,
 			index->idl_count++;
 		}
 
-		return TRUE;
+		return true;
 
 	case 4:
-		if (!(relation = MET_lookup_relation(tdbb, work->dfw_name)))
-			return FALSE;
+		relation = MET_lookup_relation(tdbb, work->dfw_name);
+		if (!relation) {
+			return false;
+		}
 
 		id = work->dfw_id - 1;
 		index = CMP_get_index_lock(tdbb, relation, id);
 		IDX_delete_index(tdbb, relation, id);
 		if (work->dfw_type == dfw_delete_expression_index)
+		{
 			MET_delete_dependencies(tdbb,
 									work->dfw_name,
 									obj_expression_index);
+		}
 
 		if (index)
 		{
@@ -2162,9 +2175,9 @@ static BOOLEAN delete_index(TDBB tdbb,
 				if (index->idl_lock)
 				{
 					LCK_release(tdbb, index->idl_lock);
-					ALL_release((FRB)index->idl_lock);
+					delete index->idl_lock;
 				}
-				ALL_release((FRB)index);
+				delete index;
 
 				/* Release index refresh lock and memory. */
 
@@ -2180,8 +2193,8 @@ static BOOLEAN delete_index(TDBB tdbb,
 						/* Lock was released in IDX_delete_index(). */
 
 						if (index_block->idb_lock)
-							ALL_release((FRB)index_block->idb_lock);
-						ALL_release((FRB)index_block);
+							delete index_block->idb_lock;
+						delete index_block;
 						break;
 					}
 				}
@@ -2190,11 +2203,11 @@ static BOOLEAN delete_index(TDBB tdbb,
 		break;
 	}
 
-	return FALSE;
+	return false;
 }
 
 
-static BOOLEAN delete_log(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
+static bool delete_log(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 {
 /**************************************
  *
@@ -2215,38 +2228,36 @@ static BOOLEAN delete_log(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 	{
 	case 1:
 	case 2:
-		return TRUE;
+		return true;
 
 	case 3:
-		if (CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD))
-			return TRUE;
-		else
-		{
-			ERR_post(gds_no_meta_update,
-					 gds_arg_gds, gds_lock_timeout,
-					 gds_arg_gds, gds_obj_in_use,
-					 gds_arg_string, ERR_cstring(dbb->dbb_file->fil_string),
-					 0);
-			return FALSE;
+		if (CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD)) {
+			return true;
 		}
+		ERR_post(gds_no_meta_update,
+				 gds_arg_gds, gds_lock_timeout,
+				 gds_arg_gds, gds_obj_in_use,
+				 gds_arg_string, ERR_cstring(dbb->dbb_file->fil_string),
+				 0);
+		return false;
 	case 4:
 		transaction->tra_flags |= TRA_delete_log;
 		PAG_modify_log(transaction->tra_number, TRA_delete_log);
-		return TRUE;
+		return true;
 
 	case 5:
 		CCH_release_exclusive(tdbb);
 		break;
 	}
 
-	return FALSE;
+	return false;
 }
 
 
-static BOOLEAN delete_parameter(TDBB tdbb,
-								SSHORT phase,
-								DFW work,
-								TRA transaction)
+static bool delete_parameter(	TDBB	tdbb,
+								SSHORT	phase,
+								DFW		work,
+								TRA		transaction)
 {
 /**************************************
  *
@@ -2267,24 +2278,26 @@ static BOOLEAN delete_parameter(TDBB tdbb,
 	{
 	case 1:
 		if (MET_lookup_procedure_id(tdbb, work->dfw_id, FALSE, 0))
+		{
 			check_dependencies(tdbb, work->dfw_name, work->dfw_name,
 							   obj_procedure, transaction);
+		}
 
 	case 2:
-		return TRUE;
+		return true;
 
 	case 3:
 		break;
 	}
 
-	return FALSE;
+	return false;
 }
 
 
-static BOOLEAN delete_procedure(TDBB tdbb,
-								SSHORT phase,
-								DFW work,
-								TRA transaction)
+static bool delete_procedure(	TDBB	tdbb,
+								SSHORT	phase,
+								DFW		work,
+								TRA		transaction)
 {
 /**************************************
  *
@@ -2306,24 +2319,28 @@ static BOOLEAN delete_procedure(TDBB tdbb,
 	switch (phase)
 	{
 	case 0:
-		if (!(procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, FALSE, 0)))
-			return FALSE;
+		procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, FALSE, 0);
+		if (!procedure) {
+			return false;
+		}
 
 		wait = (transaction->tra_flags & TRA_nowait) ? FALSE : TRUE;
 		LCK_convert_non_blocking(	tdbb,
 									procedure->prc_existence_lock,
 									LCK_SR,
 									wait);
-		return FALSE;
+		return false;
 
 	case 1:
 		check_dependencies(tdbb, work->dfw_name, (TEXT*)NULL_PTR,
 						   obj_procedure, transaction);
-		return TRUE;
+		return true;
 
 	case 2:
-		if (!(procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, FALSE, 0)))
-			return FALSE;
+		procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, FALSE, 0);
+		if (!procedure) {
+			return false;
+		}
 
 		wait = (transaction->tra_flags & TRA_nowait) ? FALSE : TRUE;
 		if (!LCK_convert_non_blocking(	tdbb,
@@ -2341,23 +2358,25 @@ static BOOLEAN delete_procedure(TDBB tdbb,
 		   procedure obsolete. Unmark and we will remark it later. */
 
 		procedure->prc_flags &= ~PRC_obsolete;
-		return TRUE;
+		return true;
 
 	case 3:
-		return TRUE;
+		return true;
 
 	case 4:
-		if (!(procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, TRUE, 0)))
-			return FALSE;
+		procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, TRUE, 0);
+		if (!procedure) {
+			return false;
+		}
 
 		if (procedure->prc_use_count)
 		{
 			MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure);
 
 			LCK_release(tdbb, procedure->prc_existence_lock);
-			tdbb->tdbb_database->
-				dbb_procedures->vec_object[procedure->prc_id] = (BLK) NULL_PTR;
-			return FALSE;
+			(*tdbb->tdbb_database->dbb_procedures)[procedure->prc_id] =
+				(BLK) NULL_PTR;
+			return false;
 		}
 
 		old_flags = procedure->prc_flags;
@@ -2385,14 +2404,11 @@ static BOOLEAN delete_procedure(TDBB tdbb,
 		break;
 	}
 
-	return FALSE;
+	return false;
 }
 
 
-static BOOLEAN delete_relation(TDBB tdbb,
-							   SSHORT phase,
-							   DFW work,
-							   TRA transaction)
+static bool delete_relation(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 {
 /**************************************
  *
@@ -2405,20 +2421,22 @@ static BOOLEAN delete_relation(TDBB tdbb,
  *	a relation, and if so, clean up after it.
  *
  **************************************/
-	DBB dbb;
+
 	BLK request;
 	REL relation;
 	RSC rsc;
 	USHORT wait, view_count, adjusted;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	switch (phase)
 	{
 	case 0:
-		if (!(relation = MET_lookup_relation_id(tdbb, work->dfw_id, FALSE)))
-			return FALSE;
+		relation = MET_lookup_relation_id(tdbb, work->dfw_id, FALSE);
+		if (!relation) {
+			return false;
+		}
 
 		if (relation->rel_existence_lock)
 		{
@@ -2430,7 +2448,7 @@ static BOOLEAN delete_relation(TDBB tdbb,
 		}
 
 		relation->rel_flags &= ~REL_deleting;
-		return FALSE;
+		return false;
 
 	case 1:
 		/* check if any views use this as a base relation */
@@ -2443,12 +2461,15 @@ static BOOLEAN delete_relation(TDBB tdbb,
 				/* If the view is also being deleted, there's no dependency */
 			if (!find_depend_in_dfw(tdbb, X.RDB$VIEW_NAME, obj_view, 0,
 									transaction))
+			{
 				view_count++;
+			}
 
 		END_FOR;
 		CMP_release(tdbb, (REQ)request);
 
 		if (view_count)
+		{
 			ERR_post(gds_no_meta_update,
 					gds_arg_gds, gds_no_delete, /* Msg353: can not delete */
 					gds_arg_gds, gds_table_name,
@@ -2456,18 +2477,22 @@ static BOOLEAN delete_relation(TDBB tdbb,
 					gds_arg_gds, gds_dependency,
 					gds_arg_number, (SLONG) view_count,
 					0);	/* Msg310: there are %ld dependencies */
+		}
 		check_dependencies(tdbb, work->dfw_name, (TEXT*)NULL_PTR,
 						   obj_relation, transaction);
-		return TRUE;
+		return true;
 
 	case 2:
-		if (!(relation = MET_lookup_relation_id(tdbb, work->dfw_id, FALSE)))
-			return FALSE;
+		relation = MET_lookup_relation_id(tdbb, work->dfw_id, FALSE);
+		if (!relation) {
+			return false;
+		}
 
 		/* Let relation be deleted if only this transaction is using it */
 
 		adjusted = FALSE;
 		if (relation->rel_use_count == 1)
+		{
 			for (rsc = transaction->tra_resources; rsc; rsc = rsc->rsc_next)
 			{
 				if (rsc->rsc_rel == relation)
@@ -2477,6 +2502,7 @@ static BOOLEAN delete_relation(TDBB tdbb,
 					break;
 				}
 			}
+		}
 
 		wait = (transaction->tra_flags & TRA_nowait) ? FALSE : TRUE;
 		if (relation->rel_use_count ||
@@ -2486,21 +2512,24 @@ static BOOLEAN delete_relation(TDBB tdbb,
 										LCK_EX,
 										wait)))
 		{
-			if (adjusted)
+			if (adjusted) {
 				++relation->rel_use_count;
+			}
 			ERR_post(gds_no_meta_update,
 					 gds_arg_gds, gds_obj_in_use,
 					 gds_arg_string, ERR_cstring(work->dfw_name),
 					 0);
 		}
-		return TRUE;
+		return true;
 
 	case 3:
-		return TRUE;
+		return true;
 
 	case 4:
-		if (!(relation = MET_lookup_relation_id(tdbb, work->dfw_id, TRUE)))
-			return FALSE;
+		relation = MET_lookup_relation_id(tdbb, work->dfw_id, TRUE);
+		if (!relation) {
+			return false;
+		}
 
 		/* Flag relation delete in progress so that active sweep or
 		   garbage collector threads working on relation can skip over it. */
@@ -2514,20 +2543,23 @@ static BOOLEAN delete_relation(TDBB tdbb,
 		   count doesn't run down. */
 
 		for (wait = 0; wait < 60; wait++)
-			if (!relation->rel_sweep_count)
+		{
+			if (!relation->rel_sweep_count) {
 				break;
-			else
-			{
-				THREAD_EXIT;
-				THREAD_SLEEP(1 * 1000);
-				THREAD_ENTER;
 			}
 
+			THREAD_EXIT;
+			THREAD_SLEEP(1 * 1000);
+			THREAD_ENTER;
+		}
+
 		if (relation->rel_sweep_count)
+		{
 			ERR_post(gds_no_meta_update,
 					 gds_arg_gds, gds_obj_in_use,
 					 gds_arg_string, ERR_cstring(work->dfw_name),
 					 0);
+		}
 
 #ifdef GARBAGE_THREAD
 		/* Free any memory associated with the relation's
@@ -2536,29 +2568,34 @@ static BOOLEAN delete_relation(TDBB tdbb,
 		if (relation->rel_gc_bitmap)
 		{
 			SBM_release(relation->rel_gc_bitmap);
-			relation->rel_gc_bitmap = NULL_PTR;
+			relation->rel_gc_bitmap = 0;
 		}
 #endif
-		if (relation->rel_file)
+		if (relation->rel_file) {
 		    EXT_fini (relation);
+		}
 
-		if (relation->rel_index_root)
+		if (relation->rel_index_root) {
 			IDX_delete_indices(tdbb, relation);
+		}
 
-		if (relation->rel_pages)
+		if (relation->rel_pages) {
 			DPM_delete_relation(tdbb, relation);
+		}
 
 		/* if this is a view (or even if we don't know),
 		   delete dependency lists */
 
-		if (relation->rel_view_rse || !(relation->rel_flags & REL_scanned))
+		if (relation->rel_view_rse || !(relation->rel_flags & REL_scanned)) {
 			MET_delete_dependencies(tdbb, work->dfw_name, obj_view);
+		}
 
 		/* Now that the data, pointer, and index pages are gone,
 		   get rid of formats as well */
 
-		if (relation->rel_existence_lock)
+		if (relation->rel_existence_lock) {
 			LCK_release(tdbb, relation->rel_existence_lock);
+		}
 		request = NULL;
 
 		FOR(REQUEST_HANDLE request) X IN RDB$FORMATS WITH
@@ -2573,11 +2610,11 @@ static BOOLEAN delete_relation(TDBB tdbb,
 		break;
 	}
 
-	return FALSE;
+	return false;
 }
 
 
-static BOOLEAN delete_rfr( TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
+static bool delete_rfr(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 {
 /**************************************
  *
@@ -2631,7 +2668,7 @@ static BOOLEAN delete_rfr( TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 				}
 				*p = 0;
 				field_count++;
-		}
+			}
 		END_FOR;
 		CMP_release(tdbb, (REQ)handle);
 
@@ -2647,7 +2684,7 @@ static BOOLEAN delete_rfr( TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 		/* now check if there are any dependencies generated through the blr
 		   that defines the relation */
 
-		if (relation = MET_lookup_relation_id(tdbb, work->dfw_id, FALSE))
+		if ( (relation = MET_lookup_relation_id(tdbb, work->dfw_id, FALSE)) )
 			check_dependencies(tdbb, relation->rel_name, work->dfw_name,
 							   obj_relation, transaction);
 
@@ -2690,7 +2727,7 @@ static BOOLEAN delete_rfr( TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 		}
 
 	case 2:
-		return TRUE;
+		return true;
 
 	case 3:
 		/* Unlink field from data structures.  Don't try to actually release field and
@@ -2704,24 +2741,24 @@ static BOOLEAN delete_rfr( TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 			{
 				vector = relation->rel_fields;
 				if (vector &&
-					(ULONG)id < vector->vec_count &&
-					vector->vec_object[id])
+					(ULONG)id < vector->count() &&
+					(*vector)[id])
 				{
-					vector->vec_object[id] = NULL;
+					(*vector)[id] = NULL;
 				}
 			}
 		}
 		break;
 	}
 
-	return FALSE;
+	return false;
 }
 
 
-static BOOLEAN delete_shadow(TDBB	tdbb,
-							 SSHORT	phase,
-							 DFW	work,
-							 TRA	transaction)
+static bool delete_shadow(	TDBB	tdbb,
+							SSHORT	phase,
+							DFW		work,
+							TRA		transaction)
 {
 /**************************************
  *
@@ -2741,21 +2778,21 @@ static BOOLEAN delete_shadow(TDBB	tdbb,
 	{
 	case 1:
 	case 2:
-		return TRUE;
+		return true;
 
 	case 3:
 		MET_delete_shadow(tdbb, work->dfw_id);
 		break;
 	}
 
-	return FALSE;
+	return false;
 }
 
 
-static BOOLEAN delete_trigger(TDBB tdbb,
-							  SSHORT phase,
-							  DFW work,
-							  TRA transaction)
+static bool delete_trigger(	TDBB	tdbb,
+							SSHORT	phase,
+							DFW		work,
+							TRA		transaction)
 {
 /**************************************
  *
@@ -2774,7 +2811,7 @@ static BOOLEAN delete_trigger(TDBB tdbb,
 	{
 	case 1:
 	case 2:
-		return TRUE;
+		return true;
 
 	case 3:
 		/* get rid of dependencies */
@@ -2783,15 +2820,15 @@ static BOOLEAN delete_trigger(TDBB tdbb,
 		break;
 	}
 
-	return FALSE;
+	return false;
 }
 
 
-static BOOLEAN find_depend_in_dfw(TDBB tdbb,
-								  TEXT * object_name,
-								  USHORT dep_type,
-								  USHORT rel_id,
-								  TRA transaction)
+static bool find_depend_in_dfw(	TDBB	tdbb,
+								TEXT*	object_name,
+								USHORT	dep_type,
+								USHORT	rel_id,
+								TRA		transaction)
 {
 /**************************************
  *
@@ -2805,17 +2842,18 @@ static BOOLEAN find_depend_in_dfw(TDBB tdbb,
  *	Return FALSE if it is, TRUE otherwise.
  *
  **************************************/
-	DBB dbb;
+
 	BLK request;
 	TEXT *p;
 	ENUM dfw_t dfw_type;
 	DFW work;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
-	for (p = object_name; *p && *p != ' '; p++)
+	for (p = object_name; *p && *p != ' '; p++) {
 		;
+	}
 	*p = 0;
 
 	switch (dep_type)
@@ -2848,7 +2886,7 @@ static BOOLEAN find_depend_in_dfw(TDBB tdbb,
 			!strcmp(object_name, work->dfw_name) &&
 			(!rel_id || rel_id == work->dfw_id))
 		{
-			return TRUE;
+			return true;
 		}
 	}
 
@@ -2872,17 +2910,18 @@ static BOOLEAN find_depend_in_dfw(TDBB tdbb,
                                     REL.RDB$RELATION_ID, transaction))
 			{
 				EXE_unwind(tdbb, (REQ)request);
-				return FALSE;
+				return false;
 			}
 		END_FOR;
 
-		if (!REQUEST(irq_ch_cmp_dpd))
+		if (!REQUEST(irq_ch_cmp_dpd)) {
 			REQUEST(irq_ch_cmp_dpd) = (BLK) request;
+		}
 
-		return TRUE;
+		return true;
 	}
 
-	return FALSE;
+	return false;
 }
 
 
@@ -2963,7 +3002,7 @@ static void get_procedure_dependencies(DFW work)
 	GDS__QUAD blob_id;
 	REQ request;
 	BLK handle;
-	PLB old_pool;
+	JrdMemoryPool *old_pool;
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
@@ -2990,20 +3029,20 @@ static void get_procedure_dependencies(DFW work)
 	if (procedure && !NULL_BLOB(blob_id))
 	{
 		old_pool = tdbb->tdbb_default;
-		tdbb->tdbb_default = ALL_pool();
+		tdbb->tdbb_default = new(*dbb->dbb_permanent) JrdMemoryPool;
 		MET_get_dependencies(tdbb,
 							(struct rel*)NULL_PTR,
 							(TEXT*)NULL_PTR,
-							(struct csb*)NULL_PTR,
+							(CSB)NULL_PTR,
 							(SLONG*)&blob_id,
 							&request,
-							(struct csb**)NULL_PTR,
+							(CSB*)NULL_PTR,
 							work->dfw_name,
 							obj_procedure);
 		if (request)
 			CMP_release(tdbb, request);
 		else
-			ALL_rlpool(tdbb->tdbb_default);
+			delete tdbb->tdbb_default;
 
 		tdbb->tdbb_default = old_pool;
 	}
@@ -3030,7 +3069,7 @@ static void get_trigger_dependencies( DFW work)
 	GDS__QUAD blob_id;
 	REQ request;
 	BLK handle;
-	PLB old_pool;
+	JrdMemoryPool *old_pool;
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
@@ -3056,17 +3095,18 @@ static void get_trigger_dependencies( DFW work)
 
 	if (relation && !NULL_BLOB(blob_id))
 	{
+		JrdMemoryPool	tempPool;
 		old_pool = tdbb->tdbb_default;
-		tdbb->tdbb_default = ALL_pool();
+		tdbb->tdbb_default = &tempPool;
+		
 		MET_get_dependencies(tdbb, relation,
 							 (TEXT*)NULL_PTR,
-							 (struct csb*)NULL_PTR,
+							 (CSB)NULL_PTR,
 							 (SLONG*)&blob_id,
 							 &request,
-							 (struct csb**)NULL_PTR,
+							 (CSB*)NULL_PTR,
 							 work->dfw_name,
 							 obj_trigger);
-		ALL_rlpool(tdbb->tdbb_default);
 		tdbb->tdbb_default = old_pool;
 	}
 }
@@ -3087,7 +3127,6 @@ static FMT make_format( TDBB tdbb, REL relation, USHORT version, TFB stack)
 	DBB dbb;
 	BLK request;
 	FMT format;
-	VEC vector;
 	TFB tfb;
 	BLB blob;
 	USHORT count;
@@ -3103,7 +3142,7 @@ static FMT make_format( TDBB tdbb, REL relation, USHORT version, TFB stack)
 	for (tfb = stack; tfb; tfb = tfb->tfb_next)
 		count = MAX(count, tfb->tfb_id);
 
-	format = (FMT) ALLOCPV(type_fmt, count + 1);
+	format = fmt::newFmt(*dbb->dbb_permanent, count + 1);
 	format->fmt_count = count + 1;
 	format->fmt_version = version;
 
@@ -3111,7 +3150,7 @@ static FMT make_format( TDBB tdbb, REL relation, USHORT version, TFB stack)
 
 	for (tfb = stack; tfb; tfb = tfb->tfb_next)
 	{
-		desc = format->fmt_desc + tfb->tfb_id;
+		desc = &format->fmt_desc[tfb->tfb_id];
 		if (tfb->tfb_flags & TFB_array)
 		{
 			desc->dsc_dtype = dtype_array;
@@ -3127,19 +3166,20 @@ static FMT make_format( TDBB tdbb, REL relation, USHORT version, TFB stack)
 
 	offset = FLAG_BYTES(count);
 
-	for (count = 0, desc = format->fmt_desc;
+	count = 0;
+	for (fmt::fmt_desc_iterator desc2 = format->fmt_desc.begin();
 		 count < format->fmt_count;
-		 count++, desc++)
+		 count++, desc2++)
 	{
-		if (desc->dsc_dtype & COMPUTED_FLAG)
+		if (desc2->dsc_dtype & COMPUTED_FLAG)
 		{
-			desc->dsc_dtype &= ~COMPUTED_FLAG;
+			desc2->dsc_dtype &= ~COMPUTED_FLAG;
 			continue;
 		}
-		if (desc->dsc_dtype)
+		if (desc2->dsc_dtype)
 		{
 			old_offset = offset;
-			offset = MET_align(desc, (USHORT) offset);
+			offset = MET_align(desc2, (USHORT) offset);
 
 			/* see of record too big */
 
@@ -3148,8 +3188,8 @@ static FMT make_format( TDBB tdbb, REL relation, USHORT version, TFB stack)
 				offset += 65536L;
 				break;
 			}
-			desc->dsc_address = (UCHAR *) (SLONG) offset;
-			offset += desc->dsc_length;
+			desc2->dsc_address = (UCHAR *) (SLONG) offset;
+			offset += desc2->dsc_length;
 		}
 	}
 
@@ -3159,15 +3199,15 @@ static FMT make_format( TDBB tdbb, REL relation, USHORT version, TFB stack)
 
 /* Release the temporary field blocks */
 
-	while (tfb = stack)
+	while ( (tfb = stack) )
 	{
 		stack = tfb->tfb_next;
-		ALL_release((FRB)tfb);
+		delete tfb;
 	}
 
 	if (offset > MAX_FORMAT_SIZE)
 	{
-		ALL_release((FRB)format);
+		delete format;
 		ERR_post(gds_no_meta_update,
 				 gds_arg_gds, gds_rec_size_err,
 				 gds_arg_number, (SLONG) offset,
@@ -3179,8 +3219,14 @@ static FMT make_format( TDBB tdbb, REL relation, USHORT version, TFB stack)
 
 /* Link the format block into the world */
 
-	vector = ALL_vector(dbb->dbb_permanent, &relation->rel_formats, version);
-	vector->vec_object[version] = (BLK) format;
+	VEC vector = relation->rel_formats;
+	if (!vector) {
+		vector = vec::newVector(*dbb->dbb_permanent, version+1);
+		relation->rel_formats = vector;
+	} else {
+		vector->resize(version+1);
+	}
+	(*vector)[version] = (BLK) format;
 
 /* Store format in system relation */
 
@@ -3195,7 +3241,7 @@ static FMT make_format( TDBB tdbb, REL relation, USHORT version, TFB stack)
 		blob = BLB_create(tdbb, dbb->dbb_sys_trans, (BID)&FMT.RDB$DESCRIPTOR);
 		BLB_put_segment(tdbb,
 						blob,
-						(UCHAR*)format->fmt_desc,
+						(UCHAR*)format->fmt_desc.begin(),
 						(USHORT)(format->fmt_count * sizeof(struct dsc)));
 		BLB_close(tdbb, blob);
     END_STORE;
@@ -3207,10 +3253,7 @@ static FMT make_format( TDBB tdbb, REL relation, USHORT version, TFB stack)
 }
 
 
-static BOOLEAN make_version(TDBB	tdbb,
-							SSHORT	phase,
-							DFW		work,
-							TRA		transaction)
+static bool make_version(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 {
 /**************************************
  *
@@ -3228,7 +3271,7 @@ static BOOLEAN make_version(TDBB	tdbb,
  **************************************/
 	DBB dbb;
 	BLK request_fmt1, request_fmtx;
-	TFB stack, external, tfb;
+	TFB stack, external, tfb_;
 	REL relation;
 	BLB blob;
 	GDS__QUAD blob_id;
@@ -3248,28 +3291,31 @@ static BOOLEAN make_version(TDBB	tdbb,
 	{
 	case 1:
 	case 2:
-		return TRUE;
+		return true;
 
 	case 3:
 		relation = NULL;
 		stack = external = NULL;
 		computed_field = FALSE;
 
-		for (n = 0; n < TRIGGER_MAX; n++)
+		for (n = 0; n < TRIGGER_MAX; n++) {
 			triggers[n] = (VEC) NULL_PTR;
+		}
 
 		request_fmt1 =
 			(BLK) CMP_find_request(tdbb, irq_format1, IRQ_REQUESTS);
 
 		FOR(REQUEST_HANDLE request_fmt1)
 			REL IN RDB$RELATIONS WITH REL.RDB$RELATION_NAME EQ work->dfw_name
-            if (!REQUEST(irq_format1))
+            if (!REQUEST(irq_format1)) {
                 REQUEST(irq_format1) = (BLK) request_fmt1;
-			if (!(relation =
-				 MET_lookup_relation_id(tdbb, REL.RDB$RELATION_ID, FALSE)))
+			}
+			relation =
+				 MET_lookup_relation_id(tdbb, REL.RDB$RELATION_ID, FALSE);
+			if (!relation)
 			{
 				EXE_unwind(tdbb, (REQ)request_fmt1);
-				return FALSE;
+				return false;
 			}
 			blob_id = REL.RDB$VIEW_BLR;
 			null_view = NULL_BLOB(blob_id);
@@ -3398,9 +3444,9 @@ static BOOLEAN make_version(TDBB	tdbb,
 
 					/* Make a temporary field block */
 
-					tfb = (TFB) ALLOCD(type_tfb);
-					tfb->tfb_next = stack;
-					stack = tfb;
+					tfb_ = new(*tdbb->tdbb_default) tfb;
+					tfb_->tfb_next = stack;
+					stack = tfb_;
 
 					/* for text data types, grab the CHARACTER_SET and
 					   COLLATION to give the type of international text */
@@ -3414,21 +3460,21 @@ static BOOLEAN make_version(TDBB	tdbb,
 					if (!RFR.RDB$COLLATION_ID.NULL)
 						collation = RFR.RDB$COLLATION_ID;
 
-					DSC_make_descriptor(&tfb->tfb_desc, FLD.RDB$FIELD_TYPE,
+					DSC_make_descriptor(&tfb_->tfb_desc, FLD.RDB$FIELD_TYPE,
 										FLD.RDB$FIELD_SCALE,
 										FLD.RDB$FIELD_LENGTH,
 										FLD.RDB$FIELD_SUB_TYPE,
 										FLD.RDB$CHARACTER_SET_ID, collation);
 
 					/* Make sure the text type specified is implemented */
-					if ((IS_DTYPE_ANY_TEXT(tfb->tfb_desc.dsc_dtype) &&
+					if ((IS_DTYPE_ANY_TEXT(tfb_->tfb_desc.dsc_dtype) &&
 						 !INTL_defined_type(tdbb, status,
-											tfb->tfb_desc.dsc_ttype)) ||
-						(tfb->tfb_desc.dsc_dtype == dtype_blob &&
-						 tfb->tfb_desc.dsc_sub_type == BLOB_text &&
+											tfb_->tfb_desc.dsc_ttype)) ||
+						(tfb_->tfb_desc.dsc_dtype == dtype_blob &&
+						 tfb_->tfb_desc.dsc_sub_type == BLOB_text &&
 						 !INTL_defined_type(tdbb,
 											status,
-											tfb->tfb_desc.dsc_scale)))
+											tfb_->tfb_desc.dsc_scale)))
 					{
 						EXE_unwind(tdbb, (REQ)request_fmt1);
 						EXE_unwind(tdbb, (REQ)request_fmtx);
@@ -3440,22 +3486,22 @@ static BOOLEAN make_version(TDBB	tdbb,
 					}
 
 					if (!NULL_BLOB(FLD.RDB$COMPUTED_BLR))
-						tfb->tfb_flags |= TFB_computed;
-					tfb->tfb_id = RFR.RDB$FIELD_ID;
+						tfb_->tfb_flags |= TFB_computed;
+					tfb_->tfb_id = RFR.RDB$FIELD_ID;
 
-					if (n = FLD.RDB$DIMENSIONS)
+					if ( (n = FLD.RDB$DIMENSIONS) )
 					{
 						put_summary_record(	blob,
 											RSR_dimensions,
 											(UCHAR*)&n,
 											sizeof(n));
-						tfb->tfb_flags |= TFB_array;
+						tfb_->tfb_flags |= TFB_array;
 						array = (ADS) stuff;
 						MOVE_CLEAR(array, (SLONG) sizeof(struct ads));
 						assert(n <= MAX_UCHAR);
 						array->ads_dimensions = (UCHAR)n;
 						array->ads_struct_count = 1;
-						array->ads_rpt[0].ads_desc = tfb->tfb_desc;
+						array->ads_rpt[0].ads_desc = tfb_->tfb_desc;
 						get_array_desc(tdbb, FLD.RDB$FIELD_NAME, array);
 						put_summary_record(blob,
 											RSR_array_desc,
@@ -3465,16 +3511,16 @@ static BOOLEAN make_version(TDBB	tdbb,
 
 					if (external_flag)
 					{
-						tfb = (TFB) ALLOCD(type_tfb);
-						tfb->tfb_next = external;
-						external = tfb;
+						tfb_ = new(*tdbb->tdbb_default) tfb;
+						tfb_->tfb_next = external;
+						external = tfb_;
 						assert(FLD.RDB$EXTERNAL_TYPE <= MAX_UCHAR);
-						tfb->tfb_desc.dsc_dtype = (UCHAR)FLD.RDB$EXTERNAL_TYPE;
+						tfb_->tfb_desc.dsc_dtype = (UCHAR)FLD.RDB$EXTERNAL_TYPE;
 						assert(FLD.RDB$EXTERNAL_SCALE >= MIN_SCHAR &&
 								FLD.RDB$EXTERNAL_SCALE <= MAX_SCHAR);
-						tfb->tfb_desc.dsc_scale = (SCHAR)FLD.RDB$EXTERNAL_SCALE;
-						tfb->tfb_desc.dsc_length = FLD.RDB$EXTERNAL_LENGTH;
-						tfb->tfb_id = RFR.RDB$FIELD_ID;
+						tfb_->tfb_desc.dsc_scale = (SCHAR)FLD.RDB$EXTERNAL_SCALE;
+						tfb_->tfb_desc.dsc_length = FLD.RDB$EXTERNAL_LENGTH;
+						tfb_->tfb_id = RFR.RDB$FIELD_ID;
 					}
 				END_FOR;
 
@@ -3613,8 +3659,9 @@ static BOOLEAN make_version(TDBB	tdbb,
 
 		/* If we didn't find the relation, it is probably being dropped */
 
-		if (!relation)
-			return FALSE;
+		if (!relation) {
+			return false;
+		}
 
 		if (!(relation->rel_flags & REL_sys_trigs_being_loaded))
 		{
@@ -3677,11 +3724,11 @@ static BOOLEAN make_version(TDBB	tdbb,
 		break;
 	}
 
-	return FALSE;
+	return false;
 }
 
 
-static BOOLEAN modify_procedure(TDBB	tdbb,
+static bool modify_procedure(	TDBB	tdbb,
 								SSHORT	phase,
 								DFW		work,
 								TRA		transaction)
@@ -3710,56 +3757,55 @@ static BOOLEAN modify_procedure(TDBB	tdbb,
 											work->dfw_id,
 											FALSE,
 											0);
-		if (!procedure)
-			return FALSE;
+		if (!procedure) {
+			return false;
+		}
 
 		wait = (transaction->tra_flags & TRA_nowait) ? FALSE : TRUE;
 		LCK_convert_non_blocking(tdbb, procedure->prc_existence_lock, LCK_SR,
 								 wait);
-		return FALSE;
+		return false;
 	}
 	case 1:
-		return TRUE;
+		return true;
 
 	case 2:
-		return TRUE;
+		return true;
 
 	case 3:
-		if (!(procedure =
-			 MET_lookup_procedure_id(tdbb, work->dfw_id, FALSE,
-									 0))) return FALSE;
+		procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, FALSE, 0);
+		if (!procedure) {
+			return false;
+		}
 		wait = (transaction->tra_flags & TRA_nowait) ? FALSE : TRUE;
 
 		/* Let relation be deleted if only this transaction is using it */
 
 		if (!LCK_convert_non_blocking(tdbb, procedure->prc_existence_lock,
 									  LCK_EX, wait))
+		{
 			ERR_post(gds_no_meta_update,
 					 gds_arg_gds, gds_obj_in_use,
 					 gds_arg_string, ERR_cstring(work->dfw_name),
 					 0);
+		}
 
 		/* If we are in a multi-client server, someone else may have marked
 		   procedure obsolete. Unmark and we will remark it later. */
 
 		procedure->prc_flags &= ~PRC_obsolete;
-		return TRUE;
+		return true;
 
 	case 4:
-		if (!(procedure =
-			 MET_lookup_procedure_id(tdbb, work->dfw_id, FALSE,
-									 0))) return FALSE;
+		procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, FALSE, 0);
+		if (!procedure) {
+			return false;
+		}
+
+		try {
 
 		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 		tdbb->tdbb_setjmp = (UCHAR *) env;
-		if (SETJMP(env))
-		{
-#ifdef SUPERSERVER
-			THD_rec_mutex_unlock(&tdbb->tdbb_database->dbb_sp_rec_mutex);
-#endif
-			tdbb->tdbb_setjmp = (UCHAR *) old_env;
-			ERR_punt();
-		}
 
 #ifdef SUPERSERVER
 		if (!(tdbb->tdbb_database->dbb_flags & DBB_sp_rec_mutex_init))
@@ -3771,7 +3817,7 @@ static BOOLEAN modify_procedure(TDBB	tdbb,
 		if (THD_rec_mutex_lock(&tdbb->tdbb_database->dbb_sp_rec_mutex))
 		{
 			THREAD_ENTER;
-			return FALSE;
+			return false;
 		}
 		THREAD_ENTER;
 #endif /* SUPERSERVER */
@@ -3788,8 +3834,8 @@ static BOOLEAN modify_procedure(TDBB	tdbb,
 				/* Msg357: too many versions */
 			}
 			LCK_release(tdbb, procedure->prc_existence_lock);
-			tdbb->tdbb_database->
-				dbb_procedures->vec_object[procedure->prc_id] = (BLK) NULL_PTR;
+			(*tdbb->tdbb_database->dbb_procedures)
+				[procedure->prc_id] = (BLK) NULL_PTR;
 
 			if (!(procedure = MET_lookup_procedure_id(tdbb,
 														work->dfw_id,
@@ -3800,7 +3846,7 @@ static BOOLEAN modify_procedure(TDBB	tdbb,
 				THD_rec_mutex_unlock(&tdbb->tdbb_database->dbb_sp_rec_mutex);
 #endif
 				tdbb->tdbb_setjmp = (UCHAR *) old_env;
-				return FALSE;
+				return false;
 			}
 			procedure->prc_alter_count = ++prc_alter_count;
 		}
@@ -3846,6 +3892,17 @@ static BOOLEAN modify_procedure(TDBB	tdbb,
 		procedure->prc_flags &= ~(PRC_obsolete | PRC_being_altered);
 
 		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+		}	// try
+		catch (...)
+		{
+#ifdef SUPERSERVER
+			THD_rec_mutex_unlock(&tdbb->tdbb_database->dbb_sp_rec_mutex);
+#endif
+			tdbb->tdbb_setjmp = (UCHAR *) old_env;
+			ERR_punt();
+		}
+
 #ifdef SUPERSERVER
 		THD_rec_mutex_unlock(&tdbb->tdbb_database->dbb_sp_rec_mutex);
 #endif
@@ -3853,14 +3910,11 @@ static BOOLEAN modify_procedure(TDBB	tdbb,
 		break;
 	}
 
-	return FALSE;
+	return false;
 }
 
 
-static BOOLEAN modify_trigger(TDBB tdbb,
-							  SSHORT phase,
-							  DFW work,
-							  TRA transaction)
+static bool modify_trigger(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 {
 /**************************************
  *
@@ -3879,7 +3933,7 @@ static BOOLEAN modify_trigger(TDBB tdbb,
 	{
 	case 1:
 	case 2:
-		return TRUE;
+		return true;
 
 	case 3:
 		/* get rid of old dependencies, bring in the new */
@@ -3889,11 +3943,11 @@ static BOOLEAN modify_trigger(TDBB tdbb,
 		break;
 	}
 
-	return FALSE;
+	return false;
 }
 
 
-static USHORT name_length( TEXT * name)
+static USHORT name_length(TEXT* name)
 {
 /**************************************
  *
@@ -3906,21 +3960,19 @@ static USHORT name_length( TEXT * name)
  *	Trailing blanks are ignored.
  *
  **************************************/
-	TEXT *p, *q;
-#define	BLANK	'\040'
 
-	q = name - 1;
-	for (p = name; *p; p++)
-	{
-		if (*p != BLANK)
+	TEXT* q = name - 1;
+	for (TEXT* p = name; *p; p++) {
+		if (*p != ' ') {
 			q = p;
+		}
 	}
 
 	return ((q + 1) - name);
 }
 
 
-static void put_summary_blob( BLB blob, RSR_T type, SLONG blob_id[2])
+static void put_summary_blob(BLB blob, RSR_T type, SLONG blob_id[2])
 {
 /**************************************
  *
@@ -3932,56 +3984,49 @@ static void put_summary_blob( BLB blob, RSR_T type, SLONG blob_id[2])
  *	Put an attribute record to the relation summary blob.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLB blr;
-	UCHAR *buffer, temp[128];
-	USHORT length;
-	JMP_BUF env, *old_env;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	UCHAR temp[128];
 
-/* If blob is null, don't both */
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB  dbb  = tdbb->tdbb_database;
 
-	if (!blob_id[0] && !blob_id[1])
+	/* If blob is null, don't both */
+
+	if (!blob_id[0] && !blob_id[1]) {
 		return;
+	}
 
-/* Go ahead and open blob */
+	// Go ahead and open blob
 
-	blr = BLB_open(tdbb, dbb->dbb_sys_trans, (BID)blob_id);
+	BLB blr = BLB_open(tdbb, dbb->dbb_sys_trans, (BID)blob_id);
 	assert(blr->blb_length <= MAX_USHORT);
-	length = (USHORT)blr->blb_length;
-	buffer = (length > sizeof(temp)) ?
-		(UCHAR *) ALL_malloc((SLONG) blr->blb_length, ERR_jmp) : temp;
+	USHORT length = (USHORT)blr->blb_length;
+	UCHAR* buffer = (length > sizeof(temp)) ?
+		(UCHAR*) MemoryPool::malloc_from_system((SLONG) blr->blb_length) : temp;
 
-/* Setup to cleanup after any error that may occur */
+	// Setup to cleanup after any error that may occur
 
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
-
-	if (SETJMP(env))
-	{
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		if (buffer != temp)
-			ALL_free((SCHAR*) buffer);
+	try {
+		length = (USHORT)BLB_get_data(tdbb, blr, buffer, (SLONG) length);
+		put_summary_record(blob, type, buffer, length);
+	}
+	catch (...) {
+		if (buffer != temp) {
+			MemoryPool::free_from_system(buffer);
+		}
 		ERR_punt();
 	}
 
-	length = (USHORT)BLB_get_data(tdbb, blr, buffer, (SLONG) length);
-	put_summary_record(blob, type, buffer, length);
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
-	if (buffer != temp)
-		ALL_free((SCHAR*) buffer);
+	if (buffer != temp) {
+		MemoryPool::free_from_system(buffer);
+	}
 }
 
 
-static void put_summary_record(BLB blob,
-							   RSR_T type,
-							   UCHAR* data,
-							   USHORT length)
+static void put_summary_record(BLB		blob,
+							   RSR_T	type,
+							   UCHAR*	data,
+							   USHORT	length)
 {
 /**************************************
  *
@@ -3993,48 +4038,40 @@ static void put_summary_record(BLB blob,
  *	Put an attribute record to the relation summary blob.
  *
  **************************************/
-	TDBB tdbb;
-	UCHAR *p, *buffer, temp[129];
-	JMP_BUF env, *old_env;
 
-	tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
+	UCHAR temp[129];
 
-	p = buffer = (length + 1 > sizeof(temp)) ?
-		(UCHAR *) ALL_malloc((SLONG) (length + 1), ERR_jmp) : temp;
+	UCHAR* buffer = (length + 1 > sizeof(temp)) ?
+		(UCHAR *) MemoryPool::malloc_from_system((SLONG) (length + 1)) : temp;
+
+	UCHAR* p = buffer;
 
 	*p++ = (UCHAR) type;
 
-	if (length)
-		do
+	if (length) {
+		do {
 			*p++ = *data++;
-		while (--length);
+		} while (--length);
+	}
 
-/* Setup to cleanup after any error that may occur */
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
-
-	if (SETJMP(env))
-	{
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		if (buffer != temp)
-			ALL_free((SCHAR*) buffer);
+	try {
+		BLB_put_segment(tdbb, blob, buffer, (USHORT)(p - buffer));
+	}
+	catch (...) {
+		if (buffer != temp) {
+			MemoryPool::free_from_system(buffer);
+		}
 		ERR_punt();
 	}
 
-	BLB_put_segment(tdbb, blob, buffer, (USHORT)(p - buffer));
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
-	if (buffer != temp)
-		ALL_free((SCHAR*) buffer);
+	if (buffer != temp) {
+		MemoryPool::free_from_system(buffer);
+	}
 }
 
 
-static BOOLEAN scan_relation(TDBB tdbb,
-							 SSHORT phase,
-							 DFW work,
-							 TRA transaction)
+static bool scan_relation(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 {
 /**************************************
  *
@@ -4054,18 +4091,18 @@ static BOOLEAN scan_relation(TDBB tdbb,
 	{
 	case 1:
 	case 2:
-		return TRUE;
+		return true;
 
 	case 3:
 		MET_scan_relation(tdbb, MET_relation(tdbb, work->dfw_id));
 		break;
 	}
 
-	return FALSE;
+	return false;
 }
 
 
-static BOOLEAN shadow_defined(TDBB tdbb)
+static bool shadow_defined(TDBB tdbb)
 {
 /**************************************
  *
@@ -4078,19 +4115,16 @@ static BOOLEAN shadow_defined(TDBB tdbb)
  *      for the database else return FALSE.
  *
  **************************************/
-	DBB dbb;
-	BOOLEAN result;
-	BLK handle;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
-	result = FALSE;
-	handle = NULL;
+	bool result = false;
+	BLK  handle = NULL;
 
 	FOR(REQUEST_HANDLE handle) FIRST 1 X IN RDB$FILES 
         WITH X.RDB$SHADOW_NUMBER > 0
-		result = TRUE;
+		result = true;
 	END_FOR
 
 	CMP_release(tdbb, (REQ)handle);
@@ -4099,7 +4133,7 @@ static BOOLEAN shadow_defined(TDBB tdbb)
 }
 
 
-static BOOLEAN wal_defined(TDBB tdbb)
+static bool wal_defined(TDBB tdbb)
 {
 /**************************************
  *
@@ -4112,18 +4146,15 @@ static BOOLEAN wal_defined(TDBB tdbb)
  *      for the database else return FALSE.
  *
  **************************************/
-	DBB dbb;
-	BOOLEAN result;
-	BLK handle;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
-	result = FALSE;
-	handle = NULL;
+	bool result = false;
+	BLK  handle = NULL;
 
 	FOR(REQUEST_HANDLE handle) FIRST 1 X IN RDB$LOG_FILES
-		result = TRUE;
+		result = true;
 	END_FOR
 
 	CMP_release(tdbb, (REQ)handle);

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: opt.cpp,v 1.2 2001-07-29 17:42:22 skywalker Exp $
+$Id: opt.cpp,v 1.3 2001-12-24 02:50:51 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -237,8 +237,8 @@ BOOLEAN OPT_access_path(REQ request,
 	if (!vector)
 		return FALSE;
 
-	for (i = vector->vec_count - 1; i >= 0; i--) {
-		rsb = (RSB) vector->vec_object[i];
+	for (i = vector->count() - 1; i >= 0; i--) {
+		rsb = (RSB) (*vector)[i];
 		if (rsb && !dump_rsb(request, rsb, &buffer, &buffer_length))
 			break;
 	}
@@ -267,7 +267,7 @@ RSB OPT_compile(TDBB tdbb,
  *
  **************************************/
 	DBB dbb;
-	OPT opt;
+	OPT opt_;
 	IDX *idx;
 	RIV river;
 	NOD node, *ptr, *end, sort, project, aggregate;
@@ -329,9 +329,9 @@ RSB OPT_compile(TDBB tdbb,
 		(UCHAR *) ALLOC_LIB_MEMORY((DWORD) (sizeof(UCHAR) * MAX_STREAMS));
 	local_streams =
 		(UCHAR *) ALLOC_LIB_MEMORY((DWORD) (sizeof(UCHAR) * MAX_STREAMS));
-	opt = (OPT) ALLOC_LIB_MEMORY((DWORD) (sizeof(struct opt)));
+	opt_ = (OPT) ALLOC_LIB_MEMORY((DWORD) (sizeof(Opt)));
 	if (streams == NULL || beds == NULL || key_streams == NULL ||
-		local_streams == NULL || opt == NULL) {
+		local_streams == NULL || opt_ == NULL) {
 		if (local_streams != NULL)
 			FREE_LIB_MEMORY(local_streams);
 		if (key_streams != NULL)
@@ -340,47 +340,30 @@ RSB OPT_compile(TDBB tdbb,
 			FREE_LIB_MEMORY(beds);
 		if (streams != NULL)
 			FREE_LIB_MEMORY(streams);
-		if (opt != NULL)
-			FREE_LIB_MEMORY(opt);
+		if (opt_ != NULL)
+			FREE_LIB_MEMORY(opt_);
 		ERR_post(isc_virmemexh, 0);
 	}
 
 /* clear block and set block type */
 
-	MOVE_CLEAR(opt, sizeof(struct opt));
-	((BLK) opt)->blk_type = type_opt;
+	MOVE_CLEAR(opt_, sizeof(Opt));
+	((BLK) opt_)->blk_type = type_opt;
 
 #else
 
-	opt = (OPT) ALLOCP(type_opt);
+	opt_ = new(*dbb->dbb_permanent) Opt();
 
 #endif
 
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-	if (SETJMP(env)) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		for (i = 0; i < streams[0]; i++) {
-			stream = streams[i + 1];
-			if (csb->csb_rpt[stream].csb_idx_allocation)
-				ALL_RELEASE(csb->csb_rpt[stream].csb_idx_allocation);
-			csb->csb_rpt[stream].csb_idx_allocation = 0;
-		}
-#ifdef STACK_REDUCTION
-		FREE_LIB_MEMORY(local_streams);
-		FREE_LIB_MEMORY(key_streams);
-		FREE_LIB_MEMORY(beds);
-		FREE_LIB_MEMORY(streams);
-		FREE_LIB_MEMORY(opt);
-#else
-		ALL_RELEASE(opt);
-#endif
-		ERR_punt();
-	}
 
-	opt->opt_csb = csb;
+	try {
+
+	opt_->opt_csb = csb;
 	if (rse->nod_flags & rse_stream)
-		opt->opt_g_flags |= opt_g_stream;
+		opt_->opt_g_flags |= opt_g_stream;
 
 	beds[0] = streams[0] = key_streams[0] = 0;
 	conjunct_stack = rivers_stack = NULL;
@@ -415,7 +398,8 @@ RSB OPT_compile(TDBB tdbb,
    record source blocks for all streams */
 
 	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end;
-		 ptr++) {
+		 ptr++)
+	{
 		node = *ptr;
 
 		/* find the stream number and place it at the end of the beds array
@@ -436,18 +420,18 @@ RSB OPT_compile(TDBB tdbb,
 			i = (SSHORT) key_streams[0];
 			compute_dbkey_streams(csb, node, key_streams);
 			rsb =
-				gen_union(tdbb, opt, node, key_streams + i + 1,
+				gen_union(tdbb, opt_, node, key_streams + i + 1,
 						  (USHORT) (key_streams[0] - i));
 			local_streams[++local_streams[0]] =
 				(UCHAR) node->nod_arg[e_uni_stream];
 		}
 		else if (node->nod_type == nod_aggregate) {
-			rsb = gen_aggregate(tdbb, opt, node);
+			rsb = gen_aggregate(tdbb, opt_, node);
 			local_streams[++local_streams[0]] =
 				(UCHAR) node->nod_arg[e_agg_stream];
 		}
 		else if (node->nod_type == nod_procedure) {
-			rsb = gen_procedure(tdbb, opt, node);
+			rsb = gen_procedure(tdbb, opt_, node);
 			local_streams[++local_streams[0]] =
 				(UCHAR) node->nod_arg[e_prc_stream];
 		}
@@ -466,12 +450,12 @@ RSB OPT_compile(TDBB tdbb,
 
 		if (rsb) {
 			i = local_streams[0];
-			river = (RIV) ALLOCDV(type_riv, i);
+			river = new(*tdbb->tdbb_default, i) riv();
 			river->riv_count = (UCHAR) i;
 			river->riv_rsb = rsb;
 			MOVE_FAST(local_streams + 1, river->riv_streams, i);
-			set_made_river(opt, river);
-			set_inactive(opt, river);
+			set_made_river(opt_, river);
+			set_inactive(opt_, river);
 			LLS_PUSH(river, &rivers_stack);
 			continue;
 		}
@@ -518,17 +502,17 @@ RSB OPT_compile(TDBB tdbb,
 
 /* first fill out the conjuncts at the end of opt */
 
-	opt->opt_count = (SSHORT) conjunct_count;
+	opt_->opt_count = (SSHORT) conjunct_count;
 
 /* Check if size of optimizer block exceeded. */
 
-	if (opt->opt_count > MAX_CONJUNCTS)
+	if (opt_->opt_count > MAX_CONJUNCTS)
 		ERR_post(isc_optimizer_blk_exc, 0);
 	/* Msg442: size of optimizer block exceeded */
 
 	for (i = 0; i < conjunct_count; i++) {
-		opt->opt_rpt[i].opt_conjunct = node = (NOD) LLS_POP(&conjunct_stack);
-		compute_dependencies(node, opt->opt_rpt[i].opt_dependencies);
+		opt_->opt_rpt[i].opt_conjunct = node = (NOD) LLS_POP(&conjunct_stack);
+		compute_dependencies(node, opt_->opt_rpt[i].opt_dependencies);
 	}
 
 /* Store the conjuncts from the parent rse.  But don't fiddle with
@@ -536,13 +520,13 @@ RSB OPT_compile(TDBB tdbb,
 
 	for (; parent_stack && conjunct_count < MAX_CONJUNCTS;
 		 parent_stack = parent_stack->lls_next, conjunct_count++) {
-		opt->opt_rpt[conjunct_count].opt_conjunct = node =
+		opt_->opt_rpt[conjunct_count].opt_conjunct = node =
 			(NOD) parent_stack->lls_object;
 		compute_dependencies(node,
-							 opt->opt_rpt[conjunct_count].opt_dependencies);
+							 opt_->opt_rpt[conjunct_count].opt_dependencies);
 	}
 
-	opt->opt_parent_count = (SSHORT) conjunct_count;
+	opt_->opt_parent_count = (SSHORT) conjunct_count;
 
 /* Check if size of optimizer block exceeded. */
 
@@ -560,23 +544,23 @@ RSB OPT_compile(TDBB tdbb,
 /* outer joins require some extra processing */
 
 	if (rse->rse_jointype != blr_inner)
-		rsb = gen_outer(tdbb, opt, rse, rivers_stack, &sort, &project);
+		rsb = gen_outer(tdbb, opt_, rse, rivers_stack, &sort, &project);
 	else {
 		/* attempt to form joins in decreasing order of desirability */
 
-		gen_join(tdbb, opt, streams, &rivers_stack, &sort, &project,
+		gen_join(tdbb, opt_, streams, &rivers_stack, &sort, &project,
 				 rse->rse_plan);
 
 		/* If there are multiple rivers, try some sort/merging */
 
 		while (rivers_stack->lls_next
-			   && gen_sort_merge(tdbb, opt, &rivers_stack));
+			   && gen_sort_merge(tdbb, opt_, &rivers_stack));
 
-		rsb = make_cross(tdbb, opt, rivers_stack);
+		rsb = make_cross(tdbb, opt_, rivers_stack);
 
 		/* Pick up any residual boolean that may have fallen thru the cracks */
 
-		rsb = gen_residual_boolean(tdbb, opt, rsb);
+		rsb = gen_residual_boolean(tdbb, opt_, rsb);
 	}
 
 /* if the aggregate was not optimized via an index, get rid of the 
@@ -608,25 +592,25 @@ RSB OPT_compile(TDBB tdbb,
 		/* Handle project clause, if present. */
 
 		if (project)
-			rsb = gen_sort(tdbb, opt, beds, key_streams, rsb, project, TRUE);
+			rsb = gen_sort(tdbb, opt_, beds, key_streams, rsb, project, TRUE);
 
 		/* Handle sort clause if present */
 
 		if (sort)
-			rsb = gen_sort(tdbb, opt, beds, key_streams, rsb, sort, FALSE);
+			rsb = gen_sort(tdbb, opt_, beds, key_streams, rsb, sort, FALSE);
 	}
 
 /* If there's a FIRST n clause, handle it */
 
 	if (rse->rse_first)
-		rsb = gen_first(tdbb, opt, rsb, rse->rse_first);
+		rsb = gen_first(tdbb, opt_, rsb, rse->rse_first);
 
 /* release memory allocated for index descriptions */
 
 	for (i = 0; i < streams[0]; i++) {
 		stream = streams[i + 1];
 		if (csb->csb_rpt[stream].csb_idx_allocation)
-			ALL_RELEASE(csb->csb_rpt[stream].csb_idx_allocation);
+			delete csb->csb_rpt[stream].csb_idx_allocation;
 		csb->csb_rpt[stream].csb_idx_allocation = 0;
 	}
 
@@ -637,10 +621,10 @@ RSB OPT_compile(TDBB tdbb,
 	FREE_LIB_MEMORY(key_streams);
 	FREE_LIB_MEMORY(beds);
 	FREE_LIB_MEMORY(streams);
-	FREE_LIB_MEMORY(opt);
+	FREE_LIB_MEMORY(opt_);
 
 #else
-		ALL_RELEASE(opt);
+		delete opt_;
 
 #endif
 
@@ -653,11 +637,33 @@ RSB OPT_compile(TDBB tdbb,
 #endif
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}	// try
+	catch (...) {
+		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+		for (i = 0; i < streams[0]; i++) {
+			stream = streams[i + 1];
+			if (csb->csb_rpt[stream].csb_idx_allocation)
+				delete csb->csb_rpt[stream].csb_idx_allocation;
+			csb->csb_rpt[stream].csb_idx_allocation = 0;
+		}
+#ifdef STACK_REDUCTION
+		FREE_LIB_MEMORY(local_streams);
+		FREE_LIB_MEMORY(key_streams);
+		FREE_LIB_MEMORY(beds);
+		FREE_LIB_MEMORY(streams);
+		FREE_LIB_MEMORY(opt_);
+#else
+		delete opt_;
+#endif
+		ERR_punt();
+	}
+
 	return rsb;
 }
 
 
-NOD OPT_make_dbkey(register OPT opt, NOD boolean, USHORT stream)
+NOD OPT_make_dbkey(register OPT opt_, NOD boolean, USHORT stream)
 {
 /**************************************
  *
@@ -682,7 +688,7 @@ NOD OPT_make_dbkey(register OPT opt, NOD boolean, USHORT stream)
 	tdbb = GET_THREAD_DATA;
 
 
-	DEV_BLKCHK(opt, type_opt);
+	DEV_BLKCHK(opt_, type_opt);
 	DEV_BLKCHK(boolean, type_nod);
 
 /* If this isn't an equality, it isn't even interesting */
@@ -706,7 +712,7 @@ NOD OPT_make_dbkey(register OPT opt, NOD boolean, USHORT stream)
 
 /* If the value isn't computable, this has been a waste of time */
 
-	csb = opt->opt_csb;
+	csb = opt_->opt_csb;
 	if (!computable(csb, value, stream, FALSE))
 		return NULL;
 
@@ -736,7 +742,7 @@ NOD OPT_make_dbkey(register OPT opt, NOD boolean, USHORT stream)
 }
 
 
-NOD OPT_make_index(TDBB tdbb, OPT opt, REL relation, IDX * idx)
+NOD OPT_make_index(TDBB tdbb, OPT opt_, REL relation, IDX * idx)
 {
 /**************************************
  *
@@ -750,16 +756,16 @@ NOD OPT_make_index(TDBB tdbb, OPT opt, REL relation, IDX * idx)
  **************************************/
 	IRB retrieval;
 	NOD node, *lower, *upper, *end_node;
-	opt::opt_repeat * tail, *end;
+	Opt::opt_repeat * tail, *end;
 
 	SET_TDBB(tdbb);
 
-	DEV_BLKCHK(opt, type_opt);
+	DEV_BLKCHK(opt_, type_opt);
 	DEV_BLKCHK(relation, type_rel);
 
 /* Allocate both a index retrieval node and block. */
 
-	node = make_index_node(tdbb, relation, opt->opt_csb, idx);
+	node = make_index_node(tdbb, relation, opt_->opt_csb, idx);
 	retrieval = (IRB) node->nod_arg[e_idx_retrieval];
 	retrieval->irb_relation = relation;
 
@@ -767,19 +773,19 @@ NOD OPT_make_index(TDBB tdbb, OPT opt, REL relation, IDX * idx)
 
 	lower = retrieval->irb_value;
 	upper = retrieval->irb_value + idx->idx_count;
-	end = opt->opt_rpt + idx->idx_count;
+	end = opt_->opt_rpt + idx->idx_count;
 
 	if (idx->idx_flags & idx_descending) {
-		for (tail = opt->opt_rpt; tail->opt_lower && tail < end; tail++)
+		for (tail = opt_->opt_rpt; tail->opt_lower && tail < end; tail++)
 			*upper++ = tail->opt_lower;
-		for (tail = opt->opt_rpt; tail->opt_upper && tail < end; tail++)
+		for (tail = opt_->opt_rpt; tail->opt_upper && tail < end; tail++)
 			*lower++ = tail->opt_upper;
 		retrieval->irb_generic |= irb_descending;
 	}
 	else {
-		for (tail = opt->opt_rpt; tail->opt_lower && tail < end; tail++)
+		for (tail = opt_->opt_rpt; tail->opt_lower && tail < end; tail++)
 			*lower++ = tail->opt_lower;
-		for (tail = opt->opt_rpt; tail->opt_upper && tail < end; tail++)
+		for (tail = opt_->opt_rpt; tail->opt_upper && tail < end; tail++)
 			*upper++ = tail->opt_upper;
 	}
 
@@ -844,7 +850,7 @@ int OPT_match_index(OPT opt, USHORT stream, IDX * idx)
 	register CSB csb;
 	NOD node;
 	USHORT n;
-	register opt::opt_repeat * tail, *opt_end;
+	register Opt::opt_repeat * tail, *opt_end;
 
 	tdbb = GET_THREAD_DATA;
 	DEV_BLKCHK(opt, type_opt);
@@ -923,7 +929,7 @@ void OPT_set_index(TDBB tdbb,
 /* set up a dummy optimizer block just for the purposes 
    of the set index, to pass information to subroutines */
 
-	opt = (OPT) ALLOCP(type_opt);
+	opt = new(*dbb->dbb_permanent) Opt();
 	opt->opt_g_flags |= opt_g_stream;
 
 /* generate a new rsb for the retrieval, making sure to 
@@ -1002,18 +1008,18 @@ void OPT_set_index(TDBB tdbb,
    request, and replace the old with the new */
 
 	vector = request->req_fors;
-	for (i = 0; i < vector->vec_count; i++)
-		if (vector->vec_object[i] == (BLK) old_rsb) {
-			vector->vec_object[i] = (BLK) new_rsb;
+	for (i = 0; i < vector->count(); i++)
+		if ((*vector)[i] == (BLK) old_rsb) {
+			(*vector)[i] = (BLK) new_rsb;
 			break;
 		}
 
 /* release unneeded blocks */
 
-	ALL_RELEASE(opt);
+	delete opt;
 	if (index_node)
-		ALL_RELEASE(index_node);
-	ALL_RELEASE(old_rsb);
+		delete index_node;
+	delete old_rsb;
 
 	*rsb_ptr = new_rsb;
 }
@@ -1128,7 +1134,7 @@ static BOOLEAN check_relationship(OPT opt, USHORT position, USHORT stream)
  **************************************/
 	IRL relationship;
 	USHORT n;
-	opt::opt_repeat * tail, *end;
+	Opt::opt_repeat * tail, *end;
 
 	DEV_BLKCHK(opt, type_opt);
 
@@ -1314,7 +1320,7 @@ static void clear_bounds(OPT opt, IDX * idx)
  *	indices.
  *
  **************************************/
-	register opt::opt_repeat * tail, *opt_end;
+	register Opt::opt_repeat * tail, *opt_end;
 
 	DEV_BLKCHK(opt, type_opt);
 
@@ -1545,7 +1551,7 @@ static void compute_dependencies(NOD node, ULONG * dependencies)
 	case nod_total:
 	case nod_count:
 	case nod_from:
-		if (sub = node->nod_arg[e_stat_default])
+		if ( (sub = node->nod_arg[e_stat_default]) )
 			compute_dependencies(sub, dependencies);
 		rse = (RSE) node->nod_arg[e_stat_rse];
 		value = node->nod_arg[e_stat_value];
@@ -1562,18 +1568,18 @@ static void compute_dependencies(NOD node, ULONG * dependencies)
 
 /* Node is a record selection expression.  Groan.  Ugh.  Yuck. */
 
-	if (sub = rse->rse_first)
+	if ( (sub = rse->rse_first) )
 		compute_dependencies(sub, dependencies);
 
 /* Check sub-expressions */
 
-	if (sub = rse->rse_boolean)
+	if ( (sub = rse->rse_boolean) )
 		compute_dependencies(sub, dependencies);
 
-	if (sub = rse->rse_sorted)
+	if ( (sub = rse->rse_sorted) )
 		compute_dependencies(sub, dependencies);
 
-	if (sub = rse->rse_projection)
+	if ( (sub = rse->rse_projection) )
 		compute_dependencies(sub, dependencies);
 
 /* Check value expression, if any */
@@ -1807,7 +1813,7 @@ static USHORT distribute_equalities(LLS * org_stack, CSB csb)
 						count++;
 					}
 					else
-						ALL_RELEASE(boolean);
+						delete boolean;
 				}
 	}
 
@@ -1971,7 +1977,7 @@ static BOOLEAN dump_rsb(REQ request,
 	name = NULL;
 	relation = rsb->rsb_relation;
 
-	if (alias = rsb->rsb_alias) {
+	if ( (alias = rsb->rsb_alias) ) {
 		length = alias->str_length;
 		name = (SCHAR *) alias->str_data;
 	}
@@ -2145,6 +2151,8 @@ static BOOLEAN dump_rsb(REQ request,
 			(request, rsb->rsb_arg[RSB_LEFT_inner], &buffer,
 			 buffer_length)) return FALSE;
 		break;
+        default:    /* Shut up compiler warnings */
+                break;
 	}
 
 /* dump out the next rsb */
@@ -2188,7 +2196,7 @@ static BOOLEAN estimate_cost(TDBB tdbb,
 	SSHORT n;
 	ULONG inactivities[OPT_BITS];
 	double s, selectivity, cardinality, index_selectivity;
-	register opt::opt_repeat * tail, *opt_end;
+	register Opt::opt_repeat * tail, *opt_end;
 	csb_repeat *csb_tail;
 
 	DEV_BLKCHK(opt, type_opt);
@@ -2452,7 +2460,7 @@ static void find_best(TDBB tdbb,
 	USHORT flag_vector[MAX_STREAMS], *fv;
 	BOOLEAN done;
 	IRL relationship;
-	opt::opt_repeat * tail, *opt_end, *order_end, *stream_data;
+	Opt::opt_repeat * tail, *opt_end, *order_end, *stream_data;
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(plan_node, type_nod);
@@ -2633,7 +2641,7 @@ static NOD find_dbkey(NOD dbkey, USHORT stream, SLONG * position)
 	else if (dbkey->nod_type == nod_concatenate)
 		for (ptr = dbkey->nod_arg, end = ptr + dbkey->nod_count;
 			 ptr < end; ptr++)
-			if (dbkey_temp = find_dbkey(*ptr, stream, position))
+			if ( (dbkey_temp = find_dbkey(*ptr, stream, position)) )
 				return dbkey_temp;
 	return NULL;
 }
@@ -2676,7 +2684,7 @@ static USHORT find_order(TDBB tdbb,
 				  (double) 1);
 #ifdef OPT_DEBUG
 	if (opt_debug_flag >= DEBUG_BEST) {
-		opt::opt_repeat * order_end, *tail;
+		Opt::opt_repeat * order_end, *tail;
 		order_end = opt->opt_rpt + opt->opt_best_count;
 		ib_fprintf(opt_debug_file,
 				   "find_order()  -- best_count: %2.2d, best_streams: ",
@@ -2747,6 +2755,8 @@ static void find_rsbs(RSB rsb, LLS * stream_list, LLS * rsb_list)
 			 ptr < end; ptr += 2)
 			find_rsbs(*ptr, stream_list, rsb_list);
 		break;
+        default:   /* Shut up compiler warnings */
+                break;
 	}
 
 	find_rsbs(rsb->rsb_next, stream_list, rsb_list);
@@ -2838,7 +2848,7 @@ static BOOLEAN form_river(TDBB tdbb,
 	CSB csb;
 	RIV river;
 	UCHAR *stream, *end_stream, *t2;
-	opt::opt_repeat * tail, *opt_end;
+	Opt::opt_repeat * tail, *opt_end;
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(*river_stack, type_lls);
 	if (sort_clause)
@@ -2849,7 +2859,7 @@ static BOOLEAN form_river(TDBB tdbb,
 	SET_TDBB(tdbb);
 	csb = opt->opt_csb;
 /* Allocate a river block and move the best order into it */
-	river = (RIV) ALLOCDV(type_riv, count);
+	river = new(*tdbb->tdbb_default, count) riv();
 	LLS_PUSH(river, river_stack);
 	river->riv_count = (UCHAR) count;
 	if (count == 1) {
@@ -2857,7 +2867,7 @@ static BOOLEAN form_river(TDBB tdbb,
 		ptr = &river->riv_rsb;
 	}
 	else {
-		river->riv_rsb = rsb = (RSB) ALLOCDV(type_rsb, count);
+		river->riv_rsb = rsb = new(*tdbb->tdbb_default, count) Rsb();
 		rsb->rsb_type = rsb_cross;
 		rsb->rsb_count = count;
 		rsb->rsb_impure = CMP_impure(csb, sizeof(struct irsb));
@@ -2952,7 +2962,7 @@ static RSB gen_aggregate(TDBB tdbb, OPT opt, NOD node)
 
 /* allocate and optimize the record source block */
 
-	rsb = (RSB) ALLOCDV(type_rsb, 1);
+	rsb = new(*tdbb->tdbb_default, 1) Rsb();
 	rsb->rsb_type = rsb_aggregate;
 	rsb->rsb_stream = (UCHAR) node->nod_arg[e_agg_stream];
 	rsb->rsb_format = csb->csb_rpt[rsb->rsb_stream].csb_format;
@@ -3043,7 +3053,7 @@ static RSB gen_boolean(TDBB tdbb, register OPT opt, RSB prior_rsb, NOD node)
 	DEV_BLKCHK(prior_rsb, type_rsb);
 	SET_TDBB(tdbb);
 	csb = opt->opt_csb;
-	rsb = (RSB) ALLOCDV(type_rsb, 1);
+	rsb = new(*tdbb->tdbb_default, 1) Rsb();
 	rsb->rsb_count = 1;
 	rsb->rsb_type = rsb_boolean;
 	rsb->rsb_next = prior_rsb;
@@ -3073,7 +3083,7 @@ static RSB gen_first(TDBB tdbb, register OPT opt, RSB prior_rsb, NOD node)
 	DEV_BLKCHK(node, type_nod);
 	SET_TDBB(tdbb);
 	csb = opt->opt_csb;
-	rsb = (RSB) ALLOCDV(type_rsb, 1);
+	rsb = new(*tdbb->tdbb_default, 1) Rsb();
 	rsb->rsb_count = 1;
 	rsb->rsb_type = rsb_first;
 	rsb->rsb_next = prior_rsb;
@@ -3108,7 +3118,7 @@ static void gen_join(TDBB tdbb,
 	RIV river;
 	UCHAR temp[MAX_STREAMS], *stream, *end_stream, *t2;
 	IRL relationship;
-	opt::opt_repeat * tail;
+	Opt::opt_repeat * tail;
 	csb_repeat *csb_tail, *csb_tail2;
 	USHORT count;
 	DEV_BLKCHK(opt, type_opt);
@@ -3136,7 +3146,7 @@ static void gen_join(TDBB tdbb,
 									   relation) * dbb->dbb_page_size /
 				format->fmt_length;}
 
-		river = (RIV) ALLOCDV(type_riv, 1);
+		river = new(*tdbb->tdbb_default, 1) riv();
 		river->riv_count = 1;
 		river->riv_rsb =
 			gen_retrieval(tdbb, opt, streams[1], sort_clause, project_clause,
@@ -3175,7 +3185,7 @@ static void gen_join(TDBB tdbb,
 			if (*t2 != *stream) {
 				csb_tail2 = &csb->csb_rpt[*t2];
 				csb_tail2->csb_flags |= csb_active;
-				if (relationship = indexed_relationship(tdbb, opt, *t2)) {
+				if ( (relationship = indexed_relationship(tdbb, opt, *t2)) ) {
 					relationship->irl_next = tail->opt_relationships;
 					tail->opt_relationships = relationship;
 					relationship->irl_stream = *t2;
@@ -3349,7 +3359,7 @@ static RSB gen_nav_rsb(TDBB tdbb,
 	DEV_BLKCHK(alias, type_str);
 	SET_TDBB(tdbb);
 	key_length = ROUNDUP(BTR_key_length(relation, idx), sizeof(SLONG));
-	rsb = (RSB) ALLOCDV(type_rsb, RSB_NAV_count);
+	rsb = new(*tdbb->tdbb_default, RSB_NAV_count) Rsb();
 	rsb->rsb_type = rsb_navigate;
 	rsb->rsb_relation = relation;
 	rsb->rsb_stream = (UCHAR) stream;
@@ -3465,7 +3475,7 @@ static RSB gen_outer(TDBB tdbb,
 	stream_i.stream_rsb =
 		gen_residual_boolean(tdbb, opt, stream_i.stream_rsb);
 /* Allocate and fill in the rsb */
-	rsb = (RSB) ALLOCDV(type_rsb, RSB_LEFT_count);
+	rsb = new(*tdbb->tdbb_default, RSB_LEFT_count) Rsb();
 	rsb->rsb_type = rsb_left_cross;
 	rsb->rsb_count = 2;
 	rsb->rsb_impure = CMP_impure(opt->opt_csb, sizeof(struct irsb));
@@ -3508,7 +3518,7 @@ static RSB gen_procedure(TDBB tdbb, OPT opt, NOD node)
 	SET_TDBB(tdbb);
 	csb = opt->opt_csb;
 	procedure = (PRC) node->nod_arg[e_prc_procedure];
-	rsb = (RSB) ALLOCDV(type_rsb, RSB_PRC_count);
+	rsb = new(*tdbb->tdbb_default, RSB_PRC_count) Rsb();
 	rsb->rsb_type = rsb_procedure;
 	rsb->rsb_stream = (UCHAR) node->nod_arg[e_prc_stream];
 	rsb->rsb_procedure = procedure;
@@ -3535,7 +3545,7 @@ static RSB gen_residual_boolean(TDBB tdbb, register OPT opt, RSB prior_rsb)
  *
  **************************************/
 	NOD node, boolean;
-	register opt::opt_repeat * tail, *opt_end;
+	register Opt::opt_repeat * tail, *opt_end;
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(prior_rsb, type_rsb);
@@ -3582,7 +3592,7 @@ static RSB gen_retrieval(TDBB tdbb,
 	NOD node, opt_boolean, inversion;
 	USHORT segments;
 	SSHORT i;
-	register opt::opt_repeat * tail, *opt_end, *idx_tail, *idx_end;
+	register Opt::opt_repeat * tail, *opt_end, *idx_tail, *idx_end;
 	csb_repeat *csb_tail;
 	BOOLEAN full = FALSE;
 	SET_TDBB(tdbb);
@@ -3704,9 +3714,9 @@ static RSB gen_retrieval(TDBB tdbb,
 
 				if (!rsb) {
 					if (sort_ptr && *sort_ptr) {
-						if (rsb =
+						if ( (rsb =
 							gen_navigation(tdbb, opt, stream, relation, alias,
-										   idx, sort_ptr)) continue;
+										   idx, sort_ptr)) ) continue;
 					}
 
 					/* for now, make sure that we only map a DISTINCT to an index if they contain 
@@ -3831,14 +3841,14 @@ static RSB gen_rsb(TDBB tdbb,
 	}
 	else {
 		if (inversion) {
-			rsb = (RSB) ALLOCDV(type_rsb, 1);
+			rsb = new(*tdbb->tdbb_default, 1) Rsb();
 			rsb->rsb_type = rsb_indexed;
 			rsb->rsb_count = 1;
 			size = sizeof(struct irsb_index);
 			rsb->rsb_arg[0] = (RSB) inversion;
 		}
 		else {
-			rsb = (RSB) ALLOCDV(type_rsb, 0);
+			rsb = new(*tdbb->tdbb_default, 0) Rsb();
 			rsb->rsb_type = rsb_sequential;
 			size = sizeof(struct irsb);
 			if (boolean)
@@ -3899,7 +3909,7 @@ static RSB gen_sort(TDBB tdbb,
 	DSC *desc, descriptor;
 	FMT format;
 	LLS id_stack, stream_stack;
-	smb::smb_repeat * map_item;
+	smb_repeat * map_item;
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(prior_rsb, type_rsb);
 	DEV_BLKCHK(sort, type_nod);
@@ -3951,9 +3961,9 @@ static RSB gen_sort(TDBB tdbb,
    end. */
 
 	count = items +
-		(sizeof(SKD) * 2 * sort->nod_count + sizeof(smb::smb_repeat) -
-		 1) / sizeof(smb::smb_repeat);
-	map = (SMB) ALLOCDV(type_smb, count);
+		(sizeof(SKD) * 2 * sort->nod_count + sizeof(smb_repeat) -
+		 1) / sizeof(smb_repeat);
+	map = new(*tdbb->tdbb_default, count) smb();
 	map->smb_keys = sort->nod_count * 2;
 	map->smb_count = items;
 	if (project_flag)
@@ -4114,7 +4124,7 @@ static RSB gen_sort(TDBB tdbb,
 /* That was most unpleasant.  Never the less, it's done (except for
    the debugging).  All that remains is to build the record source
    block for the sort. */
-	rsb = (RSB) ALLOCDV(type_rsb, 1);
+	rsb = new(*tdbb->tdbb_default, 1) Rsb();
 	rsb->rsb_type = rsb_sort;
 	rsb->rsb_next = prior_rsb;
 	rsb->rsb_arg[0] = (RSB) map;
@@ -4151,7 +4161,7 @@ static BOOLEAN gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 		**selected_class, *last_class, node, node1, node2, sort, *ptr;
 	RSB rsb, merge_rsb;
 	RSB *rsb_tail;
-	opt::opt_repeat * tail, *end;
+	Opt::opt_repeat * tail, *end;
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(*org_rivers, type_lls);
 	SET_TDBB(tdbb);
@@ -4164,8 +4174,8 @@ static BOOLEAN gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 		river1->riv_number = cnt++;
 	}
 
-	scratch = (VEC) ALLOCPV(type_vec, opt->opt_count * cnt);
-	classes = (NOD *) scratch->vec_object;
+	scratch = vec::newVector(*dbb->dbb_permanent, opt->opt_count * cnt);
+	classes = (NOD *) scratch->begin();
 /* Compute equivalence classes among streams.  This involves finding groups
    of streams joined by field equalities.  */
 	last_class = classes;
@@ -4229,14 +4239,14 @@ static BOOLEAN gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 	}
 
 	if (!river_cnt) {
-		ALL_RELEASE(scratch);
+		delete scratch;
 		return FALSE;
 	}
 
 	*selected_class = NULL;
 	class_cnt = selected_class - selected_classes;
 /* Build a sort stream */
-	merge_rsb = (RSB) ALLOCDV(type_rsb, river_cnt * 2);
+	merge_rsb = new(*tdbb->tdbb_default, river_cnt * 2) Rsb();
 	merge_rsb->rsb_count = river_cnt;
 	merge_rsb->rsb_type = rsb_merge;
 	merge_rsb->rsb_impure = CMP_impure(opt->opt_csb,
@@ -4253,7 +4263,7 @@ static BOOLEAN gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 		if (!(TEST_DEP_BIT(selected_rivers, river1->riv_number)))
 			continue;
 		stream_cnt += river1->riv_count;
-		sort = (NOD) ALLOCDV(type_nod, class_cnt * 2);
+		sort = new(*tdbb->tdbb_default, class_cnt * 2) nod();
 		sort->nod_type = nod_sort;
 		sort->nod_count = class_cnt;
 		for (selected_class = selected_classes, ptr = sort->nod_arg;
@@ -4268,7 +4278,7 @@ static BOOLEAN gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 /* Finally, merge selected rivers into a single river, and rebuild original 
    river stack */
 
-	river1 = (RIV) ALLOCDV(type_riv, stream_cnt);
+	river1 = new(*tdbb->tdbb_default, stream_cnt) riv();
 	river1->riv_count = (UCHAR) stream_cnt;
 	river1->riv_rsb = merge_rsb;
 	stream = river1->riv_streams;
@@ -4301,7 +4311,7 @@ static BOOLEAN gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 		river1->riv_rsb = gen_boolean(tdbb, opt, river1->riv_rsb, node);
 	set_inactive(opt, river1);
 	*org_rivers = stack1;
-	ALL_RELEASE(scratch);
+	delete scratch;
 	return TRUE;
 }
 
@@ -4330,7 +4340,7 @@ static RSB gen_union(TDBB tdbb,
 	clauses = union_node->nod_arg[e_uni_clauses];
 	count = clauses->nod_count;
 	csb = opt->opt_csb;
-	rsb = (RSB) ALLOCDV(type_rsb, count + nstreams + 1);
+	rsb = new(*tdbb->tdbb_default, count + nstreams + 1) Rsb();
 	rsb->rsb_type = rsb_union;
 	rsb->rsb_count = count;
 	rsb->rsb_stream = (UCHAR) union_node->nod_arg[e_uni_stream];
@@ -4364,11 +4374,11 @@ static void get_inactivities(CSB csb, ULONG * dependencies)
  *
  **************************************/
 	USHORT n;
-	csb_repeat *tail, *end;
+	Csb::rpt_itr tail, end;
 	DEV_BLKCHK(csb, type_csb);
 	for (n = 0; n < OPT_BITS; n++)
 		dependencies[n] = (ULONG) - 1;
-	for (tail = csb->csb_rpt, end = tail + csb->csb_n_stream, n = 0;
+	for (tail = csb->csb_rpt.begin(), end = tail + csb->csb_n_stream, n = 0;
 		 tail < end; n++, tail++)
 		if (tail->csb_flags & csb_active)
 			CLEAR_DEP_BIT(dependencies, n);
@@ -4397,7 +4407,7 @@ static IRL indexed_relationship(TDBB tdbb, OPT opt, USHORT stream)
 	NOD node;
 	IRL relationship;
 	USHORT i;
-	register opt::opt_repeat * tail, *opt_end;
+	register Opt::opt_repeat * tail, *opt_end;
 	csb_repeat *csb_tail;
 	DEV_BLKCHK(opt, type_opt);
 	SET_TDBB(tdbb);
@@ -4426,7 +4436,7 @@ static IRL indexed_relationship(TDBB tdbb, OPT opt, USHORT stream)
 		tail = opt->opt_rpt;
 		if (tail->opt_lower || tail->opt_upper) {
 			if (!relationship)
-				relationship = (IRL) ALLOCD(type_irl);
+				relationship = new(*tdbb->tdbb_default) irl();
 			if (idx->idx_flags & idx_unique) {
 				relationship->irl_unique = TRUE;
 				break;
@@ -4481,7 +4491,7 @@ static STR make_alias(TDBB tdbb, CSB csb, csb_repeat * base_tail)
 
 /* allocate a string block to hold the concatenated alias */
 
-	alias = (STR) ALLOCDV(type_str, alias_length);
+	alias = new(*tdbb->tdbb_default, alias_length) str();
 	alias->str_length = alias_length - 1;
 /* now concatenate the individual aliases into the string block, 
    beginning at the end and copying back to the beginning */
@@ -4567,7 +4577,7 @@ static RSB make_cross(TDBB tdbb, OPT opt, LLS stack)
 	}
 
 	csb = opt->opt_csb;
-	rsb = (RSB) ALLOCDV(type_rsb, count);
+	rsb = new(*tdbb->tdbb_default, count) Rsb();
 	rsb->rsb_type = rsb_cross;
 	rsb->rsb_count = count;
 	rsb->rsb_impure = CMP_impure(csb, sizeof(struct irsb));
@@ -4611,7 +4621,7 @@ static NOD make_index_node(TDBB tdbb, REL relation, CSB csb, IDX * idx)
 	node = PAR_make_node(tdbb, e_idx_length);
 	node->nod_type = nod_index;
 	node->nod_count = 0;
-	retrieval = (IRB) ALLOCDV(type_irb, idx->idx_count * 2);
+	retrieval = new(*tdbb->tdbb_default, idx->idx_count * 2) irb();
 	node->nod_arg[e_idx_retrieval] = (NOD) retrieval;
 	retrieval->irb_index = idx->idx_id;
 	MOVE_FAST(idx, &retrieval->irb_desc, sizeof(retrieval->irb_desc));
@@ -4715,13 +4725,13 @@ static NOD make_inversion(TDBB tdbb,
 			(inversion =
 			 make_inversion(tdbb, opt, boolean->nod_arg[0],
 							stream))) return NULL;
-		if (inversion2 =
+		if ( (inversion2 =
 			make_inversion(tdbb, opt, boolean->nod_arg[1],
-						   stream)) return compose(&inversion, inversion2,
+						   stream)) ) return compose(&inversion, inversion2,
 												   nod_bit_or);
 		if (inversion->nod_type == nod_index)
-			ALL_RELEASE(inversion->nod_arg[e_idx_retrieval]);
-		ALL_RELEASE(inversion);
+			delete inversion->nod_arg[e_idx_retrieval];
+		delete inversion;
 		return NULL;
 	}
 
@@ -4938,7 +4948,7 @@ static void mark_indices(csb_repeat * csb_tail, SSHORT relation_id)
 		return;
 /* find out how many indices were specified; if
    there were none, this is a sequential retrieval */
-	if (access_type = plan->nod_arg[e_retrieve_access_type])
+	if ( (access_type = plan->nod_arg[e_retrieve_access_type]) )
 		plan_count = access_type->nod_count;
 /* go through each of the indices and mark it unusable
    for indexed retrieval unless it was specifically mentioned 
@@ -4987,7 +4997,7 @@ static SSHORT match_index(TDBB tdbb,
  **************************************/
 	NOD match, value;
 	SSHORT i, forward, count;
-	opt::opt_repeat * ptr;
+	Opt::opt_repeat * ptr;
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(boolean, type_nod);
 	SET_TDBB(tdbb);
@@ -5078,6 +5088,8 @@ static SSHORT match_index(TDBB tdbb,
 					ptr->opt_lower = value;
 				ptr->opt_match = boolean;
 				break;
+                        default:    /* Shut up compiler warnings */
+                                break;
 			}
 		}
 
@@ -5294,7 +5306,7 @@ static void print_order(OPT opt,
  * Functional description
  *
  **************************************/
-	opt::opt_repeat * tail, *order_end;
+	Opt::opt_repeat * tail, *order_end;
 	DEV_BLKCHK(opt, type_opt);
 	order_end = opt->opt_rpt + position;
 	ib_fprintf(opt_debug_file, "print_order() -- position %2.2d: ", position);

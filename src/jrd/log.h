@@ -35,13 +35,15 @@
 
 /* replay log block */
 
-typedef struct log {
-	struct blk log_header;
+class log : public pool_alloc<type_log>
+{
+    public:
 	struct str *log_string;		/* string block allocated to hold log buffer */
 	UCHAR *log_buffer;			/* points to beginning of string data */
 	UCHAR *log_ptr;				/* current end of buffer for logging */
 	void *log_file;				/* db-specific file to write */
-} *LOG;
+};
+typedef log *LOG;
 
 
 

@@ -21,6 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 
+#ifndef JLX_C_INCLUDED_BY_GRAMMAR_CPP
+#error This file gets included by grammar.cpp. Don not try to compile it stand-alone.
+#endif
+
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"

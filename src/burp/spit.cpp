@@ -46,7 +46,8 @@
 #endif
 
 #ifdef WIN_NT
-#include <io.h>					/* usage of non-ANSI open/read/write/close functions */
+// usage of non-ANSI open/read/write/close functions
+#include <io.h>
 #endif
 
 #define	MODE_READ	O_RDONLY
@@ -1088,7 +1089,7 @@ SLONG cnt, SLONG * total_int)
 			break;
 
 		default:
-			assert(write_cnt == read_cnt);
+			gds_assert(write_cnt == read_cnt);
 			break;
 		}
 

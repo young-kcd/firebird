@@ -41,6 +41,10 @@
 #include <assert.h>
 #endif
 
+#ifdef DARWIN
+#include <setjmp.h>
+#endif
+
 #ifdef HP10
 #include <sys/pstat.h>
 #endif
@@ -58,7 +62,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/err_proto.h"
-
+#include "../jrd/thd_proto.h"
 
 // Keep the following SIG_FPTR definitions in sync
 // with the same code in isc_ipc.cpp
@@ -295,7 +299,7 @@ static void make_object_name(TEXT *, TEXT *, TEXT *);
 #endif
 
 
-#if defined FREEBSD || defined NETBSD
+#if defined FREEBSD || defined NETBSD || defined DARWIN
 #define sigset      signal
 #endif
 
@@ -759,7 +763,7 @@ int ISC_event_init(EVENT event, int semid, int semnum)
 		pthread_mutex_init(event->event_mutex, pthread_mutexattr_default);
 		pthread_cond_init(event->event_semnum, pthread_condattr_default);
 #else
-#ifdef linux
+#if (defined linux || defined DARWIN)
 		pthread_mutex_init(event->event_mutex, NULL);
 		pthread_cond_init(event->event_semnum, NULL);
 #else
@@ -831,7 +835,7 @@ int ISC_event_wait(
 				   EVENT * events,
 				   SLONG * values,
 				   SLONG micro_seconds,
-				   void (*timeout_handler) (), void *handler_arg)
+				   FPTR_VOID timeout_handler, void *handler_arg)
 {
 /**************************************
  *
@@ -3624,7 +3628,7 @@ int ISC_mutex_init(MTX mutex, SLONG semaphore)
  **************************************/
 	int state;
 
-#if (!defined HP10 && !defined linux)
+#if (!defined HP10 && !defined linux && !defined DARWIN)
 
 	pthread_mutexattr_t mattr;
 
@@ -3644,7 +3648,7 @@ int ISC_mutex_init(MTX mutex, SLONG semaphore)
 	 server (until we are to implement local IPC using shared
 	 memory in which case we need interprocess thread sync.
 */
-#ifdef linux
+#if (defined linux || defined DARWIN)
 	return pthread_mutex_init(mutex->mtx_mutex, NULL);
 #else
 	state = pthread_mutex_init(mutex->mtx_mutex, pthread_mutexattr_default);
@@ -4880,7 +4884,7 @@ void longjmp_sig_handler(int sig_num)
 
 	tdbb = GET_THREAD_DATA;
 
-	siglongjmp(tdbb->tdbb_sigsetjmp, sig_num);
+	siglongjmp((sigjmp_buf)tdbb->tdbb_sigsetjmp, sig_num);
 }
 #endif /* UNIX */
 #endif /* SUPERSERVER */

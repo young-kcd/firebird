@@ -29,11 +29,11 @@ extern "C" {
 #endif
 
 #ifdef DEV_BUILD
-void ERRD_assert_msg(CONST UCHAR *, CONST UCHAR *, ULONG);
+void ERRD_assert_msg(const char*, const char*, ULONG);
 #endif
 
-void ERRD_bugcheck(CONST TEXT *);
-void ERRD_error(int, CONST TEXT *);
+void ERRD_bugcheck(const char*);
+void ERRD_error(int, const char*);
 void ERRD_post(STATUS, ...);
 BOOLEAN ERRD_post_warning(STATUS, ...);
 void ERRD_punt(void);

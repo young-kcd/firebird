@@ -827,7 +827,7 @@ static FIL setup_file(
 
 /* Allocate file block and move in file name */
 
-	file = ALLOCPV(type_fil, file_length + 1);
+	file = new(dbb->dbb_permanent, file_length + 1) fil();
 	file->fil_desc = chan;
 	file->fil_length = file_length;
 	file->fil_max_page = -1;
@@ -875,7 +875,7 @@ static FIL setup_file(
 	while (--l);
 	l = p - lock_id;
 
-	dbb->dbb_lock = lock = ALLOCPV(type_lck, l);
+	dbb->dbb_lock = lock = new(dbb->dbb_permanent, l) lck();
 	lock->lck_type = LCK_database;
 	lock->lck_owner_handle = LCK_get_owner_handle(NULL_TDBB, lock->lck_type);
 	lock->lck_object = dbb;

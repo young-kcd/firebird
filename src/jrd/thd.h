@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: thd.h,v 1.2 2001-07-12 05:46:05 bellardo Exp $
+$Id: thd.h,v 1.3 2001-12-24 02:50:52 tamlin Exp $
 */
 
 #ifndef _JRD_THD_H_

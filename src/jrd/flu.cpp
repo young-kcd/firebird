@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: flu.cpp,v 1.4 2001-07-29 17:42:22 skywalker Exp $
+$Id: flu.cpp,v 1.5 2001-12-24 02:50:51 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -168,6 +168,18 @@ static void terminate_at_space(char* psz)
 /* Windows NT stuff */
 
 #ifdef WIN_NT
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#define NOUSER
+#define NOGDI
+#define NOCRYPT
+#define NOMCX
+#define NOIME
+#ifndef NOMSG
+#define NOMSG
+#endif
+#define NOSERVICE
 #include <windows.h>
 #include <stdlib.h>
 #include <io.h>
@@ -1002,7 +1014,6 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
  *
  **************************************/
 	FPTR_INT function;
-	TEXT *p;
 
 	function = FUNCTIONS_entrypoint(module, name);
 	if (function)

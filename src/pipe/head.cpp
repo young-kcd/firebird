@@ -22,7 +22,7 @@
  * Solaris x86 changes - Konstantin Kuznetsov, Neil McCalden 
  */
  
- /* $Id: head.cpp,v 1.3 2001-07-29 23:43:23 skywalker Exp $ */
+ /* $Id: head.cpp,v 1.4 2001-12-24 02:50:53 tamlin Exp $ */
  
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"

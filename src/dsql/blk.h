@@ -21,29 +21,25 @@
  * Contributor(s): ______________________________________.
  */
 
-BLKDEF(type_ctx, ctx, 0)
-	BLKDEF(type_par, par, 0)
-	BLKDEF(type_map, map, 0)
-	BLKDEF(type_req, req, 0)
-	BLKDEF(type_dbb, dbb, 0)
-	BLKDEF(type_dsql_rel, dsql_rel, 1)
-	BLKDEF(type_fld, fld, 1)
-	BLKDEF(type_fil, fil, 0)
-	BLKDEF(type_nod, nod, sizeof(((NOD) 0)->nod_arg[0]))
-	BLKDEF(type_msg, msg, 0)
-	BLKDEF(type_frb, frb, 0)
-	BLKDEF(type_hnk, hnk, 0)
-	BLKDEF(type_plb, plb, 0)
-	BLKDEF(type_vec, vec, sizeof(((VEC) 0)->vec_object[0]))
-	BLKDEF(type_vcl, vcl, sizeof(((VCL) 0)->vcl_long[0]))
-	BLKDEF(type_lls, lls, 0)	/* linked list stack */
-	BLKDEF(type_str, str, 1)	/* random string block */
-	BLKDEF(type_sym, sym, 1)	/* symbol block */
-	BLKDEF(type_err, err, 0)
-	BLKDEF(type_opn, opn, 0)
-	BLKDEF(type_tra, tra, 0)
-	BLKDEF(type_udf, udf, 1)
-	BLKDEF(type_var, var, 1)
-	BLKDEF(type_blb, blb, 0)
-	BLKDEF(type_prc, prc, 1)
-	BLKDEF(type_intlsym, intlsym, 1)
+BLKDEF(dsql_type_ctx, ctx, 0)
+BLKDEF(dsql_type_par, par, 0)
+BLKDEF(dsql_type_map, map, 0)	/* Unique */
+BLKDEF(dsql_type_req, req, 0)
+BLKDEF(dsql_type_dbb, dbb, 0)
+BLKDEF(dsql_type_dsql_rel, dsql_rel, 1)
+BLKDEF(dsql_type_fld, fld, 1)
+BLKDEF(dsql_type_fil, fil, 0)
+BLKDEF(dsql_type_nod, nod, sizeof(((NOD) 0)->nod_arg[0]))
+BLKDEF(dsql_type_msg, msg, 0)
+BLKDEF(dsql_type_lls, dsql_lls, 0)	/* linked list stack */
+BLKDEF(dsql_type_str, str, 1)	/* random string block */
+BLKDEF(dsql_type_sym, sym, 1)	/* symbol block */
+BLKDEF(dsql_type_err, err, 0)
+BLKDEF(dsql_type_opn, opn, 0)
+BLKDEF(dsql_type_tra, tra, 0)
+BLKDEF(dsql_type_udf, udf, 1)
+BLKDEF(dsql_type_var, var, 1)
+BLKDEF(dsql_type_blb, blb, 0)
+BLKDEF(dsql_type_prc, prc, 1)
+BLKDEF(dsql_type_intlsym, intlsym, 1)
+BLKDEF(dsql_type_vec, vec, 0)

@@ -21,8 +21,13 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: met.epp,v 1.2 2001-07-29 17:42:22 skywalker Exp $
+$Id: met.epp,v 1.3 2001-12-24 02:50:51 tamlin Exp $
 */
+// This MUST be at the top of the file
+#ifdef DARWIN
+#define _STLP_CCTYPE
+#endif
+
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -150,13 +155,19 @@ extern int strlen();
 extern int strcmp();
 extern char *strcpy();
 extern int vsprintf();
-extern int SETJMP();
 extern int memcmp();
 extern int strncmp();
 extern void *memset();
 extern IB_FILE _iob[];
 extern int ib_fprintf();
 #endif
+
+
+#pragma FB_COMPILER_MESSAGE("Remove once we updated gpre")
+static inline void gds__vtov(CONST UCHAR* s1, SCHAR* s2, SSHORT val)
+{
+	gds__vtov(reinterpret_cast<CONST SCHAR*>(s1), s2, val);
+}
 
 
 void MET_activate_shadow( TDBB tdbb)
@@ -490,7 +501,7 @@ FMT MET_format(TDBB tdbb, register REL relation, USHORT number)
 	VEC formats;
 	FMT format;
 	BLB blob;
-	DSC *desc;
+	fmt::fmt_desc_iterator desc;
 	BLK request;
 	USHORT count;
 
@@ -498,8 +509,8 @@ FMT MET_format(TDBB tdbb, register REL relation, USHORT number)
 	dbb = tdbb->tdbb_database;
 
 	if ((formats = relation->rel_formats) &&
-		(number < formats->vec_count) &&
-		(format = (FMT) formats->vec_object[number]))
+		(number < formats->count()) &&
+		(format = (FMT) (*formats)[number]))
 	{
 		return format;
 	}
@@ -517,12 +528,12 @@ FMT MET_format(TDBB tdbb, register REL relation, USHORT number)
 		}
 		blob = BLB_open(tdbb, dbb->dbb_sys_trans, (BID)&X.RDB$DESCRIPTOR);
 		count = blob->blb_length / sizeof(struct dsc);
-		format = (FMT) ALLOCPV(type_fmt, count);
+		format = fmt::newFmt(*dbb->dbb_permanent, count);
 		format->fmt_count = count;
-		BLB_get_data(tdbb, blob, (UCHAR*)format->fmt_desc, blob->blb_length);
+		BLB_get_data(tdbb, blob, (UCHAR*)format->fmt_desc.begin(), blob->blb_length);
 
-		for (desc = format->fmt_desc + count - 1;
-			 desc >= format->fmt_desc;
+		for (desc = format->fmt_desc.end() - 1;
+			 desc >= format->fmt_desc.begin();
 			 --desc)
 		{
 			if (desc->dsc_address)
@@ -539,15 +550,21 @@ FMT MET_format(TDBB tdbb, register REL relation, USHORT number)
 	}
 
 	if (!format) {
-		format = (FMT) ALLOCPV(type_fmt, 0);
+		format = fmt::newFmt(*dbb->dbb_permanent);
 	}
 
 	format->fmt_version = number;
 
 /* Link the format block into the world */
 
-	formats = ALL_vector(dbb->dbb_permanent, &relation->rel_formats, number);
-	formats->vec_object[number] = (BLK) format;
+	formats = relation->rel_formats;
+	if (!formats) {
+		formats = vec::newVector(*dbb->dbb_permanent, number+1);
+		relation->rel_formats = formats;
+	} else {
+		formats->resize(number+1);
+	}
+	(*formats)[number] = (BLK) format;
 
 	return format;
 }
@@ -644,16 +661,17 @@ NOD MET_get_dependencies(TDBB			tdbb,
  *
  **************************************/
 	DBB dbb;
-	CSB csb;
+	CSB csb_;
 	NOD node;
 	BLK handle;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
 
-	csb = (CSB) ALLOCDV(type_csb, 5);
-	csb->csb_count = 5;
-	csb->csb_g_flags |= csb_get_dependencies;
+	csb_ = Csb::newCsb(*tdbb->tdbb_default, 5);
+	csb_->csb_rpt.resize(5); // vec always allocates one too many
+	csb_->csb_count = 5;
+	csb_->csb_g_flags |= csb_get_dependencies;
 
 	if (blob)
 	{
@@ -661,7 +679,7 @@ NOD MET_get_dependencies(TDBB			tdbb,
 						relation,
 						(UCHAR*)blob,
 						view_csb,
-						&csb,
+						&csb_,
 						request,
 						(BOOLEAN)((type == obj_trigger) ? TRUE : FALSE),
 						0);
@@ -672,7 +690,7 @@ NOD MET_get_dependencies(TDBB			tdbb,
 			MET_parse_blob(	tdbb,
 							relation,
 							blob_id,
-							&csb,
+							&csb_,
 							request,
 							(BOOLEAN)((type == obj_trigger) ? TRUE : FALSE),
 							FALSE);
@@ -692,15 +710,15 @@ NOD MET_get_dependencies(TDBB			tdbb,
 		CMP_release(tdbb, (REQ)handle);
 	}
 
-	store_dependencies(tdbb, csb, object_name, type);
+	store_dependencies(tdbb, csb_, object_name, type);
 
 	if (csb_ptr)
 	{
-		*csb_ptr = csb;
+		*csb_ptr = csb_;
 	}
 	else
 	{
-		ALL_release((FRB)csb);
+		delete csb_;
 	}
 
 	return node;
@@ -724,9 +742,9 @@ FLD MET_get_field(REL relation, USHORT id)
 
 	if (!relation ||
 		!(vector = relation->rel_fields) ||
-		id >= vector->vec_count) return NULL;
+		id >= vector->count()) return NULL;
 
-	return (FLD) vector->vec_object[id];
+	return (FLD) (*vector)[id];
 }
 
 
@@ -801,7 +819,7 @@ void MET_get_shadow_files( TDBB tdbb, USHORT deleteVar)
 
 int MET_get_walinfo(
 					TDBB tdbb,
-					LGFILE ** logfiles, ULONG * number, LGFILE ** over_flow)
+					LGFILE ** logfiles_, ULONG * number, LGFILE ** over_flow)
 {
 /**************************************
  *
@@ -825,13 +843,13 @@ int MET_get_walinfo(
 
 	FOR(REQUEST_HANDLE handle)
 		LOG IN RDB$LOG_FILES SORTED BY LOG.RDB$FILE_SEQUENCE
-			logfiles[num] = (LGFILE *) ALLOCPV(type_ail,
-											   LGFILE_SIZE + MAX_PATH_LENGTH);
-		strcpy(logfiles[num]->lg_name, LOG.RDB$FILE_NAME);
-		logfiles[num]->lg_size = LOG.RDB$FILE_LENGTH;
-		logfiles[num]->lg_partitions = LOG.RDB$FILE_PARTITIONS;
-		logfiles[num]->lg_flags = LOG.RDB$FILE_FLAGS;
-		logfiles[num]->lg_sequence = LOG.RDB$FILE_SEQUENCE;
+			logfiles_[num] = new(*dbb->dbb_permanent,
+											   LGFILE_SIZE + MAX_PATH_LENGTH) logfiles();
+		strcpy(logfiles_[num]->lg_name, LOG.RDB$FILE_NAME);
+		logfiles_[num]->lg_size = LOG.RDB$FILE_LENGTH;
+		logfiles_[num]->lg_partitions = LOG.RDB$FILE_PARTITIONS;
+		logfiles_[num]->lg_flags = LOG.RDB$FILE_FLAGS;
+		logfiles_[num]->lg_sequence = LOG.RDB$FILE_SEQUENCE;
 
 		num++;
 	END_FOR;
@@ -843,7 +861,7 @@ int MET_get_walinfo(
 
 	if (num)
 	{
-		*over_flow = logfiles[num - 1];
+		*over_flow = logfiles_[num - 1];
 
 		/* The overflow file will be passed separately */
 
@@ -1057,7 +1075,7 @@ void MET_lookup_exception(TDBB	tdbb,
  **************************************/
 	DBB dbb;
 	BLK request;
-	SCHAR *p;
+	//SCHAR *p;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -1153,8 +1171,7 @@ int MET_lookup_field(TDBB tdbb, REL relation, CONST TEXT* name)
 	DBB			dbb;
 	BLK			request;
 	VEC			vector;
-	FLD*		field;
-	FLD*		end;
+	vec::iterator	field, end;
 	CONST TEXT*	p;
 	CONST TEXT*	q;
 	USHORT		id;
@@ -1165,18 +1182,18 @@ int MET_lookup_field(TDBB tdbb, REL relation, CONST TEXT* name)
 
 /* Start by checking field names that we already know */
 
-	if (vector = relation->rel_fields)
+	if ( (vector = relation->rel_fields) )
 	{
 		length = strlen(name);
-		for (field = (FLD*) vector->vec_object,
+		for (field = vector->begin(),
 				id = 0,
-				end = field + vector->vec_count;
+				end = vector->end();
 			field < end;
 			field++, id++)
 		{
 			if (*field &&
-				(*field)->fld_length == length &&
-				(p = (*field)->fld_name))
+				((FLD)(*field))->fld_length == length &&
+				(p = ((FLD)(*field))->fld_name))
 			{
 				q = name;
 				while (*p++ == *q)
@@ -1235,17 +1252,17 @@ BLF MET_lookup_filter(TDBB tdbb, SSHORT from, SSHORT to)
 	DBB dbb;
 	BLK request;
 	PTR filter;
-	TEXT *p;
+	//TEXT *p;
 	MOD module;
 	LLS stack;
-	BLF blf;
+	BLF blf_;
 	STR exception_msg;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
 
 	filter = NULL;
-	blf = NULL;
+	blf_ = NULL;
 
 	request = (BLK) CMP_find_request(tdbb, irq_r_filters, IRQ_REQUESTS);
 
@@ -1262,22 +1279,22 @@ BLF MET_lookup_filter(TDBB tdbb, SSHORT from, SSHORT to)
 								  ISC_EXT_LIB_PATH_ENV);
 		if (filter)
 		{
-			blf = (BLF) ALLOCP(type_blf);
-			blf->blf_next = NULL;
-			blf->blf_from = from;
-			blf->blf_to = to;
-			blf->blf_filter = filter;
+			blf_ = new(*dbb->dbb_permanent) blf();
+			blf_->blf_next = NULL;
+			blf_->blf_from = from;
+			blf_->blf_to = to;
+			blf_->blf_filter = filter;
 			exception_msg =
-				(STR) ALLOCPV(type_str,
+				new(*dbb->dbb_permanent,
 							  strlen(EXCEPTION_MESSAGE) +
 							  strlen(X.RDB$FUNCTION_NAME) +
 							  strlen(X.RDB$ENTRYPOINT) +
-							  strlen(X.RDB$MODULE_NAME) + 1);
+							  strlen(X.RDB$MODULE_NAME) + 1) str();
 			sprintf((char*)exception_msg->str_data, EXCEPTION_MESSAGE,
 					X.RDB$FUNCTION_NAME, X.RDB$ENTRYPOINT, X.RDB$MODULE_NAME);
-			blf->blf_exception_message = exception_msg;
+			blf_->blf_exception_message = exception_msg;
 		}
-		if (module = FLU_lookup_module(X.RDB$MODULE_NAME))
+		if ( (module = FLU_lookup_module(X.RDB$MODULE_NAME)) )
 		{
 			/* Register interest in the module by database. */
 
@@ -1294,7 +1311,7 @@ BLF MET_lookup_filter(TDBB tdbb, SSHORT from, SSHORT to)
 				FLU_unregister_module(module);
 			else
 			{
-				PLB old_pool;
+				JrdMemoryPool *old_pool;
 
 				old_pool = tdbb->tdbb_default;
 				tdbb->tdbb_default = dbb->dbb_permanent;
@@ -1307,7 +1324,7 @@ BLF MET_lookup_filter(TDBB tdbb, SSHORT from, SSHORT to)
 	if (!REQUEST(irq_r_filters))
 		REQUEST(irq_r_filters) = request;
 
-	return blf;
+	return blf_;
 }
 
 
@@ -1481,15 +1498,15 @@ int MET_lookup_partner(
 		index_number = 0;
 
 		if (references->frgn_reference_ids) {
-			ALL_release((FRB)references->frgn_reference_ids);
+			delete references->frgn_reference_ids;
 			references->frgn_reference_ids = (VEC) NULL_PTR;
 		}
 		if (references->frgn_relations) {
-			ALL_release((FRB)references->frgn_relations);
+			delete references->frgn_relations;
 			references->frgn_relations = (VEC) NULL_PTR;
 		}
 		if (references->frgn_indexes) {
-			ALL_release((FRB)references->frgn_indexes);
+			delete references->frgn_indexes;
 			references->frgn_indexes = (VEC) NULL_PTR;
 		}
 
@@ -1511,25 +1528,37 @@ int MET_lookup_partner(
 
 			if (partner_relation)
 			{
-				ALL_vector(dbb->dbb_permanent,
-							&references->frgn_reference_ids,
-							(USHORT)index_number);
+				if (!references->frgn_reference_ids) {
+					references->frgn_reference_ids =
+						vec::newVector(*dbb->dbb_permanent,
+							(USHORT)index_number + 1);
+				} else {
+					references->frgn_reference_ids->resize((USHORT)index_number + 1);
+				}
 
-				references->frgn_reference_ids->vec_object[index_number] =
+				(*references->frgn_reference_ids)[index_number] =
 					(BLK) (IDX.RDB$INDEX_ID - 1);
-				
-				ALL_vector(dbb->dbb_permanent,
-							&references->frgn_relations,
-							(USHORT)index_number);
 
-				references->frgn_relations->vec_object[index_number] =
+				if (!references->frgn_relations) {
+					references->frgn_relations =
+							vec::newVector(*dbb->dbb_permanent,
+								(USHORT)index_number + 1);
+				} else {
+					references->frgn_relations->resize((USHORT)index_number + 1);
+				}
+
+				(*references->frgn_relations)[index_number] =
 					(BLK) partner_relation->rel_id;
 
-				ALL_vector(dbb->dbb_permanent,
-							&references->frgn_indexes,
-							(USHORT)index_number);
+				if (!references->frgn_indexes) {
+					references->frgn_indexes = 
+							vec::newVector(*dbb->dbb_permanent,
+								(USHORT)index_number + 1);
+				} else {
+					references->frgn_indexes->resize((USHORT)index_number + 1);
+				}
 
-				references->frgn_indexes->vec_object[index_number] =
+				(*references->frgn_indexes)[index_number] =
 					(BLK) (IND.RDB$INDEX_ID - 1);
 
 				index_number++;
@@ -1549,15 +1578,15 @@ int MET_lookup_partner(
 		index_number = 0;
 
 		if (dependencies->prim_reference_ids) {
-			ALL_release((FRB)dependencies->prim_reference_ids);
+			delete dependencies->prim_reference_ids;
 			dependencies->prim_reference_ids = (VEC) NULL_PTR;
 		}
 		if (dependencies->prim_relations) {
-			ALL_release((FRB)dependencies->prim_relations);
+			delete dependencies->prim_relations;
 			dependencies->prim_relations = (VEC) NULL_PTR;
 		}
 		if (dependencies->prim_indexes) {
-			ALL_release((FRB)dependencies->prim_indexes);
+			delete dependencies->prim_indexes;
 			dependencies->prim_indexes = (VEC) NULL_PTR;
 		}
 
@@ -1583,31 +1612,43 @@ int MET_lookup_partner(
 				IDX.RDB$RELATION_NAME EQ relation->rel_name AND
 				IND.RDB$FOREIGN_KEY EQ IDX.RDB$INDEX_NAME
 
-            if (!REQUEST(irq_foreign2))
+			if (!REQUEST(irq_foreign2)) {
 				REQUEST(irq_foreign2) = request;
-
-			if (partner_relation =
-				MET_lookup_relation(tdbb, IND.RDB$RELATION_NAME))
+			}
+			partner_relation = MET_lookup_relation(tdbb, IND.RDB$RELATION_NAME);
+			if (partner_relation)
 			{
-				ALL_vector(dbb->dbb_permanent,
-						   &dependencies->prim_reference_ids,
-						   (USHORT)index_number);
+				if (!dependencies->prim_reference_ids) {
+					dependencies->prim_reference_ids =
+							vec::newVector(*dbb->dbb_permanent,
+							   (USHORT)index_number+1);
+				} else {
+					dependencies->prim_reference_ids->resize((USHORT)index_number+1);
+				}
 
-				dependencies->prim_reference_ids->vec_object[index_number] =
+				(*dependencies->prim_reference_ids)[index_number] =
 					(BLK) (IDX.RDB$INDEX_ID - 1);
 
-				ALL_vector(dbb->dbb_permanent,
-							&dependencies->prim_relations,
-							(USHORT)index_number);
+				if (!dependencies->prim_relations) {
+					dependencies->prim_relations = 
+							vec::newVector(*dbb->dbb_permanent,
+								(USHORT)index_number+1);
+				} else {
+					dependencies->prim_relations->resize((USHORT)index_number+1);
+				}
 
-				dependencies->prim_relations->vec_object[index_number] =
+				(*dependencies->prim_relations)[index_number] =
 					(BLK) partner_relation->rel_id;
 
-				ALL_vector(dbb->dbb_permanent,
-							&dependencies->prim_indexes,
-							(USHORT)index_number);
+				if (!dependencies->prim_indexes) {
+					dependencies->prim_indexes =
+							vec::newVector(*dbb->dbb_permanent,
+								(USHORT)index_number+1);
+				} else {
+					dependencies->prim_indexes->resize((USHORT)index_number+1);
+				}
 
-				dependencies->prim_indexes->vec_object[index_number] =
+				(*dependencies->prim_indexes)[index_number] =
 					(BLK) (IND.RDB$INDEX_ID - 1);
 
 				index_number++;
@@ -1659,18 +1700,16 @@ int MET_lookup_partner(
 		if (references->frgn_reference_ids)
 		{
 			for (index_number = 0;
-				 index_number < references->frgn_reference_ids->vec_count;
+				 index_number < references->frgn_reference_ids->count();
 				 index_number++)
 			{
-				if (idx->idx_id == (UCHAR) references->frgn_reference_ids->
-											vec_object[index_number])
+				if (idx->idx_id == (UCHAR) (*references->frgn_reference_ids)
+											[index_number])
 				{
 					idx->idx_primary_relation =
-						(USHORT) references->frgn_relations->
-						vec_object[index_number];
+						(USHORT) (*references->frgn_relations)[index_number];
 					idx->idx_primary_index =
-						(UCHAR) references->frgn_indexes->
-						vec_object[index_number];
+						(UCHAR) (*references->frgn_indexes)[index_number];
 					return TRUE;
 				}
 			}
@@ -1683,11 +1722,11 @@ int MET_lookup_partner(
 		if (dependencies->prim_reference_ids)
 		{
 			for (index_number = 0;
-				 index_number < dependencies->prim_reference_ids->vec_count;
+				 index_number < dependencies->prim_reference_ids->count();
 				 index_number++)
 			{
-				if (idx->idx_id == (UCHAR) dependencies->prim_reference_ids->
-											vec_object[index_number])
+				if (idx->idx_id == (UCHAR) (*dependencies->prim_reference_ids)
+											[index_number])
 				{
 					idx->idx_foreign_primaries =
 						relation->rel_primary_dpnds.prim_reference_ids;
@@ -1721,7 +1760,8 @@ PRC MET_lookup_procedure(TDBB tdbb, SCHAR * name)
  **************************************/
 	DBB dbb;
 	BLK request;
-	PRC procedure, *ptr, *end;
+	PRC procedure;
+	vec::iterator ptr, end;
 	VEC procedures;
 	SCHAR *p, *q;
 
@@ -1730,10 +1770,10 @@ PRC MET_lookup_procedure(TDBB tdbb, SCHAR * name)
 
 /* See if we already know the relation by name */
 
-	if (procedures = dbb->dbb_procedures)
-		for (ptr = (PRC *) procedures->vec_object, end =
-			 ptr + procedures->vec_count; ptr < end; ptr++) {
-			if ((procedure = *ptr) && !(procedure->prc_flags & PRC_obsolete)
+	if ( (procedures = dbb->dbb_procedures) )
+		for (ptr = procedures->begin(), end = procedures->end();
+					ptr < end; ptr++) {
+			if ((procedure = PRC(*ptr))&& !(procedure->prc_flags & PRC_obsolete)
 				&& (procedure->prc_flags & PRC_scanned)
 				&& !(procedure->prc_flags & PRC_being_scanned)
 				&& !(procedure->prc_flags & PRC_being_altered)
@@ -1782,7 +1822,8 @@ PRC MET_lookup_procedure_id(TDBB tdbb,
  **************************************/
 	DBB dbb;
 	BLK request;
-	PRC procedure, *ptr, *end;
+	PRC procedure;
+	vec::iterator ptr, end;
 	VEC procedures;
 
 	SET_TDBB(tdbb);
@@ -1790,10 +1831,10 @@ PRC MET_lookup_procedure_id(TDBB tdbb,
 
 /* See if we already know the relation by name */
 
-	if (procedures = dbb->dbb_procedures)
-		for (ptr = (PRC *) procedures->vec_object, end =
-			 ptr + procedures->vec_count; ptr < end; ptr++) {
-			if ((procedure = *ptr) && procedure->prc_id == id
+	if ( (procedures = dbb->dbb_procedures) )
+		for (ptr = procedures->begin(), end = procedures->end();
+					ptr < end; ptr++) {
+			if ((procedure = PRC(*ptr)) && procedure->prc_id == id
 				&& !(procedure->prc_flags & PRC_being_scanned)
 				&& (procedure->prc_flags & PRC_scanned)
 				&& !(procedure->prc_flags & PRC_being_altered)
@@ -1842,8 +1883,7 @@ REL MET_lookup_relation(TDBB tdbb, CONST SCHAR* name)
 	VEC				relations;
 	REL				relation;
 	REL				check_relation;
-	REL*			ptr;
-	REL*			end;
+	vec::iterator	ptr, end;
 	SCHAR*			p;
 	CONST SCHAR*	q;
 	UCHAR			length;
@@ -1857,10 +1897,9 @@ REL MET_lookup_relation(TDBB tdbb, CONST SCHAR* name)
 	check_relation = NULL;
 	length = strlen(name);
 
-	for (ptr = (REL *) relations->vec_object, end =
-		 ptr + relations->vec_count; ptr < end; ptr++)
+	for (ptr = relations->begin(), end = relations->end(); ptr < end; ptr++)
 	{
-		if ((relation = *ptr) &&
+		if ((relation = REL(*ptr)) &&
 			(relation->rel_length == length) &&
 			(!(relation->rel_flags & REL_deleted)) &&
 			(p = relation->rel_name))
@@ -1959,7 +1998,7 @@ REL MET_lookup_relation_id(TDBB tdbb, SLONG id, BOOLEAN return_deleted)
 	check_relation = NULL;
 
 	if ((vector = dbb->dbb_relations) &&
-		(id < vector->vec_count) && (relation = (REL) vector->vec_object[id]))
+		(id < vector->count()) && (relation = (REL) (*vector)[id]))
 	{
 		if (relation->rel_flags & REL_deleted)
 		{
@@ -2044,7 +2083,7 @@ NOD MET_parse_blob(TDBB		tdbb,
 
 	blob = BLB_open(tdbb, dbb->dbb_sys_trans, (BID)blob_id);
 	length = blob->blb_length + 10;
-	temp = (STR) ALLOCDV(type_str, length);
+	temp = new(*tdbb->tdbb_default, length) str();
 	BLB_get_data(tdbb, blob, temp->str_data, length);
 
 	node = PAR_blr(	tdbb,
@@ -2056,7 +2095,7 @@ NOD MET_parse_blob(TDBB		tdbb,
 					trigger,
 					(USHORT)(ignore_perm ? csb_ignore_perm : 0));
 
-	ALL_release((FRB)temp);
+	delete temp;
 
 	return node;
 }
@@ -2081,7 +2120,7 @@ void MET_parse_sys_trigger(TDBB tdbb, REL relation)
 	const TEXT*	name;
 	VEC*	ptr;
 	REQ		request;
-	PLB		old_pool;
+	JrdMemoryPool	*old_pool;
 	USHORT	trig_flags;
 
 	SET_TDBB(tdbb);
@@ -2115,16 +2154,16 @@ void MET_parse_sys_trigger(TDBB tdbb, REL relation)
 	relation->rel_flags |= REL_sys_trigs_being_loaded;
 
 	trigger = NULL;
-	/* TMN: The cast "(struct trg*)" if a bad lie. Fix later
+	/* TMN: The cast "(struct trg*)" is a bad lie. Fix later
 	 * and remove this comment when it's done.
 	 */
-	while (trigger =
+	while ( (trigger =
 		   (BLK*)INI_lookup_sys_trigger(relation,
 										(struct trg*)trigger,
 										&blr,
 										&type,
 										&name,
-										&trig_flags))
+										&trig_flags)) )
 	{
 		switch (type) {
 		case 1:
@@ -2156,7 +2195,7 @@ void MET_parse_sys_trigger(TDBB tdbb, REL relation)
 				((trig_flags & TRG_ignore_perm) ? csb_ignore_perm : 0);
 
 			old_pool = tdbb->tdbb_default;
-			tdbb->tdbb_default = ALL_pool();
+			tdbb->tdbb_default = new(*FB_MemoryPool) JrdMemoryPool;
 			PAR_blr(tdbb,
 					relation,
 					const_cast<UCHAR*>(blr),
@@ -2260,13 +2299,14 @@ PRC MET_procedure(TDBB tdbb, int id, USHORT flags)
 	PRC procedure;
 	VEC vector;
 	LCK lock;
-	BLK request, request2, *ptr, *end;
-	CSB csb;
+	BLK request, request2;
+	vec::iterator ptr, end;
+	CSB csb_;
 	PRM parameter;
-	PLB old_pool;
+	JrdMemoryPool *old_pool;
 	NOD node;
 	FMT format;
-	DSC *desc;
+	fmt::fmt_desc_iterator desc;
 	SSHORT i;
 	USHORT length;
 	JMP_BUF env, *old_env;
@@ -2277,12 +2317,11 @@ PRC MET_procedure(TDBB tdbb, int id, USHORT flags)
 
 	if (!(vector = dbb->dbb_procedures))
 	{
-		vector = dbb->dbb_procedures = (VEC) ALLOCPV(type_vec, id + 10);
-		vector->vec_count = id + 10;
+		vector = dbb->dbb_procedures = vec::newVector(*dbb->dbb_permanent, id + 10);
 	}
-	else if (id >= vector->vec_count)
+	else if (id >= vector->count())
 	{
-		vector = (VEC) ALL_extend((BLK*)&dbb->dbb_procedures, id + 10);
+		vector->resize(id + 10);
 	}
 
 #ifdef SUPERSERVER
@@ -2304,7 +2343,7 @@ PRC MET_procedure(TDBB tdbb, int id, USHORT flags)
 
 #endif /* SUPERSERVER */
 
-	procedure = (PRC) vector->vec_object[id];
+	procedure = (PRC) (*vector)[id];
 	if (procedure)
 	{
 		/* Make sure PRC_being_scanned and PRC_scanned
@@ -2346,30 +2385,19 @@ PRC MET_procedure(TDBB tdbb, int id, USHORT flags)
 
 	if (!procedure)
 	{
-		procedure = (PRC) ALLOCP(type_prc);
+		procedure = new(*dbb->dbb_permanent, 0) prc;
 	}
+
+	try {
 
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-	if (SETJMP(env))
-	{
-		procedure->prc_flags &= ~(PRC_being_scanned | PRC_scanned);
-#ifdef SUPERSERVER
-		THD_rec_mutex_unlock(&dbb->dbb_sp_rec_mutex);
-#endif
-		if (procedure->prc_existence_lock)
-		{
-			LCK_release(tdbb, procedure->prc_existence_lock);
-		}
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		ERR_punt();
-	}
 
 	procedure->prc_flags |= (PRC_being_scanned | flags);
 	procedure->prc_id = id;
-	vector->vec_object[id] = (BLK) procedure;
+	(*vector)[id] = (BLK) procedure;
 
-	procedure->prc_existence_lock = lock = (LCK) ALLOCPV(type_lck, 0);
+	procedure->prc_existence_lock = lock = new(*dbb->dbb_permanent, 0) lck;
 	lock->lck_parent = dbb->dbb_lock;
 	lock->lck_dbb = dbb;
 	lock->lck_key.lck_long = procedure->prc_id;
@@ -2412,18 +2440,25 @@ PRC MET_procedure(TDBB tdbb, int id, USHORT flags)
 		{
 			procedure->prc_flags |= PRC_system;
 		}
-		if (procedure->prc_inputs = P.RDB$PROCEDURE_INPUTS)
+		if ( (procedure->prc_inputs = P.RDB$PROCEDURE_INPUTS) )
 		{
-			procedure->prc_input_fields = ALL_vector(dbb->dbb_permanent,
-													 &procedure->
-													 prc_input_fields,
-													 P.RDB$PROCEDURE_INPUTS);
+			if (!procedure->prc_input_fields) {
+				procedure->prc_input_fields =
+					vec::newVector(*dbb->dbb_permanent,
+									 P.RDB$PROCEDURE_INPUTS + 1);
+			} else {
+				procedure->prc_input_fields->resize(P.RDB$PROCEDURE_INPUTS + 1);
+			}
 		}
-		if (procedure->prc_outputs = P.RDB$PROCEDURE_OUTPUTS)
+		if ( (procedure->prc_outputs = P.RDB$PROCEDURE_OUTPUTS) )
 		{
-			procedure->prc_output_fields =
-				ALL_vector(dbb->dbb_permanent, &procedure->prc_output_fields,
-						   P.RDB$PROCEDURE_OUTPUTS);
+			if (!procedure->prc_output_fields) {
+				procedure->prc_output_fields =
+					vec::newVector(*dbb->dbb_permanent,
+									P.RDB$PROCEDURE_OUTPUTS + 1);
+			} else {
+				procedure->prc_output_fields->resize(P.RDB$PROCEDURE_OUTPUTS + 1);
+			}
 		}
 
 		FOR(REQUEST_HANDLE request2) PA IN RDB$PROCEDURE_PARAMETERS CROSS
@@ -2443,9 +2478,9 @@ PRC MET_procedure(TDBB tdbb, int id, USHORT flags)
 
 			/* should be error if field already exists */
 			parameter =
-				(PRM) ALLOCPV(type_prm, name_length(PA.RDB$PARAMETER_NAME));
+				new(*dbb->dbb_permanent, name_length(PA.RDB$PARAMETER_NAME)) prm();
 			parameter->prm_number = PA.RDB$PARAMETER_NUMBER;
-			vector->vec_object[parameter->prm_number] = (BLK) parameter;
+			(*vector)[parameter->prm_number] = (BLK) parameter;
 			name_copy(parameter->prm_string, PA.RDB$PARAMETER_NAME);
 			parameter->prm_name = parameter->prm_string;
 			DSC_make_descriptor(&parameter->prm_desc, F.RDB$FIELD_TYPE,
@@ -2458,14 +2493,14 @@ PRC MET_procedure(TDBB tdbb, int id, USHORT flags)
 			REQUEST(irq_r_params) = request2;
 		}
 
-		if ((vector = procedure->prc_output_fields) && vector->vec_object[0])
+		if ((vector = procedure->prc_output_fields) && (*vector)[0])
 		{
 			format = procedure->prc_format =
-				(FMT) ALLOCPV(type_fmt, procedure->prc_outputs);
+				fmt::newFmt(*dbb->dbb_permanent, procedure->prc_outputs);
 			format->fmt_count = procedure->prc_outputs;
 			length = FLAG_BYTES(format->fmt_count);
-			desc = format->fmt_desc;
-			for (ptr = vector->vec_object, end = ptr + procedure->prc_outputs;
+			desc = format->fmt_desc.begin();
+			for (ptr = vector->begin(), end = vector->end();
 				 ptr < end; ptr++, desc++)
 			{
 				parameter = (PRM) * ptr;
@@ -2485,14 +2520,15 @@ PRC MET_procedure(TDBB tdbb, int id, USHORT flags)
 		}
 
 		old_pool = tdbb->tdbb_default;
-		tdbb->tdbb_default = ALL_pool();
-		csb = (CSB) ALLOCDV(type_csb, 5);
-		csb->csb_count = 5;
-		parse_procedure_blr(tdbb, procedure, (SLONG*)&P.RDB$PROCEDURE_BLR, &csb);
+		tdbb->tdbb_default = new(*FB_MemoryPool) JrdMemoryPool;
+		csb_ = Csb::newCsb(*tdbb->tdbb_default, 5);
+		csb_->csb_rpt.resize(5);	// vec always allocates one too many
+		csb_->csb_count = 5;
+		parse_procedure_blr(tdbb, procedure, (SLONG*)&P.RDB$PROCEDURE_BLR, &csb_);
 		procedure->prc_request->req_procedure = procedure;
-		for (i = 0; i < csb->csb_count; i++)
+		for (i = 0; i < csb_->csb_count; i++)
 		{
-			if (node = csb->csb_rpt[i].csb_message)
+			if ( (node = csb_->csb_rpt[i].csb_message) )
 			{
 				if ((int) node->nod_arg[e_msg_number] == 0)
 				{
@@ -2503,7 +2539,7 @@ PRC MET_procedure(TDBB tdbb, int id, USHORT flags)
 				}
 			}
 		}
-		ALL_release((FRB)csb);
+		delete csb_;
 		tdbb->tdbb_default = old_pool;
 
  END_FOR;
@@ -2522,6 +2558,21 @@ PRC MET_procedure(TDBB tdbb, int id, USHORT flags)
 	THD_rec_mutex_unlock(&dbb->dbb_sp_rec_mutex);
 #endif
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}	// try
+	catch (...) {
+		procedure->prc_flags &= ~(PRC_being_scanned | PRC_scanned);
+#ifdef SUPERSERVER
+		THD_rec_mutex_unlock(&dbb->dbb_sp_rec_mutex);
+#endif
+		if (procedure->prc_existence_lock)
+		{
+			LCK_release(tdbb, procedure->prc_existence_lock);
+		}
+		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+		ERR_punt();
+	}
+
 	return procedure;
 }
 
@@ -2538,27 +2589,27 @@ REL MET_relation(TDBB tdbb, USHORT id)
  *      Find or create a relation block for a given relation id.
  *
  **************************************/
-	DBB dbb;
+
 	register REL relation;
-	register VEC vector;
 	LCK lock;
 	USHORT major_version, minor_original, max_sys_rel;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	if (!(vector = dbb->dbb_relations))
+	VEC vector = dbb->dbb_relations;
+
+	if (!vector)
 	{
-		vector = dbb->dbb_relations = (VEC) ALLOCPV(type_vec, id + 10);
-		vector->vec_count = id + 10;
+		vector = dbb->dbb_relations = vec::newVector(*dbb->dbb_permanent, id + 10);
 	}
-	else if (id >= vector->vec_count)
+	else if (id >= vector->count())
 	{
-		vector = (VEC) ALL_extend((BLK*)&dbb->dbb_relations, id + 10);
+		vector->resize(id + 10);
 	}
 
-	if (relation = (REL) vector->vec_object[id])
+	if ( (relation = (REL) (*vector)[id]) )
 		return relation;
 
 	major_version = (SSHORT) dbb->dbb_ods_version;
@@ -2571,14 +2622,14 @@ REL MET_relation(TDBB tdbb, USHORT id)
 	else
 		max_sys_rel = (USHORT) USER_DEF_REL_INIT_ID - 1;
 
-	relation = (REL) ALLOCP(type_rel);
-	vector->vec_object[id] = (BLK) relation;
+	relation = new(*dbb->dbb_permanent) rel();
+	(*vector)[id] = (BLK) relation;
 	relation->rel_id = id;
 
 	if (relation->rel_id <= max_sys_rel)
 		return relation;
 
-	relation->rel_existence_lock = lock = (LCK) ALLOCPV(type_lck, 0);
+	relation->rel_existence_lock = lock = new(*dbb->dbb_permanent, 0) lck;
 	lock->lck_parent = dbb->dbb_lock;
 	lock->lck_dbb = dbb;
 	lock->lck_key.lck_long = relation->rel_id;
@@ -2642,7 +2693,7 @@ void MET_remove_procedure( TDBB tdbb, int id, PRC procedure)
 		if (!(vector = dbb->dbb_procedures))
 			return;
 
-		if (!(procedure = (PRC) vector->vec_object[id]))
+		if (!(procedure = (PRC) (*vector)[id]))
 			return;
 	}
 
@@ -2650,7 +2701,7 @@ void MET_remove_procedure( TDBB tdbb, int id, PRC procedure)
    to it by other procedures via pointer to current meta
    data structure, so don't loose the structure or the pointer. 
 if (!(procedure->prc_flags & PRC_being_altered))
-    vector->vec_object [id] = (BLK) NULL_PTR;
+    (*vector)[id] = (BLK) NULL_PTR;
 */
 
 /* deallocate all structure which were allocated.  The procedure
@@ -2659,24 +2710,24 @@ if (!(procedure->prc_flags & PRC_being_altered))
  */
 
 	if (procedure->prc_existence_lock)
-		ALL_release((FRB)procedure->prc_existence_lock);
+		delete procedure->prc_existence_lock;
 
 	if (procedure->prc_name)
-		ALL_release((FRB)procedure->prc_name);
+		delete procedure->prc_name;
 	if (procedure->prc_security_name)
-		ALL_release((FRB)procedure->prc_security_name);
+		delete procedure->prc_security_name;
 
 /* deallocate input param structures */
 
 	if ((procedure->prc_inputs) && (vector = procedure->prc_input_fields)) {
 		for (i = 0; i < procedure->prc_inputs; i++)
 		{
-			if (vector->vec_object[i])
+			if ((*vector)[i])
 			{
-				ALL_release((FRB)vector->vec_object[i]);
+				delete (*vector)[i];
 			}
 		}
-		ALL_release((FRB)vector);
+		delete vector;
 	}
 
 /* deallocate output param structures */
@@ -2684,20 +2735,20 @@ if (!(procedure->prc_flags & PRC_being_altered))
 	if ((procedure->prc_outputs) && (vector = procedure->prc_output_fields)) {
 		for (i = 0; i < procedure->prc_outputs; i++)
 		{
-			if (vector->vec_object[i])
+			if ((*vector)[i])
 			{
-				ALL_release((FRB)vector->vec_object[i]);
+				delete (*vector)[i];
 			}
 		}
-		ALL_release((FRB)vector);
+		delete vector;
 	}
 
 	if (procedure->prc_format)
-		ALL_release((FRB)procedure->prc_format);
+		delete procedure->prc_format;
 
 	if (!(procedure->prc_flags & PRC_being_altered))
 	{
-		ALL_release((FRB)procedure);
+		delete procedure;
 	}
 	else
 	{
@@ -2818,11 +2869,11 @@ void MET_scan_relation( TDBB tdbb, REL relation)
 	VEC vector, triggers[TRIGGER_MAX], tmp_vector;
 	FLD field;
 	BLK request;
-	CSB csb;
+	CSB csb_;
 	BLB blob;
 	UCHAR *p, *q, *buffer, temp[256];
 	STR name, string;
-	PLB old_pool;
+	JrdMemoryPool* old_pool;
 	VOLATILE BOOLEAN dependencies, sys_triggers;
 	JMP_BUF env, *old_env;
 
@@ -2869,41 +2920,34 @@ void MET_scan_relation( TDBB tdbb, REL relation)
    make sure that the error will be caught if the operation is tried
    again. */
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-
-	if (SETJMP(env))
-	{
-		relation->rel_flags &= ~(REL_being_scanned | REL_scanned);
-		if (dependencies)
-			relation->rel_flags |= REL_get_dependencies;
-		if (sys_triggers)
-			relation->rel_flags |= REL_sys_triggers;
-#ifdef SUPERSERVER
-		THD_rec_mutex_unlock(&dbb->dbb_sp_rec_mutex);
-#endif
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		tdbb->tdbb_default = old_pool;
-		ERR_punt();
-	}
 
 /* Since this can be called recursively, find an inactive clone of the request */
 
 	request = (BLK) CMP_find_request(tdbb, irq_r_fields, IRQ_REQUESTS);
-	csb = NULL;
+	csb_ = NULL;
 
 	FOR(REQUEST_HANDLE request)
 		REL IN RDB$RELATIONS WITH REL.RDB$RELATION_ID EQ relation->rel_id
 			/* Pick up relation level stuff */
-		if (!REQUEST(irq_r_fields))
+		if (!REQUEST(irq_r_fields)) {
             REQUEST(irq_r_fields) = request;
+		}
 		relation->rel_current_fmt = REL.RDB$FORMAT;
-		vector =
-			ALL_vector(dbb->dbb_permanent, &relation->rel_fields,
-					   REL.RDB$FIELD_ID);
-		if (!REL.RDB$SECURITY_CLASS.NULL)
+		vector = relation->rel_fields;
+		if (!vector) {
+			vector = vec::newVector(*dbb->dbb_permanent, REL.RDB$FIELD_ID + 1);
+			relation->rel_fields = vector;
+		} else {
+			vector->resize(REL.RDB$FIELD_ID + 1);
+		}
+		if (!REL.RDB$SECURITY_CLASS.NULL) {
 			relation->rel_security_name =
 				MET_save_name(tdbb, REL.RDB$SECURITY_CLASS);
+		}
 		if (!relation->rel_name) {
 			relation->rel_name = MET_save_name(tdbb, REL.RDB$RELATION_NAME);
 			relation->rel_length = strlen(relation->rel_name);
@@ -2928,7 +2972,7 @@ void MET_scan_relation( TDBB tdbb, REL relation)
 											(CSB) NULL_PTR,
 											(SLONG*)&REL.RDB$VIEW_BLR,
 											(REQ*) NULL_PTR,
-											&csb,
+											&csb_,
 											REL.RDB$RELATION_NAME,
 											obj_view);
 			}
@@ -2938,7 +2982,7 @@ void MET_scan_relation( TDBB tdbb, REL relation)
 					(RSE) MET_parse_blob(tdbb,
 										relation,
 										(SLONG*)&REL.RDB$VIEW_BLR,
-										&csb,
+										&csb_,
 										(REQ*) NULL_PTR,
 										FALSE,
 										FALSE);
@@ -2966,7 +3010,7 @@ void MET_scan_relation( TDBB tdbb, REL relation)
 		}
 		else
 		{
-			string = (STR) ALLOCDV(type_str, blob->blb_max_segment);
+			string = new(*tdbb->tdbb_default, blob->blb_max_segment) str();
 			buffer = string->str_data;
 		}
 
@@ -2994,7 +3038,7 @@ void MET_scan_relation( TDBB tdbb, REL relation)
 					&& !REL.RDB$DEFAULT_CLASS.NULL) field->fld_security_name =
 						MET_save_name(tdbb, REL.RDB$DEFAULT_CLASS);
 				field_id = n;
-				field = (FLD) vector->vec_object[field_id];
+				field = (FLD) (*vector)[field_id];
 				array = NULL;
 				break;
 
@@ -3006,12 +3050,12 @@ void MET_scan_relation( TDBB tdbb, REL relation)
 					if (!strcmp((char*)p, (char*)field->fld_name))
 						break;
 
-					name = (STR) ALLOCPV(type_str, length);
+					name = new(*dbb->dbb_permanent, length) str();
 					field->fld_name = (TEXT *) name->str_data;
 				}
 				else {
-					field = (FLD) ALLOCPV(type_fld, length);
-					vector->vec_object[field_id] = (BLK) field;
+					field = new(*dbb->dbb_permanent, length) fld();
+					(*vector)[field_id] = (BLK) field;
 					field->fld_name = (TEXT *) field->fld_string;
 				}
 				/*
@@ -3028,44 +3072,44 @@ void MET_scan_relation( TDBB tdbb, REL relation)
 
 			case RSR_base_field:
 				field->fld_source =
-					PAR_make_field(tdbb, csb, view_context, (TEXT*)p);
+					PAR_make_field(tdbb, csb_, view_context, (TEXT*)p);
 				break;
 
 			case RSR_computed_blr:
 				field->fld_computation = (dependencies) ?
 					MET_get_dependencies(tdbb, relation,
 										 (TEXT*) p,
-										 csb,
+										 csb_,
 										 (SLONG*) NULL_PTR,
 										 (REQ*) NULL_PTR,
 										 (CSB*) NULL_PTR,
 										 field->fld_name,
 										 obj_computed) :
-					PAR_blr(tdbb, relation, p, csb, (CSB*) NULL_PTR, (REQ*) NULL_PTR, FALSE,
+					PAR_blr(tdbb, relation, p, csb_, (CSB*) NULL_PTR, (REQ*) NULL_PTR, FALSE,
 							0);
 				break;
 
 			case RSR_missing_value:
 				field->fld_missing_value =
-					PAR_blr(tdbb, relation, p, csb, (CSB*) NULL_PTR, (REQ*) NULL_PTR, FALSE,
+					PAR_blr(tdbb, relation, p, csb_, (CSB*) NULL_PTR, (REQ*) NULL_PTR, FALSE,
 							0);
 				break;
 
 			case RSR_default_value:
 				field->fld_default_value =
-					PAR_blr(tdbb, relation, p, csb, (CSB*) NULL_PTR, (REQ*) NULL_PTR, FALSE,
+					PAR_blr(tdbb, relation, p, csb_, (CSB*) NULL_PTR, (REQ*) NULL_PTR, FALSE,
 							0);
 				break;
 
 			case RSR_validation_blr:
 				field->fld_validation =
-					PAR_blr(tdbb, relation, p, csb, (CSB*) NULL_PTR, (REQ*) NULL_PTR, FALSE,
+					PAR_blr(tdbb, relation, p, csb_, (CSB*) NULL_PTR, (REQ*) NULL_PTR, FALSE,
 							csb_validation);
 				break;
 
 			case RSR_field_not_null:
 				field->fld_not_null =
-					PAR_blr(tdbb, relation, p, csb, (CSB*) NULL_PTR, (REQ*) NULL_PTR, FALSE,
+					PAR_blr(tdbb, relation, p, csb_, (CSB*) NULL_PTR, (REQ*) NULL_PTR, FALSE,
 							csb_validation);
 				break;
 
@@ -3078,7 +3122,7 @@ void MET_scan_relation( TDBB tdbb, REL relation)
 				break;
 
 			case RSR_dimensions:
-				field->fld_array = array = (ARR) ALLOCPV(type_arr, n);
+				field->fld_array = array = new(*dbb->dbb_permanent, n) arr();
 				array->arr_desc.ads_dimensions = n;
 				break;
 
@@ -3086,6 +3130,8 @@ void MET_scan_relation( TDBB tdbb, REL relation)
 				if (array)
 					MOVE_FAST(p, &array->arr_desc, length);
 				break;
+                        default:    /* Shut up compiler warning */
+                            break;
 			}
 		}
 		if (field && !field->fld_security_name && !REL.RDB$DEFAULT_CLASS.NULL)
@@ -3095,13 +3141,13 @@ void MET_scan_relation( TDBB tdbb, REL relation)
 		}
 		if (buffer != temp)
 		{
-			ALL_release((FRB)string);
+			delete string;
 		}
 	END_FOR;
 
-	if (csb)
+	if (csb_)
 	{
-		ALL_release((FRB)csb);
+		delete csb_;
 	}
 
 /* release any triggers in case of a rescan, but not if the rescan 
@@ -3150,10 +3196,27 @@ void MET_scan_relation( TDBB tdbb, REL relation)
 	relation->rel_current_format = NULL;
 	tdbb->tdbb_default = old_pool;
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}	// try
+	catch (...) {
+		relation->rel_flags &= ~(REL_being_scanned | REL_scanned);
+		if (dependencies) {
+			relation->rel_flags |= REL_get_dependencies;
+		}
+		if (sys_triggers) {
+			relation->rel_flags |= REL_sys_triggers;
+		}
+#ifdef SUPERSERVER
+		THD_rec_mutex_unlock(&dbb->dbb_sp_rec_mutex);
+#endif
+		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+		tdbb->tdbb_default = old_pool;
+		ERR_punt();
+	}
 }
 
 
-TEXT *MET_trigger_msg(TDBB tdbb, TEXT * name, USHORT number)
+TEXT* MET_trigger_msg(TDBB tdbb, TEXT* name, USHORT number)
 {
 /**************************************
  *
@@ -3370,7 +3433,7 @@ static void get_trigger(
  *
  **************************************/
 	REQ request;
-	PLB old_pool;
+	JrdMemoryPool* old_pool;
 
 	SET_TDBB(tdbb);
 
@@ -3378,7 +3441,7 @@ static void get_trigger(
 		return;
 
 	old_pool = tdbb->tdbb_default;
-	tdbb->tdbb_default = ALL_pool();
+	tdbb->tdbb_default = new(*FB_MemoryPool) JrdMemoryPool;
 	MET_parse_blob(	tdbb,
 					relation,
 					blob_id,
@@ -3493,7 +3556,7 @@ static void lookup_view_contexts( TDBB tdbb, REL view)
 		/* allocate a view context block and link it in
 		   to the relation block's linked list */
 
-		view_context = (VCX) ALLOCD(type_vcx);
+		view_context = new(*tdbb->tdbb_default) vcx();
 		*vcx_ptr = view_context;
 		vcx_ptr = &view_context->vcx_next;
 
@@ -3502,7 +3565,7 @@ static void lookup_view_contexts( TDBB tdbb, REL view)
 		/* allocate a string block for the context name */
 
 		length = name_length(V.RDB$CONTEXT_NAME);
-		alias = (STR) ALLOCDV(type_str, length + 1);
+		alias = new(*tdbb->tdbb_default, length + 1) str();
 		V.RDB$CONTEXT_NAME[length] = 0;
 		strcpy((char*)alias->str_data, V.RDB$CONTEXT_NAME);
 		alias->str_length = length;
@@ -3512,7 +3575,7 @@ static void lookup_view_contexts( TDBB tdbb, REL view)
 		/* allocate a string block for the relation name */
 
 		length = name_length(V.RDB$RELATION_NAME);
-		alias = (STR) ALLOCDV(type_str, length + 1);
+		alias = new(*tdbb->tdbb_default, length + 1) str();
 		V.RDB$RELATION_NAME[length] = 0;
 		strcpy((char*)alias->str_data, V.RDB$RELATION_NAME);
 		alias->str_length = length;
@@ -3600,7 +3663,7 @@ static NOD parse_procedure_blr(
 
 	blob = BLB_open(tdbb, dbb->dbb_sys_trans, (BID)blob_id);
 	length = blob->blb_length + 10;
-	temp = (STR) ALLOCDV(type_str, length);
+	temp = new(*tdbb->tdbb_default, length) str();
 	BLB_get_data(tdbb, blob, temp->str_data, length);
 	(*csb_ptr)->csb_blr = temp->str_data;
 	par_messages(tdbb, temp->str_data, (USHORT) blob->blb_length, procedure,
@@ -3608,7 +3671,7 @@ static NOD parse_procedure_blr(
 	node =
 		PAR_blr(tdbb, (REL) NULL_PTR, temp->str_data, (CSB) NULL_PTR, csb_ptr,
 				&procedure->prc_request, FALSE, 0);
-	ALL_release((FRB)temp);
+	delete temp;
 
 	return node;
 }
@@ -3631,9 +3694,9 @@ static BOOLEAN par_messages(TDBB	tdbb,
  *      a format (fmt) block.
  *
  **************************************/
-	UCHAR *end;
+	//UCHAR *end;
+	fmt::fmt_desc_iterator desc;
 	FMT format;
-	DSC *desc;
 	USHORT count, offset, align, msg_number;
 	SSHORT version;
 
@@ -3651,10 +3714,10 @@ static BOOLEAN par_messages(TDBB	tdbb,
 		msg_number = BLR_BYTE;
 		count = BLR_BYTE;
 		count += (BLR_BYTE) << 8;
-		format = (FMT) ALLOCDV(type_fmt, count);
+		format = fmt::newFmt(*tdbb->tdbb_default, count);
 		format->fmt_count = count;
 		offset = 0;
-		for (desc = format->fmt_desc; count; --count, ++desc) {
+		for (desc = format->fmt_desc.begin(); count; --count, ++desc) {
 			align = PAR_desc(csb, desc);
 			if (align)
 				offset = FB_ALIGN(offset, align);
@@ -3672,7 +3735,7 @@ static BOOLEAN par_messages(TDBB	tdbb,
 		}
 		else
 		{
-			ALL_release((FRB)format);
+			delete format;
 		}
 	}
 
@@ -3695,7 +3758,7 @@ void MET_release_triggers( TDBB tdbb, VEC * vector_ptr)
  *
  **************************************/
 	VEC vector;
-	REQ *ptr, *end;
+	vec::iterator ptr, end;
 
 
 	if (!(vector = *vector_ptr))
@@ -3705,25 +3768,23 @@ void MET_release_triggers( TDBB tdbb, VEC * vector_ptr)
 
 	*vector_ptr = NULL;
 
-	for (ptr = (REQ *) vector->vec_object, end = ptr + vector->vec_count;
-		 ptr < end; ptr++)
+	for (ptr = vector->begin(), end = vector->end(); ptr < end; ptr++)
 	{
-		if (*ptr && CMP_clone_active(*ptr))
+		if (*ptr && CMP_clone_active((REQ)(*ptr)))
 		{
 			return;
 		}
 	}
 
-	for (ptr = (REQ *) vector->vec_object, end = ptr + vector->vec_count;
-		 ptr < end; ptr++)
+	for (ptr = vector->begin(), end = vector->end(); ptr < end; ptr++)
 	{
 		if (*ptr)
 		{
-			CMP_release(tdbb, *ptr);
+			CMP_release(tdbb, (REQ)(*ptr));
 		}
 	}
 
-	ALL_release((FRB)vector);
+	delete vector;
 }
 
 
@@ -3861,7 +3922,7 @@ static STR save_name(TDBB tdbb, CONST TEXT* name)
 	dbb = tdbb->tdbb_database;
 
 	l = name_length(name);
-	string = (STR) ALLOCPV(type_str, l);
+	string = new(*dbb->dbb_permanent, l) str();
 	string->str_length = l;
 	p = (TEXT *) string->str_data;
 
@@ -3888,13 +3949,18 @@ static void save_trigger_request(DBB dbb, VEC * ptr, REQ request)
  *      Get trigger.
  *
  **************************************/
-	VEC vector;
-	USHORT n;
 
-	n = (*ptr) ? (*ptr)->vec_count : 0;
-	vector = ALL_vector(dbb->dbb_permanent, ptr, n);
+	USHORT n      = (*ptr) ? (*ptr)->count() : 0;
+	VEC    vector = *ptr;
 
-	vector->vec_object[n] = (BLK) request;
+	if (!vector) {
+		vector = vec::newVector(*dbb->dbb_permanent, n + 1);
+		*ptr = vector;
+	} else {
+		vector->resize(n + 1);
+	}
+
+	(*vector)[n] = (BLK) request;
 }
 
 
@@ -3973,15 +4039,14 @@ static void store_dependencies(TDBB			tdbb,
 				fld_id = (SSHORT) field_node->nod_arg[0];
 				if (relation)
 				{
-					if (field = MET_get_field(relation, fld_id))
+					if ( (field = MET_get_field(relation, fld_id)) )
 					{
 						field_name = field->fld_name;
 					}
 					else if (procedure)
 					{
 						field =
-							(FLD) procedure->prc_output_fields->
-							vec_object[fld_id];
+							(FLD) (*procedure->prc_output_fields)[fld_id];
 					}
 				}
 			}

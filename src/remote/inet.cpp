@@ -23,7 +23,7 @@
  * FSG 16.03.2001 
  */
 /*
-$Id: inet.cpp,v 1.3 2001-07-29 23:43:24 skywalker Exp $
+$Id: inet.cpp,v 1.4 2001-12-24 02:50:53 tamlin Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -36,13 +36,17 @@ $Id: inet.cpp,v 1.3 2001-07-29 23:43:24 skywalker Exp $
 
 #include "../jrd/time.h"
 
+#ifdef DARWIN
+#include </usr/include/pwd.h>
+#endif
+
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
 
-//#ifdef HAVE_GRP_H
+#ifdef HAVE_GRP_H
 #include <grp.h>
-//#endif
+#endif
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -154,6 +158,7 @@ extern int h_errno;
 #define INET_RETRY_ERRNO	WSAEINPROGRESS
 #define INET_ADDR_IN_USE	WSAEADDRINUSE
 #define sleep(seconds)  Sleep ((seconds) * 1000)
+typedef int socklen_t;
 
 /* 
 ** Winsock has a typedef for socket, so #define SOCKET to the typedef here

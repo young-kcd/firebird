@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: ibmgrswi.h,v 1.2 2001-08-01 08:11:52 skywalker Exp $
+ * $Id: ibmgrswi.h,v 1.3 2001-12-24 02:50:53 tamlin Exp $
  */
 
 #ifndef _IBMGR_IBMGRSWI_H_

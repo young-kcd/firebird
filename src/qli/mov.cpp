@@ -52,11 +52,6 @@
 #define MOVQ_terminate		MOVP_terminate
 #endif
 
-typedef struct vary {
-	USHORT vary_length;
-	TEXT vary_string[1];
-} VARY;
-
 #include "../qli/mov_proto.h"
 
 static void date_error(TEXT *, USHORT);

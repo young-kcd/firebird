@@ -87,7 +87,7 @@
  */
 
 /*
-$Id: ib_stdio.cpp,v 1.2 2001-07-29 17:42:22 skywalker Exp $
+$Id: ib_stdio.cpp,v 1.3 2001-12-24 02:50:51 tamlin Exp $
 */
 
 #include "firebird.h"

@@ -24,11 +24,11 @@
 #ifndef _JRD_VAL_H_
 #define _JRD_VAL_H_
 
-#include "../jrd/dsc.h"
+#include "../jrd/jrd_blks.h"
+#include "../include/fb_blk.h"
+#include "../include/fb_vector.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "../jrd/dsc.h"
 
 
 #ifdef GATEWAY
@@ -56,8 +56,16 @@ extern "C" {
 #endif
 
 #ifndef REQUESTER
-typedef struct fmt {
-	struct blk fmt_header;
+class fmt : public pool_alloc<type_fmt>
+{
+public:
+	fmt(MemoryPool& p, int len)
+	:	fmt_desc(len, p, type_fmt)
+	{
+	}
+	static fmt* newFmt(MemoryPool& p, int len = 0)
+		{ return new(p) fmt(p, len); }
+
 	USHORT fmt_length;
 	USHORT fmt_count;
 	USHORT fmt_version;
@@ -69,19 +77,18 @@ typedef struct fmt {
 								   THIS FIELD INSURES THAT A PC_PLATFORM DATABASE IS
 								   IDENTICAL TO ONE ON Windows/NT. */
 #endif
-	struct dsc fmt_desc[1];
+	Firebird::vector<dsc> fmt_desc;
+	typedef Firebird::vector<dsc>::iterator fmt_desc_iterator;
 #ifdef GATEWAY
-	struct xdsc fmt_ext_desc[1];
+	Firebird::vector<xdsc> fmt_ext_desc[1];
 #endif
-} *FMT;
+};
+typedef fmt *FMT;
 #endif /* REQUESTER */
 
 #define MAX_FORMAT_SIZE		65535
 
-typedef struct vary {
-	USHORT vary_length;
-	UCHAR vary_string[1];
-} VARY;
+typedef vary VARY;
 
 /* A macro to define a local vary stack variable of a given length
    Usage:  VARY_STRING(5)	my_var;        */
@@ -96,8 +103,14 @@ typedef ENUM {
 		FUN_reference,
 		FUN_descriptor, FUN_blob_struct, FUN_scalar_array} FUN_T;
 
-typedef struct fun {
-	struct blk fun_header;
+struct fun_repeat {
+	DSC fun_desc;			/* Datatype info */
+	FUN_T fun_mechanism;	/* Passing mechanism */
+};
+
+class fun : public pool_alloc_rpt<fun_repeat, type_fun>
+{
+    public:
 	STR fun_exception_message;	/* message containing the exception error message */
 	struct fun *fun_homonym;	/* Homonym functions */
 	struct sym *fun_symbol;		/* Symbol block */
@@ -107,11 +120,9 @@ typedef struct fun {
 	USHORT fun_return_arg;		/* Return argument */
 	USHORT fun_type;			/* Type of function */
 	ULONG fun_temp_length;		/* Temporary space required */
-	struct fun_repeat {
-		DSC fun_desc;			/* Datatype info */
-		FUN_T fun_mechanism;	/* Passing mechanism */
-	} fun_rpt[1];
-} *FUN;
+    fun_repeat fun_rpt[1];
+};
+typedef fun *FUN;
 
 #define FUN_value	0
 #define FUN_boolean	1
@@ -155,7 +166,8 @@ typedef struct ads {
 		SLONG ads_length;		/* Length of "vector" element */
 		SLONG ads_lower;		/* Lower bound */
 		SLONG ads_upper;		/* Upper bound */
-	} ads_rpt[1];
+	};
+        struct ads_repeat ads_rpt[1];
 } *ADS;
 
 #define ADS_VERSION_1	1
@@ -166,23 +178,21 @@ typedef struct ads {
 #endif
 
 #ifndef REQUESTER
-typedef struct arr {
-	struct blk arr_header;
-	UCHAR *arr_data;			/* Data block, if allocated */
-	struct blb *arr_blob;		/* Blob for data access */
-	struct tra *arr_transaction;	/* Parent transaction block */
-	struct arr *arr_next;		/* Next array in transaction */
-	struct req *arr_request;	/* request */
-	SLONG arr_effective_length;	/* Length of array instance */
-	USHORT arr_desc_length;		/* Length of array descriptor */
-	struct ads arr_desc;		/* Array descriptor */
-} *ARR;
+class arr : public pool_alloc_rpt<ads::ads_repeat, type_arr>
+{
+    public:
+	UCHAR*		arr_data;			/* Data block, if allocated */
+	class blb*	arr_blob;		/* Blob for data access */
+	struct tra* arr_transaction;	/* Parent transaction block */
+	struct arr* arr_next;		/* Next array in transaction */
+	struct req* arr_request;	/* request */
+	SLONG		arr_effective_length;	/* Length of array instance */
+	USHORT		arr_desc_length;		/* Length of array descriptor */
+	struct ads	arr_desc;		/* Array descriptor */
+};
+typedef arr *ARR;
 
 #endif /* REQUESTER */
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 
 #endif /* _JRD_VAL_H_ */

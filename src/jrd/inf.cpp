@@ -540,7 +540,7 @@ int INF_database_info(
 			for (att = dbb->dbb_attachments; att; att = att->att_next) {
 				if (att->att_flags & ATT_shutdown)
 					continue;
-				if (user = att->att_user) {
+				if ( (user = att->att_user) ) {
 					p = buffer;
 					*p++ = l = strlen(user->usr_user_name);
 					for (q = user->usr_user_name; l; l--)
@@ -561,11 +561,11 @@ int INF_database_info(
 			err_att = tdbb->tdbb_attachment;
 			if (err_att->att_val_errors) {
 				err_val =
-					err_att->att_val_errors->vcl_long[VAL_PAG_WRONG_TYPE]
-					+ err_att->att_val_errors->vcl_long[VAL_PAG_CHECKSUM_ERR]
-					+ err_att->att_val_errors->vcl_long[VAL_PAG_DOUBLE_ALLOC]
-					+ err_att->att_val_errors->vcl_long[VAL_PAG_IN_USE]
-					+ err_att->att_val_errors->vcl_long[VAL_PAG_ORPHAN];
+					(*err_att->att_val_errors)[VAL_PAG_WRONG_TYPE]
+					+ (*err_att->att_val_errors)[VAL_PAG_CHECKSUM_ERR]
+					+ (*err_att->att_val_errors)[VAL_PAG_DOUBLE_ALLOC]
+					+ (*err_att->att_val_errors)[VAL_PAG_IN_USE]
+					+ (*err_att->att_val_errors)[VAL_PAG_ORPHAN];
 			}
 			else
 				err_val = 0;
@@ -577,9 +577,9 @@ int INF_database_info(
 			err_att = tdbb->tdbb_attachment;
 			if (err_att->att_val_errors) {
 				err_val =
-					err_att->att_val_errors->vcl_long[VAL_BLOB_INCONSISTENT]
-					+ err_att->att_val_errors->vcl_long[VAL_BLOB_CORRUPT]
-					+ err_att->att_val_errors->vcl_long[VAL_BLOB_TRUNCATED];
+					(*err_att->att_val_errors)[VAL_BLOB_INCONSISTENT]
+					+ (*err_att->att_val_errors)[VAL_BLOB_CORRUPT]
+					+ (*err_att->att_val_errors)[VAL_BLOB_TRUNCATED];
 			}
 			else
 				err_val = 0;
@@ -591,14 +591,13 @@ int INF_database_info(
 			err_att = tdbb->tdbb_attachment;
 			if (err_att->att_val_errors) {
 				err_val =
-					err_att->att_val_errors->vcl_long[VAL_REC_CHAIN_BROKEN]
-					+ err_att->att_val_errors->vcl_long[VAL_REC_DAMAGED]
-					+ err_att->att_val_errors->vcl_long[VAL_REC_BAD_TID]
+					(*err_att->att_val_errors)[VAL_REC_CHAIN_BROKEN]
+					+ (*err_att->att_val_errors)[VAL_REC_DAMAGED]
+					+ (*err_att->att_val_errors)[VAL_REC_BAD_TID]
 					+
-					err_att->
-					att_val_errors->vcl_long[VAL_REC_FRAGMENT_CORRUPT] +
-					err_att->att_val_errors->vcl_long[VAL_REC_WRONG_LENGTH] +
-					err_att->att_val_errors->vcl_long[VAL_REL_CHAIN_ORPHANS];
+					(*err_att->att_val_errors)[VAL_REC_FRAGMENT_CORRUPT] +
+					(*err_att->att_val_errors)[VAL_REC_WRONG_LENGTH] +
+					(*err_att->att_val_errors)[VAL_REL_CHAIN_ORPHANS];
 			}
 			else
 				err_val = 0;
@@ -610,9 +609,9 @@ int INF_database_info(
 			err_att = tdbb->tdbb_attachment;
 			if (err_att->att_val_errors) {
 				err_val =
-					err_att->att_val_errors->vcl_long[VAL_DATA_PAGE_CONFUSED]
+					(*err_att->att_val_errors)[VAL_DATA_PAGE_CONFUSED]
 					+
-					err_att->att_val_errors->vcl_long[VAL_DATA_PAGE_LINE_ERR];
+					(*err_att->att_val_errors)[VAL_DATA_PAGE_LINE_ERR];
 			}
 			else
 				err_val = 0;
@@ -624,13 +623,11 @@ int INF_database_info(
 			err_att = tdbb->tdbb_attachment;
 			if (err_att->att_val_errors) {
 				err_val =
-					err_att->att_val_errors->vcl_long[VAL_INDEX_PAGE_CORRUPT]
+					(*err_att->att_val_errors)[VAL_INDEX_PAGE_CORRUPT]
 					+
-					err_att->
-					att_val_errors->vcl_long[VAL_INDEX_ROOT_MISSING] +
-					err_att->att_val_errors->
-					vcl_long[VAL_INDEX_MISSING_ROWS] +
-					err_att->att_val_errors->vcl_long[VAL_INDEX_ORPHAN_CHILD];
+					(*err_att->att_val_errors)[VAL_INDEX_ROOT_MISSING] +
+					(*err_att->att_val_errors)[VAL_INDEX_MISSING_ROWS] +
+					(*err_att->att_val_errors)[VAL_INDEX_ORPHAN_CHILD];
 			}
 			else
 				err_val = 0;
@@ -641,10 +638,9 @@ int INF_database_info(
 		case isc_info_ppage_errors:
 			err_att = tdbb->tdbb_attachment;
 			if (err_att->att_val_errors) {
-				err_val = err_att->att_val_errors->vcl_long[VAL_P_PAGE_LOST]
+				err_val = (*err_att->att_val_errors)[VAL_P_PAGE_LOST]
 					+
-					err_att->
-					att_val_errors->vcl_long[VAL_P_PAGE_INCONSISTENT];
+					(*err_att->att_val_errors)[VAL_P_PAGE_INCONSISTENT];
 			}
 			else
 				err_val = 0;
@@ -655,9 +651,9 @@ int INF_database_info(
 		case isc_info_tpage_errors:
 			err_att = tdbb->tdbb_attachment;
 			if (err_att->att_val_errors) {
-				err_val = err_att->att_val_errors->vcl_long[VAL_TIP_LOST]
-					+ err_att->att_val_errors->vcl_long[VAL_TIP_LOST_SEQUENCE]
-					+ err_att->att_val_errors->vcl_long[VAL_TIP_CONFUSED];
+				err_val = (*err_att->att_val_errors)[VAL_TIP_LOST]
+					+ (*err_att->att_val_errors)[VAL_TIP_LOST_SEQUENCE]
+					+ (*err_att->att_val_errors)[VAL_TIP_CONFUSED];
 			}
 			else
 				err_val = 0;
@@ -1110,7 +1106,8 @@ static USHORT get_counts(USHORT count_id, UCHAR * buffer, USHORT length)
  *
  **************************************/
 	TDBB tdbb;
-	SLONG n, *ptr;
+	SLONG n;
+	vcl::iterator ptr;
 	UCHAR *p, *end;
 	USHORT relation_id;
 	VCL vector;
@@ -1123,8 +1120,8 @@ static USHORT get_counts(USHORT count_id, UCHAR * buffer, USHORT length)
 	p = buffer;
 	end = p + length - 6;
 
-	for (relation_id = 0, ptr = vector->vcl_long;
-		 relation_id < vector->vcl_count && buffer < end; ++relation_id)
+	for (relation_id = 0, ptr = vector->begin();
+		 relation_id < vector->count() && buffer < end; ++relation_id)
 		if (n = *ptr++) {
 			STUFF_WORD(p, relation_id);
 			p += INF_convert(n, reinterpret_cast < char *>(p));

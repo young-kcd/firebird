@@ -30,6 +30,7 @@
 
 typedef ENUM nod_t
 {
+	nod_unknown_type = 0,
 	nod_commit = 1,	/* Commands, not executed. */
 	nod_rollback,
 	nod_trans,
@@ -301,14 +302,18 @@ typedef ENUM nod_t
 /* definition of a syntax node created both
    in parsing and in context recognition */
 
-typedef struct nod {
-	struct blk nod_header;
+class nod : public pool_alloc_rpt<class nod*, dsql_type_nod>
+{
+public:
 	NOD_TYPE nod_type;			/* Type of node */
 	DSC nod_desc;				/* Descriptor */
 	USHORT nod_count;			/* Number of arguments */
 	USHORT nod_flags;
 	struct nod *nod_arg[1];
-} *NOD;
+	
+	nod() : nod_type(nod_unknown_type), nod_count(0), nod_flags(0) {}
+};
+typedef nod *NOD;
 
 /* values of flags */
 

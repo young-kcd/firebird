@@ -110,7 +110,7 @@ static struct in_sw_tab_t gdef_in_sw_table[] = {
 	IN_SW_GDEF_0, 0, NULL, 0, 0, 0, FALSE, 0, 0, NULL
 };
 
-
+#ifndef SUPERSERVER
 int CLIB_ROUTINE main( int argc, char *argv[])
 {
 /**************************************
@@ -475,7 +475,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	DDL_exit(FINI_OK);
 }
-
+#endif
 
 UCHAR *DDL_alloc(register int size)
 {

@@ -41,8 +41,14 @@ typedef unsigned char NCHAR;	/* Narrow Char */
 typedef unsigned short WCHAR;	/* Wide   Char */
 typedef unsigned char MBCHAR;	/* Multibyte Char */
 
+typedef struct intl_blk {
+    UCHAR blk_type;
+    UCHAR blk_pool_id;
+    USHORT blk_length;
+} intl_blk;
+
 typedef struct texttype {
-	struct blk texttype_blk;
+	struct intl_blk texttype_blk;
 	USHORT texttype_version;	/* version ID of object */
 	USHORT texttype_flags;		/* miscellanous flags */
 	TTYPE_ID texttype_type;		/* Interpretation ID */
@@ -84,7 +90,7 @@ typedef struct texttype {
 
 
 typedef struct csconvert {
-	struct blk csconvert_blk;
+	struct intl_blk csconvert_blk;
 	USHORT csconvert_version;
 	USHORT csconvert_flags;
 	SSHORT csconvert_id;
@@ -113,8 +119,10 @@ typedef struct csconvert {
 
 
 
-typedef struct charset {
-	struct blk charset_blk;
+class charset
+{
+public:
+	struct intl_blk charset_blk;
 	USHORT charset_version;
 	USHORT charset_flags;
 	CHARSET_ID charset_id;
@@ -132,7 +140,8 @@ typedef struct charset {
 	VEC charset_converters;
 	VEC charset_collations;
 	ULONG *charset_unused[2];
-} *CHARSET;
+};
+typedef charset *CHARSET;
 
 /* values for charset_flags */
 

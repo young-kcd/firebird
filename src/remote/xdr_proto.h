@@ -24,6 +24,8 @@
 #ifndef REMOTE_XDR_PROTO_H
 #define REMOTE_XDR_PROTO_H
 
+#include "../remote/xdr.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -24,6 +24,11 @@
 #ifndef _JRD_REQ_H_
 #define _JRD_REQ_H_
 
+#include "../jrd/jrd_blks.h"
+#include "../include/fb_blk.h"
+
+#include <vector>
+
 /* record parameter block */
 
 typedef struct rpb {
@@ -99,8 +104,9 @@ typedef struct rpb {
 
 /* Record block (holds data, remember data?) */
 
-typedef struct rec {
-	struct blk rec_header;
+class rec : public pool_alloc_rpt<SCHAR, type_rec>
+{
+    public:
 	struct fmt *rec_format;		/* what the data looks like */
 	struct lls *rec_precedence;	/* stack of higher precedence pages */
 	USHORT rec_length;			/* how much there is */
@@ -108,7 +114,8 @@ typedef struct rec {
 	SLONG rec_number;			/* original rpb number - used for undoing multiple updates */
 	double rec_dummy;			/* this is to force next field to a double boundary */
 	UCHAR rec_data[1];			/* THIS VARIABLE MUST BE ALIGNED ON A DOUBLE BOUNDARY */
-} *REC;
+};
+typedef rec *REC;
 
 #define REC_same_tx	1			/* record inserted/updated and deleted by same tx */
 #define REC_gc_active	2		/* relation garbage collect record block in use */
@@ -116,34 +123,37 @@ typedef struct rec {
 
 /* save rpb block */
 
-typedef struct srpb {
-	struct blk srpb_header;
+class srpb : public pool_alloc<type_srpb>
+{
+    public:
 	struct rpb srpb_rpb[1];		/* record parameter blocks */
-} *SRPB;
+};
+typedef srpb *SRPB;
 
 /* request block */
 
-typedef struct req {
-	struct blk req_header;
-	ATT req_attachment;			/* database attachment */
-	USHORT req_count;			/* number of streams */
-	USHORT req_incarnation;		/* incarnation number */
-	ULONG req_impure_size;		/* size of impure area */
-	struct plb *req_pool;
-	struct vec *req_sub_requests;	/* vector of sub-requests */
-	struct tra *req_transaction;
-	struct req *req_request;	/* next request in dbb */
-	struct acc *req_access;		/* Access items to be checked */
-	struct vec *req_variables;	/* Vector of variables, if any */
-	struct rsc *req_resources;	/* Resources (relations and indices) */
-	struct nod *req_message;	/* Current message for send/receive */
+class req : public pool_alloc_rpt<rpb, type_req>
+{
+public:
+	ATT			req_attachment;		// database attachment
+	USHORT		req_count;			// number of streams
+	USHORT		req_incarnation;	// incarnation number
+	ULONG		req_impure_size;	// size of impure area
+	JrdMemoryPool* req_pool;
+	struct vec*	req_sub_requests;	// vector of sub-requests
+	struct tra* req_transaction;
+	req*		req_request;	/* next request in dbb */
+	struct acc*	req_access;		/* Access items to be checked */
+	struct vec*	req_variables;	/* Vector of variables, if any */
+	class Rsc*	req_resources;	/* Resources (relations and indices) */
+	struct nod*	req_message;	/* Current message for send/receive */
 #ifdef SCROLLABLE_CURSORS
 	struct nod *req_async_message;	/* Asynchronous message (used in scrolling) */
 #endif
-	struct vec *req_refresh_ranges;	/* Vector of refresh_ranges */
-	struct rng *req_begin_ranges;	/* Vector of refresh_ranges */
-	struct prc *req_procedure;	/* procedure, if any */
-	TEXT *req_trg_name;			/* name of request (trigger), if any */
+	struct vec*	req_refresh_ranges;	/* Vector of refresh_ranges */
+	struct rng*	req_begin_ranges;	/* Vector of refresh_ranges */
+	struct prc*	req_procedure;		/* procedure, if any */
+	TEXT*		req_trg_name;		/* name of request (trigger), if any */
 	USHORT req_length;			/* message length for send/receive */
 	USHORT req_nmsgs;			/* number of message types */
 	USHORT req_mmsg;			/* highest message type */
@@ -155,10 +165,10 @@ typedef struct req {
 	ULONG req_records_updated;	/* count of records updated by request */
 	ULONG req_records_deleted;	/* count of records deleted by request */
 
-	struct nod *req_top_node;	/* top of execution tree */
-	struct nod *req_next;		/* next node for execution */
-	struct vec *req_fors;		/* Vector of for loops, if any */
-	struct vec *req_invariants;	/* Vector of invariant nodes, if any */
+	struct nod* req_top_node;	/* top of execution tree */
+	struct nod* req_next;		/* next node for execution */
+	struct vec* req_fors;		/* Vector of for loops, if any */
+	struct vec* req_invariants;	/* Vector of invariant nodes, if any */
 	USHORT req_label;			/* label for leave */
 	ULONG req_flags;			/* misc request flags */
 	struct sav *req_proc_sav_point;	/* procedure savepoint list */
@@ -166,10 +176,17 @@ typedef struct req {
 
 	ENUM req_s {
 		req_evaluate,
-			req_return, req_receive, req_send, req_proceed, req_sync, req_unwind} req_operation;	/* operation for next node */
+		req_return,
+		req_receive,
+		req_send,
+		req_proceed,
+		req_sync,
+		req_unwind
+	} req_operation;	/* operation for next node */
 
-	struct rpb req_rpb[1];		/* record parameter blocks */
-} *REQ;
+	rpb req_rpb[1];		/* record parameter blocks */
+};
+typedef req *REQ;
 
 #define REQ_SIZE	(sizeof (struct req) - sizeof (((REQ) 0)->req_rpb[0]))
 
@@ -226,33 +243,36 @@ enum rsc_s {
 	rsc_index
 };
 
-typedef struct rsc {
-	struct blk rsc_header;
-	struct rsc *rsc_next;		/* Next resource in request */
+class Rsc : public pool_alloc<type_rsc>
+{
+    public:
+	class Rsc *rsc_next;		/* Next resource in request */
 	struct rel *rsc_rel;		/* Relation block */
 	struct prc *rsc_prc;		/* Relation block */
 	USHORT rsc_id;				/* Id of parent */
 	enum rsc_s rsc_type;
-} *RSC;
+};
+typedef Rsc *RSC;
 
 /* Index lock block */
 
-typedef struct idl
+class idl : public pool_alloc<type_idl>
 {
-	struct blk	idl_header;
+    public:
 	struct idl*	idl_next;		/* Next index lock block for relation */
 	struct lck*	idl_lock;		/* Lock block */
 	struct rel*	idl_relation;	/* Parent relation */
 	USHORT		idl_id;			/* Index id */
 	USHORT		idl_count;		/* Use count */
-} *IDL;
+};
+typedef idl *IDL;
 
 
 /* Access items */
 
-typedef struct acc
+class acc : public pool_alloc<type_acc>
 {
-	struct blk	acc_header;
+    public:
 	struct acc*	acc_next;
 #ifndef GATEWAY
 	TEXT*		acc_security_name;	/* WRITTEN into by SCL_get_class() */
@@ -265,6 +285,7 @@ typedef struct acc
 	CONST TEXT*	acc_name;
 	CONST TEXT*	acc_type;
 	USHORT		acc_mask;
-} *ACC;
+};
+typedef acc *ACC;
 
 #endif /* _JRD_REQ_H_ */

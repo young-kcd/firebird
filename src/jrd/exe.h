@@ -24,6 +24,10 @@
 #ifndef _JRD_EXE_H_
 #define _JRD_EXE_H_
 
+#include "../jrd/jrd_blks.h"
+#include "../include/fb_blk.h"
+#include "../include/fb_vector.h"
+
 #define NODE(type, name, keyword) type,
 
 typedef ENUM nod_t {
@@ -39,16 +43,29 @@ typedef ENUM nod_t {
 	 exactly the same way as structure nod through item nod_count.
 	 If you change one, be sure to change all of them. */
 
-typedef struct nod {
-	struct blk nod_header;
-	struct nod *nod_parent;
-	SLONG nod_impure;			/* Inpure offset from request block */
-	NOD_T nod_type;				/* Type of node */
-	UCHAR nod_flags;
-	SCHAR nod_scale;			/* Target scale factor */
-	USHORT nod_count;			/* Number of arguments */
-	struct nod *nod_arg[1];
-} *NOD;
+class nod : public pool_alloc_rpt<class nod*, type_nod>
+{
+public:
+	nod()
+	:	nod_parent(0),
+		nod_impure(0),
+		nod_type(nod_nop),
+		nod_flags(0),
+		nod_scale(0),
+		nod_count(0)
+	{
+		nod_arg[0] = 0;
+	}
+
+	nod*	nod_parent;
+	SLONG	nod_impure;			/* Inpure offset from request block */
+	NOD_T	nod_type;				/* Type of node */
+	UCHAR	nod_flags;
+	SCHAR	nod_scale;			/* Target scale factor */
+	USHORT	nod_count;			/* Number of arguments */
+	nod*	nod_arg[1];
+};
+typedef nod* NOD;
 
 #define nod_comparison 	1
 #define nod_id		1			/* marks a field node as a blr_fid guy */
@@ -65,28 +82,30 @@ typedef struct nod {
 
 /* Special RSE node */
 
-typedef struct rse {
-	struct blk nod_header;
-	struct nod *nod_parent;
-	SLONG nod_impure;			/* Inpure offset from request block */
-	NOD_T nod_type;				/* Type of node */
-	UCHAR nod_flags;
-	SCHAR nod_scale;			/* Target scale factor */
-	USHORT nod_count;			/* Number of arguments */
-	USHORT rse_count;
-	USHORT rse_jointype;		/* inner, left, right, full */
+class rse : public pool_alloc_rpt<nod*, type_rse>
+{
+public:
+	nod*	nod_parent;
+	SLONG	nod_impure;			/* Inpure offset from request block */
+	NOD_T	nod_type;				/* Type of node */
+	UCHAR	nod_flags;
+	SCHAR	nod_scale;			/* Target scale factor */
+	USHORT	nod_count;			/* Number of arguments */
+	USHORT	rse_count;
+	USHORT	rse_jointype;		/* inner, left, right, full */
 	struct rsb *rse_rsb;
-	struct nod *rse_first;
-	struct nod *rse_boolean;
-	struct nod *rse_sorted;
-	struct nod *rse_projection;
-	struct nod *rse_aggregate;	/* singleton aggregate for optimizing to index */
-	struct nod *rse_plan;		/* user-specified access plan */
+	nod*	rse_first;
+	nod*	rse_boolean;
+	nod*	rse_sorted;
+	nod*	rse_projection;
+	nod*	rse_aggregate;	/* singleton aggregate for optimizing to index */
+	nod*	rse_plan;		/* user-specified access plan */
 #ifdef SCROLLABLE_CURSORS
-	struct nod *rse_async_message;	/* asynchronous message to send for scrolling */
+	nod*	rse_async_message;	/* asynchronous message to send for scrolling */
 #endif
-	struct nod *rse_relation[1];
-} *RSE;
+	nod*	rse_relation[1];
+};
+typedef rse* RSE;
 
 #define rse_stream	1			/* flags rse-type node as a blr_stream type */
 #define rse_singular	2		/* flags rse-type node as from a singleton select */
@@ -97,35 +116,39 @@ typedef struct rse {
 
 /* Literal value */
 
-typedef struct lit {
-	struct blk nod_header;
-	struct nod *nod_parent;
-	SLONG nod_impure;			/* Inpure offset from request block */
-	NOD_T nod_type;				/* Type of node */
-	UCHAR nod_flags;
-	SCHAR nod_scale;			/* Target scale factor */
-	USHORT nod_count;			/* Number of arguments */
-	struct dsc lit_desc;
-	UCHAR lit_data[1];
-} *LIT;
+class lit : public pool_alloc<type_lit>
+{
+public:
+	nod*	nod_parent;
+	SLONG	nod_impure;			/* Inpure offset from request block */
+	NOD_T	nod_type;				/* Type of node */
+	UCHAR	nod_flags;
+	SCHAR	nod_scale;			/* Target scale factor */
+	USHORT	nod_count;			/* Number of arguments */
+	dsc		lit_desc;
+	UCHAR	lit_data[1];
+};
+typedef lit* LIT;
 
-#define lit_delta	(sizeof (struct dsc) / sizeof (NOD*))
+#define lit_delta	(sizeof(dsc) / sizeof(NOD*))
 
 
 /* Aggregate Sort Block (for DISTINCT aggregates) */
 
-typedef struct asb {
-	struct blk nod_header;
-	struct nod *nod_parent;
-	SLONG nod_impure;			/* Impure offset from request block */
-	NOD_T nod_type;				/* Type of node */
-	UCHAR nod_flags;
-	SCHAR nod_scale;
-	USHORT nod_count;
-	struct dsc asb_desc;
-	struct skd *asb_key_desc;	/* for the aggregate   */
-	UCHAR asb_key_data[1];
-} *ASB;
+class asb : public pool_alloc<type_asb>
+{
+public:
+	nod*	nod_parent;
+	SLONG	nod_impure;			/* Impure offset from request block */
+	NOD_T	nod_type;				/* Type of node */
+	UCHAR	nod_flags;
+	SCHAR	nod_scale;
+	USHORT	nod_count;
+	dsc		asb_desc;
+	struct skd* asb_key_desc;	/* for the aggregate   */
+	UCHAR	asb_key_data[1];
+};
+typedef asb* ASB;
 
 #define asb_delta	((sizeof(struct asb) - sizeof(struct nod)) / sizeof (NOD*))
 
@@ -200,7 +223,7 @@ typedef struct vluk {
 /* Inversion (i.e. nod_index) impure area */
 
 typedef struct inv {
-	struct sbm *inv_bitmap;
+	struct sbm* inv_bitmap;
 } *INV;
 
 
@@ -497,63 +520,124 @@ typedef struct iasb {
  * since it's part of the C API. Compiling as C++ would enclose it.
  */
 
-struct csb_repeat {
+struct csb_repeat
+{
+	// We must zero-initialize this one
+	csb_repeat()
+	:	csb_stream(0),
+		csb_view_stream(0),
+		csb_flags(0),
+		csb_indices(0),
+		csb_relation(0),
+		csb_alias(0),
+		csb_procedure(0),
+		csb_view(0),
+		csb_idx(0),
+		csb_idx_allocation(0),
+		csb_message(0),
+		csb_format(0),
+		csb_fields(0),
+#ifndef GATEWAY
+		csb_cardinality(0.0f),	// TMN: Non-natural cardinality?!
+		csb_plan(0),
+#else
+		csb_asgn_flds(0),
+		csb_selct_rsb(0),
+		csb_selct_bool(0),
+		csb_selct_sort(0),
+		csb_sql_selct(0),
+		csb_other_nod(0),
+		csb_sql_other(0),
+#endif
+		csb_map(0),
+		csb_rsb_ptr(0)
+	{}
+
 	UCHAR csb_stream;			/* Map user context to internal stream */
 	UCHAR csb_view_stream;		/* stream number for view relation, below */
 	USHORT csb_flags;
 	USHORT csb_indices;			/* Number of indices */
 
-	struct rel *csb_relation;
-	struct str *csb_alias;		/* SQL alias name for this instance of relation */
-	struct prc *csb_procedure;
-	struct rel *csb_view;		/* parent view */
+	struct rel* csb_relation;
+	struct str* csb_alias;		/* SQL alias name for this instance of relation */
+	struct prc* csb_procedure;
+	struct rel* csb_view;		/* parent view */
 
-	struct idx *csb_idx;		/* Packed description of indices */
-	struct str *csb_idx_allocation;	/* Memory allocated to hold index descriptions */
-	struct nod *csb_message;	/* Msg for send/receive */
-	struct fmt *csb_format;		/* Default fmt for stream */
-	struct sbm *csb_fields;		/* Fields referenced */
+	struct idx* csb_idx;		/* Packed description of indices */
+	struct str* csb_idx_allocation;	/* Memory allocated to hold index descriptions */
+	nod*		csb_message;	/* Msg for send/receive */
+	struct fmt* csb_format;		/* Default fmt for stream */
+	struct sbm* csb_fields;		/* Fields referenced */
 #ifndef GATEWAY
 	float csb_cardinality;		/* Cardinality of relation */
-	struct nod *csb_plan;		/* user-specified plan for this relation */
+	nod*		csb_plan;		/* user-specified plan for this relation */
 #else
-	struct sbm *csb_asgn_flds;	/* Fields that are assigned from */
-	struct rsb *csb_selct_rsb;	/* SELECT statement's rsb */
-	struct nod *csb_selct_bool;	/* SELECT statement's boolean */
-	struct nod *csb_selct_sort;	/* SELECT statement's sort clause */
-	struct sql *csb_sql_selct;	/* SELECT statement */
-	struct nod *csb_other_nod;	/* non-SELECT statement's node */
-	struct sql *csb_sql_other;	/* non-SELECT statement */
+	struct sbm* csb_asgn_flds;	/* Fields that are assigned from */
+	struct rsb* csb_selct_rsb;	/* SELECT statement's rsb */
+	nod*		csb_selct_bool;	/* SELECT statement's boolean */
+	nod*		csb_selct_sort;	/* SELECT statement's sort clause */
+	struct sql* csb_sql_selct;	/* SELECT statement */
+	nod*		csb_other_nod;	/* non-SELECT statement's node */
+	struct sql* csb_sql_other;	/* non-SELECT statement */
 #endif
-	UCHAR *csb_map;				/* Stream map for views */
-	struct rsb **csb_rsb_ptr;	/* point to rsb for nod_stream */
+	UCHAR* csb_map;				/* Stream map for views */
+	struct rsb** csb_rsb_ptr;	/* point to rsb for nod_stream */
 };
 
 
-typedef struct csb {
-	struct blk csb_header;
-	UCHAR *csb_blr;
-	UCHAR *csb_running;
-	struct nod *csb_node;
-	struct acc *csb_access;		/* Access items to be checked */
-	struct vec *csb_variables;	/* Vector of variables, if any */
-	struct rsc *csb_resources;	/* Resources (relations and indexes) */
-	struct lls *csb_dependencies;	/* objects this request depends upon */
-	struct lls *csb_fors;		/* stack of fors */
-	struct lls *csb_invariants;	/* stack of invariant nodes */
-	struct lls *csb_current_rses;	/* rse's within whose scope we are */
+class Csb : public pool_alloc<type_csb>
+{
+public:
+	Csb(MemoryPool& p, size_t len)
+	:	csb_blr(0),
+		csb_running(0),
+		csb_node(0),
+		csb_access(0),
+		csb_variables(0),
+		csb_resources(0),
+		csb_dependencies(0),
+		csb_fors(0),
+		csb_invariants(0),
+		csb_current_rses(0),
 #ifdef SCROLLABLE_CURSORS
-	struct rse *csb_current_rse;	/* this holds the rse currently being processed; 
+		csb_current_rse(0),
+#endif
+		csb_async_message(0),
+		csb_count(0),
+		csb_n_stream(0),
+		csb_msg_number(0),
+		csb_impure(0),
+		csb_g_flags(0),
+		csb_rpt(len, p, type_csb)
+	{}
+
+	static Csb* newCsb(MemoryPool& p, size_t len)
+		{ return new(p) Csb(p, len); }
+
+	UCHAR*		csb_blr;
+	UCHAR*		csb_running;
+	nod*		csb_node;
+	struct acc*	csb_access;		/* Access items to be checked */
+	struct vec*	csb_variables;	/* Vector of variables, if any */
+	class Rsc*	csb_resources;	/* Resources (relations and indexes) */
+	struct lls*	csb_dependencies;	/* objects this request depends upon */
+	struct lls*	csb_fors;		/* stack of fors */
+	struct lls*	csb_invariants;	/* stack of invariant nodes */
+	struct lls*	csb_current_rses;	/* rse's within whose scope we are */
+#ifdef SCROLLABLE_CURSORS
+	struct rse*	csb_current_rse;	/* this holds the rse currently being processed; 
 									   unlike the current_rses stack, it references any expanded view rse */
 #endif
-	struct nod *csb_async_message;	/* asynchronous message to send to request */
-	USHORT csb_count;			/* Current tail count */
-	USHORT csb_n_stream;		/* Next available stream */
-	USHORT csb_msg_number;		/* Highest used message number */
-	SLONG csb_impure;			/* Next offset into impure area */
-	USHORT csb_g_flags;
-	struct csb_repeat csb_rpt[1];
-} *CSB;
+	nod*		csb_async_message;	/* asynchronous message to send to request */
+	USHORT		csb_count;			/* Current tail count */
+	USHORT		csb_n_stream;		/* Next available stream */
+	USHORT		csb_msg_number;		/* Highest used message number */
+	SLONG		csb_impure;			/* Next offset into impure area */
+	USHORT		csb_g_flags;
+	typedef		Firebird::vector<csb_repeat>::iterator rpt_itr;
+	Firebird::vector<csb_repeat> csb_rpt;
+};
+typedef Csb* CSB;
 
 #define csb_internal	     	0x1	/* "csb_g_flag" switch */
 #define csb_get_dependencies 	0x2
@@ -578,15 +662,18 @@ typedef struct csb {
 
 
 /* Exception condition list */
-
-typedef struct xcp {
-	struct blk xcp_header;
-	SLONG xcp_count;
 	struct xcp_repeat {
 		SSHORT xcp_type;
 		SLONG xcp_code;
-	} xcp_rpt[1];
-} *XCP;
+	};
+
+class xcp : public pool_alloc_rpt<xcp_repeat, type_xcp>
+{
+    public:
+	SLONG xcp_count;
+    xcp_repeat xcp_rpt[1];
+};
+typedef xcp *XCP;
 
 #define xcp_sql_code	1
 #define xcp_gds_code	2

@@ -422,7 +422,7 @@ USHORT SQZ_length(TDBB tdbb, SCHAR* data, int length, DCC dcc)
 	end = &data[length];
 	length = 0;
 
-	while (count = end - data)
+	while ( (count = end - data) )
 	{
 		start = data;
 
@@ -455,7 +455,7 @@ USHORT SQZ_length(TDBB tdbb, SCHAR* data, int length, DCC dcc)
 			if (control == end_control)
 			{
 				dcc->dcc_end = control;
-				if (dcc->dcc_next = tdbb->tdbb_default->plb_dccs)
+				if ( (dcc->dcc_next = tdbb->tdbb_default->plb_dccs) )
 				{
 					dcc = dcc->dcc_next;
 					tdbb->tdbb_default->plb_dccs = dcc->dcc_next;
@@ -464,7 +464,7 @@ USHORT SQZ_length(TDBB tdbb, SCHAR* data, int length, DCC dcc)
 				}
 				else
 				{
-					dcc->dcc_next = (DCC) ALLOCD(type_dcc);
+					dcc->dcc_next = new(*tdbb->tdbb_default) Dcc();
 					dcc = dcc->dcc_next;
 					dcc->dcc_pool = tdbb->tdbb_default;
 				}
@@ -493,7 +493,7 @@ USHORT SQZ_length(TDBB tdbb, SCHAR* data, int length, DCC dcc)
 			if (control == end_control)
 			{
 				dcc->dcc_end = control;
-				if (dcc->dcc_next = tdbb->tdbb_default->plb_dccs)
+				if ( (dcc->dcc_next = tdbb->tdbb_default->plb_dccs) )
 				{
 					dcc = dcc->dcc_next;
 					tdbb->tdbb_default->plb_dccs = dcc->dcc_next;
@@ -502,7 +502,7 @@ USHORT SQZ_length(TDBB tdbb, SCHAR* data, int length, DCC dcc)
 				}
 				else
 				{
-					dcc->dcc_next = (DCC) ALLOCD(type_dcc);
+					dcc->dcc_next = new(*tdbb->tdbb_default) Dcc();
 					dcc = dcc->dcc_next;
 					dcc->dcc_pool = tdbb->tdbb_default;
 				}

@@ -25,10 +25,10 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.3 2001-07-29 23:43:21 skywalker Exp $
+//	$Id: cob.cpp,v 1.4 2001-12-24 02:50:49 tamlin Exp $
 //
 
- /* $Id: cob.cpp,v 1.3 2001-07-29 23:43:21 skywalker Exp $ */
+ /* $Id: cob.cpp,v 1.4 2001-12-24 02:50:49 tamlin Exp $ */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"

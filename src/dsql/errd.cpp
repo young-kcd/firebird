@@ -44,7 +44,7 @@ extern "C" {
 
 ASSERT_FILENAME					/* Define things assert() needs */
 #ifdef DEV_BUILD
-void ERRD_assert_msg( CONST UCHAR * msg, CONST UCHAR * file, ULONG lineno)
+void ERRD_assert_msg(const char* msg, const char* file, ULONG lineno)
 {
 /**************************************
  *
@@ -60,13 +60,13 @@ void ERRD_assert_msg( CONST UCHAR * msg, CONST UCHAR * file, ULONG lineno)
 	char buffer[100];
 
 	sprintf(buffer, "Assertion failure: %s File: %s Line: %ld\n",	/* NTX: dev build */
-			(msg ? msg : (UCHAR *) ""), (file ? file : (UCHAR *) ""), lineno);
+			(msg ? msg : ""), (file ? file : ""), lineno);
 	ERRD_bugcheck(buffer);
 }
 #endif /* DEV_BUILD */
 
 
-void ERRD_bugcheck( CONST TEXT * text)
+void ERRD_bugcheck(const char* text)
 {
 /**************************************
  *
@@ -85,7 +85,7 @@ void ERRD_bugcheck( CONST TEXT * text)
 }
 
 
-void ERRD_error( int code, CONST TEXT * text)
+void ERRD_error( int code, const char* text)
 {
 /**************************************
  *
@@ -110,7 +110,7 @@ void ERRD_error( int code, CONST TEXT * text)
 	sprintf(s, "** DSQL error: %s **\n", text);
 	TRACE(s);
 
-	LONGJMP(*tdsql->tsql_setjmp, code);
+	Firebird::status_longjmp_error::raise(code);
 }
 
 
@@ -323,7 +323,7 @@ void ERRD_punt(void)
 
 /* Give up whatever we were doing and return to the user. */
 
-	LONGJMP(*tdsql->tsql_setjmp, (int) tdsql->tsql_status[1]);
+	Firebird::status_longjmp_error::raise(tdsql->tsql_status[1]);
 }
 
 

@@ -61,7 +61,7 @@
 /* Block types */
 
 #ifndef INCLUDE_FB_BLK
-#include "../include/fb_blk.h"
+#include "../include/old_fb_blk.h"
 #endif
 
 
@@ -164,11 +164,7 @@ typedef struct str
 
 #include "../jrd/dsc.h"
 
-typedef struct vary
-{
-	USHORT	vary_length;
-	UCHAR	vary_string[1];
-} *VARY;
+typedef vary* VARY;
 
 typedef struct fmt
 {
@@ -314,7 +310,7 @@ enum blk_t
 
 /* Generalized port definition. */
 
-enum port_t
+enum rem_port_t
 {
 	port_mailbox,		/* Apollo mailbox */
 	port_pcic,			/* IBM PC interconnect */
@@ -359,7 +355,7 @@ public:
 typedef struct port
 {
 	struct blk		port_header;
-	enum port_t		port_type;			/* type of port */
+	enum rem_port_t	port_type;			/* type of port */
 	enum state_t	port_state;			/* state of port */
 	P_ARCH			port_client_arch;	/* so we can tell arch of client */
 	struct port*	port_clients;		/* client ports */

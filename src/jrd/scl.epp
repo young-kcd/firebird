@@ -21,6 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 
+// This MUST be at the top of the file
+#ifdef DARWIN
+#define _STLP_CCTYPE
+#endif
+
+
 #include "firebird.h"
 #include <string.h>
 #include <stdlib.h>
@@ -51,6 +57,7 @@
 #include "../jrd/grant_proto.h"
 #include "../jrd/scl_proto.h"
 #include "../jrd/thd_proto.h"
+#include "../include/fb_exception.h"
 
 #ifdef VMS
 #define UIC_BASE	8
@@ -86,18 +93,18 @@ typedef struct {
 
 static CONST P_NAMES p_names[] =
 {
-	SCL_protect, priv_protect, "protect",
-	SCL_control, priv_control, "control",
-	SCL_delete, priv_delete, "delete",
-	SCL_sql_insert, priv_sql_insert, "insert/write",
-	SCL_sql_update, priv_sql_update, "update/write",
-	SCL_sql_delete, priv_sql_delete, "delete/write",
-	SCL_write, priv_write, "write",
-	SCL_read, priv_read, "read/select",
-	SCL_grant, priv_grant, "grant",
-	SCL_sql_references, priv_sql_references, "references",
-	SCL_execute, priv_execute, "execute",
-	0, 0, ""
+	{ SCL_protect, priv_protect, "protect" },
+	{ SCL_control, priv_control, "control" },
+	{ SCL_delete, priv_delete, "delete" },
+	{ SCL_sql_insert, priv_sql_insert, "insert/write" },
+	{ SCL_sql_update, priv_sql_update, "update/write" },
+	{ SCL_sql_delete, priv_sql_delete, "delete/write" },
+	{ SCL_write, priv_write, "write" },
+	{ SCL_read, priv_read, "read/select" },
+	{ SCL_grant, priv_grant, "grant" },
+	{ SCL_sql_references, priv_sql_references, "references" },
+	{ SCL_execute, priv_execute, "execute" },
+	{ 0, 0, "" }
 };
 
 
@@ -241,15 +248,10 @@ void SCL_check_index( TDBB tdbb, TEXT * index_name, USHORT mask)
 /* set up the setjmp mechanism, so that we can release the request
    in case of error in SCL_check_access */
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-	if (SETJMP(env)) {
-		tdbb->tdbb_setjmp = (UCHAR*) old_env;
-		if (request)
-			CMP_release(tdbb, (REQ) request);
-		LONGJMP(*(JMP_BUF*)&tdbb->tdbb_setjmp, (int) tdbb->tdbb_status_vector[1]);
-	}
-
 
 /* check if the field used in the index has the appropriate
    permission. If the field in question does not have a security class
@@ -279,6 +281,16 @@ void SCL_check_index( TDBB tdbb, TEXT * index_name, USHORT mask)
 	CMP_release(tdbb, (REQ) request);
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}
+	catch (...) {
+		tdbb->tdbb_setjmp = (UCHAR*) old_env;
+		if (request) {
+			CMP_release(tdbb, (REQ) request);
+		}
+//		LONGJMP(*(JMP_BUF*)&tdbb->tdbb_setjmp, (int) tdbb->tdbb_status_vector[1]);
+		Firebird::status_longjmp_error::raise(tdbb->tdbb_status_vector[1]);
+	}
 }
 
 
@@ -446,10 +458,10 @@ SCL SCL_get_class(/* INOUT */ TEXT* string)
 
 /* Class isn't known.  So make up a new security class block */
 
-	s_class = (SCL) ALLOCPV(type_scl, p - name);
+	s_class = new(*dbb->dbb_permanent, p - name) scl();
 	p = name;
 	q = s_class->scl_name;
-	while (*q++ = *p++)
+	while ( (*q++ = *p++) )
 		;
 	s_class->scl_flags = (USHORT) compute_access(tdbb, s_class, (REL)NULL_PTR,
 												 (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
@@ -461,7 +473,7 @@ SCL SCL_get_class(/* INOUT */ TEXT* string)
 		return s_class;
 	}
 
-	ALL_release((FRB) s_class);
+	delete s_class;
 
 	return NULL;
 }
@@ -505,7 +517,7 @@ int SCL_get_mask(CONST TEXT* relation_name, CONST TEXT* field_name)
 		(relation = MET_lookup_relation(tdbb, relation_name)))
 	{
 		MET_scan_relation(tdbb, relation);
-		if (s_class = SCL_get_class(relation->rel_security_name))
+		if ( (s_class = SCL_get_class(relation->rel_security_name)) )
 		{
 			access &= s_class->scl_flags;
 		}
@@ -627,7 +639,7 @@ void SCL_init(BOOLEAN	create,
 	{
 		if (strlen(name) != 0)
 		{
-			for (p = login_name, q = name; *p++ = UPPER7(*q); q++)
+			for (p = login_name, q = name; (*p++ = UPPER7(*q)); q++)
 			{
 				;
 			}
@@ -665,7 +677,7 @@ void SCL_init(BOOLEAN	create,
 
 	length = strlen(name) + strlen(role_name) + strlen(project) +
 		strlen(organization) + 4;	/* for the terminating nulls */
-	tdbb->tdbb_attachment->att_user = user = (USR) ALLOCPV(type_usr, length);
+	tdbb->tdbb_attachment->att_user = user = new(*dbb->dbb_permanent, length) usr();
 	p = user->usr_data;
 	user->usr_user_name = save_string(name, &p);
 	user->usr_project_name = save_string(project, &p);
@@ -816,7 +828,7 @@ void SCL_release( SCL s_class)
 		}
 	}
 
-	ALL_release((FRB) s_class);
+	delete s_class;
 }
 
 
@@ -838,7 +850,7 @@ static BOOLEAN check_hex(CONST TEXT* acl, USHORT number)
 	int n;
 
 	n = 0;
-	if (l = *acl++)
+	if ( (l = *acl++) )
 	{
 		do
 		{
@@ -874,7 +886,7 @@ static BOOLEAN check_number(CONST TEXT* acl, USHORT number)
 	int n;
 
 	n = 0;
-	if (l = *acl++)
+	if ( (l = *acl++) )
 	{
 		do {
 			n = n * UIC_BASE + *acl++ - '0';
@@ -925,21 +937,15 @@ static BOOLEAN check_user_group(CONST TEXT*	acl,
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-	if (SETJMP(env))
-	{
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		if (buffer)
-			ALL_release((FRB) buffer);
-		LONGJMP(*(JMP_BUF*)&tdbb->tdbb_setjmp, (int) tdbb->tdbb_status_vector[1]);
-	}
 
-
-	buffer = (STR) ALLOCPV(type_str, *length_ptr);
+	buffer = new(*dbb->dbb_permanent, *length_ptr) str();
 
 	n = 0;
-	if (l = *acl++)
+	if ( (l = *acl++) )
 	{
 		if (isdigit(*acl))
 		{	/* this is a group id */
@@ -964,8 +970,17 @@ static BOOLEAN check_user_group(CONST TEXT*	acl,
 		}
 	}
 
-	ALL_release((FRB) buffer);
+	delete buffer;
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}
+	catch (...) {
+		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+		delete buffer;
+//		LONGJMP(*(JMP_BUF*)&tdbb->tdbb_setjmp, (int) tdbb->tdbb_status_vector[1]);
+		Firebird::status_longjmp_error::raise(tdbb->tdbb_status_vector[1]);
+	}
+
 	return (n != number);
 }
 
@@ -998,7 +1013,7 @@ static BOOLEAN check_string(CONST TEXT* acl, CONST TEXT* string)
 
 /* JPN: Since Kanji User names are not allowed, No need to fix this UPPER loop. */
 
-	if (l = *acl++)
+	if ( (l = *acl++) )
 	{
 		do {
 			c1 = *acl++;
@@ -1045,18 +1060,13 @@ static SLONG compute_access(TDBB		tdbb,
 
 	privileges = SCL_scanned;
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-	if (SETJMP(env))
-	{
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		if (str_buffer)
-			ALL_release((FRB) str_buffer);
-		LONGJMP(*(JMP_BUF*)&tdbb->tdbb_setjmp, (int) tdbb->tdbb_status_vector[1]);
-	}
 
 /* Get some space that's not off the stack */
-	str_buffer = (STR) ALLOCPV(type_str, BLOB_BUFFER_SIZE);
+	str_buffer = new(*dbb->dbb_permanent, BLOB_BUFFER_SIZE) str();
 	buffer = (TEXT*) str_buffer->str_data;
 
 
@@ -1084,7 +1094,8 @@ static SLONG compute_access(TDBB		tdbb,
 			{
 				ULONG old_offset = (ULONG) (acl - buffer);
 				length += BLOB_BUFFER_SIZE;
-				(void) ALL_extend((BLK *) & str_buffer, length);
+				// TMN: Cast away volatile
+				str::extend(const_cast<str*>(str_buffer), length);
 				buffer = (TEXT*) str_buffer->str_data;
 				acl = buffer + old_offset;
 			}
@@ -1110,9 +1121,18 @@ static SLONG compute_access(TDBB		tdbb,
 		REQUEST(irq_l_security) = request;
 
 
-	ALL_release((FRB) str_buffer);
+	delete str_buffer;
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}
+	catch (...) {
+		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+		delete str_buffer;
+//		LONGJMP(*(JMP_BUF*)&tdbb->tdbb_setjmp, (int) tdbb->tdbb_status_vector[1]);
+		Firebird::status_longjmp_error::raise(tdbb->tdbb_status_vector[1]);
+	}
+
 	return privileges;
 }
 
@@ -1137,7 +1157,7 @@ static TEXT *save_string(TEXT* string, TEXT** ptr)
 
 	start = p = *ptr;
 
-	while (*p++ = *string++)
+	while ( (*p++ = *string++) )
 		;
 
 	*ptr = p;
@@ -1171,7 +1191,7 @@ static SLONG walk_acl(TDBB			tdbb,
 	TEXT		c;
 	TEXT*		p;
 	TEXT*		role_name;
-	BOOLEAN		is_member = FALSE;
+	//BOOLEAN		is_member = FALSE;
 	VOLATILE BLK request;
 	DBB			dbb;
 
@@ -1204,13 +1224,13 @@ static SLONG walk_acl(TDBB			tdbb,
 		return -1 & ~SCL_corrupt;
 	}
 
-	while (c = *acl++)
+	while ( (c = *acl++) )
 	{
 		switch (c)
 		{
 		case ACL_id_list:
 			hit = TRUE;
-			while (c = *acl++)
+			while ( (c = *acl++) )
 			{
 				switch (c)
 				{
@@ -1246,7 +1266,7 @@ static SLONG walk_acl(TDBB			tdbb,
 					{
 						TEXT login_name[129], *p, *q;
 						for (p = login_name, q = user.usr_user_name;
-							 *p++ = UPPER7(*q); q++);
+							 (*p++ = UPPER7(*q)); q++);
 						hit = FALSE;
 						request = (BLK)CMP_find_request(tdbb, irq_get_role_mem,
 												   IRQ_REQUESTS);
@@ -1320,7 +1340,7 @@ static SLONG walk_acl(TDBB			tdbb,
 
 		case ACL_priv_list:
 			if (hit) {
-				while (c = *acl++)
+				while ( (c = *acl++) )
 					switch (c) {
 					case priv_control:
 						privilege |= SCL_control;

@@ -32,12 +32,12 @@ extern "C" {
 #endif
 
 extern USHORT	SQZ_apply_differences(struct rec*, SCHAR*, SCHAR*);
-extern USHORT	SQZ_compress(struct dcc*, const SCHAR*, SCHAR*, int);
-extern USHORT	SQZ_compress_length(struct dcc*, SCHAR*, int);
+extern USHORT	SQZ_compress(class Dcc*, const SCHAR*, SCHAR*, int);
+extern USHORT	SQZ_compress_length(class Dcc*, SCHAR*, int);
 extern SCHAR*	SQZ_decompress(const SCHAR*, USHORT, SCHAR*, const SCHAR*);
 extern USHORT	SQZ_differences(SCHAR*, USHORT, SCHAR*, USHORT, SCHAR*, int);
-extern void		SQZ_fast(struct dcc*, SCHAR*, SCHAR*);
-extern USHORT	SQZ_length(TDBB, SCHAR*, int, struct dcc*);
+extern void		SQZ_fast(class Dcc*, SCHAR*, SCHAR*);
+extern USHORT	SQZ_length(TDBB, SCHAR*, int, class Dcc*);
 
 #ifdef __cplusplus
 } /* extern "C" */

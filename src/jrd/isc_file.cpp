@@ -188,7 +188,11 @@ typedef struct mnt {
 #include <sys/param.h>
 #endif
 
+#ifdef DARWIN
+#include </usr/include/pwd.h>
+#else
 extern struct passwd *getpwnam(), *getpwuid();
+#endif
 #endif	// UNIX
 
 

@@ -597,7 +597,7 @@ static FIL setup_file(
 
 /* Allocate file block and copy file name string */
 
-	file = (FIL) ALLOCPV(type_fil, file_length + 1);
+	file = new(*dbb->dbb_permanent, file_length + 1) fil();
 	file->fil_desc = desc;
 	file->fil_length = file_length;
 	file->fil_max_page = -1;
@@ -612,7 +612,7 @@ static FIL setup_file(
 
 /* Build unique lock string for file and construct lock block */
 
-	dbb->dbb_lock = lock = (LCK) ALLOCPV(type_lck, file_length);
+	dbb->dbb_lock = lock = new(*dbb->dbb_permanent, file_length) lck();
 	lock->lck_type = LCK_database;
 	lock->lck_owner_handle = LCK_get_owner_handle(NULL_TDBB, lock->lck_type);
 	lock->lck_object = (BLK) dbb;

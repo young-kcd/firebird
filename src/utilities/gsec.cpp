@@ -49,10 +49,6 @@
 #include <unistd.h>
 #endif
 
-
-extern "C" {
-
-
 #if defined (WIN95) && !defined (GUI_TOOLS)
 static BOOLEAN fAnsiCP = FALSE;
 #define TRANSLATE_CP(a) if (!fAnsiCP) CharToOem(a, a)
@@ -85,7 +81,6 @@ int output_svc(SLONG, UCHAR *);
 static int output_main(SLONG, UCHAR *);
 
 
-
 #ifdef SUPERSERVER
 int main_gsec( SVC service)
 {
@@ -112,6 +107,7 @@ int main_gsec( SVC service)
 
 	return exit_code;
 }
+
 
 int output_svc( SLONG output_data, UCHAR * output_buf)
 {
@@ -205,8 +201,9 @@ int UTIL_gsec(
 
 	tdsec = (struct tsec *) gds__alloc(sizeof(*tdsec));
 /* NOMEM: return error, FREE: during function exit in the SETJMP */
-	if (tdsec == NULL)
+	if (tdsec == NULL) {
 		EXIT(FINI_ERROR);
+	}
 
 	SET_THREAD_DATA;
 	SVC_PUTSPECIFIC_DATA;
@@ -215,29 +212,13 @@ int UTIL_gsec(
 	tdsec->tsec_user_data =
 		(struct user_data *) gds__alloc(sizeof(*user_data));
 /* NOMEM: return error, FREE: during function exit in the SETJMP */
-	if (tdsec->tsec_user_data == NULL)
+	if (tdsec->tsec_user_data == NULL) {
 		EXIT(FINI_ERROR);
+	}
 
 	memset((void *) tdsec->tsec_user_data, 0, sizeof(*user_data));
 
-	if (SETJMP(env)) {
-		int exit_code;
-
-		/* All calls to EXIT(), normal and error exits, wind up here */
-		SVC_STARTED(tdsec->tsec_service_blk);
-		tdsec->tsec_env = NULL;
-		exit_code = tdsec->tsec_exit_code;
-
-		if (tdsec->tsec_user_data != NULL)
-			gds__free((SLONG *) tdsec->tsec_user_data);
-
-		if (tdsec != NULL)
-			gds__free((SLONG *) tdsec);
-
-		/* All returns occur from this point - even normal returns */
-		return exit_code;
-	}
-
+	try {
 
 /* Perform some special handling when run as an Interbase service.  The
    first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
@@ -390,6 +371,23 @@ int UTIL_gsec(
 	}
 	EXIT(FINI_OK);
 	return 0;					// silence compiler warning
+
+	}	// try
+	catch (...) {
+		/* All calls to EXIT(), normal and error exits, wind up here */
+		SVC_STARTED(tdsec->tsec_service_blk);
+		tdsec->tsec_env = NULL;
+		const int exit_code = tdsec->tsec_exit_code;
+
+		if (tdsec->tsec_user_data != NULL)
+			gds__free((SLONG *) tdsec->tsec_user_data);
+
+		if (tdsec != NULL)
+			gds__free((SLONG *) tdsec);
+
+		/* All returns occur from this point - even normal returns */
+		return exit_code;
+	}
 }
 
 
@@ -1322,5 +1320,3 @@ void UTIL_print_partial(
 	util_output("%s ", buffer);
 }
 
-
-} // extern "C"

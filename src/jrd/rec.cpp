@@ -190,7 +190,7 @@ static void apply_data(DPG page, JRND * record)
 
 /* Process clumps */
 
-	for (clump = NULL; clump = next_clump(record, clump);) {
+	for (clump = NULL; (clump = next_clump(record, clump));) {
 		MOVE_FAST((SCHAR *) clump, (SCHAR *) & temp, JRNP_SIZE);
 
 		if (temp.jrnp_type != JRNP_DATA_SEGMENT)
@@ -286,8 +286,8 @@ static void apply_header(HDR page, JRND * record)
 	JRNDA temp1;
 
 	for (clump = NULL;
-		 clump =
-		 (JRNDH *) next_clump(record, reinterpret_cast < jrnp * >(clump));) {
+		 (clump =
+		 (JRNDH *) next_clump(record, reinterpret_cast < jrnp * >(clump)));) {
 		MOVE_FAST((SCHAR *) clump, (SCHAR *) & temp, JRNDH_SIZE);
 
 		if (temp.jrndh_type == JRNP_DB_HEADER) {
@@ -339,8 +339,8 @@ static void apply_ids(PPG page, JRND * record)
 	SLONG *ptr;
 
 	for (clump = NULL;
-		 clump =
-		 (JRNG *) next_clump(record, reinterpret_cast < jrnp * >(clump));) {
+		 (clump =
+		 (JRNG *) next_clump(record, reinterpret_cast < jrnp * >(clump)));) {
 		MOVE_FAST((SCHAR *) clump, (SCHAR *) & temp, JRNG_SIZE);
 
 		if (temp.jrng_type != JRNP_GENERATOR)
@@ -371,8 +371,8 @@ static void apply_index(BTR page, JRND * record)
 	BTN node, next;
 
 	for (clump = NULL;
-		 clump =
-		 (JRNB *) next_clump(record, reinterpret_cast < jrnp * >(clump));) {
+		 (clump =
+		 (JRNB *) next_clump(record, reinterpret_cast < jrnp * >(clump)));) {
 		MOVE_FAST((SCHAR *) clump, (SCHAR *) & temp, JRNB_SIZE);
 
 		switch (temp.jrnb_type) {
@@ -386,7 +386,7 @@ static void apply_index(BTR page, JRND * record)
 			delta = temp.jrnb_delta;
 			p = (UCHAR *) page + page->btr_length;
 			q = p + delta;
-			if (l = page->btr_length - temp.jrnb_offset)
+			if ( (l = page->btr_length - temp.jrnb_offset) )
 				do
 					*--q = *--p;
 				while (--l);
@@ -396,7 +396,7 @@ static void apply_index(BTR page, JRND * record)
 			p = (UCHAR *) page + temp.jrnb_offset;
 			q = clump->jrnb_data;
 
-			if (l = temp.jrnb_length)
+			if ( (l = temp.jrnb_length) )
 				MOVE_FAST(q, p, l);
 
 			page->btr_length += delta;
@@ -411,7 +411,7 @@ static void apply_index(BTR page, JRND * record)
 			p = (UCHAR *) page;
 			q = (UCHAR *) clump->jrnb_data;
 
-			if (l = temp.jrnb_length)
+			if ( (l = temp.jrnb_length) )
 				MOVE_FAST(q, p, l);
 			break;
 
@@ -442,7 +442,7 @@ static void apply_index(BTR page, JRND * record)
 
 			/* Compute length of rest of bucket and move it down. */
 
-			if (l = page->btr_length - (q - (UCHAR *) page))
+			if ( (l = page->btr_length - (q - (UCHAR *) page)) )
 				do
 					*p++ = *q++;
 				while (--l);
@@ -479,8 +479,8 @@ static void apply_log(LIP page, JRND * record)
 	JRNL temp, *clump;
 
 	for (clump = NULL;
-		 clump =
-		 (JRNL *) next_clump(record, reinterpret_cast < jrnp * >(clump));) {
+		 (clump =
+		 (JRNL *) next_clump(record, reinterpret_cast < jrnp * >(clump)));) {
 		MOVE_FAST((SCHAR *) clump, (SCHAR *) & temp, JRNL_SIZE);
 
 		page->log_flags = temp.jrnl_flags;
@@ -508,8 +508,8 @@ static void apply_pip(PIP page, JRND * record)
 	USHORT byte;
 
 	for (clump = NULL;
-		 clump =
-		 (JRNA *) next_clump(record, reinterpret_cast < jrnp * >(clump));) {
+		 (clump =
+		 (JRNA *) next_clump(record, reinterpret_cast < jrnp * >(clump)));) {
 		MOVE_FAST((SCHAR *) clump, (SCHAR *) & temp, sizeof(struct jrna));
 
 		if (temp.jrna_type != JRNP_PIP)
@@ -542,7 +542,7 @@ static void apply_pointer(PPG page, JRND * record)
 	JRNP temp, *clump;
 	SLONG longword;
 
-	for (clump = NULL; clump = next_clump(record, clump);) {
+	for (clump = NULL; (clump = next_clump(record, clump));) {
 		MOVE_FAST((SCHAR *) clump, (SCHAR *) & temp, JRNP_SIZE);
 
 		if (temp.jrnp_type != JRNP_POINTER_SLOT)
@@ -575,8 +575,8 @@ static void apply_root(IRT page, JRND * record)
 	JRNRP temp, *clump;
 
 	for (clump = NULL;
-		 clump =
-		 (JRNRP *) next_clump(record, reinterpret_cast < jrnp * >(clump));) {
+		 (clump =
+		 (JRNRP *) next_clump(record, reinterpret_cast < jrnp * >(clump)));) {
 		MOVE_FAST((SCHAR *) clump, (SCHAR *) & temp, JRNRP_SIZE);
 
 		if (temp.jrnrp_type != JRNP_ROOT_PAGE)
@@ -1054,7 +1054,7 @@ USHORT activate_shadow, SLONG * timestamp, SLONG page_no, PAG page)
 	else if (!WALRS_handle)
 		ERR_post(gds_wal_failure, 0);
 
-	string = (STR) ALLOCPV(type_str, MAX_WALBUFLEN);
+	string = new(*dbb->dbb_permanent, MAX_WALBUFLEN) str();
 	wal_buff = (UCHAR *) string->str_data;
 
 	while (TRUE) {
@@ -1069,7 +1069,7 @@ USHORT activate_shadow, SLONG * timestamp, SLONG page_no, PAG page)
 		else if (ret_val != SUCCESS) {
 			WALR_close(tdbb->tdbb_status_vector,
 					   reinterpret_cast < walrs ** >(&WALRS_handle));
-			ALL_release(reinterpret_cast < frb * >(string));
+			delete string;
 			ERR_punt();
 		}
 
@@ -1107,5 +1107,5 @@ USHORT activate_shadow, SLONG * timestamp, SLONG page_no, PAG page)
 	WALR_close(tdbb->tdbb_status_vector,
 			   reinterpret_cast < walrs ** >(&WALRS_handle));
 
-	ALL_release(reinterpret_cast < frb * >(string));
+	delete string;
 }

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		val.c
+ *	MODULE:		val.cpp
  *	DESCRIPTION:	Validation and garbage collection
  *
  * The contents of this file are subject to the Interbase Public
@@ -689,7 +689,7 @@ BOOLEAN VAL_validate(TDBB tdbb, USHORT switches)
  *
  **************************************/
 	struct vdr control;
-	PLB val_pool, old_pool;
+	JrdMemoryPool *val_pool, *old_pool;
 	ATT att;
 	USHORT i;
 	DBB dbb;
@@ -701,18 +701,12 @@ BOOLEAN VAL_validate(TDBB tdbb, USHORT switches)
 
 	DEBUG old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-	if (SETJMP(env)) {
-		if (val_pool)
-			ALL_rlpool(val_pool);
-		tdbb->tdbb_default = old_pool;
-		tdbb->tdbb_flags &= ~TDBB_sweeper;
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		return FALSE;
-	}
+
+	try {
 
 	old_pool = tdbb->tdbb_default;
 	val_pool = 0;
-	tdbb->tdbb_default = val_pool = ALL_pool();
+	tdbb->tdbb_default = val_pool = new(*dbb->dbb_permanent) JrdMemoryPool;
 
 	control.vdr_page_bitmap = NULL;
 	control.vdr_flags = 0;
@@ -734,12 +728,11 @@ BOOLEAN VAL_validate(TDBB tdbb, USHORT switches)
 /* initialize validate errors */
 
 	if (!att->att_val_errors) {
-		att->att_val_errors = (VCL) ALLOCPV(type_vcl, VAL_MAX_ERROR);
-		att->att_val_errors->vcl_count = VAL_MAX_ERROR;
+		att->att_val_errors = vcl::newVector(*dbb->dbb_permanent, VAL_MAX_ERROR);
 	}
 	else {
 		for (i = 0; i < VAL_MAX_ERROR; i++)
-			att->att_val_errors->vcl_long[i] = 0;
+			(*att->att_val_errors)[i] = 0;
 	}
 
 	tdbb->tdbb_flags |= TDBB_sweeper;
@@ -750,13 +743,23 @@ BOOLEAN VAL_validate(TDBB tdbb, USHORT switches)
 	garbage_collect(tdbb, &control);
 	CCH_flush(tdbb, (USHORT) FLUSH_FINI, 0);
 
-	ALL_rlpool(val_pool);
+	delete val_pool;
 	tdbb->tdbb_default = old_pool;
 	tdbb->tdbb_flags &= ~TDBB_sweeper;
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}	// try
+	catch (...) {
+		delete val_pool;
+		tdbb->tdbb_default = old_pool;
+		tdbb->tdbb_flags &= ~TDBB_sweeper;
+		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+		return FALSE;
+	}
+
 	return TRUE;
 }
-
+
 static RTN corrupt(TDBB tdbb, VDR control, USHORT err_code, REL relation, ...)
 {
 /**************************************
@@ -778,8 +781,8 @@ static RTN corrupt(TDBB tdbb, VDR control, USHORT err_code, REL relation, ...)
 
 	SET_TDBB(tdbb);
 	att = tdbb->tdbb_attachment;
-	if (err_code < att->att_val_errors->vcl_count)
-		att->att_val_errors->vcl_long[err_code]++;
+	if (err_code < att->att_val_errors->count())
+		(*att->att_val_errors)[err_code]++;
 
 	string = msg_table[err_code];
 
@@ -1097,7 +1100,7 @@ static RTN walk_chain(TDBB tdbb,
 	SLONG page_number;
 	USHORT line_number, delta_flag;
 	dpg::dpg_repeat * line;
-	USHORT counter = 0;
+	//USHORT counter = 0;
 
 	SET_TDBB(tdbb);
 
@@ -1172,12 +1175,12 @@ static void walk_database(TDBB tdbb, VDR control)
 	(void) walk_tip(tdbb, control, page->hdr_next_transaction);
 	walk_generators(tdbb, control);
 
-	for (i = 0; (vector = dbb->dbb_relations) && i < vector->vec_count; i++) {
+	for (i = 0; (vector = dbb->dbb_relations) && i < vector->count(); i++) {
 #ifdef VAL_VERBOSE
 		if (i >= 32 /* rel_MAX */ )
 			VAL_debug_level = 2;
 #endif
-		if (relation = (REL) vector->vec_object[i])
+		if ( (relation = (REL) (*vector)[i]) )
 			(void) walk_relation(tdbb, control, relation);
 	}
 
@@ -1331,14 +1334,14 @@ static void walk_generators(TDBB tdbb, VDR control)
 	WIN window;
 	VCL vector;
 	PPG page;
-	SLONG *ptr, *end;
+	vcl::iterator ptr, end;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	if (vector = dbb->dbb_gen_id_pages)
-		for (ptr = vector->vcl_long, end = ptr + vector->vcl_count; ptr < end;
+	if ( (vector = dbb->dbb_gen_id_pages) )
+		for (ptr = vector->begin(), end = vector->end(); ptr < end;
 			 ptr++)
 			if (*ptr) {
 #ifdef VAL_VERBOSE
@@ -1670,13 +1673,13 @@ static RTN walk_pointer_page(	TDBB	tdbb,
 
 	VCL vector = relation->rel_pages;
 
-	if (!vector || sequence >= static_cast<int>(vector->vcl_count)) {
+	if (!vector || sequence >= static_cast<int>(vector->count())) {
 		return corrupt(tdbb, control, VAL_P_PAGE_LOST, relation, sequence);
 	}
 
 	fetch_page(	tdbb,
 				control,
-				vector->vcl_long[sequence],
+				(*vector)[sequence],
 				pag_pointer,
 				&window,
 				&page);
@@ -1685,7 +1688,7 @@ static RTN walk_pointer_page(	TDBB	tdbb,
 	if (VAL_debug_level)
 		ib_fprintf(ib_stdout,
 				   "walk_pointer_page: page %d relation %d sequence %d\n",
-				   vector->vcl_long[sequence], relation->rel_id, sequence);
+				   (*vector)[sequence], relation->rel_id, sequence);
 #endif
 
 /* Give the page a quick once over */
@@ -1718,8 +1721,8 @@ static RTN walk_pointer_page(	TDBB	tdbb,
 
 /* Make sure the "next" pointer agrees with the pages relation */
 
-	if (++sequence >= static_cast<int>(vector->vcl_count) ||
-		(page->ppg_next && page->ppg_next != vector->vcl_long[sequence]))
+	if (++sequence >= static_cast<int>(vector->count()) ||
+		(page->ppg_next && page->ppg_next != (*vector)[sequence]))
 	{
 		CCH_RELEASE(tdbb, &window);
 		return corrupt(	tdbb,
@@ -1878,7 +1881,8 @@ static RTN walk_record(TDBB tdbb,
 
 	return rtn_ok;
 }
-
+
+
 static RTN walk_relation(TDBB tdbb, VDR control, REL relation)
 {
 /**************************************
@@ -1891,35 +1895,12 @@ static RTN walk_relation(TDBB tdbb, VDR control, REL relation)
  *	Walk all pages associated with a given relation.
  *
  **************************************/
-	int *old_env, ret;
-	JMP_BUF env;
-	SLONG sequence;
 
 	SET_TDBB(tdbb);
 
-	old_env = (int *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
+	try {
 
-/* If we get an error for any reason, at least say where we were */
-
-	ret = SETJMP(env);
-
-	if (ret) {
-		TEXT s[64], *msg;
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		msg = (relation->rel_name) ?
-			(TEXT*)"bugcheck during scan of table %d (%s)" :
-			(TEXT*)"bugcheck during scan of table %d";
-		sprintf(s, msg, relation->rel_id, relation->rel_name);
-		gds__log(s);
-#ifdef VAL_VERBOSE
-		if (VAL_debug_level)
-			ib_fprintf(ib_stdout, "LOG:\t%s\n", s);
-#endif
-		ERR_punt();
-	}
-
-/* If relation hasn't been scanned, do so now */
+	// If relation hasn't been scanned, do so now
 
 	if (!(relation->rel_flags & REL_scanned) ||
 		(relation->rel_flags & REL_being_scanned))
@@ -1935,7 +1916,6 @@ static RTN walk_relation(TDBB tdbb, VDR control, REL relation)
 /* If it's a view or external file, skip this */
 
 	if (relation->rel_view_rse || relation->rel_file) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		return rtn_ok;
 	}
 
@@ -1947,23 +1927,21 @@ static RTN walk_relation(TDBB tdbb, VDR control, REL relation)
 		control->vdr_rel_chain_counter = 0;
 		SBM_reset(&control->vdr_rel_records);
 	}
-	for (sequence = 0; TRUE; sequence++) {
+	for (SLONG sequence = 0; TRUE; sequence++) {
 		RTN result;
 		result = walk_pointer_page(tdbb, control, relation, sequence);
-		if (result == rtn_eof)
+		if (result == rtn_eof) {
 			break;
+		}
 		if (result != rtn_ok) {
-			tdbb->tdbb_setjmp = (UCHAR *) old_env;
 			return result;
 		}
-	};
+	}
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
-/* Walk indices for the relation */
+	// Walk indices for the relation
 	(void) walk_root(tdbb, control, relation);
 
-/* See if the counts of backversions match */
+	// See if the counts of backversions match
 	if (control && (control->vdr_flags & vdr_records) &&
 		(control->vdr_rel_backversion_counter !=
 		 control->vdr_rel_chain_counter))
@@ -1976,9 +1954,25 @@ static RTN walk_relation(TDBB tdbb, VDR control, REL relation)
 						control-> vdr_rel_chain_counter);
 	}
 
+	}	// try
+	catch (...) {
+		TEXT s[64];
+		TEXT* msg = (relation->rel_name) ?
+			(TEXT*)"bugcheck during scan of table %d (%s)" :
+			(TEXT*)"bugcheck during scan of table %d";
+		sprintf(s, msg, relation->rel_id, relation->rel_name);
+		gds__log(s);
+#ifdef VAL_VERBOSE
+		if (VAL_debug_level)
+			ib_fprintf(ib_stdout, "LOG:\t%s\n", s);
+#endif
+		ERR_punt();
+	}
+
 	return rtn_ok;
 }
-
+
+
 static RTN walk_root(TDBB tdbb, VDR control, REL relation)
 {
 /**************************************
@@ -2007,7 +2001,7 @@ static RTN walk_root(TDBB tdbb, VDR control, REL relation)
 			   &page);
 
 	for (i = 0; i < page->irt_count; i++)
-		if (page_number = page->irt_rpt[i].irt_root)
+		if ( (page_number = page->irt_rpt[i].irt_root) )
 			(void) walk_index(tdbb, control, relation, page_number, i);
 
 	CCH_RELEASE(tdbb, &window);
@@ -2045,7 +2039,7 @@ static RTN walk_tip(TDBB tdbb, VDR control, SLONG transaction)
 	pages = transaction / dbb->dbb_pcontrol->pgc_tpt;
 
 	for (sequence = 0; sequence <= pages; sequence++) {
-		if (!vector->vcl_long[sequence] || sequence >= vector->vcl_count) {
+		if (!(*vector)[sequence] || sequence >= vector->count()) {
 			corrupt(tdbb, control, VAL_TIP_LOST_SEQUENCE, 0, sequence);
 			if (!(control->vdr_flags & vdr_repair))
 				continue;
@@ -2054,7 +2048,7 @@ static RTN walk_tip(TDBB tdbb, VDR control, SLONG transaction)
 		}
 		fetch_page(	tdbb,
 					control,
-					vector->vcl_long[sequence],
+					(*vector)[sequence],
 					pag_transactions,
 					&window,
 					&page);
@@ -2062,9 +2056,9 @@ static RTN walk_tip(TDBB tdbb, VDR control, SLONG transaction)
 #ifdef VAL_VERBOSE
 		if (VAL_debug_level)
 			ib_fprintf(ib_stdout, "walk_tip: page %d next %d\n",
-					   vector->vcl_long[sequence], page->tip_next);
+					   (*vector)[sequence], page->tip_next);
 #endif
-		if (page->tip_next && page->tip_next != vector->vcl_long[sequence + 1])
+		if (page->tip_next && page->tip_next != (*vector)[sequence + 1])
 		{
 			corrupt(tdbb, control, VAL_TIP_CONFUSED, 0, sequence);
 		}

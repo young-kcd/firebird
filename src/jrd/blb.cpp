@@ -24,7 +24,7 @@
  *                         readonly databases.
  */
 /*
-$Id: blb.cpp,v 1.4 2001-07-29 17:42:21 skywalker Exp $
+$Id: blb.cpp,v 1.5 2001-12-24 02:50:50 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -62,9 +62,6 @@ $Id: blb.cpp,v 1.4 2001-07-29 17:42:21 skywalker Exp $
 #include "../jrd/pag_proto.h"
 #include "../jrd/sdl_proto.h"
 #include "../jrd/thd_proto.h"
-
-
-//extern "C" {
 
 
 #define STREAM          (blob->blb_flags & BLB_stream)
@@ -113,7 +110,7 @@ void BLB_cancel(TDBB tdbb, BLB blob)
 }
 
 
-void BLB_close(TDBB tdbb, BLB blob)
+void BLB_close(TDBB tdbb, class blb* blob)
 {
 /**************************************
  *
@@ -223,9 +220,9 @@ BLB BLB_create2(TDBB tdbb,
 		if (to_charset == CS_dynamic)
 			to_charset = tdbb->tdbb_attachment->att_charset;
 		if ((to_charset != CS_NONE) && (from_charset != to_charset)) {
-			filter = (BLF) ALLOCP(type_blf);
+			filter = new(*dbb->dbb_permanent) blf();
 			filter->blf_filter =
-				reinterpret_cast < STATUS (*) (USHORT, CTL) > (filter_transliterate_text);
+				reinterpret_cast<STATUS (*)(USHORT, CTL)>(filter_transliterate_text);
 			filter_required = TRUE;
 		}
 	}
@@ -291,7 +288,7 @@ void BLB_garbage_collect(
  **************************************/
 	LLS stack1, stack2;
 	REC rec1, rec2;
-	DSC *desc, desc1, desc2;
+	DSC desc1, desc2;
 	FMT format;
 	BID blob, blob2;
 	USHORT id;
@@ -307,9 +304,9 @@ void BLB_garbage_collect(
 
 		/* Look for active blob records */
 
-		for (id = 0, desc = format->fmt_desc; id < format->fmt_count;
-			 id++, desc++) {
-			if (!DTYPE_IS_BLOB(desc->dsc_dtype)
+		for (id = 0; id < format->fmt_count;
+			 id++) {
+			if (!DTYPE_IS_BLOB(format->fmt_desc[id].dsc_dtype)
 				|| !EVL_field(0, rec1, id, &desc1))
 				continue;
 			blob = (BID) desc1.dsc_address;
@@ -375,7 +372,7 @@ BLB BLB_get_array(TDBB tdbb, TRA transaction, BID blob_id, ADS desc)
 	BLB_get_segment(tdbb, blob, reinterpret_cast < UCHAR * >(desc),
 					sizeof(struct ads));
 
-	if (n = desc->ads_length - sizeof(struct ads))
+	if ( (n = desc->ads_length - sizeof(struct ads)) )
 		BLB_get_segment(tdbb, blob, (UCHAR *) desc + sizeof(struct ads), n);
 
 	return blob;
@@ -461,9 +458,9 @@ USHORT BLB_get_segment(TDBB tdbb,
 
 	if (blob->blb_filter) {
 		blob->blb_fragment_size = 0;
-		if (status =
+		if ( (status =
 			BLF_get_segment(tdbb, &blob->blb_filter, &length, buffer_length,
-							segment)) {
+							segment)) ) {
 			if (status == gds_segstr_eof)
 				blob->blb_flags |= BLB_eof;
 			else if (status == gds_segment)
@@ -647,8 +644,10 @@ SLONG BLB_get_slice(TDBB tdbb,
 	struct sdl_info info;
 	struct slice arg;
 	JMP_BUF env, *old_env;
+        DBB dbb;
 
 	SET_TDBB(tdbb);
+        dbb = GET_DBB;
 	tdbb->tdbb_default = transaction->tra_pool;
 
 /* Checkout slice description language */
@@ -664,7 +663,7 @@ SLONG BLB_get_slice(TDBB tdbb,
 
 /* Get someplace to put data */
 
-	data = (UCHAR *) ALL_malloc(desc->ads_total_length, ERR_jmp);
+	data = (UCHAR*) dbb->dbb_permanent->allocate(desc->ads_total_length);
 
 /* zero out memory, so that it does not have to be done for
    each element */
@@ -678,11 +677,7 @@ SLONG BLB_get_slice(TDBB tdbb,
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
 
-	if (SETJMP(env)) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		ALL_free(reinterpret_cast < char *>(data));
-		ERR_punt();
-	}
+	try {
 
 /* If we know something about the subscript bounds, prepare
    to fetch only stuff we really care about */
@@ -728,10 +723,18 @@ SLONG BLB_get_slice(TDBB tdbb,
 					  reinterpret_cast < struct slice *>(&arg));
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-	ALL_free(reinterpret_cast < char *>(data));
+	MemoryPool::deallocate(data);
 
-	if (status)
+	if (status) {
 		ERR_punt();
+	}
+
+	}	// try
+	catch (...) {
+		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+		MemoryPool::deallocate(data);
+		ERR_punt();
+	}
 
 	return (SLONG) (arg.slice_count * arg.slice_element_length);
 }
@@ -774,6 +777,9 @@ SLONG BLB_lseek(BLB blob, USHORT mode, SLONG offset)
 
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
+
+extern "C" {
+
 void DLL_EXPORT BLB_map_blobs(TDBB tdbb, BLB old_blob, BLB new_blob)
 {
 /**************************************
@@ -798,14 +804,17 @@ void DLL_EXPORT BLB_map_blobs(TDBB tdbb, BLB old_blob, BLB new_blob)
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	new_map = (MAP) ALLOCP(type_map);
+	new_map = new(*dbb->dbb_permanent) map();
 	new_map->map_old_blob = old_blob;
 	new_map->map_new_blob = new_blob;
 
 	new_map->map_next = dbb->dbb_blob_map;
 	dbb->dbb_blob_map = new_map;
 }
-#endif
+
+}	// extern "C"
+
+#endif	// REPLAY_OSRI_API_CALLS_SUBSYSTEM
 
 
 void BLB_move(TDBB tdbb, DSC * from_desc, DSC * to_desc, NOD field)
@@ -918,7 +927,7 @@ void BLB_move(TDBB tdbb, DSC * from_desc, DSC * to_desc, NOD field)
 				}
 
 		if (!blob ||
-			blob->blb_header.blk_type != (UCHAR) type_blb ||
+			MemoryPool::blk_type(blob) != type_blb ||
 			blob->blb_attachment != tdbb->tdbb_attachment ||
 			!(blob->blb_flags & BLB_closed) ||
 			(blob->blb_request && blob->blb_request != request))
@@ -981,7 +990,6 @@ BLB BLB_open2(TDBB tdbb,
  **************************************/
 	DBB dbb;
 	BLB blob, new_;
-	VEC vector;
 	VCL new_pages, pages;
 	CTL control;
 	SSHORT from, to;
@@ -1023,7 +1031,7 @@ BLB BLB_open2(TDBB tdbb,
 		if (to_charset == CS_dynamic)
 			to_charset = tdbb->tdbb_attachment->att_charset;
 		if ((to_charset != CS_NONE) && (from_charset != to_charset)) {
-			filter = (BLF) ALLOCP(type_blf);
+			filter = new(*dbb->dbb_permanent) blf();
 			filter->blf_filter =
 				reinterpret_cast < STATUS (*) (USHORT, CTL) > (filter_transliterate_text);
 			filter_required = TRUE;
@@ -1083,12 +1091,10 @@ BLB BLB_open2(TDBB tdbb,
 			blob->blb_max_segment = new_->blb_max_segment;
 			blob->blb_level = new_->blb_level;
 			blob->blb_flags = new_->blb_flags & BLB_stream;
-			if (pages = new_->blb_pages) {
-				blob->blb_pages = new_pages =
-					(VCL) ALLOCTV(type_vcl, pages->vcl_count);
-				new_pages->vcl_count = pages->vcl_count;
-				MOVE_FAST(pages->vcl_long, new_pages->vcl_long,
-						  sizeof(pages->vcl_long[0]) * pages->vcl_count);
+			pages = new_->blb_pages;
+			if (pages) {
+				new_pages = vcl::newVector(*transaction->tra_pool, *pages);
+				blob->blb_pages = new_pages;
 			}
 			if (blob->blb_level == 0) {
 				blob->blb_space_remaining =
@@ -1105,12 +1111,14 @@ BLB BLB_open2(TDBB tdbb,
    know about the relation, the blob id has got to be invalid
    anyway. */
 
-	vector = dbb->dbb_relations;
+	VEC vector = dbb->dbb_relations;
 
-	if (blob_id->bid_relation_id >= vector->vec_count ||
+	if (blob_id->bid_relation_id >= vector->count() ||
 		!(blob->blb_relation =
-		  (REL) vector->vec_object[blob_id->bid_relation_id]))
+		  reinterpret_cast<rel*>( (*vector)[blob_id->bid_relation_id]) ) )
+	{
 			ERR_post(gds_bad_segstr_id, 0);
+	}
 
 	DPM_get_blob(tdbb, blob, blob_id->bid_stuff.bid_number, FALSE, (SLONG) 0);
 
@@ -1196,7 +1204,7 @@ void BLB_put_segment(TDBB tdbb, BLB blob, UCHAR* seg, USHORT segment_length)
 		TRA transaction;
 
 		transaction = blob->blb_transaction;
-		blob->blb_pages = (VCL) ALLOCTV(type_vcl, blob->blb_max_pages);
+		blob->blb_pages = vcl::newVector(*transaction->tra_pool, blob->blb_max_pages+1);
 		l = dbb->dbb_page_size - BLP_SIZE;
 		blob->blb_space_remaining += l - blob->blb_clump_size;
 		blob->blb_clump_size = l;
@@ -1439,16 +1447,16 @@ void BLB_release_array(ARR array)
 	ARR *ptr;
 
 	if (array->arr_data)
-		ALL_free(reinterpret_cast < char *>(array->arr_data));
+		MemoryPool::deallocate(array->arr_data);
 
-	if (transaction = array->arr_transaction)
+	if ( (transaction = array->arr_transaction) )
 		for (ptr = &transaction->tra_arrays; *ptr; ptr = &(*ptr)->arr_next)
 			if (*ptr == array) {
 				*ptr = array->arr_next;
 				break;
 			}
 
-	ALL_release(reinterpret_cast < frb * >(array));
+	delete array;
 }
 
 
@@ -1486,7 +1494,7 @@ void BLB_scalar(
 		desc.dsc_address = (UCHAR *) temp;
 	} else {
 		temp_str =
-			(STR) ALLOCDV(type_str, desc.dsc_length + DOUBLE_ALIGN - 1);
+			new(*tdbb->tdbb_default, desc.dsc_length + DOUBLE_ALIGN - 1) str;
 		desc.dsc_address =
 			(UCHAR *) FB_ALIGN((U_IPTR) temp_str->str_data, DOUBLE_ALIGN);
 	}
@@ -1498,7 +1506,7 @@ void BLB_scalar(
 	if (number < 0) {
 		BLB_close(tdbb, blob);
 		if (desc.dsc_address != (UCHAR *) temp)
-			ALL_release(reinterpret_cast < frb * >(temp_str));
+			delete temp_str;
 		ERR_punt();
 	}
 
@@ -1514,7 +1522,7 @@ void BLB_scalar(
 	EVL_make_value(tdbb, &desc, value);
 	BLB_close(tdbb, blob);
 	if (desc.dsc_address != (UCHAR *) temp)
-		ALL_release(reinterpret_cast < frb * >(temp_str));
+		delete temp_str;
 }
 
 
@@ -1532,11 +1540,14 @@ static ARR alloc_array(TRA transaction, ADS proto_desc)
  **************************************/
 	ARR array;
 	USHORT n;
+ 	DBB dbb;
+
+	dbb = GET_DBB;
 
 /* Compute size and allocate block */
 
 	n = MAX(proto_desc->ads_struct_count, proto_desc->ads_dimensions);
-	array = (ARR) ALLOCTV(type_arr, n);
+	array = new(*transaction->tra_pool, n) arr();
 
 /* Copy prototype descriptor */
 
@@ -1551,7 +1562,7 @@ static ARR alloc_array(TRA transaction, ADS proto_desc)
 /* Allocate large block to hold array */
 
 	array->arr_data =
-		(UCHAR *) ALL_malloc(array->arr_desc.ads_total_length, ERR_jmp);
+		(UCHAR*) dbb->dbb_permanent->allocate(array->arr_desc.ads_total_length);
 
 	return array;
 }
@@ -1577,7 +1588,7 @@ static BLB allocate_blob(TDBB tdbb, TRA transaction)
 
 /* Create a blob large enough to hold a single data page */
 
-	blob = (BLB) ALLOCTV(type_blb, dbb->dbb_page_size);
+	blob = new(*transaction->tra_pool, dbb->dbb_page_size) blb();
 	blob->blb_attachment = tdbb->tdbb_attachment;
 	blob->blb_next = transaction->tra_blobs;
 	transaction->tra_blobs = blob;
@@ -1609,8 +1620,6 @@ static STATUS blob_filter(
  *      Filter of last resort for filtered blob access handled by Y-valve.
  *
  **************************************/
-	USHORT length;
-	VCL vector;
 	BLB blob;
 	TRA transaction;
 	SLONG *blob_id;
@@ -1670,13 +1679,10 @@ static STATUS blob_filter(
 		return SUCCESS;
 
 	case ACTION_alloc:
-		length = ROUNDUP(sizeof(struct ctl), sizeof(SLONG));
-		vector = (VCL) ALLOCTV(type_vcl, length);
-		return (STATUS) (vector->vcl_long);
+		return (STATUS) new(*transaction->tra_pool) ctl();
 
 	case ACTION_free:
-		vector = (VCL) ((UCHAR *) control - OFFSETA(VCL, vcl_long));
-		ALL_release(reinterpret_cast < frb * >(vector));
+		delete control;
 		return SUCCESS;
 
 	case ACTION_seek:
@@ -1721,7 +1727,7 @@ static void check_BID_validity(BLB blob, TDBB tdbb)
  **************************************/
 
 	if (!blob ||
-		blob->blb_header.blk_type != (UCHAR) type_blb ||
+		MemoryPool::blk_type(blob) != type_blb ||
 		blob->blb_attachment != tdbb->tdbb_attachment ||
 		blob->blb_level > 2 || !(blob->blb_flags & BLB_temporary))
 
@@ -1772,7 +1778,7 @@ static BLB copy_blob(TDBB tdbb, BID source, REL relation, BID destination)
 #endif
 
 	{
-		string = (STR) ALLOCDV(type_str, input->blb_max_segment);
+		string = new(*tdbb->tdbb_default, input->blb_max_segment) str();
 		buff = (UCHAR *) string->str_data;
 	}
 	else {
@@ -1788,7 +1794,7 @@ static BLB copy_blob(TDBB tdbb, BID source, REL relation, BID destination)
 	}
 
 	if (string)
-		ALL_release(reinterpret_cast < frb * >(string));
+		delete string;
 
 #ifdef STACK_REDUCTION
 	gds__free((SLONG *) buffer);
@@ -1820,7 +1826,8 @@ static void delete_blob(TDBB tdbb, BLB blob, ULONG prior_page)
 	VCL vector;
 	WIN window;
 	BLP page;
-	SLONG *ptr, *end, *ptr2, *end2;
+	vcl::iterator ptr, end;
+	SLONG *ptr2, *end2;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -1837,8 +1844,8 @@ static void delete_blob(TDBB tdbb, BLB blob, ULONG prior_page)
 /* Level 1 blobs just need the root page level released */
 
 	vector = blob->blb_pages;
-	ptr = vector->vcl_long;
-	end = ptr + vector->vcl_count;
+	ptr = vector->begin();
+	end = vector->end();
 
 	if (blob->blb_level == 1) {
 		for (; ptr < end; ptr++)
@@ -1855,7 +1862,7 @@ static void delete_blob(TDBB tdbb, BLB blob, ULONG prior_page)
 	window.win_scans = 1;
 
 	for (; ptr < end; ptr++)
-		if (window.win_page = *ptr) {
+		if ( (window.win_page = *ptr) ) {
 			page = (BLP) CCH_FETCH(tdbb, &window, LCK_read, pag_blob);
 			MOVE_FASTER(page, blob->blb_data, dbb->dbb_page_size);
 			CCH_RELEASE_TAIL(tdbb, &window);
@@ -2026,12 +2033,12 @@ static BLP get_next_page(TDBB tdbb, BLB blob, WIN * window)
 			CCH_PREFETCH(tdbb, pages, i);
 		}
 #endif
-		window->win_page = vector->vcl_long[blob->blb_sequence];
+		window->win_page = (*vector)[blob->blb_sequence];
 		page = (BLP) CCH_FETCH(tdbb, window, LCK_read, pag_blob);
 	}
 	else {
 		window->win_page =
-			vector->vcl_long[blob->blb_sequence / blob->blb_pointers];
+			(*vector)[blob->blb_sequence / blob->blb_pointers];
 		page = (BLP) CCH_FETCH(tdbb, window, LCK_read, pag_blob);
 #ifdef SUPERSERVER_V2
 		/* Perform prefetch of blob level 2 data pages. */
@@ -2169,9 +2176,7 @@ static void insert_page(TDBB tdbb, BLB blob)
 		   the vector. */
 
 		if (blob->blb_sequence < blob->blb_max_pages) {
-			vector->vcl_long[blob->blb_sequence] = page_number;
-			if (blob->blb_sequence >= vector->vcl_count)
-				vector->vcl_count = blob->blb_sequence + 1;
+			(*vector)[blob->blb_sequence] = page_number;
 			return;
 		}
 
@@ -2182,10 +2187,10 @@ static void insert_page(TDBB tdbb, BLB blob)
 		page->blp_header.pag_flags = blp_pointers;
 		page->blp_header.pag_type = pag_blob;
 		page->blp_lead_page = blob->blb_lead_page;
-		page->blp_length = vector->vcl_count << SHIFTLONG;
-		MOVE_FASTER(vector->vcl_long, page->blp_page, page->blp_length);
-		vector->vcl_long[0] = window.win_page;
-		vector->vcl_count = 1;
+		page->blp_length = vector->count() << SHIFTLONG;
+		MOVE_FASTER(vector->memPtr(), page->blp_page, page->blp_length);
+		vector->clear();
+		(*vector)[0] = window.win_page;
 		CCH_RELEASE(tdbb, &window);
 	}
 
@@ -2194,8 +2199,8 @@ static void insert_page(TDBB tdbb, BLB blob)
 
 	l = blob->blb_sequence / blob->blb_pointers;
 
-	if (l < vector->vcl_count) {
-		window.win_page = vector->vcl_long[l];
+	if (l < vector->count()) {
+		window.win_page = (*vector)[l];
 		window.win_flags = 0;
 		page = (BLP) CCH_FETCH(tdbb, &window, LCK_write, pag_blob);
 	}
@@ -2204,8 +2209,7 @@ static void insert_page(TDBB tdbb, BLB blob)
 		page->blp_header.pag_flags = blp_pointers;
 		page->blp_header.pag_type = pag_blob;
 		page->blp_lead_page = blob->blb_lead_page;
-		vector->vcl_count = l + 1;
-		vector->vcl_long[l] = window.win_page;
+		(*vector)[l] = window.win_page;
 	}
 
 	CCH_precedence(tdbb, &window, page_number);
@@ -2246,12 +2250,12 @@ static void release_blob(BLB blob, USHORT purge_flag)
 			}
 
 	if (blob->blb_pages) {
-		ALL_release(reinterpret_cast < frb * >(blob->blb_pages));
+		delete blob->blb_pages;
 		blob->blb_pages = NULL;
 	}
 
 	if (purge_flag)
-		ALL_release(reinterpret_cast < frb * >(blob));
+		delete blob;
 }
 
 
@@ -2316,7 +2320,7 @@ static void slice_callback(SLICE arg, ULONG count, DSC * descriptors)
 			tdbb = GET_THREAD_DATA;
 
 			tmp_len = array_desc->dsc_length;
-			tmp_buffer = (STR) ALLOCDV(type_str, tmp_len);
+			tmp_buffer = new(*tdbb->tdbb_default, tmp_len) str();
 			len = MOV_make_string(slice_desc,
 								  INTL_TEXT_TYPE(*array_desc),
 								  &p,
@@ -2324,7 +2328,7 @@ static void slice_callback(SLICE arg, ULONG count, DSC * descriptors)
 								  vary * >(tmp_buffer->str_data), tmp_len);
 			MOVE_FAST(&len, array_desc->dsc_address, sizeof(USHORT));
 			MOVE_FAST(p, array_desc->dsc_address + sizeof(USHORT), (int) len);
-			ALL_release(reinterpret_cast < frb * >(tmp_buffer));
+			delete tmp_buffer;
 		}
 		else
 			MOV_move(slice_desc, array_desc);
@@ -2363,7 +2367,7 @@ static void slice_callback(SLICE arg, ULONG count, DSC * descriptors)
 				MOV_move(array_desc, slice_desc);
 			++arg->slice_count;
 		}
-		else if (l = slice_desc->dsc_length)
+		else if ( (l = slice_desc->dsc_length) )
 			memset(slice_desc->dsc_address, 0, l);
 	}
 
@@ -2421,5 +2425,3 @@ static BLB store_array(TDBB tdbb, TRA transaction, BID blob_id)
 	return blob;
 }
 
-
-//} // extern "C"

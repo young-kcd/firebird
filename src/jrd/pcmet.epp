@@ -136,7 +136,7 @@ int PCMET_expression_index(
 				   for the expression index */
 
 				default_pool = tdbb->tdbb_default;
-				tdbb->tdbb_default = new_pool = ALL_pool();
+				tdbb->tdbb_default = new_pool = ALL_pool(&jrd_alloc_info);
 				MET_scan_relation(tdbb, relation);
 
 				if (!IDX.RDB$EXPRESSION_BLR.NULL)
@@ -249,7 +249,7 @@ void PCMET_lookup_index( REL relation, IDX * idx)
 		   with the index block in the "permanent" metadata cache */
 
 		old_pool = tdbb->tdbb_default;
-		tdbb->tdbb_default = ALL_pool();
+		tdbb->tdbb_default = ALL_pool(&jrd_alloc_info);
 		idx->idx_expression =
 			MET_parse_blob(tdbb, relation, &IDX.RDB$EXPRESSION_BLR, &csb,
 						   &idx->idx_expression_request, FALSE, FALSE);

@@ -434,7 +434,7 @@ typedef SLONG HANDLE;
 /* Block types */
 
 #ifndef INCLUDE_FB_BLK
-#include "../include/fb_blk.h"
+#include "../include/old_fb_blk.h"
 #endif
 
 #define type_rdb	10

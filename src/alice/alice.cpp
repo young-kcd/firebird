@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.4 2001-07-29 23:43:20 skywalker Exp $
+//	$Id: alice.cpp,v 1.5 2001-12-24 02:50:47 tamlin Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -71,10 +71,6 @@
 #include <io.h>
 #endif
 
-
-#ifndef MAXPATHLEN
-#define MAXPATHLEN	1024
-#endif
 
 static USHORT val_err_table[] = {
 	0,
@@ -232,38 +228,8 @@ int DLL_EXPORT ALICE_gfix(
 	tdgbl->output_data = output_data;
 	tdgbl->ALICE_permanent_pool = NULL;
 	tdgbl->ALICE_default_pool = NULL;
-	tdgbl->pools = NULL;
 
-	if (SETJMP(env)) {
-		int exit_code;
-
-		/* All calls to EXIT(), normal and error exits, wind up here */
-
-		SVC_STARTED(tdgbl->service_blk);
-		tdgbl->alice_env = NULL;
-		exit_code = tdgbl->exit_code;
-
-		/* Close the status output file */
-		if (tdgbl->sw_redirect == TRUE && tdgbl->output_file != NULL) {
-			ib_fclose(tdgbl->output_file);
-			tdgbl->output_file = NULL;
-		}
-
-		/* Free all unfreed memory used by Gfix itself */
-		ALLA_fini();
-
-		RESTORE_THREAD_DATA;
-		if (tdgbl != NULL) {
-			gds__free((SLONG *) tdgbl);
-		}
-#if defined(DEBUG_GDS_ALLOC) && !defined(SUPERSERVER)
-		gds_alloc_report(0, __FILE__, __LINE__);
-#endif
-
-		/* All returns occur from this point - even normal returns */
-		return exit_code;
-	}
-
+	try {
 
 #ifdef VMS
 	argc = VMS_parse(&argv, argc);
@@ -333,10 +299,13 @@ int DLL_EXPORT ALICE_gfix(
 	database = NULL;
 	argv++;
 
-	while (--argc > 0) {
-		if ((*argv)[0] != '-') {
-			if (database)
+	while (--argc > 0)
+	{
+		if ((*argv)[0] != '-')
+		{
+			if (database) {
 				ALICE_error(1, database, 0, 0, 0, 0);	/* msg 1: "data base file name (%s) already given", */
+			}
 			database = *argv++;
 
 #if defined (WIN95) && !defined (GUI_TOOLS)
@@ -576,6 +545,38 @@ int DLL_EXPORT ALICE_gfix(
 		ALICE_print_status(tdgbl->status);
 
 	EXIT(FINI_OK);
+
+	}	// try
+	catch (...)
+	{
+		int exit_code;
+
+		/* All calls to EXIT(), normal and error exits, wind up here */
+
+		SVC_STARTED(tdgbl->service_blk);
+		tdgbl->alice_env = NULL;
+		exit_code = tdgbl->exit_code;
+
+		/* Close the status output file */
+		if (tdgbl->sw_redirect == TRUE && tdgbl->output_file != NULL) {
+			ib_fclose(tdgbl->output_file);
+			tdgbl->output_file = NULL;
+		}
+
+		/* Free all unfreed memory used by Gfix itself */
+		ALLA_fini();
+
+		RESTORE_THREAD_DATA;
+		if (tdgbl != NULL) {
+			gds__free((SLONG *) tdgbl);
+		}
+#if defined(DEBUG_GDS_ALLOC) && !defined(SUPERSERVER)
+		gds_alloc_report(0, __FILE__, __LINE__);
+#endif
+
+		/* All returns occur from this point - even normal returns */
+		return exit_code;
+	}	// catch
 
 	return 0;					// compiler silencer
 }

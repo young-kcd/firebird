@@ -26,28 +26,21 @@
 
 #include "../dsql/sym.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-struct nod *MAKE_constant(struct str *, int);
-struct nod *MAKE_str_constant(struct str *, SSHORT);
-struct str *MAKE_cstring(CONST SCHAR *);
-void MAKE_desc(struct dsc *, struct nod *);
-void MAKE_desc_from_field(struct dsc *, struct fld *);
-struct nod *MAKE_field(struct ctx *, struct fld *, struct nod *);
-struct nod *MAKE_list(struct lls *);
-struct nod *MAKE_node(ENUM nod_t, int);
-struct par *MAKE_parameter(struct msg *, USHORT, USHORT);
-struct str *MAKE_string(CONST UCHAR *, int);
-struct sym *MAKE_symbol(struct dbb *, CONST TEXT *, USHORT,
-						   ENUM sym_type, struct req *);
-struct str *MAKE_tagged_string(CONST UCHAR *, int, CONST TEXT *);
-struct nod *MAKE_variable(struct fld *, CONST TEXT *, USHORT, USHORT,
+struct nod* MAKE_constant(class str* , int);
+struct nod* MAKE_str_constant(class str* , SSHORT);
+class str* MAKE_cstring(CONST SCHAR*);
+void MAKE_desc(struct dsc* , struct nod*);
+void MAKE_desc_from_field(struct dsc* , class fld*);
+struct nod* MAKE_field(class ctx* , class fld* , struct nod*);
+struct nod* MAKE_list(class dsql_lls*);
+struct nod* MAKE_node(ENUM nod_t, int);
+class par* MAKE_parameter(class msg* , USHORT, USHORT);
+class str* MAKE_string(CONST UCHAR* , int);
+struct sym* MAKE_symbol(class dbb* , CONST TEXT* , USHORT,
+						   ENUM sym_type, class req*);
+class str* MAKE_tagged_string(CONST UCHAR* , int, CONST TEXT*);
+struct nod* MAKE_variable(class fld* , CONST TEXT* , USHORT, USHORT,
 								 USHORT, USHORT);
 
-#ifdef __cplusplus
-}	/* extern "C" */
-#endif
 
 #endif /* _DSQL_MAKE_PROTO_H_ */

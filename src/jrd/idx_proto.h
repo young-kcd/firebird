@@ -32,7 +32,7 @@
 extern "C" {
 #endif
 
-extern void IDX_check_access(TDBB, struct csb *, struct rel *, struct rel *,
+extern void IDX_check_access(TDBB, class Csb *, struct rel *, struct rel *,
 							 struct fld *);
 extern void IDX_create_index(TDBB, struct rel *, struct idx *, UCHAR *,
 							 USHORT *, struct tra *, float *);

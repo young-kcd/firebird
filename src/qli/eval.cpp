@@ -41,11 +41,6 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"
 
-typedef struct vary {
-	USHORT vary_length;
-	TEXT vary_string[1];
-} VARY;
-
 extern USHORT QLI_prompt_count, QLI_reprompt;
 extern USHORT sw_forms;
 

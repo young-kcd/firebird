@@ -82,7 +82,7 @@ static void bump_count(TDBB, USHORT, REL);
 static void check_class(TDBB, TRA, RPB *, RPB *, USHORT);
 static void check_control(TDBB);
 static BOOLEAN check_user(TDBB, DSC *);
-static void delete_(TDBB, RPB *, SLONG, struct plb *);
+static void delete_(TDBB, RPB *, SLONG, JrdMemoryPool *);
 static UCHAR *delete_tail(TDBB, RPB *, SLONG, UCHAR *, UCHAR *);
 static void expunge(TDBB, RPB *, TRA, SLONG);
 static void garbage_collect(TDBB, RPB *, SLONG, LLS);
@@ -164,7 +164,7 @@ void VIO_backout(TDBB tdbb, RPB * rpb, TRA transaction)
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES)
-		ib_printf("VIO_backout (rpb %d, transaction %d)\n", rpb->rpb_number,
+		ib_printf("VIO_backout (rpb %"SLONGFORMAT", transaction %"SLONGFORMAT")\n", rpb->rpb_number,
 				  transaction ? transaction->tra_number : 0);
 #endif
 
@@ -186,7 +186,7 @@ void VIO_backout(TDBB tdbb, RPB * rpb, TRA transaction)
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES_INFO)
 		ib_printf
-			("   record  %d:%d, rpb_trans %d, flags %d, back %d:%d, fragment %d:%d\n",
+			("   record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 			 temp.rpb_page, temp.rpb_line, temp.rpb_transaction,
 			 temp.rpb_flags, temp.rpb_b_page, temp.rpb_b_line,
 			 temp.rpb_f_page, temp.rpb_f_line);
@@ -342,7 +342,7 @@ void VIO_backout(TDBB tdbb, RPB * rpb, TRA transaction)
 		LLS_POP(&going);
 
 	while (staying)
-		ALL_release(reinterpret_cast < frb * >(LLS_POP(&staying)));
+		delete LLS_POP(&staying);
 
 /* Return relation garbage collect record blocks to vector. */
 
@@ -385,12 +385,12 @@ int VIO_chase_record_version(
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL)
 		ib_printf
-			("VIO_chase_record_version (rpb %d, transaction %d, pool %d)\n",
+			("VIO_chase_record_version (rpb %"SLONGFORMAT", transaction %"SLONGFORMAT", pool %p)\n",
 			 rpb->rpb_number, transaction ? transaction->tra_number : 0,
-			 pool ? ((PLB) pool)->plb_pool_id : 0);
+			 pool );
 	if (debug_flag > DEBUG_TRACE_ALL_INFO)
 		ib_printf
-			("   record  %d:%d, rpb_trans %d, flags %d, back %d:%d, fragment %d:%d\n",
+			("   record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
@@ -440,7 +440,7 @@ int VIO_chase_record_version(
 #ifdef VIO_DEBUG
 		if (debug_flag > DEBUG_READS_INFO)
 			ib_printf
-				("   chase record  %d:%d, rpb_trans %d, flags %d, back %d:%d, fragment %d:%d\n",
+				("   chase record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 				 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction,
 				 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 				 rpb->rpb_f_page, rpb->rpb_f_line);
@@ -521,7 +521,7 @@ int VIO_chase_record_version(
 #ifdef VIO_DEBUG
 			if (debug_flag > DEBUG_READS_INFO)
 				ib_printf
-					("    record's transaction (%d) is dead (my TID - %d)\n",
+					("    record's transaction (%"SLONGFORMAT") is dead (my TID - %"SLONGFORMAT")\n",
 					 rpb->rpb_transaction, transaction->tra_number);
 #endif
 #ifdef GARBAGE_THREAD
@@ -591,7 +591,7 @@ int VIO_chase_record_version(
 #ifdef VIO_DEBUG
 			if (debug_flag > DEBUG_READS_INFO)
 				ib_printf
-					("    record's transaction (%d) is in limbo (my TID - %d)\n",
+					("    record's transaction (%"SLONGFORMAT") is in limbo (my TID - %"SLONGFORMAT")\n",
 					 rpb->rpb_transaction, transaction->tra_number);
 #endif
 
@@ -605,7 +605,7 @@ int VIO_chase_record_version(
 #ifdef VIO_DEBUG
 			if ((debug_flag > DEBUG_READS_INFO) && (state == tra_active))
 				ib_printf
-					("    record's transaction (%d) is active (my TID - %d)\n",
+					("    record's transaction (%"SLONGFORMAT") is active (my TID - %"SLONGFORMAT")\n",
 					 rpb->rpb_transaction, transaction->tra_number);
 #endif
 
@@ -691,7 +691,7 @@ int VIO_chase_record_version(
 #ifdef VIO_DEBUG
 			if (debug_flag > DEBUG_READS_INFO)
 				ib_printf
-					("    record's transaction (%d) is us (my TID - %d)\n",
+					("    record's transaction (%"SLONGFORMAT") is us (my TID - %"SLONGFORMAT")\n",
 					 rpb->rpb_transaction, transaction->tra_number);
 
 #endif
@@ -708,7 +708,7 @@ int VIO_chase_record_version(
 #ifdef VIO_DEBUG
 			if (debug_flag > DEBUG_READS_INFO)
 				ib_printf
-					("    record's transaction (%d) is committed (my TID - %d)\n",
+					("    record's transaction (%"SLONGFORMAT") is committed (my TID - %"SLONGFORMAT")\n",
 					 rpb->rpb_transaction, transaction->tra_number);
 
 #endif
@@ -902,13 +902,13 @@ void VIO_data(TDBB tdbb, register RPB * rpb, BLK pool)
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_READS)
 	{
-		ib_printf("VIO_data (rpb %d, pool %d)\n",
+		ib_printf("VIO_data (rpb %"SLONGFORMAT", pool %p)\n",
 					rpb->rpb_number,
-					pool ? ((PLB) pool)->plb_pool_id : 0);
+					pool);
 	}
 	if (debug_flag > DEBUG_READS_INFO)
 	{
-		ib_printf("   record  %d:%d, rpb_trans %d, flags %d, back %d:%d, fragment %d:%d\n",
+		ib_printf("   record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 				 rpb->rpb_page, rpb->rpb_line,
 				 rpb->rpb_transaction,
 				 rpb->rpb_flags,
@@ -921,7 +921,7 @@ void VIO_data(TDBB tdbb, register RPB * rpb, BLK pool)
    the format block and set up the record block.  This is a performance
    optimization. */
 
-	REC record = VIO_record(tdbb, rpb, 0, reinterpret_cast < plb * >(pool));
+	REC record = VIO_record(tdbb, rpb, 0, (JrdMemoryPool*) pool);
 	FMT format = record->rec_format;
 
 /* If the record is a delta version, start with data from prior record. */
@@ -1034,12 +1034,12 @@ void VIO_erase(TDBB tdbb, RPB * rpb, TRA transaction)
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES)
 	{
-		ib_printf("VIO_erase (rpb %d, transaction %d)\n", rpb->rpb_number,
+		ib_printf("VIO_erase (rpb %"SLONGFORMAT", transaction %"SLONGFORMAT")\n", rpb->rpb_number,
 				  transaction->tra_number);
 	}
 	if (debug_flag > DEBUG_WRITES_INFO)
 	{
-		ib_printf("   record  %d:%d, rpb_trans %d, flags %d, back %d:%d, fragment %d:%d\n",
+		ib_printf("   record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
@@ -1138,7 +1138,7 @@ void VIO_erase(TDBB tdbb, RPB * rpb, TRA transaction)
 			EVL_field(0, rpb->rpb_record, f_idx_relation, &desc);
 			SCL_check_relation(&desc, SCL_control);
 			EVL_field(0, rpb->rpb_record, f_idx_id, &desc2);
-			if (id = MOV_get_long(&desc2, 0)) {
+			if ( (id = MOV_get_long(&desc2, 0)) ) {
 				if (EVL_field(0, rpb->rpb_record, f_idx_exp_blr, &desc2))
 				{
 					DFW_post_work(transaction, dfw_delete_expression_index,
@@ -1157,7 +1157,7 @@ void VIO_erase(TDBB tdbb, RPB * rpb, TRA transaction)
 			DFW_post_work(transaction, dfw_update_format, &desc, 0);
 			EVL_field(0, rpb->rpb_record, f_rfr_fname, &desc2);
 			MOV_get_metadata_ptr(&desc, &relation_name);
-			if (r2 = MET_lookup_relation(tdbb, relation_name))
+			if ( (r2 = MET_lookup_relation(tdbb, relation_name)) )
 			{
 				DFW_post_work(transaction, dfw_delete_rfr, &desc2,
 							  r2->rel_id);
@@ -1171,7 +1171,7 @@ void VIO_erase(TDBB tdbb, RPB * rpb, TRA transaction)
 			SCL_check_procedure(&desc, SCL_control);
 			EVL_field(0, rpb->rpb_record, f_prm_name, &desc2);
 			MOV_get_metadata_ptr(&desc, &procedure_name);
-			if (procedure = MET_lookup_procedure(tdbb, procedure_name))
+			if ( (procedure = MET_lookup_procedure(tdbb, procedure_name)) )
 			{
 				DFW_post_work(transaction, dfw_delete_prm, &desc2,
 							  procedure->prc_id);
@@ -1236,6 +1236,8 @@ void VIO_erase(TDBB tdbb, RPB * rpb, TRA transaction)
 		case rel_log:
 			DFW_post_work(transaction, dfw_delete_log, 0, 0);
 			break;
+                default:    /* Shut up compiler warnings */
+                        break;
 		}
 	}
 
@@ -1372,12 +1374,12 @@ int VIO_garbage_collect(TDBB tdbb, RPB * rpb, TRA transaction)
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE)
 	{
-		ib_printf("VIO_garbage_collect (rpb %d, transaction %d)\n",
+		ib_printf("VIO_garbage_collect (rpb %"SLONGFORMAT", transaction %"SLONGFORMAT")\n",
 				  rpb->rpb_number, transaction ? transaction->tra_number : 0);
 	}
 	if (debug_flag > DEBUG_TRACE_INFO)
 	{
-		ib_printf("   record  %d:%d, rpb_trans %d, flags %d, back %d:%d, fragment %d:%d\n",
+		ib_printf("   record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
@@ -1475,7 +1477,8 @@ REC VIO_gc_record(TDBB tdbb, REL relation)
  **************************************/
 	DBB dbb;
 	VEC vector;
-	REC record, *rec_ptr, *end;
+	REC record;
+	vec::iterator rec_ptr, end;
 	RPB rpb;
 	USHORT slot;
 
@@ -1490,15 +1493,15 @@ REC VIO_gc_record(TDBB tdbb, REL relation)
 /* Allocate a vector of garbage collect record blocks for relation. */
 
 	if (!(vector = relation->rel_gc_rec)) {
-		vector = ALL_vector(dbb->dbb_permanent, &relation->rel_gc_rec, 0);
+		vector = relation->rel_gc_rec = vec::newVector(*dbb->dbb_permanent, 1);
 	}
 
 /* Set the active flag on an inactive garbage collect record block
    and return it. */
 
-	for (rec_ptr = (REC *) vector->vec_object, end =
-		 rec_ptr + vector->vec_count; rec_ptr < end; rec_ptr++)
-		if ((record = *rec_ptr) && !(record->rec_flags & REC_gc_active)) {
+	for (rec_ptr = vector->begin(), end =
+		 vector->end(); rec_ptr != end; ++rec_ptr)
+		if ((record = *(REC*)rec_ptr) && !(record->rec_flags & REC_gc_active)) {
 			record->rec_flags |= REC_gc_active;
 /*	V4_MUTEX_UNLOCK (&relation->rel_mutex); */
 			return record;
@@ -1514,11 +1517,10 @@ REC VIO_gc_record(TDBB tdbb, REL relation)
 
 /* Insert the new record block into the last slot of the vector. */
 
-	slot = vector->vec_count - 1;
-	if (vector->vec_object[slot])
-		vector =
-			ALL_vector(dbb->dbb_permanent, &relation->rel_gc_rec, ++slot);
-	vector->vec_object[slot] = (BLK) record;
+	slot = vector->count() - 1;
+	if ((*vector)[slot])
+		vector->resize((++slot) + 1);
+	(*vector)[slot] = (BLK) record;
 
 /* V4_MUTEX_UNLOCK (&relation->rel_mutex); */
 	return record;
@@ -1543,9 +1545,9 @@ int VIO_get(TDBB tdbb, RPB * rpb, RSB rsb, TRA transaction, BLK pool)
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_READS)
-		ib_printf("VIO_get (rpb %d, transaction %d, pool %d)\n",
+		ib_printf("VIO_get (rpb %"SLONGFORMAT", transaction %d, pool %p)\n",
 				  rpb->rpb_number, transaction ? transaction->tra_number : 0,
-				  pool ? ((PLB) pool)->plb_pool_id : 0);
+				  pool);
 #endif
 
 /* Fetch data page from a modify/erase input stream with a write
@@ -1566,7 +1568,7 @@ int VIO_get(TDBB tdbb, RPB * rpb, RSB rsb, TRA transaction, BLK pool)
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_READS_INFO)
 		ib_printf
-			("   record  %d:%d, rpb_trans %d, flags %d, back %d:%d, fragment %d:%d\n",
+			("   record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
@@ -1609,9 +1611,9 @@ int VIO_get_current(
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE)
-		ib_printf("VIO_get_current (rpb %d, transaction %d, pool %d)\n",
+		ib_printf("VIO_get_current (rpb %"SLONGFORMAT", transaction %d, pool %p)\n",
 				  rpb->rpb_number, transaction ? transaction->tra_number : 0,
-				  pool ? ((PLB) pool)->plb_pool_id : 0);
+				  pool );
 #endif
 
 	while (TRUE) {
@@ -1623,7 +1625,7 @@ int VIO_get_current(
 #ifdef VIO_DEBUG
 		if (debug_flag > DEBUG_TRACE_INFO)
 			ib_printf
-				("   record  %d:%d, rpb_trans %d, flags %d, back %d:%d, fragment %d:%d\n",
+				("   record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 				 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction,
 				 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 				 rpb->rpb_f_page, rpb->rpb_f_line);
@@ -1852,12 +1854,12 @@ void VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, TRA transaction)
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES)
-		ib_printf("VIO_modify (org_rpb %d, new_rpb %d, transaction %d)\n",
+		ib_printf("VIO_modify (org_rpb %"SLONGFORMAT", new_rpb %"SLONGFORMAT", transaction %d)\n",
 				  org_rpb->rpb_number, new_rpb->rpb_number,
 				  transaction ? transaction->tra_number : 0);
 	if (debug_flag > DEBUG_WRITES_INFO)
 		ib_printf
-			("   old record  %d:%d, rpb_trans %d, flags %d, back %d:%d, fragment %d:%d\n",
+			("   old record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 			 org_rpb->rpb_page, org_rpb->rpb_line, org_rpb->rpb_transaction,
 			 org_rpb->rpb_flags, org_rpb->rpb_b_page, org_rpb->rpb_b_line,
 			 org_rpb->rpb_f_page, org_rpb->rpb_f_line);
@@ -1978,6 +1980,8 @@ void VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, TRA transaction)
 			EVL_field(0, org_rpb->rpb_record, f_trg_name, &desc1);
 			DFW_post_work(transaction, dfw_modify_trigger, &desc1, 0);
 			break;
+                default:
+                        break;
 		}
 
 /* We're almost ready to go.  To modify the record, we must first
@@ -2058,12 +2062,12 @@ BOOLEAN VIO_next_record(TDBB tdbb,
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE)
-		ib_printf("VIO_next_record (rpb %d, transaction %d, pool %d)\n",
+		ib_printf("VIO_next_record (rpb %"SLONGFORMAT", transaction %d, pool %p)\n",
 				  rpb->rpb_number, transaction ? transaction->tra_number : 0,
-				  pool ? ((PLB) pool)->plb_pool_id : 0);
+				  pool);
 	if (debug_flag > DEBUG_TRACE_INFO)
 		ib_printf
-			("   record  %d:%d, rpb_trans %d, flags %d, back %d:%d, fragment %d:%d\n",
+			("   record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
@@ -2085,7 +2089,7 @@ BOOLEAN VIO_next_record(TDBB tdbb,
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_READS_INFO)
 		ib_printf
-			("VIO_next_record got record  %d:%d, rpb_trans %d, flags %d, back %d:%d, fragment %d:%d\n",
+			("VIO_next_record got record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
@@ -2097,7 +2101,7 @@ BOOLEAN VIO_next_record(TDBB tdbb,
 }
 
 
-REC VIO_record(TDBB tdbb, register RPB * rpb, FMT format, struct plb * pool)
+REC VIO_record(TDBB tdbb, register RPB * rpb, FMT format, JrdMemoryPool *pool)
 {
 /**************************************
  *
@@ -2118,9 +2122,9 @@ REC VIO_record(TDBB tdbb, register RPB * rpb, FMT format, struct plb * pool)
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE)
-		ib_printf("VIO_record (rpb %d, format %d, pool %d)\n",
+		ib_printf("VIO_record (rpb %"SLONGFORMAT", format %d, pool %p)\n",
 				  rpb->rpb_number, format ? format->fmt_version : 0,
-				  pool ? ((PLB) pool)->plb_pool_id : 0);
+				  pool);
 #endif
 
 /* If format wasn't given, look one up */
@@ -2131,8 +2135,7 @@ REC VIO_record(TDBB tdbb, register RPB * rpb, FMT format, struct plb * pool)
 	if (!(record = rpb->rpb_record)) {
 		if (!pool)
 			pool = dbb->dbb_permanent;
-		record = rpb->rpb_record =
-			(REC) ALL_alloc(pool, type_rec, format->fmt_length, ERR_jmp);
+		record = rpb->rpb_record = new(*pool, format->fmt_length) rec;
 		record->rec_length = format->fmt_length;
 	}
 	else if (record->rec_length < format->fmt_length) {
@@ -2142,10 +2145,12 @@ REC VIO_record(TDBB tdbb, register RPB * rpb, FMT format, struct plb * pool)
 				replace_gc_record(rpb->rpb_relation, &rpb->rpb_record,
 								  format->fmt_length);
 		else
-			record =
-				(REC) ALL_extend(reinterpret_cast <
-								 blk ** >(&rpb->rpb_record),
-								 format->fmt_length);
+		{
+			record = new(*MemoryPool::blk_pool(record), format->fmt_length) rec;
+			memcpy(record, rpb->rpb_record, sizeof(rec) + sizeof(SCHAR)*rpb->rpb_record->rec_length);
+			delete rpb->rpb_record;
+			rpb->rpb_record = record;
+		}
 
 		record->rec_length = format->fmt_length;
 		if (rpb->rpb_prior == old)
@@ -2179,10 +2184,10 @@ void VIO_start_save_point(TDBB tdbb, TRA transaction)
 
 	SET_TDBB(tdbb);
 
-	if (sav_point = transaction->tra_save_free)
+	if ( (sav_point = transaction->tra_save_free) )
 		transaction->tra_save_free = sav_point->sav_next;
 	else
-		sav_point = (SAV) ALLOCT(type_sav);
+		sav_point = new(*transaction->tra_pool) sav();
 
 	sav_point->sav_number = ++transaction->tra_save_point_number;
 	sav_point->sav_next = transaction->tra_save_point;
@@ -2212,7 +2217,7 @@ void VIO_store(TDBB tdbb, RPB * rpb, TRA transaction)
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES)
-		ib_printf("VIO_store (rpb %d, transaction %d)\n", rpb->rpb_number,
+		ib_printf("VIO_store (rpb %"SLONGFORMAT", transaction %d)\n", rpb->rpb_number,
 				  transaction ? transaction->tra_number : 0);
 #endif
 
@@ -2299,6 +2304,8 @@ void VIO_store(TDBB tdbb, RPB * rpb, TRA transaction)
 		case rel_log:
 			DFW_post_work(transaction, dfw_create_log, 0, 0);
 			break;
+                default:    /* Shut up compiler warnings */
+                    break;
 		}
 
 	rpb->rpb_b_page = 0;
@@ -2312,7 +2319,7 @@ void VIO_store(TDBB tdbb, RPB * rpb, TRA transaction)
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES_INFO)
 		ib_printf
-			("   record  %d:%d, rpb_trans %d, flags %d, back %d:%d, fragment %d:%d\n",
+			("   record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
@@ -2370,21 +2377,11 @@ BOOLEAN VIO_sweep(TDBB tdbb, TRA transaction)
 
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-	if (SETJMP(env)) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		if (rpb.rpb_record)
-			ALL_release(reinterpret_cast < frb * >(rpb.rpb_record));
-		if (relation) {
-			if (relation->rel_sweep_count)
-				--relation->rel_sweep_count;
-			if (relation->rel_scan_count)
-				--relation->rel_scan_count;
-		}
-		ERR_punt();
-	}
 
-	for (i = 1; (vector = dbb->dbb_relations) && i < vector->vec_count; i++)
-		if ((relation = (REL) vector->vec_object[i]) && relation->rel_pages &&
+	try {
+
+	for (i = 1; (vector = dbb->dbb_relations) && i < vector->count(); i++)
+		if ((relation = (REL) (*vector)[i]) && relation->rel_pages &&
 			!(relation->rel_flags & (REL_deleted | REL_deleting))) {
 			rpb.rpb_relation = relation;
 			rpb.rpb_number = -1;
@@ -2406,8 +2403,25 @@ BOOLEAN VIO_sweep(TDBB tdbb, TRA transaction)
 		}
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-	if (rpb.rpb_record)
-		ALL_release(reinterpret_cast < frb * >(rpb.rpb_record));
+	if (rpb.rpb_record) {
+		delete rpb.rpb_record;
+	}
+
+	}	// try
+	catch (...) {
+		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+		delete rpb.rpb_record;
+		if (relation)
+		{
+			if (relation->rel_sweep_count) {
+				--relation->rel_sweep_count;
+			}
+			if (relation->rel_scan_count) {
+				--relation->rel_scan_count;
+			}
+		}
+		ERR_punt();
+	}
 	return TRUE;
 }
 
@@ -2442,7 +2456,7 @@ void VIO_verb_cleanup(TDBB tdbb, TRA transaction)
 	LLS stack;
 	SAV sav_point;
 	BOOLEAN same_tx = FALSE;
-	struct plb *old_pool;
+	JrdMemoryPool *old_pool;
 	SLONG savep_size;
 
 	SET_TDBB(tdbb);
@@ -2497,7 +2511,7 @@ void VIO_verb_cleanup(TDBB tdbb, TRA transaction)
 		}
 	}
 
-	while (action = sav_point->sav_verb_actions) {
+	while ( (action = sav_point->sav_verb_actions) ) {
 		sav_point->sav_verb_actions = action->vct_next;
 		relation = action->vct_relation;
 		if (sav_point->sav_verb_count || transaction->tra_save_point) {
@@ -2643,14 +2657,13 @@ void VIO_verb_cleanup(TDBB tdbb, TRA transaction)
 			}
 
 			if (rpb.rpb_record)
-				ALL_release(reinterpret_cast < frb * >(rpb.rpb_record));
+				delete rpb.rpb_record;
 		}
 		SBM_reset(&action->vct_records);
 		SBM_reset(&action->vct_undo);
 
 		while (action->vct_data)
-			ALL_release(reinterpret_cast <
-						frb * >(LLS_POP(&action->vct_data)));
+			delete LLS_POP(&action->vct_data);
 
 		action->vct_next = sav_point->sav_verb_free;
 		sav_point->sav_verb_free = action;
@@ -2765,15 +2778,10 @@ static void bump_count(TDBB tdbb, USHORT count_id, REL relation)
 	relation_id = relation->rel_id;
 	ptr = tdbb->tdbb_attachment->att_counts + count_id;
 
-	if (!(vector = *ptr) || relation_id >= vector->vcl_count)
-		vector =
-			reinterpret_cast <
-			vcl *
-			>(ALL_vector
-			  (dbb->dbb_permanent, reinterpret_cast < vec ** >(ptr),
-			   relation_id));
+	if (!(vector = *ptr) || relation_id >= vector->count())
+		vector = *ptr = vcl::newVector(*dbb->dbb_permanent, relation_id + 1);
 
-	++vector->vcl_long[relation_id];
+	++((*vector)[relation_id]);
 }
 
 
@@ -2868,7 +2876,7 @@ static BOOLEAN check_user(TDBB tdbb, DSC * desc)
 }
 
 
-static void delete_(TDBB tdbb, RPB * rpb, SLONG prior_page, struct plb *pool)
+static void delete_(TDBB tdbb, RPB * rpb, SLONG prior_page, JrdMemoryPool *pool)
 {
 /**************************************
  *
@@ -2891,12 +2899,12 @@ static void delete_(TDBB tdbb, RPB * rpb, SLONG prior_page, struct plb *pool)
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES)
-		ib_printf("delete_ (rpb %d, prior_page %ld, pool %d)\n",
+		ib_printf("delete_ (rpb %"SLONGFORMAT", prior_page %ld, pool %p)\n",
 				  rpb->rpb_number, prior_page,
-				  (pool) ? pool->plb_pool_id : 0);
+				  pool);
 	if (debug_flag > DEBUG_WRITES_INFO)
 		ib_printf
-			("   delete_ record  %d:%d, rpb_trans %d, flags %d, back %d:%d, fragment %d:%d\n",
+			("   delete_ record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
@@ -2907,7 +2915,7 @@ static void delete_(TDBB tdbb, RPB * rpb, SLONG prior_page, struct plb *pool)
 	}
 	else {
 		record = VIO_record(tdbb, rpb, 0, pool);
-		if (prior = rpb->rpb_prior) {
+		if ( (prior = rpb->rpb_prior) ) {
 			tail = differences;
 			tail_end = differences + sizeof(differences);
 			if (prior != record)
@@ -2960,11 +2968,11 @@ static UCHAR *delete_tail(
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES)
 		ib_printf
-			("delete_tail (rpb %d, prior_page %ld, tail %x, tail_end %x)\n",
+			("delete_tail (rpb %"SLONGFORMAT", prior_page %ld, tail %x, tail_end %x)\n",
 			 rpb->rpb_number, prior_page, tail, tail_end);
 	if (debug_flag > DEBUG_WRITES_INFO)
 		ib_printf
-			("   tail of record  %d:%d, rpb_trans %d, flags %d, back %d:%d, fragment %d:%d\n",
+			("   tail of record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
@@ -3016,7 +3024,7 @@ static void expunge(TDBB tdbb, RPB * rpb, TRA transaction, SLONG prior_page)
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES)
-		ib_printf("expunge (rpb %d, transaction %d, prior_page %d)\n",
+		ib_printf("expunge (rpb %"SLONGFORMAT", transaction %d, prior_page %"SLONGFORMAT")\n",
 				  rpb->rpb_number, transaction ? transaction->tra_number : 0,
 				  prior_page);
 #endif
@@ -3031,7 +3039,7 @@ static void expunge(TDBB tdbb, RPB * rpb, TRA transaction, SLONG prior_page)
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES_INFO)
 		ib_printf
-			("   expunge record  %d:%d, rpb_trans %d, flags %d, back %d:%d, fragment %d:%d\n",
+			("   expunge record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
@@ -3086,11 +3094,11 @@ static void garbage_collect(
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES)
-		ib_printf("garbage_collect (rpb %d, prior_page %d, staying)\n",
+		ib_printf("garbage_collect (rpb %"SLONGFORMAT", prior_page %"SLONGFORMAT", staying)\n",
 				  rpb->rpb_number, prior_page);
 	if (debug_flag > DEBUG_WRITES_INFO)
 		ib_printf
-			("   record  %d:%d, rpb_trans %d, flags %d, back %d:%d, fragment %d:%d\n",
+			("   record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
@@ -3123,7 +3131,7 @@ static void garbage_collect(
 	IDX_garbage_collect(tdbb, rpb, going, staying);
 
 	while (going)
-		ALL_release(reinterpret_cast < frb * >(LLS_POP(&going)));
+		delete LLS_POP(&going);
 }
 
 
@@ -3170,7 +3178,7 @@ static void garbage_collect_idx(
 	LLS_POP(&going);
 
 	while (staying)
-		ALL_release(reinterpret_cast < frb * >(LLS_POP(&staying)));
+		delete LLS_POP(&staying);
 }
 
 
@@ -3227,13 +3235,11 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
 
 /* Surrender if resources to start up aren't available. */
 
-	if (SETJMP(env)) {
-		goto gc_exit;
-	}
+	try {
 
 /* Pseudo attachment needed for lock owner identification. */
 
-	tdbb->tdbb_attachment = (ATT) ALLOCP(type_att);
+	tdbb->tdbb_attachment = new(*dbb->dbb_permanent) att();
 	tdbb->tdbb_attachment->att_database = dbb;
 	tdbb->tdbb_attachment->att_flags = ATT_garbage_collector;
 
@@ -3246,13 +3252,12 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
 	dbb->dbb_flags |= DBB_garbage_collector;
 	ISC_event_post(gc_event);
 
-	if (SETJMP(env)) {
-		/* Perfunctory error reporting -- got any better ideas ? */
-
-		gds__log_status(dbb->dbb_file->fil_string, status_vector);
-		if (relation && relation->rel_sweep_count)
-			--relation->rel_sweep_count;
+	}	// try
+	catch (...) {
+		goto gc_exit;
 	}
+
+	try {
 
 /* Initialize status vector after logging error. */
 
@@ -3261,7 +3266,8 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
 /* The garbage collector flag is cleared to request the thread
    to finish up and exit. */
 
-	while (dbb->dbb_flags & DBB_garbage_collector) {
+	while (dbb->dbb_flags & DBB_garbage_collector)
+	{
 		count = ISC_event_clear(gc_event);
 		dbb->dbb_flags |= DBB_gc_active;
 		found = FALSE;
@@ -3304,9 +3310,9 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
 		   Express interest in the relation to prevent it from being deleted
 		   out from under us while garbage collection is in-progress. */
 
-		for (id = 0; (vector = dbb->dbb_relations) && id < vector->vec_count;
+		for (id = 0; (vector = dbb->dbb_relations) && id < vector->count();
 			 id++)
-			if ((relation = (REL) vector->vec_object[id])
+			if ((relation = (REL) (*vector)[id])
 				&& relation->rel_gc_bitmap != 0
 				&& !(relation->rel_flags & (REL_deleted | REL_deleting))) {
 				++relation->rel_sweep_count;
@@ -3422,15 +3428,15 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
 		}
 	}
 
-  gc_exit:
+gc_exit:
 
 	if (rpb.rpb_record)
-		ALL_release(reinterpret_cast < frb * >(rpb.rpb_record));	/* Possibly allocated from permanent pool. */
+		delete rpb.rpb_record;	/* Possibly allocated from permanent pool. */
 	if (transaction)
 		TRA_commit(tdbb, transaction, FALSE);
 	if (tdbb->tdbb_attachment) {
 		LCK_fini(tdbb, LCK_OWNER_attachment);
-		ALL_release(reinterpret_cast < frb * >(tdbb->tdbb_attachment));
+		delete tdbb->tdbb_attachment;
 	}
 	dbb->dbb_flags &=
 		~(DBB_garbage_collector | DBB_gc_active | DBB_gc_pending);
@@ -3439,6 +3445,16 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
 	RESTORE_THREAD_DATA;
 
 	THREAD_EXIT;
+
+	}	// try
+	catch (...) {
+		/* Perfunctory error reporting -- got any better ideas ? */
+
+		gds__log_status(dbb->dbb_file->fil_string, status_vector);
+		if (relation && relation->rel_sweep_count) {
+			--relation->rel_sweep_count;
+		}
+	}
 }
 #endif
 
@@ -3458,10 +3474,10 @@ static SAV get_free_save_point_block(TRA transaction)
  **************************************/
 	SAV sav_point;
 
-	if (sav_point = transaction->tra_save_free)
+	if ( (sav_point = transaction->tra_save_free) )
 		transaction->tra_save_free = sav_point->sav_next;
 	else
-		sav_point = (SAV) ALLOCT(type_sav);
+		sav_point = new(*transaction->tra_pool) sav();
 
 	return sav_point;
 }
@@ -3507,7 +3523,7 @@ static void list_staying(TDBB tdbb, RPB * rpb, LLS * staying)
 		/* If the entire record disappeared, then there is nothing staying. */
 		if (!DPM_fetch(tdbb, &temp, LCK_read)) {
 			while (*staying)
-				ALL_release(reinterpret_cast < frb * >(LLS_POP(staying)));
+				delete LLS_POP(staying);
 			return;
 		}
 
@@ -3518,7 +3534,7 @@ static void list_staying(TDBB tdbb, RPB * rpb, LLS * staying)
 			temp.rpb_b_line != rpb->rpb_b_line ||
 			temp.rpb_flags != rpb->rpb_flags) {
 			while (*staying)
-				ALL_release(reinterpret_cast < frb * >(LLS_POP(staying)));
+				delete LLS_POP(staying);
 			next_page = temp.rpb_page;
 			next_line = temp.rpb_line;
 			max_depth = 0;
@@ -3575,7 +3591,7 @@ static void list_staying(TDBB tdbb, RPB * rpb, LLS * staying)
    in 'staying' that have already been garbage collected. */
 	while (depth < max_depth--)
 		if (*staying)
-			ALL_release(reinterpret_cast < frb * >(LLS_POP(staying)));
+			delete LLS_POP(staying);
 }
 
 
@@ -3598,7 +3614,7 @@ static void notify_garbage_collector(TDBB tdbb, RPB * rpb)
  **************************************/
 	DBB dbb;
 	REL relation;
-	PLB old_pool;
+	JrdMemoryPool *old_pool;
 	SLONG dp_sequence;
 
 	dbb = tdbb->tdbb_database;
@@ -3660,16 +3676,16 @@ static void prepare_update(
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL) {
 		ib_printf
-			("prepare_update (transaction %d, commit_tid read %ld, rpb %d, ",
+			("prepare_update (transaction %"SLONGFORMAT", commit_tid read %ld, rpb %"SLONGFORMAT", ",
 			 transaction ? transaction->tra_number : 0, commit_tid_read,
 			 rpb ? rpb->rpb_number : 0);
-		ib_printf(" temp_rpb %d, new_rpb %d, stack)\n",
+		ib_printf(" temp_rpb %"SLONGFORMAT", new_rpb %"SLONGFORMAT", stack)\n",
 				  temp ? temp->rpb_number : 0,
 				  new_rpb ? new_rpb->rpb_number : 0);
 	}
 	if (debug_flag > DEBUG_TRACE_ALL_INFO)
 		ib_printf
-			("   old record  %d:%d, rpb_trans %d, flags %d, back %d:%d, fragment %d:%d, prior %d\n",
+			("   old record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d, prior %d\n",
 			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line, rpb->rpb_prior);
@@ -3785,7 +3801,7 @@ static void prepare_update(
 #ifdef VIO_DEBUG
 			if (debug_flag > DEBUG_READS_INFO)
 				ib_printf
-					("    record's transaction (%d) is committed (my TID - %d)\n",
+					("    record's transaction (%"SLONGFORMAT") is committed (my TID - %"SLONGFORMAT")\n",
 					 rpb->rpb_transaction, transaction->tra_number);
 #endif
 			if (rpb->rpb_flags & rpb_deleted) {
@@ -3831,7 +3847,7 @@ static void prepare_update(
 #ifdef VIO_DEBUG
 			if (debug_flag > DEBUG_READS_INFO && state == tra_us)
 				ib_printf
-					("    record's transaction (%d) is us (my TID - %d)\n",
+					("    record's transaction (%"SLONGFORMAT") is us (my TID - %"SLONGFORMAT")\n",
 					 rpb->rpb_transaction, transaction->tra_number);
 
 #endif
@@ -3874,7 +3890,7 @@ static void prepare_update(
 #ifdef VIO_DEBUG
 			if (debug_flag > DEBUG_READS_INFO) {
 				ib_printf
-					("    record's transaction (%d) is %s (my TID - %d)\n",
+					("    record's transaction (%"SLONGFORMAT") is %s (my TID - %"SLONGFORMAT")\n",
 					 rpb->rpb_transaction,
 					 (state == tra_active) ? "active" : "limbo",
 					 transaction->tra_number);
@@ -3945,7 +3961,7 @@ static void prepare_update(
 #ifdef VIO_DEBUG
 			if (debug_flag > DEBUG_READS_INFO)
 				ib_printf
-					("    record's transaction (%d) is dead (my TID - %d)\n",
+					("    record's transaction (%"SLONGFORMAT") is dead (my TID - %"SLONGFORMAT")\n",
 					 rpb->rpb_transaction, transaction->tra_number);
 #endif
 			CCH_RELEASE(tdbb, &rpb->rpb_window);
@@ -3991,10 +4007,10 @@ static BOOLEAN purge(TDBB tdbb, RPB * rpb)
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL)
-		ib_printf("purge (rpb %d)\n", rpb->rpb_number);
+		ib_printf("purge (rpb %"SLONGFORMAT")\n", rpb->rpb_number);
 	if (debug_flag > DEBUG_TRACE_ALL_INFO)
 		ib_printf
-			("   record  %d:%d, rpb_trans %d, flags %d, back %d:%d, fragment %d:%d\n",
+			("   record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
@@ -4061,20 +4077,22 @@ static REC replace_gc_record(REL relation, REC * gc_record, USHORT length)
  *
  **************************************/
 	VEC vector;
-	REC *rec_ptr, *end;
+	REC temp;
+	vec::iterator rec_ptr, end;
 
 /* V4_MUTEX_LOCK (&relation->rel_mutex); */
 
 	vector = relation->rel_gc_rec;
 
-	for (rec_ptr = (REC *) vector->vec_object, end =
-		 rec_ptr + vector->vec_count; rec_ptr < end; ++rec_ptr)
+	for (rec_ptr = vector->begin(), end = vector->end(); rec_ptr < end;
+					++rec_ptr)
 		if (*rec_ptr == *gc_record) {
-			*rec_ptr =
-				(REC) ALL_extend(reinterpret_cast < blk ** >(gc_record),
-								 length);
+			temp = new(*MemoryPool::blk_pool(*gc_record), length) rec;
+			memcpy(temp, *rec_ptr, sizeof(rec) + sizeof(SCHAR)*(*gc_record)->rec_length);
+			delete *rec_ptr;
+			*rec_ptr = temp;
 /*	V4_MUTEX_UNLOCK (&relation->rel_mutex); */
-			return *rec_ptr;
+			return (REC)*rec_ptr;
 		}
 
 /* V4_MUTEX_UNLOCK (&relation->rel_mutex); */
@@ -4103,11 +4121,11 @@ static void replace_record(
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL)
-		ib_printf("replace_record (rpb %d, stack, transaction %d)\n",
+		ib_printf("replace_record (rpb %"SLONGFORMAT", stack, transaction %"SLONGFORMAT")\n",
 				  rpb->rpb_number, transaction ? transaction->tra_number : 0);
 	if (debug_flag > DEBUG_TRACE_ALL_INFO)
 		ib_printf
-			("   record  %d:%d, rpb_trans %d, flags %d, back %d:%d, fragment %d:%d, prior %d\n",
+			("   record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d, prior %d\n",
 			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line, rpb->rpb_prior);
@@ -4215,12 +4233,12 @@ static void update_in_place(
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL)
 		ib_printf
-			("update_in_place (transaction %d, org_rpb %d, new_rpb %d)\n",
+			("update_in_place (transaction %d, org_rpb %"SLONGFORMAT", new_rpb %d)\n",
 			 transaction ? transaction->tra_number : 0, org_rpb->rpb_number,
 			 new_rpb ? new_rpb->rpb_number : 0);
 	if (debug_flag > DEBUG_TRACE_ALL_INFO)
 		ib_printf
-			("   old record  %d:%d, rpb_trans %d, flags %d, back %d:%d, fragment %d:%d\n",
+			("   old record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 			 org_rpb->rpb_page, org_rpb->rpb_line, org_rpb->rpb_transaction,
 			 org_rpb->rpb_flags, org_rpb->rpb_b_page, org_rpb->rpb_b_line,
 			 org_rpb->rpb_f_page, org_rpb->rpb_f_line);
@@ -4236,7 +4254,7 @@ static void update_in_place(
    with an old "complete" record, update in placement, then delete the old
    delta record */
 
-	if (prior = org_rpb->rpb_prior) {
+	if ( (prior = org_rpb->rpb_prior) ) {
 		temp2 = *org_rpb;
 		temp2.rpb_record = VIO_gc_record(tdbb, relation);
 		temp2.rpb_page = org_rpb->rpb_b_page;
@@ -4303,7 +4321,7 @@ static void update_in_place(
 		LLS_POP(&staying);
 
 		while (staying)
-			ALL_release(reinterpret_cast < frb * >(LLS_POP(&staying)));
+			delete LLS_POP(&staying);
 	}
 
 	if (prior) {
@@ -4345,7 +4363,7 @@ static void verb_post(
  *
  **************************************/
 	VCT action;
-	struct plb *old_pool;
+	JrdMemoryPool *old_pool;
 	REC data, record;
 	UCHAR *p, *q, *end;
 	LLS stack;
@@ -4363,10 +4381,10 @@ static void verb_post(
 			break;
 
 	if (!action) {
-		if (action = transaction->tra_save_point->sav_verb_free)
+		if ( (action = transaction->tra_save_point->sav_verb_free) )
 			transaction->tra_save_point->sav_verb_free = action->vct_next;
 		else
-			action = (VCT) ALLOCD(type_vct);
+			action = new(*tdbb->tdbb_default) vct();
 		action->vct_next = transaction->tra_save_point->sav_verb_actions;
 		transaction->tra_save_point->sav_verb_actions = action;
 		action->vct_relation = rpb->rpb_relation;
@@ -4379,7 +4397,7 @@ static void verb_post(
 			   savepoint hasn't seen this record before. */
 
 			SBM_set(tdbb, &action->vct_undo, rpb->rpb_number);
-			data = (REC) ALLOCDV(type_rec, old_data->rec_length);
+			data = new(*tdbb->tdbb_default, old_data->rec_length) rec();
 			data->rec_number = rpb->rpb_number;
 			data->rec_length = old_data->rec_length;
 			data->rec_format = old_data->rec_format;
@@ -4395,7 +4413,7 @@ static void verb_post(
 			   and this savepoint hasn't seen this record before. */
 
 			SBM_set(tdbb, &action->vct_undo, rpb->rpb_number);
-			data = (REC) ALLOCDV(type_rec, FUDGE);
+			data = new(*tdbb->tdbb_default, 1) rec;
 			data->rec_number = rpb->rpb_number;
 			data->rec_length = 0;
 			if (new_ver)
@@ -4424,7 +4442,7 @@ static void verb_post(
 			   undo data. */
 
 			SBM_set(tdbb, &action->vct_undo, rpb->rpb_number);
-			data = (REC) ALLOCDV(type_rec, FUDGE);
+			data = new(*tdbb->tdbb_default, 1) rec();
 			data->rec_number = rpb->rpb_number;
 			data->rec_length = 0;
 			data->rec_flags |= (REC_same_tx | REC_new_version);

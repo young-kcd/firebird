@@ -1,10 +1,19 @@
 #include "firebird.h"
+
+#ifdef _MSC_VER
+#pragma warning (disable: 4786)	// debug identifier truncated
+#endif
+
 #include "FirebirdConfigFile.h"
+#include "../jrd/gds.h"
+#include "../include/fb_macros.h"
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
 
+#include <fstream>
+#include <iostream>
 
 
 
@@ -16,6 +25,7 @@
 FirebirdConfigFile::FirebirdConfigFile() 
 {
     isLoadedFlg = false;
+#pragma FB_COMPILER_MESSAGE("Error! This is a *nix only thing!")
     configFile = "/etc/firebird.conf";
 }
 
@@ -24,14 +34,14 @@ FirebirdConfigFile::FirebirdConfigFile()
 //
 //
 
-void stripLeadingWhiteSpace(string& s)
+void stripLeadingWhiteSpace(FirebirdConfig::string& s)
 {
 	if (!s.size()) {
 		return;
 	}
 
-	const string::size_type startPos = s.find_first_not_of(" \t");
-	if (startPos == string::npos) {
+	const Firebird::string::size_type startPos = s.find_first_not_of(" \t");
+	if (startPos == Firebird::string::npos) {
 		s.erase();	// nothing but air
 	} else if (startPos) {
 		s = s.substr(startPos);
@@ -43,14 +53,14 @@ void stripLeadingWhiteSpace(string& s)
 //
 //
 
-void stripTrailingWhiteSpace(string& s)
+void stripTrailingWhiteSpace(FirebirdConfig::string& s)
 {
 	if (!s.size()) {
 		return;
 	}
 
-	string::size_type endPos = s.find_last_not_of(" \t");
-	if (endPos != string::npos) {
+	Firebird::string::size_type endPos = s.find_last_not_of(" \t");
+	if (endPos != std::string::npos) {
 		// Note that endPos is the index to the last non-ws char
 		// why we have to inc. it
 		++endPos;
@@ -63,13 +73,13 @@ void stripTrailingWhiteSpace(string& s)
 //
 //
 
-void stripComments(string& s)
+void stripComments(FirebirdConfig::string& s)
 {
 	// Note that this is only a hack. It won't work in case inputLine
 	// contains hash-marks embedded in quotes! Not that I know if we
 	// should care about that case.
-	const string::size_type commentPos = s.find('#');
-	if (commentPos != string::npos) {
+	const Firebird::string::size_type commentPos = s.find('#');
+	if (commentPos != Firebird::string::npos) {
 		s = s.substr(0, commentPos);
 	}
 }
@@ -80,7 +90,7 @@ void stripComments(string& s)
 //
 //
 
-string FirebirdConfigFile::getString(const string& key) {
+FirebirdConfig::string FirebirdConfigFile::getString(const FirebirdConfig::string& key) {
 
     checkLoadConfig();
 
@@ -92,7 +102,7 @@ string FirebirdConfigFile::getString(const string& key) {
       return lookup->second;
     }
 
-    return string();
+    return FirebirdConfig::string();
 }
 
 //-----------------------------------------------------------------------------
@@ -100,11 +110,11 @@ string FirebirdConfigFile::getString(const string& key) {
 //
 //
 
-int    FirebirdConfigFile::getInt(const string& key) {
+int    FirebirdConfigFile::getInt(const FirebirdConfig::string& key) {
 
     checkLoadConfig();
 
-    string data = getString(key);
+    Firebird::string data = getString(key);
 
     if (data.empty()) {
         return 0;
@@ -119,7 +129,7 @@ int    FirebirdConfigFile::getInt(const string& key) {
 //
 //
 
-bool FirebirdConfigFile::getBoolean(const string& key) {
+bool FirebirdConfigFile::getBoolean(const FirebirdConfig::string& key) {
 
     checkLoadConfig();
 
@@ -144,10 +154,11 @@ bool FirebirdConfigFile::getBoolean(const string& key) {
 //
 //
 
-string parseKeyFrom(const string& inputLine, string::size_type& endPos) {
+FirebirdConfig::string parseKeyFrom(const FirebirdConfig::string& inputLine,
+		FirebirdConfig::string::size_type& endPos) {
 
     endPos = inputLine.find_first_of("= \t");
-    if (endPos == string::npos) {
+    if (endPos == Firebird::string::npos) {
         return inputLine;
     }
 
@@ -161,16 +172,17 @@ string parseKeyFrom(const string& inputLine, string::size_type& endPos) {
 //
 //
 
-string parseValueFrom(string inputLine, string::size_type initialPos) {
+FirebirdConfig::string parseValueFrom(FirebirdConfig::string inputLine,
+			FirebirdConfig::string::size_type initialPos) {
 
-    if (initialPos == string::npos) {
-        return string();
+    if (initialPos == Firebird::string::npos) {
+        return Firebird::string();
     }
 
     // skip leading white spaces
     unsigned int startPos = inputLine.find_first_not_of("= \t", initialPos);
-    if (startPos == string::npos) {
-        return string();
+    if (startPos == Firebird::string::npos) {
+        return Firebird::string();
     }
 
     stripTrailingWhiteSpace(inputLine);
@@ -199,7 +211,7 @@ void FirebirdConfigFile::loadConfig() {
 
     isLoadedFlg = true;
 
-    ifstream configFile(configFile.c_str());
+    std::ifstream configFile(configFile.c_str());
 
     if (!configFile) {
         // config file does not exist, a warning message would be nice.
@@ -208,7 +220,7 @@ void FirebirdConfigFile::loadConfig() {
     string inputLine;
     
     while (!configFile.eof() ) {
-        getline(configFile, inputLine);
+		std::getline(configFile, inputLine);
 
 		stripComments(inputLine);
 		stripLeadingWhiteSpace(inputLine);
@@ -220,7 +232,7 @@ void FirebirdConfigFile::loadConfig() {
         //        cout << "read \"" << inputLine << "\"\n";
 
         if (inputLine.find('=') == string::npos) {
-            cerr << "illegal line \"" << inputLine << "\"" << endl;
+            std::cerr << "illegal line \"" << inputLine << "\"" << std::endl;
             continue;
         }
 
@@ -229,10 +241,10 @@ void FirebirdConfigFile::loadConfig() {
         string key   = parseKeyFrom(inputLine, endPos);
         string value = parseValueFrom(inputLine, endPos);
 
-        cout << "adding \"" << key << "\" \"" << value << "\"" << endl;
+        std::cout << "adding \"" << key << "\" \"" << value << "\"" << std::endl;
 //        parameters.insert(pair<string, string>(key, value));
 // Just to display yet another template function
-        parameters.insert(make_pair(key, value));
+        parameters.insert(std::make_pair(key, value));
     }
 }
 

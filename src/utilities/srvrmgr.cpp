@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: srvrmgr.cpp,v 1.2 2001-07-29 23:43:24 skywalker Exp $
+ * $Id: srvrmgr.cpp,v 1.3 2001-12-24 02:50:53 tamlin Exp $
  */
 
 #include "firebird.h"

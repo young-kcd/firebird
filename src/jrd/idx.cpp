@@ -200,10 +200,12 @@ void IDX_create_index(
 
 	BTR_reserve_slot(tdbb, relation, transaction, idx);
 
-	if (index_id)
+	if (index_id) {
 		*index_id = idx->idx_id;
+	}
 
-	primary.rpb_relation = secondary.rpb_relation = relation;
+	secondary.rpb_relation = relation;
+	primary.rpb_relation   = relation;
 	primary.rpb_number = -1;
 	primary.rpb_window.win_flags = secondary.rpb_window.win_flags = 0;
 
@@ -325,7 +327,7 @@ void IDX_create_index(
 						&key) == idx_e_nullunique) {
 				do {
 					if (record != gc_record)
-						ALL_release(reinterpret_cast < frb * >(record));
+						delete record;
 				} while (stack && (record = (REC) LLS_POP(&stack)));
 				SORT_fini(sort_handle, tdbb->tdbb_attachment);
 				gc_record->rec_flags &= ~REC_gc_active;
@@ -350,7 +352,7 @@ void IDX_create_index(
 			{
 				do {
 					if (record != gc_record)
-						ALL_release(reinterpret_cast < frb * >(record));
+						delete record;
 				} while (stack && (record = (REC) LLS_POP(&stack)));
 				SORT_fini(sort_handle, tdbb->tdbb_attachment);
 				gc_record->rec_flags &= ~REC_gc_active;
@@ -363,7 +365,7 @@ void IDX_create_index(
 				 reinterpret_cast < ULONG ** >(&p))) {
 				do {
 					if (record != gc_record)
-						ALL_release(reinterpret_cast < frb * >(record));
+						delete record;
 				} while (stack && (record = (REC) LLS_POP(&stack)));
 				SORT_fini(sort_handle, tdbb->tdbb_attachment);
 				gc_record->rec_flags &= ~REC_gc_active;
@@ -377,7 +379,7 @@ void IDX_create_index(
 			if ((idx->idx_flags & idx_unique) && ifl_data.ifl_duplicates) {
 				do {
 					if (record != gc_record)
-						ALL_release(reinterpret_cast < frb * >(record));
+						delete record;
 				} while (stack && (record = (REC) LLS_POP(&stack)));
 				SORT_fini(sort_handle, tdbb->tdbb_attachment);
 				gc_record->rec_flags &= ~REC_gc_active;
@@ -411,7 +413,7 @@ void IDX_create_index(
 			/* Offset BOOLEAN in the beginning of the sort record key */
 			if (l = key_length - key.key_length - sizeof(SORTP))
 #else
-			if (l = key_length - key.key_length)
+			if ( (l = key_length - key.key_length) )
 #endif /* IGNORE_NULL_IDX_KEY */
 				do
 					*p++ = pad;
@@ -421,7 +423,7 @@ void IDX_create_index(
 			isr->isr_record_number = primary.rpb_number;
 			isr->isr_flags = (stack) ? ISR_secondary : 0;
 			if (record != gc_record)
-				ALL_release(reinterpret_cast < frb * >(record));
+				delete record;
 		}
 
 #ifdef MULTI_THREAD
@@ -476,7 +478,7 @@ IDB IDX_create_index_block(TDBB tdbb, REL relation, UCHAR id)
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	index_block = (IDB) ALLOCP(type_idb);
+	index_block = new(*dbb->dbb_permanent) idb();
 	index_block->idb_id = id;
 
 /* link the block in with the relation linked list */
@@ -488,14 +490,14 @@ IDB IDX_create_index_block(TDBB tdbb, REL relation, UCHAR id)
    any modification to the index so that the cached information
    about the index will be discarded */
 
-	index_block->idb_lock = lock = (LCK) ALLOCPV(type_lck, 0);
+	index_block->idb_lock = lock = new(*dbb->dbb_permanent, 0) lck;
 	lock->lck_parent = dbb->dbb_lock;
 	lock->lck_dbb = dbb;
 	lock->lck_key.lck_long = index_block->idb_id;
 	lock->lck_length = sizeof(lock->lck_key.lck_long);
 	lock->lck_type = LCK_expression;
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-	lock->lck_ast = reinterpret_cast < lck_ast_t > (index_block_flush);
+	lock->lck_ast = reinterpret_cast<lck_ast_t>(index_block_flush);
 	lock->lck_object = (BLK) index_block;
 
 	return index_block;
@@ -704,19 +706,19 @@ IDX_E IDX_modify(TDBB tdbb,
 		   (tdbb, org_rpb->rpb_relation, transaction, &idx, &window)) {
 		*bad_index = idx.idx_id;
 		*bad_relation = new_rpb->rpb_relation;
-		if (error_code =
+		if ( (error_code =
 			BTR_key(tdbb, new_rpb->rpb_relation, new_rpb->rpb_record, &idx,
-					&key1)) {
+					&key1)) ) {
 			CCH_RELEASE(tdbb, &window);
 			break;
 		}
 		BTR_key(tdbb, org_rpb->rpb_relation, org_rpb->rpb_record, &idx,
 				&key2);
 		if (!key_equal(&key1, &key2)) {
-			if (error_code =
+			if (( error_code =
 				insert_key(tdbb, new_rpb->rpb_relation, new_rpb->rpb_record,
 						   transaction, &window, &insertion, bad_relation,
-						   bad_index)) return error_code;
+						   bad_index)) ) return error_code;
 		}
 	}
 
@@ -857,14 +859,14 @@ IDX_E IDX_store(TDBB tdbb,
 		   (tdbb, rpb->rpb_relation, transaction, &idx, &window)) {
 		*bad_index = idx.idx_id;
 		*bad_relation = rpb->rpb_relation;
-		if (error_code =
-			BTR_key(tdbb, rpb->rpb_relation, rpb->rpb_record, &idx, &key)) {
+		if ( (error_code =
+			BTR_key(tdbb, rpb->rpb_relation, rpb->rpb_record, &idx, &key)) ) {
 			CCH_RELEASE(tdbb, &window);
 			break;
 		}
-		if (error_code =
+		if ( (error_code =
 			insert_key(tdbb, rpb->rpb_relation, rpb->rpb_record, transaction,
-					   &window, &insertion, bad_relation, bad_index))
+					   &window, &insertion, bad_relation, bad_index)) )
 			return error_code;
 	}
 
@@ -946,7 +948,7 @@ static IDX_E check_duplicates(
 	}
 
 	if (rpb.rpb_record)
-		ALL_release(reinterpret_cast < frb * >(rpb.rpb_record));
+		delete rpb.rpb_record;
 
 	return result;
 }
@@ -995,20 +997,18 @@ REL * bad_relation, USHORT * bad_index)
 	}
 	else if (idx->idx_flags & (idx_primary | idx_unique))
 		for (index_number = 0;
-			 index_number < idx->idx_foreign_primaries->vec_count;
+			 index_number < idx->idx_foreign_primaries->count();
 			 index_number++) {
 			if (idx->idx_id !=
-				(UCHAR) idx->
-				idx_foreign_primaries->vec_object[index_number]) continue;
+				(UCHAR) (*idx->idx_foreign_primaries)[index_number]) continue;
 			partner_relation =
 				MET_relation(tdbb,
-							 (int) idx->
-							 idx_foreign_relations->vec_object[index_number]);
+							 (int) (*idx->idx_foreign_relations)[index_number]);
 			index_id =
-				(USHORT) idx->idx_foreign_indexes->vec_object[index_number];
-			if (result =
+				(USHORT) (*idx->idx_foreign_indexes)[index_number];
+			if ( (result =
 				check_partner_index(tdbb, relation, record, transaction, idx,
-									partner_relation, index_id))
+									partner_relation, index_id)) )
 				break;
 		}
 
@@ -1084,7 +1084,7 @@ REL partner_relation, SSHORT index_id)
 
 		bitmap = NULL;
 		MOVE_CLEAR(&retrieval, sizeof(struct irb));
-		retrieval.irb_header.blk_type = type_irb;
+		//retrieval.blk_type = type_irb;
 		retrieval.irb_index = partner_idx.idx_id;
 		MOVE_FAST(&partner_idx, &retrieval.irb_desc,
 				  sizeof(retrieval.irb_desc));

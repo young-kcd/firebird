@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: btr.cpp,v 1.2 2001-07-29 17:42:21 skywalker Exp $
+$Id: btr.cpp,v 1.3 2001-12-24 02:50:50 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -241,7 +241,7 @@ USHORT BTR_all(TDBB tdbb,
 
 	if ((SLONG) (root->irt_count * sizeof(IDX)) > *idx_size) {
 		size = (sizeof(IDX) * MAX_IDX) + ALIGNMENT;
-		*csb_idx_allocation = new_buffer = (STR) ALLOCPV(type_str, size);
+		*csb_idx_allocation = new_buffer = new(*dbb->dbb_permanent, size) str();
 		buffer = *start_buffer =
 			(IDX *) FB_ALIGN((U_IPTR) new_buffer->str_data, ALIGNMENT);
 		*idx_size = size - ALIGNMENT;
@@ -942,11 +942,8 @@ IDX_E BTR_key(TDBB tdbb,
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
 
-	if (SETJMP(env)) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		key->key_length = 0;
-		return idx_e_conversion;
-	}
+	try {
+
 #ifdef IGNORE_NULL_IDX_KEY
 /* Initialize KEY flags */ key->key_flags = 0;
 #endif /* IGNORE_NULL_IDX_KEY */
@@ -1042,6 +1039,13 @@ IDX_E BTR_key(TDBB tdbb,
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 
 	return result;
+
+	}	// try
+	catch(...) {
+		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+		key->key_length = 0;
+		return idx_e_conversion;
+	}
 }
 
 
@@ -1764,7 +1768,7 @@ float BTR_selectivity(TDBB tdbb, REL relation, USHORT id)
 			/* keep the key value current for comparison with the next key */
 
 			key.key_length = l;
-			if (l = node->btn_length) {
+			if ( (l = node->btn_length) ) {
 				p = key.key_data + node->btn_prefix;
 				q = node->btn_data;
 				do
@@ -2266,7 +2270,7 @@ static USHORT compress_root(TDBB tdbb, IRT page)
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	temp = (UCHAR *) ALL_malloc((SLONG) dbb->dbb_page_size, ERR_jmp);
+	temp = (UCHAR *) tdbb->tdbb_default->allocate((SLONG) dbb->dbb_page_size);
 	MOVE_FASTER(page, temp, dbb->dbb_page_size);
 	p = temp + dbb->dbb_page_size;
 
@@ -2279,7 +2283,7 @@ static USHORT compress_root(TDBB tdbb, IRT page)
 			root_idx->irt_desc = p - temp;
 		}
 	l = p - temp;
-	ALL_free(reinterpret_cast < char *>(temp));
+	MemoryPool::deallocate(temp);
 
 	return l;
 }
@@ -2334,7 +2338,7 @@ static void copy_key(KEY * in, KEY * out)
 	out->key_flags = in->key_flags;
 #endif /* IGNORE_NULL_IDX_KEY */
 
-	if (l = out->key_length = in->key_length) {
+	if ( (l = out->key_length = in->key_length) ) {
 		p = out->key_data;
 		q = in->key_data;
 		do
@@ -2632,15 +2636,15 @@ static SLONG fast_load(TDBB tdbb,
 	tdbb->tdbb_setjmp = (UCHAR *) env;
 	tdbb->tdbb_flags |= TDBB_no_cache_unwind;
 
+	try {
+
 /* If there's an error during index construction, fall
    thru to release the last index bucket at each level
    of the index. This will prepare for a single attempt
    to deallocate the index pages for reuse. */
 
-	if (SETJMP(env))
-		error = TRUE;
-
-	while (!error) {
+	while (!error)
+	{
 		/* Get the next record in sorted order. */
 
 		DEBUG;
@@ -2708,8 +2712,8 @@ static SLONG fast_load(TDBB tdbb,
 			BTN_PREFIX(split_node) = 0;
 			p = BTN_DATA(split_node);
 			q = key->key_data;
-			assert(key->key_length <= MAX_UCHAR)
-				if (l = BTN_LENGTH(split_node) = (UCHAR) key->key_length)
+			assert(key->key_length <= MAX_UCHAR);
+				if ( (l = BTN_LENGTH(split_node) = (UCHAR) key->key_length) )
 				do
 					*p++ = *q++;
 				while (--l);
@@ -2761,7 +2765,7 @@ static SLONG fast_load(TDBB tdbb,
 		quad_put(isr->isr_record_number, BTN_NUMBER(node));
 		p = BTN_DATA(node);
 		q = record + prefix;
-		if (l = BTN_LENGTH(node) = isr->isr_key_length - prefix)
+		if ( (l = BTN_LENGTH(node) = isr->isr_key_length - prefix) )
 			do
 				*p++ = *q++;
 			while (--l);
@@ -2784,7 +2788,7 @@ static SLONG fast_load(TDBB tdbb,
 
 		p = key->key_data;
 		q = record;
-		if (l = key->key_length = isr->isr_key_length)
+		if ( (l = key->key_length = isr->isr_key_length) )
 			do
 				*p++ = *q++;
 			while (--l);
@@ -2808,7 +2812,7 @@ static SLONG fast_load(TDBB tdbb,
 				bucket->btr_header.pag_type = pag_index;
 				bucket->btr_relation = relation->rel_id;
 				bucket->btr_id = idx->idx_id;
-				assert(level <= MAX_UCHAR)
+				assert(level <= MAX_UCHAR);
 					bucket->btr_level = (UCHAR) level;
 				if (idx->idx_flags & idx_descending)
 					bucket->btr_header.pag_flags |= btr_descending;
@@ -2855,8 +2859,8 @@ static SLONG fast_load(TDBB tdbb,
 				BTN_PREFIX(split_node) = 0;
 				p = BTN_DATA(split_node);
 				q = key->key_data;
-				assert(key->key_length <= MAX_UCHAR)
-					if (l = BTN_LENGTH(split_node) = (UCHAR) key->key_length)
+				assert(key->key_length <= MAX_UCHAR);
+					if ( (l = BTN_LENGTH(split_node) = (UCHAR) key->key_length) )
 					do
 						MOVE_BYTE(q, p);
 					while (--l);
@@ -2894,7 +2898,7 @@ static SLONG fast_load(TDBB tdbb,
 
 			p = BTN_DATA(node);
 			q = temp_key.key_data + prefix;
-			if (l = BTN_LENGTH(node) = temp_key.key_length - prefix)
+			if ( (l = BTN_LENGTH(node) = temp_key.key_length - prefix) )
 				do
 					MOVE_BYTE(q, p);
 				while (--l);
@@ -2965,16 +2969,16 @@ static SLONG fast_load(TDBB tdbb,
 
 	SORT_fini(sort_handle, tdbb->tdbb_attachment);
 
+	}	// try
+	catch (...) {
+		error = TRUE;
+	}
+
+
 /* If index flush fails, try to delete the index tree.
    If the index delete fails, just go ahead and punt. */
 
-	if (SETJMP(env))
-		if (!error)
-			error = TRUE;
-		else {
-			tdbb->tdbb_setjmp = (UCHAR *) old_env;
-			ERR_punt();
-		}
+	try {
 
 	if (error) {
 		delete_tree(tdbb, relation->rel_id, idx->idx_id, window->win_page, 0);
@@ -2989,6 +2993,16 @@ static SLONG fast_load(TDBB tdbb,
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 	return window->win_page;
+
+	}	// try
+	catch(...) {
+		if (!error)
+			error = TRUE;
+		else {
+			tdbb->tdbb_setjmp = (UCHAR *) old_env;
+			ERR_punt();
+		}
+	}
 }
 
 
@@ -3252,7 +3266,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 
 /* fetch the right sibling page */
 
-	if (right_window.win_page = gc_page->btr_sibling) {
+	if ( (right_window.win_page = gc_page->btr_sibling) ) {
 		right_window.win_flags = 0;
 		right_page =
 			(BTR) CCH_FETCH(tdbb, &right_window, LCK_write, pag_index);
@@ -3361,9 +3375,9 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 	assert(number != END_NON_NULL);
 #else
 	for (last_node = left_page->btr_nodes;
-		 number = BTR_get_quad(BTN_NUMBER(last_node))
-		 >= 0; last_node = NEXT_NODE(last_node))
-		if (l = BTN_LENGTH(last_node)) {
+		 (number = BTR_get_quad(BTN_NUMBER(last_node))
+		 >= 0); last_node = NEXT_NODE(last_node))
+		if ( (l = BTN_LENGTH(last_node)) ) {
 			p = last_key.key_data + BTN_PREFIX(last_node);
 			q = BTN_DATA(last_node);
 			do
@@ -3734,15 +3748,12 @@ static SLONG insert_node(TDBB tdbb,
 		/* allocate an overflow buffer which is large enough,
 		   and set up to release it in case of error */
 
-		overflow_page = (SLONG *) ALL_malloc((SLONG)
-											 OVERSIZE, ERR_jmp);
+		overflow_page = (SLONG *) plb::ALL_malloc((SLONG)
+											 OVERSIZE);
 		tdbb->tdbb_setjmp = (UCHAR *) env;
-		if (SETJMP(env)) {
-			tdbb->tdbb_setjmp = (UCHAR *) old_env;
-			if (overflow_page)
-				ALL_free(overflow_page);
-			ERR_punt();
-		}
+
+		try {
+
 #endif
 		MOVE_FASTER(bucket, overflow_page, bucket->btr_length);
 		node = (BTN) ((UCHAR *) overflow_page + node_offset);
@@ -3777,7 +3788,7 @@ static SLONG insert_node(TDBB tdbb,
 	quad_put(insertion->iib_number, BTN_NUMBER(node));
 	p = BTN_DATA(node);
 	q = key->key_data + prefix;
-	if (l = BTN_LENGTH(node) = key->key_length - prefix) {
+	if ( (l = BTN_LENGTH(node) = key->key_length - prefix) ) {
 		do
 			MOVE_BYTE(q, p);
 		while (--l);
@@ -3839,8 +3850,18 @@ static SLONG insert_node(TDBB tdbb,
 
 #if (defined PC_PLATFORM && !defined NETWARE_386)
 		if (overflow_page)
-			ALL_free(overflow_page);
+			plb::ALL_free(overflow_page);
 		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}	// try
+	catch (...) {
+		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+		if (overflow_page) {
+			plb::ALL_free(overflow_page);
+		}
+		ERR_punt();
+	}
+
 #endif
 
 		return 0;
@@ -3881,7 +3902,7 @@ midpoint = (UCHAR *) new_node;
 		p = BTN_DATA(node);
 		q = new_key->key_data + BTN_PREFIX(node);
 		new_key->key_length = BTN_PREFIX(node) + BTN_LENGTH(node);
-		if (l = BTN_LENGTH(node))
+		if ( (l = BTN_LENGTH(node)) )
 			do
 				*q++ = *p++;
 			while (--l);
@@ -3928,9 +3949,8 @@ midpoint = (UCHAR *) new_node;
 	QUAD_MOVE(BTN_NUMBER(node), BTN_NUMBER(new_node));
 	p = BTN_DATA(new_node);
 	q = new_key->key_data;
-	assert(new_key->key_length <=
-		   MAX_UCHAR) if (l =
-						  BTN_LENGTH(new_node) = (UCHAR) new_key->key_length)
+	assert(new_key->key_length <= MAX_UCHAR);
+        if ( (l = BTN_LENGTH(new_node) = (UCHAR) new_key->key_length) )
 		do
 			MOVE_BYTE(q, p);
 		while (--l);
@@ -4011,7 +4031,7 @@ midpoint = (UCHAR *) new_node;
 
 #if (defined PC_PLATFORM && !defined NETWARE_386)
 	if (overflow_page)
-		ALL_free(overflow_page);
+		plb::ALL_free(overflow_page);
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 #endif
 
@@ -4335,7 +4355,7 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 /* check to make sure the node has the same value */
 	p = BTN_DATA(node);
 	q = key->key_data + BTN_PREFIX(node);
-	if (l = BTN_LENGTH(node))
+	if ( (l = BTN_LENGTH(node)) )
 		do
 			if (*p++ != *q++) {
 #ifdef BTR_DEBUG

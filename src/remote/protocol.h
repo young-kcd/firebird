@@ -23,7 +23,7 @@
  * FSG 16.03.2001 
  */
 /*
-$Id: protocol.h,v 1.2 2001-07-12 05:46:06 bellardo Exp $
+$Id: protocol.h,v 1.3 2001-12-24 02:50:53 tamlin Exp $
 */
 #ifndef _REMOTE_PROTOCOL_H_
 #define _REMOTE_PROTOCOL_H_
@@ -267,13 +267,6 @@ typedef struct cstring
 	USHORT	cstr_allocated;
 	UCHAR*	cstr_address;
 } CSTRING;
-
-typedef struct lstring
-{
-	ULONG	lstr_length;
-	ULONG	lstr_allocated;
-	UCHAR*	lstr_address;
-} LSTRING;
 
 
 #ifdef DEBUG_XDR_MEMORY

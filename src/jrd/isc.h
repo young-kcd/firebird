@@ -23,7 +23,7 @@
  * FSG 16.03.2001 
  */
 /*
-$Id: isc.h,v 1.1.1.1 2001-05-23 13:26:08 tamlin Exp $
+$Id: isc.h,v 1.2 2001-12-24 02:50:51 tamlin Exp $
 */
 #ifndef _JRD_ISC_H_
 #define _JRD_ISC_H_

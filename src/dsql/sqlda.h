@@ -42,7 +42,6 @@
 #include "../include/fb_types.h"
 #endif
 
-
 typedef struct
 {
 	SSHORT	sqltype;

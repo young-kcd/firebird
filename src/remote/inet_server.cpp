@@ -23,7 +23,7 @@
  * FSG 16.03.2001 
  */
 /*
-$Id: inet_server.cpp,v 1.3 2001-07-29 23:43:24 skywalker Exp $
+$Id: inet_server.cpp,v 1.4 2001-12-24 02:50:53 tamlin Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"

@@ -27,17 +27,22 @@
 /* Security class definition */
 
 #ifndef GATEWAY
-typedef struct scl {
-	struct blk scl_header;
-	struct scl *scl_next;		/* Next security class in system */
+class scl : public pool_alloc_rpt<SCHAR, type_scl>
+{
+    public:
+	scl *scl_next;		/* Next security class in system */
 	USHORT scl_flags;			/* Access permissions */
 	TEXT scl_name[2];
-} *SCL;
+};
+typedef scl *SCL;
+
 #else
-typedef struct scl {
-	struct blk scl_header;
+class scl : public pool_alloc<type_scl>
+{
+    public:
 	struct sbm *scl_flags;		/* Access permissions */
-} *SCL;
+};
+typedef scl *SCL;
 #endif
 
 #define SCL_read		1		/* Read access */
@@ -59,8 +64,9 @@ typedef struct scl {
 
 /* information about the user */
 
-typedef struct usr {
-	struct blk usr_header;
+class usr : public pool_alloc_rpt<SCHAR, type_usr>
+{
+    public:
 	TEXT *usr_user_name;		/* User name */
 	TEXT *usr_sql_role_name;	/* Role name */
 	TEXT *usr_project_name;		/* Project name */
@@ -77,7 +83,8 @@ typedef struct usr {
 	SLONG usr_dbms_uid;			/* Number of user as defined by DBMS */
 #endif
 	TEXT usr_data[2];
-} *USR;
+};
+typedef usr *USR;
 
 #define USR_locksmith	1		/* User has great karma */
 #define USR_dba		2			/* User has DBA privileges */

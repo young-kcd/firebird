@@ -52,11 +52,6 @@ typedef struct msg {
 
 #include "../jrd/map_proto.h"
 
-typedef struct vary {
-	USHORT vary_length;
-	UCHAR vary_data[];
-} *VARY;
-
 extern double MTH$CVT_D_G(), MTH$CVT_G_D();
 
 static void bugcheck(int);

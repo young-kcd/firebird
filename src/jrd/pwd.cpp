@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: pwd.cpp,v 1.3 2001-07-29 17:42:22 skywalker Exp $
+$Id: pwd.cpp,v 1.4 2001-12-24 02:50:52 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -322,7 +322,6 @@ static BOOLEAN open_user_db(isc_db_handle* uihandle, SLONG* status)
 	TEXT			user_info_name[MAX_PATH_LENGTH];
 	isc_db_handle	uinfo;			/* database handle */
 	IHNDL			ihandle;
-	SCHAR*			p;
 	SCHAR*			dpb;
 	SCHAR			dpb_buffer[256];
 	SSHORT			dpb_len;

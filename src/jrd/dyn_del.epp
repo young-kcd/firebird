@@ -166,14 +166,10 @@ void DYN_delete_exception( GBL gbl, UCHAR ** ptr)
 
 	request = (BLK) CMP_find_request(tdbb, drq_e_xcp, DYN_REQUESTS);
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-
-	if (SETJMP(env)) {
-		DYN_rundown_request(old_env, request, -1);
-		DYN_error_punt(TRUE, 143, NULL, NULL, NULL, NULL, NULL);
-		/* msg 143: "ERASE EXCEPTION failed" */
-	}
 
 	found = FALSE;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -190,9 +186,17 @@ void DYN_delete_exception( GBL gbl, UCHAR ** ptr)
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 
-	if (!found)
+	}
+	catch (...) {
+		DYN_rundown_request(old_env, request, -1);
+		DYN_error_punt(TRUE, 143, NULL, NULL, NULL, NULL, NULL);
+		/* msg 143: "ERASE EXCEPTION failed" */
+	}
+
+	if (!found) {
 		DYN_error_punt(FALSE, 144, NULL, NULL, NULL, NULL, NULL);
-	/* msg 144: "Exception not found" */
+		/* msg 144: "Exception not found" */
+	}
 }
 
 
@@ -221,14 +225,10 @@ void DYN_delete_filter( GBL gbl, UCHAR ** ptr)
 
 	request = (BLK) CMP_find_request(tdbb, drq_e_filters, DYN_REQUESTS);
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-
-	if (SETJMP(env)) {
-		DYN_rundown_request(old_env, request, -1);
-		DYN_error_punt(TRUE, 36, NULL, NULL, NULL, NULL, NULL);
-		/* msg 36: "ERASE BLOB FILTER failed" */
-	}
 
 	GET_STRING(ptr, f);
 
@@ -246,12 +246,21 @@ void DYN_delete_filter( GBL gbl, UCHAR ** ptr)
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 
-	if (!found)
-		DYN_error_punt(FALSE, 37, NULL, NULL, NULL, NULL, NULL);
-	/* msg 37: "Blob Filter not found" */
+	}
+	catch (...) {
+		DYN_rundown_request(old_env, request, -1);
+		DYN_error_punt(TRUE, 36, NULL, NULL, NULL, NULL, NULL);
+		/* msg 36: "ERASE BLOB FILTER failed" */
+	}
 
-	if (*(*ptr)++ != gds_dyn_end)
+	if (!found) {
+		DYN_error_punt(FALSE, 37, NULL, NULL, NULL, NULL, NULL);
+		/* msg 37: "Blob Filter not found" */
+	}
+
+	if (*(*ptr)++ != gds_dyn_end) {
 		DYN_unsupported_verb();
+	}
 }
 
 
@@ -281,18 +290,10 @@ void DYN_delete_function( GBL gbl, UCHAR ** ptr)
 	request = (BLK) CMP_find_request(tdbb, drq_e_func_args, DYN_REQUESTS);
 	id = drq_e_func_args;
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-
-	if (SETJMP(env)) {
-		DYN_rundown_request(old_env, request, -1);
-		if (id == drq_e_func_args)
-			DYN_error_punt(TRUE, 39, NULL, NULL, NULL, NULL, NULL);
-		/* msg 39: "ERASE RDB$FUNCTION_ARGUMENTS failed" */
-		else
-			DYN_error_punt(TRUE, 40, NULL, NULL, NULL, NULL, NULL);
-		/* msg 40: "ERASE RDB$FUNCTIONS failed" */
-	}
 
 	GET_STRING(ptr, f);
 
@@ -323,12 +324,30 @@ void DYN_delete_function( GBL gbl, UCHAR ** ptr)
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 
-	if (!found)
-		DYN_error_punt(FALSE, 41, NULL, NULL, NULL, NULL, NULL);
-	/* msg 41: "Function not found" */
+	}
+	catch (...) {
+		DYN_rundown_request(old_env, request, -1);
+		if (id == drq_e_func_args)
+		{
+			DYN_error_punt(TRUE, 39, NULL, NULL, NULL, NULL, NULL);
+			/* msg 39: "ERASE RDB$FUNCTION_ARGUMENTS failed" */
+		}
+		else
+		{
+			DYN_error_punt(TRUE, 40, NULL, NULL, NULL, NULL, NULL);
+			/* msg 40: "ERASE RDB$FUNCTIONS failed" */
+		}
+	}
 
-	if (*(*ptr)++ != gds_dyn_end)
+	if (!found)
+	{
+		DYN_error_punt(FALSE, 41, NULL, NULL, NULL, NULL, NULL);
+		/* msg 41: "Function not found" */
+	}
+
+	if (*(*ptr)++ != gds_dyn_end) {
 		DYN_unsupported_verb();
+	}
 }
 
 
@@ -358,18 +377,10 @@ void DYN_delete_global_field( GBL gbl, UCHAR ** ptr)
 	request = (BLK) CMP_find_request(tdbb, drq_l_fld_src, DYN_REQUESTS);
 	id = drq_l_fld_src;
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-
-	if (SETJMP(env)) {
-		DYN_rundown_request(old_env, request, -1);
-		if (id == drq_l_fld_src)
-			DYN_error_punt(TRUE, 44, NULL, NULL, NULL, NULL, NULL);
-		/* msg 44: "ERASE RDB$FIELDS failed" */
-		else
-			DYN_error_punt(TRUE, 45, NULL, NULL, NULL, NULL, NULL);
-		/* msg 45: "ERASE RDB$FIELDS failed" */
-	}
 
 	GET_STRING(ptr, f);
 
@@ -407,6 +418,21 @@ void DYN_delete_global_field( GBL gbl, UCHAR ** ptr)
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 
+	}
+	catch (...) {
+		DYN_rundown_request(old_env, request, -1);
+		if (id == drq_l_fld_src)
+		{
+			DYN_error_punt(TRUE, 44, NULL, NULL, NULL, NULL, NULL);
+			/* msg 44: "ERASE RDB$FIELDS failed" */
+		}
+		else
+		{
+			DYN_error_punt(TRUE, 45, NULL, NULL, NULL, NULL, NULL);
+			/* msg 45: "ERASE RDB$FIELDS failed" */
+		}
+	}
+
 	if (!found) {
 		DYN_error_punt(FALSE, 46, NULL, NULL, NULL, NULL, NULL);
 		/* msg 46: "Field not found" */
@@ -414,7 +440,13 @@ void DYN_delete_global_field( GBL gbl, UCHAR ** ptr)
 
 	while (*(*ptr)++ != gds_dyn_end) {
 		--(*ptr);
-		DYN_execute(gbl, ptr, (TEXT*)NULL_PTR, f, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
+		DYN_execute(gbl,
+					ptr,
+					(TEXT*)NULL_PTR,
+					f,
+					(TEXT*)NULL_PTR,
+					(TEXT*)NULL_PTR,
+					(TEXT*)NULL_PTR);
 	}
 }
 
@@ -444,14 +476,10 @@ void DYN_delete_index( GBL gbl, UCHAR ** ptr)
 
 	request = (BLK) CMP_find_request(tdbb, drq_e_indices, DYN_REQUESTS);
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-
-	if (SETJMP(env)) {
-		DYN_rundown_request(old_env, request, -1);
-		DYN_error_punt(TRUE, 47, NULL, NULL, NULL, NULL, NULL);
-		/* msg 47: "ERASE RDB$INDICES failed" */
-	}
 
 	GET_STRING(ptr, i);
 
@@ -470,17 +498,34 @@ void DYN_delete_index( GBL gbl, UCHAR ** ptr)
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 
+	}
+	catch (...) {
+		DYN_rundown_request(old_env, request, -1);
+		DYN_error_punt(TRUE, 47, NULL, NULL, NULL, NULL, NULL);
+		/* msg 47: "ERASE RDB$INDICES failed" */
+	}
+
 	if (!found)
+	{
 		DYN_error_punt(FALSE, 48, NULL, NULL, NULL, NULL, NULL);
-	/* msg 48: "Index not found" */
+		/* msg 48: "Index not found" */
+	}
 
 	if (!delete_index_segment_records(gbl, i))
+	{
 		DYN_error_punt(FALSE, 50, NULL, NULL, NULL, NULL, NULL);
-	/* msg 50: "No segments found for index" */
+		/* msg 50: "No segments found for index" */
+	}
 
 	while (*(*ptr)++ != gds_dyn_end) {
 		--(*ptr);
-		DYN_execute(gbl, ptr, r, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
+		DYN_execute(gbl,
+					ptr,
+					r,
+					(TEXT*)NULL_PTR,
+					(TEXT*)NULL_PTR,
+					(TEXT*)NULL_PTR,
+					(TEXT*)NULL_PTR);
 	}
 }
 
@@ -529,7 +574,7 @@ void DYN_delete_local_field(
 	DBB dbb;
 	BLK request, old_request;
 	VOLATILE USHORT id, found;
-	TEXT tbl_nm[32], col_nm[32], i[32], constraint[32], index_name[32];
+	TEXT tbl_nm[32], col_nm[32], constraint[32], index_name[32];
 	JMP_BUF env, *old_env;
 
 	tdbb = GET_THREAD_DATA;
@@ -549,18 +594,10 @@ void DYN_delete_local_field(
 	request = (BLK) CMP_find_request(tdbb, drq_l_dep_flds, DYN_REQUESTS);
 	id = drq_l_dep_flds;
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-
-	if (SETJMP(env)) {
-		DYN_rundown_request(old_env, request, -1);
-		if (id == drq_l_dep_flds)
-			DYN_error_punt(TRUE, 53, NULL, NULL, NULL, NULL, NULL);
-		/* msg 53: "ERASE RDB$RELATION_FIELDS failed" */
-		else
-			DYN_error_punt(TRUE, 54, NULL, NULL, NULL, NULL, NULL);
-		/* msg 54: "ERASE RDB$RELATION_FIELDS failed" */
-	}
 
 /*
 **  ================================================================
@@ -712,17 +749,30 @@ void DYN_delete_local_field(
 						RFR.RDB$FIELD_SOURCE, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
 		}
 	END_FOR;
-	if (!DYN_REQUEST(drq_e_lfield))
+	if (!DYN_REQUEST(drq_e_lfield)) {
 		DYN_REQUEST(drq_e_lfield) = request;
+	}
+
+		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+	}	// try
+	catch (...) {
+		DYN_rundown_request(old_env, request, -1);
+		if (id == drq_l_dep_flds)
+		{
+			DYN_error_punt(TRUE, 53, NULL, NULL, NULL, NULL, NULL);
+			/* msg 53: "ERASE RDB$RELATION_FIELDS failed" */
+		}
+		else
+		{
+			DYN_error_punt(TRUE, 54, NULL, NULL, NULL, NULL, NULL);
+			/* msg 54: "ERASE RDB$RELATION_FIELDS failed" */
+		}
+	}
 
 	if (!found) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		DYN_error_punt(FALSE, 55, NULL, NULL, NULL, NULL, NULL);
+		/* msg 55: "Field not found for relation" */
 	}
-	/* msg 55: "Field not found for relation" */
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 }
 
 
@@ -739,37 +789,27 @@ void DYN_delete_parameter( GBL gbl, UCHAR ** ptr, TEXT * proc_name)
  *	deletes a stored procedure parameter.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
+
 	BLK old_request, request;
 	VOLATILE USHORT old_id, id, found;
 	TEXT name[32];
 	JMP_BUF env, *old_env;
 
 	GET_STRING(ptr, name);
-	if (**ptr == gds_dyn_prc_name)
+	if (**ptr == gds_dyn_prc_name) {
 		DYN_get_string((TEXT**)++ptr, proc_name, PROC_NAME_SIZE, TRUE);
+	}
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB  dbb  = tdbb->tdbb_database;
 
 	request = (BLK) CMP_find_request(tdbb, drq_e_prm, DYN_REQUESTS);
 	id = drq_e_prms;
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-
-	if (SETJMP(env)) {
-		DYN_rundown_request(old_env, request, -1);
-		if (id == drq_e_prms) {
-			DYN_error_punt(TRUE, 138, NULL, NULL, NULL, NULL, NULL);
-			/* msg 138: "ERASE RDB$PROCEDURE_PARAMETERS failed" */
-		}
-		else {
-			DYN_error_punt(TRUE, 35, NULL, NULL, NULL, NULL, NULL);
-			/* msg 35: "ERASE RDB$FIELDS failed" */
-		}
-	}
 
 	found = FALSE;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -806,16 +846,33 @@ void DYN_delete_parameter( GBL gbl, UCHAR ** ptr, TEXT * proc_name)
 		ERASE PP;
 
 	END_FOR;
-	if (!DYN_REQUEST(drq_e_prm))
+	if (!DYN_REQUEST(drq_e_prm)) {
 		DYN_REQUEST(drq_e_prm) = request;
+	}
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-	if (!found)
-		DYN_error_punt(FALSE, 146, name, proc_name, NULL, NULL, NULL);
-	/* msg 146: "Parameter %s in procedure %s not found" */
 
-	if (*(*ptr)++ != gds_dyn_end)
+	}	// try
+	catch (...) {
+		DYN_rundown_request(old_env, request, -1);
+		if (id == drq_e_prms) {
+			DYN_error_punt(TRUE, 138, NULL, NULL, NULL, NULL, NULL);
+			/* msg 138: "ERASE RDB$PROCEDURE_PARAMETERS failed" */
+		}
+		else {
+			DYN_error_punt(TRUE, 35, NULL, NULL, NULL, NULL, NULL);
+			/* msg 35: "ERASE RDB$FIELDS failed" */
+		}
+	}
+
+	if (!found) {
+		DYN_error_punt(FALSE, 146, name, proc_name, NULL, NULL, NULL);
+		/* msg 146: "Parameter %s in procedure %s not found" */
+	}
+
+	if (*(*ptr)++ != gds_dyn_end) {
 		DYN_unsupported_verb();
+	}
 }
 
 
@@ -856,26 +913,10 @@ void DYN_delete_procedure( GBL gbl, UCHAR ** ptr)
 	request = (BLK) CMP_find_request(tdbb, drq_e_prms, DYN_REQUESTS);
 	id = drq_e_prms;
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-
-	if (SETJMP(env))
-	{
-		DYN_rundown_request(old_env, request, -1);
-		if (id == drq_e_prms)
-			DYN_error_punt(TRUE, 138, NULL, NULL, NULL, NULL, NULL);
-		/* msg 138: "ERASE RDB$PROCEDURE_PARAMETERS failed" */
-		else if (id == drq_e_prcs)
-			DYN_error_punt(TRUE, 139, NULL, NULL, NULL, NULL, NULL);
-		/* msg 139: "ERASE RDB$PROCEDURES failed" */
-		else if (id == drq_d_gfields)
-			DYN_error_punt(TRUE, 35, NULL, NULL, NULL, NULL, NULL);
-		/* msg 35: "ERASE RDB$FIELDS failed" */
-		else
-			DYN_error_punt(TRUE, 62, NULL, NULL, NULL, NULL, NULL);
-		/* msg 62: "ERASE RDB$USER_PRIVILEGES failed" */
-	}
-
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		PP IN RDB$PROCEDURE_PARAMETERS WITH PP.RDB$PROCEDURE_NAME EQ name
@@ -911,8 +952,9 @@ void DYN_delete_procedure( GBL gbl, UCHAR ** ptr)
 
 		ERASE PP;
 	END_FOR;
-	if (!DYN_REQUEST(drq_e_prms))
+	if (!DYN_REQUEST(drq_e_prms)) {
 		DYN_REQUEST(drq_e_prms) = request;
+	}
 
 	request = (BLK) CMP_find_request(tdbb, drq_e_prcs, DYN_REQUESTS);
 	id = drq_e_prcs;
@@ -921,23 +963,25 @@ void DYN_delete_procedure( GBL gbl, UCHAR ** ptr)
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_NAME EQ name
 
-        if (!DYN_REQUEST(drq_e_prcs)) 
+        if (!DYN_REQUEST(drq_e_prcs)) {
             DYN_REQUEST(drq_e_prcs) = request;
+		}
 
-		if (!P.RDB$SECURITY_CLASS.NULL)
+		if (!P.RDB$SECURITY_CLASS.NULL) {
 			delete_security_class2(gbl, P.RDB$SECURITY_CLASS);
+		}
 
 		ERASE P;
 		found = TRUE;
 	END_FOR;
 
-	if (!DYN_REQUEST(drq_e_prcs))
+	if (!DYN_REQUEST(drq_e_prcs)) {
 		DYN_REQUEST(drq_e_prcs) = request;
+	}
 
 	if (!found) {
 		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		DYN_error_punt(FALSE, 140, name, NULL, NULL, NULL, NULL);
-		/* msg 140: "Procedure %s not found" */
+		goto dyn_punt_140;
 	}
 
 	request = (BLK) CMP_find_request(tdbb, drq_e_prc_prvs, DYN_REQUESTS);
@@ -958,8 +1002,40 @@ void DYN_delete_procedure( GBL gbl, UCHAR ** ptr)
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 
-	if (*(*ptr)++ != gds_dyn_end)
+	}	// try
+	catch (...) {
+		DYN_rundown_request(old_env, request, -1);
+		if (id == drq_e_prms)
+		{
+			DYN_error_punt(TRUE, 138, NULL, NULL, NULL, NULL, NULL);
+			/* msg 138: "ERASE RDB$PROCEDURE_PARAMETERS failed" */
+		}
+		else if (id == drq_e_prcs)
+		{
+			DYN_error_punt(TRUE, 139, NULL, NULL, NULL, NULL, NULL);
+			/* msg 139: "ERASE RDB$PROCEDURES failed" */
+		}
+		else if (id == drq_d_gfields)
+		{
+			DYN_error_punt(TRUE, 35, NULL, NULL, NULL, NULL, NULL);
+			/* msg 35: "ERASE RDB$FIELDS failed" */
+		}
+		else
+		{
+			DYN_error_punt(TRUE, 62, NULL, NULL, NULL, NULL, NULL);
+			/* msg 62: "ERASE RDB$USER_PRIVILEGES failed" */
+		}
+	}
+
+	if (*(*ptr)++ != gds_dyn_end) {
 		DYN_unsupported_verb();
+	}
+
+	return;
+
+dyn_punt_140:
+	DYN_error_punt(FALSE, 140, name, NULL, NULL, NULL, NULL);
+	/* msg 140: "Procedure %s not found" */
 }
 
 
@@ -981,7 +1057,7 @@ void DYN_delete_relation( GBL gbl, UCHAR ** ptr, TEXT * relation)
 	DBB dbb;
 	BLK request;
 	VOLATILE USHORT id, found;
-	TEXT relation_name[32], security_class[32];
+	TEXT relation_name[32];
 	JMP_BUF env, *old_env;
 
 	tdbb = GET_THREAD_DATA;
@@ -995,42 +1071,10 @@ void DYN_delete_relation( GBL gbl, UCHAR ** ptr, TEXT * relation)
 	request = (BLK) CMP_find_request(tdbb, drq_e_rel_con2, DYN_REQUESTS);
 	id = drq_e_rel_con2;
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-
-	if (SETJMP(env)) {
-		DYN_rundown_request(old_env, request, -1);
-		if (id == drq_e_rel_con2)
-			DYN_error_punt(TRUE, 129, NULL, NULL, NULL, NULL, NULL);
-		/* msg 129: "ERASE RDB$RELATION_CONSTRAINTS failed" */
-		else if (id == drq_e_rel_idxs)
-			DYN_error_punt(TRUE, 57, NULL, NULL, NULL, NULL, NULL);
-		/* msg 57: "ERASE RDB$INDICES failed" */
-		else if (id == drq_e_trg_msgs2)
-			DYN_error_punt(TRUE, 65, NULL, NULL, NULL, NULL, NULL);
-		/* msg 65: "ERASE RDB$TRIGGER_MESSAGES failed" */
-		else if (id == drq_e_trigger2)
-			DYN_error_punt(TRUE, 66, NULL, NULL, NULL, NULL, NULL);
-		/* msg 66: "ERASE RDB$TRIGGERS failed" */
-		else if (id == drq_e_rel_flds)
-			DYN_error_punt(TRUE, 58, NULL, NULL, NULL, NULL, NULL);
-		/* msg 58: "ERASE RDB$RELATION_FIELDS failed" */
-		else if (id == drq_e_view_rels)
-			DYN_error_punt(TRUE, 59, NULL, NULL, NULL, NULL, NULL);
-		/* msg 59: "ERASE RDB$VIEW_RELATIONS failed" */
-		else if (id == drq_e_relation)
-			DYN_error_punt(TRUE, 60, NULL, NULL, NULL, NULL, NULL);
-		/* msg 60: "ERASE RDB$RELATIONS failed" */
-		else if (id == drq_e_rel_con2)
-			DYN_error_punt(TRUE, 129, NULL, NULL, NULL, NULL, NULL);
-		/* msg 129: "ERASE RDB$RELATION_CONSTRAINTS failed" */
-		else if (id == drq_e_sec_class)
-			DYN_error_punt(TRUE, 74, NULL, NULL, NULL, NULL, NULL);
-		/* msg 74: "ERASE RDB$SECURITY_CLASSES failed" */
-		else
-			DYN_error_punt(TRUE, 62, NULL, NULL, NULL, NULL, NULL);
-		/* msg 62: "ERASE RDB$USER_PRIVILEGES failed" */
-	}
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		CRT IN RDB$RELATION_CONSTRAINTS
@@ -1141,8 +1185,7 @@ void DYN_delete_relation( GBL gbl, UCHAR ** ptr, TEXT * relation)
 
 	if (!found) {
 		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		DYN_error_punt(FALSE, 61, NULL, NULL, NULL, NULL, NULL);
-		/* msg 61: "Relation not found" */
+		goto dyn_punt_61;
 	}
 
 	request = (BLK) CMP_find_request(tdbb, drq_e_rel_con3, DYN_REQUESTS);
@@ -1195,16 +1238,59 @@ void DYN_delete_relation( GBL gbl, UCHAR ** ptr, TEXT * relation)
 		ERASE PRIV;
 	END_FOR;
 
-	if (!DYN_REQUEST(drq_e_usr_prvs))
+	if (!DYN_REQUEST(drq_e_usr_prvs)) {
 		DYN_REQUEST(drq_e_usr_prvs) = request;
+	}
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 
-	while (*(*ptr)++ != gds_dyn_end) {
+	}	// try
+	catch (...) {
+		DYN_rundown_request(old_env, request, -1);
+
+		// lookup error # from id
+		// msg  57: "ERASE RDB$INDICES failed"
+		// msg  58: "ERASE RDB$RELATION_FIELDS failed"
+		// msg  59: "ERASE RDB$VIEW_RELATIONS failed"
+		// msg  60: "ERASE RDB$RELATIONS failed"
+		// msg  62: "ERASE RDB$USER_PRIVILEGES failed"
+		// msg  65: "ERASE RDB$TRIGGER_MESSAGES failed"
+		// msg  66: "ERASE RDB$TRIGGERS failed"
+		// msg  74: "ERASE RDB$SECURITY_CLASSES failed"
+		// msg 129: "ERASE RDB$RELATION_CONSTRAINTS failed"
+		USHORT number;
+		switch (id) {
+			case drq_e_rel_con2:	number = 129;	break;
+			case drq_e_rel_idxs:	number = 57;	break;
+			case drq_e_trg_msgs2:	number = 65;	break;
+			case drq_e_trigger2:	number = 66;	break;
+			case drq_e_rel_flds:	number = 58;	break;
+			case drq_e_view_rels:	number = 59;	break;
+			case drq_e_relation:	number = 60;	break;
+			case drq_e_sec_class:	number = 74;	break;
+			default:				number = 62;	break;
+		}
+
+		DYN_error_punt(TRUE, number, NULL, NULL, NULL, NULL, NULL);
+	}
+
+	while (*(*ptr)++ != gds_dyn_end)
+	{
 		--(*ptr);
-		DYN_execute(gbl, ptr, relation_name, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR,
+		DYN_execute(gbl,
+					ptr,
+					relation_name,
+					(TEXT*)NULL_PTR,
+					(TEXT*)NULL_PTR,
+					(TEXT*)NULL_PTR,
 					(TEXT*)NULL_PTR);
 	}
+
+	return;
+
+dyn_punt_61:
+	DYN_error_punt(FALSE, 61, NULL, NULL, NULL, NULL, NULL);
+	/* msg 61: "Relation not found" */
 }
 
 
@@ -1271,14 +1357,10 @@ files = NULL;
 
 	request = (BLK) CMP_find_request(tdbb, drq_e_shadow, DYN_REQUESTS);
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-
-	if (SETJMP(env)) {
-		DYN_rundown_request(old_env, request, -1);
-		DYN_error_punt(TRUE, 63, NULL, NULL, NULL, NULL, NULL);
-		/* msg 63: "ERASE RDB$FILES failed" */
-	}
 
 	shadow_number = DYN_get_number(ptr);
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -1289,7 +1371,7 @@ files = NULL;
 
 		ERASE FIL;
 /****
-    file = (STR) ALLOCDV (type_str, sizeof (FIL.RDB$FILE_NAME) - 1);
+    file = new(*tdbb->tdbb_default, sizeof (FIL.RDB$FILE_NAME) - 1) str();
     strcpy (file->str_data, FIL.RDB$FILE_NAME);
     LLS_PUSH (file, &files);
 ****/
@@ -1300,6 +1382,13 @@ files = NULL;
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 
+	}
+	catch (...) {
+		DYN_rundown_request(old_env, request, -1);
+		DYN_error_punt(TRUE, 63, NULL, NULL, NULL, NULL, NULL);
+		/* msg 63: "ERASE RDB$FILES failed" */
+	}
+
 /****
 while (files)
     {
@@ -1309,8 +1398,9 @@ while (files)
     }
 ****/
 
-	if (*(*ptr)++ != gds_dyn_end)
+	if (*(*ptr)++ != gds_dyn_end) {
 		DYN_unsupported_verb();
+	}
 }
 
 
@@ -1340,21 +1430,10 @@ void DYN_delete_trigger( GBL gbl, UCHAR ** ptr)
 	request = (BLK) CMP_find_request(tdbb, drq_e_trg_msgs, DYN_REQUESTS);
 	id = drq_e_trg_msgs;
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-
-	if (SETJMP(env)) {
-		DYN_rundown_request(old_env, request, -1);
-		if (id == drq_e_trg_msgs)
-			DYN_error_punt(TRUE, 65, NULL, NULL, NULL, NULL, NULL);
-		/* msg 65: "ERASE RDB$TRIGGER_MESSAGES failed" */
-		else if (id == drq_e_trigger)
-			DYN_error_punt(TRUE, 66, NULL, NULL, NULL, NULL, NULL);
-		/* msg 66: "ERASE RDB$TRIGGERS failed" */
-		else
-			DYN_error_punt(TRUE, 68, NULL, NULL, NULL, NULL, NULL);
-		/* msg 68: "MODIFY RDB$VIEW_RELATIONS failed" */
-	}
 
 	GET_STRING(ptr, t);
 
@@ -1390,8 +1469,7 @@ void DYN_delete_trigger( GBL gbl, UCHAR ** ptr)
 
 	if (!found) {
 		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		DYN_error_punt(FALSE, 67, NULL, NULL, NULL, NULL, NULL);
-		/* msg 67: "Trigger not found" */
+		goto dyn_punt_67;
 	}
 
 /* clear the update flags on the fields if this is the last remaining
@@ -1438,8 +1516,35 @@ void DYN_delete_trigger( GBL gbl, UCHAR ** ptr)
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 
-	if (*(*ptr)++ != gds_dyn_end)
+	}	// try
+	catch (...) {
+		DYN_rundown_request(old_env, request, -1);
+		if (id == drq_e_trg_msgs)
+		{
+			DYN_error_punt(TRUE, 65, NULL, NULL, NULL, NULL, NULL);
+			/* msg 65: "ERASE RDB$TRIGGER_MESSAGES failed" */
+		}
+		else if (id == drq_e_trigger)
+		{
+			DYN_error_punt(TRUE, 66, NULL, NULL, NULL, NULL, NULL);
+			/* msg 66: "ERASE RDB$TRIGGERS failed" */
+		}
+		else
+		{
+			DYN_error_punt(TRUE, 68, NULL, NULL, NULL, NULL, NULL);
+			/* msg 68: "MODIFY RDB$VIEW_RELATIONS failed" */
+		}
+	}
+
+	if (*(*ptr)++ != gds_dyn_end) {
 		DYN_unsupported_verb();
+	}
+
+	return;
+
+dyn_punt_67:
+	DYN_error_punt(FALSE, 67, NULL, NULL, NULL, NULL, NULL);
+	/* msg 67: "Trigger not found" */
 }
 
 
@@ -1478,14 +1583,10 @@ void DYN_delete_trigger_msg( GBL gbl, UCHAR ** ptr, TEXT * trigger_name)
 
 	request = (BLK) CMP_find_request(tdbb, drq_e_trg_msg, DYN_REQUESTS);
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-
-	if (SETJMP(env)) {
-		DYN_rundown_request(old_env, request, -1);
-		DYN_error_punt(TRUE, 71, NULL, NULL, NULL, NULL, NULL);
-		/* msg 71: "ERASE TRIGGER MESSAGE failed" */
-	}
 
 	found = FALSE;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -1504,19 +1605,28 @@ void DYN_delete_trigger_msg( GBL gbl, UCHAR ** ptr, TEXT * trigger_name)
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 
-	if (!found)
-		DYN_error_punt(FALSE, 72, NULL, NULL, NULL, NULL, NULL);
-	/* msg 72: "Trigger Message not found" */
+	}
+	catch (...) {
+		DYN_rundown_request(old_env, request, -1);
+		DYN_error_punt(TRUE, 71, NULL, NULL, NULL, NULL, NULL);
+		/* msg 71: "ERASE TRIGGER MESSAGE failed" */
+	}
 
-	if (*(*ptr)++ != gds_dyn_end)
+	if (!found)
+	{
+		DYN_error_punt(FALSE, 72, NULL, NULL, NULL, NULL, NULL);
+		/* msg 72: "Trigger Message not found" */
+	}
+
+	if (*(*ptr)++ != gds_dyn_end) {
 		DYN_unsupported_verb();
+	}
 }
 
 
-static BOOLEAN delete_constraint_records(
-										 GBL gbl,
-										 TEXT * constraint_name,
-										 TEXT * relation_name)
+static BOOLEAN delete_constraint_records(GBL	gbl,
+										 TEXT*	constraint_name,
+										 TEXT*	relation_name)
 {
 /**************************************
  *
@@ -1540,14 +1650,10 @@ static BOOLEAN delete_constraint_records(
 
 	request = (BLK) CMP_find_request(tdbb, drq_e_rel_con, DYN_REQUESTS);
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-
-	if (SETJMP(env)) {
-		DYN_rundown_request(old_env, request, -1);
-		DYN_error_punt(TRUE, 129, NULL, NULL, NULL, NULL, NULL);
-		/* msg 129: "ERASE RDB$RELATION_CONSTRAINTS failed" */
-	}
 
 	found = FALSE;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -1567,11 +1673,18 @@ static BOOLEAN delete_constraint_records(
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 
+	}
+	catch (...) {
+		DYN_rundown_request(old_env, request, -1);
+		DYN_error_punt(TRUE, 129, NULL, NULL, NULL, NULL, NULL);
+		/* msg 129: "ERASE RDB$RELATION_CONSTRAINTS failed" */
+	}
+
 	return found;
 }
 
 
-static BOOLEAN delete_dimension_records( GBL gbl, TEXT * field_name)
+static BOOLEAN delete_dimension_records(GBL gbl, TEXT* field_name)
 {
 /**************************************
  *
@@ -1595,41 +1708,44 @@ static BOOLEAN delete_dimension_records( GBL gbl, TEXT * field_name)
 
 	request = (BLK) CMP_find_request(tdbb, drq_e_dims, DYN_REQUESTS);
 
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
+	try {
 
-	if (SETJMP(env)) {
+		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
+		tdbb->tdbb_setjmp = (UCHAR *) env;
+
+		found = FALSE;
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			X IN RDB$FIELD_DIMENSIONS WITH X.RDB$FIELD_NAME EQ field_name
+
+			if (!DYN_REQUEST(drq_e_dims))
+				DYN_REQUEST(drq_e_dims) = request;
+
+			found = TRUE;
+			ERASE X;
+		END_FOR;
+
+		if (!DYN_REQUEST(drq_e_dims))
+			DYN_REQUEST(drq_e_dims) = request;
+
+		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}
+	catch (...) {
 		DYN_rundown_request(old_env, request, -1);
 		DYN_error_punt(TRUE, 35, NULL, NULL, NULL, NULL, NULL);
 		/* msg 35: "ERASE RDB$FIELDS failed" */
 	}
 
-	found = FALSE;
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		X IN RDB$FIELD_DIMENSIONS WITH X.RDB$FIELD_NAME EQ field_name
-
-        if (!DYN_REQUEST(drq_e_dims))
-            DYN_REQUEST(drq_e_dims) = request;
-
-		found = TRUE;
-		ERASE X;
-	END_FOR;
-
-	if (!DYN_REQUEST(drq_e_dims))
-		DYN_REQUEST(drq_e_dims) = request;
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	return found;
 }
 
 
-static void delete_f_key_constraint(
-									TDBB tdbb,
-									GBL gbl,
-									TEXT * tbl_nm,
-									TEXT * col_nm,
-									TEXT * constraint_nm, TEXT * index_name)
+static void delete_f_key_constraint(TDBB	tdbb,
+									GBL		gbl,
+									TEXT*	tbl_nm,
+									TEXT*	col_nm,
+									TEXT*	constraint_nm,
+									TEXT*	index_name)
 {
 /**************************************
  *
@@ -1663,7 +1779,6 @@ static void delete_f_key_constraint(
 	DBB dbb;
 	BLK request;
 	BOOLEAN found;
-	VOLATILE USHORT id;
 	JMP_BUF env, *old_env;
 
 	SET_TDBB(tdbb);
@@ -1671,39 +1786,42 @@ static void delete_f_key_constraint(
 
 	request = (BLK) CMP_find_request(tdbb, drq_e_rel_const, DYN_REQUESTS);
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
 
-	if (SETJMP(env)) {
+		found = FALSE;
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			RC IN RDB$RELATION_CONSTRAINTS
+				WITH RC.RDB$CONSTRAINT_NAME EQ constraint_nm
+				AND RC.RDB$CONSTRAINT_TYPE EQ FOREIGN_KEY
+				AND RC.RDB$RELATION_NAME EQ tbl_nm
+				AND RC.RDB$INDEX_NAME EQ index_name
+
+			if (!DYN_REQUEST(drq_e_rel_const))
+				DYN_REQUEST(drq_e_rel_const) = request;
+
+			found = TRUE;
+			ERASE RC;
+		END_FOR;
+
+		if (!DYN_REQUEST(drq_e_rel_const))
+			DYN_REQUEST(drq_e_rel_const) = request;
+
+		if (!found)
+		{
+			DYN_error_punt(FALSE, 130, constraint_nm, NULL, NULL, NULL, NULL);
+			/* msg 130: "CONSTRAINT %s does not exist." */
+		}
+
+		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+	}
+	catch (...) {
 		DYN_rundown_request(old_env, request, -1);
 		DYN_error_punt(TRUE, 129, NULL, NULL, NULL, NULL, NULL);
 		/* msg 49: "ERASE RDB$RELATION_CONSTRAINTS failed" */
 	}
-
-	found = FALSE;
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		RC IN RDB$RELATION_CONSTRAINTS
-			WITH RC.RDB$CONSTRAINT_NAME EQ constraint_nm
-			AND RC.RDB$CONSTRAINT_TYPE EQ FOREIGN_KEY
-			AND RC.RDB$RELATION_NAME EQ tbl_nm
-			AND RC.RDB$INDEX_NAME EQ index_name
-
-        if (!DYN_REQUEST(drq_e_rel_const))
-            DYN_REQUEST(drq_e_rel_const) = request;
-
-		found = TRUE;
-		ERASE RC;
-	END_FOR;
-
-	if (!DYN_REQUEST(drq_e_rel_const))
-		DYN_REQUEST(drq_e_rel_const) = request;
-
-	if (!found)
-		DYN_error_punt(FALSE, 130, constraint_nm, NULL, NULL, NULL, NULL);
-	/* msg 130: "CONSTRAINT %s does not exist." */
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 }
 
 
@@ -1776,29 +1894,32 @@ static BOOLEAN delete_index_segment_records( GBL gbl, TEXT * index_name)
 
 	request = (BLK) CMP_find_request(tdbb, drq_e_idx_segs, DYN_REQUESTS);
 
+	try {
+
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
-	if (SETJMP(env)) {
+
+		found = FALSE;
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			I_S IN RDB$INDEX_SEGMENTS WITH I_S.RDB$INDEX_NAME EQ index_name
+
+			if (!DYN_REQUEST(drq_e_idx_segs))
+				DYN_REQUEST(drq_e_idx_segs) = request;
+
+			found = TRUE;
+			ERASE I_S;
+		END_FOR;
+
+		if (!DYN_REQUEST(drq_e_idx_segs))
+			DYN_REQUEST(drq_e_idx_segs) = request;
+
+		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+	}
+	catch (...) {
 		DYN_rundown_request(old_env, request, -1);
 		DYN_error_punt(TRUE, 49, NULL, NULL, NULL, NULL, NULL);
 		/* msg 49: "ERASE RDB$INDEX_SEGMENTS failed" */
 	}
-
-	found = FALSE;
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		I_S IN RDB$INDEX_SEGMENTS WITH I_S.RDB$INDEX_NAME EQ index_name
-
-        if (!DYN_REQUEST(drq_e_idx_segs))
-            DYN_REQUEST(drq_e_idx_segs) = request;
-
-		found = TRUE;
-		ERASE I_S;
-	END_FOR;
-
-	if (!DYN_REQUEST(drq_e_idx_segs))
-		DYN_REQUEST(drq_e_idx_segs) = request;
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 
 	return found;
 }
@@ -1817,27 +1938,21 @@ static BOOLEAN delete_security_class2( GBL gbl, TEXT * security_class)
  *	which takes a string as input.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
-	BOOLEAN found;
+
 	JMP_BUF env, *old_env;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB  dbb  = tdbb->tdbb_database;
 
-	request = (BLK) CMP_find_request(tdbb, drq_e_class, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_e_class, DYN_REQUESTS);
+
+	BOOLEAN found = FALSE;
+
+	try {
 
 	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 	tdbb->tdbb_setjmp = (UCHAR *) env;
 
-	if (SETJMP(env)) {
-		DYN_rundown_request(old_env, request, -1);
-		DYN_error_punt(TRUE, 74, NULL, NULL, NULL, NULL, NULL);
-		/* msg 74: "ERASE RDB$SECURITY_CLASSES failed" */
-	}
-
-	found = FALSE;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		SC IN RDB$SECURITY_CLASSES WITH SC.
 			RDB$SECURITY_CLASS EQ security_class 
@@ -1850,10 +1965,18 @@ static BOOLEAN delete_security_class2( GBL gbl, TEXT * security_class)
 
 	END_FOR;
 
-	if (!DYN_REQUEST(drq_e_class))
+	if (!DYN_REQUEST(drq_e_class)) {
 		DYN_REQUEST(drq_e_class) = request;
+	}
 
 	tdbb->tdbb_setjmp = (UCHAR *) old_env;
+
+	}
+	catch (...) {
+		DYN_rundown_request(old_env, request, -1);
+		DYN_error_punt(TRUE, 74, NULL, NULL, NULL, NULL, NULL);
+		/* msg 74: "ERASE RDB$SECURITY_CLASSES failed" */
+	}
 
 	return found;
 }

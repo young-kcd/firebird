@@ -20,6 +20,11 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
+ 
+//This MUST be before any other includes
+#ifdef DARWIN
+#define _STLP_CCTYPE
+#endif
 
 #include "firebird.h"
 #include <ctype.h>
@@ -40,9 +45,6 @@
 #include "../jrd/cvt_proto.h"
 
 
-extern "C" {
-
-
 ASSERT_FILENAME					/* declare things assert() needs */
 /* InterBase provides transparent conversion from string to date in
  * contexts where it makes sense.  This macro checks a descriptor to
@@ -53,7 +55,9 @@ ASSERT_FILENAME					/* declare things assert() needs */
 #define IS_DATE_AND_TIME(d1,d2)	\
   ((((d1).dsc_dtype==dtype_sql_time)&&((d2).dsc_dtype==dtype_sql_date)) || \
    (((d2).dsc_dtype==dtype_sql_time)&&((d1).dsc_dtype==dtype_sql_date)))
-	NOD MAKE_constant(STR constant, int numeric_flag)
+
+
+NOD MAKE_constant(STR constant, int numeric_flag)
 {
 /**************************************
  *
@@ -70,9 +74,9 @@ ASSERT_FILENAME					/* declare things assert() needs */
 
 	tdsql = GET_THREAD_DATA;
 
-	node = (NOD) ALLOCDV(type_nod,
-						 (numeric_flag == CONSTANT_TIMESTAMP ||
-						  numeric_flag == CONSTANT_SINT64) ? 2 : 1);
+	node = new(*tdsql->tsql_default,
+						(numeric_flag == CONSTANT_TIMESTAMP ||
+						  numeric_flag == CONSTANT_SINT64) ? 2 : 1) nod;
 	node->nod_type = nod_constant;
 
 	if (numeric_flag == CONSTANT_SLONG) {
@@ -84,7 +88,7 @@ ASSERT_FILENAME					/* declare things assert() needs */
 		node->nod_arg[0] = (NOD) constant;
 	}
 	else if (numeric_flag == CONSTANT_DOUBLE) {
-		DEV_BLKCHK(constant, type_str);
+		DEV_BLKCHK(constant, dsql_type_str);
 
 		/* This is a numeric value which is transported to the engine as
 		 * a string.  The engine will convert it. Use dtype_double so that
@@ -166,23 +170,23 @@ ASSERT_FILENAME					/* declare things assert() needs */
 		tmp.dsc_scale = 0;
 		tmp.dsc_flags = 0;
 		tmp.dsc_ttype = ttype_ascii;
-		tmp.dsc_length = static_cast < USHORT > (constant->str_length);
+		tmp.dsc_length = static_cast<USHORT>(constant->str_length);
 		tmp.dsc_address = constant->str_data;
 
 		/* Now invoke the string_to_date/time/timestamp routines */
 
 		CVT_move(&tmp, &node->nod_desc,
-				 reinterpret_cast < void (*)() > (ERRD_post));
+				 reinterpret_cast<void (*)()> (ERRD_post));
 	}
 	else {
 		assert(numeric_flag == CONSTANT_STRING);
-		DEV_BLKCHK(constant, type_str);
+		DEV_BLKCHK(constant, dsql_type_str);
 
 		node->nod_desc.dsc_dtype = dtype_text;
 		node->nod_desc.dsc_sub_type = 0;
 		node->nod_desc.dsc_scale = 0;
 		node->nod_desc.dsc_length =
-			static_cast < USHORT > (constant->str_length);
+			static_cast<USHORT>(constant->str_length);
 		node->nod_desc.dsc_address = constant->str_data;
 		node->nod_desc.dsc_ttype = ttype_dynamic;
 		/* carry a pointer to the constant to resolve character set in pass1 */
@@ -211,15 +215,15 @@ NOD MAKE_str_constant(STR constant, SSHORT character_set)
 
 	tdsql = GET_THREAD_DATA;
 
-	node = (NOD) ALLOCDV(type_nod, 1);
+	node = new(*tdsql->tsql_default, 1) nod;
 	node->nod_type = nod_constant;
 
-	DEV_BLKCHK(constant, type_str);
+	DEV_BLKCHK(constant, dsql_type_str);
 
 	node->nod_desc.dsc_dtype = dtype_text;
 	node->nod_desc.dsc_sub_type = 0;
 	node->nod_desc.dsc_scale = 0;
-	node->nod_desc.dsc_length = static_cast < USHORT > (constant->str_length);
+	node->nod_desc.dsc_length = static_cast<USHORT>(constant->str_length);
 	node->nod_desc.dsc_address = constant->str_data;
 	node->nod_desc.dsc_ttype = character_set;
 /* carry a pointer to the constant to resolve character set in pass1 */
@@ -267,7 +271,7 @@ void MAKE_desc( DSC * desc, NOD node)
 	UDF udf;
 	FLD field;
 
-	DEV_BLKCHK(node, type_nod);
+	DEV_BLKCHK(node, dsql_type_nod);
 
 /* If we already know the datatype, don't worry about anything */
 
@@ -766,7 +770,7 @@ void MAKE_desc( DSC * desc, NOD node)
 		MAKE_desc(&desc1, node->nod_arg[0]);
 		MAKE_desc(&desc2, node->nod_arg[1]);
 		dtype = DSC_multiply_result[desc1.dsc_dtype][desc2.dsc_dtype];
-		desc->dsc_dtype = static_cast < UCHAR > (dtype);
+		desc->dsc_dtype = static_cast<UCHAR>(dtype);
 
 		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
 		switch (dtype) {
@@ -817,9 +821,9 @@ void MAKE_desc( DSC * desc, NOD node)
 
 	case nod_udf:
 		udf = (UDF) node->nod_arg[0];
-		desc->dsc_dtype = static_cast < UCHAR > (udf->udf_dtype);
+		desc->dsc_dtype = static_cast<UCHAR>(udf->udf_dtype);
 		desc->dsc_length = udf->udf_length;
-		desc->dsc_scale = static_cast < SCHAR > (udf->udf_scale);
+		desc->dsc_scale = static_cast<SCHAR>(udf->udf_scale);
 		desc->dsc_flags = 0;
 		desc->dsc_ttype = udf->udf_sub_type;
 		return;
@@ -966,10 +970,10 @@ void MAKE_desc_from_field( DSC * desc, FLD field)
  *
  **************************************/
 
-	DEV_BLKCHK(field, type_fld);
+	DEV_BLKCHK(field, dsql_type_fld);
 
-	desc->dsc_dtype = static_cast < UCHAR > (field->fld_dtype);
-	desc->dsc_scale = static_cast < SCHAR > (field->fld_scale);
+	desc->dsc_dtype = static_cast<UCHAR>(field->fld_dtype);
+	desc->dsc_scale = static_cast<SCHAR>(field->fld_scale);
 	desc->dsc_sub_type = field->fld_sub_type;
 	desc->dsc_length = field->fld_length;
 	desc->dsc_flags = (field->fld_flags & FLD_nullable) ? DSC_nullable : 0;
@@ -978,7 +982,7 @@ void MAKE_desc_from_field( DSC * desc, FLD field)
 						field->fld_collation_id);
 	}
 	else if (desc->dsc_dtype == dtype_blob)
-		desc->dsc_scale = static_cast < SCHAR > (field->fld_character_set_id);
+		desc->dsc_scale = static_cast<SCHAR>(field->fld_character_set_id);
 }
 
 
@@ -996,9 +1000,9 @@ NOD MAKE_field(CTX context, FLD field, NOD indices)
  **************************************/
 	NOD node;
 
-	DEV_BLKCHK(context, type_ctx);
-	DEV_BLKCHK(field, type_fld);
-	DEV_BLKCHK(indices, type_nod);
+	DEV_BLKCHK(context, dsql_type_ctx);
+	DEV_BLKCHK(field, dsql_type_fld);
+	DEV_BLKCHK(indices, dsql_type_nod);
 
 	node = MAKE_node(nod_field, e_fld_count);
 	node->nod_arg[e_fld_context] = (NOD) context;
@@ -1008,7 +1012,7 @@ NOD MAKE_field(CTX context, FLD field, NOD indices)
 			node->nod_arg[e_fld_indices] = indices;
 			MAKE_desc_from_field(&node->nod_desc, field);
 			node->nod_desc.dsc_dtype =
-				static_cast < UCHAR > (field->fld_element_dtype);
+				static_cast<UCHAR>(field->fld_element_dtype);
 			node->nod_desc.dsc_length = field->fld_element_length;
 			/*
 			   node->nod_desc.dsc_scale = field->fld_scale;
@@ -1019,7 +1023,7 @@ NOD MAKE_field(CTX context, FLD field, NOD indices)
 			node->nod_desc.dsc_dtype = dtype_array;
 			node->nod_desc.dsc_length = sizeof(GDS__QUAD);
 			node->nod_desc.dsc_scale =
-				static_cast < SCHAR > (field->fld_scale);
+				static_cast<SCHAR>(field->fld_scale);
 			node->nod_desc.dsc_sub_type = field->fld_sub_type;
 		}
 	}
@@ -1036,7 +1040,7 @@ NOD MAKE_field(CTX context, FLD field, NOD indices)
 }
 
 
-NOD MAKE_list(LLS stack)
+NOD MAKE_list(DLLS stack)
 {
 /**************************************
  *
@@ -1048,11 +1052,11 @@ NOD MAKE_list(LLS stack)
  *	Make a list node from a linked list stack of things.
  *
  **************************************/
-	LLS temp;
+	DLLS temp;
 	USHORT count;
 	NOD node, *ptr;
 
-	DEV_BLKCHK(stack, type_lls);
+	DEV_BLKCHK(stack, dsql_type_lls);
 
 	for (temp = stack, count = 0; temp; temp = temp->lls_next)
 		++count;
@@ -1084,7 +1088,7 @@ NOD MAKE_node(NOD_TYPE type, int count)
 
 	tdsql = GET_THREAD_DATA;
 
-	node = (NOD) ALLOCDV(type_nod, count);
+	node = new(*tdsql->tsql_default, count) nod;
 	node->nod_type = type;
 	node->nod_count = count;
 
@@ -1108,11 +1112,11 @@ PAR MAKE_parameter(MSG message, USHORT sqlda_flag, USHORT null_flag)
 	PAR parameter, null;
 	TSQL tdsql;
 
-	DEV_BLKCHK(message, type_msg);
+	DEV_BLKCHK(message, dsql_type_msg);
 
 	tdsql = GET_THREAD_DATA;
 
-	parameter = (PAR) ALLOCD(type_par);
+	parameter = new(*tdsql->tsql_default) par;
 	parameter->par_message = message;
 	if (parameter->par_next = message->msg_parameters)
 		parameter->par_next->par_ordered = parameter;
@@ -1174,14 +1178,14 @@ SYM MAKE_symbol(DBB database,
 	TEXT *p;
 	TSQL tdsql;
 
-	DEV_BLKCHK(database, type_dbb);
-	DEV_BLKCHK(object, type_req);
+	DEV_BLKCHK(database, dsql_type_dbb);
+	DEV_BLKCHK(object, dsql_type_req);
 	assert(name);
 	assert(length > 0);
 
 	tdsql = GET_THREAD_DATA;
 
-	symbol = (SYM) ALLOCDV(type_sym, length);
+	symbol = new(*tdsql->tsql_default, length) sym;
 	symbol->sym_type = type;
 	symbol->sym_object = (BLK) object;
 	symbol->sym_dbb = database;
@@ -1197,7 +1201,7 @@ SYM MAKE_symbol(DBB database,
 }
 
 
-STR MAKE_tagged_string(CONST UCHAR * str, int length, CONST TEXT * charset)
+STR MAKE_tagged_string(CONST UCHAR * str_, int length, CONST TEXT * charset)
 {
 /**************************************
  *
@@ -1216,11 +1220,11 @@ STR MAKE_tagged_string(CONST UCHAR * str, int length, CONST TEXT * charset)
 
 	tdsql = GET_THREAD_DATA;
 
-	string = (STR) ALLOCDV(type_str, length);
+	string = new(*tdsql->tsql_default, length) str;
 	string->str_charset = const_cast < char *>(charset);
 	string->str_length = length;
 	for (p = string->str_data; length; --length)
-		*p++ = *str++;
+		*p++ = *str_++;
 
 	return string;
 }
@@ -1242,26 +1246,24 @@ NOD MAKE_variable(FLD field,
  *
  **************************************/
 	NOD node;
-	VAR var;
+	VAR var_;
 	TSQL tdsql;
 
-	DEV_BLKCHK(field, type_fld);
+	DEV_BLKCHK(field, dsql_type_fld);
 
 	tdsql = GET_THREAD_DATA;
 
-	var = (VAR) ALLOCDV(type_var, strlen(name));
+	var_ = new(*tdsql->tsql_default, strlen(name)) var;
 	node = MAKE_node(nod_variable, e_var_count);
-	node->nod_arg[e_var_variable] = (NOD) var;
-	var->var_msg_number = msg_number;
-	var->var_msg_item = item_number;
-	var->var_variable_number = local_number;
-	var->var_field = field;
-	strcpy(var->var_name, name);
-	var->var_flags = type;
+	node->nod_arg[e_var_variable] = (NOD) var_;
+	var_->var_msg_number = msg_number;
+	var_->var_msg_item = item_number;
+	var_->var_variable_number = local_number;
+	var_->var_field = field;
+	strcpy(var_->var_name, name);
+	var_->var_flags = type;
 	MAKE_desc_from_field(&node->nod_desc, field);
 
 	return node;
 }
 
-
-}	// extern "C"

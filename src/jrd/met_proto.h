@@ -43,8 +43,8 @@ SCHAR *MET_exact_name(TEXT *);
 struct fmt *MET_format(TDBB, register struct rel *, USHORT);
 BOOLEAN MET_get_char_subtype(TDBB, SSHORT *, UCHAR *, USHORT);
 struct nod *MET_get_dependencies(TDBB, struct rel*, TEXT*,
-								struct csb*, SLONG[2], struct req**,
-								struct csb **, CONST TEXT*, USHORT);
+								class Csb*, SLONG[2], struct req**,
+								class Csb **, CONST TEXT*, USHORT);
 struct fld *MET_get_field(struct rel *, USHORT);
 void MET_get_shadow_files(TDBB, USHORT);
 int MET_get_walinfo(TDBB, struct logfiles **, ULONG *,
@@ -64,7 +64,7 @@ struct prc *MET_lookup_procedure(TDBB, SCHAR *);
 struct prc *MET_lookup_procedure_id(TDBB, SSHORT, BOOLEAN, USHORT);
 struct rel *MET_lookup_relation(TDBB, CONST SCHAR*);
 struct rel *MET_lookup_relation_id(TDBB, SLONG, BOOLEAN);
-struct nod *MET_parse_blob(TDBB, struct rel *, SLONG[2], struct csb **,
+struct nod *MET_parse_blob(TDBB, struct rel *, SLONG[2], class Csb **,
 								  struct req **, BOOLEAN, BOOLEAN);
 void MET_parse_sys_trigger(TDBB, struct rel *);
 int MET_post_existence(TDBB, struct rel *);

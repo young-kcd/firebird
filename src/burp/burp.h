@@ -603,6 +603,10 @@ typedef struct gfld {
 
 #define MAX_FILE_NAME_LENGTH	256
 
+#ifdef __cplusplus
+}	/* extern "C" */
+#endif
+
 /* Note that this typedef is also defined in JRD.H and REMOTE.H */
 /* but for some reason we are avoiding including JRD.H          */
 /* and this typedef is needed to include SVC.H                  */
@@ -612,10 +616,6 @@ typedef struct gfld {
 #endif
 #endif
 
-
-#ifdef __cplusplus
-}	/* extern "C" */
-#endif
 
 #include "../jrd/svc.h"
 #include "../jrd/svc_proto.h"
@@ -865,11 +865,11 @@ extern struct tgbl *gdgbl;
 // I had funnies with this cast
 #define EXIT(code)	            {  tdgbl->exit_code = ((volatile int)code);          \
 												if (tdgbl->burp_env != NULL)        \
-											  		LONGJMP((jmp_buf)(const_cast<UCHAR*>(tdgbl->burp_env)), 1);  }
+											  		Firebird::status_longjmp_error::raise(1);  }
 #else
-#define EXIT(code)	            {  tdgbl->exit_code = ((volatile int)code);          \
-												if (tdgbl->burp_env != NULL)        \
-											  		LONGJMP(tdgbl->burp_env, 1);  }
+
+#error Dont do this, it hurts!
+
 #endif	/* __cplusplus */
 
 #define FINI_DB_NOT_ONLINE	2	/* database is not on-line due to

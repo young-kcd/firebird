@@ -30,12 +30,15 @@
  *       John Bellardo  <bellardo@cs.ucsd.edu>
  *
  *
- *  $Id: firebird.h,v 1.1 2001-07-29 17:19:15 skywalker Exp $
+ *  $Id: firebird.h,v 1.2 2001-12-24 02:50:49 tamlin Exp $
  *
  */
 
 
 #include "gen/autoconfig.h"
 
+#ifdef __cplusplus
+#include "fb_exception.h"
+#endif
 
 #endif /* INCLUDE_Firebird */

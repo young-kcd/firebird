@@ -47,12 +47,12 @@
 #include "../jrd/llio_proto.h"
 #include "../jrd/misc_proto.h"
 #include "../jrd/divorce.h"
+#include <setjmp.h>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
-#include <setjmp.h>
 #if !(defined WIN_NT)
 #ifndef VMS
 #include <sys/types.h>
@@ -111,7 +111,8 @@ extern "C" {
 #define ERRNO	errno
 #endif
 
-typedef struct walwl {
+typedef struct walwl
+{
 	jmp_buf walwl_env;
 	SLONG walwl_log_fd;
 	struct jrn *walwl_journal_handle;
@@ -375,13 +376,11 @@ SSHORT WALW_writer(STATUS * status_vector, WAL WAL_handle)
 	acquired = FALSE;
 	log_header = (WALFH) gds__alloc(WALFH_LENGTH);
 /* NOMEM: return failure, FREE: error returns & macro WALW_WRITER_RETURN */
-	if (!log_header)
+	if (!log_header) {
 		return FAILURE;
-	if (setjmp(ENV)) {
-		if (acquired)
-			WALC_release(WAL_handle);
-		WALW_WRITER_RETURN(FAILURE);
 	}
+
+	try {
 
 /* If there already is a WAL writer running, return quietly. */
 
@@ -631,6 +630,14 @@ SSHORT WALW_writer(STATUS * status_vector, WAL WAL_handle)
 	ISC_event_clear(WAL_EVENTS + WAL_WRITER_WORK_DONE_SEM);
 
 	WALW_WRITER_RETURN(SUCCESS);
+
+	}	// try
+	catch (...) {
+		if (acquired) {
+			WALC_release(WAL_handle);
+		}
+		WALW_WRITER_RETURN(FAILURE);
+	}
 }
 
 
@@ -1760,7 +1767,7 @@ static void report_walw_bug_or_error(
 		ib_fprintf(DEBUG_FD, "WAL writer encountered error, code=%d\n", code);
 	}
 
-	longjmp(ENV, (int) status_vector[1]);
+	Firebird::status_longjmp_error::raise(status_vector[1]);
 }
 
 

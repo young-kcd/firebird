@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: ibmgr.h,v 1.1.1.1 2001-05-23 13:26:42 tamlin Exp $
+ * $Id: ibmgr.h,v 1.2 2001-12-24 02:50:53 tamlin Exp $
  */
 
 #ifndef _UTILITIES_IBMGR_H_

@@ -34,17 +34,22 @@
 #ifndef _JRD_PAG_H_
 #define _JRD_PAG_H_
 
+#include "../jrd/jrd_blks.h"
+#include "../include/fb_blk.h"
+
 /* Page control block -- used by PAG to keep track of critical
    constants */
 
-typedef struct pgc {
-	struct blk pgc_header;
+class pgc : public pool_alloc<type_pgc>
+{
+    public:
 	SLONG pgc_high_water;		/* Lowest PIP with space */
 	SLONG pgc_ppp;				/* Pages per pip */
 	SLONG pgc_pip;				/* First pointer page */
 	ULONG pgc_bytes;			/* Number of bytes of bit in PIP */
 	ULONG pgc_tpt;				/* Transactions per TIP */
 	ULONG pgc_gpg;				/* Generators per generator page */
-} *PGC;
+};
+typedef pgc *PGC;
 
 #endif /* _JRD_PAG_H_ */

@@ -227,7 +227,7 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 		sprintf(filename, "Unknown QATEST_entrypoint #%lu",	/* TXNN */
 				*function);
 		THREAD_ENTER;
-		ERR_post(gds__random,
+		ERR_post(gds_random,
 				 gds_arg_string, ERR_cstring((TEXT *) filename), 0);
 		THREAD_EXIT;
 		return 0;

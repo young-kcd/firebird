@@ -14,7 +14,7 @@
 #
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
-# $Id: bind_gds_s.sco,v 1.1 2001-07-12 06:32:03 bellardo Exp $
+# $Id: bind_gds_s.sco,v 1.2 2001-12-24 02:50:52 tamlin Exp $
 #ident "InterBase V4.0 shared library"
 #address .text 0xa4800000
 #address .data 0xa4c00000

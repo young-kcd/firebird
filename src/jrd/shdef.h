@@ -108,13 +108,11 @@ typedef unsigned int mode_t;
 #define ctime		(*_libgds_ctime)
 #define atol		(*_libgds_atol)
 
-extern int setjmp();
 extern int sprintf();
 extern int strlen();
 extern int strcmp();
 extern SCHAR *strcpy();
 extern void exit();
-extern void longjmp();
 extern IB_FILE _iob[];
 extern int abort();
 extern void *memset();

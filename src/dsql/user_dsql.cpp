@@ -654,9 +654,7 @@ STATUS API_ROUTINE isc_embed_dsql_prepare(STATUS*	user_status,
 	init(db_handle);
 	set_global_private_status(user_status, local_status);
 
-	if (SETJMP(UDSQL_error->dsql_env)) {
-		return error();
-	}
+	try {
 
 	NAME name = lookup_name(stmt_name, statement_names);
 
@@ -708,7 +706,7 @@ STATUS API_ROUTINE isc_embed_dsql_prepare(STATUS*	user_status,
 
 	if (!statement)
 	{
-		statement = (STMT) gds__alloc((SLONG) sizeof(struct stmt));
+		statement = (STMT) gds__alloc((SLONG) sizeof(stmt));
 		/* FREE: by user calling isc_embed_dsql_release() */
 		if (!statement)			/* NOMEM: */
 			error_post(isc_virmemexh, 0);
@@ -731,6 +729,13 @@ STATUS API_ROUTINE isc_embed_dsql_prepare(STATUS*	user_status,
 	statement->stmt_cursor = NULL;
 
 	return s;
+
+	}	// try
+	catch (...)
+	{
+		return error();
+	}
+
 }
 
 
@@ -1437,7 +1442,7 @@ static void error_post(STATUS status, ...)
 
 	// Give up whatever we were doing and return to the user.
 
-	LONGJMP(UDSQL_error->dsql_env, (int) UDSQL_error->dsql_status[1]);
+	Firebird::status_longjmp_error::raise(UDSQL_error->dsql_status[1]);
 }
 
 
@@ -1450,7 +1455,7 @@ static void init(HNDL* db_handle)
 	// If we haven't been initialized yet, do it now
 	if (!init_flag)
 	{
-		UDSQL_error = (ERR) gds__alloc((SLONG) sizeof(struct err));
+		UDSQL_error = (ERR) gds__alloc((SLONG) sizeof(err));
 		// FREE: by exit cleanup()
 		if (!UDSQL_error) {		// NOMEM:
 			return;				// Don't set the init_flag
@@ -1470,7 +1475,7 @@ static void init(HNDL* db_handle)
 		}
 	}
 
-	dbb = (DBB) gds__alloc((SLONG) sizeof(struct dbb));
+	dbb = (DBB) gds__alloc((SLONG) sizeof(dbb));
 
 	// FREE: by database exit handler cleanup_database()
 	if (!dbb) {					// NOMEM
@@ -1506,7 +1511,7 @@ static NAME insert_name( TEXT * symbol, NAME* list_ptr, STMT stmt)
 	TEXT *p;
 
 	l = name_length(symbol);
-	name = (NAME) gds__alloc((SLONG) sizeof(struct name) + l);
+	name = (NAME) gds__alloc((SLONG) sizeof(name) + l);
 /* FREE: by exit handler cleanup() or database_cleanup() */
 	if (!name)					/* NOMEM: */
 		error_post(gds_virmemexh, 0);

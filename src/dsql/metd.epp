@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
- *	MODULE:		met.e
+ *	MODULE:		met.epp
  *	DESCRIPTION:	Meta-data interface
  *
  * The contents of this file are subject to the Interbase Public
@@ -41,7 +41,7 @@
 #include "../jrd/thd_proto.h"
 #include "../jrd/constants.h"
 
-/* NOTE: The static definition of DB and gds__trans by gpre will not
+/* NOTE: The static definition of DB and gds_trans by gpre will not
          be used by the meta data routines.  Each of those routines has
          its own local definition of these variables. */
 
@@ -213,7 +213,7 @@ INTLSYM METD_get_collation(REQ request, STR name)
  *	If it doesn't exist, return NULL.
  *
  **************************************/
-	SLONG *DB, *gds__trans;
+	SLONG *DB, *gds_trans;
 	DBB dbb;
 	INTLSYM iname;
 	SYM symbol;
@@ -232,7 +232,7 @@ INTLSYM METD_get_collation(REQ request, STR name)
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
-	gds__trans = (SLONG*) request->req_trans;
+	gds_trans = (SLONG*) request->req_trans;
 	iname = NULL;
 
 	THREAD_EXIT;
@@ -244,7 +244,7 @@ INTLSYM METD_get_collation(REQ request, STR name)
 
 	THREAD_ENTER;
 
-	iname = (INTLSYM) ALLOCV(type_intlsym, dbb->dbb_pool, name->str_length);
+	iname = new(*dbb->dbb_pool, name->str_length) intlsym;
 	strcpy(iname->intlsym_name, (TEXT *) name->str_data);
 	iname->intlsym_type = INTLSYM_collation;
 	iname->intlsym_flags = 0;
@@ -268,7 +268,7 @@ INTLSYM METD_get_collation(REQ request, STR name)
 
 /* Store in the symbol table */
 
-	symbol = iname->intlsym_symbol = (SYM) ALLOCV(type_sym, dbb->dbb_pool, 0);
+	symbol = iname->intlsym_symbol = new(*dbb->dbb_pool, 0) sym;
 	symbol->sym_object = (BLK) iname;
 	symbol->sym_string = iname->intlsym_name;
 	symbol->sym_length = name->str_length;
@@ -303,7 +303,7 @@ TEXT * buffer, USHORT buff_length)
  *    Reads the system tables RDB$FIELDS and RDB$RELATION_FIELDS.
  *
  **************************************************************/
-	SLONG *DB, *gds__trans;
+	SLONG *DB, *gds_trans;
 	DBB dbb;
 	long status_vect[20];
 
@@ -318,7 +318,7 @@ TEXT * buffer, USHORT buff_length)
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
-	gds__trans = (SLONG*) request->req_trans;
+	gds_trans = (SLONG*) request->req_trans;
 
 /* V4.x multi threading requirements */
 	THREAD_EXIT;
@@ -346,7 +346,7 @@ TEXT * buffer, USHORT buff_length)
 	if (*has_default) {
 		/* open the blob */
 		THREAD_EXIT;
-		stat = isc_open_blob2(status_vect, (void**) &DB, (void**) &gds__trans,
+		stat = isc_open_blob2(status_vect, (void**) &DB, (void**) &gds_trans,
 							  (void**) &blob_handle, blob_id, sizeof(blr_bpb),
 							  (UCHAR*)blr_bpb);
 		THREAD_ENTER;
@@ -413,7 +413,7 @@ INTLSYM METD_get_charset(REQ request, USHORT length, UCHAR * name)
  *	If it doesn't exist, return NULL.
  *
  **************************************/
-	SLONG *DB, *gds__trans;
+	SLONG *DB, *gds_trans;
 	DBB dbb;
 	INTLSYM iname;
 	SYM symbol;
@@ -431,7 +431,7 @@ INTLSYM METD_get_charset(REQ request, USHORT length, UCHAR * name)
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
-	gds__trans = (SLONG*) request->req_trans;
+	gds_trans = (SLONG*) request->req_trans;
 	iname = NULL;
 
 	THREAD_EXIT;
@@ -447,7 +447,7 @@ INTLSYM METD_get_charset(REQ request, USHORT length, UCHAR * name)
 
 	    THREAD_ENTER;
 
-        iname = (INTLSYM) ALLOCV(type_intlsym, dbb->dbb_pool, length);
+        iname = new(*dbb->dbb_pool, length) intlsym;
         strcpy(iname->intlsym_name, (char*) name);
         iname->intlsym_type = INTLSYM_charset;
         iname->intlsym_flags = 0;
@@ -473,7 +473,7 @@ INTLSYM METD_get_charset(REQ request, USHORT length, UCHAR * name)
 
 /* Store in the symbol table */
 
-	symbol = iname->intlsym_symbol = (SYM) ALLOCV(type_sym, dbb->dbb_pool, 0);
+	symbol = iname->intlsym_symbol = new(*dbb->dbb_pool, 0) sym;
 	symbol->sym_object = (BLK) iname;
 	symbol->sym_string = iname->intlsym_name;
 	symbol->sym_length = length;
@@ -497,11 +497,11 @@ STR METD_get_default_charset(REQ request)
  *	Find the default character set for a database
  *
  **************************************/
-	SLONG *DB, *gds__trans;
+	SLONG *DB, *gds_trans;
 	DBB dbb;
 	isc_req_handle handle;
 	UCHAR *p;
-	UCHAR *str;
+	UCHAR *str_;
 	USHORT length;
 
 	dbb = request->req_dbb;
@@ -514,7 +514,7 @@ STR METD_get_default_charset(REQ request)
 /* Now see if it is in the database */
 
 	DB = dbb->dbb_database_handle;
-	gds__trans = (SLONG*) request->req_trans;
+	gds_trans = (SLONG*) request->req_trans;
 
 	handle = NULL_PTR;
 
@@ -529,12 +529,12 @@ STR METD_get_default_charset(REQ request)
         /* Terminate ASCIIZ string on first blank */
         metd_exact_name(DBB.RDB$CHARACTER_SET_NAME);
         length = strlen(DBB.RDB$CHARACTER_SET_NAME);
-        dbb->dbb_dfl_charset = (STR) ALLOCV(type_str, dbb->dbb_pool, length);
+        dbb->dbb_dfl_charset = new(*dbb->dbb_pool, length) str;
         dbb->dbb_dfl_charset->str_length = length;
         dbb->dbb_dfl_charset->str_charset = NULL;
-        str = (UCHAR*) DBB.RDB$CHARACTER_SET_NAME;
+        str_ = (UCHAR*) DBB.RDB$CHARACTER_SET_NAME;
         for (p = dbb->dbb_dfl_charset->str_data; length; --length)
-            *p++ = *str++;
+            *p++ = *str_++;
 
         THREAD_EXIT;
 	END_FOR 
@@ -551,7 +551,7 @@ gds__release request ()
 THREAD_EXIT;
 *************/
 
-	isc_release_request(gds__status, GDS_REF(handle));
+	isc_release_request(gds_status, GDS_REF(handle));
 	THREAD_ENTER;
 
 	if (dbb->dbb_dfl_charset == NULL)
@@ -573,13 +573,13 @@ USHORT METD_get_domain(REQ request, FLD field, UCHAR * name)
  *	Fetch domain information for field defined as 'name'
  *
  **************************************/
-	SLONG *DB, *gds__trans;
+	SLONG *DB, *gds_trans;
 	DBB dbb;
 	USHORT found = FALSE;
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
-	gds__trans = (SLONG*) request->req_trans;
+	gds_trans = (SLONG*) request->req_trans;
 
 	THREAD_EXIT;
 
@@ -639,7 +639,7 @@ void METD_get_domain_default(REQ request,
  *    Gets the default value for a domain of an existing table.
  *
  **************************************************************/
-	SLONG *DB, *gds__trans;
+	SLONG *DB, *gds_trans;
 	DBB dbb;
 	ISC_STATUS status_vect[20];
 
@@ -654,7 +654,7 @@ void METD_get_domain_default(REQ request,
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
-	gds__trans = (SLONG*) request->req_trans;
+	gds_trans = (SLONG*) request->req_trans;
 
 /* V4.x multi threading requirements */
 	THREAD_EXIT;
@@ -672,7 +672,7 @@ void METD_get_domain_default(REQ request,
         if (*has_default) {
             /* open the blob */
             THREAD_EXIT;
-            stat = isc_open_blob2(status_vect, (void**) &DB, (void**) &gds__trans,
+            stat = isc_open_blob2(status_vect, (void**) &DB, (void**) &gds_trans,
                                   (void**) &blob_handle, blob_id, sizeof(blr_bpb),
                                   (UCHAR*)blr_bpb);
             THREAD_ENTER;
@@ -744,9 +744,9 @@ UDF METD_get_function(REQ request, STR name)
  *	return NULL.
  *
  **************************************/
-	SLONG *DB, *gds__trans;
+	SLONG *DB, *gds_trans;
 	DBB dbb;
-	UDF udf;
+	UDF udf_;
 	USHORT return_arg;
 	SYM symbol;
 
@@ -761,8 +761,8 @@ UDF METD_get_function(REQ request, STR name)
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
-	gds__trans = (SLONG*) request->req_trans;
-	udf = NULL;
+	gds_trans = (SLONG*) request->req_trans;
+	udf_ = NULL;
 
 	THREAD_EXIT;
 
@@ -772,10 +772,10 @@ UDF METD_get_function(REQ request, STR name)
 
         THREAD_ENTER;
 
-	    udf = (UDF) ALLOCV(type_udf, dbb->dbb_pool, name->str_length);
-        udf->udf_next = dbb->dbb_functions;
-        dbb->dbb_functions = udf;
-        strcpy((char*) udf->udf_name, (char*) name->str_data);
+	    udf_ = new(*dbb->dbb_pool, name->str_length) udf;
+        udf_->udf_next = dbb->dbb_functions;
+        dbb->dbb_functions = udf_;
+        strcpy((char*) udf_->udf_name, (char*) name->str_data);
         return_arg = X.RDB$RETURN_ARGUMENT;
 
         THREAD_EXIT;
@@ -786,7 +786,7 @@ UDF METD_get_function(REQ request, STR name)
 
 	THREAD_ENTER;
 
-	if (!udf)
+	if (!udf_)
 		return NULL;
     
 /* Note: The following two requests differ in the fields which are
@@ -805,11 +805,11 @@ UDF METD_get_function(REQ request, STR name)
 
             THREAD_ENTER;
 
-		    udf->udf_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
+		    udf_->udf_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
                 gds_cvt_blr_dtype[X.RDB$FIELD_TYPE] : dtype_blob;
-            udf->udf_scale = X.RDB$FIELD_SCALE;
-            udf->udf_sub_type = X.RDB$FIELD_SUB_TYPE;
-            udf->udf_length = X.RDB$FIELD_LENGTH;
+            udf_->udf_scale = X.RDB$FIELD_SCALE;
+            udf_->udf_sub_type = X.RDB$FIELD_SUB_TYPE;
+            udf_->udf_length = X.RDB$FIELD_LENGTH;
 
             THREAD_EXIT;
             
@@ -826,14 +826,14 @@ UDF METD_get_function(REQ request, STR name)
 
             THREAD_ENTER;
 
-		    udf->udf_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
+		    udf_->udf_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
                 gds_cvt_blr_dtype[X.RDB$FIELD_TYPE] : dtype_blob;
-            udf->udf_scale = X.RDB$FIELD_SCALE;
-            udf->udf_sub_type = X.RDB$FIELD_SUB_TYPE;
-            udf->udf_length = X.RDB$FIELD_LENGTH;
+            udf_->udf_scale = X.RDB$FIELD_SCALE;
+            udf_->udf_sub_type = X.RDB$FIELD_SUB_TYPE;
+            udf_->udf_length = X.RDB$FIELD_LENGTH;
             
             if (!X.RDB$CHARACTER_SET_ID.NULL)
-                udf->udf_character_set_id = X.RDB$CHARACTER_SET_ID;
+                udf_->udf_character_set_id = X.RDB$CHARACTER_SET_ID;
 
             THREAD_EXIT;
 
@@ -850,23 +850,23 @@ UDF METD_get_function(REQ request, STR name)
  * (Q: why not use varying?)
  */
 
-	if (udf->udf_dtype == dtype_cstring) {
-		udf->udf_dtype = dtype_text;
+	if (udf_->udf_dtype == dtype_cstring) {
+		udf_->udf_dtype = dtype_text;
 	}
-	else if (udf->udf_dtype == dtype_varying)
-		udf->udf_length += sizeof(USHORT);
+	else if (udf_->udf_dtype == dtype_varying)
+		udf_->udf_length += sizeof(USHORT);
 
 /* Store in the symbol table */
 
-	symbol = udf->udf_symbol = (SYM) ALLOCV(type_sym, dbb->dbb_pool, 0);
-	symbol->sym_object = (BLK) udf;
-	symbol->sym_string = udf->udf_name;
+	symbol = udf_->udf_symbol = new(*dbb->dbb_pool, 0) sym;
+	symbol->sym_object = (BLK) udf_;
+	symbol->sym_string = udf_->udf_name;
 	symbol->sym_length = name->str_length;
 	symbol->sym_type = SYM_udf;
 	symbol->sym_dbb = dbb;
 	HSHD_insert(symbol);
 
-	return udf;
+	return udf_;
 }
 
 
@@ -884,7 +884,7 @@ NOD METD_get_primary_key(REQ request, STR relation_name)
  *	node of the fields.
  *
  **************************************/
-	SLONG *DB, *gds__trans;
+	SLONG *DB, *gds_trans;
 	DBB dbb;
 	NOD list, field_node;
 	STR field_name;
@@ -892,7 +892,7 @@ NOD METD_get_primary_key(REQ request, STR relation_name)
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
-	gds__trans = (SLONG*) request->req_trans;
+	gds_trans = (SLONG*) request->req_trans;
 
 	list = NULL;
 	count = 0;
@@ -943,7 +943,7 @@ PRC METD_get_procedure(REQ request, STR name)
  *	If it is marked dropped, try to read from system tables
  *
  **************************************/
-	SLONG *DB, *gds__trans;
+	SLONG *DB, *gds_trans;
 	DBB dbb;
 	FLD parameter, *ptr;
 	PRC procedure, temp;
@@ -977,7 +977,7 @@ PRC METD_get_procedure(REQ request, STR name)
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
-	gds__trans = (SLONG*) request->req_trans;
+	gds_trans = (SLONG*) request->req_trans;
 	procedure = NULL;
 
 	THREAD_EXIT;
@@ -990,8 +990,8 @@ PRC METD_get_procedure(REQ request, STR name)
 
 	    metd_exact_name(X.RDB$OWNER_NAME);
 
-        procedure = (PRC) ALLOCV(type_prc, dbb->dbb_pool,
-                                 name->str_length + strlen(X.RDB$OWNER_NAME));
+        procedure = new(*dbb->dbb_pool,
+                                 name->str_length + strlen(X.RDB$OWNER_NAME)) prc;
         procedure->prc_id = X.RDB$PROCEDURE_ID;
         
         procedure->prc_name = procedure->prc_data;
@@ -1037,8 +1037,8 @@ PRC METD_get_procedure(REQ request, STR name)
             /* allocate the field block */
 
             metd_exact_name(PR.RDB$PARAMETER_NAME);
-            parameter = (FLD) ALLOCV(type_fld, dbb->dbb_pool,
-                                     strlen(PR.RDB$PARAMETER_NAME));
+            parameter = new(*dbb->dbb_pool,
+                                     strlen(PR.RDB$PARAMETER_NAME)) fld;
             parameter->fld_next = *ptr;
             *ptr = parameter;
             
@@ -1107,8 +1107,7 @@ PRC METD_get_procedure(REQ request, STR name)
 		procedure->prc_next = dbb->dbb_procedures;
 		dbb->dbb_procedures = procedure;
 
-		symbol = procedure->prc_symbol =
-			(SYM) ALLOCV(type_sym, dbb->dbb_pool, 0);
+		symbol = procedure->prc_symbol = new(*dbb->dbb_pool, 0) sym;
 		symbol->sym_object = (BLK) procedure;
 		symbol->sym_string = procedure->prc_name;
 		symbol->sym_length = name->str_length;
@@ -1135,7 +1134,7 @@ DSQL_REL METD_get_relation(REQ request, STR name)
  *	If it does, fetch field information as well.
  *
  **************************************/
-	SLONG *DB, *gds__trans;
+	SLONG *DB, *gds_trans;
 	DBB dbb;
 	FLD field, *ptr;
 	DSQL_REL relation, temp;
@@ -1170,7 +1169,7 @@ DSQL_REL METD_get_relation(REQ request, STR name)
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
-	gds__trans = (SLONG*) request->req_trans;
+	gds_trans = (SLONG*) request->req_trans;
 	relation = NULL;
 
 	THREAD_EXIT;
@@ -1186,15 +1185,14 @@ DSQL_REL METD_get_relation(REQ request, STR name)
 	    metd_exact_name(X.RDB$OWNER_NAME);
 
         if (!X.RDB$RELATION_ID.NULL) {
-            relation =
-                (DSQL_REL) ALLOCV(type_dsql_rel, dbb->dbb_pool,
-                                  name->str_length + strlen(X.RDB$OWNER_NAME));
+            relation = new(*dbb->dbb_pool,
+                                  name->str_length + strlen(X.RDB$OWNER_NAME)) dsql_rel;
             relation->rel_id = X.RDB$RELATION_ID;
         }
         else if (!DDL_ids(request)) {
             relation =
-                (DSQL_REL) ALLOCDV(type_dsql_rel,
-                                   name->str_length + strlen(X.RDB$OWNER_NAME));
+                new(*tdsql->tsql_default,
+                                   name->str_length + strlen(X.RDB$OWNER_NAME)) dsql_rel;
             relation->rel_flags |= REL_new_relation;
         }
 
@@ -1245,11 +1243,11 @@ DSQL_REL METD_get_relation(REQ request, STR name)
             /* Allocate from default or permanent pool as appropriate */
             
             if (relation->rel_flags & REL_new_relation)
-                *ptr = field = (FLD) ALLOCDV(type_fld,
-                                             strlen(RFR.RDB$FIELD_NAME));
+                *ptr = field = new(*tdsql->tsql_default,
+                                             strlen(RFR.RDB$FIELD_NAME)) fld;
             else
-                *ptr = field = (FLD) ALLOCV(type_fld, dbb->dbb_pool,
-                                            strlen(RFR.RDB$FIELD_NAME));
+                *ptr = field = new(*dbb->dbb_pool,
+                                            strlen(RFR.RDB$FIELD_NAME)) fld;
             ptr = &field->fld_next;
             
             /* get field information */
@@ -1296,11 +1294,11 @@ DSQL_REL METD_get_relation(REQ request, STR name)
             /* Allocate from default or permanent pool as appropriate */
             
             if (relation->rel_flags & REL_new_relation)
-                *ptr = field = (FLD) ALLOCDV(type_fld,
-                                             strlen(RFR.RDB$FIELD_NAME));
+                *ptr = field = new(*tdsql->tsql_default,
+                                             strlen(RFR.RDB$FIELD_NAME)) fld;
             else
-                *ptr = field = (FLD) ALLOCV(type_fld, dbb->dbb_pool,
-                                            strlen(RFR.RDB$FIELD_NAME));
+                *ptr = field = new(*dbb->dbb_pool,
+                                            strlen(RFR.RDB$FIELD_NAME)) fld;
             
             ptr = &field->fld_next;
             
@@ -1373,8 +1371,7 @@ DSQL_REL METD_get_relation(REQ request, STR name)
 
 		/* store in the symbol table unless the relation is not yet committed */
 
-		symbol = relation->rel_symbol =
-			(SYM) ALLOCV(type_sym, dbb->dbb_pool, 0);
+		symbol = relation->rel_symbol = new(*dbb->dbb_pool, 0) sym;
 		symbol->sym_object = (BLK) relation;
 		symbol->sym_string = relation->rel_name;
 		symbol->sym_length = name->str_length;
@@ -1399,13 +1396,13 @@ STR METD_get_trigger_relation(REQ request, STR name, USHORT * trig_type)
  *	Look up a trigger's relation and return it's current type
  *
  **************************************/
-	SLONG *DB, *gds__trans;
+	SLONG *DB, *gds_trans;
 	DBB dbb;
 	STR relation;
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
-	gds__trans = (SLONG*) request->req_trans;
+	gds_trans = (SLONG*) request->req_trans;
 
 	relation = NULL;
 
@@ -1444,13 +1441,13 @@ USHORT METD_get_type(REQ request, STR name, UCHAR * field, SSHORT * value)
  *	Look up a symbolic name in RDB$TYPES
  *
  **************************************/
-	SLONG *DB, *gds__trans;
+	SLONG *DB, *gds_trans;
 	DBB dbb;
 	USHORT found;
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
-	gds__trans = (SLONG*) request->req_trans;
+	gds_trans = (SLONG*) request->req_trans;
 
 	found = FALSE;
 
@@ -1494,13 +1491,13 @@ DSQL_REL METD_get_view_relation(REQ request,
  *
  **************************************/
 	DBB dbb;
-	SLONG *DB, *gds__trans;
+	SLONG *DB, *gds_trans;
 	STR relation_name;
 	DSQL_REL relation;
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
-	gds__trans = (SLONG*) request->req_trans;
+	gds_trans = (SLONG*) request->req_trans;
 
 	relation = NULL;
 
@@ -1519,7 +1516,7 @@ DSQL_REL METD_get_view_relation(REQ request,
             relation_name = MAKE_string((UCHAR*) X.RDB$RELATION_NAME,
                                         strlen(X.RDB$RELATION_NAME));
             relation = METD_get_relation(request, relation_name);
-            ALLD_release((FRB)relation_name);
+            delete relation_name;
             return relation;
         }
         
@@ -1554,12 +1551,12 @@ static void check_array( REQ request, TEXT * field_name, FLD field)
  *	so in the database block to avoid wasting further effort.
  *
  **************************************/
-	SLONG *DB, *gds__trans;
+	SLONG *DB, *gds_trans;
 	DBB dbb;
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
-	gds__trans = (SLONG*) request->req_trans;
+	gds_trans = (SLONG*) request->req_trans;
 
 	THREAD_EXIT;
 
@@ -1643,18 +1640,18 @@ static void free_procedure( PRC procedure)
 	for (param = procedure->prc_inputs; param;) {
 		temp = param;
 		param = param->fld_next;
-		ALLD_release((FRB) temp);
+		delete temp;
 	}
 
 	for (param = procedure->prc_outputs; param;) {
 		temp = param;
 		param = param->fld_next;
-		ALLD_release((FRB) temp);
+		delete temp;
 	}
 
 /* release the procedure & symbol blocks */
 
-	ALLD_release((FRB) procedure);
+	delete procedure;
 }
 
 
@@ -1677,12 +1674,12 @@ static void free_relation( DSQL_REL relation)
 	for (field = relation->rel_fields; field;) {
 		temp = field;
 		field = field->fld_next;
-		ALLD_release((FRB) temp);
+		delete temp;
 	}
 
 /* release the relation & symbol blocks */
 
-	ALLD_release((FRB) relation);
+	delete relation;
 }
 
 

@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.burp,v 1.5 2001-08-21 09:41:00 skywalker Exp $
+#   $Id: Makefile.in.burp,v 1.6 2001-12-24 02:50:52 tamlin Exp $
 # 
 
 ROOT=../..
