@@ -1,3 +1,88 @@
+2004-12-07 02:40  robocop
+
+	* firebird2/src/: extlib/ib_udf2.sql (1.5),
+	jrd/os/win32/isc_ipc.cpp (1.17):
+	
+	Misc.
+
+2004-12-07 02:19  skidder
+
+	* firebird2/src/jrd/: btr.cpp (1.127), cmp.cpp (1.166), cmp_proto.h
+	(1.27), exe.cpp (1.137), idx.cpp (1.81), pcmet.epp (1.31), req.h
+	(1.45), rse.cpp (1.84), tra.cpp (1.94), tra.h (1.45), tra_proto.h
+	(1.17):
+	
+	Fix the memory leak from transaction pool when selectable stored
+	procedures are called from PSQL or in subqueries
+
+2004-12-07 02:17  robocop
+
+	* firebird2/src/jrd/scl.epp (1.67):
+	
+	Nickolay compiler caught line without effect mine because I forgot
+	the assignment.
+
+2004-12-07 01:55  robocop
+
+	* firebird2/src/jrd/os/darwin/mod_loader.cpp (1.5):
+	
+	1.- Changing the license on John's files after asking him for
+	permission.  2.- Misc.
+
+2004-12-07 01:43  robocop
+
+	* firebird2/src/jrd/os/win32/isc_ipc.cpp (1.16):
+	
+	Misc.
+
+2004-12-07 01:38  robocop
+
+	* firebird2/src/isql/isql.epp (1.117):
+	
+	1.- Get rid of the std::string from the STL.  2.- Add a couple of
+	missing deallocations.
+
+2004-12-07 01:32  robocop
+
+	* firebird2/src/: jrd/opt.cpp (1.209), isql/extract.epp (1.52),
+	isql/show.epp (1.64):
+	
+	Misc.
+
+2004-12-07 01:29  robocop
+
+	* firebird2/src/extlib/: ib_udf.cpp (1.6), ib_udf2.sql (1.4):
+	
+	Slavomir Skopalik contributed IB_UDF_frac.
+
+2004-12-06 11:16  robocop
+
+	* firebird2/src/jrd/os/: posix/config_root.cpp (1.12),
+	posix/mod_loader.cpp (1.6), posix/path_utils.cpp (1.10),
+	win32/config_root.cpp (1.16), win32/path_utils.cpp (1.13):
+	
+	Misc.
+
+2004-12-06 11:05  robocop
+
+	* firebird2/src/jrd/os/: mod_loader.h (1.4), path_utils.h (1.9):
+	
+	Changing the license on John's files after asking him for
+	permission.
+
+2004-12-06 10:58  robocop
+
+	* firebird2/src/include/: fb_map.h (1.5), fb_vector.h (1.7):
+	
+	Changing the license on John's files after asking him for
+	permission.
+
+2004-12-06 10:55  robocop
+
+	* firebird2/src/jrd/: evl_string.h (1.18), plugin_manager.h (1.17):
+	
+	Misc.
+
 2004-12-05 12:57  alexpeshkoff
 
 	* firebird2/src/dsql/preparse.cpp (1.33):
