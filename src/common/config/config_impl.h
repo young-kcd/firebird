@@ -63,7 +63,6 @@ class ConfigImpl : public ConfigRoot
 	};
 
 public:
-	ConfigImpl();
     ~ConfigImpl();
 
 	static string getValue(ConfigFile&, ConfigKey);
@@ -72,7 +71,11 @@ public:
 	static bool asBoolean(const string&);
 	static const char* asString(const string&);
 
+	inline static const ConfigImpl& instance();
+
 private:
+	ConfigImpl();
+
 	const static ConfigEntry entries[];
 	const char *root_dir;
 	ConfigValue *values;

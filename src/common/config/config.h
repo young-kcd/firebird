@@ -92,8 +92,8 @@ class Config
 		KEY_PRIORITY_BOOST,							// 25
 		KEY_REMOTE_SERVICE_NAME,					// 26
 		KEY_REMOTE_SERVICE_PORT,					// 27
-		KEY_REMOTE_PIPE_PREFIX,						// 28
-		KEY_IPC_PREFIX								// 29
+		KEY_REMOTE_PIPE_NAME,						// 28
+		KEY_IPC_NAME								// 29
 	};
 
 public:
@@ -239,14 +239,14 @@ public:
 	static int getRemoteServicePort();
 
 	/*
-		Pipe prefix for WNET
+		Pipe name for WNET
 	*/
-	static const char *getRemotePipePrefix();
+	static const char *getRemotePipeName();
 
 	/*
-		Prefix for IPC-related objects
+		Name for IPC-related objects
 	*/
-	static const char *getIpcPrefix();
+	static const char *getIpcName();
 };
 
 #endif // CONFIG_H

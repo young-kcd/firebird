@@ -51,11 +51,11 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 {
 	{TYPE_STRING,		"RootDirectory",			(ConfigValue) 0},
 	{TYPE_INTEGER,		"SortMemBlockSize",			(ConfigValue) 1048576},		// bytes
-#ifdef SUPERSERVER
-	{TYPE_INTEGER,		"SortMemUpperLimit",		(ConfigValue) 67108864},	// bytes
-#else
+//#ifdef SUPERSERVER
+//	{TYPE_INTEGER,		"SortMemUpperLimit",		(ConfigValue) 67108864},	// bytes
+//#else
 	{TYPE_INTEGER,		"SortMemUpperLimit",		(ConfigValue) 0},			// bytes
-#endif
+//#endif
 	{TYPE_BOOLEAN,		"RemoteFileOpenAbility",	(ConfigValue) false},
 	{TYPE_INTEGER,		"GuardianOption",			(ConfigValue) 1},
 	{TYPE_INTEGER,		"CpuAffinityMask",			(ConfigValue) 1},
@@ -89,8 +89,8 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_INTEGER,		"PriorityBoost",			(ConfigValue) 5},			// ratio oh high- to low-priority thread ticks in jrd.cpp
 	{TYPE_STRING,		"RemoteServiceName",		(ConfigValue) FB_SERVICE_NAME},
 	{TYPE_INTEGER,		"RemoteServicePort",		(ConfigValue) FB_SERVICE_PORT},
-	{TYPE_STRING,		"RemotePipePrefix",			(ConfigValue) FB_PIPE_NAME},
-	{TYPE_STRING,		"IpcPrefix",				(ConfigValue) FB_IPC_NAME}
+	{TYPE_STRING,		"RemotePipeName",			(ConfigValue) FB_PIPE_NAME},
+	{TYPE_STRING,		"IpcName",					(ConfigValue) FB_IPC_NAME}
 };
 
 /******************************************************************************
@@ -98,7 +98,15 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
  *	Static instance of the system configuration file
  */
 
-const static ConfigImpl sysConfig;
+// was: const static ConfigImpl sysConfig;
+
+const ConfigImpl& ConfigImpl::instance()
+{
+	static ConfigImpl config;
+	return config;
+}
+
+#define sysConfig ConfigImpl::instance()
 
 /******************************************************************************
  *
@@ -357,12 +365,12 @@ int Config::getRemoteServicePort()
 	return (int) sysConfig.values[KEY_REMOTE_SERVICE_PORT];
 }
 
-const char *Config::getRemotePipePrefix()
+const char *Config::getRemotePipeName()
 {
-	return (const char*) sysConfig.values[KEY_REMOTE_PIPE_PREFIX];
+	return (const char*) sysConfig.values[KEY_REMOTE_PIPE_NAME];
 }
 
-const char *Config::getIpcPrefix()
+const char *Config::getIpcName()
 {
-	return (const char*) sysConfig.values[KEY_IPC_PREFIX];
+	return (const char*) sysConfig.values[KEY_IPC_NAME];
 }
