@@ -36,7 +36,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.18 2003-03-21 16:19:15 dimitr Exp $
+$Id: backup.epp,v 1.19 2003-03-22 06:18:03 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -67,6 +67,7 @@ DATABASE DB = STATIC FILENAME "yachts.lnk" RUNTIME * dbb_file;
 #define DB         tdgbl->db_handle
 #define gds_trans  tdgbl->tr_handle
 #define isc_trans  tdgbl->tr_handle
+#define isc_status tdgbl->status
 
 /*
 #define DEBUG	1
@@ -298,14 +299,14 @@ int BACKUP_backup(TEXT* dbb_file, TEXT* file_name)
 	else
 	{
 		EXEC SQL SET TRANSACTION NO_AUTO_UNDO;
-		if (tdgbl->status[1])
+		if (isc_status[1])
 			EXEC SQL SET TRANSACTION;
 	}
 
 	if (!isc_trans)
 	{
 		EXEC SQL SET TRANSACTION NAME isc_trans NO_AUTO_UNDO;
-		if (tdgbl->status[1])
+		if (isc_status[1])
 			EXEC SQL SET TRANSACTION NAME isc_trans;
 	}
 
@@ -2629,7 +2630,7 @@ static void set_capabilities(void)
 	    END_ERROR;
 	}
 
-	isc_release_request(tdgbl->status, GDS_REF(req));
+	isc_release_request(isc_status, GDS_REF(req));
 }
 
 
