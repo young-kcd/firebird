@@ -23,7 +23,7 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *
- *  $Id: alloc.cpp,v 1.59 2004-08-18 23:39:43 skidder Exp $
+ *  $Id: alloc.cpp,v 1.60 2004-08-21 09:18:24 robocop Exp $
  *
  */
 
@@ -329,7 +329,8 @@ void* MemoryPool::external_alloc(size_t &size)
 	return result;
 }
 	
-void MemoryPool::external_free(void *blk, size_t &size, bool pool_destroying) {
+void MemoryPool::external_free(void *blk, size_t &size, bool pool_destroying)
+{
 	// Set access protection for block to prevent memory from deleted pool being accessed
 	int handle = VALGRIND_MAKE_NOACCESS(blk, size);
 
@@ -375,7 +376,8 @@ void MemoryPool::external_free(void *blk, size_t &size, bool pool_destroying) {
 			delayedExtentsPos = 0;
 
 		cache_mutex.leave();
-	} else {
+	}
+	else {
 		// Let Valgrind forget about unmapped block
 		VALGRIND_DISCARD(handle);
 	}
@@ -541,7 +543,8 @@ void* MemoryPool::allocate_nothrow(size_t size, SSHORT type
 			//VALGRIND_MAKE_NOACCESS((char*)result + requested_size, VALGRIND_REDZONE);
 #endif
 			return result;
-		} else {
+		}
+		else {
 			lock.enter();
 			if (parent_redirect) { // It may have changed while we were taking the lock
 				parent_redirect = false;
@@ -714,7 +717,8 @@ bool MemoryPool::verify_pool() {
 		// Verify doubly linked list
 		if (extent == extents) {
 			mem_assert(extent->mxt_prev == NULL);
-		} else {
+		}
+		else {
 			mem_assert(extent->mxt_prev);
 			mem_assert(extent->mxt_prev->mxt_next == extent);
 		}
@@ -782,7 +786,8 @@ bool MemoryPool::verify_pool() {
 		// Verify doubly linked list
 		if (large == os_redirected) {
 			mem_assert(list->mrl_prev == NULL);
-		} else {
+		}
+		else {
 			mem_assert(list->mrl_prev);
 			mem_assert(block_list_large(list->mrl_prev)->mrl_next == large);
 		}
@@ -823,7 +828,8 @@ bool MemoryPool::verify_pool() {
 			// Verify doubly linked list
 			if (redirected == parent_redirected) {
 				mem_assert(list->mrl_prev == NULL);
-			} else {
+			}
+			else {
 				mem_assert(list->mrl_prev);
 				mem_assert(block_list_small(list->mrl_prev)->mrl_next == redirected);
 			}
@@ -842,7 +848,8 @@ bool MemoryPool::verify_pool() {
 		mem_assert(blk_redirected == redirect_amount);
 		mem_assert(blk_used_memory == (size_t) used_memory.value());
 		parent->lock.leave();
-	} else {
+	}
+	else {
 		mem_assert(blk_used_memory == (size_t) used_memory.value());
 	}
 	
@@ -956,7 +963,8 @@ MemoryPool* MemoryPool::internal_create(size_t instance_size, MemoryPool* parent
 		pool->parent_redirected = blk;
 
 		parent->lock.leave();
-	} else 
+	} 
+	else
 #endif
 	{
 
@@ -1179,7 +1187,8 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 				if (!freeBlocks.getPrev() || freeBlocks.current().bli_length < current_block->small.mbk_length) {
 					current->bli_length = current_block->small.mbk_length;
 					need_list_update = false; // We finished. Potentially costly tree update is not necessary
-				} else {
+				}
+				else {
 					// Recover tree position after failed shortcut attempt
 #ifndef DEV_BUILD
 					freeBlocks.getNext();
@@ -1355,7 +1364,8 @@ void MemoryPool::removeFreeBlock(MemoryBlock *blk)
 			// Still moderately fast case. Simply replace head of fragments list
 			ptr_block(next)->mbk_prev_fragment = NULL;
 			freeBlocks.current().bli_fragments = next;
-		} else {
+		}
+		else {
 			// Have to remove item from the tree
 			freeBlocks.fastRemove();
 		}
