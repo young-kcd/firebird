@@ -566,7 +566,7 @@ BOOLEAN NAV_get_record(TDBB tdbb,
 		node = next;
 		expanded_node = expanded_next;
 		if (node)
-			number = get_long(BTN_NUMBER(node));
+			number = get_long(node->btn_number);
 		page = (BTR) window.win_buffer;
 
 #ifdef SCROLLABLE_CURSORS
@@ -636,11 +636,11 @@ BOOLEAN NAV_get_record(TDBB tdbb,
 
 		if (rsb->rsb_flags & rsb_project) {
 			if (page_changed) {
-				if (BTN_LENGTH(node) != key.key_length)
+				if (node->btn_length != key.key_length)
 					impure->irsb_flags |= irsb_key_changed;
 				else {
 					p = key.key_data;
-					q = BTN_DATA(node);
+					q = node->btn_data;
 					for (l = key.key_length; l; l--)
 						if (*p++ != *q++)
 							break;
@@ -648,7 +648,7 @@ BOOLEAN NAV_get_record(TDBB tdbb,
 						impure->irsb_flags |= irsb_key_changed;
 				}
 			}
-			else if (BTN_LENGTH(node))
+			else if (node->btn_length)
 				impure->irsb_flags |= irsb_key_changed;
 		}
 		page_changed = FALSE;
@@ -656,7 +656,7 @@ BOOLEAN NAV_get_record(TDBB tdbb,
 		/* Build the current key value from the prefix and current node data. */
 
 		if (expanded_node) {
-			if ( (l = BTN_LENGTH(node) + BTN_PREFIX(node)) ) {
+			if ( (l = node->btn_length + node->btn_prefix) ) {
 				p = key.key_data;
 				q = expanded_node->btx_data;
 				do
@@ -666,16 +666,16 @@ BOOLEAN NAV_get_record(TDBB tdbb,
 
 		}
 		else {
-			if ( (l = BTN_LENGTH(node)) ){
-				p = key.key_data + BTN_PREFIX(node);
-				q = BTN_DATA(node);
+			if ( (l = node->btn_length) ){
+				p = key.key_data + node->btn_prefix;
+				q = node->btn_data;
 				do
 					*p++ = *q++;
 				while (--l);
 			}
 		}
 
-		key.key_length = BTN_LENGTH(node) + BTN_PREFIX(node);
+		key.key_length = node->btn_length + node->btn_prefix;
 
 		/* Make sure we haven't hit the upper (or lower) limit. */
 
@@ -1008,19 +1008,19 @@ static void expand_index(WIN * window)
 	prior_node = NULL;
 
 	for (end = LAST_NODE(page); node < end;) {
-		for (p = key.key_data + BTN_PREFIX(node), q = BTN_DATA(node), l =
-			 BTN_LENGTH(node); l; l--)
+		for (p = key.key_data + node->btn_prefix, q = node->btn_data, l =
+			 node->btn_length; l; l--)
 			*p++ = *q++;
-		l = BTN_LENGTH(node) + BTN_PREFIX(node);
+		l = node->btn_length + node->btn_prefix;
 		for (p = expanded_node->btx_data, q = key.key_data; l; l--)
 			*p++ = *q++;
 
 		/* point back to the prior nodes on the expanded page and the btree page */
 
 		expanded_node->btx_btr_previous_length =
-			prior_node ? BTN_LENGTH(prior_node) : 0;
+			prior_node ? prior_node->btn_length : 0;
 		expanded_node->btx_previous_length =
-			prior_node ? BTN_LENGTH(prior_node) + BTN_PREFIX(prior_node) : 0;
+			prior_node ? prior_node->btn_length + prior_node->btn_prefix : 0;
 
 		prior_node = node;
 
@@ -1032,9 +1032,9 @@ static void expand_index(WIN * window)
    contains the length and key of the first node on the next page */
 
 	expanded_node->btx_btr_previous_length =
-		prior_node ? BTN_LENGTH(prior_node) : 0;
+		prior_node ? prior_node->btn_length : 0;
 	expanded_node->btx_previous_length =
-		prior_node ? BTN_LENGTH(prior_node) + BTN_PREFIX(prior_node) : 0;
+		prior_node ? prior_node->btn_length + prior_node->btn_prefix : 0;
 
 	expanded_page->exp_length =
 		(UCHAR *) expanded_node - (UCHAR *) expanded_page + BTX_SIZE;
@@ -1100,7 +1100,7 @@ static BOOLEAN find_dbkey(RSB rsb, ULONG record_number)
    record which matches the passed dbkey */
 
 	for (;;) {
-		rpb->rpb_number = get_long(BTN_NUMBER(node));
+		rpb->rpb_number = get_long(node->btn_number);
 
 		/* if we find an index entry with the proper dbkey, try to fetch the record */
 
@@ -1119,7 +1119,7 @@ static BOOLEAN find_dbkey(RSB rsb, ULONG record_number)
 		/* go to the next node; if we find a non-equivalent node, give up */
 
 		node = BTR_next_node(node, &expanded_node);
-		if (BTN_LENGTH(node)) {
+		if (node->btn_length) {
 			CCH_RELEASE(tdbb, &window);
 			return FALSE;
 		}
@@ -1219,7 +1219,7 @@ static BOOLEAN find_record(
 
 /* seed the key value with the prefix seen up to the current key */
 
-	MOVE_FAST(impure->irsb_nav_data, value.key_data, BTN_PREFIX(node));
+	MOVE_FAST(impure->irsb_nav_data, value.key_data, node->btn_prefix);
 
 /* In case of an error, we still need to release the window we hold
  * during the parse.  See HACKs for bug 7041
@@ -1238,7 +1238,7 @@ static BOOLEAN find_record(
 
 	for (;;)
 	{
-		rpb->rpb_number = get_long(BTN_NUMBER(node));
+		rpb->rpb_number = get_long(node->btn_number);
 
 		/* if we have gone past the search key value, stop looking */
 
@@ -1261,10 +1261,10 @@ static BOOLEAN find_record(
 
 		/* update the current stored key value */
 
-		value.key_length = BTN_LENGTH(node) + BTN_PREFIX(node);
-		p = value.key_data + BTN_PREFIX(node);
-		q = BTN_DATA(node);
-		for (l = BTN_LENGTH(node); l--;)
+		value.key_length = node->btn_length + node->btn_prefix;
+		p = value.key_data + node->btn_prefix;
+		q = node->btn_data;
+		for (l = node->btn_length; l--;)
 			*p++ = *q++;
 
 		/* if the index key is greater than the search key, we didn't find the key */
@@ -1389,7 +1389,7 @@ static BOOLEAN find_saved_node(
 	while (TRUE)
 		for (node = page->btr_nodes, end = LAST_NODE(page); node < end;
 			 node = NEXT_NODE(node)) {
-			number = get_long(BTN_NUMBER(node));
+			number = get_long(node->btn_number);
 			if (number == END_LEVEL) {
 				*return_node = node;
 				return FALSE;
@@ -1403,14 +1403,14 @@ static BOOLEAN find_saved_node(
 
 			/* maintain the running key value and compare it with the stored value */
 
-			if ( (l = BTN_LENGTH(node)) ) {
-				p = key.key_data + BTN_PREFIX(node);
-				q = BTN_DATA(node);
+			if ( (l = node->btn_length) ) {
+				p = key.key_data + node->btn_prefix;
+				q = node->btn_data;
 				do
 					*p++ = *q++;
 				while (--l);
 			}
-			key.key_length = BTN_LENGTH(node) + BTN_PREFIX(node);
+			key.key_length = node->btn_length + node->btn_prefix;
 			result =
 				compare_keys(idx, impure->irsb_nav_data,
 							 impure->irsb_nav_length, &key, FALSE);
@@ -1798,12 +1798,12 @@ static BTN nav_open(
 		while (!(node = BTR_find_leaf(page, limit_ptr, impure->irsb_nav_data,
 									  0, idx->idx_flags & idx_descending,
 									  true))
-			   || (get_long(BTN_NUMBER(node)) == END_BUCKET))
+			   || (get_long(node->btn_number) == END_BUCKET))
 			  page =
 				(BTR) CCH_HANDOFF(tdbb, window, page->btr_sibling, LCK_read,
 								  pag_index);
 
-		impure->irsb_nav_length = BTN_PREFIX(node) + BTN_LENGTH(node);
+		impure->irsb_nav_length = node->btn_prefix + node->btn_length;
 
 #ifdef SCROLLABLE_CURSORS
 		/* ensure that if we are going backward, there is an expanded page */

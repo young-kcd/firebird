@@ -199,20 +199,15 @@ typedef struct exp {
 
 /* macros used to manipulate btree nodes */
 
-#define BTN_PREFIX(node)	node->btn_prefix
-#define BTN_LENGTH(node)	node->btn_length
-#define BTN_NUMBER(node)	node->btn_number
-#define BTN_DATA(node)		node->btn_data
-
 #define QUAD_MOVE(a,b)	quad_move(a, b)
 
 #define QE(a,b,n)	(((UCHAR*) b)[n] == ((UCHAR*) a)[n])
 #define QUAD_EQUAL(a,b)	(QE(a,b,0) && QE(a,b,1) && QE(a,b,2) && QE(a,b,3))
 
-#define NEXT_NODE(xxx)	(BTN) (BTN_DATA (xxx) + BTN_LENGTH (xxx))
+#define NEXT_NODE(xxx)	(BTN) (((xxx)->btn_data + (xxx)->btn_length))
 #define LAST_NODE(page)	(BTN) ((UCHAR*) page + page->btr_length)
 
-#define NEXT_EXPANDED(xxx,yyy)	(BTX) ((UCHAR*) xxx->btx_data + BTN_PREFIX (yyy) + BTN_LENGTH (yyy))
+#define NEXT_EXPANDED(xxx,yyy)	(BTX) ((UCHAR*) xxx->btx_data + (yyy)->btn_prefix + (yyy)->btn_length)
 
 #endif /* JRD_BTR_H */
 

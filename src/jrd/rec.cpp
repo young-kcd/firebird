@@ -419,19 +419,19 @@ static void apply_index(BTR page, JRND * record)
 			/* delete a node entry */
 
 			node = (BTN) ((UCHAR *) page + temp.jrnb_offset);
-			next = (BTN) (BTN_DATA(node) + BTN_LENGTH(node));
-			QUAD_MOVE(BTN_NUMBER(next), BTN_NUMBER(node));
-			p = BTN_DATA(node);
-			q = BTN_DATA(next);
-			l = BTN_LENGTH(next);
-			if (BTN_PREFIX(node) < BTN_PREFIX(next)) {
-				BTN_LENGTH(node) = BTN_LENGTH(next) + BTN_PREFIX(next)
-					- BTN_PREFIX(node);
-				p += BTN_PREFIX(next) - BTN_PREFIX(node);
+			next = (BTN) (node->btn_data + node->btn_length);
+			QUAD_MOVE(next->btn_number, node->btn_number);
+			p = node->btn_data;
+			q = next->btn_data;
+			l = next->btn_length;
+			if (node->btn_prefix < next->btn_prefix) {
+				node->btn_length = next->btn_length + next->btn_prefix
+					- node->btn_prefix;
+				p += next->btn_prefix - node->btn_prefix;
 			}
 			else {
-				BTN_LENGTH(node) = l;
-				BTN_PREFIX(node) = BTN_PREFIX(next);
+				node->btn_length = l;
+				node->btn_prefix = next->btn_prefix;
 			}
 
 			if (l)
@@ -451,7 +451,7 @@ static void apply_index(BTR page, JRND * record)
 
 			/* Error Check */
 
-			if ((BTN_PREFIX(node) != temp.jrnb_delta) ||
+			if ((node->btn_prefix != temp.jrnb_delta) ||
 				(page->btr_length != temp.jrnb_length)) BUGCHECK(274);	/* msg 274 error in recovery! wrong b-tree page record */
 
 			break;

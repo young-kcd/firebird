@@ -453,7 +453,7 @@ void BTR_evaluate(TDBB tdbb, IRB retrieval, SBM * bitmap)
 		// if there isn't an upper bound, just walk the index to the end of the level
 		SLONG number;
 		while (true) {
-			number = get_long(BTN_NUMBER(node));
+			number = get_long(node->btn_number);
 
 			if (number == END_LEVEL) {
 				break;
@@ -505,16 +505,16 @@ BTN BTR_find_leaf(BTR bucket,
 	// If this is an non-leaf bucket of a descending index, the dummy node on the
 	// front will trip us up.  NOTE: This code may be apocryphal.  I don't see 
 	// anywhere that a dummy node is stored for a descending index.  - deej
-	if (bucket->btr_level && descending && !BTN_LENGTH(node)) {
+	if (bucket->btr_level && descending && !node->btn_length) {
 		node = NEXT_NODE(node);
 	}
 
 	while (true) {
 
 		// Pick up data from node
-		if (value && (l = BTN_LENGTH(node))) {
-			r = value + BTN_PREFIX(node);
-			q = BTN_DATA(node);
+		if (value && (l = node->btn_length)) {
+			r = value + node->btn_prefix;
+			q = node->btn_data;
 			do {
 				*r++ = *q++;
 			}
@@ -526,9 +526,9 @@ BTN BTR_find_leaf(BTR bucket,
 		// prefix of the current node is less than the running prefix, the 
 		// node must have a value greater than the key, so it is the insertion
 		// point.
-		number = get_long(BTN_NUMBER(node));
+		number = get_long(node->btn_number);
 
-		if (number == END_LEVEL || BTN_PREFIX(node) < prefix) {
+		if (number == END_LEVEL || node->btn_prefix < prefix) {
 			if (return_value) {
 				*return_value = prefix;
 			}
@@ -538,9 +538,9 @@ BTN BTR_find_leaf(BTR bucket,
 		// If the node prefix is greater than current prefix , it must be less 
 		// than the key, so we can skip it.  If it has zero length, then
 		// it is a duplicate, and can also be skipped.
-		if (BTN_PREFIX(node) == prefix) {
-			q = BTN_DATA(node);
-			node_end = q + BTN_LENGTH(node);
+		if (node->btn_prefix == prefix) {
+			q = node->btn_data;
+			node_end = q + node->btn_length;
 			if (descending) {
 				while (true) {
 					if (q == node_end || retrieval && p == key_end) {
@@ -554,7 +554,7 @@ BTN BTR_find_leaf(BTR bucket,
 					}
 				}
 			}
-			else if (BTN_LENGTH(node) > 0) {
+			else if (node->btn_length > 0) {
 				while (true) {
 					if (p == key_end) {
 						goto done;
@@ -670,7 +670,7 @@ BTR BTR_find_page(TDBB tdbb,
 #endif
 				node = page->btr_nodes;
 
-			number = get_long(BTN_NUMBER(node));
+			number = get_long(node->btn_number);
 			page = (BTR) CCH_HANDOFF(tdbb, window, number, 
 				LCK_read, pag_index);
 
@@ -763,19 +763,19 @@ void BTR_insert(TDBB tdbb, WIN * root_window, IIB * insertion)
 	// Set up first node as degenerate, but pointing to first bucket on
 	// next level.
 	BTN node = new_bucket->btr_nodes;
-	quad_put(window.win_page, BTN_NUMBER(node));
-	BTN_PREFIX(node) = 0;
-	BTN_LENGTH(node) = 0;
+	quad_put(window.win_page, node->btn_number);
+	node->btn_prefix = 0;
+	node->btn_length = 0;
 	node = NEXT_NODE(node);
 
 	// Move in the split node
 	UCHAR *p, *q;
 	USHORT l;
-	quad_put(split_page, BTN_NUMBER(node));
-	BTN_PREFIX(node) = 0;
+	quad_put(split_page, node->btn_number);
+	node->btn_prefix = 0;
 	assert(key.key_length <= MAX_UCHAR);
-	l = BTN_LENGTH(node) = (UCHAR) key.key_length;
-	q = BTN_DATA(node);
+	l = node->btn_length = (UCHAR) key.key_length;
+	q = node->btn_data;
 	p = key.key_data;
 	if (l) {
 		do {
@@ -785,9 +785,9 @@ void BTR_insert(TDBB tdbb, WIN * root_window, IIB * insertion)
 	node = NEXT_NODE(node);
 
 	// mark end of level
-	BTN_PREFIX(node) = 0;
-	BTN_LENGTH(node) = 0;
-	quad_put((SLONG) END_LEVEL, BTN_NUMBER(node));
+	node->btn_prefix = 0;
+	node->btn_length = 0;
+	quad_put((SLONG) END_LEVEL, node->btn_number);
 	node = NEXT_NODE(node);
 
 	new_bucket->btr_length = (UCHAR *) node - (UCHAR *) new_bucket;
@@ -1080,7 +1080,7 @@ BTN BTR_last_node(BTR page, EXP expanded_page, BTX * expanded_node)
 	while (true) {
 		node = BTR_previous_node(node, &enode);
 
-		number = get_long(BTN_NUMBER(node));
+		number = get_long(node->btn_number);
 		if (number != END_BUCKET && number != END_LEVEL) {
 			if (expanded_node)
 				*expanded_node = enode;
@@ -1436,9 +1436,9 @@ void BTR_remove(TDBB tdbb, WIN * root_window, IIB * insertion)
 		// get the page number of the child, and check to make sure 
 		// the page still has only one node on it
 		BTN node = page->btr_nodes;
-		SLONG number = get_long(BTN_NUMBER(node));
+		SLONG number = get_long(node->btn_number);
 		node = NEXT_NODE(node);
-		if (get_long(BTN_NUMBER(node)) >= 0) {
+		if (get_long(node->btn_number) >= 0) {
 			CCH_RELEASE(tdbb, &window);
 			CCH_RELEASE(tdbb, root_window);
 			return;
@@ -1614,7 +1614,7 @@ float BTR_selectivity(TDBB tdbb, JRD_REL relation, USHORT id)
 	BTN node;
 	while (bucket->btr_level) {
 		node = bucket->btr_nodes;
-		page = get_long(BTN_NUMBER(node));
+		page = get_long(node->btn_number);
 		bucket = (BTR) CCH_HANDOFF(tdbb, &window, page, LCK_read, pag_index);
 	}
 
@@ -1630,7 +1630,7 @@ float BTR_selectivity(TDBB tdbb, JRD_REL relation, USHORT id)
 	// also count how many of them are duplicates
 	while (page) {
 		for (node = bucket->btr_nodes;; node = NEXT_NODE(node)) {
-			page = get_long(BTN_NUMBER(node));
+			page = get_long(node->btn_number);
 			if (page < 0) {
 				break;
 			}
@@ -2266,24 +2266,24 @@ static CONTENTS delete_node(TDBB tdbb, WIN * window, BTN node)
 	CCH_MARK(tdbb, window);
 
 	// move the rest of the page to the left to cover over this node
-	BTN next = (BTN) (BTN_DATA(node) + BTN_LENGTH(node));
-	QUAD_MOVE(BTN_NUMBER(next), BTN_NUMBER(node));
+	BTN next = (BTN) (node->btn_data + node->btn_length);
+	QUAD_MOVE(next->btn_number, node->btn_number);
 
 	USHORT l;
 	UCHAR *p, *q;
-	p = BTN_DATA(node);
-	q = BTN_DATA(next);
-	l = BTN_LENGTH(next);
-	if (BTN_PREFIX(node) < BTN_PREFIX(next)) {
-		BTN_LENGTH(node) =
-			BTN_LENGTH(next) + BTN_PREFIX(next) - BTN_PREFIX(node);
-		p += BTN_PREFIX(next) - BTN_PREFIX(node);
+	p = node->btn_data;
+	q = next->btn_data;
+	l = next->btn_length;
+	if (node->btn_prefix < next->btn_prefix) {
+		node->btn_length =
+			next->btn_length + next->btn_prefix - node->btn_prefix;
+		p += next->btn_prefix - node->btn_prefix;
 	}
 	else {
-		page->btr_prefix_total -= BTN_PREFIX(node);
+		page->btr_prefix_total -= node->btn_prefix;
 		assert(l <= MAX_UCHAR);
-		BTN_LENGTH(node) = (UCHAR) l;
-		BTN_PREFIX(node) = BTN_PREFIX(next);
+		node->btn_length = (UCHAR) l;
+		node->btn_prefix = next->btn_prefix;
 	}
 
 	if (l) {
@@ -2316,7 +2316,7 @@ static CONTENTS delete_node(TDBB tdbb, WIN * window, BTN node)
 		journal.jrnb_type = JRNP_BTREE_DELETE;
 		journal.jrnb_prefix_total = page->btr_prefix_total;
 		journal.jrnb_offset = (USHORT) node_offset;
-		journal.jrnb_delta = BTN_PREFIX(node);	/* DEBUG ONLY */
+		journal.jrnb_delta = node->btn_prefix;	/* DEBUG ONLY */
 		journal.jrnb_length = page->btr_length;	/* DEBUG ONLY */
 		CCH_journal_record(tdbb, window, (UCHAR *) & journal,
 						   JRNB_SIZE, 0, 0);
@@ -2324,14 +2324,14 @@ static CONTENTS delete_node(TDBB tdbb, WIN * window, BTN node)
 
 	// check to see if the page is now empty
 	node = page->btr_nodes;
-	SLONG number = get_long(BTN_NUMBER(node));
+	SLONG number = get_long(node->btn_number);
 	if (number < 0) {
 		return contents_empty;
 	}
 
 	// check to see if there is just one node
 	node = NEXT_NODE(node);
-	number = get_long(BTN_NUMBER(node));
+	number = get_long(node->btn_number);
 	if (number < 0) {
 		return contents_single;
 	}
@@ -2388,7 +2388,7 @@ static void delete_tree(TDBB tdbb,
 		if (next == down) {
 			if (page->btr_level) {
 				BTN node = page->btr_nodes;
-				down = get_long(BTN_NUMBER(node));
+				down = get_long(node->btn_number);
 			}
 			else {
 				down = 0;
@@ -2560,12 +2560,12 @@ static SLONG fast_load(TDBB tdbb,
 
 				// store the first node on the split page
 				split_node = split->btr_nodes;
-				QUAD_MOVE(BTN_NUMBER(node), BTN_NUMBER(split_node));
-				BTN_PREFIX(split_node) = 0;
-				p = BTN_DATA(split_node);
+				QUAD_MOVE(node->btn_number, split_node->btn_number);
+				split_node->btn_prefix = 0;
+				p = split_node->btn_data;
 				q = key->key_data;
 				assert(key->key_length <= MAX_UCHAR);
-				if ( (l = BTN_LENGTH(split_node) = (UCHAR) key->key_length) ) {
+				if ( (l = split_node->btn_length = (UCHAR) key->key_length) ) {
 					do {
 						*p++ = *q++;
 					}
@@ -2573,7 +2573,7 @@ static SLONG fast_load(TDBB tdbb,
 				}
 
 				// mark the end of the previous page
-				quad_put((SLONG) END_BUCKET, BTN_NUMBER(node));
+				quad_put((SLONG) END_BUCKET, node->btn_number);
 
 				// save the page number of the previous page and release it
 				split_pages[0] = windows[0].win_page;
@@ -2597,12 +2597,12 @@ static SLONG fast_load(TDBB tdbb,
 			// Insert the new node in the now current bucket
 
 			assert(prefix <= MAX_UCHAR);
-			BTN_PREFIX(node) = (UCHAR) prefix;
+			node->btn_prefix = (UCHAR) prefix;
 			bucket->btr_prefix_total += prefix;
-			quad_put(isr->isr_record_number, BTN_NUMBER(node));
-			p = BTN_DATA(node);
+			quad_put(isr->isr_record_number, node->btn_number);
+			p = node->btn_data;
 			q = record + prefix;
-			if ( (l = BTN_LENGTH(node) = isr->isr_key_length - prefix) ) {
+			if ( (l = node->btn_length = isr->isr_key_length - prefix) ) {
 				do {
 					*p++ = *q++;
 				}
@@ -2610,7 +2610,7 @@ static SLONG fast_load(TDBB tdbb,
 			}
 
 			// check if this is a duplicate node
-			duplicate = (!BTN_LENGTH(node) && prefix == key->key_length);
+			duplicate = (!node->btn_length && prefix == key->key_length);
 			if (duplicate) {
 				++duplicates;
 			}
@@ -2661,8 +2661,8 @@ static SLONG fast_load(TDBB tdbb,
 					// node indicating that this page holds any key value 
 					// less than the next node
 					node = bucket->btr_nodes;
-					BTN_LENGTH(node) = BTN_PREFIX(node) = 0;
-					quad_put(split_pages[level - 1], BTN_NUMBER(node));
+					node->btn_length = node->btn_prefix = 0;
+					quad_put(split_pages[level - 1], node->btn_number);
 					key->key_length = 0;
 				}
 
@@ -2690,12 +2690,12 @@ static SLONG fast_load(TDBB tdbb,
 					split_node = split->btr_nodes;
 
 					// insert the new node in the new bucket
-					QUAD_MOVE(BTN_NUMBER(node), BTN_NUMBER(split_node));
-					BTN_PREFIX(split_node) = 0;
-					p = BTN_DATA(split_node);
+					QUAD_MOVE(node->btn_number, split_node->btn_number);
+					split_node->btn_prefix = 0;
+					p = split_node->btn_data;
 					q = key->key_data;
 					assert(key->key_length <= MAX_UCHAR);
-					if ( (l = BTN_LENGTH(split_node) = (UCHAR) key->key_length) ) {
+					if ( (l = split_node->btn_length = (UCHAR) key->key_length) ) {
 						do {
 							MOVE_BYTE(q, p);
 						}
@@ -2704,7 +2704,7 @@ static SLONG fast_load(TDBB tdbb,
 
 					// mark the end of the page; note that the end_bucket marker must 
 					// contain info about the first node on the next page
-					quad_put((SLONG) END_BUCKET, BTN_NUMBER(node));
+					quad_put((SLONG) END_BUCKET, node->btn_number);
 
 					// indicate to propogate the page we just split from
 					split_pages[level] = window->win_page;
@@ -2721,15 +2721,15 @@ static SLONG fast_load(TDBB tdbb,
 				// Now propogate up the lower-level bucket by storing a "pointer" to it.
 				node = NEXT_NODE(node);
 				assert(prefix <= MAX_UCHAR);
-				BTN_PREFIX(node) = (UCHAR) prefix;
+				node->btn_prefix = (UCHAR) prefix;
 				bucket->btr_prefix_total += prefix;
-				quad_put(windows[level - 1].win_page, BTN_NUMBER(node));
+				quad_put(windows[level - 1].win_page, node->btn_number);
 
 				// Store the key associated with the page as the first unique key 
 				// value on the page.
-				p = BTN_DATA(node);
+				p = node->btn_data;
 				q = temp_key.key_data + prefix;
-				if ( (l = BTN_LENGTH(node) = temp_key.key_length - prefix) ) {
+				if ( (l = node->btn_length = temp_key.key_length - prefix) ) {
 					do {
 						MOVE_BYTE(q, p);
 					}
@@ -2763,8 +2763,8 @@ static SLONG fast_load(TDBB tdbb,
 
 			// store the end of level marker
 			node = LAST_NODE(bucket);
-			BTN_LENGTH(node) = BTN_PREFIX(node) = 0;
-			quad_put((SLONG) END_LEVEL, BTN_NUMBER(node));
+			node->btn_length = node->btn_prefix = 0;
+			quad_put((SLONG) END_LEVEL, node->btn_number);
 
 			// and update the final page length
 			bucket->btr_length += BTN_SIZE;
@@ -2866,10 +2866,10 @@ static SLONG find_node(BTR bucket, KEY * key, bool descending)
 	BTN node = bucket->btr_nodes;
 
 	// Compute common prefix of key and first node
-	USHORT prefix = compute_prefix(key, BTN_DATA(node), BTN_LENGTH(node));
+	USHORT prefix = compute_prefix(key, node->btn_data, node->btn_length);
 	p = key->key_data + prefix;
 	key_end = key->key_data + key->key_length;
-	SLONG number = get_long(BTN_NUMBER(node));
+	SLONG number = get_long(node->btn_number);
 
 	if (number == END_LEVEL) {
 		BUGCHECK(206);	// msg 206 exceeded index level
@@ -2889,47 +2889,47 @@ static SLONG find_node(BTR bucket, KEY * key, bool descending)
 
 		prior = node;
 		node = NEXT_NODE(node);
-		number = get_long(BTN_NUMBER(node));
+		number = get_long(node->btn_number);
 
 		// If the page/record number is -1, the node is the last in the level
 		// and, by definition, is the target node.  Otherwise, if the
 		// prefix of the current node is less than the running prefix, its
 		// node must have a value greater than the key, which is the insertion
 		// point.
-		if (number == END_LEVEL || BTN_PREFIX(node) < prefix) {
-			return get_long(BTN_NUMBER(prior));
+		if (number == END_LEVEL || node->btn_prefix < prefix) {
+			return get_long(prior->btn_number);
 		}
 
 		// If the node prefix is greater than current prefix , it must be less 
 		// than the key, so we can skip it.  If it has zero length, then
 		// it is a duplicate, and can also be skipped.
-		q = BTN_DATA(node);
-		node_end = q + BTN_LENGTH(node);
+		q = node->btn_data;
+		node_end = q + node->btn_length;
 		if (descending) {
-			if (BTN_PREFIX(node) == prefix) {
+			if (node->btn_prefix == prefix) {
 				while (true) {
 					if (q == node_end || p == key_end) {
-						return get_long(BTN_NUMBER(prior));
+						return get_long(prior->btn_number);
 					}
 					else if (*p > *q) {
 						break;
 					}
 					else if (*p++ < *q++) {
-						return get_long(BTN_NUMBER(prior));
+						return get_long(prior->btn_number);
 					}
 				}
 			}
 		}
-		else if (BTN_PREFIX(node) == prefix && BTN_LENGTH(node) > 0) {
+		else if (node->btn_prefix == prefix && node->btn_length > 0) {
 			while (true) {
 				if (p == key_end) {
-					return get_long(BTN_NUMBER(prior));
+					return get_long(prior->btn_number);
 				}
 				else if (q == node_end || *p > *q) {
 					break;
 				}
 				else if (*p++ < *q++) {
-					return get_long(BTN_NUMBER(prior));
+					return get_long(prior->btn_number);
 				}
 			}
 		}
@@ -3091,7 +3091,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 	SLONG number;
 	BTN parent_node;
 	for (parent_node = parent_page->btr_nodes;;) {
-		number = get_long(BTN_NUMBER(parent_node));
+		number = get_long(parent_node->btn_number);
 
 		if (number == END_BUCKET) {
 			parent_page = (BTR) CCH_HANDOFF(tdbb, &parent_window,
@@ -3156,12 +3156,12 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 	USHORT l;
 	p = last_key.key_data;
 	for (last_node = left_page->btr_nodes;
-		 (number = get_long(BTN_NUMBER(last_node)) >= 0); 
+		 (number = get_long(last_node->btn_number) >= 0); 
 		 last_node = NEXT_NODE(last_node))
 	{
-		if ( (l = BTN_LENGTH(last_node)) ) {
-			p = last_key.key_data + BTN_PREFIX(last_node);
-			q = BTN_DATA(last_node);
+		if ( (l = last_node->btn_length) ) {
+			p = last_key.key_data + last_node->btn_prefix;
+			q = last_node->btn_data;
 			do {
 				*p++ = *q++;
 			}
@@ -3174,11 +3174,11 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 	// and leave some extra space for expansion (at least one key length)
 	BTN node = gc_page->btr_nodes;
 
-	USHORT prefix = compute_prefix(&last_key, BTN_DATA(node), BTN_LENGTH(node));
+	USHORT prefix = compute_prefix(&last_key, node->btn_data, node->btn_length);
 
 	if (left_page->btr_length +
 		gc_page->btr_length - prefix -
-		BTN_LENGTH(last_node) - BTN_SIZE -
+		last_node->btn_length - BTN_SIZE -
 		((UCHAR *) gc_page->btr_nodes -
 		 (UCHAR *) gc_page) > dbb->dbb_page_size - MAX_KEY) {
 		CCH_RELEASE(tdbb, &parent_window);
@@ -3198,7 +3198,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 		// it's possible that leaf pages in a duplicate chain could be out of 
 		// order when two different processes split pages at the same time
 		next_parent_node = NEXT_NODE(parent_node);
-		next_number = get_long(BTN_NUMBER(next_parent_node));
+		next_number = get_long(next_parent_node->btn_number);
 
 		if ((left_page && previous_number && (previous_number != left_window.win_page)) || 
 			(right_page && (next_number > 0) && (next_number != right_window.win_page))) 
@@ -3269,13 +3269,13 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 	// of the two pages, plus the compression of the first node on the g-c'ed page,
 	// minus the prefix of the END_BUCKET node to be deleted
 	left_page->btr_prefix_total +=
-		gc_page->btr_prefix_total + prefix - BTN_PREFIX(last_node);
+		gc_page->btr_prefix_total + prefix - last_node->btn_prefix;
 
 	// fix up the last node of the left page to contain the compressed first node
-	BTN_PREFIX(last_node) = prefix;
-	BTN_LENGTH(last_node) = BTN_LENGTH(node) - prefix;
-	p = BTN_NUMBER(last_node);
-	q = BTN_NUMBER(node);
+	last_node->btn_prefix = prefix;
+	last_node->btn_length = node->btn_length - prefix;
+	p = last_node->btn_number;
+	q = node->btn_number;
 	l = 4;
 	do {
 		*p++ = *q++;
@@ -3283,8 +3283,8 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 	while (--l);
 
 	// copy over the remainder of the page to be garbage-collected
-	p = BTN_DATA(last_node);
-	q = BTN_DATA(node) + prefix;
+	p = last_node->btn_data;
+	q = node->btn_data + prefix;
 	l = gc_page->btr_length - (q - (UCHAR *) gc_page);
 	if (l) {
 		do {
@@ -3336,14 +3336,14 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 
 		// check whether it is empty
 		parent_node = parent_page->btr_nodes;
-		number = get_long(BTN_NUMBER(parent_node));
+		number = get_long(parent_node->btn_number);
 		if (number < 0) {
 			return contents_empty;
 		}
 
 		// check whether there is just one node
 		parent_node = NEXT_NODE(parent_node);
-		number = get_long(BTN_NUMBER(parent_node));
+		number = get_long(parent_node->btn_number);
 		if (number < 0) {
 			return contents_single;
 		}
@@ -3407,12 +3407,12 @@ static SLONG insert_node(TDBB tdbb,
 	for (;;) {
 		node_offset = (UCHAR *) node - (UCHAR *) bucket;
 
-		old_number = get_long(BTN_NUMBER(node));
-		old_prefix = BTN_PREFIX(node);
-		old_length = BTN_LENGTH(node);
+		old_number = get_long(node->btn_number);
+		old_prefix = node->btn_prefix;
+		old_length = node->btn_length;
 
 		p = key->key_data + old_prefix;
-		q = BTN_DATA(node);
+		q = node->btn_data;
 		l = MIN(key->key_length - old_prefix, old_length);
 		if (l) {
 			do {
@@ -3427,7 +3427,7 @@ static SLONG insert_node(TDBB tdbb,
 
 		// check if the inserted node has the same value as the next node
 		if (old_prefix != key->key_length ||
-			old_prefix != BTN_LENGTH(node) + BTN_PREFIX(node)) {
+			old_prefix != node->btn_length + node->btn_prefix) {
 			break;
 		}
 
@@ -3454,9 +3454,9 @@ static SLONG insert_node(TDBB tdbb,
 
 		while (old_number != insertion->iib_sibling) {
 			node = NEXT_NODE(node);
-			old_number = get_long(BTN_NUMBER(node));
+			old_number = get_long(node->btn_number);
 
-			if (BTN_LENGTH(node)) {
+			if (node->btn_length) {
 				break;
 			}
 			if (old_number == END_BUCKET) {
@@ -3471,7 +3471,7 @@ static SLONG insert_node(TDBB tdbb,
 	// Compute the length of the updated page.  This is a function of the
 	// new string length minus prefix and recompression done to the string
 	// following the insertion.
-	USHORT delta = BTN_SIZE + key->key_length - prefix + BTN_PREFIX(node) - old_prefix;
+	USHORT delta = BTN_SIZE + key->key_length - prefix + node->btn_prefix - old_prefix;
 
 	// Prepare to slide down tail of bucket.  If we're going to split,
 	// move the initialized hunk of the bucket to an overflow area big
@@ -3506,12 +3506,12 @@ static SLONG insert_node(TDBB tdbb,
 
 	// Insert the new node.
 	bucket->btr_length += delta;
-	bucket->btr_prefix_total += prefix - BTN_PREFIX(node);
-	BTN_PREFIX(node) = prefix;
-	quad_put(insertion->iib_number, BTN_NUMBER(node));
-	p = BTN_DATA(node);
+	bucket->btr_prefix_total += prefix - node->btn_prefix;
+	node->btn_prefix = prefix;
+	quad_put(insertion->iib_number, node->btn_number);
+	p = node->btn_data;
 	q = key->key_data + prefix;
-	if ( (l = BTN_LENGTH(node) = key->key_length - prefix) ) {
+	if ( (l = node->btn_length = key->key_length - prefix) ) {
 		do {
 			MOVE_BYTE(q, p);
 		}
@@ -3521,10 +3521,10 @@ static SLONG insert_node(TDBB tdbb,
 	// Recompress and rebuild the next node.
 	node = (BTN) p;
 	bucket->btr_prefix_total += old_prefix;
-	BTN_PREFIX(node) = old_prefix;
-	BTN_LENGTH(node) = old_length;
-	quad_put(old_number, BTN_NUMBER(node));
-	// We don't need to rebuild BTN_DATA of first pushed node here because,
+	node->btn_prefix = old_prefix;
+	node->btn_length = old_length;
+	quad_put(old_number, node->btn_number);
+	// We don't need to rebuild btn_data of first pushed node here because,
 	// if old_prefix has increased we only move down part of the node anyway
 
 	// figure out whether this node was inserted at the end of the page
@@ -3532,12 +3532,12 @@ static SLONG insert_node(TDBB tdbb,
 
 	// If the index is unique, look for duplicates in this bucket.
 	if (insertion->iib_descriptor->idx_flags & idx_unique) {
-		while (BTN_LENGTH(node) == 0 && BTN_PREFIX(node) == key->key_length) {
-			old_number = get_long(BTN_NUMBER(node));
+		while (node->btn_length == 0 && node->btn_prefix == key->key_length) {
+			old_number = get_long(node->btn_number);
 			if (old_number < 0)
 				break;
 			SBM_set(tdbb, &insertion->iib_duplicates, old_number);
-			node = (BTN) BTN_DATA(node);
+			node = (BTN) node->btn_data;
 		}
 	}
 
@@ -3552,7 +3552,7 @@ static SLONG insert_node(TDBB tdbb,
 			journal.jrnb_prefix_total = bucket->btr_prefix_total;
 			journal.jrnb_offset = node_offset;
 			journal.jrnb_delta = delta;
-			journal.jrnb_length = BTN_SIZE + BTN_SIZE + BTN_LENGTH(new_node);
+			journal.jrnb_length = BTN_SIZE + BTN_SIZE + new_node->btn_length;
 			CCH_journal_record(tdbb,
 							   window,
 							   (UCHAR *) & journal, JRNB_SIZE, (UCHAR *)
@@ -3585,11 +3585,11 @@ static SLONG insert_node(TDBB tdbb,
 	SLONG prefix_total = 0;
 	for (p = (UCHAR *) bucket->btr_nodes; p < midpoint;) {
 		node = (BTN) p;
-		prefix_total += BTN_PREFIX(node);
-		p = BTN_DATA(node);
-		q = new_key->key_data + BTN_PREFIX(node);
-		new_key->key_length = BTN_PREFIX(node) + BTN_LENGTH(node);
-		if ( (l = BTN_LENGTH(node)) )
+		prefix_total += node->btn_prefix;
+		p = node->btn_data;
+		q = new_key->key_data + node->btn_prefix;
+		new_key->key_length = node->btn_prefix + node->btn_length;
+		if ( (l = node->btn_length) )
 			do {
 				*q++ = *p++;
 			}
@@ -3623,12 +3623,12 @@ static SLONG insert_node(TDBB tdbb,
 
 	// Format the first node on the overflow page
 	new_node = split->btr_nodes;
-	BTN_PREFIX(new_node) = 0;
-	QUAD_MOVE(BTN_NUMBER(node), BTN_NUMBER(new_node));
-	p = BTN_DATA(new_node);
+	new_node->btn_prefix = 0;
+	QUAD_MOVE(node->btn_number, new_node->btn_number);
+	p = new_node->btn_data;
 	q = new_key->key_data;
 	assert(new_key->key_length <= MAX_UCHAR);
-	if ( (l = BTN_LENGTH(new_node) = (UCHAR) new_key->key_length) ) {
+	if ( (l = new_node->btn_length = (UCHAR) new_key->key_length) ) {
 		do {
 			MOVE_BYTE(q, p);
 		}
@@ -3653,7 +3653,7 @@ static SLONG insert_node(TDBB tdbb,
 	// the prefixes found on the original page; the sum of the prefixes on the 
 	// original page must exclude the split node
 	split->btr_prefix_total = bucket->btr_prefix_total - prefix_total;
-	bucket->btr_prefix_total = prefix_total - BTN_PREFIX(node);
+	bucket->btr_prefix_total = prefix_total - node->btn_prefix;
 	SLONG split_page = split_window.win_page;
 
 	CCH_RELEASE(tdbb, &split_window);
@@ -3668,7 +3668,7 @@ static SLONG insert_node(TDBB tdbb,
 
 	// mark the end of the page; note that the end_bucket marker must 
 	// contain info about the first node on the next page.
-	quad_put((SLONG) END_BUCKET, BTN_NUMBER(node));
+	quad_put((SLONG) END_BUCKET, node->btn_number);
 	BTN next_node = NEXT_NODE(node);
 	bucket->btr_length = (UCHAR *) next_node - (UCHAR *) bucket;
 	MOVE_FASTER(bucket, window->win_buffer, bucket->btr_length);
@@ -3996,8 +3996,8 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 	}
 
 	// Make sure first node looks ok
-	if (prefix > BTN_PREFIX(node)
-		|| key->key_length != BTN_LENGTH(node) + BTN_PREFIX(node))
+	if (prefix > node->btn_prefix
+		|| key->key_length != node->btn_length + node->btn_prefix)
 	{
 #ifdef DEBUG_BTR
 		CCH_RELEASE(tdbb, window);
@@ -4009,9 +4009,9 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 	// check to make sure the node has the same value
 	USHORT l;
 	UCHAR *p, *q;
-	p = BTN_DATA(node);
-	q = key->key_data + BTN_PREFIX(node);
-	if ( (l = BTN_LENGTH(node)) ) {
+	p = node->btn_data;
+	q = key->key_data + node->btn_prefix;
+	if ( (l = node->btn_length) ) {
 		do {
 			if (*p++ != *q++) {
 #ifdef DEBUG_BTR
@@ -4038,7 +4038,7 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 	while (true) {
 
 		// if we find the right one, quit
-		number = get_long(BTN_NUMBER(node));
+		number = get_long(node->btn_number);
 		if (insertion->iib_number == number) {
 			break;
 		}
@@ -4053,8 +4053,8 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 
 		// go to the next node and check that it is a duplicate
 		if (number != END_BUCKET) {
-			node = (BTN) (BTN_DATA(node) + BTN_LENGTH(node));
-			if (BTN_LENGTH(node) != 0 || BTN_PREFIX(node) != key->key_length)
+			node = (BTN) (node->btn_data + node->btn_length);
+			if (node->btn_length != 0 || node->btn_prefix != key->key_length)
 			{
 #ifdef DEBUG_BTR
 				CCH_RELEASE(tdbb, window);
@@ -4072,7 +4072,7 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 			LCK_write, pag_index);
 
 		node = page->btr_nodes;
-		l = BTN_LENGTH(node);
+		l = node->btn_length;
 		if (l != key->key_length) {
 #ifdef DEBUG_BTR
 			CCH_RELEASE(tdbb, window);
@@ -4082,7 +4082,7 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 		}
 
 		if (l) {
-			p = BTN_DATA(node);
+			p = node->btn_data;
 			q = key->key_data;
 			do {
 				if (*p++ != *q++) {
@@ -4164,17 +4164,17 @@ static bool scan(TDBB tdbb,
 
 	SLONG number;
 	while (true) {
-		number = get_long(BTN_NUMBER(node));
+		number = get_long(node->btn_number);
 
 		if (number == END_LEVEL) {
 			return false;
 		}
 
-		if (BTN_PREFIX(node) <= prefix) {
-			prefix = BTN_PREFIX(node);
+		if (node->btn_prefix <= prefix) {
+			prefix = node->btn_prefix;
 			p = key->key_data + prefix;
-			q = BTN_DATA(node);
-			for (l = BTN_LENGTH(node); l; --l, prefix++) {
+			q = node->btn_data;
+			for (l = node->btn_length; l; --l, prefix++) {
 				if (p >= end_key) {
 					if (flag) {
 						break;

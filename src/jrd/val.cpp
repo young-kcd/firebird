@@ -793,7 +793,7 @@ static RTN corrupt(TDBB tdbb, VDR control, USHORT err_code, JRD_REL relation, ..
 
 	return rtn_corrupt;
 }
-
+
 static FETCH_CODE fetch_page(TDBB tdbb,
 							 VDR control,
 							 SLONG page_number,
@@ -861,7 +861,7 @@ static FETCH_CODE fetch_page(TDBB tdbb,
 
 	return fetch_ok;
 }
-
+
 static void garbage_collect(TDBB tdbb, VDR control)
 {
 /**************************************
@@ -937,7 +937,7 @@ static void garbage_collect(TDBB tdbb, VDR control)
 	};
 #endif
 }
-
+
 #ifdef DEBUG_VAL_VERBOSE
 static void print_rhd(USHORT length, RHD header)
 {
@@ -983,7 +983,7 @@ static void print_rhd(USHORT length, RHD header)
 	};
 }
 #endif
-
+
 static RTN walk_blob(TDBB tdbb,
 					 VDR control,
 					 JRD_REL relation, BLH header, USHORT length, SLONG number)
@@ -1062,7 +1062,7 @@ static RTN walk_blob(TDBB tdbb,
 
 	return rtn_ok;
 }
-
+
 static RTN walk_chain(TDBB tdbb,
 					  VDR control,
 					  JRD_REL relation, RHD header, SLONG head_number)
@@ -1115,7 +1115,7 @@ static RTN walk_chain(TDBB tdbb,
 
 	return rtn_ok;
 }
-
+
 static void walk_database(TDBB tdbb, VDR control)
 {
 /**************************************
@@ -1168,7 +1168,7 @@ static void walk_database(TDBB tdbb, VDR control)
 
 	CCH_RELEASE(tdbb, &window);
 }
-
+
 static RTN walk_data_page(TDBB tdbb,
 						  VDR control,
 						  JRD_REL relation, SLONG page_number, SLONG sequence)
@@ -1299,7 +1299,7 @@ static RTN walk_data_page(TDBB tdbb,
 
 	return rtn_ok;
 }
-
+
 static void walk_generators(TDBB tdbb, VDR control)
 {
 /**************************************
@@ -1334,7 +1334,7 @@ static void walk_generators(TDBB tdbb, VDR control)
 				CCH_RELEASE(tdbb, &window);
 			}
 }
-
+
 static void walk_header(TDBB tdbb, VDR control, SLONG page_num)
 {
 /**************************************
@@ -1362,7 +1362,7 @@ static void walk_header(TDBB tdbb, VDR control, SLONG page_num)
 		CCH_RELEASE(tdbb, &window);
 	}
 }
-
+
 static RTN walk_index(TDBB tdbb,
 					  VDR control, JRD_REL relation, SLONG page_number, USHORT id)
 {
@@ -1416,46 +1416,48 @@ static RTN walk_index(TDBB tdbb,
 
 		for (node = (BTN) page->btr_nodes, end =
 			 (BTN) ((UCHAR *) page + page->btr_length); node < end;
-			 node = NEXT_NODE(node)) {
+			 node = NEXT_NODE(node)) 
+		{
 			/* make sure the current key is not less than the previous key */
 
-			q = BTN_DATA(node);
-			p = key.key_data + BTN_PREFIX(node);
-			for (l =
-				 MIN(BTN_LENGTH(node),
-					 (UCHAR) (key.key_length - BTN_PREFIX(node))); l;
-				 l--, p++, q++)
+			q = node->btn_data;
+			p = key.key_data + node->btn_prefix;
+			for (l = MIN(node->btn_length,
+				 (UCHAR) (key.key_length - node->btn_prefix)); l; l--, p++, q++)
+			{
 				if (*p > *q)
 					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
 							id + 1, next);
 				else if (*p < *q)
 					break;
+			}
 
 			/* save the current key */
 
-			q = BTN_DATA(node);
-			p = key.key_data + BTN_PREFIX(node);
-			for (l = BTN_LENGTH(node); l; l--)
+			q = node->btn_data;
+			p = key.key_data + node->btn_prefix;
+			for (l = node->btn_length; l; l--)
 				*p++ = *q++;
 			key.key_length = p - key.key_data;
 
-			if (QUAD_EQUAL(BTN_NUMBER(node), &end_level) ||
-				QUAD_EQUAL(BTN_NUMBER(node), &end_bucket)) {
+			if (QUAD_EQUAL(node->btn_number, &end_level) ||
+				QUAD_EQUAL(node->btn_number, &end_bucket))
+			{
 				node = NEXT_NODE(node);
 				break;
 			}
 
 			/* Record the existance of a primary version of a record */
-			if (!page->btr_level && control
-				&& (control->vdr_flags & vdr_records)) {
-			  SBM_set(tdbb, &control->vdr_idx_records, get_long(BTN_NUMBER(node)));
-		    }
+			if (!page->btr_level && control	&& (control->vdr_flags & vdr_records))
+			{
+				SBM_set(tdbb, &control->vdr_idx_records, get_long(node->btn_number));
+			}
 
 			/* fetch the next page down (if full validation was specified) */
 
-			if (page->btr_level && control
-				&& (control->vdr_flags & vdr_records)) {
-				down_number = get_long(BTN_NUMBER(node));
+			if (page->btr_level && control && (control->vdr_flags & vdr_records))
+			{
+				down_number = get_long(node->btn_number);
 
 				/* Note: control == 0 for the fetch_page() call here 
 				   as we don't want to mark the page as visited yet - we'll 
@@ -1467,10 +1469,10 @@ static RTN walk_index(TDBB tdbb,
 				/* make sure the initial key is greater than the pointer key */
 
 				down_node = (BTN) down_page->btr_nodes;
-				p = BTN_DATA(down_node);
+				p = down_node->btn_data;
 				q = key.key_data;
 				for (l = static_cast<UCHAR>(MIN(key.key_length,
-											BTN_LENGTH(down_node)));
+											down_node->btn_length));
 					l; l--, p++, q++)
 				{
 					if (*p < *q)
@@ -1488,7 +1490,7 @@ static RTN walk_index(TDBB tdbb,
 				if (previous_number != down_page->btr_left_sibling)
 					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
 							id + 1, next);
-				next_number = get_long(BTN_NUMBER((NEXT_NODE(node))));
+				next_number = get_long((NEXT_NODE(node))->btn_number);
 				if (next_number >= 0 && next_number != down_page->btr_sibling)
 					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
 							id + 1, next);
@@ -1563,7 +1565,7 @@ static void walk_log(TDBB tdbb, VDR control)
 		CCH_RELEASE(tdbb, &window);
 	}
 }
-
+
 static void walk_pip(TDBB tdbb, VDR control)
 {
 /**************************************
@@ -1603,7 +1605,7 @@ static void walk_pip(TDBB tdbb, VDR control)
 			break;
 	}
 }
-
+
 static RTN walk_pointer_page(	TDBB	tdbb,
 								VDR		control,
 								JRD_REL		relation,
@@ -1695,7 +1697,7 @@ static RTN walk_pointer_page(	TDBB	tdbb,
 	CCH_RELEASE(tdbb, &window);
 	return rtn_ok;
 }
-
+
 
 static RTN walk_record(TDBB tdbb,
 					   VDR control,
@@ -1968,7 +1970,7 @@ static RTN walk_root(TDBB tdbb, VDR control, JRD_REL relation)
 
 	return rtn_ok;
 }
-
+
 static RTN walk_tip(TDBB tdbb, VDR control, SLONG transaction)
 {
 /**************************************

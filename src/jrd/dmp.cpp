@@ -834,13 +834,13 @@ static void dmp_index(BTR page, USHORT page_size)
 
 	while (node < end)
 	{
-		const ULONG number = get_long(BTN_NUMBER(node));
+		const ULONG number = get_long(node->btn_number);
 
 		/* compute running value */
 
-		p = value + BTN_PREFIX(node);
-		q = BTN_DATA(node);
-		l = BTN_LENGTH(node);
+		p = value + node->btn_prefix;
+		q = node->btn_data;
+		l = node->btn_length;
 		if (l)
 		{
 			do {
@@ -855,10 +855,10 @@ static void dmp_index(BTR page, USHORT page_size)
 		/* format value as number */
 
 		if (dmp_descending || (page->btr_header.pag_flags & btr_descending))
-			complement_key(value, BTN_PREFIX(node) + BTN_LENGTH(node));
+			complement_key(value, node->btn_prefix + node->btn_length);
 
-		if ((BTN_PREFIX(node) == 0 && BTN_LENGTH(node) == 0) ||
-			BTN_PREFIX(node) + BTN_LENGTH(node) > 8)
+		if ((node->btn_prefix == 0 && node->btn_length == 0) ||
+			node->btn_prefix + node->btn_length > 8)
 		{
 			n = 0;
 		}
@@ -871,7 +871,7 @@ static void dmp_index(BTR page, USHORT page_size)
 
 		p = print;
 		q = value;
-		if (l = BTN_PREFIX(node))
+		if (l = node->btn_prefix)
 		{
 			do {
 				c = *q++;
@@ -879,7 +879,7 @@ static void dmp_index(BTR page, USHORT page_size)
 			} while (--l);
 		}
 		*p++ = '|';
-		if (l = BTN_LENGTH(node))
+		if (l = node->btn_length)
 		{
 			do {
 				c = *q++;
@@ -891,8 +891,8 @@ static void dmp_index(BTR page, USHORT page_size)
 		/* print formatted node */
 
 		ib_fprintf(dbg_file, "\t+%x Prefix: %d, length: %d, ",
-				   (SCHAR *) node - (SCHAR *) page, BTN_PREFIX(node),
-				   BTN_LENGTH(node));
+				   (SCHAR *) node - (SCHAR *) page, node->btn_prefix,
+				   node->btn_length);
 		if (page->btr_level)
 			ib_fprintf(dbg_file, "page number: %ld", number);
 		else
@@ -907,7 +907,7 @@ static void dmp_index(BTR page, USHORT page_size)
 		ib_fprintf(dbg_file, ",\t(%s) [%g]\n", print, n);
 
 		if (dmp_descending || (page->btr_header.pag_flags & btr_descending))
-			complement_key(value, BTN_PREFIX(node) + BTN_LENGTH(node));
+			complement_key(value, node->btn_prefix + node->btn_length);
 
 		node = NEXT_NODE(node);
 	}

@@ -1097,8 +1097,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 #endif
 		if (attachment->att_flags & ATT_shutdown)
 			ERR_post(gds_shutdown, gds_arg_string, 
-                     ERR_string(file_name, file_length),
-					 0);
+					ERR_string(file_name, file_length), 0);
 	}
 #endif
 
@@ -1107,16 +1106,14 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	if (dbb->dbb_ast_flags & (DBB_shut_attach | DBB_shut_tran))
 	{
 		ERR_post(gds_shutinprog, gds_arg_string, 
-                 ERR_string(file_name, file_length),
-				 0);
+				ERR_string(file_name, file_length), 0);
 	}
 
 	if (dbb->dbb_ast_flags & DBB_shutdown &&
 		!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner)))
 	{
 		ERR_post(gds_shutdown, gds_arg_string, 
-                 ERR_string(file_name, file_length), 
-                 0);
+				ERR_string(file_name, file_length), 0);
 	}
 
 	if (options.dpb_disable) {
