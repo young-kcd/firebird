@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.71 2003-10-19 23:03:19 brodsom Exp $
+ * $Id: ddl.cpp,v 1.72 2003-10-20 10:12:49 robocop Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -2144,7 +2144,7 @@ static DSQL_NOD define_insert_action( DSQL_REQ request)
  *
  **************************************/
 	DSQL_NOD select_node, select_expr, from_list;
-	DSQL_NOD fields_node, values_node, field_node, value_node;
+	DSQL_NOD fields_node, values_node, field_node;
 	DSQL_NOD *ptr, *end, *ptr2, *end2;
 	DLLS field_stack, value_stack;
 	DSQL_REL relation;
@@ -2224,7 +2224,7 @@ static DSQL_NOD define_insert_action( DSQL_REQ request)
 				(DSQL_NOD) MAKE_cstring(TEMP_CONTEXT);
 			LLS_PUSH(field_node, &field_stack);
 
-			value_node = MAKE_node(nod_field_name, (int) e_fln_count);
+			DSQL_NOD value_node = MAKE_node(nod_field_name, (int) e_fln_count);
 			value_node->nod_arg[e_fln_name] = (*ptr2)->nod_arg[e_fln_name];
 			value_node->nod_arg[e_fln_context] =
 				(DSQL_NOD) MAKE_cstring(NEW_CONTEXT);
@@ -3168,10 +3168,11 @@ static void define_update_action(
 			field_node->nod_arg[e_fln_context] =
 				(DSQL_NOD) MAKE_cstring(TEMP_CONTEXT);
 
-			DSQL_NOD value_node = MAKE_node(nod_field_name, (int) e_fln_count);
-			value_node->nod_arg[e_fln_name] = (*ptr2)->nod_arg[e_fln_name];
-			value_node->nod_arg[e_fln_context] =
-				(DSQL_NOD) MAKE_cstring(NEW_CONTEXT);
+			// CVC: This code serves no purpose.
+			//DSQL_NOD value_node = MAKE_node(nod_field_name, (int) e_fln_count);
+			//value_node->nod_arg[e_fln_name] = (*ptr2)->nod_arg[e_fln_name];
+			//value_node->nod_arg[e_fln_context] =
+			//	(DSQL_NOD) MAKE_cstring(NEW_CONTEXT);
 
 			DSQL_NOD old_value_node = MAKE_node(nod_field_name, (int) e_fln_count);
 			old_value_node->nod_arg[e_fln_name] =
@@ -5747,7 +5748,7 @@ static void stuff_default_blr(	DSQL_REQ		request,
 
 	unsigned int i;
 
-	for (i = 1; ((i < buff_size) && (default_buff[i] != blr_eoc));++i)
+	for (i = 1; ((i < buff_size) && (default_buff[i] != blr_eoc)); ++i)
 	{
 		request->append_uchar(default_buff[i]);
 	}
