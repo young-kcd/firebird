@@ -51,7 +51,6 @@ typedef err* ERR;
 
 // this table is used in data allocation to determine
 // whether a block has a variable length tail
-
 #define BLKDEF(type, root, tail) type,
 
 ENUM blk_t {
@@ -71,10 +70,10 @@ dsql_type_MAX};
 class str : public pool_alloc_rpt<char, dsql_type_str>
 {
 public:
-	const char* str_charset;	// ASCIIZ Character set identifier for string
+	const char* str_charset;	//!< ASCIIZ Character set identifier for string
 	USHORT      str_flags;
-	ULONG       str_length;		// length of string in BYTES
-	char        str_data[2];	// one for ALLOC and one for the NULL
+	ULONG       str_length;		//!< length of string in BYTES
+	char        str_data[2];	//!< one for ALLOC and one for the NULL
 };
 typedef str* STR;
 
@@ -104,51 +103,48 @@ typedef dsql_lls* DLLS;
 
 #include "../jrd/dsc.h"
 
-// internal DSQL requests
-
-
 #ifdef NOT_USED_OR_REPLACED
 
-#define irq_relation	0	//!< lookup a relation
-#define irq_fields		1	//!< lookup a relation's fields
-#define irq_dimensions	2	//!< lookup a field's dimensions
-#define irq_primary_key	3	//!< lookup a primary key
-#define irq_view		4	//!< lookup a view's base relations
-#define irq_function	5	//!< lookup a user defined function
-#define irq_func_return	6	//!< lookup a function's return argument
-#define irq_procedure	7	//!< lookup a stored procedure
-#define irq_parameters	8	//!< lookup a procedure's parameters
-#define irq_collation	9	//!< lookup a collation name
-#define irq_charset		10	//!< lookup a character set name
-#define irq_trigger		11	//!< lookup a trigger
-#define irq_domain		12	//!< lookup a domain
-#define irq_type		13	//!< lookup a symbolic name in RDB$TYPES
-#define irq_col_default	14	//!< lookup default for a column
-#define irq_domain_2	15	//!< lookup a domain
+#define irq_relation    0   
+#define irq_fields      1   
+#define irq_dimensions  2   
+#define irq_primary_key 3   
+#define irq_view        4   
+#define irq_function    5   
+#define irq_func_return 6   
+#define irq_procedure   7   
+#define irq_parameters  8   
+#define irq_collation   9   
+#define irq_charset     10  
+#define irq_trigger     11  
+#define irq_domain      12  
+#define irq_type        13  
+#define irq_col_default 14  
+#define irq_domain_2    15  
 
-#define irq_MAX			16
+#define irq_MAX         16
 
 #else
-
+//! internal DSQL requests
 enum irq_type_t {
-	irq_relation	= 0,
-	irq_fields		= 1,
-	irq_dimensions	= 2,
-	irq_primary_key	= 3,
-	irq_view		= 4,
-	irq_function	= 5,
-	irq_func_return	= 6,
-	irq_procedure	= 7,
-	irq_parameters	= 8,
-	irq_collation	= 9,
-	irq_charset		= 10,
-	irq_trigger		= 11,
-	irq_domain		= 12,
-	irq_type		= 13,
-	irq_col_default	= 14,
-	irq_domain_2	= 15,
+    irq_relation    = 0,     //!< lookup a relation                     
+    irq_fields      = 1,     //!< lookup a relation's fields            
+    irq_dimensions  = 2,     //!< lookup a field's dimensions           
+    irq_primary_key = 3,     //!< lookup a primary key                  
+    irq_view        = 4,     //!< lookup a view's base relations        
+    irq_function    = 5,     //!< lookup a user defined function        
+    irq_func_return = 6,     //!< lookup a function's return argument   
+    irq_procedure   = 7,     //!< lookup a stored procedure             
+    irq_parameters  = 8,     //!< lookup a procedure's parameters       
+    irq_collation   = 9,     //!< lookup a collation name               
+    irq_charset     = 10,    //!< lookup a character set name           
+    irq_trigger     = 11,    //!< lookup a trigger                      
+    irq_domain      = 12,    //!< lookup a domain                       
+    irq_type        = 13,    //!< lookup a symbolic name in RDB$TYPES   
+    irq_col_default = 14,    //!< lookup default for a column           
+    irq_domain_2    = 15,    //!< lookup a domain
 
-	irq_MAX			= 16
+    irq_MAX         = 16
 };
 
 #endif
@@ -175,8 +171,7 @@ public:
 };
 typedef dbb* DBB;
 
-// values used in dbb_flags
-
+//! values used in dbb_flags
 #define DBB_no_arrays	0x1
 #define DBB_v3			0x2
 #define DBB_no_charset	0x4
@@ -239,10 +234,10 @@ typedef dsql_fld* DSQL_FLD;
 #define FLD_computed	1
 #define FLD_drop	2
 #define FLD_dbkey	4
-#define FLD_national	8		// field uses NATIONAL character set
+#define FLD_national	8		//!< field uses NATIONAL character set
 #define FLD_nullable	16
 
-#define MAX_ARRAY_DIMENSIONS 16	// max array dimensions
+#define MAX_ARRAY_DIMENSIONS 16	//!< max array dimensions
 
 //! database/log/cache file block
 class fil : public pool_alloc<dsql_type_fil>
