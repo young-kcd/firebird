@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.37 2002-11-12 12:16:43 eku Exp $
+$Id: inet.cpp,v 1.38 2002-11-12 13:15:13 eku Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -1722,11 +1722,11 @@ static PORT aux_connect(PORT port, PACKET* packet, XDR_INT (*ast)(void))
 		return NULL;
 	}
 
-#if !(defined VMS || defined WIN_NT || defined SINIXZ)
+#ifdef SIOCSPGRP
 	if (ast)
 	{
 
-#ifdef SOLARIS
+#ifdef HAVE_GETPGRP
 		arg = getpgrp();
 #else
 		arg = getpid();
@@ -1741,7 +1741,7 @@ static PORT aux_connect(PORT port, PACKET* packet, XDR_INT (*ast)(void))
 		new_port->port_ast = ast;
 		ISC_signal(SIGURG, (FPTR_VOID)inet_handler, new_port);
 	}
-#endif
+#endif /* SIOCSPGRP */
 
 	new_port->port_handle = (HANDLE) n;
 	new_port->port_flags |= port->port_flags & PORT_no_oob;

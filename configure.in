@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.79 2002-11-12 12:30:06 kkuznetsov Exp $
+dnl $Id: configure.in,v 1.80 2002-11-12 13:15:10 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -177,14 +177,7 @@ AC_CHECK_HEADERS(pwd.h)
 AC_CHECK_HEADERS(unistd.h)
 AC_CHECK_HEADERS(varargs.h)
 AC_CHECK_HEADERS(crypt.h)
-
-AC_CHECK_HEADERS(netinet/in.h)
-
-AC_CHECK_HEADERS(rpc/rpc.h)
-AC_CHECK_HEADERS(netconfig.h)
-
-AC_CHECK_HEADERS(rpc/xdr.h)
-
+AC_CHECK_HEADERS(netinet/in.h rpc/rpc.h netconfig.h rpc/xdr.h)
 
 dnl Check for libraries
 AC_CHECK_LIB(dl, main)
@@ -251,7 +244,7 @@ AC_CHECK_FUNCS(snprintf)
 AC_FUNC_MMAP 
 AC_CHECK_FUNCS(atexit on_exit)
 AC_FUNC_FORK
-AC_CHECK_FUNCS(setgrp setpgid)
+AC_CHECK_FUNCS(setgrp setpgid getpgrp)
 AC_FUNC_SETPGRP 
 AC_CHECK_FUNCS(flock)
 AC_CHECK_FUNCS(initgroups)

@@ -69,7 +69,6 @@
 #undef HAVE_VARARGS_H
 #undef HAVE_VFORK_H
 #undef HAVE_CRYPT_H 
-
 #undef HAVE_NETCONFIG_H
 #undef HAVE_NETINET_IN_H
 #undef HAVE_RPC_RPC_H
@@ -93,6 +92,7 @@
 #undef HAVE_WORKING_VFORK
 #undef HAVE_SETPGRP 
 #undef HAVE_SETPGID
+#undef HAVE_GETPGRP
 #undef SETPGRP_VOID
 #undef HAVE_FLOCK
 #undef HAVE_INITGROUPS
@@ -169,5 +169,7 @@
 #define WIN_NT
 #undef SCO_EV
 #undef SINIXZ
+
+#define FB_PREFIX "/usr/local/firebird"
 
 #endif
