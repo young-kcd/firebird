@@ -240,17 +240,17 @@ public:
 	bool findConverter(CHARSET_ID id, CsConvert **cvt)
 	{
 		*cvt = NULL;
-		for(Firebird::vector<CsConvert*>::iterator itr = charset_converters.begin();
-				itr != charset_converters.end(); ++itr)
-			if ((*itr)->getToCS() == id)
+		for(Firebird::vector<CsConvert*>::iterator itr1 = charset_converters.begin();
+				itr1 != charset_converters.end(); ++itr1)
+			if ((*itr1)->getToCS() == id)
 			{
-				*cvt = *itr;
+				*cvt = *itr1;
 				return true;
 			}
 
-		for(Firebird::vector<CHARSET_ID>::iterator itr = impossible_conversions.begin();
-				itr != impossible_conversions.end(); ++itr)
-			if (*itr == id)
+		for(Firebird::vector<CHARSET_ID>::iterator itr2 = impossible_conversions.begin();
+				itr2 != impossible_conversions.end(); ++itr2)
+			if (*itr2 == id)
 				return true;
 		return false;
 	}
@@ -2263,7 +2263,7 @@ static CharSet *BC_CharSetAllocFunc(MemoryPool &p, SSHORT cs_id, SSHORT unused)
 	csInitFunc = (CSInitFunc) intl_back_compat_obj_init_lookup(type_charset, cs_id, unused);
 	assert(csInitFunc != 0);
 	CHARSET cs = new(p) charset;
-	bzero(cs, sizeof(charset));
+	memset(cs, 0, sizeof(charset));
 	
 	if (0 != (*csInitFunc)(cs, cs_id, unused))
 	{
@@ -2294,7 +2294,7 @@ static CsConvert *BC_CsConvertAllocFunc(MemoryPool &p, SSHORT from_id, SSHORT to
 	cvtInitFunc = (CVTInitFunc) intl_back_compat_obj_init_lookup(type_csconvert, to_id, from_id);
 	assert(cvtInitFunc != 0);
 	CSCONVERT cvt = new(p) csconvert;
-	bzero(cvt, sizeof(csconvert));
+	memset(cvt, 0, sizeof(csconvert));
 	
 	//if (0 != (*cvtInitFunc)(cvt, from_id, to_id))
 	if (0 != (*cvtInitFunc)(cvt, to_id, from_id))
@@ -2325,7 +2325,7 @@ static TextType *BC_TextTypeAllocFunc(MemoryPool &p, SSHORT tt_id, SSHORT unused
 	ttInitFunc = (TTInitFunc) intl_back_compat_obj_init_lookup(type_texttype, tt_id, unused);
 	assert(ttInitFunc != 0);
 	TEXTTYPE tt = new(p) texttype;
-	bzero(tt, sizeof(texttype));
+	memset(tt, 0, sizeof(texttype));
 	
 	if (0 != (*ttInitFunc)(tt, tt_id, unused))
 	{
