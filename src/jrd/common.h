@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.121 2004-06-08 13:39:33 alexpeshkoff Exp $
+$Id: common.h,v 1.122 2004-08-20 04:36:48 dimitr Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -86,6 +86,7 @@ $Id: common.h,v 1.121 2004-06-08 13:39:33 alexpeshkoff Exp $
 #define FB_ARCHITECTURE isc_info_db_class_classic_access
 #endif
 
+#define EXPRESSION_INDICES
 
 /*****************************************************
 * Linux for Intel platforms 
