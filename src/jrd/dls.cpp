@@ -32,6 +32,8 @@
 #include "../jrd/dls_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/gdsassert.h"
+#include "../jrd/file_params.h"
+#include "../jrd/isc_proto.h"
 
 static MDLS DLS_cfg_tmpdir = { NULL, FALSE };	/* directory list object */
 
@@ -78,6 +80,16 @@ BOOLEAN DLS_get_temp_space(ULONG size, SFB sfb)
 
 	assert(size > (ULONG) 0);
 	assert(sfb);
+
+	/* FIXME: temporary workaround until directory lists are handled
+			  properly without need in ISC_get_config. Don't know why,
+			  but Nickolay's one in jrd.cpp didn't work for SINIX-Z.
+			  (dimitr - 2002.12.13) */
+	static bool is_initialized = false;
+	if (!is_initialized) {
+		ISC_get_config(LOCK_HEADER, 0);
+		is_initialized = true;
+	}
 
 	ptr = DLS_get_access();
 
