@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: license.h,v 1.28 2002-11-03 22:03:29 dimitr Exp $
+ * $Id: license.h,v 1.29 2003-06-07 12:39:12 dimitr Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -65,6 +65,7 @@
 #define _JRD_LICENSE_H_
 
 #include "../jrd/build_no.h"
+#include "../jrd/isc_version.h"
 
 #ifdef hpux
 #ifdef HP10
@@ -140,7 +141,7 @@
 #endif
 
 #ifndef GDS_VERSION
-#define GDS_VERSION	FB_PLATFORM "-" FB_BUILD_TYPE FB_MAJOR_VER "." FB_MINOR_VER "." FB_REV_NO "." FB_BUILD_NO " " FB_BUILD_SUFFIX
+#define GDS_VERSION		FB_PLATFORM "-" FB_BUILD_TYPE ISC_MAJOR_VER "." ISC_MINOR_VER "." FB_REV_NO "." FB_BUILD_NO " " FB_BUILD_SUFFIX
 #endif
 
 #endif /* _JRD_LICENSE_H_ */
