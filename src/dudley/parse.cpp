@@ -1089,7 +1089,7 @@ static void define_index(void)
 	index->idx_unique = unique;
 	index->idx_description = description;
 	index->idx_inactive = inactive;
-	index->idx_type = descending;
+	index->idx_type = IDX_type_none;
 
 	ptr = &index->idx_field[count];
 
@@ -2542,11 +2542,11 @@ static void modify_index(void)
 			index->idx_flags |= IDX_active_flag;
 		}
 		else if (MATCH(KW_ASCENDING)) {
-			index->idx_type = false;
+			index->idx_type = IDX_type_ascending;
 			index->idx_flags |= IDX_type_flag;
 		}
 		else if (MATCH(KW_DESCENDING)) {
-			index->idx_type = true;
+			index->idx_type = IDX_type_descending;
 			index->idx_flags |= IDX_type_flag;
 		}
 		else if (KEYWORD(KW_DESCRIPTION)) {

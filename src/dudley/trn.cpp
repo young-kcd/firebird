@@ -640,8 +640,8 @@ static void add_index( STR dyn, DUDLEY_IDX index)
 	put_symbol(dyn, gds_dyn_rel_name, index->idx_relation);
 	put_number(dyn, gds_dyn_idx_unique, (index->idx_unique) ? TRUE : FALSE);
 	put_number(dyn, gds_dyn_idx_inactive, (index->idx_inactive) ? TRUE : FALSE);
-	if (index->idx_type)
-		put_number(dyn, gds_dyn_idx_type, (index->idx_type) ? TRUE : FALSE);
+	if (index->idx_type != IDX_type_none)
+		put_number(dyn, gds_dyn_idx_type, index->idx_type);
 
 	put_text(dyn, gds_dyn_description, index->idx_description);
 
@@ -1380,8 +1380,8 @@ static void modify_index( STR dyn, DUDLEY_IDX index)
 		put_number(dyn, gds_dyn_idx_inactive,
 				   (index->idx_inactive) ? TRUE : FALSE);
 
-	if (index->idx_flags & IDX_type_flag)
-		put_number(dyn, gds_dyn_idx_type, (index->idx_type) ? TRUE : FALSE);
+	if ((index->idx_flags & IDX_type_flag) && (index->idx_type != IDX_type_none))
+		put_number(dyn, gds_dyn_idx_type, index->idx_type);
 
 	if (index->idx_flags & IDX_null_description) {
 		CHECK_DYN(3);

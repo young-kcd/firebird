@@ -284,11 +284,18 @@ typedef struct funcarg {
 
 /* Index description block */
 
+enum idx_direction
+{
+	IDX_type_none = -1,
+	IDX_type_ascending = 0,
+	IDX_type_descending = 1
+};
+
 typedef struct dudley_idx {
 	USHORT idx_count;			/* Number of fields */
 	bool idx_unique;			/* true if unique index */
 	bool idx_inactive;			/* false if index is active */
-	bool idx_type;				/* true descending */
+	idx_direction idx_type;		/* true descending */
 	USHORT idx_flags;			/* Indicate which attributes have changed */
 	struct sym *idx_name;		/* Index name */
 	struct sym *idx_relation;	/* Relation in question */
