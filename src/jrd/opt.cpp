@@ -606,7 +606,7 @@ RSB OPT_compile(TDBB tdbb,
 		rsb = gen_outer(tdbb, opt_, rse, rivers_stack, &sort, &project);
 	}
 	else {
-		bool sort_present = (sort) ? true : false;
+		bool sort_present = (sort);
 		bool outer_rivers = false;
 		JRD_NOD saved_sort_node = sort;
 

@@ -101,7 +101,7 @@ char *ChopFileName( char *szName, char *szShortName, ULONG dwLen)
 			else
 				pchLastRight = pchRight;
 		}
-		bLeft = bLeft ? false : true;
+		bLeft = !bLeft;
 	}
 
 	for (pchTmp = szShortName, pchLeft = szName;

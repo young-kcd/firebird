@@ -225,7 +225,7 @@ void ThreadPriorityScheduler::Exit(void) {
 // Check whether current thread has high priority
 //
 bool ThreadPriorityScheduler::Boosted(void) {
-	return InternalGet()->flags & THPS_BOOSTED ? true : false;
+	return (InternalGet()->flags & THPS_BOOSTED);
 }
 
 //____________________________________________________________

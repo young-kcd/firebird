@@ -122,8 +122,7 @@ int WINAPI WinMain(
 	GetVersionEx((LPOSVERSIONINFO) & OsVersionInfo);
 
 /* service_flag is TRUE for NT false for 95 */
-	service_flag = ((OsVersionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT) 
-					? true : false);
+	service_flag = (OsVersionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 
 	if (service_flag == true)
 		service_flag = parse_args(lpszCmdLine, &service_flag);

@@ -2478,7 +2478,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 			switch (request->req_operation) {
 			case jrd_req::req_evaluate:
 				impure->Open(tdbb, node->nod_arg[0], node->nod_count - 2, 
-						node->nod_arg[1] ? false : true);
+						(!node->nod_arg[1]));
 			case jrd_req::req_return:
 			case jrd_req::req_sync:
 				if (impure->Fetch(tdbb, &node->nod_arg[2])) {

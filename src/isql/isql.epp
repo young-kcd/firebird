@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.40 2003-09-05 11:25:53 brodsom Exp $
+  $Id: isql.epp,v 1.41 2003-09-08 01:43:03 brodsom Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -6079,7 +6079,7 @@ static void print_item_numeric(SINT64 value,
  **************************************/
 	SSHORT from, to;
 	bool all_digits_used = false;
-	bool neg = (value < 0) ? true : false;
+	bool neg = (value < 0);
 
 /* Handle special case of no negative scale, no '.' required! */
 	if (scale >= 0) {
