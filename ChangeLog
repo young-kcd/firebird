@@ -1,3 +1,11 @@
+2004-06-19 23:28  arnobrinkman
+
+	* firebird2/src/: dsql/make.cpp (1.68), jrd/align.h (1.7):
+	
+	Fix problems with NUMERIC and DECIMAL datatypes in
+	MAKE_desc_from_list() for Dialect 1.  This affects CASE, COALESCE
+	and the auto-union cast.
+
 2004-06-16 17:41  kkuznetsov
 
 	* firebird2/builds/posix/firebird.vers (1.3):
