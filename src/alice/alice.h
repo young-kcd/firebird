@@ -181,7 +181,6 @@ typedef tgbl *TGBL;
 
 #ifdef SUPERSERVER
 #define GET_THREAD_DATA		((TGBL) THD_get_specific())
-#ifdef __cplusplus
 #ifdef FB_FROM_ALICE_CPP
 #define SET_THREAD_DATA		THD_put_specific ((THDD) tdgbl);	\
 				tdgbl->tgbl_thd_data.thdd_type =				\
@@ -191,22 +190,14 @@ typedef tgbl *TGBL;
 				tdgbl->tgbl_thd_data.thdd_type =				\
 					reinterpret_cast<tgbl*>(THDD_TYPE_TALICE)
 #endif /* FB_FROM_ALICE_CPP */
-#else
-#define SET_THREAD_DATA		THD_put_specific ((THDD) tdgbl); \
-				tdgbl->tgbl_thd_data.thdd_type=THDD_TYPE_TALICE
-#endif
+
 #define RESTORE_THREAD_DATA	THD_restore_specific();
 #else
 extern struct tgbl *gdgbl;
 
 #define GET_THREAD_DATA		(gdgbl)
-#ifdef __cplusplus
 #define SET_THREAD_DATA		gdgbl = const_cast<tgbl*>(tdgbl); \
 				tdgbl->tgbl_thd_data.thdd_type = THDD_TYPE_TGBL
-#else
-#define SET_THREAD_DATA		gdgbl = tdgbl; \
-				tdgbl->tgbl_thd_data.thdd_type = THDD_TYPE_TGBL
-#endif
 #define RESTORE_THREAD_DATA
 #endif
 
