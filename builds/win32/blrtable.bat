@@ -1,6 +1,6 @@
 @echo off
 
-@cl -Ob2iytp -Gs -DWIN95 -W3 -G4 -Gd -MD -I..\..\src\include -I..\..\src\include\gen -DSERVER_SHUTDOWN -DSUPERSERVER -DNOMSG -D_X86_=1 -DWIN32 -DI386 ..\..\src\misc\blrtable.cpp > blrtable.log 2>&1
+@cl -Ob2iytp -Gs -DWIN95 -W3 -G4 -Gd -MD -I..\..\src\include -I..\..\src\include\gen -DSUPERSERVER -DNOMSG -D_X86_=1 -DWIN32 -DI386 ..\..\src\misc\blrtable.cpp > blrtable.log 2>&1
 @if errorlevel 1 goto :ERROR
 @blrtable.exe > blrtable.h
 @copy blrtable.h ..\..\src\include\gen\blrtable.h > nul
