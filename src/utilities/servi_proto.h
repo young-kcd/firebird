@@ -63,9 +63,10 @@ extern USHORT	SERVICES_stop (SC_HANDLE manager,
 				TEXT	*display_name,
 				USHORT (*)(SLONG, TEXT *, SC_HANDLE));
 
+extern USHORT	SERVICES_status (TEXT* service_name);
+
 extern USHORT	SERVICES_grant_logon_right (TEXT* account,
 				USHORT (*)(SLONG, TEXT *, SC_HANDLE));
-
 
 extern USHORT	SERVICES_grant_access_rights(TEXT* service_name,
 				TEXT* account,

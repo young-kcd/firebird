@@ -247,6 +247,19 @@ USHORT SERVICES_remove(SC_HANDLE manager,
 
 	CloseServiceHandle(service);
 
+	// Let's loop until the service is actually confirmed deleted
+	while (true)
+	{
+		service = OpenService(manager, service_name, GENERIC_READ);
+		if (service == NULL)
+		{
+			if (GetLastError() == ERROR_SERVICE_DOES_NOT_EXIST) break;
+		}
+		else CloseServiceHandle(service);
+
+		Sleep(100);	// A small nap is always good for health :)
+	}
+
 	return FB_SUCCESS;
 }
 
@@ -365,6 +378,55 @@ USHORT SERVICES_stop(SC_HANDLE manager,
 	CloseServiceHandle(service);
 
 	return FB_SUCCESS;
+}
+
+USHORT	SERVICES_status (TEXT* service_name)
+{
+/**************************************
+ *
+ *	S E R V I C E S _ s t a t u s
+ *
+ **************************************
+ *
+ * Functional description
+ *  Returns the Running/Stopped/Pending status of a service.
+ *  This API does not use an error handler because it has not real error
+ *  to ever report. For instance, a non-existing service is not reported as
+ *  an error, but as a status info through the function return value.
+ *
+ **************************************/
+
+	SC_HANDLE manager = OpenSCManager(NULL, NULL, GENERIC_READ);
+	if (manager == NULL)
+		return FB_SERVICE_STATUS_UNKNOWN;
+
+	SC_HANDLE service = OpenService(manager, service_name, GENERIC_READ);
+	if (service == NULL)
+	{
+		CloseServiceHandle(manager);
+		return FB_SERVICE_STATUS_NOT_INSTALLED;
+	}
+
+	SERVICE_STATUS service_status;
+	if (!QueryServiceStatus(service, &service_status))
+	{
+		CloseServiceHandle(service);
+		CloseServiceHandle(manager);
+		return FB_SERVICE_STATUS_UNKNOWN;
+	}
+	CloseServiceHandle(service);
+	CloseServiceHandle(manager);
+
+	USHORT status = FB_SERVICE_STATUS_UNKNOWN;
+	switch (service_status.dwCurrentState)
+	{
+		case SERVICE_RUNNING : status = FB_SERVICE_STATUS_RUNNING; break;
+		case SERVICE_STOPPED : status = FB_SERVICE_STATUS_STOPPED; break;
+		case SERVICE_START_PENDING :	/* fall over the next case */
+		case SERVICE_STOP_PENDING : status = FB_SERVICE_STATUS_PENDING; break;
+	}
+
+	return status;
 }
 
 USHORT SERVICES_grant_logon_right(TEXT* account,
