@@ -1,5 +1,7 @@
-Firebird configuration can be changed by adding entries
-to the file firebird.conf.
+firebird.conf
+=============
+
+Firebird configuration can be changed by entries in the firebird.conf.
 
 Depending on operating system this file is found in a little
 bit of different ways.
@@ -13,9 +15,9 @@ for a string value specifying the directory of firebird.conf.
 LOCAL_MACHINE\SOFTWARE\FirebirdSQL\Firebird\CurrentVersion\RootDirectory
 
 If this value is not present, it assumes firebird.conf is placed in the
-directory directly above the fbserver.exe. If firebird.exe is placed as
+directory directly above the fbserver.exe. If fbserver.exe is placed as
 
-	 C:\Program Files\Firebird\bin\firebird.exe
+	 C:\Program Files\Firebird\bin\fbserver.exe
 
 then the firebird.conf file is
 
@@ -38,11 +40,8 @@ stuff here].
 As a last resort it too falls back to "/usr/local/firebird".
 
 
-firebird.conf
-=============
-
-There are as of this writing, 28 Feb. 2003, 35 user settings.
-
+Syntax of firebird.conf
+=======================
 
 Comments
 --------
@@ -51,14 +50,17 @@ Anything following the # character on a line is considered a comment.
 Examples:
 
 # This is a comment
-DefaultDbCachePages   2048   # This is an end-of-line comment
+DefaultDbCachePages = 2048   # This is an end-of-line comment
 
 
-Config settings
----------------
-Config settings are placed one at each line, followed by any number
-of whitespace (tabs or spaces), a '=' character, followed by again
-any number of whitespace, followed by the configuration value. Example:
+Configuration settings
+----------------------
+
+Configuration settings are placed one at each line, followed by zero or
+more whitespace (tab or space) characters, a '=' character, followed by
+again any number of whitespace, followed by the configuration value.
+
+Example:
 
 DefaultDbCachePages=2048
 CpuAffinityMask    =  2  # only run on second CPU
@@ -69,9 +71,12 @@ tabs or spaces. Example:
     DefaultDbCachePages = 2048  # This is also a legal config setting
 
 
-Configuration values
---------------------
-Configuration values are of three types: integer, boolean or string.
+
+There are as of this writing, 28 Feb. 2003, 35 user settings. Not all
+settings apply to all operating systems.
+
+
+There are three types of configuration values: integer, boolean and string.
 
 
 Integers
@@ -91,7 +96,7 @@ String
 ------
 Strings are also what they sound like, strings. Examples:
 RootDirectory  = /opt/firebird
-RemotePipeName = pipe47
+RemotePipeName = "pipe47"
 
 
 Configuration options
@@ -114,12 +119,12 @@ Affects the operation of the guardian:
 
 CpuAffinityMask            integer  default 1
 A bit-field defining what CPU's the process should be allowed to run on.
-Only meaningful for SMP systems.
+Only meaningful for Windows SS on SMP systems.
 
 OldParameterOrdering       boolean  default false
-TcpRemoteBufferSize        integer  default 8192
+TcpRemoteBufferSize        integer  default 8192 (bytes)
 TcpNoNagle                 boolean  default false
-IpcMapSize                 integer  default 4096
+IpcMapSize                 integer  default 4096 (bytes)
 DefaultDbCachePages        integer  default SS: 2048. CS: 75
 ConnectionTimeout          integer  default 180 (seconds)
 DummyPacketInterval        integer  default  60 (seconds)
