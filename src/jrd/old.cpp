@@ -184,7 +184,7 @@ ULONG start_seqno, USHORT start_file, USHORT num_files, SCHAR ** files)
 
 /* dump all 'in use' pages in database.  */
 
-	temp_page = (PIP) MemoryPool::external_alloc(dbb->dbb_page_size);
+	temp_page = (PIP) gds__alloc(dbb->dbb_page_size);
 
 	pgc = dbb->dbb_pcontrol;
 
@@ -220,7 +220,7 @@ ULONG start_seqno, USHORT start_file, USHORT num_files, SCHAR ** files)
 			break;
 	}
 
-	MemoryPool::external_free(temp_page);
+	gds__free(temp_page);
 
 	if (last_page) {
 		file_seqno = OLD_handle->old_file_seqno;
@@ -512,9 +512,9 @@ static void old_fini(OLD * OLD_handle, USHORT code)
 				return;
 		}
 
-		MemoryPool::external_free(old->old_block->ob_hdr);
-		MemoryPool::external_free(old->old_block);
-		MemoryPool::external_free(old);
+		gds__free(old->old_block->ob_hdr);
+		gds__free(old->old_block);
+		gds__free(old);
 	}
 
 	*OLD_handle = NULL;
@@ -548,13 +548,13 @@ SSHORT rec_size, ULONG log_seqno, ULONG log_offset, ULONG log_p_offset)
 	if (*OLD_handle != NULL)
 		return FB_FAILURE;
 
-	*OLD_handle = old = (OLD) MemoryPool::external_alloc(sizeof(struct old));
+	*OLD_handle = old = (OLD) gds__alloc(sizeof(struct old));
 	MOVE_CLEAR(old, sizeof(struct old));
 
-	old->old_block = (OLDBLK) MemoryPool::external_alloc(sizeof(struct oldblk));
+	old->old_block = (OLDBLK) gds__alloc(sizeof(struct oldblk));
 	MOVE_CLEAR(old->old_block, sizeof(struct oldblk));
 
-	old->old_block->ob_hdr = (OLD_HDR) MemoryPool::external_alloc(MAX_OLDBUFLEN);
+	old->old_block->ob_hdr = (OLD_HDR) gds__alloc(MAX_OLDBUFLEN);
 	MOVE_CLEAR(old->old_block->ob_hdr, MAX_OLDBUFLEN);
 
 	old->old_dump_id = dump_id;

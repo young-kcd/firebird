@@ -112,6 +112,11 @@ private:
 	SharedSpinlock lock;
 #endif
 
+	/* Returns NULL in case it cannot allocate requested chunk */
+	static void* external_alloc(size_t size);
+
+	static void external_free(void *blk);
+	
 	void* tree_alloc(size_t size);
 
 	void tree_free(void* block);
@@ -148,11 +153,6 @@ public:
 		return internal_create(sizeof(MemoryPool));
 	}
 
-	/* Returns NULL in case it cannot allocate requested chunk */
-	static void* external_alloc(size_t size);
-
-	static void external_free(void *blk);
-	
 	static void deletePool(MemoryPool* pool);
 
 	void* allocate(size_t size, SSHORT type = 0
