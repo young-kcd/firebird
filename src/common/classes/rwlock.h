@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: rwlock.h,v 1.15 2004-03-25 23:36:03 skidder Exp $
+ *  $Id: rwlock.h,v 1.16 2004-03-28 00:38:13 skidder Exp $
  *
  */
 
@@ -121,7 +121,7 @@ public:
 	void beginRead()
 	{
 		if (!tryBeginRead()) {
-			--blockedReaders;
+			++blockedReaders;
 			while (!tryBeginRead())
 				if (WaitForSingleObject(readers_semaphore, INFINITE) != WAIT_OBJECT_0)
 					system_call_failed::raise("WaitForSingleObject");
