@@ -52,6 +52,7 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../common/config/config.h"
+#include "../common/utils_proto.h"
 
 using namespace Jrd;
 
@@ -291,13 +292,16 @@ void ERR_log(int facility, int number, const TEXT* message)
 	thread_db* tdbb = JRD_get_thread_data();
 
 	DEBUG;
-	if (message)
-		strcpy(errmsg, message);
+	if (message) {
+		strncpy(errmsg, message, sizeof(errmsg));
+		errmsg[sizeof(errmsg) - 1] = 0;
+	}
 	else
 		if (gds__msg_lookup(0, facility, number, sizeof(errmsg), errmsg, NULL) < 1)
 			strcpy(errmsg, "Internal error code");
 
-	sprintf(errmsg + strlen(errmsg), " (%d)", number);
+	const size_t len = strlen(errmsg);
+	fb_utils::snprintf(errmsg + len, sizeof(errmsg) - len, " (%d)", number);
 
 	gds__log("Database: %s\n\t%s", (tdbb && tdbb->tdbb_attachment) ?
 		tdbb->tdbb_attachment->att_filename.c_str() : "",
@@ -631,19 +635,22 @@ static void internal_error(ISC_STATUS status, int number,
 	if (gds__msg_lookup(0, JRD_BUGCHK, number, sizeof(errmsg), errmsg, NULL) < 1)
 		strcpy(errmsg, "Internal error code");
 
+	const size_t len = strlen(errmsg);
+	
 	if (file) {
 		// Remove path information
-		TEXT* ptr = (TEXT*)file + strlen(file);	
+		const TEXT* ptr = (TEXT*)file + strlen(file);
 		for (; ptr > file; ptr--) {
 			if ((*ptr == '/') || (*ptr == '\\')) {
 				ptr++;
 				break;
 			}
 		}
-		sprintf(errmsg + strlen(errmsg), " (%d), file: %s line: %d", number, ptr, line);
+		fb_utils::snprintf(errmsg + len, sizeof(errmsg) - len,
+			" (%d), file: %s line: %d", number, ptr, line);
 	}
 	else {
-		sprintf(errmsg + strlen(errmsg), " (%d)", number);
+		fb_utils::snprintf(errmsg + len, sizeof(errmsg) - len, " (%d)", number);
 	}
 
 	ERR_post(status, isc_arg_string, ERR_cstring(errmsg), 0);
