@@ -822,7 +822,9 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 			bool isNull;
 #ifdef EXPRESSION_INDICES
 			// for expression indices, compute the value of the expression
-			if (idx->idx_expression) {
+			if (idx->idx_flags & idx_expressn) {
+
+				fb_assert(idx->idx_expression != NULL);
 
 				// 15 June 2004. Nickolay Samofatov.
 				// This code doesn't look correct. It should get broken in
@@ -973,7 +975,7 @@ USHORT BTR_key_length(jrd_rel* relation, index_desc* idx)
 		// function that declared return type being USHORT.
 		size_t length;
 #ifdef EXPRESSION_INDICES
-		if (idx->idx_expression)
+		if (idx->idx_flags & idx_expressn)
 		{
 			fb_assert(idx->idx_expression != NULL);
 			length = idx->idx_expression_desc.dsc_length;

@@ -108,7 +108,8 @@ static bool estimate_cost(thread_db*, OptimizerBlk*, USHORT, double *, double *)
 static bool expression_contains(const jrd_nod*, NOD_T);
 static bool expression_contains_stream(const jrd_nod*, UCHAR);
 #ifdef EXPRESSION_INDICES
-static bool expression_equal(thread_db*, jrd_nod*, jrd_nod*);
+static bool expression_equal(thread_db*, OptimizerBlk*, const index_desc*, jrd_nod*, USHORT);
+static bool expression_equal2(thread_db*, OptimizerBlk*, jrd_nod*, jrd_nod*, USHORT);
 #endif
 static void find_best(thread_db*, OptimizerBlk*, USHORT, USHORT, UCHAR*, const jrd_nod*,
 					  double, double);
@@ -3114,11 +3115,48 @@ static bool expression_contains_stream(const jrd_nod* node, UCHAR stream)
 
 // Try to merge this function with node_equality() into 1 function.
 
-static bool expression_equal(thread_db* tdbb, jrd_nod* node1, jrd_nod* node2)
+static bool expression_equal(thread_db* tdbb, OptimizerBlk* opt, const index_desc* idx, jrd_nod* node, USHORT stream)
 {
 /**************************************
  *
  *      e x p r e s s i o n _ e q u a l
+ *
+ **************************************
+ *
+ * Functional description
+ *  Wrapper for expression_equal2().
+ *
+ **************************************/
+	DEV_BLKCHK(node, type_nod);
+
+	SET_TDBB(tdbb);
+
+	if (idx && idx->idx_expression_request && idx->idx_expression)
+	{
+		fb_assert(idx->idx_expression_request->req_caller == NULL);
+		idx->idx_expression_request->req_caller = tdbb->tdbb_request;
+		tdbb->tdbb_request = idx->idx_expression_request;
+		JrdMemoryPool* old_pool = tdbb->getDefaultPool();
+		tdbb->setDefaultPool(tdbb->tdbb_request->req_pool);
+
+		bool result = expression_equal2(tdbb, opt, idx->idx_expression, node, stream);
+	
+		tdbb->setDefaultPool(old_pool);
+		tdbb->tdbb_request = idx->idx_expression_request->req_caller;
+		idx->idx_expression_request->req_caller = NULL;
+
+		return result;
+	}
+	else
+		return false;
+}
+
+
+static bool expression_equal2(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* node1, jrd_nod* node2, USHORT stream)
+{
+/**************************************
+ *
+ *      e x p r e s s i o n _ e q u a l 2
  *
  **************************************
  *
@@ -3133,11 +3171,42 @@ static bool expression_equal(thread_db* tdbb, jrd_nod* node1, jrd_nod* node2)
 
 	SET_TDBB(tdbb);
 
-	if (!node1 || !node2) {
+	if (!node1 || !node2)
+	{
 		BUGCHECK(303);	// msg 303 Invalid expression for evaluation.
 	}
 
-	if (node1->nod_type != node2->nod_type) {
+	if (node1->nod_type != node2->nod_type)
+	{
+		dsc dsc1, dsc2; 
+		dsc *desc1 = &dsc1, *desc2 = &dsc2; 
+
+		if (node1->nod_type == nod_cast && node2->nod_type == nod_field)
+		{
+			CMP_get_desc(tdbb, opt->opt_csb, node1, desc1);
+			CMP_get_desc(tdbb, opt->opt_csb, node2, desc2);
+
+			if (DSC_EQUIV(desc1, desc2) && 
+				expression_equal2(tdbb, opt, node1->nod_arg[e_cast_source],
+								  node2, stream))
+			{
+				return true;
+			}
+		}
+
+		if (node1->nod_type == nod_field && node2->nod_type == nod_cast)
+		{
+			CMP_get_desc(tdbb, opt->opt_csb, node1, desc1);
+			CMP_get_desc(tdbb, opt->opt_csb, node2, desc2);
+
+			if (DSC_EQUIV(desc1, desc2) &&
+				expression_equal2(tdbb, opt, node1,
+								  node2->nod_arg[e_cast_source], stream))
+			{
+				return true;
+			}
+		}
+
 		return false;
 	}
 
@@ -3146,11 +3215,15 @@ static bool expression_equal(thread_db* tdbb, jrd_nod* node1, jrd_nod* node2)
 		case nod_multiply:
 		case nod_add2:
 		case nod_multiply2:
+	    case nod_eql:
+		case nod_neq:
+	    case nod_and:
+		case nod_or:
 			// A+B is equivilant to B+A, ditto A*B==B*A
 			// Note: If one expression is A+B+C, but the other is B+C+A we won't
 			// necessarily match them.
-			if (expression_equal(tdbb, node1->nod_arg[0], node2->nod_arg[1]) &&
-				expression_equal(tdbb, node1->nod_arg[1], node2->nod_arg[0]))
+			if (expression_equal2(tdbb, opt, node1->nod_arg[0], node2->nod_arg[1], stream) &&
+				expression_equal2(tdbb, opt, node1->nod_arg[1], node2->nod_arg[0], stream))
 			{
 				return true;
 			}
@@ -3160,8 +3233,14 @@ static bool expression_equal(thread_db* tdbb, jrd_nod* node1, jrd_nod* node2)
 		case nod_subtract2:
 		case nod_divide2:
 		case nod_concatenate:
-			if (expression_equal(tdbb, node1->nod_arg[0], node2->nod_arg[0]) &&
-				expression_equal(tdbb, node1->nod_arg[1], node2->nod_arg[1]))
+
+		// TODO match A > B to B <= A, etc
+	    case nod_gtr:
+		case nod_geq:
+		case nod_leq:
+		case nod_lss:
+			if (expression_equal2(tdbb, opt, node1->nod_arg[0], node2->nod_arg[0], stream) &&
+				expression_equal2(tdbb, opt, node1->nod_arg[1], node2->nod_arg[1], stream))
 			{
 				return true;
 			}
@@ -3170,25 +3249,41 @@ static bool expression_equal(thread_db* tdbb, jrd_nod* node1, jrd_nod* node2)
 		case nod_rec_version:
 		case nod_dbkey:
 			// AB: Please explain index 0 same as index 1 ???
-			if (node1->nod_arg[0] == node2->nod_arg[1]) {
+			if (node1->nod_arg[0] == node2->nod_arg[1])
+			{
 				return true;
 			}
 			break;
 
 		case nod_field:
-			// don't compare stream id's because we will use computable() to 
-			// make sure the field is in the same stream as the index; 
-			// the stream id of the index expression is always 0 so it 
-			// isn't usable for comparison
-			if (node1->nod_arg[e_fld_id] == node2->nod_arg[e_fld_id]) {
-				return true;
+			{
+				// don't compare stream id's because we will use computable() to 
+				// make sure the field is in the same stream as the index; 
+				// the stream id of the index expression is always 0 so it 
+				// isn't usable for comparison
+//				if (node1->nod_arg[e_fld_id] == node2->nod_arg[e_fld_id]) {
+				const USHORT fld_stream = (USHORT)(IPTR) node2->nod_arg[e_fld_stream];
+				if ((node1->nod_arg[e_fld_id] == node2->nod_arg[e_fld_id]) && (fld_stream == stream))
+				{
+					/*
+					dsc dsc1, dsc2; 
+					dsc *desc1 = &dsc1, *desc2 = &dsc2; 
+
+					CMP_get_desc(tdbb, opt->opt_csb, node1, desc1);
+					CMP_get_desc(tdbb, opt->opt_csb, node2, desc2);
+
+					if (DSC_GET_COLLATE(desc1) == DSC_GET_COLLATE(desc2))
+					*/	
+					return true;
+				}
 			}
 			break;
 
 		case nod_function:
-			if ((node1->nod_arg[e_fun_function] == node2->nod_arg[e_fun_function])
-				&& expression_equal(tdbb, node1->nod_arg[e_fun_args],
-				node2->nod_arg[e_fun_args])) 
+			if (node1->nod_arg[e_fun_function] &&
+				(node1->nod_arg[e_fun_function] == node2->nod_arg[e_fun_function]) &&
+				expression_equal2(tdbb, opt, node1->nod_arg[e_fun_args],
+								  node2->nod_arg[e_fun_args], stream)) 
 			{
 				return true;
 			}
@@ -3198,7 +3293,8 @@ static bool expression_equal(thread_db* tdbb, jrd_nod* node1, jrd_nod* node2)
 			{
 				const dsc* desc1 = EVL_expr(tdbb, node1);
 				const dsc* desc2 = EVL_expr(tdbb, node2);
-				if (desc1 && desc2 && !MOV_compare(desc1, desc2)) {
+				if (desc1 && desc2 && !MOV_compare(desc1, desc2))
+				{
 					return true;
 				}
 			}
@@ -3213,35 +3309,67 @@ static bool expression_equal(thread_db* tdbb, jrd_nod* node1, jrd_nod* node2)
 
 		case nod_value_if:
 		case nod_substr:
-			if (expression_equal(tdbb, node1->nod_arg[0], node2->nod_arg[0]) &&
-				expression_equal(tdbb, node1->nod_arg[1], node2->nod_arg[1]) &&
-				expression_equal(tdbb, node1->nod_arg[2], node2->nod_arg[2]))
 			{
+				if (node1->nod_count != node2->nod_count)
+				{
+					return false;
+				}
+				for (int i = 0; i < node1->nod_count; ++i)
+				{
+					if (!expression_equal2(tdbb, opt, node1->nod_arg[i],
+										   node2->nod_arg[i], stream))
+					{
+						return false;
+					}
+				}
 				return true;
 			}
-		break;
+			break;
 
 		case nod_gen_id:
 		case nod_gen_id2:
-			if (node1->nod_arg[e_gen_id] == node2->nod_arg[e_gen_id]) {
+			if (node1->nod_arg[e_gen_id] == node2->nod_arg[e_gen_id])
+			{
 				return true;
 			}
 			break;
 
 		case nod_negate:
+			if (expression_equal2(tdbb, opt, node1->nod_arg[0], node2->nod_arg[0], stream))
+			{
+				return true;
+			}
+			break;
+
 		case nod_upcase:
-		case nod_internal_info:
-			if (expression_equal(tdbb, node1->nod_arg[0], node2->nod_arg[0])) {
+			if (expression_equal2(tdbb, opt, node1->nod_arg[0], node2->nod_arg[0], stream))
+			{
+				/*
+				dsc dsc1, dsc2; 
+				dsc *desc1 = &dsc1, *desc2 = &dsc2; 
+
+				CMP_get_desc(tdbb, opt->opt_csb, node1, desc1);
+				CMP_get_desc(tdbb, opt->opt_csb, node2, desc2);
+
+				if (DSC_GET_COLLATE(desc1) == DSC_GET_COLLATE(desc2))
+				*/
 				return true;
 			}
 			break;
 
 		case nod_cast:
 			{
-				const dsc* desc1 = &((Format*) node1->nod_arg[e_cast_fmt])->fmt_desc[0];
-				const dsc* desc2 = &((Format*) node2->nod_arg[e_cast_fmt])->fmt_desc[0];
+				dsc	dsc1, dsc2; 
+				dsc	*desc1 = &dsc1, *desc2 = &dsc2; 
+
+				CMP_get_desc(tdbb, opt->opt_csb, node1, desc1);
+				CMP_get_desc(tdbb, opt->opt_csb, node2, desc2);
+
+//				const dsc* desc1 = &((Format*) node1->nod_arg[e_cast_fmt])->fmt_desc[0];
+//				const dsc* desc2 = &((Format*) node2->nod_arg[e_cast_fmt])->fmt_desc[0];
+
 				if (DSC_EQUIV(desc1, desc2) &&
-					expression_equal(tdbb, node1->nod_arg[0], node2->nod_arg[0])) 
+					expression_equal2(tdbb, opt, node1->nod_arg[0], node2->nod_arg[0], stream)) 
 				{
 					return true;
 				}
@@ -3249,18 +3377,45 @@ static bool expression_equal(thread_db* tdbb, jrd_nod* node1, jrd_nod* node2)
 			break;
 
 		case nod_extract:
-			if (node1->nod_arg[e_extract_part] == node2->nod_arg[e_extract_part]
-				&& expression_equal(tdbb, node1->nod_arg[e_extract_value],
-				node2->nod_arg[e_extract_value])) 
+			if (node1->nod_arg[e_extract_part] == node2->nod_arg[e_extract_part] &&
+				expression_equal2(tdbb, opt, node1->nod_arg[e_extract_value],
+								  node2->nod_arg[e_extract_value], stream)) 
 			{
 				return true;
 			}
 			break;
 
+	    case nod_list:
+			{
+				jrd_nod** ptr1 = node1->nod_arg;
+				jrd_nod** ptr2 = node2->nod_arg;
+
+				if (node1->nod_count != node2->nod_count)
+				{
+					return false;
+				}
+
+				ULONG count = node1->nod_count;
+
+				while (count--)
+				{
+					if (!expression_equal2(tdbb, opt, *ptr1++, *ptr2++, stream))
+					{
+						return false;
+					}
+				}
+			
+				return true;
+		    }
+
+		// non-deterministic function
+		case nod_internal_info:
+			return false;
+
 		// AB: New nodes has to be added
 
-	default:
-		break;
+		default:
+			break;
 	}
 
 	return false;
@@ -4351,7 +4506,6 @@ static RecordSource* gen_navigation(thread_db* tdbb,
 		}
 #endif
 	}
-
 
 	// Looks like we can do a navigational walk.  Flag that
 	// we have used this index for navigation, and allocate
@@ -6209,20 +6363,42 @@ static jrd_nod* make_missing(thread_db* tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
+
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(relation, type_rel);
 	DEV_BLKCHK(boolean, type_nod);
+
 	jrd_nod* field = boolean->nod_arg[0];
+
+#ifdef EXPRESSION_INDICES
+	if (idx->idx_flags & idx_expressn)
+	{
+		if (!expression_equal(tdbb, opt, idx, field, stream))
+		{
+			return FALSE;
+		}
+	}
+	else
+	{
+#endif
 	if (field->nod_type != nod_field)
+	{
 		return NULL;
+	}
+
 	if ((USHORT)(IPTR) field->nod_arg[e_fld_stream] != stream ||
 		(USHORT)(IPTR) field->nod_arg[e_fld_id] != idx->idx_rpt[0].idx_field)
 	{
 		return NULL;
 	}
+#ifdef EXPRESSION_INDICES
+	}
+#endif
+
 	jrd_nod* node = make_index_node(tdbb, relation, opt->opt_csb, idx);
 	IndexRetrieval* retrieval = (IndexRetrieval*) node->nod_arg[e_idx_retrieval];
 	retrieval->irb_relation = relation;
+
 	if ((dbb->dbb_ods_version < ODS_VERSION11) || (idx->idx_flags & idx_descending)) {
 		// AB: irb_starting? Why?
 		// Commenting myself. Because we don't know exact length for the field.
@@ -6230,19 +6406,24 @@ static jrd_nod* make_missing(thread_db* tdbb,
 		// a NULL is always stored as a key with length 0 (zero).
 		retrieval->irb_generic = irb_starting;
 	}
+
 	retrieval->irb_lower_count = retrieval->irb_upper_count = 1;
+
 	// If we are matching less than the full index, this is a partial match
 	if (retrieval->irb_upper_count < idx->idx_count) {
 		retrieval->irb_generic |= irb_partial;
 	}
+
 	// Set descending flag on retrieval if index is descending
 	if (idx->idx_flags & idx_descending) {
 		retrieval->irb_generic |= irb_descending;
 	}
+
 	jrd_nod* value = PAR_make_node(tdbb, 0);
 	retrieval->irb_value[0] = retrieval->irb_value[idx->idx_count] = value;
 	value->nod_type = nod_null;
 	idx->idx_runtime_flags |= idx_plan_missing;
+
 	return node;
 }
 
@@ -6263,14 +6444,40 @@ static jrd_nod* make_starts(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
+
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(relation, type_rel);
 	DEV_BLKCHK(boolean, type_nod);
+
 	if (boolean->nod_type != nod_starts)
 		return NULL;
+
 	jrd_nod* field = boolean->nod_arg[0];
 	jrd_nod* value = boolean->nod_arg[1];
-	if (field->nod_type != nod_field) {
+
+#ifdef EXPRESSION_INDICES
+	if (idx->idx_flags & idx_expressn)
+	{
+		if (!(expression_equal(tdbb, opt, idx, field, stream) && 
+			computable(opt->opt_csb, value, stream, true, false)))
+		{
+			if (expression_equal(tdbb, opt, idx, value, stream) && 
+				computable(opt->opt_csb, field, stream, true, false))
+			{
+				field = value; 
+				value = boolean->nod_arg [0]; 
+			}
+			else
+			{
+				return NULL;
+			}
+		}
+	}
+	else
+	{
+#endif
+	if (field->nod_type != nod_field)
+	{
 		// dimitr:	any idea how we can use an index in this case?
 		//			The code below produced wrong results.
 		return NULL;
@@ -6281,11 +6488,15 @@ static jrd_nod* make_starts(thread_db* tdbb,
 		value = boolean->nod_arg[0];
 		*/
 	}
+#ifdef EXPRESSION_INDICES
+	}
+#endif
 
 /* Every string starts with an empty string so
    don't bother using an index in that case. */
 
-	if (value->nod_type == nod_literal) {
+	if (value->nod_type == nod_literal)
+	{
 		const dsc* literal_desc = &((Literal*) value)->lit_desc;
 		if ((literal_desc->dsc_dtype == dtype_text &&
 			 literal_desc->dsc_length == 0) ||
@@ -6306,6 +6517,7 @@ static jrd_nod* make_starts(thread_db* tdbb,
 	{
 		return NULL;
 	}
+
 	jrd_nod* node = make_index_node(tdbb, relation, opt->opt_csb, idx);
 	IndexRetrieval* retrieval = (IndexRetrieval*) node->nod_arg[e_idx_retrieval];
 	retrieval->irb_relation = relation;
@@ -6320,12 +6532,14 @@ static jrd_nod* make_starts(thread_db* tdbb,
 	if (retrieval->irb_upper_count < idx->idx_count) {
 		retrieval->irb_generic |= irb_partial;
 	}
+
 	// Set descending flag on retrieval if index is descending
 	if (idx->idx_flags & idx_descending) {
 		retrieval->irb_generic |= irb_descending;
 	}
 	retrieval->irb_value[0] = retrieval->irb_value[idx->idx_count] = value;
 	idx->idx_runtime_flags |= idx_plan_starts;
+
 	return node;
 }
 
@@ -6465,24 +6679,30 @@ static SSHORT match_index(thread_db* tdbb,
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(boolean, type_nod);
 	SET_TDBB(tdbb);
-	if (boolean->nod_count < 2) {
-		return 0;
-	}
-	if (boolean->nod_type == nod_and) {
+
+	if (boolean->nod_type == nod_and)
+	{
 		return match_index(tdbb, opt, stream, boolean->nod_arg[0], idx) +
 			match_index(tdbb, opt, stream, boolean->nod_arg[1], idx);
 	}
-	bool forward = true;
-	jrd_nod* match = boolean->nod_arg[0];
-	jrd_nod* value = boolean->nod_arg[1];
-#ifdef EXPRESSION_INDICES
-	if (idx->idx_expression) {
-		/* see if one side or the other is matchable to the index expression */
 
-		if (!expression_equal(tdbb, idx->idx_expression, match) ||
-			!computable(opt->opt_csb, value, stream, true, false))
+	bool forward = true;
+
+	jrd_nod* match = boolean->nod_arg[0];
+	jrd_nod* value = (boolean->nod_count < 2) ? NULL : boolean->nod_arg[1];
+
+#ifdef EXPRESSION_INDICES
+	if (idx->idx_flags & idx_expressn)
+	{
+		// see if one side or the other is matchable to the index expression
+
+	    fb_assert(idx->idx_expression != NULL);
+
+		if (!expression_equal(tdbb, opt, idx, match, stream) ||
+			(value && !computable(opt->opt_csb, value, stream, true, false)))
 		{
-			if (expression_equal(tdbb, idx->idx_expression, value) &&
+			if (value &&
+				expression_equal(tdbb, opt, idx, value, stream) &&
 				computable(opt->opt_csb, match, stream, true, false))
 			{
 				match = boolean->nod_arg[1];
@@ -6494,16 +6714,17 @@ static SSHORT match_index(thread_db* tdbb,
 	}
 	else {
 #endif
-		/* If left side is not a field, swap sides. 
-		   If left side is still not a field, give up */
+		// If left side is not a field, swap sides. 
+		// If left side is still not a field, give up
 
 		if (match->nod_type != nod_field ||
 			(USHORT)(IPTR) match->nod_arg[e_fld_stream] != stream ||
-			!computable(opt->opt_csb, value, stream, true, false))
+			(value && !computable(opt->opt_csb, value, stream, true, false)))
 		{
 			match = value;
 			value = boolean->nod_arg[0];
-			if (match->nod_type != nod_field ||
+			if (!match ||
+				match->nod_type != nod_field ||
 				(USHORT)(IPTR) match->nod_arg[e_fld_stream] != stream ||
 				!computable(opt->opt_csb, value, stream, true, false))
 			{
@@ -6525,7 +6746,7 @@ static SSHORT match_index(thread_db* tdbb,
 	{
 		if
 #ifdef EXPRESSION_INDICES
-			(idx->idx_expression ||
+			((idx->idx_flags & idx_expressn) ||
 #endif
 			 ((USHORT)(IPTR) match->nod_arg[e_fld_id] == idx->idx_rpt[i].idx_field)
 #ifdef EXPRESSION_INDICES
