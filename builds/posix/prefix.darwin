@@ -15,10 +15,11 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin,v 1.8.2.5 2003-10-09 23:08:34 skidder Exp $
+#$Id: prefix.darwin,v 1.8.2.6 2003-11-09 18:34:07 bellardo Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 CC=@CXX@
+LD=@CXX@
 
 OS_ServerFiles=inet_server.cpp
 
