@@ -1,3 +1,23 @@
+2004-09-01 00:29  skidder
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.8),
+	lang_helpers/gds_codes.pas (1.8), src/include/gen/codetext.h
+	(1.13), src/include/gen/iberror.h (1.12), src/include/gen/msgs.h
+	(1.16), src/include/gen/rdb_codes.h (1.13),
+	src/include/gen/sql_code.h (1.15), src/jrd/err.cpp (1.54),
+	src/jrd/err_proto.h (1.21), src/jrd/idx.cpp (1.66),
+	src/msgs/facilities.sql (1.3), src/msgs/messages.sql (1.4),
+	src/msgs/system_errors.sql (1.2):
+	
+	Use slightly more clear messages during FK violations. Patch
+	submitted by Adriano dos Santos Fernandes
+
+2004-08-31 08:26  robocop
+
+	* firebird2/src/isql/show.epp (1.55):
+	
+	Showing role's description is dependent on the ODS
+
 2004-08-30 20:10  alexpeshkoff
 
 	* firebird2/src/: alice/alice.cpp (1.70), alice/alice.h (1.43),
