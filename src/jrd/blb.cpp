@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.49 2004-01-21 07:16:18 skidder Exp $
+$Id: blb.cpp,v 1.50 2004-01-22 06:50:05 skidder Exp $
 */
 
 #include "firebird.h"
@@ -1620,7 +1620,7 @@ static ARR alloc_array(jrd_tra* transaction, ADS proto_desc)
 		  ,__FILE__, __LINE__
 #endif
 		);
-	array->arr_temp_id = transaction->tra_next_blob_id++;
+	array->arr_temp_id = ++transaction->tra_next_blob_id;
 
 	return array;
 }
@@ -1659,7 +1659,7 @@ static BLB allocate_blob(TDBB tdbb, jrd_tra* transaction)
 							sizeof(blh);
 	blob->blb_max_pages = blob->blb_clump_size >> SHIFTLONG;
 	blob->blb_pointers = (dbb->dbb_page_size - BLP_SIZE) >> SHIFTLONG;
-	blob->blb_temp_id = transaction->tra_next_blob_id++;
+	blob->blb_temp_id = ++transaction->tra_next_blob_id;
 
 	return blob;
 }

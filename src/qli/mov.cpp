@@ -794,7 +794,7 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 		case dtype_cstring:
 		case dtype_text:
 			length = MOVQ_get_string(from, (TEXT**) &ptr, 0, 0);
-			string_to_date((TEXT*) ptr, length, (long int*)to->dsc_address);
+			string_to_date((TEXT*) ptr, length, (SLONG*)to->dsc_address);
 			return;
 		case dtype_sql_date:
 			((SLONG *) to->dsc_address)[0] = *(SLONG *) from->dsc_address;
@@ -815,7 +815,7 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 			{
 				SLONG date[2];
 				length = MOVQ_get_string(from, (TEXT**)&ptr, 0, 0);
-				string_to_date((TEXT*) ptr, length, (long int*)date);
+				string_to_date((TEXT*) ptr, length, (SLONG*)date);
 				((SLONG *) to->dsc_address)[0] = date[0];
 			}
 			return;
@@ -836,7 +836,7 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 			{
 				SLONG date[2];
 				length = MOVQ_get_string(from, (TEXT**)&ptr, 0, 0);
-				string_to_time((TEXT*) ptr, length, (long int*) date);
+				string_to_time((TEXT*) ptr, length, (SLONG*) date);
 				((SLONG *) to->dsc_address)[0] = date[1];
 			}
 			return;
@@ -900,13 +900,13 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 			return;
 
 		case dtype_sql_date:
-			sql_date_to_text((long int*) from->dsc_address, to);
+			sql_date_to_text((SLONG*) from->dsc_address, to);
 			return;
 		case dtype_sql_time:
 			sql_time_to_text((ULONG*) from->dsc_address, to);
 			return;
 		case dtype_timestamp:
-			timestamp_to_text((long int*) from->dsc_address, to);
+			timestamp_to_text((SLONG*) from->dsc_address, to);
 			return;
 		}
 		break;
