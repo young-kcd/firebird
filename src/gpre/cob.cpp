@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.11 2002-11-12 05:05:01 skywalker Exp $
+//	$Id: cob.cpp,v 1.12 2002-11-12 14:03:27 dimitr Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -164,6 +164,10 @@
 #endif
 
 #if defined FREEBSD || defined NETBSD
+#define MICROFOCUS
+#endif
+
+#ifdef WIN_NT
 #define MICROFOCUS
 #endif
 
