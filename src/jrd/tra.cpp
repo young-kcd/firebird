@@ -3074,9 +3074,7 @@ static void transaction_options(
 /* Try to seize all relation locks.
    If any can't be seized, release all and try again. */
 
-	USHORT id = 0;
-
-	for (; id < vector->count(); id++) {
+	for (ULONG id = 0; id < vector->count(); id++) {
 		if (!(lock = (LCK) (*vector)[id]))
 			continue;
 		level = lock->lck_logical;
