@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.120 2003-02-20 06:36:37 eku Exp $
+dnl $Id: configure.in,v 1.121 2003-02-22 21:48:48 skidder Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -483,7 +483,7 @@ dnl ##################### DO NOT ADD ANY TESTS BELOW ###########################
 
 dnl The following file defines the version number strings
 . ./src/misc/writeBuildNum.sh
-FIREBIRD_PACKAGE_VERSION="0.Beta2"
+FIREBIRD_PACKAGE_VERSION="0.Beta3"
 
 
 FIREBIRD_LIBGDS_SO=libfbembed.so.${FIREBIRD_VERSION}
