@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.27 2003-11-01 10:26:32 robocop Exp $
+//	$Id: tdr.cpp,v 1.28 2003-11-07 23:09:04 brodsom Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -35,7 +35,8 @@
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/common.h"
 #include "../alice/alice.h"
 #include "../alice/aliceswi.h"
@@ -58,7 +59,7 @@ static bool reconnect(FRBRD*, SLONG, const TEXT*, ULONG);
 
 const char* const NEWLINE = "\n";
 
-static const UCHAR limbo_info[] = { gds_info_limbo, gds_info_end };
+static const UCHAR limbo_info[] = { isc_info_limbo, isc_info_end };
 
 
 
@@ -191,14 +192,14 @@ bool TDR_attach_database(ISC_STATUS* status_vector,
 
 	UCHAR* d = dpb;
 
-	*d++ = gds_dpb_version1;
-	*d++ = gds_dpb_no_garbage_collect;
+	*d++ = isc_dpb_version1;
+	*d++ = isc_dpb_no_garbage_collect;
 	*d++ = 0;
 	*d++ = isc_dpb_gfix_attach;
 	*d++ = 0;
 
 	if (tdgbl->ALICE_data.ua_user) {
-		*d++ = gds_dpb_user_name;
+		*d++ = isc_dpb_user_name;
 		*d++ = strlen(reinterpret_cast<const char*>(tdgbl->ALICE_data.ua_user));
 		for (const UCHAR* q = tdgbl->ALICE_data.ua_user; *q;)
 			*d++ = *q++;
@@ -206,9 +207,9 @@ bool TDR_attach_database(ISC_STATUS* status_vector,
 
 	if (tdgbl->ALICE_data.ua_password) {
 		if (!tdgbl->sw_service)
-			*d++ = gds_dpb_password;
+			*d++ = isc_dpb_password;
 		else
-			*d++ = gds_dpb_password_enc;
+			*d++ = isc_dpb_password_enc;
 		*d++ =
 			strlen(reinterpret_cast<const char*>(tdgbl->ALICE_data.ua_password));
 		for (const UCHAR* q = tdgbl->ALICE_data.ua_password; *q;)
@@ -221,7 +222,7 @@ bool TDR_attach_database(ISC_STATUS* status_vector,
 
 	trans->tdr_db_handle = NULL;
 
-	gds__attach_database(status_vector, 0, pathname,
+	isc_attach_database(status_vector, 0, pathname,
 						 &trans->tdr_db_handle, dpb_length,
 						 reinterpret_cast<char*>(dpb));
 
@@ -270,7 +271,7 @@ void TDR_shutdown_databases(TDR trans)
 	ISC_STATUS_ARRAY status_vector;
 
 	for (TDR ptr = trans; ptr; ptr = ptr->tdr_next)
-		gds__detach_database(status_vector, &ptr->tdr_db_handle);
+		isc_detach_database(status_vector, &ptr->tdr_db_handle);
 }
 
 
@@ -293,7 +294,7 @@ void TDR_list_limbo(FRBRD* handle, const TEXT* name, const ULONG switches)
 	ISC_STATUS_ARRAY status_vector;
 	TGBL tdgbl = GET_THREAD_DATA;
 
-	if (gds__database_info(status_vector, &handle, sizeof(limbo_info),
+	if (isc_database_info(status_vector, &handle, sizeof(limbo_info),
 						   reinterpret_cast<const char*>(limbo_info),
 						   sizeof(buffer),
 						   reinterpret_cast<char*>(buffer))) {
@@ -311,7 +312,7 @@ void TDR_list_limbo(FRBRD* handle, const TEXT* name, const ULONG switches)
 		const USHORT length = (USHORT) gds__vax_integer(ptr, 2);
 		ptr += 2;
 		switch (item) {
-		case gds_info_limbo:
+		case isc_info_limbo:
 			id = gds__vax_integer(ptr, length);
 			if (switches &
 				(sw_commit | sw_rollback | sw_two_phase | sw_prompt))
@@ -348,12 +349,12 @@ void TDR_list_limbo(FRBRD* handle, const TEXT* name, const ULONG switches)
 			ptr += length;
 			break;
 
-		case gds_info_truncated:
+		case isc_info_truncated:
 			if (!tdgbl->sw_service_thd)
 				ALICE_print(72, 0, 0, 0, 0, 0);
 				// msg 72: More limbo transactions than fit.  Try again
 
-		case gds_info_end:
+		case isc_info_end:
 			flag = false;
 			break;
 
@@ -880,7 +881,7 @@ static bool reconnect(FRBRD* handle,
 
 	const SLONG id = gds__vax_integer((UCHAR *) &number, 4);
 	FRBRD* transaction = NULL;
-	if (gds__reconnect_transaction(status_vector, &handle, &transaction,
+	if (isc_reconnect_transaction(status_vector, &handle, &transaction,
 								   sizeof(id),
 								   reinterpret_cast<const char*>(&id)))
 	{
@@ -902,9 +903,9 @@ static bool reconnect(FRBRD* handle,
 	}
 
 	if (switches & sw_commit)
-		gds__commit_transaction(status_vector, &transaction);
+		isc_commit_transaction(status_vector, &transaction);
 	else if (switches & sw_rollback)
-		gds__rollback_transaction(status_vector, &transaction);
+		isc_rollback_transaction(status_vector, &transaction);
 	else
 		return false;
 

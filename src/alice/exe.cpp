@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.23 2003-11-03 23:49:24 brodsom Exp $
+//	$Id: exe.cpp,v 1.24 2003-11-07 23:09:04 brodsom Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -37,7 +37,8 @@
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <string.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/common.h"
 #include "../jrd/ibsetjmp.h"
 #include "../alice/alice.h"
@@ -58,7 +59,7 @@ static const TEXT val_errors[] =
 {
 	isc_info_page_errors, isc_info_record_errors, isc_info_bpage_errors,
 	isc_info_dpage_errors, isc_info_ipage_errors, isc_info_ppage_errors,
-	isc_info_tpage_errors, gds_info_end
+	isc_info_tpage_errors, isc_info_end
 };
 
 static inline void stuff_dpb(UCHAR** d, int blr)
@@ -99,7 +100,7 @@ int EXE_action(const TEXT* database, const ULONG switches)
 
 	bool error = false;
 	FRBRD* handle = NULL;
-	gds__attach_database(tdgbl->status, 0, database, &handle, dpb_length,
+	isc_attach_database(tdgbl->status, 0, database, &handle, dpb_length,
 						 reinterpret_cast<SCHAR*>(dpb));
 
 	SVC_STARTED(tdgbl->service_blk);
@@ -113,7 +114,7 @@ int EXE_action(const TEXT* database, const ULONG switches)
 	if (handle != NULL) {
 		UCHAR error_string[128];
 		if ((switches & sw_validate) && (tdgbl->status[1] != isc_bug_check)) {
-			gds__database_info(tdgbl->status, &handle, sizeof(val_errors),
+			isc_database_info(tdgbl->status, &handle, sizeof(val_errors),
 							   val_errors, sizeof(error_string),
 							   reinterpret_cast<char*>(error_string));
 
@@ -123,7 +124,7 @@ int EXE_action(const TEXT* database, const ULONG switches)
 		if (switches & sw_disable)
 			MET_disable_wal(tdgbl->status, handle);
 
-		gds__detach_database(tdgbl->status, &handle);
+		isc_detach_database(tdgbl->status, &handle);
 	}
 
 	ALLA_fini();
@@ -153,7 +154,7 @@ int EXE_two_phase(const TEXT* database, const ULONG switches)
 
 	bool error = false;
 	FRBRD* handle = NULL;
-	gds__attach_database(tdgbl->status, 0, database, &handle,
+	isc_attach_database(tdgbl->status, 0, database, &handle,
 						 dpb_length,  reinterpret_cast<char*>(dpb));
 
 	SVC_STARTED(tdgbl->service_blk);
@@ -168,7 +169,7 @@ int EXE_two_phase(const TEXT* database, const ULONG switches)
 									   switches);
 
 	if (handle)
-		gds__detach_database(tdgbl->status, &handle);
+		isc_detach_database(tdgbl->status, &handle);
 
 	ALLA_fini();
 
@@ -187,35 +188,35 @@ static USHORT build_dpb(UCHAR* dpb, const ULONG switches)
 	TGBL tdgbl = GET_THREAD_DATA;
 
 	UCHAR* dpb2 = dpb;
-	*dpb2++ = gds_dpb_version1;
+	*dpb2++ = isc_dpb_version1;
 	*dpb2++ = isc_dpb_gfix_attach;
 	*dpb2++ = 0;
 
 	if (switches & sw_sweep) {
-		*dpb2++ = gds_dpb_sweep;
+		*dpb2++ = isc_dpb_sweep;
 		*dpb2++ = 1;
-		*dpb2++ = gds_dpb_records;
+		*dpb2++ = isc_dpb_records;
 	}
 	else if (switches & sw_activate) {
-		*dpb2++ = gds_dpb_activate_shadow;
+		*dpb2++ = isc_dpb_activate_shadow;
 		*dpb2++ = 0;
 	}
 	else if (switches & sw_validate) {
-		*dpb2++ = gds_dpb_verify;
+		*dpb2++ = isc_dpb_verify;
 		*dpb2++ = 1;
-		*dpb2 = gds_dpb_pages;
+		*dpb2 = isc_dpb_pages;
 		if (switches & sw_full)
-			*dpb2 |= gds_dpb_records;
+			*dpb2 |= isc_dpb_records;
 		if (switches & sw_no_update)
-			*dpb2 |= gds_dpb_no_update;
+			*dpb2 |= isc_dpb_no_update;
 		if (switches & sw_mend)
-			*dpb2 |= gds_dpb_repair;
+			*dpb2 |= isc_dpb_repair;
 		if (switches & sw_ignore)
-			*dpb2 |= gds_dpb_ignore;
+			*dpb2 |= isc_dpb_ignore;
 		dpb2++;
 	}
 	else if (switches & sw_housekeeping) {
-		*dpb2++ = gds_dpb_sweep_interval;
+		*dpb2++ = isc_dpb_sweep_interval;
 		*dpb2++ = 4;
 		for (int i = 0; i < 4; i++, (tdgbl->ALICE_data.ua_sweep_interval >>= 8))
 		{
@@ -225,7 +226,7 @@ static USHORT build_dpb(UCHAR* dpb, const ULONG switches)
 		}
 	}
 	else if (switches & sw_begin_log) {
-		*dpb2++ = gds_dpb_begin_log;
+		*dpb2++ = isc_dpb_begin_log;
 		*dpb2++ = strlen(tdgbl->ALICE_data.ua_log_file);
 		for (const char* q = tdgbl->ALICE_data.ua_log_file; *q;)
 			*dpb2++ = *q++;
@@ -241,20 +242,20 @@ static USHORT build_dpb(UCHAR* dpb, const ULONG switches)
 		}
 	}
 	else if (switches & sw_quit_log) {
-		*dpb2++ = gds_dpb_quit_log;
+		*dpb2++ = isc_dpb_quit_log;
 		*dpb2++ = 0;
 	}
 	else if (switches & sw_kill) {
-		*dpb2++ = gds_dpb_delete_shadow;
+		*dpb2++ = isc_dpb_delete_shadow;
 		*dpb2++ = 0;
 	}
 	else if (switches & sw_write) {
-		*dpb2++ = gds_dpb_force_write;
+		*dpb2++ = isc_dpb_force_write;
 		*dpb2++ = 1;
 		*dpb2++ = tdgbl->ALICE_data.ua_force ? 1 : 0;
 	}
 	else if (switches & sw_use) {
-		*dpb2++ = gds_dpb_no_reserve;
+		*dpb2++ = isc_dpb_no_reserve;
 		*dpb2++ = 1;
 		*dpb2++ = tdgbl->ALICE_data.ua_use ? 1 : 0;
 	}
@@ -265,19 +266,19 @@ static USHORT build_dpb(UCHAR* dpb, const ULONG switches)
 		*dpb2++ = (tdgbl->ALICE_data.ua_read_only) ? 1 : 0;
 	}
 	else if (switches & sw_shut) {
-		*dpb2++ = gds_dpb_shutdown;
+		*dpb2++ = isc_dpb_shutdown;
 		*dpb2++ = 1;
 		*dpb2 = 0;
 		if (switches & sw_attach)
-			*dpb2 |= gds_dpb_shut_attachment;
+			*dpb2 |= isc_dpb_shut_attachment;
 		else if (switches & sw_cache)
-			*dpb2 |= gds_dpb_shut_cache;
+			*dpb2 |= isc_dpb_shut_cache;
 		else if (switches & sw_force)
-			*dpb2 |= gds_dpb_shut_force;
+			*dpb2 |= isc_dpb_shut_force;
 		else if (switches & sw_tran)
-			*dpb2 |= gds_dpb_shut_transaction;
+			*dpb2 |= isc_dpb_shut_transaction;
 		dpb2++;
-		*dpb2++ = gds_dpb_shutdown_delay;
+		*dpb2++ = isc_dpb_shutdown_delay;
 		*dpb2++ = 2;				// Build room for shutdown delay 
 		// TMN: Here we should really have the following assert 
 		// fb_assert(tdgbl->ALICE_data.ua_page_buffers <= MAX_USHORT);
@@ -286,7 +287,7 @@ static USHORT build_dpb(UCHAR* dpb, const ULONG switches)
 		*dpb2++ = (UCHAR) (tdgbl->ALICE_data.ua_shutdown_delay >> 8);
 	}
 	else if (switches & sw_online) {
-		*dpb2++ = gds_dpb_online;
+		*dpb2++ = isc_dpb_online;
 		*dpb2++ = 0;
 	}
 	else if (switches & sw_disable) {
@@ -294,7 +295,7 @@ static USHORT build_dpb(UCHAR* dpb, const ULONG switches)
 		*dpb2++ = 0;
 	}
 	else if (switches & (sw_list | sw_commit | sw_rollback | sw_two_phase)) {
-		*dpb2++ = gds_dpb_no_garbage_collect;
+		*dpb2++ = isc_dpb_no_garbage_collect;
 		*dpb2++ = 0;
 	}
 	else if (switches & sw_set_db_dialect) {
@@ -304,7 +305,7 @@ static USHORT build_dpb(UCHAR* dpb, const ULONG switches)
 	}
 
 	if (tdgbl->ALICE_data.ua_user) {
-		*dpb2++ = gds_dpb_user_name;
+		*dpb2++ = isc_dpb_user_name;
 		*dpb2++ = strlen(reinterpret_cast<const char*>(tdgbl->ALICE_data.ua_user));
 		for (const UCHAR* q = tdgbl->ALICE_data.ua_user; *q;)
 			*dpb2++ = *q++;
@@ -312,9 +313,9 @@ static USHORT build_dpb(UCHAR* dpb, const ULONG switches)
 
 	if (tdgbl->ALICE_data.ua_password) {
 		if (!tdgbl->sw_service)
-			*dpb2++ = gds_dpb_password;
+			*dpb2++ = isc_dpb_password;
 		else
-			*dpb2++ = gds_dpb_password_enc;
+			*dpb2++ = isc_dpb_password_enc;
 		*dpb2++ = strlen(reinterpret_cast<const char*>(tdgbl->ALICE_data.ua_password));
 		for (const UCHAR* q = tdgbl->ALICE_data.ua_password; *q;)
 			*dpb2++ = *q++;
@@ -340,7 +341,7 @@ static void extract_db_info(const UCHAR* db_info_buffer)
 	const UCHAR* p = db_info_buffer;
 
 	UCHAR item;
-	while ((item = *p++) != gds_info_end) {
+	while ((item = *p++) != isc_info_end) {
 		const SLONG length = gds__vax_integer(p, 2);
 		p += 2;
 
