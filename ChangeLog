@@ -1,3 +1,67 @@
+2004-12-09 02:53  skidder
+
+	* firebird2/src/isql/isql.epp (1.118):
+	
+	Fix POSIX build after Claudio cleanup
+
+2004-12-08 07:06  robocop
+
+	* firebird2/src/: jrd/common.h (1.132), lock/lock.cpp (1.111):
+	
+	Misc.
+
+2004-12-08 07:03  robocop
+
+	* firebird2/src/lock/lock.cpp (1.110):
+	
+	1.- Minimize buffer overrun.  2.- Stack variable should not be
+	referenced once the owning function finishes. Make it static.
+
+2004-12-08 06:59  robocop
+
+	* firebird2/src/dsql/dsql.cpp (1.135):
+	
+	Prevent buffer overrun.
+
+2004-12-08 06:58  robocop
+
+	* firebird2/src/: dsql/ddl.cpp (1.122), dsql/sqlda.h (1.10),
+	dsql/sqlda_pub.h (1.4), dudley/expr.cpp (1.26),
+	include/fb_exception.h (1.15), intl/lc_narrow.cpp (1.12),
+	intl/ldcommon.h (1.20), jrd/common.h (1.131), jrd/cvt.cpp (1.62),
+	jrd/evl_string.h (1.19), jrd/sha.cpp (1.6), jrd/sqz.cpp (1.20):
+	
+	Misc.
+
+2004-12-08 05:14  robocop
+
+	* firebird2/src/jrd/os/posix/: mod_loader.cpp (1.7), path_utils.cpp
+	(1.11):
+	
+	Putting the license on John's files after asking him for
+	permission.
+
+2004-12-08 05:11  robocop
+
+	* firebird2/src/: jrd/gds.cpp (1.166), jrd/os/posix/fbsyslog.cpp
+	(1.3), remote/xnet.cpp (1.58), utilities/install/install.cpp (1.7),
+	utilities/install/services.cpp (1.15):
+	
+	Misc.
+
+2004-12-08 03:36  robocop
+
+	* firebird2/src/jrd/os/darwin/config_root.cpp (1.2):
+	
+	1.- Changing the license on John's files after asking him for
+	permission.  2.- Misc.
+
+2004-12-07 20:21  skidder
+
+	* firebird2/builds/win32/msvc7/common_static.vcproj (1.8):
+	
+	Fix MSVC7 makefiles
+
 2004-12-07 02:40  robocop
 
 	* firebird2/src/: extlib/ib_udf2.sql (1.5),
