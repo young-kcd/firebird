@@ -1,3 +1,61 @@
+2003-03-09 22:16  skidder
+
+	* firebird2/src/burp/: burp.cpp, restore.epp:
+	
+	Make backup/restore process work when invoked via Services API on
+	Classic engine
+
+2003-03-09 22:13  skidder
+
+	* firebird2/src/jrd/svc.cpp:
+	
+	Enable Services API on all platforms
+
+2003-03-09 22:08  skidder
+
+	* firebird2/src/jrd/svc.cpp:
+	
+	Enable Services API on all platforms
+
+2003-03-09 22:07  skidder
+
+	* firebird2/src/jrd/: btr.cpp, btr.h, btr_proto.h, idx.cpp:
+	
+	Fix up engine to work with multi-field foreign constraints again
+	after nulls handing changes in unique indices
+
+2003-03-09 10:06  tamlin
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Fixed a comment mistake (*/ leftover at EOL of //) spotted by
+	Claudio.
+
+2003-03-09 03:48  brodsom
+
+	* firebird2/src/jrd/: isc_f_proto.h, isc_file.cpp:
+	
+	Remove PARSE_FILENAME macro (remains of OS2_ONLY || NETWARE ||
+	PC_PLATFORM).
+
+2003-03-09 03:25  brodsom
+
+	* firebird2/src/: gpre/sql.cpp, dudley/parse.cpp:
+	
+	Add FLINT_CACHE ifdefs
+
+2003-03-09 03:23  brodsom
+
+	* firebird2/src/include/firebird.h:
+	
+	Correct Typo mistake
+
+2003-03-09 01:17  brodsom
+
+	* firebird2/src/qli/eval.cpp:
+	
+	Correct typo mistake
+
 2003-03-08 09:06  dimitr
 
 	* firebird2/src/jrd/: alt.cpp, dfw.epp, event.cpp, event.h,
