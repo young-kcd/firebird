@@ -970,7 +970,9 @@ void SQL_relation_name(TEXT* r_name,
 	db_name[0] = 0;
 	owner_name[0] = 0;
 
-	SQL_resolve_identifier("<Database name>", NULL, NAME_SIZE);
+	SQL_resolve_identifier("<Database name>", NULL, NAME_SIZE + 1);
+	if (gpreGlob.token_global.tok_length >= NAME_SIZE)
+		PAR_error("Database alias too long");
 
 	gpre_sym* symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_database);
 	if (symbol) {

@@ -435,6 +435,9 @@ SSHORT PAR_blob_subtype(DBB db)
 
 act* PAR_database(bool sql, const TEXT* base_directory)
 {
+	if (gpreGlob.token_global.tok_length >= NAME_SIZE)
+		PAR_error("Database alias too long");
+
 	TEXT s[MAXPATHLEN << 1];
 
 	act* action = MSC_action(0, ACT_database);
