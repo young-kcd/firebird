@@ -17,7 +17,7 @@
 #
 # Erik Kunze, Philosys GmbH, <kunze@philosys.de>
 #
-# $Id: prefix.sinixz,v 1.16.2.1 2003-10-09 23:08:34 skidder Exp $
+# $Id: prefix.sinixz,v 1.16.2.2 2005-01-24 02:19:43 stryqx Exp $
 #
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
@@ -40,7 +40,7 @@ LIB_LINK_OPTIONS:=-shared
 LIB_LINK_RPATH:=-Wl,-rpath,
 LIB_LINK_SONAME:=-Wl,-soname,
 EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec fb_lock_print
-CLIENT_UTIL_TARGETS=gds_drop gds_delay gstat gsec fbguard fbmgr_bin fb_lock_print
+CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec fbguard fbmgr_bin fb_lock_print
 
 Physical_IO_Module=unix.cpp
 
