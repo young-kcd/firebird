@@ -1,3 +1,44 @@
+2004-02-13 12:15  aafemt
+
+	* firebird2/src/dsql/ddl.cpp:
+	
+	Fix warning
+
+2004-02-13 12:12  aafemt
+
+	* firebird2/src/jrd/constants.h:
+	
+	Fix warning
+
+2004-02-13 11:17  stryqx
+
+	* firebird2/src/remote/server.cpp:
+	
+	Let semaphore.h see the definition of gds__log for successful build
+	on FreeBSD.
+
+2004-02-13 11:14  alexpeshkoff
+
+	*
+	firebird2/src/install/arch-specific/linux/super/preuninstall.sh.in:
+	
+	Don't remove user & group firebird after uninstall
+
+2004-02-13 11:14  stryqx
+
+	* firebird2/builds/posix/: prefix.darwin, prefix.example,
+	prefix.freebsd, prefix.sinixz, prefix.solaris, prefix.solx86,
+	prefix.solx86gcc:
+	
+	change CLIENT_UTIL_TARGET from gds_delay to gds_relay
+
+2004-02-13 11:13  alexpeshkoff
+
+	*
+	firebird2/src/install/arch-specific/linux/super/postinstall.sh.in:
+	
+	Don't add lines to hosts.allow file
+
 2004-02-11 12:16  aafemt
 
 	* firebird2/src/utilities/nbackup.cpp:
