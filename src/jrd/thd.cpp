@@ -2064,7 +2064,7 @@ static int thread_start(
 	return state;
 
 #else
-#ifdef ( defined linux || defined FREEBSD )
+#if ( defined linux || defined FREEBSD )
 		if (state = pthread_create(&thread, NULL, (void*(*)(void*))routine, arg))
 		return state;
 	return pthread_detach(thread);
