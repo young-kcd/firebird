@@ -1,4 +1,4 @@
-# $Id: prototype.in,v 1.8 2002-11-12 12:10:58 eku Exp $
+# $Id: prototype.in,v 1.9 2002-11-13 11:07:10 eku Exp $
 #-------------------------------------------------------------------------------
 
 !SRCDIR=@NEW_FIREBIRD_DIR@
@@ -20,6 +20,7 @@ f none @prefix@/firebird.msg=$SRCDIR/firebird.msg  0644 root root
 f none @prefix@/de_DE.msg=$SRCDIR/de_DE.msg  0644 root root
 f none @prefix@/fr_FR.msg=$SRCDIR/fr_FR.msg  0644 root root
 f none @prefix@/ja_JP.msg=$SRCDIR/ja_JP.msg  0644 root root
+f none @prefix@/firebird.conf=$SRCDIR/misc/firebird.conf  0644 root root
 
 d none @prefix@/bin  0755 root root
 #f none @prefix@/bin/CSchangeRunUser.sh=$SRCDIR/bin/CSchangeRunUser.sh  0555 root root
@@ -60,7 +61,6 @@ f none @prefix@/include/blr.h=$SRCDIR/include/blr.h  0644 root root
 f none @prefix@/include/gds.h=$SRCDIR/include/gds.h  0644 root root
 f none @prefix@/include/ib_util.h=$SRCDIR/include/ib_util.h  0644 root root
 f none @prefix@/include/ibase.h=$SRCDIR/include/ibase.h  0644 root root
-f none @prefix@/include/gds.h=$SRCDIR/include/gds.h  0644 root root
 f none @prefix@/include/iberror.h=$SRCDIR/include/iberror.h  0644 root root
 f none @prefix@/include/perf.h=$SRCDIR/include/perf.h  0644 root root
 

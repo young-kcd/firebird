@@ -27,7 +27,7 @@
 # Contributor(s):
 # 
 # 
-# $Id: Makefile.in,v 1.4 2002-11-12 12:10:58 eku Exp $
+# $Id: Makefile.in,v 1.5 2002-11-13 11:07:10 eku Exp $
 # 
 
 ROOT=..
@@ -48,7 +48,7 @@ install package packages dist:
 	@echo Making SINIX-Z package...
 	rm -rf $(PKG_DIR)/firebird2
 	-mkdir -p $(PKG_DIR)
-	(cd $(PKG_DIR); pkgmk -o -d $(PKG_DIR))
+	(cd $(PKG_DIR); pkgmk -o -c -d $(PKG_DIR))
 	pkgtrans -s $(PKG_DIR) $(PKG_DIR)/$(PKG_NAME) firebird2
 
 clean clobber:
