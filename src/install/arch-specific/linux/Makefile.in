@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in,v 1.9.2.1 2003-12-29 04:40:56 skidder Exp $
+#  $Id: Makefile.in,v 1.9.2.2 2003-12-30 00:16:14 skidder Exp $
 #
 ROOT=..
 
@@ -135,14 +135,14 @@ buildImageDir:
 	mkdir -p $(GEN_ROOT)/$(DebugDir)
 	for x in `(cd $(GEN_ROOT)/buildroot; find)`; do \
         FIL=$(GEN_ROOT)/buildroot/$$x; \
-        D_FIL=$(GEN_ROOT)/$(DebugDir)/$${x}.debug; \
+        D_FIL=$(GEN_ROOT)/$(DebugDir)/`dirname $${x}`/.debug/`basename $${x}`.debug; \
         if [ ! -h $$FIL ] && readelf -h $$FIL > /dev/null 2> /dev/null; then \
-            mkdir -p $(GEN_ROOT)/$(DebugDir)/`dirname $$x`; \
+            mkdir -p $(GEN_ROOT)/$(DebugDir)/`dirname $$x`/.debug; \
             echo Generating external debug info for $$x; \
             if eu-strip -g -f $${D_FIL} $${FIL} > /dev/null 2> /dev/null; then \
                echo Succeeded using eu-strip from elfutils; \
             else \
-                cp -r $${FIL} $(GEN_ROOT)/$(DebugDir)/$${x}.debug; \
+                cp $${FIL} $${D_FIL}; \
                 if objcopy --add-gnu-debuglink $${D_FIL} $${FIL}; > /dev/null 2> /dev/null; then \
                     echo Succeeded using objcopy from binutils; \
                 else \
@@ -152,6 +152,11 @@ buildImageDir:
             echo Stripping unneeded symbols from $${x}; \
             objcopy --strip-debug --strip-unneeded $${FIL}; \
         fi; \
+    done
+# Work around GDB 6.0 bug
+	mkdir -p $(GEN_ROOT)/$(DebugDir)/usr/lib/.debug
+	for x in `ls $(GEN_ROOT)/$(DebugDir)@prefix@/lib/.debug`; do \
+        ln -s @prefix@/lib/.debug/`basename $$x` $(GEN_ROOT)/$(DebugDir)/usr/lib/.debug; \
     done
 
 
