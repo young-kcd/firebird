@@ -40,6 +40,7 @@
 #include "../jrd/thd_proto.h"
 #include "../jrd/tpc_proto.h"
 #include "../jrd/tra_proto.h"
+#include <memory>
 
 static TPC allocate_tpc(TDBB, ULONG);
 static void cache_transactions(TDBB, TPC *, ULONG);
@@ -197,67 +198,74 @@ int TPC_snapshot_state(TDBB tdbb, SLONG number)
  *	further checking to see if it really is.
  *
  **************************************/
-	DBB dbb;
-	TPC tip_cache;
-	USHORT state;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	if (!(tip_cache = dbb->dbb_tip_cache)) {
+	TPC tip_cache = dbb->dbb_tip_cache;
+	if (!tip_cache) {
 		cache_transactions(tdbb, (TPC *) 0, (ULONG) 0);
 		tip_cache = dbb->dbb_tip_cache;
 	}
 
-	if (number && dbb->dbb_pc_transactions)
-		if (TRA_precommited(tdbb, number, number))
+	if (number && dbb->dbb_pc_transactions) {
+		if (TRA_precommited(tdbb, number, number)) {
 			return tra_precommitted;
+		}
+	}
 
 /* if the transaction is older than the oldest
    transaction in our tip cache, it must be committed */
 
-	if (number < tip_cache->tpc_base)
+	if (number < tip_cache->tpc_base) {
 		return tra_committed;
+	}
 
 /* locate the specific TIP cache block for the transaction */
 
 	for (; tip_cache; tip_cache = tip_cache->tpc_next)
-		if (number < tip_cache->tpc_base + dbb->dbb_pcontrol->pgc_tpt) {
-			struct lck temp_lock;
-
-			state =
-				TRA_state(tip_cache->tpc_transactions, tip_cache->tpc_base,
-						  number);
+	{
+		if (number < tip_cache->tpc_base + dbb->dbb_pcontrol->pgc_tpt)
+		{
+			const USHORT state =
+				TRA_state(	tip_cache->tpc_transactions,
+							tip_cache->tpc_base,
+							number);
 
 			/* committed or dead transactions always stay that 
 			   way, so no need to check their current state */
 
-			if (state == tra_committed || state == tra_dead)
+			if (state == tra_committed || state == tra_dead) {
 				return state;
+			}
 
-			/* see if we can get a lock on the transaction; if we can't
-			   then we know it is still active */
+			// see if we can get a lock on the transaction; if we can't
+			// then we know it is still active
+			// We need to create this one in a pool since the
+			// receiver of this (ptr) checks its type.
+			// Please review this. This lock has _nothing_ to do in the
+			// permamnent pool!
+			std::auto_ptr<lck> temp_lock(new(*dbb->dbb_permanent, 0) lck);
 
-			MOVE_CLEAR(&temp_lock, sizeof(struct lck));
 			//temp_lock.blk_type = type_lck;
-			temp_lock.lck_dbb = dbb;
-			temp_lock.lck_type = LCK_tra;
-			temp_lock.lck_owner_handle =
-				LCK_get_owner_handle(tdbb, temp_lock.lck_type);
-			temp_lock.lck_parent = dbb->dbb_lock;
-			temp_lock.lck_length = sizeof(SLONG);
-			temp_lock.lck_key.lck_long = number;
+			temp_lock->lck_dbb = dbb;
+			temp_lock->lck_type = LCK_tra;
+			temp_lock->lck_owner_handle =
+				LCK_get_owner_handle(tdbb, temp_lock->lck_type);
+			temp_lock->lck_parent = dbb->dbb_lock;
+			temp_lock->lck_length = sizeof(SLONG);
+			temp_lock->lck_key.lck_long = number;
 
 			/* If we can't get a lock on the transaction, it must be active. */
 
-			if (!LCK_lock_non_blocking(tdbb, &temp_lock, LCK_read, FALSE)) {
+			if (!LCK_lock_non_blocking(tdbb, temp_lock.get(), LCK_read, FALSE)) {
 				INIT_STATUS(tdbb->tdbb_status_vector);
 				return tra_active;
 			}
 
 			INIT_STATUS(tdbb->tdbb_status_vector);
-			LCK_release(tdbb, &temp_lock);
+			LCK_release(tdbb, temp_lock.get());
 
 			/* as a last resort we must look at the TIP page to see
 			   whether the transaction is committed or dead; to minimize 
@@ -266,6 +274,7 @@ int TPC_snapshot_state(TDBB tdbb, SLONG number)
 
 			return TRA_fetch_state(tdbb, number);
 		}
+	}
 
 /* if the transaction has been started since we
    last looked, extend the cache upward */
