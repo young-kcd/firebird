@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.71 2003-09-08 21:44:44 skidder Exp $
+$Id: lock.cpp,v 1.72 2003-09-11 21:30:09 skidder Exp $
 */
 
 #include "firebird.h"
@@ -1496,7 +1496,7 @@ static void acquire( PTR owner_offset)
   we have only one address space and we do not need to adjust our
   mapping because another process has changed size of the lock table.
 */
-#if !defined SUPERSERVER && defined HAVE_MMAP
+#if !defined SUPERSERVER && (defined HAVE_MMAP || defined WIN_NT)
 		ISC_STATUS_ARRAY status_vector;
 		header =
 			(LHB) ISC_remap_file(status_vector, &LOCK_data, length, FALSE);
@@ -1626,7 +1626,7 @@ static UCHAR *alloc( SSHORT size, ISC_STATUS * status_vector)
   coherent memory mappings of different size on Windows to apply
   ISC_map_object approach
 */
-#if (defined WIN_NT && defined SUPERSERVER) || (!defined SUPERSERVER && defined HAVE_MMAP)
+#if defined WIN_NT || (!defined SUPERSERVER && defined HAVE_MMAP)
 		ULONG length = LOCK_data.sh_mem_length_mapped + EXTEND_SIZE;
 		LHB header = (LHB) ISC_remap_file(status_vector, &LOCK_data, length, TRUE);
 		if (header) {
