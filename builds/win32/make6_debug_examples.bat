@@ -7,10 +7,10 @@ for /f "tokens=*" %%a in ('@echo %ROOT_PATH:\=/%') do (set DB_PATH=%%a)
 
 ::===========
 :SED
-del expand.sed
-@echo s?\"empbuild.fdb\"?\"localhost:%DB_PATH%/generated/v5_examples/empbuild.fdb\"?g >> expand.sed
+del expand_ex.sed
+@echo s?\"empbuild.fdb\"?\"localhost:%DB_PATH%/generated/v5_examples/empbuild.fdb\"?g >> expand_ex.sed
 
-@sed -f expand.sed ..\..\src\v5_examples\empbuild.e > sed.tmp
+@sed -f expand_ex.sed ..\..\src\v5_examples\empbuild.e > sed.tmp
 @copy sed.tmp ..\..\generated\v5_examples\empbuild.e
 @del sed.tmp
 @copy ..\..\src\v5_examples\*.sql ..\..\generated\v5_examples\
