@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.39 2004-11-22 08:00:49 robocop Exp $
+ * $Id: isql.h,v 1.40 2004-11-24 08:58:06 robocop Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -199,8 +199,7 @@ const int NO_TRIGGERS				= 91;		// There are no triggers in this database
 const int NO_CHECKS_ON_REL			= 92;		// There are no check constraints on table %s in this database 
 const int BUFFER_OVERFLOW			= 94;		// An isql command exceeded maximum buffer size 
 #ifdef SCROLLABLE_CURSORS
-const int HLP_SETFETCH				= 95;		// \tSET AUTOfetch  -- toggle autofetch of
-											// records\n 
+const int HLP_SETFETCH				= 95;		// \tSET AUTOfetch  -- toggle autofetch of records\n
 #endif
 
 const int NO_ROLES					= 95;		// There are no roles in this database 
@@ -212,12 +211,14 @@ const int UNEXPECTED_EOF			= 98;		// Expected end of statement, encountered EOF
 const int TIME_ERR					= 101;		// Bad TIME: %s\n 
 const int HLP_OBJTYPE3				= 102;		// Some more objects 
 const int NO_ROLE					= 103;
-const int USAGE3 					= 104;		// Usage message 3 
+const int USAGE4 					= 104;		// Usage message 4
 const int INCOMPLETE_STR			= 105;		// Incomplete string in %s 
 const int HLP_SETSQLDIALECT			= 106;		//\tSET SQL DIALECT <n>    -- set sql dialect to <n>
 const int NO_GRANT_ON_ANY			= 107;		// There is no privilege granted in this database. 
-const int HLP_SETPLANONLY			= 108;		// Toggle display of query plan without executing 
-const int HLP_SETHEADING            = 109;      // Toggle display of query column titles
+const int HLP_SETPLANONLY			= 108;		// toggle display of query plan without executing
+const int HLP_SETHEADING			= 109;		// toggle display of query column titles
+const int HLP_SETBAIL				= 110;		// toggle bailing out on errors in non-interactive mode
+const int USAGE3 					= 111;		// Usage message 3
 
 // Initialize types
 
@@ -336,7 +337,7 @@ static const char* SCRATCH		= "fb_q";
 static const char* SCRATCH		= "fb_query_";
 #endif
 
-inline void STDERROUT(char* st, bool cr) {
+inline void STDERROUT(const char* st, bool cr) {
 	fprintf (isqlGlob.Errfp, "%s", st);
 	if (cr)
 		fprintf (isqlGlob.Errfp, "\n");

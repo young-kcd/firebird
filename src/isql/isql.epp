@@ -20,13 +20,6 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * 2002-02-24 Sean Leyne - Code Cleanup of old Win 3.1 port (WINDOWS_ONLY)
- *
- * 2003-08-15 Fred Polizo, Jr. - Fixed print_item() to correctly print
- * string types as their hex represention for CHARACTER SET OCTETS.
- *
- */
-/*
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -43,7 +36,11 @@
   2001.11.23 Claudio Valderrama: skip any number of -- comments but only at
 	the beginning and ignore void statements like block comments followed by
 	a semicolon.
-
+  2002-02-24 Sean Leyne - Code Cleanup of old Win 3.1 port (WINDOWS_ONLY)
+  2003-08-15 Fred Polizo, Jr. - Fixed print_item() to correctly print
+  string types as their hex represention for CHARACTER SET OCTETS.
+  2004-11-16 Damyan Ivanov - bail out on error in non-interactive mode.
+  
 */
 
 #ifdef DARWIN
@@ -266,6 +263,7 @@ static bool Docount = false;
 static bool Plan = false;
 static bool Planonly = false;
 static bool Heading = true;
+static bool BailOnError = false;
 static int Termlen = 0;
 static SCHAR ISQL_charset[MAXCHARSET_LENGTH] = { 0 };
 static bool Merge_diagnostic = false;
@@ -543,8 +541,10 @@ int ISQL_main(int argc,
 			gds__msg_format(NULL, ISQL_MSG_FAC, USAGE2, sizeof(helpstring),
 							helpstring, NULL, NULL, NULL, NULL, NULL);
 			STDERROUT(helpstring, 1);
-
 			gds__msg_format(NULL, ISQL_MSG_FAC, USAGE3, sizeof(helpstring),
+							helpstring, NULL, NULL, NULL, NULL, NULL);
+			STDERROUT(helpstring, 1);
+			gds__msg_format(NULL, ISQL_MSG_FAC, USAGE4, sizeof(helpstring),
 							helpstring, NULL, NULL, NULL, NULL, NULL);
 			STDERROUT(helpstring, 1);
 			Exit_value = FINI_ERROR;
@@ -553,7 +553,9 @@ int ISQL_main(int argc,
 
 	default:
 		do_isql();
-		Exit_value = FINI_OK;
+		// keep Exit_value to whatever it is set
+		// by do_isql()
+		// Exit_value = FINI_OK;
 		break;
 	}
 #ifdef MU_ISQL
@@ -718,7 +720,7 @@ static void readNextInputLine(const char* prompt)
 
 		if (Ifp == stdin) {
 #ifdef HAVE_EDITLINE_H
-			lastInputLine = readline((char*) prompt);
+			lastInputLine = readline(const_cast<char*>(prompt));
 
 			if (lastInputLine != NULL && strlen(lastInputLine) != 0) {
 				add_history(lastInputLine);
@@ -2783,6 +2785,8 @@ static void do_isql()
 			if (process_statement(statement, global_sqldap) == ERR)
 			{
 				Exit_value = FINI_ERROR;
+				if (!Interactive && BailOnError)
+					Abort_flag = true;
 			}
 			break;
 
@@ -3521,7 +3525,9 @@ static processing_state frontend(const TEXT* statement)
 		else if (!strcmp(parms[1], "STATISTICS"))
 			ret = CONT;
 		else if (!strcmp(parms[1], "HEADING"))
-		    ret = do_set_command(parms[2], &Heading);
+			ret = do_set_command(parms[2], &Heading);
+		else if (!strcmp(parms[1], "BAIL"))
+			ret = do_set_command(parms[2], &BailOnError);
 		else
 			ret = ERR;
 	}
@@ -4512,6 +4518,9 @@ static processing_state print_sets()
 	sprintf(Print_buffer, "Warnings:				%s%s",
 			(Warnings) ? "ON" : "OFF", NEWLINE);
 	ISQL_printf(isqlGlob.Out, Print_buffer);
+	sprintf(Print_buffer, "Bail on error:				%s%s",
+			(BailOnError) ? "ON" : "OFF", NEWLINE);
+	ISQL_printf(isqlGlob.Out, Print_buffer);
 	return (SKIP);
 }
 
@@ -4562,11 +4571,12 @@ static processing_state help(const TEXT* what)
 #ifdef SCROLLABLE_CURSORS
 		HLP_SETFETCH,			/*	SET AUTOfetch		  -- toggle autofetch of records */
 #endif
+		HLP_SETBAIL,			/*	SET BAIL		 -- toggle bailing out on errors in non-interactive mode */
 		HLP_SETBLOB,			/*	SET BLOB [ALL|<n>]	 -- display BLOBS of subtype <n> or ALL */
 		HLP_SETBLOB2,			/*	SET BLOB			   -- turn off BLOB display */
 		HLP_SETCOUNT,			/*	SET COUNT			  -- toggle count of selected rows on/off */
 		HLP_SETECHO,			/*	SET ECHO			   -- toggle command echo on/off */
-		HLP_SETHEADING,         //  SET HEADING         -- toggle column titles display on/off
+		HLP_SETHEADING,			//  SET HEADING         -- toggle column titles display on/off
 		HLP_SETLIST,			/*	SET LIST			   -- toggle column or table display format */
 		HLP_SETNAMES,			/*	SET NAMES <csname>	 -- set name of runtime character set */
 		HLP_SETPLAN,			/*	SET PLAN			   -- toggle display of query access plan */
@@ -5308,6 +5318,8 @@ static processing_state parse_arg(int argc,
 			}
 			else if (c == 'A')
 				ret = EXTRACTALL;
+			else if (c == 'B')
+				BailOnError = true;
 			else if (c == 'E')
 				Echo = true;
 			else if (c == 'M')
