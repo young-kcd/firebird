@@ -475,6 +475,9 @@ int CLIB_ROUTINE main(int argc, char **argv)
 			name = str;
 	}
 
+	if (sw_version)
+		dba_print(5, GDS_VERSION, 0, 0, 0, 0);	/* msg 5: gstat version %s */
+
 	if (!name) {
 #ifdef SUPERSERVER
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
@@ -504,13 +507,8 @@ int CLIB_ROUTINE main(int argc, char **argv)
 		}
 	}
 #endif
-	if (sw_version)
-		dba_print(5, GDS_VERSION, 0, 0, 0, 0);	/* msg 5: gstat version %s */
 
 /* Open database and go to work */
-
-
-
 
 	current = db_open((UCHAR*) name, strlen(name));
 	tddba->page_size = sizeof(temp);
