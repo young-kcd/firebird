@@ -475,12 +475,20 @@ removeLineFromFile() {
     fi
 
     # Update /etc/services
+    # The \n is needed, some /etc/services files are missing a trailing
+    # line feed - MOD 12-Dec-2003
 
     FileName=/etc/services
-    newLine="gds_db          3050/tcp  # InterBase Database Remote Protocol"
+    newLine="gds_db          3050/tcp  # Firebird SQL Database Remote Protocol"
     oldLine=`grep "^gds_db" $FileName`
 
-    replaceLineInFile "$FileName" "$newLine" "$oldLine"
+    if [ -z "$oldLine" ]
+      then
+        echo "" >> $FileName
+        echo $newLine >> $FileName
+        echo "" >> $FileName
+    # replaceLineInFile "$FileName" "$newLine" "$oldLine"
+    fi
 
 
     # Add entries to host.equiv & hosts.allow files
@@ -514,7 +522,7 @@ removeLineFromFile() {
     fi
 
     # For security reasons initially force all root:root non-writable
-    chown -R root.root $IBRootDir
+    chown -R root:root $IBRootDir
     chmod -R uga-w $IBRootDir
 
     # Prepare bin
@@ -527,6 +535,8 @@ FIREBIRD=$IBRootDir
 export FIREBIRD
 exec \$FIREBIRD/bin/fbmgr.bin \$@
 EOF
+
+    #chown $RunUser.$RunUser fbmgr
 
     # Everyone may execute clients
     chmod 0555 *
@@ -547,7 +557,7 @@ EOF
       do
         FileName=$i.`hostname`
         touch $FileName
-	MakeFileFirebirdWritable $FileName
+        MakeFileFirebirdWritable $FileName
       done
 
     touch firebird.log
