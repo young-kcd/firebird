@@ -15,26 +15,52 @@
 #include "fb_list.h"
 #include "fb_string.h"
 
+
+/** The PluginManager class provides a platform independent interface for
+  *   loading, unloading, and accessing symbols in dynamically loadable
+  *   libraries.  The PluginManager has the ability to restrict module
+  *   loading to specific search paths, ignore certain modules in a
+  *   search path, and automatically load all the modules in the search
+  *   paths.
+  **/
 class PluginManager
 {
 public:
 	class iterator;
 	
 private:
+	/** PluginManager::Module is an internal class that encapsulates
+	  *  the reference counter, module linked list, module
+	  *  name, and symbol lookup function of a loaded module.  This class
+	  *  is expected to be subclassed to provide module specific functionality.
+	  *  For example, a builtin module class may load modules that have been statically
+	  *  linked in with the engine, while a dynamic module class might handle modules
+	  *  found in OS specific dynamic libraries.
+	  **/
 	class Module
 	{
 	public:
+		/// The constructor requires the name of the module.  The initial reference count
+		///  is 1, to indicate that the PluginManager itself has a reference.  This is
+		///  verified in debug builds in the PluginManager destructor.
 		Module(const Firebird::string& name)
-			: refCnt(0), module_name(name), prev(0), next(0) {}
+			: refCnt(1), module_name(name), prev(0), next(0) {}
+		/// The destructor is responsible for removing the module from the linked
+		///  list.
 		virtual ~Module();
+		/// aquire indicates the interest of a particular piece of engine code in
+		///  the loadable module.  Currently that interest is tracked via a reference
+		///  counter.
 		void aquire() { refCnt++; }
-		/* 23 Sep 2002, Nickolay Samofatov commented it out because 
-		  otherwise it caused nasty memory corruption. 
-		  LoadAllPlugins function puts plugins with refCnt=0 to the list. 
-		  I'd add destructor to the PluginManager to free memory...
-		  */
-		void release() { refCnt--; /*if (refCnt == 0) delete this;*/ }
+		/// release indicates the end of interest in a modules.  Each call to aquire
+		///  must be balanced with a call to release.
+		void release() { refCnt--; }
+		/// Accessor function that returns the name of the module
 		const Firebird::string& name() const { return module_name; }
+		/// lookupSymbol searches through a module's symbol table and attempts to
+		///  locate the given symbol name.  If successful it returns a pointer to
+		///  the symbol's location in the current address space.  If the symbol can't
+		///  be found it returns 0.
 		virtual void *lookupSymbol(Firebird::string&) = 0;
 		
 	private:
@@ -45,6 +71,9 @@ private:
 		Module **prev;
 		Module *next;
 		
+		/// unload_module is used called by the destructor when the module
+		/// represented by this module object needs to be physically unloaded
+		/// from memory.
 		virtual void unload_module() {}
 	};
 
@@ -53,7 +82,16 @@ public:
 	friend class iterator;
 	
 	PluginManager() : moduleList(0) {}
+	~PluginManager();
 
+	/** The Plugin class encapsulates the various operations that are available
+	  *  after a plugin has been located.  The PluginManager returns instances
+	  *  of the Plugin class to the calling code to give that code access to
+	  *  the aforementioned operations.  These operations include tracking the
+	  *  usage of a plugin, and locating symbols within the plugin.  The Plugin
+	  *  class has a full contingent of constructors, assignment operators, and
+	  *  equality operators.
+	  **/
 	class Plugin
 	{
 	public:
@@ -67,6 +105,9 @@ public:
 			{ return module == other.module; }
 		bool operator !=(const Plugin &other) const
 			{ return module != other.module; }
+		/// Looks in the Plugin's symbol table for a symbol with the given name.
+		///  If the symbol exists a pointer to that symbol's location in the
+		/// current address space is returned.  Otherwise NULL is returned.
 		void *lookupSymbol(Firebird::string &sym)
 			{ return module ? module->lookupSymbol(sym) : 0; }
 		operator bool() { return module != 0; }
@@ -79,6 +120,10 @@ public:
 		Module *module;
 	};
 	
+	/** The iterator class allows external code to iterate through all the plugins
+	  *  a plugin manager knows about.  The iterator behaves like a traditional STL
+	  *  iterator.
+	  **/
 	class iterator
 	{
 	public:
@@ -102,13 +147,32 @@ public:
 		iterator(Module *start = 0) : curr(start) {}
 	};
 	
+	/// Searches for the plugin with the given name using the
+	///  preset search criteria.
 	Plugin findPlugin(const Firebird::string&);
+	/// Adds a path to the list of paths to be searched for a modules.  The
+	///  second parameter indicates if the path is absolute, or relative to
+	///  the current working directory.
 	void addSearchPath(const Firebird::string&, bool = true);
+	/// Removes the given search path from the list of search paths.  The path name
+	/// (1st parameter) and the relative indicator (2nd parameter) must exactly match
+	/// those passed in to addSearchPath.
 	void removeSearchPath(const Firebird::string&, bool = true);
+	/// Adds a module to the ignore list.  Ignored modules are not loaded automatically
+	///  when a directory is scanned, but may be loaded manually via the findPlugin
+	///  function.
 	void addIgnoreModule(const Firebird::string &mod)
 		{ ignoreModules.push_back(mod); }
+	/// Loads all the plugins found in the current set of search paths, except those that
+	///  have been ignored.  This function must be called after adding all the needed search paths,
+	///  and before iterating through the plugins.
 	void loadAllPlugins();
+	/// The traditional STL iterator end function.  Returns an iterator that represents the
+	/// last element in the iteration.
 	iterator end() { return iterator(0); }
+	/// Returns an iterator set to the first element in the iteration set.  That set
+	///  is the set of all plugins known to the PluginManager.  This includes all plugins
+	///  found with the loadAllPluings and findPlugin functions.
 	iterator begin() { return iterator(moduleList); }
 	
 private:

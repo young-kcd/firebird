@@ -243,6 +243,21 @@ const PluginManager::Plugin& PluginManager::Plugin::operator=(const Plugin& othe
 	return *this;
 }
 
+PluginManager::~PluginManager()
+{
+	while(moduleList)
+	{
+#if defined(DEV_BUILD)
+		if (moduleList->refCnt != 1)
+		{
+			ib_printf("Freeing loadable module with reference count != 1: %s (%d)\n",
+					moduleList->module_name.c_str(), moduleList->refCnt);
+		}
+#endif
+		delete moduleList;
+	}
+}
+
 PluginManager::Module::~Module()
 {
 	if (*prev == this)
