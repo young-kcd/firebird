@@ -88,7 +88,8 @@ static CONST VERB verbs[] = {
 	PAIR(nod_send, blr_send, e_send_length, 1, STATEMENT, STATEMENT),
 	PAIR(nod_store, blr_store, e_sto_length, e_sto_length - 1, STATEMENT, STATEMENT),
 	PAIR(nod_store, blr_store2, e_sto_length, e_sto_length - 1, STATEMENT, STATEMENT),
-	PAIR(nod_post, blr_post, 1, 1, STATEMENT, VALUE),
+	PAIR(nod_post, blr_post, 2, 1, STATEMENT, VALUE),
+	PAIR(nod_post, blr_post_arg, 2, 2, STATEMENT, VALUE),
 	PAIR(nod_exec_sql, blr_exec_sql, 1, 1, STATEMENT, VALUE),
 	PAIR(nod_internal_info, blr_internal_info, 1, 1, VALUE, VALUE),
 	PAIR2(nod_add, blr_add, 2, 2, VALUE, VALUE),
@@ -220,7 +221,7 @@ static CONST VERB verbs[] = {
 	PAIR(nod_current_date, blr_current_date, e_current_date_length, 0, VALUE, OTHER),
 	PAIR(nod_current_time, blr_current_time, e_current_time_length, 0, VALUE, OTHER),
 	PAIR(nod_current_timestamp, blr_current_timestamp, e_current_timestamp_length, 0, VALUE, OTHER),
-    PAIR(nod_current_role, blr_current_role, 1, 0, VALUE, VALUE),
+	PAIR(nod_current_role, blr_current_role, 1, 0, VALUE, VALUE),
 	0
 };
 

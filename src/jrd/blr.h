@@ -270,12 +270,13 @@
 #define blr_current_timestamp	(unsigned char)161
 #define blr_current_time	(unsigned char)162
 
-/* FB1 specific BLR */
+/* FB 1.0 specific BLR */
 
 #define blr_current_role	(unsigned char)174
 #define blr_skip		(unsigned char)175
 
-/* FB2 specific BLR */
+/* FB 1.5 specific BLR */
+
 #define blr_exec_sql		(unsigned char)176
 #define blr_internal_info	(unsigned char)177
 #define blr_nullsfirst		(unsigned char)178
@@ -283,7 +284,12 @@
 
 /* This codes are for user-defined savepoints 
   as opposed to the system ones defined earlier */
+
 #define blr_user_savepoint	(unsigned char)180
 #define blr_undo_savepoint	(unsigned char)181
+
+/* This codes reuse BLR code space */
+
+#define blr_post_arg		(unsigned char)163
 
 #endif /* _JRD_BLR_H_ */
