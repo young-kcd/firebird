@@ -1,3 +1,71 @@
+2004-03-24 22:43  dimitr
+
+	* firebird2/src/jrd/cmp.cpp:
+	
+	Fixed bug QC #7449.
+
+2004-03-24 22:36  dimitr
+
+	* firebird2/src/jrd/dpm.epp:
+	
+	Fixed wrong generator pages write order.
+
+2004-03-24 22:27  dimitr
+
+	* firebird2/src/jrd/evl.cpp:
+	
+	Fixed memory leak.
+
+2004-03-24 22:11  dimitr
+
+	* firebird2/src/jrd/evl.cpp:
+	
+	Fixed bug SF #784121 (by Claudio).
+
+2004-03-24 22:00  dimitr
+
+	* firebird2/src/jrd/cmp.cpp:
+	
+	Fixed procedures vs views issue (invalid impure area re-usage).
+
+2004-03-24 21:12  dimitr
+
+	* firebird2/src/remote/server.cpp:
+	
+	Fixed possible AV in SS builds.
+
+2004-03-24 20:48  dimitr
+
+	* firebird2/src/jrd/svc.cpp:
+	
+	Fixed memory leak in the Services API.	Explicitly mark information
+	services (those launched not from SVC_start) as finished.
+
+2004-03-24 12:06  aafemt
+
+	* firebird2/src/utilities/install/registry.cpp:
+	
+	Right headers include sequence
+
+2004-03-24 12:02  aafemt
+
+	* firebird2/src/: burp/spit.cpp, iscguard/iscguard.cpp,
+	iscguard/iscguard.h, jrd/jrd.h:
+	
+	Right headers include sequence
+
+2004-03-24 06:48  skidder
+
+	* firebird2/src/jrd/os/posix/path_utils.cpp:
+	
+	Fix warnings
+
+2004-03-24 06:43  skidder
+
+	* firebird2/src/common/classes/fb_string.cpp:
+	
+	Notify Alex about flaw in his string code
+
 2004-03-23 12:07  aafemt
 
 	* firebird2/builds/posix/: prefix.darwin, prefix.freebsd,
