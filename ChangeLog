@@ -1,3 +1,9 @@
+2004-06-14 13:20  fsg
+
+	* firebird2/src/remote/inet.cpp (1.116):
+	
+	Fixed an old bug. Thanks to Torsten Martinsen.
+
 2004-06-14 01:49  skidder
 
 	* firebird2/src/common/classes/: class_test.cpp (1.17), test.sh
