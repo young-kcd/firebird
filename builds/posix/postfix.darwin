@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: postfix.darwin,v 1.1.2.10 2003-11-26 00:32:50 bellardo Exp $
+#$Id: postfix.darwin,v 1.1.2.11 2003-11-26 19:43:43 bellardo Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 
@@ -100,6 +100,7 @@ darwin_finish_ss_framework: extlib
 	cp -r ../gen/firebird/help $(FB_FW)/Resources/English.lproj/var/help
 	cp ../gen/firebird/security.fdb $(FB_FW)/Resources/English.lproj/var
 	mkdir -p $(FB_FW)/Resources/bin
+	touch $(FB_FW)/Resources/.SuperServer
 	ln -s ../../bin $(FB_FW)/Resources/English.lproj/var/bin
 	cp ../gen/firebird/bin/fbserver $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/fbguard $(FB_FW)/Resources/bin
@@ -113,13 +114,13 @@ darwin_finish_ss_framework: extlib
 	cp ../gen/firebird/bin/gds_relay $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gsec $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gstat $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/qli $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/gdef $(FB_FW)/Resources/bin
 	cp -r ../gen/firebird/examples/v5 $(FB_FW)/Resources/examples
 	cp ../src/extlib/ib_udf.sql $(FB_FW)/Resources/examples
 	cp install/arch-specific/darwin/FrameworkInfo.plist \
 			$(FB_FW)/Resources/Info.plist
 	cp install/misc/firebird.conf $(FB_FW)/Resources/English.lproj/var
-	#cp ../gen/firebird/bin/qli $(FB_FW)/Resources/bin
-	#cp ../gen/firebird/bin/gdef $(FB_FW)/Resources/bin
 	#sed "s/__VERSION__/`$(VERS_UTIL)`/g" source/firebird/bellardo/darwin/FrameworkInfo.plist > source/interbase/Firebird.framework/Resources/Info.plist
 
 darwin_postbuild_target: package
