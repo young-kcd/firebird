@@ -2390,22 +2390,26 @@ integer_keyword	: INTEGER
 blob_type	: BLOB blob_subtype blob_segsize charset_clause
 			{ 
 			lex.g_field->fld_dtype = dtype_blob; 
+			lex.g_field->fld_length = sizeof(ISC_QUAD);
 			}
 		| BLOB '(' unsigned_short_integer ')'
 			{ 
 			lex.g_field->fld_dtype = dtype_blob; 
+			lex.g_field->fld_length = sizeof(ISC_QUAD);
 			lex.g_field->fld_seg_length = (USHORT)(IPTR) $3;
 			lex.g_field->fld_sub_type = 0;
 			}
 		| BLOB '(' unsigned_short_integer ',' signed_short_integer ')'
 			{ 
 			lex.g_field->fld_dtype = dtype_blob; 
+			lex.g_field->fld_length = sizeof(ISC_QUAD);
 			lex.g_field->fld_seg_length = (USHORT)(IPTR) $3;
 			lex.g_field->fld_sub_type = (USHORT)(IPTR) $5;
 			}
 		| BLOB '(' ',' signed_short_integer ')'
 			{ 
 			lex.g_field->fld_dtype = dtype_blob; 
+			lex.g_field->fld_length = sizeof(ISC_QUAD);
 			lex.g_field->fld_seg_length = 80;
 			lex.g_field->fld_sub_type = (USHORT)(IPTR) $4;
 			}
