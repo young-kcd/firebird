@@ -49,14 +49,14 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID reserved)
 	/* save instance value */
 	hIBDLLInstance = h;
 
-#ifdef GDS32
-	char buffer[MAXPATHLEN], *p;
-	int l;
-
 	switch (reason)	{
+
 	case DLL_PROCESS_ATTACH:
+#ifdef GDS32
+		{
+		char buffer[MAXPATHLEN], *p;
 		GetModuleFileName(hIBDLLInstance, buffer, sizeof(buffer));
-		l = strlen(buffer);
+		int l = strlen(buffer);
 		p = buffer + l;
 		while (l-- && *p-- != '\\');
 		p++;
@@ -69,11 +69,19 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID reserved)
 				hFBDLLInstance = LoadLibrary(FBDLLNAME);
 			}
 		}
-		break;
-	case DLL_PROCESS_DETACH:
-		FreeLibrary(hFBDLLInstance);
-	}
+		}
 #endif
+		break;
+
+	case DLL_PROCESS_DETACH:
+#ifdef GDS32
+		FreeLibrary(hFBDLLInstance);
+#endif
+#ifdef EMBEDDED
+		JRD_shutdown_all();
+#endif
+		break;
+	}
 
 	return TRUE;
 }
