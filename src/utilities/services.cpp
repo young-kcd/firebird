@@ -41,7 +41,8 @@
 USHORT SERVICES_config(SC_HANDLE manager,
 					   TEXT * service_name,
 					   TEXT * display_name,
-					   USHORT sw_mode, USHORT(*err_handler) ())
+					   USHORT sw_mode,
+					   USHORT(*err_handler)(SLONG, TEXT *, SC_HANDLE))
 {
 /**************************************
  *
@@ -76,7 +77,7 @@ USHORT SERVICES_config(SC_HANDLE manager,
 	}
 
 	if ((status = RegSetValueEx(hkey, "DefaultClientMode", 0,
-								REG_SZ, mode,
+								REG_SZ, reinterpret_cast<UCHAR*>(mode),
 								(DWORD) (strlen(mode) + 1))) !=
 		ERROR_SUCCESS) {
 		RegCloseKey(hkey);
@@ -91,7 +92,8 @@ USHORT SERVICES_config(SC_HANDLE manager,
 
 USHORT SERVICES_delete(SC_HANDLE manager,
 					   TEXT * service_name,
-					   TEXT * display_name, USHORT(*err_handler) ())
+					   TEXT * display_name,
+					   USHORT(*err_handler)(SLONG, TEXT *, SC_HANDLE))
 {
 /**************************************
  *
@@ -116,7 +118,7 @@ USHORT SERVICES_delete(SC_HANDLE manager,
 	}
 
 	if ((status = RegSetValueEx(hkey, "DefaultClientMode", 0,
-								REG_SZ, mode,
+								REG_SZ, reinterpret_cast<UCHAR*>(mode),
 								(DWORD) (strlen(mode) + 1))) !=
 		ERROR_SUCCESS) {
 		RegCloseKey(hkey);
@@ -135,7 +137,8 @@ USHORT SERVICES_install(SC_HANDLE manager,
 						TEXT * executable,
 						TEXT * directory,
 						TEXT * dependencies,
-						USHORT sw_startup, USHORT(*err_handler) ())
+						USHORT sw_startup,
+						USHORT(*err_handler)(SLONG, TEXT *, SC_HANDLE))
 {
 /**************************************
  *
@@ -188,7 +191,8 @@ USHORT SERVICES_install(SC_HANDLE manager,
 
 USHORT SERVICES_remove(SC_HANDLE manager,
 					   TEXT * service_name,
-					   TEXT * display_name, USHORT(*err_handler) ())
+					   TEXT * display_name,
+					   USHORT(*err_handler)(SLONG, TEXT *, SC_HANDLE))
 {
 /**************************************
  *
@@ -231,7 +235,8 @@ USHORT SERVICES_remove(SC_HANDLE manager,
 USHORT SERVICES_start(SC_HANDLE manager,
 					  TEXT * service_name,
 					  TEXT * display_name,
-					  USHORT sw_mode, USHORT(*err_handler) ())
+					  USHORT sw_mode,
+					  USHORT(*err_handler)(SLONG, TEXT *, SC_HANDLE))
 {
 /**************************************
  *
@@ -244,7 +249,7 @@ USHORT SERVICES_start(SC_HANDLE manager,
  *
  **************************************/
 	SC_HANDLE service;
-	TEXT *mode;
+	CONST TEXT *mode;
 
 	service = OpenService(manager, service_name, SERVICE_ALL_ACCESS);
 	if (service == NULL)
@@ -274,7 +279,8 @@ USHORT SERVICES_start(SC_HANDLE manager,
 
 USHORT SERVICES_stop(SC_HANDLE manager,
 					 TEXT * service_name,
-					 TEXT * display_name, USHORT(*err_handler) ())
+					 TEXT * display_name,
+					 USHORT(*err_handler)(SLONG, TEXT *, SC_HANDLE))
 {
 /**************************************
  *

@@ -35,11 +35,10 @@
 #include "../utilities/regis_proto.h"
 #include "../utilities/registry.h"
 
-static USHORT remove_subkeys(HKEY, USHORT, USHORT(*)());
-
+static USHORT remove_subkeys(HKEY, USHORT, USHORT(*)(SLONG, TEXT *, HKEY));
 
 USHORT REGISTRY_install(HKEY hkey_node,
-						TEXT * directory, USHORT(*err_handler) ())
+						TEXT * directory, USHORT(*err_handler)(SLONG, TEXT *, HKEY))
 {
 /**************************************
  *
@@ -74,10 +73,11 @@ USHORT REGISTRY_install(HKEY hkey_node,
 	}
 
 	if ((status = RegSetValueEx(hkey_kit, "RootDirectory", 0,
-								REG_SZ, path_name,
+								REG_SZ, reinterpret_cast<UCHAR*>(path_name),
 								(DWORD) (len + 1))) != ERROR_SUCCESS
 		|| (status =
-			RegSetValueEx(hkey_kit, "Version", 0, REG_SZ, GDS_VERSION,
+			RegSetValueEx(hkey_kit, "Version", 0, REG_SZ,
+						  reinterpret_cast<UCHAR*>(GDS_VERSION),
 						  (DWORD) sizeof(GDS_VERSION))) != ERROR_SUCCESS) {
 		(*err_handler) (status, "RegSetValueEx", hkey_kit);
 		if (disp == REG_CREATED_NEW_KEY)
@@ -94,7 +94,7 @@ USHORT REGISTRY_install(HKEY hkey_node,
     }
 
 	if ((status = RegSetValueEx(hkey_kit, "ServerDirectory", 0,
-								REG_SZ, path_name,
+								REG_SZ, reinterpret_cast<UCHAR*>(path_name),
 								(DWORD)(len + 1))) != ERROR_SUCCESS) {
 	    (*err_handler) (status, "RegSetValueEx", hkey_kit);
     	if (disp == REG_CREATED_NEW_KEY)
@@ -109,7 +109,7 @@ USHORT REGISTRY_install(HKEY hkey_node,
 
 
 USHORT REGISTRY_remove(HKEY hkey_node,
-					   USHORT silent_flag, USHORT(*err_handler) ())
+					   USHORT silent_flag, USHORT(*err_handler)(SLONG, TEXT *, HKEY))
 {
 /**************************************
  *
@@ -154,7 +154,7 @@ USHORT REGISTRY_remove(HKEY hkey_node,
 
 static USHORT remove_subkeys(
 							 HKEY hkey,
-							 USHORT silent_flag, USHORT(*err_handler) ())
+							 USHORT silent_flag, USHORT(*err_handler)(SLONG, TEXT *, HKEY))
 {
 /**************************************
  *

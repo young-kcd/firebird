@@ -28,11 +28,11 @@ extern USHORT	SERVICES_config (SC_HANDLE,
 				TEXT *,
 				TEXT *,
 				USHORT,
-				USHORT (*)());
+				USHORT (*)(SLONG, TEXT *, SC_HANDLE));
 extern USHORT	SERVICES_delete (SC_HANDLE,
 				TEXT *,
 				TEXT *,
-				USHORT (*)());
+				USHORT (*)(SLONG, TEXT *, SC_HANDLE));
 extern USHORT	SERVICES_install (SC_HANDLE manager,
 				TEXT	*service_name,
 				TEXT	*display_name,
@@ -40,19 +40,19 @@ extern USHORT	SERVICES_install (SC_HANDLE manager,
 				TEXT	*directory,
 				TEXT	*dependencies,
 				USHORT	sw_startup,
-				USHORT (*)());
+				USHORT (*)(SLONG, TEXT *, SC_HANDLE));
 extern USHORT	SERVICES_remove (SC_HANDLE manager,
 				TEXT	*service_name,
 				TEXT	*display_name,
-				USHORT (*)());
+				USHORT (*)(SLONG, TEXT *, SC_HANDLE));
 extern USHORT	SERVICES_start (SC_HANDLE manager,
 				TEXT	*service_name,
 				TEXT	*display_name,
 				USHORT	sw_mode,
-				USHORT (*)());
+				USHORT (*)(SLONG, TEXT *, SC_HANDLE));
 extern USHORT	SERVICES_stop (SC_HANDLE	manager,
 				TEXT	*service_name,
 				TEXT	*display_name,
-				USHORT (*)());
+				USHORT (*)(SLONG, TEXT *, SC_HANDLE));
 
 #endif /* _UTILITIES_SERVI_PROTO_H_ */

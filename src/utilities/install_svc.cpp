@@ -30,12 +30,12 @@
 #include "../utilities/install_nt.h"
 #include "../utilities/servi_proto.h"
 #include "../utilities/registry.h"
-#include "../iscguard/iscguard_utils.c"
+#include "../iscguard/iscguard_utils.cpp"
 
 extern USHORT svc_error(SLONG, TEXT *, SC_HANDLE);
 static void usage(void);
-static USHORT using_guardian (USHORT (*err_handler)());
-static USHORT guardian_setup (USHORT (*err_handler)());
+static USHORT using_guardian (USHORT (*err_handler)(SLONG, TEXT *, SC_HANDLE));
+static USHORT guardian_setup (USHORT (*err_handler)(SLONG, TEXT *, SC_HANDLE));
 
 static struct {
 	TEXT *name;
@@ -359,7 +359,7 @@ static void usage(void)
 }
 
 
-static USHORT using_guardian(USHORT	(*err_handler)())
+static USHORT using_guardian(USHORT	(*err_handler)(SLONG, TEXT *, SC_HANDLE))
 {
 /**************************************
  *
@@ -392,7 +392,7 @@ static USHORT using_guardian(USHORT	(*err_handler)())
 								  "GuardianOptions",
 								  NULL,
 								  NULL,
-								  mode,
+								  reinterpret_cast<UCHAR*>(mode),
 								  &buffSize)) != ERROR_SUCCESS) {
     	RegCloseKey(hkey);
     	return (*err_handler)(status, "RegQueryValueEx", NULL);
@@ -404,7 +404,7 @@ static USHORT using_guardian(USHORT	(*err_handler)())
 };
 
 
-USHORT guardian_setup(USHORT (*err_handler)())
+USHORT guardian_setup(USHORT (*err_handler)(SLONG, TEXT *, SC_HANDLE))
 {
 /*************************************************
  *
@@ -432,9 +432,10 @@ USHORT guardian_setup(USHORT (*err_handler)())
 							   "GuardianOptions",
 							   0,
 							   REG_SZ,
-							   "1",
+							   reinterpret_cast<UCHAR*>("1"),
 							   2) != ERROR_SUCCESS) {
-	    return (*err_handler)(status, "RegSetValueEx", hkey);
+	    return (*err_handler)(status, "RegSetValueEx",
+							  reinterpret_cast<SC_HANDLE>(hkey));
     }
 
 	RegCloseKey (hkey);
