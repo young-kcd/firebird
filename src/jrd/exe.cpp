@@ -205,7 +205,7 @@ const int ALL_TRIGS	= 0;
 const int PRE_TRIG	= 1;
 const int POST_TRIG	= 2;
 
-const int MAX_STACK_TRACE = 2048;
+const size_t MAX_STACK_TRACE = 2048;
 
 /* this constant defines how many records are locked
    before we check whether record locking has been

@@ -111,12 +111,8 @@ static BufferDesc* alloc_bdb(thread_db*, BufferControl*, UCHAR **);
 static int blocking_ast_bdb(void*);
 #endif
 static void btc_flush(thread_db*, SLONG, const bool, ISC_STATUS*);
-static void btc_insert_balanced(Database*, BufferDesc*);
 static bool btc_insert_balance(BufferDesc**, bool, SCHAR);
-static void btc_insert_unbalanced(Database*, BufferDesc*);
-static void btc_remove_balanced(BufferDesc*);
 static bool btc_remove_balance(BufferDesc**, bool, SCHAR);
-static void btc_remove_unbalanced(BufferDesc*);
 static void cache_bugcheck(int);
 #ifdef CACHE_READER
 static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM);
@@ -154,9 +150,13 @@ static void update_write_direction(thread_db*, BufferDesc*);
 #define BALANCED_DIRTY_PAGE_TREE
 
 #ifdef BALANCED_DIRTY_PAGE_TREE
+static void btc_insert_balanced(Database*, BufferDesc*);
+static void btc_remove_balanced(BufferDesc*);
 #define btc_insert btc_insert_balanced
 #define btc_remove btc_remove_balanced
 #else
+static void btc_insert_unbalanced(Database*, BufferDesc*);
+static void btc_remove_unbalanced(BufferDesc*);
 #define btc_insert btc_insert_unbalanced
 #define btc_remove btc_remove_unbalanced
 #endif
@@ -2896,6 +2896,7 @@ static void btc_flush(thread_db* tdbb,
 }
 
 
+#ifdef BALANCED_DIRTY_PAGE_TREE
 static void btc_insert_balanced(Database* dbb, BufferDesc* bdb)
 {
 /**************************************
@@ -3021,6 +3022,7 @@ static void btc_insert_balanced(Database* dbb, BufferDesc* bdb)
 	}
 //	BTC_MUTEX_RELEASE;
 }
+#endif //BALANCED_DIRTY_PAGE_TREE
 
 
 static bool btc_insert_balance(BufferDesc** bdb, bool subtree, SCHAR comp)
@@ -3180,6 +3182,7 @@ static bool btc_insert_balance(BufferDesc** bdb, bool subtree, SCHAR comp)
 }
 
 
+#ifndef BALANCED_DIRTY_PAGE_TREE
 static void btc_insert_unbalanced(Database* dbb, BufferDesc* bdb)
 {
 /**************************************
@@ -3248,8 +3251,10 @@ static void btc_insert_unbalanced(Database* dbb, BufferDesc* bdb)
 
 //	BTC_MUTEX_RELEASE;
 }
+#endif //!BALANCED_DIRTY_PAGE_TREE
 
 
+#ifdef BALANCED_DIRTY_PAGE_TREE
 static void btc_remove_balanced(BufferDesc* bdb)
 {
 /**************************************
@@ -3497,6 +3502,7 @@ static void btc_remove_balanced(BufferDesc* bdb)
 	bdb->bdb_left = bdb->bdb_right = bdb->bdb_parent = NULL;
 //	BTC_MUTEX_RELEASE;
 }
+#endif //BALANCED_DIRTY_PAGE_TREE
 
 
 static bool btc_remove_balance(BufferDesc** bdb, bool subtree, SCHAR comp)
@@ -3694,6 +3700,7 @@ static bool btc_remove_balance(BufferDesc** bdb, bool subtree, SCHAR comp)
 }
 
 
+#ifndef BALANCED_DIRTY_PAGE_TREE
 static void btc_remove_unbalanced(BufferDesc* bdb)
 {
 /**************************************
@@ -3774,6 +3781,7 @@ static void btc_remove_unbalanced(BufferDesc* bdb)
 	bdb->bdb_left = bdb->bdb_right = bdb->bdb_parent = NULL;
 //	BTC_MUTEX_RELEASE;
 }
+#endif //!BALANCED_DIRTY_PAGE_TREE
 
 
 static void cache_bugcheck(int number)

@@ -1834,7 +1834,7 @@ static void change_backup_mode( Global* gbl, UCHAR verb)
 /*
 static void drop_log( Global* gbl)
 {
-//**************************************
+// **************************************
 // *
 // *	d r o p _ l o g
 // *

@@ -1291,7 +1291,7 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
  *      members of the role.
  *
  **************************************/
-	USHORT id = -1;
+	int id = -1;
 	SqlIdentifier role_name, role_owner, user;
 
 	thread_db* tdbb = JRD_get_thread_data();
