@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: install.sh.in,v 1.1 2003-11-06 09:20:33 stryqx Exp $
+#   $Id: install.sh.in,v 1.2 2003-11-06 12:13:00 stryqx Exp $
 # 
 
 #  Install script for FirebirdSQL database engine
@@ -169,8 +169,8 @@ cp $BuiltFBDir/security.fdb $DestDir/security.fdb
 #cp $BuiltFBDir/include/gds.hxx $DestDir/include 
 cp $BuiltFBDir/include/*.h $DestDir/include 
 
-cp -f $BuiltFBDir/lib/libfbembed.so* $DestDir/lib
-cp -f $BuiltFBDir/lib/libfbclient.so* $DestDir/lib
+cp -f $BuiltFBDir/lib/libfbembed.so.2.0.0 $DestDir/lib
+cp -f $BuiltFBDir/lib/libfbclient.so.2.0.0 $DestDir/lib
 
 #cp -f $BuiltFBDir/lib/gds.a /usr/lib/libgds.a 
 cp -f $BuiltFBDir/lib/libib_util.so $DestDir/lib/libib_util.so 
@@ -225,7 +225,7 @@ for i in `find $InstallFirebirdPrefix/doc -type f -print`
 do
 	chmod a=r $i
 done
-chmod -R a=r $InstallFirebirdPrefix/examples/*
+#chmod -R a=r $InstallFirebirdPrefix/examples/*
 chmod -R a=r $InstallFirebirdPrefix/include/*
 chmod -R a=r $InstallFirebirdPrefix/intl/*
 #chmod -R a=r $InstallFirebirdPrefix/misc/*
@@ -235,8 +235,8 @@ chmod -R ug=rx,o= $InstallFirebirdPrefix/intl/fbintl
 chmod -R a=rx $InstallFirebirdPrefix/lib/*
 
 cd $InstallFirebirdPrefix/lib
-ln -sf libfbclient.so libgds.so
-ln -sf libfbclient.so.1 libgds.so.1
+ln -sf libfbclient.so.2.0.0 libfbclient.so.2
+ln -sf libfbembed.so.2.0.0 libfbembed.so.2
 
 cd $InstallFirebirdPrefix/bin
 for i in `ls`
