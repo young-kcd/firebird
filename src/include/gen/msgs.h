@@ -388,7 +388,7 @@ static const SCHAR * const messages[] = {
 	"journal file wrong format",		/* 366, jrn_format_err */
 	"intermediate journal file full",		/* 367, jrn_file_full */
 	"The prepare statement identifies a prepare statement with an open cursor",		/* 368, dsql_open_cursor_request */
-	"Firebird error",		/* 369, ib_error */
+	"Firebird error",		/* 369, error */
 	"Cache redefined",		/* 370, cache_redef */
 	"Insufficient memory to allocate page buffer cache",		/* 371, cache_too_small */
 	"Log redefined",		/* 372, log_redef */

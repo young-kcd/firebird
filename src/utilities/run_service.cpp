@@ -109,7 +109,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			while (len--) {
 				p++;
 				if (*p != '\001')
-					ib_putchar(*p);
+					putchar(*p);
 			}
 			if (*p++ == '\001') {
 				send_buffer[0] = isc_info_svc_line;

@@ -208,7 +208,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 		RESTORE_THREAD_DATA;
 		exit(exit_code);
 	}
-	FILE* sw_outfile = tddba->sw_outfile = ib_stderr;
+	FILE* sw_outfile = tddba->sw_outfile = stderr;
 
 #if defined (WIN95)
 	bool fAnsiCP = false;

@@ -387,7 +387,7 @@ static const SSHORT gds__sql_code [] = {
 -839 /* 366 jrn_format_err                   */,
 -840 /* 367 jrn_file_full                    */,
 -519 /* 368 dsql_open_cursor_request         */,
--999 /* 369 ib_error                         */,
+-999 /* 369 error                            */,
 -260 /* 370 cache_redef                      */,
 -239 /* 371 cache_too_small                  */,
 -260 /* 372 log_redef                        */,

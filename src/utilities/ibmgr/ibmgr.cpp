@@ -23,7 +23,7 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
- * $Id: ibmgr.cpp,v 1.13 2004-04-28 22:18:19 brodsom Exp $
+ * $Id: ibmgr.cpp,v 1.14 2004-05-01 14:18:28 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -242,9 +242,9 @@ static bool get_line( int *argc, SCHAR** argv, TEXT* stuff)
 	printf("%s ", msg);		/* "IBMGR> " */
 /*
 if (sw_service_gsec)
-    ib_putc ('\001', stdout);
+    putc ('\001', stdout);
 */
-	ib_fflush(stdout);
+	fflush(stdout);
 	*argc = 1;
 	TEXT* cursor = stuff;
 	USHORT count = MAXSTUFF - 1;
@@ -255,7 +255,7 @@ if (sw_service_gsec)
    done; otherwise, put it in the current argument */
 
 	while (*argc < MAXARGS && count > 0) {
-		TEXT c = ib_getc(ib_stdin);
+		TEXT c = getc(stdin);
 		if (c > ' ' && c <= '~') {
 			/* note that the first argument gets a '-' appended to the front to fool
 			   the switch checker into thinking it came from the command line */

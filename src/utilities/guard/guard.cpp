@@ -15,7 +15,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: guard.cpp,v 1.4 2004-04-28 22:18:58 brodsom Exp $
+ * $Id: guard.cpp,v 1.5 2004-05-01 14:17:49 brodsom Exp $
  */
  /* contains the main() and not shared routines for ibguard */
 
@@ -97,7 +97,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				option = IGNORE;
 				break;
 			default:
-				fprintf(ib_stderr,
+				fprintf(stderr,
 						   "Usage: %s [-signore | -onetime | -forever (default)]\n",
 						   prog_name);
 				exit(-1);
@@ -113,7 +113,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		&& strcmp(user_name, FIREBIRD_USER)
 		&& strcmp(user_name, INTERBASE_USER_SHORT)) {
 		/* invalid user bail out */
-		fprintf(ib_stderr,
+		fprintf(stderr,
 				   "%s: Invalid user (must be %s, %s, %s or root).\n",
 				   prog_name, FIREBIRD_USER, INTERBASE_USER,
 				   INTERBASE_USER_SHORT);
@@ -127,7 +127,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	if ((fd_guard = UTIL_ex_lock(GUARD_FILE)) < 0) {
 		/* could not get exclusive lock -- some other guardian is running */
 		if (fd_guard == -2)
-			fprintf(ib_stderr, "%s: Program is already running.\n",
+			fprintf(stderr, "%s: Program is already running.\n",
 					   prog_name);
 		exit(-3);
 	}

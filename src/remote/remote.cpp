@@ -436,7 +436,7 @@ void REMOTE_get_timeout_params(
 #ifdef DEBUG
 	printf("REMOTE_get_timeout dummy = %lu conn = %lu\n",
 			  port->port_dummy_packet_interval, port->port_connect_timeout);
-	fflush(ib_stdout);
+	fflush(stdout);
 #endif
 }
 
