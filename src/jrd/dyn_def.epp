@@ -83,7 +83,7 @@
 
 using namespace Jrd;
 
-typedef Firebird::Array<TEXT*> TextStack;
+typedef Firebird::HalfStaticArray<TEXT*, 16> TextArray;
 
 const int FOR_KEY_UPD_CASCADE	= 0x01;
 const int FOR_KEY_UPD_NULL	= 0x02;
@@ -240,7 +240,7 @@ void DYN_define_constraint(Global*		gbl,
 	UCHAR verb;
 	SqlIdentifier constraint_name, index_name, referred_index_name;
 	SqlIdentifier null_field_name, trigger_name;
-	TextStack field_list;
+	TextArray field_list;
 	int list_index = -1;
 	int all_count, unique_count;
 	bool primary_flag = false, foreign_flag = false;
@@ -1632,7 +1632,7 @@ void DYN_define_index(Global*		gbl,
 	UCHAR verb;
 	UCHAR seg_count;
 	UCHAR fld_count;
-	TextStack field_list, seg_list;
+	TextArray field_list, seg_list;
 	int list_index = -1;
 	USHORT key_length, length, referred_cols = 0;
 	SqlIdentifier trigger_name;
