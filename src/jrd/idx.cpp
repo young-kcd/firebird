@@ -964,9 +964,7 @@ static IDX_E check_duplicates(
 			
 			if (record_idx->idx_flags & idx_expressn)
 			{
-				DSC *desc_ptr1, *desc_ptr2;
-
-				fb_assert(insertion_idx->idx_expression != NULL);	
+				fb_assert(insertion_idx->idx_expression != NULL);
 
 				fb_assert(insertion_idx->idx_expression_request->req_caller == NULL);
 				insertion_idx->idx_expression_request->req_caller = tdbb->tdbb_request;
@@ -980,6 +978,7 @@ static IDX_E check_duplicates(
 				tdbb->tdbb_request = insertion_idx->idx_expression_request;
 				tdbb->tdbb_request->req_rpb[0].rpb_record = rpb.rpb_record;
 				tdbb->tdbb_request->req_flags &= ~req_null;
+				const dsc* desc_ptr1;
 				{
 					Jrd::ContextPoolHolder context(tdbb, tdbb->tdbb_request->req_pool);
 
@@ -1006,6 +1005,7 @@ static IDX_E check_duplicates(
 				tdbb->tdbb_request = record_idx->idx_expression_request;
 				tdbb->tdbb_request->req_rpb[0].rpb_record = record;
 				tdbb->tdbb_request->req_flags &= ~req_null;
+				const dsc* desc_ptr2;
 				{
 					Jrd::ContextPoolHolder context(tdbb, tdbb->tdbb_request->req_pool);
 
@@ -1044,7 +1044,7 @@ static IDX_E check_duplicates(
 					const bool notEqualCur = !hasCurValues || 
 						hasCurValues && ( (flag_cur != flag_idx) || (MOV_compare(&desc1, &desc2) != 0) );
 
-					if((isFK || !hasOldValues) && notEqualCur)
+					if ((isFK || !hasOldValues) && notEqualCur)
 						break;
 
 					if (hasOldValues)
@@ -1054,7 +1054,7 @@ static IDX_E check_duplicates(
 
 						const bool notEqualOld = (flag_old != flag_idx || MOV_compare(&desc1, &desc2) != 0);
 
-						if(isFK) {
+						if (isFK) {
 							if (notEqualCur || notEqualOld)
 								break;
 						}
