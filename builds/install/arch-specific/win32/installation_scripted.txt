@@ -1,0 +1,163 @@
+
+Setup Command Line Parameters
+=============================
+
+General parameters available to all InnoSetup based installers
+--------------------------------------------------------------
+
+The Setup program accepts optional command line parameters. These can
+be useful to system administrators, and to other programs calling the
+Setup program.
+
+These notes are applicable to version 4.2.7 of InnoSetup.
+/SP-
+  Disables the 'This will install... Do you wish to continue?' prompt at
+  the beginning of Setup. Of course, this will have no effect if the
+  DisableStartupPrompt [Setup] section directive was set to yes.
+
+
+/SILENT, /VERYSILENT
+  Instructs Setup to be silent or very silent. When Setup is silent the
+  wizard and the background window are not displayed but the installation
+  progress window is. When a setup is very silent this installation
+  progress window is not displayed. Everything else is normal so for
+  example error messages during installation are displayed and the startup
+  prompt is (if you haven't disabled it with DisableStartupPrompt or the '/SP-' command line option
+  explained above)
+
+  If a restart is necessary and the '/NORESTART' command isn't used
+(see below) and Setup is silent, it will display a Reboot now?
+  message box. If it's very silent it will reboot without asking.
+
+
+/LOG
+  Causes Setup to create a log file in the user's TEMP directory
+  detailing file installation actions taken during the installation
+  process. This can be a helpful debugging aid. For example, if you
+  suspect a file isn't being replaced when you believe it should be (or
+  vice versa), the log file will tell you if the file was really
+  skipped, and why.
+
+  The log file is created with a unique name based on the current date.
+  (It will not overwrite or append to existing files.) Currently, it is
+  not possible to customize the filename.
+
+  The information contained in the log file is technical in nature and
+  therefore not intended to be understandable by end users. Nor is it
+  designed to be machine-parseable; the format of the file is subject
+  to change without notice.
+
+
+/NOCANCEL
+  Prevents the user from cancelling during the installation process,
+  by disabling the Cancel button and ignoring clicks on the close
+  button. Useful along with '/SILENT' or '/VERYSILENT'.
+
+
+/NORESTART
+  Instructs Setup not to reboot even if it's necessary.
+
+
+/RESTARTEXITCODE=exit code
+  Specifies the custom exit code that Setup is to return when a restart
+  is needed. Useful along with '/NORESTART'. Also see Setup Exit Codes.
+
+
+/LOADINF="filename"
+  Instructs Setup to load the settings from the specified file after
+  having checked the command line. This file can be prepared using the
+  '/SAVEINF=' command as explained below.
+
+  o Don't forget to use quotes if the filename contains spaces.
+
+
+/SAVEINF="filename"
+  Instructs Setup to save installation settings to the specified file.
+
+  o Don't forget to use quotes if the filename contains spaces.
+
+
+/LANG=language
+  Specifies the language to use. language specifies the internal name
+  of the language as specified in a [Languages] section entry.
+
+  o When a valid /LANG parameter is used, the Select Language dialog will be suppressed.
+
+
+/DIR="x:\dirname"
+  Overrides the default directory name displayed on the Select Destination
+  Location wizard page. A fully qualified pathname must be specified.
+
+
+/GROUP="folder name"
+  Overrides the default folder name displayed on the Select Start Menu Folder
+  wizard page. If the [Setup] section directive DisableProgramGroupPage
+  was set to yes, this command line parameter is ignored.
+
+
+/NOICONS
+  Instructs Setup to initially check the Don't create any icons check box
+ on the Select Start Menu Folder wizard page.
+
+
+Parameters specific to Firebird installs
+----------------------------------------
+
+/COMPONENTS="comma separated list of component names"
+
+  Choose from - SuperServerComponent,
+                ClassicServerComponent,
+                ServerComponent,
+                DevAdminComponent and
+                ClientComponent
+
+  Overrides the default components settings. Using this command line
+  parameter causes Setup to automatically select a custom type. A full
+  install requires combining components. For example:
+
+  /COMPONENTS="SuperServerComponent, ServerComponent,
+               DevAdminComponent, ClientComponent"
+
+  would be required for a full install.
+
+
+/FORCE
+
+  Tells the installer to ignore its analysis of the existing
+  environment. It will attempt to install and configure Firebird 1.5 as
+  if no previous version of Firebird or InterBase was installed.
+
+  This can be useful if you have a seriously broken installation that
+  you cannot uninstall. Or it could be another way to aggravate your
+  users by breaking a perfectly good working install of InterBase. Its
+  your choice.
+
+
+/NOCPL
+
+  Don't install the Control Panel Applet. This is useful for two
+  reasons:
+
+  o Installing/Uninstalling the CPL applet requires a system
+    restart on Windows 2000 (and perhaps some other platforms.)
+
+  o You may wish to use an alternative cpl applet.
+
+
+/NOGDS32
+
+  Don't install a copy of the client library into the system directory,
+  even if installation analysis concludes it is OK to do so.
+
+
+/COPYFBCLIENT
+
+  Copy the fbclient.dll to the system directory. This is recommended
+  for client installs if you are sure that you will only ever be
+  accessing a single server version. If your client applications are
+  likely to take advantage of accessing different server versions this
+  is not recommended. See
+    doc/README.Win32LibraryInstallation.txt
+  for more information.
+
+
