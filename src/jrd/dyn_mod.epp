@@ -117,7 +117,7 @@ void DYN_modify_database( Global* gbl, const UCHAR** ptr)
  *	Modify a database.
  *
  **************************************/
-	UCHAR verb, s[128];
+	UCHAR s[128];
 
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
@@ -149,6 +149,7 @@ void DYN_modify_database( Global* gbl, const UCHAR** ptr)
 #endif
 
 		MODIFY DBB USING
+			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
 				switch (verb) {
 				case isc_dyn_security_class:
@@ -264,7 +265,6 @@ void DYN_modify_exception( Global* gbl, const UCHAR** ptr)
  *	Modify an exception.
  *
  **************************************/
-	UCHAR verb;
 	SqlIdentifier t;
 
 	thread_db* tdbb = JRD_get_thread_data();
@@ -286,6 +286,7 @@ void DYN_modify_exception( Global* gbl, const UCHAR** ptr)
 
 		found = true;
 		MODIFY X
+			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
 				switch (verb) {
 				case isc_dyn_xcp_msg:
@@ -334,9 +335,6 @@ void DYN_modify_global_field(
  * Note: a global field here is a SQL domain.
  *
  **************************************/
-	jrd_req* old_request;
-	UCHAR verb;
-
 	SSHORT field_adjusted_count = 0;
 	const TEXT* err_one_type_change_only =
 		"Only one data type change to the domain allowed at a time";
@@ -419,6 +417,7 @@ void DYN_modify_global_field(
 
         bool single_validate = false;
 
+		UCHAR verb;
 		while ((verb = *(*ptr)++) != isc_dyn_end)
 		{
 			switch (verb)
@@ -434,7 +433,7 @@ void DYN_modify_global_field(
 							MODIFY FLD USING
 								strcpy(FLD.RDB$FIELD_NAME, newfld);
 								FLD.RDB$FIELD_NAME.NULL = FALSE;
-								old_request = request;
+								jrd_req* old_request = request;
 								request = NULL;
 								/* CVC: Let's update the dimensions, too. */
 								if (has_dimensions)
@@ -718,7 +717,7 @@ void DYN_modify_global_field(
 
 				/* If the datatype was changed, update any indexes that involved the domain */
 
-				old_request = request;
+				jrd_req* old_request = request;
 				request = NULL;
 				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 					DOM IN RDB$RELATION_FIELDS 
@@ -883,7 +882,6 @@ void DYN_modify_index( Global* gbl, const UCHAR** ptr)
  *	Modify an existing index
  *
  **************************************/
-	UCHAR verb;
 	SqlIdentifier name;
 
 	thread_db* tdbb = JRD_get_thread_data();
@@ -904,6 +902,7 @@ void DYN_modify_index( Global* gbl, const UCHAR** ptr)
 
 		found = true;
 		MODIFY IDX USING
+			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
 				switch (verb) {
 				case isc_dyn_idx_unique:
@@ -970,8 +969,7 @@ void DYN_modify_local_field(
  *	Execute a dynamic ddl statement.
  *
  **************************************/
-	USHORT position, existing_position;
-	UCHAR verb;
+	USHORT position;
 	SqlIdentifier f, r;
 	TEXT *query_name, *edit_string,
 		*security_class, *new_name;
@@ -989,6 +987,7 @@ void DYN_modify_local_field(
 	sfflag = qnflag = qhflag = esflag = dflag = scflag = npflag = nnflag =
 		ntflag = false;
 		
+	UCHAR verb;
 	while ((verb = *(*ptr)++) != isc_dyn_end)
 		switch (verb) {
 		case isc_dyn_rel_name:
@@ -1051,6 +1050,7 @@ void DYN_modify_local_field(
 
 	try {
 
+	USHORT existing_position;
 	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FLD IN RDB$RELATION_FIELDS
@@ -1163,7 +1163,6 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
  *	Execute a dynamic ddl statement.
  *
  **************************************/
-	UCHAR verb;
 	SqlIdentifier procedure_name;
 
 	GET_STRING(ptr, procedure_name);
@@ -1196,6 +1195,7 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 			P.RDB$PROCEDURE_INPUTS.NULL = TRUE;
 			P.RDB$PROCEDURE_OUTPUTS.NULL = TRUE;
 
+			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
 				switch (verb) {
 				case isc_dyn_system_flag:
@@ -1271,7 +1271,6 @@ void DYN_modify_relation( Global* gbl, const UCHAR** ptr)
  *	Modify an existing relation
  *
  **************************************/
-	UCHAR verb;
 	SqlIdentifier name, field_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
@@ -1296,6 +1295,7 @@ void DYN_modify_relation( Global* gbl, const UCHAR** ptr)
 			DYN_error_punt(false, 177, NULL, NULL, NULL, NULL, NULL);
 		found = true;
 		MODIFY REL USING
+			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
 				switch (verb) {
 				case isc_dyn_system_flag:
@@ -1370,7 +1370,6 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
  *	Modify a trigger for a relation.
  *
  **************************************/
-	UCHAR verb;
 	SqlIdentifier trigger_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
@@ -1411,6 +1410,7 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 */
 		found = true;
 		MODIFY X
+			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
 				switch (verb) {
 				case isc_dyn_trg_name:
@@ -1503,8 +1503,6 @@ void DYN_modify_trigger_msg( Global* gbl, const UCHAR** ptr, TEXT* trigger_name)
  *	Modify a trigger message.
  *
  **************************************/
-	int number;
-	UCHAR verb;
 	SqlIdentifier t;
 
 	thread_db* tdbb = JRD_get_thread_data();
@@ -1514,7 +1512,7 @@ void DYN_modify_trigger_msg( Global* gbl, const UCHAR** ptr, TEXT* trigger_name)
 
 	try {
 
-	number = DYN_get_number(ptr);
+	const int number = DYN_get_number(ptr);
 	if (trigger_name)
 		strcpy(t, trigger_name);
 	else if (*(*ptr)++ == isc_dyn_trg_name)
@@ -1531,6 +1529,7 @@ void DYN_modify_trigger_msg( Global* gbl, const UCHAR** ptr, TEXT* trigger_name)
             DYN_REQUEST(drq_m_trg_msg) = request;
 
 		MODIFY X
+			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
 				switch (verb) {
 				case isc_dyn_trg_msg_number:
@@ -1574,7 +1573,6 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
  *	Execute a dynamic ddl statement.
  *
  **************************************/
-	UCHAR verb;
 	SqlIdentifier view_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
@@ -1611,6 +1609,7 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 			REL.RDB$VIEW_SOURCE.NULL = TRUE;
 			REL.RDB$SECURITY_CLASS.NULL = TRUE;
 
+			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
 				switch (verb)
 				{
@@ -2208,7 +2207,6 @@ void DYN_modify_sql_field(Global*		gbl,
  *	produces a warning. This condition raises an error, too.
  *
  **************************************/
-	UCHAR verb;
 	SSHORT field_adjusted_count = 0;
 	const TEXT* err_one_type_change_only =
 		"Only one data type change to the field allowed at a time";
@@ -2295,6 +2293,7 @@ void DYN_modify_sql_field(Global*		gbl,
 				has_dimensions = true;
 			}
 
+			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end) {
 				switch (verb) {
 				case isc_dyn_fld_source:

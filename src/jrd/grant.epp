@@ -60,8 +60,8 @@ using namespace Jrd;
 
 /* privileges given to the owner of a relation */
 
-const USHORT OWNER_PRIVS	= SCL_control | SCL_read | SCL_write | SCL_delete | SCL_protect;
-const USHORT VIEW_PRIVS		= SCL_read | SCL_write | SCL_delete;
+const SecurityClass::flags_t OWNER_PRIVS	= SCL_control | SCL_read | SCL_write | SCL_delete | SCL_protect;
+const SecurityClass::flags_t VIEW_PRIVS		= SCL_read | SCL_write | SCL_delete;
 const ULONG ACL_BUFFER_SIZE	= 4096;
 static const char* DEFAULT_CLASS	= "SQL$DEFAULT";
 
@@ -78,24 +78,25 @@ DATABASE DB = STATIC "yachts.lnk";
 
 static void define_default_class(thread_db*, const TEXT*, TEXT*, const UCHAR*, USHORT);
 #ifdef NOT_USED_OR_REPLACED
-static void delete_security_class(thread_db*, TEXT *);
+static void delete_security_class(thread_db*, const TEXT*);
 #endif
-static void finish_security_class(UCHAR**, USHORT, UCharBuffer&, ULONG*);
+static void finish_security_class(UCHAR**, SecurityClass::flags_t, UCharBuffer&, ULONG*);
 static void get_object_info(thread_db*, const TEXT*, SSHORT,
 							TEXT*, TEXT*, TEXT*, bool*);
-static USHORT get_public_privs(thread_db*, const TEXT*, SSHORT);
-static void get_user_privs(thread_db*, UCHAR**, TEXT*,
-						   SSHORT, TEXT*, USHORT, UCharBuffer&, ULONG*);
-static void grant_user(UCHAR**, TEXT*, SSHORT, USHORT, UCharBuffer&, ULONG*);
+static SecurityClass::flags_t get_public_privs(thread_db*, const TEXT*, SSHORT);
+static void get_user_privs(thread_db*, UCHAR**, const TEXT*, SSHORT, const TEXT*,
+							SecurityClass::flags_t, UCharBuffer&, ULONG*);
+static void grant_user(UCHAR**, const TEXT*, SSHORT, SecurityClass::flags_t,
+						UCharBuffer&, ULONG*);
 #ifdef NOT_USED_OR_REPLACED
-static void grant_views(TEXT**, USHORT, UCharBuffer&, ULONG*);
+static void grant_views(TEXT**, SecurityClass::flags_t, UCharBuffer&, ULONG*);
 static void purge_default_class(TEXT*, SSHORT);
 #endif
-static USHORT save_field_privileges(thread_db*, UCharBuffer&, UCHAR**,
-									TEXT*, const TEXT*, USHORT, ULONG*);
+static SecurityClass::flags_t save_field_privileges(thread_db*, UCharBuffer&, UCHAR**,
+									TEXT*, const TEXT*, SecurityClass::flags_t, ULONG*);
 static void save_security_class(thread_db*, const TEXT*, const UCHAR*, USHORT);
-static USHORT trans_sql_priv(const TEXT*);
-static SLONG squeeze_acl(UCHAR*, UCHAR**, TEXT*, SSHORT);
+static SecurityClass::flags_t trans_sql_priv(const TEXT*);
+static SecurityClass::flags_t squeeze_acl(UCHAR*, UCHAR**, const TEXT*, SSHORT);
 static bool check_string(const UCHAR*, const TEXT*);
 
 
@@ -120,7 +121,7 @@ void GRANT_realloc_acl(UCharBuffer&	start_ptr,
 
 // realloc the new length, ERR_punt incase of no memory
 // the write_ptr is set back to the same offset in the new buffer
-	*write_ptr = &(start_ptr.getBuffer(realloc_length))[old_offset];
+	*write_ptr = start_ptr.getBuffer(realloc_length) + old_offset;
 
 	*buffer_length = realloc_length;
 }
@@ -150,9 +151,6 @@ bool GRANT_privileges( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 	case 3:
 		{
-			UCHAR *acl, *temp_acl;
-			UCHAR *default_acl;
-			USHORT public_priv, aggregate_public;
 			ULONG length = ACL_BUFFER_SIZE, *length_ptr = &length;
 			ULONG default_length = ACL_BUFFER_SIZE;
 			ULONG* default_length_ptr = &default_length;
@@ -181,21 +179,22 @@ bool GRANT_privileges( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			UCharBuffer str_buffer;
 			UCharBuffer str_default_buffer;
 
-			acl = str_buffer.getBuffer(ACL_BUFFER_SIZE);
+			UCHAR* acl = str_buffer.getBuffer(ACL_BUFFER_SIZE);
 			str_default_buffer.getBuffer(ACL_BUFFER_SIZE);
 
 			CHECK_AND_MOVE(acl, ACL_version, str_buffer, length_ptr);
 			grant_user(&acl,
 						owner,
 						obj_user,
-						(USHORT)((work->dfw_id == obj_procedure) ?
+						((work->dfw_id == obj_procedure) ?
 							(SCL_execute | OWNER_PRIVS) : OWNER_PRIVS),
 						str_buffer,
 						length_ptr);
 
 			/* Pick up any relation-level privileges */
 
-			public_priv = get_public_privs(tdbb, work->dfw_name, work->dfw_id);
+			const SecurityClass::flags_t public_priv =
+				get_public_privs(tdbb, work->dfw_name, work->dfw_id);
 			get_user_privs(tdbb, &acl, work->dfw_name, work->dfw_id,
 						   owner, public_priv, str_buffer, length_ptr);
 
@@ -214,11 +213,12 @@ bool GRANT_privileges( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 				MOVE_FAST(str_buffer.begin(), str_default_buffer.begin(),
 						  (int) (acl - str_buffer.begin()));
-				default_acl =
+				UCHAR* default_acl =
 					str_default_buffer.begin() + (acl - str_buffer.begin());
-				temp_acl = acl;
+				const UCHAR* const temp_acl = acl;
 
-				aggregate_public = save_field_privileges(tdbb, str_buffer,
+				const SecurityClass::flags_t aggregate_public =
+					save_field_privileges(tdbb, str_buffer,
 														 &acl, work->dfw_name,
 														 owner, public_priv,
 														 length_ptr);
@@ -345,7 +345,7 @@ static void define_default_class(
 }
 
 #ifdef NOT_USED_OR_REPLACED
-static void delete_security_class( thread_db* tdbb, TEXT * s_class)
+static void delete_security_class( thread_db* tdbb, const TEXT* s_class)
 {
 /**************************************
  *
@@ -373,7 +373,7 @@ static void delete_security_class( thread_db* tdbb, TEXT * s_class)
 #endif // NOT_USED_OR_REPLACED
 
 static void finish_security_class(UCHAR**	acl_ptr,
-								  USHORT	public_priv,
+								  SecurityClass::flags_t public_priv,
 								  UCharBuffer&	start_ptr,
 								  ULONG*	length_ptr)
 {
@@ -401,8 +401,10 @@ static void finish_security_class(UCHAR**	acl_ptr,
 }
 
 
-static USHORT get_public_privs(
-							   thread_db* tdbb, const TEXT* object_name, SSHORT obj_type)
+static SecurityClass::flags_t get_public_privs(
+							   thread_db* tdbb,
+							   const TEXT* object_name,
+							   SSHORT obj_type)
 {
 /**************************************
  *
@@ -417,7 +419,7 @@ static USHORT get_public_privs(
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	USHORT public_priv = 0;
+	SecurityClass::flags_t public_priv = 0;
 
 	jrd_req* request = CMP_find_request(tdbb, irq_grant5, IRQ_REQUESTS);
 
@@ -513,10 +515,10 @@ static void get_object_info(
 
 static void get_user_privs(thread_db*		tdbb,
 						   UCHAR**	acl_ptr,
-						   TEXT*	object_name,
+						   const TEXT*	object_name,
 						   SSHORT	obj_type,
-						   TEXT*	owner,
-						   USHORT	public_priv,
+						   const TEXT*	owner,
+						   SecurityClass::flags_t public_priv,
 						   UCharBuffer&	start_ptr,
 						   ULONG*	length_ptr)
 {
@@ -537,7 +539,7 @@ static void get_user_privs(thread_db*		tdbb,
 	SqlIdentifier user;
 	user[0] = 0;
 	SSHORT user_type = -2;
-	USHORT priv = 0;
+	SecurityClass::flags_t priv = 0;
 
 	jrd_req* request = CMP_find_request(tdbb, irq_grant2, IRQ_REQUESTS);
 
@@ -585,9 +587,9 @@ static void get_user_privs(thread_db*		tdbb,
 
 
 static void grant_user(UCHAR**	acl_ptr,
-					   TEXT*	user,
+					   const TEXT*	user,
 					   SSHORT	user_type,
-					   USHORT	privs,
+					   SecurityClass::flags_t	privs,
 					   UCharBuffer&	start_ptr,
 					   ULONG*	length_ptr)
 {
@@ -650,7 +652,8 @@ static void grant_user(UCHAR**	acl_ptr,
 #ifdef NOT_USED_OR_REPLACED
 static void grant_views(
 						UCHAR** acl_ptr,
-						USHORT privs, UCharBuffer& start_ptr, ULONG * length_ptr)
+						SecurityClass::flags_t privs, UCharBuffer& start_ptr,
+						ULONG* length_ptr)
 {
 /**************************************
  *
@@ -673,7 +676,7 @@ static void grant_views(
 }
 
 
-static void purge_default_class( TEXT * object_name, SSHORT obj_type)
+static void purge_default_class( TEXT* object_name, SSHORT obj_type)
 {
 /**************************************
  *
@@ -722,13 +725,13 @@ static void purge_default_class( TEXT * object_name, SSHORT obj_type)
 #endif // NOT_USED_OR_REPLACED
 
 
-static USHORT save_field_privileges(
+static SecurityClass::flags_t save_field_privileges(
 									thread_db* tdbb,
 									UCharBuffer& str_relation_buffer,
 									UCHAR** acl_ptr,
 									TEXT* relation_name,
 									const TEXT* owner,
-									USHORT public_priv,
+									SecurityClass::flags_t public_priv,
 									ULONG* length_ptr)
 {
 /**************************************
@@ -745,10 +748,7 @@ static USHORT save_field_privileges(
  *
  **************************************/
 	SqlIdentifier field_name, user, s_class;
-	USHORT priv, field_public, aggregate_public;
-	DSC desc;
-	SSHORT user_type;
-	
+
 	UCharBuffer str_field_buffer;
 	UCharBuffer str_field_buffer_start;
 
@@ -776,7 +776,9 @@ static USHORT save_field_privileges(
 
 	field_name[0] = 0;
 	user[0] = 0;
-	aggregate_public = public_priv;
+	SecurityClass::flags_t aggregate_public = public_priv;
+	SecurityClass::flags_t priv, field_public;
+	SSHORT user_type = -1;
 
 	jrd_req* request = CMP_find_request(tdbb, irq_grant6, IRQ_REQUESTS);
 	jrd_req* request2 = NULL;
@@ -807,26 +809,26 @@ static USHORT save_field_privileges(
 			{
 				if (strcmp(user, "PUBLIC"))
 				{
-					const USHORT field_priv =
-						(USHORT)(	public_priv |
+					const SecurityClass::flags_t field_priv =
+							public_priv |
 									priv |
 									squeeze_acl(str_field_buffer.begin(),
 												&field_acl,
 												user,
-												user_type));
+												user_type);
 					grant_user(&field_acl,
 								user,
 								user_type,
 								field_priv,
 								str_field_buffer,
 								field_length_ptr);
-					const USHORT relation_priv =
-						(USHORT)(	public_priv |
+					const SecurityClass::flags_t relation_priv =
+							public_priv |
 									priv |
 									squeeze_acl(str_relation_buffer.begin(),
 												&relation_acl,
 												user,
-												user_type));
+												user_type);
 					grant_user(&relation_acl,
 								user,
 								user_type,
@@ -857,7 +859,7 @@ static USHORT save_field_privileges(
 			if (field_name[0]) {
 				aggregate_public |= field_public;
 				finish_security_class(&field_acl,
-										(USHORT)(field_public | public_priv),
+										(field_public | public_priv),
 										str_field_buffer,
 										field_length_ptr);
 				save_security_class(
@@ -921,26 +923,26 @@ static USHORT save_field_privileges(
 	{
 		if (strcmp(user, "PUBLIC"))
 		{
-			const USHORT field_priv =
-				(USHORT)(	public_priv |
+			const SecurityClass::flags_t field_priv =
+					public_priv |
 							priv |
 							squeeze_acl(str_field_buffer.begin(),
 										&field_acl,
 										user,
-										user_type));
+										user_type);
 			grant_user(&field_acl,
 						user,
 						user_type,
 						field_priv,
 						str_field_buffer,
 						field_length_ptr);
-			const USHORT relation_priv =
-				(USHORT)(	public_priv |
+			const SecurityClass::flags_t relation_priv =
+					public_priv |
 							priv |
 							squeeze_acl(str_relation_buffer.begin(),
 										&relation_acl,
 										user,
-										user_type));
+										user_type);
 			grant_user(&relation_acl,
 						user,
 						user_type,
@@ -960,13 +962,15 @@ static USHORT save_field_privileges(
 	{
 		aggregate_public |= field_public;
 		finish_security_class(&field_acl,
-							(USHORT)(field_public | public_priv),
+							(field_public | public_priv),
 							str_field_buffer,
 							field_length_ptr);
 		save_security_class(tdbb,
 							s_class,
 							str_field_buffer.begin(),
 							(USHORT)(field_acl - str_field_buffer.begin()));
+							
+		dsc desc;
 		desc.dsc_dtype = dtype_text;
 		desc.dsc_sub_type = 0;
 		desc.dsc_scale = 0;
@@ -1038,7 +1042,7 @@ static void save_security_class(thread_db*	tdbb,
 }
 
 
-static USHORT trans_sql_priv(const TEXT* privileges)
+static SecurityClass::flags_t trans_sql_priv(const TEXT* privileges)
 {
 /**************************************
  *
@@ -1050,7 +1054,7 @@ static USHORT trans_sql_priv(const TEXT* privileges)
  *	Map a SQL privilege letter into an internal privilege bit.
  *
  **************************************/
-	USHORT priv = 0;
+	SecurityClass::flags_t priv = 0;
 
 	switch (UPPER7(privileges[0])) {
 	case 'S':
@@ -1077,9 +1081,9 @@ static USHORT trans_sql_priv(const TEXT* privileges)
 }
 
 
-static SLONG squeeze_acl(UCHAR*		acl_base,
+static SecurityClass::flags_t squeeze_acl(UCHAR*		acl_base,
 						 UCHAR**	acl_ptr,
-						 TEXT*		user,
+						 const TEXT*		user,
 						 SSHORT		user_type)
 {
 /**************************************
@@ -1095,11 +1099,9 @@ static SLONG squeeze_acl(UCHAR*		acl_base,
  *	privilege for the input user.
  *
  **************************************/
-	UCHAR *dup_acl;
-	SLONG privilege = 0;
+	UCHAR* dup_acl;
+	SecurityClass::flags_t privilege = 0;
 	UCHAR c;
-	UCHAR l;
-
 
 /* Make sure that this half-finished acl looks good enough to process. */
 	**acl_ptr = 0;
@@ -1166,9 +1168,11 @@ static SLONG squeeze_acl(UCHAR*		acl_base,
 
 				case id_node:
 				case id_user:
+					{
 					hit = false;
-					for (l = *acl++; l; acl++, l--);
+					for (UCHAR l = *acl++; l; acl++, l--);
 					break;
+					}
 
 				case id_group:
 					if (user_type != obj_user_group)

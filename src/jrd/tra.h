@@ -221,6 +221,7 @@ enum dfw_t {
 	dfw_delete_exception, 
 	dfw_unlink_file,
 	dfw_delete_generator,
+	dfw_modify_generator,
 	dfw_delete_udf,
 	dfw_add_difference,
 	dfw_delete_difference,

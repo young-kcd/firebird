@@ -794,7 +794,6 @@ void DYN_delete_parameter( Global* gbl, const UCHAR** ptr, TEXT* proc_name)
  *	deletes a stored procedure parameter.
  *
  **************************************/
-	USHORT id;
 	SqlIdentifier name;
 
 	GET_STRING(ptr, name);
@@ -807,7 +806,7 @@ void DYN_delete_parameter( Global* gbl, const UCHAR** ptr, TEXT* proc_name)
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_prm, DYN_REQUESTS);
-	id = drq_e_prms;
+	USHORT id = drq_e_prms;
 
 	bool found = false;
 	
@@ -889,7 +888,6 @@ void DYN_delete_procedure( Global* gbl, const UCHAR** ptr)
  *	deletes a stored procedure.
  *
  **************************************/
-	USHORT id;
 	SqlIdentifier name;
 
 	GET_STRING(ptr, name);
@@ -907,7 +905,7 @@ void DYN_delete_procedure( Global* gbl, const UCHAR** ptr)
 	tdbb->tdbb_flags &= ~TDBB_prc_being_dropped;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_prms, DYN_REQUESTS);
-	id = drq_e_prms;
+	USHORT id = drq_e_prms;
 
 	bool found = false;
 
@@ -1048,7 +1046,6 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const TEXT* relation)
  *	and fields.
  *
  **************************************/
-	USHORT id;
 	SqlIdentifier relation_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
@@ -1060,7 +1057,7 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const TEXT* relation)
 		GET_STRING(ptr, relation_name);
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_rel_con2, DYN_REQUESTS);
-	id = drq_e_rel_con2;
+	USHORT id = drq_e_rel_con2;
 	
 	bool found = false;
 
@@ -1289,9 +1286,8 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
  *      members of the role.
  *
  **************************************/
-	USHORT id;
+	USHORT id = -1;
 	SqlIdentifier role_name, role_owner, user;
-	TEXT *ptr1, *ptr2;
 
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
@@ -1309,8 +1305,9 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
 
 	try {
 
-		for (ptr1 = tdbb->tdbb_attachment->att_user->usr_user_name, ptr2 =
-			 user; *ptr1; ptr1++, ptr2++)
+		TEXT* ptr2 = user;
+		for (const TEXT* ptr1 = tdbb->tdbb_attachment->att_user->usr_user_name;
+			*ptr1; ptr1++, ptr2++)
 		{
 			*ptr2 = UPPER7(*ptr1);
 		}
@@ -1360,7 +1357,7 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
 				PRIV IN RDB$USER_PRIVILEGES WITH
 					(PRIV.RDB$RELATION_NAME EQ role_name AND
 					 PRIV.RDB$OBJECT_TYPE = obj_sql_role)
-					OR(PRIV.RDB$USER EQ role_name AND
+					OR (PRIV.RDB$USER EQ role_name AND
 					   PRIV.RDB$USER_TYPE = obj_sql_role)
 
 					if (!DYN_REQUEST(drq_del_role_1)) {
@@ -1444,8 +1441,6 @@ void DYN_delete_shadow( Global* gbl, const UCHAR** ptr)
  *	Delete a shadow.
  *
  **************************************/
-	int shadow_number;
-
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
@@ -1464,7 +1459,7 @@ files = NULL;
 
 	try {
 
-	shadow_number = DYN_get_number(ptr);
+	const int shadow_number = DYN_get_number(ptr);
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FIL IN RDB$FILES WITH FIL.RDB$SHADOW_NUMBER EQ shadow_number
 
@@ -1518,14 +1513,13 @@ void DYN_delete_trigger( Global* gbl, const UCHAR** ptr)
  *	deletes a trigger.
  *
  **************************************/
-	USHORT id;
 	SqlIdentifier r, t;
 
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_trg_msgs, DYN_REQUESTS);
-	id = drq_e_trg_msgs;
+	USHORT id = drq_e_trg_msgs;
 
 	bool found = false;
 
@@ -1655,13 +1649,12 @@ void DYN_delete_trigger_msg( Global* gbl, const UCHAR** ptr, TEXT* trigger_name)
  *	deletes an trigger message.
  *
  **************************************/
-	int number;
 	SqlIdentifier t;
 
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
-	number = DYN_get_number(ptr);
+	const int number = DYN_get_number(ptr);
 	if (trigger_name)
 		strcpy(t, trigger_name);
 	else if (*(*ptr)++ == isc_dyn_trg_name)

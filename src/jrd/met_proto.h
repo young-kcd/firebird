@@ -43,7 +43,7 @@ namespace Jrd {
 
 void		MET_activate_shadow(Jrd::thread_db*);
 ULONG		MET_align(const dsc*, USHORT);
-void		MET_change_fields(Jrd::thread_db*, Jrd::jrd_tra*, dsc*);
+void		MET_change_fields(Jrd::thread_db*, Jrd::jrd_tra*, const dsc*);
 Jrd::Format*	MET_current(Jrd::thread_db*, Jrd::jrd_rel*);
 void		MET_delete_dependencies(Jrd::thread_db*, const TEXT*, USHORT);
 void		MET_delete_shadow(Jrd::thread_db*, USHORT);

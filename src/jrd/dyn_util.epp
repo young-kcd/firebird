@@ -120,8 +120,6 @@ SINT64 DYN_UTIL_gen_unique_id(thread_db*		tdbb,
  *	Generate a unique id using a generator.
  *
  **************************************/
-	SINT64 value;
-
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
@@ -146,6 +144,7 @@ SINT64 DYN_UTIL_gen_unique_id(thread_db*		tdbb,
 		req_handle = CMP_compile2(tdbb, reinterpret_cast<const UCHAR*>(blr), TRUE);
 	}
 	*request = req_handle;
+	SINT64 value;
 	EXE_start(tdbb, req_handle, dbb->dbb_sys_trans);
 	EXE_receive(tdbb, req_handle, 0, sizeof(value), (UCHAR*)&value);
 	EXE_unwind(tdbb, req_handle);
@@ -171,12 +170,10 @@ void DYN_UTIL_generate_constraint_name( thread_db* tdbb, Global* gbl, TEXT* buff
  *	Generate a name unique to RDB$RELATION_CONSTRAINTS.
  *
  **************************************/
-	jrd_req* request;
-
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	request = NULL;
+	jrd_req* request = NULL;
 	SSHORT id = -1;
 
 	try {
@@ -232,12 +229,10 @@ void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* gbl, TEXT* buffer)
  *	Generate a name unique to RDB$FIELDS.
  *
  **************************************/
-	jrd_req* request;
-
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	request = NULL;
+	jrd_req* request = NULL;
 	SSHORT id = -1;
 	
 	try {
@@ -296,7 +291,6 @@ void DYN_UTIL_generate_field_position(
  *	Generate a field position if not specified
  *
  **************************************/
-	jrd_req* request;
 	SLONG field_position = -1;
 
 	if (!relation_name)
@@ -305,7 +299,7 @@ void DYN_UTIL_generate_field_position(
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	request = NULL;
+	jrd_req* request = NULL;
 
 	try {
 
@@ -349,12 +343,10 @@ void DYN_UTIL_generate_index_name(thread_db* tdbb,
  *	Generate a name unique to RDB$INDICES.
  *
  **************************************/
-	jrd_req* request;
-
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	request = NULL;
+	jrd_req* request = NULL;
 	SSHORT id = -1;
 
 	try {
@@ -415,12 +407,10 @@ void DYN_UTIL_generate_trigger_name( thread_db* tdbb, Global* gbl, TEXT* buffer)
  *	Generate a name unique to RDB$TRIGGERS.
  *
  **************************************/
-	jrd_req* request;
-
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	request = NULL;
+	jrd_req* request = NULL;
 	SSHORT id = -1;
 
 	try {
@@ -466,7 +456,7 @@ bool DYN_UTIL_get_prot(thread_db*		tdbb,
 						  Global*		gbl,
 						  const SCHAR*	rname,
 						  const SCHAR*	fname,
-						  USHORT*	prot_mask)
+						  SecurityClass::flags_t*	prot_mask)
 {
 /**************************************
  *
@@ -478,7 +468,6 @@ bool DYN_UTIL_get_prot(thread_db*		tdbb,
  *	Get protection mask for relation or relation_field
  *
  **************************************/
-	jrd_req* request;
 	struct
 	{
 		SqlIdentifier relation_name;
@@ -487,7 +476,7 @@ bool DYN_UTIL_get_prot(thread_db*		tdbb,
 
 	SET_TDBB(tdbb);
 
-	request = CMP_find_request(tdbb, drq_l_prot_mask, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, drq_l_prot_mask, DYN_REQUESTS);
 
 	try {
 
@@ -527,12 +516,10 @@ void DYN_UTIL_store_check_constraints(thread_db*	tdbb,
  * Functional description
  *
  **************************************/
-	jrd_req* request;
-
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	request = CMP_find_request(tdbb, drq_s_chk_con, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, drq_s_chk_con, DYN_REQUESTS);
 
 	try {
 

@@ -1271,12 +1271,12 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
         case rel_gens:
             EVL_field (0, rpb->rpb_record, f_prc_name, &desc);
-            DFW_post_work (transaction, dfw_delete_generator, &desc, 0);
+            DFW_post_work(transaction, dfw_delete_generator, &desc, 0);
             break;
 
         case rel_funs:
             EVL_field (0, rpb->rpb_record, f_prc_name, &desc);
-            DFW_post_work (transaction, dfw_delete_udf, &desc, 0);
+            DFW_post_work(transaction, dfw_delete_udf, &desc, 0);
             break;
 
 		case rel_indices:
@@ -1442,7 +1442,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		replace_record(tdbb, rpb, &stack, transaction);
 	}
 
-/* Check to see if recursive revoke needs to be propogated */
+/* Check to see if recursive revoke needs to be propagated */
 
 	if ((RIDS) relation->rel_id == rel_priv)
 	{
@@ -2135,6 +2135,12 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 			DFW_post_work(transaction, dfw_modify_procedure, &desc1, id);
 			} // scope
 			break;
+
+        case rel_gens:
+            EVL_field (0, org_rpb->rpb_record, f_prc_name, &desc1);
+            // We won't accept modifying generators.
+            DFW_post_work(transaction, dfw_modify_generator, &desc1, 0);
+            break;
 
 		case rel_rfr:
 			EVL_field(0, org_rpb->rpb_record, f_rfr_rname, &desc1);

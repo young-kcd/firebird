@@ -25,14 +25,18 @@
 #ifndef JRD_DYN_UT_PROTO_H
 #define JRD_DYN_UT_PROTO_H
 
-void	DYN_UTIL_store_check_constraints(Jrd::thread_db*, Jrd::Global*, const TEXT*, const TEXT*);
-bool	DYN_UTIL_get_prot(Jrd::thread_db*, Jrd::Global*, const SCHAR*, const SCHAR*, USHORT*);
+void	DYN_UTIL_store_check_constraints(Jrd::thread_db*, Jrd::Global*,
+			const TEXT*, const TEXT*);
+bool	DYN_UTIL_get_prot(Jrd::thread_db*, Jrd::Global*, const SCHAR*,
+			const SCHAR*, Jrd::SecurityClass::flags_t*);
 void	DYN_UTIL_generate_trigger_name(Jrd::thread_db*, Jrd::Global*, TEXT*);
 void	DYN_UTIL_generate_index_name(Jrd::thread_db*, Jrd::Global*, TEXT*, UCHAR);
-void	DYN_UTIL_generate_field_position(Jrd::thread_db*, Jrd::Global*, const TEXT*, SLONG*);
+void	DYN_UTIL_generate_field_position(Jrd::thread_db*, Jrd::Global*,
+			const TEXT*, SLONG*);
 void	DYN_UTIL_generate_field_name(Jrd::thread_db*, Jrd::Global*, TEXT*);
 void	DYN_UTIL_generate_constraint_name(Jrd::thread_db*, Jrd::Global*, TEXT*);
-SINT64	DYN_UTIL_gen_unique_id(Jrd::thread_db*, Jrd::Global*, SSHORT, const SCHAR*, BLK*);
+SINT64	DYN_UTIL_gen_unique_id(Jrd::thread_db*, Jrd::Global*, SSHORT,
+			const SCHAR*, BLK*);
 
 #endif // JRD_DYN_UT_PROTO_H
 

@@ -135,13 +135,11 @@ void DYN_define_cache( Global* gbl, const UCHAR** ptr)
  *	Define a database cache file.
  *
  **************************************/
-	UCHAR verb;
-	jrd_req* request;
 	SSHORT id = -1;
 
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
-	request = NULL;
+	jrd_req* request = NULL;
 
 	try {
 
@@ -172,6 +170,7 @@ void DYN_define_cache( Global* gbl, const UCHAR** ptr)
 		X.RDB$FILE_START.NULL = FALSE;
 		X.RDB$FILE_LENGTH.NULL = TRUE;
 
+		UCHAR verb;
 		while ((verb = *(*ptr)++) != isc_dyn_end)
 		{
 			switch (verb)
@@ -235,8 +234,6 @@ void DYN_define_constraint(Global*		gbl,
  *	constraint, also an index for the constraint.
  *
  **************************************/
-	jrd_req* request;
-	SSHORT id;
 	UCHAR verb;
 	SqlIdentifier constraint_name, index_name, referred_index_name;
 	SqlIdentifier null_field_name, trigger_name;
@@ -261,8 +258,8 @@ void DYN_define_constraint(Global*		gbl,
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
-	request = NULL;
-	id = -1;
+	jrd_req* request = NULL;
+	SSHORT id = -1;
 
 	try {
 
@@ -636,10 +633,7 @@ void DYN_define_dimension(Global*		gbl,
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
-	UCHAR verb;
-	jrd_req* request;
-
-	request = CMP_find_request(tdbb, drq_s_dims, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, drq_s_dims, DYN_REQUESTS);
 
 	bool b_ending_store = false;
 
@@ -654,6 +648,7 @@ void DYN_define_dimension(Global*		gbl,
 			strcpy(DIM.RDB$FIELD_NAME, field_name);
 		}
 
+		UCHAR verb;
 		while ((verb = *(*ptr)++) != isc_dyn_end)
 		{
 			switch (verb)
@@ -712,9 +707,6 @@ void DYN_define_exception( Global* gbl, const UCHAR** ptr)
  *	Define an exception.
  *
  **************************************/
-
-	jrd_req* request;
-	UCHAR verb;
 	SqlIdentifier exception_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
@@ -728,7 +720,7 @@ void DYN_define_exception( Global* gbl, const UCHAR** ptr)
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
-	request = CMP_find_request(tdbb, drq_s_xcp, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, drq_s_xcp, DYN_REQUESTS);
 
 	bool b_ending_store = false;
 
@@ -739,6 +731,8 @@ void DYN_define_exception( Global* gbl, const UCHAR** ptr)
 		    /* GET_STRING(ptr, X.RDB$EXCEPTION_NAME); */
 			strcpy(X.RDB$EXCEPTION_NAME, exception_name);
 			X.RDB$MESSAGE.NULL = TRUE;
+
+			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
 			{
 				switch (verb)
@@ -790,7 +784,6 @@ void DYN_define_file(Global*		gbl,
  *
  **************************************/
 	UCHAR verb;
-	jrd_req* request;
 	SLONG temp;
 	USHORT man_auto;
 	SSHORT id;
@@ -798,7 +791,7 @@ void DYN_define_file(Global*		gbl,
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
-	request = NULL;
+	jrd_req* request = NULL;
 
 	try {
 
@@ -899,12 +892,11 @@ void DYN_define_difference(Global*		gbl,
  *	Define backup difference file.
  *
  **************************************/
-	jrd_req* request;
 	SSHORT id = -1;
 
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
-	request = NULL;
+	jrd_req* request = NULL;
 
 	try {
 
@@ -980,10 +972,7 @@ void DYN_define_filter( Global* gbl, const UCHAR** ptr)
  *	Define a blob filter.
  *
  **************************************/
-
-	UCHAR verb;
 	SqlIdentifier filter_name;
-	jrd_req* request;
 
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
@@ -996,7 +985,7 @@ void DYN_define_filter( Global* gbl, const UCHAR** ptr)
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
-	request = CMP_find_request(tdbb, drq_s_filters, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, drq_s_filters, DYN_REQUESTS);
 
 	bool b_ending_store = false;
 
@@ -1011,6 +1000,8 @@ void DYN_define_filter( Global* gbl, const UCHAR** ptr)
 			X.RDB$MODULE_NAME.NULL = TRUE;
 			X.RDB$ENTRYPOINT.NULL = TRUE;
 			X.RDB$DESCRIPTION.NULL = TRUE;
+
+			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
 			{
 				switch (verb)
@@ -1075,10 +1066,7 @@ void DYN_define_function( Global* gbl, const UCHAR** ptr)
  *	Define a user defined function.
  *
  **************************************/
-
-	UCHAR verb;
 	SqlIdentifier function_name;
-	jrd_req* request;
 
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
@@ -1091,7 +1079,7 @@ void DYN_define_function( Global* gbl, const UCHAR** ptr)
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
-	request = CMP_find_request(tdbb, drq_s_funcs, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, drq_s_funcs, DYN_REQUESTS);
 
 	bool b_ending_store = false;
 
@@ -1106,6 +1094,8 @@ void DYN_define_function( Global* gbl, const UCHAR** ptr)
 			X.RDB$MODULE_NAME.NULL = TRUE;
 			X.RDB$ENTRYPOINT.NULL = TRUE;
 			X.RDB$DESCRIPTION.NULL = TRUE;
+
+			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
 			{
 				switch (verb)
@@ -1176,7 +1166,7 @@ void DYN_define_function_arg(Global* gbl, const UCHAR** ptr, TEXT* function_name
  *	Define a user defined function argument.
  *
  **************************************/
-	UCHAR verb;
+
 	jrd_req* request = NULL;
 
 	thread_db* tdbb = JRD_get_thread_data();
@@ -1210,6 +1200,8 @@ void DYN_define_function_arg(Global* gbl, const UCHAR** ptr, TEXT* function_name
 		X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
 		X.RDB$CHARACTER_SET_ID.NULL = TRUE;
 		X.RDB$FIELD_PRECISION.NULL = TRUE;
+
+		UCHAR verb;
 		while ((verb = *(*ptr)++) != isc_dyn_end)
 			switch (verb)
 			{
@@ -1307,7 +1299,6 @@ void DYN_define_generator( Global* gbl, const UCHAR** ptr)
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
-	jrd_req* request;
 	SqlIdentifier generator_name;
 
 	generator_name[0] = 0;
@@ -1318,7 +1309,7 @@ void DYN_define_generator( Global* gbl, const UCHAR** ptr)
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
-	request = CMP_find_request(tdbb, drq_s_gens, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, drq_s_gens, DYN_REQUESTS);
 
 	bool b_ending_store = false;
 
@@ -1376,7 +1367,6 @@ void DYN_define_global_field(Global*		gbl,
 
 	UCHAR verb;
 	SqlIdentifier global_field_name;
-	jrd_req* request;
 	USHORT dtype;
 
 	global_field_name[0] = 0;
@@ -1392,7 +1382,7 @@ void DYN_define_global_field(Global*		gbl,
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
-	request = CMP_find_request(tdbb, drq_s_gfields, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, drq_s_gfields, DYN_REQUESTS);
 
 	bool b_ending_store = false;
 
@@ -1624,9 +1614,6 @@ void DYN_define_index(Global*		gbl,
  *	creates an index.
  *
  **************************************/
-
-	jrd_req* request;
-	SSHORT id, old_id;
 	SqlIdentifier index_name;
 	SqlIdentifier referenced_relation;
 	UCHAR verb;
@@ -1657,8 +1644,8 @@ void DYN_define_index(Global*		gbl,
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
-	request = NULL;
-	id = -1;
+	jrd_req* request = NULL;
+	SSHORT id = -1;
 
 	try {
 
@@ -1697,7 +1684,7 @@ void DYN_define_index(Global*		gbl,
 		/* Check if the table is actually a view */
 
 		old_request = request;
-		old_id = id;
+		SSHORT old_id = id;
 		request = CMP_find_request(tdbb, drq_l_view_idx, DYN_REQUESTS);
 		id = drq_l_view_idx;
 
@@ -2186,8 +2173,6 @@ void DYN_define_local_field(Global*		gbl,
  *	Execute a dynamic ddl statement.
  *
  **************************************/
-	jrd_req* request;
-	SSHORT id;
 	UCHAR verb;
 	SqlIdentifier local_field_name;
 	USHORT dtype, length, clength, precision;
@@ -2206,8 +2191,8 @@ void DYN_define_local_field(Global*		gbl,
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
-	request = NULL;
-	id = -1;
+	jrd_req* request = NULL;
+	SSHORT id = -1;
 
 	try {
 
@@ -2504,15 +2489,11 @@ void DYN_define_log_file(
  *	Define a database or shadow file.
  *
  **************************************/
-	UCHAR verb;
-	jrd_req* request;
-	SSHORT id;
-
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
-	request = NULL;
-	id = -1;
+	jrd_req* request = NULL;
+	SSHORT id = -1;
 
 	try {
 	
@@ -2556,6 +2537,8 @@ void DYN_define_log_file(
 			X.RDB$FILE_FLAGS.NULL = FALSE;
 			X.RDB$FILE_FLAGS = 0;
 			GET_STRING(ptr, X.RDB$FILE_NAME);
+
+			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
 				switch (verb)
 				{
@@ -2632,10 +2615,7 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, TEXT* procedure_name)
  *	Execute a dynamic ddl statement.
  *
  **************************************/
-	UCHAR verb;
 	SqlIdentifier parameter_name;
-	jrd_req* request;
-	jrd_req* request2;
 	// Leave these as USHORT. Don't convert the *_null ones to bool.
 	USHORT f_length, f_type, f_charlength, f_seg_length,
 		f_scale_null, f_subtype_null, f_seg_length_null,
@@ -2657,7 +2637,7 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, TEXT* procedure_name)
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
-	request = CMP_find_request(tdbb, drq_s_prms, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, drq_s_prms, DYN_REQUESTS);
 
 	try {
 
@@ -2685,6 +2665,7 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, TEXT* procedure_name)
 		P.RDB$SYSTEM_FLAG.NULL = TRUE;
 		P.RDB$DESCRIPTION.NULL = TRUE;
 
+		UCHAR verb;
 		while ((verb = *(*ptr)++) != isc_dyn_end)
 			switch (verb)
 			{
@@ -2804,7 +2785,7 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, TEXT* procedure_name)
 		if (P.RDB$FIELD_SOURCE.NULL) {
 			/* Need to store dummy global field */
 			id = drq_s_prm_src;
-			request2 = CMP_find_request(tdbb, drq_s_prm_src, DYN_REQUESTS);
+			jrd_req* request2 = CMP_find_request(tdbb, drq_s_prm_src, DYN_REQUESTS);
 			STORE(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
 				PS IN RDB$FIELDS USING
                 DYN_UTIL_generate_field_name(tdbb, gbl,
@@ -2884,8 +2865,6 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
  *	Execute a dynamic ddl statement.
  *
  **************************************/
-	UCHAR verb;
-	SSHORT id;
 	SqlIdentifier procedure_name;
 	SqlIdentifier owner_name;
 
@@ -2901,7 +2880,7 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 	/* msg 212: "Zero length identifiers not allowed" */
 
 	jrd_req* request = NULL;
-	id = -1;
+	SSHORT id = -1;
 
 	try {
 
@@ -2924,6 +2903,7 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 		P.RDB$PROCEDURE_INPUTS.NULL = TRUE;
 		P.RDB$PROCEDURE_OUTPUTS.NULL = TRUE;
 
+		UCHAR verb;
 		while ((verb = *(*ptr)++) != isc_dyn_end)
 			switch (verb)
 			{
@@ -3040,10 +3020,6 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
  *	Execute a dynamic ddl statement.
  *
  **************************************/
-	jrd_req* request;
-	UCHAR verb;
-	USHORT priv;
-	SSHORT id;
 	SqlIdentifier relation_name, owner_name, field_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
@@ -3057,8 +3033,8 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
-	request = NULL;
-	id = -1;
+	jrd_req* request = NULL;
+	SSHORT id = -1;
 
 	Firebird::PathName Path, Name;
 
@@ -3083,6 +3059,7 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 		REL.RDB$FLAGS = 0;
 		REL.RDB$FLAGS.NULL = FALSE;
 
+		UCHAR verb;
 		while ((verb = *(*ptr)++) != isc_dyn_end)
 			switch (verb)
 			{
@@ -3166,12 +3143,15 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 							so I included a call to strip trailing blanks. */
 					fb_utils::fb_exact_name_limit(PREL.RDB$OWNER_NAME, sizeof(PREL.RDB$OWNER_NAME));
 					if (strcmp(PREL.RDB$OWNER_NAME, owner_name)) {
+						SecurityClass::flags_t priv;
 						if (!DYN_UTIL_get_prot
 							(tdbb, gbl, PREL.RDB$RELATION_NAME, "", &priv))
+						{
 							DYN_error_punt(true, 115, NULL, NULL, NULL, NULL,
 										   NULL);
-						/* msg 115: "CREATE VIEW failed" */
-
+							/* msg 115: "CREATE VIEW failed" */
+						}
+						
 						if (!(priv & SCL_read)) {
 							ISC_STATUS* s = tdbb->tdbb_status_vector;
 							*s++ = isc_arg_gds;
@@ -3387,11 +3367,7 @@ void DYN_define_security_class( Global* gbl, const UCHAR** ptr)
 
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
-
-	jrd_req* request;
-	UCHAR verb;
-
-	request = CMP_find_request(tdbb, drq_s_classes, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, drq_s_classes, DYN_REQUESTS);
 
 	bool b_ending_store = false;
 
@@ -3402,6 +3378,8 @@ void DYN_define_security_class( Global* gbl, const UCHAR** ptr)
 			GET_STRING(ptr, SC.RDB$SECURITY_CLASS);
 			SC.RDB$ACL.NULL = TRUE;
 			SC.RDB$DESCRIPTION.NULL = TRUE;
+
+			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
 			{
 				switch (verb)
@@ -3457,8 +3435,6 @@ void DYN_define_sql_field(Global*		gbl,
  *	an global field name.
  *
  **************************************/
-	jrd_req* request;
-	SSHORT id;
 	UCHAR verb;
 	SqlIdentifier sql_field_name;
 	USHORT dtype;
@@ -3475,8 +3451,8 @@ void DYN_define_sql_field(Global*		gbl,
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
-	request = NULL;
-	id = -1;
+	jrd_req* request = NULL;
+	SSHORT id = -1;
 
 	try {
 
@@ -3746,8 +3722,6 @@ void DYN_define_shadow( Global* gbl, const UCHAR** ptr)
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
-	UCHAR verb;
-	jrd_req* request;
 	bool found = false;
 
 	const SLONG shadow_number = DYN_get_number(ptr);
@@ -3755,7 +3729,7 @@ void DYN_define_shadow( Global* gbl, const UCHAR** ptr)
 /* If a shadow set identified by the
    shadow number already exists return error.  */
 
-	request = CMP_find_request(tdbb, drq_l_shadow, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, drq_l_shadow, DYN_REQUESTS);
 
 	try {
 
@@ -3782,6 +3756,7 @@ void DYN_define_shadow( Global* gbl, const UCHAR** ptr)
 	}
 
 	SLONG start = 0;
+	UCHAR verb;
 	while ((verb = *(*ptr)++) != isc_dyn_end)
 	{
 		switch (verb)
@@ -3824,8 +3799,6 @@ void DYN_define_trigger(Global*		gbl,
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
-	jrd_req* request;
-	UCHAR	verb;
 	SqlIdentifier t;
 
 	GET_STRING(ptr, t);
@@ -3844,7 +3817,7 @@ void DYN_define_trigger(Global*		gbl,
 		strcpy(trigger_name, t);
 	}
 
-	request = CMP_find_request(tdbb, drq_s_triggers, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, drq_s_triggers, DYN_REQUESTS);
 
 	bool b_ending_store = false;
 
@@ -3878,6 +3851,8 @@ void DYN_define_trigger(Global*		gbl,
 		X.RDB$TRIGGER_SOURCE.NULL = TRUE;
 		X.RDB$DESCRIPTION.NULL = TRUE;
 		strcpy(X.RDB$TRIGGER_NAME, t);
+
+		UCHAR verb;
 		while ((verb = *(*ptr)++) != isc_dyn_end)
 		{
 			switch (verb)
@@ -3991,10 +3966,7 @@ void DYN_define_trigger_msg(Global* gbl, const UCHAR** ptr, const TEXT* trigger_
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
-	jrd_req* request;
-	UCHAR verb;
-
-	request = CMP_find_request(tdbb, drq_s_trg_msgs, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, drq_s_trg_msgs, DYN_REQUESTS);
 
 	bool b_ending_store = false;
 
@@ -4012,6 +3984,7 @@ void DYN_define_trigger_msg(Global* gbl, const UCHAR** ptr, const TEXT* trigger_
 				X.RDB$TRIGGER_NAME.NULL = TRUE;
 			}
 
+			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
 			{
 				switch (verb)
@@ -4067,10 +4040,6 @@ void DYN_define_view_relation( Global* gbl, const UCHAR** ptr, const TEXT* view)
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
-	jrd_req* request;
-	UCHAR verb;
-	SSHORT id;
-
 	SqlIdentifier view_name;
 	strncpy(view_name, view, sizeof(view_name));
 	view_name[sizeof(view_name) - 1] = 0;
@@ -4079,8 +4048,8 @@ void DYN_define_view_relation( Global* gbl, const UCHAR** ptr, const TEXT* view)
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
-	request = CMP_find_request(tdbb, drq_s_view_rels, DYN_REQUESTS);
-	id = drq_s_view_rels;
+	jrd_req* request = CMP_find_request(tdbb, drq_s_view_rels, DYN_REQUESTS);
+	SSHORT id = drq_s_view_rels;
 
 	bool b_ending_store = false;
 
@@ -4117,6 +4086,8 @@ void DYN_define_view_relation( Global* gbl, const UCHAR** ptr, const TEXT* view)
 			GET_STRING(ptr, VRL.RDB$RELATION_NAME);
 			VRL.RDB$CONTEXT_NAME.NULL = TRUE;
 			VRL.RDB$VIEW_CONTEXT.NULL = TRUE;
+
+			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
 			{
 				switch (verb)
@@ -4183,13 +4154,12 @@ static void check_unique_name(	thread_db*	tdbb,
  *
  **************************************/
 
-	jrd_req* request;
 	bool found = false;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	request = NULL;
+	jrd_req* request = NULL;
 
 	try {
 
@@ -4262,12 +4232,10 @@ static bool find_field_source(thread_db*	tdbb,
  *
  **************************************/
 
-	jrd_req* request;
-
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	request = CMP_find_request(tdbb, drq_l_fld_src2, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, drq_l_fld_src2, DYN_REQUESTS);
 
 /* CVC: It seems the logic of this function was changed over time. It's unlikely
 it will cause a failure that leads to call DYN_error_punt(), unless the request finds
@@ -4321,11 +4289,9 @@ static bool get_who( thread_db* tdbb, Global* gbl, SCHAR* output_name)
  *	Get user name
  *
  **************************************/
-	jrd_req* request;
-
 	SET_TDBB(tdbb);
 
-	request = CMP_find_request(tdbb, drq_l_user_name, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, drq_l_user_name, DYN_REQUESTS);
 
 	try {
 		if (!request)

@@ -24,7 +24,9 @@
 #ifndef JRD_ACL_H
 #define JRD_ACL_H
 
-// CVC: The correct type for these ACL_ and privileges seems to be UCHAR, not int.
+// CVC: The correct type for these ACL_ and privileges seems to be UCHAR instead
+// of int, based on usage, but they aren't coherent either with scl.epp's
+// P_NAMES.p_names_acl that's USHORT.
 
 const int ACL_version	= 1;
 
