@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.firebird,v 1.12 2002-01-04 11:34:16 skywalker Exp $
+#   $Id: Makefile.in.firebird,v 1.13 2002-01-06 13:06:36 skywalker Exp $
 # 
 
 ROOT=..
@@ -62,8 +62,21 @@ dirs = alice burp dudley dsql extlib gpre intl isql journal jrd lock msgs \
 .PHONY: firebird super_firebird $(dirs)
 
 
-firebird: phase1 phase2 phase3
+firebird: updateBuildNum phase1 phase2 phase3
 
+
+#----------------------------------------------------------------------------
+# jrd/build_no.h contains the version and build# fields used throughout the 
+# program and quoted in the tools.  This routine will update the build_no.h 
+# file with the auto update build# script file, writeBuildNum.sh.  The 
+# writeBuildNum.sh script is autoupdated by CVS checkins.
+#
+.PHONY: updateBuildNum
+
+updateBuildNum : jrd/build_no.h
+
+jrd/build_no.h : misc/writeBuildNum.sh
+	(cd ..; ./src/misc/writeBuildNum.sh rebuildHeader)
 
 #---------------------------------------------------------------------------
 # Phase1: make a gpre_static from scratch so we can parse .e and .epp files

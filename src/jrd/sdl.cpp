@@ -336,12 +336,12 @@ ADS array_desc, SLONG * variables, void (*callback) (), SLICE argument)
 	arg.sdl_arg_status_vector = status_vector;
 	p = sdl + 1;
 
-	while ((UCHAR) * p != gds_sdl_eoc)
+	while ((UCHAR) * p != gds_sdl_eoc) {
 		switch (*p++) {
 		case gds_sdl_struct:
 			for (n = *p++; n; --n) {
 				offset = p - sdl - 1;
-				if (!(p = sdl_desc(p, &junk)))
+				if (!(p = sdl_desc(p, &junk))) 
 					return error(status_vector, gds_invalid_sdl,
 								 gds_arg_number, (SLONG) offset, 0);
 			}
@@ -375,6 +375,7 @@ ADS array_desc, SLONG * variables, void (*callback) (), SLICE argument)
 				return FAILURE;
 			break;
 		}
+    }
 
 	return SUCCESS;
 }
