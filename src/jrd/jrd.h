@@ -35,6 +35,7 @@
 #include "../jrd/all.h"
 #include "../jrd/nbak.h"
 #include "../jrd/btn.h"
+#include "../jrd/all.h"
 #if defined(UNIX) && defined(SUPERSERVER)
 #include <setjmp.h>
 #endif
@@ -42,6 +43,7 @@
 #include "../include/fb_vector.h"
 #include "fb_string.h"
 #include "../common/classes/objects_array.h"
+#include "../common/classes/stack.h"
 
 #ifdef DEV_BUILD
 #define DEBUG                   if (debug) DBG_supervisor(debug);

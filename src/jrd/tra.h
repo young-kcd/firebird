@@ -37,6 +37,7 @@
 #include "../common/classes/tree.h"
 #include "../jrd/rpb_chain.h"
 #include "../jrd/exe.h"
+#include "../jrd/blb.h" // For bid structure
 
 namespace Jrd {
 
@@ -50,13 +51,35 @@ class Record;
 class VerbAction;
 class ArrayField;
 
+// Blobs active in transaction identified by bli_temp_id. Please keep this 
+// structure small as there can be huge amount of them floating in memory.
+struct BlobIndex {
+	ULONG bli_temp_id;
+	bool bli_materialized;
+	jrd_req* bli_request;
+	union {
+		bid bli_blob_id; // ID of materialized blob
+		blb* bli_blob_object; // Blob object
+	};
+    static const ULONG& generate(const void *sender, const BlobIndex& item) {
+		return item.bli_temp_id;
+    }
+	// Empty default constructor to make it behave like POD structure
+	BlobIndex() {}
+	BlobIndex(ULONG temp_id, blb* blob_object) : 
+		bli_temp_id(temp_id), bli_materialized(false), bli_request(NULL), 
+		bli_blob_object(blob_object) 
+	{ }
+};
+
+typedef Firebird::BePlusTree<BlobIndex, ULONG, MemoryPool, BlobIndex> BlobIndexTree;
 
 /* Transaction block */
 
 class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 {
     public:
-	jrd_tra(MemoryPool& p) : tra_resources(p) {}
+	jrd_tra(MemoryPool& p) : tra_blobs(&p), tra_resources(p) {}
 	class Attachment* tra_attachment;	/* database attachment */
 	SLONG tra_number;			/* transaction number */
 	SLONG tra_top;				/* highest transaction in snapshot */
@@ -66,7 +89,7 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 	jrd_tra*	tra_next;		/* next transaction in database */
 	jrd_tra*	tra_sibling;	/* next transaction in group */
 	JrdMemoryPool* tra_pool;		/* pool for transaction */
-	blb*		tra_blobs;		/* Linked list of active blobs */
+	BlobIndexTree tra_blobs;		/* list of active blobs */
 	ArrayField*	tra_arrays;		/* Linked list of active arrays */
 	Lock*		tra_lock;		/* lock for transaction */
 	vec*		tra_relation_locks;	/* locks for relations */

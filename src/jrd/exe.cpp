@@ -1801,6 +1801,8 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	jrd_req* old_request = tdbb->tdbb_request;
 	tdbb->tdbb_request = request;
 	tdbb->tdbb_transaction = transaction;
+    fb_assert(request->req_caller == NULL);
+	request->req_caller = old_request;
 
 	const SLONG save_point_number = (transaction->tra_save_point) ?
 		transaction->tra_save_point->sav_number : 0;
@@ -2289,6 +2291,8 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 								tdbb->tdbb_default = old_pool;
 								tdbb->tdbb_request = old_request;
+								fb_assert(request->req_caller == old_request);
+								request->req_caller = NULL;
 
 								/* Save the previous state of req_error_handler
 								   bit. We need to restore it later. This is
@@ -2318,6 +2322,8 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 								catch_disabled = false;
 								tdbb->tdbb_default = request->req_pool;
 								tdbb->tdbb_request = request;
+								fb_assert(request->req_caller == NULL);
+								request->req_caller = old_request;
 
 								/* The error is dealt with by the application, cleanup
 								   this block's savepoint. */
@@ -2790,6 +2796,8 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	tdbb->tdbb_default = old_pool;
 	tdbb->tdbb_transaction = (tdbb->tdbb_request = old_request) ?
 		old_request->req_transaction : NULL;
+	fb_assert(request->req_caller == old_request);
+	request->req_caller = NULL;
 
 	// in the case of a pending error condition (one which did not
 	// result in a exception to the top of looper), we need to
@@ -3177,15 +3185,34 @@ static void release_blobs(thread_db* tdbb, jrd_req* request)
 	if (transaction) {
 		DEV_BLKCHK(transaction, type_tra);
 
-		/* Release blobs assigned by this request */
+		/* Release blobs bound to this request */
 
-		for (blb** blob = &transaction->tra_blobs; *blob;) {
-			DEV_BLKCHK(*blob, type_blb);
-			if ((*blob)->blb_request == request)
-				BLB_cancel(tdbb, *blob);
-			else
-				blob = &(*blob)->blb_next;
-		}
+		if (request->req_blobs.getFirst()) do {
+			ULONG blob_temp_id = request->req_blobs.current();
+			if (transaction->tra_blobs.locate(blob_temp_id)) {
+				BlobIndex *current = &transaction->tra_blobs.current();
+				if (current->bli_materialized)
+					transaction->tra_blobs.fastRemove();
+				else {
+					// Blob was created by request, is accounted for internal needs, 
+					// but is not materialized. Get rid of it.
+					BLB_cancel(tdbb, current->bli_blob_object);
+					// Since the routine above modifies req_blobs 
+					// we need to reestablish accessor position
+					if (request->req_blobs.locate(Firebird::locGreat, blob_temp_id))
+						continue;
+					else
+						break;
+				}
+			} else {
+				// Blob accounting inconsistent
+				fb_assert(false);
+			}
+			if (!request->req_blobs.getNext())
+				break;
+		} while(true);
+
+		request->req_blobs.clear();
 
 		/* Release arrays assigned by this request */
 

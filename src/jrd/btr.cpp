@@ -792,8 +792,13 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 #ifdef EXPRESSION_INDICES
 			// for expression indices, compute the value of the expression
 			if (idx->idx_expression) {
-				jrd_req* current_request = tdbb->tdbb_request;
+				// 15 June 2004. Nickolay Samofatov.
+				// This code doesn't look correct. It should get broken in
+				// case of reentrance due to recursion or multi-threading
+				fb_assert(idx->idx_expression_request->req_caller == NULL);
+				idx->idx_expression_request->req_caller = tdbb->tdbb_request;
 				tdbb->tdbb_request = idx->idx_expression_request;
+
 				tdbb->tdbb_request->req_rpb[0].rpb_record = record;
 
 				if (!(desc_ptr = EVL_expr(tdbb, idx->idx_expression))) {
@@ -801,7 +806,9 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 				}
 
 				isNull = ((tdbb->tdbb_request->req_flags & req_null) == req_null);
-				tdbb->tdbb_request = current_request;
+
+				tdbb->tdbb_request = idx->idx_expression_request->req_caller;
+				idx->idx_expression_request->req_caller = NULL;
 			}
 			else
 #endif

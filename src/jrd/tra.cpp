@@ -999,8 +999,18 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
  **************************************/
 	SET_TDBB(tdbb);
 
-	while (transaction->tra_blobs)
-		BLB_cancel(tdbb, transaction->tra_blobs);
+	if (transaction->tra_blobs.getFirst()) do {
+		BlobIndex *current = &transaction->tra_blobs.current();
+		if (current->bli_materialized) {
+			if (!transaction->tra_blobs.getNext())
+				break;
+		} else {
+			ULONG temp_id = current->bli_temp_id;
+			BLB_cancel(tdbb, current->bli_blob_object);
+			if (!transaction->tra_blobs.locate(Firebird::locGreat, temp_id))
+				break;
+		}
+	} while(true);
 
 	while (transaction->tra_arrays)
 		BLB_release_array(transaction->tra_arrays);

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.81 2004-06-08 13:39:32 alexpeshkoff Exp $
+$Id: blb.cpp,v 1.82 2004-06-22 20:13:08 skidder Exp $
 */
 
 #include "firebird.h"
@@ -83,7 +83,6 @@ inline bool SEGMENTED(const blb* blob)
 static ArrayField* alloc_array(jrd_tra*, internal_array_desc*);
 static blb* allocate_blob(thread_db*, jrd_tra*);
 static ISC_STATUS blob_filter(USHORT, BlobControl*, SSHORT, SLONG);
-static void check_BID_validity(const blb*, thread_db*);
 static blb* copy_blob(thread_db*, const bid*, bid*);
 static void delete_blob(thread_db*, blb*, ULONG);
 static void delete_blob_id(thread_db*, const bid*, SLONG, jrd_rel*);
@@ -904,12 +903,14 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 /* If the source is a permanent blob, then the blob must be copied.
    Otherwise find the temporary blob referenced.  */
 
-	ArrayField* array = 0;
-	blb* blob = 0;
-	bool materialized_blob, refetch_flag;
+	ArrayField* array = NULL;
+	BlobIndex* blobIndex;
+	blb* blob = NULL;
+	bool materialized_blob; // Set if we materialized temporary blob in this routine
 	
 	do {
-		materialized_blob = refetch_flag = false;
+		materialized_blob = false;
+		blobIndex = NULL;
 		if (source->bid_relation_id)
 			blob = copy_blob(tdbb, source, destination);
 		else if ((to_desc->dsc_dtype == dtype_array) &&
@@ -919,37 +920,73 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 			materialized_blob = true;
 		}
 		else {
-			for (blob = transaction->tra_blobs; blob; blob = blob->blb_next)
-				if (blob->blb_temp_id == source->bid_stuff.bid_temp_id)
-				{
-					materialized_blob = true;
-					break;
+			if (transaction->tra_blobs.locate(source->bid_stuff.bid_temp_id)) {
+				blobIndex = &transaction->tra_blobs.current();
+				if (blobIndex->bli_materialized) {
+					if (blobIndex->bli_request) {
+						// Walk through call stack looking if our BLOB is 
+						// owned by somebody from our call chain
+						jrd_req* temp_req = request;
+						do {
+							if (blobIndex->bli_request == temp_req)
+								break;
+							temp_req = temp_req->req_caller;
+						} while (temp_req);
+						if (!temp_req) {
+							// Trying to use temporary id of materialized blob from another request
+							ERR_post(isc_bad_segstr_id, 0);
+						}
+					}
+					source = &blobIndex->bli_blob_id;
+					continue;
 				}
+				else {
+					materialized_blob = true;
+					blob = blobIndex->bli_blob_object;
+				}
+			}
 		}
 
-		if (!blob || MemoryPool::blk_type(blob) != type_blb ||
-			blob->blb_attachment != tdbb->tdbb_attachment ||
-			!(blob->blb_flags & BLB_closed) ||
-			(blob->blb_request && blob->blb_request != request))
+		if (!blob || !(blob->blb_flags & BLB_closed))
 		{
 			ERR_post(isc_bad_segstr_id, 0);
 		}
 
-		if (materialized_blob && !(blob->blb_flags & BLB_temporary)) {
-			refetch_flag = true;
-			source = &blob->blb_blob_id;
-		}
-	} while (refetch_flag);
+		break;
+	} while (true);
 
 	blob->blb_relation = relation;
 	destination->bid_relation_id = relation->rel_id;
 	destination->bid_stuff.bid_number = DPM_store_blob(tdbb, blob, record);
+	// This is the only place in the engine where blobs are materialized
+	// If new places appear code below should transform to common sub-routine
 	if (materialized_blob) {
-		blob->blb_flags &= ~BLB_temporary;
-		blob->blb_blob_id = *destination;
-		blob->blb_request = request;
+		if (!blobIndex) {
+			// In case of normal blobs tra_blobs is already positioned on item we need
+			if (transaction->tra_blobs.locate(blob->blb_temp_id)) {
+				blobIndex = &transaction->tra_blobs.current();
+			}
+		}
+		
+		// If we didn't find materialized blob in transaction blob index it 
+		// means memory structures are inconsistent and crash is appropriate 
+		blobIndex->bli_materialized = true;
+		blobIndex->bli_blob_id = *destination;
+		// Assign temporary BLOB ownership to top-level request if it is not assigned yet
+		jrd_req* own_request;
+		if (blobIndex->bli_request) {
+			own_request = blobIndex->bli_request;
+		} else {
+			own_request = request;
+			while (own_request->req_caller)
+				own_request = own_request->req_caller;
+			blobIndex->bli_request = own_request;
+			own_request->req_blobs.add(blob->blb_temp_id);
+		}
+		// Not sure that this ownership is entirely correct for arrays, but
+		// even if I make mistake here widening array lifetime this should not hurt much
 		if (array)
-			array->arr_request = request;
+			array->arr_request = own_request;
 	}
 	release_blob(blob, !materialized_blob);
 }
@@ -1005,7 +1042,32 @@ void BLB_move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc, j
 		blob_desc.dsc_address = reinterpret_cast<UCHAR*>(&temp_bid);
 		BLB_put_segment(tdbb, blob, fromstr, blob_desc.dsc_length);
 		BLB_close(tdbb, blob);
+		ULONG blob_temp_id = blob->blb_temp_id;
 		BLB_move(tdbb, &blob_desc, to_desc, field);
+		// 14-June-2004. Nickolay Samofatov
+		// The code below saves a lot of memory when bunches of records are 
+		// converted to blobs from strings. If BLB_move is materialized blob we
+		// can discard it without consequences since we know there are no other
+		// descriptors using temporary ID of blob we just created. If blob is 
+		// still temporary we cannot free it as it may now be used inside 
+		// trigger for updatable view. In theory we could make this decision 
+		// solely via checking that destination field belongs to updatable 
+		// view, but direct check that blob is fully materialized should be 
+		// more future proof. 
+		jrd_tra* transaction = tdbb->tdbb_request->req_transaction;
+		if (transaction->tra_blobs.locate(blob_temp_id)) {
+			BlobIndex* current = &transaction->tra_blobs.current();
+			if (current->bli_materialized)
+				transaction->tra_blobs.fastRemove();
+			else {
+				// But even in bad case when we cannot free blob immediately
+				// we may still bind lifetime of blob to current request.
+				if (!current->bli_request) { 
+					current->bli_request = tdbb->tdbb_request;
+					current->bli_request->req_blobs.add(blob_temp_id);
+				}
+			}
+		}
 	}
 }
 
@@ -1120,17 +1182,17 @@ blb* BLB_open2(thread_db* tdbb,
 			 * better.  94-Jan-07 Daves.
 			 */
 
-			/* Search the list of transaction blobs for a match */
-			const blb* new_blob;
-			for (new_blob = transaction->tra_blobs; new_blob; 
-				new_blob = new_blob->blb_next) 
-			{
-				if (new_blob->blb_temp_id == blob_id->bid_stuff.bid_temp_id) {
-					break;
-				}
+			/* Search the index of transaction blobs for a match */
+			const blb* new_blob = NULL;
+			if (transaction->tra_blobs.locate(blob_id->bid_stuff.bid_temp_id)) {
+				BlobIndex *current = &transaction->tra_blobs.current();
+				if (!current->bli_materialized)
+					new_blob = current->bli_blob_object;
 			}
 
-			check_BID_validity(new_blob, tdbb);
+			if (!new_blob || !(new_blob->blb_flags & BLB_temporary)) {
+				ERR_post(isc_bad_segstr_id, 0);
+			}
 
 			blob->blb_lead_page = new_blob->blb_lead_page;
 			blob->blb_max_sequence = new_blob->blb_max_sequence;
@@ -1641,8 +1703,6 @@ static blb* allocate_blob(thread_db* tdbb, jrd_tra* transaction)
 
 	blb* blob = FB_NEW_RPT(*transaction->tra_pool, dbb->dbb_page_size) blb();
 	blob->blb_attachment = tdbb->tdbb_attachment;
-	blob->blb_next = transaction->tra_blobs;
-	transaction->tra_blobs = blob;
 	blob->blb_transaction = transaction;
 
 /* Compute some parameters governing various maximum sizes based on
@@ -1654,7 +1714,15 @@ static blb* allocate_blob(thread_db* tdbb, jrd_tra* transaction)
 							sizeof(Ods::blh);
 	blob->blb_max_pages = blob->blb_clump_size >> SHIFTLONG;
 	blob->blb_pointers = (dbb->dbb_page_size - BLP_SIZE) >> SHIFTLONG;
-	blob->blb_temp_id = ++transaction->tra_next_blob_id;
+	// This code is to handle huge number of blob updates done in one transaction.
+	// Blob index counter may wrap in this case
+	do {
+		transaction->tra_next_blob_id++;
+		// Do not generate null blob ID
+		if (!transaction->tra_next_blob_id)
+			transaction->tra_next_blob_id++;
+	} while (!transaction->tra_blobs.add(BlobIndex(transaction->tra_next_blob_id, blob)));
+	blob->blb_temp_id = transaction->tra_next_blob_id;
 
 	return blob;
 }
@@ -1743,50 +1811,6 @@ static ISC_STATUS blob_filter(	USHORT	action,
 	default:
 		ERR_post(isc_uns_ext, 0);
 		return FB_SUCCESS;
-	}
-}
-
-
-static void check_BID_validity(const blb* blob, thread_db* tdbb)
-{
-/**************************************
- *
- *      c h e c k _ B I D _ v a l i d i t y
- *
- **************************************
- *
- * Functional description
- *      There are times when an application passes the engine
- *      a bid, which we then assume points to a valid blb structure.
- *      Specifically, this can occur when an application is trying
- *      to open a newly created blob (that doesn't have a relation
- *      ID assigned).
- *
- *      However, it is quite possible that garbage bid is passed in
- *      from an application; resulting in core dumps within the engine
- *      due to trying to make use of the information.
- *
- *      This function takes a bid's pointer to a blb, and performs
- *      some validity checks on it.  It can't catch all possible
- *      garbage inputs from an application, but should catch
- *      many of them.
- *
- *      Note that we can't BUGCHECK or BLKCHK here, this is an
- *      application level error.
- *
- *      94-Jan-07 Daves
- *
- **************************************/
-
-	if (!blob ||
-		// Nickolay Samofatov. These checks are now unnecessary since we
-		// look up blob using temp_id inside the transaction blobs only.
-		// They were unreliable, anyway.
-		//   MemoryPool::blk_type(blob) != type_blb ||
-		//   blob->blb_attachment != tdbb->tdbb_attachment ||
-		blob->blb_level > 2 || !(blob->blb_flags & BLB_temporary))
-	{
-		ERR_post(isc_bad_segstr_id, 0);
 	}
 }
 
@@ -2245,11 +2269,22 @@ static void release_blob(blb* blob, const bool purge_flag)
 /* Disconnect blob from transaction block. */
 
 	if (purge_flag) {
-		for (blb** ptr = &transaction->tra_blobs; *ptr; ptr = &(*ptr)->blb_next) {
-			if (*ptr == blob) {
-				*ptr = blob->blb_next;
-				break;
+		if (transaction->tra_blobs.locate(blob->blb_temp_id)) {
+			jrd_req* blob_request = transaction->tra_blobs.current().bli_request;
+			if (blob_request) {
+				if (blob_request->req_blobs.locate(blob->blb_temp_id)) {
+					blob_request->req_blobs.fastRemove();
+				} else {
+					// We should never get here because when bli_request is assigned
+					// item should be added to req_blobs array
+					fb_assert(false);
+				}					
 			}
+			transaction->tra_blobs.fastRemove();
+		} else {
+			// We should never get here because allocate_blob stores each blob object 
+			// in tra_blobs
+			fb_assert(false);
 		}
 	}
 
@@ -2258,8 +2293,7 @@ static void release_blob(blb* blob, const bool purge_flag)
 		blob->blb_pages = NULL;
 	}
 
-	if (purge_flag)
-		delete blob;
+	delete blob;
 }
 
 

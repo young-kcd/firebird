@@ -190,6 +190,7 @@ static char ib_prefix_msg_val[MAXPATHLEN];
 
 
 #include "../include/fb_types.h"
+#include "../jrd/jrd.h"
 
 
 // This structure is used to parse the firebird.msg file.
@@ -1146,6 +1147,57 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
 		va_start(ptr, text);
 		vfprintf(file, text, ptr);
 		fprintf(file, "\n\n");
+		fclose(file);
+	}
+#ifdef WIN_NT
+	trace_mutex.leave();
+#endif
+
+	umask(oldmask);
+
+}
+
+void API_ROUTINE gds__print_pool(JrdMemoryPool* pool, const TEXT* text, ...)
+{
+/**************************************
+ *
+ *	g d s _ p r i n t _ p o o l
+ *
+ **************************************
+ *
+ * Functional description
+ *	Print pool contents to the log file. 
+ * Preced it with normal log record as in gds__log
+ *
+ **************************************/
+	va_list ptr;
+	time_t now;
+	TEXT name[MAXPATHLEN];
+
+#ifdef HAVE_GETTIMEOFDAY
+	struct timeval tv;
+	GETTIMEOFDAY(&tv);
+	now = tv.tv_sec;
+#else
+	now = time((time_t *)0);
+#endif
+
+	gds__prefix(name, LOGFILE);
+
+	const int oldmask = umask(0111);
+#ifdef WIN_NT
+	trace_mutex.enter();
+#endif
+	FILE* file = fopen(name, "a");
+	if (file != NULL)
+	{
+		fprintf(file, "\n%s%s\t%.25s\t", 
+				   ISC_get_host(name, MAXPATHLEN), gdslogid, ctime(&now));
+		va_start(ptr, text);
+		vfprintf(file, text, ptr);
+		fprintf(file, "\n");
+		pool->print_contents(file, false);
+		fprintf(file, "\n");
 		fclose(file);
 	}
 #ifdef WIN_NT

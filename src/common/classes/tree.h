@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: tree.h,v 1.33 2004-06-21 22:45:17 skidder Exp $
+ *  $Id: tree.h,v 1.34 2004-06-22 20:13:01 skidder Exp $
  *
  */
 
@@ -115,7 +115,7 @@ class BePlusTree {
 public:
 	BePlusTree(Allocator *_pool) : pool(_pool), level(0), root(NULL), defaultAccessor(this)	{ };
 
-    ~BePlusTree() {
+	void clear() {
 		// We delete tree which was not fully created
 		if (!root) return;
 		
@@ -145,6 +145,14 @@ public:
 				list = t;
 			}
 		}
+
+		// Initialize fields to make tree usable again
+		root = NULL;
+		level = 0;
+	}
+
+    ~BePlusTree() {
+		clear();
 	}
 	
 	bool add(const Value& item);

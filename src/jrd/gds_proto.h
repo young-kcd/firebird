@@ -129,11 +129,15 @@ void	API_ROUTINE gds__vtov(const SCHAR*, char*, SSHORT);
 void	API_ROUTINE isc_print_sqlerror(SSHORT, const ISC_STATUS*);
 void	API_ROUTINE isc_sql_interprete(SSHORT, TEXT*, SSHORT);
 SINT64	API_ROUTINE isc_portable_integer(const UCHAR*, SSHORT);
+
+// 14-June-2004. Nickolay Samofatov. The routines below are not part of the 
+// API and are not exported. Maybe use another prefix like GDS_ for them?
 void	gds__cleanup(void);
 void	gds__ulstr(char* buffer, ULONG value, const int minlen, const char filler);
 
 void	gds__default_printer(void*, SSHORT, const TEXT*);
 void	gds__trace_printer(void*, SSHORT, const TEXT*);
+void	gds__print_pool(class JrdMemoryPool*, const TEXT*, ...);
 
 
 #if (defined SOLARIS && !defined(MAP_ANON))

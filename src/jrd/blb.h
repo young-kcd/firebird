@@ -62,7 +62,6 @@ class blb : public pool_alloc_rpt<UCHAR, type_blb>
 	UCHAR*		blb_segment;	/* Next segment to be addressed */
 	BlobControl*	blb_filter;	/* Blob filter control block, if any */
 	bid			blb_blob_id;	/* Id of materialized blob */
-	jrd_req*	blb_request;	/* request that assigned temporary blob */
 	vcl*		blb_pages;		/* Vector of pages */
 	USHORT blb_pointers;		/* Max pointer on a page */
 	USHORT blb_level;			/* Storage type */

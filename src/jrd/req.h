@@ -140,6 +140,9 @@ class SaveRecordParam : public pool_alloc<type_srpb>
 	record_param srpb_rpb[1];		/* record parameter blocks */
 };
 
+/* List of active blobs controlled by request */
+
+typedef Firebird::BePlusTree<ULONG, ULONG, MemoryPool> TempBlobIdTree;
 
 /* request block */
 
@@ -147,7 +150,7 @@ class jrd_req : public pool_alloc_rpt<record_param, type_req>
 {
 public:
 	jrd_req(JrdMemoryPool* pool) :
-		req_external(*pool), req_access(*pool), req_resources(*pool),
+		req_blobs(pool), req_external(*pool), req_access(*pool), req_resources(*pool),
 		req_fors(*pool), req_invariants(*pool) { };
 	Attachment*	req_attachment;		// database attachment
 	USHORT		req_count;			// number of streams
@@ -157,6 +160,9 @@ public:
 	vec*		req_sub_requests;	// vector of sub-requests
 	jrd_tra*	req_transaction;
 	jrd_req*	req_request;		/* next request in Database */
+	jrd_req*	req_caller;			// Caller of this request
+									// This field may be used to reconstruct the whole call stack
+	TempBlobIdTree req_blobs;		// Temporary BLOBs owned by this request
 	ExternalAccessList req_external;	/* Access to procedures/triggers to be checked */
 	AccessItemList req_access;		/* Access items to be checked */
 	vec*		req_variables;		/* Vector of variables, if any */
