@@ -1052,8 +1052,9 @@ int ISC_expand_share(TEXT * file_name, TEXT * expanded_name)
 		ret = WNetEnumResource(handle, &nument, resources, &size);
 	}
 
-	for (i = 0, res = resources; i < nument && *device != *(res->lpLocalName);
-		 i++, res++);
+	for (i = 0, res = resources; 
+		i < nument && (!res->lpLocalName || (*device != *(res->lpLocalName)));
+		i++, res++);
 	if (i != nument)			/* i.e. we found the drive in the resources list */
 		share_name_from_resource(expanded_name, file_name, res);
 
