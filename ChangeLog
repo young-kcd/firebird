@@ -1,3 +1,9 @@
+2005-02-25 15:17  paul_reeves
+
+	* firebird2/builds/win32/prepare.bat (1.41):
+	
+	Remove misplaced CR/LF
+
 2005-02-24 18:56  alexpeshkoff
 
 	* firebird2/src/jrd/execute_statement.cpp (1.14):
