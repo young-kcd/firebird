@@ -414,9 +414,8 @@ TEXTTYPE_ENTRY(NEXT_c0_init)
  * 8 bit sorting)
  */
 
-#define LANGASCII_MAX_KEY	(MAX_KEY)
-
-#define ASCII_SPACE	32			// ASCII code for space
+const USHORT LANGASCII_MAX_KEY	= MAX_KEY;
+const BYTE ASCII_SPACE			= 32;			// ASCII code for space
 
 #define	ASCII7_UPPER(ch) \
 	((((UCHAR) (ch) >= (UCHAR) ASCII_LOWER_A) && ((UCHAR) (ch) <= (UCHAR) ASCII_LOWER_Z)) \

@@ -29,12 +29,14 @@
 
 #include "../jrd/intlobj.h"
 #include "../jrd/constants.h"
-#include "../intl/langdrv.h"
 #include "../intl/charsets.h"
 #include "../intl/country_codes.h"
 #include "../intl/ld.h"
 
 #undef DEBUG
+
+// texttype version
+#define IB_LANGDRV_VERSION	1
 
 typedef USHORT UNICODE;
 

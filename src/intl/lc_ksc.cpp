@@ -138,8 +138,8 @@ const UCHAR gen_han[18][2] =
 	{ 0xc7, 0xce }
 };
 
-#define	LANGKSC_MAX_KEY	4096
-#define		ASCII_SPACE	32
+const USHORT LANGKSC_MAX_KEY	= 4096;
+const BYTE	ASCII_SPACE	= 32;
 
 
 static USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar,

@@ -32,14 +32,11 @@
  */
 
 
-#define LANGFAM2_MAX_KEY     	(MAX_KEY)
-
-#define ASCII_SPACE	32
-#define	NULL_WEIGHT	0
-#define	NULL_SECONDARY	0
-#define	NULL_TERTIARY	0
-
-
+const USHORT LANGFAM2_MAX_KEY	= MAX_KEY;
+const BYTE ASCII_SPACE			= 32;
+const UINT16 NULL_WEIGHT		= 0;
+const UINT16 NULL_SECONDARY		= 0;
+const UINT16 NULL_TERTIARY		= 0;
 
 
 /*
