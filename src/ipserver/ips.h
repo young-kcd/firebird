@@ -24,6 +24,6 @@
 #ifndef _IPS_H_
 #define _IPS_H_
 
-#define	IP_CONNECT_MESSAGE	WM_USER + 1
+#define	IPI_CONNECT_MESSAGE	WM_USER + 1
 
 #endif /* _IPS_H_ */

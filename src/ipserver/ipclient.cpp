@@ -3834,7 +3834,7 @@ static SSHORT init( STATUS * user_status, ICC * picc)
 		if (hWndServer)
 		{
 			number = (ULONG) SendMessage(hWndServer,
-										 IP_CONNECT_MESSAGE, 0,
+										 IPI_CONNECT_MESSAGE, 0,
 										 (LPARAM) client_pid);
 		}
 		if (!number || number == (ULONG) - 1)
