@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.115 2003-02-12 06:09:12 bellardo Exp $
+dnl $Id: configure.in,v 1.116 2003-02-13 12:00:22 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -368,7 +368,6 @@ fi
 
 dnl Check for other things
 AC_C_BIGENDIAN
-AC_C_CONST dnl EKU: we should replace the CONST define in the source!!!
 AC_C_VOLATILE 
 AC_TYPE_SIGNAL
 AC_SYS_LARGEFILE
