@@ -54,34 +54,9 @@ public:
 	bool operator !() {return ptr ? false : true;}
 	Where* operator->() {return ptr;}
 	~AutoPtr<Where, Clear>() {Clear::clear(ptr);}
-};
-
-// CVC: It turns out that AutoPtr was designed to deallocate single objects,
-// not arrays. Worse even, we need in many places to allocate dynamically an
-// array of char*/UCHAR* that's later converted into a pointer to a single
-// object and passed to AutoPtr. In that case, AutoPtr will invoke the wrong
-// deallocation logic and therefore we have undefined behavior, typically a leak.
-// See execute_statement.cpp for an example. This is the reason this
-// AutoPtrFromString beast was created.
-// Alex: It should be gone after full Ñ++ code conversion
-
-template <typename What>
-class CharArrayDelete
-{
-public:
-	static void clear(What *ptr)
-	{
-		char* p = reinterpret_cast<char*>(ptr);
-		delete[] p;
-	}
-};
-	
-template <typename Where>
-class AutoPtrFromString : public AutoPtr<Where, CharArrayDelete<Where> >
-{
-public:
-	AutoPtrFromString<Where>(Where *v) 
-		: AutoPtr<Where, CharArrayDelete<Where> >(v) { }
+private:
+	AutoPtr<Where, Clear>(AutoPtr<Where, Clear>&);
+	operator=(AutoPtr<Where, Clear>&);
 };
 
 } //namespace Firebird
