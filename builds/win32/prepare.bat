@@ -8,7 +8,7 @@
 @cd dbs
 @gbak -r %1\src\misc\metadata.gbak localhost:%1\builds\win32\dbs\metadata.gdb
 @md jrd
-@gbak -r %1\src\misc\isc4.gbak localhost:%1\builds\win32\dbs\jrd\isc.gdb
+@gbak -r %1\src\misc\security.gbak localhost:%1\builds\win32\dbs\jrd\isc.gdb
 @md msgs
 @gbak -r %1\src\msgs\msg.gbak localhost:%1\builds\win32\dbs\msgs\msg.gdb
 @md qli
