@@ -69,14 +69,17 @@ static void free_cstring(XDR *, CSTRING *);
 static RSR get_statement(XDR *, SSHORT);
 static bool_t xdr_cstring(XDR *, CSTRING *);
 static bool_t xdr_datum(XDR *, DSC *, BLOB_PTR *);
+#ifdef DEBUG_XDR_MEMORY
 static bool_t xdr_debug_packet(XDR *, enum xdr_op, PACKET *);
-
+#endif
 static bool_t xdr_longs(XDR *, CSTRING *);
 static bool_t xdr_message(XDR *, REM_MSG, FMT);
 static bool_t xdr_quad(XDR *, struct bid *);
 static bool_t xdr_request(XDR *, USHORT, USHORT, USHORT);
+#ifdef VMS
 static bool_t xdr_semi_opaque(XDR *, REM_MSG, FMT);
 static bool_t xdr_semi_opaque_slice(XDR *, LSTRING *);
+#endif
 static bool_t xdr_slice(XDR *, LSTRING *, USHORT, BLOB_PTR *);
 static bool_t xdr_status_vector(XDR *, STATUS *, TEXT * strings[]);
 static bool_t xdr_sql_blr(XDR *, SLONG, CSTRING *, int, SQL_STMT_TYPE);

@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.54 2003-02-18 16:06:01 bellardo Exp $
+$Id: inet.cpp,v 1.55 2003-03-01 17:51:59 brodsom Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -326,12 +326,14 @@ static void		alarm_handler(int);
 static PORT		alloc_port(PORT);
 static PORT		aux_connect(PORT, PACKET *, XDR_INT(*)(void));
 static PORT		aux_request(PORT, PACKET *);
+#if !defined(WIN_NT)
 #ifndef VMS
 static int		check_host(PORT, TEXT *, TEXT *, struct passwd *);
 #else
 static int		check_host(PORT, TEXT *, TEXT *);
 #endif
 static BOOLEAN	check_proxy(PORT, TEXT *, TEXT *);
+#endif
 static void		cleanup_port(PORT);
 static void		disconnect(PORT);
 static void		exit_handler(void *);
@@ -355,7 +357,9 @@ static void		inet_gen_error(PORT, STATUS, ...);
 static bool_t	inet_getbytes(XDR *, SCHAR *, u_int);
 static bool_t	inet_getlong(XDR *, SLONG *);
 static u_int	inet_getpostn(XDR *);
+#if !(defined WIN_NT)
 static void		inet_handler(PORT);
+#endif
 static caddr_t	inet_inline(XDR *, u_int);
 static int		inet_error(PORT, const TEXT *, STATUS, int);
 static bool_t	inet_putlong(XDR *, SLONG *);
@@ -373,8 +377,10 @@ static PORT		inet_try_connect(	PACKET*,
 static bool_t	inet_write(XDR *, int);
 static void		inet_zero(SCHAR *, int);
 static int		initWSA(PORT);
+#if !(defined WIN_NT)
 static int		parse_hosts(TEXT *, TEXT *, TEXT *);
 static int		parse_line(TEXT *, TEXT *, TEXT *, TEXT *);
+#endif
 
 #ifdef DEBUG
 static void packet_print(TEXT *, UCHAR *, int, int);
@@ -1758,6 +1764,7 @@ static PORT aux_request( PORT port, PACKET * packet)
 	return new_port;
 }
 
+#ifndef WIN_NT
 #ifdef VMS
 static check_host( PORT port, TEXT * host_name, TEXT * user_name)
 {
@@ -1790,9 +1797,8 @@ static check_host( PORT port, TEXT * host_name, TEXT * user_name)
 
 	return result;
 }
-#endif
+#else
 
-#if !(defined VMS || defined WIN_NT)
 static int check_host(
 					  PORT port,
 					  TEXT * host_name,
@@ -1853,6 +1859,7 @@ static int check_host(
 	}
 	return result;
 }
+#endif
 #endif
 
 #if !(defined WIN_NT)

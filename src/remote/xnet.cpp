@@ -97,7 +97,9 @@ static int accept_connection(PORT, P_CNCT *);
 static PORT alloc_port(PORT, UCHAR *, USHORT, UCHAR *, ULONG);
 static PORT aux_connect(PORT, PACKET *, XDR_INT(*)(void));
 static PORT aux_request(PORT, PACKET *);
+#ifdef UNIX
 static ULONG connection_setup(TEXT *, PACKET *, STATUS *);
+#endif
 static void cleanup_comm(XCC);
 static void cleanup_port(PORT);
 static void disconnect(PORT);

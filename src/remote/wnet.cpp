@@ -101,7 +101,9 @@ static bool_t	wnet_putbytes(XDR *, SCHAR *, u_int);
 static bool_t	wnet_read(XDR *);
 static bool_t	wnet_setpostn(XDR *, u_int);
 static bool_t	wnet_write(XDR *, int);
+#ifdef DEBUG
 static void		packet_print(TEXT *, UCHAR *, int);
+#endif
 static int		packet_receive(PORT, UCHAR *, SSHORT, SSHORT *);
 static int		packet_send(PORT, SCHAR *, SSHORT);
 static void		wnet_copy(SCHAR *, SCHAR *, int);
