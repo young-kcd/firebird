@@ -633,12 +633,12 @@ typedef struct {
 
 /* Windows names used to identify various named objects */
 
-const char* IPI_MAPPED_FILE_NAME	= "%sMappedArea%d";
-const char* IPI_CLIENT_SEM_NAME		= "%sClientSem%d_%d";
-const char* IPI_SERVER_SEM_NAME		= "%sServerSem%d_%d";
-const char* IPI_EVENT_NAME			= "%sEvent%d";
-const char* IPI_EVENT_CLASS			= "%sEventClass";
-const char* IPI_EVENT_THREAD		= "%sEventThread%d_%d";
+static const char* IPI_MAPPED_FILE_NAME	= "%sMappedArea%d";
+static const char* IPI_CLIENT_SEM_NAME		= "%sClientSem%d_%d";
+static const char* IPI_SERVER_SEM_NAME		= "%sServerSem%d_%d";
+static const char* IPI_EVENT_NAME			= "%sEvent%d";
+static const char* IPI_EVENT_CLASS			= "%sEventClass";
+static const char* IPI_EVENT_THREAD		= "%sEventThread%d_%d";
 
 /* local event queue structure */
 

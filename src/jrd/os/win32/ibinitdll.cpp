@@ -23,6 +23,7 @@
 
 #include "firebird.h"
 #include <windows.h>
+#include "../jrd/common.h"
 #include "../../utilities/install/registry.h"
 #include "../jrd/thread_proto.h"
 
