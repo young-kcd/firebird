@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.53 2004-10-07 09:59:02 robocop Exp $
+//  $Id: par.cpp,v 1.54 2004-10-30 05:36:08 robocop Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -835,9 +835,9 @@ void PAR_init()
 	brace_count = 0;
 }
 
-static inline void gobble(SCHAR*& string, SCHAR*& s1)
+static inline void gobble(SCHAR*& string)
 {
-	s1 = gpreGlob.token_global.tok_string;
+	const SCHAR* s1 = gpreGlob.token_global.tok_string;
 	while (*s1) 
 		*string++ = *s1++; 
 	PAR_get_token();
@@ -852,7 +852,6 @@ TEXT* PAR_native_value(bool array_ref,
 					   bool handle_ref)
 {
 	SCHAR buffer[512];
-	SCHAR* s1;
 
 	SCHAR* string = buffer;
 
@@ -866,7 +865,7 @@ TEXT* PAR_native_value(bool array_ref,
 				//const enum tok_t typ = gpreGlob.token_global.tok_type;
 				gpreGlob.token_global.tok_length += 2;
 				*string++ = '\"';
-				gobble(string, s1);
+				gobble(string);
 				*string++ = '\"';
 				break;
 			}
@@ -877,7 +876,7 @@ TEXT* PAR_native_value(bool array_ref,
 			else if (gpreGlob.token_global.tok_type == tok_sglquoted) {
 				gpreGlob.token_global.tok_length += 2;
 				*string++ = '\"';
-				gobble(string, s1);
+				gobble(string);
 				*string++ = '\"';
 				break;
 			}
@@ -886,22 +885,22 @@ TEXT* PAR_native_value(bool array_ref,
 			if (gpreGlob.token_global.tok_type == tok_sglquoted) {
 				gpreGlob.token_global.tok_length += 2;
 				*string++ = '\"';
-				gobble(string, s1);
+				gobble(string);
 				*string++ = '\"';
 				break;
 			}
 		}
 
 		if (gpreGlob.token_global.tok_keyword == KW_AMPERSAND || gpreGlob.token_global.tok_keyword == KW_ASTERISK)
-			gobble(string, s1);
+			gobble(string);
 		if (gpreGlob.token_global.tok_type != tok_ident)
 			CPR_s_error("identifier");
-		gobble(string, s1);
+		gobble(string);
 
 		/* For ADA, gobble '<attribute> */
 
 		if ((gpreGlob.sw_language == lang_ada) && (gpreGlob.token_global.tok_string[0] == '\'')) {
-			gobble(string, s1);
+			gobble(string);
 		}
 		enum kwwords keyword = gpreGlob.token_global.tok_keyword;
 		if (keyword == KW_LEFT_PAREN) {
@@ -910,7 +909,7 @@ TEXT* PAR_native_value(bool array_ref,
 				const enum tok_t typ = gpreGlob.token_global.tok_type;
 				if (isQuoted(typ))
 					*string++ = (typ == tok_sglquoted) ? '\'' : '\"';
-				gobble(string, s1);
+				gobble(string);
 				if (isQuoted(typ))
 					*string++ = (typ == tok_sglquoted) ? '\'' : '\"';
 				keyword = gpreGlob.token_global.tok_keyword;
@@ -919,25 +918,25 @@ TEXT* PAR_native_value(bool array_ref,
 				else if (keyword == KW_LEFT_PAREN)
 					parens++;
 			}
-			gobble(string, s1);
+			gobble(string);
 			keyword = gpreGlob.token_global.tok_keyword;
 		}
 		while (keyword == KW_L_BRCKET) {
 			int brackets = 1;
 			while (brackets) {
-				gobble(string, s1);
+				gobble(string);
 				keyword = gpreGlob.token_global.tok_keyword;
 				if (keyword == KW_R_BRCKET)
 					brackets--;
 				else if (keyword == KW_L_BRCKET)
 					brackets++;
 			}
-			gobble(string, s1);
+			gobble(string);
 			keyword = gpreGlob.token_global.tok_keyword;
 		}
 
 		while ((keyword == KW_CARAT) && (gpreGlob.sw_language == lang_pascal)) {
-			gobble(string, s1);
+			gobble(string);
 			keyword = gpreGlob.token_global.tok_keyword;
 		}
 
@@ -947,7 +946,7 @@ TEXT* PAR_native_value(bool array_ref,
 				 || gpreGlob.sw_language == lang_ada)) || keyword == KW_POINTS
 			|| (keyword == KW_COLON && !gpreGlob.sw_sql && !array_ref))
 		{
-			gobble(string, s1);
+			gobble(string);
 		}
 		else
 			break;
@@ -955,7 +954,7 @@ TEXT* PAR_native_value(bool array_ref,
 
 	int length = string - buffer;
 	SCHAR* s2 = string = (SCHAR *) MSC_alloc(length + 1);
-	s1 = buffer;
+	const SCHAR* s1 = buffer;
 
 	if (length) {
 		do {
