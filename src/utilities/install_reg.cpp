@@ -123,7 +123,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	}
 
 	if (sw_version)
-		ib_printf("install version %s\n", GDS_VERSION);
+		ib_printf("instreg version %s\n", GDS_VERSION);
 
 	if (sw_command == COMMAND_NONE /*||
 		(!directory && sw_command == COMMAND_INSTALL) ||

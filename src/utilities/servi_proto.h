@@ -35,6 +35,7 @@ extern USHORT	SERVICES_delete (SC_HANDLE,
 				TEXT *,
 				USHORT (*)(SLONG, TEXT *, SC_HANDLE));
 */
+
 extern USHORT	SERVICES_install (SC_HANDLE manager,
 				TEXT	*service_name,
 				TEXT	*display_name,
@@ -45,20 +46,29 @@ extern USHORT	SERVICES_install (SC_HANDLE manager,
 				TEXT	*nt_user_name,
 				TEXT	*nt_user_password,
 				USHORT (*)(SLONG, TEXT *, SC_HANDLE));
+
 extern USHORT	SERVICES_remove (SC_HANDLE manager,
 				TEXT	*service_name,
 				TEXT	*display_name,
 				USHORT (*)(SLONG, TEXT *, SC_HANDLE));
+
 extern USHORT	SERVICES_start (SC_HANDLE manager,
 				TEXT	*service_name,
 				TEXT	*display_name,
 				USHORT	sw_mode,
 				USHORT (*)(SLONG, TEXT *, SC_HANDLE));
-extern USHORT	SERVICES_stop (SC_HANDLE	manager,
+
+extern USHORT	SERVICES_stop (SC_HANDLE manager,
 				TEXT	*service_name,
 				TEXT	*display_name,
 				USHORT (*)(SLONG, TEXT *, SC_HANDLE));
-extern USHORT	SERVICES_grant_logon_right (TEXT*,
+
+extern USHORT	SERVICES_grant_logon_right (TEXT* account,
+				USHORT (*)(SLONG, TEXT *, SC_HANDLE));
+
+
+extern USHORT	SERVICES_grant_access_rights(TEXT* service_name,
+				TEXT* account,
 				USHORT (*)(SLONG, TEXT *, SC_HANDLE));
 
 #endif /* _UTILITIES_SERVI_PROTO_H_ */

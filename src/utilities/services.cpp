@@ -28,6 +28,7 @@
 #include "../jrd/ib_stdio.h"
 #include <windows.h>
 #include <ntsecapi.h>
+#include <aclapi.h>
 #include "../jrd/common.h"
 #include "../jrd/license.h"
 #include "../utilities/install_nt.h"
@@ -478,6 +479,79 @@ USHORT SERVICES_grant_logon_right(TEXT* account,
 	LsaClose(PolicyHandle);
 	LocalFree(pSid);
 	LocalFree(pDomain);
+
+	return FB_SUCCESS;
+}
+
+
+USHORT SERVICES_grant_access_rights(TEXT* service_name, TEXT* account,
+	USHORT(*err_handler)(SLONG, TEXT *, SC_HANDLE))
+{
+/*********************************************************
+ *
+ * S E R V I C E S _ g r a n t _ a c c e s s _ r i g h t s
+ *
+ *********************************************************
+ *
+ * Functional description
+ *
+ * Grant access rights to service 'service_name' so that user 'account'
+ * can control it (start, stop, query).
+ * Intended to be called after SERVICES_install().
+ * By doing so to the Firebird server service object, we can set the Guardian
+ * to run as the same specific user, yet still be able to start the Firebird
+ * server from the Guardian.
+ * 'account' is of format : DOMAIN\User or SERVER\User.
+ * Returns FB_SUCCESS or FB_FAILURE.
+ *
+ * OM - SEP 2003 - Initial implementation
+ *
+ *********************************************************/
+
+	PACL pOldDACL = NULL;
+	PACL pNewDACL = NULL;
+	PSECURITY_DESCRIPTOR pSD = NULL;
+	EXPLICIT_ACCESS ea;
+
+	// Get Security Information on the service. Will of course fail if we're
+	// not allowed to do this. Administrators should be allowed, by default.
+	if (GetNamedSecurityInfo(service_name, SE_SERVICE,
+		DACL_SECURITY_INFORMATION,
+		NULL /*Owner Sid*/, NULL /*Group Sid*/,
+		&pOldDACL, NULL /*Sacl*/, &pSD) != ERROR_SUCCESS)
+	{
+		return (*err_handler)(GetLastError(), "GetNamedSecurityInfo", NULL);
+	}
+
+	// Initialize an EXPLICIT_ACCESS structure.
+	ZeroMemory(&ea, sizeof(ea));
+	ea.grfAccessPermissions = GENERIC_READ|GENERIC_EXECUTE;
+	ea.grfAccessMode = SET_ACCESS;
+	ea.grfInheritance = NO_INHERITANCE;
+	ea.Trustee.MultipleTrusteeOperation = NO_MULTIPLE_TRUSTEE;
+	ea.Trustee.TrusteeForm = TRUSTEE_IS_NAME;
+	ea.Trustee.TrusteeType = TRUSTEE_IS_USER;
+	ea.Trustee.ptstrName = account;
+
+	// Create a new DACL, adding this right to whatever exists.
+	if (SetEntriesInAcl(1, &ea, pOldDACL, &pNewDACL) != ERROR_SUCCESS)
+	{
+		DWORD err = GetLastError();
+		LocalFree(pSD);
+		return (*err_handler)(err, "SetEntriesInAcl", NULL);
+	}
+
+	// Updates the new rights in the object
+	if (SetNamedSecurityInfo(service_name, SE_SERVICE,
+		DACL_SECURITY_INFORMATION,
+		NULL /*Owner Sid*/, NULL /*Group Sid*/,
+		pNewDACL, NULL /*Sacl*/) != ERROR_SUCCESS)
+	{
+		DWORD err = GetLastError();
+		LocalFree(pSD);
+		LocalFree(pNewDACL);
+		return (*err_handler)(err, "SetNamedSecurityInfo", NULL);
+	}
 
 	return FB_SUCCESS;
 }
