@@ -22,7 +22,6 @@ cp dbs\qli\help.fdb %ROOT_PATH%\generated\help.fdb
 
 @if "%1"=="BOOT" (set BOOTBUILD=1) else (set BOOTBUILD=0)
 @echo.
-@call :CHECKTOOLS
 @if "%BOOTBUILD%"=="1" (call :BOOT_PROCESS) else (call :MASTER_PROCESS)
 @set BOOTBUILD=
 @set GPRE=
@@ -45,17 +44,6 @@ cp dbs\qli\help.fdb %ROOT_PATH%\generated\help.fdb
 ::===========
 :GPRE_GDS
 @%GPRE% -n -gds -raw -ids ..\..\src\%1\%2.epp ..\..\generated\%1\%2.cpp -b localhost:%DB_PATH%/generated/
-goto :EOF
-
-::=====================================
-
-:CHECKTOOLS
-:: verify our unix tool set is available
-
-@sed --help > nul
-@if errorlevel 1 ((goto :HELP_TOOLS) & (goto :EOF))
-echo sed located on path
-
 goto :EOF
 
 ::===========
@@ -83,22 +71,5 @@ goto :EOF
 @for %%i in (dba, security) do @call :PREPROCESS utilities %%i
 
 @goto :EOF
-
-::=================
-:HELP_TOOLS
-@echo:
-@echo   Please check that these utilities programs are
-@echo   all on your path:
-@echo:
-@echo     sed.exe
-@echo:
-@echo   If you do not have these utilities they may be downloaded
-@echo   via ftp from the Firebird Project on Sourceforge:
-@echo:
-@echo     http://prdownloads.sourceforge.net/firebird/
-@echo:
-@echo   filename:  Firebird_Unix_Tools_for_Win32.zip
-@echo:
-@goto :END
 
 :END
