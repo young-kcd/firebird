@@ -187,7 +187,7 @@ if errorlevel 1 goto :msgs2
 @goto :EOF
 :msgs2
 echo.
-echo Error building messages see boot3.log
+echo Error building build_msg see boot3.log
 echo.
 set ERRLEV=1
 goto :EOF
@@ -207,7 +207,7 @@ if errorlevel 1 goto :codes2
 @goto :EOF
 :codes2
 echo.
-echo Error building messages see boot4.log
+echo Error building codes see boot4.log
 echo.
 set ERRLEV=1
 goto :EOF
