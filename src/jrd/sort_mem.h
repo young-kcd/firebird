@@ -46,15 +46,15 @@ private:
 	protected:
 		Block *prev;
 		Block *next;
-		long size;
+		size_t size;
 
 	public:
 		// Read bytes from the block into the given buffer
-		virtual long read(STATUS*, long, char*, long) = 0;
+		virtual size_t read(STATUS*, size_t, char*, size_t) = 0;
 		// Write bytes from the given buffer into the block
-		virtual long write(STATUS*, long, char*, long) = 0;
+		virtual size_t write(STATUS*, size_t, char*, size_t) = 0;
 
-		Block(Block*, long);
+		Block(Block*, size_t);
 		virtual ~Block() {}
 	};
 
@@ -65,10 +65,10 @@ private:
 		char* address;
 
 	public:
-		long read(STATUS*, long, char*, long);
-		long write(STATUS*, long, char*, long);
+		size_t read(STATUS*, size_t, char*, size_t);
+		size_t write(STATUS*, size_t, char*, size_t);
 		
-		MemoryBlock(Block*, long);
+		MemoryBlock(Block*, size_t);
 		~MemoryBlock();
 	};
 
@@ -78,13 +78,13 @@ private:
 		// Sort file block
 		struct sfb *file;
 		// File offset
-		long offset;
+		size_t offset;
 
 	public:
-		long read(STATUS*, long, char*, long);
-		long write(STATUS*, long, char*, long);
+		size_t read(STATUS*, size_t, char*, size_t);
+		size_t write(STATUS*, size_t, char*, size_t);
 
-		FileBlock(Block*, long, struct sfb*, long);
+		FileBlock(Block*, size_t, struct sfb*, size_t);
 		~FileBlock();
 	};
 
@@ -92,20 +92,20 @@ private:
 	static bool is_initialized;
 
 	// Virtual memory allocation values
-	static unsigned long mem_block_size;
-	static unsigned long mem_upper_limit;
+	static size_t mem_block_size;
+	static size_t mem_upper_limit;
 
 	// Total amount of allocated virtual memory
-	static unsigned long mem_total_size;
+	static size_t mem_total_size;
 
 	struct sfb *internal;
 
 	// Virtual scratch file size
-	long logical_size;
+	size_t logical_size;
 	// Amount of storage space allocated for this scratch file
-	long physical_size;
+	size_t physical_size;
 	// File size on disk
-	long file_size;
+	size_t file_size;
 
 	// First block in chain
 	Block *head;
@@ -113,17 +113,17 @@ private:
 	Block *tail;
 
 	// Allocate one more block, if necessary
-	void allocate(long);
+	void allocate(size_t);
 	// Convert logical position to the physical one - pair [block, offset]
-	Block* seek(long&);
+	Block* seek(size_t&);
 
 public:
 	// Read bytes from the scratch file
-	long read(STATUS*, long, char*, long);
+	size_t read(STATUS*, size_t, char*, size_t);
 	// Write bytes into the scratch file
-	long write(STATUS*, long, char*, long);
+	size_t write(STATUS*, size_t, char*, size_t);
 
-	SortMem(struct sfb*, long);
+	SortMem(struct sfb*, size_t);
 	~SortMem();
 };
 

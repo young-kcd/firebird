@@ -30,20 +30,17 @@
 #include "../common/memory/allocators.h"
 #include "../jrd/sort_proto.h"
 #include "../jrd/gdsassert.h"
-
 #include "../jrd/sort_mem.h"
-
 
 #define BLOCK_SIZE_KEY "SORT_MEM_BLOCK_SIZE"
 #define UPPER_LIMIT_KEY "SORT_MEM_UPPER_LIMIT"
 
-
 bool SortMem::is_initialized = false;
 
-unsigned long SortMem::mem_block_size = 1048576;				// 1MB
-unsigned long SortMem::mem_upper_limit = (unsigned long) -1;	// ~4GB
+size_t SortMem::mem_block_size = 1048576;		// 1MB
+size_t SortMem::mem_upper_limit = (size_t) -1;	// ~4GB
 
-unsigned long SortMem::mem_total_size = 0;
+size_t SortMem::mem_total_size = 0;
 
 
 /******************************************************************************
@@ -51,7 +48,7 @@ unsigned long SortMem::mem_total_size = 0;
  *	Generic storage block implementation
  */
 
-SortMem::Block::Block(Block *tail, long length)
+SortMem::Block::Block(Block *tail, size_t length)
 	: next(0), size(length)
 {
 	// Link block with the chain
@@ -67,7 +64,7 @@ SortMem::Block::Block(Block *tail, long length)
  *	Virtual memory block implementation
  */
 
-SortMem::MemoryBlock::MemoryBlock(Block* tail, long length)
+SortMem::MemoryBlock::MemoryBlock(Block* tail, size_t length)
 	: Block(tail, length)
 {
 	// Allocate virtual memory block
@@ -82,7 +79,7 @@ SortMem::MemoryBlock::~MemoryBlock()
 //	MemoryPool::free_from_system(address);
 }
 
-long SortMem::MemoryBlock::read(STATUS *status, long position, char *buffer, long length)
+size_t SortMem::MemoryBlock::read(STATUS *status, size_t position, char *buffer, size_t length)
 {
 	// Read block from memory
 	if (position + length > size)
@@ -93,7 +90,7 @@ long SortMem::MemoryBlock::read(STATUS *status, long position, char *buffer, lon
 	return length;
 }
 
-long SortMem::MemoryBlock::write(STATUS *status, long position, char *buffer, long length)
+size_t SortMem::MemoryBlock::write(STATUS *status, size_t position, char *buffer, size_t length)
 {
 	// Write block to memory
 	if (position + length > size)
@@ -109,7 +106,7 @@ long SortMem::MemoryBlock::write(STATUS *status, long position, char *buffer, lo
  *	File block implementation
  */
 
-SortMem::FileBlock::FileBlock(Block *tail, long length, struct sfb *blk, long position)
+SortMem::FileBlock::FileBlock(Block *tail, size_t length, struct sfb *blk, size_t position)
 	: Block(tail, length), file(blk), offset(position)
 {
 }
@@ -118,7 +115,7 @@ SortMem::FileBlock::~FileBlock()
 {
 }
 
-long SortMem::FileBlock::read(STATUS *status, long position, char *buffer, long length)
+size_t SortMem::FileBlock::read(STATUS *status, size_t position, char *buffer, size_t length)
 {
 	// Read block from file
 	if (position + length > size)
@@ -131,7 +128,7 @@ long SortMem::FileBlock::read(STATUS *status, long position, char *buffer, long 
 //	return _read(file->sfb_file, buffer, length);
 }
 
-long SortMem::FileBlock::write(STATUS *status, long position, char *buffer, long length)
+size_t SortMem::FileBlock::write(STATUS *status, size_t position, char *buffer, size_t length)
 {
 	// Write block to file
 	if (position + length > size)
@@ -149,7 +146,7 @@ long SortMem::FileBlock::write(STATUS *status, long position, char *buffer, long
  *	Virtual scratch file implementation
  */
 
-SortMem::SortMem(struct sfb *blk, long size)
+SortMem::SortMem(struct sfb *blk, size_t size)
 	: internal(blk), logical_size(0), physical_size(0), file_size(0), head(0), tail(0)
 {
 	// Override defaults with the configuration values, if they exist
@@ -183,7 +180,7 @@ SortMem::~SortMem()
 	mem_total_size -= physical_size - file_size;
 }
 
-void SortMem::allocate(long size)
+void SortMem::allocate(size_t size)
 {
 	if (size > 0)
 	{
@@ -196,7 +193,7 @@ void SortMem::allocate(long size)
 			Block *block;
 
 			// Calculate how much virtual memory we should allocate
-			long smart_size = (mem_block_size > size) ? mem_block_size : size;
+			size_t smart_size = (mem_block_size > size) ? mem_block_size : size;
 
 			// Check whether virtual memory should be allocated or file should be used instead
 			if (mem_total_size + smart_size <= mem_upper_limit)
@@ -253,7 +250,7 @@ void SortMem::allocate(long size)
 	}
 }
 
-SortMem::Block* SortMem::seek(long &position)
+SortMem::Block* SortMem::seek(size_t &position)
 {
 	Block *block = 0;
 
@@ -286,21 +283,21 @@ SortMem::Block* SortMem::seek(long &position)
 	return block;
 }
 
-long SortMem::read(STATUS *status, long position, char *address, long length)
+size_t SortMem::read(STATUS *status, size_t position, char *address, size_t length)
 {
-	long copied = 0;
+	size_t copied = 0;
 
 	if (length > 0)
 	{
 		// Search for the first needed block
-		long pos = position;
+		size_t pos = position;
 		Block *block = seek(pos);
 		assert(block);
 
 		// Read data from as many blocks as necessary
 		for (Block *itr = block; itr, length > 0; itr = itr->next, pos = 0)
 		{
-			long n = itr->read(status, pos, address, length);
+			size_t n = itr->read(status, pos, address, length);
 			address += n;
 			copied += n;
 			length -= n;
@@ -312,7 +309,7 @@ long SortMem::read(STATUS *status, long position, char *address, long length)
 	return position + copied;
 }
 
-long SortMem::write(STATUS *status, long position, char *address, long length)
+size_t SortMem::write(STATUS *status, size_t position, char *address, size_t length)
 {
 	// There's probably not enough space, try to allocate one more block
 	if (position + length >= logical_size)
@@ -320,19 +317,19 @@ long SortMem::write(STATUS *status, long position, char *address, long length)
 		allocate(position + length - logical_size);
 	}
 
-	long copied = 0;
+	size_t copied = 0;
 
 	if (length > 0)
 	{
 		// Search for the first needed block
-		long pos = position;
+		size_t pos = position;
 		Block *block = seek(pos);
 		assert(block);
 
 		// Write data to as many blocks as necessary
 		for (Block *itr = block; itr, length > 0; itr = itr->next, pos = 0)
 		{
-			long n = itr->write(status, pos, address, length);
+			size_t n = itr->write(status, pos, address, length);
 			address += n;
 			copied += n;
 			length -= n;
