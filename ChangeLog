@@ -1,3 +1,40 @@
+2004-09-09 21:24  skidder
+
+	* firebird2/src/jrd/intlobj_new.h (1.10):
+	
+	Fix bug in canonical representation routine
+
+2004-09-09 13:32  kkuznetsov
+
+	* firebird2/builds/posix/: Makefile.in.embed.gfix (1.11),
+	Makefile.in.embed.util (1.14), prefix.solx86gcc (1.13):
+	
+	Fix some unresolved symbols. Make FB CS linkable on Solaris x86.
+
+2004-09-09 11:24  robocop
+
+	* firebird2/src/dsql/dsql.cpp (1.123):
+	
+	Get rid of some reinterpret_cast's.
+
+2004-09-09 10:58  robocop
+
+	* firebird2/src/dsql/ddl.cpp (1.114):
+	
+	Totally misc: typo in comment
+
+2004-09-09 10:56  robocop
+
+	* firebird2/src/dsql/dsql.cpp (1.122):
+	
+	Style
+
+2004-09-09 10:55  robocop
+
+	* firebird2/src/jrd/ibase.h (1.85):
+	
+	A little more explanations in ibase.h
+
 2004-09-08 14:01  alexpeshkoff
 
 	* firebird2/src/dsql/: ddl.cpp (1.113), parse.y (1.146):
