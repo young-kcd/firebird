@@ -189,7 +189,7 @@ static void get_trigger_dependencies(DFW);
 static void	load_trigs(TDBB, JRD_REL, TRIG_VEC *);
 static FMT	make_format(TDBB, JRD_REL, USHORT *, TFB);
 static USHORT name_length(TEXT *);
-static DFW	post_work(JRD_TRA, SLONG, DFW, ENUM dfw_t, DSC *, USHORT);
+static DFW	post_work(JRD_TRA, SLONG, DFW *, ENUM dfw_t, DSC *, USHORT);
 static void put_summary_blob(BLB, enum rsr_t, SLONG[2]);
 static void put_summary_record(BLB, enum rsr_t, UCHAR *, USHORT);
 static void	setup_array(TDBB, BLB, TEXT *, USHORT, TFB);
@@ -666,7 +666,7 @@ class dfw * DFW_post_work( JRD_TRA transaction, ENUM dfw_t type, DSC * desc, USH
 
 	return post_work(transaction,
 					 sav_number,
-					 transaction->tra_deferred_work,
+					 &transaction->tra_deferred_work,
 					 type,
 					 desc,
 					 id);
@@ -688,7 +688,7 @@ void DFW_post_work_arg( JRD_TRA transaction, DFW work, DSC * desc, USHORT id)
 
 	post_work(transaction,
 			  work->dfw_sav_number,
-			  work->dfw_args,
+			  &work->dfw_args,
 			  work->dfw_type,
 			  desc,
 			  id);
@@ -3996,7 +3996,7 @@ static USHORT name_length(TEXT* name)
 
 static DFW post_work(JRD_TRA transaction,
 					 SLONG sav_number,
-					 DFW list,
+					 DFW *list,
 					 ENUM dfw_t type,
 					 DSC * desc,
 					 USHORT id)
@@ -4049,7 +4049,7 @@ static DFW post_work(JRD_TRA transaction,
 
 /* Check to see if work is already posted */
 
-	for (ptr = &list; (work = *ptr); ptr = &(*ptr)->dfw_next)
+	for (ptr = list; (work = *ptr); ptr = &(*ptr)->dfw_next)
 	{
 		if (work->dfw_type == type &&
 			work->dfw_id == id &&
