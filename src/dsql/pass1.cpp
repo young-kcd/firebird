@@ -4450,7 +4450,7 @@ static DSQL_NOD pass1_label(DSQL_REQ request, DSQL_NOD input)
 
 	// look for a label, if specified
 
-	TEXT* label_string = 0;
+	TEXT* label_string = NULL;
 
 	if (label) {
 		assert(label->nod_type == nod_label);
@@ -4507,7 +4507,7 @@ static DSQL_NOD pass1_label(DSQL_REQ request, DSQL_NOD input)
 		label = MAKE_node(nod_label, e_label_count);
 		// this label is unnamed, i.e. its nod_arg[e_label_name] is NULL
 	}
-	label->nod_arg[e_label_number] = (DSQL_NOD) number;
+	label->nod_arg[e_label_number] = (DSQL_NOD) (IPTR) number;
 
 	return label;
 }
