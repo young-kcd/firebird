@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbackup.cpp,v 1.17 2004-03-13 22:17:55 skidder Exp $
+ *  $Id: nbackup.cpp,v 1.18 2004-03-16 05:54:15 skidder Exp $
  *
  */
  
@@ -154,7 +154,6 @@ public:
 		backup = 0;
 		newdb = NULL;
 		trans = NULL;
-		bakname[0] = 0;
 		// Recognition of local prefix allows to work with
 		// database using TCP/IP loopback while reading file locally.
 		// This makes NBACKUP compatible with Windows CS with XNET disabled
@@ -162,7 +161,7 @@ public:
 			_database += sizeof(local_prefix) - 1;
 		}
 		if (!ResolveDatabaseAlias(_database, dbname))
-			strncpy(dbname, _database, sizeof(dbname));
+			dbname = _database;
 	}
 	// External calls must clean up resources after themselves
 	void fixup_database();
@@ -176,8 +175,8 @@ private:
     isc_tr_handle trans; /* transaction handle */
 	
 	const char* database;
-	char dbname[MAXPATHLEN]; // Database file name
-	char bakname[MAXPATHLEN];
+	Firebird::PathName dbname; // Database file name
+	Firebird::PathName bakname;
 	FILE_HANDLE dbase;
 	FILE_HANDLE backup;
 	
@@ -211,16 +210,16 @@ size_t nbackup::read_file(FILE_HANDLE &file, void *buffer, size_t bufsize)
 	if (!ReadFile(file, buffer, bufsize, &bytesDone, NULL))
 		b_error::raise("IO error (%d) reading file: %s", 
 			GetLastError(),
-			&file==&dbase ? dbname :
-			&file==&backup ? bakname : "unknown");
+			&file==&dbase ? dbname.c_str() :
+			&file==&backup ? bakname.c_str() : "unknown");
 	return bytesDone;
 #else
 	ssize_t res = read(file, buffer, bufsize);
 	if (res < 0)
 		b_error::raise("IO error (%d) reading file: %s", 
 			errno,
-			&file==&dbase ? dbname :
-			&file==&backup ? bakname : "unknown");
+			&file==&dbase ? dbname.c_str() :
+			&file==&backup ? bakname.c_str() : "unknown");
 	return res;
 #endif
 }
@@ -234,15 +233,15 @@ void nbackup::write_file(FILE_HANDLE &file, void *buffer, size_t bufsize)
 	{
 		b_error::raise("IO error (%d) writing file: %s", 
 			GetLastError(),
-			&file==&dbase ? dbname :
-			&file==&backup ? bakname : "unknown");
+			&file==&dbase ? dbname.c_str() :
+			&file==&backup ? bakname.c_str() : "unknown");
 	}
 #else
 	if (write(file, buffer, bufsize) != (ssize_t)bufsize)
 		b_error::raise("IO error (%d) writing file: %s", 
 			errno,
-			&file==&dbase ? dbname :
-			&file==&backup ? bakname : "unknown");
+			&file==&dbase ? dbname.c_str() :
+			&file==&backup ? bakname.c_str() : "unknown");
 #endif
 }
 
@@ -258,55 +257,55 @@ void nbackup::seek_file(FILE_HANDLE &file, SINT64 pos)
 	{
 		b_error::raise("IO error (%d) seeking file: %s", 
 			error,
-			&file==&dbase ? dbname :
-			&file==&backup ? bakname : "unknown");
+			&file==&dbase ? dbname.c_str() :
+			&file==&backup ? bakname.c_str() : "unknown");
 	}
 #else
 	if (lseek(file, pos, SEEK_SET) == (off_t)-1)
 		b_error::raise("IO error (%d) seeking file: %s", 
 			errno,
-			&file==&dbase ? dbname :
-			&file==&backup ? bakname : "unknown");
+			&file==&dbase ? dbname.c_str() :
+			&file==&backup ? bakname.c_str() : "unknown");
 #endif
 }
 
 void nbackup::open_database_write() {
 #ifdef WIN_NT
-	dbase = CreateFile(dbname, GENERIC_READ | GENERIC_WRITE, 
+	dbase = CreateFile(dbname.c_str(), GENERIC_READ | GENERIC_WRITE, 
 		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 
 		NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (dbase == INVALID_HANDLE_VALUE)
-		b_error::raise("Error (%d) opening database file: %s", GetLastError(), dbname);
+		b_error::raise("Error (%d) opening database file: %s", GetLastError(), dbname.c_str());
 #else
-	dbase = open(dbname, O_RDWR | O_LARGEFILE);
+	dbase = open(dbname.c_str(), O_RDWR | O_LARGEFILE);
 	if (dbase < 0)
-		b_error::raise("Error (%d) opening database file: %s", errno, dbname);	
+		b_error::raise("Error (%d) opening database file: %s", errno, dbname.c_str());	
 #endif
 }
 
 void nbackup::open_database_scan() {
 #ifdef WIN_NT
-	dbase = CreateFile(dbname, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 
+	dbase = CreateFile(dbname.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 
 		NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	if (dbase == INVALID_HANDLE_VALUE)
-		b_error::raise("Error (%d) opening database file: %s", GetLastError(), dbname);
+		b_error::raise("Error (%d) opening database file: %s", GetLastError(), dbname.c_str());
 #else
-	dbase = open(dbname, O_RDONLY | O_LARGEFILE);
+	dbase = open(dbname.c_str(), O_RDONLY | O_LARGEFILE);
 	if (dbase < 0)
-		b_error::raise("Error (%d) opening database file: %s", errno, dbname);	
+		b_error::raise("Error (%d) opening database file: %s", errno, dbname.c_str());	
 #endif
 }
 
 void nbackup::create_database() {
 #ifdef WIN_NT
-	dbase = CreateFile(dbname, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_DELETE, 
+	dbase = CreateFile(dbname.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_DELETE, 
 		NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	if (dbase == INVALID_HANDLE_VALUE)
-		b_error::raise("Error (%d) creating database file: %s", GetLastError(), dbname);
+		b_error::raise("Error (%d) creating database file: %s", GetLastError(), dbname.c_str());
 #else
-	dbase = open(dbname, O_RDWR | O_CREAT | O_EXCL | O_LARGEFILE, 0660);
+	dbase = open(dbname.c_str(), O_RDWR | O_CREAT | O_EXCL | O_LARGEFILE, 0660);
 	if (dbase < 0)
-		b_error::raise("Error (%d) creating database file: %s", errno, dbname);	
+		b_error::raise("Error (%d) creating database file: %s", errno, dbname.c_str());	
 #endif
 }
 
@@ -320,42 +319,42 @@ void nbackup::close_database() {
 
 void nbackup::open_backup_scan() {
 #ifdef WIN_NT
-	backup = CreateFile(bakname, GENERIC_READ, 0, 
+	backup = CreateFile(bakname.c_str(), GENERIC_READ, 0, 
 		NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	if (backup == INVALID_HANDLE_VALUE)
-		b_error::raise("Error (%d) opening backup file: %s", GetLastError(), bakname);
+		b_error::raise("Error (%d) opening backup file: %s", GetLastError(), bakname.c_str());
 #else
-	backup = open(bakname, O_RDONLY | O_LARGEFILE);
+	backup = open(bakname.c_str(), O_RDONLY | O_LARGEFILE);
 	if (backup < 0)
-		b_error::raise("Error (%d) opening backup file: %s", errno, bakname);	
+		b_error::raise("Error (%d) opening backup file: %s", errno, bakname.c_str());	
 #endif
 }
 
 void nbackup::create_backup() {
 #ifdef WIN_NT
-	if (strcmp(bakname, "stdout") == 0) {
+	if (bakname == "stdout") {
 		backup = GetStdHandle(STD_OUTPUT_HANDLE);
 	}
 	else {		
-		backup = CreateFile(bakname, GENERIC_WRITE, FILE_SHARE_DELETE, 
+		backup = CreateFile(bakname.c_str(), GENERIC_WRITE, FILE_SHARE_DELETE, 
 			NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	}
 	if (backup == INVALID_HANDLE_VALUE)
-		b_error::raise("Error (%d) creating backup file: %s", GetLastError(), bakname);
+		b_error::raise("Error (%d) creating backup file: %s", GetLastError(), bakname.c_str());
 #else
-	if (strcmp(bakname, "stdout") == 0) {
+	if (bakname == "stdout") {
 		backup = 1 /* Posix file handle for stdout */;
 	}
 	else {
-		backup = open(bakname, O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, 0660);
+		backup = open(bakname.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, 0660);
 		if (backup < 0)
-			b_error::raise("Error (%d) creating backup file: %s", errno, bakname);
+			b_error::raise("Error (%d) creating backup file: %s", errno, bakname.c_str());
 	}
 #endif
 }
 
 void nbackup::close_backup() {
-	if (strcmp(bakname, "stdout") == 0) return;
+	if (bakname == "stdout") return;
 #ifdef WIN_NT
 	CloseHandle(backup);
 #else
@@ -520,15 +519,17 @@ void nbackup::backup_database(int level, const char* fname) {
 		struct tm *today = localtime(&_time);
 	
 		if (fname)
-			strncpy(bakname, fname, sizeof(bakname));
+			bakname = fname;
 		else {
 			// Let's generate nice new filename
 			Firebird::PathName begin, fil;
 			PathUtils::splitLastComponent(begin, fil, database);
-			sprintf(bakname, "%s-%d-%04d%02d%02d-%02d%02d", fil.c_str(), level,
+			char temp[100];
+			sprintf(temp, "%s-%d-%04d%02d%02d-%02d%02d", fil.c_str(), level,
 				today->tm_year + 1900, today->tm_mon+1, today->tm_mday,
 				today->tm_hour, today->tm_min);
-			printf("%s", bakname); // Print out generated filename for script processing
+			bakname = temp;
+			printf("%s", bakname.c_str()); // Print out generated filename for script processing
 		}
 
 		// Level 0 backup is a full reconstructed database image that can be
@@ -660,12 +661,12 @@ void nbackup::backup_database(int level, const char* fname) {
 		in_sqlda->sqlvar[2].sqlind = &null_flag;
 		// Pad filename with spaces before storing
 		char buff[256]; // RDB$FILE_NAME has length of 253
-		size_t len = strlen(bakname);
+		size_t len = bakname.length();
 		if (len > 253)
 			len = 253;
 		buff[0] = len;
 		buff[1] = 0;
-		memcpy(buff + 2, bakname, len);
+		memcpy(buff + 2, bakname.c_str(), len);
 		in_sqlda->sqlvar[3].sqldata = buff;
 		in_sqlda->sqlvar[3].sqlind = &null_flag;
 		if (isc_dsql_execute(status, &trans, &stmt, 1, in_sqlda))
@@ -679,7 +680,7 @@ void nbackup::backup_database(int level, const char* fname) {
 		}
 		delete[] reinterpret_cast<UCHAR*>(page_buff);
 		if (delete_backup)
-			unlink(bakname);
+			unlink(bakname.c_str());
 		if (trans) {
 			if (isc_rollback_transaction(status, &trans))
 				pr_error(status, "rollback transaction");
@@ -710,11 +711,14 @@ void nbackup::restore_database(int filecount, const char* const* files) {
 				while (true) {
 					printf("Enter name of the backup file of level %d "
 						   "(\".\" - do not restore further): \n", curLevel);
-					scanf("%s", bakname);
-					if (!strcmp(bakname,".")) {
+					char temp[256];
+					scanf("%255s", temp);
+					bakname = temp;
+					if (bakname == ".") 
+					{
 						close_database();
 						if (!curLevel) {
-							unlink(dbname);
+							unlink(dbname.c_str());
 							b_error::raise("Level 0 backup is not restored");
 						}
 						fixup_database();
@@ -741,8 +745,7 @@ void nbackup::restore_database(int filecount, const char* const* files) {
 					return;
 				}
 				else {
-					strncpy(bakname, files[curLevel], sizeof(bakname));
-					bakname[sizeof(bakname) - 1] = 0; // Worst case
+					bakname = files[curLevel];
 #ifdef WIN_NT
 					if (curLevel)
 #endif
@@ -753,20 +756,20 @@ void nbackup::restore_database(int filecount, const char* const* files) {
 			if (curLevel) {
 				inc_header bakheader;
 				if (read_file(backup, &bakheader, sizeof(bakheader)) != sizeof(bakheader))
-					b_error::raise("Unexpected end of file when reading header of backup file: %s", bakname);					
+					b_error::raise("Unexpected end of file when reading header of backup file: %s", bakname.c_str());					
 				if (memcmp(bakheader.signature, backup_signature, sizeof(backup_signature)) != 0)				
-					b_error::raise("Invalid incremental backup file: %s", bakname);
+					b_error::raise("Invalid incremental backup file: %s", bakname.c_str());
 				if (bakheader.version != 1)
-					b_error::raise("Unsupported version %d of incremental backup file: %s", bakheader.version, bakname);
+					b_error::raise("Unsupported version %d of incremental backup file: %s", bakheader.version, bakname.c_str());
 				if (bakheader.level != curLevel)
 					b_error::raise("Invalid level %d of incremental backup file: %s, expected %d", 
-						bakheader.level, bakname, curLevel);
+						bakheader.level, bakname.c_str(), curLevel);
 				// We may also add SCN check, but GUID check covers this case too
 				if (memcmp(&bakheader.prev_guid, &prev_guid, sizeof(FB_GUID)) != 0)
 				{
 					b_error::raise(
 						"Wrong order of backup files or "
-						"invalid incremental backup file detected, file: %s", bakname);
+						"invalid incremental backup file detected, file: %s", bakname.c_str());
 				}
 				delete_database = true;
 				prev_guid = bakheader.backup_guid;
@@ -778,7 +781,7 @@ void nbackup::restore_database(int filecount, const char* const* files) {
 					if (bytesDone != sizeof(pageNum) || 
 						read_file(backup, page_buffer, bakheader.page_size) != bakheader.page_size) 
 					{
-						b_error::raise("Unexpected end of backup file: %s", bakname);
+						b_error::raise("Unexpected end of backup file: %s", bakname.c_str());
 					}
 					seek_file(dbase, ((SINT64)pageNum)*bakheader.page_size);
 					write_file(dbase, page_buffer, bakheader.page_size);
@@ -787,8 +790,10 @@ void nbackup::restore_database(int filecount, const char* const* files) {
 			}
 			else {
 #ifdef WIN_NT
-				if (!CopyFile(bakname, dbname, FALSE))
-					b_error::raise("Error (%d) creating database file: %s via copying from: %s", GetLastError(), dbname, bakname);
+				if (!CopyFile(bakname.c_str(), dbname.c_str(), FALSE)) {
+					b_error::raise("Error (%d) creating database file: %s via copying from: %s", 
+						GetLastError(), dbname.c_str(), bakname.c_str());
+				}
 				delete_database = true; // database is possibly broken
 				open_database_write();
 #else
@@ -843,7 +848,7 @@ void nbackup::restore_database(int filecount, const char* const* files) {
 		}
 		delete[] page_buffer;
 		if (delete_database)
-			unlink(dbname);
+			unlink(dbname.c_str());
 		throw;
 	}
 }
