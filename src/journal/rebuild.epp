@@ -248,26 +248,26 @@ static ISC_STATUS_ARRAY wal_status;
 // if new journal records are added in jrn.h, they should be added here
 
 static char *table[] = {
-	"JRN_PAGE				",	// A full page WAL record
-	"JRNP_DATA_SEGMENT	   ",	// Add segment to data page
-	"JRNP_POINTER_SLOT	   ",	// Add pointer page to relation
-	"JRNP_TRANSACTION		",	// Journal transaction state
-	"JRNP_NULL			   ",	// Odd byte
-	"JRNP_PIP				",	// Page allocation/deallocation
-	"JRNP_BTREE_NODE		 ",	// Add/delete a node to BTREE
-	"JRNP_BTREE_SEGMENT	  ",	// B Tree split - valid part
-	"JRNP_BTREE_DELETE	   ",	// B Tree node delete - logical
-	"JRNP_INDEX_ROOT		 ",	// Add/drop an index
-	"JRNP_DB_HEADER		  ",	// Modify db header page
-	"JRNP_GENERATOR		  ",	// generator		
-	"JRNP_ROOT_PAGE		  ",	// Index root page	 
-	"JRNP_DB_ATTACHMENT	  ",	// next attachment
-	"JRNP_DB_HDR_PAGES	   ",	// Header pages	
-	"JRNP_DB_HDR_FLAGS	   ",	// Header flags
+	"JRN_PAGE                ",	// A full page WAL record
+	"JRNP_DATA_SEGMENT       ",	// Add segment to data page
+	"JRNP_POINTER_SLOT       ",	// Add pointer page to relation
+	"JRNP_TRANSACTION        ",	// Journal transaction state
+	"JRNP_NULL               ",	// Odd byte
+	"JRNP_PIP                ",	// Page allocation/deallocation
+	"JRNP_BTREE_NODE         ",	// Add/delete a node to BTREE
+	"JRNP_BTREE_SEGMENT      ",	// B Tree split - valid part
+	"JRNP_BTREE_DELETE       ",	// B Tree node delete - logical
+	"JRNP_INDEX_ROOT         ",	// Add/drop an index
+	"JRNP_DB_HEADER          ",	// Modify db header page
+	"JRNP_GENERATOR          ",	// generator		
+	"JRNP_ROOT_PAGE          ",	// Index root page	 
+	"JRNP_DB_ATTACHMENT      ",	// next attachment
+	"JRNP_DB_HDR_PAGES       ",	// Header pages	
+	"JRNP_DB_HDR_FLAGS       ",	// Header flags
 	"JRNP_DB_HDR_SDW_COUNT   ",	// Header shadow count
-	"JRNP_LOG_PAGE		   ",	// log page information
-	"JRNP_NEXT_TIP		   ",	// next tip page
-	"JRNP_MAX				"
+	"JRNP_LOG_PAGE           ",	// log page information
+	"JRNP_NEXT_TIP           ",	// next tip page
+	"JRNP_MAX                "
 };
 
 
