@@ -30,9 +30,11 @@
  *  Created by:  Mark O'Donohue <skywalker@users.sourceforge.net>
  *
  *  Contributor(s):
+ *  25 May 2003 - Nickolay Samofatov: Fix several bugs that prevented 
+ *    compatibility with Kylix
  * 
  *
- *  $Id: config_root.cpp,v 1.5 2003-05-25 00:12:34 skidder Exp $
+ *  $Id: config_root.cpp,v 1.6 2003-05-25 00:24:23 skidder Exp $
  */
 
 #include "firebird.h"
