@@ -1786,7 +1786,7 @@ static bool create_procedure(	TDBB	tdbb,
 	case 3:
 		{
 			get_procedure_dependencies(work);
-			PRC procedure = MET_lookup_procedure(tdbb, work->dfw_name);
+			PRC procedure = MET_lookup_procedure(tdbb, work->dfw_name, FALSE);
 			if (!procedure) {
 				return false;
 			}
@@ -2450,7 +2450,7 @@ static bool delete_parameter(	TDBB	tdbb,
 	switch (phase)
 	{
 	case 1:
-		if (MET_lookup_procedure_id(tdbb, work->dfw_id, FALSE, 0))
+		if (MET_lookup_procedure_id(tdbb, work->dfw_id, FALSE, TRUE, 0))
 		{
 			check_dependencies(tdbb, work->dfw_name, work->dfw_name,
 							   obj_procedure, transaction);
@@ -2492,7 +2492,7 @@ static bool delete_procedure(	TDBB	tdbb,
 	switch (phase)
 	{
 	case 0:
-		procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, FALSE, 0);
+		procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, FALSE, TRUE, 0);
 		if (!procedure) {
 			return false;
 		}
@@ -2510,7 +2510,7 @@ static bool delete_procedure(	TDBB	tdbb,
 		return true;
 
 	case 2:
-		procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, FALSE, 0);
+		procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, FALSE, TRUE, 0);
 		if (!procedure) {
 			return false;
 		}
@@ -2537,7 +2537,7 @@ static bool delete_procedure(	TDBB	tdbb,
 		return true;
 
 	case 4:
-		procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, TRUE, 0);
+		procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, TRUE, TRUE, 0);
 		if (!procedure) {
 			return false;
 		}
@@ -3204,7 +3204,7 @@ static void get_procedure_dependencies(DFW work)
         if (!REQUEST(irq_c_prc_dpd)) 
             REQUEST(irq_c_prc_dpd) = (BLK) handle;
         blob_id = X.RDB$PROCEDURE_BLR;
-		procedure = MET_lookup_procedure(tdbb, work->dfw_name);
+		procedure = MET_lookup_procedure(tdbb, work->dfw_name, FALSE);
 
 	END_FOR;
 
@@ -3826,6 +3826,7 @@ static bool modify_procedure(	TDBB	tdbb,
 		procedure = MET_lookup_procedure_id(tdbb,
 											work->dfw_id,
 											FALSE,
+											TRUE,
 											0);
 		if (!procedure) {
 			return false;
@@ -3843,7 +3844,7 @@ static bool modify_procedure(	TDBB	tdbb,
 		return true;
 
 	case 3:
-		procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, FALSE, 0);
+		procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, FALSE, TRUE, 0);
 		if (!procedure) {
 			return false;
 		}
@@ -3867,7 +3868,7 @@ static bool modify_procedure(	TDBB	tdbb,
 		return true;
 
 	case 4:
-		procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, FALSE, 0);
+		procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, FALSE, TRUE, 0);
 		if (!procedure) {
 			return false;
 		}
@@ -3910,6 +3911,7 @@ static bool modify_procedure(	TDBB	tdbb,
 			if (!(procedure = MET_lookup_procedure_id(tdbb,
 														work->dfw_id,
 														FALSE,
+														TRUE,
 														PRC_being_altered)))
 			{
 #ifdef SUPERSERVER

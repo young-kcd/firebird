@@ -162,7 +162,7 @@ SLONG VIO_savepoint_large(struct sav *savepoint, SLONG size)
 		if (count < 0)
 			break;
 		verb_actions = verb_actions->vct_next;
-	}	
+	}
 
 	return count;
 }
@@ -1165,7 +1165,7 @@ BOOLEAN VIO_erase(TDBB tdbb, RPB * rpb, TRA transaction)
 			EVL_field(0, rpb->rpb_record, f_prc_id, &desc2);
 			id = MOV_get_long(&desc2, 0);
 			DFW_post_work(transaction, dfw_delete_procedure, &desc, id);
-			MET_lookup_procedure_id(tdbb, id, FALSE, 0);
+			MET_lookup_procedure_id(tdbb, id, FALSE, TRUE, 0);
 			break;
 
 		case rel_exceptions:
@@ -1220,7 +1220,7 @@ BOOLEAN VIO_erase(TDBB tdbb, RPB * rpb, TRA transaction)
 			SCL_check_procedure(&desc, SCL_control);
 			EVL_field(0, rpb->rpb_record, f_prm_name, &desc2);
 			MOV_get_metadata_str(&desc, procedure_name, sizeof(procedure_name));
-			if ( (procedure = MET_lookup_procedure(tdbb, procedure_name)) )
+			if ( (procedure = MET_lookup_procedure(tdbb, procedure_name, TRUE)) )
 			{
 				DFW_post_work(transaction, dfw_delete_prm, &desc2,
 							  procedure->prc_id);

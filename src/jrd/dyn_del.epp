@@ -913,7 +913,7 @@ void DYN_delete_procedure( GBL gbl, UCHAR ** ptr)
 	dbb = tdbb->tdbb_database;
 
 	tdbb->tdbb_flags |= TDBB_prc_being_dropped;
-	if (MET_lookup_procedure(tdbb, name) == 0)
+	if (MET_lookup_procedure(tdbb, name, TRUE) == 0)
 	{
 		tdbb->tdbb_flags &= ~TDBB_prc_being_dropped;
 		DYN_error_punt(FALSE, 140, name, NULL, NULL, NULL, NULL);

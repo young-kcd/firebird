@@ -61,8 +61,8 @@ void MET_lookup_generator_id(TDBB, SLONG, TEXT *);
 void DLL_EXPORT MET_lookup_index(TDBB, TEXT *, TEXT *, USHORT);
 SLONG MET_lookup_index_name(TDBB, TEXT *, SLONG *, SSHORT *);
 int MET_lookup_partner(TDBB, struct rel *, struct idx *, UCHAR *);
-struct prc *MET_lookup_procedure(TDBB, SCHAR *);
-struct prc *MET_lookup_procedure_id(TDBB, SSHORT, BOOLEAN, USHORT);
+struct prc *MET_lookup_procedure(TDBB, SCHAR *, BOOLEAN);
+struct prc *MET_lookup_procedure_id(TDBB, SSHORT, BOOLEAN, BOOLEAN, USHORT);
 struct rel *MET_lookup_relation(TDBB, const char*);
 struct rel *MET_lookup_relation_id(TDBB, SLONG, BOOLEAN);
 struct nod *MET_parse_blob(TDBB, struct rel *, SLONG[2], class Csb **,
@@ -70,7 +70,7 @@ struct nod *MET_parse_blob(TDBB, struct rel *, SLONG[2], class Csb **,
 void MET_parse_sys_trigger(TDBB, struct rel *);
 int MET_post_existence(TDBB, struct rel *);
 void MET_prepare(TDBB, struct tra *, USHORT, UCHAR *);
-struct prc *MET_procedure(TDBB, int, USHORT);
+struct prc *MET_procedure(TDBB, int, BOOLEAN, USHORT);
 struct rel *MET_relation(TDBB, USHORT);
 extern BOOLEAN 		MET_relation_owns_trigger (TDBB, const TEXT *, const TEXT *);
 extern BOOLEAN		MET_relation_default_class (TDBB, const TEXT *, const TEXT *);

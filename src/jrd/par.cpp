@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.18 2002-10-31 11:58:40 dimitr Exp $
+$Id: par.cpp,v 1.19 2002-11-04 15:12:33 skidder Exp $
 */
 
 #include "firebird.h"
@@ -1037,12 +1037,12 @@ static NOD par_exec_proc(TDBB tdbb, CSB * csb, SSHORT operator_)
 
 		if (operator_ == blr_exec_pid) {
 			pid = BLR_WORD;
-			if (!(procedure = MET_lookup_procedure_id(tdbb, pid, FALSE, 0)))
+			if (!(procedure = MET_lookup_procedure_id(tdbb, pid, FALSE, FALSE, 0)))
 				sprintf(name, "id %d", pid);
 		}
 		else {
 			par_name(csb, name);
-			procedure = MET_lookup_procedure(tdbb, name);
+			procedure = MET_lookup_procedure(tdbb, name, FALSE);
 		}
 		if (!procedure)
 			error(*csb, gds_prcnotdef, gds_arg_string, ERR_cstring(name), 0);
@@ -1166,7 +1166,7 @@ static NOD par_field(TDBB tdbb, CSB * csb, SSHORT operator_)
 		if (procedure && (!(procedure->prc_flags & PRC_scanned)
 						  || (procedure->prc_flags & PRC_being_scanned)
 						  || (procedure->prc_flags & PRC_being_altered))) {
-			scan_proc = MET_procedure(tdbb, procedure->prc_id, 0);
+			scan_proc = MET_procedure(tdbb, procedure->prc_id, FALSE, 0);
 			if (scan_proc != procedure)
 				procedure = NULL;
 		}
@@ -1767,11 +1767,11 @@ static NOD par_procedure(TDBB tdbb, CSB * csb, SSHORT operator_)
 
 		if (operator_ == blr_procedure) {
 			par_name(csb, name);
-			procedure = MET_lookup_procedure(tdbb, name);
+			procedure = MET_lookup_procedure(tdbb, name, FALSE);
 		}
 		else {
 			pid = BLR_WORD;
-			if (!(procedure = MET_lookup_procedure_id(tdbb, pid, FALSE, 0)))
+			if (!(procedure = MET_lookup_procedure_id(tdbb, pid, FALSE, FALSE, 0)))
 				sprintf(name, "id %d", pid);
 		}
 		if (!procedure)

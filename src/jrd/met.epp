@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.29 2002-11-03 22:25:53 tamlin Exp $
+$Id: met.epp,v 1.30 2002-11-04 15:12:32 skidder Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -1973,7 +1973,7 @@ int MET_lookup_partner(
 }
 
 
-PRC MET_lookup_procedure(TDBB tdbb, SCHAR * name)
+PRC MET_lookup_procedure(TDBB tdbb, SCHAR * name, BOOLEAN noscan)
 {
 /**************************************
  *
@@ -2024,7 +2024,7 @@ PRC MET_lookup_procedure(TDBB tdbb, SCHAR * name)
         if (!REQUEST(irq_l_procedure)) 
             REQUEST(irq_l_procedure) = request;
 
-        procedure = MET_procedure(tdbb, P.RDB$PROCEDURE_ID, 0);
+        procedure = MET_procedure(tdbb, P.RDB$PROCEDURE_ID, noscan, 0);
 
 	END_FOR;
 
@@ -2035,8 +2035,8 @@ PRC MET_lookup_procedure(TDBB tdbb, SCHAR * name)
 }
 
 
-PRC MET_lookup_procedure_id(TDBB tdbb,
-							SSHORT id, BOOLEAN return_deleted, USHORT flags)
+PRC MET_lookup_procedure_id(TDBB tdbb, SSHORT id, 
+							BOOLEAN return_deleted, BOOLEAN noscan, USHORT flags)
 {
 /**************************************
  *
@@ -2064,7 +2064,7 @@ PRC MET_lookup_procedure_id(TDBB tdbb,
 					ptr < end; ptr++) {
 			if ((procedure = PRC(*ptr)) && procedure->prc_id == id
 				&& !(procedure->prc_flags & PRC_being_scanned)
-				&& (procedure->prc_flags & PRC_scanned)
+				&& ((procedure->prc_flags & PRC_scanned) || noscan)
 				&& !(procedure->prc_flags & PRC_being_altered)
 				&& (!(procedure->prc_flags & PRC_obsolete) || return_deleted))
 				return procedure;
@@ -2082,7 +2082,7 @@ PRC MET_lookup_procedure_id(TDBB tdbb,
         if (!REQUEST(irq_l_proc_id)) 
             REQUEST(irq_l_proc_id) = request;
 
-		procedure = MET_procedure(tdbb, P.RDB$PROCEDURE_ID, flags);
+		procedure = MET_procedure(tdbb, P.RDB$PROCEDURE_ID, noscan, flags);
 
 	END_FOR;
 
@@ -2511,7 +2511,7 @@ void MET_prepare( TDBB tdbb, TRA transaction, USHORT length, UCHAR * msg)
 }
 
 
-PRC MET_procedure(TDBB tdbb, int id, USHORT flags)
+PRC MET_procedure(TDBB tdbb, int id, BOOLEAN noscan, USHORT flags)
 {
 /**************************************
  *
@@ -2620,19 +2620,22 @@ PRC MET_procedure(TDBB tdbb, int id, USHORT flags)
 	procedure->prc_id = id;
 	(*vector)[id] = (BLK) procedure;
 
-	procedure->prc_existence_lock = lock = FB_NEW_RPT(*dbb->dbb_permanent, 0) lck;
-	lock->lck_parent = dbb->dbb_lock;
-	lock->lck_dbb = dbb;
-	lock->lck_key.lck_long = procedure->prc_id;
-	lock->lck_length = sizeof(lock->lck_key.lck_long);
-	lock->lck_type = LCK_prc_exist;
-	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-	lock->lck_object = (BLK) procedure;
-	/* TMN: Beware - this is a hairy AND UGLY cast */
-	lock->lck_ast = reinterpret_cast<lck_ast_t>(blocking_ast_procedure);
+	if (!procedure->prc_existence_lock) {
+		procedure->prc_existence_lock = lock = FB_NEW_RPT(*dbb->dbb_permanent, 0) lck;
+		lock->lck_parent = dbb->dbb_lock;
+		lock->lck_dbb = dbb;
+		lock->lck_key.lck_long = procedure->prc_id;
+		lock->lck_length = sizeof(lock->lck_key.lck_long);
+		lock->lck_type = LCK_prc_exist;
+		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
+		lock->lck_object = (BLK) procedure;
+		/* TMN: Beware - this is a hairy AND UGLY cast */
+		lock->lck_ast = reinterpret_cast<lck_ast_t>(blocking_ast_procedure);
 
-	LCK_lock(tdbb, procedure->prc_existence_lock, LCK_SR, TRUE);
+		LCK_lock(tdbb, procedure->prc_existence_lock, LCK_SR, TRUE);
+	}
 
+	if (!noscan) {
 	request = (BLK) CMP_find_request(tdbb, irq_r_procedure, IRQ_REQUESTS);
 	request2 = (BLK) CMP_find_request(tdbb, irq_r_params, IRQ_REQUESTS);
 
@@ -2765,17 +2768,20 @@ PRC MET_procedure(TDBB tdbb, int id, USHORT flags)
 		}
 		delete csb_;
 		tdbb->tdbb_default = old_pool;
-
- END_FOR;
+		
+	END_FOR;
 
 	if (!REQUEST(irq_r_procedure)) {
 		REQUEST(irq_r_procedure) = request;
 	}
 
+	procedure->prc_flags |= PRC_scanned;
+	
+	} /* if !noscan */
+	
 /* Make sure that it is really being Scanned ! */
 	assert(procedure->prc_flags & PRC_being_scanned);
-
-	procedure->prc_flags |= PRC_scanned;
+	
 	procedure->prc_flags &= ~PRC_being_scanned;
 
 #ifdef SUPERSERVER
@@ -2791,6 +2797,7 @@ PRC MET_procedure(TDBB tdbb, int id, USHORT flags)
 		if (procedure->prc_existence_lock)
 		{
 			LCK_release(tdbb, procedure->prc_existence_lock);
+			procedure->prc_existence_lock = NULL;
 		}
 		ERR_punt();
 	}
