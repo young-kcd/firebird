@@ -2462,8 +2462,8 @@ static bool process_old_record(JRND * record,
 		seqno = page->pag_seqno;
 		return process_record((JRNH*) record, length, seqno, offset, false);
 	}
-	offset = -1;
-	seqno = -1;
+	offset = (ULONG) -1;
+	seqno = (ULONG) -1;
 
 	return process_record((JRNH*) record, length, seqno, offset, false);
 }

@@ -451,10 +451,10 @@ static void backup_wal(DJB database,
 	if (test_dup_entry(database, file_id))
 		return;
 
-	sprintf(f_id, "%d", file_id);
+	sprintf(f_id, "%"SLONGFORMAT, file_id);
 	sprintf(db_id, "%d", database->djb_id);
-	sprintf(csize, "%d", file_size);
-	sprintf(cp_offset, "%d", p_offset);
+	sprintf(csize, "%"SLONGFORMAT, file_size);
+	sprintf(cp_offset, "%"SLONGFORMAT, p_offset);
 	build_indexed_name(dname, (char*) database->djb_dir_name, file_seq);
 
 	gds__prefix(name, ARCHIVE);
@@ -565,7 +565,7 @@ static void build_indexed_name(SCHAR * filename,
 	SCHAR extension[11];
 
 	if (seqno < 1000 || seqno > 18575)
-		sprintf(extension, "%d", seqno);
+		sprintf(extension, "%"SLONGFORMAT, seqno);
 	else {
 		seqno -= 1000;
 		extension[0] = letters[seqno % 26];
