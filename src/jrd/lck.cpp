@@ -1587,8 +1587,10 @@ static bool internal_enqueue(
 
 
 static void set_lock_attachment(Lock* lock, Attachment* attachment) {
-#ifdef MULTI_THREAD
 	if (lock->lck_attachment == attachment) return;
+
+	// Disable delivery of ASTs for the moment while queue of locks is in flux
+	LCK_ast_inhibit();
 
 	// If lock has an attachment it must not be a part of linked list
 	fb_assert(!lock->lck_attachment ? !lock->lck_prior && !lock->lck_next : true);
@@ -1633,7 +1635,8 @@ static void set_lock_attachment(Lock* lock, Attachment* attachment) {
 		if (next)
 			next->lck_prior = lock;
 	}
-#endif
+
+	LCK_ast_enable();
 
 	lock->lck_attachment = attachment;
 }

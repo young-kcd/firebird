@@ -5658,6 +5658,8 @@ static void release_attachment(Attachment* attachment)
    were hung off this attachment block, to ensure that the attachment
    block doesn't get dereferenced after it is released */
 
+	// Disable delivery of ASTs for the moment while queue of locks is in flux
+	LCK_ast_inhibit();
 	record_lock = attachment->att_long_locks;
 	while (record_lock) {
 		Lock* next = record_lock->lck_next;
@@ -5666,6 +5668,7 @@ static void release_attachment(Attachment* attachment)
 		record_lock->lck_prior = NULL;
 		record_lock = next;
 	}
+	LCK_ast_enable();
 
 	if (attachment->att_flags & ATT_lck_init_done)
 		LCK_fini(tdbb, LCK_OWNER_attachment);	/* For the attachment */
