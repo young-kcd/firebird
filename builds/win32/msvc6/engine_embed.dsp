@@ -395,6 +395,10 @@ SOURCE=..\..\..\src\jrd\rng.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\rpb_chain.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\rse.cpp
 # End Source File
 # Begin Source File
@@ -1158,6 +1162,10 @@ SOURCE=..\..\..\src\jrd\rng.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\rng_proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\rpb_chain.h
 # End Source File
 # Begin Source File
 

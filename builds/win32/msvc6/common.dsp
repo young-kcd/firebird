@@ -145,6 +145,10 @@ SOURCE=..\..\..\src\common\classes\alloc.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\common\classes\array.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\common\config\config.h
 # End Source File
 # Begin Source File

@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.53 2003-04-24 05:46:49 dimitr Exp $
+$Id: exe.cpp,v 1.54 2003-04-25 14:49:39 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -105,6 +105,7 @@ $Id: exe.cpp,v 1.53 2003-04-24 05:46:49 dimitr Exp $
 
 #include "../jrd/ExecuteStatement.h"
 #include "../dsql/dsql_proto.h"
+#include "../jrd/rpb_chain.h"
 
 extern "C" {
 
@@ -1222,13 +1223,21 @@ static JRD_NOD erase(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 
 /* Handle pre-operation trigger */
 
-	if (relation->rel_pre_erase &&
-		which_trig != POST_TRIG &&
-		(trigger = execute_triggers(tdbb, &relation->rel_pre_erase,
-									rpb->rpb_record, 0,
-									jrd_req::req_trigger_delete)))
-	{
-		trigger_failure(tdbb, trigger);
+	if (relation->rel_pre_erase && which_trig != POST_TRIG) {
+		if (! tdbb->tdbb_transaction->tra_rpblist) {
+			assert(tdbb->tdbb_transaction->tra_pool);
+			tdbb->tdbb_transaction->tra_rpblist = 
+				FB_NEW(*tdbb->tdbb_transaction->tra_pool) 
+					traRpbList(tdbb->tdbb_transaction->tra_pool);
+		}
+		int rpblevel = tdbb->tdbb_transaction->
+					tra_rpblist->PushRpb(rpb);
+		trigger = execute_triggers(tdbb, &relation->rel_pre_erase,
+					rpb->rpb_record, 0, jrd_req::req_trigger_delete);
+		tdbb->tdbb_transaction->tra_rpblist->PopRpb(rpb, rpblevel);
+		if (trigger) {
+			trigger_failure(tdbb, trigger);
+		}
 	}
 
 	if (relation->rel_file)
@@ -2844,14 +2853,24 @@ static JRD_NOD modify(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 		if (transaction != dbb->dbb_sys_trans)
 			++transaction->tra_save_point->sav_verb_count;
 
-		if (relation->rel_pre_modify &&
-			which_trig != POST_TRIG &&
-			(trigger = execute_triggers(tdbb, &relation->rel_pre_modify,
-										org_rpb->rpb_record,
-										new_rpb->rpb_record,
-										jrd_req::req_trigger_update)))
-		{
-			trigger_failure(tdbb, trigger);
+
+		if (relation->rel_pre_modify && which_trig != POST_TRIG) {
+			if (! tdbb->tdbb_transaction->tra_rpblist) {
+				assert(tdbb->tdbb_transaction->tra_pool);
+				tdbb->tdbb_transaction->tra_rpblist = 
+					FB_NEW(*tdbb->tdbb_transaction->tra_pool) 
+						traRpbList(tdbb->tdbb_transaction->tra_pool);
+			}
+			int rpblevel = tdbb->tdbb_transaction->
+							tra_rpblist->PushRpb(org_rpb);
+			trigger = execute_triggers(tdbb, &relation->rel_pre_modify,
+							org_rpb->rpb_record, new_rpb->rpb_record,
+							jrd_req::req_trigger_update);
+			tdbb->tdbb_transaction->tra_rpblist->
+							PopRpb(org_rpb, rpblevel);
+			if (trigger) {
+				trigger_failure(tdbb, trigger);
+			}
 		}
 
 		if (node->nod_arg[e_mod_validate]) {

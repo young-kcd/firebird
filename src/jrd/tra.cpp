@@ -1108,10 +1108,16 @@ void TRA_release_transaction(TDBB tdbb, JRD_TRA transaction)
 /* Unlink the transaction from the database block */
 
 	for (ptr = &tdbb->tdbb_attachment->att_transactions;
-		 *ptr; ptr = &(*ptr)->tra_next) if (*ptr == transaction) {
+							*ptr; ptr = &(*ptr)->tra_next) { 
+		if (*ptr == transaction) {
 			*ptr = transaction->tra_next;
 			break;
 		}
+	}
+
+/* Release transaction's under-modification-rpb list. */
+
+	delete transaction->tra_rpblist;
 
 /* Release the transaction pool. */
 

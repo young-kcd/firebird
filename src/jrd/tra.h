@@ -35,6 +35,7 @@
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 #include "../common/classes/tree.h"
+#include "../jrd/rpb_chain.h"
 
 /* Transaction block */
 
@@ -64,6 +65,7 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 #endif
 	struct dfw *tra_deferred_work;	/* work deferred to commit time */
 	class Rsc *tra_resources;	/* resource existence list */
+	class traRpbList *tra_rpblist;
 	UCHAR tra_use_count;		/* use count for safe AST delivery */
 	UCHAR tra_callback_count;	/* callback count for 'execute varchar' */
 	UCHAR tra_transactions[1];
