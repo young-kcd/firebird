@@ -382,51 +382,15 @@ __END_DECLS
 #define	ib_ferror_unlocked(p)	ib__sferror(p)
 #define	ib_clearerr_unlocked(p)	ib__sclearerr(p)
 #define	ib_fileno_unlocked(p)	ib__sfileno(p)
-#ifndef  _THREAD_SAFE
 #define	ib_feof(p)	ib_feof_unlocked(p)
 #define	ib_ferror(p)	ib_ferror_unlocked(p)
 #define	ib_clearerr(p)	ib_clearerr_unlocked(p)
 #define	ib_fileno(p)	ib_fileno_unlocked(p)
-#endif
 #ifndef lint
 #define	ib_getc_unlocked(fp)	ib__sgetc(fp)
 #define ib_putc_unlocked(x, fp)	ib__sputc(x, fp)
-#ifdef	_THREAD_SAFE
-	 void ib_flockfile_debug(IB_FILE *, char *, int);
-#ifdef	_FLOCK_DEBUG
-#define IB_FLOCKFILE(x)	ib__flockfile_debug(x, __FILE__, __LINE__)
-#else
-#define IB_FLOCKFILE(x)	ib_flockfile(x)
-#endif
-	 static __inline int \ ib__getc_locked(IB_FILE * _fp) \
-{
-	\extern int ib__isthreaded;
-	\int _ret;
-	\if (__isthreaded)
-		\IB_FLOCKFILE(_fp);
-	\_ret = ib_getc_unlocked(_fp);
-	\if (ib__isthreaded)
-		\ib_funlockfile(_fp);
-	\return (_ret);
-\}
-static __inline int \ ib__putc_locked(int _x, IB_FILE * _fp) \
-{
-	\extern int ib__isthreaded;
-	\int _ret;
-	\if (ib__isthreaded)
-		\IB_FLOCKFILE(_fp);
-	\_ret = ib_putc_unlocked(_x, _fp);
-	\if (ib__isthreaded)
-		\ib_funlockfile(_fp);
-	\return (_ret);
-\}
-
-#define	ib_getc(fp)	ib__getc_locked(fp)
-#define	ib_putc(x, fp)	ib__putc_locked(x, fp)
-#else
 #define	ib_getc(fp)	ib_getc_unlocked(fp)
 #define ib_putc(x, fp)	ib_putc_unlocked(x, fp)
-#endif
 #endif /* lint */
 #define	ib_getchar()		ib_getc(ib_stdin)
 #define	ib_getchar_unlocked()	ib_getc_unlocked(ib_stdin)
