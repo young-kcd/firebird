@@ -5901,7 +5901,9 @@ static CONTENTS remove_leaf_node(thread_db* tdbb, index_insertion* insertion, WI
 	while (true) {
 
 		// if we find the right one, quit
-		if (insertion->iib_number == node.recordNumber && !node.isEndBucket) {
+		if (insertion->iib_number == node.recordNumber && 
+			!node.isEndBucket && !node.isEndLevel) 
+		{
 			break;
 		}
 
