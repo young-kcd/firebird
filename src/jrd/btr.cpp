@@ -5854,7 +5854,10 @@ static bool scan(TDBB tdbb, UCHAR *pointer, SBM *bitmap, USHORT to_segment,
 				return false;
 			}
 
-			if (descending && done && (node.prefix < prefix)) {
+			if (descending && 
+				((done && (node.prefix < prefix)) || 
+				 (node.prefix + node.length < key->key_length))) 
+			{
 				return false;
 			}
 
@@ -5935,7 +5938,10 @@ static bool scan(TDBB tdbb, UCHAR *pointer, SBM *bitmap, USHORT to_segment,
 				return false;
 			}
 
-			if (descending && done && (node->btn_prefix < prefix)) {
+			if (descending && 
+				((done && (node->btn_prefix < prefix)) || 
+				 (node->btn_prefix + node->btn_length < key->key_length))) 
+			{
 				return false;
 			}
 
