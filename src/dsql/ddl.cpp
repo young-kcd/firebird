@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.46 2003-04-10 06:14:54 aafemt Exp $
+ * $Id: ddl.cpp,v 1.47 2003-04-28 07:41:29 dimitr Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -2713,7 +2713,7 @@ static void define_trigger( DSQL_REQ request, DSQL_NOD node)
 
 	STR trigger_name = (STR) node->nod_arg[e_trg_name];
 
-	if (node->nod_type == nod_replace_view)
+	if (node->nod_type == nod_replace_trigger)
 	{
 		if (METD_get_trigger_relation(request,
 									  trigger_name,
