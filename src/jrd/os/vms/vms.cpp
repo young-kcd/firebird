@@ -782,7 +782,7 @@ static FIL seek_file(FIL file, BDB bdb, int *block)
 
 	for (;; file = file->fil_next)
 		if (!file)
-			CORRUPT(158);		/* msg 158 cannot sort on a field that does not exist */
+			CORRUPT(158);		/* msg 158 database file not available */
 		else if (page >= file->fil_min_page && page <= file->fil_max_page)
 			break;
 
