@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.80 2004-07-03 00:13:46 brodsom Exp $
+$Id: restore.epp,v 1.81 2004-08-29 06:53:31 robocop Exp $
 */
 
 #include "firebird.h"
@@ -91,7 +91,7 @@ enum scan_attr_t {
 	AFTER_SKIP	= 2	// After skipping and after scanning next byte for valid attribute 
 };
 
-void	add_files(const UCHAR*);
+void	add_files(const char*);
 void	bad_attribute(scan_attr_t, ATT_TYPE, USHORT);
 USHORT	check_db_version();
 void	create_database (const TEXT*);
@@ -561,7 +561,7 @@ int RESTORE_restore (const TEXT* file_name,
 		*d++ = (UCHAR) isc_dpb_user_name;
 		*d++ = (UCHAR) strlen (tdgbl->gbl_sw_user);
 		for (UCHAR* q = (UCHAR*) tdgbl->gbl_sw_user; *q;)
-		*d++ = *q++;
+			*d++ = *q++;
 	}
 
 	if (tdgbl->gbl_sw_password)
@@ -572,7 +572,7 @@ int RESTORE_restore (const TEXT* file_name,
 			*d++ = (UCHAR) isc_dpb_password_enc;
 		*d++ = (UCHAR) strlen (tdgbl->gbl_sw_password);
 		for (UCHAR* q = (UCHAR*) tdgbl->gbl_sw_password; *q;)
-		*d++ = *q++;
+			*d++ = *q++;
 	}
 
 	// set sync writes to engine default 
@@ -648,7 +648,7 @@ int RESTORE_restore (const TEXT* file_name,
 namespace // unnamed, private
 {
 
-void add_files (const UCHAR* file_name)
+void add_files (const char* file_name)
 {
 /**************************************
  *
@@ -673,7 +673,7 @@ void add_files (const UCHAR* file_name)
 
 	for (burp_fil* file = tdgbl->gbl_sw_files; file; file = file->fil_next)
 	{
-		if (strcmp (file->fil_name, (char*) file_name))
+		if (strcmp (file->fil_name, file_name))
 		{
 			count++;
 			STORE (REQUEST_HANDLE req_handle1)
@@ -1393,8 +1393,9 @@ void get_array (burp_rel*	relation,
 
 	// Pick up attributes 
 	SLONG		fld_ranges[2 * MAX_DIMENSION];
-	SLONG       slice_length;
-	SLONG       *range, *end_ranges;
+	SLONG       slice_length = 0;
+	SLONG       *range;
+	const SLONG* end_ranges;
 	scan_attr_t scan_next_attr;
 	skip_init(&scan_next_attr);
 	ATT_TYPE	attribute;
@@ -5965,7 +5966,8 @@ void ignore_array (burp_rel*		relation)
  **************************************/
 	burp_fld*		field;
 	ATT_TYPE	attribute;
-	SLONG		*range, *end_ranges;
+	SLONG		*range;
+	const SLONG* end_ranges;
 	USHORT		field_number;
 	scan_attr_t		scan_next_attr;
 
@@ -6305,7 +6307,6 @@ bool restore (const TEXT* file_name,
  *	Perform the body of restore.
  *
  **************************************/
-	rec_type	record;
 	ATT_TYPE	attribute;
 	isc_req_handle  req_handle1 = 0, req_handle2 = 0, req_handle3 = 0,
 					req_handle5 = 0;
@@ -6314,7 +6315,7 @@ bool restore (const TEXT* file_name,
 
 	// Read burp record first 
 
-	MVOL_init_read ((UCHAR*) tdgbl->gbl_database_file_name, (UCHAR*) file_name,
+	MVOL_init_read (tdgbl->gbl_database_file_name, file_name,
 		&tdgbl->RESTORE_format, &tdgbl->io_cnt, &tdgbl->io_ptr);
 
 	if (tdgbl->gbl_sw_transportable)
@@ -6421,12 +6422,13 @@ bool restore (const TEXT* file_name,
 	// If this should be a multi-file database, add the files
 
 	if (tdgbl->gbl_sw_files && tdgbl->gbl_sw_files->fil_next)
-		add_files ((UCHAR*) database_name);
+		add_files(database_name);
 
 	// Get global fields and relations
 
 	bool flag_norel = true;	// To fix bug 10098
 	bool flag = false;
+	rec_type record;
 
 	while (get_record(&record, tdgbl) != rec_end)
 	{

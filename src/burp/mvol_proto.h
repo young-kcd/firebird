@@ -30,8 +30,8 @@
 UINT64			MVOL_fini_read();
 UINT64			MVOL_fini_write(int*, UCHAR**);
 void			MVOL_init(ULONG);
-void			MVOL_init_read(const UCHAR*, const UCHAR*, USHORT*, int*, UCHAR**);
-void			MVOL_init_write(const UCHAR*, const UCHAR*, int*, UCHAR**);
+void			MVOL_init_read(const char*, const char*, USHORT*, int*, UCHAR**);
+void			MVOL_init_write(const char*, const char*, int*, UCHAR**);
 bool			MVOL_split_hdr_write();
 bool			MVOL_split_hdr_read();
 int				MVOL_read(int*, UCHAR**);

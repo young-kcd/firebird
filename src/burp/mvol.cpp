@@ -176,8 +176,8 @@ void MVOL_init(ULONG io_buf_size)
 //
 // Read init record from backup file
 //
-void MVOL_init_read(const UCHAR*	database_name, // unused?
-					const UCHAR*	file_name,
+void MVOL_init_read(const char* database_name, // unused?
+					const char* file_name,
 					USHORT*	format,
 					int*	cnt,
 					UCHAR**	ptr)
@@ -189,7 +189,7 @@ void MVOL_init_read(const UCHAR*	database_name, // unused?
 
 	if (file_name != NULL)
 	{
-		strncpy(tdgbl->mvol_old_file, (char*) file_name, MAX_FILE_NAME_LENGTH);
+		strncpy(tdgbl->mvol_old_file, file_name, MAX_FILE_NAME_LENGTH);
 		tdgbl->mvol_old_file[MAX_FILE_NAME_LENGTH - 1] = 0;
 	}
 	else
@@ -225,8 +225,8 @@ void MVOL_init_read(const UCHAR*	database_name, // unused?
 //
 // Write init record to the backup file
 //
-void MVOL_init_write(const UCHAR*		database_name, // unused?
-					 const UCHAR*		file_name,
+void MVOL_init_write(const char*		database_name, // unused?
+					 const char*		file_name,
 					 int*		cnt,
 					 UCHAR**	ptr)
 {
@@ -237,7 +237,7 @@ void MVOL_init_write(const UCHAR*		database_name, // unused?
 
 	if (file_name != NULL)
 	{
-		strncpy(tdgbl->mvol_old_file, (char*)file_name, MAX_FILE_NAME_LENGTH);
+		strncpy(tdgbl->mvol_old_file, file_name, MAX_FILE_NAME_LENGTH);
 		tdgbl->mvol_old_file[MAX_FILE_NAME_LENGTH - 1] = 0;
 	}
 	else

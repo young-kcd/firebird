@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.63 2004-07-06 05:54:13 robocop Exp $
+$Id: backup.epp,v 1.64 2004-08-29 06:53:31 robocop Exp $
 */
 
 #include "firebird.h"
@@ -315,9 +315,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 		tdgbl->action->act_file = tdgbl->gbl_sw_files;
 	}
 
-	MVOL_init_write(reinterpret_cast<const UCHAR*>(dbb_file),
-					reinterpret_cast<const UCHAR*>(file_name),
-					&tdgbl->io_cnt, &tdgbl->io_ptr);
+	MVOL_init_write(dbb_file, file_name, &tdgbl->io_cnt, &tdgbl->io_ptr);
 
 // Write database record 
 
