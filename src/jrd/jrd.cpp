@@ -2214,7 +2214,6 @@ ISC_STATUS GDS_DDL(ISC_STATUS * user_status,
  *
  **************************************/
 	struct tdbb thd_context;
-	ISC_STATUS_ARRAY temp_status;
 
 	api_entry_point_init(user_status);
 
@@ -2240,9 +2239,6 @@ ISC_STATUS GDS_DDL(ISC_STATUS * user_status,
 
 	}	// try
 	catch (const std::exception&) {
-		if (tdbb->tdbb_status_vector == temp_status) {
-			tdbb->tdbb_status_vector = user_status;
-		}
 		return error(user_status);
 	}
 
@@ -2265,9 +2261,17 @@ ISC_STATUS GDS_DDL(ISC_STATUS * user_status,
 		try {
 			TRA_commit(tdbb, transaction, true);
 		}
-		catch (const std::exception&)  {
+		catch (const std::exception&) {
+			ISC_STATUS_ARRAY temp_status;
 			tdbb->tdbb_status_vector = temp_status;
-			TRA_rollback(tdbb, transaction, true);
+			try {
+				TRA_rollback(tdbb, transaction, true);
+			}
+			catch (const std::exception&) {
+			    // CVC, TMN: Do nothing, see FB1 code, this will fall into
+			    // the two lines below, achieving the same logic than going
+			    // back to the SETJMP(env) in FB1.
+			}
 			tdbb->tdbb_status_vector = user_status;
 
 			return error(user_status);
