@@ -920,7 +920,7 @@ void CCH_fetch_page(
    persistant (more than 3 times) error out of the routine by
    calling CCH_unwind, and eventually punting out. */
    
-	if (!dbb->backup_manager->lock_state() ||
+	if (!dbb->backup_manager->lock_state(false) ||
 		!dbb->backup_manager->actualize_state(status)) 
 	{
 		PAGE_LOCK_RELEASE(bdb->bdb_lock);
@@ -930,7 +930,7 @@ void CCH_fetch_page(
 	int bak_state = dbb->backup_manager->get_state();
 	ULONG diff_page = 0;
 	if (bak_state == nbak_state_stalled || bak_state == nbak_state_merge) {
-		if (!dbb->backup_manager->lock_alloc() ||
+		if (!dbb->backup_manager->lock_alloc(false) ||
 			!dbb->backup_manager->actualize_alloc(status)) 
 		{
 			PAGE_LOCK_RELEASE(bdb->bdb_lock);
@@ -5608,7 +5608,7 @@ static BOOLEAN write_page(
 		   shadows, making a special case of the header page */
 
 		if (bdb->bdb_page >= 0) {		
-			if (!dbb->backup_manager->lock_state() ||
+			if (!dbb->backup_manager->lock_state(true) ||
 				!dbb->backup_manager->actualize_state(status)) 
 			{
 				bdb->bdb_flags |= BDB_io_error;
@@ -5627,7 +5627,7 @@ static BOOLEAN write_page(
 				 bdb->bdb_page >= dbb->backup_manager->get_backup_pages()))
 			{
 				// Write to difference file
-				if (!dbb->backup_manager->lock_alloc() ||
+				if (!dbb->backup_manager->lock_alloc(true) ||
 					!dbb->backup_manager->actualize_alloc(status))
 				{
 					dbb->backup_manager->unlock_alloc();
@@ -5648,7 +5648,7 @@ static BOOLEAN write_page(
 					}
 					TRACE2("Write page %u at offset %u (existing) in difference file", bdb->bdb_page, diff_page);
 				} else if (backup_state == nbak_state_stalled) {
-					if (!dbb->backup_manager->lock_alloc_write() || 
+					if (!dbb->backup_manager->lock_alloc_write(true) || 
 						!dbb->backup_manager->actualize_alloc(status)) 
 					{
 						dbb->backup_manager->unlock_alloc_write();

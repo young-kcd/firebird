@@ -47,7 +47,7 @@ private:
 	LONG blockedWriters;
 	HANDLE writers_event, readers_semaphore;
 public:
-	RWLock() : lock(0) { 
+	RWLock() : lock(0), blockedReaders(0), blockedWriters(0) { 
 		readers_semaphore = CreateSemaphore(NULL, 0 /*initial count*/, 
 			INT_MAX, NULL); 
 		writers_event = CreateEvent(NULL, FALSE/*auto-reset*/, FALSE, NULL);

@@ -39,6 +39,7 @@
 #include "gen/codes.h"
 #include "gds_proto.h"
 #include "os/guid.h"
+#include "sch_proto.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -49,9 +50,11 @@ void BackupManager::generate_filename() {
 	strncat(diff_name, ".delta", sizeof(diff_name)-strlen(diff_name)-1);
 }
 
-void BackupManager::lock_state_write() {
+void BackupManager::lock_state_write(bool thread_exit) {
 #ifdef SUPERSERVER
+	if (thread_exit) THREAD_EXIT;
 	state_lock->beginWrite();
+	if (thread_exit) THREAD_ENTER;
 #else
 	TDBB tdbb = GET_THREAD_DATA;
 	if (!LCK_lock(tdbb, state_lock, LCK_EX, LCK_WAIT))
@@ -79,9 +82,11 @@ void BackupManager::unlock_state_write() {
 #endif
 }
 
-bool BackupManager::lock_alloc_write() {
+bool BackupManager::lock_alloc_write(bool thread_exit) {
 #ifdef SUPERSERVER
+	if (thread_exit) THREAD_EXIT;
 	alloc_lock->beginWrite();
+	if (thread_exit) THREAD_ENTER;
 	return true;
 #else
 	TDBB tdbb = GET_THREAD_DATA;
@@ -107,7 +112,7 @@ void BackupManager::unlock_alloc_write() {
 bool BackupManager::begin_backup() {	
 	TRACE("begin_backup");
 	TDBB tdbb = GET_THREAD_DATA;
-	lock_state_write();
+	lock_state_write(true);
 	TRACE("state locked");
 	try {
 		if (!actualize_state(tdbb->tdbb_status_vector))
@@ -186,7 +191,7 @@ bool BackupManager::end_backup(bool recover) {
 		if (!try_lock_state_write())
 			return false;		
 	} else
-		lock_state_write();
+		lock_state_write(true);
 	TRACE("state locked");
 	try {
 		// Check state
@@ -235,7 +240,7 @@ bool BackupManager::end_backup(bool recover) {
 	// Merge process should not inhibit normal operations.
 	tdbb->tdbb_flags &= ~TDBB_set_backup_state;
 	unlock_state_write();
-	if (!lock_state())
+	if (!lock_state(true))
 		ERR_post(gds_lock_conflict, 0);
 	try {
 		if (!actualize_state(tdbb->tdbb_status_vector))
@@ -274,8 +279,8 @@ bool BackupManager::end_backup(bool recover) {
 		throw;
 	}
 	
-	// We finished. We need to reflect it our database header page
-	lock_state_write();
+	// We finished. We need to reflect it in our database header page
+	lock_state_write(true);
 	try {
 		// Check state
 		if (!actualize_state(tdbb->tdbb_status_vector))
@@ -530,12 +535,14 @@ void BackupManager::set_difference(const char* filename) {
 	}
 }
 
-bool BackupManager::lock_state() {
+bool BackupManager::lock_state(bool thread_exit) {
 	TDBB tdbb = GET_THREAD_DATA;
 	// If we own exlock here no need to do anything else
 	if (tdbb->tdbb_flags & TDBB_set_backup_state) return true; 
 #ifdef SUPERSERVER
+	if (thread_exit) THREAD_EXIT;
 	state_lock->beginRead();
+	if (thread_exit) THREAD_ENTER;
 	return true;
 #else
 	ast_flags |= NBAK_state_in_use; // Prevent ASTs from releasing the lock
@@ -565,10 +572,12 @@ void BackupManager::unlock_state() {
 #endif
 }
 
-bool BackupManager::lock_alloc() {
+bool BackupManager::lock_alloc(bool thread_exit) {
 	TDBB tdbb = GET_THREAD_DATA;
 #ifdef SUPERSERVER
+	if (thread_exit) THREAD_EXIT;
 	alloc_lock->beginRead();
+	if (thread_exit) THREAD_ENTER;
 	return true;
 #else
 	ast_flags |= NBAK_alloc_in_use; // Prevent ASTs from releasing the lock

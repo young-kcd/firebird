@@ -1096,7 +1096,7 @@ static bool add_difference( TDBB tdbb, SSHORT phase, DFW work, JRD_TRA transacti
 		}
 		/* Msg309: Write-Ahead Log with Shadowing configuration not allowed */
 		
-		if (!dbb->backup_manager->lock_state())
+		if (!dbb->backup_manager->lock_state(true))
 			ERR_post(gds_lock_conflict, 0);
 		try {
 			if (!dbb->backup_manager->actualize_state(tdbb->tdbb_status_vector))
@@ -1150,7 +1150,7 @@ static bool delete_difference(	TDBB	tdbb,
 	case 2:
 		return true;
 	case 3:
-		if (!dbb->backup_manager->lock_state())
+		if (!dbb->backup_manager->lock_state(true))
 			ERR_post(gds_lock_conflict, 0);
 		try {
 			if (!dbb->backup_manager->actualize_state(tdbb->tdbb_status_vector))

@@ -62,7 +62,7 @@ public:
 	void set_difference(const char* filename);
 	// Prevent backup state from modification by others
 	// You may or may not call unlock_state in case this function fails
-	bool lock_state();
+	bool lock_state(bool thread_exit);
 	// Remove our interest in consistent backup state
 	void unlock_state();
 	// Return current backup state
@@ -89,8 +89,8 @@ public:
 	
 	// Prevent allocation table from modification by other threads/processes
 	// You may or may not call unlock function in case this functions fail
-	bool lock_alloc();
-	bool lock_alloc_write();
+	bool lock_alloc(bool thread_exit);
+	bool lock_alloc_write(bool thread_exit);
 	// Remove our interest in static allocation table
 	void unlock_alloc();
 	void unlock_alloc_write();
@@ -139,7 +139,7 @@ private:
 	static int alloc_table_ast(void *ast_object);
 #endif
 	bool try_lock_state_write();
-	void lock_state_write();
+	void lock_state_write(bool thread_exit);
 	void unlock_state_write();
 	void generate_filename();
 };
