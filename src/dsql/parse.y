@@ -4389,7 +4389,7 @@ static dsql_nod* make_list (dsql_nod* node)
 	node->nod_flags = old->nod_flags;
 	dsql_nod** ptr = node->nod_arg + node->nod_count;
 
-	while (stack.notEmpty())
+	while (stack.hasData())
 		*--ptr = stack.pop();
 
 	return node;

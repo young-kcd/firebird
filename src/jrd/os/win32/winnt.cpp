@@ -382,7 +382,7 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 	}
 
     DWORD actual_length;
-	if (dbb->dbb_encrypt_key)
+	if (dbb->dbb_encrypt_key.hasData())
 	{
 		SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
 
@@ -595,7 +595,7 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 	HANDLE desc = (HANDLE) ((file->fil_flags & FIL_force_write) ?
 					 file->fil_force_write_desc : file->fil_desc);
 
-	if (dbb->dbb_encrypt_key)
+	if (dbb->dbb_encrypt_key.hasData())
 	{
 		SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
         DWORD actual_length;
@@ -817,7 +817,7 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 	HANDLE desc = (HANDLE) ((file->fil_flags & FIL_force_write) ?
 					 file->fil_force_write_desc : file->fil_desc);
 
-	if (dbb->dbb_encrypt_key) {
+	if (dbb->dbb_encrypt_key.hasData()) {
 		SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
 
 		(*dbb->dbb_encrypt) (dbb->dbb_encrypt_key.c_str(),

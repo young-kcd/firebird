@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.70 2004-05-07 07:57:20 brodsom Exp $
+ * $Id: rse.cpp,v 1.71 2004-05-27 16:26:00 alexpeshkoff Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -765,7 +765,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 				   if we join to nulls before opening the rsbs */
 
 				for (RsbStack::iterator stack(*(rsb->rsb_left_rsbs)); 
-					stack.notEmpty(); ++stack)
+					stack.hasData(); ++stack)
 				{
 					VIO_record(tdbb,
 							   &request->req_rpb[stack.object()->rsb_stream],
@@ -1979,14 +1979,14 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, IRSB_MRG impure)
 			tail2 < tail_end; tail2++)
 		{
 			ImrStack::iterator stack(best_tails);
-			for (; stack.notEmpty(); ++stack)
+			for (; stack.hasData(); ++stack)
 			{
 				if (stack.object() == tail2)
 				{
 					break;
 				}
 			}
-			if (stack.notEmpty()) {
+			if (stack.hasData()) {
 				continue;
 			}
 			merge_file* mfb = &tail2->irsb_mrg_file;
@@ -2869,7 +2869,7 @@ static void join_to_nulls(thread_db* tdbb, RecordSource* rsb, StreamStack* strea
 
 	jrd_req* request = tdbb->tdbb_request;
 	for (StreamStack::iterator stack(*stream);
-		stack.notEmpty(); ++stack)
+		stack.hasData(); ++stack)
 	{
 		record_param* rpb = &request->req_rpb[stack.object()];
 

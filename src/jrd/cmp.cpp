@@ -463,9 +463,9 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 		jrd_prc* procedure = request->req_procedure;
 		if (procedure) {
 			// can't use const
-			TEXT* prc_sec_name = (procedure->prc_security_name ?
-							(TEXT *) procedure->
-							prc_security_name.c_str() : NULL);
+			TEXT* prc_sec_name = 
+				(procedure->prc_security_name.hasData() ?
+				(TEXT *) procedure->prc_security_name.c_str() : NULL);
 			const SecurityClass* sec_class = SCL_get_class(prc_sec_name);
 			SCL_check_access(sec_class, 0, 0,
 							 0, SCL_execute, object_procedure,
@@ -3588,7 +3588,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 				return node;
 			NodeStack stack;
 			expand_view_nodes(tdbb, csb, stream, stack, type);
-			if (stack.notEmpty())
+			if (stack.hasData())
 				return catenate_nodes(tdbb, stack);
 
 			// The user is asking for the dbkey/record version of an aggregate.
@@ -4019,7 +4019,7 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb,
 
 	arg = rse->rse_relation + count;
 
-	while (stack.notEmpty()) 
+	while (stack.hasData()) 
 	{
 		*--arg = stack.pop();
 	}
@@ -5502,8 +5502,9 @@ static void post_procedure_access(thread_db* tdbb, CompilerScratch* csb, jrd_prc
 	if (csb->csb_g_flags & (csb_internal | csb_ignore_perm))
 		return;
 
-	const TEXT* prc_sec_name = (procedure->prc_security_name ?
-					procedure->prc_security_name.c_str() : NULL);
+	const TEXT* prc_sec_name = 
+		(procedure->prc_security_name.hasData() ?
+		procedure->prc_security_name.c_str() : NULL);
 
 	// this request must have EXECUTE permission on the stored procedure
 	CMP_post_access(tdbb, csb, prc_sec_name, 0,

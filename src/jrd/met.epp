@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.127 2004-05-26 16:12:05 alexpeshkoff Exp $
+$Id: met.epp,v 1.128 2004-05-27 16:25:59 alexpeshkoff Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -1515,7 +1515,7 @@ BlobFilter* MET_lookup_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 			/* Register interest in the module by database. */
 
 			Firebird::Stack<MOD>::iterator stack(dbb->dbb_modules);
-			while (stack.notEmpty())
+			while (stack.hasData())
 			{
 				if (module == stack.object())
 				{
@@ -1529,7 +1529,7 @@ BlobFilter* MET_lookup_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 			   ISC_lookup_entrypoint() above. Otherwise push it onto
 			   the stack of registered modules. */
 
-			if (stack.notEmpty()) {
+			if (stack.hasData()) {
 				FLU_unregister_module(module);
 			}
 			else
@@ -2639,7 +2639,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 	            REQUEST(irq_r_procedure) = request;
 			}
 
-			if (!procedure->prc_name)
+			if (procedure->prc_name.empty())
 			{
 				procedure->prc_name = P.RDB$PROCEDURE_NAME;
 			}
@@ -4283,7 +4283,7 @@ static void store_dependencies(thread_db*	tdbb,
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	while (csb->csb_dependencies.notEmpty())
+	while (csb->csb_dependencies.hasData())
 	{
 		jrd_nod* node = csb->csb_dependencies.pop();
 		if (!node->nod_arg[e_dep_object])

@@ -799,7 +799,7 @@ int ISC_expand_filename(const Firebird::PathName& file_name,
 	case where temp is of the form "c:foo.fdb" and
 	expanded_name is "c:\x\y".
         **/
-		if (device && device[0] == expanded_name[0]) {
+		if (device.hasData() && device[0] == expanded_name[0]) {
 			expanded_name += '\\';
 			expanded_name.append (temp, 2, npos);
 		}
@@ -807,7 +807,7 @@ int ISC_expand_filename(const Firebird::PathName& file_name,
 	case where temp is of the form "foo.fdb" and
 	expanded_name is "c:\x\y".
         **/
-		else if (! device) {
+		else if (device.empty()) {
 			expanded_name += '\\';
 			expanded_name += temp;
 		}
@@ -1074,7 +1074,7 @@ static int expand_filename2(const Firebird::PathName& from_buff, Firebird::PathN
 		while (*from && *from != '/')
 			q += *from++;
 		const struct passwd* password =
-			q ? getpwnam(q.c_str()) : getpwuid(geteuid());
+			q.hasData() ? getpwnam(q.c_str()) : getpwuid(geteuid());
 		if (password) {
 			expand_filename2(password->pw_dir, to_buff);
 		}
@@ -1100,7 +1100,7 @@ static int expand_filename2(const Firebird::PathName& from_buff, Firebird::PathN
 
 		// Copy the leading slash, if any
 		if (*from == '/') {
-			if (to_buff && (to_buff.end()[-1] == '/'))
+			if (to_buff.hasData() && (to_buff.end()[-1] == '/'))
 				++from;
 			else
 				to_buff += *from++;

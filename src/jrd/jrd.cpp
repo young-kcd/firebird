@@ -253,7 +253,7 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 		}
 		tdbb->tdbb_default = old_pool;
 		
-		if (name) 
+		if (name.hasData()) 
 		{
 			request->req_trg_name = name.c_str();
 		}
@@ -649,9 +649,11 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 /* Worry about encryption key */
 
 	if (dbb->dbb_decrypt) {
-		if (dbb->dbb_filename && (dbb->dbb_encrypt_key || options.dpb_key)) {
-			if ((dbb->dbb_encrypt_key && !options.dpb_key) ||
-				(!dbb->dbb_encrypt_key && options.dpb_key) ||
+		if (dbb->dbb_filename.hasData() && 
+			(dbb->dbb_encrypt_key.hasData() || options.dpb_key)) 
+		{
+			if ((dbb->dbb_encrypt_key.hasData() && !options.dpb_key) ||
+				(dbb->dbb_encrypt_key.empty() && options.dpb_key) ||
 				(dbb->dbb_encrypt_key != options.dpb_key))
 			{
 				ERR_post(isc_no_priv,
@@ -662,7 +664,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
                          0);
 			}
 		}
-		else if (options.dpb_key) {
+		else if (options.dpb_key) 
+		{
 			dbb->dbb_encrypt_key = options.dpb_key;
 		}
 	}
@@ -711,7 +714,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	LCK_init(tdbb, LCK_OWNER_attachment);	/* For the attachment */
 	attachment->att_flags |= ATT_lck_init_done;
-	if (!dbb->dbb_filename)
+	if (dbb->dbb_filename.empty())
 	{
 		first = true;
 		dbb->dbb_filename = expanded_name;
@@ -4068,7 +4071,7 @@ bool JRD_getdir(Firebird::PathName& buf)
     so in all probabilities attachment->att_working_directory will be null.
     return false so that ISC_expand_filename will create the file in fbserver's dir
    **/
-		if (!attachment || !attachment->att_working_directory)
+		if (!attachment || attachment->att_working_directory.empty())
 		{
 			return false;
 		}

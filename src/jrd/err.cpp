@@ -496,7 +496,7 @@ void ERR_punt(void)
 
 	if (dbb && (dbb->dbb_flags & DBB_bugcheck))
 	{
-		gds__log_status(tdbb->tdbb_attachment->att_filename ?
+		gds__log_status(tdbb->tdbb_attachment->att_filename.hasData() ?
 			tdbb->tdbb_attachment->att_filename.c_str() : NULL,
 			tdbb->tdbb_status_vector);
  		if (Config::getBugcheckAbort())

@@ -1253,7 +1253,7 @@ void CCH_fini(thread_db* tdbb)
 
 		if ( (bcb = dbb->dbb_bcb) ) 
 		{
-			while (bcb->bcb_memory.notEmpty()) 
+			while (bcb->bcb_memory.hasData()) 
 			{
 				gds__free(bcb->bcb_memory.pop());
 			}
@@ -3805,7 +3805,7 @@ static void expand_buffers(thread_db* tdbb, ULONG number)
 
 /* Copy addresses of previously allocated buffer space to new block */
 
-	for (Jrd::UCharStack::iterator stack(old->bcb_memory); stack.notEmpty(); ++stack) {
+	for (Jrd::UCharStack::iterator stack(old->bcb_memory); stack.hasData(); ++stack) {
 		new_block->bcb_memory.push(stack.object());
 	}
 

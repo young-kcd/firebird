@@ -202,7 +202,7 @@ namespace Firebird {
 					return false;
 			}
 
-			bool notEmpty() const
+			bool hasData() const
 			{
 				return stk;
 			}
@@ -302,7 +302,7 @@ namespace Firebird {
 					return false;
 			}
 
-			bool notEmpty() const
+			bool hasData() const
 			{
 				return stk;
 			}
@@ -486,7 +486,7 @@ namespace Firebird {
 		}
 
 		// returns true if stack is not empty
-		bool notEmpty() const
+		bool hasData() const
 		{
 			return stk;
 		}

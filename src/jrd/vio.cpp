@@ -136,7 +136,23 @@ static const SCHAR gc_tpb[] = { isc_tpb_version1, isc_tpb_read,
 };
 #endif
 
-
+inline void clearRecordStack(RecordStack& stack)
+{
+/**************************************
+ *
+ *	c l e a r R e c o r d S t a c k
+ *
+ **************************************
+ *
+ * Functional description
+ *	Clears stack, deleting each entry, popped from it.
+ *
+ **************************************/
+	while (stack.hasData()) 
+	{
+		delete stack.pop();
+	}
+}
 SLONG VIO_savepoint_large(const Savepoint* savepoint, SLONG size)
 {
 /**************************************
@@ -386,13 +402,12 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 	BLB_garbage_collect(tdbb, going, staying, rpb->rpb_page, relation);
 	IDX_garbage_collect(tdbb, rpb, going, staying);
 
-	if (going.notEmpty()) {
+	if (going.hasData()) 
+	{
 		going.pop();
 	}
 
-	while (staying.notEmpty()) {
-		delete staying.pop();
-	}
+	clearRecordStack(staying);
 
 /* Return relation garbage collect record blocks to vector. */
 
@@ -2027,7 +2042,7 @@ static void RefetchRecord(thread_db* tdbb, record_param* rpb, jrd_tra* transacti
 	 */
 	if ((transaction->tra_flags & TRA_read_committed) &&
 		(tid_fetch != rpb->rpb_transaction_nr) &&
-		// added to check that it was not current transcation,
+		// added to check that it was not current transaction,
 		// who modified the record. Alex P, 18-Jun-03
 		(rpb->rpb_transaction_nr != transaction->tra_number))
 	{
@@ -3470,9 +3485,7 @@ static void garbage_collect(thread_db* tdbb,
 	BLB_garbage_collect(tdbb, going, staying, prior_page, rpb->rpb_relation);
 	IDX_garbage_collect(tdbb, rpb, going, staying);
 
-	while (going.notEmpty()) {
-		delete going.pop();
-	}
+	clearRecordStack(going);
 }
 
 
@@ -3514,9 +3527,7 @@ static void garbage_collect_idx(
 
 	going.pop();
 
-	while (staying.notEmpty()) {
-		delete staying.pop();
-	}
+	clearRecordStack(staying);
 }
 
 
@@ -3852,9 +3863,7 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 
 		/* If the entire record disappeared, then there is nothing staying. */
 		if (!DPM_fetch(tdbb, &temp, LCK_read)) {
-			while (staying.notEmpty()) {
-				delete staying.pop();
-			}
+			clearRecordStack(staying);
 			return;
 		}
 
@@ -3865,9 +3874,7 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 			temp.rpb_b_line != rpb->rpb_b_line ||
 			temp.rpb_flags != rpb->rpb_flags)
 		{
-			while (staying.notEmpty()) {
-				delete staying.pop();
-			}
+			clearRecordStack(staying);
 			next_page = temp.rpb_page;
 			next_line = temp.rpb_line;
 			max_depth = 0;
@@ -3926,8 +3933,10 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
    of back versions that we saw in a previous iteration (max_depth), then
    somebody else must have been garbage collecting also.  Remove the entries
    in 'staying' that have already been garbage collected. */
-	while (depth < max_depth--) {
-		if (staying.notEmpty()) {
+	while (depth < max_depth--) 
+	{
+		if (staying.hasData()) 
+		{
 			delete staying.pop();
 		}
 	}
@@ -4679,9 +4688,7 @@ static void update_in_place(
 		IDX_garbage_collect(tdbb, org_rpb, going, staying);
 
 		staying.pop();
-		while (staying.notEmpty()) {
-			delete staying.pop();
-		}
+		clearRecordStack(staying);
 	}
 
 	if (prior) {

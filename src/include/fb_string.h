@@ -326,6 +326,13 @@ namespace Firebird
 		inline bool empty() const {
 			return length() == 0;
 		}
+		inline bool hasData() const {
+			return !empty();
+		}
+		// to satisfy both ways to check for empty string
+		inline bool isEmpty() const {
+			return empty();
+		}
 
 		void upper();
 		void lower();
@@ -592,8 +599,6 @@ namespace Firebird
 		inline bool operator>=(const char_type* str) const {return compare(str) >= 0;}
 		inline bool operator> (const char_type* str) const {return compare(str) >  0;}
 		inline bool operator!=(const char_type* str) const {return compare(str) != 0;}
-
-		inline operator bool() {return length() > 0;}
     };
 
 	typedef StringBase<StringComparator> string;

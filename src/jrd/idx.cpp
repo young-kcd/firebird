@@ -309,7 +309,7 @@ void IDX_create_index(
 			secondary.rpb_line = secondary.rpb_b_line;
 		}
 
-		while (stack.notEmpty()) 
+		while (stack.hasData()) 
 		{
 			Record* record = stack.pop();
 
@@ -351,7 +351,7 @@ void IDX_create_index(
 				do {
 					if (record != gc_record)
 						delete record;
-				} while (stack.notEmpty() && (record = stack.pop()));
+				} while (stack.hasData() && (record = stack.pop()));
 				SORT_fini(sort_handle, tdbb->tdbb_attachment);
 				gc_record->rec_flags &= ~REC_gc_active;
 				if (primary.rpb_window.win_flags & WIN_large_scan)
@@ -364,7 +364,7 @@ void IDX_create_index(
 				do {
 					if (record != gc_record)
 						delete record;
-				} while (stack.notEmpty() && (record = stack.pop()));
+				} while (stack.hasData() && (record = stack.pop()));
 				SORT_fini(sort_handle, tdbb->tdbb_attachment);
 				gc_record->rec_flags &= ~REC_gc_active;
 				if (primary.rpb_window.win_flags & WIN_large_scan)
@@ -382,7 +382,7 @@ void IDX_create_index(
 				do {
 					if (record != gc_record)
 						delete record;
-				} while (stack.notEmpty() && (record = stack.pop()));
+				} while (stack.hasData() && (record = stack.pop()));
 				SORT_fini(sort_handle, tdbb->tdbb_attachment);
 				gc_record->rec_flags &= ~REC_gc_active;
 				if (primary.rpb_window.win_flags & WIN_large_scan)
@@ -407,7 +407,7 @@ void IDX_create_index(
 			index_sort_record* isr = (index_sort_record*) p;
 			isr->isr_key_length = key.key_length;
 			isr->isr_record_number = primary.rpb_number;
-			isr->isr_flags = (stack.notEmpty() ? ISR_secondary : 0) | (key_is_null ? ISR_null : 0);
+			isr->isr_flags = (stack.hasData() ? ISR_secondary : 0) | (key_is_null ? ISR_null : 0);
 			if (record != gc_record)
 				delete record;
 		}
@@ -611,14 +611,14 @@ void IDX_garbage_collect(thread_db*			tdbb,
 
 	for (USHORT i = 0; i < root->irt_count; i++) {
 		if (BTR_description(rpb->rpb_relation, root, &idx, i)) {
-			for (RecordStack::iterator stack1(going); stack1.notEmpty(); ++stack1) {
+			for (RecordStack::iterator stack1(going); stack1.hasData(); ++stack1) {
 				Record* rec1 = stack1.object();
 				BTR_key(tdbb, rpb->rpb_relation, rec1, &idx, &key1, 0);
 
 				/* Cancel index if there are duplicates in the remaining records */
 
 				RecordStack::iterator stack2(stack1);
-				for (++stack2; stack2.notEmpty(); ++stack2)
+				for (++stack2; stack2.hasData(); ++stack2)
 				{
 					Record* rec2 = stack2.object();
 					if (rec2->rec_number == rec1->rec_number) {
@@ -627,19 +627,19 @@ void IDX_garbage_collect(thread_db*			tdbb,
 							break;
 					}
 				}
-				if (stack2.notEmpty())
+				if (stack2.hasData())
 					continue;
 
 				/* Make sure the index doesn't exist in any record remaining */
 
 				RecordStack::iterator stack3(staying);
-				for (; stack3.notEmpty(); ++stack3) {
+				for (; stack3.hasData(); ++stack3) {
 					Record* rec3 = stack3.object();
 					BTR_key(tdbb, rpb->rpb_relation, rec3, &idx, &key2, 0);
 					if (key_equal(&key1, &key2))
 						break;
 				}
-				if (stack3.notEmpty())
+				if (stack3.hasData())
 					continue;
 
 				/* Get rid of index node */

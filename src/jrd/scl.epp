@@ -469,7 +469,8 @@ SecurityClass* SCL_get_class(const TEXT* _string)
 
 	fb_utils::fb_exact_name(string);
 
-	if (!string) {
+	if (string.empty())
+	{
 		return NULL;
 	}
 
