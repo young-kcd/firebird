@@ -1835,10 +1835,11 @@ void DYN_define_index(GBL		gbl,
 				MET_exact_name(referred_relation);
 				if (!referred_relation[0])
 					DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+				/* msg 212: "Zero length identifiers not allowed" */
+
 				/* return referenced relation name to the caller */
 				if (referenced_relation)
 				  strcpy(referenced_relation,referred_relation);
-				/* msg 212: "Zero length identifiers not allowed" */
 				break;
 
 			case gds_dyn_idx_ref_column:
