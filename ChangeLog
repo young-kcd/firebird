@@ -1,3 +1,96 @@
+2002-11-16 21:59  skidder
+
+	* firebird2/src/jrd/met.epp:
+	
+	Roll back part of my previous change
+
+2002-11-16 21:20  skidder
+
+	* firebird2/src/jrd/met.epp:
+	
+	Roll back part of my previous change
+
+2002-11-16 19:48  skidder
+
+	* firebird2/src/jrd/: cmp.cpp, dbg.cpp, jrd.h, met.epp, opt.cpp,
+	par.cpp:
+	
+	Fixed restore problem for databases having views that use
+	procedures AND are used by procedures. General procedure metadata
+	related cleanup.
+
+2002-11-16 18:41  dimitr
+
+	* firebird2/src/jrd/: evl.cpp, idx.cpp, rse.cpp, sort.cpp, sort.h,
+	sort_proto.h:
+	
+	Some changes to support future improvements.
+
+2002-11-16 17:01  dimitr
+
+	* firebird2/src/include/gen/autoconfig_msvc.h:
+	
+	no message
+
+2002-11-16 16:53  dimitr
+
+	* firebird2/: src/jrd/isc_sync.cpp, src/jrd/isc_sync_win32.cpp,
+	builds/win32/msvc6/engine.dsp,
+	builds/win32/msvc6/engine_classic.dsp,
+	builds/win32/msvc6/fbclient.dsp:
+	
+	Synchronized generic and win32-only files. The latter is removed.
+
+2002-11-16 14:59  dimitr
+
+	* firebird2/src/common/memory/memory_pool.cpp:
+	
+	Fixed a couple of bugs in the memory manager. Now we're fast again.
+
+2002-11-16 12:40  dimitr
+
+	* firebird2/builds/win32/: gds32.def, gds32_debug.def:
+	
+	Restored export by ordinals for gds32.dll (due to compatibility
+	issues).
+
+2002-11-16 11:58  dimitr
+
+	* firebird2/builds/win32/msvc6/: fb_inet_server.dsp, fbembed.dsp:
+	
+	Updates project files.
+
+2002-11-16 11:56  dimitr
+
+	* firebird2/src/common/config/config_file.cpp:
+	
+	Having duplicated names is not a good practice.
+
+2002-11-16 09:38  dimitr
+
+	* firebird2/builds/win32/msvc6/: fbclient.dsp, gds32.dsp,
+	ib_udf.dsp, ib_util.dsp:
+	
+	Updates project files.
+
+2002-11-16 04:14  skywalker
+
+	* firebird2/builds/posix/Makefile.in.firebird:
+	
+	Build ibase.h distribution file correctly
+
+2002-11-16 03:17  skywalker
+
+	* firebird2/: configure.in, builds/posix/Makefile.in.firebird,
+	src/install/arch-specific/linux/Makefile.in,
+	src/install/arch-specific/linux/classic/makeInstallImage.sh.in,
+	src/install/arch-specific/linux/classic/postinstall.sh.in,
+	src/install/arch-specific/linux/classic/rpmheader.txt.in:
+	
+	Change rpmbuild to not need root access Change install to only put
+	in 'compatibility' libgds.so links if the files do not already
+	exist.
+
 2002-11-15 13:01  hippoman
 
 	* firebird2/builds/win32/: fbclient.def, fbclient_debug.def,
