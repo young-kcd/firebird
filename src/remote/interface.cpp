@@ -4557,9 +4557,16 @@ TEXT * user_string, USHORT uv_flag, SCHAR * dpb, SSHORT dpb_length)
 		strcpy((char *) service_name, "localhost:");
 		strcat((char *) service_name, (char *) expanded_name);
 		if (ISC_analyze_tcp(service_name, node_name))
-			return INET_analyze(service_name, service_length, status_vector,
-								node_name, user_string, uv_flag, dpb,
+		{
+			return INET_analyze(service_name,
+								service_length,
+								status_vector,
+								node_name,
+								user_string,
+								uv_flag,
+								dpb,
 								dpb_length);
+		}
 	}
 #endif /* UNIX */
 #endif /* SUPERCLIENT */
@@ -4569,11 +4576,11 @@ TEXT * user_string, USHORT uv_flag, SCHAR * dpb, SSHORT dpb_length)
 }
 
 
-static BOOLEAN batch_dsql_fetch(
-								struct trdb *trdb,
-								PORT port,
-								struct rmtque *que,
-								STATUS * user_status, USHORT id)
+static BOOLEAN batch_dsql_fetch(trdb*	trdb,
+								PORT	port,
+								rmtque*	que,
+								STATUS*	user_status,
+								USHORT	id)
 {
 /**************************************
  *
@@ -4597,13 +4604,6 @@ static BOOLEAN batch_dsql_fetch(
  *	client in the proper place in the stream.
  *
  **************************************/
-	RDB rdb;
-	RSR statement;
-	MSG message, new_;
-	PACKET *packet;
-	STATUS tmp_status[20];
-	STATUS *save_status;
-	BOOLEAN clear_queue = FALSE;
 
 	assert(port);
 	assert(que);
@@ -4611,15 +4611,16 @@ static BOOLEAN batch_dsql_fetch(
 
 	assert(que->rmtque_function == batch_dsql_fetch);
 
-	rdb = que->rmtque_rdb;
-	statement = (RSR) que->rmtque_parm;
-	packet = &rdb->rdb_packet;
+	RDB     rdb       = que->rmtque_rdb;
+	RSR     statement = (RSR) que->rmtque_parm;
+	PACKET* packet    = &rdb->rdb_packet;
 
 	assert(port == rdb->rdb_port);
 
 /* Queue errors within the batched request */
 
-	save_status = packet->p_resp.p_resp_status_vector;
+	STATUS tmp_status[20];
+	STATUS* save_status = packet->p_resp.p_resp_status_vector;
 	packet->p_resp.p_resp_status_vector = tmp_status;
 
 /* Setup the packet structures so it knows what statement we
@@ -4635,31 +4636,37 @@ static BOOLEAN batch_dsql_fetch(
    so we have to clear the wire before the response can be received */
 /* In addtion to the above we grab all the records in case of XNET as 
  * we need to clear the queue */
-	if (id != statement->rsr_id || port->port_type == port_xnet)
+	BOOLEAN clear_queue = FALSE;
+	if (id != statement->rsr_id || port->port_type == port_xnet) {
 		clear_queue = TRUE;
+	}
 
 	statement->rsr_flags |= RSR_fetched;
-	while (TRUE) {
+	while (TRUE)
+	{
 		/* Swallow up data. If a buffer isn't available, allocate another. */
 
-		message = statement->rsr_buffer;
-		if (message->msg_address) {
-			statement->rsr_buffer = new_ =
-				(MSG) ALLOCV(type_msg, statement->rsr_fmt_length);
-			new_->msg_next = message;
+		MSG message = statement->rsr_buffer;
+		if (message->msg_address)
+		{
+			MSG new_msg = (MSG) ALLOCV(type_msg, statement->rsr_fmt_length);
+			statement->rsr_buffer = new_msg;
+				
+			new_msg->msg_next = message;
 
 #ifdef SCROLLABLE_CURSORS
 			/* link the new message in a doubly linked list to make it 
 			   easier to scroll back and forth through the records */
 
 			MSG prior = message->msg_prior;
-			message->msg_prior = new_;
-			prior->msg_next = new_;
-			new_->msg_prior = prior;
+			message->msg_prior = new_msg;
+			prior->msg_next = new_msg;
+			new_msg->msg_prior = prior;
 #else
-			while (message->msg_next != new_->msg_next)
+			while (message->msg_next != new_msg->msg_next) {
 				message = message->msg_next;
-			message->msg_next = new_;
+			}
+			message->msg_next = new_msg;
 #endif
 		}
 
@@ -4672,11 +4679,6 @@ static BOOLEAN batch_dsql_fetch(
 			--statement->rsr_batch_count;
 			dequeue_receive(port);
 			Firebird::status_longjmp_error::raise(user_status[1]);
-
-			/* we don't return from the LONGJMP - but put a
-			   return here to make the compiler happy. */
-
-			return FALSE;
 		}
 
 		if (packet->p_operation != op_fetch_response) {
@@ -4698,8 +4700,10 @@ static BOOLEAN batch_dsql_fetch(
 
 		if (packet->p_sqldata.p_sqldata_status ||
 			!packet->p_sqldata.p_sqldata_messages ||
-			(port->port_flags & PORT_rpc)) {
-			if (packet->p_sqldata.p_sqldata_status == 100) {
+			(port->port_flags & PORT_rpc))
+		{
+			if (packet->p_sqldata.p_sqldata_status == 100)
+			{
 				statement->rsr_flags |= RSR_eof;
 				statement->rsr_rows_pending = 0;
 #ifdef DEBUG
@@ -4709,8 +4713,9 @@ static BOOLEAN batch_dsql_fetch(
 #endif
 			}
 			--statement->rsr_batch_count;
-			if (statement->rsr_batch_count == 0)
+			if (statement->rsr_batch_count == 0) {
 				statement->rsr_rows_pending = 0;
+			}
 			dequeue_receive(port);
 			break;
 		}
@@ -4721,19 +4726,20 @@ static BOOLEAN batch_dsql_fetch(
 				   "Decrementing Rows Pending in batch_dsql_fetch=%d\n",
 				   statement->rsr_rows_pending);
 #endif
-		if (clear_queue == FALSE)
+		if (clear_queue == FALSE) {
 			break;
+		}
 	}
 	packet->p_resp.p_resp_status_vector = save_status;
 	return TRUE;
 }
 
 
-static BOOLEAN batch_gds_receive(
-								 struct trdb *trdb,
-								 PORT port,
-								 struct rmtque *que,
-								 STATUS * user_status, USHORT id)
+static BOOLEAN batch_gds_receive(trdb*		trdb,
+								 PORT		port,
+								 rmtque*	que,
+								 STATUS*	user_status,
+								 USHORT		id)
 {
 /**************************************
  *
@@ -4758,72 +4764,74 @@ static BOOLEAN batch_gds_receive(
  *
  **************************************/
 
-	MSG message, new_;
-	FMT format;
-	STATUS tmp_status[20];
-	STATUS *save_status;
-	BOOLEAN clear_queue = FALSE;	/* indicates whether queue is just being emptied, not retrieved */
-
 	assert(port);
 	assert(que);
 	assert(user_status);
-
 	assert(que->rmtque_function == batch_gds_receive);
 
 	RDB rdb = que->rmtque_rdb;
-	RRQ request = reinterpret_cast < RRQ > (que->rmtque_parm);
-	rrq::rrq_repeat * tail =
-		reinterpret_cast < rrq::rrq_repeat * >(que->rmtque_message);
+	RRQ request = reinterpret_cast<RRQ>(que->rmtque_parm);
+	rrq::rrq_repeat* tail =
+		reinterpret_cast<rrq::rrq_repeat*>(que->rmtque_message);
 	PACKET *packet = &rdb->rdb_packet;
 
 	assert(port == rdb->rdb_port);
+	
+	// Queue errors within the batched request
 
-/* Queue errors within the batched request */
-
-	save_status = packet->p_resp.p_resp_status_vector;
+	STATUS tmp_status[20];
+	STATUS* save_status = packet->p_resp.p_resp_status_vector;
 	packet->p_resp.p_resp_status_vector = tmp_status;
 
-/* always clear the complete queue for XNET, as we might have incomplete
- * packets */
-	if (id != request->rrq_id || port->port_type == port_xnet)
+	bool clear_queue = FALSE;	/* indicates whether queue is just being emptied, not retrieved */
+
+	// always clear the complete queue for XNET, as we might
+	// have incomplete packets
+	if (id != request->rrq_id || port->port_type == port_xnet) {
 		clear_queue = TRUE;
+	}
 
-/* Receive the whole batch of records, until end-of-batch is seen */
+	// Receive the whole batch of records, until end-of-batch is seen
 
-	while (TRUE) {
-		message = tail->rrq_xdr;	/* First free buffer */
+	while (TRUE)
+	{
+		MSG message = tail->rrq_xdr;	/* First free buffer */
 
 		/* If the buffer queue is full, allocate a new message and 
 		   place it in the queue--if we are clearing the queue, don't 
 		   read records into messages linked list so that we don't 
 		   mess up the record cache for scrolling purposes. */
 
-		if (message->msg_address) {
-			format = tail->rrq_format;
-			tail->rrq_xdr = new_ = (MSG) ALLOCV(type_msg, format->fmt_length);
-			new_->msg_next = message;
-			new_->msg_number = message->msg_number;
+		if (message->msg_address)
+		{
+			FMT format = tail->rrq_format;
+			MSG new_msg = (MSG) ALLOCV(type_msg, format->fmt_length);
+			tail->rrq_xdr = new_msg;
+			new_msg->msg_next = message;
+			new_msg->msg_number = message->msg_number;
 
 #ifdef SCROLLABLE_CURSORS
 			/* link the new message in a doubly linked list to make it 
 			   easier to scroll back and forth through the records */
 
 			MSG prior = message->msg_prior;
-			message->msg_prior = new_;
-			prior->msg_next = new_;
-			new_->msg_prior = prior;
+			message->msg_prior = new_msg;
+			prior->msg_next = new_msg;
+			new_msg->msg_prior = prior;
 #else
 			/* Walk the que until we find the predecessor of message */
 
-			while (message->msg_next != new_->msg_next)
+			while (message->msg_next != new_msg->msg_next) {
 				message = message->msg_next;
-			message->msg_next = new_;
+			}
+			message->msg_next = new_msg;
 #endif
 		}
 
 		/* Note: not receive_packet */
 
-		if (!receive_packet_noqueue(rdb->rdb_port, packet, tmp_status)) {
+		if (!receive_packet_noqueue(rdb->rdb_port, packet, tmp_status))
+		{
 			/* Must be a network error */
 
 			memcpy(user_status, tmp_status, sizeof(tmp_status));
@@ -4832,11 +4840,6 @@ static BOOLEAN batch_gds_receive(
 			--tail->rrq_batch_count;
 			dequeue_receive(port);
 			Firebird::status_longjmp_error::raise(user_status[1]);
-
-			/* we don't return from the LONGJMP - but put a
-			   return here to make the compiler happy. */
-
-			return FALSE;
 		}
 
 		if (packet->p_operation != op_send) {
@@ -4849,9 +4852,10 @@ static BOOLEAN batch_gds_receive(
 			ib_fprintf(ib_stderr, "Got batch error %ld Max message = %d\n",
 					   tmp_status[1], request->rrq_max_msg);
 #endif
-			if (!request->rrq_status_vector[1])
+			if (!request->rrq_status_vector[1]) {
 				memcpy(request->rrq_status_vector, tmp_status,
 					   sizeof(tmp_status));
+			}
 			dequeue_receive(port);
 			break;
 		}
@@ -4859,15 +4863,14 @@ static BOOLEAN batch_gds_receive(
 #ifdef SCROLLABLE_CURSORS
 		/* at this point we've received a row into the message, so mark the message 
 		   with the absolute offset */
+		const bool bIsBackward    = (tail->rrq_flags & RRQ_backward) != 0;
+		const bool bIsAbsBackward = (tail->rrq_flags & RRQ_absolute_backward) != 0;
 
-		if (
-			((tail->rrq_flags & RRQ_backward)
-			 && (tail->rrq_flags & RRQ_absolute_backward))
-			|| (!(tail->rrq_flags & RRQ_backward)
-				&& !(tail->rrq_flags & RRQ_absolute_backward))) tail->
-				rrq_absolute++;
-		else
+		if (bIsBackward == bIsAbsBackward) {
+				tail->rrq_absolute++;
+		} else {
 			tail->rrq_absolute--;
+		}
 		message->msg_absolute = tail->rrq_absolute;
 #endif
 
