@@ -158,6 +158,13 @@ Source: output\intl\fbintl.dll; DestDir: {app}\intl; Components: ServerComponent
 Source: output\lib\*.*; DestDir: {app}\lib; Components: DevAdminComponent;  Flags: ignoreversion;
 Source: output\UDF\*.*; DestDir: {app}\UDF; Components: ServerComponent; Flags: sharedfile ignoreversion;
 Source: output\examples\*.*; DestDir: {app}\examples; Components: DevAdminComponent;  Flags: ignoreversion;
+Source: output\examples\api\*.*; DestDir: {app}\examples\api; Components: DevAdminComponent;  Flags: ignoreversion;
+Source: output\examples\build_win32\*.*; DestDir: {app}\examples\build_win32; Components: DevAdminComponent;  Flags: ignoreversion;
+Source: output\examples\dyn\*.*; DestDir: {app}\examples\dyn; Components: DevAdminComponent;  Flags: ignoreversion;
+Source: output\examples\empbuild\*.*; DestDir: {app}\examples\empbuild; Components: DevAdminComponent;  Flags: ignoreversion;
+Source: output\examples\include\*.*; DestDir: {app}\examples\include; Components: DevAdminComponent;  Flags: ignoreversion;
+Source: output\examples\stat\*.*; DestDir: {app}\examples\stat; Components: DevAdminComponent;  Flags: ignoreversion;
+Source: output\examples\udf\*.*; DestDir: {app}\examples\udf; Components: DevAdminComponent;  Flags: ignoreversion;
 ;For now (RC2 timeframe) we are not recommending co-existence with other versions of Firebird or InterBase
 ;so we can install the client library and its wrapper into {sys}
 ;Source: output\bin\gds32.dll; DestDir: {app}\bin; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder;
