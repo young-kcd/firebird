@@ -162,9 +162,11 @@ struct temporary_key {
 /* Index Sort Record -- fix part of sort record for index fast load */
 
 struct index_sort_record {
+	// RecordNumber should be at the first place, because it's used
+	// for determing sort by creating index (see idx.cpp)
+	RecordNumber isr_record_number;
 	USHORT isr_key_length;
 	USHORT isr_flags;
-	RecordNumber isr_record_number;
 };
 
 const int ISR_secondary	= 1;	// Record is secondary version

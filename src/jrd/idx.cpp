@@ -226,12 +226,19 @@ void IDX_create_index(
 
 	bool key_is_null = false;
 
-	sort_key_def key_desc;
-	key_desc.skd_dtype = SKD_bytes;
-	key_desc.skd_flags = SKD_ascending;
-	key_desc.skd_length = key_length;
-	key_desc.skd_offset = 0;
-	key_desc.skd_vary_offset = 0;
+	sort_key_def key_desc[2];
+	// Key sort description
+	key_desc[0].skd_dtype = SKD_bytes;
+	key_desc[0].skd_flags = SKD_ascending;
+	key_desc[0].skd_length = key_length;
+	key_desc[0].skd_offset = 0;
+	key_desc[0].skd_vary_offset = 0;
+	// RecordNumber sort description
+	key_desc[1].skd_dtype = SKD_int64;
+	key_desc[1].skd_flags = SKD_ascending;
+	key_desc[1].skd_length = sizeof(RecordNumber);
+	key_desc[1].skd_offset = 0;
+	key_desc[1].skd_vary_offset = 0;
 
 	FPTR_REJECT_DUP_CALLBACK callback =
 		(idx->idx_flags & idx_unique) ? duplicate_key : NULL;
@@ -240,7 +247,7 @@ void IDX_create_index(
 
 	sort_context* sort_handle = SORT_init(tdbb->tdbb_status_vector,
 							key_length + sizeof(index_sort_record),
-							1, &key_desc, callback, callback_arg,
+							2, &key_desc[0], callback, callback_arg,
 							tdbb->tdbb_attachment, 0);
 
 	if (!sort_handle)
@@ -400,8 +407,8 @@ void IDX_create_index(
 				} while (--l);
 			}
 			index_sort_record* isr = (index_sort_record*) p;
-			isr->isr_key_length = key.key_length;
 			isr->isr_record_number = primary.rpb_number;
+			isr->isr_key_length = key.key_length;
 			isr->isr_flags = (stack.hasData() ? ISR_secondary : 0) | (key_is_null ? ISR_null : 0);
 			if (record != gc_record)
 				delete record;
@@ -612,6 +619,7 @@ void IDX_garbage_collect(thread_db*			tdbb,
 
 				/* Cancel index if there are duplicates in the remaining records */
 
+				
 				RecordStack::iterator stack2(stack1);
 				for (++stack2; stack2.hasData(); ++stack2)
 				{
@@ -624,6 +632,7 @@ void IDX_garbage_collect(thread_db*			tdbb,
 				}
 				if (stack2.hasData())
 					continue;
+				
 
 				/* Make sure the index doesn't exist in any record remaining */
 
