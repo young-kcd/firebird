@@ -1,3 +1,11 @@
+2003-01-07 17:35  skidder
+
+	* firebird2/src/common/classes/: alloc.cpp, alloc.h,
+	class_perf.cpp, class_test.cpp, locks.h, test.sh, tree.h:
+	
+	Further class library development. Added memory pool locking and
+	line number allocation information
+
 2003-01-06 18:35  alexpeshkoff
 
 	* firebird2/src/common/classes/: class_test.cpp, class_perf.cpp,
