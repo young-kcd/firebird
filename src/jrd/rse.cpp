@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.28.2.3 2003-12-24 13:02:01 dimitr Exp $
+ * $Id: rse.cpp,v 1.28.2.4 2004-09-25 19:38:38 dimitr Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -3380,7 +3380,7 @@ static void pop_rpbs(JRD_REQ request, RSB rsb)
 
 	case rsb_sort:
 		{
-			SSHORT i, streams[128];
+			SSHORT i, streams[MAX_STREAMS + 1];
 			SMB map;
 			smb_repeat * item, *end_item;
 
@@ -3400,7 +3400,7 @@ static void pop_rpbs(JRD_REQ request, RSB rsb)
 
 	case rsb_merge:
 		{
-			SSHORT i, streams[128];
+			SSHORT i, streams[MAX_STREAMS + 1];
 			SMB map;
 			RSB sort_rsb, *ptr, *end;
 			smb_repeat * item, *end_item;
@@ -3489,7 +3489,7 @@ static void push_rpbs(TDBB tdbb, JRD_REQ request, RSB rsb)
 
 	case rsb_sort:
 		{
-			SSHORT i, streams[128];
+			SSHORT i, streams[MAX_STREAMS + 1];
 			SMB map;
 			smb_repeat * item, *end_item;
 
@@ -3509,7 +3509,7 @@ static void push_rpbs(TDBB tdbb, JRD_REQ request, RSB rsb)
 
 	case rsb_merge:
 		{
-			SSHORT i, streams[128];
+			SSHORT i, streams[MAX_STREAMS + 1];
 			SMB map;
 			RSB sort_rsb, *ptr, *end;
 			smb_repeat * item, *end_item;
