@@ -367,7 +367,7 @@ ADS array_desc, SLONG * variables, SDL_walk_callback callback, SLICE argument)
 				   && *(p - 1) <= gds_sdl_element);
 
 			arg.sdl_arg_next = arg.sdl_arg_compiled;
-			arg.sdl_arg_end = arg.sdl_arg_compiled+COMPILE_SIZE;
+			arg.sdl_arg_end = arg.sdl_arg_compiled + COMPILE_SIZE;
 			if (!(p = compile(p - 1, &arg)))
 				return FB_FAILURE;
 			if (!stuff((IPTR) op_exit, &arg))
