@@ -1572,7 +1572,8 @@ static void revoke_permission(GBL gbl, UCHAR ** ptr)
 
 	const usr* revoking_user = tdbb->tdbb_attachment->att_user;
 	TEXT* q = revoking_user_name;
-	for (const TEXT* p = revoking_user->usr_user_name; *p; p++, q++)
+	const TEXT* p;
+	for (p = revoking_user->usr_user_name; *p; p++, q++)
 		*q = UPPER7(*p);
 	*q = 0;
 
