@@ -1,3 +1,74 @@
+2003-07-17 17:40  skidder
+
+	* firebird2/builds/win32/msvc7/: fbclient.vcproj, fbguard.vcproj,
+	gsec.vcproj, instreg.vcproj, instsvc.vcproj, utilities.vcproj,
+	utilities_classic.vcproj:
+	
+	Fix MSVC7 makefiles
+
+2003-07-17 15:59  brodsom
+
+	* firebird2/builds/win32/msvc7/codes.vcproj:
+	
+	Correct codes.cpp directory
+
+2003-07-17 13:49  eku
+
+	* firebird2/src/burp/backup.epp:
+	
+	Fixed compilation on SINIX-Z (Thanks to Dmitry Yemanov).
+
+2003-07-17 13:41  brodsom
+
+	* firebird2/builds/win32/msvc7/: wal_classic.vcproj, alice.vcproj,
+	alice_classic.vcproj, burp.vcproj, burp_classic.vcproj,
+	common.vcproj, common_classic.vcproj, dsql_server.vcproj,
+	dsql_server_classic.vcproj, engine.vcproj, engine_classic.vcproj,
+	engine_embed.vcproj, fb_inet_server.vcproj, fb_lock_print.vcproj,
+	fbclient.vcproj, fbembed.vcproj, fbguard.vcproj, fbserver.vcproj,
+	fbudf.vcproj, gbak.vcproj, gdef.vcproj, gds32.vcproj, gfix.vcproj,
+	gpre.vcproj, gpre_boot.vcproj, gsec.vcproj, gsplit.vcproj,
+	gstat.vcproj, ib_udf.vcproj, ib_util.vcproj, instreg.vcproj,
+	instsvc.vcproj, intl.vcproj, intlcpp.vcproj, ipserver.vcproj,
+	isql.vcproj, lock.vcproj, lock_classic.vcproj, qli.vcproj,
+	remote.vcproj, remote_classic.vcproj, utilities.vcproj,
+	utilities_classic.vcproj, wal.vcproj:
+	
+	Update output directories
+
+2003-07-17 10:26  dimitr
+
+	* firebird2/src/jrd/exe.cpp:
+	
+	Re-applied recent v1.5 fixes to the release branch.
+
+2003-07-17 10:21  dimitr
+
+	* firebird2/src/: dsql/node.h, dsql/parse.cpp, dsql/parse.y,
+	dsql/pass1.cpp, jrd/rse.cpp, jrd/vio.cpp, jrd/vio_proto.h,
+	jrd/dyn.epp:
+	
+	Re-applied recent v1.5 fixes to the release branch.
+
+2003-07-17 10:07  dimitr
+
+	* firebird2/src/jrd/ids.m:
+	
+	Re-applied recent v1.5 fixes to the release branch.
+
+2003-07-17 10:04  dimitr
+
+	* firebird2/src/jrd/: opt.cpp, cmp.cpp:
+	
+	Re-applied recent v1.5 fixes to the release branch.
+
+2003-07-17 04:15  brodsom
+
+	* firebird2/: configure.in, builds/posix/Makefile.in.examples,
+	builds/posix/Makefile.in.firebird:
+	
+	Restore examples build (and add intlbld)
+
 2003-07-16 21:40  brodsom
 
 	* firebird2/doc/README.build.msvc.html:
