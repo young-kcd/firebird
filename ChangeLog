@@ -1,3 +1,97 @@
+2003-09-26 17:25  dimitr
+
+	* firebird2/src/: jrd/intlnames.h, intl/lc_iso8859_2.cpp,
+	intl/ld.cpp, intl/collations/xx88592hun.h:
+	
+	Added new collation by Sandor Szollosi.
+
+2003-09-26 17:15  dimitr
+
+	* firebird2/src/intl/collations/xx88592hun.h:
+	
+	file xx88592hun.h was initially added on branch B1_5_Release.
+
+2003-09-26 17:14  dimitr
+
+	* firebird2/src/: jrd/intlnames.h, intl/lc_iso8859_2.c, intl/ld.c,
+	intl/collations/xx88592hun.h:
+	
+	Added new collation by Sandor Szollosi.
+
+2003-09-26 16:25  dimitr
+
+	* firebird2/doc/license/: IDPL.txt, LGPL_w_exception.txt:
+	
+	Added license texts.
+
+2003-09-26 16:18  dimitr
+
+	* firebird2/src/jrd/os/win32/config_root.cpp:
+	
+	Changed license of some files by Mark and myself.
+
+2003-09-26 16:11  dimitr
+
+	* firebird2/src/: common/config/config.cpp, common/config/config.h,
+	common/config/config_file.cpp, common/config/config_file.h,
+	common/config/config_impl.h, dsql/misc_func.cpp, dsql/misc_func.h,
+	jrd/db_alias.cpp, jrd/db_alias.h, jrd/misc_func_ids.h,
+	jrd/sort_mem.cpp, jrd/sort_mem.h, jrd/os/win32/config_root.cpp:
+	
+	Changed license of some files by Mark and myself.
+
+2003-09-26 15:07  brodsom
+
+	* firebird2/doc/README.build.mingw.html:
+	
+	Update dates
+
+2003-09-26 14:49  brodsom
+
+	* firebird2/doc/README.build.mingw.html:
+	
+	Update
+
+2003-09-26 13:45  dimitr
+
+	* firebird2/src/jrd/os/: posix/unix.cpp, vms/vms.cpp,
+	win32/winnt.cpp:
+	
+	Fixed comment.
+
+2003-09-26 13:02  brodsom
+
+	* firebird2/src/dsql/: sym.h, chars.h, misc_func.h, node.h,
+	sqlda.h:
+	
+	-Macro cleaning
+
+2003-09-26 12:50  brodsom
+
+	* firebird2/src/dsql/: alld_proto.h, array_proto.h, blob_proto.h,
+	ddl_proto.h, dsql_proto.h, make_proto.h, metd_proto.h,
+	movd_proto.h, parse_proto.h, pass1_proto.h, prepa_proto.h:
+	
+	-Macro cleaning
+
+2003-09-26 12:22  aafemt
+
+	* firebird2/builds/posix/make.defaults:
+	
+	Rollback my unneeded anymore hack
+
+2003-09-26 11:26  robocop
+
+	* firebird2/src/qli/exe.cpp:
+	
+	make gcc happy v2 :-)
+
+2003-09-26 10:07  fsg
+
+	* firebird2/src/qli/exe.cpp:
+	
+	make gcc happy again FSG
+
 2003-09-25 14:12  eku
 
 	* firebird2/src/jrd/: pag.cpp, os/posix/unix.cpp:
