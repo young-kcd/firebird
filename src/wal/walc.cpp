@@ -1033,8 +1033,8 @@ static void wals_initialize( WALC wal_args, SH_MEM shmem_data, int initialize)
 /* Now setup the checkpointing info */
 
 	WAL_segment->wals_max_ckpt_intrvl = wal_args->walc_max_ckpt_intrvl;
-	WAL_segment->wals_thrshold_intrvl =
-		WAL_segment->wals_max_ckpt_intrvl * 0.8;
+	WAL_segment->wals_thrshold_intrvl = 
+		static_cast<SLONG>(WAL_segment->wals_max_ckpt_intrvl * 0.8);
 	WAL_segment->wals_cur_ckpt_intrvl = 0L;
 	WAL_segment->wals_ckpted_log_seqno = 0L;
 	WAL_segment->wals_ckpt_log_p_offset = 0L;
