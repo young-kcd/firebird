@@ -1,3 +1,23 @@
+2003-05-29 15:40  skidder
+
+	* firebird2/src/install/arch-specific/linux/Makefile.in:
+	
+	Use rpmbuild to build packages
+
+2003-05-29 13:59  dimitr
+
+	* firebird2/src/jrd/idx.cpp:
+	
+	Bugfix for RI failure in foreign keys.
+
+2003-05-29 12:14  skidder
+
+	* firebird2/src/install/:
+	arch-specific/linux/classic/postinstall.sh.in,
+	misc/CSchangeRunUser.sh:
+	
+	Fix permissions problem for firebird.conf (SF 745090)
+
 2003-05-28 05:33  paul_reeves
 
 	* firebird2/builds/win32/prepare.bat:
