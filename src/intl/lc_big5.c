@@ -64,7 +64,7 @@ extern SSHORT CVBIG5_big5_mbtowc();
 
 TEXTTYPE_ENTRY(BIG5_init)
 {
-	static CONST ASCII POSIX[] = "C.BIG5";
+	static const ASCII POSIX[] = "C.BIG5";
 
 	FAMILY_MULTIBYTE(500, BIG5_init, CS_BIG5, CC_C);
 	cache->texttype_fn_to_wc = CVBIG5_big5_byte2short;

@@ -62,12 +62,6 @@
 
 #define BOOL	UINT16
 
-#ifdef __cplusplus
-#define CONST	const
-#else
-#define CONST
-#endif
-
 #define FAR_VARIABLE
 
 #ifdef WIN_NT
@@ -564,9 +558,12 @@ struct CompressPair {
 // VCS AREA
 //-----------------------------------------------------------------
 
-//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.16 2003-02-12 02:53:47 brodsom Exp $
+//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.17 2003-02-13 09:52:17 dimitr Exp $
 
 //	$Log: not supported by cvs2svn $
+//	Revision 1.16  2003/02/12 02:53:47  brodsom
+//	Remove commit non used defines
+//	
 //	Revision 1.15  2003/02/10 19:25:14  brodsom
 //	Remove QLD and PIRANHA defines
 //	

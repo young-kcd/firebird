@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.11 2003-02-08 00:36:51 brodsom Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.12 2003-02-13 09:58:18 dimitr Exp $
  */
 
 #include "firebird.h"
@@ -52,7 +52,7 @@ extern enum lang_t sw_language;
 extern USHORT sw_cstring;
 extern DBB isc_databases;
 
-static CONST UCHAR blr_bpb[] = { isc_bpb_version1,
+static const UCHAR blr_bpb[] = { isc_bpb_version1,
 	isc_bpb_source_type, 1, BLOB_blr,
 	isc_bpb_target_type, 1, BLOB_blr
 };
@@ -123,7 +123,7 @@ BOOLEAN MET_database(DBB dbb, BOOLEAN print_version)
 	SCHAR dpb[MAX_PASSWORD_LENGTH + MAX_USER_LENGTH + 5], *d, *p;
 	SCHAR buffer[16], *data;
 	SSHORT l;
-	static CONST UCHAR sql_version_info[] = { isc_info_base_level,
+	static const UCHAR sql_version_info[] = { isc_info_base_level,
 		isc_info_ods_version,
 		isc_info_db_sql_dialect,
 		isc_info_end

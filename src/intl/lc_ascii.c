@@ -57,7 +57,7 @@ extern SSHORT LC_DOS_nc_mbtowc();
 
 TEXTTYPE_ENTRY(DOS101_init)
 {
-	static CONST ASCII POSIX[] = "C.DOS437";
+	static const ASCII POSIX[] = "C.DOS437";
 
 	FAMILY_ASCII(parm1, DOS101_init, CS_DOS_437, CC_C);
 
@@ -69,7 +69,7 @@ TEXTTYPE_ENTRY(DOS101_init)
 
 TEXTTYPE_ENTRY(DOS107_init)
 {
-	static CONST ASCII POSIX[] = "C.DOS865";
+	static const ASCII POSIX[] = "C.DOS865";
 
 	FAMILY_ASCII(parm1, DOS107_init, CS_DOS_865, CC_C);
 
@@ -81,7 +81,7 @@ TEXTTYPE_ENTRY(DOS107_init)
 
 TEXTTYPE_ENTRY(DOS160_init)
 {
-	static CONST ASCII POSIX[] = "C.DOS850";
+	static const ASCII POSIX[] = "C.DOS850";
 
 	FAMILY_ASCII(parm1, DOS160_init, CS_DOS_850, CC_C);
 
@@ -93,7 +93,7 @@ TEXTTYPE_ENTRY(DOS160_init)
 
 TEXTTYPE_ENTRY(ISO88591_cp_init)
 {
-	static CONST ASCII POSIX[] = "C.ISO8859_1";
+	static const ASCII POSIX[] = "C.ISO8859_1";
 
 	FAMILY_ASCII(parm1, ISO88591_cp_init, CS_ISO8859_1, CC_C);
 
@@ -104,7 +104,7 @@ TEXTTYPE_ENTRY(ISO88591_cp_init)
 
 TEXTTYPE_ENTRY (ISO88592_cp_init)
 {
-    static CONST ASCII	POSIX[] = "C.ISO8859_2";
+    static const ASCII	POSIX[] = "C.ISO8859_2";
 
     FAMILY_ASCII (parm1, ISO88592_cp_init, CS_ISO8859_2, CC_C); 
     
@@ -115,7 +115,7 @@ TEXTTYPE_ENTRY (ISO88592_cp_init)
 
 TEXTTYPE_ENTRY (ISO88593_cp_init)
 {
-    static CONST ASCII	POSIX[] = "C.ISO8859_3";
+    static const ASCII	POSIX[] = "C.ISO8859_3";
 
     FAMILY_ASCII (parm1, ISO88593_cp_init, CS_ISO8859_3, CC_C); 
     
@@ -126,7 +126,7 @@ TEXTTYPE_ENTRY (ISO88593_cp_init)
 
 TEXTTYPE_ENTRY (ISO88594_cp_init)
 {
-    static CONST ASCII	POSIX[] = "C.ISO8859_4";
+    static const ASCII	POSIX[] = "C.ISO8859_4";
 
     FAMILY_ASCII (parm1, ISO88594_cp_init, CS_ISO8859_4, CC_C); 
     
@@ -137,7 +137,7 @@ TEXTTYPE_ENTRY (ISO88594_cp_init)
 
 TEXTTYPE_ENTRY (ISO88595_cp_init)
 {
-    static CONST ASCII	POSIX[] = "C.ISO8859_5";
+    static const ASCII	POSIX[] = "C.ISO8859_5";
 
     FAMILY_ASCII (parm1, ISO88595_cp_init, CS_ISO8859_5, CC_C); 
     
@@ -148,7 +148,7 @@ TEXTTYPE_ENTRY (ISO88595_cp_init)
 
 TEXTTYPE_ENTRY (ISO88596_cp_init)
 {
-    static CONST ASCII	POSIX[] = "C.ISO8859_6";
+    static const ASCII	POSIX[] = "C.ISO8859_6";
 
     FAMILY_ASCII (parm1, ISO88596_cp_init, CS_ISO8859_6, CC_C); 
     
@@ -159,7 +159,7 @@ TEXTTYPE_ENTRY (ISO88596_cp_init)
 
 TEXTTYPE_ENTRY (ISO88597_cp_init)
 {
-    static CONST ASCII	POSIX[] = "C.ISO8859_7";
+    static const ASCII	POSIX[] = "C.ISO8859_7";
 
     FAMILY_ASCII (parm1, ISO88597_cp_init, CS_ISO8859_7, CC_C); 
     
@@ -170,7 +170,7 @@ TEXTTYPE_ENTRY (ISO88597_cp_init)
 
 TEXTTYPE_ENTRY (ISO88598_cp_init)
 {
-    static CONST ASCII	POSIX[] = "C.ISO8859_8";
+    static const ASCII	POSIX[] = "C.ISO8859_8";
 
     FAMILY_ASCII (parm1, ISO88598_cp_init, CS_ISO8859_8, CC_C); 
     
@@ -181,7 +181,7 @@ TEXTTYPE_ENTRY (ISO88598_cp_init)
 
 TEXTTYPE_ENTRY (ISO88599_cp_init)
 {
-    static CONST ASCII	POSIX[] = "C.ISO8859_9";
+    static const ASCII	POSIX[] = "C.ISO8859_9";
 
     FAMILY_ASCII (parm1, ISO88599_cp_init, CS_ISO8859_9, CC_C); 
     
@@ -192,7 +192,7 @@ TEXTTYPE_ENTRY (ISO88599_cp_init)
 
 TEXTTYPE_ENTRY (ISO885913_cp_init)
 {
-    static CONST ASCII	POSIX[] = "C.ISO8859_13";
+    static const ASCII	POSIX[] = "C.ISO8859_13";
 
     FAMILY_ASCII (parm1, ISO885913_cp_init, CS_ISO8859_13, CC_C); 
     
@@ -203,7 +203,7 @@ TEXTTYPE_ENTRY (ISO885913_cp_init)
 
 TEXTTYPE_ENTRY(DOS852_c0_init)
 {
-	static CONST ASCII POSIX[] = "C.DOS852";
+	static const ASCII POSIX[] = "C.DOS852";
 
 	FAMILY_ASCII(parm1, DOS852_c0_init, CS_DOS_852, CC_C);
 
@@ -215,7 +215,7 @@ TEXTTYPE_ENTRY(DOS852_c0_init)
 
 TEXTTYPE_ENTRY(DOS857_c0_init)
 {
-	static CONST ASCII POSIX[] = "C.DOS857";
+	static const ASCII POSIX[] = "C.DOS857";
 
 	FAMILY_ASCII(parm1, DOS857_c0_init, CS_DOS_857, CC_C);
 
@@ -227,7 +227,7 @@ TEXTTYPE_ENTRY(DOS857_c0_init)
 
 TEXTTYPE_ENTRY(DOS860_c0_init)
 {
-	static CONST ASCII POSIX[] = "C.DOS860";
+	static const ASCII POSIX[] = "C.DOS860";
 
 	FAMILY_ASCII(parm1, DOS860_c0_init, CS_DOS_860, CC_C);
 
@@ -239,7 +239,7 @@ TEXTTYPE_ENTRY(DOS860_c0_init)
 
 TEXTTYPE_ENTRY(DOS861_c0_init)
 {
-	static CONST ASCII POSIX[] = "C.DOS861";
+	static const ASCII POSIX[] = "C.DOS861";
 
 	FAMILY_ASCII(parm1, DOS861_c0_init, CS_DOS_861, CC_C);
 
@@ -251,7 +251,7 @@ TEXTTYPE_ENTRY(DOS861_c0_init)
 
 TEXTTYPE_ENTRY(DOS863_c0_init)
 {
-	static CONST ASCII POSIX[] = "C.DOS863";
+	static const ASCII POSIX[] = "C.DOS863";
 
 	FAMILY_ASCII(parm1, DOS863_c0_init, CS_DOS_863, CC_C);
 
@@ -263,7 +263,7 @@ TEXTTYPE_ENTRY(DOS863_c0_init)
 
 TEXTTYPE_ENTRY(DOS737_c0_init)
 {
-	static CONST ASCII POSIX[] = "C.DOS737";
+	static const ASCII POSIX[] = "C.DOS737";
 
 	FAMILY_ASCII(parm1, DOS737_c0_init, CS_DOS_737, CC_C);
 
@@ -275,7 +275,7 @@ TEXTTYPE_ENTRY(DOS737_c0_init)
 
 TEXTTYPE_ENTRY(DOS775_c0_init)
 {
-	static CONST ASCII POSIX[] = "C.DOS775";
+	static const ASCII POSIX[] = "C.DOS775";
 
 	FAMILY_ASCII(parm1, DOS775_c0_init, CS_DOS_775, CC_C);
 
@@ -287,7 +287,7 @@ TEXTTYPE_ENTRY(DOS775_c0_init)
 
 TEXTTYPE_ENTRY(DOS858_c0_init)
 {
-	static CONST ASCII POSIX[] = "C.DOS858";
+	static const ASCII POSIX[] = "C.DOS858";
 
 	FAMILY_ASCII(parm1, DOS858_c0_init, CS_DOS_858, CC_C);
 
@@ -299,7 +299,7 @@ TEXTTYPE_ENTRY(DOS858_c0_init)
 
 TEXTTYPE_ENTRY(DOS862_c0_init)
 {
-	static CONST ASCII POSIX[] = "C.DOS862";
+	static const ASCII POSIX[] = "C.DOS862";
 
 	FAMILY_ASCII(parm1, DOS862_c0_init, CS_DOS_862, CC_C);
 
@@ -311,7 +311,7 @@ TEXTTYPE_ENTRY(DOS862_c0_init)
 
 TEXTTYPE_ENTRY(DOS864_c0_init)
 {
-	static CONST ASCII POSIX[] = "C.DOS864";
+	static const ASCII POSIX[] = "C.DOS864";
 
 	FAMILY_ASCII(parm1, DOS864_c0_init, CS_DOS_864, CC_C);
 
@@ -323,7 +323,7 @@ TEXTTYPE_ENTRY(DOS864_c0_init)
 
 TEXTTYPE_ENTRY(DOS866_c0_init)
 {
-	static CONST ASCII POSIX[] = "C.DOS866";
+	static const ASCII POSIX[] = "C.DOS866";
 
 	FAMILY_ASCII(parm1, DOS866_c0_init, CS_DOS_866, CC_C);
 
@@ -335,7 +335,7 @@ TEXTTYPE_ENTRY(DOS866_c0_init)
 
 TEXTTYPE_ENTRY(DOS869_c0_init)
 {
-	static CONST ASCII POSIX[] = "C.DOS869";
+	static const ASCII POSIX[] = "C.DOS869";
 
 	FAMILY_ASCII(parm1, DOS869_c0_init, CS_DOS_869, CC_C);
 
@@ -347,7 +347,7 @@ TEXTTYPE_ENTRY(DOS869_c0_init)
 
 TEXTTYPE_ENTRY(CYRL_c0_init)
 {
-	static CONST ASCII POSIX[] = "C.CYRL";
+	static const ASCII POSIX[] = "C.CYRL";
 
 	FAMILY_ASCII(parm1, CYRL_c0_init, CS_CYRL, CC_C);
 
@@ -359,7 +359,7 @@ TEXTTYPE_ENTRY(CYRL_c0_init)
 
 TEXTTYPE_ENTRY(WIN1250_c0_init)
 {
-	static CONST ASCII POSIX[] = "C.ISO8859_1";
+	static const ASCII POSIX[] = "C.ISO8859_1";
 
 	FAMILY_ASCII(parm1, WIN1250_c0_init, CS_WIN1250, CC_C);
 
@@ -371,7 +371,7 @@ TEXTTYPE_ENTRY(WIN1250_c0_init)
 
 TEXTTYPE_ENTRY(WIN1251_c0_init)
 {
-	static CONST ASCII POSIX[] = "C.ISO8859_1";
+	static const ASCII POSIX[] = "C.ISO8859_1";
 
 	FAMILY_ASCII(parm1, WIN1251_c0_init, CS_WIN1251, CC_C);
 
@@ -383,7 +383,7 @@ TEXTTYPE_ENTRY(WIN1251_c0_init)
 
 TEXTTYPE_ENTRY(WIN1252_c0_init)
 {
-	static CONST ASCII POSIX[] = "C.ISO8859_1";
+	static const ASCII POSIX[] = "C.ISO8859_1";
 
 	FAMILY_ASCII(parm1, WIN1252_c0_init, CS_WIN1252, CC_C);
 
@@ -395,7 +395,7 @@ TEXTTYPE_ENTRY(WIN1252_c0_init)
 
 TEXTTYPE_ENTRY(WIN1253_c0_init)
 {
-	static CONST ASCII POSIX[] = "C.ISO8859_1";
+	static const ASCII POSIX[] = "C.ISO8859_1";
 
 	FAMILY_ASCII(parm1, WIN1253_c0_init, CS_WIN1253, CC_C);
 
@@ -407,7 +407,7 @@ TEXTTYPE_ENTRY(WIN1253_c0_init)
 
 TEXTTYPE_ENTRY(WIN1254_c0_init)
 {
-	static CONST ASCII POSIX[] = "C.ISO8859_1";
+	static const ASCII POSIX[] = "C.ISO8859_1";
 
 	FAMILY_ASCII(parm1, WIN1254_c0_init, CS_WIN1254, CC_C);
 
@@ -418,7 +418,7 @@ TEXTTYPE_ENTRY(WIN1254_c0_init)
 
 TEXTTYPE_ENTRY(WIN1255_c0_init)
 {
-	static CONST ASCII POSIX[] = "C.ISO8859_5";
+	static const ASCII POSIX[] = "C.ISO8859_5";
 
 	FAMILY_ASCII(parm1, WIN1255_c0_init, CS_WIN1255, CC_C);
 
@@ -429,7 +429,7 @@ TEXTTYPE_ENTRY(WIN1255_c0_init)
 
 TEXTTYPE_ENTRY(WIN1256_c0_init)
 {
-	static CONST ASCII POSIX[] = "C.ISO8859_1";
+	static const ASCII POSIX[] = "C.ISO8859_1";
 
 	FAMILY_ASCII(parm1, WIN1256_c0_init, CS_WIN1256, CC_C);
 
@@ -440,7 +440,7 @@ TEXTTYPE_ENTRY(WIN1256_c0_init)
 
 TEXTTYPE_ENTRY(WIN1257_c0_init)
 {
-	static CONST ASCII POSIX[] = "C.ISO8859_1";
+	static const ASCII POSIX[] = "C.ISO8859_1";
 
 	FAMILY_ASCII(parm1, WIN1257_c0_init, CS_WIN1257, CC_C);
 
@@ -452,7 +452,7 @@ TEXTTYPE_ENTRY(WIN1257_c0_init)
 
 TEXTTYPE_ENTRY(NEXT_c0_init)
 {
-	static CONST ASCII POSIX[] = "C.ISO8859_1";
+	static const ASCII POSIX[] = "C.ISO8859_1";
 
 	FAMILY_ASCII(parm1, NEXT_c0_init, CS_NEXT, CC_C);
 

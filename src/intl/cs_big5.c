@@ -32,7 +32,7 @@ extern USHORT CVBIG5_check_big5();
 CHARSET_ENTRY(CS_big_5)
 {
 #include "../intl/charsets/cs_big5.h"
-	static CONST ASCII POSIX[] = "BIG_5";
+	static const ASCII POSIX[] = "BIG_5";
 
 	csptr->charset_version = 40;
 	csptr->charset_id = CS_BIG5;

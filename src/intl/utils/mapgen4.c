@@ -260,7 +260,7 @@ void print_direct_table(char *name, TABLE * table)
 {
 	int i;
 
-	ib_printf("static CONST USHORT %s_map[256] = {\n", name);
+	ib_printf("static const USHORT %s_map[256] = {\n", name);
 	for (i = 0; i < 256; i++) {
 		if (table->table[i].exists != 1 || table->table[i].not_defined)
 			ib_printf("/* %02X */     UNICODE_REPLACEMENT_CHARACTER,\n", i);
@@ -280,7 +280,7 @@ void print_indexed_table(char *name, TABLE * table,
 	unsigned short upper_byte[256];
 	int i;
 
-	ib_printf("static CONST USHORT FAR_VARIABLE %s_mapping_array[] = {\n",
+	ib_printf("static const USHORT FAR_VARIABLE %s_mapping_array[] = {\n",
 			  name);
 	for (index = 0; index < 256; index++)
 		if (replacement == UNICODE_REPLACEMENT_CHARACTER)
@@ -331,7 +331,7 @@ void print_indexed_table(char *name, TABLE * table,
 	ib_printf("\t0 /* END OF MAP TABLE */\n");
 	ib_printf("};\n");
 
-	ib_printf("static CONST USHORT %s_map[256] = {\n", name);
+	ib_printf("static const USHORT %s_map[256] = {\n", name);
 	for (i = 0; i < 256; i++)
 		ib_printf("/* U+%02X-- */\t%d,\n", i, upper_byte[i]);
 	ib_printf("};\n");
@@ -348,7 +348,7 @@ void print_condensed_indexed_table(
 	unsigned short upper_byte[256];
 	int i;
 
-	ib_printf("static CONST USHORT FAR_VARIABLE %s_mapping_array[] = {\n",
+	ib_printf("static const USHORT FAR_VARIABLE %s_mapping_array[] = {\n",
 			  name);
 
 	ib_printf("\n");
@@ -408,7 +408,7 @@ void print_condensed_indexed_table(
 	ib_printf("\t0 /* END OF MAP TABLE */\n");
 	ib_printf("};\n");
 
-	ib_printf("static CONST USHORT %s_map[256] = {\n", name);
+	ib_printf("static const USHORT %s_map[256] = {\n", name);
 	for (i = 0; i < 256; i++)
 		ib_printf("%d,\n", upper_byte[i]);
 	ib_printf("};\n");

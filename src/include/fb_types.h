@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.13 2003-02-12 12:45:43 brodsom Exp $
+ *  $Id: fb_types.h,v 1.14 2003-02-13 09:55:51 dimitr Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -36,11 +36,6 @@
 
 #ifndef INCLUDE_FB_TYPES_H
 #define INCLUDE_FB_TYPES_H
-
-
-#ifndef CONST
-#    define CONST           const
-#endif
 
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)

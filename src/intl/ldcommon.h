@@ -49,7 +49,7 @@ typedef USHORT UNICODE;
 #else
 #define ERR_assert	LD_assert
 #define assert(ex)	{if (!(ex)){(void) LD_assert (__FILE__, __LINE__); abort();}}
-extern void LD_assert(CONST SCHAR*, int);
+extern void LD_assert(const SCHAR*, int);
 #endif
 
 #define MIN(x,y) ((x)<(y)?(x):(y))

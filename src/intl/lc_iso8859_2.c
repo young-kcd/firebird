@@ -55,7 +55,7 @@ extern	SSHORT	LC_DOS_nc_mbtowc();
 
 TEXTTYPE_ENTRY (ISO88592_c1_init)
 {
-static CONST ASCII	POSIX[] = "cs_CZ.ISO8859_2";
+static const ASCII	POSIX[] = "cs_CZ.ISO8859_2";
 
 #include "../intl/collations/xx88592czech.h"
 

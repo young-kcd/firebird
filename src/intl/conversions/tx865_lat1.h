@@ -17,7 +17,7 @@
  * Contributor(s): ______________________________________.
  */
 /* 865 to iso8859_1 character set conversion table */
-static CONST UCHAR cvt_865_to_iso88591[256] = {
+static const UCHAR cvt_865_to_iso88591[256] = {
 /*NEW       OLD UINC       NAME */
 	0x00 /*     00 0000 NULL                                     */ ,
 	0x01 /*     01 0001 START OF HEADING                         */ ,
@@ -288,7 +288,7 @@ static CONST UCHAR cvt_865_to_iso88591[256] = {
 
 
 /* iso8859_1 to 865 character set conversion table */
-static CONST UCHAR cvt_iso88591_to_865[256] = {
+static const UCHAR cvt_iso88591_to_865[256] = {
 /*NEW       OLD UINC       NAME */
 	0x00 /*     00 0000 NULL                                     */ ,
 	0x01 /*     01 0001 START OF HEADING                         */ ,

@@ -31,7 +31,7 @@ extern USHORT CV_wc_copy();
 
 CHARSET_ENTRY(CS_unicode_ucs2)
 {
-	static CONST WCHAR space = 0x0020;
+	static const WCHAR space = 0x0020;
 
 	csptr->charset_version = 40;
 	csptr->charset_id = CS_UNICODE_UCS2;

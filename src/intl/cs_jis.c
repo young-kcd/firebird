@@ -34,7 +34,7 @@ extern USHORT CVJIS_unicode_to_eucj();
 
 CHARSET_ENTRY(CS_jis_0208_1990)
 {
-	static CONST WCHAR space = 0x0020;
+	static const WCHAR space = 0x0020;
 
 #include "../intl/charsets/cs_jis_0208_1990.h"
 

@@ -61,7 +61,7 @@ extern SSHORT CVJIS_euc_mbtowc();
 
 TEXTTYPE_ENTRY(JIS220_init)
 {
-	static CONST ASCII POSIX[] = "C.SJIS";
+	static const ASCII POSIX[] = "C.SJIS";
 
 	FAMILY_MULTIBYTE(220, JIS220_init, CS_SJIS, CC_C);
 	cache->texttype_fn_to_wc = CVJIS_sjis_byte2short;
@@ -79,7 +79,7 @@ TEXTTYPE_ENTRY(JIS220_init)
 
 TEXTTYPE_ENTRY(JIS230_init)
 {
-	static CONST ASCII POSIX[] = "C.EUC_J";
+	static const ASCII POSIX[] = "C.EUC_J";
 
 	FAMILY_MULTIBYTE(230, JIS230_init, CS_EUCJ, CC_C);
 	cache->texttype_fn_to_wc = CVJIS_euc_byte2short;

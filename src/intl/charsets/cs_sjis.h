@@ -290,7 +290,7 @@
 #define UNICODE_REPLACEMENT_CHARACTER 0xFFFD
 #endif
 
-static CONST USHORT FAR_VARIABLE sjis_to_unicode_mapping_array[] = {
+static const USHORT FAR_VARIABLE sjis_to_unicode_mapping_array[] = {
 												/* U+XX00 */ UNICODE_REPLACEMENT_CHARACTER,
 												/* 0 */
 												/* U+XX01 */ UNICODE_REPLACEMENT_CHARACTER,
@@ -1126,7 +1126,7 @@ static CONST USHORT FAR_VARIABLE sjis_to_unicode_mapping_array[] = {
 												/* 511 */
 	0							/* END OF MAP TABLE */
 };
-static CONST USHORT sjis_to_unicode_map[256] = {
+static const USHORT sjis_to_unicode_map[256] = {
 /* U+00-- */ 256,
 /* U+01-- */ 0,
 /* U+02-- */ 0,
@@ -1390,7 +1390,7 @@ static CONST USHORT sjis_to_unicode_map[256] = {
 #define CANT_MAP_CHARACTER 0
 #endif
 
-static CONST USHORT FAR_VARIABLE sjis_from_unicode_mapping_array[] = {
+static const USHORT FAR_VARIABLE sjis_from_unicode_mapping_array[] = {
 										/* U+XX00 */ CANT_MAP_CHARACTER,
 										/* 0 */
 										/* U+XX01 */ CANT_MAP_CHARACTER,
@@ -3250,7 +3250,7 @@ static CONST USHORT FAR_VARIABLE sjis_from_unicode_mapping_array[] = {
 										/* 1023 */
 	0							/* END OF MAP TABLE */
 };
-static CONST USHORT sjis_from_unicode_map[256] = {
+static const USHORT sjis_from_unicode_map[256] = {
 /* U+00-- */ 256,
 /* U+01-- */ 0,
 /* U+02-- */ 0,

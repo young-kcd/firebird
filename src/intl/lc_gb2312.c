@@ -64,7 +64,7 @@ extern SSHORT CVGB_gb2312_mbtowc();
 
 TEXTTYPE_ENTRY(GB_2312_init)
 {
-	static CONST ASCII POSIX[] = "C.GB_2312";
+	static const ASCII POSIX[] = "C.GB_2312";
 
 	FAMILY_MULTIBYTE(2312, GB_2312_init, CS_GB2312, CC_C);
 	cache->texttype_fn_to_wc = CVGB_gb2312_byte2short;

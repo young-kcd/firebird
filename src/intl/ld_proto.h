@@ -25,7 +25,7 @@
 #define _INTL_LD_PROTO_H_
 
 #ifdef DEV_BUILD
-void DLL_EXPORT LD_assert(CONST SCHAR*, int);
+void DLL_EXPORT LD_assert(const SCHAR*, int);
 #endif
 
 USHORT DLL_EXPORT LD_lookup(USHORT, FPTR_SHORT*, SSHORT, SSHORT);

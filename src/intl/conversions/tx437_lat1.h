@@ -17,7 +17,7 @@
  * Contributor(s): ______________________________________.
  */
 /* 437 to iso88591 character set conversion table */
-static CONST UCHAR cvt_437_to_iso88591[256] = {
+static const UCHAR cvt_437_to_iso88591[256] = {
 /*NEW       OLD UINC       NAME */
 	0x00 /*     00 0000 NULL                                     */ ,
 	0x01 /*     01 0001 START OF HEADING                         */ ,
@@ -288,7 +288,7 @@ static CONST UCHAR cvt_437_to_iso88591[256] = {
 
 
 /* iso88591 to 437 character set conversion table */
-static CONST UCHAR cvt_iso88591_to_437[256] = {
+static const UCHAR cvt_iso88591_to_437[256] = {
 /*NEW       OLD UINC       NAME */
 	0x00 /*     00 0000 NULL                                     */ ,
 	0x01 /*     01 0001 START OF HEADING                         */ ,

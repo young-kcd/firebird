@@ -59,7 +59,7 @@ extern SSHORT LC_DOS_nc_mbtowc();
 
 TEXTTYPE_ENTRY(DOS102_init)
 {
-	static CONST ASCII POSIX[] = "INTL.DOS437";
+	static const ASCII POSIX[] = "INTL.DOS437";
 
 #include "../intl/collations/pd437intl.h"
 
@@ -73,7 +73,7 @@ TEXTTYPE_ENTRY(DOS102_init)
 
 TEXTTYPE_ENTRY(DOS105_init)
 {
-	static CONST ASCII POSIX[] = "NORDAN4.DOS437";
+	static const ASCII POSIX[] = "NORDAN4.DOS437";
 
 #include "../intl/collations/pd865nordan40.h"
 
@@ -87,7 +87,7 @@ TEXTTYPE_ENTRY(DOS105_init)
 
 TEXTTYPE_ENTRY(DOS106_init)
 {
-	static CONST ASCII POSIX[] = "SWEDFIN.DOS437";
+	static const ASCII POSIX[] = "SWEDFIN.DOS437";
 
 #include "../intl/collations/pd437swedfin.h"
 
@@ -101,7 +101,7 @@ TEXTTYPE_ENTRY(DOS106_init)
 
 TEXTTYPE_ENTRY(DOS101_c2_init)
 {
-	static CONST ASCII POSIX[] = "DBASE.DOS437";
+	static const ASCII POSIX[] = "DBASE.DOS437";
 
 #include "../intl/collations/db437de0.h"
 
@@ -115,7 +115,7 @@ TEXTTYPE_ENTRY(DOS101_c2_init)
 
 TEXTTYPE_ENTRY(DOS101_c3_init)
 {
-	static CONST ASCII POSIX[] = "DBASE.DOS437";
+	static const ASCII POSIX[] = "DBASE.DOS437";
 
 #include "../intl/collations/db437es1.h"
 
@@ -129,7 +129,7 @@ TEXTTYPE_ENTRY(DOS101_c3_init)
 
 TEXTTYPE_ENTRY(DOS101_c4_init)
 {
-	static CONST ASCII POSIX[] = "DBASE.DOS437";
+	static const ASCII POSIX[] = "DBASE.DOS437";
 
 #include "../intl/collations/db437fi0.h"
 
@@ -143,7 +143,7 @@ TEXTTYPE_ENTRY(DOS101_c4_init)
 
 TEXTTYPE_ENTRY(DOS101_c5_init)
 {
-	static CONST ASCII POSIX[] = "DBASE.DOS437";
+	static const ASCII POSIX[] = "DBASE.DOS437";
 
 #include "../intl/collations/db437fr0.h"
 
@@ -157,7 +157,7 @@ TEXTTYPE_ENTRY(DOS101_c5_init)
 
 TEXTTYPE_ENTRY(DOS101_c6_init)
 {
-	static CONST ASCII POSIX[] = "DBASE.DOS437";
+	static const ASCII POSIX[] = "DBASE.DOS437";
 
 #include "../intl/collations/db437it0.h"
 
@@ -171,7 +171,7 @@ TEXTTYPE_ENTRY(DOS101_c6_init)
 
 TEXTTYPE_ENTRY(DOS101_c7_init)
 {
-	static CONST ASCII POSIX[] = "DBASE.DOS437";
+	static const ASCII POSIX[] = "DBASE.DOS437";
 
 #include "../intl/collations/db437nl0.h"
 
@@ -185,7 +185,7 @@ TEXTTYPE_ENTRY(DOS101_c7_init)
 
 TEXTTYPE_ENTRY(DOS101_c8_init)
 {
-	static CONST ASCII POSIX[] = "DBASE.DOS437";
+	static const ASCII POSIX[] = "DBASE.DOS437";
 
 #include "../intl/collations/db437sv0.h"
 
@@ -199,7 +199,7 @@ TEXTTYPE_ENTRY(DOS101_c8_init)
 
 TEXTTYPE_ENTRY(DOS101_c9_init)
 {
-	static CONST ASCII POSIX[] = "DBASE.DOS437";
+	static const ASCII POSIX[] = "DBASE.DOS437";
 
 #include "../intl/collations/db437uk0.h"
 
@@ -213,7 +213,7 @@ TEXTTYPE_ENTRY(DOS101_c9_init)
 
 TEXTTYPE_ENTRY(DOS101_c10_init)
 {
-	static CONST ASCII POSIX[] = "DBASE.DOS437";
+	static const ASCII POSIX[] = "DBASE.DOS437";
 
 #include "../intl/collations/db437us0.h"
 
@@ -227,7 +227,7 @@ TEXTTYPE_ENTRY(DOS101_c10_init)
 
 TEXTTYPE_ENTRY(DOS160_c1_init)
 {
-	static CONST ASCII POSIX[] = "DBASE.DOS850";
+	static const ASCII POSIX[] = "DBASE.DOS850";
 
 #include "../intl/collations/db850cf0.h"
 
@@ -241,7 +241,7 @@ TEXTTYPE_ENTRY(DOS160_c1_init)
 
 TEXTTYPE_ENTRY(DOS160_c2_init)
 {
-	static CONST ASCII POSIX[] = "DBASE.DOS850";
+	static const ASCII POSIX[] = "DBASE.DOS850";
 
 #include "../intl/collations/db850de0.h"
 
@@ -255,7 +255,7 @@ TEXTTYPE_ENTRY(DOS160_c2_init)
 
 TEXTTYPE_ENTRY(DOS160_c3_init)
 {
-	static CONST ASCII POSIX[] = "DBASE.DOS850";
+	static const ASCII POSIX[] = "DBASE.DOS850";
 
 #include "../intl/collations/db850es0.h"
 
@@ -269,7 +269,7 @@ TEXTTYPE_ENTRY(DOS160_c3_init)
 
 TEXTTYPE_ENTRY(DOS160_c4_init)
 {
-	static CONST ASCII POSIX[] = "DBASE.DOS850";
+	static const ASCII POSIX[] = "DBASE.DOS850";
 
 #include "../intl/collations/db850fr0.h"
 
@@ -283,7 +283,7 @@ TEXTTYPE_ENTRY(DOS160_c4_init)
 
 TEXTTYPE_ENTRY(DOS160_c5_init)
 {
-	static CONST ASCII POSIX[] = "DBASE.DOS850";
+	static const ASCII POSIX[] = "DBASE.DOS850";
 
 #include "../intl/collations/db850it1.h"
 
@@ -297,7 +297,7 @@ TEXTTYPE_ENTRY(DOS160_c5_init)
 
 TEXTTYPE_ENTRY(DOS160_c6_init)
 {
-	static CONST ASCII POSIX[] = "DBASE.DOS850";
+	static const ASCII POSIX[] = "DBASE.DOS850";
 
 #include "../intl/collations/db850nl0.h"
 
@@ -311,7 +311,7 @@ TEXTTYPE_ENTRY(DOS160_c6_init)
 
 TEXTTYPE_ENTRY(DOS160_c7_init)
 {
-	static CONST ASCII POSIX[] = "DBASE.DOS850";
+	static const ASCII POSIX[] = "DBASE.DOS850";
 
 #include "../intl/collations/db850pt0.h"
 
@@ -325,7 +325,7 @@ TEXTTYPE_ENTRY(DOS160_c7_init)
 
 TEXTTYPE_ENTRY(DOS160_c8_init)
 {
-	static CONST ASCII POSIX[] = "DBASE.DOS850";
+	static const ASCII POSIX[] = "DBASE.DOS850";
 
 #include "../intl/collations/db850sv1.h"
 
@@ -339,7 +339,7 @@ TEXTTYPE_ENTRY(DOS160_c8_init)
 
 TEXTTYPE_ENTRY(DOS160_c9_init)
 {
-	static CONST ASCII POSIX[] = "DBASE.DOS850";
+	static const ASCII POSIX[] = "DBASE.DOS850";
 
 #include "../intl/collations/db850uk0.h"
 
@@ -353,7 +353,7 @@ TEXTTYPE_ENTRY(DOS160_c9_init)
 
 TEXTTYPE_ENTRY(DOS160_c10_init)
 {
-	static CONST ASCII POSIX[] = "DBASE.DOS850";
+	static const ASCII POSIX[] = "DBASE.DOS850";
 
 #include "../intl/collations/db850us0.h"
 
@@ -367,7 +367,7 @@ TEXTTYPE_ENTRY(DOS160_c10_init)
 
 TEXTTYPE_ENTRY(DOS107_c1_init)
 {
-	static CONST ASCII POSIX[] = "PDOX.DOS865";
+	static const ASCII POSIX[] = "PDOX.DOS865";
 
 #include "../intl/collations/pd865nordan40.h"
 
@@ -381,7 +381,7 @@ TEXTTYPE_ENTRY(DOS107_c1_init)
 
 TEXTTYPE_ENTRY(DOS107_c2_init)
 {
-	static CONST ASCII POSIX[] = "DBASE.DOS865";
+	static const ASCII POSIX[] = "DBASE.DOS865";
 
 #include "../intl/collations/db865da0.h"
 
@@ -395,7 +395,7 @@ TEXTTYPE_ENTRY(DOS107_c2_init)
 
 TEXTTYPE_ENTRY(DOS107_c3_init)
 {
-	static CONST ASCII POSIX[] = "DBASE.DOS865";
+	static const ASCII POSIX[] = "DBASE.DOS865";
 
 #include "../intl/collations/db865no0.h"
 
@@ -409,7 +409,7 @@ TEXTTYPE_ENTRY(DOS107_c3_init)
 
 TEXTTYPE_ENTRY(DOS852_c1_init)
 {
-	static CONST ASCII POSIX[] = "DBASE.DOS852";
+	static const ASCII POSIX[] = "DBASE.DOS852";
 
 #include "../intl/collations/db852cz0.h"
 
@@ -423,7 +423,7 @@ TEXTTYPE_ENTRY(DOS852_c1_init)
 
 TEXTTYPE_ENTRY(DOS852_c2_init)
 {
-	static CONST ASCII POSIX[] = "DBASE.DOS852";
+	static const ASCII POSIX[] = "DBASE.DOS852";
 
 #include "../intl/collations/db852po0.h"
 
@@ -437,7 +437,7 @@ TEXTTYPE_ENTRY(DOS852_c2_init)
 
 TEXTTYPE_ENTRY(DOS852_c4_init)
 {
-	static CONST ASCII POSIX[] = "DBASE.DOS852";
+	static const ASCII POSIX[] = "DBASE.DOS852";
 
 #include "../intl/collations/db852sl0.h"
 
@@ -451,7 +451,7 @@ TEXTTYPE_ENTRY(DOS852_c4_init)
 
 TEXTTYPE_ENTRY(DOS852_c5_init)
 {
-	static CONST ASCII POSIX[] = "PDOX.DOS852";
+	static const ASCII POSIX[] = "PDOX.DOS852";
 
 #include "../intl/collations/pd852czech.h"
 
@@ -465,7 +465,7 @@ TEXTTYPE_ENTRY(DOS852_c5_init)
 
 TEXTTYPE_ENTRY(DOS852_c6_init)
 {
-	static CONST ASCII POSIX[] = "PDOX.DOS852";
+	static const ASCII POSIX[] = "PDOX.DOS852";
 
 #include "../intl/collations/pd852polish.h"
 
@@ -479,7 +479,7 @@ TEXTTYPE_ENTRY(DOS852_c6_init)
 
 TEXTTYPE_ENTRY(DOS852_c7_init)
 {
-	static CONST ASCII POSIX[] = "PDOX.DOS852";
+	static const ASCII POSIX[] = "PDOX.DOS852";
 
 #include "../intl/collations/pd852hundc.h"
 
@@ -493,7 +493,7 @@ TEXTTYPE_ENTRY(DOS852_c7_init)
 
 TEXTTYPE_ENTRY(DOS852_c8_init)
 {
-	static CONST ASCII POSIX[] = "PDOX.DOS852";
+	static const ASCII POSIX[] = "PDOX.DOS852";
 
 #include "../intl/collations/pd852slovene.h"
 
@@ -507,7 +507,7 @@ TEXTTYPE_ENTRY(DOS852_c8_init)
 
 TEXTTYPE_ENTRY(DOS857_c1_init)
 {
-	static CONST ASCII POSIX[] = "DBASE.DOS857";
+	static const ASCII POSIX[] = "DBASE.DOS857";
 
 #include "../intl/collations/db857tr0.h"
 
@@ -521,7 +521,7 @@ TEXTTYPE_ENTRY(DOS857_c1_init)
 
 TEXTTYPE_ENTRY(DOS860_c1_init)
 {
-	static CONST ASCII POSIX[] = "DBASE.DOS860";
+	static const ASCII POSIX[] = "DBASE.DOS860";
 
 #include "../intl/collations/db860pt0.h"
 
@@ -535,7 +535,7 @@ TEXTTYPE_ENTRY(DOS860_c1_init)
 
 TEXTTYPE_ENTRY(DOS861_c1_init)
 {
-	static CONST ASCII POSIX[] = "PDOX.DOS861";
+	static const ASCII POSIX[] = "PDOX.DOS861";
 
 #include "../intl/collations/pd861iceland.h"
 
@@ -549,7 +549,7 @@ TEXTTYPE_ENTRY(DOS861_c1_init)
 
 TEXTTYPE_ENTRY(DOS863_c1_init)
 {
-	static CONST ASCII POSIX[] = "DBASE.DOS863";
+	static const ASCII POSIX[] = "DBASE.DOS863";
 
 #include "../intl/collations/db863cf1.h"
 
@@ -563,7 +563,7 @@ TEXTTYPE_ENTRY(DOS863_c1_init)
 
 TEXTTYPE_ENTRY(CYRL_c1_init)
 {
-	static CONST ASCII POSIX[] = "DBASE.CYRL";
+	static const ASCII POSIX[] = "DBASE.CYRL";
 
 #include "../intl/collations/db866ru0.h"
 
@@ -577,7 +577,7 @@ TEXTTYPE_ENTRY(CYRL_c1_init)
 
 TEXTTYPE_ENTRY(CYRL_c2_init)
 {
-	static CONST ASCII POSIX[] = "PDOX.CYRL";
+	static const ASCII POSIX[] = "PDOX.CYRL";
 
 #include "../intl/collations/pd866cyrr.h"
 

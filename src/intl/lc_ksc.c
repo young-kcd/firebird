@@ -63,7 +63,7 @@ static int GetSpeHanNdx();
 
 TEXTTYPE_ENTRY(KSC_5601_init)
 {
-	static CONST ASCII POSIX[] = "C.KSC_5601";
+	static const ASCII POSIX[] = "C.KSC_5601";
 
 	FAMILY_MULTIBYTE(5601, KSC_5601_init, CS_KSC5601, CC_C);
 
@@ -78,7 +78,7 @@ TEXTTYPE_ENTRY(KSC_5601_init)
 
 TEXTTYPE_ENTRY(CV_ksc_5601_dict_init)
 {
-	static CONST ASCII POSIX[] = "HANGUL.KSC_5601";
+	static const ASCII POSIX[] = "HANGUL.KSC_5601";
 
 	FAMILY_MULTIBYTE(5602, CV_ksc_5601_dict_init, CS_KSC5601, CC_KOREA);
 

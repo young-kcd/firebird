@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int_cxx.cpp,v 1.7 2003-02-08 00:36:51 brodsom Exp $
+//	$Id: int_cxx.cpp,v 1.8 2003-02-13 09:58:19 dimitr Exp $
 //
 
 #include "firebird.h"
@@ -508,7 +508,7 @@ static void gen_request( GPRE_REQ request)
 		ib_fprintf(out_file, "static void\t*%s;\t/* request handle */\n",
 				   request->req_handle);
 
-	ib_fprintf(out_file, "static CONST UCHAR\tjrd_%d [%d] =",
+	ib_fprintf(out_file, "static const UCHAR\tjrd_%d [%d] =",
 			   request->req_ident, request->req_length);
 	align(INDENT);
 	ib_fprintf(out_file, "{\t/* blr string */\n", request->req_ident);

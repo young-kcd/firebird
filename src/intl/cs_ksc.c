@@ -29,7 +29,7 @@ extern USHORT CVKSC_check_ksc();
 
 CHARSET_ENTRY(CS_ksc_5601)
 {
-	static CONST char space = 0x20;
+	static const char space = 0x20;
 
 #include "../intl/charsets/cs_ksc5601.h"
 

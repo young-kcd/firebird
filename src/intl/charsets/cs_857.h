@@ -289,7 +289,7 @@
  * All Rights Reserved.
  * Contributor(s): Blas Rodriguez Somoza.
    -------------------------------------------- */
-static CONST USHORT to_unicode_map[256] = {
+static const USHORT to_unicode_map[256] = {
 /* 00 */  0x0000 /*                                          NULL */,
 /* 01 */  0x0001 /*                              START OF HEADING */,
 /* 02 */  0x0002 /*                                 START OF TEXT */,
@@ -553,7 +553,7 @@ static CONST USHORT to_unicode_map[256] = {
 #define CANT_MAP_CHARACTER 0
 #endif
 
-static CONST UCHAR FAR_VARIABLE from_unicode_mapping_array[] = {
+static const UCHAR FAR_VARIABLE from_unicode_mapping_array[] = {
 /* U+XX00 */	CANT_MAP_CHARACTER,	/* 0 */
 /* U+XX01 */	CANT_MAP_CHARACTER,	/* 1 */
 /* U+XX02 */	CANT_MAP_CHARACTER,	/* 2 */
@@ -1580,7 +1580,7 @@ static CONST UCHAR FAR_VARIABLE from_unicode_mapping_array[] = {
 /* U+25FF */	CANT_MAP_CHARACTER,	/* 1023 */
 	0 /* END OF MAP TABLE */
 };
-static CONST USHORT from_unicode_map[256] = {
+static const USHORT from_unicode_map[256] = {
 /* U+00-- */	256,
 /* U+01-- */	512,
 /* U+02-- */	0,

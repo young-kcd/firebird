@@ -31,7 +31,7 @@
 #define FIRST_TERTIARY   	1
 #define FIRST_SECONDARY  	(FIRST_TERTIARY+MAX_NCO_TERTIARY+1)
 #define FIRST_PRIMARY    	(FIRST_SECONDARY+MAX_NCO_SECONDARY+1)
-static CONST BYTE ToUpperConversionTbl [ UPPERCASE_LEN ] = {
+static const BYTE ToUpperConversionTbl [ UPPERCASE_LEN ] = {
 
 	0, /* 0 -> 0 */
 	1, /* 1 -> 1 */
@@ -291,7 +291,7 @@ static CONST BYTE ToUpperConversionTbl [ UPPERCASE_LEN ] = {
 	255  /* 255 -> 255	( ÿ -> ÿ ) */
 };
 
-static CONST BYTE ToLowerConversionTbl [ LOWERCASE_LEN ] = {
+static const BYTE ToLowerConversionTbl [ LOWERCASE_LEN ] = {
 	0, /* 0 -> 0 */
 	1, /* 1 -> 1 */
 	2, /* 2 -> 2 */
@@ -550,7 +550,7 @@ static CONST BYTE ToLowerConversionTbl [ LOWERCASE_LEN ] = {
 	255  /* 255 -> 255	( ÿ -> ÿ ) */
 };
 
-static CONST struct ExpandChar ExpansionTbl [ NUM_EXPAND_CHARS + 1 ] = {
+static const struct ExpandChar ExpansionTbl [ NUM_EXPAND_CHARS + 1 ] = {
 { 223, 115, 115 }, /* ß -> ss */
 { 146,  65,  69 }, /* ’ -> AE */
 { 145,  97, 101 }, /* ‘ -> ae */
@@ -558,12 +558,12 @@ static CONST struct ExpandChar ExpansionTbl [ NUM_EXPAND_CHARS + 1 ] = {
 { 0, 0, 0 } /* END OF TABLE */
 };
 
-static CONST struct CompressPair CompressTbl [ NUM_COMPRESS_CHARS + 1 ] = {
+static const struct CompressPair CompressTbl [ NUM_COMPRESS_CHARS + 1 ] = {
 { {0, 0}, {   0,   0,   0,   0,   0 }, {   0,   0,   0,   0,   0 } } /*END OF TABLE */
 };
 
 /*1250*/
-static CONST struct SortOrderTblEntry NoCaseOrderTbl [ NOCASESORT_LEN ] = {
+static const struct SortOrderTblEntry NoCaseOrderTbl [ NOCASESORT_LEN ] = {
 { FIRST_PRIMARY+  0, NULL_SECONDARY,      NULL_TERTIARY,      0, 0 }, /*   0   */
 { FIRST_PRIMARY+  1, NULL_SECONDARY,      NULL_TERTIARY,      0, 0 }, /*   1   */
 { FIRST_PRIMARY+  2, NULL_SECONDARY,      NULL_TERTIARY,      0, 0 }, /*   2   */

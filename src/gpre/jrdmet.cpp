@@ -26,7 +26,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: jrdmet.cpp,v 1.6 2002-11-30 17:40:24 hippoman Exp $
+//	$Id: jrdmet.cpp,v 1.7 2003-02-13 09:58:19 dimitr Exp $
 //
 
 #include "firebird.h"
@@ -65,9 +65,9 @@ void JRDMET_init( DBB db)
 	SYM symbol;
 	GPRE_FLD field;
 	TYP type;
-	CONST RTYP *rtype;
-	CONST UCHAR *relfld;
-	CONST UCHAR *fld;
+	const RTYP *rtype;
+	const UCHAR *relfld;
+	const UCHAR *fld;
 	int n;
 	struct gfld *gfield;
 

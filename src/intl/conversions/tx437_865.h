@@ -17,7 +17,7 @@
  * Contributor(s): ______________________________________.
  */
 /* 437 to 865 character set conversion table */
-static CONST UCHAR cvt_437_to_865[256] = {
+static const UCHAR cvt_437_to_865[256] = {
 /*NEW       OLD UINC       NAME */
 	0x00 /*     00 0000 NULL                                     */ ,
 	0x01 /*     01 0001 START OF HEADING                         */ ,
@@ -286,7 +286,7 @@ static CONST UCHAR cvt_437_to_865[256] = {
 
 
 /* 865 to 437 character set conversion table */
-static CONST UCHAR cvt_865_to_437[256] = {
+static const UCHAR cvt_865_to_437[256] = {
 /*NEW       OLD UINC       NAME */
 	0x00 /*     00 0000 NULL                                     */ ,
 	0x01 /*     01 0001 START OF HEADING                         */ ,

@@ -235,7 +235,7 @@ EXTERN_convert(CVJIS_sjis_x_eucj);
 
 
 #ifdef DEV_BUILD
-void LD_assert(CONST SCHAR* filename, int lineno)
+void LD_assert(const SCHAR* filename, int lineno)
 {
 /**************************************
  *

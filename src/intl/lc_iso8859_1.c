@@ -60,7 +60,7 @@ extern SSHORT LC_DOS_nc_mbtowc();
 
 TEXTTYPE_ENTRY(ISO88591_39_init)
 {
-	static CONST ASCII POSIX[] = "da_DA.ISO8859_1";
+	static const ASCII POSIX[] = "da_DA.ISO8859_1";
 
 #include "../intl/collations/bl88591da0.h"
 
@@ -75,7 +75,7 @@ TEXTTYPE_ENTRY(ISO88591_39_init)
 
 TEXTTYPE_ENTRY(ISO88591_40_init)
 {
-	static CONST ASCII POSIX[] = "du_NL.ISO8859_1";
+	static const ASCII POSIX[] = "du_NL.ISO8859_1";
 
 #include "../intl/collations/bl88591nl0.h"
 
@@ -90,7 +90,7 @@ TEXTTYPE_ENTRY(ISO88591_40_init)
 
 TEXTTYPE_ENTRY(ISO88591_41_init)
 {
-	static CONST ASCII POSIX[] = "fi_FI.ISO8859_1";
+	static const ASCII POSIX[] = "fi_FI.ISO8859_1";
 
 #include "../intl/collations/bl88591fi0.h"
 
@@ -104,7 +104,7 @@ TEXTTYPE_ENTRY(ISO88591_41_init)
 
 TEXTTYPE_ENTRY(ISO88591_42_init)
 {
-	static CONST ASCII POSIX[] = "fr_FR.ISO8859_1";
+	static const ASCII POSIX[] = "fr_FR.ISO8859_1";
 
 #include "../intl/collations/bl88591fr0.h"
 
@@ -118,7 +118,7 @@ TEXTTYPE_ENTRY(ISO88591_42_init)
 
 TEXTTYPE_ENTRY(ISO88591_43_init)
 {
-	static CONST ASCII POSIX[] = "fr_CA.ISO8859_1";
+	static const ASCII POSIX[] = "fr_CA.ISO8859_1";
 
 #include "../intl/collations/bl88591ca0.h"
 
@@ -132,7 +132,7 @@ TEXTTYPE_ENTRY(ISO88591_43_init)
 
 TEXTTYPE_ENTRY(ISO88591_44_init)
 {
-	static CONST ASCII POSIX[] = "de_DE.ISO8859_1";
+	static const ASCII POSIX[] = "de_DE.ISO8859_1";
 
 #include "../intl/collations/bl88591de0.h"
 
@@ -146,7 +146,7 @@ TEXTTYPE_ENTRY(ISO88591_44_init)
 
 TEXTTYPE_ENTRY(ISO88591_45_init)
 {
-	static CONST ASCII POSIX[] = "is_IS.ISO8859_1";
+	static const ASCII POSIX[] = "is_IS.ISO8859_1";
 
 #include "../intl/collations/bl88591is0.h"
 
@@ -160,7 +160,7 @@ TEXTTYPE_ENTRY(ISO88591_45_init)
 
 TEXTTYPE_ENTRY(ISO88591_46_init)
 {
-	static CONST ASCII POSIX[] = "it_IT.ISO8859_1";
+	static const ASCII POSIX[] = "it_IT.ISO8859_1";
 
 #include "../intl/collations/bl88591it0.h"
 
@@ -175,7 +175,7 @@ TEXTTYPE_ENTRY(ISO88591_46_init)
 
 TEXTTYPE_ENTRY(ISO88591_48_init)
 {
-	static CONST ASCII POSIX[] = "no_NO.ISO8859_1";
+	static const ASCII POSIX[] = "no_NO.ISO8859_1";
 
 #include "../intl/collations/bl88591no0.h"
 
@@ -190,7 +190,7 @@ TEXTTYPE_ENTRY(ISO88591_48_init)
 
 TEXTTYPE_ENTRY(ISO88591_49_init)
 {
-	static CONST ASCII POSIX[] = "es_ES.ISO8859_1";
+	static const ASCII POSIX[] = "es_ES.ISO8859_1";
 
 #include "../intl/collations/bl88591es0.h"
 
@@ -204,7 +204,7 @@ TEXTTYPE_ENTRY(ISO88591_49_init)
 
 TEXTTYPE_ENTRY(ISO88591_51_init)
 {
-	static CONST ASCII POSIX[] = "sv_SV.ISO8859_1";
+	static const ASCII POSIX[] = "sv_SV.ISO8859_1";
 
 #include "../intl/collations/bl88591sv0.h"
 
@@ -218,7 +218,7 @@ TEXTTYPE_ENTRY(ISO88591_51_init)
 
 TEXTTYPE_ENTRY(ISO88591_52_init)
 {
-	static CONST ASCII POSIX[] = "en_UK.ISO8859_1";
+	static const ASCII POSIX[] = "en_UK.ISO8859_1";
 
 #include "../intl/collations/bl88591uk0.h"
 
@@ -232,7 +232,7 @@ TEXTTYPE_ENTRY(ISO88591_52_init)
 
 TEXTTYPE_ENTRY(ISO88591_53_init)
 {
-	static CONST ASCII POSIX[] = "en_US.ISO8859_1";
+	static const ASCII POSIX[] = "en_US.ISO8859_1";
 
 #include "../intl/collations/bl88591us0.h"
 
@@ -246,7 +246,7 @@ TEXTTYPE_ENTRY(ISO88591_53_init)
 
 TEXTTYPE_ENTRY(ISO88591_54_init)
 {
-	static CONST ASCII POSIX[] = "pt_PT.ISO8859_1";
+	static const ASCII POSIX[] = "pt_PT.ISO8859_1";
 
 #include "../intl/collations/bl88591pt0.h"
 
@@ -260,7 +260,7 @@ TEXTTYPE_ENTRY(ISO88591_54_init)
 
 TEXTTYPE_ENTRY(WIN1250_c1_init)
 {
-	static CONST ASCII POSIX[] = "PXW_CSY.WIN1250";
+	static const ASCII POSIX[] = "PXW_CSY.WIN1250";
 
 #include "../intl/collations/pw1250czech.h"
 
@@ -274,7 +274,7 @@ TEXTTYPE_ENTRY(WIN1250_c1_init)
 
 TEXTTYPE_ENTRY(WIN1250_c2_init)
 {
-	static CONST ASCII POSIX[] = "PXW_HUNDC.WIN1250";
+	static const ASCII POSIX[] = "PXW_HUNDC.WIN1250";
 
 #include "../intl/collations/pw1250hundc.h"
 
@@ -288,7 +288,7 @@ TEXTTYPE_ENTRY(WIN1250_c2_init)
 
 TEXTTYPE_ENTRY(WIN1250_c3_init)
 {
-	static CONST ASCII POSIX[] = "PXW_PLK.WIN1250";
+	static const ASCII POSIX[] = "PXW_PLK.WIN1250";
 
 #include "../intl/collations/pw1250polish.h"
 
@@ -302,7 +302,7 @@ TEXTTYPE_ENTRY(WIN1250_c3_init)
 
 TEXTTYPE_ENTRY(WIN1250_c4_init)
 {
-	static CONST ASCII POSIX[] = "PXW_SLOV.WIN1250";
+	static const ASCII POSIX[] = "PXW_SLOV.WIN1250";
 
 #include "../intl/collations/pw1250slov.h"
 
@@ -315,7 +315,7 @@ TEXTTYPE_ENTRY(WIN1250_c4_init)
 
 TEXTTYPE_ENTRY (WIN1250_c5_init)
 {
-    static CONST ASCII      POSIX[] = "PXW_HUN.WIN1250";
+    static const ASCII      POSIX[] = "PXW_HUN.WIN1250";
     
 #include "../intl/collations/pw1250hun.h"
     
@@ -328,7 +328,7 @@ TEXTTYPE_ENTRY (WIN1250_c5_init)
 
 TEXTTYPE_ENTRY(WIN1251_c1_init)
 {
-	static CONST ASCII POSIX[] = "PXW_CYRL.WIN1251";
+	static const ASCII POSIX[] = "PXW_CYRL.WIN1251";
 
 #include "../intl/collations/pw1251cyrr.h"
 
@@ -342,7 +342,7 @@ TEXTTYPE_ENTRY(WIN1251_c1_init)
 
 TEXTTYPE_ENTRY(WIN1251_c2_init)
 {
-	static CONST ASCII POSIX[] = "WIN1251_UA.WIN1251";
+	static const ASCII POSIX[] = "WIN1251_UA.WIN1251";
 
 #include "../intl/collations/xx1251_ua.h"
 
@@ -356,7 +356,7 @@ TEXTTYPE_ENTRY(WIN1251_c2_init)
 
 TEXTTYPE_ENTRY(WIN1252_c1_init)
 {
-	static CONST ASCII POSIX[] = "PXW_INTL.WIN1252";
+	static const ASCII POSIX[] = "PXW_INTL.WIN1252";
 
 #include "../intl/collations/pw1252intl.h"
 
@@ -370,7 +370,7 @@ TEXTTYPE_ENTRY(WIN1252_c1_init)
 
 TEXTTYPE_ENTRY(WIN1252_c2_init)
 {
-	static CONST ASCII POSIX[] = "PXW_INTL850.WIN1252";
+	static const ASCII POSIX[] = "PXW_INTL850.WIN1252";
 
 #include "../intl/collations/pw1252i850.h"
 
@@ -384,7 +384,7 @@ TEXTTYPE_ENTRY(WIN1252_c2_init)
 
 TEXTTYPE_ENTRY(WIN1252_c3_init)
 {
-	static CONST ASCII POSIX[] = "PXW_NORDAN4.WIN1252";
+	static const ASCII POSIX[] = "PXW_NORDAN4.WIN1252";
 
 #include "../intl/collations/pw1252nor4.h"
 
@@ -398,7 +398,7 @@ TEXTTYPE_ENTRY(WIN1252_c3_init)
 
 TEXTTYPE_ENTRY(WIN1252_c4_init)
 {
-	static CONST ASCII POSIX[] = "PXW_SPAN.WIN1252";
+	static const ASCII POSIX[] = "PXW_SPAN.WIN1252";
 
 #include "../intl/collations/pw1252span.h"
 
@@ -412,7 +412,7 @@ TEXTTYPE_ENTRY(WIN1252_c4_init)
 
 TEXTTYPE_ENTRY(WIN1252_c5_init)
 {
-	static CONST ASCII POSIX[] = "PXW_SWEDFIN.WIN1252";
+	static const ASCII POSIX[] = "PXW_SWEDFIN.WIN1252";
 
 #include "../intl/collations/pw1252swfn.h"
 
@@ -426,7 +426,7 @@ TEXTTYPE_ENTRY(WIN1252_c5_init)
 
 TEXTTYPE_ENTRY(WIN1253_c1_init)
 {
-	static CONST ASCII POSIX[] = "PXW_GREEK.WIN1253";
+	static const ASCII POSIX[] = "PXW_GREEK.WIN1253";
 
 #include "../intl/collations/pw1253greek1.h"
 
@@ -440,7 +440,7 @@ TEXTTYPE_ENTRY(WIN1253_c1_init)
 
 TEXTTYPE_ENTRY(WIN1254_c1_init)
 {
-	static CONST ASCII POSIX[] = "PXW_TURK.WIN1254";
+	static const ASCII POSIX[] = "PXW_TURK.WIN1254";
 
 #include "../intl/collations/pw1254turk.h"
 
@@ -454,7 +454,7 @@ TEXTTYPE_ENTRY(WIN1254_c1_init)
 
 TEXTTYPE_ENTRY(NEXT_c1_init)
 {
-	static CONST ASCII POSIX[] = "NXT_US.NEXT";
+	static const ASCII POSIX[] = "NXT_US.NEXT";
 
 #include "../intl/collations/blNEXTus0.h"
 
@@ -468,7 +468,7 @@ TEXTTYPE_ENTRY(NEXT_c1_init)
 
 TEXTTYPE_ENTRY(NEXT_c2_init)
 {
-	static CONST ASCII POSIX[] = "NXT_DEU.NEXT";
+	static const ASCII POSIX[] = "NXT_DEU.NEXT";
 
 #include "../intl/collations/blNEXTde0.h"
 
@@ -482,7 +482,7 @@ TEXTTYPE_ENTRY(NEXT_c2_init)
 
 TEXTTYPE_ENTRY(NEXT_c3_init)
 {
-	static CONST ASCII POSIX[] = "NXT_FRA.NEXT";
+	static const ASCII POSIX[] = "NXT_FRA.NEXT";
 
 #include "../intl/collations/blNEXTfr0.h"
 
@@ -496,7 +496,7 @@ TEXTTYPE_ENTRY(NEXT_c3_init)
 
 TEXTTYPE_ENTRY(NEXT_c4_init)
 {
-	static CONST ASCII POSIX[] = "NXT_ITA.NEXT";
+	static const ASCII POSIX[] = "NXT_ITA.NEXT";
 
 #include "../intl/collations/blNEXTit0.h"
 
