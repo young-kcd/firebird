@@ -1720,6 +1720,11 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 	InversionCandidate** inversion = inversions->begin();
 	for (i = 0; i < inversions->getCount(); i++) {
 		inversion[i]->used = false;
+		if (inversion[i]->scratch) {
+			if (inversion[i]->scratch->idx->idx_runtime_flags & idx_plan_dont_use) {
+				inversion[i]->used = true;
+			}
+		}
 	}
 
 	// The matches returned in this inversion are always sorted.
@@ -2277,7 +2282,9 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 	IndexScratch** indexScratch = indexScratches->begin();
 	for (int i = 0; i < indexScratches->getCount(); i++) {
 		// Try to match the boolean against a index.
-		if (!(indexScratch[i]->idx->idx_runtime_flags & idx_plan_dont_use)) {
+		if (!(indexScratch[i]->idx->idx_runtime_flags & idx_plan_dont_use) ||
+			(indexScratch[i]->idx->idx_runtime_flags & idx_plan_navigate)) 
+		{
 			matchBoolean(indexScratch[i], boolean, scope); 
 		}
 	}
