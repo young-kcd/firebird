@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.34.2.4 2004-03-29 03:50:10 skidder Exp $ 
+  * $Id: evl.cpp,v 1.34.2.5 2004-03-29 05:04:01 skidder Exp $ 
  */
 
 /*
@@ -4794,12 +4794,17 @@ static SSHORT string_function(
 		escape = 0;
 		/* ensure 3rd argument (escape char) is in operation text type */
 		if (node->nod_count == 3) {
+			DSC* dsc = EVL_expr(tdbb, node->nod_arg[2]);
+			if (tdbb->tdbb_request->req_flags & req_null) {
+				return FALSE;
+			}
+
 			const char* q1;
 			USHORT l3, consumed;
 			UCHAR temp3[TEMP_LENGTH];
 
 			/* Convert ESCAPE to operation character set */
-			l3 = MOV_make_string(EVL_expr(tdbb, node->nod_arg[2]),
+			l3 = MOV_make_string(dsc,
 								 ttype, &q1, (VARY *) temp3,
 								 TEMP_SIZE(temp3));
 			if (!l3)
