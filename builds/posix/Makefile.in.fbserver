@@ -27,16 +27,18 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.fbserver,v 1.11.2.3 2003-11-13 04:51:50 tmcsys Exp $
+#  $Id: Makefile.in.fbserver,v 1.11.2.4 2004-07-05 14:21:59 kkuznetsov Exp $
 #
 ROOT=..
 ObjModuleName=fbserver
-CFLAGS:=-DSUPERSERVER -pthread -D_REENTRANT
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
 include     $(ROOT)/gen/make.rules
 include     $(ROOT)/gen/make.shared.variables
+
+CFLAGS:=$(SUPER_CFLAGS)
+
 
 @SET_MAKE@
 

@@ -27,17 +27,19 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbserver,v 1.6.2.1 2003-09-08 14:48:14 alexpeshkoff Exp $
+#  $Id: Makefile.in.libfbserver,v 1.6.2.2 2004-07-05 14:21:59 kkuznetsov Exp $
 #
 ROOT=..
 ObjModuleName=libfbserver
-CFLAGS:= -DSUPERSERVER -pthread -D_REENTRANT
+
 ArchType=super
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
 include     $(ROOT)/gen/make.rules
 include     $(ROOT)/gen/make.shared.variables
+
+CFLAGS:= $(SUPER_CFLAGS)
 
 @SET_MAKE@
 
