@@ -24,7 +24,7 @@
  * to signal NULL by testing the flags of the parameter's descriptor.
  */
 /*
-$Id: fun.epp,v 1.7 2002-08-22 08:20:26 dimitr Exp $
+$Id: fun.epp,v 1.8 2002-09-06 13:05:33 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -64,17 +64,10 @@ $Id: fun.epp,v 1.7 2002-08-22 08:20:26 dimitr Exp $
 #endif
 #include "../jrd/nlm_thd.h"
 
-typedef SSHORT(*FPTR_SSHORT) ();
-typedef SLONG(*FPTR_SLONG) ();
-typedef SINT64(*FPTR_SINT64) ();
-typedef float (*FPTR_REAL) ();
-typedef double (*FPTR_DOUBLE) ();
-typedef UCHAR *(*FPTR_UCHAR) ();
-
 #ifdef VMS
-#define CALL_UDF(ptr)           (*(SLONG (*)(SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG))(ptr)) (args [0], args[1], args[2], args[3], args [4], args [5], args [6], args [7], args [8], args [9]) 
+#define CALL_UDF(ptr, udftype)     (*(udftype (*)(SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG))(ptr)) (args [0], args[1], args[2], args[3], args [4], args [5], args [6], args [7], args [8], args [9]) 
 #else
-#define CALL_UDF(ptr)           ((SLONG (*)(SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG))(ptr)) (args [0], args[1], args[2], args[3], args [4], args [5], args [6], args [7], args [8], args [9])
+#define CALL_UDF(ptr, udftype)     ((udftype (*)(SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG))(ptr)) (args [0], args[1], args[2], args[3], args [4], args [5], args [6], args [7], args [8], args [9])
 #endif
 
 DATABASE DB = FILENAME "ODS.RDB";
@@ -436,7 +429,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, NOD node, VLU value)
 	if (function->fun_return_arg)
 	{
 		THREAD_EXIT;
-		CALL_UDF(function->fun_entrypoint);
+		CALL_UDF(function->fun_entrypoint, void);
 		THREAD_ENTER;
 	}
 	else if ((SLONG) return_ptr->fun_mechanism == FUN_value)
@@ -448,7 +441,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, NOD node, VLU value)
 		case dtype_long:
 			THREAD_EXIT;
 			value->vlu_misc.vlu_long =
-				CALL_UDF((FPTR_SLONG) function->fun_entrypoint);
+				CALL_UDF(function->fun_entrypoint, SLONG);
 			THREAD_ENTER;
 			break;
 
@@ -459,7 +452,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, NOD node, VLU value)
 			 */
 			THREAD_EXIT;
 			value->vlu_misc.vlu_short = (SSHORT)
-				CALL_UDF((FPTR_SLONG) function->fun_entrypoint);
+				CALL_UDF(function->fun_entrypoint, SLONG);
 			THREAD_ENTER;
 			break;
 
@@ -470,14 +463,14 @@ void DLL_EXPORT FUN_evaluate(FUN function, NOD node, VLU value)
 			 */
 			THREAD_EXIT;
 			value->vlu_misc.vlu_float = (float)
-				CALL_UDF((FPTR_DOUBLE) function->fun_entrypoint);
+				CALL_UDF(function->fun_entrypoint, double);
 			THREAD_ENTER;
 			break;
 
 		case dtype_int64:
 			THREAD_EXIT;
 			value->vlu_misc.vlu_int64 =
-				CALL_UDF((FPTR_SINT64) function->fun_entrypoint);
+				CALL_UDF(function->fun_entrypoint, SINT64);
 			THREAD_ENTER;
 			break;
 
@@ -487,7 +480,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, NOD node, VLU value)
 #endif
 			THREAD_EXIT;
 			value->vlu_misc.vlu_double =
-				CALL_UDF((FPTR_DOUBLE) function->fun_entrypoint);
+				CALL_UDF(function->fun_entrypoint, double);
 			THREAD_ENTER;
 			break;
 
@@ -500,7 +493,8 @@ void DLL_EXPORT FUN_evaluate(FUN function, NOD node, VLU value)
 	else
 	{
 		THREAD_EXIT;
-		temp_ptr = (UCHAR*) CALL_UDF(*(FPTR_UCHAR) function->fun_entrypoint);
+		typedef UCHAR* pUCHAR;
+		temp_ptr = CALL_UDF(function->fun_entrypoint, pUCHAR);
 		THREAD_ENTER;
 
 		if (temp_ptr != NULL)
