@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.122 2003-02-25 01:12:57 brodsom Exp $
+dnl $Id: configure.in,v 1.123 2003-03-03 06:02:29 aafemt Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -512,7 +512,7 @@ AC_SUBST(NEW_FIREBIRD_DIR)
 
 AC_DEFINE_UNQUOTED(FB_PREFIX, $(if test "x$prefix" = "xNONE" ; then echo \"$ac_default_prefix\"; else echo \"$prefix\"; fi))
 
-AC_CONFIG_COMMANDS_PRE([
+AC_CONFIG_COMMANDS(,,[
 mkdir -p gen/csv
 mkdir -p gen/dudley
 mkdir -p gen/isql
@@ -678,8 +678,9 @@ dnl EKU: handle platform specific installation and packaging
 
 case "$PLATFORM" in
   LINUX)
-    mkdir -p gen/install/scripts
-    mkdir -p gen/install/misc
+    AC_CONFIG_COMMANDS(,,[
+        mkdir -p gen/install/scripts
+        mkdir -p gen/install/misc])
     INSTALL_SRC_DIR=src/install/arch-specific/linux/${FIREBIRD_ARCH_TYPE}
     AC_CONFIG_FILES([gen/install/makeInstallImage.sh:${INSTALL_SRC_DIR}/makeInstallImage.sh.in
                      gen/install/scripts/preinstall.sh:${INSTALL_SRC_DIR}/preinstall.sh.in
