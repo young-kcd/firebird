@@ -1,3 +1,23 @@
+2003-12-19 16:43  paul_reeves
+
+	* firebird2/: builds/win32/msvc6/fb2control.dsp,
+	doc/README.Win32LibraryInstallation.txt,
+	src/install/arch-specific/win32/BuildExecutableInstall.bat,
+	src/install/arch-specific/win32/FirebirdInstall_15.iss,
+	src/utilities/install.cpp, src/utilities/install_client.cpp,
+	src/utilities/install_proto.h:
+	
+	Update build number for Fb 1.5. Put correct link to IDPL in some
+	boiler plates. (Very) minor changes to Win32 build process.
+
+2003-12-19 12:48  paul_reeves
+
+	* firebird2/src/utilities/fbcpl/: fbdialog.cpp, fbdialog.h,
+	fbpanel.cpp, fbpanel.h, res/fbcontrol.rc2:
+	
+	cpl applet - Prevent runaway error dialogues. Disable controls if
+	user has insufficient access rights.
+
 2003-12-17 18:54  alexpeshkoff
 
 	* firebird2/src/jrd/lck.cpp:
