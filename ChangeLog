@@ -1,3 +1,111 @@
+2003-11-16 23:10  skidder
+
+	* firebird2/src/jrd/: evl_string.h, evl_string_test.cpp:
+	
+	New algorithm for calculation of LIKE operator (not integrated yet,
+	published for review)
+
+2003-11-16 17:17  brodsom
+
+	* firebird2/src/jrd/: gds.cpp, isc_file.cpp, jrn.cpp, llio.cpp,
+	why.cpp:
+	
+	-Removing some unneeded headers (WIN_NT) or explaining why are
+	needed
+
+2003-11-16 17:11  brodsom
+
+	* firebird2/src/: journal/server.epp, journal/console.cpp,
+	journal/miscj.cpp, journal/rebuild.epp, lock/lock.h,
+	utilities/gsec/gsec.cpp, remote/os/win32/wnet.cpp, wal/wal.cpp,
+	wal/walc.cpp:
+	
+	-Removing some unneeded headers (WIN_NT) or explaining why are
+	needed
+
+2003-11-16 16:42  brodsom
+
+	* firebird2/src/utilities/gstat/dba_full.epp:
+	
+	-Make dba_full compile
+
+2003-11-16 16:40  brodsom
+
+	* firebird2/builds/win32/msvc6/: Firebird2.dsw, gstat_full.dsp:
+	
+	-Add gstat_full project (utilities/dba_full)
+
+2003-11-16 13:54  brodsom
+
+	* firebird2/src/: utilities/common/cmd_util.cpp,
+	utilities/gsec/gsec.h, utilities/gstat/dba.epp,
+	utilities/ibmgr/ibmgr.h, wal/walw.cpp:
+	
+	-Removing some unneeded headers (WIN_NT) or explaining why are
+	needed
+
+2003-11-16 13:50  brodsom
+
+	* firebird2/src/: jrd/os/win32/path_utils.cpp, lock/print.cpp,
+	msgs/build_file.epp, qli/lex.cpp, remote/inet.cpp,
+	utilities/nbackup.cpp:
+	
+	-Removing some unneeded headers (WIN_NT) or explaining why are
+	needed
+
+2003-11-16 13:23  brodsom
+
+	* firebird2/src/: jrd/divorce.cpp, jrd/ext.cpp, jrd/flu.cpp,
+	jrd/gds.cpp, jrd/log.cpp, jrd/rse.cpp, jrd/sort.cpp, jrd/svc.cpp,
+	jrd/utl.cpp, wal/driver.cpp, wal/wal_prnt.cpp, wal/walw.cpp:
+	
+	-Removing some unneeded headers (WIN_NT) or explaining why are
+	needed
+
+2003-11-16 12:42  brodsom
+
+	* firebird2/src/: dudley/ddl.cpp, dudley/exe.epp, isql/isql.epp,
+	isql/isql.h, journal/gjrn.cpp:
+	
+	-Removing some unneeded headers (WIN_NT) or explaining why are
+	needed
+
+2003-11-16 12:39  brodsom
+
+	* firebird2/src/: alice/alice.cpp, burp/burp.cpp, burp/mvol.cpp,
+	burp/spit.cpp, burp/std_desc.h:
+	
+	-Removing uneeded headers (WIN_NT)
+
+2003-11-16 11:31  brodsom
+
+	* firebird2/src/jrd/: common.h, gds.cpp:
+	
+	-Fixes to be able to build with gcc 3.3.1 (MinGW)
+
+2003-11-16 02:52  brodsom
+
+	* firebird2/src/: jrd/os/vms/dfloat_stub.cpp,
+	jrd/os/vms/vmsevent.cpp, qli/exe.cpp, qli/meta.epp, qli/show.epp,
+	remote/merge.cpp, remote/remote.cpp, remote/server.cpp,
+	utilities/run_service.cpp, utilities/stats.epp:
+	
+	-Undo gds__vax_integer to isc_vax_integer and gds__event_* to
+	isc_event_* changes
+
+2003-11-16 02:43  brodsom
+
+	* firebird2/src/: alice/alice_meta.epp, alice/exe.cpp,
+	alice/tdr.cpp, burp/mvol.cpp, burp/restore.epp, dsql/dsql.cpp,
+	dsql/utld.cpp, dudley/exe.epp, dudley/extract.epp, isql/isql.epp,
+	journal/server.epp, jrd/alt.cpp, jrd/alt_proto.h, jrd/dyn.epp,
+	jrd/dyn_mod.epp, jrd/event.cpp, jrd/filters.cpp, jrd/gds.cpp,
+	jrd/gds_proto.h, jrd/jrd.cpp, jrd/log.cpp, jrd/par.cpp,
+	jrd/svc.cpp, jrd/tra.cpp, jrd/utl.cpp, jrd/why.cpp:
+	
+	-Undo gds__vax_integer to isc_vax_integer and gds__event_* to
+	isc_event_* changes
+
 2003-11-15 21:16  skidder
 
 	* firebird2/src/remote/inet.cpp:
