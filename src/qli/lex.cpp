@@ -247,9 +247,9 @@ TOK LEX_edit_string(void)
 
 	retchar();
 
-	if (p[-1] == ','){
+	if (p[-1] == ',') {
 		retchar();
-		p--;
+		--p;
 	}
 
 	token->tok_length = p - token->tok_string;
@@ -329,7 +329,7 @@ TOK LEX_filename(void)
 
 	if (p[-1] == ';') {
 		retchar();
-		p--;
+		--p;
 	}
 
 // complain on unterminated quoted string
@@ -902,7 +902,7 @@ TOK LEX_token(void)
 		if (!HSH_lookup(token->tok_string, 2))
 		{
 			retchar();
-			p--;
+			--p;
 		}
 	}
 
@@ -1183,8 +1183,8 @@ static bool scan_number(SSHORT c,
 //   character is really a digit, otherwise backout
 
 	if (c == '.') {
-		retchar();
 		c = nextchar(true);
+		retchar();
 		if (!(classes[c] & CHR_digit))
 			return false;
 		dot = true;
