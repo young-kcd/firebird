@@ -29,7 +29,7 @@
  * the length of string types containing binary data (char. set octets).
  */
 /*
-$Id: fun.epp,v 1.22.2.4 2004-04-17 01:13:22 skidder Exp $
+$Id: fun.epp,v 1.22.2.5 2004-10-17 17:41:51 hvlad Exp $
 */
 
 #include "firebird.h"
@@ -151,7 +151,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 	try {
 #endif
 
-	START_CHECK_FOR_EXCEPTIONS( (TEXT*) function->fun_exception_message);
+	START_CHECK_FOR_EXCEPTIONS( (TEXT*) function->fun_exception_message->str_data);
 
 	// If the return data type is any of the string types,
 	// allocate space to hold value
@@ -578,7 +578,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 		}
 	}
 
-	END_CHECK_FOR_EXCEPTIONS((TEXT*)function->fun_exception_message);
+	END_CHECK_FOR_EXCEPTIONS((TEXT*)function->fun_exception_message->str_data);
 
 	if (unsup_datatype) {
 		IBERROR(169);			/* msg 169 return data type not supported */
