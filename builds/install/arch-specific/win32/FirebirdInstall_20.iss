@@ -77,7 +77,7 @@
 
 
 ;-------Start of Innosetup script
-#define msvc_version 6
+#define msvc_version 7
 #define FirebirdURL "http://www.firebirdsql.org"
 #define BaseVer "2_0"
 #define release
@@ -308,14 +308,14 @@ Source: output\bin\fbclient.dll; DestDir: {app}\bin; Components: ClientComponent
 ; Deploy libraries from vcredist if MSVC6 is used. Use %FrameworkSDKDir% is compiling with Visual Studio.
 ; The BuildExecutableInstall.bat will attempt to locate them and place them in output\system32\
 #if msvc_version == 6
-Source: output\system32\msvcrt.dll; DestDir: {app}\bin; Components: ClientComponent; MinVersion: 0,5.0;
-Source: output\system32\msvcrt.dll; DestDir: {sys}; Components: ClientComponent; OnlyBelowVersion: 5.0,5.0; Flags: sharedfile onlyifdoesntexist uninsneveruninstall;
+Source: output\system32\msvcrt.dll; DestDir: {app}\bin; Components: ClientComponent;
+Source: output\system32\msvcrt.dll; DestDir: {sys}; Components: ClientComponent; Flags: sharedfile onlyifdoesntexist uninsneveruninstall;
 #elif msvc_version == 7
-Source: output\system32\msvcr{#msvc_version}?.dll; DestDir: {app}\bin; Components: ClientComponent; MinVersion: 0,5.0;
-Source: output\system32\msvcr{#msvc_version}?.dll; DestDir: {sys}; Components: ClientComponent; OnlyBelowVersion: 5.0,5.0; Flags: sharedfile uninsneveruninstall;
+Source: output\system32\msvcr{#msvc_version}?.dll; DestDir: {app}\bin; Components: ClientComponent;
+Source: output\system32\msvcr{#msvc_version}?.dll; DestDir: {sys}; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
 #endif
-Source: output\system32\msvcp{#msvc_version}?.dll; DestDir: {app}\bin; Components: ClientComponent; MinVersion: 0,5.0;
-Source: output\system32\msvcp{#msvc_version}?.dll; DestDir: {sys}; Components: ClientComponent; OnlyBelowVersion: 5.0,5.0; Flags: sharedfile uninsneveruninstall;
+Source: output\system32\msvcp{#msvc_version}?.dll; DestDir: {app}\bin; Components: ClientComponent;
+Source: output\system32\msvcp{#msvc_version}?.dll; DestDir: {sys}; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
 
 ;Docs
 Source: output\doc\*.*; DestDir: {app}\doc; Components: DevAdminComponent; Flags: skipifsourcedoesntexist  ignoreversion

@@ -137,7 +137,7 @@ for /f "tokens=*" %%a in ('type %temp%.\b$2.txt') do set PRODUCT_VER_STRING=%%a
 
 @echo s/-2.0.0-/-%PRODUCT_VER_STRING%-/ > %temp%.\b$3.txt
 @echo s/define release/define %FBBUILD_BUILDTYPE%/ >> %temp%.\b$3.txt
-@echo s/define msvc_version 6/define msvc_version %MSVC_VERSION%/ >> %temp%.\b$3.txt
+@echo s/define msvc_version 7/define msvc_version %MSVC_VERSION%/ >> %temp%.\b$3.txt
 @echo s/define no_pdb/define %FBBUILD_SHIP_PDB%/ >> %temp%.\b$3.txt
 @echo s/define package_number=\"0\"/define package_number=\"%FBBUILD_PACKAGE_NUMBER%\"/ >> %temp%.\b$3.txt
 @echo s/define iss_release/define %ISS_BUILD_TYPE%/ >> %temp%.\b$3.txt
@@ -476,6 +476,7 @@ for %%v in ( doc intl udf ) do (@mkdir %FBBUILD_EMB_PACK_ROOT%\%%v 2>nul)
 @copy /Y %FBBUILD_OUTPUT%\doc\Firebird*.pdf %FBBUILD_EMB_PACK_ROOT%\doc\ > nul
 @copy /Y %FBBUILD_OUTPUT%\intl\*.* %FBBUILD_EMB_PACK_ROOT%\intl\ > nul
 @copy /Y %FBBUILD_OUTPUT%\udf\*.* %FBBUILD_EMB_PACK_ROOT%\udf\ > nul
+@copy /Y %FBBUILD_OUTPUT%\system32\msvc*.* %FBBUILD_EMB_PACK_ROOT% > nul
 
 if "%FBBUILD_SHIP_PDB%"=="ship_pdb" (
   @copy /Y %ROOT_PATH%\temp\release\fbembed\fbembed.pdb %FBBUILD_EMB_PACK_ROOT% > nul
