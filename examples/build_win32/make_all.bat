@@ -3,4 +3,3 @@ make_api.bat
 make_dyn.bat
 make_stat.bat
 make_udf.bat
-make_winevent.bat

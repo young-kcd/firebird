@@ -24,7 +24,7 @@ cl %CLFLAGS% %ROOT_PATH%\lib\gds32_ms.lib %ROOT_PATH%\examples\api\api6.c
 cl %CLFLAGS% %ROOT_PATH%\lib\gds32_ms.lib %ROOT_PATH%\examples\api\api7.c
 cl %CLFLAGS% %ROOT_PATH%\lib\gds32_ms.lib %ROOT_PATH%\examples\api\api8.c
 cl %CLFLAGS% %ROOT_PATH%\lib\gds32_ms.lib %ROOT_PATH%\examples\api\api9.c
-:: cl %CLFLAGS% %ROOT_PATH%\lib\gds32_ms.lib %ROOT_PATH%\examples\api\api9f.c
+:: TODO : api9f
 cl %CLFLAGS% %ROOT_PATH%\lib\gds32_ms.lib %ROOT_PATH%\examples\api\api10.c
 cl %CLFLAGS% %ROOT_PATH%\lib\gds32_ms.lib %ROOT_PATH%\examples\api\api11.c
 cl %CLFLAGS% %ROOT_PATH%\lib\gds32_ms.lib %ROOT_PATH%\examples\api\api12.c
@@ -32,6 +32,7 @@ cl %CLFLAGS% %ROOT_PATH%\lib\gds32_ms.lib %ROOT_PATH%\examples\api\api13.c
 cl %CLFLAGS% %ROOT_PATH%\lib\gds32_ms.lib %ROOT_PATH%\examples\api\api14.c
 cl %CLFLAGS% %ROOT_PATH%\lib\gds32_ms.lib %ROOT_PATH%\examples\api\api15.c
 cl %CLFLAGS% %ROOT_PATH%\lib\gds32_ms.lib %ROOT_PATH%\examples\api\api16.c
+:: TODO : winevent
 cl %CLFLAGS% %ROOT_PATH%\lib\gds32_ms.lib %ROOT_PATH%\examples\api\api16t.c
 cl %CLFLAGS% %ROOT_PATH%\lib\gds32_ms.lib %ROOT_PATH%\examples\api\apifull.c
 
