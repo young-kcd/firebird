@@ -28,7 +28,7 @@
 #define REMOTE_SERVICE		"InterBaseServer"
 #define REMOTE_DISPLAY_NAME	"Firebird Server"
 #define REMOTE_EXECUTABLE	"bin\\ibserver"
-#define ISCGUARD_SERVICE	"InterBaseGuardian"
+#define ISCGUARD_SERVICE	"Firebird Guardian"
 #define ISCGUARD_DISPLAY_NAME "Firebird Guardian Service"
 #define ISCGUARD_EXECUTABLE	"bin\\ibguard"
 #define GUARDIAN_MUTEX      "InterBaseGuardianMutex"
