@@ -23,7 +23,7 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *
- *  $Id: alloc.cpp,v 1.64 2004-08-25 03:09:57 skidder Exp $
+ *  $Id: alloc.cpp,v 1.65 2004-08-26 11:04:14 robocop Exp $
  *
  */
 
@@ -1393,7 +1393,7 @@ void MemoryPool::removeFreeBlock(MemoryBlock *blk)
 		{
 			while ( itr ) {
 				PendingFreeBlock *next2 = itr->next;
-				if (next2==temp) {
+				if (next2 == temp) {
 					itr->next = temp->next;
 					break;
 				}
