@@ -1065,7 +1065,7 @@ void API_ROUTINE gds__interprete_a(
 
 #ifdef WIN_NT
 Firebird::Spinlock trace_mutex;
-HANDLE trace_file = INVALID_HANDLE_VALUE;
+HANDLE trace_file_handle = INVALID_HANDLE_VALUE;
 #endif
 
 void API_ROUTINE gds__trace(const TEXT * text)
@@ -1136,24 +1136,24 @@ void API_ROUTINE gds__trace(const TEXT * text)
 	// Slowly enough to make such trace useless. Thus we cache file handle !
 	trace_mutex.enter();
 	while (true) {
-		if (trace_file == INVALID_HANDLE_VALUE) {
+		if (trace_file_handle == INVALID_HANDLE_VALUE) {
 			TEXT name[MAXPATHLEN];
 			gds__prefix(name, LOGFILE);
 			// We do not care to close this file. 
 			// It will be closed automatically when our process terminates.
-			trace_file = CreateFile(name, GENERIC_WRITE, 
+			trace_file_handle = CreateFile(name, GENERIC_WRITE, 
 				FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
 				NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-			if (trace_file == INVALID_HANDLE_VALUE) break;
+			if (trace_file_handle == INVALID_HANDLE_VALUE) break;
 		}
 		DWORD bytesWritten;
-		SetFilePointer(trace_file, 0, NULL, FILE_END);
-		WriteFile(trace_file, buffer, p-buffer, &bytesWritten, NULL);
+		SetFilePointer(trace_file_handle, 0, NULL, FILE_END);
+		WriteFile(trace_file_handle, buffer, p-buffer, &bytesWritten, NULL);
 		if (bytesWritten != p-buffer) {
 			// Handle the case when file was deleted by another process on Win9x
 			// On WinNT we are not going to notice that fact :(
-			CloseHandle(trace_file);
-			trace_file = INVALID_HANDLE_VALUE;
+			CloseHandle(trace_file_handle);
+			trace_file_handle = INVALID_HANDLE_VALUE;
 			continue;
 		}
 		break;
