@@ -26,7 +26,10 @@
 #include "../intl/ldcommon.h"
 #include "../intl/ld_proto.h"
 
+/* Commented out to make Linux version work because it is inaccessiable on all 
+  known platforms. Nickolay Samofatov, 10 Sept 2002
 extern void gds__log(UCHAR*, ...);
+*/
 
 #define	EXTERN_texttype(name)	extern USHORT name (TEXTTYPE, SSHORT, SSHORT)
 #define EXTERN_convert(name)	extern USHORT name (CSCONVERT, SSHORT, SSHORT)
@@ -216,7 +219,7 @@ void LD_assert(CONST SCHAR* filename, int lineno)
 			"Assertion failed: component intl, file \"%s\", line %d\n",
 			filename, lineno);
 #if !(defined VMS || defined WIN_NT)
-	gds__log(buffer);
+/*	gds__log(buffer); -- see note above */
 #endif
 	//ib_printf(buffer);
 	printf(buffer);
