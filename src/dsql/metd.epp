@@ -1450,7 +1450,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
         }
         else if (!DDL_ids(request)) {
             relation =
-                FB_NEW_RPT(*tdsql->tsql_default,
+                FB_NEW_RPT(*tdsql->getDefaultPool(),
                                    name->str_length + strlen(X.RDB$OWNER_NAME)) dsql_rel;
             relation->rel_flags |= REL_new_relation;
         }
@@ -1509,7 +1509,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
             // Allocate from default or permanent pool as appropriate 
             
             if (relation->rel_flags & REL_new_relation)
-                *ptr = field = FB_NEW_RPT(*tdsql->tsql_default,
+                *ptr = field = FB_NEW_RPT(*tdsql->getDefaultPool(),
                                              strlen(RFR.RDB$FIELD_NAME)) dsql_fld;
             else
                 *ptr = field = FB_NEW_RPT(*dbb->dbb_pool,
@@ -1563,7 +1563,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
             // Allocate from default or permanent pool as appropriate 
             
             if (relation->rel_flags & REL_new_relation)
-                *ptr = field = FB_NEW_RPT(*tdsql->tsql_default,
+                *ptr = field = FB_NEW_RPT(*tdsql->getDefaultPool(),
                                              strlen(RFR.RDB$FIELD_NAME)) dsql_fld;
             else
                 *ptr = field = FB_NEW_RPT(*dbb->dbb_pool,

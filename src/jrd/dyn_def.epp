@@ -413,7 +413,7 @@ void DYN_define_constraint(Global*		gbl,
 		}
 
 		unique_count++;
-		field_list.add(stringDup(*tdbb->tdbb_default, IDS.RDB$FIELD_NAME));
+		field_list.add(stringDup(*tdbb->getDefaultPool(), IDS.RDB$FIELD_NAME));
 	END_FOR;
 	if (!DYN_REQUEST(drq_c_unq_nam)) {
 		DYN_REQUEST(drq_c_unq_nam) = request;
@@ -1731,7 +1731,7 @@ void DYN_define_index(Global*		gbl,
 				
 			case isc_dyn_fld_name:
 			{
-				TEXT* str = DYN_dup_string(*tdbb->tdbb_default,
+				TEXT* str = DYN_dup_string(*tdbb->getDefaultPool(),
 					reinterpret_cast<const TEXT**>(ptr),
 					true, MAX_SQL_IDENTIFIER_SIZE);
 				seg_list.push(str);
@@ -1841,7 +1841,7 @@ void DYN_define_index(Global*		gbl,
 				break;
 
 			case isc_dyn_idx_ref_column:
-				field_list.add(DYN_dup_string(*tdbb->tdbb_default, 
+				field_list.add(DYN_dup_string(*tdbb->getDefaultPool(), 
 								reinterpret_cast<const TEXT**>(ptr), 
 								true, MAX_SQL_IDENTIFIER_SIZE));
 				referred_cols++;

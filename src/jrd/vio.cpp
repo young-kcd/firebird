@@ -2028,7 +2028,7 @@ static void RefetchRecord(thread_db* tdbb, record_param* rpb, jrd_tra* transacti
 	if ((!DPM_get(tdbb, rpb, LCK_read)) ||
 		  (!VIO_chase_record_version
 			(tdbb, rpb, NULL, transaction,
-			reinterpret_cast<blk*>(tdbb->tdbb_default),
+			reinterpret_cast<blk*>(tdbb->getDefaultPool()),
 			false)))
 	{
 		ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
@@ -2316,7 +2316,7 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, RecordSource* rsb,
 	Record* org_record = org_rpb->rpb_record;
 	if (!org_record) {
 		org_record =
-			VIO_record(tdbb, org_rpb, NULL, tdbb->tdbb_default);
+			VIO_record(tdbb, org_rpb, NULL, tdbb->getDefaultPool());
 		org_rpb->rpb_address = org_record->rec_data;
 		org_rpb->rpb_length = org_record->rec_format->fmt_length;
 		org_rpb->rpb_format_number = org_record->rec_format->fmt_version;
@@ -2332,7 +2332,7 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, RecordSource* rsb,
 			if ((!DPM_get(tdbb, org_rpb, LCK_read)) ||
 				(!VIO_chase_record_version
 				 (tdbb, org_rpb, NULL, transaction,
-				  reinterpret_cast<blk*>(tdbb->tdbb_default), true)))
+				  reinterpret_cast<blk*>(tdbb->getDefaultPool()), true)))
 			{
 				return false;
 			}
@@ -2865,8 +2865,8 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 		return;
 	}
 
-	JrdMemoryPool* old_pool = tdbb->tdbb_default;
-	tdbb->tdbb_default = transaction->tra_pool;
+	JrdMemoryPool* old_pool = tdbb->getDefaultPool();
+	tdbb->setDefaultPool(transaction->tra_pool);
 
 // If the current to-be-cleaned-up savepoint is very big, and the next
 // level savepoint is the transaction level savepoint, then get rid of
@@ -2934,7 +2934,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 					}
 					if (rpb.rpb_flags & rpb_delta) {
 						VIO_data(tdbb, &rpb,
-								 reinterpret_cast<blk*>(tdbb->tdbb_default));
+								 reinterpret_cast<blk*>(tdbb->getDefaultPool()));
 					}
 					else {
 						CCH_RELEASE(tdbb, &rpb.rpb_window);
@@ -2968,7 +2968,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 								}
 								if (rpb.rpb_flags & rpb_delta) {
 									VIO_data(tdbb, &rpb,
-											 reinterpret_cast<blk*>(tdbb->tdbb_default));
+											 reinterpret_cast<blk*>(tdbb->getDefaultPool()));
 								}
 								else {
 									CCH_RELEASE(tdbb, &rpb.rpb_window);
@@ -2988,7 +2988,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 									BUGCHECK(186);	/* msg 186 record disappeared */
 								}
 								VIO_data(tdbb, &rpb,
-										 reinterpret_cast<blk*>(tdbb->tdbb_default));
+										 reinterpret_cast<blk*>(tdbb->getDefaultPool()));
 							}
 							update_in_place(tdbb, transaction, &rpb, &new_rpb);
 							if (!(transaction->tra_flags & TRA_system)) {
@@ -3072,7 +3072,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 		VIO_verb_cleanup(tdbb, transaction);	// get rid of savepoint
 	}
 
-	tdbb->tdbb_default = old_pool;
+	tdbb->setDefaultPool(old_pool);
 }
 
 
@@ -3474,7 +3474,7 @@ static void garbage_collect(thread_db* tdbb,
 		if (!DPM_fetch(tdbb, rpb, LCK_write)) {
 			BUGCHECK(291);		/* msg 291 cannot find record back version */
 		}
-		delete_record(tdbb, rpb, prior_page, tdbb->tdbb_default);
+		delete_record(tdbb, rpb, prior_page, tdbb->getDefaultPool());
 		if (rpb->rpb_record) {
 			going.push(rpb->rpb_record);
 		}
@@ -3573,7 +3573,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 	thread_db thd_context, *tdbb;
 	JRD_set_thread_data(tdbb, thd_context);
 	tdbb->tdbb_database = dbb;
-	tdbb->tdbb_default = dbb->dbb_permanent;
+	tdbb->setDefaultPool(dbb->dbb_permanent);
 	tdbb->tdbb_status_vector = status_vector;
 	tdbb->tdbb_quantum = SWEEP_QUANTUM;
 	tdbb->tdbb_flags = TDBB_sweeper;
@@ -3922,7 +3922,7 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 			}
 			else {
 				VIO_data(tdbb, &temp,
-						 reinterpret_cast<blk*>(tdbb->tdbb_default));
+						 reinterpret_cast<blk*>(tdbb->getDefaultPool()));
 				staying.push(temp.rpb_record);
 				data = temp.rpb_record;
 			}
@@ -3981,12 +3981,12 @@ static void notify_garbage_collector(thread_db* tdbb, record_param* rpb)
 /* A relation's garbage collect bitmap is allocated
    from the database permanent pool. */
 
-	JrdMemoryPool* old_pool = tdbb->tdbb_default;
+	JrdMemoryPool* old_pool = tdbb->getDefaultPool();
 
-	tdbb->tdbb_default = dbb->dbb_permanent;
+	tdbb->setDefaultPool(dbb->dbb_permanent);
 	const SLONG dp_sequence = rpb->rpb_number / dbb->dbb_max_records;
 	SBM_set(tdbb, &relation->rel_gc_bitmap, dp_sequence);
-	tdbb->tdbb_default = old_pool;
+	tdbb->setDefaultPool(old_pool);
 
 /* If the garbage collector isn't active then poke
    the event on which it sleeps to awaken it. */
@@ -4742,8 +4742,8 @@ static void verb_post(
 #pragma FB_COMPILER_MESSAGE("Out-of-memory condition in this function corrupts database. And it is likely due to huge amounts of allocations")
 	SET_TDBB(tdbb);
 
-	JrdMemoryPool* old_pool = tdbb->tdbb_default;
-	tdbb->tdbb_default = transaction->tra_pool;
+	JrdMemoryPool* old_pool = tdbb->getDefaultPool();
+	tdbb->setDefaultPool(transaction->tra_pool);
 
 /* Find action block for relation */
 	VerbAction* action;
@@ -4756,7 +4756,7 @@ static void verb_post(
 	}
 
 	if (!action) {
-		action = FB_NEW(*tdbb->tdbb_default) VerbAction();
+		action = FB_NEW(*tdbb->getDefaultPool()) VerbAction();
 		action->vct_next = transaction->tra_save_point->sav_verb_actions;
 		transaction->tra_save_point->sav_verb_actions = action;
 		action->vct_relation = rpb->rpb_relation;
@@ -4768,7 +4768,7 @@ static void verb_post(
 			/* An update-in-place is being posted to this savepoint, and this
 			   savepoint hasn't seen this record before. */
 
-			Record* data = FB_NEW_RPT(*tdbb->tdbb_default, old_data->rec_length) Record(*tdbb->tdbb_default);
+			Record* data = FB_NEW_RPT(*tdbb->getDefaultPool(), old_data->rec_length) Record(*tdbb->getDefaultPool());
 			data->rec_number = rpb->rpb_number;
 			data->rec_length = old_data->rec_length;
 			data->rec_format = old_data->rec_format;
@@ -4782,7 +4782,7 @@ static void verb_post(
 				*p++ = *q;
 			}
 			if (!action->vct_undo) {
-				action->vct_undo = new UndoItemTree(tdbb->tdbb_default);
+				action->vct_undo = new UndoItemTree(tdbb->getDefaultPool());
 			}
 			action->vct_undo->add(UndoItem(rpb->rpb_number, data));
 		}
@@ -4790,7 +4790,7 @@ static void verb_post(
 			/* An insert/update followed by a delete is posted to this savepoint,
 			   and this savepoint hasn't seen this record before. */
 
-			Record* data = FB_NEW_RPT(*tdbb->tdbb_default, 1) Record(*tdbb->tdbb_default);
+			Record* data = FB_NEW_RPT(*tdbb->getDefaultPool(), 1) Record(*tdbb->getDefaultPool());
 			data->rec_number = rpb->rpb_number;
 			data->rec_length = 0;
 			if (new_ver) {
@@ -4801,7 +4801,7 @@ static void verb_post(
 			}
 
 			if (!action->vct_undo) {
-				action->vct_undo = new UndoItemTree(tdbb->tdbb_default);
+				action->vct_undo = new UndoItemTree(tdbb->getDefaultPool());
 			}
 			action->vct_undo->add(UndoItem(rpb->rpb_number, data));
 		}
@@ -4817,12 +4817,12 @@ static void verb_post(
 			   and this savepoint has seen this record before but it doesn't have
 			   undo data. */
 
-			Record* data = FB_NEW_RPT(*tdbb->tdbb_default, 1) Record(*tdbb->tdbb_default);
+			Record* data = FB_NEW_RPT(*tdbb->getDefaultPool(), 1) Record(*tdbb->getDefaultPool());
 			data->rec_number = rpb->rpb_number;
 			data->rec_length = 0;
 			data->rec_flags |= (REC_same_tx | REC_new_version);
 			if (!action->vct_undo) {
-				action->vct_undo = new UndoItemTree(tdbb->tdbb_default);
+				action->vct_undo = new UndoItemTree(tdbb->getDefaultPool());
 			}
 			action->vct_undo->add(UndoItem(rpb->rpb_number, data));
 		}
@@ -4841,7 +4841,7 @@ static void verb_post(
 		garbage_collect_idx(tdbb, rpb, new_rpb, old_data);
 	}
 
-	tdbb->tdbb_default = old_pool;
+	tdbb->setDefaultPool(old_pool);
 }
 
 

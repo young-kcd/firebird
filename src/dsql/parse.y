@@ -4328,13 +4328,13 @@ static dsql_fld* make_field (dsql_nod* field_name)
 	if (field_name == NULL)
 	{
 		dsql_fld* field =
-			FB_NEW_RPT(*tdsql->tsql_default, sizeof (INTERNAL_FIELD_NAME)) dsql_fld;
+			FB_NEW_RPT(*tdsql->getDefaultPool(), sizeof (INTERNAL_FIELD_NAME)) dsql_fld;
 		strcpy (field->fld_name, (TEXT*) INTERNAL_FIELD_NAME);
 		return field;
 	}
 	const dsql_str* string = (dsql_str*) field_name->nod_arg[1];
 	dsql_fld* field =
-		FB_NEW_RPT(*tdsql->tsql_default, strlen ((SCHAR*) string->str_data)) dsql_fld;
+		FB_NEW_RPT(*tdsql->getDefaultPool(), strlen ((SCHAR*) string->str_data)) dsql_fld;
 	strcpy (field->fld_name, (TEXT*) string->str_data);
 
 	return field;
@@ -4355,7 +4355,7 @@ static dsql_fil* make_file()
  **************************************/
 	tsql* tdsql = DSQL_get_thread_data();
 		   
-	dsql_fil* temp_file = FB_NEW(*tdsql->tsql_default) dsql_fil;
+	dsql_fil* temp_file = FB_NEW(*tdsql->getDefaultPool()) dsql_fil;
 
 	return temp_file;
 }
@@ -4383,7 +4383,7 @@ static dsql_nod* make_list (dsql_nod* node)
 	USHORT l = stack.getCount();
 
 	dsql_nod* old  = node;
-	node = FB_NEW_RPT(*tdsql->tsql_default, l) dsql_nod;
+	node = FB_NEW_RPT(*tdsql->getDefaultPool(), l) dsql_nod;
 	node->nod_count = l;
 	node->nod_type  = nod_list;
 	node->nod_flags = old->nod_flags;
@@ -4411,7 +4411,7 @@ static dsql_nod* make_parameter (void)
  **************************************/
 	tsql* tdsql = DSQL_get_thread_data();
 
-	dsql_nod* node = FB_NEW_RPT(*tdsql->tsql_default, 1) dsql_nod;
+	dsql_nod* node = FB_NEW_RPT(*tdsql->getDefaultPool(), 1) dsql_nod;
 	node->nod_type = nod_parameter;
 	node->nod_line = (USHORT) lex.lines_bk;
 	node->nod_column = (USHORT) (lex.last_token_bk - lex.line_start_bk + 1);
@@ -4439,7 +4439,7 @@ static dsql_nod* make_node (NOD_TYPE	type,
  **************************************/
 	tsql* tdsql = DSQL_get_thread_data();
 
-	dsql_nod* node = FB_NEW_RPT(*tdsql->tsql_default, count) dsql_nod;
+	dsql_nod* node = FB_NEW_RPT(*tdsql->getDefaultPool(), count) dsql_nod;
 	node->nod_type = type;
 	node->nod_line = (USHORT) lex.lines_bk;
 	node->nod_column = (USHORT) (lex.last_token_bk - lex.line_start_bk + 1);
@@ -4472,7 +4472,7 @@ static dsql_nod* make_flag_node (NOD_TYPE	type,
  **************************************/
 	tsql* tdsql = DSQL_get_thread_data();
 
-	dsql_nod* node = FB_NEW_RPT(*tdsql->tsql_default, count) dsql_nod;
+	dsql_nod* node = FB_NEW_RPT(*tdsql->getDefaultPool(), count) dsql_nod;
 	node->nod_type = type;
 	node->nod_flags = flag;
 	node->nod_line = (USHORT) lex.lines_bk;

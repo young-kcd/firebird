@@ -1962,8 +1962,8 @@ void CCH_prefetch(thread_db* tdbb, SLONG * pages, SSHORT count)
 /* Switch default pool to permanent pool for setting bits in
    prefetch bitmap. */
 
-	JrdMemoryPool* old_pool = tdbb->tdbb_default;
-	tdbb->tdbb_default = dbb->dbb_bufferpool;
+	JrdMemoryPool* old_pool = tdbb->getDefaultPool();
+	tdbb->setDefaultPool(dbb->dbb_bufferpool);
 
 /* The global prefetch bitmap is the key to the I/O coalescense
    mechanism which dovetails all thread prefetch requests to
@@ -1992,7 +1992,7 @@ void CCH_prefetch(thread_db* tdbb, SLONG * pages, SSHORT count)
 		prefetch_epilogue(&prefetch, tdbb->tdbb_status_vector);
 	}
 
-	tdbb->tdbb_default = old_pool;
+	tdbb->setDefaultPool(old_pool);
 #endif
 }
 
@@ -3086,7 +3086,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 	ISC_STATUS_ARRAY status_vector;
 /* Dummy attachment needed for lock owner identification. */
 	tdbb->tdbb_database = dbb;
-	tdbb->tdbb_default = dbb->dbb_bufferpool;
+	tdbb->setDefaultPool(dbb->dbb_bufferpool);
 	tdbb->tdbb_status_vector = status_vector;
 	tdbb->tdbb_quantum = QUANTUM;
 	tdbb->tdbb_attachment = FB_NEW(*dbb->dbb_bufferpool) Attachment();
@@ -3258,7 +3258,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 /* Dummy attachment needed for lock owner identification. */
 
 	tdbb->tdbb_database = dbb;
-	tdbb->tdbb_default = dbb->dbb_bufferpool;
+	tdbb->setDefaultPool(dbb->dbb_bufferpool);
 	tdbb->tdbb_status_vector = status_vector;
 	tdbb->tdbb_quantum = QUANTUM;
 	tdbb->tdbb_attachment = FB_NEW(*dbb->dbb_bufferpool) Attachment(dbb);
@@ -3779,8 +3779,8 @@ static void expand_buffers(thread_db* tdbb, ULONG number)
 
 /* Allocate and initialize buffers control block */
 
-	JrdMemoryPool* old_pool = tdbb->tdbb_default;
-	tdbb->tdbb_default = dbb->dbb_bufferpool;
+	JrdMemoryPool* old_pool = tdbb->getDefaultPool();
+	tdbb->setDefaultPool(dbb->dbb_bufferpool);
 
 	old = dbb->dbb_bcb;
 	const bcb_repeat* const old_end = old->bcb_rpt + old->bcb_count;
@@ -3870,7 +3870,7 @@ static void expand_buffers(thread_db* tdbb, ULONG number)
 	dbb->dbb_bcb = new_block;
 
 	delete old;
-	tdbb->tdbb_default = old_pool;
+	tdbb->setDefaultPool(old_pool);
 }
 
 

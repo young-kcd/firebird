@@ -372,7 +372,7 @@ static ISC_STATUS open_blob(
 
 /* utilize a temporary control block just to pass the three 
    necessary internal parameters to the filter */
-	BlobControl temp(*tdbb->tdbb_default);  // !!!!!!!!!!
+	BlobControl temp;
 	temp.ctl_internal[0] = dbb;
 	temp.ctl_internal[1] = tra_handle;
 	temp.ctl_internal[2] = NULL;

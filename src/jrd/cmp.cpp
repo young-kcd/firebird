@@ -553,11 +553,11 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag)
 
 	SET_TDBB(tdbb);
 
-	JrdMemoryPool* old_pool = tdbb->tdbb_default;
+	JrdMemoryPool* old_pool = tdbb->getDefaultPool();
 	// 26.09.2002 Nickolay Samofatov: default memory pool will become statement pool 
 	// and will be freed by CMP_release
 	JrdMemoryPool* new_pool = JrdMemoryPool::createPool();
-	tdbb->tdbb_default = new_pool;
+	tdbb->setDefaultPool(new_pool);
 
 	try {
 
@@ -571,12 +571,12 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag)
 		CMP_verify_access(tdbb, request);
 
 		delete csb;
-		tdbb->tdbb_default = old_pool;
+		tdbb->setDefaultPool(old_pool);
 
 	}
 	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);		
-		tdbb->tdbb_default = old_pool;
+		tdbb->setDefaultPool(old_pool);
 		if (request) {
 			CMP_release(tdbb, request);
 		}
@@ -2016,9 +2016,9 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 	// count of hold the impure areas.
 
 	const SLONG n = (csb->csb_impure - REQ_SIZE + REQ_TAIL - 1) / REQ_TAIL;
-	request = FB_NEW_RPT(*tdbb->tdbb_default, n) jrd_req(tdbb->tdbb_default);
+	request = FB_NEW_RPT(*tdbb->getDefaultPool(), n) jrd_req(tdbb->getDefaultPool());
 	request->req_count = csb->csb_n_stream;
-	request->req_pool = tdbb->tdbb_default;
+	request->req_pool = tdbb->getDefaultPool();
 	request->req_impure_size = csb->csb_impure;
 	request->req_top_node = csb->csb_node;
 	request->req_access = csb->csb_access;
@@ -2164,9 +2164,9 @@ void CMP_post_access(thread_db* tdbb,
 	}
 
 	AccessItem access(
-		stringDup(*(tdbb->tdbb_default), security_name),
+		stringDup(*(tdbb->getDefaultPool()), security_name),
 		view_id,
-		stringDup(*(tdbb->tdbb_default), name),
+		stringDup(*(tdbb->getDefaultPool()), name),
 		type_name,
 		mask
 	);
@@ -2468,7 +2468,7 @@ static UCHAR* alloc_map(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 
 	SET_TDBB(tdbb);
 
-	str* string = FB_NEW_RPT(*tdbb->tdbb_default, MAP_LENGTH) str;
+	str* string = FB_NEW_RPT(*tdbb->getDefaultPool(), MAP_LENGTH) str;
 	string->str_length = MAP_LENGTH;
 	csb->csb_rpt[stream].csb_map = (UCHAR *) string->str_data;
 	fb_assert(stream <= MAX_STREAMS); // CVC: MAX_UCHAR maybe?
@@ -5096,7 +5096,7 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 			RecordSelExpr* top_rse = static_cast<RecordSelExpr*>(aux_rse_node);
 			if (!top_rse->rse_invariants)
 				top_rse->rse_invariants = 
-					FB_NEW(*tdbb->tdbb_default) VarInvariantArray(*tdbb->tdbb_default);
+					FB_NEW(*tdbb->getDefaultPool()) VarInvariantArray(*tdbb->getDefaultPool());
 			top_rse->rse_invariants->add(node->nod_impure);
 		}
 	}
@@ -5678,7 +5678,7 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map,
 	
 	Format* format = *input_format;
 	if (!format) {
-		format = *input_format = Format::newFormat(*tdbb->tdbb_default, map->nod_count);
+		format = *input_format = Format::newFormat(*tdbb->getDefaultPool(), map->nod_count);
 		format->fmt_count = map->nod_count;
 	}
 

@@ -370,7 +370,7 @@ public:
 		USHORT err_pos;
 		SSHORT out_len = obj.to_wc(NULL, 0, str, len, &err_code, &err_pos);
 		if (out_len > (int) sizeof(tempBuffer))
-			out_str = FB_NEW(*tdbb->tdbb_default) UCS2_CHAR[out_len/2];
+			out_str = FB_NEW(*tdbb->getDefaultPool()) UCS2_CHAR[out_len/2];
 		else
 			out_str = tempBuffer;
 		len = obj.to_wc(out_str, out_len, str, len, &err_code, &err_pos);
@@ -396,7 +396,7 @@ public:
 		PrevConverter(tdbb, obj, str, len) 
 	{
 		if (len > (int) sizeof(tempBuffer))
-			out_str = FB_NEW(*tdbb->tdbb_default) UCHAR[len];
+			out_str = FB_NEW(*tdbb->getDefaultPool()) UCHAR[len];
 		else
 			out_str = tempBuffer;
 		obj.str_to_upper(len, str, len, out_str);
@@ -434,7 +434,7 @@ public:
 	static ContainsObject* create(thread_db* tdbb, TextType ttype, const UCHAR* str, SSHORT length) {
 		StrConverter cvt(tdbb, ttype, str, length);
 		fb_assert(length % sizeof(CharType) == 0);
-		return FB_NEW(*tdbb->tdbb_default) ContainsObjectImpl(*tdbb->tdbb_default, 
+		return FB_NEW(*tdbb->getDefaultPool()) ContainsObjectImpl(*tdbb->getDefaultPool(), 
 			reinterpret_cast<const CharType*>(str), length / sizeof(CharType));
 	}
 
@@ -444,7 +444,7 @@ public:
 		StrConverter cvt1(tdbb, ttype, p, pl), cvt2(tdbb, ttype, s, sl);
 		fb_assert(pl % sizeof(CharType) == 0);
 		fb_assert(sl % sizeof(CharType) == 0);
-		Firebird::ContainsEvaluator<CharType> evaluator(*tdbb->tdbb_default, 
+		Firebird::ContainsEvaluator<CharType> evaluator(*tdbb->getDefaultPool(), 
 			reinterpret_cast<const CharType*>(p), pl / sizeof(CharType));
 		evaluator.processNextChunk(reinterpret_cast<const CharType*>(s), sl / sizeof(CharType));
 		return evaluator.getResult();
@@ -484,7 +484,7 @@ public:
 	{
 		StrConverter cvt(tdbb, ttype, str, length);
 		fb_assert(length % sizeof(CharType) == 0);
-		return FB_NEW(*tdbb->tdbb_default) LikeObjectImpl(*tdbb->tdbb_default, 
+		return FB_NEW(*tdbb->getDefaultPool()) LikeObjectImpl(*tdbb->getDefaultPool(), 
 			reinterpret_cast<const CharType*>(str), length / sizeof(CharType), escape);
 	}
 
@@ -494,7 +494,7 @@ public:
 		StrConverter cvt1(tdbb, ttype, p, pl), cvt2(tdbb, ttype, s, sl);
 		fb_assert(pl % sizeof(CharType) == 0);
 		fb_assert(sl % sizeof(CharType) == 0);
-		Firebird::LikeEvaluator<CharType> evaluator(*tdbb->tdbb_default, 
+		Firebird::LikeEvaluator<CharType> evaluator(*tdbb->getDefaultPool(), 
 			reinterpret_cast<const CharType*>(p), pl / sizeof(CharType), 
 			escape, SQL_MATCH_ANY_CHARS, SQL_MATCH_1_CHAR);
 		evaluator.processNextChunk(reinterpret_cast<const CharType*>(s), sl / sizeof(CharType));
@@ -938,7 +938,7 @@ USHORT INTL_convert_bytes(thread_db* tdbb,
 		   ** allocate a temporary buffer that is large enough.
 		 */
 		BYTE* tmp_buffer =
-			(BYTE *) FB_NEW(*tdbb->tdbb_default) char[(SLONG) src_len * sizeof(UCS2_CHAR)];
+			(BYTE *) FB_NEW(*tdbb->getDefaultPool()) char[(SLONG) src_len * sizeof(UCS2_CHAR)];
 
 		cs_obj = from_cs.getConvToUnicode();
 		fb_assert(cs_obj != NULL);

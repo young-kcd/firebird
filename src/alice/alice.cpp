@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.68 2004-07-03 02:32:32 brodsom Exp $
+//	$Id: alice.cpp,v 1.69 2004-08-16 12:28:13 alexpeshkoff Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -205,7 +205,7 @@ int common_main(int			argc,
 	tdgbl->output_proc = output_proc;
 	tdgbl->output_data = output_data;
 	tdgbl->ALICE_permanent_pool = NULL;
-	tdgbl->ALICE_default_pool = NULL;
+	tdgbl->setDefaultPool(0);
 
 	try {
 

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.84 2004-08-03 16:04:17 skidder Exp $
+$Id: blb.cpp,v 1.85 2004-08-16 12:28:16 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -661,7 +661,7 @@ SLONG BLB_get_slice(thread_db* tdbb,
 
 	SET_TDBB(tdbb);
     Database* database = GET_DBB();
-	tdbb->tdbb_default = transaction->tra_pool;
+	tdbb->setDefaultPool(transaction->tra_pool);
 
 /* Checkout slice description language */
 	SLONG variables[64];
@@ -1429,7 +1429,7 @@ void BLB_put_slice(	thread_db*	tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	tdbb->tdbb_default = transaction->tra_pool;
+	tdbb->setDefaultPool(transaction->tra_pool);
 
 /* Do initial parse of slice description to get relation and field identification */
 	sdl_info info;

@@ -341,7 +341,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 
 	index_desc* idx = NULL;
 
-	OptimizerBlk* opt = FB_NEW(*tdbb->tdbb_default) OptimizerBlk(tdbb->tdbb_default);
+	OptimizerBlk* opt = FB_NEW(*tdbb->getDefaultPool()) OptimizerBlk(tdbb->getDefaultPool());
 	opt->opt_streams.grow(csb->csb_n_stream);
 	RecordSource* rsb = 0;
 
@@ -525,7 +525,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 
 		if (rsb) {
 			const SSHORT i = local_streams[0];
-			River* river = FB_NEW_RPT(*tdbb->tdbb_default, i) River();
+			River* river = FB_NEW_RPT(*tdbb->getDefaultPool(), i) River();
 			river->riv_count = (UCHAR) i;
 			river->riv_rsb = rsb;
 			MOVE_FAST(local_streams + 1, river->riv_streams, i);
@@ -1106,7 +1106,7 @@ void OPT_set_index(thread_db* tdbb,
 /* set up a dummy optimizer block just for the purposes 
    of the set index, to pass information to subroutines */
 
-	OptimizerBlk* opt = FB_NEW(*tdbb->tdbb_default) OptimizerBlk(tdbb->tdbb_default);
+	OptimizerBlk* opt = FB_NEW(*tdbb->getDefaultPool()) OptimizerBlk(tdbb->getDefaultPool());
 	opt->opt_g_flags |= opt_g_stream;
 
 /* generate a new rsb for the retrieval, making sure to 
@@ -3332,7 +3332,7 @@ static void find_best(thread_db* tdbb,
 	// Save the various flag bits from the optimizer block to reset its
 	// state after each test.
 	Firebird::HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> 
-		stream_flags(*tdbb->tdbb_default), conjunct_flags(*tdbb->tdbb_default);
+		stream_flags(*tdbb->getDefaultPool()), conjunct_flags(*tdbb->getDefaultPool());
 	stream_flags.grow(csb->csb_n_stream);
 	conjunct_flags.grow(opt->opt_base_conjuncts);
 	int i;
@@ -3823,7 +3823,7 @@ static bool form_river(thread_db*		tdbb,
 	CompilerScratch* csb = opt->opt_csb;
 
 	// Allocate a river block and move the best order into it.
-	River* river = FB_NEW_RPT(*tdbb->tdbb_default, count) River();
+	River* river = FB_NEW_RPT(*tdbb->getDefaultPool(), count) River();
 	river_stack.push(river);
 	river->riv_count = (UCHAR) count;
 
@@ -3835,7 +3835,7 @@ static bool form_river(thread_db*		tdbb,
 		ptr = &river->riv_rsb;
 	}
 	else {
-		river->riv_rsb = rsb = FB_NEW_RPT(*tdbb->tdbb_default, count) RecordSource();
+		river->riv_rsb = rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), count) RecordSource();
 		rsb->rsb_type = rsb_cross;
 		rsb->rsb_count = count;
 		rsb->rsb_impure = CMP_impure(csb, sizeof(struct irsb));
@@ -3939,7 +3939,7 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 
 	// allocate and optimize the record source block
 
-	RecordSource* rsb = FB_NEW_RPT(*tdbb->tdbb_default, 1) RecordSource();
+	RecordSource* rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), 1) RecordSource();
 	rsb->rsb_type = rsb_aggregate;
 	fb_assert((int) (IPTR)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
 	fb_assert((int) (IPTR)node->nod_arg[e_agg_stream] <= MAX_UCHAR);
@@ -4040,7 +4040,7 @@ static RecordSource* gen_boolean(thread_db* tdbb, OptimizerBlk* opt,
 	SET_TDBB(tdbb);
 
 	CompilerScratch* csb = opt->opt_csb;
-	RecordSource* rsb = FB_NEW_RPT(*tdbb->tdbb_default, 1) RecordSource();
+	RecordSource* rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), 1) RecordSource();
 	rsb->rsb_count = 1;
 	rsb->rsb_type = rsb_boolean;
 	rsb->rsb_next = prior_rsb;
@@ -4076,7 +4076,7 @@ static RecordSource* gen_first(thread_db* tdbb, OptimizerBlk* opt,
 	SET_TDBB(tdbb);
 
 	CompilerScratch* csb = opt->opt_csb;
-	RecordSource* rsb = FB_NEW_RPT(*tdbb->tdbb_default, 1) RecordSource();
+	RecordSource* rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), 1) RecordSource();
 	rsb->rsb_count = 1;
 	rsb->rsb_type = rsb_first;
 	rsb->rsb_next = prior_rsb;
@@ -4137,7 +4137,7 @@ static void gen_join(thread_db*		tdbb,
 				        dbb->dbb_page_size / format->fmt_length;
 		}
 
-		River* river = FB_NEW_RPT(*tdbb->tdbb_default, 1) River();
+		River* river = FB_NEW_RPT(*tdbb->getDefaultPool(), 1) River();
 		river->riv_count = 1;
 
 		fb_assert(csb->csb_rpt[streams[1]].csb_relation);
@@ -4386,7 +4386,7 @@ static RecordSource* gen_nav_rsb(thread_db* tdbb,
 	SET_TDBB(tdbb);
 
 	USHORT key_length = ROUNDUP(BTR_key_length(relation, idx), sizeof(SLONG));
-	RecordSource* rsb = FB_NEW_RPT(*tdbb->tdbb_default, RSB_NAV_count) RecordSource();
+	RecordSource* rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), RSB_NAV_count) RecordSource();
 	rsb->rsb_type = rsb_navigate;
 	rsb->rsb_relation = relation;
 	rsb->rsb_stream = (UCHAR) stream;
@@ -4515,7 +4515,7 @@ static RecordSource* gen_outer(thread_db* tdbb,
 	stream_i.stream_rsb = gen_residual_boolean(tdbb, opt, stream_i.stream_rsb);
 
 	// Allocate and fill in the rsb
-	RecordSource* rsb = FB_NEW_RPT(*tdbb->tdbb_default, RSB_LEFT_count) RecordSource();
+	RecordSource* rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), RSB_LEFT_count) RecordSource();
 	rsb->rsb_type = rsb_left_cross;
 	rsb->rsb_count = 2;
 	rsb->rsb_impure = CMP_impure(opt->opt_csb, sizeof(struct irsb));
@@ -4524,11 +4524,11 @@ static RecordSource* gen_outer(thread_db* tdbb,
 	rsb->rsb_arg[RSB_LEFT_boolean] = (RecordSource*) boolean;
 	rsb->rsb_arg[RSB_LEFT_inner_boolean] = (RecordSource*) inner_boolean;
 	rsb->rsb_left_streams = 
-		FB_NEW(*tdbb->tdbb_default) StreamStack(*tdbb->tdbb_default);
+		FB_NEW(*tdbb->getDefaultPool()) StreamStack(*tdbb->getDefaultPool());
 	rsb->rsb_left_inner_streams = 
-		FB_NEW(*tdbb->tdbb_default) StreamStack(*tdbb->tdbb_default);
+		FB_NEW(*tdbb->getDefaultPool()) StreamStack(*tdbb->getDefaultPool());
 	rsb->rsb_left_rsbs = 
-		FB_NEW(*tdbb->tdbb_default) RsbStack(*tdbb->tdbb_default);
+		FB_NEW(*tdbb->getDefaultPool()) RsbStack(*tdbb->getDefaultPool());
 	// find all the outer and inner substreams and push them on a stack.
 	find_rsbs(stream_i.stream_rsb,
 			  rsb->rsb_left_streams,
@@ -4561,7 +4561,7 @@ static RecordSource* gen_procedure(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 	CompilerScratch* csb = opt->opt_csb;
 	jrd_prc* procedure = MET_lookup_procedure_id(tdbb,
 		(SSHORT)(IPTR)node->nod_arg[e_prc_procedure], false, false, 0);
-	RecordSource* rsb = FB_NEW_RPT(*tdbb->tdbb_default, RSB_PRC_count) RecordSource();
+	RecordSource* rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), RSB_PRC_count) RecordSource();
 	rsb->rsb_type = rsb_procedure;
 	rsb->rsb_stream = (UCHAR)(IPTR) node->nod_arg[e_prc_stream];
 	rsb->rsb_procedure = procedure;
@@ -4723,10 +4723,10 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		   could be calculated via the index; currently we won't detect that case
 		 */
 
-		Firebird::HalfStaticArray<index_desc*, OPT_STATIC_ITEMS> idx_walk_vector(*tdbb->tdbb_default);
+		Firebird::HalfStaticArray<index_desc*, OPT_STATIC_ITEMS> idx_walk_vector(*tdbb->getDefaultPool());
 		idx_walk_vector.grow(csb_tail->csb_indices);
 		index_desc** idx_walk = idx_walk_vector.begin();
-		Firebird::HalfStaticArray<UINT64, OPT_STATIC_ITEMS> idx_priority_level_vector(*tdbb->tdbb_default);
+		Firebird::HalfStaticArray<UINT64, OPT_STATIC_ITEMS> idx_priority_level_vector(*tdbb->getDefaultPool());
 		idx_priority_level_vector.grow(csb_tail->csb_indices);
 		UINT64* idx_priority_level = idx_priority_level_vector.begin();
 
@@ -4819,10 +4819,10 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		// when necessary build the index
 
 		Firebird::HalfStaticArray<SSHORT, OPT_STATIC_ITEMS>
-			conjunct_position_vector(*tdbb->tdbb_default);
+			conjunct_position_vector(*tdbb->getDefaultPool());
 
 		Firebird::HalfStaticArray<OptimizerBlk::opt_conjunct*, OPT_STATIC_ITEMS> 
-			matching_nodes_vector(*tdbb->tdbb_default);
+			matching_nodes_vector(*tdbb->getDefaultPool());
 
 		for (i = 0; i < idx_walk_count; i++)
 		{
@@ -5042,14 +5042,14 @@ static RecordSource* gen_rsb(thread_db* tdbb,
 	else {
 		SSHORT size;
 		if (inversion) {
-			rsb = FB_NEW_RPT(*tdbb->tdbb_default, 1) RecordSource();
+			rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), 1) RecordSource();
 			rsb->rsb_type = rsb_indexed;
 			rsb->rsb_count = 1;
 			size = sizeof(struct irsb_index);
 			rsb->rsb_arg[0] = (RecordSource*) inversion;
 		}
 		else {
-			rsb = FB_NEW_RPT(*tdbb->tdbb_default, 0) RecordSource();
+			rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) RecordSource();
 			rsb->rsb_type = rsb_sequential;
 			size = sizeof(struct irsb);
 			if (boolean)
@@ -5107,7 +5107,7 @@ static RecordSource* gen_skip(thread_db* tdbb, OptimizerBlk* opt,
     
     CompilerScratch* csb = opt->opt_csb;
 	// was : rsb = (RecordSource*) ALLOCDV (type_rsb, 1);
-    RecordSource* rsb = FB_NEW_RPT(*tdbb->tdbb_default, 0) RecordSource();   
+    RecordSource* rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) RecordSource();   
     rsb->rsb_count = 1;
     rsb->rsb_type = rsb_skip;
     rsb->rsb_next = prior_rsb;
@@ -5198,7 +5198,7 @@ static RecordSource* gen_sort(thread_db* tdbb,
 	const USHORT count = items +
 		(sizeof(sort_key_def) * 2 * sort->nod_count + sizeof(smb_repeat) -
 		 1) / sizeof(smb_repeat);
-	SortMap* map = FB_NEW_RPT(*tdbb->tdbb_default, count) SortMap();
+	SortMap* map = FB_NEW_RPT(*tdbb->getDefaultPool(), count) SortMap();
 	map->smb_keys = sort->nod_count * 2;
 	map->smb_count = items;
 	if (project_flag) {
@@ -5384,7 +5384,7 @@ static RecordSource* gen_sort(thread_db* tdbb,
 /* That was most unpleasant.  Never the less, it's done (except for
    the debugging).  All that remains is to build the record source
    block for the sort. */
-	RecordSource* rsb = FB_NEW_RPT(*tdbb->tdbb_default, 1) RecordSource();
+	RecordSource* rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), 1) RecordSource();
 	rsb->rsb_type = rsb_sort;
 	rsb->rsb_next = prior_rsb;
 	rsb->rsb_arg[0] = (RecordSource*) map;
@@ -5425,7 +5425,7 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 		stack1.object()->riv_number = cnt++;
 	}
 
-	Firebird::HalfStaticArray<jrd_nod*, OPT_STATIC_ITEMS> scratch(*tdbb->tdbb_default);
+	Firebird::HalfStaticArray<jrd_nod*, OPT_STATIC_ITEMS> scratch(*tdbb->getDefaultPool());
 	scratch.grow(opt->opt_base_conjuncts * cnt);
 	jrd_nod** classes = scratch.begin();
 
@@ -5484,7 +5484,7 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
    to indicate that nothing could be done. */
 
 	USHORT river_cnt = 0, stream_cnt = 0;
-	Firebird::HalfStaticArray<jrd_nod**, OPT_STATIC_ITEMS> selected_classes(*tdbb->tdbb_default, cnt);
+	Firebird::HalfStaticArray<jrd_nod**, OPT_STATIC_ITEMS> selected_classes(*tdbb->getDefaultPool(), cnt);
 	for (eq_class = classes; eq_class < last_class; eq_class += cnt) {
 		i = river_count(cnt, eq_class);
 		if (i > river_cnt) {
@@ -5510,7 +5510,7 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 		return false;
 
 	// Build a sort stream.
-	RecordSource* merge_rsb = FB_NEW_RPT(*tdbb->tdbb_default, river_cnt * 2) RecordSource();
+	RecordSource* merge_rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), river_cnt * 2) RecordSource();
 	merge_rsb->rsb_count = river_cnt;
 	merge_rsb->rsb_type = rsb_merge;
 	merge_rsb->rsb_impure = 
@@ -5525,7 +5525,7 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 			continue;
 		}
 		stream_cnt += river1->riv_count;
-		jrd_nod* sort = FB_NEW_RPT(*tdbb->tdbb_default, selected_classes.getCount() * 3) jrd_nod();
+		jrd_nod* sort = FB_NEW_RPT(*tdbb->getDefaultPool(), selected_classes.getCount() * 3) jrd_nod();
 		sort->nod_type = nod_sort;
 		sort->nod_count = selected_classes.getCount();
 		jrd_nod*** selected_class;
@@ -5545,7 +5545,7 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 
 	// Finally, merge selected rivers into a single river, and rebuild 
 	// original river stack.
-	River* river1 = FB_NEW_RPT(*tdbb->tdbb_default, stream_cnt) River();
+	River* river1 = FB_NEW_RPT(*tdbb->getDefaultPool(), stream_cnt) River();
 	river1->riv_count = (UCHAR) stream_cnt;
 	river1->riv_rsb = merge_rsb;
 	UCHAR* stream = river1->riv_streams;
@@ -5635,7 +5635,7 @@ static RecordSource* gen_union(thread_db* tdbb,
 	jrd_nod* clauses = union_node->nod_arg[e_uni_clauses];
 	const USHORT count = clauses->nod_count;
 	CompilerScratch* csb = opt->opt_csb;
-	RecordSource* rsb = FB_NEW_RPT(*tdbb->tdbb_default, count + nstreams + 1) RecordSource();
+	RecordSource* rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), count + nstreams + 1) RecordSource();
 	rsb->rsb_type = rsb_union;
 	rsb->rsb_count = count;
 	rsb->rsb_stream = (UCHAR)(IPTR) union_node->nod_arg[e_uni_stream];
@@ -5748,7 +5748,7 @@ static IndexedRelationship* indexed_relationship(thread_db* tdbb, OptimizerBlk* 
 
 		if (opt->opt_segments[0].opt_lower || opt->opt_segments[0].opt_upper) {
 			if (!relationship) {
-				relationship = FB_NEW(*tdbb->tdbb_default) IndexedRelationship();
+				relationship = FB_NEW(*tdbb->getDefaultPool()) IndexedRelationship();
 			}
 			if (idx->idx_flags & idx_unique) {
 				relationship->irl_unique = TRUE;
@@ -5804,7 +5804,7 @@ static str* make_alias(thread_db* tdbb, CompilerScratch* csb,
 
 /* allocate a string block to hold the concatenated alias */
 
-	str* alias = FB_NEW_RPT(*tdbb->tdbb_default, alias_length) str();
+	str* alias = FB_NEW_RPT(*tdbb->getDefaultPool(), alias_length) str();
 	alias->str_length = alias_length - 1;
 /* now concatenate the individual aliases into the string block, 
    beginning at the end and copying back to the beginning */
@@ -5883,7 +5883,7 @@ static RecordSource* make_cross(thread_db* tdbb, OptimizerBlk* opt, RiverStack& 
 	}
 
 	CompilerScratch* csb = opt->opt_csb;
-	RecordSource* rsb = FB_NEW_RPT(*tdbb->tdbb_default, count) RecordSource();
+	RecordSource* rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), count) RecordSource();
 	rsb->rsb_type = rsb_cross;
 	rsb->rsb_count = count;
 	rsb->rsb_impure = CMP_impure(csb, sizeof(struct irsb));
@@ -5927,7 +5927,7 @@ static jrd_nod* make_index_node(thread_db* tdbb, jrd_rel* relation,
 	node->nod_type = nod_index;
 	node->nod_count = 0;
 	IndexRetrieval* retrieval =
-		FB_NEW_RPT(*tdbb->tdbb_default, idx->idx_count * 2) IndexRetrieval();
+		FB_NEW_RPT(*tdbb->getDefaultPool(), idx->idx_count * 2) IndexRetrieval();
 	node->nod_arg[e_idx_retrieval] = (jrd_nod*) retrieval;
 	retrieval->irb_index = idx->idx_id;
 	MOVE_FAST(idx, &retrieval->irb_desc, sizeof(retrieval->irb_desc));
@@ -6069,13 +6069,13 @@ static jrd_nod* make_inversion(thread_db* tdbb, OptimizerBlk* opt,
 	bool used_in_compound = false;
 	float compound_selectivity = 1; // Real maximum selectivity possible is 1.
 
-	// TMN: Shouldn't this be allocated from the tdbb->tdbb_default pool?
+	// TMN: Shouldn't this be allocated from the tdbb->getDefaultPool() pool?
 	Firebird::HalfStaticArray<index_desc*, OPT_STATIC_ITEMS> 
-		idx_walk_vector(*tdbb->tdbb_default);
+		idx_walk_vector(*tdbb->getDefaultPool());
 	idx_walk_vector.grow(csb_tail->csb_indices);
 	index_desc** idx_walk = idx_walk_vector.begin();
 	Firebird::HalfStaticArray<UINT64, OPT_STATIC_ITEMS> 
-		idx_priority_level_vector(*tdbb->tdbb_default);
+		idx_priority_level_vector(*tdbb->getDefaultPool());
 	idx_priority_level_vector.grow(csb_tail->csb_indices);
 	UINT64* idx_priority_level = idx_priority_level_vector.begin();
 
@@ -7203,7 +7203,7 @@ static void sort_indices_by_selectivity(CompilerScratch::csb_repeat* csb_tail)
 
 	index_desc* selected_idx = NULL;
 	USHORT i, j;
-	Firebird::Array<index_desc> idx_sort(*JRD_get_thread_data()->tdbb_default, csb_tail->csb_indices);
+	Firebird::Array<index_desc> idx_sort(*JRD_get_thread_data()->getDefaultPool(), csb_tail->csb_indices);
 	bool same_selectivity = false;
 
 	// Walk through the indices and sort them into into idx_sort
@@ -7272,7 +7272,7 @@ static SSHORT sort_indices_by_priority(CompilerScratch::csb_repeat* csb_tail,
  *    Sort indices based on the priority level.
  *
  ***************************************************/
-	Firebird::HalfStaticArray<index_desc*, OPT_STATIC_ITEMS> idx_csb(*JRD_get_thread_data()->tdbb_default);
+	Firebird::HalfStaticArray<index_desc*, OPT_STATIC_ITEMS> idx_csb(*JRD_get_thread_data()->getDefaultPool());
 	idx_csb.grow(csb_tail->csb_indices);
 	memcpy(idx_csb.begin(), idx_walk, csb_tail->csb_indices * sizeof(index_desc*));
 

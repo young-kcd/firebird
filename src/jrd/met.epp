@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.132 2004-07-17 00:13:34 skidder Exp $
+$Id: met.epp,v 1.133 2004-08-16 12:28:19 alexpeshkoff Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -952,7 +952,7 @@ jrd_nod* MET_get_dependencies(thread_db*	tdbb,
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->tdbb_default, 5);
+	CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
 	csb->csb_g_flags |= csb_get_dependencies;
 
 	jrd_nod* node;
@@ -2326,7 +2326,7 @@ jrd_nod* MET_parse_blob(thread_db*	tdbb,
 
 	blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, blob_id);
 	const SLONG length = blob->blb_length + 10;
-	str* temp = FB_NEW_RPT(*tdbb->tdbb_default, length) str();
+	str* temp = FB_NEW_RPT(*tdbb->getDefaultPool(), length) str();
 	BLB_get_data(tdbb, blob, temp->str_data, length);
 
 	jrd_nod* node = PAR_blr(tdbb, relation, temp->str_data, NULL, csb_ptr, request_ptr,
@@ -2425,12 +2425,12 @@ void MET_parse_sys_trigger(thread_db* tdbb, jrd_rel* relation)
 			const USHORT par_flags = (USHORT)
 				((trig_flags & TRG_ignore_perm) ? csb_ignore_perm : 0);
 
-			JrdMemoryPool* old_pool = tdbb->tdbb_default;
-			tdbb->tdbb_default = JrdMemoryPool::createPool();
+			JrdMemoryPool* old_pool = tdbb->getDefaultPool();
+			tdbb->setDefaultPool(JrdMemoryPool::createPool());
 			PAR_blr(tdbb, relation, blr, NULL, NULL,
 					&request, true, par_flags);
 
-			tdbb->tdbb_default = old_pool;
+			tdbb->setDefaultPool(old_pool);
 
 			request->req_trg_name = name;
 
@@ -2701,15 +2701,15 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				if ((PA.RDB$PARAMETER_TYPE == 0) && !F.RDB$DEFAULT_VALUE.NULL) {
 					procedure->prc_defaults++;
 
-					old_pool = tdbb->tdbb_default;
-					tdbb->tdbb_default = JrdMemoryPool::createPool();
+					old_pool = tdbb->getDefaultPool();
+					tdbb->setDefaultPool(JrdMemoryPool::createPool());
 
-					CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->tdbb_default, 5);
+					CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
 					parameter->prm_default_val = 
 						parse_param_blr(tdbb, procedure, &F.RDB$DEFAULT_VALUE, csb);
 					
 					delete csb;
-					tdbb->tdbb_default = old_pool;
+					tdbb->setDefaultPool(old_pool);
 				}
 
 			END_FOR;
@@ -2745,9 +2745,9 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				format->fmt_length = (USHORT) length;
 			}
 
-			old_pool = tdbb->tdbb_default;
-			tdbb->tdbb_default = JrdMemoryPool::createPool();
-			CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->tdbb_default, 5);
+			old_pool = tdbb->getDefaultPool();
+			tdbb->setDefaultPool(JrdMemoryPool::createPool());
+			CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
 			// Now, check the result of this function here! Null pointer means failure.
 			// Or should parse_procedure_blr and its callee throw exceptions instead?
 			if (!parse_procedure_blr(tdbb, procedure, &P.RDB$PROCEDURE_BLR, csb))
@@ -2768,7 +2768,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				}
 			}
 			delete csb;
-			tdbb->tdbb_default = old_pool;
+			tdbb->setDefaultPool(old_pool);
 
 		END_FOR;
 
@@ -3247,8 +3247,8 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 	for (USHORT itr = 0; itr < TRIGGER_MAX; ++itr) {
 		triggers[itr] = NULL;
 	}
-	JrdMemoryPool* old_pool = tdbb->tdbb_default;
-	tdbb->tdbb_default = dbb->dbb_permanent;
+	JrdMemoryPool* old_pool = tdbb->getDefaultPool();
+	tdbb->setDefaultPool(dbb->dbb_permanent);
 
 /* If anything errors, catch it to reset the scan flag.  This will
    make sure that the error will be caught if the operation is tried
@@ -3507,7 +3507,7 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 	THD_rec_mutex_unlock(&dbb->dbb_sp_rec_mutex);
 #endif
 	relation->rel_current_format = NULL;
-	tdbb->tdbb_default = old_pool;
+	tdbb->setDefaultPool(old_pool);
 
 	}	// try
 	catch (const std::exception&) {
@@ -3521,7 +3521,7 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 #ifdef SUPERSERVER
 		THD_rec_mutex_unlock(&dbb->dbb_sp_rec_mutex);
 #endif
-		tdbb->tdbb_default = old_pool;
+		tdbb->setDefaultPool(old_pool);
 		throw;
 	}
 }
@@ -3660,7 +3660,7 @@ static int blocking_ast_procedure(void* ast_object)
 	tdbb->tdbb_quantum = QUANTUM;
 	tdbb->tdbb_request = NULL;
 	tdbb->tdbb_transaction = NULL;
-	tdbb->tdbb_default = NULL;
+	tdbb->setDefaultPool(0);
 
 	if (procedure->prc_existence_lock) {
 		LCK_release(tdbb, procedure->prc_existence_lock);
@@ -3703,7 +3703,7 @@ static int blocking_ast_relation(void* ast_object)
 	tdbb->tdbb_quantum = QUANTUM;
 	tdbb->tdbb_request = NULL;
 	tdbb->tdbb_transaction = NULL;
-	tdbb->tdbb_default = NULL;
+	tdbb->setDefaultPool(0);
 
 	if (relation->rel_use_count) {
 		relation->rel_flags |= REL_blocking;
@@ -3832,7 +3832,7 @@ static void lookup_view_contexts( thread_db* tdbb, jrd_rel* view)
 		/* allocate a view context block and link it in
 		   to the relation block's linked list */
 
-		ViewContext* view_context = FB_NEW(*tdbb->tdbb_default) ViewContext();
+		ViewContext* view_context = FB_NEW(*tdbb->getDefaultPool()) ViewContext();
 		*vcx_ptr = view_context;
 		vcx_ptr = &view_context->vcx_next;
 
@@ -3841,7 +3841,7 @@ static void lookup_view_contexts( thread_db* tdbb, jrd_rel* view)
 		/* allocate a string block for the context name */
 
 		SSHORT length = name_length(V.RDB$CONTEXT_NAME);
-		str* alias = FB_NEW_RPT(*tdbb->tdbb_default, length + 1) str();
+		str* alias = FB_NEW_RPT(*tdbb->getDefaultPool(), length + 1) str();
 		V.RDB$CONTEXT_NAME[length] = 0;
 		strcpy((char*)alias->str_data, V.RDB$CONTEXT_NAME);
 		alias->str_length = length;
@@ -3851,7 +3851,7 @@ static void lookup_view_contexts( thread_db* tdbb, jrd_rel* view)
 		/* allocate a string block for the relation name */
 
 		length = name_length(V.RDB$RELATION_NAME);
-		alias = FB_NEW_RPT(*tdbb->tdbb_default, length + 1) str();
+		alias = FB_NEW_RPT(*tdbb->getDefaultPool(), length + 1) str();
 		V.RDB$RELATION_NAME[length] = 0;
 		strcpy((char*)alias->str_data, V.RDB$RELATION_NAME);
 		alias->str_length = length;
@@ -3948,7 +3948,7 @@ static jrd_nod* parse_procedure_blr(
 	blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, blob_id);
 	const SLONG length = blob->blb_length + 10;
 	// CVC: Warning: the str class is limited by 64K
-	str* temp = FB_NEW_RPT(*tdbb->tdbb_default, length) str();
+	str* temp = FB_NEW_RPT(*tdbb->getDefaultPool(), length) str();
 	BLB_get_data(tdbb, blob, temp->str_data, length);
 	csb->csb_blr = temp->str_data;
 	// CVC: Why don't we check this function's return value!
@@ -4001,7 +4001,7 @@ static bool par_messages(thread_db*	tdbb,
 		const USHORT msg_number = BLR_BYTE;
 		USHORT count = BLR_BYTE;
 		count += (BLR_BYTE) << 8;
-		Format* format = Format::newFormat(*tdbb->tdbb_default, count);
+		Format* format = Format::newFormat(*tdbb->getDefaultPool(), count);
 		format->fmt_count = count;
 		// CVC: This offset should be protected against 32K overflow in the future
 		USHORT offset = 0;

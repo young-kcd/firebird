@@ -104,7 +104,7 @@ int PCMET_expression_index(
 					relation->rel_length = strlen(relation->rel_name);
 				}
 				if (IDX.RDB$INDEX_ID && IDX.RDB$STATISTICS < 0.0) {
-					SelectivityList selectivity(tdbb->tdbb_default);
+					SelectivityList selectivity(tdbb->getDefaultPool());
 					const USHORT id = IDX.RDB$INDEX_ID - 1;
 					IDX_statistics(tdbb, relation, id, selectivity);
 					DFW_update_index(work->dfw_name, id, selectivity);
@@ -138,8 +138,8 @@ int PCMET_expression_index(
 				/* allocate a new pool to contain the expression tree 
 				   for the expression index */
 
-				default_pool = tdbb->tdbb_default;
-				tdbb->tdbb_default = new_pool = ALL_pool(&jrd_alloc_info);
+				default_pool = tdbb->getDefaultPool();
+				tdbb->setDefaultPool(new_pool = ALL_pool(&jrd_alloc_info));
 				MET_scan_relation(tdbb, relation);
 
 				if (!IDX.RDB$EXPRESSION_BLR.NULL)
@@ -150,7 +150,7 @@ int PCMET_expression_index(
 															  &csb,
 															  IDX.RDB$INDEX_NAME,
 															  obj_expression_index);
-				tdbb->tdbb_default = default_pool;
+				tdbb->setDefaultPool(default_pool);
 
 				/* fake a description of the index */
 
@@ -177,7 +177,7 @@ int PCMET_expression_index(
 
 		/* Actually create the index */
 
-		SelectivityList selectivity(tdbb->tdbb_default);
+		SelectivityList selectivity(tdbb->getDefaultPool());
 
 		current_request = tdbb->tdbb_request;
 		tdbb->tdbb_request = idx.idx_expression_request;
@@ -249,12 +249,12 @@ void PCMET_lookup_index( jrd_rel* relation, index_desc* idx)
 		   tree and request in its own pool so that it may be cached
 		   with the index block in the "permanent" metadata cache */
 
-		plb* const old_pool = tdbb->tdbb_default;
-		tdbb->tdbb_default = ALL_pool(&jrd_alloc_info);
+		plb* const old_pool = tdbb->getDefaultPool();
+		tdbb->setDefaultPool(ALL_pool(&jrd_alloc_info));
 		idx->idx_expression =
 			MET_parse_blob(tdbb, relation, &IDX.RDB$EXPRESSION_BLR, &csb,
 						   &idx->idx_expression_request, false, false);
-		tdbb->tdbb_default = old_pool;
+		tdbb->setDefaultPool(old_pool);
 
 	END_FOR;
 

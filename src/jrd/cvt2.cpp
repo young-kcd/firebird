@@ -750,7 +750,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 		UCHAR* dbuf = 0;
 		if (arg2->dsc_length+1 > BUFFER_LARGE)
 		{
-			temp_str = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(UCHAR) * (arg2->dsc_length+1)) str();
+			temp_str = FB_NEW_RPT(*tdbb->getDefaultPool(), sizeof(UCHAR) * (arg2->dsc_length+1)) str();
 			dbuf = temp_str->str_data;
 	    }
 		else
@@ -870,7 +870,7 @@ USHORT CVT2_make_string2(const dsc* desc,
 											cs2, from_buf, from_len, err);
 			UCHAR* tempptr = (UCHAR *) temp;
 			if (needed_len > length) {
-				*ptr = FB_NEW_RPT(*tdbb->tdbb_default, needed_len) str();
+				*ptr = FB_NEW_RPT(*tdbb->getDefaultPool(), needed_len) str();
 				(*ptr)->str_length = needed_len;
 				tempptr = (*ptr)->str_data;
 				length = needed_len;

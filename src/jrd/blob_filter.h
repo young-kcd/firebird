@@ -68,6 +68,8 @@ public:
 public:
 	BlobControl(MemoryPool& p) 
 		: ctl_exception_message(p) { }
+	BlobControl() 
+		: ctl_exception_message() { }
 };
 
 

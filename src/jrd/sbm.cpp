@@ -763,7 +763,7 @@ void SBM_set(thread_db* tdbb, SparseBitmap** bitmap, SLONG number)
 
 	SparseBitmap* vector = *bitmap;
 	if (!vector) {
-		*bitmap = vector = FB_NEW(*tdbb->tdbb_default) SparseBitmap(*tdbb->tdbb_default, 5);
+		*bitmap = vector = FB_NEW(*tdbb->getDefaultPool()) SparseBitmap(*tdbb->getDefaultPool(), 5);
 		vector->sbm_type = SBM_ROOT;
 		vector->sbm_count = 5;
 		vector->sbm_state = SBM_SINGULAR;
@@ -804,12 +804,12 @@ void SBM_set(thread_db* tdbb, SparseBitmap** bitmap, SLONG number)
 
 		SparseBitmap* bucket = (SparseBitmap*) vector->sbm_segments[slot];
 		if (!bucket) {
-			if ( (bucket = tdbb->tdbb_default->plb_buckets) )
-				tdbb->tdbb_default->plb_buckets = bucket->sbm_next;
+			if ( (bucket = tdbb->getDefaultPool()->plb_buckets) )
+				tdbb->getDefaultPool()->plb_buckets = bucket->sbm_next;
 			else {
-				bucket = FB_NEW(*tdbb->tdbb_default)
-						SparseBitmap(*tdbb->tdbb_default, BUNCH_BUCKET);
-				bucket->sbm_pool = tdbb->tdbb_default;
+				bucket = FB_NEW(*tdbb->getDefaultPool())
+						SparseBitmap(*tdbb->getDefaultPool(), BUNCH_BUCKET);
+				bucket->sbm_pool = tdbb->getDefaultPool();
 			}
 			clear_bucket(bucket);
 			vector->sbm_segments[slot] = (BitmapSegment*) bucket;
@@ -834,13 +834,13 @@ void SBM_set(thread_db* tdbb, SparseBitmap** bitmap, SLONG number)
 
 		BitmapSegment* segment = vector->sbm_segments[slot];
 		if (!segment) {
-			if ( (segment = tdbb->tdbb_default->plb_segments) ) {
-				tdbb->tdbb_default->plb_segments = segment->bms_next;
+			if ( (segment = tdbb->getDefaultPool()->plb_segments) ) {
+				tdbb->getDefaultPool()->plb_segments = segment->bms_next;
 				clear_segment(segment);
 			}
 			else {
-				segment = FB_NEW(*tdbb->tdbb_default) BitmapSegment();
-				segment->bms_pool = tdbb->tdbb_default;
+				segment = FB_NEW(*tdbb->getDefaultPool()) BitmapSegment();
+				segment->bms_pool = tdbb->getDefaultPool();
 			}
 			vector->sbm_segments[slot] = segment;
 			vector->sbm_used++;

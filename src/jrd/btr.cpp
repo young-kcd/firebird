@@ -240,7 +240,7 @@ USHORT BTR_all(thread_db*		tdbb,
 	}
 
 	delete *csb_idx;
-	*csb_idx = FB_NEW_RPT(*tdbb->tdbb_default, root->irt_count) IndexDescAlloc();
+	*csb_idx = FB_NEW_RPT(*tdbb->getDefaultPool(), root->irt_count) IndexDescAlloc();
 	index_desc* buffer = (*csb_idx)->items;
 	USHORT count = 0;
 	for (USHORT i = 0; i < root->irt_count; i++) {
@@ -1612,7 +1612,7 @@ void BTR_selectivity(thread_db* tdbb, const jrd_rel* relation, USHORT id,
 	const ULONG segments = root->irt_rpt[id].irt_keys;
 
 	// SSHORT count, stuff_count, pos, i;
-	Firebird::HalfStaticArray<ULONG, 4> duplicatesList(*tdbb->tdbb_default);
+	Firebird::HalfStaticArray<ULONG, 4> duplicatesList(*tdbb->getDefaultPool());
 	duplicatesList.grow(segments);
 	memset(duplicatesList.begin(), 0, segments * sizeof(ULONG));
 
@@ -2282,7 +2282,7 @@ static USHORT compress_root(thread_db* tdbb, index_root_page* page)
 	CHECK_DBB(dbb);
 
 	UCHAR* const temp =
-		(UCHAR*)tdbb->tdbb_default->allocate((SLONG) dbb->dbb_page_size, 0
+		(UCHAR*)tdbb->getDefaultPool()->allocate((SLONG) dbb->dbb_page_size, 0
 #ifdef DEBUG_GDS_ALLOC
 	  ,__FILE__,__LINE__
 #endif
@@ -2307,7 +2307,7 @@ static USHORT compress_root(thread_db* tdbb, index_root_page* page)
 		}
 	}
 	const USHORT l = p - temp;
-	tdbb->tdbb_default->deallocate(temp);
+	tdbb->getDefaultPool()->deallocate(temp);
 
 	return l;
 }
@@ -2374,7 +2374,7 @@ static CONTENTS delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
 	USHORT newNextLength = 0;
 	USHORT length = MAX(removingNode.length + removingNode.prefix, 
 		nextNode.length + nextNode.prefix);
-	UCHAR* tempData = FB_NEW(*tdbb->tdbb_default) UCHAR[length];
+	UCHAR* tempData = FB_NEW(*tdbb->getDefaultPool()) UCHAR[length];
 	length = 0;
 	if (nextNode.prefix > removingNode.prefix) {
 		// The next node uses data from the node that is going to
@@ -2419,8 +2419,8 @@ static CONTENTS delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
 		// Only update offsets pointing after the deleted node and 
 		// remove jump nodes pointing to the deleted node or node
 		// next to the deleted one.
-		jumpNodeList* jumpNodes = FB_NEW(*tdbb->tdbb_default) 
-			jumpNodeList(*tdbb->tdbb_default);
+		jumpNodeList* jumpNodes = FB_NEW(*tdbb->getDefaultPool()) 
+			jumpNodeList(*tdbb->getDefaultPool());
 
 		IndexJumpInfo jumpInfo;
 		pointer = BTreeNode::getPointerFirstNode(page, &jumpInfo);
@@ -2444,7 +2444,7 @@ static CONTENTS delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
 					if (jumpNode.offset > offsetDeletePoint) {
 						newJumpNode.offset -= delta;
 					}
-					newJumpNode.data = FB_NEW(*tdbb->tdbb_default) UCHAR[newJumpNode.length];
+					newJumpNode.data = FB_NEW(*tdbb->getDefaultPool()) UCHAR[newJumpNode.length];
 					memcpy(newJumpNode.data, delJumpNode.data, addLength);					
 					memcpy(newJumpNode.data + addLength, jumpNode.data, jumpNode.length);
 				}
@@ -2455,7 +2455,7 @@ static CONTENTS delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
 					if (jumpNode.offset > offsetDeletePoint) {
 						newJumpNode.offset -= delta;
 					}
-					newJumpNode.data = FB_NEW(*tdbb->tdbb_default) UCHAR[newJumpNode.length];
+					newJumpNode.data = FB_NEW(*tdbb->getDefaultPool()) UCHAR[newJumpNode.length];
 					memcpy(newJumpNode.data, jumpNode.data, newJumpNode.length);
 				}
 				jumpNodes->add(newJumpNode);
@@ -2670,13 +2670,13 @@ static SLONG fast_load(thread_db* tdbb,
 	bool useJumpInfo = (dbb->dbb_ods_version >= ODS_VERSION11);
 
 	typedef Firebird::vector<jumpNodeList*> jumpNodeListContainer;
-	jumpNodeListContainer* jumpNodes = FB_NEW(*tdbb->tdbb_default) 
-		jumpNodeListContainer(*tdbb->tdbb_default);
-	jumpNodes->push_back(FB_NEW(*tdbb->tdbb_default) jumpNodeList(*tdbb->tdbb_default));
+	jumpNodeListContainer* jumpNodes = FB_NEW(*tdbb->getDefaultPool()) 
+		jumpNodeListContainer(*tdbb->getDefaultPool());
+	jumpNodes->push_back(FB_NEW(*tdbb->getDefaultPool()) jumpNodeList(*tdbb->getDefaultPool()));
 
-	keyList* jumpKeys = FB_NEW(*tdbb->tdbb_default) keyList(*tdbb->tdbb_default);
-	jumpKeys->push_back(FB_NEW(*tdbb->tdbb_default) dynKey);
-	(*jumpKeys)[0]->keyData = FB_NEW(*tdbb->tdbb_default) UCHAR[key_length];
+	keyList* jumpKeys = FB_NEW(*tdbb->getDefaultPool()) keyList(*tdbb->getDefaultPool());
+	jumpKeys->push_back(FB_NEW(*tdbb->getDefaultPool()) dynKey);
+	(*jumpKeys)[0]->keyData = FB_NEW(*tdbb->getDefaultPool()) UCHAR[key_length];
 
 	IndexJumpInfo jumpInfo;
 	jumpInfo.jumpAreaSize = 0;
@@ -2762,7 +2762,7 @@ static SLONG fast_load(thread_db* tdbb,
 	ULONG duplicates = 0;
 	const ULONG segments = idx->idx_count;
 	// SSHORT segment, stuff_count, pos, i;
-	Firebird::HalfStaticArray<ULONG, 4> duplicatesList(*tdbb->tdbb_default);
+	Firebird::HalfStaticArray<ULONG, 4> duplicatesList(*tdbb->getDefaultPool());
 	duplicatesList.grow(segments);
 	memset(duplicatesList.begin(), 0, segments * sizeof(ULONG));
 
@@ -3030,7 +3030,7 @@ static SLONG fast_load(thread_db* tdbb,
 					jumpKey->keyLength, key->key_data, newNode.prefix);
 				jumpNode.length = newNode.prefix - jumpNode.prefix;
 				jumpNode.offset = (newNode.nodePointer - (UCHAR*)bucket);
-				jumpNode.data = FB_NEW(*tdbb->tdbb_default) UCHAR[jumpNode.length];
+				jumpNode.data = FB_NEW(*tdbb->getDefaultPool()) UCHAR[jumpNode.length];
 				memcpy(jumpNode.data, key->key_data + jumpNode.prefix, jumpNode.length);
 				// Push node on end in list
 				leafJumpNodes->add(jumpNode);
@@ -3090,12 +3090,12 @@ static SLONG fast_load(thread_db* tdbb,
 					key->key_length = 0;
 
 					// Initialize jumpNodes variables for new level
-					jumpNodes->push_back(FB_NEW(*tdbb->tdbb_default) 
-						jumpNodeList(*tdbb->tdbb_default));
-					jumpKeys->push_back(FB_NEW(*tdbb->tdbb_default) dynKey);
+					jumpNodes->push_back(FB_NEW(*tdbb->getDefaultPool()) 
+						jumpNodeList(*tdbb->getDefaultPool()));
+					jumpKeys->push_back(FB_NEW(*tdbb->getDefaultPool()) dynKey);
 					(*jumpKeys)[level]->keyLength = 0;
 					(*jumpKeys)[level]->keyData = 
-						FB_NEW(*tdbb->tdbb_default) UCHAR[key_length];
+						FB_NEW(*tdbb->getDefaultPool()) UCHAR[key_length];
 					totalJumpSize[level] = 0;
 					newAreaPointers[level] = levelPointer + jumpInfo.jumpAreaSize;
 				}
@@ -3247,7 +3247,7 @@ static SLONG fast_load(thread_db* tdbb,
 						pageJumpKey->keyLength, temp_key.key_data, levelNode[level].prefix);
 					jumpNode.length = levelNode[level].prefix - jumpNode.prefix;
 					jumpNode.offset = (levelNode[level].nodePointer - (UCHAR*)bucket);
-					jumpNode.data = FB_NEW(*tdbb->tdbb_default) UCHAR[jumpNode.length];
+					jumpNode.data = FB_NEW(*tdbb->getDefaultPool()) UCHAR[jumpNode.length];
 					memcpy(jumpNode.data, temp_key.key_data + jumpNode.prefix, 
 						jumpNode.length);
 					// Push node on end in list
@@ -4501,7 +4501,7 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 		newBucket->btr_length += l;
 		
 		// Generate new jump nodes.
-		jumpNodeList* jumpNodes = FB_NEW(*tdbb->tdbb_default) jumpNodeList(*tdbb->tdbb_default);
+		jumpNodeList* jumpNodes = FB_NEW(*tdbb->getDefaultPool()) jumpNodeList(*tdbb->getDefaultPool());
 		USHORT jumpersNewSize = 0;
 		// Update jump information on scratch page, so generate_jump_nodes
 		// can deal with it.
@@ -4805,7 +4805,7 @@ static void generate_jump_nodes(thread_db* tdbb, btree_page* page,
 					currentData, node.prefix);
 				jumpNode.length = node.prefix - jumpNode.prefix;
 				if (jumpNode.length) {
-					jumpNode.data = FB_NEW(*tdbb->tdbb_default) UCHAR[jumpNode.length];
+					jumpNode.data = FB_NEW(*tdbb->getDefaultPool()) UCHAR[jumpNode.length];
 					const UCHAR* const q = currentData + jumpNode.prefix;
 					memcpy(jumpNode.data, q, jumpNode.length);
 				}
@@ -4858,7 +4858,7 @@ static void generate_jump_nodes(thread_db* tdbb, btree_page* page,
 					currentData, node->btn_prefix);
 				jumpNode.length = node->btn_prefix - jumpNode.prefix;
 				if (jumpNode.length) {
-					jumpNode.data = FB_NEW(*tdbb->tdbb_default) UCHAR[jumpNode.length];
+					jumpNode.data = FB_NEW(*tdbb->getDefaultPool()) UCHAR[jumpNode.length];
 					const UCHAR* const q = currentData + jumpNode.prefix;
 					memcpy(jumpNode.data, q, jumpNode.length);
 				}
@@ -5020,7 +5020,7 @@ static SLONG insert_node(thread_db* tdbb,
 
 	// Update the values for the next node after our new node.
 	// First, store needed data for beforeInsertNode into tempData.
-	UCHAR* tempData = FB_NEW(*tdbb->tdbb_default) UCHAR[newLength];
+	UCHAR* tempData = FB_NEW(*tdbb->getDefaultPool()) UCHAR[newLength];
 	{ // scope
 	const UCHAR* p = beforeInsertNode.data + newPrefix - beforeInsertNode.prefix;
 	memcpy(tempData, p, newLength);
@@ -5083,7 +5083,7 @@ static SLONG insert_node(thread_db* tdbb,
 	USHORT newPrefixTotalBySplit = 0;
 	USHORT splitJumpNodeIndex = 0;
 	IndexJumpInfo jumpInfo;
-	jumpNodeList* jumpNodes = FB_NEW(*tdbb->tdbb_default) jumpNodeList(*tdbb->tdbb_default);
+	jumpNodeList* jumpNodes = FB_NEW(*tdbb->getDefaultPool()) jumpNodeList(*tdbb->getDefaultPool());
 
 	USHORT ensureEndInsert = 0;
 	if (endOfPage) {
@@ -5269,7 +5269,7 @@ static SLONG insert_node(thread_db* tdbb,
 			for (i = 0; i < jumpNodes->getCount(); i++, index++) {
 				if (index > splitJumpNodeIndex) {
 					const USHORT length = walkJumpNode[i].prefix + walkJumpNode[i].length;
-					UCHAR* newData = FB_NEW(*tdbb->tdbb_default) UCHAR[length];
+					UCHAR* newData = FB_NEW(*tdbb->getDefaultPool()) UCHAR[length];
 					memcpy(newData, new_key->key_data, walkJumpNode[i].prefix);
 					memcpy(newData + walkJumpNode[i].prefix, walkJumpNode[i].data, 
 						walkJumpNode[i].length);

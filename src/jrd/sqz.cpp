@@ -474,18 +474,18 @@ USHORT SQZ_length(thread_db* tdbb, const SCHAR* data, int length, DataComprContr
 			if (control == end_control)
 			{
 				dcc->dcc_end = control;
-				if ( (dcc->dcc_next = tdbb->tdbb_default->plb_dccs) )
+				if ( (dcc->dcc_next = tdbb->getDefaultPool()->plb_dccs) )
 				{
 					dcc = dcc->dcc_next;
-					tdbb->tdbb_default->plb_dccs = dcc->dcc_next;
+					tdbb->getDefaultPool()->plb_dccs = dcc->dcc_next;
 					dcc->dcc_next = NULL;
-					fb_assert(dcc->dcc_pool == tdbb->tdbb_default);
+					fb_assert(dcc->dcc_pool == tdbb->getDefaultPool());
 				}
 				else
 				{
-					dcc->dcc_next = FB_NEW(*tdbb->tdbb_default) DataComprControl();
+					dcc->dcc_next = FB_NEW(*tdbb->getDefaultPool()) DataComprControl();
 					dcc = dcc->dcc_next;
-					dcc->dcc_pool = tdbb->tdbb_default;
+					dcc->dcc_pool = tdbb->getDefaultPool();
 				}
 				control = dcc->dcc_string;
 				end_control = dcc->dcc_string + sizeof(dcc->dcc_string);
@@ -512,18 +512,18 @@ USHORT SQZ_length(thread_db* tdbb, const SCHAR* data, int length, DataComprContr
 			if (control == end_control)
 			{
 				dcc->dcc_end = control;
-				if ( (dcc->dcc_next = tdbb->tdbb_default->plb_dccs) )
+				if ( (dcc->dcc_next = tdbb->getDefaultPool()->plb_dccs) )
 				{
 					dcc = dcc->dcc_next;
-					tdbb->tdbb_default->plb_dccs = dcc->dcc_next;
+					tdbb->getDefaultPool()->plb_dccs = dcc->dcc_next;
 					dcc->dcc_next = NULL;
-					fb_assert(dcc->dcc_pool == tdbb->tdbb_default);
+					fb_assert(dcc->dcc_pool == tdbb->getDefaultPool());
 				}
 				else
 				{
-					dcc->dcc_next = FB_NEW(*tdbb->tdbb_default) DataComprControl();
+					dcc->dcc_next = FB_NEW(*tdbb->getDefaultPool()) DataComprControl();
 					dcc = dcc->dcc_next;
-					dcc->dcc_pool = tdbb->tdbb_default;
+					dcc->dcc_pool = tdbb->getDefaultPool();
 				}
 				control = dcc->dcc_string;
 				end_control = dcc->dcc_string + sizeof(dcc->dcc_string);

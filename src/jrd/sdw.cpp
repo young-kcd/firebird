@@ -180,7 +180,7 @@ int SDW_add_file(const TEXT* file_name, SLONG start, USHORT shadow_number)
    the spare page buffer for raw disk access. */
 
 	SCHAR* const spare_buffer = 
-		FB_NEW(*tdbb->tdbb_default) char[dbb->dbb_page_size + MIN_PAGE_SIZE];
+		FB_NEW(*tdbb->getDefaultPool()) char[dbb->dbb_page_size + MIN_PAGE_SIZE];
 	// And why doesn't the code check that the allocation succeeds?
 
 	SCHAR* spare_page =
@@ -945,7 +945,7 @@ void SDW_start(
 
 	shadow = NULL;
 	SLONG* const spare_buffer =
-		FB_NEW(*tdbb->tdbb_default) SLONG[(dbb->dbb_page_size + MIN_PAGE_SIZE) / sizeof(SLONG)];
+		FB_NEW(*tdbb->getDefaultPool()) SLONG[(dbb->dbb_page_size + MIN_PAGE_SIZE) / sizeof(SLONG)];
 	SLONG* spare_page = reinterpret_cast<SLONG*>((SCHAR *)
 											  (((U_IPTR)
 												spare_buffer + MIN_PAGE_SIZE -

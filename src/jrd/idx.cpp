@@ -303,7 +303,7 @@ void IDX_create_index(
 				break;			/* must be garbage collected */
 			secondary.rpb_record = NULL;
 			VIO_data(tdbb, &secondary,
-					 reinterpret_cast<BLK>(tdbb->tdbb_default));
+					 reinterpret_cast<BLK>(tdbb->getDefaultPool()));
 			stack.push(secondary.rpb_record);
 			secondary.rpb_page = secondary.rpb_b_page;
 			secondary.rpb_line = secondary.rpb_b_line;
@@ -909,7 +909,7 @@ static IDX_E check_duplicates(
 	{
 		if (rpb.rpb_number != insertion->iib_number
 			&& VIO_get_current(tdbb, &rpb, insertion->iib_transaction,
-							   reinterpret_cast<BLK>(tdbb->tdbb_default),
+							   reinterpret_cast<BLK>(tdbb->getDefaultPool()),
 							   (record_idx->idx_flags & idx_foreign) != 0))
 		{
 			// dimitr: we shouldn't ignore status exceptions which take place

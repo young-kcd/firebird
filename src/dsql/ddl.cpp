@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.107 2004-07-01 00:46:10 skidder Exp $
+ * $Id: ddl.cpp,v 1.108 2004-08-16 12:28:24 alexpeshkoff Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -2288,7 +2288,7 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 	// fill req_procedure to allow procedure to self reference
 
 	const size_t nExtra = strlen(procedure_name->str_data);
-	dsql_prc* procedure = FB_NEW_RPT(*tdsql->tsql_default, nExtra) dsql_prc;
+	dsql_prc* procedure = FB_NEW_RPT(*tdsql->getDefaultPool(), nExtra) dsql_prc;
 	procedure->prc_name = procedure->prc_data;
 	procedure->prc_owner =
 		procedure->prc_data + procedure_name->str_length + 1;
@@ -2915,7 +2915,7 @@ static void define_trigger( dsql_req* request, dsql_nod* node)
 							  isc_random, isc_arg_string,
 							  trigger_name->str_data, 0);
 			}
-			relation_node = FB_NEW_RPT(*tdsql->tsql_default, e_rln_count) dsql_nod;
+			relation_node = FB_NEW_RPT(*tdsql->getDefaultPool(), e_rln_count) dsql_nod;
 			node->nod_arg[e_trg_table] = relation_node;
 			relation_node->nod_type = nod_relation_name;
 			relation_node->nod_count = e_rln_count;
@@ -3852,8 +3852,8 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
 
 			context = request->req_context->object();
 			if (context->ctx_alias) {
-				sav_context = FB_NEW(*tdsql->tsql_default) 
-					dsql_ctx(*tdsql->tsql_default);
+				sav_context = FB_NEW(*tdsql->getDefaultPool()) 
+					dsql_ctx(*tdsql->getDefaultPool());
 				*sav_context = *context;
 			}
 		}
@@ -5777,7 +5777,7 @@ static void save_field(dsql_req* request, const TEXT* field_name)
 		return;
 	}
 
-	dsql_fld* field = FB_NEW_RPT(*tdsql->tsql_default, strlen(field_name) + 1) dsql_fld;
+	dsql_fld* field = FB_NEW_RPT(*tdsql->getDefaultPool(), strlen(field_name) + 1) dsql_fld;
 	strcpy(field->fld_name, field_name);
 	field->fld_next = relation->rel_fields;
 	relation->rel_fields = field;
@@ -5817,7 +5817,7 @@ static void save_relation( dsql_req* request, const dsql_str* relation_name)
 	}
 	else
 	{
-		relation = FB_NEW_RPT(*tdsql->tsql_default, relation_name->str_length) dsql_rel;
+		relation = FB_NEW_RPT(*tdsql->getDefaultPool(), relation_name->str_length) dsql_rel;
 		relation->rel_name = relation->rel_data;
 		relation->rel_owner =
 			relation->rel_data + relation_name->str_length + 1;

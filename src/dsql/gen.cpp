@@ -594,7 +594,7 @@ void GEN_port( dsql_req* request, dsql_msg* message)
 // Allocate buffer for message 
 	// CVC: again, final possibility of having overflow! Should be < 64K
 	const USHORT new_len = message->msg_length + DOUBLE_ALIGN - 1;
-	dsql_str* buffer = FB_NEW_RPT(*tdsql->tsql_default, new_len) dsql_str;
+	dsql_str* buffer = FB_NEW_RPT(*tdsql->getDefaultPool(), new_len) dsql_str;
 	message->msg_buffer =
 		(UCHAR *) FB_ALIGN((U_IPTR) buffer->str_data, DOUBLE_ALIGN);
 

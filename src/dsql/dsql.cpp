@@ -444,7 +444,7 @@ GDS_DSQL_ALLOCATE_CPP(	ISC_STATUS*    user_status,
     try
     {
 		tdsql->tsql_status = user_status;
-		tdsql->tsql_default = NULL;
+		tdsql->setDefaultPool(0);
 
 		init(0);
 
@@ -452,11 +452,11 @@ GDS_DSQL_ALLOCATE_CPP(	ISC_STATUS*    user_status,
 
 		dsql_dbb* database = init(db_handle);
 
-		tdsql->tsql_default = DsqlMemoryPool::createPool();
+		tdsql->setDefaultPool(DsqlMemoryPool::createPool());
 
 // allocate the request block 
 
-		dsql_req* request = FB_NEW(*tdsql->tsql_default) dsql_req(*tdsql->tsql_default);
+		dsql_req* request = FB_NEW(*tdsql->getDefaultPool()) dsql_req(*tdsql->getDefaultPool());
 		request->req_dbb = database;
 
 		*req_handle = request;
@@ -518,13 +518,13 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
     try
     {
 		tdsql->tsql_status = user_status;
-		tdsql->tsql_default = NULL;
+		tdsql->setDefaultPool(0);
 
 		init(0);
 		sing_status = 0;
 
 		dsql_req* request = *req_handle;
-		tdsql->tsql_default = &request->req_pool;
+		tdsql->setDefaultPool(&request->req_pool);
 
 		if ((SSHORT) in_msg_type == -1) {
 			request->req_type = REQ_EMBED_SELECT;
@@ -659,16 +659,16 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
     try
     {
 		tdsql->tsql_status = user_status;
-		tdsql->tsql_default = NULL;
+		tdsql->setDefaultPool(0);
 
 		dsql_dbb* database = init(db_handle);
 
-		tdsql->tsql_default = DsqlMemoryPool::createPool();
+		tdsql->setDefaultPool(DsqlMemoryPool::createPool());
 
 	// allocate the request block, then prepare the request 
 
-		dsql_req* request = FB_NEW(*tdsql->tsql_default) 
-			dsql_req(*tdsql->tsql_default);
+		dsql_req* request = FB_NEW(*tdsql->getDefaultPool()) 
+			dsql_req(*tdsql->getDefaultPool());
 		request->req_dbb = database;
 		request->req_trans = *trans_handle;
 
@@ -966,12 +966,12 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
     try
     {
 		tdsql->tsql_status = user_status;
-		tdsql->tsql_default = NULL;
+		tdsql->setDefaultPool(0);
 
 		init(0);
 
 		dsql_req* request = *req_handle;
-		tdsql->tsql_default = &request->req_pool;
+		tdsql->setDefaultPool(&request->req_pool);
 
 // if the cursor isn't open, we've got a problem 
 
@@ -1186,12 +1186,12 @@ ISC_STATUS GDS_DSQL_FREE_CPP(ISC_STATUS*	user_status,
     try
     {
 		tdsql->tsql_status = user_status;
-		tdsql->tsql_default = NULL;
+		tdsql->setDefaultPool(0);
 
 		init(0);
 
 		request = *req_handle;
-		tdsql->tsql_default = &request->req_pool;
+		tdsql->setDefaultPool(&request->req_pool);
 
 		if (option & DSQL_drop) {
 		// Release everything associate with the request. 
@@ -1252,12 +1252,12 @@ ISC_STATUS GDS_DSQL_INSERT_CPP(	ISC_STATUS*	user_status,
     try
     {
 		tdsql->tsql_status = user_status;
-		tdsql->tsql_default = NULL;
+		tdsql->setDefaultPool(0);
 
 		init(0);
 
 		dsql_req* request = *req_handle;
-		tdsql->tsql_default = &request->req_pool;
+		tdsql->setDefaultPool(&request->req_pool);
 
 // if the cursor isn't open, we've got a problem 
 
@@ -1340,7 +1340,7 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 	try
 	{
 		tdsql->tsql_status = user_status;
-		tdsql->tsql_default = NULL;
+		tdsql->setDefaultPool(0);
 
 		init(0);
 
@@ -1376,9 +1376,9 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 /* Because that's the client's allocated statement handle and we
    don't want to trash the context in it -- 2001-Oct-27 Ann Harrison */
 
-		tdsql->tsql_default = DsqlMemoryPool::createPool();
-		dsql_req* request = FB_NEW(*tdsql->tsql_default) 
-			dsql_req(*tdsql->tsql_default);
+		tdsql->setDefaultPool(DsqlMemoryPool::createPool());
+		dsql_req* request = FB_NEW(*tdsql->getDefaultPool()) 
+			dsql_req(*tdsql->getDefaultPool());
 		request->req_dbb = database;
 		request->req_trans = *trans_handle;
 
@@ -1440,9 +1440,9 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 
 // Now that we know that the new request exists, zap the old one. 
 
-			tdsql->tsql_default = &old_request->req_pool;
+			tdsql->setDefaultPool(&old_request->req_pool);
 			release_request(old_request, true);
-			tdsql->tsql_default = NULL;
+			tdsql->setDefaultPool(0);
 
 /* The request was sucessfully prepared, and the old request was
  * successfully zapped, so set the client's handle to the new request */
@@ -1502,12 +1502,12 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
     try
     {
 		tdsql->tsql_status = user_status;
-		tdsql->tsql_default = NULL;
+		tdsql->setDefaultPool(0);
 
 		init(0);
 
 		dsql_req* request = *req_handle;
-		tdsql->tsql_default = &request->req_pool;
+		tdsql->setDefaultPool(&request->req_pool);
 
 		TEXT cursor[132];
 
@@ -1612,7 +1612,7 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
     try
     {
 		tdsql->tsql_status = user_status;
-		tdsql->tsql_default = NULL;
+		tdsql->setDefaultPool(0);
 
 		init(0);
 		memset(buffer, 0, sizeof(buffer));
@@ -4666,8 +4666,8 @@ static dsql_req* prepare(
 
 // allocate the send and receive messages 
 
-	request->req_send = FB_NEW(*tdsql->tsql_default) dsql_msg;
-	dsql_msg* message = FB_NEW(*tdsql->tsql_default) dsql_msg;
+	request->req_send = FB_NEW(*tdsql->getDefaultPool()) dsql_msg;
+	dsql_msg* message = FB_NEW(*tdsql->getDefaultPool()) dsql_msg;
 	request->req_receive = message;
 	message->msg_number = 1;
 
@@ -4676,7 +4676,7 @@ static dsql_req* prepare(
 		/* allocate a message in which to send scrolling information
 		   outside of the normal send/receive protocol */
 
-		request->req_async = message = FB_NEW(*tdsql->tsql_default) dsql_msg;
+		request->req_async = message = FB_NEW(*tdsql->getDefaultPool()) dsql_msg;
 		message->msg_number = 2;
 	}
 #endif
@@ -4737,7 +4737,7 @@ static dsql_req* prepare(
 	{
 		// Allocate persistent blr string from request's pool. 
 
-		request->req_blr_string = FB_NEW_RPT(*tdsql->tsql_default, 980) dsql_str;
+		request->req_blr_string = FB_NEW_RPT(*tdsql->getDefaultPool(), 980) dsql_str;
 	}
 	else {
 		/* Allocate transient blr string from permanent pool so
@@ -4914,10 +4914,10 @@ static void release_request(dsql_req* request, bool top_level)
 	for (dsql_req* child = request->req_offspring; child; child = child->req_sibling) {
 		child->req_flags |= REQ_orphan;
 		child->req_parent = NULL;
-		DsqlMemoryPool *save_default = tdsql->tsql_default;
-		tdsql->tsql_default = &child->req_pool;
+		DsqlMemoryPool *save_default = tdsql->getDefaultPool();
+		tdsql->setDefaultPool(&child->req_pool);
 		release_request(child, false);
-		tdsql->tsql_default = save_default;
+		tdsql->setDefaultPool(save_default);
 	}
 
 // For top level requests that are linked to a parent, unlink it

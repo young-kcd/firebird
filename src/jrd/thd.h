@@ -26,7 +26,7 @@
  *
  */
 /*
-$Id: thd.h,v 1.34 2004-07-14 21:54:41 skidder Exp $
+$Id: thd.h,v 1.35 2004-08-16 12:28:20 alexpeshkoff Exp $
 */
 
 #ifndef JRD_THD_H
@@ -36,6 +36,7 @@ $Id: thd.h,v 1.34 2004-07-14 21:54:41 skidder Exp $
 #include "../jrd/isc.h"
 #include "../common/classes/locks.h"
 #include "../common/classes/rwlock.h"
+#include "../common/classes/alloc.h"
 
 // compatibility definitions
 enum	WLCK_type {WLCK_read = 1, WLCK_write = 2};
@@ -147,6 +148,45 @@ public:
 	static FB_THREAD_ID getId(void);
 	static void		getSpecificData(void** t_data);
 	static void		putSpecificData(void* t_data);
+
+private:
+	MemoryPool*	thdd_pool;
+
+public:
+	void makeDefaultPool()
+	{
+		thdd* previous = getSpecific();
+		if (previous)
+		{
+			thdd_pool = &previous->getPool();
+		}
+		if (! thdd_pool)
+		{
+			thdd_pool = getDefaultMemoryPool();
+		}
+	}
+
+	void setPool(MemoryPool* p)
+	{
+		if (p)
+		{
+			thdd_pool = p;
+		}
+		else
+		{
+			makeDefaultPool();
+		}
+	}
+
+	MemoryPool& getPool()
+	{
+		return *thdd_pool;
+	}
+
+	static MemoryPool& getDefaultPool()
+	{
+		return getSpecific()->getPool();
+	}
 };
 
 /* Thread structure types */

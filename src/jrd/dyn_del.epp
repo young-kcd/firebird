@@ -1468,7 +1468,7 @@ files = NULL;
 
 		ERASE FIL;
 /****
-    file = FB_NEW_RPT(*tdbb->tdbb_default, sizeof (FIL.RDB$FILE_NAME) - 1) str();
+    file = FB_NEW_RPT(*tdbb->getDefaultPool(), sizeof (FIL.RDB$FILE_NAME) - 1) str();
     strcpy (file->str_data, FIL.RDB$FILE_NAME);
     LLS_PUSH (file, &files);
 ****/

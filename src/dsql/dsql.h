@@ -617,10 +617,21 @@ public:
 
 class tsql : public thdd
 {
-public:
+private:
 	DsqlMemoryPool*		tsql_default;
+public:
 	ISC_STATUS*		tsql_status;
 	ISC_STATUS*		tsql_user_status;
+
+	void setDefaultPool(DsqlMemoryPool* p)
+	{
+		thdd::setPool(p);
+		tsql_default = p;
+	}
+	DsqlMemoryPool* getDefaultPool()
+	{
+		return tsql_default;
+	}
 };
 
 inline tsql* DSQL_get_thread_data() {

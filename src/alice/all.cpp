@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: all.cpp,v 1.26 2004-07-03 00:13:09 brodsom Exp $
+//	$Id: all.cpp,v 1.27 2004-08-16 12:28:13 alexpeshkoff Exp $
 //
 
 #include "firebird.h"
@@ -52,7 +52,7 @@ void ALLA_fini(void)
 	}
 	tdgbl->pools.clear();
 
-	tdgbl->ALICE_default_pool = 0;
+	tdgbl->setDefaultPool(0);
 	tdgbl->ALICE_permanent_pool = 0;
 }
 
@@ -71,7 +71,7 @@ void ALLA_init(void)
 #else
 	// TMN: John, what pool to use here?
 	tdgbl->ALICE_permanent_pool = AliceMemoryPool::createPool();
-	tdgbl->ALICE_default_pool = tdgbl->ALICE_permanent_pool;
+	tdgbl->setDefaultPool(tdgbl->ALICE_permanent_pool);
 #endif
 }
 

@@ -105,7 +105,7 @@ void ALLD_init()
 		DSQL_permanent_pool = DsqlMemoryPool::createPool();
 		pools = FB_NEW(*DSQL_permanent_pool) Firebird::vector<DsqlMemoryPool*>
 					(10, *DSQL_permanent_pool, dsql_type_vec);
-		tdsql->tsql_default = DSQL_permanent_pool;
+		tdsql->setDefaultPool(DSQL_permanent_pool);
 	}
 }
 
@@ -113,7 +113,7 @@ void ALLD_init()
 void DsqlMemoryPool::ALLD_push(BLK object, dsql_lls** stack)
 {
 	tsql* tdsql = DSQL_get_thread_data();
-	DsqlMemoryPool* pool = tdsql->tsql_default;
+	DsqlMemoryPool* pool = tdsql->getDefaultPool();
 
 	dsql_lls* node = pool->lls_cache.newBlock();
 	node->lls_object = object;

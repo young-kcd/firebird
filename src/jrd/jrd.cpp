@@ -218,18 +218,18 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 		SET_TDBB(tdbb);
 
 		compile_in_progress = true;
-		JrdMemoryPool* old_pool = tdbb->tdbb_default,
-			*new_pool = JrdMemoryPool::createPool();
+		JrdMemoryPool* old_pool = tdbb->getDefaultPool(),
+		*new_pool = JrdMemoryPool::createPool();
 		// Allocate statement memory pool
-		tdbb->tdbb_default = new_pool;
+		tdbb->setDefaultPool(new_pool);
 		// Trigger request is not compiled yet. Lets do it now
 		try {
 			PAR_blr(tdbb, relation, blr.begin(),  NULL, NULL, &request, true,
 					(USHORT)(flags & TRG_ignore_perm ? csb_ignore_perm : 0));
-			tdbb->tdbb_default = old_pool;
+			tdbb->setDefaultPool(old_pool);
 		}
 		catch (const std::exception&) {
-			tdbb->tdbb_default = old_pool;
+			tdbb->setDefaultPool(old_pool);
 			compile_in_progress = false;
 			if (request) {
 				CMP_release(tdbb,request);
@@ -240,7 +240,7 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 			}
 			throw;
 		}
-		tdbb->tdbb_default = old_pool;
+		tdbb->setDefaultPool(old_pool);
 		
 		if (name.hasData()) 
 		{
@@ -2209,7 +2209,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Attachment** handle)
 	tdbb->tdbb_attachment = attachment;
 	tdbb->tdbb_request = NULL;
 	tdbb->tdbb_transaction = NULL;
-	tdbb->tdbb_default = NULL;
+	tdbb->setDefaultPool(0);
 
 /* Count active thread in database */
 
@@ -2322,7 +2322,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 	tdbb->tdbb_attachment = attachment;
 	tdbb->tdbb_request = NULL;
 	tdbb->tdbb_transaction = NULL;
-	tdbb->tdbb_default = dbb->dbb_permanent;
+	tdbb->setDefaultPool(dbb->dbb_permanent);
 
 /* Count active thread in database */
 
@@ -2417,7 +2417,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 	const jrd_file* file = dbb->dbb_file;
 	const Shadow* shadow = dbb->dbb_shadow;
 
-	tdbb->tdbb_default = NULL;
+	tdbb->setDefaultPool(NULL);
 
 #ifdef GOVERNOR
 	if (JRD_max_users) {
@@ -3707,8 +3707,8 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 
 	jrd_tra* transaction = find_transaction(tdbb, *tra_handle, isc_req_wrong_db);
 
-	old_pool = tdbb->tdbb_default;
-	tdbb->tdbb_default = new_pool = JrdMemoryPool::createPool();
+	old_pool = tdbb->getDefaultPool();
+	tdbb->setDefaultPool(new_pool = JrdMemoryPool::createPool());
 
 	CompilerScratch* csb = PAR_parse(tdbb, reinterpret_cast<const UCHAR*>(blr), FALSE);
 	request = CMP_make_request(tdbb, csb);
@@ -3730,7 +3730,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 		}
 	}
 
-	tdbb->tdbb_default = old_pool;
+	tdbb->setDefaultPool(old_pool);
 	old_pool = NULL;
 
 	request->req_attachment = attachment;
@@ -3800,7 +3800,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 
 		try {
 			if (old_pool) {
-				tdbb->tdbb_default = old_pool;
+				tdbb->setDefaultPool(old_pool);
 			}
 			if (request) {
 				CMP_release(tdbb, request);
@@ -4499,7 +4499,7 @@ static ISC_STATUS check_database(thread_db* tdbb, Attachment* attachment, ISC_ST
 	tdbb->tdbb_quantum = QUANTUM;
 	tdbb->tdbb_request = NULL;
 	tdbb->tdbb_transaction = NULL;
-	tdbb->tdbb_default = NULL;
+	tdbb->setDefaultPool(0);
 	tdbb->tdbb_inhibit = 0;
 	tdbb->tdbb_flags = 0;
 
@@ -6175,7 +6175,7 @@ ULONG JRD_shutdown_all()
 				tdbb->tdbb_attachment = attach;
 				tdbb->tdbb_request = NULL;
 				tdbb->tdbb_transaction = NULL;
-				tdbb->tdbb_default = NULL;
+				tdbb->setDefaultPool(0);
 
 				++dbb->dbb_use_count;
 
@@ -6379,7 +6379,7 @@ static bool verify_database_name(const Firebird::PathName& name, ISC_STATUS* sta
 {
 	// Check for security.fdb
 	static TEXT SecurityNameBuffer[MAXPATHLEN] = "";
-	static Firebird::PathName ExpandedSecurityNameBuffer(*getDefaultMemoryPool()); // !!!!!!!!!
+	static Firebird::PathName ExpandedSecurityNameBuffer(*getDefaultMemoryPool());
 	if (! SecurityNameBuffer[0]) {
 		SecurityDatabase::getPath(SecurityNameBuffer);
 		ISC_expand_filename(SecurityNameBuffer, ExpandedSecurityNameBuffer);

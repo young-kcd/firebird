@@ -157,7 +157,7 @@ jrd_nod* PAR_blr(thread_db*	tdbb,
 		size_t count = 5;
 		if (view_csb)
 			count += view_csb->csb_rpt.getCapacity();
-		csb = CompilerScratch::newCsb(*tdbb->tdbb_default, count);
+		csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), count);
 		csb->csb_g_flags |= flags;
 	}
 
@@ -376,7 +376,7 @@ jrd_nod* PAR_gen_field(thread_db* tdbb, USHORT stream, USHORT id)
  **************************************/
 	SET_TDBB(tdbb);
 
-	jrd_nod* node = FB_NEW_RPT(*tdbb->tdbb_default, e_fld_length) jrd_nod();
+	jrd_nod* node = FB_NEW_RPT(*tdbb->getDefaultPool(), e_fld_length) jrd_nod();
 	node->nod_type = nod_field;
 	node->nod_arg[e_fld_id] = (jrd_nod*) (IPTR) id;
 	node->nod_arg[e_fld_stream] = (jrd_nod*) (IPTR) stream;
@@ -499,7 +499,7 @@ jrd_nod* PAR_make_node(thread_db* tdbb, int size)
  **************************************/
 	SET_TDBB(tdbb);
 
-	jrd_nod* node = FB_NEW_RPT(*tdbb->tdbb_default, size) jrd_nod();
+	jrd_nod* node = FB_NEW_RPT(*tdbb->getDefaultPool(), size) jrd_nod();
 	node->nod_count = size;
 
 	return node;
@@ -520,7 +520,7 @@ CompilerScratch* PAR_parse(thread_db* tdbb, const UCHAR* blr, USHORT internal_fl
  **************************************/
 	SET_TDBB(tdbb);
 
-	CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->tdbb_default, 5);
+	CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
 	csb->csb_running = csb->csb_blr = blr;
 	const SSHORT version = *csb->csb_running++;
 	if (internal_flag)
@@ -733,7 +733,7 @@ static jrd_nod* par_cast(thread_db* tdbb, CompilerScratch* csb)
 	jrd_nod* node = PAR_make_node(tdbb, e_cast_length);
 	node->nod_count = count_table[blr_cast];
 
-	Format* format = Format::newFormat(*tdbb->tdbb_default, 1);
+	Format* format = Format::newFormat(*tdbb->getDefaultPool(), 1);
 	format->fmt_count = 1;
 	node->nod_arg[e_cast_fmt] = (jrd_nod*) format;
 
@@ -776,7 +776,7 @@ static PsqlException* par_condition(thread_db* tdbb, CompilerScratch* csb)
 		return NULL;
 	}
 
-	PsqlException* exception_list = FB_NEW_RPT(*tdbb->tdbb_default, 1) PsqlException();
+	PsqlException* exception_list = FB_NEW_RPT(*tdbb->getDefaultPool(), 1) PsqlException();
 	exception_list->xcp_count = 1;
 	
 	switch (code_type) {
@@ -841,7 +841,7 @@ static PsqlException* par_conditions(thread_db* tdbb, CompilerScratch* csb)
 /* allocate a node to represent the conditions list */
 
 	const USHORT n = BLR_WORD;
-	PsqlException* exception_list = FB_NEW_RPT(*tdbb->tdbb_default, n) PsqlException();
+	PsqlException* exception_list = FB_NEW_RPT(*tdbb->getDefaultPool(), n) PsqlException();
 	exception_list->xcp_count = n;
 	for (int i = 0; i < n; i++) {
 		const USHORT code_type = BLR_BYTE;
@@ -967,7 +967,7 @@ static void par_dependency(thread_db*   tdbb,
 		node->nod_arg[e_dep_field] = field_node;
 		field_node->nod_type = nod_literal;
 		field_node->nod_arg[0] = (jrd_nod*) 
-			stringDup(*tdbb->tdbb_default, field_name);
+			stringDup(*tdbb->getDefaultPool(), field_name);
 	}
 	else if (id >= 0) {
 		jrd_nod* field_node = PAR_make_node(tdbb, 1);
@@ -1438,7 +1438,7 @@ static jrd_nod* par_message(thread_db* tdbb, CompilerScratch* csb)
    out the format block */
 
 	n = BLR_WORD;
-	Format* format = Format::newFormat(*tdbb->tdbb_default, n);
+	Format* format = Format::newFormat(*tdbb->getDefaultPool(), n);
 	node->nod_arg[e_msg_format] = (jrd_nod*) format;
 	format->fmt_count = n;
 	ULONG offset = 0;
@@ -1648,7 +1648,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 			access_type->nod_arg[0] = (jrd_nod*) (IPTR) relation_id;
 			access_type->nod_arg[1] = (jrd_nod*) (IPTR) index_id;
-			access_type->nod_arg[2] = (jrd_nod*) ALL_cstring(tdbb->tdbb_default, name);
+			access_type->nod_arg[2] = (jrd_nod*) ALL_cstring(tdbb->getDefaultPool(), name);
 
 			if (BLR_PEEK == blr_indices)
 				// dimitr:	FALL INTO, if the plan item is ORDER ... INDEX (...)
@@ -1703,7 +1703,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 				*arg++ = (jrd_nod*) (IPTR) relation_id;
 				*arg++ = (jrd_nod*) (IPTR) index_id;
-				*arg++ = (jrd_nod*) ALL_cstring(tdbb->tdbb_default, name);
+				*arg++ = (jrd_nod*) ALL_cstring(tdbb->getDefaultPool(), name);
 			}
 			break;
 			}
@@ -1829,7 +1829,7 @@ static void par_procedure_parms(
 		/* dimitr: procedure (with its parameter formats) is allocated out of
 				   its own pool (prc_request->req_pool) and can be freed during
 				   the cache cleanup (MET_clear_cache). Since the current
-				   tdbb_default pool is different from the procedure's one,
+				   tdbb default pool is different from the procedure's one,
 				   it's dangerous to copy a pointer from one request to another.
 				   As an experiment, I've decided to copy format by value
 				   instead of copying the reference. Since Format structure
@@ -1843,7 +1843,7 @@ static void par_procedure_parms(
 
 		message->nod_arg[e_msg_format] = (jrd_nod*) format;
 		*/
-		Format* fmt_copy = Format::newFormat(*tdbb->tdbb_default, format->fmt_count);
+		Format* fmt_copy = Format::newFormat(*tdbb->getDefaultPool(), format->fmt_count);
 		*fmt_copy = *format;
 		message->nod_arg[e_msg_format] = (jrd_nod*) fmt_copy;
 		/* --- end of fix --- */
@@ -1962,7 +1962,7 @@ static jrd_nod* par_relation(
 	if (alias_string)
 	{
 		node->nod_arg[e_rel_alias] = 
-			(jrd_nod*) stringDup(*tdbb->tdbb_default, *alias_string);
+			(jrd_nod*) stringDup(*tdbb->getDefaultPool(), *alias_string);
 	}
 
 /* Scan the relation if it hasn't already been scanned for meta data */
@@ -2418,7 +2418,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			*arg++ = (jrd_nod*) (IPTR) BLR_BYTE;
 			Firebird::string name;
 			par_name(csb, name);
-			*arg++ = (jrd_nod*) ALL_cstring(tdbb->tdbb_default, name);
+			*arg++ = (jrd_nod*) ALL_cstring(tdbb->getDefaultPool(), name);
 			break;
 		}
 
@@ -2628,7 +2628,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			node->nod_arg[e_dcl_id] = (jrd_nod*) (IPTR) n;
 			PAR_desc(csb, (DSC *) (node->nod_arg + e_dcl_desc));
 			vec* vector = csb->csb_variables =
-				vec::newVector(*tdbb->tdbb_default, csb->csb_variables, n + 1);
+				vec::newVector(*tdbb->getDefaultPool(), csb->csb_variables, n + 1);
 			(*vector)[n] = (BLK) node;
 		}
 		break;

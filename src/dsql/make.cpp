@@ -88,7 +88,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 {
 	tsql* tdsql = DSQL_get_thread_data();
 
-	dsql_nod* node = FB_NEW_RPT(*tdsql->tsql_default,
+	dsql_nod* node = FB_NEW_RPT(*tdsql->getDefaultPool(),
 						(numeric_flag == CONSTANT_TIMESTAMP ||
 						  numeric_flag == CONSTANT_SINT64) ? 2 : 1) dsql_nod;
 	node->nod_type = nod_constant;
@@ -235,7 +235,7 @@ dsql_nod* MAKE_str_constant(dsql_str* constant, SSHORT character_set)
 {
 	tsql* tdsql = DSQL_get_thread_data();
 
-	dsql_nod* node = FB_NEW_RPT(*tdsql->tsql_default, 1) dsql_nod;
+	dsql_nod* node = FB_NEW_RPT(*tdsql->getDefaultPool(), 1) dsql_nod;
 	node->nod_type = nod_constant;
 
 	DEV_BLKCHK(constant, dsql_type_str);
@@ -1565,7 +1565,7 @@ dsql_nod* MAKE_node(NOD_TYPE type, int count)
 {
 	tsql* tdsql = DSQL_get_thread_data();
 
-	dsql_nod* node = FB_NEW_RPT(*tdsql->tsql_default, count) dsql_nod;
+	dsql_nod* node = FB_NEW_RPT(*tdsql->getDefaultPool(), count) dsql_nod;
 	node->nod_type = type;
 	node->nod_count = count;
 
@@ -1604,7 +1604,7 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 
 	tsql* tdsql = DSQL_get_thread_data();
 
-	dsql_par* parameter = FB_NEW(*tdsql->tsql_default) dsql_par;
+	dsql_par* parameter = FB_NEW(*tdsql->getDefaultPool()) dsql_par;
 	parameter->par_message = message;
 	parameter->par_next = message->msg_parameters;
 	if (parameter->par_next != 0)
@@ -1682,7 +1682,7 @@ dsql_sym* MAKE_symbol(dsql_dbb* database,
 
 	tsql* tdsql = DSQL_get_thread_data();
 
-	dsql_sym* symbol = FB_NEW_RPT(*tdsql->tsql_default, length) dsql_sym;
+	dsql_sym* symbol = FB_NEW_RPT(*tdsql->getDefaultPool(), length) dsql_sym;
 	symbol->sym_type = type;
 	symbol->sym_object = (BLK) object;
 	symbol->sym_dbb = database;
@@ -1716,7 +1716,7 @@ dsql_str* MAKE_tagged_string(const char* strvar, size_t length, const char* char
 {
 	tsql* tdsql = DSQL_get_thread_data();
 
-	dsql_str* string = FB_NEW_RPT(*tdsql->tsql_default, length) dsql_str;
+	dsql_str* string = FB_NEW_RPT(*tdsql->getDefaultPool(), length) dsql_str;
 	string->str_charset = charset;
 	string->str_length  = length;
 	memcpy(string->str_data, strvar, length);
@@ -1770,7 +1770,7 @@ dsql_nod* MAKE_variable(dsql_fld* field,
 
 	tsql* tdsql = DSQL_get_thread_data();
 
-	dsql_var* variable = FB_NEW_RPT(*tdsql->tsql_default, strlen(name)) dsql_var;
+	dsql_var* variable = FB_NEW_RPT(*tdsql->getDefaultPool(), strlen(name)) dsql_var;
 	dsql_nod* node = MAKE_node(nod_variable, e_var_count);
 	node->nod_arg[e_var_variable] = (dsql_nod*) variable;
 	variable->var_msg_number = msg_number;

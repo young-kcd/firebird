@@ -906,12 +906,13 @@ const USHORT WIN_garbage_collect	= 8;	/* scan left a page for garbage collector 
 // Thread specific database block
 class thread_db : public thdd
 {
+private:
+	JrdMemoryPool*	tdbb_default;
 public:
 	Database*	tdbb_database;
 	Attachment*	tdbb_attachment;
 	jrd_tra*	tdbb_transaction;
 	jrd_req*	tdbb_request;
-	JrdMemoryPool*	tdbb_default;
 	ISC_STATUS*	tdbb_status_vector;
 	void*		tdbb_setjmp;
 	USHORT		tdbb_inhibit;		// Inhibit context switch if non-zero
@@ -924,6 +925,16 @@ public:
 #if defined(UNIX) && defined(SUPERSERVER)
     sigjmp_buf tdbb_sigsetjmp;
 #endif
+
+	void setDefaultPool(JrdMemoryPool* p)
+	{
+		thdd::setPool(p);
+		tdbb_default = p;
+	}
+	JrdMemoryPool* getDefaultPool()
+	{
+		return tdbb_default;
+	}
 };
 
 // tdbb_flags

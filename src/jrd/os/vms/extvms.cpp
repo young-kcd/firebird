@@ -230,7 +230,7 @@ ExternalFile* EXT_file(jrd_rel* relation, TEXT* file_name, bid* description)
 			}
 		const ptrdiff_t l2 = (UCHAR *) index - index_buffer;
 		if (l2) {
-			str* string = FB_NEW_RPT(tdbb->tdbb_default, l2) str();
+			str* string = FB_NEW_RPT(tdbb->getDefaultPool(), l2) str();
 			MOVE_FAST(index_buffer, string->str_data, l2);
 			file->ext_indices = string->str_data;
 		}
@@ -456,21 +456,21 @@ RecordSource* EXT_optimize(OptimizerBlk* opt, SSHORT stream, jrd_nod** sort_ptr)
 	RecordSource* rsb;
 	SSHORT size; // better size_t
 	if (dbkey) {
-		rsb = FB_NEW_RPT(tdbb->tdbb_default, 1) RecordSource();
+		rsb = FB_NEW_RPT(tdbb->getDefaultPool(), 1) RecordSource();
 		rsb->rsb_type = rsb_ext_dbkey;
 		rsb->rsb_count = 1;
 		size = sizeof(struct irsb_index);
 		rsb->rsb_arg[0] = (RecordSource*) dbkey;
 	}
 	else if (inversion) {
-		rsb = FB_NEW_RPT(tdbb->tdbb_default, 1) RecordSource();
+		rsb = FB_NEW_RPT(tdbb->getDefaultPool(), 1) RecordSource();
 		rsb->rsb_type = rsb_ext_indexed;
 		rsb->rsb_count = 1;
 		size = sizeof(struct irsb_index);
 		rsb->rsb_arg[0] = (RecordSource*) inversion;
 	}
 	else {
-		rsb = FB_NEW(tdbb->tdbb_default) RecordSource();
+		rsb = FB_NEW(tdbb->getDefaultPool()) RecordSource();
 		rsb->rsb_type = rsb_ext_sequential;
 		size = sizeof(struct irsb);
 	}

@@ -430,7 +430,7 @@ static TEXT_PTR thread_db[] = {
 
 	"THREAD DATA BLOCK",
 		FLD(thread_db*, "Status vec: %x", tdbb_status_vector),
-		FLD(thread_db*, "Default: %x", tdbb_default),
+		FLD(thread_db*, "Default: %x", getDefaultPool()),
 		0
 };
 static TEXT_PTR Service[] =		{	"SERVICE MANAGER BLOCK", 0};

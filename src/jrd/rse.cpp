@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.73 2004-06-25 22:12:19 skidder Exp $
+ * $Id: rse.cpp,v 1.74 2004-08-16 12:28:20 alexpeshkoff Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -733,7 +733,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 		case rsb_union:
 			{
 				((IRSB) impure)->irsb_count = 0;
-				VIO_record(tdbb, rpb, rsb->rsb_format, tdbb->tdbb_default);
+				VIO_record(tdbb, rpb, rsb->rsb_format, tdbb->getDefaultPool());
 
 				/* Initialize the record number of each stream in the union */
 
@@ -750,7 +750,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 
 		case rsb_aggregate:
 			((IRSB) impure)->irsb_count = 3;
-			VIO_record(tdbb, rpb, rsb->rsb_format, tdbb->tdbb_default);
+			VIO_record(tdbb, rpb, rsb->rsb_format, tdbb->getDefaultPool());
 			return;
 
 		case rsb_merge:
@@ -779,7 +779,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 				{
 					VIO_record(tdbb,
 							   &request->req_rpb[stack.object()->rsb_stream],
-							   stack.object()->rsb_format, tdbb->tdbb_default);
+							   stack.object()->rsb_format, tdbb->getDefaultPool());
 				}
 				return;
 			}
@@ -1754,7 +1754,7 @@ static bool get_merge_join(
 		const ULONG key_length = map->smb_key_length * sizeof(ULONG);
 		UCHAR* first_data;
 		if (key_length > sizeof(key))
-			first_data = FB_NEW(*tdbb->tdbb_default) UCHAR[key_length];
+			first_data = FB_NEW(*tdbb->getDefaultPool()) UCHAR[key_length];
 		else
 			first_data = (UCHAR *) key;
 		MOVE_FASTER(get_merge_data(tdbb, mfb, 0), first_data, key_length);
@@ -1945,7 +1945,7 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, IRSB_MRG impure)
 		const ULONG key_length = map->smb_key_length * sizeof(ULONG);
 		UCHAR* first_data;
 		if (key_length > sizeof(key))
-			first_data = FB_NEW(*tdbb->tdbb_default) UCHAR[key_length];
+			first_data = FB_NEW(*tdbb->getDefaultPool()) UCHAR[key_length];
 		else
 			first_data = (UCHAR *) key;
 		MOVE_FASTER(get_merge_data(tdbb, mfb, 0), first_data, key_length);
@@ -2104,7 +2104,7 @@ static bool get_procedure(thread_db*			tdbb,
 	if (!impure->irsb_message)
 	{
 		const SLONG size = msg_format->fmt_length + ALIGNMENT;
-		impure->irsb_message = FB_NEW_RPT(*tdbb->tdbb_default, size) str();
+		impure->irsb_message = FB_NEW_RPT(*tdbb->getDefaultPool(), size) str();
 		impure->irsb_message->str_length = size;
 	}
 	UCHAR* om =
@@ -2115,7 +2115,7 @@ static bool get_procedure(thread_db*			tdbb,
 	Record* record;
 	if (!rpb->rpb_record) {
 		record = rpb->rpb_record =
-			FB_NEW_RPT(*tdbb->tdbb_default, rec_format->fmt_length) Record(*tdbb->tdbb_default);
+			FB_NEW_RPT(*tdbb->getDefaultPool(), rec_format->fmt_length) Record(*tdbb->getDefaultPool());
 		record->rec_format = rec_format;
 		record->rec_length = rec_format->fmt_length;
 	}
@@ -2894,7 +2894,7 @@ static void join_to_nulls(thread_db* tdbb, RecordSource* rsb, StreamStack* strea
 					MET_format(tdbb, rpb->rpb_relation,
 							   rpb->rpb_format_number);
 			}
-			record = VIO_record(tdbb, rpb, format, tdbb->tdbb_default);
+			record = VIO_record(tdbb, rpb, format, tdbb->getDefaultPool());
 		}
 
         record->rec_fmt_bk = record->rec_format;
@@ -3222,7 +3222,7 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, IRSB_SORT impure, UINT
 		record_param* rpb = &request->req_rpb[stream];
 		if (rpb->rpb_relation)
 			VIO_record(tdbb, rpb, MET_current(tdbb, rpb->rpb_relation),
-					   tdbb->tdbb_default);
+					   tdbb->getDefaultPool());
 	}
 }
 
@@ -3707,10 +3707,10 @@ static void save_record(thread_db* tdbb, record_param* rpb)
 				delete rec_copy;
 		}
 		else
-			rpb->rpb_copy = rpb_copy = FB_NEW(*tdbb->tdbb_default) SaveRecordParam(); 
+			rpb->rpb_copy = rpb_copy = FB_NEW(*tdbb->getDefaultPool()) SaveRecordParam(); 
 
 		MOVE_FAST(rpb, rpb_copy->srpb_rpb, sizeof(record_param));
-		Record* rec_copy = FB_NEW_RPT(*tdbb->tdbb_default, size) Record(*tdbb->tdbb_default);
+		Record* rec_copy = FB_NEW_RPT(*tdbb->getDefaultPool(), size) Record(*tdbb->getDefaultPool());
 		rpb_copy->srpb_rpb->rpb_record = rec_copy;
 
 		rec_copy->rec_length = size;

@@ -967,8 +967,8 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 
 	if (request->req_flags & req_active) {
 		if (request->req_fors.getCount()) {
-			JrdMemoryPool* old_pool = tdbb->tdbb_default;
-			tdbb->tdbb_default = request->req_pool;
+			JrdMemoryPool* old_pool = tdbb->getDefaultPool();
+			tdbb->setDefaultPool(request->req_pool);
 			jrd_req* old_request = tdbb->tdbb_request;
 			tdbb->tdbb_request = request;
 			jrd_tra* old_transaction = tdbb->tdbb_transaction;
@@ -981,7 +981,7 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 				if (*ptr)
 					RSE_close(tdbb, *ptr);
 			}
-			tdbb->tdbb_default = old_pool;
+			tdbb->setDefaultPool(old_pool);
 			tdbb->tdbb_request = old_request;
 			tdbb->tdbb_transaction = old_transaction;
 		}
@@ -1130,7 +1130,7 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		if (!node->nod_arg[e_erase_statement])
 			break;
 		const Format* format = MET_current(tdbb, rpb->rpb_relation);
-		Record* record = VIO_record(tdbb, rpb, format, tdbb->tdbb_default);
+		Record* record = VIO_record(tdbb, rpb, format, tdbb->getDefaultPool());
 		rpb->rpb_address = record->rec_data;
 		rpb->rpb_length = format->fmt_length;
 		rpb->rpb_format_number = format->fmt_version;
@@ -1169,7 +1169,7 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 									   rpb,
 									   NULL,
 									   transaction,
-									   reinterpret_cast<blk*>(tdbb->tdbb_default),
+									   reinterpret_cast<blk*>(tdbb->getDefaultPool()),
 									   false)))
 		{
 			ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
@@ -1436,15 +1436,15 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 		const Format* format = (Format*) procedure->prc_output_msg->nod_arg[e_msg_format];
 		out_msg_length = format->fmt_length;
 		temp_buffer =
-			FB_NEW_RPT(*tdbb->tdbb_default, out_msg_length + DOUBLE_ALIGN - 1) str();
+			FB_NEW_RPT(*tdbb->getDefaultPool(), out_msg_length + DOUBLE_ALIGN - 1) str();
 		out_msg =
 			(SCHAR *) FB_ALIGN((U_IPTR) temp_buffer->str_data, DOUBLE_ALIGN);
 	}
 
 /* Save the old pool */
 
-	JrdMemoryPool* old_pool = tdbb->tdbb_default;
-	tdbb->tdbb_default = proc_request->req_pool;
+	JrdMemoryPool* old_pool = tdbb->getDefaultPool();
+	tdbb->setDefaultPool(proc_request->req_pool);
 
 /* Catch errors so we can unwind cleanly */
 
@@ -1477,7 +1477,7 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 
 	}	// try
 	catch (const std::exception&) {
-		tdbb->tdbb_default = old_pool;
+		tdbb->setDefaultPool(old_pool);
 		tdbb->tdbb_request = request;
 		EXE_unwind(tdbb, proc_request);
 		proc_request->req_attachment = NULL;
@@ -1487,7 +1487,7 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 		throw;
 	}
 
-	tdbb->tdbb_default = old_pool;
+	tdbb->setDefaultPool(old_pool);
 	EXE_unwind(tdbb, proc_request);
 	tdbb->tdbb_request = request;
 
@@ -1836,8 +1836,8 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 	// Save the old pool and request to restore on exit
 
-	JrdMemoryPool* old_pool = tdbb->tdbb_default;
-	tdbb->tdbb_default = request->req_pool;
+	JrdMemoryPool* old_pool = tdbb->getDefaultPool();
+	tdbb->setDefaultPool(request->req_pool);
 
 	jrd_req* old_request = tdbb->tdbb_request;
 	tdbb->tdbb_request = request;
@@ -1907,7 +1907,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					&& !variable->vlu_string)
 				{
 					variable->vlu_string =
-						FB_NEW_RPT(*tdbb->tdbb_default,
+						FB_NEW_RPT(*tdbb->getDefaultPool(),
 									  variable->vlu_desc.dsc_length) str();
 					variable->vlu_string->str_length =
 						variable->vlu_desc.dsc_length;
@@ -2331,7 +2331,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 								   On recursive calling we will loose the actual old
 								   request for that invocation of looper. Avoid this. */
 
-								tdbb->tdbb_default = old_pool;
+								tdbb->setDefaultPool(old_pool);
 								tdbb->tdbb_request = old_request;
 								fb_assert(request->req_caller == old_request);
 								request->req_caller = NULL;
@@ -2362,7 +2362,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 								   terminating the processing. */
 
 								catch_disabled = false;
-								tdbb->tdbb_default = request->req_pool;
+								tdbb->setDefaultPool(request->req_pool);
 								tdbb->tdbb_request = request;
 								fb_assert(request->req_caller == NULL);
 								request->req_caller = old_request;
@@ -2840,7 +2840,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	}
 
 	request->req_next = node;
-	tdbb->tdbb_default = old_pool;
+	tdbb->setDefaultPool(old_pool);
 	tdbb->tdbb_transaction = (tdbb->tdbb_request = old_request) ?
 		old_request->req_transaction : NULL;
 	fb_assert(request->req_caller == old_request);
@@ -2933,7 +2933,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 									   org_rpb,
 									   NULL,
 									   transaction,
-									   reinterpret_cast<blk*>(tdbb->tdbb_default),
+									   reinterpret_cast<blk*>(tdbb->getDefaultPool()),
 									   false)))
 		{
 			ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
@@ -3113,7 +3113,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
    original record to the new record. */
 
 	const Format* new_format = MET_current(tdbb, new_rpb->rpb_relation);
-	Record* new_record = VIO_record(tdbb, new_rpb, new_format, tdbb->tdbb_default);
+	Record* new_record = VIO_record(tdbb, new_rpb, new_format, tdbb->getDefaultPool());
 	new_rpb->rpb_address = new_record->rec_data;
 	new_rpb->rpb_length = new_format->fmt_length;
 	new_rpb->rpb_format_number = new_format->fmt_version;
@@ -3122,7 +3122,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	Record* org_record = org_rpb->rpb_record;
 	if (!org_record) {
 		org_record =
-			VIO_record(tdbb, org_rpb, new_format, tdbb->tdbb_default);
+			VIO_record(tdbb, org_rpb, new_format, tdbb->getDefaultPool());
 		org_format = org_record->rec_format;
 		org_rpb->rpb_address = org_record->rec_data;
 		org_rpb->rpb_length = org_format->fmt_length;
@@ -3981,7 +3981,7 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
    to "missing." */
 
 	const Format* format = MET_current(tdbb, relation);
-	record = VIO_record(tdbb, rpb, format, tdbb->tdbb_default);
+	record = VIO_record(tdbb, rpb, format, tdbb->getDefaultPool());
 
 	rpb->rpb_address = record->rec_data;
 	rpb->rpb_length = format->fmt_length;

@@ -408,7 +408,7 @@ DSC *RNG_begin(jrd_nod* node, impure_value* impure)
 
 /* allocate the range block and move the event name into it */
 
-	refresh_range = FB_NEW_RPT(*tdbb->tdbb_default, p - event_name + 1) RefreshRange();
+	refresh_range = FB_NEW_RPT(*tdbb->getDefaultPool(), p - event_name + 1) RefreshRange();
 	refresh_range->rng_event_length = p - event_name;
 	strcpy(refresh_range->rng_event, event_name);
 
@@ -428,7 +428,7 @@ DSC *RNG_begin(jrd_nod* node, impure_value* impure)
 
 	refresh_range->rng_number = range_number;
 	refresh_ranges =
-		ALL_vector(tdbb->tdbb_default, &request->req_refresh_ranges,
+		ALL_vector(tdbb->getDefaultPool(), &request->req_refresh_ranges,
 				   EXTEND(range_number));
 	refresh_ranges->vec_object[range_number] = (BLK) refresh_range;
 

@@ -474,7 +474,7 @@ void DFW_perform_work(jrd_tra* transaction)
 		return;
 	}
 
-	tdbb->tdbb_default = transaction->tra_pool;
+	tdbb->setDefaultPool(transaction->tra_pool);
 
 /* Loop for as long as any of the deferred work routines says that it has
    more to do.  A deferred work routine should be able to deal with any
@@ -1583,7 +1583,7 @@ static bool create_index(	thread_db*	tdbb,
 				}
 				if (IDX.RDB$INDEX_ID && IDX.RDB$STATISTICS < 0.0)
 				{
-					SelectivityList selectivity(*tdbb->tdbb_default);
+					SelectivityList selectivity(*tdbb->getDefaultPool());
 					const USHORT id = IDX.RDB$INDEX_ID - 1;
 					IDX_statistics(tdbb, relation, id, selectivity);
 					DFW_update_index(work->dfw_name, id, selectivity);
@@ -1773,7 +1773,7 @@ static bool create_index(	thread_db*	tdbb,
 		}
 
 		fb_assert(work->dfw_id == dbb->dbb_max_idx);
-		SelectivityList selectivity(*tdbb->tdbb_default);
+		SelectivityList selectivity(*tdbb->getDefaultPool());
 		IDX_create_index(tdbb, relation, &idx, work->dfw_name,
 						 &work->dfw_id, transaction, selectivity);
 		fb_assert(work->dfw_id == idx.idx_id);
@@ -1885,7 +1885,7 @@ static bool create_relation(thread_db*	tdbb,
 		/* Take a relation lock on rel id -1 before actually
 		   generating a relation id. */
 
-		work->dfw_lock = lock = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(SLONG)) Lock;
+		work->dfw_lock = lock = FB_NEW_RPT(*tdbb->getDefaultPool(), sizeof(SLONG)) Lock;
 		lock->lck_dbb = dbb;
 		lock->lck_length = sizeof(SLONG);
 		lock->lck_key.lck_long = -1;
@@ -3244,22 +3244,22 @@ static void get_procedure_dependencies(DeferredWork* work)
 
 	if (procedure && !blob_id.isEmpty())
 	{
-		JrdMemoryPool* old_pool = tdbb->tdbb_default;
+		JrdMemoryPool* old_pool = tdbb->getDefaultPool();
 		/* Nickolay Samofatov: allocate statement memory pool... */
-		tdbb->tdbb_default = JrdMemoryPool::createPool();
+		tdbb->setDefaultPool(JrdMemoryPool::createPool());
 		jrd_req* request;
 		MET_get_dependencies(tdbb, NULL, NULL, NULL, &blob_id, &request,
 							NULL, work->dfw_name, obj_procedure);
 		if (request)
 			CMP_release(tdbb, request);
 		else
-			JrdMemoryPool::deletePool(tdbb->tdbb_default);
+			JrdMemoryPool::deletePool(tdbb->getDefaultPool());
 	
 #ifdef DEV_BUILD
 		MET_verify_cache(tdbb);
 #endif
 
-		tdbb->tdbb_default = old_pool;
+		tdbb->setDefaultPool(old_pool);
 	}
 }
 
@@ -3302,18 +3302,18 @@ static void get_trigger_dependencies( DeferredWork* work)
 
 	if (relation && !blob_id.isEmpty())
 	{
-		JrdMemoryPool* old_pool = tdbb->tdbb_default;
+		JrdMemoryPool* old_pool = tdbb->getDefaultPool();
 		/* Nickolay Samofatov: allocate statement memory pool... */
-		tdbb->tdbb_default = JrdMemoryPool::createPool();
+		tdbb->setDefaultPool(JrdMemoryPool::createPool());
 		jrd_req* request;
 		MET_get_dependencies(tdbb, relation, NULL, NULL, &blob_id,
 							 &request, NULL, work->dfw_name, obj_trigger);
 		if (request)
 			CMP_release(tdbb, request);
 		else
-			JrdMemoryPool::deletePool(tdbb->tdbb_default);
+			JrdMemoryPool::deletePool(tdbb->getDefaultPool());
 			
-		tdbb->tdbb_default = old_pool;
+		tdbb->setDefaultPool(old_pool);
 	}
 }
 
@@ -3685,7 +3685,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 					/* Make a temporary field block */
 
-					TemporaryField* tfb = FB_NEW(*tdbb->tdbb_default) TemporaryField;
+					TemporaryField* tfb = FB_NEW(*tdbb->getDefaultPool()) TemporaryField;
 					tfb->tfb_next = stack;
 					stack = tfb;
 
@@ -3730,7 +3730,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 					if (external_flag)
 					{
-						tfb = FB_NEW(*tdbb->tdbb_default) TemporaryField;
+						tfb = FB_NEW(*tdbb->getDefaultPool()) TemporaryField;
 						tfb->tfb_next = external;
 						external = tfb;
 						fb_assert(FLD.RDB$EXTERNAL_TYPE <= MAX_UCHAR);

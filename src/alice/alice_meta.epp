@@ -27,7 +27,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: alice_meta.epp,v 1.39 2004-07-02 10:02:46 brodsom Exp $
+ *	$Id: alice_meta.epp,v 1.40 2004-08-16 12:28:13 alexpeshkoff Exp $
  */
 
 #include "firebird.h"
@@ -250,7 +250,7 @@ static alice_str* alloc_string(const TEXT** ptr)
 	const TEXT* p = *ptr;
 
 	USHORT length = (USHORT) *p++;
-	alice_str* string = FB_NEW_RPT(*tdgbl->ALICE_default_pool, length + 1) alice_str;
+	alice_str* string = FB_NEW_RPT(*tdgbl->getDefaultPool(), length + 1) alice_str;
 
 	TEXT* q = (TEXT *) string->str_data;
 	while (length--) {
@@ -354,10 +354,10 @@ static TDR get_description(ISC_QUAD* blob_id)
 			id = gds__vax_integer(reinterpret_cast<const UCHAR*>(p), id_length);
 			p += id_length;
 			if (!trans) {
-				trans = ptr = FB_NEW(*tdgbl->ALICE_default_pool) tdr;
+				trans = ptr = FB_NEW(*tdgbl->getDefaultPool()) tdr;
 			}
 			else {
-				ptr->tdr_next = FB_NEW(*tdgbl->ALICE_default_pool) tdr;
+				ptr->tdr_next = FB_NEW(*tdgbl->getDefaultPool()) tdr;
 				ptr = ptr->tdr_next;
 			}
 			ptr->tdr_host_site = host_site;
@@ -422,7 +422,7 @@ static void parse_fullpath(TDR trans)
 		if (*q) {
 			trans->tdr_filename = q + 1;
 
-			trans->tdr_remote_site = FB_NEW_RPT(*tdgbl->ALICE_default_pool, q - p + 1) alice_str;
+			trans->tdr_remote_site = FB_NEW_RPT(*tdgbl->getDefaultPool(), q - p + 1) alice_str;
 			strncpy((char*) trans->tdr_remote_site->str_data, (char*) p, q - p);
 			trans->tdr_remote_site->str_data[q - p] = '\0';
 		}
@@ -453,7 +453,7 @@ static void parse_fullpath(TDR trans)
 		++p;
 
 		if (length) {
-			trans->tdr_remote_site = FB_NEW_RPT(*tdgbl->ALICE_default_pool, length + 1) alice_str;
+			trans->tdr_remote_site = FB_NEW_RPT(*tdgbl->getDefaultPool(), length + 1) alice_str;
 			TEXT* q = (TEXT *) trans->tdr_remote_site->str_data;
 			while (length--)
 				*q++ = *p++;

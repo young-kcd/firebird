@@ -361,8 +361,8 @@ dsql_ctx* PASS1_make_context(dsql_req* request, dsql_nod* relation_node)
 	}
 
 	// Set up context block.
-	dsql_ctx* context = FB_NEW(*tdsql->tsql_default) 
-		dsql_ctx(*tdsql->tsql_default);
+	dsql_ctx* context = FB_NEW(*tdsql->getDefaultPool()) 
+		dsql_ctx(*tdsql->getDefaultPool());
 	context->ctx_relation = relation;
 	context->ctx_procedure = procedure;
 	context->ctx_request = request;
@@ -466,7 +466,7 @@ dsql_ctx* PASS1_make_context(dsql_req* request, dsql_nod* relation_node)
 			if (count)
 			{
 				// Initialize this stack variable, and make it look like a node
-				std::auto_ptr<dsql_nod> desc_node(FB_NEW_RPT(*tdsql->tsql_default, 0) dsql_nod);
+				std::auto_ptr<dsql_nod> desc_node(FB_NEW_RPT(*tdsql->getDefaultPool(), 0) dsql_nod);
 
 				dsql_nod* const* input = context->ctx_proc_inputs->nod_arg;
 				for (dsql_fld* field = procedure->prc_inputs;
@@ -2991,11 +2991,11 @@ static void pass1_blob( dsql_req* request, dsql_nod* input)
 	request->req_type = (input->nod_type == nod_get_segment) ?
 		REQ_GET_SEGMENT : REQ_PUT_SEGMENT;
 		 
-	dsql_blb* blob = FB_NEW(*tdsql->tsql_default) dsql_blb;
+	dsql_blb* blob = FB_NEW(*tdsql->getDefaultPool()) dsql_blb;
 	request->req_blob = blob;
 	blob->blb_field = field;
 	blob->blb_open_in_msg = request->req_send;
-	blob->blb_open_out_msg = FB_NEW(*tdsql->tsql_default) dsql_msg;
+	blob->blb_open_out_msg = FB_NEW(*tdsql->getDefaultPool()) dsql_msg;
 	blob->blb_segment_msg = request->req_receive;
 
 // Create a parameter for the blob segment 
@@ -3137,7 +3137,7 @@ static dsql_nod* pass1_collate( dsql_req* request, dsql_nod* sub1,
 	tsql* tdsql = DSQL_get_thread_data();
 
 	dsql_nod* node = MAKE_node(nod_cast, e_cast_count);
-	dsql_fld* field = FB_NEW_RPT(*tdsql->tsql_default, 1) dsql_fld;
+	dsql_fld* field = FB_NEW_RPT(*tdsql->getDefaultPool(), 1) dsql_fld;
 	field->fld_name[0] = 0;
 	node->nod_arg[e_cast_target] = (dsql_nod*) field;
 	node->nod_arg[e_cast_source] = sub1;
@@ -4852,7 +4852,7 @@ static dsql_nod* pass1_make_derived_field(dsql_req* request, tsql* tdsql,
 				DEV_BLKCHK(field, dsql_type_fld);
 
 				// Copy fieldname to a new string.
-				dsql_str* alias = FB_NEW_RPT(*tdsql->tsql_default, strlen(field->fld_name)) dsql_str;
+				dsql_str* alias = FB_NEW_RPT(*tdsql->getDefaultPool(), strlen(field->fld_name)) dsql_str;
 				strcpy(alias->str_data, field->fld_name);
 				alias->str_length = strlen(field->fld_name);
 			
@@ -4870,7 +4870,7 @@ static dsql_nod* pass1_make_derived_field(dsql_req* request, tsql* tdsql,
 			{
 				// Copy aliasname to a new string.
 				const dsql_str* alias_alias = (dsql_str*) select_item->nod_arg[e_alias_alias];
-				dsql_str* alias = FB_NEW_RPT(*tdsql->tsql_default, strlen(alias_alias->str_data)) dsql_str;
+				dsql_str* alias = FB_NEW_RPT(*tdsql->getDefaultPool(), strlen(alias_alias->str_data)) dsql_str;
 				strcpy(alias->str_data, alias_alias->str_data);
 				alias->str_length = strlen(alias_alias->str_data);
 			
@@ -5081,8 +5081,8 @@ static dsql_nod* pass1_alias_list(dsql_req* request, dsql_nod* alias_list)
 
 	// make up a dummy context to hold the resultant relation.
 	tsql* tdsql = DSQL_get_thread_data();
-	dsql_ctx* new_context = FB_NEW(*tdsql->tsql_default) 
-		dsql_ctx(*tdsql->tsql_default);
+	dsql_ctx* new_context = FB_NEW(*tdsql->getDefaultPool()) 
+		dsql_ctx(*tdsql->getDefaultPool());
 	new_context->ctx_context = context->ctx_context;
 	new_context->ctx_relation = relation;
 
@@ -5095,7 +5095,7 @@ static dsql_nod* pass1_alias_list(dsql_req* request, dsql_nod* alias_list)
 		alias_length += static_cast < USHORT > (((dsql_str*) *arg)->str_length);
 	}
 
-	dsql_str* alias = FB_NEW_RPT(*tdsql->tsql_default, alias_length) dsql_str;
+	dsql_str* alias = FB_NEW_RPT(*tdsql->getDefaultPool(), alias_length) dsql_str;
 	alias->str_length = alias_length;
 
 	TEXT* p = new_context->ctx_alias = (TEXT*) alias->str_data;
@@ -5207,7 +5207,7 @@ static dsql_str* pass1_alias_concat(const dsql_str* input1, const dsql_str* inpu
 	if (input2) {
 		length += input2->str_length;
 	}
-	dsql_str* output = FB_NEW_RPT(*tdsql->tsql_default, length) dsql_str;
+	dsql_str* output = FB_NEW_RPT(*tdsql->getDefaultPool(), length) dsql_str;
 	output->str_length = length;
 	TEXT* ptr = output->str_data;
 	if (input1) {
@@ -5434,8 +5434,8 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 					isc_arg_gds, isc_random, isc_arg_string, "WITH LOCK", 0);
 		}
 
-		parent_context = FB_NEW(*tdsql->tsql_default) 
-			dsql_ctx(*tdsql->tsql_default);
+		parent_context = FB_NEW(*tdsql->getDefaultPool()) 
+			dsql_ctx(*tdsql->getDefaultPool());
 		parent_context->ctx_context = request->req_context_number++;
 		parent_context->ctx_scope_level = request->req_scope_level;
 		aggregate = MAKE_node(nod_aggregate, e_agg_count);
@@ -6067,8 +6067,8 @@ static dsql_nod* pass1_union( dsql_req* request, dsql_nod* input,
 	} // end scope block
 
 	// generate a context for the union itself.
-	dsql_ctx* union_context = FB_NEW(*tdsql->tsql_default) 
-		dsql_ctx(*tdsql->tsql_default);
+	dsql_ctx* union_context = FB_NEW(*tdsql->getDefaultPool()) 
+		dsql_ctx(*tdsql->getDefaultPool());
 	union_context->ctx_context = request->req_context_number++;
 
 	// generate the list of fields to select.
@@ -6142,7 +6142,7 @@ static dsql_nod* pass1_union( dsql_req* request, dsql_nod* input,
 	    dsql_nod* map_node = MAKE_node(nod_map, e_map_count);
 		*ptr = map_node;
 		map_node->nod_arg[e_map_context] = (dsql_nod*) union_context;
-		dsql_map* map = FB_NEW(*tdsql->tsql_default) dsql_map;
+		dsql_map* map = FB_NEW(*tdsql->getDefaultPool()) dsql_map;
 		map_node->nod_arg[e_map_map] = (dsql_nod*) map;
 
 		// set up the dsql_map* between the sub-rses and the union context.
@@ -6289,7 +6289,7 @@ static void pass1_union_auto_cast(dsql_nod* input, const dsc& desc,
 						else {
 							tsql* tdsql = DSQL_get_thread_data();
 							cast_node = MAKE_node(nod_cast, e_cast_count);
-							dsql_fld* afield = FB_NEW_RPT(*tdsql->tsql_default, 0) dsql_fld;
+							dsql_fld* afield = FB_NEW_RPT(*tdsql->getDefaultPool(), 0) dsql_fld;
 							cast_node->nod_arg[e_cast_target] = (dsql_nod*) afield;
 							// We want to leave the ALIAS node on his place, because a UNION
 							// uses the select_items from the first sub-rse to determine the
@@ -6307,7 +6307,7 @@ static void pass1_union_auto_cast(dsql_nod* input, const dsc& desc,
 								// Create new node for alias and copy fieldname
 								alias_node = MAKE_node(nod_alias, e_alias_count);
 								// Copy fieldname to a new string.
-								dsql_str* str_alias = FB_NEW_RPT(*tdsql->tsql_default, 
+								dsql_str* str_alias = FB_NEW_RPT(*tdsql->getDefaultPool(), 
 									strlen(sub_field->fld_name)) dsql_str;
 								strcpy(str_alias->str_data, sub_field->fld_name);
 								str_alias->str_length = strlen(sub_field->fld_name);
@@ -6646,7 +6646,7 @@ static dsql_nod* post_map( dsql_nod* node, dsql_ctx* context)
 			break;
 
 	if (!map) {
-		map = FB_NEW(*tdsql->tsql_default) dsql_map;
+		map = FB_NEW(*tdsql->getDefaultPool()) dsql_map;
 		map->map_position = (USHORT) count;
 		map->map_next = context->ctx_map;
 		context->ctx_map = map;

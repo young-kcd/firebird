@@ -361,7 +361,7 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 	if (transaction->tra_flags & TRA_invalidated)
 		ERR_post(isc_trans_invalid, 0);
 
-	tdbb->tdbb_default = transaction->tra_pool;
+	tdbb->setDefaultPool(transaction->tra_pool);
 
 /* Perform any meta data work deferred */
 
@@ -758,8 +758,8 @@ void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, ResourceList& res
  **************************************/
 	SET_TDBB(tdbb);
 
-	JrdMemoryPool* const old_pool = tdbb->tdbb_default;
-	tdbb->tdbb_default = transaction->tra_pool;
+	JrdMemoryPool* const old_pool = tdbb->getDefaultPool();
+	tdbb->setDefaultPool(transaction->tra_pool);
 
 	for (Resource* rsc = resources.begin(); rsc < resources.end(); rsc++) 
 	{
@@ -793,7 +793,7 @@ void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, ResourceList& res
 		}
 	}
 
-	tdbb->tdbb_default = old_pool;
+	tdbb->setDefaultPool(old_pool);
 }
 
 
@@ -939,9 +939,9 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 		ERR_post(isc_read_only_database, 0);
 
 
-	tdbb->tdbb_default = JrdMemoryPool::createPool();
-	jrd_tra* trans = FB_NEW_RPT(*tdbb->tdbb_default, 0) jrd_tra(*tdbb->tdbb_default);
-	trans->tra_pool = tdbb->tdbb_default;
+	tdbb->setDefaultPool(JrdMemoryPool::createPool());
+	jrd_tra* trans = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) jrd_tra(*tdbb->getDefaultPool());
+	trans->tra_pool = tdbb->getDefaultPool();
 	trans->tra_number = gds__vax_integer(id, length);
 	trans->tra_flags |= TRA_prepared | TRA_reconnected | TRA_write;
 
@@ -1095,7 +1095,7 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
  **************************************/
 	SET_TDBB(tdbb);
 
-	tdbb->tdbb_default = transaction->tra_pool;
+	tdbb->setDefaultPool(transaction->tra_pool);
 
 /* Check in with external file system */
 
@@ -1424,9 +1424,9 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
    transaction block first, sieze relation locks, the go ahead and
    make up the real transaction block. */
 
-	tdbb->tdbb_default = JrdMemoryPool::createPool();
-	jrd_tra* temp = FB_NEW_RPT(*tdbb->tdbb_default, 0) jrd_tra(*tdbb->tdbb_default);
-	temp->tra_pool = tdbb->tdbb_default;
+	tdbb->setDefaultPool(JrdMemoryPool::createPool());
+	jrd_tra* temp = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) jrd_tra(*tdbb->getDefaultPool());
+	temp->tra_pool = tdbb->getDefaultPool();
 	transaction_options(tdbb, temp, reinterpret_cast<const UCHAR*>(tpb),
 						tpb_length);
 
@@ -1475,9 +1475,9 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
 
 	jrd_tra* trans;
 	if (temp->tra_flags & TRA_read_committed)
-		trans = FB_NEW_RPT(*tdbb->tdbb_default, 0) jrd_tra(*tdbb->tdbb_default);
+		trans = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) jrd_tra(*tdbb->getDefaultPool());
 	else {
-		trans = FB_NEW_RPT(*tdbb->tdbb_default, (number - base + TRA_MASK) / 4) jrd_tra(*tdbb->tdbb_default);
+		trans = FB_NEW_RPT(*tdbb->getDefaultPool(), (number - base + TRA_MASK) / 4) jrd_tra(*tdbb->getDefaultPool());
 	}
 
 	trans->tra_pool = temp->tra_pool;
@@ -1925,7 +1925,7 @@ Lock* TRA_transaction_lock(thread_db* tdbb, BLK object)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	Lock* lock = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(SLONG)) Lock();
+	Lock* lock = FB_NEW_RPT(*tdbb->getDefaultPool(), sizeof(SLONG)) Lock();
 	lock->lck_type = LCK_tra;
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 	lock->lck_length = sizeof(SLONG);

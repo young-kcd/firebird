@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.99 2004-08-02 19:49:12 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.100 2004-08-16 12:28:18 alexpeshkoff Exp $ 
  */
 
 /*
@@ -1922,7 +1922,7 @@ void EVL_make_value(thread_db* tdbb, const dsc* desc, impure_value* value)
 		}
 
 		if (!string) {
-			string = value->vlu_string = FB_NEW_RPT(*tdbb->tdbb_default, length) str();
+			string = value->vlu_string = FB_NEW_RPT(*tdbb->getDefaultPool(), length) str();
 			string->str_length = length;
 		}
 
@@ -1974,11 +1974,11 @@ bool EVL_mb_matches(thread_db* tdbb,
 	USHORT len1 = obj.to_wc(NULL, 0, p1, l1, &err_code, &err_pos);
 	USHORT len2 = obj.to_wc(NULL, 0, p2, l2, &err_code, &err_pos);
 	if (len1 > sizeof(buffer1)) {
-		buf1 = FB_NEW_RPT(*tdbb->tdbb_default, len1) str();
+		buf1 = FB_NEW_RPT(*tdbb->getDefaultPool(), len1) str();
 		pp1 = (UCS2_CHAR *) buf1->str_data;
 	}
 	if (len2 > sizeof(buffer2)) {
-		buf2 = FB_NEW_RPT(*tdbb->tdbb_default, len2) str();
+		buf2 = FB_NEW_RPT(*tdbb->getDefaultPool(), len2) str();
 		pp2 = (UCS2_CHAR *) buf2->str_data;
 	}
 
@@ -2033,7 +2033,7 @@ bool EVL_mb_sleuth_check(thread_db* tdbb,
 
 	USHORT len1 = obj.to_wc(NULL, 0, search, search_bytes, &err_code, &err_pos);
 	if (len1 > sizeof(buffer1)) {
-		buf1 = FB_NEW_RPT(*tdbb->tdbb_default, len1) str();
+		buf1 = FB_NEW_RPT(*tdbb->getDefaultPool(), len1) str();
 		pp1 = (UCS2_CHAR *) buf1->str_data;
 	}
 
@@ -2087,11 +2087,11 @@ USHORT EVL_mb_sleuth_merge(thread_db* tdbb,
 	USHORT len1 = obj.to_wc(NULL, 0, match, match_bytes, &err_code, &err_pos);
 	USHORT len2 = obj.to_wc(NULL, 0, control, control_bytes, &err_code, &err_pos);
 	if (len1 > sizeof(buffer1)) {
-		buf1 = FB_NEW_RPT(*tdbb->tdbb_default, len1) str();
+		buf1 = FB_NEW_RPT(*tdbb->getDefaultPool(), len1) str();
 		pp1 = (UCS2_CHAR *) buf1->str_data;
 	}
 	if (len2 > sizeof(buffer2)) {
-		buf2 = FB_NEW_RPT(*tdbb->tdbb_default, len2) str();
+		buf2 = FB_NEW_RPT(*tdbb->getDefaultPool(), len2) str();
 		pp2 = (UCS2_CHAR *) buf2->str_data;
 	}
 
@@ -3078,7 +3078,7 @@ static dsc* cast(thread_db* tdbb, const dsc* value, const jrd_nod* node, impure_
 		}
 
 		if (!string) {
-			string = impure->vlu_string = FB_NEW_RPT(*tdbb->tdbb_default, length) str();
+			string = impure->vlu_string = FB_NEW_RPT(*tdbb->getDefaultPool(), length) str();
 			string->str_length = length;
 		}
 
@@ -4897,7 +4897,7 @@ static dsc* substring(
 		else
 		{
 			const USHORT bufflen = MAX(BUFFER_LARGE, length);
-			str* temp_str = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(UCHAR) * bufflen) str();
+			str* temp_str = FB_NEW_RPT(*tdbb->getDefaultPool(), sizeof(UCHAR) * bufflen) str();
 			UCHAR *buffer = temp_str->str_data;
 		
 			USHORT datalen = 0;
