@@ -197,7 +197,7 @@ void ERR_duplicate_error(IDX_E	code,
 	switch (code) {
 	case idx_e_keytoobig:
 		ERR_post(isc_imp_exc, isc_arg_gds, isc_keytoobig,
-				 isc_arg_string, ERR_cstring(index_name), 0);
+				 isc_arg_string, index_name, 0);
 		break;
 
 	case idx_e_conversion:
@@ -205,13 +205,13 @@ void ERR_duplicate_error(IDX_E	code,
 		break;
 
 	case idx_e_foreign_target_doesnt_exist:
-		ERR_post(isc_foreign_key, isc_arg_string, ERR_cstring(constraint_name),
+		ERR_post(isc_foreign_key, isc_arg_string, constraint_name,
 			 	 isc_arg_string, relation->rel_name, 
 			 	 isc_arg_gds, isc_foreign_key_target_doesnt_exist, 0);
 		break;
 
 	case idx_e_foreign_references_present:
-		ERR_post(isc_foreign_key, isc_arg_string, ERR_cstring(constraint_name),
+		ERR_post(isc_foreign_key, isc_arg_string, constraint_name,
 			 	 isc_arg_string, relation->rel_name,
 			 	 isc_arg_gds, isc_foreign_key_references_present, 0);
 		break;
@@ -219,10 +219,10 @@ void ERR_duplicate_error(IDX_E	code,
 	default:
 		if (constraint[0])
 			ERR_post(isc_unique_key_violation,
-					 isc_arg_string, ERR_cstring(constraint_name),
+					 isc_arg_string, constraint_name,
 					 isc_arg_string, relation->rel_name, 0);
 		else
-			ERR_post(isc_no_dup, isc_arg_string, ERR_cstring(index_name), 0);
+			ERR_post(isc_no_dup, isc_arg_string, index_name, 0);
 	}
 }
 #endif
