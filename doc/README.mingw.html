@@ -11,7 +11,7 @@
 <BODY>
 <H2>MINGW Notes</H2>
 <hr/>
-Date: April 8 2003<br>
+Last Update: June 4 2003<br>
 Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 
 <h3>0.-Introduction</h3>
@@ -21,8 +21,9 @@ Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 
 <h3>1.-TODO</h3>
 <ul>
-<li>Add rc files to the build of fbserver, fb_inet_server and ibguard (with windres).</li>
-<li>Support for ms SEH, now _try is a no-op.</li>
+<li>Build of fb_util.dll</li>
+<li>Analyze thread issue in blocking thread (classic server).
+<li>Support for ms SEH (superserver).</li>
 <li>Installer definition</li>
 </ul>
 
@@ -58,8 +59,12 @@ Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 <h3>3.- PATCHES TO BUILD FILES</h3>
 
 <ul>
-<li>The lib_fb_udf target in Make.in.extlib cannot be built yet. Remove it from
-dependencies list for 'all'.</li>
+<li>The lib_fb_udf target in Make.in.extlib cannot be built yet, so it must be removed.<br>
+Edit the file Makefile.in.extlib in the builds/posix directory and change the line <br>
+all: lib_ib_udf lib_ib_util lib_fb_util<br>
+to<br>
+all: lib_ib_udf lib_ib_util <br>
+</li>
 </ul>
 
 <h3>4.- BUILD PROCESS</h3>
@@ -76,6 +81,9 @@ The valid switches for autogen are<br>
 <li>Make the build. For instance if you want to get compiler messages isolated from make log<br> make > make.log 2>comp.log</li>
 <li>After the build finish, the firebird directory with the binaries is created as gen/firebird.</li> 
 </ol>
+<ul>
+<li>To make a clean build from scratch after making changes to the code use the clean.sh script</li>
+</ul>
 
 <p>BUILD NOTE:</p>
 <p>There is a bug in mingw (3.2) related with msvc format for 64bit integers. When the I64 format is used, the compiler throws warnings of two types:</p>
