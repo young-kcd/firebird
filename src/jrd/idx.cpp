@@ -616,7 +616,7 @@ void IDX_garbage_collect(thread_db*			tdbb,
 				/* Cancel index if there are duplicates in the remaining records */
 
 				RecordStack::iterator stack2(stack1);
-				for (; stack2; ++stack2)
+				for (++stack2; stack2; ++stack2)
 				{
 					Record* rec2 = stack2.object();
 					if (rec2->rec_number == rec1->rec_number) {
@@ -644,7 +644,7 @@ void IDX_garbage_collect(thread_db*			tdbb,
 
 				BTR_remove(tdbb, &window, &insertion);
 				root = (index_root_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_root);
-				if (++stack1)
+				if (stack1)
 					BTR_description(rpb->rpb_relation, root, &idx, i);
 			}
 		}
