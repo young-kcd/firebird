@@ -76,7 +76,7 @@ public:
 private:
 	ConfigImpl();
 
-	const static ConfigEntry entries[];
+	static const ConfigEntry entries[];
 	const char *root_dir;
 	ConfigValue *values;
 
