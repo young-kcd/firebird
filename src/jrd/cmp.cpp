@@ -1363,10 +1363,17 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 			    rc_len = DSC_convert_to_text_length(desc1.dsc_dtype);
 				desc->dsc_ttype = ttype_ascii;
 			}
-			if (desc2.dsc_dtype <= dtype_varying)
+			if (desc2.dsc_dtype <= dtype_varying) {
 				rc_len += DSC_string_length (&desc2);
-			else
+				if (((desc->dsc_ttype == CS_ASCII) || (desc->dsc_ttype == CS_NONE)) &&
+					(desc2.dsc_ttype != CS_NONE)) 
+				{
+					desc->dsc_ttype = desc2.dsc_ttype;
+				}
+			}
+			else {
 				rc_len += DSC_convert_to_text_length(desc2.dsc_dtype);
+			}
 			// error() is a local routine in par.cpp, so we use plain ERR_post
 			if (rc_len > MAX_FORMAT_SIZE)
 				ERR_post(isc_imp_exc, isc_arg_gds, isc_blktoobig, 0);
