@@ -39,7 +39,7 @@ USHORT CVGB_gb2312_to_unicode(CSCONVERT obj, UCS2_CHAR *dest_ptr, USHORT dest_le
 	assert(err_code != NULL);
 	assert(err_position != NULL);
 	assert(obj != NULL);
-	assert(obj->csconvert_convert == CVGB_gb2312_to_unicode);
+	assert(obj->csconvert_convert == (FPTR_SHORT) CVGB_gb2312_to_unicode);
 	assert(obj->csconvert_datatable != NULL);
 	assert(obj->csconvert_misc != NULL);
 
@@ -113,7 +113,7 @@ USHORT CVGB_unicode_to_gb2312(CSCONVERT obj, UCHAR *gb_str, USHORT gb_len, UCS2_
 	assert(err_code != NULL);
 	assert(err_position != NULL);
 	assert(obj != NULL);
-	assert(obj->csconvert_convert == CVGB_unicode_to_gb2312);
+	assert(obj->csconvert_convert == (FPTR_SHORT) CVGB_unicode_to_gb2312);
 	assert(obj->csconvert_datatable != NULL);
 	assert(obj->csconvert_misc != NULL);
 

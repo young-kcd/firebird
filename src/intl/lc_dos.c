@@ -601,7 +601,7 @@ TEXTTYPE_ENTRY(CYRL_c2_init)
 
 
 
-STATIC USHORT fam1_to_upper(TEXTTYPE obj, BYTE ch)
+USHORT fam1_to_upper(TEXTTYPE obj, BYTE ch)
 {
 	return (LOCALE_UPPER(ch));
 }
@@ -612,7 +612,7 @@ STATIC USHORT fam1_to_upper(TEXTTYPE obj, BYTE ch)
 /*
  *	Returns -1 if output buffer was too small
  */
-STATIC SSHORT fam1_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr)
+SSHORT fam1_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr)
 {
 	BYTE *p;
 	assert(pStr != NULL);
@@ -634,7 +634,7 @@ STATIC SSHORT fam1_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iO
 
 
 
-STATIC USHORT fam1_to_lower(TEXTTYPE obj, BYTE ch)
+USHORT fam1_to_lower(TEXTTYPE obj, BYTE ch)
 {
 	return (LOCALE_LOWER(ch));
 }

@@ -39,7 +39,7 @@ USHORT CVBIG5_big5_to_unicode(CSCONVERT obj, UCS2_CHAR *dest_ptr, USHORT dest_le
 	assert(err_code != NULL);
 	assert(err_position != NULL);
 	assert(obj != NULL);
-	assert(obj->csconvert_convert == CVBIG5_big5_to_unicode);
+	assert(obj->csconvert_convert == (FPTR_SHORT) CVBIG5_big5_to_unicode);
 	assert(obj->csconvert_datatable != NULL);
 	assert(obj->csconvert_misc != NULL);
 
@@ -113,7 +113,7 @@ USHORT CVBIG5_unicode_to_big5(CSCONVERT obj, UCHAR *big5_str, USHORT big5_len, U
 	assert(err_code != NULL);
 	assert(err_position != NULL);
 	assert(obj != NULL);
-	assert(obj->csconvert_convert == CVBIG5_unicode_to_big5);
+	assert(obj->csconvert_convert == (FPTR_SHORT) CVBIG5_unicode_to_big5);
 	assert(obj->csconvert_datatable != NULL);
 	assert(obj->csconvert_misc != NULL);
 
