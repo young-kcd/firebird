@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.73 2003-09-08 20:23:41 skidder Exp $
+$Id: inet.cpp,v 1.74 2003-09-11 18:59:34 brodsom Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -225,7 +225,7 @@ typedef int socklen_t;
 
 SLONG INET_remote_buffer;
 SLONG INET_max_data;
-static BOOLEAN first_time = TRUE;
+static bool first_time = true;
 
 /*
 #define DEBUG	1
@@ -339,7 +339,7 @@ static int		check_host(PORT, TEXT *, TEXT *, struct passwd *);
 #else
 static int		check_host(PORT, TEXT *, TEXT *);
 #endif
-static BOOLEAN	check_proxy(PORT, TEXT *, TEXT *);
+static bool		check_proxy(PORT, TEXT *, TEXT *);
 #endif
 static void		cleanup_port(PORT);
 static void		disconnect(PORT);
@@ -410,7 +410,7 @@ static void		unhook_disconnected_ports(PORT);
 
 static void		unhook_port(PORT, PORT);
 static int		xdrinet_create(XDR *, PORT, UCHAR *, USHORT, enum xdr_op);
-static bool_t	xdrinet_endofrecord(XDR *, int);
+static bool_t	xdrinet_endofrecord(XDR *, bool_t);
 
 
 static XDR::xdr_ops inet_ops =
@@ -561,13 +561,13 @@ extern int errno;
 extern "C" {
 
 static MUTX_T	port_mutex;
-static BOOLEAN	port_mutex_inited = 0;
+static bool		port_mutex_inited = false;
 
 #define DEFER_PORT_CLEANUP
 
 #define START_PORT_CRITICAL     if (!port_mutex_inited)                \
                                     {                                  \
-                                    port_mutex_inited = 1;             \
+                                    port_mutex_inited = true;          \
                                     THD_mutex_init (&port_mutex);      \
                                     }                                  \
                                 THREAD_EXIT;                           \
@@ -1079,8 +1079,7 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 		if (Config::getTcpNoNagle()) {
 
 			optval = TRUE;
-			n =
-				setsockopt((SOCKET) port->port_handle, SOL_SOCKET,
+			n = setsockopt((SOCKET) port->port_handle, SOL_SOCKET,
 						   TCP_NODELAY, (SCHAR *) & optval, sizeof(optval));
 
 			gds__log("inet log: disabled Nagle algorithm \n");
@@ -1236,7 +1235,8 @@ void INET_set_clients( int count)
 	INET_max_clients = (count && count < MAXCLIENTS) ? count : MAXCLIENTS;
 }
 
-static int accept_connection(PORT port, P_CNCT* cnct)
+static int accept_connection(PORT port,
+							 P_CNCT* cnct)
 {
 /**************************************
  *
@@ -1254,7 +1254,6 @@ static int accept_connection(PORT port, P_CNCT* cnct)
 	STR string;
 	SLONG eff_gid, eff_uid;
 	int length, l;
-	BOOLEAN user_verification;
 
 /* Default account to "guest" (in theory all packets contain a name) */
 
@@ -1267,7 +1266,7 @@ static int accept_connection(PORT port, P_CNCT* cnct)
 	end = id + cnct->p_cnct_user_id.cstr_length;
 
 	eff_uid = eff_gid = -1;
-	user_verification = FALSE;
+	bool user_verification = false;
 	while (id < end)
 	{
 		switch (*id++)
@@ -1310,7 +1309,7 @@ static int accept_connection(PORT port, P_CNCT* cnct)
 			   the security database */
 
 		case CNCT_user_verification:
-			user_verification = TRUE;
+			user_verification = true;
 			id++;
 			break;
 
@@ -1506,7 +1505,7 @@ static PORT alloc_port( PORT parent)
 	}
 #endif
 
-	if (first_time == TRUE)
+	if (first_time == true)
 	{
 		INET_remote_buffer = Config::getTcpRemoteBufferSize();
 		if (INET_remote_buffer < MAX_DATA_LW ||
@@ -1523,7 +1522,7 @@ static PORT alloc_port( PORT parent)
 			gds__log(messg, 0);
 		}
 #endif
-		first_time = FALSE;
+		first_time = false;
 	}
 	PORT port = (PORT) ALLOCV(type_port, INET_remote_buffer * 2);
 	port->port_type = port_inet;
@@ -1746,7 +1745,9 @@ static PORT aux_request( PORT port, PACKET * packet)
 
 #ifndef WIN_NT
 #ifdef VMS
-static check_host( PORT port, TEXT * host_name, TEXT * user_name)
+static int check_host(PORT port,
+					  TEXT * host_name,
+					  TEXT * user_name)
 {
 /**************************************
  *
@@ -1772,7 +1773,7 @@ static check_host( PORT port, TEXT * host_name, TEXT * user_name)
 		return FALSE;
 
 	gethosts(hosts_file);
-	if ((result = parse_hosts(hosts_file, host_name, user_name)) == -1)
+	if (parse_hosts(hosts_file, host_name, user_name) == -1)
 		result = FALSE;
 
 	return result;
@@ -1810,10 +1811,11 @@ static int check_host(
 		return 0;
 
 
-	if (!
-		(host =
-		 gethostbyaddr((SCHAR *) & address.sin_addr, sizeof(address.sin_addr),
-					   address.sin_family))) return 0;
+	if (!(host = gethostbyaddr((SCHAR *) & address.sin_addr, 
+							   sizeof(address.sin_addr), address.sin_family))) 
+	{
+		return 0;
+	}
 
 	result = -1;
 
@@ -1834,7 +1836,7 @@ static int check_host(
 		if (fp)
 			ib_fclose(fp);
 
-		if ((result = parse_hosts(hosts_file, host_name, user)) == -1)
+		if (parse_hosts(hosts_file, host_name, user) == -1)
 			result = FALSE;
 	}
 	return result;
@@ -1843,7 +1845,9 @@ static int check_host(
 #endif
 
 #if !(defined WIN_NT)
-static BOOLEAN check_proxy( PORT port, TEXT * host_name, TEXT * user_name)
+static bool check_proxy(PORT port,
+						TEXT * host_name,
+						TEXT * user_name)
 {
 /**************************************
  *
@@ -1857,10 +1861,13 @@ static BOOLEAN check_proxy( PORT port, TEXT * host_name, TEXT * user_name)
  *
  **************************************/
 	IB_FILE *proxy;
-	TEXT *p, proxy_file[MAXPATHLEN], source_user[64], source_host[MAXHOSTLEN],
-		target_user[64], line[128];
+	TEXT *p;
+	TEXT proxy_file[MAXPATHLEN];
+	TEXT source_user[64];
+	TEXT source_host[MAXHOSTLEN];
+	TEXT target_user[64];
+	TEXT line[128];
 	int c;
-	BOOLEAN result;
 	SLONG length;
 	STR string;
 
@@ -1870,11 +1877,11 @@ static BOOLEAN check_proxy( PORT port, TEXT * host_name, TEXT * user_name)
 	gds__prefix(proxy_file, PROXY_FILE);
 #endif
 	if (!(proxy = ib_fopen(proxy_file, "r")))
-		return FALSE;
+		return false;
 
 /* Read lines, scan, and compare */
 
-	result = FALSE;
+	bool result = false;
 
 	for (;;) {
 		for (p = line;
@@ -1893,7 +1900,7 @@ static BOOLEAN check_proxy( PORT port, TEXT * host_name, TEXT * user_name)
 				string->str_length = length;
 				strncpy(string->str_data, target_user, length);
 				strcpy(user_name, target_user);
-				result = TRUE;
+				result = true;
 				break;
 			}
 		if (c == EOF)
@@ -2173,11 +2180,7 @@ static int fork( SOCKET old_handle, USHORT flag)
 	start_crud.lpDesktop = NULL;
 	start_crud.lpTitle = NULL;
 	start_crud.dwFlags = 0;
-	if (ret = CreateProcess(NULL,
-							INET_command_line,
-							NULL,
-							NULL,
-							TRUE,
+	if (ret = CreateProcess(NULL, INET_command_line, NULL, NULL, TRUE,
 							(flag & SRVR_high_priority ?
 							 HIGH_PRIORITY_CLASS | DETACHED_PROCESS :
 							 NORMAL_PRIORITY_CLASS | DETACHED_PROCESS),
@@ -2370,6 +2373,11 @@ static int parse_line(
  * Functional description:
  *	Parse hosts file (.rhosts or hosts.equiv) to determine
  *	if user_name on host_name should be allowed access.
+ *
+ *  Returns 
+ *  1 if user_name is allowed
+ *  0 if not allowed and 
+ *  -1 if there is not a host_name or a user_name
  *
  * only supporting:
  *    + - anybody on any machine
@@ -2700,7 +2708,7 @@ static int select_wait( PORT main_port, SLCT * selct)
  *
  **************************************/
 	PORT port;
-	USHORT found;
+	bool found;
 	TEXT msg[64];
 	SLONG delta_time;
 	struct timeval timeout;
@@ -2709,7 +2717,7 @@ static int select_wait( PORT main_port, SLCT * selct)
 	{
 		selct->slct_count = selct->slct_width = 0;
 		FD_ZERO(&selct->slct_fdset);
-		found = FALSE;
+		found = false;
 
 		/* Use the time interval between select() calls to expire
 		   keepalive timers on all ports. */
@@ -2748,15 +2756,14 @@ static int select_wait( PORT main_port, SLCT * selct)
 				selct->slct_width =
 					MAX(selct->slct_width, (int) port->port_handle);
 #endif
-				found = TRUE;
+				found = true;
 			}
 		}
 		STOP_PORT_CRITICAL;
 
 		if (!found)
 		{
-			gds__log
-				("INET/select_wait: client rundown complete, server exiting",
+			gds__log("INET/select_wait: client rundown complete, server exiting",
 				 0);
 			return FALSE;
 		}

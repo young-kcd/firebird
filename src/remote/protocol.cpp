@@ -64,7 +64,7 @@ typedef enum {
 	TYPE_PREPARED
 } SQL_STMT_TYPE;
 
-static BOOLEAN alloc_cstring(XDR *, CSTRING *);
+static bool alloc_cstring(XDR *, CSTRING *);
 static void free_cstring(XDR *, CSTRING *);
 static RSR get_statement(XDR *, SSHORT);
 static bool_t xdr_cstring(XDR *, CSTRING *);
@@ -850,7 +850,8 @@ ULONG xdr_protocol_overhead(P_OP op)
 }
 
 
-static BOOLEAN alloc_cstring( XDR * xdrs, CSTRING * cstring)
+static bool alloc_cstring(XDR * xdrs,
+						  CSTRING * cstring)
 {
 /**************************************
  *
@@ -864,7 +865,7 @@ static BOOLEAN alloc_cstring( XDR * xdrs, CSTRING * cstring)
  **************************************/
 
 	if (!cstring->cstr_length)
-		return TRUE;
+		return true;
 
 	if (cstring->cstr_length > cstring->cstr_allocated &&
 		cstring->cstr_allocated) free_cstring(xdrs, cstring);
@@ -875,14 +876,14 @@ static BOOLEAN alloc_cstring( XDR * xdrs, CSTRING * cstring)
 			 ALLR_alloc((SLONG) cstring->cstr_length)))
 			/* NOMEM: handled by ALLR_alloc() */
 			/* FREE:  in realloc case above & free_cstring() */
-			return FALSE;
+			return false;
 
 		cstring->cstr_allocated = cstring->cstr_length;
 		DEBUG_XDR_ALLOC(cstring, cstring->cstr_address,
 						cstring->cstr_allocated);
 	}
 
-	return TRUE;
+	return true;
 }
 
 

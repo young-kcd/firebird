@@ -123,7 +123,7 @@ typedef struct srvr
 	USHORT			srvr_flags;
 } *SRVR;
 
-static BOOLEAN	accept_connection(PORT, P_CNCT*, PACKET*);
+static bool	accept_connection(PORT, P_CNCT*, PACKET*);
 static ISC_STATUS	allocate_statement(PORT, P_RLSE*, PACKET*);
 static SLONG	append_request_chain(SERVER_REQ, SERVER_REQ*);
 static SLONG	append_request_next(SERVER_REQ, SERVER_REQ*);
@@ -136,14 +136,14 @@ static ISC_STATUS	cancel_events(PORT, P_EVENT*, PACKET*);
 static void	cancel_operation(PORT);
 #endif
 
-static BOOLEAN	check_request(RRQ, USHORT, USHORT);
+static bool	check_request(RRQ, USHORT, USHORT);
 static USHORT	check_statement_type(RSR);
 
 #ifdef SCROLLABLE_CURSORS
 static REM_MSG		dump_cache(rrq::rrq_repeat*);
 #endif
 
-static USHORT	get_next_msg_no(RRQ, USHORT, USHORT*);
+static bool		get_next_msg_no(RRQ, USHORT, USHORT*);
 static RTR		make_transaction(RDB, FRBRD*);
 
 static void	release_blob(RBL);
@@ -160,7 +160,7 @@ static REM_MSG	scroll_cache(rrq::rrq_repeat*, USHORT *, ULONG *);
 static void	server_ast(RVNT, USHORT, UCHAR *);
 static void		success(ISC_STATUS *);
 static int THREAD_ROUTINE thread(void *);
-static void		zap_packet(PACKET*, BOOLEAN);
+static void		zap_packet(PACKET*, bool);
 
 
 // static data - NOT THREAD SAFE!
@@ -218,12 +218,12 @@ void SRVR_main(PORT main_port, USHORT flags)
 	ISC_enter();				/* Setup floating point exception handler once and for all. */
 #endif
 
-	zap_packet(&receive, TRUE);
-	zap_packet(&send, TRUE);
+	zap_packet(&receive, true);
+	zap_packet(&send, true);
 	THREAD_ENTER;
 	set_server(main_port, flags);
 
-	while (TRUE)
+	while (true)
 	{
 		//
 		// Note: The following is cloned in server other SRVR_main instances.
@@ -292,7 +292,7 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
 	try {
 
 /* When this loop exits, the server will no longer receive requests */
-	while (TRUE)
+	while (true)
 	{
 		port = NULL;
 
@@ -309,8 +309,8 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
 			request = (SERVER_REQ) gds__alloc((SLONG) sizeof(struct server_req_t));
 			if (request)
 			{
-				zap_packet(&request->req_send, TRUE);
-				zap_packet(&request->req_receive, TRUE);
+				zap_packet(&request->req_send, true);
+				zap_packet(&request->req_receive, true);
 #ifdef DEBUG_REMOTE_MEMORY
 				ib_printf("SRVR_multi_thread         allocate request %x\n",
 						  request);
@@ -537,7 +537,9 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
 }
 
 
-static BOOLEAN accept_connection( PORT port, P_CNCT * connect, PACKET* send)
+static bool accept_connection(PORT port,
+							  P_CNCT * connect,
+							  PACKET* send)
 {
 /**************************************
  *
@@ -563,7 +565,7 @@ static BOOLEAN accept_connection( PORT port, P_CNCT * connect, PACKET* send)
 
 	if (!port->accept(connect)) {
 		port->send(send);
-		return FALSE;
+		return false;
 	}
 
 /* Select the most appropriate protocol (this will get smarter) */
@@ -617,7 +619,7 @@ static BOOLEAN accept_connection( PORT port, P_CNCT * connect, PACKET* send)
 
 	port->send(send);
 
-	return TRUE;
+	return true;
 }
 
 
@@ -979,9 +981,9 @@ static void cancel_operation( PORT port)
 #endif
 
 
-static BOOLEAN check_request(
-							 RRQ request,
-							 USHORT incarnation, USHORT msg_number)
+static bool check_request(RRQ request,
+						  USHORT incarnation,
+						  USHORT msg_number)
 {
 /**************************************
  *
@@ -997,9 +999,9 @@ static BOOLEAN check_request(
 	USHORT n;
 
 	if (!get_next_msg_no(request, incarnation, &n))
-		return FALSE;
+		return false;
 
-	return (msg_number == n) ? TRUE : FALSE;
+	return (msg_number == n);
 }
 
 
@@ -1018,18 +1020,13 @@ static USHORT check_statement_type( RSR statement)
 	UCHAR buffer[16], *info;
 	USHORT l, type;
 	ISC_STATUS_ARRAY local_status;
-	USHORT ret;
-	BOOLEAN done = FALSE;
-
-	ret = STMT_OTHER;
+	USHORT ret = STMT_OTHER;
+	bool done = false;
 
 	THREAD_EXIT;
-	if (!GDS_DSQL_SQL_INFO(local_status,
-						   &statement->rsr_handle,
-						   sizeof(sql_info),
-						   (SCHAR *) sql_info,	/* const_cast */
-						   sizeof(buffer),
-						   reinterpret_cast<char*>(buffer)))
+	if (!GDS_DSQL_SQL_INFO(local_status, &statement->rsr_handle,
+						   sizeof(sql_info), (SCHAR *) sql_info, // const_cast
+						   sizeof(buffer), reinterpret_cast<char*>(buffer)))
 	{
 		for (info = buffer; (*info != gds_info_end) && !done;)
 		{
@@ -1042,16 +1039,16 @@ static USHORT check_statement_type( RSR statement)
 					type == gds_info_sql_stmt_put_segment)
 				{
 					ret = STMT_BLOB;
-					done = TRUE;
+					done = true;
 				}
 				break;
 			case isc_info_sql_batch_fetch:
-				if (type == FALSE)
+				if (type == 0)
 					ret = STMT_NO_BATCH;
 				break;
 			case isc_info_error:
 			case isc_info_truncated:
-				done = TRUE;
+				done = true;
 				break;
 
 			}
@@ -1416,7 +1413,7 @@ static REM_MSG dump_cache( rrq::rrq_repeat* tail)
 	REM_MSG message;
 
 	message = tail->rrq_xdr;
-	while (TRUE) {
+	while (true) {
 		message->msg_address = NULL;
 		message = message->msg_next;
 		if (message == tail->rrq_xdr)
@@ -1952,7 +1949,7 @@ ISC_STATUS port::fetch(P_SQLDATA * sqldata, PACKET* send)
 			   sizeof(statement->rsr_status_vector));
 		if ((message = statement->rsr_message) != NULL) {
 			statement->rsr_buffer = message;
-			while (TRUE) {
+			while (true) {
 				message->msg_address = NULL;
 				message = message->msg_next;
 				if (message == statement->rsr_message)
@@ -1973,7 +1970,7 @@ ISC_STATUS port::fetch(P_SQLDATA * sqldata, PACKET* send)
 
 /* Check to see if any messages are already sitting around */
 
-	while (TRUE) {
+	while (true) {
 
 		/* Have we exhausted the cache & reached cursor EOF? */
 		if ((statement->rsr_flags & RSR_eof) && !statement->rsr_msgs_waiting) {
@@ -2105,7 +2102,7 @@ ISC_STATUS port::fetch(P_SQLDATA * sqldata, PACKET* send)
 		statement->rsr_msgs_waiting++;
 	}
 
-	return TRUE;
+	return true;
 }
 
 
@@ -2222,9 +2219,9 @@ OBJCT port::get_id(BLK block)
 }
 
 
-static USHORT get_next_msg_no(RRQ request,
-							  USHORT incarnation,
-							  USHORT * msg_number)
+static bool get_next_msg_no(RRQ request,
+							USHORT incarnation,
+							USHORT * msg_number)
 {
 /**************************************
  *
@@ -2237,7 +2234,8 @@ static USHORT get_next_msg_no(RRQ request,
  *	in the request.
  *
  **************************************/
-	USHORT l, n, result;
+	USHORT l;
+	USHORT n;
 	ISC_STATUS_ARRAY status_vector;
 	UCHAR info_buffer[128], *info;
 
@@ -2248,25 +2246,25 @@ static USHORT get_next_msg_no(RRQ request,
 	THREAD_ENTER;
 
 	if (status_vector[1])
-		return FALSE;
+		return false;
 
-	result = FALSE;
+	bool result = false;
 	for (info = info_buffer; *info != gds_info_end;) {
 		l = (USHORT) gds__vax_integer(info + 1, 2);
 		n = (USHORT) gds__vax_integer(info + 3, l);
 		switch (*info) {
 		case gds_info_state:
 			if (n != gds_info_req_send)
-				return FALSE;
+				return false;
 			break;
 
 		case gds_info_message_number:
 			*msg_number = n;
-			result = TRUE;
+			result = true;
 			break;
 
 		default:
-			return FALSE;
+			return false;
 		}
 		info += 3 + l;
 	}
@@ -2955,8 +2953,10 @@ ISC_STATUS port::prepare_statement(P_SQLST * prepare, PACKET* send)
 }
 
 
-BOOLEAN process_packet(PORT port,
-					   PACKET* send, PACKET* receive, PORT * result)
+bool process_packet(PORT port,
+					PACKET* send,
+					PACKET* receive,
+					PORT * result)
 {
 /**************************************
  *
@@ -3001,7 +3001,7 @@ BOOLEAN process_packet(PORT port,
 						("SERVER/process_packet: connect reject, server exiting",
 						 0);
 					THD_restore_specific();
-					return FALSE;
+					return false;
 				}
 			}
 			break;
@@ -3040,7 +3040,7 @@ BOOLEAN process_packet(PORT port,
 						gds__log("SERVER/process_packet: Multi-client server shutdown", 0);
 				port->disconnect(send, receive);
 				THD_restore_specific();
-				return FALSE;
+				return false;
 			}
 
 		case op_receive:
@@ -3215,7 +3215,7 @@ BOOLEAN process_packet(PORT port,
 				else
 					port->disconnect(send, receive);
 				THD_restore_specific();
-				return FALSE;
+				return false;
 			}
 			port->disconnect(send, receive);
 			port = NULL;
@@ -3237,10 +3237,10 @@ BOOLEAN process_packet(PORT port,
 		port->disconnect(send, receive);	/*  Well, how about this...  */
 
 		THD_restore_specific();
-		return FALSE;
+		return false;
 	}
 
-	return TRUE;
+	return true;
 }
 
 
@@ -3545,7 +3545,7 @@ ISC_STATUS port::receive_msg(P_DATA * data, PACKET* send)
 
 /* Check to see if any messages are already sitting around */
 
-	while (TRUE) {
+	while (true) {
 		message = tail->rrq_xdr;
 
 		/* If we don't have a message cached, get one from the next layer down. */
@@ -4896,7 +4896,8 @@ ISC_STATUS port::transact_request(P_TRRQ * trrq, PACKET* send)
 }
 
 
-static void zap_packet( PACKET* packet, BOOLEAN new_)
+static void zap_packet(PACKET* packet,
+					   bool new_)
 {
 /**************************************
  *

@@ -106,18 +106,18 @@ static PORT analyze(TEXT *, USHORT *, ISC_STATUS *, TEXT *, USHORT, SCHAR *,
 					SSHORT, TEXT *);
 static PORT analyze_service(TEXT *, USHORT *, ISC_STATUS *, TEXT *, USHORT,
 							SCHAR *, SSHORT);
-static BOOLEAN batch_gds_receive(struct trdb *, PORT, struct rmtque *,
+static bool batch_gds_receive(struct trdb *, PORT, struct rmtque *,
 								 ISC_STATUS *, USHORT);
-static BOOLEAN batch_dsql_fetch(struct trdb *, PORT, struct rmtque *,
+static bool batch_dsql_fetch(struct trdb *, PORT, struct rmtque *,
 								ISC_STATUS *, USHORT);
-static BOOLEAN check_response(RDB, PACKET *);
-static BOOLEAN clear_queue(PORT, ISC_STATUS *);
+static bool check_response(RDB, PACKET *);
+static bool clear_queue(PORT, ISC_STATUS *);
 static void disconnect(PORT);
 #ifdef SCROLLABLE_CURSORS
 static REM_MSG dump_cache(PORT, ISC_STATUS *, rrq::rrq_repeat *);
 #endif
 static void enqueue_receive(PORT,
-							BOOLEAN(*fn) (struct trdb *, PORT,
+							bool(*fn) (struct trdb *, PORT,
 										  struct rmtque *, ISC_STATUS *, USHORT),
 							RDB, void *, void *);
 static void dequeue_receive(PORT);
@@ -132,23 +132,23 @@ static ISC_STATUS fetch_blob(ISC_STATUS *, RSR, USHORT, UCHAR *, USHORT, USHORT,
 static RVNT find_event(PORT, SLONG);
 static USHORT get_new_dpb(UCHAR *, SSHORT, SSHORT, UCHAR *, USHORT *, TEXT *);
 #ifdef UNIX
-static BOOLEAN get_single_user(USHORT, SCHAR *);
+static bool get_single_user(USHORT, SCHAR *);
 #endif
 static ISC_STATUS handle_error(ISC_STATUS *, ISC_STATUS);
 static ISC_STATUS info(ISC_STATUS *, RDB, P_OP, USHORT, USHORT, USHORT, SCHAR *,
 				   USHORT, SCHAR *, USHORT, SCHAR *);
-static BOOLEAN init(ISC_STATUS *, PORT, P_OP, UCHAR *, USHORT, UCHAR *, USHORT);
+static bool init(ISC_STATUS *, PORT, P_OP, UCHAR *, USHORT, UCHAR *, USHORT);
 static RTR make_transaction(RDB, USHORT);
 static ISC_STATUS mov_dsql_message(UCHAR *, FMT, UCHAR *, FMT);
 static void move_error(ISC_STATUS, ...);
 static void receive_after_start(RRQ, USHORT);
-static BOOLEAN receive_packet(PORT, PACKET *, ISC_STATUS *);
-static BOOLEAN receive_packet_noqueue(PORT, PACKET *, ISC_STATUS *);
-static BOOLEAN receive_queued_packet(struct trdb *, PORT, ISC_STATUS *, USHORT);
-static BOOLEAN receive_response(RDB, PACKET *);
+static bool receive_packet(PORT, PACKET *, ISC_STATUS *);
+static bool receive_packet_noqueue(PORT, PACKET *, ISC_STATUS *);
+static bool receive_queued_packet(struct trdb *, PORT, ISC_STATUS *, USHORT);
+static bool receive_response(RDB, PACKET *);
 static void release_blob(RBL);
 static void release_event(RVNT);
-static BOOLEAN release_object(RDB, P_OP, USHORT);
+static bool release_object(RDB, P_OP, USHORT);
 static void release_request(RRQ);
 static void release_statement(RSR *);
 static void release_sql_request(RSR);
@@ -161,9 +161,9 @@ static REM_MSG scroll_cache(ISC_STATUS *, struct trdb *, RRQ, PORT, rrq::rrq_rep
 static ISC_STATUS send_and_receive(RDB, PACKET *, ISC_STATUS *);
 static ISC_STATUS send_blob(ISC_STATUS *, RBL, USHORT, UCHAR *);
 static void send_cancel_event(RVNT);
-static BOOLEAN send_packet(PORT, PACKET *, ISC_STATUS *);
+static bool send_packet(PORT, PACKET *, ISC_STATUS *);
 #ifdef NOT_USED_OR_REPLACED
-static BOOLEAN send_partial_packet(PORT, PACKET *, ISC_STATUS *);
+static bool send_partial_packet(PORT, PACKET *, ISC_STATUS *);
 #endif
 #ifdef MULTI_THREAD
 static void server_death(PORT);
@@ -271,7 +271,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	USHORT	length;
 	USHORT	user_verification;
 	USHORT	new_dpb_length;
-	USHORT	result;
 	UCHAR	expanded_name[MAXPATHLEN];
 	UCHAR	new_dpb[MAXPATHLEN];
 	UCHAR*	new_dpb_ptr;
@@ -321,23 +320,13 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 			return error(user_status);
 		}
 	}
-	user_verification =
-		get_new_dpb((UCHAR *) dpb, dpb_length,
-					TRUE,
-					new_dpb_ptr,
-					&new_dpb_length,
-					user_string);
+	user_verification = get_new_dpb((UCHAR *) dpb, dpb_length, TRUE, new_dpb_ptr,
+					&new_dpb_length, user_string);
 
 	us = (user_string[0]) ? user_string : 0;
 
-	port = analyze((TEXT*)expanded_name,
-					&length,
-					user_status,
-					us,
-					user_verification,
-					dpb,
-					dpb_length,
-					node_name);
+	port = analyze((TEXT*)expanded_name, &length, user_status, us,
+					user_verification, dpb, dpb_length, node_name);
 	if (!port)
 	{
 		if (new_dpb_ptr != new_dpb) {
@@ -360,13 +349,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		add_other_params(port, new_dpb_ptr, &new_dpb_length);
 		add_working_directory(new_dpb_ptr, &new_dpb_length, node_name);
 
-		result = init(	user_status,
-						port,
-						op_attach,
-						expanded_name,
-						length,
-						new_dpb_ptr,
-						new_dpb_length);
+		bool result = init(user_status, port, op_attach, expanded_name, length,
+						new_dpb_ptr, new_dpb_length);
 
 		if (new_dpb_ptr != new_dpb) {
 			gds__free(new_dpb_ptr);
@@ -969,9 +953,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS * user_status,
 		add_other_params(port, new_dpb_ptr, &new_dpb_length);
 		add_working_directory(new_dpb_ptr, &new_dpb_length, node_name);
 
-		result =
-			init(user_status, port, op_create, expanded_name, length, new_dpb_ptr,
-				 new_dpb_length);
+		result = init(user_status, port, op_create, expanded_name, length,
+					  new_dpb_ptr, new_dpb_length);
 		if (new_dpb_ptr != new_dpb) {
 			gds__free(new_dpb_ptr);
 		}
@@ -1835,7 +1818,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS * user_status,
 			if (message = statement->rsr_message)
 			{
 				statement->rsr_buffer = message;
-				while (TRUE)
+				while (true)
 				{
 					message->msg_address = NULL;
 					message = message->msg_next;
@@ -2244,7 +2227,6 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status, RTR * rtr_handle, RSR * st
 	P_SQLST *prepare;
 	P_RESP *response;
 	CSTRING temp;
-	BOOLEAN status;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -2305,7 +2287,7 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status, RTR * rtr_handle, RSR * st
 		response->p_resp_data.cstr_allocated = buffer_length;
 		response->p_resp_data.cstr_address = (UCHAR *) buffer;
 
-		status = receive_response(rdb, packet);
+		bool status = receive_response(rdb, packet);
 
 		if (response->p_resp_object)
 			statement->rsr_flags |= RSR_blob;
@@ -2560,7 +2542,7 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 		   Our buffer (described by the structure blob) is counted strings 
 		   <count word> <string> <count word> <string>... */
 
-		while (TRUE) {
+		while (true) {
 			/* If there's data to be given away, give some away (p points to the
 			   local data) */
 
@@ -2722,7 +2704,6 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS * user_status,
 	PACKET *packet;
 	P_SLC *data;
 	P_SLR *response;
-	USHORT err_flag;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -2772,13 +2753,13 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS * user_status,
 		response->p_slr_slice.lstr_address = slice;
 		response->p_slr_slice.lstr_length = slice_length;
 
-		err_flag = FALSE;
+		bool err_flag = false;
 		if (!send_packet(rdb->rdb_port, packet, user_status))
-			err_flag = TRUE;
+			err_flag = true;
 		else {
 			packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;
 			if (!receive_packet(rdb->rdb_port, packet, user_status))
-				err_flag = TRUE;
+				err_flag = true;
 		}
 		if (new_sdl != sdl)
 			gds__free(new_sdl);
@@ -5041,11 +5022,11 @@ static PORT analyze_service(TEXT * service_name,
 }
 
 
-static BOOLEAN batch_dsql_fetch(trdb*	trdb,
-								PORT	port,
-								rmtque*	que,
-								ISC_STATUS*	user_status,
-								USHORT	id)
+static bool batch_dsql_fetch(trdb*	trdb,
+							 PORT	port,
+							 rmtque*	que,
+							 ISC_STATUS*	user_status,
+							 USHORT		id)
 {
 /**************************************
  *
@@ -5101,13 +5082,13 @@ static BOOLEAN batch_dsql_fetch(trdb*	trdb,
    so we have to clear the wire before the response can be received */
 /* In addtion to the above we grab all the records in case of XNET as 
  * we need to clear the queue */
-	BOOLEAN clear_queue = FALSE;
+	bool clear_queue = false;
 	if (id != statement->rsr_id || port->port_type == port_xnet) {
-		clear_queue = TRUE;
+		clear_queue = true;
 	}
 
 	statement->rsr_flags |= RSR_fetched;
-	while (TRUE)
+	while (true)
 	{
 		/* Swallow up data. If a buffer isn't available, allocate another. */
 
@@ -5191,20 +5172,20 @@ static BOOLEAN batch_dsql_fetch(trdb*	trdb,
 				   "Decrementing Rows Pending in batch_dsql_fetch=%lu\n",
 				   statement->rsr_rows_pending);
 #endif
-		if (clear_queue == FALSE) {
+		if (clear_queue == false) {
 			break;
 		}
 	}
 	packet->p_resp.p_resp_status_vector = save_status;
-	return TRUE;
+	return true;
 }
 
 
-static BOOLEAN batch_gds_receive(trdb*		trdb,
-								 PORT		port,
-								 rmtque*	que,
-								 ISC_STATUS*	user_status,
-								 USHORT		id)
+static bool batch_gds_receive(trdb*		trdb,
+							  PORT		port,
+							  rmtque*	que,
+							  ISC_STATUS*	user_status,
+							  USHORT		id)
 {
 /**************************************
  *
@@ -5248,17 +5229,18 @@ static BOOLEAN batch_gds_receive(trdb*		trdb,
 	ISC_STATUS* save_status = packet->p_resp.p_resp_status_vector;
 	packet->p_resp.p_resp_status_vector = tmp_status;
 
-	bool clear_queue = FALSE;	/* indicates whether queue is just being emptied, not retrieved */
+	bool clear_queue = false;
+	// indicates whether queue is just being emptied, not retrieved
 
 	// always clear the complete queue for XNET, as we might
 	// have incomplete packets
 	if (id != request->rrq_id || port->port_type == port_xnet) {
-		clear_queue = TRUE;
+		clear_queue = true;
 	}
 
 	// Receive the whole batch of records, until end-of-batch is seen
 
-	while (TRUE)
+	while (true)
 	{
 		REM_MSG message = tail->rrq_xdr;	/* First free buffer */
 
@@ -5376,11 +5358,12 @@ static BOOLEAN batch_gds_receive(trdb*		trdb,
 	}
 
 	packet->p_resp.p_resp_status_vector = save_status;
-	return TRUE;
+	return true;
 }
 
 
-static BOOLEAN check_response( RDB rdb, PACKET * packet)
+static bool check_response(RDB rdb,
+						   PACKET * packet)
 {
 /**************************************
  *
@@ -5428,13 +5411,14 @@ static BOOLEAN check_response( RDB rdb, PACKET * packet)
 	if ((packet->p_operation == op_response ||
 		 packet->p_operation == op_response_piggyback) &&
 		!rdb->rdb_status_vector[1])
-		return TRUE;
+		return true;
 
-	return FALSE;
+	return false;
 }
 
 
-static BOOLEAN clear_queue( PORT port, ISC_STATUS * user_status)
+static bool clear_queue(PORT port,
+						ISC_STATUS * user_status)
 {
 /**************************************
  *
@@ -5456,10 +5440,10 @@ static BOOLEAN clear_queue( PORT port, ISC_STATUS * user_status)
 		trdb = GET_THREAD_DATA;
 		while (port->port_receive_rmtque)
 			if (!receive_queued_packet(trdb, port, user_status, (USHORT) - 1))
-				return FALSE;
+				return false;
 	}
 
-	return TRUE;
+	return true;
 }
 
 
@@ -5539,7 +5523,7 @@ static REM_MSG dump_cache(
 		return NULL;
 
 	message = tail->rrq_message;
-	while (TRUE) {
+	while (true) {
 		message->msg_address = NULL;
 		message = message->msg_next;
 		if (message == tail->rrq_message)
@@ -5957,7 +5941,8 @@ static USHORT get_new_dpb(UCHAR*	dpb,
 }
 
 #ifdef UNIX
-static BOOLEAN get_single_user(USHORT dpb_length, SCHAR * dpb)
+static bool get_single_user(USHORT dpb_length,
+							SCHAR * dpb)
 {
 /******************************************
  *
@@ -5975,27 +5960,27 @@ static BOOLEAN get_single_user(USHORT dpb_length, SCHAR * dpb)
 	USHORT l;
 
 	if (!dpb)
-		return FALSE;
+		return false;
 
 	end_dpb = dpb + dpb_length;
 
 	if (dpb < end_dpb && *dpb++ != gds_dpb_version1)
-		return FALSE;
+		return false;
 
 	while (dpb < end_dpb)
 		switch (*dpb++) {
 		case isc_dpb_reserved:
 			l = *dpb++;
 			if (l == 3 && !strncmp(dpb, "YES", 3))
-				return TRUE;
-			return FALSE;
+				return true;
+			return false;
 
 		default:
 			l = *dpb++;
 			dpb += l;
 		}
 
-	return FALSE;
+	return false;
 }
 #endif
 
@@ -6093,12 +6078,13 @@ SCHAR * recv_items, USHORT buffer_length, SCHAR * buffer)
 }
 
 
-static BOOLEAN init(
-					ISC_STATUS * user_status,
-					PORT port,
-					P_OP op,
-					UCHAR * file_name,
-					USHORT file_length, UCHAR * dpb, USHORT dpb_length)
+static bool init(ISC_STATUS * user_status,
+				 PORT port,
+				 P_OP op,
+				 UCHAR * file_name,
+				 USHORT file_length,
+				 UCHAR * dpb,
+				 USHORT dpb_length)
 {
 /**************************************
  *
@@ -6129,7 +6115,7 @@ static BOOLEAN init(
 
 	if (!send_packet(rdb->rdb_port, packet, user_status)) {
 		disconnect(port);
-		return FALSE;
+		return false;
 	}
 
 /* Get response */
@@ -6137,12 +6123,12 @@ static BOOLEAN init(
 	if (!receive_response(rdb, packet)) {
 		REMOTE_save_status_strings(user_status);
 		disconnect(port);
-		return FALSE;
+		return false;
 	}
 
 	rdb->rdb_id = packet->p_resp.p_resp_object;
 
-	return TRUE;
+	return true;
 }
 
 
@@ -6358,7 +6344,7 @@ static void receive_after_start( RRQ request, USHORT msg_type)
 
 /* Swallow up data.  If a buffer isn't available, allocate another */
 
-	while (TRUE) {
+	while (true) {
 		message = tail->rrq_xdr;
 		if (message->msg_address) {
 			tail->rrq_xdr = new_ = (REM_MSG) ALLOCV(type_msg, format->fmt_length);
@@ -6406,9 +6392,9 @@ static void receive_after_start( RRQ request, USHORT msg_type)
 }
 
 
-static BOOLEAN receive_packet(
-							  PORT port,
-							  PACKET * packet, ISC_STATUS * user_status)
+static bool receive_packet(PORT port,
+						   PACKET * packet,
+						   ISC_STATUS * user_status)
 {
 /**************************************
  *
@@ -6431,15 +6417,15 @@ static BOOLEAN receive_packet(
    the desired packet */
 
 	if (!clear_queue(port, user_status))
-		return FALSE;
+		return false;
 
 	return receive_packet_noqueue(port, packet, user_status);
 }
 
 
-static BOOLEAN receive_packet_noqueue(
-									  PORT port,
-									  PACKET * packet, ISC_STATUS * user_status)
+static bool receive_packet_noqueue(PORT port,
+								   PACKET * packet,
+								   ISC_STATUS * user_status)
 {
 /**************************************
  *
@@ -6481,13 +6467,14 @@ static BOOLEAN receive_packet_noqueue(
 	user_status[1] = isc_net_read_err;
 	user_status[2] = gds_arg_end;
 
-	return port->receive(packet) ? TRUE : FALSE;
+	return (port->receive(packet));
 }
 
 
-static BOOLEAN receive_queued_packet(struct trdb*	trdb,
-									 PORT		port,
-									 ISC_STATUS*	user_status, USHORT id)
+static bool receive_queued_packet(struct trdb*	trdb,
+								  PORT		port,
+								  ISC_STATUS*	user_status,
+								  USHORT id)
 {
 /**************************************
  *
@@ -6503,21 +6490,18 @@ static BOOLEAN receive_queued_packet(struct trdb*	trdb,
  *	FALSE - Network error occured, error code in user_status 
  *
  **************************************/
-	RMTQUE que;
-	BOOLEAN result;
-
 /* Trivial case, nothing pending on the wire */
 
 	if (!port->port_receive_rmtque)
-		return TRUE;
+		return true;
 
 /* Grab first queue entry */
 
-	que = port->port_receive_rmtque;
+	RMTQUE que = port->port_receive_rmtque;
 
 /* Receive the data */
 
-	result = (que->rmtque_function) (trdb, port, que, user_status, id);
+	bool result = (que->rmtque_function) (trdb, port, que, user_status, id);
 
 /* Note: it is the rmtque_function's responsibility to dequeue the request */
 
@@ -6525,11 +6509,12 @@ static BOOLEAN receive_queued_packet(struct trdb*	trdb,
 }
 
 
-static void enqueue_receive(
-							PORT port,
-							BOOLEAN(*fn) (struct trdb *, PORT,
-										  struct rmtque *, ISC_STATUS *, USHORT),
-RDB rdb, void *parm, void *parm1)
+static void enqueue_receive(PORT port,
+							bool(*fn) (struct trdb *, PORT,
+									   struct rmtque *, ISC_STATUS *, USHORT),
+							RDB rdb,
+							void *parm,
+							void *parm1)
 {
 /**************************************
  *
@@ -6590,7 +6575,8 @@ static void dequeue_receive( PORT port)
 }
 
 
-static BOOLEAN receive_response( RDB rdb, PACKET * packet)
+static bool receive_response(RDB rdb,
+							 PACKET * packet)
 {
 /**************************************
  *
@@ -6608,7 +6594,7 @@ static BOOLEAN receive_response( RDB rdb, PACKET * packet)
 	status = packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;
 
 	if (!receive_packet(rdb->rdb_port, packet, status))
-		return FALSE;
+		return false;
 
 	return check_response(rdb, packet);
 }
@@ -6674,7 +6660,9 @@ static void release_event( RVNT event)
 }
 
 
-static BOOLEAN release_object( RDB rdb, P_OP op, USHORT id)
+static bool release_object(RDB rdb,
+						   P_OP op,
+						   USHORT id)
 {
 /**************************************
  *
@@ -6694,7 +6682,7 @@ static BOOLEAN release_object( RDB rdb, P_OP op, USHORT id)
 	packet->p_rlse.p_rlse_object = id;
 
 	if (!send_packet(rdb->rdb_port, packet, rdb->rdb_status_vector))
-		return FALSE;
+		return false;
 
 	return receive_response(rdb, packet);
 }
@@ -7161,7 +7149,9 @@ static void send_cancel_event(RVNT event)
 }
 
 
-static BOOLEAN send_packet(PORT port, PACKET* packet, ISC_STATUS* user_status)
+static bool send_packet(PORT port,
+						PACKET* packet,
+						ISC_STATUS* user_status)
 {
 /**************************************
  *
@@ -7188,13 +7178,13 @@ static BOOLEAN send_packet(PORT port, PACKET* packet, ISC_STATUS* user_status)
 	user_status[1] = isc_net_write_err;
 	user_status[2] = gds_arg_end;
 
-	return port->send(packet) ? TRUE : FALSE;
+	return (port->send(packet));
 }
 
 #ifdef NOT_USED_OR_REPLACED
-static BOOLEAN send_partial_packet(PORT		port,
-								   PACKET*	packet,
-								   ISC_STATUS*	user_status)
+static bool send_partial_packet(PORT		port,
+								PACKET*	packet,
+								ISC_STATUS*	user_status)
 {
 /**************************************
  *
@@ -7222,10 +7212,10 @@ static BOOLEAN send_partial_packet(PORT		port,
 	user_status[2] = gds_arg_end;
 
 	if (!port->send_partial(packet)) {
-		return FALSE;
+		return false;
 	}
 
-	return TRUE;
+	return true;
 }
 #endif
 

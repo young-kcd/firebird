@@ -341,13 +341,12 @@ void DLL_EXPORT REMOTE_get_timeout_params(
  **************************************/
 	UCHAR *p, *end;
 	USHORT len;
-	BOOLEAN got_dpb_connect_timeout, got_dpb_dummy_packet_interval;
+	bool got_dpb_connect_timeout = false;
+	bool got_dpb_dummy_packet_interval = false;
 
 	assert(isc_dpb_connect_timeout == isc_spb_connect_timeout);
 	assert(isc_dpb_dummy_packet_interval == isc_spb_dummy_packet_interval);
 
-	got_dpb_connect_timeout = FALSE;
-	got_dpb_dummy_packet_interval = FALSE;
 	port->port_flags &= ~PORT_dummy_pckt_set;
 
 	if (dpb && dpb_length) {
@@ -359,7 +358,7 @@ void DLL_EXPORT REMOTE_get_timeout_params(
 				switch (*p++) {
 				case gds_dpb_connect_timeout:
 					port->port_connect_timeout = get_parameter(&p);
-					got_dpb_connect_timeout = TRUE;
+					got_dpb_connect_timeout = true;
 					break;
 
 // 22 Aug 2003. Do not receive this parameter from the client as dummy packets
@@ -367,7 +366,7 @@ void DLL_EXPORT REMOTE_get_timeout_params(
 //   This applies to all IB/FB versions.
 //				case gds_dpb_dummy_packet_interval:
 //					port->port_dummy_packet_interval = get_parameter(&p);
-//					got_dpb_dummy_packet_interval = TRUE;
+//					got_dpb_dummy_packet_interval = true;
 //					port->port_flags |= PORT_dummy_pckt_set;
 //					break;
 
@@ -485,7 +484,7 @@ void DLL_EXPORT REMOTE_release_messages( REM_MSG messages)
 	REM_MSG message, temp;
 
 	if (message = messages)
-		while (TRUE) {
+		while (true) {
 			temp = message;
 			message = message->msg_next;
 #ifdef DEBUG_REMOTE_MEMORY
@@ -578,7 +577,7 @@ void DLL_EXPORT REMOTE_reset_request( RRQ request, REM_MSG active_message)
 			tail->rrq_rows_pending = 0;
 			tail->rrq_reorder_level = 0;
 			tail->rrq_batch_count = 0;
-			while (TRUE) {
+			while (true) {
 				message->msg_address = NULL;
 				message = message->msg_next;
 				if (message == tail->rrq_message)

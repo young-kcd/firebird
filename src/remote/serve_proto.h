@@ -40,7 +40,7 @@ extern void SRVR_main(struct port *, USHORT);
 #endif
 
 extern void SRVR_multi_thread(struct port *, USHORT);
-extern BOOLEAN process_packet(PORT, PACKET *, PACKET *, PORT *);
+extern bool process_packet(PORT, PACKET *, PACKET *, PORT *);
 extern void set_server(PORT, USHORT);
 extern void THREAD_ROUTINE process_connection_thread(PORT);
 

@@ -503,8 +503,6 @@ typedef struct trdb
 
 #define GET_THREAD_DATA		((TRDB) THD_get_specific())
 
-
-
 /* Queuing structure for Client batch fetches */
 
 typedef struct rmtque
@@ -516,7 +514,7 @@ typedef struct rmtque
 	struct rdb*			rmtque_rdb;	/* What database has pending msg */
 
 	/* Fn that receives queued entry */
-	BOOLEAN	(*rmtque_function) (struct trdb*,
+	bool	(*rmtque_function) (struct trdb*,
 								struct port*,
 								struct rmtque*,
 								ISC_STATUS*,
