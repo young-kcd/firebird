@@ -2854,7 +2854,7 @@ static void get_log_names(
 			break;
 
 		if (not_archived && skip_delete) {
-			*log_stack = (LLS) 0;
+			*log_stack = NULL;
 			return;
 		}
 

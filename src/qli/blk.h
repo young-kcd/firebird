@@ -24,14 +24,14 @@
 BLKDEF (type_frb, frb, 0)
 BLKDEF (type_hnk, hnk, 0)
 BLKDEF (type_plb, plb, 0)
-BLKDEF (type_vec, vec, sizeof (((VEC) 0)->vec_object[0]))
+BLKDEF (type_vec, vec, sizeof (((VEC) NULL)->vec_object[0]))
 BLKDEF (type_dbb, dbb, 1)
 BLKDEF (type_rel, qli_rel, 0)
 BLKDEF (type_fld, qli_fld, 1)
-BLKDEF (type_vcl, vcl, sizeof (((VCL) 0)->vcl_long[0]))
+BLKDEF (type_vcl, vcl, sizeof (((VCL) NULL)->vcl_long[0]))
 BLKDEF (type_req, qli_req, 0)				/* Request block */
-BLKDEF (type_nod, qli_nod, sizeof (((QLI_NOD) 0)->nod_arg[0]))
-BLKDEF (type_syn, qli_nod, sizeof (((SYN) 0)->syn_arg[0]))
+BLKDEF (type_nod, qli_nod, sizeof (((QLI_NOD) NULL)->nod_arg[0]))
+BLKDEF (type_syn, qli_nod, sizeof (((SYN) NULL)->syn_arg[0]))
 BLKDEF (type_lls, lls, 0)				/* linked list stack */
 BLKDEF (type_str, str, 1)				/* random string block */
 BLKDEF (type_tok, tok, 1)				/* token block */
@@ -56,5 +56,5 @@ BLKDEF (type_frm, frm, 1)
 BLKDEF (type_ffl, ffl, 1)
 BLKDEF (type_men, men, 1)
 #endif
-BLKDEF (type_fun, fun, sizeof (((FUN) 0)->fun_arg[0]))
+BLKDEF (type_fun, fun, sizeof (((FUN) NULL)->fun_arg[0]))
 BLKDEF (type_rlb, rlb, 0)				/* Request language block */
