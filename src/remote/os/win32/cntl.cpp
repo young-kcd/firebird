@@ -332,10 +332,10 @@ static THREAD_ENTRY_DECLARE cleanup_thread(THREAD_ENTRY_PARAM)
 
 		TEXT out_message[ERROR_BUFFER_LENGTH + 100];
 		// just get the ushort value and increment it by a ushort length
-		const USHORT num_databases = (USHORT) * ((USHORT *) buff_ptr);
+		const USHORT num_databases = * (USHORT *) buff_ptr;
 		buff_ptr += sizeof(USHORT);
 		for (USHORT i = 0; i < num_databases; i++) {
-			const USHORT database_name_length = (USHORT) * ((USHORT *) buff_ptr);
+			const USHORT database_name_length = * (USHORT *) buff_ptr;
 			buff_ptr += sizeof(USHORT);
 			print_ptr = print_buffer;
 			for (USHORT j = 0; j < database_name_length; j++)
