@@ -3,26 +3,27 @@ Cleaning todo
 The order is not significative.
 
 Macros
-.- Remove NOT_USED_OR_REPLACED Macro
-.- Remove PYXIS macro
-.- Remove NO_CHECKSUM macro (and CCH_Checksum function in cch.cpp)
-.- Remove GDS_VAL and GDS_REF macros.
-.- Remove NULL_PTR macro
-.- Remove TRUE and FALSE macros and replace with builtin "true" and "false"
+M1.- Remove NOT_USED_OR_REPLACED Macro
+M2.- Remove PYXIS macro
+M3.- Remove NO_CHECKSUM macro (and CCH_Checksum function in cch.cpp)
+M4.- Remove GDS_VAL and GDS_REF macros.
+M5.- Remove NULL_PTR macro
+M6.- Remove TRUE and FALSE macros and replace with builtin "true" and "false"
 
 Code
-.- Remove warnings
-	Comparison between signed and unsigned
-	Cast from pointer to integer of different size
-	Format arg and argument not matching.
-.- Define (type-safe?) unions for nod_arg and lls_object. 
+C1.- Remove warnings (excluding parentheses, unused var, non complete switches and pragmas)
+C2.- Define (type-safe?) unions for nod_arg and lls_object. 
 	Nod_arg is used in several places of the code to contain pointers to several kinds of objects or numbers, whether is defined as pointer to xxx_nod.
 	The same happends with lls_object in lls (linked list) where the lls_object can store pointers or numbers, whether is defined as pointer to xxx_nod.
 	See gpre.h nod_arg in gpre_nod struct and lls_object in lls struct.
-.- Modify gds__msg_format and derivated functions to use arglist instead of TEXT arguments. This change will also remove a lot of casts.
-.- Remove casts.
+C3.- Modify gds__msg_format and derivated functions to use arglist instead of TEXT arguments. This change will also remove a lot of casts.
+C4.- Remove casts.
+C5.- Replace macros with code with inline? functions.
 
 Builds
-.- Posix take cpp generated from epp out of src directory.
-.- Build help.fdb from script.
-.- Build msg.fdb from script.
+B1.- Posix take cpp generated from epp out of src directory.
+B2.- Build help.fdb from script.
+B3.- Build msg.fdb from script.
+
+
+The point C1 is prepared and will be committed when 1.5 is out.
