@@ -1859,6 +1859,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 #endif
 	if (!is_alias && !verify_database_name(expanded_name, user_status)) {
+		JRD_SS_MUTEX_UNLOCK; // CVC: Added this line.
 		JRD_restore_context();
 		return user_status[1];
 	}
@@ -1902,7 +1903,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 		V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 #endif
 		if (!SHUT_database
-			(dbb, options.dpb_shutdown, options.dpb_shutdown_delay)) {
+			(dbb, options.dpb_shutdown, options.dpb_shutdown_delay)) 
+		{
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
 			V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 #endif
@@ -4743,10 +4745,8 @@ static ISC_STATUS error(ISC_STATUS* user_status)
 
 #if (defined DEV_BUILD && !defined MULTI_THREAD)
 	if (dbb && dbb->dbb_use_count && !(dbb->dbb_flags & DBB_security_db)) {
-		ISC_STATUS *p;
-
 		dbb->dbb_use_count = 0;
-		p = user_status;
+		ISC_STATUS* p = user_status;
 		*p++ = isc_arg_gds;
 		*p++ = isc_random;
 		*p++ = isc_arg_string;
