@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.64 2004-05-20 00:56:23 brodsom Exp $
+//	$Id: alice.cpp,v 1.65 2004-05-23 22:56:51 brodsom Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -785,13 +785,13 @@ static void alice_output(const SCHAR* format, ...)
 		exit_code = tdgbl->output_proc(tdgbl->output_data, (UCHAR *)(""));
 	}
 	else if (tdgbl->sw_redirect == REDIRECT && tdgbl->output_file != NULL) {
-		VA_START(arglist, format);
+		va_start(arglist, format);
 		vfprintf(tdgbl->output_file, format, arglist);
 		va_end(arglist);
 		exit_code = tdgbl->output_proc(tdgbl->output_data, (UCHAR *)(""));
 	}
 	else {
-		VA_START(arglist, format);
+		va_start(arglist, format);
 		vsprintf((char *) buf, format, arglist);
 		va_end(arglist);
 
