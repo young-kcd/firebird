@@ -36,7 +36,9 @@
 #include <io.h>
 #endif
 
-static UCHAR cache_dpb[] = { isc_dpb_version1, isc_dpb_cache_manager };
+// CVC: Obsolete functionality?
+
+static const UCHAR cache_dpb[] = { isc_dpb_version1, isc_dpb_cache_manager };
 
 
 int CLIB_ROUTINE main( int argc, char **argv)

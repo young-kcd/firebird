@@ -379,40 +379,53 @@ do_test_memcpy(src, dest, size)
 /* stubs */
 void gds__encode_date()
 {
-};
+}
+
 USHORT CVT2_make_string2()
 {
-};
+}
+
 USHORT CVT_make_string()
 {
-};
+}
+
 SSHORT CVT2_compare()
 {
-};
+}
+
 USHORT CVT_get_string_ptr()
 {
-};
+}
+
 SLONG CVT_get_long()
 {
-};
+}
+
 void CVT2_get_name()
 {
-};
+}
+
 void CVT_double_to_date()
 {
-};
+}
+
 double CVT_date_to_double()
 {
-};
+}
+
 SQUAD CVT_get_quad()
 {
-};
+}
+
 void CVT_move()
 {
-};
+}
+
 void ERR_post()
 {
-};
+}
+
 double CVT_get_double()
 {
-};
+}
+

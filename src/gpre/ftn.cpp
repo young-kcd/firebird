@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.51 2004-10-30 05:30:08 robocop Exp $
+//	$Id: ftn.cpp,v 1.52 2004-11-08 03:09:20 robocop Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -4078,7 +4078,7 @@ static void t_start_auto(const gpre_req* request,
 	for (DBB db = gpreGlob.isc_databases; db; db = db->dbb_next) {
 		if (gpreGlob.sw_auto)
 		{
-		    const TEXT* filename = db->dbb_runtime;
+			const TEXT* filename = db->dbb_runtime;
 			if (filename || !(db->dbb_flags & DBB_sqlca)) {
 				if (buffer[0])
 					printa(COLUMN, "IF (%s .EQ. 0 .AND. %s(2) .EQ. 0) THEN",

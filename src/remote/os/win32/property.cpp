@@ -235,7 +235,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 			LPHELPINFO lphi = (LPHELPINFO) lParam;
 			if (lphi->iContextType == HELPINFO_WINDOW)	// must be for a control
 			{
-				WinHelp(static_cast < HWND > (lphi->hItemHandle),
+				WinHelp(static_cast<HWND>(lphi->hItemHandle),
 						"IBSERVER.HLP",
 						HELP_WM_HELP, (DWORD) (LPVOID) aMenuHelpIDs);
 			}
