@@ -2810,9 +2810,7 @@ void VIO_verb_cleanup(TDBB tdbb, JRD_TRA transaction)
 						VIO_backout(tdbb, &rpb, transaction);
 					else {
 						record = action->vct_undo->current().rec_data;
-						same_tx =
-							(record->rec_flags & REC_same_tx) ? TRUE :
-							FALSE;
+						same_tx = (record->rec_flags & REC_same_tx) ? TRUE : FALSE;
 
 						/* Have we done BOTH an update and delete to this record
 						   in the same transaction? */
@@ -2850,11 +2848,9 @@ void VIO_verb_cleanup(TDBB tdbb, JRD_TRA transaction)
 										 reinterpret_cast <
 										 blk * >(tdbb->tdbb_default));
 							}
-							update_in_place(tdbb, transaction, &rpb,
-											&new_rpb);
+							update_in_place(tdbb, transaction, &rpb, &new_rpb);
 							if (!(transaction->tra_flags & TRA_system))
-								garbage_collect_idx(tdbb, &rpb, &new_rpb,
-													NULL);
+								garbage_collect_idx(tdbb, &rpb, &new_rpb, NULL);
 							rpb.rpb_record = dead_record;
 						}
 					}
@@ -3325,10 +3321,6 @@ static void garbage_collect(
 		delete_(tdbb, rpb, prior_page, tdbb->tdbb_default);
 		if (rpb->rpb_record) {
 			LLS_PUSH(rpb->rpb_record, &going);
-			BLB_garbage_collect(tdbb, going, staying, prior_page, rpb->rpb_relation);
-			IDX_garbage_collect(tdbb, rpb, going, staying);
-			delete LLS_POP(&going);
-			going = NULL;
 		}
 #ifdef SUPERSERVER
 		/* Don't monopolize the server while chasing long
@@ -3338,6 +3330,12 @@ static void garbage_collect(
 			(void) JRD_reschedule(tdbb, 0, TRUE);
 #endif
 	}
+
+	BLB_garbage_collect(tdbb, going, staying, prior_page, rpb->rpb_relation);
+	IDX_garbage_collect(tdbb, rpb, going, staying);
+
+	while (going)
+		delete LLS_POP(&going);
 }
 
 
