@@ -3420,7 +3420,12 @@ bool get_generator()
 		}
 	}
 
-	store_blr_gen_id (name, value, got_desc ? &gen_desc: NULL);
+	if (tdgbl->gbl_sw_meta)
+	{
+		value = 0;
+	}
+
+	store_blr_gen_id (name, value, got_desc ? &gen_desc : NULL);
 
 	return true;
 }
