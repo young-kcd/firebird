@@ -54,8 +54,4 @@
 #define	IB_CANADA_FRENCH 5
 #define	IB_CANADA_ENGLISH 6
 
-#ifdef SCO
-#define NON_DLINK_OS
-#endif
-
 #endif /* _INTL_LANGDRV_H_ */

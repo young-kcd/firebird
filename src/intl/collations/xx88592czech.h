@@ -14,130 +14,12 @@
  */
 /*  Language Driver/API version 1.1 */
 
-#define LDRV_DRIVERID               lat2CZECH
-
-
-#define LDRV_CTRYLANGID             CZECH
-
-
-#define LDRV_PRIMARYCPID            852
-
-
-#define LDRV_PID                    ISOLATIN2
-
-
-#define LDRV_ALTCPID                1250
-
-
-#define LDRV_PRIMPLAT               ANSI_CP
-
-
-#define LDRV_ALTPLAT                OEM_CP
-
-
-#define LDRV_SORTTYPE               DICT_SORT
-
-
-#define LDRV_NAME                   "ISO 8859-2 Latin Czech"
-
-
-#define LDRV_FNAME                  "lat2czech"
-
-
 #define NUM_EXPAND_CHARS            4
-
-
 #define NUM_COMPRESS_CHARS          0
-
-
-#define LDRV_MAJOR                  LD_MAJOR
-
-
-#define LDRV_MINOR                  LD_MINOR
-
-
-#define CHARDEF_SUP                 YES
-
-
-#define LOWERCASE_SUP               YES
-
-
-#define UPPERCASE_SUP               YES
-
-
-#define CASESORT_SUP                YES
-
-
-#define NOCASESORT_SUP              YES
-
-
-#define EXPAND_SUP                  YES
-
-
-#define COMPRESS_SUP                YES
-
-
-#define SOUNDEX_SUP                 YES
-
-
-#define LICSCP_SUP                  YES
-
-
-#define CPLICS_SUP                  YES
-
-
-#define PRIMALT_SUP                 YES
-
-
-#define ALTPRIM_SUP                 YES
-
-
-#define CHARDEF_LEN                 256
-
-
 #define LOWERCASE_LEN               256
-
-
 #define UPPERCASE_LEN               256
-
-
-#define CASESORT_LEN                256
-
-
 #define NOCASESORT_LEN              256
-
-
-#define SOUNDEX_LEN                 256
-
-
-#define LICSTOCP_LEN                256
-
-
-#define CPTOLICS_LEN                256
-
-
-#define PRIMALT_LEN                 256
-
-
-#define ALTPRIM_LEN                 256
-
-
-#define NUMBER_TABLE_OFFSETS        14
-
-
 #define LDRV_TIEBREAK               LOCAL_EXPAND
-
-
-#define BASE_LEN               256
-
-
-#define BASE_SUP               YES
-
-
-#define LDRV_REVISION          1
-
-
-/* End of langdrv/anczech.def */
 
 #define MAX_NCO_PRIMARY  	152
 #define MAX_NCO_SECONDARY	 11
@@ -940,13 +822,4 @@ static CONST struct SortOrderTblEntry NoCaseOrderTbl [ NOCASESORT_LEN ] = {
 { FIRST_PRIMARY+152, NULL_SECONDARY,      NULL_TERTIARY,      0, 0 }  /* 255   */
 };
 
-
-#ifdef DEBUG
-#ifndef NEED_CP_MAP
-#define NEED_CP_MAP
-#endif
-#endif
-#ifdef NEED_CP_MAP
-#include "../include/cs_lat2.h"
-#endif
 /* End of File : Language driver lat2czech */
