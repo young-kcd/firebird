@@ -1,13 +1,5 @@
 #!/bin/sh
 #
-#------------------------------------------------------------------------------
-# $Copyright: 
-# Copyright (C) Siemens Nixdorf Informationssysteme AG 1994 - 1998
-# Copyright (C) Siemens AG 1998 1999
-# Copyright (C) Fujitsu Siemens Computers GmbH 1999 - 2002
-# All rights reserved
-# $
-#------------------------------------------------------------------------------
 
 FIREBIRD=@prefix@
 cd $FIREBIRD
@@ -61,15 +53,14 @@ if [ -f /etc/profile ]; then
     fi
 fi
 
-    # Create the fbmgr shell script.
-pushd ./
-cd $FIREBIRD/bin
-    cat > fbmgr <<EOF
+# Create the fbmgr shell script.
+cat > $FIREBIRD/bin/fbmgr <<EOF
 #!/bin/sh
-FIREBIRD=$FBRootDir
+FIREBIRD=@prefix@
 export FIREBIRD
-exec \$FIREBIRD/bin/fbmgr.bin \$@
+mode=\${*}
+exec \$FIREBIRD/bin/fbmgr.bin \$mode
 EOF
-popd
+chmod +x $FIREBIRD/bin/fbmgr
 
 # EOF

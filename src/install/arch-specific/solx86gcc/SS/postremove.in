@@ -1,13 +1,5 @@
 #!/bin/sh
 #
-#------------------------------------------------------------------------------
-# $Copyright: 
-# Copyright (C) Siemens Nixdorf Informationssysteme AG 1994 - 1998
-# Copyright (C) Siemens AG 1998 1999
-# Copyright (C) Fujitsu Siemens Computers GmbH 1999 2000
-# All rights reserved
-# $
-#------------------------------------------------------------------------------
 
 # Remove lock and log files
 FIREBIRD=@prefix@
@@ -39,9 +31,9 @@ then
     exit 1
 fi
 
-if [ -f /etc/inet/inetd.conf ]; then
-    echo "Restarting inetd..."
-    kill -HUP `ps -e | grep inetd | awk '{print $1}'`
-fi
+#if [ -f /etc/inet/inetd.conf ]; then
+#    echo "Restarting inetd..."
+#    kill -HUP `ps -e | grep inetd | awk '{print $1}'`
+#fi
 
 # EOF

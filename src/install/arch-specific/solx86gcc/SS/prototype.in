@@ -20,6 +20,7 @@ f none @prefix@/de_DE.msg=$SRCDIR/de_DE.msg  0644 root root
 f none @prefix@/fr_FR.msg=$SRCDIR/fr_FR.msg  0644 root root
 f none @prefix@/ja_JP.msg=$SRCDIR/ja_JP.msg  0644 root root
 v CONFIG.prsv @prefix@/firebird.conf=$SRCDIR/misc/firebird.conf  0644 root root
+f none @prefix@/firebird.init.d.example=$SRCDIR/../../src/install/misc/firebird.init.d.Solaris.in  0755 root root
 
 d none @prefix@/bin  0755 root root
 
