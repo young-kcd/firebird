@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.88 2002-11-14 08:18:10 eku Exp $
+dnl $Id: configure.in,v 1.89 2002-11-15 10:55:32 kkuznetsov Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -238,7 +238,8 @@ AC_CHECK_HEADERS(pwd.h)
 AC_CHECK_HEADERS(unistd.h)
 AC_CHECK_HEADERS(varargs.h)
 AC_CHECK_HEADERS(crypt.h)
-AC_CHECK_HEADERS(netinet/in.h rpc/rpc.h netconfig.h rpc/xdr.h)
+AC_CHECK_HEADERS(netinet/in.h rpc/rpc.h netconfig.h)
+AC_CHECK_HEADERS(rpc/xdr.h,,,[#include <rpc/rpc.h>])
 AC_CHECK_HEADERS(aio.h)
 AC_CHECK_HEADERS(mntent.h)
 
@@ -330,6 +331,10 @@ AC_CHECK_TYPE(socklen_t,int)
 AC_SYS_LARGEFILE
 AC_CHECK_SIZEOF(void*)
 AC_CHECK_TYPE(semun)
+AC_CHECK_TYPES([struct XDR::xdr_ops],,,[#include <rpc/rpc.h> 
+#include <rpc/xdr.h>])
+AC_CHECK_TYPES([struct xdr_ops],,,[#include <rpc/rpc.h> 
+#include <rpc/xdr.h>])
 
 dnl EKU: try to determine the alignment of long and double
 dnl      replaces ALIGNMENT and DOUBLE_ALIGN in src/jrd/common.h

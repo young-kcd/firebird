@@ -132,8 +132,11 @@
 /* Is the platform big endian? */
 #undef WORDS_BIGENDIAN
 
+
 /* Return type of signal handler */
 #define RETSIGTYPE void
+
+#undef HAVE_STRUCT_XDR_OPS
 
 /* Are paths case sensitive? */
 #define CASE_SENSITIVITY false

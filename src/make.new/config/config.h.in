@@ -1,4 +1,4 @@
-#ident "$Id: config.h.in,v 1.58 2002-11-14 07:35:51 eku Exp $"
+#ident "$Id: config.h.in,v 1.59 2002-11-15 10:55:34 kkuznetsov Exp $"
 
  /*
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
@@ -101,6 +101,8 @@
 
 /* Is union semun defined? */
 #undef HAVE_SEMUN
+
+#undef  HAVE_STRUCT_XDR_OPS
 
 /* alignment of long */
 #define ALIGNMENT 4
