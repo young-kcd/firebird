@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: postfix.darwin,v 1.1.2.8 2003-11-25 23:18:50 bellardo Exp $
+#$Id: postfix.darwin,v 1.1.2.9 2003-11-25 23:41:55 bellardo Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 
@@ -131,6 +131,6 @@ darwin_postbuild_target: package
 	@echo You can find the installer packages in gen/firebird, and the raw
 	@echo frameworks in gen/firebird/frameworks
 	@echo
-	@echo Run \"make install\" as root (or via sudo) to install your binary.
+	@echo "Run \"make install\" as root (or via sudo) to install your binary."
 	@echo
 	@echo Enjoy
