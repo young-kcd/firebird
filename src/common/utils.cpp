@@ -31,7 +31,9 @@
 // Utility functions
 
 
-#if defined(LINUX) || defined(MINGW) || defined(FREEBSD)
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#else
 #define __need_size_t
 #include <stddef.h>
 #undef __need_size_t
