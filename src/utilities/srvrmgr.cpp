@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: srvrmgr.cpp,v 1.13.2.2 2004-12-06 09:45:45 kkuznetsov Exp $
+ * $Id: srvrmgr.cpp,v 1.13.2.3 2005-01-13 10:30:56 kkuznetsov Exp $
  */
 
 #include "firebird.h"
@@ -504,15 +504,15 @@ static BOOLEAN start_server( IBMGR_DATA * data)
 */
 	if (!(pid = fork1())) {
 		if (execv(path, argv)== -1){
-			ib_fprintf(OUTFILE, "Could not create child process %s with args %s\n",
-				   path, argv);
+			ib_fprintf(OUTFILE, "Could not create child process %s with args %s %s\n",
+				   path, argv[0], argv[1]);
 
 		    }
 		
 		
 		
 		
-		_exit(FINI_ERROR);
+		exit(FINI_ERROR);
 	}
 
 #else
