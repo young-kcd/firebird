@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.refDatabases,v 1.7 2002-10-11 21:41:06 skywalker Exp $
+#  $Id: Makefile.in.refDatabases,v 1.8 2002-10-14 09:21:11 eku Exp $
 #
 ROOT=..
 ObjModuleName=refDatabases
@@ -86,7 +86,7 @@ yachts.lnk: empty.gdb
 ref_databases : msg.gdb help.gdb metadata.gdb isc4.gdb
 
 msg.gdb:	$(SRC_ROOT)/msgs/msg.gbak
-	$(BIN)/gbak_static -MODE read_only -R $< msg.gdb
+	$(BIN)/gbak_static -MODE read_only -R $< $@
 	touch $@
 	chmod 444 $@
 
@@ -104,10 +104,10 @@ isc4.gdb:	$(FIREBIRD)/isc4.gdb
 $(FIREBIRD)/isc4.gdb:	$(SRC_ROOT)/misc/isc4.gbak
 	$(BIN)/gbak_static  -R $< $@
 	touch $@
-	chmod 444 $@
+	chmod 666 $@
 
 metadata.gdb:	$(SRC_ROOT)/misc/metadata.gbak
-	$(BIN)/gbak_static -MODE read_only -R $< metadata.gdb
+	$(BIN)/gbak_static -MODE read_only -R $< $@
 	touch $@
 	chmod 444 $@
 
