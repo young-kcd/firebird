@@ -103,12 +103,12 @@ NULL,							/* 0 */
 	"gds__dyn_func_mechanism",
 	"gds__dyn_filter_in_subtype",
 	"gds__dyn_filter_out_subtype",
-	"gds__dyn_description2", "gds__dyn_fld_computed_source2",	/* 155 */
-	"gds__dyn_fld_edit_string2",
-	"gds__dyn_fld_query_header2",
-	"gds__dyn_fld_validation_source2",
-	"gds__dyn_trg_msg2", "gds__dyn_trg_source2",	/* 160 */
-	"gds__dyn_view_source2",
+	NULL, NULL,	/* 155 */
+	NULL,
+	NULL,
+	NULL,
+	NULL, NULL,	/* 160 */
+	NULL,
 	"gds__dyn_rel_constraint",
 	"gds__dyn_delete_rel_constraint",
 	"gds__dyn_def_procedure", "gds__dyn_delete_procedure",	/* 165 */
@@ -125,7 +125,7 @@ NULL,							/* 0 */
 	"gds__dyn_log_file_serial", "gds__dyn_def_cache_file",	/* 180 */
 	"gds__dyn_def_exception",
 	"gds__dyn_mod_exception",
-	"gds__dyn_del_exception", "gds__dyn_xcp_msg2", "gds__dyn_xcp_msg",	/* 185 */
+	"gds__dyn_del_exception", NULL, "gds__dyn_xcp_msg",	/* 185 */
 	"gds__dyn_grant_proc",
 	"gds__dyn_grant_trig",
 	"gds__dyn_grant_view", "gds__dyn_log_group_commit_wait", "gds__dyn_log_buffer_size",	/* 190 */

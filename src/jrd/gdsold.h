@@ -1784,35 +1784,6 @@ const unsigned char gds_dyn_filter_out_subtype = 153;
 
 #endif
 
-
-#ifndef	__cplusplus				/* c definitions */
-
-#define gds__dyn_description2		   154
-#define gds__dyn_fld_computed_source2	   155
-#define gds__dyn_fld_edit_string2	   156
-#define gds__dyn_fld_query_header2	   157
-#define gds__dyn_fld_validation_source2    158
-#define gds__dyn_trg_msg2	   	   159
-#define gds__dyn_trg_source2	   	   160
-#define gds__dyn_view_source2		   161
-#define gds__dyn_xcp_msg2                  184
-
-#else /* c++ definitions */
-
-const unsigned char gds_dyn_description2 = 154;
-const unsigned char gds_dyn_fld_computed_source2 = 155;
-const unsigned char gds_dyn_fld_edit_string2 = 156;
-const unsigned char gds_dyn_fld_query_header2 = 157;
-const unsigned char gds_dyn_fld_validation_source2 = 158;
-const unsigned char gds_dyn_trg_msg2 = 159;
-const unsigned char gds_dyn_trg_source2 = 160;
-const unsigned char gds_dyn_view_source2 = 161;
-const unsigned char gds_dyn_xcp_msg2 = 184;
-
-#endif
-
-
-
 /*********************************/
 /* Generator specific attributes */
 /*********************************/
