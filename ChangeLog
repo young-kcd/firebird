@@ -1,3 +1,54 @@
+2004-04-27 17:54  brodsom
+
+	* firebird2/: src/jrd/gdsold.h (1.43), src/jrd/gds.h (1.6),
+	src/jrd/gds.hxx (1.10), lang_helpers/gdsold.h (1.1),
+	lang_helpers/gds.h (1.1), lang_helpers/gds.hxx (1.1):
+	
+	Moving obsolete headers to lang_helpers
+
+2004-04-27 17:53  brodsom
+
+	* firebird2/src/include/jrd/gds.h (1.5):
+	
+	Remove unused header
+
+2004-04-27 14:38  brodsom
+
+	* firebird2/builds/win32/make_all.bat (1.23):
+	
+	Remove references to gds.h, gds.hxx and gdsold.h from builds
+
+2004-04-27 14:35  brodsom
+
+	* firebird2/builds/: install/arch-specific/freebsd/install.sh.in
+	(1.7), install/arch-specific/linux/classic/makeInstallImage.sh.in
+	(1.7), install/arch-specific/linux/classic/preinstall.sh.in (1.4),
+	install/arch-specific/linux/super/makeInstallImage.sh.in (1.8),
+	install/arch-specific/linux/super/rpmfiles.txt.in (1.8),
+	install/arch-specific/sinixz/prototype.in (1.5),
+	mac_os_x/CS/Helpers.make (1.4),
+	mac_os_x/CS/CS.pbproj/project.pbxproj (1.5),
+	posix/Makefile.in.firebird (1.52):
+	
+	Remove references to gds.h, gds.hxx and gdsold.h from builds
+
+2004-04-27 14:32  brodsom
+
+	* firebird2/builds/win32/: msvc6/fbclient.dsp (1.45),
+	msvc6/fbclient_static.dsp (1.13), msvc6/engine.dsp (1.46),
+	msvc6/engine_classic.dsp (1.41), msvc6/engine_embed.dsp (1.20),
+	msvc7/engine.vcproj (1.36), msvc7/engine_classic.vcproj (1.35),
+	msvc7/engine_embed.vcproj (1.23), msvc7/fbclient.vcproj (1.33),
+	msvc7/fbclient_static.vcproj (1.13):
+	
+	Remove references to gds.h, gds.hxx and gdsold.h from builds
+
+2004-04-27 03:45  skidder
+
+	* firebird2/src/jrd/blb.cpp (1.70):
+	
+	Back out my block leak fix and return to 1.5.0 logic in this place
+
 2004-04-26 09:54  brodsom
 
 	* firebird2/src/isql/: show.epp (1.42), isql.epp (1.76), isql.h
