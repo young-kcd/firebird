@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.77 2002-11-12 07:46:32 eku Exp $
+dnl $Id: configure.in,v 1.78 2002-11-12 09:17:47 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -260,6 +260,7 @@ AC_TYPE_SIGNAL
 AC_CHECK_TYPE(socklen_t,int)
 AC_SYS_LARGEFILE
 AC_CHECK_SIZEOF(void*)
+AC_CHECK_TYPE(semun)
 
 dnl EKU: try to determine the alignment of long and double
 dnl      replaces ALIGNMENT and DOUBLE_ALIGN in src/jrd/common.h
@@ -330,7 +331,7 @@ dnl ##################### DO NOT ADD ANY TESTS BELOW ###########################
 
 dnl The following file defines the version number strings
 . ./src/misc/writeBuildNum.sh
-FIREBIRD_PACKAGE_VERSION="0a.Alpha3"
+FIREBIRD_PACKAGE_VERSION="0a.Alpha4"
 
 
 FIREBIRD_LIBGDS_SO=libfbembed.so.${FIREBIRD_VERSION}

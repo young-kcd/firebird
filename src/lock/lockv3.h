@@ -44,19 +44,7 @@
 #include "../jrd/common.h"
 #include "../lock/fparamv3.h"
 
-#if (defined linux || defined FREEBSD || defined NETBSD || defined DARWIN )
-#define SEMUN
-#endif
-
-#ifdef sun
-#ifndef SOLARIS
-#define SEMUN
-#endif
-#endif
-
-#ifdef SEMUN
-#undef SEMUN
-#else
+#ifndef HAVE_SEMUN
 union semun {
 	int val;
 	struct semid_ds *buf;
