@@ -22,6 +22,14 @@
 #ifndef _DIR_LIST_H_
 #define _DIR_LIST_H_
 
+//
+// This class is used internally by DirectoryList
+// to store single path in format of pre-parsed
+// elements of that path & perform basic operations
+// with this path representation.
+// Because of it's internal nature it has only
+// internally required subset of possible operators.
+//
 class ParsedPath {
 	Firebird::string * PathElem;
 	int nElem;
@@ -30,10 +38,15 @@ public:
 	ParsedPath(void);
 	ParsedPath(const Firebird::string & path);
 	~ParsedPath();
+	// Take new path inside
 	void Parse(const Firebird::string & path);
-	Firebird::string operator[](int n);
+	// Convert internal representation to traditional one
 	operator Firebird::string();
+	// Compare with path given by constant
 	bool operator==(const char * path);
+	// Check, whether pPath lies inside directory tree,
+	// specified by *this ParsedPath. Also checks against
+	// possible symbolic links.
 	bool Contains(const ParsedPath & pPath);
 };
 
@@ -41,10 +54,14 @@ class DirectoryList {
 private:
 	ParsedPath * ConfigDirs;
 	int nDirs;
+	// Initialize loads data from Config Manager.
+	// With simple mutex add-on may be easily used to 
+	// load them dynamically. Now called locally
+	// when IsPathInList() invoked first time.
 	void Initialize(void);
 protected:
-	// for various configuration parameters
-	// returns parameter value
+	// Used for various configuration parameters - 
+	// returns parameter string from Config Manager.
 	virtual const Firebird::string GetConfigString(void) = 0;
 public:
 	DirectoryList();
