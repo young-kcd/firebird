@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: nbackup.cpp,v 1.32 2004-09-15 05:30:25 skidder Exp $
+ *  $Id: nbackup.cpp,v 1.33 2004-09-25 10:28:03 robocop Exp $
  *
  */
  
@@ -104,8 +104,8 @@ public:
 		va_start(params, message);
 		VSNPRINTF(temp, sizeof(temp), message, params);
 		temp[sizeof(temp) - 1] = 0;
-		fprintf(stderr, "Failure: %s\n", temp);
 		va_end(params);
+		fprintf(stderr, "Failure: %s\n", temp);
 		throw b_error(temp);
 	}
 private:

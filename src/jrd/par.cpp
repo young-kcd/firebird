@@ -651,6 +651,7 @@ static void error(CompilerScratch* csb, ...)
 			break; 
 		}
 	}
+	va_end(args);
 
 /* Give up whatever we were doing and return to the user. */
 
@@ -3046,5 +3047,6 @@ static void warning(CompilerScratch* csb, ...)
 			break; 
 		}
 	}
+	va_end(args);
 }
 

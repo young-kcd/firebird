@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.78 2004-09-24 15:48:20 hvlad Exp $
+$Id: why.cpp,v 1.79 2004-09-25 10:27:42 robocop Exp $
 */
 
 #include "firebird.h"
@@ -4276,7 +4276,9 @@ ISC_STATUS API_ROUTINE GDS_ROLLBACK(ISC_STATUS * user_status,
 		{
 			if (!is_network_error(status) ||
 				(transaction->flags & HANDLE_TRANSACTION_limbo) )
+			{
 				return error(status, local);
+			}
 		}
 
 	if (is_network_error(status))
@@ -4838,6 +4840,7 @@ ISC_STATUS API_ROUTINE_VARARG GDS_START_TRANSACTION(ISC_STATUS * user_status,
 		teb->teb_tpb_length = va_arg(ptr, int);
 		teb->teb_tpb = va_arg(ptr, UCHAR *);
 	}
+	va_end(ptr);
 
 	teb = end - count;
 
@@ -4988,7 +4991,6 @@ ISC_STATUS API_ROUTINE GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 	ISC_STATUS *status;
 	ISC_STATUS_ARRAY local;
 	WHY_TRA transaction, sub;
-	UCHAR *ptr, *end;
 	SSHORT buffer_len, item_len;
 
 	GET_STATUS;
@@ -5018,8 +5020,8 @@ ISC_STATUS API_ROUTINE GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 																  buffer))
 					return error(status, local);
 
-			ptr = buffer;
-			end = buffer + buffer_len;
+			UCHAR* ptr = buffer;
+			const UCHAR* const end = buffer + buffer_len;
 			while (ptr < end && *ptr == isc_info_tra_id)
 				ptr += 3 + gds__vax_integer(ptr + 1, 2);
 

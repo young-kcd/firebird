@@ -608,7 +608,8 @@ static ISC_STATUS error(ISC_STATUS * status_vector, ...)
 			*p++ = va_arg(args, int);
 			break;
 		}
-
+		
+	va_end(args);
 	return status_vector[1];
 }
 

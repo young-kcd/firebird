@@ -4466,6 +4466,7 @@ static dsql_nod* make_node (NOD_TYPE	type,
 	while (--count >= 0)
 		*p++ = va_arg (ptr, dsql_nod*);
 
+	va_end(ptr);
 	return node;
 }
 
@@ -4500,6 +4501,7 @@ static dsql_nod* make_flag_node (NOD_TYPE	type,
 	while (--count >= 0)
 		*p++ = va_arg (ptr, dsql_nod*);
 
+	va_end(ptr);
 	return node;
 }
 

@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.139 2004-09-15 03:49:52 robocop Exp $
+$Id: met.epp,v 1.140 2004-09-25 10:27:42 robocop Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -782,7 +782,8 @@ void MET_error(const TEXT* string, ...)
 	va_list ptr;
 
 	va_start(ptr, string);
-	vsprintf(s, string, ptr);
+	VSNPRINTF(s, sizeof(s), string, ptr);
+	va_end(ptr);
 
 	ERR_post(isc_no_meta_update, isc_arg_gds, isc_random, isc_arg_string,
 			 ERR_cstring(s), 0);

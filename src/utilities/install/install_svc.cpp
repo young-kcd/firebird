@@ -543,6 +543,7 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
 
 	va_start(ptr, text);
 	vprintf(text, ptr);
+	va_end(ptr);
 	printf("\n\n");
 }
 

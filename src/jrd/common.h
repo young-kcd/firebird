@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.123 2004-08-21 07:55:35 skidder Exp $
+$Id: common.h,v 1.124 2004-09-25 10:27:41 robocop Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -69,7 +69,7 @@ $Id: common.h,v 1.123 2004-08-21 07:55:35 skidder Exp $
 #include "../include/fb_types.h"
 
 /*
-  do not use links in source code to maintain platform neutraility
+  do not use links in source code to maintain platform neutrality
 */
 
 #ifdef PROD_BUILD

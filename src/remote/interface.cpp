@@ -6166,8 +6166,11 @@ static void move_error( ISC_STATUS status, ...)
 /* NOTE: This loop could potentially set up a bad status vector */
 
 	while ((*p_args++ = (ISC_STATUS) va_arg(ap, ISC_STATUS)) && p_args < end_args);
+	
 	if (p_args >= end_args)
 		end_args[-1] = isc_arg_end;
+		
+	va_end(ap);
 
 	Firebird::status_exception::raise(tdrdb->trdb_status_vector);
 }

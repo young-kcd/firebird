@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.49 2004-06-05 09:36:56 robocop Exp $
+//	$Id: ftn.cpp,v 1.50 2004-09-25 10:27:32 robocop Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -3999,6 +3999,7 @@ static void printa(const TEXT* column, const TEXT* string, ...)
 	strcat(s, string);
 	strcat(s, "\n");
 	vsprintf(output_buffer, s, ptr);
+	va_end(ptr);
 	FTN_print_buffer(output_buffer);
 }
 
@@ -4341,6 +4342,7 @@ static void printb(const TEXT* string, ...)
 
 	va_start(ptr, string);
 	vfprintf(gpreGlob.out_file, string, ptr);
+	va_end(ptr);
 }
 #endif
 

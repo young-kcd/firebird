@@ -136,7 +136,7 @@ void ERRD_error( int code, const char* text)
         *status_vector++ = isc_random;
         *status_vector++ = isc_arg_cstring;
         *status_vector++ = strlen(s);
-        *status_vector++ = reinterpret_cast<long>(s);
+        *status_vector++ = reinterpret_cast<ISC_STATUS>(s); // warning, pointer to SLONG!
         *status_vector++ = isc_arg_end;
     }
 
@@ -193,6 +193,8 @@ bool ERRD_post_warning(ISC_STATUS status, ...)
 	if (indx + 3 >= ISC_STATUS_LENGTH)
 	{
 		// not enough free space 
+		// Hey, before returning, clean the varargs thing!
+	    va_end(args);
 		return false;
 	}
 
@@ -243,6 +245,7 @@ bool ERRD_post_warning(ISC_STATUS status, ...)
 			break;
 		}
     }
+    va_end(args);
 	status_vector[indx] = isc_arg_end;
 	return true;
 }

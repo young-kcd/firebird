@@ -406,6 +406,7 @@ static ISC_STATUS error( ISC_STATUS* status, SSHORT count, ...)
 	for (; count; --count)
 		*stat++ = (ISC_STATUS) va_arg(ptr, ISC_STATUS);
 
+	va_end(ptr);
 	*stat = isc_arg_end;
 
 	return status[1];
@@ -631,6 +632,7 @@ static ISC_STATUS stuff_args(gen_t* gen, SSHORT count, ...)
 		*(gen->gen_sdl)++ = c;
 	}
 
+	va_end(ptr);
 	return 0;
 }
 

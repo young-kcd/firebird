@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.48 2004-08-26 21:44:11 brodsom Exp $
+//	$Id: cob.cpp,v 1.49 2004-09-25 10:27:32 robocop Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -4419,6 +4419,7 @@ static void printa(const TEXT* column,
 	strcat(s, string);
 	strcat(s, "\n");
 	vsprintf(output_buffer, s, ptr);
+	va_end(ptr);
 	COB_print_buffer(output_buffer, call);
 }
 
@@ -4435,6 +4436,7 @@ static void printb(const TEXT* string, ...)
 
 	va_start(ptr, string);
 	vfprintf(gpreGlob.out_file, string, ptr);
+	va_end(ptr);
 }
 #endif
 

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int_cxx.cpp,v 1.35 2004-05-24 17:13:37 brodsom Exp $
+//	$Id: int_cxx.cpp,v 1.36 2004-09-25 10:27:32 robocop Exp $
 //
 
 #include "firebird.h"
@@ -746,5 +746,6 @@ static void printa(const int column, const TEXT* string, ...)
 	va_start(ptr, string);
 	align(column);
 	vfprintf(gpreGlob.out_file, string, ptr);
+	va_end(ptr);
 }
 

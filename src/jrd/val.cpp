@@ -770,19 +770,20 @@ static RTN corrupt(thread_db* tdbb, VDR control, USHORT err_code, jrd_rel* relat
 
 	const TEXT* string = msg_table[err_code];
 
-	sprintf(s, "Database: %s\n\t",
+	SNPRINTF(s, sizeof(s), "Database: %s\n\t",
 			tdbb->tdbb_attachment->att_filename.c_str());
 			
 	TEXT* p;
 	for (p = s; *p; p++)
 		/* nothing */ ;
-	vsprintf(p, string, ptr);
+	VSNPRINTF(p, sizeof(s) - (p - s), string, ptr);
+	va_end(ptr);
 
 	if (relation) {
 		for (; *p; p++)
 			/* nothing */ ;
-		sprintf(p, " in table %s (%d)\n", relation->rel_name,
-				relation->rel_id);
+		SNPRINTF(p, sizeof(s) - (p - s), " in table %s (%d)\n",
+				relation->rel_name, relation->rel_id);
 	}
 
 	gds__log(s);

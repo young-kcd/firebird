@@ -3661,6 +3661,7 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
 		teb->teb_tpb_length = va_arg(ptr, int);
 		teb->teb_tpb = va_arg(ptr, UCHAR *);
 	}
+	va_end(ptr);
 
 	return GDS_START_MULTIPLE(user_status, tra_handle, count, tebs);
 }

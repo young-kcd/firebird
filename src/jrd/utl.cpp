@@ -393,6 +393,7 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR** dpb, SSHORT* dpb_size, ...)
 			break;
 		}
 	}
+	va_end(args);
 
 /* if items have been added, allocate space
    for the new dpb and copy the old one over */
@@ -467,6 +468,7 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR** dpb, SSHORT* dpb_size, ...)
 			break;
 		}
 	}
+	va_end(args);
 
 	*dpb_size = p - reinterpret_cast<char*>(new_dpb);
 	*dpb = reinterpret_cast<SCHAR*>(new_dpb);

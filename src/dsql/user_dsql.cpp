@@ -1476,6 +1476,7 @@ static void error_post(ISC_STATUS status, ...)
 		}
 	}
 
+	va_end(args);
 	*p = isc_arg_end;
 
 	// Give up whatever we were doing and return to the user.

@@ -85,6 +85,7 @@ SLONG API_ROUTINE_VARARG isc_event_block(SCHAR** event_buffer,
 		const char* q = va_arg(ptr, SCHAR *);
 		length += strlen(q) + 5;
 	}
+	va_end(ptr);
 
 	char* p = *event_buffer = (SCHAR *) gds__alloc((SLONG) length);
 /* FREE: apparently never freed */
@@ -125,6 +126,7 @@ SLONG API_ROUTINE_VARARG isc_event_block(SCHAR** event_buffer,
 		*p++ = 0;
 		*p++ = 0;
 	}
+	va_end(ptr);
 
 	return static_cast<SLONG>(p - *event_buffer);
 }
@@ -268,6 +270,7 @@ struct teb_t {
 		teb_iter->teb_tpb_length = va_arg(ptr, int);
 		teb_iter->teb_tpb = va_arg(ptr, UCHAR *);
 	}
+	va_end(ptr);
 
 	const ISC_STATUS status = isc_start_multiple(status_vector, tra_handle, count, teb);
 

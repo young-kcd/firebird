@@ -1168,7 +1168,7 @@ static void util_output( const SCHAR* format, ...)
 		UCHAR buf[1000];
 		va_list arglist;
 		va_start(arglist, format);
-		vsprintf((char *) buf, format, arglist);
+		VSNPRINTF((char *) buf, sizeof(buf), format, arglist);
 		va_end(arglist);
 		exit_code = tdsec->tsec_output_proc(tdsec->tsec_output_data, buf);
 	}

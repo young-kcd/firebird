@@ -389,10 +389,12 @@ bool ERR_post_warning(ISC_STATUS status, ...)
 				break;
 			}
 		status_vector[indx] = isc_arg_end;
+		va_end(args);
 		return true;
 	}
 	else {
 		/* not enough free space */
+		va_end(args);
 		return false;
 	}
 }
@@ -414,8 +416,8 @@ void ERR_post_nothrow(ISC_STATUS status, ...)
 {
 	va_list args;
 	va_start(args, status);
-
 	internal_post(status, args);
+	va_end(args);
 }
 
 
@@ -434,9 +436,9 @@ void ERR_post(ISC_STATUS status, ...)
 {
 	va_list args;
 	va_start(args, status);
-	
 	internal_post(status, args);
-	
+	va_end(args);
+
 	DEBUG;
 	ERR_punt();
 }

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pretty.cpp,v 1.27 2004-06-03 07:31:10 robocop Exp $
+//	$Id: pretty.cpp,v 1.28 2004-09-25 10:27:33 robocop Exp $
 //
 
 #include "firebird.h"
@@ -271,8 +271,10 @@ static int blr_format(CTL control, const char *string, ...)
 
 	va_start(ptr, string);
 	vsprintf(control->ctl_ptr, string, ptr);
+	va_end(ptr);
 	while (*control->ctl_ptr)
 		control->ctl_ptr++;
+		
 	return 0;
 }
 

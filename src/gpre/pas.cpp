@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.41 2004-06-05 09:36:56 robocop Exp $
+//	$Id: pas.cpp,v 1.42 2004-09-25 10:27:33 robocop Exp $
 //
 
 #include "firebird.h"
@@ -3593,6 +3593,7 @@ static void printa( int column, const char* string, ...)
 	va_start(ptr, string);
 	align(column);
 	vfprintf(gpreGlob.out_file, string, ptr);
+	va_end(ptr);
 }
 
 

@@ -3294,6 +3294,7 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
 		if (l)
 			comm_ptr += sizeof(ULONG) - l;
 	}
+	va_end(args); // Note CHECK_HANDLE_REL may return above!
 
 	// send message and get response 
 
