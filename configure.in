@@ -1,0 +1,112 @@
+AC_INIT(src)
+AC_CONFIG_AUX_DIR(src/make.new/config)
+AC_CACHE_VAL(ac_cv_prog_make_set, [AC_PROG_MAKE_SET])
+
+AC_CONFIG_HEADER(src/include/gen/autoconfig.h:src/make.new/config/config.h.in)
+
+AC_CANONICAL_SYSTEM
+
+AC_PROG_AWK
+AC_PROG_CC
+AC_PROG_CXX
+AC_PROG_LEX
+AC_PROG_LN_S
+AC_PROG_RANLIB
+AC_PROG_YACC
+
+AC_CHECK_HEADERS(assert.h)
+AC_CHECK_HEADERS(unistd.h)
+AC_CHECK_HEADERS(fcntl.h)
+AC_CHECK_HEADERS(grp.h)
+AC_CHECK_HEADERS(libio.h)
+AC_CHECK_HEADERS(sys/types.h)
+AC_CHECK_HEADERS(sys/stat.h)
+AC_CHECK_HEADERS(sys/uio.h)
+AC_CHECK_HEADERS(sys/wait.h)
+AC_CHECK_HEADERS(time.h)
+AC_CHECK_HEADERS(sys/time.h)
+AC_CHECK_HEADERS(sys/param.h)
+AC_CHECK_HEADERS(varargs.h)
+AC_CHECK_HEADERS(stdarg.h)
+AC_CHECK_HEADERS(stdlib.h)
+AC_CHECK_HEADERS(ctype.h)
+AC_CHECK_HEADERS(string.h)
+AC_CHECK_HEADERS(signal.h)
+
+AC_C_BIGENDIAN
+AC_C_CONST
+
+case "$target_cpu" in
+powerpc) AC_DEFINE(PowerPC) ;;
+esac
+
+case "$target" in
+*-*-darwin*) MAKEFILE_PREFIX=prefix.darwin ; PLATFORM=DARWIN ; AC_DEFINE(DARWIN);;
+*-*-freebsd*) MAKEFILE_PREFIX=prefix.freebsd ; PLATFORM=FREEBSD ; AC_DEFINE(FREEBSD);;
+*-*-linux*) MAKEFILE_PREFIX=prefix.linux ; PLATFORM=LINUX ; AC_DEFINE(LINUX) ;;
+*-*-netbsd*) MAKEFILE_PREFIX=prefix.netbsd ; PLATFORM=NETBSD ; AC_DEFINE(NETBSD) ;;
+*-*-hpux*) MAKEFILE_PREFIX=prefix.hpux ; PLATFORM=hpux ; AC_DEFINE(hpux) ;;
+esac
+
+AC_SUBST(PLATFORM)
+
+AC_OUTPUT_COMMANDS([mkdir -p gen/csv])
+AC_OUTPUT_COMMANDS([mkdir -p gen/dudley])
+AC_OUTPUT_COMMANDS([mkdir -p gen/isql])
+AC_OUTPUT_COMMANDS([mkdir -p gen/lock])
+AC_OUTPUT_COMMANDS([mkdir -p gen/gpre])
+AC_OUTPUT_COMMANDS([mkdir -p gen/pipe])
+AC_OUTPUT_COMMANDS([mkdir -p gen/remote])
+AC_OUTPUT_COMMANDS([mkdir -p gen/wal])
+AC_OUTPUT_COMMANDS([mkdir -p gen/alice])
+AC_OUTPUT_COMMANDS([mkdir -p gen/refDatabases])
+AC_OUTPUT_COMMANDS([mkdir -p gen/v5_examples])
+AC_OUTPUT_COMMANDS([mkdir -p gen/gpre])
+AC_OUTPUT_COMMANDS([mkdir -p gen/journal])
+AC_OUTPUT_COMMANDS([mkdir -p gen/msgs])
+AC_OUTPUT_COMMANDS([mkdir -p gen/burp])
+AC_OUTPUT_COMMANDS([mkdir -p gen/dsql])
+AC_OUTPUT_COMMANDS([mkdir -p gen/extlib])
+AC_OUTPUT_COMMANDS([mkdir -p gen/intl])
+AC_OUTPUT_COMMANDS([mkdir -p gen/jrd])
+AC_OUTPUT_COMMANDS([mkdir -p gen/qli])
+AC_OUTPUT_COMMANDS([mkdir -p gen/utilities])
+
+AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/include])
+AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/intl])
+AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/UDF])
+AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/bin])
+AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/examples/v5])
+AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/lib])
+AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/misc])
+AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/help])
+
+AC_OUTPUT( \
+src/make.rules:src/make.new/make.rules \
+src/make.defaults:src/make.new/make.defaults \
+src/make.platform:src/make.new/${MAKEFILE_PREFIX} \
+src/make.shared.variables:src/make.new/make.shared.variables \
+src/fbutil/Makefile:src/fbutil/Makefile.in \
+src/alice/Makefile:src/make.new/Makefile.in.alice \
+src/burp/Makefile:src/make.new/Makefile.in.burp \
+src/csv/Makefile:src/make.new/Makefile.in.csv \
+src/refDatabases/Makefile:src/make.new/Makefile.in.refDatabases \
+src/dsql/Makefile:src/make.new/Makefile.in.dsql \
+src/dudley/Makefile:src/make.new/Makefile.in.dudley \
+src/v5_examples/Makefile:src/make.new/Makefile.in.example5 \
+src/extlib/Makefile:src/make.new/Makefile.in.extlib \
+src/gpre/Makefile:src/make.new/Makefile.in.gpre \
+src/intl/Makefile:src/make.new/Makefile.in.intl \
+src/isql/Makefile:src/make.new/Makefile.in.isql \
+src/journal/Makefile:src/make.new/Makefile.in.journal \
+src/jrd/Makefile:src/make.new/Makefile.in.jrd \
+src/lock/Makefile:src/make.new/Makefile.in.lock \
+src/msgs/Makefile:src/make.new/Makefile.in.msgs \
+src/pipe/Makefile:src/make.new/Makefile.in.pipe \
+src/qli/Makefile:src/make.new/Makefile.in.qli \
+src/remote/Makefile:src/make.new/Makefile.in.remote \
+src/utilities/Makefile:src/make.new/Makefile.in.utilities \
+src/wal/Makefile:src/make.new/Makefile.in.wal \
+src/Makefile:src/make.new/Makefile.in.firebird \
+Makefile:Makefile.in \
+)
