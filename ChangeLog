@@ -1,3 +1,9 @@
+2005-02-27 23:29  arnobrinkman
+
+	* firebird2/src/jrd/btn.cpp (1.18):
+	
+	Very little optimization
+
 2005-02-26 19:54  hvlad
 
 	* firebird2/builds/win32/make_all.bat (1.31):
