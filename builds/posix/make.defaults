@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.35 2004-04-30 23:02:07 brodsom Exp $
+#   $Id: make.defaults,v 1.36 2004-05-20 09:55:35 kkuznetsov Exp $
 # 
 
 
@@ -186,8 +186,10 @@ LINK_OPTS = $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib $(LIB_LINK_RPATH)$(Fir
 LIB_LINK_OPTIONS = -shared
 LIB_LINK_RPATH = -Wl,-rpath,
 LIB_LINK_SONAME = -Wl,-soname,
-LINK_FIREBIRD_SYMBOLS = -Wl,--version-script,$(ROOT)/builds/posix/firebird.vers
-LINK_FBINTL_SYMBOLS = -Wl,--version-script,$(ROOT)/builds/posix/fbintl.vers
+LIB_LINK_MAPFILE= -Wl,--version-script,
+
+LINK_FIREBIRD_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.vers
+LINK_FBINTL_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.vers
 
 FB_SUPER_SERVER	= $(BIN)/fbserver$(EXEC_EXT)
 FB_CLASSIC_SERVER = $(BIN)/fb_inet_server$(EXEC_EXT)
