@@ -1,3 +1,28 @@
+2004-06-06 07:25  robocop
+
+	* firebird2/src/: isql/isql.epp (1.87), qli/help.epp (1.22):
+	
+	Style and const
+
+2004-06-05 11:36  robocop
+
+	* firebird2/src/: burp/burp.cpp (1.79), dsql/ddl.cpp (1.105),
+	dudley/ddl.h (1.27), dudley/extract.epp (1.35), gpre/c_cxx.cpp
+	(1.51), gpre/cme.cpp (1.31), gpre/cob.cpp (1.47), gpre/exp.cpp
+	(1.35), gpre/ftn.cpp (1.49), gpre/gpre.cpp (1.62), gpre/gpre.h
+	(1.70), gpre/par.cpp (1.52), gpre/pas.cpp (1.41), isql/extract.epp
+	(1.39), jrd/dbg.cpp (1.28), jrd/isc.cpp (1.51), jrd/jrd.cpp
+	(1.172), jrd/os/posix/config_root.cpp (1.11), msgs/include.epp
+	(1.10), qli/help.epp (1.21), qli/picstr.cpp (1.25), remote/allr.cpp
+	(1.27), remote/os/win32/window.h (1.4), remote/os/win32/winmain.cpp
+	(1.10), utilities/install/install_reg.cpp (1.10),
+	utilities/install/regis_proto.h (1.5),
+	utilities/install/registry.cpp (1.11), utilities/install/registry.h
+	(1.7), utilities/install/servi_proto.h (1.9),
+	utilities/install/services.cpp (1.13):
+	
+	Literal strings should be treated as const char*
+
 2004-06-04 16:36  kkuznetsov
 
 	* firebird2/src/: dsql/array_proto.h (1.14), jrd/alt_proto.h
