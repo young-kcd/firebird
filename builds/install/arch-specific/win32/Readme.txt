@@ -66,11 +66,11 @@ Reporting Bugs
 o Are you sure you understand how Firebird works?
 
   Perhaps you are seeing the correct behaviour and you really have a
-  support question. In this case contact the ib-support list server.
+  support question. In this case contact the firebird-support list server.
 
   You may subscribe here:
 
-    mailto:ib-support-subscribe@yahoogroups.com
+    mailto:firebird-support-subscribe@yahoogroups.com
 
 
 o Still think it is a bug?
