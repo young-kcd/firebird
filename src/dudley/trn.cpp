@@ -606,7 +606,6 @@ static void add_global_field( STR dyn, DUDLEY_FLD field)
  *
  **************************************/
 	SYM name;
-	DSC desc;
 	int n;
 
 	if (field->fld_computed)
@@ -1300,7 +1299,6 @@ static void modify_global_field( STR dyn, DUDLEY_FLD field)
  *
  **************************************/
 	SYM name;
-	DSC desc;
 	int n;
 
 	if (field->fld_computed)
@@ -1817,11 +1815,13 @@ static void raw_cobol( STR dyn)
 		}
 		if (language == lan_ansi_cobol)
 			ib_fprintf(output_file,
-					   "           03  GDS-DYN-%d PIC S9(10) USAGE COMP VALUE IS %d.\n",
+					   "           03  GDS-DYN-%d PIC S9(10) USAGE COMP VALUE IS %"
+					   SLONGFORMAT".\n",
 					   length++, blr_hunk.longword_blr);
 		else
 			ib_fprintf(output_file,
-					   "           03  GDS__DYN_%d PIC S9(10) USAGE COMP VALUE IS %d.\n",
+					   "           03  GDS__DYN_%d PIC S9(10) USAGE COMP VALUE IS %"
+					   SLONGFORMAT".\n",
 					   length++, blr_hunk.longword_blr);
 	}
 }
@@ -1858,9 +1858,9 @@ static void raw_ftn( STR dyn)
 				break;
 		}
 		if (blr_length)
-			sprintf(p, "%d,", blr_hunk.longword_blr);
+			sprintf(p, "%"SLONGFORMAT",", blr_hunk.longword_blr);
 		else
-			sprintf(p, "%d/", blr_hunk.longword_blr);
+			sprintf(p, "%"SLONGFORMAT"/", blr_hunk.longword_blr);
 		while (*p)
 			p++;
 		if (p - buffer > 50) {

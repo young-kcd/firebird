@@ -85,6 +85,8 @@ static SCHAR db_info[] =
 	gds_info_wal_ckpt_length, gds_info_wal_grpc_wait_usecs
 };
 static TEXT acl_privs[] = "?CGDRWP???";
+
+#ifdef NOT_USED_OR_REPLACED
 static TEXT *acl_ids[] = {
 	"?",
 	"group",
@@ -95,7 +97,7 @@ static TEXT *acl_ids[] = {
 	"node",
 	"view"
 };
-
+#endif
 
 static SLONG EXT_capabilities;
 
@@ -223,7 +225,7 @@ static void binary_to_ascii(SLONG value, SSHORT scale, TEXT * buffer)
 /* Handle non-negative scale factor in straightforward manner */
 
 	if (scale >= 0) {
-		sprintf(p, "%d", value);
+		sprintf(p, "%"SLONGFORMAT, value);
 		while (*p)
 			p++;
 		if (scale)
@@ -530,7 +532,7 @@ static void extract_database(TEXT * DB_file_name)
             d += 2;
             page_size = gds__vax_integer((UCHAR*) d, length);
             if (page_size)
-                ib_fprintf(output_file, "\n\tpage_size %d", page_size);
+                ib_fprintf(output_file, "\n\tpage_size %"SLONGFORMAT, page_size);
         }
         
         if (EXT_capabilities & EXT_files)
@@ -538,13 +540,13 @@ static void extract_database(TEXT * DB_file_name)
                 FOR F IN RDB$FILES WITH F.RDB$SHADOW_NUMBER MISSING OR 
                     F.RDB$SHADOW_NUMBER EQ 0 
                     name_trunc(F.RDB$FILE_NAME, buffer);
-                    ib_fprintf(output_file, "\n\tfile \"%s\" starting at page %d",
+                    ib_fprintf(output_file, "\n\tfile \"%s\" starting at page %ld",
                                buffer, F.RDB$FILE_START);
                 END_FOR;
             }
             else
                 FOR F IN RDB$FILES name_trunc(F.RDB$FILE_NAME, buffer);
-                    ib_fprintf(output_file, "\n\tfile \"%s\" starting at page %d",
+                    ib_fprintf(output_file, "\n\tfile \"%s\" starting at page %ld",
                                buffer, F.RDB$FILE_START);
                 END_FOR;
 
@@ -576,7 +578,7 @@ static void extract_database(TEXT * DB_file_name)
 	           ib_fprintf(output_file, ",\n\t\t\"%s\"", F.RDB$FILE_NAME);
 	
 	       if (F.RDB$FILE_LENGTH)
-	           ib_fprintf(output_file, " size = %d", F.RDB$FILE_LENGTH);
+	           ib_fprintf(output_file, " size = %ld", F.RDB$FILE_LENGTH);
 	
 	       if (F.RDB$FILE_PARTITIONS)
 	           ib_fprintf(output_file, " partitions = %d",
@@ -596,7 +598,7 @@ static void extract_database(TEXT * DB_file_name)
 	       ib_fprintf(output_file, " \"%s\"", F.RDB$FILE_NAME);
 	
 	       if (F.RDB$FILE_LENGTH)
-	           ib_fprintf(output_file, " size = %d", F.RDB$FILE_LENGTH);
+	           ib_fprintf(output_file, " size = %ld", F.RDB$FILE_LENGTH);
 	
 	       if (F.RDB$FILE_PARTITIONS)
 	           ib_fprintf(output_file, " partitions = %d",
@@ -621,12 +623,12 @@ static void extract_database(TEXT * DB_file_name)
 			if (num_buf)
 				ib_fprintf(output_file, "\n\tnum_log_buffers %d", num_buf);
 			if (buf_size)
-				ib_fprintf(output_file, "\n\tlog_buffer_size %d", buf_size);
+				ib_fprintf(output_file, "\n\tlog_buffer_size %"SLONGFORMAT, buf_size);
 			if (chkpt_len)
-				ib_fprintf(output_file, "\n\tcheck_point_length %d",
+				ib_fprintf(output_file, "\n\tcheck_point_length %"SLONGFORMAT,
 						   chkpt_len / OneK);
 			if (grp_commit)
-				ib_fprintf(output_file, "\n\tgroup_commit_wait_time %d",
+				ib_fprintf(output_file, "\n\tgroup_commit_wait_time %"SLONGFORMAT,
 						   grp_commit);
 		}
 
@@ -639,7 +641,7 @@ static void extract_database(TEXT * DB_file_name)
 	           SORTED BY F.RDB$SHADOW_NUMBER, F.RDB$FILE_START
 	           name_trunc(F.RDB$FILE_NAME, buffer);
 	           if (F.RDB$FILE_START)
-                   ib_fprintf(output_file, "\n\tfile \"%s\" starting at page %d",
+                   ib_fprintf(output_file, "\n\tfile \"%s\" starting at page %ld",
                               buffer, F.RDB$FILE_START);
                else
                    ib_fprintf(output_file, "%s\ndefine shadow %d \"%s\"",
@@ -2042,9 +2044,9 @@ static void type_scalar(USHORT dtype,
             D.RDB$FIELD_NAME EQ field_name 
             SORTED BY D.RDB$DIMENSION 
             if (D.RDB$LOWER_BOUND  == 1)
-                ib_fprintf(output_file, "%c%d", c, D.RDB$UPPER_BOUND);
+                ib_fprintf(output_file, "%c%ld", c, D.RDB$UPPER_BOUND);
             else
-                ib_fprintf(output_file, "%c%d:%d", c, D.RDB$LOWER_BOUND,
+                ib_fprintf(output_file, "%c%ld:%ld", c, D.RDB$LOWER_BOUND,
                            D.RDB$UPPER_BOUND);
             c = ',';
 	    END_FOR;

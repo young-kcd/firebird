@@ -122,7 +122,9 @@ static void store_userpriv(USERPRIV, TEXT *, TEXT *, USRE, UPFE);
 static int string_length(SCHAR);
 static void wal_info(UCHAR *, SLONG *, SCHAR *, SLONG *);
 
+#ifdef NOT_USED_OR_REPLACED
 static GDS__QUAD null_blob;
+#endif
 static LLS files_to_delete = (LLS) NULL;
 static TEXT alloc_info[] = { gds_info_allocation, gds_info_end };
 
