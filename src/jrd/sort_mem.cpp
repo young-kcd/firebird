@@ -40,8 +40,8 @@
 
 bool SortMem::is_initialized = false;
 
-unsigned long SortMem::mem_block_size = 1048576;			// 1MB
-unsigned long SortMem::mem_upper_limit = 1048576 * 128;		// 128MB
+unsigned long SortMem::mem_block_size = 1048576;				// 1MB
+unsigned long SortMem::mem_upper_limit = (unsigned long) -1;	// ~4GB
 
 unsigned long SortMem::mem_total_size = 0;
 
