@@ -44,7 +44,6 @@ RSC=rc.exe
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /GZ /c
 # ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "SERVER_SHUTDOWN" /D "SUPERSERVER" /D "WIN32_LEAN_AND_MEAN" /D "NOMSG" /FD /GZ /c
-# SUBTRACT CPP /YX
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
@@ -73,8 +72,7 @@ LINK32=link.exe
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "SERVER_SHUTDOWN" /D "SUPERSERVER" /D "WIN32_LEAN_AND_MEAN" /D "NOMSG" /FD /GZ /c
 # SUBTRACT BASE CPP /YX
-# ADD CPP /nologo /MDd /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "SERVER_SHUTDOWN" /D "SUPERSERVER" /D "WIN32_LEAN_AND_MEAN" /D "NOMSG" /FD /GZ /c
-# SUBTRACT CPP /YX
+# ADD CPP /nologo /MD /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "SERVER_SHUTDOWN" /D "SUPERSERVER" /D "WIN32_LEAN_AND_MEAN" /D "NOMSG" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
