@@ -1,3 +1,177 @@
+2003-02-28 21:41  tamlin
+
+	* firebird2/doc/Firebird_conf.txt:
+	
+	no message
+
+2003-02-28 20:20  tamlin
+
+	* firebird2/doc/Firebird_conf.txt:
+	
+	First draft.
+
+2003-02-28 18:02  brodsom
+
+	* firebird2/src/jrd/isc_sync.cpp:
+	
+	-Remove the SOLARIS specific stuff, NDEBUG is set at the compiler
+	command line, and assert.h is obsolete when gdsassert can be used. 
+	-Change assert to fb_assert when gdsassert is in use. to make clear
+	if we use the standard macro or the fb one.
+
+2003-02-28 17:41  brodsom
+
+	* firebird2/src/jrd/: utl.cpp, status.cpp, sch.cpp, gdsassert.h,
+	perf.cpp, dsc.cpp:
+	
+	Change assert to fb_assert when gdsassert is in use. to make clear
+	if we use the standard macro or the fb one.
+
+2003-02-28 17:35  brodsom
+
+	* firebird2/src/dudley/trn.cpp:
+	
+	Change assert to fb_assert when gdsassert is in use. to make clear
+	if we use the standard macro or the fb one.
+
+2003-02-28 16:17  brodsom
+
+	* firebird2/src/: jrd/jrd.h, isql/isql.epp:
+	
+	Change gds_assert to fb_assert (gds_assert is a synonym for
+	fb_assert)
+
+2003-02-28 16:07  brodsom
+
+	* firebird2/src/remote/: server.cpp, protocol.cpp, parser.cpp,
+	interface.cpp:
+	
+	Change assert to fb_assert when gdsassert.h is included. Separate
+	the standard macro from the FB one.
+
+2003-02-28 15:51  brodsom
+
+	* firebird2/src/: intlcpp/utils/dtest.c, intl/utils/dtest.c:
+	
+	Remove not used include
+
+2003-02-28 14:36  brodsom
+
+	* firebird2/src/: qli/all.cpp, jrd/event.cpp, jrd/gds.cpp,
+	jrd/sort.cpp, jrd/sort.h, jrd/all_old.cpp, jrd/common.h:
+	
+	Remove HUGE_PTR
+
+2003-02-28 14:19  brodsom
+
+	* firebird2/src/: gpre/c_cxx.cpp, v5_examples/api1.c,
+	v5_examples/api10.c, v5_examples/api11.c, v5_examples/api12.c,
+	v5_examples/api13.c, v5_examples/api15.c, v5_examples/api16.c,
+	v5_examples/api16t.c, v5_examples/api2.c, v5_examples/api3.c,
+	v5_examples/api4.c, v5_examples/api5.c, v5_examples/api6.c,
+	v5_examples/api7.c, v5_examples/api8.c, v5_examples/api9.c,
+	v5_examples/apifull.c, v5_examples/dynfull.e,
+	v5_examples/empbuild.c, v5_examples/stat8.e, include/fb_types.h:
+	
+	Remove ISC_FAR
+
+2003-02-28 14:10  brodsom
+
+	* firebird2/src/jrd/: ibase.h, scroll_cursors.h:
+	
+	Remove ISC_FAR
+
+2003-02-28 13:57  brodsom
+
+	* firebird2/src/jrd/: par.cpp, trig.h, codes.epp, common.h,
+	gds.cpp, ini.epp, ini.h:
+	
+	Remove FAR_VARIABLE
+
+2003-02-28 13:52  brodsom
+
+	* firebird2/src/: include/gen/sql_code.h,
+	jrd/boot_codes/sql_code.h, misc/sql_code.h, dsql/parse.sed:
+	
+	Remove FAR_VARIABLE
+
+2003-02-28 13:49  brodsom
+
+	* firebird2/src/intlcpp/: charsets/cs_437.h, charsets/cs_737.h,
+	charsets/cs_775.h, charsets/cs_850.h, charsets/cs_852.h,
+	charsets/cs_857.h, charsets/cs_858.h, charsets/cs_860.h,
+	charsets/cs_861.h, charsets/cs_862.h, charsets/cs_863.h,
+	charsets/cs_864.h, charsets/cs_865.h, charsets/cs_866.h,
+	charsets/cs_869.h, charsets/cs_big5.h, charsets/cs_cyrl.h,
+	charsets/cs_gb2312.h, charsets/cs_iso8859_1.h,
+	charsets/cs_iso8859_13.h, charsets/cs_iso8859_2.h,
+	charsets/cs_iso8859_3.h, charsets/cs_iso8859_4.h,
+	charsets/cs_iso8859_5.h, charsets/cs_iso8859_6.h,
+	charsets/cs_iso8859_7.h, charsets/cs_iso8859_8.h,
+	charsets/cs_iso8859_9.h, charsets/cs_jis_0208_1990.h,
+	charsets/cs_ksc5601.h, charsets/cs_next.h, charsets/cs_sjis.h,
+	charsets/cs_w1250.h, charsets/cs_w1251.h, charsets/cs_w1252.h,
+	charsets/cs_w1253.h, charsets/cs_w1254.h, charsets/cs_w1255.h,
+	charsets/cs_w1256.h, charsets/cs_w1257.h, utils/maptest2.c,
+	utils/mapgen4.c:
+	
+	Remove FAR_VARIABLE
+
+2003-02-28 13:45  brodsom
+
+	* firebird2/src/: intl/ld.h, intl/charsets/cs_w1252.h,
+	intl/charsets/cs_w1253.h, intl/charsets/cs_w1254.h,
+	intl/charsets/cs_w1255.h, intl/charsets/cs_w1256.h,
+	intl/charsets/cs_w1257.h, intl/charsets/cs_865.h,
+	intl/charsets/cs_866.h, intl/charsets/cs_869.h,
+	intl/charsets/cs_big5.h, intl/charsets/cs_cyrl.h,
+	intl/charsets/cs_gb2312.h, intl/charsets/cs_iso8859_1.h,
+	intl/charsets/cs_iso8859_13.h, intl/charsets/cs_iso8859_2.h,
+	intl/charsets/cs_iso8859_3.h, intl/charsets/cs_iso8859_4.h,
+	intl/charsets/cs_iso8859_5.h, intl/charsets/cs_iso8859_6.h,
+	intl/charsets/cs_iso8859_7.h, intl/charsets/cs_iso8859_8.h,
+	intl/charsets/cs_iso8859_9.h, intl/charsets/cs_jis_0208_1990.h,
+	intl/charsets/cs_ksc5601.h, intl/charsets/cs_next.h,
+	intl/charsets/cs_sjis.h, intl/charsets/cs_w1250.h,
+	intl/charsets/cs_w1251.h, intl/charsets/cs_857.h,
+	intl/charsets/cs_858.h, intl/charsets/cs_860.h,
+	intl/charsets/cs_861.h, intl/charsets/cs_862.h,
+	intl/charsets/cs_863.h, intl/charsets/cs_864.h,
+	intl/charsets/cs_437.h, intl/charsets/cs_737.h,
+	intl/charsets/cs_775.h, intl/charsets/cs_850.h,
+	intl/charsets/cs_852.h, intl/utils/mapgen4.c,
+	intl/utils/maptest2.c, intlcpp/ld.h:
+	
+	Remove FAR_VARIABLE
+
+2003-02-28 09:22  paul_reeves
+
+	* firebird2/src/jrd/svc.h:
+	
+	Let gbak and friends use service_mgr again.
+
+2003-02-28 06:22  aafemt
+
+	* firebird2/: builds/posix/Makefile.in.codes,
+	builds/posix/make.defaults, builds/posix/make.rules,
+	builds/posix/make.shared.targets,
+	builds/posix/make.shared.variables, src/include/gen/blrtable.h:
+	
+	blrtable.h is generated and must not be in tree
+
+2003-02-28 02:08  brodsom
+
+	* firebird2/src/gpre/: form.h, form__proto.h, form_proto.h,
+	form_trn.cpp:
+	
+	Add empty line at the end of the source.
+
+2003-02-28 00:53  brodsom
+
+	* firebird2/src/jrd/os/win32/thd_priority.cpp:
+	
+	Variable declaration without typedef.
+
 2003-02-28 00:07  arnobrinkman
 
 	* firebird2/src/jrd/opt.cpp:
