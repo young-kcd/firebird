@@ -298,23 +298,30 @@ int CLIB_ROUTINE main( int argc, char **argv)
 					printf("You must stop it before attempting to delete it.\n\n");
 				}
 			}
+			else
+				status = FB_FAILURE;
 
 			service = OpenService(manager, REMOTE_SERVICE, SERVICE_ALL_ACCESS);
 			if (service)
 			{
 				CloseServiceHandle(service);
-				status = SERVICES_remove(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
+				status2 = SERVICES_remove(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
 										 svc_error);
-				if (status == FB_SUCCESS)
+				if (status2 == FB_SUCCESS)
 				{
 				    printf("Service \"%s\" successfully deleted.\n", REMOTE_DISPLAY_NAME);
 				}
-				else if (status == IB_SERVICE_RUNNING)
+				else if (status2 == IB_SERVICE_RUNNING)
 				{
 					printf("Service \"%s\" not deleted.\n", REMOTE_DISPLAY_NAME);
 					printf("You must stop it before attempting to delete it.\n\n");
 				}
 			}
+			else
+				status2 = FB_FAILURE;
+
+			if (status != FB_SUCCESS && status2 != FB_SUCCESS)
+				status = FB_FAILURE;
 			break;
 
 		case COMMAND_START:
@@ -362,7 +369,11 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		case COMMAND_QUERY:
 			svc_query(ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME, manager);
 			svc_query(REMOTE_SERVICE, REMOTE_DISPLAY_NAME, manager);
+			status = FB_SUCCESS;
 			break;
+
+		default:
+			status = FB_SUCCESS;
 	}
 
 	CloseServiceHandle(manager);

@@ -136,12 +136,15 @@ int CLIB_ROUTINE main( int argc, char** argv)
 			break;
 
 		case COMMAND_REMOVE:
-		ret = REGISTRY_remove(hkey_node, false, reg_error);
+			ret = REGISTRY_remove(hkey_node, false, reg_error);
 			if (ret != FB_SUCCESS)
 				printf("Firebird has not been deleted from the registry.\n");
 			else
 				printf("Firebird has been successfully deleted from the registry.\n");
 			break;
+
+		default:
+			ret = FB_SUCCESS;
 	}
 
 	if (hkey_node != HKEY_LOCAL_MACHINE)
