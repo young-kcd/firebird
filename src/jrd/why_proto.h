@@ -29,6 +29,7 @@ extern "C" {
 #endif
 
 
+#ifndef WHY_NO_API
 #ifndef JRD_IBASE_H
 ISC_STATUS API_ROUTINE isc_dsql_allocate_statement(ISC_STATUS*, FRBRD**, FRBRD**);
 ISC_STATUS API_ROUTINE isc_dsql_alloc_statement2(ISC_STATUS*, FRBRD**, FRBRD**);
@@ -249,7 +250,8 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS*, FRBRD**, USHORT,
 										const SCHAR*, SCHAR*);
 #endif
 
-#endif
+#endif	/* JRD_IBASE_H */
+#endif	/* WHY_NO_API */
 
 typedef void DatabaseCleanupRoutine(FRBRD**, void*);
 
@@ -269,6 +271,7 @@ ISC_STATUS gds__handle_cleanup(ISC_STATUS*, FRBRD**);
 typedef void TransactionCleanupRoutine(FRBRD*, void*);
 ISC_STATUS API_ROUTINE gds__transaction_cleanup(ISC_STATUS*, FRBRD**,
 												   TransactionCleanupRoutine*, void*);
+void WHY_cleanup_transaction(FRBRD * transaction);
 
 #ifdef SERVER_SHUTDOWN
 BOOLEAN WHY_set_shutdown(BOOLEAN);

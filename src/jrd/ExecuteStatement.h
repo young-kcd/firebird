@@ -50,5 +50,18 @@ public:
 	void Close(TDBB tdbb);
 };
 
+
+// To be moved to some more appropriate place
+template <typename Where>
+class AutoPtr {
+private:
+	Where *ptr;
+public:
+	inline AutoPtr<Where>(Where *v) {ptr = v;}
+	inline operator Where* () {return ptr;}
+	inline Where* operator-> () {return ptr;}
+	inline ~AutoPtr<Where>() {delete ptr;}
+};
+
 #endif // JRD_DynExec_H
 

@@ -36,6 +36,8 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/sch_proto.h"
+#define	WHY_NO_API 
+#include "../jrd/why_proto.h"
 
 #include "../jrd/ExecuteStatement.h"
 
@@ -82,7 +84,7 @@ void ExecuteStatement::Open(TDBB tdbb, jrd_nod* sql, SSHORT nVars, bool SingleTo
 	SingleMode = SingleTon;
 
 	fb_assert(tdbb->tdbb_transaction->tra_pool);
-	vary *v = reinterpret_cast <vary*> (
+	AutoPtr<vary> v = reinterpret_cast <vary*> (
 		FB_NEW(*tdbb->tdbb_transaction->tra_pool) char[BUFFER_LARGE + sizeof(vary)]);
 	v->vary_length = BUFFER_LARGE;
 	UCHAR* p = 0;
@@ -294,6 +296,7 @@ void ExecuteStatement::Close(TDBB tdbb) {
 	}
 	delete Sqlda;
 	Sqlda = 0;
+	WHY_cleanup_transaction(Transaction);
 	delete Transaction;
 	Transaction = 0;
 	delete Buffer;

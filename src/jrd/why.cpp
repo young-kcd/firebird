@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.54 2004-02-24 05:34:34 robocop Exp $
+$Id: why.cpp,v 1.55 2004-02-28 19:32:46 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -208,12 +208,16 @@ inline WHY_HNDL allocate_handle(int implementation, class jrd_tra *h, int handle
 // Probably a finer grain would be better here.
 // There's an exported variable several lines below.
 static ISC_STATUS bad_handle(ISC_STATUS *, ISC_STATUS);
+#ifdef DEBUG_GDS_ALLOC
+#define alloc(x) alloc_debug(x, __FILE__, __LINE__)
+static SCHAR *alloc_debug(SLONG, const char*, int);
+#else
 static SCHAR *alloc(SLONG);
+#endif
 
 #ifdef DEV_BUILD
 static void check_status_vector(ISC_STATUS *, ISC_STATUS);
 #endif
-static void cleanup_transaction(WHY_TRA);
 static ISC_STATUS error(ISC_STATUS *, ISC_STATUS *);
 static ISC_STATUS error2(ISC_STATUS *, ISC_STATUS *);
 static void event_ast(void*, USHORT, const UCHAR*);
@@ -1074,7 +1078,7 @@ ISC_STATUS API_ROUTINE GDS_COMMIT(ISC_STATUS * user_status,
 
 /* Call the associated cleanup handlers */
 
-	cleanup_transaction(transaction);
+	WHY_cleanup_transaction(transaction);
 	//while (clean = transaction->cleanup) {
 	//	transaction->cleanup = clean->clean_next;
 	//	clean->TransactionRoutine(transaction, clean->clean_arg);
@@ -1696,7 +1700,9 @@ ISC_STATUS API_ROUTINE GDS_DETACH(ISC_STATUS * user_status,
 
 /* Call the associated cleanup handlers */
 
-	// Obviously, this code can't be replaced by cleanup_transaction!
+	// Obviously, this code can't be replaced by WHY_cleanup_transaction!
+	// But this requires chnages in database and transaction cleanup 
+	// routines first parameter.
 	for (clean* cln = dbb->cleanup; cln; cln = dbb->cleanup)
 	{
 		dbb->cleanup = cln->clean_next;
@@ -2299,7 +2305,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2_M(ISC_STATUS* user_status,
 			if (transaction && !handle) {
 				/* Call the associated cleanup handlers */
 
-				cleanup_transaction(transaction);
+				WHY_cleanup_transaction(transaction);
 				//while (clean = transaction->cleanup) {
 				//	transaction->cleanup = clean->clean_next;
 				//	clean->TransactionRoutine(transaction, clean->clean_arg);
@@ -2730,7 +2736,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM3_M(ISC_STATUS* user_status,
 		if (transaction && !handle) {
 			/* Call the associated cleanup handlers */
 
-			cleanup_transaction(transaction);
+			WHY_cleanup_transaction(transaction);
 			//while (clean = transaction->cleanup) {
 			//	transaction->cleanup = clean->clean_next;
 			//	clean->TransactionRoutine(transaction, clean->clean_arg);
@@ -3616,7 +3622,7 @@ ISC_STATUS gds__handle_cleanup(ISC_STATUS * user_status,
 		/* Call the associated cleanup handlers */
 
 		transaction = (WHY_TRA) handle;
-		cleanup_transaction(transaction);
+		WHY_cleanup_transaction(transaction);
 		//while (clean = transaction->cleanup) {
 		//	transaction->cleanup = clean->clean_next;
 		//	clean->TransactionRoutine(transaction, clean->clean_arg);
@@ -4203,7 +4209,7 @@ ISC_STATUS API_ROUTINE GDS_ROLLBACK(ISC_STATUS * user_status,
 
 /* Call the associated cleanup handlers */
 
-	cleanup_transaction(transaction);
+	WHY_cleanup_transaction(transaction);
 	//while (clean = transaction->cleanup) {
 	//	transaction->cleanup = clean->clean_next;
 	//	clean->TransactionRoutine(transaction, clean->clean_arg);
@@ -4999,8 +5005,11 @@ ISC_STATUS API_ROUTINE GDS_UNWIND(ISC_STATUS * user_status,
 	RETURN_SUCCESS;
 }
 
-
+#ifdef DEBUG_GDS_ALLOC
+static SCHAR *alloc_debug(SLONG length, const char* file, int line)
+#else
 static SCHAR *alloc(SLONG length)
+#endif
 {
 /**************************************
  *
@@ -5014,7 +5023,11 @@ static SCHAR *alloc(SLONG length)
  **************************************/
 	SCHAR *block;
 
+#ifdef DEBUG_GDS_ALLOC
+	if (block = reinterpret_cast<SCHAR *>(gds__alloc_debug((SLONG) (sizeof(SCHAR) * length), file, line)))
+#else
 	if (block = reinterpret_cast<SCHAR *>(gds__alloc((SLONG) (sizeof(SCHAR) * length))))
+#endif
 		memset(block, 0, length);
 	return block;
 }
@@ -5177,7 +5190,7 @@ static void check_status_vector(ISC_STATUS * status,
 
 // Make this repetitive block a function.
 // Call all cleanup routines registered with the transaction.
-static void cleanup_transaction(WHY_TRA transaction)
+void WHY_cleanup_transaction(WHY_TRA transaction)
 {
 	for (clean* cln = transaction->cleanup; cln; cln = transaction->cleanup)
 	{
