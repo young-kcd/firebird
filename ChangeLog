@@ -1,3 +1,70 @@
+2003-09-02 20:26  brodsom
+
+	* firebird2/: src/journal/server.epp, src/journal/archive.cpp,
+	src/journal/conso_proto.h, src/journal/console.cpp,
+	src/journal/gjrn.cpp, src/journal/journal.h, src/journal/miscj.cpp,
+	src/journal/miscj_proto.h, src/journal/oldr.cpp,
+	src/journal/rebui_proto.h, src/journal/rebuild.epp,
+	src/journal/serve_proto.h, src/jrd/jrn_proto.h,
+	builds/win32/make_boot.bat, builds/win32/prepare.bat,
+	builds/win32/preprocess.bat, builds/win32/msvc6/journal.dsp,
+	builds/win32/msvc6/Firebird2.dsw, builds/win32/msvc6/archive.dsp:
+	
+	-Making journal buildable (and translating e to epp)
+
+2003-09-02 20:19  brodsom
+
+	* firebird2/builds/misc/journal.gbak:
+	
+	-Making journal buildable (and translating e to epp)
+
+2003-09-02 19:57  brodsom
+
+	* firebird2/src/journal/: misc.cpp, misc_proto.h, miscj.cpp,
+	miscj_proto.h, rebuild.e, rebuild.epp, server.e, server.epp:
+	
+	-Making journal buildable (and translating e to epp)
+
+2003-09-02 19:22  brodsom
+
+	* firebird2/src/: ipserver/ipclient.cpp, ipserver/ipserver.cpp,
+	iscguard/iscguard.cpp:
+	
+	-Replace BOOLEAN, TRUE and FALSE
+
+2003-09-02 18:39  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Fix wrong last commit :-(
+
+2003-09-02 14:45  brodsom
+
+	*
+	
+	-Fix to allow use repositories named differently.
+	firebird2/builds/install/arch-specific/win32/FirebirdInstall_15.iss
+	:
+
+2003-09-02 02:12  brodsom
+
+	* firebird2/generated/placeholder2.txt:
+	
+	Trying to solve the CVS error in generated directory
+
+2003-09-02 02:00  brodsom
+
+	* firebird2/generated/placeholder2.txt:
+	
+	Trying to solve the CVS error in generated directory
+
+2003-09-02 01:20  arnobrinkman
+
+	* firebird2/src/: dsql/ddl.cpp, dsql/pass1.cpp, dsql/pass1_proto.h,
+	jrd/opt.cpp:
+	
+	Change BOOLEAN to bool type
+
 2003-09-01 19:38  brodsom
 
 	* firebird2/src/qli/: blk.h, meta.epp:
