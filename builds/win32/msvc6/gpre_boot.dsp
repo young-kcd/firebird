@@ -42,7 +42,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /I "../../../src/jrd" /D "_DEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /D "_DEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /D "DEV_BUILD" /D "_WINDOWS" /D "_USRDLL" /D "CLIENT" /D "WIN32_LEAN_AND_MEAN" /FR /FD /GZ /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -68,7 +68,7 @@ LINK32=link.exe
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /I "../../../src/jrd" /D "_DEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
 # SUBTRACT BASE CPP /YX
-# ADD CPP /nologo /MD /W3 /GX /Ot /Oi /Oy /Ob2 /I "../../../src/include" /I "../../../src/jrd" /D "NDEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
+# ADD CPP /nologo /MD /W3 /GX /Ot /Oi /Oy /Ob2 /I "../../../src/include" /D "NDEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /D "WIN32_LEAN_AND_MEAN" /FR /FD /GZ /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -90,6 +90,10 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
+SOURCE=..\..\..\src\gpre\ada.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\gpre\c_cxx.cpp
 # End Source File
 # Begin Source File
@@ -103,6 +107,10 @@ SOURCE=..\..\..\src\gpre\cme.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\gpre\cmp.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\gpre\cob.cpp
 # End Source File
 # Begin Source File
 
@@ -154,6 +162,10 @@ SOURCE=..\..\..\src\gpre\par.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\gpre\pas.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\gpre\pat.cpp
 # End Source File
 # Begin Source File
@@ -174,11 +186,42 @@ SOURCE=..\..\..\src\gpre\sql.cpp
 # PROP Default_Filter "h;c"
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\dls.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\dsc.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\dsc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\gds.cpp
+
+!IF  "$(CFG)" == "gpre_boot - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "gpre_boot - Win32 Release"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\isc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\isc_ipc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\isc_sync.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\thd.cpp
 # End Source File
 # End Group
 # Begin Group "Header files"
