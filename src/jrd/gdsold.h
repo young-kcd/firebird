@@ -36,6 +36,9 @@
 #define GDS_REF(val)	&val
 #endif
 
+#define GDS_EXPORT ISC_EXPORT
+#define GDS_EXPORT_VARARG ISC_EXPORT_VARARG
+
 #define CANCEL_disable	1
 #define CANCEL_enable	2
 #define CANCEL_raise	3

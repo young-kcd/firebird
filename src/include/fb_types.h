@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.24 2003-05-25 00:10:03 skidder Exp $
+ *  $Id: fb_types.h,v 1.25 2003-06-05 10:12:37 aafemt Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -48,11 +48,11 @@ typedef __int64				ISC_INT64;
 typedef unsigned __int64	ISC_UINT64;
 #define  ISC_INT64_DEFINED
 #endif
-#define  GDS_EXPORT	__stdcall
-#define  GDS_EXPORT_VARARG	__cdecl
+#define  ISC_EXPORT	__stdcall
+#define  ISC_EXPORT_VARARG	__cdecl
 #else
-#define  GDS_EXPORT
-#define  GDS_EXPORT_VARARG
+#define  ISC_EXPORT
+#define  ISC_EXPORT_VARARG
 #endif
 
 /*******************************************************************/

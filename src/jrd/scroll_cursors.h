@@ -33,7 +33,7 @@
 */
 
 #ifdef SCROLLABLE_CURSORS
-ISC_STATUS GDS_EXPORT isc_dsql_fetch2(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_dsql_fetch2(ISC_STATUS *,
 									  isc_stmt_handle *,
 									  unsigned short,
 									  XSQLDA *,
@@ -41,7 +41,7 @@ ISC_STATUS GDS_EXPORT isc_dsql_fetch2(ISC_STATUS *,
 #endif
 
 #ifdef SCROLLABLE_CURSORS
-ISC_STATUS GDS_EXPORT isc_dsql_fetch2_m(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_dsql_fetch2_m(ISC_STATUS *,
 										isc_stmt_handle *,
 										unsigned short,
 										char *,
@@ -52,7 +52,7 @@ ISC_STATUS GDS_EXPORT isc_dsql_fetch2_m(ISC_STATUS *,
 #endif
 
 #ifdef SCROLLABLE_CURSORS
-ISC_STATUS GDS_EXPORT isc_embed_dsql_fetch2(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_embed_dsql_fetch2(ISC_STATUS *,
 											char *,
 											unsigned short,
 											XSQLDA *,
@@ -60,7 +60,7 @@ ISC_STATUS GDS_EXPORT isc_embed_dsql_fetch2(ISC_STATUS *,
 #endif
 
 #ifdef SCROLLABLE_CURSORS
-ISC_STATUS GDS_EXPORT isc_receive2(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_receive2(ISC_STATUS *,
 								   isc_req_handle *,
 								   short,
 								   short,
@@ -70,7 +70,7 @@ ISC_STATUS GDS_EXPORT isc_receive2(ISC_STATUS *,
 
 /****** Add the following commented lines in the #else part of..
 #else                                    __cplusplus || __STDC__ 
-ISC_STATUS  GDS_EXPORT isc_receive2();
+ISC_STATUS  ISC_EXPORT isc_receive2();
 ******/
 
 /****************************************/

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.38 2003-05-22 11:13:22 alexpeshkoff Exp $
+$Id: ibase.h,v 1.39 2003-06-05 10:12:45 aafemt Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -50,6 +50,8 @@ $Id: ibase.h,v 1.38 2003-05-22 11:13:22 alexpeshkoff Exp $
 #define  ISC__TRUE	ISC_TRUE
 #define  ISC__FALSE	ISC_FALSE
 #endif
+
+#define ISC_FAR
 
 #if SIZEOF_LONG == 8
 typedef	int		ISC_LONG;
@@ -357,20 +359,20 @@ typedef struct
 extern "C" {
 #endif
 
-ISC_STATUS GDS_EXPORT isc_attach_database(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_attach_database(ISC_STATUS *,
 										  short,
 										  char *,
 										  isc_db_handle *,
 										  short,
 										  char *);
 
-ISC_STATUS GDS_EXPORT isc_array_gen_sdl(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_array_gen_sdl(ISC_STATUS *,
 										ISC_ARRAY_DESC *,
 										short *,
 										char *,
 										short *);
 
-ISC_STATUS GDS_EXPORT isc_array_get_slice(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_array_get_slice(ISC_STATUS *,
 										  isc_db_handle *,
 										  isc_tr_handle *,
 										  ISC_QUAD *,
@@ -378,21 +380,21 @@ ISC_STATUS GDS_EXPORT isc_array_get_slice(ISC_STATUS *,
 										  void *,
 										  ISC_LONG *);
 
-ISC_STATUS GDS_EXPORT isc_array_lookup_bounds(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_array_lookup_bounds(ISC_STATUS *,
 											  isc_db_handle *,
 											  isc_tr_handle *,
 											  char *,
 											  char *,
 											  ISC_ARRAY_DESC *);
 
-ISC_STATUS GDS_EXPORT isc_array_lookup_desc(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_array_lookup_desc(ISC_STATUS *,
 											isc_db_handle *,
 											isc_tr_handle *,
 											char *,
 											char *,
 											ISC_ARRAY_DESC *);
 
-ISC_STATUS GDS_EXPORT isc_array_set_desc(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_array_set_desc(ISC_STATUS *,
 										 char *,
 										 char *,
 										 short *,
@@ -400,7 +402,7 @@ ISC_STATUS GDS_EXPORT isc_array_set_desc(ISC_STATUS *,
 										 short *,
 										 ISC_ARRAY_DESC *);
 
-ISC_STATUS GDS_EXPORT isc_array_put_slice(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_array_put_slice(ISC_STATUS *,
 										  isc_db_handle *,
 										  isc_tr_handle *,
 										  ISC_QUAD *,
@@ -408,25 +410,25 @@ ISC_STATUS GDS_EXPORT isc_array_put_slice(ISC_STATUS *,
 										  void *,
 										  ISC_LONG *);
 
-void GDS_EXPORT isc_blob_default_desc(ISC_BLOB_DESC *,
+void ISC_EXPORT isc_blob_default_desc(ISC_BLOB_DESC *,
 									  unsigned char *,
 									  unsigned char *);
 
-ISC_STATUS GDS_EXPORT isc_blob_gen_bpb(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_blob_gen_bpb(ISC_STATUS *,
 									   ISC_BLOB_DESC *,
 									   ISC_BLOB_DESC *,
 									   unsigned short,
 									   unsigned char *,
 									   unsigned short *);
 
-ISC_STATUS GDS_EXPORT isc_blob_info(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_blob_info(ISC_STATUS *,
 									isc_blob_handle *,
 									short,
 									char *,
 									short,
 									char *);
 
-ISC_STATUS GDS_EXPORT isc_blob_lookup_desc(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_blob_lookup_desc(ISC_STATUS *,
 										   isc_db_handle *,
 										   isc_tr_handle *,
 										   unsigned char *,
@@ -434,7 +436,7 @@ ISC_STATUS GDS_EXPORT isc_blob_lookup_desc(ISC_STATUS *,
 										   ISC_BLOB_DESC *,
 										   unsigned char *);
 
-ISC_STATUS GDS_EXPORT isc_blob_set_desc(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_blob_set_desc(ISC_STATUS *,
 										unsigned char *,
 										unsigned char *,
 										short,
@@ -442,29 +444,29 @@ ISC_STATUS GDS_EXPORT isc_blob_set_desc(ISC_STATUS *,
 										short,
 										ISC_BLOB_DESC *);
 
-ISC_STATUS GDS_EXPORT isc_cancel_blob(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_cancel_blob(ISC_STATUS *,
 									  isc_blob_handle *);
 
-ISC_STATUS GDS_EXPORT isc_cancel_events(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_cancel_events(ISC_STATUS *,
 										isc_db_handle *,
 										ISC_LONG *);
 
-ISC_STATUS GDS_EXPORT isc_close_blob(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_close_blob(ISC_STATUS *,
 									 isc_blob_handle *);
 
-ISC_STATUS GDS_EXPORT isc_commit_retaining(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_commit_retaining(ISC_STATUS *,
 										   isc_tr_handle *);
 
-ISC_STATUS GDS_EXPORT isc_commit_transaction(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_commit_transaction(ISC_STATUS *,
 											 isc_tr_handle *);
 
-ISC_STATUS GDS_EXPORT isc_create_blob(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_create_blob(ISC_STATUS *,
 									  isc_db_handle *,
 									  isc_tr_handle *,
 									  isc_blob_handle *,
 									  ISC_QUAD *);
 
-ISC_STATUS GDS_EXPORT isc_create_blob2(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_create_blob2(ISC_STATUS *,
 									   isc_db_handle *,
 									   isc_tr_handle *,
 									   isc_blob_handle *,
@@ -472,7 +474,7 @@ ISC_STATUS GDS_EXPORT isc_create_blob2(ISC_STATUS *,
 									   short,
 									   char *);
 
-ISC_STATUS GDS_EXPORT isc_create_database(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_create_database(ISC_STATUS *,
 										  short,
 										  char *,
 										  isc_db_handle *,
@@ -480,50 +482,50 @@ ISC_STATUS GDS_EXPORT isc_create_database(ISC_STATUS *,
 										  char *,
 										  short);
 
-ISC_STATUS GDS_EXPORT isc_database_info(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_database_info(ISC_STATUS *,
 										isc_db_handle *,
 										short,
 										char *,
 										short,
 										char *);
 
-void GDS_EXPORT isc_decode_date(ISC_QUAD *,
+void ISC_EXPORT isc_decode_date(ISC_QUAD *,
 								void *);
 
-void GDS_EXPORT isc_decode_sql_date(ISC_DATE *,
+void ISC_EXPORT isc_decode_sql_date(ISC_DATE *,
 									void *);
 
-void GDS_EXPORT isc_decode_sql_time(ISC_TIME *,
+void ISC_EXPORT isc_decode_sql_time(ISC_TIME *,
 									void *);
 
-void GDS_EXPORT isc_decode_timestamp(ISC_TIMESTAMP *,
+void ISC_EXPORT isc_decode_timestamp(ISC_TIMESTAMP *,
 									 void *);
 
-ISC_STATUS GDS_EXPORT isc_detach_database(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_detach_database(ISC_STATUS *,
 										  isc_db_handle *);
 
-ISC_STATUS GDS_EXPORT isc_drop_database(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_drop_database(ISC_STATUS *,
 										isc_db_handle *);
 
-ISC_STATUS GDS_EXPORT isc_dsql_allocate_statement(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_dsql_allocate_statement(ISC_STATUS *,
 												  isc_db_handle *,
 												  isc_stmt_handle *);
 
-ISC_STATUS GDS_EXPORT isc_dsql_alloc_statement2(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_dsql_alloc_statement2(ISC_STATUS *,
 												isc_db_handle *,
 												isc_stmt_handle *);
 
-ISC_STATUS GDS_EXPORT isc_dsql_describe(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_dsql_describe(ISC_STATUS *,
 										isc_stmt_handle *,
 										unsigned short,
 										XSQLDA *);
 
-ISC_STATUS GDS_EXPORT isc_dsql_describe_bind(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_dsql_describe_bind(ISC_STATUS *,
 											 isc_stmt_handle *,
 											 unsigned short,
 											 XSQLDA *);
 
-ISC_STATUS GDS_EXPORT isc_dsql_exec_immed2(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_dsql_exec_immed2(ISC_STATUS *,
 										   isc_db_handle *,
 										   isc_tr_handle *,
 										   unsigned short,
@@ -532,20 +534,20 @@ ISC_STATUS GDS_EXPORT isc_dsql_exec_immed2(ISC_STATUS *,
 										   XSQLDA *,
 										   XSQLDA *);
 
-ISC_STATUS GDS_EXPORT isc_dsql_execute(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_dsql_execute(ISC_STATUS *,
 									   isc_tr_handle *,
 									   isc_stmt_handle *,
 									   unsigned short,
 									   XSQLDA *);
 
-ISC_STATUS GDS_EXPORT isc_dsql_execute2(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_dsql_execute2(ISC_STATUS *,
 										isc_tr_handle *,
 										isc_stmt_handle *,
 										unsigned short,
 										XSQLDA *,
 										XSQLDA *);
 
-ISC_STATUS GDS_EXPORT isc_dsql_execute_immediate(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_dsql_execute_immediate(ISC_STATUS *,
 												 isc_db_handle *,
 												 isc_tr_handle *,
 												 unsigned short,
@@ -553,23 +555,23 @@ ISC_STATUS GDS_EXPORT isc_dsql_execute_immediate(ISC_STATUS *,
 												 unsigned short,
 												 XSQLDA *);
 
-ISC_STATUS GDS_EXPORT isc_dsql_fetch(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_dsql_fetch(ISC_STATUS *,
 									 isc_stmt_handle *,
 									 unsigned short,
 									 XSQLDA *);
 
-ISC_STATUS GDS_EXPORT isc_dsql_finish(isc_db_handle *);
+ISC_STATUS ISC_EXPORT isc_dsql_finish(isc_db_handle *);
 
-ISC_STATUS GDS_EXPORT isc_dsql_free_statement(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_dsql_free_statement(ISC_STATUS *,
 											  isc_stmt_handle *,
 											  unsigned short);
 
-ISC_STATUS GDS_EXPORT isc_dsql_insert(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_dsql_insert(ISC_STATUS *,
 									  isc_stmt_handle *,
 									  unsigned short,
 									  XSQLDA *);
 
-ISC_STATUS GDS_EXPORT isc_dsql_prepare(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_dsql_prepare(ISC_STATUS *,
 									   isc_tr_handle *,
 									   isc_stmt_handle *,
 									   unsigned short,
@@ -577,58 +579,58 @@ ISC_STATUS GDS_EXPORT isc_dsql_prepare(ISC_STATUS *,
 									   unsigned short,
 									   XSQLDA *);
 
-ISC_STATUS GDS_EXPORT isc_dsql_set_cursor_name(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_dsql_set_cursor_name(ISC_STATUS *,
 											   isc_stmt_handle *,
 											   char *,
 											   unsigned short);
 
-ISC_STATUS GDS_EXPORT isc_dsql_sql_info(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_dsql_sql_info(ISC_STATUS *,
 										isc_stmt_handle *,
 										short,
 										const char *,
 										short,
 										char *);
 
-void GDS_EXPORT isc_encode_date(void *,
+void ISC_EXPORT isc_encode_date(void *,
 								ISC_QUAD *);
 
-void GDS_EXPORT isc_encode_sql_date(void *,
+void ISC_EXPORT isc_encode_sql_date(void *,
 									ISC_DATE *);
 
-void GDS_EXPORT isc_encode_sql_time(void *,
+void ISC_EXPORT isc_encode_sql_time(void *,
 									ISC_TIME *);
 
-void GDS_EXPORT isc_encode_timestamp(void *,
+void ISC_EXPORT isc_encode_timestamp(void *,
 									 ISC_TIMESTAMP *);
 
-ISC_LONG GDS_EXPORT_VARARG isc_event_block(char * *,
+ISC_LONG ISC_EXPORT_VARARG isc_event_block(char * *,
 										   char * *,
 										   unsigned short, ...);
 
-void GDS_EXPORT isc_event_counts(ISC_ULONG *,
+void ISC_EXPORT isc_event_counts(ISC_ULONG *,
 								 short,
 								 char *,
 								 char *);
 
 /* 17 May 2001 - isc_expand_dpb is DEPRECATED */
-void GDS_EXPORT_VARARG isc_expand_dpb(char * *,
+void ISC_EXPORT_VARARG isc_expand_dpb(char * *,
 									  short *, ...);
 
-int GDS_EXPORT isc_modify_dpb(char * *,
+int ISC_EXPORT isc_modify_dpb(char * *,
 							  short *,
 							  unsigned short,
 							  char *,
 							  short);
 
-ISC_LONG GDS_EXPORT isc_free(char *);
+ISC_LONG ISC_EXPORT isc_free(char *);
 
-ISC_STATUS GDS_EXPORT isc_get_segment(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_get_segment(ISC_STATUS *,
 									  isc_blob_handle *,
 									  unsigned short *,
 									  unsigned short,
 									  char *);
 
-ISC_STATUS GDS_EXPORT isc_get_slice(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_get_slice(ISC_STATUS *,
 									isc_db_handle *,
 									isc_tr_handle *,
 									ISC_QUAD *,
@@ -640,16 +642,16 @@ ISC_STATUS GDS_EXPORT isc_get_slice(ISC_STATUS *,
 									void *,
 									ISC_LONG *);
 
-ISC_STATUS GDS_EXPORT isc_interprete(char *,
+ISC_STATUS ISC_EXPORT isc_interprete(char *,
 									 ISC_STATUS * *);
 
-ISC_STATUS GDS_EXPORT isc_open_blob(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_open_blob(ISC_STATUS *,
 									isc_db_handle *,
 									isc_tr_handle *,
 									isc_blob_handle *,
 									ISC_QUAD *);
 
-ISC_STATUS GDS_EXPORT isc_open_blob2(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_open_blob2(ISC_STATUS *,
 									 isc_db_handle *,
 									 isc_tr_handle *,
 									 isc_blob_handle *,
@@ -657,22 +659,22 @@ ISC_STATUS GDS_EXPORT isc_open_blob2(ISC_STATUS *,
 									 ISC_USHORT,
 									 ISC_UCHAR *);
 
-ISC_STATUS GDS_EXPORT isc_prepare_transaction2(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_prepare_transaction2(ISC_STATUS *,
 											   isc_tr_handle *,
 											   ISC_USHORT,
 											   ISC_UCHAR *);
 
-void GDS_EXPORT isc_print_sqlerror(ISC_SHORT,
+void ISC_EXPORT isc_print_sqlerror(ISC_SHORT,
 								   ISC_STATUS *);
 
-ISC_STATUS GDS_EXPORT isc_print_status(ISC_STATUS *);
+ISC_STATUS ISC_EXPORT isc_print_status(ISC_STATUS *);
 
-ISC_STATUS GDS_EXPORT isc_put_segment(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_put_segment(ISC_STATUS *,
 									  isc_blob_handle *,
 									  unsigned short,
 									  char *);
 
-ISC_STATUS GDS_EXPORT isc_put_slice(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_put_slice(ISC_STATUS *,
 									isc_db_handle *,
 									isc_tr_handle *,
 									ISC_QUAD *,
@@ -683,7 +685,7 @@ ISC_STATUS GDS_EXPORT isc_put_slice(ISC_STATUS *,
 									ISC_LONG,
 									void *);
 
-ISC_STATUS GDS_EXPORT isc_que_events(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_que_events(ISC_STATUS *,
 									 isc_db_handle *,
 									 ISC_LONG *,
 									 ISC_USHORT,
@@ -691,35 +693,35 @@ ISC_STATUS GDS_EXPORT isc_que_events(ISC_STATUS *,
 									 isc_callback,
 									 void *);
 
-ISC_STATUS GDS_EXPORT isc_rollback_retaining(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_rollback_retaining(ISC_STATUS *,
 											 isc_tr_handle *);
 
-ISC_STATUS GDS_EXPORT isc_rollback_transaction(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_rollback_transaction(ISC_STATUS *,
 											   isc_tr_handle *);
 
-ISC_STATUS GDS_EXPORT isc_start_multiple(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_start_multiple(ISC_STATUS *,
 										 isc_tr_handle *,
 										 short,
 										 void *);
 
-ISC_STATUS GDS_EXPORT_VARARG isc_start_transaction(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT_VARARG isc_start_transaction(ISC_STATUS *,
 												   isc_tr_handle *,
 												   short, ...);
 
-ISC_LONG GDS_EXPORT isc_sqlcode(ISC_STATUS *);
+ISC_LONG ISC_EXPORT isc_sqlcode(ISC_STATUS *);
 
-void GDS_EXPORT isc_sql_interprete(short,
+void ISC_EXPORT isc_sql_interprete(short,
 								   char *,
 								   short);
 
-ISC_STATUS GDS_EXPORT isc_transaction_info(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_transaction_info(ISC_STATUS *,
 										   isc_tr_handle *,
 										   short,
 										   char *,
 										   short,
 										   char *);
 
-ISC_STATUS GDS_EXPORT isc_transact_request(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_transact_request(ISC_STATUS *,
 										   isc_db_handle *,
 										   isc_tr_handle *,
 										   unsigned short,
@@ -729,10 +731,10 @@ ISC_STATUS GDS_EXPORT isc_transact_request(ISC_STATUS *,
 										   unsigned short,
 										   char *);
 
-ISC_LONG GDS_EXPORT isc_vax_integer(char *,
+ISC_LONG ISC_EXPORT isc_vax_integer(char *,
 									short);
 
-ISC_INT64 GDS_EXPORT isc_portable_integer(unsigned char *,
+ISC_INT64 ISC_EXPORT isc_portable_integer(unsigned char *,
 										  short);
 
 /*************************************/
@@ -771,55 +773,55 @@ typedef struct {
 	char *dba_password;			/* the dba password */
 } USER_SEC_DATA;
 
-int GDS_EXPORT isc_add_user(ISC_STATUS *, USER_SEC_DATA *);
+int ISC_EXPORT isc_add_user(ISC_STATUS *, USER_SEC_DATA *);
 
-int GDS_EXPORT isc_delete_user(ISC_STATUS *, USER_SEC_DATA *);
+int ISC_EXPORT isc_delete_user(ISC_STATUS *, USER_SEC_DATA *);
 
-int GDS_EXPORT isc_modify_user(ISC_STATUS *, USER_SEC_DATA *);
+int ISC_EXPORT isc_modify_user(ISC_STATUS *, USER_SEC_DATA *);
 
 /**********************************/
 /*  Other OSRI functions          */
 /**********************************/
 
-ISC_STATUS GDS_EXPORT isc_compile_request(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_compile_request(ISC_STATUS *,
 										  isc_db_handle *,
 										  isc_req_handle *,
 										  short,
 										  char *);
 
-ISC_STATUS GDS_EXPORT isc_compile_request2(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_compile_request2(ISC_STATUS *,
 										   isc_db_handle *,
 										   isc_req_handle *,
 										   short,
 										   char *);
 
-ISC_STATUS GDS_EXPORT isc_ddl(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_ddl(ISC_STATUS *,
 							  isc_db_handle *,
 							  isc_tr_handle *,
 							  short,
 							  char *);
 
-ISC_STATUS GDS_EXPORT isc_prepare_transaction(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_prepare_transaction(ISC_STATUS *,
 											  isc_tr_handle *);
 
 
-ISC_STATUS GDS_EXPORT isc_receive(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_receive(ISC_STATUS *,
 								  isc_req_handle *,
 								  short,
 								  short,
 								  void *,
 								  short);
 
-ISC_STATUS GDS_EXPORT isc_reconnect_transaction(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_reconnect_transaction(ISC_STATUS *,
 												isc_db_handle *,
 												isc_tr_handle *,
 												short,
 												char *);
 
-ISC_STATUS GDS_EXPORT isc_release_request(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_release_request(ISC_STATUS *,
 										  isc_req_handle *);
 
-ISC_STATUS GDS_EXPORT isc_request_info(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_request_info(ISC_STATUS *,
 									   isc_req_handle *,
 									   short,
 									   short,
@@ -827,20 +829,20 @@ ISC_STATUS GDS_EXPORT isc_request_info(ISC_STATUS *,
 									   short,
 									   char *);
 
-ISC_STATUS GDS_EXPORT isc_seek_blob(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_seek_blob(ISC_STATUS *,
 									isc_blob_handle *,
 									short,
 									ISC_LONG,
 									ISC_LONG *);
 
-ISC_STATUS GDS_EXPORT isc_send(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_send(ISC_STATUS *,
 							   isc_req_handle *,
 							   short,
 							   short,
 							   void *,
 							   short);
 
-ISC_STATUS GDS_EXPORT isc_start_and_send(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_start_and_send(ISC_STATUS *,
 										 isc_req_handle *,
 										 isc_tr_handle *,
 										 short,
@@ -848,16 +850,16 @@ ISC_STATUS GDS_EXPORT isc_start_and_send(ISC_STATUS *,
 										 void *,
 										 short);
 
-ISC_STATUS GDS_EXPORT isc_start_request(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_start_request(ISC_STATUS *,
 										isc_req_handle *,
 										isc_tr_handle *,
 										short);
 
-ISC_STATUS GDS_EXPORT isc_unwind_request(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_unwind_request(ISC_STATUS *,
 										 isc_tr_handle *,
 										 short);
 
-ISC_STATUS GDS_EXPORT isc_wait_for_event(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_wait_for_event(ISC_STATUS *,
 										 isc_db_handle *,
 										 short,
 										 char *,
@@ -868,42 +870,42 @@ ISC_STATUS GDS_EXPORT isc_wait_for_event(ISC_STATUS *,
 /* Other Sql functions       */
 /*****************************/
 
-ISC_STATUS GDS_EXPORT isc_close(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_close(ISC_STATUS *,
 								char *);
 
-ISC_STATUS GDS_EXPORT isc_declare(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_declare(ISC_STATUS *,
 								  char *,
 								  char *);
 
-ISC_STATUS GDS_EXPORT isc_describe(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_describe(ISC_STATUS *,
 								   char *,
 								   XSQLDA *);
 
-ISC_STATUS GDS_EXPORT isc_describe_bind(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_describe_bind(ISC_STATUS *,
 										char *,
 										XSQLDA *);
 
-ISC_STATUS GDS_EXPORT isc_execute(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_execute(ISC_STATUS *,
 								  isc_tr_handle *,
 								  char *,
 								  XSQLDA *);
 
-ISC_STATUS GDS_EXPORT isc_execute_immediate(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_execute_immediate(ISC_STATUS *,
 											isc_db_handle *,
 											isc_tr_handle *,
 											short *,
 											char *);
 
-ISC_STATUS GDS_EXPORT isc_fetch(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_fetch(ISC_STATUS *,
 								char *,
 								XSQLDA *);
 
-ISC_STATUS GDS_EXPORT isc_open(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_open(ISC_STATUS *,
 							   isc_tr_handle *,
 							   char *,
 							   XSQLDA *);
 
-ISC_STATUS GDS_EXPORT isc_prepare(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_prepare(ISC_STATUS *,
 								  isc_db_handle *,
 								  isc_tr_handle *,
 								  char *,
@@ -916,7 +918,7 @@ ISC_STATUS GDS_EXPORT isc_prepare(ISC_STATUS *,
 /* Other Dynamic sql functions       */
 /*************************************/
 
-ISC_STATUS GDS_EXPORT isc_dsql_execute_m(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_dsql_execute_m(ISC_STATUS *,
 										 isc_tr_handle *,
 										 isc_stmt_handle *,
 										 unsigned short,
@@ -925,7 +927,7 @@ ISC_STATUS GDS_EXPORT isc_dsql_execute_m(ISC_STATUS *,
 										 unsigned short,
 										 char *);
 
-ISC_STATUS GDS_EXPORT isc_dsql_execute2_m(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_dsql_execute2_m(ISC_STATUS *,
 										  isc_tr_handle *,
 										  isc_stmt_handle *,
 										  unsigned short,
@@ -939,7 +941,7 @@ ISC_STATUS GDS_EXPORT isc_dsql_execute2_m(ISC_STATUS *,
 										  unsigned short,
 										  char *);
 
-ISC_STATUS GDS_EXPORT isc_dsql_execute_immediate_m(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_dsql_execute_immediate_m(ISC_STATUS *,
 												   isc_db_handle *,
 												   isc_tr_handle *,
 												   unsigned short,
@@ -951,7 +953,7 @@ ISC_STATUS GDS_EXPORT isc_dsql_execute_immediate_m(ISC_STATUS *,
 												   unsigned short,
 												   char *);
 
-ISC_STATUS GDS_EXPORT isc_dsql_exec_immed3_m(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_dsql_exec_immed3_m(ISC_STATUS *,
 											 isc_db_handle *,
 											 isc_tr_handle *,
 											 unsigned short,
@@ -968,7 +970,7 @@ ISC_STATUS GDS_EXPORT isc_dsql_exec_immed3_m(ISC_STATUS *,
 											 unsigned short,
 											 char *);
 
-ISC_STATUS GDS_EXPORT isc_dsql_fetch_m(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_dsql_fetch_m(ISC_STATUS *,
 									   isc_stmt_handle *,
 									   unsigned short,
 									   char *,
@@ -976,7 +978,7 @@ ISC_STATUS GDS_EXPORT isc_dsql_fetch_m(ISC_STATUS *,
 									   unsigned short,
 									   char *);
 
-ISC_STATUS GDS_EXPORT isc_dsql_insert_m(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_dsql_insert_m(ISC_STATUS *,
 										isc_stmt_handle *,
 										unsigned short,
 										char *,
@@ -984,7 +986,7 @@ ISC_STATUS GDS_EXPORT isc_dsql_insert_m(ISC_STATUS *,
 										unsigned short,
 										char *);
 
-ISC_STATUS GDS_EXPORT isc_dsql_prepare_m(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_dsql_prepare_m(ISC_STATUS *,
 										 isc_tr_handle *,
 										 isc_stmt_handle *,
 										 unsigned short,
@@ -995,40 +997,40 @@ ISC_STATUS GDS_EXPORT isc_dsql_prepare_m(ISC_STATUS *,
 										 unsigned short,
 										 char *);
 
-ISC_STATUS GDS_EXPORT isc_dsql_release(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_dsql_release(ISC_STATUS *,
 									   char *);
 
-ISC_STATUS GDS_EXPORT isc_embed_dsql_close(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_embed_dsql_close(ISC_STATUS *,
 										   char *);
 
-ISC_STATUS GDS_EXPORT isc_embed_dsql_declare(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_embed_dsql_declare(ISC_STATUS *,
 											 char *,
 											 char *);
 
-ISC_STATUS GDS_EXPORT isc_embed_dsql_describe(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_embed_dsql_describe(ISC_STATUS *,
 											  char *,
 											  unsigned short,
 											  XSQLDA *);
 
-ISC_STATUS GDS_EXPORT isc_embed_dsql_describe_bind(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_embed_dsql_describe_bind(ISC_STATUS *,
 												   char *,
 												   unsigned short,
 												   XSQLDA *);
 
-ISC_STATUS GDS_EXPORT isc_embed_dsql_execute(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_embed_dsql_execute(ISC_STATUS *,
 											 isc_tr_handle *,
 											 char *,
 											 unsigned short,
 											 XSQLDA *);
 
-ISC_STATUS GDS_EXPORT isc_embed_dsql_execute2(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_embed_dsql_execute2(ISC_STATUS *,
 											  isc_tr_handle *,
 											  char *,
 											  unsigned short,
 											  XSQLDA *,
 											  XSQLDA *);
 
-ISC_STATUS GDS_EXPORT isc_embed_dsql_execute_immed(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_embed_dsql_execute_immed(ISC_STATUS *,
 												   isc_db_handle *,
 												   isc_tr_handle *,
 												   unsigned short,
@@ -1036,30 +1038,30 @@ ISC_STATUS GDS_EXPORT isc_embed_dsql_execute_immed(ISC_STATUS *,
 												   unsigned short,
 												   XSQLDA *);
 
-ISC_STATUS GDS_EXPORT isc_embed_dsql_fetch(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_embed_dsql_fetch(ISC_STATUS *,
 										   char *,
 										   unsigned short,
 										   XSQLDA *);
 
-ISC_STATUS GDS_EXPORT isc_embed_dsql_open(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_embed_dsql_open(ISC_STATUS *,
 										  isc_tr_handle *,
 										  char *,
 										  unsigned short,
 										  XSQLDA *);
 
-ISC_STATUS GDS_EXPORT isc_embed_dsql_open2(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_embed_dsql_open2(ISC_STATUS *,
 										   isc_tr_handle *,
 										   char *,
 										   unsigned short,
 										   XSQLDA *,
 										   XSQLDA *);
 
-ISC_STATUS GDS_EXPORT isc_embed_dsql_insert(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_embed_dsql_insert(ISC_STATUS *,
 											char *,
 											unsigned short,
 											XSQLDA *);
 
-ISC_STATUS GDS_EXPORT isc_embed_dsql_prepare(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_embed_dsql_prepare(ISC_STATUS *,
 											 isc_db_handle *,
 											 isc_tr_handle *,
 											 char *,
@@ -1068,7 +1070,7 @@ ISC_STATUS GDS_EXPORT isc_embed_dsql_prepare(ISC_STATUS *,
 											 unsigned short,
 											 XSQLDA *);
 
-ISC_STATUS GDS_EXPORT isc_embed_dsql_release(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_embed_dsql_release(ISC_STATUS *,
 											 char *);
 
 
@@ -1076,53 +1078,53 @@ ISC_STATUS GDS_EXPORT isc_embed_dsql_release(ISC_STATUS *,
 /* Other Blob functions       */
 /******************************/
 
-BSTREAM *GDS_EXPORT BLOB_open(isc_blob_handle,
+BSTREAM *ISC_EXPORT BLOB_open(isc_blob_handle,
 									  char *,
 									  int);
 
-int GDS_EXPORT BLOB_put(char,
+int ISC_EXPORT BLOB_put(char,
 						BSTREAM *);
 
-int GDS_EXPORT BLOB_close(BSTREAM *);
+int ISC_EXPORT BLOB_close(BSTREAM *);
 
-int GDS_EXPORT BLOB_get(BSTREAM *);
+int ISC_EXPORT BLOB_get(BSTREAM *);
 
-int GDS_EXPORT BLOB_display(ISC_QUAD *,
+int ISC_EXPORT BLOB_display(ISC_QUAD *,
 							isc_db_handle,
 							isc_tr_handle,
 							char *);
 
-int GDS_EXPORT BLOB_dump(ISC_QUAD *,
+int ISC_EXPORT BLOB_dump(ISC_QUAD *,
 						 isc_db_handle,
 						 isc_tr_handle,
 						 char *);
 
-int GDS_EXPORT BLOB_edit(ISC_QUAD *,
+int ISC_EXPORT BLOB_edit(ISC_QUAD *,
 						 isc_db_handle,
 						 isc_tr_handle,
 						 char *);
 
-int GDS_EXPORT BLOB_load(ISC_QUAD *,
+int ISC_EXPORT BLOB_load(ISC_QUAD *,
 						 isc_db_handle,
 						 isc_tr_handle,
 						 char *);
 
-int GDS_EXPORT BLOB_text_dump(ISC_QUAD *,
+int ISC_EXPORT BLOB_text_dump(ISC_QUAD *,
 							  isc_db_handle,
 							  isc_tr_handle,
 							  char *);
 
-int GDS_EXPORT BLOB_text_load(ISC_QUAD *,
+int ISC_EXPORT BLOB_text_load(ISC_QUAD *,
 							  isc_db_handle,
 							  isc_tr_handle,
 							  char *);
 
-BSTREAM *GDS_EXPORT Bopen(ISC_QUAD *,
+BSTREAM *ISC_EXPORT Bopen(ISC_QUAD *,
 								  isc_db_handle,
 								  isc_tr_handle,
 								  char *);
 
-BSTREAM *GDS_EXPORT Bopen2(ISC_QUAD *,
+BSTREAM *ISC_EXPORT Bopen2(ISC_QUAD *,
 								   isc_db_handle,
 								   isc_tr_handle,
 								   char *,
@@ -1133,34 +1135,34 @@ BSTREAM *GDS_EXPORT Bopen2(ISC_QUAD *,
 /* Other Misc functions       */
 /******************************/
 
-ISC_LONG GDS_EXPORT isc_ftof(char *,
+ISC_LONG ISC_EXPORT isc_ftof(char *,
 							 unsigned short,
 							 char *,
 							 unsigned short);
 
-ISC_STATUS GDS_EXPORT isc_print_blr(char *,
+ISC_STATUS ISC_EXPORT isc_print_blr(char *,
 									isc_callback,
 									void *,
 									short);
 
-void GDS_EXPORT isc_set_debug(int);
+void ISC_EXPORT isc_set_debug(int);
 
-void GDS_EXPORT isc_qtoq(ISC_QUAD *,
+void ISC_EXPORT isc_qtoq(ISC_QUAD *,
 						 ISC_QUAD *);
 
-void GDS_EXPORT isc_vtof(char *,
+void ISC_EXPORT isc_vtof(char *,
 						 char *,
 						 unsigned short);
 
-void GDS_EXPORT isc_vtov(char *,
+void ISC_EXPORT isc_vtov(char *,
 						 char *,
 						 short);
 
-int GDS_EXPORT isc_version(isc_db_handle *,
+int ISC_EXPORT isc_version(isc_db_handle *,
 						   isc_callback,
 						   void *);
 
-ISC_LONG GDS_EXPORT isc_reset_fpe(unsigned short);
+ISC_LONG ISC_EXPORT isc_reset_fpe(unsigned short);
 
 
 /*****************************************/
@@ -1175,17 +1177,17 @@ ISC_LONG GDS_EXPORT isc_reset_fpe(unsigned short);
 					 *(p)++ = (SCHAR) ((data) >> 16); \
 					 *(p)++ = (SCHAR) ((data) >> 24);}
 
-ISC_STATUS GDS_EXPORT isc_service_attach(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_service_attach(ISC_STATUS *,
 										 unsigned short,
 										 char *,
 										 isc_svc_handle *,
 										 unsigned short,
 										 char *);
 
-ISC_STATUS GDS_EXPORT isc_service_detach(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_service_detach(ISC_STATUS *,
 										 isc_svc_handle *);
 
-ISC_STATUS GDS_EXPORT isc_service_query(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_service_query(ISC_STATUS *,
 										isc_svc_handle *,
 										isc_resv_handle *,
 										unsigned short,
@@ -1195,7 +1197,7 @@ ISC_STATUS GDS_EXPORT isc_service_query(ISC_STATUS *,
 										unsigned short,
 										char *);
 
-ISC_STATUS GDS_EXPORT isc_service_start(ISC_STATUS *,
+ISC_STATUS ISC_EXPORT isc_service_start(ISC_STATUS *,
 										isc_svc_handle *,
 										isc_resv_handle *,
 										unsigned short,
@@ -1206,9 +1208,9 @@ ISC_STATUS GDS_EXPORT isc_service_start(ISC_STATUS *,
 /* Client information functions */
 /********************************/
 
-void GDS_EXPORT isc_get_client_version ( char  *);
-int  GDS_EXPORT isc_get_client_major_version ();
-int  GDS_EXPORT isc_get_client_minor_version ();
+void ISC_EXPORT isc_get_client_version ( char  *);
+int  ISC_EXPORT isc_get_client_major_version ();
+int  ISC_EXPORT isc_get_client_minor_version ();
 
 #ifdef __cplusplus
 }	/* extern "C" */
