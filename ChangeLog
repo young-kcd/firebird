@@ -1,3 +1,37 @@
+2003-07-13 12:30  brodsom
+
+	* firebird2/src/: dbs/dflt.gdl, dbs/grant.gdl, dbs/isc.gdl,
+	dbs/metadata.sql, dbs/ods10.gdl, dbs/ods101.gdl, dbs/ods72.gdl,
+	dbs/ods80.gdl, dbs/ods80dif.gdl, dbs/ods81.gdl, dbs/ods91.gdl,
+	dbs/procs2.gdl, dbs/scrty_unix.gdl, dbs/scrty_vms.gdl,
+	dbs/security.gdl, dbs/security.sql, dbs/stored_proc.gdl,
+	dbs/v2_triggers.gdl, jrd/dflt.gdl, jrd/grant.gdl, jrd/ods10.gdl,
+	jrd/ods101.gdl, jrd/ods72.gdl, jrd/ods80.gdl, jrd/ods80dif.gdl,
+	jrd/ods81.gdl, jrd/ods91.gdl, jrd/procs2.gdl, jrd/stored_proc.gdl,
+	jrd/v2_triggers.gdl, misc/isc.gdl, misc/metadata.sql,
+	misc/scrty_unix.gdl, misc/scrty_vms.gdl, misc/security.gdl,
+	misc/security.sql:
+	
+	Move db definitions to dbs
+
+2003-07-13 11:53  brodsom
+
+	* firebird2/src/jrd/relations.epp:
+	
+	Correction
+
+2003-07-13 10:28  dimitr
+
+	* firebird2/src/jrd/dyn.epp:
+	
+	Fixed porting bug. Thanks to Oleg LOA.
+
+2003-07-13 01:16  brodsom
+
+	* firebird2/src/include/gen/ids.h:
+	
+	Correction
+
 2003-07-12 22:41  brodsom
 
 	* firebird2/src/jrd/iscmsgs.msg:
