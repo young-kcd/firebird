@@ -33,7 +33,11 @@
 #define DEFAULT_SIZE	32768
 #define EXTEND_SIZE	32768
 #define SEM_KEY		100
+#ifdef SINIXZ
+#define SEMAPHORES	25
+#else
 #define SEMAPHORES	32
+#endif
 
 #define BASE 			((UCHAR*) LOCK_header)
 #define REL_PTR(item)		((UCHAR*) item - BASE)

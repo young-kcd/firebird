@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: lock.cpp,v 1.7 2002-03-31 00:39:01 tamlin Exp $
+$Id: lock.cpp,v 1.8 2002-06-29 08:22:08 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -813,7 +813,7 @@ int LOCK_init(
 					 owner_handle) != SUCCESS) return FAILURE;
 
 #ifndef  SUPERSERVER
-#if defined(SCO_EV) || defined(LINUX) || defined(FREEBSD) || defined(NETBSD) || defined(AIX_PPC)
+#if defined(SCO_EV) || defined(LINUX) || defined(FREEBSD) || defined(NETBSD) || defined(AIX_PPC) || defined(DARWIN) || defined(SINIXZ)
 /* 5.5 SCO port: might also help other classic ports, but not sure. This
    and a few subsequent pieces of code later, solve problem of gds_drop
    giving following message
@@ -829,7 +829,7 @@ If this happens on another classic platform add that platform too. - Shailesh
 #endif
 
 #if !(defined NETWARE_386 || defined WIN_NT || defined SOLARIS_MT || POSIX_THREADS)
-#if defined(SCO_EV) || defined(LINUX) || defined(FREEBSD) || defined(NETBSD) || defined(AIX_PPC) || defined(DARWIN)
+#if defined(SCO_EV) || defined(LINUX) || defined(FREEBSD) || defined(NETBSD) || defined(AIX_PPC) || defined(DARWIN) || defined(SINIXZ)
 	if (LOCK_owner_offset)		/* 5.5 SCO port: gds_drop */
 #endif
 		ISC_signal(LOCK_block_signal, (void(*)()) blocking_action,
@@ -891,7 +891,7 @@ If this happens on another classic platform add that platform too. - Shailesh
 		return FAILURE;
 	}
 #else
-#if defined(SCO_EV) || defined(LINUX) || defined(FREEBSD) || defined(NETBSD) || defined(AIX_PPC) || defined(DARWIN)
+#if defined(SCO_EV) || defined(LINUX) || defined(FREEBSD) || defined(NETBSD) || defined(AIX_PPC) || defined(DARWIN) || defined(SINIXZ)
 	if (LOCK_owner_offset)		/* 5.5 SCO Port: gds_drop */
 #endif
 		if (!(LOCK_owner = (OWN) ISC_map_object(status_vector, &LOCK_data,
