@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.10 2002-10-07 01:29:09 skywalker Exp $
+#  $Id: Makefile.in.firebird,v 1.11 2002-10-10 06:47:05 eku Exp $
 #
 
 ROOT=..
@@ -182,7 +182,12 @@ jrd/build_no.h : misc/writeBuildNum.sh
 # as part of the project are included here.  Currently editline
 # is the only external library we have included.
 # 
-external_libraries: $(LIBEDIT_A)
+EXTERNAL_LIBRARIES=
+ifeq ($(READLINE_FLG),Y)
+EXTERNAL_LIBRARIES:= $(EXTERNAL_LIBRARIES) $(LIBEDIT_A)
+endif
+
+external_libraries: $(EXTERNAL_LIBRARIES)
 
 $(LIBEDIT_A): 
 	$(MAKE) -C $(SRC_ROOT)/extern/editline
@@ -326,7 +331,7 @@ otherfiles: misc_files script_files
 .PHONY: embed_gpre embed_util
 
 classic_targets: libfbembed inet_server embed_gfix embed_gbak embed_isql \
-	embed_gpre embed_util embed_gdef
+	embed_gpre embed_util embed_gdef embed_qli
 
 libfbembed:
 	$(MAKE) -f $(MAKE_ROOT)/Makefile.libfbembed $@
