@@ -4474,7 +4474,7 @@ static RSB gen_retrieval(TDBB     tdbb,
 	{
 		rsb = EXT_optimize(opt, stream, sort_ptr ? sort_ptr : project_ptr);
 	}
-	else if (opt->opt_base_parent_conjuncts || (sort_ptr && *sort_ptr)
+	else if (opt->opt_conjuncts_count || (sort_ptr && *sort_ptr)
 	 /***|| (project_ptr && *project_ptr)***/
 		)
 	{
