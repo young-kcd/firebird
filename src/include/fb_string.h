@@ -345,13 +345,13 @@ namespace Firebird
 
 	class StringComparator {
 	public:
-		static inline int compare(AbstractString::const_pointer s1, AbstractString::const_pointer s2, unsigned int n) {
+		static inline int compare(AbstractString::const_pointer s1, AbstractString::const_pointer s2, AbstractString::size_type n) {
 			return memcmp(s1, s2, n);
 		}
 	};
 	class PathNameComparator {
 	public:
-		static int compare(AbstractString::const_pointer s1, AbstractString::const_pointer s2, unsigned int n);
+		static int compare(AbstractString::const_pointer s1, AbstractString::const_pointer s2, AbstractString::size_type n);
 	};
 
 	template<typename Comparator>
