@@ -1,3 +1,31 @@
+2005-04-03 12:09  robocop
+
+	* firebird2/src/jrd/isc_file.cpp (1.93):
+	
+	The client library shouldn't throw exceptions. The loader program
+	may be written in any language and thus C++ exceptions don't make
+	sense.	Beware of old code that accesses strings out of bounds:
+	Firebird::string throws an exception.
+
+2005-04-03 09:06  robocop
+
+	* firebird2/doc/README.isql_enhancements.txt (1.4):
+	
+	Another little change I forgot to document.
+
+2005-04-03 08:59  robocop
+
+	* firebird2/doc/: README.isql_enhancements.txt (1.3),
+	cleaning-todo.txt (1.5), sql.extensions/README.ddl.txt (1.3):
+	
+	Update some docos.
+
+2005-04-03 08:58  robocop
+
+	* firebird2/src/isql/: isql.epp (1.138), show.epp (1.68):
+	
+	Fix chaotic output.
+
 2005-04-02 09:07  robocop
 
 	* firebird2/src/isql/isql.epp (1.137):
