@@ -227,7 +227,7 @@ static dsql_nod* pass1_sel_list(dsql_req*, dsql_nod*);
 static dsql_nod* pass1_simple_case(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_sort(dsql_req*, dsql_nod*, dsql_nod*);
 static dsql_nod* pass1_udf(dsql_req*, dsql_nod*, bool);
-static void pass1_udf_args(dsql_req*, dsql_nod*, dsql_udf*, USHORT, DsqlNodStack&,
+static void pass1_udf_args(dsql_req*, dsql_nod*, dsql_udf*, USHORT&, DsqlNodStack&,
 	bool);
 static dsql_nod* pass1_union(dsql_req*, dsql_nod*, dsql_nod*, dsql_nod*);
 static void pass1_union_auto_cast(dsql_nod*, const dsc&, SSHORT,
@@ -5963,7 +5963,8 @@ static dsql_nod* pass1_udf( dsql_req* request, dsql_nod* input, bool proc_flag)
 	node->nod_arg[0] = (dsql_nod*) userFunc;
 	if (input->nod_count == 2) {
 		DsqlNodStack stack;
-		pass1_udf_args(request, input->nod_arg[1], userFunc, 0, stack, proc_flag);
+		USHORT arg_pos = 0;
+		pass1_udf_args(request, input->nod_arg[1], userFunc, arg_pos, stack, proc_flag);
 		node->nod_arg[1] = MAKE_list(stack);
 	}
 
@@ -5987,7 +5988,7 @@ static dsql_nod* pass1_udf( dsql_req* request, dsql_nod* input, bool proc_flag)
 
  **/
 static void pass1_udf_args(dsql_req* request, dsql_nod* input,
-	dsql_udf* userFunc, USHORT arg_pos, DsqlNodStack& stack, bool proc_flag)
+	dsql_udf* userFunc, USHORT& arg_pos, DsqlNodStack& stack, bool proc_flag)
 {
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
@@ -6007,6 +6008,7 @@ static void pass1_udf_args(dsql_req* request, dsql_nod* input,
             }
         }
         stack.push(temp);
+		arg_pos++;
         return;
 	}
 
@@ -6014,7 +6016,7 @@ static void pass1_udf_args(dsql_req* request, dsql_nod* input,
 	for (const dsql_nod* const* const end = ptr + input->nod_count;
 		ptr < end; ptr++)
 	{
-		pass1_udf_args(request, *ptr, userFunc, arg_pos++, stack, proc_flag);
+		pass1_udf_args(request, *ptr, userFunc, arg_pos, stack, proc_flag);
 	}
 }
 
