@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int_cxx.cpp,v 1.17 2003-09-29 12:43:03 robocop Exp $
+//	$Id: int_cxx.cpp,v 1.18 2003-10-06 09:48:44 robocop Exp $
 //
 
 #include "firebird.h"
@@ -43,27 +43,27 @@ static void asgn_from(REF, int);
 #ifdef NOT_USED_OR_REPLACED
 static void asgn_to(REF);
 #endif
-static void gen_at_end(ACT, int);
+static void gen_at_end(const act*, int);
 static void gen_blr(void*, SSHORT, const char*);
 static void gen_compile(GPRE_REQ, int);
-static void gen_database(ACT, int);
-static void gen_emodify(ACT, int);
-static void gen_estore(ACT, int, bool);
-static void gen_endfor(ACT, int);
-static void gen_erase(ACT, int);
-static void gen_for(ACT, int);
+static void gen_database(const act*, int);
+static void gen_emodify(const act*, int);
+static void gen_estore(const act*, int, bool);
+static void gen_endfor(const act*, int);
+static void gen_erase(const act*, int);
+static void gen_for(const act*, int);
 static char* gen_name(char*, const REF);
 static void gen_raw(GPRE_REQ);
 static void gen_receive(GPRE_REQ, POR);
 static void gen_request(GPRE_REQ);
-static void gen_routine(ACT, int);
-static void gen_s_end(ACT, int);
-static void gen_s_fetch(ACT, int);
-static void gen_s_start(ACT, int);
+static void gen_routine(const act*, int);
+static void gen_s_end(const act*, int);
+static void gen_s_fetch(const act*, int);
+static void gen_s_start(const act*, int);
 static void gen_send(GPRE_REQ, const por*, int, bool);
 static void gen_start(GPRE_REQ, const por*, int, bool);
-static void gen_type(ACT, int);
-static void gen_variable(ACT, int);
+static void gen_type(const act*, int);
+static void gen_variable(const act*, int);
 static void make_port(POR, int);
 static void printa(const int, const TEXT*, ...);
 
@@ -89,7 +89,7 @@ static inline void endp(const int column)
 //  
 //  
 
-void INT_CXX_action( ACT action, int column)
+void INT_CXX_action( const act* action, int column)
 {
 
 //  Put leading braces where required 
@@ -146,7 +146,7 @@ void INT_CXX_action( ACT action, int column)
 	case ACT_s_start:
 		gen_s_start(action, column);
 		break;
-	case ACT_type:
+	case ACT_type_number:
 		gen_type(action, column);
 		return;
 	case ACT_variable:
@@ -262,7 +262,7 @@ static void asgn_to( REF reference)
 //		Generate code for AT END clause of FETCH.
 //  
 
-static void gen_at_end( ACT action, int column)
+static void gen_at_end( const act* action, int column)
 {
 	TEXT s[20];
 
@@ -308,7 +308,7 @@ static void gen_compile( GPRE_REQ request, int column)
 //		Generate insertion text for the database statement.
 //  
 
-static void gen_database( ACT action, int column)
+static void gen_database( const act* action, int column)
 {
 	GPRE_REQ request;
 
@@ -326,7 +326,7 @@ static void gen_database( ACT action, int column)
 //		Generate substitution text for END_MODIFY.
 //  
 
-static void gen_emodify( ACT action, int column)
+static void gen_emodify( const act* action, int column)
 {
 	UPD modify;
 	REF reference;
@@ -368,7 +368,7 @@ static void gen_emodify( ACT action, int column)
 //		Generate substitution text for END_STORE.
 //  
 
-static void gen_estore( ACT action, int column, bool special)
+static void gen_estore( const act* action, int column, bool special)
 {
 	GPRE_REQ request = action->act_request;
 	align(column);
@@ -382,7 +382,7 @@ static void gen_estore( ACT action, int column, bool special)
 //		Generate definitions associated with a single request.
 //  
 
-static void gen_endfor( ACT action, int column)
+static void gen_endfor( const act* action, int column)
 {
 	GPRE_REQ request = action->act_request;
 	column += INDENT;
@@ -399,7 +399,7 @@ static void gen_endfor( ACT action, int column)
 //		Generate substitution text for ERASE.
 //  
 
-static void gen_erase( ACT action, int column)
+static void gen_erase( const act* action, int column)
 {
 	UPD erase = (UPD) action->act_object;
 	gen_send(erase->upd_request, erase->upd_port, column, false);
@@ -411,7 +411,7 @@ static void gen_erase( ACT action, int column)
 //		Generate substitution text for FOR statement.
 //  
 
-static void gen_for( ACT action, int column)
+static void gen_for( const act* action, int column)
 {
 	TEXT s[20];
 
@@ -525,7 +525,7 @@ static void gen_request( GPRE_REQ request)
 //		routine, insert local definitions.
 //  
 
-static void gen_routine( ACT action, int column)
+static void gen_routine( const act* action, int column)
 {
 	for (GPRE_REQ request = (GPRE_REQ) action->act_object; request;
 		 request = request->req_routine) 
@@ -541,7 +541,7 @@ static void gen_routine( ACT action, int column)
 //		Generate substitution text for END_STREAM.
 //  
 
-static void gen_s_end( ACT action, int column)
+static void gen_s_end( const act* action, int column)
 {
 	GPRE_REQ request = action->act_request;
 	printa(column, "EXE_unwind (tdbb, %s);", request->req_handle);
@@ -553,7 +553,7 @@ static void gen_s_end( ACT action, int column)
 //		Generate substitution text for FETCH.
 //  
 
-static void gen_s_fetch( ACT action, int column)
+static void gen_s_fetch( const act* action, int column)
 {
 	GPRE_REQ request = action->act_request;
 	if (request->req_sync)
@@ -569,7 +569,7 @@ static void gen_s_fetch( ACT action, int column)
 //		used both by START_STREAM and FOR
 //  
 
-static void gen_s_start( ACT action, int column)
+static void gen_s_start( const act* action, int column)
 {
 	GPRE_REQ request = action->act_request;
 	gen_compile(request, column);
@@ -625,7 +625,7 @@ static void gen_start( GPRE_REQ request, const por* port, int column, bool speci
 //		Substitute for a variable reference.
 //  
 
-static void gen_type( ACT action, int column)
+static void gen_type( const act* action, int column)
 {
 
 	printa(column, "%ld", action->act_object);
@@ -637,7 +637,7 @@ static void gen_type( ACT action, int column)
 //		Substitute for a variable reference.
 //  
 
-static void gen_variable( ACT action, int column)
+static void gen_variable( const act* action, int column)
 {
 	char s[20];
 
@@ -664,7 +664,8 @@ static void make_port( POR port, int column)
 		align(column + INDENT);
 		GPRE_FLD field = reference->ref_field;
 		SYM symbol = field->fld_symbol;
-		TEXT* name = symbol->sym_string;
+		const TEXT* name = symbol->sym_string;
+
 		switch (field->fld_dtype) {
 		case dtype_short:
 			ib_fprintf(out_file, "    SSHORT jrd_%d;\t/* %s */",

@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.32 2003-09-13 12:22:11 brodsom Exp $
+//  $Id: par.cpp,v 1.33 2003-10-06 09:48:44 robocop Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -58,7 +58,7 @@
 
 ACT			cur_routine;
 
-extern TEXT*	module_lc_ctype;
+extern const TEXT*	module_lc_ctype;
 
 static jmp_buf*	PAR_jmp_buf;
 
@@ -132,7 +132,7 @@ static GPRE_FLD		flag_field;
 //		parse an action segment.  If not, return NULL.
 //  
 
-ACT PAR_action(TEXT* base_dir)
+ACT PAR_action(const TEXT* base_dir)
 {
 	ACT action;
 	SYM symbol;
@@ -732,7 +732,6 @@ ACT PAR_event_wait(bool sql)
 
 void PAR_fini()
 {
-
 	if (cur_for)
 		IBERROR("unterminated FOR statement");
 
@@ -758,7 +757,6 @@ void PAR_fini()
 
 TOK PAR_get_token()
 {
-
 	if (CPR_token() == NULL) {
 		CPR_error("unexpected EOF");
 		PAR_unwind();
@@ -806,7 +804,7 @@ void PAR_init()
 //		Parse a native expression as a string.
 //  
 
-TEXT *PAR_native_value(bool array_ref,
+TEXT* PAR_native_value(bool array_ref,
 					   bool handle_ref)
 {
 	SCHAR *s2, buffer[512];
@@ -1209,8 +1207,8 @@ static ACT par_any()
 
 	function = MAKE_ACTION(0, ACT_function);
 	function->act_object = (REF) action;
-	function->act_next = functions;
-	functions = function;
+	function->act_next = global_functions;
+	global_functions = function;
 
 	return action;
 }
@@ -3071,7 +3069,7 @@ static ACT par_type()
 	}
 
 	ADVANCE_TOKEN;
-	action = MAKE_ACTION(0, ACT_type);
+	action = MAKE_ACTION(0, ACT_type_number);
 	action->act_object = (REF) (ULONG) type;
 
 	return action;

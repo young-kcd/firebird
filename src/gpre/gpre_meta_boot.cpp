@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.24 2003-10-05 06:53:00 robocop Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.25 2003-10-06 09:48:44 robocop Exp $
  */
 
 #include "firebird.h"
@@ -191,8 +191,8 @@ bool MET_domain_lookup(GPRE_REQ request,
  */  
 
 bool MET_get_domain_default(DBB db,
-							TEXT * domain_name,
-							TEXT * buffer,
+							const TEXT* domain_name,
+							TEXT* buffer,
 							USHORT buff_length)
 {
 
@@ -351,14 +351,13 @@ void MET_fini( DBB end)
  *		If found, return string. If not, return NULL.
  */  
 
-SCHAR *MET_generator(TEXT * string, DBB db)
+const SCHAR* MET_generator(const TEXT* string, DBB db)
 {
-	SYM symbol;
 	SCHAR name[NAME_SIZE];
 
 	strcpy(name, string);
 
-	for (symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
+	for (SYM symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 		if ((symbol->sym_type == SYM_generator) &&
 			(db == (DBB) (symbol->sym_object))) 
 		{
@@ -583,8 +582,8 @@ UDF MET_get_udf(DBB db, TEXT * string)
  */  
 
 GPRE_REL MET_get_view_relation(GPRE_REQ request,
-						  char *view_name,
-						  char *relation_or_alias, USHORT level)
+						  const char* view_name,
+						  const char* relation_or_alias, USHORT level)
 {
 	assert(0);
 	return NULL;

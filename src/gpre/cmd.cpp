@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmd.cpp,v 1.16 2003-09-13 12:22:11 brodsom Exp $
+//	$Id: cmd.cpp,v 1.17 2003-10-06 09:48:43 robocop Exp $
 //
 
 #include "firebird.h"
@@ -81,12 +81,12 @@ static void put_array_info(GPRE_REQ, GPRE_FLD);
 static void put_blr(GPRE_REQ, USHORT, GPRE_NOD, pfn_local_trigger_cb);
 static void put_computed_blr(GPRE_REQ, GPRE_FLD);
 static void put_computed_source(GPRE_REQ, GPRE_FLD);
-static void put_cstring(GPRE_REQ, USHORT, TEXT *);
+static void put_cstring(GPRE_REQ, USHORT, const TEXT*);
 static void put_dtype(GPRE_REQ, GPRE_FLD);
 static void put_field_attributes(GPRE_REQ, GPRE_FLD);
 static void put_numeric(GPRE_REQ, USHORT, SSHORT);
-static void put_short_cstring(GPRE_REQ, USHORT, TEXT *);
-static void put_string(GPRE_REQ, USHORT, TEXT *, USHORT);
+static void put_short_cstring(GPRE_REQ, USHORT, const TEXT*);
+static void put_string(GPRE_REQ, USHORT, const TEXT*, USHORT);
 static void put_symbol(GPRE_REQ, int, SYM);
 static void put_trigger_blr(GPRE_REQ, USHORT, GPRE_NOD, pfn_local_trigger_cb);
 static void put_view_trigger_blr(GPRE_REQ, GPRE_REL, USHORT, GPRE_TRG, GPRE_NOD, GPRE_CTX *, GPRE_NOD);
@@ -917,7 +917,6 @@ static void create_set_default_trg(GPRE_REQ request,
 
 	bool search_for_default;
 	bool search_for_column;
-	TEXT *search_for_domain;
 	GPRE_FLD field, domain, fld;
 	LLS for_key_fld;
 	STR for_key_fld_name;
@@ -1011,7 +1010,7 @@ static void create_set_default_trg(GPRE_REQ request,
 
 		search_for_default = true;
 		search_for_column = false;
-		search_for_domain = NULL;
+		const TEXT* search_for_domain = NULL;
 
 		/* Is the column being created in this ddl statement ? */
 		for (field = relation->rel_fields; field; field = field->fld_next) {
@@ -2578,7 +2577,7 @@ static void put_computed_source( GPRE_REQ request, GPRE_FLD field)
 //		Put a null-terminated string valued attributed to the output string.
 //  
 
-static void put_cstring( GPRE_REQ request, USHORT operator_, TEXT * string)
+static void put_cstring( GPRE_REQ request, USHORT operator_, const TEXT* string)
 {
 	USHORT length;
 
@@ -2804,7 +2803,8 @@ static void put_numeric( GPRE_REQ request, USHORT operator_, SSHORT number)
 //		Count value is BYTE instead of WORD like put_cstring & put_string
 //  
 
-static void put_short_cstring( GPRE_REQ request, USHORT operator_, TEXT * string)
+static void put_short_cstring( GPRE_REQ request, USHORT operator_,
+	const TEXT* string)
 {
 	SSHORT length;
 
@@ -2832,7 +2832,7 @@ static void put_short_cstring( GPRE_REQ request, USHORT operator_, TEXT * string
 
 static void put_string(
 					   GPRE_REQ request,
-					   USHORT operator_, TEXT * string, USHORT length)
+					   USHORT operator_, const TEXT* string, USHORT length)
 {
 
 	STUFF_CHECK(length);

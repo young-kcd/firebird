@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmp.cpp,v 1.19 2003-09-12 16:35:39 brodsom Exp $
+//	$Id: cmp.cpp,v 1.20 2003-10-06 09:48:43 robocop Exp $
 //
 
 #include "firebird.h"
@@ -375,11 +375,9 @@ USHORT CMP_next_ident(void)
 
 void CMP_stuff_symbol( GPRE_REQ request, SYM symbol)
 {
-	TEXT *p;
-
 	STUFF(strlen(symbol->sym_string));
 
-	for (p = symbol->sym_string; *p; p++)
+	for (const TEXT* p = symbol->sym_string; *p; p++)
 		STUFF(*p);
 }
 
@@ -403,7 +401,6 @@ void CMP_t_start( GPRE_TRA trans)
 	char tpb_buffer[MAX_TRA_OPTIONS + 1];
 	char *text;
 	char *p;
-	char *q;
 	DBB database;
 	RRL lock_block;
 	USHORT buff_len, tpb_len;
@@ -461,7 +458,7 @@ void CMP_t_start( GPRE_TRA trans)
 			for (lock_block = database->dbb_rrls; lock_block;
 				 lock_block = lock_block->rrl_next) {
 				*p++ = lock_block->rrl_lock_mode;
-				q = lock_block->rrl_relation->rel_symbol->sym_string;
+				const char* q = lock_block->rrl_relation->rel_symbol->sym_string;
 				*p++ = strlen(q);
 				while (*q)
 					*p++ = *q++;
@@ -1213,14 +1210,12 @@ static void cmp_procedure( GPRE_REQ request)
 
 static void cmp_ready( GPRE_REQ request)
 {
-	DBB db;
-	ACT action;
-	TEXT *p;
+	const TEXT* p;
 	SSHORT l;
 
-	db = request->req_database;
+	DBB db = request->req_database;
 
-	action = request->req_actions;
+	ACT action = request->req_actions;
 	request->req_blr = request->req_base = ALLOC(250);
 	request->req_length = 250;
 	request->req_flags |= REQ_exp_hand;

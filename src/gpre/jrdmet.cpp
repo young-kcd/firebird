@@ -26,7 +26,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: jrdmet.cpp,v 1.9 2003-09-06 00:52:10 brodsom Exp $
+//	$Id: jrdmet.cpp,v 1.10 2003-10-06 09:48:44 robocop Exp $
 //
 
 #include "firebird.h"
@@ -50,20 +50,12 @@
 
 void JRDMET_init( DBB db)
 {
-	GPRE_REL relation;
 	SYM symbol;
-	GPRE_FLD field;
-	TYP type;
-	const RTYP *rtype;
-	const UCHAR *relfld;
-	const UCHAR *fld;
-	int n;
-	gfld* gfield;
 
-	relfld = relfields;
+	const UCHAR* relfld = relfields;
 
 	while (relfld[RFLD_R_NAME]) {
-		relation = (GPRE_REL) ALLOC(REL_LEN);
+		GPRE_REL relation = (GPRE_REL) ALLOC(REL_LEN);
 		relation->rel_database = db;
 		relation->rel_next = db->dbb_relations;
 		relation->rel_id = relfld[RFLD_R_ID];
@@ -72,17 +64,16 @@ void JRDMET_init( DBB db)
 		symbol->sym_type = SYM_relation;
 		symbol->sym_object = (GPRE_CTX) relation;
 
-#pragma FB_COMPILER_MESSAGE("FIXFIX! const_cast")
-
-		symbol->sym_string = const_cast < char *>(names[relfld[RFLD_R_NAME]]);
+		symbol->sym_string = names[relfld[RFLD_R_NAME]];
 		HSH_insert(symbol);
 
-		for (n = 0, fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];
-			 n++, fld += RFLD_F_LENGTH) {
-			gfield = const_cast < gfld * >((fld[RFLD_F_UPD_MINOR]) ?
+		const UCHAR* fld = relfld + RFLD_RPT;
+		for (int n = 0; fld[RFLD_F_NAME]; ++n, fld += RFLD_F_LENGTH) 
+		{
+			const gfld* gfield = (fld[RFLD_F_UPD_MINOR]) ?
 										   &gfields[fld[RFLD_F_UPD_ID]] :
-										   &gfields[fld[RFLD_F_ID]]);
-			field = (GPRE_FLD) ALLOC(FLD_LEN);
+										   &gfields[fld[RFLD_F_ID]];
+			GPRE_FLD field = (GPRE_FLD) ALLOC(FLD_LEN);
 			relation->rel_fields = field;
 			field->fld_relation = relation;
 			field->fld_next = relation->rel_fields;
@@ -118,26 +109,24 @@ void JRDMET_init( DBB db)
 			field->fld_symbol = symbol = (SYM) ALLOC(SYM_LEN);
 			symbol->sym_type = SYM_field;
 			symbol->sym_object = (GPRE_CTX) field;
-			symbol->sym_string =
-				const_cast < char *>(names[fld[RFLD_F_NAME]]);
+			symbol->sym_string = names[fld[RFLD_F_NAME]];
 			HSH_insert(symbol);
 
 			field->fld_global = symbol = (SYM) ALLOC(SYM_LEN);
 			symbol->sym_type = SYM_field;
 			symbol->sym_object = (GPRE_CTX) field;
-			symbol->sym_string =
-				const_cast < char *>(names[gfield->gfld_name]);
+			symbol->sym_string = names[gfield->gfld_name];
 		}
 		relfld = fld + 1;
 	}
 
-	for (rtype = types; rtype->rtyp_name; rtype++) {
-		type = (TYP) ALLOC(TYP_LEN);
+	for (const RTYP* rtype = types; rtype->rtyp_name; rtype++) {
+		TYP type = (TYP) ALLOC(TYP_LEN);
 		type->typ_symbol = symbol = (SYM) ALLOC(SYM_LEN);
 		type->typ_value = rtype->rtyp_value;
 		symbol->sym_type = SYM_type;
 		symbol->sym_object = (GPRE_CTX) type;
-		symbol->sym_string = const_cast < char *>(rtype->rtyp_name);
+		symbol->sym_string = rtype->rtyp_name;
 		HSH_insert(symbol);
 	}
 }

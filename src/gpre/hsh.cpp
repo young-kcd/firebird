@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: hsh.cpp,v 1.14 2003-09-13 12:22:11 brodsom Exp $
+//	$Id: hsh.cpp,v 1.15 2003-10-06 09:48:44 robocop Exp $
 //
 
 #include "firebird.h"
@@ -36,9 +36,9 @@
 #include "../gpre/msc_proto.h"
 
 
-static int hash(SCHAR *);
-static bool scompare(SCHAR *, SCHAR *);
-static bool scompare2(SCHAR *, SCHAR *);
+static int hash(const SCHAR*);
+static bool scompare(const SCHAR*, const SCHAR*);
+static bool scompare2(const SCHAR*, const SCHAR*);
 
 #define HASH_SIZE 211
 
@@ -108,11 +108,10 @@ void HSH_init(void)
 
 void HSH_insert( SYM symbol)
 {
-	int h;
 	SYM *next;
 	SYM ptr;
 
-	h = hash(symbol->sym_string);
+	int h = hash(symbol->sym_string);
 
 	for (next = &hash_table[h]; *next; next = &(*next)->sym_collision) {
 		for (ptr = *next; ptr; ptr = ptr->sym_homonym)
@@ -152,13 +151,14 @@ void HSH_insert( SYM symbol)
 //		Perform a string lookup against hash table.
 //  
 
-SYM HSH_lookup(SCHAR * string)
+SYM HSH_lookup(const SCHAR* string)
 {
-	SYM symbol;
-
-	for (symbol = hash_table[hash(string)]; symbol;
+	for (SYM symbol = hash_table[hash(string)]; symbol;
 		 symbol = symbol->sym_collision)
-			if (scompare(string, symbol->sym_string)) return symbol;
+	{
+		if (scompare(string, symbol->sym_string)) 
+			return symbol;
+	}
 
 	return NULL;
 }
@@ -170,13 +170,14 @@ SYM HSH_lookup(SCHAR * string)
 //		compare.
 //  
 
-SYM HSH_lookup2(SCHAR * string)
+SYM HSH_lookup2(const SCHAR* string)
 {
-	SYM symbol;
-
-	for (symbol = hash_table[hash(string)]; symbol;
+	for (SYM symbol = hash_table[hash(string)]; symbol;
 		 symbol = symbol->sym_collision)
-			if (scompare2(string, symbol->sym_string)) return symbol;
+	{
+		if (scompare2(string, symbol->sym_string)) 
+			return symbol;
+	}
 
 	return NULL;
 }
@@ -189,10 +190,9 @@ SYM HSH_lookup2(SCHAR * string)
 
 void HSH_remove( SYM symbol)
 {
-	int h;
 	SYM *next, *ptr, homonym;
 
-	h = hash(symbol->sym_string);
+	int h = hash(symbol->sym_string);
 
 	for (next = &hash_table[h]; *next; next = &(*next)->sym_collision)
 		if (symbol == *next)
@@ -221,12 +221,11 @@ void HSH_remove( SYM symbol)
 //		Returns the hash function of a string.
 //  
 
-static int hash( SCHAR * string)
+static int hash(const SCHAR* string)
 {
-	SLONG value;
 	SCHAR c;
 
-	value = 0;
+	SLONG value = 0;
 
 	while (c = *string++)
 		value = (value << 1) + UPPER(c);
@@ -240,8 +239,8 @@ static int hash( SCHAR * string)
 //		case sensitive Compare 
 //  
 
-static bool scompare(SCHAR * string1,
-					 SCHAR * string2)
+static bool scompare(const SCHAR* string1,
+					 const SCHAR* string2)
 {
 
 	while (*string1)
@@ -259,8 +258,8 @@ static bool scompare(SCHAR * string1,
 //		Compare two strings
 //  
 
-static bool scompare2(SCHAR * string1,
-					  SCHAR * string2)
+static bool scompare2(const SCHAR* string1,
+					  const SCHAR* string2)
 {
 	SCHAR c1, c2;
 

@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.32 2003-09-29 12:43:03 robocop Exp $
+//	$Id: c_cxx.cpp,v 1.33 2003-10-06 09:48:43 robocop Exp $
 //
 
 #include "firebird.h"
@@ -49,87 +49,87 @@
 extern TEXT *transaction_name;
 
 static void align(int);
-static void asgn_from(ACT, REF, int);
-static void asgn_to(ACT, REF, int);
+static void asgn_from(const act*, REF, int);
+static void asgn_to(const act*, REF, int);
 static void asgn_to_proc(REF, int);
-static void gen_any(ACT, int);
-static void gen_at_end(ACT, int);
-static void gen_based(ACT, int);
-static void gen_blob_close(ACT, USHORT);
-static void gen_blob_end(ACT, USHORT);
-static void gen_blob_for(ACT, USHORT);
-static void gen_blob_open(ACT, USHORT);
+static void gen_any(const act*, int);
+static void gen_at_end(const act*, int);
+static void gen_based(const act*, int);
+static void gen_blob_close(const act*, USHORT);
+static void gen_blob_end(const act*, USHORT);
+static void gen_blob_for(const act*, USHORT);
+static void gen_blob_open(const act*, USHORT);
 static void gen_blr(void*, SSHORT, const char*);
-static void gen_clear_handles(ACT, int);
+static void gen_clear_handles(const act*, int);
 static void gen_compatibility_symbol(TEXT *, TEXT *, TEXT *);
-static void gen_compile(ACT, int);
-static void gen_create_database(ACT, int);
-static int gen_cursor_close(ACT, GPRE_REQ, int);
-static void gen_cursor_init(ACT, int);
-static int gen_cursor_open(ACT, GPRE_REQ, int);
-static void gen_database(ACT, int);
-static void gen_ddl(ACT, int);
-static void gen_drop_database(ACT, int);
-static void gen_dyn_close(ACT, int);
-static void gen_dyn_declare(ACT, int);
-static void gen_dyn_describe(ACT, int, bool);
-static void gen_dyn_execute(ACT, int);
-static void gen_dyn_fetch(ACT, int);
-static void gen_dyn_immediate(ACT, int);
-static void gen_dyn_insert(ACT, int);
-static void gen_dyn_open(ACT, int);
-static void gen_dyn_prepare(ACT, int);
-static void gen_emodify(ACT, int);
-static void gen_estore(ACT, int);
-static void gen_endfor(ACT, int);
-static void gen_erase(ACT, int);
-static SSHORT gen_event_block(ACT);
-static void gen_event_init(ACT, int);
-static void gen_event_wait(ACT, int);
-static void gen_fetch(ACT, int);
-static void gen_finish(ACT, int);
-static void gen_for(ACT, int);
-static void gen_function(ACT, int);
-static void gen_get_or_put_slice(ACT, REF, bool, int);
-static void gen_get_segment(ACT, int);
-static void gen_loop(ACT, int);
+static void gen_compile(const act*, int);
+static void gen_create_database(const act*, int);
+static int gen_cursor_close(const act*, GPRE_REQ, int);
+static void gen_cursor_init(const act*, int);
+static int gen_cursor_open(const act*, GPRE_REQ, int);
+static void gen_database(const act*, int);
+static void gen_ddl(const act*, int);
+static void gen_drop_database(const act*, int);
+static void gen_dyn_close(const act*, int);
+static void gen_dyn_declare(const act*, int);
+static void gen_dyn_describe(const act*, int, bool);
+static void gen_dyn_execute(const act*, int);
+static void gen_dyn_fetch(const act*, int);
+static void gen_dyn_immediate(const act*, int);
+static void gen_dyn_insert(const act*, int);
+static void gen_dyn_open(const act*, int);
+static void gen_dyn_prepare(const act*, int);
+static void gen_emodify(const act*, int);
+static void gen_estore(const act*, int);
+static void gen_endfor(const act*, int);
+static void gen_erase(const act*, int);
+static SSHORT gen_event_block(const act*);
+static void gen_event_init(const act*, int);
+static void gen_event_wait(const act*, int);
+static void gen_fetch(const act*, int);
+static void gen_finish(const act*, int);
+static void gen_for(const act*, int);
+static void gen_function(const act*, int);
+static void gen_get_or_put_slice(const act*, REF, bool, int);
+static void gen_get_segment(const act*, int);
+static void gen_loop(const act*, int);
 static TEXT *gen_name(char *, REF, bool);
-static void gen_on_error(ACT, USHORT);
-static void gen_procedure(ACT, int);
-static void gen_put_segment(ACT, int);
+static void gen_on_error(const act*, USHORT);
+static void gen_procedure(const act*, int);
+static void gen_put_segment(const act*, int);
 static void gen_raw(UCHAR *, int);
-static void gen_ready(ACT, int);
-static void gen_receive(ACT, int, POR);
-static void gen_release(ACT, int);
+static void gen_ready(const act*, int);
+static void gen_receive(const act*, int, POR);
+static void gen_release(const act*, int);
 static void gen_request(GPRE_REQ);
-static void gen_return_value(ACT, int);
-static void gen_routine(ACT, int);
-static void gen_s_end(ACT, int);
-static void gen_s_fetch(ACT, int);
-static void gen_s_start(ACT, int);
-static void gen_segment(ACT, int);
-static void gen_select(ACT, int);
-static void gen_send(ACT, POR, int);
-static void gen_slice(ACT, REF, int);
-static void gen_start(ACT, POR, int, bool);
-static void gen_store(ACT, int);
-static void gen_t_start(ACT, int);
+static void gen_return_value(const act*, int);
+static void gen_routine(const act*, int);
+static void gen_s_end(const act*, int);
+static void gen_s_fetch(const act*, int);
+static void gen_s_start(const act*, int);
+static void gen_segment(const act*, int);
+static void gen_select(const act*, int);
+static void gen_send(const act*, POR, int);
+static void gen_slice(const act*, REF, int);
+static void gen_start(const act*, POR, int, bool);
+static void gen_store(const act*, int);
+static void gen_t_start(const act*, int);
 static void gen_tpb(TPB, int);
-static void gen_trans(ACT, int);
-static void gen_type(ACT, int);
-static void gen_update(ACT, int);
-static void gen_variable(ACT, int);
+static void gen_trans(const act*, int);
+static void gen_type(const act*, int);
+static void gen_update(const act*, int);
+static void gen_variable(const act*, int);
 static void gen_whenever(SWE, int);
 static void make_array_declaration(REF);
 static TEXT *make_name(TEXT *, SYM);
-static void make_ok_test(ACT, GPRE_REQ, int);
+static void make_ok_test(const act*, GPRE_REQ, int);
 static void make_port(POR, int);
 static void make_ready(DBB, TEXT *, TEXT *, USHORT, GPRE_REQ);
 static void printa(int, const char *, ...) ATTRIBUTE_FORMAT(2,3);
 static void printb(TEXT *, ...) ATTRIBUTE_FORMAT(1,2);
-static TEXT *request_trans(ACT, GPRE_REQ);
-static TEXT *status_vector(ACT);
-static void t_start_auto(ACT, GPRE_REQ, TEXT *, int, bool);
+static const TEXT* request_trans(const act*, GPRE_REQ);
+static TEXT *status_vector(const act*);
+static void t_start_auto(const act*, GPRE_REQ, TEXT *, int, bool);
 
 static int global_first_flag;
 static TEXT *status_name;
@@ -170,7 +170,7 @@ static inline void endp(const int column)
 	printa(column, "}");
 }
 
-static inline void set_sqlcode(ACT action, const int column)
+static inline void set_sqlcode(const act* action, const int column)
 {
 	if (action->act_flags & ACT_sql)
 		printa(column, "SQLCODE = isc_sqlcode(%s);", status_name);
@@ -180,7 +180,7 @@ static inline void set_sqlcode(ACT action, const int column)
 //  
 //  
 
-void C_CXX_action( ACT action, int column)
+void C_CXX_action(const act* action, int column)
 {
 
 	status_name = "isc_status";
@@ -498,7 +498,7 @@ void C_CXX_action( ACT action, int column)
 	case ACT_store2:
 		gen_return_value(action, column);
 		return;
-	case ACT_type:
+	case ACT_type_number:
 		gen_type(action, column);
 		return;
 	case ACT_update:
@@ -557,7 +557,7 @@ static void align( int column)
 //		byte.
 //  
 
-static void asgn_from( ACT action, REF reference, int column)
+static void asgn_from( const act* action, REF reference, int column)
 {
 	TEXT name[64], variable[20], temp[20];
 
@@ -565,10 +565,10 @@ static void asgn_from( ACT action, REF reference, int column)
 		bool slice_flag = false;
 		GPRE_FLD field = reference->ref_field;
 		if (field->fld_array_info) {
-		    ACT slice_action;
+		    act* slice_action;
 		    REF source = reference->ref_friend;
 			if (source &&
-				(slice_action = (ACT) source->ref_slice) &&
+				(slice_action = (act*) source->ref_slice) &&
 				slice_action->act_object)
 			{
 				slice_flag = true;
@@ -645,7 +645,7 @@ static void asgn_from( ACT action, REF reference, int column)
 //		a port variable.
 //  
 
-static void asgn_to( ACT action, REF reference, int column)
+static void asgn_to( const act* action, REF reference, int column)
 {
 	char s[64];
 
@@ -653,8 +653,8 @@ static void asgn_to( ACT action, REF reference, int column)
 	GPRE_FLD field = source->ref_field;
 
 	if (field) {
-	    ACT slice_action;
-		if (field->fld_array_info && (slice_action = (ACT) source->ref_slice)) {
+	    act* slice_action;
+		if (field->fld_array_info && (slice_action = (act*) source->ref_slice)) {
 			source->ref_value = reference->ref_value;
 			if (slice_action->act_object) {
 				slice_action->act_type = ACT_get_slice;
@@ -743,7 +743,7 @@ static void asgn_to_proc( REF reference, int column)
 //		will need to generate the actual function.
 //  
 
-static void gen_any( ACT action, int column)
+static void gen_any( const act* action, int column)
 {
 	align(column);
 	GPRE_REQ request = action->act_request;
@@ -768,7 +768,7 @@ static void gen_any( ACT action, int column)
 //		Generate code for AT END clause of FETCH.
 //  
 
-static void gen_at_end( ACT action, int column)
+static void gen_at_end( const act* action, int column)
 {
 	char s[20];
 
@@ -782,7 +782,7 @@ static void gen_at_end( ACT action, int column)
 //		Substitute for a BASED ON <field name> clause.
 //  
 
-static void gen_based( ACT action, int column)
+static void gen_based( const act* action, int column)
 {
 	TEXT s[64], *variable;
 	USHORT datatype;
@@ -909,7 +909,7 @@ static void gen_based( ACT action, int column)
 //		Make a blob FOR loop.
 //  
 
-static void gen_blob_close( ACT action, USHORT column)
+static void gen_blob_close( const act* action, USHORT column)
 {
 	BLB blob;
 	PAT args;
@@ -944,7 +944,7 @@ static void gen_blob_close( ACT action, USHORT column)
 //		End a blob FOR loop.
 //  
 
-static void gen_blob_end( ACT action, USHORT column)
+static void gen_blob_end( const act* action, USHORT column)
 {
 	BLB blob;
 	PAT args;
@@ -970,7 +970,7 @@ isc_close_blob (%V1, &%BH);\n\
 //		Make a blob FOR loop.
 //  
 
-static void gen_blob_for( ACT action, USHORT column)
+static void gen_blob_for( const act* action, USHORT column)
 {
 	PAT args;
 	TEXT *pattern1 = "%IFif (!%S1 [1]) {\n\
@@ -993,7 +993,7 @@ static void gen_blob_for( ACT action, USHORT column)
 //		Generate the call to open (or create) a blob.
 //  
 
-static void gen_blob_open( ACT action, USHORT column)
+static void gen_blob_open( const act* action, USHORT column)
 {
 	BLB blob;
 	PAT args;
@@ -1133,7 +1133,7 @@ static void gen_blr(void* user_arg, SSHORT offset, const char* string)
 //		Zap all know handles.
 //  
 
-static void gen_clear_handles( ACT action, int column)
+static void gen_clear_handles( const act* action, int column)
 {
 	for (GPRE_REQ request = requests; request; request = request->req_next) {
 		if (!(request->req_flags & REQ_exp_hand))
@@ -1164,7 +1164,7 @@ static void gen_compatibility_symbol(
 //		Generate text to compile a request.
 //  
 
-static void gen_compile( ACT action, int column)
+static void gen_compile( const act* action, int column)
 {
 	PAT args;
 	TEXT *pattern1 =
@@ -1208,7 +1208,7 @@ static void gen_compile( ACT action, int column)
 //		Generate a call to create a database.
 //  
 
-static void gen_create_database( ACT action, int column)
+static void gen_create_database( const act* action, int column)
 {
 	PAT args;
 	TEXT *pattern1 =
@@ -1298,7 +1298,7 @@ static void gen_create_database( ACT action, int column)
 //		Generate substitution text for END_STREAM.
 //  
 
-static int gen_cursor_close( ACT action, GPRE_REQ request, int column)
+static int gen_cursor_close( const act* action, GPRE_REQ request, int column)
 {
 	PAT args;
 	TEXT *pattern1 =
@@ -1321,7 +1321,7 @@ static int gen_cursor_close( ACT action, GPRE_REQ request, int column)
 //		Generate text to initialize a cursor.
 //  
 
-static void gen_cursor_init( ACT action, int column)
+static void gen_cursor_init( const act* action, int column)
 {
 
 //  If blobs are present, zero out all of the blob handles.  After this
@@ -1341,7 +1341,7 @@ static void gen_cursor_init( ACT action, int column)
 //		Generate text to open an embedded SQL cursor.
 //  
 
-static int gen_cursor_open( ACT action, GPRE_REQ request, int column)
+static int gen_cursor_open( const act* action, GPRE_REQ request, int column)
 {
 	PAT args;
 	TEXT s[64];
@@ -1383,7 +1383,7 @@ static int gen_cursor_open( ACT action, GPRE_REQ request, int column)
 //		Generate insertion text for the database statement.
 //  
 
-static void gen_database( ACT action, int column)
+static void gen_database( const act* action, int column)
 {
 	if (global_first_flag++ != 0)
 		return;
@@ -1467,7 +1467,7 @@ static void gen_database( ACT action, int column)
 
 	SSHORT max_count = 0;
 	for (LLS stack_ptr = events; stack_ptr; stack_ptr = stack_ptr->lls_next) {
-		SSHORT count = gen_event_block((ACT) (stack_ptr->lls_object));
+		SSHORT count = gen_event_block((const act*) (stack_ptr->lls_object));
 		max_count = MAX(count, max_count);
 	}
 
@@ -1520,7 +1520,7 @@ static void gen_database( ACT action, int column)
 //		Generate a call to update metadata.
 //  
 
-static void gen_ddl( ACT action, int column)
+static void gen_ddl( const act* action, int column)
 {
 //  Set up command type for call to RDB$DDL
 
@@ -1557,7 +1557,7 @@ static void gen_ddl( ACT action, int column)
 //		Generate a call to create a database.
 //  
 
-static void gen_drop_database( ACT action, int column)
+static void gen_drop_database( const act* action, int column)
 {
 	DBB db = (DBB) action->act_object;
 	align(column);
@@ -1575,7 +1575,7 @@ static void gen_drop_database( ACT action, int column)
 //		Generate a dynamic SQL statement.
 //  
 
-static void gen_dyn_close( ACT action, int column)
+static void gen_dyn_close( const act* action, int column)
 {
 	TEXT s[64];
 
@@ -1592,7 +1592,7 @@ static void gen_dyn_close( ACT action, int column)
 //		Generate a dynamic SQL statement.
 //  
 
-static void gen_dyn_declare( ACT action, int column)
+static void gen_dyn_declare( const act* action, int column)
 {
 	TEXT s1[64], s2[64];
 
@@ -1611,7 +1611,7 @@ static void gen_dyn_declare( ACT action, int column)
 //		Generate a dynamic SQL statement.
 //  
 
-static void gen_dyn_describe(ACT action,
+static void gen_dyn_describe(const act* action,
 							 int column,
 							 bool bind_flag)
 {
@@ -1633,15 +1633,14 @@ static void gen_dyn_describe(ACT action,
 //		Generate a dynamic SQL statement.
 //  
 
-static void gen_dyn_execute( ACT action, int column)
+static void gen_dyn_execute( const act* action, int column)
 {
-
-	DYN statement = (DYN) action->act_object;
-	TEXT *transaction;
 	TEXT s[64];
 	gpre_req* request;
 	gpre_req req_const;
 
+	DYN statement = (DYN) action->act_object;
+	const TEXT* transaction;
 	if (statement->dyn_trans) {
 		transaction = statement->dyn_trans;
 		request = &req_const;
@@ -1688,7 +1687,7 @@ static void gen_dyn_execute( ACT action, int column)
 //		Generate a dynamic SQL statement.
 //  
 
-static void gen_dyn_fetch( ACT action, int column)
+static void gen_dyn_fetch( const act* action, int column)
 {
 	TEXT s[64];
 
@@ -1708,14 +1707,14 @@ static void gen_dyn_fetch( ACT action, int column)
 //		Generate code for an EXECUTE IMMEDIATE dynamic SQL statement.
 //  
 
-static void gen_dyn_immediate( ACT action, int column)
+static void gen_dyn_immediate( const act* action, int column)
 {
-	TEXT *transaction;
 	gpre_req* request;
 	gpre_req req_const;
 
 	DYN statement = (DYN) action->act_object;
 	DBB database = statement->dyn_database;
+	const TEXT* transaction;
 	if (statement->dyn_trans) {
 		transaction = statement->dyn_trans;
 		request = &req_const;
@@ -1753,7 +1752,7 @@ static void gen_dyn_immediate( ACT action, int column)
 //		Generate a dynamic SQL statement.
 //  
 
-static void gen_dyn_insert( ACT action, int column)
+static void gen_dyn_insert( const act* action, int column)
 {
 	TEXT s[64];
 
@@ -1774,13 +1773,14 @@ static void gen_dyn_insert( ACT action, int column)
 //		Generate a dynamic SQL statement.
 //  
 
-static void gen_dyn_open( ACT action, int column)
+static void gen_dyn_open( const act* action, int column)
 {
-	TEXT *transaction, s[64];
+	TEXT s[64];
 	gpre_req* request;
 	gpre_req req_const;
 
 	DYN statement = (DYN) action->act_object;
+	const TEXT* transaction;
 	if (statement->dyn_trans) {
 		transaction = statement->dyn_trans;
 		request = &req_const;
@@ -1822,14 +1822,14 @@ static void gen_dyn_open( ACT action, int column)
 //		Generate a dynamic SQL statement.
 //  
 
-static void gen_dyn_prepare( ACT action, int column)
+static void gen_dyn_prepare( const act* action, int column)
 {
-	TEXT s[64], *transaction;
+	TEXT s[64];
 	gpre_req* request;
 	gpre_req req_const;
 
 	DYN statement = (DYN) action->act_object;
-
+	const TEXT* transaction;
 	if (statement->dyn_trans) {
 		transaction = statement->dyn_trans;
 		request = &req_const;
@@ -1870,7 +1870,7 @@ static void gen_dyn_prepare( ACT action, int column)
 //		single character.
 //  
 
-static void gen_emodify( ACT action, int column)
+static void gen_emodify( const act* action, int column)
 {
 	TEXT s1[20], s2[20];
 
@@ -1909,7 +1909,7 @@ static void gen_emodify( ACT action, int column)
 //		Generate substitution text for END_STORE.
 //  
 
-static void gen_estore( ACT action, int column)
+static void gen_estore( const act* action, int column)
 {
 	GPRE_REQ request = action->act_request;
 
@@ -1938,7 +1938,7 @@ static void gen_estore( ACT action, int column)
 //		Generate definitions associated with a single request.
 //  
 
-static void gen_endfor( ACT action, int column)
+static void gen_endfor( const act* action, int column)
 {
 	GPRE_REQ request = action->act_request;
 	column += INDENT;
@@ -1958,7 +1958,7 @@ static void gen_endfor( ACT action, int column)
 //		Generate substitution text for ERASE.
 //  
 
-static void gen_erase( ACT action, int column)
+static void gen_erase( const act* action, int column)
 {
 	if (action->act_error || (action->act_flags & ACT_sql))
 		begin(column);
@@ -1977,7 +1977,7 @@ static void gen_erase( ACT action, int column)
 //		with a particular call to isc_event_wait.
 //  
 
-static SSHORT gen_event_block( ACT action)
+static SSHORT gen_event_block( const act* action)
 {
 	GPRE_NOD init = (GPRE_NOD) action->act_object;
 	SYM event_name = (SYM) init->nod_arg[0];
@@ -1999,7 +1999,7 @@ static SSHORT gen_event_block( ACT action)
 //		Generate substitution text for EVENT_INIT.
 //  
 
-static void gen_event_init( ACT action, int column)
+static void gen_event_init( const act* action, int column)
 {
 	GPRE_NOD *ptr, *end, node;
 	REF reference;
@@ -2062,7 +2062,7 @@ static void gen_event_init( ACT action, int column)
 //		Generate substitution text for EVENT_WAIT.
 //  
 
-static void gen_event_wait( ACT action, int column)
+static void gen_event_wait( const act* action, int column)
 {
 	PAT args;
 	TEXT s[64];
@@ -2084,7 +2084,7 @@ static void gen_event_wait( ACT action, int column)
 	DBB database;
 	int ident = -1;
 	for (LLS stack_ptr = events; stack_ptr; stack_ptr = stack_ptr->lls_next) {
-		ACT event_action = (ACT) stack_ptr->lls_object;
+		const act* event_action = (const act*) stack_ptr->lls_object;
 		GPRE_NOD event_init = (GPRE_NOD) event_action->act_object;
 		SYM stack_name = (SYM) event_init->nod_arg[0];
 		if (!strcmp(event_name->sym_string, stack_name->sym_string)) {
@@ -2121,7 +2121,7 @@ static void gen_event_wait( ACT action, int column)
 //		stream fetch).
 //  
 
-static void gen_fetch( ACT action, int column)
+static void gen_fetch( const act* action, int column)
 {
 	TEXT s[20];
 
@@ -2219,7 +2219,7 @@ static void gen_fetch( ACT action, int column)
 //		Generate substitution text for FINISH
 //  
 
-static void gen_finish( ACT action, int column)
+static void gen_finish( const act* action, int column)
 {
 	PAT args;
 	TEXT *pattern1 = "if (%S2)\n\
@@ -2267,7 +2267,7 @@ static void gen_finish( ACT action, int column)
 //		Generate substitution text for FOR statement.
 //  
 
-static void gen_for( ACT action, int column)
+static void gen_for( const act* action, int column)
 {
 	TEXT s[20];
 
@@ -2305,12 +2305,12 @@ static void gen_for( ACT action, int column)
 //		Generate a function for free standing ANY or statistical.
 //  
 
-static void gen_function( ACT function, int column)
+static void gen_function( const act* function, int column)
 {
 	REF reference;
 	TEXT *dtype, s[64];
 
-	ACT action = (ACT) function->act_object;
+	const act* action = (const act*) function->act_object;
 
 	if (action->act_type != ACT_any) {
 		IBERROR("can't generate function");
@@ -2422,7 +2422,7 @@ static void gen_function( ACT function, int column)
 //       or isc_put_slice for an array.
 //  
 
-static void gen_get_or_put_slice(ACT action,
+static void gen_get_or_put_slice(const act* action,
 								 REF reference,
 								 bool get,
 								 int column)
@@ -2473,7 +2473,7 @@ static void gen_get_or_put_slice(ACT action,
 //		Generate the code to do a get segment.
 //  
 
-static void gen_get_segment( ACT action, int column)
+static void gen_get_segment( const act* action, int column)
 {
 	BLB blob;
 	PAT args;
@@ -2523,7 +2523,7 @@ static void gen_get_segment( ACT action, int column)
 //		Generate text to compile and start a SQL command
 //  
 
-static void gen_loop( ACT action, int column)
+static void gen_loop( const act* action, int column)
 {
 	TEXT name[20];
 
@@ -2571,9 +2571,9 @@ static TEXT *gen_name(char *string,
 //		Generate a block to handle errors.
 //  
 
-static void gen_on_error( ACT action, USHORT column)
+static void gen_on_error( const act* action, USHORT column)
 {
-	ACT err_action = (ACT) action->act_object;
+	const act* err_action = (const act*) action->act_object;
 	if ((err_action->act_type == ACT_get_segment) ||
 		(err_action->act_type == ACT_put_segment) ||
 		(err_action->act_type == ACT_endblob))
@@ -2592,7 +2592,7 @@ static void gen_on_error( ACT action, USHORT column)
 //		Generate code for an EXECUTE PROCEDURE.
 //  
 
-static void gen_procedure( ACT action, int column)
+static void gen_procedure( const act* action, int column)
 {
 	PAT args;
 	TEXT *pattern;
@@ -2647,7 +2647,7 @@ static void gen_procedure( ACT action, int column)
 //		Generate the code to do a put segment.
 //  
 
-static void gen_put_segment( ACT action, int column)
+static void gen_put_segment( const act* action, int column)
 {
 	BLB blob;
 	PAT args;
@@ -2727,7 +2727,7 @@ static void gen_raw( UCHAR * blr, int request_length)
 //		Generate substitution text for READY
 //  
 
-static void gen_ready( ACT action, int column)
+static void gen_ready( const act* action, int column)
 {
 	TEXT* vector = status_vector(action);
 
@@ -2757,7 +2757,7 @@ static void gen_ready( ACT action, int column)
 //		Generate a send or receive call for a port.
 //  
 
-static void gen_receive( ACT action, int column, POR port)
+static void gen_receive( const act* action, int column, POR port)
 {
 	PAT args;
 	TEXT *pattern =
@@ -2783,7 +2783,7 @@ static void gen_receive( ACT action, int column, POR port)
 //		a serious error, it will be caught on the next statement.
 //  
 
-static void gen_release( ACT action, int column)
+static void gen_release( const act* action, int column)
 {
 	DBB exp_db = (DBB) action->act_object;
 
@@ -2960,7 +2960,7 @@ static void gen_request( GPRE_REQ request)
 //		in a store2 statement.
 //  
 
-static void gen_return_value( ACT action, int column)
+static void gen_return_value( const act* action, int column)
 {
 	GPRE_REQ request = action->act_request;
 	if (action->act_pair->act_error)
@@ -2979,7 +2979,7 @@ static void gen_return_value( ACT action, int column)
 //		routine, insert local definitions.
 //  
 
-static void gen_routine( ACT action, int column)
+static void gen_routine( const act* action, int column)
 {
 	column += INDENT;
 
@@ -3007,7 +3007,7 @@ static void gen_routine( ACT action, int column)
 //		Generate substitution text for END_STREAM.
 //  
 
-static void gen_s_end( ACT action, int column)
+static void gen_s_end( const act* action, int column)
 {
 	if (action->act_error)
 		begin(column);
@@ -3035,7 +3035,7 @@ static void gen_s_end( ACT action, int column)
 //		Generate substitution text for FETCH.
 //  
 
-static void gen_s_fetch( ACT action, int column)
+static void gen_s_fetch( const act* action, int column)
 {
 	GPRE_REQ request = action->act_request;
 
@@ -3055,7 +3055,7 @@ static void gen_s_fetch( ACT action, int column)
 //		used both by START_STREAM and FOR
 //  
 
-static void gen_s_start( ACT action, int column)
+static void gen_s_start( const act* action, int column)
 {
 	GPRE_REQ request = action->act_request;
 
@@ -3094,7 +3094,7 @@ static void gen_s_start( ACT action, int column)
 //		Substitute for a segment, segment length, or blob handle.
 //  
 
-static void gen_segment( ACT action, int column)
+static void gen_segment( const act* action, int column)
 {
 	BLB blob = (BLB) action->act_object;
 
@@ -3111,7 +3111,7 @@ static void gen_segment( ACT action, int column)
 //		generate code for a singleton select.
 //  
 
-static void gen_select( ACT action, int column)
+static void gen_select( const act* action, int column)
 {
 	TEXT name[20];
 
@@ -3156,7 +3156,7 @@ static void gen_select( ACT action, int column)
 //		Generate a send or receive call for a port.
 //  
 
-static void gen_send( ACT action, POR port, int column)
+static void gen_send( const act* action, POR port, int column)
 {
 	PAT args;
 	TEXT *pattern =
@@ -3176,7 +3176,7 @@ static void gen_send( ACT action, POR port, int column)
 //		Generate support for get/put slice statement.
 //  
 
-static void gen_slice( ACT action, REF var_reference, int column)
+static void gen_slice( const act* action, REF var_reference, int column)
 {
 	PAT args;
 	TEXT *pattern1 = "isc_get_slice (%V1, &%DH, &%RT, &%FR, (short) %N1, \
@@ -3252,7 +3252,7 @@ static void gen_slice( ACT action, REF var_reference, int column)
 //		MODIFY statement, generate PUT_SLICE calls, as well.
 //  
 
-static void gen_start(ACT action,
+static void gen_start(const act* action,
 					  POR port,
 					  int column,
 					  bool sending)
@@ -3286,7 +3286,7 @@ static void gen_start(ACT action,
 //		call and any variable initialization required.
 //  
 
-static void gen_store( ACT action, int column)
+static void gen_store( const act* action, int column)
 {
 	TEXT name[64];
 
@@ -3321,7 +3321,7 @@ static void gen_store( ACT action, int column)
 //		Generate substitution text for START_TRANSACTION.
 //  
 
-static void gen_t_start( ACT action, int column)
+static void gen_t_start( const act* action, int column)
 {
 	GPRE_TRA trans;
 	tpb* tpb_iterator;
@@ -3437,7 +3437,7 @@ static void gen_tpb(tpb* tpb_buffer, int column)
 //		Generate substitution text for COMMIT, ROLLBACK, PREPARE, and SAVE
 //  
 
-static void gen_trans( ACT action, int column)
+static void gen_trans( const act* action, int column)
 {
 
 	if (action->act_type == ACT_commit_retain_context)
@@ -3465,7 +3465,7 @@ static void gen_trans( ACT action, int column)
 //		Substitute for a variable reference.
 //  
 
-static void gen_type( ACT action, int column)
+static void gen_type( const act* action, int column)
 {
 
 	printa(column, "%ld", (SLONG) action->act_object);
@@ -3477,7 +3477,7 @@ static void gen_type( ACT action, int column)
 //		Generate substitution text for UPDATE ... WHERE CURRENT OF ...
 //  
 
-static void gen_update( ACT action, int column)
+static void gen_update( const act* action, int column)
 {
 	UPD modify = (UPD) action->act_object;
 	POR port = modify->upd_port;
@@ -3491,7 +3491,7 @@ static void gen_update( ACT action, int column)
 //		Substitute for a variable reference.
 //  
 
-static void gen_variable( ACT action, int column)
+static void gen_variable( const act* action, int column)
 {
 	TEXT s[20];
 
@@ -3539,7 +3539,7 @@ static void make_array_declaration( REF reference)
 {
 
 	GPRE_FLD field = reference->ref_field;
-	TEXT* name = field->fld_symbol->sym_string;
+	const TEXT* name = field->fld_symbol->sym_string;
 	TEXT s[64];
 	TEXT *dtype;
 
@@ -3661,7 +3661,7 @@ static TEXT *make_name( TEXT * string, SYM symbol)
 //		active transaction
 //  
 
-static void make_ok_test( ACT action, GPRE_REQ request, int column)
+static void make_ok_test( const act* action, GPRE_REQ request, int column)
 {
 
 	if (sw_auto)
@@ -3689,7 +3689,7 @@ static void make_port( POR port, int column)
 	{
 		align(column + INDENT);
 		GPRE_FLD field = reference->ref_field;
-		TEXT* name;
+		const TEXT* name;
 		SYM symbol = field->fld_symbol;
 		if (symbol)
 			name = symbol->sym_string;
@@ -3877,11 +3877,11 @@ static void printb( TEXT* string, ...)
 //		Generate the appropriate transaction handle.
 //  
 
-static TEXT* request_trans( ACT action, GPRE_REQ request)
+static const TEXT* request_trans( const act* action, GPRE_REQ request)
 {
 
 	if (action->act_type == ACT_open) {
-		TEXT *trname = ((OPN) action->act_object)->opn_trans;
+		const TEXT* trname = ((OPN) action->act_object)->opn_trans;
 		if (!trname) {
 			trname = transaction_name;
 		}
@@ -3898,7 +3898,7 @@ static TEXT* request_trans( ACT action, GPRE_REQ request)
 //		call depending on where or not the action has an error clause.
 //  
 
-static TEXT* status_vector( ACT action)
+static TEXT* status_vector( const act* action)
 {
 
 	if (action && (action->act_error || (action->act_flags & ACT_sql)))
@@ -3916,7 +3916,7 @@ static TEXT* status_vector( ACT action)
 //		any thing fails so we don't trash the status vector.
 //  
 
-static void t_start_auto(ACT action,
+static void t_start_auto(const act* action,
 						 GPRE_REQ request,
 						 TEXT* vector,
 						 int column,
@@ -3926,7 +3926,7 @@ static void t_start_auto(ACT action,
 	int count;
 	TEXT buffer[256];
 
-	TEXT* trname = request_trans(action, request);
+	const TEXT* trname = request_trans(action, request);
 
 //  find out whether we're using a status vector or not 
 

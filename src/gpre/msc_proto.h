@@ -44,8 +44,8 @@ PRV			MSC_privilege_block(void);
 void		MSC_push(GPRE_NOD, LLS*);
 REF			MSC_reference(REF*);
 GPRE_REQ	MSC_request(enum req_t);
-SCHAR*		MSC_string(TEXT*);
-SYM			MSC_symbol(enum sym_t, TEXT*, USHORT, GPRE_CTX);
+SCHAR*		MSC_string(const TEXT*);
+SYM			MSC_symbol(enum sym_t, const TEXT*, USHORT, GPRE_CTX);
 GPRE_NOD	MSC_unary(NOD_T, GPRE_NOD);
 USN			MSC_username(SCHAR*, USHORT);
 

@@ -28,9 +28,9 @@
 
 void	CPR_abort(void);
 #ifdef DEV_BUILD
-void	CPR_assert(TEXT*, int);
+void	CPR_assert(const TEXT*, int);
 #endif
-void	CPR_bugcheck(TEXT*);
+void	CPR_bugcheck(const TEXT*);
 void	CPR_end_text(TXT);
 int		CPR_error(const TEXT*);
 void	CPR_exit(int);
@@ -38,7 +38,7 @@ void	CPR_warn(const TEXT*);
 TOK		CPR_eol_token(void);
 void	CPR_get_text(TEXT*, TXT);
 void	CPR_raw_read(void);
-void	CPR_s_error(TEXT*);
+void	CPR_s_error(const TEXT*);
 TXT		CPR_start_text(void);
 TOK		CPR_token(void);
 

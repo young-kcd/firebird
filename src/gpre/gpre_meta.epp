@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.25 2003-09-12 02:21:53 brodsom Exp $
+ *	$Id: gpre_meta.epp,v 1.26 2003-10-06 09:48:43 robocop Exp $
  */
 
 #include "firebird.h"
@@ -116,7 +116,7 @@ GPRE_FLD MET_context_field( GPRE_CTX context, char *string)
 /*____________________________________________________________
  *  
  *		Initialize meta data access to database.  If the
- *		database can't be opened, return FALSE.
+ *		database can't be opened, return false.
  */  
 
 bool MET_database(dbb* database, bool print_version)
@@ -449,8 +449,8 @@ bool MET_domain_lookup(GPRE_REQ request, GPRE_FLD field, char *string)
  */  
 
 bool MET_get_domain_default(dbb* database,
-							TEXT * domain_name,
-							TEXT * buffer,
+							const TEXT* domain_name,
+							TEXT* buffer,
 							USHORT buff_length)
 {
 	FRBRD *DB, *gds_trans;
@@ -977,16 +977,18 @@ void MET_fini(dbb* end)
  *		If found, return string. If not, return NULL.
  */  
 
-SCHAR *MET_generator(TEXT * string, dbb* database)
+const SCHAR* MET_generator(const TEXT* string, dbb* database)
 {
-	SYM symbol;
 	SCHAR name[NAME_SIZE];
 
 	strcpy(name, string);
 
-	for (symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
+	for (SYM symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 		if ((symbol->sym_type == SYM_generator) &&
-			(database == (dbb*) (symbol->sym_object))) return symbol->sym_string;
+			(database == (dbb*) (symbol->sym_object)))
+		{
+			return symbol->sym_string;
+		}
 
 	return NULL;
 }
@@ -1355,8 +1357,8 @@ UDF MET_get_udf(dbb* database, TEXT * string)
  */  
 
 GPRE_REL MET_get_view_relation(GPRE_REQ request,
-							   char *view_name,
-							   char *relation_or_alias, 
+							   const char* view_name,
+							   const char* relation_or_alias, 
 							   USHORT level)
 {
 	dbb* database;
@@ -1373,22 +1375,22 @@ GPRE_REL MET_get_view_relation(GPRE_REQ request,
 	X IN RDB$VIEW_RELATIONS WITH
 		X.RDB$VIEW_NAME EQ view_name
 		for (p = X.RDB$CONTEXT_NAME; *p && *p != ' '; p++);
-	*p = 0;
+		*p = 0;
 
-	for (p = X.RDB$RELATION_NAME; *p && *p != ' '; p++);
-	*p = 0;
+		for (p = X.RDB$RELATION_NAME; *p && *p != ' '; p++);
+		*p = 0;
 
-	if (!strcmp(X.RDB$RELATION_NAME, relation_or_alias) ||
-		!strcmp(X.RDB$CONTEXT_NAME, relation_or_alias))
-	{
-		return MET_get_relation(database, X.RDB$RELATION_NAME, "");
-	}
+		if (!strcmp(X.RDB$RELATION_NAME, relation_or_alias) ||
+			!strcmp(X.RDB$CONTEXT_NAME, relation_or_alias))
+		{
+			return MET_get_relation(database, X.RDB$RELATION_NAME, "");
+		}
 
-	if (relation = MET_get_view_relation(request, X.RDB$RELATION_NAME, 
-										 relation_or_alias, level + 1))
-	{
-		return relation;
-	}
+		if (relation = MET_get_view_relation(request, X.RDB$RELATION_NAME, 
+											 relation_or_alias, level + 1))
+		{
+			return relation;
+		}
 
 	END_FOR;
 

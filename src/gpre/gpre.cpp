@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.37 2003-10-03 01:53:33 brodsom Exp $
+//  $Id: gpre.cpp,v 1.38 2003-10-06 09:48:43 robocop Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -91,11 +91,11 @@ extern int lib$get_foreign();
 #define FOPEN_WRITE_TYPE	"w"
 #endif
 
-static bool			all_digits(char *);
-static bool			arg_is_string(SLONG, TEXT **, TEXT *);
-static SSHORT		compare_ASCII7z(char *, char *);
-static SLONG		compile_module(SLONG,TEXT*);
-static bool			file_rename(TEXT *, TEXT *, TEXT *);
+static bool			all_digits(const char*);
+static bool			arg_is_string(SLONG, TEXT**, const TEXT*);
+static SSHORT		compare_ASCII7z(const char*, const char*);
+static SLONG		compile_module(SLONG, const TEXT*);
+static bool			file_rename(TEXT*, const TEXT*, const TEXT*);
 #ifdef GPRE_FORTRAN
 static void			finish_based(ACT);
 #endif
@@ -103,7 +103,7 @@ static int			get_char(IB_FILE *);
 static bool			get_switches(int, TEXT **, const in_sw_tab_t*, SW_TAB, TEXT **);
 static TOK			get_token();
 static int			nextchar();
-static SLONG		pass1(TEXT*);
+static SLONG		pass1(const TEXT*);
 static void			pass2(SLONG);
 static void			print_switches();
 static void			remember_label(TEXT *);
@@ -118,7 +118,7 @@ TEXT*	file_name;
 TEXT*	out_file_name;
 SLONG position, last_position, line_position, first_position,
 	prior_line_position;
-ACT last_action, first_action;
+ACT global_last_action, global_first_action;
 UCHAR classes[256], fortran_labels[1024];
 TEXT *ident_pattern, *utility_name, *count_name, *slack_name,
 	*transaction_name, *database_name;
@@ -131,7 +131,7 @@ static USHORT sw_first;
 tok prior_token;
 static TEXT *comment_start, *comment_stop;
 
-typedef void (*pfn_gen_routine) (ACT, int);
+typedef void (*pfn_gen_routine) (const act*, int);
 static pfn_gen_routine gen_routine;
 
 static TEXT trace_file_name[128];
@@ -932,7 +932,7 @@ void CPR_abort()
 //		Report an assertion failure and abort this silly program.
 //  
 
-void CPR_assert( TEXT * file, int line)
+void CPR_assert(const TEXT* file, int line)
 {
 	TEXT buffer[200];
 
@@ -947,7 +947,7 @@ void CPR_assert( TEXT * file, int line)
 //		Issue an error message.
 //  
 
-void CPR_bugcheck( TEXT * string)
+void CPR_bugcheck(const TEXT* string)
 {
 
 	ib_fprintf(ib_stderr, "*** INTERNAL BUGCHECK: %s ***\n", string);
@@ -1034,10 +1034,6 @@ void CPR_warn(const TEXT* string)
 
 TOK CPR_eol_token()
 {
-	SSHORT c, peek;
-	SSHORT num_chars;
-	TEXT *p;
-
 	if (sw_language != lang_fortran)
 		return CPR_token();
 
@@ -1048,11 +1044,12 @@ TOK CPR_eol_token()
 
 	last_position =
 		token.tok_position + token.tok_length + token.tok_white_space - 1;
-	p = token.tok_string;
-	num_chars = 0;
+	TEXT* p = token.tok_string;
+	SSHORT num_chars = 0;
 
 //  skip spaces 
 
+	SSHORT c;
 	for (c = nextchar(); c == ' '; c = nextchar()) {
 		num_chars++;
 		*p++ = (TEXT) c;
@@ -1069,7 +1066,7 @@ TOK CPR_eol_token()
 //  in-line SQL comments are equivalent to end of line 
 
 	if (sw_sql && (c == '-')) {
-		peek = nextchar();
+		const SSHORT peek = nextchar();
 		if (peek != '-')
 			return_char(peek);
 		else {
@@ -1121,14 +1118,10 @@ TOK CPR_eol_token()
 //       Write text from the scratch trace file into a buffer.
 //  
 
-void CPR_get_text( TEXT * buffer, TXT text)
+void CPR_get_text( TEXT* buffer, TXT text)
 {
-	SLONG start;
-	int length;
-	TEXT *p;
-
-	start = text->txt_position;
-	length = text->txt_length;
+	SLONG start = text->txt_position;
+	int length = text->txt_length;
 
 //  On PC-like platforms, '\n' will be 2 bytes.  The txt_position
 //  will be incorrect for ib_fseek.  The position is not adjusted
@@ -1154,7 +1147,7 @@ void CPR_get_text( TEXT * buffer, TXT text)
 		ib_getc(trace_file);
 #endif
 
-	p = buffer;
+	TEXT* p = buffer;
 	while (length--)
 		*p++ = ib_getc(trace_file);
 	ib_fseek(trace_file, (SLONG) 0, 2);
@@ -1173,10 +1166,9 @@ void CPR_raw_read()
 {
 	SSHORT c;
 	SCHAR token_string[MAXSYMLEN];
-	SCHAR *p;
 	bool continue_char = false;
 
-	p = token_string;
+	SCHAR* p = token_string;
 
 	while (c = get_char(input_file)) {
 		position++;
@@ -1210,7 +1202,7 @@ void CPR_raw_read()
 //		Generate a syntax error.
 //  
 
-void CPR_s_error( TEXT * string)
+void CPR_s_error(const TEXT* string)
 {
 	TEXT s[512];
 
@@ -1227,9 +1219,7 @@ void CPR_s_error( TEXT * string)
 
 TXT CPR_start_text()
 {
-	TXT text;
-
-	text = (TXT) ALLOC(TXT_LEN);
+	TXT text = (TXT) ALLOC(TXT_LEN);
 	text->txt_position = token.tok_position - 1;
 
 	return text;
@@ -1246,15 +1236,12 @@ TXT CPR_start_text()
 
 TOK CPR_token()
 {
-	TOK token;
-	SYM symbol;
-
-	token = get_token();
+	TOK token = get_token();
 	if (!token)
 		return NULL;
 
 	if (token->tok_type == tok_introducer) {
-		symbol = MSC_find_symbol(HSH_lookup(token->tok_string + 1), SYM_charset);
+		SYM symbol = MSC_find_symbol(HSH_lookup(token->tok_string + 1), SYM_charset);
 		if (!symbol) {
 			TEXT err_buffer[100];
 
@@ -1263,6 +1250,7 @@ TOK CPR_token()
 			CPR_error(err_buffer);
 		}
 		token = get_token();
+
 		switch (sw_sql_dialect) {
 		case SQL_DIALECT_V5:
 			if (!(QUOTED(token->tok_type)))
@@ -1307,9 +1295,8 @@ TOK CPR_token()
 //		Return true if the string consists entirely of digits.
 //  
 
-static bool all_digits(char *str1)
+static bool all_digits(const char* str1)
 {
-
 	for (; *str1; str1++)
 		if (!(classes[*str1] & CHR_DIGIT))
 			return false;
@@ -1326,12 +1313,10 @@ static bool all_digits(char *str1)
 //  
 
 static bool arg_is_string(SLONG argc,
-						  TEXT ** argvstring,
-						  TEXT * errstring)
+						  TEXT** argvstring,
+						  const TEXT* errstring)
 {
-	TEXT *str;
-
-	str = *++argvstring;
+	const TEXT* str = *++argvstring;
 
 	if (!argc || *str == '-') {
 		ib_fprintf(ib_stderr, "%s", errstring);
@@ -1352,7 +1337,7 @@ static bool arg_is_string(SLONG argc,
 //		(positive) if str1 > str2
 //  
 
-static SSHORT compare_ASCII7z( char *str1, char *str2)
+static SSHORT compare_ASCII7z(const char* str1, const char* str2)
 {
 
 	for (; *str1; str1++, str2++)
@@ -1369,17 +1354,14 @@ static SSHORT compare_ASCII7z( char *str1, char *str2)
 //		Process a module and generate output.
 //  
 
-static SLONG compile_module( SLONG start_position, TEXT* base_directory)
+static SLONG compile_module( SLONG start_position, const TEXT* base_directory)
 {
-	SLONG end_position;
-	GPRE_REQ request;
-
 //  Reset miscellaneous pointers 
 
 	isc_databases = sw_databases;
 	requests = NULL;
 	events = NULL;
-	last_action = first_action = functions = NULL;
+	global_last_action = global_first_action = global_functions = NULL;
 
 //  Position the input file and initialize various modules 
 
@@ -1409,13 +1391,13 @@ static SLONG compile_module( SLONG start_position, TEXT* base_directory)
 
 //  Take a first pass at the module 
 
-	end_position = pass1(base_directory);
+	SLONG end_position = pass1(base_directory);
 
 //  finish up any based_ons that got deferred 
 
 #ifdef GPRE_FORTRAN
 	if (sw_language == lang_fortran)
-		finish_based(first_action);
+		finish_based(global_first_action);
 #endif
 
 	MET_fini(NULL);
@@ -1424,7 +1406,7 @@ static SLONG compile_module( SLONG start_position, TEXT* base_directory)
 	if (errors)
 		return end_position;
 
-	for (request = requests; request; request = request->req_next)
+	for (GPRE_REQ request = requests; request; request = request->req_next)
 		CMP_compile_request(request);
 
 	ib_fseek(input_file, start_position, 0);
@@ -1445,29 +1427,29 @@ static SLONG compile_module( SLONG start_position, TEXT* base_directory)
 //		new extension is given, use it.
 //  
 
-static bool file_rename(TEXT * file_name,
-						TEXT * extension,
-						TEXT * new_extension)
+static bool file_rename(TEXT* file_name,
+						const TEXT* extension,
+						const TEXT* new_extension)
 {
-	TEXT *p, *q, *terminator, *ext;
+	TEXT *p;
 
 //  go to the end of the file name 
 
 	for (p = file_name; *p; p++);
-	terminator = p;
+
+	TEXT* terminator = p;
 
 //  back up to the last extension (if any) 
 
-#ifdef VMS
+#if defined(VMS)
 	while ((p != file_name) && (*p != '.') && (*p != ']'))
-#else
-#if defined(WIN_NT)
+#elif defined(WIN_NT)
 	while ((p != file_name) && (*p != '.') && (*p != '/') && (*p != '\\'))
 #else
 	while ((p != file_name) && (*p != '.') && (*p != '/'))
 #endif
-#endif
-		p--;
+
+	--p;
 
 //  
 //  There's a match and the file spec has no extension, 
@@ -1485,8 +1467,8 @@ static bool file_rename(TEXT * file_name,
 //  to add a duplicate.  Otherwise add it.
 //  
 
-	ext = p;
-	for (q = extension; SAME(p, q); p++, q++)
+	TEXT* ext = p;
+	for (const TEXT* q = extension; SAME(p, q); p++, q++)
 		if (!*p) {
 			if (new_extension)
 				while (*ext++ = *new_extension++);
@@ -1520,11 +1502,8 @@ static bool file_rename(TEXT * file_name,
 
 static void finish_based( ACT action)
 {
-	DBB db;
 	GPRE_REL relation;
 	GPRE_FLD field;
-	BAS based_on;
-	SYM symbol;
 	TEXT s[128];
 
 	for (; action; action = action->act_rest) {
@@ -1540,13 +1519,13 @@ static void finish_based( ACT action)
 			continue;
 		}
 
-		based_on = (BAS) action->act_object;
+		BAS based_on = (BAS) action->act_object;
 		if (!based_on->bas_fld_name)
 			continue;
 
-		db = NULL;
+		DBB db = NULL;
 		if (based_on->bas_db_name) {
-			symbol = HSH_lookup((SCHAR *) based_on->bas_db_name);
+			SYM symbol = HSH_lookup((SCHAR *) based_on->bas_db_name);
 			for (; symbol; symbol = symbol->sym_homonym)
 				if (symbol->sym_type == SYM_database)
 					break;
@@ -1979,14 +1958,10 @@ static bool get_switches(int			argc,
 
 static TOK get_token()
 {
-	SSHORT c, next;
+	SSHORT next;
 	USHORT peek;
-	bool label = false;
 	TEXT *p, *end;
 	UCHAR class_;
-	SYM symbol;
-	SLONG start_position;
-	int start_line;
 
 //  Save the information from the previous token 
 
@@ -1995,11 +1970,11 @@ static TOK get_token()
 
 	last_position =
 		token.tok_position + token.tok_length + token.tok_white_space - 1;
-	start_line = line;
-	start_position = position;
+	int start_line = line;
+	SLONG start_position = position;
 	token.tok_charset = NULL;
 
-	c = skip_white();
+	SSHORT c = skip_white();
 
 #ifdef GPRE_COBOL
 //  Skip over cobol line continuation characters 
@@ -2059,6 +2034,9 @@ static TOK get_token()
 		return_char(c1);
 	}
 #endif
+
+	bool label = false;
+
 	if (sw_sql && (class_ & CHR_INTRODUCER)) {
 		while (classes[c = nextchar()] & CHR_IDENT)
 			if (p < end)
@@ -2214,6 +2192,8 @@ static TOK get_token()
 			return_char(*--p);
 	}
 
+	SYM symbol;
+
 	token.tok_length = p - token.tok_string;
 	*p++ = 0;
 	if (QUOTED(token.tok_type)) {
@@ -2357,7 +2337,7 @@ static int nextchar()
 //		for processing on pass 2.
 //  
 
-static SLONG pass1(TEXT* base_directory)
+static SLONG pass1(const TEXT* base_directory)
 {
 	ACT action;
 	SLONG start;
@@ -2383,17 +2363,17 @@ static SLONG pass1(TEXT* base_directory)
 						prior_token.tok_position +
 						prior_token.tok_length - 1 - start;
 				}
-				if (first_action) {
-					last_action->act_rest = action;
+				if (global_first_action) {
+					global_last_action->act_rest = action;
 				} else {
-					first_action = action;
+					global_first_action = action;
 				}
 
 				/* Allow for more than one action to be generated by a token. */
 
 				do
 				{
-					last_action = action;
+					global_last_action = action;
 					if (action = action->act_rest)
 					{
 						if (action->act_type == ACT_database)
@@ -2402,22 +2382,22 @@ static SLONG pass1(TEXT* base_directory)
 							   is do generate global decl at the start of the
 							   program file. */
 
-							last_action->act_rest = NULL;
-							action->act_rest = first_action;
-							first_action = action;
+							global_last_action->act_rest = NULL;
+							action->act_rest = global_first_action;
+							global_first_action = action;
 							action->act_position = -1;
 							action->act_length = -1;
 							break;
 						}
 						else
 						{
-							action->act_position = last_action->act_position;
+							action->act_position = global_last_action->act_position;
 							action->act_length = 0;
 						}
 					}
 				} while (action);
 
-				if (last_action->act_flags & ACT_break) {
+				if (global_last_action->act_flags & ACT_break) {
 					return last_position;
 				}
 
@@ -2450,15 +2430,12 @@ static SLONG pass1(TEXT* base_directory)
 
 static void pass2( SLONG start_position)
 {
-	SSHORT c, d, prior, comment_start_len, to_skip;
+	SSHORT d, prior, comment_start_len, to_skip;
 	SLONG column, start;
 	SLONG i;
-	SLONG line;
 	bool line_pending;
-	SLONG current;
-	ACT action;
 
-	c = 0;
+	SSHORT c = 0;
 
 //  FSG 14.Nov.2000 
 	if (sw_verbose) {
@@ -2497,12 +2474,12 @@ static void pass2( SLONG start_position)
 //   ib_fprintf (out_file, "#line 1 \"%s\"\n", file_name);
 //  
 
-	line = 0;
+	SLONG line = 0;
 	if (sw_lines)
 		line_pending = true;
 	else
 		line_pending = false;
-	current = 1 + start_position;
+	SLONG current = 1 + start_position;
 	column = 0;
 
 	comment_start_len = strlen(comment_start);
@@ -2510,7 +2487,7 @@ static void pass2( SLONG start_position)
 
 //  Dump text until the start of the next action, then process the action. 
 
-	for (action = first_action; action; action = action->act_rest)
+	for (const act* action = global_first_action; action; action = action->act_rest)
 	{
 		/* Dump text until the start of the next action.  If a line marker
 		   is pending and we see an end of line, dump out the marker. */
@@ -2661,8 +2638,8 @@ static void pass2( SLONG start_position)
 
 //  Last but not least, generate any remaining functions 
 
-	for (; functions; functions = functions->act_next)
-		(*gen_routine) (functions, 0);
+	for (; global_functions; global_functions = global_functions->act_next)
+		(*gen_routine) (global_functions, 0);
 }
 
 

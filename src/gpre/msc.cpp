@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: msc.cpp,v 1.12 2003-09-13 12:23:31 brodsom Exp $
+//	$Id: msc.cpp,v 1.13 2003-10-06 09:48:44 robocop Exp $
 //
 //  
 //  
@@ -485,11 +485,9 @@ GPRE_REQ MSC_request(enum req_t type)
 //		Copy a string into a permanent block.
 //  
 
-SCHAR *MSC_string(TEXT * input)
+SCHAR* MSC_string(const TEXT* input)
 {
-	TEXT *string;
-
-	string = (TEXT *) ALLOC(strlen(input) + 1);
+	TEXT* string = (TEXT*) ALLOC(strlen(input) + 1);
 	strcpy(string, input);
 
 	return string;
@@ -501,20 +499,18 @@ SCHAR *MSC_string(TEXT * input)
 //		Allocate and initialize a symbol block.
 //  
 
-SYM MSC_symbol(enum sym_t type, TEXT * string, USHORT length, GPRE_CTX object)
+SYM MSC_symbol(enum sym_t type, const TEXT* string, USHORT length, GPRE_CTX object)
 {
-	SYM symbol;
-	TEXT *p;
-
-	symbol = (SYM) ALLOC(SYM_LEN + length);
+	SYM symbol = (SYM) ALLOC(SYM_LEN + length);
 	symbol->sym_type = type;
 	symbol->sym_object = object;
-	p = symbol->sym_string = symbol->sym_name;
+	TEXT* p = symbol->sym_name;
+	symbol->sym_string = p;
 
 	if (length)
-		do
+		do {
 			*p++ = *string++;
-		while (--length);
+		} while (--length);
 
 	return symbol;
 }

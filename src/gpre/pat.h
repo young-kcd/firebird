@@ -69,11 +69,11 @@ Substitution codes:
 
 struct pat {
 	DBB pat_database;
-	GPRE_REQ pat_request;
+	const gpre_req* pat_request;
 	GPRE_TRA pat_transaction;
 	BLB pat_blob;
-	POR pat_port;
-	POR pat_port2;
+	const por* pat_port;
+	const por* pat_port2;
 	const TEXT* pat_string1;
 	const TEXT* pat_string2;
 	const TEXT* pat_string3;
@@ -92,7 +92,7 @@ struct pat {
 	SLONG pat_long1;
 	SLONG pat_long2;
 	bool pat_condition;
-	REF pat_reference;
+	const ref* pat_reference;
 };
 
 typedef pat PAT;

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pat.cpp,v 1.16 2003-10-05 06:56:48 robocop Exp $
+//	$Id: pat.cpp,v 1.17 2003-10-06 09:48:44 robocop Exp $
 //
 
 #include "firebird.h"
@@ -122,38 +122,41 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 	SSHORT value;				/* value needs to be signed since some of the
 								   values printed out are signed.  */
 	SLONG long_value;
-	TEXT *ref, *refend, *val, *valend, *q;
+	TEXT* q;
 
-	ref = "";
-	refend = "";
-	val = "";
-	valend = "";
+	// CVC: kudos to the programmer that had chosen variables with the same
+	// names that structs in gpre.h and with type char* if not enough.
+	// Renamed ref to lang_ref and val to lang_val.
+	const TEXT* lang_ref = "";
+	const TEXT* refend = "";
+	const TEXT* lang_val = "";
+	const TEXT* valend = "";
 
 	if ((sw_language == lang_c) || (isLangCpp(sw_language))) {
-		ref = "&";
+		lang_ref = "&";
 		refend = "";
 	}
 	else if (sw_language == lang_pascal) {
-		ref = "%%REF ";
+		lang_ref = "%%REF ";
 		refend = "";
 	}
 	else if (sw_language == lang_cobol) {
-		ref = "BY REFERENCE ";
+		lang_ref = "BY REFERENCE ";
 		refend = "";
-		val = "BY VALUE ";
+		lang_val = "BY VALUE ";
 		valend = "";
 	}
 	else if (sw_language == lang_fortran) {
 #ifdef VMS
-		ref = "%REF(";
+		lang_ref = "%REF(";
 		refend = ")";
-		val = "%VAL(";
+		lang_val = "%VAL(";
 		valend = ")";
 #endif
 #if (defined AIX || defined AIX_PPC)
-		ref = "%REF(";
+		lang_ref = "%REF(";
 		refend = ")";
-		val = "%VAL(";
+		lang_val = "%VAL(";
 		valend = ")";
 #endif
 	}
@@ -177,7 +180,7 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 		}
 		bool sw_ident = false;
 		const TEXT* string = NULL;
-		REF reference = NULL;
+		const ref* reference = NULL;
 		bool handle_flag = false, long_flag = false;
 		ops* oper_iter;
 		for (oper_iter = operators; oper_iter->ops_type != NL; oper_iter++)
@@ -336,7 +339,7 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 			break;
 
 		case RF:
-			string = ref;
+			string = lang_ref;
 			break;
 
 		case RE:
@@ -344,7 +347,7 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 			break;
 
 		case VF:
-			string = val;
+			string = lang_val;
 			break;
 
 		case VE:

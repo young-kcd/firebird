@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.25 2003-09-25 11:49:02 robocop Exp $
+//	$Id: sql.cpp,v 1.26 2003-10-06 09:48:44 robocop Exp $
 //
 
 #include "firebird.h"
@@ -59,7 +59,7 @@
 extern ACT cur_routine;
 extern TEXT* database_name;
 
-TEXT* module_lc_ctype = NULL;
+const TEXT* module_lc_ctype = NULL;
 
 static ACT act_alter(void);
 static ACT act_alter_database(void);
@@ -133,7 +133,7 @@ static GPRE_FLD par_field(GPRE_REQ, GPRE_REL);
 static CNSTRT	par_field_constraint(GPRE_REQ, GPRE_FLD, GPRE_REL);
 static void		par_fkey_extension(CNSTRT);
 static bool		par_into(DYN);
-static void		par_options(TEXT **);
+static void		par_options(const TEXT**);
 static int		par_page_size(void);
 static GPRE_REL par_relation(GPRE_REQ);
 static DYN		par_statement(void);
@@ -2243,9 +2243,9 @@ static ACT act_declare(void)
 				if (!MATCH(KW_OF))
 					SYNTAX_ERROR("OF");
 
-				do
+				do {
 					CPR_token();
-				while (MATCH(KW_COMMA));
+				} while (MATCH(KW_COMMA));
 			}
 			EXP_rse_cleanup(request->req_rse);
 		}
@@ -2268,9 +2268,9 @@ static ACT act_declare(void)
 				if (!MATCH(KW_OF))
 					SYNTAX_ERROR("OF");
 
-				do
+				do {
 					CPR_token();
-				while (MATCH(KW_COMMA));
+				} while (MATCH(KW_COMMA));
 			}
 			symbol->sym_type = SYM_dyn_cursor;
 			statement->dyn_cursor_name = symbol;
@@ -2531,7 +2531,7 @@ static ACT act_declare_udf(void)
 
 static ACT act_delete(void)
 {
-	TEXT* transaction;
+	const TEXT* transaction;
 
 	par_options(&transaction);
 
@@ -2571,7 +2571,8 @@ static ACT act_delete(void)
 			else {				/* does not specify transaction clause in      */
 				/*   "delete ... where cuurent of cursor" stmt */
 				SSHORT trans_nm_len = strlen(request->req_trans);
-				SCHAR* str_2 = transaction = (SCHAR*) ALLOC(trans_nm_len + 1);
+				SCHAR* str_2 = (SCHAR*) ALLOC(trans_nm_len + 1);
+				transaction = str_2;
 				const SCHAR* str_1 = request->req_trans;
 				do {
 					*str_2++ = *str_1++;
@@ -2945,7 +2946,7 @@ static ACT act_execute(void)
 
 //  Ordinary form of EXECUTE 
 
-	TEXT* transaction;
+	const TEXT* transaction;
 	par_options(&transaction);
 	DYN statement = par_statement();
 	statement->dyn_trans = transaction;
@@ -3376,7 +3377,7 @@ static ACT act_include(void)
 
 static ACT act_insert(void)
 {
-	TEXT* transaction = NULL;
+	const TEXT* transaction = NULL;
 
 	par_options(&transaction);
 
@@ -3593,7 +3594,7 @@ static ACT act_lock(void)
 
 static ACT act_openclose( enum act_t type)
 {
-	TEXT* transaction = 0;
+	const TEXT* transaction = 0;
 
 	if (type == ACT_open)
 		par_options(&transaction);
@@ -3835,7 +3836,7 @@ static ACT act_prepare(void)
 		CPR_warn(s);
 	}
 
-	TEXT* transaction = NULL;
+	const TEXT* transaction = NULL;
 	par_options(&transaction);
 
 	DYN statement = par_statement();
@@ -4293,7 +4294,7 @@ static ACT act_set_transaction(void)
 
 static ACT act_transaction( enum act_t type)
 {
-	TEXT* transaction = NULL;
+	const TEXT* transaction = NULL;
 
 	par_options(&transaction);
 	MATCH(KW_WORK);
@@ -4330,7 +4331,7 @@ static ACT act_transaction( enum act_t type)
 
 static ACT act_update(void)
 {
-	TEXT* transaction = NULL;
+	const TEXT* transaction = NULL;
 
 	par_options(&transaction);
 
@@ -4411,11 +4412,12 @@ static ACT act_update(void)
 			else {				/* does not specify transaction clause in      */
 				/*   "update ... where cuurent of cursor" stmt */
 				SSHORT trans_nm_len = strlen(request->req_trans);
-				SCHAR* str_2 = transaction = (SCHAR *) ALLOC(trans_nm_len + 1);
+				SCHAR* str_2 = (SCHAR *) ALLOC(trans_nm_len + 1);
+				transaction = str_2;
 				const SCHAR* str_1 = request->req_trans;
-				do
+				do {
 					*str_2++ = *str_1++;
-				while (--trans_nm_len);
+				} while (--trans_nm_len);
 			}
 		}
 		request->req_trans = transaction;
@@ -4632,9 +4634,9 @@ static ACT act_whenever(void)
 		if (label->swe_length) {
 			TEXT* p = label->swe_label;
 			const TEXT* q = token.tok_string;
-			do
+			do {
 				*p++ = *q++;
-			while (--l);
+			} while (--l);
 		}
 		ADVANCE_TOKEN;
 		label->swe_condition = condition;
@@ -4965,9 +4967,9 @@ static SWE gen_whenever(void)
 			if (l) {
 				TEXT* p = label->swe_label;
 				const TEXT* q = proto->swe_label;
-				do
+				do {
 					*p++ = *q++;
-				while (--l);
+				} while (--l);
 			}
 		}
 	}
@@ -5592,7 +5594,7 @@ static bool par_into( DYN statement)
 //		Parse request options.
 //  
 
-static void par_options( TEXT ** transaction)
+static void par_options(const TEXT** transaction)
 {
 
 	*transaction = NULL;

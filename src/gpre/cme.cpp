@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cme.cpp,v 1.12 2003-09-28 21:35:58 skidder Exp $
+//	$Id: cme.cpp,v 1.13 2003-10-06 09:48:43 robocop Exp $
 //
 
 #include "firebird.h"
@@ -1211,7 +1211,6 @@ static GPRE_NOD cmp_array( GPRE_NOD node, GPRE_REQ request)
 {
 	GPRE_FLD field;
 	REF reference;
-	TEXT *p;
 
 	CMP_check(request, 0);
 
@@ -1257,6 +1256,7 @@ static GPRE_NOD cmp_array( GPRE_NOD node, GPRE_REQ request)
 		{
 			STUFF_SDL(gds_sdl_relation);
 			STUFF_SDL(strlen(field->fld_relation->rel_symbol->sym_string));
+			const TEXT* p;
 			for (p = field->fld_relation->rel_symbol->sym_string; *p; p++)
 				STUFF_SDL(*p);
 			STUFF_SDL(gds_sdl_field);

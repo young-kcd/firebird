@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.44 2003-09-28 21:35:59 skidder Exp $
+ * $Id: gpre.h,v 1.45 2003-10-06 09:48:43 robocop Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -620,7 +620,7 @@ typedef enum act_t {
 	ACT_update,
 	ACT_variable,
 	ACT_clear_handles,
-	ACT_type,
+	ACT_type_number,  // let's avoid confusion with act.act_type
 	ACT_noop,
 	ACT_get_slice,
 	ACT_put_slice,
@@ -686,7 +686,7 @@ enum sym_t {
 };
 
 typedef struct sym {
-	char *sym_string;			/* address of asciz string */
+	const char* sym_string;			/* address of asciz string */
 	enum sym_t sym_type;		/* symbol type */
 	USHORT sym_keyword;			/* keyword number, if keyword */
 	gpre_ctx* sym_object;		/* general pointer to object */
@@ -776,7 +776,7 @@ typedef struct dbb {
 	TEXT *dbb_r_password;		/* runtime password */
 	TEXT *dbb_r_sql_role;		/* runtime SQL role */
 	TEXT *dbb_c_lc_messages;	/* compiletime user natural language */
-	TEXT *dbb_c_lc_ctype;		/* compiletime user character set */
+	const TEXT* dbb_c_lc_ctype;		/* compiletime user character set */
 	TEXT *dbb_r_lc_messages;	/* runtime user natural language */
 	TEXT *dbb_r_lc_ctype;		/* runtime user character set */
 	TEXT *dbb_def_charset;		/* charset for CREATE DATABASE */
@@ -1107,7 +1107,7 @@ typedef struct gpre_req {
 	UCHAR *req_base;			/* base of blr string during generation */
 	UCHAR *req_blr;				/* raw blr string */
 	SCHAR *req_handle;			/* request handle */
-	TEXT *req_trans;			/* transaction handle */
+	const TEXT* req_trans;			/* transaction handle */
 	SCHAR *req_request_level;	/* request level expression */
 	USHORT req_level;			/* access level */
 	USHORT req_count;			/* number of ports in request */
@@ -1271,7 +1271,7 @@ typedef struct dyn {
 	dbb* dyn_database;			/* Database involved */
 	sym* dyn_statement_name;	/* Name of dynamic statement */
 	sym* dyn_cursor_name;		/* Cursor name */
-	TEXT *dyn_trans;			/* Transaction handle */
+	const TEXT* dyn_trans;			/* Transaction handle */
 	TEXT *dyn_string;			/* Dynamic string or variable name */
 	TEXT *dyn_sqlda;			/* Name of SQLDA structure, if any */
 	TEXT *dyn_sqlda2;			/* Name of second SQLDA structure, if any */
@@ -1322,7 +1322,7 @@ typedef struct mdbb {
 
 typedef struct opn {
 	sym* opn_cursor;			/* Symbol block of cursor */
-	TEXT *opn_trans;			/* Transaction handle */
+	const TEXT* opn_trans;			/* Transaction handle */
 	ref* opn_using;				/* Using variables */
 } *OPN;
 
@@ -1450,7 +1450,7 @@ EXTERN LLS events;
 EXTERN IB_FILE *out_file;
 EXTERN LANG_T sw_language;
 EXTERN int line, errors, warnings, fatals;
-EXTERN ACT functions;
+EXTERN act* global_functions;
 EXTERN dbd global_db_list[32];
 EXTERN USHORT global_db_count;
 EXTERN INTLSYM text_subtypes;
