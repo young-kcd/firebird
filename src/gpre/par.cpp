@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.18 2003-03-03 08:27:33 brodsom Exp $
+//  $Id: par.cpp,v 1.19 2003-07-02 12:57:41 brodsom Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: par.cpp,v 1.18 2003-03-03 08:27:33 brodsom Exp $
+//	$Id: par.cpp,v 1.19 2003-07-02 12:57:41 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -175,7 +175,7 @@ static GPRE_FLD		flag_field;
 //		parse an action segment.  If not, return NULL.
 //  
 
-ACT PAR_action()
+ACT PAR_action(TEXT* base_dir)
 {
 	ACT action;
 	SYM symbol;
@@ -253,7 +253,7 @@ ACT PAR_action()
 			return par_window_create();
 #endif
 		case KW_DATABASE:
-			return PAR_database(FALSE);
+			return PAR_database(FALSE,base_dir);
 #ifdef PYXIS
 		case KW_DELETE_WINDOW:
 			return par_window_delete();
@@ -524,7 +524,7 @@ SSHORT PAR_blob_subtype(DBB dbb)
 //		an action block.
 //  
 
-ACT PAR_database(USHORT sql)
+ACT PAR_database(USHORT sql, TEXT* base_directory)
 {
 	ACT action;
 	SYM symbol;
@@ -559,8 +559,14 @@ ACT PAR_database(USHORT sql)
 			SYNTAX_ERROR("quoted file name");
 
 		if (QUOTED(token.tok_type)) {
-			db->dbb_filename = string = (TEXT *) ALLOC(token.tok_length + 1);
-			COPY(token.tok_string, token.tok_length, string);
+			if (base_directory){
+				db->dbb_filename = string = (TEXT *) ALLOC(token.tok_length + strlen(base_directory) + 1);
+				COPY_CAT(base_directory, strlen(base_directory),token.tok_string, token.tok_length, string);
+			}
+			else {
+				db->dbb_filename = string = (TEXT *) ALLOC(token.tok_length + 1);
+				COPY(token.tok_string, token.tok_length, string);
+			}
 			token.tok_length += 2;
 		}
 		else if (MATCH(KW_PASSWORD)) {

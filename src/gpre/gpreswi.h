@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpreswi.h,v 1.7 2002-12-06 13:43:10 eku Exp $
+ * $Id: gpreswi.h,v 1.8 2003-07-02 12:57:41 brodsom Exp $
  * Revision 1.2  2000/11/16 15:54:29  fsg
  * Added new switch -verbose to gpre that will dump
  * parsed lines to stderr
@@ -88,6 +88,10 @@ enum gpre_cmd_switch
 	 */
 	IN_SW_GPRE_LANG_INTERNAL,
 
+	/* Added this to allow in builds to specify the compiletime database directory
+	 * without the need to edit the epp source
+	 */
+	IN_SW_GPRE_BASE,
 
 	/* As mentioned above: This should always be one larger than the largest 
 	   switch value.
@@ -161,5 +165,6 @@ static struct in_sw_tab_t gpre_in_sw_table[] =
 	{IN_SW_GPRE_ANSI		, 0, "ANSI"			, 0, 0, 0, FALSE, 0, 0, "\t\tgenerate ANSI85 compatible COBOL"},
 #endif
 	{IN_SW_GPRE_Z		, 0, "Z"			, 0, 0, 0, FALSE, 0, 0, "\t\tprint software version"},
+	{IN_SW_GPRE_BASE	, 0, "BASE"			, 0, 0, 0, FALSE, 0, 0, "\t\tbase directory for compiletime DB"},
 	{IN_SW_GPRE_0		, 0, NULL			, 0, 0, 0, FALSE, 0, 0, NULL}
 };

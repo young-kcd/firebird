@@ -25,10 +25,10 @@
 //
 //____________________________________________________________
 //
-//	$Id: msc.cpp,v 1.5 2002-11-17 00:04:18 hippoman Exp $
+//	$Id: msc.cpp,v 1.6 2003-07-02 12:57:41 brodsom Exp $
 //
 //  
-//$Id: msc.cpp,v 1.5 2002-11-17 00:04:18 hippoman Exp $
+//$Id: msc.cpp,v 1.6 2003-07-02 12:57:41 brodsom Exp $
 //  
 
 // ***************************************************
@@ -227,6 +227,25 @@ void MSC_copy( char *from, int length, char *to)
 	*to = 0;
 }
 
+//____________________________________________________________
+//  
+//		Copy two strings into another.
+//  
+
+void MSC_copy_cat( char *from1, int length1, char *from2, int length2, char *to)
+{
+
+	if (length1)
+		do
+			*to++ = *from1++;
+		while (--length1);
+	if (length2)
+		do
+			*to++ = *from2++;
+		while (--length2);
+
+	*to = 0;
+}
 
 //____________________________________________________________
 //  

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.31 2003-02-27 16:55:56 brodsom Exp $
+ * $Id: gpre.h,v 1.32 2003-07-02 12:57:41 brodsom Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -104,6 +104,7 @@ extern "C" {
 #define ALLOC(size) 			MSC_alloc (size)
 #define MAKE_CONTEXT(request)		MSC_context (request)
 #define COPY(from, length, to) 		MSC_copy (from, length, to)
+#define COPY_CAT(from1, length1, from2, length2,to) 	MSC_copy_cat(from1, length1, from2, length2,to)
 #define FREE(block)			MSC_free (block)
 #define MAKE_NODE(type, count)		MSC_node (type, count)
 #define POP(stack)			MSC_pop (stack)

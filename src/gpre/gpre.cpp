@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.24 2003-04-02 12:07:10 brodsom Exp $
+//  $Id: gpre.cpp,v 1.25 2003-07-02 12:57:41 brodsom Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -42,7 +42,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.24 2003-04-02 12:07:10 brodsom Exp $
+//	$Id: gpre.cpp,v 1.25 2003-07-02 12:57:41 brodsom Exp $
 //
 
 #define GPRE_MAIN
@@ -99,7 +99,7 @@ extern "C" {
 static BOOLEAN		all_digits(char *);
 static int			arg_is_string(SLONG, TEXT **, TEXT *);
 static SSHORT		compare_ASCII7z(char *, char *);
-static SLONG		compile_module(SLONG);
+static SLONG		compile_module(SLONG,TEXT*);
 static BOOLEAN		file_rename(TEXT *, TEXT *, TEXT *);
 #ifdef GPRE_FORTRAN
 static void			finish_based(ACT);
@@ -108,7 +108,7 @@ static int			get_char(IB_FILE *);
 static BOOLEAN		get_switches(int, TEXT **, IN_SW_TAB, SW_TAB, TEXT **);
 static TOK			get_token();
 static int			nextchar();
-static SLONG		pass1();
+static SLONG		pass1(TEXT*);
 static void			pass2(SLONG);
 static void			print_switches();
 static void			remember_label(TEXT *);
@@ -357,7 +357,7 @@ int main(int argc, char* argv[])
 //  Call a subroutine to process the input line 
 //  
 
-	TEXT* filename_array[3] = { 0 };
+	TEXT* filename_array[4] = { 0 };
 
 	if (!get_switches(argc, argv, gpre_in_sw_table, sw_table, filename_array)) {
 		CPR_exit(FINI_ERROR);
@@ -367,6 +367,7 @@ int main(int argc, char* argv[])
 	out_file_name	= filename_array[1];
 
 	TEXT* db_filename = filename_array[2];
+	TEXT* db_base_directory = filename_array[3];
 
 	if (!file_name) {
 		ib_fprintf(ib_stderr, "gpre:  no source file named.\n");
@@ -868,7 +869,7 @@ int main(int argc, char* argv[])
 	sw_databases = isc_databases;
 
 	try {
-		for (end_position = 0; end_position = compile_module(end_position););  // empty loop
+		for (end_position = 0; end_position = compile_module(end_position,filename_array[3]););  // empty loop
 	}	// try
 	catch (const std::exception&) {}  // fall through to the cleanup code
 
@@ -1357,7 +1358,7 @@ static SSHORT compare_ASCII7z( char *str1, char *str2)
 //		Process a module and generate output.
 //  
 
-static SLONG compile_module( SLONG start_position)
+static SLONG compile_module( SLONG start_position, TEXT* base_directory)
 {
 	SLONG end_position;
 	GPRE_REQ request;
@@ -1397,7 +1398,7 @@ static SLONG compile_module( SLONG start_position)
 
 //  Take a first pass at the module 
 
-	end_position = pass1();
+	end_position = pass1(base_directory);
 
 //  finish up any based_ons that got deferred 
 
@@ -1819,6 +1820,23 @@ static BOOLEAN get_switches(int			argc,
 						return FALSE;
 				else
 					file_array[2] = *++argv;
+			break;
+
+		case IN_SW_GPRE_BASE:
+			if (!arg_is_string
+				(--argc, argv,
+				 "Command line syntax: -b requires database base directory:\n ")) return
+					FALSE;
+
+			file_array[3] = *++argv;
+			string = *argv;
+			if (*string == '=')
+				if (!arg_is_string
+					(--argc, argv,
+					 "Command line syntax: -b requires database base directory:\n "))
+						return FALSE;
+				else
+					file_array[3] = *++argv;
 			break;
 
 		case IN_SW_GPRE_HANDLES:
@@ -2313,7 +2331,7 @@ static int nextchar()
 //		for processing on pass 2.
 //  
 
-static SLONG pass1()
+static SLONG pass1(TEXT* base_directory)
 {
 	ACT action;
 	SLONG start;
@@ -2329,7 +2347,7 @@ static SLONG pass1()
 		while (token.tok_symbol)
 		{
 			start = token.tok_position;
-			if (action = PAR_action())
+			if (action = PAR_action(base_directory))
 			{
 				action->act_position = start;
 				if (!(action->act_flags & ACT_back_token)) {
