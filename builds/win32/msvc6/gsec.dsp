@@ -89,11 +89,11 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\gsec\gsec.cpp
+SOURCE=..\..\..\src\utilities\gsec\call_service.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\gen\utilities\gsec\security.cpp
+SOURCE=..\..\..\src\utilities\gsec\gsec.cpp
 # End Source File
 # End Group
 # Begin Group "JRD files"

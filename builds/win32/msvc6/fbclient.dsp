@@ -272,12 +272,16 @@ SOURCE=..\..\..\src\remote\xnet.cpp
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\gen\utilities\gsec\security.cpp
+SOURCE=..\..\..\src\utilities\gsec\call_service.cpp
 # End Source File
 # End Group
 # Begin Group "Header files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
+# Begin Source File
+
+SOURCE=..\..\..\src\utilities\gsec\call_service.h
+# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\cvt_proto.h
@@ -379,13 +383,6 @@ SOURCE=..\..\..\src\jrd\version.rc
 # Begin Source File
 
 SOURCE=..\defs\fbclient.def
-
-!IF  "$(CFG)" == "fbclient - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "fbclient - Win32 Release"
-
-!ENDIF 
-
 # End Source File
 # End Target
 # End Project

@@ -434,6 +434,10 @@ SOURCE=..\..\..\src\jrd\sdw.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\os\win32\sha.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\shut.cpp
 # End Source File
 # Begin Source File
@@ -689,11 +693,11 @@ SOURCE=..\..\..\src\jrd\dsc.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\dsc_pub.h
+SOURCE=..\..\..\src\jrd\dsc_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\dsc_proto.h
+SOURCE=..\..\..\src\jrd\dsc_pub.h
 # End Source File
 # Begin Source File
 
@@ -853,11 +857,11 @@ SOURCE=..\..\..\src\jrd\idx_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\inf_pub.h
+SOURCE=..\..\..\src\jrd\inf_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\inf_proto.h
+SOURCE=..\..\..\src\jrd\inf_pub.h
 # End Source File
 # Begin Source File
 
@@ -1178,6 +1182,10 @@ SOURCE=..\..\..\src\jrd\sdw_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\seg_proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\os\sha.h
 # End Source File
 # Begin Source File
 

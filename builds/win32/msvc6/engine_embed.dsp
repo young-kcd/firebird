@@ -40,8 +40,8 @@ RSC=rc.exe
 # PROP Output_Dir "..\..\..\temp\release\engine_es"
 # PROP Intermediate_Dir "..\..\..\temp\release\engine_es"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /GX /GR /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /GR /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "_X86_" /D "SUPERSERVER" /D "EMBEDDED" /YX /FD /EHc- /c
+# ADD BASE CPP /nologo /W3 /GR /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GR /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "_X86_" /D "SUPERSERVER" /D "EMBEDDED" /YX /FD /EHc- /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -63,8 +63,8 @@ LIB32=link.exe -lib
 # PROP Output_Dir "..\..\..\temp\debug\engine_es"
 # PROP Intermediate_Dir "..\..\..\temp\debug\engine_es"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /Gm /GX /GR /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /GR /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "_X86_" /D "SUPERSERVER" /D "DEV_BUILD" /D "EMBEDDED" /FD /GZ /c
+# ADD BASE CPP /nologo /W3 /Gm /GR /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GR /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "_X86_" /D "SUPERSERVER" /D "DEV_BUILD" /D "EMBEDDED" /FD /GZ /c
 # SUBTRACT CPP /YX
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
 # ADD RSC /l 0x419 /d "_DEBUG"
@@ -416,6 +416,10 @@ SOURCE=..\..\..\src\jrd\sdw.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\os\win32\sha.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\shut.cpp
 # End Source File
 # Begin Source File
@@ -602,6 +606,10 @@ SOURCE=..\..\..\src\jrd\constants.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\crypt_plugins.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\cvt2_proto.h
 # End Source File
 # Begin Source File
@@ -658,11 +666,11 @@ SOURCE=..\..\..\src\jrd\dsc.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\dsc_pub.h
+SOURCE=..\..\..\src\jrd\dsc_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\dsc_proto.h
+SOURCE=..\..\..\src\jrd\dsc_pub.h
 # End Source File
 # Begin Source File
 
@@ -822,11 +830,11 @@ SOURCE=..\..\..\src\jrd\idx_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\inf_pub.h
+SOURCE=..\..\..\src\jrd\inf_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\inf_proto.h
+SOURCE=..\..\..\src\jrd\inf_pub.h
 # End Source File
 # Begin Source File
 
