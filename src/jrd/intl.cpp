@@ -474,7 +474,7 @@ public:
 			reinterpret_cast<const CharType*>(str), length / sizeof(CharType), 
 			escape, SQL_MATCH_ANY_CHARS, SQL_MATCH_1_CHAR);
 	}
-	static bool evaluate(TDBB tdbb, TextType ttype, void* object, const UCHAR* s, SSHORT sl, 
+	static bool evaluate(TDBB tdbb, TextType ttype, const UCHAR* s, SSHORT sl, 
 		const UCHAR* p, SSHORT pl, UCS2_CHAR escape) 
 	{
 		StrConverter cvt1(tdbb, ttype, p, pl), cvt2(tdbb, ttype, s, sl);
