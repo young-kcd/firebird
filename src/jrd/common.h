@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.51 2002-11-18 07:57:41 eku Exp $
+$Id: common.h,v 1.52 2002-12-29 15:23:46 nmcc Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -324,6 +324,9 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
    so many times I suggest stdIO from 
    http://www.research.att.com/sw/tools/sfio/ 
 */       
+/* 	Need to use full sfio not just stdio emulation to fix
+	file descriptor number limit. nmcc Dec2002
+*/
 #ifndef SFIO
 #define NEED_IB_STDIO
 #endif
@@ -358,12 +361,11 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 
 **********/
 
-#if !(defined(SOLARIS26) || defined(HP10))
-//#ifndef SOLARIS26
+#ifndef SOLARIS26
 
 /* If our build platform is at least Solaris release 2.6, then unistd.h
    declares these functions, so we must not define them with macros. 
-   The same applies to HP10 16-Apr-2002 Paul Beach */
+*/
 
 #define setreuid(ruid,euid)     ((setuid (ruid) == -1 || seteuid (euid) == -1) ? -1 : 0)
 #define setregid(rgid,egid)     ((setgid (rgid) == -1 || setegid (egid) == -1) ? -1 : 0)
