@@ -353,7 +353,8 @@ bool ISC_analyze_pclan(tstring& expanded_name, tstring& node_name)
  *	file name, and return true.  Otherwise return false.
  *
  **************************************/
-	if ((expanded_name[0] != '\\' && expanded_name[0] != '/') ||
+	if (!expanded_name.length() ||
+		(expanded_name[0] != '\\' && expanded_name[0] != '/') ||
 		(expanded_name[1] != '\\' && expanded_name[1] != '/'))
 	{
 		return false;
