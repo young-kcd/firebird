@@ -163,7 +163,6 @@ int common_main(int argc,
  *	the specified argc/argv to SECURITY_exec_line (see below).
  *
  **************************************/
-	DebugBreak();
 	TEXT stuff[MAXSTUFF];		/* a place to put stuff */
 	JMP_BUF env;
 
