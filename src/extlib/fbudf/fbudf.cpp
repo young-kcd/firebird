@@ -444,7 +444,7 @@ FBUDF_API ISC_TIMESTAMP* addMonth(ISC_TIMESTAMP* v, int& nmonths)
 		times.tm_year++;
 		times.tm_mon -= 12;
 	}
-	else if (times.tm_mon < 1)
+	else if (times.tm_mon < 0)
 	{
 		times.tm_year--;
 		times.tm_mon += 12;
