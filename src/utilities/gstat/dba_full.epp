@@ -159,6 +159,8 @@ inline void DBA_set_thread_data(tdba* &tddba, tdba* thd_context) {
 	tddba->tdba_thd_data.thdd_type = THDD_TYPE_TDBA;
 }
 inline void DBA_restore_thread_data() {
+	THD_restore_specific();
+}
 
 void inline dba_full_exit(int code, tdba* tddba)
 {
