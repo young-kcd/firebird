@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.36 2003-04-16 10:17:41 aafemt Exp $
+$Id: ibase.h,v 1.37 2003-05-14 15:12:04 skidder Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -752,7 +752,7 @@ ISC_INT64 GDS_EXPORT isc_portable_integer(unsigned char *,
 
 #define sec_protocol_tcpip            1
 #define sec_protocol_netbeui          2
-/* sec_protocol_spx          3  -- Deprecated Protocol   */
+#define sec_protocol_spx              3 /* -- Deprecated Protocol. Declaration retained for compatibility   */
 #define sec_protocol_local            4
 
 typedef struct {
