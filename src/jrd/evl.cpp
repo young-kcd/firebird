@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.114 2004-10-14 19:08:03 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.115 2004-10-27 13:27:30 dimitr Exp $ 
  */
 
 /*
@@ -115,6 +115,13 @@
 //#include "../jrd/authenticate.h"
 #include "../common/config/config.h"
 #include "../jrd/evl_string.h"
+
+#ifdef HAVE_SYS_TIMES_H
+# include <sys/times.h>
+#endif
+#ifdef HAVE_SYS_TIMEB_H
+# include <sys/timeb.h>
+#endif
 
 const int TEMP_LENGTH	= 128;
 
@@ -988,6 +995,15 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 			case nod_current_timestamp:
 				impure->vlu_desc.dsc_dtype = dtype_timestamp;
 				impure->vlu_desc.dsc_length = type_lengths[dtype_timestamp];
+#ifdef HAVE_GETTIMEOFDAY
+				struct timeval tp;
+				GETTIMEOFDAY(&tp);
+				enc_times.timestamp_time += tp.tv_usec / 100;
+#else
+				struct timeb time_buffer;
+				ftime(&time_buffer);
+				enc_times.timestamp_time += time_buffer.millitm * 10;
+#endif
 				*((GDS_TIMESTAMP *) impure->vlu_desc.dsc_address) = enc_times;
 				break;
 			default:
