@@ -5908,7 +5908,7 @@ static USHORT get_new_dpb(UCHAR*	dpb,
 		}
 	}
 
-#ifdef NO_CRYPT
+#ifdef NO_PASSWORD_ENCRYPTION
 	if (password)
 	{
 		moved_some = 1;

@@ -6,43 +6,27 @@
 */
 #include "firebird.h"
 
-
-#if defined(HAVE_UNISTD_H) && defined(LINUX)
-#define _XOPEN_SOURCE
-#include <unistd.h>
-#endif
+#include "../jrd/common.h"
+#include "../jrd/enc_proto.h"
 
 #ifdef HAVE_CRYPT_H
 #include <crypt.h>
 #endif
 
-
-#include "../jrd/common.h"
-#include "../jrd/enc_proto.h"
-
-#if (defined WIN_NT || defined VMS)
-#define NO_CRYPT
-#define CRYPT_FUNC	local_crypt
-static TEXT *local_crypt(TEXT *, TEXT *);
+#ifdef HAVE_UNISTD_H
+#ifdef LINUX
+#define _XOPEN_SOURCE
 #endif
-
-#if defined(HAVE_UNISTD_H) && !defined(NO_CRYPT)
 #include <unistd.h>
-#define CRYPT_FUNC	crypt
-#else
-#ifndef NO_CRYPT
-extern TEXT *crypt();
-#define CRYPT_FUNC	crypt
-#endif
 #endif
 
 
 extern "C" {
 
 
+#ifdef HAVE_CRYPT
 /* Changed prototype from DLL_EXPORT to API_ROUTINE - Jeevan */
-#ifndef NO_CRYPT
-TEXT *DLL_EXPORT ENC_crypt(TEXT * string, TEXT * salt)
+TEXT *DLL_EXPORT ENC_crypt(TEXT *string, TEXT *salt)
 {
 /**************************************
  *
@@ -56,12 +40,9 @@ TEXT *DLL_EXPORT ENC_crypt(TEXT * string, TEXT * salt)
  *
  **************************************/
 
-	return CRYPT_FUNC(string, salt);
+	return crypt(string, salt);
 }
-#endif
-
-
-#ifdef NO_CRYPT
+#else /* !HAVE_CRYPT */
 /*
  * Copyright (c) 1989 The Regents of the University of California.
  * All rights reserved.
@@ -541,7 +522,7 @@ static char cryptresult[1 + 4 + 4 + 11 + 1];	/* encrypted result */
  * followed by an encryption produced by the "key" and "setting".
  */
 /* Changed prototype from DLL_EXPORT to API_ROUTINE - Jeevan */
-TEXT* DLL_EXPORT ENC_crypt(TEXT* key, TEXT* setting)
+TEXT* DLL_EXPORT ENC_crypt(TEXT *key, TEXT *setting)
 {
 	unsigned long a, b, d;
 	register char *encp;
@@ -1033,7 +1014,7 @@ encrypt(char *block, int flag)
 	}
 	return (0);
 }
-#endif
+#endif /* !HAVE_CRYPT */
 
 
 }	// extern "C"
