@@ -187,7 +187,7 @@ checkForFreeSpace:
 			if (getCount() >= MAX_CONCURRENT_FAILURES)
 			{
 				// try to perform old entries collection
-				time_t t = time(0);
+				const time_t t = time(0);
 				for (iterator i = begin(); i != end(); )
 				{
 					if (t - i->lastAttempt >= FAILURE_DELAY)
