@@ -62,7 +62,7 @@ private:
 protected:
 	// Used for various configuration parameters - 
 	// returns parameter string from Config Manager.
-	virtual const Firebird::string GetConfigString(void) = 0;
+	virtual const Firebird::string GetConfigString(void) const = 0;
 public:
 	DirectoryList();
 	~DirectoryList();

@@ -742,8 +742,9 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 		/* Check to see if the database is truly local or if it just looks
 		   that way */
       
-		if (ISC_check_if_remote(expanded_filename, TRUE))
+		if (ISC_check_if_remote(expanded_filename, TRUE)) {
 			ERR_post(gds_unavailable, 0);
+		}
 	}
 
 /* Worry about encryption key */
@@ -1880,7 +1881,7 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 		/* Check to see if the database is truly local or if it just looks
 		   that way */
 
-		if (ISC_check_if_remote (expanded_filename, TRUE)) {
+		if (ISC_check_if_remote(expanded_filename, TRUE)) {
 			ERR_post(gds_unavailable, 0);
 		}
 	}

@@ -1742,7 +1742,7 @@ static void share_name_from_unc(
 bool ISC_verify_databases_dirs(TEXT *name) {
 #ifndef SUPERCLIENT
 	static class DatabasesDirectoryList : public DirectoryList {
-		virtual const Firebird::string GetConfigString(void) {
+		const Firebird::string GetConfigString(void) const {
 			return Firebird::string(Config::getDatabasesDirs());
 		}
 	} iDatabasesDirectoryList;

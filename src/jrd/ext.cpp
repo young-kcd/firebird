@@ -60,12 +60,11 @@
 
 static IB_FILE *ext_fopen(const char *filename, const char *mode);
 
-class ExternalFilesDirectoryList : public DirectoryList {
-	virtual const Firebird::string GetConfigString(void) {
+static class ExternalFilesDirectoryList : public DirectoryList {
+	const Firebird::string GetConfigString(void) const {
 		return Firebird::string(Config::getExternalTablesDirs());
 	}
-};
-static ExternalFilesDirectoryList iExternalFilesDirectoryList;
+} iExternalFilesDirectoryList;
 
 static IB_FILE *ext_fopen(const char *filename, const char *mode) {
 	if (!iExternalFilesDirectoryList.IsPathInList(filename))
