@@ -192,6 +192,9 @@ static const SQUAD quad_max_int = { LONG_MAX, -1 };
 #include "../jrd/quad.cpp"
 #endif
 
+static const double eps_double = 1e-14;
+static const double eps_float  = 1e-5;
+
 using namespace Jrd;
 
 double CVT_date_to_double(const dsc* desc, FPTR_ERROR err)
@@ -493,7 +496,7 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, FPTR_ERROR err)
  **************************************/
 	SLONG value, high, fraction;
 
-	double d;
+	double d, eps;
 	SINT64 val64;
 	USHORT length;
 	TEXT buffer[50];			/* long enough to represent largest long in ASCII */
@@ -561,25 +564,22 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 	case dtype_d_float:
 #endif
 		if (desc->dsc_dtype == dtype_real)
-			d = *((float*) p);
+			d = *((float*) p), eps = eps_float;
 		else if (desc->dsc_dtype == DEFAULT_DOUBLE)
-			d = *((double*) p);
+			d = *((double*) p), eps = eps_double;
 #ifdef VMS
 		else
-			d = CNVT_TO_DFLT((double*) p);
+			d = CNVT_TO_DFLT((double*) p), eps = eps_double;
 #endif
 		if (scale > 0)
-			do {
-				d /= 10.;
-			} while (--scale);
+			d /= power_of_ten(scale);
 		else if (scale < 0)
-			do {
-				d *= 10.;
-			} while (++scale);
+			d *= power_of_ten(-scale);
+
 		if (d > 0)
-			d += 0.5;
+			d += 0.5 + eps;
 		else
-			d -= 0.5;
+			d -= 0.5 + eps;
 
 		/* make sure the cast will succeed - different machines 
 		   do different things if the value is larger than a long
@@ -933,7 +933,6 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 	return value;
 }
 
-
 SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 {
 /**************************************
@@ -949,7 +948,7 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, FPTR_ERROR err)
  **************************************/
 	SINT64 value;
 	SLONG fraction;
-	double d;
+	double d, eps;
 	USHORT length;
 	TEXT buffer[50];			/* long enough to represent largest SINT64 in ASCII */
 
@@ -984,25 +983,22 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 	case dtype_d_float:
 #endif
 		if (desc->dsc_dtype == dtype_real)
-			d = *((float*) p);
+			d = *((float*) p), eps = eps_float;
 		else if (desc->dsc_dtype == DEFAULT_DOUBLE)
-			d = *((double*) p);
+			d = *((double*) p), eps = eps_double;
 #ifdef VMS
 		else
-			d = CNVT_TO_DFLT((double*) p);
+			d = CNVT_TO_DFLT((double*) p), eps = eps_double;
 #endif
 		if (scale > 0)
-			do {
-				d /= 10.;
-			} while (--scale);
+			d /= power_of_ten(scale);
 		else if (scale < 0)
-			do {
-				d *= 10.;
-			} while (++scale);
+			d *= power_of_ten(-scale);
+
 		if (d > 0)
-			d += 0.5;
+			d += 0.5 + eps;
 		else
-			d -= 0.5;
+			d -= 0.5 + eps;
 
 		/* make sure the cast will succeed - different machines 
 		   do different things if the value is larger than a quad
