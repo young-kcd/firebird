@@ -66,7 +66,10 @@ typedef USHORT (*pfn_INTL_keylength) (
 	USHORT len
 );
 
-/* Returned value of INTL_BAD_KEY_LENGTH means that key error happened during key construction */
+/* Returned value of INTL_BAD_KEY_LENGTH means that key error happened during 
+  key construction. When partial key is requested returned string should 
+  complement collated comparison. 
+*/
 typedef USHORT (*pfn_INTL_str2key) (
 	texttype* tt, 
 	USHORT srcLen, 
@@ -76,23 +79,16 @@ typedef USHORT (*pfn_INTL_str2key) (
 	INTL_BOOL partial
 );
 
-/* Compare two potentially long strings. This routine should complement str2key and canonical:
-   s1 >  s2 <==> str2key(s1) > str2key(s2)
-   s1 =  s2 <==> canonical(padded_s1) == canonical(padded_s2)
-   s1 >= s2 <==> str2key(s1) > str2key(s2) || canonical(padded_s1) == canonical(padded_s2)
-
-   Note that in general case both conditions below may be FALSE because sorting and equality 
-   comparisons are only loosely coupled:
-   (s1 > s2) && !(s2 > s1) ==> (s1 = s2)
-   (s1 = s2) ==> (s1 > s2) && !(s2 > s1)
+/* Collate two potentially long strings. According to SQL 2003 standard 
+  collation is a process by which two strings are determined to be in exactly 
+  one of the relationships of less than, greater than, or equal to one another.  
 */
-typedef INTL_BOOL (*pfn_INTL_compare) (
+typedef SSHORT (*pfn_INTL_compare) (
 	texttype* tt, 
 	ULONG len1, 
 	const UCHAR* str1, 
 	ULONG len2, 
 	const UCHAR* str2,
-	USHORT operation,
 	INTL_BOOL* error_flag
 );
 
@@ -105,7 +101,9 @@ typedef ULONG (*pfn_INTL_str2case) (
 	UCHAR* dst
 );
 
-/* Returns FALSE in case of error */
+/* Returns FALSE in case of error. Otherwise it should put exactly 
+  texttype_canonical_width number of bytes into dst for each character from src.
+ */
 typedef INTL_BOOL (*pfn_INTL_canonical) (
 	texttype* t, 
 	ULONG srcLen,
@@ -127,8 +125,11 @@ typedef struct texttype {
 	const ASCII* texttype_name;
 	SSHORT texttype_country;	    /* ID of base country values */
 	BYTE texttype_canonical_width;  /* number bytes in canonical character representation */
-	BYTE texttype_pad_length;       /* Length of pad character in bytes */
-	const BYTE* texttype_pad_character; /* Character using for string padding */
+
+	/* do we logically pad string with spaces for comparison purposes.
+       this is the job of string_to_key and compare routines to care or not to
+       care about trailing spaces */
+	INTL_BOOL texttype_pad_option;
 
 	/* If not set key length is assumed to be equal to string length */
 	pfn_INTL_keylength	texttype_fn_key_length; /* Return key length for given string */
@@ -177,7 +178,11 @@ typedef void (*pfn_INTL_cv_destroy) (
 struct csconvert {
 	USHORT csconvert_version;
 	CsConvertImpl* csConvert;
-	const ASCII* csconvert_name;
+
+    /* Used only for debugging purposes. Should contain string in form 
+      <source_charset>-><destination_charset>. For example "WIN1251->DOS866"
+    */
+	const ASCII* csconvert_name; 
 
 	/* Conversion routine. Must be present. */
 	pfn_INTL_convert csconvert_fn_convert;
@@ -238,6 +243,8 @@ struct charset
 	const ASCII* charset_name;
 	BYTE charset_min_bytes_per_char;
 	BYTE charset_max_bytes_per_char;
+	BYTE charset_space_length;       /* Length of space character in bytes */
+	const BYTE* charset_space_character; /* Space character, may be used for string padding */
 
 	csconvert		charset_to_unicode;
 	csconvert		charset_from_unicode;
