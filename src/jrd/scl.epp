@@ -741,14 +741,12 @@ void SCL_init(BOOLEAN	create,
         preODS9 = TRUE;
     }
 
-
 	if (sql_role) {
         if (!preODS9 && strcmp (role_name, "NONE")) {
             strcpy (role_name, sql_role);
         }
         /* CVC: Role is an identifier, it may have embedded blanks. */
         MET_exact_name(role_name);
-		strcpy(role_name, sql_role);
 	}
 	else {
 		strcpy(role_name, "NONE");
