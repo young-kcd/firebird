@@ -749,7 +749,6 @@ const GDS_LONG gds_err_max                          = 692L;
 #define gds_arg_interpreted	5	/* interpreted status code (string) */
 #define gds_arg_vms		6	/* VAX/VMS status code (long) */
 #define gds_arg_unix		7	/* UNIX error code */
-#define gds_arg_domain		8	/* Apollo/Domain error code */
 #define gds_arg_dos		9	/* MSDOS/OS2 error code */
 #define gds_arg_mpexl		10	/* HP MPE/XL error code */
 #define gds_arg_mpexl_ipc	11	/* HP MPE/XL IPC error code */
