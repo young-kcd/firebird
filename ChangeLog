@@ -1,3 +1,28 @@
+2002-12-19 15:48  dimitr
+
+	* firebird2/src/dsql/: parse.cpp, parse.y:
+	
+	Now we understand single-line comments (--) in any position of the
+	SQL statement.
+
+2002-12-19 14:14  dimitr
+
+	* firebird2/src/dsql/: parse.cpp, parse.y:
+	
+	Prepared parser to allow non-reserved words as valid symbol names.
+
+2002-12-19 14:08  dimitr
+
+	* firebird2/src/dsql/dsql.tab.h:
+	
+	no message
+
+2002-12-19 09:57  dimitr
+
+	* firebird2/src/dsql/parse.y:
+	
+	no message
+
 2002-12-18 16:01  dimitr
 
 	* firebird2/src/dsql/: ddl.cpp, dsql.h, dsql.tab.h, gen.cpp,
