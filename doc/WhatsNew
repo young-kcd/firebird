@@ -341,6 +341,10 @@
       Contributor(s):
         Alexander Peshkoff <peshkoff@hotmail.ru>
 
+    * Major code cleanup.
+      Contributor(s):
+        Sean Leyne <sleyne@atkin.com>
+
     * New memory manager.
       Contributor(s):
         John Bellardo <bellardo@cs.ucsd.edu>
