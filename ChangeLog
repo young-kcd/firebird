@@ -1,3 +1,159 @@
+2003-02-12 23:57  arnobrinkman
+
+	* firebird2/src/jrd/: cch.cpp, jrd.h, vio.cpp:
+	
+	Stripped implementation of events used by garbage_collection() &
+	cache_writer() procedures.  This will fix known delay with
+	connecting/disconnect on at least WinXP.  Also are the
+	connecting/disconnecting delays while debugging in MSVC6 gone.
+
+2003-02-12 20:36  tamlin
+
+	* firebird2/src/common/classes/alloc.cpp:
+	
+	Print warning messages to stderr instead of stdout
+
+2003-02-12 20:27  tamlin
+
+	* firebird2/src/dsql/: pass1.cpp, parse.y, parse.cpp, metd.epp,
+	metd_proto.h, node.h, make.cpp, make_proto.h, dsql.cpp, dsql.h,
+	errd.cpp, gen.cpp, hsh.cpp, ddl.cpp, ddl_proto.h:
+	
+	A bit const correctness added and some reinterpret_casts removed. 
+	Changed DSQL's str to actually hold char.
+
+2003-02-12 20:12  tamlin
+
+	* firebird2/src/jrd/exe.cpp:
+	
+	Just some reformatting and added a TODO comment.
+
+2003-02-12 19:47  tamlin
+
+	* firebird2/src/jrd/isc_sync.cpp:
+	
+	Prevent garbage text output in log file
+
+2003-02-12 16:50  brodsom
+
+	* firebird2/src/qli/dtr.cpp:
+	
+	Remove __OVERLAY__ define. It is defined for old Borland TurboC and
+	TurboPascal only in MS_DOS.
+
+2003-02-12 15:04  dimitr
+
+	* firebird2/src/jrd/os/win32/thd_priority.cpp:
+	
+	Cleanup.
+
+2003-02-12 13:51  brodsom
+
+	* firebird2/src/jrd/: gds.cpp, gds.h, ib_stdio.cpp, iberr.h,
+	isc_sync.cpp, all.cpp, entry.h:
+	
+	Change #if 0 and #if 1 to NOT_USED_OR_REPLACED
+
+2003-02-12 13:45  brodsom
+
+	* firebird2/src/: include/fb_types.h, remote/protocol.cpp,
+	iscguard/iscguard.cpp:
+	
+	Change #if 0 and #if 1 to NOT_USED_OR_REPLACED
+
+2003-02-12 13:42  brodsom
+
+	* firebird2/src/: alice/all.cpp, dsql/dsql.h, gpre/ada.cpp,
+	gpre/ftn.cpp:
+	
+	Change #if 0 and #if 1 to NOT_USED_OR_REPLACED
+
+2003-02-12 12:24  brodsom
+
+	* firebird2/src/jrd/intl.cpp:
+	
+	Remove INTL_BACKEND define (used previously by dSCO ODT 3 port).
+
+2003-02-12 12:08  brodsom
+
+	* firebird2/src/jrd/isc_sync.cpp:
+	
+	Remove CHICAGO_FIXED not used define, the isc_is_winnt() check must
+	be done always as long as chicago is supported.
+
+2003-02-12 10:23  eku
+
+	* firebird2/builds/posix/: Makefile.in.client.util,
+	Makefile.in.embed.util:
+	
+	Fixed POSIX build.
+
+2003-02-12 07:09  bellardo
+
+	* firebird2/configure.in:
+	
+	3 new tests for darwin: expanded semun expanded 64 bit io dirname
+
+2003-02-12 03:54  brodsom
+
+	* firebird2/src/intl/: langdrv.h, collations/pw1251cyrr.h,
+	collations/pw1252i850.h, collations/pw1252intl.h,
+	collations/pw1252nor4.h, collations/pw1252span.h,
+	collations/pw1252swfn.h, collations/pw1253greek1.h,
+	collations/pw1254turk.h, collations/xx1251_ua.h,
+	collations/xx88592czech.h, collations/db437nl0.h,
+	collations/db437sv0.h, collations/db437uk0.h,
+	collations/db437us0.h, collations/db850cf0.h,
+	collations/db850de0.h, collations/db850es0.h,
+	collations/db850fr0.h, collations/db850it1.h,
+	collations/db850nl0.h, collations/db850pt0.h,
+	collations/db850sv1.h, collations/db850uk0.h,
+	collations/db850us0.h, collations/db852cz0.h,
+	collations/db852po0.h, collations/db852sl0.h,
+	collations/db857tr0.h, collations/db860pt0.h,
+	collations/db863cf1.h, collations/db865da0.h,
+	collations/db865no0.h, collations/db866ru0.h,
+	collations/pd437intl.h, collations/pd437swedfin.h,
+	collations/pd852czech.h, collations/pd852hundc.h,
+	collations/pd852polish.h, collations/pd852slovene.h,
+	collations/pd861iceland.h, collations/pd865nordan40.h,
+	collations/pd866cyrr.h, collations/pw1250czech.h,
+	collations/pw1250hun.h, collations/pw1250hundc.h,
+	collations/pw1250polish.h, collations/pw1250slov.h,
+	collations/bl88591ca0.h, collations/bl88591da0.h,
+	collations/bl88591de0.h, collations/bl88591es0.h,
+	collations/bl88591fi0.h, collations/bl88591fr0.h,
+	collations/bl88591is0.h, collations/bl88591it0.h,
+	collations/bl88591nl0.h, collations/bl88591no0.h,
+	collations/bl88591pt0.h, collations/bl88591sv0.h,
+	collations/bl88591uk0.h, collations/bl88591us0.h,
+	collations/blNEXTde0.h, collations/blNEXTes0.h,
+	collations/blNEXTfr0.h, collations/blNEXTit0.h,
+	collations/blNEXTus0.h, collations/db437de0.h,
+	collations/db437es1.h, collations/db437fi0.h,
+	collations/db437fr0.h, collations/db437it0.h:
+	
+	Remove not used defines
+
+2003-02-12 03:53  brodsom
+
+	* firebird2/src/intl/ld.h:
+	
+	Remove commit non used defines
+
+2003-02-12 03:52  brodsom
+
+	* firebird2/src/intl/collations/: ascii.h, ascii2.h:
+	
+	Remove not used sources
+
+2003-02-12 03:26  brodsom
+
+	* firebird2/src/jrd/common.h:
+	
+	Remove obsolete SCO Xenix and Open Desktop.  This patch also enable
+	platforms with M_I386 defined to be compiled.
+
 2003-02-11 21:17  brodsom
 
 	* firebird2/src/utilities/: gsec.cpp, dba_full.epp, dba.epp:
