@@ -38,9 +38,6 @@
  *
  */
 
-/*
-$Id: lock.cpp,v 1.110 2004-12-08 06:03:05 robocop Exp $
-*/
 
 #include "firebird.h"
 #include "../jrd/jrd_time.h"

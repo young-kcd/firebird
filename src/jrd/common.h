@@ -48,9 +48,6 @@
  * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
  *
  */
-/*
-$Id: common.h,v 1.131 2004-12-08 05:58:41 robocop Exp $
-*/
 
 #ifndef JRD_COMMON_H
 #define JRD_COMMON_H
