@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.37 2004-11-11 05:37:20 skidder Exp $
+ *  $Id: keywords.cpp,v 1.38 2004-11-22 20:49:57 skidder Exp $
  *
  */
 
@@ -104,7 +104,6 @@ static const TOK tokens[] = {
 	{CSTRING, "CSTRING", 1},
 	{CURRENT, "CURRENT", 1},
 	{CURRENT_CONNECTION, "CURRENT_CONNECTION", 2},
-	{CURRENT_DATABASE, "CURRENT_DATABASE", 2},
 	{CURRENT_DATE, "CURRENT_DATE", 2},
 	{CURRENT_ROLE, "CURRENT_ROLE", 2},
 	{CURRENT_TIME, "CURRENT_TIME", 2},

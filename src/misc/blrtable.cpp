@@ -226,7 +226,6 @@ static const VERB verbs[] =
 	PAIR(nod_current_role, blr_current_role, 1, 0, VALUE, VALUE),
 	PAIR(nod_dcl_cursor, blr_dcl_cursor, e_dcl_cursor_length, 0, STATEMENT, OTHER),
 	PAIR(nod_cursor_stmt, blr_cursor_stmt, e_cursor_stmt_length, 0, STATEMENT, OTHER),
-	PAIR(nod_current_database, blr_current_database, e_current_database_length, 0, VALUE, VALUE),
 	{0, NULL, NULL, NULL, NULL, NULL, NULL}
 };
 

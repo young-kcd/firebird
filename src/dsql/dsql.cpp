@@ -2237,9 +2237,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_current_role:
 		verb = "current_role";
 		break;
-	case nod_current_database:
-		verb = "current_database";
-		break;
 	case nod_via:
 		verb = "via";
 		break;

@@ -2418,7 +2418,6 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	case blr_agg_count:
 	case blr_user_name:
     case blr_current_role:
-    case blr_current_database:
 	case blr_current_date:
 	case blr_current_time:
 	case blr_current_timestamp:

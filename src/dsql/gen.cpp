@@ -181,10 +181,6 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
         stuff(request, blr_current_role);
         return;
 
-    case nod_current_database:
-        stuff(request, blr_current_database);
-        return;
-
 	case nod_udf:
 		gen_udf(request, node);
 		return;
@@ -2433,9 +2429,6 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 			break;
 		case nod_current_role:
 			name_alias	= "ROLE";
-			break;
-		case nod_current_database:
-			name_alias	= "CURRENT_DATABASE";
 			break;
 		case nod_internal_info:
 			{

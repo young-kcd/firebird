@@ -507,7 +507,6 @@ static LexerState lex;
 %token IIF
 %token SCALAR_ARRAY
 %token CROSS
-%token CURRENT_DATABASE
 
 /* precedence declarations for expression evaluation */
 
@@ -1331,7 +1330,6 @@ default_opt	: DEFAULT default_value
 default_value	: constant
 		| current_user
 		| current_role
-		| current_database
 		| internal_info
 		| null_value
 		| datetime_value_expression
@@ -2123,7 +2121,6 @@ keyword_or_column	: valid_symbol_name
 		| ROWS
 		| USING
 		| CROSS
-		| CURRENT_DATABASE
 		;
 
 col_opt		: ALTER
@@ -3676,7 +3673,6 @@ value	: column_name
 			{ $$ = $2; }
 		| current_user
 		| current_role
-		| current_database
 		| internal_info
 		| DB_KEY
 			{ $$ = make_node (nod_dbkey, 1, NULL); }
@@ -3803,10 +3799,6 @@ current_user	: USER
 
 current_role	: CURRENT_ROLE
 			{ $$ = make_node (nod_current_role, 0, NULL); }
-		;
-
-current_database	: CURRENT_DATABASE
-			{ $$ = make_node (nod_current_database, 0, NULL); }
 		;
 
 internal_info	: CURRENT_CONNECTION

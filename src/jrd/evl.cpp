@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.127 2004-11-18 09:14:20 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.128 2004-11-22 20:50:32 skidder Exp $ 
  */
 
 /*
@@ -1020,20 +1020,6 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 		}
 		return &impure->vlu_desc;
 
-	case nod_current_database:
-		impure->vlu_desc.dsc_dtype = dtype_text;
-		impure->vlu_desc.dsc_sub_type = 0;
-		impure->vlu_desc.dsc_scale = 0;
-		INTL_ASSIGN_TTYPE(&impure->vlu_desc, ttype_metadata);
-		
-		impure->vlu_desc.dsc_address =
-			(UCHAR*) tdbb->tdbb_database->dbb_database_name.c_str();
-			
-		impure->vlu_desc.dsc_length =
-			tdbb->tdbb_database->dbb_database_name.length();
-			
-		return &impure->vlu_desc;
-
 	case nod_extract:
 		{
 			impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
@@ -1342,20 +1328,6 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 							(UCHAR *) relation->rel_owner_name;
 						desc->dsc_length =
 							strlen(reinterpret_cast<const char*>(desc->dsc_address));
-					}
-					else if (temp_nod_type == nod_current_database)
-					{
-						thread_db* tdbb = NULL;
-						SET_TDBB(tdbb);
-						
-						desc->dsc_dtype = dtype_text;
-						desc->dsc_sub_type = 0;
-						desc->dsc_scale = 0;
-						INTL_ASSIGN_TTYPE(desc, ttype_metadata);
-						desc->dsc_address =
-							(UCHAR *) tdbb->tdbb_database->dbb_database_name.c_str();
-						desc->dsc_length =
-							tdbb->tdbb_database->dbb_database_name.length();
 					}
 					else if (temp_nod_type == nod_current_date ||
 					    temp_nod_type == nod_current_time ||

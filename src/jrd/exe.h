@@ -507,7 +507,6 @@ const int e_extract_length	= 2;	/* Number of entries in nod_args */
 const int e_current_date_length		= 1;
 const int e_current_time_length		= 1;
 const int e_current_timestamp_length= 1;
-const int e_current_database_length = 1;
 
 const int e_dcl_cursor_number	= 0;
 const int e_dcl_cursor_rse		= 1;
