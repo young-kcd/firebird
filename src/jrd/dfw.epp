@@ -2847,7 +2847,7 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 									0, transaction))
 			{
 				TEXT* p = f;
-				const TEXT const* endp = f + sizeof(f) - 1;
+				const TEXT* const endp = f + sizeof(f) - 1;
 				for (const TEXT* q = VFLD.RDB$BASE_FIELD; *q && p < endp; *p++ = *q++)
 				{
 					;	/* empty body */
