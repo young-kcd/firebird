@@ -956,8 +956,14 @@ static IDX_E check_duplicates(
 			// P.S. I think the check for a status vector should be enough,
 			//      but for sure let's keep the old one as well.
 			//														2003.05.27
-			//
-			if (rpb.rpb_flags & rpb_deleted || tdbb->tdbb_status_vector[1]) {
+
+			bool lock_error =
+				(tdbb->tdbb_status_vector[1] == gds_deadlock ||
+				tdbb->tdbb_status_vector[1] == gds_lock_conflict ||
+				tdbb->tdbb_status_vector[1] == gds_lock_timeout);
+			// the above errors are not thrown but returned silently
+
+			if (rpb.rpb_flags & rpb_deleted || lock_error) {
 				result = idx_e_duplicate;
 				break;
 			}
@@ -965,7 +971,7 @@ static IDX_E check_duplicates(
 			/* check the values of the fields in the record being inserted with the 
 			   record retrieved -- for unique indexes the insertion index and the 
 			   record index are the same, but for foreign keys they are different */
-			
+
 			bool all_nulls = true;
 
 			for (i = 0; i < insertion_idx->idx_count; i++) {
