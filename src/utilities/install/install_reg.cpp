@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Windows NT registry installation program
- *	MODULE:		install_reg.c
+ *	MODULE:		install_reg.cpp
  *	DESCRIPTION:	Registry installation program
  *
  * The contents of this file are subject to the Interbase Public
@@ -127,7 +127,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	if (hkey_node != HKEY_LOCAL_MACHINE)
 		RegCloseKey(hkey_node);
 
-	exit((ret == FB_SUCCESS) ? FINI_OK : FINI_ERROR);
+	return (ret == FB_SUCCESS) ? FINI_OK : FINI_ERROR;
 }
 
 
