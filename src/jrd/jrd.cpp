@@ -5625,10 +5625,12 @@ static DBB init(TDBB	tdbb,
 	PluginManager::Plugin crypt_lib =
 		PluginManager::getEnginePluginManager().findPlugin(CRYPT_IMAGE);
 	if (crypt_lib) {
+		Firebird::string encrypt_entrypoint(ENCRYPT);
+		Firebird::string decrypt_entrypoint(DECRYPT);
 		dbb_->dbb_encrypt =
-			(dbb::crypt_routine) crypt_lib.lookupSymbol(Firebird::string(ENCRYPT));
+			(dbb::crypt_routine) crypt_lib.lookupSymbol(encrypt_entrypoint);
 		dbb_->dbb_decrypt =
-			(dbb::crypt_routine) crypt_lib.lookupSymbol(Firebird::string(DECRYPT));
+			(dbb::crypt_routine) crypt_lib.lookupSymbol(decrypt_entrypoint);
 	}
 
 	INTL_init(tdbb);
