@@ -51,6 +51,7 @@ struct CsConvertImpl;
 
 struct texttype; /* forward decl for the fc signatures before the struct itself. */
 struct csconvert;
+struct charset;
 
 #define INTL_BAD_KEY_LENGTH ((USHORT)(-1))
 #define INTL_BAD_STR_LENGTH ((ULONG)(-1))
@@ -175,7 +176,7 @@ typedef void (*pfn_INTL_cv_destroy) (
 
 struct csconvert {
 	USHORT csconvert_version;
-	CsConvertImpl* csConvert, 
+	CsConvertImpl* csConvert;
 	const ASCII* csconvert_name;
 
 	/* Conversion routine. Must be present. */
@@ -204,7 +205,7 @@ struct csconvert {
 typedef INTL_BOOL (*pfn_INTL_well_formed) (
 	charset* cs, 
 	ULONG len,
-	const UCHAR* str, 
+	const UCHAR* str
 );
 
 /* Extracts a portion from a string. Returns INTL_BAD_STR_LENGTH in case of problems. */
@@ -233,7 +234,7 @@ typedef void (*pfn_INTL_cs_destroy) (
 struct charset
 {
 	USHORT charset_version;
-	CharSetImpl* charset, 
+	CharSetImpl* charset;
 	const ASCII* charset_name;
 	BYTE charset_min_bytes_per_char;
 	BYTE charset_max_bytes_per_char;
