@@ -1,4 +1,4 @@
-/*  $Revision: 1.1 $
+/*  $Revision: 1.1.4.1 $
 **
 **  Main editing routines for editline library.
 */
@@ -1018,11 +1018,14 @@ read_redirected()
     char	*p;
     char	*line;
     char	*end;
+    int		diff;
 
     for (size = MEM_INC, p = line = NEW(char, size), end = p + size; ; p++) {
 	if (p == end) {
 	    size += MEM_INC;
+            diff = p - line;
 	    p = line = realloc(line, size);
+            p += diff;
 	    end = p + size;
 	}
 	if (read(0, p, 1) <= 0) {
