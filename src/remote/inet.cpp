@@ -1036,12 +1036,12 @@ rem_port* INET_server(int sock)
 	int optval = 1;
 	n = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE,
 			   (SCHAR *) & optval, sizeof(optval));
-	if (n==-1) {
+	if (n == -1) {
 		gds__log("inet server err: setting KEEPALIVE socket option \n");
 	}	
 
 	if (Config::getTcpNoNagle()) {
-		n = setsockopt(sock, SOL_SOCKET,TCP_NODELAY, 
+		n = setsockopt(sock, SOL_SOCKET, TCP_NODELAY, 
 			   (SCHAR *) &optval, sizeof(optval));
 #ifdef DEBUG
 		gds__log("inet log: disabled Nagle algorithm \n");
