@@ -1165,18 +1165,6 @@ SOURCE=..\..\..\src\jrd\que.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\rdb.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\rdb_codes.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\rdbcodes.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\rec_proto.h
 # End Source File
 # Begin Source File
