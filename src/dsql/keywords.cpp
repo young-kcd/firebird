@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.18 2003-07-02 00:16:56 brodsom Exp $
+ *  $Id: keywords.cpp,v 1.18.2.1 2004-01-26 07:10:12 stryqx Exp $
  *
  */
 
@@ -209,7 +209,7 @@ static const TOK tokens [] = {
 	{OVERFLOW, "OVERFLOW", 1},
 	{PAGE, "PAGE", 1},
 	{PAGES, "PAGES", 1},
-	{PAGE_SIZE, "PAGE_SIZE", 1},
+	{KW_PAGE_SIZE, "PAGE_SIZE", 1},
 	{PARAMETER, "PARAMETER", 1},
 	{PASSWORD, "PASSWORD", 1},
 	{PLAN, "PLAN", 1},
