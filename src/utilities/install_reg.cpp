@@ -223,5 +223,5 @@ static void usage(void)
 	ib_printf("  of your Firebird installation.\n\n");
 	ib_printf("  '-z' can be used with any other option, prints version\n");
 
-	exit(FINI_OK);
+	exit(FINI_ERROR);
 }
