@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.46 2004-06-03 07:31:10 robocop Exp $
+//	$Id: sql.cpp,v 1.47 2004-06-03 07:42:31 robocop Exp $
 //
 
 #include "firebird.h"
@@ -1603,7 +1603,8 @@ static act* act_create(void)
 		return (act_create_view());
 
 	if (gpreGlob.token_global.tok_keyword == KW_UNIQUE || gpreGlob.token_global.tok_keyword == KW_ASCENDING ||
-		gpreGlob.token_global.tok_keyword == KW_DESCENDING || gpreGlob.token_global.tok_keyword == KW_INDEX) {
+		gpreGlob.token_global.tok_keyword == KW_DESCENDING || gpreGlob.token_global.tok_keyword == KW_INDEX)
+	{
 		bool descending = false;
 		bool unique = false;
 		while (true) {
@@ -3904,7 +3905,8 @@ static act* act_procedure(void)
 	gpre_lls* values = NULL;
 
 	SSHORT inputs = 0;
-	if (!(gpreGlob.token_global.tok_keyword == KW_RETURNING) && !(gpreGlob.token_global.tok_keyword == KW_SEMI_COLON)) {
+	if (!(gpreGlob.token_global.tok_keyword == KW_RETURNING) && !(gpreGlob.token_global.tok_keyword == KW_SEMI_COLON))
+	{
 		// parse input references
 
 		bool paren = MSC_match(KW_LEFT_PAREN);
@@ -4100,7 +4102,8 @@ static act* act_set_generator(void)
 	}
 	PAR_get_token();
 	MSC_match(KW_TO);
-	if ((gpreGlob.sw_sql_dialect == SQL_DIALECT_V5) || (gpreGlob.sw_server_version < 6)) {
+	if ((gpreGlob.sw_sql_dialect == SQL_DIALECT_V5) || (gpreGlob.sw_server_version < 6))
+	{
 		setgen->sgen_value = EXP_SLONG_ordinal(true);
 		setgen->sgen_dialect = SQL_DIALECT_V5;
 	}
