@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.37.2.2 2003-09-23 19:07:51 skidder Exp $
+#  $Id: Makefile.in.firebird,v 1.37.2.3 2003-10-15 14:47:57 alexpeshkoff Exp $
 #
 
 ROOT=..
@@ -131,6 +131,7 @@ export DYLD_FRAMEWORK_PATH
 .PHONY: all firebird firebird_boot firebird_basic 
 .PHONY: firebird_embedded firebird_server classic_programs super_programs
 .PHONY: firebird_super firebird_classic
+.PHONY: extlib
 
 
 # The main targets are firebird_embedded or firebird_server
@@ -141,8 +142,8 @@ export DYLD_FRAMEWORK_PATH
 
 firebird : firebird_@FIREBIRD_ARCH_TYPE@
 
-firebird_classic firebird_embedded: firebird_basic classic_targets
-firebird_super firebird_server: firebird_basic super_targets
+firebird_classic firebird_embedded: firebird_basic classic_targets extlib
+firebird_super firebird_server: firebird_basic super_targets extlib
 
 
 
@@ -299,9 +300,9 @@ security.fdb: gdef isql 		# build the security database
 # database earlier, then perhaps we could build the jrdlib in one step and
 # include the security bits and pieces.
 
-.PHONY: ref_databases msgs msgs_intl generated_headers intl extlib includes
+.PHONY: ref_databases msgs msgs_intl generated_headers intl includes
 
-basic_targets: ref_databases msgs msgs_intl generated_headers intl extlib includes examples \
+basic_targets: ref_databases msgs msgs_intl generated_headers intl includes examples \
 		otherfiles
 
 # hack to make code regeneration work
@@ -328,7 +329,7 @@ examples:
 	$(MAKE) -C ../gen/v5_examples -f ../Makefile.v5_examples
 #	$(MAKE) -f $(GEN_ROOT)/Makefile.v5_examples
 
-otherfiles: misc_files
+otherfiles: misc_files script_files
 
 
 #_ Embedded Firebird Targets (Classic)_______________________________________

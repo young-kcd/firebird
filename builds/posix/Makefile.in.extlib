@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.extlib,v 1.10.2.3 2003-08-04 22:18:12 skidder Exp $
+#  $Id: Makefile.in.extlib,v 1.10.2.4 2003-10-15 14:47:57 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleName=extlib
@@ -55,13 +55,17 @@ UTIL_Sources = $(addprefix extlib/, $(UTIL_Files))
 UTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(UTIL_Sources))))
 
 
+udf_client_library_super = $(LIBFBCLIENT_SO)
+udf_client_library_classic =
+
+
 AllObjects = $(UDF_Objects) $(UTIL_Objects) $(FBUDF_Objects)
 Dependencies = $(AllObjects:.o=.d)
 
 
 .PHONY: all lib_ib_udf lib_ib_util lib_fb_udf
 
-all: lib_ib_udf lib_fb_udf lib_ib_util 
+all: lib_ib_util lib_ib_udf lib_fb_udf
 
 
 # The libraires in this directory could do with a bit more work, since they
@@ -97,7 +101,7 @@ lib_fb_udf: $(UDF)/fbudf.$(SHRLIB_EXT)
 
 $(UDF)/fbudf.$(SHRLIB_EXT):	LINK_PROD=fbudf.$(SHRLIB_EXT)
 $(UDF)/fbudf.$(SHRLIB_EXT):	$(FBUDF_Objects) $(UTIL_Objects)
-	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME_LINE) $(LIB_LINK_RPATH_LINE) -o $@ $^
+	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME_LINE) $(LIB_LINK_RPATH_LINE) -o $@ $^ $(udf_client_library_@FIREBIRD_ARCH_TYPE@)
 #	-$(LN) $(@F) $(LIBFBINTL_SOBASENAME) 
 #	-$(LN) $(notdir $(LIBFBINTL_SOBASENAME)) $(LIBFBINTL_SONAME)
 
