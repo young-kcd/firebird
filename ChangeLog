@@ -1,3 +1,9 @@
+2004-04-17 04:36  skidder
+
+	* firebird2/builds/install/misc/firebird.conf (1.5):
+	
+	Implement Paul B. suggestion about dangerous config file option
+
 2004-04-16 23:51  skidder
 
 	* firebird2/src/jrd/fun.epp (1.47):
