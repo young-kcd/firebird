@@ -3,7 +3,7 @@
 /* from Peter C. Gutmann's implementation as found in */
 /* Applied Cryptography by Bruce Schneier */
 /* This code is in the public domain */
-/* $Id: sha.cpp,v 1.2 2004-11-16 08:52:29 robocop Exp $ */
+/* $Id: sha.cpp,v 1.3 2004-11-17 08:57:25 robocop Exp $ */
 
 // Adopted and added to firebird cvs tree - A.Peshkov, 2004
 
@@ -71,7 +71,7 @@ void sha_final(unsigned char [SHA_DIGESTSIZE], SHA_INFO *);
  *
  * This code is in the public domain
  *
- * $Id: sha.cpp,v 1.2 2004-11-16 08:52:29 robocop Exp $
+ * $Id: sha.cpp,v 1.3 2004-11-17 08:57:25 robocop Exp $
  */
 
 /* UNRAVEL should be fastest & biggest */
@@ -272,7 +272,7 @@ void sha_update(SHA_INFO *sha_info, const BYTE *buffer, int count)
 	if (i > count) {
 	    i = count;
 	}
-	memcpy(((BYTE *) sha_info->data) + sha_info->local, buffer, i);
+	memcpy(sha_info->data + sha_info->local, buffer, i);
 	count -= i;
 	buffer += i;
 	sha_info->local += i;
@@ -299,13 +299,13 @@ void sha_final(unsigned char digest[SHA_DIGESTSIZE], SHA_INFO *sha_info)
     const LONG lo_bit_count = sha_info->count_lo;
     const LONG hi_bit_count = sha_info->count_hi;
     int count = (int) ((lo_bit_count >> 3) & 0x3f);
-    ((BYTE *) sha_info->data)[count++] = 0x80;
+    sha_info->data[count++] = 0x80;
     if (count > SHA_BLOCKSIZE - 8) {
-	memset(((BYTE *) sha_info->data) + count, 0, SHA_BLOCKSIZE - count);
+	memset(sha_info->data + count, 0, SHA_BLOCKSIZE - count);
 	sha_transform(sha_info);
-	memset((BYTE *) sha_info->data, 0, SHA_BLOCKSIZE - 8);
+	memset(sha_info->data, 0, SHA_BLOCKSIZE - 8);
     } else {
-	memset(((BYTE *) sha_info->data) + count, 0,
+	memset(sha_info->data + count, 0,
 	    SHA_BLOCKSIZE - 8 - count);
     }
     sha_info->data[56] = (unsigned char) ((hi_bit_count >> 24) & 0xff);
