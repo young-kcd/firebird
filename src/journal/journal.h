@@ -121,7 +121,7 @@ typedef struct cmds {
 #define JRN_FILE_OPEN	223		/* Journal file \"%s\" opened */
 #define CLOSE_ARG	224			/* Optional close argument is a journal file sequence number */
 #define SEQ_NUM_ERR	225			/* Journal file sequence number %ld does not exist */
-#define SUB_SYS_ERR	226			/* unsupported journal sub-system version (expected %d, encountered %d) 
+#define SUB_SYS_ERR	226			/* unsupported journal sub-system version (expected %d, encountered %d) */
 								   #define OUTFILE_ERR  227 /* no output file */
 #define JRN_SUSPND	228			/* Journaling suspended */
 #define OUTFILE		229			/* current output file: %s */
