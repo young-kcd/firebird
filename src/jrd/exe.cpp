@@ -170,9 +170,10 @@ static jrd_nod* store(thread_db*, jrd_nod*, SSHORT);
 static bool test_and_fixup_error(thread_db*, const PsqlException*, jrd_req*);
 static void trigger_failure(thread_db*, jrd_req*);
 static void validate(thread_db*, jrd_nod*);
+inline void verb_cleanup(thread_db*, jrd_tra*);
 inline void PreModifyEraseTriggers(thread_db*, trig_vec**, SSHORT, record_param*,
 	Record*, jrd_req::req_ta);
-static void stuff_stack_trace(const jrd_req* request);
+static void stuff_stack_trace(const jrd_req*);
 
 #ifdef PC_ENGINE
 static jrd_nod* find(thread_db*, jrd_nod*);
@@ -183,11 +184,6 @@ static jrd_nod* set_bookmark(thread_db*, jrd_nod*);
 static jrd_nod* set_index(thread_db*, jrd_nod*);
 static jrd_nod* stream(thread_db*, jrd_nod*);
 #endif
-
-#if defined(DEBUG_GDS_ALLOC) && defined(PROD_BUILD)
-static SLONG memory_debug = 1;
-static SLONG memory_count = 0;
-#endif /* DEBUG_GDS_ALLOC */
 
 /* macro definitions */
 
@@ -1822,23 +1818,6 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	jrd_nod* top_node = 0;
 	jrd_nod* prev_node;
 
-/* If an error happens during the backout of a savepoint, then the transaction
-   must be marked 'dead' because that is the only way to clean up after a
-   failed backout.  The easiest way to do this is to kill the application
-   by calling bugcheck.
-   To facilitate catching errors during VIO_verb_cleanup, the following
-   define is used. */
-#define VERB_CLEANUP									\
-	try {												\
-	    VIO_verb_cleanup (tdbb, transaction);			\
-    }													\
-	catch (const std::exception&) {							\
-		if (dbb->dbb_flags & DBB_bugcheck) {				\
-			Firebird::status_exception::raise(tdbb->tdbb_status_vector);	\
-		}																\
-    	BUGCHECK (290); /* msg 290 error during savepoint backout */	\
-	}
-
 	jrd_tra* transaction = request->req_transaction;
 	if (!transaction) {
 		ERR_post(isc_req_no_trans, 0);
@@ -2155,7 +2134,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 							previous->sav_next = savepoint->sav_next;
 							Savepoint* const current = transaction->tra_save_point;
 							transaction->tra_save_point = savepoint;
-							VERB_CLEANUP;
+							verb_cleanup(tdbb, transaction);
 							transaction->tra_save_point = current;
 						}
 
@@ -2169,7 +2148,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 						previous->sav_next = savepoint->sav_next;
 						Savepoint* const current = transaction->tra_save_point;
 						transaction->tra_save_point = savepoint;
-						VERB_CLEANUP;
+						verb_cleanup(tdbb, transaction);
 						transaction->tra_save_point = current;
 						break;
 					}
@@ -2181,7 +2160,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 						while (transaction->tra_save_point &&
 							transaction->tra_save_point->sav_number >= sav_number) 
 						{
-							VERB_CLEANUP;
+							verb_cleanup(tdbb, transaction);
 						}
 
 						// Restore the savepoint initially created by EXE_start
@@ -2197,7 +2176,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 							transaction->tra_save_point->sav_number >= sav_number) 
 						{
 							transaction->tra_save_point->sav_verb_count++;
-							VERB_CLEANUP;
+							verb_cleanup(tdbb, transaction);
 						}
 
 						// Now set the savepoint again to allow to return to it later
@@ -2244,7 +2223,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					if (error_pending) {
 						++transaction->tra_save_point->sav_verb_count;
 					}
-					VERB_CLEANUP;
+					verb_cleanup(tdbb, transaction);
 				}
 
 			default:
@@ -2294,6 +2273,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 						// req_leave bit indicates that we hit an EXIT or
 						// BREAK/LEAVE statement in the SP/trigger code.
 						// Do not perform the error handling stuff.
+
 						if (transaction != dbb->dbb_sys_trans) {
 							MOVE_FAST((SCHAR *) request + node->nod_impure,
 									  &count, sizeof(SLONG));
@@ -2301,9 +2281,10 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 								 save_point && count <= save_point->sav_number;
 								 save_point = transaction->tra_save_point)
 							{
-								VERB_CLEANUP;
+								verb_cleanup(tdbb, transaction);
 							}
 						}
+
 						node = node->nod_parent;
 						break;
 					}
@@ -2319,7 +2300,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 							 save_point = transaction->tra_save_point)
 						{
 							++transaction->tra_save_point->sav_verb_count;
-							VERB_CLEANUP;
+							verb_cleanup(tdbb, transaction);
 						}
 					}
 
@@ -2338,7 +2319,6 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 								request->req_operation = jrd_req::req_evaluate;
 								node = (*ptr)->nod_arg[e_err_action];
 								error_pending = false;
-								catch_disabled = true;
 
 								/* On entering looper old_request etc. are saved.
 								   On recursive calling we will loose the actual old
@@ -2359,7 +2339,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 										request->req_flags & req_error_handler;
 									request->req_flags |= req_error_handler;
 									node = looper(tdbb, request, node);
-									request->req_flags &= ~(req_error_handler);
+									request->req_flags &= ~req_error_handler;
 									request->req_flags |= prev_req_error_handler;
 
 									/* Note: Previously the above call
@@ -2391,7 +2371,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 											 count <= save_point->sav_number;
 										 save_point = transaction->tra_save_point)
 									{
-										VERB_CLEANUP;
+										verb_cleanup(tdbb, transaction);
 									}
 								}
 							}
@@ -2408,7 +2388,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 					if (error_pending && transaction != dbb->dbb_sys_trans) {
 						++transaction->tra_save_point->sav_verb_count;
-						VERB_CLEANUP;
+						verb_cleanup(tdbb, transaction);
 					}
 				}
 				break;
@@ -2421,7 +2401,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 						 save_point && count <= save_point->sav_number;
 						 save_point = transaction->tra_save_point)
 					{
-						VERB_CLEANUP;
+						verb_cleanup(tdbb, transaction);
 					}
 				}
 			default:
@@ -2430,13 +2410,17 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			break;
 
 		case nod_error_handler:
-			if (request->req_flags & req_error_handler && !error_pending) {
+			if (request->req_flags & req_error_handler && !error_pending)
+			{
+				fb_assert(request->req_caller == old_request);
+				request->req_caller = NULL;
 				return node;
 			}
 			node = node->nod_parent;
 			node = node->nod_parent;
-			if (request->req_operation == jrd_req::req_unwind)
+			if (request->req_operation == jrd_req::req_unwind) {
 				node = node->nod_parent;
+			}
 			request->req_last_xcp.clear();
 			break;
 
@@ -2605,8 +2589,8 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 								  EVL_expr(tdbb, node->nod_arg[1]), 0);
 			}
 
-			/* for an autocommit transaction, events can be posted
-			 * without any updates */
+			// for an autocommit transaction, events can be posted
+			// without any updates
 
 			if (transaction->tra_flags & TRA_autocommit)
 				transaction->tra_flags |= TRA_perform_autocommit;
@@ -2792,33 +2776,41 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			BUGCHECK(168);		/* msg 168 looper: action not yet implemented */
 		}
 
-//#if defined(DEBUG_GDS_ALLOC) && defined(PROD_BUILD)
-//		memory_count++;
-//		if ((memory_count % memory_debug) == 0) {
-//			ALL_check_memory();
-//		}
-//#endif
 	}	// try
 	catch (const std::exception& ex) {
+
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		// If we already have a handled error, and took another, simply
-		// pass the buck.
+
+		// Skip this handling for errors coming from the nested looper calls,
+		// as they're already handled properly. The only need is to undo
+		// our own savepoints.
 		if (catch_disabled) {
-			Firebird::status_exception::raise(tdbb->tdbb_status_vector);
+			if (transaction != dbb->dbb_sys_trans) {
+				for (const Savepoint* save_point = transaction->tra_save_point;
+					((save_point) && (save_point_number <= save_point->sav_number));
+					save_point = transaction->tra_save_point)
+				{
+					++transaction->tra_save_point->sav_verb_count;
+					verb_cleanup(tdbb, transaction);
+				}
+			}
+
+			ERR_punt();
 		}
 
-		/* If the database is already bug-checked, then get out. */
+		// If the database is already bug-checked, then get out
 		if (dbb->dbb_flags & DBB_bugcheck) {
 			Firebird::status_exception::raise(tdbb->tdbb_status_vector);
 		}
 
-		/* Since an error happened, the current savepoint needs to be undone. */		
+		// Since an error happened, the current savepoint needs to be undone
 		if (transaction != dbb->dbb_sys_trans) {
 			++transaction->tra_save_point->sav_verb_count;
-			VERB_CLEANUP;
+			verb_cleanup(tdbb, transaction);
 		}
 
 		error_pending = true;
+		catch_disabled = true;
 		request->req_operation = jrd_req::req_unwind;
 		request->req_label = 0;
 
@@ -2829,8 +2821,9 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	}
 	} // while()
 
-/* if there is no node, assume we have finished processing the 
-   request unless we are in the middle of processing an asynchronous message */
+	// If there is no node, assume we have finished processing the
+	// request unless we are in the middle of processing an
+	// asynchronous message
 
 	if (!node
 #ifdef SCROLLABLE_CURSORS
@@ -2838,7 +2831,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 #endif
 		)
 	{
-		// close active cursors
+		// Close active cursors
 		if (request->req_cursors) {
 			for (vec::iterator ptr = request->req_cursors->begin(),
 				end = request->req_cursors->end(); ptr < end; ptr++)
@@ -2859,10 +2852,10 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	fb_assert(request->req_caller == old_request);
 	request->req_caller = NULL;
 
-	// in the case of a pending error condition (one which did not
+	// In the case of a pending error condition (one which did not
 	// result in a exception to the top of looper), we need to
 	// delete the last savepoint
-	
+
 	if (error_pending) {
 		if (transaction != dbb->dbb_sys_trans) {
 			for (const Savepoint* save_point = transaction->tra_save_point;
@@ -2870,7 +2863,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 				 save_point = transaction->tra_save_point)
 			{
 				++transaction->tra_save_point->sav_verb_count;
-				VERB_CLEANUP;
+				verb_cleanup(tdbb, transaction);
 			}
 		}
 
@@ -4274,3 +4267,29 @@ static void validate(thread_db* tdbb, jrd_nod* list)
 	}
 }
 
+
+inline void verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
+{
+/**************************************
+ *
+ *	v e r b _ c l e a n u p
+ *
+ **************************************
+ *
+ * Functional description
+ *  If an error happens during the backout of a savepoint, then the transaction
+ *  must be marked 'dead' because that is the only way to clean up after a
+ *  failed backout. The easiest way to do this is to kill the application
+ *  by calling bugcheck.
+ *
+ **************************************/
+	try {
+	    VIO_verb_cleanup(tdbb, transaction);
+    }
+	catch (const std::exception&) {
+		if (tdbb->tdbb_database->dbb_flags & DBB_bugcheck) {
+			Firebird::status_exception::raise(tdbb->tdbb_status_vector);
+		}
+    	BUGCHECK(290); // msg 290 error during savepoint backout
+	}
+}
