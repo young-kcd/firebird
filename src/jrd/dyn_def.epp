@@ -4191,7 +4191,11 @@ void DYN_define_view_relation( GBL gbl, UCHAR ** ptr, TEXT * view)
 	bool b_ending_store = false;
 
 	try {
-
+/*
+ * The below code has been added for ALTER VIEW support,
+ * but implementation was definitely wrong,
+ * so it's commented our till the better times
+ *
 		old_request = request, old_id = id;
 
 		request = (BLK) CMP_find_request(tdbb, drq_e_view_rels, DYN_REQUESTS);
@@ -4210,7 +4214,7 @@ void DYN_define_view_relation( GBL gbl, UCHAR ** ptr, TEXT * view)
 			DYN_REQUEST(drq_e_view_rels) = request;
 
 		request = old_request, id = old_id;	
-
+*/
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			VRL IN RDB$VIEW_RELATIONS 
 			strcpy(VRL.RDB$VIEW_NAME, view);
