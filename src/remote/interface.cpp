@@ -477,8 +477,6 @@ STATUS GDS_CANCEL_BLOB(STATUS * user_status, RBL * blob_handle)
 
 		release_blob(blob);
 		*blob_handle = NULL;
-
-		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
@@ -530,7 +528,6 @@ STATUS GDS_CANCEL_EVENTS(STATUS * user_status, RDB * handle, SLONG * id)
 		if (event = find_event(port, *id)) {
 			send_cancel_event(event);
 		}
-		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
@@ -585,7 +582,6 @@ STATUS GDS_CLOSE_BLOB(STATUS * user_status, RBL * blob_handle)
 
 		release_blob(blob);
 		*blob_handle = NULL;
-		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
@@ -632,13 +628,12 @@ STATUS GDS_COMMIT(STATUS * user_status, RTR * rtr_handle)
 		REMOTE_cleanup_transaction(transaction);
 		release_transaction(transaction);
 		*rtr_handle = NULL;
-		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
 		return error(user_status);
 	}
-
+	
 	RETURN_SUCCESS;
 }
 
@@ -680,7 +675,6 @@ STATUS GDS_COMMIT_RETAINING(STATUS * user_status, RTR * rtr_handle)
 		if (!release_object(rdb, op_commit_retaining, transaction->rtr_id)) {
 			return error(user_status);
 		}
-		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
@@ -794,7 +788,6 @@ STATUS GDS_COMPILE(STATUS * user_status,
 
 			message->msg_address = NULL;
 		}
-		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
@@ -871,7 +864,6 @@ STATUS GDS_CREATE_BLOB2(STATUS * user_status,
 		SET_OBJECT(rdb, blob, blob->rbl_id);
 		blob->rbl_next = transaction->rtr_blobs;
 		transaction->rtr_blobs = blob;
-		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
@@ -990,7 +982,6 @@ STATUS GDS_CREATE_DATABASE(STATUS * user_status,
 		}
 
 		*handle = rdb;
-		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
@@ -1135,7 +1126,6 @@ STATUS GDS_DDL(STATUS*	user_status,
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
 
@@ -1218,7 +1208,6 @@ STATUS GDS_DETACH(STATUS* user_status, RDB* handle)
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
 
@@ -1292,7 +1281,6 @@ STATUS GDS_DROP_DATABASE(STATUS* user_status, RDB* handle)
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
 
@@ -1360,7 +1348,6 @@ STATUS GDS_DSQL_ALLOCATE(STATUS*	user_status,
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
 
@@ -1566,7 +1553,6 @@ STATUS GDS_DSQL_EXECUTE2(STATUS*	user_status,
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
 
@@ -1788,7 +1774,6 @@ STATUS GDS_DSQL_EXECUTE_IMMED2(STATUS * user_status,
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
 
@@ -2057,9 +2042,9 @@ STATUS GDS_DSQL_FETCH(STATUS * user_status,
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
+
 	RETURN_SUCCESS;
 }
 
@@ -2129,11 +2114,8 @@ STATUS GDS_DSQL_FREE(STATUS * user_status, RSR * stmt_handle, USHORT option)
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
-
-	RESTORE_THREAD_DATA;
 
 	RETURN_SUCCESS;
 }
@@ -2233,11 +2215,8 @@ STATUS GDS_DSQL_INSERT(STATUS * user_status,
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
-
-	RESTORE_THREAD_DATA;
 
 	RETURN_SUCCESS;
 }
@@ -2339,10 +2318,8 @@ STATUS GDS_DSQL_PREPARE(STATUS * user_status, RTR * rtr_handle, RSR * stmt_handl
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
-	RESTORE_THREAD_DATA;
 
 	RETURN_SUCCESS;
 }
@@ -2424,10 +2401,8 @@ STATUS GDS_DSQL_SET_CURSOR(STATUS * user_status,
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
-	RESTORE_THREAD_DATA;
 
 	RETURN_SUCCESS;
 }
@@ -2477,7 +2452,6 @@ STATUS GDS_DSQL_SQL_INFO(STATUS * user_status,
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
 
@@ -2715,7 +2689,6 @@ STATUS GDS_GET_SEGMENT(STATUS * user_status,
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
 
@@ -2824,10 +2797,8 @@ STATUS GDS_GET_SLICE(STATUS * user_status,
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
-	RESTORE_THREAD_DATA;
 
 	RETURN_SUCCESS;
 }
@@ -2897,10 +2868,8 @@ STATUS GDS_OPEN_BLOB2(STATUS * user_status,
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
-	RESTORE_THREAD_DATA;
 
 	RETURN_SUCCESS;
 }
@@ -2963,10 +2932,8 @@ STATUS GDS_PREPARE(STATUS * user_status,
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
-	RESTORE_THREAD_DATA;
 
 	RETURN_SUCCESS;
 }
@@ -3060,10 +3027,8 @@ STATUS GDS_PUT_SEGMENT(STATUS * user_status,
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
-	RESTORE_THREAD_DATA;
 
 	RETURN_SUCCESS;
 }
@@ -3155,10 +3120,8 @@ STATUS GDS_PUT_SLICE(STATUS * user_status,
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
-	RESTORE_THREAD_DATA;
 
 	RETURN_SUCCESS;
 }
@@ -3271,10 +3234,8 @@ STATUS GDS_QUE_EVENTS(STATUS * user_status,
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
-	RESTORE_THREAD_DATA;
 
 	RETURN_SUCCESS;
 }
@@ -3523,10 +3484,8 @@ STATUS GDS_RECEIVE(STATUS * user_status,
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
-	RESTORE_THREAD_DATA;
 
 	RETURN_SUCCESS;
 }
@@ -3576,10 +3535,8 @@ STATUS GDS_RECONNECT(STATUS * user_status,
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
-	RESTORE_THREAD_DATA;
 
 	RETURN_SUCCESS;
 }
@@ -3622,10 +3579,8 @@ STATUS GDS_RELEASE_REQUEST(STATUS * user_status, RRQ * req_handle)
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
-	RESTORE_THREAD_DATA;
 
 	RETURN_SUCCESS;
 }
@@ -3778,10 +3733,8 @@ STATUS GDS_ROLLBACK_RETAINING(STATUS * user_status, RTR * rtr_handle)
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
-	RESTORE_THREAD_DATA;
 
 	RETURN_SUCCESS;
 }
@@ -3822,11 +3775,9 @@ STATUS GDS_ROLLBACK(STATUS * user_status, RTR * rtr_handle)
 		REMOTE_cleanup_transaction(transaction);
 		release_transaction(transaction);
 		*rtr_handle = NULL;
-		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
 
@@ -3890,11 +3841,9 @@ STATUS GDS_SEEK_BLOB(STATUS * user_status,
 		blob->rbl_length = 0;
 		blob->rbl_fragment_length = 0;
 		blob->rbl_flags &= ~(RBL_eof | RBL_eof_pending | RBL_segment);
-		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
 
@@ -3961,11 +3910,9 @@ STATUS GDS_SEND(STATUS * user_status,
 		if (!receive_response(rdb, packet)) {
 			return error(user_status);
 		}
-		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
 
@@ -4082,11 +4029,9 @@ STATUS GDS_SERVICE_ATTACH(STATUS * user_status,
 		}
 
 		*handle = rdb;
-		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
 
@@ -4138,7 +4083,6 @@ STATUS GDS_SERVICE_DETACH(STATUS * user_status, RDB * handle)
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
 
@@ -4356,11 +4300,9 @@ STATUS GDS_START_AND_SEND(STATUS * user_status,
 		{
 			receive_after_start(request, packet->p_resp.p_resp_object);
 		}
-		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
 
@@ -4439,7 +4381,6 @@ STATUS GDS_START(STATUS * user_status,
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
 
@@ -4490,11 +4431,9 @@ STATUS GDS_START_TRANSACTION(STATUS * user_status,
 		}
 
 		*rtr_handle = make_transaction(rdb, packet->p_resp.p_resp_object);
-		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
 
@@ -4636,11 +4575,9 @@ STATUS GDS_TRANSACT_REQUEST(STATUS * user_status,
 				return error(user_status);
 			}
 		}
-		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
 		return error(user_status);
 	}
 
