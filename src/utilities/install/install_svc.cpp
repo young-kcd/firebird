@@ -256,7 +256,13 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				status = SERVICES_install(manager, ISCGUARD_SERVICE,
 					ISCGUARD_DISPLAY_NAME, ISCGUARD_EXECUTABLE, directory,
 						NULL, sw_startup, username, password, svc_error);
-				if (status == FB_SUCCESS)
+				status2 = FB_SUCCESS;
+				if (username != 0)
+				{
+					status2 = SERVICES_grant_access_rights(ISCGUARD_SERVICE,
+						username, svc_error);
+				}
+				if (status == FB_SUCCESS && status2 == FB_SUCCESS)
 					ib_printf("Service \"%s\" successfully created.\n", ISCGUARD_DISPLAY_NAME);
 
 				/* Set sw_startup to manual in preparation for install the service */
