@@ -1514,7 +1514,7 @@ static void init(FRBRD** db_handle)
 		}
 	}
 
-	dbb = (dsql_dbb*) gds__alloc((SLONG) sizeof(dbb));
+	dbb = (dsql_dbb*) gds__alloc((SLONG) sizeof(class dbb));
 
 	// FREE: by database exit handler cleanup_database()
 	if (!dbb) {					// NOMEM
