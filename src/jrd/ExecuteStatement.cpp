@@ -84,6 +84,7 @@ void ExecuteStatement::Open(TDBB tdbb, JRD_NOD sql, SSHORT nVars, bool SingleTon
 	Buffer = 0;
 	SingleMode = SingleTon;
 
+	assert(tdbb->tdbb_transaction->tra_pool);
 	vary *v = reinterpret_cast <vary*> (
 		FB_NEW(*tdbb->tdbb_transaction->tra_pool) char[BUFFER_LARGE + sizeof(vary)]);
 	v->vary_length = BUFFER_LARGE;
