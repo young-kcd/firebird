@@ -1,3 +1,18 @@
+2004-01-05 09:48  paul_reeves
+
+	* firebird2/: builds/win32/msvc6/fb2control.dsp,
+	src/install/arch-specific/win32/installation_readme.txt,
+	src/utilities/fbcpl/fbdialog.cpp, src/utilities/fbcpl/fbdialog.h:
+	
+	Update build number. Improve error detection in cpl applet. Update
+	some Win32 install notes.
+
+2004-01-05 06:03  skidder
+
+	* firebird2/builds/win32/msvc7/Firebird2.sln:
+	
+	fix solution file
+
 2004-01-04 15:12  dimitr
 
 	* firebird2/src/dsql/utld.cpp:
