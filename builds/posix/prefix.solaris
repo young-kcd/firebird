@@ -9,12 +9,12 @@
 # 30-Dec-2002  nmcc FB2 initial working build on Solaris8 with gcc 3.2.1
 
 # Firebird defines specific to Solaris (and x86) build
-CFLAGS_COMMON= -DSOLARIS -DSOLARIS26 -DSOLARIS_MT -DBSD_COMP -DEXACT_NUMERICS  
+CFLAGS_COMMON= -DSOLARIS -DSOLARIS_MT -DBSD_COMP -DEXACT_NUMERICS  
 
 # compile flags for GCC compiler
-COMMON_GCC_FLAGS= -fwritable-strings -pipe -MMD -p -fPIC 
-DEBUG_GCC_FLAGS=  -ggdb  
-PROD_GCC_FLAGS= -O2 
+COMMON_GCC_FLAGS= -pipe -MMD -p -fPIC -m32
+DEBUG_GCC_FLAGS=  -ggdb -DDEBUG_GDS_ALLOC -Wall -Wno-switch
+PROD_GCC_FLAGS= -mcpu=ultrasparc -mtune=ultrasparc -O3 -DNDEBUG
 
 # compile flags for SUNWspro/Forte compiler - untested nmcc dec2002
 COMMON_FORTE_FLAGS= -Xt -xstrconst -mt -K PIC
@@ -61,3 +61,5 @@ EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec fb_lock_print
 CLIENT_UTIL_TARGETS=gds_drop gds_delay gstat gsec fbguard fbmgr_bin fb_lock_print
 
 Physical_IO_Module=unix.cpp
+
+LD=gcc

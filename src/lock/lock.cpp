@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.56.2.4 2003-09-28 20:50:04 skidder Exp $
+$Id: lock.cpp,v 1.56.2.5 2003-10-27 18:30:37 skidder Exp $
 */
 
 #include "firebird.h"
@@ -1597,7 +1597,7 @@ static UCHAR *alloc( SSHORT size, ISC_STATUS * status_vector)
  **************************************/
 	ULONG block;
 
-	size = FB_ALIGN(size, sizeof(IPTR));
+	size = FB_ALIGN(size, ALIGNMENT);
 	ASSERT_ACQUIRED;
 	block = LOCK_header->lhb_used;
 	LOCK_header->lhb_used += size;
@@ -3294,7 +3294,7 @@ static void lock_initialize( void *arg, SH_MEM shmem_data, int initialize)
 		sizeof(struct lhb) +
 		(LOCK_header->lhb_hash_slots * sizeof(LOCK_header->lhb_hash[0]));
 	LOCK_header->lhb_length = shmem_data->sh_mem_length_mapped;
-	LOCK_header->lhb_used = FB_ALIGN(length, sizeof(IPTR));
+	LOCK_header->lhb_used = FB_ALIGN(length, ALIGNMENT);
 
 	if (!(shb = (SHB) alloc(sizeof(struct shb), NULL)))
 	{

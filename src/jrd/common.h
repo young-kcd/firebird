@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.73.2.2 2003-10-12 14:23:14 skidder Exp $
+$Id: common.h,v 1.73.2.3 2003-10-27 18:30:37 skidder Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -382,16 +382,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
      between non-overlapping areas.
 
 **********/
-
-#ifndef SOLARIS26
-
-/* If our build platform is at least Solaris release 2.6, then unistd.h
-   declares these functions, so we must not define them with macros. 
-*/
-
-#define setreuid(ruid,euid)     ((setuid (ruid) == -1 || seteuid (euid) == -1) ? -1 : 0)
-#define setregid(rgid,egid)     ((setgid (rgid) == -1 || setegid (egid) == -1) ? -1 : 0)
-#endif
 
 /* The following define is the prefix to go in front of a "d" or "u"
    format item in a ib_printf() format string, to indicate that the argument
