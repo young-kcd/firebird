@@ -36,9 +36,6 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 
-/*
-$Id: backup.epp,v 1.73 2004-12-01 00:02:52 skidder Exp $
-*/
 
 #include "firebird.h"
 #include <stdio.h>
