@@ -543,6 +543,7 @@ static const struct {
 	{"foreign_key_references_present", 335544839},
 	{"no_update", 335544840},
 	{"cursor_already_open", 335544841},
+	{"stack_trace", 335544842},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},
