@@ -802,7 +802,7 @@ return_value	: init_data_type udf_data_type
 		  		(DSQL_NOD) NULL, MAKE_constant ((STR) $2, CONSTANT_SLONG));}
 		;
 
-filter_decl_clause : symbol_filter_name INPUT_TYPE blob_subtype OUTPUT_TYPE blob_subtype 
+filter_decl_clause : symbol_filter_name INPUT_TYPE blob_subtype_io OUTPUT_TYPE blob_subtype_io
 			ENTRY_POINT sql_string MODULE_NAME sql_string
 		    	{ $$ = make_node (nod_def_filter, (int) e_filter_count, 
 						$1, $3, $5, $7, $9); }
@@ -3185,19 +3185,21 @@ filter_clause	: FILTER FROM blob_subtype_value TO blob_subtype_value
 		| FILTER TO blob_subtype_value
 			{ $$ = make_node (nod_list, 2, NULL, $3); }
 		|
+			{ $$ = NULL; }
 		;
 
-blob_subtype_value : blob_subtype
+blob_subtype_value : blob_subtype_io
 		| parameter
 		;
 
-blob_subtype	: signed_short_integer
+blob_subtype_io	: signed_short_integer
 			{ $$ = MAKE_constant ((STR) $1, CONSTANT_SLONG); }
 		;
 
 segment_clause	: MAX_SEGMENT segment_length
 			{ $$ = $2; }
 		|
+			{ $$ = NULL; }
 		;
 
 segment_length	: unsigned_short_integer
