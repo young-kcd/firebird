@@ -3704,22 +3704,25 @@ static act* act_open_blob( ACT_T act_op, gpre_sym* symbol)
 	SQL_relation_name(r_name, db_name, owner_name);
 
 
-	SCHAR s[128];
+	SCHAR s[ERROR_LENGTH];
 	gpre_rel* relation = SQL_relation(request, r_name, db_name, owner_name, true);
 	gpre_fld* field = MET_field(relation, f_token->tok_string);
 	if (!field) {
-		sprintf(s, "column \"%s\" not in context", f_token->tok_string);
+		fb_utils::snprintf(s, sizeof(s),
+			"column \"%s\" not in context", f_token->tok_string);
 		PAR_error(s);
 	}
 
 	if (!(field->fld_flags & FLD_blob)) {
-		sprintf(s, "column %s is not a BLOB", field->fld_symbol->sym_string);
+		fb_utils::snprintf(s, sizeof(s),
+			"column %s is not a BLOB", field->fld_symbol->sym_string);
 		PAR_error(s);
 	}
 
 	if (field->fld_array_info) {
-		sprintf(s, "column %s is an array and can not be opened as a BLOB",
-				field->fld_symbol->sym_string);
+		fb_utils::snprintf(s, sizeof(s),
+			"column %s is an array and can not be opened as a BLOB",
+			field->fld_symbol->sym_string);
 		PAR_error(s);
 	}
 
@@ -3842,7 +3845,7 @@ static act* act_prepare(void)
 {
 	if (gpreGlob.isc_databases && gpreGlob.isc_databases->dbb_next) {
 		TEXT s[ERROR_LENGTH];
-		sprintf(s,
+		fb_utils::sprintf(s, sizeof(s),
 				"Executing dynamic SQL statement in context of database %s",
 				gpreGlob.isc_databases->dbb_name->sym_string);
 		CPR_warn(s);
@@ -3983,7 +3986,8 @@ static act* act_select(void)
 
 	if (!MSC_match(KW_SEMI_COLON)) {
 		TEXT s[ERROR_LENGTH];
-		sprintf(s, "Expected ';', got %s.", gpreGlob.token_global.tok_string);
+		fb_utils::sprintf(s, sizeof(s),
+			"Expected ';', got %s.", gpreGlob.token_global.tok_string);
 		CPR_warn(s);
 	}
 
@@ -4142,8 +4146,8 @@ static act* act_set_names(void)
 		TEXT* value = PAR_native_value(false, false);
 		for (dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next) {
 			if (db->dbb_r_lc_ctype) {
-				char buffer[256];
-				sprintf(buffer,
+				char buffer[ERROR_LENGTH];
+				fb_utils::snprintf(buffer, sizeof(buffer),
 						"Supersedes runtime character set for database %s",
 						(db->dbb_filename) ?
 							db->dbb_filename : db->dbb_name->sym_string);
@@ -4169,10 +4173,11 @@ static act* act_set_names(void)
 		gpreGlob.module_lc_ctype = value;
 		for (dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next) {
 			if (db->dbb_c_lc_ctype) {
-				char buffer[256];
-				sprintf(buffer, "Supersedes character set for database %s",
-						(db->dbb_filename) ?
-							db->dbb_filename : db->dbb_name->sym_string);
+				char buffer[ERROR_LENGTH];
+				fb_utils::snprintf(buffer, sizeof(buffer),
+					"Supersedes character set for database %s",
+					(db->dbb_filename) ?
+						db->dbb_filename : db->dbb_name->sym_string);
 				CPR_warn(buffer);
 			}
 
@@ -5080,10 +5085,11 @@ static IND make_index( gpre_req* request, const TEXT* string)
 static gpre_rel* make_relation( gpre_req* request, const TEXT * relation_name)
 {
 	gpre_rel* relation = NULL;
-	TEXT r[ERROR_LENGTH];
 
 	if (gpreGlob.isc_databases && !gpreGlob.isc_databases->dbb_next) {
-		strcpy(r, relation_name);
+		TEXT r[ERROR_LENGTH];
+		strncpy(r, relation_name, sizeof(r));
+		r[sizeof(r) - 1] = 0;
 
 		relation = MET_make_relation(r);
 		relation->rel_database = gpreGlob.isc_databases;
@@ -5464,8 +5470,6 @@ static gpre_fld* par_field( gpre_req* request, gpre_rel* relation)
 static CNSTRT par_field_constraint( gpre_req* request, gpre_fld* for_field,
 	gpre_rel* relation)
 {
-	STR field_name;
-
 	cnstrt* new_constraint = (cnstrt*) MSC_alloc(CNSTRT_LEN);
 
 	if (gpreGlob.token_global.tok_keyword == KW_CONSTRAINT) {
@@ -5478,6 +5482,7 @@ static CNSTRT par_field_constraint( gpre_req* request, gpre_fld* for_field,
 		PAR_get_token();
 	}
 
+	STR field_name;
 	const enum kwwords keyword = gpreGlob.token_global.tok_keyword;
 	switch (keyword) {
 	case KW_NOT:
@@ -6250,6 +6255,7 @@ static void to_upcase(const TEXT * p, TEXT * q)
 void SQL_resolve_identifier( const TEXT* err_mesg, TEXT* str)
 {
 	// Ripe for B.O.
+	// Beware to_upcase() works only in the first 32 bytes.
 	switch (gpreGlob.sw_sql_dialect) {
 	case 2:
 		if (gpreGlob.token_global.tok_type == tok_dblquoted)
