@@ -51,7 +51,7 @@ typedef struct bid {
 
 /* Your basic blob block. */
 
-class blb : public pool_alloc_rpt<SCHAR, type_blb>
+class blb : public pool_alloc_rpt<UCHAR, type_blb>
 {
     public:
 	att *blb_attachment;	/* database attachment */
