@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: pwd.cpp,v 1.9 2002-12-16 16:24:02 alexpeshkoff Exp $
+$Id: pwd.cpp,v 1.10 2003-01-24 09:30:54 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -176,7 +176,11 @@ void PWD_verify_user(TEXT*	name,
    found there.  This means that another database must be accessed, and
    that means the current context must be saved and restored. */
 
+#ifdef EMBEDDED
+	return;
+#else
 	notfound = lookup_user(name, uid, gid, pw1);
+#endif
 
 /* Punt if the user has specified neither a raw nor an encrypted password,
    or if the user has specified both a raw and an encrypted password, 
