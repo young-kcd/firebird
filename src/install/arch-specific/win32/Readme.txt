@@ -1,14 +1,16 @@
 
 ==================================
-Firebird 1.5.0       (Win32 Build)
+Firebird 1.5.1       (Win32 Build)
 ==================================
 
 
 o Introduction
 o Stability
-o Installation
+o Installation of the binary package
+o Installing from the zip package
+o Installation of the embedded server
 o Known Issues
-o Language documentation
+o SQL Language documentation
 o Reporting Bugs
 o Requesting New Features
 
@@ -16,31 +18,37 @@ o Requesting New Features
 Introduction
 ============
 
-Welcome to Firebird 1.5.0. This represents a feature complete
-build of Firebird 1.5. It is the product of many months work by the 
-Firebird team. See the Release Notes document for details of all the 
-new features and the bug-fixes it contains. 
+Welcome to Firebird 1.5.1. This the first maintenance release of 
+Firebird 1.5. Full details of the fixes and minor enhancements in 
+this release are contained in the release notes. These are in the
+doc/ directory.
 
 
 Stability
 =========
 
-This release is the first using the C++ codebase, the latest 
-evolution of more than three years' refactoring of the original 
-InterBase 6.n C code.  It has been through a long beta and release 
-candidate cycle and is considered to be as stable as its predecessor, 
-Firebird 1.0.3.  There is no reason to be concerned about using it in 
-a production environment. However, before ANY new software into a 
-production environment it should be always be tested properly on a 
-development system. This is standard practice.
+Firebird 1.5 is the first version of Firebird compiled with C++. 
+It has been through a long beta and release candidate cycle and 
+is considered to be as stable as its predecessor, Firebird 1.0.3. 
+No major problems have been discovered since the original release of
+Firebird 1.5.0 and as such it is considered as stable as or better 
+than the last release of Firebird 1 (v1.0.3). 
+
+There is no reason to be concerned about using this maintenance 
+release in a production environment. However, before installing 
+ANY new software into a production environment it should be 
+always be tested properly on a development system. This is 
+standard practice.
 
 
 Installing the self-installing executable
 =========================================
 
 Please run the executable and read the accompanying installation 
-instructions that are contained within the setup wizard. More 
-detailed information is in the release notes. 
+instructions that are contained within the setup wizard. After 
+installation you will find this document as 
+  doc/installation_readme.txt. 
+More detailed information is in the release notes. 
 
 Many changes have been implemented in this release.  If you have an 
 existing installation of Firebird (including a v.1.5 beta or release 
@@ -50,6 +58,23 @@ applies to both server and client installations.
 
 Do not install this version "over the top" of an existing Firebird or
 InterBase installation.  
+
+
+Installing from the zip package
+===============================
+
+Please follow the instructions in doc/README_installation.txt for 
+installing the zip package. (This document is only shipped with the 
+zip package.)
+
+
+Installation of the embedded server
+===================================
+
+The embedded server is designed to be installed as part of an existing
+application. See doc/README_embedded.txt for more information on how to
+deploy the embedded server. (This document is only shipped with the 
+embedded package.)
 
 
 Known Issues
@@ -63,6 +88,7 @@ fbclient.dll and/or will not find it in its default location, now the
 For example, the Borland IBConsole program will not work with 
 fbclient.dll, even if it is copied to the system directory and renamed 
 to gds32.dll. 
+
 The Windows kits contain a program named instclient.exe that can be
 used to build a "legacy-compatible" gds32.dll and optionally install 
 it to your system directory.  It is essential to read the release 
@@ -81,7 +107,7 @@ SQL Language Documentation
 ========================== 
 New language features, keywords, extensions and restrictions introduced 
 in this release are documented in detail in the release notes. 
-The Firebird 1.5 release notes version for this release is 1.08. 
+The Firebird 1.5 release notes version for this release is 1.0.8. 
 
 
 Reporting Bugs
