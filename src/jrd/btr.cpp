@@ -1569,7 +1569,7 @@ retry:
 	slot->irt_root = 0;
 
 	if (dbb->dbb_ods_version < ODS_VERSION11) {
-		for (USHORT i=0; i<idx->idx_count; i++) {
+		for (USHORT i = 0; i < idx->idx_count; i++) {
 			irtd_ods10 temp;
 			temp.irtd_field = idx->idx_rpt[i].idx_field;
 			temp.irtd_itype = idx->idx_rpt[i].idx_itype;
