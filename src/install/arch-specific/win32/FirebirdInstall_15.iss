@@ -169,8 +169,9 @@ Name: {group}\Firebird Server; Filename: {app}\bin\fbserver.exe; Parameters: -a;
 Name: {group}\Firebird Guardian; Filename: {app}\bin\fbguard.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: SuperServerComponent; Comment: Run Firebird Super Server (with guardian)
 Name: {group}\Firebird Guardian; Filename: {app}\bin\fbguard.exe; Parameters: -c; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: ClassicServerComponent; Comment: Run Firebird Classic Server (with guardian)
 #define App_Name = SetupSetting("AppName")
+Name: {group}\Firebird 1.5.1 Release Notes; Filename: {app}\doc\Firebird_v1.5.1.ReleaseNotes.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name} release notes. (Requires Acrobat Reader.)
 Name: {group}\Firebird 1.5 Release Notes; Filename: {app}\doc\Firebird_v1.5.ReleaseNotes.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name} release notes. (Requires Acrobat Reader.)
-Name: {group}\Firebird 1.5 Readme; Filename: {app}\readme.txt; MinVersion: 4.0,4.0;
+Name: {group}\Firebird 1.5.1 Readme; Filename: {app}\readme.txt; MinVersion: 4.0,4.0;
 Name: {group}\Uninstall Firebird; Filename: {uninstallexe}; Comment: Uninstall Firebird
 
 [Files]

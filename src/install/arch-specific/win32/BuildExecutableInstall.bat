@@ -291,6 +291,7 @@ goto :EOF
 :ZIP_PACK
 ::=======
 if "%FBBUILD_ZIP_PACK%" NEQ "1" goto :EOF
+mkdir %ROOT_PATH%\builds\win32\install_image 2>nul
 if defined PKZIP (
 	if "%SHIP_PDB%" == "ship_pdb" (
 		del %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_win32_pdb.zip
@@ -345,7 +346,7 @@ for %%v in (IPLicense.txt IDPLicense.txt ) do (
 ::=======
 if "%FBBUILD_EMB_PACK%" NEQ "1" goto :EOF
 @echo Now building embedded package
-
+mkdir %ROOT_PATH%\builds\win32\install_image 2>nul
 ::Now we can zip it up and copy the package to the install images directory.
 if defined PKZIP (
 	if "%SHIP_PDB%" == "ship_pdb" (
