@@ -40,6 +40,15 @@ typedef Firebird::PathName string;
  *	Configuration entries
  */
 
+const char*	GCPolicyCooperative	= "cooperative";
+const char*	GCPolicyBackground	= "background";
+const char*	GCPolicyCombined	= "combined";
+#ifdef SUPERSERVER
+const char*	GCPolicyDefault	= GCPolicyCombined;
+#else
+const char*	GCPolicyDefault	= GCPolicyCooperative;
+#endif
+
 const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 {
 	{TYPE_STRING,		"RootDirectory",			(ConfigValue) 0},
@@ -114,7 +123,8 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
  	{TYPE_BOOLEAN,		"BugcheckAbort",			(ConfigValue) false},	// whether to abort() engine when internal error is found
 #endif
 	{TYPE_INTEGER,		"TraceDSQL",				(ConfigValue) 0},		// bitmask
-	{TYPE_BOOLEAN,		"LegacyHash",				(ConfigValue) false}	// let use old passwd hash verification
+	{TYPE_BOOLEAN,		"LegacyHash",				(ConfigValue) false},	// let use old passwd hash verification
+	{TYPE_STRING,		"GCPolicy",					(ConfigValue) GCPolicyDefault}	// garbage collection policy
 };
 
 /******************************************************************************
@@ -487,4 +497,9 @@ int Config::getTraceDSQL()
 bool Config::getLegacyHash()
 {
 	return (bool) sysConfig.values[KEY_LEGACY_HASH];
+}
+
+const char *Config::getGCPolicy()
+{
+	return (const char *) sysConfig.values[KEY_GC_POLICY];
 }

@@ -5490,6 +5490,34 @@ static Database* init(thread_db*	tdbb,
 	dbb->dbb_flags |= DBB_exclusive;
 	dbb->dbb_sweep_interval = SWEEP_INTERVAL;
 
+/* set a garbage collection policy */
+
+	if ((dbb->dbb_flags & (DBB_gc_cooperative | DBB_gc_background)) == 0)
+	{
+		const char* gc_policy = Config::getGCPolicy();
+		if (stricmp(gc_policy, GCPolicyCooperative) == 0) {
+			dbb->dbb_flags |= DBB_gc_cooperative;
+		}
+		else if (stricmp(gc_policy, GCPolicyBackground) == 0) {
+			dbb->dbb_flags |= DBB_gc_background;
+		}
+		else if (stricmp(gc_policy, GCPolicyCombined) == 0) {
+			dbb->dbb_flags |= DBB_gc_cooperative | DBB_gc_background;
+		}
+		else // config value is invalid, use default
+			if (stricmp(GCPolicyDefault, GCPolicyCooperative) == 0) {
+				dbb->dbb_flags |= DBB_gc_cooperative;
+			}
+			else if (stricmp(GCPolicyDefault, GCPolicyBackground) == 0) {
+				dbb->dbb_flags |= DBB_gc_background;
+			}
+			else if (stricmp(GCPolicyDefault, GCPolicyCombined) == 0) {
+				dbb->dbb_flags |= DBB_gc_cooperative | DBB_gc_background;
+			}
+			else 
+				fb_assert(false);
+	};
+
 /* Initialize a number of subsystems */
 
 	TRA_init(tdbb);

@@ -496,6 +496,9 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
  **************************************/
 	SET_TDBB(tdbb);
 
+	const bool gcPolicyCooperative = tdbb->tdbb_database->dbb_flags & DBB_gc_cooperative;
+	const bool gcPolicyBackground = tdbb->tdbb_database->dbb_flags & DBB_gc_background;
+
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL) {
 		printf
@@ -547,8 +550,8 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 		(rpb->rpb_b_page == 0 ||
 		 rpb->rpb_transaction_nr >= transaction->tra_oldest_active))
 	{
-#if defined(GARBAGE_THREAD) && defined(GC_NOTIFY_ON_WRITE)
-		if (rpb->rpb_b_page) 
+#ifdef GARBAGE_THREAD
+		if (gcPolicyBackground && rpb->rpb_b_page) 
 			notify_garbage_collector(tdbb, rpb);
 #endif // GARBAGE_THREAD
 
@@ -877,8 +880,8 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 				if (rpb->rpb_transaction_nr < transaction->tra_oldest_active &&
 					!(attachment->att_flags & ATT_no_cleanup))
 				{
-#if defined(GARBAGE_THREAD) && defined(GC_NOTIFY_ON_READ) 
-					if (attachment->att_flags & ATT_notify_gc) {
+#ifdef GARBAGE_THREAD
+					if (!gcPolicyCooperative && (attachment->att_flags & ATT_notify_gc)) {
 						notify_garbage_collector(tdbb, rpb);
 						CCH_RELEASE(tdbb, &rpb->rpb_window);
 					}
@@ -900,15 +903,16 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 			   might interfere with the updater (prepare_update, update_in_place...).
 			   That might be the reason for the rpb_chained check. */
 
-			bool cannotGC = 
+			const bool cannotGC = 
 				rpb->rpb_transaction_nr >= transaction->tra_oldest_active ||
 				rpb->rpb_b_page == 0 ||
 				rpb->rpb_flags & rpb_chained ||
 				attachment->att_flags & ATT_no_cleanup;
 
 			if (cannotGC) {
-#if defined(GARBAGE_THREAD) && defined(GC_NOTIFY_ON_WRITE)
-				if (attachment->att_flags & (ATT_notify_gc | ATT_garbage_collector) &&
+#ifdef GARBAGE_THREAD
+				if (gcPolicyBackground && 
+					attachment->att_flags & (ATT_notify_gc | ATT_garbage_collector) &&
 					(rpb->rpb_b_page != 0 && !(rpb->rpb_flags & rpb_chained)) )
 				{
 					// VIO_chase_record_version
@@ -920,8 +924,8 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 
 			/* Garbage collect. */
 
-#if defined(GARBAGE_THREAD) && defined(GC_NOTIFY_ON_READ) 
-			if (attachment->att_flags & ATT_notify_gc) {
+#ifdef GARBAGE_THREAD
+			if (!gcPolicyCooperative && (attachment->att_flags & ATT_notify_gc)) {
 				notify_garbage_collector(tdbb, rpb);
 				return true;
 			}
@@ -1508,9 +1512,10 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		transaction->tra_flags |= TRA_perform_autocommit;
 	}
 	
-#if defined(GARBAGE_THREAD) && defined(GC_NOTIFY_ON_WRITE)
+#ifdef GARBAGE_THREAD
 	// VIO_erase
-	notify_garbage_collector(tdbb, rpb, transaction->tra_number);
+	if (tdbb->tdbb_database->dbb_flags | DBB_gc_background)
+		notify_garbage_collector(tdbb, rpb, transaction->tra_number);
 #endif
 }
 
@@ -2057,7 +2062,8 @@ void VIO_init(thread_db* tdbb)
 	Database* dbb = tdbb->tdbb_database;
 	Attachment* attachment = tdbb->tdbb_attachment;
 
-	if (dbb->dbb_flags & DBB_read_only) {
+	if ((dbb->dbb_flags & DBB_read_only) ||
+		!(dbb->dbb_flags & DBB_gc_background) ) {
 		return;
 	}
 
@@ -2378,9 +2384,10 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 		transaction->tra_flags |= TRA_perform_autocommit;
 	}
 
-#if defined(GARBAGE_THREAD) && defined(GC_NOTIFY_ON_WRITE)
+#ifdef GARBAGE_THREAD
 	// VIO_modify
-	notify_garbage_collector(tdbb, org_rpb, transaction->tra_number);
+	if (tdbb->tdbb_database->dbb_flags | DBB_gc_background)
+		notify_garbage_collector(tdbb, org_rpb, transaction->tra_number);
 #endif
 }
 
@@ -3494,9 +3501,10 @@ static void expunge(thread_db* tdbb, record_param* rpb,
 /* Re-fetch the record */
 
 	if (!DPM_get(tdbb, rpb, LCK_write)) {
-#if defined(GARBAGE_THREAD) && defined(GC_NOTIFY_ON_WRITE)
+#ifdef GARBAGE_THREAD
 		// expunge
-		notify_garbage_collector(tdbb, rpb);
+		if (tdbb->tdbb_database->dbb_flags | DBB_gc_background)
+			notify_garbage_collector(tdbb, rpb);
 #endif
 		return;
 	}
@@ -3517,9 +3525,10 @@ static void expunge(thread_db* tdbb, record_param* rpb,
 		rpb->rpb_transaction_nr >= transaction->tra_oldest_active)
 	{
 
-#if defined(GARBAGE_THREAD) && defined(GC_NOTIFY_ON_WRITE)
+#ifdef GARBAGE_THREAD
 		// expunge
-		notify_garbage_collector(tdbb, rpb);
+		if (tdbb->tdbb_database->dbb_flags | DBB_gc_background)
+			notify_garbage_collector(tdbb, rpb);
 #endif
 
 		CCH_RELEASE(tdbb, &rpb->rpb_window);
@@ -4120,9 +4129,6 @@ static void notify_garbage_collector(thread_db* tdbb, record_param* rpb, SLONG t
 	ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 	const SLONG dp_sequence = rpb->rpb_number.getValue() / dbb->dbb_max_records;
 
-#if !defined(GC_NOTIFY_ON_WRITE)
-	PBM_SET(tdbb->getDefaultPool(), &relation->rel_gc_bitmap, dp_sequence);
-#else 
 	if (!relation->rel_garbage) {
 		relation->rel_garbage = 
 			FB_NEW(*tdbb->getDefaultPool()) RelationGarbage(*tdbb->getDefaultPool());
@@ -4132,7 +4138,6 @@ static void notify_garbage_collector(thread_db* tdbb, record_param* rpb, SLONG t
 
 	if (tranid > relation->rel_garbage->minTranID())
 		tranid = relation->rel_garbage->minTranID();
-#endif // GC_NOTIFY_ON_WRITE
 
 /* If the garbage collector isn't active then poke
    the event on which it sleeps to awaken it. */
@@ -4574,9 +4579,10 @@ static void purge(thread_db* tdbb, record_param* rpb)
 	if (!DPM_get(tdbb, rpb, LCK_write)) {
 		gc_rec->rec_flags &= ~REC_gc_active;
 
-#if defined(GARBAGE_THREAD) && defined(GC_NOTIFY_ON_WRITE)
+#ifdef GARBAGE_THREAD
 		// purge
-		notify_garbage_collector(tdbb, rpb);
+		if (tdbb->tdbb_database->dbb_flags | DBB_gc_background)
+			notify_garbage_collector(tdbb, rpb);
 #endif
 		return; //false;
 	}

@@ -58,6 +58,11 @@
 		   in config.cpp module.
 **/
 
+extern const char*	GCPolicyCooperative;
+extern const char*	GCPolicyBackground;
+extern const char*	GCPolicyCombined;
+extern const char*	GCPolicyDefault;
+
 class Config
 {
 	enum ConfigKey
@@ -106,7 +111,8 @@ class Config
 		KEY_TEMP_DIRECTORIES,						// 40
  		KEY_BUGCHECK_ABORT,							// 41
 		KEY_TRACE_DSQL,								// 42
-		KEY_LEGACY_HASH								// 43
+		KEY_LEGACY_HASH,							// 43
+		KEY_GC_POLICY								// 44
 	};
 
 public:
@@ -330,6 +336,11 @@ public:
 		Let use of des hash to verify passwords
 	*/
 	static bool getLegacyHash();
+
+	/*
+		GC policy
+	*/
+	static const char *getGCPolicy();
 };
 
 namespace Firebird {

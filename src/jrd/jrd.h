@@ -335,7 +335,8 @@ const ULONG DBB_security_db			= 0x80000L;	/* ISC security database */
 const ULONG DBB_sweep_thread_started	= 0x100000L;	/* A database sweep thread has been started */
 const ULONG DBB_suspend_bgio		= 0x200000L;	/* Suspend I/O by background threads */
 const ULONG DBB_being_opened		= 0x400000L;	/* database is being attached to */
-
+const ULONG DBB_gc_cooperative		= 0x0800000L;	/* cooperative garbage collection */
+const ULONG DBB_gc_background		= 0x1000000L;	/* background garbage collection by gc_thread */
 //
 // dbb_ast_flags
 //
@@ -632,9 +633,6 @@ public:
 typedef Firebird::ObjectsArray<Trigger> trig_vec;
 
 #ifdef GARBAGE_THREAD
-
-#define GC_NOTIFY_ON_WRITE
-//#define GC_NOTIFY_ON_READ
 
 class RelationGarbage
 {
