@@ -46,17 +46,19 @@ extern ULONG API_ROUTINE gds__free(void* blk);
 void* operator new(size_t);
 void* operator new[](size_t);
 
-FB_DLL_EXPORT void* operator new(size_t, MemoryPool&);
 FB_DLL_EXPORT void  operator delete(void* mem, MemoryPool&);
-FB_DLL_EXPORT void* operator new[](size_t s, MemoryPool&);
 FB_DLL_EXPORT void  operator delete[](void* mem, MemoryPool&);
 
 #ifdef DEBUG_GDS_ALLOC
 FB_DLL_EXPORT void* operator new(size_t, MemoryPool&, char*, int);
 FB_DLL_EXPORT void* operator new[](size_t s, MemoryPool&, char*, int);
 #define FB_NEW(pool) new(pool,__FILE__,__LINE__)
+#define FB_NEW_RPT(pool,count) new(pool,count,__FILE__,__LINE__)
 #else
+FB_DLL_EXPORT void* operator new(size_t, MemoryPool&);
+FB_DLL_EXPORT void* operator new[](size_t s, MemoryPool&);
 #define FB_NEW(pool) new(pool)
+#define FB_NEW_RPT(pool,count) new(pool,count)
 #endif
 
 FB_DLL_EXPORT void* operator new(size_t, MemoryPool*);
@@ -113,10 +115,18 @@ namespace Firebird
 		allocator(const allocator<DST> &alloc)
 		: pool(alloc.getPool()), type(alloc.getType()) { }
 
+#ifdef DEBUG_GDS_ALLOC
 		pointer allocate(size_type s, const void * = 0)
-			{ return (pointer) (pool ? pool->allocate(sizeof(T) * s) : gds__alloc(sizeof(T)*s)); }
+			{ return (pointer) (pool ? pool->allocate(sizeof(T) * s, 0,__FILE__, __LINE__) : gds__alloc(sizeof(T)*s)); }
 		char *_Charalloc(size_type n)
-			{ return (char*) (pool ? pool->allocate(n) : gds__alloc(n)); }
+			{ return (char*) (pool ? pool->allocate(n, 0, __FILE__, __LINE__) : gds__alloc(n)); }
+#else
+		pointer allocate(size_type s, const void * = 0)
+			{ return (pointer) (pool ? pool->allocate(sizeof(T) * s, 0) : gds__alloc(sizeof(T)*s)); }
+		char *_Charalloc(size_type n)
+			{ return (char*) (pool ? pool->allocate(n, 0) : gds__alloc(n)); }
+#endif
+			
 		void deallocate(pointer p, size_type s)
 			{ if (pool) MemoryPool::deallocate(p); else gds__free(p); }
 		void deallocate(void* p, size_type s)

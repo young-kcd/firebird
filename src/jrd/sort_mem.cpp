@@ -204,7 +204,7 @@ void SortMem::allocate(long size)
 				// Allocate block in virtual memory
 				try
 				{
-					block = new (*getDefaultMemoryPool())
+					block = FB_NEW (*getDefaultMemoryPool())
 						MemoryBlock(tail, smart_size);
 					mem_allocated = true;
 				}
@@ -218,7 +218,7 @@ void SortMem::allocate(long size)
 						smart_size = size;
 						try
 						{
-							block = new (*getDefaultMemoryPool())
+							block = FB_NEW (*getDefaultMemoryPool())
 								MemoryBlock(tail, smart_size);
 							mem_allocated = true;
 						}
@@ -236,7 +236,7 @@ void SortMem::allocate(long size)
 			if (!mem_allocated)
 			{
 				// Allocate block on disk
-				block = new (*getDefaultMemoryPool())
+				block = FB_NEW (*getDefaultMemoryPool())
 					FileBlock(tail, size, internal, file_size);
 				physical_size += size;
 				// We've just allocated some file storage

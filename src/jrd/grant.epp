@@ -175,8 +175,8 @@ int GRANT_privileges( TDBB tdbb, SSHORT phase, DFW work)
 
 			try {
 
-			str_buffer = new(*dbb->dbb_permanent, ACL_BUFFER_SIZE) str;
-			str_default_buffer = new(*dbb->dbb_permanent, ACL_BUFFER_SIZE) str;
+			str_buffer = FB_NEW_RPT(*dbb->dbb_permanent, ACL_BUFFER_SIZE) str;
+			str_default_buffer = FB_NEW_RPT(*dbb->dbb_permanent, ACL_BUFFER_SIZE) str;
 
 			acl = str_buffer->str_data;
 
@@ -798,8 +798,8 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 
 	/* initialize the field-level acl buffer to include all relation-level privs */
 
-	str_field_buffer_start = new(*dbb->dbb_permanent, *length_ptr) str;
-	str_field_buffer       = new(*dbb->dbb_permanent, *length_ptr) str;
+	str_field_buffer_start = FB_NEW_RPT(*dbb->dbb_permanent, *length_ptr) str;
+	str_field_buffer       = FB_NEW_RPT(*dbb->dbb_permanent, *length_ptr) str;
 
 	field_length = start_length = *length_ptr;
 

@@ -169,7 +169,7 @@ EXT EXT_file(REL relation, TEXT * file_name, SLONG * description)
    format. */
 
 	l = strlen(file_name);
-	relation->rel_file = file = new(dbb->dbb_permanent, l) ext();
+	relation->rel_file = file = FB_NEW_RPT(dbb->dbb_permanent, l) ext();
 	strcpy(file->ext_filename, file_name);
 	format = file->ext_format = MET_format(tdbb, relation, 0);
 	expand_format(format, MET_current(tdbb, relation));
@@ -243,7 +243,7 @@ EXT EXT_file(REL relation, TEXT * file_name, SLONG * description)
 				index = (IDX *) (index->idx_rpt + index->idx_count);
 			}
 		if (l = (UCHAR *) index - index_buffer) {
-			string = new(tdbb->tdbb_default, l) str();
+			string = FB_NEW_RPT(tdbb->tdbb_default, l) str();
 			MOVE_FAST(index_buffer, string->str_data, l);
 			file->ext_indices = string->str_data;
 		}
@@ -486,21 +486,21 @@ RSB EXT_optimize(register OPT opt, SSHORT stream, NOD * sort_ptr)
    block */
 
 	if (dbkey) {
-		rsb = new(tdbb->tdbb_default, 1) rsb();
+		rsb = FB_NEW_RPT(tdbb->tdbb_default, 1) rsb();
 		rsb->rsb_type = rsb_ext_dbkey;
 		rsb->rsb_count = 1;
 		size = sizeof(struct irsb_index);
 		rsb->rsb_arg[0] = (RSB) dbkey;
 	}
 	else if (inversion) {
-		rsb = new(tdbb->tdbb_default, 1) rsb();
+		rsb = FB_NEW_RPT(tdbb->tdbb_default, 1) rsb();
 		rsb->rsb_type = rsb_ext_indexed;
 		rsb->rsb_count = 1;
 		size = sizeof(struct irsb_index);
 		rsb->rsb_arg[0] = (RSB) inversion;
 	}
 	else {
-		rsb = new(tdbb->tdbb_default) rsb();
+		rsb = FB_NEW(tdbb->tdbb_default) rsb();
 		rsb->rsb_type = rsb_ext_sequential;
 		size = sizeof(struct irsb);
 	}

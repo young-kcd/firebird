@@ -300,7 +300,7 @@ LCK RLCK_record_locking(REL relation)
 	tdbb = GET_THREAD_DATA;
 	dbb = GET_DBB;
 
-	lock = new(*dbb->dbb_permanent, sizeof(SLONG)) lck();
+	lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) lck();
 	lock->lck_parent = dbb->dbb_lock;
 	lock->lck_dbb = dbb;
 	lock->lck_attachment = tdbb->tdbb_attachment;
@@ -555,7 +555,7 @@ void RLCK_signal_refresh(TRA transaction)
 
 		/* allocate a local lock */
 
-		local_lock = new(*dbb->dbb_permanent, sizeof(SLONG)) lck();
+		local_lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) lck();
 		local_lock->lck_dbb = dbb;
 		local_lock->lck_attachment = tdbb->tdbb_attachment;
 		local_lock->lck_length = sizeof(SLONG);
@@ -797,7 +797,7 @@ static LCK allocate_record_lock(TRA transaction, RPB * rpb)
 	if (!rpb->rpb_record)
 		ERR_post(gds_no_cur_rec, 0);
 /* allocate a lock block for the record lock */
-	lock = new(*dbb->dbb_permanent, sizeof(SLONG)) lck();
+	lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) lck();
 	lock->lck_dbb = dbb;
 	lock->lck_attachment = attachment;
 	lock->lck_object = reinterpret_cast<blk*>(dbb);
@@ -850,7 +850,7 @@ static LCK allocate_relation_lock(MemoryPool* pool, REL relation)
 	LCK lock;
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
-	lock = new(*pool, sizeof(SLONG)) lck();
+	lock = FB_NEW_RPT(*pool, sizeof(SLONG)) lck();
 	lock->lck_dbb = dbb;
 	lock->lck_attachment = tdbb->tdbb_attachment;
 	lock->lck_length = sizeof(SLONG);

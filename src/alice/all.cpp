@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: all.cpp,v 1.5 2001-12-29 10:08:21 tamlin Exp $
+//	$Id: all.cpp,v 1.6 2002-09-25 17:12:00 skidder Exp $
 //
 
 #include "../alice/all.h"
@@ -80,7 +80,7 @@ void ALLA_init(void)
 		AliceMemoryPool::create_new_pool();
 #else
 	// TMN: John, what pool to use here?
-	tdgbl->ALICE_permanent_pool = new (*getDefaultMemoryPool()) AliceMemoryPool;
+	tdgbl->ALICE_permanent_pool = FB_NEW(*getDefaultMemoryPool()) AliceMemoryPool;
 	tdgbl->ALICE_default_pool = tdgbl->ALICE_permanent_pool;
 #endif
 }

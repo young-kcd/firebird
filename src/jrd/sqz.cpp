@@ -464,7 +464,7 @@ USHORT SQZ_length(TDBB tdbb, SCHAR* data, int length, DCC dcc)
 				}
 				else
 				{
-					dcc->dcc_next = new(*tdbb->tdbb_default) Dcc();
+					dcc->dcc_next = FB_NEW(*tdbb->tdbb_default) Dcc();
 					dcc = dcc->dcc_next;
 					dcc->dcc_pool = tdbb->tdbb_default;
 				}
@@ -502,7 +502,7 @@ USHORT SQZ_length(TDBB tdbb, SCHAR* data, int length, DCC dcc)
 				}
 				else
 				{
-					dcc->dcc_next = new(*tdbb->tdbb_default) Dcc();
+					dcc->dcc_next = FB_NEW(*tdbb->tdbb_default) Dcc();
 					dcc = dcc->dcc_next;
 					dcc->dcc_pool = tdbb->tdbb_default;
 				}

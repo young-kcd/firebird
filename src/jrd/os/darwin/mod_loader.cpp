@@ -95,7 +95,7 @@ ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::string& modPath)
 		init();
 	}
 	
-	return new(*getDefaultMemoryPool()) DarwinModule(mod_handle);
+	return FB_NEW(*getDefaultMemoryPool()) DarwinModule(mod_handle);
 }
 
 DarwinModule::~DarwinModule()

@@ -101,7 +101,7 @@ void PluginManager::loadAllPlugins()
 			// as defined by the host os, then by all means load it!
 			if (!alreadyLoaded && ModuleLoader::isLoadableModule(**dirItr))
 			{
-				Module *mod = new(*getDefaultMemoryPool()) PluginModule(**dirItr,
+				Module *mod = FB_NEW(*getDefaultMemoryPool()) PluginModule(**dirItr,
 						ModuleLoader::loadModule(**dirItr));
 				if (moduleList)
 				{
@@ -143,13 +143,13 @@ PluginManager::Module *PluginManager::loadPluginModule(const Firebird::string& n
 			
 			if (ModuleLoader::isLoadableModule(checkPath))
 			{
-				return new(*getDefaultMemoryPool()) PluginModule(checkPath,
+				return FB_NEW(*getDefaultMemoryPool()) PluginModule(checkPath,
 						ModuleLoader::loadModule(checkPath));
 			}
 			ModuleLoader::doctorModuleExtention(checkPath);
 			if (ModuleLoader::isLoadableModule(checkPath))
 			{
-				return new(*getDefaultMemoryPool()) PluginModule(checkPath,
+				return FB_NEW(*getDefaultMemoryPool()) PluginModule(checkPath,
 						ModuleLoader::loadModule(checkPath));
 			}
 		}
@@ -180,14 +180,14 @@ PluginManager::Module *PluginManager::loadPluginModule(const Firebird::string& n
 			// OK, the module has the correct prefix path, lets try to load it.
 			if (ModuleLoader::isLoadableModule(name))
 			{
-				return new(*getDefaultMemoryPool()) PluginModule(name,
+				return FB_NEW(*getDefaultMemoryPool()) PluginModule(name,
 						ModuleLoader::loadModule(name));
 			}
 			checkPath = name;
 			ModuleLoader::doctorModuleExtention(checkPath);
 			if (ModuleLoader::isLoadableModule(checkPath))
 			{
-				return new(*getDefaultMemoryPool()) PluginModule(checkPath,
+				return FB_NEW(*getDefaultMemoryPool()) PluginModule(checkPath,
 						ModuleLoader::loadModule(checkPath));
 			}
 		}

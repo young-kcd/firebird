@@ -53,7 +53,7 @@ public:
 	{
 	}
 	static fmt* newFmt(MemoryPool& p, int len = 0)
-		{ return new(p) fmt(p, len); }
+		{ return FB_NEW(p) fmt(p, len); }
 
 	USHORT fmt_length;
 	USHORT fmt_count;

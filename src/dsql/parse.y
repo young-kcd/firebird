@@ -3829,13 +3829,13 @@ for (token = KEYWORD_getTokens(); token->tok_string; ++token)
     SYM         symbol;
     STR         str_;
 
-    symbol = new(*DSQL_permanent_pool, 0) sym;
+    symbol = FB_NEW_RPT(*DSQL_permanent_pool, 0) sym;
     symbol->sym_string = (TEXT *) token->tok_string;
     symbol->sym_length = strlen (token->tok_string);
     symbol->sym_type = SYM_keyword;
     symbol->sym_keyword = token->tok_ident;
     symbol->sym_version = token->tok_version;
-    str_ = new(*DSQL_permanent_pool, symbol->sym_length) str;
+    str_ = FB_NEW_RPT(*DSQL_permanent_pool, symbol->sym_length) str;
     str_->str_length = symbol->sym_length;
     strncpy ((char*)str_->str_data, (char*)symbol->sym_string, symbol->sym_length);
     symbol->sym_object = (void *) str_;
@@ -3974,12 +3974,12 @@ tdsql = GET_THREAD_DATA;
        
 if (field_name == NULL)
    {
-    field = new (*tdsql->tsql_default, sizeof (INTERNAL_FIELD_NAME)) fld;
+    field = FB_NEW_RPT(*tdsql->tsql_default, sizeof (INTERNAL_FIELD_NAME)) fld;
     strcpy (field->fld_name, (TEXT*) INTERNAL_FIELD_NAME);
     return field;
    }
 string = (STR) field_name->nod_arg [1];
-field = new(*tdsql->tsql_default, strlen ((SCHAR*) string->str_data)) fld;
+field = FB_NEW_RPT(*tdsql->tsql_default, strlen ((SCHAR*) string->str_data)) fld;
 strcpy (field->fld_name, (TEXT*) string->str_data);
 
 return field;
@@ -4003,7 +4003,7 @@ TSQL    tdsql;
 
 tdsql = GET_THREAD_DATA;
        
-temp_file = new(*tdsql->tsql_default) fil;
+temp_file = FB_NEW(*tdsql->tsql_default) fil;
 
 return temp_file;
 }
@@ -4039,7 +4039,7 @@ for (l = 0, temp = stack; temp; temp = temp->lls_next)
     l++;
 
 old  = node;
-node = new(*tdsql->tsql_default, l) nod;
+node = FB_NEW_RPT(*tdsql->tsql_default, l) nod;
 node->nod_count = l;
 node->nod_type  = nod_list;
 node->nod_flags = old->nod_flags;
@@ -4074,7 +4074,7 @@ TSQL    tdsql;
 
 tdsql = GET_THREAD_DATA;
 
-node = new(*tdsql->tsql_default, count) nod;
+node = FB_NEW_RPT(*tdsql->tsql_default, count) nod;
 node->nod_type = type;
 node->nod_line = (USHORT) lines_bk;
 node->nod_column = (USHORT) (last_token_bk - line_start_bk + 1);
@@ -4111,7 +4111,7 @@ TSQL    tdsql;
 
 tdsql = GET_THREAD_DATA;
 
-node = new(*tdsql->tsql_default, count) nod;
+node = FB_NEW_RPT(*tdsql->tsql_default, count) nod;
 node->nod_type = type;
 node->nod_flags = flag;
 node->nod_line = (USHORT) lines_bk;

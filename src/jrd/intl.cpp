@@ -500,7 +500,7 @@ CHARSET_ID src_type, BYTE * src_ptr, USHORT src_len, FPTR_VOID err)
 		/* 
 		   ** allocate a temporary buffer that is large enough. 2 = sizeof WCHAR
 		 */
-		tmp_buffer = (BYTE *) new(*getDefaultMemoryPool()) char[(SLONG) src_len * 2];
+		tmp_buffer = (BYTE *) FB_NEW(*getDefaultMemoryPool()) char[(SLONG) src_len * 2];
 
 		cs_obj = from_cs->getConvToUnicode();
 		assert(cs_obj != NULL);
@@ -1015,7 +1015,7 @@ static CharSetContainer *internal_charset_container_lookup(TDBB tdbb, SSHORT par
 		if (!newCs)
 			return NULL;
 		
-		cs = new(*dbb->dbb_permanent) CharSetContainer(*dbb->dbb_permanent, newCs);
+		cs = FB_NEW(*dbb->dbb_permanent) CharSetContainer(*dbb->dbb_permanent, newCs);
 		if (!cs)
 		{
 			delete newCs;
@@ -1942,8 +1942,8 @@ public:
 			(char*)csStruct->charset_space_character),
 		cs(csStruct)
 	{
-		charset_to_unicode = new(p) CsConvert_BC(&cs->charset_to_unicode, false);
-		charset_from_unicode = new(p) CsConvert_BC(&cs->charset_from_unicode, false);
+		charset_to_unicode = FB_NEW(p) CsConvert_BC(&cs->charset_to_unicode, false);
+		charset_from_unicode = FB_NEW(p) CsConvert_BC(&cs->charset_from_unicode, false);
 	}
 	
 	~CharSet_BC() { delete cs; }
@@ -2293,7 +2293,7 @@ static CharSet *BC_CharSetAllocFunc(MemoryPool &p, SSHORT cs_id, SSHORT unused)
 	
 	csInitFunc = (CSInitFunc) intl_back_compat_obj_init_lookup(type_charset, cs_id, unused);
 	assert(csInitFunc != 0);
-	CHARSET cs = new(p) charset;
+	CHARSET cs = FB_NEW(p) charset;
 	memset(cs, 0, sizeof(charset));
 	
 	if (0 != (*csInitFunc)(cs, cs_id, unused))
@@ -2305,7 +2305,7 @@ static CharSet *BC_CharSetAllocFunc(MemoryPool &p, SSHORT cs_id, SSHORT unused)
 	CharSet *result = 0;
 	try
 	{
-		result = new(p) CharSet_BC(p, cs);
+		result = FB_NEW(p) CharSet_BC(p, cs);
 	}
 	catch(std::exception&)
 	{
@@ -2324,7 +2324,7 @@ static CsConvert *BC_CsConvertAllocFunc(MemoryPool &p, SSHORT from_id, SSHORT to
 	//cvtInitFunc = (CVTInitFunc) intl_back_compat_obj_init_lookup(type_csconvert, from_id, to_id);
 	cvtInitFunc = (CVTInitFunc) intl_back_compat_obj_init_lookup(type_csconvert, to_id, from_id);
 	assert(cvtInitFunc != 0);
-	CSCONVERT cvt = new(p) csconvert;
+	CSCONVERT cvt = FB_NEW(p) csconvert;
 	memset(cvt, 0, sizeof(csconvert));
 	
 	//if (0 != (*cvtInitFunc)(cvt, from_id, to_id))
@@ -2337,7 +2337,7 @@ static CsConvert *BC_CsConvertAllocFunc(MemoryPool &p, SSHORT from_id, SSHORT to
 	CsConvert *result = 0;
 	try
 	{
-		result = new(p) CsConvert_BC(cvt, true);
+		result = FB_NEW(p) CsConvert_BC(cvt, true);
 	}
 	catch(std::exception&)
 	{
@@ -2355,7 +2355,7 @@ static TextType *BC_TextTypeAllocFunc(MemoryPool &p, SSHORT tt_id, SSHORT unused
 	
 	ttInitFunc = (TTInitFunc) intl_back_compat_obj_init_lookup(type_texttype, tt_id, unused);
 	assert(ttInitFunc != 0);
-	TEXTTYPE tt = new(p) texttype;
+	TEXTTYPE tt = FB_NEW(p) texttype;
 	memset(tt, 0, sizeof(texttype));
 	
 	if (0 != (*ttInitFunc)(tt, tt_id, unused))
@@ -2368,11 +2368,11 @@ static TextType *BC_TextTypeAllocFunc(MemoryPool &p, SSHORT tt_id, SSHORT unused
 	try
 	{
 		if (tt->texttype_bytes_per_char == 1 && tt->texttype_fn_to_wc == NULL)
-			result = new(p) TextType_BC<TextTypeNC>(tt);
+			result = FB_NEW(p) TextType_BC<TextTypeNC>(tt);
 		else if (tt->texttype_bytes_per_char == 2 && tt->texttype_fn_to_wc == NULL)
-			result = new(p) TextType_BC<TextTypeWC>(tt);
+			result = FB_NEW(p) TextType_BC<TextTypeWC>(tt);
 		else if (tt->texttype_fn_to_wc != NULL)
-			result = new(p) TextType_BC<TextTypeMB>(tt);
+			result = FB_NEW(p) TextType_BC<TextTypeMB>(tt);
 		else
 			BUGCHECK(1);
 	}

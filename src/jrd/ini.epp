@@ -543,7 +543,7 @@ void INI_init(void)
 			gfield = &gfields[fld_[RFLD_F_ID]];
 			desc->dsc_length = gfield->gfld_length;
 			desc->dsc_dtype = gfield->gfld_dtype;
-			*itr = field = new(*dbb->dbb_permanent,0) fld();
+			*itr = field = FB_NEW_RPT(*dbb->dbb_permanent,0) fld();
 			field->fld_name = names[fld_[RFLD_F_NAME]];
 			field->fld_length = strlen(field->fld_name);
 		}

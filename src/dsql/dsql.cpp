@@ -29,7 +29,7 @@
  *
  */
 /*
-$Id: dsql.cpp,v 1.22 2002-09-17 05:58:34 eku Exp $
+$Id: dsql.cpp,v 1.23 2002-09-25 17:12:06 skidder Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -491,11 +491,11 @@ GDS_DSQL_ALLOCATE_CPP(	STATUS*	user_status,
 
 		database = init((SLONG **) db_handle);
 
-		tdsql->tsql_default = new(*DSQL_permanent_pool) DsqlMemoryPool;
+		tdsql->tsql_default = FB_NEW(*DSQL_permanent_pool) DsqlMemoryPool;
 
 /* allocate the request block */
 
-		request = new(*tdsql->tsql_default) req;
+		request = FB_NEW(*tdsql->tsql_default) req;
 		request->req_dbb = database;
 		request->req_pool = tdsql->tsql_default;
 
@@ -613,7 +613,7 @@ STATUS DLL_EXPORT GDS_DSQL_EXECUTE_CPP(STATUS*		user_status,
 				((request->
 			  	req_type == REQ_EMBED_SELECT) ? REQ_embedded_sql_cursor : 0);
 
-			request->req_open_cursor = open_cursor = new(*DSQL_permanent_pool) opn;
+			request->req_open_cursor = open_cursor = FB_NEW(*DSQL_permanent_pool) opn;
 			open_cursor->opn_request = request;
 			open_cursor->opn_transaction = (SLONG *) * trans_handle;
 			THD_MUTEX_LOCK(&cursors_mutex);
@@ -685,11 +685,11 @@ static STATUS dsql8_execute_immediate_common(STATUS*	user_status,
 
 		database = init(reinterpret_cast < long **>(db_handle));
 
-		tdsql->tsql_default = new(*DSQL_permanent_pool) DsqlMemoryPool;
+		tdsql->tsql_default = FB_NEW(*DSQL_permanent_pool) DsqlMemoryPool;
 
 	/* allocate the request block, then prepare the request */
 
-		request = new(*tdsql->tsql_default) req;
+		request = FB_NEW(*tdsql->tsql_default) req;
 		request->req_dbb = database;
 		request->req_pool = tdsql->tsql_default;
 		request->req_trans = (int *) *trans_handle;
@@ -1341,8 +1341,8 @@ STATUS GDS_DSQL_PREPARE_CPP(STATUS*			user_status,
 /* Because that's the client's allocated statement handle and we
    don't want to trash the context in it -- 2001-Oct-27 Ann Harrison */
 
-		tdsql->tsql_default = new(*DSQL_permanent_pool) DsqlMemoryPool;
-		request = new(*tdsql->tsql_default) req;
+		tdsql->tsql_default = FB_NEW(*DSQL_permanent_pool) DsqlMemoryPool;
+		request = FB_NEW(*tdsql->tsql_default) req;
 		request->req_dbb = database;
 		request->req_pool = tdsql->tsql_default;
 		request->req_trans = (int *) *trans_handle;
@@ -3667,8 +3667,8 @@ static DBB init( SLONG ** db_handle)
 		}
 	}
 
-	pool = new(*DSQL_permanent_pool) DsqlMemoryPool;
-	database = new(*pool) dbb;
+	pool = FB_NEW(*DSQL_permanent_pool) DsqlMemoryPool;
+	database = FB_NEW(*pool) dbb;
 	database->dbb_pool = pool;
 	database->dbb_next = databases;
 	databases = database;
@@ -4122,8 +4122,8 @@ static REQ prepare(
 
 /* allocate the send and receive messages */
 
-	request->req_send = new(*tdsql->tsql_default) msg;
-	request->req_receive = message = new(*tdsql->tsql_default) msg;
+	request->req_send = FB_NEW(*tdsql->tsql_default) msg;
+	request->req_receive = message = FB_NEW(*tdsql->tsql_default) msg;
 	message->msg_number = 1;
 
 #ifdef SCROLLABLE_CURSORS
@@ -4131,7 +4131,7 @@ static REQ prepare(
 		/* allocate a message in which to send scrolling information
 		   outside of the normal send/receive protocol */
 
-		request->req_async = message = new(*tdsql->tsql_default) msg;
+		request->req_async = message = FB_NEW(*tdsql->tsql_default) msg;
 		message->msg_number = 2;
 	}
 #endif
@@ -4180,13 +4180,13 @@ static REQ prepare(
 		request->req_type == REQ_EXEC_PROCEDURE) {
 		/* Allocate persistent blr string from request's pool. */
 
-		request->req_blr_string = new(*tdsql->tsql_default, 980) str;
+		request->req_blr_string = FB_NEW_RPT(*tdsql->tsql_default, 980) str;
 	}
 	else {
 		/* Allocate transient blr string from permanent pool so
 		   as not to unnecessarily bloat the request's pool. */
 
-		request->req_blr_string = new(*DSQL_permanent_pool, 980) str;
+		request->req_blr_string = FB_NEW_RPT(*DSQL_permanent_pool, 980) str;
 	}
 	request->req_blr_string->str_length = 980;
 	request->req_blr = request->req_blr_string->str_data;

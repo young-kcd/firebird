@@ -718,7 +718,7 @@ void DFW_post_work( TRA transaction, ENUM dfw_t type, DSC * desc, USHORT id)
 
 /* Not already posted, so do so now. */
 
-	*ptr = work = new(*transaction->tra_pool, length) dfw;
+	*ptr = work = FB_NEW_RPT(*transaction->tra_pool, length) dfw;
 	work->dfw_type = type;
 	work->dfw_id = id;
 	work->dfw_count = 1;
@@ -1854,7 +1854,7 @@ static bool create_relation(TDBB	tdbb,
 		/* Take a relation lock on rel id -1 before actually
 		   generating a relation id. */
 
-		work->dfw_lock = lock = new(*tdbb->tdbb_default, sizeof(SLONG)) lck;
+		work->dfw_lock = lock = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(SLONG)) lck;
 		lock->lck_dbb = dbb;
 		lock->lck_attachment = tdbb->tdbb_attachment;
 		lock->lck_length = sizeof(SLONG);
@@ -3194,7 +3194,7 @@ static void get_procedure_dependencies(DFW work)
 	if (procedure && !NULL_BLOB(blob_id))
 	{
 		old_pool = tdbb->tdbb_default;
-		tdbb->tdbb_default = new(*dbb->dbb_permanent) JrdMemoryPool;
+		tdbb->tdbb_default = FB_NEW(*dbb->dbb_permanent) JrdMemoryPool;
 		MET_get_dependencies(tdbb,
 							(struct rel*)NULL_PTR,
 							(TEXT*)NULL_PTR,
@@ -3659,7 +3659,7 @@ static bool make_version(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 
 					/* Make a temporary field block */
 
-					tfb_ = new(*tdbb->tdbb_default) tfb;
+					tfb_ = FB_NEW(*tdbb->tdbb_default) tfb;
 					tfb_->tfb_next = stack;
 					stack = tfb_;
 
@@ -3702,7 +3702,7 @@ static bool make_version(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 
 					if (external_flag)
 					{
-						tfb_ = new(*tdbb->tdbb_default) tfb;
+						tfb_ = FB_NEW(*tdbb->tdbb_default) tfb;
 						tfb_->tfb_next = external;
 						external = tfb_;
 						assert(FLD.RDB$EXTERNAL_TYPE <= MAX_UCHAR);

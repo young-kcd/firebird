@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.11 2002-09-17 05:58:36 eku Exp $
+ * $Id: sort.cpp,v 1.12 2002-09-25 17:12:11 skidder Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -1835,7 +1835,7 @@ static ULONG find_file_space(SCB scb, ULONG size, SFB * ret_sfb)
 
 			// dimitr: allocate sort memory 
 #ifdef SORT_MEM
-			sfb->sfb_mem = new (*getDefaultMemoryPool()) SortMem(sfb, size);
+			sfb->sfb_mem = FB_NEW (*getDefaultMemoryPool()) SortMem(sfb, size);
 #endif
 		}
 

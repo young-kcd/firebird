@@ -1414,7 +1414,7 @@ void CCH_init(TDBB tdbb, ULONG number)
 
 	while (!bcb_) {
 		try {
-			bcb_ = new(*dbb->dbb_bufferpool, number) bcb;
+			bcb_ = FB_NEW_RPT(*dbb->dbb_bufferpool, number) bcb;
 		} catch(...) {
 			/* If the buffer control block can't be allocated, memory is
 			very low. Recalculate the number of buffers to account for
@@ -1782,7 +1782,7 @@ LCK CCH_page_lock(TDBB tdbb)
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
 
-	lock = new(*dbb->dbb_bufferpool, sizeof(SLONG)) lck;
+	lock = FB_NEW_RPT(*dbb->dbb_bufferpool, sizeof(SLONG)) lck;
 	lock->lck_type = LCK_bdb;
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 	lock->lck_length = sizeof(SLONG);
@@ -2459,7 +2459,11 @@ BOOLEAN CCH_write_all_shadows(TDBB tdbb,
 		   and set up to release it in case of error */
 
 		spare_buffer =
-			(SLONG *) dbb->dbb_bufferpool->allocate((SLONG) dbb->dbb_page_size);
+			(SLONG *) dbb->dbb_bufferpool->allocate((SLONG) dbb->dbb_page_size,0
+#ifdef DEBUG_GDS_ALLOC
+			  ,__FILE__,__LINE__
+#endif
+			);
 
 		page = (PAG) spare_buffer;
 		MOVE_FAST((UCHAR *) bdb->bdb_buffer, (UCHAR *) page, HDR_SIZE);
@@ -2585,7 +2589,7 @@ static BDB alloc_bdb(TDBB tdbb, BCB bcb, UCHAR ** memory)
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
 
-	bdb_ = new(*dbb->dbb_bufferpool) bdb;
+	bdb_ = FB_NEW(*dbb->dbb_bufferpool) bdb;
 	bdb_->bdb_dbb = dbb;
 
 #ifndef PAGE_LATCHING
@@ -2999,7 +3003,7 @@ static void THREAD_ROUTINE cache_reader(DBB dbb)
 	tdbb->tdbb_default = dbb->dbb_bufferpool;
 	tdbb->tdbb_status_vector = status_vector;
 	tdbb->tdbb_quantum = QUANTUM;
-	tdbb->tdbb_attachment = new(*dbb->dbb_bufferpool) att();
+	tdbb->tdbb_attachment = FB_NEW(*dbb->dbb_bufferpool) att();
 	tdbb->tdbb_attachment->att_database = dbb;
 
 /* This try block is specifically to protect the LCK_init call: if
@@ -3167,7 +3171,7 @@ static void THREAD_ROUTINE cache_writer(DBB dbb)
 	tdbb->tdbb_default = dbb->dbb_bufferpool;
 	tdbb->tdbb_status_vector = status_vector;
 	tdbb->tdbb_quantum = QUANTUM;
-	tdbb->tdbb_attachment = new(*dbb->dbb_bufferpool) att;
+	tdbb->tdbb_attachment = FB_NEW(*dbb->dbb_bufferpool) att;
 	tdbb->tdbb_attachment->att_database = dbb;
 
 /* This try block is specifically to protect the LCK_init call: if
@@ -3439,7 +3443,7 @@ static void check_precedence(TDBB tdbb, WIN * window, SLONG page)
 	if ( (precedence = bcb->bcb_free) )
 		bcb->bcb_free = (PRE) precedence->pre_hi;
 	else
-		precedence = new(*dbb->dbb_bufferpool) pre;
+		precedence = FB_NEW(*dbb->dbb_bufferpool) pre;
 
 	precedence->pre_low = low;
 	precedence->pre_hi = high;
@@ -3707,7 +3711,7 @@ static void expand_buffers(TDBB tdbb, ULONG number)
 	old = dbb->dbb_bcb;
 	old_end = old->bcb_rpt + old->bcb_count;
 
-	BCB new_ = new(*dbb->dbb_bufferpool, number) bcb;
+	BCB new_ = FB_NEW_RPT(*dbb->dbb_bufferpool, number) bcb;
 	new_->bcb_count = number;
 	new_->bcb_free_minimum = (SSHORT) MIN(number / 4, 128);	/* 25% clean page reserve */
 	new_->bcb_checkpoint = old->bcb_checkpoint;
@@ -4322,7 +4326,7 @@ static SSHORT latch_bdb(
 		lwt_ = (LWT) BLOCK(que, LWT, lwt_waiters);
 	}
 	else {
-		lwt_ = new(*dbb->dbb_bufferpool) lwt;
+		lwt_ = FB_NEW(*dbb->dbb_bufferpool) lwt;
 		QUE_INIT(lwt_->lwt_waiters);
 		ISC_event_init(&lwt_->lwt_event, 0, 0);
 	}

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.14 2002-09-17 05:58:35 eku Exp $ 
+  * $Id: evl.cpp,v 1.15 2002-09-25 17:12:09 skidder Exp $ 
  */
 
 /*
@@ -1821,7 +1821,7 @@ void DLL_EXPORT EVL_make_value(TDBB tdbb, DSC * desc, VLU value)
 		}
 
 		if (!string) {
-			string = value->vlu_string = new(*tdbb->tdbb_default, length) str();
+			string = value->vlu_string = FB_NEW_RPT(*tdbb->tdbb_default, length) str();
 			string->str_length = length;
 		}
 
@@ -1867,11 +1867,11 @@ USHORT DLL_EXPORT EVL_mb_contains(TDBB tdbb,
 	len2 = obj->to_wc(NULL, 0, p2, l2, &err_code, &err_pos);
 
 	if (len1 > sizeof(buffer1)) {
-		buf1 = new(*tdbb->tdbb_default, len1) str();
+		buf1 = FB_NEW_RPT(*tdbb->tdbb_default, len1) str();
 		pp1 = (USHORT *) buf1->str_data;
 	}
 	if (len2 > sizeof(buffer2)) {
-		buf2 = new(*tdbb->tdbb_default, len2) str();
+		buf2 = FB_NEW_RPT(*tdbb->tdbb_default, len2) str();
 		pp2 = (USHORT *) buf2->str_data;
 	}
 
@@ -1924,11 +1924,11 @@ USHORT DLL_EXPORT EVL_mb_like(TDBB tdbb,
 	len1 = obj->to_wc(NULL, 0, p1, l1, &err_code, &err_pos);
 	len2 = obj->to_wc(NULL, 0, p2, l2, &err_code, &err_pos);
 	if (len1 > sizeof(buffer1)) {
-		buf1 = new(*tdbb->tdbb_default, len1) str();
+		buf1 = FB_NEW_RPT(*tdbb->tdbb_default, len1) str();
 		pp1 = (USHORT *) buf1->str_data;
 	}
 	if (len2 > sizeof(buffer2)) {
-		buf2 = new(*tdbb->tdbb_default, len2) str();
+		buf2 = FB_NEW_RPT(*tdbb->tdbb_default, len2) str();
 		pp2 = (USHORT *) buf2->str_data;
 	}
 
@@ -1977,11 +1977,11 @@ USHORT DLL_EXPORT EVL_mb_matches(TDBB tdbb,
 	len1 = obj->to_wc(NULL, 0, p1, l1, &err_code, &err_pos);
 	len2 = obj->to_wc(NULL, 0, p2, l2, &err_code, &err_pos);
 	if (len1 > sizeof(buffer1)) {
-		buf1 = new(*tdbb->tdbb_default, len1) str();
+		buf1 = FB_NEW_RPT(*tdbb->tdbb_default, len1) str();
 		pp1 = (USHORT *) buf1->str_data;
 	}
 	if (len2 > sizeof(buffer2)) {
-		buf2 = new(*tdbb->tdbb_default, len2) str();
+		buf2 = FB_NEW_RPT(*tdbb->tdbb_default, len2) str();
 		pp2 = (USHORT *) buf2->str_data;
 	}
 
@@ -2037,7 +2037,7 @@ USHORT DLL_EXPORT EVL_mb_sleuth_check(TDBB tdbb,
 
 	len1 = obj->to_wc(NULL, 0, search, search_bytes, &err_code, &err_pos);
 	if (len1 > sizeof(buffer1)) {
-		buf1 = new(*tdbb->tdbb_default, len1) str();
+		buf1 = FB_NEW_RPT(*tdbb->tdbb_default, len1) str();
 		pp1 = (USHORT *) buf1->str_data;
 	}
 
@@ -2091,11 +2091,11 @@ USHORT DLL_EXPORT EVL_mb_sleuth_merge(TDBB tdbb,
 	len1 = obj->to_wc(NULL, 0, match, match_bytes, &err_code, &err_pos);
 	len2 = obj->to_wc(NULL, 0, control, control_bytes, &err_code, &err_pos);
 	if (len1 > sizeof(buffer1)) {
-		buf1 = new(*tdbb->tdbb_default, len1) str();
+		buf1 = FB_NEW_RPT(*tdbb->tdbb_default, len1) str();
 		pp1 = (USHORT *) buf1->str_data;
 	}
 	if (len2 > sizeof(buffer2)) {
-		buf2 = new(*tdbb->tdbb_default, len2) str();
+		buf2 = FB_NEW_RPT(*tdbb->tdbb_default, len2) str();
 		pp2 = (USHORT *) buf2->str_data;
 	}
 
@@ -3088,7 +3088,7 @@ static DSC *cast(TDBB tdbb, DSC * value, NOD node, VLU impure)
 		}
 
 		if (!string) {
-			string = impure->vlu_string = new(*tdbb->tdbb_default, length) str();
+			string = impure->vlu_string = FB_NEW_RPT(*tdbb->tdbb_default, length) str();
 			string->str_length = length;
 		}
 
@@ -4524,7 +4524,7 @@ static SSHORT sleuth(TDBB tdbb, NOD node, DSC * desc1, DSC * desc2)
 
 #ifdef STACK_REDUCTION
 /* do a block allocate */
-	temp_str = new(*tdbb->tdbb_default, ((SLONG)
+	temp_str = FB_NEW_RPT(*tdbb->tdbb_default, ((SLONG)
 										(sizeof(UCHAR) *
 										 (2 * TEMP_LENGTH + BUFFER_LARGE +
 										  BUFFER_SMALL)))) str();
@@ -4650,7 +4650,7 @@ static SSHORT string_boolean(TDBB tdbb, NOD node, DSC * desc1, DSC * desc2)
 #ifdef STACK_REDUCTION
 /*  do a block allocation of local variables */
 	temp_str =
-		new(*tdbb->tdbb_default,
+		FB_NEW_RPT(*tdbb->tdbb_default,
 					  (SLONG) (sizeof(UCHAR) *
 							   (2 * TEMP_LENGTH + BUFFER_LARGE))) str();
 	temp1 = temp_str->str_data;
@@ -4794,7 +4794,7 @@ static SSHORT string_function(
 			UCHAR *temp3;
 
 			SET_TDBB(tdbb);
-			temp_str = new(*tdbb->tdbb_default, (sizeof(UCHAR) * TEMP_LENGTH)) str();
+			temp_str = FB_NEW_RPT(*tdbb->tdbb_default, (sizeof(UCHAR) * TEMP_LENGTH)) str();
 			temp3 = temp_str->str_data;
 #endif
 
@@ -4871,7 +4871,7 @@ static DSC *substring(
 		else
 		{
 			USHORT bufflen = MAX(BUFFER_LARGE, length);
-			STR temp_str = new(*tdbb->tdbb_default, sizeof(UCHAR) * bufflen) str();
+			STR temp_str = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(UCHAR) * bufflen) str();
 			UCHAR *buffer = temp_str->str_data;
 		
 			USHORT datalen = 0;

@@ -27,7 +27,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: alice_meta.epp,v 1.5 2002-04-04 05:31:13 bellardo Exp $
+ *	$Id: alice_meta.epp,v 1.6 2002-09-25 17:12:00 skidder Exp $
  */
 
 #include "firebird.h"
@@ -245,7 +245,7 @@ static STR alloc_string(TEXT ** ptr)
 	p = *ptr;
 
 	length = (USHORT) * p++;
-	string = new(*tdgbl->ALICE_default_pool, length + 1) str;
+	string = FB_NEW_RPT(*tdgbl->ALICE_default_pool, length + 1) str;
 
 	q = (TEXT *) string->str_data;
 	while (length--)
@@ -342,9 +342,9 @@ static TDR get_description(SLONG blob_id[2])
 			id = gds__vax_integer((UCHAR*) p, id_length);
 			p += id_length;
 			if (!trans)
-				trans = ptr = new(*tdgbl->ALICE_default_pool) tdr;
+				trans = ptr = FB_NEW(*tdgbl->ALICE_default_pool) tdr;
 			else {
-				ptr->tdr_next = new(*tdgbl->ALICE_default_pool) tdr;
+				ptr->tdr_next = FB_NEW(*tdgbl->ALICE_default_pool) tdr;
 				ptr = ptr->tdr_next;
 			}
 			ptr->tdr_host_site = host_site;
@@ -405,7 +405,7 @@ static void parse_fullpath(TDR trans)
 		if (*q) {
 			trans->tdr_filename = q + 1;
 
-			trans->tdr_remote_site = new(*tdgbl->ALICE_default_pool, q - p + 1) str;
+			trans->tdr_remote_site = FB_NEW_RPT(*tdgbl->ALICE_default_pool, q - p + 1) str;
 			strncpy((char*) trans->tdr_remote_site->str_data, (char*) p, q - p);
 			trans->tdr_remote_site->str_data[q - p] = '\0';
 		}
@@ -431,7 +431,7 @@ static void parse_fullpath(TDR trans)
 		p++;
 
 		if (length) {
-			trans->tdr_remote_site = new(*tdgbl->ALICE_default_pool, length + 1) str;
+			trans->tdr_remote_site = FB_NEW_RPT(*tdgbl->ALICE_default_pool, length + 1) str;
 			q = (TEXT *) trans->tdr_remote_site->str_data;
 			while (length--)
 				*q++ = *p++;

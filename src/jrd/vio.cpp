@@ -2149,7 +2149,7 @@ REC VIO_record(TDBB tdbb, register RPB * rpb, FMT format, JrdMemoryPool *pool)
 	if (!(record = rpb->rpb_record)) {
 		if (!pool)
 			pool = dbb->dbb_permanent;
-		record = rpb->rpb_record = new(*pool, format->fmt_length) rec;
+		record = rpb->rpb_record = FB_NEW_RPT(*pool, format->fmt_length) rec;
 		record->rec_length = format->fmt_length;
 	}
 	else if (record->rec_length < format->fmt_length) {
@@ -2160,7 +2160,7 @@ REC VIO_record(TDBB tdbb, register RPB * rpb, FMT format, JrdMemoryPool *pool)
 								  format->fmt_length);
 		else
 		{
-			record = new(*MemoryPool::blk_pool(record), format->fmt_length) rec;
+			record = FB_NEW_RPT(*MemoryPool::blk_pool(record), format->fmt_length) rec;
 			memcpy(record, rpb->rpb_record, sizeof(rec) + sizeof(SCHAR)*rpb->rpb_record->rec_length);
 			delete rpb->rpb_record;
 			rpb->rpb_record = record;
@@ -2201,7 +2201,7 @@ void VIO_start_save_point(TDBB tdbb, TRA transaction)
 	if ( (sav_point = transaction->tra_save_free) )
 		transaction->tra_save_free = sav_point->sav_next;
 	else
-		sav_point = new(*transaction->tra_pool) sav();
+		sav_point = FB_NEW(*transaction->tra_pool) sav();
 
 	sav_point->sav_number = ++transaction->tra_save_point_number;
 	sav_point->sav_next = transaction->tra_save_point;
@@ -3253,7 +3253,7 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
 
 /* Pseudo attachment needed for lock owner identification. */
 
-	tdbb->tdbb_attachment = new(*dbb->dbb_permanent) att();
+	tdbb->tdbb_attachment = FB_NEW(*dbb->dbb_permanent) att();
 	tdbb->tdbb_attachment->att_database = dbb;
 	tdbb->tdbb_attachment->att_flags = ATT_garbage_collector;
 
@@ -3527,7 +3527,7 @@ static SAV get_free_save_point_block(TRA transaction)
 	if ( (sav_point = transaction->tra_save_free) )
 		transaction->tra_save_free = sav_point->sav_next;
 	else
-		sav_point = new(*transaction->tra_pool) sav();
+		sav_point = FB_NEW(*transaction->tra_pool) sav();
 
 	return sav_point;
 }
@@ -4158,7 +4158,7 @@ static REC replace_gc_record(REL relation, REC * gc_record, USHORT length)
 	for (rec_ptr = vector->begin(), end = vector->end(); rec_ptr < end;
 					++rec_ptr)
 		if (*rec_ptr == *gc_record) {
-			temp = new(*MemoryPool::blk_pool(*gc_record), length) rec;
+			temp = FB_NEW_RPT(*MemoryPool::blk_pool(*gc_record), length) rec;
 			memcpy(temp, *rec_ptr, sizeof(rec) + sizeof(SCHAR)*(*gc_record)->rec_length);
 			delete *rec_ptr;
 			*rec_ptr = temp;
@@ -4455,7 +4455,7 @@ static void verb_post(
 		if ( (action = transaction->tra_save_point->sav_verb_free) )
 			transaction->tra_save_point->sav_verb_free = action->vct_next;
 		else
-			action = new(*tdbb->tdbb_default) vct();
+			action = FB_NEW(*tdbb->tdbb_default) vct();
 		action->vct_next = transaction->tra_save_point->sav_verb_actions;
 		transaction->tra_save_point->sav_verb_actions = action;
 		action->vct_relation = rpb->rpb_relation;
@@ -4468,7 +4468,7 @@ static void verb_post(
 			   savepoint hasn't seen this record before. */
 
 			SBM_set(tdbb, &action->vct_undo, rpb->rpb_number);
-			data = new(*tdbb->tdbb_default, old_data->rec_length) rec();
+			data = FB_NEW_RPT(*tdbb->tdbb_default, old_data->rec_length) rec();
 			data->rec_number = rpb->rpb_number;
 			data->rec_length = old_data->rec_length;
 			data->rec_format = old_data->rec_format;
@@ -4484,7 +4484,7 @@ static void verb_post(
 			   and this savepoint hasn't seen this record before. */
 
 			SBM_set(tdbb, &action->vct_undo, rpb->rpb_number);
-			data = new(*tdbb->tdbb_default, 1) rec;
+			data = FB_NEW_RPT(*tdbb->tdbb_default, 1) rec;
 			data->rec_number = rpb->rpb_number;
 			data->rec_length = 0;
 			if (new_ver)
@@ -4513,7 +4513,7 @@ static void verb_post(
 			   undo data. */
 
 			SBM_set(tdbb, &action->vct_undo, rpb->rpb_number);
-			data = new(*tdbb->tdbb_default, 1) rec();
+			data = FB_NEW_RPT(*tdbb->tdbb_default, 1) rec();
 			data->rec_number = rpb->rpb_number;
 			data->rec_length = 0;
 			data->rec_flags |= (REC_same_tx | REC_new_version);

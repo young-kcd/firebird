@@ -766,7 +766,7 @@ void SBM_set(TDBB tdbb, SBM * bitmap, SLONG number)
 	SET_TDBB(tdbb);
 
 	if (!(vector = *bitmap)) {
-		*bitmap = vector = new(*tdbb->tdbb_default) sbm(*tdbb->tdbb_default, 5);
+		*bitmap = vector = FB_NEW(*tdbb->tdbb_default) sbm(*tdbb->tdbb_default, 5);
 		vector->sbm_type = SBM_ROOT;
 		vector->sbm_count = 5;
 		vector->sbm_state = SBM_SINGULAR;
@@ -811,7 +811,7 @@ void SBM_set(TDBB tdbb, SBM * bitmap, SLONG number)
 			if ( (bucket = tdbb->tdbb_default->plb_buckets) )
 				tdbb->tdbb_default->plb_buckets = bucket->sbm_next;
 			else {
-				bucket = new(*tdbb->tdbb_default)
+				bucket = FB_NEW(*tdbb->tdbb_default)
 						sbm(*tdbb->tdbb_default, BUNCH_BUCKET);
 				bucket->sbm_pool = tdbb->tdbb_default;
 			}
@@ -845,7 +845,7 @@ void SBM_set(TDBB tdbb, SBM * bitmap, SLONG number)
 				clear_segment(segment);
 			}
 			else {
-				segment = new(*tdbb->tdbb_default) bms();
+				segment = FB_NEW(*tdbb->tdbb_default) bms();
 				segment->bms_pool = tdbb->tdbb_default;
 			}
 			vector->sbm_segments[slot] = segment;

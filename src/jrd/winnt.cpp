@@ -1058,7 +1058,7 @@ static FIL setup_file(DBB		dbb,
 
 /* Allocate file block and copy file name string */
 
-	file = new(*dbb->dbb_permanent, file_length + 1) fil;
+	file = FB_NEW_RPT(*dbb->dbb_permanent, file_length + 1) fil;
 	file->fil_desc = reinterpret_cast<SLONG>(desc);
 	file->fil_force_write_desc =
 		reinterpret_cast<SLONG>(INVALID_HANDLE_VALUE);
@@ -1106,7 +1106,7 @@ static FIL setup_file(DBB		dbb,
 
 	l = p - lock_string;
 
-	dbb->dbb_lock = lock = new(*dbb->dbb_permanent, l) lck;
+	dbb->dbb_lock = lock = FB_NEW_RPT(*dbb->dbb_permanent, l) lck;
 	lock->lck_type = LCK_database;
 	lock->lck_owner_handle = LCK_get_owner_handle(NULL_TDBB, lock->lck_type);
 	lock->lck_object = reinterpret_cast<blk*>(dbb);

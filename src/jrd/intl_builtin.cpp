@@ -47,7 +47,7 @@ class TextType_Binary : public TextTypeNC
 {
 public:
 	static TextType *object_factory(MemoryPool &p, CHARSET_ID u1, CHARSET_ID u2)
-		{ return new(p) TextType_Binary; }
+		{ return FB_NEW(p) TextType_Binary; }
 	TextType_Binary() : TextTypeNC(ttype_binary, "C.OCTETS", CS_BINARY, CC_C, 1)
 		{}
 
@@ -82,7 +82,7 @@ class TextType_UFSS : public TextTypeMB
 {
 public:
 	static TextType *object_factory(MemoryPool &p, CHARSET_ID u1, CHARSET_ID u2)
-		{ return new(p) TextType_UFSS; }
+		{ return FB_NEW(p) TextType_UFSS; }
 	TextType_UFSS() : TextTypeMB(ttype_unicode_fss, "C.UNICODE_FSS", CS_UNICODE_FSS, CC_C, 3)
 		{}
 
@@ -129,7 +129,7 @@ class TextType_ASCII : public TextTypeNC
 {
 public:
 	static TextType *object_factory(MemoryPool &p, CHARSET_ID u1, CHARSET_ID u2)
-		{ return new(p) TextType_ASCII; }
+		{ return FB_NEW(p) TextType_ASCII; }
 	TextType_ASCII() : TextTypeNC(ttype_ascii, "C.ASCII", CS_ASCII, CC_C, 1)
 		{}
 
@@ -165,7 +165,7 @@ class TextType_None : public TextTypeNC
 {
 public:
 	static TextType *object_factory(MemoryPool &p, CHARSET_ID u1, CHARSET_ID u2)
-		{ return new(p) TextType_None; }
+		{ return FB_NEW(p) TextType_None; }
 	TextType_None() : TextTypeNC(ttype_none, "C", CS_NONE, CC_C, 1)
 		{}
 		
@@ -201,7 +201,7 @@ class CsConvert_ASCII_UFSS : public CsConvert
 {
 public:
 	static CsConvert *object_factory(MemoryPool& p, CHARSET_ID u1, CHARSET_ID u2)
-		{ return new(p) CsConvert_ASCII_UFSS; }
+		{ return FB_NEW(p) CsConvert_ASCII_UFSS; }
 	CsConvert_ASCII_UFSS() : CsConvert(0, "DIRECT", CS_ASCII, CS_UNICODE_FSS)
 			{}
 			
@@ -218,7 +218,7 @@ class CsConvert_UFSS_ASCII : public CsConvert
 {
 public:
 	static CsConvert *object_factory(MemoryPool& p, CHARSET_ID u1, CHARSET_ID u2)
-		{ return new(p) CsConvert_UFSS_ASCII; }
+		{ return FB_NEW(p) CsConvert_UFSS_ASCII; }
 	CsConvert_UFSS_ASCII() : CsConvert(0, "DIRECT", CS_UNICODE_FSS, CS_ASCII)
 			{}
 	unsigned short convert(unsigned char *a,
@@ -234,7 +234,7 @@ class CsConvert_UFSS_None : public CsConvert
 {
 public:
 	static CsConvert *object_factory(MemoryPool& p, CHARSET_ID u1, CHARSET_ID u2)
-		{ return new(p) CsConvert_UFSS_None; }
+		{ return FB_NEW(p) CsConvert_UFSS_None; }
 	CsConvert_UFSS_None() : CsConvert(0, "DIRECT", CS_UNICODE_FSS, CS_NONE)
 			{}
 	unsigned short convert(unsigned char *a,
@@ -250,7 +250,7 @@ class CsConvert_None_Unicode : public CsConvert
 {
 public:
 	static CsConvert *object_factory(MemoryPool& p, CHARSET_ID u1, CHARSET_ID u2)
-		{ return new(p) CsConvert_None_Unicode; }
+		{ return FB_NEW(p) CsConvert_None_Unicode; }
 	CsConvert_None_Unicode() : CsConvert(0, "DIRECT", CS_NONE, CS_UNICODE101)
 			{}
 	unsigned short convert(unsigned char*,
@@ -265,7 +265,7 @@ class CsConvert_Unicode_None : public CsConvert
 {
 public:
 	static CsConvert *object_factory(MemoryPool& p, CHARSET_ID u1, CHARSET_ID u2)
-		{ return new(p) CsConvert_Unicode_None; }
+		{ return FB_NEW(p) CsConvert_Unicode_None; }
 	CsConvert_Unicode_None() : CsConvert(0, "DIRECT", CS_UNICODE101, CS_NONE)
 			{}
 	unsigned short convert(unsigned char*,
@@ -280,7 +280,7 @@ class CsConvert_ASCII_Unicode : public CsConvert
 {
 public:
 	static CsConvert *object_factory(MemoryPool& p, CHARSET_ID u1, CHARSET_ID u2)
-		{ return new(p) CsConvert_ASCII_Unicode; }
+		{ return FB_NEW(p) CsConvert_ASCII_Unicode; }
 	CsConvert_ASCII_Unicode() : CsConvert(0, "DIRECT", CS_ASCII, CS_UNICODE101)
 			{}
 	unsigned short convert(unsigned char*,
@@ -295,7 +295,7 @@ class CsConvert_Unicode_ASCII : public CsConvert
 {
 public:
 	static CsConvert *object_factory(MemoryPool& p, CHARSET_ID u1, CHARSET_ID u2)
-		{ return new(p) CsConvert_Unicode_ASCII; }
+		{ return FB_NEW(p) CsConvert_Unicode_ASCII; }
 	CsConvert_Unicode_ASCII() : CsConvert(0, "DIRECT", CS_UNICODE101, CS_ASCII)
 			{}
 	unsigned short convert(unsigned char*,
@@ -310,7 +310,7 @@ class CsConvert_UFSS_Unicode : public CsConvert
 {
 public:
 	static CsConvert *object_factory(MemoryPool& p, CHARSET_ID u1, CHARSET_ID u2)
-		{ return new(p) CsConvert_UFSS_Unicode; }
+		{ return FB_NEW(p) CsConvert_UFSS_Unicode; }
 	CsConvert_UFSS_Unicode() : CsConvert(0, "DIRECT", CS_UNICODE_FSS, CS_UNICODE101)
 			{}
 	unsigned short convert(unsigned char*,
@@ -325,7 +325,7 @@ class CsConvert_Unicode_UFSS : public CsConvert
 {
 public:
 	static CsConvert *object_factory(MemoryPool& p, CHARSET_ID u1, CHARSET_ID u2)
-		{ return new(p) CsConvert_Unicode_UFSS; }
+		{ return FB_NEW(p) CsConvert_Unicode_UFSS; }
 	CsConvert_Unicode_UFSS() : CsConvert(0, "DIRECT", CS_UNICODE101, CS_UNICODE_FSS)
 			{}
 	unsigned short convert(unsigned char *a,
@@ -341,7 +341,7 @@ class CsConvert_Binary_Unicode : public CsConvert
 {
 public:
 	static CsConvert *object_factory(MemoryPool& p, CHARSET_ID u1, CHARSET_ID u2)
-		{ return new(p) CsConvert_Binary_Unicode; }
+		{ return FB_NEW(p) CsConvert_Binary_Unicode; }
 	CsConvert_Binary_Unicode() : CsConvert(0, "DIRECT", CS_BINARY, CS_UNICODE101)
 		{}	
 	unsigned short convert(unsigned char*,
@@ -356,7 +356,7 @@ class CsConvert_Unicode_Binary : public CsConvert
 {
 public:
 	static CsConvert *object_factory(MemoryPool& p, CHARSET_ID u1, CHARSET_ID u2)
-		{ return new(p) CsConvert_Unicode_Binary; }
+		{ return FB_NEW(p) CsConvert_Unicode_Binary; }
 	CsConvert_Unicode_Binary() : CsConvert(0, "DIRECT", CS_UNICODE101, CS_BINARY)
 		{}	
 	unsigned short convert(unsigned char*,
@@ -371,7 +371,7 @@ class CharSet_None : public CharSet
 {
 public:
 	static CharSet *object_factory(MemoryPool &p, CHARSET_ID u1, CHARSET_ID u2)
-		{ return new(p) CharSet_None(p); }
+		{ return FB_NEW(p) CharSet_None(p); }
 	CharSet_None(MemoryPool &p) : CharSet(CS_NONE, "NONE", 1, 1, 1, " ")
 	{
 		charset_to_unicode = CsConvert_None_Unicode::object_factory(p,0,0);
@@ -383,7 +383,7 @@ class CharSet_ASCII : public CharSet
 {
 public:
 	static CharSet *object_factory(MemoryPool &p, CHARSET_ID u1, CHARSET_ID u2)
-		{ return new(p) CharSet_ASCII(p); }
+		{ return FB_NEW(p) CharSet_ASCII(p); }
 	CharSet_ASCII(MemoryPool &p) : CharSet(CS_ASCII, "ASCII", 1, 1, 1, " ")
 	{
 		charset_to_unicode = CsConvert_ASCII_Unicode::object_factory(p,0,0);
@@ -395,7 +395,7 @@ class CharSet_Unicode_FSS : public CharSet
 {
 public:
 	static CharSet *object_factory(MemoryPool &p, CHARSET_ID u1, CHARSET_ID u2)
-		{ return new(p) CharSet_Unicode_FSS(p); }
+		{ return FB_NEW(p) CharSet_Unicode_FSS(p); }
 	CharSet_Unicode_FSS(MemoryPool &p) : CharSet(CS_UNICODE_FSS, "UNICODE_FSS", 1, 1, 1, " ")
 	{
 		charset_to_unicode = CsConvert_UFSS_Unicode::object_factory(p,0,0);
@@ -407,7 +407,7 @@ class CharSet_Unicode : public CharSet
 {
 public:
 	static CharSet *object_factory(MemoryPool &p, CHARSET_ID u1, CHARSET_ID u2)
-		{ return new(p) CharSet_Unicode(p); }
+		{ return FB_NEW(p) CharSet_Unicode(p); }
 	CharSet_Unicode(MemoryPool &p) : CharSet(CS_UNICODE101, "UNICODE101", 2, 2, 2, 0)
 	{
 		static CONST WCHAR space = 0x0020;
@@ -419,7 +419,7 @@ class CharSet_Binary : public CharSet
 {
 public:
 	static CharSet *object_factory(MemoryPool &p, CHARSET_ID u1, CHARSET_ID u2)
-		{ return new(p) CharSet_Binary(p); }
+		{ return FB_NEW(p) CharSet_Binary(p); }
 	CharSet_Binary(MemoryPool &p) : CharSet(CS_BINARY, "BINARY", 1, 1, 1, "\0")
 	{
 		charset_to_unicode = CsConvert_Binary_Unicode::object_factory(p,0,0);

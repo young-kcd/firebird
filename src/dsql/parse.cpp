@@ -8,6 +8,7 @@ static char yysccsid[] = "@(#)yaccpar	1.9 (Berkeley) 02/21/93";
 #define yyerrok (DSQL_yyerrflag=0)
 #define YYRECOVERING (DSQL_yyerrflag!=0)
 #define YYPREFIX "yy"
+#line 2 "parse.y"
 /* 
  *	PROGRAM:	Dynamic SQL runtime support
  *	MODULE:		parse.y
@@ -149,6 +150,7 @@ static TEXT	*beginning;
 static SSHORT	log_defined, cache_defined;
 static void	yyerror (TEXT *);
 
+#line 154 "y.tab.c"
 #define ACTIVE 257
 #define ADD 258
 #define AFTER 259
@@ -3969,6 +3971,7 @@ static YYSTYPE yylval;
 static short DSQL_yyss[YYSTACKSIZE];
 static YYSTYPE yyvs[YYSTACKSIZE];
 #define yystacksize YYSTACKSIZE
+#line 3770 "parse.y"
 
 
 /*
@@ -4031,13 +4034,13 @@ for (token = KEYWORD_getTokens(); token->tok_string; ++token)
     SYM         symbol;
     STR         str_;
 
-    symbol = new(*DSQL_permanent_pool, 0) sym;
+    symbol = FB_NEW_RPT(*DSQL_permanent_pool, 0) sym;
     symbol->sym_string = (TEXT *) token->tok_string;
     symbol->sym_length = strlen (token->tok_string);
     symbol->sym_type = SYM_keyword;
     symbol->sym_keyword = token->tok_ident;
     symbol->sym_version = token->tok_version;
-    str_ = new(*DSQL_permanent_pool, symbol->sym_length) str;
+    str_ = FB_NEW_RPT(*DSQL_permanent_pool, symbol->sym_length) str;
     str_->str_length = symbol->sym_length;
     strncpy ((char*)str_->str_data, (char*)symbol->sym_string, symbol->sym_length);
     symbol->sym_object = (void *) str_;
@@ -4176,12 +4179,12 @@ tdsql = GET_THREAD_DATA;
        
 if (field_name == NULL)
    {
-    field = new (*tdsql->tsql_default, sizeof (INTERNAL_FIELD_NAME)) fld;
+    field = FB_NEW_RPT(*tdsql->tsql_default, sizeof (INTERNAL_FIELD_NAME)) fld;
     strcpy (field->fld_name, (TEXT*) INTERNAL_FIELD_NAME);
     return field;
    }
 string = (STR) field_name->nod_arg [1];
-field = new(*tdsql->tsql_default, strlen ((SCHAR*) string->str_data)) fld;
+field = FB_NEW_RPT(*tdsql->tsql_default, strlen ((SCHAR*) string->str_data)) fld;
 strcpy (field->fld_name, (TEXT*) string->str_data);
 
 return field;
@@ -4205,7 +4208,7 @@ TSQL    tdsql;
 
 tdsql = GET_THREAD_DATA;
        
-temp_file = new(*tdsql->tsql_default) fil;
+temp_file = FB_NEW(*tdsql->tsql_default) fil;
 
 return temp_file;
 }
@@ -4241,7 +4244,7 @@ for (l = 0, temp = stack; temp; temp = temp->lls_next)
     l++;
 
 old  = node;
-node = new(*tdsql->tsql_default, l) nod;
+node = FB_NEW_RPT(*tdsql->tsql_default, l) nod;
 node->nod_count = l;
 node->nod_type  = nod_list;
 node->nod_flags = old->nod_flags;
@@ -4276,7 +4279,7 @@ TSQL    tdsql;
 
 tdsql = GET_THREAD_DATA;
 
-node = new(*tdsql->tsql_default, count) nod;
+node = FB_NEW_RPT(*tdsql->tsql_default, count) nod;
 node->nod_type = type;
 node->nod_line = (USHORT) lines_bk;
 node->nod_column = (USHORT) (last_token_bk - line_start_bk + 1);
@@ -4313,7 +4316,7 @@ TSQL    tdsql;
 
 tdsql = GET_THREAD_DATA;
 
-node = new(*tdsql->tsql_default, count) nod;
+node = FB_NEW_RPT(*tdsql->tsql_default, count) nod;
 node->nod_type = type;
 node->nod_flags = flag;
 node->nod_line = (USHORT) lines_bk;
@@ -5052,6 +5055,7 @@ static void yyabandon (
 ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) sql_code, 
 	gds_arg_gds, error_symbol, 0);
 }
+#line 5055 "y.tab.c"
 #define YYABORT goto yyabort
 #define YYREJECT goto yyabort
 #define YYACCEPT goto yyaccept
@@ -5193,444 +5197,575 @@ yyreduce:
     switch (yyn)
     {
 case 1:
+#line 442 "parse.y"
 { DSQL_parse = yyvsp[0]; }
 break;
 case 2:
+#line 444 "parse.y"
 { DSQL_parse = yyvsp[-1]; }
 break;
 case 20:
+#line 465 "parse.y"
 { prepare_console_debug ((int) yyvsp[0], &yydebug);
 			  yyval = make_node (nod_null, (int) 0, NULL); }
 break;
 case 21:
+#line 474 "parse.y"
 { yyval = make_node (nod_grant, (int) e_grant_count, 
 					yyvsp[-5], yyvsp[-3], make_list(yyvsp[-1]), yyvsp[0]); }
 break;
 case 22:
+#line 478 "parse.y"
 { yyval = make_node (nod_grant, (int) e_grant_count, 
 					yyvsp[-6], yyvsp[-3], make_list(yyvsp[-1]), yyvsp[0]); }
 break;
 case 23:
+#line 482 "parse.y"
 { yyval = make_node (nod_grant, (int) e_grant_count, 
 					yyvsp[-4], yyvsp[-2], make_list(yyvsp[0]), NULL); }
 break;
 case 24:
+#line 486 "parse.y"
 { yyval = make_node (nod_grant, (int) e_grant_count, 
 					yyvsp[-5], yyvsp[-2], make_list(yyvsp[0]), NULL); }
 break;
 case 25:
+#line 489 "parse.y"
 { yyval = make_node (nod_grant, (int) e_grant_count, 
 					make_list(yyvsp[-3]), make_list(yyvsp[-1]), NULL, yyvsp[0]); }
 break;
 case 27:
+#line 495 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 28:
+#line 499 "parse.y"
 { yyval = make_node (nod_all, (int) 0, NULL); }
 break;
 case 29:
+#line 501 "parse.y"
 { yyval = make_node (nod_all, (int) 0, NULL); }
 break;
 case 30:
+#line 503 "parse.y"
 { yyval = make_list (yyvsp[0]); }
 break;
 case 32:
+#line 508 "parse.y"
 { yyval = make_node (nod_list, (int) 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 33:
+#line 512 "parse.y"
 { yyval = make_list (make_node (nod_execute, (int) 0, NULL)); }
 break;
 case 34:
+#line 516 "parse.y"
 { yyval = make_node (nod_select, (int) 0, NULL); }
 break;
 case 35:
+#line 518 "parse.y"
 { yyval = make_node (nod_insert, (int) 0, NULL); }
 break;
 case 36:
+#line 520 "parse.y"
 { yyval = make_node (nod_delete, (int) 0, NULL); }
 break;
 case 37:
+#line 522 "parse.y"
 { yyval = make_node (nod_update, (int) 1, yyvsp[0]); }
 break;
 case 38:
+#line 524 "parse.y"
 { yyval = make_node (nod_references, (int) 1, yyvsp[0]); }
 break;
 case 39:
+#line 528 "parse.y"
 { yyval = make_node (nod_grant, (int) 0, NULL); }
 break;
 case 40:
+#line 530 "parse.y"
 { yyval = 0; }
 break;
 case 41:
+#line 534 "parse.y"
 { yyval = make_node (nod_grant_admin, (int) 0, NULL); }
 break;
 case 42:
+#line 536 "parse.y"
 { yyval = 0; }
 break;
 case 43:
+#line 540 "parse.y"
 { yyval = make_node (nod_procedure_name, (int) 1, yyvsp[0]); }
 break;
 case 44:
+#line 548 "parse.y"
 { yyval = make_node (nod_revoke, 
 				(int) e_grant_count, yyvsp[-4], yyvsp[-2],
 				make_list(yyvsp[0]), yyvsp[-5]); }
 break;
 case 45:
+#line 553 "parse.y"
 { yyval = make_node (nod_revoke, 
 				(int) e_grant_count, yyvsp[-5], yyvsp[-2],
 				make_list(yyvsp[0]), yyvsp[-6]); }
 break;
 case 46:
+#line 558 "parse.y"
 { yyval = make_node (nod_revoke, 
 				(int) e_grant_count, yyvsp[-4], yyvsp[-2],
 				make_list(yyvsp[0]), NULL); }
 break;
 case 47:
+#line 563 "parse.y"
 { yyval = make_node (nod_revoke, 
 				(int) e_grant_count, yyvsp[-5], yyvsp[-2],
 				make_list(yyvsp[0]), NULL); }
 break;
 case 48:
+#line 568 "parse.y"
 { yyval = make_node (nod_revoke, 
 				(int) e_grant_count, yyvsp[-4], yyvsp[-2],
 				make_list(yyvsp[0]), NULL); }
 break;
 case 49:
+#line 573 "parse.y"
 { yyval = make_node (nod_revoke, 
 				(int) e_grant_count, yyvsp[-5], yyvsp[-2],
 				make_list(yyvsp[0]), NULL); }
 break;
 case 50:
+#line 577 "parse.y"
 { yyval = make_node (nod_revoke, 
 				(int) e_grant_count, make_list(yyvsp[-2]), make_list(yyvsp[0]),
 				NULL, NULL); }
 break;
 case 51:
+#line 583 "parse.y"
 { yyval = make_node (nod_grant, (int) 0, NULL); }
 break;
 case 53:
+#line 588 "parse.y"
 { yyval = make_node (nod_list, (int) 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 54:
+#line 590 "parse.y"
 { yyval = make_node (nod_list, (int) 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 55:
+#line 592 "parse.y"
 { yyval = make_node (nod_list, (int) 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 56:
+#line 596 "parse.y"
 { yyval = make_node (nod_proc_obj, (int) 1, yyvsp[0]); }
 break;
 case 57:
+#line 598 "parse.y"
 { yyval = make_node (nod_trig_obj, (int) 1, yyvsp[0]); }
 break;
 case 58:
+#line 600 "parse.y"
 { yyval = make_node (nod_view_obj, (int) 1, yyvsp[0]); }
 break;
 case 59:
+#line 602 "parse.y"
 { yyval = make_node (nod_role_name, (int) 1, yyvsp[0]); }
 break;
 case 61:
+#line 607 "parse.y"
 { yyval = make_node (nod_list, (int) 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 62:
+#line 614 "parse.y"
 { yyval = make_node (nod_user_name, (int) 1, yyvsp[0]); }
 break;
 case 63:
+#line 616 "parse.y"
 { yyval = make_node (nod_user_name, (int) 2, yyvsp[0], NULL); }
 break;
 case 64:
+#line 618 "parse.y"
 { yyval = make_node (nod_user_group, (int) 1, yyvsp[0]); }
 break;
 case 66:
+#line 623 "parse.y"
 { yyval = make_node (nod_list, (int) 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 67:
+#line 627 "parse.y"
 { yyval = make_node (nod_role_name, (int) 1, yyvsp[0]); }
 break;
 case 69:
+#line 632 "parse.y"
 { yyval = make_node (nod_list, (int) 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 70:
+#line 636 "parse.y"
 { yyval = make_node (nod_user_name, (int) 1, yyvsp[0]); }
 break;
 case 71:
+#line 638 "parse.y"
 { yyval = make_node (nod_user_name, (int) 1, yyvsp[0]); }
 break;
 case 72:
+#line 645 "parse.y"
 { yyval = yyvsp[0];}
 break;
 case 73:
+#line 649 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 74:
+#line 651 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 75:
+#line 657 "parse.y"
 { yyval = make_node (nod_def_udf, (int) e_udf_count, 
 				yyvsp[-7], yyvsp[-2], yyvsp[0], make_list (yyvsp[-6]), yyvsp[-4]); }
 break;
 case 77:
+#line 663 "parse.y"
 { g_field->fld_dtype = dtype_blob; }
 break;
 case 78:
+#line 665 "parse.y"
 { 
 			g_field->fld_dtype = dtype_cstring; 
 			g_field->fld_character_length = (USHORT) yyvsp[-2]; }
 break;
 case 79:
+#line 671 "parse.y"
 { yyval = (NOD) NULL; }
 break;
 case 81:
+#line 674 "parse.y"
 { yyval = yyvsp[-1]; }
 break;
 case 83:
+#line 679 "parse.y"
 { yyval = make_node (nod_list, (int) 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 84:
+#line 685 "parse.y"
 { yyval = make_node (nod_udf_param, (int) e_udf_param_count,
 				              yyvsp[-1], NULL); }
 break;
 case 85:
+#line 688 "parse.y"
 { yyval = make_node (nod_udf_param, (int) e_udf_param_count,
 				yyvsp[-3], MAKE_constant ((STR) FUN_descriptor, CONSTANT_SLONG)); }
 break;
 case 87:
+#line 695 "parse.y"
 { yyval = yyvsp[-1]; }
 break;
 case 88:
+#line 698 "parse.y"
 { yyval = make_node (nod_udf_return_value, (int) 2, yyvsp[-1], 
 				MAKE_constant ((STR) FUN_reference, CONSTANT_SLONG));}
 break;
 case 89:
+#line 701 "parse.y"
 { yyval = make_node (nod_udf_return_value, (int) 2, yyvsp[-2], 
 				MAKE_constant ((STR) (-1 * FUN_reference), CONSTANT_SLONG));}
 break;
 case 90:
+#line 705 "parse.y"
 { yyval = make_node (nod_udf_return_value, (int) 2, yyvsp[-3], 
 				MAKE_constant ((STR) FUN_value, CONSTANT_SLONG));}
 break;
 case 91:
+#line 709 "parse.y"
 { yyval = make_node (nod_udf_return_value, (int) 2, yyvsp[-3],
 				MAKE_constant ((STR) FUN_descriptor, CONSTANT_SLONG));}
 break;
 case 92:
+#line 712 "parse.y"
 { yyval = make_node (nod_udf_return_value, (int) 2, 
 		  		(NOD) NULL, MAKE_constant ((STR) yyvsp[0], CONSTANT_SLONG));}
 break;
 case 93:
+#line 718 "parse.y"
 { yyval = make_node (nod_def_filter, (int) e_filter_count, 
 						yyvsp[-8], yyvsp[-6], yyvsp[-4], yyvsp[-2], yyvsp[0]); }
 break;
 case 94:
+#line 726 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 95:
+#line 730 "parse.y"
 { yyval = make_node (nod_def_exception, (int) e_xcp_count, 
 						yyvsp[-1], yyvsp[0]); }
 break;
 case 96:
+#line 733 "parse.y"
 { yyval = make_node (nod_def_index, (int) e_idx_count, 
 					yyvsp[-6], yyvsp[-5], yyvsp[-3], yyvsp[-1], yyvsp[0]); }
 break;
 case 97:
+#line 736 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 98:
+#line 738 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 99:
+#line 740 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 100:
+#line 742 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 101:
+#line 744 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 102:
+#line 746 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 103:
+#line 748 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 104:
+#line 750 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 105:
+#line 752 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 106:
+#line 757 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 107:
+#line 761 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 108:
+#line 763 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 109:
+#line 765 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 110:
+#line 774 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 111:
+#line 778 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 112:
+#line 780 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 113:
+#line 782 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 114:
+#line 789 "parse.y"
 { yyval = make_node (nod_unique, (int) 0, NULL); }
 break;
 case 115:
+#line 791 "parse.y"
 { yyval = NULL; }
 break;
 case 116:
+#line 795 "parse.y"
 { yyval = make_list (yyvsp[0]); }
 break;
 case 118:
+#line 798 "parse.y"
 { yyval = make_node (nod_def_computed, 2, yyvsp[-2], yyvsp[-1]); }
 break;
 case 119:
+#line 805 "parse.y"
 { yyval = make_node (nod_def_shadow, (int) e_shadow_count,
 			     yyvsp[-5], yyvsp[-4], yyvsp[-3], yyvsp[-2], yyvsp[-1], make_list (yyvsp[0])); }
 break;
 case 120:
+#line 810 "parse.y"
 { yyval = MAKE_constant ((STR) 1, CONSTANT_SLONG); }
 break;
 case 121:
+#line 812 "parse.y"
 { yyval = MAKE_constant ((STR) 0, CONSTANT_SLONG); }
 break;
 case 122:
+#line 814 "parse.y"
 { yyval = MAKE_constant ((STR) 0, CONSTANT_SLONG); }
 break;
 case 123:
+#line 818 "parse.y"
 { yyval = MAKE_constant ((STR) 0, CONSTANT_SLONG); }
 break;
 case 124:
+#line 820 "parse.y"
 { yyval = MAKE_constant ((STR) 1, CONSTANT_SLONG); }
 break;
 case 125:
+#line 824 "parse.y"
 { yyval = (NOD) 0;}
 break;
 case 126:
+#line 826 "parse.y"
 { yyval = yyvsp[-1]; }
 break;
 case 127:
+#line 830 "parse.y"
 { yyval = (NOD) NULL; }
 break;
 case 130:
+#line 836 "parse.y"
 { yyval = make_node (nod_list, (int) 2, yyvsp[-1], yyvsp[0]); }
 break;
 case 131:
+#line 850 "parse.y"
 { yyval = make_node (nod_def_domain, (int) e_dom_count,
                                           yyvsp[-7], yyvsp[-3], yyvsp[-2], make_list (yyvsp[-1]), yyvsp[0]); }
 break;
 case 132:
+#line 861 "parse.y"
 { yyval = NULL; }
 break;
 case 133:
+#line 863 "parse.y"
 { yyval = NULL; }
 break;
 case 134:
+#line 867 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 135:
+#line 869 "parse.y"
 { yyval = (NOD) NULL; }
 break;
 case 136:
+#line 873 "parse.y"
 { yyval = (NOD) NULL; }
 break;
 case 139:
+#line 879 "parse.y"
 { yyval = make_node (nod_list, (int) 2, yyvsp[-1], yyvsp[0]); }
 break;
 case 140:
+#line 882 "parse.y"
 { yyval = make_node (nod_rel_constraint, (int) 2, NULL, yyvsp[0]);}
 break;
 case 143:
+#line 891 "parse.y"
 { yyval = make_node (nod_null, (int) 0, NULL); }
 break;
 case 144:
+#line 895 "parse.y"
 { yyval = make_node (nod_def_constraint, 
 				  (int) e_cnstr_count, MAKE_string (NULL_STRING, 0), NULL, 
 				  NULL, NULL, yyvsp[-2], NULL, yyvsp[0], NULL, NULL); }
 break;
 case 145:
+#line 904 "parse.y"
 { yyval = make_node (nod_def_generator, 
 						(int) e_gen_count, yyvsp[0]); }
 break;
 case 146:
+#line 912 "parse.y"
 { yyval = make_node (nod_def_role, 
 						(int) 1, yyvsp[0]); }
 break;
 case 147:
+#line 920 "parse.y"
 { yyval = make_node (nod_def_database, (int) e_cdb_count,
 				 yyvsp[-2], make_list(yyvsp[-1]), make_list (yyvsp[0]));}
 break;
 case 150:
+#line 929 "parse.y"
 { log_defined = FALSE;
 			  cache_defined = FALSE;
 			  yyval = (NOD) yyvsp[0]; }
 break;
 case 151:
+#line 935 "parse.y"
 {yyval = (NOD) NULL;}
 break;
 case 154:
+#line 941 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-1], yyvsp[0]); }
 break;
 case 155:
+#line 945 "parse.y"
 { yyval = make_node (nod_page_size, 1, yyvsp[0]);}
 break;
 case 156:
+#line 947 "parse.y"
 { yyval = make_node (nod_file_length, 1, yyvsp[-1]);}
 break;
 case 157:
+#line 949 "parse.y"
 { yyval = make_node (nod_user_name, 1, yyvsp[0]);}
 break;
 case 158:
+#line 951 "parse.y"
 { yyval = make_node (nod_password, 1, yyvsp[0]);}
 break;
 case 159:
+#line 953 "parse.y"
 { yyval = make_node (nod_lc_ctype, 1, yyvsp[0]);}
 break;
 case 160:
+#line 957 "parse.y"
 {yyval = (NOD) NULL;}
 break;
 case 163:
+#line 963 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-1], yyvsp[0]); }
 break;
 case 167:
+#line 971 "parse.y"
 { yyval = make_node (nod_dfl_charset, 1, yyvsp[0]);}
 break;
 case 168:
+#line 975 "parse.y"
 { yyval = make_node (nod_group_commit_wait, 1, yyvsp[0]);}
 break;
 case 169:
+#line 977 "parse.y"
 { yyval = make_node (nod_check_point_len, 1, yyvsp[0]);}
 break;
 case 170:
+#line 979 "parse.y"
 { yyval = make_node (nod_num_log_buffers, 1, yyvsp[0]);}
 break;
 case 171:
+#line 981 "parse.y"
 { yyval = make_node (nod_log_buffer_size, 1, yyvsp[0]);}
 break;
 case 172:
+#line 985 "parse.y"
 { if (log_defined)
 			    yyabandon (-260, isc_log_redef);  /* Log redefined */
 			  log_defined = TRUE;
 			  yyval = yyvsp[0]; }
 break;
 case 173:
+#line 990 "parse.y"
 { if (log_defined)
 			    yyabandon (-260, isc_log_redef);
 			  log_defined = TRUE;
 			  yyval = yyvsp[0]; }
 break;
 case 174:
+#line 997 "parse.y"
 { g_file->fil_flags |= LOG_serial | LOG_overflow; 
 			  if (g_file->fil_partitions)
 			      yyabandon (-261, isc_partition_not_supp);
@@ -5638,779 +5773,1008 @@ case 174:
 			 yyval = make_node (nod_list, 2, yyvsp[-3], yyvsp[0]); }
 break;
 case 175:
+#line 1003 "parse.y"
 { g_file->fil_flags |= LOG_serial;
 			  if (g_file->fil_partitions)
 			      yyabandon (-261, isc_partition_not_supp);
 			  yyval = yyvsp[0]; }
 break;
 case 176:
+#line 1010 "parse.y"
 { g_file = make_file(); 
 			  g_file->fil_flags = LOG_serial | LOG_default;
 			  yyval = make_node (nod_log_file_desc, (int) 1,
 						(NOD) g_file);}
 break;
 case 177:
+#line 1017 "parse.y"
 { g_file->fil_name = (STR) yyvsp[-1]; 
 			  yyval = (NOD) make_node (nod_file_desc, (int) 1,
 						(NOD) g_file); }
 break;
 case 179:
+#line 1051 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 180:
+#line 1054 "parse.y"
 { 
 		         check_log_file_attrs(); 
 			 yyval = (NOD) make_node (nod_log_file_desc, (int) 1,
                                                 (NOD) g_file); }
 break;
 case 181:
+#line 1060 "parse.y"
 { g_file = make_file();
 			  g_file->fil_name = (STR) yyvsp[0]; }
 break;
 case 184:
+#line 1068 "parse.y"
 { g_file->fil_length = (SLONG) yyvsp[0]; }
 break;
 case 185:
+#line 1076 "parse.y"
 { g_file  = make_file ();}
 break;
 case 190:
+#line 1088 "parse.y"
 { g_file->fil_start = (SLONG) yyvsp[0];}
 break;
 case 191:
+#line 1090 "parse.y"
 { g_file->fil_length = (SLONG) yyvsp[-1];}
 break;
 case 198:
+#line 1107 "parse.y"
 { yyval = make_node (nod_def_relation, 
 				(int) e_drl_count, yyvsp[-4], make_list (yyvsp[-1]), yyvsp[-3]); }
 break;
 case 199:
+#line 1112 "parse.y"
 { yyval = make_node (nod_redef_relation, 
 				(int) e_drl_count, yyvsp[-4], make_list (yyvsp[-1]), yyvsp[-3]); }
 break;
 case 200:
+#line 1117 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 201:
+#line 1119 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 202:
+#line 1121 "parse.y"
 { yyval = (NOD) NULL; }
 break;
 case 204:
+#line 1126 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 207:
+#line 1139 "parse.y"
 { yyval = make_node (nod_def_field, (int) e_dfl_count, 
 					yyvsp[-5], yyvsp[-3], yyvsp[-2], make_list (yyvsp[-1]), yyvsp[0], yyvsp[-4], NULL); }
 break;
 case 208:
+#line 1142 "parse.y"
 { yyval = make_node (nod_def_field, (int) e_dfl_count, 
 				    yyvsp[-2], NULL, NULL, NULL, NULL, NULL, yyvsp[0]); }
 break;
 case 209:
+#line 1146 "parse.y"
 { yyval = make_node (nod_def_field, (int) e_dfl_count, 
 				    yyvsp[-1], NULL, NULL, NULL, NULL, NULL, yyvsp[0]); }
 break;
 case 210:
+#line 1155 "parse.y"
 { 
 			g_field->fld_flags |= FLD_computed;
 			yyval = make_node (nod_def_computed, 2, yyvsp[-2], yyvsp[-1]); }
 break;
 case 213:
+#line 1165 "parse.y"
 { yyval = NULL; }
 break;
 case 214:
+#line 1167 "parse.y"
 { yyval = make_node (nod_def_domain, (int) e_dom_count,
                                             yyvsp[-1], NULL, NULL, NULL, NULL); }
 break;
 case 215:
+#line 1172 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 216:
+#line 1174 "parse.y"
 { yyval = (NOD) NULL; }
 break;
 case 217:
+#line 1179 "parse.y"
 { g_field_name = yyvsp[0];
 			  g_field = make_field (yyvsp[0]);
 			  yyval = (NOD) g_field; }
 break;
 case 218:
+#line 1185 "parse.y"
 { g_field = make_field (yyvsp[0]);
 				  yyval = (NOD) g_field; }
 break;
 case 219:
+#line 1191 "parse.y"
 { yyval = yyvsp[-1]; }
 break;
 case 220:
+#line 1194 "parse.y"
 { g_field = make_field (NULL);
 			  yyval = (NOD) g_field; }
 break;
 case 221:
+#line 1199 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 222:
+#line 1201 "parse.y"
 { yyval = (NOD) NULL; }
 break;
 case 226:
+#line 1212 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 227:
+#line 1214 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 228:
+#line 1216 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 229:
+#line 1220 "parse.y"
 { yyval = (NOD) NULL; }
 break;
 case 232:
+#line 1226 "parse.y"
 { yyval = make_node (nod_list, (int) 2, yyvsp[-1], yyvsp[0]); }
 break;
 case 233:
+#line 1230 "parse.y"
 { yyval = make_node (nod_rel_constraint, (int) 2, yyvsp[-1], yyvsp[0]);}
 break;
 case 234:
+#line 1234 "parse.y"
 { yyval = make_node (nod_null, (int) 1, NULL); }
 break;
 case 235:
+#line 1237 "parse.y"
 { yyval = make_node (nod_foreign, e_for_count,
                         make_node (nod_list, (int) 1, g_field_name), yyvsp[-3], yyvsp[-2], yyvsp[-1], yyvsp[0]); }
 break;
 case 237:
+#line 1242 "parse.y"
 { yyval = make_node (nod_unique, 2, NULL, yyvsp[0]); }
 break;
 case 238:
+#line 1244 "parse.y"
 { yyval = make_node (nod_primary, e_pri_count, NULL, yyvsp[0]); }
 break;
 case 239:
+#line 1252 "parse.y"
 { yyval = make_node (nod_rel_constraint, (int) 2, yyvsp[-1], yyvsp[0]);}
 break;
 case 240:
+#line 1256 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 241:
+#line 1257 "parse.y"
 { yyval = NULL ;}
 break;
 case 246:
+#line 1267 "parse.y"
 { yyval = make_node (nod_unique, 2, yyvsp[-1], yyvsp[0]); }
 break;
 case 247:
+#line 1271 "parse.y"
 { yyval = make_node (nod_primary, e_pri_count, yyvsp[-1], yyvsp[0]); }
 break;
 case 248:
+#line 1277 "parse.y"
 { yyval = make_node (nod_foreign, e_for_count, yyvsp[-5], yyvsp[-3], 
 			         yyvsp[-2], yyvsp[-1], yyvsp[0]); }
 break;
 case 249:
+#line 1282 "parse.y"
 { yyval = make_node (nod_def_index, (int) e_idx_count, 
 					NULL, yyvsp[-2], yyvsp[0], NULL, NULL); }
 break;
 case 250:
+#line 1289 "parse.y"
 { yyval = make_node (nod_def_index, (int) e_idx_count, 
 					NULL, NULL, NULL, NULL, NULL); }
 break;
 case 251:
+#line 1294 "parse.y"
 { yyval = make_node (nod_def_constraint, 
 				(int) e_cnstr_count, MAKE_string (NULL_STRING, 0), NULL, 
 				NULL, NULL, yyvsp[-2], NULL, yyvsp[0], NULL, NULL); }
 break;
 case 252:
+#line 1301 "parse.y"
 { yyval = make_node (nod_ref_upd_del, e_ref_upd_del_count, yyvsp[0], NULL);}
 break;
 case 253:
+#line 1303 "parse.y"
 { yyval = make_node (nod_ref_upd_del, e_ref_upd_del_count, NULL, yyvsp[0]);}
 break;
 case 254:
+#line 1305 "parse.y"
 { yyval = make_node (nod_ref_upd_del, e_ref_upd_del_count, yyvsp[0], yyvsp[-1]); }
 break;
 case 255:
+#line 1307 "parse.y"
 { yyval = make_node (nod_ref_upd_del, e_ref_upd_del_count, yyvsp[-1], yyvsp[0]);}
 break;
 case 256:
+#line 1309 "parse.y"
 { yyval = NULL;}
 break;
 case 257:
+#line 1313 "parse.y"
 { yyval = yyvsp[0];}
 break;
 case 258:
+#line 1316 "parse.y"
 { yyval = yyvsp[0];}
 break;
 case 259:
+#line 1320 "parse.y"
 { yyval = make_flag_node (nod_ref_trig_action, 
 			 REF_ACTION_CASCADE, e_ref_trig_action_count, NULL);}
 break;
 case 260:
+#line 1323 "parse.y"
 { yyval = make_flag_node (nod_ref_trig_action, 
 			 REF_ACTION_SET_DEFAULT, e_ref_trig_action_count, NULL);}
 break;
 case 261:
+#line 1326 "parse.y"
 { yyval = make_flag_node (nod_ref_trig_action, 
 			 REF_ACTION_SET_NULL, e_ref_trig_action_count, NULL);}
 break;
 case 262:
+#line 1329 "parse.y"
 { yyval = make_flag_node (nod_ref_trig_action, 
 			 REF_ACTION_NONE, e_ref_trig_action_count, NULL);}
 break;
 case 263:
+#line 1343 "parse.y"
 { yyval = make_node (nod_def_procedure,
 						  (int) e_prc_count, 
 					          yyvsp[-7], yyvsp[-6], yyvsp[-5], yyvsp[-2], yyvsp[-1], yyvsp[0], NULL); }
 break;
 case 264:
+#line 1355 "parse.y"
 { yyval = make_node (nod_redef_procedure,
 						  (int) e_prc_count, 
 					          yyvsp[-7], yyvsp[-6], yyvsp[-5], yyvsp[-2], yyvsp[-1], yyvsp[0], NULL); }
 break;
 case 265:
+#line 1366 "parse.y"
 { yyval = make_node (nod_replace_procedure,
 						  (int) e_prc_count, 
 					          yyvsp[-7], yyvsp[-6], yyvsp[-5], yyvsp[-2], yyvsp[-1], yyvsp[0], NULL); }
 break;
 case 266:
+#line 1377 "parse.y"
 { yyval = make_node (nod_mod_procedure,
 						  (int) e_prc_count, 
 					          yyvsp[-7], yyvsp[-6], yyvsp[-5], yyvsp[-2], yyvsp[-1], yyvsp[0], NULL); }
 break;
 case 267:
+#line 1383 "parse.y"
 { yyval = make_list (yyvsp[-1]); }
 break;
 case 268:
+#line 1385 "parse.y"
 { yyval = NULL; }
 break;
 case 269:
+#line 1389 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 270:
+#line 1391 "parse.y"
 { yyval = NULL; }
 break;
 case 272:
+#line 1396 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 273:
+#line 1400 "parse.y"
 { yyval = make_node (nod_def_field, (int) e_dfl_count, 
 				yyvsp[-1], NULL, NULL, NULL, NULL, NULL, NULL); }
 break;
 case 274:
+#line 1406 "parse.y"
 { yyval = make_list (yyvsp[0]); }
 break;
 case 275:
+#line 1408 "parse.y"
 { yyval = NULL; }
 break;
 case 277:
+#line 1413 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-1], yyvsp[0]); }
 break;
 case 278:
+#line 1417 "parse.y"
 { yyval = make_node (nod_def_field, (int) e_dfl_count, 
 				yyvsp[-3], yyvsp[-1], NULL, NULL, NULL, NULL, NULL); }
 break;
 case 279:
+#line 1422 "parse.y"
 { yyval = NULL; }
 break;
 case 280:
+#line 1424 "parse.y"
 { yyval = NULL; }
 break;
 case 281:
+#line 1428 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 282:
+#line 1430 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 285:
+#line 1439 "parse.y"
 { yyval = make_node (nod_block, e_blk_count,
 					NULL, NULL);}
 break;
 case 286:
+#line 1444 "parse.y"
 { yyval = make_node (nod_block, e_blk_count,
 					make_list (yyvsp[-1]), NULL);}
 break;
 case 287:
+#line 1450 "parse.y"
 { yyval = make_node (nod_block, e_blk_count,
 					make_list (yyvsp[-2]), make_list (yyvsp[-1]));}
 break;
 case 289:
+#line 1456 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-1], yyvsp[0]); }
 break;
 case 292:
+#line 1462 "parse.y"
 { yyval = make_node (nod_exception_stmt, 1, yyvsp[-1]); }
 break;
 case 298:
+#line 1469 "parse.y"
 { yyval = make_node (nod_post, e_pst_count, yyvsp[-1]); }
 break;
 case 302:
+#line 1474 "parse.y"
 { yyval = make_node (nod_return, e_rtn_count, NULL); }
 break;
 case 303:
+#line 1476 "parse.y"
 { yyval = make_node (nod_exit, 0, NULL); }
 break;
 case 304:
+#line 1478 "parse.y"
 { yyval = make_node (nod_breakleave, e_break_count, NULL); }
 break;
 case 305:
+#line 1482 "parse.y"
 { yyval = make_node (nod_exec_procedure, e_exe_count, yyvsp[-3],
 					  yyvsp[-2], yyvsp[-1]); }
 break;
 case 306:
+#line 1487 "parse.y"
 { yyval = make_node (nod_exec_sql, e_exec_vc_count, yyvsp[-1]); }
 break;
 case 307:
+#line 1491 "parse.y"
 { yyval = make_node (nod_for_select, e_flp_count, yyvsp[-5],
 					  make_list (yyvsp[-3]), yyvsp[-2], yyvsp[0], NULL); }
 break;
 case 308:
+#line 1496 "parse.y"
 { yyval = make_node (nod_if, e_if_count, yyvsp[-5], yyvsp[-2], yyvsp[0]); }
 break;
 case 309:
+#line 1498 "parse.y"
 { yyval = make_node (nod_if, e_if_count, yyvsp[-3], yyvsp[0], NULL); }
 break;
 case 310:
+#line 1502 "parse.y"
 { yyval = make_node (nod_for_select, e_flp_count, yyvsp[-3],
 					  make_list (yyvsp[-1]), NULL, NULL); }
 break;
 case 311:
+#line 1507 "parse.y"
 { yyval = make_node (nod_var_name, (int) e_vrn_count, 
 							yyvsp[0]); }
 break;
 case 312:
+#line 1512 "parse.y"
 { yyval = make_list (yyvsp[0]); }
 break;
 case 313:
+#line 1514 "parse.y"
 { yyval = make_list (yyvsp[-1]); }
 break;
 case 314:
+#line 1516 "parse.y"
 { yyval = NULL; }
 break;
 case 315:
+#line 1520 "parse.y"
 { yyval = make_list (yyvsp[0]); }
 break;
 case 316:
+#line 1522 "parse.y"
 { yyval = make_list (yyvsp[-1]); }
 break;
 case 317:
+#line 1524 "parse.y"
 { yyval = NULL; }
 break;
 case 320:
+#line 1530 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 321:
+#line 1532 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 322:
+#line 1536 "parse.y"
 { yyval = make_node (nod_while, e_while_count,
 					  yyvsp[-3], yyvsp[0], NULL); }
 break;
 case 323:
+#line 1541 "parse.y"
 { yyval = make_node (nod_cursor, e_cur_count, yyvsp[0], NULL, NULL); }
 break;
 case 324:
+#line 1543 "parse.y"
 { yyval = NULL; }
 break;
 case 326:
+#line 1547 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-1], yyvsp[0]); }
 break;
 case 327:
+#line 1551 "parse.y"
 { yyval = make_node (nod_on_error, e_err_count,
 					make_list (yyvsp[-2]), yyvsp[0]); }
 break;
 case 329:
+#line 1557 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 330:
+#line 1561 "parse.y"
 { yyval = make_node (nod_sqlcode, 1, yyvsp[0]); }
 break;
 case 331:
+#line 1563 "parse.y"
 { yyval = make_node (nod_gdscode, 1, yyvsp[0]); }
 break;
 case 332:
+#line 1565 "parse.y"
 { yyval = make_node (nod_exception, 1, yyvsp[0]); }
 break;
 case 333:
+#line 1567 "parse.y"
 { yyval = make_node (nod_default, 1, NULL); }
 break;
 case 334:
+#line 1574 "parse.y"
 { yyval = make_node (nod_exec_procedure, e_exe_count, yyvsp[-1],
 				  yyvsp[0], make_node (nod_all, (int) 0, NULL)); }
 break;
 case 335:
+#line 1579 "parse.y"
 { yyval = make_list (yyvsp[0]); }
 break;
 case 336:
+#line 1581 "parse.y"
 { yyval = make_list (yyvsp[-1]); }
 break;
 case 337:
+#line 1583 "parse.y"
 { yyval = NULL; }
 break;
 case 341:
+#line 1590 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 342:
+#line 1592 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 343:
+#line 1594 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 344:
+#line 1602 "parse.y"
 { yyval = make_node (nod_def_view, (int) e_view_count, 
 					  yyvsp[-6], yyvsp[-5], yyvsp[-2], yyvsp[-1], yyvsp[0]); }
 break;
 case 345:
+#line 1609 "parse.y"
 { yyval = make_node (nod_redef_view, (int) e_view_count, 
 					  yyvsp[-6], yyvsp[-5], yyvsp[-2], yyvsp[-1], yyvsp[0]); }
 break;
 case 346:
+#line 1616 "parse.y"
 { yyval = make_node (nod_replace_view, (int) e_view_count, 
 					  yyvsp[-6], yyvsp[-5], yyvsp[-2], yyvsp[-1], yyvsp[0]); }
 break;
 case 347:
+#line 1622 "parse.y"
 { yyval = make_node (nod_mod_view, (int) e_view_count, 
 					  yyvsp[-6], yyvsp[-5], yyvsp[-2], yyvsp[-1], yyvsp[0]); }
 break;
 case 348:
+#line 1627 "parse.y"
 { yyval = make_node (nod_select, (int) 2, yyvsp[0], NULL); }
 break;
 case 349:
+#line 1631 "parse.y"
 { yyval = make_node (nod_list, (int) 1, yyvsp[0]); }
 break;
 case 350:
+#line 1633 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 351:
+#line 1635 "parse.y"
 { yyval = make_flag_node (nod_list, NOD_UNION_ALL, 2, yyvsp[-3], yyvsp[0]); }
 break;
 case 352:
+#line 1646 "parse.y"
 { yyval = make_node (nod_select_expr, e_sel_count, 
 					yyvsp[-7], yyvsp[-6], yyvsp[-5], yyvsp[-4], yyvsp[-3], yyvsp[-2], yyvsp[-1], yyvsp[0], NULL); }
 break;
 case 353:
+#line 1651 "parse.y"
 { yyval = make_list (yyvsp[0]); }
 break;
 case 355:
+#line 1656 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 358:
+#line 1664 "parse.y"
 { yyval = make_node (nod_join, (int) e_join_count,
 						yyvsp[-5], yyvsp[-4], yyvsp[-2], yyvsp[0]); }
 break;
 case 359:
+#line 1667 "parse.y"
 { yyval = yyvsp[-1]; }
 break;
 case 360:
+#line 1673 "parse.y"
 { beginning = lex_position(); }
 break;
 case 361:
+#line 1677 "parse.y"
 { yyval = (NOD) MAKE_string ((UCHAR *) beginning, 
 			       (lex_position() == end) ?
 			       lex_position()-beginning : last_token-beginning);}
 break;
 case 362:
+#line 1683 "parse.y"
 { beginning = last_token; }
 break;
 case 363:
+#line 1687 "parse.y"
 { yyval = (NOD) MAKE_string ((UCHAR *) beginning, 
 					lex_position()-beginning); }
 break;
 case 364:
+#line 1693 "parse.y"
 { yyval = make_node (nod_def_constraint, (int) e_cnstr_count, 
 					MAKE_string (NULL_STRING, 0), NULL, NULL, NULL, 
 					NULL, NULL, NULL, NULL, NULL); }
 break;
 case 365:
+#line 1697 "parse.y"
 { yyval = 0; }
 break;
 case 366:
+#line 1711 "parse.y"
 { yyval = make_node (nod_def_trigger, (int) e_trg_count,
 				yyvsp[-8], yyvsp[-6], yyvsp[-5], yyvsp[-4], yyvsp[-3], yyvsp[-1], yyvsp[0], NULL); }
 break;
 case 367:
+#line 1722 "parse.y"
 { yyval = make_node (nod_replace_trigger, (int) e_trg_count,
 				yyvsp[-8], yyvsp[-6], yyvsp[-5], yyvsp[-4], yyvsp[-3], yyvsp[-1], yyvsp[0], NULL); }
 break;
 case 368:
+#line 1727 "parse.y"
 { yyval = MAKE_constant ((STR) 0, CONSTANT_SLONG); }
 break;
 case 369:
+#line 1729 "parse.y"
 { yyval = MAKE_constant ((STR) 1, CONSTANT_SLONG); }
 break;
 case 370:
+#line 1731 "parse.y"
 { yyval = NULL; }
 break;
 case 371:
+#line 1735 "parse.y"
 { yyval = MAKE_trigger_type (yyvsp[-1], yyvsp[0]); }
 break;
 case 372:
+#line 1739 "parse.y"
 { yyval = MAKE_constant ((STR) 0, CONSTANT_SLONG); }
 break;
 case 373:
+#line 1741 "parse.y"
 { yyval = MAKE_constant ((STR) 1, CONSTANT_SLONG); }
 break;
 case 374:
+#line 1745 "parse.y"
 { yyval = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (1, 0, 0), CONSTANT_SLONG); }
 break;
 case 375:
+#line 1747 "parse.y"
 { yyval = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (2, 0, 0), CONSTANT_SLONG); }
 break;
 case 376:
+#line 1749 "parse.y"
 { yyval = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (3, 0, 0), CONSTANT_SLONG); }
 break;
 case 377:
+#line 1751 "parse.y"
 { yyval = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (1, 2, 0), CONSTANT_SLONG); }
 break;
 case 378:
+#line 1753 "parse.y"
 { yyval = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (1, 3, 0), CONSTANT_SLONG); }
 break;
 case 379:
+#line 1755 "parse.y"
 { yyval = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (2, 1, 0), CONSTANT_SLONG); }
 break;
 case 380:
+#line 1757 "parse.y"
 { yyval = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (2, 3, 0), CONSTANT_SLONG); }
 break;
 case 381:
+#line 1759 "parse.y"
 { yyval = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (3, 1, 0), CONSTANT_SLONG); }
 break;
 case 382:
+#line 1761 "parse.y"
 { yyval = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (3, 2, 0), CONSTANT_SLONG); }
 break;
 case 383:
+#line 1763 "parse.y"
 { yyval = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (1, 2, 3), CONSTANT_SLONG); }
 break;
 case 384:
+#line 1765 "parse.y"
 { yyval = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (1, 3, 2), CONSTANT_SLONG); }
 break;
 case 385:
+#line 1767 "parse.y"
 { yyval = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (2, 1, 3), CONSTANT_SLONG); }
 break;
 case 386:
+#line 1769 "parse.y"
 { yyval = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (2, 3, 1), CONSTANT_SLONG); }
 break;
 case 387:
+#line 1771 "parse.y"
 { yyval = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (3, 1, 2), CONSTANT_SLONG); }
 break;
 case 388:
+#line 1773 "parse.y"
 { yyval = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (3, 2, 1), CONSTANT_SLONG); }
 break;
 case 389:
+#line 1777 "parse.y"
 { yyval = MAKE_constant ((STR) yyvsp[0], CONSTANT_SLONG); }
 break;
 case 390:
+#line 1779 "parse.y"
 { yyval = NULL; }
 break;
 case 391:
+#line 1783 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-1], yyvsp[0]); }
 break;
 case 392:
+#line 1789 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 393:
+#line 1793 "parse.y"
 { yyval = make_node (nod_mod_exception, (int) e_xcp_count, 
 						yyvsp[-1], yyvsp[0]); }
 break;
 case 394:
+#line 1796 "parse.y"
 { yyval = make_node (nod_mod_relation, (int) e_alt_count, 
 						yyvsp[-1], make_list (yyvsp[0])); }
 break;
 case 395:
+#line 1799 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 396:
+#line 1801 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 397:
+#line 1803 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 398:
+#line 1805 "parse.y"
 { yyval = make_node (nod_mod_database, (int) e_adb_count,
 				make_list (yyvsp[0])); }
 break;
 case 399:
+#line 1808 "parse.y"
 { yyval = make_node (nod_mod_domain, (int) e_alt_count,
                                           yyvsp[-1], make_list (yyvsp[0])); }
 break;
 case 400:
+#line 1811 "parse.y"
 { yyval = make_node (nod_mod_index, 
 				     (int) e_mod_idx_count, yyvsp[0]); }
 break;
 case 401:
+#line 1816 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 402:
+#line 1819 "parse.y"
 { yyval = make_node (nod_def_constraint, 
 				  (int) e_cnstr_count, MAKE_string (NULL_STRING, 0), NULL, 
 				  NULL, NULL, yyvsp[-2], NULL, yyvsp[0], NULL, NULL); }
 break;
 case 404:
+#line 1826 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-1], yyvsp[0]); }
 break;
 case 405:
+#line 1830 "parse.y"
 { yyval = make_node (nod_def_default, (int) e_dft_count,
 					    yyvsp[-1], yyvsp[0]); }
 break;
 case 406:
+#line 1839 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 407:
+#line 1843 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 408:
+#line 1845 "parse.y"
 {yyval = make_node (nod_del_default, (int) 0, NULL); }
 break;
 case 409:
+#line 1847 "parse.y"
 { yyval = make_node (nod_delete_rel_constraint, (int) 1, NULL); }
 break;
 case 410:
+#line 1849 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 411:
+#line 1851 "parse.y"
 { yyval = make_node (nod_mod_domain_type, 2, yyvsp[-1]); }
 break;
 case 413:
+#line 1856 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 414:
+#line 1860 "parse.y"
 { yyval = make_node (nod_del_field, 2, yyvsp[-1], yyvsp[0]); }
 break;
 case 415:
+#line 1862 "parse.y"
 { yyval = make_node (nod_delete_rel_constraint, (int) 1, yyvsp[0]);}
 break;
 case 416:
+#line 1864 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 417:
+#line 1866 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 418:
+#line 1872 "parse.y"
 { yyval = make_node (nod_mod_field_pos, 2, yyvsp[-2],
 				MAKE_constant ((STR) yyvsp[0], CONSTANT_SLONG)); }
 break;
 case 419:
+#line 1875 "parse.y"
 { yyval = make_node (nod_mod_field_name, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 420:
+#line 1877 "parse.y"
 { yyval = make_node (nod_mod_field_type, 3, yyvsp[-3], yyvsp[0], yyvsp[-1]); }
 break;
 case 421:
+#line 1881 "parse.y"
 { yyval = make_node (nod_field_name, (int) e_fln_count,
 						NULL, yyvsp[0]); }
 break;
 case 446:
+#line 1912 "parse.y"
 { yyval = NULL; }
 break;
 case 447:
+#line 1914 "parse.y"
 { yyval = NULL; }
 break;
 case 448:
+#line 1918 "parse.y"
 { yyval = NULL; }
 break;
 case 449:
+#line 1920 "parse.y"
 { yyval = make_node (nod_def_domain, (int) e_dom_count,
                                         	    yyvsp[-1], NULL, NULL, NULL, NULL); }
 break;
 case 450:
+#line 1924 "parse.y"
 { g_field_name = yyvsp[0];
 			  g_field = make_field (yyvsp[0]);
 			  yyval = (NOD) g_field; }
 break;
 case 451:
+#line 1929 "parse.y"
 { yyval = make_node (nod_restrict, 0, NULL); }
 break;
 case 452:
+#line 1931 "parse.y"
 { yyval = make_node (nod_cascade, 0, NULL); }
 break;
 case 453:
+#line 1933 "parse.y"
 { yyval = make_node (nod_restrict, 0, NULL); }
 break;
 case 454:
+#line 1937 "parse.y"
 { yyval = make_node (nod_idx_active, 1, yyvsp[-1]); }
 break;
 case 455:
+#line 1939 "parse.y"
 { yyval = make_node (nod_idx_inactive, 1, yyvsp[-1]); }
 break;
 case 456:
+#line 1946 "parse.y"
 { log_defined = FALSE;
 			  cache_defined = FALSE;
 			  yyval = (NOD) NULL; }
 break;
 case 458:
+#line 1953 "parse.y"
 { yyval = make_node (nod_list, (int) 2, yyvsp[-1], yyvsp[0]); }
 break;
 case 459:
+#line 1957 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 460:
+#line 1965 "parse.y"
 { yyval = make_node (nod_drop_log, (int) 0, NULL); }
 break;
 case 461:
+#line 1967 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 462:
+#line 1969 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 464:
+#line 1974 "parse.y"
 { yyval = make_node (nod_list, (int) 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 465:
+#line 1986 "parse.y"
 { yyval = make_node (nod_mod_trigger, (int) e_trg_count,
 				yyvsp[-6], NULL, yyvsp[-5], yyvsp[-4], yyvsp[-3], yyvsp[-1], yyvsp[0], NULL); }
 break;
 case 467:
+#line 1992 "parse.y"
 { yyval = NULL; }
 break;
 case 469:
+#line 1997 "parse.y"
 { yyval = NULL; }
 break;
 case 470:
+#line 2003 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 471:
+#line 2007 "parse.y"
 { yyval = make_node (nod_del_exception, 1, yyvsp[0]); }
 break;
 case 472:
+#line 2009 "parse.y"
 { yyval = make_node (nod_del_index, (int) 1, yyvsp[0]); }
 break;
 case 473:
+#line 2011 "parse.y"
 { yyval = make_node (nod_del_procedure, (int) 1, yyvsp[0]); }
 break;
 case 474:
+#line 2013 "parse.y"
 { yyval = make_node (nod_del_relation, (int) 1, yyvsp[0]); }
 break;
 case 475:
+#line 2015 "parse.y"
 { yyval = make_node (nod_del_trigger, (int) 1, yyvsp[0]); }
 break;
 case 476:
+#line 2017 "parse.y"
 { yyval = make_node (nod_del_view, (int) 1, yyvsp[0]); }
 break;
 case 477:
+#line 2019 "parse.y"
 { yyval = make_node (nod_del_filter, (int) 1, yyvsp[0]); }
 break;
 case 478:
+#line 2021 "parse.y"
 { yyval = make_node (nod_del_domain, (int) 1, yyvsp[0]); }
 break;
 case 479:
+#line 2023 "parse.y"
 { yyval = make_node (nod_del_udf, (int) 1, yyvsp[0]); }
 break;
 case 480:
+#line 2025 "parse.y"
 { yyval = make_node (nod_del_shadow, (int) 1, yyvsp[0]); }
 break;
 case 481:
+#line 2027 "parse.y"
 { yyval = make_node (nod_del_role, (int) 1, yyvsp[0]); }
 break;
 case 482:
+#line 2029 "parse.y"
 { yyval = make_node (nod_del_generator, (int) 1, yyvsp[0]); }
 break;
 case 487:
+#line 2045 "parse.y"
 { g_field->fld_ranges = make_list (yyvsp[-1]);
 		      g_field->fld_dimensions = g_field->fld_ranges->nod_count / 2;
 		      g_field->fld_element_dtype = g_field->fld_dtype;
 		      yyval = yyvsp[-3]; }
 break;
 case 488:
+#line 2050 "parse.y"
 { g_field->fld_ranges = make_list (yyvsp[-2]);
 		      g_field->fld_dimensions = g_field->fld_ranges->nod_count / 2;
 		      g_field->fld_element_dtype = g_field->fld_dtype;
 		      yyval = yyvsp[-4]; }
 break;
 case 490:
+#line 2058 "parse.y"
 { yyval = make_node (nod_list, (int) 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 491:
+#line 2062 "parse.y"
 { if ((SLONG) yyvsp[0] < 1)
 		     		yyval = make_node (nod_list, (int) 2, 
 					MAKE_constant ((STR) yyvsp[0], CONSTANT_SLONG), 
@@ -6421,11 +6785,13 @@ case 491:
 					MAKE_constant ((STR) yyvsp[0], CONSTANT_SLONG) ); }
 break;
 case 492:
+#line 2071 "parse.y"
 { yyval = make_node (nod_list, (int) 2, 
 			 	MAKE_constant ((STR) yyvsp[-2], CONSTANT_SLONG),
 				MAKE_constant ((STR) yyvsp[0], CONSTANT_SLONG)); }
 break;
 case 498:
+#line 2084 "parse.y"
 { 
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
 			    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
@@ -6444,18 +6810,21 @@ case 498:
 			}
 break;
 case 499:
+#line 2101 "parse.y"
 { 
 			g_field->fld_dtype = dtype_long; 
 			g_field->fld_length = sizeof (SLONG); 
 			}
 break;
 case 500:
+#line 2106 "parse.y"
 { 
 			g_field->fld_dtype = dtype_short; 
 			g_field->fld_length = sizeof (SSHORT); 
 			}
 break;
 case 501:
+#line 2111 "parse.y"
 { 
 			*stmt_ambiguous = TRUE;
 			if (client_dialect <= SQL_DIALECT_V5)
@@ -6476,6 +6845,7 @@ case 501:
 			}
 break;
 case 502:
+#line 2130 "parse.y"
 { 
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
 			    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
@@ -6494,17 +6864,20 @@ case 502:
 			}
 break;
 case 503:
+#line 2147 "parse.y"
 { 
 			g_field->fld_dtype = dtype_timestamp; 
 			g_field->fld_length = sizeof (GDS_TIMESTAMP);
 			}
 break;
 case 506:
+#line 2162 "parse.y"
 { 
 			g_field->fld_dtype = dtype_blob; 
 			}
 break;
 case 507:
+#line 2166 "parse.y"
 { 
 			g_field->fld_dtype = dtype_blob; 
 			g_field->fld_seg_length = (USHORT) yyvsp[-1];
@@ -6512,6 +6885,7 @@ case 507:
 			}
 break;
 case 508:
+#line 2172 "parse.y"
 { 
 			g_field->fld_dtype = dtype_blob; 
 			g_field->fld_seg_length = (USHORT) yyvsp[-3];
@@ -6519,6 +6893,7 @@ case 508:
 			}
 break;
 case 509:
+#line 2178 "parse.y"
 { 
 			g_field->fld_dtype = dtype_blob; 
 			g_field->fld_seg_length = 80;
@@ -6526,36 +6901,43 @@ case 509:
 			}
 break;
 case 510:
+#line 2186 "parse.y"
 {
 			g_field->fld_seg_length = (USHORT) yyvsp[0];
 		  	}
 break;
 case 511:
+#line 2190 "parse.y"
 {
 			g_field->fld_seg_length = (USHORT) 80;
 		  	}
 break;
 case 512:
+#line 2196 "parse.y"
 {
 			g_field->fld_sub_type = (USHORT) yyvsp[0];
 			}
 break;
 case 513:
+#line 2200 "parse.y"
 {
 			g_field->fld_sub_type_name = yyvsp[0];
 			}
 break;
 case 514:
+#line 2204 "parse.y"
 {
 			g_field->fld_sub_type = (USHORT) 0;
 			}
 break;
 case 515:
+#line 2210 "parse.y"
 {
 			g_field->fld_character_set = yyvsp[0];
 			}
 break;
 case 517:
+#line 2221 "parse.y"
 { 
 			g_field->fld_dtype = dtype_text; 
 			g_field->fld_character_length = (USHORT) yyvsp[-1]; 
@@ -6563,6 +6945,7 @@ case 517:
 			}
 break;
 case 518:
+#line 2227 "parse.y"
 { 
 			g_field->fld_dtype = dtype_text; 
 			g_field->fld_character_length = 1; 
@@ -6570,6 +6953,7 @@ case 518:
 			}
 break;
 case 519:
+#line 2233 "parse.y"
 { 
 			g_field->fld_dtype = dtype_varying; 
 			g_field->fld_character_length = (USHORT) yyvsp[-1]; 
@@ -6577,29 +6961,34 @@ case 519:
 			}
 break;
 case 520:
+#line 2241 "parse.y"
 { 
 			g_field->fld_dtype = dtype_text; 
 			g_field->fld_character_length = (USHORT) yyvsp[-1]; 
 			}
 break;
 case 521:
+#line 2246 "parse.y"
 { 
 			g_field->fld_dtype = dtype_text; 
 			g_field->fld_character_length = 1; 
 			}
 break;
 case 522:
+#line 2251 "parse.y"
 { 
 			g_field->fld_dtype = dtype_varying; 
 			g_field->fld_character_length = (USHORT) yyvsp[-1]; 
 			}
 break;
 case 531:
+#line 2276 "parse.y"
 { 
 			  g_field->fld_sub_type = dsc_num_type_numeric;
 			}
 break;
 case 532:
+#line 2280 "parse.y"
 {  
 			   g_field->fld_sub_type = dsc_num_type_decimal;
 			   if (g_field->fld_dtype == dtype_short)
@@ -6610,9 +6999,11 @@ case 532:
 			}
 break;
 case 533:
+#line 2291 "parse.y"
 { yyval = make_node (nod_position, 1, yyvsp[0]); }
 break;
 case 534:
+#line 2298 "parse.y"
 {
 			g_field->fld_dtype = dtype_long; 
 		    	g_field->fld_length = sizeof (SLONG); 
@@ -6620,6 +7011,7 @@ case 534:
 		    	}
 break;
 case 535:
+#line 2304 "parse.y"
 {         
 			if ( ((SLONG) yyvsp[-1] < 1) || ((SLONG) yyvsp[-1] > 18) )
 			    yyabandon (-842, isc_precision_err);
@@ -6675,6 +7067,7 @@ case 535:
 			}
 break;
 case 536:
+#line 2358 "parse.y"
 { 
 			if ( ((SLONG) yyvsp[-3] < 1) || ((SLONG) yyvsp[-3] > 18) )
 			    yyabandon (-842, isc_precision_err);
@@ -6736,6 +7129,7 @@ case 536:
 			}
 break;
 case 539:
+#line 2428 "parse.y"
 { 
 			if ((SLONG) yyvsp[0] > 7)
 			    {
@@ -6750,42 +7144,50 @@ case 539:
 			}
 break;
 case 540:
+#line 2441 "parse.y"
 { 
 			g_field->fld_dtype = dtype_double; 
 			g_field->fld_length = sizeof (double); 
 			}
 break;
 case 541:
+#line 2446 "parse.y"
 { 
 			g_field->fld_dtype = dtype_real; 
 			g_field->fld_length = sizeof (float); 
 			}
 break;
 case 542:
+#line 2451 "parse.y"
 { 
 			g_field->fld_dtype = dtype_double; 
 			g_field->fld_length = sizeof (double); 
 			}
 break;
 case 543:
+#line 2458 "parse.y"
 { yyval = yyvsp[-1]; }
 break;
 case 544:
+#line 2460 "parse.y"
 { yyval = 0; }
 break;
 case 548:
+#line 2473 "parse.y"
 { 
 			  yyval = make_node (nod_set_generator2,e_gen_id_count,yyvsp[-2],
 						MAKE_constant ((STR) yyvsp[0], CONSTANT_SLONG));
 			}
 break;
 case 549:
+#line 2478 "parse.y"
 {
 			  yyval = make_node (nod_set_generator2,e_gen_id_count,yyvsp[-2],
 				       MAKE_constant((STR)yyvsp[0], CONSTANT_SINT64));
 			}
 break;
 case 550:
+#line 2483 "parse.y"
 {
 			  yyval = make_node (nod_set_generator2, e_gen_id_count, yyvsp[-3],
 					  make_node(nod_negate, 1,
@@ -6793,609 +7195,805 @@ case 550:
 			}
 break;
 case 551:
+#line 2494 "parse.y"
 { yyval = make_node (nod_commit, 1, yyvsp[0]); }
 break;
 case 552:
+#line 2498 "parse.y"
 { yyval = make_node (nod_rollback, 0, NULL); }
 break;
 case 555:
+#line 2506 "parse.y"
 { yyval = make_node (nod_commit_retain, 0, NULL); }
 break;
 case 556:
+#line 2508 "parse.y"
 { yyval = (NOD) NULL; }
 break;
 case 558:
+#line 2513 "parse.y"
 { yyval = (NOD) NULL; }
 break;
 case 559:
+#line 2517 "parse.y"
 {yyval = make_node (nod_trans, 1, make_list (yyvsp[0])); }
 break;
 case 561:
+#line 2522 "parse.y"
 { yyval = (NOD) NULL; }
 break;
 case 563:
+#line 2527 "parse.y"
 { yyval = make_node (nod_list, (int) 2, yyvsp[-1], yyvsp[0]); }
 break;
 case 568:
+#line 2537 "parse.y"
 { yyval = make_flag_node (nod_access, NOD_READ_ONLY, (int) 0, NULL); }
 break;
 case 569:
+#line 2539 "parse.y"
 { yyval = make_flag_node (nod_access, NOD_READ_WRITE, (int) 0, NULL); }
 break;
 case 570:
+#line 2543 "parse.y"
 { yyval = make_flag_node (nod_wait, NOD_WAIT, (int) 0, NULL); }
 break;
 case 571:
+#line 2545 "parse.y"
 { yyval = make_flag_node (nod_wait, NOD_NO_WAIT, (int) 0, NULL); }
 break;
 case 572:
+#line 2549 "parse.y"
 { yyval = yyvsp[0];}
 break;
 case 574:
+#line 2554 "parse.y"
 { yyval = yyvsp[0];}
 break;
 case 575:
+#line 2556 "parse.y"
 { yyval = make_flag_node (nod_isolation, NOD_READ_COMMITTED, 1, yyvsp[0]); }
 break;
 case 576:
+#line 2558 "parse.y"
 { yyval = make_flag_node (nod_isolation, NOD_READ_COMMITTED, 1, yyvsp[0]); }
 break;
 case 577:
+#line 2562 "parse.y"
 { yyval = make_flag_node (nod_isolation, NOD_CONCURRENCY, 0, NULL); }
 break;
 case 578:
+#line 2564 "parse.y"
 { yyval = make_flag_node (nod_isolation, NOD_CONSISTENCY, 0, NULL); }
 break;
 case 579:
+#line 2566 "parse.y"
 { yyval = make_flag_node (nod_isolation, NOD_CONSISTENCY, 0, NULL); }
 break;
 case 580:
+#line 2570 "parse.y"
 { yyval = make_flag_node (nod_version, NOD_VERSION, 0, NULL); }
 break;
 case 581:
+#line 2572 "parse.y"
 { yyval = make_flag_node (nod_version, NOD_NO_VERSION, 0, NULL); }
 break;
 case 582:
+#line 2574 "parse.y"
 { yyval = 0; }
 break;
 case 583:
+#line 2578 "parse.y"
 { yyval = make_node (nod_reserve, 1, make_list (yyvsp[0])); }
 break;
 case 584:
+#line 2582 "parse.y"
 { yyval = (NOD) NOD_SHARED; }
 break;
 case 585:
+#line 2584 "parse.y"
 { yyval = (NOD) NOD_PROTECTED ; }
 break;
 case 586:
+#line 2586 "parse.y"
 { yyval = (NOD) 0; }
 break;
 case 587:
+#line 2590 "parse.y"
 { yyval = (NOD) NOD_READ; }
 break;
 case 588:
+#line 2592 "parse.y"
 { yyval = (NOD) NOD_WRITE; }
 break;
 case 590:
+#line 2597 "parse.y"
 { yyval = make_node (nod_list, (int) 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 591:
+#line 2601 "parse.y"
 { yyval = make_node (nod_table_lock, (int) 2, make_list (yyvsp[-1]), yyvsp[0]); }
 break;
 case 592:
+#line 2605 "parse.y"
 { yyval = make_flag_node (nod_lock_mode, (SSHORT) ((SSHORT) yyvsp[-1] | (SSHORT) yyvsp[0]), (SSHORT) 0, NULL); }
 break;
 case 593:
+#line 2607 "parse.y"
 { yyval = 0; }
 break;
 case 595:
+#line 2612 "parse.y"
 { yyval = make_node (nod_list, (int) 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 596:
+#line 2617 "parse.y"
 {yyval = make_node (nod_set_statistics, 
 				(int)e_stat_count, yyvsp[0]); }
 break;
 case 597:
+#line 2624 "parse.y"
 { yyval = make_node (nod_select, 3, yyvsp[-2], yyvsp[-1], yyvsp[0]); }
 break;
 case 598:
+#line 2628 "parse.y"
 { yyval = make_node (nod_list, 1, yyvsp[0]); }
 break;
 case 599:
+#line 2630 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 600:
+#line 2632 "parse.y"
 { yyval = make_flag_node (nod_list, NOD_UNION_ALL, 2, yyvsp[-3], yyvsp[0]); }
 break;
 case 601:
+#line 2636 "parse.y"
 { yyval = make_list (yyvsp[0]); }
 break;
 case 602:
+#line 2638 "parse.y"
 { yyval = 0; }
 break;
 case 604:
+#line 2643 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 605:
+#line 2647 "parse.y"
 { yyval = make_node (nod_order, e_order_count, yyvsp[-3], yyvsp[-1], yyvsp[-2], yyvsp[0]); }
 break;
 case 606:
+#line 2649 "parse.y"
 { yyval = make_node (nod_order, e_order_count, yyvsp[-3], yyvsp[-1], yyvsp[-2], yyvsp[0]); }
 break;
 case 607:
+#line 2653 "parse.y"
 { yyval = 0; }
 break;
 case 608:
+#line 2655 "parse.y"
 { yyval = make_node (nod_flag, 0, NULL); }
 break;
 case 609:
+#line 2657 "parse.y"
 { yyval = 0; }
 break;
 case 610:
+#line 2661 "parse.y"
 { yyval = make_node (nod_flag, 0, NULL); }
 break;
 case 611:
+#line 2663 "parse.y"
 { yyval = 0; }
 break;
 case 612:
+#line 2665 "parse.y"
 { yyval = 0; }
 break;
 case 613:
+#line 2669 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 614:
+#line 2671 "parse.y"
 { yyval = 0; }
 break;
 case 615:
+#line 2675 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 616:
+#line 2677 "parse.y"
 { yyval = make_node (nod_flag, 0, NULL); }
 break;
 case 617:
+#line 2691 "parse.y"
 { yyval = make_node (nod_select_expr, e_sel_count, 
 					yyvsp[-7], yyvsp[-6], yyvsp[-5], yyvsp[-4], yyvsp[-3], yyvsp[-2], yyvsp[-1], yyvsp[0], NULL); }
 break;
 case 618:
+#line 2697 "parse.y"
 { yyval = make_node (nod_flag, 0, NULL); }
 break;
 case 619:
+#line 2699 "parse.y"
 { yyval = 0; }
 break;
 case 620:
+#line 2703 "parse.y"
 { yyval = make_list (yyvsp[0]); }
 break;
 case 621:
+#line 2705 "parse.y"
 { yyval = 0; }
 break;
 case 623:
+#line 2710 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 625:
+#line 2715 "parse.y"
 { yyval = make_node (nod_alias, 2, yyvsp[-1], yyvsp[0]); }
 break;
 case 626:
+#line 2717 "parse.y"
 { yyval = make_node (nod_alias, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 627:
+#line 2724 "parse.y"
 { yyval = make_list (yyvsp[0]); }
 break;
 case 629:
+#line 2732 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 632:
+#line 2740 "parse.y"
 { yyval = make_node (nod_join, (int) e_join_count, yyvsp[-5], yyvsp[-4], yyvsp[-2], yyvsp[0]); }
 break;
 case 633:
+#line 2742 "parse.y"
 { yyval = yyvsp[-1]; }
 break;
 case 634:
+#line 2746 "parse.y"
 { yyval = make_node (nod_rel_proc_name, 
 					(int) e_rpn_count, yyvsp[-2], yyvsp[0], yyvsp[-1]); }
 break;
 case 635:
+#line 2749 "parse.y"
 { yyval = make_node (nod_rel_proc_name, 
 					(int) e_rpn_count, yyvsp[-1], NULL, yyvsp[0]); }
 break;
 case 636:
+#line 2754 "parse.y"
 { yyval = make_list (yyvsp[-1]); }
 break;
 case 637:
+#line 2756 "parse.y"
 { yyval = NULL; }
 break;
 case 639:
+#line 2761 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 643:
+#line 2770 "parse.y"
 { yyval = make_node (nod_relation_name, 
 						(int) e_rln_count, yyvsp[-1], yyvsp[0]); }
 break;
 case 644:
+#line 2775 "parse.y"
 { yyval = make_node (nod_relation_name, 
 						(int) e_rln_count, yyvsp[0], NULL); }
 break;
 case 645:
+#line 2780 "parse.y"
 { yyval = make_node (nod_join_inner, (int) 0, NULL); }
 break;
 case 646:
+#line 2782 "parse.y"
 { yyval = make_node (nod_join_left, (int) 0, NULL); }
 break;
 case 647:
+#line 2784 "parse.y"
 { yyval = make_node (nod_join_left, (int) 0, NULL); }
 break;
 case 648:
+#line 2786 "parse.y"
 { yyval = make_node (nod_join_right, (int) 0, NULL); }
 break;
 case 649:
+#line 2788 "parse.y"
 { yyval = make_node (nod_join_right, (int) 0, NULL); }
 break;
 case 650:
+#line 2790 "parse.y"
 { yyval = make_node (nod_join_full, (int) 0, NULL); }
 break;
 case 651:
+#line 2792 "parse.y"
 { yyval = make_node (nod_join_full, (int) 0, NULL); }
 break;
 case 652:
+#line 2794 "parse.y"
 { yyval = make_node (nod_join_inner, (int) 0, NULL); }
 break;
 case 653:
+#line 2800 "parse.y"
 { yyval = MAKE_constant ((STR) yyvsp[0], CONSTANT_SLONG); }
 break;
 case 654:
+#line 2802 "parse.y"
 { yyval = yyvsp[-1]; }
 break;
 case 655:
+#line 2804 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 656:
+#line 2808 "parse.y"
 { yyval = MAKE_constant ((STR) yyvsp[0], CONSTANT_SLONG); }
 break;
 case 657:
+#line 2810 "parse.y"
 { yyval = yyvsp[-1]; }
 break;
 case 658:
+#line 2812 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 659:
+#line 2816 "parse.y"
 { yyval = make_node (nod_limit, e_limit_count, yyvsp[0], yyvsp[-1]); }
 break;
 case 660:
+#line 2818 "parse.y"
 { yyval = make_node (nod_limit, e_limit_count, NULL, yyvsp[0]); }
 break;
 case 661:
+#line 2820 "parse.y"
 { yyval = make_node (nod_limit, e_limit_count, yyvsp[0], NULL); }
 break;
 case 662:
+#line 2822 "parse.y"
 { yyval = 0; }
 break;
 case 663:
+#line 2826 "parse.y"
 { yyval = make_list (yyvsp[0]); }
 break;
 case 664:
+#line 2828 "parse.y"
 { yyval = 0; }
 break;
 case 666:
+#line 2833 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 671:
+#line 2841 "parse.y"
 { yyval = make_node (nod_collate, e_coll_count, (NOD) yyvsp[0], yyvsp[-2]); }
 break;
 case 675:
+#line 2850 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 676:
+#line 2852 "parse.y"
 { yyval = 0; }
 break;
 case 677:
+#line 2856 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 678:
+#line 2858 "parse.y"
 { yyval = 0; }
 break;
 case 679:
+#line 2862 "parse.y"
 { yyval = make_node (nod_top, 1, yyvsp[-2]);}
 break;
 case 680:
+#line 2864 "parse.y"
 { yyval = make_node (nod_top, 2, yyvsp[-4], yyvsp[-3]);}
 break;
 case 681:
+#line 2866 "parse.y"
 { yyval = 0;}
 break;
 case 682:
+#line 2874 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 683:
+#line 2876 "parse.y"
 { yyval = 0; }
 break;
 case 684:
+#line 2880 "parse.y"
 { yyval = make_node (nod_plan_expr, 2, yyvsp[-3], make_list (yyvsp[-1])); }
 break;
 case 685:
+#line 2884 "parse.y"
 { yyval = 0; }
 break;
 case 686:
+#line 2886 "parse.y"
 { yyval = make_node (nod_merge, (int) 0, NULL); }
 break;
 case 687:
+#line 2888 "parse.y"
 { yyval = make_node (nod_merge, (int) 0, NULL); }
 break;
 case 688:
+#line 2894 "parse.y"
 { yyval = 0; }
 break;
 case 689:
+#line 2896 "parse.y"
 { yyval = 0; }
 break;
 case 691:
+#line 2901 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 692:
+#line 2905 "parse.y"
 { yyval = make_node (nod_plan_item, 2, make_list (yyvsp[-1]), yyvsp[0]); }
 break;
 case 695:
+#line 2911 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-1], yyvsp[0]); }
 break;
 case 696:
+#line 2915 "parse.y"
 { yyval = make_node (nod_natural, (int) 0, NULL); }
 break;
 case 697:
+#line 2917 "parse.y"
 { yyval = make_node (nod_index, 1, make_list (yyvsp[-1])); }
 break;
 case 698:
+#line 2919 "parse.y"
 { yyval = make_node (nod_index_order, 1, yyvsp[0]); }
 break;
 case 700:
+#line 2924 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 701:
+#line 2932 "parse.y"
 { yyval = make_node (nod_insert, e_ins_count, 
 			  yyvsp[-5], make_list (yyvsp[-4]), make_list (yyvsp[-1]), NULL); }
 break;
 case 702:
+#line 2935 "parse.y"
 { yyval = make_node (nod_insert, e_ins_count, yyvsp[-2], yyvsp[-1], NULL, yyvsp[0]); }
 break;
 case 704:
+#line 2940 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 707:
+#line 2951 "parse.y"
 { yyval = make_node (nod_delete, e_del_count, yyvsp[-1], yyvsp[0], NULL); }
 break;
 case 708:
+#line 2955 "parse.y"
 { yyval = make_node (nod_delete, e_del_count, yyvsp[-1], NULL, yyvsp[0]); }
 break;
 case 709:
+#line 2959 "parse.y"
 { yyval = make_node (nod_cursor, e_cur_count, yyvsp[0], NULL, NULL); }
 break;
 case 712:
+#line 2970 "parse.y"
 { yyval = make_node (nod_update, e_upd_count, 
 				yyvsp[-3], make_list (yyvsp[-1]), yyvsp[0], NULL); }
 break;
 case 713:
+#line 2975 "parse.y"
 { yyval = make_node (nod_update, e_upd_count,
 			  	yyvsp[-3], make_list (yyvsp[-1]), NULL, yyvsp[0]); }
 break;
 case 715:
+#line 2981 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 716:
+#line 2985 "parse.y"
 { yyval = make_node (nod_assign, 2, yyvsp[0], yyvsp[-2]); }
 break;
 case 719:
+#line 2996 "parse.y"
 { yyval = make_node (nod_get_segment, e_blb_count, yyvsp[-4], yyvsp[-2], yyvsp[-1], yyvsp[0]); }
 break;
 case 720:
+#line 2998 "parse.y"
 { yyval = make_node (nod_put_segment, e_blb_count, yyvsp[-4], yyvsp[-2], yyvsp[-1], yyvsp[0]); }
 break;
 case 721:
+#line 3002 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 722:
+#line 3004 "parse.y"
 { yyval = make_node (nod_list, 2, NULL, yyvsp[0]); }
 break;
 case 726:
+#line 3013 "parse.y"
 { yyval = MAKE_constant ((STR) yyvsp[0], CONSTANT_SLONG); }
 break;
 case 727:
+#line 3017 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 729:
+#line 3022 "parse.y"
 { yyval = MAKE_constant ((STR) yyvsp[0], CONSTANT_SLONG); }
 break;
 case 732:
+#line 3031 "parse.y"
 { yyval = NULL; }
 break;
 case 733:
+#line 3035 "parse.y"
 { yyval = make_list (yyvsp[-1]); }
 break;
 case 735:
+#line 3040 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 737:
+#line 3046 "parse.y"
 { yyval = NULL; }
 break;
 case 738:
+#line 3050 "parse.y"
 { yyval = make_list (yyvsp[-1]); }
 break;
 case 740:
+#line 3055 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 742:
+#line 3061 "parse.y"
 { yyval = make_node (nod_field_name, (int) e_fln_count, 
 							yyvsp[-2], yyvsp[0]); }
 break;
 case 743:
+#line 3064 "parse.y"
 { yyval = make_node (nod_field_name, (int) e_fln_count, 
 							yyvsp[-2], NULL); }
 break;
 case 744:
+#line 3069 "parse.y"
 { yyval = make_node (nod_field_name, (int) e_fln_count,
 						NULL, yyvsp[0]); }
 break;
 case 746:
+#line 3077 "parse.y"
 { yyval = make_node (nod_field_name, (int) e_fln_count, 
 							yyvsp[-2], yyvsp[0]); }
 break;
 case 748:
+#line 3085 "parse.y"
 { yyval = make_node (nod_or, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 749:
+#line 3087 "parse.y"
 { yyval = make_node (nod_and, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 750:
+#line 3089 "parse.y"
 { yyval = make_node (nod_not, 1, yyvsp[0]); }
 break;
 case 761:
+#line 3103 "parse.y"
 { yyval = yyvsp[-1]; }
 break;
 case 762:
+#line 3110 "parse.y"
 { yyval = make_node (nod_eql, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 763:
+#line 3112 "parse.y"
 { yyval = make_node (nod_lss, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 764:
+#line 3114 "parse.y"
 { yyval = make_node (nod_gtr, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 765:
+#line 3116 "parse.y"
 { yyval = make_node (nod_geq, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 766:
+#line 3118 "parse.y"
 { yyval = make_node (nod_leq, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 767:
+#line 3120 "parse.y"
 { yyval = make_node (nod_leq, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 768:
+#line 3122 "parse.y"
 { yyval = make_node (nod_geq, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 769:
+#line 3124 "parse.y"
 { yyval = make_node (nod_neq, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 770:
+#line 3131 "parse.y"
 { yyval = make_node (nod_eql_all, 2, yyvsp[-5], yyvsp[-1]); }
 break;
 case 771:
+#line 3133 "parse.y"
 { yyval = make_node (nod_lss_all, 2, yyvsp[-5], yyvsp[-1]); }
 break;
 case 772:
+#line 3135 "parse.y"
 { yyval = make_node (nod_gtr_all, 2, yyvsp[-5], yyvsp[-1]); }
 break;
 case 773:
+#line 3137 "parse.y"
 { yyval = make_node (nod_geq_all, 2, yyvsp[-5], yyvsp[-1]); }
 break;
 case 774:
+#line 3139 "parse.y"
 { yyval = make_node (nod_leq_all, 2, yyvsp[-5], yyvsp[-1]); }
 break;
 case 775:
+#line 3141 "parse.y"
 { yyval = make_node (nod_leq_all, 2, yyvsp[-5], yyvsp[-1]); }
 break;
 case 776:
+#line 3143 "parse.y"
 { yyval = make_node (nod_geq_all, 2, yyvsp[-5], yyvsp[-1]); }
 break;
 case 777:
+#line 3145 "parse.y"
 { yyval = make_node (nod_neq_all, 2, yyvsp[-5], yyvsp[-1]); }
 break;
 case 778:
+#line 3147 "parse.y"
 { yyval = make_node (nod_eql_any, 2, yyvsp[-5], yyvsp[-1]); }
 break;
 case 779:
+#line 3149 "parse.y"
 { yyval = make_node (nod_lss_any, 2, yyvsp[-5], yyvsp[-1]); }
 break;
 case 780:
+#line 3151 "parse.y"
 { yyval = make_node (nod_gtr_any, 2, yyvsp[-5], yyvsp[-1]); }
 break;
 case 781:
+#line 3153 "parse.y"
 { yyval = make_node (nod_geq_any, 2, yyvsp[-5], yyvsp[-1]); }
 break;
 case 782:
+#line 3155 "parse.y"
 { yyval = make_node (nod_leq_any, 2, yyvsp[-5], yyvsp[-1]); }
 break;
 case 783:
+#line 3157 "parse.y"
 { yyval = make_node (nod_leq_any, 2, yyvsp[-5], yyvsp[-1]); }
 break;
 case 784:
+#line 3159 "parse.y"
 { yyval = make_node (nod_geq_any, 2, yyvsp[-5], yyvsp[-1]); }
 break;
 case 785:
+#line 3161 "parse.y"
 { yyval = make_node (nod_neq_any, 2, yyvsp[-5], yyvsp[-1]); }
 break;
 case 788:
+#line 3172 "parse.y"
 { yyval = make_node (nod_between, 3, yyvsp[-4], yyvsp[-2], yyvsp[0]); }
 break;
 case 789:
+#line 3174 "parse.y"
 { yyval = make_node (nod_not, 1, make_node (nod_between, 
 						3, yyvsp[-5], yyvsp[-2], yyvsp[0])); }
 break;
 case 790:
+#line 3179 "parse.y"
 { yyval = make_node (nod_like, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 791:
+#line 3181 "parse.y"
 { yyval = make_node (nod_not, 1, make_node (nod_like, 2, yyvsp[-3], yyvsp[0])); }
 break;
 case 792:
+#line 3183 "parse.y"
 { yyval = make_node (nod_like, 3, yyvsp[-4], yyvsp[-2], yyvsp[0]); }
 break;
 case 793:
+#line 3185 "parse.y"
 { yyval = make_node (nod_not, 1, make_node (nod_like, 
 						3, yyvsp[-5], yyvsp[-2], yyvsp[0])); }
 break;
 case 794:
+#line 3190 "parse.y"
 { yyval = make_node (nod_eql_any, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 795:
+#line 3192 "parse.y"
 { yyval = make_node (nod_not, 1, make_node (nod_eql_any, 2, yyvsp[-3], yyvsp[0])); }
 break;
 case 796:
+#line 3196 "parse.y"
 { yyval = make_node (nod_containing, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 797:
+#line 3198 "parse.y"
 { yyval = make_node (nod_not, 1, make_node (nod_containing, 2, yyvsp[-3], yyvsp[0])); }
 break;
 case 798:
+#line 3202 "parse.y"
 { yyval = make_node (nod_starting, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 799:
+#line 3204 "parse.y"
 { yyval = make_node (nod_not, 1, make_node (nod_starting, 2, yyvsp[-3], yyvsp[0])); }
 break;
 case 800:
+#line 3206 "parse.y"
 { yyval = make_node (nod_starting, 2, yyvsp[-3], yyvsp[0]); }
 break;
 case 801:
+#line 3208 "parse.y"
 { yyval = make_node (nod_not, 1, make_node (nod_starting, 2, yyvsp[-4], yyvsp[0])); }
 break;
 case 802:
+#line 3212 "parse.y"
 { yyval = make_node (nod_exists, 1, yyvsp[-1]); }
 break;
 case 803:
+#line 3216 "parse.y"
 { yyval = make_node (nod_singular, 1, yyvsp[-1]); }
 break;
 case 804:
+#line 3220 "parse.y"
 { yyval = make_node (nod_missing, 1, yyvsp[-2]); }
 break;
 case 805:
+#line 3222 "parse.y"
 { yyval = make_node (nod_not, 1, make_node (nod_missing, 1, yyvsp[-3])); }
 break;
 case 807:
+#line 3230 "parse.y"
 { yyval = make_list (yyvsp[-1]); }
 break;
 case 808:
+#line 3234 "parse.y"
 { yyval = yyvsp[-1]; }
 break;
 case 809:
+#line 3245 "parse.y"
 { yyval = make_node (nod_select_expr, e_sel_count, 
 				yyvsp[-7], yyvsp[-6], make_list (yyvsp[-5]), yyvsp[-4], yyvsp[-3], yyvsp[-2], yyvsp[-1], yyvsp[0], NULL); }
 break;
 case 810:
+#line 3257 "parse.y"
 { yyval = make_node (nod_select_expr, e_sel_count, 
                               yyvsp[-7], yyvsp[-6], make_list (yyvsp[-5]), yyvsp[-4], yyvsp[-3], yyvsp[-2], yyvsp[-1], yyvsp[0], 
 				MAKE_constant ((STR) 1, CONSTANT_SLONG)); }
 break;
 case 820:
+#line 3275 "parse.y"
 { yyval = make_node (nod_negate, 1, yyvsp[0]); }
 break;
 case 821:
+#line 3277 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 822:
+#line 3279 "parse.y"
 { 
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
 			      yyval = make_node (nod_add2, 2, yyvsp[-2], yyvsp[0]);
@@ -7404,12 +8002,15 @@ case 822:
 			}
 break;
 case 823:
+#line 3286 "parse.y"
 { yyval = make_node (nod_concatenate, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 824:
+#line 3288 "parse.y"
 { yyval = make_node (nod_collate, e_coll_count, (NOD) yyvsp[0], yyvsp[-2]); }
 break;
 case 825:
+#line 3290 "parse.y"
 { 
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
 			      yyval = make_node (nod_subtract2, 2, yyvsp[-2], yyvsp[0]);
@@ -7418,6 +8019,7 @@ case 825:
 			}
 break;
 case 826:
+#line 3297 "parse.y"
 { 
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
 			       yyval = make_node (nod_multiply2, 2, yyvsp[-2], yyvsp[0]);
@@ -7426,6 +8028,7 @@ case 826:
 			}
 break;
 case 827:
+#line 3304 "parse.y"
 {
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
 			      yyval = make_node (nod_divide2, 2, yyvsp[-2], yyvsp[0]);
@@ -7434,29 +8037,37 @@ case 827:
 			}
 break;
 case 828:
+#line 3311 "parse.y"
 { yyval = yyvsp[-1]; }
 break;
 case 829:
+#line 3313 "parse.y"
 { yyval = yyvsp[-1]; }
 break;
 case 832:
+#line 3321 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 833:
+#line 3323 "parse.y"
 { yyval = make_node (nod_dbkey, 1, NULL); }
 break;
 case 834:
+#line 3325 "parse.y"
 { yyval = make_node (nod_dbkey, 1, yyvsp[-2]); }
 break;
 case 835:
+#line 3327 "parse.y"
 { 
 			  yyval = make_node (nod_dom_value, 0, NULL);
                         }
 break;
 case 836:
+#line 3331 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 837:
+#line 3336 "parse.y"
 { 
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
 			    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
@@ -7474,6 +8085,7 @@ case 837:
 			}
 break;
 case 838:
+#line 3352 "parse.y"
 { 
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
 			    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
@@ -7491,36 +8103,47 @@ case 838:
 			}
 break;
 case 839:
+#line 3368 "parse.y"
 { yyval = make_node (nod_current_timestamp, 0, NULL); }
 break;
 case 840:
+#line 3372 "parse.y"
 { yyval = make_node (nod_array, 2, yyvsp[-3], make_list (yyvsp[-1])); }
 break;
 case 842:
+#line 3377 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 844:
+#line 3382 "parse.y"
 { yyval = make_node (nod_negate, 1, yyvsp[0]); }
 break;
 case 845:
+#line 3386 "parse.y"
 { yyval = MAKE_constant ((STR) yyvsp[0], CONSTANT_STRING); }
 break;
 case 846:
+#line 3388 "parse.y"
 { yyval = MAKE_constant ((STR) yyvsp[0], CONSTANT_SLONG); }
 break;
 case 847:
+#line 3390 "parse.y"
 { yyval = MAKE_constant ((STR) yyvsp[0], CONSTANT_DOUBLE); }
 break;
 case 848:
+#line 3392 "parse.y"
 { yyval = MAKE_constant ((STR) yyvsp[0], CONSTANT_SINT64); }
 break;
 case 849:
+#line 3394 "parse.y"
 { yyval = MAKE_constant ((STR) yyvsp[0], CONSTANT_SINT64); }
 break;
 case 851:
+#line 3399 "parse.y"
 { yyval = MAKE_str_constant ((STR) yyvsp[0], att_charset); }
 break;
 case 852:
+#line 3401 "parse.y"
 { 
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
 			    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
@@ -7538,6 +8161,7 @@ case 852:
 			}
 break;
 case 853:
+#line 3417 "parse.y"
 {
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
 			    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
@@ -7555,94 +8179,119 @@ case 853:
 			}
 break;
 case 854:
+#line 3433 "parse.y"
 { yyval = MAKE_constant ((STR) yyvsp[0], CONSTANT_TIMESTAMP); }
 break;
 case 860:
+#line 3443 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 861:
+#line 3445 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 862:
+#line 3447 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 863:
+#line 3449 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 864:
+#line 3451 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 865:
+#line 3455 "parse.y"
 { yyval = make_node (nod_parameter, 0, NULL); }
 break;
 case 866:
+#line 3459 "parse.y"
 { yyval = make_node (nod_user_name, 0, NULL); }
 break;
 case 867:
+#line 3461 "parse.y"
 { yyval = make_node (nod_user_name, 0, NULL); }
 break;
 case 868:
+#line 3465 "parse.y"
 { yyval = make_node (nod_current_role, 0, NULL); }
 break;
 case 869:
+#line 3469 "parse.y"
 { yyval = make_node (nod_internal_info, e_internal_info_count,
 						MAKE_constant ((STR) 1, CONSTANT_SLONG)); }
 break;
 case 870:
+#line 3472 "parse.y"
 { yyval = make_node (nod_internal_info, e_internal_info_count,
 						MAKE_constant ((STR) 2, CONSTANT_SLONG)); }
 break;
 case 871:
+#line 3477 "parse.y"
 { yyval = yyvsp[0]; }
 break;
 case 872:
+#line 3479 "parse.y"
 { ((STR) yyvsp[0])->str_charset = (TEXT *) yyvsp[-1];
 			  yyval = yyvsp[0]; }
 break;
 case 874:
+#line 3485 "parse.y"
 { yyval = (NOD) - (SLONG) yyvsp[0]; }
 break;
 case 875:
+#line 3489 "parse.y"
 { if ((SLONG) yyvsp[0] > SHRT_POS_MAX)
 			    yyabandon (-842, isc_expec_short);
 				/* Short integer expected */
 			  yyval = yyvsp[0];}
 break;
 case 876:
+#line 3496 "parse.y"
 { if ((SLONG) yyvsp[0] > SHRT_NEG_MAX)
 			    yyabandon (-842, isc_expec_short);
 				/* Short integer expected */
 			  yyval = yyvsp[0];}
 break;
 case 877:
+#line 3503 "parse.y"
 { if ((SLONG) yyvsp[0] == 0)
 			    yyabandon (-842, isc_expec_positive);
 				/* Positive number expected */
 			  yyval = yyvsp[0];}
 break;
 case 878:
+#line 3510 "parse.y"
 { if ((SLONG) yyvsp[0] > SHRT_UNSIGNED_MAX)
 			    yyabandon (-842, isc_expec_ushort);
 				/* Unsigned short integer expected */
 			  yyval = yyvsp[0];}
 break;
 case 880:
+#line 3518 "parse.y"
 { yyval = (NOD) - (SLONG) yyvsp[0]; }
 break;
 case 881:
+#line 3522 "parse.y"
 { yyval = yyvsp[0];}
 break;
 case 886:
+#line 3534 "parse.y"
 { yyval = make_node (nod_agg_count, 0, NULL); }
 break;
 case 887:
+#line 3536 "parse.y"
 { yyval = make_node (nod_agg_count, 1, yyvsp[-1]); }
 break;
 case 888:
+#line 3538 "parse.y"
 { yyval = make_flag_node (nod_agg_count,
                                        NOD_AGG_DISTINCT, 1, yyvsp[-1]); }
 break;
 case 889:
+#line 3541 "parse.y"
 { 
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
 			      yyval = make_node (nod_agg_total2, 1, yyvsp[-1]);
@@ -7651,6 +8300,7 @@ case 889:
 			}
 break;
 case 890:
+#line 3548 "parse.y"
 { 
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
 			      yyval = make_flag_node (nod_agg_total2,
@@ -7661,6 +8311,7 @@ case 890:
 			}
 break;
 case 891:
+#line 3557 "parse.y"
 { 
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
 			      yyval = make_node (nod_agg_average2, 1, yyvsp[-1]);
@@ -7669,6 +8320,7 @@ case 891:
 			}
 break;
 case 892:
+#line 3564 "parse.y"
 { 
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
 			      yyval = make_flag_node (nod_agg_average2,
@@ -7679,18 +8331,23 @@ case 892:
 			}
 break;
 case 893:
+#line 3573 "parse.y"
 { yyval = make_node (nod_agg_min, 1, yyvsp[-1]); }
 break;
 case 894:
+#line 3575 "parse.y"
 { yyval = make_node (nod_agg_min, 1, yyvsp[-1]); }
 break;
 case 895:
+#line 3577 "parse.y"
 { yyval = make_node (nod_agg_max, 1, yyvsp[-1]); }
 break;
 case 896:
+#line 3579 "parse.y"
 { yyval = make_node (nod_agg_max, 1, yyvsp[-1]); }
 break;
 case 897:
+#line 3585 "parse.y"
 { 
 				  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
 				      yyval = make_node (nod_gen_id2, 2, yyvsp[-3], yyvsp[-1]);
@@ -7699,89 +8356,116 @@ case 897:
 				}
 break;
 case 898:
+#line 3594 "parse.y"
 { yyval = make_node (nod_extract, e_extract_count, yyvsp[-3], yyvsp[-1]); }
 break;
 case 899:
+#line 3601 "parse.y"
 { yyval = make_node (nod_substr, e_substr_count, yyvsp[-3],
 					MAKE_constant ((STR) ((SLONG)(yyvsp[-1]) - 1), CONSTANT_SLONG),
 					MAKE_constant ((STR) SHRT_POS_MAX, CONSTANT_SLONG)); }
 break;
 case 900:
+#line 3605 "parse.y"
 { yyval = make_node (nod_substr, e_substr_count, yyvsp[-5],
 					MAKE_constant ((STR) ((SLONG)(yyvsp[-3]) - 1), CONSTANT_SLONG),
 					MAKE_constant ((STR) (yyvsp[-1]), CONSTANT_SLONG)); }
 break;
 case 901:
+#line 3609 "parse.y"
 { yyval = make_node (nod_upcase, 1, yyvsp[-1]); }
 break;
 case 902:
+#line 3613 "parse.y"
 { yyval = make_node (nod_udf, 2, yyvsp[-3], yyvsp[-1]); }
 break;
 case 903:
+#line 3615 "parse.y"
 { yyval = make_node (nod_udf, 1, yyvsp[-2]); }
 break;
 case 904:
+#line 3619 "parse.y"
 { yyval = make_node (nod_cast, e_cast_count, yyvsp[-1], yyvsp[-3]); }
 break;
 case 907:
+#line 3629 "parse.y"
 { yyval = make_node (nod_searched_case, 2, 
 				make_node (nod_list, 2, make_node (nod_eql, 2, yyvsp[-3], yyvsp[-1]), 
 				make_node (nod_null, 0, NULL)), yyvsp[-3]); }
 break;
 case 908:
+#line 3633 "parse.y"
 { yyval = make_node (nod_coalesce, 2, yyvsp[-3], yyvsp[-1]); }
 break;
 case 911:
+#line 3641 "parse.y"
 { yyval = make_node (nod_simple_case, 3, yyvsp[-2], make_list(yyvsp[-1]), make_node (nod_null, 0, NULL)); }
 break;
 case 912:
+#line 3643 "parse.y"
 { yyval = make_node (nod_simple_case, 3, yyvsp[-4], make_list(yyvsp[-3]), yyvsp[-1]); }
 break;
 case 913:
+#line 3647 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 914:
+#line 3649 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-4], make_node (nod_list, 2, yyvsp[-2], yyvsp[0])); }
 break;
 case 915:
+#line 3653 "parse.y"
 { yyval = make_node (nod_searched_case, 2, make_list(yyvsp[-1]), make_node (nod_null, 0, NULL)); }
 break;
 case 916:
+#line 3655 "parse.y"
 { yyval = make_node (nod_searched_case, 2, make_list(yyvsp[-3]), yyvsp[-1]); }
 break;
 case 917:
+#line 3659 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 918:
+#line 3661 "parse.y"
 { yyval = make_node (nod_list, 2, yyvsp[-4], make_node (nod_list, 2, yyvsp[-2], yyvsp[0])); }
 break;
 case 922:
+#line 3674 "parse.y"
 { yyval = MAKE_constant ((STR)blr_extract_year, CONSTANT_SLONG); }
 break;
 case 923:
+#line 3676 "parse.y"
 { yyval = MAKE_constant ((STR)blr_extract_month, CONSTANT_SLONG); }
 break;
 case 924:
+#line 3678 "parse.y"
 { yyval = MAKE_constant ((STR)blr_extract_day, CONSTANT_SLONG); }
 break;
 case 925:
+#line 3680 "parse.y"
 { yyval = MAKE_constant ((STR)blr_extract_hour, CONSTANT_SLONG); }
 break;
 case 926:
+#line 3682 "parse.y"
 { yyval = MAKE_constant ((STR)blr_extract_minute, CONSTANT_SLONG); }
 break;
 case 927:
+#line 3684 "parse.y"
 { yyval = MAKE_constant ((STR)blr_extract_second, CONSTANT_SLONG); }
 break;
 case 928:
+#line 3686 "parse.y"
 { yyval = MAKE_constant ((STR)blr_extract_weekday, CONSTANT_SLONG); }
 break;
 case 929:
+#line 3688 "parse.y"
 { yyval = MAKE_constant ((STR)blr_extract_yearday, CONSTANT_SLONG); }
 break;
 case 932:
+#line 3696 "parse.y"
 { yyval = make_node (nod_null, 0, NULL); }
 break;
+#line 8465 "y.tab.c"
     }
     DSQL_DSQL_yyssp -= yym;
     yystate = *DSQL_DSQL_yyssp;

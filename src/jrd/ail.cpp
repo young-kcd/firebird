@@ -639,7 +639,7 @@ void AIL_get_file_list(LLS * stack)
 				continue;
 			temp_fname = LOGF_NAME(logf);
 			fname_term_length = strlen(temp_fname) + 1;
-			fname = new(*dbb->dbb_permanent, fname_term_length) str();
+			fname = FB_NEW_RPT(*dbb->dbb_permanent, fname_term_length) str();
 			MOVE_FAST(temp_fname, (SCHAR*)fname->str_data, fname_term_length);
 			LLS_PUSH(fname, stack);
 		}
@@ -675,7 +675,7 @@ void AIL_get_file_list(LLS * stack)
 	while (TRUE) {
 		if (!(log_flags & WALFH_RAW)) {
 			fname_term_length = strlen(curr_name) + 1;
-			fname = new(*dbb->dbb_permanent, fname_term_length) str();
+			fname = FB_NEW_RPT(*dbb->dbb_permanent, fname_term_length) str();
 			MOVE_FAST(curr_name, (SCHAR*)fname->str_data, fname_term_length);
 			LLS_PUSH(fname, stack);
 		}

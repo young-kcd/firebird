@@ -303,7 +303,7 @@ INTLSYM METD_get_collation(REQ request, STR name)
 
 	THREAD_ENTER;
 
-	iname = new(*dbb->dbb_pool, name->str_length) intlsym;
+	iname = FB_NEW_RPT(*dbb->dbb_pool, name->str_length) intlsym;
 	strcpy(iname->intlsym_name, (TEXT *) name->str_data);
 	iname->intlsym_type = INTLSYM_collation;
 	iname->intlsym_flags = 0;
@@ -327,7 +327,7 @@ INTLSYM METD_get_collation(REQ request, STR name)
 
 /* Store in the symbol table */
 
-	symbol = iname->intlsym_symbol = new(*dbb->dbb_pool, 0) sym;
+	symbol = iname->intlsym_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) sym;
 	symbol->sym_object = (BLK) iname;
 	symbol->sym_string = iname->intlsym_name;
 	symbol->sym_length = name->str_length;
@@ -506,7 +506,7 @@ INTLSYM METD_get_charset(REQ request, USHORT length, UCHAR * name)
 
 	    THREAD_ENTER;
 
-        iname = new(*dbb->dbb_pool, length) intlsym;
+        iname = FB_NEW_RPT(*dbb->dbb_pool, length) intlsym;
         strcpy(iname->intlsym_name, (char*) name);
         iname->intlsym_type = INTLSYM_charset;
         iname->intlsym_flags = 0;
@@ -532,7 +532,7 @@ INTLSYM METD_get_charset(REQ request, USHORT length, UCHAR * name)
 
 /* Store in the symbol table */
 
-	symbol = iname->intlsym_symbol = new(*dbb->dbb_pool, 0) sym;
+	symbol = iname->intlsym_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) sym;
 	symbol->sym_object = (BLK) iname;
 	symbol->sym_string = iname->intlsym_name;
 	symbol->sym_length = length;
@@ -646,7 +646,7 @@ STR METD_get_default_charset(REQ request)
         /* Terminate ASCIIZ string on first trailing blank */
         metd_exact_name(DBB.RDB$CHARACTER_SET_NAME);
         length = strlen(DBB.RDB$CHARACTER_SET_NAME);
-        dbb->dbb_dfl_charset = new(*dbb->dbb_pool, length) str;
+        dbb->dbb_dfl_charset = FB_NEW_RPT(*dbb->dbb_pool, length) str;
         dbb->dbb_dfl_charset->str_length = length;
         dbb->dbb_dfl_charset->str_charset = NULL;
         str_ = (UCHAR*) DBB.RDB$CHARACTER_SET_NAME;
@@ -907,7 +907,7 @@ UDF METD_get_function(REQ request, STR name)
 
         THREAD_ENTER;
 
-	    udf_ = new(*dbb->dbb_pool, name->str_length) udf;
+	    udf_ = FB_NEW_RPT(*dbb->dbb_pool, name->str_length) udf;
         /* Moved below as still can't say for sure it will be stored.
            Following the same logic for MET_get_procedure and MET_get_relation
         udf_->udf_next = dbb->dbb_functions;
@@ -994,7 +994,7 @@ UDF METD_get_function(REQ request, STR name)
             else {
                 DSC* d;
                 /* udf_param_node = MAKE_node (type_nod, 0); */
-			    udf_param_node = new(*dbb->dbb_pool, 0) nod;
+			    udf_param_node = FB_NEW_RPT(*dbb->dbb_pool, 0) nod;
                 d = &udf_param_node->nod_desc;
                 d->dsc_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
                     gds_cvt_blr_dtype [X.RDB$FIELD_TYPE] : dtype_blob;
@@ -1055,7 +1055,7 @@ UDF METD_get_function(REQ request, STR name)
     }
 
     /* udf->udf_arguments = MAKE_node (nod_list, count); */
-    udf_->udf_arguments = new(*dbb->dbb_pool, arg_count) nod;
+    udf_->udf_arguments = FB_NEW_RPT(*dbb->dbb_pool, arg_count) nod;
     udf_->udf_arguments->nod_type = nod_list;
     udf_->udf_arguments->nod_count = arg_count;
     
@@ -1093,7 +1093,7 @@ UDF METD_get_function(REQ request, STR name)
 /* Store in the symbol table */
 /* The UDF_new_udf flag is not used, so nothing extra to check. */
 
-	symbol = udf_->udf_symbol = new(*dbb->dbb_pool, 0) sym;
+	symbol = udf_->udf_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) sym;
 	symbol->sym_object = (BLK) udf_;
 	symbol->sym_string = udf_->udf_name;
 	symbol->sym_length = name->str_length;
@@ -1228,7 +1228,7 @@ PRC METD_get_procedure(REQ request, STR name)
 
 	    metd_exact_name(X.RDB$OWNER_NAME);
 
-        procedure = new(*dbb->dbb_pool,
+        procedure = FB_NEW_RPT(*dbb->dbb_pool,
                                  name->str_length + strlen(X.RDB$OWNER_NAME)) prc;
         procedure->prc_id = X.RDB$PROCEDURE_ID;
         
@@ -1275,7 +1275,7 @@ PRC METD_get_procedure(REQ request, STR name)
             /* allocate the field block */
 
             metd_exact_name(PR.RDB$PARAMETER_NAME);
-            parameter = new(*dbb->dbb_pool,
+            parameter = FB_NEW_RPT(*dbb->dbb_pool,
                                      strlen(PR.RDB$PARAMETER_NAME)) fld;
             parameter->fld_next = *ptr;
             *ptr = parameter;
@@ -1346,7 +1346,7 @@ PRC METD_get_procedure(REQ request, STR name)
 		procedure->prc_next = dbb->dbb_procedures;
 		dbb->dbb_procedures = procedure;
 
-		symbol = procedure->prc_symbol = new(*dbb->dbb_pool, 0) sym;
+		symbol = procedure->prc_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) sym;
 		symbol->sym_object = (BLK) procedure;
 		symbol->sym_string = procedure->prc_name;
 		symbol->sym_length = name->str_length;
@@ -1424,13 +1424,13 @@ DSQL_REL METD_get_relation(REQ request, STR name)
 	    metd_exact_name(X.RDB$OWNER_NAME);
 
         if (!X.RDB$RELATION_ID.NULL) {
-            relation = new(*dbb->dbb_pool,
+            relation = FB_NEW_RPT(*dbb->dbb_pool,
                                   name->str_length + strlen(X.RDB$OWNER_NAME)) dsql_rel;
             relation->rel_id = X.RDB$RELATION_ID;
         }
         else if (!DDL_ids(request)) {
             relation =
-                new(*tdsql->tsql_default,
+                FB_NEW_RPT(*tdsql->tsql_default,
                                    name->str_length + strlen(X.RDB$OWNER_NAME)) dsql_rel;
             relation->rel_flags |= REL_new_relation;
         }
@@ -1487,10 +1487,10 @@ DSQL_REL METD_get_relation(REQ request, STR name)
             /* Allocate from default or permanent pool as appropriate */
             
             if (relation->rel_flags & REL_new_relation)
-                *ptr = field = new(*tdsql->tsql_default,
+                *ptr = field = FB_NEW_RPT(*tdsql->tsql_default,
                                              strlen(RFR.RDB$FIELD_NAME)) fld;
             else
-                *ptr = field = new(*dbb->dbb_pool,
+                *ptr = field = FB_NEW_RPT(*dbb->dbb_pool,
                                             strlen(RFR.RDB$FIELD_NAME)) fld;
             ptr = &field->fld_next;
             
@@ -1539,10 +1539,10 @@ DSQL_REL METD_get_relation(REQ request, STR name)
             /* Allocate from default or permanent pool as appropriate */
             
             if (relation->rel_flags & REL_new_relation)
-                *ptr = field = new(*tdsql->tsql_default,
+                *ptr = field = FB_NEW_RPT(*tdsql->tsql_default,
                                              strlen(RFR.RDB$FIELD_NAME)) fld;
             else
-                *ptr = field = new(*dbb->dbb_pool,
+                *ptr = field = FB_NEW_RPT(*dbb->dbb_pool,
                                             strlen(RFR.RDB$FIELD_NAME)) fld;
             
             ptr = &field->fld_next;
@@ -1619,7 +1619,7 @@ DSQL_REL METD_get_relation(REQ request, STR name)
 
 		/* store in the symbol table unless the relation is not yet committed */
 
-		symbol = relation->rel_symbol = new(*dbb->dbb_pool, 0) sym;
+		symbol = relation->rel_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) sym;
 		symbol->sym_object = (BLK) relation;
 		symbol->sym_string = relation->rel_name;
 		symbol->sym_length = name->str_length;

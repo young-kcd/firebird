@@ -433,7 +433,7 @@ void DYN_define_constraint(GBL		gbl,
 		}
 
 		unique_count++;
-		str_ = new(*tdbb->tdbb_default, sizeof(IDS.RDB$FIELD_NAME) - 1) str();
+		str_ = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(IDS.RDB$FIELD_NAME) - 1) str();
 		strcpy((char*)str_->str_data, IDS.RDB$FIELD_NAME);
 		LLS_PUSH(str_, &field_list);
 	END_FOR;
@@ -1729,7 +1729,7 @@ void DYN_define_index(GBL		gbl,
 				break;
 				
 			case gds_dyn_fld_name:
-				str_ = new(*tdbb->tdbb_default, field_name_size - 1) str();
+				str_ = FB_NEW_RPT(*tdbb->tdbb_default, field_name_size - 1) str();
 				DYN_get_string((TEXT**)ptr, (TEXT*)str_->str_data, field_name_size, TRUE);
 				LLS_PUSH(str_, &seg_list);
 				seg_count++;
@@ -1837,7 +1837,7 @@ void DYN_define_index(GBL		gbl,
 				break;
 
 			case gds_dyn_idx_ref_column:
-				str_ = new(*tdbb->tdbb_default, field_name_size - 1) str();
+				str_ = FB_NEW_RPT(*tdbb->tdbb_default, field_name_size - 1) str();
 				DYN_get_string((TEXT**)ptr, (TEXT*)str_->str_data, field_name_size, TRUE);
 				LLS_PUSH(str_, &field_list);
 				referred_cols++;

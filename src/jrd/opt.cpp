@@ -27,7 +27,7 @@
  *             stored procedure doesn't access tables, views or other procedures directly.
  */
 /*
-$Id: opt.cpp,v 1.12 2002-09-17 05:58:36 eku Exp $
+$Id: opt.cpp,v 1.13 2002-09-25 17:12:10 skidder Exp $
 */
 
 #include "firebird.h"
@@ -357,7 +357,7 @@ RSB OPT_compile(TDBB tdbb,
 
 #else
 
-	opt_ = new(*dbb->dbb_permanent) Opt();
+	opt_ = FB_NEW(*dbb->dbb_permanent) Opt();
 
 #endif
 
@@ -452,7 +452,7 @@ RSB OPT_compile(TDBB tdbb,
 
 		if (rsb) {
 			i = local_streams[0];
-			river = new(*tdbb->tdbb_default, i) riv();
+			river = FB_NEW_RPT(*tdbb->tdbb_default, i) riv();
 			river->riv_count = (UCHAR) i;
 			river->riv_rsb = rsb;
 			MOVE_FAST(local_streams + 1, river->riv_streams, i);
@@ -942,7 +942,7 @@ void OPT_set_index(TDBB tdbb,
 /* set up a dummy optimizer block just for the purposes 
    of the set index, to pass information to subroutines */
 
-	opt = new(*dbb->dbb_permanent) Opt();
+	opt = FB_NEW(*dbb->dbb_permanent) Opt();
 	opt->opt_g_flags |= opt_g_stream;
 
 /* generate a new rsb for the retrieval, making sure to 
@@ -2902,7 +2902,7 @@ static BOOLEAN form_river(TDBB tdbb,
 	SET_TDBB(tdbb);
 	csb = opt->opt_csb;
 /* Allocate a river block and move the best order into it */
-	river = new(*tdbb->tdbb_default, count) riv();
+	river = FB_NEW_RPT(*tdbb->tdbb_default, count) riv();
 	LLS_PUSH(river, river_stack);
 	river->riv_count = (UCHAR) count;
 	if (count == 1) {
@@ -2910,7 +2910,7 @@ static BOOLEAN form_river(TDBB tdbb,
 		ptr = &river->riv_rsb;
 	}
 	else {
-		river->riv_rsb = rsb = new(*tdbb->tdbb_default, count) Rsb();
+		river->riv_rsb = rsb = FB_NEW_RPT(*tdbb->tdbb_default, count) Rsb();
 		rsb->rsb_type = rsb_cross;
 		rsb->rsb_count = count;
 		rsb->rsb_impure = CMP_impure(csb, sizeof(struct irsb));
@@ -3005,7 +3005,7 @@ static RSB gen_aggregate(TDBB tdbb, OPT opt, NOD node)
 
 /* allocate and optimize the record source block */
 
-	rsb = new(*tdbb->tdbb_default, 1) Rsb();
+	rsb = FB_NEW_RPT(*tdbb->tdbb_default, 1) Rsb();
 	rsb->rsb_type = rsb_aggregate;
 	rsb->rsb_stream = (UCHAR) node->nod_arg[e_agg_stream];
 	rsb->rsb_format = csb->csb_rpt[rsb->rsb_stream].csb_format;
@@ -3096,7 +3096,7 @@ static RSB gen_boolean(TDBB tdbb, register OPT opt, RSB prior_rsb, NOD node)
 	DEV_BLKCHK(prior_rsb, type_rsb);
 	SET_TDBB(tdbb);
 	csb = opt->opt_csb;
-	rsb = new(*tdbb->tdbb_default, 1) Rsb();
+	rsb = FB_NEW_RPT(*tdbb->tdbb_default, 1) Rsb();
 	rsb->rsb_count = 1;
 	rsb->rsb_type = rsb_boolean;
 	rsb->rsb_next = prior_rsb;
@@ -3131,7 +3131,7 @@ static RSB gen_first(TDBB tdbb, register OPT opt, RSB prior_rsb, NOD node)
 	DEV_BLKCHK(node, type_nod);
 	SET_TDBB(tdbb);
 	csb = opt->opt_csb;
-	rsb = new(*tdbb->tdbb_default, 1) Rsb();
+	rsb = FB_NEW_RPT(*tdbb->tdbb_default, 1) Rsb();
 	rsb->rsb_count = 1;
 	rsb->rsb_type = rsb_first;
 	rsb->rsb_next = prior_rsb;
@@ -3194,7 +3194,7 @@ static void gen_join(TDBB tdbb,
 									   relation) * dbb->dbb_page_size /
 				format->fmt_length;}
 
-		river = new(*tdbb->tdbb_default, 1) riv();
+		river = FB_NEW_RPT(*tdbb->tdbb_default, 1) riv();
 		river->riv_count = 1;
 		river->riv_rsb =
 			gen_retrieval(tdbb, opt, streams[1], sort_clause, project_clause,
@@ -3408,7 +3408,7 @@ static RSB gen_nav_rsb(TDBB tdbb,
 	DEV_BLKCHK(alias, type_str);
 	SET_TDBB(tdbb);
 	key_length = ROUNDUP(BTR_key_length(relation, idx), sizeof(SLONG));
-	rsb = new(*tdbb->tdbb_default, RSB_NAV_count) Rsb();
+	rsb = FB_NEW_RPT(*tdbb->tdbb_default, RSB_NAV_count) Rsb();
 	rsb->rsb_type = rsb_navigate;
 	rsb->rsb_relation = relation;
 	rsb->rsb_stream = (UCHAR) stream;
@@ -3524,7 +3524,7 @@ static RSB gen_outer(TDBB tdbb,
 	stream_i.stream_rsb =
 		gen_residual_boolean(tdbb, opt, stream_i.stream_rsb);
 /* Allocate and fill in the rsb */
-	rsb = new(*tdbb->tdbb_default, RSB_LEFT_count) Rsb();
+	rsb = FB_NEW_RPT(*tdbb->tdbb_default, RSB_LEFT_count) Rsb();
 	rsb->rsb_type = rsb_left_cross;
 	rsb->rsb_count = 2;
 	rsb->rsb_impure = CMP_impure(opt->opt_csb, sizeof(struct irsb));
@@ -3567,7 +3567,7 @@ static RSB gen_procedure(TDBB tdbb, OPT opt, NOD node)
 	SET_TDBB(tdbb);
 	csb = opt->opt_csb;
 	procedure = (PRC) node->nod_arg[e_prc_procedure];
-	rsb = new(*tdbb->tdbb_default, RSB_PRC_count) Rsb();
+	rsb = FB_NEW_RPT(*tdbb->tdbb_default, RSB_PRC_count) Rsb();
 	rsb->rsb_type = rsb_procedure;
 	rsb->rsb_stream = (UCHAR) node->nod_arg[e_prc_stream];
 	rsb->rsb_procedure = procedure;
@@ -3890,14 +3890,14 @@ static RSB gen_rsb(TDBB tdbb,
 	}
 	else {
 		if (inversion) {
-			rsb = new(*tdbb->tdbb_default, 1) Rsb();
+			rsb = FB_NEW_RPT(*tdbb->tdbb_default, 1) Rsb();
 			rsb->rsb_type = rsb_indexed;
 			rsb->rsb_count = 1;
 			size = sizeof(struct irsb_index);
 			rsb->rsb_arg[0] = (RSB) inversion;
 		}
 		else {
-			rsb = new(*tdbb->tdbb_default, 0) Rsb();
+			rsb = FB_NEW_RPT(*tdbb->tdbb_default, 0) Rsb();
 			rsb->rsb_type = rsb_sequential;
 			size = sizeof(struct irsb);
 			if (boolean)
@@ -3953,7 +3953,7 @@ static RSB gen_skip (TDBB tdbb, register OPT opt, RSB prior_rsb, NOD node)
     SET_TDBB (tdbb);
     
     csb = opt->opt_csb;
-    rsb = new(*tdbb->tdbb_default, 0) Rsb();   // was : rsb = (RSB) ALLOCDV (type_rsb, 1);
+    rsb = FB_NEW_RPT(*tdbb->tdbb_default, 0) Rsb();   // was : rsb = (RSB) ALLOCDV (type_rsb, 1);
     rsb->rsb_count = 1;
     rsb->rsb_type = rsb_skip;
     rsb->rsb_next = prior_rsb;
@@ -4049,7 +4049,7 @@ static RSB gen_sort(TDBB tdbb,
 	count = items +
 		(sizeof(SKD) * 2 * sort->nod_count + sizeof(smb_repeat) -
 		 1) / sizeof(smb_repeat);
-	map = new(*tdbb->tdbb_default, count) smb();
+	map = FB_NEW_RPT(*tdbb->tdbb_default, count) smb();
 	map->smb_keys = sort->nod_count * 2;
 	map->smb_count = items;
 	if (project_flag)
@@ -4212,7 +4212,7 @@ static RSB gen_sort(TDBB tdbb,
 /* That was most unpleasant.  Never the less, it's done (except for
    the debugging).  All that remains is to build the record source
    block for the sort. */
-	rsb = new(*tdbb->tdbb_default, 1) Rsb();
+	rsb = FB_NEW_RPT(*tdbb->tdbb_default, 1) Rsb();
 	rsb->rsb_type = rsb_sort;
 	rsb->rsb_next = prior_rsb;
 	rsb->rsb_arg[0] = (RSB) map;
@@ -4335,7 +4335,7 @@ static BOOLEAN gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 	*selected_class = NULL;
 	class_cnt = selected_class - selected_classes;
 /* Build a sort stream */
-	merge_rsb = new(*tdbb->tdbb_default, river_cnt * 2) Rsb();
+	merge_rsb = FB_NEW_RPT(*tdbb->tdbb_default, river_cnt * 2) Rsb();
 	merge_rsb->rsb_count = river_cnt;
 	merge_rsb->rsb_type = rsb_merge;
 	merge_rsb->rsb_impure = CMP_impure(opt->opt_csb,
@@ -4352,7 +4352,7 @@ static BOOLEAN gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 		if (!(TEST_DEP_BIT(selected_rivers, river1->riv_number)))
 			continue;
 		stream_cnt += river1->riv_count;
-		sort = new(*tdbb->tdbb_default, class_cnt * 2) nod();
+		sort = FB_NEW_RPT(*tdbb->tdbb_default, class_cnt * 2) nod();
 		sort->nod_type = nod_sort;
 		sort->nod_count = class_cnt;
 		for (selected_class = selected_classes, ptr = sort->nod_arg;
@@ -4367,7 +4367,7 @@ static BOOLEAN gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 /* Finally, merge selected rivers into a single river, and rebuild original 
    river stack */
 
-	river1 = new(*tdbb->tdbb_default, stream_cnt) riv();
+	river1 = FB_NEW_RPT(*tdbb->tdbb_default, stream_cnt) riv();
 	river1->riv_count = (UCHAR) stream_cnt;
 	river1->riv_rsb = merge_rsb;
 	stream = river1->riv_streams;
@@ -4429,7 +4429,7 @@ static RSB gen_union(TDBB tdbb,
 	clauses = union_node->nod_arg[e_uni_clauses];
 	count = clauses->nod_count;
 	csb = opt->opt_csb;
-	rsb = new(*tdbb->tdbb_default, count + nstreams + 1) Rsb();
+	rsb = FB_NEW_RPT(*tdbb->tdbb_default, count + nstreams + 1) Rsb();
 	rsb->rsb_type = rsb_union;
 	rsb->rsb_count = count;
 	rsb->rsb_stream = (UCHAR) union_node->nod_arg[e_uni_stream];
@@ -4525,7 +4525,7 @@ static IRL indexed_relationship(TDBB tdbb, OPT opt, USHORT stream)
 		tail = opt->opt_rpt;
 		if (tail->opt_lower || tail->opt_upper) {
 			if (!relationship)
-				relationship = new(*tdbb->tdbb_default) irl();
+				relationship = FB_NEW(*tdbb->tdbb_default) irl();
 			if (idx->idx_flags & idx_unique) {
 				relationship->irl_unique = TRUE;
 				break;
@@ -4580,7 +4580,7 @@ static STR make_alias(TDBB tdbb, CSB csb, csb_repeat * base_tail)
 
 /* allocate a string block to hold the concatenated alias */
 
-	alias = new(*tdbb->tdbb_default, alias_length) str();
+	alias = FB_NEW_RPT(*tdbb->tdbb_default, alias_length) str();
 	alias->str_length = alias_length - 1;
 /* now concatenate the individual aliases into the string block, 
    beginning at the end and copying back to the beginning */
@@ -4666,7 +4666,7 @@ static RSB make_cross(TDBB tdbb, OPT opt, LLS stack)
 	}
 
 	csb = opt->opt_csb;
-	rsb = new(*tdbb->tdbb_default, count) Rsb();
+	rsb = FB_NEW_RPT(*tdbb->tdbb_default, count) Rsb();
 	rsb->rsb_type = rsb_cross;
 	rsb->rsb_count = count;
 	rsb->rsb_impure = CMP_impure(csb, sizeof(struct irsb));
@@ -4710,7 +4710,7 @@ static NOD make_index_node(TDBB tdbb, REL relation, CSB csb, IDX * idx)
 	node = PAR_make_node(tdbb, e_idx_length);
 	node->nod_type = nod_index;
 	node->nod_count = 0;
-	retrieval = new(*tdbb->tdbb_default, idx->idx_count * 2) irb();
+	retrieval = FB_NEW_RPT(*tdbb->tdbb_default, idx->idx_count * 2) irb();
 	node->nod_arg[e_idx_retrieval] = (NOD) retrieval;
 	retrieval->irb_index = idx->idx_id;
 	MOVE_FAST(idx, &retrieval->irb_desc, sizeof(retrieval->irb_desc));

@@ -32,7 +32,7 @@
  *                         readonly databases.
  */
 /*
-$Id: blb.cpp,v 1.9 2002-06-29 13:00:56 dimitr Exp $
+$Id: blb.cpp,v 1.10 2002-09-25 17:12:09 skidder Exp $
 */
 
 #include "firebird.h"
@@ -228,7 +228,7 @@ BLB BLB_create2(TDBB tdbb,
 		if (to_charset == CS_dynamic)
 			to_charset = tdbb->tdbb_attachment->att_charset;
 		if ((to_charset != CS_NONE) && (from_charset != to_charset)) {
-			filter = new(*dbb->dbb_permanent) blf();
+			filter = FB_NEW(*dbb->dbb_permanent) blf();
 			filter->blf_filter =
 				reinterpret_cast<STATUS (*)(USHORT, CTL)>(filter_transliterate_text);
 			filter_required = TRUE;
@@ -670,7 +670,11 @@ SLONG BLB_get_slice(TDBB tdbb,
 
 /* Get someplace to put data */
 
-	data = (UCHAR*) dbb->dbb_permanent->allocate(desc->ads_total_length);
+	data = (UCHAR*) dbb->dbb_permanent->allocate(desc->ads_total_length, 0
+#ifdef DEBUG_GDS_ALLOC
+	  ,__FILE__, __LINE__
+#endif
+	);
 
 /* zero out memory, so that it does not have to be done for
    each element */
@@ -806,7 +810,7 @@ void DLL_EXPORT BLB_map_blobs(TDBB tdbb, BLB old_blob, BLB new_blob)
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	new_map = new(*dbb->dbb_permanent) map();
+	new_map = FB_NEW(*dbb->dbb_permanent) map();
 	new_map->map_old_blob = old_blob;
 	new_map->map_new_blob = new_blob;
 
@@ -1088,7 +1092,7 @@ BLB BLB_open2(TDBB tdbb,
 		if (to_charset == CS_dynamic)
 			to_charset = tdbb->tdbb_attachment->att_charset;
 		if ((to_charset != CS_NONE) && (from_charset != to_charset)) {
-			filter = new(*dbb->dbb_permanent) blf();
+			filter = FB_NEW(*dbb->dbb_permanent) blf();
 			filter->blf_filter =
 				reinterpret_cast < STATUS (*) (USHORT, CTL) > (filter_transliterate_text);
 			filter_required = TRUE;
@@ -1580,7 +1584,7 @@ void BLB_scalar(TDBB	tdbb,
 		desc.dsc_address = (UCHAR*) temp;
 	} else {
 		temp_str =
-			new(*tdbb->tdbb_default, desc.dsc_length + DOUBLE_ALIGN - 1) str;
+			FB_NEW_RPT(*tdbb->tdbb_default, desc.dsc_length + DOUBLE_ALIGN - 1) str;
 		desc.dsc_address =
 			(UCHAR *) FB_ALIGN((U_IPTR) temp_str->str_data, DOUBLE_ALIGN);
 	}
@@ -1633,7 +1637,7 @@ static ARR alloc_array(TRA transaction, ADS proto_desc)
 	// Compute size and allocate block
 
 	USHORT n = MAX(proto_desc->ads_struct_count, proto_desc->ads_dimensions);
-	ARR array = new(*transaction->tra_pool, n) arr();
+	ARR array = FB_NEW_RPT(*transaction->tra_pool, n) arr();
 
 	// Copy prototype descriptor
 
@@ -1648,7 +1652,11 @@ static ARR alloc_array(TRA transaction, ADS proto_desc)
 	// Allocate large block to hold array
 
 	array->arr_data =
-		(UCHAR*)dbb->dbb_permanent->allocate(array->arr_desc.ads_total_length);
+		(UCHAR*)dbb->dbb_permanent->allocate(array->arr_desc.ads_total_length, 0
+#ifdef DEBUG_GDS_ALLOC
+		  ,__FILE__, __LINE__
+#endif
+		);
 
 	return array;
 }
@@ -1672,7 +1680,7 @@ static BLB allocate_blob(TDBB tdbb, TRA transaction)
 
 /* Create a blob large enough to hold a single data page */
 
-	BLB blob = new(*transaction->tra_pool, dbb->dbb_page_size) blb();
+	BLB blob = FB_NEW_RPT(*transaction->tra_pool, dbb->dbb_page_size) blb();
 	blob->blb_attachment = tdbb->tdbb_attachment;
 	blob->blb_next = transaction->tra_blobs;
 	transaction->tra_blobs = blob;
@@ -1769,7 +1777,7 @@ static STATUS blob_filter(	USHORT	action,
 		return SUCCESS;
 
 	case ACTION_alloc:
-		return (STATUS) new(*transaction->tra_pool) ctl();
+		return (STATUS) FB_NEW(*transaction->tra_pool) ctl();
 
 	case ACTION_free:
 		delete control;
@@ -1867,7 +1875,7 @@ static BLB copy_blob(TDBB tdbb, BID source, REL relation, BID destination)
 #endif
 
 	{
-		string = new(*tdbb->tdbb_default, input->blb_max_segment) str();
+		string = FB_NEW_RPT(*tdbb->tdbb_default, input->blb_max_segment) str();
 		buff = (UCHAR *) string->str_data;
 	}
 	else {
@@ -2409,7 +2417,7 @@ static void slice_callback(SLICE arg, ULONG count, DSC * descriptors)
 			tdbb = GET_THREAD_DATA;
 
 			tmp_len = array_desc->dsc_length;
-			tmp_buffer = new(*tdbb->tdbb_default, tmp_len) str();
+			tmp_buffer = FB_NEW_RPT(*tdbb->tdbb_default, tmp_len) str();
 			len = MOV_make_string(slice_desc,
 								  INTL_TEXT_TYPE(*array_desc),
 								  &p,

@@ -172,7 +172,7 @@ EXT EXT_file(REL relation, TEXT * file_name, SLONG * description)
 		if (!_access(ib_file_path, 4))
 		{
 			relation->rel_file = file =
-				new(*dbb->dbb_permanent, strlen(ib_file_path) + 1) ext();
+				FB_NEW_RPT(*dbb->dbb_permanent, strlen(ib_file_path) + 1) ext();
 			strcpy(reinterpret_cast<char*>(file->ext_filename), absolute_file);
 			found_dir = TRUE;
 		}
@@ -182,12 +182,12 @@ EXT EXT_file(REL relation, TEXT * file_name, SLONG * description)
 	if (!found_dir)
 	{
 		relation->rel_file = file =
-			new(*dbb->dbb_permanent, strlen(file_name) + 1) ext();
+			FB_NEW_RPT(*dbb->dbb_permanent, strlen(file_name) + 1) ext();
 		strcpy(reinterpret_cast<char*>(file->ext_filename), file_name);
 	}
 #else
 	relation->rel_file = file =
-		new(*dbb->dbb_permanent, (strlen(file_name) + 1)) ext();
+		FB_NEW_RPT(*dbb->dbb_permanent, (strlen(file_name) + 1)) ext();
 	strcpy(reinterpret_cast<char*>(file->ext_filename), file_name);
 #endif
 
@@ -476,7 +476,7 @@ if (opt->opt_count)
 */
 
 
-	rsb_ = new(*tdbb->tdbb_default,0) Rsb;
+	rsb_ = FB_NEW_RPT(*tdbb->tdbb_default,0) Rsb;
 	rsb_->rsb_type = rsb_ext_sequential;
 	size = sizeof(struct irsb);
 

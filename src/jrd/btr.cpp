@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: btr.cpp,v 1.6 2002-09-24 12:57:07 eku Exp $
+$Id: btr.cpp,v 1.7 2002-09-25 17:12:09 skidder Exp $
 */
 
 #include "firebird.h"
@@ -240,7 +240,7 @@ USHORT BTR_all(TDBB tdbb,
 
 	if ((SLONG) (root->irt_count * sizeof(IDX)) > *idx_size) {
 		size = (sizeof(IDX) * MAX_IDX) + ALIGNMENT;
-		*csb_idx_allocation = new_buffer = new(*dbb->dbb_permanent, size) str();
+		*csb_idx_allocation = new_buffer = FB_NEW_RPT(*dbb->dbb_permanent, size) str();
 		buffer = *start_buffer =
 			(IDX *) FB_ALIGN((U_IPTR) new_buffer->str_data, ALIGNMENT);
 		*idx_size = size - ALIGNMENT;
@@ -2263,7 +2263,11 @@ static USHORT compress_root(TDBB tdbb, IRT page)
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	temp = (UCHAR *) tdbb->tdbb_default->allocate((SLONG) dbb->dbb_page_size);
+	temp = (UCHAR *) tdbb->tdbb_default->allocate((SLONG) dbb->dbb_page_size, 0
+#ifdef DEBUG_GDS_ALLOC
+	  ,__FILE__,__LINE__
+#endif
+	);
 	MOVE_FASTER(page, temp, dbb->dbb_page_size);
 	p = temp + dbb->dbb_page_size;
 

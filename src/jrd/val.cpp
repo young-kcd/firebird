@@ -701,7 +701,7 @@ BOOLEAN VAL_validate(TDBB tdbb, USHORT switches)
 
 	old_pool = tdbb->tdbb_default;
 	val_pool = 0;
-	tdbb->tdbb_default = val_pool = new(*dbb->dbb_permanent) JrdMemoryPool;
+	tdbb->tdbb_default = val_pool = FB_NEW(*dbb->dbb_permanent) JrdMemoryPool;
 
 	control.vdr_page_bitmap = NULL;
 	control.vdr_flags = 0;

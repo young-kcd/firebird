@@ -478,7 +478,7 @@ IDB IDX_create_index_block(TDBB tdbb, REL relation, UCHAR id)
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	index_block = new(*dbb->dbb_permanent) idb();
+	index_block = FB_NEW(*dbb->dbb_permanent) idb();
 	index_block->idb_id = id;
 
 /* link the block in with the relation linked list */
@@ -490,7 +490,7 @@ IDB IDX_create_index_block(TDBB tdbb, REL relation, UCHAR id)
    any modification to the index so that the cached information
    about the index will be discarded */
 
-	index_block->idb_lock = lock = new(*dbb->dbb_permanent, 0) lck;
+	index_block->idb_lock = lock = FB_NEW_RPT(*dbb->dbb_permanent, 0) lck;
 	lock->lck_parent = dbb->dbb_lock;
 	lock->lck_dbb = dbb;
 	lock->lck_key.lck_long = index_block->idb_id;

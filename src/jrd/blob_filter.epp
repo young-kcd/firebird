@@ -236,12 +236,12 @@ BLF DLL_EXPORT BLF_lookup_internal_filter(TDBB tdbb, SSHORT from, SSHORT to)
 
 	if (to == BLOB_text && from >= 0
 		&& from < sizeof(filters) / sizeof(filters[0])) {
-		result = new(*dbb->dbb_permanent) blf;
+		result = FB_NEW(*dbb->dbb_permanent) blf;
 		result->blf_next = NULL;
 		result->blf_from = from;
 		result->blf_to = to;
 		result->blf_filter = filters[from];
-		exception_msg = new(*dbb->dbb_permanent, 100) str;
+		exception_msg = FB_NEW_RPT(*dbb->dbb_permanent, 100) str;
 		// SIGN ISSUE, arg 1
 		sprintf((char*)exception_msg->str_data,
 				"Exception occurred in system provided internal filters for filtering internal subtype %d to text.",

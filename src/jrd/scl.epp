@@ -484,7 +484,7 @@ SCL SCL_get_class(/* INOUT */ TEXT* string)
 
 /* Class isn't known.  So make up a new security class block */
 
-	s_class = new(*dbb->dbb_permanent, p - name) scl();
+	s_class = FB_NEW_RPT(*dbb->dbb_permanent, p - name) scl();
 	p = name;
 	q = s_class->scl_name;
 	while ( (*q++ = *p++) )
@@ -759,7 +759,7 @@ void SCL_init(BOOLEAN	create,
 
 	length = strlen(name) + strlen(role_name) + strlen(project) +
 		strlen(organization) + 4;   /* for the terminating nulls */
-	tdbb->tdbb_attachment->att_user = user = new(*dbb->dbb_permanent, length) usr();
+	tdbb->tdbb_attachment->att_user = user = FB_NEW_RPT(*dbb->dbb_permanent, length) usr();
 	p = user->usr_data;
 	user->usr_user_name = save_string(name, &p);
 	user->usr_project_name = save_string(project, &p);
@@ -1019,7 +1019,7 @@ static BOOLEAN check_user_group(CONST TEXT*	acl,
 
 	try {
 
-	buffer = new(*dbb->dbb_permanent, *length_ptr) str();
+	buffer = FB_NEW_RPT(*dbb->dbb_permanent, *length_ptr) str();
 
 	n = 0;
 	if ( (l = *acl++) )
@@ -1141,7 +1141,7 @@ static SLONG compute_access(TDBB		tdbb,
 	try {
 
 /* Get some space that's not off the stack */
-	str_buffer = new(*dbb->dbb_permanent, BLOB_BUFFER_SIZE) str();
+	str_buffer = FB_NEW_RPT(*dbb->dbb_permanent, BLOB_BUFFER_SIZE) str();
 	buffer = (TEXT*) str_buffer->str_data;
 
 

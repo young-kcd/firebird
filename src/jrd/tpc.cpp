@@ -246,7 +246,7 @@ int TPC_snapshot_state(TDBB tdbb, SLONG number)
 			// receiver of this (ptr) checks its type.
 			// Please review this. This lock has _nothing_ to do in the
 			// permamnent pool!
-			std::auto_ptr<lck> temp_lock(new(*dbb->dbb_permanent, 0) lck);
+			std::auto_ptr<lck> temp_lock(FB_NEW_RPT(*dbb->dbb_permanent, 0) lck);
 
 			//temp_lock.blk_type = type_lck;
 			temp_lock->lck_dbb = dbb;
@@ -365,7 +365,7 @@ static TPC allocate_tpc(TDBB tdbb, ULONG base)
 /* allocate a TIP cache block with enough room for 
    all desired transactions */
 
-	tip_cache = new(*dbb->dbb_permanent, trans_per_tip / 4) tpc();
+	tip_cache = FB_NEW_RPT(*dbb->dbb_permanent, trans_per_tip / 4) tpc();
 	tip_cache->tpc_base = base;
 
 	return tip_cache;

@@ -715,7 +715,7 @@ SLONG PAG_attachment_id(void)
 
 /* Take out lock on attachment id */
 
-	lock = attachment->att_id_lock = new(*dbb->dbb_permanent, sizeof(SLONG)) lck();
+	lock = attachment->att_id_lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) lck();
 	lock->lck_type = LCK_attachment;
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 	lock->lck_parent = dbb->dbb_lock;
@@ -1152,7 +1152,7 @@ void PAG_init(void)
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	dbb->dbb_pcontrol = control = new(*dbb->dbb_permanent) pgc();
+	dbb->dbb_pcontrol = control = FB_NEW(*dbb->dbb_permanent) pgc();
 	control->pgc_bytes = dbb->dbb_page_size - OFFSETA(PIP, pip_bits);
 	control->pgc_ppp = control->pgc_bytes * 8;
 	control->pgc_tpt =

@@ -25,7 +25,7 @@
  * 2001.07.28: Added parse code for blr_skip to support LIMIT.
  */
 /*
-$Id: par.cpp,v 1.11 2002-09-10 18:34:00 skidder Exp $
+$Id: par.cpp,v 1.12 2002-09-25 17:12:10 skidder Exp $
 */
 
 #include "firebird.h"
@@ -365,7 +365,7 @@ NOD PAR_gen_field(TDBB tdbb, USHORT stream, USHORT id)
 
 	SET_TDBB(tdbb);
 
-	node = new(*tdbb->tdbb_default, e_fld_length) nod();
+	node = FB_NEW_RPT(*tdbb->tdbb_default, e_fld_length) nod();
 	node->nod_type = nod_field;
 	node->nod_arg[e_fld_id] = (NOD) (SLONG) id;
 	node->nod_arg[e_fld_stream] = (NOD) (SLONG) stream;
@@ -499,7 +499,7 @@ NOD PAR_make_node(TDBB tdbb, int size)
 
 	SET_TDBB(tdbb);
 
-	node = new(*tdbb->tdbb_default, size) nod();
+	node = FB_NEW_RPT(*tdbb->tdbb_default, size) nod();
 	node->nod_count = size;
 
 	return node;
@@ -783,7 +783,7 @@ static XCP par_condition(TDBB tdbb, CSB * csb)
 
 /* allocate a node to represent the conditions list */
 
-	exception_list = new(*tdbb->tdbb_default, 1) xcp();
+	exception_list = FB_NEW_RPT(*tdbb->tdbb_default, 1) xcp();
 	exception_list->xcp_count = 1;
 	code_type = BLR_BYTE;
 	switch (code_type) {
@@ -850,7 +850,7 @@ static XCP par_conditions(TDBB tdbb, CSB * csb)
 /* allocate a node to represent the conditions list */
 
 	n = BLR_WORD;
-	exception_list = new(*tdbb->tdbb_default, n) xcp();
+	exception_list = FB_NEW_RPT(*tdbb->tdbb_default, n) xcp();
 	exception_list->xcp_count = n;
 	for (i = 0; i < n; i++) {
 		code_type = BLR_BYTE;
@@ -977,7 +977,7 @@ static void par_dependency(
 		node->nod_arg[e_dep_field] = field_node = PAR_make_node(tdbb, 1);
 		field_node->nod_type = nod_literal;
 		length = strlen(field_name);
-		string = new(*tdbb->tdbb_default, length) str();
+		string = FB_NEW_RPT(*tdbb->tdbb_default, length) str();
 		string->str_length = length;
 		strcpy(reinterpret_cast < char *>(string->str_data), field_name);
 		field_node->nod_arg[0] = (NOD) string->str_data;
@@ -1913,7 +1913,7 @@ static NOD par_relation(
 		id = BLR_WORD;
 		if (operator_ == blr_rid2) {
 			length = BLR_PEEK;
-			alias_string = new(*tdbb->tdbb_default, length + 1) str();
+			alias_string = FB_NEW_RPT(*tdbb->tdbb_default, length + 1) str();
 			alias_string->str_length = length;
 			par_name(csb, reinterpret_cast < char *>(alias_string->str_data));
 		}
@@ -1926,7 +1926,7 @@ static NOD par_relation(
 		par_name(csb, name);
 		if (operator_ == blr_relation2) {
 			length = BLR_PEEK;
-			alias_string = new(*tdbb->tdbb_default, length + 1) str();
+			alias_string = FB_NEW_RPT(*tdbb->tdbb_default, length + 1) str();
 			alias_string->str_length = length;
 			par_name(csb, reinterpret_cast < char *>(alias_string->str_data));
 		}

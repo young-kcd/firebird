@@ -296,7 +296,7 @@ CTX PASS1_make_context( REQ request, NOD relation_node)
     }
 /* Set up context block */
 
-	context = new(*tdsql->tsql_default) ctx;
+	context = FB_NEW(*tdsql->tsql_default) ctx;
 	context->ctx_relation = relation;
 	context->ctx_procedure = procedure;
 	context->ctx_request = request;
@@ -377,7 +377,7 @@ CTX PASS1_make_context( REQ request, NOD relation_node)
 			if (count)
 			{
 				// Initialize this stack variable, and make it look like a node
-                std::auto_ptr<nod> desc_node(new(*tdsql->tsql_default, 0) nod);
+                std::auto_ptr<nod> desc_node(FB_NEW_RPT(*tdsql->tsql_default, 0) nod);
 
 				for (input = context->ctx_proc_inputs->nod_arg,
 					 field = procedure->prc_inputs;
@@ -1073,7 +1073,7 @@ NOD PASS1_statement(REQ request, NOD input, USHORT proc_flag)
 				ERRD_post(gds_prcmismat, gds_arg_string, name->str_data, 0);
 			if (count) {
 				// Initialize this stack variable, and make it look like a node
-                std::auto_ptr<nod> desc_node(new(*getDefaultMemoryPool(), 0) nod);
+                std::auto_ptr<nod> desc_node(FB_NEW_RPT(*getDefaultMemoryPool(), 0) nod);
 
 				for (ptr = node->nod_arg[e_exe_inputs]->nod_arg,
 					 field = request->req_procedure->prc_inputs;
@@ -2590,10 +2590,10 @@ static void pass1_blob( REQ request, NOD input)
 	request->req_type =
 		(input->nod_type ==
 		 nod_get_segment) ? REQ_GET_SEGMENT : REQ_PUT_SEGMENT;
-	request->req_blob = blob = new(*tdsql->tsql_default) blb;
+	request->req_blob = blob = FB_NEW(*tdsql->tsql_default) blb;
 	blob->blb_field = field;
 	blob->blb_open_in_msg = request->req_send;
-	blob->blb_open_out_msg = new(*tdsql->tsql_default) msg;
+	blob->blb_open_out_msg = FB_NEW(*tdsql->tsql_default) msg;
 	blob->blb_segment_msg = request->req_receive;
 
 /* Create a parameter for the blob segment */
@@ -2714,7 +2714,7 @@ static NOD pass1_collate( REQ request, NOD sub1, STR collation)
 
 
 	node = MAKE_node(nod_cast, e_cast_count);
-	field = new(*tdsql->tsql_default, 1) fld;
+	field = FB_NEW_RPT(*tdsql->tsql_default, 1) fld;
 	field->fld_name[0] = 0;
 	node->nod_arg[e_cast_target] = (NOD) field;
 	node->nod_arg[e_cast_source] = sub1;
@@ -3540,7 +3540,7 @@ static NOD pass1_alias_list( REQ request, NOD alias_list)
 
 /* make up a dummy context to hold the resultant relation */
 
-	new_context = new(*tdsql->tsql_default) ctx;
+	new_context = FB_NEW(*tdsql->tsql_default) ctx;
 	new_context->ctx_context = context->ctx_context;
 	new_context->ctx_relation = relation;
 
@@ -3553,7 +3553,7 @@ static NOD pass1_alias_list( REQ request, NOD alias_list)
 		alias_length += static_cast < USHORT > (((STR) * arg)->str_length);
 	}
 
-	alias = new(*tdsql->tsql_default, alias_length) str;
+	alias = FB_NEW_RPT(*tdsql->tsql_default, alias_length) str;
 	alias->str_length = alias_length;
 
 	p = new_context->ctx_alias = (TEXT *) alias->str_data;
@@ -3715,14 +3715,14 @@ static NOD pass1_rse( REQ request, NOD input, NOD order)
 				sub = sub->nod_arg[e_alias_value];
 
 			if (aggregate_found(request, sub, &proj)) {
-				parent_context = new(*tdsql->tsql_default) ctx;
+				parent_context = FB_NEW(*tdsql->tsql_default) ctx;
 				break;
 			}
 		}
 
 	if (!parent_context && (input->nod_arg[e_sel_group] ||
 							input->nod_arg[e_sel_having]))
-			parent_context = new(*tdsql->tsql_default) ctx;
+			parent_context = FB_NEW(*tdsql->tsql_default) ctx;
 
 	if (parent_context) {
 		parent_context->ctx_context = request->req_context_number++;
@@ -4290,7 +4290,7 @@ static NOD pass1_union( REQ request, NOD input, NOD order_list)
 
 /* generate a context for the union itself */
 
-	union_context = new(*tdsql->tsql_default) ctx;
+	union_context = FB_NEW(*tdsql->tsql_default) ctx;
 	union_context->ctx_context = request->req_context_number++;
 
 /* generate the list of fields to select */
@@ -4347,7 +4347,7 @@ static NOD pass1_union( REQ request, NOD input, NOD order_list)
 		 ptr < end; ptr++) {
 		*ptr = map_node = MAKE_node(nod_map, e_map_count);
 		map_node->nod_arg[e_map_context] = (NOD) union_context;
-		map_ = new(*tdsql->tsql_default) map;
+		map_ = FB_NEW(*tdsql->tsql_default) map;
 		map_node->nod_arg[e_map_map] = (NOD) map_;
 
 		/* set up the MAP between the sub-rses and the union context */
@@ -4584,7 +4584,7 @@ static NOD post_map( NOD node, CTX context)
 			break;
 
 	if (!map_) {
-		map_ = new(*tdsql->tsql_default) map;
+		map_ = FB_NEW(*tdsql->tsql_default) map;
 		map_->map_position = count;
 		map_->map_next = context->ctx_map;
 		context->ctx_map = map_;

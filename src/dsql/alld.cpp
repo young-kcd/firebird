@@ -113,8 +113,8 @@ void ALLD_init()
 	if (!init_flag)
 	{
 		init_flag = true;
-		DSQL_permanent_pool = new(*getDefaultMemoryPool()) DsqlMemoryPool;
-		pools = new(*DSQL_permanent_pool) Firebird::vector<DsqlMemoryPool*>
+		DSQL_permanent_pool = FB_NEW(*getDefaultMemoryPool()) DsqlMemoryPool;
+		pools = FB_NEW(*DSQL_permanent_pool) Firebird::vector<DsqlMemoryPool*>
 					(10, *DSQL_permanent_pool, dsql_type_vec);
 		tdsql->tsql_default = DSQL_permanent_pool;
 	}

@@ -30,7 +30,7 @@
  *   This closes the heart of SF Bug #518282.
  */
 /*
-$Id: cmp.cpp,v 1.10 2002-09-19 16:02:56 skidder Exp $
+$Id: cmp.cpp,v 1.11 2002-09-25 17:12:09 skidder Exp $
 */
 
 #include "firebird.h"
@@ -290,7 +290,7 @@ REQ DLL_EXPORT CMP_clone_request(TDBB tdbb,
 	n =
 		(USHORT) ((request->req_impure_size - REQ_SIZE + REQ_TAIL - 1) /
 				  REQ_TAIL);
-	clone = new(*request->req_pool, n) req;
+	clone = FB_NEW_RPT(*request->req_pool, n) req;
 	(*vector)[level] = (BLK) clone;
 	clone->req_attachment = tdbb->tdbb_attachment;
 	clone->req_count = request->req_count;
@@ -356,7 +356,7 @@ REQ DLL_EXPORT CMP_compile2(TDBB tdbb, UCHAR* blr, USHORT internal_flag)
 	SET_TDBB(tdbb);
 
 	JrdMemoryPool* old_pool = tdbb->tdbb_default;
-	JrdMemoryPool* new_pool = new(*tdbb->tdbb_database->dbb_permanent)
+	JrdMemoryPool* new_pool = FB_NEW(*tdbb->tdbb_database->dbb_permanent)
 				JrdMemoryPool;
 	tdbb->tdbb_default = new_pool;
 
@@ -1636,13 +1636,13 @@ IDL DLL_EXPORT CMP_get_index_lock(TDBB tdbb, REL relation, USHORT id)
 		if (index->idl_id == id)
 			return index;
 
-	index = new(*dbb->dbb_permanent) idl();
+	index = FB_NEW(*dbb->dbb_permanent) idl();
 	index->idl_next = relation->rel_index_locks;
 	relation->rel_index_locks = index;
 	index->idl_relation = relation;
 	index->idl_id = id;
 
-	index->idl_lock = lock = new(*dbb->dbb_permanent, 0) lck;
+	index->idl_lock = lock = FB_NEW_RPT(*dbb->dbb_permanent, 0) lck;
 	lock->lck_parent = dbb->dbb_lock;
 	lock->lck_dbb = dbb;
 	lock->lck_key.lck_long = relation->rel_id * 1000 + id;
@@ -1724,7 +1724,7 @@ REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
    count of hold the impure areas. */
 
 	int n = (csb->csb_impure - REQ_SIZE + REQ_TAIL - 1) / REQ_TAIL;
-	request = new(*tdbb->tdbb_default, n) req;
+	request = FB_NEW_RPT(*tdbb->tdbb_default, n) req;
 	request->req_count = csb->csb_n_stream;
 	request->req_pool = tdbb->tdbb_default;
 	request->req_impure_size = csb->csb_impure;
@@ -1919,7 +1919,7 @@ int DLL_EXPORT CMP_post_access(TDBB			tdbb,
 	}
 
 
-	access = new(*tdbb->tdbb_default) acc;
+	access = FB_NEW(*tdbb->tdbb_default) acc;
 
 /* append the security class to the existing list */
 	if (last_entry)
@@ -1979,7 +1979,7 @@ void DLL_EXPORT CMP_post_resource(
 		if (resource->rsc_type == type && resource->rsc_id == id)
 			return;
 
-	resource = new(*tdbb->tdbb_default) Rsc;
+	resource = FB_NEW(*tdbb->tdbb_default) Rsc;
 	resource->rsc_next = *rsc_ptr;
 	*rsc_ptr = resource;
 	resource->rsc_type = type;
@@ -2232,7 +2232,7 @@ static UCHAR *alloc_map(TDBB tdbb, CSB * csb, USHORT stream)
 
 	SET_TDBB(tdbb);
 
-	string = new(*tdbb->tdbb_default, MAP_LENGTH) str;
+	string = FB_NEW_RPT(*tdbb->tdbb_default, MAP_LENGTH) str;
 	string->str_length = MAP_LENGTH;
 	(*csb)->csb_rpt[stream].csb_map = (UCHAR *) string->str_data;
 /* TMN: Here we should really have the following assert */

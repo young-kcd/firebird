@@ -559,7 +559,7 @@ public:
 	{}
 
 	static Csb* newCsb(MemoryPool& p, size_t len)
-		{ return new(p) Csb(p, len); }
+		{ return FB_NEW(p) Csb(p, len); }
 
 	UCHAR*		csb_blr;
 	UCHAR*		csb_running;

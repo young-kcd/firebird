@@ -110,7 +110,7 @@ class tdbb;
 class dbb : private pool_alloc<type_dbb>
 {
 public:
-	static dbb* newDbb(MemoryPool& p) { return new(p) dbb(p); }
+	static dbb* newDbb(MemoryPool& p) { return FB_NEW(p) dbb(p); }
 	
 	// The deleteDbb function MUST be used to delete a dbb object.
 	// The function hides some tricky order of operations.  Since the
@@ -689,9 +689,9 @@ public:
 	typedef typename Firebird::vector<T>::iterator iterator;
 
 	static vec_base* newVector(MemoryPool& p, int len)
-		{ return new(p) vec_base<T,TYPE>(p, len); }
+		{ return FB_NEW(p) vec_base<T,TYPE>(p, len); }
 	static vec_base* newVector(MemoryPool& p, const vec_base& base)
-		{ return new(p) vec_base<T,TYPE>(p, base); }
+		{ return FB_NEW(p) vec_base<T,TYPE>(p, base); }
 		
 	ULONG count() { return vector.size(); }
 	T& operator[](size_t index) { return vector[index]; }
@@ -723,9 +723,9 @@ class vec : public vec_base<BlkPtr, type_vec>
 {
 public:
     static vec* newVector(MemoryPool& p, int len)
-        { return new(p) vec(p, len); }
+        { return FB_NEW(p) vec(p, len); }
     static vec* newVector(MemoryPool& p, const vec& base)
-        { return new(p) vec(p, base); }
+        { return FB_NEW(p) vec(p, base); }
 
 private:
     vec(MemoryPool& p, int len) : vec_base<BlkPtr, type_vec>(p, len) {}
@@ -737,9 +737,9 @@ class vcl : public vec_base<SLONG, type_vcl>
 {
 public:
     static vcl* newVector(MemoryPool& p, int len)
-        { return new(p) vcl(p, len); }
+        { return FB_NEW(p) vcl(p, len); }
     static vcl* newVector(MemoryPool& p, const vcl& base)
-        { return new(p) vcl(p, base); }
+        { return FB_NEW(p) vcl(p, base); }
 
 private:
     vcl(MemoryPool& p, int len) : vec_base<SLONG, type_vcl>(p, len) {}
@@ -801,7 +801,7 @@ public:
 			return false;	// runtime safety
 		}
 		// TMN: Note that this violates "common sense" and should be fixed.
-		str* res = new(*pPool, new_len+1) str;
+		str* res = FB_NEW_RPT(*pPool, new_len+1) str;
 		res->str_length = new_len;
 		memcpy(res->str_data, s->str_data, s->str_length+1);
 		str* old = s;

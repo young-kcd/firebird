@@ -322,7 +322,7 @@ void SDW_check(void)
 	}
 	if (SDW_check_conditional()) {
 		if (SDW_lck_update((SLONG) 0)) {
-			lock = new(*dbb->dbb_permanent, sizeof(SLONG)) lck();
+			lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) lck();
 			lock->lck_dbb = dbb;
 			lock->lck_attachment = tdbb->tdbb_attachment;
 			lock->lck_length = sizeof(SLONG);
@@ -596,7 +596,7 @@ void SDW_init(USHORT activate, USHORT delete_, SBM sbm_rec)
 /* set up the lock block for synchronizing addition of new shadows */
 
 	key_length = sizeof(header->hdr_shadow_count);
-	dbb->dbb_shadow_lock = lock = new(*dbb->dbb_permanent, key_length) lck();
+	dbb->dbb_shadow_lock = lock = FB_NEW_RPT(*dbb->dbb_permanent, key_length) lck();
 	lock->lck_type = LCK_shadow;
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 	lock->lck_parent = dbb->dbb_lock;
@@ -1197,7 +1197,7 @@ static SDW allocate_shadow(
 
 	dbb = GET_DBB;
 
-	shadow = new(*dbb->dbb_permanent) sdw();
+	shadow = FB_NEW(*dbb->dbb_permanent) sdw();
 	shadow->sdw_file = shadow_file;
 	shadow->sdw_number = shadow_number;
 	if (file_flags & FILE_manual)

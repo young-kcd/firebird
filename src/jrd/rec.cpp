@@ -1053,7 +1053,7 @@ USHORT activate_shadow, SLONG * timestamp, SLONG page_no, PAG page)
 	else if (!WALRS_handle)
 		ERR_post(gds_wal_failure, 0);
 
-	string = new(*dbb->dbb_permanent, MAX_WALBUFLEN) str();
+	string = FB_NEW_RPT(*dbb->dbb_permanent, MAX_WALBUFLEN) str();
 	wal_buff = (UCHAR *) string->str_data;
 
 	while (TRUE) {

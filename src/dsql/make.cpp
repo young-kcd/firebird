@@ -82,7 +82,7 @@ NOD MAKE_constant(STR constant, int numeric_flag)
 
 	tdsql = GET_THREAD_DATA;
 
-	node = new(*tdsql->tsql_default,
+	node = FB_NEW_RPT(*tdsql->tsql_default,
 						(numeric_flag == CONSTANT_TIMESTAMP ||
 						  numeric_flag == CONSTANT_SINT64) ? 2 : 1) nod;
 	node->nod_type = nod_constant;
@@ -223,7 +223,7 @@ NOD MAKE_str_constant(STR constant, SSHORT character_set)
 
 	tdsql = GET_THREAD_DATA;
 
-	node = new(*tdsql->tsql_default, 1) nod;
+	node = FB_NEW_RPT(*tdsql->tsql_default, 1) nod;
 	node->nod_type = nod_constant;
 
 	DEV_BLKCHK(constant, dsql_type_str);
@@ -1390,7 +1390,7 @@ NOD MAKE_node(NOD_TYPE type, int count)
 
 	tdsql = GET_THREAD_DATA;
 
-	node = new(*tdsql->tsql_default, count) nod;
+	node = FB_NEW_RPT(*tdsql->tsql_default, count) nod;
 	node->nod_type = type;
 	node->nod_count = count;
 
@@ -1418,7 +1418,7 @@ PAR MAKE_parameter(MSG message, USHORT sqlda_flag, USHORT null_flag)
 
 	tdsql = GET_THREAD_DATA;
 
-	parameter = new(*tdsql->tsql_default) par;
+	parameter = FB_NEW(*tdsql->tsql_default) par;
 	parameter->par_message = message;
     parameter->par_next = message->msg_parameters;
 	if (parameter->par_next != 0)
@@ -1488,7 +1488,7 @@ SYM MAKE_symbol(DBB database,
 
 	tdsql = GET_THREAD_DATA;
 
-	symbol = new(*tdsql->tsql_default, length) sym;
+	symbol = FB_NEW_RPT(*tdsql->tsql_default, length) sym;
 	symbol->sym_type = type;
 	symbol->sym_object = (BLK) object;
 	symbol->sym_dbb = database;
@@ -1523,7 +1523,7 @@ STR MAKE_tagged_string(CONST UCHAR * str_, int length, CONST TEXT * charset)
 
 	tdsql = GET_THREAD_DATA;
 
-	string = new(*tdsql->tsql_default, length) str;
+	string = FB_NEW_RPT(*tdsql->tsql_default, length) str;
 	string->str_charset = const_cast < char *>(charset);
 	string->str_length = length;
 	for (p = string->str_data; length; --length)
@@ -1576,7 +1576,7 @@ NOD MAKE_variable(FLD field,
 
 	tdsql = GET_THREAD_DATA;
 
-	var_ = new(*tdsql->tsql_default, strlen(name)) var;
+	var_ = FB_NEW_RPT(*tdsql->tsql_default, strlen(name)) var;
 	node = MAKE_node(nod_variable, e_var_count);
 	node->nod_arg[e_var_variable] = (NOD) var_;
 	var_->var_msg_number = msg_number;

@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.7 2002-08-22 08:20:27 dimitr Exp $
+ * $Id: rse.cpp,v 1.8 2002-09-25 17:12:11 skidder Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -2025,7 +2025,7 @@ static BOOLEAN get_procedure(TDBB				tdbb,
 	if (!impure->irsb_message)
 	{
 		size = msg_format->fmt_length + ALIGNMENT;
-		impure->irsb_message = new(*tdbb->tdbb_default, size) str();
+		impure->irsb_message = FB_NEW_RPT(*tdbb->tdbb_default, size) str();
 		impure->irsb_message->str_length = size;
 	}
 	om =
@@ -2035,7 +2035,7 @@ static BOOLEAN get_procedure(TDBB				tdbb,
 
 	if (!rpb->rpb_record) {
 		record = rpb->rpb_record =
-			new(*tdbb->tdbb_default, rec_format->fmt_length) rec();
+			FB_NEW_RPT(*tdbb->tdbb_default, rec_format->fmt_length) rec();
 		record->rec_format = rec_format;
 		record->rec_length = rec_format->fmt_length;
 	}
@@ -3622,11 +3622,11 @@ static void save_record(TDBB tdbb, RPB * rpb)
 				delete rec_copy;
 		}
 		else
-			rpb->rpb_copy = rpb_copy = new(*tdbb->tdbb_default) srpb(); 
+			rpb->rpb_copy = rpb_copy = FB_NEW(*tdbb->tdbb_default) srpb(); 
 
 		MOVE_FAST(rpb, rpb_copy->srpb_rpb, sizeof(struct rpb));
 		rpb_copy->srpb_rpb->rpb_record = rec_copy =
-			new(*tdbb->tdbb_default, size) rec();
+			FB_NEW_RPT(*tdbb->tdbb_default, size) rec();
 
 		rec_copy->rec_length = size;
 		rec_copy->rec_format = record->rec_format;
@@ -3681,7 +3681,7 @@ static void write_merge_block(TDBB tdbb, MFB mfb, ULONG block)
 	SFB sfb_;
 
 	if (!(sfb_ = mfb->mfb_sfb)) {
-		sfb_ = mfb->mfb_sfb = new(*getDefaultMemoryPool()) sfb;
+		sfb_ = mfb->mfb_sfb = FB_NEW(*getDefaultMemoryPool()) sfb;
 	}
 	if (!sfb_->sfb_file_name) {
 		TEXT file_name[128];

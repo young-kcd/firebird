@@ -57,7 +57,7 @@ const PosixDirItr& PosixDirItr::operator++()
 
 PathUtils::dir_iterator *PathUtils::newDirItr(MemoryPool& p, const Firebird::string& path)
 {
-	return new(p) PosixDirItr(path);
+	return FB_NEW(p) PosixDirItr(path);
 }
 
 void PathUtils::splitLastComponent(Firebird::string& path, Firebird::string& file,

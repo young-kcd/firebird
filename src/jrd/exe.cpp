@@ -31,7 +31,7 @@
  * to count virtual operations, not real I/O on the underlying tables.
  */
 /*
-$Id: exe.cpp,v 1.17 2002-09-19 16:02:57 skidder Exp $
+$Id: exe.cpp,v 1.18 2002-09-25 17:12:09 skidder Exp $
 */
 
 #include "firebird.h"
@@ -1334,7 +1334,7 @@ static void exec_sql(TDBB tdbb, REQ request, DSC* dsc)
 
 	UCHAR *p;
 	vary *v = reinterpret_cast <vary*> (
-		new(*tdbb->tdbb_transaction->tra_pool) char[BUFFER_LARGE + sizeof(vary)]);
+		FB_NEW(*tdbb->tdbb_transaction->tra_pool) char[BUFFER_LARGE + sizeof(vary)]);
 	v->vary_length = BUFFER_LARGE;
 	SSHORT l;
 	STATUS *status, local[ISC_STATUS_LENGTH];
@@ -1434,7 +1434,7 @@ static void execute_procedure(TDBB tdbb, NOD node)
 		format = (FMT) procedure->prc_output_msg->nod_arg[e_msg_format];
 		out_msg_length = format->fmt_length;
 		temp_buffer =
-			new(*tdbb->tdbb_default, out_msg_length + DOUBLE_ALIGN - 1) str();
+			FB_NEW_RPT(*tdbb->tdbb_default, out_msg_length + DOUBLE_ALIGN - 1) str();
 		out_msg =
 			(SCHAR *) FB_ALIGN((U_IPTR) temp_buffer->str_data, DOUBLE_ALIGN);
 	}
@@ -1855,7 +1855,7 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 				if (variable->vlu_desc.dsc_dtype <= dtype_varying
 					&& !variable->vlu_string) {
 					variable->vlu_string =
-						new(*tdbb->tdbb_default,
+						FB_NEW_RPT(*tdbb->tdbb_default,
 									  variable->vlu_desc.dsc_length) str();
 					variable->vlu_string->str_length =
 						variable->vlu_desc.dsc_length;

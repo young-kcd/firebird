@@ -95,7 +95,7 @@ void* API_ROUTINE gds__alloc(SLONG size_request)
 	try
 	{
 		poolLoader.loadPool();
-		return FB_MemoryPool->allocate(size_request);
+		return FB_MemoryPool->allocate(size_request,0);
 	} catch(...) {}
 	
 	return 0;
@@ -144,7 +144,11 @@ void* operator new(size_t s)
 	}
 #endif	// DEV_BUILD
 	poolLoader.loadPool();
-	return FB_MemoryPool->allocate(s);
+	return FB_MemoryPool->allocate(s,0
+#ifdef DEBUG_GDS_ALLOC
+	  ,__FILE__,__LINE__
+#endif
+	);
 }
 
 /** operator new[] implementation to trap all calls to the default operator
@@ -164,16 +168,14 @@ void* operator new[](size_t s)
 	}
 #endif
 	poolLoader.loadPool();
-	return FB_MemoryPool->allocate(s);
+	return FB_MemoryPool->allocate(s,0
+#ifdef DEBUG_GDS_ALLOC
+	  ,__FILE__,__LINE__
+#endif
+	);
 }
 
-/**	Generic operator new to allocate memory from a given pool.  Works with
-	all objects that don't define their own operator new.
-**/
-void* operator new(size_t s, MemoryPool& p)
-{
-	return p.allocate(s, 0);
-}
+
 
 /**	operator delete to handle exceptions thrown while contructing object with
 	our custom operator new.
@@ -219,14 +221,6 @@ void* operator new(size_t s, MemoryPool* p)
 }
 #endif
 
-/**	Generic operator new to allocate memory from a given pool.  Works with
-	all objects that don't define their own operator new.
-**/
-void* operator new[](size_t s, MemoryPool& p)
-{
-	return p.allocate(s, 0);
-}
-
 #ifdef DEBUG_GDS_ALLOC
 
 // Debugging operators new used by FB_NEW macro. Work the same as the above
@@ -239,6 +233,24 @@ void* operator new(size_t s, MemoryPool& p, char *file, int line)
 void* operator new[](size_t s, MemoryPool& p, char *file, int line)
 {
 	return p.allocate(s, 0, file, line);
+}
+
+#else
+
+/**	Generic operator new to allocate memory from a given pool.  Works with
+	all objects that don't define their own operator new.
+**/
+void* operator new(size_t s, MemoryPool& p)
+{
+	return p.allocate(s, 0);
+}
+
+/**	Generic operator new to allocate memory from a given pool.  Works with
+	all objects that don't define their own operator new.
+**/
+void* operator new[](size_t s, MemoryPool& p)
+{
+	return p.allocate(s, 0);
 }
 
 #endif

@@ -232,7 +232,7 @@ void trig::compile(tdbb* _tdbb) {
 
 		compile_in_progress = TRUE;
 		old_pool = _tdbb->tdbb_default;
-		_tdbb->tdbb_default = new(*getDefaultMemoryPool()) JrdMemoryPool;
+		_tdbb->tdbb_default = FB_NEW(*getDefaultMemoryPool()) JrdMemoryPool;
 		// Trigger request is not compiled yet. Lets do it now
 		PAR_blr(_tdbb, relation, blr->str_data, 
 				(CSB)NULL_PTR, (CSB*)NULL_PTR, &request, TRUE, 
@@ -746,7 +746,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 	}
 #endif
 
-	tdbb->tdbb_attachment = attachment = new(*dbb->dbb_permanent) att();
+	tdbb->tdbb_attachment = attachment = FB_NEW(*dbb->dbb_permanent) att();
 	attachment->att_database = dbb;
 	attachment->att_filename = (is_alias) ?
 		copy_string(alias_buffer, strlen(alias_buffer)) :
@@ -1872,7 +1872,7 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 			copy_string(options.dpb_key, strlen(options.dpb_key));
 #endif
 
-	tdbb->tdbb_attachment = attachment = new(*dbb->dbb_permanent) att();
+	tdbb->tdbb_attachment = attachment = FB_NEW(*dbb->dbb_permanent) att();
 	attachment->att_database = dbb;
 	attachment->att_filename = copy_string(expanded_name, strlen(expanded_name));
 	attachment->att_next = dbb->dbb_attachments;
@@ -3830,7 +3830,7 @@ STATUS DLL_EXPORT GDS_TRANSACT_REQUEST(STATUS*	user_status,
 	transaction = find_transaction(tdbb, *tra_handle, gds_req_wrong_db);
 
 	old_pool = tdbb->tdbb_default;
-	tdbb->tdbb_default = new_pool = new(*tdbb->tdbb_database->dbb_permanent)
+	tdbb->tdbb_default = new_pool = FB_NEW(*tdbb->tdbb_database->dbb_permanent)
 				JrdMemoryPool;
 
 	csb = PAR_parse(tdbb, reinterpret_cast < UCHAR * >(blr), FALSE);
@@ -4125,7 +4125,7 @@ void JRD_blocked(ATT blocking, BTB * que)
 	if (block) {
 		dbb->dbb_free_btbs = block->btb_next;
 	} else {
-		block = new(*dbb->dbb_permanent) btb;
+		block = FB_NEW(*dbb->dbb_permanent) btb;
 	}
 
 	block->btb_thread_id = (SLONG) SCH_current_thread();
@@ -4838,7 +4838,7 @@ static STR copy_string(TEXT * ptr, USHORT length)
  *
  **************************************/
 	DBB dbb = get_dbb();
-	STR string = new(*dbb->dbb_permanent, length) str();
+	STR string = FB_NEW_RPT(*dbb->dbb_permanent, length) str();
 
 	string->str_length = length;
 	MOVE_FAST(ptr, string->str_data, length);
@@ -5608,7 +5608,7 @@ static DBB init(TDBB	tdbb,
 
 	try {
 
-	JrdMemoryPool* perm = new(*getDefaultMemoryPool()) JrdMemoryPool;
+	JrdMemoryPool* perm = FB_NEW(*getDefaultMemoryPool()) JrdMemoryPool;
 	dbb_ = dbb::newDbb(*perm);
 	//temp.blk_type = type_dbb;
 	dbb_->dbb_permanent = perm;
@@ -5625,12 +5625,12 @@ static DBB init(TDBB	tdbb,
 	databases = dbb_;
 
 	string =
-		new(*dbb_->dbb_permanent, THREAD_STRUCT_SIZE(MUTX_T, DBB_MUTX_max)) str();
+		FB_NEW_RPT(*dbb_->dbb_permanent, THREAD_STRUCT_SIZE(MUTX_T, DBB_MUTX_max)) str();
 
 	dbb_->dbb_mutexes = (MUTX) THREAD_STRUCT_ALIGN(string->str_data);
 	THD_MUTEX_INIT_N(dbb_->dbb_mutexes, DBB_MUTX_max);
 	string =
-		new(*dbb_->dbb_permanent, THREAD_STRUCT_SIZE(WLCK_T, DBB_WLCK_max)) str();
+		FB_NEW_RPT(*dbb_->dbb_permanent, THREAD_STRUCT_SIZE(WLCK_T, DBB_WLCK_max)) str();
 	dbb_->dbb_rw_locks = (WLCK) THREAD_STRUCT_ALIGN(string->str_data);
 	V4_RW_LOCK_INIT_N(dbb_->dbb_rw_locks, DBB_WLCK_max);
 	dbb_->dbb_internal = vector = vec::newVector(*dbb_->dbb_permanent, irq_MAX);

@@ -616,7 +616,7 @@ SSHORT CVT2_blob_compare(DSC * arg1, DSC * arg2, FPTR_VOID err)
 
 #ifdef STACK_REDUCTION
 		/* do a block allocate */
-		temp_str = new (*tdbb->tdbb_default, sizeof(UCHAR) * (2 * BUFFER_LARGE)) str();
+		temp_str = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(UCHAR) * (2 * BUFFER_LARGE)) str();
 		buffer1 = temp_str->str_data;
 	    buffer2 = buffer1 + BUFFER_LARGE;
 #endif
@@ -783,12 +783,12 @@ SSHORT CVT2_blob_compare(DSC * arg1, DSC * arg2, FPTR_VOID err)
 
 #ifdef STACK_REDUCTION
 		/* do a block allocate */
-		temp_str = new (*tdbb->tdbb_default, sizeof(UCHAR) * arg2->dsc_length) str();
+		temp_str = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(UCHAR) * arg2->dsc_length) str();
 	    dbuf = temp_str->str_data;
 #else
 		if (arg2->dsc_length > BUFFER_LARGE)
 		{
-			temp_str = new (*tdbb->tdbb_default, sizeof(UCHAR) * arg2->dsc_length) str();
+			temp_str = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(UCHAR) * arg2->dsc_length) str();
 			dbuf = temp_str->str_data;
 	    }
 		else
@@ -916,7 +916,7 @@ USHORT CVT2_make_string2(DSC * desc,
 											cs2, from_buf, from_len, err);
 			tempptr = (UCHAR *) temp;
 			if (needed_len > length) {
-				*ptr = new(*tdbb->tdbb_default, needed_len) str();
+				*ptr = FB_NEW_RPT(*tdbb->tdbb_default, needed_len) str();
 				(*ptr)->str_length = needed_len;
 				tempptr = (*ptr)->str_data;
 				length = needed_len;

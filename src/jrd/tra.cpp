@@ -174,7 +174,7 @@ BOOLEAN TRA_active_transactions(TDBB tdbb, DBB dbb)
 
 	base = oldest & ~TRA_MASK;
 
-	trans = new(*dbb->dbb_permanent, (number - base + TRA_MASK) / 4) tra();
+	trans = FB_NEW_RPT(*dbb->dbb_permanent, (number - base + TRA_MASK) / 4) tra();
 
 /* Build transaction bitmap to scan for active transactions. */
 
@@ -735,7 +735,7 @@ void TRA_init(TDBB tdbb)
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	dbb->dbb_sys_trans = trans = new(*dbb->dbb_permanent, 0) tra();
+	dbb->dbb_sys_trans = trans = FB_NEW_RPT(*dbb->dbb_permanent, 0) tra();
 	trans->tra_flags |= TRA_system | TRA_ignore_limbo;
 	trans->tra_pool = dbb->dbb_permanent;
 }
@@ -822,7 +822,7 @@ void TRA_post_resources(TDBB tdbb, TRA transaction, RSC resources)
 				 tra_rsc =
 				 tra_rsc->rsc_next) if (rsc->rsc_id == tra_rsc->rsc_id) break;
 			if (!tra_rsc) {
-				new_rsc = new(*tdbb->tdbb_default) Rsc();
+				new_rsc = FB_NEW(*tdbb->tdbb_default) Rsc();
 				new_rsc->rsc_next = transaction->tra_resources;
 				transaction->tra_resources = new_rsc;
 				new_rsc->rsc_id = rsc->rsc_id;
@@ -1007,8 +1007,8 @@ TRA TRA_reconnect(TDBB tdbb, UCHAR * id, USHORT length)
 		ERR_post(isc_read_only_database, 0);
 
 
-	tdbb->tdbb_default = new(*dbb->dbb_permanent) JrdMemoryPool;
-	trans = new(*tdbb->tdbb_default, 0) tra();
+	tdbb->tdbb_default = FB_NEW(*dbb->dbb_permanent) JrdMemoryPool;
+	trans = FB_NEW_RPT(*tdbb->tdbb_default, 0) tra();
 	trans->tra_pool = tdbb->tdbb_default;
 	trans->tra_number = gds__vax_integer(id, length);
 	trans->tra_flags |= TRA_prepared | TRA_reconnected | TRA_write;
@@ -1448,8 +1448,8 @@ TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
    transaction block first, sieze relation locks, the go ahead and
    make up the real transaction block. */
 
-	tdbb->tdbb_default = new(*dbb->dbb_permanent) JrdMemoryPool;
-	temp = new(*tdbb->tdbb_default, 0) tra;
+	tdbb->tdbb_default = FB_NEW(*dbb->dbb_permanent) JrdMemoryPool;
+	temp = FB_NEW_RPT(*tdbb->tdbb_default, 0) tra;
 	temp->tra_pool = tdbb->tdbb_default;
 	transaction_options(tdbb, temp, reinterpret_cast < UCHAR * >(tpb),
 						tpb_length);
@@ -1496,9 +1496,9 @@ TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
 	base = oldest & ~TRA_MASK;
 
 	if (temp->tra_flags & TRA_read_committed)
-		trans = new(*tdbb->tdbb_default, 0) tra;
+		trans = FB_NEW_RPT(*tdbb->tdbb_default, 0) tra;
 	else {
-		trans = new(*tdbb->tdbb_default, (number - base + TRA_MASK) / 4) tra;
+		trans = FB_NEW_RPT(*tdbb->tdbb_default, (number - base + TRA_MASK) / 4) tra;
 	}
 
 	trans->tra_pool = temp->tra_pool;
@@ -1955,7 +1955,7 @@ LCK TRA_transaction_lock(TDBB tdbb, BLK object)
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
 
-	lock = new(*tdbb->tdbb_default, sizeof(SLONG)) lck();
+	lock = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(SLONG)) lck();
 	lock->lck_type = LCK_tra;
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 	lock->lck_length = sizeof(SLONG);
@@ -2242,7 +2242,7 @@ static void compute_oldest_retaining(
 /* Get a commit retaining lock, if not present. */
 
 	if (!(lock = dbb->dbb_retaining_lock)) {
-		lock = new(*dbb->dbb_permanent, sizeof(SLONG)) lck();
+		lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) lck();
 		lock->lck_dbb = dbb;
 		lock->lck_type = LCK_retaining;
 		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);

@@ -2,6 +2,7 @@
 #define _JRD_BLOCK_CACHE_H_
 
 #include "../common/memory/memory_pool.h"
+#include "../common/memory/allocators.h"
 #include "../jrd/smp_impl.h"
 
 template <class T>
@@ -36,7 +37,7 @@ inline T* BlockCache<T>::newBlock()
         return result;
     }
 	lock.release();
-    return new(pool) T;
+    return FB_NEW(pool) T;
 }
 
 template<class T>

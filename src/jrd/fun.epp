@@ -24,7 +24,7 @@
  * to signal NULL by testing the flags of the parameter's descriptor.
  */
 /*
-$Id: fun.epp,v 1.8 2002-09-06 13:05:33 alexpeshkoff Exp $
+$Id: fun.epp,v 1.9 2002-09-25 17:12:09 skidder Exp $
 */
 
 #include "firebird.h"
@@ -120,7 +120,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, NOD node, VLU value)
 		   a number of data blocks with aligned length */
 
 		temp_string =
-			new(*tdbb->tdbb_default,
+			FB_NEW_RPT(*tdbb->tdbb_default,
 				function->fun_temp_length + DOUBLE_ALIGN - 1) str;
 		MOVE_CLEAR(temp_string->str_data, temp_string->str_length);
 		temp_ptr =
@@ -161,7 +161,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, NOD node, VLU value)
 			string = NULL;
 		}
 		if (!string) {
-			string = new(*tdbb->tdbb_default, length) str;
+			string = FB_NEW_RPT(*tdbb->tdbb_default, length) str;
 			string->str_length = length;
 			value->vlu_string = string;
 		}
@@ -720,7 +720,7 @@ FUN DLL_EXPORT FUN_lookup_function(TEXT * name)
 				l = sizeof(struct blob);
 			length += l;
         END_FOR;
-		function = new(*dbb->dbb_permanent, count + 1) fun;
+		function = FB_NEW_RPT(*dbb->dbb_permanent, count + 1) fun;
 		function->fun_count = count;
 		function->fun_args = args;
 		function->fun_return_arg = X.RDB$RETURN_ARGUMENT;
@@ -739,7 +739,7 @@ FUN DLL_EXPORT FUN_lookup_function(TEXT * name)
 		   causes an exception.  This is done at this time to save us from preparing
 		   (thus allocating) this message every time the function is called. */
 		exception_msg =
-			new(*dbb->dbb_permanent,
+			FB_NEW_RPT(*dbb->dbb_permanent,
 						  strlen(EXCEPTION_MESSAGE) + strlen(name) +
 						  strlen(X.RDB$ENTRYPOINT) +
 						  strlen(X.RDB$MODULE_NAME) + 1) str;
@@ -792,9 +792,9 @@ FUN DLL_EXPORT FUN_lookup_function(TEXT * name)
 		else
 		{
 			prior = function;
-			function->fun_symbol = symbol = new(*dbb->dbb_permanent) sym;
+			function->fun_symbol = symbol = FB_NEW(*dbb->dbb_permanent) sym;
 			symbol->sym_object = (BLK) function;
-			string = new(*dbb->dbb_permanent, strlen(name)) str;
+			string = FB_NEW_RPT(*dbb->dbb_permanent, strlen(name)) str;
 			strcpy((char*)string->str_data, name);
 			symbol->sym_string = (TEXT *) string->str_data;
 			symbol->sym_type = SYM_fun;

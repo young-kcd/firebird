@@ -64,7 +64,7 @@ BKM BKM_allocate(RSB rsb, USHORT length)
 /* allocate the bookmark and link it into the 
    linked list hanging off the attachment block */
 
-	bookmark = new(*dbb->dbb_permanent, length) bkm();
+	bookmark = FB_NEW_RPT(*dbb->dbb_permanent, length) bkm();
 
 	attachment = tdbb->tdbb_attachment;
 	bookmark->bkm_next = attachment->att_bookmarks;

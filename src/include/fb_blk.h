@@ -17,13 +17,20 @@ template<SSHORT TYPE = 0>
 class pool_alloc : public blk
 {
     public:
+#ifdef DEBUG_GDS_ALLOC
+        void* operator new(size_t s, MemoryPool& p, char* file, int line)
+            { return p.allocate(s, TYPE, file, line); }
+        void* operator new[](size_t s, MemoryPool& p, char* file, int line)
+            { return p.allocate(s, TYPE, file, line); }
+#else
         void* operator new(size_t s, MemoryPool& p )
             { return p.allocate(s, TYPE); }
-        void operator delete(void* mem, MemoryPool& p)
-            { if (mem) p.deallocate(mem); }
-
         void* operator new[](size_t s, MemoryPool& p)
             { return p.allocate(s, TYPE); }
+#endif
+
+        void operator delete(void* mem, MemoryPool& p)
+            { if (mem) p.deallocate(mem); }
         void operator delete[](void* mem, MemoryPool& p)
             { if (mem) p.deallocate(mem); }
 
@@ -40,8 +47,13 @@ template<class RPT, SSHORT TYPE = 0>
 class pool_alloc_rpt : public blk
 {
     public:
+#ifdef DEBUG_GDS_ALLOC
+        void* operator new(size_t s, MemoryPool& p, int rpt, char *file, int line)
+            { return p.allocate(s + sizeof(RPT)*rpt, TYPE, file, line); }
+#else
         void* operator new(size_t s, MemoryPool& p, int rpt)
             { return p.allocate(s + sizeof(RPT)*rpt, TYPE); }
+#endif
         void operator delete(void* mem, MemoryPool& p,int rpt)
             { if (mem) p.deallocate(mem); }
         void operator delete(void* mem) { if (mem) MemoryPool::deallocate(mem); }

@@ -25,7 +25,7 @@
  *
  */
 /*
-$Id: gen.cpp,v 1.10 2002-09-10 18:28:19 skidder Exp $
+$Id: gen.cpp,v 1.11 2002-09-25 17:12:06 skidder Exp $
 */
 
 #include "firebird.h"
@@ -114,7 +114,7 @@ UCHAR GEN_expand_buffer( REQ request, UCHAR byte)
 	ULONG length = request->req_blr_string->str_length + 2048;
 	DsqlMemoryPool *pool = (MemoryPool::blk_pool(request->req_blr_string) == DSQL_permanent_pool) ?
 		DSQL_permanent_pool : tdsql->tsql_default;
-	STR new_buffer = new(*pool, length) str;
+	STR new_buffer = FB_NEW_RPT(*pool, length) str;
 	new_buffer->str_length = length;
 
 	p = new_buffer->str_data;
@@ -669,7 +669,7 @@ void GEN_port( REQ request, MSG message)
 
 /* Allocate buffer for message */
 
-	buffer = new(*tdsql->tsql_default, message->msg_length + DOUBLE_ALIGN - 1) str;
+	buffer = FB_NEW_RPT(*tdsql->tsql_default, message->msg_length + DOUBLE_ALIGN - 1) str;
 	message->msg_buffer =
 		(UCHAR *) FB_ALIGN((U_IPTR) buffer->str_data, DOUBLE_ALIGN);
 

@@ -136,7 +136,11 @@ TEXT* ALL_cstring(TEXT* in_string)
 	}
 
 	length = strlen(in_string);
+#ifdef DEBUG_GDS_ALLOC
+	string = (STR) pool->allocate(type_str, length, __FILE__, __LINE__);
+#else
 	string = (STR) pool->allocate(type_str, length);
+#endif
 /* TMN: Here we should really have the following assert */
 /* assert(length <= MAX_USHORT); */
 	string->str_length = (USHORT) length;
@@ -205,7 +209,7 @@ void ALL_init(void)
         dbb->dbb_permanent->setExtendSize(PERM_EXTEND_SIZE);
 	dbb->dbb_pools[0] = pool;
 
-	dbb->dbb_bufferpool = new(*pool) JrdMemoryPool(CACH_EXTEND_SIZE);
+	dbb->dbb_bufferpool = FB_NEW(*pool) JrdMemoryPool(CACH_EXTEND_SIZE);
 	dbb->dbb_pools[1] = dbb->dbb_bufferpool;
 }
 

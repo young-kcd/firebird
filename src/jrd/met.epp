@@ -35,7 +35,7 @@
  * 2002-09-16 Nickolay Samofatov - Deferred trigger compilation changes
  */
 /*
-$Id: met.epp,v 1.17 2002-09-24 08:05:54 dimitr Exp $
+$Id: met.epp,v 1.18 2002-09-25 17:12:10 skidder Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -850,7 +850,7 @@ int MET_get_walinfo(
 
 	FOR(REQUEST_HANDLE handle)
 		LOG IN RDB$LOG_FILES SORTED BY LOG.RDB$FILE_SEQUENCE
-			logfiles_[num] = new(*dbb->dbb_permanent,
+			logfiles_[num] = FB_NEW_RPT(*dbb->dbb_permanent,
 											   LGFILE_SIZE + MAX_PATH_LENGTH) logfiles();
 		strcpy(logfiles_[num]->lg_name, LOG.RDB$FILE_NAME);
 		logfiles_[num]->lg_size = LOG.RDB$FILE_LENGTH;
@@ -1308,13 +1308,13 @@ BLF MET_lookup_filter(TDBB tdbb, SSHORT from, SSHORT to)
 								  ISC_EXT_LIB_PATH_ENV);
 		if (filter)
 		{
-			blf_ = new(*dbb->dbb_permanent) blf();
+			blf_ = FB_NEW(*dbb->dbb_permanent) blf();
 			blf_->blf_next = NULL;
 			blf_->blf_from = from;
 			blf_->blf_to = to;
 			blf_->blf_filter = filter;
 			exception_msg =
-				new(*dbb->dbb_permanent,
+				FB_NEW_RPT(*dbb->dbb_permanent,
 							  strlen(EXCEPTION_MESSAGE) +
 							  strlen(X.RDB$FUNCTION_NAME) +
 							  strlen(X.RDB$ENTRYPOINT) +
@@ -2154,7 +2154,7 @@ NOD MET_parse_blob(TDBB		tdbb,
 
 	blob = BLB_open(tdbb, dbb->dbb_sys_trans, (BID)blob_id);
 	length = blob->blb_length + 10;
-	temp = new(*tdbb->tdbb_default, length) str();
+	temp = FB_NEW_RPT(*tdbb->tdbb_default, length) str();
 	BLB_get_data(tdbb, blob, temp->str_data, length);
 
 	node = PAR_blr(	tdbb,
@@ -2266,7 +2266,7 @@ void MET_parse_sys_trigger(TDBB tdbb, REL relation)
 				((trig_flags & TRG_ignore_perm) ? csb_ignore_perm : 0);
 
 			old_pool = tdbb->tdbb_default;
-			tdbb->tdbb_default = new(*getDefaultMemoryPool()) JrdMemoryPool;
+			tdbb->tdbb_default = FB_NEW(*getDefaultMemoryPool()) JrdMemoryPool;
 			PAR_blr(tdbb,
 					relation,
 					const_cast<UCHAR*>(blr),
@@ -2454,7 +2454,7 @@ PRC MET_procedure(TDBB tdbb, int id, USHORT flags)
 
 	if (!procedure)
 	{
-		procedure = new(*dbb->dbb_permanent, 0) prc;
+		procedure = FB_NEW_RPT(*dbb->dbb_permanent, 0) prc;
 	}
 
 	try {
@@ -2463,7 +2463,7 @@ PRC MET_procedure(TDBB tdbb, int id, USHORT flags)
 	procedure->prc_id = id;
 	(*vector)[id] = (BLK) procedure;
 
-	procedure->prc_existence_lock = lock = new(*dbb->dbb_permanent, 0) lck;
+	procedure->prc_existence_lock = lock = FB_NEW_RPT(*dbb->dbb_permanent, 0) lck;
 	lock->lck_parent = dbb->dbb_lock;
 	lock->lck_dbb = dbb;
 	lock->lck_key.lck_long = procedure->prc_id;
@@ -2544,7 +2544,7 @@ PRC MET_procedure(TDBB tdbb, int id, USHORT flags)
 
 			/* should be error if field already exists */
 			parameter =
-				new(*dbb->dbb_permanent, name_length(PA.RDB$PARAMETER_NAME)) prm();
+				FB_NEW_RPT(*dbb->dbb_permanent, name_length(PA.RDB$PARAMETER_NAME)) prm();
 			parameter->prm_number = PA.RDB$PARAMETER_NUMBER;
 			(*vector)[parameter->prm_number] = (BLK) parameter;
 			name_copy(parameter->prm_string, PA.RDB$PARAMETER_NAME);
@@ -2586,7 +2586,7 @@ PRC MET_procedure(TDBB tdbb, int id, USHORT flags)
 		}
 
 		old_pool = tdbb->tdbb_default;
-		tdbb->tdbb_default = new(*getDefaultMemoryPool()) JrdMemoryPool;
+		tdbb->tdbb_default = FB_NEW(*getDefaultMemoryPool()) JrdMemoryPool;
 		csb_ = Csb::newCsb(*tdbb->tdbb_default, 5);
 		csb_->csb_rpt.resize(5);	// vec always allocates one too many
 		csb_->csb_count = 5;
@@ -2686,14 +2686,14 @@ REL MET_relation(TDBB tdbb, USHORT id)
 	else
 		max_sys_rel = (USHORT) USER_DEF_REL_INIT_ID - 1;
 
-	relation = new(*dbb->dbb_permanent) rel();
+	relation = FB_NEW(*dbb->dbb_permanent) rel();
 	(*vector)[id] = (BLK) relation;
 	relation->rel_id = id;
 
 	if (relation->rel_id <= max_sys_rel)
 		return relation;
 
-	relation->rel_existence_lock = lock = new(*dbb->dbb_permanent, 0) lck;
+	relation->rel_existence_lock = lock = FB_NEW_RPT(*dbb->dbb_permanent, 0) lck;
 	lock->lck_parent = dbb->dbb_lock;
 	lock->lck_dbb = dbb;
 	lock->lck_key.lck_long = relation->rel_id;
@@ -3179,7 +3179,7 @@ void MET_scan_relation( TDBB tdbb, REL relation)
 		}
 		else
 		{
-			string = new(*tdbb->tdbb_default, blob->blb_max_segment) str();
+			string = FB_NEW_RPT(*tdbb->tdbb_default, blob->blb_max_segment) str();
 			buffer = string->str_data;
 		}
 
@@ -3219,11 +3219,11 @@ void MET_scan_relation( TDBB tdbb, REL relation)
 					if (!strcmp((char*)p, (char*)field->fld_name))
 						break;
 
-					name = new(*dbb->dbb_permanent, length) str();
+					name = FB_NEW_RPT(*dbb->dbb_permanent, length) str();
 					field->fld_name = (TEXT *) name->str_data;
 				}
 				else {
-					field = new(*dbb->dbb_permanent, length) fld();
+					field = FB_NEW_RPT(*dbb->dbb_permanent, length) fld();
 					(*vector)[field_id] = (BLK) field;
 					field->fld_name = (TEXT *) field->fld_string;
 				}
@@ -3299,7 +3299,7 @@ void MET_scan_relation( TDBB tdbb, REL relation)
 				break;
 
 			case RSR_dimensions:
-				field->fld_array = array = new(*dbb->dbb_permanent, n) arr();
+				field->fld_array = array = FB_NEW_RPT(*dbb->dbb_permanent, n) arr();
 				array->arr_desc.ads_dimensions = n;
 				break;
 
@@ -3618,12 +3618,12 @@ static void get_trigger(
 		return;
 
 	old_pool = tdbb->tdbb_default;
-	tdbb->tdbb_default = new(*getDefaultMemoryPool()) JrdMemoryPool;
+	tdbb->tdbb_default = FB_NEW(*getDefaultMemoryPool()) JrdMemoryPool;
 
 	DBB dbb = tdbb->tdbb_database;
 	BLB blob = BLB_open(tdbb, dbb->dbb_sys_trans, (BID)blob_id);
 	SLONG length = blob->blb_length + 10;
-	STR blr = new(*tdbb->tdbb_default,length) str();
+	STR blr = FB_NEW_RPT(*tdbb->tdbb_default,length) str();
 	BLB_get_data(tdbb, blob, blr->str_data, length);
 	tdbb->tdbb_default = old_pool;
 	  
@@ -3723,7 +3723,7 @@ static void lookup_view_contexts( TDBB tdbb, REL view)
 		/* allocate a view context block and link it in
 		   to the relation block's linked list */
 
-		view_context = new(*tdbb->tdbb_default) vcx();
+		view_context = FB_NEW(*tdbb->tdbb_default) vcx();
 		*vcx_ptr = view_context;
 		vcx_ptr = &view_context->vcx_next;
 
@@ -3732,7 +3732,7 @@ static void lookup_view_contexts( TDBB tdbb, REL view)
 		/* allocate a string block for the context name */
 
 		length = name_length(V.RDB$CONTEXT_NAME);
-		alias = new(*tdbb->tdbb_default, length + 1) str();
+		alias = FB_NEW_RPT(*tdbb->tdbb_default, length + 1) str();
 		V.RDB$CONTEXT_NAME[length] = 0;
 		strcpy((char*)alias->str_data, V.RDB$CONTEXT_NAME);
 		alias->str_length = length;
@@ -3742,7 +3742,7 @@ static void lookup_view_contexts( TDBB tdbb, REL view)
 		/* allocate a string block for the relation name */
 
 		length = name_length(V.RDB$RELATION_NAME);
-		alias = new(*tdbb->tdbb_default, length + 1) str();
+		alias = FB_NEW_RPT(*tdbb->tdbb_default, length + 1) str();
 		V.RDB$RELATION_NAME[length] = 0;
 		strcpy((char*)alias->str_data, V.RDB$RELATION_NAME);
 		alias->str_length = length;
@@ -3830,7 +3830,7 @@ static NOD parse_procedure_blr(
 
 	blob = BLB_open(tdbb, dbb->dbb_sys_trans, (BID)blob_id);
 	length = blob->blb_length + 10;
-	temp = new(*tdbb->tdbb_default, length) str();
+	temp = FB_NEW_RPT(*tdbb->tdbb_default, length) str();
 	BLB_get_data(tdbb, blob, temp->str_data, length);
 	(*csb_ptr)->csb_blr = temp->str_data;
 	par_messages(tdbb, temp->str_data, (USHORT) blob->blb_length, procedure,
@@ -4091,7 +4091,7 @@ static STR save_name(TDBB tdbb, CONST TEXT* name)
 	dbb = tdbb->tdbb_database;
 
 	l = name_length(name);
-	string = new(*dbb->dbb_permanent, l) str();
+	string = FB_NEW_RPT(*dbb->dbb_permanent, l) str();
 	string->str_length = l;
 	p = (TEXT *) string->str_data;
 
@@ -4123,7 +4123,7 @@ static void save_trigger_data(TDBB tdbb, TRIG_VEC* ptr, REL relation, REQ reques
 	TRIG_VEC vector = *ptr;
 
 	if (!vector) {
-		vector = new(*tdbb->tdbb_database->dbb_permanent) 
+		vector = FB_NEW(*tdbb->tdbb_database->dbb_permanent) 
 		  trig_vec(n+1, *tdbb->tdbb_database->dbb_permanent);
 		*ptr = vector;
 	} else {
