@@ -1200,23 +1200,31 @@ void CCH_flush(TDBB tdbb, USHORT flush_flag, SLONG tra_number)
 	time_t max_unflushed_write_time = Config::getMaxUnflushedWriteTime();
 	now = time(0);
 	BOOLEAN doFlush = FALSE;
+	BOOLEAN max_time = max_unflushed_writes >= 0;
+	BOOLEAN max_num = max_unflushed_write_time >= 0;
 	if (!(dbb->dbb_file->fil_flags & FIL_force_write) 
-	&& (max_unflushed_writes > 0 || max_unflushed_write_time>0))
+	&& (max_num || max_time))
 	{
 		THD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_flush_count);
-		if (((max_unflushed_writes >= 0) && (dbb->unflushed_writes == max_unflushed_writes))
-		|| ((max_unflushed_write_time>=0) && (dbb->oldest_unflushed_write)
-		&& (now - dbb->oldest_unflushed_write > max_unflushed_write_time))){
+		// If this is the first commit set last_flushed_write to now
+		if (!dbb->last_flushed_write)
+		{
+			dbb->last_flushed_write = now;
+		}
+		// test max_num condition and max_time condition
+		max_num = max_num 
+			&& (dbb->unflushed_writes == max_unflushed_writes);
+		max_time = max_time
+			&& (now - dbb->last_flushed_write > max_unflushed_write_time);
+		// 
+		if (max_num || max_time)
+		{
 			doFlush = TRUE;
 			dbb->unflushed_writes = 0;
-			dbb->oldest_unflushed_write = NULL;
+			dbb->last_flushed_write = now;
 		}
 		else {
 			dbb->unflushed_writes++;
-			if (!dbb->oldest_unflushed_write)
-			{
-				dbb->oldest_unflushed_write = now;
-			}
 		}
 		THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_flush_count);
 	}

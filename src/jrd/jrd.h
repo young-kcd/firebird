@@ -215,7 +215,7 @@ public:
 	SLONG dbb_lock_owner_handle;	/* Handle for the lock manager */
 
 	USHORT unflushed_writes;	/* unflushed writes */
-	time_t oldest_unflushed_write; /* oldest unflushed time */
+	time_t last_flushed_write; /* last flushed write time */
 
 #ifdef ISC_DATABASE_ENCRYPTION
 	int (*dbb_encrypt) ();		/* External encryption routine */
