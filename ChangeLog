@@ -1,3 +1,168 @@
+2003-02-16 20:25  dimitr
+
+	* firebird2/src/install/misc/firebird.conf:
+	
+	New config values for win32.
+
+2003-02-16 20:19  dimitr
+
+	* firebird2/builds/win32/msvc6/fbembed.dsp:
+	
+	Added finalization code.
+
+2003-02-16 20:04  dimitr
+
+	* firebird2/src/remote/srvr_w32.cpp:
+	
+	1. Priority level of the server (SS only) 2. Multi-instancing
+	(without local protocols) 3. Remote shutdown of instances
+
+2003-02-16 19:58  dimitr
+
+	* firebird2/src/common/config/: config.cpp, config.h:
+	
+	New config values for win32.
+
+2003-02-16 19:07  dimitr
+
+	* firebird2/src/jrd/: ibinitdll.cpp, jrd.cpp:
+	
+	Corrections.
+
+2003-02-16 17:55  alexpeshkoff
+
+	* firebird2/src/jrd/evl.cpp:
+	
+	Fixed bug with NULL ptr use
+
+2003-02-16 16:00  dimitr
+
+	* firebird2/src/jrd/ibinitdll.cpp:
+	
+	Shutdown attachments when fbembed is being unloaded.
+
+2003-02-16 14:26  dimitr
+
+	* firebird2/src/common/config/config.cpp:
+	
+	Fixed config error.
+
+2003-02-16 14:25  dimitr
+
+	* firebird2/src/jrd/cch.cpp:
+	
+	Cleanup.
+
+2003-02-16 13:53  dimitr
+
+	* firebird2/src/jrd/dfw.epp:
+	
+	Some extra checks.
+
+2003-02-16 12:36  brodsom
+
+	* firebird2/: src/include/removed_msvc_warnings.h,
+	builds/win32/common_boot.mak, builds/win32/fbclient_boot.mak,
+	builds/win32/gpre.mak, builds/win32/gpre_boot.mak,
+	builds/win32/msvc6/instsvc.dsp, builds/win32/msvc6/intl.dsp,
+	builds/win32/msvc6/ipserver.dsp, builds/win32/msvc6/isql.dsp,
+	builds/win32/msvc6/lock.dsp, builds/win32/msvc6/lock_classic.dsp,
+	builds/win32/msvc6/qli.dsp, builds/win32/msvc6/remote.dsp,
+	builds/win32/msvc6/remote_classic.dsp,
+	builds/win32/msvc6/utilities.dsp,
+	builds/win32/msvc6/utilities_classic.dsp,
+	builds/win32/msvc6/wal.dsp, builds/win32/msvc6/wal_classic.dsp,
+	builds/win32/msvc6/fbclient.dsp, builds/win32/msvc6/fbembed.dsp,
+	builds/win32/msvc6/fbguard.dsp, builds/win32/msvc6/fbserver.dsp,
+	builds/win32/msvc6/fbudf.dsp, builds/win32/msvc6/gbak.dsp,
+	builds/win32/msvc6/gdef.dsp, builds/win32/msvc6/gds32.dsp,
+	builds/win32/msvc6/gfix.dsp, builds/win32/msvc6/gpre.dsp,
+	builds/win32/msvc6/gpre_boot.dsp, builds/win32/msvc6/gsec.dsp,
+	builds/win32/msvc6/gstat.dsp, builds/win32/msvc6/ib_udf.dsp,
+	builds/win32/msvc6/ib_util.dsp, builds/win32/msvc6/instreg.dsp,
+	builds/win32/msvc6/alice.dsp, builds/win32/msvc6/alice_classic.dsp,
+	builds/win32/msvc6/burp.dsp, builds/win32/msvc6/burp_classic.dsp,
+	builds/win32/msvc6/common.dsp,
+	builds/win32/msvc6/common_classic.dsp,
+	builds/win32/msvc6/dsql_server.dsp,
+	builds/win32/msvc6/dsql_server_classic.dsp,
+	builds/win32/msvc6/engine.dsp,
+	builds/win32/msvc6/engine_classic.dsp,
+	builds/win32/msvc6/fb_inet_server.dsp,
+	builds/win32/msvc6/fb_lock_print.dsp,
+	builds/win32/msvc7/gdef.vcproj, builds/win32/msvc7/gds32.vcproj,
+	builds/win32/msvc7/gfix.vcproj, builds/win32/msvc7/gpre.vcproj,
+	builds/win32/msvc7/gpre_boot.vcproj,
+	builds/win32/msvc7/gsec.vcproj, builds/win32/msvc7/gstat.vcproj,
+	builds/win32/msvc7/ib_udf.vcproj,
+	builds/win32/msvc7/ib_util.vcproj,
+	builds/win32/msvc7/instreg.vcproj,
+	builds/win32/msvc7/instsvc.vcproj, builds/win32/msvc7/intl.vcproj,
+	builds/win32/msvc7/ipserver.vcproj, builds/win32/msvc7/isql.vcproj,
+	builds/win32/msvc7/lock.vcproj,
+	builds/win32/msvc7/lock_classic.vcproj,
+	builds/win32/msvc7/qli.vcproj, builds/win32/msvc7/remote.vcproj,
+	builds/win32/msvc7/remote_classic.vcproj,
+	builds/win32/msvc7/utilities.vcproj,
+	builds/win32/msvc7/utilities_classic.vcproj,
+	builds/win32/msvc7/wal.vcproj,
+	builds/win32/msvc7/wal_classic.vcproj,
+	builds/win32/msvc7/alice.vcproj,
+	builds/win32/msvc7/alice_classic.vcproj,
+	builds/win32/msvc7/burp.vcproj,
+	builds/win32/msvc7/burp_classic.vcproj,
+	builds/win32/msvc7/common.vcproj,
+	builds/win32/msvc7/common_classic.vcproj,
+	builds/win32/msvc7/dsql_server.vcproj,
+	builds/win32/msvc7/dsql_server_classic.vcproj,
+	builds/win32/msvc7/engine.vcproj,
+	builds/win32/msvc7/engine_classic.vcproj,
+	builds/win32/msvc7/fb_lock_print.vcproj,
+	builds/win32/msvc7/fbclient.vcproj,
+	builds/win32/msvc7/fbembed.vcproj,
+	builds/win32/msvc7/fbguard.vcproj, builds/win32/msvc7/fbudf.vcproj,
+	builds/win32/msvc7/gbak.vcproj, src/common/config/config.cpp,
+	src/common/config/config_file.cpp, src/extlib/fbudf/stdafx.h,
+	src/include/gen/autoconfig_msvc.h, src/jrd/intl.cpp,
+	src/jrd/plugin_manager.cpp, src/jrd/tra.cpp, src/jrd/db_alias.cpp,
+	src/jrd/evl.cpp:
+	
+	Change build system to move warning control to only one header for
+	each compiler
+
+2003-02-16 12:17  brodsom
+
+	* firebird2/src/utilities/dba.epp:
+	
+	patch format
+
+2003-02-16 01:55  brodsom
+
+	* firebird2/src/gpre/: gpre.cpp, gpre.h:
+	
+	Move code from header to cpp and remove inline.
+
+2003-02-16 01:37  brodsom
+
+	* firebird2/src/: lock/pls.cpp, lock/plserver.cpp, lock/plserver.h,
+	jrd/vms.cpp:
+	
+	Remove PLSERVER (page lock server).
+
+2003-02-16 01:20  brodsom
+
+	* firebird2/src/: jrd/svc.cpp, jrd/svc.h, common/classes/alloc.cpp,
+	common/classes/alloc.h:
+	
+	Move function definition from header to cpp and remove inline.
+
+2003-02-16 01:17  brodsom
+
+	* firebird2/builds/win32/: msvc7/fbserver.vcproj,
+	msvc6/fbserver.dsp:
+	
+	Add svc.cpp to fbserver
+
 2003-02-15 17:41  brodsom
 
 	* firebird2/src/jrd/: dyn.epp, dyn_def.epp, dyn_del.epp,
