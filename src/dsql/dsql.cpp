@@ -3337,9 +3337,8 @@ static USHORT get_plan_info(
 		/* keep going until we reach the end of the explain info */
 
 		while (explain_length > 0 && buffer_length > 0)
-			if (get_rsb_item
-				(&explain_length, &explain, &buffer_length, &plan,
-				 &join_count, &level)) {
+			if (!get_rsb_item(&explain_length, &explain, &buffer_length, &plan,
+							  &join_count, &level)) {
 				/* assume we have run out of room in the buffer, try again with a larger one */
 
 				buffer_ptr =
@@ -3551,8 +3550,8 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			union_level = *level_ptr;
 			union_join_count = 0;
 			while (true) {
-				if (get_rsb_item(&explain_length, &explain, &plan_length, &plan,
-								 &union_join_count, &union_level)) 
+				if (!get_rsb_item(&explain_length, &explain, &plan_length, &plan,
+								  &union_join_count, &union_level)) 
 				{
 					return false;
 				}
@@ -3567,8 +3566,8 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 				union_join_count = 0;
 				union_level = 0;
 				while (true) {
-					if (get_rsb_item(&explain_length, &explain, &plan_length,
-									 &plan, &union_join_count, &union_level)) 
+					if (!get_rsb_item(&explain_length, &explain, &plan_length,
+									  &plan, &union_join_count, &union_level)) 
 					{
 						return false;
 					}
@@ -3612,8 +3611,8 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			explain_length--;
 			join_count = (USHORT) * explain++;
 			while (join_count) {
-				if (get_rsb_item(&explain_length, &explain, &plan_length,
-								 &plan, &join_count, level_ptr))
+				if (!get_rsb_item(&explain_length, &explain, &plan_length,
+								  &plan, &join_count, level_ptr))
 				{
 					return false;
 				}
@@ -3722,8 +3721,8 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 
 			save_level = *level_ptr;
 			while (explain_length > 0 && plan_length > 0) {
-				if (get_rsb_item(&explain_length, &explain, &plan_length,
-								 &plan, parent_join_count, level_ptr))
+				if (!get_rsb_item(&explain_length, &explain, &plan_length,
+								  &plan, parent_join_count, level_ptr))
 					return false;
 				if (*level_ptr == save_level)
 					break;
