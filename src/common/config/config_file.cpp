@@ -39,10 +39,15 @@
 // in applications. That's why for regular SERVER builds
 // it's better to exit with appropriate diags rather continue
 // with missing / wrong configuration.
-#if (! defined(BOOT_BUILD)) && (! defined(EMBEDDED) && (! defined(SUPERCLIENT)))
+#if (! defined(BOOT_BUILD)) && (! defined(EMBEDDED)) && (! defined(SUPERCLIENT))
 #define EXIT_ON_NO_CONF
 #else
 #undef EXIT_ON_NO_CONF
+#endif
+#if (! defined(BOOT_BUILD)) && (! defined(SUPERCLIENT))
+#define INFORM_ON_NO_CONF
+#else
+#undef INFORM_ON_NO_CONF
 #endif
 
 typedef Firebird::string string;
@@ -240,7 +245,7 @@ void ConfigFile::loadConfig()
     if (!configFileStream)
     {
         // config file does not exist
-#ifndef BOOT_BUILD
+#ifdef INFORM_ON_NO_CONF
 		string Msg = "Missing configuration file: " + configFile;
 #ifdef EXIT_ON_NO_CONF
 		if (fExitOnError)
@@ -253,7 +258,7 @@ void ConfigFile::loadConfig()
 		if (fExitOnError)
 			exit(1);
 #endif
-#endif //BOOT_BUILD
+#endif //INFORM_ON_NO_CONF
 		return;
     }
     string inputLine;
