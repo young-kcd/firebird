@@ -46,7 +46,7 @@
 #include "../common/classes/objects_array.h"
 #include "../common/classes/stack.h"
 #include "../common/classes/timestamp.h"
-#include "../common/classes/StringMap.h"
+#include "../common/classes/GenericMap.h"
 #include "../jrd/sbm.h"
 
 #ifdef DEV_BUILD

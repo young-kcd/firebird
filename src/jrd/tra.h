@@ -35,7 +35,7 @@
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 #include "../common/classes/tree.h"
-#include "../common/classes/StringMap.h"
+#include "../common/classes/GenericMap.h"
 #include "../jrd/rpb_chain.h"
 #include "../jrd/exe.h"
 #include "../jrd/blb.h" // For bid structure
