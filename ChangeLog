@@ -1,3 +1,82 @@
+2003-03-27 18:15  brodsom
+
+	* firebird2/src/gpre/: int_cxx.cpp, int.cpp, ftn.cpp, c_cxx.cpp,
+	cob.cpp, ada.cpp:
+	
+	Fix some wrong format strings/argument lists
+
+2003-03-27 13:40  brodsom
+
+	* firebird2/src/jrd/dls.cpp:
+	
+	Remove declarations used by functions removed in a previous commit
+
+2003-03-27 12:21  aafemt
+
+	* firebird2/: builds/posix/Makefile.in.client.gbak,
+	builds/posix/Makefile.in.client.gdef,
+	builds/posix/Makefile.in.client.gfix,
+	builds/posix/Makefile.in.client.gpre,
+	builds/posix/Makefile.in.client.isql,
+	builds/posix/Makefile.in.client.util,
+	builds/posix/Makefile.in.codes,
+	builds/posix/Makefile.in.embed.gbak,
+	builds/posix/Makefile.in.embed.gdef,
+	builds/posix/Makefile.in.embed.gfix,
+	builds/posix/Makefile.in.embed.gpre,
+	builds/posix/Makefile.in.embed.isql,
+	builds/posix/Makefile.in.embed.lockmgr,
+	builds/posix/Makefile.in.embed.qli,
+	builds/posix/Makefile.in.embed.util,
+	builds/posix/Makefile.in.example5,
+	builds/posix/Makefile.in.extern.editline,
+	builds/posix/Makefile.in.extlib, builds/posix/Makefile.in.fbserver,
+	builds/posix/Makefile.in.fbutil, builds/posix/Makefile.in.firebird,
+	builds/posix/Makefile.in.gpre,
+	builds/posix/Makefile.in.inet_server,
+	builds/posix/Makefile.in.intl,
+	builds/posix/Makefile.in.libfbclient,
+	builds/posix/Makefile.in.libfbcommon,
+	builds/posix/Makefile.in.libfbembed,
+	builds/posix/Makefile.in.libfbserver,
+	builds/posix/Makefile.in.libfbstatic,
+	builds/posix/Makefile.in.msgs,
+	builds/posix/Makefile.in.refDatabases,
+	builds/posix/Makefile.in.static.gbak,
+	builds/posix/Makefile.in.static.gpre,
+	builds/posix/Makefile.in.static.isql,
+	builds/posix/Makefile.in.v5_examples, builds/posix/make.defaults,
+	builds/posix/make.rules, builds/posix/prefix.mingw,
+	builds/posix/prefix.mingw.README.html, doc/README.makefiles:
+	
+	Ironing POSIX build
+
+2003-03-27 12:16  aafemt
+
+	* firebird2/: builds/posix/Makefile.in.jrd, src/jrd/alt_use_sec.h,
+	src/jrd/alt_use_sec.h.pre:
+	
+	Remove obsolete files
+
+2003-03-27 11:39  paul_reeves
+
+	* firebird2/src/remote/inet.cpp:
+	
+	Fix for an SS event handler bug (code courtesy of Jim Starkey)
+
+2003-03-27 04:16  brodsom
+
+	* firebird2/builds/posix/prefix.mingw.README.html:
+	
+	Update instructions to build parse.cpp with bison.
+
+2003-03-27 04:14  brodsom
+
+	* firebird2/builds/posix/prefix.mingw:
+	
+	Modify warning options. Remove unknown-pragmas and add format and
+	signed compare
+
 2003-03-26 12:08  brodsom
 
 	* firebird2/builds/posix/: Makefile.in.static.isql,
