@@ -127,15 +127,6 @@ static char sccsid[] = "@(#)crypt.c	5.11 (Berkeley) 6/25/91";
  */
 #define	LONG_IS_32_BITS
 
-/*
- * define "LARGEDATA" to get faster permutations, by using about 72 kilobytes
- * of lookup tables.  This speeds up des_setkey() and des_cipher(), but has
- * little effect on crypt().
- */
-#if defined(notdef)
-#define	LARGEDATA
-#endif
-
 /* compile with "-DSTATIC=int" when profiling */
 #ifndef STATIC
 #define	STATIC	static
@@ -295,25 +286,6 @@ typedef union {
 #define	STORE(s,s0,s1,bl)		(bl).b32.i0 = s0, (bl).b32.i1 = s1
 #define	DCL_BLOCK(d,d0,d1)		long d0, d1
 
-#if defined(LARGEDATA)
-	/* Waste memory like crazy.  Also, do permutations in line */
-#define	LGCHUNKBITS	3
-#define	CHUNKBITS	(1<<LGCHUNKBITS)
-#define	PERM6464(d,d0,d1,cpp,p)				\
-	LOAD(d,d0,d1,(p)[(0<<CHUNKBITS)+(cpp)[0]]);		\
-	OR (d,d0,d1,(p)[(1<<CHUNKBITS)+(cpp)[1]]);		\
-	OR (d,d0,d1,(p)[(2<<CHUNKBITS)+(cpp)[2]]);		\
-	OR (d,d0,d1,(p)[(3<<CHUNKBITS)+(cpp)[3]]);		\
-	OR (d,d0,d1,(p)[(4<<CHUNKBITS)+(cpp)[4]]);		\
-	OR (d,d0,d1,(p)[(5<<CHUNKBITS)+(cpp)[5]]);		\
-	OR (d,d0,d1,(p)[(6<<CHUNKBITS)+(cpp)[6]]);		\
-	OR (d,d0,d1,(p)[(7<<CHUNKBITS)+(cpp)[7]]);
-#define	PERM3264(d,d0,d1,cpp,p)				\
-	LOAD(d,d0,d1,(p)[(0<<CHUNKBITS)+(cpp)[0]]);		\
-	OR (d,d0,d1,(p)[(1<<CHUNKBITS)+(cpp)[1]]);		\
-	OR (d,d0,d1,(p)[(2<<CHUNKBITS)+(cpp)[2]]);		\
-	OR (d,d0,d1,(p)[(3<<CHUNKBITS)+(cpp)[3]]);
-#else
 	/* "small data" */
 #define	LGCHUNKBITS	2
 #define	CHUNKBITS	(1<<LGCHUNKBITS)
@@ -346,8 +318,6 @@ STATIC void permute(unsigned char *cp, C_block * out, C_block * p, int chars_in)
 	} while (--chars_in > 0);
 	STORE(D, D0, D1, *out);
 }
-#endif /* LARGEDATA */
-
 
 /* =====  (mostly) Standard DES Tables ==================== */
 
