@@ -85,4 +85,5 @@ private:
 
 } // namespace Firebird
 
-#endif
+#endif // CLUMPLETWRITER_H
+
