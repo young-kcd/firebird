@@ -1113,12 +1113,12 @@ BOOLEAN API_ROUTINE isc_set_path(TEXT* file_name,
  *	the ISC_PATH user variable.
  *
  **************************************/
-	TEXT *pathname, *p;
 
 /* look for the environment variables to tack 
    onto the beginning of the database path */
 
-	if (!(pathname = getenv("ISC_PATH")))
+	const TEXT* pathname = getenv("ISC_PATH");
+	if (!pathname)
 		return FALSE;
 
 	if (!file_length)
@@ -1127,6 +1127,8 @@ BOOLEAN API_ROUTINE isc_set_path(TEXT* file_name,
 
 /* if the file already contains a remote node
    or any path at all forget it */
+
+	TEXT *p;
 
 	for (p = file_name; *p; p++)
 		if (*p == ':' || *p == '/' || *p == '\\')
