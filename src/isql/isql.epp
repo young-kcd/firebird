@@ -734,19 +734,16 @@ static void readNextInputLine(const char* prompt)
 			// Write the prompt out.
 			fprintf(stdout, prompt);
 			fflush(stdout);
-			/*
-			std::string inputLine;
 
-			std::getline(std::cin, inputLine);
-			if (!std::cin.eof()) {
-
-				const int lineSize = inputLine.length();
-
+			// Read the line
+			if (!feof(Ifp)) {
+				char buffer[MAX_USHORT];
+				fgets(buffer, sizeof(buffer), Ifp);
+				size_t lineSize = strlen(buffer);
 				lastInputLine = (char*) malloc(lineSize + 1);
-				strncpy(lastInputLine, inputLine.c_str(), lineSize + 1);
+				memcpy(lastInputLine, buffer, lineSize + 1);
 			}
-			*/
-//#endif
+#endif
 		}
 		else {
 			// Write the prompt out, only if !Interactive && Echo
@@ -754,7 +751,6 @@ static void readNextInputLine(const char* prompt)
 				fprintf(stdout, prompt);
 				fflush(stdout);
 			}
-		}
 
 			const int growStep = 1024;//128;
 			int size = 0;
@@ -781,8 +777,8 @@ static void readNextInputLine(const char* prompt)
 			}
 			if (lastInputLine != NULL)
 				lastInputLine[pos] = '\0';
-		//}
-#endif
+		}
+
 		if (lastInputLine != NULL //&& strlen(lastInputLine) >= 2 redundant
 			&& lastInputLine[0] == '-' && lastInputLine[1] == '-')
 		{
