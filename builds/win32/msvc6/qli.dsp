@@ -213,10 +213,6 @@ SOURCE=..\..\..\src\jrd\isc_file.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\llio.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\status.cpp
 # End Source File
 # End Group

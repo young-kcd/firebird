@@ -286,9 +286,6 @@
 				RelativePath="..\..\..\src\jrd\lck.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\llio.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\log.cpp">
 			</File>
 			<File
@@ -492,9 +489,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\cmp_proto.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\codes.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\codetext.h">
@@ -747,12 +741,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\license.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\llio.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\llio_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\lls.h">

@@ -1957,11 +1957,6 @@
 			path = blrtable.h;
 			refType = 4;
 		};
-		F616C4570200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = codes.h;
-			refType = 4;
-		};
 		F616C4580200B0CF01EF0ADE = {
 			isa = PBXFileReference;
 			path = codetext.h;
@@ -3921,11 +3916,6 @@
 			path = boot_codes;
 			refType = 4;
 		};
-		F616C5870200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = codes.h;
-			refType = 4;
-		};
 		F616C5880200B0CF01EF0ADE = {
 			isa = PBXFileReference;
 			path = codetext.h;
@@ -4789,21 +4779,6 @@
 		F616C63C0200B0CF01EF0ADE = {
 			isa = PBXFileReference;
 			path = license.h;
-			refType = 4;
-		};
-		F616C63D0200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = llio.cpp;
-			refType = 4;
-		};
-		F616C63E0200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = llio.h;
-			refType = 4;
-		};
-		F616C63F0200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = llio_proto.h;
 			refType = 4;
 		};
 		F616C6400200B0CF01EF0ADE = {
@@ -5896,11 +5871,6 @@
 			);
 			isa = PBXGroup;
 			path = misc;
-			refType = 4;
-		};
-		F616C7F40200B0D001EF0ADE = {
-			isa = PBXFileReference;
-			path = codes.h;
 			refType = 4;
 		};
 		F616C7F50200B0D001EF0ADE = {

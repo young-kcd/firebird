@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.55 2004-05-08 03:28:10 skidder Exp $
+#  $Id: Makefile.in.firebird,v 1.56 2004-05-10 07:19:16 brodsom Exp $
 #
 
 ROOT=..
@@ -65,9 +65,9 @@ export DYLD_FRAMEWORK_PATH
 #    This is possible because of a special version of gpre_meta.cpp,
 #    gpre_meta_boot.cpp.  It is a copy of the gpre_meta.epp file with all
 #    the embeded commands removed.  There are pregenerated copy of the
-#    codes.h and related files in the source tree.  These are used for the
+#    iberror.h and related files in the source tree.  These are used for the
 #    entire build process.  In the future we should check for the ability
-#    to regenerate codes.h and friends (ie, a working FB install) and only
+#    to regenerate iberror.h and friends (ie, a working FB install) and only
 #    use the static files as a last resort.
 #
 #  The bootstrap version of gpre (gpre_boot) is used to build all the
@@ -88,7 +88,7 @@ export DYLD_FRAMEWORK_PATH
 #
 #  All of the aforementioned work is done in the
 #    first phase of the compilation.  I called it the first phase because
-#    none of the work (except codes.h and friends) requires database access.
+#    none of the work (except iberror.h and friends) requires database access.
 #    Phase 2 builds all the tools necessary to compile the rest of FB.  Those
 #    tools are gbak and the gds.$(SHRLIB_EXT) shared library.
 #

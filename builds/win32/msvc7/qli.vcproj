@@ -242,9 +242,6 @@
 				RelativePath="..\..\..\src\jrd\isc_file.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\llio.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\status.cpp">
 			</File>
 		</Filter>

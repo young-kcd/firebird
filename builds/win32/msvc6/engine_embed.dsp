@@ -318,10 +318,6 @@ SOURCE=..\..\..\src\jrd\lck.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\llio.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\log.cpp
 # End Source File
 # Begin Source File
@@ -595,10 +591,6 @@ SOURCE=..\..\..\src\jrd\cdefs.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\cmp_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\codes.h
 # End Source File
 # Begin Source File
 
@@ -931,14 +923,6 @@ SOURCE=..\..\..\src\jrd\lck_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\license.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\llio.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\llio_proto.h
 # End Source File
 # Begin Source File
 
