@@ -1140,12 +1140,14 @@ static QLI_NOD expand_function( SYN input, LLS stack)
 			context = context->ctx_primary;
 		database = context->ctx_relation->rel_database;
 		for (symbol = (SYM) input->syn_arg[s_fun_function]; symbol;
-			 symbol =
-			 symbol->sym_homonym) if (symbol->sym_type == SYM_function) {
+			 symbol = symbol->sym_homonym)
+		{
+			if (symbol->sym_type == SYM_function) {
 				function = (FUN) symbol->sym_object;
 				if (function->fun_database == database)
 					break;
 			}
+		}
 	}
 	else
 		for (database = QLI_databases; database;
@@ -2983,12 +2985,14 @@ static void resolve_really( QLI_FLD variable, SYN field_node)
 		resolved = (MET_declare(0, variable, fld_name));
 	else if (field_node->syn_count == 2) {
 		for (symbol = rel_name->nam_symbol; symbol;
-			 symbol =
-			 symbol->sym_homonym) if (symbol->sym_type == SYM_database) {
+			 symbol = symbol->sym_homonym)
+		{
+			if (symbol->sym_type == SYM_database) {
 				dbb = (DBB) symbol->sym_object;
 				resolved = (MET_declare(dbb, variable, fld_name));
 				break;			// should be only one db in homonym list
 			}
+		}
 
 		if (!resolved) {
 			for (dbb = QLI_databases; dbb && !resolved; dbb = dbb->dbb_next)

@@ -128,11 +128,13 @@ int EVENT_cancel(SLONG request_id)
 
 	for (session = sessions; session; session = session->ses_next)
 		for (request = session->ses_requests; request;
-			 request =
-			 request->req_next) if (request->req_request_id == request_id) {
+			 request = request->req_next)
+		{
+			if (request->req_request_id == request_id) {
 				delete_request(request);
 				return;
 			}
+		}
 }
 
 
@@ -196,11 +198,13 @@ void EVENT_delete_session(SLONG session_id)
 		session->ses_interests = interest->rint_req_interests;
 		event = interest->rint_event;
 		for (int_ptr = &event->evnt_interests; *int_ptr;
-			 int_ptr =
-			 &(*int_ptr)->rint_req_interests) if (*int_ptr == interest) {
+			 int_ptr = &(*int_ptr)->rint_req_interests)
+		{
+			if (*int_ptr == interest) {
 				*int_ptr = interest->rint_req_interests;
 				break;
 			}
+		}
 		free(interest);
 		if (!event->evnt_interests)
 			delete_event(event);
@@ -406,10 +410,13 @@ SLONG EVENT_que(ISC_STATUS * status_vector,
 		p += count;
 		if (interest = historical_interest(session, event)) {
 			for (ptr2 = &session->ses_interests; *ptr2;
-				 ptr2 = &(*ptr2)->rint_req_interests) if (*ptr2 == interest) {
+				 ptr2 = &(*ptr2)->rint_req_interests)
+			{
+				if (*ptr2 == interest) {
 					*ptr2 = interest->rint_req_interests;
 					break;
 				}
+			}
 		}
 		else {
 			interest = (RINT) alloc(sizeof(struct vms_req));
@@ -574,10 +581,13 @@ static void delete_request(VMS_REQ request)
 		if (historical_interest(session, interest->rint_event)) {
 			event = interest->rint_event;
 			for (ptr = &event->evnt_interests; *ptr;
-				 ptr = &(*ptr)->rint_evnt_interests) if (*ptr == interest) {
+				 ptr = &(*ptr)->rint_evnt_interests)
+			{
+				if (*ptr == interest) {
 					*ptr = interest->rint_evnt_interests;
 					break;
 				}
+			}
 			free(interest);
 		}
 		else {
@@ -588,10 +598,13 @@ static void delete_request(VMS_REQ request)
 	}
 
 	for (req_ptr = &session->ses_requests; *req_ptr;
-		 req_ptr = &(*req_ptr)->req_next) if (*req_ptr == request) {
+		 req_ptr = &(*req_ptr)->req_next)
+	{
+		if (*req_ptr == request) {
 			*req_ptr = request->req_next;
 			break;
 		}
+	}
 
 	free(request);
 }

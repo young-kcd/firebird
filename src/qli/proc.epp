@@ -135,10 +135,11 @@ void PRO_copy_procedure(
 
 	if (!old_database) {
 		for (old_database = QLI_databases; old_database;
-			 old_database = old_database->dbb_next) if (old_blob =
-														PRO_fetch_procedure
-														(old_database,
-														 old_name)) break;
+			 old_database = old_database->dbb_next)
+		{
+			if (old_blob = PRO_fetch_procedure(old_database,old_name))
+				break;
+		}
 	}
 	else
 		old_blob = PRO_fetch_procedure(old_database, old_name);
@@ -413,10 +414,11 @@ void PRO_invoke( DBB database, TEXT * name)
 	}
 	else
 		for (database = QLI_databases; database;
-			 database = database->dbb_next) if (blob =
-												PRO_fetch_procedure(database,
-																	name))
-					break;
+			 database = database->dbb_next)
+		{
+			if (blob =PRO_fetch_procedure(database,name))
+				break;
+		}
 
 	if (!blob)
 		ERRQ_print_error(72, name, NULL, NULL, NULL, NULL);

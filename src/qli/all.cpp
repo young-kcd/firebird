@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: all.cpp,v 1.16 2003-09-10 17:50:39 brodsom Exp $
+$Id: all.cpp,v 1.17 2003-09-13 11:47:32 brodsom Exp $
 */
 
 /***************************************************
@@ -412,9 +412,11 @@ void ALLQ_release( FRB block)
 
 	prior = NULL;
 	for (ptr = &pool->plb_free; free = *ptr;
-		 prior = free, ptr =
-		 &free->frb_next) if ((SCHAR *) block <=
-							  (SCHAR *) free) break;
+		 prior = free, ptr = &free->frb_next)
+	{
+		if ((SCHAR *) block <= (SCHAR *) free)
+			break;
+	}
 
 	if ((SCHAR *) block == (SCHAR *) free)
 		BUGCHECK(435);			// block released twice 

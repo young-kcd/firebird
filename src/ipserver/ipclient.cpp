@@ -3552,10 +3552,11 @@ static void clear_transaction_statements( ITR transaction)
 
 	database = transaction->itr_idb;
 	for (statement = database->idb_sql_requests; statement;
-		 statement =
-		 statement->isr_next) if (statement->isr_itr ==
-								  transaction)
-				clear_statement_cache(statement);
+		 statement = statement->isr_next)
+	{
+		if (statement->isr_itr ==transaction)
+			clear_statement_cache(statement);
+	}
 }
 
 
@@ -4224,8 +4225,8 @@ static void release_database( IDB idb)
 			if (client_maps == ipm)
 				client_maps = ipm->ipm_next;
 			else {
-				for (pipm = client_maps; pipm->ipm_next;
-					 pipm = pipm->ipm_next) if (pipm->ipm_next == ipm) {
+				for (pipm = client_maps; pipm->ipm_next; pipm = pipm->ipm_next)
+					if (pipm->ipm_next == ipm) {
 						pipm->ipm_next = ipm->ipm_next;
 						break;
 					}

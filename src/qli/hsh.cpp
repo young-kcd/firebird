@@ -183,8 +183,8 @@ void HSH_remove( SYM symbol)
 				return;
 			}
 		else
-			for (ptr = &(*next)->sym_homonym; *ptr;
-				 ptr = &(*ptr)->sym_homonym) if (symbol == *ptr) {
+			for (ptr = &(*next)->sym_homonym; *ptr; ptr = &(*ptr)->sym_homonym)
+				if (symbol == *ptr) {
 					*ptr = symbol->sym_homonym;
 					return;
 				}

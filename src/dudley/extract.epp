@@ -2030,12 +2030,14 @@ static void type_scalar(USHORT dtype,
 	if (scale)
 		ib_fprintf(output_file, " scale %d", scale);
 
-	if (subtype
-		&& (dtype == blr_text || dtype == blr_varying
-			|| dtype == blr_cstring)) if (subtype == 1)
+	if (subtype && (dtype == blr_text || dtype == blr_varying
+			|| dtype == blr_cstring))
+	{
+		if (subtype == 1)
 			ib_fprintf(output_file, " sub_type fixed");
 		else
 			ib_fprintf(output_file, " sub_type %d", subtype);
+	}
 }
 
 

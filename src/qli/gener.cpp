@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gener.cpp,v 1.20 2003-09-11 02:15:09 brodsom Exp $
+$Id: gener.cpp,v 1.21 2003-09-13 11:47:32 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -1080,11 +1080,14 @@ static void gen_for( QLI_NOD node, QLI_REQ request)
 		/* Build assigments for all values referenced. */
 
 		for (parameter = message->msg_parameters; parameter;
-			 parameter = parameter->par_next) if (parameter->par_value) {
+			 parameter = parameter->par_next)
+		{
+			if (parameter->par_value) {
 				STUFF(blr_assignment);
 				gen_expression(parameter->par_value, request);
 				gen_parameter(parameter, request);
 			}
+		}
 
 		/* Next, make a FALSE for the end of file parameter */
 
