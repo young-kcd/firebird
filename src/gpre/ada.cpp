@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.11 2002-12-06 13:43:09 eku Exp $
+//	$Id: ada.cpp,v 1.12 2003-02-10 23:44:53 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -50,7 +50,6 @@
 
 static void	align (int);
 static void	asgn_from (ACT, REF, int);
-static void	asgn_sqlda_from (REF, int, TEXT *, int);
 static void	asgn_to (ACT, REF, int);
 static void	asgn_to_proc (REF, int);
 static void	gen_any (ACT, int);
@@ -592,34 +591,6 @@ static void asgn_from( ACT action, REF reference, int column)
 		}
 	}
 }
-
-
-#ifdef UNDEF
-//____________________________________________________________
-//  
-//       Build an assignment from a host language variable to
-//       a sqlda variable.
-//  
-
-static void asgn_sqlda_from(
-							REF reference,
-							int number, SCHAR * string, int column)
-{
-	SCHAR *value, temp[20];
-
-	for (; reference; reference = reference->ref_next) {
-		align(column);
-		if (reference->ref_source)
-			value = gen_name(temp, reference->ref_source, TRUE);
-		else
-			value = reference->ref_value;
-		ib_fprintf(out_file,
-				   "isc_to_sqlda (isc_sqlda, %d, %s, sizeof(%s), %s);",
-				   number, value, value, string);
-	}
-}
-#endif
-
 
 //____________________________________________________________
 //  

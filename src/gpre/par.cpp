@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.12 2003-02-10 13:28:18 eku Exp $
+//  $Id: par.cpp,v 1.13 2003-02-10 23:44:47 brodsom Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: par.cpp,v 1.12 2003-02-10 13:28:18 eku Exp $
+//	$Id: par.cpp,v 1.13 2003-02-10 23:44:47 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -128,7 +128,6 @@ static ACT		par_start_transaction();
 static ACT		par_subroutine();
 static ACT		par_trans(ACT_T);
 static ACT		par_type();
-static ACT		par_var_c(enum kwwords);
 static ACT		par_variable();
 static ACT		par_window_create();
 static ACT		par_window_delete();
@@ -3911,83 +3910,6 @@ static ACT par_type()
 
 	return action;
 }
-
-
-#ifdef UNDEF
-//____________________________________________________________
-//  
-//		Recognize a C language variable.
-//  
-
-static void par_var_c( enum kwwords keyword)
-{
-	SYM symbol;
-	GPRE_FLD field;
-	USHORT dtype, length;
-
-	if (sw_language != lang_c)
-		return;
-
-	switch (keyword) {
-	case KW_CHAR:
-		dtype = dtype_text;
-		break;
-
-	case KW_INT:
-		length = sizeof(int);
-		dtype = (length == 2) ? dtype_short : dtype_long;
-		break;
-
-	case KW_LONG:
-		dtype = dtype_long;
-		length = sizeof(SLONG);
-		break;
-
-	case KW_SHORT:
-		dtype = dtype_short;
-		length = sizeof(SSHORT);
-		break;
-
-	case KW_FLOAT:
-		dtype = dtype_real;
-		length = sizeof(float);
-		break;
-
-	case KW_DOUBLE:
-		dtype = dtype_double;
-		length = sizeof(double);
-		break;
-
-	default:
-		return;
-	}
-
-	for (;;) {
-		if (token.tok_type != tok_ident)
-			break;
-		field = (GPRE_FLD) ALLOC(FLD_LEN);
-		field->fld_symbol = symbol =
-			MSC_symbol(SYM_variable, token.tok_string, token.tok_length,
-					   field);
-		ADVANCE_TOKEN;
-		if (keyword == KW_CHAR)
-			if (MATCH(KW_L_BRCKET)) {
-				if (token.tok_type != tok_number)
-					break;
-				length = EXP_USHORT_ordinal(TRUE);
-				MATCH(KW_R_BRCKET);
-			}
-			else
-				length = 1;
-		field->fld_dtype = dtype;
-		field->fld_length = length;
-		HSH_insert(symbol);
-		if (!MATCH(KW_COMMA))
-			break;
-	}
-}
-#endif
-
 
 //____________________________________________________________
 //  

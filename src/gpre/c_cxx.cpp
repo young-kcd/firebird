@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.14 2003-02-08 00:36:52 brodsom Exp $
+//	$Id: c_cxx.cpp,v 1.15 2003-02-10 23:44:52 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -54,7 +54,6 @@ extern TEXT *transaction_name;
 
 static void align(int);
 static void asgn_from(ACT, REF, int);
-static void asgn_sqlda_from(REF, int, SCHAR *, int);
 static void asgn_to(ACT, REF, int);
 static void asgn_to_proc(REF, int);
 static void gen_any(ACT, int);
@@ -705,34 +704,6 @@ static void asgn_from( ACT action, REF reference, int column)
 		}
 	}
 }
-
-
-#ifdef UNDEF
-//____________________________________________________________
-//  
-//		Build an assignment from a host language variable to
-//		a sqlda variable.
-//  
-
-static void asgn_sqlda_from(
-							REF reference,
-							int number, SCHAR * string, int column)
-{
-	SCHAR *value, temp[20];
-
-	for (; reference; reference = reference->ref_next) {
-		align(column);
-		if (reference->ref_source)
-			value = gen_name(temp, reference->ref_source, TRUE);
-		else
-			value = reference->ref_value;
-		ib_fprintf(out_file,
-				   "isc_to_sqlda (isc_sqlda, %d, %s, sizeof(%s), %s);",
-				   number, value, value, string);
-	}
-}
-#endif
-
 
 //____________________________________________________________
 //  

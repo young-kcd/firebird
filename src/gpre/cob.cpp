@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.16 2002-12-06 13:43:09 eku Exp $
+//	$Id: cob.cpp,v 1.17 2003-02-10 23:44:51 brodsom Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -303,7 +303,6 @@ extern IB_FILE *out_file;
 
 static void	align(int column);
 static void	asgn_from (ACT, REF);
-static void	asgn_sqlda_from (REF, SCHAR);
 static void	asgn_to (ACT, REF);
 static void	asgn_to_proc (REF);
 static void	gen_any (ACT);
@@ -1031,37 +1030,6 @@ static void asgn_from( ACT action, REF reference)
 		COB_print_buffer(output_buffer, FALSE);
 	}
 }
-
-
-
-#ifdef UNDEF
-//____________________________________________________________
-//  
-//		Build an assignment from a host language variable to
-//		a sqlda variable.
-//  
-
-static int asgn_sqlda_from(
-						   REF reference,
-						   int number, SCHAR * string, int column)
-{
-	SCHAR *value, temp[20];
-
-	for (; reference; reference = reference->ref_next) {
-		align(column);
-		if (reference->ref_source)
-			value = gen_name(temp, reference->ref_source, TRUE);
-		else
-			value = reference->ref_value;
-		ib_fprintf(out_file,
-				   "isc_to_sqlda (isc_sqlda, %d, %s, sizeof(%s), %s);",
-				   number, value, value, string);
-	}
-}
-#endif
-
-
-
 
 //____________________________________________________________
 //  

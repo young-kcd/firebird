@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.14 2002-12-06 13:43:10 eku Exp $
+//	$Id: ftn.cpp,v 1.15 2003-02-10 23:44:49 brodsom Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -4967,32 +4967,6 @@ static void align( int column)
 		ib_putc(' ', out_file);
 }
 #endif /* RRK_?: end of comment out */
-
-#ifdef UNDEF					/* RRK_?: seems not in use */
-//____________________________________________________________
-//  
-//		Build an assignment from a host language variable to
-//		a sqlda variable.
-//  
-
-static void asgn_sqlda_from(
-							REF reference,
-							int number, SCHAR * string, int column)
-{
-	SCHAR *value, temp[20];
-
-	for (; reference; reference = reference->ref_next) {
-		align(column);
-		if (reference->ref_source)
-			value = gen_name(temp, reference->ref_source, TRUE);
-		else
-			value = reference->ref_value;
-		ib_fprintf(out_file,
-				   "isc_to_sqlda (isc_sqlda, %d, %s, sizeof(%s), %s);",
-				   number, value, value, string);
-	}
-}
-#endif
 
 //____________________________________________________________
 //  
