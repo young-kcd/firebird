@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.13 2003-02-10 23:44:47 brodsom Exp $
+//  $Id: par.cpp,v 1.14 2003-02-13 12:01:28 dimitr Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: par.cpp,v 1.13 2003-02-10 23:44:47 brodsom Exp $
+//	$Id: par.cpp,v 1.14 2003-02-13 12:01:28 dimitr Exp $
 //
 
 #include "firebird.h"
@@ -370,7 +370,7 @@ ACT PAR_action()
 		}
 
 		}	// try
-		catch (...) {
+		catch (const std::exception&) {
 			sw_sql = FALSE;
 			/* This is to force GPRE to get the next symbol. Fix for bug #274. DROOT */
 			token.tok_symbol = NULL;
@@ -391,7 +391,7 @@ ACT PAR_action()
 				cur_statement = NULL;
 				return par_variable();
 			}
-			catch (...) {
+			catch (const std::exception&) {
 				return 0;
 			}
 
@@ -401,7 +401,7 @@ ACT PAR_action()
 				cur_statement = NULL;
 				return par_form_field();
 			}
-			catch (...) {
+			catch (const std::exception&) {
 				return 0;
 			}
 		case SYM_blob:
@@ -410,7 +410,7 @@ ACT PAR_action()
 				cur_statement = NULL;
 				return par_blob_field();
 			}
-			catch (...) {
+			catch (const std::exception&) {
 				return 0;
 			}
 		case SYM_relation:
@@ -419,7 +419,7 @@ ACT PAR_action()
 				cur_statement = NULL;
 				return par_type();
 			}
-			catch (...) {
+			catch (const std::exception&) {
 				return 0;
 			}
 		case SYM_menu:
@@ -428,7 +428,7 @@ ACT PAR_action()
 				cur_statement = NULL;
 				return par_menu_att();
 			}
-			catch (...) {
+			catch (const std::exception&) {
 				return 0;
 			}
 		case SYM_menu_map:
@@ -437,7 +437,7 @@ ACT PAR_action()
 				cur_statement = NULL;
 				return par_menu_entree_att();
 			}
-			catch (...) {
+			catch (const std::exception&) {
 				return 0;
 			}
 		default:

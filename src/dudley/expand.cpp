@@ -193,7 +193,7 @@ static void expand_action( ACT action)
 	}
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 	}
 
 	return;

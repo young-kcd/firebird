@@ -147,7 +147,7 @@ STATUS API_ROUTINE isc_embed_dsql_close(STATUS* user_status, SCHAR* name)
 									&statement->stmt_handle,
 									DSQL_close);
 	}
-	catch(...)
+	catch(const std::exception&)
 	{
 		return error();
 	}
@@ -185,7 +185,7 @@ STATUS API_ROUTINE isc_embed_dsql_declare(	STATUS*	user_status,
 
 		return s;
 	}
-	catch(...)
+	catch(const std::exception&)
 	{
 		return error();
 	}
@@ -215,7 +215,7 @@ STATUS API_ROUTINE isc_embed_dsql_describe(STATUS* user_status,
 							 dialect,
 							 sqlda);
 	}
-	catch(...)
+	catch(const std::exception&)
 	{
 		return error();
 	}
@@ -261,7 +261,7 @@ STATUS API_ROUTINE isc_embed_dsql_describe_bind(STATUS*	user_status,
 								  dialect,
 								  sqlda);
 	}
-	catch(...)
+	catch(const std::exception&)
 	{
 		return error();
 	}
@@ -314,7 +314,7 @@ STATUS API_ROUTINE isc_embed_dsql_execute2(STATUS*	user_status,
 								in_sqlda,
 								out_sqlda);
 	}
-	catch(...)
+	catch(const std::exception&)
 	{
 		return error();
 	}
@@ -452,7 +452,7 @@ STATUS API_ROUTINE isc_embed_dsql_fetch(STATUS* user_status,
 						  dialect,
 						  sqlda);
 	}
-	catch(...)
+	catch(const std::exception&)
 	{
 		return error();
 	}
@@ -487,7 +487,7 @@ STATUS API_ROUTINE isc_embed_dsql_fetch2(	STATUS*	user_status,
 							direction,
 							offset);
 	}
-	catch(...)
+	catch(const std::exception&)
 	{
 		return error();
 	}
@@ -578,7 +578,7 @@ STATUS API_ROUTINE isc_embed_dsql_insert(STATUS* user_status,
 						   dialect,
 						   sqlda);
 	}
-	catch(...)
+	catch(const std::exception&)
 	{
 		return error();
 	}
@@ -662,7 +662,7 @@ STATUS API_ROUTINE isc_embed_dsql_open2(STATUS* user_status,
 							 &stmt->stmt_handle,
 							 dialect, in_sqlda, out_sqlda);
 	}
-	catch(...)
+	catch(const std::exception&)
 	{
 		return error();
 	}
@@ -772,7 +772,7 @@ STATUS API_ROUTINE isc_embed_dsql_prepare(STATUS*	user_status,
 	return s;
 
 	}	// try
-	catch (...)
+	catch (const std::exception&)
 	{
 		return error();
 	}
@@ -859,7 +859,7 @@ STATUS API_ROUTINE isc_embed_dsql_release(STATUS* user_status,
 
 		return s;
 	}
-	catch(...)
+	catch(const std::exception&)
 	{
 		return error();
 	}

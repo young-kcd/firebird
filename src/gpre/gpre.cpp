@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.18 2003-02-08 00:36:51 brodsom Exp $
+//  $Id: gpre.cpp,v 1.19 2003-02-13 12:01:28 dimitr Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -42,7 +42,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.18 2003-02-08 00:36:51 brodsom Exp $
+//	$Id: gpre.cpp,v 1.19 2003-02-13 12:01:28 dimitr Exp $
 //
 
 #define GPRE_MAIN
@@ -859,7 +859,7 @@ int main(int argc, char* argv[])
 	try {
 		for (end_position = 0; end_position = compile_module(end_position););  // empty loop
 	}	// try
-	catch (...) {}  // fall through to the cleanup code
+	catch (const std::exception&) {}  // fall through to the cleanup code
 
 #ifdef FTN_BLK_DATA
 	if (sw_language == lang_fortran)

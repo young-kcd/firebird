@@ -1032,7 +1032,7 @@ int DLL_EXPORT BURP_gbak(int		argc,
 	return result;
 	}	// try
 
-	catch (...)
+	catch (const std::exception&)
 	{
 		int exit_code;
 		UCHAR *mem;

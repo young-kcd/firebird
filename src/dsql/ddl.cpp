@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.36 2003-02-13 09:26:10 dimitr Exp $
+ * $Id: ddl.cpp,v 1.37 2003-02-13 11:59:26 dimitr Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -5114,7 +5114,7 @@ static void modify_relation( DSQL_REQ request)
 	request->append_uchar(gds_dyn_end);
 
 	}	// try
-	catch (...)
+	catch (const std::exception&)
 	{
 		METD_drop_relation(request, relation_name);
 		request->req_relation = 0;

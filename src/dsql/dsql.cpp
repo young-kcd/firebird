@@ -496,7 +496,7 @@ GDS_DSQL_ALLOCATE_CPP(	STATUS*    user_status,
 
 		*req_handle = request;
 	}
-	catch(...)
+	catch(const std::exception&)
 	{
 		RESTORE_THREAD_DATA;
 		return tdsql->tsql_status [1];
@@ -636,7 +636,7 @@ STATUS DLL_EXPORT GDS_DSQL_EXECUTE_CPP(STATUS*		user_status,
 			return return_success();
 		}
 	}
-	catch(...)
+	catch(const std::exception&)
 	{
 		RESTORE_THREAD_DATA;
 		return tdsql->tsql_status [1];
@@ -760,14 +760,14 @@ static STATUS dsql8_execute_immediate_common(STATUS*	user_status,
 
 			release_request(request, TRUE);
 		}	// try
-		catch (...) {
+		catch (const std::exception&) {
 			status = error();
 			release_request(request, TRUE);
 			RESTORE_THREAD_DATA;
 			return status;
 		}
 	}
-	catch(...)
+	catch(const std::exception&)
 	{
 		RESTORE_THREAD_DATA;
 		return tdsql->tsql_status [1];
@@ -1135,7 +1135,7 @@ STATUS GDS_DSQL_FETCH_CPP(	STATUS*	user_status,
 
 		map_in_out(NULL, message, 0, blr, msg_length, dsql_msg);
 	}  // try
-	catch(...)
+	catch(const std::exception&)
 	{
 		RESTORE_THREAD_DATA;
 		return tdsql->tsql_status [1];
@@ -1190,7 +1190,7 @@ STATUS GDS_DSQL_FREE_CPP(STATUS*	user_status,
 			close_cursor(request);
 		}
 	}
-	catch(...)
+	catch(const std::exception&)
 	{
 		RESTORE_THREAD_DATA;
 		return tdsql->tsql_status [1];
@@ -1269,7 +1269,7 @@ STATUS GDS_DSQL_INSERT_CPP(	STATUS*	user_status,
 				punt();
 		}
 	}
-	catch(...)
+	catch(const std::exception&)
 	{
 		RESTORE_THREAD_DATA;
 		return tdsql->tsql_status [1];
@@ -1422,14 +1422,14 @@ STATUS GDS_DSQL_PREPARE_CPP(STATUS*			user_status,
 									buffer);
 
 		}	// try
-		catch(...) {
+		catch(const std::exception&) {
 			status = error();
 			release_request(request, TRUE);
 			RESTORE_THREAD_DATA;
 			return status;
 		}
 	}
-	catch(...)
+	catch(const std::exception&)
 	{
 		RESTORE_THREAD_DATA;
 		return tdsql->tsql_status [1];
@@ -1525,7 +1525,7 @@ STATUS GDS_DSQL_SET_CURSOR_CPP(	STATUS*	user_status,
 				  gds_arg_gds, gds_dsql_decl_err, 0);
 		}
 	}
-	catch(...)
+	catch(const std::exception&)
 	{
 		RESTORE_THREAD_DATA;
 		return tdsql->tsql_status [1];
@@ -1741,7 +1741,7 @@ STATUS GDS_DSQL_SQL_INFO_CPP(	STATUS*		user_status,
 
 		*info++ = gds_info_end;
 	}
-	catch(...)
+	catch(const std::exception&)
 	{
 		RESTORE_THREAD_DATA;
 		return tdsql->tsql_status [1];

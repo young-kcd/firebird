@@ -3135,7 +3135,7 @@ static BOOLEAN parse_action(void)
 	return FALSE;
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		if (DDL_interactive)
 			LEX_flush();
 		else

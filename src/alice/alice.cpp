@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.20 2003-02-13 09:14:28 dimitr Exp $
+//	$Id: alice.cpp,v 1.21 2003-02-13 11:57:51 dimitr Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -619,7 +619,7 @@ int DLL_EXPORT ALICE_gfix(	int			argc,
 	EXIT(FINI_OK);
 
 	}	// try
-	catch (...)
+	catch (const std::exception&)
 	{
 		/* All "calls" to EXIT(), normal and error exits, wind up here */
 
