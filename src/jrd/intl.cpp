@@ -2212,10 +2212,6 @@ static void* intl_back_compat_obj_init_lookup(
 	USHORT argcount;
 	char entry[48];
 
-#if defined(_MSC_VER)
-#define snprintf _snprintf
-#endif
-
 /* EKU: need a replacement for snprintf for systems like SINIX-Z!!! */
 	switch (type) {
 		case type_texttype:
