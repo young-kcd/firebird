@@ -78,7 +78,7 @@ TEXT_PTR dbt_window[] = {
 },
 dbt_record_param[] = {
 	FLD(record_param*, "Relation %x", rpb_relation),
-	FLD(record_param*, "Number %ld", rpb_number),
+	FLD(record_param*, "Number %"QUADFORMAT"d", rpb_number.getValue()),
 	FLD(record_param*, "Trans %ld", rpb_transaction_nr),
 	FLD(record_param*, "Page %ld", rpb_page),
 	FLD(record_param*, "Line %x", rpb_line),
