@@ -114,14 +114,14 @@ DirectoryList::~DirectoryList() {
 void DirectoryList::Initialize(void) {
 	const Firebird::string val = GetConfigString();
 	nDirs = 1;
-	int i;
+	unsigned int i;
 	for (i = 0; i < val.length(); i++) {
 		if (val[i] == ';') {
 			nDirs++;
 		}
 	}
 	ConfigDirs = New ParsedPath[nDirs];
-	int Last = 0;
+	unsigned int Last = 0;
 	nDirs = 0;
 	Firebird::string Root = Config::getRootDirectory();
 	for (i = 0; i < val.length(); i++) {
