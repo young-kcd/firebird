@@ -15,7 +15,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: ib_udf2.sql,v 1.2 2004-09-23 04:53:03 robocop Exp $
+ * $Id: ib_udf2.sql,v 1.3 2004-11-03 14:16:57 fsg Exp $
  * Revision 1.2  2000/11/28 06:47:52  fsg
  * Changed declaration of ascii_char in ib_udf.sql
  * to get correct result as proposed by Claudio Valderrama
@@ -449,14 +449,17 @@ DECLARE EXTERNAL FUNCTION pi
  *
  * Functional description:
  *	Returns a random number between 0 
- *	and 1.  Note the random number
- *	generator is seeded using the current 
- *	time.
+ *	and 1.  
+ * 
  *
+ * Note: Use srand to seed the 
+ *	random number generator. 
+ *	This behavior has been changed.
  *****************************************/
 DECLARE EXTERNAL FUNCTION rand 
 	RETURNS DOUBLE PRECISION BY VALUE
 	ENTRY_POINT 'IB_UDF_rand' MODULE_NAME 'ib_udf';
+
 
 /*****************************************
  *
@@ -572,6 +575,27 @@ DECLARE EXTERNAL FUNCTION sqrt
 	DOUBLE PRECISION
 	RETURNS DOUBLE PRECISION BY VALUE
 	ENTRY_POINT 'IB_UDF_sqrt' MODULE_NAME 'ib_udf';
+
+
+
+
+/*****************************************
+ *
+ *	s r a n d
+ *
+ *****************************************
+ *
+ * Functional description:
+ *	Returns a random number between 0 
+ *	and 1.  Note the random number
+ *	generator is seeded using the current 
+ *	time.
+ *
+ *****************************************/
+DECLARE EXTERNAL FUNCTION srand 
+	RETURNS DOUBLE PRECISION BY VALUE
+	ENTRY_POINT 'IB_UDF_srand' MODULE_NAME 'ib_udf';
+
 
 /*****************************************
  *

@@ -252,11 +252,20 @@ double EXPORT IB_UDF_pi()
 	return (IB_PI);
 }
 
-double EXPORT IB_UDF_rand()
+double EXPORT IB_UDF_srand()
 {
 	srand((unsigned) time(NULL));
 	return ((float) rand() / (float) RAND_MAX);
 }
+
+double EXPORT IB_UDF_rand()
+{
+	return ((float) rand() / (float) RAND_MAX);
+}
+
+
+
+
 
 char *EXPORT IB_UDF_rpad( const char *s, long *a, const char *c)
 {
