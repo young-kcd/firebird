@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include "../jrd/common.h"
 #include "../jrd/thd.h"
+#include "../jrd/y_ref.h"
 
 #define ALLOC(type)		ALLI_block (type, 0)
 #define ALLOCV(type, count)	ALLI_block (type, count)
@@ -201,7 +202,7 @@ typedef struct idb
 {
 	struct blk				idb_header;
 	struct icc*				idb_thread;			/* back pointer to thread */
-	struct why_hndl*		idb_handle;			/* database handle */
+	FRBRD*					idb_handle;			/* database handle */
 	struct itr*				idb_transactions;	/* linked list of transactions */
 	struct irq*				idb_requests;		/* compiled requests */
 	struct ipserver_isr*	idb_sql_requests;	/* SQL requests */
@@ -224,7 +225,7 @@ typedef struct itr
 	struct idb*	itr_idb;
 	struct itr*	itr_next;
 	struct ibl*	itr_blobs;
-	struct why_hndl* itr_handle;
+	FRBRD*		itr_handle;
 	USHORT		itr_flags;
 } *ITR;
 
@@ -238,7 +239,7 @@ typedef struct ibl
 	struct idb*	ibl_idb;
 	struct itr*	ibl_itr;
 	struct ibl*	ibl_next;
-	struct why_hndl* ibl_handle;
+	FRBRD*		ibl_handle;
 	SLONG		ibl_offset;			/* Apparent (to user) offset in blob */
 	USHORT		ibl_flags;
 	UCHAR*		ibl_ptr;
@@ -261,7 +262,7 @@ typedef struct irq {
 	struct tra *irq_itr;
 	struct irq *irq_next;
 	struct irq **irq_user_handle;
-	struct why_hndl* irq_handle;
+	FRBRD	   *irq_handle;
 } *IRQ;
 
 /* event structure */
@@ -284,7 +285,7 @@ typedef struct ipserver_isr {
 	struct ipserver_isr *isr_next;
 	struct idb *isr_idb;
 	struct itr *isr_itr;
-	struct why_hndl* isr_handle;
+	FRBRD *isr_handle;
 	USHORT isr_rec_count;
 	USHORT isr_max_recs;
 	USHORT isr_eof_flag;
