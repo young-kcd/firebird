@@ -15,6 +15,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "NeXT" port
+ *
  */
 #include <stdio.h>
 
@@ -27,11 +30,7 @@
 #else
 #define FLAGS_OPT	"-O"
 #endif
-#ifdef NeXT
-#define FLAGS_DEBUG	" "
-#else
 #define FLAGS_DEBUG	"-g"
-#endif
 
 main (argc, argv)
     int		argc;

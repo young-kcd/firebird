@@ -4,6 +4,7 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "NCR3000" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "NeXT" port
  */
 
 #ifndef AUTOCONFIG_H
@@ -63,7 +64,6 @@
 #undef apollo
 #undef sun
 #undef SOLARIS
-#undef NeXT
 #undef hpux
 #undef ultrix
 #undef PC_PLATFORM
