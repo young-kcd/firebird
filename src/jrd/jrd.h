@@ -686,7 +686,7 @@ template <class T, USHORT TYPE = type_vec>
 class vec_base : protected pool_alloc<TYPE>
 {
 public:
-	typedef Firebird::vector<T>::iterator iterator;
+	typedef typename Firebird::vector<T>::iterator iterator;
 
 	static vec_base* newVector(MemoryPool& p, int len)
 		{ return new(p) vec_base<T,TYPE>(p, len); }
