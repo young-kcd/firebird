@@ -1178,30 +1178,7 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
    refetch and release the record. */
 
 	if (rpb->rpb_stream_flags & RPB_s_refetch) {
-		const SLONG tid_fetch = rpb->rpb_transaction_nr;
-		if ((!DPM_get(tdbb, rpb, LCK_read)) ||
-			(!VIO_chase_record_version(tdbb,
-									   rpb,
-									   NULL,
-									   transaction,
-									   tdbb->getDefaultPool(),
-									   false)))
-		{
-			ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
-		}
-		VIO_data(tdbb, rpb, tdbb->tdbb_request->req_pool);
-
-		/* If record is present, and the transaction is read committed,
-		 * make sure the record has not been updated.  Also, punt after
-		 * VIO_data () call which will release the page.
-		 */
-
-		if ((transaction->tra_flags & TRA_read_committed) &&
-			(tid_fetch != rpb->rpb_transaction_nr))
-		{
-				ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
-		}
-
+		VIO_refetch_record(tdbb, rpb, transaction);
 		rpb->rpb_stream_flags &= ~RPB_s_refetch;
 	}
 
@@ -2933,30 +2910,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
    refetch and release the record. */
 
 	if (org_rpb->rpb_stream_flags & RPB_s_refetch) {
-		const SLONG tid_fetch = org_rpb->rpb_transaction_nr;
-		if ((!DPM_get(tdbb, org_rpb, LCK_read)) ||
-			(!VIO_chase_record_version(tdbb,
-									   org_rpb,
-									   NULL,
-									   transaction,
-									   tdbb->getDefaultPool(),
-									   false)))
-		{
-			ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
-		}
-		VIO_data(tdbb, org_rpb, tdbb->tdbb_request->req_pool);
-
-		/* If record is present, and the transaction is read committed,
-		 * make sure the record has not been updated.  Also, punt after
-		 * VIO_data () call which will release the page.
-		 */
-
-		if ((transaction->tra_flags & TRA_read_committed) &&
-			(tid_fetch != org_rpb->rpb_transaction_nr))
-		{
-				ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
-		}
-
+		VIO_refetch_record(tdbb, org_rpb, transaction);
 		org_rpb->rpb_stream_flags &= ~RPB_s_refetch;
 	}
 
@@ -3019,13 +2973,10 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 			jrd_rel* bad_relation = 0;
 
 			VIO_modify(tdbb, org_rpb, new_rpb, transaction);
+			const IDX_E error_code =
+				IDX_modify(tdbb, org_rpb, new_rpb, transaction,
+						   &bad_relation, &bad_index);
 
-			const IDX_E error_code = IDX_modify(tdbb,
-										  org_rpb,
-										  new_rpb,
-										  transaction,
-										  &bad_relation,
-										  &bad_index);
 			if (error_code) {
 				VIO_bump_count(tdbb, DBB_update_count, bad_relation, true);
 				ERR_duplicate_error(error_code, bad_relation, bad_index);
@@ -3053,12 +3004,10 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 			USHORT bad_index;
 			jrd_rel* bad_relation = 0;
 
-			const IDX_E error_code = IDX_modify_check_constraints(tdbb,
-															org_rpb,
-															new_rpb,
-															transaction,
-															&bad_relation,
-															&bad_index);
+			const IDX_E error_code =
+				IDX_modify_check_constraints(tdbb, org_rpb, new_rpb, transaction,
+											 &bad_relation, &bad_index);
+
 			if (error_code) {
 				VIO_bump_count(tdbb, DBB_update_count, relation, true);
 				ERR_duplicate_error(error_code, bad_relation, bad_index);
@@ -3888,12 +3837,12 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	Database* dbb = tdbb->tdbb_database;
 	BLKCHK(node, type_nod);
 
-	jrd_req*    request     = tdbb->tdbb_request;
-	jrd_tra*    transaction = request->req_transaction;
-	impure_state*    impure      = (impure_state*) ((SCHAR *) request + node->nod_impure);
-	SSHORT stream      = (USHORT)(IPTR) node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
-	record_param* rpb  = &request->req_rpb[stream];
-	jrd_rel*    relation    = rpb->rpb_relation;
+	jrd_req* request = tdbb->tdbb_request;
+	jrd_tra* transaction = request->req_transaction;
+	impure_state* impure = (impure_state*) ((SCHAR *) request + node->nod_impure);
+	SSHORT stream = (USHORT)(IPTR) node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
+	record_param* rpb = &request->req_rpb[stream];
+	jrd_rel* relation = rpb->rpb_relation;
 
 	switch (request->req_operation) {
 	case jrd_req::req_evaluate:
@@ -3905,7 +3854,6 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		if (impure->sta_state)
 			return node->nod_parent;
 		record = rpb->rpb_record;
-		//format = record->rec_format; Not used
 
 		if (transaction != dbb->dbb_sys_trans)
 			++transaction->tra_save_point->sav_verb_count;
@@ -3940,11 +3888,10 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 			jrd_rel* bad_relation = 0;
 
 			VIO_store(tdbb, rpb, transaction);
-			const IDX_E error_code = IDX_store(tdbb,
-										 rpb,
-										 transaction,
-										 &bad_relation,
-										 &bad_index);
+			const IDX_E error_code =
+				IDX_store(tdbb, rpb, transaction,
+						  &bad_relation, &bad_index);
+
 			if (error_code) {
 				VIO_bump_count(tdbb, DBB_insert_count, bad_relation, true);
 				ERR_duplicate_error(error_code, bad_relation, bad_index);

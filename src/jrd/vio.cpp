@@ -124,7 +124,6 @@ static void set_system_flag(record_param*, USHORT, SSHORT);
 static void update_in_place(thread_db*, jrd_tra*, record_param*, record_param*);
 static void verb_post(thread_db*, jrd_tra*, record_param*, Record*, record_param*,
 					  const bool, const bool);
-static void RefetchRecord(thread_db* tdbb, record_param* rpb, jrd_tra*);
 
 /* Pick up relation ids */
 #include "../jrd/ini.h"
@@ -1243,7 +1242,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 	if (rpb->rpb_stream_flags & RPB_s_refetch)
 	{
-		RefetchRecord(tdbb, rpb, transaction);
+		VIO_refetch_record(tdbb, rpb, transaction);
 		rpb->rpb_stream_flags &= ~RPB_s_refetch;
 	}
 
@@ -2109,43 +2108,57 @@ void VIO_init(thread_db* tdbb)
 }
 #endif
 
-static void RefetchRecord(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
+
+void VIO_merge_proc_sav_points(thread_db* tdbb,
+							   jrd_tra* transaction,
+							   Savepoint** sav_point_list)
 {
 /**************************************
  *
- *	R e f e t c h R e c o r d
+ *	V I O _ m e r g e _ p r o c _ s a v _ p o i n t s
  *
  **************************************
  *
  * Functional description
- *	Refetch & release the record, if we unsure,
- *  whether information about it is still valid.
+ *	Merge all the work done in all the save points in
+ *	sav_point_list to the current save point in the
+ *	transaction block.
  *
  **************************************/
-	const SLONG tid_fetch = rpb->rpb_transaction_nr;
-	if ((!DPM_get(tdbb, rpb, LCK_read)) ||
-		  (!VIO_chase_record_version
-			(tdbb, rpb, NULL, transaction,
-			tdbb->getDefaultPool(),
-			false)))
-	{
-		ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
-	}
-	VIO_data(tdbb, rpb, tdbb->tdbb_request->req_pool);
+	SET_TDBB(tdbb);
 
-	/* If record is present, and the transaction is read committed,
-	 * make sure the record has not been updated.  Also, punt after
-	 * VIO_data () call which will release the page.
-	 */
-	if ((transaction->tra_flags & TRA_read_committed) &&
-		(tid_fetch != rpb->rpb_transaction_nr) &&
-		// added to check that it was not current transaction,
-		// who modified the record. Alex P, 18-Jun-03
-		(rpb->rpb_transaction_nr != transaction->tra_number))
+	if (transaction->tra_flags & TRA_system) {
+		return;
+	}
+	if (!transaction->tra_save_point) {
+		return;
+	}
+
+	// one by one go on putting all savepoints in the sav_point_list on
+	// top of transaction save points and call VIO_verb_cleanup()
+
+	for (Savepoint* sav_point = *sav_point_list; sav_point;
+		 sav_point = sav_point->sav_next)
 	{
-		ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
+		Savepoint* const sav_next = sav_point->sav_next;
+		const SLONG sav_number = sav_point->sav_number;
+
+		// add it to the front
+
+		sav_point->sav_next = transaction->tra_save_point;
+		transaction->tra_save_point = sav_point;
+
+		VIO_verb_cleanup(tdbb, transaction);
+
+		sav_point = FB_NEW(*transaction->tra_pool) Savepoint();
+		sav_point->sav_verb_count = 0;
+		sav_point->sav_next = sav_next;
+		sav_point->sav_number = sav_number;
+		*sav_point_list = sav_point;
+		sav_point_list = &sav_point->sav_next;
 	}
 }
+
 
 void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, 
 				jrd_tra* transaction)
@@ -2191,7 +2204,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
    refetch and release the record. */
 
 	if (org_rpb->rpb_stream_flags & RPB_s_refetch) {
-		RefetchRecord(tdbb, org_rpb, transaction);
+		VIO_refetch_record(tdbb, org_rpb, transaction);
 		org_rpb->rpb_stream_flags &= ~RPB_s_refetch;
 	}
 
@@ -2395,130 +2408,6 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 }
 
 
-bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, RecordSource* rsb,
-	jrd_tra* transaction)
-{
-/**************************************
- *
- *	V I O _ w r i t e l o c k
- *
- **************************************
- *
- * Functional description
- *	Modify record to make record owned by this transaction
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-#ifdef VIO_DEBUG
-	if (debug_flag > DEBUG_WRITES) {
-		printf("VIO_writelock (org_rpb %"QUADFORMAT"d, transaction %"
-				  SLONGFORMAT")\n",
-				  org_rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0);
-	}
-	if (debug_flag > DEBUG_WRITES_INFO) {
-		printf
-			("   old record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
-			 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
-			 org_rpb->rpb_page, org_rpb->rpb_line, org_rpb->rpb_transaction_nr,
-			 org_rpb->rpb_flags, org_rpb->rpb_b_page, org_rpb->rpb_b_line,
-			 org_rpb->rpb_f_page, org_rpb->rpb_f_line);
-	}
-#endif
-
-	if (transaction->tra_flags & TRA_system) {
-		// Explicit locks are not needed in system transactions
-		return true;
-	}
-	
-	transaction->tra_flags |= TRA_write;
-	
-	Record* org_record = org_rpb->rpb_record;
-	if (!org_record) {
-		org_record =
-			VIO_record(tdbb, org_rpb, NULL, tdbb->getDefaultPool());
-		org_rpb->rpb_address = org_record->rec_data;
-		org_rpb->rpb_length = org_record->rec_format->fmt_length;
-		org_rpb->rpb_format_number = org_record->rec_format->fmt_version;
-	}
-
-	record_param temp;
-    // Repeat as many times as underlying record modifies
-	while (true) {
-
-		/* Refetch and release the record if it is needed */
-		if (org_rpb->rpb_stream_flags & RPB_s_refetch) {
-			// const SLONG tid_fetch = org_rpb->rpb_transaction_nr;
-			if ((!DPM_get(tdbb, org_rpb, LCK_read)) ||
-				(!VIO_chase_record_version
-				 (tdbb, org_rpb, NULL, transaction,
-				  tdbb->getDefaultPool(), true)))
-			{
-				return false;
-			}
-			VIO_data(tdbb, org_rpb, tdbb->tdbb_request->req_pool);
-
-			org_rpb->rpb_stream_flags &= ~RPB_s_refetch;
-			
-			// Make sure refetched record still fulfills search condition
-			RecordSource* r;
-			for (r = rsb; r && r->rsb_type != rsb_boolean ; r = r->rsb_next); // empty loop body
-			if (r && !EVL_boolean(tdbb, (jrd_nod*) r->rsb_arg[0]))
-				return false;
-		}
-
-		// jrd_rel* relation = org_rpb->rpb_relation;
-
-
-		if (org_rpb->rpb_transaction_nr == transaction->tra_number) {
-			// We already own this record. No writelock required
-			return true;
-		}
-
-		PageStack stack;
-		switch (prepare_update(tdbb, transaction, org_rpb->rpb_transaction_nr,
-					org_rpb, &temp, 0, stack, true))
-		{
-			case PREPARE_CONFLICT:
-				org_rpb->rpb_stream_flags |= RPB_s_refetch;
-				continue;
-			case PREPARE_LOCKERR:
-				// We got some kind of locking error (deadlock, timeout or lock_conflict)
-				// Error details should be stuffed into status vector at this point
-				ERR_punt();
-			case PREPARE_DELETE:
-				return false;
-		}
-
-		/* Old record was restored and re-fetched for write.  Now replace it.  */
-
-		org_rpb->rpb_transaction_nr = transaction->tra_number;
-		org_rpb->rpb_format_number = org_record->rec_format->fmt_version;
-		org_rpb->rpb_b_page = temp.rpb_page;
-		org_rpb->rpb_b_line = temp.rpb_line;
-		org_rpb->rpb_address = org_record->rec_data;
-		org_rpb->rpb_length = org_record->rec_format->fmt_length;
-		org_rpb->rpb_flags |= rpb_delta;
-
-		replace_record(tdbb, org_rpb, &stack, transaction);
-
-		if (!(transaction->tra_flags & TRA_system) &&
-			(transaction->tra_save_point))
-		{
-			verb_post(tdbb, transaction, org_rpb, 0, 0, false, false);
-		}
-
-		/* for an autocommit transaction, mark a commit as necessary */
-
-		if (transaction->tra_flags & TRA_autocommit) {
-			transaction->tra_flags |= TRA_perform_autocommit;
-		}
-		
-		return true;
-	}
-}
-
-
 bool VIO_next_record(thread_db* tdbb,
 						record_param* rpb,
 						RecordSource* rsb,
@@ -2657,6 +2546,46 @@ Record* VIO_record(thread_db* tdbb, record_param* rpb, const Format* format,
 	record->rec_format = format;
 
 	return record;
+}
+
+
+void VIO_refetch_record(thread_db* tdbb, record_param* rpb,
+						jrd_tra* transaction)
+{
+/**************************************
+ *
+ *	V I O _ r e f e t c h _ r e c o r d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Refetch & release the record, if we unsure,
+ *  whether information about it is still valid.
+ *
+ **************************************/
+	const SLONG tid_fetch = rpb->rpb_transaction_nr;
+
+	if ((!DPM_get(tdbb, rpb, LCK_read)) ||
+		(!VIO_chase_record_version(tdbb, rpb, NULL, transaction,
+								   tdbb->getDefaultPool(), false)))
+	{
+		ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
+	}
+
+	VIO_data(tdbb, rpb, tdbb->tdbb_request->req_pool);
+
+	// If record is present, and the transaction is read committed,
+	// make sure the record has not been updated.  Also, punt after
+	// VIO_data() call which will release the page.
+
+	if ((transaction->tra_flags & TRA_read_committed) &&
+		(tid_fetch != rpb->rpb_transaction_nr) &&
+		// added to check that it was not current transaction,
+		// who modified the record. Alex P, 18-Jun-03
+		(rpb->rpb_transaction_nr != transaction->tra_number))
+	{
+		ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
+	}
 }
 
 
@@ -3195,54 +3124,126 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 }
 
 
-
-void VIO_merge_proc_sav_points(
-							   thread_db* tdbb,
-							   jrd_tra* transaction, Savepoint** sav_point_list)
+bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, RecordSource* rsb,
+	jrd_tra* transaction)
 {
 /**************************************
  *
- *	V I O _ m e r g e _ p r o c _ s a v _ p o i n t s
+ *	V I O _ w r i t e l o c k
  *
  **************************************
  *
  * Functional description
- *	Merge all the work done in all the save points in
- *	sav_point_list to the current save point in the
- *	transaction block.
+ *	Modify record to make record owned by this transaction
  *
  **************************************/
 	SET_TDBB(tdbb);
 
+#ifdef VIO_DEBUG
+	if (debug_flag > DEBUG_WRITES) {
+		printf("VIO_writelock (org_rpb %"QUADFORMAT"d, transaction %"
+				  SLONGFORMAT")\n",
+				  org_rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0);
+	}
+	if (debug_flag > DEBUG_WRITES_INFO) {
+		printf
+			("   old record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
+			 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
+			 org_rpb->rpb_page, org_rpb->rpb_line, org_rpb->rpb_transaction_nr,
+			 org_rpb->rpb_flags, org_rpb->rpb_b_page, org_rpb->rpb_b_line,
+			 org_rpb->rpb_f_page, org_rpb->rpb_f_line);
+	}
+#endif
+
 	if (transaction->tra_flags & TRA_system) {
-		return;
+		// Explicit locks are not needed in system transactions
+		return true;
 	}
-	if (!transaction->tra_save_point) {
-		return;
+	
+	transaction->tra_flags |= TRA_write;
+	
+	Record* org_record = org_rpb->rpb_record;
+	if (!org_record) {
+		org_record =
+			VIO_record(tdbb, org_rpb, NULL, tdbb->getDefaultPool());
+		org_rpb->rpb_address = org_record->rec_data;
+		org_rpb->rpb_length = org_record->rec_format->fmt_length;
+		org_rpb->rpb_format_number = org_record->rec_format->fmt_version;
 	}
 
-	// one by one go on putting all savepoints in the sav_point_list on
-	// top of transaction save points and call VIO_verb_cleanup()
+	record_param temp;
+    // Repeat as many times as underlying record modifies
+	while (true) {
 
-	for (Savepoint* sav_point = *sav_point_list; sav_point;
-		 sav_point = sav_point->sav_next)
-	{
-		Savepoint* const sav_next = sav_point->sav_next;
-		const SLONG sav_number = sav_point->sav_number;
+		/* Refetch and release the record if it is needed */
+		if (org_rpb->rpb_stream_flags & RPB_s_refetch) {
+			// const SLONG tid_fetch = org_rpb->rpb_transaction_nr;
+			if ((!DPM_get(tdbb, org_rpb, LCK_read)) ||
+				(!VIO_chase_record_version
+				 (tdbb, org_rpb, NULL, transaction,
+				  tdbb->getDefaultPool(), true)))
+			{
+				return false;
+			}
+			VIO_data(tdbb, org_rpb, tdbb->tdbb_request->req_pool);
 
-		// add it to the front
+			org_rpb->rpb_stream_flags &= ~RPB_s_refetch;
+			
+			// Make sure refetched record still fulfills search condition
+			RecordSource* r;
+			for (r = rsb; r && r->rsb_type != rsb_boolean ; r = r->rsb_next); // empty loop body
+			if (r && !EVL_boolean(tdbb, (jrd_nod*) r->rsb_arg[0]))
+				return false;
+		}
 
-		sav_point->sav_next = transaction->tra_save_point;
-		transaction->tra_save_point = sav_point;
+		// jrd_rel* relation = org_rpb->rpb_relation;
 
-		VIO_verb_cleanup(tdbb, transaction);
 
-		sav_point = FB_NEW(*transaction->tra_pool) Savepoint();
-		sav_point->sav_verb_count = 0;
-		sav_point->sav_next = sav_next;
-		sav_point->sav_number = sav_number;
-		*sav_point_list = sav_point;
-		sav_point_list = &sav_point->sav_next;
+		if (org_rpb->rpb_transaction_nr == transaction->tra_number) {
+			// We already own this record. No writelock required
+			return true;
+		}
+
+		PageStack stack;
+		switch (prepare_update(tdbb, transaction, org_rpb->rpb_transaction_nr,
+					org_rpb, &temp, 0, stack, true))
+		{
+			case PREPARE_CONFLICT:
+				org_rpb->rpb_stream_flags |= RPB_s_refetch;
+				continue;
+			case PREPARE_LOCKERR:
+				// We got some kind of locking error (deadlock, timeout or lock_conflict)
+				// Error details should be stuffed into status vector at this point
+				ERR_punt();
+			case PREPARE_DELETE:
+				return false;
+		}
+
+		/* Old record was restored and re-fetched for write.  Now replace it.  */
+
+		org_rpb->rpb_transaction_nr = transaction->tra_number;
+		org_rpb->rpb_format_number = org_record->rec_format->fmt_version;
+		org_rpb->rpb_b_page = temp.rpb_page;
+		org_rpb->rpb_b_line = temp.rpb_line;
+		org_rpb->rpb_address = org_record->rec_data;
+		org_rpb->rpb_length = org_record->rec_format->fmt_length;
+		org_rpb->rpb_flags |= rpb_delta;
+
+		replace_record(tdbb, org_rpb, &stack, transaction);
+
+		if (!(transaction->tra_flags & TRA_system) &&
+			(transaction->tra_save_point))
+		{
+			verb_post(tdbb, transaction, org_rpb, 0, 0, false, false);
+		}
+
+		/* for an autocommit transaction, mark a commit as necessary */
+
+		if (transaction->tra_flags & TRA_autocommit) {
+			transaction->tra_flags |= TRA_perform_autocommit;
+		}
+		
+		return true;
 	}
 }
 
