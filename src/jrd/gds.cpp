@@ -50,6 +50,7 @@
 #include "../jrd/msg_encode.h"
 #include "../jrd/iberr.h"
 #include "../jrd/gds_proto.h"
+#include "../jrd/os/path_utils.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -2386,8 +2387,11 @@ void API_ROUTINE gds__prefix(TEXT *resultString, TEXT *file)
 	}
 	strcat(resultString, ib_prefix);
 
-	if (resultString[strlen(resultString) - 1] != '/')
-		strcat(resultString, "/");
+	int len = strlen(resultString);
+	if (resultString[len - 1] != PathUtils::dir_sep) {
+		resultString[len] = PathUtils::dir_sep;
+		resultString[len + 1] = 0;
+	}
 	strcat(resultString, file);
 }
 #endif /* !defined(VMS) */
