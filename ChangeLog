@@ -1,3 +1,27 @@
+2004-11-16 12:44  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/call_service.cpp (1.6):
+	
+	style
+
+2004-11-16 12:43  alexpeshkoff
+
+	* firebird2/src/remote/interface.cpp (1.96):
+	
+	restored broken by me const-correctness in remote
+
+2004-11-16 12:41  alexpeshkoff
+
+	* firebird2/src/jrd/jrd_pwd.h (1.16):
+	
+	take autoconfig.h into account
+
+2004-11-16 12:38  alexpeshkoff
+
+	* firebird2/src/include/fb_string.h (1.34):
+	
+	restored STL's copy_from - it's useless for us, but safe
+
 2004-11-16 09:52  robocop
 
 	* firebird2/src/jrd/: sha.cpp (1.2), svc.cpp (1.131), thd.cpp
