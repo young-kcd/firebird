@@ -4490,7 +4490,7 @@ static jrd_nod* pass1_update(thread_db* tdbb,
 	if (trigger)
 	{
 		bool user_triggers = false;
-		for (int i = 0; i < trigger->getCount(); i++)
+		for (size_t i = 0; i < trigger->getCount(); i++)
 		{
 			if (!(*trigger)[i].sys_trigger)
 			{
