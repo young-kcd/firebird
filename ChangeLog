@@ -1,3 +1,85 @@
+2002-11-19 18:02  skidder
+
+	* firebird2/src/jrd/vio.cpp:
+	
+	Fixed little bug in explicit locking implementation
+
+2002-11-19 16:37  skidder
+
+	* firebird2/src/: burp/canonical.cpp, remote/protocol.cpp,
+	remote/xdr.cpp, remote/xdr_proto.h:
+	
+	Move xdr_hyper to the correct place and remove duplicate
+	definitions
+
+2002-11-19 16:31  skidder
+
+	* firebird2/configure.in:
+	
+	Removed check for xdr_hyper
+
+2002-11-19 14:21  dimitr
+
+	* firebird2/builds/win32/msvc6/: burp.dsp, burp_classic.dsp,
+	dsql_server.dsp, dsql_server_classic.dsp, engine.dsp,
+	engine_classic.dsp, fb_inet_server.dsp, fb_lock_print.dsp,
+	fbclient.dsp, fbembed.dsp, fbguard.dsp, fbserver.dsp, gbak.dsp,
+	isql.dsp, remote.dsp, remote_classic.dsp:
+	
+	We no longer need NOMSG macro defined.
+
+2002-11-19 14:17  eku
+
+	* firebird2/src/remote/protocol.cpp:
+	
+	Last check-in removed autoconf stuff.
+
+2002-11-19 14:07  dimitr
+
+	* firebird2/src/include/gen/autoconfig_msvc.h:
+	
+	Correction.
+
+2002-11-19 13:40  dimitr
+
+	* firebird2/src/remote/: interface.cpp, parser.cpp, protocol.cpp,
+	remote.cpp, remote.h, server.cpp:
+	
+	Renamed MSG to REM_MSG.
+
+2002-11-19 13:38  dimitr
+
+	* firebird2/src/qli/: blk.h, compile.cpp, eval.cpp, exe.cpp, exe.h,
+	exe_proto.h, form.cpp, gener.cpp, noform.cpp, report.cpp:
+	
+	Renamed MSG to QLI_MSG.
+
+2002-11-19 13:37  dimitr
+
+	* firebird2/src/jrd/: map.cpp, map_proto.h:
+	
+	Renamed MSG to MAP_MSG.
+
+2002-11-19 13:36  dimitr
+
+	* firebird2/src/jrd/gds.cpp:
+	
+	Renamed MSG to GDS_MSG.
+
+2002-11-19 13:35  dimitr
+
+	* firebird2/src/dsql/: dsql.cpp, dsql.h, gen.cpp, gen_proto.h,
+	make.cpp, make_proto.h, pass1.cpp:
+	
+	Renamed MSG to DSQL_MSG.
+
+2002-11-19 13:31  dimitr
+
+	* firebird2/src/csv/: csi.cpp, csi.h, css.cpp, css_proto.h,
+	csv.cpp, print.cpp:
+	
+	Renamed MSG to CSV_MSG.
+
 2002-11-18 22:31  arnobrinkman
 
 	* firebird2/src/jrd/opt.cpp:
