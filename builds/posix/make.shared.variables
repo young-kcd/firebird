@@ -212,7 +212,7 @@ FBCLASSES_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCLASSES_
 #
 # common/config
 
-FBCONFIG_ClientFiles=config.cpp config_file.cpp
+FBCONFIG_ClientFiles=config.cpp config_file.cpp dir_list.cpp
 FBCONFIG_ServerFiles=
 
 FBCONFIG_Files= $(FBCONFIG_ClientFiles) $(FBCONFIG_ServerFiles)

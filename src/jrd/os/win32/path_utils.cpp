@@ -4,6 +4,7 @@
 /// The Win32 implementation of the path_utils abstraction.
 
 const char PathUtils::dir_sep = '\\';
+const Firebird::string PathUtils::up_dir_link = "..";
 
 class Win32DirItr : public PathUtils::dir_iterator
 {
@@ -117,7 +118,26 @@ void PathUtils::concatPath(Firebird::string& result,
 
 bool PathUtils::isRelative(const Firebird::string& path)
 {
-	if (path.length() > 0)
-		return path[0] != PathUtils::dir_sep;
+	if (path.length() > 0) {
+		char ds = path[0];
+		if (path.length() > 2) {
+			if (path[1] == ':' && 
+				(('A' <= path[0] && path[0] <= 'Z') || 
+				 ('a' <= path[0] && path[0] <= 'z'))) {
+						ds = path[2];
+			}
+		}
+		return ds != PathUtils::dir_sep;
+	}
+	return true;
+}
+
+bool PathUtils::isSymLink(const Firebird::string& path)
+{
 	return false;
+}
+
+bool PathUtils::comparePaths(const Firebird::string& path1, 
+							 const Firebird::string& path2) {
+	return stricmp(path1.c_str(), path2.c_str()) == 0;
 }

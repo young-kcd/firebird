@@ -1,10 +1,12 @@
 #include "../jrd/os/path_utils.h"
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <dirent.h>
 
 /// The POSIX implementation of the path_utils abstraction.
 
 const char PathUtils::dir_sep = '/';
+const Firebird::string PathUtils::up_dir_link = "..";
 
 class PosixDirItr : public PathUtils::dir_iterator
 {
@@ -116,4 +118,19 @@ bool PathUtils::isRelative(const Firebird::string& path)
 	if (path.length() > 0)
 		return path[0] != dir_sep;
 	return false;
+}
+
+bool PathUtils::isSymLink(const Firebird::string& path)
+{
+	struct stat st, lst;
+	if (stat(path.c_str(), &st) != 0)
+		return false;
+	if (lstat(path.c_str(), &lst) != 0)
+		return false;
+	return st.st_ino != lst.st_ino;
+}
+
+bool PathUtils::comparePaths(const Firebird::string& path1, 
+ 							 const Firebird::string& path2) {
+ 	return path1 == path2;
 }

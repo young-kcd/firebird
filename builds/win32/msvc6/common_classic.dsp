@@ -115,6 +115,10 @@ SOURCE=..\..\..\src\common\config\config_file.cpp
 
 SOURCE=..\..\..\src\jrd\os\win32\config_root.cpp
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\config\dir_list.cpp
+# End Source File
 # End Group
 # Begin Group "OTHER files"
 
@@ -150,6 +154,10 @@ SOURCE=..\..\..\src\common\config\config_impl.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\os\config_root.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\config\dir_list.h
 # End Source File
 # End Group
 # End Target

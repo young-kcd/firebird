@@ -54,7 +54,10 @@
 #include "../jrd/thd_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/dls_proto.h"
+#include "../common/config/config.h"
+#include "../common/config/dir_list.h"
 
+static IB_FILE *ext_fopen(const char *filename, const char *mode);
 
 extern "C" {
 
@@ -79,7 +82,6 @@ extern "C" {
 
 
 //static void io_error(EXT, TEXT *, STATUS, SLONG);
-
 
 void EXT_close(RSB rsb)
 {
@@ -199,10 +201,10 @@ EXT EXT_file(JRD_REL relation, TEXT * file_name, SLONG * description)
 #ifdef WIN_NT
 	if (found_dir)
 	{
-		if (!(file->ext_ifi = (int*) ib_fopen(ib_file_path, FOPEN_TYPE)))
+		if (!(file->ext_ifi = (int*) ext_fopen(ib_file_path, FOPEN_TYPE)))
 		{
 			/* could not open the file as read write attempt as read only */
-    		if (!(file->ext_ifi = (int*) ib_fopen(ib_file_path, FOPEN_READ_ONLY)))
+    		if (!(file->ext_ifi = (int*) ext_fopen(ib_file_path, FOPEN_READ_ONLY)))
 				ERR_post(isc_io_error, 
     					 gds_arg_string, "ib_fopen", 
     					 gds_arg_string,
@@ -215,10 +217,10 @@ EXT EXT_file(JRD_REL relation, TEXT * file_name, SLONG * description)
 	}
 	else
 	{
-		if (!(file->ext_ifi = (int*) ib_fopen(file_name, FOPEN_TYPE)))
+		if (!(file->ext_ifi = (int*) ext_fopen(file_name, FOPEN_TYPE)))
 		{
 			/* could not open the file as read write attempt as read only */
-			if (!(file->ext_ifi = (int*) ib_fopen(file_name, FOPEN_READ_ONLY)))
+			if (!(file->ext_ifi = (int*) ext_fopen(file_name, FOPEN_READ_ONLY)))
 				ERR_post(isc_io_error, 
     					 gds_arg_string, "ib_fopen", 
     					 gds_arg_string,
@@ -231,11 +233,11 @@ EXT EXT_file(JRD_REL relation, TEXT * file_name, SLONG * description)
 	}
 #else
 	if (!(dbb->dbb_flags & DBB_read_only))
-		file->ext_ifi = (int *) ib_fopen(file_name, FOPEN_TYPE);
+		file->ext_ifi = (int *) ext_fopen(file_name, FOPEN_TYPE);
 	if (!(file->ext_ifi))
 	{
 		/* could not open the file as read write attempt as read only */
-		if (!(file->ext_ifi = (int *) ib_fopen(file_name, FOPEN_READ_ONLY)))
+		if (!(file->ext_ifi = (int *) ext_fopen(file_name, FOPEN_READ_ONLY)))
 			ERR_post(isc_io_error,
 					 gds_arg_string, "ib_fopen",
 					 gds_arg_string,
@@ -653,3 +655,16 @@ void EXT_trans_start(JRD_TRA transaction)
 
 
 } // extern "C"
+
+class ExternalFilesDirectoryList : public DirectoryList {
+	virtual const Firebird::string GetConfigString(void) {
+		return Firebird::string(Config::getExternalTablesDirectory());
+	}
+};
+static ExternalFilesDirectoryList iExternalFilesDirectoryList;
+
+static IB_FILE *ext_fopen(const char *filename, const char *mode) {
+	if (! iExternalFilesDirectoryList.IsPathInList(filename))
+		return 0;
+	return ib_fopen(filename, mode);
+}

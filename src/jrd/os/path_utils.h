@@ -16,6 +16,9 @@ class PathUtils
 public:
 	/// The directory separator for the platform.
 	static const char dir_sep;
+
+	/// String used to point to parent directory
+	static const Firebird::string up_dir_link;
 	
 	/** An abstract base class for iterating through the contents of a directory.
 		Instances of this class are created using the newDirItr method of
@@ -68,6 +71,19 @@ public:
 		the path '/opt/firebird/bin' is not.
 	**/
 	static bool isRelative(const Firebird::string& path);
+	
+	/** isSymLink returns true if the given path is symbolic link, and false if not.
+		Use of this links may provide way to override system security.
+		Example: ln -s /usr/firebird/ExternalTables/mytable /etc/xinet.d/remoteshell
+		and insert desired rows into mytable.
+	**/
+	static bool isSymLink(const Firebird::string& path);
+	
+	/** comparePaths returns true if two given paths
+		point to the same place in FileSystem.
+	**/
+	static bool comparePaths(const Firebird::string& path1, 
+									const Firebird::string& path2);
 	
 	/** Concatinates the two paths given in the second and third parameters,
 		and writes the resulting path into the first parameter.  The
