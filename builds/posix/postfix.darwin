@@ -15,14 +15,12 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: postfix.darwin,v 1.1.2.1 2003-11-11 00:27:27 bellardo Exp $
+#$Id: postfix.darwin,v 1.1.2.2 2003-11-11 01:01:51 bellardo Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 
-darwin_setup_framework: ../gen/firebird/Firebird.framework
-
-../gen/firebird/Firebird.framework: FB_FW = ../gen/firebird/Firebird.framework
-../gen/firebird/Firebird.framework:
+darwin_setup_framework: FB_FW = ../gen/firebird/Firebird.framework
+darwin_setup_framework:
 	-$(RM) -rf $(FB_FW) ../gen/firebird/Firebird.framework
 	mkdir -p $(FB_FW)/Versions/A/Resources/English.lproj/var
 	ln -s Versions/Current/Firebird $(FB_FW)/Firebird
@@ -30,7 +28,7 @@ darwin_setup_framework: ../gen/firebird/Firebird.framework
 	ln -s Versions/Current/Resources $(FB_FW)/Resources
 	ln -s A $(FB_FW)/Versions/Current
 	ln -s ../../../include $(FB_FW)/Versions/A/Headers
-	ln -s ../../../lib/libfbembbed.dylib $(FB_FW)/Versions/A/Firebird
+	ln -s ../../../lib/libfbembed.dylib $(FB_FW)/Versions/A/Firebird
 	ln -s ../../../../../../firebird.msg \
 			$(FB_FW)/Resources/English.lproj/var/firebird.msg
 	ln -s ../../../../../../bin $(FB_FW)/Resources/English.lproj/var/bin
@@ -49,27 +47,27 @@ darwin_finish_cs_framework:
 	ln -s Versions/Current/Headers $(FB_FW)/Headers
 	ln -s Versions/Current/Resources $(FB_FW)/Resources
 	ln -s A $(FB_FW)/Versions/Current
-	-cp -r ../gen/firebird/include $(FB_FW)/Versions/A/Headers
-	-cp ../gen/firebird/lib/libfbembed.dylib $(FB_FW)/Versions/A/Firebird
-	-cp ../gen/firebird/firebird.msg \
+	cp -r ../gen/firebird/include $(FB_FW)/Versions/A/Headers
+	cp ../gen/firebird/lib/libfbembed.dylib $(FB_FW)/Versions/A/Firebird
+	cp ../gen/firebird/firebird.msg \
 			$(FB_FW)/Resources/English.lproj/var/firebird.msg
-	-cp -r ../gen/firebird/UDF $(FB_FW)/Resources/English.lproj/var/UDF
-	-cp -r ../gen/firebird/intl $(FB_FW)/Resources/English.lproj/var/intl
-	-cp -r ../gen/firebird/help $(FB_FW)/Resources/English.lproj/var/help
-	-cp ../gen/firebird/security.fdb $(FB_FW)/Resources/English.lproj/var
+	cp -r ../gen/firebird/UDF $(FB_FW)/Resources/English.lproj/var/UDF
+	cp -r ../gen/firebird/intl $(FB_FW)/Resources/English.lproj/var/intl
+	cp -r ../gen/firebird/help $(FB_FW)/Resources/English.lproj/var/help
+	cp ../gen/firebird/security.fdb $(FB_FW)/Resources/English.lproj/var
 	mkdir -p $(FB_FW)/Resources/bin
 	ln -s ../../bin $(FB_FW)/Resources/English.lproj/var/bin
-	-cp ../gen/firebird/bin/fb_inet_server $(FB_FW)/Resources/bin
-	-cp ../gen/firebird/bin/gfix $(FB_FW)/Resources/bin
-	-cp ../gen/firebird/bin/gbak $(FB_FW)/Resources/bin
-	-cp ../gen/firebird/bin/isql $(FB_FW)/Resources/bin
-	-cp ../gen/firebird/bin/gpre $(FB_FW)/Resources/bin
-	-cp ../gen/firebird/bin/gdef $(FB_FW)/Resources/bin
-	-cp ../gen/firebird/bin/qli $(FB_FW)/Resources/bin
-	-cp ../gen/firebird/bin/fb_lock_mgr $(FB_FW)/Resources/bin
-	-cp ../gen/firebird/bin/fb_lock_print $(FB_FW)/Resources/bin
-	-cp ../gen/firebird/bin/gds_drop $(FB_FW)/Resources/bin
-	-cp ../gen/firebird/bin/gds_relay $(FB_FW)/Resources/bin
-	-cp ../gen/firebird/bin/gsec $(FB_FW)/Resources/bin
-	-cp ../gen/firebird/bin/gstat $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/fb_inet_server $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/gfix $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/gbak $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/isql $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/gpre $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/gdef $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/qli $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/fb_lock_mgr $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/fb_lock_print $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/gds_drop $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/gds_relay $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/gsec $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/gstat $(FB_FW)/Resources/bin
 	#sed "s/__VERSION__/`$(VERS_UTIL)`/g" source/firebird/bellardo/darwin/FrameworkInfo.plist > source/interbase/Firebird.framework/Resources/Info.plist

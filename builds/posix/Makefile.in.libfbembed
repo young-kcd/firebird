@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbembed,v 1.10.2.2 2003-11-10 00:01:40 bellardo Exp $
+#  $Id: Makefile.in.libfbembed,v 1.10.2.3 2003-11-11 01:01:51 bellardo Exp $
 #
 ROOT=..
 ObjModuleName=libfbembed
@@ -60,7 +60,8 @@ libfbembed : $(LIBFBEMBED_SONAME)
 $(LIBFBEMBED_SO):	LINK_PROD=$(SharedLibrarySoName)
 $(LIBFBEMBED_SO):	$(LIBFBEMBED_Objects)
 #	$(LIB_LINK) -Wl,-soname,libfbembed.$(SHRLIB_EXT).1 -Wl,-rpath,/usr/lib -o $@ $^
-	$(LIB_LINK)  $(LIB_SHLIB_LINK_OPTIONS) $(LIB_LINK_SONAME_LINE) $(LIB_LINK_RPATH_LINE) -o $@ $^ $(SO_LINK_LIBS)
+	$(LIB_LINK)  $(LIB_SHLIB_LINK_OPTIONS) $(LIB_EMBED_LINK_OPTIONS) \
+		$(LIB_LINK_SONAME_LINE) $(LIB_LINK_RPATH_LINE) -o $@ $^ $(SO_LINK_LIBS)
 
 $(LIBFBEMBED_SOBASENAME):	$(LIBFBEMBED_SO)
 	(cd $(LIB) && $(LN) -f $(SharedLibraryName) $(SharedLibrarySoName) )
