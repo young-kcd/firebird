@@ -32,9 +32,6 @@
  * 2002.10.29 Sean Leyne - Removed support for obsolete IPX/SPX Protocol
  *
  */
-/*
-$Id: ibase.h,v 1.98 2004-12-04 06:58:47 robocop Exp $
- */
 
 #ifndef JRD_IBASE_H
 #define JRD_IBASE_H
