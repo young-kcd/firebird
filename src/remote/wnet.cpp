@@ -547,6 +547,9 @@ PORT WNET_connect(TEXT*		name,
 
 		if (!command_line[0])
 		{
+
+#ifdef CMDLINE_VIA_SERVICE_MANAGER
+
 			SC_HANDLE manager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
 			SC_HANDLE service = 0;
 			if (manager) {
@@ -582,6 +585,9 @@ PORT WNET_connect(TEXT*		name,
 				strcpy(command_line, GetCommandLine());
 			}
 			CloseServiceHandle(manager);
+#else
+			strcpy(command_line, GetCommandLine());
+#endif
 			p = command_line + strlen(command_line);
 		}
 

@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.28 2002-10-29 02:45:09 seanleyne Exp $
+$Id: inet.cpp,v 1.29 2002-10-29 13:24:37 dimitr Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -2307,6 +2307,9 @@ static int fork( SOCKET old_handle, USHORT flag)
 	PROCESS_INFORMATION pi;
 
 	if (!INET_command_line[0]) {
+
+#ifdef CMDLINE_VIA_SERVICE_MANAGER
+
 		SC_HANDLE manager, service;
 
 		if ((manager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT)) &&
@@ -2332,9 +2335,13 @@ static int fork( SOCKET old_handle, USHORT flag)
 			}
 			CloseServiceHandle(service);
 		}
-		else
+		else {
 			strcpy(INET_command_line, GetCommandLine());
+		}
 		CloseServiceHandle(manager);
+#else
+		strcpy(INET_command_line, GetCommandLine());
+#endif
 		INET_p = INET_command_line + strlen(INET_command_line);
 	}
 
