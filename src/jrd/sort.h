@@ -273,6 +273,7 @@ typedef struct scb
 	struct dls *scb_dls;
 	struct mrg *scb_merge_pool;	/* ALLOC: pool of mrg blocks */
 	class att *scb_attachment;	/* back pointer to attachment */
+	struct irsb_sort *scb_impure;	/* back pointer to request's impure area */
 	SKD scb_description[1];
 } *SCB;
 

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.51 2003-12-22 10:00:47 robocop Exp $
+ * $Id: sort.cpp,v 1.52 2003-12-24 13:04:59 dimitr Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -2274,6 +2274,10 @@ static bool local_fini(SCB scb, ATT att)
 	}
 
 	scb->scb_merge = NULL;
+ 	scb->scb_attachment = NULL;
+ 	scb->scb_impure = NULL;
+ 	scb->scb_next = NULL;
+
 	return true;
 }
 

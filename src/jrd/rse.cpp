@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.46 2003-12-22 10:00:47 robocop Exp $
+ * $Id: rse.cpp,v 1.47 2003-12-24 13:04:59 dimitr Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -3118,7 +3118,11 @@ static void open_sort(TDBB tdbb, RSB rsb, IRSB_SORT impure, UINT64 max_records)
 
 	// Get rid of the old sort areas if this request has been used already
 
-	SORT_fini(impure->irsb_sort_handle, tdbb->tdbb_attachment);
+	if (impure->irsb_sort_handle &&
+		impure->irsb_sort_handle->scb_impure == impure)
+	{
+		SORT_fini(impure->irsb_sort_handle, tdbb->tdbb_attachment);
+	}
 
 	// Initialize for sort. If this is really a project operation,
 	// establish a callback routine to reject duplicate records.
@@ -3132,6 +3136,10 @@ static void open_sort(TDBB tdbb, RSB rsb, IRSB_SORT impure, UINT64 max_records)
 
 	if (!(impure->irsb_sort_handle = handle))
 		ERR_punt();
+
+	// Mark scb with the impure area pointer
+
+	handle->scb_impure = impure;
 
 	// Pump the input stream dry while pushing records into sort. For
 	// each record, map all fields into the sort record. The reverse
