@@ -128,7 +128,7 @@ void EXT_erase(RPB * rpb, int *transaction)
 }
 
 
-EXT EXT_file(JRD_REL relation, const TEXT * file_name, SLONG * description)
+EXT EXT_file(jrd_rel* relation, const TEXT * file_name, SLONG * description)
 {
 /**************************************
  *
@@ -196,7 +196,7 @@ EXT EXT_file(JRD_REL relation, const TEXT * file_name, SLONG * description)
 }
 
 
-void EXT_fini(JRD_REL relation)
+void EXT_fini(jrd_rel* relation)
 {
 /**************************************
  *
@@ -276,7 +276,7 @@ int EXT_get(RSB rsb)
 	for (vec::iterator itr = relation->rel_fields->begin();
 			i < format->fmt_count; ++i, ++itr, ++desc_ptr)
 	{
-	    const jrd_fld* field = (JRD_FLD) (*itr);
+	    const jrd_fld* field = (jrd_fld*) (*itr);
 		SET_NULL(record, i);
 		if (!desc_ptr->dsc_length || !field)
 			continue;
@@ -411,7 +411,7 @@ if (opt->opt_count)
 }
 
 
-void EXT_ready(JRD_REL relation)
+void EXT_ready(jrd_rel* relation)
 {
 /**************************************
  *
@@ -469,7 +469,7 @@ void EXT_store(RPB * rpb, int *transaction)
 
 	for (USHORT i = 0; i < format->fmt_count; i++, field_ptr++, desc_ptr++)
 	{
-		const jrd_fld* field = (JRD_FLD)*field_ptr;
+		const jrd_fld* field = (jrd_fld*) *field_ptr;
 		if (field &&
 			!field->fld_computation &&
 			desc_ptr->dsc_length &&
@@ -509,7 +509,7 @@ void EXT_store(RPB * rpb, int *transaction)
 }
 
 
-void EXT_trans_commit(JRD_TRA transaction)
+void EXT_trans_commit(jrd_tra* transaction)
 {
 /**************************************
  *
@@ -524,7 +524,7 @@ void EXT_trans_commit(JRD_TRA transaction)
 }
 
 
-void EXT_trans_prepare(JRD_TRA transaction)
+void EXT_trans_prepare(jrd_tra* transaction)
 {
 /**************************************
  *
@@ -539,7 +539,7 @@ void EXT_trans_prepare(JRD_TRA transaction)
 }
 
 
-void EXT_trans_rollback(JRD_TRA transaction)
+void EXT_trans_rollback(jrd_tra* transaction)
 {
 /**************************************
  *
@@ -554,7 +554,7 @@ void EXT_trans_rollback(JRD_TRA transaction)
 }
 
 
-void EXT_trans_start(JRD_TRA transaction)
+void EXT_trans_start(jrd_tra* transaction)
 {
 /**************************************
  *

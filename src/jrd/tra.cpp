@@ -98,23 +98,23 @@ static SLONG bump_transaction_id(TDBB, WIN *);
 #else
 static HDR bump_transaction_id(TDBB, WIN *);
 #endif
-static void retain_context(TDBB, JRD_TRA, const bool);
+static void retain_context(TDBB, jrd_tra*, const bool);
 #ifdef VMS
-static void compute_oldest_retaining(TDBB, JRD_TRA, const bool);
+static void compute_oldest_retaining(TDBB, jrd_tra*, const bool);
 #endif
 #ifdef PC_ENGINE
-static void downgrade_lock(JRD_TRA);
+static void downgrade_lock(jrd_tra*);
 #endif
-static void expand_view_lock(JRD_TRA, JRD_REL, SCHAR);
+static void expand_view_lock(jrd_tra*, jrd_rel*, SCHAR);
 static TIP fetch_inventory_page(TDBB, WIN *, SLONG, USHORT);
 static SLONG inventory_page(TDBB, SLONG);
 static SSHORT limbo_transaction(TDBB, SLONG);
-static void restart_requests(TDBB, JRD_TRA);
+static void restart_requests(TDBB, jrd_tra*);
 #ifdef SWEEP_THREAD
 static BOOLEAN start_sweeper(TDBB, DBB);
 static void THREAD_ROUTINE sweep_database(char*);
 #endif
-static void transaction_options(TDBB, JRD_TRA, const UCHAR*, USHORT);
+static void transaction_options(TDBB, jrd_tra*, const UCHAR*, USHORT);
 #ifdef VMS
 static BOOLEAN vms_convert(LCK, SLONG *, SCHAR, BOOLEAN);
 #endif
@@ -326,7 +326,7 @@ void TRA_cleanup(TDBB tdbb)
 }
 
 
-void TRA_commit(TDBB tdbb, JRD_TRA transaction, const bool retaining_flag)
+void TRA_commit(TDBB tdbb, jrd_tra* transaction, const bool retaining_flag)
 {
 /**************************************
  *
@@ -730,7 +730,7 @@ void TRA_invalidate(DBB database, ULONG mask)
 }
 
 
-void TRA_link_transaction(TDBB tdbb, JRD_TRA transaction)
+void TRA_link_transaction(TDBB tdbb, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -751,7 +751,7 @@ void TRA_link_transaction(TDBB tdbb, JRD_TRA transaction)
 }
 
 
-void TRA_post_resources(TDBB tdbb, JRD_TRA transaction, RSC resources)
+void TRA_post_resources(TDBB tdbb, jrd_tra* transaction, RSC resources)
 {
 /**************************************
  *
@@ -864,7 +864,7 @@ BOOLEAN TRA_precommited(TDBB tdbb, SLONG old_number, SLONG new_number)
 }
 
 
-void TRA_prepare(TDBB tdbb, JRD_TRA transaction, USHORT length,
+void TRA_prepare(TDBB tdbb, jrd_tra* transaction, USHORT length,
 	const UCHAR* msg)
 {
 /**************************************
@@ -1001,7 +1001,7 @@ jrd_tra* TRA_reconnect(TDBB tdbb, const UCHAR* id, USHORT length)
 }
 
 
-void TRA_release_transaction(TDBB tdbb, JRD_TRA transaction)
+void TRA_release_transaction(TDBB tdbb, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -1086,7 +1086,7 @@ void TRA_release_transaction(TDBB tdbb, JRD_TRA transaction)
 }
 
 
-void TRA_rollback(TDBB tdbb, JRD_TRA transaction, const bool retaining_flag)
+void TRA_rollback(TDBB tdbb, jrd_tra* transaction, const bool retaining_flag)
 {
 /**************************************
  *
@@ -1217,7 +1217,7 @@ void TRA_rollback(TDBB tdbb, JRD_TRA transaction, const bool retaining_flag)
 }
 
 
-void TRA_set_state(TDBB tdbb, JRD_TRA transaction, SLONG number, SSHORT state)
+void TRA_set_state(TDBB tdbb, jrd_tra* transaction, SLONG number, SSHORT state)
 {
 /**************************************
  *
@@ -1353,7 +1353,7 @@ void TRA_shutdown_attachment(TDBB tdbb, ATT attachment)
 }
 
 
-int TRA_snapshot_state(TDBB tdbb, JRD_TRA trans, SLONG number)
+int TRA_snapshot_state(TDBB tdbb, jrd_tra* trans, SLONG number)
 {
 /**************************************
  *
@@ -1754,7 +1754,7 @@ int TRA_state(UCHAR * bit_vector, ULONG oldest, ULONG number)
 }
 
 
-int TRA_sweep(TDBB tdbb, JRD_TRA trans)
+int TRA_sweep(TDBB tdbb, jrd_tra* trans)
 {
 /**************************************
  *
@@ -1957,7 +1957,7 @@ LCK TRA_transaction_lock(TDBB tdbb, BLK object)
 }
 
 
-int TRA_wait(TDBB tdbb, JRD_TRA trans, SLONG number, USHORT wait)
+int TRA_wait(TDBB tdbb, jrd_tra* trans, SLONG number, USHORT wait)
 {
 /**************************************
  *
@@ -2189,7 +2189,7 @@ static HDR bump_transaction_id(TDBB tdbb, WIN * window)
 #ifdef VMS
 static void compute_oldest_retaining(
 									 TDBB tdbb,
-									 JRD_TRA transaction, const bool write_flag)
+									 jrd_tra* transaction, const bool write_flag)
 {
 /**************************************
  *
@@ -2289,7 +2289,7 @@ static void compute_oldest_retaining(
 #endif
 
 #ifdef PC_ENGINE
-static void downgrade_lock(JRD_TRA transaction)
+static void downgrade_lock(jrd_tra* transaction)
 {
 /**************************************
  *
@@ -2342,7 +2342,7 @@ static void downgrade_lock(JRD_TRA transaction)
 }
 #endif
 
-static void expand_view_lock(JRD_TRA transaction, JRD_REL relation, SCHAR lock_type)
+static void expand_view_lock(jrd_tra* transaction, jrd_rel* relation, SCHAR lock_type)
 {
 /**************************************
  *
@@ -2499,7 +2499,7 @@ static SSHORT limbo_transaction(TDBB tdbb, SLONG id)
 }
 
 
-static void restart_requests(TDBB tdbb, JRD_TRA trans)
+static void restart_requests(TDBB tdbb, jrd_tra* trans)
 {
 /**************************************
  *
@@ -2528,7 +2528,7 @@ static void restart_requests(TDBB tdbb, JRD_TRA trans)
 		vec* vector = request->req_sub_requests;
 		if (vector) {
 			for (USHORT level = 1; level < vector->count(); level++) {
-				jrd_req* clone = (JRD_REQ) (*vector)[level];
+				jrd_req* clone = (jrd_req*) (*vector)[level];
 				if (clone && clone->req_transaction) {
 					EXE_unwind(tdbb, clone);
 					EXE_start(tdbb, clone, trans);
@@ -2539,7 +2539,7 @@ static void restart_requests(TDBB tdbb, JRD_TRA trans)
 }
 
 
-static void retain_context(TDBB tdbb, JRD_TRA transaction, const bool commit)
+static void retain_context(TDBB tdbb, jrd_tra* transaction, const bool commit)
 {
 /**************************************
  *
@@ -2841,7 +2841,7 @@ static void THREAD_ROUTINE sweep_database(char* database)
 
 static void transaction_options(
 								TDBB tdbb,
-								JRD_TRA transaction,
+								jrd_tra* transaction,
 								const UCHAR* tpb, USHORT tpb_length)
 {
 /**************************************

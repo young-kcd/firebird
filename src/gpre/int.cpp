@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int.cpp,v 1.26 2003-11-28 06:48:12 robocop Exp $
+//	$Id: int.cpp,v 1.27 2004-01-03 10:59:38 robocop Exp $
 //
 
 #include "firebird.h"
@@ -479,7 +479,7 @@ static void gen_receive( const gpre_req* request, const por* port)
 {
 
 	ib_fprintf(out_file,
-			   "EXE_receive (tdbb, (JRD_REQ)%s, %d, %d, (UCHAR*)&jrd_%d);",
+			   "EXE_receive (tdbb, (jrd_req*)%s, %d, %d, (UCHAR*)&jrd_%d);",
 			   request->req_handle, port->por_msg_number, port->por_length,
 			   port->por_ident);
 }
@@ -587,11 +587,11 @@ static void gen_send(const gpre_req* request, const por* port, int column,
 		align(column);
 		ib_fprintf(out_file, "if (ignore_perm)");
 		align(column);
-		ib_fprintf(out_file, "\t((JRD_REQ)request)->req_flags |= req_ignore_perm;"); 
+		ib_fprintf(out_file, "\t((jrd_req*)request)->req_flags |= req_ignore_perm;");
 	}
 	align(column);
 
-	ib_fprintf(out_file, "EXE_send (tdbb, (JRD_REQ)%s, %d, %d, (UCHAR*)&jrd_%d);",
+	ib_fprintf(out_file, "EXE_send (tdbb, (jrd_req*)%s, %d, %d, (UCHAR*)&jrd_%d);",
 			   request->req_handle,
 			   port->por_msg_number, port->por_length, port->por_ident);
 }
@@ -607,7 +607,7 @@ static void gen_start(const gpre_req* request, const por* port, int column,
 {
 	align(column);
 
-	ib_fprintf(out_file, "EXE_start (tdbb, (JRD_REQ)%s, %s);",
+	ib_fprintf(out_file, "EXE_start (tdbb, (jrd_req*)%s, %s);",
 			   request->req_handle, request->req_trans);
 
 	if (port)

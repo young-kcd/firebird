@@ -337,8 +337,8 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 		END_STORE;
 	}
 
-	CMP_release(tdbb, (JRD_REQ)handle1);
-	CMP_release(tdbb, (JRD_REQ)handle2);
+	CMP_release(tdbb, (jrd_req*)handle1);
+	CMP_release(tdbb, (jrd_req*)handle2);
 	handle1 = handle2 = NULL;
 
 /* Store global FIELDS */
@@ -348,7 +348,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 		store_global_field(tdbb, gfield, &handle1);
 	}
 
-	CMP_release(tdbb, (JRD_REQ)handle1);
+	CMP_release(tdbb, (jrd_req*)handle1);
 	handle1 = NULL;
 
 	STORE(REQUEST_HANDLE handle1) X IN RDB$DATABASE
@@ -364,7 +364,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 		}
 	END_STORE
 
-	CMP_release(tdbb, (JRD_REQ)handle1);
+	CMP_release(tdbb, (jrd_req*)handle1);
 	handle1 = NULL;
 
 /* Create indices for system relations */
@@ -384,7 +384,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 		END_STORE;
 	}
 
-	CMP_release(tdbb, (JRD_REQ)handle1);
+	CMP_release(tdbb, (jrd_req*)handle1);
 
 /* Store symbols for international character sets & collations */
 
@@ -397,7 +397,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	{
 		store_generator(tdbb, generator, &handle1);
 	}
-	CMP_release(tdbb, (JRD_REQ)handle1);
+	CMP_release(tdbb, (jrd_req*)handle1);
 
 /* store system-defined triggers */
 
@@ -406,7 +406,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	{
 		store_trigger(tdbb, trigger, &handle1);
 	}
-	CMP_release(tdbb, (JRD_REQ)handle1);
+	CMP_release(tdbb, (jrd_req*)handle1);
 
 /* store trigger messages to go with triggers */
 
@@ -415,7 +415,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	{
 		store_message(tdbb, message, &handle1);
 	}
-	CMP_release(tdbb, (JRD_REQ)handle1);
+	CMP_release(tdbb, (jrd_req*)handle1);
 
 	DFW_perform_system_work();
 
@@ -505,9 +505,8 @@ void INI_init(void)
  *
  **************************************/
 	DBB				dbb;
-	JRD_REL				relation;
+	jrd_rel*				relation;
 	FMT				format;
-	JRD_FLD				field;
 	VEC				formats;
 	VEC				fields;
 	int				n;
@@ -548,7 +547,6 @@ void INI_init(void)
 		}
 
 		relation->rel_fields = fields = vec::newVector(*dbb->dbb_permanent, n);
-		//field = (JRD_FLD *) fields->vec_object;
 		itr = fields->begin();
 		relation->rel_current_format = format = fmt::newFmt(*dbb->dbb_permanent, n);
 		relation->rel_formats = formats = vec::newVector(*dbb->dbb_permanent, 1);
@@ -562,7 +560,8 @@ void INI_init(void)
 			gfield = &gfields[fld_[RFLD_F_ID]];
 			desc->dsc_length = gfield->gfld_length;
 			desc->dsc_dtype = gfield->gfld_dtype;
-			*itr = field = FB_NEW_RPT(*dbb->dbb_permanent,0) jrd_fld();
+			jrd_fld* field = FB_NEW_RPT(*dbb->dbb_permanent,0) jrd_fld();
+			*itr = field;
 			field->fld_name = names[fld_[RFLD_F_NAME]];
 			field->fld_length = strlen(field->fld_name);
 		}
@@ -584,7 +583,7 @@ void INI_init2(void)
  *	the database when it was created.
  *
  **************************************/
-	JRD_REL				relation;
+	jrd_rel*				relation;
 	FMT				format;
 	int				n;
 	const UCHAR*	relfld;
@@ -610,7 +609,7 @@ void INI_init2(void)
         **
         ******************************************************/
 			id = relfld[RFLD_R_ID];
-			relation = (JRD_REL)(*vector)[id];
+			relation = (jrd_rel*)(*vector)[id];
 			delete relation->rel_current_format;
 			delete relation->rel_formats;
 			delete relation->rel_fields;
@@ -703,7 +702,7 @@ void INI_init2(void)
 }
 
 
-const jrd_trg* INI_lookup_sys_trigger(JRD_REL				relation,
+const jrd_trg* INI_lookup_sys_trigger(jrd_rel*				relation,
 							const jrd_trg*			trigger,
 							const UCHAR**	blr,
 							UCHAR*			trigger_type,
@@ -904,7 +903,7 @@ static void add_global_fields( USHORT minor_version)
 	}
 
 	if (handle) {
-		CMP_release(tdbb, (JRD_REQ)handle);
+		CMP_release(tdbb, (jrd_req*)handle);
 	}
 
 	DFW_perform_system_work();
@@ -928,13 +927,13 @@ static void add_index_set(DBB		dbb,
  *	ODS (major_version,minor_version).
  *
  **************************************/
-	JRD_REL		relation;
+	jrd_rel*		relation;
 	TEXT	string[32];
 	const ini_idx_t::ini_idx_segment_t* segment;
 	IDX		idx;
 	idx::idx_repeat* tail;
 	USHORT	position;
-	JRD_FLD		field;
+	jrd_fld*		field;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	BLK handle1 = NULL;
@@ -980,7 +979,7 @@ static void add_index_set(DBB		dbb,
 				segment = &index->ini_idx_segment[position];
 				STORE(REQUEST_HANDLE handle2) Y IN RDB$INDEX_SEGMENTS
 					field =
-						(JRD_FLD) (*relation->rel_fields)[segment->ini_idx_rfld_id];
+						(jrd_fld*) (*relation->rel_fields)[segment->ini_idx_rfld_id];
 
 					Y.RDB$FIELD_POSITION = position;
 					PAD(X.RDB$INDEX_NAME, Y.RDB$INDEX_NAME);
@@ -999,10 +998,10 @@ static void add_index_set(DBB		dbb,
 
 	}
 	if (handle1) {
-		CMP_release(tdbb, (JRD_REQ)handle1);
+		CMP_release(tdbb, (jrd_req*)handle1);
 	}
 	if (handle2) {
-		CMP_release(tdbb, (JRD_REQ)handle2);
+		CMP_release(tdbb, (jrd_req*)handle2);
 	}
 }
 
@@ -1048,10 +1047,10 @@ static void add_new_triggers(USHORT major_version, USHORT minor_version)
 	}
 
 	if (handle1) {
-		CMP_release(tdbb, (JRD_REQ)handle1);
+		CMP_release(tdbb, (jrd_req*)handle1);
 	}
 	if (handle2) {
-		CMP_release(tdbb, (JRD_REQ)handle2);
+		CMP_release(tdbb, (jrd_req*)handle2);
 	}
 }
 
@@ -1108,10 +1107,10 @@ static void add_relation_fields( USHORT minor_version)
 	}
 
 	if (s_handle) {
-		CMP_release(tdbb, (JRD_REQ)s_handle);
+		CMP_release(tdbb, (jrd_req*)s_handle);
 	}
 	if (m_handle) {
-		CMP_release(tdbb, (JRD_REQ)m_handle);
+		CMP_release(tdbb, (jrd_req*)m_handle);
 	}
 
 	DFW_perform_system_work();
@@ -1211,7 +1210,7 @@ static void add_security_to_sys_rel(TDBB	tdbb,
 			PRIV.RDB$OBJECT_TYPE = obj_relation;
 		END_STORE;
 
-		CMP_release(tdbb, (JRD_REQ)handle1);
+		CMP_release(tdbb, (jrd_req*)handle1);
 	}
 
 	handle1 = NULL;
@@ -1223,7 +1222,7 @@ static void add_security_to_sys_rel(TDBB	tdbb,
 		CLS.RDB$ACL = blob_id_1;
 	END_STORE;
 
-	CMP_release(tdbb, (JRD_REQ)handle1);
+	CMP_release(tdbb, (jrd_req*)handle1);
 
 	handle1 = NULL;
 
@@ -1234,7 +1233,7 @@ static void add_security_to_sys_rel(TDBB	tdbb,
 		CLS.RDB$ACL = blob_id_2;
 	END_STORE;
 
-	CMP_release(tdbb, (JRD_REQ)handle1);
+	CMP_release(tdbb, (jrd_req*)handle1);
 
 	handle1 = NULL;
 
@@ -1248,7 +1247,7 @@ static void add_security_to_sys_rel(TDBB	tdbb,
 
 	END_FOR;
 
-	CMP_release(tdbb, (JRD_REQ)handle1);
+	CMP_release(tdbb, (jrd_req*)handle1);
 
 }
 
@@ -1511,7 +1510,7 @@ static void store_intlnames(TDBB tdbb, DBB dbb)
 		END_STORE;
 	}
 
-	CMP_release(tdbb, (JRD_REQ)handle);
+	CMP_release(tdbb, (jrd_req*)handle);
 	handle = NULL;
 
 	for (const COLL_TYPE* collptr = coll_types; collptr->init_collation_name; collptr++)
@@ -1524,7 +1523,7 @@ static void store_intlnames(TDBB tdbb, DBB dbb)
 		END_STORE;
 	}
 
-	CMP_release(tdbb, (JRD_REQ)handle);
+	CMP_release(tdbb, (jrd_req*)handle);
 	handle = NULL;
 }
 

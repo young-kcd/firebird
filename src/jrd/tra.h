@@ -69,7 +69,6 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 	UCHAR tra_callback_count;		/* callback count for 'execute statement' */
 	UCHAR tra_transactions[1];
 };
-typedef jrd_tra *JRD_TRA;
 
 #define TRA_system		1L		/* system transaction */
 #define TRA_update		2L		/* update is permitted */

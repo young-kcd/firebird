@@ -86,7 +86,7 @@ static const TEXT elements[][10] =
 #include "gen/codetext.h"
 
 static void error(CSB, ...);
-static SSHORT find_proc_field(JRD_PRC, TEXT *);
+static SSHORT find_proc_field(jrd_prc*, TEXT *);
 static JRD_NOD par_args(TDBB, CSB, USHORT);
 static JRD_NOD par_cast(TDBB, CSB);
 static XCP par_condition(TDBB, CSB);
@@ -104,7 +104,7 @@ static JRD_NOD par_modify(TDBB, CSB);
 static USHORT par_name(CSB, TEXT *);
 static JRD_NOD par_plan(TDBB, CSB);
 static JRD_NOD par_procedure(TDBB, CSB, SSHORT);
-static void par_procedure_parms(TDBB, CSB, JRD_PRC, JRD_NOD *, JRD_NOD *, USHORT);
+static void par_procedure_parms(TDBB, CSB, jrd_prc*, JRD_NOD *, JRD_NOD *, USHORT);
 static JRD_NOD par_relation(TDBB, CSB, SSHORT, BOOLEAN);
 static JRD_NOD par_rse(TDBB, CSB, SSHORT);
 static JRD_NOD par_sort(TDBB, CSB, BOOLEAN);
@@ -122,11 +122,11 @@ static void warning(CSB, ...);
 
 
 JRD_NOD PAR_blr(TDBB	tdbb,
-			JRD_REL		relation,
+			jrd_rel*		relation,
 			const UCHAR*	blr,
 			CSB		view_csb,
 			CSB*	csb_ptr,
-			JRD_REQ*	request_ptr,
+			jrd_req**	request_ptr,
 			BOOLEAN	trigger,
 			USHORT	flags)
 {
@@ -444,7 +444,7 @@ JRD_NOD PAR_make_field(TDBB tdbb, CSB csb, USHORT context,
 	}
 
 	jrd_nod* temp_node = PAR_gen_field(tdbb, stream, id);
-	jrd_fld* field = (JRD_FLD) (*temp_rel->rel_fields)[id];
+	jrd_fld* field = (jrd_fld*) (*temp_rel->rel_fields)[id];
 	if (field) {
 		if (field->fld_default_value && field->fld_not_null)
 			temp_node->nod_arg[e_fld_default_value] =
@@ -659,7 +659,7 @@ static void error(CSB csb, ...)
 }
 
 
-static SSHORT find_proc_field(JRD_PRC procedure, TEXT * name)
+static SSHORT find_proc_field(jrd_prc* procedure, TEXT * name)
 {
 /**************************************
  *
@@ -1097,12 +1097,12 @@ static JRD_NOD par_field(TDBB tdbb, CSB csb, SSHORT operator_)
  *	Parse a field.
  *
  **************************************/
-	JRD_REL relation;
-	JRD_PRC procedure;
+	jrd_rel* relation;
+	jrd_prc* procedure;
 	TEXT name[32];
 	SSHORT id;
 	csb_repeat *tail;
-	JRD_PRC scan_proc;
+	jrd_prc* scan_proc;
 
 	SET_TDBB(tdbb);
 
@@ -1198,7 +1198,7 @@ static JRD_NOD par_field(TDBB tdbb, CSB csb, SSHORT operator_)
 	if (is_column) {
 		jrd_rel* temp_rel = csb->csb_rpt[stream].csb_relation;
 		if (temp_rel) {
-			jrd_fld* field = (JRD_FLD) (*temp_rel->rel_fields)[id];
+			jrd_fld* field = (jrd_fld*) (*temp_rel->rel_fields)[id];
 			if (field) {
 				if (field->fld_default_value && field->fld_not_null)
 					node->nod_arg[e_fld_default_value] =
@@ -1603,7 +1603,7 @@ static JRD_NOD par_plan(TDBB tdbb, CSB csb)
 
 		jrd_nod* relation_node = par_relation(tdbb, csb, n, FALSE);
 		plan->nod_arg[e_retrieve_relation] = relation_node;
-		jrd_rel* relation = (JRD_REL) relation_node->nod_arg[e_rel_relation];
+		jrd_rel* relation = (jrd_rel*) relation_node->nod_arg[e_rel_relation];
 
 		n = BLR_BYTE;
 		if (n >= csb->csb_rpt.getCount() || !(csb->csb_rpt[n].csb_flags & csb_used))
@@ -1742,7 +1742,7 @@ static JRD_NOD par_procedure(TDBB tdbb, CSB csb, SSHORT operator_)
  *	Parse an procedural view reference.
  *
  **************************************/
-	JRD_PRC procedure;
+	jrd_prc* procedure;
 
 	SET_TDBB(tdbb);
 
@@ -1784,7 +1784,7 @@ static JRD_NOD par_procedure(TDBB tdbb, CSB csb, SSHORT operator_)
 static void par_procedure_parms(
 								TDBB tdbb,
 								CSB csb,
-								JRD_PRC procedure,
+								jrd_prc* procedure,
 								JRD_NOD * message_ptr,
 								JRD_NOD * parameter_ptr, USHORT input_flag)
 {

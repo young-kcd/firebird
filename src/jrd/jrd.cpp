@@ -228,7 +228,7 @@ void trig::compile(tdbb* _tdbb)
 	{
 		SET_TDBB(_tdbb);
 
-		compile_in_progress = TRUE;
+		compile_in_progress = true;
 		JrdMemoryPool* old_pool = _tdbb->tdbb_default,
 			*new_pool = JrdMemoryPool::createPool();
 		/* Allocate statement memory pool */
@@ -241,7 +241,7 @@ void trig::compile(tdbb* _tdbb)
 		}
 		catch (const std::exception&) {
 			_tdbb->tdbb_default = old_pool;
-			compile_in_progress = FALSE;
+			compile_in_progress = false;
 			if (request) {
 				CMP_release(_tdbb,request);
 				request = NULL;
@@ -253,13 +253,13 @@ void trig::compile(tdbb* _tdbb)
 		_tdbb->tdbb_default = old_pool;
 		
 		if (name)
-			request->req_trg_name = (TEXT *)name->str_data;
+			request->req_trg_name = (const TEXT*)name->str_data;
 		if (sys_trigger)
 			request->req_flags |= req_sys_trigger;
 		if (flags & TRG_ignore_perm)
 			request->req_flags |= req_ignore_perm;
 
-		compile_in_progress = FALSE;
+		compile_in_progress = false;
 	}
 }
 
@@ -355,12 +355,12 @@ typedef struct dpb
 static BLB		check_blob(TDBB, ISC_STATUS*, BLB*);
 static ISC_STATUS	check_database(TDBB, ATT, ISC_STATUS*);
 static void		cleanup(void*);
-static ISC_STATUS	commit(ISC_STATUS*, JRD_TRA*, const bool);
+static ISC_STATUS	commit(ISC_STATUS*, jrd_tra**, const bool);
 static STR		copy_string(const TEXT*, const USHORT);
 static bool		drop_files(const fil*);
 static ISC_STATUS	error(ISC_STATUS*);
 static void		find_intl_charset(TDBB, ATT, const DPB*);
-static JRD_TRA		find_transaction(TDBB, JRD_TRA, ISC_STATUS);
+static jrd_tra*		find_transaction(TDBB, jrd_tra*, ISC_STATUS);
 static void		get_options(const UCHAR*, USHORT, TEXT**, ULONG, DPB*);
 static SLONG	get_parameter(const UCHAR**);
 static TEXT*	get_string_parameter(const UCHAR**, TEXT**, ULONG*);
@@ -380,10 +380,10 @@ static BOOLEAN	handler_NT(SSHORT);
 static DBB		init(TDBB, ISC_STATUS*, const TEXT*, bool);
 static void		make_jrn_data(UCHAR*, USHORT*, const TEXT*, USHORT,
 	const TEXT*, USHORT);
-static ISC_STATUS	prepare(TDBB, JRD_TRA, ISC_STATUS*, USHORT, const UCHAR*);
+static ISC_STATUS	prepare(TDBB, jrd_tra*, ISC_STATUS*, USHORT, const UCHAR*);
 static void		release_attachment(ATT);
 static ISC_STATUS	return_success(TDBB);
-static BOOLEAN	rollback(TDBB, JRD_TRA, ISC_STATUS*, const bool);
+static BOOLEAN	rollback(TDBB, jrd_tra*, ISC_STATUS*, const bool);
 
 static void		shutdown_database(DBB, const bool);
 static void		strip_quotes(const TEXT*, TEXT*);
@@ -417,7 +417,7 @@ IHNDL	internal_db_handles = 0;
 // do it here to prevent committing every record update
 // in a statement
 //
-static void check_autocommit(JRD_REQ request, struct tdbb* tdbb)
+static void check_autocommit(jrd_req* request, struct tdbb* tdbb)
 {
 	/* dimitr: we should ignore autocommit for requests
 			   created by EXECUTE STATEMENT */
@@ -1607,7 +1607,7 @@ ISC_STATUS GDS_CLOSE_BLOB(ISC_STATUS * user_status, BLB * blob_handle)
 }
 
 
-ISC_STATUS GDS_COMMIT(ISC_STATUS * user_status, JRD_TRA * tra_handle)
+ISC_STATUS GDS_COMMIT(ISC_STATUS * user_status, jrd_tra** tra_handle)
 {
 /**************************************
  *
@@ -1631,7 +1631,7 @@ ISC_STATUS GDS_COMMIT(ISC_STATUS * user_status, JRD_TRA * tra_handle)
 }
 
 
-ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS * user_status, JRD_TRA * tra_handle)
+ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS * user_status, jrd_tra** tra_handle)
 {
 /**************************************
  *
@@ -1652,7 +1652,7 @@ ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS * user_status, JRD_TRA * tra_handle)
 
 ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 						ATT* db_handle,
-						JRD_REQ* req_handle,
+						jrd_req** req_handle,
 						SSHORT blr_length,
 						const SCHAR* blr)
 {
@@ -1708,7 +1708,7 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 
 ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 							ATT* db_handle,
-							JRD_TRA* tra_handle,
+							jrd_tra** tra_handle,
 							BLB* blob_handle,
 							BID blob_id,
 							USHORT bpb_length,
@@ -1724,7 +1724,7 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
  *	Open an existing blob.
  *
  **************************************/
-	JRD_TRA transaction;
+	jrd_tra* transaction;
 	BLB blob;
 	struct tdbb thd_context;
 
@@ -2191,7 +2191,7 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS* user_status,
 
 ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
 					ATT* db_handle,
-					JRD_TRA* tra_handle,
+					jrd_tra** tra_handle,
 					USHORT ddl_length,
 					const SCHAR* ddl)
 {
@@ -2656,7 +2656,7 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 
 ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 						ATT* db_handle,
-						JRD_TRA* tra_handle,
+						jrd_tra** tra_handle,
 						SLONG* array_id,
 						USHORT sdl_length,
 						const UCHAR* sdl,
@@ -2721,7 +2721,7 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 
 ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 						ATT* db_handle,
-						JRD_TRA* tra_handle,
+						jrd_tra** tra_handle,
 						BLB* blob_handle,
 						BID blob_id,
 						USHORT bpb_length,
@@ -2776,7 +2776,7 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 
 
 ISC_STATUS GDS_PREPARE(ISC_STATUS * user_status,
-						JRD_TRA * tra_handle,
+						jrd_tra** tra_handle,
 						USHORT length,
 						UCHAR * msg)
 {
@@ -2859,7 +2859,7 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
 
 ISC_STATUS GDS_PUT_SLICE(ISC_STATUS* user_status,
 						ATT* db_handle,
-						JRD_TRA* tra_handle,
+						jrd_tra** tra_handle,
 						SLONG* array_id,
 						USHORT sdl_length,
 						const UCHAR* sdl,
@@ -2976,7 +2976,7 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 
 
 ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
-						JRD_REQ * req_handle,
+						jrd_req** req_handle,
 						USHORT msg_type,
 						USHORT msg_length,
 						SCHAR * msg,
@@ -3044,7 +3044,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 
 ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
 						ATT* db_handle,
-						JRD_TRA* tra_handle,
+						jrd_tra** tra_handle,
 						SSHORT length,
 						const UCHAR* id)
 {
@@ -3093,7 +3093,7 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, JRD_REQ * req_handle)
+ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, jrd_req** req_handle)
 {
 /**************************************
  *
@@ -3138,7 +3138,7 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, JRD_REQ * req_handle)
 
 
 ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
-							JRD_REQ* req_handle,
+							jrd_req** req_handle,
 							SSHORT level,
 							SSHORT item_length,
 							const SCHAR* items,
@@ -3189,7 +3189,7 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 
 
 ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS * user_status,
-									JRD_TRA * tra_handle)
+									jrd_tra** tra_handle)
 {
 /**************************************
  *
@@ -3224,7 +3224,7 @@ ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_ROLLBACK(ISC_STATUS * user_status, JRD_TRA * tra_handle)
+ISC_STATUS GDS_ROLLBACK(ISC_STATUS * user_status, jrd_tra** tra_handle)
 {
 /**************************************
  *
@@ -3305,7 +3305,7 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS * user_status,
 
 
 ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
-					JRD_REQ * req_handle,
+					jrd_req** req_handle,
 					USHORT msg_type,
 					USHORT msg_length,
 					SCHAR * msg,
@@ -3579,8 +3579,8 @@ ISC_STATUS GDS_SERVICE_START(ISC_STATUS*	user_status,
 
 
 ISC_STATUS GDS_START_AND_SEND(ISC_STATUS* user_status,
-							JRD_REQ* req_handle,
-							JRD_TRA* tra_handle,
+							jrd_req** req_handle,
+							jrd_tra** tra_handle,
 							USHORT msg_type,
 							USHORT msg_length,
 							SCHAR* msg,
@@ -3616,7 +3616,7 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS* user_status,
 	tdbb->tdbb_status_vector = user_status;
 	try
 	{
-		JRD_TRA transaction = find_transaction(tdbb, *tra_handle, isc_req_wrong_db);
+		jrd_tra* transaction = find_transaction(tdbb, *tra_handle, isc_req_wrong_db);
 	
 		if (level)
 			request = CMP_clone_request(tdbb, request, level, false);
@@ -3643,8 +3643,8 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS* user_status,
 
 
 ISC_STATUS GDS_START(ISC_STATUS * user_status,
-					JRD_REQ * req_handle,
-					JRD_TRA * tra_handle,
+					jrd_req** req_handle,
+					jrd_tra** tra_handle,
 					SSHORT level)
 {
 /**************************************
@@ -3702,7 +3702,7 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
 
 
 ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
-							JRD_TRA * tra_handle,
+							jrd_tra** tra_handle,
 							USHORT count,
 							TEB * vector)
 {
@@ -3782,7 +3782,7 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
 
 
 ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
-								JRD_TRA * tra_handle,
+								jrd_tra** tra_handle,
 								SSHORT count,
 								...)
 {
@@ -3815,7 +3815,7 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
 
 ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 								ATT*		db_handle,
-								JRD_TRA*		tra_handle,
+								jrd_tra**		tra_handle,
 								USHORT	blr_length,
 								const SCHAR*	blr,
 								USHORT	in_msg_length,
@@ -3975,7 +3975,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 
 
 ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
-								JRD_TRA* tra_handle,
+								jrd_tra** tra_handle,
 								SSHORT item_length,
 								const SCHAR* items,
 								SSHORT buffer_length,
@@ -4024,7 +4024,7 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 
 
 ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status,
-						JRD_REQ * req_handle,
+						jrd_req** req_handle,
 						SSHORT level)
 {
 /**************************************
@@ -4594,7 +4594,7 @@ static BLB check_blob(TDBB tdbb, ISC_STATUS* user_status, BLB* blob_handle)
  *	the address of the blob if ok, NULL otherwise.
  *
  **************************************/
-	JRD_TRA transaction = 0;
+	jrd_tra* transaction = 0;
 
 	SET_TDBB(tdbb);
 	 // this const made to check no accidental changes happen
@@ -4735,7 +4735,7 @@ static void cleanup(void* arg)
 
 static ISC_STATUS commit(
 					 ISC_STATUS* user_status,
-					 JRD_TRA* tra_handle, const bool retaining_flag)
+					 jrd_tra** tra_handle, const bool retaining_flag)
 {
 /**************************************
  *
@@ -4854,7 +4854,7 @@ static bool drop_files(const fil* file)
 }
 
 
-static JRD_TRA find_transaction(TDBB tdbb, JRD_TRA transaction, ISC_STATUS error_code)
+static jrd_tra* find_transaction(TDBB tdbb, jrd_tra* transaction, ISC_STATUS error_code)
 {
 /**************************************
  *
@@ -5697,7 +5697,7 @@ static void make_jrn_data(UCHAR*	data,
 
 
 static ISC_STATUS prepare(TDBB		tdbb,
-					  JRD_TRA		transaction,
+					  jrd_tra*		transaction,
 					  ISC_STATUS*	status_vector,
 					  USHORT	length,
 					  const UCHAR*	msg)
@@ -5914,7 +5914,7 @@ static ISC_STATUS return_success(TDBB tdbb)
 
 
 static BOOLEAN rollback(TDBB	tdbb,
-						JRD_TRA		next,
+						jrd_tra*		next,
 						ISC_STATUS*	status_vector,
 						const bool	retaining_flag)
 {
@@ -5928,7 +5928,7 @@ static BOOLEAN rollback(TDBB	tdbb,
  *	Abort a transaction.
  *
  **************************************/
-	JRD_TRA transaction;
+	jrd_tra* transaction;
 	ISC_STATUS_ARRAY local_status;
 
 	SET_TDBB(tdbb);
@@ -6038,9 +6038,9 @@ static void shutdown_database(DBB dbb, const bool release_pools)
 
 		for (; ptr < end; ++ptr)
 		{
-			if (*ptr && ((JRD_REL)(*ptr))->rel_file)
+			if (*ptr && ((jrd_rel*)(*ptr))->rel_file)
 			{
-				EXT_fini((JRD_REL)(*ptr));
+				EXT_fini((jrd_rel*)(*ptr));
 			}
 		}
 	}

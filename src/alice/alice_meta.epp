@@ -27,7 +27,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: alice_meta.epp,v 1.28 2003-11-18 12:33:43 brodsom Exp $
+ *	$Id: alice_meta.epp,v 1.29 2004-01-03 10:59:34 robocop Exp $
  */
 
 #include "firebird.h"
@@ -57,7 +57,7 @@ DATABASE DB = STATIC FILENAME "yachts.lnk";
 #define DB			tdgbl->db_handle
 #define gds_trans	tdgbl->tr_handle
 
-static STR alloc_string(TEXT**);
+static alice_str* alloc_string(const TEXT**);
 static USHORT get_capabilities(ISC_STATUS*);
 static TDR get_description(SLONG[2]);
 static void parse_fullpath(TDR);
@@ -244,18 +244,19 @@ void MET_set_capabilities(ISC_STATUS* user_status, TDR trans)
  *		Eat a string with a byte-encoded length.
  */  
 
-static STR alloc_string(TEXT** ptr)
+static alice_str* alloc_string(const TEXT** ptr)
 {
 	TGBL tdgbl = GET_THREAD_DATA;
 
-	TEXT* p = *ptr;
+	const TEXT* p = *ptr;
 
 	USHORT length = (USHORT) *p++;
-	STR string = FB_NEW_RPT(*tdgbl->ALICE_default_pool, length + 1) str;
+	alice_str* string = FB_NEW_RPT(*tdgbl->ALICE_default_pool, length + 1) alice_str;
 
 	TEXT* q = (TEXT *) string->str_data;
-	while (length--)
+	while (length--) {
 		*q++ = *p++;
+	}
 	*q = 0;
 
 	*ptr = p;
@@ -314,7 +315,7 @@ static TDR get_description(SLONG blob_id[2])
 	TEXT* bigger_buffer = 0;
 	TGBL tdgbl = GET_THREAD_DATA;
 
-	TEXT* p = buffer;
+	const TEXT* p = buffer;
 	const USHORT length = snarf_blob(blob_id, (USHORT) sizeof(buffer), buffer);
 	if (length) {
 		p = bigger_buffer = (TEXT *) gds__alloc((SLONG) length);
@@ -322,7 +323,8 @@ static TDR get_description(SLONG blob_id[2])
 	}
 
 	TDR trans = NULL;
-	STR host_site = NULL, database_path = NULL;
+	alice_str* host_site = NULL;
+	alice_str* database_path = NULL;
 
 //  skip version number 
 	++p;
@@ -330,7 +332,7 @@ static TDR get_description(SLONG blob_id[2])
 	TDR ptr;
 	SLONG id_length, id;
 
-	while (*p)
+	while (*p) {
 		switch (*p++) {
 		case TDR_HOST_SITE:
 			host_site = alloc_string(&p);
@@ -342,10 +344,11 @@ static TDR get_description(SLONG blob_id[2])
 
 		case TDR_TRANSACTION_ID:
 			id_length = *p++;
-			id = gds__vax_integer(reinterpret_cast<UCHAR*>(p), id_length);
+			id = gds__vax_integer(reinterpret_cast<const UCHAR*>(p), id_length);
 			p += id_length;
-			if (!trans)
+			if (!trans) {
 				trans = ptr = FB_NEW(*tdgbl->ALICE_default_pool) tdr;
+			}
 			else {
 				ptr->tdr_next = FB_NEW(*tdgbl->ALICE_default_pool) tdr;
 				ptr = ptr->tdr_next;
@@ -361,13 +364,16 @@ static TDR get_description(SLONG blob_id[2])
 			ALICE_print(108, 0, 0, 0, 0, 0);
 			// msg 108: Transaction description item unknown.
 
-			if (length)
+			if (length) {
 				gds__free(bigger_buffer);
+			}
 			return NULL;
 		}
+	}
 
-	if (length)
+	if (length) {
 		gds__free(bigger_buffer);
+	}
 
 	return trans;
 }
@@ -409,7 +415,7 @@ static void parse_fullpath(TDR trans)
 		if (*q) {
 			trans->tdr_filename = q + 1;
 
-			trans->tdr_remote_site = FB_NEW_RPT(*tdgbl->ALICE_default_pool, q - p + 1) str;
+			trans->tdr_remote_site = FB_NEW_RPT(*tdgbl->ALICE_default_pool, q - p + 1) alice_str;
 			strncpy((char*) trans->tdr_remote_site->str_data, (char*) p, q - p);
 			trans->tdr_remote_site->str_data[q - p] = '\0';
 		}
@@ -440,7 +446,7 @@ static void parse_fullpath(TDR trans)
 		++p;
 
 		if (length) {
-			trans->tdr_remote_site = FB_NEW_RPT(*tdgbl->ALICE_default_pool, length + 1) str;
+			trans->tdr_remote_site = FB_NEW_RPT(*tdgbl->ALICE_default_pool, length + 1) alice_str;
 			TEXT* q = (TEXT *) trans->tdr_remote_site->str_data;
 			while (length--)
 				*q++ = *p++;

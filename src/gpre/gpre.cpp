@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.47 2003-11-28 06:48:12 robocop Exp $
+//  $Id: gpre.cpp,v 1.48 2004-01-03 10:59:38 robocop Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -1948,7 +1948,6 @@ static TOK get_token()
 	SSHORT next;
 	USHORT peek;
 	TEXT *p, *end;
-	UCHAR class_;
 
 //  Save the information from the previous token 
 
@@ -2008,15 +2007,16 @@ static TOK get_token()
 
 	token.tok_position = position;
 	token.tok_white_space = 0;
-	class_ = classes[c];
+	UCHAR char_class = classes[c];
 
 #ifdef GPRE_ADA
 	if ((sw_language == lang_ada) && (c == '\'')) {
 		SSHORT c1, c2;
 		c1 = nextchar();
 		c2 = nextchar();
-		if (c2 != '\'')
-			class_ = CHR_LETTER;
+		if (c2 != '\'') {
+			char_class = CHR_LETTER;
+		}
 		return_char(c2);
 		return_char(c1);
 	}
@@ -2024,14 +2024,16 @@ static TOK get_token()
 
 	bool label = false;
 
-	if (sw_sql && (class_ & CHR_INTRODUCER)) {
-		while (classes[c = nextchar()] & CHR_IDENT)
-			if (p < end)
+	if (sw_sql && (char_class & CHR_INTRODUCER)) {
+		while (classes[c = nextchar()] & CHR_IDENT) {
+			if (p < end) {
 				*p++ = (TEXT) c;
+			}
+		}
 		return_char(c);
 		token.tok_type = tok_introducer;
 	}
-	else if (class_ & CHR_LETTER) {
+	else if (char_class & CHR_LETTER) {
 		while (true) {
 			while (classes[c = nextchar()] & CHR_IDENT)
 				*p++ = (TEXT) c;
@@ -2045,7 +2047,7 @@ static TOK get_token()
 		return_char(c);
 		token.tok_type = tok_ident;
 	}
-	else if (class_ & CHR_DIGIT) {
+	else if (char_class & CHR_DIGIT) {
 #ifdef GPRE_FORTRAN
 		if (sw_language == lang_fortran && line_position < 7)
 			label = true;
@@ -2074,8 +2076,8 @@ static TOK get_token()
 		return_char(c);
 		token.tok_type = tok_number;
 	}
-	else if ((class_ & CHR_QUOTE) || (class_ & CHR_DBLQUOTE)) {
-		token.tok_type = (class_ & CHR_QUOTE) ? tok_sglquoted : tok_dblquoted;
+	else if ((char_class & CHR_QUOTE) || (char_class & CHR_DBLQUOTE)) {
+		token.tok_type = (char_class & CHR_QUOTE) ? tok_sglquoted : tok_dblquoted;
 		for (;;) {
 			next = nextchar();
 			if (sw_language == lang_cobol && sw_ansi && next == '\n') {
@@ -2747,10 +2749,11 @@ static SSHORT skip_white()
 		}
 #endif
 
-		SSHORT class_ = classes[c];
+		const UCHAR char_class = classes[c];
 
-		if (class_ & CHR_WHITE)
+		if (char_class & CHR_WHITE) {
 			continue;
+		}
 
 		// skip in-line SQL comments 
 

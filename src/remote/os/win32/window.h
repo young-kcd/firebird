@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef WINDOW_H
-#define WINDOW_H
+#ifndef OS_WIN32_WINDOW_H
+#define OS_WIN32_WINDOW_H
 
 #define APP_HSIZE			220
 #define APP_VSIZE			150
@@ -49,4 +49,5 @@
 static char *szClassName = "FB_Server";
 static char *szWindowName = "Firebird Server";
 
-#endif // WINDOW_H
+#endif // OS_WIN32_WINDOW_H
+

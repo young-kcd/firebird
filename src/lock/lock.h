@@ -325,11 +325,11 @@ typedef struct own
 #endif
 #endif							/* WIN_NT */
 #ifdef SOLARIS_MT
-	EVENT_T own_blocking[1];	/* Blocking event block */
-	EVENT_T own_stall[1];		/* Owner is stalling for other owner */
+	event_t own_blocking[1];	/* Blocking event block */
+	event_t own_stall[1];		/* Owner is stalling for other owner */
 #endif
 #if !(defined WIN_NT) || (defined WIN_NT && !defined SUPERSERVER)
-	EVENT_T own_wakeup[1];		/* Wakeup event block */
+	event_t own_wakeup[1];		/* Wakeup event block */
 #endif
 	USHORT own_semaphore;		/* Owner semaphore -- see note below */
 	USHORT own_flags;			/* Misc stuff */

@@ -78,7 +78,7 @@ static PORT		aux_request(PORT, PACKET *);
 static void		cleanup_port(PORT);
 static void		disconnect(PORT);
 static void		exit_handler(PORT);
-static STR		make_pipe_name(const TEXT*, const TEXT*, const TEXT*);
+static rem_str*		make_pipe_name(const TEXT*, const TEXT*, const TEXT*);
 static PORT		receive(PORT, PACKET *);
 static int		send_full(PORT, PACKET *);
 static int		send_partial(PORT, PACKET *);
@@ -606,7 +606,7 @@ static int accept_connection( PORT port, P_CNCT * cnct)
 		case CNCT_user:
 			{
 				const int length = *id++;
-				str* string= (str*) ALLOCV(type_str, length);
+				rem_str* string= (rem_str*) ALLOCV(type_str, length);
 				port->port_user_name = string;
 				string->str_length = length;
 				if (length) {
@@ -995,7 +995,7 @@ static void exit_handler( PORT main_port)
 }
 
 
-static STR make_pipe_name(
+static rem_str* make_pipe_name(
 						  const TEXT* connect_name,
 						  const TEXT* suffix_name,
 						  const TEXT* str_pid)

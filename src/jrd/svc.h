@@ -122,7 +122,7 @@ public:
 	UCHAR*	svc_stdout;
 	TEXT**	svc_argv;
 	ULONG	svc_argc;
-	EVENT_T	svc_start_event[1];	/* fired once service has started successfully */
+	event_t	svc_start_event[1];	/* fired once service has started successfully */
 	const struct serv*	svc_service;
 	UCHAR*	svc_resp_buf;
 	UCHAR*	svc_resp_ptr;

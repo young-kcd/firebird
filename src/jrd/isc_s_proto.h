@@ -32,16 +32,16 @@
 #include "../jrd/isc.h"
 
 BOOLEAN	ISC_check_restart(void);
-int		ISC_event_blocked(USHORT, struct event **, SLONG *);
-SLONG	ISC_event_clear(struct event *);
-void	ISC_event_fini(struct event *);
-int		ISC_event_init(struct event *, int, int);
+int		ISC_event_blocked(USHORT, struct event_t **, SLONG *);
+SLONG	ISC_event_clear(struct event_t *);
+void	ISC_event_fini(struct event_t *);
+int		ISC_event_init(struct event_t *, int, int);
 
 #if defined(WIN_NT)
-int		ISC_event_init_shared(struct event*, int, const TEXT*, struct event*, bool);
+int		ISC_event_init_shared(struct event_t*, int, const TEXT*, struct event_t*, bool);
 #endif
-int		ISC_event_post(struct event *);
-int		ISC_event_wait(SSHORT, struct event **, SLONG *, SLONG, FPTR_VOID_PTR, void *);
+int		ISC_event_post(struct event_t *);
+int		ISC_event_wait(SSHORT, struct event_t **, SLONG *, SLONG, FPTR_VOID_PTR, void *);
 
 #ifdef WIN_NT
 void*	ISC_make_signal(BOOLEAN, BOOLEAN, int, int);

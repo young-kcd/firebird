@@ -54,7 +54,7 @@ SLONG		MET_lookup_generator(TDBB, const TEXT*);
 void		MET_lookup_generator_id(TDBB, SLONG, TEXT *);
 void		MET_lookup_index(TDBB, TEXT*, const TEXT*, USHORT);
 SLONG		MET_lookup_index_name(TDBB, const TEXT*, SLONG*, SSHORT*);
-int			MET_lookup_partner(TDBB, struct jrd_rel*, struct idx*, const TEXT*);
+bool		MET_lookup_partner(TDBB, struct jrd_rel*, struct idx*, const TEXT*);
 struct jrd_prc*	MET_lookup_procedure(TDBB, SCHAR *, BOOLEAN);
 struct jrd_prc*	MET_lookup_procedure_id(TDBB, SSHORT, BOOLEAN, BOOLEAN, USHORT);
 struct jrd_rel*	MET_lookup_relation(TDBB, const char*);
@@ -73,10 +73,10 @@ void		MET_release_triggers(TDBB, TRIG_VEC *);
 #ifdef DEV_BUILD
 void		MET_verify_cache(TDBB);
 #endif
-BOOLEAN		MET_clear_cache(TDBB, JRD_PRC);
-BOOLEAN		MET_procedure_in_use(TDBB, JRD_PRC);
-void		MET_remove_procedure(TDBB, int, JRD_PRC);
-void		MET_revoke(TDBB, class jrd_tra *, TEXT *, TEXT *, TEXT *);
+BOOLEAN		MET_clear_cache(TDBB, jrd_prc*);
+BOOLEAN		MET_procedure_in_use(TDBB, jrd_prc*);
+void		MET_remove_procedure(TDBB, int, jrd_prc*);
+void		MET_revoke(TDBB, class jrd_tra*, const TEXT*, const TEXT*, const TEXT*);
 TEXT*		MET_save_name(TDBB, const TEXT*);
 void		MET_scan_relation(TDBB, struct jrd_rel *);
 const TEXT* MET_trigger_msg(TDBB, const TEXT*, USHORT);

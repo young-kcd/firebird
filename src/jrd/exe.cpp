@@ -145,33 +145,33 @@ SLONG status_xcp::as_sqlcode() const
 static void assign_xcp_message(TDBB, STR*, const TEXT*);
 static void cleanup_rpb(TDBB, RPB *);
 static JRD_NOD erase(TDBB, JRD_NOD, SSHORT);
-static void execute_looper(TDBB, JRD_REQ, JRD_TRA, enum jrd_req::req_s);
-static void exec_sql(TDBB, JRD_REQ, DSC *);
+static void execute_looper(TDBB, jrd_req*, jrd_tra*, enum jrd_req::req_s);
+static void exec_sql(TDBB, jrd_req*, DSC *);
 static void execute_procedure(TDBB, JRD_NOD);
-static JRD_REQ execute_triggers(TDBB, TRIG_VEC *, REC, REC, enum jrd_req::req_ta);
-static JRD_NOD looper(TDBB, JRD_REQ, JRD_NOD);
+static jrd_req* execute_triggers(TDBB, TRIG_VEC *, REC, REC, enum jrd_req::req_ta);
+static JRD_NOD looper(TDBB, jrd_req*, JRD_NOD);
 static JRD_NOD modify(TDBB, JRD_NOD, SSHORT);
 static JRD_NOD receive_msg(TDBB, JRD_NOD);
-static void release_blobs(TDBB, JRD_REQ);
-static void release_proc_save_points(JRD_REQ);
+static void release_blobs(TDBB, jrd_req*);
+static void release_proc_save_points(jrd_req*);
 #ifdef SCROLLABLE_CURSORS
-static JRD_NOD seek_rse(TDBB, JRD_REQ, JRD_NOD);
-static void seek_rsb(TDBB, JRD_REQ, RSB, USHORT, SLONG);
+static JRD_NOD seek_rse(TDBB, jrd_req*, JRD_NOD);
+static void seek_rsb(TDBB, jrd_req*, RSB, USHORT, SLONG);
 #endif
 static JRD_NOD selct(TDBB, JRD_NOD);
 static JRD_NOD send_msg(TDBB, JRD_NOD);
 static void set_error(TDBB, const xcp_repeat*, JRD_NOD);
 static JRD_NOD stall(TDBB, JRD_NOD);
 static JRD_NOD store(TDBB, JRD_NOD, SSHORT);
-static bool test_and_fixup_error(TDBB, const XCP, JRD_REQ);
-static void trigger_failure(TDBB, JRD_REQ);
+static bool test_and_fixup_error(TDBB, const XCP, jrd_req*);
+static void trigger_failure(TDBB, jrd_req*);
 static void validate(TDBB, JRD_NOD);
 inline void PreModifyEraseTriggers(TDBB, trig_vec**, SSHORT, RPB*, REC, jrd_req::req_ta);
 
 #ifdef PC_ENGINE
 static JRD_NOD find(TDBB, JRD_NOD);
 static JRD_NOD find_dbkey(TDBB, JRD_NOD);
-static LCK implicit_record_lock(JRD_TRA, RPB *);
+static LCK implicit_record_lock(jrd_tra*, RPB *);
 static JRD_NOD release_bookmark(TDBB, JRD_NOD);
 static JRD_NOD set_bookmark(TDBB, JRD_NOD);
 static JRD_NOD set_index(TDBB, JRD_NOD);
@@ -253,7 +253,7 @@ void EXE_assignment(TDBB tdbb, JRD_NOD node)
 	DEV_BLKCHK(node, type_nod);
 
 	SET_TDBB(tdbb);
-	JRD_REQ request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->tdbb_request;
 	BLKCHK(node, type_nod);
 
 /* Get descriptors of receiving and sending fields/parameters, variables, etc. */
@@ -473,7 +473,7 @@ bool EXE_crack(TDBB tdbb, RSB rsb, USHORT flags)
 #endif
 
 
-JRD_REQ EXE_find_request(TDBB tdbb, JRD_REQ request, bool validate)
+jrd_req* EXE_find_request(TDBB tdbb, jrd_req* request, bool validate)
 {
 /**************************************
  *
@@ -581,7 +581,7 @@ void EXE_mark_crack(TDBB tdbb, RSB rsb, USHORT flag)
 
 
 void EXE_receive(TDBB		tdbb,
-				 JRD_REQ		request,
+				 jrd_req*		request,
 				 USHORT		msg,
 				 USHORT		length,
 				 UCHAR*		buffer)
@@ -687,7 +687,7 @@ void EXE_receive(TDBB		tdbb,
 
 
 #ifdef SCROLLABLE_CURSORS
-void EXE_seek(TDBB tdbb, JRD_REQ request, USHORT direction, ULONG offset)
+void EXE_seek(TDBB tdbb, jrd_req* request, USHORT direction, ULONG offset)
 {
 /**************************************
  *
@@ -726,7 +726,7 @@ void EXE_seek(TDBB tdbb, JRD_REQ request, USHORT direction, ULONG offset)
 
 
 void EXE_send(TDBB		tdbb,
-			  JRD_REQ		request,
+			  jrd_req*		request,
 			  USHORT	msg,
 			  USHORT	length,
 			  UCHAR*	buffer)
@@ -835,7 +835,7 @@ void EXE_send(TDBB		tdbb,
 }
 
 
-void EXE_start(TDBB tdbb, JRD_REQ request, JRD_TRA transaction)
+void EXE_start(TDBB tdbb, jrd_req* request, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -941,7 +941,7 @@ void EXE_start(TDBB tdbb, JRD_REQ request, JRD_TRA transaction)
 }
 
 
-void EXE_unwind(TDBB tdbb, JRD_REQ request)
+void EXE_unwind(TDBB tdbb, jrd_req* request)
 {
 /**************************************
  *
@@ -962,9 +962,9 @@ void EXE_unwind(TDBB tdbb, JRD_REQ request)
 		if (request->req_fors) {
 			JrdMemoryPool *old_pool = tdbb->tdbb_default;
 			tdbb->tdbb_default = request->req_pool;
-			JRD_REQ old_request = tdbb->tdbb_request;
+			jrd_req* old_request = tdbb->tdbb_request;
 			tdbb->tdbb_request = request;
-			JRD_TRA old_transaction = tdbb->tdbb_transaction;
+			jrd_tra* old_transaction = tdbb->tdbb_transaction;
 			tdbb->tdbb_transaction = request->req_transaction;
 
 			vec::iterator ptr, end;
@@ -1101,7 +1101,7 @@ inline void PreModifyEraseTriggers(TDBB tdbb,
 		}
 		int rpblevel = tdbb->tdbb_transaction->
 						tra_rpblist->PushRpb(rpb);
-		JRD_REQ trigger = execute_triggers(tdbb, trigs,
+		jrd_req* trigger = execute_triggers(tdbb, trigs,
 					rpb->rpb_record, rec, op);
 		tdbb->tdbb_transaction->tra_rpblist->PopRpb(rpb, rpblevel);
 		if (trigger) {
@@ -1265,7 +1265,7 @@ static JRD_NOD erase(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 
 	if (!relation->rel_file & !relation->rel_view_rse)
 	{
-		JRD_REL bad_relation;
+		jrd_rel* bad_relation = 0;
 		USHORT bad_index;
 
 		IDX_E error_code =
@@ -1320,8 +1320,8 @@ static JRD_NOD erase(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 
 static void execute_looper(
 						   TDBB tdbb,
-						   JRD_REQ request,
-						   JRD_TRA transaction, enum jrd_req::req_s next_state)
+						   jrd_req* request,
+						   jrd_tra* transaction, enum jrd_req::req_s next_state)
 {
 /**************************************
  *
@@ -1365,7 +1365,7 @@ static void execute_looper(
 }
 
 
-static void exec_sql(TDBB tdbb, JRD_REQ request, DSC* dsc)
+static void exec_sql(TDBB tdbb, jrd_req* request, DSC* dsc)
 {
 /**************************************
  *
@@ -1467,7 +1467,7 @@ static void execute_procedure(TDBB tdbb, JRD_NOD node)
 		out_msg = (SCHAR *) request + out_message->nod_impure;
 	}
 
-	jrd_prc* procedure = (JRD_PRC) node->nod_arg[e_esp_procedure];
+	jrd_prc* procedure = (jrd_prc*) node->nod_arg[e_esp_procedure];
 	jrd_req* proc_request = EXE_find_request(tdbb, procedure->prc_request, false);
 
 	str* temp_buffer = NULL;
@@ -1549,7 +1549,7 @@ static void execute_procedure(TDBB tdbb, JRD_NOD node)
 }
 
 
-static JRD_REQ execute_triggers(TDBB tdbb,
+static jrd_req* execute_triggers(TDBB tdbb,
 								TRIG_VEC* triggers,
 								REC old_rec,
 								REC new_rec,
@@ -1566,7 +1566,8 @@ static JRD_REQ execute_triggers(TDBB tdbb,
  *	if any blow up.
  *
  **************************************/
-	volatile JRD_REQ trigger = NULL;
+// It was volatile JRD_REQ trigger = NULL;
+	jrd_req* volatile trigger = NULL;
 
 	//DEV_BLKCHK(*triggers, type_vec);
 	DEV_BLKCHK(old_rec, type_rec);
@@ -1578,9 +1579,9 @@ static JRD_REQ execute_triggers(TDBB tdbb,
 
 	SET_TDBB(tdbb);
 
-	JRD_TRA transaction = tdbb->tdbb_request->req_transaction;
+	jrd_tra* transaction = tdbb->tdbb_request->req_transaction;
 	TRIG_VEC vector = *triggers;
-	JRD_REQ result = NULL;
+	jrd_req* result = NULL;
 
 	try
 	{
@@ -1639,7 +1640,7 @@ static JRD_NOD find(TDBB tdbb, JRD_NOD node)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	JRD_REQ request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->tdbb_request;
 	BLKCHK(node, type_nod);
 
 	if (request->req_operation == jrd_req::req_evaluate)
@@ -1719,7 +1720,7 @@ static JRD_NOD find_dbkey(TDBB tdbb, JRD_NOD node)
  **************************************/
 
 	SET_TDBB(tdbb);
-	JRD_REQ request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->tdbb_request;
 	BLKCHK(node, type_nod);
 
 	if (request->req_operation == jrd_req::req_evaluate)
@@ -1744,7 +1745,7 @@ static JRD_NOD find_dbkey(TDBB tdbb, JRD_NOD node)
 
 
 #ifdef PC_ENGINE
-static LCK implicit_record_lock(JRD_TRA transaction, RPB * rpb)
+static LCK implicit_record_lock(jrd_tra* transaction, RPB * rpb)
 {
 /**************************************
  *
@@ -1764,7 +1765,7 @@ static LCK implicit_record_lock(JRD_TRA transaction, RPB * rpb)
 
 	DEV_BLKCHK(transaction, type_tra);
 
-	JRD_REL relation = rpb->rpb_relation;
+	jrd_rel* relation = rpb->rpb_relation;
 	LCK record_locking = relation->rel_record_locking;
 
 /* occasionally we should check whether we really still need to 
@@ -1789,7 +1790,7 @@ static LCK implicit_record_lock(JRD_TRA transaction, RPB * rpb)
 #endif
 
 
-static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
+static JRD_NOD looper(TDBB tdbb, jrd_req* request, JRD_NOD in_node)
 {
 /**************************************
  *
@@ -1839,7 +1840,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 	JrdMemoryPool* old_pool = tdbb->tdbb_default;
 	tdbb->tdbb_default = request->req_pool;
 
-	JRD_REQ old_request = tdbb->tdbb_request;
+	jrd_req* old_request = tdbb->tdbb_request;
 	tdbb->tdbb_request = request;
 	tdbb->tdbb_transaction = transaction;
 
@@ -2993,7 +2994,7 @@ static JRD_NOD modify(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 		else if (!relation->rel_view_rse)
 		{
 			USHORT bad_index;
-			JRD_REL bad_relation;
+			jrd_rel* bad_relation = 0;
 
 			VIO_modify(tdbb, org_rpb, new_rpb, transaction);
 
@@ -3028,7 +3029,7 @@ static JRD_NOD modify(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 		if (!relation->rel_file && !relation->rel_view_rse)
 		{
 			USHORT bad_index;
-			JRD_REL bad_relation;
+			jrd_rel* bad_relation = 0;
 
 			const IDX_E error_code = IDX_modify_check_constraints(tdbb,
 															org_rpb,
@@ -3200,7 +3201,7 @@ static JRD_NOD receive_msg(TDBB tdbb, JRD_NOD node)
 }
 
 
-static void release_blobs(TDBB tdbb, JRD_REQ request)
+static void release_blobs(TDBB tdbb, jrd_req* request)
 {
 /**************************************
  *
@@ -3256,7 +3257,7 @@ static JRD_NOD release_bookmark(TDBB tdbb, JRD_NOD node)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	JRD_REQ request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->tdbb_request;
 	BLKCHK(node, type_nod);
 
 	if (request->req_operation == jrd_req::req_evaluate) {
@@ -3269,7 +3270,7 @@ static JRD_NOD release_bookmark(TDBB tdbb, JRD_NOD node)
 #endif
 
 
-static void release_proc_save_points(JRD_REQ request)
+static void release_proc_save_points(jrd_req* request)
 {
 /**************************************
  *
@@ -3295,7 +3296,7 @@ static void release_proc_save_points(JRD_REQ request)
 
 
 #ifdef SCROLLABLE_CURSORS
-static JRD_NOD seek_rse(TDBB tdbb, JRD_REQ request, JRD_NOD node)
+static JRD_NOD seek_rse(TDBB tdbb, jrd_req* request, JRD_NOD node)
 {
 /**************************************
  *
@@ -3336,7 +3337,7 @@ static JRD_NOD seek_rse(TDBB tdbb, JRD_REQ request, JRD_NOD node)
 #ifdef SCROLLABLE_CURSORS
 static void seek_rsb(
 					 TDBB tdbb,
-					 JRD_REQ request, RSB rsb, USHORT direction, SLONG offset)
+					 jrd_req* request, RSB rsb, USHORT direction, SLONG offset)
 {
 /**************************************
  *
@@ -3652,7 +3653,7 @@ static void set_error(TDBB tdbb, const xcp_repeat* exception, JRD_NOD msg_node)
 
 	SET_TDBB(tdbb);
 
-	JRD_REQ request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->tdbb_request;
 
 	if (!exception) {
 		// retrieve the status vector and punt
@@ -3829,19 +3830,19 @@ static JRD_NOD store(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
  *	Execute a STORE statement.
  *
  **************************************/
-	JRD_REQ trigger;
+	jrd_req* trigger;
 	REC record;
 
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
 	BLKCHK(node, type_nod);
 
-	JRD_REQ    request     = tdbb->tdbb_request;
-	JRD_TRA    transaction = request->req_transaction;
+	jrd_req*    request     = tdbb->tdbb_request;
+	jrd_tra*    transaction = request->req_transaction;
 	STA    impure      = (STA) ((SCHAR *) request + node->nod_impure);
 	SSHORT stream      = (USHORT)(ULONG) node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
 	RPB*   rpb         = &request->req_rpb[stream];
-	JRD_REL    relation    = rpb->rpb_relation;
+	jrd_rel*    relation    = rpb->rpb_relation;
 
 	switch (request->req_operation) {
 	case jrd_req::req_evaluate:
@@ -3885,7 +3886,7 @@ static JRD_NOD store(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 		else if (!relation->rel_view_rse)
 		{
 			USHORT bad_index;
-			JRD_REL bad_relation;
+			jrd_rel* bad_relation = 0;
 
 			VIO_store(tdbb, rpb, transaction);
 			IDX_E error_code = IDX_store(tdbb,
@@ -4018,7 +4019,7 @@ static JRD_NOD stream(TDBB tdbb, JRD_NOD node)
 #endif
 
 
-static bool test_and_fixup_error(TDBB tdbb, XCP conditions, JRD_REQ request)
+static bool test_and_fixup_error(TDBB tdbb, XCP conditions, jrd_req* request)
 {
 /**************************************
  *
@@ -4082,7 +4083,7 @@ static bool test_and_fixup_error(TDBB tdbb, XCP conditions, JRD_REQ request)
 }
 
 
-static void trigger_failure(TDBB tdbb, JRD_REQ trigger)
+static void trigger_failure(TDBB tdbb, jrd_req* trigger)
 {
 /**************************************
  *

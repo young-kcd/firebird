@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.45 2003-12-22 10:00:45 robocop Exp $
+$Id: blb.cpp,v 1.46 2004-01-03 10:59:40 robocop Exp $
 */
 
 #include "firebird.h"
@@ -72,17 +72,19 @@ $Id: blb.cpp,v 1.45 2003-12-22 10:00:45 robocop Exp $
 #include "../jrd/dsc_proto.h"
 
 
-#define STREAM          (blob->blb_flags & BLB_stream)
-#define SEGMENTED       !STREAM
+inline bool SEGMENTED(const blb* blob)
+{
+	return !(blob->blb_flags & BLB_stream);
+}
 
-static ARR alloc_array(JRD_TRA, ADS);
-static BLB allocate_blob(TDBB, JRD_TRA);
+static ARR alloc_array(jrd_tra*, ADS);
+static BLB allocate_blob(TDBB, jrd_tra*);
 static ISC_STATUS blob_filter(USHORT, CTL, SSHORT, SLONG);
 static void check_BID_validity(const blb*, TDBB);
 static BLB copy_blob(TDBB, const bid*, bid*);
 static void delete_blob(TDBB, BLB, ULONG);
-static void delete_blob_id(TDBB, const bid*, ULONG, JRD_REL);
-static ARR find_array(JRD_TRA, const bid*);
+static void delete_blob_id(TDBB, const bid*, ULONG, jrd_rel*);
+static ARR find_array(jrd_tra*, const bid*);
 static BLF find_filter(TDBB, SSHORT, SSHORT);
 static BLP get_next_page(TDBB, BLB, WIN *);
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
@@ -91,7 +93,7 @@ static void get_replay_blob(TDBB, const bid*);
 static void insert_page(TDBB, BLB);
 static void release_blob(BLB, const bool);
 static void slice_callback(SLICE, ULONG, DSC *);
-static BLB store_array(TDBB, JRD_TRA, bid*);
+static BLB store_array(TDBB, jrd_tra*, bid*);
 
 
 void BLB_cancel(TDBB tdbb, BLB blob)
@@ -157,7 +159,7 @@ void BLB_close(TDBB tdbb, class blb* blob)
 }
 
 
-BLB BLB_create(TDBB tdbb, JRD_TRA transaction, bid* blob_id)
+BLB BLB_create(TDBB tdbb, jrd_tra* transaction, bid* blob_id)
 {
 /**************************************
  *
@@ -176,7 +178,7 @@ BLB BLB_create(TDBB tdbb, JRD_TRA transaction, bid* blob_id)
 
 
 BLB BLB_create2(TDBB tdbb,
-				JRD_TRA transaction, bid* blob_id,
+				jrd_tra* transaction, bid* blob_id,
 				USHORT bpb_length, const UCHAR* bpb)
 {
 /**************************************
@@ -274,7 +276,7 @@ BLB BLB_create2(TDBB tdbb,
 void BLB_garbage_collect(
 						 TDBB tdbb,
 						 LLS going,
-						 LLS staying, SLONG prior_page, JRD_REL relation)
+						 LLS staying, SLONG prior_page, jrd_rel* relation)
 {
 /**************************************
  *
@@ -356,7 +358,7 @@ void BLB_garbage_collect(
 }
 
 
-BLB BLB_get_array(TDBB tdbb, JRD_TRA transaction, const bid* blob_id, ADS desc)
+BLB BLB_get_array(TDBB tdbb, jrd_tra* transaction, const bid* blob_id, ADS desc)
 {
 /**************************************
  *
@@ -523,7 +525,7 @@ USHORT BLB_get_segment(TDBB tdbb,
 		/* If the blob is segmented, and this isn't a fragment, pick up
 		   the length of the next segment. */
 
-		if (SEGMENTED && !blob->blb_fragment_size) {
+		if (SEGMENTED(blob) && !blob->blb_fragment_size) {
 			while (length < 2) {
 				if (active_page) {
 					if (window.win_flags & WIN_large_scan)
@@ -552,7 +554,7 @@ USHORT BLB_get_segment(TDBB tdbb,
 
 		l = MIN(buffer_length, length);
 
-		if (SEGMENTED) {
+		if (SEGMENTED(blob)) {
 			l = MIN(l, blob->blb_fragment_size);
 			blob->blb_fragment_size -= l;
 		}
@@ -593,7 +595,7 @@ USHORT BLB_get_segment(TDBB tdbb,
 		/* If either the buffer or the fragment is exhausted, we're
 		   done. */
 
-		if (!buffer_length || (SEGMENTED && !blob->blb_fragment_size))
+		if (!buffer_length || (SEGMENTED(blob) && !blob->blb_fragment_size))
 			break;
 	}
 
@@ -619,16 +621,17 @@ USHORT BLB_get_segment(TDBB tdbb,
 
 /* If this is a stream blob, fake fragment unless we're at the end */
 
-	if (STREAM)
+	if (!SEGMENTED(blob)) { // stream blob
 		blob->blb_fragment_size =
 			(blob->blb_seek == blob->blb_length) ? 0 : 1;
+	}
 
 	return length;
 }
 
 
 SLONG BLB_get_slice(TDBB tdbb,
-					JRD_TRA transaction,
+					jrd_tra* transaction,
 					const bid* blob_id,
 					const UCHAR* sdl,
 					USHORT param_length,
@@ -872,7 +875,7 @@ void BLB_move(TDBB tdbb, dsc* from_desc, dsc* to_desc, JRD_NOD field)
 	}
 
 	CLEAR_NULL(record, id);
-	JRD_TRA transaction = request->req_transaction;
+	jrd_tra* transaction = request->req_transaction;
 
 /* If the target is a view, this must be from a view update trigger.
    Just pass the blob id thru */
@@ -997,7 +1000,7 @@ void BLB_move_from_string(TDBB tdbb, const dsc* from_desc, dsc* to_desc, JRD_NOD
 }
 
 
-BLB BLB_open(TDBB tdbb, JRD_TRA transaction, const bid* blob_id)
+BLB BLB_open(TDBB tdbb, jrd_tra* transaction, const bid* blob_id)
 {
 /**************************************
  *
@@ -1016,7 +1019,7 @@ BLB BLB_open(TDBB tdbb, JRD_TRA transaction, const bid* blob_id)
 
 
 BLB BLB_open2(TDBB tdbb,
-			  JRD_TRA transaction, const bid* blob_id,
+			  jrd_tra* transaction, const bid* blob_id,
 			  USHORT bpb_length, const UCHAR* bpb)
 {
 /**************************************
@@ -1217,7 +1220,7 @@ void BLB_put_segment(TDBB tdbb, BLB blob, const UCHAR* seg, USHORT segment_lengt
 
 	ULONG length;				// length of segment + overhead
 	bool length_flag;
-	if (SEGMENTED) {
+	if (SEGMENTED(blob)) {
 		length = segment_length + 2;
 		length_flag = true;
 	}
@@ -1230,9 +1233,7 @@ void BLB_put_segment(TDBB tdbb, BLB blob, const UCHAR* seg, USHORT segment_lengt
    just does a form transformation and drops into the next case. */
 
 	if (blob->blb_level == 0 && length > (ULONG) blob->blb_space_remaining) {
-		JRD_TRA transaction;
-
-		transaction = blob->blb_transaction;
+		jrd_tra* transaction = blob->blb_transaction;
 		blob->blb_pages = vcl::newVector(*transaction->tra_pool, 0);
 		const USHORT l = dbb->dbb_page_size - BLP_SIZE;
 		blob->blb_space_remaining += l - blob->blb_clump_size;
@@ -1323,7 +1324,7 @@ void BLB_put_segment(TDBB tdbb, BLB blob, const UCHAR* seg, USHORT segment_lengt
 
 
 void BLB_put_slice(	TDBB	tdbb,
-					JRD_TRA		transaction,
+					jrd_tra*		transaction,
 					bid*		blob_id,
 					const UCHAR*	sdl,
 					USHORT	param_length,
@@ -1511,7 +1512,7 @@ void BLB_release_array(ARR array)
 
 
 void BLB_scalar(TDBB	tdbb,
-				JRD_TRA		transaction,
+				jrd_tra*		transaction,
 				const bid*		blob_id,
 				USHORT	count,
 				SLONG*	subscripts,
@@ -1580,7 +1581,7 @@ void BLB_scalar(TDBB	tdbb,
 }
 
 
-static ARR alloc_array(JRD_TRA transaction, ADS proto_desc)
+static ARR alloc_array(jrd_tra* transaction, ADS proto_desc)
 {
 /**************************************
  *
@@ -1623,7 +1624,7 @@ static ARR alloc_array(JRD_TRA transaction, ADS proto_desc)
 }
 
 
-static BLB allocate_blob(TDBB tdbb, JRD_TRA transaction)
+static BLB allocate_blob(TDBB tdbb, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -1682,7 +1683,7 @@ static ISC_STATUS blob_filter(	USHORT	action,
 
 	TDBB tdbb = GET_THREAD_DATA;
 
-	JRD_TRA transaction = (JRD_TRA) control->ctl_internal[1];
+	jrd_tra* transaction = (jrd_tra*) control->ctl_internal[1];
 	bid* blob_id = reinterpret_cast<bid*>(control->ctl_internal[2]);
 
 #ifdef DEV_BUILD
@@ -1916,7 +1917,7 @@ static void delete_blob(TDBB tdbb, BLB blob, ULONG prior_page)
 
 static void delete_blob_id(
 						   TDBB tdbb,
-						   const bid* blob_id, ULONG prior_page, JRD_REL relation)
+						   const bid* blob_id, ULONG prior_page, jrd_rel* relation)
 {
 /**************************************
  *
@@ -1955,7 +1956,7 @@ static void delete_blob_id(
 }
 
 
-static ARR find_array(JRD_TRA transaction, const bid* blob_id)
+static ARR find_array(jrd_tra* transaction, const bid* blob_id)
 {
 /**************************************
  *
@@ -2394,7 +2395,7 @@ static void slice_callback(SLICE arg, ULONG count, DSC * descriptors)
 }
 
 
-static BLB store_array(TDBB tdbb, JRD_TRA transaction, bid* blob_id)
+static BLB store_array(TDBB tdbb, jrd_tra* transaction, bid* blob_id)
 {
 /**************************************
  *

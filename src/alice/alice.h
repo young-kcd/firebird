@@ -72,13 +72,12 @@ typedef struct user_action
 
 /*  String block: used to store a string of constant length. */
 
-class str : public pool_alloc_rpt<UCHAR, alice_type_str>
+class alice_str : public pool_alloc_rpt<UCHAR, alice_type_str>
 {
 public:
 	USHORT str_length;
 	UCHAR str_data[2];
 };
-typedef str* STR;
 
 /*  Transaction block: used to store info about a multidatabase transaction. */
 
@@ -86,10 +85,10 @@ typedef struct tdr : public pool_alloc<alice_type_tdr>
 {
 	tdr* tdr_next;				/* next subtransaction */
 	SLONG tdr_id;				/* database-specific transaction id */
-	str* tdr_fullpath;			/* full (possibly) remote pathname */
+	alice_str* tdr_fullpath;			/* full (possibly) remote pathname */
 	const TEXT* tdr_filename;	/* filename within full pathname */
-	str* tdr_host_site;			/* host for transaction */
-	str* tdr_remote_site;		/* site for remote transaction */
+	alice_str* tdr_host_site;			/* host for transaction */
+	alice_str* tdr_remote_site;		/* site for remote transaction */
 	FRBRD* tdr_handle;			/* reconnected transaction handle */
 	FRBRD* tdr_db_handle;		/* reattached database handle */
 	USHORT tdr_db_caps;			/* capabilities of database */

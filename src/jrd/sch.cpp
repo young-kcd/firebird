@@ -53,7 +53,7 @@
 typedef struct thread {
 	struct thread *thread_next;	/* Next thread to be scheduled */
 	struct thread *thread_prior;	/* Prior thread */
-	EVENT_T thread_stall[1];	/* Generic event to stall thread */
+	event_t thread_stall[1];	/* Generic event to stall thread */
 	SLONG thread_id;			/* Current thread id */
 	USHORT thread_count;		/* AST disable count */
 	USHORT thread_flags;		/* Flags */

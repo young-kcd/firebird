@@ -196,7 +196,7 @@ public:
 
 	rpb req_rpb[1];		/* record parameter blocks */
 };
-typedef jrd_req *JRD_REQ;
+typedef jrd_req* JRD_REQ;  // CVC: Scheduled for termination, don't use the uppercase type!!!
 
 #define REQ_SIZE	(sizeof (struct jrd_req) - sizeof (((JRD_REQ) NULL)->req_rpb[0]))
 
@@ -302,3 +302,4 @@ class acc : public pool_alloc<type_acc>
 typedef acc *ACC;
 
 #endif /* JRD_REQ_H */
+

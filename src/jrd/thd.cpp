@@ -1500,12 +1500,11 @@ void THD_sleep(ULONG milliseconds)
 #else
 
 #ifdef ANY_THREADING
-	EVENT_T timer;
-	EVENT timer_ptr = &timer;
-	SLONG count;
+	event_t timer;
+	event_t* timer_ptr = &timer;
 
 	ISC_event_init(&timer, 0, 0);
-	count = ISC_event_clear(&timer);
+	SLONG count = ISC_event_clear(&timer);
 
 	ISC_event_wait(1, &timer_ptr, &count, milliseconds * 1000, NULL, 0);
 	ISC_event_fini(&timer);

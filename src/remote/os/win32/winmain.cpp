@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Remote Server
- *	MODULE:		winmain.c
+ *	MODULE:		winmain.cpp
  *	DESCRIPTION:	Windows Main server routine for router testing
  *
  * The contents of this file are subject to the Interbase Public
@@ -282,3 +282,4 @@ long FAR PASCAL _export WndProc(
 	}
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
+

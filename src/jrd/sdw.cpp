@@ -873,7 +873,8 @@ void SDW_shutdown_shadow(SDW shadow)
 	if (shadow) {
 		PIO_close(shadow->sdw_file);
 		fil* file;
-		for (fil* free = shadow->sdw_file; (file = free->fil_next); free = file)
+		fil* free = shadow->sdw_file;
+		for (; (file = free->fil_next); free = file)
 		{
 			delete free;
 		}

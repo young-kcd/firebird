@@ -1286,9 +1286,7 @@ int ISC_event_wait(SSHORT count,
  *	Wait on an event.
  *
  **************************************/
-
-	EVENT *ptr, *end;
-	HANDLE handles[16], *handle_ptr;
+	HANDLE handles[16];
 
 	/* If we're not blocked, the rest is a gross waste of time */
 
@@ -1296,7 +1294,9 @@ int ISC_event_wait(SSHORT count,
 		return 0;
 	}
 
-	for (ptr = events, end = events + count, handle_ptr = handles; ptr < end;) {
+	HANDLE* handle_ptr = handles;
+	event_t** ptr = events;
+	for (const event_t* const* const end = events + count; ptr < end;) {
 		*handle_ptr++ = (*ptr++)->event_handle;
 	}
 

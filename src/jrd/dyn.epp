@@ -772,7 +772,7 @@ void DYN_rundown_request(BLK handle, SSHORT id)
 		return;
 	}
 
-	EXE_unwind(tdbb, (JRD_REQ)handle);
+	EXE_unwind(tdbb, (jrd_req*)handle);
 	if (id >= 0 && !DYN_REQUEST(id)) {
 		DYN_REQUEST(id) = handle;
 	}

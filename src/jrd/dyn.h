@@ -45,7 +45,7 @@ const char* const NOT_NULL_CNSTRT	= "NOT NULL";
 
 typedef struct gbl
 {
-	JRD_TRA gbl_transaction;
+	jrd_tra* gbl_transaction;
 } *GBL;
 
 typedef struct dyn_fld {

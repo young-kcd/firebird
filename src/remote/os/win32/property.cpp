@@ -23,7 +23,7 @@
 
 /*
  *      PROGRAM:        IB Server
- *      MODULE:         property.c
+ *      MODULE:         property.cpp
  *      DESCRIPTION:    Property sheet implementation for WIN32 server
  *
  */
@@ -347,3 +347,4 @@ static void RefreshUserCount(HWND hDlg)
 
 	SetCursor(hOldCursor);
 }
+

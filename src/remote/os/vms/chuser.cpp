@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Remote Server
- *	MODULE:		chuser.c
+ *	MODULE:		chuser.cpp
  *	DESCRIPTION:	Change user identity.
  *
  * The contents of this file are subject to the Interbase Public
@@ -445,3 +445,4 @@ static int get_major_vms_version(void)
 
 	return (int) (buffer[1] - '0');
 }
+

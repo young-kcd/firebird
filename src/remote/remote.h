@@ -164,12 +164,12 @@ typedef struct vcl
 
 /* Random string block -- jack of all kludges */
 
-typedef struct str
+struct rem_str
 {
 	struct blk	str_header;
 	USHORT		str_length;
 	SCHAR		str_data[2];
-} *STR;
+};
 
 /* Include definition of descriptor */
 
@@ -406,11 +406,11 @@ typedef struct port
 #endif
 	VEC				port_object_vector;
 	BLK*			port_objects;
-	STR				port_version;
-	STR				port_host;			/* Our name */
-	STR				port_connection;	/* Name of connection */
-	STR				port_user_name;
-	STR				port_passwd;
+	rem_str*				port_version;
+	rem_str*				port_host;			/* Our name */
+	rem_str*				port_connection;	/* Name of connection */
+	rem_str*				port_user_name;
+	rem_str*				port_passwd;
 	struct rpr*		port_rpr;			/* port stored procedure reference */
 	struct rsr*		port_statement;		/* Statement for execute immediate */
 	struct rmtque*	port_receive_rmtque;	/* for client, responses waiting */

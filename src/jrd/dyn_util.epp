@@ -130,7 +130,7 @@ SINT64 DYN_UTIL_gen_unique_id(TDBB		tdbb,
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
 
-	JRD_REQ req_handle = CMP_find_request(tdbb, id, DYN_REQUESTS);
+	jrd_req* req_handle = CMP_find_request(tdbb, id, DYN_REQUESTS);
 
 	if (!req_handle)
 	{
@@ -482,7 +482,8 @@ bool DYN_UTIL_get_prot(TDBB		tdbb,
  *	Get protection mask for relation or relation_field
  *
  **************************************/
-	volatile JRD_REQ request;
+//	It was volatile JRD_REQ request; This maps to:
+	jrd_req* volatile request;
 	struct
 	{
 		SqlIdentifier relation_name;

@@ -64,8 +64,10 @@ static void apply_transaction(TIP, jrnd*);
 static void disable(void);
 static JRNP* next_clump(jrnd*, const jrnp*);
 static void process_page(TDBB, jrnd*, SLONG, SLONG, PAG, SBM*, bool);
-static void quad_move(UCHAR *, UCHAR *);
-static void rec_process_record(TDBB, JRNH*, USHORT, ULONG,
+#ifdef NOT_USED_OR_REPLACED
+static void quad_move(const UCHAR*, UCHAR*); // unused
+#endif
+static void rec_process_record(TDBB, jrnh*, USHORT, ULONG,
 							   ULONG, PAG, SBM*, bool);
 static void scan_and_apply_logs(const TEXT*, TEXT*, CP*, SBM*, bool, SLONG*,
 								SLONG, PAG);
@@ -894,7 +896,8 @@ static void process_page(
 }
 
 
-static void quad_move(UCHAR * a, UCHAR * b)
+#ifdef NOT_USED_OR_REPLACED
+static void quad_move(const UCHAR* a, UCHAR* b)
 {
 /**************************************
  *
@@ -912,11 +915,12 @@ static void quad_move(UCHAR * a, UCHAR * b)
 	MOVE_BYTE(a, b);
 	MOVE_BYTE(a, b);
 }
+#endif
 
 
 static void rec_process_record(
 							   TDBB tdbb,
-							   JRNH* record,
+							   jrnh* record,
 							   USHORT length,
 							   ULONG seqno,
 							   ULONG offset,
@@ -1073,7 +1077,7 @@ static void scan_and_apply_logs(
 				continue;
 		}
 
-		rec_process_record(tdbb, (JRNH *) wal_buff, len, seqno, offset, page,
+		rec_process_record(tdbb, (jrnh*) wal_buff, len, seqno, offset, page,
 						   sbm_rec, activate_shadow);
 	}
 

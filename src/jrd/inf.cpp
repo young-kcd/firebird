@@ -220,7 +220,7 @@ int INF_database_info(const SCHAR* items,
 		WAL_segment = dbb->dbb_wal->wal_segment;
 	else
 		WAL_segment = NULL;
-	JRD_TRA transaction = NULL;
+	jrd_tra* transaction = NULL;
 	const SCHAR* const end_items = items + item_length;
 	const SCHAR* const end = info + output_length;
 

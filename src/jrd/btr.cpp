@@ -168,8 +168,8 @@ static void copy_key(const KEY*, KEY*);
 static CONTENTS delete_node(TDBB, WIN *, UCHAR *);
 static void delete_tree(TDBB, USHORT, USHORT, SLONG, SLONG);
 static DSC *eval(TDBB, JRD_NOD, DSC *, bool *);
-static SLONG fast_load(TDBB, JRD_REL, IDX *, USHORT, SCB, SelectivityList&);
-static IRT fetch_root(TDBB, WIN *, JRD_REL);
+static SLONG fast_load(TDBB, jrd_rel*, IDX *, USHORT, SCB, SelectivityList&);
+static IRT fetch_root(TDBB, WIN *, jrd_rel*);
 static UCHAR *find_node_start_point(BTR, KEY *, UCHAR *, USHORT *, bool, bool, bool = false, SLONG = NO_VALUE);
 static UCHAR* find_area_start_point(BTR, const KEY*, UCHAR *, USHORT *, bool, bool, SLONG = NO_VALUE);
 static SLONG find_page(BTR, const KEY*, UCHAR, SLONG = NO_VALUE, bool = false);
@@ -187,7 +187,7 @@ static bool scan(TDBB, UCHAR *, SBM *, USHORT, USHORT, KEY *, USHORT, SCHAR);
 static void update_selectivity(IRT, USHORT, const SelectivityList&);
 
 USHORT BTR_all(TDBB    tdbb,
-			   JRD_REL relation,
+			   jrd_rel* relation,
 			   IDX**   start_buffer,
 			   IDX**   csb_idx,
 			   STR*    csb_idx_allocation,
@@ -246,7 +246,7 @@ USHORT BTR_all(TDBB    tdbb,
 
 
 void BTR_create(TDBB tdbb,
-				JRD_REL relation,
+				jrd_rel* relation,
 				IDX * idx,
 				USHORT key_length,
 				SCB sort_handle,
@@ -336,7 +336,7 @@ void BTR_delete_index(TDBB tdbb, WIN * window, USHORT id)
 }
 
 
-bool BTR_description(JRD_REL relation, IRT root, IDX * idx, SSHORT id)
+bool BTR_description(jrd_rel* relation, IRT root, IDX * idx, SSHORT id)
 {
 /**************************************
  *
@@ -763,7 +763,7 @@ void BTR_insert(TDBB tdbb, WIN * root_window, IIB * insertion)
 }
 
 
-IDX_E BTR_key(TDBB tdbb, JRD_REL relation, REC record, IDX * idx, KEY * key, idx_null_state * null_state)
+IDX_E BTR_key(TDBB tdbb, jrd_rel* relation, REC record, IDX * idx, KEY * key, idx_null_state * null_state)
 {
 /**************************************
  *
@@ -802,8 +802,7 @@ IDX_E BTR_key(TDBB tdbb, JRD_REL relation, REC record, IDX * idx, KEY * key, idx
 #ifdef EXPRESSION_INDICES
 			// for expression indices, compute the value of the expression
 			if (idx->idx_expression) {
-				JRD_REQ current_request;
-				current_request = tdbb->tdbb_request;
+				jrd_req* current_request = tdbb->tdbb_request;
 				tdbb->tdbb_request = idx->idx_expression_request;
 				tdbb->tdbb_request->req_rpb[0].rpb_record = record;
 
@@ -889,7 +888,7 @@ IDX_E BTR_key(TDBB tdbb, JRD_REL relation, REC record, IDX * idx, KEY * key, idx
 }
 
 
-USHORT BTR_key_length(JRD_REL relation, IDX * idx)
+USHORT BTR_key_length(jrd_rel* relation, IDX * idx)
 {
 /**************************************
  *
@@ -1103,7 +1102,7 @@ BTR BTR_left_handoff(TDBB tdbb, WIN * window, BTR page, SSHORT lock_level)
 #endif
 
 
-USHORT BTR_lookup(TDBB tdbb, JRD_REL relation, USHORT id, IDX * buffer)
+USHORT BTR_lookup(TDBB tdbb, jrd_rel* relation, USHORT id, IDX * buffer)
 {
 /**************************************
  *
@@ -1208,7 +1207,7 @@ void BTR_make_key(TDBB tdbb,
 
 
 bool BTR_next_index(TDBB tdbb,
-					   JRD_REL relation, JRD_TRA transaction, IDX * idx, WIN * window)
+					   jrd_rel* relation, jrd_tra* transaction, IDX * idx, WIN * window)
 {
 /**************************************
  *
@@ -1427,7 +1426,7 @@ void BTR_remove(TDBB tdbb, WIN * root_window, IIB * insertion)
 }
 
 
-void BTR_reserve_slot(TDBB tdbb, JRD_REL relation, JRD_TRA transaction, IDX * idx)
+void BTR_reserve_slot(TDBB tdbb, jrd_rel* relation, jrd_tra* transaction, IDX * idx)
 {
 /**************************************
  *
@@ -1530,9 +1529,11 @@ retry:
 			memcpy(desc, &temp, sizeof(temp));
 			desc += sizeof(temp);
 		}
-	} else
+	}
+	else {
 		// Exploit the fact idx_repeat structure matches ODS IRTD one
 		memcpy(desc, idx->idx_rpt, l);
+	}
 
 	if (dbb->dbb_wal) {
 		CCH_journal_page(tdbb, &window);
@@ -1542,7 +1543,7 @@ retry:
 }
 
 
-void BTR_selectivity(TDBB tdbb, JRD_REL relation, USHORT id, SelectivityList& selectivity)
+void BTR_selectivity(TDBB tdbb, jrd_rel* relation, USHORT id, SelectivityList& selectivity)
 {
 /**************************************
  *
@@ -2582,7 +2583,7 @@ static DSC *eval(TDBB tdbb, JRD_NOD node, DSC * temp, bool *isNull)
 
 
 static SLONG fast_load(TDBB tdbb,
-					   JRD_REL relation,
+					   jrd_rel* relation,
 					   IDX * idx,
 					   USHORT key_length,
 					   SCB sort_handle,
@@ -3320,7 +3321,7 @@ static SLONG fast_load(TDBB tdbb,
 }
 
 
-static IRT fetch_root(TDBB tdbb, WIN * window, JRD_REL relation)
+static IRT fetch_root(TDBB tdbb, WIN * window, jrd_rel* relation)
 {
 /**************************************
  *

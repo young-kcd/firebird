@@ -158,7 +158,7 @@ const TEXT* ERR_cstring(const TEXT* in_string)
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
 void ERR_duplicate_error(IDX_E	code,
-						JRD_REL		relation,
+						jrd_rel*		relation,
 						USHORT index_number)
 {
 /**************************************

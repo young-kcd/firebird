@@ -186,7 +186,7 @@ static SLONG process_new_file(DRB, jrnf*);
 static bool process_old_record(jrnd*, USHORT);
 static void process_page(DRB, jrnd*, ULONG, ULONG, bool);
 static bool process_partial(SLONG, SCHAR *);
-static bool process_record(JRNH *, USHORT, ULONG, ULONG, bool);
+static bool process_record(jrnh*, USHORT, ULONG, ULONG, bool);
 static void quad_move(register UCHAR *, register UCHAR *);
 static void read_page(DRB, CACHE);
 static void rebuild_abort(SLONG);
@@ -2271,7 +2271,7 @@ static int process_journal(const SCHAR* dbname,
 #endif
 		// Will return FALSE when JRN_DISABLE is encountered
 
-		if (!process_record((JRNH*) wal_buff, len, seqno, offset, true)){
+		if (!process_record((jrnh*) wal_buff, len, seqno, offset, true)){
 			ret_val = 0;
 			break;
 		}
@@ -2439,12 +2439,12 @@ static bool process_old_record(jrnd* record,
 		page = (PAG) record->jrnd_data;
 		offset = page->pag_offset;
 		seqno = page->pag_seqno;
-		return process_record((JRNH*) record, length, seqno, offset, false);
+		return process_record((jrnh*) record, length, seqno, offset, false);
 	}
 	offset = (ULONG) -1;
 	seqno = (ULONG) -1;
 
-	return process_record((JRNH*) record, length, seqno, offset, false);
+	return process_record((jrnh*) record, length, seqno, offset, false);
 }
 
 
@@ -2754,7 +2754,7 @@ static bool process_partial(SLONG db_id,
 }
 
 
-static bool process_record(JRNH * record,
+static bool process_record(jrnh*  record,
 						   USHORT length,
 						   ULONG seqno,
 						   ULONG offset,

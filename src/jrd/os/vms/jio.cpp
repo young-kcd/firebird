@@ -97,7 +97,7 @@ typedef union {
 
 
 JIO_fini(journal)
-	 JRN journal;
+	 jrn* journal;
 {
 /**************************************
  *
@@ -135,7 +135,7 @@ JIO_fini(journal)
 
 
 JIO_get_position(journal, data)
-	 JRN journal;
+	 jrn* journal;
 	 LDATA *data;
 {
 /**************************************
@@ -178,7 +178,7 @@ DIR JIO_next_dir(dir)
 
 
 JIO_open(journal)
-	 JRN journal;
+	 jrn* journal;
 {
 /**************************************
  *
@@ -233,7 +233,7 @@ JIO_open(journal)
 
 
 JIO_put(journal, message, size)
-	 JRN journal;
+	 jrn* journal;
 	 ltjc *message;
 	 USHORT size;
 {
@@ -322,9 +322,9 @@ JIO_put(journal, message, size)
 
 
 JIO_read(journal, position, buffer, size)
-	 JRN journal;
+	 jrn* journal;
 	 USHORT *position;
-	 JRNH *buffer;
+	 jrnh* buffer;
 	 USHORT size;
 {
 /**************************************
@@ -389,7 +389,7 @@ JIO_read(journal, position, buffer, size)
 
 
 JIO_read_header(journal, header, h_length, id_space, i_length)
-	 JRN journal;
+	 jrn* journal;
 	 JFH header;
 	 USHORT h_length;
 	 TEXT *id_space;
@@ -426,7 +426,7 @@ JIO_read_header(journal, header, h_length, id_space, i_length)
 
 
 SLONG JIO_rewind(journal, position)
-	 JRN journal;
+	 jrn* journal;
 	 USHORT *position;
 {
 /**************************************
@@ -459,7 +459,7 @@ SLONG JIO_rewind(journal, position)
 
 
 JIO_truncate(journal, position, sequence)
-	 JRN journal;
+	 jrn* journal;
 	 USHORT *position;
 	 SLONG sequence;
 {
@@ -503,7 +503,7 @@ JIO_truncate(journal, position, sequence)
 
 
 static acquire(journal, data)
-	 JRN journal;
+	 jrn* journal;
 	 LDATA *data;
 {
 /**************************************
@@ -530,7 +530,7 @@ static acquire(journal, data)
 
 
 static SLONG add_database(journal, name_string, name_length)
-	 JRN journal;
+	 jrn* journal;
 	 TEXT *name_string;
 	 USHORT name_length;
 {
@@ -643,7 +643,7 @@ static delete_dir(header, id_space, name_string, name_length)
 
 
 static error(journal, value, string, operation)
-	 JRN journal;
+	 jrn* journal;
 	 int value;
 	 TEXT *string;
 	 ISC_STATUS operation;
@@ -669,7 +669,7 @@ static error(journal, value, string, operation)
 
 #ifdef VMS
 static extend_file(journal)
-	 JRN journal;
+	 jrn* journal;
 {
 /**************************************
  *
@@ -760,7 +760,7 @@ static extend_file(journal)
 
 
 static extend_segments(journal)
-	 JRN journal;
+	 jrn* journal;
 {
 /**************************************
  *
@@ -797,7 +797,7 @@ static extend_segments(journal)
 
 #ifdef VMS
 static journal_open(journal, data)
-	 JRN journal;
+	 jrn* journal;
 	 LDATA *data;
 {
 /**************************************
@@ -909,7 +909,7 @@ static journal_open(journal, data)
 
 #ifndef VMS
 static journal_open(journal, data)
-	 JRN journal;
+	 jrn* journal;
 	 LDATA *data;
 {
 /**************************************
@@ -988,7 +988,7 @@ static DIR locate_dir(header, id_space, name_string, name_length)
 
 #ifdef VMS
 static lock_create(journal, data)
-	 JRN journal;
+	 jrn* journal;
 	 LDATA *data;
 {
 /**************************************
@@ -1038,7 +1038,7 @@ static lock_create(journal, data)
 
 #ifndef VMS
 static lock_create(journal, data)
-	 JRN journal;
+	 jrn* journal;
 	 LDATA *data;
 {
 /**************************************
@@ -1066,7 +1066,7 @@ static lock_create(journal, data)
 
 
 static bool lock_exclusive(journal, flag)
-	 JRN journal;
+	 jrn* journal;
 	 SSHORT flag;
 {
 /**************************************
@@ -1095,7 +1095,7 @@ static bool lock_exclusive(journal, flag)
 
 
 static lock_release(journal)
-	 JRN journal;
+	 jrn* journal;
 {
 /**************************************
  *
@@ -1120,7 +1120,7 @@ static lock_release(journal)
 
 
 static SLONG lookup_id(journal, name_string, name_length)
-	 JRN journal;
+	 jrn* journal;
 	 TEXT *name_string;
 {
 /**************************************
@@ -1149,7 +1149,7 @@ static SLONG lookup_id(journal, name_string, name_length)
 
 
 static high_water(journal, header)
-	 JRN journal;
+	 jrn* journal;
 	 JFH header;
 {
 /**************************************
@@ -1209,7 +1209,7 @@ static move(from, to, length)
 
 #ifdef VMS
 static position_and_read(journal, block, buffer, length)
-	 JRN journal;
+	 jrn* journal;
 	 ULONG block;
 	 UCHAR *buffer;
 	 USHORT length;
@@ -1256,7 +1256,7 @@ static position_and_read(journal, block, buffer, length)
 
 #ifndef VMS
 static position_and_read(journal, block, buffer, length)
-	 JRN journal;
+	 jrn* journal;
 	 ULONG block;
 	 UCHAR *buffer;
 	 USHORT length;
@@ -1290,7 +1290,7 @@ static position_and_read(journal, block, buffer, length)
 
 #ifdef VMS
 static position_and_write(journal, block, buffer, length)
-	 JRN journal;
+	 jrn* journal;
 	 ULONG block;
 	 UCHAR *buffer;
 	 USHORT length;
@@ -1335,7 +1335,7 @@ static position_and_write(journal, block, buffer, length)
 
 #ifndef VMS
 static position_and_write(journal, block, buffer, length)
-	 JRN journal;
+	 jrn* journal;
 	 ULONG block;
 	 UCHAR *buffer;
 	 USHORT length;
@@ -1367,7 +1367,7 @@ static position_and_write(journal, block, buffer, length)
 
 
 static release(journal, data)
-	 JRN journal;
+	 jrn* journal;
 	 LDATA *data;
 {
 /**************************************
@@ -1395,7 +1395,7 @@ static release(journal, data)
 
 #ifdef VMS
 static bool vms_convert(journal, data, mode, wait)
-	 JRN journal;
+	 jrn* journal;
 	 LDATA *data;
 {
 /**************************************

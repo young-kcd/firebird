@@ -28,12 +28,12 @@
 extern "C" {
 
 ISC_STATUS	BLF_close_blob(TDBB, ctl**);
-ISC_STATUS	BLF_create_blob(TDBB, JRD_TRA, ctl**, SLONG*,
+ISC_STATUS	BLF_create_blob(TDBB, jrd_tra*, ctl**, SLONG*,
 										 USHORT, const UCHAR*,
 										 FPTR_BFILTER_CALLBACK, BLF);
 ISC_STATUS	BLF_get_segment(TDBB, ctl**, USHORT*, USHORT, UCHAR*);
 BLF			BLF_lookup_internal_filter(TDBB, SSHORT, SSHORT);
-ISC_STATUS	BLF_open_blob(TDBB, JRD_TRA, ctl**, const SLONG*,
+ISC_STATUS	BLF_open_blob(TDBB, jrd_tra*, ctl**, const SLONG*,
 									   USHORT, const UCHAR*,
 									   FPTR_BFILTER_CALLBACK, BLF);
 ISC_STATUS	BLF_put_segment(TDBB, ctl**, USHORT, const UCHAR*);

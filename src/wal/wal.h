@@ -164,7 +164,7 @@ typedef struct wals {
     SLONG    wals_group_id;          /* id of the group of the database file */
     SLONG    wals_writer_pid;        /* Process id of the WAL writer */
     MTX_T   wals_mutex [1];         /* Mutex controlling access to WAL segment */
-    EVENT_T wals_events [MAX_WALSEMS];
+    event_t wals_events [MAX_WALSEMS];
     SLONG    wals_last_pid;          /* Process-id of the last process acquiring mutex */
     USHORT   wals_num_attaches;      /* Number of processes who did attachment to WAL segment */
     USHORT   wals_num_detaches;      /* Number of processes who did detachment from WAL segment */
@@ -282,7 +282,7 @@ typedef struct wal {
     SH_MEM_T	wal_shmem_data;
 #if (defined WIN_NT)
     MTX_T	wal_mutex [1];	/* Mutex controlling access to WAL segment */
-    EVENT_T	wal_events [MAX_WALSEMS];
+    event_t	wal_events [MAX_WALSEMS];
 #endif
     SLONG	wal_pid;	/* Process (Thread) id of the current process (thread) */
     SLONG	wal_length;	/* Length of the WAL segement */

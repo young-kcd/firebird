@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.82 2003-12-31 05:36:01 robocop Exp $
+$Id: lock.cpp,v 1.83 2004-01-03 10:59:43 robocop Exp $
 */
 
 #include "firebird.h"
@@ -3311,7 +3311,7 @@ static void lock_initialize(void* arg, SH_MEM shmem_data, bool initialize)
 	}
 	for (i = 1; i < (USHORT) LOCK_sem_count; i++)
 	{
-		EVENT_T local_event;
+		event_t local_event;
 
 		ISC_event_init(&local_event, shmem_data->sh_mem_mutex_arg, i);
 		semaphores->smb_mask[i / BITS_PER_LONG] |= 1L << (i % BITS_PER_LONG);

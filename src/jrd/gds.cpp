@@ -441,7 +441,8 @@ void gds__ulstr(char* buffer, ULONG value, const int minlen, const char filler)
 }
 
 
-ISC_STATUS API_ROUTINE gds__decode(ISC_STATUS code, USHORT* fac, USHORT* class_)
+ISC_STATUS API_ROUTINE gds__decode(ISC_STATUS code, USHORT* fac, USHORT*
+	code_class)
 {
 /**************************************
  *
@@ -466,7 +467,7 @@ ISC_STATUS API_ROUTINE gds__decode(ISC_STATUS code, USHORT* fac, USHORT* class_)
 	}
 
 	*fac = GET_FACILITY(code);
-	*class_ = GET_CLASS(code);
+	*code_class = GET_CLASS(code);
 	return GET_CODE(code);
 
 }

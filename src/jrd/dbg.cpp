@@ -716,8 +716,8 @@ int DBG_pretty(JRD_NOD node, int column)
  *
  **************************************/
 	RSE rse;
-	JRD_REL relation;
-	JRD_PRC procedure;
+	jrd_rel* relation;
+	jrd_prc* procedure;
 	JRD_NOD *ptr, *end;
 	IRB retrieval;
 	int i;
@@ -796,7 +796,7 @@ int DBG_pretty(JRD_NOD node, int column)
 		return TRUE;
 
 	case nod_relation:
-		relation = (JRD_REL) node->nod_arg[e_rel_relation];
+		relation = (jrd_rel*) node->nod_arg[e_rel_relation];
 		ib_fprintf(dbg_file, ", stream: %d, %s (%X)\n",
 				   node->nod_arg[e_rel_stream], relation->rel_name, relation);
 		return TRUE;
@@ -810,7 +810,7 @@ int DBG_pretty(JRD_NOD node, int column)
 		return TRUE;
 
 	case nod_exec_proc:
-		procedure = (JRD_PRC) node->nod_arg[e_esp_procedure];
+		procedure = (jrd_prc*) node->nod_arg[e_esp_procedure];
 		ib_fprintf(dbg_file, ", name: %s (%X)\n",
 				   procedure->prc_name->str_data, procedure);
 		for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end;
@@ -1199,7 +1199,7 @@ static int rsb_pretty(RSB rsb, int column)
  *	Pretty print an rsb tree.
  *
  **************************************/
-	JRD_REL relation;
+	jrd_rel* relation;
 	RSB *ptr, *end;
 	USHORT i;
 

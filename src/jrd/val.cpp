@@ -644,25 +644,25 @@ static const TEXT msg_table[][52] = {
 };
 
 
-static RTN corrupt(TDBB, VDR, USHORT, JRD_REL, ...);
+static RTN corrupt(TDBB, VDR, USHORT, jrd_rel*, ...);
 static FETCH_CODE fetch_page(TDBB, VDR, SLONG, USHORT, WIN *, void *);
 static void garbage_collect(TDBB, VDR);
 #ifdef DEBUG_VAL_VERBOSE
 static void print_rhd(USHORT, const rhd*);
 #endif
-static RTN walk_blob(TDBB, VDR, JRD_REL, BLH, USHORT, SLONG);
-static RTN walk_chain(TDBB, VDR, JRD_REL, RHD, SLONG);
+static RTN walk_blob(TDBB, VDR, jrd_rel*, BLH, USHORT, SLONG);
+static RTN walk_chain(TDBB, VDR, jrd_rel*, RHD, SLONG);
 static void walk_database(TDBB, VDR);
-static RTN walk_data_page(TDBB, VDR, JRD_REL, SLONG, SLONG);
+static RTN walk_data_page(TDBB, VDR, jrd_rel*, SLONG, SLONG);
 static void walk_generators(TDBB, VDR);
 static void walk_header(TDBB, VDR, SLONG);
-static RTN walk_index(TDBB, VDR, JRD_REL, SLONG, USHORT);
+static RTN walk_index(TDBB, VDR, jrd_rel*, SLONG, USHORT);
 static void walk_log(TDBB, VDR);
 static void walk_pip(TDBB, VDR);
-static RTN walk_pointer_page(TDBB, VDR, JRD_REL, int);
-static RTN walk_record(TDBB, VDR, JRD_REL, RHD, USHORT, SLONG, bool);
-static RTN walk_relation(TDBB, VDR, JRD_REL);
-static RTN walk_root(TDBB, VDR, JRD_REL);
+static RTN walk_pointer_page(TDBB, VDR, jrd_rel*, int);
+static RTN walk_record(TDBB, VDR, jrd_rel*, RHD, USHORT, SLONG, bool);
+static RTN walk_relation(TDBB, VDR, jrd_rel*);
+static RTN walk_root(TDBB, VDR, jrd_rel*);
 static RTN walk_tip(TDBB, VDR, SLONG);
 
 static const SLONG end_level = END_LEVEL, end_bucket = END_BUCKET;
@@ -742,7 +742,7 @@ BOOLEAN VAL_validate(TDBB tdbb, USHORT switches)
 	return TRUE;
 }
 
-static RTN corrupt(TDBB tdbb, VDR control, USHORT err_code, JRD_REL relation, ...)
+static RTN corrupt(TDBB tdbb, VDR control, USHORT err_code, jrd_rel* relation, ...)
 {
 /**************************************
  *
@@ -982,7 +982,7 @@ static void print_rhd(USHORT length, const rhd* header)
 
 static RTN walk_blob(TDBB tdbb,
 					 VDR control,
-					 JRD_REL relation, BLH header, USHORT length, SLONG number)
+					 jrd_rel* relation, BLH header, USHORT length, SLONG number)
 {
 /**************************************
  *
@@ -1061,7 +1061,7 @@ static RTN walk_blob(TDBB tdbb,
 
 static RTN walk_chain(TDBB tdbb,
 					  VDR control,
-					  JRD_REL relation, RHD header, SLONG head_number)
+					  jrd_rel* relation, RHD header, SLONG head_number)
 {
 /**************************************
  *
@@ -1155,7 +1155,7 @@ static void walk_database(TDBB tdbb, VDR control)
 		if (i >= 32 /* rel_MAX */ ) // Why not system flag instead?
 			VAL_debug_level = 2;
 #endif
-		jrd_rel* relation = (JRD_REL) (*vector)[i];
+		jrd_rel* relation = (jrd_rel*) (*vector)[i];
 		if (relation)
 			walk_relation(tdbb, control, relation);
 	}
@@ -1165,7 +1165,7 @@ static void walk_database(TDBB tdbb, VDR control)
 
 static RTN walk_data_page(TDBB tdbb,
 						  VDR control,
-						  JRD_REL relation, SLONG page_number, SLONG sequence)
+						  jrd_rel* relation, SLONG page_number, SLONG sequence)
 {
 /**************************************
  *
@@ -1360,7 +1360,7 @@ static void walk_header(TDBB tdbb, VDR control, SLONG page_num)
 }
 
 static RTN walk_index(TDBB tdbb,
-					  VDR control, JRD_REL relation, SLONG page_number, USHORT id)
+					  VDR control, jrd_rel* relation, SLONG page_number, USHORT id)
 {
 /**************************************
  *
@@ -1722,7 +1722,7 @@ static void walk_pip(TDBB tdbb, VDR control)
 
 static RTN walk_pointer_page(	TDBB	tdbb,
 								VDR		control,
-								JRD_REL		relation,
+								jrd_rel*		relation,
 								int		sequence)
 {
 /**************************************
@@ -1819,7 +1819,7 @@ static RTN walk_pointer_page(	TDBB	tdbb,
 
 static RTN walk_record(TDBB tdbb,
 					   VDR control,
-					   JRD_REL relation,
+					   jrd_rel* relation,
 					   RHD header,
 					   USHORT length, SLONG number, bool delta_flag)
 {
@@ -1963,7 +1963,7 @@ static RTN walk_record(TDBB tdbb,
 }
 
 
-static RTN walk_relation(TDBB tdbb, VDR control, JRD_REL relation)
+static RTN walk_relation(TDBB tdbb, VDR control, jrd_rel* relation)
 {
 /**************************************
  *
@@ -2054,7 +2054,7 @@ static RTN walk_relation(TDBB tdbb, VDR control, JRD_REL relation)
 }
 
 
-static RTN walk_root(TDBB tdbb, VDR control, JRD_REL relation)
+static RTN walk_root(TDBB tdbb, VDR control, jrd_rel* relation)
 {
 /**************************************
  *

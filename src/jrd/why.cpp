@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.48 2003-12-31 05:35:53 robocop Exp $
+$Id: why.cpp,v 1.49 2004-01-03 10:59:41 robocop Exp $
 */
 
 #include "firebird.h"
@@ -240,7 +240,7 @@ static void subsystem_enter(void);
 static void subsystem_exit(void);
 
 #ifndef REQUESTER
-static EVENT_T why_event[1];
+static event_t why_event[1];
 static SSHORT why_initialized = 0;
 #endif
 static SLONG why_enabled = 0;

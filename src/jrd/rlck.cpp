@@ -41,15 +41,15 @@
 #include "../jrd/vio_proto.h"
 
 #ifdef PC_ENGINE
-static LCK allocate_record_lock(JRD_TRA, RPB *);
+static LCK allocate_record_lock(jrd_tra*, RPB *);
 #endif
-static LCK allocate_relation_lock(MemoryPool*, JRD_REL);
+static LCK allocate_relation_lock(MemoryPool*, jrd_rel*);
 #ifdef PC_ENGINE
-static LCK attachment_relation_lock(JRD_REL);
+static LCK attachment_relation_lock(jrd_rel*);
 static void drop_record_lock(LCK);
 static LCK find_record_lock(RPB *);
-static BOOLEAN obtain_lock(JRD_TRA, LCK, USHORT);
-static void start_record_locking(JRD_REL);
+static BOOLEAN obtain_lock(jrd_tra*, LCK, USHORT);
+static void start_record_locking(jrd_rel*);
 #endif
 
 
@@ -120,7 +120,7 @@ LCK RLCK_lock_record(RPB * rpb,
 
 
 #ifdef PC_ENGINE
-LCK RLCK_lock_record_implicit(JRD_TRA transaction,
+LCK RLCK_lock_record_implicit(jrd_tra* transaction,
 							  RPB * rpb,
 							  USHORT lock_level,
 							  int (*ast) (BLK), BLK ast_arg)
@@ -139,7 +139,7 @@ LCK RLCK_lock_record_implicit(JRD_TRA transaction,
  *
  **************************************/
 	USHORT interest_lock_level = 0;
-	JRD_REL relation;
+	jrd_rel* relation;
 
 	lck* lock = allocate_record_lock(transaction, rpb);
 	lock->lck_ast = ast;
@@ -197,7 +197,7 @@ LCK RLCK_lock_record_implicit(JRD_TRA transaction,
 
 
 #ifdef PC_ENGINE
-LCK RLCK_lock_relation(JRD_REL relation,
+LCK RLCK_lock_relation(jrd_rel* relation,
 					   USHORT lock_level, int (*ast) (BLK), BLK ast_arg)
 {
 /**************************************
@@ -229,8 +229,8 @@ LCK RLCK_lock_relation(JRD_REL relation,
 
 
 #ifdef PC_ENGINE
-LCK RLCK_range_relation(JRD_TRA transaction,
-						JRD_REL relation, int (*ast) (BLK), BLK ast_arg)
+LCK RLCK_range_relation(jrd_tra* transaction,
+						jrd_rel* relation, int (*ast) (BLK), BLK ast_arg)
 {
 /**************************************
  *
@@ -274,7 +274,7 @@ LCK RLCK_range_relation(JRD_TRA transaction,
 
 
 #ifdef PC_ENGINE
-LCK RLCK_record_locking(JRD_REL relation)
+LCK RLCK_record_locking(jrd_rel* relation)
 {
 /**************************************
  *
@@ -347,7 +347,7 @@ void RLCK_release_lock(LCK lock)
 /* now use the lock type to determine the type
    of lock to release */
 	if (lock->lck_type == LCK_relation)
-		RLCK_unlock_relation(0, (JRD_REL) lock->lck_object);
+		RLCK_unlock_relation(0, (jrd_rel*) lock->lck_object);
 	else if (lock->lck_type == LCK_record)
 		RLCK_unlock_record(lock, 0);
 	else
@@ -376,7 +376,7 @@ void RLCK_release_locks(ATT attachment)
 	if (vector = attachment->att_relation_locks) {
 		for (lptr = vector->begin(), lend = vector->end(); lptr < lend; lptr++) {
 			if (lock = ((LCK)(*lptr)) )
-				RLCK_unlock_relation(0, (JRD_REL) lock->lck_object);
+				RLCK_unlock_relation(0, (jrd_rel*) lock->lck_object);
 		}
 	}
 /* unlock all explicit record locks */
@@ -395,8 +395,8 @@ void RLCK_release_locks(ATT attachment)
 
 
 LCK RLCK_reserve_relation(TDBB tdbb,
-						  JRD_TRA transaction,
-						  JRD_REL relation, USHORT write_flag, USHORT error_flag)
+						  jrd_tra* transaction,
+						  jrd_rel* relation, USHORT write_flag, USHORT error_flag)
 {
 /**************************************
  *
@@ -511,7 +511,7 @@ void RLCK_shutdown_database(DBB dbb)
 	for (ptr = vector->begin(), end =  vector->end(); ptr < end; ptr++)
 	{
 		jrd_rel* relation;
-		if ( (relation = ((JRD_REL)(*ptr)) ) ) {
+		if ( (relation = ((jrd_rel*)(*ptr)) ) ) {
 			if (relation->rel_record_locking)
 				LCK_release(tdbb, relation->rel_record_locking);
 			if (relation->rel_interest_lock)
@@ -526,7 +526,7 @@ void RLCK_shutdown_database(DBB dbb)
 
 
 #ifdef PC_ENGINE
-void RLCK_signal_refresh(JRD_TRA transaction)
+void RLCK_signal_refresh(jrd_tra* transaction)
 {
 /**************************************
  *
@@ -540,7 +540,7 @@ void RLCK_signal_refresh(JRD_TRA transaction)
  *
  **************************************/
 	USHORT i;
-	JRD_REL relation;
+	jrd_rel* relation;
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 /* for each relation, take out a range relation lock and then release it */
@@ -561,7 +561,7 @@ void RLCK_signal_refresh(JRD_TRA transaction)
 		for (i = 0; i < vector->count(); i++) {
 			lck* lock = (LCK *) ((*vector)[i]);
 			if (lock) {
-				relation = (JRD_REL) lock->lck_object;
+				relation = (jrd_rel*) lock->lck_object;
 				local_lock->lck_key.lck_long = relation->rel_id;
 				local_lock->lck_object = reinterpret_cast<blk*>(relation);
 				LCK_lock_non_blocking(tdbb, local_lock, LCK_SW, 0);
@@ -574,7 +574,7 @@ void RLCK_signal_refresh(JRD_TRA transaction)
 #endif
 
 
-LCK RLCK_transaction_relation_lock(JRD_TRA transaction, JRD_REL relation)
+LCK RLCK_transaction_relation_lock(jrd_tra* transaction, jrd_rel* relation)
 {
 /**************************************
  *
@@ -631,13 +631,13 @@ void RLCK_unlock_record(LCK lock, RPB * rpb)
  *	in the specified record parameter block.
  *
  **************************************/
-	JRD_REL relation;
+	jrd_rel* relation;
 	LCK record_locking;
 	SLONG process_count;
 	if (rpb)
 		relation = rpb->rpb_relation;
 	else if (lock)
-		relation = (JRD_REL) lock->lck_parent->lck_object;
+		relation = (jrd_rel*) lock->lck_parent->lck_object;
 	else
 		relation = NULL;		/* theoretically impossible */
 	RLCK_unlock_record_implicit(lock, rpb);
@@ -693,7 +693,7 @@ void RLCK_unlock_record_implicit(LCK lock, RPB * rpb)
    So do nothing.
    */
 
-	jrd_rel* relation = (JRD_REL) lock->lck_parent->lck_object;
+	jrd_rel* relation = (jrd_rel*) lock->lck_parent->lck_object;
 	if (lock_level == LCK_EX) {
 		if (!--relation->rel_write_locks)
 			if (!relation->rel_read_locks)
@@ -713,7 +713,7 @@ void RLCK_unlock_record_implicit(LCK lock, RPB * rpb)
 
 
 #ifdef PC_ENGINE
-void RLCK_unlock_relation(LCK lock, JRD_REL relation)
+void RLCK_unlock_relation(LCK lock, jrd_rel* relation)
 {
 /**************************************
  *
@@ -760,7 +760,7 @@ void RLCK_unlock_relation(LCK lock, JRD_REL relation)
 
 
 #ifdef PC_ENGINE
-static LCK allocate_record_lock(JRD_TRA transaction, RPB * rpb)
+static LCK allocate_record_lock(jrd_tra* transaction, RPB * rpb)
 {
 /**************************************
  *
@@ -816,7 +816,7 @@ static LCK allocate_record_lock(JRD_TRA transaction, RPB * rpb)
 
 
 #endif
-static LCK allocate_relation_lock(MemoryPool* pool, JRD_REL relation)
+static LCK allocate_relation_lock(MemoryPool* pool, jrd_rel* relation)
 {
 /**************************************
  *
@@ -848,7 +848,7 @@ static LCK allocate_relation_lock(MemoryPool* pool, JRD_REL relation)
 }
 
 #ifdef PC_ENGINE
-static LCK attachment_relation_lock(JRD_REL relation)
+static LCK attachment_relation_lock(jrd_rel* relation)
 {
 /**************************************
  *
@@ -939,7 +939,7 @@ static LCK find_record_lock(RPB * rpb)
 	for (lock = attachment->att_record_locks; lock; lock = lock->lck_att_next)
 	{
 		if ((rpb->rpb_number == lock->lck_key.lck_long)
-			&& (rpb->rpb_relation == (JRD_REL) lock->lck_parent->lck_object))
+			&& (rpb->rpb_relation == (jrd_rel*) lock->lck_parent->lck_object))
 		{
 			break;
 		}
@@ -949,7 +949,7 @@ static LCK find_record_lock(RPB * rpb)
 #endif
 
 #ifdef PC_ENGINE
-static BOOLEAN obtain_lock(JRD_TRA transaction, LCK lock, USHORT lock_level)
+static BOOLEAN obtain_lock(jrd_tra* transaction, LCK lock, USHORT lock_level)
 {
 /**************************************
  *
@@ -982,7 +982,7 @@ static BOOLEAN obtain_lock(JRD_TRA transaction, LCK lock, USHORT lock_level)
 #endif
 
 #ifdef PC_ENGINE
-static void start_record_locking(JRD_REL relation)
+static void start_record_locking(jrd_rel* relation)
 {
 /**************************************
  *

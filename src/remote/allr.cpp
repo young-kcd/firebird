@@ -45,7 +45,7 @@ static const struct
 	{type_fmt	, sizeof(fmt)		, sizeof(((FMT) NULL)->fmt_desc[0])},
 	{type_rrq	, sizeof(rrq)		, sizeof(((RRQ) NULL)->rrq_rpt [0])},
 	{type_rtr	, sizeof(rtr)		, 0},
-	{type_str	, sizeof(str)		, 1},	// random string block
+	{type_str	, sizeof(rem_str)		, 1},	// random string block
 	{type_rbl	, sizeof(rbl)		, 1},
 	{type_port	, sizeof(port)		, 1},
 	{type_msg	, sizeof(message)	, 1},

@@ -755,7 +755,7 @@ static ISC_STATUS attach_database(
 	FRBRD *handle;
 	ISC_STATUS_ARRAY status_vector;
 	RDB rdb;
-	STR string;
+	rem_str* string;
 
 	send->p_operation = op_accept;
 	handle = NULL;
@@ -2967,7 +2967,7 @@ bool process_packet(PORT port,
  *
  **************************************/
 	P_OP op;
-	STR string;
+	rem_str* string;
 	TEXT msg[128];
 	SRVR server;
 	struct trdb thd_context, *trdb;
@@ -4136,8 +4136,6 @@ ISC_STATUS port::send_response(	PACKET*	send,
 		case isc_arg_warning:
 		case isc_arg_gds:
 			{
-				USHORT fac = 0, class_ = 0;
-
 				/* When talking with older (pre 6.0) clients, do not send
 				 * warnings.
 				 */
@@ -4157,14 +4155,17 @@ ISC_STATUS port::send_response(	PACKET*	send,
 				 * that the facility is part of the status code we need to know
 				 * this on the client side, thus when talking with 6.0 and newer
 				 * clients, do not decode the status code, just send it to the
-				 * client.  The same check is made in interface.c::check_response
+				 * client.  The same check is made in interface.cpp::check_response
 				 */
 
-				if (this->port_protocol < PROTOCOL_VERSION10)
+				if (this->port_protocol < PROTOCOL_VERSION10) {
+					USHORT fac = 0, code_class = 0;
 					*v++ = code =
-						gds__decode(*status_vector++, &fac, &class_);
-				else
+						gds__decode(*status_vector++, &fac, &code_class);
+				}
+				else {
 					*v++ = code = *status_vector++;
+				}
 				for (;;) {
 					switch (*status_vector) {
 					case isc_arg_string:
@@ -4286,7 +4287,7 @@ ISC_STATUS port::service_attach(P_ATCH* attach, PACKET* send)
 	FRBRD *handle;
 	ISC_STATUS_ARRAY status_vector;
 	RDB rdb;
-	STR string;
+	rem_str* string;
 
 	send->p_operation = op_accept;
 	handle = NULL;

@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.94 2003-12-11 10:33:28 robocop Exp $
+$Id: inet.cpp,v 1.95 2004-01-03 10:59:46 robocop Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -1184,7 +1184,7 @@ static int accept_connection(PORT port,
 		case CNCT_user:
 			{
 				const int length = *id++;
-				str* string = (str*) ALLOCV(type_str, length);
+				rem_str* string = (rem_str*) ALLOCV(type_str, length);
 				port->port_user_name = string;
 				string->str_length = length;
 				if (length) {
@@ -1785,7 +1785,7 @@ static bool check_proxy(PORT port,
 	TEXT line[128];
 	int c;
 	SLONG length;
-	STR string;
+	rem_str* string;
 
 #ifndef VMS
 	strcpy(proxy_file, PROXY_FILE);
@@ -1812,7 +1812,7 @@ static bool check_proxy(PORT port,
 				ALLR_free(port->port_user_name);
 				length = strlen(target_user);
 				port->port_user_name = string =
-					(STR) ALLOCV(type_str, (int) length);
+					(rem_str*) ALLOCV(type_str, (int) length);
 				string->str_length = length;
 				strncpy(string->str_data, target_user, length);
 				strcpy(user_name, target_user);

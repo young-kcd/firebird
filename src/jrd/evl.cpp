@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.57 2003-12-31 16:09:07 skidder Exp $ 
+  * $Id: evl.cpp,v 1.58 2004-01-03 10:59:40 robocop Exp $ 
  */
 
 /*
@@ -1214,7 +1214,7 @@ dsc* EVL_expr(TDBB tdbb, JRD_NOD node)
 }
 
 
-bool EVL_field(JRD_REL relation, REC record, USHORT id, dsc* desc)
+bool EVL_field(jrd_rel* relation, REC record, USHORT id, dsc* desc)
 {
 /**************************************
  *
@@ -3568,7 +3568,7 @@ static dsc* lock_record(TDBB tdbb, JRD_NOD node, VLU impure)
  *      pointing to the lock handle.
  *
  **************************************/
-	JRD_REQ request;
+	jrd_req* request;
 	dsc* desc;
 	USHORT lock_level;
 	RSB rsb;
@@ -3649,7 +3649,7 @@ static dsc* lock_relation(TDBB tdbb, JRD_NOD node, VLU impure)
 	dsc* desc;
 	USHORT lock_level;
 	JRD_NOD relation_node;
-	JRD_REL relation;
+	jrd_rel* relation;
 	LCK lock = NULL;
 
 	SET_TDBB(tdbb);
@@ -3672,7 +3672,7 @@ static dsc* lock_relation(TDBB tdbb, JRD_NOD node, VLU impure)
 /* perform the actual lock (or unlock) */
 
 	relation_node = node->nod_arg[e_lockrel_relation];
-	relation = (JRD_REL) relation_node->nod_arg[e_rel_relation];
+	relation = (jrd_rel*) relation_node->nod_arg[e_rel_relation];
 	if (!lock_level)
 		RLCK_unlock_relation(0, relation);
 	else

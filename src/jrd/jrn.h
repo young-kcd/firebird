@@ -57,7 +57,6 @@ class jrn : public pool_alloc_rpt<SCHAR, type_jrn>
 	USHORT jrn_did[3];			/* VMS directory id */
 	TEXT jrn_server[1];			/* Server name */
 };
-typedef jrn *JRN;
 
 /* Journal record types */
 
@@ -112,7 +111,7 @@ typedef jrn *JRN;
 
 /* Journal header block */
 
-typedef struct jrnh {
+struct jrnh {
 	UCHAR jrnh_type;
 	UCHAR jrnh_version;
 	USHORT jrnh_length;			/* Total length of journal record */
@@ -120,12 +119,12 @@ typedef struct jrnh {
 	SLONG jrnh_series;			/* Journal series */
 	SLONG jrnh_prev_seqno;		/* previous seqno  of record */
 	SLONG jrnh_prev_offset;		/* previous offset of record */
-} JRNH;
+};
 
 /* Long Term Journal control message format */
 
 struct ltjc {
-	JRNH ltjc_header;
+	jrnh ltjc_header;
 	USHORT ltjc_page_size;		/* Database page size */
 	SLONG ltjc_seqno;			/* Seqno of WAL */
 	ULONG ltjc_offset;			/* offset in WAL */
@@ -138,7 +137,7 @@ struct ltjc {
 /* Long Term Journal archive message format */
 
 struct ltja {
-	JRNH ltja_header;
+	jrnh ltja_header;
 	SLONG ltja_db_id;			/* Database ID */
 	SLONG ltja_file_id;			/* WAL file ID */
 	SLONG ltja_error_code;		/* Error number */
@@ -168,7 +167,7 @@ enum jrnr_t {
 /* Journal server response message */
 
 struct jrnr {
-	JRNH jrnr_header;
+	jrnh jrnr_header;
 	enum jrnr_t jrnr_response;
 	SLONG jrnr_page;
 };
@@ -176,7 +175,7 @@ struct jrnr {
 /* Journal data message format */
 
 struct jrnd {
-	JRNH jrnd_header;
+	jrnh jrnd_header;
 	USHORT jrnd_length;			/* Length of data portion */
 	SLONG jrnd_page;			/* Page number */
 	UCHAR jrnd_data[1];
@@ -333,7 +332,7 @@ struct jrnrp {
  */
 
 struct ltjw {
-	JRNH ltjw_header;
+	jrnh ltjw_header;
 	USHORT ltjw_mode;			/* any mode of operation */
 	ULONG ltjw_seqno;			/* log file seqno */
 	ULONG ltjw_offset;			/* offset of record */
@@ -369,7 +368,7 @@ struct ltjw {
 /* Secondary file name message */
 
 struct jrnf {
-	JRNH jrnf_header;
+	jrnh jrnf_header;
 	ULONG jrnf_start;			/* start block number */
 	USHORT jrnf_length;			/* Length of filename */
 	USHORT jrnf_sequence;		/* File sequence # */

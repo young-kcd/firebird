@@ -184,14 +184,14 @@ public:
 	SLONG dbb_page_incarnation;	/* Cache page incarnation counter */
 	ULONG dbb_page_buffers;		/* Page buffers from header page */
 
-	EVENT_T dbb_writer_event[1];	/* Event to wake up cache writer */
-	EVENT_T dbb_writer_event_init[1];	/* Event for initialization cache writer */
-	EVENT_T dbb_writer_event_fini[1];	/* Event for finalization cache writer */
-	EVENT_T dbb_reader_event[1];	/* Event to wake up cache reader */
+	event_t dbb_writer_event[1];	/* Event to wake up cache writer */
+	event_t dbb_writer_event_init[1];	/* Event for initialization cache writer */
+	event_t dbb_writer_event_fini[1];	/* Event for finalization cache writer */
+	event_t dbb_reader_event[1];	/* Event to wake up cache reader */
 #ifdef GARBAGE_THREAD
-	EVENT_T dbb_gc_event[1];	/* Event to wake up garbage collector */
-	EVENT_T dbb_gc_event_init[1];	/* Event for initialization garbage collector */
-	EVENT_T dbb_gc_event_fini[1];	/* Event for finalization garbage collector */
+	event_t dbb_gc_event[1];	/* Event to wake up garbage collector */
+	event_t dbb_gc_event_init[1];	/* Event for initialization garbage collector */
+	event_t dbb_gc_event_fini[1];	/* Event for finalization garbage collector */
 #endif
 	class att *dbb_update_attachment;	/* Attachment with update in process */
 	class btb *dbb_update_que;	/* Attachments waiting for update */
@@ -499,7 +499,6 @@ class jrd_prc : public pool_alloc_rpt<SCHAR, type_prc>
 	class str *prc_name;		/* pointer to ascic name */
 	USHORT prc_alter_count;		/* No. of times the procedure was altered */
 };
-typedef jrd_prc* JRD_PRC;
 
 #define PRC_scanned           1		/* Field expressions scanned */
 #define PRC_system            2
@@ -548,7 +547,7 @@ typedef struct frgn {
 typedef struct trig {
     class str* blr; // BLR code
 	jrd_req* request; // Compiled request. Gets filled on first invocation
-	BOOLEAN compile_in_progress;
+	bool compile_in_progress;
 	BOOLEAN sys_trigger;
 	USHORT flags; // Flags as they are in RDB$TRIGGERS table
 	class jrd_rel* relation; // Trigger parent relation
@@ -618,7 +617,6 @@ public:
 	struct prim rel_primary_dpnds;	/* foreign dependencies on this relation's primary key */
 	struct frgn rel_foreign_refs;	/* foreign references to other relations' primary keys */
 };
-typedef jrd_rel* JRD_REL;
 
 #define REL_scanned					1		/* Field expressions scanned (or being scanned) */
 #define REL_system					2
@@ -652,7 +650,6 @@ class jrd_fld : public pool_alloc_rpt<SCHAR, type_fld>
 	UCHAR		fld_length;			/* Field name length */
 	UCHAR		fld_string[2];		/* one byte for ALLOC and one for the terminating null */
 };
-typedef jrd_fld *JRD_FLD;
 
 
 

@@ -32,7 +32,7 @@ USHORT	BTR_all(TDBB, jrd_rel*, idx**, idx**, str**, SLONG*);
 void	BTR_create(TDBB, jrd_rel*, idx*, USHORT, scb*, SelectivityList&);
 void	BTR_delete_index(TDBB, win*, USHORT);
 //USHORT	BTR_delete_node(TDBB, btr*, USHORT);
-bool	BTR_description(JRD_REL, irt*, idx*, SSHORT);
+bool	BTR_description(jrd_rel*, irt*, idx*, SSHORT);
 void	BTR_evaluate(tdbb*, irb*, sbm**);
 UCHAR*	BTR_find_leaf(btr*, key*, UCHAR*, USHORT*, int, bool);
 btr*	BTR_find_page(tdbb*, irb*, win*, idx*, key*, key*, bool);

@@ -407,7 +407,7 @@ void DYN_define_constraint(GBL		gbl,
 			not_null = FALSE;
 			fb_utils::fb_exact_name_limit(RFR.RDB$FIELD_NAME, sizeof(RFR.RDB$FIELD_NAME));
 			strcpy(null_field_name, RFR.RDB$FIELD_NAME);
-			EXE_unwind(tdbb, (JRD_REQ)request);
+			EXE_unwind(tdbb, (jrd_req*)request);
 			break;
 		}
 
@@ -473,7 +473,7 @@ void DYN_define_constraint(GBL		gbl,
 					found = false;
 				}
 				if (found) {
-					EXE_unwind(tdbb,(JRD_REQ)request);
+					EXE_unwind(tdbb,(jrd_req*)request);
 					break;
 				}
 				list_ptr = field_list;
@@ -1846,6 +1846,7 @@ void DYN_define_index(GBL		gbl,
 				str_ = FB_NEW_RPT(*tdbb->tdbb_default, MAX_SQL_IDENTIFIER_LEN) str();
 				DYN_get_string(reinterpret_cast<const TEXT**>(ptr),
 					(TEXT*)str_->str_data, MAX_SQL_IDENTIFIER_SIZE, true);
+				fb_utils::fb_exact_name_limit((TEXT*)str_->str_data, MAX_SQL_IDENTIFIER_SIZE);
 				LLS_PUSH(str_, &field_list);
 				referred_cols++;
 				break;
@@ -2039,7 +2040,7 @@ void DYN_define_index(GBL		gbl,
 					if (list_ptr)
 						found = false;
 					if (found) {
-						EXE_unwind(tdbb,(JRD_REQ)request);
+						EXE_unwind(tdbb,(jrd_req*)request);
 						break;
 					}
 					list_ptr = field_list;
@@ -3915,7 +3916,7 @@ void DYN_define_trigger(GBL		gbl,
 
 /* the END_STORE_SPECIAL adds the foll. lines of code to the END_STORE
    if (ignore_perm)
-       ((JRD_REQ)request)->req_flags |= req_ignore_perm;
+       ((jrd_req*)request)->req_flags |= req_ignore_perm;
    after the request is compiled and before the request is sent.
    It makes the current request (to define the trigger) go through
    without checking any permissions lower in the engine */
@@ -3923,7 +3924,7 @@ void DYN_define_trigger(GBL		gbl,
 	END_STORE_SPECIAL;
 
 	if (ignore_perm)
-		((JRD_REQ) request)->req_flags &= ~req_ignore_perm;
+		((jrd_req*) request)->req_flags &= ~req_ignore_perm;
 
 	if (!DYN_REQUEST(drq_s_triggers)) {
 		DYN_REQUEST(drq_s_triggers) = request;
@@ -4293,8 +4294,8 @@ static bool get_who( TDBB tdbb, GBL gbl, SCHAR* output_name)
 		{
 			request = (BLK) CMP_compile2(tdbb, who_blr, TRUE);
 		}
-		EXE_start(tdbb, (JRD_REQ) request, gbl->gbl_transaction);
-		EXE_receive(tdbb, (JRD_REQ) request, 0, MAX_SQL_IDENTIFIER_SIZE,
+		EXE_start(tdbb, (jrd_req*) request, gbl->gbl_transaction);
+		EXE_receive(tdbb, (jrd_req*) request, 0, MAX_SQL_IDENTIFIER_SIZE,
 			(UCHAR*) output_name);
 
 		DYN_rundown_request(request, drq_l_user_name);

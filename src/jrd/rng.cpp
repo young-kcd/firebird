@@ -74,7 +74,7 @@ void RNG_add_page(ULONG page_number)
  *
  **************************************/
 	TDBB tdbb;
-	JRD_REQ request;
+	jrd_req* request;
 	RNG refresh_range, next_refresh_range;
 	VEC page_locks;
 	LCK page_lock;
@@ -148,7 +148,7 @@ void RNG_add_record(RPB * rpb)
  *
  **************************************/
 	TDBB tdbb;
-	JRD_REQ request;
+	jrd_req* request;
 	RNG refresh_range, next_refresh_range;
 	VEC record_locks;
 	LCK record_lock;
@@ -220,13 +220,13 @@ JRD_NOD RNG_add_relation(JRD_NOD node)
  *
  **************************************/
 	TDBB tdbb;
-	JRD_REQ request;
+	jrd_req* request;
 	DSC *desc;
 	USHORT range_number;
 	VEC refresh_ranges;
 	RNG refresh_range;
 	JRD_NOD relation_node;
-	JRD_REL relation;
+	jrd_rel* relation;
 	LCK relation_lock;
 	VEC relation_locks;
 
@@ -238,7 +238,7 @@ JRD_NOD RNG_add_relation(JRD_NOD node)
 		range_number = (USHORT) MOV_get_long(desc, 0);
 
 		relation_node = node->nod_arg[e_range_relation_relation];
-		relation = (JRD_REL) relation_node->nod_arg[e_rel_relation];
+		relation = (jrd_rel*) relation_node->nod_arg[e_rel_relation];
 
 		/* check to see if the range exists */
 
@@ -298,7 +298,7 @@ void RNG_add_uncommitted_record(RPB * rpb)
  *
  **************************************/
 	TDBB tdbb;
-	JRD_REQ request;
+	jrd_req* request;
 	RNG refresh_range, next_refresh_range;
 	VEC transaction_locks;
 	LCK transaction_lock;
@@ -373,8 +373,8 @@ DSC *RNG_begin(JRD_NOD node, VLU impure)
  **************************************/
 	TDBB tdbb;
 	DBB dbb;
-	JRD_REQ request;
-	JRD_TRA transaction;
+	jrd_req* request;
+	jrd_tra* transaction;
 	DSC desc, *desc2;
 	RNG refresh_range;
 	USHORT range_number;
@@ -477,7 +477,7 @@ JRD_NOD RNG_delete(JRD_NOD node)
  *
  **************************************/
 	TDBB tdbb;
-	JRD_REQ request;
+	jrd_req* request;
 	DSC *desc;
 	RNG refresh_range;
 	USHORT range_number;
@@ -509,7 +509,7 @@ JRD_NOD RNG_delete(JRD_NOD node)
 
 
 #ifdef PC_ENGINE
-void RNG_delete_ranges(JRD_REQ request)
+void RNG_delete_ranges(jrd_req* request)
 {
 /**************************************
  *
@@ -551,7 +551,7 @@ JRD_NOD RNG_end(JRD_NOD node)
  *
  **************************************/
 	TDBB tdbb;
-	JRD_REQ request;
+	jrd_req* request;
 	DSC *desc;
 	RNG refresh_range, *ptr;
 	USHORT range_number;
@@ -662,7 +662,7 @@ void RNG_release_locks(RNG refresh_range)
 
 
 #ifdef PC_ENGINE
-void RNG_release_ranges(JRD_REQ request)
+void RNG_release_ranges(jrd_req* request)
 {
 /**************************************
  *
@@ -710,7 +710,7 @@ void RNG_shutdown_attachment(ATT attachment)
 	VEC refresh_ranges;
 	RNG refresh_range;
 	USHORT range_number, i;
-	JRD_REQ request;
+	jrd_req* request;
 	LCK *lock_ptr;
 	TDBB tdbb;
 
@@ -770,7 +770,7 @@ static void delete_range(RNG refresh_range)
  **************************************/
 	TDBB tdbb;
 	DBB dbb;
-	JRD_REQ request;
+	jrd_req* request;
 	VEC refresh_ranges;
 	RNG *ptr;
 
@@ -883,7 +883,7 @@ static void stop_creating(RNG refresh_range)
  *
  **************************************/
 	TDBB tdbb;
-	JRD_REQ request;
+	jrd_req* request;
 	RNG *ptr;
 
 	tdbb = GET_THREAD_DATA;

@@ -194,12 +194,12 @@ pgc[] = {
 
 jrd_rel[] = {
 	"RELATION",
-		FLD(JRD_REL, "%s", rel_name),
-		FLD(JRD_REL, "Id: %d", rel_id),
-		FLD(JRD_REL, "Current format: %x", rel_current_format),
-		FLD(JRD_REL, "Formats: %x", rel_formats),
-		FLD(JRD_REL, "Pages: %x", rel_pages),
-		FLD(JRD_REL, "Root: %ld", rel_index_root),
+		FLD(jrd_rel*, "%s", rel_name),
+		FLD(jrd_rel*, "Id: %d", rel_id),
+		FLD(jrd_rel*, "Current format: %x", rel_current_format),
+		FLD(jrd_rel*, "Formats: %x", rel_formats),
+		FLD(jrd_rel*, "Pages: %x", rel_pages),
+		FLD(jrd_rel*, "Root: %ld", rel_index_root),
 		0
 },
 fmt[] = {
@@ -211,34 +211,34 @@ fmt[] = {
 },
 jrd_req[] = {
 	"REQUEST",
-		FLD(JRD_REQ, "COUNT: %x", req_count),
-		FLD(JRD_REQ, "Impure: %x", req_impure_size),
-		FLD(JRD_REQ, "Incarn: %x", req_incarnation),
-		FLD(JRD_REQ, "Pool: %x", req_pool),
-		FLD(JRD_REQ, "Sub req: %x", req_sub_requests),
-		FLD(JRD_REQ, "Trans: %x", req_transaction),
-		FLD(JRD_REQ, "Next req: %x", req_request),
-		FLD(JRD_REQ, "Msg: %x", req_message),
-		FLD(JRD_REQ, "Length: %x", req_length),
-		FLD(JRD_REQ, "#msgs: %x", req_nmsgs),
-		FLD(JRD_REQ, "Max send: %x", req_msend),
-		FLD(JRD_REQ, "Max receive: %x", req_mreceive),
-		FLD(JRD_REQ, "Top: %x", req_top_node),
-		FLD(JRD_REQ, "Next: %x", req_next),
-		FLD(JRD_REQ, "Label: %x", req_label),
-		FLD(JRD_REQ, "Op: %x", req_operation),
-		FLD(JRD_REQ, "Flags: %x", req_flags),
+		FLD(jrd_req*, "COUNT: %x", req_count),
+		FLD(jrd_req*, "Impure: %x", req_impure_size),
+		FLD(jrd_req*, "Incarn: %x", req_incarnation),
+		FLD(jrd_req*, "Pool: %x", req_pool),
+		FLD(jrd_req*, "Sub req: %x", req_sub_requests),
+		FLD(jrd_req*, "Trans: %x", req_transaction),
+		FLD(jrd_req*, "Next req: %x", req_request),
+		FLD(jrd_req*, "Msg: %x", req_message),
+		FLD(jrd_req*, "Length: %x", req_length),
+		FLD(jrd_req*, "#msgs: %x", req_nmsgs),
+		FLD(jrd_req*, "Max send: %x", req_msend),
+		FLD(jrd_req*, "Max receive: %x", req_mreceive),
+		FLD(jrd_req*, "Top: %x", req_top_node),
+		FLD(jrd_req*, "Next: %x", req_next),
+		FLD(jrd_req*, "Label: %x", req_label),
+		FLD(jrd_req*, "Op: %x", req_operation),
+		FLD(jrd_req*, "Flags: %x", req_flags),
 		0
 },
 jrd_tra[] = {
 	"TRANSACTION",
-		FLD(JRD_TRA, "Number: %ld", tra_number),
-		FLD(JRD_TRA, "Oldest: %ld", tra_oldest),
-		FLD(JRD_TRA, "Next: %x", tra_next),
-		FLD(JRD_TRA, "Pool: %x", tra_pool),
-		FLD(JRD_TRA, "Lock: %x", tra_lock),
-		FLD(JRD_TRA, "Locks: %x", tra_relation_locks),
-		FLD(JRD_TRA, "Flags: %x", tra_flags),
+		FLD(jrd_tra*, "Number: %ld", tra_number),
+		FLD(jrd_tra*, "Oldest: %ld", tra_oldest),
+		FLD(jrd_tra*, "Next: %x", tra_next),
+		FLD(jrd_tra*, "Pool: %x", tra_pool),
+		FLD(jrd_tra*, "Lock: %x", tra_lock),
+		FLD(jrd_tra*, "Locks: %x", tra_relation_locks),
+		FLD(jrd_tra*, "Flags: %x", tra_flags),
 		0
 },
 jrd_nod[] = {
@@ -372,8 +372,8 @@ static TEXT_PTR log[] = {	"LOG BLOCK", 0};
 static TEXT_PTR dls[] = {	"DIR LIST BLOCK", 0};
 static TEXT_PTR jrd_prc[] = {
 	"PROCEDURE",
-		FLD(JRD_PRC, "%s", prc_name),
-		FLD(JRD_PRC, "Id: %d", prc_id), 0};
+		FLD(jrd_prc*, "%s", prc_name),
+		FLD(jrd_prc*, "Id: %d", prc_id), 0};
 static TEXT_PTR prm[] = {	"PARAMETER", FLD(PRM, "%s", prm_name), 0};
 static TEXT_PTR idb[] = {	"INDEX BLOCK", 0};
 static TEXT_PTR bkm[] = {	"BOOKMARK BLOCK", 0};
@@ -479,8 +479,8 @@ struct symb dbt_symbols[] = {
     SYM (DBB, dbb_requests)
     SYM (REL, rel_formats)
     SYM (REL, rel_pages)
-    SYM (JRD_REQ, req_top_node)
-    SYM (JRD_REQ, req_next)
+    SYM (jrd_req*, req_top_node)
+    SYM (jrd_req*, req_next)
 */
 	{NULL, 0, symb_routine, 0}
 };

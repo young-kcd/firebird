@@ -441,7 +441,7 @@ void REMOTE_get_timeout_params(
 }
 
 
-STR REMOTE_make_string(const SCHAR* input)
+rem_str* REMOTE_make_string(const SCHAR* input)
 {
 /**************************************
  *
@@ -455,7 +455,7 @@ STR REMOTE_make_string(const SCHAR* input)
  *
  **************************************/
 	const USHORT length = strlen(input);
-	STR string = (STR) ALLOCV(type_str, length);
+	rem_str* string = (rem_str*) ALLOCV(type_str, length);
 #ifdef DEBUG_REMOTE_MEMORY
 	ib_printf("REMOTE_make_string        allocate string  %x\n", string);
 #endif

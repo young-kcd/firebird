@@ -390,7 +390,7 @@ static void delete_security_class( TDBB tdbb, TEXT * s_class)
         ERASE CLS;
 	END_FOR;
 
-	CMP_release(tdbb, (JRD_REQ)handle);
+	CMP_release(tdbb, (jrd_req*)handle);
 }
 #endif // NOT_USED_OR_REPLACED
 
@@ -969,7 +969,7 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 		REQUEST(irq_grant6) = request;
 
 	if (request2)
-		CMP_release(tdbb, (JRD_REQ)request2);
+		CMP_release(tdbb, (jrd_req*)request2);
 
 /* flush out the last user's info */
 

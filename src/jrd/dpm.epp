@@ -81,11 +81,11 @@ DATABASE DB = FILENAME "ODS.RDB";
 #define SPACE_FUDGE	RHDF_SIZE
 
 static void delete_tail(TDBB, RHDF, USHORT);
-static void fragment(TDBB, RPB *, SSHORT, Dcc*, SSHORT, JRD_TRA);
-static void extend_relation(TDBB, JRD_REL, WIN *);
+static void fragment(TDBB, RPB *, SSHORT, Dcc*, SSHORT, jrd_tra*);
+static void extend_relation(TDBB, jrd_rel*, WIN *);
 static UCHAR *find_space(TDBB, RPB *, SSHORT, LLS *, REC, USHORT);
 static BOOLEAN get_header(WIN *, SSHORT, RPB *);
-static PPG get_pointer_page(TDBB, JRD_REL, WIN *, USHORT, USHORT);
+static PPG get_pointer_page(TDBB, jrd_rel*, WIN *, USHORT, USHORT);
 static void journal_segment(TDBB, WIN *, USHORT);
 static RHD locate_space(TDBB, RPB *, SSHORT, LLS *, REC, USHORT);
 static void mark_full(TDBB, RPB *);
@@ -458,7 +458,7 @@ int DPM_compress( TDBB tdbb, DPG page)
 }
 
 
-void DPM_create_relation( TDBB tdbb, JRD_REL relation)
+void DPM_create_relation( TDBB tdbb, jrd_rel* relation)
 {
 /**************************************
  *
@@ -531,7 +531,7 @@ void DPM_create_relation( TDBB tdbb, JRD_REL relation)
 }
 
 
-SLONG DPM_data_pages(TDBB tdbb, JRD_REL relation)
+SLONG DPM_data_pages(TDBB tdbb, jrd_rel* relation)
 {
 /**************************************
  *
@@ -607,7 +607,7 @@ void DPM_delete( TDBB tdbb, RPB * rpb, SLONG prior_page)
 	USHORT pp_sequence;
 	SLONG *ptr;
 	JRNP journal;
-	JRD_REL relation;
+	jrd_rel* relation;
 
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
@@ -788,7 +788,7 @@ void DPM_delete( TDBB tdbb, RPB * rpb, SLONG prior_page)
 }
 
 
-void DPM_delete_relation( TDBB tdbb, JRD_REL relation)
+void DPM_delete_relation( TDBB tdbb, jrd_rel* relation)
 {
 /**************************************
  *
@@ -876,7 +876,7 @@ void DPM_delete_relation( TDBB tdbb, JRD_REL relation)
 		X.RDB$RELATION_ID EQ relation->rel_id ERASE X;
 	END_FOR;
 
-	CMP_release(tdbb, (JRD_REQ)handle);
+	CMP_release(tdbb, (jrd_req*)handle);
 	CCH_flush(tdbb, (USHORT) FLUSH_ALL, 0);
 }
 
@@ -1654,7 +1654,7 @@ void DPM_pages(
 
 
 #ifdef SUPERSERVER_V2
-SLONG DPM_prefetch_bitmap(TDBB tdbb, JRD_REL relation, SBM bitmap, SLONG number)
+SLONG DPM_prefetch_bitmap(TDBB tdbb, jrd_rel* relation, SBM bitmap, SLONG number)
 {
 /**************************************
  *
@@ -2028,7 +2028,7 @@ void DPM_rewrite_header( TDBB tdbb, RPB * rpb)
 }
 
 
-void DPM_update( TDBB tdbb, RPB * rpb, LLS * stack, JRD_TRA transaction)
+void DPM_update( TDBB tdbb, RPB * rpb, LLS * stack, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -2225,7 +2225,7 @@ static void fragment(
 					 TDBB tdbb,
 					 RPB * rpb,
 					 SSHORT available_space,
-					 Dcc* dcc, SSHORT length, JRD_TRA transaction)
+					 Dcc* dcc, SSHORT length, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -2439,7 +2439,7 @@ static void fragment(
 }
 
 
-static void extend_relation( TDBB tdbb, JRD_REL relation, WIN * window)
+static void extend_relation( TDBB tdbb, jrd_rel* relation, WIN * window)
 {
 /**************************************
  *
@@ -2755,7 +2755,7 @@ static BOOLEAN get_header( WIN * window, SSHORT line, RPB * rpb)
 
 static PPG get_pointer_page(
 							TDBB tdbb,
-							JRD_REL relation,
+							jrd_rel* relation,
 							WIN * window, USHORT sequence, USHORT lock)
 {
 /**************************************

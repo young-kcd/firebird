@@ -37,7 +37,7 @@
 #include "../jrd/llio_proto.h"
 
 static bool copy_file(SLONG, SLONG, SLONG);
-static void error_exit(ISC_STATUS *, JRN *, SLONG, SLONG, SLONG);
+static void error_exit(ISC_STATUS*, jrn**, SLONG, SLONG, SLONG);
 static bool open_file(const TEXT*, SLONG, USHORT, SLONG*);
 
 
@@ -155,7 +155,7 @@ static bool copy_file(SLONG s_fd,
 
 
 static void error_exit(ISC_STATUS* status_vector,
-					   JRN* ret_journal,
+					   jrn** ret_journal,
 					   SLONG db_id,
 					   SLONG file_id,
 					   SLONG error_code)

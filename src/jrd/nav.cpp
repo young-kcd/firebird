@@ -1052,7 +1052,7 @@ static BOOLEAN find_dbkey(RSB rsb, ULONG record_number)
  *
  **************************************/
 	TDBB tdbb;
-	JRD_REQ request;
+	jrd_req* request;
 	IRSB_NAV impure;
 	RPB *rpb;
 	WIN window;
@@ -1144,7 +1144,7 @@ static BOOLEAN find_record(
  *
  **************************************/
 	TDBB tdbb;
-	JRD_REQ request;
+	jrd_req* request;
 	IRSB_NAV impure;
 	RPB *rpb;
 	JRD_NOD retrieval_node;
@@ -1569,7 +1569,7 @@ static BOOLEAN get_record(
  **************************************/
 
 	TDBB tdbb = GET_THREAD_DATA;
-	JRD_REQ request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->tdbb_request;
 	IDX *idx = (IDX*) ((SCHAR*) impure + (SLONG) rsb->rsb_arg[RSB_NAV_idx_offset]);
 
 	KEY value;

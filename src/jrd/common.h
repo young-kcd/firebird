@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.94 2003-12-31 05:35:52 robocop Exp $
+$Id: common.h,v 1.95 2004-01-03 10:59:40 robocop Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -1057,9 +1057,9 @@ static const TEXT* FB_LONG_MONTHS_UPPER[] =
 inline int fb_stricmp(const char* a, const char* b)
 {
 #if defined(HAVE_STRCASECMP)
-		return strcasecmp(a, b);
+	return strcasecmp(a, b);
 #elif defined(HAVE_STRICMP)
-		return stricmp(a, b);
+	return stricmp(a, b);
 #else
 #error dont know how to compare strings case insensitive on this system
 #endif

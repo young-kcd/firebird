@@ -1265,7 +1265,8 @@ void PAG_init2(USHORT shadow_number)
 
 	fil* file = dbb->dbb_file;
 	if (shadow_number) {
-		for (sdw* shadow = dbb->dbb_shadow; shadow; shadow = shadow->sdw_next) {
+		sdw* shadow = dbb->dbb_shadow;
+		for (; shadow; shadow = shadow->sdw_next) {
 			if (shadow->sdw_number == shadow_number) {
 				file = shadow->sdw_file;
 				break;

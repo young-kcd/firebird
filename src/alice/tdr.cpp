@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.31 2003-11-18 07:58:23 robocop Exp $
+//	$Id: tdr.cpp,v 1.32 2004-01-03 10:59:34 robocop Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -838,8 +838,8 @@ static void reattach_database(TDR trans)
 		if (TDR_attach_database(status_vector, trans,
 								reinterpret_cast<char*>(p)))
 		{
-			STR string = FB_NEW_RPT(*tdgbl->ALICE_default_pool,
-						strlen(reinterpret_cast<const char*>(p)) + 1) str;
+			alice_str* string = FB_NEW_RPT(*tdgbl->ALICE_default_pool,
+						strlen(reinterpret_cast<const char*>(p)) + 1) alice_str;
 			strcpy(reinterpret_cast<char*>(string->str_data),
 				   reinterpret_cast<const char*>(p));
 			string->str_length = strlen(reinterpret_cast<const char*>(p));

@@ -55,7 +55,7 @@ DATABASE DB = FILENAME "ODS.RDB";
 
 #ifdef EXPRESSION_INDICES
 int PCMET_expression_index(
-						   TDBB tdbb, SSHORT phase, DFW work, JRD_TRA transaction)
+						   TDBB tdbb, SSHORT phase, DFW work, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -67,11 +67,11 @@ int PCMET_expression_index(
  *	Create a new expression index.
  *
  **************************************/
-	JRD_REL relation;
+	jrd_rel* relation;
 	IDX idx;
 	PLB default_pool, new_pool = NULL;
 	CSB csb;
-	JRD_REQ current_request;
+	jrd_req* current_request;
 
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
@@ -196,7 +196,7 @@ int PCMET_expression_index(
 
 
 #ifdef EXPRESSION_INDICES
-void PCMET_lookup_index( JRD_REL relation, IDX * idx)
+void PCMET_lookup_index( jrd_rel* relation, IDX * idx)
 {
 /**************************************
  *

@@ -118,7 +118,7 @@ bool_t xdr_free();
 #ifdef VMS
 double MTH$CVT_D_G(), MTH$CVT_G_D();
 
-static STR gfloat_buffer;
+static rem_str* gfloat_buffer;
 #endif
 
 
@@ -1357,7 +1357,7 @@ static bool_t xdr_semi_opaque( XDR* xdrs, REM_MSG message, FMT format)
 		if (!gfloat_buffer || gfloat_buffer->str_length < format->fmt_length) {
 			if (gfloat_buffer)
 				ALLR_free(gfloat_buffer);
-			gfloat_buffer = (STR) ALLOCV(type_str, format->fmt_length);
+			gfloat_buffer = (rem_str*) ALLOCV(type_str, format->fmt_length);
 			gfloat_buffer->str_length = format->fmt_length;
 		}
 
@@ -1409,20 +1409,19 @@ static bool_t xdr_semi_opaque_slice( XDR* xdrs, LSTRING* slice)
  *	Move data while converting for doubles in d_float format.
  *
  **************************************/
-	ULONG msg_len;
-
 	BLOB_PTR* p = slice->lstr_address;
 	for (ULONG n = slice->lstr_length; n; n -= msg_len, p += msg_len) {
-		msg_len = MIN(n, MAX_OPAQUE);
+		const ULONG msg_len = MIN(n, MAX_OPAQUE);
 
 		BLOB_PTR* msg_addr;
 		if (xdrs->x_op == XDR_ENCODE) {
-			/* Using an str structure is fine as long as MAX_OPAQUE < 64K */
+			/* Using a rem_str structure is fine as long as MAX_OPAQUE < 64K */
 
 			if (!gfloat_buffer || gfloat_buffer->str_length < msg_len) {
-				if (gfloat_buffer)
+				if (gfloat_buffer) {
 					ALLR_free(gfloat_buffer);
-				gfloat_buffer = (STR) ALLOCV(type_str, msg_len);
+				}
+				gfloat_buffer = (rem_str*) ALLOCV(type_str, msg_len);
 				gfloat_buffer->str_length = msg_len;
 			}
 

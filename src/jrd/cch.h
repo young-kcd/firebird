@@ -196,7 +196,7 @@ class lwt : public pool_alloc<type_lwt>
 	struct tdbb*	lwt_tdbb;
 	LATCH			lwt_latch;		/* latch type requested */
 	struct que		lwt_waiters;	/* latch queue */
-	struct event	lwt_event;		/* grant event to wait on */
+	struct event_t	lwt_event;		/* grant event to wait on */
 	USHORT			lwt_flags;
 };
 typedef lwt *LWT;

@@ -877,7 +877,7 @@ void AIL_process_jrn_error(SLONG ret_val)
 void AIL_put(
 			 DBB dbb,
 			 ISC_STATUS * status,
-			 JRNH* header,
+			 jrnh* header,
 			 USHORT h_length,
 			 const UCHAR* data,
 	USHORT d_length,

@@ -702,12 +702,12 @@ static void put_command(SLONG channel,
  **************************************/
 	TEXT *p, buffer[MAXPATHLEN];
 	USHORT l;
-	JRNH *header_ptr;
+	jrnh* header_ptr;
 
 	p = buffer;
 	l = header_length + data_length;
 
-	header_ptr = (JRNH *) header;
+	header_ptr = (jrnh*) header;
 	header_ptr->jrnh_length = l;
 
 	if (header_length)
@@ -745,12 +745,12 @@ static void put_command(SLONG channel,
  **************************************/
 	TEXT *p, buffer[MAXPATHLEN];
 	ULONG l, len;
-	JRNH *header_ptr;
+	jrnh* header_ptr;
 
 	p = buffer;
 	l = header_length + data_length;
 
-	header_ptr = (JRNH *) header;
+	header_ptr = (jrnh*) header;
 	header_ptr->jrnh_length = l;
 
 	if (header_length)

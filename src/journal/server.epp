@@ -225,7 +225,7 @@ static void enable(CNCT, const ltjc*);
 static void error(ISC_STATUS, const TEXT*);
 static void error_exit(ISC_STATUS, const TEXT*);
 static void free_database_entry(djb*);
-static void get_message(JRNH *, int);
+static void get_message(jrnh*, int);
 
 #ifdef BSD_SOCKETS
 static void init_handles(fd_set *);
@@ -249,7 +249,7 @@ static void process_drop_database(CNCT, const SCHAR*);
 static void process_dump_file(CNCT, ltjw *);
 static void process_end_dump(CNCT, ltjw *);
 static void process_erase_database(CNCT, USHORT);
-static void process_message(CNCT, JRNH *, USHORT);
+static void process_message(CNCT, jrnh*, USHORT);
 static void process_reset_database(CNCT, const SCHAR*);
 static void process_restart_archive(CNCT, const SCHAR*);
 static void process_set_database(CNCT, const SCHAR*);
@@ -263,7 +263,7 @@ static void read_asynchronous(CNCT);
 static void report_status(CNCT);
 static void restart_all_backups(int);
 static void restart_backup(djb*, int);
-static void send_reply(CNCT, JRNH *, USHORT);
+static void send_reply(CNCT, jrnh*, USHORT);
 static void set_use_count(djb*);
 static void sign_off(CNCT, ltjc *);
 static void sign_on(CNCT, const ltjc*);
@@ -1107,7 +1107,7 @@ static void enable(CNCT connection,
 		build_indexed_name(arch_name, dir_name, msg->ltjc_seqno);
 		if (LLIO_open(NULL, arch_name, LLIO_OPEN_NEW_RW, false, &fd)) {
 			reply.jrnr_response = jrnr_archive_error;
-			send_reply(connection, (JRNH *) & reply, sizeof(reply));
+			send_reply(connection, (jrnh*) & reply, sizeof(reply));
 			delete_connection(connection);
 			return;
 		}
@@ -1131,7 +1131,7 @@ static void enable(CNCT connection,
 	start_database(connection, db_name, dir_name,
 				   msg->ltjc_page_size, msg->ltjc_seqno, msg->ltjc_offset);
 	reply.jrnr_response = jrnr_enabled;
-	send_reply(connection, (JRNH *) & reply, sizeof(reply));
+	send_reply(connection, (jrnh*) & reply, sizeof(reply));
 }
 
 
@@ -1233,7 +1233,7 @@ static void free_database_entry(djb* database)
 
 
 #ifdef BSD_SOCKETS
-static void get_message(JRNH * buffer,
+static void get_message(jrnh*  buffer,
 						int length)
 {
 /**************************************
@@ -1305,7 +1305,7 @@ static void get_message(JRNH * buffer,
 			}
 		}
 
-		len = recv(nfd, (SCHAR *) buffer, sizeof(JRNH), 0);
+		len = recv(nfd, (SCHAR *) buffer, sizeof(struct jrnh), 0);
 		p = (UCHAR *) buffer + len;
 		length = buffer->jrnh_length - len;
 		while (len > 0 && length) {
@@ -1329,7 +1329,7 @@ static void get_message(JRNH * buffer,
 
 
 #ifdef WIN_NT
-static void get_message(JRNH * buffer,
+static void get_message(jrnh*  buffer,
 						int length)
 {
 /**************************************
@@ -1654,7 +1654,7 @@ static void open_mailbox(SCHAR * filename,
 							  PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
 							  PIPE_WAIT | PIPE_TYPE_BYTE | PIPE_READMODE_BYTE,
 							  PIPE_UNLIMITED_INSTANCES,
-							  sizeof(JRNH) + MSG_LENGTH,
+							  sizeof(struct jrnh) + MSG_LENGTH,
 							  MAX_RECORD + 6, 0, ISC_get_security_desc());
 	if (phandle == INVALID_HANDLE_VALUE)
 		error_exit(GetLastError(), "CreateNamedPipe");
@@ -1763,7 +1763,7 @@ static void process_command(CNCT connection,
 		put_message(98, NULL);
 		global_state |= state_shut_pending;
 		response.jrnr_response = jrnr_shutdown;
-		send_reply(connection, (JRNH *) & response, sizeof(response));
+		send_reply(connection, (jrnh*) & response, sizeof(response));
 #ifdef WIN_NT
 		Sleep(5000);
 #endif
@@ -1772,7 +1772,7 @@ static void process_command(CNCT connection,
 
 	case cmd_exit:
 		response.jrnr_response = jrnr_exit;
-		send_reply(connection, (JRNH *) & response, sizeof(response));
+		send_reply(connection, (jrnh*) & response, sizeof(response));
 		return;
 
 	case cmd_status:
@@ -1828,7 +1828,7 @@ static void process_command(CNCT connection,
 	}
 
 	response.jrnr_response = jrnr_end_msg;
-	send_reply(connection, (JRNH *) & response, sizeof(response));
+	send_reply(connection, (jrnh*) & response, sizeof(response));
 }
 
 
@@ -1860,7 +1860,7 @@ static void process_archive_begin(CNCT connection,
 		if (!database->djb_use_count++)
 			set_use_count(database);
 		reply.jrnr_response = jrnr_accepted;
-		send_reply(connection, (JRNH *) & reply, sizeof(reply));
+		send_reply(connection, (jrnh*) & reply, sizeof(reply));
 		return;
 	}
 
@@ -1869,7 +1869,7 @@ static void process_archive_begin(CNCT connection,
 
 	FOR D IN DATABASES WITH D.DB_ID EQ db_id AND D.STATUS EQ DB_DISABLED
 		reply.jrnr_response = jrnr_accepted;
-		send_reply(connection, (JRNH *) & reply, sizeof(reply));
+		send_reply(connection, (jrnh*) & reply, sizeof(reply));
 		connection->cnct_database = NULL;
 		return;
 	END_FOR;
@@ -1877,7 +1877,7 @@ static void process_archive_begin(CNCT connection,
 // Error situation
 
 	reply.jrnr_response = jrnr_rejected;
-	send_reply(connection, (JRNH *) & reply, sizeof(reply));
+	send_reply(connection, (jrnh*) & reply, sizeof(reply));
 }
 
 
@@ -2041,7 +2041,7 @@ static void process_control_point(CNCT connection,
 
 	jrnr reply;
 	reply.jrnr_response = jrnr_ack;
-	send_reply(connection, (JRNH *) & reply, sizeof(reply));
+	send_reply(connection, (jrnh*) & reply, sizeof(reply));
 
 //
 // Restart backup.
@@ -2185,7 +2185,7 @@ static void process_dump_file(CNCT connection,
 
 	jrnr reply;
 	reply.jrnr_response = jrnr_ack;
-	send_reply(connection, (JRNH *) & reply, sizeof(reply));
+	send_reply(connection, (jrnh*) & reply, sizeof(reply));
 }
 
 
@@ -2227,7 +2227,7 @@ static void process_end_dump(CNCT connection,
 
 	jrnr reply;
 	reply.jrnr_response = jrnr_end_dump;
-	send_reply(connection, (JRNH *) & reply, sizeof(reply));
+	send_reply(connection, (jrnh*) & reply, sizeof(reply));
 }
 
 
@@ -2344,7 +2344,7 @@ static void process_erase_database(CNCT connection,
 
 
 static void process_message(CNCT connection,
-							JRNH * msg,
+							jrnh*  msg,
 							USHORT length)
 {
 /**************************************
@@ -2382,7 +2382,7 @@ static void process_message(CNCT connection,
 		{
 			TEXT* p = (TEXT*) msg;
 			p[length] = 0;
-			process_command(connection, p + sizeof(JRNH));
+			process_command(connection, p + sizeof(struct jrnh));
 			break;
 		}
 
@@ -2603,7 +2603,7 @@ static void process_start_dump(CNCT connection,
 
 	reply.jrnr_response = jrnr_start_dump;
 	reply.jrnr_page = (SLONG) dump_id;
-	send_reply(connection, (JRNH *) & reply, sizeof(reply));
+	send_reply(connection, (jrnh*) & reply, sizeof(reply));
 }
 
 
@@ -2692,7 +2692,7 @@ static void process_wal_file(CNCT connection,
 	commit();
 
 	reply.jrnr_response = jrnr_ack;
-	send_reply(connection, (JRNH *) & reply, sizeof(reply));
+	send_reply(connection, (jrnh*) & reply, sizeof(reply));
 
 // restart failed backups
 
@@ -2776,7 +2776,7 @@ static void put_line(CNCT connection,
 	TEXT* p = buffer + sizeof(jrnr);
 	sprintf(p, line, arg1, arg2, arg3);
 	response->jrnr_page = strlen(p);
-	send_reply(connection, (JRNH *) buffer,
+	send_reply(connection, (jrnh*) buffer,
 			   (USHORT) (sizeof(jrnr) + response->jrnr_page));
 }
 
@@ -2985,7 +2985,7 @@ static void restart_backup(djb* database,
 
 #ifdef BSD_SOCKETS
 static void send_reply(CNCT connection,
-					   JRNH * msg,
+					   jrnh*  msg,
 					   USHORT length)
 {
 /**************************************
@@ -3015,7 +3015,7 @@ static void send_reply(CNCT connection,
 
 #ifdef WIN_NT
 static void send_reply(CNCT connection,
-					   JRNH * msg,
+					   jrnh*  msg,
 					   USHORT length)
 {
 /**************************************
@@ -3123,7 +3123,7 @@ static void sign_on(CNCT connection,
 		if (!database->djb_use_count++)
 			set_use_count(database);
 		reply.jrnr_response = jrnr_accepted;
-		send_reply(connection, (JRNH *) & reply, sizeof(reply));
+		send_reply(connection, (jrnh*) & reply, sizeof(reply));
 		return;
 	}
 
@@ -3132,7 +3132,7 @@ static void sign_on(CNCT connection,
 	start_database(connection, db_name, dir_name,
 				   msg->ltjc_page_size, msg->ltjc_seqno, msg->ltjc_offset);
 	reply.jrnr_response = jrnr_enabled;
-	send_reply(connection, (JRNH *) & reply, sizeof(reply));
+	send_reply(connection, (jrnh*) & reply, sizeof(reply));
 }
 
 
@@ -3439,7 +3439,7 @@ static bool start_server(UCHAR * journal_dir,
 			report_status(NULL);
 		}
 		commit();
-		get_message((JRNH *) message_buffer, sizeof(message_buffer));
+		get_message((jrnh*) message_buffer, sizeof(message_buffer));
 
 		// restart archives every max_retry messages
 
@@ -3494,7 +3494,7 @@ static bool start_server(UCHAR * journal_dir,
 			report_status(NULL);
 		}
 		commit();
-		get_message((JRNH *) message_buffer, sizeof(message_buffer));
+		get_message((jrnh*) message_buffer, sizeof(message_buffer));
 		commit();
 	}
 

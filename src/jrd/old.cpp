@@ -62,7 +62,7 @@ static int old_init(OLD*, const SCHAR*, USHORT, SSHORT, SCHAR**, ULONG, ULONG,
 					SSHORT, SSHORT, ULONG, ULONG, ULONG);
 static int old_put(OLD, const SCHAR*, USHORT);
 static void old_put_db_filename(OLD);
-static int old_put_rec(OLD, JRNH*, USHORT, const UCHAR*, USHORT);
+static int old_put_rec(OLD, jrnh*, USHORT, const UCHAR*, USHORT);
 static int open_next_file(OLD);
 
 
@@ -664,7 +664,7 @@ static void old_put_db_filename(OLD OLD_handle)
 
 static int old_put_rec(
 					   OLD OLD_handle,
-					   JRNH * header,
+					   jrnh*  header,
 					   USHORT h_length, const UCHAR* data, USHORT d_length)
 {
 /**************************************

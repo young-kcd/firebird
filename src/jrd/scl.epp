@@ -82,9 +82,11 @@ static bool check_hex(const TEXT*, USHORT);
 static bool check_number(const TEXT*, USHORT);
 static bool check_user_group(const TEXT*, USHORT, STR*, ULONG*);
 static bool check_string(const TEXT*, const TEXT*);
-static SLONG compute_access(TDBB, const scl*, JRD_REL, const TEXT*, const TEXT*);
+static SLONG compute_access(TDBB, const scl*, const jrd_rel*, const TEXT*,
+	const TEXT*);
 static TEXT* save_string(const TEXT*, TEXT**);
-static SLONG walk_acl(TDBB, const TEXT*, JRD_REL, const TEXT*, const TEXT*, STR*, ULONG*);
+static SLONG walk_acl(TDBB, const TEXT*, const jrd_rel*, const TEXT*,
+	const TEXT*, STR*, ULONG*);
 
 static inline void check_and_move(UCHAR*& to, UCHAR from, STR& start, ULONG* length_ptr)
 {
@@ -148,9 +150,9 @@ void SCL_check_access(const scl* s_class,
 				 0);
 	}
 
-	ATT attachment = tdbb->tdbb_attachment;
+	att* attachment = tdbb->tdbb_attachment;
 
-	SCL att_class = attachment->att_security_class;
+	const scl* att_class = attachment->att_security_class;
 	if (att_class && !(att_class->scl_flags & mask))
 	{
 		type = "DATABASE";
@@ -161,9 +163,10 @@ void SCL_check_access(const scl* s_class,
 		if (!s_class ||	(mask & s_class->scl_flags)) {
 			return;
 		}
-		JRD_REL view = NULL;
-		if (view_id)
+		const jrd_rel* view = NULL;
+		if (view_id) {
 			view = MET_lookup_relation_id(tdbb, view_id, false);
+		}
 		if ((view || trg_name || prc_name) &&
 			 (compute_access(tdbb, s_class, view, trg_name, prc_name) & mask))
 		{
@@ -196,7 +199,7 @@ void SCL_check_access(const scl* s_class,
 }
 
 
-void SCL_check_index(TDBB tdbb, TEXT* index_name, UCHAR index_id, USHORT mask)
+void SCL_check_index(TDBB tdbb, const TEXT* index_name, UCHAR index_id, USHORT mask)
 {
 /******************************************************
  *
@@ -215,13 +218,10 @@ void SCL_check_index(TDBB tdbb, TEXT* index_name, UCHAR index_id, USHORT mask)
  *      becomes relation_name since index ids are relative to tables.
  *
  *******************************************************/
-	SCL s_class, default_s_class;
-    TEXT reln_name[32], aux_idx_name[32];
-    TEXT *idx_name_ptr = index_name, *relation_name_ptr = index_name;
-
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
-	s_class = default_s_class = NULL;
+	const scl* s_class = NULL;
+	const scl* default_s_class = NULL;
 
 	// No security to check for if the index is not yet created 
 
@@ -229,7 +229,10 @@ void SCL_check_index(TDBB tdbb, TEXT* index_name, UCHAR index_id, USHORT mask)
         return;
     }
 
+    TEXT reln_name[32], aux_idx_name[32];
     reln_name[0] = aux_idx_name[0] = 0;
+    const TEXT* idx_name_ptr = index_name;
+	const TEXT* relation_name_ptr = index_name;
 
 	volatile BLK request = NULL;
 
@@ -249,7 +252,7 @@ void SCL_check_index(TDBB tdbb, TEXT* index_name, UCHAR index_id, USHORT mask)
                 default_s_class = SCL_get_class(REL.RDB$DEFAULT_CLASS);
         END_FOR;
 
-        CMP_release(tdbb, (JRD_REQ) request);
+        CMP_release(tdbb, (jrd_req*) request);
     }
     else {
         idx_name_ptr = aux_idx_name;
@@ -267,14 +270,15 @@ void SCL_check_index(TDBB tdbb, TEXT* index_name, UCHAR index_id, USHORT mask)
                 default_s_class = SCL_get_class (REL.RDB$DEFAULT_CLASS);
         END_FOR;
 	
-        CMP_release (tdbb, (JRD_REQ)request);
+        CMP_release (tdbb, (jrd_req*)request);
     }
 
 	// Check if the relation exists. It may not have been created yet.
 	// Just return in that case.
 
-	if (!reln_name || !*reln_name)
+	if (!reln_name || !*reln_name) {
 		return;
+	}
 
 	SCL_check_access(s_class, 0, NULL, NULL, mask, object_table, reln_name);
 
@@ -304,24 +308,25 @@ void SCL_check_index(TDBB tdbb, TEXT* index_name, UCHAR index_id, USHORT mask)
 			SCL_check_access(s_class, 0, NULL, NULL, mask,
 							 object_column, RF.RDB$FIELD_NAME);
 		}
-		else
+		else {
 			  SCL_check_access(default_s_class, 0, NULL, NULL, mask,
 							   object_column, RF.RDB$FIELD_NAME);
+		}
 
 	END_FOR;
 
-	CMP_release(tdbb, (JRD_REQ) request);
+	CMP_release(tdbb, (jrd_req*) request);
 	}
 	catch (const std::exception&) {
 		if (request) {
-			CMP_release(tdbb, (JRD_REQ) request);
+			CMP_release(tdbb, (jrd_req*) request);
 		}
 		Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);
 	}
 }
 
 
-void SCL_check_procedure(DSC* dsc_name, USHORT mask)
+void SCL_check_procedure(const dsc* dsc_name, USHORT mask)
 {
 /**************************************
  *
@@ -348,26 +353,27 @@ void SCL_check_procedure(DSC* dsc_name, USHORT mask)
 	const TEXT* const endp = name + sizeof(name) - 1;
 	const TEXT* q = (TEXT*) dsc_name->dsc_address;
 	const TEXT* const endq = q + dsc_name->dsc_length;
-	while (q < endq && p < endp && *q)
+	while (q < endq && p < endp && *q) {
 		*p++ = *q++;
+	}
 	*p = 0;
 	} // end scope block
     fb_utils::fb_exact_name(name);
 
 	DBB dbb = tdbb->tdbb_database;
 
-	SCL s_class = NULL;
+	const scl* s_class = NULL;
 
 	BLK request = (BLK) CMP_find_request(tdbb, irq_p_security, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE request) JRD_PRC IN RDB$PROCEDURES WITH
-		JRD_PRC.RDB$PROCEDURE_NAME EQ name 
+	FOR(REQUEST_HANDLE request) SPROC IN RDB$PROCEDURES
+		WITH SPROC.RDB$PROCEDURE_NAME EQ name
 
         if (!REQUEST(irq_p_security))
 			REQUEST(irq_p_security) = request;
 
-		if (!JRD_PRC.RDB$SECURITY_CLASS.NULL)
-			s_class = SCL_get_class(JRD_PRC.RDB$SECURITY_CLASS);
+		if (!SPROC.RDB$SECURITY_CLASS.NULL)
+			s_class = SCL_get_class(SPROC.RDB$SECURITY_CLASS);
 	END_FOR;
 
 	if (!REQUEST(irq_p_security))
@@ -377,7 +383,7 @@ void SCL_check_procedure(DSC* dsc_name, USHORT mask)
 }
 
 
-void SCL_check_relation(DSC* dsc_name, USHORT mask)
+void SCL_check_relation(const dsc* dsc_name, USHORT mask)
 {
 /**************************************
  *
@@ -404,20 +410,21 @@ void SCL_check_relation(DSC* dsc_name, USHORT mask)
 	const TEXT* const endp = name + sizeof(name) - 1;
 	const TEXT* q = (TEXT*) dsc_name->dsc_address;
 	const TEXT* const endq = q + dsc_name->dsc_length;
-	while (q < endq && p < endp && *q)
+	while (q < endq && p < endp && *q) {
 		*p++ = *q++;
+	}
 	*p = 0;
 	} // end scope block
 	fb_utils::fb_exact_name(name);
 
 	DBB dbb = tdbb->tdbb_database;
 
-	SCL s_class = NULL;
+	const scl* s_class = NULL;
 
 	BLK request = (BLK) CMP_find_request(tdbb, irq_v_security, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE request) REL IN RDB$RELATIONS WITH
-		REL.RDB$RELATION_NAME EQ name 
+	FOR(REQUEST_HANDLE request) REL IN RDB$RELATIONS
+		WITH REL.RDB$RELATION_NAME EQ name
 
         if (!REQUEST(irq_v_security))
 			REQUEST(irq_v_security) = request;
@@ -452,13 +459,15 @@ SCL SCL_get_class(/* INOUT */ TEXT* string)
 
 	// Name may be absent or terminated with NULL or blank.  Clean up name.
 
-	if (!string)
+	if (!string) {
 		return NULL;
+	}
 
 	fb_utils::fb_exact_name(string);
 
-	if (!string[0])
+	if (!string[0]) {
 		return NULL;
+	}
 
 	ATT attachment = tdbb->tdbb_attachment;
 
@@ -508,18 +517,16 @@ int SCL_get_mask(const TEXT* relation_name, const TEXT* field_name)
  *	access for database.
  *
  **************************************/
-	JRD_REL relation;
-
 	TDBB tdbb = GET_THREAD_DATA;
 	ATT attachment = tdbb->tdbb_attachment;
 
 	// Start with database security class
 
-	SCL s_class = attachment->att_security_class;
+	const scl* s_class = attachment->att_security_class;
 	USHORT access = (s_class) ? s_class->scl_flags : -1;
 
 	// If there's a relation, track it down
-
+	jrd_rel* relation;
 	if (relation_name &&
 		(relation = MET_lookup_relation(tdbb, relation_name)))
 	{
@@ -529,7 +536,7 @@ int SCL_get_mask(const TEXT* relation_name, const TEXT* field_name)
 			access &= s_class->scl_flags;
 		}
 		
-		JRD_FLD field;
+		jrd_fld* field;
 		SSHORT id;
 		if (field_name &&
 			(id = MET_lookup_field(tdbb, relation, field_name, 0)) >= 0 &&
@@ -662,7 +669,7 @@ void SCL_init(bool create,
                     if (!REQUEST(irq_get_role_name))
                         REQUEST(irq_get_role_name) = request;
 
-					EXE_unwind(tdbb, (JRD_REQ) request);
+					EXE_unwind(tdbb, (jrd_req*) request);
 					ERR_post(isc_login_same_as_role_name,
 							 isc_arg_string, ERR_cstring(login_name), 0);
 
@@ -730,7 +737,7 @@ void SCL_init(bool create,
 		strcpy(role_name, "NONE");
 	}
 
-	USHORT length = strlen(name) + strlen(role_name) + strlen(project) +
+	const USHORT length = strlen(name) + strlen(role_name) + strlen(project) +
 		strlen(organization) + 4;   /* for the terminating nulls */
 	usr* user = FB_NEW_RPT(*dbb->dbb_permanent, length) usr();
 	tdbb->tdbb_attachment->att_user = user;
@@ -742,8 +749,9 @@ void SCL_init(bool create,
 	user->usr_user_id = id;
 	user->usr_group_id = group;
 	user->usr_node_id = node_id;
-	if (wheel)
+	if (wheel) {
 		user->usr_flags |= USR_locksmith;
+	}
 
 	BLK handle = NULL, handle1 = NULL;
 
@@ -754,7 +762,7 @@ void SCL_init(bool create,
 				tdbb->tdbb_attachment->att_security_class =
 					SCL_get_class(X.RDB$SECURITY_CLASS);
 		END_FOR;
-		CMP_release(tdbb, (JRD_REQ) handle);
+		CMP_release(tdbb, (jrd_req*) handle);
 
 		FOR(REQUEST_HANDLE handle1)
 			FIRST 1 REL IN RDB$RELATIONS WITH REL.
@@ -771,7 +779,7 @@ void SCL_init(bool create,
 				}
 			}
 		END_FOR;
-		CMP_release(tdbb, (JRD_REQ) handle1);
+		CMP_release(tdbb, (jrd_req*) handle1);
 	}
 	else {
 		user->usr_flags |= USR_owner;
@@ -827,18 +835,19 @@ SCL SCL_recompute_class(TDBB tdbb, TEXT* string)
  *	can't find it, return NULL.
  *
  **************************************/
-	SCL s_class;
-
 	SET_TDBB(tdbb);
 
-	if (!(s_class = SCL_get_class(string)))
+	scl* s_class = SCL_get_class(string);
+	if (!s_class) {
 		return NULL;
+	}
 
 	s_class->scl_flags = (USHORT) compute_access(tdbb, s_class, NULL, NULL,
 												 NULL);
 
-	if (s_class->scl_flags & SCL_exists)
+	if (s_class->scl_flags & SCL_exists) {
 		return s_class;
+	}
 
 	// Class no long exists - get rid of it!
 
@@ -860,12 +869,10 @@ void SCL_release(SCL s_class)
  *	Release an unneeded and unloved security class.
  *
  **************************************/
-	SCL *next;
-
 	TDBB tdbb = GET_THREAD_DATA;
 	ATT attachment = tdbb->tdbb_attachment;
 
-	for (next = &attachment->att_security_classes; *next;
+	for (scl** next = &attachment->att_security_classes; *next;
 		 next = &(*next)->scl_next)
 	{
 		if (*next == s_class)
@@ -889,24 +896,25 @@ static bool check_hex(const TEXT* acl, USHORT number)
  *
  * Functional description
  *	Check a string against and acl numeric string.  If they don't match,
- *	return TRUE.
+ *	return true.
  *
  **************************************/
-	USHORT l;
-
 	int n = 0;
-	if ( (l = *acl++) )
+	USHORT l = *acl++;
+	if (l)
 	{
-		do
-		{
-			TEXT c = *acl++;
+		do {
+			const TEXT c = *acl++;
 			n *= 10;
-			if (c >= '0' && c <= '9')
+			if (c >= '0' && c <= '9') {
 				n += c - '0';
-			else if (c >= 'a' && c <= 'f')
+			}
+			else if (c >= 'a' && c <= 'f') {
 				n += c - 'a' + 10;
-			else if (c >= 'A' && c <= 'F')
+			}
+			else if (c >= 'A' && c <= 'F') {
 				n += c - 'A' + 10;
+			}
 		} while (--l);
 	}
 
@@ -924,13 +932,12 @@ static bool check_number(const TEXT* acl, USHORT number)
  *
  * Functional description
  *	Check a string against and acl numeric string.  If they don't match,
- *	return TRUE.
+ *	return true.
  *
  **************************************/
-	USHORT l;
-
 	int n = 0;
-	if ( (l = *acl++) )
+	USHORT l = *acl++;
+	if (l)
 	{
 		do {
 			n = n * UIC_BASE + *acl++ - '0';
@@ -965,11 +972,9 @@ static bool check_user_group(const TEXT* acl,
  *      converts character user group id to numeric user group id.
  *
  *	Check numeric user group id against an acl numeric string.  
- *  If they don't match, return TRUE.
+ *  If they don't match, return true.
  *
  **************************************/
-	USHORT l;
-
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 
@@ -980,19 +985,20 @@ static bool check_user_group(const TEXT* acl,
 
 	buffer = FB_NEW_RPT(*dbb->dbb_permanent, *length_ptr) str();
 
-	if ( (l = *acl++) )
+	USHORT l = *acl++;
+	if (l)
 	{
 		if (isdigit(*acl))	// this is a group id
 		{
-			do
+			do {
 				n = n * UIC_BASE + *acl++ - '0';
-			while (--l);
+			} while (--l);
 		}
 		else				// processing group name
 		{
 			TEXT* user_group_name = (TEXT*) buffer->str_data;
 			do {
-				TEXT one_char = *acl++;
+				const TEXT one_char = *acl++;
 				*user_group_name++ = LOWWER(one_char);
 			} while (--l);
 			*user_group_name = '\0';
@@ -1028,8 +1034,6 @@ static bool check_string(const TEXT* acl, const TEXT* string)
  *	return true.
  *
  **************************************/
-	USHORT l;
-
 	// Add these asserts to catch calls to this function with NULL,
 	// the caller to this function must check to ensure that the arguments are not
 	// NULL  - Shaunak Mistry 03-May-99.
@@ -1039,13 +1043,15 @@ static bool check_string(const TEXT* acl, const TEXT* string)
 
 	// JPN: Since Kanji User names are not allowed, no need to fix this UPPER loop
 
-	if ( (l = *acl++) )
+	USHORT l = *acl++;
+	if (l)
 	{
 		do {
-			TEXT c1 = *acl++;
-			TEXT c2 = *string++;
-			if (UPPER7(c1) != UPPER7(c2))
+			const TEXT c1 = *acl++;
+			const TEXT c2 = *string++;
+			if (UPPER7(c1) != UPPER7(c2)) {
 				return true;
+			}
 		} while (--l);
 	}
 
@@ -1053,8 +1059,9 @@ static bool check_string(const TEXT* acl, const TEXT* string)
     // Need to check all since can have embedded spaces.
 
     while (*string) {
-        if (*string++ != ' ')
+        if (*string++ != ' ') {
             return true;
+        }
     }
     return false;
 }
@@ -1062,7 +1069,7 @@ static bool check_string(const TEXT* acl, const TEXT* string)
 
 static SLONG compute_access(TDBB tdbb,
 							const scl* s_class,
-							JRD_REL view,
+							const jrd_rel* view,
 							const TEXT* trg_name,
 							const TEXT* prc_name)
 {
@@ -1078,7 +1085,6 @@ static SLONG compute_access(TDBB tdbb,
  *	access permissions.  Return a flag word of recognized privileges.
  *
  **************************************/
-	BLB blob = NULL;
 	volatile STR str_buffer = NULL;
 	SLONG length = BLOB_BUFFER_SIZE, *length_ptr = &length;
 
@@ -1104,7 +1110,7 @@ static SLONG compute_access(TDBB tdbb,
 			REQUEST(irq_l_security) = request;
 
 		privileges |= SCL_exists;
-		blob = BLB_open(tdbb, dbb->dbb_sys_trans, (BID) & X.RDB$ACL);
+		blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, (BID) & X.RDB$ACL);
 		TEXT* acl = buffer;
 		while (true)
 		{
@@ -1119,7 +1125,7 @@ static SLONG compute_access(TDBB tdbb,
 
 			if (blob->blb_fragment_size)
 			{
-				ULONG old_offset = (ULONG) (acl - buffer);
+				const ULONG old_offset = (ULONG) (acl - buffer);
 				length += BLOB_BUFFER_SIZE;
 				// TMN: Cast away volatile
 				str::extend(const_cast<str*&>(str_buffer), length);
@@ -1189,7 +1195,7 @@ static TEXT* save_string(const TEXT* string, TEXT** ptr)
 
 static SLONG walk_acl(TDBB tdbb,
 					  const TEXT* acl,
-					  JRD_REL view,
+					  const jrd_rel* view,
 					  const TEXT* trg_name,
 					  const TEXT* prc_name,
 					  STR* start_ptr,
@@ -1206,18 +1212,13 @@ static SLONG walk_acl(TDBB tdbb,
  *	is found, return privileges.
  *
  **************************************/
-	bool hit;
-	TEXT c;
-	TEXT* p;
-	volatile BLK request;
-
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
 
 	// Munch ACL. If we find a hit, eat up privileges.
 
 	struct usr user = *tdbb->tdbb_attachment->att_user;
-	TEXT* role_name = user.usr_sql_role_name;
+	const TEXT* role_name = user.usr_sql_role_name;
 
 	if (view && (view->rel_flags & REL_sql_relation))
 	{
@@ -1241,6 +1242,10 @@ static SLONG walk_acl(TDBB tdbb,
 		return -1 & ~SCL_corrupt;
 	}
 
+	const TEXT* p;
+	bool hit = false;
+	TEXT c;
+	
 	while ( (c = *acl++) )
 	{
 		switch (c)
@@ -1281,11 +1286,16 @@ static SLONG walk_acl(TDBB tdbb,
 						hit = false;
 					else
 					{
-						TEXT login_name[129], *p, *q;
-						for (p = login_name, q = user.usr_user_name;
-							 (*p++ = UPPER7(*q)); q++);
+						TEXT login_name[129];
+						TEXT* pln = login_name;
+						const TEXT* q = user.usr_user_name;
+						while (*pln++ = UPPER7(*q)) {
+							++q;
+						}
 						hit = false;
-						request = (BLK)CMP_find_request(tdbb, irq_get_role_mem,
+						// Was volatile BLK request;
+						blk* volatile request =
+							(BLK)CMP_find_request(tdbb, irq_get_role_mem,
 												   IRQ_REQUESTS);
 
 						FOR(REQUEST_HANDLE request) U IN RDB$USER_PRIVILEGES WITH

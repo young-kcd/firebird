@@ -29,7 +29,7 @@ ULONG		REMOTE_compute_batch_size (struct port *, USHORT, P_OP, FMT);
 void		REMOTE_get_timeout_params (struct port*, const UCHAR*, USHORT);
 struct rrq*	REMOTE_find_request (struct rrq *, USHORT);
 void		REMOTE_free_packet (struct port *, struct packet *);
-struct str*	REMOTE_make_string (const SCHAR*);
+struct rem_str*	REMOTE_make_string (const SCHAR*);
 void		REMOTE_release_messages (struct message *);
 void		REMOTE_release_request (struct rrq *);
 void		REMOTE_reset_request (struct rrq *, struct message *);
@@ -38,3 +38,4 @@ void		REMOTE_save_status_strings (ISC_STATUS *);
 OBJCT		REMOTE_set_object (struct port *, struct blk *, OBJCT);
 
 #endif // REMOTE_REMOT_PROTO_H
+

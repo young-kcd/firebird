@@ -109,7 +109,7 @@ typedef struct prb
 	SRQ prb_sessions;			/* Sessions within process */
 	SLONG prb_process_id;		/* Process id */
 	SLONG prb_process_uid[2];	/* Process UID (apollo) */
-	EVENT_T prb_event[1];		/* Event on which to wait */
+	event_t prb_event[1];		/* Event on which to wait */
 	USHORT prb_flags;
 } *PRB;
 
