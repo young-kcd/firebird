@@ -1,3 +1,98 @@
+2004-10-27 20:17  asfernandes
+
+	* firebird2/src/jrd/all.cpp (1.42):
+	
+	Make compilable in MSVC6
+
+2004-10-27 15:27  dimitr
+
+	* firebird2/src/jrd/evl.cpp (1.115):
+	
+	Let's include milliseconds also in CURRENT_TIMESTAMP, accordingly
+	to the SQL spec.
+
+2004-10-27 14:14  dimitr
+
+	* firebird2/src/dsql/parse.y (1.156):
+	
+	Changed non-standard WEEKDAY and YEARDAY extentions to become
+	non-reserved words.
+
+2004-10-27 13:46  dimitr
+
+	* firebird2/src/jrd/cvt.cpp (1.51):
+	
+	Let's include milliseconds in 'NOW'.
+
+2004-10-27 12:54  aafemt
+
+	* firebird2/src/dudley/ddl.h (1.31):
+	
+	Supress warning
+
+2004-10-27 12:50  aafemt
+
+	* firebird2/src/alice/alice.h (1.45):
+	
+	Supress warning
+
+2004-10-27 12:19  aafemt
+
+	* firebird2/src/jrd/ibase.h (1.93):
+	
+	Equal rights to all compilers as Claudio suggested
+
+2004-10-27 12:14  aafemt
+
+	* firebird2/src/dsql/dsql.cpp (1.129):
+	
+	Variable shadowing
+
+2004-10-27 11:33  aafemt
+
+	* firebird2/src/jrd/cmp.cpp (1.158):
+	
+	Fix warning
+
+2004-10-27 11:32  dimitr
+
+	* firebird2/src/dsql/: node.h (1.50), parse.cpp (1.132), parse.y
+	(1.155), pass1.cpp (1.166):
+	
+	Ported UPDATE/DELETE extentions from Yaffil.
+
+2004-10-27 11:31  aafemt
+
+	* firebird2/src/jrd/cmp.cpp (1.157):
+	
+	Variable shadowing that could cause memory leak
+
+2004-10-27 11:27  aafemt
+
+	* firebird2/src/: common/classes/sparse_bitmap.h (1.7),
+	jrd/RecordNumber.h (1.4):
+	
+	Variable shadowing
+
+2004-10-27 11:24  aafemt
+
+	* firebird2/src/jrd/ibase.h (1.92):
+	
+	Supress compiler warning
+
+2004-10-27 11:21  aafemt
+
+	* firebird2/builds/posix/prefix.mingw (1.34):
+	
+	Unfortunatelly GNU autoconf macros added by Nikolay don't work for
+	mingw
+
+2004-10-27 04:35  skidder
+
+	* firebird2/src/jrd/all.cpp (1.41):
+	
+	kill warning
+
 2004-10-27 03:03  asfernandes
 
 	* firebird2/src/intl/collations/bl88591ptbr0.h (1.1):
