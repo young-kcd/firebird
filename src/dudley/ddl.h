@@ -468,21 +468,6 @@ typedef enum {
 #define	trig_era	8			/* erase defaults to post */
 #define	trig_inact	16
 
-/* this table translates between the two types of types */
-
-static TRG_T trig_table[] = {
-	trg_type_none,
-	trg_type_none,
-	trg_store,
-	trg_post_store,
-	trg_modify,
-	trg_post_modify,
-	trg_type_none,
-	trg_type_none,
-	trg_pre_erase,
-	trg_erase
-};
-
 typedef struct dudley_trg {
 	TRG_T trg_type;
 	DUDLEY_REL trg_relation;

@@ -76,6 +76,21 @@ typedef enum {
 	obj_generator,
 } OBJ_T;
 
+/* this table translates between the two types of types */
+
+static TRG_T trig_table[] = {
+	trg_type_none,
+	trg_type_none,
+	trg_store,
+	trg_post_store,
+	trg_modify,
+	trg_post_modify,
+	trg_type_none,
+	trg_type_none,
+	trg_pre_erase,
+	trg_erase
+};
+
 jmp_buf parse_env;
 
 extern TEXT *DDL_prompt;
@@ -1208,7 +1223,6 @@ static void define_relation(void)
  **************************************/
 	DUDLEY_REL relation;
 	DUDLEY_FLD field, global;
-	DSC desc;
 	SSHORT position;
 	ACT rel_actions, action;
 
@@ -1431,7 +1445,7 @@ static void define_trigger(void)
 
 	trigger->trg_relation = PARSE_relation();
 
-	flags = trg_state = trg_sequence = NULL;
+	flags = trg_state = trg_sequence = 0;
 	get_trigger_attributes(&flags, &trg_state, &trg_sequence);
 	trigger->trg_type = trig_table[trg_state & ~trig_inact];
 	trigger->trg_inactive = (trg_state & trig_inact);
@@ -2413,7 +2427,7 @@ static void mod_old_trigger(void)
 	relation = PARSE_relation();
 
 	while (!MATCH(KW_END_TRIGGER)) {
-		flags = type = sequence = NULL;
+		flags = type = sequence = 0;
 		get_trigger_attributes(&flags, &type, &sequence);
 		if (!type)
 			PARSE_error(165, DDL_token.tok_string, 0);	/* msg 165: expected STORE, MODIFY, ERASE, END_TRIGGER, encountered \"%s\"  */
@@ -2769,7 +2783,7 @@ static void modify_trigger(void)
 	else
 		relation = trigger->trg_relation;
 
-	flags = type = sequence = NULL;
+	flags = type = sequence = 0;
 	get_trigger_attributes((int*) &flags, (int*) &type, (int*) &sequence);
 
 	while (!KEYWORD(KW_SEMI)) {
