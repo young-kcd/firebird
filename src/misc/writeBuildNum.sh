@@ -3,7 +3,7 @@
 # This file is used both to rebuild the header file and to set the 
 # environment variables on the config call
 
-BuildVersion="$Id: writeBuildNum.sh,v 1.98 2002-01-21 15:26:55 kkuznetsov Exp $"
+BuildVersion="$Id: writeBuildNum.sh,v 1.99 2002-01-28 07:30:12 skywalker Exp $"
 
 BuildType=T
 MajorVer=2
@@ -62,7 +62,7 @@ eof
 
 
 
-if [ "$1" == "rebuildHeader" ]
+if [ "$1" = "rebuildHeader" ]
   then
     rebuildHeaderFile
 fi
