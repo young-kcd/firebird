@@ -114,6 +114,7 @@ static bool expression_equal2(thread_db*, OptimizerBlk*, jrd_nod*,
 #endif
 static void find_best(thread_db*, OptimizerBlk*, USHORT, USHORT, UCHAR*, const jrd_nod*,
 					  double, double);
+static void find_index_relationship_streams(thread_db*, OptimizerBlk*, UCHAR*, UCHAR*, UCHAR*);
 static jrd_nod* find_dbkey(jrd_nod*, USHORT, SLONG*);
 static USHORT find_order(thread_db*, OptimizerBlk*, UCHAR*, const jrd_nod*);
 static void find_rsbs(RecordSource*, StreamStack*, RsbStack*);
@@ -678,7 +679,9 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	// Put conjunctions in opt structure. 
 	// Note that it's a stack and we get the nodes in reversed order from the stack.
 	opt->opt_conjuncts.grow(conjunct_count);
-	SSHORT i, j, nodeBase;
+	SSHORT i;
+	SSHORT j = 0;
+	SSHORT nodeBase = 0;
 	for (i = conjunct_count; i > 0; i--) 
 	{
 		jrd_nod* node = conjunct_stack.pop();
@@ -767,14 +770,38 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 			}
 		}
 
-		// attempt to form joins in decreasing order of desirability 
 		fb_assert(streams[0] != 1 || csb->csb_rpt[streams[1]].csb_relation != 0);
+
+		// AB: Determine which streams have a index relationship
+		// with the currently active rivers. This is needed so that
+		// no merge is made between a new cross river and the
+		// currently active rivers. Where in the new cross river 
+		// a stream depends (index) on the active rivers.
+		stream_array_t dependent_streams, free_streams;
+		dependent_streams[0] = free_streams[0] = 0;
+		find_index_relationship_streams(tdbb, opt, streams, 
+			dependent_streams, free_streams);
+
+		if (dependent_streams[0]) {
+			// copy free streams
+			for (i = 0; i <= free_streams[0]; i++) {
+				streams[i] = free_streams[i];
+			}
+		}
+
+		// attempt to form joins in decreasing order of desirability 
 		gen_join(tdbb, opt, streams, rivers_stack, &sort, &project,
 				 rse->rse_plan);
 
 		// If there are multiple rivers, try some sort/merging
 		while (rivers_stack.hasMore(1)
 			   && gen_sort_merge(tdbb, opt, rivers_stack));
+
+		if (dependent_streams[0]) {
+			// attempt to form joins in decreasing order of desirability 
+			gen_join(tdbb, opt, dependent_streams, rivers_stack, &sort, 
+				&project, rse->rse_plan);
+		}
 
 		rsb = make_cross(tdbb, opt, rivers_stack);
 
@@ -3627,6 +3654,80 @@ static void find_best(thread_db* tdbb,
 }
 
 
+static void find_index_relationship_streams(thread_db* tdbb, 
+											OptimizerBlk* opt, 
+											UCHAR* streams, 
+											UCHAR* dependent_streams, 
+											UCHAR* free_streams)
+{
+/**************************************
+ *
+ *	f i n d _ i n d e x _r e l a t i o n s h i p _ s t r e a m s 
+ *
+ **************************************
+ *
+ * Functional description
+ *	Find the streams that can use a index 
+ *	with the currently active streams.
+ *
+ **************************************/
+
+	DEV_BLKCHK(opt, type_opt);
+	SET_TDBB(tdbb);
+
+	CompilerScratch* csb = opt->opt_csb;
+	const UCHAR* end_stream = streams + 1 + streams[0];
+	for (UCHAR* stream = streams + 1; stream < end_stream; stream++) {
+
+		CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[*stream];
+		// Set temporary active flag for this stream
+		csb_tail->csb_flags |= csb_active;
+
+		bool indexed_relationship = false;
+		if (opt->opt_conjuncts.getCount()) {
+			index_desc* idx = csb_tail->csb_idx->items;
+
+			// Walk through all indexes from this relation
+			for (USHORT i = 0; i < csb_tail->csb_indices; i++) {
+				clear_bounds(opt, idx);
+				const OptimizerBlk::opt_conjunct* const opt_end =
+					opt->opt_conjuncts.end();
+				// Walk through all conjunctions
+				for (const OptimizerBlk::opt_conjunct* tail = opt->opt_conjuncts.begin();
+					tail < opt_end; tail++)
+				{
+					jrd_nod* node = tail->opt_conjunct_node;
+					// Try to match conjunction against index
+					if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
+						computable(csb, node, -1, true, false))
+					{
+						match_index(tdbb, opt, *stream, node, idx);
+					}
+				}
+
+				// If first segment could be matched we're able to use a 
+				// index that is dependent on the already active streams.
+				OptimizerBlk::opt_segment* segment = opt->opt_segments;
+				if (segment->opt_lower || segment->opt_upper) {
+					indexed_relationship = true;
+					break;
+				}
+			}
+		}
+
+		if (indexed_relationship) {
+			dependent_streams[++dependent_streams[0]] = *stream;
+		}
+		else {
+			free_streams[++free_streams[0]] = *stream;
+		}
+
+		// Reset active flag
+		csb_tail->csb_flags &= ~csb_active;
+	}
+}
+
+
 static jrd_nod* find_dbkey(jrd_nod* dbkey, USHORT stream, SLONG* position)
 {
 /**************************************
@@ -4495,6 +4596,7 @@ static void gen_join(thread_db*		tdbb,
 		} while (form_river
 			   (tdbb, opt, count, streams, temp, river_stack, 
 				sort_clause, project_clause, 0));
+				
 	}
 }
 
@@ -5781,10 +5883,16 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 
 	RecordSource** rsb_tail = merge_rsb->rsb_arg;
 	stream_cnt = 0;
+	// AB: Get the lowest river position from the rivers that are merged.
+	// Note that we're walking the rivers in backwards direction.
+	USHORT lowestRiverPosition = 0;
 	for (RiverStack::iterator stack3(org_rivers); stack3.hasData(); ++stack3) {
 		River* river1 = stack3.object();
 		if (!(TEST_DEP_BIT(selected_rivers, river1->riv_number))) {
 			continue;
+		}
+		if (river1->riv_number > lowestRiverPosition) {
+			lowestRiverPosition = river1->riv_number;
 		}
 		stream_cnt += river1->riv_count;
 		jrd_nod* sort = FB_NEW_RPT(*tdbb->getDefaultPool(), selected_classes.getCount() * 3) jrd_nod();
@@ -5807,6 +5915,7 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 
 	// Finally, merge selected rivers into a single river, and rebuild 
 	// original river stack.
+	// AB: Be sure that the rivers 'order' will be kept.
 	River* river1 = FB_NEW_RPT(*tdbb->getDefaultPool(), stream_cnt) River();
 	river1->riv_count = (UCHAR) stream_cnt;
 	river1->riv_rsb = merge_rsb;
@@ -5817,22 +5926,21 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 		if (TEST_DEP_BIT(selected_rivers, river2->riv_number)) {
 			MOVE_FAST(river2->riv_streams, stream, river2->riv_count);
 			stream += river2->riv_count;
+			// If this is the lowest position put in the new river.
+			if (river2->riv_number == lowestRiverPosition) {
+				newRivers.push(river1);
+			}
 		}
 		else {
-			// AB: Be sure that the rivers 'order' will be kept.
-			if (newRivers.hasData()) {
-				River* river3 = newRivers.pop();
-				newRivers.push(river2);
-				newRivers.push(river3);
-			}
-			else {
-				newRivers.push(river2);
-			}
+			newRivers.push(river2);
 		}
 	}
-	// AB: Moved LLS_PUSH() from before the while (*org_rivers) loop to here, because
-	// the merged rivers could be refering to other streams on the list.
-	newRivers.push(river1);
+
+	// AB: Put new rivers list back in the original list.
+	// Note that the rivers in the new stack are reversed.
+	while (newRivers.hasData()) {
+		org_rivers.push(newRivers.pop());
+	}
 
 	// Pick up any boolean that may apply.
 	{
@@ -5863,7 +5971,6 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 			river1->riv_rsb = gen_boolean(tdbb, opt, river1->riv_rsb, node);
 		}
 		set_inactive(opt, river1);
-		org_rivers.takeOwnership(newRivers);
 
 		for (stream_nr = 0, fv = flag_vector; 
 			stream_nr < opt->opt_csb->csb_n_stream; stream_nr++) 
