@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.113 2004-09-08 12:01:28 alexpeshkoff Exp $
+ * $Id: ddl.cpp,v 1.114 2004-09-09 08:58:13 robocop Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -2008,7 +2008,7 @@ static SSHORT getBlobFilterSubType(dsql_req* request, const dsql_nod* node)
  *******************************************
  *
  * Function
- *	get syb_type value from nod_constant.
+ *	get sub_type value from nod_constant.
  *
  **************************************/
 	fb_assert(node->nod_type == nod_constant);
