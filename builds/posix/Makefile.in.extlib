@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.extlib,v 1.9 2003-03-27 11:21:44 aafemt Exp $
+#  $Id: Makefile.in.extlib,v 1.10 2003-05-25 00:04:15 skidder Exp $
 #
 ROOT=..
 ObjModuleName=extlib
@@ -102,10 +102,10 @@ $(UDF)/fb_udf.$(SHRLIB_EXT):	$(FBUDF_Objects) $(UTIL_Objects)
 
 # ib_util
 
-lib_ib_util: $(LIB)/ib_util.$(SHRLIB_EXT)
+lib_ib_util: $(LIBIBUTIL_SO)
 
-$(LIB)/ib_util.$(SHRLIB_EXT):	$(UTIL_Objects)
-	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)ib_util.$(SHRLIB_EXT) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^
+$(LIBIBUTIL_SO):	$(UTIL_Objects)
+	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)$(IbUtilLibraryName) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^
 #	-$(LN) $(@F) $(LIBFBINTL_SOBASENAME) 
 #	-$(LN) $(notdir $(LIBFBINTL_SOBASENAME)) $(LIBFBINTL_SONAME)
 
