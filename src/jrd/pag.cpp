@@ -1174,6 +1174,10 @@ void PAG_init(void)
 	dbb->dbb_max_idx = (dbb->dbb_page_size - OFFSETA(IRT, irt_rpt)) /
 		(sizeof(irt::irt_repeat) + (1 * (sizeof(irtd))));
 
+	// dimitr:	temporary fix. We allow no more than 256 indices in FB 1.5
+	//			because of theoretically possible BTR instability and
+	//			known optimizer limits.
+	dbb->dbb_max_idx = MIN(dbb->dbb_max_idx, 256);
 
 /* Compute prefetch constants from database page size and maximum prefetch
    transfer size. Double pages per prefetch request so that cache reader
