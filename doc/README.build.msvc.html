@@ -53,10 +53,11 @@ Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 <ul>
 <li>Microsoft VisualStudio 6 or 7.</li>
 <li>A running Firebird server</li>
+<li>sed unix utility</li>
 </ul>
 
-<p>If you intend to modify the dsql parser file (parse.y) you will need a parser generator, bison or byacc (Berkeley yacc) and the sed utility. At this time byacc 1.9 is the official parser generator although in the future it will be switched to bison. The tested versions of byacc are 1.9 or newer and for bison 1.28 or newer.</p>
-<p>If you intend to prepare an installable build, you will need innosetup and the sed utility.</p>
+<p>If you intend to modify the dsql parser file (parse.y) you will need a parser generator, bison or byacc (Berkeley yacc). At this time byacc 1.9 is the official parser generator although in the future it will be switched to bison. The tested versions of byacc are 1.9 or newer and for bison 1.28 or newer.</p>
+<p>If you intend to prepare an installable build, you will need innosetup.</p>
 <p>To download the utilities use the following links</p>
 <ul>
 <li>My Inno setup extensions 3.0.6.2 <a href="http://www.wintax.nl/isx/">http://www.wintax.nl/isx/</a></li>
@@ -107,7 +108,7 @@ Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 <p>Remember, you need sed and innosetup in the path to build the installer</p>
 <ul>
 <li>Open a command line window.</li>
-<li>Go to the firebird2 src\install\arch-specific\win32 directory.</li>
+<li>Go to the firebird2 builds\install\arch-specific\win32 directory.</li>
 <li>The batch to build the installer is<br>
 BuildExecutableInstall.bat [DEBUG] [CS]<br>
 Where DEBUG means if the build is a debug one or not and CS means classic server installer.</li>
