@@ -57,8 +57,8 @@ static bool fAnsiCP = false;
 #define TRANSLATE_CP(a)
 #endif
 
-const int MAXARGS		= 20;		/* max number of args allowed on command line */
-const USHORT MAXSTUFF	= 1000;		/* longest interactive command line */
+const int MAXARGS	= 20;		/* max number of args allowed on command line */
+const int MAXSTUFF	= 1000;		/* longest interactive command line */
 
 #ifndef SUPERSERVER
 class tsec *gdsec;
@@ -68,7 +68,7 @@ static int common_main(int, char**, Jrd::pfn_svc_output, Jrd::Service*);
 static void util_output(const SCHAR*, ...);
 
 static void data_print(void*, const internal_user_data*, bool);
-static bool get_line(int*, SCHAR**, TEXT*, tsec*);
+static bool get_line(int*, SCHAR**, TEXT*, size_t);
 static bool get_switches(int, const TEXT* const*, const in_sw_tab_t*, tsec*, bool*);
 static SSHORT parse_cmd_line(int, const TEXT* const*, tsec*);
 static void printhelp(void);
@@ -121,8 +121,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
  *	the specified argc/argv to SECURITY_exec_line (see below).
  *
  **************************************/
-	common_main(argc, argv, output_main, NULL);
-	return 0;
+	return common_main(argc, argv, output_main, NULL);
 }
 
 static int output_main(Jrd::Service* output_data, const UCHAR* output_buf)
@@ -306,7 +305,7 @@ int common_main(int argc,
 		for (;;) {
 			/* Clear out user data each time through this loop. */
 			MOVE_CLEAR(tdsec->tsec_user_data, sizeof(internal_user_data));
-			if (get_line(&local_argc, local_argv, stuff, tdsec))
+			if (get_line(&local_argc, local_argv, stuff, sizeof(stuff)))
 				break;
 			if (local_argc > 1) {
 				ret = parse_cmd_line(local_argc, local_argv, tdsec);
@@ -333,8 +332,12 @@ int common_main(int argc,
 			GSEC_error_redirect(loc_status, 0, NULL, NULL);
 		}
 	}
-	gsec_exit(FINI_OK, tdsec);
-	return 0;					// silence compiler warning
+
+	if (tdsec->tsec_interactive)
+		gsec_exit(FINI_OK, tdsec);
+
+	gsec_exit(ret, tdsec);
+	return ret;					// silence compiler warning
 
 	}	// try
 	catch (const std::exception&) {
@@ -437,7 +440,7 @@ static void data_print(void* arg, const internal_user_data* data, bool first)
 }
 
 
-static bool get_line(int* argc, SCHAR** argv, TEXT* stuff, tsec* tdsec)
+static bool get_line(int* argc, SCHAR** argv, TEXT* stuff, size_t maxstuff)
 {
 /**************************************
  *
@@ -454,7 +457,7 @@ static bool get_line(int* argc, SCHAR** argv, TEXT* stuff, tsec* tdsec)
 	GSEC_print_partial(GsecMsg1, NULL, NULL, NULL, NULL, NULL);
 	*argc = 1;
 	TEXT* cursor = stuff;
-	USHORT count = MAXSTUFF - 1;
+	int count = (int) maxstuff - 1;
 	bool first = true;
 
 /* for each input character, if it's white space (or any non-printable,
@@ -1121,10 +1124,10 @@ void GSEC_print_status(const ISC_STATUS* status_vector)
 		tsec* tdsec = tsec::getSpecific();
 		ISC_STATUS* status = tdsec->tsec_service_blk->svc_status;
 		if (status != status_vector) {
-		    int i = 0, j;
+		    int i = 0;
 			while (*status && (++i < ISC_STATUS_LENGTH))
 				status++;
-			for (j = 0; status_vector[j] && (i < ISC_STATUS_LENGTH); j++, i++)
+			for (int j = 0; status_vector[j] && (i < ISC_STATUS_LENGTH); j++, i++)
 				*status++ = status_vector[j];
 		}
 #endif
