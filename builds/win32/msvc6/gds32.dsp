@@ -121,7 +121,7 @@ SOURCE=..\defs\gds32.def
 # End Source File
 # Begin Source File
 
-SOURCE=..\gds32_debug.def
+SOURCE=..\defs\gds32_debug.def
 
 !IF  "$(CFG)" == "gds32 - Win32 Debug"
 
