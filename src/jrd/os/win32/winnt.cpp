@@ -837,8 +837,8 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 	else
 	{
 		DWORD actual_length;
-		if (!WriteFile(desc, page, size, &actual_length, overlapped_ptr) &&
-			actual_length == size)
+		if (!WriteFile(desc, page, size, &actual_length, overlapped_ptr) 
+			|| actual_length != size )
 		{
 #ifdef SUPERSERVER_V2
 			if (!GetOverlappedResult(desc, overlapped_ptr, &actual_length, TRUE)
