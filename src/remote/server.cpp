@@ -1234,6 +1234,20 @@ void port::disconnect(PACKET* send, PACKET* receive)
 		return;
 	}
 
+	/* For WNET and XNET we should send dummy op_disconnect packet
+	   to wakeup async port handling events on client side.
+	   For INET it's not necessary because INET client's async port
+	   wakes up while server performs shutdown(socket) call on its async port.
+	   See interface.cpp - event_thread(). */
+
+	PACKET *packet = &rdb->rdb_packet;
+	if ((this->port_async) &&
+		((this->port_type == port_xnet) || (this->port_type == port_pipe)))
+	{
+		packet->p_operation = op_disconnect;
+		this->port_async->send(packet);
+	}
+
 	if (rdb->rdb_handle)
 		if (!(rdb->rdb_flags & RDB_service)) {
 #ifdef CANCEL_OPERATION
@@ -3072,11 +3086,7 @@ BOOLEAN process_packet(PORT port,
 				break;
 			if ((server->srvr_flags & SRVR_multi_client) &&
 				port != server->srvr_parent_port) {
-				if (port->port_type == port_xnet) {
-					port->disconnect(send, receive);
-					THD_restore_specific();
-					return FALSE;
-				}
+
 				port->disconnect(send, receive);
 				port = NULL;
 				break;
@@ -3084,9 +3094,7 @@ BOOLEAN process_packet(PORT port,
 			else {
 				if ((server->srvr_flags & SRVR_multi_client) &&
 					port == server->srvr_parent_port)
-						gds__log
-						("SERVER/process_packet: Multi-client server shutdown",
-						 0);
+						gds__log("SERVER/process_packet: Multi-client server shutdown", 0);
 				port->disconnect(send, receive);
 				THD_restore_specific();
 				return FALSE;
@@ -3259,7 +3267,10 @@ BOOLEAN process_packet(PORT port,
 		if (port && port->port_state == state_broken) {
 			if (!port->port_parent) {
 				gds__log("SERVER/process_packet: broken port, server exiting", 0);
-				port->disconnect();
+				if (port->port_type == port_inet)
+					port->disconnect();
+				else
+					port->disconnect(send, receive);
 				THD_restore_specific();
 				return FALSE;
 			}
