@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.27 2003-02-13 10:10:59 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.28 2003-02-13 17:28:38 tamlin Exp $ 
  */
 
 /*
@@ -205,6 +205,13 @@ static const UCHAR special[256] = {
 #define DIALECT_3_TIMESTAMP_SCALE	-9
 #define DIALECT_1_TIMESTAMP_SCALE	0
 
+#ifdef SCROLLABLE_CURSORS
+static const RSE_GET_MODE g_RSE_get_mode = RSE_get_next;
+#else
+static const RSE_GET_MODE g_RSE_get_mode = RSE_get_forward;
+#endif
+
+
 
 
 DSC *DLL_EXPORT EVL_assign_to(TDBB tdbb, JRD_NOD node)
@@ -362,12 +369,11 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, JRD_NOD node)
  *      Evaluate a boolean.
  *
  **************************************/
-	JRD_REQ request;
-	JRD_NOD *ptr;
-	DSC *desc[2];
+
+	DSC*   desc[2];
 	USHORT value;
 	SSHORT comparison;
-	VLU impure;
+	VLU    impure;
 
 	SET_TDBB(tdbb);
 
@@ -376,10 +382,11 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, JRD_NOD node)
 /* Handle and pre-processing possible for various nodes.  This includes
    evaluating argument and checking NULL flags */
 
-	request = tdbb->tdbb_request;
-	ptr = node->nod_arg;
+	JRD_REQ  request = tdbb->tdbb_request;
+	JRD_NOD* ptr     = node->nod_arg;
 
-	switch (node->nod_type) {
+	switch (node->nod_type)
+	{
 	case nod_contains:
 	case nod_starts:
 	case nod_matches:
@@ -423,16 +430,18 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, JRD_NOD node)
 
 			force_equal |= request->req_flags & req_same_tx_upd;
 
-			if (node->nod_flags & nod_comparison)
+			if (node->nod_flags & nod_comparison) {
 				comparison = MOV_compare(desc[0], desc[1]);
+			}
 
 			/* If we are checking equality of record_version
 			 * and same transaction updated the record,
 			 * force equality.
 			 */
 
-			if ((rec_version->nod_type == nod_rec_version) && (force_equal))
+			if ((rec_version->nod_type == nod_rec_version) && (force_equal)) {
 				comparison = 0;
+			}
 
 			request->req_flags &= ~(req_null | req_same_tx_upd);
 		}
@@ -447,23 +456,24 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, JRD_NOD node)
 		break;
 
 	case nod_not:
-		if ((*ptr)->nod_type == nod_ansi_any
-			|| (*ptr)->nod_type == nod_ansi_all) request->req_flags |=
-				req_ansi_not;
+		if ((*ptr)->nod_type == nod_ansi_any ||
+		    (*ptr)->nod_type == nod_ansi_all)
+		{
+			request->req_flags |= req_ansi_not;
+		}
 		value = EVL_boolean(tdbb, *ptr++);
-                break;
-        
-        default:   /* Shut up some compiler warnings */
-            break;
+		break;
+
+	default:   /* Shut up some compiler warnings */
+		break;
 	}
 
 /* Evaluate node */
 
-	switch (node->nod_type) {
+	switch (node->nod_type)
+	{
 	case nod_and:
 		{
-			USHORT firstnull, secondnull, value2;
-
 			/* for and,
 			   if either operand is FALSE, then the result is FALSE;
 			   if both are TRUE, the result is TRUE;
@@ -485,16 +495,18 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, JRD_NOD node)
 
 			/* save null state and get other operand */
 
-			firstnull = request->req_flags & req_null;
+			const USHORT firstnull = request->req_flags & req_null;
 			request->req_flags &= ~req_null;
-			value2 = EVL_boolean(tdbb, *ptr);
-			secondnull = request->req_flags & req_null;
+			const USHORT value2 = EVL_boolean(tdbb, *ptr);
+			const USHORT secondnull = request->req_flags & req_null;
 			request->req_flags &= ~req_null;
 
-			if ((!value && !firstnull) || (!value2 && !secondnull))
+			if ((!value && !firstnull) || (!value2 && !secondnull)) {
 				return FALSE;	/* at least one operand was FALSE */
-			else if (value && value2)
+			}
+			else if (value && value2) {
 				return TRUE;	/* both true */
+			}
 			request->req_flags |= req_null;
 			return FALSE;		/* otherwise, return null */
 		}
@@ -507,7 +519,8 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, JRD_NOD node)
 			RSB rsb;
 			RSE rse;
 
-			if (node->nod_flags & nod_invariant) {
+			if (node->nod_flags & nod_invariant)
+			{
 				impure = (VLU) ((SCHAR *) request + node->nod_impure);
 				invariant_flags = & impure->vlu_flags;
 				if (*invariant_flags & VLU_computed) {
@@ -515,9 +528,13 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, JRD_NOD node)
 
 					if ((node->nod_type == nod_ansi_any) &&
 						(*invariant_flags & VLU_null))
+					{
 						request->req_flags |= req_null;
+					}
 					else
+					{
 						request->req_flags &= ~req_null;
+					}
 					return impure->vlu_misc.vlu_short;
 				}
 			}
@@ -528,7 +545,8 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, JRD_NOD node)
 
 			rse = (RSE) (node->nod_arg[e_any_rse]);
 			rsb = (RSB) (node->nod_arg[e_any_rsb]);
-			if (node->nod_type != nod_any) {
+			if (node->nod_type != nod_any)
+			{
 				rsb->rsb_any_boolean = (JRD_NOD) rse->rse_boolean;
 				if (node->nod_type == nod_ansi_any)
 					request->req_flags |= req_ansi_any;
@@ -536,30 +554,26 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, JRD_NOD node)
 					request->req_flags |= req_ansi_all;
 			}
 			RSE_open(tdbb,
-					 reinterpret_cast <
-					 struct Rsb *>(node->nod_arg[e_any_rsb]));
+					 reinterpret_cast<struct Rsb*>(node->nod_arg[e_any_rsb]));
 			value =
 				RSE_get_record(tdbb,
-							   reinterpret_cast <
-							   struct Rsb *>(node->nod_arg[e_any_rsb]),
-#ifdef SCROLLABLE_CURSORS
-							   RSE_get_next);
-#else
-							   RSE_get_forward);
-#endif
+							   reinterpret_cast<struct Rsb*>(node->nod_arg[e_any_rsb]),
+							   g_RSE_get_mode);
 			RSE_close(tdbb,
-					  reinterpret_cast <
-					  struct Rsb *>(node->nod_arg[e_any_rsb]));
+					  reinterpret_cast<struct Rsb*>(node->nod_arg[e_any_rsb]));
 			if (node->nod_type == nod_any)
 				request->req_flags &= ~req_null;
 
 			/* If this is an invariant node, save the return value. */
 
-			if (node->nod_flags & nod_invariant) {
+			if (node->nod_flags & nod_invariant)
+			{
 				*invariant_flags |= VLU_computed;
 				if ((node->nod_type != nod_any) &&
-					(request->req_flags & req_null))
-						*invariant_flags |= VLU_null;
+				    (request->req_flags & req_null))
+				{
+					*invariant_flags |= VLU_null;
+				}
 				impure->vlu_misc.vlu_short = value;
 			}
 			return value;
@@ -597,9 +611,6 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, JRD_NOD node)
 
 	case nod_or:
 		{
-			ULONG flags;
-			USHORT value2;
-
 			/* for or, if either operand is TRUE, then the result is TRUE; if
 			   both are FALSE, the result is FALSE; otherwise, the result is NULL
 
@@ -620,9 +631,9 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, JRD_NOD node)
 			   evaluate second operand, since latter field mappings may
 			   depend on the evaluation */
 
-			flags = request->req_flags;
+			const ULONG flags = request->req_flags;
 			request->req_flags &= ~req_null;
-			value2 = EVL_boolean(tdbb, *ptr);
+			const USHORT value2 = EVL_boolean(tdbb, *ptr);
 			if (value || value2) {
 				request->req_flags &= ~req_null;
 				return TRUE;
@@ -630,19 +641,22 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, JRD_NOD node)
 
 			/* restore saved NULL state */
 
-			if (flags & req_null)
+			if (flags & req_null) {
 				request->req_flags |= req_null;
+			}
 			return FALSE;
 		}
 
 	case nod_unique:
 		{
-			USHORT *invariant_flags;
+			USHORT* invariant_flags;
 
-			if (node->nod_flags & nod_invariant) {
+			if (node->nod_flags & nod_invariant)
+			{
 				impure = (VLU) ((SCHAR *) request + node->nod_impure);
 				invariant_flags = & impure->vlu_flags;
-				if (*invariant_flags & VLU_computed) {
+				if (*invariant_flags & VLU_computed)
+				{
 					/* An invariant node has already been computed. */
 
 					if (*invariant_flags & VLU_null)
@@ -653,35 +667,28 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, JRD_NOD node)
 				}
 			}
 
-			RSE_open(tdbb,
-					 reinterpret_cast < Rsb * >(node->nod_arg[e_any_rsb]));
-			if ( (value =
+			RSE_open(tdbb, reinterpret_cast<Rsb*>(node->nod_arg[e_any_rsb]));
+			value =
 				RSE_get_record(tdbb,
-							   reinterpret_cast <
-							   Rsb * >(node->nod_arg[e_any_rsb]),
-#ifdef SCROLLABLE_CURSORS
-							   RSE_get_next)) )
-#else
-							   RSE_get_forward)) )
-#endif
+							   reinterpret_cast<Rsb*>(node->nod_arg[e_any_rsb]),
+							   g_RSE_get_mode);
+			if (value)
+			{
 				value =
 				!RSE_get_record(tdbb,
-								reinterpret_cast <
-								Rsb * >(node->nod_arg[e_any_rsb]),
-#ifdef SCROLLABLE_CURSORS
-								RSE_get_next);
-#else
-								RSE_get_forward);
-#endif
-			RSE_close(tdbb,
-					  reinterpret_cast < Rsb * >(node->nod_arg[e_any_rsb]));
+								reinterpret_cast<Rsb*>(node->nod_arg[e_any_rsb]),
+								g_RSE_get_mode);
+			}
+			RSE_close(tdbb, reinterpret_cast<Rsb*>(node->nod_arg[e_any_rsb]));
 
 			/* If this is an invariant node, save the return value. */
 
-			if (node->nod_flags & nod_invariant) {
+			if (node->nod_flags & nod_invariant)
+			{
 				*invariant_flags |= VLU_computed;
-				if (request->req_flags & req_null)
+				if (request->req_flags & req_null) {
 					*invariant_flags |= VLU_null;
+				}
 				impure->vlu_misc.vlu_short = value;
 			}
 			return value;
@@ -895,11 +902,14 @@ DSC* DLL_EXPORT EVL_expr(TDBB tdbb, JRD_NOD node)
 			impure->vlu_desc.dsc_address =
 				(UCHAR *) tdbb->tdbb_attachment->att_user->usr_user_name;
 		if (impure->vlu_desc.dsc_address != NULL)
+		{
 			impure->vlu_desc.dsc_length =
-				strlen(reinterpret_cast <
-					   const char *>(impure->vlu_desc.dsc_address));
-		else
+				strlen(reinterpret_cast<const char*>(
+					impure->vlu_desc.dsc_address));
+		}
+		else {
 			impure->vlu_desc.dsc_length = 0;
+		}
 		return &impure->vlu_desc;
 
 	/* CVC: Current role will get a validated role; IE one that exists. */
@@ -909,14 +919,19 @@ DSC* DLL_EXPORT EVL_expr(TDBB tdbb, JRD_NOD node)
 		impure->vlu_desc.dsc_scale = 0;
 		INTL_ASSIGN_TTYPE(&impure->vlu_desc, ttype_metadata);
 		if (tdbb->tdbb_attachment->att_user)
+		{
 			impure->vlu_desc.dsc_address =
 				(UCHAR*) tdbb->tdbb_attachment->att_user->usr_sql_role_name;
+		}
 		if (impure->vlu_desc.dsc_address != NULL)
+		{
 			impure->vlu_desc.dsc_length =
-				strlen(reinterpret_cast <
-					   const char *>(impure->vlu_desc.dsc_address));
-		else
+				strlen(reinterpret_cast<const char*>(
+					impure->vlu_desc.dsc_address));
+		}
+		else {
 			impure->vlu_desc.dsc_length = 0;
+		}
 		return &impure->vlu_desc;
 
 	case nod_extract:
@@ -1173,7 +1188,6 @@ BOOLEAN DLL_EXPORT EVL_field(JRD_REL relation,
  *      Evaluate a field by filling out a descriptor.
  *
  **************************************/
-	FMT format;
 
 	DEV_BLKCHK(record, type_rec);
 
@@ -1182,8 +1196,11 @@ BOOLEAN DLL_EXPORT EVL_field(JRD_REL relation,
 		return FALSE;
 	}
 
-	if ( (format = record->rec_format) )
+	FMT format = record->rec_format;
+
+	if (format) {
 		*desc = format->fmt_desc[id];
+	}
 
 /*
 	dimitr: fixed bug SF #562417
@@ -1193,91 +1210,97 @@ BOOLEAN DLL_EXPORT EVL_field(JRD_REL relation,
 	an empty string has dsc_length = 0, and being part of an aggregate it
 	becomes nod_field with zero length, hence we had NULL as a result.
 
-	if (!format || id >= format->fmt_count || !desc->dsc_length) {
+	if (!format || id >= format->fmt_count || !desc->dsc_length)
 */
-	if (!format || id >= format->fmt_count || !desc->dsc_dtype) {
+	if (!format || id >= format->fmt_count || !desc->dsc_dtype)
+	{
 	/* Map a non-existent field to a default value, if available.
 		 * This enables automatic format upgrade for data rows.
 		 * Handle Outer Joins and such specially!
 		 * Reference: Bug 10424, 10116
 		 */
-		JRD_FLD temp_field;
 
 		/* rec_format == NULL indicates we're performing a 
 		   join-to-null operation for outer joins */
 
-		if (record && record->rec_format && relation) {
+		if (record && record->rec_format && relation)
+		{
 			/* A database sweep does not scan a relation's metadata. However
 			 * the change to substitute a default value for a missing "not null" 
 			 * field makes it necessary to reference the field block. 
 			 */
-			if (!relation->rel_fields) {
+			if (!relation->rel_fields)
+			{
 				TDBB tdbb = NULL;
 
 				SET_TDBB(tdbb);
 				MET_scan_relation(tdbb, relation);
 			}
 
-			if ( (temp_field =
-				reinterpret_cast <jrd_fld *>((jrd_fld*)(*relation->rel_fields)[id])) )
-					if (temp_field->fld_default_value
-									   && temp_field->fld_not_null) {
-					if (temp_field->fld_default_value->nod_type == nod_user_name
-						|| temp_field->fld_default_value->nod_type == nod_current_role) {
-						desc->dsc_dtype = dtype_text;
+			JRD_FLD temp_field =
+				reinterpret_cast<jrd_fld*>((jrd_fld*)(*relation->rel_fields)[id]);
+
+			if (temp_field)
+			{
+				const NOD_T temp_nod_type =
+					temp_field->fld_default_value->nod_type;
+
+				if (temp_field->fld_default_value && temp_field->fld_not_null)
+				{
+					if (temp_nod_type == nod_user_name ||
+					    temp_nod_type == nod_current_role)
+					{
+						desc->dsc_dtype    = dtype_text;
 						desc->dsc_sub_type = 0;
-						desc->dsc_scale = 0;
+						desc->dsc_scale    = 0;
 						INTL_ASSIGN_TTYPE(desc, ttype_metadata);
 						desc->dsc_address =
 							(UCHAR *) relation->rel_owner_name;
 						desc->dsc_length =
-							strlen(reinterpret_cast <
-								   const char *>(desc->dsc_address));
+							strlen(reinterpret_cast<const char*>(desc->dsc_address));
 						return TRUE;
 					}
-					else if (temp_field->fld_default_value->nod_type ==
-							 nod_current_date
-							 || temp_field->fld_default_value->nod_type ==
-							 nod_current_time
-							 || temp_field->fld_default_value->nod_type ==
-							 nod_current_timestamp) {
+
+					if (temp_nod_type == nod_current_date ||
+					    temp_nod_type == nod_current_time ||
+						temp_nod_type == nod_current_timestamp)
+					{
 						static const GDS_TIMESTAMP temp_timestamp = { 0, 0 };
 						desc->dsc_dtype = dtype_timestamp;
 						desc->dsc_scale = 0;
 						desc->dsc_flags = 0;
 						desc->dsc_address =
-							reinterpret_cast < UCHAR * >(const_cast <
-														 ISC_TIMESTAMP *
-														 >(&temp_timestamp));
+							reinterpret_cast<UCHAR*>(
+								const_cast<ISC_TIMESTAMP*>(&temp_timestamp));
 						desc->dsc_length = sizeof(temp_timestamp);
 						return TRUE;
 					}
-					else {
-						LIT default_literal;
-						DSC *default_desc = NULL;
-
-						default_literal =
-							reinterpret_cast <
-							lit * >(temp_field->fld_default_value);
+					else
+					{
+						LIT default_literal =
+							reinterpret_cast<lit*>(temp_field->fld_default_value);
 
 						if (default_literal->nod_type == nod_null)
+						{
 							ERR_post(gds_not_valid,
 									 gds_arg_string, temp_field->fld_name,
 									 gds_arg_string, "*** null ***", 0);
+						}
 
 						assert(default_literal->nod_type == nod_literal);
 
-						default_desc = &default_literal->lit_desc;
-						desc->dsc_dtype = default_desc->dsc_dtype;
-						desc->dsc_scale = default_desc->dsc_scale;
-						desc->dsc_length = default_desc->dsc_length;
+						DSC* default_desc = &default_literal->lit_desc;
+						desc->dsc_dtype    = default_desc->dsc_dtype;
+						desc->dsc_scale    = default_desc->dsc_scale;
+						desc->dsc_length   = default_desc->dsc_length;
 						desc->dsc_sub_type = default_desc->dsc_sub_type;
-						desc->dsc_flags = default_desc->dsc_flags;
-						desc->dsc_address = default_desc->dsc_address;
+						desc->dsc_flags    = default_desc->dsc_flags;
+						desc->dsc_address  = default_desc->dsc_address;
 						return TRUE;
 					}
 				}
-				else {
+				else
+				{
 					desc->dsc_dtype = dtype_text;
 					desc->dsc_length = 1;
 					desc->dsc_sub_type = 0;
@@ -1286,8 +1309,10 @@ BOOLEAN DLL_EXPORT EVL_field(JRD_REL relation,
 					desc->dsc_address = (UCHAR *) " ";
 					return FALSE;
 				}
+			}
 		}
-		else {
+		else
+		{
 			desc->dsc_dtype = dtype_text;
 			desc->dsc_length = 1;
 			desc->dsc_sub_type = 0;
@@ -1300,8 +1325,9 @@ BOOLEAN DLL_EXPORT EVL_field(JRD_REL relation,
 
 /* If the offset of the field is 0, the field can't possible exist */
 
-	if (!desc->dsc_address)
+	if (!desc->dsc_address) {
 		return FALSE;
+	}
 
 	desc->dsc_address = record->rec_data + (int) desc->dsc_address;
 
@@ -1465,18 +1491,14 @@ USHORT DLL_EXPORT EVL_group(TDBB tdbb, BLK rsb, JRD_NOD node, USHORT state)
 
 /* If there isn't a record pending, open the stream and get one */
 
-	if ((state == 0) || (state == 3)) {
-		RSE_open(tdbb, reinterpret_cast < struct Rsb *>(rsb));
-#ifdef SCROLLABLE_CURSORS
-		if (!RSE_get_record
-			(tdbb, reinterpret_cast < struct Rsb *>(rsb), RSE_get_next))
-#else
-		if (!RSE_get_record
-			(tdbb, reinterpret_cast < struct Rsb *>(rsb), RSE_get_forward))
-#endif
+	if ((state == 0) || (state == 3))
+	{
+		RSE_open(tdbb, reinterpret_cast<struct Rsb*>(rsb));
+		if (!RSE_get_record(tdbb, reinterpret_cast<struct Rsb*>(rsb), g_RSE_get_mode))
 		{
-			if (group)
+			if (group) {
 				return 0;
+			}
 			state = 2;
 		}
 	}
@@ -1503,8 +1525,10 @@ USHORT DLL_EXPORT EVL_group(TDBB tdbb, BLK rsb, JRD_NOD node, USHORT state)
 		   the columns; if we find one, stop aggregating and return what we have */
 
 		if (group)
+		{
 			for (ptr = group->nod_arg, end = ptr + group->nod_count;
-				 ptr < end; ptr++) {
+				 ptr < end; ptr++)
+			{
 				from = *ptr;
 				impure = (VLUX) ((SCHAR *) request + from->nod_impure);
 				if (impure->vlu_desc.dsc_address)
@@ -1525,40 +1549,43 @@ USHORT DLL_EXPORT EVL_group(TDBB tdbb, BLK rsb, JRD_NOD node, USHORT state)
 						goto break_out;
 				}
 			}
+		}
 
 		/* go through and compute all the aggregates on this record */
 
-		for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++) {
+		for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++)
+		{
 			from = (*ptr)->nod_arg[e_asgn_from];
 			impure = (VLUX) ((SCHAR *) request + from->nod_impure);
-			switch (from->nod_type) {
+			switch (from->nod_type)
+			{
 			case nod_agg_min:
 			case nod_agg_min_indexed:
 			case nod_agg_max:
 			case nod_agg_max_indexed:
 				desc = EVL_expr(tdbb, from->nod_arg[0]);
-				if (request->req_flags & req_null)
+				if (request->req_flags & req_null) {
 					break;
+				}
 				++impure->vlux_count;
-				if (!impure->vlu_desc.dsc_dtype) {
+				if (!impure->vlu_desc.dsc_dtype)
+				{
 					EVL_make_value(tdbb, desc,
-								   reinterpret_cast <
-								   vlu * >(&impure->vlu_desc));
+								   reinterpret_cast<vlu*>(&impure->vlu_desc));
 					break;
 				}
 				result =
-					MOV_compare(desc, reinterpret_cast < dsc * >(impure));
-				if (
-					(result > 0
-					 && (from->nod_type == nod_agg_max
-						 || from->nod_type == nod_agg_max_indexed))
-					|| (result < 0
-						&& (from->nod_type == nod_agg_min
-							|| from->nod_type ==
-							nod_agg_min_indexed))) EVL_make_value(tdbb, desc,
-																  reinterpret_cast
-																  < vlu *
-																  >(impure));
+					MOV_compare(desc, reinterpret_cast<dsc*>(impure));
+
+				if ((result > 0 &&
+				     (from->nod_type == nod_agg_max ||
+				      from->nod_type == nod_agg_max_indexed)) ||
+				    (result < 0 &&
+				     (from->nod_type == nod_agg_min ||
+				      from->nod_type == nod_agg_min_indexed)))
+				{
+					EVL_make_value(tdbb, desc, reinterpret_cast<vlu*>(impure));
+				}
 
 				/* if a max or min has been mapped to an index, then the first record is the eof */
 
@@ -1607,10 +1634,11 @@ USHORT DLL_EXPORT EVL_group(TDBB tdbb, BLK rsb, JRD_NOD node, USHORT state)
 				asb = (ASB) from->nod_arg[1];
 				asb_impure = (IASB) ((SCHAR *) request + asb->nod_impure);
 				if (SORT_put(tdbb->tdbb_status_vector,
-							 reinterpret_cast <
-							 scb * >(asb_impure->iasb_sort_handle),
-							 reinterpret_cast < unsigned long **>(&data)))
+							 reinterpret_cast<scb*>(asb_impure->iasb_sort_handle),
+							 reinterpret_cast<unsigned long**>(&data)))
+				{
 					  ERR_punt();
+				}
 				MOVE_CLEAR(data, ROUNDUP_LONG(asb->asb_key_desc->skd_length));
 				asb->asb_desc.dsc_address = data;
 				MOV_move(desc, &asb->asb_desc);
@@ -1621,13 +1649,12 @@ USHORT DLL_EXPORT EVL_group(TDBB tdbb, BLK rsb, JRD_NOD node, USHORT state)
 			}
 		}
 
-#ifdef SCROLLABLE_CURSORS
-		if (!RSE_get_record(tdbb, rsb, RSE_get_next))
-#else
-		if (!RSE_get_record
-			(tdbb, reinterpret_cast < struct Rsb *>(rsb), RSE_get_forward))
-#endif
+		if (!RSE_get_record(tdbb,
+		                    reinterpret_cast<struct Rsb*>(rsb),
+		                    g_RSE_get_mode))
+		{
 			  state = 2;
+		}
 	}
 
   break_out:
@@ -1637,14 +1664,16 @@ USHORT DLL_EXPORT EVL_group(TDBB tdbb, BLK rsb, JRD_NOD node, USHORT state)
 	if (vtemp.vlu_string)
 		delete vtemp.vlu_string;
 
-	for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++) {
+	for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++)
+	{
 		from = (*ptr)->nod_arg[e_asgn_from];
 		field = (*ptr)->nod_arg[e_asgn_to];
 		id = (USHORT) field->nod_arg[e_fld_id];
 		record =
 			request->req_rpb[(int) field->nod_arg[e_fld_stream]].rpb_record;
 		impure = (VLUX) ((SCHAR *) request + from->nod_impure);
-		switch (from->nod_type) {
+		switch (from->nod_type)
+		{
 		case nod_agg_min:
 		case nod_agg_min_indexed:
 		case nod_agg_max:
@@ -1655,8 +1684,11 @@ USHORT DLL_EXPORT EVL_group(TDBB tdbb, BLK rsb, JRD_NOD node, USHORT state)
 		case nod_agg_total_distinct2:
 			if ((from->nod_type == nod_agg_total_distinct) ||
 				(from->nod_type == nod_agg_total_distinct2))
+			{
 				compute_agg_distinct(tdbb, from);
-			if (!impure->vlux_count) {
+			}
+			if (!impure->vlux_count)
+			{
 				SET_NULL(record, id);
 				break;
 			}
@@ -1664,10 +1696,12 @@ USHORT DLL_EXPORT EVL_group(TDBB tdbb, BLK rsb, JRD_NOD node, USHORT state)
 		case nod_agg_count:
 		case nod_agg_count2:
 		case nod_agg_count_distinct:
-			if (from->nod_type == nod_agg_count_distinct)
+			if (from->nod_type == nod_agg_count_distinct) {
 				compute_agg_distinct(tdbb, from);
-			if (!impure->vlu_desc.dsc_dtype)
+			}
+			if (!impure->vlu_desc.dsc_dtype) {
 				SET_NULL(record, id);
+			}
 			else {
 				MOV_move(&impure->vlu_desc, EVL_expr(tdbb, field));
 				CLEAR_NULL(record, id);
@@ -2126,7 +2160,8 @@ USHORT DLL_EXPORT EVL_nc_contains(TDBB tdbb_dummy,
 	UCHAR *q1, *q2, c1, c2;
 	SSHORT l;
 
-	while (l1 >= l2) {
+	while (l1 >= l2)
+	{
 		--l1;
 		q1 = p1++;
 		q2 = p2;
@@ -3389,49 +3424,43 @@ static DSC *eval_statistical(TDBB tdbb, JRD_NOD node, VLU impure)
 
 /* Handle each variety separately */
 
-	switch (node->nod_type) {
+	switch (node->nod_type)
+	{
 	case nod_count:
 		flag = 0;
-		while (RSE_get_record(tdbb, reinterpret_cast < struct Rsb *>(rsb),
-#ifdef SCROLLABLE_CURSORS
-							  RSE_get_next))
-#else
-							  RSE_get_forward))
-#endif
-		++ impure->vlu_misc.vlu_long;
+		while (RSE_get_record(tdbb, reinterpret_cast<struct Rsb*>(rsb),
+							  g_RSE_get_mode))
+		{
+			++ impure->vlu_misc.vlu_long;
+		}
 		break;
 
 	case nod_count2:
 		flag = 0;
-		while (RSE_get_record(tdbb, reinterpret_cast < struct Rsb *>(rsb),
-#ifdef SCROLLABLE_CURSORS
-							  RSE_get_next))
-#else
-							  RSE_get_forward))
-#endif
+		while (RSE_get_record(tdbb, reinterpret_cast<struct Rsb*>(rsb),
+							  g_RSE_get_mode))
 		{
 			value = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
-			if (!(request->req_flags & req_null))
+			if (!(request->req_flags & req_null)) {
 				++impure->vlu_misc.vlu_long;
+			}
 		}
 		break;
 
 	case nod_min:
 	case nod_max:
-		while (RSE_get_record(tdbb, reinterpret_cast < struct Rsb *>(rsb),
-#ifdef SCROLLABLE_CURSORS
-							  RSE_get_next))
-#else
-							  RSE_get_forward))
-#endif
+		while (RSE_get_record(tdbb, reinterpret_cast<struct Rsb*>(rsb),
+							  g_RSE_get_mode))
 		{
 			value = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
-			if (request->req_flags & req_null)
+			if (request->req_flags & req_null) {
 				continue;
+			}
 			if (flag ||
 				((result = MOV_compare(value, desc)) < 0 &&
 				 node->nod_type == nod_min) ||
-				(node->nod_type != nod_min && result > 0)) {
+				(node->nod_type != nod_min && result > 0))
+			{
 				flag = 0;
 				EVL_make_value(tdbb, value, impure);
 			}
@@ -3439,12 +3468,8 @@ static DSC *eval_statistical(TDBB tdbb, JRD_NOD node, VLU impure)
 		break;
 
 	case nod_from:
-		if (RSE_get_record(tdbb, reinterpret_cast < struct Rsb *>(rsb),
-#ifdef SCROLLABLE_CURSORS
-						   RSE_get_next))
-#else
-						   RSE_get_forward))
-#endif
+		if (RSE_get_record(tdbb, reinterpret_cast<struct Rsb*>(rsb),
+						   g_RSE_get_mode))
 		{
 			desc = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
 		}
@@ -3460,16 +3485,13 @@ static DSC *eval_statistical(TDBB tdbb, JRD_NOD node, VLU impure)
 
 	case nod_average:			/* total or average with dialect-1 semantics */
 	case nod_total:
-		while (RSE_get_record(tdbb, reinterpret_cast < struct Rsb *>(rsb),
-#ifdef SCROLLABLE_CURSORS
-								RSE_get_next))
-#else
-								RSE_get_forward))
-#endif
+		while (RSE_get_record(tdbb, reinterpret_cast<struct Rsb*>(rsb),
+								g_RSE_get_mode))
 		{
 			desc = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
-			if (request->req_flags & req_null)
+			if (request->req_flags & req_null) {
 				continue;
+			}
 			/* Note: if the field being SUMed or AVERAGEd is short or long,
 			   impure will stay long, and the first add() will
 			   set the correct scale; if it is approximate numeric,
@@ -3493,12 +3515,8 @@ static DSC *eval_statistical(TDBB tdbb, JRD_NOD node, VLU impure)
 		break;
 
 	case nod_average2:			/* average with dialect-3 semantics */
-		while (RSE_get_record(tdbb, reinterpret_cast < struct Rsb *>(rsb),
-#ifdef SCROLLABLE_CURSORS
-							  RSE_get_next))
-#else
-							  RSE_get_forward))
-#endif
+		while (RSE_get_record(tdbb, reinterpret_cast<struct Rsb*>(rsb),
+							  g_RSE_get_mode))
 		{
 			desc = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
 			if (request->req_flags & req_null)
@@ -4059,18 +4077,17 @@ static DSC *multiply2(DSC * desc, VLU value, JRD_NOD node)
  *      implementing blr_version5 ... blr_multiply.
  *
  **************************************/
-	double d1, d2;
-	SINT64 i1, i2;
-	UINT64 u1, u2, u_limit;		/* used to check for overflow */
+
 	SSHORT scale;
 
 	DEV_BLKCHK(node, type_nod);
 
 /* Handle floating arithmetic */
 
-	if (node->nod_flags & nod_double) {
-		d1 = MOV_get_double(desc);
-		d2 = MOV_get_double(&value->vlu_desc);
+	if (node->nod_flags & nod_double)
+	{
+		double d1 = MOV_get_double(desc);
+		double d2 = MOV_get_double(&value->vlu_desc);
 		value->vlu_misc.vlu_double = DOUBLE_MULTIPLY(d1, d2);
 		value->vlu_desc.dsc_dtype = DEFAULT_DOUBLE;
 		value->vlu_desc.dsc_length = sizeof(double);
@@ -4081,12 +4098,11 @@ static DSC *multiply2(DSC * desc, VLU value, JRD_NOD node)
 
 /* Handle (oh, ugh) quad arithmetic */
 
-	if (node->nod_flags & nod_quad) {
-		SQUAD q1, q2;
-
+	if (node->nod_flags & nod_quad)
+	{
 		scale = NUMERIC_SCALE(value->vlu_desc);
-		q1 = MOV_get_quad(desc, node->nod_scale - scale);
-		q2 = MOV_get_quad(&value->vlu_desc, scale);
+		SQUAD q1 = MOV_get_quad(desc, node->nod_scale - scale);
+		SQUAD q2 = MOV_get_quad(&value->vlu_desc, scale);
 		value->vlu_desc.dsc_dtype = dtype_quad;
 		value->vlu_desc.dsc_length = sizeof(SQUAD);
 		value->vlu_desc.dsc_scale = node->nod_scale;
@@ -4100,8 +4116,8 @@ static DSC *multiply2(DSC * desc, VLU value, JRD_NOD node)
 /* Everything else defaults to int64 */
 
 	scale = NUMERIC_SCALE(value->vlu_desc);
-	i1 = MOV_get_int64(desc, node->nod_scale - scale);
-	i2 = MOV_get_int64(&value->vlu_desc, scale);
+	const SINT64 i1 = MOV_get_int64(desc, node->nod_scale - scale);
+	const SINT64 i2 = MOV_get_int64(&value->vlu_desc, scale);
 
 /*
    We need to report an overflow if
@@ -4127,17 +4143,18 @@ static DSC *multiply2(DSC * desc, VLU value, JRD_NOD node)
    need a trial-division to be sure the multiply won't overflow.
  */
 
-	u1 = (i1 >= 0) ? i1 : -i1;	/* abs(i1) */
-	u2 = (i2 >= 0) ? i2 : -i2;	/* abs(i2) */
-	u_limit = ((i1 ^ i2) >= 0) ? MAX_SINT64 : MAX_SINT64 + 1;	/* largest product */
+	const UINT64 u1 = (i1 >= 0) ? i1 : -i1;	/* abs(i1) */
+	const UINT64 u2 = (i2 >= 0) ? i2 : -i2;	/* abs(i2) */
+	const UINT64 u_limit = ((i1 ^ i2) >= 0) ? MAX_SINT64 : MAX_SINT64 + 1;	/* largest product */
 
-	if ((u1 != 0) && ((u_limit / u1) < u2))
+	if ((u1 != 0) && ((u_limit / u1) < u2)) {
 		ERR_post(isc_exception_integer_overflow, 0);
+	}
 
-	value->vlu_desc.dsc_dtype = dtype_int64;
-	value->vlu_desc.dsc_length = sizeof(SINT64);
-	value->vlu_desc.dsc_scale = node->nod_scale;
-	value->vlu_misc.vlu_int64 = i1 * i2;
+	value->vlu_desc.dsc_dtype   = dtype_int64;
+	value->vlu_desc.dsc_length  = sizeof(SINT64);
+	value->vlu_desc.dsc_scale   = node->nod_scale;
+	value->vlu_misc.vlu_int64   = i1 * i2;
 	value->vlu_desc.dsc_address = (UCHAR *) & value->vlu_misc.vlu_int64;
 
 	return &value->vlu_desc;
@@ -4299,9 +4316,6 @@ static DSC *negate_dsc(TDBB tdbb, DSC * desc, VLU value)
  *      Negate a single value
  *
  **************************************/
-#ifdef VMS
-	double d1;
-#endif
 
 	SET_TDBB(tdbb);
 	EVL_make_value(tdbb, desc, value);
@@ -4329,8 +4343,10 @@ static DSC *negate_dsc(TDBB tdbb, DSC * desc, VLU value)
 
 #ifdef VMS
 	case SPECIAL_DOUBLE:
-		d1 = -CNVT_TO_DFLT(&value->vlu_misc.vlu_double);
-		value->vlu_misc.vlu_double = CNVT_FROM_DFLT(&d1);
+		{
+			double d1 = -CNVT_TO_DFLT(&value->vlu_misc.vlu_double);
+			value->vlu_misc.vlu_double = CNVT_FROM_DFLT(&d1);
+		}
 		break;
 #endif
 
@@ -4355,7 +4371,9 @@ static DSC *negate_dsc(TDBB tdbb, DSC * desc, VLU value)
 
 	return &value->vlu_desc;
 }
-static DSC *record_version(TDBB tdbb, JRD_NOD node, VLU impure)
+
+
+static DSC* record_version(TDBB tdbb, JRD_NOD node, VLU impure)
 {
 /**************************************
  *
@@ -4390,25 +4408,33 @@ static DSC *record_version(TDBB tdbb, JRD_NOD node, VLU impure)
  */
 
 	if (tdbb->tdbb_request->req_transaction->tra_number ==
-		rpb->rpb_transaction) request->req_flags |= req_same_tx_upd;
-	else {
+		rpb->rpb_transaction)
+	{
+		request->req_flags |= req_same_tx_upd;
+	}
+	else
+	{
 		/* If the transaction is a commit retain, check if the record was
 		 * last updated in one of its own prior transactions
 		 */
 
 		if (request->req_transaction->tra_commit_sub_trans)
-			if (SBM_test
-				(request->req_transaction->tra_commit_sub_trans,
-				 rpb->rpb_transaction)) request->req_flags |= req_same_tx_upd;
+		{
+			if (SBM_test(request->req_transaction->tra_commit_sub_trans,
+			             rpb->rpb_transaction))
+			{
+				 request->req_flags |= req_same_tx_upd;
+			}
+		}
 	}
 
 /* Initialize descriptor */
 
-	impure->vlu_misc.vlu_long = rpb->rpb_transaction;
+	impure->vlu_misc.vlu_long    = rpb->rpb_transaction;
 	impure->vlu_desc.dsc_address = (UCHAR *) & impure->vlu_misc.vlu_long;
-	impure->vlu_desc.dsc_dtype = dtype_text;
-	impure->vlu_desc.dsc_length = 4;
-	impure->vlu_desc.dsc_ttype = ttype_binary;
+	impure->vlu_desc.dsc_dtype   = dtype_text;
+	impure->vlu_desc.dsc_length  = 4;
+	impure->vlu_desc.dsc_ttype   = ttype_binary;
 
 	return &impure->vlu_desc;
 }
@@ -4432,7 +4458,7 @@ static BOOLEAN reject_duplicate(UCHAR * data1, UCHAR * data2, int user_arg)
 }
 
 
-static DSC *scalar(TDBB tdbb, JRD_NOD node, VLU impure)
+static DSC* scalar(TDBB tdbb, JRD_NOD node, VLU impure)
 {
 /**************************************
  *
@@ -4465,7 +4491,8 @@ static DSC *scalar(TDBB tdbb, JRD_NOD node, VLU impure)
 	list = node->nod_arg[e_scl_subscripts];
 
 	for (ptr = list->nod_arg, end = ptr + list->nod_count, p = subscripts;
-		 ptr < end;) {
+		 ptr < end;)
+	{
 		*p++ = MOV_get_long(EVL_expr(tdbb, *ptr++), 0);
 		if (request->req_flags & req_null)
 			return NULL;
@@ -4506,7 +4533,6 @@ static SSHORT sleuth(TDBB tdbb, JRD_NOD node, DSC * desc1, DSC * desc2)
 	USHORT ttype;
 	STR data_str = NULL, match_str = NULL, sleuth_str = NULL;
 	SSHORT ret_val;
-	class TextType* obj;
 
 	SET_TDBB(tdbb);
 
@@ -4535,19 +4561,20 @@ static SSHORT sleuth(TDBB tdbb, JRD_NOD node, DSC * desc1, DSC * desc2)
 	else
 		ttype = INTL_TTYPE(desc1);
 
-	obj = INTL_texttype_lookup(tdbb, ttype, (FPTR_VOID) ERR_post, NULL);
+	TextType* obj =
+		INTL_texttype_lookup(tdbb, ttype, (FPTR_VOID) ERR_post, NULL);
 
 /* Get operator definition string (control string) */
 
 	desc3 = EVL_expr(tdbb, node->nod_arg[2]);
 	l1 =
 		MOV_make_string2(desc3, ttype, &p1,
-						 reinterpret_cast < vary * >(temp1), TEMP_SIZE(temp1),
+						 reinterpret_cast<vary*>(temp1), TEMP_SIZE(temp1),
 						 &sleuth_str);
 /* Get address and length of search string */
 	l2 =
 		MOV_make_string2(desc2, ttype, &p2,
-						 reinterpret_cast < vary * >(temp2), TEMP_SIZE(temp2),
+						 reinterpret_cast<vary*>(temp2), TEMP_SIZE(temp2),
 						 &match_str);
 /* Merge search and control strings */
 	l2 = obj->sleuth_merge(tdbb, p2, l2, p1, l1, control,
@@ -4563,7 +4590,7 @@ static SSHORT sleuth(TDBB tdbb, JRD_NOD node, DSC * desc1, DSC * desc2)
 
 		l1 =
 			MOV_make_string2(desc1, ttype, &p1,
-							 reinterpret_cast < vary * >(temp1),
+							 reinterpret_cast<vary*>(temp1),
 							 TEMP_SIZE(temp1), &data_str);
 		ret_val = obj->sleuth_check(tdbb, 0, p1, l1, control, l2);
 	}
@@ -4575,7 +4602,8 @@ static SSHORT sleuth(TDBB tdbb, JRD_NOD node, DSC * desc1, DSC * desc2)
 					 reinterpret_cast < bid * >(desc1->dsc_address));
 
 		ret_val = FALSE;
-		while (!(blob->blb_flags & BLB_eof)) {
+		while (!(blob->blb_flags & BLB_eof))
+		{
 #ifdef STACK_REDUCTION
 			l1 = BLB_get_segment(tdbb, blob, buffer, BUFFER_LARGE);
 #else
