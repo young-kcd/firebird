@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.27 2003-07-14 16:53:39 brodsom Exp $
+//  $Id: gpre.cpp,v 1.28 2003-08-20 19:08:00 brodsom Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -42,7 +42,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.27 2003-07-14 16:53:39 brodsom Exp $
+//	$Id: gpre.cpp,v 1.28 2003-08-20 19:08:00 brodsom Exp $
 //
 
 #define GPRE_MAIN
@@ -1249,10 +1249,12 @@ TOK CPR_token()
 	SYM symbol;
 
 	tok = get_token();
-	if (tok && tok->tok_type == tok_introducer) {
-		if (!
-			(symbol =
-			 MSC_find_symbol(HSH_lookup(tok->tok_string + 1), SYM_charset))) {
+	if (!tok)
+		return NULL;
+
+	if (tok->tok_type == tok_introducer) {
+		symbol = MSC_find_symbol(HSH_lookup(tok->tok_string + 1), SYM_charset);
+		if (!symbol) {
 			TEXT err_buffer[100];
 
 			sprintf(err_buffer, "Character set not recognized: '%.50s'",
@@ -1277,7 +1279,24 @@ TOK CPR_token()
 
 		}
 	}
-
+	// use -charset switch if there is one for quoted strings
+	// only after a database declaration is loaded and MET_load_hash_table run.
+	else if (default_lc_ctype && text_subtypes) {
+		switch (sw_sql_dialect) {
+		case 1:
+			if (QUOTED(tok->tok_type)){
+				tok->tok_charset = MSC_find_symbol(HSH_lookup(default_lc_ctype), 
+												   SYM_charset);
+			}
+			break;
+		default:
+			if (SINGLE_QUOTED(tok->tok_type)){
+				tok->tok_charset = MSC_find_symbol(HSH_lookup(default_lc_ctype),
+												   SYM_charset);
+			}
+			break;
+		}
+	}
 	return tok;
 }
 
@@ -2117,8 +2136,7 @@ static TOK get_token()
 			/* If we can hold the literal do so, else assume it is in part
 			   of program we do not care about */
 
-			if (next == '\\' &&
-				!sw_sql &&
+			if (next == '\\' && !sw_sql &&
 				((sw_language == lang_c) || (isLangCpp(sw_language))))
 			{
 				peek = nextchar();
