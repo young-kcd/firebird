@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.63 2004-02-02 11:00:55 robocop Exp $
+$Id: restore.epp,v 1.64 2004-02-06 07:07:46 skidder Exp $
 */
 
 #include "firebird.h"
@@ -1887,6 +1887,7 @@ void get_blob (const burp_fld* fields,
 	ULONG segments = 0;
 	USHORT field_number = MAX_USHORT;
 	USHORT max_segment = 0;
+	UCHAR blob_type = 0;
 
 	ATT_TYPE	attribute;
 	scan_attr_t	scan_next_attr;
@@ -1908,7 +1909,7 @@ void get_blob (const burp_fld* fields,
 			break;
 
 		case att_blob_type:
-			get_numeric();
+			blob_type = (UCHAR) get_numeric();
 			break;
 
 		default:
@@ -1935,8 +1936,10 @@ void get_blob (const burp_fld* fields,
 	ISC_QUAD* blob_id = (ISC_QUAD*) ((UCHAR*) record_buffer + field->fld_offset);
 	FRBRD* blob = NULL;
 	ISC_STATUS_ARRAY status_vector;
+	char[] blob_desc = {gds_bpb_version1, gds_bpb_type, 1, blob_type};
 
-	if (isc_create_blob (status_vector, &DB, &gds_trans, &blob, blob_id))
+	if (isc_create_blob2 (status_vector, &DB, &gds_trans, &blob, blob_id, 
+		sizeof(blob_desc), blob_desc))
 	{
 		BURP_error_redirect (status_vector, 37, 0, 0);
 		// msg 37 isc_create_blob failed 
