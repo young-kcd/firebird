@@ -1,3 +1,9 @@
+2004-02-18 12:10  aafemt
+
+	* firebird2/src/common/classes/fb_string.cpp:
+	
+	Remove unneeded comparsions
+
 2004-02-17 21:10  skidder
 
 	* firebird2/builds/win32/msvc7/: alice.vcproj,
