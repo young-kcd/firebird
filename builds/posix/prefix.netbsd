@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.netbsd:	$(VERSION)	@PLATFORM@
-#$Id: prefix.netbsd,v 1.1 2004-05-20 23:04:27 skidder Exp $
+#$Id: prefix.netbsd,v 1.2 2005-01-24 02:15:48 stryqx Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 OS_ServerFiles=inet_server.cpp
@@ -31,6 +31,6 @@ LIB_LINK_RPATH:=-Wl,--rpath -Wl,
 LIB_LINK_SONAME:=-Wl,-soname,
 
 EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec nbackup fb_lock_print
-CLIENT_UTIL_TARGETS=gds_drop gds_delay gstat gsec fbguard fbmgr_bin nbackup fb_lock_print
+CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec fbguard fbmgr_bin nbackup fb_lock_print
 
 Physical_IO_Module=os/posix/unix.cpp
