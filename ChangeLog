@@ -1,3 +1,243 @@
+2003-07-08 21:16  brodsom
+
+	* firebird2/doc/: cleaning-todo.txt, cleaning-todo.txt:
+	
+	Update
+
+2003-07-08 20:12  brodsom
+
+	* firebird2/doc/: cleaning-todo.txt, cross_ref.html:
+	
+	-Add external macros cross-reference -Add cleaning-todo
+
+2003-07-08 17:07  brodsom
+
+	* firebird2/src/: misc/isc.gdl, misc/scrty_unix.gdl,
+	misc/scrty_vms.gdl, misc/security.gdl, misc/security.sql,
+	utilities/isc.gdl, utilities/scrty_unix.gdl,
+	utilities/scrty_vms.gdl, utilities/security.gdl,
+	utilities/security.sql:
+	
+	Move security.fdb related scripts to misc
+
+2003-07-08 14:26  alexpeshkoff
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	added static function declaration
+
+2003-07-08 14:23  brodsom
+
+	* firebird2/: Makefile.in, clean.sh, configure.in,
+	builds/posix/Makefile.in.codes, builds/posix/Makefile.in.embed.qli,
+	builds/posix/Makefile.in.firebird, builds/posix/Makefile.in.msgs,
+	builds/posix/Makefile.in.refDatabases:
+	
+	Posix build move build process and temporary databases to 'gen'
+
+2003-07-08 14:12  alexpeshkoff
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	fixed AV on some combinations of CAST, BETWEEN and sub-select
+
+2003-07-08 13:49  dimitr
+
+	* firebird2/src/common/config/config_file.cpp:
+	
+	Removed warning for fbembed
+
+2003-07-08 13:32  skidder
+
+	* firebird2/doc/install_win32.txt:
+	
+	Correct docs a little
+
+2003-07-08 13:19  skidder
+
+	* firebird2/doc/WhatsNew:
+	
+	[no log message]
+
+2003-07-08 13:17  dimitr
+
+	* firebird2/src/dsql/parse.cpp:
+	
+	Fixed parse.cpp
+
+2003-07-08 12:56  alexpeshkoff
+
+	* firebird2/builds/win32/preprocess.bat:
+	
+	enable standalone use of preprocess.bat
+
+2003-07-08 12:45  brodsom
+
+	* firebird2/builds/posix/: Makefile.in.msgs, make.defaults:
+	
+	no message
+
+2003-07-08 12:20  brodsom
+
+	* firebird2/src/jrd/: winnt_dll.cpp, stubs.cpp:
+	
+	Remove unused sources
+
+2003-07-08 03:08  brodsom
+
+	* firebird2/clean.sh:
+	
+	Correction
+
+2003-07-08 03:04  brodsom
+
+	* firebird2/: clean.sh, configure.in,
+	builds/posix/Makefile.in.codes, builds/posix/Makefile.in.example5,
+	builds/posix/Makefile.in.firebird, builds/posix/Makefile.in.gpre,
+	builds/posix/Makefile.in.v5_examples, builds/posix/make.defaults,
+	builds/posix/make.rules, builds/posix/make.shared.targets,
+	builds/posix/make.shared.variables, builds/posix/prefix.solaris:
+	
+	-Split posix build output between 'gen' and 'temp'(compiler .o .d)
+	- Remove some redundant variables
+
+2003-07-08 01:49  skidder
+
+	* firebird2/src/dsql/parse.y:
+	
+	Fix problem in non-reserved Inserting/Updating/Deleting
+	implementation found by Dmitry Emanov
+
+2003-07-07 22:06  skidder
+
+	* firebird2/src/jrd/gds.cpp:
+	
+	Little fix to make Linux version compile
+
+2003-07-07 13:42  brodsom
+
+	* firebird2/doc/README.build.msvc.html:
+	
+	Correction
+
+2003-07-07 13:34  brodsom
+
+	* firebird2/builds/win32/clean_all.bat:
+	
+	Installer update
+
+2003-07-07 13:29  brodsom
+
+	* firebird2/doc/README.build.msvc.html:
+	
+	Installer update
+
+2003-07-07 02:56  brodsom
+
+	* firebird2/src/install/arch-specific/win32/FirebirdInstall_15.iss:
+	
+	Correction
+
+2003-07-06 17:13  dimitr
+
+	* firebird2/doc/WhatsNew:
+	
+	Added RC4 changed.
+
+2003-07-06 15:56  dimitr
+
+	* firebird2/src/jrd/tra.cpp:
+	
+	Fixed thread priority to avoid the sweeper to be locked outside the
+	scheduler under a heavy load.
+
+2003-07-06 15:35  dimitr
+
+	* firebird2/src/remote/srvr_w32.cpp:
+	
+	no message
+
+2003-07-06 13:38  dimitr
+
+	* firebird2/src/remote/srvr_w32.cpp:
+	
+	Preload the client library to fix the win98 UDF issues.
+
+2003-07-06 10:38  dimitr
+
+	* firebird2/builds/win32/defs/: fbclient.def, fbclient_debug.def:
+	
+	Minor addition to the private API
+
+2003-07-06 10:14  dimitr
+
+	* firebird2/src/isql/isql.epp:
+	
+	Fixed ISQL temp file bug.
+
+2003-07-06 09:05  dimitr
+
+	* firebird2/src/isql/isql.epp:
+	
+	no message
+
+2003-07-06 09:03  dimitr
+
+	* firebird2/src/: dudley/lex.cpp, gpre/gpre.cpp, isql/isql.h,
+	jrd/rse.cpp, jrd/sort.cpp, qli/lex.cpp:
+	
+	Uniform tempfile naming.
+
+2003-07-06 05:11  brodsom
+
+	* firebird2/src/ipserver/alli.cpp:
+	
+	Bracketing fix
+
+2003-07-06 04:15  brodsom
+
+	* firebird2/src/misc/: codes.h, codetext.h, gds_codes.ftn,
+	gds_codes.pas, msg_facs.h, msgs.h, rdb_codes.h, sql_code.h:
+	
+	Remove duplicated, unused and unmaintaned (dangerous) sources. The
+	maintained ones are in include/gen
+
+2003-07-06 04:04  brodsom
+
+	* firebird2/src/jrd/boot_codes/: codes.h, codetext.h, files.txt,
+	iberror.h, msg_facs.h, msgs.h, rdb_codes.h, sql_code.h:
+	
+	Remove duplicated, unused and unmaintaned (dangerous) sources. The
+	maintained ones are in include/gen
+
+2003-07-06 03:51  brodsom
+
+	* firebird2/builds/posix/Makefile.in.codes:
+	
+	Comment correction
+
+2003-07-06 03:18  hippoman
+
+	* firebird2/builds/win32/msvc7/: Firebird2Boot.sln,
+	build_msg.vcproj, codes.vcproj, common_static.vcproj,
+	fbclient_static.vcproj, gpre_static.vcproj, v5_examples.vcproj:
+	
+	Syncing MSVC7 build files
+
+2003-07-06 03:16  hippoman
+
+	* firebird2/builds/win32/: make_all.bat, make_boot.bat:
+	
+	Fixing MSVC7 build
+
+2003-07-06 03:07  brodsom
+
+	* firebird2/: src/make.new/config/config.h.in,
+	src/make.new/config/install-sh, builds/make.new/config/config.h.in,
+	builds/make.new/config/install-sh, clean.sh, configure.in:
+	
+	Move make.new to builds
+
 2003-07-05 17:44  brodsom
 
 	* firebird2/generated/pyxis/placeholder.txt:
