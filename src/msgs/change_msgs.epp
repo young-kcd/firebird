@@ -32,6 +32,12 @@
 #include <string.h>
 #endif
 
+#ifdef SOLX86
+#include <stdio.h>
+extern "C" char * gets (char *);
+#endif
+
+
 DATABASE DB = "msg.gdb";
 
 #define FAC_SQL_POSITIVE	14

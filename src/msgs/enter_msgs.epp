@@ -23,6 +23,7 @@
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
+
 #include "../jrd/gds.h"
 #include "../jrd/common.h"
 
@@ -36,6 +37,12 @@
 #include <ctype.h>
 #endif
 #include <stdlib.h>
+
+#ifdef SOLX86
+#include <stdio.h>
+extern "C" char * gets (char *);
+#endif
+
 
 DATABASE DB = "msg.gdb";
 
@@ -107,7 +114,7 @@ int main( int argc, char **argv)
 
 	for (;;) {
 		ib_printf("Facility: ");
-		if (!gets((char*) facility))
+		if (gets((char*) facility)==NULL)
 			break;
 		ascii_str_upper(facility);
 		count = 0;

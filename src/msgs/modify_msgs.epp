@@ -28,6 +28,13 @@
 
 #include <stdlib.h>
 
+#ifdef SOLX86
+#include <stdio.h>
+extern "C" char * gets (char *);
+#endif
+
+
+
 DATABASE DB = "msg.gdb";
 
 static void explicit_print(TEXT *);
