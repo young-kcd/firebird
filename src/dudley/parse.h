@@ -24,10 +24,6 @@
 #ifndef DUDLEY_PARSE_H
 #define DUDLEY_PARSE_H
 
-#define MATCH(kw)		PARSE_match (kw)
-#define SYNTAX_NODE(type,count)	PARSE_make_node (type, count)
-#define KEYWORD(kw)		(DDL_token.tok_keyword == kw)
-
 /* Keywords */
 
 enum kwwords {

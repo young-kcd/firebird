@@ -1821,7 +1821,7 @@ static void add_view( DUDLEY_REL relation)
  **************************************/
 	DUDLEY_FLD field;
 	DUDLEY_REL target;
-	DUDLEY_NOD rse, *arg, contexts;
+	DUDLEY_NOD rse, contexts;
 	DUDLEY_CTX context;
 	USHORT i;
 
@@ -1833,7 +1833,7 @@ static void add_view( DUDLEY_REL relation)
 
 	rse = relation->rel_rse;
 
-/* Store the relation record proper */
+// Store the relation record proper
 
 	STORE X IN RDB$RELATIONS
 		MOVE_SYMBOL(relation->rel_name, X.RDB$RELATION_NAME);
@@ -1856,11 +1856,13 @@ static void add_view( DUDLEY_REL relation)
 		X.RDB$SYSTEM_FLAG = relation->rel_system;
 
 	END_STORE
-/* Store VIEW_RELATIONS for each relation in view */
-		contexts = rse->nod_arg[s_rse_contexts];
-	for (i = 0, arg = contexts->nod_arg; i < contexts->nod_count; i++, arg++) {
+
+// Store VIEW_RELATIONS for each relation in view
+
+	contexts = rse->nod_arg[s_rse_contexts];
+	for (i = 0; i < contexts->nod_count; i++) {
 		STORE X IN RDB$VIEW_RELATIONS 
-			context = (DUDLEY_CTX) (*arg)->nod_arg[0];
+			context = (DUDLEY_CTX) contexts->nod_arg[i]->nod_arg[0];
 			target = context->ctx_relation;
 			MOVE_SYMBOL(relation->rel_name, X.RDB$VIEW_NAME);
 			MOVE_SYMBOL(target->rel_name, X.RDB$RELATION_NAME);
@@ -1869,7 +1871,7 @@ static void add_view( DUDLEY_REL relation)
 		END_STORE;
 	}
 
-/* Store the various fields */
+// Store the various fields
 
 	for (field = relation->rel_fields; field; field = field->fld_next) {
 		if (check_field(relation->rel_name, field->fld_name))
@@ -4131,7 +4133,6 @@ static void store_query_header( DUDLEY_NOD node, SLONG * blob_id)
  *	Store a query header.
  *
  **************************************/
-	DUDLEY_NOD *ptr, *end;
 	SYM symbol;
 	ISC_STATUS_ARRAY status_vector;
 	FRBRD *blob;
@@ -4142,12 +4143,12 @@ static void store_query_header( DUDLEY_NOD node, SLONG * blob_id)
 
 	blob = create_blob(blob_id, bpb_length, bpb);
 
-	for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end; ptr++) {
-		symbol = (SYM) * ptr;
+	for (int pos = 0; pos < node->nod_count; pos++) {
+		symbol = (SYM) node->nod_arg[pos];
 		if (gds__put_segment(status_vector, &blob, symbol->sym_length,
 							 symbol->sym_string)) {
 			DDL_db_error(status_vector, 93, NULL, NULL, NULL, NULL, NULL);
-			/* msg 93: gds__put_segment failed */
+			// msg 93: gds__put_segment failed
 			return;
 		}
 	}

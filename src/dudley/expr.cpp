@@ -93,12 +93,12 @@ DUDLEY_NOD EXPR_boolean(USHORT * paren_count)
 
 	expr = parse_and(paren_count);
 
-	if (!MATCH(KW_OR)) {
+	if (!PARSE_match(KW_OR)) {
 		parse_terminating_parens(paren_count, &local_count);
 		return expr;
 	}
 
-	node = SYNTAX_NODE(nod_or, 2);
+	node = PARSE_make_node(nod_or, 2);
 	node->nod_arg[0] = expr;
 	node->nod_arg[1] = EXPR_boolean(paren_count);
 	parse_terminating_parens(paren_count, &local_count);
@@ -124,47 +124,47 @@ DUDLEY_NOD EXPR_rse(bool view_flag)
 	DUDLEY_CTX context;
 	SYM field_sym;
 
-	node = SYNTAX_NODE(nod_rse, s_rse_count);
+	node = PARSE_make_node(nod_rse, s_rse_count);
 	stack = NULL;
 	LEX_real();
 
-	if (MATCH(KW_ALL))
+	if (PARSE_match(KW_ALL))
 		LEX_real();
 
-	if (MATCH(KW_FIRST))
+	if (PARSE_match(KW_FIRST))
 		node->nod_arg[s_rse_first] = EXPR_value(0, NULL);
 
 	while (true) {
 		LLS_PUSH((DUDLEY_NOD) parse_relation(), &stack);
-		if (MATCH(KW_OVER)) {
+		if (PARSE_match(KW_OVER)) {
 			for (;;) {
 				if (!stack->lls_next) {
 					PARSE_error(234, NULL, NULL);	/* msg 234: OVER can only be used in CROSS expressions */
 				}
-				boolean = SYNTAX_NODE(nod_eql, 2);
+				boolean = PARSE_make_node(nod_eql, 2);
 				field_sym = PARSE_symbol(tok_ident);
-				field_name = SYNTAX_NODE(nod_field_name, 2);
+				field_name = PARSE_make_node(nod_field_name, 2);
 				context = (DUDLEY_CTX) stack->lls_object;
 				field_name->nod_arg[0] = (DUDLEY_NOD) context->ctx_name;
 				field_name->nod_arg[1] = (DUDLEY_NOD) field_sym;
 				boolean->nod_arg[0] = field_name;
-				field_name = SYNTAX_NODE(nod_over, 2);
+				field_name = PARSE_make_node(nod_over, 2);
 				field_name->nod_arg[0] = (DUDLEY_NOD) context->ctx_name;
 				field_name->nod_arg[1] = (DUDLEY_NOD) field_sym;
 				boolean->nod_arg[1] = field_name;
 				if (node->nod_arg[s_rse_boolean]) {
-					a_boolean = SYNTAX_NODE(nod_and, 2);
+					a_boolean = PARSE_make_node(nod_and, 2);
 					a_boolean->nod_arg[0] = boolean;
 					a_boolean->nod_arg[1] = node->nod_arg[s_rse_boolean];
 					node->nod_arg[s_rse_boolean] = a_boolean;
 				}
 				else
 					node->nod_arg[s_rse_boolean] = boolean;
-				if (!MATCH(KW_COMMA))
+				if (!PARSE_match(KW_COMMA))
 					break;
 			}
 		}
-		if (!MATCH(KW_CROSS))
+		if (!PARSE_match(KW_CROSS))
 			break;
 	}
 
@@ -172,10 +172,10 @@ DUDLEY_NOD EXPR_rse(bool view_flag)
 
 /* Pick up various other clauses */
 
-	if (MATCH(KW_WITH))
+	if (PARSE_match(KW_WITH))
 		if (boolean = EXPR_boolean(0)) {
 			if (node->nod_arg[s_rse_boolean]) {
-				a_boolean = SYNTAX_NODE(nod_and, 2);
+				a_boolean = PARSE_make_node(nod_and, 2);
 				a_boolean->nod_arg[0] = boolean;
 				a_boolean->nod_arg[1] = node->nod_arg[s_rse_boolean];
 				node->nod_arg[s_rse_boolean] = a_boolean;
@@ -183,15 +183,15 @@ DUDLEY_NOD EXPR_rse(bool view_flag)
 			else
 				node->nod_arg[s_rse_boolean] = boolean;
 		}
-	if (MATCH(KW_SORTED)) {
+	if (PARSE_match(KW_SORTED)) {
 		if (view_flag)
 			PARSE_error(319, NULL, NULL);	/* msg 234: Unexpected sort clause */
-		MATCH(KW_BY);
+		PARSE_match(KW_BY);
 		node->nod_arg[s_rse_sort] = parse_sort();
 	}
 
-	if (MATCH(KW_REDUCED)) {
-		MATCH(KW_TO);
+	if (PARSE_match(KW_REDUCED)) {
+		PARSE_match(KW_TO);
 		node->nod_arg[s_rse_reduced] = parse_sort();
 	}
 
@@ -215,77 +215,77 @@ DUDLEY_NOD EXPR_statement(void)
 	DUDLEY_NOD node;
 	int number;
 
-	if (MATCH(KW_BEGIN)) {
+	if (PARSE_match(KW_BEGIN)) {
 		stack = NULL;
-		while (!MATCH(KW_END))
+		while (!PARSE_match(KW_END))
 			LLS_PUSH(EXPR_statement(), &stack);
 		node = PARSE_make_list(stack);
 	}
-	else if (MATCH(KW_IF)) {
-		node = SYNTAX_NODE(nod_if, 3);
+	else if (PARSE_match(KW_IF)) {
+		node = PARSE_make_node(nod_if, 3);
 		node->nod_arg[s_if_boolean] = EXPR_boolean(0);
-		MATCH(KW_THEN);
+		PARSE_match(KW_THEN);
 		node->nod_arg[s_if_true] = EXPR_statement();
-		if (MATCH(KW_ELSE))
+		if (PARSE_match(KW_ELSE))
 			node->nod_arg[s_if_false] = EXPR_statement();
 		else
 			node->nod_count = 2;
 	}
-	else if (MATCH(KW_FOR)) {
-		node = SYNTAX_NODE(nod_for, 2);
+	else if (PARSE_match(KW_FOR)) {
+		node = PARSE_make_node(nod_for, 2);
 		node->nod_arg[s_for_rse] = EXPR_rse(false);
 		stack = NULL;
-		while (!MATCH(KW_END_FOR))
+		while (!PARSE_match(KW_END_FOR))
 			LLS_PUSH(EXPR_statement(), &stack);
 		node->nod_arg[s_for_action] = PARSE_make_list(stack);
 	}
-	else if (MATCH(KW_STORE)) {
-		node = SYNTAX_NODE(nod_store, 2);
+	else if (PARSE_match(KW_STORE)) {
+		node = PARSE_make_node(nod_store, 2);
 		node->nod_arg[s_store_rel] = (DUDLEY_NOD) parse_relation();
-		MATCH(KW_USING);
+		PARSE_match(KW_USING);
 		stack = NULL;
-		while (!MATCH(KW_END_STORE))
+		while (!PARSE_match(KW_END_STORE))
 			LLS_PUSH(EXPR_statement(), &stack);
 		node->nod_arg[s_store_action] = PARSE_make_list(stack);
 	}
-	else if (MATCH(KW_ABORT)) {
-		node = SYNTAX_NODE(nod_abort, 1);
+	else if (PARSE_match(KW_ABORT)) {
+		node = PARSE_make_node(nod_abort, 1);
 		node->nod_count = 0;
 		number = PARSE_number();
 		if (number > 255)
 			PARSE_error(235, NULL, NULL);	/* msg 235: abort code cannot exceed 255 */
 		node->nod_arg[0] = (DUDLEY_NOD) (SLONG) number;
 	}
-	else if (MATCH(KW_ERASE)) {
-		node = SYNTAX_NODE(nod_erase, 1);
+	else if (PARSE_match(KW_ERASE)) {
+		node = PARSE_make_node(nod_erase, 1);
 		node->nod_count = 0;
 		node->nod_arg[0] = (DUDLEY_NOD) PARSE_symbol(tok_ident);
 	}
-	else if (MATCH(KW_MODIFY)) {
-		MATCH(KW_USING);
-		node = SYNTAX_NODE(nod_modify, 3);
+	else if (PARSE_match(KW_MODIFY)) {
+		PARSE_match(KW_USING);
+		node = PARSE_make_node(nod_modify, 3);
 		node->nod_count = 0;
 		node->nod_arg[s_mod_old_ctx] = (DUDLEY_NOD) PARSE_symbol(tok_ident);
-		MATCH(KW_USING);
+		PARSE_match(KW_USING);
 		stack = NULL;
-		while (!MATCH(KW_END_MODIFY))
+		while (!PARSE_match(KW_END_MODIFY))
 			LLS_PUSH(EXPR_statement(), &stack);
 		node->nod_arg[s_mod_action] = PARSE_make_list(stack);
 	}
-	else if (MATCH(KW_POST)) {
-		node = SYNTAX_NODE(nod_post, 1);
+	else if (PARSE_match(KW_POST)) {
+		node = PARSE_make_node(nod_post, 1);
 		node->nod_count = 1;
 		node->nod_arg[0] = EXPR_value(0, NULL);
 	}
 	else {
-		node = SYNTAX_NODE(nod_assignment, 2);
+		node = PARSE_make_node(nod_assignment, 2);
 		node->nod_arg[1] = parse_field();
-		if (!MATCH(KW_EQUALS))
+		if (!PARSE_match(KW_EQUALS))
 			PARSE_error(236, DDL_token.tok_string, NULL);	/* msg 236: expected =, encountered \"%s\" */
 		node->nod_arg[0] = EXPR_value(0, NULL);
 	}
 
-	MATCH(KW_SEMI);
+	PARSE_match(KW_SEMI);
 
 	return node;
 }
@@ -321,12 +321,12 @@ DUDLEY_NOD EXPR_value(USHORT * paren_count,
 	node = parse_add(paren_count, bool_flag);
 
 	while (true) {
-		if (!MATCH(KW_BAR)) {
+		if (!PARSE_match(KW_BAR)) {
 			parse_terminating_parens(paren_count, &local_count);
 			return node;
 		}
 		arg = node;
-		node = SYNTAX_NODE(nod_concatenate, 2);
+		node = PARSE_make_node(nod_concatenate, 2);
 		node->nod_arg[0] = arg;
 		node->nod_arg[1] = parse_add(paren_count, bool_flag);
 	}
@@ -440,14 +440,14 @@ static DUDLEY_NOD parse_add(USHORT * paren_count,
 	node = parse_multiply(paren_count, bool_flag);
 
 	while (true) {
-		if (MATCH(KW_PLUS))
+		if (PARSE_match(KW_PLUS))
 			operatr = nod_add;
-		else if (MATCH(KW_MINUS))
+		else if (PARSE_match(KW_MINUS))
 			operatr = nod_subtract;
 		else
 			return node;
 		arg = node;
-		node = SYNTAX_NODE(operatr, 2);
+		node = PARSE_make_node(operatr, 2);
 		node->nod_arg[0] = arg;
 		node->nod_arg[1] = parse_multiply(paren_count, bool_flag);
 	}
@@ -470,10 +470,10 @@ static DUDLEY_NOD parse_and( USHORT * paren_count)
 
 	expr = parse_not(paren_count);
 
-	if (!MATCH(KW_AND))
+	if (!PARSE_match(KW_AND))
 		return expr;
 
-	node = SYNTAX_NODE(nod_and, 2);
+	node = PARSE_make_node(nod_and, 2);
 	node->nod_arg[0] = expr;
 	node->nod_arg[1] = parse_and(paren_count);
 
@@ -501,14 +501,14 @@ static DUDLEY_NOD parse_field(void)
 	while (true) {
 		LEX_real();
 		LLS_PUSH((DUDLEY_NOD) PARSE_symbol(tok_ident), &stack);
-		if (!MATCH(KW_DOT))
+		if (!PARSE_match(KW_DOT))
 			break;
 	}
 
 	field = PARSE_make_list(stack);
 	field->nod_type = nod_field_name;
 
-	if (!MATCH(KW_L_BRCKET))
+	if (!PARSE_match(KW_L_BRCKET))
 		return field;
 
 /* Parse an array reference */
@@ -516,13 +516,13 @@ static DUDLEY_NOD parse_field(void)
 	stack = NULL;
 	for (;;) {
 		LLS_PUSH(EXPR_value(0, NULL), &stack);
-		if (MATCH(KW_R_BRCKET))
+		if (PARSE_match(KW_R_BRCKET))
 			break;
-		if (!MATCH(KW_COMMA))
+		if (!PARSE_match(KW_COMMA))
 			PARSE_error(317, DDL_token.tok_string, NULL);	/* msg 317, expected comma or right bracket, encountered \"%s\" */
 	}
 
-	array = SYNTAX_NODE(nod_index, 2);
+	array = PARSE_make_node(nod_index, 2);
 	array->nod_arg[0] = field;
 	array->nod_arg[1] = PARSE_make_list(stack);
 
@@ -545,23 +545,23 @@ static DUDLEY_NOD parse_from(USHORT * paren_count,
  **************************************/
 	DUDLEY_NOD node, value;
 
-	if (MATCH(KW_FIRST)) {
+	if (PARSE_match(KW_FIRST)) {
 		value = parse_primitive_value(0, NULL);
-		if (!MATCH(KW_FROM))
+		if (!PARSE_match(KW_FROM))
 			PARSE_error(239, DDL_token.tok_string, NULL);
 		/* msg 239: expected FROM rse clause, encountered \"%s\" */
 	}
 	else {
 		value = parse_primitive_value(paren_count, bool_flag);
-		if (!MATCH(KW_FROM))
+		if (!PARSE_match(KW_FROM))
 			return value;
 	}
 
-	node = SYNTAX_NODE(nod_from, s_stt_count);
+	node = PARSE_make_node(nod_from, s_stt_count);
 	node->nod_arg[s_stt_value] = value;
 	node->nod_arg[s_stt_rse] = EXPR_rse(false);
 
-	if (MATCH(KW_ELSE))
+	if (PARSE_match(KW_ELSE))
 		node->nod_arg[s_stt_default] = EXPR_value(0, NULL);
 
 	return node;
@@ -593,18 +593,18 @@ static DUDLEY_NOD parse_function(void)
 	if (!symbol)
 		return NULL;
 
-	node = SYNTAX_NODE(nod_function, 3);
+	node = PARSE_make_node(nod_function, 3);
 	node->nod_count = 1;
 	node->nod_arg[1] = (DUDLEY_NOD) PARSE_symbol(tok_ident);
 	node->nod_arg[2] = (DUDLEY_NOD) symbol->sym_object;
 	stack = NULL;
 
-	if (MATCH(KW_LEFT_PAREN) && !MATCH(KW_RIGHT_PAREN))
+	if (PARSE_match(KW_LEFT_PAREN) && !PARSE_match(KW_RIGHT_PAREN))
 		for (;;) {
 			LLS_PUSH(EXPR_value(0, NULL), &stack);
-			if (MATCH(KW_RIGHT_PAREN))
+			if (PARSE_match(KW_RIGHT_PAREN))
 				break;
-			if (!MATCH(KW_COMMA))
+			if (!PARSE_match(KW_COMMA))
 				PARSE_error(240, DDL_token.tok_string, NULL);
 			/* msg 240: expected comma or right parenthesis, encountered \"%s\" */
 		}
@@ -633,13 +633,13 @@ static DUDLEY_NOD parse_gen_id(void)
 
 	LEX_token();
 
-	if (!MATCH(KW_LEFT_PAREN))
+	if (!PARSE_match(KW_LEFT_PAREN))
 		PARSE_error(241, DDL_token.tok_string, NULL);	/* msg 241: expected left parenthesis, encountered \"%s\" */
 
-	node = SYNTAX_NODE(nod_gen_id, 2);
+	node = PARSE_make_node(nod_gen_id, 2);
 	node->nod_count = 1;
 	node->nod_arg[1] = (DUDLEY_NOD) PARSE_symbol(tok_ident);
-	MATCH(KW_COMMA);
+	PARSE_match(KW_COMMA);
 	node->nod_arg[0] = EXPR_value(0, NULL);
 	parse_matching_paren();
 
@@ -705,7 +705,7 @@ static void parse_matching_paren(void)
  *
  **************************************/
 
-	if (!MATCH(KW_RIGHT_PAREN))
+	if (!PARSE_match(KW_RIGHT_PAREN))
 		PARSE_error(243, DDL_token.tok_string, NULL);	/* msg 243: expected right parenthesis, encountered \"%s\" */
 }
 
@@ -729,14 +729,14 @@ static DUDLEY_NOD parse_multiply(USHORT * paren_count,
 	node = parse_from(paren_count, bool_flag);
 
 	while (true) {
-		if (MATCH(KW_ASTERISK))
+		if (PARSE_match(KW_ASTERISK))
 			operatr = nod_multiply;
-		else if (MATCH(KW_SLASH))
+		else if (PARSE_match(KW_SLASH))
 			operatr = nod_divide;
 		else
 			return node;
 		arg = node;
-		node = SYNTAX_NODE(operatr, 2);
+		node = PARSE_make_node(operatr, 2);
 		node->nod_arg[0] = arg;
 		node->nod_arg[1] = parse_from(paren_count, bool_flag);
 	}
@@ -759,10 +759,10 @@ static DUDLEY_NOD parse_not( USHORT * paren_count)
 
 	LEX_real();
 
-	if (!MATCH(KW_NOT))
+	if (!PARSE_match(KW_NOT))
 		return parse_relational(paren_count);
 
-	node = SYNTAX_NODE(nod_not, 1);
+	node = PARSE_make_node(nod_not, 1);
 	node->nod_arg[0] = parse_not(paren_count);
 
 	return node;
@@ -820,7 +820,7 @@ static DUDLEY_NOD parse_primitive_value(USHORT * paren_count,
 				return sub;
 			}
 		}
-		node = SYNTAX_NODE(nod_negate, 1);
+		node = PARSE_make_node(nod_negate, 1);
 		node->nod_arg[0] = sub;
 		break;
 
@@ -834,12 +834,12 @@ static DUDLEY_NOD parse_primitive_value(USHORT * paren_count,
 
 	case KW_NULL:
 		LEX_token();
-		node = SYNTAX_NODE(nod_null, 0);
+		node = PARSE_make_node(nod_null, 0);
 		break;
 
 	case KW_USER_NAME:
 		LEX_token();
-		node = SYNTAX_NODE(nod_user_name, 0);
+		node = PARSE_make_node(nod_user_name, 0);
 		break;
 
 	case KW_GEN_ID:
@@ -849,7 +849,7 @@ static DUDLEY_NOD parse_primitive_value(USHORT * paren_count,
 	case KW_UPPERCASE:
 		LEX_token();
 		sub = parse_primitive_value(0, NULL);
-		node = SYNTAX_NODE(nod_uppercase, 1);
+		node = PARSE_make_node(nod_uppercase, 1);
 		node->nod_arg[0] = sub;
 		break;
 
@@ -859,7 +859,7 @@ static DUDLEY_NOD parse_primitive_value(USHORT * paren_count,
 				node = parse_field();
 			break;
 		}
-		node = SYNTAX_NODE(nod_literal, 1);
+		node = PARSE_make_node(nod_literal, 1);
 		node->nod_arg[0] = (DUDLEY_NOD) parse_literal();
 	}
 
@@ -889,7 +889,7 @@ static DUDLEY_CTX parse_relation(void)
 	symbol->sym_type = SYM_context;
 	symbol->sym_object = context;
 
-	if (!MATCH(KW_IN))
+	if (!PARSE_match(KW_IN))
 		PARSE_error(244, DDL_token.tok_string, NULL);	/* msg 244: expected IN, encountered \"%s\" */
 
 	context->ctx_relation = PARSE_relation();
@@ -915,27 +915,27 @@ static DUDLEY_NOD parse_relational( USHORT * paren_count)
 	enum nod_t operatr, *rel_ops;
 	bool local_flag = true;
 
-	if (MATCH(KW_ANY)) {
-		node = SYNTAX_NODE(nod_any, 1);
+	if (PARSE_match(KW_ANY)) {
+		node = PARSE_make_node(nod_any, 1);
 		node->nod_arg[0] = EXPR_rse(false);
 		return node;
 	}
 
-	if (MATCH(KW_UNIQUE)) {
-		node = SYNTAX_NODE(nod_unique, 1);
+	if (PARSE_match(KW_UNIQUE)) {
+		node = PARSE_make_node(nod_unique, 1);
 		node->nod_arg[0] = EXPR_rse(false);
 		return node;
 	}
 
 	expr1 = EXPR_value(paren_count, &local_flag);
-	if (KEYWORD(KW_RIGHT_PAREN))
+	if (DDL_token.tok_keyword == KW_RIGHT_PAREN)
 		return expr1;
 
 	negation = false;
 	node = NULL;
 	LEX_real();
 
-	if (MATCH(KW_NOT)) {
+	if (PARSE_match(KW_NOT)) {
 		negation = true;
 		LEX_real();
 	}
@@ -979,14 +979,14 @@ static DUDLEY_NOD parse_relational( USHORT * paren_count)
 	case KW_MATCHES:
 		LEX_token();
 		expr2 = EXPR_value(0, NULL);
-		if (MATCH(KW_USING)) {
+		if (PARSE_match(KW_USING)) {
 			operatr = nod_sleuth;
-			node = SYNTAX_NODE(operatr, 3);
+			node = PARSE_make_node(operatr, 3);
 			node->nod_arg[2] = EXPR_value(0, NULL);
 		}
 		else {
 			operatr = nod_matches;
-			node = SYNTAX_NODE(operatr, 2);
+			node = PARSE_make_node(operatr, 2);
 		}
 		node->nod_arg[0] = expr1;
 		node->nod_arg[1] = expr2;
@@ -994,24 +994,24 @@ static DUDLEY_NOD parse_relational( USHORT * paren_count)
 
 	case KW_STARTS:
 		LEX_token();
-		MATCH(KW_WITH);
-		node = SYNTAX_NODE(nod_starts, 2);
+		PARSE_match(KW_WITH);
+		node = PARSE_make_node(nod_starts, 2);
 		node->nod_arg[0] = expr1;
 		node->nod_arg[1] = EXPR_value(0, NULL);
 		break;
 
 	case KW_MISSING:
 		LEX_token();
-		node = SYNTAX_NODE(nod_missing, 1);
+		node = PARSE_make_node(nod_missing, 1);
 		node->nod_arg[0] = expr1;
 		break;
 
 	case KW_BETWEEN:
 		LEX_token();
-		node = SYNTAX_NODE(nod_between, 3);
+		node = PARSE_make_node(nod_between, 3);
 		node->nod_arg[0] = expr1;
 		node->nod_arg[1] = EXPR_value(0, NULL);
-		MATCH(KW_AND);
+		PARSE_match(KW_AND);
 		node->nod_arg[2] = EXPR_value(0, NULL);
 		break;
 
@@ -1027,7 +1027,7 @@ static DUDLEY_NOD parse_relational( USHORT * paren_count)
 
 	if (!node) {
 		LEX_token();
-		node = SYNTAX_NODE(operatr, 2);
+		node = PARSE_make_node(operatr, 2);
 		node->nod_arg[0] = expr1;
 		node->nod_arg[1] = EXPR_value(paren_count, &local_flag);
 	}
@@ -1035,7 +1035,7 @@ static DUDLEY_NOD parse_relational( USHORT * paren_count)
 /* If a negation remains to be handled, zap the node under a NOT. */
 
 	if (negation) {
-		expr1 = SYNTAX_NODE(nod_not, 1);
+		expr1 = PARSE_make_node(nod_not, 1);
 		expr1->nod_arg[0] = node;
 		node = expr1;
 	}
@@ -1049,11 +1049,11 @@ static DUDLEY_NOD parse_relational( USHORT * paren_count)
 /* We have an equality operation, which can take a number of values.  Generate
    implicit ORs */
 
-	while (MATCH(KW_COMMA)) {
-		MATCH(KW_OR);
-		or_node = SYNTAX_NODE(nod_or, 2);
+	while (PARSE_match(KW_COMMA)) {
+		PARSE_match(KW_OR);
+		or_node = PARSE_make_node(nod_or, 2);
 		or_node->nod_arg[0] = node;
-		or_node->nod_arg[1] = node = SYNTAX_NODE(nod_eql, 2);
+		or_node->nod_arg[1] = node = PARSE_make_node(nod_eql, 2);
 		node->nod_arg[0] = expr1;
 		node->nod_arg[1] = EXPR_value(paren_count, &local_flag);
 		node = or_node;
@@ -1083,13 +1083,13 @@ static DUDLEY_NOD parse_sort(void)
 
 	while (true) {
 		LEX_real();
-		if (MATCH(KW_ASCENDING))
+		if (PARSE_match(KW_ASCENDING))
 			direction = 0;
-		else if (MATCH(KW_DESCENDING))
+		else if (PARSE_match(KW_DESCENDING))
 			direction = 1;
 		LLS_PUSH(EXPR_value(0, NULL), &stack);
 		LLS_PUSH((DUDLEY_NOD) (SLONG) direction, &stack);
-		if (!MATCH(KW_COMMA))
+		if (!PARSE_match(KW_COMMA))
 			break;
 	}
 
@@ -1120,12 +1120,12 @@ static DUDLEY_NOD parse_statistical(void)
 		if (types->nod_t_keyword == keyword)
 			break;
 
-	node = SYNTAX_NODE(types->nod_t_node, s_stt_count);
+	node = PARSE_make_node(types->nod_t_node, s_stt_count);
 
 	if (node->nod_type != nod_count)
 		node->nod_arg[s_stt_value] = EXPR_value(0, NULL);
 
-	if (!MATCH(KW_OF))
+	if (!PARSE_match(KW_OF))
 		PARSE_error(246, DDL_token.tok_string, NULL);	/* msg 246: expected OF, encountered \"%s\" */
 
 	node->nod_arg[s_stt_rse] = EXPR_rse(false);

@@ -300,7 +300,7 @@ DUDLEY_NOD PARSE_make_list(LLS stack)
  *	them first.
  *
  **************************************/
-	DUDLEY_NOD node, *ptr;
+	DUDLEY_NOD node;
 	LLS temp;
 	USHORT count;
 
@@ -312,12 +312,11 @@ DUDLEY_NOD PARSE_make_list(LLS stack)
 		temp = temp->lls_next;
 	}
 
-	node = SYNTAX_NODE(nod_list, count);
-	ptr = &node->nod_arg[count];
+	node = PARSE_make_node(nod_list, count);
 
 	while (stack)
-		*--ptr = LLS_POP(&stack);
-
+		node->nod_arg[--count] = LLS_POP(&stack);
+	
 	return node;
 }
 
@@ -359,7 +358,7 @@ bool PARSE_match( enum kwwords keyword)
  **************************************/
 	SYM symbol;
 
-	if (KEYWORD(keyword)) {
+	if (DDL_token.tok_keyword == keyword) {
 		LEX_token();
 		return true;
 	}
@@ -390,7 +389,7 @@ int PARSE_number(void)
 	SSHORT negate;
 	int number;
 
-	negate = MATCH(KW_MINUS);
+	negate = PARSE_match(KW_MINUS);
 
 	if (DDL_token.tok_type != tok_number)
 		PARSE_error(115, DDL_token.tok_string, 0);	/* msg 115: expected number, encountered \"%s\" */
@@ -655,10 +654,10 @@ static FIL define_cache(void)
 	if (!check_filename(file->fil_name, false))
 		PARSE_error(322, 0, 0);	/* msg 322: a node name is not permitted in a shared cache file name */
 
-	if (MATCH(KW_LENGTH)) {
+	if (PARSE_match(KW_LENGTH)) {
 		if ((file->fil_length = PARSE_number()) < MIN_CACHE_BUFFERS)
 			PARSE_error(339, (TEXT *) MIN_CACHE_BUFFERS, 0);	/* msg 339: minimum of %d cache pages required */
-		MATCH(KW_PAGES);
+		PARSE_match(KW_PAGES);
 	}
 	else
 		file->fil_length = DEF_CACHE_BUFFERS;	/* default cache buffers */
@@ -683,7 +682,8 @@ static void define_database( enum act_t action_type)
 	SYM symbol;
 
 	if (database)
-		DDL_error_abort(0, 120, NULL, NULL, NULL, NULL, NULL);	/* msg 120: GDEF processes only one database at a time */
+		DDL_error_abort(0, 120, NULL, NULL, NULL, NULL, NULL);
+		// msg 120: GDEF processes only one database at a time 
 
 	database = (DBB) DDL_alloc(sizeof(dbb));
 	database->dbb_name = PARSE_symbol(tok_quoted);
@@ -693,15 +693,15 @@ static void define_database( enum act_t action_type)
 /* parse options for the database parameter block */
 
 	while (true) {
-		if (MATCH(KW_LENGTH)) {
+		if (PARSE_match(KW_LENGTH)) {
 			database->dbb_length = PARSE_number();
-			MATCH(KW_PAGES);
+			PARSE_match(KW_PAGES);
 		}
-		else if (MATCH(KW_USER)) {
+		else if (PARSE_match(KW_USER)) {
 			symbol = PARSE_symbol(tok_quoted);
 			DDL_default_user = symbol->sym_name;
 		}
-		else if (MATCH(KW_PASSWORD)) {
+		else if (PARSE_match(KW_PASSWORD)) {
 			symbol = PARSE_symbol(tok_quoted);
 			DDL_default_password = symbol->sym_name;
 		}
@@ -710,7 +710,7 @@ static void define_database( enum act_t action_type)
 	}
 
 	if (action_type == act_d_database) {
-		if (MATCH(KW_CASCADE))
+		if (PARSE_match(KW_CASCADE))
 			database->dbb_flags |= DBB_cascade;
 		EXE_drop_database(database);
 		DDL_drop_database = true;
@@ -720,83 +720,84 @@ static void define_database( enum act_t action_type)
 /* parse add/drop items */
 
 	while (true) {
-		MATCH(KW_ADD);
-		if (KEYWORD(KW_DESCRIPTION))
+		PARSE_match(KW_ADD);
+		if (DDL_token.tok_keyword == KW_DESCRIPTION)
 			database->dbb_description = parse_description();
-		else if (MATCH(KW_SECURITY_CLASS))
+		else if (PARSE_match(KW_SECURITY_CLASS))
 			database->dbb_security_class = PARSE_symbol(tok_ident);
-		else if (MATCH(KW_DROP)) {
-			if (MATCH(KW_DESCRIP))
+		else if (PARSE_match(KW_DROP)) {
+			if (PARSE_match(KW_DESCRIP))
 				database->dbb_flags |= DBB_null_description;
-			else if (MATCH(KW_SECURITY_CLASS))
+			else if (PARSE_match(KW_SECURITY_CLASS))
 				database->dbb_flags |= DBB_null_security_class;
-			else if (MATCH(KW_LOG_FILE)) {
+			else if (PARSE_match(KW_LOG_FILE)) {
 				if ((database->dbb_flags & DBB_log_default)
 					|| (database->dbb_logfiles)) PARSE_error(337, 0, 0);
 
 				database->dbb_flags |= DBB_drop_log;
 			}
-			else if (MATCH(KW_CASCADE))
+			else if (PARSE_match(KW_CASCADE))
 				database->dbb_flags |= DBB_cascade;
 #ifdef FLINT_CACHE
-			else if (MATCH(KW_CACHE))
+			else if (PARSE_match(KW_CACHE))
 				database->dbb_flags |= DBB_drop_cache;
 #endif /* FLINT_CACHE */
 			else
-				PARSE_error(121, 0, 0);	/* msg 121 only SECURITY_CLASS, DESCRIPTION and CACHE can be dropped */
+				PARSE_error(121, 0, 0);
+			// msg 121 only SECURITY_CLASS, DESCRIPTION and CACHE can be dropped 
 		}
-		else if (MATCH(KW_FILE)) {
+		else if (PARSE_match(KW_FILE)) {
 			file = define_file();
 			file->fil_next = database->dbb_files;
 			database->dbb_files = file;
 		}
-		else if (MATCH(KW_PAGE_SIZE)) {
+		else if (PARSE_match(KW_PAGE_SIZE)) {
 			if (action_type == act_m_database)
 				PARSE_error(122, 0, 0);	/* msg 122: PAGE_SIZE can not be modified */
 			database->dbb_page_size = parse_page_size();
 		}
-		else if (MATCH(KW_CHECK_POINT_LEN)) {
-			MATCH(KW_EQUALS);
+		else if (PARSE_match(KW_CHECK_POINT_LEN)) {
+			PARSE_match(KW_EQUALS);
 			database->dbb_chkptlen = PARSE_number();
 		}
-		else if (MATCH(KW_NUM_LOG_BUFS)) {
-			MATCH(KW_EQUALS);
+		else if (PARSE_match(KW_NUM_LOG_BUFS)) {
+			PARSE_match(KW_EQUALS);
 			database->dbb_numbufs = PARSE_number();
 		}
-		else if (MATCH(KW_LOG_BUF_SIZE)) {
-			MATCH(KW_EQUALS);
+		else if (PARSE_match(KW_LOG_BUF_SIZE)) {
+			PARSE_match(KW_EQUALS);
 			database->dbb_bufsize = PARSE_number();
 		}
-		else if (MATCH(KW_GROUP_COMMIT_WAIT)) {
-			MATCH(KW_EQUALS);
+		else if (PARSE_match(KW_GROUP_COMMIT_WAIT)) {
+			PARSE_match(KW_EQUALS);
 			database->dbb_grp_cmt_wait = PARSE_number();
 		}
-		else if (MATCH(KW_LOG_FILE)) {
+		else if (PARSE_match(KW_LOG_FILE)) {
 			if ((database->dbb_flags & DBB_log_default)
 				|| (database->dbb_logfiles)) PARSE_error(338, 0, 0);
 
 			if (database->dbb_flags & DBB_drop_log)
 				PARSE_error(337, 0, 0);
 
-			if (MATCH(KW_LEFT_PAREN)) {
+			if (PARSE_match(KW_LEFT_PAREN)) {
 				database->dbb_flags |= DBB_log_preallocated;
 				while (true) {
 					file = define_log_file(DBB_log_preallocated);
 					file->fil_next = database->dbb_logfiles;
 					database->dbb_logfiles = file;
-					if (!MATCH(KW_COMMA))
+					if (!PARSE_match(KW_COMMA))
 						break;
 				}
 
-				if (!MATCH(KW_RIGHT_PAREN))
+				if (!PARSE_match(KW_RIGHT_PAREN))
 					PARSE_error(341, DDL_token.tok_string, 0);	/* msg 341: expected comma or ')', encountered \"%s\" */
 
-				if (MATCH(KW_OVERFLOW))
+				if (PARSE_match(KW_OVERFLOW))
 					database->dbb_overflow = define_log_file(DBB_log_serial);
 				else
 					PARSE_error(340, 0, 0);
 			}
-			else if (MATCH(KW_BASE_NAME)) {
+			else if (PARSE_match(KW_BASE_NAME)) {
 				database->dbb_flags |= DBB_log_serial;
 				database->dbb_logfiles = define_log_file(DBB_log_serial);
 			}
@@ -804,7 +805,7 @@ static void define_database( enum act_t action_type)
 				database->dbb_flags |= DBB_log_default;
 		}
 #ifdef FLINT_CACHE
-		else if (MATCH(KW_CACHE))
+		else if (PARSE_match(KW_CACHE))
 			database->dbb_cache_file = define_cache();
 #endif /* FLINT_CACHE */
 		else
@@ -875,13 +876,13 @@ static FIL define_file(void)
 		PARSE_error(297, 0, 0);	/* msg 297: A node name is not permitted in a shadow or secondary file name */
 
 	while (true) {
-		if (MATCH(KW_LENGTH)) {
+		if (PARSE_match(KW_LENGTH)) {
 			file->fil_length = PARSE_number();
-			MATCH(KW_PAGES);
+			PARSE_match(KW_PAGES);
 		}
-		else if (MATCH(KW_STARTS)) {
-			MATCH(KW_AT);
-			MATCH(KW_PAGE);
+		else if (PARSE_match(KW_STARTS)) {
+			PARSE_match(KW_AT);
+			PARSE_match(KW_PAGE);
 			file->fil_start = PARSE_number();
 		}
 		else
@@ -913,15 +914,15 @@ static void define_filter(void)
 	new_filter->filter_name = PARSE_symbol(tok_ident);
 
 	while (true) {
-		if (KEYWORD(KW_DESCRIPTION))
+		if (DDL_token.tok_keyword == KW_DESCRIPTION)
 			new_filter->filter_description = parse_description();
-		else if (MATCH(KW_INPUT_TYPE))
+		else if (PARSE_match(KW_INPUT_TYPE))
 			new_filter->filter_input_sub_type = PARSE_number();
-		else if (MATCH(KW_OUTPUT_TYPE))
+		else if (PARSE_match(KW_OUTPUT_TYPE))
 			new_filter->filter_output_sub_type = PARSE_number();
-		else if (MATCH(KW_FUNCTION_MODULE_NAME))
+		else if (PARSE_match(KW_FUNCTION_MODULE_NAME))
 			new_filter->filter_module_name = PARSE_symbol(tok_quoted);
-		else if (MATCH(KW_FUNCTION_ENTRY_POINT))
+		else if (PARSE_match(KW_FUNCTION_ENTRY_POINT))
 			new_filter->filter_entry_point = PARSE_symbol(tok_quoted);
 		else
 			break;
@@ -959,13 +960,13 @@ static void define_function(void)
 	function = PARSE_function(FALSE);
 
 	while (true) {
-		if (KEYWORD(KW_DESCRIPTION))
+		if (DDL_token.tok_keyword == KW_DESCRIPTION)
 			function->func_description = parse_description();
-		else if (MATCH(KW_FUNCTION_MODULE_NAME))
+		else if (PARSE_match(KW_FUNCTION_MODULE_NAME))
 			function->func_module_name = PARSE_symbol(tok_quoted);
-		else if (MATCH(KW_FUNCTION_ENTRY_POINT))
+		else if (PARSE_match(KW_FUNCTION_ENTRY_POINT))
 			function->func_entry_point = PARSE_symbol(tok_quoted);
-		else if (MATCH(KW_QUERY_NAME))
+		else if (PARSE_match(KW_QUERY_NAME))
 			function->func_query_name = PARSE_symbol(tok_ident);
 		else
 			break;
@@ -984,16 +985,16 @@ static void define_function(void)
 	position = 1;
 
 	while (true) {
-		if (KEYWORD(KW_SEMI))
+		if (DDL_token.tok_keyword == KW_SEMI)
 			break;
 		function_arg = parse_function_arg(function, (USHORT*) &position);
 		function_arg->funcarg_funcname = function->func_name;
 		make_action(act_a_function_arg, (DBB) function_arg);
-		if (!MATCH(KW_COMMA))
+		if (!PARSE_match(KW_COMMA))
 			break;
 	}
 
-	if (!KEYWORD(KW_SEMI))
+	if (!(DDL_token.tok_keyword == KW_SEMI))
 		PARSE_error(132, DDL_token.tok_string, 0);	/* msg 132: expected comma or semi-colon, encountered \"%s\" */
 
 	make_action(act_a_function, (DBB) function);
@@ -1036,7 +1037,7 @@ static void define_index(void)
  *
  **************************************/
 	LLS stack;
-	SYM index_name, rel_name, *ptr;
+	SYM index_name, rel_name;
 	TXT description = NULL;
 	SSHORT count;
 	bool unique = false;
@@ -1044,23 +1045,23 @@ static void define_index(void)
 	idx_direction descending = IDX_type_none;
 
 	index_name = PARSE_symbol(tok_ident);
-	MATCH(KW_FOR);
+	PARSE_match(KW_FOR);
 	rel_name = PARSE_symbol(tok_ident);
 
 	while (true) {
-		if (MATCH(KW_DUPLICATES))
+		if (PARSE_match(KW_DUPLICATES))
 			unique = false;
-		else if (MATCH(KW_UNIQUE))
+		else if (PARSE_match(KW_UNIQUE))
 			unique = true;
-		else if (KEYWORD(KW_DESCRIPTION))
+		else if (DDL_token.tok_keyword == KW_DESCRIPTION)
 			description = parse_description();
-		else if (MATCH(KW_ACTIVE))
+		else if (PARSE_match(KW_ACTIVE))
 			inactive = false;
-		else if (MATCH(KW_INACTIVE))
+		else if (PARSE_match(KW_INACTIVE))
 			inactive = true;
-		else if (MATCH(KW_ASCENDING))
+		else if (PARSE_match(KW_ASCENDING))
 			descending = IDX_type_none;
-		else if (MATCH(KW_DESCENDING))
+		else if (PARSE_match(KW_DESCENDING))
 			descending = IDX_type_descend;
 		else
 			break;
@@ -1073,12 +1074,13 @@ static void define_index(void)
 	while (true) {
 		LLS_PUSH((DUDLEY_NOD) PARSE_symbol(tok_ident), &stack);
 		count++;
-		if (!MATCH(KW_COMMA))
+		if (!PARSE_match(KW_COMMA))
 			break;
 	}
 
-	if (!KEYWORD(KW_SEMI))
-		PARSE_error(135, DDL_token.tok_string, 0);	/* msg 135: expected comma or semi-colon, encountered \"%s\" */
+	if (!(DDL_token.tok_keyword == KW_SEMI))
+		PARSE_error(135, DDL_token.tok_string, 0);
+	// msg 135: expected comma or semi-colon, encountered \"%s\"
 	DUDLEY_IDX index = (DUDLEY_IDX) DDL_alloc(IDX_LEN(count == 0 ? 1 : count));
 	index->idx_count = count;
 	index->idx_name = index_name;
@@ -1088,10 +1090,8 @@ static void define_index(void)
 	index->idx_inactive = inactive;
 	index->idx_type = descending;
 
-	ptr = &index->idx_field[count];
-
 	while (stack)
-		*--ptr = (SYM) LLS_POP(&stack);
+		index->idx_field[--count] = (SYM) LLS_POP(&stack);
 
 	make_action(act_a_index, (DBB) index);
 }
@@ -1114,17 +1114,19 @@ static FIL define_log_file( USHORT log_type)
 	file = (FIL) DDL_alloc(sizeof(fil));
 	file->fil_name = PARSE_symbol(tok_quoted);
 	if (!check_filename(file->fil_name, false))
-		PARSE_error(297, 0, 0);	/* msg 297: A node name is not permitted in a shadow or secondary file name */
+		PARSE_error(297, 0, 0);
+	// msg 297: A node name is not permitted in a shadow or secondary file name
 
 	while (true) {
-		if (MATCH(KW_SIZE)) {
-			MATCH(KW_EQUALS);
+		if (PARSE_match(KW_SIZE)) {
+			PARSE_match(KW_EQUALS);
 			file->fil_length = PARSE_number();
 		}
-		else if (MATCH(KW_RAW_PARTITIONS)) {
+		else if (PARSE_match(KW_RAW_PARTITIONS)) {
 			if (log_type != DBB_log_preallocated)
-				PARSE_error(332, 0, 0);	/* msg 332: Partitions not supported in series of log file specification */
-			MATCH(KW_EQUALS);
+				PARSE_error(332, 0, 0);
+			// msg 332: Partitions not supported in series of log file specification 
+			PARSE_match(KW_EQUALS);
 			file->fil_partitions = PARSE_number();
 			file->fil_raw = LOG_raw;
 		}
@@ -1136,17 +1138,19 @@ static FIL define_log_file( USHORT log_type)
 
 	if (file->fil_partitions) {
 		if (!file->fil_length)
-			PARSE_error(335, file->fil_name->sym_string, 0);	/* msg 335: Total length of the partitioned
-																   log <logname> must be specified */
+			PARSE_error(335, file->fil_name->sym_string, 0);
+			// msg 335: Total length of the partitioned log <logname> must be specified
 		if (PARTITION_SIZE(OneK * file->fil_length, file->fil_partitions) <
 			(OneK * MIN_LOG_LENGTH))
+		{
 			PARSE_error(334, file->fil_name->sym_string, 0);
-		/* msg 334: log partition size too small for <logname> */
+		}
+		// msg 334: log partition size too small for <logname>
 	}
 	else {
 		if ((file->fil_length) && (file->fil_length < MIN_LOG_LENGTH))
 			PARSE_error(336, (TEXT *) MIN_LOG_LENGTH, 0);
-		/* msg 336: Minimum log length should be MIN_LOG_LENGTH Kbytes */
+		// msg 336: Minimum log length should be MIN_LOG_LENGTH Kbytes
 	}
 
 	return file;
@@ -1172,19 +1176,20 @@ static void define_old_trigger(void)
 	trigger = NULL;
 	relation = PARSE_relation();
 
-	while (!MATCH(KW_END_TRIGGER)) {
+	while (!PARSE_match(KW_END_TRIGGER)) {
 		trigger = (DUDLEY_TRG) DDL_alloc(sizeof(dudley_trg));
 		trigger->trg_relation = relation;
 
-		if (MATCH(KW_STORE))
+		if (PARSE_match(KW_STORE))
 			trigger->trg_type = trg_store;
-		else if (MATCH(KW_MODIFY))
+		else if (PARSE_match(KW_MODIFY))
 			trigger->trg_type = trg_modify;
-		else if (MATCH(KW_ERASE))
+		else if (PARSE_match(KW_ERASE))
 			trigger->trg_type = trg_erase;
 		else
-			PARSE_error(136, DDL_token.tok_string, 0);	/* msg 136: expected STORE, MODIFY, ERASE, END_TRIGGER, encountered \"%s\" */
-		MATCH(KW_COLON);
+			PARSE_error(136, DDL_token.tok_string, 0);
+		// msg 136: expected STORE, MODIFY, ERASE, END_TRIGGER, encountered \"%s\"
+		PARSE_match(KW_COLON);
 
 		name = gen_trigger_name(trigger->trg_type, relation);
 
@@ -1232,7 +1237,7 @@ static void define_relation(void)
 		// msg 137: relation %s already exists 
 	}
 
-	if (MATCH(KW_EXTERNAL_FILE)) {
+	if (PARSE_match(KW_EXTERNAL_FILE)) {
 		relation->rel_filename = PARSE_symbol(tok_quoted);
 		if (!check_filename(relation->rel_filename, true))
 			PARSE_error(298, 0, 0);
@@ -1244,11 +1249,11 @@ static void define_relation(void)
 	position = 1;
 
 	while (true)
-		if (KEYWORD(KW_DESCRIPTION))
+		if (DDL_token.tok_keyword == KW_DESCRIPTION)
 			relation->rel_description = parse_description();
-		else if (MATCH(KW_SECURITY_CLASS))
+		else if (PARSE_match(KW_SECURITY_CLASS))
 			relation->rel_security_class = PARSE_symbol(tok_ident);
-		else if (MATCH(KW_SYSTEM_FLAG)) {
+		else if (PARSE_match(KW_SYSTEM_FLAG)) {
 			relation->rel_system = get_system_flag();
 			relation->rel_flags |= rel_explicit_system;
 		}
@@ -1258,8 +1263,8 @@ static void define_relation(void)
 /* Gobble fields */
 
 	while (true) {
-		MATCH(KW_ADD);
-		MATCH(KW_FIELD);
+		PARSE_match(KW_ADD);
+		PARSE_match(KW_FIELD);
 		field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 		parse_field(field);
 		field->fld_relation = relation;
@@ -1285,16 +1290,17 @@ static void define_relation(void)
 		HSH_insert(field->fld_name);
 		action = make_action(act_a_field, (DBB) field);
 		action->act_flags |= ACT_ignore;
-		if (!MATCH(KW_COMMA))
+		if (!PARSE_match(KW_COMMA))
 			break;
 	}
 
-	if (!KEYWORD(KW_SEMI))
-		PARSE_error(138, DDL_token.tok_string, 0);	/* msg 138: expected comma or semi-colon, encountered \"%s\" */
+	if (!(DDL_token.tok_keyword == KW_SEMI))
+		PARSE_error(138, DDL_token.tok_string, 0);
+	// msg 138: expected comma or semi-colon, encountered \"%s\"
 
-/* We started off by assuming that the relation and field actions that
-   have been defined would have to be ignored.  Everything has gone well so
-   turn them on. */
+// We started off by assuming that the relation and field actions that
+// have been defined would have to be ignored.  Everything has gone well so
+// turn them on.
 
 	while (true) {
 		action->act_flags &= ~ACT_ignore;
@@ -1326,7 +1332,7 @@ static void define_security_class(void)
 
 	class_ = (SCL) DDL_alloc(sizeof(scl));
 	class_->scl_name = PARSE_symbol(tok_ident);
-	if (KEYWORD(KW_DESCRIPTION))
+	if (DDL_token.tok_keyword == KW_DESCRIPTION)
 		class_->scl_description = parse_description();
 
 /* Pick up entries. Use the users's order */
@@ -1337,7 +1343,7 @@ static void define_security_class(void)
 		for (next = &class_->scl_entries; *next; next = &(*next)->sce_next);
 		*next = element;
 		element->sce_privileges = parse_privileges();
-		if (!MATCH(KW_COMMA))
+		if (!PARSE_match(KW_COMMA))
 			break;
 	}
 
@@ -1379,25 +1385,26 @@ static void define_shadow(void)
 /* match the keywords MANUAL or AUTO to imply whether the shadow 
    should be automatically deleted when something goes awry */
 
-	if (MATCH(KW_MANUAL))
+	if (PARSE_match(KW_MANUAL))
 		shadow->fil_manual = 1;
 	else
-		MATCH(KW_AUTO);
+		PARSE_match(KW_AUTO);
 
-	if (MATCH(KW_CONDITIONAL))
+	if (PARSE_match(KW_CONDITIONAL))
 		shadow->fil_conditional = 1;
 
 	shadow->fil_name = PARSE_symbol(tok_quoted);
 	if (!check_filename(shadow->fil_name, false))
-		PARSE_error(297, 0, 0);	/* msg 297: A node name is not permitted in a shadow or secondary file name */
+		PARSE_error(297, 0, 0);
+	// msg 297: A node name is not permitted in a shadow or secondary file name 
 
-	if (MATCH(KW_LENGTH)) {
+	if (PARSE_match(KW_LENGTH)) {
 		shadow->fil_length = PARSE_number();
-		MATCH(KW_PAGES);
+		PARSE_match(KW_PAGES);
 	}
 
 	while (true) {
-		if (MATCH(KW_FILE)) {
+		if (PARSE_match(KW_FILE)) {
 			file = define_file();
 			file->fil_next = shadow;
 			shadow = file;
@@ -1433,7 +1440,7 @@ static void define_trigger(void)
 	TRGMSG trigmsg;
 	int flags, trg_state, trg_sequence;
 
-	if (MATCH(KW_FOR)) {
+	if (PARSE_match(KW_FOR)) {
 		define_old_trigger();
 		return;
 	}
@@ -1441,7 +1448,7 @@ static void define_trigger(void)
 	trigger = (DUDLEY_TRG) DDL_alloc(sizeof(dudley_trg));
 	trigger->trg_name = PARSE_symbol(tok_ident);
 
-	MATCH(KW_FOR);
+	PARSE_match(KW_FOR);
 
 	trigger->trg_relation = PARSE_relation();
 
@@ -1458,10 +1465,10 @@ static void define_trigger(void)
 	bool action = false;
 	bool end = false;
 
-	while (!KEYWORD(KW_SEMI)) {
-		if (KEYWORD(KW_DESCRIPTION))
+	while (!(DDL_token.tok_keyword == KW_SEMI)) {
+		if (DDL_token.tok_keyword == KW_DESCRIPTION)
 			trigger->trg_description = parse_description();
-		else if (MATCH(KW_END_TRIGGER))
+		else if (PARSE_match(KW_END_TRIGGER))
 			action = end = true;
 		else if (!action) {
 			trigger->trg_source = start_text();
@@ -1469,17 +1476,17 @@ static void define_trigger(void)
 			end_text(trigger->trg_source);
 			action = true;
 		}
-		else if (MATCH(KW_MESSAGE)) {
+		else if (PARSE_match(KW_MESSAGE)) {
 			trigmsg = (TRGMSG) DDL_alloc(sizeof(trgmsg));
 			trigmsg->trgmsg_trg_name = trigger->trg_name;
 			trigmsg->trgmsg_number = PARSE_number();
 			if (trigmsg->trgmsg_number > 255)
 				PARSE_error(142, (TEXT *)(SLONG)(trigmsg->trgmsg_number), 0);
 			/* msg 142: message number %d exceeds 255 */
-			MATCH(KW_COLON);
+			PARSE_match(KW_COLON);
 			trigmsg->trgmsg_text = PARSE_symbol(tok_quoted);
 			make_action(act_a_trigger_msg, (DBB) trigmsg);
-			MATCH(KW_COMMA);
+			PARSE_match(KW_COMMA);
 		}
 		else {
 			/* if none of the other cases were true, we must be stuck on a bum token */
@@ -1520,19 +1527,19 @@ static void define_type(void)
 	SYM fldname;
 	TYP fldtype;
 
-	MATCH(KW_FOR);
+	PARSE_match(KW_FOR);
 	fldname = PARSE_symbol(tok_ident);
 
 	while (true) {
 		fldtype = (TYP) DDL_alloc(sizeof(typ));
 		fldtype->typ_field_name = fldname;
 		fldtype->typ_name = PARSE_symbol(tok_ident);
-		MATCH(KW_COLON);
+		PARSE_match(KW_COLON);
 		fldtype->typ_type = PARSE_number();
-		if (KEYWORD(KW_DESCRIPTION))
+		if (DDL_token.tok_keyword == KW_DESCRIPTION)
 			fldtype->typ_description = parse_description();
 		make_action(act_a_type, (DBB) fldtype);
-		if (!MATCH(KW_COMMA))
+		if (!PARSE_match(KW_COMMA))
 			break;
 	}
 
@@ -1571,7 +1578,7 @@ static void define_view(void)
 		// msg 300: relation %s already exists 
 	}
 
-	MATCH(KW_OF);
+	PARSE_match(KW_OF);
 
 /* Parse record selection expression */
 
@@ -1593,11 +1600,11 @@ static void define_view(void)
 /* Pick up various fields and clauses */
 
 	while (true) {
-		if (KEYWORD(KW_DESCRIPTION))
+		if (DDL_token.tok_keyword == KW_DESCRIPTION)
 			relation->rel_description = parse_description();
-		else if (MATCH(KW_SECURITY_CLASS))
+		else if (PARSE_match(KW_SECURITY_CLASS))
 			relation->rel_security_class = PARSE_symbol(tok_ident);
-		else if (MATCH(KW_SYSTEM_FLAG)) {
+		else if (PARSE_match(KW_SYSTEM_FLAG)) {
 			relation->rel_system = get_system_flag();
 			relation->rel_flags |= rel_explicit_system;
 		}
@@ -1611,8 +1618,8 @@ static void define_view(void)
 	ptr = &relation->rel_fields;
 
 	while (true) {
-		MATCH(KW_ADD);
-		MATCH(KW_FIELD);
+		PARSE_match(KW_ADD);
+		PARSE_match(KW_FIELD);
 		field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 		field->fld_flags |= fld_local;
 		field->fld_relation = relation;
@@ -1620,17 +1627,17 @@ static void define_view(void)
 		ptr = &field->fld_next;
 		field->fld_name = symbol = PARSE_symbol(tok_ident);
 		if (context = lookup_context(symbol, contexts)) {
-			if (!MATCH(KW_DOT))
+			if (!PARSE_match(KW_DOT))
 				PARSE_error(144, DDL_token.tok_string, 0);	/* msg 144: expected period, encountered \"%s\" */
 			field->fld_name = field->fld_base = PARSE_symbol(tok_ident);
 		}
 		else {
-			if (MATCH(KW_FROM)) {
+			if (PARSE_match(KW_FROM)) {
 				symbol = PARSE_symbol(tok_ident);
 				if (!(context = lookup_context(symbol, contexts)))
 					PARSE_error(145, DDL_token.tok_string, 0);
 				/* msg 145: expected qualified field name, encountered \"%s\" */
-				if (!MATCH(KW_DOT))
+				if (!PARSE_match(KW_DOT))
 					PARSE_error(146, DDL_token.tok_string, 0);
 				/* msg 146: expected period, encountered \"%s\" */
 				field->fld_base = PARSE_symbol(tok_ident);
@@ -1640,14 +1647,14 @@ static void define_view(void)
 				if (field->fld_dtype == blr_cstring)
 					PARSE_error(147, 0, 0);	/* msg 147: datatype cstring not supported for fields  */
 
-				if (MATCH(KW_COMPUTED)) {
-					MATCH(KW_BY);
-					if (!(MATCH(KW_LEFT_PAREN)))
+				if (PARSE_match(KW_COMPUTED)) {
+					PARSE_match(KW_BY);
+					if (!(PARSE_match(KW_LEFT_PAREN)))
 						PARSE_error(148, 0, 0);	/* msg 148: computed by expression must be parenthesized  */
 					field->fld_compute_src = start_text();
 					field->fld_computed = EXPR_value(0, NULL);
 					end_text(field->fld_compute_src);
-					if (!(MATCH(KW_RIGHT_PAREN)))
+					if (!(PARSE_match(KW_RIGHT_PAREN)))
 						PARSE_error(149, 0, 0);	/* msg 149: unmatched parenthesis */
 					context = my_context;
 				}
@@ -1668,7 +1675,7 @@ static void define_view(void)
 		field->fld_name->sym_type = SYM_field;
 		field->fld_name->sym_object = (DUDLEY_CTX) field;
 		HSH_insert(field->fld_name);
-		if (!MATCH(KW_COMMA))
+		if (!PARSE_match(KW_COMMA))
 			break;
 	}
 
@@ -1864,7 +1871,7 @@ static void drop_trigger(void)
 	DUDLEY_REL relation;
 	DUDLEY_TRG trigger;
 
-	if (MATCH(KW_FOR)) {
+	if (PARSE_match(KW_FOR)) {
 		relation = PARSE_relation();
 		old_style = true;
 	}
@@ -1874,13 +1881,13 @@ static void drop_trigger(void)
 	}
 
 	if (old_style) {
-		while (!MATCH(KW_END_TRIGGER)) {
+		while (!PARSE_match(KW_END_TRIGGER)) {
 			trigger = (DUDLEY_TRG) DDL_alloc(sizeof(dudley_trg));
-			if (MATCH(KW_STORE))
+			if (PARSE_match(KW_STORE))
 				trigger->trg_type = trg_store;
-			else if (MATCH(KW_MODIFY))
+			else if (PARSE_match(KW_MODIFY))
 				trigger->trg_type = trg_modify;
-			else if (MATCH(KW_ERASE))
+			else if (PARSE_match(KW_ERASE))
 				trigger->trg_type = trg_erase;
 			else
 				PARSE_error(153, DDL_token.tok_string, 0);
@@ -1916,8 +1923,8 @@ static void drop_type(void)
 	SYM fldname;
 	TYP fldtype;
 
-	MATCH(KW_FOR);
-	if (MATCH(KW_ALL)) {
+	PARSE_match(KW_FOR);
+	if (PARSE_match(KW_ALL)) {
 		fldtype = (TYP) DDL_alloc(sizeof(typ));
 		fldtype->typ_field_name = PARSE_symbol(tok_ident);
 		fldtype->typ_name->sym_length = 3;
@@ -1931,7 +1938,7 @@ static void drop_type(void)
 			fldtype->typ_field_name = fldname;
 			fldtype->typ_name = PARSE_symbol(tok_ident);
 			make_action(act_d_type,(DBB)  fldtype);
-			if (!MATCH(KW_COMMA))
+			if (!PARSE_match(KW_COMMA))
 				break;
 		}
 	}
@@ -2061,40 +2068,40 @@ static void get_trigger_attributes( int *flags, int *type, int *sequence)
  *	
  **************************************/
 
-	if (MATCH(KW_INACTIVE)) {
+	if (PARSE_match(KW_INACTIVE)) {
 		*flags |= trg_mflag_onoff;
 		*type |= trig_inact;
 	}
-	else if (MATCH(KW_ACTIVE))
+	else if (PARSE_match(KW_ACTIVE))
 		*flags |= trg_mflag_onoff;
 
 	*flags |= trg_mflag_order;
-	if (MATCH(KW_PRE_STORE))
+	if (PARSE_match(KW_PRE_STORE))
 		*type |= trig_sto;
-	else if (MATCH(KW_PRE_MODIFY))
+	else if (PARSE_match(KW_PRE_MODIFY))
 		*type |= trig_mod;
-	else if (MATCH(KW_PRE_ERASE))
+	else if (PARSE_match(KW_PRE_ERASE))
 		*type |= trig_era;
-	else if (!(MATCH(KW_PRE))) {
+	else if (!(PARSE_match(KW_PRE))) {
 		*type |= trig_post;
-		if (MATCH(KW_POST_STORE))
+		if (PARSE_match(KW_POST_STORE))
 			*type |= trig_sto;
-		else if (MATCH(KW_POST_MODIFY))
+		else if (PARSE_match(KW_POST_MODIFY))
 			*type |= trig_mod;
-		else if (MATCH(KW_POST_ERASE))
+		else if (PARSE_match(KW_POST_ERASE))
 			*type |= trig_era;
-		else if (!(MATCH(KW_POST))) {
+		else if (!(PARSE_match(KW_POST))) {
 			*type &= ~trig_post;
 			*flags &= ~trg_mflag_order;
 		}
 	}
 
 	if (!(*type & ~(trig_inact | trig_post))) {
-		if (MATCH(KW_STORE))
+		if (PARSE_match(KW_STORE))
 			*type |= trig_sto;
-		else if (MATCH(KW_MODIFY))
+		else if (PARSE_match(KW_MODIFY))
 			*type |= trig_mod;
-		else if (MATCH(KW_ERASE)) {
+		else if (PARSE_match(KW_ERASE)) {
 			*type |= trig_era;
 			if (!(*flags & trg_mflag_order))
 				*type |= trig_post;
@@ -2102,11 +2109,12 @@ static void get_trigger_attributes( int *flags, int *type, int *sequence)
 	}
 
 
-	if ((!MATCH(KW_COLON)) && ((*flags & trg_mflag_order) ||
-							   (*type & (trig_sto | trig_mod | trig_era)))) {
+	if ((!PARSE_match(KW_COLON)) && ((*flags & trg_mflag_order) ||
+							   (*type & (trig_sto | trig_mod | trig_era))))
+	{
 		*sequence = PARSE_number();
 		*flags |= trg_mflag_seqnum;
-		MATCH(KW_COLON);
+		PARSE_match(KW_COLON);
 	}
 
 	if ((*type & ~trig_inact) || (*flags & trg_mflag_order))
@@ -2136,53 +2144,57 @@ static void grant_user_privilege(void)
 	while (true) {
 		/* ALL is translated to mean four individual privileges */
 
-		if (MATCH(KW_ALL)) {
+		if (PARSE_match(KW_ALL)) {
 			/* optional keyword following ALL */
 
-			MATCH(KW_PRIVILEGES);
+			PARSE_match(KW_PRIVILEGES);
 			upriv->userpriv_flags |= USERPRIV_select;
 			upriv->userpriv_flags |= USERPRIV_delete;
 			upriv->userpriv_flags |= USERPRIV_insert;
 			upriv->userpriv_flags |= USERPRIV_update;
-			if (!MATCH(KW_ON))
+			if (!PARSE_match(KW_ON))
 				PARSE_error(159, DDL_token.tok_string, 0);	/* msg 159: expected ON, encountered \"%s\" */
 
 			break;
 		}
-		else if (MATCH(KW_SELECT))
+		else if (PARSE_match(KW_SELECT))
 			upriv->userpriv_flags |= USERPRIV_select;
-		else if (MATCH(KW_DELETE))
+		else if (PARSE_match(KW_DELETE))
 			upriv->userpriv_flags |= USERPRIV_delete;
-		else if (MATCH(KW_INSERT))
+		else if (PARSE_match(KW_INSERT))
 			upriv->userpriv_flags |= USERPRIV_insert;
-		else if (MATCH(KW_UPDATE)) {
+		else if (PARSE_match(KW_UPDATE)) {
 			/* look for a field list for the update privilege */
 
 			upriv->userpriv_flags |= USERPRIV_update;
-			if (MATCH(KW_ON))
+			if (PARSE_match(KW_ON))
 				break;
-			if (MATCH(KW_COMMA))
+			if (PARSE_match(KW_COMMA))
 				continue;
-			if (!MATCH(KW_LEFT_PAREN))
+			if (!PARSE_match(KW_LEFT_PAREN))
 				PARSE_error(313, DDL_token.tok_string, 0);	/* msg 313: expected ON or '(', encountered "%s" */
 
 			do {
-				if (KEYWORD(KW_SELECT) || KEYWORD(KW_INSERT) ||
-					KEYWORD(KW_DELETE) || KEYWORD(KW_UPDATE))
+				if (DDL_token.tok_keyword == KW_SELECT 
+					|| DDL_token.tok_keyword == KW_INSERT 
+					|| DDL_token.tok_keyword == KW_DELETE 
+					|| DDL_token.tok_keyword == KW_UPDATE)
+				{
 					break;
+				}
 				upf = (UPFE) DDL_alloc(sizeof(upfe));
 				upf->upfe_fldname = PARSE_symbol(tok_ident);
 				upf->upfe_next = upriv->userpriv_upflist;
 				upriv->userpriv_upflist = upf;
-			} while (MATCH(KW_COMMA));
+			} while (PARSE_match(KW_COMMA));
 
-			if (!MATCH(KW_RIGHT_PAREN))
+			if (!PARSE_match(KW_RIGHT_PAREN))
 				PARSE_error(314, DDL_token.tok_string, 0);	/* msg 314: expected ')', encountered "%s" */
 
 			continue;
 		}
-		if (!MATCH(KW_COMMA)) {
-			if (!MATCH(KW_ON))
+		if (!PARSE_match(KW_COMMA)) {
+			if (!PARSE_match(KW_ON))
 				PARSE_error(159, DDL_token.tok_string, 0);	/* msg 159: expected ON, encountered \"%s\" */
 			break;
 		}
@@ -2192,7 +2204,7 @@ static void grant_user_privilege(void)
 		PARSE_error(160, 0, 0);	/* msg 160: GRANT privilege was not specified */
 
 	upriv->userpriv_relation = PARSE_symbol(tok_ident);
-	if (!MATCH(KW_TO))
+	if (!PARSE_match(KW_TO))
 		PARSE_error(161, DDL_token.tok_string, 0);	/* msg 161: expected TO, encountered "%s" */
 
 /* get the userlist */
@@ -2202,16 +2214,16 @@ static void grant_user_privilege(void)
 		usr->usre_name = PARSE_symbol(tok_ident);
 		usr->usre_next = upriv->userpriv_userlist;
 		upriv->userpriv_userlist = usr;
-		if (!MATCH(KW_COMMA))
+		if (!PARSE_match(KW_COMMA))
 			break;
 	}
 
 /* check for the optional WITH GRANT OPTION specification */
 
-	if (MATCH(KW_WITH)) {
-		if (!MATCH(KW_GRANT))
+	if (PARSE_match(KW_WITH)) {
+		if (!PARSE_match(KW_GRANT))
 			PARSE_error(162, DDL_token.tok_string, 0);	/* msg 162:expected GRANT, encountered \"%s\" */
-		if (!MATCH(KW_OPTION))
+		if (!PARSE_match(KW_OPTION))
 			PARSE_error(163, DDL_token.tok_string, 0);	/* msg 163: expected OPTION, encountered \"%s\" */
 		upriv->userpriv_flags |= USERPRIV_grant;
 	}
@@ -2433,7 +2445,7 @@ static void mod_old_trigger(void)
 
 	relation = PARSE_relation();
 
-	while (!MATCH(KW_END_TRIGGER)) {
+	while (!PARSE_match(KW_END_TRIGGER)) {
 		flags = type = sequence = 0;
 		get_trigger_attributes(&flags, &type, &sequence);
 		if (!type)
@@ -2522,40 +2534,40 @@ static void modify_index(void)
 	index->idx_name = PARSE_symbol(tok_ident);
 
 	while (true) {
-		if (MATCH(KW_DUPLICATES)) {
+		if (PARSE_match(KW_DUPLICATES)) {
 			index->idx_unique = false;
 			index->idx_flags |= IDX_unique_flag;
 		}
-		else if (MATCH(KW_UNIQUE)) {
+		else if (PARSE_match(KW_UNIQUE)) {
 			index->idx_unique = true;
 			index->idx_flags |= IDX_unique_flag;
 		}
-		else if (MATCH(KW_ACTIVE)) {
+		else if (PARSE_match(KW_ACTIVE)) {
 			index->idx_inactive = false;
 			index->idx_flags |= IDX_active_flag;
 		}
-		else if (MATCH(KW_INACTIVE)) {
+		else if (PARSE_match(KW_INACTIVE)) {
 			index->idx_inactive = true;
 			index->idx_flags |= IDX_active_flag;
 		}
-		else if (MATCH(KW_ASCENDING)) {
+		else if (PARSE_match(KW_ASCENDING)) {
 			index->idx_type = IDX_type_none;
 			index->idx_flags |= IDX_type_flag;
 		}
-		else if (MATCH(KW_DESCENDING)) {
+		else if (PARSE_match(KW_DESCENDING)) {
 			index->idx_type = IDX_type_descend;
 			index->idx_flags |= IDX_type_flag;
 		}
-		else if (KEYWORD(KW_DESCRIPTION)) {
+		else if (DDL_token.tok_keyword == KW_DESCRIPTION) {
 			index->idx_description = parse_description();
 		}
-		else if (MATCH(KW_DROP)) {
-			if (MATCH(KW_DESCRIP))
+		else if (PARSE_match(KW_DROP)) {
+			if (PARSE_match(KW_DESCRIP))
 				index->idx_flags |= IDX_null_description;
 			else
 				PARSE_error(172, DDL_token.tok_string, 0);	/*msg 172: expected DESCRIPTION, encountered \"%s\" */
 		}
-		else if (MATCH(KW_STATISTICS))
+		else if (PARSE_match(KW_STATISTICS))
 			index->idx_flags |= IDX_statistics_flag;
 		else
 			break;
@@ -2583,7 +2595,7 @@ static void modify_relation(void)
 	relation = PARSE_relation();
 	make_action(act_m_relation, (DBB) relation);
 
-	if (MATCH(KW_EXTERNAL_FILE)) {
+	if (PARSE_match(KW_EXTERNAL_FILE)) {
 		relation->rel_filename = PARSE_symbol(tok_quoted);
 		if (!check_filename(relation->rel_filename, true))
 			PARSE_error(298, 0, 0);	/* msg 298: A non-Decnet node name is not permitted in an external file name */
@@ -2592,16 +2604,16 @@ static void modify_relation(void)
 	bool modify_relation = false;
 
 	while (true) {
-		if (KEYWORD(KW_DESCRIPTION)) {
+		if (DDL_token.tok_keyword == KW_DESCRIPTION) {
 			relation->rel_description = parse_description();
 			modify_relation = true;
 		}
-		else if (MATCH(KW_SECURITY_CLASS))
+		else if (PARSE_match(KW_SECURITY_CLASS))
 		 {
 			modify_relation = true;
 			relation->rel_security_class = PARSE_symbol(tok_ident);
 		}
-		else if (MATCH(KW_SYSTEM_FLAG)) {
+		else if (PARSE_match(KW_SYSTEM_FLAG)) {
 			relation->rel_system = get_system_flag();
 			relation->rel_flags |= rel_explicit_system;
 			modify_relation = true;
@@ -2612,10 +2624,10 @@ static void modify_relation(void)
 
 /* Act on field actions */
 
-	if (!KEYWORD(KW_SEMI))
+	if (!(DDL_token.tok_keyword == KW_SEMI))
 		while (true) {
-			if (MATCH(KW_ADD)) {
-				MATCH(KW_FIELD);
+			if (PARSE_match(KW_ADD)) {
+				PARSE_match(KW_FIELD);
 				{
 					field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 					parse_field(field);
@@ -2641,8 +2653,8 @@ static void modify_relation(void)
 					make_action(act_a_field, (DBB) field);
 				}
 			}
-			else if (MATCH(KW_MODIFY)) {
-				MATCH(KW_FIELD);
+			else if (PARSE_match(KW_MODIFY)) {
+				PARSE_match(KW_FIELD);
 				field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 				field->fld_flags |= (fld_modify | fld_local);
 				parse_field(field);
@@ -2652,27 +2664,27 @@ static void modify_relation(void)
 					PARSE_error(173, 0, 0);	/* msg 173: A computed expression can not be changed or added */
 				make_action(act_m_field, (DBB) field);
 			}
-			else if (MATCH(KW_DROP)) {
-				if (MATCH(KW_SECURITY_CLASS)) {
+			else if (PARSE_match(KW_DROP)) {
+				if (PARSE_match(KW_SECURITY_CLASS)) {
 					relation->rel_flags |= rel_null_security_class;
 					modify_relation = true;
-					MATCH(KW_COMMA);
-					if (KEYWORD(KW_SEMI))
+					PARSE_match(KW_COMMA);
+					if (DDL_token.tok_keyword == KW_SEMI)
 						break;
 					else
 						continue;
 				}
-				else if (MATCH(KW_DESCRIP)) {
+				else if (PARSE_match(KW_DESCRIP)) {
 					modify_relation = true;
 					relation->rel_flags |= rel_null_description;
-					MATCH(KW_COMMA);
-					if (KEYWORD(KW_SEMI))
+					PARSE_match(KW_COMMA);
+					if (DDL_token.tok_keyword == KW_SEMI)
 						break;
 					else
 						continue;
 				}
 				else {
-					MATCH(KW_FIELD);
+					PARSE_match(KW_FIELD);
 					field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 					field->fld_flags |= fld_local;
 					field->fld_relation = relation;
@@ -2683,7 +2695,7 @@ static void modify_relation(void)
 			}
 			else
 				PARSE_error(174, DDL_token.tok_string, 0);	/* msg 174: expected field action, encountered \"%s\" */
-			if (!MATCH(KW_COMMA))
+			if (!PARSE_match(KW_COMMA))
 				break;
 		}
 
@@ -2716,7 +2728,7 @@ static void modify_security_class(void)
 
 	class_ = (SCL) DDL_alloc(sizeof(scl));
 	class_->scl_name = PARSE_symbol(tok_ident);
-	if (KEYWORD(KW_DESCRIPTION))
+	if (DDL_token.tok_keyword == KW_DESCRIPTION)
 		class_->scl_description = parse_description();
 
 	while (true) {
@@ -2730,7 +2742,7 @@ static void modify_security_class(void)
 				break;
 			}
 		element->sce_privileges = parse_privileges();
-		if (!MATCH(KW_COMMA))
+		if (!PARSE_match(KW_COMMA))
 			break;
 	}
 
@@ -2762,7 +2774,7 @@ static void modify_trigger(void)
 
 	msg_type = trgmsg_none;
 
-	if (MATCH(KW_FOR)) {		/* modify trigger for ... is the old syntax */
+	if (PARSE_match(KW_FOR)) {		/* modify trigger for ... is the old syntax */
 		mod_old_trigger();
 		return;
 	}
@@ -2781,7 +2793,7 @@ static void modify_trigger(void)
 
 /* in case somebody compulsive specifies the relation name */
 
-	if (MATCH(KW_FOR)) {
+	if (PARSE_match(KW_FOR)) {
 		relation = PARSE_relation();
 		if (relation != trigger->trg_relation)
 			PARSE_error(177, 0, 0);
@@ -2795,11 +2807,15 @@ static void modify_trigger(void)
 	SLONG sequence = 0;
 	get_trigger_attributes((int*) &flags, (int*) &type, (int*) &sequence);
 
-	while (!KEYWORD(KW_SEMI)) {
-		if ((MATCH(KW_MESSAGE)) || (MATCH(KW_MSGADD)) ||
-			(MATCH(KW_MSGMODIFY))) msg_type = trgmsg_modify;
-		else if ((MATCH(KW_MSGDROP)) || (MATCH(KW_DROP))) {
-			MATCH(KW_MESSAGE);
+	while (!(DDL_token.tok_keyword == KW_SEMI)) {
+		if ((PARSE_match(KW_MESSAGE)) || (PARSE_match(KW_MSGADD)) ||
+			(PARSE_match(KW_MSGMODIFY))) 
+		{
+			msg_type = trgmsg_modify;
+		}
+		else if ((PARSE_match(KW_MSGDROP)) || (PARSE_match(KW_DROP)))
+		{
+			PARSE_match(KW_MESSAGE);
 			msg_type = trgmsg_drop;
 		}
 		if (msg_type) {
@@ -2812,16 +2828,16 @@ static void modify_trigger(void)
 			if (msg_type == trgmsg_drop)
 				make_action(act_d_trigger_msg, (DBB) trigmsg);
 			else if (msg_type == trgmsg_modify) {
-				MATCH(KW_COLON);
+				PARSE_match(KW_COLON);
 				trigmsg->trgmsg_text = PARSE_symbol(tok_quoted);
 				make_action(act_m_trigger_msg, (DBB) trigmsg);
 			}
-			MATCH(KW_COMMA);
+			PARSE_match(KW_COMMA);
 			msg_type = trgmsg_none;
 		}
-		else if (MATCH(KW_END_TRIGGER))
+		else if (PARSE_match(KW_END_TRIGGER))
 			end = true;
-		else if (KEYWORD(KW_DESCRIPTION))
+		else if (DDL_token.tok_keyword == KW_DESCRIPTION)
 			trigger->trg_description = parse_description();
 		else if (!action && !end) {
 			modify_trigger_action(trigger, relation);
@@ -2873,18 +2889,18 @@ static void modify_type(void)
 	SYM fldname;
 	TYP fldtype;
 
-	MATCH(KW_FOR);
+	PARSE_match(KW_FOR);
 	fldname = PARSE_symbol(tok_ident);
 	while (true) {
 		fldtype = (TYP) DDL_alloc(sizeof(typ));
 		fldtype->typ_field_name = fldname;
 		fldtype->typ_name = PARSE_symbol(tok_ident);
-		MATCH(KW_COLON);
+		PARSE_match(KW_COLON);
 		fldtype->typ_type = PARSE_number();
-		if (KEYWORD(KW_DESCRIPTION))
+		if (DDL_token.tok_keyword == KW_DESCRIPTION)
 			fldtype->typ_description = parse_description();
 		make_action(act_m_type, (DBB) fldtype);
-		if (!MATCH(KW_COMMA))
+		if (!PARSE_match(KW_COMMA))
 			break;
 	}
 	parse_end();
@@ -2911,15 +2927,15 @@ static void modify_view(void)
 	make_action(act_m_relation, (DBB) relation);
 
 	while (true) {
-		if (KEYWORD(KW_DESCRIPTION)) {
+		if (DDL_token.tok_keyword == KW_DESCRIPTION) {
 			relation->rel_description = parse_description();
 			view_modify = true;
 		}
-		else if (MATCH(KW_SECURITY_CLASS)) {
+		else if (PARSE_match(KW_SECURITY_CLASS)) {
 			relation->rel_security_class = PARSE_symbol(tok_ident);
 			view_modify = true;
 		}
-		else if (MATCH(KW_SYSTEM_FLAG)) {
+		else if (PARSE_match(KW_SYSTEM_FLAG)) {
 			relation->rel_system = get_system_flag();
 			relation->rel_flags |= rel_explicit_system;
 			view_modify = true;
@@ -2930,10 +2946,10 @@ static void modify_view(void)
 
 /* Act on field actions */
 
-	if (!KEYWORD(KW_SEMI))
+	if (!(DDL_token.tok_keyword == KW_SEMI))
 		while (true) {
-			if (MATCH(KW_MODIFY)) {
-				MATCH(KW_FIELD);
+			if (PARSE_match(KW_MODIFY)) {
+				PARSE_match(KW_FIELD);
 				field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 				field->fld_flags |= (fld_modify | fld_local);
 				parse_field(field);
@@ -2943,27 +2959,27 @@ static void modify_view(void)
 					PARSE_error(181, 0, 0);	/* msg 181: A computed expression can not be changed or added */
 				make_action(act_m_field, (DBB) field);
 			}
-			else if (MATCH(KW_DROP)) {
-				if (MATCH(KW_DESCRIP)) {
+			else if (PARSE_match(KW_DROP)) {
+				if (PARSE_match(KW_DESCRIP)) {
 					view_modify = true;
 					relation->rel_flags |= rel_null_description;
 
-					if (KEYWORD(KW_SEMI))
+					if (DDL_token.tok_keyword == KW_SEMI)
 						break;
 					else
 						continue;
 				}
-				else if (MATCH(KW_SECURITY_CLASS)) {
+				else if (PARSE_match(KW_SECURITY_CLASS)) {
 					view_modify = true;
 					relation->rel_flags |= rel_null_security_class;
 
-					if (KEYWORD(KW_SEMI))
+					if (DDL_token.tok_keyword == KW_SEMI)
 						break;
 					else
 						continue;
 				}
 				else {
-					MATCH(KW_FIELD);
+					PARSE_match(KW_FIELD);
 					field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 					field->fld_flags |= fld_local;
 					field->fld_relation = relation;
@@ -2975,7 +2991,7 @@ static void modify_view(void)
 			else
 				PARSE_error(182, DDL_token.tok_string, 0);
 			/* msg 182: expected drop/modify of field or security class, encountered \"%s\" */
-			if (!MATCH(KW_COMMA))
+			if (!PARSE_match(KW_COMMA))
 				break;
 		}
 
@@ -3009,7 +3025,7 @@ static bool parse_action(void)
 	if (DDL_eof)
 		return true;
 
-	if (MATCH(KW_DEFINE))
+	if (PARSE_match(KW_DEFINE))
 		switch (parse_object()) {
 		case obj_database:
 			define_database(act_c_database);
@@ -3058,7 +3074,7 @@ static bool parse_action(void)
 			}
 			PARSE_error(183, DDL_token.tok_string, 0);	/* msg 183: expected object for DEFINE, encountered \"%s\" */
 		}
-	else if (MATCH(KW_MODIFY))
+	else if (PARSE_match(KW_MODIFY))
 		switch (parse_object()) {
 		case obj_database:
 			define_database(act_m_database);
@@ -3094,7 +3110,7 @@ static bool parse_action(void)
 			PARSE_error(184, DDL_token.tok_string, 0);
 			/* msg 184: expected object for MODIFY, encountered \"%s\" */
 		}
-	else if (MATCH(KW_DROP))
+	else if (PARSE_match(KW_DROP))
 		switch (parse_object()) {
 		case obj_database:
 			define_database(act_d_database);
@@ -3131,29 +3147,29 @@ static bool parse_action(void)
 			PARSE_error(185, DDL_token.tok_string, 0);
 			/* msg 185: expected object for DROP, encountered \"%s\" */
 		}
-	else if (MATCH(KW_GRANT)) {
+	else if (PARSE_match(KW_GRANT)) {
 		grant_user_privilege();
 		return true;
 	}
-	else if (MATCH(KW_REVOKE)) {
+	else if (PARSE_match(KW_REVOKE)) {
 		revoke_user_privilege();
 		return true;
 	}
-	else if (MATCH(KW_SET_GENERATOR)) {
+	else if (PARSE_match(KW_SET_GENERATOR)) {
 		set_generator();
 		return true;
 	}
-	else if (MATCH(KW_SET)) {
-		if (!MATCH(KW_GENERATOR))
+	else if (PARSE_match(KW_SET)) {
+		if (!PARSE_match(KW_GENERATOR))
 			PARSE_error(318, DDL_token.tok_string, 0);	/* msg 318: expected GENERATOR, encountered \"%s\" */
 		set_generator();
 		return true;
 	}
-	else if (DDL_interactive && KEYWORD(KW_EXIT)) {
+	else if (DDL_interactive && DDL_token.tok_keyword == KW_EXIT) {
 		DDL_eof = true;
 		return false;
 	}
-	else if (DDL_interactive && KEYWORD(KW_QUIT)) {
+	else if (DDL_interactive && DDL_token.tok_keyword == KW_QUIT) {
 		DDL_quit = DDL_eof = true;
 		return false;
 	}
@@ -3166,7 +3182,7 @@ static bool parse_action(void)
 		if (DDL_interactive)
 			LEX_flush();
 		else
-			while (!DDL_eof && !KEYWORD(KW_SEMI))
+			while (!DDL_eof && !(DDL_token.tok_keyword == KW_SEMI))
 				LEX_token();
 		return true;
 	}
@@ -3187,7 +3203,7 @@ static void parse_array( DUDLEY_FLD field)
  **************************************/
 	SLONG n, *range, *end, *ptr, ranges[2 * MAX_DIMENSION];
 
-	if (!MATCH(KW_LEFT_PAREN))
+	if (!PARSE_match(KW_LEFT_PAREN))
 		return;
 
 /* Pick up ranges */
@@ -3197,7 +3213,7 @@ static void parse_array( DUDLEY_FLD field)
 		range[0] = 1;
 		range[1] = PARSE_number();
 
-		if (MATCH(KW_COLON)) {
+		if (PARSE_match(KW_COLON)) {
 			range[0] = range[1];
 			range[1] = PARSE_number();
 		}
@@ -3207,10 +3223,10 @@ static void parse_array( DUDLEY_FLD field)
 
 		range += 2;
 
-		if (MATCH(KW_RIGHT_PAREN))
+		if (PARSE_match(KW_RIGHT_PAREN))
 			break;
 
-		if (!MATCH(KW_COMMA))
+		if (!PARSE_match(KW_COMMA))
 			PARSE_error(189, DDL_token.tok_string, 0);	/* msg 189: expected comma, encountered \"%s\" */
 	}
 
@@ -3243,14 +3259,14 @@ static TXT parse_description(void)
 	description = start_text();
 	description->txt_position = DDL_token.tok_position;
 
-	while (!DDL_eof && (!KEYWORD(KW_END_DESCRIPTION)))
+	while (!DDL_eof && (!(DDL_token.tok_keyword == KW_END_DESCRIPTION)))
 		LEX_token();
 
 	if (DDL_eof)
 		return NULL;
 
 	end_text(description);
-	MATCH(KW_END_DESCRIPTION);
+	PARSE_match(KW_END_DESCRIPTION);
 	DDL_description = false;
 
 	return description;
@@ -3270,7 +3286,7 @@ static void parse_end(void)
  *
  **************************************/
 
-	if (!KEYWORD(KW_SEMI))
+	if (!(DDL_token.tok_keyword == KW_SEMI))
 		PARSE_error(190, DDL_token.tok_string, 0);	/* msg 190: expected semi-colon, encountered \"%s\" */
 }
 
@@ -3291,8 +3307,8 @@ static DUDLEY_FLD parse_field( DUDLEY_FLD field)
 	field->fld_name = PARSE_symbol(tok_ident);
 	field->fld_name->sym_object = (DUDLEY_CTX) field;
 
-	if (MATCH(KW_BASED)) {
-		MATCH(KW_ON);
+	if (PARSE_match(KW_BASED)) {
+		PARSE_match(KW_ON);
 		field->fld_source = PARSE_symbol(tok_ident);
 		field->fld_flags |= fld_local;
 	}
@@ -3307,7 +3323,7 @@ static DUDLEY_FLD parse_field( DUDLEY_FLD field)
 
 	parse_field_clauses(field);
 
-	if (!KEYWORD(KW_COMMA) && !KEYWORD(KW_SEMI))
+	if (!(DDL_token.tok_keyword == KW_COMMA) && !(DDL_token.tok_keyword == KW_SEMI))
 		PARSE_error(192, DDL_token.tok_string, 0);	/* msg 192: expected field clause, encountered \"%s\" */
 
 	validate_field(field);
@@ -3349,20 +3365,20 @@ static void parse_field_clauses( DUDLEY_FLD field)
 
 		case KW_DROP:
 			LEX_token();
-			if (MATCH(KW_SECURITY_CLASS))
+			if (PARSE_match(KW_SECURITY_CLASS))
 				field->fld_flags |= fld_null_security_class;
-			else if (MATCH(KW_VALID_IF))
+			else if (PARSE_match(KW_VALID_IF))
 				field->fld_flags |= fld_null_validation;
-			else if (MATCH(KW_DESCRIP))
+			else if (PARSE_match(KW_DESCRIP))
 				field->fld_flags |= fld_null_description;
-			else if (MATCH(KW_QUERY_NAME))
+			else if (PARSE_match(KW_QUERY_NAME))
 				field->fld_flags |= fld_null_query_name;
-			else if (MATCH(KW_QUERY_HEADER))
+			else if (PARSE_match(KW_QUERY_HEADER))
 				field->fld_flags |= fld_null_query_header;
-			else if (MATCH(KW_EDIT_STRING))
+			else if (PARSE_match(KW_EDIT_STRING))
 				field->fld_flags |= fld_null_edit_string;
-			else if (MATCH(KW_MISSING)) {
-				MATCH(KW_VALUE);
+			else if (PARSE_match(KW_MISSING)) {
+				PARSE_match(KW_VALUE);
 				field->fld_flags |= fld_null_missing_value;
 			}
 			else
@@ -3372,7 +3388,7 @@ static void parse_field_clauses( DUDLEY_FLD field)
 
 		case KW_QUERY_NAME:
 			LEX_token();
-			MATCH(KW_IS);
+			PARSE_match(KW_IS);
 			field->fld_query_name = PARSE_symbol(tok_ident);
 			break;
 
@@ -3383,11 +3399,11 @@ static void parse_field_clauses( DUDLEY_FLD field)
 
 		case KW_QUERY_HEADER:
 			LEX_token();
-			MATCH(KW_IS);
+			PARSE_match(KW_IS);
 			stack = NULL;
 			for (;;) {
 				LLS_PUSH((DUDLEY_NOD) PARSE_symbol(tok_quoted), &stack);
-				if (!MATCH(KW_SLASH))
+				if (!PARSE_match(KW_SLASH))
 					break;
 			}
 			field->fld_query_header = PARSE_make_list(stack);
@@ -3395,38 +3411,38 @@ static void parse_field_clauses( DUDLEY_FLD field)
 
 		case KW_COMPUTED:
 			LEX_token();
-			MATCH(KW_BY);
-			if (!(MATCH(KW_LEFT_PAREN)))
+			PARSE_match(KW_BY);
+			if (!(PARSE_match(KW_LEFT_PAREN)))
 				PARSE_error(194, 0, 0);	/* msg 194: computed by expression must be parenthesized */
 			field->fld_compute_src = start_text();
 			field->fld_computed = EXPR_value(0, NULL);
 			end_text(field->fld_compute_src);
-			if (!(MATCH(KW_RIGHT_PAREN)))
+			if (!(PARSE_match(KW_RIGHT_PAREN)))
 				PARSE_error(195, 0, 0);	/* msg 195: unmatched parenthesis */
 			break;
 
 		case KW_MISSING:
 			LEX_token();
-			MATCH(KW_VALUE);
-			MATCH(KW_IS);
+			PARSE_match(KW_VALUE);
+			PARSE_match(KW_IS);
 			field->fld_missing = EXPR_value(0, NULL);
 			break;
 
 		case KW_VALID_IF:
 			LEX_token();
-			MATCH(KW_IF);
-			if (!(MATCH(KW_LEFT_PAREN)))
+			PARSE_match(KW_IF);
+			if (!(PARSE_match(KW_LEFT_PAREN)))
 				PARSE_error(196, 0, 0);	/* msg 196: validation expression must be parenthesized */
 			field->fld_valid_src = start_text();
 			field->fld_validation = EXPR_boolean(0);
 			end_text(field->fld_valid_src);
-			if (!(MATCH(KW_RIGHT_PAREN)))
+			if (!(PARSE_match(KW_RIGHT_PAREN)))
 				PARSE_error(195, 0, 0);	/* msg 195: unmatched parenthesis */
 			break;
 
 		case KW_SEGMENT_LENGTH:
 			LEX_token();
-			MATCH(KW_IS);
+			PARSE_match(KW_IS);
 			field->fld_segment_length = n = PARSE_number();
 			if (n <= 0)
 				PARSE_error(197, 0, 0);	/* msg 197: segment length must be positive */
@@ -3439,8 +3455,8 @@ static void parse_field_clauses( DUDLEY_FLD field)
 
 		case KW_DEFAULT:
 			LEX_token();
-			MATCH(KW_VALUE);
-			MATCH(KW_IS);
+			PARSE_match(KW_VALUE);
+			PARSE_match(KW_IS);
 			field->fld_default = EXPR_value(0, NULL);
 			break;
 
@@ -3530,15 +3546,15 @@ static void parse_field_dtype( DUDLEY_FLD field)
 
 	if (field->fld_dtype == blr_text ||
 		field->fld_dtype == blr_varying || field->fld_dtype == blr_cstring) {
-		if (!MATCH(KW_L_BRCKET) && !MATCH(KW_LT))
+		if (!PARSE_match(KW_L_BRCKET) && !PARSE_match(KW_LT))
 			PARSE_error(200, DDL_token.tok_string, 0);	/* msg 200: expected \"[\", encountered \"%s\" */
 		field->fld_length = n = PARSE_number();
 		if (n <= 0)
 			PARSE_error(201, 0, 0);	/* msg 201: character field length must be positive */
-		if (!MATCH(KW_R_BRCKET) && !MATCH(KW_GT))
+		if (!PARSE_match(KW_R_BRCKET) && !PARSE_match(KW_GT))
 			PARSE_error(202, DDL_token.tok_string, 0);	/* msg 202: expected \"]\", encountered \"%s\" */
 
-		if (MATCH(KW_SUB_TYPE))
+		if (PARSE_match(KW_SUB_TYPE))
 			parse_field_subtype(field);
 
 	}
@@ -3550,7 +3566,7 @@ static void parse_field_dtype( DUDLEY_FLD field)
 
 	if ((field->fld_dtype == blr_short ||
 		 field->fld_dtype == blr_long || field->fld_dtype == blr_quad))
-		if (MATCH(KW_SCALE))
+		if (PARSE_match(KW_SCALE))
 			field->fld_scale = PARSE_number();
 }
 
@@ -3569,12 +3585,12 @@ static void parse_field_subtype( DUDLEY_FLD field)
  *
  **************************************/
 
-	MATCH(KW_IS);
-	if (MATCH(KW_TEXT) || MATCH(KW_FIXED))
+	PARSE_match(KW_IS);
+	if (PARSE_match(KW_TEXT) || PARSE_match(KW_FIXED))
 		field->fld_sub_type = 1;
-	else if (MATCH(KW_BLR))
+	else if (PARSE_match(KW_BLR))
 		field->fld_sub_type = 2;
-	else if (MATCH(KW_ACL))
+	else if (PARSE_match(KW_ACL))
 		field->fld_sub_type = 3;
 	else if (PARSE_keyword() == KW_MINUS)
 		field->fld_sub_type = PARSE_number();
@@ -3612,7 +3628,7 @@ static FUNCARG parse_function_arg( FUNC function, USHORT * position)
 	func_arg->funcarg_has_sub_type = field->fld_has_sub_type;
 	func_arg->funcarg_position = (*position)++;
 
-	MATCH(KW_BY);
+	PARSE_match(KW_BY);
 	LEX_token();
 
 	switch (PARSE_keyword()) {
@@ -3647,7 +3663,7 @@ static FUNCARG parse_function_arg( FUNC function, USHORT * position)
    return_value or a return_argument in which case it had
    better not be passed by value */
 
-	if (KEYWORD(KW_COMMA) || KEYWORD(KW_SEMI)) {
+	if (DDL_token.tok_keyword == KW_COMMA || DDL_token.tok_keyword == KW_SEMI) {
 		if (func_arg->funcarg_mechanism == FUNCARG_mechanism_value)
 			PARSE_error(293, 0, 0);	/* msg 293: argument mode 'by value' requires a return mode */
 	}
@@ -3722,7 +3738,7 @@ static SCE parse_identifier(void)
 		q = DDL_token.tok_string;
 		while (*p++ = *q++);
 		LEX_token();
-		if (MATCH(KW_GROUP)) {
+		if (PARSE_match(KW_GROUP)) {
 			if (DDL_token.tok_type != tok_ident)
 				PARSE_error(117, DDL_token.tok_string, 0);	/* msg 117: expected identifier, encountered \"%s\" */
 			idents[id_group] = p;
@@ -3740,7 +3756,7 @@ static SCE parse_identifier(void)
 		q = DDL_token.tok_string;
 		while (*p++ = *q++);
 		LEX_token();
-		if (MATCH(KW_USER)) {
+		if (PARSE_match(KW_USER)) {
 			if (DDL_token.tok_type != tok_ident)
 				PARSE_error(117, DDL_token.tok_string, 0);	/* msg 117: expected identifier, encountered \"%s\" */
 			idents[id_user] = p;
@@ -3753,7 +3769,7 @@ static SCE parse_identifier(void)
 	case (KW_L_BRCKET):
 	case (KW_LT):
 		LEX_token();
-		if (!MATCH(KW_ASTERISK)) {
+		if (!PARSE_match(KW_ASTERISK)) {
 			if (DDL_token.tok_type != tok_number)
 				PARSE_error(206, DDL_token.tok_string, 0);	/* msg 206: expected number, encountered \"%s\" */
 			idents[id_group] = p;
@@ -3761,9 +3777,9 @@ static SCE parse_identifier(void)
 			while (*p++ = *q++);
 			LEX_token();
 		}
-		if (!MATCH(KW_COMMA))
+		if (!PARSE_match(KW_COMMA))
 			PARSE_error(207, DDL_token.tok_string, 0);	/* msg 207: expected comma between group and user ids, encountered \"%s\" */
-		if (!MATCH(KW_ASTERISK)) {
+		if (!PARSE_match(KW_ASTERISK)) {
 			if (DDL_token.tok_type != tok_number)
 				PARSE_error(206, DDL_token.tok_string, 0);	/* msg 206: expected number, encountered \"%s\" */
 			idents[id_user] = p;
@@ -3771,7 +3787,7 @@ static SCE parse_identifier(void)
 			while (*p++ = *q++);
 			LEX_token();
 		}
-		if (!(MATCH(KW_R_BRCKET) || MATCH(KW_GT)))
+		if (!(PARSE_match(KW_R_BRCKET) || PARSE_match(KW_GT)))
 			PARSE_error(208, DDL_token.tok_string, 0);	/* msg 208: expected trailing bracket, encountered \"%s\" */
 
 		break;
@@ -3806,45 +3822,45 @@ static OBJ_T parse_object(void)
  *
  **************************************/
 
-	if (MATCH(KW_DATABASE))
+	if (PARSE_match(KW_DATABASE))
 		return obj_database;
 	else if (!database || !database->dbb_handle)
 		PARSE_error(209, 0, 0);	/* msg 209: no database declared */
 
-	if (MATCH(KW_RELATION))
+	if (PARSE_match(KW_RELATION))
 		return obj_relation;
 
-	if (MATCH(KW_FIELD))
+	if (PARSE_match(KW_FIELD))
 		return obj_field;
 
-	if (MATCH(KW_INDEX))
+	if (PARSE_match(KW_INDEX))
 		return obj_index;
 
-	if (MATCH(KW_VIEW))
+	if (PARSE_match(KW_VIEW))
 		return obj_view;
 
-	if (MATCH(KW_SECURITY_CLASS))
+	if (PARSE_match(KW_SECURITY_CLASS))
 		return obj_security_class;
 
-	if (MATCH(KW_TRIGGER))
+	if (PARSE_match(KW_TRIGGER))
 		return obj_trigger;
 
-	if (MATCH(KW_FILE))
+	if (PARSE_match(KW_FILE))
 		return obj_file;
 
-	if (MATCH(KW_FUNCTION))
+	if (PARSE_match(KW_FUNCTION))
 		return obj_function;
 
-	if (MATCH(KW_TYPES))
+	if (PARSE_match(KW_TYPES))
 		return obj_type;
 
-	if (MATCH(KW_FILTER))
+	if (PARSE_match(KW_FILTER))
 		return obj_filter;
 
-	if (MATCH(KW_SHADOW))
+	if (PARSE_match(KW_SHADOW))
 		return obj_shadow;
 
-	if (MATCH(KW_GENERATOR))
+	if (PARSE_match(KW_GENERATOR))
 		return obj_generator;
 
 	return obj_none;
@@ -3867,7 +3883,7 @@ static int parse_page_size(void)
  **************************************/
 	int n1, n2;
 
-	MATCH(KW_EQUALS);
+	PARSE_match(KW_EQUALS);
 	n2 = n1 = PARSE_number();
 
 	if (n1 <= 1024)
@@ -3906,7 +3922,7 @@ static SLONG parse_privileges(void)
 
 	privileges = 0;
 
-	if (!MATCH(KW_MINUS)) {
+	if (!PARSE_match(KW_MINUS)) {
 		if (DDL_token.tok_type != tok_ident)
 			PARSE_error(117, DDL_token.tok_string, 0);	/* msg 117: expected identifier, encountered \"%s\" */
 		p = DDL_token.tok_string;
@@ -3966,50 +3982,54 @@ static void revoke_user_privilege(void)
 	upriv = (USERPRIV) DDL_alloc(sizeof(userpriv));
 
 	while (true) {
-		if (MATCH(KW_ALL)) {
+		if (PARSE_match(KW_ALL)) {
 			/* optional keyword following ALL */
 
-			MATCH(KW_PRIVILEGES);
+			PARSE_match(KW_PRIVILEGES);
 			upriv->userpriv_flags |= USERPRIV_select;
 			upriv->userpriv_flags |= USERPRIV_delete;
 			upriv->userpriv_flags |= USERPRIV_insert;
 			upriv->userpriv_flags |= USERPRIV_update;
 		}
-		else if (MATCH(KW_SELECT))
+		else if (PARSE_match(KW_SELECT))
 			upriv->userpriv_flags |= USERPRIV_select;
-		else if (MATCH(KW_DELETE))
+		else if (PARSE_match(KW_DELETE))
 			upriv->userpriv_flags |= USERPRIV_delete;
-		else if (MATCH(KW_INSERT))
+		else if (PARSE_match(KW_INSERT))
 			upriv->userpriv_flags |= USERPRIV_insert;
-		else if (MATCH(KW_UPDATE)) {
+		else if (PARSE_match(KW_UPDATE)) {
 			/* revoke update privilege applies to all fields in the grant
 			   update list */
 
 			upriv->userpriv_flags |= USERPRIV_update;
-			if (MATCH(KW_ON))
+			if (PARSE_match(KW_ON))
 				break;
-			if (MATCH(KW_COMMA))
+			if (PARSE_match(KW_COMMA))
 				continue;
-			if (!MATCH(KW_LEFT_PAREN))
+			if (!PARSE_match(KW_LEFT_PAREN))
 				PARSE_error(315, DDL_token.tok_string, 0);	/* msg 315: expected ON or '(', encountered "%s" */
 
 			do {
-				if (KEYWORD(KW_SELECT) || KEYWORD(KW_INSERT) ||
-					KEYWORD(KW_DELETE) || KEYWORD(KW_UPDATE))
+				if (DDL_token.tok_keyword == KW_SELECT
+					|| DDL_token.tok_keyword == KW_INSERT
+					|| DDL_token.tok_keyword == KW_DELETE
+					|| DDL_token.tok_keyword == KW_UPDATE)
+				{
 					break;
+				}
 				upf = (UPFE) DDL_alloc(sizeof(upfe));
 				upf->upfe_fldname = PARSE_symbol(tok_ident);
 				upf->upfe_next = upriv->userpriv_upflist;
 				upriv->userpriv_upflist = upf;
-			} while (MATCH(KW_COMMA));
+			} while (PARSE_match(KW_COMMA));
 
-			if (!MATCH(KW_RIGHT_PAREN))
+			if (!PARSE_match(KW_RIGHT_PAREN))
 				PARSE_error(316, DDL_token.tok_string, 0);	/* msg 316: expected ')', encountered "%s" */
 
 			continue;
 		}
-		if (!MATCH(KW_COMMA)) {
-			if (!MATCH(KW_ON))
+		if (!PARSE_match(KW_COMMA)) {
+			if (!PARSE_match(KW_ON))
 				PARSE_error(214, DDL_token.tok_string, 0);	/* msg 214: expected ON, encountered \"%s\" */
 			break;
 		}
@@ -4019,7 +4039,7 @@ static void revoke_user_privilege(void)
 		PARSE_error(215, 0, 0);	/* msg 215: REVOKE privilege was not specified */
 
 	upriv->userpriv_relation = PARSE_symbol(tok_ident);
-	if (!MATCH(KW_FROM))
+	if (!PARSE_match(KW_FROM))
 		PARSE_error(216, DDL_token.tok_string, 0);	/* msg 216: expected FROM, encountered \"%s\" */
 
 /* get the userlist */
@@ -4028,7 +4048,7 @@ static void revoke_user_privilege(void)
 		usr->usre_name = PARSE_symbol(tok_ident);
 		usr->usre_next = upriv->userpriv_userlist;
 		upriv->userpriv_userlist = usr;
-		if (!MATCH(KW_COMMA))
+		if (!PARSE_match(KW_COMMA))
 			break;
 	}
 
@@ -4088,7 +4108,7 @@ static DUDLEY_NOD set_generator(void)
 	node = PARSE_make_node(nod_set_generator, 2);
 	node->nod_count = 1;
 	node->nod_arg[1] = (DUDLEY_NOD) PARSE_symbol(tok_ident);
-	MATCH(KW_TO);
+	PARSE_match(KW_TO);
 	node->nod_arg[0] = EXPR_value(0, NULL);
 
 	parse_end();

@@ -778,7 +778,7 @@ static void add_view( STR dyn, DUDLEY_REL relation)
  **************************************/
 	DUDLEY_FLD field;
 	DUDLEY_CTX context;
-	DUDLEY_NOD *arg, contexts;
+	DUDLEY_NOD contexts;
 	SSHORT i;
 
 	put_symbol(dyn, gds_dyn_def_view, relation->rel_name);
@@ -790,8 +790,8 @@ static void add_view( STR dyn, DUDLEY_REL relation)
 	put_text(dyn, gds_dyn_view_source, relation->rel_view_source);
 
 	contexts = relation->rel_rse->nod_arg[s_rse_contexts];
-	for (i = 0, arg = contexts->nod_arg; i < contexts->nod_count; i++, arg++) {
-		context = (DUDLEY_CTX) (*arg)->nod_arg[0];
+	for (i = 0; i < contexts->nod_count; i++) {
+		context = (DUDLEY_CTX) contexts->nod_arg[i]->nod_arg[0];
 		put_symbol(dyn, gds_dyn_view_relation,
 				   context->ctx_relation->rel_name);
 		put_number(dyn, gds_dyn_view_context, context->ctx_context_id);
@@ -1597,7 +1597,6 @@ static void put_query_header( STR dyn, TEXT attribute, DUDLEY_NOD node)
  * Functional description
  *
  **************************************/
-	DUDLEY_NOD *ptr, *end;
 	SYM symbol;
 	UCHAR *s;
 	USHORT length, offset;
@@ -1610,8 +1609,8 @@ static void put_query_header( STR dyn, TEXT attribute, DUDLEY_NOD node)
 
 	offset = dyn->str_current - dyn->str_start;
 	dyn->str_current = dyn->str_current + 2;
-	for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end; ptr++) {
-		symbol = (SYM) * ptr;
+	for (int pos = 0; pos < node->nod_count; pos++) {
+		symbol = (SYM) node->nod_arg[pos];
 		s = (UCHAR *) symbol->sym_string;
 		CHECK_DYN(symbol->sym_length);
 		while (*s)

@@ -119,14 +119,15 @@ static void generate( STR blr, DUDLEY_NOD node)
 	DUDLEY_REL relation;
 	SYM symbol;
 	CON constant;
-	DUDLEY_NOD sub, *arg, *end;
+	DUDLEY_NOD sub;
 	DUDLEY_CTX context;
 	SCHAR operatr, *p;
 	SLONG value;
 	USHORT l;
 
-	arg = node->nod_arg;
-	end = arg + node->nod_count;
+	DUDLEY_NOD* arg = node->nod_arg;
+	USHORT pos = 0;
+	USHORT end = node->nod_count;
 
 	switch (node->nod_type) {
 	case nod_fid:
@@ -156,9 +157,8 @@ static void generate( STR blr, DUDLEY_NOD node)
 		if (sub) {
 			CHECK_BLR(1);
 			STUFF(sub->nod_count);
-			for (arg = sub->nod_arg, end = arg + sub->nod_count; arg < end;
-				 arg++)
-				generate(blr, *arg);
+			for (pos = 0; pos < sub->nod_count; pos++)
+				generate(blr, sub->nod_arg[pos]);
 		}
 		return;
 
@@ -177,8 +177,8 @@ static void generate( STR blr, DUDLEY_NOD node)
 		sub = node->nod_arg[0];
 		CHECK_BLR(1);
 		STUFF(sub->nod_count);
-		for (arg = sub->nod_arg, end = arg + sub->nod_count; arg < end; arg++)
-			generate(blr, *arg);
+		for (pos = 0; pos < sub->nod_count ; pos++)
+			generate(blr, sub->nod_arg[pos]);
 		return;
 
 	case nod_context:
@@ -276,7 +276,8 @@ static void generate( STR blr, DUDLEY_NOD node)
 		case dtype_sql_time:
 		case dtype_sql_date:
 		default:
-			DDL_err(95, NULL, NULL, NULL, NULL, NULL);	/* msg 95: GENERATE_blr: dtype not supported */
+			DDL_err(95, NULL, NULL, NULL, NULL, NULL);
+			// msg 95: GENERATE_blr: dtype not supported
 		}
 		p = (SCHAR *) constant->con_data;
 		switch (constant->con_desc.dsc_dtype) {
@@ -319,8 +320,8 @@ static void generate( STR blr, DUDLEY_NOD node)
 		STUFF(blr_rse);
 		sub = node->nod_arg[s_rse_contexts];
 		STUFF(sub->nod_count);
-		for (l = 0, arg = sub->nod_arg; l < sub->nod_count; l++, arg++)
-			generate(blr, *arg);
+		for (pos = 0; pos < sub->nod_count ; pos++)
+			generate(blr, sub->nod_arg[pos]);
 		if (sub = node->nod_arg[s_rse_first]) {
 			CHECK_BLR(1);
 			STUFF(blr_first);
@@ -335,20 +336,18 @@ static void generate( STR blr, DUDLEY_NOD node)
 			CHECK_BLR(2);
 			STUFF(blr_sort);
 			STUFF(sub->nod_count / 2);
-			for (arg = sub->nod_arg, end = arg + sub->nod_count;
-				 arg < end; arg += 2) {
+			for (pos = 0; pos < sub->nod_count ; pos+=2) {
 				CHECK_BLR(1);
-				STUFF((arg[1]) ? blr_descending : blr_ascending);
-				generate(blr, arg[0]);
+				STUFF((sub->nod_arg[pos + 1]) ? blr_descending : blr_ascending);
+				generate(blr, sub->nod_arg[pos]);
 			}
 		}
 		if (sub = node->nod_arg[s_rse_reduced]) {
 			CHECK_BLR(2);
 			STUFF(blr_project);
 			STUFF(sub->nod_count / 2);
-			for (arg = sub->nod_arg, end = arg + sub->nod_count;
-				 arg < end; arg += 2)
-				generate(blr, arg[0]);
+			for (pos = 0; pos < sub->nod_count ; pos+=2)
+				generate(blr, sub->nod_arg[pos]);
 		}
 		CHECK_BLR(1);
 		STUFF(blr_end);
@@ -404,10 +403,10 @@ static void generate( STR blr, DUDLEY_NOD node)
 	case nod_if:
 		CHECK_BLR(1);
 		STUFF(blr_if);
-		generate(blr, *arg++);
-		generate(blr, *arg++);
-		if (*arg)
-			generate(blr, *arg);
+		generate(blr, arg[pos++]);
+		generate(blr, arg[pos++]);
+		if (arg[pos])
+			generate(blr, arg[pos]);
 		else {
 			CHECK_BLR(1);
 			STUFF(blr_end);
@@ -417,8 +416,8 @@ static void generate( STR blr, DUDLEY_NOD node)
 	case nod_list:
 		CHECK_BLR(1);
 		STUFF(blr_begin);
-		for (; arg < end; arg++)
-			generate(blr, *arg);
+		for (; pos < end; pos++)
+			generate(blr, arg[pos]);
 		CHECK_BLR(1);
 		STUFF(blr_end);
 		return;
@@ -524,40 +523,44 @@ static void generate( STR blr, DUDLEY_NOD node)
 	case nod_sleuth:
 		operatr = blr_matching2;
 		break;
-		/*case nod_substr:      operatr = blr_substring; break; */
+//	case nod_substr:
+//		operatr = blr_substring; 
+//		break;
 
 	default:
-		DDL_err(96, NULL, NULL, NULL, NULL, NULL);	/* msg 96: GENERATE_blr: node not supported */
+		DDL_err(96, NULL, NULL, NULL, NULL, NULL);
+		// msg 96: GENERATE_blr: node not supported
 		return;
 	}
 
-/* If the user has given us something that has the form
-
-       field {EQ} NULL
-             {NE}
-
-   transform it into
-
-       field [NOT] MISSING */
+// If the user has given us something that has the form
+//
+//     field {EQ} NULL
+//          {NE}
+//
+//   transform it into
+//
+//     field [NOT] MISSING
 
 	if ((operatr == blr_eql || operatr == blr_neq) &&
-		(arg[0]->nod_type == nod_null || arg[1]->nod_type == nod_null)) {
+		(arg[pos]->nod_type == nod_null || arg[pos + 1]->nod_type == nod_null))
+	{
 		if (operatr == blr_neq) {
 			CHECK_BLR(1);
 			STUFF(blr_not);
 		}
 		operatr = blr_missing;
-		if (arg[0]->nod_type == nod_null)
-			arg++;
-		end = arg + 1;
+		if (arg[pos]->nod_type == nod_null)
+			pos++;
+		end = pos + 1;
 	}
 
-/* Fall thru on reasonable stuff */
+// Fall thru on reasonable stuff
 
 	CHECK_BLR(1);
 	STUFF(operatr);
-	for (; arg < end; arg++)
-		generate(blr, *arg);
+	for (; pos < end; pos++)
+		generate(blr, arg[pos]);
 }
 
 
