@@ -42,7 +42,7 @@ typedef vary VARY;
 
 
 extern USHORT QLI_prompt_count, QLI_reprompt;
-#ifdef PIXYS
+#ifdef PYXIS
 extern USHORT sw_forms;
 #endif
 static SLONG execute_any(QLI_NOD);
