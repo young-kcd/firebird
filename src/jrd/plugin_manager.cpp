@@ -295,21 +295,18 @@ void PluginManager::PluginModule::unload_module()
 
 // Code that handles loading the generic firebird/plugin directory
 
-static const char *ENGINE_PLUGIN_DIR = "plugins";
-static PluginManager enginePluginManager;
-static char enginePluginsLoaded = 0;
+const char *PluginManager::ENGINE_PLUGIN_DIR = "plugins";
+
 #ifndef DARWIN
-static char *ENGINE_PLUGIN_REGISTRATION_ENTRYPOINT =  "register_plugin";
+const char *PluginManager::ENGINE_PLUGIN_REGISTRATION_ENTRYPOINT =  "register_plugin";
 #else
-static char *ENGINE_PLUGIN_REGISTRATION_ENTRYPOINT =  "_register_plugin";
+const char *PluginManager::ENGINE_PLUGIN_REGISTRATION_ENTRYPOINT =  "_register_plugin";
 #endif
-typedef void (*engineRegistrationFuncType)(PluginManager::Plugin*);
 
 void PluginManager::load_engine_plugins()
 {
-	if (enginePluginsLoaded)
-		return;
-		
+	PluginManager& enginePluginManager = getEnginePluginManager();
+
 	enginePluginManager.addSearchPath(ENGINE_PLUGIN_DIR);
 	enginePluginManager.loadAllPlugins();
 	
@@ -324,4 +321,10 @@ void PluginManager::load_engine_plugins()
 		PluginManager::Plugin p = *itr;
 		(*regFunc)(&p);
 	}
+}
+
+PluginManager& PluginManager::getEnginePluginManager()
+{
+	static PluginManager manager;
+	return manager;
 }

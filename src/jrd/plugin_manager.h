@@ -48,6 +48,9 @@
   **/
 class PluginManager
 {
+	static const char *ENGINE_PLUGIN_DIR;
+	static const char *ENGINE_PLUGIN_REGISTRATION_ENTRYPOINT;
+
 public:
 	static void load_engine_plugins();
 
@@ -199,8 +202,11 @@ public:
 	///  is the set of all plugins known to the PluginManager.  This includes all plugins
 	///  found with the loadAllPluings and findPlugin functions.
 	iterator begin() { return iterator(moduleList); }
+
+	static PluginManager& getEnginePluginManager();
 	
 private:
+	typedef void (*engineRegistrationFuncType)(Plugin*);
 	typedef std::pair<Firebird::string, bool> Path;
 	Module *moduleList;
 	Firebird::list<Path> searchPaths;
