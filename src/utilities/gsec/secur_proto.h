@@ -21,12 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _UTILITIES_SECUR_PROTO_H_
-#define _UTILITIES_SECUR_PROTO_H_
+#ifndef UTILITIES_SECUR_PROTO_H
+#define UTILITIES_SECUR_PROTO_H
 
-extern SSHORT	SECURITY_exec_line (ISC_STATUS *, FRBRD *, struct user_data *,
+SSHORT	SECURITY_exec_line (ISC_STATUS *, FRBRD *, struct user_data *,
 									void (*)(void *, USER_DATA, bool), void *);
-extern void		SECURITY_msg_get (USHORT, TEXT *);
-extern void		SECURITY_get_db_path (TEXT *, TEXT *);
+void	SECURITY_msg_get (USHORT, TEXT *);
+void	SECURITY_get_db_path (TEXT *, TEXT *);
 
-#endif /* _UTILITIES_SECUR_PROTO_H_ */
+#endif // UTILITIES_SECUR_PROTO_H

@@ -21,13 +21,13 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _UTILITIES_REBUI_PROTO_H_
-#define _UTILITIES_REBUI_PROTO_H_
+#ifndef UTILITIES_REBUI_PROTO_H
+#define UTILITIES_REBUI_PROTO_H
 
-extern SCHAR		*RBDB_alloc (SLONG);
-extern void		RBDB_close (struct rbdb *);
-extern void		RBDB_open (struct rbdb *);
-extern struct pag	*RBDB_read (struct rbdb *, SLONG);
-extern void		RBDB_write (struct rbdb *, struct pag *, SLONG);
+SCHAR*		RBDB_alloc (SLONG);
+void		RBDB_close (struct rbdb *);
+void		RBDB_open (struct rbdb *);
+struct pag*	RBDB_read (struct rbdb *, SLONG);
+void		RBDB_write (struct rbdb *, struct pag *, SLONG);
 
-#endif /* _UTILITIES_REBUI_PROTO_H_ */
+#endif // UTILITIES_REBUI_PROTO_H

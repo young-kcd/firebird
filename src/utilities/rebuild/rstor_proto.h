@@ -21,9 +21,9 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _UTILITIES_RSTOR_PROTO_H_
-#define _UTILITIES_RSTOR_PROTO_H_
+#ifndef UTILITIES_RSTOR_PROTO_H
+#define UTILITIES_RSTOR_PROTO_H
 
-extern void	RSTORE (struct rbdb *);
+void	RSTORE (struct rbdb *);
 
-#endif /* _UTILITIES_RSTOR_PROTO_H_ */
+#endif // UTILITIES_RSTOR_PROTO_H

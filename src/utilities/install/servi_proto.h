@@ -21,41 +21,20 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _UTILITIES_SERVI_PROTO_H_
-#define _UTILITIES_SERVI_PROTO_H_
+#ifndef UTILITIES_SERVI_PROTO_H
+#define UTILITIES_SERVI_PROTO_H
 
-extern USHORT	SERVICES_install (SC_HANDLE manager,
-				TEXT	*service_name,
-				TEXT	*display_name,
-				TEXT	*executable,
-				TEXT	*directory,
-				TEXT	*dependencies,
-				USHORT	sw_startup,
-				TEXT	*nt_user_name,
-				TEXT	*nt_user_password,
-				USHORT (*)(SLONG, TEXT *, SC_HANDLE));
+USHORT	SERVICES_install(SC_HANDLE, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*, USHORT,
+						TEXT*, TEXT*, USHORT (*)(SLONG, TEXT *, SC_HANDLE));
 
-extern USHORT	SERVICES_remove (SC_HANDLE manager,
-				TEXT	*service_name,
-				TEXT	*display_name,
-				USHORT (*)(SLONG, TEXT *, SC_HANDLE));
+USHORT	SERVICES_remove(SC_HANDLE, TEXT*, TEXT*, USHORT (*)(SLONG, TEXT *, SC_HANDLE));
 
-extern USHORT	SERVICES_start (SC_HANDLE manager,
-				TEXT	*service_name,
-				TEXT	*display_name,
-				USHORT	sw_mode,
-				USHORT (*)(SLONG, TEXT *, SC_HANDLE));
+USHORT	SERVICES_start(SC_HANDLE, TEXT*, TEXT*, USHORT, USHORT (*)(SLONG, TEXT *, SC_HANDLE));
 
-extern USHORT	SERVICES_stop (SC_HANDLE manager,
-				TEXT	*service_name,
-				TEXT	*display_name,
-				USHORT (*)(SLONG, TEXT *, SC_HANDLE));
+USHORT	SERVICES_stop(SC_HANDLE, TEXT*, TEXT*, USHORT (*)(SLONG, TEXT *, SC_HANDLE));
 
-extern USHORT	SERVICES_grant_logon_right(TEXT* account,
-				USHORT (*)(SLONG, TEXT *, SC_HANDLE));
+USHORT	SERVICES_grant_logon_right(TEXT*, USHORT (*)(SLONG, TEXT *, SC_HANDLE));
 
-extern USHORT	SERVICES_grant_access_rights(TEXT* service_name,
-				TEXT* account,
-				USHORT (*)(SLONG, TEXT *, SC_HANDLE));
+USHORT	SERVICES_grant_access_rights(TEXT*, TEXT*, USHORT (*)(SLONG, TEXT *, SC_HANDLE));
 
-#endif /* _UTILITIES_SERVI_PROTO_H_ */
+#endif // UTILITIES_SERVI_PROTO_H

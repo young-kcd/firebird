@@ -21,10 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _UTILITIES_REGIS_PROTO_H_
-#define _UTILITIES_REGIS_PROTO_H_
+#ifndef UTILITIES_REGIS_PROTO_H
+#define UTILITIES_REGIS_PROTO_H
 
-extern USHORT	REGISTRY_install (HKEY, TEXT *, USHORT (*)(SLONG, TEXT *, HKEY));
-extern USHORT	REGISTRY_remove (HKEY, bool, USHORT (*)(SLONG, TEXT *, HKEY));
+USHORT	REGISTRY_install (HKEY, TEXT *, USHORT (*)(SLONG, TEXT *, HKEY));
+USHORT	REGISTRY_remove (HKEY, bool, USHORT (*)(SLONG, TEXT *, HKEY));
 
-#endif /* _UTILITIES_REGIS_PROTO_H_ */
+#endif // UTILITIES_REGIS_PROTO_H

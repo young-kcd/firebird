@@ -21,13 +21,13 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _UTIL_PROTO_H_
-#define _UTIL_PROTO_H_
+#ifndef UTIL_PROTO_H
+#define UTIL_PROTO_H
 
-extern pid_t UTIL_start_process(char *process, char **argv);
-extern int 	UTIL_wait_for_child(pid_t child_pid); 
-extern int 	UTIL_ex_lock(char *file); 
-extern void UTIL_ex_unlock(int fd_file); 
+pid_t	UTIL_start_process(char *process, char **argv);
+int 	UTIL_wait_for_child(pid_t child_pid); 
+int 	UTIL_ex_lock(char *file); 
+void	UTIL_ex_unlock(int fd_file); 
 
-#endif /* _UTIL_PROTO_H_ */
+#endif // UTIL_PROTO_H
 

@@ -21,11 +21,11 @@
  * Contributor(s): ______________________________________.
  */
  
-#ifndef _SRVRMGR_PROTO_H_
-#define _SRVRMGR_PROTO_H_
+#ifndef SRVRMGR_PROTO_H
+#define SRVRMGR_PROTO_H
  
-extern void 	SRVRMGR_cleanup (IBMGR_DATA *);
-extern USHORT	SRVRMGR_exec_line (IBMGR_DATA *);
-extern void 	SRVRMGR_msg_get (USHORT, TEXT *);
+void 	SRVRMGR_cleanup (IBMGR_DATA *);
+USHORT	SRVRMGR_exec_line (IBMGR_DATA *);
+void 	SRVRMGR_msg_get (USHORT, TEXT *);
 
-#endif /* _SRVRMGR_PROTO_H_ */
+#endif // SRVRMGR_PROTO_H

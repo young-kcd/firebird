@@ -21,16 +21,16 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _UTILITIES_PPG_PROTO_H_
-#define _UTILITIES_PPG_PROTO_H_
+#ifndef UTILITIES_PPG_PROTO_H
+#define UTILITIES_PPG_PROTO_H
 
 #ifdef SUPERSERVER
-extern void	PPG_print_header (HDR, SLONG, SVC);
-extern void	PPG_print_log (LIP, SLONG, SVC);
+void	PPG_print_header (HDR, SLONG, SVC);
+void	PPG_print_log (LIP, SLONG, SVC);
 #else
-extern void	PPG_print_header (HDR, SLONG, IB_FILE*);
-extern void	PPG_print_log (LIP, SLONG, IB_FILE*);
+void	PPG_print_header (HDR, SLONG, IB_FILE*);
+void	PPG_print_log (LIP, SLONG, IB_FILE*);
 #endif
 
-#endif /* _UTILITIES_PPG_PROTO_H_ */
+#endif // UTILITIES_PPG_PROTO_H
 

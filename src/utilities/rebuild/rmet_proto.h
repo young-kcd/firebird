@@ -21,9 +21,9 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _UTILITIES_RMET_PROTO_H_
-#define _UTILITIES_RMET_PROTO_H_
+#ifndef UTILITIES_RMET_PROTO_H
+#define UTILITIES_RMET_PROTO_H
 
-extern ULONG	*RMET_tips (TEXT *);
+ULONG	*RMET_tips (TEXT *);
 
-#endif /* _UTILITIES_RMET_PROTO_H_ */
+#endif // UTILITIES_RMET_PROTO_H
