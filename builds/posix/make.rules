@@ -26,7 +26,7 @@
 #   Contributor(s):
 #
 #
-#   $Id: make.rules,v 1.17 2003-04-10 06:34:24 eku Exp $
+#   $Id: make.rules,v 1.18 2003-05-25 00:07:30 skidder Exp $
 #
 
 #____________________________________________________________________________
@@ -130,6 +130,7 @@ LINK_OPTIONS=
 
 LINK_LIBS = @LIBS@ @EDITLINE_A@
 STATICLINK_LIBS = @LIBS@ @EDITLINE_A@
+SO_LINK_LIBS = @LIBS@
 
 #LINK_LIBS= -L$(LIB)  -lgds -lm -lc -ldl -lcrypt
 # -lgcc
