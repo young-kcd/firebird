@@ -1,3 +1,130 @@
+2003-10-05 12:27  dimitr
+
+	* firebird2/src/jrd/: jrd_pwd.h, pwd.cpp:
+	
+	Some cleanup.
+
+2003-10-05 09:04  robocop
+
+	* firebird2/src/jrd/: cvt.cpp, cvt_proto.h, intl.cpp, intl_proto.h:
+	
+	const correctness, vars in scope, etc.
+
+2003-10-05 09:03  robocop
+
+	* firebird2/src/intl/: kanji.h, kanji_proto.h, ldcommon.h,
+	utils/maptest2.c:
+	
+	style
+
+2003-10-05 09:02  robocop
+
+	* firebird2/src/: intl/ld.cpp, jrd/intlnames.h:
+	
+	changed _INTL_COMPONENT_ to INTL_COMPONENT_FB
+
+2003-10-05 08:58  robocop
+
+	* firebird2/src/gpre/: cmd_proto.h, cme_proto.h, cmp_proto.h,
+	exp_proto.h, gpre_meta.h, gpre_proto.h, hsh_proto.h, jrdme_proto.h,
+	lang_proto.h, msc_proto.h, par_proto.h, prett_proto.h, sqe_proto.h,
+	sql_proto.h:
+	
+	style
+
+2003-10-05 08:56  robocop
+
+	* firebird2/src/gpre/: pat.cpp, pat.h, pat_proto.h:
+	
+	const correctness, vars in scope, etc.
+
+2003-10-05 08:53  robocop
+
+	* firebird2/src/gpre/: ftn.cpp, gpre_meta_boot.cpp, movg.cpp,
+	movg_proto.h:
+	
+	const correctness, vars in scope, etc.
+
+2003-10-05 08:42  robocop
+
+	* firebird2/src/dudley/: hsh.cpp, hsh_proto.h, parse.cpp:
+	
+	const correctness, vars in scope, etc.
+
+2003-10-05 08:39  robocop
+
+	* firebird2/src/dudley/: exe.epp, exe_proto.h, expan_proto.h,
+	expand.cpp, expr.cpp, expr_proto.h, extra_proto.h, gener_proto.h,
+	ddl_proto.h, lex.cpp, lex_proto.h, parse_proto.h, trn.cpp,
+	trn_proto.h:
+	
+	style
+
+2003-10-05 08:37  robocop
+
+	* firebird2/src/dudley/: ddl.cpp, ddl.h:
+	
+	const correctness, vars in scope, etc.
+
+2003-10-05 08:33  robocop
+
+	* firebird2/src/dsql/: alld.cpp, array.epp, array_proto.h,
+	blob_proto.h, ddl.cpp, dsql.cpp, dsql.h, dsql_proto.h:
+	
+	style
+
+2003-10-05 08:33  robocop
+
+	* firebird2/src/dsql/: pass1.cpp, preparse.cpp, utld.cpp:
+	
+	const correctness, vars in scope, etc.
+
+2003-10-05 08:25  robocop
+
+	* firebird2/src/dsql/: make.cpp, make_proto.h, movd.cpp,
+	movd_proto.h, errd.cpp, gen.cpp, gen_proto.h, hsh.cpp, hsh_proto.h:
+	
+	const correctness, vars in scope, etc.
+
+2003-10-05 08:21  robocop
+
+	* firebird2/src/: burp/backu_proto.h, burp/burp_proto.h,
+	burp/canon_proto.h, burp/misc_proto.h, burp/mvol_proto.h,
+	burp/resto_proto.h, dsql/parse_proto.h, dsql/prepa_proto.h,
+	dsql/utld_proto.h:
+	
+	style
+
+2003-10-05 08:20  robocop
+
+	* firebird2/src/burp/burp.h:
+	
+	constant should use FB type
+
+2003-10-05 08:17  robocop
+
+	* firebird2/src/alice/exe_proto.h:
+	
+	style
+
+2003-10-05 08:11  robocop
+
+	* firebird2/src/jrd/vio_proto.h:
+	
+	Fixed cleanup mistake by someone
+
+2003-10-05 08:10  robocop
+
+	* firebird2/doc/license/README.license.usage.txt:
+	
+	small typo
+
+2003-10-05 06:06  robocop
+
+	* firebird2/builds/win32/defs/gds.def:
+	
+	Removed win16 survivor
+
 2003-10-03 14:45  dimitr
 
 	* firebird2/src/: utilities/dbaswi.h, jrd/ibase.h, jrd/svc.cpp:
