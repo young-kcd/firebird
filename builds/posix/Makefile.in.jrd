@@ -29,7 +29,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.jrd,v 1.5 2003-02-17 08:26:10 eku Exp $
+#  $Id: Makefile.in.jrd,v 1.6 2003-02-24 09:52:33 eku Exp $
 #
 ROOT=../..
 
@@ -156,7 +156,7 @@ SUPER_OBJECTS=	$(DSQL_MISC) $(LOCK_MISC) \
 
 HEAD_OBJECTS= whyp.o utlp.o dls.o enc.o \
 		$(JRD_MISC) $(JRD_HEAD_MISC) $(DSQL_HEAD_MISC) \
-		$(PYXIS_MISC_OBJS) $(MERGE_MISC) $(SECURITY_MISC)
+		$(MERGE_MISC) $(SECURITY_MISC)
 
 HEAD_J_OBJECTS=	whyp.j utlp.j \
 		$(JRD_J_MISC) $(JRD_J_HEAD_MISC) $(DSQL_J_HEAD_MISC) \
@@ -225,12 +225,11 @@ bridge.apollo:	gdslib
 	$(CHMOD_7) bridge5
 
 gds.sl $(HP_GDSSHR): $(JRD_P_OBJECTS) flu.bin $(DSQL_P_MISC) $(LOCK_P_MISC) \
-		$(PYXIS_P_MISC_OBJS) \
 		$(REMOTE_P_MISC) $(WAL_P_MISC) \
 		$(SECURITY_P_MISC) functions.bin gds.bind
 	-$(RM) gds.sl
 	ld -b $(LD_OPTS) $(JRD_P_OBJECTS) flu.bin $(DSQL_P_MISC) \
-		$(LOCK_P_MISC) $(PYXIS_P_MISC_OBJS) $(REMOTE_P_MISC) \
+		$(LOCK_P_MISC) $(REMOTE_P_MISC) \
 		$(WAL_P_MISC) \
 		$(SECURITY_P_MISC) functions.bin -o gds.sl
 	$(CHMOD_7) gds.sl
@@ -404,7 +403,7 @@ gds.dylib: $(DO_FORCE) \
 		$(JRD_P_OBJECTS) flu.bin $(CSI_P_MISC) $(DSQL_P_MISC) \
 		$(LOCK_P_MISC) $(REMOTE_P_MISC) $(SECURITY_P_MISC) \
 		$(INTL_P_MISC) $(WAL_P_MISC) \
-		$(FUNCTIONS)  $(PYXIS_P_OBJECTS) $(PYXIS_P_MISC)
+		$(FUNCTIONS)
 
 	-$(RM) gds.dylib
 	libtool -dynamic -o gds.dylib -current_version $(FW_VERS) \
@@ -414,7 +413,6 @@ gds.dylib: $(DO_FORCE) \
 		$(CSI_P_MISC) $(DSQL_P_MISC) $(LOCK_P_MISC) \
 		$(REMOTE_P_MISC) $(SECURITY_P_MISC) $(INTL_P_MISC) \
 		$(WAL_P_MISC) $(FUNCTIONS) $(GDSF_LIB) \
-		$(PYXIS_P_OBJECTS) $(PYXIS_P_MISC) \
 		$(LD_LIBS) -framework System -framework CoreFoundation
 	$(CHMOD_6) gds.dylib
 	$(MV) gds.dylib $(GDSSHR_DEST)

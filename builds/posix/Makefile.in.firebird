@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.27 2003-02-10 11:54:30 dimitr Exp $
+#  $Id: Makefile.in.firebird,v 1.28 2003-02-24 09:52:30 eku Exp $
 #
 
 ROOT=..
@@ -100,9 +100,7 @@ export DYLD_FRAMEWORK_PATH
 #    used later on in the compilation process to restore build databases.
 #
 #  After gbak_static is built the gds.so library is built.  This library is
-#    still missing the security functionality.  Note there is a dependancy
-#    between gbak_static and gds.so because the shared library contains the
-#    PYXIS code, which needs the forms.gdb database restored from forms.gbak.
+#    still missing the security functionality.
 #
 #  Now we are on phase 3, building the actual DB tools.  This is as expected.
 #    We build all tools and link them against the shared library, including
