@@ -204,10 +204,14 @@ Source: output\bin\qli.exe; DestDir: {app}\bin; Components: DevAdminComponent; F
 Source: output\bin\fbclient.dll; DestDir: {app}\bin; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder
 
 ;Install MS libs locally if Win2K or later, else place in <sys> if NT4 or Win95/98/ME.
-Source: output\bin\msvcrt.dll; DestDir: {app}\bin; Components: ClientComponent; MinVersion: 0,5.0;
-Source: output\bin\msvcrt.dll; DestDir: {sys}; Components: ClientComponent; OnlyBelowVersion: 5.0,5.0; Flags: sharedfile onlyifdoesntexist uninsneveruninstall;
-Source: output\bin\msvcp{#msvc_version}0.dll; DestDir: {app}\bin; Components: ClientComponent; MinVersion: 0,5.0;
-Source: output\bin\msvcp{#msvc_version}0.dll; DestDir: {sys}; Components: ClientComponent; OnlyBelowVersion: 5.0,5.0; Flags: sharedfile onlyifdoesntexist uninsneveruninstall;
+;As there is no default location to store these system files they need to
+;be manually placed in the output\system32 prior to running this script.
+;NOTE: These dll's MUST be sourced from the vcredist package
+;if using MSVC6 and NOT from the local system32 directory.
+Source: output\system32\msvcrt.dll; DestDir: {app}\bin; Components: ClientComponent; MinVersion: 0,5.0;
+Source: output\system32\msvcrt.dll; DestDir: {sys}; Components: ClientComponent; OnlyBelowVersion: 5.0,5.0; Flags: sharedfile onlyifdoesntexist uninsneveruninstall;
+Source: output\system32\msvcp{#msvc_version}0.dll; DestDir: {app}\bin; Components: ClientComponent; MinVersion: 0,5.0;
+Source: output\system32\msvcp{#msvc_version}0.dll; DestDir: {sys}; Components: ClientComponent; OnlyBelowVersion: 5.0,5.0; Flags: sharedfile onlyifdoesntexist uninsneveruninstall;
 
 Source: output\doc\*.*; DestDir: {app}\doc; Components: DevAdminComponent; Flags: skipifsourcedoesntexist  ignoreversion
 Source: output\doc\sql.extensions\*.*; DestDir: {app}\doc\sql.extensions; Components: DevAdminComponent; Flags: skipifsourcedoesntexist ignoreversion
@@ -218,7 +222,7 @@ Source: output\lib\*.*; DestDir: {app}\lib; Components: DevAdminComponent; Flags
 Source: output\UDF\ib_udf.dll; DestDir: {app}\UDF; Components: ServerComponent; Flags: sharedfile ignoreversion;
 Source: output\UDF\fbudf.dll; DestDir: {app}\UDF; Components: ServerComponent; Flags: sharedfile ignoreversion;
 Source: output\UDF\*.sql; DestDir: {app}\UDF; Components: ServerComponent; Flags: ignoreversion;
-Source: output\v5_examples\*.*; DestDir: {app}\examples; Components: DevAdminComponent; Flags: ignoreversion;
+Source: output\examples\*.*; DestDir: {app}\examples; Components: DevAdminComponent; Flags: ignoreversion;
 ;Source: output\doc\Firebird_v15.104_ReleaseNotes.pdf; DestDir: {app}\doc\Firebird_v15.ReleaseNotes.pdf; Components: DevAdminComponent; Flags: ignoreversion
 ;Source: firebird\install\doc_all_platforms\Firebird_v1_5_*.html; DestDir: {app}\doc; Components: DevAdminComponent;  Flags: ignoreversion;
 ;Note - Win9x requires 8.3 filenames for the uninsrestartdelete option to work

@@ -74,9 +74,11 @@ del %temp%.\b$?.bat
 :: (You may need to download and extract the 
 :: vcredist stuff to your MSDevDir for this to work.
 ::=====================
+@if DEFINED MSDevDir ( 
 @if %msvc_version% EQU 6 (
- (@copy %MSDevDir%\vcredist\msvcrt.dll %ROOT_PATH%\output\bin\ > nul)
- (@copy %MSDevDir%\vcredist\msvcp%msvc_version%0.dll %ROOT_PATH%\output\bin\ > nul)
+ (@copy "%MSDevDir%\vcredist\msvcrt.dll" %ROOT_PATH%\output\system32\ 2>nul)
+ (@copy "%MSDevDir%\vcredist\msvcp%msvc_version%0.dll" %ROOT_PATH%\output\system32\ 2>nul)
+)
 )
 
 :: grab some missing bits'n'pieces from different parts of the source tree
@@ -105,7 +107,7 @@ for %%v in (fbclient ib_util) do @(
 ((@copy %ROOT_PATH%\temp\%BUILDTYPE%\firebird\bin\*.pdb %ROOT_PATH%\output\bin > nul) || (@echo Copying pdb files failed))
 )
 
-@echo Copying docs...
+@echo Started copying docs...
 @copy %ROOT_PATH%\doc\*.* %ROOT_PATH%\output\doc\ > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY of main documentation tree failed with errorlevel %ERRORLEVEL% ) & (goto :EOF))
 @if EXIST "%ROOT_PATH%\output\doc\Firebird_v15.104_ReleaseNotes.pdf" ren %ROOT_PATH%\output\doc\Firebird_v15.104_ReleaseNotes.pdf Firebird_v15_ReleaseNotes.pdf 
@@ -118,7 +120,7 @@ for %%v in (fbclient ib_util) do @(
 @copy %ROOT_PATH%\src\extlib\fbudf\fbudf.txt %ROOT_PATH%\output\doc\ > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY fbudf doc failed with errorlevel %ERRORLEVEL% ) & (goto :EOF))
 
-::
+@echo Copying other documentation...
 @copy %ROOT_PATH%\ChangeLog %ROOT_PATH%\output\doc\ChangeLog.txt  > nul
 
 ::@copy %ROOT_PATH%\output\doc\install_win32.txt %ROOT_PATH%\output\doc\InstallNotes.txt > nul
@@ -141,6 +143,29 @@ for %%v in (fbclient ib_util) do @(
 
 @copy %ROOT_PATH%\doc\sql.extensions\*.* %ROOT_PATH%\output\doc\sql.extensions\ > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY doc\sql.extensions failed  ) & (goto :EOF))
+
+if DEFINED FB_EXTERNAL_DOCS (
+	@echo copying pdf docs.
+	@for %%v in (QuickStartGuide.pdf Firebird_v1.5.ReleaseNotes.pdf ) do @copy %FB_EXTERNAL_DOCS%\%%v %ROOT_PATH%\output\doc\%%v > nul
+) else (
+ @echo.
+ @echo The FB_EXTERNAL_DOCS environment var is not defined
+ @echo It should point to the directory containing the relevant release notes
+ @echo in adobe pdf format.
+ @echo.
+ @echo Subsequent script execution will be cancelled.
+ @echo.
+ cancel_script > nul 2>&1
+ goto :EOF
+)
+@echo Completed copying docs.
+
+::rename the examples directory
+:: /Y is not necessary in a script, but is added to document 
+:: that no prompting will take place
+if EXIST output\v5_examples (
+@move /Y output\v5_examples output\examples > nul 2>&1
+)
 
 @goto :EOF
 
@@ -224,6 +249,47 @@ endlocal
 ::for %%v in ( fbclient msvcrt msvcp%MSVC_VERSION%0 )  do touch %ROOT_PATH%\output\bin\%%v.local
 @goto :EOF
 
+
+:ZIP_PACK
+::=======
+:: Generate the directory tree to be zipped
+@mkdir %ROOT_PATH%\zip_pack 2>nul
+@copy /Y %ROOT_PATH%\output %ROOT_PATH%\zip_pack
+for %%v in (bin doc doc\sql.extensions help include intl lib udf examples ) do (
+	@mkdir %ROOT_PATH%\zip_pack\%%v 2>nul
+	@copy /Y %ROOT_PATH%\output\%%v\*.* %ROOT_PATH%\zip_pack\%%v\ > nul
+)
+
+:: Now remove stuff that is not needed.
+for %%v in (bin\gpre_boot.exe bin\gpre_static.exe doc\installation_readme.txt ) do ( 
+	@del %ROOT_PATH%\zip_pack\%%v 
+)
+
+::grab install notes for zip pack
+@copy %ROOT_PATH%\doc\install_win32.txt %ROOT_PATH%\zip_pack\doc\README_installation.txt > nul
+
+:: Add license
+for %%v in (IPLicense.txt IDPLicense.txt ) do ( 
+	@copy %ROOT_PATH%\src\install\misc\%%v %ROOT_PATH%\zip_pack\%%v 
+)
+
+::And readme 
+@copy %ROOT_PATH%\src\install\arch-specific\win32\readme.txt %ROOT_PATH%\zip_pack\
+
+::Now we can zip it up and copy the package to the install images directory.
+
+if defined PKZIP (
+	%PKZIP%\pkzip25.exe -level=9 -add=update -rec -path=relative -exclude=*.pdb %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_win32.zip %ROOT_PATH%\zip_pack\*.*	
+	%PKZIP%\pkzip25.exe -level=9 -add=update -rec -path=relative %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_win32_pdb.zip %ROOT_PATH%\zip_pack\*.*	
+) else (
+@Echo.
+@Echo Couldn't find pkzip.
+@Echo.
+)
+
+
+@goto :EOF
+
 :TOUCH_ALL
 ::========
 ::Set file timestamp to something meaningful.
@@ -296,11 +362,15 @@ start FirebirdInstall_%PRODUCT_VER_STRING%.iss
 @Echo.
 @Echo fb_msg
 @(@call :FB_MSG ) || (@goto :EOF)
-@Echo.
+::@Echo.
 ::@Echo Creating .local files for libraries
 ::@(@call :TOUCH_LOCAL ) || (@goto :EOF)
-::@Echo.
+@Echo.
 @(@call :TOUCH_ALL ) || (@goto :EOF)
+@Echo.
+@Echo Generating zip package
+@(@call :ZIP_PACK ) || (@goto :EOF)
+@Echo.
 @Echo Now let's run InnoSetup extensions
 @Echo.
 @(@call :RUN_ISX ) || (@goto :EOF)
