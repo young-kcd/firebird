@@ -50,7 +50,7 @@ typedef struct gen_t {
 	UCHAR** gen_sdl_ptr;
 	UCHAR* gen_end;
 	ISC_STATUS* gen_status;
-	USHORT gen_internal;
+	SSHORT gen_internal;
 } *GEN_T;
 
 static void adjust_length(ISC_ARRAY_DESC*);
@@ -58,7 +58,7 @@ static void copy_exact_name (const char*, char*, SSHORT);
 static ISC_STATUS copy_status(const ISC_STATUS*, ISC_STATUS*);
 static ISC_STATUS error(ISC_STATUS*, SSHORT, ...);
 static ISC_STATUS gen_sdl(ISC_STATUS*, const ISC_ARRAY_DESC*, SSHORT*, UCHAR**,
-					  SSHORT*);
+					  SSHORT*, bool);
 static ISC_STATUS lookup_desc(ISC_STATUS*, FRBRD**, FRBRD**, const SCHAR*,
 						const SCHAR*, ISC_ARRAY_DESC*, SCHAR*);
 static ISC_STATUS stuff_args(gen_t*, SSHORT, ...);
@@ -84,6 +84,25 @@ static inline ISC_STATUS stuff_sdl_long(gen_t* gen, int word)
 }
 
 
+ISC_STATUS API_ROUTINE isc_array_gen_sdl(ISC_STATUS * status,
+									 ISC_ARRAY_DESC * desc,
+									 SSHORT * sdl_buffer_length,
+                                    UCHAR * sdl_buffer, SSHORT * sdl_length)
+{
+/**************************************
+  *
+  *	i s c _ a r r a y _ g e n _ s d l
+  *
+  **************************************
+  *
+  * Functional description
+  *
+  **************************************/
+ 
+ 	return gen_sdl(status, desc, sdl_buffer_length, &sdl_buffer, sdl_length, false);
+}
+ 
+ 
 ISC_STATUS API_ROUTINE isc_array_get_slice(ISC_STATUS* status,
 									   FRBRD** db_handle,
 									   FRBRD** trans_handle,
@@ -106,7 +125,7 @@ ISC_STATUS API_ROUTINE isc_array_get_slice(ISC_STATUS* status,
 	SSHORT sdl_length = sizeof(sdl_buffer);
 	UCHAR* sdl = sdl_buffer;
 
-	if (gen_sdl(status, desc, &sdl_length, &sdl, &sdl_length))
+	if (gen_sdl(status, desc, &sdl_length, &sdl, &sdl_length, true))
 		return status[1];
 
 	isc_get_slice(status, db_handle, trans_handle, array_id,
@@ -205,7 +224,7 @@ ISC_STATUS API_ROUTINE isc_array_put_slice(ISC_STATUS* status,
 	SSHORT sdl_length = sizeof(sdl_buffer);
 	UCHAR* sdl = sdl_buffer;
 
-	if (gen_sdl(status, desc, &sdl_length, &sdl, &sdl_length))
+	if (gen_sdl(status, desc, &sdl_length, &sdl, &sdl_length, true))
 		return status[1];
 
 	isc_put_slice(status, db_handle, trans_handle, array_id,
@@ -394,7 +413,8 @@ static ISC_STATUS gen_sdl(ISC_STATUS* status,
 					  const ISC_ARRAY_DESC* desc,
 					  SSHORT* sdl_buffer_length,
 					  UCHAR** sdl_buffer,
-                      SSHORT* sdl_length)
+                      SSHORT* sdl_length,
+					  bool internal_flag)
 {
 /**************************************
  *
@@ -418,7 +438,7 @@ static ISC_STATUS gen_sdl(ISC_STATUS* status,
 	gen->gen_sdl_ptr = sdl_buffer;
 	gen->gen_end = *sdl_buffer + *sdl_buffer_length;
 	gen->gen_status = status;
-	gen->gen_internal = 0;
+	gen->gen_internal = internal_flag ? 0 : -1;
 
 	if (stuff_args(gen, 4, isc_sdl_version1, isc_sdl_struct, 1,
 				   desc->array_desc_dtype))
@@ -575,6 +595,10 @@ static ISC_STATUS stuff_args(gen_t* gen, SSHORT count, ...)
 	va_list ptr;
 
 	if (gen->gen_sdl + count >= gen->gen_end) {
+		if (gen->gen_internal < 0)
+			return error(gen->gen_status, 3, (ISC_STATUS) isc_misc_interpreted,
+						 (ISC_STATUS) isc_arg_string,
+						 (ISC_STATUS) "SDL buffer overflow");
 
 		// The sdl buffer is too small.  Allocate a larger one. 
 
