@@ -119,7 +119,7 @@ static int prepare_update(thread_db*, jrd_tra*, SLONG, record_param*,
 
 static void purge(thread_db*, record_param*);
 static Record* replace_gc_record(jrd_rel*, Record**, USHORT);
-static void replace_record(thread_db*, record_param*, PageStack&, const jrd_tra*);
+static void replace_record(thread_db*, record_param*, PageStack*, const jrd_tra*);
 static void set_system_flag(record_param*, USHORT, SSHORT);
 static void update_in_place(thread_db*, jrd_tra*, record_param*, record_param*);
 static void verb_post(thread_db*, jrd_tra*, record_param*, Record*, record_param*,
@@ -372,8 +372,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 		rpb->rpb_format_number = temp.rpb_format_number;
 
 		if (temp2.rpb_flags & rpb_deleted) {
-			PageStack empty;
-			replace_record(tdbb, rpb, empty, transaction);
+			replace_record(tdbb, rpb, 0, transaction);
 			if (!DPM_fetch(tdbb, &temp, LCK_write))
 				BUGCHECK(291);	/* msg 291 cannot find record back version */
 			delete_record(tdbb, &temp, rpb->rpb_page, 0);
@@ -384,8 +383,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 
 		rpb->rpb_flags &=
 			~(rpb_fragment | rpb_incomplete | rpb_chained | rpb_gc_active);
-		PageStack empty;
-		DPM_update(tdbb, rpb, empty, transaction);
+		DPM_update(tdbb, rpb, 0, transaction);
 		delete_tail(tdbb, &temp2, rpb->rpb_page, 0, 0);
 
 		/* Next, delete the old copy of the now current version. */
@@ -1437,7 +1435,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		rpb->rpb_flags |= rpb_deleted;
 		rpb->rpb_flags &= ~rpb_delta;
 
-		replace_record(tdbb, rpb, stack, transaction);
+		replace_record(tdbb, rpb, &stack, transaction);
 	}
 
 /* Check to see if recursive revoke needs to be propogated */
@@ -2251,7 +2249,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 	org_rpb->rpb_flags &= ~rpb_delta;
 	org_rpb->rpb_flags |= new_rpb->rpb_flags & rpb_delta;
 
-	replace_record(tdbb, org_rpb, stack, transaction);
+	replace_record(tdbb, org_rpb, &stack, transaction);
 
 	if (!(transaction->tra_flags & TRA_system) &&
 		(transaction->tra_save_point) &&
@@ -2373,7 +2371,7 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, RecordSource* rsb,
 		org_rpb->rpb_length = org_record->rec_format->fmt_length;
 		org_rpb->rpb_flags |= rpb_delta;
 
-		replace_record(tdbb, org_rpb, stack, transaction);
+		replace_record(tdbb, org_rpb, &stack, transaction);
 
 		if (!(transaction->tra_flags & TRA_system) &&
 			(transaction->tra_save_point))
@@ -4497,7 +4495,7 @@ static Record* replace_gc_record(jrd_rel* relation, Record** gc_record, USHORT l
 
 static void replace_record(thread_db*		tdbb, 
 						   record_param*	rpb, 
-						   PageStack&		stack,
+						   PageStack*		stack,
 						   const jrd_tra*	transaction)
 {
 /**************************************
@@ -4668,7 +4666,7 @@ static void update_in_place(
 	org_rpb->rpb_format_number = new_rpb->rpb_format_number;
 
 	DEBUG;
-	replace_record(tdbb, org_rpb, stack, transaction);
+	replace_record(tdbb, org_rpb, &stack, transaction);
 	DEBUG;
 
 	org_rpb->rpb_address = address;

@@ -2043,7 +2043,7 @@ void DPM_rewrite_header( thread_db* tdbb, record_param* rpb)
 }
 
 
-void DPM_update( thread_db* tdbb, record_param* rpb, PageStack& stack,
+void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack,
 	const jrd_tra* transaction)
 {
 /**************************************
@@ -2079,8 +2079,12 @@ void DPM_update( thread_db* tdbb, record_param* rpb, PageStack& stack,
    replacement record. */
 
 	DEBUG
-	while (stack.notEmpty()) {
-		CCH_precedence(tdbb, &rpb->rpb_window, stack.pop());
+	if (stack)
+	{
+		while (stack->notEmpty()) 
+		{
+			CCH_precedence(tdbb, &rpb->rpb_window, stack->pop());
+		}
 	}
 
 	CCH_precedence(tdbb, &rpb->rpb_window, -rpb->rpb_transaction_nr);

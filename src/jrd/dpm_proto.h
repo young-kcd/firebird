@@ -60,7 +60,7 @@ void	DPM_scan_pages(Jrd::thread_db*);
 void	DPM_store(Jrd::thread_db*, Jrd::record_param*, Jrd::PageStack&, USHORT);
 SLONG	DPM_store_blob(Jrd::thread_db*, Jrd::blb*, Jrd::Record*);
 void	DPM_rewrite_header(Jrd::thread_db*, Jrd::record_param*);
-void	DPM_update(Jrd::thread_db*, Jrd::record_param*, Jrd::PageStack&, const Jrd::jrd_tra*);
+void	DPM_update(Jrd::thread_db*, Jrd::record_param*, Jrd::PageStack*, const Jrd::jrd_tra*);
 
 #endif // JRD_DPM_PROTO_H
 
