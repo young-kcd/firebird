@@ -273,8 +273,7 @@ USHORT GDS_VAL(dpb_length), SCHAR * dpb, SCHAR * expanded_filename)
 		comm->ips_buffers[commi].ips_flags = 0;
 	comm->ips_operation = op_attach;
 	ips = &comm->ips_operations.ips_op_object;
-	IPS_C_IN(comm, ips_name, IPS_ATTACH_NAME,
-			 expanded_filename, strlen(expanded_filename));
+	IPS_C_IN(comm, ips_name, IPS_ATTACH_NAME, file_name, l);
 	IPS_C_IN(comm, ips_dpb, IPS_ATTACH_DPB, dpb, dpb_length);
 	IPS_C_IN(comm, ips_expanded, IPS_ATTACH_EXPANDED,
 			 expanded_filename, strlen(expanded_filename));
