@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.36 2002-11-10 14:29:00 kkuznetsov Exp $
+$Id: inet.cpp,v 1.37 2002-11-12 12:16:43 eku Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -2734,9 +2734,6 @@ static int select_wait( PORT main_port, SLCT * selct)
 	TEXT msg[64];
 	SLONG delta_time;
 	struct timeval timeout;
-
-	timeout.tv_sec = SELECT_TIMEOUT;
-	timeout.tv_usec = 0;
 
 	for (;;)
 	{

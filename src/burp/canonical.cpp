@@ -28,7 +28,7 @@
  *
  */
 /*
-$Id: canonical.cpp,v 1.9 2002-11-04 13:57:09 eku Exp $
+$Id: canonical.cpp,v 1.10 2002-11-12 12:16:43 eku Exp $
 */
 
 #include "firebird.h"
@@ -1003,7 +1003,7 @@ static bool_t xdr_hyper(register XDR* xdrs, SINT64* pi64)
 /* clue, feel free to fix the cludge 'return FALSE' */
 	return FALSE;
 }
-#endif /* PLATFORM_SUPPLIES_XDR_HYPER */
+#endif /* HAVE_XDR_HYPER */
 
 
 } // extern "C"
