@@ -4824,9 +4824,6 @@ static PORT analyze(TEXT*	file_name,
 #endif
 
 #if defined(WIN_NT)
-	if (ISC_analyze_xnet(file_name, node_name))
-		return XNET_analyze(file_name, file_length, status_vector,
-							node_name, user_string, uv_flag);
 	if (ISC_analyze_pclan(file_name, node_name))
 		return WNET_analyze(file_name, file_length, status_vector,
 							node_name, user_string, uv_flag);
@@ -4994,9 +4991,6 @@ static PORT analyze_service(TEXT * service_name,
 #endif
 
 #if defined(WIN_NT)
-	if (ISC_analyze_xnet(service_name, node_name))
-		return XNET_analyze(service_name, service_length, status_vector,
-							node_name, user_string, uv_flag);
 	if (ISC_analyze_pclan(service_name, node_name))
 		return WNET_analyze(service_name, service_length, status_vector,
 							node_name, user_string, uv_flag);

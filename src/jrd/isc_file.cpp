@@ -472,43 +472,6 @@ int ISC_analyze_pclan(TEXT * expanded_name, TEXT * node_name)
 
 	return TRUE;
 }
-
-// dimitr: this is just a temporary stub
-int ISC_analyze_xnet(TEXT * expanded_name, TEXT * node_name)
-{
-/**************************************
- *
- *	I S C _ a n a l y z e _ x n e t
- *
- **************************************
- *
- * Functional description
- *	Analyze a filename for a XNET mark on the front.
- *	If one is found, compute the residual
- *	file name, and return TRUE.  Otherwise return FALSE.
- *
- **************************************/
-	TEXT *p, *q;
-
-	if (expanded_name[0] != '$')
-		return FALSE;
-
-	p = node_name;
-	for (q = expanded_name + 1; *q && *q != '$';)
-		*p++ = *q++;
-	*p = 0;
-
-	if (*q == '$')
-		q++;
-
-	for (p = expanded_name; *p++ = *q++;);
-
-	if (stricmp(node_name, "xnet"))
-		return FALSE;
-
-	*node_name = 0;
-	return TRUE;
-}
 #endif	// WIN_NT
 
 
