@@ -5829,7 +5829,6 @@ static BOOLEAN write_page(
 	BOOLEAN result;
 	ISC_STATUS saved_status;
 	FIL file;
-	ULONG diff_page;
 
 	if (bdb->bdb_flags & BDB_not_valid) {
 		*status++ = gds_arg_gds;

@@ -36,8 +36,9 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.1 2003-09-08 20:23:38 skidder Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.2 2003-09-08 21:44:43 skidder Exp $ */
 
+#include <windows.h>
 #include <process.h>
 #include <signal.h>
 #include "firebird.h"
@@ -80,8 +81,9 @@ static struct opn_event opn_events[MAX_OPN_EVENTS];
 static USHORT opn_event_count;
 static ULONG opn_event_clock;
 
-static void (*system_overflow_handler)(int, int);
-static SLONG overflow_handler(int, int) throw();
+static void (*system_overflow_handler)(int);
+static void cleanup(void *);
+static void overflow_handler(int, int) throw();
 
 // Not thread-safe 
 
@@ -102,8 +104,9 @@ void DLL_EXPORT ISC_enter(void)
  *
  **************************************/  
 /* Setup overflow handler - with chaining to any user handler */
-	void (*temp)(int, int) = signal(SIGFPE, overflow_handler);
-	if (temp != overflow_handler)
+	void (*temp)(int) = signal(SIGFPE,
+		reinterpret_cast<void(*)(int)>(overflow_handler));
+	if (temp != reinterpret_cast<void(*)(int)>(overflow_handler))
 		system_overflow_handler = temp;
 
 #ifdef DEBUG_FPE_HANDLING
@@ -217,7 +220,8 @@ void DLL_EXPORT ISC_signal_init(void)
 
 	THD_MUTEX_INIT(&sig_mutex);
 
-	system_overflow_handler = signal(SIGFPE, overflow_handler);
+	system_overflow_handler =
+		signal(SIGFPE, reinterpret_cast<void(*)(int)>(overflow_handler));
 
 #endif /* REQUESTER */
 
@@ -238,11 +242,7 @@ static void cleanup(void *arg)
  *	Module level cleanup handler.
  *
  **************************************/
-	signals = NULL;
-
 	THD_MUTEX_DESTROY(&sig_mutex);
-
-	pending_signals = 0;
 
 	process_id = 0;
 
@@ -258,7 +258,7 @@ static void cleanup(void *arg)
 #endif
 
 #ifndef REQUESTER
-static void overflow_handler(int signal, int code)
+static void overflow_handler(int signal, int code) throw()
 {
 /**************************************
  *
@@ -293,9 +293,10 @@ static void overflow_handler(int signal, int code)
 		   the signal to other handlers */
 		if (system_overflow_handler != SIG_DFL &&
 			system_overflow_handler != SIG_IGN &&
-			system_overflow_handler != SIG_HOLD)
+			system_overflow_handler != SIG_SGE &&
+			system_overflow_handler != SIG_ACK)
 		{
-			system_overflow_handler(signal, code);
+			reinterpret_cast<void(*)(int,int)>(system_overflow_handler)(signal, code);
 		}
 	}
 }

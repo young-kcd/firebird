@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.70 2003-09-08 20:23:39 skidder Exp $
+$Id: lock.cpp,v 1.71 2003-09-08 21:44:44 skidder Exp $
 */
 
 #include "firebird.h"
@@ -1785,7 +1785,7 @@ static void blocking_action( void* _owner_offset)
  *		   been done.
  *
  **************************************/
-	PTR owner_offset = (PTR)(U_IPTR)_owner_offset;
+	PTR owner_offset = (PTR)(IPTR)_owner_offset;
 
 /* Ignore signals that occur when executing in lock manager
    or when there is no owner block set up */
@@ -1933,7 +1933,7 @@ static void THREAD_ROUTINE blocking_action_thread( PTR * owner_offset_ptr)
 		if ((ret != WAIT_OBJECT_0 && ret != WAIT_ABANDONED) || !*owner_offset_ptr ||
 			owner->own_process_id != LOCK_pid || owner->own_owner_id == 0)
 			break;
-		blocking_action(*owner_offset_ptr);
+		blocking_action((void*)(IPTR)*owner_offset_ptr);
 		AST_EXIT;
 	}
 
@@ -1970,7 +1970,7 @@ static void THREAD_ROUTINE blocking_action_thread( PTR * owner_offset_ptr)
 			!LOCK_owner->own_owner_id) break;
 
 		value = ISC_event_clear(LOCK_owner->own_blocking);
-		blocking_action(*owner_offset_ptr);
+		blocking_action((void*)(IPTR)*owner_offset_ptr);
 		AST_EXIT;
 		event_ptr = LOCK_owner->own_blocking;
 		ISC_event_wait(1, &event_ptr, &value, 0, NULL, 0);

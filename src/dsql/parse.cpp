@@ -369,7 +369,7 @@
 
 /* Can't include ../jrd/err_proto.h here because it pulls jrd.h. */
 #if !defined(JRD_ERR_PROTO_H)
-TEXT *DLL_EXPORT ERR_string(const TEXT*, int);
+const TEXT *DLL_EXPORT ERR_string(const TEXT*, int);
 #endif
 
 ASSERT_FILENAME

@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.cpp,v 1.8 2003-09-08 20:23:35 skidder Exp $
+ *  $Id: nbak.cpp,v 1.9 2003-09-08 21:44:41 skidder Exp $
  *
  */
 
@@ -1153,7 +1153,7 @@ bool BackupManager::actualize_state() throw() {
 			NBAK_TRACE(("Open difference file"));
 			diff_file = PIO_open(database, diff_name, strlen(diff_name), 0, 
 								 NULL, diff_name, strlen(diff_name));
-		} catch(const Firebird::status_exception& ex) {
+		} catch(const Firebird::status_exception&) {
 #ifdef SUPERSERVER
 			adjust_state_lock->leave();
 #endif
