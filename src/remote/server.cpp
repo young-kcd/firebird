@@ -577,8 +577,11 @@ static BOOLEAN accept_connection( PORT port, P_CNCT * connect, PACKET* send)
 			 || protocol->p_cnct_version == PROTOCOL_SCROLLABLE_CURSORS
 #endif
 			) &&
-			(protocol->p_cnct_architecture == arch_generic ||
-			 protocol->p_cnct_architecture == ARCHITECTURE) &&
+			// (protocol->p_cnct_architecture == arch_generic ||
+			// protocol->p_cnct_architecture == ARCHITECTURE) &&
+			//
+			// dimitr: here we accept only asymmetric protocols
+			protocol->p_cnct_architecture == arch_generic &&
 			protocol->p_cnct_weight >= weight) {
 			weight = protocol->p_cnct_weight;
 			version = protocol->p_cnct_version;
@@ -599,7 +602,6 @@ static BOOLEAN accept_connection( PORT port, P_CNCT * connect, PACKET* send)
 			port->port_protocol);
 	ALLR_free(port->port_version);
 	port->port_version = REMOTE_make_string(buffer);
-
 
 	if (architecture == ARCHITECTURE)
 		port->port_flags |= PORT_symmetric;
