@@ -941,6 +941,4 @@ extern struct tgbl *gdgbl;
 }	/* extern "C" */
 #endif
 
-#define GDS_VERSION "Firebird-W32-V1.0"
-
 #endif /* _BURP_BURP_H_ */
