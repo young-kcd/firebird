@@ -2356,28 +2356,10 @@ void API_ROUTINE gds__prefix(TEXT *resultString, TEXT *file)
  *	the enviroment variable FIREBIRD if it is set.
  *
  **************************************/
-#ifdef DARWIN   /* Variables needed for Darwin specific code */
-	CFBundleRef     ibaseBundle;
-	CFURLRef        msgFileUrl;
-	CFStringRef     msgFilePath;
-#endif      
-
 	resultString[0] = 0;
 
 	if (ib_prefix == NULL) {
 		if (!(ib_prefix = getenv(FB_ENV)) || ib_prefix[0] == 0) {
-#ifdef DARWIN
-			if ((ibaseBundle = CFBundleGetBundleWithIdentifier(
-				CFSTR(DARWIN_FRAMEWORK_ID)) ))
-			if ((msgFileUrl = CFBundleCopyResourceURL(ibaseBundle,
-				CFSTR(DARWIN_GEN_DIR), NULL, NULL)))
-			if ((msgFilePath = CFURLCopyFileSystemPath(msgFileUrl,
-					kCFURLPOSIXPathStyle)))
-			if ((CFStringGetCString(msgFilePath, ib_prefix_val,
-				MAXPATHLEN, kCFStringEncodingMacRoman ))
-			) { }
-			else
-#endif
 			{
               // Try and get value from config file
               const char *regPrefix = Config::getRootDirectory();
