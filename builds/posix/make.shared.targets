@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: make.shared.targets,v 1.10 2003-04-10 06:34:24 eku Exp $
+#  $Id: make.shared.targets,v 1.11 2003-04-10 07:50:03 eku Exp $
 #
 
 
@@ -80,13 +80,13 @@ $(SRC)/gpre/gpre_meta.cpp:  $(SRC)/gpre/gpre_meta.epp
 buildb: security.fdb yachts.lnk help.fdb
 
 security.fdb : $(ISC_GDB)
-	-$(LN_S) -f $(ISC_GDB) $@
+	-$(LN) -f $(ISC_GDB) $@
 
 yachts.lnk: 
-	-$(LN_S) -f $(SRC_ROOT)/refDatabases/empty.fdb yachts.lnk
+	-$(LN) -f $(SRC_ROOT)/refDatabases/empty.fdb yachts.lnk
 
 help.fdb:
-	-$(LN_S) -f $(SRC_ROOT)/refDatabases/help.fdb help.fdb
+	-$(LN) -f $(SRC_ROOT)/refDatabases/help.fdb help.fdb
 
 
 
