@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.39 2003-09-01 07:49:57 brodsom Exp $
+  $Id: isql.epp,v 1.40 2003-09-05 11:25:53 brodsom Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -159,7 +159,7 @@ typedef struct ri_actions {
 static SSHORT add_row(TEXT *);
 static SSHORT blobedit(TEXT *, TEXT **);
 static void col_check(TEXT *, SSHORT *);
-static void copy_str(TEXT **, TEXT **, BOOLEAN *, TEXT *, TEXT *, SSHORT);
+static void copy_str(TEXT **, TEXT **, bool *, TEXT *, TEXT *, SSHORT);
 static SSHORT copy_table(TEXT *, TEXT *, TEXT *);
 static SSHORT create_db(TEXT *, TEXT *);
 static void do_isql(void);
@@ -169,13 +169,13 @@ static int end_trans(void);
 static SSHORT escape(TEXT *);
 static SSHORT frontend(TEXT *);
 static SSHORT get_statement(TEXT **, USHORT *, TEXT *);
-static BOOLEAN get_numeric(UCHAR *, USHORT, SSHORT *, SINT64 *);
+static bool get_numeric(UCHAR *, USHORT, SSHORT *, SINT64 *);
 static void get_str(TEXT *, TEXT **, TEXT **, SSHORT *);
 static SSHORT print_sets(void);
 static SSHORT help(TEXT *);
 static SSHORT input(TEXT *);
-static BOOLEAN isyesno(TEXT *);
-static SSHORT newdb(TEXT *, TEXT *, TEXT *, TEXT *, TEXT *, BOOLEAN);
+static bool isyesno(TEXT *);
+static SSHORT newdb(TEXT *, TEXT *, TEXT *, TEXT *, TEXT *, bool);
 static SSHORT newoutput(TEXT *);
 static SSHORT newsize(TEXT *, TEXT *);
 static SSHORT newtrans(TEXT *);
@@ -187,7 +187,7 @@ static int print_line(XSQLDA *, SLONG *, TEXT *);
 static int process_statement(TEXT *, XSQLDA **);
 static void CLIB_ROUTINE query_abort(void);
 static void strip_quotes(TEXT *, TEXT *);
-static SSHORT do_set_command(TEXT *, SSHORT *);
+static SSHORT do_set_command(TEXT *, bool *);
 #ifdef DEV_BUILD
 static UCHAR *sqltype_to_string(USHORT);
 #endif
@@ -196,17 +196,17 @@ XSQLDA *sqlda;
 XSQLDA **sqldap;
 USHORT dialect_spoken = 0;
 USHORT requested_SQL_dialect = SQL_DIALECT_V6;
-BOOLEAN connecting_to_pre_v6_server = FALSE;
-SSHORT V45 = FALSE;
-SSHORT V4 = FALSE;
-SSHORT V33 = FALSE;
+bool connecting_to_pre_v6_server = false;
+bool V45 = false;
+bool V4 = false;
+bool V33 = false;
 USHORT major_ods = 0;
 USHORT minor_ods = 0;
 SCHAR server_version [256];
-SSHORT Quiet;
-SSHORT Version_info = FALSE;
+bool Quiet;
+bool Version_info = false;
 #if defined (WIN95)
-BOOL fAnsiCP;
+bool fAnsiCP;
 #endif
 
 static COLLIST *Cols = NULL;
@@ -214,27 +214,27 @@ static SCHAR statistics[256];
 static INDEV Filelist;
 static TEXT Tmpfile[128];
 static int Abort_flag = 0;
-static SSHORT Echo = FALSE;
-static SSHORT Time_display = FALSE;
-static SSHORT Sqlda_display = FALSE;
+static bool Echo = false;
+static bool Time_display = false;
+static bool Sqlda_display = false;
 static SSHORT Exit_value;
-static BOOLEAN Continuation = FALSE;
-static BOOLEAN Interactive = TRUE;
-static BOOLEAN Input_file = FALSE;
+static bool Continuation = false;
+static bool Interactive = true;
+static bool Input_file = false;
 static SSHORT Pagelength = 20;
-static SSHORT Stats = FALSE;
-static SSHORT Autocommit = TRUE;	/* Commit ddl */
-static SSHORT Warnings = TRUE;	/* Print warnings */
+static bool Stats = false;
+static bool Autocommit = true; // Commit ddl
+static bool Warnings = true; // Print warnings
 #ifdef SCROLLABLE_CURSORS
-static SSHORT Autofetch = TRUE;	/* automatically fetch all records */
+static bool Autofetch = true; // automatically fetch all records
 static USHORT fetch_direction = 0;
 static SLONG fetch_offset = 1;
 #endif
 static SSHORT Doblob = 1;		/* Default to printing only text types */
-static SSHORT List = FALSE;
-static SSHORT Docount = FALSE;
-static SSHORT Plan = FALSE;
-static SSHORT Planonly = FALSE;
+static bool List = false;
+static bool Docount = false;
+static bool Plan = false;
+static bool Planonly = false;
 static int Termlen = 0;
 static SCHAR ISQL_charset[MAXCHARSET_LENGTH] = { 0 };
 static IB_FILE *Diag;
@@ -244,11 +244,11 @@ static TEXT *sql_prompt = "SQL> ";
 static TEXT *fetch_prompt = "FETCH> ";
 #endif
 
-static BOOLEAN global_psw = FALSE;
-static BOOLEAN global_usr = FALSE;
-static BOOLEAN global_role = FALSE;
-static BOOLEAN global_numbufs = FALSE;
-static BOOLEAN have_trans = FALSE;	/* translation of word "Yes" */
+static bool global_psw = false;
+static bool global_usr = false;
+static bool global_role = false;
+static bool global_numbufs = false;
+static bool have_trans = false; // translation of word "Yes"
 static TEXT yesword[MSG_LENGTH];
 static TEXT Print_buffer[PRINT_BUFFER_LENGTH];
 
@@ -304,7 +304,7 @@ static UCHAR	batch_tpb [] = {isc_tpb_version3, isc_tpb_read,
 /* InterBase Performance Statistic format Variables */
 
 static struct perf perf_before, perf_after;
-static BOOLEAN have_report = FALSE;	/* translation of report strings */
+static bool have_report = false; // translation of report strings 
 static TEXT report_1[MSG_LENGTH + MSG_LENGTH];
 #ifdef NOT_USED_OR_REPLACED
 static TEXT report_2[MSG_LENGTH];
@@ -338,8 +338,8 @@ static IB_FILE * create_temp_file(TEXT * string, TEXT * expanded_string)
 #endif
 
 
-
-int CLIB_ROUTINE main(int argc, char* argv[])
+int CLIB_ROUTINE main(int argc,
+					  char* argv[])
 {
 /**************************************
  *
@@ -360,9 +360,9 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 
 		ulConsoleCP = GetConsoleCP();
 		if (ulConsoleCP == GetACP())
-			fAnsiCP = TRUE;
+			fAnsiCP = true;
 		else {
-			fAnsiCP = FALSE;
+			fAnsiCP = false;
 			if (ulConsoleCP != GetOEMCP() && Warnings) {
 				ISQL_printf(Out,
 							(TEXT*) "WARNING: The current codepage is not supported.  Any use of any\n"
@@ -378,7 +378,8 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 }
 
 
-SSHORT ISQL_main(int argc, char *argv[])
+SSHORT ISQL_main(int argc,
+				 char *argv[])
 {
 /**************************************
  *
@@ -449,11 +450,11 @@ SSHORT ISQL_main(int argc, char *argv[])
 		if (*Db_name) {
 			/* Let's use user and password if provided.
 			   This should solve bug #112263 FSG 28.Jan.2001 */
-			newdb(Db_name, User, Password, Numbufs, Role, FALSE);
+			newdb(Db_name, User, Password, Numbufs, Role, false);
 
 			Exit_value = EXTRACT_ddl(SQL_objects, tabname);
 
-            ISQL_disconnect_database(TRUE);
+            ISQL_disconnect_database(true);
 			// isc_detach_database(isc_status, &DB);
 		}
 		break;
@@ -461,14 +462,14 @@ SSHORT ISQL_main(int argc, char *argv[])
 	case EXTRACTALL:
 
 		if (*Db_name) {
-            Interactive = FALSE;
+            Interactive = false;
 			/* Let's use user and password if provided.
 			   This should solve bug #112263 FSG 28.Jan.2001 */
-			newdb(Db_name, User, Password, Numbufs, Role, FALSE);
+			newdb(Db_name, User, Password, Numbufs, Role, false);
 
 			Exit_value = EXTRACT_ddl(ALL_objects, tabname);
 
-            ISQL_disconnect_database (TRUE);
+            ISQL_disconnect_database (true);
 			//isc_detach_database(isc_status, &DB);
 		}
 		break;
@@ -513,7 +514,7 @@ SSHORT ISQL_main(int argc, char *argv[])
 }
 
 
-void ISQL_array_dimensions( TEXT * fieldname)
+void ISQL_array_dimensions(TEXT * fieldname)
 {
 /**************************************
  *
@@ -592,7 +593,7 @@ SCHAR *ISQL_blankterm(TEXT * str)
 }
 
 
-BOOLEAN ISQL_dbcheck(void)
+bool ISQL_dbcheck(void)
 {
 /**************************************
  *
@@ -615,10 +616,10 @@ BOOLEAN ISQL_dbcheck(void)
 		}
 		else
 			Exit_value = FINI_ERROR;
-		return FALSE;
+		return false;
 	}
 	else
-		return TRUE;
+		return true;
 }
 
 static std::string userPrompt;
@@ -627,7 +628,7 @@ static int getColumn = -1;
 
 
 
-void ISQL_prompt( TEXT * string)
+void ISQL_prompt(TEXT * string)
 {
 /**************************************
  *
@@ -715,7 +716,9 @@ int getNextInputChar() {
     return  lastInputLine[ getColumn++];
 }
 
-void ISQL_copy_SQL_id( TEXT * in_str, TEXT * output_str, TEXT escape_char)
+void ISQL_copy_SQL_id(TEXT * in_str,
+					  TEXT * output_str,
+					  TEXT escape_char)
 {
 /**************************************
  *
@@ -740,18 +743,18 @@ void ISQL_copy_SQL_id( TEXT * in_str, TEXT * output_str, TEXT escape_char)
 
     if (escape_char == DBL_QUOTE) {
         /* Cannot rely on ANSI functions that may be localized. */
-        BOOLEAN need_quotes = *in_str < 'A' || *in_str > 'Z';
+        bool need_quotes = *in_str < 'A' || *in_str > 'Z';
         q1 = output_str;
         for (p1 = in_str; *p1 && !need_quotes; ++p1, ++q1) {
             if ((*p1 < 'A' || *p1 > 'Z') && (*p1 < '0' || *p1 > '9') 
                 && *p1 != '_' && *p1 != '$') {
-                need_quotes = TRUE;
+                need_quotes = true;
             }
             *q1 = *p1;
         }
         if (!need_quotes) {
             if (KEYWORD_stringIsAToken(in_str)) {
-                need_quotes = TRUE;
+                need_quotes = true;
             }
 
             if (!need_quotes) {
@@ -775,7 +778,7 @@ void ISQL_copy_SQL_id( TEXT * in_str, TEXT * output_str, TEXT escape_char)
 }
 
 
-void ISQL_errmsg( ISC_STATUS * status)
+void ISQL_errmsg(ISC_STATUS * status)
 {
 /**************************************
  *
@@ -823,7 +826,7 @@ void ISQL_errmsg( ISC_STATUS * status)
 }
 
 
-void ISQL_warning( ISC_STATUS * status)
+void ISQL_warning(ISC_STATUS * status)
 {
 /**************************************
  *
@@ -965,7 +968,8 @@ SSHORT ISQL_get_field_length(TEXT * field_name)
 
 void ISQL_get_character_sets(SSHORT char_set_id,
 							 SSHORT collation,
-							 USHORT collate_only, TEXT * string)
+							 bool collate_only,
+							 TEXT * string)
 {
 /**************************************
  *
@@ -977,7 +981,7 @@ void ISQL_get_character_sets(SSHORT char_set_id,
  *
  **************************************/
 #ifdef	DEV_BUILD
-	BOOLEAN found = FALSE;
+	bool found = false;
 #endif
 
 	string[0] = 0;
@@ -998,7 +1002,7 @@ void ISQL_get_character_sets(SSHORT char_set_id,
             SORTED BY COL.RDB$COLLATION_NAME, CST.RDB$CHARACTER_SET_NAME
 	
 #ifdef DEV_BUILD
-            found = TRUE;
+            found = true;
 #endif
             ISQL_blankterm (CST.RDB$CHARACTER_SET_NAME);
             ISQL_blankterm (COL.RDB$COLLATION_NAME);
@@ -1034,7 +1038,7 @@ void ISQL_get_character_sets(SSHORT char_set_id,
             SORTED BY CST.RDB$CHARACTER_SET_NAME
             
 #ifdef DEV_BUILD
-            found = TRUE;
+            found = true;
 #endif
             ISQL_blankterm (CST.RDB$CHARACTER_SET_NAME);
             
@@ -1057,7 +1061,8 @@ void ISQL_get_character_sets(SSHORT char_set_id,
 
 
 void ISQL_get_default_source(TEXT * rel_name,
-							 TEXT * field_name, ISC_QUAD * blob_id)
+							 TEXT * field_name,
+							 ISC_QUAD * blob_id)
 {
 /**************************************
  *
@@ -1120,7 +1125,8 @@ void ISQL_get_default_source(TEXT * rel_name,
 
 
 SSHORT ISQL_get_index_segments(TEXT * segs,
-							   TEXT * indexname, BOOLEAN delimited_yes)
+							   TEXT * indexname,
+							   bool delimited_yes)
 {
 /**************************************
  *
@@ -1178,8 +1184,9 @@ SSHORT ISQL_get_index_segments(TEXT * segs,
 }
 
 
-BOOLEAN ISQL_get_base_column_null_flag(TEXT * view_name,
-									   SSHORT view_context, TEXT * base_field)
+bool ISQL_get_base_column_null_flag(TEXT * view_name,
+									SSHORT view_context,
+									TEXT * base_field)
 {
 /**************************************
  *
@@ -1192,9 +1199,9 @@ BOOLEAN ISQL_get_base_column_null_flag(TEXT * view_name,
  *	view_context and the base_field of the view column.
  *
  **************************************/
-	BOOLEAN null_flag;
-	BOOLEAN done = FALSE;
-	BOOLEAN error = FALSE;
+	bool null_flag;
+	bool done = false;
+	bool error = false;
 	SSHORT save_view_context;
 	BASED_ON RDB$RELATION_FIELDS.RDB$RELATION_NAME save_view_name,
 		save_base_field;
@@ -1203,13 +1210,13 @@ BOOLEAN ISQL_get_base_column_null_flag(TEXT * view_name,
 	strcpy(save_base_field, base_field);
 	save_view_context = view_context;
 
-	null_flag = TRUE;
+	null_flag = true;
 
 /* Transaction for all frontend commands */
 	if (DB && !gds_trans)
 		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL)) {
 			ISQL_errmsg(isc_status);
-			return FALSE;
+			return false;
 		};
 
 /* 
@@ -1235,8 +1242,8 @@ BOOLEAN ISQL_get_base_column_null_flag(TEXT * view_name,
 	
             if (NEWRFR.RDB$BASE_FIELD.NULL) {
                 if (NEWRFR.RDB$NULL_FLAG == 1)
-                null_flag = FALSE;
-                done = TRUE;
+                null_flag = false;
+                done = true;
             }
             else {
                 strcpy (save_view_name, NEWRFR.RDB$RELATION_NAME);
@@ -1245,14 +1252,15 @@ BOOLEAN ISQL_get_base_column_null_flag(TEXT * view_name,
             }   
 	    END_FOR
 		ON_ERROR 
-            error = TRUE;
+            error = true;
 		END_ERROR;
 	}
 
 	return null_flag;
 }
 
-BOOLEAN ISQL_get_null_flag(TEXT * rel_name, TEXT * field_name)
+bool ISQL_get_null_flag(TEXT * rel_name,
+						TEXT * field_name)
 {
 /**************************************
  *
@@ -1266,17 +1274,17 @@ BOOLEAN ISQL_get_null_flag(TEXT * rel_name, TEXT * field_name)
  *	We are passed the relation name and the relation_field name
  *  	For domains, the relation name is null.
  **************************************/
-	BOOLEAN null_flag;
+	bool null_flag;
 
 	ISQL_blankterm(field_name);
 
-	null_flag = TRUE;
+	null_flag = true;
 
 /* Transaction for all frontend commands */
 	if (DB && !gds_trans)
 		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL)) {
 			ISQL_errmsg(isc_status);
-			return FALSE;
+			return false;
 		};
 
 	if (rel_name) {
@@ -1287,7 +1295,7 @@ BOOLEAN ISQL_get_null_flag(TEXT * rel_name, TEXT * field_name)
             RFR.RDB$FIELD_NAME EQ field_name 
             
             if (FLD.RDB$NULL_FLAG == 1) 
-                null_flag = FALSE;
+                null_flag = false;
             else {
                 
                 /* If RDB$BASE_FIELD is not null then it is a view column */
@@ -1297,7 +1305,7 @@ BOOLEAN ISQL_get_null_flag(TEXT * rel_name, TEXT * field_name)
                     /* Simple column. Did user define it not null?  */
                     
                     if (RFR.RDB$NULL_FLAG == 1)
-                        null_flag = FALSE;
+                        null_flag = false;
                 }
                 else
                     null_flag = ISQL_get_base_column_null_flag (rel_name, 
@@ -1316,7 +1324,7 @@ BOOLEAN ISQL_get_null_flag(TEXT * rel_name, TEXT * field_name)
             FLD.RDB$FIELD_NAME EQ field_name
 	
             if (FLD.RDB$NULL_FLAG == 1)
-                null_flag = FALSE;
+                null_flag = false;
 	
 	    END_FOR
 		ON_ERROR 
@@ -1328,7 +1336,8 @@ BOOLEAN ISQL_get_null_flag(TEXT * rel_name, TEXT * field_name)
 	return null_flag;
 }
 
-void ISQL_disconnect_database( int nQuietMode)
+
+void ISQL_disconnect_database(bool nQuietMode)
  {
 /**************************************
  *
@@ -1342,7 +1351,6 @@ void ISQL_disconnect_database( int nQuietMode)
  *	out the DB handle.
  *
  **************************************/
-	extern SSHORT Quiet;
 
 /* Ignore error msgs during disconnect */
 	Quiet = nQuietMode;
@@ -1370,7 +1378,7 @@ void ISQL_disconnect_database( int nQuietMode)
     }
 
 /* Enable error msgs */
-	Quiet = FALSE;
+	Quiet = false;
 
 /* Zero database handle and transaction handles */
 	Stmt = NULL;
@@ -1384,7 +1392,7 @@ void ISQL_disconnect_database( int nQuietMode)
 }
 
 
-BOOLEAN ISQL_is_domain(TEXT * field_name)
+bool ISQL_is_domain(TEXT * field_name)
 {
 /**************************************
  *
@@ -1395,13 +1403,13 @@ BOOLEAN ISQL_is_domain(TEXT * field_name)
  *	Determine if a field in rdb$fields is a domain,
  *
  **************************************/
-	BOOLEAN is_domain = FALSE;
+	bool is_domain = false;
 
 /* Transaction for all frontend commands */
 	if (DB && !gds_trans)
 		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL)) {
 			ISQL_errmsg(isc_status);
-			return FALSE;
+			return false;
 		};
 
 	FOR FLD IN RDB$FIELDS WITH
@@ -1410,7 +1418,7 @@ BOOLEAN ISQL_is_domain(TEXT * field_name)
 	    if (!(strncmp (FLD.RDB$FIELD_NAME, "RDB$", 4) == 0 &&
               isdigit (FLD.RDB$FIELD_NAME[4]) &&
               FLD.RDB$SYSTEM_FLAG != 1))
-            is_domain = TRUE;
+            is_domain = true;
 	
 	END_FOR
     ON_ERROR 
@@ -1422,7 +1430,7 @@ BOOLEAN ISQL_is_domain(TEXT * field_name)
 }
 
 
-void ISQL_make_upper( UCHAR * str)
+void ISQL_make_upper(UCHAR * str)
 {
 /**************************************
  *
@@ -1447,7 +1455,10 @@ void ISQL_make_upper( UCHAR * str)
 void ISQL_msg_get(USHORT number,
 				  TEXT * msg,
 				  TEXT * arg1,
-				  TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
+				  TEXT * arg2,
+				  TEXT * arg3,
+				  TEXT * arg4,
+				  TEXT * arg5)
 {
 /**************************************
  *
@@ -1466,7 +1477,9 @@ void ISQL_msg_get(USHORT number,
 
 
 void ISQL_print_validation(IB_FILE * fp,
-						   ISC_QUAD * blobid, SSHORT flag, FRBRD * trans)
+						   ISC_QUAD * blobid,
+						   SSHORT flag,
+						   FRBRD * trans)
 {
 /**************************************
  *
@@ -1486,7 +1499,8 @@ void ISQL_print_validation(IB_FILE * fp,
 	FRBRD *blob;
 	USHORT length;
 	TEXT *buffer, *p;
-	SSHORT issql = FALSE, firsttime = TRUE;
+	bool issql = false;
+	bool firsttime = true;
 
 /* Don't bother with null blobs */
 
@@ -1514,7 +1528,7 @@ void ISQL_print_validation(IB_FILE * fp,
 			while (isspace(*p))
 				p++;
 			if (*p == '(')
-				issql = TRUE;
+				issql = true;
 		}
 		else {
 			/* Validation SQL syntax correction */
@@ -1522,10 +1536,10 @@ void ISQL_print_validation(IB_FILE * fp,
 			while (isspace(*p))
 				p++;
 			if (!strncmp(p, "check", 5) || !strncmp(p, "CHECK", 5))
-				issql = TRUE;
+				issql = true;
 		}
 		if (firsttime) {
-			firsttime = FALSE;
+			firsttime = false;
 			if (!issql) {
 				sprintf(Print_buffer, "%s ", (flag ? "/* " : "("));
 				ISQL_printf(fp, Print_buffer);
@@ -1549,7 +1563,8 @@ void ISQL_print_validation(IB_FILE * fp,
 }
 
 
-void ISQL_printf( IB_FILE * fp, TEXT * buffer)
+void ISQL_printf(IB_FILE * fp,
+				 TEXT * buffer)
 {
 /**************************************
  *
@@ -1583,7 +1598,8 @@ static SSHORT add_row(TEXT * tabname)
  *	tabname -- Name of table to insert into
  *
  **************************************/
-	SSHORT n_cols, length, type, nullable, i, j, i_cols, done;
+	SSHORT n_cols, length, type, nullable, i, j, i_cols;
+	bool done;
 	SCHAR string[BUFFER_LENGTH120];
 	SCHAR name[WORDLENGTH];
 	// SCHAR buffer[BUFFER_LENGTH512];
@@ -1719,7 +1735,7 @@ static SSHORT add_row(TEXT * tabname)
 					infobuf, NULL, NULL, NULL, NULL, NULL);
 	STDERROUT(infobuf, 1);
 
-	done = FALSE;
+	done = false;
 	while (!done) {
 		nullp = nullind;
 		for (i = 0, var = sqlda->sqlvar; i < n_cols && !done; var++, i++) {
@@ -1761,7 +1777,7 @@ static SSHORT add_row(TEXT * tabname)
             //            if (!ib_fgets(buffer, BUFFER_LENGTH512, ib_stdin)
             //                || !strlen(buffer)) {
             if (lastInputLine == NULL || strlen(lastInputLine) == 0) {
-                done = TRUE;
+                done = true;
                 break;
             }
 
@@ -1807,7 +1823,7 @@ static SSHORT add_row(TEXT * tabname)
 
 					if (!res) {
 						STDERROUT("Unable to load file", 1);
-						done = TRUE;
+						done = true;
 					}
 
 					ivar->sqldata = (SCHAR *) blobid;
@@ -1817,7 +1833,7 @@ static SSHORT add_row(TEXT * tabname)
 					fvalue = (float *) ISQL_ALLOC(sizeof(float));
 					if (sscanf(lastInputLine, "%g", fvalue) != 1) {
 						STDERROUT("Input parsing problem", 1);
-						done = TRUE;
+						done = true;
 					}
 					ivar->sqldata = (SCHAR *) fvalue;
 					break;
@@ -1826,7 +1842,7 @@ static SSHORT add_row(TEXT * tabname)
 					dvalue = (double *) ISQL_ALLOC(sizeof(double));
 					if (sscanf(lastInputLine, "%lg", dvalue) != 1) {
 						STDERROUT("Input parsing problem", 1);
-						done = TRUE;
+						done = true;
 					}
 					ivar->sqldata = (SCHAR *) dvalue;
 					break;
@@ -1837,7 +1853,7 @@ static SSHORT add_row(TEXT * tabname)
 						ISQL_msg_get(TIME_ERR, msg, lastInputLine, NULL, NULL, NULL,
 									 NULL);
 						STDERROUT(msg, 1);	/* Bad date %s\n */
-						done = TRUE;
+						done = true;
 					}
 					else {
 						ULONG date[2];
@@ -1856,7 +1872,7 @@ static SSHORT add_row(TEXT * tabname)
 						ISQL_msg_get(DATE_ERR, msg, lastInputLine, NULL, NULL, NULL,
 									 NULL);
 						STDERROUT(msg, 1);	/* Bad date %s\n */
-						done = TRUE;
+						done = true;
 					}
 					else {
 						ULONG date[2];
@@ -1905,9 +1921,9 @@ static SSHORT add_row(TEXT * tabname)
 					}
 					if ((dscale = var->sqlscale) < 0) {
 						SSHORT lscale = 0;
-						if (get_numeric((UCHAR*) lastInputLine, length, &lscale, &n) != TRUE) {
+						if (get_numeric((UCHAR*) lastInputLine, length, &lscale, &n) != true) {
 							STDERROUT("Input parsing problem", 1);
-							done = TRUE;
+							done = true;
 						}
 						else {
 							dscale = var->sqlscale - lscale;
@@ -1917,7 +1933,7 @@ static SSHORT add_row(TEXT * tabname)
 										"input error: input scale %d exceeds the field's scale %d",
 										-lscale, -var->sqlscale);
 								STDERROUT(err_buf, 1);
-								done = TRUE;
+								done = true;
 							}
 							while (dscale++ < 0)
 								n *= 10;
@@ -1926,7 +1942,7 @@ static SSHORT add_row(TEXT * tabname)
 					/* sscanf assumes an 64-bit integer target */
 					else if (sscanf(lastInputLine, "%" QUADFORMAT "d", &n) != 1) {
 						STDERROUT("Input parsing problem", 1);
-						done = TRUE;
+						done = true;
 					}
 					if (type == SQL_INT64)
 						*pi64 = n;
@@ -1937,7 +1953,7 @@ static SSHORT add_row(TEXT * tabname)
 					break;
 
 				default:
-					done = TRUE;
+					done = true;
 					STDERROUT("Unexpected SQLTYPE in add_row()", 1);
 					break;
 				}
@@ -1945,9 +1961,9 @@ static SSHORT add_row(TEXT * tabname)
 		if (!done) {
 			/* having completed all columns, try the insert statement with the sqlda */
 
-			if (isc_dsql_exec_immed2
-				(isc_status, &DB, &M__trans, 0, insertstring, SQL_dialect,
-				 isqlda, NULL)) {
+			if (isc_dsql_exec_immed2(isc_status, &DB, &M__trans, 0, 
+									 insertstring, SQL_dialect, isqlda, NULL))
+			{
 				ISQL_errmsg(isc_status);
 				break;
 			}
@@ -1977,8 +1993,8 @@ static SSHORT add_row(TEXT * tabname)
 }
 
 
-
-static SSHORT blobedit( TEXT * action, TEXT ** cmd)
+static SSHORT blobedit(TEXT * action,
+					   TEXT ** cmd)
 {
 /**************************************
  *
@@ -2026,7 +2042,8 @@ static SSHORT blobedit( TEXT * action, TEXT ** cmd)
 }
 
 
-static void col_check( TEXT * tabname, SSHORT * colnumber)
+static void col_check(TEXT * tabname,
+					  SSHORT * colnumber)
 {
 /**************************************
  *
@@ -2071,8 +2088,10 @@ static void col_check( TEXT * tabname, SSHORT * colnumber)
 
 static void copy_str(TEXT ** output_str,
 					 TEXT ** input_str,
-					 BOOLEAN * done,
-					 TEXT * str_begin, TEXT * str_end, SSHORT str_flag)
+					 bool * done,
+					 TEXT * str_begin,
+					 TEXT * str_end,
+					 SSHORT str_flag)
 {
 /**************************************
  *
@@ -2166,7 +2185,7 @@ static void copy_str(TEXT ** output_str,
 		strncpy(temp_str, temp_local_stmt_str, slen);
 		temp_str += slen;
 		*temp_str = '\0';
-		*done = TRUE;
+		*done = true;
 		*output_str = temp_str;
 		*input_str = temp_local_stmt_str + slen;
 		break;
@@ -2176,7 +2195,9 @@ static void copy_str(TEXT ** output_str,
 }
 
 
-static SSHORT copy_table( TEXT * source, TEXT * destination, TEXT * otherdb)
+static SSHORT copy_table(TEXT * source,
+						 TEXT * destination,
+						 TEXT * otherdb)
 {
 /**************************************
  *
@@ -2196,7 +2217,7 @@ static SSHORT copy_table( TEXT * source, TEXT * destination, TEXT * otherdb)
 	TEXT errbuf[MSG_LENGTH];
 	TEXT cmd[512];
 	TEXT *altdb;
-	SSHORT domain_flag = FALSE;
+	bool domain_flag = false;
 
 /* Call list_table with a temporary file, then hand that file to a
    new version of isql */
@@ -2206,7 +2227,7 @@ static SSHORT copy_table( TEXT * source, TEXT * destination, TEXT * otherdb)
 /* If there is an alternate database, extract the domains */
 
 	if (*otherdb)
-		domain_flag = TRUE;
+		domain_flag = true;
 
 	Out = (IB_FILE *) gds__temp_file(TRUE, SCRATCH, ftmp);
 	if (Out == (IB_FILE *) - 1) {
@@ -2249,7 +2270,8 @@ static SSHORT copy_table( TEXT * source, TEXT * destination, TEXT * otherdb)
 	return (SKIP);
 }
 
-static SSHORT create_db( TEXT * statement, TEXT * d_name)
+static SSHORT create_db(TEXT * statement,
+						TEXT * d_name)
 {
 /**************************************
  *
@@ -2273,7 +2295,7 @@ static SSHORT create_db( TEXT * statement, TEXT * d_name)
 	SSHORT arglength;
 	SSHORT slen, ret, cnt = 0;
 	TEXT *usr, *psw, quote = DBL_QUOTE;
-	BOOLEAN done = FALSE;
+	bool done = false;
 	SSHORT str_flag;
 	TEXT errbuf[MSG_LENGTH];
 
@@ -2281,7 +2303,7 @@ static SSHORT create_db( TEXT * statement, TEXT * d_name)
 	ret = SKIP;
 
 /* Disconnect from the database and cleanup */
-	ISQL_disconnect_database(FALSE);
+	ISQL_disconnect_database(false);
 
 	arglength = strlen(statement) + strlen(User) + strlen(Password) + 24;
 	if (*ISQL_charset && strcmp(ISQL_charset, DEFCHARSET))
@@ -2425,7 +2447,7 @@ static SSHORT create_db( TEXT * statement, TEXT * d_name)
 
 		if (p && strlen(p) > 0) {
 			temp_local_stmt_str = p;
-			done = FALSE;
+			done = false;
 			while (!done) {
 				str_begin = str_end = NULL;
 				str_flag = INIT_STR_FLAG;
@@ -2454,7 +2476,8 @@ static SSHORT create_db( TEXT * statement, TEXT * d_name)
 	if (SQL_dialect == 0 || SQL_dialect == SQL_DIALECT_V6_TRANSITION) {
 		if (isc_dsql_execute_immediate(isc_status, &DB, &M__trans, 0,
 									   local_statement, requested_SQL_dialect,
-									   NULL)) {
+									   NULL)) 
+		{
 			ISQL_errmsg(isc_status);
 			if (!DB)
 				ret = FAIL;
@@ -2462,7 +2485,8 @@ static SSHORT create_db( TEXT * statement, TEXT * d_name)
 	}
 	else {
 		if (isc_dsql_execute_immediate(isc_status, &DB, &M__trans, 0,
-									   local_statement, SQL_dialect, NULL)) {
+									   local_statement, SQL_dialect, NULL)) 
+		{
 			ISQL_errmsg(isc_status);
 			if (!DB)
 				ret = FAIL;
@@ -2474,7 +2498,7 @@ static SSHORT create_db( TEXT * statement, TEXT * d_name)
 
 		strip_quotes(d_name, Db_name);
 
-		ISQL_get_version(TRUE);
+		ISQL_get_version(true);
 
 		/* Start the user transaction */
 
@@ -2524,7 +2548,7 @@ static void do_isql(void)
 	TEXT *errbuf;
 	USHORT bufsize = 0;
 	SSHORT ret;
-	BOOLEAN done = FALSE;
+	bool done = false;
 
 	errbuf = (TEXT *) ISQL_ALLOC((SLONG) MSG_LENGTH);
 	if (!errbuf)
@@ -2558,7 +2582,7 @@ static void do_isql(void)
 	// the file containing the script.
 	//
 	
-	newdb(Db_name, User, Password, Numbufs, Role, TRUE);
+	newdb(Db_name, User, Password, Numbufs, Role, true);
 
 	// If that failed or no Dbname was specified
 
@@ -2619,7 +2643,7 @@ static void do_isql(void)
 		switch (ret) {
 		case CONT:
 			process_statement(statement, sqldap);
-			Continuation = FALSE;
+			Continuation = false;
 			break;
 
 		case END:
@@ -2656,7 +2680,7 @@ static void do_isql(void)
 			if (Stmt)
 				isc_dsql_free_statement(isc_status, &Stmt, DSQL_drop);
 			isc_detach_database(isc_status, &DB);
-			done = TRUE;
+			done = true;
 			break;
 
 		case BACKOUT:
@@ -2673,7 +2697,7 @@ static void do_isql(void)
 			if (Stmt)
 				isc_dsql_free_statement(isc_status, &Stmt, DSQL_drop);
 			isc_detach_database(isc_status, &DB);
-			done = TRUE;
+			done = true;
 			break;
 
 		case EXTRACT:
@@ -2771,7 +2795,7 @@ static SSHORT drop_db(void)
 }
 
 
-static SSHORT edit( TEXT ** cmd)
+static SSHORT edit(TEXT ** cmd)
 {
 /**************************************
  *
@@ -2951,7 +2975,7 @@ static int end_trans(void)
 }
 
 
-static SSHORT escape( TEXT * cmd)
+static SSHORT escape(TEXT * cmd)
 {
 /**************************************
  *
@@ -2998,8 +3022,7 @@ static SSHORT escape( TEXT * cmd)
 }
 
 
-
-static SSHORT frontend( TEXT * statement)
+static SSHORT frontend(TEXT * statement)
 {
 /**************************************
  *
@@ -3023,8 +3046,10 @@ static SSHORT frontend( TEXT * statement)
 	TEXT end_quote;
 	SCHAR *dialect_str;
 	USHORT old_SQL_dialect;
-	BOOLEAN bad_dialect = FALSE, print_warning = FALSE, delimited_done =
-		FALSE, role_found = FALSE;
+	bool bad_dialect = false;
+	bool print_warning = false;
+	bool delimited_done = false;
+	bool role_found = false;
 	TEXT bad_dialect_buf[512];
 
 	buffer = (TEXT *) ISQL_ALLOC((SLONG) (BUFFER_LENGTH256));
@@ -3103,8 +3128,8 @@ static SSHORT frontend( TEXT * statement)
             j = 0;
             if (*p == DBL_QUOTE || *p == SINGLE_QUOTE) {
                 if (i > 0 && (!strcmp(parms[i - 1], KW_ROLE)))
-                    role_found = TRUE;
-                delimited_done = FALSE;
+                    role_found = true;
+                delimited_done = false;
                 end_quote = *p;
                 j++;
                 *a++ = *p++;
@@ -3119,7 +3144,7 @@ static SSHORT frontend( TEXT * statement)
                             *a++ = *p++;
                         }
                         else
-                            delimited_done = TRUE;
+                            delimited_done = true;
                     }
                     else {
                         j++;
@@ -3145,7 +3170,7 @@ static SSHORT frontend( TEXT * statement)
             strcpy(lparms[i], parms[i]);
             if (!role_found)
                 ISQL_make_upper((UCHAR*) parms[i]);
-            role_found = FALSE;
+            role_found = false;
         }
     }
 
@@ -3337,7 +3362,7 @@ static SSHORT frontend( TEXT * statement)
 					if (SQL_dialect < SQL_DIALECT_V5 ||
 						SQL_dialect > SQL_DIALECT_V6)
 					{
-						bad_dialect = TRUE;
+						bad_dialect = true;
 						sprintf(bad_dialect_buf, "%s%s",
 								"invalid SQL dialect ", dialect_str);
 						SQL_dialect = old_SQL_dialect;	/* restore SQL dialect */
@@ -3381,8 +3406,8 @@ static SSHORT frontend( TEXT * statement)
 									if (SQL_dialect > SQL_DIALECT_V5)
 									{
 										if (SQL_DIALECT_V6_TRANSITION)
-											Merge_stderr = TRUE;
-										print_warning = TRUE;
+											Merge_stderr = true;
+										print_warning = true;
 									}
 									break;
 								case SQL_DIALECT_V6:
@@ -3391,8 +3416,8 @@ static SSHORT frontend( TEXT * statement)
 										SQL_DIALECT_V6_TRANSITION)
 									{
 										if (SQL_DIALECT_V6_TRANSITION)
-											Merge_stderr = TRUE;
-										print_warning = TRUE;
+											Merge_stderr = true;
+										print_warning = true;
 									}
 									break;
 								default:
@@ -3400,7 +3425,7 @@ static SSHORT frontend( TEXT * statement)
 								}
 								if (print_warning && Warnings)
 								{
-									print_warning = FALSE;
+									print_warning = false;
 									sprintf(bad_dialect_buf, "%s%d%s%d%s%s",
 											"WARNING: Client SQL dialect has been set to ",
 											SQL_dialect,
@@ -3416,7 +3441,7 @@ static SSHORT frontend( TEXT * statement)
 				else
 				{			/* handle non numeric invalid "set sql dialect" case */
 					SQL_dialect = old_SQL_dialect;	/* restore SQL dialect */
-					bad_dialect = TRUE;
+					bad_dialect = true;
 					sprintf(bad_dialect_buf, "%s%s", "invalid SQL dialect ",
 							dialect_str);
 					ret = ERR;
@@ -3496,7 +3521,7 @@ static SSHORT frontend( TEXT * statement)
 				i++;
 		}
 		if (ret != ERR)
-			ret = newdb(lparms[1], usr, psw, numbufs, sql_role_nm, TRUE);
+			ret = newdb(lparms[1], usr, psw, numbufs, sql_role_nm, true);
 	}
 
 #ifdef SCROLLABLE_CURSORS
@@ -3536,7 +3561,7 @@ static SSHORT frontend( TEXT * statement)
 	else if (!strcmp(parms[0], "EDIT"))
 		ret = edit(lparms);
 	else if ((!strcmp(parms[0], "INPUT")) || (!strcmp(parms[0], "IN"))) {
-		Input_file = TRUE;
+		Input_file = true;
 		ret = input(lparms[1]);
 	}
 	else if (!strcmp(parms[0], "QUIT"))
@@ -3561,7 +3586,7 @@ static SSHORT frontend( TEXT * statement)
 		}
 
 	if (ret == ERR) {
-		if (bad_dialect == TRUE)
+		if (bad_dialect == true)
 			gds__msg_format(NULL, ISQL_MSG_FAC, CMD_ERR, MSG_LENGTH,
 							errbuf, bad_dialect_buf, NULL, NULL, NULL, NULL);
 		else
@@ -3577,7 +3602,10 @@ static SSHORT frontend( TEXT * statement)
 
 	return (ret);
 }
-static SSHORT do_set_command( TEXT * parm, SSHORT * global_flag)
+
+
+static SSHORT do_set_command(TEXT * parm,
+							 bool * global_flag)
 {
 /**************************************
  *
@@ -3596,17 +3624,15 @@ static SSHORT do_set_command( TEXT * parm, SSHORT * global_flag)
 	SSHORT ret = SKIP;
 
 	if (!*parm)
-		*global_flag = 1 - *global_flag;
+		*global_flag = !*global_flag;
 	else if (!strcmp(parm, "ON"))
-		*global_flag = 1;
+		*global_flag = true;
 	else if (!strcmp(parm, "OFF"))
-		*global_flag = 0;
+		*global_flag = false;
 	else
 		ret = ERR;
 	return (ret);
 }
-
-
 
 
 static SSHORT get_statement(TEXT ** statement_ref,
@@ -3627,17 +3653,22 @@ static SSHORT get_statement(TEXT ** statement_ref,
  **************************************/
 	TEXT *p, *q;
 	TEXT *statement, *statement2;
-	SSHORT c, blank, done, start_quoted_string;
-	USHORT count, bufsize, bufsize2;
+	SSHORT c;
+	bool blank;
+	bool done;
+	SSHORT start_quoted_string;
+	USHORT count;
+	USHORT bufsize;
+	USHORT bufsize2;
 	SSHORT ret = CONT;
 	INDEV flist, oflist;
 	TEXT con_prompt[MSG_LENGTH];
-	SSHORT incomment = FALSE;
-	SSHORT in_single_quoted_string = FALSE;	/* set to true once we are
-											   inside a single quoted string */
-	SSHORT in_double_quoted_string = FALSE;
+	bool incomment = false;
+	// set to true once we are inside a single quoted string
+	bool in_single_quoted_string = false; 
+	bool in_double_quoted_string = false;
 	TEXT *errbuf;
-	BOOLEAN ignore_this_stmt = FALSE;
+	bool ignore_this_stmt = false;
 
 /* Lookup the continuation prompt once */
 	ISQL_msg_get(CON_PROMPT, con_prompt, NULL, NULL, NULL, NULL, NULL);
@@ -3675,8 +3706,8 @@ static SSHORT get_statement(TEXT ** statement_ref,
 
 	count = 0;
 
-	blank = TRUE;
-	done = FALSE;
+	blank = true;
+	done = false;
 
 	while (!done) {
         switch (c =  getNextInputChar()) {
@@ -3723,7 +3754,7 @@ static SSHORT get_statement(TEXT ** statement_ref,
 		case '\n':
 //        case '\0': // In particular with readline the \n is removed
 			/* the context of string literals should not extend past eoln */
-			in_single_quoted_string = in_double_quoted_string = FALSE;
+			in_single_quoted_string = in_double_quoted_string = false;
 
 			/* Ignore a series of carriage returns at the beginning */
 			if (blank) {
@@ -3735,8 +3766,8 @@ static SSHORT get_statement(TEXT ** statement_ref,
 			/* Catch the help ? without a terminator */
 			if (*statement == '?') {
                 statement[1] = '\0';
-				done = TRUE;
-				Continuation = FALSE;
+				done = true;
+				Continuation = false;
 				break;
 			}
 
@@ -3802,8 +3833,8 @@ static SSHORT get_statement(TEXT ** statement_ref,
 
 				/* Lop off terminal comment */
 				*(q - Termlen) = '\0';
-				done = TRUE;
-				Continuation = FALSE;
+				done = true;
+				Continuation = false;
 			}
 			else {
 
@@ -3831,9 +3862,9 @@ static SSHORT get_statement(TEXT ** statement_ref,
 			 */
 			if (count && (*(p - 1) == '/') &&
 				!in_single_quoted_string && !in_double_quoted_string)
-					incomment = TRUE;
+					incomment = true;
 			*p++ = c;
-			blank = FALSE;
+			blank = false;
 			count++;
 			break;
 
@@ -3844,9 +3875,9 @@ static SSHORT get_statement(TEXT ** statement_ref,
 			 */
 			if (incomment && (*(p - 1) == '*') &&
 				!in_single_quoted_string && !in_double_quoted_string)
-					incomment = FALSE;
+					incomment = false;
 			*p++ = c;
-			blank = FALSE;
+			blank = false;
 			count++;
 			break;
 
@@ -3858,14 +3889,14 @@ static SSHORT get_statement(TEXT ** statement_ref,
 						(count == start_quoted_string + 1))
 						/* for strings such as '' which are empty strings, 
 						   we need to reset the in_single_quoted_string flag */
-						in_single_quoted_string = FALSE;
+						in_single_quoted_string = false;
 				}
 				else {
 					start_quoted_string = count;
-					in_single_quoted_string = TRUE;
+					in_single_quoted_string = true;
 				}
 			*p++ = c;
-			blank = FALSE;
+			blank = false;
 			count++;
 			break;
 
@@ -3877,14 +3908,14 @@ static SSHORT get_statement(TEXT ** statement_ref,
 						(count == start_quoted_string + 1))
 						/* for strings such as "" which are empty strings, 
 						   we need to reset the in_single_quoted_string flag */
-						in_double_quoted_string = FALSE;
+						in_double_quoted_string = false;
 				}
 				else {
 					start_quoted_string = count;
-					in_double_quoted_string = TRUE;
+					in_double_quoted_string = true;
 				}
 			*p++ = c;
-			blank = FALSE;
+			blank = false;
 			count++;
 			break;
 
@@ -3894,9 +3925,9 @@ static SSHORT get_statement(TEXT ** statement_ref,
 
 			*p++ = c;
 			count++;
-			blank = FALSE;
+			blank = false;
 			if (!incomment)
-				Continuation = TRUE;
+				Continuation = true;
 			break;
 		}
 
@@ -3920,7 +3951,7 @@ static SSHORT get_statement(TEXT ** statement_ref,
 				ret = SKIP;
 				ISQL_FREE(statement);
 
-				ignore_this_stmt = TRUE;
+				ignore_this_stmt = true;
 				/* now reallocate the buffer to hold the reminder of the statement */
 				bufsize = 512;
 				statement = (TEXT *) ISQL_ALLOC((SLONG) bufsize);
@@ -3929,7 +3960,7 @@ static SSHORT get_statement(TEXT ** statement_ref,
 #endif
 				*statement_ref = statement;
 				*statement_buffer = 512;
-				in_single_quoted_string = in_double_quoted_string = FALSE;
+				in_single_quoted_string = in_double_quoted_string = false;
 				count = 0;
 				p = statement;
 				*p = '\0';
@@ -3979,7 +4010,9 @@ static SSHORT get_statement(TEXT ** statement_ref,
 
 
 static void get_str(TEXT * input_str,
-					TEXT ** str_begin, TEXT ** str_end, SSHORT * str_flag)
+					TEXT ** str_begin,
+					TEXT ** str_end,
+					SSHORT * str_flag)
 {
 /**************************************
  *
@@ -4014,7 +4047,7 @@ static void get_str(TEXT * input_str,
  *
  **************************************/
 	TEXT *b1 = NULL, *b2 = NULL, delimited_char;
-	BOOLEAN done = FALSE;
+	bool done = false;
 
 	b1 = strchr(input_str, SINGLE_QUOTE);
 	b2 = strchr(input_str, DBL_QUOTE);
@@ -4043,7 +4076,7 @@ static void get_str(TEXT * input_str,
 				if (*b1 == delimited_char)
 					b1++;
 				else {
-					done = TRUE;
+					done = true;
 					*str_end = b1;
 				}
 			}
@@ -4060,14 +4093,14 @@ static void get_str(TEXT * input_str,
 			   - Shailesh */
 			if (b1 == NULL) {
 				*str_flag = INCOMPLETE_STRING;
-				done = TRUE;
+				done = true;
 			}
 		}						/* end of while (!done) */
 	}
 }
 
 
-void ISQL_get_version( BOOLEAN call_by_create_db)
+void ISQL_get_version(bool call_by_create_db)
 {
 /**************************************
  *
@@ -4105,10 +4138,10 @@ void ISQL_get_version( BOOLEAN call_by_create_db)
     UCHAR buffer[256];
 	UCHAR *p;
 	TEXT bad_dialect_buf[512];
-	BOOLEAN print_warning = FALSE;
+	bool print_warning = false;
 
-	V4 = FALSE;
-	V33 = FALSE;
+	V4 = false;
+	V33 = false;
 	dialect_spoken = 0;
 
 	if (isc_database_info(isc_status, &DB, sizeof(db_version_info),
@@ -4151,18 +4184,18 @@ void ISQL_get_version( BOOLEAN call_by_create_db)
 				switch (dialect_spoken) {
 				case SQL_DIALECT_V5:
 					if (SQL_dialect > SQL_DIALECT_V5)
-						print_warning = TRUE;
+						print_warning = true;
 					break;
 
 				case SQL_DIALECT_V6:
 					if (SQL_dialect != 0 && SQL_dialect < SQL_DIALECT_V6)
-						print_warning = TRUE;
+						print_warning = true;
 					break;
 				default:
 					break;
 				}
 				if (print_warning && Warnings) {
-					print_warning = FALSE;
+					print_warning = false;
 					ISQL_printf(Out, (TEXT*) NEWLINE);
 					sprintf(bad_dialect_buf, "%s%d%s%d%s%s",
 							"WARNING: This database speaks SQL dialect ",
@@ -4191,7 +4224,7 @@ void ISQL_get_version( BOOLEAN call_by_create_db)
 							SQL_dialect,
 							" . Client SQL dialect is reset to 1.", NEWLINE);
 				else {
-					connecting_to_pre_v6_server = TRUE;
+					connecting_to_pre_v6_server = true;
 					sprintf(bad_dialect_buf, "%s%s%d%s%s",
 							"ERROR: Pre IB V6 server only speaks SQL dialect 1",
 							" and does not accept Client SQL dialect ",
@@ -4202,7 +4235,7 @@ void ISQL_get_version( BOOLEAN call_by_create_db)
 			}
 			else {
 				if (SQL_dialect == 0) {
-					connecting_to_pre_v6_server = TRUE;
+					connecting_to_pre_v6_server = true;
 					sprintf(bad_dialect_buf, "%s%s%d%s%s",
 							"ERROR: Pre IB V6 server only speaks SQL dialect 1",
 							" and does not accept Client SQL dialect ",
@@ -4215,7 +4248,7 @@ void ISQL_get_version( BOOLEAN call_by_create_db)
         case isc_info_firebird_version: 
             strcpy(server_version, "Server: "); 
             strncat(server_version, (char*) &(p[2]), (length - 2)); 
-            if (Version_info == TRUE)  { 
+            if (Version_info == true)  { 
                 strcat(server_version, NEWLINE); 
                 ISQL_printf (Out, server_version); 
             } 
@@ -4235,12 +4268,12 @@ void ISQL_get_version( BOOLEAN call_by_create_db)
 	}
 
 	if (major_ods >= ODS_VERSION8) {
-		V4 = TRUE;
+		V4 = true;
 		if (major_ods >= ODS_VERSION9)
-			V45 = TRUE;
+			V45 = true;
 	}
 	else if (major_ods == ODS_VERSION7 && minor_ods == ODS_CURRENT7)
-		V33 = TRUE;
+		V33 = true;
 
 /* If the remote server did not respond to our request for
    "dialects spoken", then we can assume it can only speak
@@ -4262,7 +4295,8 @@ void ISQL_get_version( BOOLEAN call_by_create_db)
 }
 
 
-void ISQL_truncate_term( TEXT * str, USHORT len)
+void ISQL_truncate_term(TEXT * str,
+						USHORT len)
 {
 /**************************************
  *
@@ -4281,7 +4315,8 @@ void ISQL_truncate_term( TEXT * str, USHORT len)
 
 
 void ISQL_ri_action_print(TEXT * ri_action_str,
-						  TEXT * ri_action_prefix_str, BOOLEAN all_caps)
+						  TEXT * ri_action_prefix_str,
+						  bool all_caps)
 {
 /**************************************
  *
@@ -4319,9 +4354,10 @@ void ISQL_ri_action_print(TEXT * ri_action_str,
 }
 
 
-static BOOLEAN get_numeric(
-						   UCHAR * string,
-						   USHORT length, SSHORT * scale, SINT64 * ptr)
+static bool get_numeric(UCHAR * string,
+						USHORT length,
+						SSHORT * scale,
+						SINT64 * ptr)
 {
 /**************************************
  *
@@ -4368,28 +4404,29 @@ static BOOLEAN get_numeric(
 		}
 		else if (*p == '.') {
 			if (fraction)
-				return FALSE;
+				return false;
 			else
-				fraction = TRUE;
+				fraction = true;
 		}
 		else if (*p == '-' && !digit_seen && !sign && !fraction)
 			sign = -1;
 		else if (*p == '+' && !digit_seen && !sign && !fraction)
 			sign = 1;
 		else if (*p != BLANK)
-			return FALSE;
+			return false;
 	}
 
 	if (!digit_seen)
-		return FALSE;
+		return false;
 
 	*scale = local_scale;
 	*(SINT64 *) ptr = ((sign == -1) ? -value : value);
-	return TRUE;
+	return true;
 }
 
 
-static SSHORT newsize( TEXT * colname, TEXT * sizestr)
+static SSHORT newsize(TEXT * colname,
+					  TEXT * sizestr)
 {
 /**************************************
  *
@@ -4617,7 +4654,7 @@ static SSHORT help(TEXT * what)
 }
 
 
-static SSHORT input( TEXT * infile)
+static SSHORT input(TEXT * infile)
 {
 /**************************************
  *
@@ -4697,12 +4734,12 @@ static SSHORT input( TEXT * infile)
 	if (errbuf)
 		ISQL_FREE(errbuf);
 
-	Input_file = TRUE;
+	Input_file = true;
 	return (SKIP);
 }
 
 
-static BOOLEAN isyesno( TEXT * buffer)
+static bool isyesno(TEXT * buffer)
 {
 /**********************************************
  *
@@ -4721,20 +4758,24 @@ static BOOLEAN isyesno( TEXT * buffer)
 
 	if (!have_trans) {			/* get the translation if we don't have it already */
 		ISQL_msg_get(YES_ANS, yesword, NULL, NULL, NULL, NULL, NULL);
-		have_trans = TRUE;
+		have_trans = true;
 	}
 
 /* Just check first byte of yes response -- could be multibyte problem */
 
 	if (UPPER7(buffer[0]) == UPPER7(yesword[0]))
-		return TRUE;
+		return true;
 	else
-		return FALSE;
+		return false;
 }
 
 
-static SSHORT newdb(TEXT * dbname, TEXT * usr, TEXT * psw, TEXT * numbufs, 
-                    TEXT * sql_role_nm, BOOLEAN	start_user_trans)
+static SSHORT newdb(TEXT * dbname,
+					TEXT * usr,
+					TEXT * psw,
+					TEXT * numbufs,
+					TEXT * sql_role_nm,
+					bool start_user_trans)
 {
 /**************************************
  *
@@ -4759,7 +4800,7 @@ static SSHORT newdb(TEXT * dbname, TEXT * usr, TEXT * psw, TEXT * numbufs,
 	SSHORT l, cnt;
 	UCHAR *p, *p1, *p2;
 	TEXT end_quote;
-	BOOLEAN delimited_done = FALSE;
+	bool delimited_done = false;
 	TEXT *local_psw, *local_usr, *local_name, *local_sql_role;
 	TEXT local_numbufs[BUFFER_LENGTH128];
 	TEXT *errbuf;
@@ -4780,7 +4821,7 @@ static SSHORT newdb(TEXT * dbname, TEXT * usr, TEXT * psw, TEXT * numbufs,
 		return (ERR);
 
 	strcpy(save_database, dbname);
-	ISQL_disconnect_database(FALSE);
+	ISQL_disconnect_database(false);
 	strcpy(dbname, save_database);
 
 	errbuf = (TEXT *) ISQL_ALLOC(MSG_LENGTH);
@@ -4952,7 +4993,7 @@ static SSHORT newdb(TEXT * dbname, TEXT * usr, TEXT * psw, TEXT * numbufs,
 		return FAIL;
 	}
 
-	ISQL_get_version(FALSE);
+	ISQL_get_version(false);
 
 	if (*local_sql_role) {
 		switch (SQL_dialect) {
@@ -4967,7 +5008,7 @@ static SSHORT newdb(TEXT * dbname, TEXT * usr, TEXT * psw, TEXT * numbufs,
 				|| *local_sql_role == SINGLE_QUOTE) {
 				p1 = p2 = (UCHAR*) local_sql_role;
 				cnt = 1;
-				delimited_done = FALSE;
+				delimited_done = false;
 				end_quote = *p1++;
 				/*
 				   ** remove the delimited quotes and escape quote from ROLE name
@@ -4980,7 +5021,7 @@ static SSHORT newdb(TEXT * dbname, TEXT * usr, TEXT * psw, TEXT * numbufs,
 							&& cnt < BUFFER_LENGTH128 - 1)
 							*p1++;	/* skip the escape quote here */
 						else {
-							delimited_done = TRUE;
+							delimited_done = true;
 							p2--;
 						}
 					}
@@ -5114,7 +5155,7 @@ static SSHORT newdb(TEXT * dbname, TEXT * usr, TEXT * psw, TEXT * numbufs,
 }
 
 
-static SSHORT newoutput( TEXT * outfile)
+static SSHORT newoutput(TEXT * outfile)
 {
 /**************************************
  *
@@ -5171,7 +5212,7 @@ static SSHORT newoutput( TEXT * outfile)
 }
 
 
-static SSHORT newtrans( TEXT * statement)
+static SSHORT newtrans(TEXT * statement)
 {
 /**************************************
  *
@@ -5207,9 +5248,10 @@ static SSHORT newtrans( TEXT * statement)
 }
 
 
-static SSHORT parse_arg(
-						int argc,
-						SCHAR ** argv, SCHAR * tabname, IB_FILE ** sess)
+static SSHORT parse_arg(int argc,
+						SCHAR ** argv,
+						SCHAR * tabname,
+						IB_FILE ** sess)
 {
 /**************************************
  *
@@ -5226,7 +5268,7 @@ static SSHORT parse_arg(
 	int ret = SKIP;
 
 #ifdef	DEV_BUILD
-	BOOLEAN istable = FALSE;
+	bool istable = false;
 #endif
 
 	TEXT* errbuf = (TEXT *) ISQL_ALLOC(MSG_LENGTH);
@@ -5244,7 +5286,7 @@ static SSHORT parse_arg(
 	User[0] = '\0';
 	Role[0] = '\0';
 	Numbufs[0] = 0;
-	Quiet = FALSE;
+	Quiet = false;
 	Exit_value = FINI_OK;
 
 	/* 
@@ -5253,7 +5295,7 @@ static SSHORT parse_arg(
 
 	requested_SQL_dialect = SQL_DIALECT_V6;
 
-	Merge_stderr = FALSE;
+	Merge_stderr = false;
 
 #if defined (WIN95)
 #define STRARGCPY(dest, src) fAnsiCP ? strcpy(dest, src) : AnsiToOem(src, dest)
@@ -5301,22 +5343,22 @@ static SSHORT parse_arg(
 			if (c == 'X' || (c == 'E' && UPPER(s[2]) == 'X')) {
 #ifdef DEV_BUILD
 				if (UPPER(s[2]) == 'T')
-					istable = TRUE;
+					istable = true;
 #endif
 				ret = EXTRACT;
 			}
 			else if (c == 'A')
 				ret = EXTRACTALL;
 			else if (c == 'E')
-				Echo = TRUE;
+				Echo = true;
 			else if (c == 'M')
-				Merge_stderr = TRUE;
+				Merge_stderr = true;
 			else if (c == 'N' && UPPER(s[2]) == 'O' && UPPER(s[3]) == 'W')
-				Warnings = FALSE;
+				Warnings = false;
 			else if (c == 'N' &&
 					 (!s[2] || (UPPER(s[2]) == 'O' && !s[3]) ||
 					  (UPPER(s[2]) == 'O' && UPPER(s[3]) == 'A')))
-				Autocommit = FALSE;
+				Autocommit = false;
 			else if (c == 'O') {
 				/* Alternate output file */
 
@@ -5331,8 +5373,8 @@ static SSHORT parse_arg(
 				if ((s = argv[++i]) && (input(s) != FAIL));
 				else
 					ret = ERR;
-				Interactive = FALSE;
-				Input_file = TRUE;
+				Interactive = false;
+				Input_file = true;
 			}
 			else if (c == 'T') {
 				/* The next string is the proposed terminator */
@@ -5368,7 +5410,7 @@ static SSHORT parse_arg(
 			else if (c == 'P') {
 				if ((s = argv[++i]) && *s) {
 					STRARGCPY(Password, s);
-					global_psw = TRUE;
+					global_psw = true;
 				}
 				else
 					ret = ERR;
@@ -5376,7 +5418,7 @@ static SSHORT parse_arg(
 			else if (c == 'U') {
 				if ((s = argv[++i]) && *s) {
 					STRARGCPY(User, s);
-					global_usr = TRUE;
+					global_usr = true;
 				}
 				else
 					ret = ERR;
@@ -5384,7 +5426,7 @@ static SSHORT parse_arg(
 			else if (c == 'R') {
 				if ((s = argv[++i]) && *s) {
 					STRARGCPY(Role, s);
-					global_role = TRUE;
+					global_role = true;
 				}
 				else
 					ret = ERR;
@@ -5394,7 +5436,7 @@ static SSHORT parse_arg(
 				&& (!s[2] || UPPER(s[2])== 'A')) {
 				if ((s = argv[++i]) && *s) {
 					STRARGCPY(Numbufs, s);
-					global_numbufs = TRUE;
+					global_numbufs = true;
 				}
 				else
 					ret = ERR;
@@ -5414,9 +5456,9 @@ static SSHORT parse_arg(
 			}
 			else if (c == 'Q')
 				/* Quiet flag */
-				Quiet = TRUE;
+				Quiet = true;
 			else if (c == 'Z') {
-                Version_info = TRUE;
+                Version_info = true;
 				gds__msg_format(NULL, ISQL_MSG_FAC, VERSION, MSG_LENGTH,
 								errbuf, FB_VERSION, NULL, NULL, NULL, NULL);
 
@@ -5438,7 +5480,7 @@ static SSHORT parse_arg(
 						SQL_dialect = requested_SQL_dialect;
 						if (requested_SQL_dialect ==
 							SQL_DIALECT_V6_TRANSITION) {
-							Merge_stderr = TRUE;
+							Merge_stderr = true;
 							requested_SQL_dialect = SQL_DIALECT_V6;
 						}
 					}
@@ -5492,7 +5534,9 @@ static SSHORT parse_arg(
 }
 
 
-static SSHORT print_item( TEXT ** s, XSQLVAR * var, SLONG printlength)
+static SSHORT print_item(TEXT ** s,
+						 XSQLVAR * var,
+						 SLONG printlength)
 {
 /**************************************
  *
@@ -5885,7 +5929,9 @@ static SSHORT print_item( TEXT ** s, XSQLVAR * var, SLONG printlength)
 }
 
 
-static int print_item_blob( IB_FILE * fp, XSQLVAR * var, FRBRD *trans)
+static int print_item_blob(IB_FILE * fp,
+						   XSQLVAR * var,
+						   FRBRD *trans)
 {
 /**************************************
  *
@@ -6015,9 +6061,10 @@ static int print_item_blob( IB_FILE * fp, XSQLVAR * var, FRBRD *trans)
 }
 
 
-static void print_item_numeric(
-							   SINT64 value,
-							   SSHORT length, SSHORT scale, TEXT * buf)
+static void print_item_numeric(SINT64 value,
+							   SSHORT length,
+							   SSHORT scale,
+							   TEXT * buf)
 {
 /**************************************
  *
@@ -6031,7 +6078,8 @@ static void print_item_numeric(
  *
  **************************************/
 	SSHORT from, to;
-	BOOLEAN all_digits_used = FALSE, neg = (value < 0) ? TRUE : FALSE;
+	bool all_digits_used = false;
+	bool neg = (value < 0) ? true : false;
 
 /* Handle special case of no negative scale, no '.' required! */
 	if (scale >= 0) {
@@ -6056,7 +6104,7 @@ static void print_item_numeric(
 
 /* Check whether we need a '0' (zero) in front of the '.' point */
 	if (!DIGIT(buf[from]))
-		all_digits_used = TRUE;
+		all_digits_used = true;
 
 /* Insert new '0's to satisfy larger scale than input digits 
  * For e.g: 12345 with scale -7 would be .0012345
@@ -6068,15 +6116,17 @@ static void print_item_numeric(
 
 /* Insert '.' decimal point, and if required, '-' and '0' */
 	buf[to--] = '.';
-	if (all_digits_used == TRUE) {
+	if (all_digits_used == true) {
 		buf[to--] = '0';
-		if (neg == TRUE)
+		if (neg == true)
 			buf[to--] = '-';
 	}
 }
 
 
-static int print_line( XSQLDA * sqlda, SLONG * pad, TEXT * line)
+static int print_line(XSQLDA * sqlda,
+					  SLONG * pad,
+					  TEXT * line)
 {
 /**************************************
  *
@@ -6150,7 +6200,8 @@ static int print_line( XSQLDA * sqlda, SLONG * pad, TEXT * line)
 }
 
 
-static int process_statement( TEXT * string, XSQLDA ** sqldap)
+static int process_statement(TEXT * string,
+							 XSQLDA ** sqldap)
 {
 /**************************************
  *
@@ -6261,8 +6312,7 @@ static int process_statement( TEXT * string, XSQLDA ** sqldap)
 		input_sqlda->version = SQLDA_VERSION1;
 		input_sqlda->sqld = input_sqlda->sqln = 10;
 
-		if (isc_dsql_describe_bind
-			(isc_status, &Stmt, SQL_dialect, input_sqlda)) {
+		if (isc_dsql_describe_bind(isc_status, &Stmt, SQL_dialect, input_sqlda)) {
 			ISQL_errmsg(isc_status);
 			return ERR;
 		}
@@ -6277,8 +6327,9 @@ static int process_statement( TEXT * string, XSQLDA ** sqldap)
 				(XSQLDA *) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(n_columns)));
 			input_sqlda->version = SQLDA_VERSION1;
 			input_sqlda->sqld = input_sqlda->sqln = n_columns;
-			if (isc_dsql_describe_bind
-				(isc_status, &Stmt, SQL_dialect, input_sqlda)) {
+			if (isc_dsql_describe_bind(isc_status, &Stmt, SQL_dialect, 
+									   input_sqlda)) 
+			{
 				ISQL_errmsg(isc_status);
 				return ERR;
 			}
@@ -6361,8 +6412,9 @@ static int process_statement( TEXT * string, XSQLDA ** sqldap)
 		// If this is an autocommit, put the DDL stmt on a special trans
 
 		if (Autocommit && (statement_type == isc_info_sql_stmt_ddl)) {
-			if (isc_dsql_execute_immediate
-				(isc_status, &DB, &D__trans, 0, string, SQL_dialect, NULL)) {
+			if (isc_dsql_execute_immediate(isc_status, &DB, &D__trans, 0, 
+										   string, SQL_dialect, NULL)) 
+			{
 				ISQL_errmsg(isc_status);
 				ret = ERR;
 			}
@@ -6447,7 +6499,7 @@ static int process_statement( TEXT * string, XSQLDA ** sqldap)
 				   = !f\n */
 				/* Else:  Cpu = !u sec\nBuffers = !b\nReads = !r\nWrites = !w\nFetch
 				   es = !f\n */
-				have_report = TRUE;
+				have_report = true;
 			}
 			perf_format(&perf_before, &perf_after, report_1, statistics, NULL);
 			sprintf(Print_buffer, "%s%s", statistics, NEWLINE);
@@ -6873,7 +6925,7 @@ static int process_statement( TEXT * string, XSQLDA ** sqldap)
 			   = !f\n */
 			/* Else:  Cpu = !u sec\nBuffers = !b\nReads = !r\nWrites = !w\nFetch
 			   es = !f\n */
-			have_report = TRUE;
+			have_report = true;
 		}
 		perf_format(&perf_before, &perf_after, report_1, statistics, NULL);
 		sprintf(Print_buffer, "%s%s", statistics, NEWLINE);
@@ -6914,7 +6966,8 @@ static void CLIB_ROUTINE query_abort(void)
 }
 
 
-static void strip_quotes( TEXT * in, TEXT * out)
+static void strip_quotes(TEXT * in,
+						 TEXT * out)
 {
 /**************************************
  *
@@ -6950,7 +7003,7 @@ static void strip_quotes( TEXT * in, TEXT * out)
 
 
 #ifdef DEV_BUILD
-static UCHAR *sqltype_to_string( USHORT sqltype)
+static UCHAR *sqltype_to_string(USHORT sqltype)
 {
 /**************************************
  *

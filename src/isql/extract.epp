@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.12 2003-09-01 07:49:57 brodsom Exp $
+ * $Id: extract.epp,v 1.13 2003-09-05 11:25:53 brodsom Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -62,10 +62,10 @@ DATABASE DB = EXTERN COMPILETIME "yachts.lnk";
 
 extern USHORT major_ods;
 extern USHORT minor_ods;
-extern SSHORT V33;
+extern bool V33;
 
 static void list_all_grants(void);
-static int	list_all_grants2 (BOOLEAN, SCHAR *);
+static int	list_all_grants2 (bool, SCHAR *);
 static void list_all_procs(void);
 static void list_all_tables(SSHORT, SSHORT);
 static void list_all_triggers(void);
@@ -114,7 +114,8 @@ static TEXT SQL_identifier2[BUFFER_LENGTH128];
 
 
 
-SSHORT EXTRACT_ddl( int flag, SCHAR * tabname)
+SSHORT EXTRACT_ddl(int flag,
+				   SCHAR * tabname)
 {
 /**************************************
  *
@@ -129,8 +130,8 @@ SSHORT EXTRACT_ddl( int flag, SCHAR * tabname)
  **************************************/
 	SCHAR errbuf[MSG_LENGTH];
 	SSHORT ret_code = FINI_OK;
-	USHORT did_attach = FALSE;
-	USHORT did_start = FALSE;
+	bool did_attach = false;
+	bool did_start = false;
 	SSHORT default_char_set_id;
 
 	if (!DB)
@@ -140,10 +141,10 @@ SSHORT EXTRACT_ddl( int flag, SCHAR * tabname)
 			ISQL_errmsg(gds_status);
 			return (SSHORT) FINI_ERROR;
 		}
-		did_attach = TRUE;
+		did_attach = true;
 	}
 
-	ISQL_get_version(FALSE);
+	ISQL_get_version(false);
 	if (SQL_dialect != db_SQL_dialect)
 	{
 		sprintf(Print_buffer,
@@ -192,7 +193,7 @@ SSHORT EXTRACT_ddl( int flag, SCHAR * tabname)
 			ISQL_errmsg(gds_status);
 			return (SSHORT) FINI_ERROR;
 		}
-		did_start = TRUE;
+		did_start = true;
 	}
 
 	default_char_set_id = ISQL_get_default_char_set_id();
@@ -200,7 +201,7 @@ SSHORT EXTRACT_ddl( int flag, SCHAR * tabname)
 /* If a table name was passed, extract only that table and domains */
 	if (*tabname)
 	{
-		if (EXTRACT_list_table(tabname, NULL, 1, default_char_set_id))
+		if (EXTRACT_list_table(tabname, NULL, true, default_char_set_id))
 		{
 			gds__msg_format(NULL, ISQL_MSG_FAC, NOT_FOUND, sizeof(errbuf),
 							errbuf, tabname, NULL, NULL, NULL, NULL);
@@ -246,6 +247,7 @@ SSHORT EXTRACT_ddl( int flag, SCHAR * tabname)
 	return (SSHORT) ret_code;
 }
 
+
 int EXTRACT_list_grants (SCHAR *terminator)
 {
 /**************************************
@@ -261,12 +263,14 @@ int EXTRACT_list_grants (SCHAR *terminator)
  *	If a new_name is passed, substitute it for relation_name
  *
  **************************************/
-    return list_all_grants2 (FALSE, terminator);
+    return list_all_grants2 (false, terminator);
 }
+
 
 SSHORT EXTRACT_list_table(SCHAR * relation_name,
 						  SCHAR * new_name,
-						  SSHORT domain_flag, SSHORT default_char_set_id)
+						  bool domain_flag,
+						  SSHORT default_char_set_id)
 {
 /**************************************
  *
@@ -328,18 +332,16 @@ SSHORT EXTRACT_list_table(SCHAR * relation_name,
  *
  **************************************/
 
-	USHORT first;
-	SSHORT collation, char_set_id;
+	bool first = true;
+	SSHORT collation;
+	SSHORT char_set_id;
 	SSHORT i;
-	SCHAR *collist, char_sets[86];
+	SCHAR *collist = NULL;
+	SCHAR char_sets[86];
 	SSHORT subtype;
-	SSHORT intchar;
+	SSHORT intchar = 0;
 
 /* Query to obtain relation detail information */
-
-	first = TRUE;
-	collist = NULL;
-	intchar = 0;
 
 	FOR REL IN RDB$RELATIONS CROSS
 	   RFR IN RDB$RELATION_FIELDS CROSS
@@ -351,7 +353,7 @@ SSHORT EXTRACT_list_table(SCHAR * relation_name,
 	
 	    if (first)
 		{
-            first = FALSE;
+            first = false;
             /* Do we need to print domains */
             if (domain_flag)
                 list_domain_table (relation_name,default_char_set_id);
@@ -432,7 +434,8 @@ SSHORT EXTRACT_list_table(SCHAR * relation_name,
 			{
                 char_sets [0] = '\0';
                 collation = RFR.RDB$COLLATION_ID;
-                ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, collation, TRUE, char_sets);
+                ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, collation, 
+										 true, char_sets);
                 if (char_sets [0])
                     ISQL_printf (Out, char_sets);
             }
@@ -443,7 +446,7 @@ SSHORT EXTRACT_list_table(SCHAR * relation_name,
             for (i = 0; Column_types [i].type; i++)
 	            if (FLD.RDB$FIELD_TYPE == Column_types [i].type)
 				{
-                    BOOLEAN precision_known = FALSE;
+                    bool precision_known = false;
                     
                     if (major_ods >= ODS_VERSION10)
 					{ 
@@ -466,7 +469,7 @@ SSHORT EXTRACT_list_table(SCHAR * relation_name,
                                                  Integral_subtypes [FLD1.RDB$FIELD_SUB_TYPE],
                                                  FLD1.RDB$FIELD_PRECISION,
                                                  -FLD1.RDB$FIELD_SCALE);
-                                        precision_known = TRUE;
+                                        precision_known = true;
                                     }
                                 }
                             END_FOR
@@ -477,7 +480,7 @@ SSHORT EXTRACT_list_table(SCHAR * relation_name,
                         }
                     }
 	
-                    if (precision_known == FALSE)
+                    if (precision_known == false)
 					{
                         
                         /* Take a stab at numerics and decimals */
@@ -562,7 +565,7 @@ SSHORT EXTRACT_list_table(SCHAR * relation_name,
                 if (!FLD.RDB$CHARACTER_SET_ID.NULL)
                     char_set_id = FLD.RDB$CHARACTER_SET_ID;
                 if ((char_set_id != default_char_set_id) || collation)
-                    ISQL_get_character_sets (char_set_id, 0, FALSE, char_sets);
+                    ISQL_get_character_sets (char_set_id, 0, false, char_sets);
                 if (char_sets [0])
                     ISQL_printf (Out, char_sets);
                 if (!char_set_id)
@@ -638,7 +641,7 @@ SSHORT EXTRACT_list_table(SCHAR * relation_name,
             if (collation)
 			{
                 char_sets[0] = '\0';
-                ISQL_get_character_sets (char_set_id, collation, TRUE, char_sets);
+                ISQL_get_character_sets (char_set_id, collation, true, char_sets);
                 if (char_sets [0])
                     ISQL_printf (Out, char_sets);
             }
@@ -690,14 +693,14 @@ SSHORT EXTRACT_list_table(SCHAR * relation_name,
         
 	    if (!strncmp (RELC.RDB$CONSTRAINT_TYPE, "PRIMARY", 7))
 		{
-            ISQL_get_index_segments (collist, RELC.RDB$INDEX_NAME, TRUE);
+            ISQL_get_index_segments (collist, RELC.RDB$INDEX_NAME, true);
             sprintf (Print_buffer, "PRIMARY KEY (%s)", collist);
             ISQL_printf (Out, Print_buffer);
         }
         
 	    else if (!strncmp (RELC.RDB$CONSTRAINT_TYPE, "UNIQUE", 6))
 		{
-            ISQL_get_index_segments (collist, RELC.RDB$INDEX_NAME, TRUE);
+            ISQL_get_index_segments (collist, RELC.RDB$INDEX_NAME, true);
             sprintf (Print_buffer, "UNIQUE (%s)", collist);
             ISQL_printf (Out, Print_buffer);
         }
@@ -721,6 +724,7 @@ SSHORT EXTRACT_list_table(SCHAR * relation_name,
 	return (SSHORT) FINI_OK;
 }
 
+
 static void get_procedure_args(char* proc_name)
 {
 /**************************************
@@ -734,7 +738,9 @@ static void get_procedure_args(char* proc_name)
  *	extract file
  *
  **************************************/
-	SSHORT ptype, first_time, i;
+	SSHORT ptype;
+	bool first_time;
+	SSHORT i;
 	SCHAR char_sets[86];
 
 /* query to retrieve the parameters. */
@@ -751,7 +757,7 @@ static void get_procedure_args(char* proc_name)
 
 		for (ptype = 0; ptype < 2; ptype++)
 		{
-			first_time = TRUE;
+			first_time = true;
 
             FOR PRM IN RDB$PROCEDURE_PARAMETERS CROSS
                 FLD IN RDB$FIELDS WITH
@@ -762,7 +768,7 @@ static void get_procedure_args(char* proc_name)
 	
                 if (first_time)
 				{
-                    first_time = FALSE;
+                    first_time = false;
                     if (ptype==0)
 					{ /* this is the input part */
                         ISQL_printf (Out, "(");
@@ -794,7 +800,7 @@ static void get_procedure_args(char* proc_name)
                 for (i = 0; Column_types [i].type; i++)
                     if (FLD.RDB$FIELD_TYPE == Column_types [i].type)
 					{
-                        BOOLEAN precision_known = FALSE;
+                        bool precision_known = false;
                         
                         if (major_ods >= ODS_VERSION10)
 						{
@@ -818,7 +824,7 @@ static void get_procedure_args(char* proc_name)
                                                      Integral_subtypes [FLD1.RDB$FIELD_SUB_TYPE],
                                                      FLD1.RDB$FIELD_PRECISION,
                                                      -FLD1.RDB$FIELD_SCALE);
-                                            precision_known = TRUE;
+                                            precision_known = true;
                                         }
                                     }
                                 END_FOR
@@ -828,7 +834,7 @@ static void get_procedure_args(char* proc_name)
                                 END_ERROR;
                             }
                         }
-                        if (precision_known == FALSE)
+                        if (precision_known == false)
 						{
                             /* Take a stab at numerics and decimals */
                             if ((FLD.RDB$FIELD_TYPE == SMALLINT) && 
@@ -889,7 +895,7 @@ static void get_procedure_args(char* proc_name)
                         FLD.RDB$CHARACTER_SET_ID = 0;
                     
                     ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID,
-                                             FLD.RDB$COLLATION_ID, FALSE, char_sets);
+                                             FLD.RDB$COLLATION_ID, false, char_sets);
                     if (char_sets [0])
                         ISQL_printf (Out, char_sets);
                 }  
@@ -916,6 +922,7 @@ static void get_procedure_args(char* proc_name)
 	}
 }
 
+
 static void list_all_grants ()
 {
 /**************************************
@@ -930,10 +937,12 @@ static void list_all_grants ()
  *	Wrapper around list_all_grants2().
  *
  **************************************/
-    list_all_grants2 (TRUE, Term);
+    list_all_grants2 (true, Term);
 }
 
-static int list_all_grants2 (BOOLEAN show_role_list, SCHAR *terminator)
+
+static int list_all_grants2 (bool show_role_list,
+							 SCHAR *terminator)
 {
 /**************************************
  *
@@ -947,7 +956,7 @@ static int list_all_grants2 (BOOLEAN show_role_list, SCHAR *terminator)
  *	Get separate permissions on table/views and then procedures
  *
  **************************************/
-	SSHORT first = TRUE;
+	bool first = true;
 	TEXT prev_owner[44];
     int rc = 0;
 
@@ -972,7 +981,7 @@ static int list_all_grants2 (BOOLEAN show_role_list, SCHAR *terminator)
                 ISQL_printf (Out, Print_buffer);
             }
         
-            first = FALSE;
+            first = false;
         
             /* Null terminate name string */
             ISQL_blankterm (XX.RDB$ROLE_NAME);
@@ -1011,7 +1020,7 @@ static int list_all_grants2 (BOOLEAN show_role_list, SCHAR *terminator)
 /* This version of cursor gets only sql tables identified by security class 
    and misses views, getting only null view_source */
 
-	first = TRUE;
+	first = true;
 
 	FOR REL IN RDB$RELATIONS WITH
         (REL.RDB$SYSTEM_FLAG NE 1 OR REL.RDB$SYSTEM_FLAG MISSING) AND
@@ -1024,7 +1033,7 @@ static int list_all_grants2 (BOOLEAN show_role_list, SCHAR *terminator)
                      NEWLINE);
             if (show_role_list) {
                 ISQL_printf (Out, Print_buffer);
-                first = FALSE;
+                first = false;
             }
         }
 	
@@ -1035,7 +1044,7 @@ static int list_all_grants2 (BOOLEAN show_role_list, SCHAR *terminator)
         rc = SHOW_grants2 (REL.RDB$RELATION_NAME, terminator, obj_relation, 
                            first ? Print_buffer : 0);
         if (rc == SKIP) {
-            first = FALSE;
+            first = false;
         }
 
 	END_FOR
@@ -1049,7 +1058,7 @@ static int list_all_grants2 (BOOLEAN show_role_list, SCHAR *terminator)
 				NEWLINE, NEWLINE);
         if (show_role_list) {
             ISQL_printf (Out, Print_buffer);
-            first = FALSE;
+            first = false;
         }
     }
 
@@ -1068,7 +1077,7 @@ static int list_all_grants2 (BOOLEAN show_role_list, SCHAR *terminator)
                      NEWLINE, NEWLINE);
             if (show_role_list) {
                 ISQL_printf (Out, Print_buffer);
-                first = FALSE;
+                first = false;
             }
         }
         
@@ -1079,7 +1088,7 @@ static int list_all_grants2 (BOOLEAN show_role_list, SCHAR *terminator)
         rc = SHOW_grants2 (PRC.RDB$PROCEDURE_NAME, terminator, obj_procedure, 
                            first ? Print_buffer: 0);
         if (rc == SKIP)
-            first = FALSE;
+            first = false;
         
     END_FOR
 	ON_ERROR 
@@ -1110,7 +1119,7 @@ static void list_all_procs()
  *	procname -- Name of procedure to investigate
  *
  **************************************/
-	SSHORT header = TRUE;
+	bool header = true;
 	TEXT msg[MSG_LENGTH];
 	static const SCHAR *create_procedure_str1 = "CREATE PROCEDURE %s ";
 	static const SCHAR *create_procedure_str2 = "BEGIN EXIT; END %s%s";
@@ -1131,7 +1140,7 @@ static void list_all_procs()
 	        ISQL_printf (Out, Print_buffer);
 	        sprintf (Print_buffer, "%s/* Stored procedures */%s", NEWLINE, NEWLINE);
 	        ISQL_printf (Out, Print_buffer);
-	        header = FALSE;
+	        header = false;
         }
 	    ISQL_blankterm (PRC.RDB$PROCEDURE_NAME);
 	    if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
@@ -1211,7 +1220,8 @@ static void list_all_procs()
 }
 
 
-static void list_all_tables( SSHORT flag, SSHORT default_char_set_id)
+static void list_all_tables(SSHORT flag,
+							SSHORT default_char_set_id)
 {
 /**************************************
  *
@@ -1243,7 +1253,7 @@ static void list_all_tables( SSHORT flag, SSHORT default_char_set_id)
         ISQL_blankterm (REL.RDB$RELATION_NAME);
 	
         if (flag || !strncmp (REL.RDB$SECURITY_CLASS, "SQL$", 4))
-            EXTRACT_list_table (REL.RDB$RELATION_NAME, NULL, 0,default_char_set_id);
+            EXTRACT_list_table (REL.RDB$RELATION_NAME, NULL, false,default_char_set_id);
     END_FOR
 	ON_ERROR 
         ISQL_errmsg(gds_status);
@@ -1267,7 +1277,7 @@ static void list_all_triggers()
  *	tables with sql source only.
  *
  **************************************/
-	SSHORT header = TRUE;
+	bool header = true;
 
 
 /* Query gets the trigger info for non-system triggers with 
@@ -1289,7 +1299,7 @@ static void list_all_triggers()
                      NEWLINE,
                      NEWLINE);
             ISQL_printf (Out, Print_buffer);
-            header = FALSE;
+            header = false;
         }
         ISQL_blankterm (TRG.RDB$TRIGGER_NAME);
 	    ISQL_blankterm (TRG.RDB$RELATION_NAME);
@@ -1419,7 +1429,7 @@ static void list_check(void)
 }
 
 
-static void print_set( SSHORT * set_used)
+static void print_set(bool * set_used)
 {
 /**************************************
  *
@@ -1440,7 +1450,7 @@ static void print_set( SSHORT * set_used)
 	{
 		sprintf(Print_buffer, "  SET ");
 		ISQL_printf(Out, Print_buffer);
-		*set_used = TRUE;
+		*set_used = true;
 	}
 	else
 	{
@@ -1448,6 +1458,8 @@ static void print_set( SSHORT * set_used)
 		ISQL_printf(Out, Print_buffer);
 	}
 }
+
+
 static void list_create_db(void)
 {
 /**************************************
@@ -1474,10 +1486,15 @@ static void list_create_db(void)
 		isc_info_end
 	};
 
-	SSHORT nodb = FALSE, first = TRUE, first_file = TRUE, has_wal =
-		FALSE, set_used = FALSE;
-	USHORT translate = FALSE;
-	SCHAR *d, *buffer, item;
+	bool nodb = false;
+	bool first = true;
+	bool first_file = true;
+	bool has_wal = false;
+	bool set_used = false;
+	bool translate = false;
+	SCHAR *d;
+	SCHAR *buffer;
+	SCHAR item;
 	int length;
 	SLONG value_out;
 
@@ -1487,7 +1504,7 @@ static void list_create_db(void)
 	{
 		ISQL_printf(Out, "/* ");
 		strcpy(Target_db, Db_name);
-		nodb = TRUE;
+		nodb = true;
 	}
 	sprintf(Print_buffer, "CREATE DATABASE '%s'", Target_db);
 	ISQL_printf(Out, Print_buffer);
@@ -1539,7 +1556,7 @@ static void list_create_db(void)
             ISQL_printf (Out, Print_buffer);
         }
 	
-        first = FALSE;
+        first = false;
 	    /* reset nulls to zero */
 	
 	    if (FIL.RDB$FILE_FLAGS.NULL)
@@ -1628,7 +1645,7 @@ static void list_create_db(void)
 	FOR WAL IN RDB$LOG_FILES 
 	    SORTED BY WAL.RDB$FILE_FLAGS, WAL.RDB$FILE_SEQUENCE
 	
-	    has_wal = TRUE;
+	    has_wal = true;
         if (first)
 		{ 
             if (nodb)
@@ -1639,7 +1656,7 @@ static void list_create_db(void)
             sprintf (Print_buffer, "%sALTER DATABASE ADD ", NEWLINE);
             ISQL_printf (Out, Print_buffer);
 	    }
-	    first = FALSE;
+	    first = false;
         
 	    if (first_file)
             ISQL_printf (Out, "LOGFILE ");
@@ -1679,7 +1696,7 @@ static void list_create_db(void)
                 sprintf (Print_buffer, ",%s  ", NEWLINE); 
                 ISQL_printf (Out, Print_buffer);
             } 
-	        first_file = FALSE;    
+	        first_file = false;
             
             sprintf (Print_buffer, "'%s'", WAL.RDB$FILE_NAME);
             ISQL_printf (Out, Print_buffer);
@@ -1789,7 +1806,8 @@ static void list_create_db(void)
 }
 
 
-static void list_domain_table( SCHAR * table_name, SSHORT default_char_set_id)
+static void list_domain_table(SCHAR * table_name,
+							  SSHORT default_char_set_id)
 {
 /**************************************
  *
@@ -1805,7 +1823,7 @@ static void list_domain_table( SCHAR * table_name, SSHORT default_char_set_id)
  *	default_char_set_id -- character set def to supress
  *
  **************************************/
-	SSHORT first = TRUE;
+	bool first = true;
 	SSHORT i;
 	SCHAR char_sets[86];
 	SSHORT subtype;
@@ -1826,7 +1844,7 @@ static void list_domain_table( SCHAR * table_name, SSHORT default_char_set_id)
 		{ 
             sprintf (Print_buffer, "/* Domain definitions */%s", NEWLINE);
             ISQL_printf (Out, Print_buffer);
-            first = FALSE;
+            first = false;
         }
         ISQL_blankterm(FLD.RDB$FIELD_NAME);
         
@@ -1836,7 +1854,7 @@ static void list_domain_table( SCHAR * table_name, SSHORT default_char_set_id)
         for (i = 0; Column_types [i].type; i++)
             if (FLD.RDB$FIELD_TYPE == Column_types [i].type)
 			{ 
-                BOOLEAN precision_known = FALSE;
+                bool precision_known = false;
                 
                 if (major_ods >= ODS_VERSION10)
 				{ 
@@ -1859,7 +1877,7 @@ static void list_domain_table( SCHAR * table_name, SSHORT default_char_set_id)
                                              Integral_subtypes [FLD1.RDB$FIELD_SUB_TYPE],
                                              FLD1.RDB$FIELD_PRECISION,
                                                  -FLD1.RDB$FIELD_SCALE);
-                                    precision_known = TRUE;
+                                    precision_known = true;
                                 }
                             }
                         END_FOR
@@ -1870,7 +1888,7 @@ static void list_domain_table( SCHAR * table_name, SSHORT default_char_set_id)
                     }
                 }
                     
-                if (precision_known == FALSE)
+                if (precision_known == false)
 				{ 
                     /* Take a stab at numerics and decimals */
                     if ((FLD.RDB$FIELD_TYPE == SMALLINT) && (FLD.RDB$FIELD_SCALE < 0))
@@ -1932,7 +1950,7 @@ static void list_domain_table( SCHAR * table_name, SSHORT default_char_set_id)
             char_sets[0] = 0;
             if ((FLD.RDB$CHARACTER_SET_ID != default_char_set_id) ||
                 (!FLD.RDB$COLLATION_ID.NULL && FLD.RDB$COLLATION_ID != 0))
-                ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, FALSE, FALSE, char_sets);
+                ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, 0, false, char_sets);
             if (char_sets[0])
                 ISQL_printf (Out, char_sets);
         }
@@ -1966,7 +1984,8 @@ static void list_domain_table( SCHAR * table_name, SSHORT default_char_set_id)
         if (!FLD.RDB$COLLATION_ID.NULL && FLD.RDB$COLLATION_ID != 0)
 		{ 
             char_sets[0] = 0;
-            ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, FLD.RDB$COLLATION_ID, TRUE, char_sets);
+            ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, FLD.RDB$COLLATION_ID, 
+									 true, char_sets);
             if (char_sets[0])
                 ISQL_printf (Out, char_sets);
         }
@@ -1981,7 +2000,7 @@ static void list_domain_table( SCHAR * table_name, SSHORT default_char_set_id)
 }
 
 
-static void list_domains( SSHORT default_char_set_id)
+static void list_domains(SSHORT default_char_set_id)
 {
 /**************************************
  *
@@ -1996,7 +2015,7 @@ static void list_domains( SSHORT default_char_set_id)
  *	default_char_set_id -- character set def to supress
  *
  **************************************/
-	SSHORT first = TRUE;
+	bool first = true;
 	SSHORT i;
 	SCHAR char_sets[86];
 	SSHORT subtype;
@@ -2010,7 +2029,7 @@ static void list_domains( SSHORT default_char_set_id)
 		{ 
             sprintf (Print_buffer, "/* Domain definitions */%s", NEWLINE);
             ISQL_printf (Out, Print_buffer);
-            first = FALSE;
+            first = false;
         }
         ISQL_blankterm(FLD.RDB$FIELD_NAME);
 	
@@ -2028,7 +2047,7 @@ static void list_domains( SSHORT default_char_set_id)
 	    for (i = 0; Column_types [i].type; i++)
 	        if (FLD.RDB$FIELD_TYPE == Column_types [i].type)
 			{ 
-                BOOLEAN precision_known = FALSE;
+                bool precision_known = false;
                 
                 if (major_ods >= ODS_VERSION10)
 				{ 
@@ -2051,7 +2070,7 @@ static void list_domains( SSHORT default_char_set_id)
                                              Integral_subtypes [FLD1.RDB$FIELD_SUB_TYPE],
                                              FLD1.RDB$FIELD_PRECISION,
                                              -FLD1.RDB$FIELD_SCALE);
-                                    precision_known = TRUE;
+                                    precision_known = true;
                                 }
                             }
                         END_FOR
@@ -2062,7 +2081,7 @@ static void list_domains( SSHORT default_char_set_id)
                     }
                 }
                 
-                if (precision_known == FALSE)
+                if (precision_known == false)
 				{ 
                     /* Take a stab at numerics and decimals */
                     if ((FLD.RDB$FIELD_TYPE == SMALLINT) && (FLD.RDB$FIELD_SCALE < 0))
@@ -2123,7 +2142,7 @@ static void list_domains( SSHORT default_char_set_id)
             char_sets[0] = 0;
             if ((FLD.RDB$CHARACTER_SET_ID != default_char_set_id) ||
 	            (!FLD.RDB$COLLATION_ID.NULL && FLD.RDB$COLLATION_ID != 0))
-                ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, FALSE, FALSE, char_sets);
+                ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, 0, false, char_sets);
             if (char_sets[0])
                 ISQL_printf (Out, char_sets);
         }
@@ -2157,7 +2176,8 @@ static void list_domains( SSHORT default_char_set_id)
 	    if (!FLD.RDB$COLLATION_ID.NULL && FLD.RDB$COLLATION_ID != 0)
 		{
             char_sets[0] = 0;
-            ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, FLD.RDB$COLLATION_ID, TRUE, char_sets);
+            ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, FLD.RDB$COLLATION_ID,
+									 true, char_sets);
             if (char_sets[0])
                 ISQL_printf (Out, char_sets);
         }
@@ -2186,7 +2206,7 @@ static void list_exception(void)
  *	Parameters:  none
  *
  **************************************/
-	SSHORT first = TRUE;
+	bool first = true;
 
 	FOR EXC IN RDB$EXCEPTIONS
 	    SORTED BY EXC.RDB$EXCEPTION_NAME
@@ -2196,7 +2216,7 @@ static void list_exception(void)
             sprintf (Print_buffer, "%s/*  Exceptions */%s", NEWLINE, NEWLINE);
             ISQL_printf (Out, Print_buffer);
         }
-        first = FALSE;
+        first = false;
         ISQL_blankterm (EXC.RDB$EXCEPTION_NAME);
         
 	    ISQL_copy_SQL_id (EXC.RDB$MESSAGE, SQL_identifier2, SINGLE_QUOTE);
@@ -2237,7 +2257,7 @@ static void list_filters(void)
  * DECLARE FILTER <fname> INPUT_TYPE <blob_sub_type> OUTPUT_TYPE <blob_subtype>
  *		 ENTRY_POINT <string> MODULE_NAME <string>
  **************************************/
-	SSHORT first = TRUE;
+	bool first = true;
 
 	FOR FIL IN RDB$FILTERS 
 	    SORTED BY FIL.RDB$FUNCTION_NAME
@@ -2253,7 +2273,7 @@ static void list_filters(void)
                      NEWLINE);
             ISQL_printf (Out, Print_buffer);
         }
-	    first = FALSE;
+	    first = false;
         
 	    sprintf (Print_buffer, "DECLARE FILTER %s INPUT_TYPE %d OUTPUT_TYPE %d%s%sENTRY_POINT '%s' MODULE_NAME '%s'%s%s%s",
                  FIL.RDB$FUNCTION_NAME, FIL.RDB$INPUT_SUB_TYPE, FIL.RDB$OUTPUT_SUB_TYPE, 
@@ -2312,7 +2332,7 @@ static void list_foreign()
         ISQL_blankterm (RELC1.RDB$RELATION_NAME);
         ISQL_blankterm (RELC2.RDB$RELATION_NAME);
 	
-        ISQL_get_index_segments (collist, RELC1.RDB$INDEX_NAME, TRUE);
+        ISQL_get_index_segments (collist, RELC1.RDB$INDEX_NAME, true);
         
         sprintf (Print_buffer, " %s", NEWLINE);
         ISQL_printf (Out, Print_buffer);
@@ -2362,7 +2382,7 @@ static void list_foreign()
         
         /* Get the column list for the primary key */
         
-        ISQL_get_index_segments (collist, RELC2.RDB$INDEX_NAME, TRUE);
+        ISQL_get_index_segments (collist, RELC2.RDB$INDEX_NAME, true);
 	    
         sprintf (Print_buffer, "(%s)", collist);
         ISQL_printf (Out, Print_buffer);
@@ -2372,14 +2392,14 @@ static void list_foreign()
 		{
             ISQL_truncate_term (REFC.RDB$UPDATE_RULE,
                                 strlen(REFC.RDB$UPDATE_RULE));
-            ISQL_ri_action_print (REFC.RDB$UPDATE_RULE, " ON UPDATE", TRUE);
+            ISQL_ri_action_print (REFC.RDB$UPDATE_RULE, " ON UPDATE", true);
         }
 	
         if (!REFC.RDB$DELETE_RULE.NULL)
 		{
             ISQL_truncate_term (REFC.RDB$DELETE_RULE,
                                 strlen(REFC.RDB$DELETE_RULE));
-            ISQL_ri_action_print (REFC.RDB$DELETE_RULE, " ON DELETE", TRUE);
+            ISQL_ri_action_print (REFC.RDB$DELETE_RULE, " ON DELETE", true);
         }
 	
         sprintf (Print_buffer, "%s%s", Term, NEWLINE);
@@ -2415,7 +2435,9 @@ static void list_functions(void)
  *               RETURNS INTEGER BY VALUE
  *               ENTRY_POINT entrypoint MODULE_NAME module;
  **************************************/
-	SSHORT first = TRUE, firstarg = TRUE, printarg = TRUE;
+	bool first = true;
+	bool firstarg = true;
+	bool printarg = true;
 	SSHORT i, ptype;
 	SCHAR *return_buffer;
 	SCHAR *type_buffer;
@@ -2470,7 +2492,7 @@ static void list_functions(void)
                      NEWLINE,
                      NEWLINE);
             ISQL_printf (Out, Print_buffer);
-            first = FALSE;
+            first = false;
         }
 	
 	    /* Start new function declaration */
@@ -2479,7 +2501,7 @@ static void list_functions(void)
                  NEWLINE);
 	    ISQL_printf (Out, Print_buffer);
         
-	    firstarg = TRUE;
+	    firstarg = true;
 	
 	    FOR FNA IN RDB$FUNCTION_ARGUMENTS WITH
             FUN.RDB$FUNCTION_NAME EQ FNA.RDB$FUNCTION_NAME
@@ -2519,7 +2541,7 @@ static void list_functions(void)
             }
 	        else
 			{
-                BOOLEAN precision_known = FALSE;
+                bool precision_known = false;
 	            
 	            if ( (major_ods >= ODS_VERSION10) &&
 	                 ((FNA.RDB$FIELD_TYPE == SMALLINT) ||
@@ -2541,7 +2563,7 @@ static void list_functions(void)
 	                                     Integral_subtypes [FNA1.RDB$FIELD_SUB_TYPE],
 	                                     FNA1.RDB$FIELD_PRECISION,
                                          -FNA1.RDB$FIELD_SCALE);
-	                            precision_known = TRUE;
+	                            precision_known = true;
                             }
                         } /* if field_precision is not null */
 	                END_FOR
@@ -2595,7 +2617,7 @@ static void list_functions(void)
             if (ptype > MAX_UDFPARAM_TYPES + 1 || ptype < 0)
                 ptype = MAX_UDFPARAM_TYPES + 1;
             
-            printarg = TRUE;
+            printarg = true;
 
 	
 	        if (FUN.RDB$RETURN_ARGUMENT == FNA.RDB$ARGUMENT_POSITION) {
@@ -2607,7 +2629,7 @@ static void list_functions(void)
                     sprintf (return_buffer, "RETURNS %s%s %s", type_buffer,
                              UDF_param_types[ptype],
                              (FNA.RDB$MECHANISM < 0 ? "FREE_IT" : ""));
-                    printarg = FALSE;
+                    printarg = false;
                 }
 
 			}
@@ -2618,7 +2640,7 @@ static void list_functions(void)
                 sprintf (Print_buffer, "%s%s%s", (firstarg ? "" : ", "), type_buffer, 
                          UDF_param_types[ptype]);
                 ISQL_printf (Out, Print_buffer);
-                firstarg = FALSE;
+                firstarg = false;
             }
             
         END_FOR
@@ -2722,7 +2744,7 @@ static void list_index()
  *
  **************************************/
 	SCHAR *collist;
-	SSHORT first = TRUE;
+	bool first = true;
 
 
 	collist = NULL;
@@ -2752,7 +2774,7 @@ static void list_index()
                      NEWLINE);
             ISQL_printf (Out, Print_buffer);
         }
-        first = FALSE;
+        first = false;
     /* Strip trailing blanks */
 	
 	    ISQL_blankterm (IDX.RDB$RELATION_NAME);
@@ -2778,7 +2800,7 @@ static void list_index()
         
 	    /* Get column names */
         
-	    if (ISQL_get_index_segments (collist, IDX.RDB$INDEX_NAME, TRUE))
+	    if (ISQL_get_index_segments (collist, IDX.RDB$INDEX_NAME, true))
 		{
             sprintf (Print_buffer, "%s)%s%s", collist, Term, NEWLINE);
             ISQL_printf (Out, Print_buffer);
@@ -2809,7 +2831,7 @@ static void list_views()
  *	Note: This should also contain check option
  *
  **************************************/
-	SSHORT first;
+	bool first;
 
 /* If this is a view, use print_blob to print the view text */
 
@@ -2819,7 +2841,7 @@ static void list_views()
 	   REL.RDB$FLAGS = REL_sql
 	   SORTED BY REL.RDB$RELATION_ID
 	   
-	    first = TRUE;
+	    first = true;
 	    ISQL_blankterm (REL.RDB$RELATION_NAME);
 	
 	    if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
@@ -2852,7 +2874,7 @@ static void list_views()
             
             sprintf (Print_buffer, "%s%s", (first ? "" : ", "), SQL_identifier);
             ISQL_printf (Out, Print_buffer);
-            first = FALSE;
+            first = false;
         
 	    END_FOR
 	    ON_ERROR

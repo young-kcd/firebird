@@ -25,7 +25,7 @@
 #define _ISQL_EXTRA_PROTO_H_
 
 extern SSHORT EXTRACT_ddl(int, SCHAR *);
-extern SSHORT EXTRACT_list_table(SCHAR *, SCHAR *, SSHORT, SSHORT);
+extern SSHORT EXTRACT_list_table(SCHAR *, SCHAR *, bool, SSHORT);
 extern void EXTRACT_list_view(SCHAR *);
 extern int	EXTRACT_list_grants (SCHAR *);
 

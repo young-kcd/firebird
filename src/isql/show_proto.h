@@ -26,11 +26,11 @@
 
 
 
-extern BOOLEAN	SHOW_dbb_parameters (FRBRD *, SCHAR *, SCHAR *, USHORT, USHORT);
+extern bool	SHOW_dbb_parameters (FRBRD *, SCHAR *, SCHAR *, USHORT, bool);
 extern int	SHOW_grants (SCHAR *, SCHAR *, USHORT);
 extern int	SHOW_grants2 (SCHAR *, SCHAR *, USHORT, TEXT *);
-extern void	SHOW_grant_roles (SCHAR *, SSHORT *);
-extern void	SHOW_grant_roles2 (SCHAR *, SSHORT *, TEXT *);
+extern void	SHOW_grant_roles (SCHAR *, bool *);
+extern void	SHOW_grant_roles2 (SCHAR *, bool *, TEXT *);
 extern void SHOW_print_metadata_text_blob(IB_FILE *, GDS__QUAD *);
 extern int SHOW_metadata(SCHAR **, SCHAR **);
 
