@@ -416,6 +416,10 @@ static void parse_switch( TEXT * switches, int *flag)
 		case 'W':
 			*flag |= SRVR_wnet;
 			break;
+
+		case 'X':
+			*flag |= SRVR_xnet;
+			break;
 		}
 
 #if (defined SUPERCLIENT || defined SUPERSERVER)
