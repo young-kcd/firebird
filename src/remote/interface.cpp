@@ -68,15 +68,11 @@
 #include <unistd.h>
 #endif
 
-#ifdef	WIN_NT
-#include "../jrd/isc_proto.h"
-#endif
-
 #if defined(WIN_NT)
+#define XNET
+#include "../jrd/isc_proto.h"
 #include "../remote/wnet_proto.h"
-#ifdef  XNET
 #include "../remote/xnet_proto.h"
-#endif
 #endif
 
 #ifdef VMS
@@ -4807,7 +4803,6 @@ static PORT analyze(TEXT*	file_name,
 #endif
 
 #if defined(WIN_NT)
-
 	*file_length = ISC_expand_share(file_name, expanded_name);
 	strcpy((char *) file_name, (char *) expanded_name);
 #endif
@@ -4823,6 +4818,9 @@ static PORT analyze(TEXT*	file_name,
 #endif
 
 #if defined(WIN_NT)
+	if (ISC_analyze_xnet(file_name, node_name))
+		return XNET_analyze(file_name, file_length, status_vector,
+							node_name, user_string, uv_flag);
 	if (ISC_analyze_pclan(file_name, node_name))
 		return WNET_analyze(file_name, file_length, status_vector,
 							node_name, user_string, uv_flag);
@@ -4901,7 +4899,7 @@ static PORT analyze(TEXT*	file_name,
 #endif /* IPSERV */
 #endif /* WIN_NT */
 
-#ifdef  XNET
+#if defined(XNET) && !defined(IPSERV)
 
 /* all remote attempts have failed, so access locally through the
    interprocess server */
@@ -4987,6 +4985,9 @@ TEXT * user_string, USHORT uv_flag, SCHAR * dpb, SSHORT dpb_length)
 #endif
 
 #if defined(WIN_NT)
+	if (ISC_analyze_xnet(service_name, node_name))
+		return XNET_analyze(service_name, service_length, status_vector,
+							node_name, user_string, uv_flag);
 	if (ISC_analyze_pclan(service_name, node_name))
 		return WNET_analyze(service_name, service_length, status_vector,
 							node_name, user_string, uv_flag);
@@ -4997,7 +4998,7 @@ TEXT * user_string, USHORT uv_flag, SCHAR * dpb, SSHORT dpb_length)
 								node_name, user_string, uv_flag, dpb,
 								dpb_length);
 
-#ifdef  XNET
+#if defined(XNET) && !defined(IPSERV)
 
 /* all remote attempts have failed, so access locally through the
    interprocess server */
@@ -5616,7 +5617,6 @@ static void event_handler( PORT port)
 /* free up anything allocated */
 
 	REMOTE_free_packet(port, &packet);
-
 }
 
 
@@ -5691,7 +5691,9 @@ static STATUS fetch_blob(
 						 RSR statement,
 						 USHORT blr_length,
 						 UCHAR * blr,
-USHORT msg_type, USHORT msg_length, UCHAR * msg)
+						 USHORT msg_type,
+						 USHORT msg_length,
+						 UCHAR * msg)
 {
 /**************************************
  *

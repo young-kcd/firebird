@@ -56,10 +56,10 @@ typedef short DWORD;
 #define XPS_MAX_PAGES_PER_CLI   16      /* max 1k pages space per client */
 
 #define XPS_PACK_PARAMS(x,p,m,u) (((ULONG)(x) << 24) + ((ULONG)(p) << 16) + ((m) << 8) + (u))
-#define XPS_UNPACK_MAX_USERS(n) (((ULONG)(n) >> 24) & 0xFF)
+#define XPS_UNPACK_MAX_SLOTS(n) (((ULONG)(n) >> 24) & 0xFF)
 #define XPS_UNPACK_PAGES(n)     (((ULONG)(n) >> 16) & 0xFF)
 #define XPS_UNPACK_MAPNUM(n)    (((ULONG)(n) >> 8) & 0xFF)
-#define XPS_UNPACK_USERNUM(n)   ((n) & 0xFF)
+#define XPS_UNPACK_SLOTNUM(n)   ((n) & 0xFF)
 
 /* mapped file structure */
 
@@ -146,15 +146,19 @@ typedef struct xps
 
 /* Windows names used to identify various named objects */
 
-#define XPI_SERVER_NAME         "InterBaseXPIServer"
-#define XPI_SERVER_CLASS        "InterBaseXPIServerClass"
-#define XPI_MAPPED_FILE_NAME    "InterBaseXPIMappedArea%d"
-#define XPI_C_TO_S_SEM_NAME     "InterBaseXPICtoS%d_%d"
-#define XPI_S_TO_C_SEM_NAME     "InterBaseXPIStoC%d_%d"
-#define XPI_C_TO_S_EVT_SEM_NAME "InterBaseXPICtoSEvent%d_%d"
-#define XPI_S_TO_C_EVT_SEM_NAME "InterBaseXPIStoCEvent%d_%d"
-#define XPI_EVENT_NAME          "InterBaseXPIEvent%d"
-#define XPI_EVENT_CLASS         "InterBaseXPIEventClass"
-#define XPI_EVENT_THREAD        "InterBaseXPIEventThread%d_%d"
+#define XPI_PREFIX				"FirebirdXPI"
+
+#define XPI_SERVER_NAME         "%sServer"
+#define XPI_SERVER_CLASS        "%sServerClass"
+#define XPI_MAPPED_FILE_NAME    "%sMappedArea%d"
+#define XPI_C_TO_S_SEM_NAME     "%sCtoS%d_%d"
+#define XPI_S_TO_C_SEM_NAME     "%sStoC%d_%d"
+#define XPI_C_TO_S_EVT_SEM_NAME "%sCtoSEvent%d_%d"
+#define XPI_S_TO_C_EVT_SEM_NAME "%sStoCEvent%d_%d"
+#define XPI_EVENT_NAME          "%sEvent%d"
+#define XPI_EVENT_CLASS         "%sEventClass"
+#define XPI_EVENT_THREAD        "%sEventThread%d_%d"
+
+#define	XPI_CONNECT_MESSAGE	WM_USER + 3
 
 #endif /* _REMOTE_XNET_H_ */

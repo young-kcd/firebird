@@ -96,9 +96,7 @@
 #include "../remote/window_proto.h"
 #include "../remote/wnet_proto.h"
 #include "../remote/window.rh"
-#ifdef  XNET
 #include "../remote/xnet_proto.h"
-#endif /* XNET */
 #include "../jrd/gds_proto.h"
 #include "../jrd/license.h"
 #include "../jrd/sch_proto.h"
@@ -129,10 +127,8 @@ static SERVICE_TABLE_ENTRY service_table[] = {
 	NULL, NULL
 };
 
-#ifdef XNET
 /* put into ensure that we have a parent port for the XNET connections */
 static int xnet_server_set = FALSE;
-#endif /* XNET */
 
 
 int WINAPI WinMain(HINSTANCE	hThisInst,
@@ -200,6 +196,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 			server_flag |= SRVR_wnet;
 		server_flag |= SRVR_inet;
 #ifdef SUPERSERVER
+		server_flag |= SRVR_xnet;
 		server_flag |= SRVR_ipc;
 #endif
 	}
@@ -248,13 +245,6 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 							  (wnet_connect_wait_thread), 0, THREAD_medium, 0,
 							  0);
 		}
-#ifdef XNET
-		if (server_flag & SRVR_xnet) {
-			gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
-							  (xnet_connect_wait_thread), 0, THREAD_medium, 0,
-							  0);
-		}
-#endif
 		/* No need to waste a thread if we are running as a window.  Just start
 		 * the ipc communication
 		 */
@@ -265,7 +255,6 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 }
 
 
-#ifdef XNET
 ULONG SRVR_xnet_start_thread(ULONG client_pid)
 {
 /**************************************
@@ -282,7 +271,6 @@ ULONG SRVR_xnet_start_thread(ULONG client_pid)
  **************************************/
 	PORT port;
 	ULONG response;
-
 
 /* get a port */
 	port = XNET_start_thread(client_pid, &response);
@@ -310,7 +298,6 @@ ULONG SRVR_xnet_start_thread(ULONG client_pid)
 /* return combined mapped area and number */
 	return response;
 }
-#endif /* XNET */
 
 
 static void THREAD_ROUTINE process_connection_thread( PORT port)
@@ -468,12 +455,6 @@ static void THREAD_ROUTINE start_connections_thread( int flag)
 		gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
 						  (wnet_connect_wait_thread), 0, THREAD_medium, 0, 0);
 	}
-#ifdef XNET
-	if (server_flag & SRVR_xnet) {
-		gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
-						  (xnet_connect_wait_thread), 0, THREAD_medium, 0, 0);
-	}
-#else
 	if (server_flag & SRVR_ipc) {
 		const int bFailed =
 			gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
@@ -496,7 +477,6 @@ static void THREAD_ROUTINE start_connections_thread( int flag)
 			return;
 		}
 	}
-#endif /* XNET */
 }
 
 
@@ -586,14 +566,12 @@ static HANDLE parse_args( LPSTR lpszArgs, USHORT * pserver_flag)
 					*pserver_flag &= ~SRVR_high_priority;
 					break;
 
-#ifdef XNET
-				case 'X':
-					*pserver_flag |= SRVR_xnet;
-					break;
-#endif
-
 				case 'W':
 					*pserver_flag |= SRVR_wnet;
+					break;
+
+				case 'X':
+					*pserver_flag |= SRVR_xnet;
 					break;
 
 				case 'Z':

@@ -28,8 +28,6 @@
 extern "C" {
 #endif
 
-#ifdef  XNET
-
 #ifdef NO_PORT
 #define PORT void*
 #endif
@@ -37,9 +35,8 @@ extern "C" {
 extern PORT     XNET_analyze( TEXT *, USHORT *, STATUS *, TEXT *, TEXT *, USHORT);
 extern PORT     XNET_connect( TEXT *, struct packet *, STATUS *, USHORT);
 extern USHORT   XNET_init( HWND, USHORT, USHORT, USHORT);
+extern void		XNET_release_all(void);
 extern PORT     XNET_start_thread( ULONG, ULONG *);
-
-#endif
 
 #ifdef __cplusplus
 }	/* extern "C" */

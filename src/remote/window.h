@@ -49,6 +49,4 @@
 static char *szClassName = "FB_Server";
 static char *szWindowName = "Firebird Server";
 
-#define	IP_CONNECT_MESSAGE	WM_USER + 1
-
 #endif // WINDOW_H

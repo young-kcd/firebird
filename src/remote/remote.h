@@ -315,13 +315,13 @@ enum rem_port_t
 	port_mailbox,		/* Apollo mailbox */
 	port_pcic,			/* IBM PC interconnect */
 	port_inet,			/* Internet (TCP/IP) */
-	port_asyn_homebrew,		/* homebrew asynchronous connection */
+	port_asyn_homebrew,	/* homebrew asynchronous connection */
 	port_decnet,		/* DECnet connection */
 	port_ipc,			/* NetIPC connection */
 	port_pipe,			/* Windows NT named pipe connection */
 	port_mslan,			/* Microsoft LanManager connection */
-	port_spx,                   /* Novell SPX connection */
-	port_ipserver,               /* InterBase interprocess server */
+	port_spx,			/* Novell SPX connection */
+	port_ipserver,		/* InterBase interprocess server */
 	port_xnet			/* Windows NT named xnet connection */
 };
 
@@ -407,9 +407,7 @@ typedef struct port
 #ifdef VMS
 	USHORT			port_iosb[4];
 #endif
-#ifdef XNET
 	void*			port_xcc;              /* interprocess structure */
-#endif
 	UCHAR			port_buffer[1];
 
 	/* TMN: Beginning of C++ port */

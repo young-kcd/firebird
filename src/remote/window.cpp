@@ -33,6 +33,7 @@
 #include "../remote/remote_def.h"
 #include "../remote/window.rh"
 #include "../remote/property.rh"
+#include "../remote/xnet.h"
 #include "../ipserver/ips.h"
 
 #include "../jrd/svc_proto.h"
@@ -117,8 +118,6 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 	}
 	else {
 
-#ifndef XNET
-
 		if (!IPS_init(hWnd, 0, (USHORT) Config::getIpcMapSize(), 0)) {
 			// The initialization failed.  Check to see if there is another
 			// server running.  If so, bring up it's property sheet and quit
@@ -147,8 +146,6 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 			return 0;
 		}
 
-#else
-
 		if (!XNET_init(hWnd, 0, 0, 0)) {
 			char szMsgString[TMP_STRINGLEN];
 			hWnd = FindWindow(szClassName, APP_NAME);
@@ -172,7 +169,6 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 			}
 			return 0;
 		}
-#endif
 	}
 
 /* initialize main window */
@@ -491,12 +487,11 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 		PostQuitMessage(0);
 		break;
 
-	case IP_CONNECT_MESSAGE:
-#ifndef XNET
+	case IPI_CONNECT_MESSAGE:
 		return IPS_start_thread(lParam);
-#else
+
+	case XPI_CONNECT_MESSAGE:
 		return SRVR_xnet_start_thread(lParam);
-#endif
 
 	case WM_DEVICECHANGE:
 		pdbcv = (PDEV_BROADCAST_VOLUME) lParam;

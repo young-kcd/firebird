@@ -24,8 +24,6 @@
  *
  */
 
-#ifdef  XNET
-
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
@@ -68,7 +66,6 @@
 #endif
 
 extern "C" {
-
 
 #ifdef WIN_NT
 #define ERRNO		GetLastError()
@@ -165,11 +162,8 @@ static HANDLE server_watcher_handle = 0;
 static HANDLE server_process_handle = 0;
 #endif
 static USHORT exit_flag = 0;
-static USHORT initialized = 0;
+static bool initialized = false;
 static MUTX_T xnet_mutex;
-
-
-
 
 
 PORT XNET_analyze(
@@ -200,7 +194,6 @@ PORT XNET_analyze(
 	TEXT *p, user_id[128], buffer[64];
 
 	p_cnct::p_cnct_repeat * protocol;
-
 
 	*file_length = strlen(file_name);
 
@@ -237,7 +230,6 @@ PORT XNET_analyze(
 
 	user_length = p - user_id;
 
-
 /* Establish connection to server */
 
 	cnct = &packet->p_cnct;
@@ -260,8 +252,6 @@ PORT XNET_analyze(
 
 	cnct->p_cnct_user_id.cstr_length = user_length;
 	cnct->p_cnct_user_id.cstr_address = (UCHAR *) user_id;
-
-
 
 	protocol = cnct->p_cnct_versions;
 
@@ -513,10 +503,8 @@ PORT XNET_connect(TEXT * name,
 	PORT port;
 #endif
 
-
-
 	if (!initialized) {
-		initialized = 1;
+		initialized = true;
 		gds__register_cleanup((FPTR_VOID_PTR) exit_handler, NULL);
 		THD_mutex_init(&xnet_mutex);
 	}
@@ -562,7 +550,7 @@ for (xcc = client_threads; xcc; xcc = xcc->xcc_next)
 		client_pid = GetCurrentProcessId();
 		HWND hWndServer = FindWindow(szClassName, APP_NAME);
 		number = (ULONG) SendMessage(hWndServer,
-									 IP_CONNECT_MESSAGE, 0,
+									 XPI_CONNECT_MESSAGE, 0,
 									 (LPARAM) client_pid);
 #else /* WIN_NT */
 		client_pid = getpid();
@@ -575,9 +563,9 @@ for (xcc = client_threads; xcc; xcc = xcc->xcc_next)
 			return 0;
 		}
 		pages_per_user = (USHORT) XPS_UNPACK_PAGES(number);
-		users_per_map = (USHORT) XPS_UNPACK_MAX_USERS(number);
+		users_per_map = (USHORT) XPS_UNPACK_MAX_SLOTS(number);
 		mapped_area = (SSHORT) XPS_UNPACK_MAPNUM(number);
-		mapped_position = (SSHORT) XPS_UNPACK_USERNUM(number);
+		mapped_position = (SSHORT) XPS_UNPACK_SLOTNUM(number);
 
 		/* see if area is already mapped for this client */
 
@@ -588,7 +576,7 @@ for (xcc = client_threads; xcc; xcc = xcc->xcc_next)
 		if (!xpm) {
 			/* add new mapping */
 
-			sprintf(name_buffer, XPI_MAPPED_FILE_NAME, mapped_area);
+			sprintf(name_buffer, XPI_MAPPED_FILE_NAME, XPI_PREFIX, mapped_area);
 #ifdef WIN_NT
 			file_handle = OpenFileMapping(FILE_MAP_WRITE, FALSE, name_buffer);
 			if (!file_handle) {
@@ -646,7 +634,6 @@ for (xcc = client_threads; xcc; xcc = xcc->xcc_next)
 		xcc->xcc_send_channel_locked = FALSE;
 		xps = (XPS) xcc->xcc_mapped_addr;
 
-
 		/* only speak if server has correct protocol */
 
 		if (xps->xps_server_protocol != 2L) {
@@ -673,7 +660,7 @@ for (xcc = client_threads; xcc; xcc = xcc->xcc_next)
 
 		/* get handles of semaphores */
 
-		sprintf(name_buffer, XPI_S_TO_C_SEM_NAME,
+		sprintf(name_buffer, XPI_S_TO_C_SEM_NAME, XPI_PREFIX,
 				mapped_area, mapped_position);
 #ifdef WIN_NT
 		xcc->xcc_recv_sem =
@@ -681,7 +668,7 @@ for (xcc = client_threads; xcc; xcc = xcc->xcc_next)
 #else
 		/* STUB : need to call event init for Unix */
 #endif
-		sprintf(name_buffer, XPI_C_TO_S_SEM_NAME, mapped_area,
+		sprintf(name_buffer, XPI_C_TO_S_SEM_NAME, XPI_PREFIX, mapped_area,
 				mapped_position);
 #ifdef WIN_NT
 		xcc->xcc_send_sem =
@@ -713,7 +700,6 @@ for (xcc = client_threads; xcc; xcc = xcc->xcc_next)
 
 		xcc->xcc_receive_channel = &xps->xps_channels[1];
 		xcc->xcc_send_channel = &xps->xps_channels[0];
-
 
 		/* if we're not watching the server yet, do so now */
 
@@ -763,9 +749,8 @@ USHORT XNET_init(HWND hwnd,
  **************************************/
 	XPM xpm;
 
-
 	if (!initialized) {
-		initialized = 1;
+		initialized = true;
 		gds__register_cleanup((FPTR_VOID_PTR) exit_handler, NULL);
 		THD_mutex_init(&xnet_mutex);
 	}
@@ -908,10 +893,10 @@ PORT XNET_start_thread(ULONG client_pid, ULONG * response)
 #ifdef WIN_NT
 /* create the semaphores and put the handles into the xcc */
 
-	sprintf(name_buffer, XPI_S_TO_C_SEM_NAME, mapped_area, mapped_position);
+	sprintf(name_buffer, XPI_S_TO_C_SEM_NAME, XPI_PREFIX, mapped_area, mapped_position);
 	xcc->xcc_send_sem = CreateSemaphore(ISC_get_security_desc(),
 										0L, 2L, name_buffer);
-	sprintf(name_buffer, XPI_C_TO_S_SEM_NAME, mapped_area, mapped_position);
+	sprintf(name_buffer, XPI_C_TO_S_SEM_NAME, XPI_PREFIX, mapped_area, mapped_position);
 	xcc->xcc_recv_sem = CreateSemaphore(ISC_get_security_desc(),
 										0L, 2L, name_buffer);
 
@@ -960,7 +945,6 @@ PORT XNET_start_thread(ULONG client_pid, ULONG * response)
 					  xcc->xcc_receive_channel->xch_size);
 	if (port)
 		port->port_xcc = (void *) xcc;
-
 
 /* return combined mapped area and number */
 
@@ -1020,7 +1004,7 @@ port->port_type = port_ipserver;
 	ISC_get_host(buffer, sizeof(buffer));
 	port->port_host = REMOTE_make_string(buffer);
 	port->port_connection = REMOTE_make_string(buffer);
-	sprintf(buffer, "IP Server (%s)", port->port_host->str_data);
+	sprintf(buffer, "XNET Server (%s)", port->port_host->str_data);
 	port->port_version = REMOTE_make_string(buffer);
 	if (parent) {
 		port->port_parent = parent;
@@ -1076,7 +1060,6 @@ static PORT aux_connect( PORT port, PACKET * packet, XDR_INT(*ast) (void))
 
 	USHORT espace;
 
-
 	if (port->port_server_flags) {
 		port->port_flags |= PORT_async;
 		return port;
@@ -1106,11 +1089,11 @@ static PORT aux_connect( PORT port, PACKET * packet, XDR_INT(*ast) (void))
 #ifdef WIN_NT
 /* get handles of semaphores */
 
-	sprintf(name_buffer, XPI_S_TO_C_EVT_SEM_NAME,
+	sprintf(name_buffer, XPI_S_TO_C_EVT_SEM_NAME,XPI_PREFIX, 
 			xcc->xcc_file, xcc->xcc_slot);
 	xcc->xcc_recv_sem = OpenSemaphore(SEMAPHORE_ALL_ACCESS, FALSE,
 									  name_buffer);
-	sprintf(name_buffer, XPI_C_TO_S_EVT_SEM_NAME,
+	sprintf(name_buffer, XPI_C_TO_S_EVT_SEM_NAME, XPI_PREFIX, 
 			xcc->xcc_file, xcc->xcc_slot);
 	xcc->xcc_send_sem = OpenSemaphore(SEMAPHORE_ALL_ACCESS, FALSE,
 									  name_buffer);
@@ -1204,11 +1187,11 @@ static PORT aux_request( PORT port, PACKET * packet)
 /* create the event semaphores and put the handles into the xcc */
 
 #ifdef WIN_NT
-	sprintf(name_buffer, XPI_S_TO_C_EVT_SEM_NAME,
+	sprintf(name_buffer, XPI_S_TO_C_EVT_SEM_NAME, XPI_PREFIX, 
 			xcc->xcc_file, xcc->xcc_slot);
 	xcc->xcc_send_sem = CreateSemaphore(ISC_get_security_desc(),
 										0L, 2L, name_buffer);
-	sprintf(name_buffer, XPI_C_TO_S_EVT_SEM_NAME,
+	sprintf(name_buffer, XPI_C_TO_S_EVT_SEM_NAME, XPI_PREFIX, 
 			xcc->xcc_file, xcc->xcc_slot);
 	xcc->xcc_recv_sem = CreateSemaphore(ISC_get_security_desc(),
 										0L, 2L, name_buffer);
@@ -1462,7 +1445,6 @@ ULONG connection_setup(TEXT * name, PACKET * packet, STATUS * status_vector)
 #endif /* UNIX */
 
 
-
 static void cleanup_comm( XCC xcc)
 {
 /**************************************
@@ -1520,7 +1502,6 @@ static void cleanup_comm( XCC xcc)
 
 /* if this was the last area for this map, unmap it */
 
-
 	xpm->xpm_count--;
 #ifdef SUPERCLIENT
 	if (!xpm->xpm_count && client_maps) {
@@ -1569,7 +1550,6 @@ static void cleanup_port( PORT port)
  *      allocated memory and then free the port.
  *
  **************************************/
-
 
 	if (port->port_xcc)
 		cleanup_comm((XCC) port->port_xcc);
@@ -1661,7 +1641,6 @@ static void exit_handler( PORT main_port)
  **************************************/
 	PORT port;
 
-
 	for (port = main_port; port; port = port->port_next);
 }
 
@@ -1688,10 +1667,9 @@ static XPM make_map( USHORT map_number)
 	USHORT i;
 	TEXT name_buffer[128];
 
-
 /* create the mapped file name and try to open it */
 
-	sprintf(name_buffer, XPI_MAPPED_FILE_NAME, map_number);
+	sprintf(name_buffer, XPI_MAPPED_FILE_NAME, XPI_PREFIX, map_number);
 #ifdef WIN_NT
 	map_handle = CreateFileMapping((HANDLE) 0xFFFFFFFF, NULL,
 								   PAGE_READWRITE, 0L,
@@ -1812,7 +1790,6 @@ static int packet_send( PORT port, SSHORT length)
 	XCH xch;
 	USHORT errres;
 
-
 	xcc = reinterpret_cast<XCC>(port->port_xcc);
 	xps = (XPS) (xcc->xcc_mapped_addr);
 	xch = xcc->xcc_send_channel;
@@ -1857,7 +1834,6 @@ static PORT receive( PORT main_port, PACKET * packet)
  *
  **************************************/
 
-
 	if (!xdr_protocol(&main_port->port_receive, packet))
 		packet->p_operation = op_exit;
 	return main_port;
@@ -1877,11 +1853,9 @@ static int send_full( PORT port, PACKET * packet)
  *
  **************************************/
 
-
 	if (!xdr_protocol(&port->port_send, packet))
 		return FALSE;
 	return xdrxnet_endofrecord(&port->port_send, TRUE);
-
 }
 
 
@@ -1897,7 +1871,6 @@ static int send_partial( PORT port, PACKET * packet)
  *	Send a packet across a port to another process.
  *
  **************************************/
-
 
 	return xdr_protocol(&port->port_send, packet);
 }
@@ -1975,7 +1948,6 @@ static void server_watcher(void)
 #ifdef WIN_NT
 	DWORD result;
 
-
 	for (;;) {
 		if (exit_flag)
 			break;
@@ -2011,7 +1983,6 @@ static int xdrxnet_create(
  *
  **************************************/
 
-
 	xdrs->x_public = (caddr_t) port;
 	xdrs->x_private = (SCHAR *) buffer;
 	xdrs->x_base = xdrs->x_private;
@@ -2034,7 +2005,6 @@ static bool_t xdrxnet_endofrecord( XDR * xdrs, bool_t flushnow)
  *	Write out the rest of a record.
  *
  **************************************/
-
 
 	return xnet_write(xdrs, flushnow);
 }
@@ -2095,7 +2065,6 @@ static int xnet_error(
 	TEXT node_name[MAXPATHLEN];
 	TEXT *p;
 
-
 	strcpy(node_name, ((SCHAR *) port->port_connection->str_data) + 2);
 	p = strchr(node_name, '\\');
 	if (p != NULL)
@@ -2136,7 +2105,6 @@ static void xnet_gen_error( PORT port, STATUS status, ...)
  *
  **************************************/
 	STATUS *status_vector;
-
 
 	port->port_flags |= PORT_broken;
 	port->port_state = state_broken;
@@ -2239,7 +2207,6 @@ static u_int xnet_getpostn( XDR * xdrs)
  *
  **************************************/
 
-
 	return (u_int) (xdrs->x_private - xdrs->x_base);
 }
 
@@ -2277,7 +2244,6 @@ static bool_t xnet_putbytes( XDR * xdrs, SCHAR * buff, u_int count)
  **************************************/
 	SLONG bytecount = count;
 	SLONG to_copy;
-
 
 	THREAD_EXIT;
 	while (bytecount) {
@@ -2383,7 +2349,6 @@ static bool_t xnet_read( XDR * xdrs)
 	PORT port;
 	USHORT length;
 
-
 	port = (PORT) xdrs->x_public;
 	if (!packet_receive(port, &length))
 		return FALSE;
@@ -2446,12 +2411,11 @@ static bool_t xnet_write( XDR * xdrs, bool_t end_flag)
 }
 
 
-#ifdef XNET
-void IPC_release_all(void)
+void XNET_release_all(void)
 {
 /**************************************
  *
- *      I P C _ r e l e a s e _ a l l
+ *      X N E T _ r e l e a s e _ a l l
  *
  **************************************
  *
@@ -2524,9 +2488,5 @@ void IPC_release_all(void)
 		ALLR_free((UCHAR *) xpm);
 	}
 }
-#endif
-
 
 } // extern "C"
-
-#endif /* XNET */

@@ -3069,13 +3069,11 @@ BOOLEAN process_packet(PORT port,
 				break;
 			if ((server->srvr_flags & SRVR_multi_client) &&
 				port != server->srvr_parent_port) {
-	#ifdef XNET
 				if (port->port_type == port_xnet) {
 					port->disconnect(send, receive);
 					THD_restore_specific();
 					return FALSE;
 				}
-	#endif /* XNET */
 				port->disconnect(send, receive);
 				port = NULL;
 				break;

@@ -50,6 +50,9 @@
 #include "../jrd/sch_proto.h"
 #include "../remote/window.h"
 #include "../common/config/config.h"
+#define NO_PORT
+#include "../remote/xnet_proto.h"
+#undef NO_PORT
 
 #define statistics      stat
 
@@ -3777,7 +3780,6 @@ static SSHORT init( STATUS * user_status, ICC * picc)
 	DWORD client_pid;
 	ips_comm_area *comm;
 
-
 	/* first, make sure that the critical region is initialized */
 
 	while (!initialized)
@@ -3792,6 +3794,8 @@ static SSHORT init( STATUS * user_status, ICC * picc)
 			THD_mutex_init(&mapsect);
 			initialized = TRUE;
 			gds__register_cleanup(reinterpret_cast<void(*)(void*)>(IPC_release_all),
+									NULL);
+			gds__register_cleanup(reinterpret_cast<void(*)(void*)>(XNET_release_all),
 									NULL);
 		}
 		else
