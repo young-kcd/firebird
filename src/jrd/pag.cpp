@@ -1167,8 +1167,9 @@ void PAG_init(void)
    assuming that each index has only one key */
 
 	dbb->dbb_max_idx = (dbb->dbb_page_size - OFFSETA(IRT, irt_rpt)) /
-		(sizeof(irt::irt_repeat) + (1 * (sizeof(irtd))));
-
+		(sizeof(irt::irt_repeat) +
+		(1 * (dbb->dbb_ods_version >= ODS_VERSION11) ?
+			sizeof(irtd) : sizeof(irtd_ods10)));
 
 /* Compute prefetch constants from database page size and maximum prefetch
    transfer size. Double pages per prefetch request so that cache reader
