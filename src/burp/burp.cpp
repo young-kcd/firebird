@@ -857,7 +857,7 @@ int DLL_EXPORT BURP_gbak(int		argc,
 			case (IN_SW_BURP_PASS):
 				if (!tdgbl->dpb_length)
 					*dpb++ = gds_dpb_version1;
-				if (!tdgbl->gbl_sw_service_thd)
+				if (!tdgbl->gbl_sw_service_gbak)
 					*dpb++ = gds_dpb_password;
 				else
 					*dpb++ = gds_dpb_password_enc;

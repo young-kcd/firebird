@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: restore.epp,v 1.22 2003-03-04 00:00:26 brodsom Exp $
+$Id: restore.epp,v 1.23 2003-03-09 21:16:25 skidder Exp $
 */
 
 #include "firebird.h"
@@ -553,7 +553,7 @@ if (tdgbl->gbl_sw_user)
 
 if (tdgbl->gbl_sw_password)
     {
-    if (!tdgbl->gbl_sw_service_thd)
+    if (!tdgbl->gbl_sw_service_gbak)
         *d++ = (UCHAR) gds_dpb_password;
     else
     	*d++ = (UCHAR) gds_dpb_password_enc;
@@ -607,7 +607,7 @@ if (tdgbl->gbl_sw_mode == TRUE && tdgbl->gbl_sw_mode_val == TRUE)
 
     if (tdgbl->gbl_sw_password)
 	{
-	if (!tdgbl->gbl_sw_service_thd)
+	if (!tdgbl->gbl_sw_service_gbak)
 	    *d++ = (UCHAR) gds_dpb_password;
 	else
 	    *d++ = (UCHAR) gds_dpb_password_enc;
@@ -964,7 +964,7 @@ if (tdgbl->gbl_sw_user)
     }
 if (tdgbl->gbl_sw_password)
     {
-    if (!tdgbl->gbl_sw_service_thd)
+    if (!tdgbl->gbl_sw_service_gbak)
 	*d++ = (UCHAR) isc_dpb_password;
     else
 	*d++ = (UCHAR) isc_dpb_password_enc;
