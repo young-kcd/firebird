@@ -40,7 +40,7 @@
  *
  */
 /*
-$Id: cmp.cpp,v 1.28 2002-11-30 17:43:18 hippoman Exp $
+$Id: cmp.cpp,v 1.29 2002-12-04 18:39:14 arnobrinkman Exp $
 */
 
 #include "firebird.h"
@@ -2184,12 +2184,28 @@ void DLL_EXPORT CMP_shutdown_database(TDBB tdbb)
 	IDL index;
 	VEC vector;
 	DBB dbb;
+	USHORT id;
+	JRD_REQ request;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	DEV_BLKCHK(dbb, type_dbb);
+
+
+	/* Release all database specific requests */
+	for (id = 0; id < irq_MAX; id++) {
+		if (request = (JRD_REQ) REQUEST(id)) {
+			CMP_release(tdbb, request);
+		}
+	}
+
+	for (id = 0; id < drq_MAX; id++) {
+		if (request = (JRD_REQ) DYN_REQUEST(id)) {
+			CMP_release(tdbb, request);
+		}
+	}
 
 	if (!(vector = dbb->dbb_relations))
 		return;
@@ -2223,6 +2239,18 @@ void DLL_EXPORT CMP_shutdown_database(TDBB tdbb)
 				procedure->prc_use_count = 0;
 			}
 		}
+
+
+
+/*	if ((which == IRQ_REQUESTS && !(request = (JRD_REQ) REQUEST(id))) ||
+		(which == DYN_REQUESTS && !(request = (JRD_REQ) DYN_REQUEST(id))) ||
+		!(request->req_flags & (req_active | req_reserved))) {
+		if (request)
+			request->req_flags |= req_reserved;
+		THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_cmp_clone);
+		return request;
+	}*/
+
 }
 
 
@@ -4733,9 +4761,7 @@ static void pass2_rse(TDBB tdbb, CSB csb, RSE rse)
 
 		node = *ptr;
 		if (node->nod_type == nod_relation) {
-			USHORT stream;
-
-			stream = (USHORT) node->nod_arg[e_rel_stream];
+			USHORT stream = (USHORT) node->nod_arg[e_rel_stream];
 			csb->csb_rpt[stream].csb_flags |= csb_active;
 			pass2(tdbb, csb, node, (JRD_NOD) rse);
 		}
@@ -4743,9 +4769,12 @@ static void pass2_rse(TDBB tdbb, CSB csb, RSE rse)
 			pass2_rse(tdbb, csb, (RSE) node);
 		}
 		else if (node->nod_type == nod_procedure) {
-			USHORT stream;
-
-			stream = (USHORT) node->nod_arg[e_prc_stream];
+			USHORT stream = (USHORT) node->nod_arg[e_prc_stream];
+			csb->csb_rpt[stream].csb_flags |= csb_active;
+			pass2(tdbb, csb, node, (JRD_NOD) rse);
+		}
+		else if (node->nod_type == nod_aggregate) {
+			USHORT stream = (USHORT) node->nod_arg[e_agg_stream];
 			csb->csb_rpt[stream].csb_flags |= csb_active;
 			pass2(tdbb, csb, node, (JRD_NOD) rse);
 		}
@@ -5119,7 +5148,6 @@ static RSB post_rse(TDBB tdbb, CSB csb, RSE rse)
  **************************************/
 	RSB rsb;
 	JRD_NOD node, *ptr, *end;
-	USHORT stream;
 
 	SET_TDBB(tdbb);
 
@@ -5144,11 +5172,15 @@ static RSB post_rse(TDBB tdbb, CSB csb, RSE rse)
 		 ptr < end; ptr++) {
 		node = *ptr;
 		if (node->nod_type == nod_relation) {
-			stream = (USHORT) node->nod_arg[e_rel_stream];
+			USHORT stream = (USHORT) node->nod_arg[e_rel_stream];
 			csb->csb_rpt[stream].csb_flags &= ~csb_active;
 		}
 		else if (node->nod_type == nod_procedure) {
-			stream = (USHORT) node->nod_arg[e_prc_stream];
+			USHORT stream = (USHORT) node->nod_arg[e_prc_stream];
+			csb->csb_rpt[stream].csb_flags &= ~csb_active;
+		}
+		else if (node->nod_type == nod_aggregate) {
+			USHORT stream = (USHORT) node->nod_arg[e_agg_stream];
 			csb->csb_rpt[stream].csb_flags &= ~csb_active;
 		}
 	}

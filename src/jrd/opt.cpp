@@ -1507,10 +1507,6 @@ static BOOLEAN computable(CSB csb,
 	case nod_field:
 		if ((n = (USHORT) node->nod_arg[e_fld_stream]) == stream)
 			return FALSE;
-		if (!(csb->csb_rpt[n].csb_relation || 
-			  csb->csb_rpt[n].csb_procedure ||
-			  csb->csb_rpt[n].csb_view))
-			return TRUE;
 		if (idx_use
 			&& !(csb->csb_rpt[n].
 				 csb_flags & (csb_made_river | csb_active))) return FALSE;
@@ -4698,7 +4694,7 @@ static IRL indexed_relationship(TDBB tdbb, OPT opt, USHORT stream)
 			node = tail->opt_conjunct;
 			if (!(tail->opt_flags & opt_used)
 				&& computable(csb, node, -1, FALSE)) {
-				/* AB: Why only check for and-structures ? 
+				/* AB: Why only check for AND structures ? 
 				   Added match_indices for support of "OR" with INNER JOINs */
 
 				/* match_index(tdbb, opt, stream, node, idx); */
@@ -5059,19 +5055,17 @@ static JRD_NOD make_inversion(TDBB tdbb,
 			/* Because indices are already sort based on their selectivity
 			   it's not needed to more then 1 index for a node */
 			if ((boolean->nod_type == nod_starts) && accept_starts) {
-				compose(&inversion,
-					node = make_starts(tdbb, opt, relation, boolean, stream, idx),
-					nod_bit_and);
+				node = make_starts(tdbb, opt, relation, boolean, stream, idx);
 				if (node) {
+					compose(&inversion, node, nod_bit_and);
 					accept_starts = FALSE;
 				}
 			}
 
 			if ((boolean->nod_type == nod_missing) && accept_missing) {
-				compose(&inversion,
-					node = make_missing(tdbb, opt, relation, boolean, stream, idx),
-					nod_bit_and);
+				node = make_missing(tdbb, opt, relation, boolean, stream, idx);
 				if (node) {
+					compose(&inversion, node, nod_bit_and);
 					accept_missing = FALSE;
 				}
 			}
@@ -6008,7 +6002,7 @@ static void sort_indices(csb_repeat * csb_tail)
  *
  * Functional Description:
  *    Sort indices based on there selectivity.
- *    Lowest selectivy as first, higest as last.
+ *    Lowest selectivy as first, highest as last.
  *
  ***************************************************/
 	IDX *idx, *selected_idx;
@@ -6022,15 +6016,15 @@ static void sort_indices(csb_repeat * csb_tail)
 	}
 
 	/* Walk through the indices and sort them into into idx_sort
-	   where idx_sort[0] contains the lowest selectivity and
-	   idx_sort[csb_tail->csb_indices - 1] the highest */
+	   where idx_sort[0] contains the lowest selectivity (best) and
+	   idx_sort[csb_tail->csb_indices - 1] the highest (worst) */
 
 	if (csb_tail->csb_idx && (csb_tail->csb_indices > 1)) {
 		for (j = 0; j < csb_tail->csb_indices; j++) {
 			selectivity = 1; /* Maximum selectivity is 1 (when all keys are the same) */
 			idx = csb_tail->csb_idx;
 			for (i = 0; i < csb_tail->csb_indices; i++) {
-				/* Prefer ASC indices in the case of almost same selectivities */
+				/* Prefer ASC indices in the case of almost the same selectivities */
 				if (selectivity > idx->idx_selectivity) {
 					same_selectivity = ((selectivity - idx->idx_selectivity) <= 0.00001);
 				}
