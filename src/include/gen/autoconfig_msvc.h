@@ -106,7 +106,7 @@
 #undef HAVE_XDR_HYPER
 #undef HAVE_PREAD
 #undef HAVE_PWRITE
-#undef HAVE_GETCWD
+#define HAVE_GETCWD
 #undef HAVE_GETWD
 #undef HAVE_SETMNTENT
 #undef HAVE_GETMNTENT
