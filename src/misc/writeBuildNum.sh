@@ -3,7 +3,7 @@
 # This file is used both to rebuild the header file and to set the 
 # environment variables on the config call
 
-BuildVersion="$Id: writeBuildNum.sh,v 1.421 2002-07-05 12:07:14 skywalker Exp $"
+BuildVersion="$Id: writeBuildNum.sh,v 1.422 2002-07-05 12:22:58 skywalker Exp $"
 
 BuildType=T
 MajorVer=2
@@ -67,5 +67,5 @@ if [ "$1" = "rebuildHeader" ]
     rebuildHeaderFile
 elif [ "$1" = "--version" ]
   then
-    echo "Build Version : " $PRODUCT_VER_STRING $BuildSuffix
+    echo "Build Version : " $BuildType$PRODUCT_VER_STRING $BuildSuffix
 fi
