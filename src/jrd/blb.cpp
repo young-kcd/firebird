@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.83 2004-07-10 03:20:08 robocop Exp $
+$Id: blb.cpp,v 1.84 2004-08-03 16:04:17 skidder Exp $
 */
 
 #include "firebird.h"
@@ -1057,8 +1057,22 @@ void BLB_move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc, j
 		jrd_tra* transaction = tdbb->tdbb_request->req_transaction;
 		if (transaction->tra_blobs.locate(blob_temp_id)) {
 			BlobIndex* current = &transaction->tra_blobs.current();
-			if (current->bli_materialized)
+			if (current->bli_materialized) {
+				// Delete BLOB from request owned blob list
+				jrd_req* blob_request = current->bli_request;
+				if (blob_request) {
+					if (blob_request->req_blobs.locate(blob_temp_id)) {
+						blob_request->req_blobs.fastRemove();
+					} else {
+						// We should never get here because when bli_request is assigned
+						// item should be added to req_blobs array
+						fb_assert(false);
+					}					
+				}
+
+				// Free materialized blob handle
 				transaction->tra_blobs.fastRemove();
+			}
 			else {
 				// But even in bad case when we cannot free blob immediately
 				// we may still bind lifetime of blob to current request.
