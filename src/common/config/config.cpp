@@ -48,7 +48,7 @@ typedef Firebird::vector<string> string_vector;
  */
 
 const string keys[] = {
-	"InstanceKey",							// 0
+	"RootDirectory",						// 0
 	"SortMemBlockSize",						// 1
 	"SortMemUpperLimit",					// 2
 	"RemoteFileOpenAbility",				// 3
@@ -152,13 +152,8 @@ void ConfigImpl::getValueList(ConfigKey key, Firebird::vector<string> &result)
 
 string Config::getRootDirectory()
 {
-	return ConfigImpl::instance().getRootDirectory();
-}
-
-string Config::getInstanceKey(string default_value)
-{
-	string result = default_value;
-	ConfigImpl::instance().getValue(INSTANCE_KEY, result);
+	string result = ConfigImpl::instance().getRootDirectory();
+	ConfigImpl::instance().getValue(ROOT_DIRECTORY, result);
 	return result;
 }
 

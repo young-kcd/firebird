@@ -40,10 +40,10 @@
 
 enum ConfigKey
 {
-	INSTANCE_KEY,							// 0
+	ROOT_DIRECTORY,							// 0
 	SORT_MEM_BLOCK_SIZE,					// 1
 	SORT_MEM_UPPER_LIMIT,					// 2
-	REMOTE_FILE_OPEN_ABILITY,			// 3
+	REMOTE_FILE_OPEN_ABILITY,				// 3
 	TEMP_DIRECTORIES						// 4
 };
 

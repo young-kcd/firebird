@@ -72,11 +72,6 @@ public:
 	static string getRootDirectory();
 
 	/*
-		Key for unique identification of server instances
-	*/
-	static string getInstanceKey(string default_value = "");
-
-	/*
 		Block size for the sorting manager
 	*/
 	static int getSortMemBlockSize(int default_value = 0);
