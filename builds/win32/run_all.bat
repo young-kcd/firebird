@@ -21,9 +21,9 @@ set ERRLEV=0
 call clean_all
 call prepare
 :: call parse
-call make_boot DEBUG
+call make_boot 
 if "%ERRLEV%"=="1" goto :END2
-call make_all DEBUG
+call make_all 
 if "%ERRLEV%"=="1" goto :END2
 call make_examples
 if "%ERRLEV%"=="1" goto :END2
