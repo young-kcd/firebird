@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.65 2004-02-06 07:31:01 skidder Exp $
+$Id: restore.epp,v 1.66 2004-02-16 23:24:31 arnobrinkman Exp $
 */
 
 #include "firebird.h"
@@ -6697,13 +6697,11 @@ USHORT get_view_base_relation_count (const TEXT* current_view_name,
 	USHORT result = 0;
 
 	FOR (REQUEST_HANDLE req_handle1)
-		D IN RDB$DEPENDENCIES 
-		CROSS R IN RDB$RELATIONS 
-		WITH 
-		  D.RDB$DEPENDENT_TYPE EQ obj_view AND
-		  D.RDB$FIELD_NAME MISSING AND
-		  D.RDB$DEPENDENT_NAME EQ current_view_name AND
-		  R.RDB$RELATION_NAME EQ D.RDB$DEPENDED_ON_NAME
+		V IN RDB$VIEW_RELATIONS
+		CROSS R IN RDB$RELATIONS
+		WITH
+		  V.RDB$VIEW_NAME EQ current_view_name AND
+		  R.RDB$RELATION_NAME EQ V.RDB$RELATION_NAME
 
 		if (R.RDB$VIEW_BLR.NULL) {
 			// This relation is a table, so increment count
@@ -6711,9 +6709,8 @@ USHORT get_view_base_relation_count (const TEXT* current_view_name,
 		}
 		else {
 			// Call recursive for VIEWS that are referenced in VIEWS
-			result += get_view_base_relation_count(D.RDB$DEPENDED_ON_NAME, depth);
+			result += get_view_base_relation_count(V.RDB$RELATION_NAME, depth);
 		}
-
 	END_FOR;
 
 	ON_ERROR
