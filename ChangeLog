@@ -1,3 +1,11 @@
+2004-06-23 18:40  skidder
+
+	* firebird2/src/jrd/opt.cpp (1.174):
+	
+	Report PLANs for selectable procedures in correct order. This is a
+	fix for regression which I introduced a few months ago and it was
+	found by Vlad Horsun
+
 2004-06-22 22:13  skidder
 
 	* firebird2/src/: common/classes/tree.h (1.34), jrd/blb.cpp (1.82),
