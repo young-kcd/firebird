@@ -41,7 +41,7 @@ RSC=rc.exe
 # PROP Intermediate_Dir "debug\remote_cs"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /D "_DEBUG" /D "_LIB" /D "SERVER_SHUTDOWN" /D "WIN32" /D "_MBCS" /D "WIN32_LEAN_AND_MEAN" /D "_X86_" /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /D "_DEBUG" /D "_LIB" /D "SERVER_SHUTDOWN" /D "WIN32" /D "_MBCS" /D "WIN32_LEAN_AND_MEAN" /D "_X86_" /D "DEV_BUILD" /FD /GZ /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -65,7 +65,7 @@ LIB32=link.exe -lib
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "_DEBUG" /D "_LIB" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "NOMSG" /D "WIN32_LEAN_AND_MEAN" /D "_X86_" /FD /GZ /c
 # SUBTRACT BASE CPP /YX
-# ADD CPP /nologo /MD /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "NDEBUG" /D "_LIB" /D "SERVER_SHUTDOWN" /D "WIN32" /D "_MBCS" /D "WIN32_LEAN_AND_MEAN" /D "_X86_" /FD /GZ /c
+# ADD CPP /nologo /MD /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "NDEBUG" /D "_LIB" /D "SERVER_SHUTDOWN" /D "WIN32" /D "_MBCS" /D "WIN32_LEAN_AND_MEAN" /D "_X86_" /FD /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe

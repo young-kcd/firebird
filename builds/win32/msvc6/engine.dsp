@@ -42,6 +42,7 @@ RSC=rc.exe
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
 # ADD CPP /nologo /MD /W3 /GX /Ot /Oi /Op /Oy /I "../../../src/include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "WIN32_LEAN_AND_MEAN" /D "_X86_" /D "SERVER_SHUTDOWN" /D "SUPERSERVER" /YX /FD /c
+# SUBTRACT CPP /Ox
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -427,13 +428,6 @@ SOURCE=..\..\..\src\jrd\vio.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\why.cpp
-
-!IF  "$(CFG)" == "engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "engine - Win32 Debug"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
