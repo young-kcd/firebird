@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.intl,v 1.11 2003-03-27 11:21:45 aafemt Exp $
+#  $Id: Makefile.in.intl,v 1.12 2003-08-20 08:35:24 brodsom Exp $
 #
 ROOT=..
 ObjModuleName=intl
@@ -42,17 +42,17 @@ include     $(ROOT)/gen/make.shared.variables
 
 
 
-INTL_Files1=	ld.c         cv_narrow.c \
-		cs_narrow.c  lc_ascii.c lc_narrow.c lc_iso8859_1.c lc_iso8859_2.c lc_dos.c \
-		cs_unicode_ucs2.c lc_unicode_ucs2.c \
-		cs_unicode_fss.c cv_unicode_fss.c \
-		cs_big5.c    cv_big5.c   lc_big5.c \
-		cs_gb2312.c  cv_gb2312.c lc_gb2312.c \
-		cs_jis.c     cv_jis.c    lc_jis.c \
-		cs_ksc.c     cv_ksc.c    lc_ksc.c
+INTL_Files1=	ld.cpp       cv_narrow.cpp \
+		cs_narrow.cpp  lc_ascii.cpp lc_narrow.cpp lc_iso8859_1.cpp lc_iso8859_2.cpp lc_dos.cpp \
+		cs_unicode_ucs2.cpp lc_unicode_ucs2.cpp \
+		cs_unicode_fss.cpp cv_unicode_fss.cpp \
+		cs_big5.cpp    cv_big5.cpp   lc_big5.cpp \
+		cs_gb2312.cpp  cv_gb2312.cpp lc_gb2312.cpp \
+		cs_jis.cpp     cv_jis.cpp    lc_jis.cpp \
+		cs_ksc.cpp     cv_ksc.cpp    lc_ksc.cpp
 
 # This one is the example stub for another module (I think) MOD 30-July-2002
-INTL_Files2=	ld2.c
+INTL_Files2=	ld2.cpp
 
 
 INTL_Files = $(INTL_Files1)

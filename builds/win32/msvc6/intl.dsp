@@ -93,99 +93,99 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_big5.c
+SOURCE=..\..\..\src\intl\cs_big5.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_gb2312.c
+SOURCE=..\..\..\src\intl\cs_gb2312.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_jis.c
+SOURCE=..\..\..\src\intl\cs_jis.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_ksc.c
+SOURCE=..\..\..\src\intl\cs_ksc.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_narrow.c
+SOURCE=..\..\..\src\intl\cs_narrow.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_unicode_fss.c
+SOURCE=..\..\..\src\intl\cs_unicode_fss.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_unicode_ucs2.c
+SOURCE=..\..\..\src\intl\cs_unicode_ucs2.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cv_big5.c
+SOURCE=..\..\..\src\intl\cv_big5.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cv_gb2312.c
+SOURCE=..\..\..\src\intl\cv_gb2312.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cv_jis.c
+SOURCE=..\..\..\src\intl\cv_jis.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cv_ksc.c
+SOURCE=..\..\..\src\intl\cv_ksc.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cv_narrow.c
+SOURCE=..\..\..\src\intl\cv_narrow.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cv_unicode_fss.c
+SOURCE=..\..\..\src\intl\cv_unicode_fss.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\lc_ascii.c
+SOURCE=..\..\..\src\intl\lc_ascii.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\lc_big5.c
+SOURCE=..\..\..\src\intl\lc_big5.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\lc_dos.c
+SOURCE=..\..\..\src\intl\lc_dos.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\lc_gb2312.c
+SOURCE=..\..\..\src\intl\lc_gb2312.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\lc_iso8859_1.c
+SOURCE=..\..\..\src\intl\lc_iso8859_1.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\lc_iso8859_2.c
+SOURCE=..\..\..\src\intl\lc_iso8859_2.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\lc_jis.c
+SOURCE=..\..\..\src\intl\lc_jis.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\lc_ksc.c
+SOURCE=..\..\..\src\intl\lc_ksc.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\lc_narrow.c
+SOURCE=..\..\..\src\intl\lc_narrow.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\lc_unicode_ucs2.c
+SOURCE=..\..\..\src\intl\lc_unicode_ucs2.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\ld.c
+SOURCE=..\..\..\src\intl\ld.cpp
 # End Source File
 # End Group
 # Begin Group "Header files"
