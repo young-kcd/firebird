@@ -33,6 +33,8 @@ AC_CHECK_HEADERS(ctype.h)
 AC_CHECK_HEADERS(string.h)
 AC_CHECK_HEADERS(signal.h)
 
+AC_CHECK_TYPE(socklen_t, int)
+
 AC_C_BIGENDIAN
 AC_C_CONST
 

@@ -23,20 +23,23 @@
 #define HAVE_STRING_H 1
 #define HAVE_SIGNAL_H 1
 
+/* types */
+#define socklen_t int
+
 
 /* Is the platform big endian? */
-#define WORDS_BIGENDIAN 0
+#define WORDS_BIGENDIAN 1
 
 /* CPU types */
-/* #undef PowerPC */
+#define PowerPC 1
 /* #undef sparc */
 /* #undef i386 */
 /* #undef mips */
 /* #undef alpha */
 
 /* various OS efforts */
-/* #undef DARWIN */
-#define LINUX 1
+#define DARWIN 1
+/* #undef LINUX */
 /* #undef FREEBSD */
 /* #undef NETBSD */
 /* #undef apollo */

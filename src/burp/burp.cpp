@@ -112,7 +112,7 @@
 #endif
 
 #ifdef NETWARE_386
-#define MASK		    0
+#define OPEN_MASK		    0
 #else
 struct tgbl *gdgbl;
 #endif
@@ -125,8 +125,8 @@ struct tgbl *gdgbl;
 #define FOPEN_READ_TYPE		"r"
 #endif
 
-#ifndef MASK
-#define MASK		0666
+#ifndef OPEN_MASK
+#define OPEN_MASK		0666
 #endif
 
 #ifndef SWITCH_CHAR
@@ -1642,7 +1642,7 @@ static SSHORT open_files(TEXT * file1,
 				if ((fil->fil_fd = MVOL_open(fil->fil_name, MODE_WRITE,
 											 CREATE_ALWAYS)) == INVALID_HANDLE_VALUE)
 #else
-				if ((fil->fil_fd = open(fil->fil_name, MODE_WRITE, MASK)) == -1)
+				if ((fil->fil_fd = open(fil->fil_name, MODE_WRITE, OPEN_MASK)) == -1)
 #endif /* WIN_NT */
 
 				{

@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.4 2001-08-02 07:03:59 skywalker Exp $
+#   $Id: make.defaults,v 1.5 2001-08-04 22:48:18 bellardo Exp $
 # 
 
 
@@ -63,6 +63,7 @@ CD=			cd
 CAT=			cat
 AR=			ar crsu
 LN=    ln -s 
+RANLIB=			@RANLIB@
 
 # Default extensions
 

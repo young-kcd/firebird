@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin,v 1.1 2001-07-29 23:43:23 skywalker Exp $
+#$Id: prefix.darwin,v 1.2 2001-08-04 22:48:18 bellardo Exp $
 
 
 #_____________________________________________________________________________
@@ -28,12 +28,6 @@
 
 
 # Adding to LINK_LIBS to add the framework thing.
-
-LINK_LIBS := $(COREFOUNDATION_LINK) $(LINK_LIBS)
-STATICLINK_LIBS := $(LINK_LIBS)
-
-
-CFLAGS := ($CARBONCOORE_DIR_FLAG) $(CFLAGS)
 
 
 
@@ -68,16 +62,17 @@ include_darwin:
 # End add by me MOD 26-July-2001
 #______________________________________________________________________________
 
+# use the following to define conditional DEV/PROD compile
+    
+ifdef IsProdTypeBuild
+    DEBUG_Sources=      nodebug.cpp
+    CFLAGS:=            -O3 -DPROD_BUILD $(CFLAGS)
 
-.SUFFIXES: .bin .o .cpp .c
-.cpp.o:
-	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $<
-.cpp.bin:
-	$(CXX) -c $(PIC_FLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) -o $*.bin $<
-.c.o:
-	$(CC) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $<
-.c.bin:
-	$(CC) -c $(PIC_FLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) -o $*.bin $<
+else
+    DEBUG_Sources=      grammar.c dbg.cpp dbt.cpp dmp.cpp
+    CFLAGS:=            -ggdb -DDEV_BUILD $(CFLAGS)
+endif
+
 
 
 PROD_DEBUG_OBJECTS=	nodebug.o
@@ -216,5 +211,34 @@ MSG_INSTALL_CMD=	$(CP) $(OBJS)/firebird/interbase.msg $(FB_FRAMEWORK)/Resources/
 CARBONCORE_DIR_FLAG=	-F/System/Library/Frameworks/CoreServices.framework/Frameworks
 DARWIN_COREFOUNDATION_LINK=	-framework CoreFoundation
 DARWIN_FOUNDATION_LINK=	-framework Foundation
+
+# Options for linking the FB shared library.
+LIBGDS_SO := $(LIB)/libgds.dylib
+LIB_LINK := libtool -dynamic \
+		-install_name $(FW_NAME)/Versions/A/$(FBFW_PREFIX) \
+		-current_version $(FW_VERS) \
+		-compatibility_version $(FW_COMPAT_VERS)
+LIB_LINK_OPTIONS := -framework System -framework CoreFoundation -lstdc++ -lcc_dynamic
+
+# The routines used for IO.  Darwin uses the unix routines.
+IO_Sources=             unix.cpp
+
+# Add in the platform specific link options
+LINK_LIBS := $(DARWIN_COREFOUNDATION_LINK)
+STATICLINK_LIBS := $(LINK_LIBS)
+LINK_OPTS := $(DARWIN_COREFOUNDATION_LINK)
+
+
+#  We need to over ride some of the defaults set in make.defaults
+AR=                     ar cru
+
+#  Define our own rules to over ride those in make.rules
+CFLAGS := $(CARBONCORE_DIR_FLAG) $(CFLAGS)
+
+# If we don't define CXXFLAGS again, our changes to CFLAGS won't take effect
+#    for CXXFLAGS
+CXXFLAGS:= $(CXXFLAGS) $(CFLAGS)
+
+
 
 #   End of file prefix.darwin:	$(VERSION)	$(PLATFORM)

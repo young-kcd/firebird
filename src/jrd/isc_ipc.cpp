@@ -22,7 +22,7 @@
  * Solaris x86 changes - Konstantin Kuznetsov, Neil McCalden
  */
 
- /* $Id: isc_ipc.cpp,v 1.3 2001-07-29 17:42:22 skywalker Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.4 2001-08-04 22:48:18 bellardo Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -798,7 +798,7 @@ static void isc_signal2(
 		memset(&vec.sa_mask, 0, sizeof(vec.sa_mask));
 		vec.sa_flags = SA_RESTART;
 		sigaction(signal_number, &vec, &old_vec);
-		ptr = (FPTR_VOID) old_vec.sa_handler;
+		ptr = old_vec.sa_handler;
 #endif
 #endif
 #pragma FB_COMPILER_MESSAGE("Fix! Ugly function pointer casts!")
