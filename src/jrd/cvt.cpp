@@ -143,8 +143,8 @@ double MTH$CVT_D_G(), MTH$CVT_G_D();
 
 #define CVT_FAILURE_SPACE       128
 
-#define CVT_COPY_BUFF(from,to,len) \
-{if (len) {MOVE_FAST(from,to,len); from +=len; to+=len; len=0;} }
+#define CVT_COPY_BUFF(from, to, len) \
+{if (len) {MOVE_FAST(from, to, len); from += len; to += len; len = 0;} }
 
 enum EXPECT_DATETIME {
 	expect_timestamp,

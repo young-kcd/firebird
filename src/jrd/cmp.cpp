@@ -101,7 +101,7 @@ inline bool IS_DATE_AND_TIME(const dsc d1, const dsc d2) {
 	return (((d1.dsc_dtype == dtype_sql_time) && (d2.dsc_dtype == dtype_sql_date)) ||
 	((d2.dsc_dtype == dtype_sql_time) && (d1.dsc_dtype == dtype_sql_date)));
 }
-//#define IS_DATE_AND_TIME(d1,d2)
+//#define IS_DATE_AND_TIME(d1, d2)
 //  ((((d1).dsc_dtype==dtype_sql_time)&&((d2).dsc_dtype==dtype_sql_date)) ||
 //   (((d2).dsc_dtype==dtype_sql_time)&&((d1).dsc_dtype==dtype_sql_date)))
 

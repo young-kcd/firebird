@@ -156,13 +156,13 @@ inline void XNET_UNLOCK() {
 
 #endif
 
-static int xnet_error(rem_port*, TEXT *, ISC_STATUS, int, ULONG);
+static int xnet_error(rem_port*, const TEXT*, ISC_STATUS, int, ULONG);
 
-#define XNET_ERROR(po,fu,op,st) xnet_error(po,fu,op,st,__LINE__);
-#define XNET_LOG_ERROR(msg) xnet_log_error(__LINE__,msg)
-#define XNET_LOG_ERRORC(msg) xnet_log_error(__LINE__,msg,ERRNO)
+#define XNET_ERROR(po, fu, op, st) xnet_error(po, fu, op, st, __LINE__);
+#define XNET_LOG_ERROR(msg) xnet_log_error(__LINE__, msg)
+#define XNET_LOG_ERRORC(msg) xnet_log_error(__LINE__, msg, ERRNO)
 
-static void xnet_log_error(int source_line_num, char* err_msg, ULONG err_code=0)
+static void xnet_log_error(int source_line_num, const char* err_msg, ULONG err_code = 0)
 { 
 /**************************************
  *
@@ -178,10 +178,10 @@ static void xnet_log_error(int source_line_num, char* err_msg, ULONG err_code=0)
 
 	if (err_code)
 		sprintf(err_msg_buff, "XNET error (xnet:%d)  %s  Win32 error = %"ULONGFORMAT"\n",
-			source_line_num,err_msg,err_code);
+			source_line_num, err_msg, err_code);
 	else
 		sprintf(err_msg_buff, "XNET error (xnet:%d)  %s\n",
-			source_line_num,err_msg);
+			source_line_num, err_msg);
 
 	gds__log(err_msg_buff);
 }
@@ -1357,7 +1357,7 @@ static void disconnect(rem_port* port)
 #endif
 	}
 
-	gds__unregister_cleanup((FPTR_VOID_PTR)(exit_handler),port);
+	gds__unregister_cleanup((FPTR_VOID_PTR)(exit_handler), port);
 		
 	xnet_cleanup_port(port);
 }
@@ -1636,7 +1636,7 @@ static void xnet_gen_error( rem_port* port, ISC_STATUS status, ...)
 }
 
 
-static int xnet_error(rem_port* port,TEXT * function, ISC_STATUS operation,
+static int xnet_error(rem_port* port, const TEXT* function, ISC_STATUS operation,
 											int status, ULONG source_line_num)
 {
 /**************************************
@@ -1704,7 +1704,7 @@ static bool_t xnet_getbytes(XDR * xdrs, SCHAR * buff, u_int count)
 			if (to_copy == sizeof(SLONG))
 				*((SLONG*)buff)	= *((SLONG*)xdrs->x_private);
 			else
-				memcpy(buff, xdrs->x_private,to_copy);
+				memcpy(buff, xdrs->x_private, to_copy);
 
 			xdrs->x_handy -= to_copy;
 			xdrs->x_private += to_copy;
@@ -1840,7 +1840,7 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 					if (wait_result == WAIT_TIMEOUT) {
 
 						/* Check if another side is alive */
-						if (WaitForSingleObject(xcc->xcc_proc_h,1) == WAIT_TIMEOUT)
+						if (WaitForSingleObject(xcc->xcc_proc_h, 1) == WAIT_TIMEOUT)
 							continue; /* Another side is alive */			
 						else {
 
@@ -1963,7 +1963,7 @@ static bool_t xnet_read(XDR * xdrs)
 		if (wait_result == WAIT_TIMEOUT) {
 
 			/* Check if another side is alive */
-			if (WaitForSingleObject(xcc->xcc_proc_h,1) == WAIT_TIMEOUT)
+			if (WaitForSingleObject(xcc->xcc_proc_h, 1) == WAIT_TIMEOUT)
 				continue; /* Another side is alive */			
 			else {
 
@@ -2648,7 +2648,7 @@ rem_port* XNET_reconnect(ULONG client_pid, ISC_STATUS* status_vector)
 			throw -1;
 		}
 
-		port = xnet_get_srv_port(client_pid, xpm, CurrentProcessId, 0, 0,status_vector);
+		port = xnet_get_srv_port(client_pid, xpm, CurrentProcessId, 0, 0, status_vector);
 		if (!port) {
 			throw -1;
 		}

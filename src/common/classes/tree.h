@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: tree.h,v 1.44 2004-11-08 02:57:23 robocop Exp $
+ *  $Id: tree.h,v 1.45 2004-11-24 09:05:12 robocop Exp $
  *
  */
 
@@ -528,7 +528,7 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 		if (pos == LeafCount) {
 			// This would be ok if items were unique: temp->insert(0, item);
 			// The same applies to all simular cases below
-			temp->insert(0,item);
+			temp->insert(0, item);
 		}
 		else {
 			// Maybe splitting array by half would make things faster ?
@@ -570,7 +570,7 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 	int recovery_map[MAX_TREE_LEVEL];
 			
 	if (pos == LeafCount) {
-		newLeaf->insert(0,item);
+		newLeaf->insert(0, item);
 		recovery_map[0] = -1;
 	}
 	else {

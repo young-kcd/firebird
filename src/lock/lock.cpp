@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.108 2004-08-26 18:14:14 brodsom Exp $
+$Id: lock.cpp,v 1.109 2004-11-24 09:11:41 robocop Exp $
 */
 
 #include "firebird.h"
@@ -136,9 +136,9 @@ static ULONG debug_acquire_count = 0;
 
 #ifdef DEBUG
 SSHORT LOCK_debug_level = 0;
-#define DEBUG_MSG(l,x)	if ((l) <= LOCK_debug_level) { time_t t; time(&t); printf("%s", ctime(&t) ); printf x; fflush (stdout); gds__log x; }
+#define DEBUG_MSG(l, x)	if ((l) <= LOCK_debug_level) { time_t t; time(&t); printf("%s", ctime(&t) ); printf x; fflush (stdout); gds__log x; }
 #else
-#define DEBUG_MSG(l,x)			/* nothing */
+#define DEBUG_MSG(l, x)			/* nothing */
 #endif
 
 /* Debug delay is used to create nice big windows for signals or other
@@ -674,7 +674,7 @@ void LOCK_fini( ISC_STATUS* status_vector, SRQ_PTR * owner_offset)
 
 #if !defined SUPERSERVER && defined HAVE_MMAP
 	if (LOCK_owner) {
-		ISC_unmap_object(status_vector, &LOCK_data,(UCHAR**)&LOCK_owner,
+		ISC_unmap_object(status_vector, &LOCK_data, (UCHAR**)&LOCK_owner,
 						 sizeof(own));
 		LOCK_owner_offset = 0;
 	}

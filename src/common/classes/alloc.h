@@ -29,7 +29,7 @@
  *		Alex Peshkoff <peshkoff@mail.ru>
  *				added PermanentStorage and AutoStorage classes.
  *
- *  $Id: alloc.h,v 1.55 2004-11-17 08:55:40 robocop Exp $
+ *  $Id: alloc.h,v 1.56 2004-11-24 09:05:11 robocop Exp $
  *
  */
 
@@ -450,8 +450,8 @@ static inline void* operator new(size_t s, Firebird::MemoryPool& pool, const cha
 static inline void* operator new[](size_t s, Firebird::MemoryPool& pool, const char* file, int line) {
 	return pool.allocate(s, 0, file, line);
 }
-#define FB_NEW(pool) new(pool,__FILE__,__LINE__)
-#define FB_NEW_RPT(pool,count) new(pool,count,__FILE__,__LINE__)
+#define FB_NEW(pool) new(pool, __FILE__, __LINE__)
+#define FB_NEW_RPT(pool, count) new(pool, count, __FILE__, __LINE__)
 #else
 static inline void* operator new(size_t s, Firebird::MemoryPool& pool) {
 	return pool.allocate(s);
@@ -460,7 +460,7 @@ static inline void* operator new[](size_t s, Firebird::MemoryPool& pool) {
 	return pool.allocate(s);
 }
 #define FB_NEW(pool) new(pool)
-#define FB_NEW_RPT(pool,count) new(pool,count)
+#define FB_NEW_RPT(pool, count) new(pool, count)
 #endif
 
 

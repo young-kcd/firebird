@@ -75,7 +75,7 @@
 	FIELD(fld_fun_type		, nam_fun_type		, dtype_short	, sizeof(SSHORT), 0						, 0, NULL)
 	FIELD(fld_trans_id		, nam_trans_id		, dtype_long	, sizeof(SLONG)	, 0						, 0, NULL)
 	FIELD(fld_trans_state	, nam_trans_state	, dtype_short	, sizeof(SSHORT), 0						, 0, NULL)
-	FIELD(fld_time			, nam_time			, dtype_timestamp, TIMESTAMP_SIZE,0						, 0, NULL)
+	FIELD(fld_time			, nam_time			, dtype_timestamp, TIMESTAMP_SIZE, 0						, 0, NULL)
 	FIELD(fld_trans_desc	, nam_trans_desc	, dtype_blob	, BLOB_SIZE		, isc_blob_tra			, 0, NULL)
 	FIELD(fld_msg			, nam_msg			, dtype_varying	, 1023			, 0						, 0, NULL)
 	FIELD(fld_msg_num		, nam_msg_num		, dtype_short	, sizeof(SSHORT), 0						, 0, NULL)

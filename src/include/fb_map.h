@@ -18,7 +18,7 @@ namespace Firebird
 {
 	template <class A, class B>
 	class map :
-		public std::map<A, B, std::less<A>, Firebird::allocator<std::pair<A,B> > >
+		public std::map<A, B, std::less<A>, Firebird::allocator<std::pair<A, B> > >
 	{
 	};
 } // namespace

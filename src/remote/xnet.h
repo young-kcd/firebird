@@ -45,8 +45,8 @@ const DWORD XNET_SEND_WAIT_TIMEOUT	= XNET_RECV_WAIT_TIMEOUT; /* Send wait timeou
 /* mapped file parameters */
 
 #define XPS_MAPPED_PER_CLI(p)        ((ULONG)(p) * 1024L)
-#define XPS_SLOT_OFFSET(pages,slot)  (XPS_MAPPED_PER_CLI(pages) * (ULONG)(slot))
-#define XPS_MAPPED_SIZE(users,pages) ((ULONG)(users) * XPS_MAPPED_PER_CLI(pages))
+#define XPS_SLOT_OFFSET(pages, slot)  (XPS_MAPPED_PER_CLI(pages) * (ULONG)(slot))
+#define XPS_MAPPED_SIZE(users, pages) ((ULONG)(users) * XPS_MAPPED_PER_CLI(pages))
 
 #define XPS_USEFUL_SPACE(p)          (XPS_MAPPED_PER_CLI(p) - sizeof(struct xps))
 

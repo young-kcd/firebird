@@ -23,7 +23,7 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *
- *  $Id: alloc.cpp,v 1.73 2004-11-17 08:55:40 robocop Exp $
+ *  $Id: alloc.cpp,v 1.74 2004-11-24 09:05:10 robocop Exp $
  *
  */
 
@@ -1702,7 +1702,7 @@ void* operator new(size_t s) THROW_BAD_ALLOC
 //	return getDefaultMemoryPool()->calloc(s, 0
 	return getDefaultMemoryPool()->allocate(s, 0
 #ifdef DEBUG_GDS_ALLOC
-	  ,__FILE__,__LINE__
+	  ,__FILE__, __LINE__
 #endif
 	);
 }
@@ -1716,7 +1716,7 @@ void* operator new[](size_t s) THROW_BAD_ALLOC
 //	return getDefaultMemoryPool()->->calloc(s, 0
 	return getDefaultMemoryPool()->allocate(s, 0
 #ifdef DEBUG_GDS_ALLOC
-	  ,__FILE__,__LINE__
+	  ,__FILE__, __LINE__
 #endif
 	);
 }

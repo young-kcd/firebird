@@ -1632,7 +1632,7 @@ void DPM_pages(
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL) {
 		printf("DPM_pages (rel_id %d, type %d, sequence %"ULONGFORMAT
-			  ", page %"SLONGFORMAT")\n",rel_id, type, sequence
+			  ", page %"SLONGFORMAT")\n", rel_id, type, sequence
 			  , page);
 	}
 #endif

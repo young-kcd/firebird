@@ -228,7 +228,7 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 		catch (const std::exception&) {
 			compile_in_progress = false;
 			if (request) {
-				CMP_release(tdbb,request);
+				CMP_release(tdbb, request);
 				request = NULL;
 			}
 			else {
@@ -421,11 +421,11 @@ inline static thread_db* JRD_MAIN_set_thread_data(thread_db& thd_context)
 	return tdbb;
 }
 
-#define CHECK_HANDLE(blk,type,error)					\
+#define CHECK_HANDLE(blk, type, error)					\
 	if (!blk || MemoryPool::blk_type(blk) != type)	\
 		return handle_error (user_status, error, tdbb)
 
-#define NULL_CHECK(ptr,code)									\
+#define NULL_CHECK(ptr, code)									\
 	if (*ptr) return handle_error (user_status, code, tdbb)
 
 

@@ -33,9 +33,9 @@ const int STUFF_COUNT		= 4;
 const int TEXT_BLOB_LENGTH	= 512;
 
 
-#define GET_STRING(from,to)	DYN_get_string ((const TEXT**)from, (TEXT*)to, sizeof (to), true)
+#define GET_STRING(from, to)	DYN_get_string ((const TEXT**)from, (TEXT*)to, sizeof (to), true)
 
-#define GET_STRING_2(from,to)	DYN_get_string ((const TEXT**)from, (TEXT*)to, sizeof (to), false)
+#define GET_STRING_2(from, to)	DYN_get_string ((const TEXT**)from, (TEXT*)to, sizeof (to), false)
 
 namespace Jrd {
 

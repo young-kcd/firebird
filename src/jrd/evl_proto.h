@@ -38,7 +38,7 @@ void		EVL_make_value(Jrd::thread_db* tdbb, const dsc*, Jrd::impure_value*);
 // Obsolete functions to support MATCHES and SLEUTH
 bool		EVL_mb_matches(Jrd::thread_db* tdbb, Jrd::TextType, const UCHAR*, SSHORT, const UCHAR*, SSHORT);
 bool		EVL_mb_sleuth_check(Jrd::thread_db* tdbb, Jrd::TextType, USHORT, const UCHAR*, USHORT,
-								const UCHAR*,USHORT);
+								const UCHAR*, USHORT);
 USHORT		EVL_mb_sleuth_merge(Jrd::thread_db* tdbb, Jrd::TextType, const UCHAR*, USHORT, const UCHAR*,
 								USHORT, UCHAR*, USHORT);
 bool		EVL_nc_matches(Jrd::thread_db* tdbb, Jrd::TextType, const UCHAR*, SSHORT, const UCHAR*, SSHORT);

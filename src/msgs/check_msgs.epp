@@ -129,7 +129,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		flag_loc = true;
 		if (ind_loc = fopen(LOCALE_INDICATOR, "r")) {
 			if (!fstat(fileno(ind_loc), &file_stat)) {
-				isc_encode_date(localtime(&file_stat.st_mtime),(ISC_QUAD*)  &date_loc);
+				isc_encode_date(localtime(&file_stat.st_mtime), (ISC_QUAD*) &date_loc);
 				flag_loc = false;
 			}
 /* Earlier the following fclose was closing ind_msg again, due to which 

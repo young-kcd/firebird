@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.72 2004-11-02 15:42:18 hvlad Exp $
+ * $Id: sort.cpp,v 1.73 2004-11-24 09:21:56 robocop Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -91,14 +91,14 @@ const ULONG MAX_SORT_BUFFER_SIZE	= SORT_BUFFER_CHUNK_SIZE * 32;
 
 const ULONG MAX_TEMPFILE_SIZE		= 1073741824;	// 1GB
 
-#define DIFF_LONGS(a,b)         ((a) - (b))
-#define SWAP_LONGS(a,b,t)       {t=a; a=b; b=t;}
+#define DIFF_LONGS(a, b)         ((a) - (b))
+#define SWAP_LONGS(a, b, t)       {t = a; a = b; b = t;}
 
 // Compare p and q both SORTP pointers for l 32-bit longwords
 // l != 0 if p and q are not equal for l bytes
 #define  DO_32_COMPARE(p, q, l)   do if (*p++ != *q++) break; while (--l);
 
-#define MOVE_32(len,from,to)      memcpy(to, from, len*4)
+#define MOVE_32(len, from, to)      memcpy(to, from, len * 4)
 
 // These values are not defined as const as they are passed to 
 // the diddle_key routines which mangles them.

@@ -107,9 +107,10 @@ const USHORT ODS_CURRENT11		= 0;
 /* useful ODS macros. These are currently used to flag the version of the
    system triggers and system indices in ini.e */
 
-inline USHORT ENCODE_ODS(USHORT major,USHORT minor) {
+inline USHORT ENCODE_ODS(USHORT major, USHORT minor) {
 	return (((major) << 4) | (minor));
 }
+
 const USHORT ODS_8_0		= ENCODE_ODS(ODS_VERSION8, 0);
 const USHORT ODS_8_1		= ENCODE_ODS(ODS_VERSION8, 1);
 const USHORT ODS_9_0		= ENCODE_ODS(ODS_VERSION9, 0);

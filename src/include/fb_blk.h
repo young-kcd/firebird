@@ -82,10 +82,10 @@ class vector_rpt : public BASE
           : rptAllocator(pool, BLOCK_TYPE), rpt(size, rptAllocator) {}
 
     public:
-        std::vector<RPT>    rpt;
+        std::vector<RPT> rpt;
 
-        static vector_rpt<BASE,RPT,BLOCK_TYPE>* allocate(int size, MemoryPool& p)
-            { return new(p) vector_rpt<BASE,RPT,BLOCK_TYPE>(size,p); }
+        static vector_rpt<BASE, RPT, BLOCK_TYPE>* allocate(int size, MemoryPool& p)
+            { return new(p) vector_rpt<BASE, RPT, BLOCK_TYPE>(size, p); }
 }; */
 
 #endif	/* INCLUDE_FB_BLK */

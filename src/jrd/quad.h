@@ -47,19 +47,19 @@ const int HIGH_WORD		= 0;
 #endif
 
 #ifdef NATIVE_QUAD
-#define QUAD_ADD(a,b,e)         ((a) + (b))
-#define QUAD_COMPARE(a,b)       ((a == b) ? 0 : (a < b) ? -1 : 1)
-#define QUAD_FROM_DOUBLE(a,e)   a
-#define QUAD_MULTIPLY(a,b,e)    ((a) * (b))
-#define QUAD_NEGATE(a,e)        (-(a))
+#define QUAD_ADD(a, b, e)         ((a) + (b))
+#define QUAD_COMPARE(a, b)       ((a == b) ? 0 : (a < b) ? -1 : 1)
+#define QUAD_FROM_DOUBLE(a, e)   a
+#define QUAD_MULTIPLY(a, b, e)    ((a) * (b))
+#define QUAD_NEGATE(a, e)        (-(a))
 #define QUAD_SUBTRACT(a,b,e)    ((a) - (b))
 #else
-#define QUAD_ADD(a,b,e)         QUAD_add (&(a), &(b), e)
-#define QUAD_COMPARE(a,b)       QUAD_compare (&(a), &(b))
-#define QUAD_FROM_DOUBLE(a,e)   QUAD_from_double (&(a), e)
-#define QUAD_MULTIPLY(a,b,e)    QUAD_multiply (&(a), &(b), e)
-#define QUAD_NEGATE(a,e)        QUAD_negate (&(a), e)
-#define QUAD_SUBTRACT(a,b,e)    QUAD_subtract (&(a), &(b), e)
+#define QUAD_ADD(a, b, e)         QUAD_add (&(a), &(b), e)
+#define QUAD_COMPARE(a, b)       QUAD_compare (&(a), &(b))
+#define QUAD_FROM_DOUBLE(a, e)   QUAD_from_double (&(a), e)
+#define QUAD_MULTIPLY(a, b, e)    QUAD_multiply (&(a), &(b), e)
+#define QUAD_NEGATE(a, e)        QUAD_negate (&(a), e)
+#define QUAD_SUBTRACT(a, b, e)    QUAD_subtract (&(a), &(b), e)
 
 #include "../jrd/quad_proto.h"
 #endif

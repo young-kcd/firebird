@@ -5531,13 +5531,13 @@ case 552:
     break;}
 case 556:
 { 
-			  yyval = make_node (nod_set_generator2,e_gen_id_count,yyvsp[-2],
+			  yyval = make_node (nod_set_generator2, e_gen_id_count, yyvsp[-2],
 						MAKE_constant ((dsql_str*) yyvsp[0], CONSTANT_SLONG));
 			;
     break;}
 case 557:
 {
-			  yyval = make_node (nod_set_generator2,e_gen_id_count,yyvsp[-2],
+			  yyval = make_node (nod_set_generator2, e_gen_id_count, yyvsp[-2],
 					   MAKE_constant((dsql_str*)yyvsp[0], CONSTANT_SINT64));
 			;
     break;}

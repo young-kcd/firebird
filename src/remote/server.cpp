@@ -70,7 +70,7 @@
 
 #pragma FB_COMPILER_MESSAGE("What kind of crap is this?! FIX!")
 
-#define CHECK_HANDLE(blk,cast,type,id,err)							\
+#define CHECK_HANDLE(blk, cast, type, id, err)							\
 	{																\
 		if (id >= port->port_object_vector->vec_count ||			\
 			!(blk = (cast) port->port_objects [id]) ||				\
@@ -83,7 +83,7 @@
 		}															\
 	}
 
-#define CHECK_HANDLE_MEMBER(blk,cast,type,id,err)					\
+#define CHECK_HANDLE_MEMBER(blk, cast, type, id, err)					\
 	{																\
 		if (id >= this->port_object_vector->vec_count ||			\
 			!(blk = (cast) this->port_objects [id]) ||				\
@@ -1494,7 +1494,7 @@ ISC_STATUS rem_port::end_database(P_RLSE * release, PACKET* sendL)
 	RDB rdb = this->port_context;
 
 	THREAD_EXIT();
-	isc_detach_database(status_vector,&rdb->rdb_handle);
+	isc_detach_database(status_vector, &rdb->rdb_handle);
 	THREAD_ENTER();
 
 	if (status_vector[1])

@@ -32,9 +32,9 @@ const USHORT QLI_MSG_FAC	= 1;
 #define IBERROR(number)		ERRQ_error (number, NULL, NULL, NULL, NULL, NULL)
 
 #define ALLOCD(type)		ALLQ_alloc (QLI_default_pool, type, 0)
-#define ALLOCDV(type,repeat)	ALLQ_alloc (QLI_default_pool, type, repeat)
+#define ALLOCDV(type, repeat)	ALLQ_alloc (QLI_default_pool, type, repeat)
 #define ALLOCP(type)		ALLQ_alloc (QLI_permanent_pool, type, 0)
-#define ALLOCPV(type,repeat)	ALLQ_alloc (QLI_permanent_pool, type, repeat)
+#define ALLOCPV(type, repeat)	ALLQ_alloc (QLI_permanent_pool, type, repeat)
 
 #define BLKDEF(type, root, tail) type,
 enum blk_t

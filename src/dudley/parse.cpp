@@ -1847,7 +1847,7 @@ static void drop_type(void)
 			TYP fldtype = (TYP) DDL_alloc(sizeof(typ));
 			fldtype->typ_field_name = fldname;
 			fldtype->typ_name = PARSE_symbol(tok_ident);
-			make_action(act_d_type,(DBB)  fldtype);
+			make_action(act_d_type, (DBB) fldtype);
 			if (!PARSE_match(KW_COMMA))
 				break;
 		}

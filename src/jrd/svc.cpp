@@ -115,7 +115,7 @@ const int SVC_user_none			= 0;
 #endif
 
 #ifdef VMS
-#define waitpid(x,y,z)	wait (y)
+#define waitpid(x, y, z)	wait (y)
 #endif
 
 #define statistics	stat

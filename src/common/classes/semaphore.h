@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: semaphore.h,v 1.15 2004-11-07 10:52:32 robocop Exp $
+ *  $Id: semaphore.h,v 1.16 2004-11-24 09:05:12 robocop Exp $
  *
  */
 
@@ -102,7 +102,7 @@ public:
 			//gds__log("Error on semaphore.h: constructor");
 			system_call_failed::raise("mutex_init");
 		}
-		if (cond_init(&cv,USYNC_PROCESS, NULL) != 0) {
+		if (cond_init(&cv, USYNC_PROCESS, NULL) != 0) {
 			//gds__log("Error on semaphore.h: constructor");
 			system_call_failed::raise("cond_init");
 		}

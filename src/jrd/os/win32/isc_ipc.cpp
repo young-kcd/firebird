@@ -36,7 +36,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.14 2004-06-08 13:40:41 alexpeshkoff Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.15 2004-11-24 09:16:23 robocop Exp $ */
 
 #include "firebird.h"
 #include "../jrd/common.h"
@@ -300,7 +300,7 @@ static void overflow_handler(int signal, int code) throw()
 			system_overflow_handler != SIG_SGE &&
 			system_overflow_handler != SIG_ACK)
 		{
-			reinterpret_cast<void(*)(int,int)>(system_overflow_handler)(signal, code);
+			reinterpret_cast<void (*)(int, int)>(system_overflow_handler)(signal, code);
 		}
 	}
 }

@@ -17,7 +17,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: align.cpp,v 1.8 2004-11-08 03:33:19 robocop Exp $
+$Id: align.cpp,v 1.9 2004-11-24 09:11:46 robocop Exp $
 */
 
 #include "firebird.h"
@@ -31,7 +31,7 @@ struct xyz {
 typedef xyz* XYZ;
 
 #define MAJOR_MINOR	"((n + b - 1) & ~(b - 1))"
-#define EVEN		"((n+1) & ~1)"
+#define EVEN		"((n + 1) & ~1)"
 #define NO_OP		"(n)"
 
 struct alignment {
@@ -62,25 +62,24 @@ static JMP_BUF env;
 
 int main(int argc, char *argv[])
 {
-	double *p, d1;
 #if SIZEOF_LONG == 8
 	int vector[3];
 #else
 	long vector[3];
 #endif
-	short offset, length, faults;
 
-	offset = (int) &((XYZ) NULL)->b;
-	length = sizeof(xyz);
-	faults = check_double();
+	const short offset = (int) &((XYZ) NULL)->b;
+	const short length = sizeof(xyz);
+	const short faults = check_double();
 
 	for (const alignment* rule = rules; rule->rule_offset; ++rule)
 		if (rule->rule_offset == offset &&
-			rule->rule_length == length && rule->rule_faults == faults) {
+			rule->rule_length == length && rule->rule_faults == faults)
+		{
 			printf("\n/* %s */\n\n", rule->rule_system);
 			printf("#define ALIGNMENT\t%d\n", rule->rule_base_align);
 			printf("#define DOUBLE_ALIGN\t%d\n", rule->rule_double_align);
-			printf("#define FB_ALIGN(n,b)\t%s\n", rule->rule_rule);
+			printf("#define FB_ALIGN(n, b)\t%s\n", rule->rule_rule);
 			check_byte_order();
 			printf("\n");
 			return 1;
@@ -109,7 +108,7 @@ static void check_byte_order(void)
 
 static int check_double(void)
 {
-	double *p, d1;
+	double *p;
 #if SIZEOF_LONG == 8
 	int vector[3];
 #else

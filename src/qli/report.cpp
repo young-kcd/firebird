@@ -41,7 +41,7 @@ static bool test_break(qli_brk*, qli_rpt*, qli_msg*);
 static void top_break(qli_brk*, qli_prt*);
 static void top_of_page(qli_prt*, bool);
 
-//#define SWAP(a,b)	{temp = a; a = b; b = temp;}
+//#define SWAP(a, b)	{temp = a; a = b; b = temp;}
 inline void swap_uchar(UCHAR*& a, UCHAR*& b)
 {
 		UCHAR* temp = a;

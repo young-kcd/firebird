@@ -2600,7 +2600,7 @@ static bool delete_procedure(	thread_db*	tdbb,
 		}
 
 		// Do not allow to drop procedure used by user requests
-		if (procedure->prc_use_count && MET_procedure_in_use(tdbb,procedure))
+		if (procedure->prc_use_count && MET_procedure_in_use(tdbb, procedure))
 			ERR_post(isc_no_meta_update,
 					 isc_arg_gds, isc_obj_in_use,
 					 isc_arg_string, ERR_cstring(work->dfw_name),
@@ -3933,7 +3933,7 @@ static bool modify_procedure(	thread_db*	tdbb,
 		THREAD_ENTER();
 #endif /* SUPERSERVER */
 		// Do not allow to modify procedure used by user requests
-		if (procedure->prc_use_count && MET_procedure_in_use(tdbb,procedure))
+		if (procedure->prc_use_count && MET_procedure_in_use(tdbb, procedure))
 			ERR_post(isc_no_meta_update,
 					 isc_arg_gds, isc_obj_in_use,
 					 isc_arg_string, ERR_cstring(work->dfw_name),

@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.66 2004-11-10 04:18:58 robocop Exp $
+//  $Id: gpre.cpp,v 1.67 2004-11-24 09:08:54 robocop Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -237,9 +237,9 @@ enum char_types {
 //  macro compares chars; case sensitive for some platforms 
 
 #ifdef EITHER_CASE
-#define SAME(p,q)	UPPER7 (*p) == UPPER7 (*q)
+#define SAME(p, q)	UPPER7 (*p) == UPPER7 (*q)
 #else
-#define SAME(p,q)	*p == *q
+#define SAME(p, q)	*p == *q
 #endif
 
 
@@ -881,7 +881,7 @@ int main(int argc, char* argv[])
 
 	try {
 		SLONG end_position = 0;
-		while (end_position = compile_module(end_position,filename_array[3]));
+		while (end_position = compile_module(end_position, filename_array[3]));
 		// empty loop body
 	}	// try
 	catch (const std::exception&) {}  // fall through to the cleanup code

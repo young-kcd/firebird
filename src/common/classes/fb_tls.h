@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: fb_tls.h,v 1.9 2004-07-14 21:49:03 skidder Exp $
+ *  $Id: fb_tls.h,v 1.10 2004-11-24 09:05:12 robocop Exp $
  *
  */
  
@@ -42,12 +42,12 @@
 // Single-threaded case
 # define TLS_DECLARE(TYPE, NAME) TYPE NAME
 # define TLS_GET(NAME) NAME
-# define TLS_SET(NAME,VALUE) NAME=(VALUE)
+# define TLS_SET(NAME, VALUE) NAME=(VALUE)
 #elif defined(HAVE___THREAD)
 // Recent GCC supports __thread keyword. Sun compiler and HP-UX should have it too
 # define TLS_DECLARE(TYPE, NAME) __thread TYPE NAME
 # define TLS_GET(NAME) NAME
-# define TLS_SET(NAME,VALUE) NAME=(VALUE)
+# define TLS_SET(NAME, VALUE) NAME=(VALUE)
 #elif defined(WIN_NT)
 
 namespace Firebird {
@@ -80,7 +80,7 @@ private:
 } // namespace Firebird
 # define TLS_DECLARE(TYPE, NAME) ::Firebird::Win32Tls<TYPE> NAME
 # define TLS_GET(NAME) NAME.get()
-# define TLS_SET(NAME,VALUE) NAME.set(VALUE)
+# define TLS_SET(NAME, VALUE) NAME.set(VALUE)
 
 // 14-Jul-2004 Nickolay Samofatov.
 //
@@ -92,7 +92,7 @@ private:
 //
 //# define TLS_DECLARE(TYPE, NAME) __declspec(thread) TYPE NAME
 //# define TLS_GET(NAME) NAME
-//# define TLS_SET(NAME,VALUE) NAME=(VALUE)
+//# define TLS_SET(NAME, VALUE) NAME=(VALUE)
 #else
 
 #if not (defined SOLARIS)
@@ -175,7 +175,7 @@ private:
 
 # define TLS_DECLARE(TYPE, NAME) ::Firebird::TlsValue<TYPE> NAME
 # define TLS_GET(NAME) NAME.get()
-# define TLS_SET(NAME,VALUE) NAME.set(VALUE)
+# define TLS_SET(NAME, VALUE) NAME.set(VALUE)
 
 #endif
 

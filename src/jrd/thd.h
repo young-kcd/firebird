@@ -26,7 +26,7 @@
  *
  */
 /*
-$Id: thd.h,v 1.38 2004-09-21 06:18:40 aafemt Exp $
+$Id: thd.h,v 1.39 2004-11-24 09:22:07 robocop Exp $
 */
 
 #ifndef JRD_THD_H
@@ -207,7 +207,7 @@ typedef struct wlck_t* WLCK;
 #define V4_MUTEX_UNLOCK(mutx)		THD_mutex_unlock (mutx)
 #define V4_GLOBAL_MUTEX_LOCK		THD_mutex_lock_global()
 #define V4_GLOBAL_MUTEX_UNLOCK		THD_mutex_unlock_global()
-#define V4_RW_LOCK_LOCK(wlck,type)	THD_wlck_lock (wlck, type)
+#define V4_RW_LOCK_LOCK(wlck, type)	THD_wlck_lock (wlck, type)
 #define V4_RW_LOCK_UNLOCK(wlck)		THD_wlck_unlock (wlck)
 #endif
 

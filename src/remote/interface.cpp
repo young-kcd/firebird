@@ -175,12 +175,12 @@ static void mov_faster(const SLONG*, SLONG*, USHORT);
 
 static ULONG remote_event_id = 0;
 
-#define CHECK_HANDLE(blk,type,error) if (!blk || ((BLK) blk)->blk_type != (UCHAR) type) \
+#define CHECK_HANDLE(blk, type, error) if (!blk || ((BLK) blk)->blk_type != (UCHAR) type) \
 				return handle_error (user_status, (ISC_STATUS) error)
 
-#define NULL_CHECK(ptr,code)	if (*ptr) return handle_error (user_status, (ISC_STATUS) code)
+#define NULL_CHECK(ptr, code)	if (*ptr) return handle_error (user_status, (ISC_STATUS) code)
 
-#define SET_OBJECT(rdb,object,id) REMOTE_set_object (rdb->rdb_port, (struct blk *) object, id)
+#define SET_OBJECT(rdb, object, id) REMOTE_set_object (rdb->rdb_port, (struct blk *) object, id)
 
 #define GDS_ATTACH_DATABASE	REM_attach_database
 #define GDS_BLOB_INFO		REM_blob_info

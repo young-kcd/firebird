@@ -61,7 +61,7 @@
 #ifdef SUPERSERVER
 #include <excpt.h>
 #define START_CHECK_FOR_EXCEPTIONS(err)	__try {
-#define  END_CHECK_FOR_EXCEPTIONS(err) 	} __except ( ISC_exception_post(GetExceptionCode(),err)) { }
+#define  END_CHECK_FOR_EXCEPTIONS(err) 	} __except ( ISC_exception_post(GetExceptionCode(), err)) { }
 #endif /* SUPER_SERVER */
 #endif /* WIN_NT */
 

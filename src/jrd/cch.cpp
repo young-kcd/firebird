@@ -2529,7 +2529,7 @@ bool CCH_write_all_shadows(thread_db* tdbb,
 		spare_buffer =
 			(SLONG*) dbb->dbb_bufferpool->allocate((SLONG) dbb->dbb_page_size, 0
 #ifdef DEBUG_GDS_ALLOC
-			  ,__FILE__,__LINE__
+			  ,__FILE__, __LINE__
 #endif
 			);
 
@@ -6299,7 +6299,7 @@ static bool write_page(
 #ifdef NBAK_DEBUG
 				// We cannot call normal trace functions here as they are signal-unsafe
 				char buffer[1000], *ptr = buffer;
-				strcpy(ptr, "NBAK,Write page ");
+				strcpy(ptr, "NBAK, Write page ");
 				ptr += strlen(ptr);
 				gds__ulstr(ptr, bdb->bdb_page, 0, 0);
 				ptr += strlen(ptr);

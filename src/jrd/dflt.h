@@ -32,7 +32,7 @@
    PLEASE NOTE: Since default values cannot be specified in GDML, the
    MISSING_VALUE clause is used to generate the BLR for DEFAULT value.  */
 
-/* default value of "NO" for RDB$DEFERRABLE,RDB$INITIALLY_DEFERRED in
+/* default value of "NO" for RDB$DEFERRABLE, RDB$INITIALLY_DEFERRED in
     RDB$RELATION_CONSTRAINTS.                                           */
 
 /* transform int's into network byte format */
@@ -54,7 +54,7 @@ static const UCHAR dflt_full[] =
 	blr_eoc
 };
 
-/* default value of "RESTRICT" for  RDB$UPDATE_RULE,RDB$DELETE_RULE in
+/* default value of "RESTRICT" for  RDB$UPDATE_RULE, RDB$DELETE_RULE in
    RDB$REF_CONSTRAINTS                                                  */
 
 static const UCHAR dflt_restrict[] =

@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.128 2004-11-05 08:01:18 hvlad Exp $
+$Id: common.h,v 1.129 2004-11-24 09:17:48 robocop Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -138,10 +138,10 @@ $Id: common.h,v 1.128 2004-11-05 08:01:18 hvlad Exp $
 #define IMPLEMENTATION  isc_info_db_impl_linux_sparc /* 65  */
 #endif /* sparc */
 
-#define MEMMOVE(from,to,length)		memmove ((void *)to, (void *)from, (size_t) length)
-#define MOVE_FAST(from,to,length)       memcpy (to, from, (int) (length))
-#define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
-#define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
+#define MEMMOVE(from, to, length)		memmove ((void *)to, (void *)from, (size_t) length)
+#define MOVE_FAST(from, to, length)       memcpy (to, from, (int) (length))
+#define MOVE_FASTER(from, to, length)     memcpy (to, from, (int) (length))
+#define MOVE_CLEAR(to, length)           memset (to, 0, (int) (length))
 
 #endif /* LINUX */
 
@@ -186,8 +186,8 @@ int syslog(int pri, char *fmt, ...);
 #endif
 
 #include <dlfcn.h>
-#define dlopen(a,b)		dlopen((char *)(a),(b))
-#define dlsym(a,b)		dlsym((a), (char *)(b))
+#define dlopen(a, b)		dlopen((char *)(a),(b))
+#define dlsym(a, b)		dlsym((a), (char *)(b))
 
 #include <signal.h>
 #include <sys/siginfo.h>
@@ -239,13 +239,13 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 #define IMPLEMENTATION  isc_info_db_impl_sinixz  /* 64 */
 #endif /* i386 */
 
-#define setreuid(ruid,euid)     setuid(euid)
-#define setregid(rgid,egid)     setgid(egid)
+#define setreuid(ruid, euid)     setuid(euid)
+#define setregid(rgid, egid)     setgid(egid)
 
-#define MEMMOVE(from,to,length)		memmove ((void *)to, (void *)from, (size_t) length)
-#define MOVE_FAST(from,to,length)       memcpy (to, from, (int) (length))
-#define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
-#define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
+#define MEMMOVE(from, to, length)		memmove ((void *)to, (void *)from, (size_t) length)
+#define MOVE_FAST(from, to, length)       memcpy (to, from, (int) (length))
+#define MOVE_FASTER(from, to, length)     memcpy (to, from, (int) (length))
+#define MOVE_CLEAR(to, length)           memset (to, 0, (int) (length))
 
 //format for __LINE__
 #define LINEFORMAT "d"
@@ -286,10 +286,10 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 #define MAP_ANONYMOUS
 #define MAP_ANNON
 
-#define MEMMOVE(from,to,length)		memmove ((void *)to, (void *)from, (size_t)length)
-#define MOVE_FAST(from,to,length)	memcpy (to, from, (int) (length))
-#define MOVE_FASTER(from,to,length)	memcpy (to, from, (int) (length))
-#define MOVE_CLEAR(to,length)		memset (to, 0, (int) (length))
+#define MEMMOVE(from, to, length)		memmove ((void *)to, (void *)from, (size_t)length)
+#define MOVE_FAST(from, to, length)	memcpy (to, from, (int) (length))
+#define MOVE_FASTER(from, to, length)	memcpy (to, from, (int) (length))
+#define MOVE_CLEAR(to, length)		memset (to, 0, (int) (length))
 
 #endif /* Darwin Platforms */
 
@@ -318,10 +318,10 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 //#define KILLER_SIGNALS
 #define NO_NFS					/* no MTAB_OPEN or MTAB_CLOSE in isc_file.c */
 
-#define MEMMOVE(from,to,length)     memmove ((void *)to, (void *)from, (size_t) length)
-#define MOVE_FAST(from,to,length)       memcpy (to, from, (int) (length))
-#define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
-#define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
+#define MEMMOVE(from, to, length)     memmove ((void *)to, (void *)from, (size_t) length)
+#define MOVE_FAST(from, to, length)       memcpy (to, from, (int) (length))
+#define MOVE_FASTER(from, to, length)     memcpy (to, from, (int) (length))
+#define MOVE_CLEAR(to, length)           memset (to, 0, (int) (length))
 
 #endif /* FREEBSD */
 
@@ -349,10 +349,10 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 //#define KILLER_SIGNALS
 #define NO_NFS					/* no MTAB_OPEN or MTAB_CLOSE in isc_file.c */
 
-#define MEMMOVE(from,to,length)     memmove ((void *)(to), (void *)(from), (size_t) length)
-#define MOVE_FAST(from,to,length)       memcpy ((to), (from), (int) (length))
-#define MOVE_FASTER(from,to,length)     memcpy ((to), (from), (int) (length))
-#define MOVE_CLEAR(to,length)           memset ((to), 0, (int) (length))
+#define MEMMOVE(from, to, length)     memmove ((void *)(to), (void *)(from), (size_t) length)
+#define MOVE_FAST(from, to, length)       memcpy ((to), (from), (int) (length))
+#define MOVE_FASTER(from, to, length)     memcpy ((to), (from), (int) (length))
+#define MOVE_CLEAR(to, length)           memset ((to), 0, (int) (length))
 
 #endif /* NETBSD */
 
@@ -399,7 +399,7 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 #error "need to use SFIO"
 #endif
 
-#define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)
+#define MEMMOVE(from, to, length)       memmove ((void *)to, (void *)from, (size_t) length)
 /*********   Reason for introducing MEMMOVE macro.
 
   void *memcpy( void *s1, const void *s2, size_t n);
@@ -457,9 +457,9 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 
 #endif /* sparc */
 
-#define MOVE_FAST(from,to,length)       memcpy (to, from, (int) (length))
-#define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
-#define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
+#define MOVE_FAST(from, to, length)       memcpy (to, from, (int) (length))
+#define MOVE_FASTER(from, to, length)     memcpy (to, from, (int) (length))
+#define MOVE_CLEAR(to, length)            memset (to, 0, (int) (length))
 
 #endif /* sun */
 
@@ -485,8 +485,8 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 #define IEEE
 #pragma OPT_LEVEL 1
 // 16-Apr-2002 HP10 in unistd.h Paul Beach
-//#define setreuid(ruid,euid)     setresuid (ruid, euid, -1)
-//#define setregid(rgid,egid)     setresgid (rgid, egid, -1)
+//#define setreuid(ruid, euid)     setresuid (ruid, euid, -1)
+//#define setregid(rgid, egid)     setresgid (rgid, egid, -1)
 
 /* The following define is the prefix to go in front of a "d" or "u"
    format item in a printf() format string, to indicate that the argument
@@ -496,10 +496,10 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
    which is too large to fit in a long int. */
 #define QUADCONST(n) (n##LL)
 
-#define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)
-#define MOVE_FAST(from,to,length)       memcpy (to, from, (int) (length))
-#define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
-#define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
+#define MEMMOVE(from, to, length)       memmove ((void *)to, (void *)from, (size_t) length)
+#define MOVE_FAST(from, to, length)       memcpy (to, from, (int) (length))
+#define MOVE_FASTER(from, to, length)     memcpy (to, from, (int) (length))
+#define MOVE_CLEAR(to, length)           memset (to, 0, (int) (length))
 
 #endif /* hpux */
 
@@ -547,10 +547,10 @@ typedef unsigned int64 UATOM;
 //*#define ALIGNMENT       4
 #define IMPLEMENTATION  isc_info_db_impl_isc_rt_aix /* 35 */
 #define IEEE
-#define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)
-#define MOVE_FAST(from,to,length)       memcpy (to, from, (int) (length))
-#define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
-#define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
+#define MEMMOVE(from, to, length)       memmove ((void *)to, (void *)from, (size_t) length)
+#define MOVE_FAST(from, to, length)       memcpy (to, from, (int) (length))
+#define MOVE_FASTER(from, to, length)     memcpy (to, from, (int) (length))
+#define MOVE_CLEAR(to, length)           memset (to, 0, (int) (length))
 #define SYSCALL_INTERRUPTED(err)        (((err) == EINTR) || ((err) == ERESTART))	/* pjpg 20001102 */
 #else /* AIX PowerPC */
 #define AIX_PPC
@@ -560,10 +560,10 @@ typedef unsigned int64 UATOM;
 //#define ALIGNMENT       4
 #define IMPLEMENTATION  isc_info_db_impl_isc_rt_aix /* 35 */
 #define IEEE
-#define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)
-#define MOVE_FAST(from,to,length)       memcpy (to, from, (int) (length))
-#define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
-#define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
+#define MEMMOVE(from, to, length)       memmove ((void *)to, (void *)from, (size_t) length)
+#define MOVE_FAST(from, to, length)       memcpy (to, from, (int) (length))
+#define MOVE_FASTER(from, to, length)     memcpy (to, from, (int) (length))
+#define MOVE_CLEAR(to, length)           memset (to, 0, (int) (length))
 #define SYSCALL_INTERRUPTED(err)        (((err) == EINTR) || ((err) == ERESTART))	/* pjpg 20001102 */
 
 #define QUADFORMAT "ll"			/* TMC 081700 */
@@ -583,10 +583,10 @@ typedef unsigned int64 UATOM;
 
 #define NO_NFS
 
-#define MOVE_FAST(from,to,length)       memcpy (to, from, (int) (length))
-#define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
-#define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
-#define MEMMOVE(from,to,length)         memmove ((void *)to, (void *)from, (size_t) length)
+#define MOVE_FAST(from, to, length)       memcpy (to, from, (int) (length))
+#define MOVE_FASTER(from, to, length)     memcpy (to, from, (int) (length))
+#define MOVE_CLEAR(to, length)           memset (to, 0, (int) (length))
+#define MEMMOVE(from, to, length)         memmove ((void *)to, (void *)from, (size_t) length)
 
 #define SYS_ARG		isc_arg_win32
 #define SYS_ERR		isc_arg_win32
@@ -652,7 +652,7 @@ typedef unsigned __int64 UINT64;
 // but use DEBUG_GDS_ALLOC. Hence DEBUG_GDS_ALLOC should be defined
 // globally by now and moved to autoconf-generated header later
 #ifdef DEBUG_GDS_ALLOC
-#define ALLOC_LIB_MEMORY(size)   gds__alloc_debug ((size),(TEXT *)__FILE__,(ULONG)__LINE__)
+#define ALLOC_LIB_MEMORY(size)   gds__alloc_debug ((size), (TEXT *)__FILE__, (ULONG)__LINE__)
 #endif
 
 /*****************************************************
@@ -670,14 +670,14 @@ typedef unsigned __int64 UINT64;
 //#define KILLER_SIGNALS
 //
 #define IMPLEMENTATION  isc_info_db_impl_sco_ev /* 59 */
-#define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)
-#define MOVE_FAST(from,to,length)    memcpy (to, from, (unsigned int) (length))
-#define MOVE_FASTER(from,to,length)  memcpy (to, from, (unsigned int) (length))
-#define MOVE_CLEAR(to,length)        memset (to, 0, (unsigned int) (length))
+#define MEMMOVE(from, to, length)       memmove ((void *)to, (void *)from, (size_t) length)
+#define MOVE_FAST(from, to, length)    memcpy (to, from, (unsigned int) (length))
+#define MOVE_FASTER(from, to, length)  memcpy (to, from, (unsigned int) (length))
+#define MOVE_CLEAR(to, length)        memset (to, 0, (unsigned int) (length))
 
 //  These functions are supported so we don't need the defines
-//#define setreuid(ruid,euid)     setuid(euid)
-//#define setregid(rgid,egid)     setgid(egid)
+//#define setreuid(ruid, euid)     setuid(euid)
+//#define setregid(rgid, egid)     setgid(egid)
 //
 
 #endif /* SCO_EV */
@@ -870,10 +870,10 @@ struct ISC_TIMESTAMP
 /* commonly used macros */
 
 #ifndef MAX
-#define MAX(a,b)                (((a) > (b)) ? (a) : (b))
+#define MAX(a, b)                (((a) > (b)) ? (a) : (b))
 #endif
 #ifndef MIN
-#define MIN(a,b)                (((a) < (b)) ? (a) : (b))
+#define MIN(a, b)                (((a) < (b)) ? (a) : (b))
 #endif
 
 #define UPPER(c)                (((c) >= 'a' && (c)<= 'z') ? (c) - 'a' + 'A' : (c))
@@ -886,14 +886,14 @@ struct ISC_TIMESTAMP
 #define LOWWER7(c)              (((c) >= 'A' && (c)<= 'Z') ? (c) - 'A' + 'a' : (c))
 
 #ifndef ROUNDUP
-#define ROUNDUP(n,b)            (((n) + (b) - 1) & ~((b) - 1))
+#define ROUNDUP(n, b)            (((n) + (b) - 1) & ~((b) - 1))
 #endif
 #define ROUNDUP_LONG(len)       ROUNDUP (len, sizeof (SLONG))
 
 #define JRD_BUGCHK 15			/* facility code for bugcheck messages */
 #ifndef OFFSET
-#define OFFSET(struct,fld)      ((size_t) &((struct) NULL)->fld)
-#define OFFSETA(struct,fld)     ((size_t) ((struct) NULL)->fld)
+#define OFFSET(struct, fld)      ((size_t) &((struct) NULL)->fld)
+#define OFFSETA(struct, fld)     ((size_t) ((struct) NULL)->fld)
 #endif
 
 #ifndef ODS_ALIGNMENT
@@ -923,20 +923,20 @@ struct ISC_TIMESTAMP
 /* data movement and allocation macros */
 
 #ifndef MOVE_FAST
-#define MOVE_FAST(from,to,length)       MOV_fast (from, to, (ULONG) (length))
+#define MOVE_FAST(from, to, length)       MOV_fast (from, to, (ULONG) (length))
 #endif
 
 #ifndef MOVE_FASTER
-#define MOVE_FASTER(from,to,length)     MOV_faster (from, to, (ULONG) (length))
+#define MOVE_FASTER(from, to, length)     MOV_faster (from, to, (ULONG) (length))
 #endif
 
 #ifndef MEMMOVE
 /* Use character by character copy function */
-#define MEMMOVE(from,to,length)       MOV_fast (from, to, (ULONG) (length))
+#define MEMMOVE(from, to, length)       MOV_fast (from, to, (ULONG) (length))
 #endif
 
 #ifndef MOVE_CLEAR
-#define MOVE_CLEAR(to,length)           MOV_fill (to, (ULONG) (length))
+#define MOVE_CLEAR(to, length)           MOV_fill (to, (ULONG) (length))
 #endif
 
 #ifndef ALLOC_LIB_MEMORY
@@ -953,9 +953,9 @@ struct ISC_TIMESTAMP
 #define DEFINE_TRACE_ROUTINE(routine) void routine(const char* message, ...)
 
 #ifdef HAVE_VSNPRINTF
-#define VSNPRINTF(a,b,c,d) vsnprintf(a,b,c,d)
+#define VSNPRINTF(a, b, c, d) vsnprintf(a, b, c, d)
 #else
-#define VSNPRINTF(a,b,c,d) vsprintf(a,c,d)
+#define VSNPRINTF(a, b, c, d) vsprintf(a, c, d)
 #endif
 
 #ifdef HAVE_SNPRINTF
@@ -1033,11 +1033,11 @@ void GDS_breakpoint(int);
 #endif
 
 #ifndef DOUBLE_MULTIPLY
-#define DOUBLE_MULTIPLY(a,b)    (((double) (a)) * ((double) (b)))
+#define DOUBLE_MULTIPLY(a, b)    (((double) (a)) * ((double) (b)))
 #endif
 
 #ifndef DOUBLE_DIVIDE
-#define DOUBLE_DIVIDE(a,b)      (((double) (a)) / ((double) (b)))
+#define DOUBLE_DIVIDE(a, b)      (((double) (a)) / ((double) (b)))
 #endif
 
 #ifndef ISC_EXT_LIB_PATH_ENV

@@ -276,10 +276,10 @@ public:
 template <typename T, size_t InlineCapacity>
 class HalfStaticArray : public Array<T, InlineStorage<T, InlineCapacity> > {
 public:
-	explicit HalfStaticArray(MemoryPool& p) : Array<T,InlineStorage<T, InlineCapacity> > (p) {}
+	explicit HalfStaticArray(MemoryPool& p) : Array<T, InlineStorage<T, InlineCapacity> > (p) {}
 	HalfStaticArray(MemoryPool& p, size_t InitialCapacity) : 
 		Array<T, InlineStorage<T, InlineCapacity> > (p, InitialCapacity) {}
-	HalfStaticArray() : Array<T,InlineStorage<T, InlineCapacity> > () {}
+	HalfStaticArray() : Array<T, InlineStorage<T, InlineCapacity> > () {}
 	explicit HalfStaticArray(size_t InitialCapacity) : 
 		Array<T, InlineStorage<T, InlineCapacity> > (InitialCapacity) {}
 };

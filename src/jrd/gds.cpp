@@ -394,10 +394,10 @@ const char* const FB_TMP_ENV		= "FIREBIRD_TMP";
 
 #ifdef WIN_NT
 #define EXPAND_PATH(relative, absolute)		_fullpath(absolute, relative, MAXPATHLEN)
-#define COMPARE_PATH(a,b)			_stricmp(a,b)
+#define COMPARE_PATH(a, b)			_stricmp(a, b)
 #else
 #define EXPAND_PATH(relative, absolute)		realpath(relative, absolute)
-#define COMPARE_PATH(a,b)			strcmp(a,b)
+#define COMPARE_PATH(a, b)			strcmp(a, b)
 #endif
 
 

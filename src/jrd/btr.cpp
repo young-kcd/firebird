@@ -2414,7 +2414,7 @@ static USHORT compress_root(thread_db* tdbb, index_root_page* page)
 	UCHAR* const temp =
 		(UCHAR*)tdbb->getDefaultPool()->allocate((SLONG) dbb->dbb_page_size, 0
 #ifdef DEBUG_GDS_ALLOC
-	  ,__FILE__,__LINE__
+	  ,__FILE__, __LINE__
 #endif
 	);
 	memcpy(temp, page, dbb->dbb_page_size);
@@ -2775,7 +2775,7 @@ static SLONG fast_load(thread_db* tdbb,
 	IndexNode levelNode[MAX_LEVELS];
 #ifdef DEBUG_BTR_PAGES
 	TEXT debugtext[1024];
-	//  ,__FILE__,__LINE__
+	//  ,__FILE__, __LINE__
 #endif
 
 	

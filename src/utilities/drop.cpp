@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: drop.cpp,v 1.29 2004-11-10 04:26:41 robocop Exp $
+ * $Id: drop.cpp,v 1.30 2004-11-24 09:14:32 robocop Exp $
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
@@ -307,7 +307,7 @@ static void remove_resource(
 #ifdef SCO_EV					/* 5.5 SCO Port: SCO needs waitpid() to function properly */
 		waitpid(pid, 0, 0);
 #else
-		waitpid(pid,NULL,0);
+		waitpid(pid, NULL, 0);
 #endif
 	}
 #endif

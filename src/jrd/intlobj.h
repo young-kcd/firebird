@@ -137,7 +137,7 @@ typedef struct texttype {
 	typedef bool (*pfn_INTL_matches)(engine_thread_db*, engine_TextType, const UCHAR*, SSHORT, 
 		const UCHAR*, SSHORT);
 	typedef bool (*pfn_INTL_sleuth_check)(engine_thread_db*, engine_TextType, USHORT, 
-		const UCHAR*, USHORT, const UCHAR*,USHORT);
+		const UCHAR*, USHORT, const UCHAR*, USHORT);
 	typedef USHORT (*pfn_INTL_sleuth_merge)(engine_thread_db*, engine_TextType, const UCHAR*,
 		USHORT, const UCHAR*, USHORT, UCHAR*, USHORT);
 

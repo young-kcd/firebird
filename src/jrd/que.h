@@ -92,9 +92,9 @@ typedef que *QUE;
 #define SRQ_NEXT(que)   (srq*) SRQ_ABS_PTR (que.srq_forward)
 #define SRQ_PREV(que)	(srq*) SRQ_ABS_PTR (que.srq_backward)
 
-#define SRQ_LOOP(header,que)    for (que = SRQ_NEXT (header);\
+#define SRQ_LOOP(header, que)    for (que = SRQ_NEXT (header);\
 	que != &header; que = SRQ_NEXT ((*que)))
-#define SRQ_LOOP_BACK(header,que)	for (que = SRQ_PREV (header);\
+#define SRQ_LOOP_BACK(header, que)	for (que = SRQ_PREV (header);\
 	que != &header; que = SRQ_PREV ((*que)))
 
 /* Self-relative que block.  Offsets are from the block itself. */

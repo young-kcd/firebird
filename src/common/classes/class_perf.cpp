@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  * 
  *
- *  $Id: class_perf.cpp,v 1.14 2004-08-22 21:31:19 skidder Exp $
+ *  $Id: class_perf.cpp,v 1.15 2004-11-24 09:05:11 robocop Exp $
  *
  */
 
@@ -164,7 +164,7 @@ static void testAllocatorOverhead() {
 	printf("Calculating measurement overhead...\n");
 	start();
 	MallocAllocator allocator;
-	BePlusTree<AllocItem,AllocItem,MallocAllocator,DefaultKeyValue<AllocItem>,AllocItem> items(&allocator),
+	BePlusTree<AllocItem, AllocItem, MallocAllocator, DefaultKeyValue<AllocItem>, AllocItem> items(&allocator),
 		bigItems(&allocator);
 	// Allocate small items
 	int n = 0;
@@ -202,7 +202,7 @@ static void testAllocatorMemoryPool() {
 	start();
 	Firebird::MemoryPool* pool = Firebird::MemoryPool::createPool();	
 	MallocAllocator allocator;
-	BePlusTree<AllocItem,AllocItem,MallocAllocator,DefaultKeyValue<AllocItem>,AllocItem> items(&allocator),
+	BePlusTree<AllocItem, AllocItem, MallocAllocator, DefaultKeyValue<AllocItem>, AllocItem> items(&allocator),
 		bigItems(&allocator);
 	// Allocate small items
 	int i, n = 0;	
@@ -239,7 +239,7 @@ static void testAllocatorMalloc() {
 	printf("Test reference run for ::malloc...\n");
 	start();
 	MallocAllocator allocator;
-	BePlusTree<AllocItem,AllocItem,MallocAllocator,DefaultKeyValue<AllocItem>,AllocItem> items(&allocator),
+	BePlusTree<AllocItem, AllocItem, MallocAllocator, DefaultKeyValue<AllocItem>, AllocItem> items(&allocator),
 		bigItems(&allocator);
 	// Allocate small items
 	int i, n = 0;
@@ -274,16 +274,16 @@ static void testAllocatorMalloc() {
 /*static void testAllocatorOldPool() {
 	printf("Test run for old MemoryPool...\n");
 	start();
-	::MemoryPool *pool = new ::MemoryPool(0,getDefaultMemoryPool());
+	::MemoryPool *pool = new ::MemoryPool(0, getDefaultMemoryPool());
 	MallocAllocator allocator;
-	BePlusTree<AllocItem,AllocItem,MallocAllocator,DefaultKeyValue<AllocItem>,AllocItem> items(&allocator),
+	BePlusTree<AllocItem, AllocItem, MallocAllocator, DefaultKeyValue<AllocItem>, AllocItem> items(&allocator),
 		bigItems(&allocator);
 	// Allocate small items
 	int n = 0;
 	int i;
 	for (i=0;i<ALLOC_ITEMS;i++) {
 		n = n * 47163 - 57412;
-		AllocItem temp = {n, pool->allocate((n % MAX_ITEM_SIZE + MAX_ITEM_SIZE)/2+1,0)};
+		AllocItem temp = {n, pool->allocate((n % MAX_ITEM_SIZE + MAX_ITEM_SIZE) / 2 + 1, 0)};
 		items.add(temp);
 	}
 	// Deallocate half of small items
@@ -295,7 +295,7 @@ static void testAllocatorMalloc() {
 	// Allocate big items
 	for (i=0;i<BIG_ITEMS;i++) {
 		n = n * 47163 - 57412;
-		AllocItem temp = {n, pool->allocate((n % BIG_SIZE + BIG_SIZE)/2+1,0)};
+		AllocItem temp = {n, pool->allocate((n % BIG_SIZE + BIG_SIZE) / 2 + 1, 0)};
 		bigItems.add(temp);
 	}
 	// Deallocate the rest of small items

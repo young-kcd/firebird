@@ -110,7 +110,7 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 #endif
 	{TYPE_INTEGER,		"ProcessPriorityLevel",		(ConfigValue) 0},
 	{TYPE_BOOLEAN,		"CreateInternalWindow",		(ConfigValue) true},
-	{TYPE_BOOLEAN,		"CompleteBooleanEvaluation",(ConfigValue) false},
+	{TYPE_BOOLEAN,		"CompleteBooleanEvaluation", (ConfigValue) false},
 	{TYPE_INTEGER,		"RemoteAuxPort",			(ConfigValue) 0},
 	{TYPE_STRING,		"RemoteBindAddress",		(ConfigValue) 0},
 	{TYPE_STRING,		"ExternalFileAccess",		(ConfigValue) "None"},	// location(s) of external files for tables

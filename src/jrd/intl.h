@@ -138,7 +138,7 @@
 #define INTL_INDEX_TYPE(desc)	INTL_TEXT_TO_INDEX (INTL_RES_TTYPE (desc))
 
 /* Maps a Character_set_id & collation_id to a text_type (driver ID) */
-#define INTL_CS_COLL_TO_TTYPE(cs,coll)	((SSHORT)((coll) << 8 | ((cs) & 0x00FF)))
+#define INTL_CS_COLL_TO_TTYPE(cs, coll)	((SSHORT)((coll) << 8 | ((cs) & 0x00FF)))
 
 #endif /* JRD_INTL_H */
 

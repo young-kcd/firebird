@@ -28,8 +28,8 @@ struct blk;
 struct rem_vec;
 
 #ifdef DEBUG_GDS_ALLOC
-#define ALLR_alloc(s)	  ALLR_alloc_debug((s),(TEXT*)__FILE__,(ULONG)__LINE__)
-#define ALLR_block(s, sz) ALLR_block_debug((s), (sz), (TEXT*)__FILE__,(ULONG)__LINE__)
+#define ALLR_alloc(s)	  ALLR_alloc_debug((s), (TEXT*)__FILE__, (ULONG)__LINE__)
+#define ALLR_block(s, sz) ALLR_block_debug((s), (sz), (TEXT*)__FILE__, (ULONG)__LINE__)
 UCHAR*	ALLR_alloc_debug(ULONG, const TEXT*, ULONG);
 blk*	ALLR_block_debug(UCHAR, ULONG, const TEXT*, ULONG);
 #else  //DEBUG_GDS_ALLOC

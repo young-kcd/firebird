@@ -2317,30 +2317,32 @@ static void clone_global_fields( qli_rel* target, qli_rel* source)
 
 	FOR(REQUEST_HANDLE req1
 		TRANSACTION_HANDLE s_trans)
-        RFR IN DB.RDB$RELATION_FIELDS CROSS
-        Y IN DB.RDB$FIELDS
-        WITH RFR.RDB$RELATION_NAME = source->rel_symbol->sym_string AND
-        Y.RDB$FIELD_NAME = RFR.RDB$FIELD_SOURCE REDUCED TO Y.RDB$FIELD_NAME
-        if (!Y.RDB$COMPUTED_BLR.NULL ||
-            ((strncmp("RDB$",RFR.RDB$FIELD_NAME,4)) &&
-             (!(strncmp("RDB$", Y.RDB$FIELD_NAME,4)))))
-            continue;
+		RFR IN DB.RDB$RELATION_FIELDS CROSS
+		Y IN DB.RDB$FIELDS
+		WITH RFR.RDB$RELATION_NAME = source->rel_symbol->sym_string AND
+		Y.RDB$FIELD_NAME = RFR.RDB$FIELD_SOURCE REDUCED TO Y.RDB$FIELD_NAME
+		if (!Y.RDB$COMPUTED_BLR.NULL ||
+			((strncmp("RDB$", RFR.RDB$FIELD_NAME, 4)) &&
+				(!(strncmp("RDB$", Y.RDB$FIELD_NAME, 4)))))
+		{
+			continue;
+		}
 
-        bool predefined = false;
+		bool predefined = false;
 
 		FOR(REQUEST_HANDLE req2 TRANSACTION_HANDLE t_trans)
 			A IN DB1.RDB$FIELDS WITH A.RDB$FIELD_NAME = Y.RDB$FIELD_NAME
-            if ((A.RDB$FIELD_TYPE != Y.RDB$FIELD_TYPE) ||
-                (A.RDB$FIELD_LENGTH != Y.RDB$FIELD_LENGTH) ||
-                (A.RDB$FIELD_SCALE.NULL != Y.RDB$FIELD_SCALE.NULL) ||
-                ((!Y.RDB$FIELD_SCALE.NULL) &&
-                 (A.RDB$FIELD_SCALE != Y.RDB$FIELD_SCALE)) ||
-                (A.RDB$FIELD_SUB_TYPE.NULL != Y.RDB$FIELD_SUB_TYPE.NULL)
-                || ((!Y.RDB$FIELD_SUB_TYPE.NULL)
-                    && (A.RDB$FIELD_SUB_TYPE != Y.RDB$FIELD_SUB_TYPE)))
+			if ((A.RDB$FIELD_TYPE != Y.RDB$FIELD_TYPE) ||
+				(A.RDB$FIELD_LENGTH != Y.RDB$FIELD_LENGTH) ||
+				(A.RDB$FIELD_SCALE.NULL != Y.RDB$FIELD_SCALE.NULL) ||
+				((!Y.RDB$FIELD_SCALE.NULL) &&
+				(A.RDB$FIELD_SCALE != Y.RDB$FIELD_SCALE)) ||
+				(A.RDB$FIELD_SUB_TYPE.NULL != Y.RDB$FIELD_SUB_TYPE.NULL)
+				|| ((!Y.RDB$FIELD_SUB_TYPE.NULL)
+					&& (A.RDB$FIELD_SUB_TYPE != Y.RDB$FIELD_SUB_TYPE)))
 				{
 
-                	TEXT* name = (TEXT*) ALLQ_malloc((SLONG) sizeof(Y.RDB$FIELD_NAME));
+					TEXT* name = (TEXT*) ALLQ_malloc((SLONG) sizeof(Y.RDB$FIELD_NAME));
 					strcpy(name, Y.RDB$FIELD_NAME);
 					rollback_update(target->rel_database);
 					// CVC: When is this memory deallocated?
@@ -2448,14 +2450,14 @@ static void clone_global_fields( qli_rel* target, qli_rel* source)
 					WITH F.RDB$FIELD_NAME = D.RDB$FIELD_NAME AND
 					F.RDB$FIELD_NAME = Y.RDB$FIELD_NAME
 
-                if (first_dimension) {
+				if (first_dimension) {
 					first_dimension = false;
 					STUFF(isc_dyn_fld_dimensions);
 					STUFF_WORD(2);
 					STUFF_WORD(F.RDB$DIMENSIONS);
 				}
 
-                STUFF(isc_dyn_def_dimension);
+				STUFF(isc_dyn_def_dimension);
 				STUFF_WORD(2);
 				STUFF_WORD(D.RDB$DIMENSION);
 

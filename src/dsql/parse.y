@@ -2690,12 +2690,12 @@ set		: set_transaction
 
 set_generator	: SET GENERATOR symbol_generator_name TO signed_long_integer
 			{ 
-			  $$ = make_node (nod_set_generator2,e_gen_id_count,$3,
+			  $$ = make_node (nod_set_generator2, e_gen_id_count, $3,
 						MAKE_constant ((dsql_str*) $5, CONSTANT_SLONG));
 			}
 				| SET GENERATOR symbol_generator_name TO NUMBER64BIT
 						{
-			  $$ = make_node (nod_set_generator2,e_gen_id_count,$3,
+			  $$ = make_node (nod_set_generator2, e_gen_id_count, $3,
 					   MAKE_constant((dsql_str*)$5, CONSTANT_SINT64));
 			}
 				| SET GENERATOR symbol_generator_name TO '-' NUMBER64BIT

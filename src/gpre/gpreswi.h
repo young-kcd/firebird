@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpreswi.h,v 1.10 2003-09-08 11:27:51 robocop Exp $
+ * $Id: gpreswi.h,v 1.11 2004-11-24 09:09:04 robocop Exp $
  * Revision 1.2  2000/11/16 15:54:29  fsg
  * Added new switch -verbose to gpre that will dump
  * parsed lines to stderr
@@ -138,7 +138,7 @@ static const in_sw_tab_t gpre_in_sw_table[] =
 	{IN_SW_GPRE_I		, 0, "IDENTIFIERS"	, 0, 0, 0, FALSE, 0, 0, NULL},
 	{IN_SW_GPRE_I		, 0, "IDS"			, 0, 0, 0, FALSE, 0, 0, NULL},
 	{IN_SW_GPRE_INTERP	, 0, "CHARSET"		, 0, 0, 0, FALSE, 0, 0, "\t\tDefault character set & format"},
-	{IN_SW_GPRE_INTERP	, 0, "INTERPRETATION",0, 0, 0, FALSE, 0, 0, NULL},
+	{IN_SW_GPRE_INTERP	, 0, "INTERPRETATION", 0, 0, 0, FALSE, 0, 0, NULL},
 	{IN_SW_GPRE_LANG_INTERNAL , 0, "LANG_INTERNAL"	, 0, 0, 0, FALSE, 0, 0, "\tinternal language only"},
 	{IN_SW_GPRE_M		, 0, "MANUAL"		, 0, 0, 0, FALSE, 0, 0, "\t\tdo not automatically ATTACH to a database"},
 	{IN_SW_GPRE_N		, 0, "NO_LINES"		, 0, 0, 0, FALSE, 0, 0, "\tdo not generate C debug lines"},
@@ -148,7 +148,7 @@ static const in_sw_tab_t gpre_in_sw_table[] =
 #endif
 	{IN_SW_GPRE_PASSWORD	, 0, "PASSWORD"		, 0, 0, 0, FALSE, 0, 0, "\tdefault password"},
 	{IN_SW_GPRE_R		, 0, "RAW"			, 0, 0, 0, FALSE, 0, 0, "\t\tgenerate unformatted binary BLR"},
-	{IN_SW_GPRE_SQLDIALECT,0, "SQL_DIALECT"	, 0, 0, 0, FALSE, 0, 0, "\tSQL dialect to use"},
+	{IN_SW_GPRE_SQLDIALECT, 0, "SQL_DIALECT"	, 0, 0, 0, FALSE, 0, 0, "\tSQL dialect to use"},
 	{IN_SW_GPRE_S		, 0, "STRINGS"		, 0, 0, 0, FALSE, 0, 0, NULL},
 	{IN_SW_GPRE_SQLDA	, 0, "SQLDA"		, 0, 0, 0, FALSE, 0, 0, "\t\t***** Deprecated feature. ********"},
 	{IN_SW_GPRE_T		, 0, "TRACE"		, 0, 0, 0, FALSE, 0, 0, NULL},

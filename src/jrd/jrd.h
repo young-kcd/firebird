@@ -79,9 +79,9 @@
  */
 #ifdef DEV_BUILD
 #define DEV_BLKCHK(blk,type)
-//#define DEV_BLKCHK(blk,type)    if (blk) {BLKCHK (blk, type);}
+//#define DEV_BLKCHK(blk, type)    if (blk) {BLKCHK (blk, type);}
 #else
-#define DEV_BLKCHK(blk,type)	/* nothing */
+#define DEV_BLKCHK(blk, type)	/* nothing */
 #endif
 
 
@@ -895,7 +895,7 @@ private:
 };
 typedef vcl* VCL;
 
-//#define TEST_VECTOR(vector,number)      ((vector && number < vector->vec_count) ? 
+//#define TEST_VECTOR(vector, number)      ((vector && number < vector->vec_count) ?
 //					  vector->vec_object [number] : NULL)
 
 
@@ -1148,14 +1148,14 @@ inline void SET_DBB(Jrd::Database* &dbb) {
 #ifdef V4_THREADING
 #define V4_JRD_MUTEX_LOCK(mutx)         JRD_mutex_lock (mutx)
 #define V4_JRD_MUTEX_UNLOCK(mutx)       JRD_mutex_unlock (mutx)
-#define V4_JRD_RW_LOCK_LOCK(wlck,type)  JRD_wlck_lock (wlck, type)
+#define V4_JRD_RW_LOCK_LOCK(wlck, type)  JRD_wlck_lock (wlck, type)
 #define V4_JRD_RW_LOCK_UNLOCK(wlck)     JRD_wlck_unlock (wlck)
 // BRS. 03/23/2003
 // Those empty defines was substituted with #ifdef V4_THREADING
 //#else
 //#define V4_JRD_MUTEX_LOCK(mutx)
 //#define V4_JRD_MUTEX_UNLOCK(mutx)
-//#define V4_JRD_RW_LOCK_LOCK(wlck,type)
+//#define V4_JRD_RW_LOCK_LOCK(wlck, type)
 //#define V4_JRD_RW_LOCK_UNLOCK(wlck)
 #endif
 
