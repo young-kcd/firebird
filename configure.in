@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.65 2002-11-06 12:58:45 dimitr Exp $
+dnl $Id: configure.in,v 1.66 2002-11-06 13:03:20 dimitr Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -37,7 +37,6 @@ i386-pc-solaris*) MAKEFILE_PREFIX=solx86  ; PLATFORM=solx86    ; AC_DEFINE(solx8
 sparc-sun-solaris*) MAKEFILE_PREFIX=solaris  ; PLATFORM=SOLARIS    ; AC_DEFINE(SOLARIS) ;;
 i*-sni-sysv4)     MAKEFILE_PREFIX=sinixz  ; PLATFORM="SINIX-Z" ; AC_DEFINE(SINIXZ) ;;
 *-*-mingw*)       MAKEFILE_PREFIX=mingw   ; PLATFORM=win32     ; AC_DEFINE(WIN_NT) ;;
-
 esac
 
 AC_SUBST(PLATFORM)
