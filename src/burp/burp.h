@@ -477,6 +477,7 @@ enum att_type {
 	// SQL roles attributes 
 	att_role_name = SERIES,
 	att_role_owner_name,
+	att_role_description,
 
 	// Check constraints attributes 
 	att_chk_constraint_name = SERIES,
@@ -841,6 +842,7 @@ public:
 	 */
 //	burp_fld*		v3_cvt_fld_list;
 
+	// The handles_get... are for restore.
 	isc_req_handle	handles_get_character_sets_req_handle1;
 	isc_req_handle	handles_get_chk_constraint_req_handle1;
 	isc_req_handle	handles_get_collation_req_handle1;
@@ -877,6 +879,7 @@ public:
 	isc_req_handle	handles_get_type_req_handle1;
 	isc_req_handle	handles_get_user_privilege_req_handle1;
 	isc_req_handle	handles_get_view_req_handle1;
+	// The handles_put.. are for backup.
 	isc_req_handle	handles_put_index_req_handle1;
 	isc_req_handle	handles_put_index_req_handle2;
 	isc_req_handle	handles_put_index_req_handle3;

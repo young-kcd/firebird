@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.81 2004-08-29 06:53:31 robocop Exp $
+$Id: restore.epp,v 1.82 2004-08-30 10:07:00 robocop Exp $
 */
 
 #include "firebird.h"
@@ -5026,6 +5026,8 @@ bool get_sql_roles()
 
 		X.RDB$ROLE_NAME.NULL = TRUE;
 		X.RDB$OWNER_NAME.NULL = TRUE;
+		X.RDB$DESCRIPTION.NULL = TRUE;
+		X.RDB$SYSTEM_FLAG.NULL = TRUE;
 		skip_init(&scan_next_attr);
 
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
@@ -5048,6 +5050,11 @@ bool get_sql_roles()
 				X.RDB$OWNER_NAME.NULL = FALSE;
 				GET_TEXT(X.RDB$OWNER_NAME);
 				break;
+				
+			case att_role_description:
+				get_source_blob (&X.RDB$DESCRIPTION, false);
+				X.RDB$DESCRIPTION.NULL = FALSE;
+			    break;
 
 			default:
 				/*************************************************
