@@ -1,3 +1,27 @@
+2003-04-23 18:17  skidder
+
+	* firebird2/builds/win32/common_boot.mak:
+	
+	Fix up makefile a little
+
+2003-04-23 09:29  alexpeshkoff
+
+	* firebird2/src/jrd/inf.cpp:
+	
+	fix buffer overrun in get_counts()
+
+2003-04-23 08:42  eku
+
+	* firebird2/src/install/arch-specific/sinixz/prototype.in:
+	
+	Reduced the number of distributed header files
+
+2003-04-23 08:40  eku
+
+	* firebird2/src/jrd/common.h:
+	
+	SINIX-Z does not provide a prototype for syslog() :-(
+
 2003-04-22 10:45  alexpeshkoff
 
 	* firebird2/src/jrd/exe.cpp:
