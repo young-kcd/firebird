@@ -4007,8 +4007,9 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			if (rsb_type == isc_info_rsb_navigate &&
 				*explain == isc_info_rsb_indexed)
 			{
+		        USHORT idx_count = 1;
 				if (!get_rsb_item(&explain_length, &explain, &plan_length,
-								  &plan, parent_join_count, level_ptr))
+								  &plan, &idx_count, level_ptr))
 				{
 					return false;
 				}
