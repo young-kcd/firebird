@@ -1,4 +1,4 @@
-/* A Bison parser, made from F:\fb2dev\fbbuild\firebird2\src\dsql\parse.y
+/* A Bison parser, made from ../src/dsql/parse.y
    by GNU bison 1.35.  */
 
 #define YYBISON 1  /* Identify Bison output.  */
@@ -5890,10 +5890,10 @@ case 643:
 { yyval = 0; }
     break;
 case 644:
-{ yyval = make_node (nod_flag, 0, NULL); }
+{ yyval = MAKE_constant((dsql_str*) NOD_NULLS_FIRST, CONSTANT_SLONG); }
     break;
 case 645:
-{ yyval = 0; }
+{ yyval = MAKE_constant((dsql_str*) NOD_NULLS_LAST, CONSTANT_SLONG); }
     break;
 case 646:
 { yyval = yyvsp[-1]; }
@@ -7159,7 +7159,7 @@ static void check_log_file_attrs (void)
 		}
 		
 		if (PARTITION_SIZE (OneK * lex.g_file->fil_length, lex.g_file->fil_partitions) <
-			(OneK*MIN_LOG_LENGTH))
+			(OneK * MIN_LOG_LENGTH))
 		{
 			yyabandon (-239, isc_partition_too_small);
 			/* Log partition size too small */

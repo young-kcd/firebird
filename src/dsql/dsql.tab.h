@@ -1,5 +1,5 @@
-#ifndef BISON_DSQL_TAB_H
-# define BISON_DSQL_TAB_H
+#ifndef BISON_Y_TAB_H
+# define BISON_Y_TAB_H
 
 # ifndef YYSTYPE
 #  define YYSTYPE int
@@ -274,4 +274,4 @@
 
 extern YYSTYPE yylval;
 
-#endif /* not BISON_DSQL_TAB_H */
+#endif /* not BISON_Y_TAB_H */
