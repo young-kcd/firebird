@@ -102,7 +102,7 @@ static USHORT get_prot_mask(TEXT *, TEXT *);
 static SYM get_symbol(enum sym_t, TEXT *, CTX);
 static void get_triggers(DBB);
 static void get_udfs(DBB);
-static void make_desc(NOD, DSC *);
+static void make_desc(DUDLEY_NOD, DSC *);
 static int make_dtype(USHORT);
 static void modify_field(FLD);
 static void modify_global_field(FLD);
@@ -112,10 +112,10 @@ static void modify_trigger(TRG);
 static void modify_trigger_msg(TRGMSG);
 static void modify_type(TYP);
 static void move_symbol(SYM, register SCHAR *, SSHORT);
-static void set_generator(NOD);
+static void set_generator(DUDLEY_NOD);
 static void store_acl(SCL, SLONG *);
-static void store_blr(NOD, SLONG *, REL);
-static void store_query_header(NOD, SLONG *);
+static void store_blr(DUDLEY_NOD, SLONG *, REL);
+static void store_query_header(DUDLEY_NOD, SLONG *);
 static void store_range(FLD);
 static void store_text(TXT, SLONG *);
 static void store_userpriv(USERPRIV, TEXT *, TEXT *, USRE, UPFE);
@@ -633,7 +633,7 @@ void EXE_execute(void)
 				break;
 
 			case act_s_generator:
-				set_generator((NOD) action->act_object);
+				set_generator((DUDLEY_NOD) action->act_object);
 				break;
 
 			default:
@@ -1827,7 +1827,7 @@ static void add_view( REL relation)
  **************************************/
 	FLD field;
 	REL target;
-	NOD rse, *arg, contexts;
+	DUDLEY_NOD rse, *arg, contexts;
 	CTX context;
 	USHORT i;
 
@@ -2547,7 +2547,7 @@ static void drop_shadow( SLONG shadow_number)
         ERASE FIL;
 	    string = (SYM) DDL_alloc(SYM_LEN + strlen(FIL.RDB$FILE_NAME));
         strcpy(string->sym_name, FIL.RDB$FILE_NAME);
-        DDL_push((NOD) string, &files);
+        DDL_push((DUDLEY_NOD) string, &files);
         if (!first_file)
             first_file = files;
     END_FOR;
@@ -3228,7 +3228,7 @@ static void get_udfs( DBB dbb)
 }
 
 
-static void make_desc( NOD node, DSC * desc)
+static void make_desc( DUDLEY_NOD node, DSC * desc)
 {
 /**************************************
  *
@@ -3962,7 +3962,7 @@ static void move_symbol( SYM symbol, register SCHAR * field, SSHORT length)
 }
 
 
-static void set_generator( NOD node)
+static void set_generator( DUDLEY_NOD node)
 {
 /**************************************
  *
@@ -4099,7 +4099,7 @@ static void store_acl( SCL scl_class, SLONG * blob_id)
 }
 
 
-static void store_blr( NOD node, SLONG * blob_id, REL relation)
+static void store_blr( DUDLEY_NOD node, SLONG * blob_id, REL relation)
 {
 /**************************************
  *
@@ -4142,7 +4142,7 @@ static void store_blr( NOD node, SLONG * blob_id, REL relation)
 }
 
 
-static void store_query_header( NOD node, SLONG * blob_id)
+static void store_query_header( DUDLEY_NOD node, SLONG * blob_id)
 {
 /**************************************
  *
@@ -4154,7 +4154,7 @@ static void store_query_header( NOD node, SLONG * blob_id)
  *	Store a query header.
  *
  **************************************/
-	NOD *ptr, *end;
+	DUDLEY_NOD *ptr, *end;
 	SYM symbol;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	void *blob;

@@ -27,7 +27,7 @@
  *
  */
 /*
-$Id: fun.epp,v 1.10 2002-10-30 06:40:47 seanleyne Exp $
+$Id: fun.epp,v 1.11 2002-11-12 05:05:01 skywalker Exp $
 */
 
 #include "firebird.h"
@@ -84,7 +84,7 @@ static SLONG blob_lseek(BLB, USHORT, SLONG);
 static SLONG get_scalar_array(fun_repeat *, DSC *, SAD, LLS *);
 
 
-void DLL_EXPORT FUN_evaluate(FUN function, NOD node, VLU value)
+void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 {
 /**************************************
  *
@@ -134,7 +134,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, NOD node, VLU value)
 	REQ			request		= tdbb->tdbb_request;
 	USHORT		null_flag	= (USHORT)(request->req_flags & req_null);
 	fun_repeat*	return_ptr	= function->fun_rpt + function->fun_return_arg;
-	NOD*		ptr			= node->nod_arg;
+	JRD_NOD*		ptr			= node->nod_arg;
 
 	value->vlu_desc = return_ptr->fun_desc;
 	value->vlu_desc.dsc_address = (UCHAR *) & value->vlu_misc;
@@ -813,7 +813,7 @@ FUN DLL_EXPORT FUN_lookup_function(TEXT * name)
 }
 
 
-FUN DLL_EXPORT FUN_resolve(CSB csb, FUN function, NOD args)
+FUN DLL_EXPORT FUN_resolve(CSB csb, FUN function, JRD_NOD args)
 {
 /**************************************
  *
@@ -826,7 +826,7 @@ FUN DLL_EXPORT FUN_resolve(CSB csb, FUN function, NOD args)
  *
  **************************************/
 	FUN best;
-	NOD *ptr, *end;
+	JRD_NOD *ptr, *end;
 	DSC arg;
 	int best_score, score;
 	fun_repeat *tail;
