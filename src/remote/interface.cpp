@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
+ *
  */
 
 #include "firebird.h"
@@ -72,7 +75,7 @@
 #include "../remote/spxnet32_proto.h"
 #endif
 
-#if (defined ultrix || defined DECOSF)
+#if (defined DECOSF)
 #include "../remote/dnet_proto.h"
 #endif
 
@@ -4820,7 +4823,7 @@ static PORT analyze(TEXT*	file_name,
 /* Analyze the file name to see if a remote connection is required.  If not,
    quietly (sic) return. */
 
-#if (defined ultrix || defined DECOSF)
+#if (defined DECOSF)
 	port = DNET_analyze(file_name, file_length, status_vector, uv_flag);
 #endif
 
@@ -5007,7 +5010,7 @@ TEXT * user_string, USHORT uv_flag, SCHAR * dpb, SSHORT dpb_length)
 /* Analyze the service name to see if a remote connection is required.  If not,
    quietly (sic) return. */
 
-#if (defined ultrix || defined DECOSF)
+#if (defined DECOSF)
 	port = DNET_analyze(service_name, service_length, status_vector, uv_flag);
 #endif
 

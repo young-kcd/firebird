@@ -24,9 +24,12 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.9 2002-10-24 09:01:23 eku Exp $
+//	$Id: tdr.cpp,v 1.10 2002-10-28 05:19:43 seanleyne Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
+//
+// 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
+//
 //
 
 #include "firebird.h"
@@ -782,10 +785,6 @@ static void reattach_database(TDR trans)
 	protocols |= DECNET_PROTOCOL | VMS_TCP_PROTOCOL;
 #else
 	protocols |= TCP_PROTOCOL;
-#endif
-
-#ifdef ultrix
-	protocols |= DECNET_PROTOCOL;
 #endif
 
 	ISC_get_host(reinterpret_cast < char *>(buffer), sizeof(buffer));

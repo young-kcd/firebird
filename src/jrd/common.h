@@ -37,10 +37,11 @@
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
  *
  */
 /*
-$Id: common.h,v 1.38 2002-10-28 04:57:01 seanleyne Exp $
+$Id: common.h,v 1.39 2002-10-28 05:19:47 seanleyne Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -454,31 +455,6 @@ typedef RETSIGTYPE (*SIG_FPTR) (int);
 
 typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* hpux */
-
-
-
-/* DEC Ultrix */
-
-#ifdef ultrix
-#define BSD_UNIX        1
-#define INTL_BACKEND
-#define UNIX            1
-#define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
-
-#ifdef mips
-#define IMPLEMENTATION  isc_info_db_impl_isc_mips_ult /* 36 */
-#define                 IEEE
-/*#define ALIGNMENT       4*/
-/*#define DOUBLE_ALIGN    8*/
-#else
-#define CTO32L(p)       (*(long*) p)
-#define IMPLEMENTATION  isc_info_db_impl_isc_vax_ultr /* 26 */
-#define SHMEM_PICKY
-#endif
-
-typedef RETSIGTYPE (*SIG_FPTR) ();
-#endif /* ultrix */
-
 
 
 /* PC Platforms are NetWare, Windows 3.1, and Windows and DOS Clients */

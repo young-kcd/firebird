@@ -25,6 +25,7 @@
  *                          - NT Power PC and HP9000 s300
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
  *
  */
 
@@ -33,14 +34,6 @@
 
 #ifdef VMS
 #define ARCHITECTURE		arch_vms
-#endif
-
-#ifdef ultrix
-#ifdef mips
-#define ARCHITECTURE		arch_mips_ultrix
-#else
-#define ARCHITECTURE		arch_ultrix
-#endif
 #endif
 
 #ifdef sun

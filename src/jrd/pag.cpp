@@ -26,6 +26,8 @@
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix/MIPS" port
  *
  */
 
@@ -138,14 +140,6 @@ static BOOLEAN find_type(SLONG, WIN *, PAG *, USHORT, USHORT, UCHAR **,
 
 #ifdef hpux
 #define CLASS		7
-#endif
-
-#ifdef ultrix
-#ifdef mips
-#define CLASS		6
-#else
-#define CLASS		5
-#endif
 #endif
 
 #ifdef VMS

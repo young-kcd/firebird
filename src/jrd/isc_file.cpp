@@ -28,6 +28,7 @@
  * 2002-02-23 Sean Leyne - Code Cleanup, removed old M88K and NCR3000 port
  *
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
  *
  */
 
@@ -1777,58 +1778,6 @@ static void expand_share_name(TEXT * share_name)
 
 
 #ifdef NFS
-#ifdef ultrix
-#define GET_MOUNTS
-static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, int *context)
-{
-/**************************************
- *
- *	g e t _ m o u n t s	( U l t r i x )
- *
- **************************************
- *
- * Functional description
- *	Get ALL mount points.
- *
- **************************************/
-	TEXT *p, *q;
-	struct fs_data fs;
-
-/* Start by finding a mount point. */
-
-	p = buffer;
-
-	while (getmnt(context, &fs, sizeof(fs), NOSTAT_MANY, NULL) > 0) {
-		/* Include non-NFS (local) mounts - some may be longer than
-		   NFS mount points */
-
-/****
-    if (fs.fd_req.fstype != GT_NFS)
-	continue;
-****/
-
-		mount->mnt_node = p;
-		q = fs.fd_req.devname;
-		while (*q && *q != ':')
-			*p++ = *q++;
-		*p++ = 0;
-		if (*q != ':')
-			mount->mnt_node = NULL;
-		if (*q)
-			q++;
-		mount->mnt_path = p;
-		while (*p++ = *q++);
-		mount->mnt_mount = p;
-		q = fs.fd_req.path;
-		while (*p++ = *q++);
-		return TRUE;
-	}
-
-	return FALSE;
-}
-#endif
-
-
 #if (defined AIX || defined AIX_PPC)
 #define GET_MOUNTS
 static BOOLEAN get_mounts(

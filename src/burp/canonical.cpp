@@ -19,9 +19,12 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix/MIPS" port
+ *
  */
 /*
-$Id: canonical.cpp,v 1.5 2002-10-24 09:01:25 eku Exp $
+$Id: canonical.cpp,v 1.6 2002-10-28 05:19:46 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -53,12 +56,6 @@ extern SLONG ntohl(), htonl();
 
 
 extern "C" {
-
-
-#ifdef mips
-#define LOC_DOUBLE
-#endif
-
 
 static XDR_INT burp_destroy(XDR*);
 static bool_t burp_getbytes(XDR*, SCHAR *, u_int);

@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
  *
  */
 
@@ -49,7 +50,7 @@
 #include <unistd.h>
 #endif
 
-#if (defined sgi || defined ultrix)
+#if (defined sgi)
 #include <sys/types.h>
 #endif
 #include <sys/stat.h>

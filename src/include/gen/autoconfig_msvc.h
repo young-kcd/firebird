@@ -7,6 +7,7 @@
  * 2002-02-23 Sean Leyne - Code Cleanup, removed old Win3.1 port (Windows_Only)
  *
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
  *
  */
 
@@ -134,7 +135,6 @@
 #undef sun
 #undef SOLARIS
 #undef hpux
-#undef ultrix
 #undef PC_PLATFORM
 #undef NETWARE_386
 #undef VMS

@@ -22,6 +22,8 @@
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  *
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix/MIPS" port
+ *
  */
 
 #include "firebird.h"
@@ -116,10 +118,6 @@ extern bool_t xdr_free();
 extern double MTH$CVT_D_G(), MTH$CVT_G_D();
 
 static STR gfloat_buffer;
-#endif
-
-#ifdef	mips
-#define	LOC_DOUBLE
 #endif
 
 

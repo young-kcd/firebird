@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.10 2002-10-28 04:57:01 seanleyne Exp $
+ * $Id: gpre.h,v 1.11 2002-10-28 05:19:46 seanleyne Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -46,6 +46,7 @@
  *                         - "IMP" and "HP9000 s300"
  *
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
  *
  */
 
@@ -119,14 +120,6 @@ extern "C" {
 #if (defined (PC_PLATFORM) || defined (SOLARIS) || \
 	defined (AIX) || defined (DGUX) || defined (WIN_NT))
 #define CONST_STR	"const "
-#endif
-
-#ifdef ultrix
-#ifdef mips
-#define CONST_STR	""
-#else
-#define CONST_STR	"const "
-#endif
 #endif
 
 #ifndef CONST_STR

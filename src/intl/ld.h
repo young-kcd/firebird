@@ -24,6 +24,8 @@
  *                          - MAC ("MAC", "MAC_AUX" and "MAC_CP" defines)
  *                          - XENIX and OS/2
  *
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
+ *
  */
 
 /* ------------NOTE NOTE NOTE -----------
@@ -383,7 +385,6 @@ typedef UINT16 PDXResult;
 #define SUNOS_CP                  4
 #define VMS_CP                    5
 #define HPUX_CP                   6
-#define ULTRIX_CP                 7
 #define AIX_CP                    8
 #define AUX_CP                    9
 
@@ -1035,9 +1036,12 @@ pVOID CALLTYPE LdCalloc(UINT16 NumberItems, UINT16 SizeItem);
 // VCS AREA
 //-----------------------------------------------------------------
 
-//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.8 2002-10-02 09:40:21 eku Exp $
+//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.9 2002-10-28 05:19:47 seanleyne Exp $
 
 //	$Log: not supported by cvs2svn $
+//	Revision 1.8  2002/10/02 09:40:21  eku
+//	Fixed compiler warning 'No newline at end of file'.
+//	
 //	Revision 1.7  2002/06/05 11:02:46  dimitr
 //	Fixed compile problems on Win32.
 //	

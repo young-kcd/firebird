@@ -26,6 +26,7 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "M88K" port
  *
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
  *
  */
 
@@ -72,10 +73,6 @@ union semun {
 #endif
 
 #ifdef sgi
-#define SEMAPHORES	25
-#endif
-
-#ifdef ultrix
 #define SEMAPHORES	25
 #endif
 

@@ -19,6 +19,8 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
  *                          - DELTA and IMP
  *
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix/MIPS" port
+ *
  */
 #ifndef _INTL_LANGDRV_H_
 #define _INTL_LANGDRV_H_
@@ -52,14 +54,11 @@
 #ifdef SCO
 #define NON_DLINK_OS
 #endif
+
 #ifdef NXT
 #define NON_DLINK_OS
 #endif
-#ifndef SGI
-#ifdef mips
-#define NON_DLINK_OS
-#endif
-#endif
+
 #ifdef DG
 #define NON_DLINK_OS
 #endif

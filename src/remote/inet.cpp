@@ -30,10 +30,11 @@
  * 2002-02-23 Sean Leyne - Code Cleanup, removed old M88K and NCR3000 port
  *
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix/MIPS" port
  *
  */
 /*
-$Id: inet.cpp,v 1.26 2002-10-28 04:57:02 seanleyne Exp $
+$Id: inet.cpp,v 1.27 2002-10-28 05:19:49 seanleyne Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -136,7 +137,7 @@ NETDB_DEFINE_CONTEXT
 #include "../jrd/sch_proto.h"
 #endif /* REQUESTER */
 
-#if (defined hpux || defined SCO_UNIX || defined mips)
+#if (defined hpux || defined SCO_UNIX)
 extern int h_errno;
 #endif
 

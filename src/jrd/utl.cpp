@@ -28,6 +28,8 @@
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix/MIPS" port
  *
  */
 
@@ -213,7 +215,7 @@ static const TEXT *const impl_implementation[] = {
     NULL,					/* 8 */
     NULL,					/* 9 */
     NULL, // "Firebird/apollo",     /* 10 */
-    "Firebird/ultrix",		/* 11 */
+    NULL, // "Firebird/ultrix",		/* 11 */
     "Firebird/vms",		/* 12 */
     "Firebird/sun",		/* 13 */
     NULL, // "Firebird/OS2",        /* 14 */
@@ -228,7 +230,7 @@ static const TEXT *const impl_implementation[] = {
     NULL,					/* 23 */
     NULL,					/* 24 */
     NULL, // "Firebird/apollo",     /* 25 */
-    "Firebird/ultrix",		/* 26 */
+    NULL, // "Firebird/ultrix",		/* 26 */
     "Firebird/vms",		/* 27 */
     "Firebird/sun",		/* 28 */
     NULL, // "Firebird/OS2",        /* 29 */
@@ -238,7 +240,7 @@ static const TEXT *const impl_implementation[] = {
     "Firebird:ORACLE/vms",	/* 33 */
     NULL, // "Firebird/mac/aux",    /* 34 */
     "Firebird/ibm/aix",	/* 35 */
-    "Firebird/mips/ultrix",	/* 36 */
+    NULL, // "Firebird/mips/ultrix",	/* 36 */
     NULL, // "Firebird/xenix",      /* 37 */
     "Firebird/AViiON",		/* 38 */
     "Firebird/hp/mpexl",	/* 39 */

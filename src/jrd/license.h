@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: license.h,v 1.18 2002-10-28 04:57:01 seanleyne Exp $
+ * $Id: license.h,v 1.19 2002-10-28 05:19:47 seanleyne Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -45,6 +45,8 @@
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix/MIPS" port
  *
  */
 
@@ -84,14 +86,6 @@
 #endif
 #ifndef FB_PLATFORM
 #define FB_PLATFORM	"S3"
-#endif
-#endif
-
-#ifdef ultrix
-#ifdef mips
-#define FB_PLATFORM	"MU"
-#else
-#define FB_PLATFORM	"UL"
 #endif
 #endif
 
@@ -143,11 +137,7 @@
 #ifdef alpha
 #define FB_PLATFORM	"NA"
 #else
-#ifdef mips
-#define FB_PLATFORM	"NM"
-#else /* PowerPC */
 #define FB_PLATFORM	"NP"
-#endif
 #endif
 #endif
 #endif

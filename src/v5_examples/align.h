@@ -15,9 +15,12 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
+ *
  */
 /*
-$Id: align.h,v 1.1 2001-07-23 16:05:46 skywalker Exp $
+$Id: align.h,v 1.2 2002-10-28 05:19:49 seanleyne Exp $
 */
 
 #ifdef VMS
@@ -31,10 +34,6 @@ $Id: align.h,v 1.1 2001-07-23 16:05:46 skywalker Exp $
 #endif
 
 #ifdef hpux
-#define FB_ALIGN(n,b)          ((n + b - 1) & ~(b - 1))
-#endif
-
-#ifdef ultrix
 #define FB_ALIGN(n,b)          ((n + b - 1) & ~(b - 1))
 #endif
 

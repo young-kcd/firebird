@@ -24,6 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
  *
  */
 
@@ -189,9 +190,6 @@ ISC_analyze_nfs(expanded_filename, node_name)
 	temp = NULL;
 	context = 0;
 
-#ifdef ultrix
-	while (get_mounts(&mount, mnt_buffer, &context))
-#else
 #if (defined AIX || defined AIX_PPC)
 	while (get_mounts(&mount, mnt_buffer, &temp, &context))
 #else
@@ -199,7 +197,6 @@ ISC_analyze_nfs(expanded_filename, node_name)
 		return flag;
 
 	while (get_mounts(&mount, mnt_buffer, mtab))
-#endif
 #endif
 	{
 		/* first, expand any symbolic links in the mount point */
@@ -1233,7 +1230,6 @@ static get_mounts(mount, mnt_buffer, buffer, count)
 #endif
 
 
-#ifndef ultrix
 #ifndef hpux
 #if (!defined AIX && !defined AIX_PPC)
 static get_mounts(mount, buffer, file)
@@ -1292,8 +1288,6 @@ static get_mounts(mount, buffer, file)
 }
 #endif
 #endif
-#endif
-
 
 
 static overflow_handler()

@@ -25,9 +25,11 @@
  * 2002.02.15 Sean Leyne - This module needs to be cleanedup to remove obsolete ports/defines:
  *                            - "EPSON", "XENIX" +++
  *
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix/MIPS" port
+ *
  */
 /*
-$Id: protocol.h,v 1.6 2002-02-16 04:04:45 seanleyne Exp $
+$Id: protocol.h,v 1.7 2002-10-28 05:19:49 seanleyne Exp $
 */
 #ifndef _REMOTE_PROTOCOL_H_
 #define _REMOTE_PROTOCOL_H_
