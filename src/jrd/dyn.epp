@@ -251,8 +251,6 @@ void DYN_error(USHORT	status_flag,
 
 	for (v1 = local_status, v2 = tdbb->tdbb_status_vector; v1 < end;)
 		*v2++ = *v1++;
-
-	gds__free((SLONG *) error_buffer);
 }
 
 
