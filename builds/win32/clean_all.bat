@@ -12,7 +12,6 @@
 @rmdir /S /Q %ROOT_PATH%\builds\win32\msvc7\release 2>nul
 
 @echo Cleaning files
-@del *.msg 2>nul
 @del *.log 2>nul
 @del %ROOT_PATH%\src\include\gen\autoconfig.h 2>nul
 @del %ROOT_PATH%\src\include\gen\blrtable.h 2>nul

@@ -52,7 +52,7 @@ copy %ROOT_PATH%\builds\win32\dbs\qli\help.fdb   %ROOT_PATH%\gen\help.fdb > nul
 @call :msgs
 ::=======
 @echo Building message file and codes header...
-@%ROOT_PATH%\gen\build_msg -D %DB_PATH%/gen/msg.fdb
+@%ROOT_PATH%\gen\build_msg -f %DB_PATH%/gen/firebird.msg -D %DB_PATH%/gen/msg.fdb
 @%ROOT_PATH%\gen\codes %ROOT_PATH%\src\include\gen
 ::=======
 @echo Building BLR Table

@@ -154,13 +154,13 @@ if not exist %ROOT_PATH%\output\help\help.fdb (
 ::	To Do !!!
 ::						copy %INTERBASE%\udf\fbudf.dll %ROOT_PATH%\output\udf
 ::=================================================================
-@if not exist %ROOT_PATH%\builds\win32\firebird.msg (( 
+@if not exist %ROOT_PATH%\gen\firebird.msg (( 
 						echo Cannot locate firebird.msg file. 
 						) & ( 
 						echo You need to run the build_msg scriptfile.
 						)
 						) else (
-						copy %ROOT_PATH%\builds\win32\firebird.msg %ROOT_PATH%\output\firebird.msg > nul
+						copy %ROOT_PATH%\gen\firebird.msg %ROOT_PATH%\output\firebird.msg > nul
 						)
 @goto :EOF
 
