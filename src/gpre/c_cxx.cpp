@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.18 2003-02-28 13:19:34 brodsom Exp $
+//	$Id: c_cxx.cpp,v 1.19 2003-03-27 17:15:46 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -2603,9 +2603,7 @@ static void gen_function( ACT function, int column)
 
 	request = action->act_request;
 
-#pragma FB_COMPILER_MESSAGE("fix format string")
-	ib_fprintf(out_file, "static %s_r (request, transaction ",
-			   request->req_handle, request->req_handle, request->req_trans);
+	ib_fprintf(out_file, "static %s_r (request, transaction ", request->req_handle);
 
 	if (port = request->req_vport)
 		for (reference = port->por_references; reference;
@@ -2613,10 +2611,8 @@ static void gen_function( ACT function, int column)
 				ib_fprintf(out_file, ", %s",
 						   gen_name(s, reference->ref_source, TRUE));
 
-#pragma FB_COMPILER_MESSAGE("fix format string")
 	ib_fprintf(out_file,
-			   ")\n    isc_req_handle\trequest;\n    isc_tr_handle\ttransaction;\n",
-			   request->req_handle, request->req_trans);
+			   ")\n    isc_req_handle\trequest;\n    isc_tr_handle\ttransaction;\n");
 
 	if (port)
 		for (reference = port->por_references; reference;
@@ -3526,7 +3522,7 @@ static void gen_request( GPRE_REQ request)
 			   (request->req_flags & REQ_extend_dpb) ? "" : CONST_STR,
 			   request->req_ident, request->req_length);
 		printa(0, "static %schar\n   isc_%d [] = {",
-			   CONST_STR, request->req_ident, request->req_length);
+			   CONST_STR, request->req_ident);
 		string_type = "blr";
 		if (sw_raw) {
 			gen_raw(request->req_blr, request->req_length);
@@ -3609,7 +3605,7 @@ static void gen_request( GPRE_REQ request)
 					IBERROR("internal error during BLR generation");
 			}
 		printa(INDENT, "};\t/* end of %s string for request isc_%d */\n",
-			   string_type, request->req_ident, request->req_length);
+			   string_type, request->req_ident);
 	}
 
 //   Print out slice description language if there are arrays associated with request  

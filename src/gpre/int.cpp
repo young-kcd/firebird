@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int.cpp,v 1.11 2003-03-03 08:36:03 brodsom Exp $
+//	$Id: int.cpp,v 1.12 2003-03-27 17:15:44 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -201,11 +201,11 @@ static void asgn_from( REF reference, int column)
 		if (!field || field->fld_dtype == dtype_text)
 			ib_fprintf(out_file, VTO_CALL,
 					   JRD_VTOF,
-					   value, variable, field->fld_length, sw_interp);
+					   value, variable, field->fld_length);
 		else if (!field || field->fld_dtype == dtype_cstring)
 			ib_fprintf(out_file, VTO_CALL,
 					   GDS_VTOV,
-					   value, variable, field->fld_length, sw_interp);
+					   value, variable, field->fld_length);
 		else
 			ib_fprintf(out_file, "%s = %s;", variable, value);
 	}
@@ -507,7 +507,7 @@ static void gen_request( GPRE_REQ request)
 	ib_fprintf(out_file, "static const UCHAR\tjrd_%d [%d] =",
 			   request->req_ident, request->req_length);
 	align(INDENT);
-	ib_fprintf(out_file, "{\t/* blr string */\n", request->req_ident);
+	ib_fprintf(out_file, "{\t/* blr string */\n");
 
 	if (sw_raw)
 		gen_raw(request);

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.18 2003-03-02 17:47:20 fsg Exp $
+//	$Id: ftn.cpp,v 1.19 2003-03-27 17:15:45 brodsom Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -5080,8 +5080,7 @@ static void gen_function( ACT function)
 
 	request = action->act_request;
 
-	ib_fprintf(out_file, "static %s_r (request, transaction",
-			   request->req_handle, request->req_handle, request->req_trans);
+	ib_fprintf(out_file, "static %s_r (request, transaction", request->req_handle);
 
 	if (port = request->req_vport)
 		for (reference = port->por_references; reference;
@@ -5090,8 +5089,7 @@ static void gen_function( ACT function)
 						   gen_name(s, reference->ref_source, TRUE));
 
 	ib_fprintf(out_file,
-			   ")\n    isc_req_handle\trequest;\n    isc_tr_handle\ttransaction;\n",
-			   request->req_handle, request->req_trans);
+			   ")\n    isc_req_handle\trequest;\n    isc_tr_handle\ttransaction;\n");
 
 	if (port)
 		for (reference = port->por_references; reference;

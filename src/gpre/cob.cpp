@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.20 2003-03-02 17:47:20 fsg Exp $
+//	$Id: cob.cpp,v 1.21 2003-03-27 17:15:46 brodsom Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -3010,8 +3010,7 @@ static void gen_function( ACT function)
 
 	request = action->act_request;
 
-	ib_fprintf(out_file, "static %s_r (request, transaction",
-			   request->req_handle, request->req_handle, request->req_trans);
+	ib_fprintf(out_file, "static %s_r (request, transaction", request->req_handle);
 
 	if (port = request->req_vport)
 		for (reference = port->por_references; reference;
@@ -3020,8 +3019,7 @@ static void gen_function( ACT function)
 						   gen_name(s, reference->ref_source, TRUE));
 
 	ib_fprintf(out_file,
-			   ")\n    isc_req_handle\trequest;\n    isc_tr_handle\ttransaction;\n",
-			   request->req_handle, request->req_trans);
+			   ")\n    isc_req_handle\trequest;\n    isc_tr_handle\ttransaction;\n");
 
 	if (port)
 		for (reference = port->por_references; reference;
@@ -4846,7 +4844,7 @@ static void make_array_declaration( REF reference)
 	for (dimension = field->fld_array_info->ary_dimension, i = 3;
 		 dimension->dim_next; dimension = dimension->dim_next, i += 2) {
 		dimension_size = dimension->dim_upper - dimension->dim_lower + 1;
-		printa(space, FALSE, "%02.d  %s%d%s%d OCCURS %d TIMES.",
+		printa(space, FALSE, "%02d  %s%d%s%d OCCURS %d TIMES.",
 			   i,
 			   names[ISC_],
 			   field->fld_array_info->ary_ident,
@@ -4856,7 +4854,7 @@ static void make_array_declaration( REF reference)
 
 	p = string1;
 	dimension_size = dimension->dim_upper - dimension->dim_lower + 1;
-	sprintf(p, "%02.d  %s%d OCCURS %d TIMES ",
+	sprintf(p, "%02d  %s%d OCCURS %d TIMES ",
 			i, names[ISC_], field->fld_array_info->ary_ident, dimension_size);
 	while (*p)
 		p++;
