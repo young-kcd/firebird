@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.47 2004-06-03 07:42:31 robocop Exp $
+//	$Id: sql.cpp,v 1.48 2004-09-22 08:52:47 robocop Exp $
 //
 
 #include "firebird.h"
@@ -5612,11 +5612,11 @@ static int par_page_size(void)
 		n2 = 4096;
 	else if (n1 <= 8192)
 		n2 = 8192;
+	else if (n1 <= 16384)
+	    n2 = 16384;
 	else
 		CPR_s_error("<page size> in range 1024 to 8096");
 	PAR_get_token();
-
-#pragma FB_COMPILER_MESSAGE("Shouldn't we allow here 16K pages?!")
 
 	return n2;
 }
