@@ -1,1 +1,112 @@
+
+==================================
+Firebird 2.0.0       (Win32 Build)
+==================================
+
+o Einführung
+o Verwendungszweck
+o Features in diesem Release (alle Plattformen)
+o Beseitigte Fehler in diesem Release (alle Plattformen)
+o Installation
+o Bekannte Probleme
+o Probleme melden
+o Neue Features vorschlagen
+
+
+Einführung
+==========
+
+Herzlich willkommen zum ersten Alpha Release von Firebird 2.0.
+
+
+Verwendungszweck
+================
+
+Dieses Alpha Release ist nicht für die Verwendung in einer
+Produktionsumgebung bestimmt. Es wurde der Öffentlichkeit zu
+Evaluierungszwecken zur Verfügung gestellt, und wird von
+erfahrenen Firebird Benutzern getestet. Es wird darauf
+vertraut, dass jeder Alpha Tester zuerst die Release Notes
+liest.
+
+ o Installieren Sie diese Version NICHT, falls Sie Firebird vorher
+   noch nie verwendet haben.
+   Verwenden Sie stattdessen Firebird v1.5.2.
+
+
+Features in diesem Release (alle Plattformen)
+=============================================
+
+Nähere Informationen gibt es in doc/Firebird_v2.0.ReleaseNotes.pdf.
+
+
+Beseitigte Fehler in diesem Release (alle Plattformen)
+======================================================
+
+Nähere Informationen gibt es in doc/Firebird_v2.0.ReleaseNotes.pdf.
+
+
+Installation der selbst-installierenden Datei
+=============================================
+
+Führen Sie die ausführbare Datei aus und befolgen Sie die
+begleitenden Hinweise im Setup-Wizard.
+
+
+Bekannte Probleme
+=================
+
+ o Der Installationsprozess ist nicht in der Lage einen laufenden
+   Firebird 2.0 Server zu erkennen. Die Installation wird daher
+   fehlschlagen, wenn versucht wird, eine aktive Datei zu überschreiben.
+
+ o Die Sicherheitsdatenbank hat sich geändert! Nähere Informationen zu
+   diesem Thema finden Sie im DOC Verzeichnis.
+   Benutzer, die eine bestehende Sicherheitsdatenbank migrieren möchten,
+   können dazu folgendes Skript verwenden: misc/upgrade/security
+
+
+Probleme melden
+===============
+
+o Sind Sie sicher, dass Sie verstehen, wie Firebird arbeitet?
+
+  Vielleicht handelt es sich hierbei um ein korrektes
+  Verhalten und Sie haben genau genommen eine Supportanfrage.
+  In diesem Fall, kontaktieren Sie die firebird-support
+  Liste.
+
+  Dieser können Sie hier beitreten:
+
+    mailto:firebird-support-subscribe@yahoogroups.com
+
+o Denken Sie nach wie vor, dass es sich um einen Fehler handelt?
+
+  Überprüfen Sie die Liste der offenen Fehler. Diese kann hier
+  gefunden werden:
+
+    http://prdownloads.sourceforge.net/firebird/Firebird_v1_OpenBugs.html
+
+  Eine ältere Vesion befindet sich im doc Verzeichnis dieses Release.
+
+Ansonsten, wenn Sie sich sicher sind, dass es sich um
+einen Fehler handelt, dann versuchen Sie einen
+reproduzierbaren Testfall zu erstellen. Diesen können
+Sie dann dem Bug-Tracker hinzufügen.
+
+  http://sourceforge.net/tracker/?atid=109028&group_id=9028&func=browse
+
+
+Neue Features vorschlagen
+=========================
+
+Bevor Sie ein neues Feature vorschlagen, überprüfen
+Sie die existierende Funktionalitätsanforderungsliste.
+Die Chancen stehen gut, dass jemand bereits die selbe
+Idee hatte. Verwenden Sie diesen Link, um die aktuelle
+Liste einzusehen:
+
+  http://sourceforge.net/tracker/?atid=109028&group_id=9028&func=browse
+
+
  

@@ -1,1 +1,150 @@
+Firebird Datenbank Server 2.0 ALPHA 1
+==================================================
+
+  ** WICHTIG **
+
+  Beachten Sie den Hinweis unten bzgl. der Installation
+  über eine ältere Version von Firebird
+
+  ** ******* **
+
+Dieses Dokument ist eine Hilfestellung um dieses Paket
+von Firebird 2.0 Alpha 1 auf einer Win32 Plattform zu
+installieren. Diese Hinweise beziehen sich ausschließlich
+auf das Installationspaket, und nicht auf Firebird 2.0
+allgemein.
+
+Inhalt
+------
+
+o Vor der Installation
+o Installation auf Systemen mit einer älteren Firebird Version
+o Installation auf Systemen mit Firebird 2.0
+o Neue Features des Installers
+o Bekannte Installationsprobleme
+o Veraltete Features bezogen auf die Installation
+o Deinstallation
+o Weitere Hinweise
+o Installation mit einer Batch-Datei
+
+
+Vor der Installation
+--------------------
+
+Es wird empfohlen, dass Sie alle älteren Versionen von
+Firebird oder InterBase DEINSTALLIEREN, bevor Sie dieses
+Paket installieren.
+
+
+Installation auf Systemen mit einer älteren Firebird Version
+------------------------------------------------------------
+
+Die Sicherheitsdatenbank wurde geändert. Die neue
+Datenbank heißt nun security2.fdb und verwendet einen
+stärkeren Algorithmus zur Passwortverschlüsselung. Nähere
+Informationen dazu erfahren Sie in doc/README.sha1.txt.
+
+Die neue Datenbankstruktur und die veränderte Verschlüsselung
+haben jedoch einige Migrationsprobleme zur Folge, falls
+Installationen eine Vielzahl an Benutzer IDs verwenden.
+Die Installationsroutine macht keinen Versuch diese
+Migration durchzuführen. Für Alpha 1 muss dies manuell
+erfolgen. Eine mögliche Migrationstechnik ist in
+misc/upgrade/security/ verfügbar. Ein zukünftiges
+Test-Release wird sich mit diesem Benutzermigrationsproblem
+genauer auseinandersetzen.
+
+
+Installation auf Systemen mit Firebird 2.0 Alpha 1
+--------------------------------------------------
+
+Diese Installationsroutine wird einen laufenden Firebird 2.0
+Alpha 1 Server nicht automatisch erkennen. Daher bekommen Sie
+keine Warnung, bis der Installer versucht aktive Dateien zu
+überschreiben.
+
+
+Neue Features des Installers
+----------------------------
+
+o Falls eine existierende firebird.conf vorgefunden wird,
+  wird die Default-Konfigurationsdatei unter folgendem
+  Dateinamen installiert:
+
+  firebird.conf.default.
+
+  Die existierende firebird.conf Datei bleibt davon unberührt.
+  Dies stellt sicher, dass Zugriffsrestriktionen auch nach einem
+  Update sichergestellt sind.
+
+
+o Mehrsprachigkeit wurde dem Installer hinzugefügt. Dies betrifft
+  allerdings NUR den Installationsprozess.
+
+
+Bekannte Installationsprobleme
+------------------------------
+
+Eine Nur-Client Installation wird auch die ausführbare Datei
+des Servers installieren. Dies wird in einer zukünftigen Beta
+Version behoben sein. Bis dahin kann die .exe einfach gelöscht
+werden. Dies kann mit einer skript-basierten Installation
+automatisiert werden.
+
+
+Deinstallation
+--------------
+
+o Dieses Paket sollte mit der mitgelieferten Deinstallationsroutine
+  entfernt werden. Dies kann über die Systemsteuerung durchgeführt
+  werden. Alternativ dazu kann dies auch direkt durch das Ausführen
+  von unins000.exe erfolgen.
+
+o Falls Firebird als Anwendung läuft (anstatt eines Dienstes), wird
+  empfohlen, dass der Server manuell gestoppt werden, bevor die
+  Deinstallationsroutine ausgeführt wird. Der Grund dafür ist, dass
+  der Deinstaller eine laufende Anwendung nicht beenden kann. Falls
+  ein Server während der Deinstallation läuft, wird diese mit Fehlern
+  abgeschlossen. Die übrig gebliebenen Dateien müssen im Anschluss
+  daran manuell entfernt werden.
+
+o Die Deinstallation entfernt folgende Dateien nicht:
+
+  - aliases.conf
+  - firebird.conf
+  - firebird.log
+  - security2.fdb
+
+  Dies ist beabsichtigt. Diese Dateien sind höchstwahrscheinlich
+  von Benutzern geändert worden und werden vermutlich zu einem
+  späteren Zeitpunkt benötigt, falls Firebird neu installiert
+  wird. Diese Dateien können gelöscht werden, wenn Sie dafür keine
+  Verwendung mehr haben.
+
+
+Weitere Hinweise
+----------------
+
+  Firebird benötigt WinSock2. Alle Win32 Plattformen, ausgenommen
+  Win95, sollten dies haben. Ein Test, ob sich die Winsock2
+  Bibliothek auf dem Rechner befindet, wird während der Installation
+  durchgeführt. Falls diese Bibliothek nicht vorgefunden wird, so
+  wird die Installation fehlschlagen. Sie können diesen Link
+  besuchen:
+
+    http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
+
+  um herauszufinden, wie ein Upgrade erfolgen kann.
+
+
+Installation mit einer Batch-Datei
+----------------------------------
+
+Das Setup-Programm kann von einer Batch-Datei aus verwendet werden.
+Nähere Informationen dazu finden Sie in:
+
+    installation_scripted.txt
+
+
+
  
