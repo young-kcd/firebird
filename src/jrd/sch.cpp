@@ -553,6 +553,7 @@ void SCH_init(void)
 			int mutex_state;
 			if (mutex_state = THD_mutex_init(thread_mutex))
 				mutex_bugcheck("mutex init", mutex_state);
+			init_flag = TRUE;
 #ifdef MULTI_THREAD
 			THD_INIT;
 		}
@@ -562,8 +563,6 @@ void SCH_init(void)
 	}
 	scheduler_init_lock.leave();
 #endif
-
-	init_flag = TRUE;
 }
 
 
