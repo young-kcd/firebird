@@ -265,7 +265,7 @@ void WALC_build_logname( TEXT * logname, TEXT * basename, SLONG seqno)
 	TEXT extension[11];
 
 	if (seqno < 1000 || seqno > 18575)
-		sprintf(extension, "%d", seqno);
+		sprintf(extension, "%"SLONGFORMAT, seqno);
 	else {
 		seqno -= 1000;
 		extension[0] = letters[seqno % 26];

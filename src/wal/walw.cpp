@@ -683,7 +683,8 @@ static void close_log(
 	if (PRINT_DEBUG_MSGS) {
 		PRINT_TIME(DEBUG_FD, LOCAL_TIME);
 		ib_fprintf(DEBUG_FD,
-				   "Closed seqno=%d, log %s, p_offset=%d, length=%d\n",
+				   "Closed seqno=%"SLONGFORMAT", log %s, p_offset=%"SLONGFORMAT
+				   ", length=%"SLONGFORMAT"\n",
 				   log_header->walfh_seqno, logname,
 				   log_header->walfh_log_partition_offset,
 				   log_header->walfh_length);
@@ -700,7 +701,8 @@ static void close_log(
 		if (PRINT_DEBUG_MSGS) {
 			PRINT_TIME(DEBUG_FD, LOCAL_TIME);
 			ib_fprintf(DEBUG_FD,
-					   "After calling JRN_put_wal_name() for seqno=%d, ret=%d\n",
+					   "After calling JRN_put_wal_name() for seqno=%"SLONGFORMAT
+					   ", ret=%d\n",
 					   log_header->walfh_seqno, ret);
 		}
 
@@ -1575,7 +1577,8 @@ static SSHORT journal_enable( STATUS * status_vector, WAL WAL_handle)
 			ib_fprintf(DEBUG_FD, "Enabling journaling for database %s\n",
 					   DBNAME);
 			ib_fprintf(DEBUG_FD,
-					   "Sending open for seqno=%d, log %s, p_offset=%d, length=%d\n",
+					   "Sending open for seqno=%"SLONGFORMAT", log %s, p_offset=%"
+					   SLONGFORMAT", length=%"SLONGFORMAT"\n",
 					   WAL_segment->wals_flushed_log_seqno,
 					   WAL_segment->wals_logname,
 					   WAL_segment->wals_log_partition_offset,
@@ -1593,7 +1596,8 @@ static SSHORT journal_enable( STATUS * status_vector, WAL WAL_handle)
 		if (PRINT_DEBUG_MSGS) {
 			PRINT_TIME(DEBUG_FD, LOCAL_TIME);
 			ib_fprintf(DEBUG_FD,
-					   "After calling JRN_put_wal_name() for seqno=%d, ret=%d\n",
+					   "After calling JRN_put_wal_name() for seqno=%"SLONGFORMAT
+					   ", ret=%d\n",
 					   WAL_segment->wals_flushed_log_seqno, ret);
 		}
 
@@ -1852,7 +1856,8 @@ static SSHORT rollover_log(
 			if (PRINT_DEBUG_MSGS) {
 				PRINT_TIME(DEBUG_FD, LOCAL_TIME);
 				ib_fprintf(DEBUG_FD,
-						   "Opened seqno=%d, log %s, p_offset=%d, length=%d\n",
+						   "Opened seqno=%"SLONGFORMAT", log %s, p_offset=%"
+						   SLONGFORMAT", length=%"SLONGFORMAT"\n",
 						   new_log_header->walfh_seqno, new_logname,
 						   new_log_header->walfh_log_partition_offset,
 						   new_log_header->walfh_length);
@@ -1868,7 +1873,8 @@ static SSHORT rollover_log(
 			if (PRINT_DEBUG_MSGS) {
 				PRINT_TIME(DEBUG_FD, LOCAL_TIME);
 				ib_fprintf(DEBUG_FD,
-						   "After calling JRN_put_wal_name() for seqno=%d, ret=%d\n",
+						   "After calling JRN_put_wal_name() for seqno=%"
+						   SLONGFORMAT", ret=%d\n",
 						   new_log_header->walfh_seqno, ret);
 			}
 
@@ -2299,10 +2305,11 @@ static void write_wal_statistics( WAL WAL_handle)
 				   WAL_segment->wals_total_IO_bytes /
 				   (WAL_segment->wals_IO_count ? WAL_segment->
 					wals_IO_count : 1), WAL_segment->wals_blkseqno - 1);
-		ib_fprintf(stat_file, "grpc wait micro-seconds=%d\n",
+		ib_fprintf(stat_file, "grpc wait micro-seconds=%"SLONGFORMAT"\n",
 				   WAL_segment->wals_grpc_wait_usecs);
 		ib_fprintf(stat_file,
-				   "Total commits=%ld, Number of group-commits=%d, Avg grpc size=%f\n",
+				   "Total commits=%"SLONGFORMAT", Number of group-commits=%"
+				   SLONGFORMAT", Avg grpc size=%f\n",
 				   WAL_segment->wals_commit_count,
 				   WAL_segment->wals_grpc_count,
 				   (WAL_segment->wals_commit_count * 1.0) /

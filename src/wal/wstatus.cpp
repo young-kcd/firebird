@@ -67,7 +67,8 @@ void WSTATUS_dump_wal_segment( WAL WAL_handle, int acquire_flag,
 			"WAL segment flags=%ld, flags2=%ld, Last bug=%ld, Last error=%ld\n",
 			WAL_segment->wals_flags, WAL_segment->wals_flags2,
 			WAL_segment->wals_last_bug, WAL_segment->wals_last_err);
-	FPRINTF(outfile, "Database page size=%d, owner id=%d, group id=%d\n",
+	FPRINTF(outfile, "Database page size=%d, owner id=%"SLONGFORMAT
+			", group id=%"SLONGFORMAT"\n",
 			WAL_segment->wals_dbpage_size, WAL_segment->wals_owner_id,
 			WAL_segment->wals_group_id);
 	FPRINTF(outfile, "Num attaches=%d, Num detaches=%d\n",
@@ -75,7 +76,8 @@ void WSTATUS_dump_wal_segment( WAL WAL_handle, int acquire_flag,
 	FPRINTF(outfile,
 			"---------------------------------------------------------\n");
 	FPRINTF(outfile,
-			"WAL length=%d, buffer size=%d, total buffers=%d, original buffers=%d\n",
+			"WAL length=%"SLONGFORMAT
+			", buffer size=%d, total buffers=%d, original buffers=%d\n",
 			WAL_segment->wals_length, WAL_segment->wals_bufsize,
 			WAL_segment->wals_maxbufs, WAL_segment->wals_initial_maxbufs);
 	FPRINTF(outfile,
@@ -121,7 +123,8 @@ void WSTATUS_dump_wal_segment( WAL WAL_handle, int acquire_flag,
 	FPRINTF(outfile,
 			"---------------------------------------------------------\n");
 	FPRINTF(outfile,
-			"WAL writer pid=%d, pid of the last process acquring the WAL=%d\n",
+			"WAL writer pid=%"SLONGFORMAT
+			", pid of the last process acquring the WAL=%"SLONGFORMAT"\n",
 			WAL_segment->wals_writer_pid, WAL_segment->wals_last_pid);
 	FPRINTF(outfile,
 			"---------------------------------------------------------\n");
@@ -134,12 +137,13 @@ void WSTATUS_dump_wal_segment( WAL WAL_handle, int acquire_flag,
 	FPRINTF(outfile,
 			"---------------------------------------------------------\n");
 	FPRINTF(outfile,
-			"Total commits=%d, Number of group-commits=%d, Avg grpc size=%f\n",
+			"Total commits=%"SLONGFORMAT", Number of group-commits=%"SLONGFORMAT
+			", Avg grpc size=%f\n",
 			WAL_segment->wals_commit_count, WAL_segment->wals_grpc_count,
 			((WAL_segment->wals_commit_count * 1.0) /
 			 (WAL_segment->wals_grpc_count ? WAL_segment->
 			  wals_grpc_count : 1)));
-	FPRINTF(outfile, "grpc wait micro-seconds =%d\n",
+	FPRINTF(outfile, "grpc wait micro-seconds =%"SLONGFORMAT"\n",
 			WAL_segment->wals_grpc_wait_usecs);
 	FPRINTF(outfile, "Current grpc block=%d\n",
 			WAL_segment->wals_cur_grpc_blknum + 1);
@@ -147,13 +151,14 @@ void WSTATUS_dump_wal_segment( WAL WAL_handle, int acquire_flag,
 			"Group-commit block   Coordinator pid       Group size\n");
 	for (i = 0; i < MAX_GRP_COMMITTERS; i++)
 		FPRINTF(outfile,
-				"        %d                  %d                     %d\n",
+				"        %d                  %"SLONGFORMAT"                     %d\n",
 				i + 1, WAL_segment->wals_grpc_blks[i].grp_commit_coordinator,
 				WAL_segment->wals_grpc_blks[i].grp_commit_size);
 	FPRINTF(outfile,
 			"---------------------------------------------------------\n");
 	FPRINTF(outfile,
-			"WAL segment acquire count=%d, number of wal_put2() calls=%d\n",
+			"WAL segment acquire count=%"SLONGFORMAT", number of wal_put2() calls=%"
+			SLONGFORMAT"\n",
 			WAL_segment->wals_acquire_count, WAL_segment->wals_put_count);
 	FPRINTF(outfile,
 			"---------------------------------------------------------\n");
