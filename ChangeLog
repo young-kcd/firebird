@@ -1,3 +1,10 @@
+2002-10-14 11:21  eku
+
+	* firebird2/builds/posix/Makefile.in.refDatabases:
+	
+	The file permissions must match the database attribute (read-only),
+	otherwise gpre will fail.
+
 2002-10-13 12:30  dimitr
 
 	* firebird2/src/jrd/: scl.epp, winnt.cpp:
