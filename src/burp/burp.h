@@ -825,7 +825,7 @@ typedef struct tgbl
 	 * Link list of global fields that were converted from V3 sub_type
 	 * to V4 char_set_id/collate_id. Needed for local fields conversion.
 	 */
-	BURP_FLD		v3_cvt_fld_list;
+//	BURP_FLD		v3_cvt_fld_list;
 
 	isc_req_handle	handles_get_character_sets_req_handle1;
 	isc_req_handle	handles_get_chk_constraint_req_handle1;

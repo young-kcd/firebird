@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.51 2003-11-03 23:49:47 brodsom Exp $
+$Id: restore.epp,v 1.52 2003-11-06 23:24:54 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -44,7 +44,6 @@ $Id: restore.epp,v 1.51 2003-11-03 23:49:47 brodsom Exp $
 #include "../burp/misc_proto.h"
 #include "../burp/mvol_proto.h"
 #include "../burp/resto_proto.h"
-#include "../intl/charsets.h"
 #include "../jrd/gdsassert.h"
 #include "../remote/protocol.h"
 #ifdef DEBUG
@@ -84,44 +83,6 @@ const int DEFERRED_ACTIVE		= 3;	/* RDB$INDEX_INACTIVE setting for Foreign Keys
 
 const int RESTORE_VERBOSE_INTERVAL	= 10000;
 const int cvtbl_len		= 28;
-const struct s_t_cvtbl {
-	SSHORT	sub_type;
-	SSHORT	character_set_id;
-	SSHORT	collation_id;
-} sub_type_cvtbl [] = {
-	/* NOTE: The magic numbers for collation_id come from ordinal
-	 * position of the COLLATION() entries in jrd/intlnames.h
-	 */
-	{101,	CS_DOS_437,		1},				// PDOX_ASCII 
-	{102,	CS_DOS_437,		2},				// PDOX_INTL 
-	{106,	CS_DOS_437,		3},				// PDOX_SWEDFIN 
-	{160,	CS_DOS_850,		0},				// codepoint collation 
-	{107,	CS_DOS_865,		0},				// codepoint collation 
-	{105,	CS_DOS_865,		1},				// PDOX_NORDAN4 
-	{139,	CS_ISO8859_1,		1},				// DA_DA 
-	{140,	CS_ISO8859_1,		2},				// DU_NL 
-	{141,	CS_ISO8859_1,		3},				// FI_FI 
-	{142,	CS_ISO8859_1,		4},				// FR_FR 
-	{143,	CS_ISO8859_1,		5},				// FR_CA 
-	{144,	CS_ISO8859_1,		6},				// DE_DE 
-	{145,	CS_ISO8859_1,		7},				// IS_IS 
-	{146,	CS_ISO8859_1,		8},				// IT_IT 
-	{148,	CS_ISO8859_1,		9},				// NO_NO 
-	{149,	CS_ISO8859_1,		10},				// ES_ES 
-	{151,	CS_ISO8859_1,		11},				// SV_SV 
-	{152,	CS_ISO8859_1,		12},				// EN_UK 
-	{153,	CS_ISO8859_1,		14},				// EN_US 
-	{154,	CS_ISO8859_1,		15},				// PT_PT 
-	{160,	CS_ISO8859_2,		1},				// CS_CZ 
-	{180,	CS_NEXT,		1},				// NXT_US 
-	{181,	CS_NEXT,		2},				// NXT_GERMANY 
-	{182,	CS_NEXT,		3},				// NXT_FRANCE 
-	{183,	CS_NEXT,		4},				// NXT_ITALY 
-	{184,	CS_NEXT,		5},				// NXT_SPAIN 
-	{201,	CS_UNICODE_FSS,	0},				// codepoint collation 
-	{220,	CS_SJIS,		0},				// codepoint collation 
-	{230,	CS_EUCJ,		0}				// codepoint collation 
-	};
 
 enum scan_attr_t {
 	NO_SKIP		= 0,	// Not in skipping and scanning mode 
@@ -2793,106 +2754,6 @@ bool get_exception(void)
 	return true;
 }
 
-bool cvt_v3_to_v4_intl (SSHORT	dtype,
-						SSHORT	*scale,
-						SSHORT	*sub_type,
-						SSHORT	*character_set_id,
-						SSHORT	*collation_id)
-{
-/**************************************
- *
- *  c v t _ v 3 _ t o _ v 4 _ i n t l
- *
- **************************************
- *
- * Functional description
- *  Convert a V3 scale / sub_type to V4 character_set / collate_sequence
- *
- *  Version 3.2 & 3.3 of InterBase used different methodologies
- *  to tag international text character sets and country collation
- *  sequences.  This routine will convert a V3 metadata definition
- *  into the corresponding V4 definition.
- *
- *  In V3.x, sub-type 0 is normal text, subtype 1 is "text that can
- *  contain a NULL byte, and can therefore not be represented
- *  using a c-string datatype, always use fixed".
- *
- *  Return true if a conversion was performed, false otherwise.
- *
- **************************************/
-	SSHORT	i;
-
-	switch (dtype)
-	{
-		case blr_text2:
-		case blr_varying2:
-		case blr_cstring2:
-
-		case blr_text:
-		case blr_varying:
-		case blr_cstring:
-
-			// Japanese V3.2 used SCALE 5 to indicate SJIS text 
-			if (*scale == 5 && ((*sub_type == 0) || (*sub_type == 1)))
-			{
-				*character_set_id = CS_JIS_0208;
-				*collation_id = 0;
-				BURP_verbose (237, (void*) (SLONG) *scale,
-							  (void*) (SLONG) *character_set_id,
-							  (void*) (SLONG) *collation_id, NULL, NULL);
-					/* msg 237: Converted V3 scale: %d to
-					   character_set_id: %d and callate_id: %d. */
-				*scale = 0;
-				return true;
-			}
-
-			// Japanese V3.2 used SCALE 6 to indicate EUCJ text 
-			if (*scale == 6 && (*sub_type == 0 || *sub_type == 1))
-			{
-				*character_set_id = CS_EUCJ;
-				*collation_id = 0;
-				BURP_verbose (237, (void*) (SLONG) *scale,
-							  (void*) (SLONG) *character_set_id,
-							  (void*) (SLONG) *collation_id, NULL, NULL);
-					/* msg 237: Converted V3 scale: %d to
-					   character_set_id: %d and callate_id: %d. */
-				*scale = 0;
-				return true;
-			}
-
-			/* V3.3 used SCALE 0 and Subtypes in range 100 - 255 for
-			   European text types and collations */
-
-			if (*scale != 0)
-				return false;
-
-			if (*sub_type == 0 || *sub_type == 1)
-			// Do not process sub_type 0,1 conversion 
-				return false;
-
-			for (i = 0; i < cvtbl_len; i ++)
-				if (sub_type_cvtbl [i].sub_type == *sub_type)
-				{
-					*character_set_id = sub_type_cvtbl [i].character_set_id;
-					*collation_id = sub_type_cvtbl [i].collation_id;
-
-					BURP_verbose (236, (void*) (SLONG) *sub_type,
-								 (void*) (SLONG) *character_set_id,
-								 (void*) (SLONG) *collation_id, NULL, NULL);
-						/* msg 236: Converted V3 sub_type: %d to
-						   character_set_id: %d and callate_id: %d. */
-
-					*sub_type = 0;
-					return true;
-				}
-			return false;
-
-		default:
-			// Do not process sub_type conversion on non-text field 
-			return false;
-		}
-
-}
 
 BURP_FLD get_field (BURP_REL	relation)
 {
@@ -3100,25 +2961,6 @@ BURP_FLD get_field (BURP_REL	relation)
 			default:
 				bad_attribute (scan_next_attr, attribute, 84);
 				// msg 84 field
-				break;
-			}
-		}
-
-		/* For migration from V3.3 to V4.0 format of International text
-		 * information - search the list of global fields which were
-		 * remapped from V3.3 format into V4.0 format.  If we find that
-		 * this local field's source is one of those global fields, then
-		 * remap the local field's information.  This is used to compose
-		 * the BLR which sends data to the newly restored database.
-		 */
-		for (BURP_FLD f = tdgbl->v3_cvt_fld_list; f; f = f->fld_next)
-		{
-			if (!strcmp(X.RDB$FIELD_SOURCE, f->fld_name))
-			{
-				field->fld_sub_type = f->fld_sub_type;
-				field->fld_scale = f->fld_scale;
-				field->fld_character_set_id = f->fld_character_set_id;
-				field->fld_collation_id = f->fld_collation_id;
 				break;
 			}
 		}
@@ -3624,7 +3466,6 @@ bool get_global_field (void)
 	TEXT		temp [GDS_NAME_LEN];
 	SSHORT		l;
 	scan_attr_t		scan_next_attr;
-	SSHORT		save_subtype;
 
 	TGBL tdgbl = GET_THREAD_DATA;
 
@@ -3900,39 +3741,6 @@ bool get_global_field (void)
 			if (gfield)
 				strcpy (gfield->gfld_name, X.RDB$FIELD_NAME);
 
-			/* V3.3 used a different method from V4.0 for encoding International
-			 * text character set & collation information.  Here we are
-			 * looking at the metadata information, deciding if it is
-			 * the V3.3 method, and converting it to the V4.0 method so
-			 * V3.3 customers can migrate their database to V4.0.
-			 */
-			save_subtype = X.RDB$FIELD_SUB_TYPE;
-			if (X.RDB$CHARACTER_SET_ID.NULL && X.RDB$COLLATION_ID.NULL &&
-				cvt_v3_to_v4_intl (X.RDB$FIELD_TYPE, &X.RDB$FIELD_SCALE,
-				&X.RDB$FIELD_SUB_TYPE, &X.RDB$CHARACTER_SET_ID,
-				&X.RDB$COLLATION_ID))
-			{
-				// If some value was reset, set the NULL flag 
-				if (save_subtype && !X.RDB$FIELD_SUB_TYPE)
-					X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
-				X.RDB$CHARACTER_SET_ID.NULL = FALSE;
-				X.RDB$COLLATION_ID.NULL = FALSE;
-
-				/* Add an entry to the converted-field link list
-				 * so we can also convert local fields based on this
-				 * global field
-				 */
-
-				BURP_FLD f = (BURP_FLD) BURP_alloc_zero (sizeof(burp_fld));
-				strcpy (f->fld_name, X.RDB$FIELD_NAME);
-				f->fld_sub_type = X.RDB$FIELD_SUB_TYPE;
-				f->fld_scale = X.RDB$FIELD_SCALE;
-				f->fld_character_set_id = X.RDB$CHARACTER_SET_ID;
-				f->fld_collation_id = X.RDB$COLLATION_ID;
-				f->fld_next = tdgbl->v3_cvt_fld_list;
-				tdgbl->v3_cvt_fld_list = f;
-			}
-
 		END_STORE;
 		ON_ERROR
 			general_on_error ();
@@ -4203,41 +4011,6 @@ bool get_global_field (void)
 
 			if (gfield)
 				strcpy (gfield->gfld_name, X.RDB$FIELD_NAME);
-
-			/* V3.3 used a different method from V4.0 for encoding International
-			 * text character set & collation information.  Here we are
-			 * looking at the metadata information, deciding if it is
-			 * the V3.3 method, and converting it to the V4.0 method so
-			 * V3.3 customers can migrate their database to V4.0.
-			 */
-			save_subtype = X.RDB$FIELD_SUB_TYPE;
-			if (X.RDB$CHARACTER_SET_ID.NULL &&
-			X.RDB$COLLATION_ID.NULL &&
-			cvt_v3_to_v4_intl (X.RDB$FIELD_TYPE, &X.RDB$FIELD_SCALE,
-				  &X.RDB$FIELD_SUB_TYPE, &X.RDB$CHARACTER_SET_ID,
-				  &X.RDB$COLLATION_ID))
-			{
-
-				// If some value was reset, set the NULL flag 
-				if (save_subtype && !X.RDB$FIELD_SUB_TYPE)
-					X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
-				X.RDB$CHARACTER_SET_ID.NULL = FALSE;
-				X.RDB$COLLATION_ID.NULL = FALSE;
-
-				/* Add an entry to the converted-field link list
-				 * so we can also convert local fields based on this
-				 * global field
-				 */
-
-				BURP_FLD f = (BURP_FLD) BURP_alloc_zero (sizeof(burp_fld));
-				strcpy (f->fld_name, X.RDB$FIELD_NAME);
-				f->fld_sub_type = X.RDB$FIELD_SUB_TYPE;
-				f->fld_scale = X.RDB$FIELD_SCALE;
-				f->fld_character_set_id = X.RDB$CHARACTER_SET_ID;
-				f->fld_collation_id = X.RDB$COLLATION_ID;
-				f->fld_next = tdgbl->v3_cvt_fld_list;
-				tdgbl->v3_cvt_fld_list = f;
-			}
 
 		END_STORE;
 		ON_ERROR
