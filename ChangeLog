@@ -1,3 +1,43 @@
+2003-05-14 17:12  skidder
+
+	* firebird2/src/jrd/ibase.h:
+	
+	Compatibility change
+
+2003-05-14 14:32  eku
+
+	* firebird2/src/jrd/: gds.cpp, sort.cpp:
+	
+	Improved error handling as suggested by skidder.
+
+2003-05-14 10:24  alexpeshkoff
+
+	* firebird2/src/jrd/exe.cpp:
+	
+	Fixed bug with wrong req_attachment after exception in procedure
+
+2003-05-14 10:15  dimitr
+
+	* firebird2/src/dsql/: ddl.cpp, pass1.cpp:
+	
+	Enabled BREAK/LEAVE and EXITcommands in non-system triggers.
+
+2003-05-14 10:09  dimitr
+
+	* firebird2/src/jrd/thd.cpp:
+	
+	THD_yield() should just release the CPU, it shouldn't wait. Hence
+	we get significant speed-up for the GC/sweep.
+
+2003-05-14 07:39  eku
+
+	* firebird2/: configure.in, src/include/gen/autoconfig_msvc.h,
+	src/jrd/gds.cpp, src/jrd/misc.h, src/jrd/sort.cpp, src/jrd/utl.cpp,
+	src/make.new/config/config.h.in:
+	
+	Check for the function mkstemp(). If it's not available, fall back
+	to mktemp().
+
 2003-05-13 14:04  alexpeshkoff
 
 	* firebird2/src/jrd/: ExecuteStatement.cpp, exe.cpp:
