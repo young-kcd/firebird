@@ -1,3 +1,15 @@
+2005-02-26 19:54  hvlad
+
+	* firebird2/builds/win32/make_all.bat (1.31):
+	
+	output\security.fbk renamed to security2.fbk
+
+2005-02-26 19:22  hvlad
+
+	* firebird2/builds/win32/prepare.bat (1.42):
+	
+	Correction
+
 2005-02-25 15:17  paul_reeves
 
 	* firebird2/builds/win32/prepare.bat (1.41):
