@@ -545,6 +545,7 @@ typedef struct frgn {
 typedef struct trig {
     class str* blr; // BLR code
 	req* request; // Compiled request. Gets filled on first invocation
+	BOOLEAN compile_in_progress;
 	BOOLEAN sys_trigger;
 	USHORT flags; // Flags as they are in RDB$TRIGGERS table
 	class rel* relation; // Trigger parent relation

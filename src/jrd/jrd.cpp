@@ -224,11 +224,12 @@ static REC_MUTX_T databases_rec_mutex;
 #endif	// WIN_NT
 
 void trig::compile(tdbb* _tdbb) {
-	if (!request) {
+	if (!request && !compile_in_progress) {
 		JrdMemoryPool* old_pool;
 		
 		SET_TDBB(_tdbb);
 
+		compile_in_progress = TRUE;
 		old_pool = _tdbb->tdbb_default;
 		_tdbb->tdbb_default = new(*getDefaultMemoryPool()) JrdMemoryPool;
 		// Trigger request is not compiled yet. Lets do it now
@@ -243,6 +244,8 @@ void trig::compile(tdbb* _tdbb) {
 	  		request->req_flags |= req_sys_trigger;
 		if (flags & TRG_ignore_perm)
 	  		request->req_flags |= req_ignore_perm;
+			
+		compile_in_progress = FALSE;
 	}
 }
 
