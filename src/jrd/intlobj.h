@@ -31,21 +31,21 @@
 extern "C" {
 #endif
 
-#define USHORT unsigned short
-#define SSHORT short
-#define UCHAR unsigned char
-#define CHAR char
-#define SCHAR char
-#define ULONG unsigned long
-#define LONG long
-#define SLONG signed long
-#define VEC	void*
-#define BYTE unsigned char
+#ifndef INCLUDE_FB_TYPES_H
+typedef unsigned short USHORT;
+typedef short SSHORT;
+typedef unsigned char UCHAR;
+typedef char CHAR;
+typedef char SCHAR;
+typedef unsigned char BYTE;
 
-/* duplicate definition from flu.c */
+#pragma FB_COMPILER_MESSAGE("64-bit readiness problem!")
+typedef unsigned long ULONG;
+typedef long LONG;
+typedef signed long SLONG;
+#endif
 
 typedef SSHORT(*FPTR_short) ();
-#ifndef INTL_ENGINE_INTERNAL
 typedef USHORT(*FPTR_SHORT) ();
 
 typedef SSHORT CHARSET_ID;
@@ -55,12 +55,14 @@ typedef SCHAR ASCII;
 typedef unsigned char NCHAR;	/* Narrow Char */
 typedef unsigned short UCS2_CHAR;	/* Not very Wide Char */
 typedef unsigned char MBCHAR;	/* Multibyte Char */
+typedef class vec* VEC;
 
 #define type_texttype 54
 #define type_charset 55
 #define type_csconvert 56
 
-#define MAX_KEY		256
+#ifndef JRD_CONSTANTS_H
+#define MAX_KEY 256
 #endif
 
 typedef struct intl_blk {
@@ -98,12 +100,17 @@ typedef struct texttype {
 	FPTR_SHORT texttype_fn_to_lower;	/* One ch to lowercase */
 	FPTR_short texttype_fn_str_to_upper;	/* Convert string to uppercase */
 	FPTR_SHORT texttype_fn_to_wc;	/* convert string to wc */
+
+	// INTERNAL FUNCTIONS - do not implement in collation drivers !
 	FPTR_SHORT texttype_fn_contains;	/* s1 contains s2? */
 	FPTR_SHORT texttype_fn_like;	/* s1 like s2? */
 	FPTR_SHORT texttype_fn_matches;	/* s1 matches s2 */
 	FPTR_SHORT texttype_fn_sleuth_check;	/* s1 sleuth s2 */
 	FPTR_SHORT texttype_fn_sleuth_merge;	/* aux function for sleuth */
+	//\\ END OF INTERNAL FUNCTIONS
+
 	FPTR_short texttype_fn_mbtowc;	/* get next character */
+
 	BYTE *texttype_collation_table;
 	BYTE *texttype_toupper_table;
 	BYTE *texttype_tolower_table;

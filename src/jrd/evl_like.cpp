@@ -28,8 +28,7 @@
  */
 
 #define SLEUTH_insensitive	1
-#define COND_UPPER(obj,c)	((flags & SLEUTH_insensitive) ?	\
-		(obj)->to_upper(c) : (c))
+#define COND_UPPER(obj,c)	((flags & SLEUTH_insensitive) ?	(obj).to_upper(c) : (c))
 
 #define SQL_MATCH_ONE		'_'
 #define SQL_MATCH_ANY		'%'
@@ -50,7 +49,7 @@
 #define GDML_RPAREN		')'
 
 
-USHORT LIKENAME(TDBB tdbb, class TextType* obj, LIKETYPE * p1, SSHORT l1_bytes,	/* byte count */
+USHORT LIKENAME(TDBB tdbb, TextType obj, LIKETYPE * p1, SSHORT l1_bytes,	/* byte count */
 				LIKETYPE * p2, SSHORT l2_bytes,	/* byte count */
 				UCS2_CHAR escape_char)
 {
@@ -131,7 +130,7 @@ USHORT LIKENAME(TDBB tdbb, class TextType* obj, LIKETYPE * p1, SSHORT l1_bytes,	
 
 
 USHORT MATCHESNAME(TDBB tdbb,
-				   class TextType* obj,
+				   TextType obj,
 				   MATCHESTYPE * p1,
 				   SSHORT l1_bytes, MATCHESTYPE * p2, SSHORT l2_bytes)
 {
@@ -194,7 +193,7 @@ USHORT MATCHESNAME(TDBB tdbb,
 
 
 USHORT SLEUTHNAME(TDBB tdbb_dummy,
-				  class TextType* obj,
+				  TextType obj,
 				  USHORT flags,
 				  SLEUTHTYPE * search,
 				  USHORT search_len, SLEUTHTYPE * match, USHORT match_len)
@@ -226,7 +225,7 @@ USHORT SLEUTHNAME(TDBB tdbb_dummy,
 
 
 USHORT SLEUTH_MERGE_NAME(TDBB tdbb_dummy,
-						 class TextType* obj,
+						 TextType obj,
 						 SLEUTHTYPE * match,
 						 USHORT match_bytes,
 						 SLEUTHTYPE * control,
@@ -345,7 +344,7 @@ USHORT SLEUTH_MERGE_NAME(TDBB tdbb_dummy,
 
 
 static BOOLEAN SLEUTH_AUX(
-						  class TextType* obj,
+						  TextType obj,
 						  USHORT flags,
 						  SLEUTHTYPE * search,
 						  SLEUTHTYPE * end_search,
@@ -459,7 +458,7 @@ SLEUTHTYPE * match, SLEUTHTYPE * end_match)
 
 
 static BOOLEAN SLEUTH_CLASS_NAME(
-								 class TextType* obj,
+								 TextType obj,
 								 USHORT flags,
 								 SLEUTHTYPE * class_,
 								 SLEUTHTYPE * end_class, SLEUTHTYPE character)

@@ -96,5 +96,8 @@ enum frb_sysflag {
 
 #define MAX_INDEX_SEGMENTS 16
 
+// Maximum index key length
+#define MAX_KEY 256
+
 #endif /* JRD_CONSTANTS_H */
 

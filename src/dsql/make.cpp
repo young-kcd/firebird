@@ -195,8 +195,7 @@ dsql_nod* MAKE_constant(str* constant, dsql_constant_type numeric_flag)
 
 			/* Now invoke the string_to_date/time/timestamp routines */
 
-			CVT_move(&tmp, &node->nod_desc,
-					 reinterpret_cast<void (*)()> (ERRD_post));
+			CVT_move(&tmp, &node->nod_desc, ERRD_post);
 			break;
 		}
 

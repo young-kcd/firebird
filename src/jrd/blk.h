@@ -79,9 +79,6 @@ BLKDEF(type_map, map, 0)
 BLKDEF(type_log, log, 0)
 BLKDEF(type_dls, dls, 1)
 BLKDEF(type_ail, logfiles, 1)	/* wal file */
-BLKDEF(type_texttype_alloc_id, texttype, 0)	/* Intl Text Impl Object */
-BLKDEF(type_charset_alloc_id, charset, 0)	/* Intl Charset definition */
-BLKDEF(type_csconvert_alloc_id, csconvert, 0)	/* Intl character set converter */
 BLKDEF(type_prc, jrd_prc, 1)	/* procedure block */
 BLKDEF(type_prm, prm, 1)	/* parameter block */
 BLKDEF(type_sav, sav, 0)	/* save points */

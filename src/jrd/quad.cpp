@@ -34,11 +34,7 @@
 extern "C" {
 
 
-#pragma FB_COMPILER_MESSAGE("Fix this! Ugly function pointer cast!")
-typedef void (*pfn_quad_private_cludge) (int, int);
-
-
-SQUAD QUAD_add(SQUAD * arg1, SQUAD * arg2, FPTR_VOID err)
+SQUAD QUAD_add(SQUAD * arg1, SQUAD * arg2, FPTR_STATUS err)
 {
 /**************************************
  *
@@ -51,7 +47,7 @@ SQUAD QUAD_add(SQUAD * arg1, SQUAD * arg2, FPTR_VOID err)
  *
  **************************************/
 
-	reinterpret_cast < pfn_quad_private_cludge > (err) (gds_badblk, 0);	/* not really badblk, but internal error */
+	(*err) (gds_badblk, 0);	/* not really badblk, but internal error */
 /* IBERROR (224); *//* msg 224 quad word arithmetic not supported */
 
 	SQUAD temp = { 0, 0 };
@@ -84,7 +80,7 @@ SSHORT QUAD_compare(SQUAD * arg1, SQUAD * arg2)
 }
 
 
-SQUAD QUAD_from_double(double *d, FPTR_VOID err)
+SQUAD QUAD_from_double(double *d, FPTR_STATUS err)
 {
 /**************************************
  *
@@ -97,7 +93,7 @@ SQUAD QUAD_from_double(double *d, FPTR_VOID err)
  *
  **************************************/
 
-	reinterpret_cast < pfn_quad_private_cludge > (err) (gds_badblk, 0);	/* not really badblk, but internal error */
+	(*err) (gds_badblk, 0);	/* not really badblk, but internal error */
 /* BUGCHECK (190); *//* msg 190 conversion not supported for */
 	/* specified data types */
 
@@ -107,7 +103,7 @@ SQUAD QUAD_from_double(double *d, FPTR_VOID err)
 }
 
 
-SQUAD QUAD_multiply(SQUAD * arg1, SQUAD * arg2, FPTR_VOID err)
+SQUAD QUAD_multiply(SQUAD * arg1, SQUAD * arg2, FPTR_STATUS err)
 {
 /**************************************
  *
@@ -120,7 +116,7 @@ SQUAD QUAD_multiply(SQUAD * arg1, SQUAD * arg2, FPTR_VOID err)
  *
  **************************************/
 
-	reinterpret_cast < pfn_quad_private_cludge > (err) (gds_badblk, 0);	/* not really badblk, but internal error */
+	(*err) (gds_badblk, 0);	/* not really badblk, but internal error */
 /* IBERROR (224); *//* msg 224 quad word arithmetic not supported */
 
 	SQUAD temp = { 0, 0 };
@@ -128,7 +124,7 @@ SQUAD QUAD_multiply(SQUAD * arg1, SQUAD * arg2, FPTR_VOID err)
 }
 
 
-SQUAD QUAD_negate(SQUAD * arg1, FPTR_VOID err)
+SQUAD QUAD_negate(SQUAD * arg1, FPTR_STATUS err)
 {
 /**************************************
  *
@@ -141,7 +137,7 @@ SQUAD QUAD_negate(SQUAD * arg1, FPTR_VOID err)
  *
  **************************************/
 
-	reinterpret_cast < pfn_quad_private_cludge > (err) (gds_badblk, 0);	/* not really badblk, but internal error */
+	(*err) (gds_badblk, 0);	/* not really badblk, but internal error */
 /* IBERROR (224); *//* msg 224 quad word arithmetic not supported */
 
 	SQUAD temp = { 0, 0 };
@@ -149,7 +145,7 @@ SQUAD QUAD_negate(SQUAD * arg1, FPTR_VOID err)
 }
 
 
-SQUAD QUAD_subtract(SQUAD * arg1, SQUAD * arg2, FPTR_VOID err)
+SQUAD QUAD_subtract(SQUAD * arg1, SQUAD * arg2, FPTR_STATUS err)
 {
 /**************************************
  *
@@ -162,7 +158,7 @@ SQUAD QUAD_subtract(SQUAD * arg1, SQUAD * arg2, FPTR_VOID err)
  *
  **************************************/
 
-	reinterpret_cast < pfn_quad_private_cludge > (err) (gds_badblk, 0);	/* not really badblk, but internal error */
+	(*err) (gds_badblk, 0);	/* not really badblk, but internal error */
 /* IBERROR (224); *//* msg 224 quad word arithmetic not supported */
 
 	SQUAD temp = { 0, 0 };

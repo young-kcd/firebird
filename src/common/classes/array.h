@@ -139,6 +139,7 @@ template <typename Value,
 class SortedArray : public Array<Value> {
 public:
 	SortedArray(MemoryPool* p, int s) : Array<Value>(p, s) {}
+	SortedArray(MemoryPool* p) : Array<Value>(p) {}
 	bool find(const Key& item, int& pos) {
 		int highBound = count, lowBound = 0;
 		while (highBound > lowBound) {

@@ -30,7 +30,6 @@
 		/* all applicable grant/revoke privileges for a procedure */
 #define DYN_MSG_FAC		8
 #define STUFF_COUNT		4
-#define MAX_KEY			256
 #define TEXT_BLOB_LENGTH	512
 
 #define PRIMARY_KEY		"PRIMARY KEY"

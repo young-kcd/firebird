@@ -1382,7 +1382,7 @@ static JRD_NOD par_literal(TDBB tdbb, CSB csb)
 		l = BLR_WORD;
 		q = csb->csb_running;
 		dtype =
-			CVT_get_numeric(q, l, &scale, (double *) p, (FPTR_VOID) ERR_post);
+			CVT_get_numeric(q, l, &scale, (double *) p, ERR_post);
 		literal->lit_desc.dsc_dtype = dtype;
 		if (dtype == dtype_double)
 			literal->lit_desc.dsc_length = sizeof(double);

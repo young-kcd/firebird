@@ -42,12 +42,12 @@
 extern "C" {
 #endif
 
-SQUAD	QUAD_add(SQUAD *, SQUAD *, FPTR_VOID);
+SQUAD	QUAD_add(SQUAD *, SQUAD *, FPTR_STATUS);
 SSHORT	QUAD_compare(SQUAD *, SQUAD *);
-SQUAD	QUAD_from_double(double *, FPTR_VOID);
-SQUAD	QUAD_multiply(SQUAD *, SQUAD *, FPTR_VOID);
-SQUAD	QUAD_negate(SQUAD *, FPTR_VOID);
-SQUAD	QUAD_subtract(SQUAD *, SQUAD *, FPTR_VOID);
+SQUAD	QUAD_from_double(double *, FPTR_STATUS);
+SQUAD	QUAD_multiply(SQUAD *, SQUAD *, FPTR_STATUS);
+SQUAD	QUAD_negate(SQUAD *, FPTR_STATUS);
+SQUAD	QUAD_subtract(SQUAD *, SQUAD *, FPTR_STATUS);
 
 #ifdef __cplusplus
 } /* extern "C" */

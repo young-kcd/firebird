@@ -52,7 +52,7 @@ static void post_error(ISC_STATUS, ...);
 void MOVD_move(const dsc* from, dsc* to)
 {
 
-	CVT_move(from, to, (FPTR_VOID) post_error);
+	CVT_move(from, to, post_error);
 }
 
 

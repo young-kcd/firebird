@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.44 2003-11-02 11:54:49 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.45 2003-11-03 17:14:44 skidder Exp $ 
  */
 
 /*
@@ -159,12 +159,12 @@ static DSC *record_version(TDBB, JRD_NOD, VLU);
 static BOOLEAN reject_duplicate(UCHAR *, UCHAR *, int);
 static DSC *scalar(TDBB, JRD_NOD, VLU);
 static SSHORT sleuth(TDBB, JRD_NOD, DSC *, DSC *);
-static BOOLEAN nc_sleuth_check(class TextType*, USHORT, UCHAR *, UCHAR *, UCHAR *,
+static BOOLEAN nc_sleuth_check(TextType, USHORT, UCHAR *, UCHAR *, UCHAR *,
 							   UCHAR *);
-static BOOLEAN nc_sleuth_class(class TextType*, USHORT, UCHAR *, UCHAR *, UCHAR);
-static BOOLEAN wc_sleuth_check(class TextType*, USHORT, UCS2_CHAR *, UCS2_CHAR *,
+static BOOLEAN nc_sleuth_class(TextType, USHORT, UCHAR *, UCHAR *, UCHAR);
+static BOOLEAN wc_sleuth_check(TextType, USHORT, UCS2_CHAR *, UCS2_CHAR *,
 						UCS2_CHAR *, UCS2_CHAR *);
-static BOOLEAN wc_sleuth_class(class TextType*, USHORT, UCS2_CHAR *, UCS2_CHAR *,
+static BOOLEAN wc_sleuth_class(TextType, USHORT, UCS2_CHAR *, UCS2_CHAR *,
 						UCS2_CHAR);
 static SSHORT string_boolean(TDBB, JRD_NOD, DSC *, DSC *);
 static SSHORT string_function(TDBB, JRD_NOD, SSHORT, UCHAR *, SSHORT, UCHAR *, USHORT);
@@ -1878,7 +1878,7 @@ void EVL_make_value(TDBB tdbb, DSC * desc, VLU value)
 
 
 USHORT EVL_mb_contains(TDBB tdbb,
-						class TextType* obj,
+						TextType obj,
 						UCHAR * p1,
 						USHORT l1,
 						UCHAR * p2,
@@ -1904,8 +1904,8 @@ USHORT EVL_mb_contains(TDBB tdbb,
 
 	SET_TDBB(tdbb);
 
-	len1 = obj->to_wc(NULL, 0, p1, l1, &err_code, &err_pos);
-	len2 = obj->to_wc(NULL, 0, p2, l2, &err_code, &err_pos);
+	len1 = obj.to_wc(NULL, 0, p1, l1, &err_code, &err_pos);
+	len2 = obj.to_wc(NULL, 0, p2, l2, &err_code, &err_pos);
 
 	if (len1 > sizeof(buffer1)) {
 		buf1 = FB_NEW_RPT(*tdbb->tdbb_default, len1) str();
@@ -1916,8 +1916,8 @@ USHORT EVL_mb_contains(TDBB tdbb,
 		pp2 = (UCS2_CHAR *) buf2->str_data;
 	}
 
-	len1 = obj->to_wc(pp1, len1, p1, l1, &err_code, &err_pos);
-	len2 = obj->to_wc(pp2, len2, p2, l2, &err_code, &err_pos);
+	len1 = obj.to_wc(pp1, len1, p1, l1, &err_code, &err_pos);
+	len2 = obj.to_wc(pp2, len2, p2, l2, &err_code, &err_pos);
 
 	ret_val = EVL_wc_contains(tdbb, obj, pp1, len1, pp2, len2);
 
@@ -1931,7 +1931,7 @@ USHORT EVL_mb_contains(TDBB tdbb,
 
 
 USHORT EVL_mb_like(TDBB tdbb,
-					class TextType* obj,
+					TextType obj,
 					UCHAR * p1,
 					SSHORT l1,
 					UCHAR * p2,
@@ -1964,8 +1964,8 @@ USHORT EVL_mb_like(TDBB tdbb,
 
 	SET_TDBB(tdbb);
 
-	len1 = obj->to_wc(NULL, 0, p1, l1, &err_code, &err_pos);
-	len2 = obj->to_wc(NULL, 0, p2, l2, &err_code, &err_pos);
+	len1 = obj.to_wc(NULL, 0, p1, l1, &err_code, &err_pos);
+	len2 = obj.to_wc(NULL, 0, p2, l2, &err_code, &err_pos);
 	if (len1 > sizeof(buffer1)) {
 		buf1 = FB_NEW_RPT(*tdbb->tdbb_default, len1) str();
 		pp1 = (UCS2_CHAR *) buf1->str_data;
@@ -1975,8 +1975,8 @@ USHORT EVL_mb_like(TDBB tdbb,
 		pp2 = (UCS2_CHAR *) buf2->str_data;
 	}
 
-	len1 = obj->to_wc(pp1, len1, p1, l1, &err_code, &err_pos);
-	len2 = obj->to_wc(pp2, len2, p2, l2, &err_code, &err_pos);
+	len1 = obj.to_wc(pp1, len1, p1, l1, &err_code, &err_pos);
+	len2 = obj.to_wc(pp2, len2, p2, l2, &err_code, &err_pos);
 // CHECK ME: Shouldn't errors to be handled?
 
 	ret_val = EVL_wc_like(tdbb, obj, pp1, len1, pp2, len2, escape_char);
@@ -1991,7 +1991,7 @@ USHORT EVL_mb_like(TDBB tdbb,
 
 
 USHORT EVL_mb_matches(TDBB tdbb,
-						class TextType* obj,
+						TextType obj,
 						UCHAR * p1,
 						SSHORT l1,
 						UCHAR * p2,
@@ -2021,8 +2021,8 @@ USHORT EVL_mb_matches(TDBB tdbb,
 
 	SET_TDBB(tdbb);
 
-	len1 = obj->to_wc(NULL, 0, p1, l1, &err_code, &err_pos);
-	len2 = obj->to_wc(NULL, 0, p2, l2, &err_code, &err_pos);
+	len1 = obj.to_wc(NULL, 0, p1, l1, &err_code, &err_pos);
+	len2 = obj.to_wc(NULL, 0, p2, l2, &err_code, &err_pos);
 	if (len1 > sizeof(buffer1)) {
 		buf1 = FB_NEW_RPT(*tdbb->tdbb_default, len1) str();
 		pp1 = (UCS2_CHAR *) buf1->str_data;
@@ -2032,8 +2032,8 @@ USHORT EVL_mb_matches(TDBB tdbb,
 		pp2 = (UCS2_CHAR *) buf2->str_data;
 	}
 
-	len1 = obj->to_wc(pp1, len1, p1, l1, &err_code, &err_pos);
-	len2 = obj->to_wc(pp2, len2, p2, l2, &err_code, &err_pos);
+	len1 = obj.to_wc(pp1, len1, p1, l1, &err_code, &err_pos);
+	len2 = obj.to_wc(pp2, len2, p2, l2, &err_code, &err_pos);
 
 	ret_val = EVL_wc_matches(tdbb, obj, pp1, len1, pp2, len2);
 
@@ -2047,7 +2047,7 @@ USHORT EVL_mb_matches(TDBB tdbb,
 
 
 USHORT EVL_mb_sleuth_check(TDBB tdbb,
-							class TextType* obj,
+							TextType obj,
 							USHORT flags,
 							UCHAR * search,
 							USHORT search_bytes,
@@ -2083,13 +2083,13 @@ USHORT EVL_mb_sleuth_check(TDBB tdbb,
 
 	SET_TDBB(tdbb);
 
-	len1 = obj->to_wc(NULL, 0, search, search_bytes, &err_code, &err_pos);
+	len1 = obj.to_wc(NULL, 0, search, search_bytes, &err_code, &err_pos);
 	if (len1 > sizeof(buffer1)) {
 		buf1 = FB_NEW_RPT(*tdbb->tdbb_default, len1) str();
 		pp1 = (UCS2_CHAR *) buf1->str_data;
 	}
 
-	len1 = obj->to_wc(pp1, len1, search, search_bytes, &err_code, &err_pos);
+	len1 = obj.to_wc(pp1, len1, search, search_bytes, &err_code, &err_pos);
 
 	ret_val =
 		EVL_wc_sleuth_check(tdbb, obj, 0, pp1, len1,
@@ -2104,7 +2104,7 @@ USHORT EVL_mb_sleuth_check(TDBB tdbb,
 
 
 USHORT EVL_mb_sleuth_merge(TDBB tdbb,
-							class TextType* obj,
+							TextType obj,
 							UCHAR * match,
 							USHORT match_bytes,
 							UCHAR * control,
@@ -2137,8 +2137,8 @@ USHORT EVL_mb_sleuth_merge(TDBB tdbb,
 
 	SET_TDBB(tdbb);
 
-	len1 = obj->to_wc(NULL, 0, match, match_bytes, &err_code, &err_pos);
-	len2 = obj->to_wc(NULL, 0, control, control_bytes, &err_code, &err_pos);
+	len1 = obj.to_wc(NULL, 0, match, match_bytes, &err_code, &err_pos);
+	len2 = obj.to_wc(NULL, 0, control, control_bytes, &err_code, &err_pos);
 	if (len1 > sizeof(buffer1)) {
 		buf1 = FB_NEW_RPT(*tdbb->tdbb_default, len1) str();
 		pp1 = (UCS2_CHAR *) buf1->str_data;
@@ -2148,8 +2148,8 @@ USHORT EVL_mb_sleuth_merge(TDBB tdbb,
 		pp2 = (UCS2_CHAR *) buf2->str_data;
 	}
 
-	len1 = obj->to_wc(pp1, len1, match, match_bytes, &err_code, &err_pos);
-	len2 = obj->to_wc(pp2, len2, control, control_bytes, &err_code, &err_pos);
+	len1 = obj.to_wc(pp1, len1, match, match_bytes, &err_code, &err_pos);
+	len2 = obj.to_wc(pp2, len2, control, control_bytes, &err_code, &err_pos);
 
 	ret_val = EVL_wc_sleuth_merge(tdbb, obj, pp1, len1, pp2, len2,
 				      reinterpret_cast < UCS2_CHAR * >(combined),
@@ -2165,7 +2165,7 @@ USHORT EVL_mb_sleuth_merge(TDBB tdbb,
 
 
 USHORT EVL_nc_contains(TDBB tdbb_dummy,
-						class TextType* obj,
+						TextType obj,
 						UCHAR * p1,
 						USHORT l1,
 						UCHAR * p2,
@@ -2194,7 +2194,7 @@ USHORT EVL_nc_contains(TDBB tdbb_dummy,
 				return TRUE;
 			c1 = *q1++;
 			c2 = *q2++;
-		} while (obj->to_upper(c1) == obj->to_upper(c2));
+		} while (obj.to_upper(c1) == obj.to_upper(c2));
 	}
 
 	return FALSE;
@@ -2245,7 +2245,7 @@ USHORT EVL_nc_contains(TDBB tdbb_dummy,
 
 
 USHORT EVL_wc_contains(TDBB tdbb_dumm,
-						class TextType* obj,
+						TextType obj,
 						UCS2_CHAR* p1,
 						USHORT l1,	/* byte count */
 						UCS2_CHAR* p2,
@@ -2274,7 +2274,7 @@ USHORT EVL_wc_contains(TDBB tdbb_dumm,
 				return TRUE;
 			c1 = *q1++;
 			c2 = *q2++;
-		} while (obj->to_upper(c1) == obj->to_upper(c2));
+		} while (obj.to_upper(c1) == obj.to_upper(c2));
 	}
 
 	return FALSE;
@@ -2387,8 +2387,8 @@ static DSC *add(DSC * desc, JRD_NOD node, VLU value)
 		result->dsc_length = sizeof(SQUAD);
 		result->dsc_scale = node->nod_scale;
 		value->vlu_misc.vlu_quad = (node->nod_type == nod_subtract) ?
-			QUAD_SUBTRACT(q2, q1, (FPTR_VOID) ERR_post) :
-			QUAD_ADD(q1, q2, (FPTR_VOID) ERR_post);
+			QUAD_SUBTRACT(q2, q1, ERR_post) :
+			QUAD_ADD(q1, q2, ERR_post);
 		result->dsc_address = (UCHAR *) & value->vlu_misc.vlu_quad;
 
 		return result;
@@ -2472,8 +2472,8 @@ static DSC *add2(DSC * desc, JRD_NOD node, VLU value)
 		result->dsc_length = sizeof(SQUAD);
 		result->dsc_scale = node->nod_scale;
 		value->vlu_misc.vlu_quad = (node->nod_type == nod_subtract2) ?
-			QUAD_SUBTRACT(q2, q1, (FPTR_VOID) ERR_post) :
-			QUAD_ADD(q1, q2, (FPTR_VOID) ERR_post);
+			QUAD_SUBTRACT(q2, q1, ERR_post) :
+			QUAD_ADD(q1, q2, ERR_post);
 		result->dsc_address = (UCHAR *) & value->vlu_misc.vlu_quad;
 
 		return result;
@@ -3634,7 +3634,7 @@ static SINT64 get_day_fraction(DSC * d)
 	result.dsc_address = reinterpret_cast < UCHAR * >(&result_days);
 
 /* Convert the input number to a double */
-	CVT_move(d, &result, reinterpret_cast < void (*)() > (ERR_post));
+	CVT_move(d, &result, ERR_post);
 
 /* There's likely some loss of precision here due to rounding of number */
 
@@ -3718,7 +3718,7 @@ static SINT64 get_timestamp_to_isc_ticks(DSC * d)
 	result.dsc_length = sizeof(GDS_TIMESTAMP);
 	result.dsc_address = reinterpret_cast < UCHAR * >(&result_timestamp);
 
-	CVT_move(d, &result, reinterpret_cast < void (*)() > (ERR_post));
+	CVT_move(d, &result, ERR_post);
 
 	return ((SINT64) result_timestamp.timestamp_date) * ISC_TICKS_PER_DAY
 		+ (SINT64) result_timestamp.timestamp_time;
@@ -4037,7 +4037,7 @@ static DSC *multiply(DSC * desc, VLU value, JRD_NOD node)
 		value->vlu_desc.dsc_length = sizeof(SQUAD);
 		value->vlu_desc.dsc_scale = node->nod_scale;
 		value->vlu_misc.vlu_quad =
-			QUAD_MULTIPLY(q1, q2, (FPTR_VOID) ERR_post);
+			QUAD_MULTIPLY(q1, q2, ERR_post);
 		value->vlu_desc.dsc_address = (UCHAR *) & value->vlu_misc.vlu_quad;
 
 		return &value->vlu_desc;
@@ -4135,7 +4135,7 @@ static DSC *multiply2(DSC * desc, VLU value, JRD_NOD node)
 		value->vlu_desc.dsc_length = sizeof(SQUAD);
 		value->vlu_desc.dsc_scale = node->nod_scale;
 		value->vlu_misc.vlu_quad =
-			QUAD_MULTIPLY(q1, q2, (FPTR_VOID) ERR_post);
+			QUAD_MULTIPLY(q1, q2, ERR_post);
 		value->vlu_desc.dsc_address = (UCHAR *) & value->vlu_misc.vlu_quad;
 
 		return &value->vlu_desc;
@@ -4381,7 +4381,7 @@ static DSC *negate_dsc(TDBB tdbb, DSC * desc, VLU value)
 
 	case dtype_quad:
 		value->vlu_misc.vlu_quad =
-			QUAD_NEGATE(value->vlu_misc.vlu_quad, (FPTR_VOID) ERR_post);
+			QUAD_NEGATE(value->vlu_misc.vlu_quad, ERR_post);
 		break;
 
 	case dtype_int64:
@@ -4573,8 +4573,8 @@ static SSHORT sleuth(TDBB tdbb, JRD_NOD node, DSC * desc1, DSC * desc2)
 	else
 		ttype = INTL_TTYPE(desc1);
 
-	TextType* obj =
-		INTL_texttype_lookup(tdbb, ttype, (FPTR_VOID) ERR_post, NULL);
+	TextType obj =
+		INTL_texttype_lookup(tdbb, ttype, ERR_post, NULL);
 
 /* Get operator definition string (control string) */
 
@@ -4589,7 +4589,7 @@ static SSHORT sleuth(TDBB tdbb, JRD_NOD node, DSC * desc1, DSC * desc2)
 						 reinterpret_cast<vary*>(temp2), TEMP_SIZE(temp2),
 						 &match_str);
 /* Merge search and control strings */
-	l2 = obj->sleuth_merge(tdbb, p2, l2, p1, l1, control,
+	l2 = obj.sleuth_merge(tdbb, p2, l2, p1, l1, control,
 										 BUFFER_SMALL);
 
 /* l2 is result's byte-count */
@@ -4604,7 +4604,7 @@ static SSHORT sleuth(TDBB tdbb, JRD_NOD node, DSC * desc1, DSC * desc2)
 			MOV_make_string2(desc1, ttype, &p1,
 							 reinterpret_cast<vary*>(temp1),
 							 TEMP_SIZE(temp1), &data_str);
-		ret_val = obj->sleuth_check(tdbb, 0, p1, l1, control, l2);
+		ret_val = obj.sleuth_check(tdbb, 0, p1, l1, control, l2);
 	}
 	else {
 		/* Source string is a blob, things get interesting */
@@ -4617,7 +4617,7 @@ static SSHORT sleuth(TDBB tdbb, JRD_NOD node, DSC * desc1, DSC * desc2)
 		while (!(blob->blb_flags & BLB_eof))
 		{
 			l1 = BLB_get_segment(tdbb, blob, buffer, sizeof(buffer));
-			if (obj->sleuth_check(tdbb, 0, buffer, l1, control, l2))
+			if (obj.sleuth_check(tdbb, 0, buffer, l1, control, l2))
 			{
 				ret_val = TRUE;
 				break;
@@ -4751,8 +4751,6 @@ static SSHORT string_function(
  *      or STARTS WITH.
  *
  **************************************/
-	class TextType* obj;
-
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(node, type_nod);
 
@@ -4767,12 +4765,12 @@ static SSHORT string_function(
 		return TRUE;
 	}
 
-	obj = INTL_texttype_lookup(tdbb, ttype, (FPTR_VOID) ERR_post, NULL);
+	TextType obj = INTL_texttype_lookup(tdbb, ttype, ERR_post, NULL);
 
 /* Handle contains */
 
 	if (node->nod_type == nod_contains) {
-		return obj->contains(tdbb, p1, l1, p2, l2);
+		return obj.contains(tdbb, p1, l1, p2, l2);
 	}
 
 /* Handle LIKE and MATCHES */
@@ -4794,17 +4792,17 @@ static SSHORT string_function(
 			if (!l3)
 				ERR_post(gds_like_escape_invalid, 0);
 			/* Grab the first character from the string */
-			consumed = obj->mbtowc(&escape, reinterpret_cast<unsigned char*>(const_cast<char*>(q1)), l3);
+			consumed = obj.mbtowc(&escape, reinterpret_cast<unsigned char*>(const_cast<char*>(q1)), l3);
 
 			/* If characters left, or null byte character, return error */
 			if (consumed <= 0 || consumed != l3 || (escape == 0))
 				ERR_post(gds_like_escape_invalid, 0);
 
 		}
-		return obj->like(tdbb, p1, l1, p2, l2, escape);
+		return obj.like(tdbb, p1, l1, p2, l2, escape);
 	}
 
-	return obj->matches(tdbb, p1, l1, p2, l2);
+	return obj.matches(tdbb, p1, l1, p2, l2);
 }
 
 
@@ -4825,7 +4823,7 @@ static DSC *substring(
 	DSC desc;
 	UCHAR temp[32];
 	USHORT ttype;
-	TextType *obj1 = 0;
+	TextType obj1 = NULL;
 	/* CVC: I didn't bother to define a larger buffer because:
 			- Native types when converted to string don't reach 31 bytes plus terminator.
 			- String types do not need and do not use the buffer ("temp") to be pulled.
@@ -4848,8 +4846,8 @@ static DSC *substring(
 
 	if (dtype_blob == value->dsc_dtype && (BLOB_text != value->dsc_sub_type
 		|| (ttype = value->dsc_scale) == ttype_ascii || ttype == ttype_none || ttype == ttype_binary
-		|| ((obj1 = INTL_texttype_lookup(tdbb, ttype, (FPTR_VOID) ERR_post, NULL)) != 0
-			&& 1 == obj1->getBytesPerChar())))
+		|| ((obj1 = INTL_texttype_lookup(tdbb, ttype, ERR_post, NULL)) != NULL
+			&& 1 == obj1.getBytesPerChar())))
 	{
 		/* Source string is a blob, things get interesting. */
 
@@ -4927,7 +4925,7 @@ static DSC *substring(
 				I couldn't find an appropriate message for this failure among current registered
 				messages, so I will return empty.
 				Finally I decided to use arithmetic exception or numeric overflow. */
-		TextType *text_obj = 0;
+		TextType text_obj = 0;
 		UCHAR *p = (UCHAR*) desc.dsc_address;
 		USHORT pcount = desc.dsc_length;
 		BOOLEAN failure = FALSE;

@@ -6211,7 +6211,7 @@ static ISC_STATUS mov_dsql_message(	UCHAR*	from_msg,
 			to = *to_desc;
 			from.dsc_address = from_msg + (SLONG) from.dsc_address;
 			to.dsc_address = to_msg + (SLONG) to.dsc_address;
-			CVT_move(&from, &to, (FPTR_VOID) move_error);
+			CVT_move(&from, &to, move_error);
 		}
 
 	}	// try

@@ -667,7 +667,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, CTL control)
 	USHORT result_length;
 
 	typedef struct ctlaux {
-		CsConvert *ctlaux_obj1;	/* Intl object that does tx for us */
+		CsConvert ctlaux_obj1;	/* Intl object that does tx for us */
 		BYTE *ctlaux_buffer1;	/* Temporary buffer for transliteration */
 		CTL ctlaux_subfilter;	/* For chaining transliterate filters */
 		ISC_STATUS ctlaux_source_blob_status;	/* marks when source is EOF, etc */
@@ -713,7 +713,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, CTL control)
 
 		SET_TDBB(tdbb);
 		aux->ctlaux_obj1 = INTL_convert_lookup(tdbb, dest_cs, source_cs);
-		if (!aux->ctlaux_obj1) {
+		if (aux->ctlaux_obj1 == NULL) {
 			/* Do the convert the hard way, via Unicode.
 			   In this case, we become the filter from Unicode to
 			   the destination format.  And we setup as our source
@@ -729,7 +729,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, CTL control)
 					INTL_convert_lookup(tdbb, CS_UNICODE_UCS2, source_cs);
 			}
 
-			if (!aux->ctlaux_obj1) {
+			if (aux->ctlaux_obj1 == NULL) {
 				control->ctl_status[0] = gds_arg_gds;
 				control->ctl_status[1] = gds_text_subtype;
 				control->ctl_status[2] = gds_arg_number;
@@ -769,7 +769,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, CTL control)
 
 		if (action == ACTION_open) {
 			control->ctl_max_segment =
-				aux->ctlaux_obj1->convert(NULL, 0, NULL,
+				aux->ctlaux_obj1.convert(NULL, 0, NULL,
 						source->ctl_max_segment, &err_code, &err_position);
 
 			if (source->ctl_max_segment && control->ctl_max_segment)
@@ -800,7 +800,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, CTL control)
 			 * for an appropriate buffer size, allocate that, and re-allocate
 			 * later if we guess wrong.
 			 */
-			tmp = aux->ctlaux_obj1->convert( NULL, 0, NULL,
+			tmp = aux->ctlaux_obj1.convert( NULL, 0, NULL,
 							128, &err_code, &err_position);
 			aux->ctlaux_expansion_factor = (EXP_SCALE * tmp) / 128;
 
@@ -851,7 +851,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, CTL control)
 		/* Now convert from the input buffer into the temporary buffer */
 
 		/* How much space do we need to convert? */
-		result_length = aux->ctlaux_obj1->convert(NULL, 0,
+		result_length = aux->ctlaux_obj1.convert(NULL, 0,
 			control->ctl_buffer, control->ctl_buffer_length,
 			&err_code, &err_position);
 
@@ -867,7 +867,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, CTL control)
 
 		/* convert the text */
 
-		result_length = aux->ctlaux_obj1->convert(aux->ctlaux_buffer1,
+		result_length = aux->ctlaux_obj1.convert(aux->ctlaux_buffer1,
 			aux->ctlaux_buffer1_len, control->ctl_buffer,
 			control->ctl_buffer_length, &err_code, &err_position);
 
@@ -959,7 +959,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, CTL control)
 
 /* Now convert from the temporary buffer into the destination buffer */
 
-	result_length = aux->ctlaux_obj1->convert(control->ctl_buffer,
+	result_length = aux->ctlaux_obj1.convert(control->ctl_buffer,
 					control->ctl_buffer_length, aux->ctlaux_buffer1, length,
 					&err_code, &err_position);
 

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: movg.cpp,v 1.4 2003-10-05 06:54:37 robocop Exp $
+//	$Id: movg.cpp,v 1.5 2003-11-03 17:14:41 skidder Exp $
 //
 
 #include "firebird.h"
@@ -46,7 +46,7 @@
 #include "../jrd/cvt_proto.h"
 #include "../jrd/thd_proto.h"
 
-static void post_error(void);
+static void post_error(ISC_STATUS, ...);
 
 
 //____________________________________________________________
@@ -57,7 +57,7 @@ static void post_error(void);
 void MOVG_move(const dsc* from, dsc* to)
 {
 
-	CVT_move(from, to, (FPTR_VOID) post_error);
+	CVT_move(from, to, post_error);
 }
 
 
@@ -66,7 +66,7 @@ void MOVG_move(const dsc* from, dsc* to)
 //		A conversion error occurred.  Complain.
 //  
 
-static void post_error(void)
+static void post_error(ISC_STATUS, ...)
 {
 
 	CPR_error("conversion error: illegal string literal");

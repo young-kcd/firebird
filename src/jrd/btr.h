@@ -37,7 +37,6 @@
 
 /* 64 turns out not to be enough indexes */
 /* #define MAX_IDX		 64	*/	/* that should be plenty of indexes */
-#define MAX_KEY		256 /* 256 isn't big enough for a key either */
 
 enum idx_null_state {
   idx_nulls_none,

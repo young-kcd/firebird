@@ -6155,7 +6155,7 @@ static JRD_NOD optimize_like(TDBB tdbb, JRD_NOD like_node)
 	USHORT ch, escape_ch;
 	USHORT p_count;
 	UCHAR tmp_buffer[32];		/* large enough to hold 1 ch of escape string */
-	TextType *text_obj;
+	TextType text_obj = NULL;
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(like_node, type_nod);
 	JRD_NOD search_node = like_node->nod_arg[1];
@@ -6173,7 +6173,6 @@ static JRD_NOD optimize_like(TDBB tdbb, JRD_NOD like_node)
 		(escape_node && escape_desc->dsc_dtype > dtype_any_text))
 		return NULL;
 /* Get the escape character, if any */
-	text_obj = NULL;
 	if (escape_node)
 	{
 		/* Ensure escape string is same character set as search string 

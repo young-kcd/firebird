@@ -54,7 +54,7 @@ int MOV_compare(const dsc* arg1, const dsc* arg2)
  *
  **************************************/
 
-	return CVT2_compare(arg1, arg2, (FPTR_VOID) ERR_post);
+	return CVT2_compare(arg1, arg2, ERR_post);
 }
 
 
@@ -72,7 +72,7 @@ double MOV_date_to_double(const dsc* desc)
  *
  **************************************/
 
-	return CVT_date_to_double(desc, (FPTR_VOID) ERR_post);
+	return CVT_date_to_double(desc, ERR_post);
 }
 
 
@@ -125,7 +125,7 @@ void MOV_double_to_date(double real, SLONG fixed[2])
  *
  **************************************/
 
-	CVT_double_to_date(real, fixed, (FPTR_VOID) ERR_post);
+	CVT_double_to_date(real, fixed, ERR_post);
 }
 
 
@@ -298,7 +298,7 @@ double MOV_get_double(const dsc* desc)
  *
  **************************************/
 
-	return CVT_get_double(desc, (FPTR_VOID) ERR_post);
+	return CVT_get_double(desc, ERR_post);
 }
 
 
@@ -316,7 +316,7 @@ SLONG MOV_get_long(const dsc* desc, SSHORT scale)
  *
  **************************************/
 
-	return CVT_get_long(desc, scale, (FPTR_VOID) ERR_post);
+	return CVT_get_long(desc, scale, ERR_post);
 }
 
 
@@ -334,7 +334,7 @@ SINT64 MOV_get_int64(const dsc* desc, SSHORT scale)
  *
  **************************************/
 
-	return CVT_get_int64(desc, scale, (FPTR_VOID) ERR_post);
+	return CVT_get_int64(desc, scale, ERR_post);
 }
 
 
@@ -356,7 +356,7 @@ void MOV_get_metadata_str(const dsc* desc, TEXT* buffer, USHORT buffer_length)
 	UCHAR *ptr;
 
 	USHORT length = CVT_get_string_ptr(desc, &dummy_type, &ptr,
-									   NULL, 0, (FPTR_VOID) ERR_post);
+									   NULL, 0, ERR_post);
 	
 #ifdef DEV_BUILD
 	if ((dummy_type != ttype_metadata) &&
@@ -383,7 +383,7 @@ void MOV_get_name(const dsc* desc, TEXT* string)
  *
  **************************************/
 
-	CVT2_get_name(desc, string, (FPTR_VOID) ERR_post);
+	CVT2_get_name(desc, string, ERR_post);
 }
 
 
@@ -401,7 +401,7 @@ SQUAD MOV_get_quad(const dsc* desc, SSHORT scale)
  *
  **************************************/
 
-	return CVT_get_quad(desc, scale, (FPTR_VOID) ERR_post);
+	return CVT_get_quad(desc, scale, ERR_post);
 }
 
 
@@ -427,8 +427,7 @@ int MOV_get_string_ptr(
  *
  **************************************/
 
-	return CVT_get_string_ptr(desc, ttype, address, temp, length,
-							  (FPTR_VOID) ERR_post);
+	return CVT_get_string_ptr(desc, ttype, address, temp, length, ERR_post);
 }
 
 
@@ -462,7 +461,7 @@ GDS_DATE MOV_get_sql_date(const dsc* desc)
  *
  **************************************/
 
-	return CVT_get_sql_date(desc, (FPTR_VOID) ERR_post);
+	return CVT_get_sql_date(desc, ERR_post);
 }
 
 
@@ -479,7 +478,7 @@ GDS_TIME MOV_get_sql_time(const dsc* desc)
  *
  **************************************/
 
-	return CVT_get_sql_time(desc, (FPTR_VOID) ERR_post);
+	return CVT_get_sql_time(desc, ERR_post);
 }
 
 
@@ -496,7 +495,7 @@ GDS_TIMESTAMP MOV_get_timestamp(const dsc* desc)
  *
  **************************************/
 
-	return CVT_get_timestamp(desc, (FPTR_VOID) ERR_post);
+	return CVT_get_timestamp(desc, ERR_post);
 }
 
 
@@ -525,8 +524,7 @@ int MOV_make_string(const dsc*	     desc,
  *
  **************************************/
 
-	return CVT_make_string(desc, ttype, address, temp, length,
-						   (FPTR_VOID) ERR_post);
+	return CVT_make_string(desc, ttype, address, temp, length, ERR_post);
 }
 
 
@@ -556,8 +554,7 @@ int MOV_make_string2(
  *
  **************************************/
 
-	return CVT2_make_string2(desc, ttype, address, temp, length, ptr,
-							 (FPTR_VOID) ERR_post);
+	return CVT2_make_string2(desc, ttype, address, temp, length, ptr, ERR_post);
 }
 
 
@@ -574,7 +571,7 @@ void MOV_move(const dsc* from, dsc* to)
  *
  **************************************/
 
-	CVT_move(from, to, (FPTR_VOID) ERR_post);
+	CVT_move(from, to, ERR_post);
 }
 
 

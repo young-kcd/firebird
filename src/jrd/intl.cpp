@@ -135,8 +135,6 @@
 #else
 #define INTL_TRACE(args)
 #endif
-/* 11 Sept 2002, Nickolay Samofatov. It is used only in asserts,
-   move it out DEV_BUILD section and let optimizer optimize it out */
 #define IS_TEXT(x)      (((x)->dsc_dtype == dtype_text)   ||\
 			 ((x)->dsc_dtype == dtype_varying)||\
 			 ((x)->dsc_dtype == dtype_cstring))
@@ -147,42 +145,14 @@
 
 typedef unsigned char FILECHAR;
 
-// extern declarations for the allocator functions for builtin charsets
-CharSetAllocFunc INTL_charset_alloc_func(short);
-TextTypeAllocFunc INTL_texttype_alloc_func(short);
-CsConvertAllocFunc INTL_csconvert_alloc_func(short, short);
-
 static bool all_spaces(TDBB, CHARSET_ID, const BYTE*, USHORT, USHORT);
-#ifdef NOT_USED_OR_REPLACED
-#ifdef DEV_BUILD
-static void dump_hex(UCHAR *, USHORT);
-static void dump_latin(UCHAR *, USHORT);
-#endif
-#endif
-//static void finish_texttype_init(TextType*, FPTR_VOID, ISC_STATUS *);
-//static SSHORT internal_str_to_upper(TextType*, USHORT, UCHAR *, USHORT,
-//									UCHAR *);
-//static USHORT internal_string_to_key(TextType*, USHORT, UCHAR *, USHORT,
-//									 UCHAR *, USHORT);
-//static USHORT mb_to_wc(CsConvert*, UCS2_CHAR *, USHORT, MBCHAR *, USHORT, SSHORT *,
-//					   USHORT *);
-#ifdef NOT_USED_OR_REPLACED
-static USHORT nc_to_wc(CsConvert*, UCS2_CHAR *, USHORT, UCHAR *, USHORT, SSHORT *,
-					   USHORT *);
-#endif
 static void pad_spaces(TDBB, CHARSET_ID, BYTE *, USHORT);
-//static USHORT wc_to_mb(CsConvert*, MBCHAR *, USHORT, UCS2_CHAR *, USHORT, SSHORT *,
-//					   USHORT *);
-//static USHORT wc_to_nc(CsConvert*, NCHAR *, USHORT, UCS2_CHAR *, USHORT, SSHORT *,
-//					   USHORT *);
-//static USHORT wc_to_wc(CsConvert*, UCS2_CHAR *, USHORT, UCS2_CHAR *, USHORT, SSHORT *,
-//					   USHORT *);
-					   
-static CharSetContainer *internal_charset_container_lookup(TDBB, SSHORT, ISC_STATUS *);
-static void* search_out_alloc_func(const char *, CHARSET_ID, CHARSET_ID);
-static void* intl_back_compat_alloc_func_lookup(USHORT, CHARSET_ID, CHARSET_ID);
-static void* intl_back_compat_obj_init_lookup(USHORT, SSHORT, SSHORT);
-
+static void* lookup_init_function(USHORT, SSHORT, SSHORT);
+static void finish_texttype_init(TEXTTYPE);
+static USHORT nc_to_wc(CSCONVERT, WCHAR *, USHORT, UCHAR *, USHORT, SSHORT *,
+					   USHORT *);
+static USHORT wc_to_wc(CSCONVERT, WCHAR *, USHORT, WCHAR *, USHORT, SSHORT *,
+					   USHORT *);
 
 /* Name of module that implements text-type (n) */
 
@@ -210,70 +180,393 @@ static void* intl_back_compat_obj_init_lookup(USHORT, SSHORT, SSHORT);
 #define INTL_LOOKUP_ENTRY2      "LD2_lookup"
 #define INTL_USER_ENTRY         "USER_TEXTTYPE_%03d"
 
+// We need all the structure definitions from the old interface
+#define INTL_ENGINE_INTERNAL
+#include "../jrd/intlobj.h"
+
+// storage for the loadable modules
+static PluginManager intlBCPlugins;
+static bool bcLoaded = false;
+
+static const char *INTL_PLUGIN_DIR = "intl";
+
+class CharsetIDGetter
+{
+public:
+	static CHARSET_ID generate(void *sender, const CsConvert& Item) { 
+		return Item.getToCS(); 
+	}
+};
 
 // Classes and structures used internally to this file and intl implementation
 class CharSetContainer
 {
 public:
-	CharSetContainer(MemoryPool &p, CharSet *cs = 0) :
-		charset_converters(p),
-		charset_collations(p),
-		impossible_conversions(p),
-		cs(cs)
-	{}
+	CharSetContainer(MemoryPool *p, USHORT cs_id);
 	
-	CharSet *getCharSet() { return cs; }
+	CharSet getCharSet() { return cs; }
 	
-	void setCollation(TextType *cs, unsigned short id)
-	{
-		if (id >= charset_collations.size())
-			charset_collations.resize(id + 10);
-		charset_collations[id] = cs;
-	}
+	TextType lookupCollation(TDBB tdbb, USHORT tt_id);
 	
-	TextType *collation(unsigned short id)
-	{
-		if (id >= charset_collations.size())
-			return NULL;
-		return charset_collations[id];
-	}
+	CsConvert lookupConverter(TDBB tdbb, CHARSET_ID to_cs);
 	
-	bool findConverter(CHARSET_ID id, CsConvert **cvt)
-	{
-		*cvt = NULL;
-		for(Firebird::vector<CsConvert*>::iterator itr1 = charset_converters.begin();
-				itr1 != charset_converters.end(); ++itr1)
-			if ((*itr1)->getToCS() == id)
-			{
-				*cvt = *itr1;
-				return true;
-			}
-
-		for(Firebird::vector<CHARSET_ID>::iterator itr2 = impossible_conversions.begin();
-				itr2 != impossible_conversions.end(); ++itr2)
-			if (*itr2 == id)
-				return true;
-		return false;
-	}
-	
-	void addConverter(CsConvert *conv)
-	{
-		charset_converters.push_back(conv);
-	}
-	
-	void addNullConverter(CHARSET_ID nullId)
-	{
-		impossible_conversions.push_back(nullId);
-	}
+	static CharSetContainer* lookupCharset(TDBB tdbb, SSHORT ttype, ISC_STATUS *status);
 	
 private:
-	Firebird::vector<CsConvert*>	charset_converters;
-	Firebird::vector<TextType*>	charset_collations;
-	Firebird::vector<CHARSET_ID>	impossible_conversions;
-	CharSet *cs;
+	Firebird::SortedArray<CsConvert, CHARSET_ID, CharsetIDGetter> charset_converters;
+	Firebird::Array<TextType> charset_collations;
+	Firebird::SortedArray<CHARSET_ID> impossible_conversions;
+	CharSet cs;
 };
 
-CHARSET_ID INTL_charset(TDBB tdbb, USHORT ttype, FPTR_VOID err)
+CharSetContainer* CharSetContainer::lookupCharset(TDBB tdbb, SSHORT ttype, ISC_STATUS *status)
+{
+/**************************************
+ *
+ *      l o o k u p C h a r s e t
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ *      Lookup a character set descriptor.
+ *
+ *      First, search the appropriate vector that hangs
+ *      off the dbb.  If not found, then call the lower
+ *      level lookup routine to allocate it, or return
+ *		null if we don't know about the charset.
+ *
+ * Returns:
+ *      *charset        - if no errors;
+ *      <never>         - if error & err non NULL
+ *      NULL            - if error & err NULL
+ *
+ **************************************/
+	DBB dbb;
+	CharSetContainer *cs = NULL;
+	USHORT id;
+
+	SET_TDBB(tdbb);
+	dbb = tdbb->tdbb_database;
+
+	id = TTYPE_TO_CHARSET(ttype);
+	if (id == CS_dynamic)
+		id = tdbb->tdbb_attachment->att_charset;
+
+	if (id >= dbb->dbb_charsets.size())
+		dbb->dbb_charsets.resize(id + 10);
+	else
+		cs = dbb->dbb_charsets[id];
+
+	// allocate a new character set object if we couldn't find one.
+	if (!cs) {
+		cs = FB_NEW(*dbb->dbb_permanent) CharSetContainer(dbb->dbb_permanent, id);
+		if (cs->getCharSet() == NULL) {
+			delete cs;
+			return NULL;
+		}
+		dbb->dbb_charsets[id] = cs;
+	}
+
+	assert(cs != NULL);
+	return cs;
+}
+
+CharSetContainer::CharSetContainer(MemoryPool *p, USHORT cs_id) :
+	charset_converters(p),
+	charset_collations(p),
+	impossible_conversions(p),
+	cs(NULL)
+{
+	typedef USHORT (*CSInitFunc)(CHARSET, SSHORT, SSHORT);
+	CSInitFunc csInitFunc = 
+		reinterpret_cast<CSInitFunc>(lookup_init_function(type_charset, cs_id, 0));
+	CHARSET cs = FB_NEW(*p) charset;
+	memset(cs, 0, sizeof(charset));
+
+	if (!csInitFunc || (*csInitFunc)(cs, cs_id, 0) != 0)
+	{
+		delete cs;
+		cs = NULL;
+	}
+
+	this->cs = cs;
+}
+
+CsConvert CharSetContainer::lookupConverter(TDBB tdbb, CHARSET_ID to_cs)
+{
+	int pos;
+	if (charset_converters.find(to_cs, pos))
+		return charset_converters[pos];
+	if (impossible_conversions.find(to_cs, pos))
+		return NULL;
+	if (to_cs == CS_UNICODE_UCS2) {
+		return cs.getConvToUnicode();
+	}
+	if (cs.getId() == CS_UNICODE_UCS2) {
+		CharSet to_charset = INTL_charset_lookup(tdbb, to_cs, NULL);
+		if (to_charset == NULL)
+			return NULL;
+		return to_charset.getConvFromUnicode();
+	}
+
+	typedef USHORT (*CVTInitFunc)(CSCONVERT, SSHORT, SSHORT);
+	CVTInitFunc cvtInitFunc = 
+		reinterpret_cast<CVTInitFunc>(lookup_init_function(type_csconvert, to_cs, cs.getId()));
+	if (!cvtInitFunc) {
+		impossible_conversions.add(to_cs);
+		return NULL;
+	}
+
+	CSCONVERT cvt = FB_NEW(*tdbb->tdbb_database->dbb_permanent) csconvert;
+	memset(cvt, 0, sizeof(csconvert));
+	if ((*cvtInitFunc)(cvt, to_cs, cs.getId()) != 0)
+	{
+		impossible_conversions.add(to_cs);
+		delete cvt;
+		return NULL;
+	}
+	CsConvert converter = cvt;
+	assert(converter.getFromCS() == cs.getId());
+	assert(converter.getToCS() == to_cs);
+	charset_converters.add(converter);
+	return cvt;
+}
+
+TextType CharSetContainer::lookupCollation(TDBB tdbb, USHORT tt_id)
+{
+	USHORT id = TTYPE_TO_COLLATION(tt_id);
+	
+	if (id < charset_collations.getCount() && charset_collations[id] != NULL)
+		return charset_collations[id];
+	typedef USHORT (*TTInitFunc)(TEXTTYPE, SSHORT, SSHORT);
+	TTInitFunc ttInitFunc =
+		reinterpret_cast<TTInitFunc>(lookup_init_function(type_texttype, tt_id, 0));
+	if (!ttInitFunc)
+		return NULL;
+	TEXTTYPE tt = FB_NEW(*tdbb->tdbb_database->dbb_permanent) texttype;
+	memset(tt, 0, sizeof(texttype));
+	if ((*ttInitFunc)(tt, tt_id, 0) != 0)
+	{
+		delete tt;
+		return NULL;
+	}
+	finish_texttype_init(tt);
+	if (charset_collations.getCount() <= id)
+		charset_collations.grow(id+1);
+	charset_collations[id] = tt;
+
+	return tt;
+}
+
+static void finish_texttype_init(TEXTTYPE txtobj)
+{
+/**************************************
+ *
+ *      f i n i s h _ t e x t t y p e _ i n i t
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ *      Finish initializing a text object with pointers to 
+ *      internal routines.
+ *      This is also a handy place to check the licensing bits
+ *      for the text object.
+ *
+ * Returns:
+ *      The TEXTTYPE_init bit in texttype_flags is set if the
+ *      object is sucessfully initialized.
+ *
+ **************************************/
+
+	if ((txtobj->texttype_fn_to_wc == NULL) &&
+		(txtobj->texttype_bytes_per_char == 1)) {
+		/* Finish initialization of a narrow character object */
+
+		txtobj->texttype_fn_to_wc = (FPTR_SHORT) nc_to_wc;
+		txtobj->texttype_fn_contains = (FPTR_SHORT) EVL_nc_contains;
+		txtobj->texttype_fn_matches = (FPTR_SHORT) EVL_nc_matches;
+		txtobj->texttype_fn_like = (FPTR_SHORT) EVL_nc_like;
+		txtobj->texttype_fn_sleuth_merge = (FPTR_SHORT) EVL_nc_sleuth_merge;
+		txtobj->texttype_fn_sleuth_check = (FPTR_SHORT) EVL_nc_sleuth_check;
+
+		if (!txtobj->texttype_fn_mbtowc)
+			txtobj->texttype_fn_mbtowc = (FPTR_short) INTL_builtin_nc_mbtowc;
+	}
+	else if ((txtobj->texttype_fn_to_wc == NULL) &&
+			 (txtobj->texttype_bytes_per_char == 2)) {
+		/* Finish initialization of a wide character object */
+
+		txtobj->texttype_fn_to_wc = (FPTR_SHORT) wc_to_wc;
+		txtobj->texttype_fn_contains = (FPTR_SHORT) EVL_wc_contains;
+		txtobj->texttype_fn_matches = (FPTR_SHORT) EVL_wc_matches;
+		txtobj->texttype_fn_like = (FPTR_SHORT) EVL_wc_like;
+		txtobj->texttype_fn_sleuth_merge = (FPTR_SHORT) EVL_wc_sleuth_merge;
+		txtobj->texttype_fn_sleuth_check = (FPTR_SHORT) EVL_wc_sleuth_check;
+		if (!txtobj->texttype_fn_mbtowc)
+			txtobj->texttype_fn_mbtowc = (FPTR_short) INTL_builtin_wc_mbtowc;
+	}
+	else if (txtobj->texttype_fn_to_wc != NULL) {
+		/* Finish initialization of a multibyte character object */
+
+		txtobj->texttype_fn_contains = (FPTR_SHORT) EVL_mb_contains;
+		txtobj->texttype_fn_matches = (FPTR_SHORT) EVL_mb_matches;
+		txtobj->texttype_fn_like = (FPTR_SHORT) EVL_mb_like;
+		txtobj->texttype_fn_sleuth_merge = (FPTR_SHORT) EVL_mb_sleuth_merge;
+		txtobj->texttype_fn_sleuth_check = (FPTR_SHORT) EVL_mb_sleuth_check;
+		if (!txtobj->texttype_fn_mbtowc)
+			txtobj->texttype_fn_mbtowc = (FPTR_short) INTL_builtin_mb_mbtowc;
+	}
+	else
+		assert(0);
+
+	txtobj->texttype_flags |= TEXTTYPE_init;
+}
+
+static void* lookup_init_function(
+						USHORT type,
+						SSHORT parm1,
+						SSHORT parm2)
+{
+/**************************************
+ *
+ *      lookup_init_function
+ *
+ **************************************
+ *
+ * Functional description
+ *      Find the allocator function for the requested international
+ *		character set using the c/IB/FB 6.0 interface.
+ *      Search algorithm is:
+ *              Look in intllib
+ *              Look in intllib2
+ *              Look for a normal UDF entry
+ *              Abort with an error.
+ *
+ * Returns:
+ *      FALSE   - no errors
+ *      TRUE    - error occurred, and parameter <err> was NULL;
+ *      <never> - error occurred, and parameter <err> non-NULL;
+ *
+ *
+ ***************************************/
+	USHORT (*function)();
+
+	if (!bcLoaded)
+	{
+		intlBCPlugins.addSearchPath(INTL_PLUGIN_DIR);
+		bcLoaded = true;
+	}
+
+	PluginManager::Plugin intlMod1 = intlBCPlugins.findPlugin(INTL_MODULE1);
+	PluginManager::Plugin intlMod2 = intlBCPlugins.findPlugin(INTL_MODULE2);
+
+	USHORT(*lookup_fn) (USHORT, FPTR_SHORT *, SSHORT, SSHORT);
+
+	INTL_TRACE(("INTL: looking for obj %d ttype %d\n", objtype, parm1));
+
+	function = INTL_builtin_lookup(type, parm1, parm2); 
+	if (function) return function;
+
+#ifdef INTL_BUILTIN
+	if (LD_lookup(type, &function, parm1, parm2) != 0)
+		function = NULL;
+	else
+		return function;
+#else
+	/* Look for an InterBase supplied object to implement the text type */
+	/* The flu.c uses searchpath which expects a file name not a path */
+	INTL_TRACE(("INTL: trying %s %s\n", INTL_MODULE1, INTL_LOOKUP_ENTRY1));
+	Firebird::string tempStr(INTL_LOOKUP_ENTRY1);
+	if ( intlMod1 && (lookup_fn = (USHORT(*)(USHORT, USHORT(**)(), short, short))
+		(intlMod1.lookupSymbol(tempStr))) ) {
+		INTL_TRACE(("INTL: calling lookup %s %s\n", INTL_MODULE1,
+					INTL_LOOKUP_ENTRY1));
+		if ((*lookup_fn) (type, &function, parm1, parm2) != 0) {
+			function = NULL;
+		}
+		else
+		{
+			return function;
+		}
+	}
+#endif
+
+/* Still not found, check the set of supplimental international objects */
+#ifdef INTL_BUILTIN
+	if (LD2_lookup(type, &function, parm1, parm2) != 0)
+		function = NULL;
+	else
+		return function;
+#else
+	/* Look for an InterBase supplied object to implement the text type */
+	/* The flu.c uses searchpath which expects a file name not a path */
+	INTL_TRACE(("INTL: trying %s %s\n", INTL_MODULE2, INTL_LOOKUP_ENTRY2));
+	tempStr = INTL_LOOKUP_ENTRY2;
+	if ( intlMod2 && (lookup_fn = (USHORT(*)(USHORT, USHORT(**)(), short, short))
+		(intlMod2.lookupSymbol(tempStr))) ) {
+		INTL_TRACE(("INTL: calling lookup %s %s\n", INTL_MODULE2,
+					INTL_LOOKUP_ENTRY2));
+		if ((*lookup_fn) (type, &function, parm1, parm2) != 0) {
+			function = NULL;
+		}
+		else
+		{
+			return function;
+		}
+	}
+#endif
+
+/* Still not found, check if there is a UDF in the database defined the right way */
+	FUN function_block;
+	USHORT argcount;
+	char entry[48];
+
+	switch (type) {
+		case type_texttype:
+			sprintf(entry, INTL_USER_ENTRY, parm1);
+			argcount = 2;
+			break;
+		case type_charset:
+			sprintf(entry, "USER_CHARSET_%03d", parm1);
+			argcount = 2;
+			break;
+		case type_csconvert:
+			sprintf(entry, "USER_TRANSLATE_%03d_%03d", parm1,
+					parm2);
+			argcount = 3;
+			break;
+		default:
+			BUGCHECK(1);
+			break;
+	}
+	INTL_TRACE(("INTL: trying user fn %s\n", entry));
+	if ( (function_block = FUN_lookup_function((TEXT*)entry, false)) ) {
+		INTL_TRACE(("INTL: found a user fn, validating\n"));
+		if ((function_block->fun_count == argcount) &&
+			(function_block->fun_args == argcount) &&
+			(function_block->fun_return_arg == 0) &&
+			(function_block->fun_entrypoint != NULL) &&
+			(function_block->fun_rpt[0].fun_mechanism == FUN_value) &&
+			(function_block->fun_rpt[0].fun_desc.dsc_dtype == dtype_short)
+			&& (function_block->fun_rpt[1].fun_desc.dsc_dtype ==
+				dtype_short)
+			&& (function_block->fun_rpt[argcount - 1].
+				fun_desc.dsc_dtype == dtype_short)
+			&& (function_block->fun_rpt[argcount].fun_mechanism ==
+				FUN_reference)
+			&& (function_block->fun_rpt[argcount].fun_desc.dsc_dtype ==
+				dtype_text))
+		{
+			return function_block->fun_entrypoint;
+		}
+	}
+	return NULL;
+}
+
+
+CHARSET_ID INTL_charset(TDBB tdbb, USHORT ttype, FPTR_STATUS err)
 {
 /**************************************
  *
@@ -308,7 +601,7 @@ CHARSET_ID INTL_charset(TDBB tdbb, USHORT ttype, FPTR_VOID err)
 int INTL_compare(TDBB tdbb,
 				const dsc* pText1,
 				const dsc* pText2,
-				FPTR_VOID err)
+				FPTR_STATUS err)
 {
 /**************************************
  *
@@ -374,9 +667,9 @@ int INTL_compare(TDBB tdbb,
 		}
 	}
 
-	TextType* obj = INTL_texttype_lookup(tdbb, compare_type, err, NULL);
+	TextType obj = INTL_texttype_lookup(tdbb, compare_type, err, NULL);
 
-	return obj->compare(length1, p1, length2, p2);
+	return obj.compare(length1, p1, length2, p2);
 }
 
 
@@ -387,7 +680,7 @@ USHORT INTL_convert_bytes(TDBB tdbb,
 						CHARSET_ID src_type,
 						BYTE * src_ptr,
 						USHORT src_len,
-						FPTR_VOID err)
+						FPTR_STATUS err)
 {
 /**************************************
  *
@@ -411,8 +704,6 @@ USHORT INTL_convert_bytes(TDBB tdbb,
 	UCHAR *start_dest_ptr;
 	USHORT len;
 	USHORT len2;
-	CsConvert* cs_obj;
-	CharSet* from_cs, *to_cs;
 	SSHORT err_code = 0;
 	USHORT err_position;
 	BYTE *tmp_buffer;
@@ -443,99 +734,78 @@ USHORT INTL_convert_bytes(TDBB tdbb,
 		if (!len || all_spaces(tdbb, src_type, src_ptr, len, 0))
 			return (dest_ptr - start_dest_ptr);
 		else
-			reinterpret_cast < void (*) (...) > (*err) (gds_arith_except, 0);
+			(*err) (gds_arith_except, 0);
 	}
 	else if (src_len == 0)
 		return (0);
 	else if (src_type == CS_BINARY)
-		reinterpret_cast < void (*) (...) > (*err) (gds_arith_except,
-													gds_arg_gds,
-													gds_transliteration_failed,
-													0);
+		(*err)(gds_arith_except, gds_arg_gds, gds_transliteration_failed, 0);
 	else
 		/* character sets are known to be different */
 	{
 		/* Do we know an object from cs1 to cs2? */
 
-		cs_obj = INTL_convert_lookup(tdbb, dest_type, src_type);
+		CsConvert cs_obj = INTL_convert_lookup(tdbb, dest_type, src_type);
 		if (cs_obj != NULL) {
-			len = cs_obj->convert(dest_ptr, dest_len, src_ptr,
+			len = cs_obj.convert(dest_ptr, dest_len, src_ptr,
 									src_len, &err_code, &err_position);
 			if (!err_code || ((err_code == CS_TRUNCATION_ERROR)
 							  && all_spaces(tdbb, src_type, src_ptr, src_len,
 											err_position))) return (len);
 			else if (err_code == CS_TRUNCATION_ERROR)
-				reinterpret_cast < void (*) (...) > (*err) (gds_arith_except,
-															0);
+				(*err) (gds_arith_except, 0);
 			else
-				reinterpret_cast < void (*) (...) > (*err) (gds_arith_except,
-															gds_arg_gds,
-															gds_transliteration_failed,
-															0);
-
+				(*err) (gds_arith_except, gds_arg_gds, gds_transliteration_failed, 0);
 		}
 
 		/* Find a CS1 to UNICODE object */
 
-		from_cs = INTL_charset_lookup(tdbb, src_type, NULL);
+		CharSet from_cs = INTL_charset_lookup(tdbb, src_type, NULL);
 		if (from_cs == NULL)
-			reinterpret_cast < void (*) (...) > (*err) (gds_arith_except,
-														gds_arg_gds,
-														gds_text_subtype,
-														gds_arg_number,
-														(SLONG) src_type, 0);
+			(*err)(gds_arith_except, gds_arg_gds, gds_text_subtype, gds_arg_number, 
+				(ISC_STATUS) src_type, 0);
 
 		/* 
 		   ** allocate a temporary buffer that is large enough.
 		 */
-		tmp_buffer = (BYTE *) FB_NEW(*getDefaultMemoryPool()) char[(SLONG) src_len * sizeof(UCS2_CHAR)];
+		tmp_buffer = (BYTE *) FB_NEW(*tdbb->tdbb_default) char[(SLONG) src_len * sizeof(UCS2_CHAR)];
 
-		cs_obj = from_cs->getConvToUnicode();
+		cs_obj = from_cs.getConvToUnicode();
 		assert(cs_obj != NULL);
-		len = cs_obj->convert(tmp_buffer, src_len * 2, src_ptr,
+		len = cs_obj.convert(tmp_buffer, src_len * 2, src_ptr,
 								src_len, &err_code, &err_position);
 		if (err_code && !((err_code == CS_TRUNCATION_ERROR)
 						  && all_spaces(tdbb, src_type, src_ptr, src_len,
 										err_position))) {
 			delete [] tmp_buffer;
 			if (err_code == CS_TRUNCATION_ERROR)
-				reinterpret_cast < void (*) (...) > (*err) (gds_arith_except,
-															0);
+				(*err) (gds_arith_except, 0);
 			else
-				reinterpret_cast < void (*) (...) > (*err) (gds_arith_except,
-															gds_arg_gds,
-															gds_transliteration_failed,
-															0);
+				(*err) (gds_arith_except, gds_arg_gds, gds_transliteration_failed, 0);
 		}
 
 		/* Find a UNICODE to CS2 object */
 
-		to_cs = INTL_charset_lookup(tdbb, dest_type, NULL);
+		CharSet to_cs = INTL_charset_lookup(tdbb, dest_type, NULL);
 		if (to_cs == NULL) {
 			delete [] tmp_buffer;
-			reinterpret_cast < void (*) (...) > (*err) (gds_arith_except,
-														gds_arg_gds,
-														gds_text_subtype,
-														gds_arg_number,
-														(SLONG) dest_type, 0);
+			(*err) (gds_arith_except, gds_arg_gds, gds_text_subtype, gds_arg_number, 
+				   (ISC_STATUS) dest_type, 0);
 		}
-		cs_obj = to_cs->getConvFromUnicode();
+		cs_obj = to_cs.getConvFromUnicode();
 		assert(cs_obj != NULL);
-		len2 = cs_obj->convert(dest_ptr, dest_len, tmp_buffer,
+		len2 = cs_obj.convert(dest_ptr, dest_len, tmp_buffer,
 							len, &err_code, &err_position);
 
 		if (err_code &&
 			!((err_code == CS_TRUNCATION_ERROR) &&
-			  all_spaces(tdbb, CS_UNICODE_UCS2, tmp_buffer, len, err_position))) {
+			  all_spaces(tdbb, CS_UNICODE_UCS2, tmp_buffer, len, err_position))) 
+		{
 			delete [] tmp_buffer;
 			if (err_code == CS_TRUNCATION_ERROR)
-				reinterpret_cast < void (*) (...) > (*err) (gds_arith_except,
-															0);
+				(*err) (gds_arith_except, 0);
 			else
-				reinterpret_cast < void (*) (...) > (*err) (gds_arith_except,
-															gds_arg_gds,
-															gds_transliteration_failed,
-															0);
+				(*err) (gds_arith_except, gds_arg_gds, gds_transliteration_failed, 0);
 		}
 
 		delete [] tmp_buffer;
@@ -545,7 +815,7 @@ USHORT INTL_convert_bytes(TDBB tdbb,
 }
 
 
-CsConvert* INTL_convert_lookup(TDBB tdbb,
+CsConvert INTL_convert_lookup(TDBB tdbb,
 								CHARSET_ID to_cs,
 								CHARSET_ID from_cs)
 {
@@ -560,7 +830,6 @@ CsConvert* INTL_convert_lookup(TDBB tdbb,
  **************************************/
 
 	CharSetContainer *charset;
-	CsConvert* converter;
 	DBB dbb;
 
 	SET_TDBB(tdbb);
@@ -578,58 +847,15 @@ CsConvert* INTL_convert_lookup(TDBB tdbb,
 	assert(from_cs != CS_dynamic);
 	assert(to_cs != CS_dynamic);
 
-	charset = internal_charset_container_lookup(tdbb, from_cs, NULL);
+	charset = CharSetContainer::lookupCharset(tdbb, from_cs, NULL);
 	if (charset == NULL)
-		return (NULL);
+		return NULL;
 
-	if (charset->findConverter(to_cs, &converter))
-		return converter;
-		
-	if (to_cs == CS_UNICODE_UCS2) {
-		converter = charset->getCharSet()->getConvToUnicode();
-	}
-	else if (from_cs == CS_UNICODE_UCS2) {
-		CharSet* charset2;
-		charset2 = INTL_charset_lookup(tdbb, to_cs, NULL);
-		if (charset2 == NULL)
-			return (NULL);
-		converter = charset2->getConvFromUnicode();
-	}
-	else {
-		CsConvertAllocFunc allocFunc;
-		
-		allocFunc = INTL_csconvert_alloc_func(from_cs, to_cs);
-		if (!allocFunc)
-			allocFunc = (CsConvertAllocFunc)
-					search_out_alloc_func("FB_CsConvert_lookup", from_cs, to_cs);
-		if (!allocFunc)
-			allocFunc = (CsConvertAllocFunc)
-//				intl_back_compat_alloc_func_lookup(type_csconvert, from_cs, to_cs);
-				intl_back_compat_alloc_func_lookup(type_csconvert, to_cs, from_cs);
-		if (!allocFunc)
-		{
-			charset->addNullConverter(to_cs);
-			return NULL;
-		}
-			
-		converter = (*allocFunc)(*dbb->dbb_permanent, from_cs, to_cs);
-		if (!converter)
-		{
-			charset->addNullConverter(to_cs);
-			return NULL;
-		}
-	}
-
-	charset->addConverter(converter);
-
-	assert(converter->getFromCS() == from_cs);
-	assert(converter->getToCS() == to_cs);
-
-	return (converter);
+	return charset->lookupConverter(tdbb, to_cs);
 }
 
 
-int INTL_convert_string(dsc* to, const dsc* from, FPTR_VOID err)
+int INTL_convert_string(dsc* to, const dsc* from, FPTR_STATUS err)
 {
 /**************************************
  *
@@ -748,13 +974,12 @@ int INTL_convert_string(dsc* to, const dsc* from, FPTR_VOID err)
 	if (from_fill)
 		/* Make sure remaining characters on From string are spaces */
 		if (!all_spaces(tdbb, from_cs, q, from_fill, 0))
-			reinterpret_cast < void (*) (...) > (*err) (gds_arith_except, 0);
+			(*err) (gds_arith_except, 0);
 
 	return 0;
 }
 
 
-#ifdef DEV_BUILD
 int INTL_data(const dsc* pText)
 {
 /**************************************
@@ -781,9 +1006,7 @@ int INTL_data(const dsc* pText)
 
 	return FALSE;
 }
-#endif
 
-#ifdef DEV_BUILD
 int INTL_data_or_binary(const dsc* pText)
 {
 /**************************************
@@ -798,14 +1021,6 @@ int INTL_data_or_binary(const dsc* pText)
 
 	return (INTL_data(pText) || (pText->dsc_ttype == ttype_binary));
 }
-#else
-// 11 Sent 2002, Nickolay Samofatov
-// Used only in asserts, but let optimizer wipe it out
-int INTL_data_or_binary(const dsc* pText)
-{
-  return TRUE;
-}
-#endif
 
 
 int INTL_defined_type(TDBB tdbb, ISC_STATUS * status, SSHORT t_type)
@@ -828,13 +1043,11 @@ int INTL_defined_type(TDBB tdbb, ISC_STATUS * status, SSHORT t_type)
  *      must return, and not call ERR directly.
  *
  **************************************/
-	TextType* obj;
-
 	SET_TDBB(tdbb);
 
 	if (status)
 		status[0] = gds_arg_end;
-	obj = INTL_texttype_lookup(tdbb, t_type, NULL, status);
+	TextType obj = INTL_texttype_lookup(tdbb, t_type, NULL, status);
 	if (obj == NULL)
 		return FALSE;
 	return TRUE;
@@ -842,7 +1055,7 @@ int INTL_defined_type(TDBB tdbb, ISC_STATUS * status, SSHORT t_type)
 
 
 UCS2_CHAR INTL_getch(TDBB tdbb,
-							TextType* * obj,
+							TextType* obj,
 							SSHORT t_type, UCHAR ** ptr, USHORT * count)
 {
 /**************************************
@@ -864,10 +1077,10 @@ UCS2_CHAR INTL_getch(TDBB tdbb,
 	assert(ptr);
 
 	if (*obj == NULL) {
-		*obj = INTL_texttype_lookup(tdbb, t_type, (FPTR_VOID) ERR_post, NULL);
-		assert(*obj);
+		*obj = INTL_texttype_lookup(tdbb, t_type, ERR_post, NULL);
+		assert(*obj != NULL);
 	}
-	used = (*obj)->mbtowc(&wc, *ptr, *count);
+	used = obj->mbtowc(&wc, *ptr, *count);
 	if (used == -1)
 		return 0;
 	*ptr += used;
@@ -887,19 +1100,6 @@ void INTL_init(TDBB tdbb)
  * Functional description
  *
  **************************************/
-	/*DBB dbb;
-	VEC vector;
-
-	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
-	CHECK_DBB(dbb);
-
-	if (!(vector = dbb->dbb_text_objects)) {
-		vector = dbb->dbb_text_objects = vec::newVector(*dbb->dbb_permanent, 25);
-	}
-	if (!(vector = dbb->dbb_charsets)) {
-		vector = dbb->dbb_charsets = vec::newVector(*dbb->dbb_permanent, 25);
-	}*/
 }
 
 
@@ -918,7 +1118,6 @@ USHORT INTL_key_length(TDBB tdbb, USHORT idxType, USHORT iLength)
  *
  **************************************/
 	USHORT key_length;
-	TextType* obj;
 	SSHORT ttype;
 
 	SET_TDBB(tdbb);
@@ -931,8 +1130,8 @@ USHORT INTL_key_length(TDBB tdbb, USHORT idxType, USHORT iLength)
 	if (ttype >= 0 && ttype <= ttype_last_internal)
 		key_length = iLength;
 	else {
-		obj = INTL_texttype_lookup(tdbb, ttype, (FPTR_VOID) ERR_post, NULL);
-		key_length = obj->key_length(iLength);
+		TextType obj = INTL_texttype_lookup(tdbb, ttype, ERR_post, NULL);
+		key_length = obj.key_length(iLength);
 	}
 
 /* Validity checks on the computed key_length */
@@ -946,7 +1145,7 @@ USHORT INTL_key_length(TDBB tdbb, USHORT idxType, USHORT iLength)
 	return (key_length);
 }
 
-static CharSetContainer *internal_charset_container_lookup(TDBB tdbb, SSHORT parm1, ISC_STATUS * status)
+CharSet INTL_charset_lookup(TDBB tdbb, SSHORT parm1, ISC_STATUS *status)
 {
 /**************************************
  *
@@ -969,90 +1168,15 @@ static CharSetContainer *internal_charset_container_lookup(TDBB tdbb, SSHORT par
  *      NULL            - if error & err NULL
  *
  **************************************/
-	DBB dbb;
-	CharSetContainer *cs = 0;
-	USHORT id;
-
-	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
-
-	id = TTYPE_TO_CHARSET(parm1);
-	if (id == CS_dynamic)
-		id = tdbb->tdbb_attachment->att_charset;
-
-	if (id >= dbb->dbb_charsets.size())
-		dbb->dbb_charsets.resize(id + 10);
-	else
-		cs = dbb->dbb_charsets[id];
-
-	// allocate a new character set object if we couldn't find one.
-	if (!cs)
-	{
-		CharSet *newCs = NULL;
-		CharSetAllocFunc allocFunc;
-		
-		allocFunc = INTL_charset_alloc_func(id);
-		if (!allocFunc)
-			allocFunc = (CharSetAllocFunc)search_out_alloc_func("FB_CharSet_lookup",id,0);
-		if (!allocFunc)
-			allocFunc = (CharSetAllocFunc)
-					intl_back_compat_alloc_func_lookup(type_charset,id,0);
-		if (!allocFunc)
-			return NULL;
-			
-		newCs = (*allocFunc)(*dbb->dbb_permanent, id, 0);
-		if (!newCs)
-			return NULL;
-		
-		cs = FB_NEW(*dbb->dbb_permanent) CharSetContainer(*dbb->dbb_permanent, newCs);
-		if (!cs)
-		{
-			delete newCs;
-			return NULL;
-		}
-		
-		dbb->dbb_charsets[id] = cs;
-	}
-
-	assert(cs != NULL);
-	return cs;
-}
-
-CharSet* INTL_charset_lookup(TDBB tdbb, SSHORT parm1, ISC_STATUS * status)
-{
-/**************************************
- *
- *      I N T L _ c h a r s e t _ l o o k u p
- *
- **************************************
- *
- * Functional description
- *
- *      Lookup a character set descriptor.
- *
- *      First, search the appropriate vector that hangs
- *      off the dbb.  If not found, then call the lower
- *      level lookup routine to allocate it, or return
- *		null if we don't know about the charset.
- *
- * Returns:
- *      *charset        - if no errors;
- *      <never>         - if error & err non NULL
- *      NULL            - if error & err NULL
- *
- **************************************/
-	CharSetContainer *cs;
-
-	cs = internal_charset_container_lookup(tdbb, parm1, status);
-	if (!cs)
-		return NULL;
+	CharSetContainer *cs = CharSetContainer::lookupCharset(tdbb, parm1, status);
+	if (!cs) return NULL;
 	return cs->getCharSet();
 }
 
 
-TextType* INTL_texttype_lookup(TDBB tdbb,
+TextType INTL_texttype_lookup(TDBB tdbb,
 								SSHORT parm1,
-								FPTR_VOID err,
+								FPTR_STATUS err,
 								ISC_STATUS * status)
 {
 /**************************************
@@ -1077,9 +1201,7 @@ TextType* INTL_texttype_lookup(TDBB tdbb,
  *
  **************************************/
 	DBB dbb;
-	TextType *cs_object;
 	CharSetContainer *csc;
-	USHORT id;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -1087,36 +1209,10 @@ TextType* INTL_texttype_lookup(TDBB tdbb,
 	if (parm1 == ttype_dynamic)
 		parm1 = MAP_CHARSET_TO_TTYPE(tdbb->tdbb_attachment->att_charset);
 
-	csc = internal_charset_container_lookup(tdbb, parm1, status);
+	csc = CharSetContainer::lookupCharset(tdbb, parm1, status);
 	if (!csc)
 		return NULL;
-	id = TTYPE_TO_COLLATION(parm1);
-
-	cs_object = csc->collation(id);
-
-	// allocate a new TextType object if needed
-	if (!cs_object)
-	{
-		TextTypeAllocFunc allocFunc;
-		
-		allocFunc = INTL_texttype_alloc_func(parm1);
-		if (!allocFunc)
-			allocFunc = (TextTypeAllocFunc)search_out_alloc_func("FB_texttype_lookup",parm1,0);
-		if (!allocFunc)
-			allocFunc = (TextTypeAllocFunc)
-				intl_back_compat_alloc_func_lookup(type_texttype,parm1,0);
-		if (!allocFunc)
-			return NULL;
-			
-		cs_object = (*allocFunc)(*dbb->dbb_permanent,parm1,0);
-		if (!cs_object)
-			return NULL;
-		
-		csc->setCollation(cs_object, id);
-	}
-
-	assert(cs_object != NULL);
-	return (cs_object);
+	return csc->lookupCollation(tdbb, parm1);
 }
 
 void INTL_pad_spaces(TDBB tdbb, DSC * type, UCHAR * string, USHORT length)
@@ -1167,7 +1263,6 @@ USHORT INTL_string_to_key(TDBB tdbb,
 	USHORT outlen;
 	UCHAR buffer[MAX_KEY];
 	UCHAR pad_char;
-	TextType* obj;
 	SSHORT ttype;
 
 	SET_TDBB(tdbb);
@@ -1206,7 +1301,7 @@ USHORT INTL_string_to_key(TDBB tdbb,
 	USHORT len =
 		CVT_make_string(pString, ttype, &src,
 						reinterpret_cast<vary*>(buffer), sizeof(buffer),
-						(FPTR_VOID) ERR_post);
+						ERR_post);
 
 	char* dest = reinterpret_cast<char*>(pByte->dsc_address);
 	switch (ttype) {
@@ -1225,8 +1320,8 @@ USHORT INTL_string_to_key(TDBB tdbb,
 		outlen = (dest - (const char*)pByte->dsc_address);
 		break;
 	default:
-		obj = INTL_texttype_lookup(tdbb, ttype, (FPTR_VOID) ERR_post, NULL);
-		outlen = obj->string_to_key(len,
+		TextType obj = INTL_texttype_lookup(tdbb, ttype, ERR_post, NULL);
+		outlen = obj.string_to_key(len,
 									reinterpret_cast<unsigned char*>(const_cast<char*>(src)),
 									pByte->dsc_length,
 									reinterpret_cast<unsigned char*>(dest),
@@ -1254,7 +1349,6 @@ int INTL_str_to_upper(TDBB tdbb, DSC * pString)
 	UCHAR *src, *dest;
 	UCHAR buffer[MAX_KEY];
 	USHORT ttype;
-	TextType* obj;
 
 	SET_TDBB(tdbb);
 
@@ -1264,7 +1358,7 @@ int INTL_str_to_upper(TDBB tdbb, DSC * pString)
 	len =
 		CVT_get_string_ptr(pString, &ttype, &src,
 						   reinterpret_cast < vary * >(buffer),
-						   sizeof(buffer), (FPTR_VOID) ERR_post);
+						   sizeof(buffer), ERR_post);
 	switch (ttype) {
 	case ttype_binary:
 		/* cannot uppercase binary strings */
@@ -1281,8 +1375,8 @@ int INTL_str_to_upper(TDBB tdbb, DSC * pString)
 		break;
 
 	default:
-		obj = INTL_texttype_lookup(tdbb, ttype, (FPTR_VOID) ERR_post, NULL);
-		obj->str_to_upper(len, src, len, src);
+		TextType obj = INTL_texttype_lookup(tdbb, ttype, ERR_post, NULL);
+		obj.str_to_upper(len, src, len, src);
 		break;
 	}
 /* 
@@ -1305,8 +1399,6 @@ UCHAR INTL_upper(TDBB tdbb, USHORT ttype, UCHAR ch)
  *      Given an input character, convert it to uppercase 
  *
  **************************************/
-	TextType* obj;
-
 	SET_TDBB(tdbb);
 
 
@@ -1321,8 +1413,8 @@ UCHAR INTL_upper(TDBB tdbb, USHORT ttype, UCHAR ch)
 		return (UPPER7(ch));
 
 	default:
-		obj = INTL_texttype_lookup(tdbb, ttype, (FPTR_VOID) ERR_post, NULL);
-		return obj->to_upper(ch);
+		TextType obj = INTL_texttype_lookup(tdbb, ttype, ERR_post, NULL);
+		return obj.to_upper(ch);
 	}
 
 }
@@ -1350,7 +1442,7 @@ static bool all_spaces(
 
 	assert(ptr != NULL);
 
-	CharSet* obj = INTL_charset_lookup(tdbb, charset, NULL);
+	CharSet obj = INTL_charset_lookup(tdbb, charset, NULL);
 
 	assert(obj != NULL);
 
@@ -1362,11 +1454,11 @@ static bool all_spaces(
 
 // Single-octet character sets are optimized here
 
-	if (obj->getSpaceLength() == 1) {
+	if (obj.getSpaceLength() == 1) {
 		const BYTE* p = &ptr[offset];
 		const BYTE* const end = &ptr[len];
 		while (p < end) {
-			if (*p++ != *obj->getSpace())
+			if (*p++ != *obj.getSpace())
 				return false;
 		}
 		return true;
@@ -1374,10 +1466,10 @@ static bool all_spaces(
 	else {
 		const BYTE* p = &ptr[offset];
 		const BYTE* const end = &ptr[len];
-		const unsigned char* space = obj->getSpace();
-		const unsigned char* const end_space = &space[obj->getSpaceLength()];
+		const unsigned char* space = obj.getSpace();
+		const unsigned char* const end_space = &space[obj.getSpaceLength()];
 		while (p < end) {
-			space = obj->getSpace();
+			space = obj.getSpace();
 			while (p < end && space < end_space) {
 				if (*p++ != *space++)
 					return false;
@@ -1387,23 +1479,7 @@ static bool all_spaces(
 	}
 }
 
-#ifdef NOT_USED_OR_REPLACED
-static USHORT internal_keylength(TextType* obj, USHORT iLength)
-{
-/**************************************
- *
- *      i n t e r n a l _ k e y l e n g t h
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	return (iLength);
-}
-
-static USHORT nc_to_wc(CsConvert* obj, UCS2_CHAR * pWide, USHORT nWide,	/* byte count */
+static USHORT nc_to_wc(CSCONVERT obj, UCS2_CHAR * pWide, USHORT nWide,	/* byte count */
 					   UCHAR * pNarrow, USHORT nNarrow,	/* byte count */
 					   SSHORT * err_code, USHORT * err_position)
 {
@@ -1443,305 +1519,24 @@ static USHORT nc_to_wc(CsConvert* obj, UCS2_CHAR * pWide, USHORT nWide,	/* byte 
 
 	return ((pWide - pStart) * sizeof(*pWide));
 }
-#endif
 
-static void pad_spaces(TDBB tdbb, CHARSET_ID charset, BYTE * ptr, USHORT len)
-{								/* byte count */
+static USHORT wc_to_wc(CSCONVERT obj, WCHAR * pDest, USHORT nDest,	/* byte count */
+					   WCHAR * pSrc, USHORT nSrc,	/* byte count */
+					   SSHORT * err_code, USHORT * err_position)
+{
 /**************************************
  *
- *      p a d  _ s p a c e s
+ *      w c _ t o _ w c 
  *
  **************************************
  *
  * Functional description
- *      Pad a buffer with the character set defined space character.
- *      
- **************************************/
-	CharSet* obj;
-	BYTE *end;
-	const unsigned char *space, *end_space;
-
-	SET_TDBB(tdbb);
-
-	assert(ptr != NULL);
-
-	obj = INTL_charset_lookup(tdbb, charset, NULL);
+ *
+ *************************************/
+	WCHAR *pStart;
+	WCHAR *pStart_src;
 
 	assert(obj != NULL);
-
-/* Single-octet character sets are optimized here */
-	if (obj->getSpaceLength() == 1) {
-		end = &ptr[len];
-		while (ptr < end)
-			*ptr++ = *obj->getSpace();
-	}
-	else {
-		end = &ptr[len];
-		space = obj->getSpace();
-		end_space = &space[obj->getSpaceLength()];
-		while (ptr < end) {
-			space = obj->getSpace();
-			while (ptr < end && space < end_space) {
-				*ptr++ = *space++;
-			}
-			/* This assert is checking that we didn't have a buffer-end
-			 * in the middle of a space character
-			 */
-			assert(!(ptr == end) || (space == end_space));
-		}
-	}
-}
-
-#ifdef NOT_USED_OR_REPLACED
-#ifdef DEV_BUILD
-
-/*
- *      Utility routines designed to be called from the debugger to
- *      print buffers, pointers, etc. which may contain text that
- *      the debugger doesn't consider visible.
- */
-static void dump_hex(UCHAR * p, USHORT len)
-{
-/**************************************
- *
- *      d u m p _ h e x
- *
- **************************************
- *
- * Functional description
- *
- *************************************/
-
-	while (len--)
-		ib_printf("%02X ", *p++);
-	ib_printf("\n");
-}
-
-
-static void dump_latin(UCHAR * p, USHORT len)
-{
-/**************************************
- *
- *      d u m p _ l a t i n
- *
- **************************************
- *
- * Functional description
- *
- *************************************/
-
-	while (len--)
-		if (isprintable(*p))
-			ib_printf("%c", *p++);
-		else
-			ib_printf("\0x%02X", *p++);
-	ib_printf("\n");
-}
-#endif
-#endif
-
-unsigned short TextTypeNC::to_wc(UCS2_CHAR *pWideUC,
-									unsigned short nWide,
-									unsigned char *pNarrow,
-									unsigned short nNarrow,
-									short *err_code,
-									unsigned short *err_position)
-/**************************************
- *
- *      TextTypeNC::to_wc
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-{
-	UCS2_CHAR *pStart, *pWide = pWideUC;
-	UCHAR *pNarrowStart;
-
-	assert((pNarrow != NULL) || (pWide == NULL));
-	assert(err_code != NULL);
-	assert(err_position != NULL);
-
-	*err_code = 0;
-	if (pWide == NULL)
-		return (sizeof(UCS2_CHAR) * nNarrow);	/* all cases */
-	pStart = pWide;
-	pNarrowStart = pNarrow;
-	while (nWide-- > 1 && nNarrow) {
-		/* YYY - Byte order issues here */
-		*pWide++ = (UCS2_CHAR) * pNarrow++;
-		nWide--;
-		nNarrow--;
-	}
-	if (!*err_code && nNarrow) {
-		*err_code = CS_TRUNCATION_ERROR;
-	}
-	*err_position = (pNarrow - pNarrowStart) * sizeof(*pNarrow);
-
-	return ((pWide - pStart) * sizeof(*pWide));
-}
-
-unsigned short TextTypeNC::contains(TDBB a, unsigned char *b,
-									unsigned short c,
-									unsigned char *d,
-									unsigned short e)
-{
-		return EVL_nc_contains(a,this,b,c,d,e);
-}
-
-unsigned short TextTypeNC::like(TDBB a, unsigned char *b,
-								short c,
-								unsigned char *d,
-								short e,
-								short f)
-{
-	return EVL_nc_like(a,this,b,c,d,e,f);
-}
-
-unsigned short TextTypeNC::matches(TDBB a, unsigned char *b, short c,
-								   unsigned char *d, short e)
-{
-	return EVL_nc_matches(a,this,b,c,d,e);
-}
-
-unsigned short TextTypeNC::sleuth_check(TDBB a, unsigned short b,
-										unsigned char *c,
-										unsigned short d,
-										unsigned char *e,
-										unsigned short f)
-{
-	return EVL_nc_sleuth_check(a,this,b,c,d,e,f);
-}
-
-unsigned short TextTypeNC::sleuth_merge(TDBB a, unsigned char *b,
-										unsigned short c,
-										unsigned char *d,
-										unsigned short e,
-										unsigned char *f,
-										unsigned short g)
-{
-	return EVL_nc_sleuth_merge(a,this,b,c,d,e,f,g);
-}
-
-unsigned short TextTypeNC::mbtowc(UCS2_CHAR *wc, unsigned char *ptr, unsigned short count)
-/**************************************
- *
- *      i n t e r n a l _ n c _ m b t o w c 
- *
- **************************************
- *
- * Functional description
- *      Get the next character from the multibyte
- *      input stream.
- *      Narrow character version.
- *  Returns:
- *      Count of bytes consumed from the input stream.
- *
- **************************************/
-{
-	assert(ptr);
-
-	if (count >= 1) {
-		if (wc)
-			*wc = *ptr;
-		return 1;
-	}
-	if (wc)
-		*wc = 0;
-	return (unsigned short)-1;			/* No more characters */
-}
-
-unsigned short TextTypeMB::contains(TDBB a, unsigned char *b,
-									unsigned short c,
-									unsigned char *d,
-									unsigned short e)
-{
-	return EVL_mb_contains(a,this,b,c,d,e);
-}
-
-unsigned short TextTypeMB::like(TDBB a, unsigned char *b,
-								short c,
-								unsigned char *d,
-								short e,
-								short f)
-{
-	return EVL_mb_like(a,this,b,c,d,e,f);
-}
-
-unsigned short TextTypeMB::matches(TDBB a, unsigned char *b, short c,
-								   unsigned char *d, short e)
-{
-	return EVL_mb_matches(a,this,b,c,d,e);
-}
-
-unsigned short TextTypeMB::sleuth_check(TDBB a, unsigned short b,
-										unsigned char *c,
-										unsigned short d,
-										unsigned char *e,
-										unsigned short f)
-{
-	return EVL_mb_sleuth_check(a,this,b,c,d,e,f);
-}
-
-unsigned short TextTypeMB::sleuth_merge(TDBB a, unsigned char *b,
-										unsigned short c,
-										unsigned char *d,
-										unsigned short e,
-										unsigned char *f,
-										unsigned short g)
-{
-	return EVL_mb_sleuth_merge(a,this,b,c,d,e,f,g);
-}
-
-unsigned short TextTypeMB::mbtowc(UCS2_CHAR *wc, unsigned char *ptr, unsigned short count)
-{
-/**************************************
- *
- *      TextTypeMB::mbtowc 
- *
- **************************************
- *
- * Functional description
- *      Get the next character from the multibyte
- *      input stream.
- *      Multibyte version character version.
- *  Returns:
- *      Count of bytes consumed from the input stream.
- *
- **************************************/
-
-	assert(ptr);
-
-	if (count >= 2) {
-		if (wc)
-			*wc = *(UCS2_CHAR *) ptr;
-		return 2;
-	}
-	if (wc)
-		*wc = 0;
-	return (unsigned short)-1;			/* No more characters */
-}
-
-unsigned short TextTypeWC::to_wc(UCS2_CHAR *pDestUC,
-									unsigned short nDest,
-									unsigned char *pSrcUC,
-									unsigned short nSrc,
-									short *err_code,
-									unsigned short *err_position)
-{
-/**************************************
- *
- *      TextTypeWC::to_wc 
- *
- **************************************
- *
- * Functional description
- *
- *************************************/
-	UCS2_CHAR *pStart, *pDest = pDestUC;
-	UCS2_CHAR *pStart_src, *pSrc = (UCS2_CHAR*)pSrcUC;
-	
 	assert((pSrc != NULL) || (pDest == NULL));
 	assert(err_code != NULL);
 	assert(err_position != NULL);
@@ -1765,634 +1560,48 @@ unsigned short TextTypeWC::to_wc(UCS2_CHAR *pDestUC,
 	return ((pDest - pStart) * sizeof(*pDest));
 }
 
-unsigned short TextTypeWC::contains(TDBB a, unsigned char *b,
-									unsigned short c,
-									unsigned char *d,
-									unsigned short e)
-{
-	return EVL_wc_contains(a,this,(UCS2_CHAR*)b,c,(UCS2_CHAR*)d,e);
-}
-
-unsigned short TextTypeWC::like(TDBB a, unsigned char *b,
-								short c,
-								unsigned char *d,
-								short e,
-								short f)
-{
-	return EVL_wc_like(a,this,(UCS2_CHAR*)b,c,(UCS2_CHAR*)d,e,f);
-}
-
-unsigned short TextTypeWC::matches(TDBB a, unsigned char *b, short c,
-								   unsigned char *d, short e)
-{
-	return EVL_wc_matches(a,this,(UCS2_CHAR*)b,c,(UCS2_CHAR*)d,e);
-}
-
-unsigned short TextTypeWC::sleuth_check(TDBB a, unsigned short b,
-										unsigned char *c,
-										unsigned short d,
-										unsigned char *e,
-										unsigned short f)
-{
-	return EVL_wc_sleuth_check(a,this,b,(UCS2_CHAR*)c,d,(UCS2_CHAR*)e,f);
-}
-
-unsigned short TextTypeWC::sleuth_merge(TDBB a, unsigned char *b,
-										unsigned short c,
-										unsigned char *d,
-										unsigned short e,
-										unsigned char *f,
-										unsigned short g)
-{
-	return EVL_wc_sleuth_merge(a,this,(UCS2_CHAR*)b,c,(UCS2_CHAR*)d,e,(UCS2_CHAR*)f,g);
-}
-
-unsigned short TextTypeWC::mbtowc(UCS2_CHAR *wc, unsigned char *ptr, unsigned short count)
-{
+static void pad_spaces(TDBB tdbb, CHARSET_ID charset, BYTE * ptr, USHORT len)
+{								/* byte count */
 /**************************************
  *
- *      TextTypeWC::mbtowc 
+ *      p a d  _ s p a c e s
  *
  **************************************
  *
  * Functional description
- *      Get the next character from the multibyte
- *      input stream.
- *      Wide character version.
- *  Returns:
- *      Count of bytes consumed from the input stream.
- *
+ *      Pad a buffer with the character set defined space character.
+ *      
  **************************************/
+	BYTE *end;
+	const unsigned char *space, *end_space;
 
-	assert(ptr);
+	SET_TDBB(tdbb);
 
-	if (count >= 2) {
-		if (wc)
-			*wc = *(UCS2_CHAR *) ptr;
-		return 2;
+	assert(ptr != NULL);
+
+	CharSet obj = INTL_charset_lookup(tdbb, charset, NULL);
+
+	assert(obj != NULL);
+
+/* Single-octet character sets are optimized here */
+	if (obj.getSpaceLength() == 1) {
+		end = &ptr[len];
+		while (ptr < end)
+			*ptr++ = *obj.getSpace();
 	}
-	if (wc)
-		*wc = 0;
-	return (unsigned short)-1;			/* No more characters */
-}
-
-
-//===============================================================================
-//===============================================================================
-//===============================================================================
-// Code to handle loading international charset plugins
-// in the new c++ OO format.
-
-static const char *INTL_PLUGIN_DIR = "intl";
-static PluginManager intlPlugins;
-static bool loaded = false;
-
-static void* search_out_alloc_func(const char *sym, CHARSET_ID p1, CHARSET_ID p2)
-{
-	typedef void* (*lookupFuncType)(CHARSET_ID,CHARSET_ID);
-	
-	void* result = 0;
-	lookupFuncType lookupFunc;
-	Firebird::string entryPoint(sym);
-	
-	if (!loaded)
-	{
-		intlPlugins.addSearchPath(INTL_PLUGIN_DIR);
-		intlPlugins.addIgnoreModule(INTL_MODULE1);
-		intlPlugins.addIgnoreModule(INTL_MODULE2);
-		intlPlugins.loadAllPlugins();
-		loaded = true;
-	}
-	
-	for(PluginManager::iterator itr = intlPlugins.begin();
-			result == 0 && itr != intlPlugins.end(); ++itr)
-	{
-		lookupFunc = (lookupFuncType)(*itr).lookupSymbol(entryPoint);
-		if (!lookupFunc)
-			continue;
-		result = (*lookupFunc)(p1,p2);
-	}
-	return result;
-}
-
-//===============================================================================
-//===============================================================================
-//===============================================================================
-// This code handles backwards compatibility with the old internation
-// character set plugin format.
-
-// We need all the structure definitions from the old interface
-#define INTL_ENGINE_INTERNAL
-#include "../jrd/intlobj.h"
-
-// storage for the loadable modules
-static PluginManager intlBCPlugins;
-static bool bcLoaded = false;
-
-class CsConvert_BC : public CsConvert
-{
-public:
-	CsConvert_BC(struct csconvert *csv, bool deleteMemory) :
-		CsConvert(
-			csv->csconvert_id,
-			(const char*)csv->csconvert_name,
-			csv->csconvert_from,
-			csv->csconvert_to),
-		cnvt(csv),
-		deleteOnDestruct(deleteMemory)
-	{}
-	virtual ~CsConvert_BC() { if (deleteOnDestruct) delete cnvt; }
-
-	unsigned short convert(unsigned char *a,
-							unsigned short b,
-							unsigned char *c,
-							unsigned short d,
-							short *e,
-							unsigned short *f)
-	{
-		assert(cnvt != NULL);
-		return (*(reinterpret_cast<USHORT (*)(struct csconvert*, UCHAR*,USHORT,
-					UCHAR*,USHORT,short*,USHORT*)>(cnvt->csconvert_convert)))
-						(cnvt,a,b,c,d,e,f);
-	}
-
-private:
-	struct csconvert *cnvt;
-	bool deleteOnDestruct;
-};
-
-class CharSet_BC : public CharSet
-{
-public:
-	CharSet_BC(MemoryPool &p, struct charset *csStruct) :
-		CharSet(
-			csStruct->charset_id,
-			(const char*)csStruct->charset_name,
-			csStruct->charset_min_bytes_per_char,
-			csStruct->charset_max_bytes_per_char,
-			csStruct->charset_space_length,
-			(char*)csStruct->charset_space_character),
-		cs(csStruct)
-	{
-		charset_to_unicode = FB_NEW(p) CsConvert_BC(&cs->charset_to_unicode, false);
-		charset_from_unicode = FB_NEW(p) CsConvert_BC(&cs->charset_from_unicode, false);
-	}
-	
-	~CharSet_BC() { delete cs; }
-private:
-	struct charset *cs;
-};
-
-template <class T>
-class TextType_BC : public T
-{
-public:
-	TextType_BC(struct texttype *textt) :
-			T(
-				textt->texttype_type,
-				(char*)textt->texttype_name,
-				textt->texttype_character_set,
-				textt->texttype_country,
-				textt->texttype_bytes_per_char),
-			tt(textt)
-		{}
-
-	unsigned short key_length(unsigned short a)
-	{
-		assert(tt);
-		assert(tt->texttype_fn_key_length);
-		return (*(reinterpret_cast<USHORT (*)(TEXTTYPE,USHORT)>
-					(tt->texttype_fn_key_length)))(tt,a);
-	}
-	
-	unsigned short string_to_key(unsigned short a,
-									unsigned char *b,
-									unsigned short c,
-									unsigned char *d,
-									unsigned short e)
-	{
-		assert(tt);
-		assert(tt->texttype_fn_string_to_key);
-		return (*(reinterpret_cast
-			<USHORT(*)(TEXTTYPE,USHORT,UCHAR*,USHORT,UCHAR*,USHORT)>
-				(tt->texttype_fn_string_to_key)))
-					(tt,a,b,c,d,e);
-	}
-	
-	short compare(unsigned short a,
-						  unsigned char *b,
-						  unsigned short c,
-						  unsigned char *d)
-	{
-		assert(tt);
-		assert(tt->texttype_fn_compare);
-		return (*(reinterpret_cast
-			<short (*)(TEXTTYPE,USHORT,UCHAR*,USHORT,UCHAR*)>
-				(tt->texttype_fn_compare)))(tt,a,b,c,d);
-	}
-	
-	unsigned short to_upper(unsigned short a)
-	{
-		assert(tt);
-		assert(tt->texttype_fn_to_upper);
-		return (*(reinterpret_cast
-			<short (*)(TEXTTYPE,USHORT)>
-				(tt->texttype_fn_to_upper)))(tt,a);
-	}
-	
-	unsigned short to_lower(unsigned short a)
-	{
-		assert(tt);
-		assert(tt->texttype_fn_to_lower);
-		return (*(reinterpret_cast
-			<USHORT (*)(TEXTTYPE,USHORT)>
-				(tt->texttype_fn_to_lower)))(tt,a);
-	}
-	
-	short str_to_upper(unsigned short a,
-						unsigned char *b,
-						unsigned short c,
-						unsigned char *d)
-	{
-		assert(tt);
-		assert(tt->texttype_fn_str_to_upper);
-		return (*(reinterpret_cast
-					<short (*)(TEXTTYPE,USHORT,UCHAR*,USHORT,UCHAR*)>
-						(tt->texttype_fn_str_to_upper)))
-							(tt,a,b,c,d);
-	}
-	
-	unsigned short to_wc(UCS2_CHAR *a,
-						 unsigned short b,
-						 unsigned char *c,
-						 unsigned short d,
-						 short *e,
-						 unsigned short *f)
-	{
-		assert(tt);
-		assert(tt->texttype_fn_to_wc);
-		return (*(reinterpret_cast
-					<USHORT (*)(TEXTTYPE,UCS2_CHAR*,USHORT,UCHAR*,USHORT,short*,USHORT*)>
-						(tt->texttype_fn_to_wc)))
-							(tt,a,b,c,d,e,f);
-	}
-									
-	unsigned short mbtowc(UCS2_CHAR *a, unsigned char *b, unsigned short c)
-	{
-		assert(tt);
-		if (!tt->texttype_fn_mbtowc)
-			return T::mbtowc(a,b,c);
-		return (*(reinterpret_cast<
-					USHORT (*)(TEXTTYPE, UCS2_CHAR*, UCHAR*, USHORT)>
-						(tt->texttype_fn_mbtowc)))(tt,a,b,c);
-	}
-
-	unsigned short contains(TDBB a, unsigned char *b,
-									unsigned short c,
-									unsigned char *d,
-									unsigned short e)
-	{
-		assert(tt);
-		if (!tt->texttype_fn_contains)
-			return T::contains(a,b,c,d,e);
-		return (*(reinterpret_cast<
-					USHORT (*)(TDBB,TEXTTYPE,UCHAR*,USHORT,UCHAR*,USHORT)>
-						(tt->texttype_fn_contains)))
-							(a,tt,b,c,d,e);
-	}
-	
-	unsigned short like(TDBB tdbb, unsigned char *a,
-							  short b,
-							  unsigned char *c,
-							  short d,
-							  short e)
-	{
-		assert(tt);
-		if (!tt->texttype_fn_like)
-			return T::like(tdbb,a,b,c,d,e);
-		else
-			return (*(reinterpret_cast<
-						USHORT(*)(TDBB,TEXTTYPE,UCHAR*,short,UCHAR*,short,short)>
-							(tt->texttype_fn_like)))(tdbb,tt,a,b,c,d,e);
-	}
-	
-	unsigned short matches(TDBB tdbb, unsigned char *a, short b,
-								   unsigned char *c, short d)
-	{
-		assert(tt);
-		if (!tt->texttype_fn_matches)
-			return T::matches(tdbb,a,b,c,d);
-		return (*(reinterpret_cast<
-					USHORT (*)(TDBB,TEXTTYPE,UCHAR*,short,UCHAR*,short)>
-						(tt->texttype_fn_matches)))
-							(tdbb,tt,a,b,c,d);
-	}
-
-	unsigned short sleuth_check(TDBB tdbb, unsigned short a,
-										unsigned char *b,
-										unsigned short c,
-										unsigned char *d,
-										unsigned short e)
-	{
-		assert(tt);
-		if (!tt->texttype_fn_sleuth_check)
-			return T::sleuth_check(tdbb,a,b,c,d,e);
-		return (*(reinterpret_cast<
-					USHORT(*)(TDBB,TEXTTYPE,USHORT,UCHAR*,USHORT,UCHAR*,USHORT)>
-						(tt->texttype_fn_sleuth_check)))
-							(tdbb,tt,a,b,c,d,e);
-	}
-	
-	unsigned short sleuth_merge(TDBB tdbb, unsigned char *a,
-										unsigned short b,
-										unsigned char *c,
-										unsigned short d,
-										unsigned char *e,
-										unsigned short f)
-	{
-		assert(tt);
-		if (!tt->texttype_fn_sleuth_merge)
-			return T::sleuth_merge(tdbb,a,b,c,d,e,f);
-		return (*(reinterpret_cast<
-					USHORT(*)(TDBB,TEXTTYPE,UCHAR*,USHORT,UCHAR*,USHORT,UCHAR*,USHORT)>
-						(tt->texttype_fn_sleuth_merge)))
-							(tdbb,tt,a,b,c,d,e,f);
-	}
-
-private:
-	struct texttype *tt;
-};
-
-static void* intl_back_compat_obj_init_lookup(
-						USHORT type,
-						SSHORT parm1,
-						SSHORT parm2)
-{
-/**************************************
- *
- *      intl_back_compat_alloc_func_lookup
- *
- **************************************
- *
- * Functional description
- *      Find the allocator function for the requested international
- *		character set using the obsolete c/IB/FB 6.0 interface.
- *      Search algorithm is:
- *              Look in intllib
- *              Look in intllib2
- *              Look for a normal UDF entry
- *              Abort with an error.
- *
- * Returns:
- *      FALSE   - no errors
- *      TRUE    - error occurred, and parameter <err> was NULL;
- *      <never> - error occurred, and parameter <err> non-NULL;
- *
- *
- ***************************************/
-	USHORT (*function)();
-
-	if (!bcLoaded)
-	{
-		intlBCPlugins.addSearchPath(INTL_PLUGIN_DIR);
-		bcLoaded = true;
-	}
-
-	PluginManager::Plugin intlMod1 = intlBCPlugins.findPlugin(INTL_MODULE1);
-	PluginManager::Plugin intlMod2 = intlBCPlugins.findPlugin(INTL_MODULE2);
-
-	USHORT(*lookup_fn) (USHORT, FPTR_SHORT *, SSHORT, SSHORT);
-
-	INTL_TRACE(("INTL: looking for obj %d ttype %d\n", objtype, parm1));
-
-	function = NULL;
-
-#ifdef INTL_BUILTIN
-	if (LD_lookup(type, &function, parm1, parm2) != 0)
-		function = NULL;
-#else
-	/* Look for an InterBase supplied object to implement the text type */
-	/* The flu.c uses searchpath which expects a file name not a path */
-	INTL_TRACE(("INTL: trying %s %s\n", INTL_MODULE1, INTL_LOOKUP_ENTRY1));
-	Firebird::string tempStr(INTL_LOOKUP_ENTRY1);
-	if ( intlMod1 && (lookup_fn = (USHORT(*)(USHORT, USHORT(**)(), short, short))
-		(intlMod1.lookupSymbol(tempStr))) ) {
-		INTL_TRACE(("INTL: calling lookup %s %s\n", INTL_MODULE1,
-					INTL_LOOKUP_ENTRY1));
-		if ((*lookup_fn) (type, &function, parm1, parm2) != 0) {
-			function = NULL;
-		}
-		else
-		{
-			return (void*) function;
+	else {
+		end = &ptr[len];
+		space = obj.getSpace();
+		end_space = &space[obj.getSpaceLength()];
+		while (ptr < end) {
+			space = obj.getSpace();
+			while (ptr < end && space < end_space) {
+				*ptr++ = *space++;
+			}
+			/* This assert is checking that we didn't have a buffer-end
+			 * in the middle of a space character
+			 */
+			assert(!(ptr == end) || (space == end_space));
 		}
 	}
-#endif
-
-/* Still not found, check the set of supplimental international objects */
-#ifdef INTL_BUILTIN
-	if (LD2_lookup(type, &function, parm1, parm2) != 0)
-		function = NULL
-#else
-	/* Look for an InterBase supplied object to implement the text type */
-	/* The flu.c uses searchpath which expects a file name not a path */
-	INTL_TRACE(("INTL: trying %s %s\n", INTL_MODULE2, INTL_LOOKUP_ENTRY2));
-	tempStr = INTL_LOOKUP_ENTRY2;
-	if ( intlMod2 && (lookup_fn = (USHORT(*)(USHORT, USHORT(**)(), short, short))
-		(intlMod2.lookupSymbol(tempStr))) ) {
-		INTL_TRACE(("INTL: calling lookup %s %s\n", INTL_MODULE2,
-					INTL_LOOKUP_ENTRY2));
-		if ((*lookup_fn) (type, &function, parm1, parm2) != 0) {
-			function = NULL;
-		}
-		else
-		{
-			return (void*) function;
-		}
-	}
-#endif
-
-/* Still not found, check if there is a UDF in the database defined the right way */
-	FUN function_block;
-	USHORT argcount;
-	char entry[48];
-
-/* EKU: need a replacement for snprintf for systems like SINIX-Z!!! */
-	switch (type) {
-		case type_texttype:
-#ifdef HAVE_SNPRINTF
-			snprintf(entry, sizeof(entry), INTL_USER_ENTRY, parm1);
-#else
-			sprintf(entry, INTL_USER_ENTRY, parm1);
-#endif
-			argcount = 2;
-			break;
-		case type_charset:
-#ifdef HAVE_SNPRINTF
-			snprintf(entry, sizeof(entry), "USER_CHARSET_%03d", parm1);
-#else
-			sprintf(entry, "USER_CHARSET_%03d", parm1);
-#endif
-			argcount = 2;
-			break;
-		case type_csconvert:
-#ifdef HAVE_SNPRINTF
-			snprintf(entry, sizeof(entry), "USER_TRANSLATE_%03d_%03d", parm1,
-					parm2);
-#else
-			sprintf(entry, "USER_TRANSLATE_%03d_%03d", parm1,
-					parm2);
-#endif
-			argcount = 3;
-			break;
-		default:
-			BUGCHECK(1);
-			break;
-	}
-	INTL_TRACE(("INTL: trying user fn %s\n", entry));
-	if ( (function_block = FUN_lookup_function((TEXT*)entry, false)) ) {
-		INTL_TRACE(("INTL: found a user fn, validating\n"));
-		if ((function_block->fun_count == argcount) &&
-			(function_block->fun_args == argcount) &&
-			(function_block->fun_return_arg == 0) &&
-			(function_block->fun_entrypoint != NULL) &&
-			(function_block->fun_rpt[0].fun_mechanism == FUN_value) &&
-			(function_block->fun_rpt[0].fun_desc.dsc_dtype == dtype_short)
-			&& (function_block->fun_rpt[1].fun_desc.dsc_dtype ==
-				dtype_short)
-			&& (function_block->fun_rpt[argcount - 1].
-				fun_desc.dsc_dtype == dtype_short)
-			&& (function_block->fun_rpt[argcount].fun_mechanism ==
-				FUN_reference)
-			&& (function_block->fun_rpt[argcount].fun_desc.dsc_dtype ==
-				dtype_text))
-		{
-			function = (FPTR_SHORT) function_block->fun_entrypoint;
-			return (void*) function;
-		}
-	}
-	return NULL;
 }
-
-static CharSet *BC_CharSetAllocFunc(MemoryPool &p, SSHORT cs_id, SSHORT unused)
-{
-	typedef USHORT (*CSInitFunc)(CHARSET, SSHORT, SSHORT);
-	CSInitFunc csInitFunc;
-	
-	csInitFunc = (CSInitFunc) intl_back_compat_obj_init_lookup(type_charset, cs_id, unused);
-	assert(csInitFunc != 0);
-	CHARSET cs = FB_NEW(p) charset;
-	memset(cs, 0, sizeof(charset));
-	
-	if (0 != (*csInitFunc)(cs, cs_id, unused))
-	{
-		delete cs;
-		return 0;
-	}
-	
-	CharSet *result = 0;
-	try
-	{
-		result = FB_NEW(p) CharSet_BC(p, cs);
-	}
-	catch(std::exception&)
-	{
-		delete cs;
-		throw;
-	}
-	
-	return result;
-}
-
-static CsConvert *BC_CsConvertAllocFunc(MemoryPool &p, SSHORT from_id, SSHORT to_id)
-{
-	typedef USHORT (*CVTInitFunc)(CSCONVERT, SSHORT, SSHORT);
-	CVTInitFunc cvtInitFunc;
-	
-	//cvtInitFunc = (CVTInitFunc) intl_back_compat_obj_init_lookup(type_csconvert, from_id, to_id);
-	cvtInitFunc = (CVTInitFunc) intl_back_compat_obj_init_lookup(type_csconvert, to_id, from_id);
-	assert(cvtInitFunc != 0);
-	CSCONVERT cvt = FB_NEW(p) csconvert;
-	memset(cvt, 0, sizeof(csconvert));
-	
-	//if (0 != (*cvtInitFunc)(cvt, from_id, to_id))
-	if (0 != (*cvtInitFunc)(cvt, to_id, from_id))
-	{
-		delete cvt;
-		return 0;
-	}
-	
-	CsConvert *result = 0;
-	try
-	{
-		result = FB_NEW(p) CsConvert_BC(cvt, true);
-	}
-	catch(std::exception&)
-	{
-		delete cvt;
-		throw;
-	}
-	
-	return result;
-}
-
-static TextType *BC_TextTypeAllocFunc(MemoryPool &p, SSHORT tt_id, SSHORT unused)
-{
-	typedef USHORT (*TTInitFunc)(TEXTTYPE, SSHORT, SSHORT);
-	TTInitFunc ttInitFunc;
-	
-	ttInitFunc = (TTInitFunc) intl_back_compat_obj_init_lookup(type_texttype, tt_id, unused);
-	assert(ttInitFunc != 0);
-	TEXTTYPE tt = FB_NEW(p) texttype;
-	memset(tt, 0, sizeof(texttype));
-	
-	if (0 != (*ttInitFunc)(tt, tt_id, unused))
-	{
-		delete tt;
-		return 0;
-	}
-	
-	TextType *result = 0;
-	try
-	{
-		if (tt->texttype_bytes_per_char == 1 && tt->texttype_fn_to_wc == NULL)
-			result = FB_NEW(p) TextType_BC<TextTypeNC>(tt);
-		else if (tt->texttype_bytes_per_char == 2 && tt->texttype_fn_to_wc == NULL)
-			result = FB_NEW(p) TextType_BC<TextTypeWC>(tt);
-		else if (tt->texttype_fn_to_wc != NULL)
-			result = FB_NEW(p) TextType_BC<TextTypeMB>(tt);
-		else
-			BUGCHECK(1);
-	}
-	catch(std::exception&)
-	{
-		delete tt;
-		throw;
-	}
-	
-	return result;
-}
-
-static void* intl_back_compat_alloc_func_lookup(
-						USHORT type,
-						CHARSET_ID parm1,
-						CHARSET_ID parm2)
-{
-	if (NULL != intl_back_compat_obj_init_lookup(type,parm1,parm2))
-	{
-		switch(type)
-		{
-			case type_charset:
-				return (void*)BC_CharSetAllocFunc;
-			case type_texttype:
-				return (void*)BC_TextTypeAllocFunc;
-			case type_csconvert:
-				return (void*)BC_CsConvertAllocFunc;
-			default:
-				BUGCHECK(1);
-		}
-	}
-	
-	return NULL;
-}
-
