@@ -3650,6 +3650,7 @@ static void form_rivers(thread_db*		tdbb,
 
 		// at this point we must have a retrieval node, so put
 		// the stream into the river.
+		fb_assert(plan_node->nod_type == nod_retrieve);
 		temp[0]++;
 		const jrd_nod* relation_node = plan_node->nod_arg[e_retrieve_relation];
 		temp[temp[0]] = (UCHAR)(IPTR) relation_node->nod_arg[e_rel_stream];
@@ -4107,7 +4108,8 @@ static void gen_join(thread_db*		tdbb,
 
 	if (dbb->dbb_ods_version >= ODS_VERSION11) {
 		// For ODS11 and higher databases we can use new calculations
-		if (plan_clause) {
+		if (plan_clause && streams[0] > 1) {
+			// this routine expects a join/merge
 			form_rivers(tdbb, opt, streams, river_stack, sort_clause,
 						project_clause, plan_clause);
 			return;
