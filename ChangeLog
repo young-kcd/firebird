@@ -1,3 +1,18 @@
+2005-01-28 17:08  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/SS/prototype.in
+	(1.1.2.5):
+	
+	small fixes
+
+2005-01-28 14:43  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/: CS/pkginfo.in
+	(1.1.2.3), CS/prototype.in (1.1.2.6), SS/pkginfo.in (1.1.2.2),
+	SS/prototype.in (1.1.2.4):
+	
+	Add libgdsmt.so link for combability with 1.0
+
 2005-01-26 15:50  kkuznetsov
 
 	* firebird2/: configure.in (1.141.2.34),
