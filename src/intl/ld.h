@@ -107,17 +107,6 @@
 #define LD_REV                    1
 
 /*
-// default LD resource DLL name
-*/
-
-
-#ifdef QLD
-#define LD_LIBRARY                "QLD.DLL"
-#else
-#define LD_LIBRARY                "LD01.DLL"
-#endif
-
-/*
 //-----------------------------------------------------------------
 // DATA TYPE DEFINITIONS
 //-----------------------------------------------------------------
@@ -195,14 +184,9 @@ typedef UINT8 far *pUINT8;
 typedef INT32 far *pINT32;
 typedef UINT32 far *pUINT32;
 typedef BOOL far *pBOOL;
-
-#ifndef PIRANHA_CREATE_RESTRUCTURE
-
 typedef INT16 far *pINT16;
 typedef UINT16 far *pUINT16;
 typedef UINT16 PDXResult;
-
-#endif
 
 #define hFILE  INT16
 #define phFILE pINT16
@@ -591,9 +575,12 @@ struct CompressPair {
 // VCS AREA
 //-----------------------------------------------------------------
 
-//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.14 2003-02-07 15:07:17 brodsom Exp $
+//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.15 2003-02-10 19:25:14 brodsom Exp $
 
 //	$Log: not supported by cvs2svn $
+//	Revision 1.14  2003/02/07 15:07:17  brodsom
+//	Remove MS_DOS and __LDSYS_H
+//	
 //	Revision 1.13  2003/01/18 19:50:16  dimitr
 //	Cleanup.
 //	
