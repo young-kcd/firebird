@@ -930,7 +930,7 @@ typedef struct tdbb
 #ifdef WIN_NT
 	void*		tdbb_sigsetjmp;
 #else
-    jmp_buf tdbb_sigsetjmp;
+    sigjmp_buf tdbb_sigsetjmp;
 #endif
 } *TDBB;
 
