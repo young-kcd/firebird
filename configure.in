@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.110 2003-01-29 15:29:01 skidder Exp $
+dnl $Id: configure.in,v 1.111 2003-02-10 05:42:19 aafemt Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -100,7 +100,7 @@ case "$target" in
     MAKEFILE_PREFIX=mingw
     PLATFORM=win32
     AC_DEFINE(WIN_NT)
-    LOCK_MANAGER_FLG=Y
+    LOCK_MANAGER_FLG=N
     EDITLINE_FLG=N
     ;;
 
@@ -287,6 +287,7 @@ AC_CHECK_HEADERS(rpc/xdr.h,,,[#include <rpc/rpc.h>])
 AC_CHECK_HEADERS(aio.h)
 AC_CHECK_HEADERS(mntent.h mnttab.h sys/mntent.h sys/mnttab.h)
 AC_CHECK_HEADERS(sys/ipc.h sys/file.h)
+AC_CHECK_HEADERS(winsock2.h)
 
 dnl Check for libraries
 AC_CHECK_LIB(dl, main)
@@ -329,13 +330,8 @@ if test "$ac_cv_func_gettimeofday" = "yes"; then
   esac
 fi
 AC_CHECK_FUNCS(time times)
-AC_CHECK_FUNCS(gethostname connect)
-if test "$ac_cv_func_gethostname" = "no"; then
-  AC_CHECK_LIB(nsl, gethostname, XE_APPEND(-lnsl,LIBS))
-fi
-if test "$ac_cv_func_connect" = "no"; then
-  AC_CHECK_LIB(socket, connect, XE_APPEND(-lsocket,LIBS),, $LIBS)
-fi  
+AC_SEARCH_LIBS(gethostname,nsl)
+AC_SEARCH_LIBS(connect,socket)
 AC_CHECK_FUNCS(strcasecmp stricmp)
 if test "$ac_cv_func_strcasecmp" = "no" -a "$ac_cv_func_stricmp" = "no"; then
   dnl EKU: On SINIX-Z strcasecmp is in libresolv.
@@ -344,14 +340,7 @@ if test "$ac_cv_func_strcasecmp" = "no" -a "$ac_cv_func_stricmp" = "no"; then
      unset ac_cv_func_strcasecmp
      AC_CHECK_FUNCS(strcasecmp)],, $LIBS)
 fi
-AC_CHECK_FUNCS(dirname)
-if test "$ac_cv_func_dirname" = "no"; then
-  dnl EKU: On SINIX-Z dirname is in libgen.
-  AC_CHECK_LIB(gen, dirname,
-    [XE_APPEND(-lgen,LIBS)
-     unset ac_cv_func_dirname
-     AC_CHECK_FUNCS(dirname)],, $LIBS)
-fi
+AC_SEARCH_LIBS(dirname,gen)
 AC_CHECK_FUNCS(sigaction setitimer)
 AC_CHECK_FUNCS(snprintf)
 AC_FUNC_MMAP 
@@ -381,11 +370,10 @@ AC_C_BIGENDIAN
 AC_C_CONST dnl EKU: we should replace the CONST define in the source!!!
 AC_C_VOLATILE 
 AC_TYPE_SIGNAL
-AC_CHECK_TYPE(socklen_t,int)
 AC_SYS_LARGEFILE
 AC_CHECK_SIZEOF(void*)
 AC_CHECK_SIZEOF(long)
-AC_CHECK_TYPE(semun)
+AC_CHECK_TYPES([socklen_t,semun])
 AC_CHECK_TYPES([struct XDR::xdr_ops],,,[#include <rpc/rpc.h> 
 #include <rpc/xdr.h>])
 AC_CHECK_TYPES([struct xdr_ops],,,[#include <rpc/rpc.h> 
@@ -464,7 +452,7 @@ case "$PLATFORM" in
       [FB_PIPE_NAME=${withval}])
     AC_DEFINE_UNQUOTED(FB_PIPE_NAME,"$FB_PIPE_NAME")
     AC_SUBST(FB_PIPE_NAME)
-    XE_PREPEND(-lversion,LIBS)
+    XE_PREPEND(-lversion -lmpr -lws2_32,LIBS)
     ;;
 
   *)

@@ -118,7 +118,7 @@
 
 
 /* Types */
-#undef socklen_t
+#undef HAVE_SOCKLEN_T
 
 /* gettimeofday accepts second (timezone) argument */
 #undef GETTIMEOFDAY_RETURNS_TIMEZONE

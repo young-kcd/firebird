@@ -1,4 +1,4 @@
-#ident "$Id: config.h.in,v 1.66 2003-01-16 16:28:28 skidder Exp $"
+#ident "$Id: config.h.in,v 1.67 2003-02-10 05:42:20 aafemt Exp $"
 
  /*
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
@@ -97,7 +97,7 @@
 
 
 /* Types */
-#undef socklen_t
+#undef HAVE_SOCKLEN_T
 
 /* gettimeofday accepts second (timezone) argument */
 #undef GETTIMEOFDAY_RETURNS_TIMEZONE
