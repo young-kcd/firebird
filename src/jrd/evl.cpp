@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.103 2004-08-21 09:29:45 robocop Exp $ 
+  * $Id: evl.cpp,v 1.104 2004-09-22 07:36:55 dimitr Exp $ 
  */
 
 /*
@@ -4858,9 +4858,8 @@ static bool string_function(
 }
 
 
-static dsc* substring(
-					  thread_db* tdbb,
-					  impure_value* impure, dsc* value, SLONG offset_arg, SLONG length_arg)
+static dsc* substring(thread_db* tdbb, impure_value* impure,
+					  dsc* value, SLONG offset_arg, SLONG length_arg)
 {
 /**************************************
  *
@@ -4877,11 +4876,11 @@ static dsc* substring(
 	desc.dsc_dtype = dtype_text;
 	desc.dsc_scale = 0;
 
-	if (offset_arg < 0 || offset_arg > MAX_USHORT)
+	if (offset_arg < 0 || offset_arg > MAX_COLUMN_SIZE)
 	{
 		ERR_post(isc_bad_substring_param, isc_arg_string, "offset", 0);
 	}
-	else if (length_arg < 0 || length_arg > MAX_USHORT)
+	else if (length_arg < 0 || length_arg > MAX_COLUMN_SIZE)
 	{
 		ERR_post(isc_bad_substring_param, isc_arg_string, "length", 0);
 	}
