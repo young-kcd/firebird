@@ -260,7 +260,9 @@ static void process_start_dump(CNCT, LTJW *);
 static void process_wal_file(CNCT, LTJW *);
 static void put_line(CNCT, SSHORT, const TEXT*, const TEXT*, const TEXT*);
 static void put_message(SSHORT, DJB);
+#ifdef WIN_NT
 static void read_asynchronous(CNCT);
+#endif
 static void report_status(CNCT);
 static void restart_all_backups(int);
 static void restart_backup(DJB, int);

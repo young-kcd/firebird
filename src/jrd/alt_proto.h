@@ -105,17 +105,13 @@ void		API_ROUTINE gds__decode_date(const GDS_QUAD*, void*);
 void		API_ROUTINE gds__encode_date(const void*, GDS_QUAD*);
 int			API_ROUTINE gds__version(FRBRD**, void(*) (), void*);
 void		API_ROUTINE gds__set_debug(int);
-SLONG		API_ROUTINE gds__vax_integer(const UCHAR*, SSHORT);
-
 //
-// gds_ functions which don't use isc_ functions (the isc_ ones are in utl.cpp)
+// isc_ functions which are not mapped to gds_ functions (the gds_ ones are in utl.cpp)
 // Should be analyzed
 //
-SLONG		API_ROUTINE gds__event_block(SCHAR **, SCHAR **, USHORT, ...);
-USHORT		API_ROUTINE gds__event_block_a(SCHAR **, SCHAR **, SSHORT, SCHAR **);
-void		API_ROUTINE gds__event_block_s(SCHAR **, SCHAR **, SSHORT,
-										   SCHAR **, SSHORT *);
-
+SLONG		API_ROUTINE_VARARG isc_event_block(SCHAR**, SCHAR**, USHORT, ...);
+USHORT		API_ROUTINE isc_event_block_a(SCHAR**, SCHAR**, USHORT, TEXT**);
+void		API_ROUTINE isc_event_block_s(SCHAR**, SCHAR**, USHORT, TEXT**, USHORT*);
 //
 // isc functions using gds_ functions (gds_ functions defined in gds.cpp)
 //
@@ -128,9 +124,9 @@ SLONG		API_ROUTINE isc_sqlcode(const ISC_STATUS*);
 void		API_ROUTINE isc_sqlcode_s(const ISC_STATUS*, ULONG*);
 void		API_ROUTINE isc_vtof(const SCHAR*, SCHAR*, USHORT);
 void		API_ROUTINE isc_vtov(const SCHAR*, SCHAR*, SSHORT);
+SLONG		API_ROUTINE isc_vax_integer(const SCHAR*, SSHORT);
 SLONG		API_ROUTINE isc_interprete(SCHAR*, ISC_STATUS**);
 SLONG		API_ROUTINE isc_interprete_cpp(SCHAR* const, const ISC_STATUS**);
-
 //
 // isc_ functions with no gds_ equivalence
 //

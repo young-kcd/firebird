@@ -506,7 +506,7 @@ SLONG EVENT_que(ISC_STATUS * status_vector,
 		ptr = &interest->rint_next;
 		ptr_offset = REL_PTR(ptr);
 		interest->rint_request = request_offset;
-		interest->rint_count = isc_vax_integer(reinterpret_cast<const SCHAR*>(p), 4);
+		interest->rint_count = gds__vax_integer(p, 4);
 		p += 4;
 		if (interest->rint_count <= event->evnt_count)
 			flag = TRUE;

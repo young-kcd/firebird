@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.39 2003-11-11 12:14:06 brodsom Exp $
+$Id: why.cpp,v 1.40 2003-11-16 01:44:51 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -4960,7 +4960,7 @@ ISC_STATUS API_ROUTINE GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 			ptr = buffer;
 			end = buffer + buffer_len;
 			while (ptr < end && *ptr == isc_info_tra_id)
-				ptr += 3 + isc_vax_integer(reinterpret_cast<const SCHAR*>(ptr + 1), 2);
+				ptr += 3 + gds__vax_integer(ptr + 1, 2);
 
 			if (ptr >= end || *ptr != isc_info_end) {
 				RETURN_SUCCESS;
@@ -5513,7 +5513,7 @@ static ISC_STATUS get_transaction_info(ISC_STATUS * status,
 	q = buffer + 3;
 	*p++ = TDR_TRANSACTION_ID;
 
-	length = (USHORT)isc_vax_integer(reinterpret_cast<SCHAR*>(buffer + 1), 2);
+	length = (USHORT)gds__vax_integer(reinterpret_cast<UCHAR*>(buffer + 1), 2);
 	*p++ = length;
 	if (length) {
 		do {

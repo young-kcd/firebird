@@ -1678,8 +1678,10 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 			}
 			else if (item == isc_info_sql_sqlda_start) {
 				length = *items++;
-				first_index = static_cast<USHORT>(isc_vax_integer(reinterpret_cast
-													<const SCHAR*>(items), length));
+				first_index =
+					static_cast<USHORT>
+					(gds__vax_integer
+				 	(items, length));
 				items += length;
 			}
 			else if (item == isc_info_sql_batch_fetch) {
@@ -3708,28 +3710,33 @@ static USHORT get_request_info(
 	UCHAR p;
 	while ((p = *data++) != isc_info_end) {
 		const USHORT data_length =
-			static_cast <USHORT>(isc_vax_integer(data, 2));
+			static_cast < USHORT >
+			(gds__vax_integer(reinterpret_cast<UCHAR*>(data), 2));
 		data += 2;
 
 		switch (p) {
 		case isc_info_req_update_count:
 			request->req_updates =
-				isc_vax_integer(data, data_length);
+				gds__vax_integer(reinterpret_cast<UCHAR*>(data),
+								 data_length);
 			break;
 
 		case isc_info_req_delete_count:
 			request->req_deletes =
-				isc_vax_integer(data, data_length);
+				gds__vax_integer(reinterpret_cast<UCHAR*>(data),
+								 data_length);
 			break;
 
 		case isc_info_req_select_count:
 			request->req_selects =
-				isc_vax_integer(data, data_length);
+				gds__vax_integer(reinterpret_cast<UCHAR*>(data),
+								 data_length);
 			break;
 
 		case isc_info_req_insert_count:
 			request->req_inserts =
-				isc_vax_integer(data, data_length);
+				gds__vax_integer(reinterpret_cast<UCHAR*>(data),
+								 data_length);
 			break;
 
 		default:
@@ -4159,7 +4166,9 @@ static DBB init(FRBRD** db_handle)
 	UCHAR p;
 	while ((p = *data++) != isc_info_end)
 	{
-		SSHORT l = static_cast<SSHORT>(isc_vax_integer(data, 2));
+		SSHORT l =
+			static_cast<SSHORT>(
+				gds__vax_integer(reinterpret_cast<UCHAR*>(data), 2));
 		data += 2;
 
 		switch (p)
@@ -4169,7 +4178,7 @@ static DBB init(FRBRD** db_handle)
 			break;
 
 		case isc_info_ods_version:
-			if (isc_vax_integer(data, l) > 7)
+			if (gds__vax_integer(reinterpret_cast<UCHAR*>(data), l) > 7)
 				database->dbb_flags &= ~DBB_v3;
 			break;
 
@@ -4203,7 +4212,7 @@ static DBB init(FRBRD** db_handle)
 		case frb_info_att_charset:
 			database->dbb_att_charset =
 				static_cast<short>(
-					isc_vax_integer(data, 2));
+					gds__vax_integer(reinterpret_cast<UCHAR*>(data), 2));
 			break;
 
 		default:

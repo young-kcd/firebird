@@ -615,7 +615,7 @@ SLONG DYN_get_number(const UCHAR** ptr)
 	length |= (*p++) << 8;
 	*ptr = p + length;
 
-	return isc_vax_integer(reinterpret_cast<const SCHAR*>(p), length);
+	return gds__vax_integer(p, length);
 }
 
 

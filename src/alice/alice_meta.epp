@@ -27,7 +27,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: alice_meta.epp,v 1.25 2003-11-11 12:05:30 brodsom Exp $
+ *	$Id: alice_meta.epp,v 1.26 2003-11-16 01:43:07 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -343,7 +343,7 @@ static TDR get_description(SLONG blob_id[2])
 
 		case TDR_TRANSACTION_ID:
 			id_length = *p++;
-			id = isc_vax_integer(reinterpret_cast<SCHAR*>(p), id_length);
+			id = gds__vax_integer((UCHAR*) p, id_length);
 			p += id_length;
 			if (!trans)
 				trans = ptr = FB_NEW(*tdgbl->ALICE_default_pool) tdr;

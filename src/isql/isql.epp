@@ -6437,8 +6437,8 @@ static int process_statement(TEXT* string,
 	}
 	else {
 		if (info_buffer [0] == isc_info_sql_stmt_type) {
-			l = isc_vax_integer(info_buffer + 1, 2);
-			statement_type = isc_vax_integer(info_buffer + 3, l);
+			l = gds__vax_integer((UCHAR*) info_buffer + 1, 2);
+			statement_type = gds__vax_integer( (UCHAR*) info_buffer + 3, l);
 		}
 	}
 
@@ -6531,7 +6531,7 @@ static int process_statement(TEXT* string,
 			ISQL_errmsg(isc_status);
 		}
 		else if (plan_buffer[0] == isc_info_sql_get_plan) {
-			l = isc_vax_integer(plan_buffer + 1, 2);
+			l = gds__vax_integer((UCHAR*) plan_buffer + 1, 2);
 			sprintf(Print_buffer, "%.*s%s", l, plan_buffer + 3, NEWLINE);
 			ISQL_printf(Diag, Print_buffer);
 		}
@@ -6613,9 +6613,9 @@ static int process_statement(TEXT* string,
 
 				for (p = count_buffer + 3; *p != isc_info_end;) {
 					count_is = *p++;
-					l = isc_vax_integer(p, 2);
+					l = gds__vax_integer((UCHAR*) p, 2);
 					p += 2;
-					count = isc_vax_integer(p, l);
+					count = gds__vax_integer((UCHAR*) p, l);
 					p += l;
 					if (count_is == count_type)
 						break;

@@ -712,9 +712,9 @@ SINT64 API_ROUTINE isc_portable_integer(const UCHAR* ptr, SSHORT length)
  *
  * **Note**
  *
- *   This function is similar to isc_vax_integer() in functionality.
+ *   This function is similar to gds__vax_integer() in functionality.
  *   The difference is in the return type. Changed from SLONG to SINT64
- *   Since isc_vax_integer() is a public API routine, it could not be
+ *   Since gds__vax_integer() is a public API routine, it could not be
  *   changed. This function has been made public so gbak can use it.
  *
  **************************************/
@@ -2002,32 +2002,25 @@ USHORT API_ROUTINE gds__parse_bpb2(USHORT bpb_length,
 		length = *p++;
 		switch (op) {
 		case gds_bpb_source_type:
-			*source = (USHORT) isc_vax_integer(reinterpret_cast<const SCHAR*>(p),
-												length);
+			*source = (USHORT) gds__vax_integer(p, length);
 			break;
 
 		case gds_bpb_target_type:
-			*target = (USHORT) isc_vax_integer(reinterpret_cast<const SCHAR*>(p),
-												length);
+			*target = (USHORT) gds__vax_integer(p, length);
 			break;
 
 		case gds_bpb_type:
-			type = (USHORT) isc_vax_integer(reinterpret_cast<const SCHAR*>(p),
-											length);
+			type = (USHORT) gds__vax_integer(p, length);
 			break;
 
 		case gds_bpb_source_interp:
 			if (source_interp)
-				*source_interp = (USHORT) isc_vax_integer(reinterpret_cast
-															<const SCHAR*>(p),
-															length);
+				*source_interp = (USHORT) gds__vax_integer(p, length);
 			break;
 
 		case gds_bpb_target_interp:
 			if (target_interp)
-				*target_interp = (USHORT) isc_vax_integer(reinterpret_cast
-															<const SCHAR*>(p), 
-															length);
+				*target_interp = (USHORT) gds__vax_integer(p, length);
 			break;
 
 		default:
@@ -2604,11 +2597,11 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
 #endif
 
 
-SLONG API_ROUTINE isc_vax_integer(const SCHAR* ptr, SSHORT length)
+SLONG API_ROUTINE gds__vax_integer(const UCHAR* ptr, SSHORT length)
 {
 /**************************************
  *
- *	i s c _ v a x _ i n t e g e r
+ *	g d s _ $ v a x _ i n t e g e r
  *
  **************************************
  *
@@ -2623,7 +2616,7 @@ SLONG API_ROUTINE isc_vax_integer(const SCHAR* ptr, SSHORT length)
 	value = shift = 0;
 
 	while (--length >= 0) {
-		value += ((SLONG) (UCHAR) *ptr++) << shift;
+		value += ((SLONG) * ptr++) << shift;
 		shift += 8;
 	}
 

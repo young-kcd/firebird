@@ -316,9 +316,9 @@ int API_ROUTINE gds__blob_size(
 	while ((item = *p++) != isc_info_end) {
 		l =
 			static_cast<SSHORT>
-			(isc_vax_integer(p, 2));
+			(gds__vax_integer(reinterpret_cast<UCHAR*>(p), 2));
 		p += 2;
-		n = isc_vax_integer(p, l);
+		n = gds__vax_integer(reinterpret_cast<UCHAR*>(p), l);
 		p += l;
 		switch (item) {
 		case isc_info_blob_max_segment:
@@ -702,29 +702,30 @@ int API_ROUTINE gds__edit(TEXT * file_name, USHORT type)
 }
 #endif
 
-SLONG API_ROUTINE_VARARG isc_event_block(SCHAR ** event_buffer,
-										 SCHAR ** result_buffer,
-										 USHORT count, ...)
+SLONG API_ROUTINE gds__event_block(SCHAR ** event_buffer,
+								   SCHAR ** result_buffer,
+								   USHORT count, ...)
 {
 /**************************************
  *
- *      i s c _ e v e n t _ b l o c k
+ *	g d s _ $ e v e n t _ b l o c k
  *
  **************************************
  *
  * Functional description
- *      Create an initialized event parameter block from a
- *      variable number of input arguments.
- *      Return the size of the block.
+ *	Create an initialized event parameter block from a
+ *	variable number of input arguments.
+ *	Return the size of the block.
  *
- *	Return 0 if any error occurs.
+ *	Return 0 as the size if the event parameter block cannot be
+ *	created for any reason.
  *
  **************************************/
 	SCHAR *p, *q;
 	SCHAR *end;
 	SLONG length;
-	USHORT i;
 	va_list ptr;
+	USHORT i;
 
 	VA_START(ptr, count);
 
@@ -739,19 +740,21 @@ SLONG API_ROUTINE_VARARG isc_event_block(SCHAR ** event_buffer,
 		length += strlen(q) + 5;
 	}
 
-	p = *event_buffer = (SCHAR *) gds__alloc((SLONG) length);
-/* FREE: apparently never freed */
+	p = *event_buffer =
+		(SCHAR *) gds__alloc((SLONG) (sizeof(SCHAR) * length));
+/* FREE: unknown */
 	if (!*event_buffer)			/* NOMEM: */
 		return 0;
-	if ((*result_buffer = (SCHAR *) gds__alloc((SLONG) length)) == NULL) {	/* NOMEM: */
-		/* FREE: apparently never freed */
+	*result_buffer = (SCHAR *) gds__alloc((SLONG) (sizeof(SCHAR) * length));
+/* FREE: unknown */
+	if (!*result_buffer) {		/* NOMEM: */
 		gds__free(*event_buffer);
 		*event_buffer = NULL;
 		return 0;
 	}
 
 #ifdef DEBUG_GDS_ALLOC
-/* I can find no place where these are freed */
+/* I can't find anywhere these items are freed */
 /* 1994-October-25 David Schnepper  */
 	gds_alloc_flag_unfreed((void *) *event_buffer);
 	gds_alloc_flag_unfreed((void *) *result_buffer);
@@ -767,7 +770,7 @@ SLONG API_ROUTINE_VARARG isc_event_block(SCHAR ** event_buffer,
 	while (i--) {
 		q = va_arg(ptr, SCHAR *);
 
-		/* Strip the blanks from the ends */
+		/* Strip trailing blanks from string */
 
 		for (end = q + strlen(q); --end >= q && *end == ' ';);
 		*p++ = end - q + 1;
@@ -779,17 +782,18 @@ SLONG API_ROUTINE_VARARG isc_event_block(SCHAR ** event_buffer,
 		*p++ = 0;
 	}
 
-	return (int) (p - *event_buffer);
+	return p - *event_buffer;
 }
 
 
-USHORT API_ROUTINE isc_event_block_a(SCHAR ** event_buffer,
-									 SCHAR ** result_buffer,
-									 USHORT count, TEXT ** name_buffer)
+USHORT API_ROUTINE gds__event_block_a(SCHAR ** event_buffer,
+									  SCHAR ** result_buffer,
+									  SSHORT count,
+									  SCHAR ** name_buffer)
 {
 /**************************************
  *
- *	i s c _ e v e n t _ b l o c k _ a 
+ *	g d s _ $ e v e n t _ b l o c k _ a 
  *
  **************************************
  *
@@ -800,10 +804,8 @@ USHORT API_ROUTINE isc_event_block_a(SCHAR ** event_buffer,
  *	Return the size of the block.
  *
  **************************************/
-#define 	MAX_NAME_LENGTH		31
 	SCHAR *p, *q;
-	SCHAR *end;
-	TEXT **nb;
+	SCHAR *end, **nb;
 	SLONG length;
 	USHORT i;
 
@@ -819,25 +821,26 @@ USHORT API_ROUTINE isc_event_block_a(SCHAR ** event_buffer,
 
 		/* Strip trailing blanks from string */
 
-		for (end = q + MAX_NAME_LENGTH; --end >= q && *end == ' ';);
+		for (end = q + 31; --end >= q && *end == ' ';);
 		length += end - q + 1 + 5;
 	}
 
-
 	i = count;
-	p = *event_buffer = (SCHAR *) gds__alloc((SLONG) length);
-/* FREE: apparently never freed */
-	if (!(*event_buffer))		/* NOMEM: */
+	p = *event_buffer =
+		(SCHAR *) gds__alloc((SLONG) (sizeof(SCHAR) * length));
+/* FREE: unknown */
+	if (!*event_buffer)			/* NOMEM: */
 		return 0;
-	if ((*result_buffer = (SCHAR *) gds__alloc((SLONG) length)) == NULL) {	/* NOMEM: */
-		/* FREE: apparently never freed */
+	*result_buffer = (SCHAR *) gds__alloc((SLONG) (sizeof(SCHAR) * length));
+/* FREE: unknown */
+	if (!*result_buffer) {		/* NOMEM: */
 		gds__free(*event_buffer);
 		*event_buffer = NULL;
 		return 0;
 	}
 
 #ifdef DEBUG_GDS_ALLOC
-/* I can find no place where these are freed */
+/* I can't find anywhere these items are freed */
 /* 1994-October-25 David Schnepper  */
 	gds_alloc_flag_unfreed((void *) *event_buffer);
 	gds_alloc_flag_unfreed((void *) *result_buffer);
@@ -852,7 +855,7 @@ USHORT API_ROUTINE isc_event_block_a(SCHAR ** event_buffer,
 
 		/* Strip trailing blanks from string */
 
-		for (end = q + MAX_NAME_LENGTH; --end >= q && *end == ' ';);
+		for (end = q + 31; --end >= q && *end == ' ';);
 		*p++ = end - q + 1;
 		while (q <= end)
 			*p++ = *q++;
@@ -866,15 +869,16 @@ USHORT API_ROUTINE isc_event_block_a(SCHAR ** event_buffer,
 }
 
 
-void API_ROUTINE isc_event_block_s(
-								   SCHAR ** event_buffer,
-								   SCHAR ** result_buffer,
-								   USHORT count,
-TEXT ** name_buffer, USHORT * return_count)
+void API_ROUTINE gds__event_block_s(
+									SCHAR ** event_buffer,
+									SCHAR ** result_buffer,
+									SSHORT count,
+									SCHAR ** name_buffer,
+									SSHORT * return_count)
 {
 /**************************************
  *
- *	i s c _ e v e n t _ b l o c k _ s
+ *	g d s _ $ e v e n t _ b l o c k _ s
  *
  **************************************
  *
@@ -885,7 +889,7 @@ TEXT ** name_buffer, USHORT * return_count)
  **************************************/
 
 	*return_count =
-		isc_event_block_a(event_buffer, result_buffer, count, name_buffer);
+		gds__event_block_a(event_buffer, result_buffer, count, name_buffer);
 }
 
 
@@ -932,10 +936,10 @@ void API_ROUTINE isc_event_counts(
 		/* get the change in count */
 
 		initial_count =
-			isc_vax_integer(p, sizeof(SLONG));
+			gds__vax_integer(reinterpret_cast<UCHAR*>(p), sizeof(SLONG));
 		p += sizeof(SLONG);
 		new_count =
-			isc_vax_integer(q, sizeof(SLONG));
+			gds__vax_integer(reinterpret_cast<UCHAR*>(q), sizeof(SLONG));
 		q += sizeof(SLONG);
 		*vec++ = new_count - initial_count;
 	}
@@ -1267,7 +1271,7 @@ int API_ROUTINE isc_version(FRBRD** handle,
 
 		while (!redo && *p != isc_info_end && p < buf + buf_len) {
 			item = *p++;
-			len = static_cast<USHORT>(isc_vax_integer(reinterpret_cast<const SCHAR*>(p), 2));
+			len = static_cast<USHORT>(gds__vax_integer(p, 2));
 			p += 2;
 			switch (item) {
 			case isc_info_firebird_version:
@@ -2213,9 +2217,9 @@ static int get_ods_version(
 	p = buffer;
 
 	while ((item = *p++) != isc_info_end) {
-		l = static_cast<USHORT>(isc_vax_integer(reinterpret_cast<const SCHAR*>(p), 2));
+		l = static_cast<USHORT>(gds__vax_integer(p, 2));
 		p += 2;
-		n = static_cast<USHORT>(isc_vax_integer(reinterpret_cast<const SCHAR*>(p), l));
+		n = static_cast<USHORT>(gds__vax_integer(p, l));
 		p += l;
 		switch (item) {
 		case isc_info_ods_version:

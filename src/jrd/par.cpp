@@ -1351,22 +1351,22 @@ static JRD_NOD par_literal(TDBB tdbb, CSB csb)
 	switch (desc.dsc_dtype) {
 	case dtype_short:
 		l = 2;
-		*(SSHORT *) p = (SSHORT) isc_vax_integer(reinterpret_cast<const SCHAR*>(q), l);
+		*(SSHORT *) p = (SSHORT) gds__vax_integer(q, l);
 		break;
 
 	case dtype_long:
 	case dtype_sql_date:
 	case dtype_sql_time:
 		l = 4;
-		*(SLONG *) p = (SLONG) isc_vax_integer(reinterpret_cast<const SCHAR*>(q), l);
+		*(SLONG *) p = (SLONG) gds__vax_integer(q, l);
 		break;
 
 	case dtype_timestamp:
 		l = 8;
-		*(SLONG *) p = (SLONG) isc_vax_integer(reinterpret_cast<const SCHAR*>(q), 4);
+		*(SLONG *) p = (SLONG) gds__vax_integer(q, 4);
 		p += 4;
 		q += 4;
-		*(SLONG *) p = (SLONG) isc_vax_integer(reinterpret_cast<const SCHAR*>(q), 4);
+		*(SLONG *) p = (SLONG) gds__vax_integer(q, 4);
 		break;
 
 	case dtype_int64:

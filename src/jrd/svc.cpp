@@ -897,7 +897,8 @@ int SVC_output(svc* output_data, const UCHAR* output_buf)
 		default:
 			if (items + 2 <= end_items) {
 				l =
-					(USHORT) isc_vax_integer(items, 2);
+					(USHORT) gds__vax_integer(reinterpret_cast<
+											  const UCHAR*>(items), 2);
 				items += 2;
 				if (items + l <= end_items) {
 					switch (item) {
@@ -909,11 +910,13 @@ int SVC_output(svc* output_data, const UCHAR* output_buf)
 						break;
 					case isc_info_svc_timeout:
 						timeout =
-							(USHORT) isc_vax_integer(items, l);
+							(USHORT) gds__vax_integer(reinterpret_cast<
+													  const UCHAR*>(items), l);
 						break;
 					case isc_info_svc_version:
 						version =
-							(USHORT) isc_vax_integer(items, l);
+							(USHORT) gds__vax_integer(reinterpret_cast<
+													  const UCHAR*>(items), l);
 						break;
 					}
 				}
@@ -1179,7 +1182,8 @@ int SVC_output(svc* output_data, const UCHAR* output_buf)
 			service_get(service, &item, 1, GET_BINARY, 0, &length);
 			service_get(service, buffer, 2, GET_BINARY, 0, &length);
 			l =
-				(USHORT) isc_vax_integer(buffer, 2);
+				(USHORT) gds__vax_integer(reinterpret_cast<
+										  UCHAR*>(buffer), 2);
 			length = MIN(end - (info + 5), l);
 			service_get(service, info + 3, length, GET_BINARY, 0, &length);
 			info = INF_put_item(item, length, info + 3, info, end);
@@ -1230,7 +1234,8 @@ int SVC_output(svc* output_data, const UCHAR* output_buf)
 			service_get(service, &item, 1, GET_BINARY, 0, &length);
 			service_get(service, buffer, 2, GET_BINARY, 0, &length);
 			l =
-				(USHORT) isc_vax_integer(buffer, 2);
+				(USHORT) gds__vax_integer(reinterpret_cast <
+										  UCHAR * >(buffer), 2);
 			service_get(service, buffer, l, GET_BINARY, 0, &length);
 			if (!(info = INF_put_item(item, length, buffer, info, end))) {
 				THREAD_ENTER;
@@ -1342,7 +1347,7 @@ void SVC_query(SVC		service,
 		default:
 			if (items + 2 <= end_items)
 			{
-				l = (USHORT) isc_vax_integer(items, 2);
+				l = (USHORT) gds__vax_integer(reinterpret_cast<const UCHAR*>(items), 2);
 				items += 2;
 				if (items + l <= end_items)
 				{
@@ -1355,11 +1360,11 @@ void SVC_query(SVC		service,
 						break;
 					case isc_info_svc_timeout:
 						timeout =
-							(USHORT) isc_vax_integer(items, l);
+							(USHORT) gds__vax_integer(reinterpret_cast<const UCHAR*>(items), l);
 						break;
 					case isc_info_svc_version:
 						version =
-							(USHORT) isc_vax_integer(items, l);
+							(USHORT) gds__vax_integer(reinterpret_cast<const UCHAR*>(items), l);
 						break;
 					}
 				}
@@ -1589,7 +1594,7 @@ void SVC_query(SVC		service,
 			service_put(service, &item, 1);
 			service_get(service, &item, 1, GET_BINARY, 0, &length);
 			service_get(service, buffer, 2, GET_BINARY, 0, &length);
-			l = (USHORT) isc_vax_integer(buffer, 2);
+			l = (USHORT) gds__vax_integer(reinterpret_cast<UCHAR*>(buffer), 2);
 			length = MIN(end - (info + 4), l);
 			service_get(service, info + 3, length, GET_BINARY, 0, &length);
 			info = INF_put_item(item, length, info + 3, info, end);
@@ -1646,7 +1651,7 @@ void SVC_query(SVC		service,
 			service_put(service, &item, 1);
 			service_get(service, &item, 1, GET_BINARY, 0, &length);
 			service_get(service, buffer, 2, GET_BINARY, 0, &length);
-			l = (USHORT) isc_vax_integer(buffer, 2);
+			l = (USHORT) gds__vax_integer(reinterpret_cast<UCHAR*>(buffer), 2);
 			service_get(service, buffer, l, GET_BINARY, 0, &length);
 			if (!(info = INF_put_item(item, length, buffer, info, end)))
 			{
@@ -3651,7 +3656,9 @@ static BOOLEAN get_action_svc_bitmask(
 	TEXT *s_ptr;
 	ISC_USHORT count;
 
-	opt = isc_vax_integer(*spb, sizeof(ISC_ULONG));
+	opt =
+		gds__vax_integer(reinterpret_cast < UCHAR * >(*spb),
+						 sizeof(ISC_ULONG));
 	for (mask = 1, count = (sizeof(ISC_ULONG) * 8) - 1; count; --count) {
 		if (opt & mask) {
 			if (!(s_ptr = find_switch((opt & mask), table)))
@@ -3694,7 +3701,8 @@ static void get_action_svc_string(
  **************************************/
 	ISC_USHORT l, l2;
 
-	l = isc_vax_integer(*spb, sizeof(ISC_USHORT));
+	l = gds__vax_integer(reinterpret_cast < UCHAR * >(*spb),
+						 sizeof(ISC_USHORT));
 
 	const char* local_server = "localhost:";
 #if defined(WIN_NT) && !defined(SUPERSERVER)
@@ -3749,7 +3757,9 @@ static void get_action_svc_data(
 	ISC_ULONG ll;
 	TEXT buf[64];
 
-	ll = isc_vax_integer(*spb, sizeof(ISC_ULONG));
+	ll =
+		gds__vax_integer(reinterpret_cast < UCHAR * >(*spb),
+						 sizeof(ISC_ULONG));
 	sprintf(buf, "%lu ", ll);
 	if (*cmd) {
 		sprintf(*cmd, "%lu ", ll);

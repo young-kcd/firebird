@@ -30,7 +30,7 @@
  */
 
 /*
-$Id: utld.cpp,v 1.22 2003-11-11 12:06:53 brodsom Exp $
+$Id: utld.cpp,v 1.23 2003-11-16 01:43:40 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -793,9 +793,9 @@ static ISC_STATUS error_dsql_804( ISC_STATUS * status, ISC_STATUS err)
  **/
 static SLONG get_numeric_info( SCHAR ** ptr)
 {
-	SSHORT l = static_cast<SSHORT>(isc_vax_integer(*ptr, 2));
+	SSHORT l = static_cast<SSHORT>(gds__vax_integer(reinterpret_cast<UCHAR*>(*ptr), 2));
 	*ptr += 2;
-	int item = isc_vax_integer(*ptr, l);
+	int item = gds__vax_integer(reinterpret_cast<UCHAR*>(*ptr), l);
 	*ptr += l;
 
 	return item;
@@ -819,7 +819,7 @@ static SLONG get_numeric_info( SCHAR ** ptr)
 static SLONG get_string_info( SCHAR ** ptr, SCHAR * buffer, int buffer_len)
 {
 	SCHAR *p = *ptr;
-	SSHORT l = static_cast<SSHORT>(isc_vax_integer(p, 2));
+	SSHORT l = static_cast<SSHORT>(gds__vax_integer(reinterpret_cast<UCHAR*>(p), 2));
 	*ptr += l + 2;
 	p += 2;
 
