@@ -69,6 +69,8 @@
 #define DEBUG_GDS_ALLOC
 #endif
 
+#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
+
 /* Headers */
 #define HAVE_ASSERT_H
 #define HAVE_CTYPE_H
