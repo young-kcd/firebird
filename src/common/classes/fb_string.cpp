@@ -114,6 +114,7 @@ namespace Firebird {
 	}
 
 	AbstractString::pointer AbstractString::baseAssign(size_type n) {
+		checkLength(n);
 		reserveBuffer(n + 1);
 		stringLength = n;
 		stringBuffer[stringLength] = 0;
@@ -122,6 +123,7 @@ namespace Firebird {
 	}
 
 	AbstractString::pointer AbstractString::baseAppend(size_type n) {
+		checkLength(stringLength + n);
 		reserveBuffer(stringLength + n + 1);
 		stringLength += n;
 		stringBuffer[stringLength] = 0; // Set null terminator inside the new buffer
@@ -132,6 +134,7 @@ namespace Firebird {
 		if (p0 >= length()) {
 			return baseAppend(n);
 		}
+		checkLength(stringLength + n);
 		reserveBuffer(stringLength + n + 1);
 		memmove(stringBuffer + p0 + n, stringBuffer + p0, 
 				stringLength - p0 + 1); // Do not forget to move null terminator too
@@ -155,8 +158,9 @@ namespace Firebird {
 		if (n == length()) {
 			return;
 		}
-		reserveBuffer(n + 1);
 		if (n > stringLength) {
+			checkLength(n);
+			reserveBuffer(n + 1);
 			memset(stringBuffer + stringLength, c, n - stringLength);
 		}
 		stringLength = n;
