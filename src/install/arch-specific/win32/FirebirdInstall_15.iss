@@ -59,7 +59,11 @@ WizardImageFile=src\install\arch-specific\win32\firebird_install_logo1.bmp
 PrivilegesRequired=admin
 UninstallDisplayIcon={app}\bin\fbserver.exe
 OutputDir=builds\win32\install_image
-OutputBaseFilename=Firebird-1.5.0-Win32
+#ifdef classic_server_install
+OutputBaseFilename=Firebird-1.5.0-Win32-Classic
+#else
+OutputBaseFilename=Firebird-1.5.0-Win32-SuperServer
+#endif
 Compression=bzip
 
 [Types]
@@ -137,11 +141,8 @@ Source: builds\win32\output\bin\gsec.exe; DestDir: {app}\bin; Components: DevAdm
 Source: builds\win32\output\bin\gstat.exe; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion;
 Source: builds\win32\output\bin\fbguard.exe; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion;
 Source: builds\win32\output\bin\fb_lock_print.exe; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion;
-#ifdef  classic_server_install
 Source: builds\win32\output\bin\fb_inet_server.exe; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion;
-#else
 Source: builds\win32\output\bin\fbserver.exe; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion;
-#endif
 Source: builds\win32\output\bin\ib_util.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion;
 Source: builds\win32\output\bin\instreg.exe; DestDir: {app}\bin; Components: ClientComponent; Flags: sharedfile ignoreversion;
 Source: builds\win32\output\bin\instsvc.exe; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion;
@@ -154,10 +155,10 @@ Source: builds\win32\output\intl\fbintl.dll; DestDir: {app}\intl; Components: Se
 Source: builds\win32\output\lib\*.*; DestDir: {app}\lib; Components: DevAdminComponent;  Flags: ignoreversion;
 Source: builds\win32\output\UDF\*.*; DestDir: {app}\UDF; Components: ServerComponent; Flags: sharedfile ignoreversion;
 Source: builds\win32\output\examples\*.*; DestDir: {app}\examples; Components: DevAdminComponent;  Flags: ignoreversion;
-Source: builds\win32\output\bin\gds32.dll; DestDir: {app}\bin; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder;
-Source: builds\win32\output\bin\fbclient.dll; DestDir: {app}\bin; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder;
-;Source: builds\win32\output\bin\gds32.dll; DestDir: {sys}\; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder;
-;Source: builds\win32\output\bin\fbclient.dll; DestDir: {sys}\; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder;
+;Source: builds\win32\output\bin\gds32.dll; DestDir: {app}\bin; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder;
+;Source: builds\win32\output\bin\fbclient.dll; DestDir: {app}\bin; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder;
+Source: builds\win32\output\bin\gds32.dll; DestDir: {sys}\; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder;
+Source: builds\win32\output\bin\fbclient.dll; DestDir: {sys}\; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder;
 Source: src\install\arch-specific\win32\msvcrt.dll; DestDir: {sys}\; Components: ClientComponent; Flags: uninsneveruninstall sharedfile onlyifdoesntexist;
 Source: src\install\arch-specific\win32\msvcp{#msvc_version}0.dll; DestDir: {sys}\; Components: ClientComponent; Flags: uninsneveruninstall sharedfile onlyifdoesntexist;
 Source: src\extlib\fbudf\fbudf.sql; DestDir: {app}\examples; Components: ServerComponent;  Flags: ignoreversion;
