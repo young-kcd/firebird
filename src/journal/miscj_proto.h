@@ -29,8 +29,8 @@ void	MISC_down_case(UCHAR *, UCHAR *);
 void	MISC_free_jrnl(int *);
 bool	MISC_get_line(TEXT *, TEXT *, SSHORT);
 void	MISC_get_new_value(SCHAR *, SCHAR *, int);
-void	MISC_get_time(timeval*);
-void	MISC_get_wal_info(ltjc*, SCHAR*, SCHAR*);
+void	MISC_get_time(struct timeval*);
+void	MISC_get_wal_info(struct ltjc*, SCHAR*, SCHAR*);
 void	MISC_print_journal_syntax(void);
 int		MISC_time_convert(TEXT *, USHORT, SLONG[2]);
 
