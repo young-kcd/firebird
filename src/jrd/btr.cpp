@@ -1989,76 +1989,82 @@ static void compress(thread_db* tdbb,
 	const UCHAR desc_end_value_prefix = 0x01; // ~0xFE
 	const UCHAR desc_end_value_check = 0x00; // ~0xFF;
 
-	SET_TDBB(tdbb);
 	const Database* dbb = tdbb->tdbb_database;
-	CHECK_DBB(dbb);
 
 	UCHAR* p = key->key_data;
 
-	if (isNull && dbb->dbb_ods_version >= ODS_VERSION7) {
-		UCHAR pad = 0;
-		key->key_flags &= ~key_empty;
-		// AB: NULL should be threated as lowest value possible.
-		//     Therefore don't complement pad when we have an
-		//     ascending index.
-		if (dbb->dbb_ods_version < ODS_VERSION11) {
-			if (!descending) { 
-				pad ^= -1;
-			}
-		}
-		else {
-			if (descending) {
-				// DESC NULLs are stored as 1 byte
-				*p++ = pad;
-				key->key_length = (p - key->key_data);
-				return;
+	if (isNull) {
+		if (dbb->dbb_ods_version >= ODS_VERSION7) {
+			UCHAR pad = 0;
+			key->key_flags &= ~key_empty;
+			// AB: NULL should be threated as lowest value possible.
+			//     Therefore don't complement pad when we have an
+			//     ascending index.
+			if (dbb->dbb_ods_version < ODS_VERSION11) {
+				if (!descending) { 
+					pad ^= -1;
+				}
 			}
 			else {
-				// ASC NULLs are stored with no data
-				key->key_length = 0;
-				return;
+				if (descending) {
+					// DESC NULLs are stored as 1 byte
+					*p++ = pad;
+					key->key_length = (p - key->key_data);
+					return;
+				}
+				else {
+					// ASC NULLs are stored with no data
+					key->key_length = 0;
+					return;
+				}
 			}
-		}
-		
-		size_t length;
-		switch (itype)
-		{
-		case idx_numeric:
-			length = sizeof(double);
-			break;
-		case idx_sql_time:
-			length = sizeof(ULONG);
-			break;
-		case idx_sql_date:
-			length = sizeof(SLONG);
-			break;
-		case idx_timestamp2:
-			length = sizeof(SINT64);
-			break;
-		case idx_numeric2:
-			length = INT64_KEY_LENGTH;
-			break;
-		default:
-			length = desc->dsc_length;
-			if (desc->dsc_dtype == dtype_varying) {
-				length -= sizeof(SSHORT);
+			
+			size_t length;
+			switch (itype)
+			{
+			case idx_numeric:
+				length = sizeof(double);
+				break;
+			case idx_sql_time:
+				length = sizeof(ULONG);
+				break;
+			case idx_sql_date:
+				length = sizeof(SLONG);
+				break;
+			case idx_timestamp2:
+				length = sizeof(SINT64);
+				break;
+			case idx_numeric2:
+				length = INT64_KEY_LENGTH;
+				break;
+			default:
+				length = desc->dsc_length;
+				if (desc->dsc_dtype == dtype_varying) {
+					length -= sizeof(SSHORT);
+				}
+				if (itype >= idx_first_intl_string) {
+					length = INTL_key_length(tdbb, itype, length);
+				}
+				break;
 			}
-			if (itype >= idx_first_intl_string) {
-				length = INTL_key_length(tdbb, itype, length);
+			length = (length > sizeof(key->key_data)) ? sizeof(key->key_data) : length;
+			while (length--) {
+				*p++ = pad;
 			}
-			break;
+			key->key_length = (p - key->key_data);
+			return;
 		}
-		length = (length > sizeof(key->key_data)) ? sizeof(key->key_data) : length;
-		while (length--) {
-			*p++ = pad;
+		else {
+			// for dbb->dbb_ods_version < ODS_VERSION7
+			key->key_flags &= ~key_empty;
+			memset(&temp, 0, sizeof(temp));
 		}
-		key->key_length = (p - key->key_data);
-		return;
 	}
 
 	if (itype == idx_string ||
 		itype == idx_byte_array ||
-		itype == idx_metadata || itype >= idx_first_intl_string) 
+		itype == idx_metadata || 
+		itype >= idx_first_intl_string) 
 	{
 		UCHAR temp1[MAX_KEY];
 		const UCHAR pad = (itype == idx_string) ? ' ' : 0;
@@ -2134,38 +2140,13 @@ static void compress(thread_db* tdbb,
 	key->key_flags &= ~key_empty;
 
 	size_t temp_copy_length = sizeof(double);
-	if (isNull) {
-		memset(&temp, 0, sizeof(temp));
-	}
-	if (itype == idx_timestamp2) {
-		GDS_TIMESTAMP timestamp;
-		timestamp = MOV_get_timestamp(desc);
-		const ULONG SECONDS_PER_DAY	= 24 * 60 * 60;
-		temp.temp_sint64 = ((SINT64) (timestamp.timestamp_date) *
-			(SINT64) (SECONDS_PER_DAY * ISC_TIME_SECONDS_PRECISION)) +
-			(SINT64) (timestamp.timestamp_time);
-		temp_copy_length = sizeof(SINT64);
+
+	if (itype == idx_numeric) {
+		temp.temp_double = MOV_get_double(desc);
+		temp_is_negative = (temp.temp_double < 0);
+
 #ifdef DEBUG_INDEXKEY
-		fprintf(stderr, "TIMESTAMP2: %d:%u ",
-				   ((const SLONG*) desc->dsc_address)[0],
-				   ((const ULONG*) desc->dsc_address)[1]);
-		fprintf(stderr, "TIMESTAMP2: %20" QUADFORMAT "d ",
-				   temp.temp_sint64);
-#endif
-	}
-	else if (itype == idx_sql_date) {
-		temp.temp_slong = MOV_get_sql_date(desc);
-		temp_copy_length = sizeof(SLONG);
-#ifdef DEBUG_INDEXKEY
-		fprintf(stderr, "DATE %d ", temp.temp_slong);
-#endif
-	}
-	else if (itype == idx_sql_time) {
-		temp.temp_ulong = MOV_get_sql_time(desc);
-		temp_copy_length = sizeof(ULONG);
-		temp_is_negative = false;
-#ifdef DEBUG_INDEXKEY
-		fprintf(stderr, "TIME %u ", temp.temp_ulong);
+		fprintf(stderr, "NUMERIC %lg ", temp.temp_double);
 #endif
 	}
 	else if (itype == idx_numeric2) {
@@ -2174,10 +2155,49 @@ static void compress(thread_db* tdbb,
 			make_int64_key(MOV_get_int64(desc, desc->dsc_scale), desc->dsc_scale);
 		temp_copy_length = sizeof(temp.temp_int64_key.d_part);
 		temp_is_negative = (temp.temp_int64_key.d_part < 0);
+
 #ifdef DEBUG_INDEXKEY
 		print_int64_key(*(const SINT64*) desc->dsc_address,
 			desc->dsc_scale, temp.temp_int64_key);
 #endif
+
+	}
+	else if (itype == idx_timestamp2) {
+		GDS_TIMESTAMP timestamp;
+		timestamp = MOV_get_timestamp(desc);
+		const ULONG SECONDS_PER_DAY	= 24 * 60 * 60;
+		temp.temp_sint64 = ((SINT64) (timestamp.timestamp_date) *
+			(SINT64) (SECONDS_PER_DAY * ISC_TIME_SECONDS_PRECISION)) +
+			(SINT64) (timestamp.timestamp_time);
+		temp_copy_length = sizeof(SINT64);
+
+#ifdef DEBUG_INDEXKEY
+		fprintf(stderr, "TIMESTAMP2: %d:%u ",
+				   ((const SLONG*) desc->dsc_address)[0],
+				   ((const ULONG*) desc->dsc_address)[1]);
+		fprintf(stderr, "TIMESTAMP2: %20" QUADFORMAT "d ",
+				   temp.temp_sint64);
+#endif
+
+	}
+	else if (itype == idx_sql_date) {
+		temp.temp_slong = MOV_get_sql_date(desc);
+		temp_copy_length = sizeof(SLONG);
+
+#ifdef DEBUG_INDEXKEY
+		fprintf(stderr, "DATE %d ", temp.temp_slong);
+#endif
+
+	}
+	else if (itype == idx_sql_time) {
+		temp.temp_ulong = MOV_get_sql_time(desc);
+		temp_copy_length = sizeof(ULONG);
+		temp_is_negative = false;
+
+#ifdef DEBUG_INDEXKEY
+		fprintf(stderr, "TIME %u ", temp.temp_ulong);
+#endif
+
 	}
 	else if (desc->dsc_dtype == dtype_timestamp) {
 		// This is the same as the pre v6 behavior.  Basically, the
@@ -2186,16 +2206,20 @@ static void compress(thread_db* tdbb,
 		// eg:  WHERE anInteger = TIMESTAMP '1998-9-16'
 		temp.temp_double = MOV_date_to_double(desc);
 		temp_is_negative = (temp.temp_double < 0);
+
 #ifdef DEBUG_INDEXKEY
 		fprintf(stderr, "TIMESTAMP1 special %lg ", temp.temp_double);
 #endif
+
 	}
 	else {
 		temp.temp_double = MOV_get_double(desc);
 		temp_is_negative = (temp.temp_double < 0);
+
 #ifdef DEBUG_INDEXKEY
 		fprintf(stderr, "NUMERIC %lg ", temp.temp_double);
 #endif
+
 	}
 
 #ifdef IEEE
@@ -2203,12 +2227,45 @@ static void compress(thread_db* tdbb,
 	const UCHAR* q;
 
 #ifndef WORDS_BIGENDIAN
+
 	// For little-endian machines, reverse the order of bytes for the key
 	// Copy the first set of bytes into key_data
 	size_t length = temp_copy_length;
+/*
+    AB: Speed things a little up, remember that this is function is called a lot. 
 	for (q = temp.temp_char + temp_copy_length; length; --length)
 	{
 		*p++ = *--q;
+	}
+*/
+	q = temp.temp_char + temp_copy_length;
+	while (length) {
+		if (length >= 8) {
+			q -= 8;
+			p[0] = q[7];
+			p[1] = q[6];
+			p[2] = q[5];
+			p[3] = q[4];
+			p[4] = q[3];
+			p[5] = q[2];
+			p[6] = q[1];
+			p[7] = q[0];
+			p += 8;
+			length -= 8;
+		}
+		else if (length >= 4) {
+			q -= 4;
+			p[0] = q[3];
+			p[1] = q[2];
+			p[2] = q[1];
+			p[3] = q[0];
+			p += 4;
+			length -= 4;
+		}
+		else {
+			*p++ = *--q;
+			length--;
+		}
 	}
 
 	// Copy the next 2 bytes into key_data, if key is of an int64 type
@@ -2289,21 +2346,22 @@ static void compress(thread_db* tdbb,
 		key->key_data[0] ^= 1 << 7;
 	}
 
-	// Complement the s_part for an int64 key.
-	// If we just flip the sign bit, which is equivalent to adding 32768, the
-	// short part will unsigned-compare correctly.
 	if (int64_key_op) {
+		// Complement the s_part for an int64 key.
+		// If we just flip the sign bit, which is equivalent to adding 32768, the
+		// short part will unsigned-compare correctly.
 		key->key_data[8] ^= 1 << 7;
+
+		/*p = &key->key_data[(!int64_key_op) ? temp_copy_length - 1 : INT64_KEY_LENGTH - 1];*/
+		p = &key->key_data[INT64_KEY_LENGTH - 1];
+	}
+	else {
+		p = &key->key_data[temp_copy_length - 1];
 	}
 
 	// Finally, chop off trailing binary zeros
-	for (p = &key->key_data[(!int64_key_op) ?
-		temp_copy_length - 1 : INT64_KEY_LENGTH - 1];
-		p > key->key_data; --p) 
-	{
-		if (*p) {
-			break;
-		}
+	while (!(*p) && (p > key->key_data)) {
+		--p;
 	}
 
 	key->key_length = (p - key->key_data) + 1;
@@ -5820,7 +5878,7 @@ static CONTENTS remove_leaf_node(thread_db* tdbb, index_insertion* insertion, WI
 	while (true) {
 
 		// if we find the right one, quit
-		if (insertion->iib_number == node.recordNumber) {
+		if (insertion->iib_number == node.recordNumber && !node.isEndBucket) {
 			break;
 		}
 
