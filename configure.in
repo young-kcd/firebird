@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.33 2004-12-09 14:43:18 kkuznetsov Exp $
+dnl $Id: configure.in,v 1.141.2.34 2005-01-26 14:50:29 kkuznetsov Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -393,10 +393,13 @@ if test "$EDITLINE_FLG" = "Y"; then
 fi
 AC_CHECK_LIB(stdc++, main,,, $LIBS)
 
-dnl kkuznetsov: Solaris always check for -lnsl and Sun threading -lthread
+dnl kkuznetsov: Solaris always check for -lnsl and Sun threading -lthread and -ltermcap if --with-editline
 if test "$PLATFORM" = "solx86" -o "$PLATFORM" = "SOLARIS"; then
   AC_CHECK_LIB(nsl, gethostname, XE_APPEND(-lnsl,LIBS))
   AC_CHECK_LIB(thread, thr_create, XE_PREPEND(-lthread,LIBS))
+  if test "$EDITLINE_FLG" = "Y"; then
+  	AC_CHECK_LIB(termcap, main)
+  fi
   
 fi
 
