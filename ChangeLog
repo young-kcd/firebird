@@ -1,3 +1,83 @@
+2005-02-17 16:04  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	FirebirdInstallEnvironmentChecks.inc (1.1),
+	FirebirdInstallSupportFunctions.inc (1.1), FirebirdInstall_15.iss
+	(1.5), FirebirdInstall_20.iss (1.1), custom_messages.inc (1.1),
+	i18n_readme.txt (1.1), installation_scripted.txt (1.1),
+	setenvvar.bat (1.2):
+	
+	Add supporting files to build Win32 packages
+
+2005-02-17 15:53  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	BuildExecutableInstall.bat (1.3), Readme.txt (1.2),
+	installation_readme.txt (1.2):
+	
+	Major overhaul of Win32 package building script. Update win32
+	readme and install readme.
+
+2005-02-17 15:48  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	de/custom_messages_de.inc (1.1), de/installation_liesmich.txt
+	(1.1), de/liesmich.txt (1.1), fr/custom_messages_fr.inc (1.1),
+	fr/documents-en-francais.txt (1.1), fr/installation_lisezmoi.txt
+	(1.1), fr/lisezmoi.txt (1.1), hu/custom_messages_hu.inc (1.1),
+	hu/olvass_el.txt (1.1), hu/telepitesi_segedlet.txt (1.1),
+	pt/custom_messages_pt.inc (1.1), pt/instalacao_leia-me.txt (1.1),
+	pt/leia-me.txt (1.1), si/custom_messages_si.inc (1.1),
+	si/instalacija_precitajMe.txt (1.1):
+	
+	Forward port i18n strings for Win32 installer from Fb 1.5
+
+2005-02-17 14:07  kkuznetsov
+
+	* firebird2/src/jrd/svc.cpp (1.136):
+	
+	More cleaning
+
+2005-02-17 13:50  kkuznetsov
+
+	* firebird2/src/: extern/editline/configure (1.2),
+	extern/editline/configure.in (1.2), gpre/cob.cpp (1.60),
+	include/firebird.h (1.31):
+	
+	SOLARIS cleanup
+
+2005-02-17 13:42  kkuznetsov
+
+	* firebird2/src/common/classes/: locks.h (1.21), semaphore.h
+	(1.19):
+	
+	Comments cleanup
+
+2005-02-17 11:46  paul_reeves
+
+	* firebird2/builds/win32/make_all.bat (1.29):
+	
+	Tidy up error handling in make_all.bat.
+
+2005-02-17 11:45  paul_reeves
+
+	* firebird2/builds/win32/msvc7/: Firebird2.sln (1.20),
+	instclient.vcproj (1.4):
+	
+	Add instclient to MSVC7 solution.
+
+2005-02-17 08:29  hvlad
+
+	* firebird2/src/jrd/cch.cpp (1.119):
+	
+	Temporary fix to prevent 100% cpu load in case of write failure
+
+2005-02-17 08:28  hvlad
+
+	* firebird2/src/jrd/os/win32/winnt.cpp (1.27):
+	
+	Fix wrong error (write failure) detection
+
 2005-02-17 01:19  arnobrinkman
 
 	* firebird2/doc/README.Optimizer.txt (1.1):
