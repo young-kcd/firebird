@@ -1,3 +1,15 @@
+2003-01-31 13:22  dimitr
+
+	* firebird2/src/utilities/dba.epp:
+	
+	Fixed wrong memory management that caused the server to crash.
+
+2003-01-31 08:44  dimitr
+
+	* firebird2/src/common/classes/locks.cpp:
+	
+	Fixed win32 CS build.
+
 2003-01-30 23:14  arnobrinkman
 
 	* firebird2/src/dsql/pass1.cpp:
