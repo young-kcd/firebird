@@ -2203,12 +2203,19 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 
 					if (request->req_flags & req_leave)
 					{
-			/** Although the req_operation is set to req_unwind
-			    it is not an error case if req_leave bit is set.
-			    req_leave bit indicates that we hit an EXIT 
-			    statement in the procedure code.
-			    Do not perform the error handling stuff.
-			**/
+						// Although the req_operation is set to req_unwind,
+						// it's not an error case if req_leave bit is set.
+						// req_leave bit indicates that we hit an EXIT or
+						// BREAK/LEAVE statement in the SP/trigger code.
+						// Do not perform the error handling stuff.
+						if (transaction != dbb->dbb_sys_trans) {
+							MOVE_FAST((SCHAR *) request + node->nod_impure,
+									  &count, sizeof(SLONG));
+							for (save_point = transaction->tra_save_point;
+								 save_point && count <= save_point->sav_number;
+								 save_point = transaction->tra_save_point)
+								VERB_CLEANUP;
+						}
 						node = node->nod_parent;
 						break;
 					}
