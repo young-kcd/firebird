@@ -43,6 +43,7 @@
 #include "../jrd/exe_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/idx_proto.h"
+#include "../jrd/tra_proto.h"
 
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
@@ -180,7 +181,7 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 										  idx.idx_expression_desc.dsc_dtype,
 										  0);
 				idx.idx_rpt[0].idx_selectivity = 0;
-				idx.idx_expression_request->req_transaction = transaction;
+				TRA_attach_request(transaction, idx.idx_expression_request);
 		
 				delete csb;
 			}

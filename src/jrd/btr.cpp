@@ -882,8 +882,8 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 				idx->idx_expression_request->req_caller = tdbb->tdbb_request;
 				if (tdbb->tdbb_request)
 				{
-					idx->idx_expression_request->req_transaction =
-						tdbb->tdbb_request->req_transaction;
+					TRA_attach_request(tdbb->tdbb_request->req_transaction,
+						idx->idx_expression_request);
 				}
 				tdbb->tdbb_request = idx->idx_expression_request;
 				tdbb->tdbb_request->req_rpb[0].rpb_record = record;

@@ -132,6 +132,55 @@ static const UCHAR sweep_tpb[] =
 };
 
 
+void TRA_attach_request(Jrd::jrd_tra* transaction, Jrd::jrd_req* request) {
+
+	// When request finishes normally transaction reference is not cleared.
+	// Then if afterwards request is restarted TRA_attach_request is called again.
+	if (request->req_transaction) {
+		if (request->req_transaction == transaction) 
+			return;
+		TRA_detach_request(request);
+	}
+
+	fb_assert(request->req_transaction == NULL);
+	fb_assert(request->req_tra_next == NULL);
+	fb_assert(request->req_tra_prev == NULL);
+	
+	// Assign transaction reference
+	request->req_transaction = transaction;
+
+	// Add request to the doubly linked list
+	if (transaction->tra_requests) {
+		fb_assert(transaction->tra_requests->req_tra_prev == NULL);
+		transaction->tra_requests->req_tra_prev = request;
+		request->req_tra_next = transaction->tra_requests;
+	}
+	transaction->tra_requests = request;
+}
+
+void TRA_detach_request(Jrd::jrd_req* request) {
+	if (!request->req_transaction) return;
+
+	// Remove request from the doubly linked list
+	if (request->req_tra_next) {
+		fb_assert(request->req_tra_next->req_tra_prev == request);
+		request->req_tra_next->req_tra_prev = request->req_tra_prev;
+	}
+
+	if (request->req_tra_prev) {
+		fb_assert(request->req_tra_prev->req_tra_next == request);
+		request->req_tra_prev->req_tra_next = request->req_tra_next;
+	} else {
+		fb_assert(request->req_transaction->tra_requests == request);
+		request->req_transaction->tra_requests = request->req_tra_next;
+	}
+
+	// Clear references
+	request->req_transaction = NULL;
+	request->req_tra_next = NULL;
+	request->req_tra_prev = NULL;
+}
+
 bool TRA_active_transactions(thread_db* tdbb, Database* dbb)
 {
 /**************************************
@@ -1018,8 +1067,11 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 	while (transaction->tra_arrays)
 		BLB_release_array(transaction->tra_arrays);
 
-	if (transaction->tra_pool)
-		CMP_expunge_transaction(transaction);
+	if (transaction->tra_pool) {
+		// Iterate the doubly linked list of requests for transaction and null out the transaction references
+		while (transaction->tra_requests)
+			TRA_detach_request(transaction->tra_requests);
+	}
 
 /* Release interest in relation/procedure existence for transaction */
 

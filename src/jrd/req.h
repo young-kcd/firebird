@@ -161,7 +161,13 @@ public:
 	ULONG		req_impure_size;	// size of impure area
 	JrdMemoryPool* req_pool;
 	vec*		req_sub_requests;	// vector of sub-requests
+
+	// Transaction pointer and doubly linked list pointers for requests in this 
+	// transaction. Maintained by TRA_attach_request/TRA_detach_request.
 	jrd_tra*	req_transaction;
+	jrd_req*	req_tra_next;
+	jrd_req*	req_tra_prev;
+
 	jrd_req*	req_request;		/* next request in Database */
 	jrd_req*	req_caller;			// Caller of this request
 									// This field may be used to reconstruct the whole call stack

@@ -610,42 +610,6 @@ CompilerScratch::csb_repeat* CMP_csb_element(CompilerScratch* csb, USHORT elemen
 }
 
 
-void CMP_expunge_transaction(jrd_tra* transaction)
-{
-/**************************************
- *
- *	C M P _ e x p u n g e _ t r a n s a c t i o n
- *
- **************************************
- *
- * Functional description
- *	Get rid of all references to a given transaction in existing
- *	requests.
- *
- **************************************/
-	DEV_BLKCHK(transaction, type_tra);
-
-	for (jrd_req* request = transaction->tra_attachment->att_requests;
-		 request; request = request->req_request)
-	{
-		if (request->req_transaction == transaction) {
-			request->req_transaction = NULL;
-		}
-		vec* vector = request->req_sub_requests;
-		if (vector) {
-			vec::iterator sub, end;
-			for (sub = vector->begin(), end = vector->end();
-				 sub < end; sub++)
-			{
-				if (*sub && ((jrd_req*)(*sub))->req_transaction == transaction) {
-					((jrd_req*)(*sub))->req_transaction = NULL;
-				}
-			}
-		}
-	}
-}
-
-
 jrd_req* CMP_find_request(thread_db* tdbb, USHORT id, USHORT which)
 {
 /**************************************

@@ -895,7 +895,7 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 
 	TRA_post_resources(tdbb, transaction, request->req_resources);
 
-	request->req_transaction = transaction;
+	TRA_attach_request(transaction, request);
 	request->req_flags &= REQ_FLAGS_INIT_MASK;
 	request->req_flags |= req_active;
 	request->req_flags &= ~req_reserved;
@@ -1007,6 +1007,8 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 
 	if (request->req_proc_sav_point && (request->req_flags & req_proc_fetch))
 		release_proc_save_points(request);
+
+	TRA_detach_request(request);
 
 	request->req_flags &= ~(req_active | req_proc_fetch | req_reserved);
 	request->req_flags |= req_abort | req_stall;

@@ -65,6 +65,7 @@
 #include "../jrd/sort_proto.h"
 #include "../jrd/thd.h"
 #include "../jrd/vio_proto.h"
+#include "../jrd/tra_proto.h"
 
 
 using namespace Jrd;
@@ -1303,8 +1304,7 @@ static const dsc* eval_expr_idx(thread_db* tdbb, const index_desc* idx, Record* 
 	
 	if (tdbb->tdbb_request)
 	{
-		idx->idx_expression_request->req_transaction =
-			tdbb->tdbb_request->req_transaction;
+		TRA_attach_request(tdbb->tdbb_request->req_transaction, idx->idx_expression_request);
 	}
 
 	tdbb->tdbb_request = idx->idx_expression_request;

@@ -62,6 +62,8 @@ int		TRA_state(const UCHAR*, ULONG, ULONG);
 bool	TRA_sweep(Jrd::thread_db*, Jrd::jrd_tra*);
 Jrd::Lock*	TRA_transaction_lock(Jrd::thread_db*, blk*);
 int		TRA_wait(Jrd::thread_db*, Jrd::jrd_tra*, SLONG, Jrd::jrd_tra::wait_t);
+void	TRA_attach_request(Jrd::jrd_tra* transaction, Jrd::jrd_req* request);
+void	TRA_detach_request(Jrd::jrd_req* request);
 
 #endif // JRD_TRA_PROTO_H
 

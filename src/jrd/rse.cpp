@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.83 2004-11-20 12:15:08 dimitr Exp $
+ * $Id: rse.cpp,v 1.84 2004-12-07 01:19:54 skidder Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -992,10 +992,6 @@ static void close_procedure(thread_db* tdbb, RecordSource* rsb)
 	IRSB_PROCEDURE impure = (IRSB_PROCEDURE) ((UCHAR *) request + rsb->rsb_impure);
 	jrd_req* proc_request = impure->irsb_req_handle;
 	if (proc_request) {
-		/* bug #7884: at this point the transaction could already have
-		   been released, so null it out so as not to dereference it */
-
-		proc_request->req_transaction = NULL;
 		EXE_unwind(tdbb, proc_request);
 		proc_request->req_flags &= ~req_in_use;
 		impure->irsb_req_handle = 0;

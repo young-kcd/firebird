@@ -34,7 +34,6 @@ Jrd::jrd_req* CMP_clone_request(Jrd::thread_db*, Jrd::jrd_req*, USHORT, bool);
 Jrd::jrd_req* CMP_compile(USHORT, const UCHAR*, USHORT);
 Jrd::jrd_req* CMP_compile2(Jrd::thread_db*, const UCHAR*, USHORT);
 Jrd::CompilerScratch::csb_repeat* CMP_csb_element(Jrd::CompilerScratch*, USHORT);
-void CMP_expunge_transaction(Jrd::jrd_tra*);
 void CMP_decrement_prc_use_count(Jrd::thread_db*, Jrd::jrd_prc*);
 Jrd::jrd_req* CMP_find_request(Jrd::thread_db*, USHORT, USHORT);
 void CMP_fini(Jrd::thread_db*);
