@@ -25,6 +25,7 @@
 #include <string.h>
 #include "../dudley/ddl.h"
 #include "../jrd/ibase.h"
+#include "../jrd/gdsassert.h"
 #include "../dudley/ddl_proto.h"
 #include "../dudley/expan_proto.h"
 #include "../dudley/hsh_proto.h"
@@ -717,7 +718,6 @@ static DUDLEY_NOD resolve( DUDLEY_NOD node, dudley_lls* right, dudley_lls* left)
  **************************************/
 	DUDLEY_NOD field, sub;
 	SYM symbol, name;
-	DUDLEY_FLD fld;
 	DUDLEY_CTX context, old_context;
 	TEXT name_string[65], *p, *q;
 
@@ -824,6 +824,8 @@ static DUDLEY_NOD resolve( DUDLEY_NOD node, dudley_lls* right, dudley_lls* left)
 // for either a local or a global field, which is known by whether the
 // context has a relation or not.  Do something reasonable in either case
 
+	DUDLEY_FLD fld;
+
 	switch (node->nod_type) {
 	case nod_field_name:
 		fld = field_context(node, right, &context);
@@ -832,6 +834,11 @@ static DUDLEY_NOD resolve( DUDLEY_NOD node, dudley_lls* right, dudley_lls* left)
 	case nod_over:
 		fld = field_search(node, right, &context);
 		break;
+
+	default:
+		// fld not defined
+		fb_assert(false);
+		return NULL;
 	}
 
 	if (fld) {

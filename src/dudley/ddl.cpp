@@ -170,7 +170,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 
 	TEXT file_name_1[256], file_name_2[256];
 	file_name_1[0] = file_name_2[0] = 0;
-	USHORT in_sw;
+	USHORT in_sw = 0; // silence uninitialized warning
 
 	for (--argc; argc; argc--) {
 		const TEXT* string = *++argv;

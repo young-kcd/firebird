@@ -28,6 +28,7 @@
 #include "../jrd/acl.h"
 #include "../dudley/gener_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../jrd/gdsassert.h"
 #include "../dudley/trn_proto.h"
 
 static void generate(STR, DUDLEY_NOD);
@@ -382,6 +383,10 @@ static void generate( STR blr, DUDLEY_NOD node)
 		case nod_from:
 			operatr = (node->nod_arg[s_stt_default]) ? blr_via : blr_from;
 			break;
+		default:
+			// operatr not assigned
+			fb_assert(false);
+			return;
 		}
 		check_blr(blr, 1);
 		blr->add_byte(operatr);

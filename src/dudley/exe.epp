@@ -1039,6 +1039,10 @@ static void add_files( DBB dbb, FIL files)
 		length = (dbb->dbb_length) ? dbb->dbb_length + 1 : 0;
 		start = MAX(start, length);
 	}
+	else {
+		length = 0;
+		start = 0;
+	}
 
 	shadow_number = 0;
 	for (file = files; file; file = file->fil_next) {

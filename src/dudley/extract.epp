@@ -32,6 +32,7 @@
 #include "../dudley/ddl_proto.h"
 #include "../dudley/extra_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../jrd/gdsassert.h"
 
 DATABASE DB = EXTERN FILENAME "yachts.lnk" RUNTIME dudleyGlob.DB_file_name;
 
@@ -1703,7 +1704,10 @@ static void format_acl(const SCHAR * string)
 					temp[l] = 0;
 					sprintf(node, ".%s", temp);
 					break;
-
+				default:
+					// l not assigned
+					fb_assert(false);
+					return;
 				}
 				p += l;
 			}
@@ -1777,7 +1781,8 @@ static void print_blob(ISC_QUAD* blob_id, TEXT type)
  *
  **************************************/
 	TEXT buffer[4096];
-	SCHAR blr_buffer[2048], *p, *q;
+	SCHAR blr_buffer[2048], *q;
+	SCHAR *p = NULL; // silence non initialized warning
 	SSHORT length;
 	ISC_STATUS_ARRAY status_vector;
 	ISC_STATUS status;

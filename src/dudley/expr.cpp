@@ -682,8 +682,10 @@ static CON parse_literal(void)
 		constant = make_numeric_constant(dudleyGlob.DDL_token.tok_string,
 										 dudleyGlob.DDL_token.tok_length);
 	}
-	else
+	else {
 		PARSE_error(242, dudleyGlob.DDL_token.tok_string, NULL);	/* msg 242: expected value expression, encountered \"%s\" */
+		return NULL; // silence non initialized warning
+	}
 
 	LEX_token();
 
@@ -909,10 +911,7 @@ static DUDLEY_NOD parse_relational( USHORT * paren_count)
  *	Parse a relational expression.
  *
  **************************************/
-	DUDLEY_NOD node, expr1, expr2, or_node;
-	bool negation;
-	enum nod_t operatr, *rel_ops;
-	bool local_flag = true;
+	DUDLEY_NOD node, expr2;
 
 	if (PARSE_match(KW_ANY)) {
 		node = PARSE_make_node(nod_any, 1);
@@ -926,11 +925,12 @@ static DUDLEY_NOD parse_relational( USHORT * paren_count)
 		return node;
 	}
 
-	expr1 = EXPR_value(paren_count, &local_flag);
+	bool local_flag = true;
+	DUDLEY_NOD expr1 = EXPR_value(paren_count, &local_flag);
 	if (dudleyGlob.DDL_token.tok_keyword == KW_RIGHT_PAREN)
 		return expr1;
 
-	negation = false;
+	bool negation = false;
 	node = NULL;
 	LEX_real();
 
@@ -938,6 +938,8 @@ static DUDLEY_NOD parse_relational( USHORT * paren_count)
 		negation = true;
 		LEX_real();
 	}
+
+	enum nod_t operatr;
 
 	switch (PARSE_keyword()) {
 	case KW_EQUALS:
@@ -980,12 +982,12 @@ static DUDLEY_NOD parse_relational( USHORT * paren_count)
 		expr2 = EXPR_value(0, NULL);
 		if (PARSE_match(KW_USING)) {
 			operatr = nod_sleuth;
-			node = PARSE_make_node(operatr, 3);
+			node = PARSE_make_node(nod_sleuth, 3);
 			node->nod_arg[2] = EXPR_value(0, NULL);
 		}
 		else {
 			operatr = nod_matches;
-			node = PARSE_make_node(operatr, 2);
+			node = PARSE_make_node(nod_matches, 2);
 		}
 		node->nod_arg[0] = expr1;
 		node->nod_arg[1] = expr2;
@@ -994,6 +996,7 @@ static DUDLEY_NOD parse_relational( USHORT * paren_count)
 	case KW_STARTS:
 		LEX_token();
 		PARSE_match(KW_WITH);
+		operatr = nod_starts;
 		node = PARSE_make_node(nod_starts, 2);
 		node->nod_arg[0] = expr1;
 		node->nod_arg[1] = EXPR_value(0, NULL);
@@ -1001,12 +1004,14 @@ static DUDLEY_NOD parse_relational( USHORT * paren_count)
 
 	case KW_MISSING:
 		LEX_token();
+		operatr = nod_missing;
 		node = PARSE_make_node(nod_missing, 1);
 		node->nod_arg[0] = expr1;
 		break;
 
 	case KW_BETWEEN:
 		LEX_token();
+		operatr = nod_between;
 		node = PARSE_make_node(nod_between, 3);
 		node->nod_arg[0] = expr1;
 		node->nod_arg[1] = EXPR_value(0, NULL);
@@ -1015,10 +1020,12 @@ static DUDLEY_NOD parse_relational( USHORT * paren_count)
 		break;
 
 	default:
-		for (rel_ops = relationals; *rel_ops != (enum nod_t) 0; rel_ops++)
+		for (enum nod_t* rel_ops = relationals; *rel_ops != (enum nod_t) 0; rel_ops++)
 			if (expr1->nod_type == *rel_ops)
 				return expr1;
-		PARSE_error(245, dudleyGlob.DDL_token.tok_string, NULL);	/* msg 245: expected relational operator, encountered \"%s\" */
+		PARSE_error(245, dudleyGlob.DDL_token.tok_string, NULL);
+		/* msg 245: expected relational operator, encountered \"%s\" */
+		return NULL; // silence non initialized warning
 	}
 
 /* If we haven't already built a node, it must be an ordinary binary operator.
@@ -1050,7 +1057,7 @@ static DUDLEY_NOD parse_relational( USHORT * paren_count)
 
 	while (PARSE_match(KW_COMMA)) {
 		PARSE_match(KW_OR);
-		or_node = PARSE_make_node(nod_or, 2);
+		DUDLEY_NOD or_node = PARSE_make_node(nod_or, 2);
 		or_node->nod_arg[0] = node;
 		or_node->nod_arg[1] = node = PARSE_make_node(nod_eql, 2);
 		node->nod_arg[0] = expr1;

@@ -210,7 +210,7 @@ void PARSE_error( USHORT number, TEXT * arg1, TEXT * arg2)
 }
 
 
-FUNC PARSE_function( int flag)
+FUNC PARSE_function(int existingFunction)
 {
 /**************************************
  *
@@ -237,18 +237,20 @@ FUNC PARSE_function( int flag)
 		return function;
 	}
 
-	if (flag)
+	if (existingFunction) {
 		PARSE_error(114, dudleyGlob.DDL_token.tok_string, 0);	/* msg 114: expected function, encountered \"%s\" */
-	else {
-		function = (FUNC) DDL_alloc(sizeof(func));
-		function->func_name = symbol = PARSE_symbol(tok_ident);
-		symbol->sym_type = SYM_function;
-		symbol->sym_object = (DUDLEY_CTX) function;
-		HSH_insert(symbol);
-
-		if (!(function->func_database = dudleyGlob.database))
-			PARSE_error(111, 0, 0);	/* msg 111: no database declared */
+		return NULL; // silence uninitialized warning
 	}
+
+	function = (FUNC) DDL_alloc(sizeof(func));
+	function->func_name = symbol = PARSE_symbol(tok_ident);
+	symbol->sym_type = SYM_function;
+	symbol->sym_object = (DUDLEY_CTX) function;
+	HSH_insert(symbol);
+
+	if (!(function->func_database = dudleyGlob.database))
+		PARSE_error(111, 0, 0);	/* msg 111: no database declared */
+
 	return function;
 }
 
@@ -1778,20 +1780,10 @@ static void drop_trigger(void)
  *      (old and new trigger syntax).
  *
  **************************************/
-	SYM name;
-	bool old_style;
-	DUDLEY_REL relation;
+
 
 	if (PARSE_match(KW_FOR)) {
-		relation = PARSE_relation();
-		old_style = true;
-	}
-	else {
-		old_style = false;
-		name = PARSE_symbol(tok_ident);
-	}
-
-	if (old_style) {
+		DUDLEY_REL relation = PARSE_relation();
 		while (!PARSE_match(KW_END_TRIGGER)) {
 			DUDLEY_TRG trigger = (DUDLEY_TRG) DDL_alloc(sizeof(dudley_trg));
 			if (PARSE_match(KW_STORE))
@@ -1803,18 +1795,16 @@ static void drop_trigger(void)
 			else
 				PARSE_error(153, dudleyGlob.DDL_token.tok_string, 0);
 			/* msg 153: "expected STORE, MODIFY, ERASE, or END_TRIGGER, encountered \"%s\" */
-			trigger->trg_name = name =
-				gen_trigger_name(trigger->trg_type, relation);
+			trigger->trg_name = gen_trigger_name(trigger->trg_type, relation);
 			trigger->trg_relation = relation;
 			make_action(act_d_trigger, (DBB) trigger);
 		}
 	}
 	else {
 		DUDLEY_TRG trigger = (DUDLEY_TRG) DDL_alloc(sizeof(dudley_trg));
-		trigger->trg_name = name;
+		trigger->trg_name = PARSE_symbol(tok_ident);
 		make_action(act_d_trigger, (DBB) trigger);
 	}
-
 	parse_end();
 }
 
