@@ -1,3 +1,42 @@
+2004-03-22 18:33  epocman
+
+	* firebird2/src/utilities/: fbcpl/fbdialog.cpp, install_nt.h,
+	install_svc.cpp, servi_proto.h, services.cpp:
+	
+	Win32 - instsvc.exe adds a service description string to the
+	services configuration info on OSes that support it (Win2K, WinXP,
+	Win2K3).
+
+2004-03-22 16:16  alexpeshkoff
+
+	* firebird2/builds/posix/make.rules:
+	
+	fixed some problems with posix debug build
+
+2004-03-22 16:12  alexpeshkoff
+
+	* firebird2/src/: msgs/build_file.epp, jrd/jrd.cpp,
+	jrd/os/posix/path_utils.cpp:
+	
+	fixed some problems with posix debig build
+
+2004-03-22 12:37  alexpeshkoff
+
+	* firebird2/src/: jrd/all.cpp, jrd/blb.cpp, jrd/blob_filter.cpp,
+	jrd/btr.cpp, jrd/cch.cpp, jrd/cvt.cpp, jrd/cvt2.cpp, jrd/dpm.epp,
+	jrd/evl.cpp, jrd/ext.cpp, jrd/filters.cpp, jrd/fun.epp,
+	jrd/functions.cpp, jrd/grant.epp, jrd/ib_stdio.h, jrd/idx.cpp,
+	jrd/inf.cpp, jrd/ini.epp, jrd/intl.cpp, jrd/intl_builtin.cpp,
+	jrd/inuse.cpp, jrd/jrd.cpp, jrd/jrd.h, jrd/lck.cpp, jrd/met.epp,
+	jrd/mov.cpp, jrd/nav.cpp, jrd/nbak.cpp, jrd/opt.cpp, jrd/pag.cpp,
+	jrd/pcmet.epp, jrd/pwd.cpp, jrd/rlck.cpp, jrd/rng.cpp,
+	jrd/rpb_chain.cpp, jrd/rse.cpp, jrd/sbm.cpp, jrd/scl.epp,
+	jrd/sdw.cpp, jrd/shut.cpp, jrd/sqz.cpp, jrd/sym.cpp, jrd/tpc.cpp,
+	jrd/tra.cpp, jrd/vio.cpp, remote/server.cpp,
+	jrd/os/win32/winnt.cpp:
+	
+	fixed problem with loop in includes
+
 2004-03-21 10:47  dimitr
 
 	* firebird2/src/jrd/: cvt.cpp, evl.cpp, mov.cpp:
