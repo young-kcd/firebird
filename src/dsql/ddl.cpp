@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.42 2003-03-03 08:29:18 brodsom Exp $
+ * $Id: ddl.cpp,v 1.43 2003-03-03 19:10:23 dimitr Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -294,11 +294,11 @@ void DDL_execute(DSQL_REQ request)
 	{
 		case nod_mod_relation:
 		case nod_redef_relation:
-		case nod_mod_view:
-		case nod_redef_view:
 			relation_node = request->req_ddl_node->nod_arg[e_alt_name];
 			string = (STR) relation_node->nod_arg[e_rln_name];
 			break;
+		case nod_mod_view:
+		case nod_redef_view:
 		case nod_del_relation:
 		case nod_del_view:
 			string = (STR) request->req_ddl_node->nod_arg[e_alt_name];
