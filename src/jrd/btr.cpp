@@ -23,9 +23,6 @@
  * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
  *
  */
-/*
-$Id: btr.cpp,v 1.36 2003-09-16 17:08:44 dimitr Exp $
-*/
 
 #include "firebird.h"
 #include <string.h>
@@ -475,17 +472,6 @@ void BTR_evaluate(TDBB tdbb, IRB retrieval, SBM * bitmap)
 			if (number == END_LEVEL)
 				break;
 
-#ifdef IGNORE_NULL_IDX_KEY
-			if (number == END_NON_NULL) {
-				/* break if we have reached the end of non-null values */
-				if (retrieval->irb_generic & irb_ignore_null_value_key)
-					break;
-				/* Else, go to the next node if we want to look at all of them */
-				node = NEXT_NODE(node);
-				continue;
-			}
-#endif /* IGNORE_NULL_IDX_KEY */
-
 			if (number != END_BUCKET) {
 				SBM_set(tdbb, bitmap, number);
 				node = NEXT_NODE(node);
@@ -555,31 +541,7 @@ BTN BTR_find_leaf(BTR bucket,
 		   node must have a value greater than the key, so it is the insertion
 		   point. */ number = get_long(BTN_NUMBER(node));
 
-#ifdef IGNORE_NULL_IDX_KEY
-		if (number == END_BUCKET)
-			return NULL;
-
-		if ((number == END_NON_NULL)
-			&& (key->key_flags & KEY_first_segment_is_null)) {
-			/* reset running prefix length. */
-			prefix = 0;
-			p = key->key_data;
-			/* We are looking for a key with initial NULL segment. Go past the
-			 * END_NON_NULL marker. */
-			node = NEXT_NODE(node);
-			continue;
-		}
-#endif /* IGNORE_NULL_IDX_KEY */
-
-#ifdef IGNORE_NULL_IDX_KEY
-		if (
-			(number == END_NON_NULL
-			 && !(key->key_flags & KEY_first_segment_is_null))
-			|| number == END_LEVEL || BTN_PREFIX(node) < prefix)
-#else
-		if (number == END_LEVEL || BTN_PREFIX(node) < prefix)
-#endif /* IGNORE_NULL_IDX_KEY */
-		{
+		if (number == END_LEVEL || BTN_PREFIX(node) < prefix) {
 			if (return_value)
 				*return_value = prefix;
 			return node;
@@ -611,11 +573,9 @@ BTN BTR_find_leaf(BTR bucket,
 						goto done;
 			prefix = (UCHAR) (p - key->key_data);
 		}
-#ifndef IGNORE_NULL_IDX_KEY
-		/* this part of the code moved up for IGNORE_NULL... */
+		// this part of the code moved up for IGNORE_NULL...
 		if (number == END_BUCKET)
 			return NULL;
-#endif /* IGNORE_NULL_IDX_KEY */
 		node = NEXT_NODE(node);
 	}
 
@@ -904,11 +864,6 @@ IDX_E BTR_key(TDBB tdbb, JRD_REL relation, REC record, IDX * idx, KEY * key, idx
 
 	try {
 
-#ifdef IGNORE_NULL_IDX_KEY
-/* Initialize KEY flags */
-	key->key_flags = 0;
-#endif /* IGNORE_NULL_IDX_KEY */
-
 /* Special case single segment indices */
 
 	if (idx->idx_count == 1) {
@@ -946,11 +901,6 @@ IDX_E BTR_key(TDBB tdbb, JRD_REL relation, REC record, IDX * idx, KEY * key, idx
 		compress(tdbb, desc_ptr, key, tail->idx_itype,
 				 (USHORT) ((not_missing) ? FALSE : TRUE),
 				 (USHORT) (idx->idx_flags & idx_descending), (USHORT) FALSE);
-#ifdef IGNORE_NULL_IDX_KEY
-		if (!not_missing) {
-			key->key_flags |= KEY_first_segment_is_null;
-		}
-#endif /* IGNORE_NULL_IDX_KEY */
 	}
 	else {
 		p = key->key_data;
@@ -973,11 +923,6 @@ IDX_E BTR_key(TDBB tdbb, JRD_REL relation, REC record, IDX * idx, KEY * key, idx
 					 (USHORT) ((not_missing) ? FALSE : TRUE),
 					 (USHORT) (idx->idx_flags & idx_descending),
 					 (USHORT) FALSE);
-#ifdef IGNORE_NULL_IDX_KEY
-			if (n == 0 && !not_missing) {
-				key->key_flags |= KEY_first_segment_is_null;
-			}
-#endif /* IGNORE_NULL_IDX_KEY */
 
 			for (q = temp.key_data, l = temp.key_length; l;
 				 --l, --stuff_count) {
@@ -1140,13 +1085,7 @@ BTN BTR_last_node(BTR page, EXP expanded_page, BTX * expanded_node)
 		node = BTR_previous_node(node, &enode);
 
 		number = get_long(BTN_NUMBER(node));
-#ifdef IGNORE_NULL_IDX_KEY
-		if (number != END_NON_NULL && number != END_BUCKET
-			&& number != END_LEVEL)
-#else
-		if (number != END_BUCKET && number != END_LEVEL)
-#endif /* IGNORE_NULL_IDX_KEY */
-		{
+		if (number != END_BUCKET && number != END_LEVEL) {
 			if (expanded_node)
 				*expanded_node = enode;
 			return node;
@@ -1287,11 +1226,6 @@ void BTR_make_key(TDBB tdbb,
 
 	tail = idx->idx_rpt;
 
-#ifdef IGNORE_NULL_IDX_KEY
-/* Initialize KEY flags */
-	key->key_flags = 0;
-#endif /* IGNORE_NULL_IDX_KEY */
-
 /* If the index is a single segment index, don't sweat the compound
    stuff. */
 
@@ -1299,11 +1233,6 @@ void BTR_make_key(TDBB tdbb,
 		desc = eval(tdbb, *exprs, &temp_desc, &missing);
 		compress(tdbb, desc, key, tail->idx_itype, (USHORT) missing,
 				 (USHORT) (idx->idx_flags & idx_descending), fuzzy);
-#ifdef IGNORE_NULL_IDX_KEY
-		if (missing) {
-			key->key_flags |= KEY_first_segment_is_null;
-		}
-#endif /* IGNORE_NULL_IDX_KEY */
 	}
 	else {
 		/* Make a compound key */
@@ -1319,11 +1248,6 @@ void BTR_make_key(TDBB tdbb,
 					 (USHORT) missing,
 					 (USHORT) (idx->idx_flags & idx_descending),
 					 (USHORT) ((n == count - 1) ? fuzzy : FALSE));
-#ifdef IGNORE_NULL_IDX_KEY
-			if (n == 0 && missing) {
-				key->key_flags |= KEY_first_segment_is_null;
-			}
-#endif /* IGNORE_NULL_IDX_KEY */
 			for (q = temp.key_data, l = temp.key_length; l;
 				 --l, --stuff_count) {
 				if (stuff_count == 0) {
@@ -1710,20 +1634,8 @@ float BTR_selectivity(TDBB tdbb, JRD_REL relation, USHORT id)
 	while (page) {
 		for (node = bucket->btr_nodes;; node = NEXT_NODE(node)) {
 			page = get_long(BTN_NUMBER(node));
-#ifdef IGNORE_NULL_IDX_KEY
-			if (page == END_BUCKET || page == END_LEVEL)
-				break;
-			if (page == END_NON_NULL) {
-				/* reset saved key. New comparisons to start for keys
-				 * with initial segment NULL
-				 */
-				key.key_length = 0;
-				continue;
-			}
-#else
 			if (page < 0)
 				break;
-#endif /* IGNORE_NULL_IDX_KEY */
 			++nodes;
 			l = node->btn_length + node->btn_prefix;
 
@@ -1820,18 +1732,12 @@ static SLONG add_node(TDBB tdbb,
    Hold on to this position while we recurse down to the next level, in case there's a 
    split at the lower level, in which case we need to insert the new page at this level. */
 
-#ifdef IGNORE_NULL_IDX_KEY
-	assert(bucket->btr_level != 0);
-#endif /* IGNORE_NULL_IDX_KEY */
 	while (TRUE) {
 		node =
 			find_node(bucket, insertion->iib_key,
 					  (USHORT) (insertion->iib_descriptor->idx_flags &
 								idx_descending));
 		page = get_long(BTN_NUMBER(node));
-#ifdef IGNORE_NULL_IDX_KEY
-		assert(page != END_NON_NULL);
-#endif /* IGNORE_NULL_IDX_KEY */
 		if (page != END_BUCKET)
 			break;
 		bucket =
@@ -2309,10 +2215,6 @@ static void copy_key(KEY * in, KEY * out)
 	UCHAR *p, *q;
 	USHORT l;
 
-#ifdef IGNORE_NULL_IDX_KEY
-	out->key_flags = in->key_flags;
-#endif /* IGNORE_NULL_IDX_KEY */
-
 	if ( (l = out->key_length = in->key_length) ) {
 		p = out->key_data;
 		q = in->key_data;
@@ -2413,29 +2315,16 @@ static CONTENTS delete_node(TDBB tdbb, WIN * window, BTN node)
 
 /* check to see if the page is now empty */
 
-#ifdef IGNORE_NULL_IDX_KEY
-/* do not use 'node' here. It is being passed back to the caller */
-	next = page->btr_nodes;
-	number = get_long(BTN_NUMBER(next));
-	if (number == END_LEVEL || number == END_BUCKET)
-#else
 	node = page->btr_nodes;
 	number = get_long(BTN_NUMBER(node));
 	if (number < 0)
-#endif /* IGNORE_NULL_IDX_KEY */
 		return contents_empty;
 
 /* check to see if there is just one node */
 
-#ifdef IGNORE_NULL_IDX_KEY
-	next = NEXT_NODE(next);
-	number = get_long(BTN_NUMBER(next));
-	if (number == END_LEVEL || number == END_BUCKET)
-#else
 	node = NEXT_NODE(node);
 	number = get_long(BTN_NUMBER(node));
 	if (number < 0)
-#endif /* IGNORE_NULL_IDX_KEY */
 		return contents_single;
 
 /* check to see if the size of the page is below the garbage collection threshold, 
@@ -2579,10 +2468,6 @@ static SLONG fast_load(TDBB tdbb,
 	UCHAR *record, *p, *q;
 	ISR isr;
 	BOOLEAN error, duplicate;
-#ifdef IGNORE_NULL_IDX_KEY
-	BOOLEAN processed_first_null_idx_key = FALSE;
-	BOOLEAN first_null_idx_key = FALSE;
-#endif /* IGNORE_NULL_IDX_KEY */
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -2590,14 +2475,7 @@ static SLONG fast_load(TDBB tdbb,
 
 	count = duplicates = 0;
 	buckets[1] = NULL;
-#ifdef IGNORE_NULL_IDX_KEY
-/* Define fill limits. Pointer page does not have END_NON_NULL marker. Hence 1
- * less BTN */
-	lp_fill_limit = dbb->dbb_page_size - SPECIAL_BTN_NUMBER_COUNT * BTN_SIZE;
-	pp_fill_limit = dbb->dbb_page_size - 2 * BTN_SIZE;
-#else
 	lp_fill_limit = pp_fill_limit = dbb->dbb_page_size - 2 * BTN_SIZE;
-#endif /* IGNORE_NULL_IDX_KEY */
 	keys[0].key_length = 0;
 
 /* Allocate and format the first leaf level bucket.  Awkwardly,
@@ -2650,31 +2528,9 @@ static SLONG fast_load(TDBB tdbb,
 		split_pages[0] = 0;
 		key = &keys[0];
 
-#ifdef IGNORE_NULL_IDX_KEY
-		/* Are we encountering the first index key to have 
-		   its first segment for a NULL value? */
-		if (SORTP_VAL_IS_NULL == *((SORTP *) record) &&
-			processed_first_null_idx_key == FALSE) {
-			processed_first_null_idx_key = TRUE;
-			first_null_idx_key = TRUE;
-		}
-		/* skip the first longword which contains the BOOLEAN used for sorting
-		 * NULLs higher than similar valid keys */
-		record += sizeof(SORTP);
-#endif /* IGNORE_NULL_IDX_KEY */
-
 		/* Compute the prefix as the length in common with the previous record's key. */
 
-#ifdef IGNORE_NULL_IDX_KEY
-		/* do not compute prefix between the last NON-NULL and the first NULL
-		 * nodes. Let them be independent of each other. This is because the
-		 * END_NON_NULL marker is in between the two.
-		 */
-		if (first_null_idx_key == TRUE)
-			prefix = 0;
-		else
-#endif /* IGNORE_NULL_IDX_KEY */
-			prefix = compute_prefix(key, record, isr->isr_key_length);
+		prefix = compute_prefix(key, record, isr->isr_key_length);
 
 		/* If the length of the new node will cause us to overflow the bucket, 
 		   form a new bucket. */
@@ -2727,20 +2583,6 @@ static SLONG fast_load(TDBB tdbb,
 
 		if (bucket->btr_length != OFFSETA(BTR, btr_nodes))
 			node = NEXT_NODE(node);
-
-#ifdef IGNORE_NULL_IDX_KEY
-		/* mark end of NON_NULL first segment, and update the length of the page */
-		if (first_null_idx_key == TRUE) {
-			first_null_idx_key = FALSE;
-			BTN_PREFIX(node) = 0;
-			BTN_LENGTH(node) = 0;
-			quad_put((SLONG) END_NON_NULL, BTN_NUMBER(node));
-			node = NEXT_NODE(node);
-			bucket->btr_length = (UCHAR *) (node) - (UCHAR *) bucket;
-			if (bucket->btr_length > dbb->dbb_page_size)
-				BUGCHECK(205);	/* msg 205 index bucket overfilled */
-		}
-#endif /* IGNORE_NULL_IDX_KEY */
 
 		/* Insert the new node in the now current bucket */
 
@@ -2917,23 +2759,6 @@ static SLONG fast_load(TDBB tdbb,
 
 		window = &windows[i];
 
-#ifdef IGNORE_NULL_IDX_KEY
-		/* For level 0 (leaf pages), insert an END_NON_NULL marker before the 
-		   END_LEVEL marker, if we have not as yet processed any 
-		   first-segment NULL record. */
-
-		if (i == 0 && processed_first_null_idx_key == FALSE) {
-			processed_first_null_idx_key = TRUE;
-			/* There does not seem to be any END_BUCKET in the last page.
-			   * Naturally, the bucket is not full, right? */
-			/* Insert END_NON_NULL at that point */
-			node = LAST_NODE(bucket);
-			BTN_LENGTH(node) = BTN_PREFIX(node) = 0;
-			quad_put((SLONG) END_NON_NULL, BTN_NUMBER(node));
-			bucket->btr_length += BTN_SIZE;
-		}
-#endif /* IGNORE_NULL_IDX_KEY */
-
 		/* store the end of level marker */
 
 		node = LAST_NODE(bucket);
@@ -3041,9 +2866,6 @@ static BTN find_node(BTR bucket, KEY * key, USHORT descending)
 	SLONG number;
 
 	DEBUG;
-#ifdef IGNORE_NULL_IDX_KEY
-	assert(bucket->btr_level != 0);
-#endif /* IGNORE_NULL_IDX_KEY */
 	node = bucket->btr_nodes;
 
 /* Compute common prefix of key and first node */
@@ -3337,29 +3159,6 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 /* find the last node on the left sibling and save its key value */
 
 	p = last_key.key_data;
-#ifdef IGNORE_NULL_IDX_KEY
-	for (last_node =
-		 left_page->btr_nodes, number =
-		 get_long(BTN_NUMBER(last_node)); (number != END_LEVEL)
-		 && (number != END_BUCKET);
-		 last_node =
-		 NEXT_NODE(last_node), number = get_long(BTN_NUMBER(last_node))) {
-		if (number == END_NON_NULL) {
-			/* this will help in negotiating for enough space later 
-			   This will make key_length calculation = 0; */
-			p = last_key.key_data;
-			continue;
-		}
-		if (l = BTN_LENGTH(last_node)) {
-			p = last_key.key_data + BTN_PREFIX(last_node);
-			q = BTN_DATA(last_node);
-			do
-				*p++ = *q++;
-			while (--l);
-		}
-	}
-	assert(number != END_NON_NULL);
-#else
 	for (last_node = left_page->btr_nodes;
 		 (number = get_long(BTN_NUMBER(last_node))
 		 >= 0); last_node = NEXT_NODE(last_node))
@@ -3370,7 +3169,6 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 				*p++ = *q++;
 			while (--l);
 		}
-#endif /* IGNORE_NULL_IDX_KEY */
 	last_key.key_length = p - last_key.key_data;
 
 /* see if there's enough space on the left page to move all the nodes to it
@@ -3550,22 +3348,14 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 
 		parent_node = parent_page->btr_nodes;
 		number = get_long(BTN_NUMBER(parent_node));
-#ifdef IGNORE_NULL_IDX_KEY
-		if (number == END_LEVEL || number == END_BUCKET)
-#else
 		if (number < 0)
-#endif /* IGNORE_NULL_IDX_KEY */
 			return contents_empty;
 
 		/* check whether there is just one node */
 
 		parent_node = NEXT_NODE(parent_node);
 		number = get_long(BTN_NUMBER(parent_node));
-#ifdef IGNORE_NULL_IDX_KEY
-		if (number == END_LEVEL || number == END_BUCKET)
-#else
 		if (number < 0)
-#endif /* IGNORE_NULL_IDX_KEY */
 			return contents_single;
 
 		/* check to see if the size of the page is below the garbage collection threshold */
@@ -3616,9 +3406,6 @@ static SLONG insert_node(TDBB tdbb,
 	SLONG prefix_total;
 	JRNB journal;
 	BOOLEAN end_of_page;
-#ifdef IGNORE_NULL_IDX_KEY
-	BOOLEAN midpoint_is_end_non_null = FALSE;
-#endif /* IGNORE_NULL_IDX_KEY */
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -3646,16 +3433,6 @@ static SLONG insert_node(TDBB tdbb,
 		old_prefix = BTN_PREFIX(node);
 		old_length = BTN_LENGTH(node);
 
-#ifdef IGNORE_NULL_IDX_KEY
-		if (old_number == END_BUCKET)
-			return -1;
-		if (old_number == END_LEVEL)
-			break;
-		if (old_number == END_NON_NULL) {
-			assert(bucket->btr_level == 0);
-			break;
-		}
-#endif /* IGNORE_NULL_IDX_KEY */
 		p = key->key_data + old_prefix;
 		q = BTN_DATA(node);
 		l = MIN(key->key_length - old_prefix, old_length);
@@ -3673,13 +3450,11 @@ static SLONG insert_node(TDBB tdbb,
 			old_prefix != BTN_LENGTH(node) + BTN_PREFIX(node))
 			break;
 
-#ifndef IGNORE_NULL_IDX_KEY
-		/* This block of code moved up for IGNORE_NULL_IDX_KEY */
+		// This block of code moved up for IGNORE_NULL_IDX_KEY
 		if (old_number == END_BUCKET)
 			return -1;
 		if (old_number == END_LEVEL)
 			break;
-#endif /* IGNORE_NULL_IDX_KEY */
 
 		/* if this is a non-leaf page, we need to find 
 		   the correct insertion point in the duplicate chain */
@@ -3770,14 +3545,7 @@ static SLONG insert_node(TDBB tdbb,
 
 /* figure out whether this node was inserted at the end of the page */
 
-#ifdef IGNORE_NULL_IDX_KEY
-/* A END_NON_NULL marker does not signify end_of_page. There could be more
- * valid BTN nodes after the END_NON_NULL in the same page */
-	end_of_page =
-		(old_number == END_BUCKET || old_number == END_LEVEL) ? TRUE : FALSE;
-#else
 	end_of_page = (old_number < 0) ? TRUE : FALSE;
-#endif /* IGNORE_NULL_IDX_KEY */
 
 /* If the index is unique, look for duplicates in this bucket. */
 
@@ -3836,15 +3604,7 @@ midpoint = (UCHAR *) new_node;
 /* Copy the bucket up to the midpoint, restructing the full midpoint key */
 
 	prefix_total = 0;
-#ifdef IGNORE_NULL_IDX_KEY
-	new_key->key_flags = 0;
-	midpoint_is_end_non_null = FALSE;
-	for (p = (UCHAR *) bucket->btr_nodes;
-		 p < midpoint || TRUE == midpoint_is_end_non_null;)
-#else
-	for (p = (UCHAR *) bucket->btr_nodes; p < midpoint;)
-#endif /* IGNORE_NULL_IDX_KEY */
-	{
+	for (p = (UCHAR *) bucket->btr_nodes; p < midpoint;) {
 		node = (BTN) p;
 		prefix_total += BTN_PREFIX(node);
 		p = BTN_DATA(node);
@@ -3854,17 +3614,6 @@ midpoint = (UCHAR *) new_node;
 			do
 				*q++ = *p++;
 			while (--l);
-#ifdef IGNORE_NULL_IDX_KEY
-		/* We do not want END_NON_NULL marker as the first node in the split page.
-		 * Move one extra node down in the original bucket */
-		if (END_NON_NULL == get_long(BTN_NUMBER(node))) {
-			/* assert: cannot have multiple END_NON_NULL markers */
-			assert(midpoint_is_end_non_null == FALSE);
-			midpoint_is_end_non_null = TRUE;
-		}
-		else
-			midpoint_is_end_non_null = FALSE;
-#endif /* IGNORE_NULL_IDX_KEY */
 	}
 
 /* Allocate and format the overflow page */
@@ -3938,13 +3687,6 @@ midpoint = (UCHAR *) new_node;
    contain info about the first node on the next page */
 
 	quad_put((SLONG) END_BUCKET, BTN_NUMBER(node));
-#ifdef IGNORE_NULL_IDX_KEY
-/* Why should the END_BUCKET marker contain info about the first node on the
- * next page??? -bsriram, 13-Sep-1999
- */
-	BTN_PREFIX(node) = 0;
-	BTN_LENGTH(node) = 0;
-#endif /* IGNORE_NULL_IDX_KEY */
 	next_node = NEXT_NODE(node);
 	bucket->btr_length = (UCHAR *) next_node - (UCHAR *) bucket;
 	MOVE_FASTER(bucket, window->win_buffer, bucket->btr_length);
@@ -4190,9 +3932,6 @@ static CONTENTS remove_node(TDBB tdbb, IIB * insertion, WIN * window)
 	if (page->btr_level == 0)
 		return remove_leaf_node(tdbb, insertion, window);
 
-#ifdef IGNORE_NULL_IDX_KEY
-	assert(page->btr_level != 0);
-#endif /* IGNORE_NULL_IDX_KEY */
 	while (TRUE) {
 		node = find_node(page, insertion->iib_key, (USHORT)
 						 (idx->idx_flags & idx_descending));
@@ -4286,12 +4025,8 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 
 /* Make sure first node looks ok */
 
-#ifdef IGNORE_NULL_IDX_KEY
-	if (key->key_length != BTN_LENGTH(node) + BTN_PREFIX(node))
-#else
 	if (prefix > BTN_PREFIX(node)
 		|| key->key_length != BTN_LENGTH(node) + BTN_PREFIX(node))
-#endif /* IGNORE_NULL_IDX_KEY */
 	{
 #ifdef DEBUG_BTR
 		CCH_RELEASE(tdbb, window);
@@ -4324,12 +4059,7 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 		if (insertion->iib_number == number)
 			break;
 
-#ifdef IGNORE_NULL_IDX_KEY
-		if (number == END_LEVEL || number == END_NON_NULL)
-#else
-		if (number == END_LEVEL)
-#endif /* IGNORE_NULL_IDX_KEY */
-		{
+		if (number == END_LEVEL) {
 #ifdef DEBUG_BTR
 			CCH_RELEASE(tdbb, window);
 			CORRUPT(204);		/* msg 204 index inconsistent */
@@ -4340,19 +4070,8 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 		/* go to the next node and check that it is a duplicate */
 
 		if (number != END_BUCKET) {
-#ifdef IGNORE_NULL_IDX_KEY
-			/* The next node could be (erroneously) a special END_xxx marker. 
-			 * What if it is a END_BUCKET ? It is fine, and we should go to the
-			 * next page, right?
-			 * so do not check for comparison between BTN_PREFIX and key_length. 
-			 * Just check whether the next node has any BTN_LENGTH. If it does,
-			 * then it is not a duplicate */
-			node = NEXT_NODE(node);
-			if (BTN_LENGTH(node) != 0)
-#else
 			node = (BTN) (BTN_DATA(node) + BTN_LENGTH(node));
 			if (BTN_LENGTH(node) != 0 || BTN_PREFIX(node) != key->key_length)
-#endif /* IGNORE_NULL_IDX_KEY */
 			{
 #ifdef DEBUG_BTR
 				CCH_RELEASE(tdbb, window);
@@ -4469,14 +4188,6 @@ static BOOLEAN scan(TDBB tdbb,
 		if (number == END_LEVEL) {
 			return FALSE;
 		}
-
-#ifdef IGNORE_NULL_IDX_KEY
-		if (number == END_NON_NULL) {
-			/* skip this node and go to the next one */
-			node = NEXT_NODE(node);
-			continue;
-		}
-#endif /* IGNORE_NULL_IDX_KEY */
 
 		if (BTN_PREFIX(node) <= prefix) {
 			prefix = BTN_PREFIX(node);

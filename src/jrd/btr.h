@@ -131,21 +131,12 @@ typedef struct iib {
 /* Temporary key block */
 
 typedef struct key {
-#ifdef IGNORE_NULL_IDX_KEY
-	USHORT key_flags;			/* could be UCHAR, but left as USHORT 
-								   because of SHORT boundary requirement 
-								   for key_data (explained below) */
-#endif							/* IGNORE_NULL_IDX_KEY */
 	USHORT key_length;
 	UCHAR key_data[MAX_KEY * 2];	/* This needs to be on a SHORT boundary. 
 									   This is because key_data is complemented as 
 									   (SSHORT *) if value is negative.
 									   See compress() (JRD/btr.c) for more details */
 } KEY;
-
-#ifdef IGNORE_NULL_IDX_KEY
-#define KEY_first_segment_is_null	1	/* first segment in index key is for NULL value */
-#endif /* IGNORE_NULL_IDX_KEY */
 
 /* Index Sort Record -- fix part of sort record for index fast load */
 

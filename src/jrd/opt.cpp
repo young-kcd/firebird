@@ -893,6 +893,10 @@ JRD_NOD OPT_make_index(TDBB tdbb, OPT opt_, JRD_REL relation, IDX * idx)
   segment. This is because these records will not satisfy the query
   since <null> is a state and not a value, and thus cannot be compared
   to a value. 
+
+	AB: Change to optimizer needed to handle these cases, but
+	no index-structure change is needed for this.
+
 */
 	if (retrieval->irb_lower_count && retrieval->irb_upper_count == 0) {
 		retrieval->irb_generic |= irb_ignore_null_value_key;

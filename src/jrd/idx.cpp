@@ -225,11 +225,6 @@ void IDX_create_index(
 				 gds_keytoobig,
 				 gds_arg_string,
 				 ERR_cstring(reinterpret_cast < char *>(index_name)), 0);
-#ifdef IGNORE_NULL_IDX_KEY
-/* accomodate enough space to prepend sort key with a BOOLEAN as 
- * SORTP_VAL_IS_NULL for initial NULL segment records. */
-	key_length += sizeof(SORTP);
-#endif /* IGNORE_NULL_IDX_KEY */
 	stack = NULL;
 	pad = (idx->idx_flags & idx_descending) ? -1 : 0;
 
@@ -363,13 +358,7 @@ void IDX_create_index(
 									partner_index_id);
 			}
 
-#ifdef IGNORE_NULL_IDX_KEY
-			/* Offset BOOLEAN in the beginning of the sort record key */
-			if (key.key_length > (key_length - sizeof(SORTP)))
-#else
-			if (key.key_length > key_length)
-#endif /* IGNORE_NULL_IDX_KEY */
-			{
+			if (key.key_length > key_length) {
 				do {
 					if (record != gc_record)
 						delete record;
@@ -410,17 +399,6 @@ void IDX_create_index(
 						 0);
 			}
 
-#ifdef IGNORE_NULL_IDX_KEY
-			/* Initialize first longword of sort record key for NULL/non-NULL 
-			 * values. When sorting and merge runs happen later, this BOOLEAN
-			 * valued longword will be used to order NULL valued records high */
-			if (key.key_flags & KEY_first_segment_is_null)
-				*((SORTP *) p) = SORTP_VAL_IS_NULL;
-			else
-				*((SORTP *) p) = SORTP_VAL_IS_NOT_NULL;
-			p += sizeof(SORTP);
-#endif /* IGNORE_NULL_IDX_KEY */
-
 			l = key.key_length;
 			q = key.key_data;
 
@@ -429,12 +407,7 @@ void IDX_create_index(
 			do
 				*p++ = *q++;
 			while (--l);
-#ifdef IGNORE_NULL_IDX_KEY
-			/* Offset BOOLEAN in the beginning of the sort record key */
-			if (l = key_length - key.key_length - sizeof(SORTP))
-#else
 			if ( (l = key_length - key.key_length) )
-#endif /* IGNORE_NULL_IDX_KEY */
 				do
 					*p++ = pad;
 				while (--l);

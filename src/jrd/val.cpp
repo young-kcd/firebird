@@ -664,9 +664,6 @@ static RTN walk_root(TDBB, VDR, JRD_REL);
 static RTN walk_tip(TDBB, VDR, SLONG);
 
 static const SLONG end_level = END_LEVEL, end_bucket = END_BUCKET;
-#ifdef IGNORE_NULL_IDX_KEY
-static const SLONG end_non_null = END_NON_NULL;
-#endif /* IGNORE_NULL_IDX_KEY */
 
 #ifdef SHLIB_DEFS
 #define vsprintf	(*_libgds_vsprintf)
@@ -1453,18 +1450,6 @@ static RTN walk_index(TDBB tdbb,
 				node = NEXT_NODE(node);
 				break;
 			}
-
-#ifdef IGNORE_NULL_IDX_KEY
-			if (QUAD_EQUAL(BTN_NUMBER(node), &end_non_null)) {
-				/* Ignore this node and go to the next one */
-				/* We also do not prefix compress between non-NULL and NULL
-				 * valued nodes (first segment). Hence, re-init saved 'key'
-				 * data. See fast_load() for further information.
-				 */
-				key.key_length = 0;
-				continue;
-			}
-#endif /* IGNORE_NULL_IDX_KEY */
 
 			/* Record the existance of a primary version of a record */
 			if (!page->btr_level && control
