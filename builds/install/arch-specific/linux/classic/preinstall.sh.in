@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: preinstall.sh.in,v 1.4 2004-04-27 12:36:30 brodsom Exp $
+#   $Id: preinstall.sh.in,v 1.5 2005-03-13 16:04:33 alexpeshkoff Exp $
 # 
 
 
@@ -190,95 +190,6 @@ displayMessage() {
 
 #------------------------------------------------------------------------
 #  Archive any existing prior installed files.
-#  The 'cd' stuff is to avoid the "leading '/' removed message from tar.
-#  for the same reason the DestFile is specified without the leading "/"
-
-
-archivePriorInstallSystemFilesX() {
-
-    oldPWD=`pwd`
-    archiveFileList=""
-
-    cd /
-
-
-    DestFile="$FBRootDir"
-    if [ -e "$DestFile"  ]
-      then
-        echo ""
-        echo ""
-        echo ""
-        echo "--- Warning ----------------------------------------------"
-        echo "    The installation target directory: $FBRootDir"
-        echo "    Already contains a prior installation of Firebird."
-        echo "    This and files found in /usr/include and @libdir@ will be"
-        echo "    archived in the file : ${ArchiveMainFile}"
-        echo "" 
-
-        if [ ! -z "$InteractiveInstall" ]
-          then
-            AskQuestion "Press return to continue or ^C to abort"
-        fi
-
-        if [ -e $DestFile ]
-          then
-            archiveFileList="$archiveFileList $DestFile"
-        fi
-    fi
-
-
-    for i in ibase.h iberror.h ib_util.h
-      do
-        DestFile=usr/include/$i
-        if [ -e $DestFile ]
-          then
-            archiveFileList="$archiveFileList $DestFile"
-        fi
-      done
-
-    for i in gds_pyxis.a gds.a libfbembed.so.@FIREBIRD_VERSION@ libfbclient.so.@FIREBIRD_VERSION@ libib_util.so libgds.a
-      do
-        DestFile=usr/lib/$i
-        if [ -e $DestFile ]
-          then
-            archiveFileList="$archiveFileList $DestFile"
-        fi
-      done
-
-    for i in usr/sbin/rcfirebird etc/init.d/firebird etc/rc.d/init.d/firebird
-      do
-        DestFile=$i
-        if [ -e $DestFile ]
-          then
-            archiveFileList="$archiveFileList $DestFile"
-        fi
-      done
-
-      if [ ! -z "$archiveFileList" ]
-        then
-
-          displayMessage "Archiving..."
-
-          runAndCheckExit "tar -czf $ArchiveMainFile $archiveFileList"
-
-
-          displayMessage "Done."
-          displayMessage "Deleting..."
-
-          for i in $archiveFileList
-            do
-              rm -rf $i
-            done
-
-          displayMessage "Done."
-
-      fi
-    cd $oldPWD
-
-}
-
-#------------------------------------------------------------------------
-#  Archive any existing prior installed files.
 #  This is mainly for the .tar.gz install since rpm packages take care of
 #  thier own.
 
@@ -357,8 +268,7 @@ EOF
         cd /
         for i in $deleteFileList
           do
-            echo $i
-            #rm -f $i
+            rm -f $i
           done
 
         cd $oldPWD
@@ -366,8 +276,6 @@ EOF
         displayMessage "Done."
 
     fi
-
-
 }
 
 

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#  This library is part of the FirebirdSQL project
+#  This library is part of the Firebird project
 #
 #  This library is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU Lesser General Public
@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: postuninstall.sh.in,v 1.1 2003-07-08 22:59:57 brodsom Exp $
+#   $Id: postuninstall.sh.in,v 1.2 2005-03-13 16:04:33 alexpeshkoff Exp $
 # 
 
 # The post uninstall routine for Firebird Classic.
@@ -92,12 +92,42 @@ removeInetDService() {
 }
 
 
+#------------------------------------------------------------------------
+#  Delete new user and group
+
+
+deleteFirebirdUser() {
+
+    userdel firebird
+ #   groupdel firebird
+
+}
+
+#------------------------------------------------------------------------
+#  removeLinksForBackCompatibility
+#  Remove links for back compatibility to InterBase and Firebird1.0 
+#  linked systems.
+
+removeLinksForBackCompatibility() {
+
+    if [ -L @libdir@/libgds.so ]
+      then
+        rm -f @libdir@/libgds.so
+    fi
+    if [ -L @libdir@/libgds.so.0 ]
+      then
+        rm -f @libdir@/libgds.so.0
+    fi
+
+}
+
+
 #= Main PostUn ============================================================
 
 # I don't think this is needed anymore.
-#    if [ -L /usr/lib/libgds.so ] 
+#    if [ -L @libdir@/libgds.so ] 
 #      then 
-#        rm /usr/lib/libgds.so 
+#        rm @libdir@/libgds.so 
 #    fi 
 
     if [ "$1"=0 ] 
@@ -111,6 +141,7 @@ removeInetDService() {
         #oldLine=`grep "^gds_db" $FileName`
         #removeLineFromFile "$FileName" "$oldLine"
 
+        removeLinksForBackCompatibility
         
         if [ -d /etc/xinetd.d ]
           then

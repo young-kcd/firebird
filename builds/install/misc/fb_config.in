@@ -1,0 +1,86 @@
+#! /bin/sh
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License, or (at your option) any later version.
+# You may obtain a copy of the Licence at
+# http://www.gnu.org/licences/lgpl.html
+# 
+# As a special exception this file can also be included in modules
+# with other source code as long as that source code has been 
+# released under an Open Source Initiative certificed licence.  
+# More information about OSI certification can be found at: 
+# http://www.opensource.org 
+# 
+# This module is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public Licence for more details.
+# 
+# This module was created by members of the firebird development 
+# team.  All individual contributions remain the Copyright (C) of 
+# those individuals and all rights are reserved.  Contributors to 
+# this file are either listed below or can be obtained from a CVS 
+# history command.
+#
+#  Created by:  Mark O'Donohue <mark.odonohue@firebirdsql.org>
+#
+#  Contributor(s):
+# 
+#  $Id: fb_config.in,v 1.1 2005-03-13 16:02:12 alexpeshkoff Exp $
+#
+
+# stored configuration values
+
+fb_root=@prefix@
+fb_bindir=$fb_root/bin
+fb_libdir=$fb_root/lib
+fb_incdir=$fb_root/include
+
+fb_cflags="-I$fb_incdir"
+fb_libs="-L$fb_libdir -lfbclient"
+fb_embedlibs="-L$fb_libdir -lfbembed"
+
+BuildVersion=@FIREBIRD_VERSION@.@FB_BUILD_NUM@
+PackageVersion=@FIREBIRD_PACKAGE_VERSION@
+CpuType=@CPU_TYPE@
+
+Version="$BuildVersion-$PackageVersion.$CpuType"
+
+fb_version=$Version
+
+
+usage() {
+  cat <<EOF
+
+Usage $0 [Options]
+
+Where Options are:
+     --cflags
+     --libs
+     --embedlibs
+     --bindir
+     --version
+EOF
+}
+
+if test "$#" -eq 0 ; then
+    usage
+    exit 1
+fi
+
+
+while test $# -gt 0
+  do
+    case "$1" in
+        --cflags) echo $fb_cflags ;;
+        --libs) echo $fb_libs ;;
+        --embedlibs) echo $fb_embedlibs ;;
+        --bindir) echo $fb_bindir ;;
+        --version) echo $fb_version ;;
+        --help) usage ;;
+        *) usage ;
+    esac
+    shift
+  done

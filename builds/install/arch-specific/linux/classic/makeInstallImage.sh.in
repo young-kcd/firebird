@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.8 2005-02-24 12:23:02 alexpeshkoff Exp $
+#   $Id: makeInstallImage.sh.in,v 1.9 2005-03-13 16:04:33 alexpeshkoff Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -123,6 +123,9 @@ copyFiles() {
     cp $BuiltFBDir/bin/CSchangeRunUser.sh $DestDir/bin
     cp $BuiltFBDir/bin/CSrestoreRootRunUser.sh $DestDir/bin
     cp $BuiltFBDir/bin/changeDBAPassword.sh $DestDir/bin
+    cp $BuiltFBDir/bin/changeGdsLibraryCompatibleLink.sh $DestDir/bin
+    cp $BuiltFBDir/bin/createAliasDB.sh $DestDir/bin
+    cp $BuiltFBDir/bin/fb_config $DestDir/bin
 
     # Copy examples only if we have them
 
@@ -144,7 +147,7 @@ copyFiles() {
     #cp -r $BuiltFBDir/doc $DestDir 
 
     cp $BuiltFBDir/firebird.msg $DestDir/firebird.msg 
-    cp $BuiltFBDir/security2.fdb $DestDir/security2.fdb 
+    cp $BuiltFBDir/$SecurityDatabase $DestDir/$SecurityDatabase 
 
 
 #    cp $BuiltFBDir/include/gds.f $DestDir/include 
@@ -154,7 +157,7 @@ copyFiles() {
     cp -df $BuiltFBDir/lib/libfbembed.so* $DestDir/lib
     cp -df $BuiltFBDir/lib/libfbclient.so* $DestDir/lib
 
-#    cp -f $BuiltFBDir/lib/gds.a /usr/lib/libgds.a 
+#    cp -f $BuiltFBDir/lib/gds.a @libdir@/libgds.a 
     cp -f $BuiltFBDir/lib/libib_util.so $DestDir/lib/libib_util.so 
 
 
@@ -176,16 +179,8 @@ copyFiles() {
 
     cp $BuiltFBDir/misc/firebird.xinetd $DestDir/misc/firebird.xinetd
     cp $BuiltFBDir/misc/firebird.conf $DestDir/firebird.conf
+    cp $BuiltFBDir/misc/aliases.conf $DestDir/aliases.conf
 
-    echo "#" >> $DestDir/aliases.conf
-    echo "# List of known database aliases" >> $DestDir/aliases.conf
-    echo "# ------------------------------" >> $DestDir/aliases.conf
-    echo "#" >> $DestDir/aliases.conf
-    echo "# Examples:" >> $DestDir/aliases.conf
-    echo "#" >> $DestDir/aliases.conf
-    echo "# employee = /$FBRootDir/examples/employee.fdb" >> $DestDir/aliases.conf
-    echo "#" >> $DestDir/aliases.conf
-    
 
 # Create links from @libdir@ to install area.
 
@@ -199,7 +194,7 @@ copyFiles() {
 
 
 # link include files to /usr/include 
-	for i in iberror.h ibase.h ib_util.h
+	for i in gds.h iberror.h ibase.h ib_util.h
 	   do
 		   ln -s ../../$FBRootDir/include/$i $TargetDir/usr/include/$i
 	   done
@@ -217,5 +212,6 @@ copyFiles() {
 
 #=== MAIN ====================================================================
 
+SecurityDatabase=security2.fdb
 
 copyFiles

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#  This library is part of the FirebirdSQL project
+#  This library is part of the Firebird project
 #
 #  This library is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU Lesser General Public
@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: postinstall.sh.in,v 1.8 2005-02-24 12:23:02 alexpeshkoff Exp $
+#   $Id: postinstall.sh.in,v 1.9 2005-03-13 16:04:33 alexpeshkoff Exp $
 # 
 
 # The post install script for Firebird Classic
@@ -89,6 +89,46 @@ replaceLineInFile() {
 }
 
 #------------------------------------------------------------------------
+#  Detect Distribution.
+
+detectDistro() {
+
+    # it's not provided...
+    if [ -z "$linuxDistro"  ]
+    then
+	if [ -e /etc/SuSE-release  ]
+	then
+	    # SuSE
+	    linuxDistro="SuSE"
+	elif [ -e /etc/mandrake-release ]
+	then
+	    # Mandrake
+	    linuxDistro="MDK"
+	elif [ -e /etc/debian_version ]
+	then
+	    # Debian
+	    linuxDistro="Debian"
+	elif [ -e /etc/gentoo-release ]
+	then
+	    # Debian
+	    linuxDistro="Gentoo"
+	elif [ -e /etc/rc.d/init.d/functions ]
+	then
+	    # very likely Red Hat
+	    linuxDistro="RH"
+	elif [ -d /etc/rc.d/init.d ]
+	then
+	    # generic Red Hat
+	    linuxDistro="G-RH"
+	elif [ -d /etc/init.d ]
+	then
+	    # generic SuSE
+	    linuxDistro="G-SuSE"
+	fi
+    fi
+}
+
+#------------------------------------------------------------------------
 #  Add new user and group
 
 
@@ -96,18 +136,14 @@ addFirebirdUser() {
 
     testStr=`grep firebird /etc/group`
 
-    if [ -z "$testStr" ]
-      then
+    if [ -z "$testStr" ]; then
         groupadd firebird
     fi
 
     testStr=`grep firebird /etc/passwd`
-    if [ -z "$testStr" ]
-      then
+    if [ -z "$testStr" ]; then
         useradd -M -d $FBRootDir -s /bin/bash \
             -c "Firebird Database Administrator" -g firebird firebird 
-
-        # >/dev/null 2>&1 
     fi
 }
 
@@ -189,32 +225,43 @@ updateInetdServiceEntry() {
 
 
 #------------------------------------------------------------------------
-#  Unable to generate the password for the rpm, so put out a message 
-#  instead
+# Write new password to the @prefix@/SYSDBA.password file
 
+writeNewPassword() {
 
-keepOrigDBAPassword() {
+    NewPasswd=$1
 
-    DBAPasswordFile=$FBRootDir/SYSDBA.password
-    
-    NewPasswd='masterkey'
-    echo "Firebird initial install password " > $DBAPasswordFile
-    echo "for user SYSDBA is : $NewPasswd" >> $DBAPasswordFile
-
-    echo "for install on `hostname` at time `date`" >> $DBAPasswordFile
-    echo "You should change this password at the earliest oportunity" >> $DBAPasswordFile
-    echo ""
-
-    echo "(For superserver you will also want to check the password in the" >> $DBAPasswordFile
-    echo "daemon init routine in the file /etc/init.d/firebird)" >> $DBAPasswordFile
-    echo "" >> $DBAPasswordFile
-    echo "Your should password can be changed to a more suitable one using the" >> $DBAPasswordFile
-    echo "@prefix@/bin/changeDBAPassword.sh script" >> $DBAPasswordFile
+    echo "# Firebird generated password for user SYSDBA is: " > $DBAPasswordFile
     echo "" >> $DBAPasswordFile
 
+    echo "ISC_USER=sysdba" >> $DBAPasswordFile
+    echo "ISC_PASSWD=$NewPasswd" >> $DBAPasswordFile
+    echo "" >> $DBAPasswordFile
+
+    if [ $NewPasswd = "masterkey" ]
+      then
+        echo "# for install on `hostname` at time `date`" >> $DBAPasswordFile
+        echo "# You should change this password at the earliest oportunity" >> $DBAPasswordFile
+      else 
+        echo "# generated on `hostname` at time `date`" >> $DBAPasswordFile
+    fi
+    echo "" >> $DBAPasswordFile
+    echo "# Your password can be changed to a more suitable one using the" >> $DBAPasswordFile
+    echo "# @prefix@/bin/changeDBAPassword.sh script" >> $DBAPasswordFile
+
+    echo "" >> $DBAPasswordFile
     chmod u=r,go= $DBAPasswordFile
 
 
+    # Only if we have changed the password from the default do we need
+    # to update the entry in the database
+
+    if [ $NewPasswd != "masterkey" ]
+      then
+        $FBBin/gsec -user sysdba -password masterkey <<EOF
+modify sysdba -pw $NewPasswd
+EOF
+    fi
 }
 
 
@@ -230,7 +277,8 @@ generateNewDBAPassword() {
     # openssl generates random data.
     if [ -f /usr/bin/openssl ]
       then
-        NewPasswd=`openssl rand -base64 10 | cut -c1-8`
+        # We generate 20 random chars, strip any '/''s and get the first 8
+        NewPasswd=`openssl rand -base64 20 | tr -d '/' | cut -c1-8`
     fi
 
     # mkpasswd is a bit of a hassle, but check to see if it's there
@@ -242,26 +290,16 @@ generateNewDBAPassword() {
         fi
     fi
 
+
+    # So we failed to generate a new password, so keep the original 
+    # installed one.
+
     if [ -z "$NewPasswd" ]
       then
-        keepOrigDBAPassword
-        return
+        NewPasswd="masterkey"
     fi
 
-    echo "Firebird generated password " > $DBAPasswordFile
-    echo "for user SYSDBA is : $NewPasswd" >> $DBAPasswordFile
-    echo "generated on `hostname` at time `date`" >> $DBAPasswordFile
-    #echo "(For superserver you will also want to check the password in the" >> $DBAPasswordFile
-    #echo "daemon init routine in the file /etc/rc.d/init.d/firebird)" >> $DBAPasswordFile
-    echo "" >> $DBAPasswordFile
-    echo "Your password can be changed to a more suitable one using the" >> $DBAPasswordFile
-    echo "@prefix@/bin/changeDBAPassword.sh script" >> $DBAPasswordFile
-    echo "" >> $DBAPasswordFile
-    chmod u=r,go= $DBAPasswordFile
-
-    $FBBin/gsec -user sysdba -password masterkey <<EOF
-modify sysdba -pw $NewPasswd
-EOF
+    writeNewPassword $NewPasswd
 
 }
 
@@ -286,10 +324,12 @@ askUserForNewDBAPassword() {
           NewPasswd=$Answer
           if [ ! -z "$NewPasswd" ]
             then
+
              $FBBin/gsec -user sysdba -password masterkey <<EOF
 modify sysdba -pw $NewPasswd
 EOF
               echo ""
+              #writeNewPassword $NewPasswd
           fi
           
       done
@@ -308,16 +348,8 @@ EOF
 changeDBAPassword() {
 
     if [ -z "$InteractiveInstall" ]
-      then
-        if [ -f /usr/bin/mkpasswd ]
-            then
-              generateNewDBAPassword
-        elif [ -f /usr/bin/openssl ]
-            then
-              generateNewDBAPassword      
-        else
-              keepOrigDBAPassword
-        fi
+      then      
+        generateNewDBAPassword      
       else
         askUserForNewDBAPassword
     fi
@@ -391,12 +423,12 @@ fixFilePermissions() {
 
     chmod ug=rw,o= firebird.log
 
-	chmod a=r aliases.conf
-	chmod a=r firebird.conf
+	chmod u=rw,go=r aliases.conf
+	chmod u=rw,go=r firebird.conf
     chmod a=r firebird.msg
     chmod a=r README
     chmod ug=rw,o= help/help.fdb
-    chmod ug=rw,o= security2.fdb
+    chmod ug=rw,o= $SecurityDatabase
 
     # Set a default of read all files in includes
 
@@ -425,7 +457,7 @@ fixFilePermissions() {
     done
 
     # make examples db's writable by group
-    for i in `find . -name '*.gdb' -print`
+    for i in `find . -name '*.fdb' -print`
       do
         chmod ug=rw,o= $i
       done
@@ -516,7 +548,7 @@ fixFilePermissionsRoot() {
     chmod a=r firebird.msg
     chmod a=r README
     chmod a=rw help/help.fdb
-    chmod a=rw security2.fdb
+    chmod a=rw $SecurityDatabase
 
     # fix up permissions for loadable plugins
     chmod a=rx intl/fbintl UDF/fbudf.so UDF/ib_udf.so
@@ -587,11 +619,6 @@ buildUninstallFile() {
 
     cp -r scripts $FBRootDir/misc/
     cp scripts/tarMainUninstall.sh $FBRootDir/bin/uninstall.sh
-
-    if [ -f /var/run/xinetd.pid ]
-      then
-        kill -USR2 `cat /var/run/xinetd.pid`
-    fi
 }
 
 #------------------------------------------------------------------------
@@ -625,14 +652,41 @@ createLinksForBackCompatibility() {
     # to ensure it loads the fb equivalent.  Eventually these should be 
     # optional and in a seperate rpm install.  MOD 7-Nov-2002.
 
+    # There are two options for classic for libgds.so :
+    #  1) The multithreaded client only libfbclient.so
+    #  or
+    #  2) The direct connect (but not threadsafe) classic libfbembeded.so
+    #
+    # libfbclient should be the prefered option unless you need to connect
+    # in an embedded mode.  However the default for install of classic 
+    # is left for libgds.so -> libfbembed.so since that is compatible to 
+    # the existing behaviour of previous installs. (There is also a 
+    # script installed to allow the user to change the option) MOD 23-Dec-2003
+
+
+    #newLibrary=$FBRootDir/lib/libfbclient.so
+    newLibrary=$FBRootDir/lib/libfbembed.so
+
+    # Remove if only a link
+    if [ -L @libdir@/libgds.so ]
+      then
+        rm -f @libdir@/libgds.so
+    fi
+
     if [ ! -e @libdir@/libgds.so ]
       then
-        ln -s $FBRootDir/lib/libfbembed.so @libdir@/libgds.so
+        ln -s $newLibrary @libdir@/libgds.so
+    fi
+
+    # Remove if only a link
+    if [ -L @libdir@/libgds.so.0 ]
+      then
+        rm -f @libdir@/libgds.so.0
     fi
 
     if [ ! -e @libdir@/libgds.so.0 ]
       then
-        ln -s $FBRootDir/lib/libfbembed.so @libdir@/libgds.so.0
+        ln -s $newLibrary @libdir@/libgds.so.0
     fi
 
 
@@ -644,6 +698,9 @@ createLinksForBackCompatibility() {
 #= Main Post ===============================================================
 
 
+
+    # Detect which linux distro we are installing on
+    detectDistro
 
     # Make sure the links are in place 
     if  [ -z "$FirebirdInstallPrefix" ]
@@ -657,6 +714,7 @@ createLinksForBackCompatibility() {
     FBBin=$FBRootDir/bin
 #    RunUser=root
     RunUser=firebird
+	SecurityDatabase=security2.fdb
 
 
     # Update /etc/services
@@ -664,7 +722,7 @@ createLinksForBackCompatibility() {
     # The \n is needed, some /etc/services files are missing a trailing
     # line feed - MOD 7-Nov-2002
     FileName=/etc/services
-    newLine="gds_db          3050/tcp  # FirebirdSQL Database Remote Protocol"
+    newLine="gds_db          3050/tcp  # Firebird SQL Database Remote Protocol"
     oldLine=`grep "^gds_db" $FileName`
     if [ -z "$oldLine" ]
       then

@@ -42,6 +42,7 @@ case "$1" in
 
 	daemon --user $FBRunUser $FIREBIRD/bin/fbmgr -start -forever
 	RETVAL=$?
+	echo
 	;;
   stop)
 	echo -n "Stopping Firebird server: "
