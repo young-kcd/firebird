@@ -41,6 +41,10 @@
 #include <unistd.h>
 #endif
 
+#ifdef HAVE_FCNTL_H
+#include <fcntl.h>
+#endif
+
 static inline UCHAR* BURP_alloc(ULONG size){
 	return MISC_alloc_burp(size);
 }
@@ -921,7 +925,7 @@ static const int MODE_READ	= O_RDONLY;
 static const int MODE_WRITE	= O_WRONLY | O_CREAT | O_TRUNC;
 #	else
 static const int MODE_READ	= O_RDONLY;
-static const int MODE_WRITE	= O_WRONLY | O_CREAT
+static const int MODE_WRITE	= O_WRONLY | O_CREAT;
 #	endif
 #endif
 
