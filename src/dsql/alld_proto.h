@@ -24,6 +24,7 @@
 #ifndef _DSQL_ALLD_PROTO_H_
 #define _DSQL_ALLD_PROTO_H_
 
-#include "../dsql/all.h"
+void		ALLD_init();				/* initialize pool system */
+void		ALLD_fini();				/* get rid of everything */
 
 #endif /* _DSQL_ALLD_PROTO_H_ */

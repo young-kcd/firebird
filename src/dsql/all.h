@@ -27,9 +27,6 @@
 #include "../common/classes/alloc.h"
 #include "../jrd/block_cache.h"
 
-void		ALLD_init();				/* initialize pool system */
-void		ALLD_fini();				/* get rid of everything */
-
 class DsqlMemoryPool : public MemoryPool
 {
 protected:
