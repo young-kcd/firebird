@@ -3064,7 +3064,7 @@ void DYN_define_relation( GBL gbl, const UCHAR** ptr)
 	request = NULL;
 	id = -1;
 
-	Firebird::string Path, Name;
+	Firebird::PathName Path, Name;
 
 	try {
 

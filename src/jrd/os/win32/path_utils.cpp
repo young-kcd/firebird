@@ -5,28 +5,28 @@
 /// The Win32 implementation of the path_utils abstraction.
 
 const char PathUtils::dir_sep = '\\';
-const Firebird::string PathUtils::up_dir_link = "..";
+const char* PathUtils::up_dir_link = "..";
 
 class Win32DirItr : public PathUtils::dir_iterator
 {
 public:
-	Win32DirItr(const Firebird::string&);
+	Win32DirItr(const Firebird::PathName&);
 	~Win32DirItr();
 	const PathUtils::dir_iterator& operator++();
-	const Firebird::string& operator*() { return file; }
+	const Firebird::PathName& operator*() { return file; }
 	operator bool() { return !done; }
 	
 private:
 	HANDLE dir;
 	WIN32_FIND_DATA fd;
-	Firebird::string file;
+	Firebird::PathName file;
 	bool done;
 };
 
-Win32DirItr::Win32DirItr(const Firebird::string& path)
+Win32DirItr::Win32DirItr(const Firebird::PathName& path)
 	: dir_iterator(path), dir(0), done(false)
 {
-	Firebird::string dirPrefix2 = dirPrefix;
+	Firebird::PathName dirPrefix2 = dirPrefix;
 
 	if (dirPrefix.length() && dirPrefix[dirPrefix.length()-1] != PathUtils::dir_sep)
 		dirPrefix2 = dirPrefix2 + PathUtils::dir_sep;
@@ -61,22 +61,22 @@ const PathUtils::dir_iterator& Win32DirItr::operator++()
 	return *this;
 }
 
-PathUtils::dir_iterator *PathUtils::newDirItr(MemoryPool& p, const Firebird::string& path)
+PathUtils::dir_iterator *PathUtils::newDirItr(MemoryPool& p, const Firebird::PathName& path)
 {
 	return FB_NEW(p) Win32DirItr(path);
 }
 
-void PathUtils::splitLastComponent(Firebird::string& path, Firebird::string& file,
-		const Firebird::string& orgPath)
+void PathUtils::splitLastComponent(Firebird::PathName& path, Firebird::PathName& file,
+		const Firebird::PathName& orgPath)
 {
-	Firebird::string::size_type pos;
+	Firebird::PathName::size_type pos;
 	
 	pos = orgPath.rfind(PathUtils::dir_sep);
-	if (pos == Firebird::string::npos)
+	if (pos == Firebird::PathName::npos)
 	{
 		pos = orgPath.rfind('/');	// temp hack to make it work with paths,
 									// not exoanded by ISC_expand_filename
-		if (pos == Firebird::string::npos)
+		if (pos == Firebird::PathName::npos)
 		{
 			path = "";
 			file = orgPath;
@@ -90,9 +90,9 @@ void PathUtils::splitLastComponent(Firebird::string& path, Firebird::string& fil
 	file.append(orgPath, pos+1, orgPath.length() - pos - 1);
 }
 
-void PathUtils::concatPath(Firebird::string& result,
-		const Firebird::string& first,
-		const Firebird::string& second)
+void PathUtils::concatPath(Firebird::PathName& result,
+		const Firebird::PathName& first,
+		const Firebird::PathName& second)
 {
 	if (second.length() == 0)
 	{
@@ -122,7 +122,7 @@ void PathUtils::concatPath(Firebird::string& result,
 	result = first + second;
 }
 
-bool PathUtils::isRelative(const Firebird::string& path)
+bool PathUtils::isRelative(const Firebird::PathName& path)
 {
 	if (path.length() > 0) {
 		char ds = path[0];
@@ -139,16 +139,16 @@ bool PathUtils::isRelative(const Firebird::string& path)
 	return true;
 }
 
-bool PathUtils::isSymLink(const Firebird::string& path)
+bool PathUtils::isSymLink(const Firebird::PathName& path)
 {
 	return false;
 }
 
-bool PathUtils::comparePaths(const Firebird::string& path1, 
-							 const Firebird::string& path2) {
+bool PathUtils::comparePaths(const Firebird::PathName& path1, 
+							 const Firebird::PathName& path2) {
 	return stricmp(path1.c_str(), path2.c_str()) == 0;
 }
 
-bool PathUtils::canAccess(const Firebird::string& path, int mode) {
+bool PathUtils::canAccess(const Firebird::PathName& path, int mode) {
 	return _access(path.c_str(), mode) == 0;
 }

@@ -29,7 +29,7 @@
 #include "../jrd/os/path_utils.h"
 #include "../jrd/gds_proto.h"
 
-typedef Firebird::string string;
+typedef Firebird::PathName string;
 
 const char* ALIAS_FILE = "aliases.conf";
 

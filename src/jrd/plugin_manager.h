@@ -71,7 +71,7 @@ private:
 		/// The constructor requires the name of the module.  The initial reference count
 		///  is 1, to indicate that the PluginManager itself has a reference.  This is
 		///  verified in debug builds in the PluginManager destructor.
-		Module(const Firebird::string& name)
+		Module(const Firebird::PathName& name)
 			: refCnt(1), module_name(name), prev(0), next(0) {}
 		/// The destructor is responsible for removing the module from the linked
 		///  list.
@@ -84,7 +84,7 @@ private:
 		///  must be balanced with a call to release.
 		void release() { refCnt--; }
 		/// Accessor function that returns the name of the module
-		const Firebird::string& name() const { return module_name; }
+		const Firebird::PathName& name() const { return module_name; }
 		/// lookupSymbol searches through a module's symbol table and attempts to
 		///  locate the given symbol name.  If successful it returns a pointer to
 		///  the symbol's location in the current address space.  If the symbol can't
@@ -95,7 +95,7 @@ private:
 		friend class PluginManager;
 		friend class iterator;
 		int refCnt;
-		Firebird::string module_name;
+		Firebird::PathName module_name;
 		Module **prev;
 		Module *next;
 		
@@ -177,19 +177,19 @@ public:
 	
 	/// Searches for the plugin with the given name using the
 	///  preset search criteria.
-	Plugin findPlugin(const Firebird::string&);
+	Plugin findPlugin(const Firebird::PathName&);
 	/// Adds a path to the list of paths to be searched for a modules.  The
 	///  second parameter indicates if the path is absolute, or relative to
 	///  the current working directory.
-	void addSearchPath(const Firebird::string&, bool = true);
+	void addSearchPath(const Firebird::PathName&, bool = true);
 	/// Removes the given search path from the list of search paths.  The path name
 	/// (1st parameter) and the relative indicator (2nd parameter) must exactly match
 	/// those passed in to addSearchPath.
-	void removeSearchPath(const Firebird::string&, bool = true);
+	void removeSearchPath(const Firebird::PathName&, bool = true);
 	/// Adds a module to the ignore list.  Ignored modules are not loaded automatically
 	///  when a directory is scanned, but may be loaded manually via the findPlugin
 	///  function.
-	void addIgnoreModule(const Firebird::string &mod)
+	void addIgnoreModule(const Firebird::PathName &mod)
 		{ ignoreModules.push_back(mod); }
 	/// Loads all the plugins found in the current set of search paths, except those that
 	///  have been ignored.  This function must be called after adding all the needed search paths,
@@ -207,18 +207,18 @@ public:
 	
 private:
 	typedef void (*engineRegistrationFuncType)(Plugin*);
-	typedef std::pair<Firebird::string, bool> Path;
+	typedef std::pair<Firebird::PathName, bool> Path;
 	Module *moduleList;
 	Firebird::list<Path> searchPaths;
-	Firebird::list<Firebird::string> ignoreModules;
+	Firebird::list<Firebird::PathName> ignoreModules;
 	
-	Module *loadPluginModule(const Firebird::string& name);
-	Module *loadBuiltinModule(const Firebird::string& name);
+	Module *loadPluginModule(const Firebird::PathName& name);
+	Module *loadBuiltinModule(const Firebird::PathName& name);
 
 	class BuiltinModule : public Module
 	{
 	public:
-		BuiltinModule(const Firebird::string& name) : Module(name) {}
+		BuiltinModule(const Firebird::PathName& name) : Module(name) {}
 		
 	private:
 		Firebird::map<Firebird::string, void*> symbols;
@@ -229,7 +229,7 @@ private:
 	class PluginModule : public Module
 	{
 	public:
-		PluginModule(const Firebird::string &name, ModuleLoader::Module *mod)
+		PluginModule(const Firebird::PathName &name, ModuleLoader::Module *mod)
 			: Module(name), module(mod) {}
 			
 	private:

@@ -52,7 +52,8 @@
 #undef INFORM_ON_NO_CONF
 #endif
 
-typedef Firebird::string string;
+// config_file works with OS case-sensitivity
+typedef Firebird::PathName string;
 
 /******************************************************************************
  *
@@ -61,7 +62,7 @@ typedef Firebird::string string;
 
 bool ConfigFile::key_compare::operator()(const string& x, const string& y) const
 {
-	return Firebird::PathName(x) < Firebird::PathName(y);
+	return x < y;
 }
 
 /******************************************************************************
@@ -224,12 +225,12 @@ void ConfigFile::loadConfig()
 
 	parameters.clear();
 
-    std::ifstream configFileStream(configFile.c_str());
+    FILE* ifile = fopen(configFile.c_str(), "rt");
 	
 #ifdef EXIT_ON_NO_CONF
 	int BadLinesCount = 0;
 #endif
-    if (!configFileStream)
+    if (!ifile)
     {
         // config file does not exist
 #ifdef INFORM_ON_NO_CONF
@@ -240,7 +241,7 @@ void ConfigFile::loadConfig()
 #endif
 		Firebird::Syslog::Record(fExitOnError ? 
 				Firebird::Syslog::Error :
-				Firebird::Syslog::Warning, Msg);
+				Firebird::Syslog::Warning, Msg.ToString());
 #ifdef EXIT_ON_NO_CONF
 		if (fExitOnError)
 			exit(1);
@@ -250,9 +251,9 @@ void ConfigFile::loadConfig()
     }
     string inputLine;
 
-    while (!configFileStream.eof())
+    while (!feof(ifile))
     {
-		std::getline(configFileStream, inputLine);
+		inputLine.LoadFromFile(ifile);
 
 		stripComments(inputLine);
 		stripLeadingWhiteSpace(inputLine);
@@ -264,8 +265,8 @@ void ConfigFile::loadConfig()
 
         if (inputLine.find('=') == string::npos)
         {
-            string Msg = configFile + ": illegal line \"" +
-				inputLine + "\"";
+			Firebird::string Msg = (configFile + ": illegal line \"" +
+				inputLine + "\"").ToString();
 			Firebird::Syslog::Record(fExitOnError ? 
 					Firebird::Syslog::Error :
 					Firebird::Syslog::Warning, Msg);

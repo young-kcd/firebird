@@ -31,7 +31,8 @@
 #include "../jrd/os/path_utils.h"
 #include "../utilities/install/registry.h"
 
-typedef Firebird::string string;
+// config_file works with OS case-sensitivity
+typedef Firebird::PathName string;
 
 static const char *CONFIG_FILE = "firebird.conf";
 

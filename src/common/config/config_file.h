@@ -56,7 +56,8 @@
 
 class ConfigFile
 {
-	typedef Firebird::string string;
+	// config_file works with OS case-sensitivity
+	typedef Firebird::PathName string;
 
 	// used to provide proper filename handling in various OS
 	class key_compare : public std::binary_function<const string&, const string&, bool>

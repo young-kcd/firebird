@@ -61,7 +61,7 @@ public:
 		It is the callers responsibility to delete the returned module object
 		when it is no longer needed.
 	**/
-	static Module *loadModule(const Firebird::string&);
+	static Module *loadModule(const Firebird::PathName&);
 	
 	/** doctorModuleExtention modifies the given path name to add the platform
 		specific module extention.  This allows the user to provide the root name
@@ -69,13 +69,13 @@ public:
 		host operating system.  This function is typically called after a failed attempt
 		to load the module without the extention.
 	**/
-	static void doctorModuleExtention(Firebird::string&);
+	static void doctorModuleExtention(Firebird::PathName&);
 	
 	/** isLoadableModule checks the given file to see if it is a loadable
 		module.  This function is required because different operating
 		systems require different checks.
 	**/
-	static bool isLoadableModule(const Firebird::string&);
+	static bool isLoadableModule(const Firebird::PathName&);
 };
 
 #endif

@@ -7,6 +7,7 @@
 #include <windows.h>
 
 typedef Firebird::string string;
+typedef Firebird::PathName PathName;
 
 /// This is the Win32 implementation of the mod_loader abstraction.
 
@@ -21,7 +22,7 @@ private:
 	HMODULE module;
 };
 
-bool ModuleLoader::isLoadableModule(const string& module)
+bool ModuleLoader::isLoadableModule(const PathName& module)
 {
 	LPCSTR pszName = module.c_str();
 	HINSTANCE hMod = LoadLibraryEx(pszName, 0, LOAD_LIBRARY_AS_DATAFILE);
@@ -31,15 +32,15 @@ bool ModuleLoader::isLoadableModule(const string& module)
 	return hMod != 0;
 }
 
-void ModuleLoader::doctorModuleExtention(Firebird::string& name)
+void ModuleLoader::doctorModuleExtention(Firebird::PathName& name)
 {
-	string::size_type pos = name.rfind(".dll");
-	if (pos != string::npos && pos == name.length() - 4)
+	PathName::size_type pos = name.rfind(".dll");
+	if (pos != PathName::npos && pos == name.length() - 4)
 		return;
 	name += ".dll";
 }
 
-ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::string& modPath)
+ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::PathName& modPath)
 {
 	HMODULE module = GetModuleHandle(modPath.c_str());
 	if (!module)

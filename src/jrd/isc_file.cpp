@@ -595,8 +595,7 @@ static DWORD ShortToLongPathName(
     const char sep = '\\';
     const char colon = ':';
     // Make some short type aliases
-    typedef Firebird::string tstring;
-    typedef tstring::traits_type traits;
+    typedef Firebird::PathName tstring;
     typedef tstring::size_type size;
     size const npos = tstring::npos;
 
@@ -683,7 +682,7 @@ static DWORD ShortToLongPathName(
 
         // The file was found - replace the short name with the long.
         size old_len = (npos == right) ? path.length() - left : right - left;
-        size new_len = traits::length(fd.cFileName);
+        size new_len = strlen(fd.cFileName);
         path.replace(left, old_len, fd.cFileName, new_len);
 
         // More to do?
@@ -707,7 +706,7 @@ static DWORD ShortToLongPathName(
         return path.length() + 1;
 
     // Copy the buffer and return the number of characters copied.
-    traits::copy(lpszLongPath, path.c_str(), path.length() + 1);
+    memcpy(lpszLongPath, path.c_str(), path.length() + 1);
     return path.length();
 }
 

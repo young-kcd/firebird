@@ -11,7 +11,7 @@
 #include "../jrd/os/path_utils.h"
 #include "../jrd/gds_proto.h"
 
-PluginManager::Plugin PluginManager::findPlugin(const Firebird::string &name)
+PluginManager::Plugin PluginManager::findPlugin(const Firebird::PathName &name)
 {
 	for (Module *itr = moduleList; itr; itr = itr->next)
 	{
@@ -49,8 +49,8 @@ void PluginManager::loadAllPlugins()
 	Firebird::list<Path>::iterator pathItr;
 	char fb_lib_path[MAXPATHLEN];
 	gds__prefix(fb_lib_path, "");
-	Firebird::string fbLibPath(fb_lib_path);
-	Firebird::string checkDir;
+	Firebird::PathName fbLibPath(fb_lib_path);
+	Firebird::PathName checkDir;
 	
 	for (pathItr = searchPaths.begin(); pathItr != searchPaths.end(); ++pathItr)
 	{
@@ -80,9 +80,9 @@ void PluginManager::loadAllPlugins()
 			// Check to see if the module has been explicitly excluded from loading
 			if (!alreadyLoaded && ignoreModules.size() > 0)
 			{
-				Firebird::string pathComponent, modName;
+				Firebird::PathName pathComponent, modName;
 				PathUtils::splitLastComponent(pathComponent, modName, **dirItr);
-				for (Firebird::list<Firebird::string>::iterator itr2 = ignoreModules.begin();
+				for (Firebird::list<Firebird::PathName>::iterator itr2 = ignoreModules.begin();
 						itr2 != ignoreModules.end(); ++itr2)
 				{
 					if (modName == *itr2)
@@ -112,12 +112,12 @@ void PluginManager::loadAllPlugins()
 	}
 }
 
-PluginManager::Module *PluginManager::loadPluginModule(const Firebird::string& name)
+PluginManager::Module *PluginManager::loadPluginModule(const Firebird::PathName& name)
 {
 	char fb_lib_path[MAXPATHLEN];
 	gds__prefix(fb_lib_path, "");
-	Firebird::string fbLibPath(fb_lib_path);
-	Firebird::string checkPath;
+	Firebird::PathName fbLibPath(fb_lib_path);
+	Firebird::PathName checkPath;
 	Firebird::list<Path>::iterator itr;
 	
 	// Check to see if the module name was specified as a relative path
@@ -160,18 +160,18 @@ PluginManager::Module *PluginManager::loadPluginModule(const Firebird::string& n
 	{
 		for (itr = searchPaths.begin(); itr != searchPaths.end(); ++itr)
 		{
-			Firebird::string::size_type pos = 0;
-			Firebird::string::size_type checkPos;
+			Firebird::PathName::size_type pos = 0;
+			Firebird::PathName::size_type checkPos;
 			
 			if (itr->second)	// use fb path prefix
 			{
 				checkPos = name.find(fbLibPath, pos);
-				if (checkPos == Firebird::string::npos || checkPos != pos)
+				if (checkPos == Firebird::PathName::npos || checkPos != pos)
 					continue;	// The fb path prefix isn't a prefix for this module.  Opps.
 				pos += fbLibPath.length();
 			}
 			checkPos = name.find(itr->first, pos);
-			if (checkPos == Firebird::string::npos || checkPos != pos)
+			if (checkPos == Firebird::PathName::npos || checkPos != pos)
 				continue;	// The search path isn't a prefix for this module.  Opps.
 			// OK, the module has the correct prefix path, lets try to load it.
 			if (ModuleLoader::isLoadableModule(name))
@@ -194,12 +194,12 @@ PluginManager::Module *PluginManager::loadPluginModule(const Firebird::string& n
 	return 0;
 }
 
-PluginManager::Module *PluginManager::loadBuiltinModule(const Firebird::string& name)
+PluginManager::Module *PluginManager::loadBuiltinModule(const Firebird::PathName& name)
 {
 	return 0;
 }
 
-void PluginManager::addSearchPath(const Firebird::string& path, bool isFBRelative)
+void PluginManager::addSearchPath(const Firebird::PathName& path, bool isFBRelative)
 {
 	Firebird::list<Path>::iterator itr;
 	
@@ -212,7 +212,7 @@ void PluginManager::addSearchPath(const Firebird::string& path, bool isFBRelativ
 	searchPaths.push_back(Path(path, isFBRelative));
 }
 
-void PluginManager::removeSearchPath(const Firebird::string& path, bool isFBRelative)
+void PluginManager::removeSearchPath(const Firebird::PathName& path, bool isFBRelative)
 {
 	Firebird::list<Path>::iterator itr;
 	

@@ -129,6 +129,10 @@ SOURCE=..\..\..\src\jrd\db_alias.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\common\classes\fb_string.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\os\win32\fbsyslog.cpp
 # End Source File
 # Begin Source File

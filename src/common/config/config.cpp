@@ -32,7 +32,8 @@
 
 #include "../jrd/gdsassert.h"
 
-typedef Firebird::string string;
+// config_file works with OS case-sensitivity
+typedef Firebird::PathName string;
 
 /******************************************************************************
  *
@@ -223,7 +224,7 @@ ConfigImpl::~ConfigImpl()
 	delete[] values;
 }
 
-string ConfigImpl::getValue(ConfigFile& file, ConfigKey key)
+string ConfigImpl::getValue(ConfigFile& file, const ConfigKey key)
 {
 	return file.doesKeyExist(key) ? file.getString(key) : "";
 }

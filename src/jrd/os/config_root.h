@@ -29,6 +29,8 @@
 #include "fb_types.h"
 #include "fb_string.h"
 
+#include "../jrd/os/path_utils.h"
+
 /**
 	Since the original (isc.cpp) code wasn't able to provide powerful and
 	easy-to-use abilities to work with complex configurations, a decision
@@ -49,7 +51,8 @@
 
 class ConfigRoot
 {
-	typedef Firebird::string string;
+	// config_file works with OS case-sensitivity
+	typedef Firebird::PathName string;
 
 public:
 	ConfigRoot();
@@ -61,7 +64,7 @@ protected:
 	const char *getConfigFile() const;
 	
 private:
-	string root_dir;	
+	string root_dir;
 
 	// copy prohibition
 	ConfigRoot(const ConfigRoot&);

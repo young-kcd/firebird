@@ -39,7 +39,8 @@ class ConfigImpl : public ConfigRoot
 {
 	friend class Config;
 
-	typedef Firebird::string string;
+	// config_file works with OS case-sensitivity
+	typedef Firebird::PathName string;
 
 	enum ConfigType
 	{
@@ -62,7 +63,7 @@ class ConfigImpl : public ConfigRoot
 public:
     ~ConfigImpl();
 
-	static string getValue(ConfigFile&, ConfigKey);
+	static string getValue(ConfigFile&, const ConfigKey);
 
 	static int asInteger(const string&);
 	static bool asBoolean(const string&);

@@ -43,17 +43,13 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.42 2004-02-02 11:01:34 robocop Exp $
+$Id: flu.cpp,v 1.43 2004-02-08 17:08:31 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
 #include "../jrd/os/path_utils.h"
-
-#include <string>
-
-using namespace std;
 
 #include "../jrd/common.h"
 #include "../jrd/flu.h"
@@ -487,7 +483,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 		}
 
         if (!mod) {  // Start looking for "libxxxx.so" module names
-            string moduleName = "lib";
+			FireBird::PathName moduleName = "lib";
             moduleName += (const char*) absolute_module;
 			mod = search_for_module((TEXT*) moduleName.c_str(), name, ShowAccessError);
         }
@@ -603,7 +599,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 #define REQUIRED_MODULE_ACCESS 4
 #define OPEN_HANDLE(name) AdjustAndLoad(name)
 
-HMOD AdjustAndLoad(Firebird::string name) {
+HMOD AdjustAndLoad(Firebird::PathName name) {
 /**************************************
  *
  *	A d j u s t A n d L o a d	( W I N _ N T )
@@ -615,10 +611,10 @@ HMOD AdjustAndLoad(Firebird::string name) {
  *		name, to provide stable behaviour (implicit .DLL suffix).
  *
  **************************************/
-	Firebird::string suffix = name.length() > 4 ?
-		name.substr(name.length() - 4, 4) : Firebird::string("");
-	if (stricmp(suffix.c_str(), ".dll") != 0) {
-		if (name.substr(name.length() - 1, 1) != ".") {
+	Firebird::PathName suffix = name.length() > 4 ?
+		name.substr(name.length() - 4, 4) : Firebird::PathName("");
+	if (suffix != ".dll") {
+		if (name[name.length() - 1] != '.') {
 			name += '.';
 		}
 	}
