@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.14 2003-09-09 11:03:37 robocop Exp $
+ * $Id: extract.epp,v 1.15 2003-09-10 17:48:23 brodsom Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -94,7 +94,7 @@ extern IB_FILE *Out;
 
 /* Command terminator and procedure terminator */
 
-extern "C" const SQLTYPES Column_types[];
+extern const SQLTYPES Column_types[];
 extern const SCHAR *Integral_subtypes[];
 extern const SCHAR *Sub_types[];
 extern const SCHAR *UDF_param_types[];
