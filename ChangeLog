@@ -1,3 +1,17 @@
+2003-10-14 15:09  eku
+
+	* firebird2/: configure.in, builds/make.new/config/config.h.in,
+	src/include/gen/autoconfig_msvc.h, src/jrd/common.h,
+	src/jrd/os/posix/isc_ipc.cpp:
+	
+	SINIX-Z: POSIX stylish sigaction.
+
+2003-10-14 15:01  eku
+
+	* firebird2/src/wal/walw.cpp:
+	
+	Fixed another compile problem with logf.
+
 2003-10-13 14:55  dimitr
 
 	* firebird2/src/dsql/: pass1.cpp, pass1.cpp:
