@@ -43,9 +43,9 @@ en.InstalledProducts='re-installation analysis indicates that %s existing Firebi
 en.InstalledProdCountSingular=version has
 en.InstalledProdCountPlural=versions have
 
-en.Fb15Running1=An existing Firebird 1.5 or 2.0 Server is running.
-en.Fb15Running2= You must close the application or stop the
-en.Fb15Running3=         service before continuing.
+en.FbRunning1=An existing Firebird %1 Server is running.
+en.FbRunning2= You must close the application or stop the
+en.FbRunning3=         service before continuing.
 
 en.PreviousInstallBroken=   (Install appears broken due to version string mismatch.)
 en.PreviousInstallGood=   (Installation appears to be correct.)
@@ -67,3 +67,4 @@ en.RunISQL=Run command-line based Interactive SQL tool
 
 en.ReadmeFile=readme.txt
 en.InstallationReadmeFile=installation_readme.txt
+

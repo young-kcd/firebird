@@ -43,9 +43,9 @@ de.InstalledProducts=Die Neuinstallations-Analyse ergibt, dass %s existierende F
 de.InstalledProdCountSingular=Version gefunden wurde.
 de.InstalledProdCountPlural=Versionen gefunden wurden.
 
-de.Fb15Running1=Ein existierender Firebird 1.5 Server läuft.
-de.Fb15Running2= Sie müssen die Anwendung schließen oder den Dienst
-de.Fb15Running3=         beenden, bevor Sie fortfahren können.
+de.FbRunning1=Ein existierender Firebird 1.5 Server läuft.
+de.FbRunning2= Sie müssen die Anwendung schließen oder den Dienst
+de.FbRunning3=         beenden, bevor Sie fortfahren können.
 
 de.PreviousInstallBroken=   (Die Installation scheint wegen eines Versionskonflikts fehlerhaft zu sein.)
 de.PreviousInstallGood=   (Die Installation scheint korrekt sein.)

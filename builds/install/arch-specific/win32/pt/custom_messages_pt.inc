@@ -43,9 +43,9 @@ pt.InstalledProducts='A análise de reinstalação indica que foram encontradas %s 
 pt.InstalledProdCountSingular=versão tem
 pt.InstalledProdCountPlural=versões têm
 
-pt.Fb15Running1=Um Servidor Firebird 2.0 anterior já se encontra em execução.
-pt.Fb15Running2=     Tem que fechar a aplicação ou parar o serviço
-pt.Fb15Running3=                 antes de continuar.
+pt.FbRunning1=Um Servidor Firebird 2.0 anterior já se encontra em execução.
+pt.FbRunning2=     Tem que fechar a aplicação ou parar o serviço
+pt.FbRunning3=                 antes de continuar.
 
 pt.PreviousInstallBroken=   (A Instalação aparenta estar danificada por disparidade no texto da versão.)
 pt.PreviousInstallGood=   (A Instalação aparenta estar correcta.)

@@ -46,9 +46,6 @@
  *)
 
 
-
-
-
 //Registry keys for Firebird and InterBase
 Const
   //All InterBase and Firebird 1.0.n except IB5.n
@@ -308,7 +305,8 @@ begin
       //  [6,2,3,nnn]   Firebird 1.0.3
       //  [6,5,n,n]     InterBase 6.5
       //  [6,3,0,nnnn]  Firebird 1.5.0
-      //  [7,0,n,n]     InterBase 7.0
+      //  [6,3,0,nnnn]  Firebird 2.0.0
+      //  [7,n,n,n]     InterBase 7
 
       case product of
         IB4Install: begin
@@ -409,7 +407,7 @@ begin
 
         FB2Install: begin
           //We don't know (yet) what we should be comparing against here, ClientVersion
-          //should be equal or greater than 1.6.0.0
+          //should be equal or greater than 2.0.0.0
           if (CompareVersion(ProductsInstalledArray[product].ClientVersion, '2.0.0.0',2) < 0) then
             ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + BrokenInstall;
           if ((ProductsInstalledArray[product].InstallType AND ClientInstall)= ClientInstall) then begin
@@ -625,10 +623,11 @@ begin
     result := true;
 end;
 
-
-function FirebirdOneFiveRunning: boolean;
+//Detect any 1.5 or 2.0 server running with default ClassName or mutex
+function FirebirdDefaultServerRunning: boolean;
 var
   Handle: Integer;
+  mutex_found: boolean;
 begin
   result := False;
   //Look for a running version of Firebird 1.5 or later
@@ -639,7 +638,13 @@ begin
     Handle:=FindWindowByClassName('FB_Guard');
 
   if (Handle>0) then
-    result := True;
+     result := True
+  else begin
+    mutex_found := CheckForMutexes('FirebirdGuardianMutex,FirebirdServerMutex');
+    if mutex_found then
+      result := true;
+  end;
+
 end;
 
 

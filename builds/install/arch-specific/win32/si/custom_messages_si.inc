@@ -43,9 +43,9 @@ si.InstalledProducts='pri ponovni instalaciji je bila najdena obstojeèa %s Fireb
 si.InstalledProdCountSingular=verzija ima
 si.InstalledProdCountPlural=verzije imajo
 
-si.Fb15Running1=Obstojeèa verzija Firebird 2.0 Server je zagnana.
-si.Fb15Running2=Zaprite vse aplikacije oz. jih zakljuèite v
-si.Fb15Running3=nastavitah servisov.
+si.FbRunning1=Obstojeèa verzija Firebird 2.0 Server je zagnana.
+si.FbRunning2=Zaprite vse aplikacije oz. jih zakljuèite v
+si.FbRunning3=nastavitah servisov.
 
 si.PreviousInstallBroken=   (Instalacije je bila prekinjena zaradi neujemanja informacije o verzijah.)
 si.PreviousInstallGood=   (Instalacije je uspela.)

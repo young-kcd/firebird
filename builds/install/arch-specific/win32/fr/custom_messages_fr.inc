@@ -36,9 +36,9 @@ fr.InstallSummarySuffix4=          donner des résultats imprévisibles.
 fr.InstallSummaryCancel1= Si vous continuez avec cette installation, Firebird sera installé mais pas configuré.
 fr.InstallSummaryCancel2= Vous aurez à finir l''installation manuellement.
 fr.InstallSummaryCancel3= Voulez-vous ANNULER cette installation?
-fr.Fb15Running1=Une version de Firebird 1.5 ou 2.0 Serveur est active.
-fr.Fb15Running2=   Vous devez fermer l'application ou arréter
-fr.Fb15Running3=           le service pour continuer.
+fr.FbRunning1=Une version de Firebird 1.5 ou 2.0 Serveur est active.
+fr.FbRunning2=   Vous devez fermer l'application ou arréter
+fr.FbRunning3=           le service pour continuer.
 fr.InstalledProducts=Selon l'analyse de pré-installation il existe %s installation(s) de Firebird ou Interbase%s.
 ;these are intentionally blank
 fr.InstalledProdCountSingular=

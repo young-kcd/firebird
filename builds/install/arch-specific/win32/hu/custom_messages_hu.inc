@@ -43,9 +43,9 @@ hu.InstalledProducts='Az újratelepítési vizsgálat az mutatja, hogy %s létezõ Fir
 hu.InstalledProdCountSingular=található
 hu.InstalledProdCountPlural=találhatóak
 
-hu.Fb15Running1=Egy létezõ Firebird Adatbázis Szerver 2.0 már fut.
-hu.Fb15Running2= A folytatás elõtt Önnek be kell zárnia a futó alkalmazást,
-hu.Fb15Running3=          vagy le kell állítani szolgáltatást.
+hu.FbRunning1=Egy létezõ Firebird Adatbázis Szerver 2.0 már fut.
+hu.FbRunning2= A folytatás elõtt Önnek be kell zárnia a futó alkalmazást,
+hu.FbRunning3=          vagy le kell állítani szolgáltatást.
 
 hu.PreviousInstallBroken=   (A telepítés hibásnak tûnik a nem megfelelõ verzió-azonosító miatt.)
 hu.PreviousInstallGood=   (A telepítés hibátlannak tûnik.)
