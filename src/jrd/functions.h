@@ -14,7 +14,7 @@
  *  See the License for the specific language governing rights
  *  and limitations under the License.
  *
- *  The Original Code was created by Arno Brinkman
+ *  The Original Code was created by Nickolay Samofatov
  *  for the Firebird Open Source RDBMS project.
  *
  *  Copyright (c) 2004 Nickolay Samofatov and all contributors
