@@ -4244,7 +4244,7 @@ USHORT JRD_getdir(TEXT * buf, USHORT len)
     so in all probabilities attachment->att_working_directory will be null.
     return 0 so that ISC_expand_filename will create the file in fbserver's dir
    **/
-		if (!attachment->att_working_directory ||
+		if (!attachment || !attachment->att_working_directory ||
 			len - 1 < attachment->att_working_directory->str_length) return 0;
 		memcpy(buf, attachment->att_working_directory->str_data,
 			   attachment->att_working_directory->str_length);
