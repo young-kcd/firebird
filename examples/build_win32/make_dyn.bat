@@ -1,13 +1,11 @@
 
 call setenvvar.bat
 
-@echo.
-@echo cleaning
 :: CLEANING
 @call clean_dyn.bat
 
 @echo.
-@echo preprocessing dyn.e
+@echo preprocessing dyn*.e
 %ROOT_PATH%\bin\gpre -r -m -n -z %ROOT_PATH%\examples\dyn\dyn1.e %ROOT_PATH%\examples\dyn\dyn1.c -b localhost:%ROOT_PATH%\examples\empbuild\
 %ROOT_PATH%\bin\gpre -r -m -n -z %ROOT_PATH%\examples\dyn\dyn2.e %ROOT_PATH%\examples\dyn\dyn2.c -b localhost:%ROOT_PATH%\examples\empbuild\
 %ROOT_PATH%\bin\gpre -r -m -n -z %ROOT_PATH%\examples\dyn\dyn3.e %ROOT_PATH%\examples\dyn\dyn3.c -b localhost:%ROOT_PATH%\examples\empbuild\

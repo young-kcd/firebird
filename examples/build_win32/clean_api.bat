@@ -2,7 +2,7 @@
 call setenvvar.bat
 
 @echo.
-@echo cleaning
+@echo cleaning api
 :: CLEANING
 del %ROOT_PATH%\examples\api\*.obj 2>nul
 del %ROOT_PATH%\examples\api\*.exp 2>nul

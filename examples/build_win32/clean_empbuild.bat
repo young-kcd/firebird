@@ -2,7 +2,7 @@
 call setenvvar.bat
 
 @echo.
-@echo cleaning empbuild.fdb
+@echo cleaning empbuild
 :: CLEANING
 del %ROOT_PATH%\examples\empbuild\*.fdb 2>nul
 del %ROOT_PATH%\examples\empbuild\*.obj 2>nul

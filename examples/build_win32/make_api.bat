@@ -1,13 +1,11 @@
 
 call setenvvar.bat
 
-@echo.
-@echo cleaning
 :: CLEANING
 call clean_api.bat
 
 @echo.
-@echo preprocessing empbuild.e
+@echo preprocessing api14.e
 %ROOT_PATH%\bin\gpre -r -m -n -z %ROOT_PATH%\examples\api\api14.e %ROOT_PATH%\examples\api\api14.c -b localhost:%ROOT_PATH%\examples\empbuild\
 
 cd %ROOT_PATH%\examples\api\

@@ -2,6 +2,6 @@
 call setenvvar.bat
 
 @echo.
-@echo cleaning
+@echo cleaning udf
 :: TODO
 

@@ -1,5 +1,5 @@
-make_empbuild.bat
-make_api.bat
-make_dyn.bat
-make_stat.bat
-make_udf.bat
+call make_empbuild.bat
+call make_api.bat
+call make_dyn.bat
+call make_stat.bat
+call make_udf.bat

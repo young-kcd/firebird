@@ -1,8 +1,6 @@
 
 call setenvvar.bat
 
-@echo.
-@echo cleaning empbuild.fdb
 :: CLEANING
 call clean_empbuild.bat
 
