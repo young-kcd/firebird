@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.55 2002-10-29 20:20:05 skidder Exp $
+dnl $Id: configure.in,v 1.56 2002-10-30 14:49:18 kkuznetsov Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -168,6 +168,8 @@ if test "$READLINE_FLG" = "Y"; then
 fi
 AC_CHECK_LIB(stdc++, main,,, $LIBS)
 
+
+AC_CHECK_LIB(sfio, main,,, $LIBS)
 
 dnl Check for functions
 AC_CHECK_FUNCS(strlcpy strlcat)
