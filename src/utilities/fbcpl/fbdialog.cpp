@@ -1,8 +1,8 @@
 /*
- *	PROGRAM:	Firebird 1.5 control panel applet
+ *	PROGRAM:	Firebird 2.0 control panel applet
  *	MODULE:		fbdialog.cpp
  *	DESCRIPTION:	Main file to provide GUI based server control functions
- *					for Firebird 1.5 Super Server
+ *					for Firebird 2.0 Super Server
  *
  *  The contents of this file are subject to the Initial Developer's 
  *  Public License Version 1.0 (the "License"); you may not use this 
@@ -38,9 +38,10 @@
 
 
 #include "stdafx.h"
+//#include "FBPanel.h"
 #include "FBDialog.h"
 
-#include "../../common/config/config.h"
+//#include "../../common/config/config.h"
 
 #ifdef _DEBUG
 #undef THIS_FILE
@@ -396,8 +397,8 @@ void CFBDialog::ViewRegistryEntries()
 		DWORD dwBytesNeeded; 
 		OpenServiceManager( GENERIC_READ );
 
-		char * service = "";
-		char * display_name = "";
+		const char * service = "";
+		const char * display_name = "";
 		service = ISCGUARD_SERVICE;
 		display_name = ISCGUARD_DISPLAY_NAME;
 		hService = OpenService (hScManager, service, SERVICE_QUERY_CONFIG);
@@ -762,8 +763,8 @@ bool CFBDialog::ServerStart( CFBDialog::STATUS status )
 
 	if ( status.UseService ) 
 	{
-		char * service = "";
-		char * display_name = "";
+		const char * service = "";
+		const char * display_name = "";
 		if (status.UseGuardian)
 		{
 			service = ISCGUARD_SERVICE;
@@ -1068,7 +1069,7 @@ bool CFBDialog::AppRemove()
 }
 
 
-static USHORT svc_error (SLONG	error_status, TEXT *string, SC_HANDLE service)
+static USHORT svc_error (SLONG	error_status, const TEXT* string, SC_HANDLE service)
 //This code is for use with the SERVICES_ functions
 {
 	bool RaiseError = true;
@@ -1115,7 +1116,7 @@ void CFBDialog::ProcessMessages()
 }
 
 
-void CFBDialog::HandleSvcError(SLONG error_status, TEXT *string )
+void CFBDialog::HandleSvcError(SLONG error_status, const TEXT* string )
 // This method supports the static svc_error() function
 // and essentially duplicates HandleError. Oh to be rid of the 
 // legacy code.
@@ -1435,8 +1436,8 @@ void CFBDialog::SetAutoStart( CFBDialog::STATUS status )
 			
 			// The database is locked, so it is safe to make changes. 
 			
-			char * service = "";
-			char * display_name = "";
+			const char * service = "";
+			const char * display_name = "";
 			
 			if ( status.UseGuardian )
 			{

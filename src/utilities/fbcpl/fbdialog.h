@@ -1,8 +1,8 @@
 /*
- *	PROGRAM:	Firebird 1.5 control panel applet
+ *	PROGRAM:	Firebird 2.0 control panel applet
  *	MODULE:		FBDialog.h
  *	DESCRIPTION:	Main file to provide GUI based server control functions
- *					for Firebird 1.5
+ *					for Firebird 2.0
  *
  *  The contents of this file are subject to the Initial Developer's 
  *  Public License Version 1.0 (the "License"); you may not use this 
@@ -51,7 +51,7 @@
 #include "../../remote/os/win32/window.h"
 #include "../../iscguard/iscguard.h"
 
-extern USHORT svc_error (SLONG, TEXT *, SC_HANDLE);
+extern USHORT svc_error (SLONG, const TEXT*, SC_HANDLE);
 
 
 class CFBDialog : public CDialog
@@ -216,7 +216,7 @@ public:
 	bool ServerStart( CFBDialog::STATUS status );
 	bool ServiceInstall( CFBDialog::STATUS status );
 	bool ServiceRemove();
-	static void HandleSvcError(SLONG	status, TEXT *string);
+	static void HandleSvcError(SLONG	status, const TEXT* string);
 	void HandleError(bool silent, TEXT *string );
 	void ShowError( LPTSTR lpMsgBuf, CString error_title );
 	void UpdateServerStatus();
