@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.121 2003-02-22 21:48:48 skidder Exp $
+dnl $Id: configure.in,v 1.122 2003-02-25 01:12:57 brodsom Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -586,6 +586,9 @@ mkdir -p gen/libfbclient/remote
 mkdir -p gen/libfbclient/utilities
 mkdir -p gen/libfbclient/fbutil
 mkdir -p gen/libfbclient/common/classes
+mkdir -p gen/libfbclient/common/config
+mkdir -p gen/libfbclient/jrd/os
+mkdir -p gen/libfbclient/jrd/os/win32
 mkdir -p gen/client.gbak/burp
 mkdir -p gen/client.gfix/alice
 mkdir -p gen/client.gpre/gpre
@@ -643,6 +646,7 @@ mkdir -p gen/embed.qli/qli
 mkdir -p gen/embed.gpre/gpre
 mkdir -p gen/inet_server/remote
 mkdir -p gen/msgs/msgs
+mkdir -p gen/extlib/extlib
 mkdir -p gen/extlib/extlib/fbudf
 mkdir -p gen/v5_examples/v5_examples
 
