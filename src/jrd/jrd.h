@@ -1021,10 +1021,8 @@ extern TDBB gdbb;
  * macros used to set tdbb and dbb pointers when there are not set already *
  *-------------------------------------------------------------------------*/
 
-#define	NULL_TDBB	((TDBB) NULL)
-#define	NULL_DBB	((DBB) NULL)
-#define	SET_TDBB(tdbb)	if ((tdbb) == NULL_TDBB) { (tdbb) = GET_THREAD_DATA; }; CHECK_TDBB (tdbb)
-#define	SET_DBB(dbb)	if ((dbb)  == NULL_DBB)  { (dbb)  = GET_DBB; }; CHECK_DBB(dbb);
+#define	SET_TDBB(tdbb)	if ((tdbb) == NULL) { (tdbb) = GET_THREAD_DATA; }; CHECK_TDBB (tdbb)
+#define	SET_DBB(dbb)	if ((dbb)  == NULL)  { (dbb)  = GET_DBB; }; CHECK_DBB(dbb);
 
 #ifdef V4_THREADING
 #define V4_JRD_MUTEX_LOCK(mutx)         JRD_mutex_lock (mutx)

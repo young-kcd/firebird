@@ -622,12 +622,12 @@ SBM *SBM_or(SBM * bitmap1, SBM * bitmap2)
    add the bit to the other and return. */
 
 	if (map1->sbm_state == SBM_SINGULAR) {
-		SBM_set(NULL_TDBB, bitmap2, map1->sbm_number);
+		SBM_set(NULL, bitmap2, map1->sbm_number);
 		return bitmap2;
 	}
 
 	if (map2->sbm_state == SBM_SINGULAR) {
-		SBM_set(NULL_TDBB, bitmap1, map2->sbm_number);
+		SBM_set(NULL, bitmap1, map2->sbm_number);
 		return bitmap1;
 	}
 

@@ -680,7 +680,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, CTL control)
 	} *CTLAUX;
 
 	CTLAUX aux;
-	TDBB tdbb = NULL_TDBB;
+	TDBB tdbb = NULL;
 /* Note: Cannot pass tdbb without API change to user filters */
 
 #define EXP_SCALE		128		/* to keep expansion non-floating */

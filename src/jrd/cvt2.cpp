@@ -119,7 +119,7 @@ SSHORT CVT2_compare(DSC * arg1, DSC * arg2, FPTR_VOID err)
 	SSHORT fill;
 	USHORT t1, t2;
 	CHARSET_ID charset1, charset2;
-	TDBB tdbb = NULL_TDBB;
+	TDBB tdbb = NULL;
 
 /* Handle the simple (matched) ones first */
 
@@ -519,7 +519,7 @@ SSHORT CVT2_blob_compare(DSC * arg1, DSC * arg2, FPTR_VOID err)
  *
  **************************************/
 	/* CHARSET_ID charset1, charset2; */
-	TDBB tdbb = NULL_TDBB;
+	TDBB tdbb = NULL;
 	SSHORT l1, l2;
 	USHORT ttype1, ttype2;
 	SSHORT ret_val = 0;
@@ -868,7 +868,7 @@ USHORT CVT2_make_string2(DSC * desc,
 
 	if (desc->dsc_dtype <= dtype_any_text) {
 		USHORT cs1, cs2;
-		TDBB tdbb = NULL_TDBB;
+		TDBB tdbb = NULL;
 
 		if (to_interp == from_interp) {
 			*address = from_buf;

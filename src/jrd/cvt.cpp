@@ -1571,13 +1571,13 @@ void DLL_EXPORT CVT_move(DSC * from, DSC * to, FPTR_VOID err)
 #ifndef SUPERCLIENT
 			if ((INTL_TTYPE(from) == ttype_dynamic) &&
 				(err == (FPTR_VOID) ERR_post))
-					charset1 = INTL_charset(NULL_TDBB, INTL_TTYPE(from), err);
+					charset1 = INTL_charset(NULL, INTL_TTYPE(from), err);
 			else
 				charset1 = INTL_TTYPE(from);
 
 			if ((INTL_TTYPE(to) == ttype_dynamic) &&
 				(err == (FPTR_VOID) ERR_post))
-					charset2 = INTL_charset(NULL_TDBB, INTL_TTYPE(to), err);
+					charset2 = INTL_charset(NULL, INTL_TTYPE(to), err);
 			else
 				charset2 = INTL_TTYPE(to);
 

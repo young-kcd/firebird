@@ -1061,7 +1061,7 @@ void API_ROUTINE gds__map_blobs(int *handle1, int *handle2)
    not function.
    1996-Nov-06 David Schnepper  */
 	deliberate_compile_error++;
-	BLB_map_blobs(NULL_TDBB, handle1, handle2);
+	BLB_map_blobs(NULL, handle1, handle2);
 #endif
 #endif
 }

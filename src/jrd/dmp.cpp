@@ -366,9 +366,9 @@ void DMP_page(SLONG number, USHORT page_size)
 
 	window.win_page = number;
 	window.win_flags = 0;
-	page = CCH_FETCH(NULL_TDBB, &window, LCK_read, 0);
+	page = CCH_FETCH(NULL, &window, LCK_read, 0);
 	DMP_fetched_page(page, number, 0, page_size);
-	CCH_RELEASE(NULL_TDBB, &window);
+	CCH_RELEASE(NULL, &window);
 }
 
 

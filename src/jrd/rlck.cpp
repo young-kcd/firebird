@@ -447,9 +447,9 @@ LCK RLCK_reserve_relation(TDBB tdbb,
 	wait = (transaction->tra_flags & TRA_nowait) ? FALSE : TRUE;
 /* get lock */
 	if (lock->lck_logical)
-		result = LCK_convert_non_blocking(NULL_TDBB, lock, level, wait);
+		result = LCK_convert_non_blocking(NULL, lock, level, wait);
 	else
-		result = LCK_lock_non_blocking(NULL_TDBB, lock, level, wait);
+		result = LCK_lock_non_blocking(NULL, lock, level, wait);
 	if (result)
 		return lock;
 	else {
@@ -998,10 +998,10 @@ static BOOLEAN obtain_lock(JRD_TRA transaction, LCK lock, USHORT lock_level)
 	if ((lock_level <= lock->lck_logical) && (lock->lck_id != -1))
 		return TRUE;
 	if ((lock->lck_logical) && (lock->lck_id != -1)) {
-		if (LCK_convert_non_blocking(NULL_TDBB, lock, lock_level, wait_flag))
+		if (LCK_convert_non_blocking(NULL, lock, lock_level, wait_flag))
 			return TRUE;
 	}
-	else if (LCK_lock_non_blocking(NULL_TDBB, lock, lock_level, wait_flag))
+	else if (LCK_lock_non_blocking(NULL, lock, lock_level, wait_flag))
 		return TRUE;
 	return FALSE;
 }
@@ -1030,7 +1030,7 @@ static void start_record_locking(JRD_REL relation)
 	if (record_locking->lck_physical == LCK_SW)
 		return;
 	ISC_ast_enter();
-	LCK_release(NULL_TDBB, record_locking);
+	LCK_release(NULL, record_locking);
 	ISC_ast_exit();
 }
 #endif

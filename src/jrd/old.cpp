@@ -192,9 +192,9 @@ ULONG start_seqno, USHORT start_file, USHORT num_files, SCHAR ** files)
 		window.win_page = (sequence) ? (SLONG) (sequence * pgc->pgc_ppp - 1) :
 			(SLONG) pgc->pgc_pip;
 		window.win_flags = 0;
-		page = (PIP) CCH_FETCH(NULL_TDBB, &window, LCK_read, pag_pages);
+		page = (PIP) CCH_FETCH(NULL, &window, LCK_read, pag_pages);
 		MOVE_FAST((UCHAR *) page, (UCHAR *) temp_page, dbb->dbb_page_size);
-		CCH_RELEASE(NULL_TDBB, &window);
+		CCH_RELEASE(NULL, &window);
 		if (start_page < (ULONG) ((sequence + 1) * pgc->pgc_ppp)) {
 			last_page = old_dump_all_pages(OLD_handle, temp_page,
 										   sequence, start_page);
@@ -476,14 +476,14 @@ static int old_dump_page(OLD OLD_handle, ULONG page_number)
 
 	window.win_page = page_number;
 	window.win_flags = 0;
-	CCH_FETCH_NO_CHECKSUM(NULL_TDBB, &window, LCK_read, pag_undefined);
+	CCH_FETCH_NO_CHECKSUM(NULL, &window, LCK_read, pag_undefined);
 	ret_val = old_put_rec(OLD_handle,
 						  reinterpret_cast < jrnh * >(&record),
 						  JRND_SIZE,
 						  reinterpret_cast < UCHAR * >(window.win_buffer),
 						  dbb->dbb_page_size);
 
-	CCH_RELEASE(NULL_TDBB, &window);
+	CCH_RELEASE(NULL, &window);
 
 	return ret_val;;
 }

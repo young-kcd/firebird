@@ -1090,7 +1090,7 @@ static FIL setup_file(DBB		dbb,
 
 	dbb->dbb_lock = lock = FB_NEW_RPT(*dbb->dbb_permanent, l) lck;
 	lock->lck_type = LCK_database;
-	lock->lck_owner_handle = LCK_get_owner_handle(NULL_TDBB, lock->lck_type);
+	lock->lck_owner_handle = LCK_get_owner_handle(NULL, lock->lck_type);
 	lock->lck_object = reinterpret_cast<blk*>(dbb);
 	lock->lck_length = l;
 	lock->lck_dbb = dbb;
@@ -1101,9 +1101,9 @@ static FIL setup_file(DBB		dbb,
    on at least a shared lock */
 
 	dbb->dbb_flags |= DBB_exclusive;
-	if (!LCK_lock(NULL_TDBB, lock, LCK_EX, LCK_NO_WAIT)) {
+	if (!LCK_lock(NULL, lock, LCK_EX, LCK_NO_WAIT)) {
 		dbb->dbb_flags &= ~DBB_exclusive;
-		LCK_lock(NULL_TDBB, lock,
+		LCK_lock(NULL, lock,
 				 (dbb->dbb_flags & DBB_cache_manager) ? LCK_SR : LCK_SW,
 				 LCK_WAIT);
 	}

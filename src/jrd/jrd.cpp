@@ -512,7 +512,7 @@ inline static DBB get_dbb()
 
 static void SET_TDBB(TDBB& tdbb)
 {
-	if (tdbb == NULL_TDBB) {
+	if (tdbb == NULL) {
 		tdbb = get_thread_data();
 	}
 	check_tdbb(tdbb);

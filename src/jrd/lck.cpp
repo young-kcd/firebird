@@ -784,7 +784,7 @@ SLONG LCK_read_data(LCK lock)
 
 	assert(LCK_CHECK_LOCK(lock));
 #ifdef VMS
-	if (!LCK_lock(NULL_TDBB, lock, LCK_null, LCK_NO_WAIT))
+	if (!LCK_lock(NULL, lock, LCK_null, LCK_NO_WAIT))
 		return 0;
 
 	data = LOCK_read_data(lock->lck_id);
