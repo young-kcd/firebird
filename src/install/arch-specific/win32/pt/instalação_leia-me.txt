@@ -1,0 +1,278 @@
+Servidor SQL Firebird 1.5.1 
+==================================================
+
+Este documento constitui um guia para instalar o kit do
+Firebird 1.5 na plataforma Win32. Estas notas referem-
+se ao próprio kit de instalação, em vez do Firebird 1.5
+em geral.
+
+** NOTAS IMPORTANTES **
+
+Se usou um dos binários de instalação do Sourceforge 
+para instalar a RC2 recomenda-se que a remova directa-
+-mente a partir da pasta de instalação através do 
+unins000.exe.
+
+Não use o Painel de Controlo como atalho para o 
+programa de remoção. Parece haver um erro que impede 
+que o serviço do servidor seja encerrado se a remoção 
+se fizer a partir daí. 
+
+Isto só se aplica à remoção da versão RC2 do Firebird 
+no Sourceforge. Para binários de instalação mais 
+recentes poderá proceder à remoção através de qualquer
+método disponível.
+
+**       FIM      **
+
+Conteúdo
+--------
+
+o Antes de Instalar
+o Novas funcionalidades da aplicação de instalação
+o Funcionalidades da instalação abandonadas 
+o Remoção
+o Outras Notas
+o Instalação a partir de um ficheiro batch
+
+
+Antes de Instalar
+-----------------
+
+Recomenda-se que REMOVA quaisquer versões prévias 
+do Firebird 1.0, Firebird 1.5 ou InterBase 
+antes de instalar este kit.
+
+
+Novas funcionalidades da aplicação de instalação
+------------------------------------------------
+
+o Esta aplicação de instalação combina os binários do 
+  servidor super e do servidor classic num só kit de
+  instalação. Poderá escolher uma ou outra, mas não 
+  ambas.
+  Para mudar entre as duas versões terá que primeiro 
+  remover a anterior antes de reinstalar a nova.
+  
+o As regras para a instalação da biblioteca mudaram
+  consideravelmente. São explicadas em detalhe em
+    .\docs\README.Win32LibraryInstallation.txt
+  o qual estará disponível após a instalação.
+
+  Como resultado destas novas regras o programa de 
+  instalação procura instalações prévias do Firebird 
+  ou InterBase. 
+  
+  - Se o Firebird 1.5 já estiver instalado tentará a 
+    "instalação por cima". Se o servidor se encontrar
+    em execução a instalação será interrompida.
+
+  - Se outra versão do Firebird ou InterBase já estiver
+    instalada um aviso será enviado ao utilizador. Se o
+    utilizador insistir em continuar, o programa de 
+    instalação instala o Firebird e insere as entradas
+    no registo mas não irá configurar o Firebird para 
+    se executar quer como serviço quer como aplicação. 
+    Este passo terá que ser feito manualmente.
+
+  - O programa de instalação possui uma nova opção de 
+    linha de comandos
+      /force
+    a qual permite que aqueles com uma atitude do tipo
+    'seja o que Deus quiser' possam ignorar esta 
+    precaução.
+
+
+o Se um ficheiro firebird.conf, já modificado, existir 
+  na pasta de instalação este será salvaguardado em:
+    firebird.conf.saved.n
+  onde n é um número. O programa de instalação instala 
+  sempre o ficheiro por omissão firebird.conf. Isto 
+  garante consistência ao processo de instalação. De 
+  outra forma o programa de instalação teria que 
+  analisar e modificar (e possivelmente tornar 
+  incoerente) o ficheiro de configuração.
+
+
+Funcionalidades abandonadas relativamente à instalação
+------------------------------------------------------
+
+o O Firebird 1.0 reservou uma nova entrada de registo
+  para o uso do Firebird. Esta era:
+  
+    HKLM\SOFTWARE\FirebirdSQL 
+  Agora é abandonada e será eliminada pelo programa
+  de instalação. Se possuir aplicações que dependam 
+  desta chave terá que a inserir manualmente. 
+  Contudo, é preferível que modifique a sua aplicação 
+  por forma a ler a nova chave.
+  
+o Em versões anteriores ao Firebird 1.5 "release 
+  candidates" o fbclient.dll era instalado na pasta de
+  <sistema>. Esta prática foi abandonada. 
+  Uma opção para instalar na pasta de <sistema> está 
+  disponível durante a instalação. Contudo é preferível
+  que modifique a sua aplicação por forma a se adaptar 
+  à nova localização do fbclient.
+  
+
+Remoção
+-------
+
+o É preferível que este kit seja removido correctamente
+  usando a aplicação de remoção fornecida. Tal poderá
+  ser efectuado recorrendo ao Painel de Controlo.
+  Alternativamente poderá ser removido executando o
+  unins000.exe directamente a partir da pasta de
+  instalação.
+  
+o Se o Firebird se encontrar em execução como aplicação
+  (em vez de um serviço) recomenda-se que o interrompa
+  manualmente antes de proceder à remoção. O motivo é 
+  porque o programa de remoção não pode parar uma 
+  aplicação em execução. Se um servidor se encontrar em
+  execução durante a remoção o processo terminará com 
+  erros.
+  Terá que remover o restante manualmente.
+
+
+Outras Notas
+------------
+
+  O Firebird requer o WinSock2. Todas as plataformas 
+  Win32 deverão possui-lo, excepto para o Win95. 
+  Um teste sobre a sua presença é feito durante o pro-
+  cesso de instalação.
+  Se não for encontrado a instalação fracassará. Poderá
+  visitar este link:
+
+    http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
+
+  para obter informação sobre a sua instalação.
+
+
+Instalação a partir de um ficheiro batch
+----------------------------------------
+
+O programa de configuração poderá ser executado a 
+partir de um ficheiro batch. Os parâmetros seguintes
+poderão ser usados:
+
+
+/SP- 
+  Desactiva a mensagem 'Irá ser instalado... Pretende 
+  continuar?' no início da instalação. 
+
+/SILENT, /VERYSILENT 
+  Ordena ao programa de instalação para se executar em
+  modo silencioso ou muito silencioso. Quando escolher
+  a opção silenciosa o assistente e a janela de fundo 
+  não serão mostrados mas a janela de progresso sim.
+  Quando a opção de muito silencioso for escolhida nem
+  a janela de progresso será mostrada.
+  Tudo o resto será processado de modo normal, por 
+  exemplo se ocorrer uma mensagem de erro durante a 
+  instalação ou a pergunta de inicio da instalação
+  (se não a tiver desactivado com a opção '/SP-'
+  explicada em baixo) 
+
+  Se um reinicio for necessário e o comando 
+  '/NORESTART' não for usado (ver em baixo) e a insta-
+  lação for silenciosa, uma caixa de mensagem com 
+  "Reiniciar agora?" será mostrada. No caso da instala-
+  ção muito silenciosa o reinicio será efectuado sem 
+  qualquer pergunta. 
+
+/NORESTART 
+  Ordena ao programa de instalação para não reiniciar 
+  mesmo que tal seja necessário.
+  
+/DIR="x:\caminho da pasta"  
+  Sobrepõe o nome da pasta por omissão mostrado na
+  página do assistente de Selecção de Pasta Destino. 
+  Um caminho completo terá que ser especificado. Se a
+  directiva DisableDirPage da secção [Setup] estiver
+  a yes(sim), este comando de linha será ignorado. 
+
+/GROUP="nome pasta" 
+  Sobrepõe o nome da pasta por omissão mostrado na 
+  página do assistente de Seleccionar Pasta no Menu 
+  Iniciar. Se a directiva DisableProgramGroupPage da 
+  secção [Setup] estiver a yes(sim), este comando de 
+  linha será ignorado.
+
+/NOICONS 
+  Ordena ao programa de instalação para desactivar a 
+  caixa de selecção "Não criar quaisquer ícones" na
+  página do assistente Seleccionar Pasta no Menu 
+  Iniciar. 
+
+/COMPONENTS="lista de nomes de componentes separados 
+             por vírgula" 
+
+  Escolha entre - SuperServerComponent, 
+                  ClassicServerComponent, 
+                  ServerComponent, 
+                  DevAdminComponent e
+                  ClientComponent
+
+  Sobrepõe as configurações por omissão dos componentes
+  a instalar. Usando este parâmetro de comando linha 
+  faz com que o programa de instalação automaticamente
+  seleccione um tipo personalizado. Uma instalação 
+  completa requer a combinação de mais de um componente. 
+  Por exemplo:
+  
+  /COMPONENTS="SuperServerComponent, ServerComponent, 
+               DevAdminComponent, ClientComponent"
+  
+  teria que ser usado para uma instalação completa.
+
+
+/FORCE
+
+  Ordena ao programa de instalação para ignorar a sua
+  análise do ambiente existente. Irá tentar instalar
+  e configurar o Firebird 1.5 tal como se não existisse
+  nenhuma versão prévia do Firebird ou InterBase 
+  instalada.
+  
+  Isto poderá ser útil se possuir uma remoção 
+  seriamente danificada que não possa ser removida. 
+  Ou poderá ser uma outra maneira de irritar os seus 
+  utilizadores cessando uma instalação funcional do 
+  Interbase. A escolha é sua.
+
+
+/NOCPL
+
+  Não instalar a aplicação no Painel de Controlo. Isto
+  é útil por dois motivos:
+  
+  o A Instalação/Remoção do programa CPL terá que pedir 
+    o reinicio do sistema.
+
+  o Poderá optar por usar um programa CPL alternativo.
+
+  
+/NOGDS32
+
+  Não instalar uma cópia da biblioteca cliente na pasta
+  de sistema, mesmo que a análise da instalação conclua
+  que tudo está Ok.
+
+
+/COPYFBCLIENT
+
+  Copia o fbclient.dll para a pasta de sistema. Isto 
+  é recomendado para instalações de cliente se tiver 
+  a certeza que apenas irá aceder a uma só versão de
+  servidor. Se as suas aplicações clientes necessitarem
+  de tirar partido do acesso a múltiplas versões de 
+  servidor este comando não é recomendado. Veja
+
+    doc/README.Win32LibraryInstallation.txt
+
+  para mais informação.
+
+
