@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.108 2004-08-16 12:28:24 alexpeshkoff Exp $
+ * $Id: ddl.cpp,v 1.109 2004-08-17 11:19:41 dimitr Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -701,6 +701,7 @@ static bool is_array_or_blob(const dsql_nod* node)
 	case nod_current_time:
 	case nod_current_timestamp:
 	case nod_constant:
+	case nod_null:
 	case nod_via:
 	case nod_internal_info:
 		return false;
