@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: semaphore.h,v 1.2 2003-09-16 21:45:47 skidder Exp $
+ *  $Id: semaphore.h,v 1.3 2003-10-30 10:59:32 brodsom Exp $
  *
  */
 
@@ -85,41 +85,62 @@ namespace Firebird {
 class Semaphore {
 private:
 	sem_t sem;
+	bool  init;
 public:
 	Semaphore() {
-		if (sem_init(&sem, 0, 0) == -1)
+		if (sem_init(&sem, 0, 0) == -1){
+			gds__log("Error on semaphore.h constructor error");
 			system_call_failed::raise();
+		}
+		init = true;
 	}
 	~Semaphore() {
-		if (sem_destroy(&sem) == -1)
+		assert(init==true);
+		if (sem_destroy(&sem) == -1) {
+			gds__log("Error on semaphore.h destructor error");
 			system_call_failed::raise();
+		}
+		init = false;
+
 	}
 	bool tryEnter(int seconds = 0) {
+		assert(init==true);
 		if (seconds == 0) {
-			if (sem_trywait(&sem) != -1) return true;
-			if (errno == EAGAIN) return false;
-			system_call_failed::raise();
+			if (sem_trywait(&sem) != -1) 
+				return true;
+			if (errno == EAGAIN) 
+				return false;
 		} else if (seconds < 0) {
-			if (sem_wait(&sem) == -1)
-				system_call_failed::raise();
+			if (sem_wait(&sem) != -1)
+				return false;
 		} else {
 			struct timespec timeout;
 			timeout.tv_sec = time(NULL) + seconds;
 			timeout.tv_nsec = 0;
-			if (sem_timedwait(&sem, &timeout) == 0) return true;
-			if (errno == ETIMEDOUT) return false;
-			system_call_failed::raise();
+			if (sem_timedwait(&sem, &timeout) == 0) 
+				return true;
+			if (errno == ETIMEDOUT) 
+				return false;
 		}
-		return false;
+		char message[128];
+		sprintf(message,"Error on semaphore.h tryEnter errno=%d\n",errno);
+		gds__log(message);
+		system_call_failed::raise();
 	}
 	void enter() {
-		if (sem_wait(&sem) == -1)
+		assert(init==true);
+		if (sem_wait(&sem) == -1){
+			gds__log("Error on semaphore.h enter error");
 			system_call_failed::raise();
+		}
 	}
 	void release(SLONG count = 1) {
+		assert(init==true);
 		for (int i = 0; i < count; i++)
-			if (sem_post(&sem) == -1)
+			if (sem_post(&sem) == -1){
+				gds__log("Error on semaphore.h release error");
 				system_call_failed::raise();
+			}
 	}
 };
 
