@@ -1159,31 +1159,7 @@ void VIO_erase(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 
 	if (rpb->rpb_stream_flags & RPB_s_refetch)
 	{
-		tid_fetch = rpb->rpb_transaction;
-		if ((!DPM_get(tdbb, rpb, LCK_read)) ||
-			(!VIO_chase_record_version(tdbb,
-										rpb,
-										NULL,
-										transaction,
-										reinterpret_cast<blk*>(
-											tdbb->tdbb_default),FALSE)))
-		{
-			ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
-		}
-		VIO_data(tdbb, rpb,
-				 reinterpret_cast<blk*>(tdbb->tdbb_request->req_pool));
-
-		/* If record is present, and the transaction is read committed,
-		 * make sure the record has not been updated.  Also, punt after
-		 * VIO_data () call which will release the page.
-		 */
-
-		if ((transaction->tra_flags & TRA_read_committed) &&
-			(tid_fetch != rpb->rpb_transaction))
-		{
-			ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
-		}
-
+		RefetchRecord(tdbb, rpb, transaction);
 		rpb->rpb_stream_flags &= ~RPB_s_refetch;
 	}
 
@@ -1980,8 +1956,9 @@ static void RefetchRecord(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 		  (!VIO_chase_record_version
 			(tdbb, rpb, NULL, transaction,
 			reinterpret_cast < blk * >(tdbb->tdbb_default), 
-			FALSE)))
+			FALSE))) {
 		ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
+	}
 	VIO_data(tdbb, rpb,
 			reinterpret_cast < blk * >(tdbb->tdbb_request->req_pool));
 
@@ -1990,8 +1967,12 @@ static void RefetchRecord(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 	 * VIO_data () call which will release the page.
 	 */
 	if ((transaction->tra_flags & TRA_read_committed) &&
-			(tid_fetch != rpb->rpb_transaction))
+		(tid_fetch != rpb->rpb_transaction) &&
+		// added to check that it was not current transcation,
+		// who modified the record. Alex P, 18-Jun-03
+		(rpb->rpb_transaction != transaction->tra_number)) {
 		ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
+	}
 }
 
 void VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, JRD_TRA transaction)
