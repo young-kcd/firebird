@@ -70,16 +70,16 @@ typedef struct why_hndl
 } *WHY_HNDL, *WHY_REQ, *WHY_DBB, *WHY_TRA, 
   *WHY_BLB, *WHY_ATT, *WHY_STMT, *WHY_SVC;
 
-#define HANDLE_invalid		0
-#define HANDLE_database		1
-#define HANDLE_transaction	2
-#define HANDLE_request		3
-#define HANDLE_blob			4
-#define HANDLE_statement	5
-#define HANDLE_service		6
+const int HANDLE_invalid		= 0;
+const int HANDLE_database		= 1;
+const int HANDLE_transaction	= 2;
+const int HANDLE_request		= 3;
+const int HANDLE_blob			= 4;
+const int HANDLE_statement		= 5;
+const int HANDLE_service		= 6;
 
-#define HANDLE_TRANSACTION_limbo	1
-#define HANDLE_BLOB_filter			2	/* Blob is locally filtered */
-#define	HANDLE_STATEMENT_local		4	/* Process DSQL statement locally */
+const int HANDLE_TRANSACTION_limbo	= 1;
+const int HANDLE_BLOB_filter		= 2;	/* Blob is locally filtered */
+const int HANDLE_STATEMENT_local	= 4;	/* Process DSQL statement locally */
 
 #endif // JRD_Y_HANDLE_H

@@ -75,8 +75,6 @@
 #include "../jrd/sch_proto.h"
 #include "../common/utils_proto.h"
 
-#define BLANK	'\040'
-
 DATABASE DB = STATIC "ODS.RDB";
 
 using namespace Jrd;

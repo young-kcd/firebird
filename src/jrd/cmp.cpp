@@ -112,7 +112,7 @@ rel_MAX} RIDS;
 
 // size of req_rpb[0]
 const size_t REQ_TAIL = sizeof (Jrd::jrd_req::blk_repeat_type);
-#define MAP_LENGTH		256
+const int MAP_LENGTH	= 256;
 
 /* RITTER - changed HP10 to HPUX */
 #if defined (HPUX) && defined (SUPERSERVER)

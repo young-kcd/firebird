@@ -127,13 +127,13 @@ public:
 
 /* Bitmask values for the svc_flags variable */
 
-#define SVC_eof			 1
-#define SVC_timeout		 2
-#define SVC_forked		 4
-#define SVC_detached	 8
-#define SVC_finished	16
-#define SVC_thd_running	32
-#define SVC_evnt_fired	64
+const int SVC_eof			= 1;
+const int SVC_timeout		= 2;
+const int SVC_forked		= 4;
+const int SVC_detached		= 8;
+const int SVC_finished		= 16;
+const int SVC_thd_running	= 32;
+const int SVC_evnt_fired	= 64;
 
 
 // Method used to signify that the service started has done basic

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.82 2004-05-02 23:04:59 skidder Exp $ 
+  * $Id: evl.cpp,v 1.83 2004-05-03 21:43:56 brodsom Exp $ 
  */
 
 /*
@@ -117,9 +117,7 @@
 #include "../common/config/config.h"
 #include "../jrd/evl_string.h"
 
-#define TEMP_LENGTH     128
-
-#define TEMP_SIZE(x)	sizeof (x)
+const int TEMP_LENGTH	= 128;
 
 #define MAX_INT64_LIMIT	(MAX_SINT64 / 10)
 #define MIN_INT64_LIMIT	(MIN_SINT64 / 10)
@@ -127,6 +125,7 @@
 #ifdef VMS
 double MTH$CVT_D_G(), MTH$CVT_G_D();
 #endif
+
 
 /*  *** DANGER DANGER WILL ROBINSON ***
  *  add(), multiply(), and divide() all take the same three arguments, but
@@ -4392,7 +4391,7 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
 	str* sleuth_str = NULL;
 	SSHORT l1 =
 		MOV_make_string2(desc3, ttype, &p1,
-						 reinterpret_cast<vary*>(temp1), TEMP_SIZE(temp1),
+						 reinterpret_cast<vary*>(temp1), sizeof(temp1),
 						 &sleuth_str);
 /* Get address and length of search string */
 	UCHAR* p2;
@@ -4400,7 +4399,7 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
 	str* match_str = NULL;
 	SSHORT l2 =
 		MOV_make_string2(desc2, ttype, &p2,
-						 reinterpret_cast<vary*>(temp2), TEMP_SIZE(temp2),
+						 reinterpret_cast<vary*>(temp2), sizeof(temp2),
 						 &match_str);
 
 /* Merge search and control strings */
@@ -4420,7 +4419,7 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
 		l1 =
 			MOV_make_string2(desc1, ttype, &p1,
 							 reinterpret_cast<vary*>(temp1),
-							 TEMP_SIZE(temp1), &data_str);
+							 sizeof(temp1), &data_str);
 		ret_val = obj.sleuth_check(tdbb, 0, p1, l1, control, l2);
 	}
 	else {
@@ -4496,14 +4495,14 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 			l2 =
 				MOV_make_string2(desc2, type1, &p2,
 							 	 reinterpret_cast<vary*>(temp2),
-							 	 TEMP_SIZE(temp2), &match_str);
+							 	 sizeof(temp2), &match_str);
 		}
 
 		USHORT xtype1;
 		const SSHORT l1 =
 			MOV_get_string_ptr(desc1, &xtype1, &p1,
 							   reinterpret_cast<vary*>(temp1),
-							   TEMP_SIZE(temp1));
+							   sizeof(temp1));
 
 		fb_assert(xtype1 == type1);
 		ret_val = string_function(tdbb, node, l1, p1, l2, p2, type1, computed_invariant);
@@ -4521,7 +4520,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 				l2 =
 					MOV_make_string2(desc2, type1, &p2,
 								 	reinterpret_cast<vary*>(temp2),
-								 	TEMP_SIZE(temp2), &match_str);
+								 	sizeof(temp2), &match_str);
 			}
 		}
 		else {
@@ -4529,7 +4528,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 			if (!computed_invariant) {
 				l2 =
 					MOV_get_string(desc2, &p2, reinterpret_cast<vary*>(temp2),
-								TEMP_SIZE(temp2));
+								sizeof(temp2));
 			}
 		}
 
@@ -4575,7 +4574,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 					UCHAR temp3[TEMP_LENGTH];
 					const USHORT l3 = MOV_make_string(dsc,
 										 type1, &q1, (vary*) temp3,
-										 TEMP_SIZE(temp3));
+										 sizeof(temp3));
 					if (!l3)
 						ERR_post(isc_like_escape_invalid, 0);
 					/* Grab the first character from the string */
@@ -4731,7 +4730,7 @@ static bool string_function(
 			}
 			const USHORT l3 = MOV_make_string(dsc,
 								 ttype, &q1, (vary*) temp3,
-								 TEMP_SIZE(temp3));
+								 sizeof(temp3));
 			if (!l3)
 				ERR_post(isc_like_escape_invalid, 0);
 			/* Grab the first character from the string */

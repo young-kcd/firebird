@@ -82,11 +82,11 @@ using namespace Jrd;
 
 DATABASE DB = STATIC "ODS.RDB";
 
-#define MAX_CHARS_SHORT		6	/* 2**16  = 5 chars + sign */
-#define MAX_CHARS_LONG		11	/* 2**32  = 10 chars + sign */
-#define MAX_CHARS_INT64		20	/* 2**64  = 19 chars + sign */
-#define MAX_CHARS_DOUBLE	22	/* 15 digits + 2 signs + E + decimal + 3 digit exp */
-#define MAX_CHARS_FLOAT		13	/* 7 digits + 2 signs + E + decimal + 2 digit exp */
+const int MAX_CHARS_SHORT	= 6;	/* 2**16  = 5 chars + sign */
+const int MAX_CHARS_LONG	= 11;	/* 2**32  = 10 chars + sign */
+const int MAX_CHARS_INT64	= 20;	/* 2**64  = 19 chars + sign */
+const int MAX_CHARS_DOUBLE	= 22;	/* 15 digits + 2 signs + E + decimal + 3 digit exp */
+const int MAX_CHARS_FLOAT	= 13;	/* 7 digits + 2 signs + E + decimal + 2 digit exp */
 
 static const UCHAR alloc_info[] = { isc_info_allocation, isc_info_end };
 static void drop_cache(Global*);

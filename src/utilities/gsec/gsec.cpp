@@ -36,6 +36,7 @@
 #include "../utilities/gsec/gsec_proto.h"
 #include "../jrd/jrd_pwd.h"
 #include "../jrd/license.h"
+#include "../jrd/svc.h"
 #include "../jrd/svc_proto.h"
 #include "../utilities/gsec/secur_proto.h"
 #include "../utilities/gsec/gsecswi.h"
@@ -98,7 +99,7 @@ int GSEC_main(Jrd::Service* service)
 
 /* Mark service thread as finished. */
 /* If service is detached, cleanup memory being used by service. */
-	SVC_finish(service, SVC_finished);
+	SVC_finish(service, Jrd::SVC_finished);
 
 	return exit_code;
 }

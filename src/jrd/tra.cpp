@@ -70,7 +70,7 @@
 #endif
 
 
-#define DYN_MSG_FAC	8
+const int DYN_MSG_FAC	= 8;
 
 #ifdef VMS
 #include ssdef

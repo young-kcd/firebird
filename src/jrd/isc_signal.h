@@ -31,6 +31,11 @@
 #define WAKEUP_SIGNAL		1100	/* Lock manager */
 #define EVENT_SIGNAL		1200	/* Event manager */
 #define CACHE_SIGNALS		1300	/* Shared cache */
+#else
+#	define BLOCKING_SIGNAL SIGUSR1 // from lock.h
+#	ifdef UNIX // from event.cpp
+#		define EVENT_SIGNAL	SIGUSR2
+#	endif
 #endif
 
 #endif /* JRD_ISC_SIGNAL_H */

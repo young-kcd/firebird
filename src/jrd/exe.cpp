@@ -190,23 +190,19 @@ static SLONG memory_count = 0;
 
 /* macro definitions */
 
-#define NULL_STRING	"*** null ***"
+const char* NULL_STRING		= "*** null ***";
 
 #if (defined SUPERSERVER) && (defined WIN_NT || defined SOLARIS_MT)
-#define MAX_CLONES	750
+const int MAX_CLONES	= 750;
+#elif defined (HP10) && defined (SUPERSERVER)
+const int MAX_CLONES	= 110;
+#else
+const int MAX_CLONES	= 1000;
 #endif
 
-#if defined (HP10) && defined (SUPERSERVER)
-#define MAX_CLONES	110
-#endif
-
-#ifndef MAX_CLONES
-#define MAX_CLONES	1000
-#endif
-
-#define ALL_TRIGS	0
-#define PRE_TRIG	1
-#define POST_TRIG	2
+const int ALL_TRIGS	= 0;
+const int PRE_TRIG	= 1;
+const int POST_TRIG	= 2;
 
 /* this constant defines how many records are locked
    before we check whether record locking has been
@@ -217,7 +213,7 @@ static SLONG memory_count = 0;
    locking in the case where someone is only occasionally
    locking a record */
 
-#define RECORD_LOCK_CHECK_INTERVAL	10
+const int RECORD_LOCK_CHECK_INTERVAL	= 10;
 
 #ifdef PC_ENGINE
 // TMN: RAII class for Lock. Unlocks the Lock on destruction.

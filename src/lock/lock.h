@@ -54,24 +54,16 @@
 
 #include "../jrd/common.h"
 #include "../jrd/file_params.h"
+#include "../jrd/isc_signal.h"
 #include "../jrd/que.h"
 
 #ifdef WIN_NT
-#define DEFAULT_SIZE	32768
-#include "../jrd/isc_signal.h"
+const int DEFAULT_SIZE		= 32768;
+#else
+const int DEFAULT_SIZE		= 98304;
 #endif
 
-#ifndef BLOCKING_SIGNAL
-#define BLOCKING_SIGNAL SIGUSR1
-#endif
-
-#ifndef DEFAULT_SIZE
-#define DEFAULT_SIZE	98304
-#endif
-
-#ifndef EXTEND_SIZE
 #define EXTEND_SIZE     32768
-#endif
 
 // not used
 //#ifdef SCO_UNIX
@@ -89,48 +81,47 @@
 /* Maximum lock series for gathering statistics
    and querying data */
 
-#define LCK_MAX_SERIES	7
+const int LCK_MAX_SERIES	= 7;
 
 /* Lock query data aggregates */
 
-#define LCK_MIN		1
-#define LCK_MAX		2
-#define LCK_CNT		3
-#define LCK_SUM		4
-#define LCK_AVG		5
-#define LCK_ANY		6
+const int LCK_MIN		= 1;
+const int LCK_MAX		= 2;
+const int LCK_CNT		= 3;
+const int LCK_SUM		= 4;
+const int LCK_AVG		= 5;
+const int LCK_ANY		= 6;
 
 /* Lock states */
 
-#define LCK_none	0
-#define LCK_null	1
-#define LCK_SR		2		// Shared Read
-#define LCK_PR		3		// Protected Read
-#define LCK_SW		4		// Shared Write
-#define LCK_PW		5		// Protected Write
-#define LCK_EX		6		// Exclusive
-#define LCK_max		7
+const int LCK_none		= 0;
+const int LCK_null		= 1;
+const int LCK_SR		= 2;		// Shared Read
+const int LCK_PR		= 3;		// Protected Read
+const int LCK_SW		= 4;		// Shared Write
+const int LCK_PW		= 5;		// Protected Write
+const int LCK_EX		= 6;		// Exclusive
+const int LCK_max		= 7;
 
-#define LCK_read		LCK_PR
-#define LCK_write		LCK_EX
+const int LCK_read			= LCK_PR;
+const int LCK_write			= LCK_EX;
 
-#define LCK_WAIT		TRUE
-#define LCK_NO_WAIT		FALSE
+const int LCK_WAIT			= TRUE;
+const int LCK_NO_WAIT		= FALSE;
 
 /* Lock block types */
 
-#define type_null		0
-#define type_lhb		1
-#define type_prb		2
-#define type_lrq		3
-#define type_lbl		4
-#define type_his		5
-#define type_smb		6
-#define type_shb		7
-#define type_own		8
+const int type_null		= 0;
+const int type_lhb		= 1;
+const int type_prb		= 2;
+const int type_lrq		= 3;
+const int type_lbl		= 4;
+const int type_his		= 5;
+const int type_smbx		= 6;
+const int type_shb		= 7;
+const int type_own		= 8;
 
-#define type_MAX		type_own
-
+const int type_MAX		= type_own;
 
 #define CLASSIC_LHB_VERSION	15 // Firebird 1.5
 #define SS_LHB_VERSION		(CLASSIC_LHB_VERSION + 100)
@@ -275,15 +266,15 @@ typedef struct lrq {
 	void* lrq_ast_argument;		/* Ast argument */
 } *LRQ;
 
-#define LRQ_blocking	1		/* Request is blocking */
-#define LRQ_pending		2		/* Request is pending */
-#define LRQ_converting	4		/* Request is pending conversion */
-#define LRQ_rejected	8		/* Request is rejected */
-#define LRQ_timed_out	16		/* Wait timed out */
-#define LRQ_deadlock	32		/* Request has been seen by the deadlock-walk */
-#define LRQ_repost		64		/* Request block used for repost */
-#define LRQ_scanned		128		/* Request already scanned for deadlock */
-#define LRQ_blocking_seen 256		/* Blocking notification received by owner */
+const int LRQ_blocking		= 1;		/* Request is blocking */
+const int LRQ_pending		= 2;		/* Request is pending */
+const int LRQ_converting	= 4;		/* Request is pending conversion */
+const int LRQ_rejected		= 8;		/* Request is rejected */
+const int LRQ_timed_out		= 16;		/* Wait timed out */
+const int LRQ_deadlock		= 32;		/* Request has been seen by the deadlock-walk */
+const int LRQ_repost		= 64;		/* Request block used for repost */
+const int LRQ_scanned		= 128;		/* Request already scanned for deadlock */
+const int LRQ_blocking_seen = 256;		/* Blocking notification received by owner */
 
 /* Owner block */
 
@@ -321,21 +312,21 @@ typedef struct own
 } *OWN;
 
 /* Flags in own_flags */
-#define OWN_blocking	1		// Owner is blocking
-#define OWN_scanned		2		// Owner has been deadlock scanned
-#define OWN_manager		4		// Owner is privileged manager
-#define OWN_signal		8		// Owner needs signal delivered
-#define OWN_wakeup		32		// Owner has been awoken
-#define OWN_starved		128		// This thread may be starved
+const int OWN_blocking		= 1;		// Owner is blocking
+const int OWN_scanned		= 2;		// Owner has been deadlock scanned
+const int OWN_manager		= 4;		// Owner is privileged manager
+const int OWN_signal		= 8;		// Owner needs signal delivered
+const int OWN_wakeup		= 32;		// Owner has been awoken
+const int OWN_starved		= 128;		// This thread may be starved
 
 /* Flags in own_ast_flags */
-#define OWN_signaled	16		/* Signal is thought to be delivered */
+const int OWN_signaled		= 16;		/* Signal is thought to be delivered */
 
 /* Flags in own_semaphore */
-#define OWN_semavail	0x8000	/* Process semaphore is available */
+const int OWN_semavail		= 0x8000;	/* Process semaphore is available */
 
 /* Flags in own_ast_hung_flag */
-#define OWN_hung		64		/* Owner may be hung by OS-level bug */
+const int OWN_hung			= 64;		/* Owner may be hung by OS-level bug */
 
 /* NOTE: own_semaphore, when USE_WAKEUP_EVENTS is set, is used to indicate when a 
    owner is waiting inside wait_for_request().  post_wakeup() will only
@@ -363,26 +354,26 @@ typedef struct his {
 } *HIS;
 
 /* his_operation definitions */
-#define his_enq			1
-#define his_deq			2
-#define his_convert		3
-#define his_signal		4
-#define his_post_ast	5
-#define his_wait		6
-#define his_del_process	7
-#define his_del_lock	8
-#define his_del_request	9
-#define his_deny		10
-#define his_grant		11
-#define his_leave_ast	12
-#define his_scan		13
-#define his_dead		14
-#define his_enter		15
-#define his_bug			16
-#define his_active		17
-#define his_cleanup		18
-#define his_del_owner	19
-#define his_MAX			his_del_owner
+const int his_enq			= 1;
+const int his_deq			= 2;
+const int his_convert		= 3;
+const int his_signal		= 4;
+const int his_post_ast		= 5;
+const int his_wait			= 6;
+const int his_del_process	= 7;
+const int his_del_lock		= 8;
+const int his_del_request	= 9;
+const int his_deny			= 10;
+const int his_grant			= 11;
+const int his_leave_ast		= 12;
+const int his_scan			= 13;
+const int his_dead			= 14;
+const int his_enter			= 15;
+const int his_bug			= 16;
+const int his_active		= 17;
+const int his_cleanup		= 18;
+const int his_del_owner		= 19;
+const int his_MAX			= his_del_owner;
 
 #endif // ISC_LOCK_LOCK_H
 

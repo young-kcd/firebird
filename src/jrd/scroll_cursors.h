@@ -77,11 +77,11 @@ ISC_STATUS  ISC_EXPORT isc_receive2();
 /* Scroll direction for isc_dsql_fetch2 */
 /****************************************/
 
-#define isc_fetch_next			   0
-#define isc_fetch_prior			   1
-#define isc_fetch_first			   2
-#define isc_fetch_last			   3
-#define isc_fetch_absolute		   4
-#define isc_fetch_relative		   5
+const int isc_fetch_next		= 0;
+const int isc_fetch_prior		= 1;
+const int isc_fetch_first		= 2;
+const int isc_fetch_last		= 3;
+const int isc_fetch_absolute	= 4;
+const int isc_fetch_relative	= 5;
 
 #endif /* JRD_SCROLL_CURSORS_H */

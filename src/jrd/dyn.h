@@ -28,9 +28,9 @@ const char* const ALL_PRIVILEGES = "SIUDR";
 		/* all applicable grant/revoke privileges */
 const char* const ALL_PROC_PRIVILEGES = "X";
 		/* all applicable grant/revoke privileges for a procedure */
-#define DYN_MSG_FAC		8
-#define STUFF_COUNT		4
-#define TEXT_BLOB_LENGTH	512
+const int DYN_MSG_FAC		= 8;
+const int STUFF_COUNT		= 4;
+const int TEXT_BLOB_LENGTH	= 512;
 
 
 #define GET_STRING(from,to)	DYN_get_string ((const TEXT**)from, (TEXT*)to, sizeof (to), true)

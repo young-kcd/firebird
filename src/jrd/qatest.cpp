@@ -110,10 +110,10 @@ defined APIs for this function.
 #define TEXT	char
 #endif
 
-#define QATEST_testing		0
-#define QATEST_delete_database	1
-#define QATEST_delete_shadow	2
-#define QATEST_exit		999
+const int QATEST_testing			= 0;
+const int QATEST_delete_database	= 1;
+const int QATEST_delete_shadow		= 2;
+const int QATEST_exit				= 999;
 
 
 

@@ -135,9 +135,9 @@
 
 /* Blob stream stuff */
 
-#define BSTR_input	0
-#define BSTR_output	1
-#define BSTR_alloc	2
+const int BSTR_input	= 0;
+const int BSTR_output	= 1;
+const int BSTR_alloc	= 2;
 
 static int dump(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, FILE*);
 static int edit(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, SSHORT, const SCHAR*);

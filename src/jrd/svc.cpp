@@ -97,13 +97,10 @@
 #include <fcntl.h>
 #endif
 
-/* This is defined in JRD/SCL.H, but including it causes
- * a linker warning.
- */
-#define SYSDBA_USER_NAME	"SYSDBA"
-#define SVC_user_dba		2
-#define SVC_user_any		1
-#define SVC_user_none		0
+const char* SYSDBA_USER_NAME	= "SYSDBA";
+const int SVC_user_dba			= 2;
+const int SVC_user_any			= 1;
+const int SVC_user_none			= 0;
 
 #if !defined(WIN_NT)
 #  include <signal.h>
@@ -134,9 +131,9 @@
 
 #define statistics	stat
 
-#define GET_LINE	1
-#define GET_EOF		2
-#define GET_BINARY	4
+const int GET_LINE		= 1;
+const int GET_EOF		= 2;
+const int GET_BINARY	= 4;
 
 #define	SVC_TRMNTR	'\377'
 

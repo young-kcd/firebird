@@ -35,8 +35,8 @@
 
 /* Defines for semaphore and shared memory removal */
 
-#define ISC_SEM_REMOVE    1
-#define ISC_MEM_REMOVE    2
+const USHORT ISC_SEM_REMOVE		= 1;
+const USHORT ISC_MEM_REMOVE		= 2;
 
 /* InterBase platform-specific synchronization data structures */
 

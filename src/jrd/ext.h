@@ -49,9 +49,9 @@ class ExternalFile : public pool_alloc_rpt<SCHAR, type_ext>
 	UCHAR	ext_filename[1];
 };
 
-#define EXT_opened	1			/* File has been opened */
-#define EXT_eof		2			/* Positioned at EOF */
-#define EXT_readonly	4		/* File could only be opened for read */
+const int EXT_opened	= 1;	/* File has been opened */
+const int EXT_eof		= 2;	/* Positioned at EOF */
+const int EXT_readonly	= 4;	/* File could only be opened for read */
 
 typedef struct irsb_ext {
 	USHORT irsb_flags;			/* flags (a whole word!) */

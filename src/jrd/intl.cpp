@@ -164,25 +164,21 @@ static USHORT wc_to_wc(TEXTTYPE, UCS2_CHAR*, USHORT, const UCS2_CHAR*, USHORT,
 /* Note: MUST be only the file name.  The VMS lib$find_shared_image
  *       call insists on file name only, not any "path" components.
  */
-#define INTL_MODULE1    "FBINTL"
-#define INTL_MODULE2    "FBINTL2"
-#endif
-
-#ifdef WIN_NT
+const char* INTL_MODULE1	= "FBINTL";
+const char* INTL_MODULE2	= "FBINTL2";
+#elif defined (WIN_NT)
 /* prefixed with $INTERBASE */
-#define INTL_MODULE1 "fbintl.dll"
-#define INTL_MODULE2 "fbintl2.dll"
-#endif
-
-#ifndef INTL_MODULE1
+const char* INTL_MODULE1	= "fbintl.dll";
+const char* INTL_MODULE2	= "fbintl2.dll";
+#else
 /* prefixed with $INTERBASE */
-#define INTL_MODULE1 "fbintl"
-#define INTL_MODULE2 "fbintl2"
+const char* INTL_MODULE1	= "fbintl";
+const char* INTL_MODULE2	= "fbintl2";
 #endif
 
-#define INTL_LOOKUP_ENTRY1      "LD_lookup"
-#define INTL_LOOKUP_ENTRY2      "LD2_lookup"
-#define INTL_USER_ENTRY         "USER_TEXTTYPE_%03d"
+const char* INTL_LOOKUP_ENTRY1	= "LD_lookup";
+const char* INTL_LOOKUP_ENTRY2	= "LD2_lookup";
+const char* INTL_USER_ENTRY		= "USER_TEXTTYPE_%03d";
 
 // We need all the structure definitions from the old interface
 #define INTL_ENGINE_INTERNAL

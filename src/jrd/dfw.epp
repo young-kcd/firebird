@@ -131,11 +131,11 @@ typedef enum rids
 
 /* Define range of user relation ids */
 
-#define MIN_RELATION_ID		rel_MAX
-#define MAX_RELATION_ID		32767
+const int MIN_RELATION_ID	= rel_MAX;
+const int MAX_RELATION_ID	= 32767;
 
-#define COMPUTED_FLAG	128
-#define WAIT_PERIOD	-1
+const int COMPUTED_FLAG	= 128;
+const int WAIT_PERIOD	= -1;
 
 DATABASE DB = FILENAME "ODS.RDB";
 

@@ -42,6 +42,7 @@
 #include "../jrd/ibase.h"
 #include "../jrd/ods.h"
 #include "../jrd/btn.h"
+#include "../jrd/svc.h"
 #include "../jrd/license.h"
 #include "../jrd/msg_encode.h"
 #include "../jrd/gdsassert.h"
@@ -919,7 +920,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 		 * used by service in case if client detached from the service
 		 */
 
-		SVC_finish(service, SVC_finished);
+		SVC_finish(service, Jrd::SVC_finished);
 #endif
 
 		int exit_code = tddba->exit_code;

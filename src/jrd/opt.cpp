@@ -174,12 +174,12 @@ static SSHORT sort_indices_by_priority(CompilerScratch::csb_repeat*, index_desc*
 /* macro definitions */
 
 #ifdef OPT_DEBUG
-#define DEBUG_PUNT		5
-#define DEBUG_RELATIONSHIPS	4
-#define DEBUG_ALL		3
-#define DEBUG_CANDIDATE		2
-#define DEBUG_BEST		1
-#define DEBUG_NONE		0
+const int DEBUG_PUNT			= 5;
+const int DEBUG_RELATIONSHIPS	= 4;
+const int DEBUG_ALL				= 3;
+const int DEBUG_CANDIDATE		= 2;
+const int DEBUG_BEST			= 1;
+const int DEBUG_NONE			= 0;
 
 FILE *opt_debug_file = 0;
 static int opt_debug_flag = DEBUG_NONE;

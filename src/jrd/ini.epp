@@ -62,8 +62,8 @@ using namespace Jrd;
 DATABASE DB = FILENAME "ODS.RDB";
 
 #define PAD(string, field) jrd_vtof ((char*)(string), field, sizeof (field))
-#define MAX_ACL_SIZE    4096
-#define DEFAULT_CLASS   "SQL$DEFAULT"
+const int MAX_ACL_SIZE		= 4096;
+const char* DEFAULT_CLASS	= "SQL$DEFAULT";
 
 #ifdef NOT_USED_OR_REPLACED
 static void add_generator(TEXT*, jrd_req**);

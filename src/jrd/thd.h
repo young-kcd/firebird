@@ -26,7 +26,7 @@
  *
  */
 /*
-$Id: thd.h,v 1.19 2004-04-30 18:43:51 skidder Exp $
+$Id: thd.h,v 1.20 2004-05-03 21:43:56 brodsom Exp $
 */
 
 #ifndef JRD_THD_H
@@ -156,23 +156,23 @@ struct IB_RTL_CRITICAL_SECTION
 
 /* Thread priorities (may be ignored) */
 
-#define THREAD_high		1
-#define THREAD_medium_high	2
-#define THREAD_medium		3
-#define THREAD_medium_low	4
-#define THREAD_low		5
-#define THREAD_critical		6
+const int THREAD_high			= 1;
+const int THREAD_medium_high	= 2;
+const int THREAD_medium			= 3;
+const int THREAD_medium_low		= 4;
+const int THREAD_low			= 5;
+const int THREAD_critical		= 6;
 
 /* Thread option flags */
 
-#define THREAD_ast		1	/* Thread can/should run at ast level */
-#define THREAD_blast		2	/* Blow away thread during exit handler */
-#define THREAD_wait		4	/* Somebody will wait for thread exit */
+const int THREAD_ast		= 1;	/* Thread can/should run at ast level */
+const int THREAD_blast		= 2;	/* Blow away thread during exit handler */
+const int THREAD_wait		= 4;	/* Somebody will wait for thread exit */
 
 /* Thread quanta */
 
-#define QUANTUM			100	/* Default quantum */
-#define SWEEP_QUANTUM		10	/* Make sweeps less disruptive */
+const int QUANTUM			= 100;	/* Default quantum */
+const int SWEEP_QUANTUM		= 10;	/* Make sweeps less disruptive */
 
 
 /* Thread specific data */
@@ -184,14 +184,14 @@ typedef struct thdd {
 
 /* Thread structure types */
 
-#define THDD_TYPE_TGBL  1		/* used by backup/restore */
-#define THDD_TYPE_TSQL  2		/* used by DSQL */
-#define THDD_TYPE_TDBB  3		/* used in engine */
-#define THDD_TYPE_TRDB  4		/* used in remote interface */
-#define THDD_TYPE_TDBA  5		/* used in DBA utility */
-#define THDD_TYPE_TIDB	6		/* used by interprocess server */
-#define THDD_TYPE_TALICE 7		/* used by gfix */
-#define THDD_TYPE_TSEC	8		/* used by gsec */
+const USHORT THDD_TYPE_TGBL	= 1;		/* used by backup/restore */
+const USHORT THDD_TYPE_TSQL	= 2;		/* used by DSQL */
+const USHORT THDD_TYPE_TDBB	= 3;		/* used in engine */
+const USHORT THDD_TYPE_TRDB	= 4;		/* used in remote interface */
+const USHORT THDD_TYPE_TDBA	= 5;		/* used in DBA utility */
+const USHORT THDD_TYPE_TIDB	= 6;		/* used by interprocess server */
+const USHORT THDD_TYPE_TALICE	= 7;		/* used by gfix */
+const USHORT THDD_TYPE_TSEC	= 8;		/* used by gsec */
 
 /* General purpose in use object structure */
 
@@ -234,8 +234,8 @@ typedef struct wlck_t {
 #endif
 } WLCK_T, *WLCK;
 
-#define WLCK_read	1
-#define WLCK_write	2
+const int WLCK_read		= 1;
+const int WLCK_write	= 2;
 
 /* Threading allocation size */
 

@@ -68,13 +68,13 @@
 
 /* blr type classes */
 
-#define OTHER		0
-#define STATEMENT	1
-#define BOOL		2
-#define VALUE		3
-#define TYPE_RSE	4
-#define RELATION	5
-#define ACCESS_TYPE	6
+const int OTHER			= 0;
+const int STATEMENT		= 1;
+const int TYPE_BOOL		= 2;
+const int VALUE			= 3;
+const int TYPE_RSE		= 4;
+const int RELATION		= 5;
+const int ACCESS_TYPE	= 6;
 
 using namespace Jrd;
 
@@ -2036,7 +2036,7 @@ static jrd_nod* par_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 		const UCHAR op = BLR_BYTE;
 		switch (op) {
 		case blr_boolean:
-			rse->rse_boolean = parse(tdbb, csb, BOOL);
+			rse->rse_boolean = parse(tdbb, csb, TYPE_BOOL);
 			break;
 
 		case blr_first:
@@ -2198,7 +2198,7 @@ static jrd_nod* par_stream(thread_db* tdbb, CompilerScratch* csb)
 		const UCHAR op = BLR_BYTE;
 		switch (op) {
 		case blr_boolean:
-			rse->rse_boolean = parse(tdbb, csb, BOOL);
+			rse->rse_boolean = parse(tdbb, csb, TYPE_BOOL);
 			break;
 
 		default:
@@ -2738,7 +2738,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		}
 
 	case blr_if:
-		node->nod_arg[e_if_boolean] = parse(tdbb, csb, BOOL);
+		node->nod_arg[e_if_boolean] = parse(tdbb, csb, TYPE_BOOL);
 		node->nod_arg[e_if_true] = parse(tdbb, csb, sub_type);
 		if (BLR_PEEK == (UCHAR) blr_end) {
 			node->nod_count = 2;

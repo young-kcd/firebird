@@ -42,6 +42,7 @@
 #include "../jrd/msg_encode.h"
 #include "../jrd/thd_proto.h"
 #include "../jrd/ods.h"			// to get MAX_PAGE_SIZE
+#include "../jrd/svc.h"
 #include "../burp/burp.h"
 #include "../burp/burpswi.h"
 #include "../burp/std_desc.h"
@@ -183,7 +184,7 @@ int BURP_main(Jrd::Service* service)
 
 // Mark service thread as finished. 
 // If service is detached, cleanup memory being used by service. 
-	SVC_finish(service, SVC_finished);
+	SVC_finish(service, Jrd::SVC_finished);
 
 	return exit_code;
 }

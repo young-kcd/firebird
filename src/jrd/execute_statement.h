@@ -33,7 +33,7 @@
 #include "../jrd/exe.h"
 #include "../jrd/ibase.h"
 
-#define MAX_CALLBACKS	50
+const int MAX_CALLBACKS	= 50;
 
 class ExecuteStatement {
 private:

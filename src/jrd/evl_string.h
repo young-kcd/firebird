@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: evl_string.h,v 1.10 2004-04-25 02:30:31 skidder Exp $
+ *  $Id: evl_string.h,v 1.11 2004-05-03 21:43:56 brodsom Exp $
  *
  */
 
@@ -43,17 +43,17 @@
 #include "../common/classes/array.h"
 
 // Number of pattern items statically allocated
-#define STATIC_PATTERN_ITEMS 16
+const int STATIC_PATTERN_ITEMS	= 16;
 
 // Number of pattern items that are matched in parallel statically allocated
-#define STATIC_STATUS_ITEMS 16
+const int STATIC_STATUS_ITEMS	= 16;
 
 // Size of internal static buffer used for allocation
 // This buffer is used for KMP masks and string unescaping
 #ifdef TESTING_ONLY
-#define STATIC_PATTERN_BUFFER 16
+const int STATIC_PATTERN_BUFFER		= 16;
 #else
-#define STATIC_PATTERN_BUFFER 256
+const int STATIC_PATTERN_BUFFER		= 256;
 #endif
 
 namespace Firebird {

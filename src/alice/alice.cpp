@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.60 2004-05-02 23:03:22 skidder Exp $
+//	$Id: alice.cpp,v 1.61 2004-05-03 21:39:59 brodsom Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -139,7 +139,7 @@ int ALICE_main(Jrd::Service* service)
 
 //  Mark service thread as finished.
 //  If service is detached, cleanup memory being used by service.
-	SVC_finish(service, SVC_finished);
+	SVC_finish(service, Jrd::SVC_finished);
 
 	return exit_code;
 }
