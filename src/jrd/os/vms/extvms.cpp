@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		extvms.c
+ *	MODULE:		extvms.cpp
  *	DESCRIPTION:	External file access
  *
  * The contents of this file are subject to the Interbase Public
@@ -54,12 +54,12 @@ static int compare_segment(NOD, UCHAR *, DSC *);
 static int connect(EXT, USHORT);
 static void disconnect(EXT);
 static void expand_format(FMT, FMT);
-static SLONG find_field(FMT, USHORT, USHORT, USHORT);
+static SLONG find_field(const fmt*, USHORT, USHORT, USHORT);
 static bool get_dbkey(RSB);
 static bool get_indexed(RSB);
 static USHORT get_key_segment(NOD, UCHAR *, DSC *);
 static bool get_sequential(RSB);
-static bool match_index(FMT, struct XABKEY *, IDX *);
+static bool match_index(const fmt*, struct XABKEY *, IDX *);
 static int open_indexed(RSB);
 static int open_sequential(RSB);
 static void position_by_rfa(EXT, USHORT *);
@@ -155,7 +155,7 @@ EXT EXT_file(REL relation, TEXT * file_name, SLONG * description)
 	EXT file;
 	IDX *index;
 	STR string;
-	FMT format;
+	const fmt* format;
 	UCHAR index_buffer[MAX_KEYS * sizeof(IDX)];
 	struct XABSUM summary;
 	struct XABKEY *key, *end, **ptr, keys[MAX_KEYS];
@@ -344,7 +344,7 @@ void EXT_modify(RPB * old_rpb, RPB * new_rpb, int *transaction)
 	EXT file;
 	JRD_REQ request;
 	REC record;
-	FMT format;
+	const fmt* format;
 	int offset, status;
 
 	if (old_rpb->rpb_stream_flags & RPB_s_refetch)
@@ -390,7 +390,7 @@ EXT_open(RSB rsb)
 	JRD_REQ request;
 	RPB *rpb;
 	REC record;
-	FMT format;
+	const fmt* format;
 	EXT file;
 
 	tdbb = GET_THREAD_DATA;
@@ -544,7 +544,7 @@ void EXT_store(RPB * rpb, int *transaction)
  **************************************/
 	REL relation;
 	REC record;
-	FMT format;
+	const fmt* format;
 	EXT file;
 	int status;
 	USHORT offset;
@@ -814,7 +814,7 @@ static void expand_format(FMT external, FMT internal)
 
 
 static SLONG find_field(
-						FMT format, USHORT type, USHORT offset, USHORT length)
+						const fmt* format, USHORT type, USHORT offset, USHORT length)
 {
 /**************************************
  *
@@ -885,7 +885,7 @@ static bool get_dbkey(RSB rsb)
 	REC record;
 	DSC *desc;
 	NOD node;
-	FMT format;
+	const fmt* format;
 	int status;
 	SSHORT offset;
 	IRSB_EXT impure;
@@ -953,7 +953,7 @@ static bool get_indexed(RSB rsb)
 	EXT file;
 	IRB retrieval;
 	REL relation;
-	FMT format;
+	const fmt* format;
 	IDX *index;
 	JRD_REQ request;
 	RPB *rpb;
@@ -1083,7 +1083,7 @@ static bool get_sequential(RSB rsb)
 	EXT file;
 	RPB *rpb;
 	REC record;
-	FMT format;
+	const fmt* format;
 	int status;
 	SSHORT offset;
 	IRSB_EXT impure;
@@ -1142,7 +1142,7 @@ static bool get_sequential(RSB rsb)
 }
 
 
-static bool match_index(FMT format, struct XABKEY *xab, IDX * idx)
+static bool match_index(const fmt* format, struct XABKEY *xab, IDX * idx)
 {
 /**************************************
  *
@@ -1304,7 +1304,7 @@ static void set_flags(REL relation, REC record)
  *	Set missing flags for a record.
  *
  **************************************/
-	FMT format;
+	const fmt* format;
 	LIT literal;
 	DSC *desc_ptr, desc;
 	FLD field, *field_ptr;
@@ -1342,7 +1342,7 @@ static void set_missing(REL relation, REC record)
  *	Set missing values for MODIFY/STORE.
  *
  **************************************/
-	FMT format;
+	const fmt* format;
 	FLD *field_ptr, field;
 	LIT literal;
 	DSC desc, *desc_ptr;

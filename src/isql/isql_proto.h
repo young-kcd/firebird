@@ -25,7 +25,6 @@
 #define ISQL_ISQL_PROTO_H
 
 void	ISQL_array_dimensions(TEXT*);
-SCHAR*	ISQL_blankterm(TEXT*);
 TEXT*	ISQL_blankterm2(const TEXT* input, TEXT* output);
 void	ISQL_build_table_list(void**, IB_FILE*, IB_FILE*, IB_FILE*);
 void	ISQL_build_view_list(void**, IB_FILE*, IB_FILE*, IB_FILE*);

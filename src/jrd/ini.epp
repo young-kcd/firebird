@@ -590,18 +590,14 @@ void INI_init2(void)
 	const UCHAR*	relfld;
 	const UCHAR*	fld;
 	fmt::fmt_desc_iterator			desc;
-	TDBB			tdbb;
-	USHORT			major_version;
-	USHORT			minor_original;
 	USHORT			id;
 	VEC	vector;
-	DBB				dbb;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
-	major_version = (SSHORT) dbb->dbb_ods_version;
-	minor_original = (SSHORT) dbb->dbb_minor_original;
+	const USHORT major_version = dbb->dbb_ods_version;
+	const USHORT minor_original = dbb->dbb_minor_original;
 	vector = dbb->dbb_relations;
 
 	for (relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
@@ -758,13 +754,10 @@ void INI_update_database()
  * %% Note %% Update the switch() statement to reflect new major ODS 
  *            addition
  **************************************/
-	DBB dbb;
 	HDR header;
-	USHORT major_version, minor_version;
-	TDBB tdbb;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 /* If database is ReadOnly, return without upgrading ODS */
@@ -773,8 +766,8 @@ void INI_update_database()
 
 /* check out the update version to see if we have work to do */
 
-	major_version = (SSHORT) dbb->dbb_ods_version;
-	minor_version = (SSHORT) dbb->dbb_minor_version;
+	const USHORT major_version = dbb->dbb_ods_version;
+	const USHORT minor_version = dbb->dbb_minor_version;
 
 /*******************************************************************
 ** when old engine is attaching a newer ODS database, do nothing

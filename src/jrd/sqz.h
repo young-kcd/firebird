@@ -35,6 +35,6 @@ class Dcc : public pool_alloc<type_dcc>
 	SCHAR *dcc_end;				/* End of control string */
 	SCHAR dcc_string[128];
 };
-typedef Dcc *DCC;
 
 #endif /* JRD_SQZ_H */
+

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		shut.c
+ *	MODULE:		shut.cpp
  *	DESCRIPTION:	Database shutdown handler
  *
  * The contents of this file are subject to the Interbase Public

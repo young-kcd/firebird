@@ -154,6 +154,7 @@
 #include "../dsql/misc_func.h"
 #include "../jrd/dsc_proto.h"
 #include "../jrd/thd_proto.h"
+#include "../common/utils_proto.h"
 
 #ifdef DEV_BUILD
 void DSQL_pretty(const dsql_nod*, int);
@@ -220,7 +221,6 @@ static dsql_fld* resolve_context(dsql_req*, const dsql_str*, dsql_ctx*);
 static bool set_parameter_type(dsql_nod*, dsql_nod*, bool);
 static void set_parameters_name(dsql_nod*, const dsql_nod*);
 static void set_parameter_name(dsql_nod*, const dsql_nod*, const dsql_rel*);
-static TEXT* pass_exact_name(TEXT*);
 static dsql_nod* pass1_savepoint(const dsql_req*, dsql_nod*);
 
 // CVC: more global variables???
@@ -284,7 +284,7 @@ dsql_ctx* PASS1_make_context(dsql_req* request, dsql_nod* relation_node)
 
     // CVC: Let's skim the context, too.
     if (relation_name && relation_name->str_data) {
-        pass_exact_name((TEXT*) relation_name->str_data);
+        fb_utils::fb_exact_name((TEXT*) relation_name->str_data);
 	}
 
 	DEV_BLKCHK(relation_name, dsql_type_str);
@@ -3647,7 +3647,7 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input, const bool lis
 
     // CVC: Let's strip trailing blanks or comparisons may fail in dialect 3.
 	if (name && name->str_data) {
-		pass_exact_name((TEXT*) name->str_data);
+		fb_utils::fb_exact_name((TEXT*) name->str_data);
 	}
 
     /* CVC: PLEASE READ THIS EXPLANATION IF YOU NEED TO CHANGE THIS CODE.
@@ -4935,7 +4935,7 @@ static dsql_ctx* pass1_alias(dsql_req* request, dsql_lls* stack, dsql_str* alias
 	
 	// CVC: Getting rid of trailing spaces.
 	if (alias && alias->str_data) {
-		pass_exact_name(reinterpret_cast<TEXT*>(alias->str_data));
+		fb_utils::fb_exact_name(reinterpret_cast<TEXT*>(alias->str_data));
 	}
 
 	// look through all contexts at this scope level
@@ -6746,7 +6746,7 @@ static dsql_fld* resolve_context( dsql_req* request, const dsql_str* qualifier,
 	else {
 		table_name = procedure->prc_name;
 	}
-	pass_exact_name(table_name);
+	fb_utils::fb_exact_name(table_name);
 
 /* If a context qualifier is present, make sure this is the
    proper context */
@@ -6973,38 +6973,6 @@ static void set_parameter_name( dsql_nod* par_node, const dsql_nod* fld_node,
 	}
 }
 
-
-/**
-  
- pass_exact_name
-  
-    @brief      Skim trailing blanks from identifiers.
- 	CVC: I had to add this function because metd_exact_name
- 	usage forced the inclusion of metd.cpp that currently
- 	only exposes metadata functions and is a product of metd.epp.
- 
-
-    @param str
-
- **/
-static TEXT* pass_exact_name (TEXT* str)
-{
-	TEXT* p;
-	for (p = str; *p; ++p) { // go to end of string
-		;
-	}
-
-	for (--p; p >= str && *p == '\x20'; --p) { // remove spaces from end
-		;
-	}
-
-	// Write *++p = 0; if you like instead of two lines.
-
-	++p;
-	*p = 0;
-
-	return str;
-}
 
 /**
 

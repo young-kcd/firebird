@@ -35,7 +35,7 @@ enum {
 };
 
 /* NOTE: length == 0 implies the node will not be created
-         by jrd/par.c.
+         by jrd/par.cpp.
 	 length == Actual length of the nod_args array.
 	 count  == How many of the nods_args array represent nodes
 	 internal == Name of the internal representing node.

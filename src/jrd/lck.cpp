@@ -66,7 +66,7 @@ static void check_lock(LCK, USHORT);
 #endif
 static BOOLEAN compatible(LCK, LCK, USHORT);
 static void enqueue(TDBB, LCK, USHORT, SSHORT);
-static void external_ast(LCK);
+static int external_ast(void*);
 #ifdef MULTI_THREAD
 static LCK find_block(LCK, USHORT);
 #endif
@@ -79,7 +79,7 @@ static void internal_ast(LCK);
 static BOOLEAN internal_compatible(LCK, LCK, USHORT);
 static void internal_dequeue(TDBB, LCK);
 static USHORT internal_downgrade(TDBB, LCK);
-static BOOLEAN internal_enqueue(TDBB, LCK, USHORT, SSHORT, BOOLEAN);
+static bool internal_enqueue(TDBB, LCK, USHORT, SSHORT, bool);
 
 
 /* globals and macros */
@@ -137,21 +137,35 @@ static const UCHAR compatibility[] = {
 #define COMPATIBLE(st1, st2)	compatibility [st1 * LCK_max + st2]
 #define LOCK_HASH_SIZE		19
 
-#define	ENQUEUE(lock,level,wait) if (lock->lck_compatible) \
-				     internal_enqueue (tdbb, lock, level, wait, FALSE); \
-		                 else enqueue (tdbb, lock, level, wait);
+inline void ENQUEUE(TDBB tdbb, LCK lock, USHORT level, SSHORT wait)
+{
+	if (lock->lck_compatible)
+		internal_enqueue (tdbb, lock, level, wait, false);
+	else
+		enqueue (tdbb, lock, level, wait);
+}
 
-#define	CONVERT(lock,level,wait) (lock->lck_compatible) ? \
-				 internal_enqueue (tdbb, lock, level, wait, TRUE) : \
-                                 LOCK_convert (lock->lck_id, level, wait, lock->lck_ast, lock->lck_object, status)
+inline bool CONVERT(TDBB tdbb, LCK lock, USHORT level, SSHORT wait, ISC_STATUS* status)
+{
+	return (lock->lck_compatible) ?
+		internal_enqueue (tdbb, lock, level, wait, true) :
+		LOCK_convert (lock->lck_id, level, wait, lock->lck_ast, lock->lck_object, status);
+}
 
-#define DEQUEUE(lock)		 if (lock->lck_compatible) \
-				     internal_dequeue (tdbb, lock); \
-				 else LOCK_deq (lock->lck_id);
+inline void DEQUEUE(TDBB tdbb, LCK lock)
+{
+	if (lock->lck_compatible)
+		internal_dequeue (tdbb, lock);
+	else
+		LOCK_deq (lock->lck_id);
+}
 
-#define DOWNGRADE(lock,status)	 (lock->lck_compatible) ? \
-				 internal_downgrade (tdbb, lock) : \
-			 	 LOCK_downgrade (lock->lck_id, status);
+inline USHORT DOWNGRADE(TDBB tdbb, LCK lock, ISC_STATUS* status)
+{
+	return (lock->lck_compatible) ?
+		internal_downgrade (tdbb, lock) :
+		LOCK_downgrade (lock->lck_id, status);
+}
 
 #ifdef DEV_BUILD
 /* Valid locks are not NULL, 
@@ -214,7 +228,10 @@ void LCK_assert(TDBB tdbb, LCK lock)
 	fb_assert(LCK_CHECK_LOCK(lock));
 
 	if (lock->lck_logical == lock->lck_physical ||
-		lock->lck_logical == LCK_none) return;
+		lock->lck_logical == LCK_none)
+	{
+		return;
+	}
 
 	if (!LCK_lock(tdbb, lock, lock->lck_logical, LCK_WAIT))
 		BUGCHECK(159);			/* msg 159 cannot fb_assert logical lock */
@@ -222,7 +239,7 @@ void LCK_assert(TDBB tdbb, LCK lock)
 }
 
 
-int LCK_convert(TDBB tdbb, LCK lock, USHORT level, SSHORT wait)
+bool LCK_convert(TDBB tdbb, LCK lock, USHORT level, SSHORT wait)
 {
 /**************************************
  *
@@ -234,24 +251,22 @@ int LCK_convert(TDBB tdbb, LCK lock, USHORT level, SSHORT wait)
  *	Convert an existing lock to a new level.
  *
  **************************************/
-	ISC_STATUS *status;
-	DBB dbb;
-	int result;
-
 	fb_assert(LCK_CHECK_LOCK(lock));
 
 	SET_TDBB(tdbb);
-	dbb = lock->lck_dbb;
-	status = tdbb->tdbb_status_vector;
+	DBB dbb = lock->lck_dbb;
+	ISC_STATUS* status = tdbb->tdbb_status_vector;
 
 	lock->lck_attachment = tdbb->tdbb_attachment;
 
-	result = CONVERT(lock, level, wait);
+	const bool result = CONVERT(tdbb, lock, level, wait, status);
 
 	if (!result) {
 		if (status[1] == isc_deadlock ||
 			status[1] == isc_lock_conflict || status[1] == isc_lock_timeout)
-			return FALSE;
+		{
+			return false;
+		}
 		if (status[1] == isc_lockmanerr)
 			dbb->dbb_flags |= DBB_bugcheck;
 		ERR_punt();
@@ -261,7 +276,7 @@ int LCK_convert(TDBB tdbb, LCK lock, USHORT level, SSHORT wait)
 		lock->lck_physical = lock->lck_logical = level;
 
 	fb_assert(LCK_CHECK_LOCK(lock));
-	return TRUE;
+	return true;
 }
 
 
@@ -280,7 +295,6 @@ int LCK_convert_non_blocking(TDBB tdbb, LCK lock, USHORT level, SSHORT wait)
  **************************************/
 	ATT attachment;
 	ISC_STATUS *status;
-	int result;
 	DBB dbb;
 
 	fb_assert(LCK_CHECK_LOCK(lock));
@@ -308,7 +322,7 @@ int LCK_convert_non_blocking(TDBB tdbb, LCK lock, USHORT level, SSHORT wait)
 	SCH_exit();
 #endif
 
-	result = CONVERT(lock, level, wait);
+	const bool result = CONVERT(tdbb, lock, level, wait, status);
 
 /* Check back in with the scheduler and restore context */
 
@@ -321,7 +335,9 @@ int LCK_convert_non_blocking(TDBB tdbb, LCK lock, USHORT level, SSHORT wait)
 	if (!result) {
 		if (status[1] == isc_deadlock ||
 			status[1] == isc_lock_conflict || status[1] == isc_lock_timeout)
+		{
 			return FALSE;
+		}
 		if (status[1] == isc_lockmanerr)
 			dbb->dbb_flags |= DBB_bugcheck;
 		ERR_punt();
@@ -413,7 +429,7 @@ int LCK_downgrade(TDBB tdbb, LCK lock)
 	fb_assert(LCK_CHECK_LOCK(lock));
 
 	if (lock->lck_id && lock->lck_physical != LCK_none) {
-		level = DOWNGRADE(lock, status);
+		level = DOWNGRADE(tdbb, lock, status);
 		if (!lock->lck_compatible)
 			lock->lck_physical = lock->lck_logical = level;
 	}
@@ -581,24 +597,22 @@ int LCK_lock(TDBB tdbb, LCK lock, USHORT level, SSHORT wait)
  *	Lock a block.  There had better not have been a lock there.
  *
  **************************************/
-	ISC_STATUS *status;
-	DBB dbb;
-
 	fb_assert(LCK_CHECK_LOCK(lock));
 	SET_TDBB(tdbb);
 
-	dbb = lock->lck_dbb;
-	status = tdbb->tdbb_status_vector;
+	DBB dbb = lock->lck_dbb;
+	ISC_STATUS* status = tdbb->tdbb_status_vector;
 	lock->lck_blocked_threads = NULL;
 	lock->lck_next = lock->lck_prior = NULL;
 	lock->lck_attachment = tdbb->tdbb_attachment;
 
-	ENQUEUE(lock, level, wait);
+	ENQUEUE(tdbb, lock, level, wait);
 	fb_assert(LCK_CHECK_LOCK(lock));
 	if (!lock->lck_id)
 		if (!wait ||
 			status[1] == isc_deadlock ||
-			status[1] == isc_lock_conflict || status[1] == isc_lock_timeout) {
+			status[1] == isc_lock_conflict || status[1] == isc_lock_timeout)
+		{
 			return FALSE;
 		}
 		else {
@@ -630,14 +644,12 @@ int LCK_lock_non_blocking(TDBB tdbb, LCK lock, USHORT level, SSHORT wait)
  **************************************/
 #ifdef MULTI_THREAD
 	ATT attachment;
-	ISC_STATUS *status;
 	LCK next;
-	DBB dbb;
 
 	fb_assert(LCK_CHECK_LOCK(lock));
 	SET_TDBB(tdbb);
 
-	dbb = lock->lck_dbb;
+	DBB dbb = lock->lck_dbb;
 	lock->lck_attachment = attachment = tdbb->tdbb_attachment;
 
 /* Don't bother for the non-wait or non-multi-threading case */
@@ -650,12 +662,12 @@ int LCK_lock_non_blocking(TDBB tdbb, LCK lock, USHORT level, SSHORT wait)
 	lock->lck_blocked_threads = NULL;
 	lock->lck_next = lock->lck_prior = NULL;
 	check_lock(lock, level);
-	status = tdbb->tdbb_status_vector;
+	ISC_STATUS* status = tdbb->tdbb_status_vector;
 
 /* If we can get the lock without waiting, save a great
    deal of grief */
 
-	ENQUEUE(lock, level, LCK_NO_WAIT);
+	ENQUEUE(tdbb, lock, level, LCK_NO_WAIT);
 	fb_assert(LCK_CHECK_LOCK(lock));
 	if (!lock->lck_id) {
 		/* Save context and checkout from the scheduler */
@@ -672,7 +684,7 @@ int LCK_lock_non_blocking(TDBB tdbb, LCK lock, USHORT level, SSHORT wait)
 #endif
 
 		INIT_STATUS(status);
-		ENQUEUE(lock, level, wait);
+		ENQUEUE(tdbb, lock, level, wait);
 
 		/* Check back in with the scheduler and restore context */
 
@@ -829,7 +841,7 @@ void LCK_release(TDBB tdbb, LCK lock)
 	fb_assert(LCK_CHECK_LOCK(lock));
 
 	if (lock->lck_physical != LCK_none) {
-		DEQUEUE(lock);
+		DEQUEUE(tdbb, lock);
 	}
 
 	lock->lck_physical = lock->lck_logical = LCK_none;
@@ -1031,7 +1043,7 @@ static void enqueue(TDBB tdbb, LCK lock, USHORT level, SSHORT wait)
 }
 
 
-static void external_ast(LCK lock)
+static int external_ast(void* lock_void)
 {
 /**************************************
  *
@@ -1045,18 +1057,20 @@ static void external_ast(LCK lock)
  *	we are blocking a lock from another process.
  *
  **************************************/
-	LCK match, next;
-
+	lck* lock = static_cast<lck*>(lock_void);
 	fb_assert(LCK_CHECK_LOCK(lock));
 
 /* go through the list, saving the next lock in the list
    in case the current one gets deleted in the ast */
 
-	for (match = hash_get_lock(lock, 0, 0); match; match = next) {
+	lck* next;
+	for (lck* match = hash_get_lock(lock, 0, 0); match; match = next) {
 		next = match->lck_identical;
-		if (match->lck_ast)
+		if (match->lck_ast) {
 			(*match->lck_ast)(match->lck_object);
+		}
 	}
+	return 0; // make the compiler happy
 }
 
 
@@ -1488,8 +1502,9 @@ static USHORT internal_downgrade(TDBB tdbb, LCK first)
 		LOCK_convert(first->lck_id,
 					 level,
 					 LCK_NO_WAIT,
-					 reinterpret_cast < int (*)(void *) >(external_ast),
-					 (int *) first, tdbb->tdbb_status_vector)) {
+					 external_ast,
+					 first, tdbb->tdbb_status_vector))
+	{
 		for (lock = first; lock; lock = lock->lck_identical)
 			lock->lck_physical = level;
 		return level;
@@ -1499,11 +1514,11 @@ static USHORT internal_downgrade(TDBB tdbb, LCK first)
 }
 
 
-static BOOLEAN internal_enqueue(
+static bool internal_enqueue(
 								TDBB tdbb,
 								LCK lock,
 								USHORT level,
-								SSHORT wait, BOOLEAN convert_flg)
+								SSHORT wait, bool convert_flg)
 {
 /**************************************
  *
@@ -1543,7 +1558,7 @@ static BOOLEAN internal_enqueue(
 			status[0] = isc_arg_gds;
 			status[1] = isc_lock_conflict;
 			status[2] = isc_arg_end;
-			return FALSE;
+			return false;
 		}
 
 		/* if there is still an identical lock,
@@ -1558,10 +1573,11 @@ static BOOLEAN internal_enqueue(
 				if (!LOCK_convert(match->lck_id,
 								  level,
 								  wait,
-								  reinterpret_cast <
-								  int (*)(void *) >(external_ast),
-								  (int *) lock, status))
-					  return FALSE;
+								  external_ast,
+								  lock, status))
+				{
+					  return false;
+				}
 				for (update = match; update; update = update->lck_identical)
 					update->lck_physical = level;
 			}
@@ -1576,7 +1592,7 @@ static BOOLEAN internal_enqueue(
 			if (!convert_flg)
 				hash_insert_lock(lock);
 
-			return TRUE;
+			return true;
 		}
 	}
 
@@ -1589,8 +1605,8 @@ static BOOLEAN internal_enqueue(
 							(UCHAR *) & lock->lck_key,
 							lock->lck_length,
 							level,
-							reinterpret_cast < int (*)(void *)>(external_ast),
-							(int *)lock,
+							external_ast,
+							lock,
 							lock->lck_data,
 							wait, status, lock->lck_owner_handle);
 
@@ -1606,7 +1622,7 @@ static BOOLEAN internal_enqueue(
 	}
 
 	fb_assert(LCK_CHECK_LOCK(lock));
-	return lock->lck_id ? TRUE : FALSE;
+	return lock->lck_id ? true : false;
 }
 
 

@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.35 2003-12-22 10:00:19 robocop Exp $
+ *  $Id: fb_types.h,v 1.36 2003-12-31 05:35:43 robocop Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -148,6 +148,9 @@ typedef void (*FPTR_ERROR) (ISC_STATUS, ...);
 
 typedef ULONG RCRD_OFFSET;
 typedef USHORT FLD_LENGTH;
+/* CVC: internal usage. I suspect the only reason to return int is that
+vmslock.cpp:LOCK_convert() calls VMS' sys$enq that may require this signature,
+but our code never uses the return value. */
 typedef int (*lock_ast_t)(void*);
 
 #define ISC_STATUS_LENGTH	20

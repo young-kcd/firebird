@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.31 2003-12-22 10:00:29 robocop Exp $
+ * $Id: show.epp,v 1.32 2003-12-31 05:35:49 robocop Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -56,6 +56,7 @@
 #include "../jrd/obj.h"
 #include "../jrd/ods.h"
 #include "../isql/extra_proto.h"
+#include "../common/utils_proto.h"
 
 #ifdef HAVE_CTYPE_H
 #include <ctype.h>
@@ -564,7 +565,7 @@ processing_state SHOW_grants2 (SCHAR* object,
 				REL.RDB$OWNER_NAME    NE PRV.RDB$USER
 				SORTED BY  PRV.RDB$USER, PRV.RDB$FIELD_NAME, PRV.RDB$GRANT_OPTION;
 
-	            ISQL_blankterm (PRV.RDB$USER);
+	            fb_utils::fb_exact_name(PRV.RDB$USER);
 
 				// Sometimes grant options are null, sometimes 0.  Both same
 
@@ -691,7 +692,7 @@ processing_state SHOW_grants2 (SCHAR* object,
 					*col_string = '\0';
 				}
 				else {
-					ISQL_blankterm (PRV.RDB$FIELD_NAME);
+					fb_utils::fb_exact_name(PRV.RDB$FIELD_NAME);
 					if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
 						ISQL_copy_SQL_id (PRV.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
 						sprintf(col_string, " (%s)", SQL_identifier);
@@ -759,7 +760,7 @@ processing_state SHOW_grants2 (SCHAR* object,
 					ISQL_printf (Out, optional_msg);
 
 				first = false;
-				ISQL_blankterm (PRV.RDB$USER);
+				fb_utils::fb_exact_name(PRV.RDB$USER);
 
 				switch (PRV.RDB$USER_TYPE) {
 				case obj_relation:
@@ -853,14 +854,14 @@ processing_state SHOW_grants2 (SCHAR* object,
 				PRV.RDB$PRIVILEGE     EQ 'M'
 				SORTED BY  PRV.RDB$USER
 
-				ISQL_blankterm (PRV.RDB$RELATION_NAME);
+				fb_utils::fb_exact_name(PRV.RDB$RELATION_NAME);
 				strcpy (role_name, PRV.RDB$RELATION_NAME);
 				if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 					ISQL_copy_SQL_id (role_name, SQL_identifier, DBL_QUOTE);
 				else
 					strcpy (SQL_identifier, role_name);
 
-				ISQL_blankterm (PRV.RDB$USER);
+				fb_utils::fb_exact_name(PRV.RDB$USER);
 				strcpy (user_string, PRV.RDB$USER);
 
 				if (PRV.RDB$GRANT_OPTION)
@@ -947,7 +948,7 @@ void SHOW_grant_roles2 (const SCHAR* terminator,
 			*first = false;
 		}
 
-	    ISQL_blankterm (PRV.RDB$USER);
+	    fb_utils::fb_exact_name(PRV.RDB$USER);
 	    strcpy (user_string, PRV.RDB$USER);
 
 	    if (PRV.RDB$GRANT_OPTION)
@@ -955,7 +956,7 @@ void SHOW_grant_roles2 (const SCHAR* terminator,
 	    else
 	        with_option[0] = '\0';
 
-	    ISQL_blankterm (PRV.RDB$RELATION_NAME);
+	    fb_utils::fb_exact_name(PRV.RDB$RELATION_NAME);
 	    if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
 			ISQL_copy_SQL_id (PRV.RDB$RELATION_NAME, SQL_identifier, DBL_QUOTE);
 			sprintf (Print_buffer, "GRANT %s TO %s%s%s%s", SQL_identifier,
@@ -1626,7 +1627,7 @@ static processing_state show_check(const SCHAR* object)
 	    first = false;
 
 	    sprintf (Print_buffer, "CONSTRAINT %s:%s  ",
-			ISQL_blankterm(CHK.RDB$CONSTRAINT_NAME), NEWLINE);
+			fb_utils::fb_exact_name(CHK.RDB$CONSTRAINT_NAME), NEWLINE);
 	    ISQL_printf (Out, Print_buffer);
 
 	    if (!TRG.RDB$TRIGGER_SOURCE.NULL)
@@ -1695,7 +1696,7 @@ static void show_db()
 	not seem necessary, and creates problems since Windows 95 allows embeded
 	spaces in file names.
 
-	    ISQL_blankterm (FIL.RDB$FILE_NAME);
+	    fb_utils::fb_exact_name(FIL.RDB$FILE_NAME);
 	*/
 
 	    if (FIL.RDB$FILE_FLAGS == 0) {
@@ -1795,7 +1796,7 @@ static void show_db()
 			LOG.RDB$FILE_LENGTH = 0;
 	    if (LOG.RDB$FILE_SEQUENCE.NULL)
 			LOG.RDB$FILE_SEQUENCE = 0;
-	    ISQL_blankterm (LOG.RDB$FILE_NAME);
+	    fb_utils::fb_exact_name(LOG.RDB$FILE_NAME);
 
 	    if (LOG.RDB$FILE_FLAGS & LOG_overflow) {
 			sprintf (Print_buffer, "overflow: %s, ", LOG.RDB$FILE_NAME);
@@ -1956,7 +1957,7 @@ static processing_state show_domains(const SCHAR* domain_name)
 
 			first = false;
 			// Print the name of the domain
-			ISQL_blankterm (FLD.RDB$FIELD_NAME);
+			fb_utils::fb_exact_name(FLD.RDB$FIELD_NAME);
 			sprintf (Print_buffer, "%-32s", FLD.RDB$FIELD_NAME);
 			ISQL_printf (Out, Print_buffer);
 
@@ -2136,12 +2137,12 @@ static processing_state show_exceptions(const SCHAR* object)
 	bool first = true;
 	SCHAR type[20];
 
-	//ISQL_blankterm (object); It already comes trimmed.
+	//fb_utils::fb_exact_name(object); It already comes trimmed.
 
 	FOR EXC IN RDB$EXCEPTIONS
 	    SORTED BY EXC.RDB$EXCEPTION_NAME
 
-	    ISQL_blankterm (EXC.RDB$EXCEPTION_NAME);
+	    fb_utils::fb_exact_name(EXC.RDB$EXCEPTION_NAME);
 	    // List all objects if none specified, or just the named exception
 
 	    if (!*object || !strcmp (EXC.RDB$EXCEPTION_NAME, object)) {
@@ -2167,7 +2168,7 @@ static processing_state show_exceptions(const SCHAR* object)
 				}
 				first_dep = false;
 
-				ISQL_blankterm (DEP.RDB$DEPENDENT_NAME);
+				fb_utils::fb_exact_name(DEP.RDB$DEPENDENT_NAME);
 
 				strcpy (type, "Unknown");
 				if (DEP.RDB$DEPENDENT_TYPE == 2)
@@ -2227,7 +2228,7 @@ static processing_state show_filters(const SCHAR* object)
 		SORTED BY FIL.RDB$FUNCTION_NAME
 
 			first = false;
-			ISQL_blankterm (FIL.RDB$FUNCTION_NAME);
+			fb_utils::fb_exact_name(FIL.RDB$FUNCTION_NAME);
 			sprintf (Print_buffer, "%-38s%s", FIL.RDB$FUNCTION_NAME, (odd ? " " : NEWLINE));
 			ISQL_printf (Out, Print_buffer);
 			odd = !odd;
@@ -2250,9 +2251,9 @@ static processing_state show_filters(const SCHAR* object)
 
 	   first = false;
 
-	   ISQL_blankterm (FIL.RDB$FUNCTION_NAME);
-	   ISQL_blankterm (FIL.RDB$MODULE_NAME);
-	   ISQL_blankterm (FIL.RDB$ENTRYPOINT);
+	   fb_utils::fb_exact_name(FIL.RDB$FUNCTION_NAME);
+	   fb_utils::fb_exact_name(FIL.RDB$MODULE_NAME);
+	   fb_utils::fb_exact_name(FIL.RDB$ENTRYPOINT);
 
 	   sprintf (Print_buffer, "BLOB Filter: %s %s%sInput subtype: %d Output subtype: %d%s",
 				FIL.RDB$FUNCTION_NAME, NEWLINE,
@@ -2298,7 +2299,7 @@ static processing_state show_functions(const SCHAR* object)
 			SORTED BY FUN.RDB$FUNCTION_NAME
 
 			first = false;
-			ISQL_blankterm (FUN.RDB$FUNCTION_NAME);
+			fb_utils::fb_exact_name(FUN.RDB$FUNCTION_NAME);
 			sprintf (Print_buffer, "%-38s%s", FUN.RDB$FUNCTION_NAME, (odd ? " " : NEWLINE));
 			ISQL_printf (Out, Print_buffer);
 			odd = !odd;
@@ -2321,9 +2322,9 @@ static processing_state show_functions(const SCHAR* object)
 		FUN.RDB$FUNCTION_NAME EQ object
 		SORTED BY FNA.RDB$ARGUMENT_POSITION
 
-		ISQL_blankterm (FUN.RDB$FUNCTION_NAME);
-		ISQL_blankterm (FUN.RDB$MODULE_NAME);
-		ISQL_blankterm (FUN.RDB$ENTRYPOINT);
+		fb_utils::fb_exact_name(FUN.RDB$FUNCTION_NAME);
+		fb_utils::fb_exact_name(FUN.RDB$MODULE_NAME);
+		fb_utils::fb_exact_name(FUN.RDB$ENTRYPOINT);
 		if (first) {
 			sprintf (Print_buffer, "%sFunction %s:%s",
 					 NEWLINE,
@@ -2432,7 +2433,7 @@ static processing_state show_functions(const SCHAR* object)
 					WITH V4FNA.RDB$FUNCTION_NAME EQ FNA.RDB$FUNCTION_NAME AND
 					V4FNA.RDB$ARGUMENT_POSITION EQ FNA.RDB$ARGUMENT_POSITION
 
-					ISQL_blankterm (CHARSET.RDB$CHARACTER_SET_NAME);
+					fb_utils::fb_exact_name(CHARSET.RDB$CHARACTER_SET_NAME);
 					sprintf (Print_buffer, "(%d) CHARACTER SET %s",
 							 (FNA.RDB$FIELD_LENGTH / MAX (1,CHARSET.RDB$BYTES_PER_CHARACTER)),
 							 CHARSET.RDB$CHARACTER_SET_NAME);
@@ -2489,7 +2490,7 @@ static processing_state show_generators(const SCHAR* object)
 	FOR GEN IN RDB$GENERATORS
 	    SORTED BY GEN.RDB$GENERATOR_NAME
 
-	    ISQL_blankterm (GEN.RDB$GENERATOR_NAME);
+	    fb_utils::fb_exact_name(GEN.RDB$GENERATOR_NAME);
 
 	    if ((!*object && GEN.RDB$SYSTEM_FLAG.NULL) ||
 			(!strcmp (GEN.RDB$GENERATOR_NAME, object)))
@@ -2590,8 +2591,8 @@ static void show_index(SCHAR* relation_name,
 
 // Strip trailing blanks
 
-	ISQL_blankterm(relation_name);
-	ISQL_blankterm(index_name);
+	fb_utils::fb_exact_name(relation_name);
+	fb_utils::fb_exact_name(index_name);
 
 	sprintf(Print_buffer, "%s%s%s INDEX ON %s", index_name,
 			(unique_flag ? " UNIQUE" : ""),
@@ -2753,7 +2754,7 @@ static processing_state show_proc(const SCHAR* procname)
 
 		// Strip trailing blanks
 
-			ISQL_blankterm (PRC.RDB$PROCEDURE_NAME);
+			fb_utils::fb_exact_name(PRC.RDB$PROCEDURE_NAME);
 			sprintf (Print_buffer, "%-34s", PRC.RDB$PROCEDURE_NAME);
 			ISQL_printf (Out, Print_buffer);
 
@@ -2763,7 +2764,7 @@ static processing_state show_proc(const SCHAR* procname)
 				REDUCED TO DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
 				SORTED BY DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
 
-				ISQL_blankterm (DEP.RDB$DEPENDED_ON_NAME);
+				fb_utils::fb_exact_name(DEP.RDB$DEPENDED_ON_NAME);
 			// Get column type name to print
 				if (!first_dep) {
 					sprintf (Print_buffer, "%s%34s", NEWLINE, "");
@@ -2819,7 +2820,7 @@ static processing_state show_proc(const SCHAR* procname)
 			PRM.RDB$FIELD_SOURCE EQ FLD.RDB$FIELD_NAME
 			SORTED BY PRM.RDB$PARAMETER_TYPE, PRM.RDB$PARAMETER_NUMBER
 
-			ISQL_blankterm (PRM.RDB$PARAMETER_NAME);
+			fb_utils::fb_exact_name(PRM.RDB$PARAMETER_NAME);
 			// Get column type name to print
 	        // Look through types array
 
@@ -2976,14 +2977,14 @@ static processing_state show_role(const SCHAR* object)
 				PRV.RDB$PRIVILEGE     EQ 'M'
 				SORTED BY  PRV.RDB$USER
 
-				ISQL_blankterm (PRV.RDB$RELATION_NAME);
+				fb_utils::fb_exact_name(PRV.RDB$RELATION_NAME);
 				strcpy (role_name, PRV.RDB$RELATION_NAME);
 				if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 					ISQL_copy_SQL_id (role_name, SQL_identifier, DBL_QUOTE);
 				else
 					strcpy (SQL_identifier, role_name);
 
-				ISQL_blankterm (PRV.RDB$USER);
+				fb_utils::fb_exact_name(PRV.RDB$USER);
 				sprintf(Print_buffer, "%s\n", PRV.RDB$USER);
 
 				ISQL_printf (Out, Print_buffer);
@@ -3065,7 +3066,7 @@ static processing_state show_table(const SCHAR* relation_name)
 
 	    // Get length of colname to align columns for printing
 
-	    ISQL_blankterm (RFR.RDB$FIELD_NAME);
+	    fb_utils::fb_exact_name(RFR.RDB$FIELD_NAME);
 
 	    // Print the column name in first column
 
@@ -3077,7 +3078,7 @@ static processing_state show_table(const SCHAR* relation_name)
 			  isdigit (FLD.RDB$FIELD_NAME[4]) &&
 			  FLD.RDB$SYSTEM_FLAG != 1))
 		{
-			ISQL_blankterm (FLD.RDB$FIELD_NAME);
+			fb_utils::fb_exact_name(FLD.RDB$FIELD_NAME);
 			sprintf (Print_buffer, "(%s) ", FLD.RDB$FIELD_NAME);
 			ISQL_printf (Out, Print_buffer);
 		}
@@ -3290,21 +3291,21 @@ static processing_state show_table(const SCHAR* relation_name)
 
 			ISQL_get_index_segments (collist, RELC1.RDB$INDEX_NAME, false);
 			if (!strncmp (RELC1.RDB$CONSTRAINT_TYPE, "PRIMARY", 7)) {
-				ISQL_blankterm (RELC1.RDB$CONSTRAINT_NAME);
+				fb_utils::fb_exact_name(RELC1.RDB$CONSTRAINT_NAME);
 				sprintf (Print_buffer, "CONSTRAINT %s:%s", RELC1.RDB$CONSTRAINT_NAME, NEWLINE);
 				ISQL_printf (Out, Print_buffer);
 				sprintf (Print_buffer, "  Primary key (%s)%s", collist, NEWLINE);
 				ISQL_printf (Out, Print_buffer);
 			}
 			else if (!strncmp (RELC1.RDB$CONSTRAINT_TYPE, "UNIQUE", 6)) {
-				ISQL_blankterm (RELC1.RDB$CONSTRAINT_NAME);
+				fb_utils::fb_exact_name(RELC1.RDB$CONSTRAINT_NAME);
 				sprintf (Print_buffer, "CONSTRAINT %s:%s", RELC1.RDB$CONSTRAINT_NAME, NEWLINE);
 				ISQL_printf (Out, Print_buffer);
 				sprintf (Print_buffer, "  Unique key (%s)%s", collist, NEWLINE);
 				ISQL_printf (Out, Print_buffer);
 			}
 			else if (!strncmp (RELC1.RDB$CONSTRAINT_TYPE, "FOREIGN", 7)) {
-				ISQL_blankterm (RELC1.RDB$CONSTRAINT_NAME);
+				fb_utils::fb_exact_name(RELC1.RDB$CONSTRAINT_NAME);
 				sprintf (Print_buffer, "CONSTRAINT %s:%s", RELC1.RDB$CONSTRAINT_NAME, NEWLINE);
 				ISQL_printf (Out, Print_buffer);
 				ISQL_get_index_segments (collist, RELC1.RDB$INDEX_NAME, false);
@@ -3317,7 +3318,7 @@ static processing_state show_table(const SCHAR* relation_name)
 					REFC.RDB$CONSTRAINT_NAME EQ RELC1.RDB$CONSTRAINT_NAME
 
 					ISQL_get_index_segments (collist, RELC2.RDB$INDEX_NAME, false);
-					ISQL_blankterm (RELC2.RDB$RELATION_NAME);
+					fb_utils::fb_exact_name(RELC2.RDB$RELATION_NAME);
 
 					sprintf (Print_buffer, "    References %s (%s)",
 							 RELC2.RDB$RELATION_NAME, collist);
@@ -3360,8 +3361,8 @@ static processing_state show_table(const SCHAR* relation_name)
 			AND R_C.RDB$CONSTRAINT_NAME EQ C_C.RDB$CONSTRAINT_NAME
 
 	        if (strncmp (R_C.RDB$CONSTRAINT_NAME, "INTEG_", 6)) {
-	            ISQL_blankterm (C_C.RDB$TRIGGER_NAME);
-	            ISQL_blankterm (R_C.RDB$CONSTRAINT_NAME);
+	            fb_utils::fb_exact_name(C_C.RDB$TRIGGER_NAME);
+	            fb_utils::fb_exact_name(R_C.RDB$CONSTRAINT_NAME);
 	            sprintf (Print_buffer, "CONSTRAINT %s:%s", R_C.RDB$CONSTRAINT_NAME,
 	                     NEWLINE);
 	            ISQL_printf (Out, Print_buffer);
@@ -3434,8 +3435,8 @@ static processing_state show_trigger(const SCHAR* object,
 					first = false;
 				}
 
-				ISQL_blankterm (TRG.RDB$TRIGGER_NAME);
-				ISQL_blankterm (TRG.RDB$RELATION_NAME);
+				fb_utils::fb_exact_name(TRG.RDB$TRIGGER_NAME);
+				fb_utils::fb_exact_name(TRG.RDB$RELATION_NAME);
 				sprintf (Print_buffer, "%-32s %s%s%s",
 						 TRG.RDB$RELATION_NAME,
 						 TRG.RDB$TRIGGER_NAME,
@@ -3465,8 +3466,8 @@ static processing_state show_trigger(const SCHAR* object,
 					first = false;
 				}
 
-				ISQL_blankterm (TRG.RDB$TRIGGER_NAME);
-				ISQL_blankterm (TRG.RDB$RELATION_NAME);
+				fb_utils::fb_exact_name(TRG.RDB$TRIGGER_NAME);
+				fb_utils::fb_exact_name(TRG.RDB$RELATION_NAME);
 				sprintf (Print_buffer, "%-32s %s%s%s", TRG.RDB$RELATION_NAME,
 						 TRG.RDB$TRIGGER_NAME,
 						 (TRG.RDB$SYSTEM_FLAG == 1 ? "(system)" : ""),
@@ -3507,8 +3508,8 @@ static processing_state show_trigger(const SCHAR* object,
 		}
 	    if (skip)
 			continue;
-	    ISQL_blankterm (TRG.RDB$TRIGGER_NAME);
-	    ISQL_blankterm (TRG.RDB$RELATION_NAME);
+	    fb_utils::fb_exact_name(TRG.RDB$TRIGGER_NAME);
+	    fb_utils::fb_exact_name(TRG.RDB$RELATION_NAME);
 
 	    if (first) {
 			sprintf (Print_buffer, "%sTriggers on Table %s:%s",

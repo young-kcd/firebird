@@ -71,7 +71,7 @@ static void format_tip(TIP, int, SLONG);
 static void get_next_file(RBDB, HDR);
 static void get_range(TEXT ***, TEXT **, ULONG *, ULONG *);
 static void get_switch(TEXT **, SWC);
-static void move(SCHAR *, SCHAR *, SSHORT);
+static void move(const SCHAR*, SCHAR*, SSHORT);
 static HDR open_database(RBDB, ULONG);
 static void print_db_header(IB_FILE *, HDR);
 static void rebuild(RBDB);
@@ -86,14 +86,7 @@ static bool sw_fudge;
 static bool sw_fix;
 static bool sw_dump_tips;
 
-static TEXT *months[] = {
-	"Jan", "Feb", "Mar",
-	"Apr", "May", "Jun",
-	"Jul", "Aug", "Sep",
-	"Oct", "Nov", "Dec"
-};
-
-static ULONG PPG_NUMBERS[] = { 5897, 6058, 5409, 6199, 6200, 6220, 6221,
+static const ULONG PPG_NUMBERS[] = { 5897, 6058, 5409, 6199, 6200, 6220, 6221,
 	4739, 4868, 6332, 6333, 6329, 6359, 6751,
 	6331, 6392, 6806, 6819, 6820, 6866, 6875,
 	6876, 7019, 7284, 7430, 7431, 7757, 6893,
@@ -914,7 +907,7 @@ static void get_switch( TEXT ** argv, SWC token)
 }
 
 
-static void move( SCHAR * from, SCHAR * to, SSHORT length)
+static void move(const SCHAR* from, SCHAR* to, SSHORT length)
 {
 /**************************************
  *
@@ -927,9 +920,9 @@ static void move( SCHAR * from, SCHAR * to, SSHORT length)
  *
  **************************************/
 
-	do
+	do {
 		*to++ = *from++;
-	while (--length);
+	} while (--length);
 }
 
 
@@ -948,7 +941,6 @@ static HDR open_database( RBDB rbdb, ULONG pg_size)
  *
  **************************************/
 	UCHAR temp[1024];
-	HDR header;
 
 	RBDB_open(rbdb);
 
@@ -956,7 +948,7 @@ static HDR open_database( RBDB rbdb, ULONG pg_size)
 	rbdb->rbdb_buffer1 = (PAG) temp;
 	rbdb->rbdb_valid = TRUE;
 
-	header = (HDR) RBDB_read(rbdb, (SLONG) 0);
+	hdr* header = (HDR) RBDB_read(rbdb, (SLONG) 0);
 
 	if (header->hdr_header.pag_type != pag_header) {
 		ib_printf("header page has wrong type, expected %d found %d!\n",
@@ -1005,10 +997,6 @@ static void print_db_header( IB_FILE * file, HDR header)
  *	Print database header page.
  *
  **************************************/
-	UCHAR *p, *end;
-	SLONG number;
-	struct tm time;
-
 	ib_fprintf(file, "Database header page information:\n");
 	ib_fprintf(file, "    Page size\t\t\t%d\n", header->hdr_page_size);
 	ib_fprintf(file, "    ODS version\t\t\t%d\n", header->hdr_ods_version);
@@ -1038,10 +1026,11 @@ ib_fprintf ("    Creation date    \n", header->hdr_creation_date);
 			   header->hdr_implementation);
 	ib_fprintf(file, "    Shadow count\t\t%ld\n", header->hdr_shadow_count);
 
+	tm time;
 	isc_decode_date(header->hdr_creation_date, &time);
 
 	ib_fprintf(file, "    Creation date:\t\t%s %d, %d %d:%02d:%02d\n",
-			   months[time.tm_mon], time.tm_mday, time.tm_year + 1900,
+			   FB_SHORT_MONTHS[time.tm_mon], time.tm_mday, time.tm_year + 1900,
 			   time.tm_hour, time.tm_min, time.tm_sec);
 	ib_fprintf(file, "    Cache buffers\t\t%ld\n", header->hdr_cache_buffers);
 	ib_fprintf(file, "    Bumped transaction\t\t%ld\n",
@@ -1049,8 +1038,12 @@ ib_fprintf ("    Creation date    \n", header->hdr_creation_date);
 
 	ib_fprintf(file, "\n    Variable header data:\n");
 
-	for (p = header->hdr_data, end = p + header->hdr_page_size;
+	SLONG number;
+	
+	const UCHAR* p = header->hdr_data;
+	for (const UCHAR* const end = p + header->hdr_page_size;
 		 p < end && *p != HDR_end; p += 2 + p[1])
+	{
 		switch (*p) {
 		case HDR_root_file_name:
 			ib_fprintf(file, "\tRoot file name: %*s\n", p[1], p + 2);
@@ -1103,6 +1096,7 @@ ib_fprintf ("    Creation date    \n", header->hdr_creation_date);
 			ib_fprintf(file, "\tUnrecognized option %d, length %d\n", p[0],
 					   p[1]);
 		}
+	}
 
 	ib_fprintf(file, "\n\n");
 }
@@ -1120,18 +1114,13 @@ static void rebuild( RBDB rbdb)
  *	Write out an improved database.
  *
  **************************************/
-	ULONG number;
-	ULONG *page_numbers;
-	PAG page;
-	ULONG page_size;
-	PPG pointer;
-
-	page_size = rbdb->rbdb_page_size;
-	page = (PAG) rbdb->rbdb_buffer1;
-	page_numbers = PPG_NUMBERS;
-	for (number = 5898; (number < 5899) && (page = RBDB_read(rbdb, number));
-		 number++) {
-		pointer = (PPG) page;
+	const ULONG page_size = rbdb->rbdb_page_size;
+	pag* page = (PAG) rbdb->rbdb_buffer1;
+	const ULONG* page_numbers = PPG_NUMBERS;
+	for (ULONG number = 5898; (number < 5899) && (page = RBDB_read(rbdb, number));
+		 number++)
+	{
+		ppg* pointer = (PPG) page;
 /*    format_pointer (page, page_size, 25, 3, 1, 37, page_numbers);   */
 
 		RBDB_write(rbdb, page, number);
@@ -1152,18 +1141,11 @@ static void write_headers(
  *	Print out the page headers.
  *
  **************************************/
-	ULONG page_number;
-	PAG page;
-	BLP blob;
-	BTR bucket;
-	DPG data;
-	IRT index_root;
-	PIP pip;
-	PPG pointer;
-
-	for (page_number = lower;
+	pag* page;
+	for (ULONG page_number = lower;
 		 (page_number <= upper) && (page = RBDB_read(rbdb, page_number));
-		 page_number++) {
+		 page_number++)
+	{
 		ib_fprintf(file, "page %d, ", page_number);
 
 		switch (page->pag_type) {
@@ -1174,11 +1156,13 @@ static void write_headers(
 			break;
 
 		case pag_pages:
+			{
 			ib_fprintf(file, "page inventory page, checksum %d\n",
 					   page->pag_checksum);
-			pip = (PIP) page;
+			PIP pip = (PIP) page;
 			ib_fprintf(file, "\tlowest free page %d\n\n", pip->pip_min);
 			break;
+			}
 
 		case pag_transactions:
 			ib_fprintf(file, "TIP page, checksum %d\n", page->pag_checksum);
@@ -1187,9 +1171,10 @@ static void write_headers(
 			break;
 
 		case pag_pointer:
+			{
 			ib_fprintf(file, "pointer page, checksum %d\n",
 					   page->pag_checksum);
-			pointer = (PPG) page;
+			const ppg* pointer = (PPG) page;
 			ib_fprintf(file,
 					   "\trelation %d, sequence %ld, next pip %ld, active slots %d\n",
 					   pointer->ppg_relation, pointer->ppg_sequence,
@@ -1202,10 +1187,12 @@ static void write_headers(
 						pag_flags & ppg_eof) ? "last pointer for relation\n" :
 					   "");
 			break;
+			}
 
 		case pag_data:
+			{
 			ib_fprintf(file, "data page, checksum %d\n", page->pag_checksum);
-			data = (DPG) page;
+			const dpg* data = (DPG) page;
 			ib_fprintf(file,
 					   "\trelation %d, sequence %ld, records on page %d\n",
 					   data->dpg_relation, data->dpg_sequence,
@@ -1218,19 +1205,23 @@ static void write_headers(
 						pag_flags & dpg_large) ? "contains a large object" :
 					   "", (data->dpg_header.pag_flags) ? "\n" : "");
 			break;
+			}
 
 		case pag_root:
+			{
 			ib_fprintf(file, "index root page, checksum %d\n",
 					   page->pag_checksum);
-			index_root = (IRT) page;
+			const irt* index_root = (IRT) page;
 			ib_fprintf(file, "\trelation %d, number of indexes %d\n\n",
 					   index_root->irt_relation, index_root->irt_count);
 			break;
+			}
 
 		case pag_index:
+			{
 			ib_fprintf(file, "btree page (bucket), checksum %d\n",
 					   page->pag_checksum);
-			bucket = (BTR) page;
+			const btr* bucket = (BTR) page;
 			ib_fprintf(file, "\trelation %d, right sibling bucket: %ld,\n",
 					   bucket->btr_relation, bucket->btr_sibling);
 			ib_fprintf(file, "\tdata length %d, index id %d, level %d\n",
@@ -1243,10 +1234,12 @@ static void write_headers(
 					   (bucket->btr_header.
 						pag_flags & btr_marked) ? "marked for delete" : "");
 			break;
+			}
 
 		case pag_blob:
+			{
 			ib_fprintf(file, "blob page, checksum %d\n", page->pag_checksum);
-			blob = (BLP) page;
+			const blp* blob = (BLP) page;
 			ib_fprintf(file, "\tlead page: %ld, sequence: %ld, length: %d\n",
 					   blob->blp_lead_page, blob->blp_sequence,
 					   blob->blp_length);
@@ -1254,6 +1247,8 @@ static void write_headers(
 					   (blob->blp_header.
 						pag_flags & blp_pointers) ? "pointers" : "data");
 			break;
+			}
+			
 		case pag_ids:
 			ib_fprintf(file, "generator page, checksum %d\n\n",
 					   page->pag_checksum);
@@ -1270,3 +1265,4 @@ static void write_headers(
 		}
 	}
 }
+

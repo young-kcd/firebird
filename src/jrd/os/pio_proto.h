@@ -26,11 +26,11 @@
 
 int		PIO_add_file(struct dbb*, struct fil*, const TEXT*, SLONG);
 void	PIO_close(struct fil*);
-struct fil*	PIO_create(struct dbb*, const TEXT*, SSHORT, BOOLEAN);
+struct fil*	PIO_create(struct dbb*, const TEXT*, SSHORT, bool);
 int		PIO_connection(const TEXT*, USHORT*);
 int		PIO_expand(const TEXT*, USHORT, TEXT*);
 void	PIO_flush(struct fil*);
-void	PIO_force_write(struct fil*, USHORT);
+void	PIO_force_write(struct fil*, bool);
 void	PIO_header(struct dbb*, SCHAR*, int);
 SLONG	PIO_max_alloc(struct dbb*);
 SLONG	PIO_act_alloc(struct dbb*);

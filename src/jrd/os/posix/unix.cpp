@@ -160,15 +160,14 @@ int PIO_add_file(DBB dbb, FIL main_file, const TEXT* file_name, SLONG start)
  *	have been locked before entry.
  *
  **************************************/
-	USHORT sequence;
-	FIL file, new_file;
-
-	if (!(new_file = PIO_create(dbb, file_name, strlen(file_name), FALSE)))
+	fil* new_file = PIO_create(dbb, file_name, strlen(file_name), false);
+	if (!new_file)
 		return 0;
 
 	new_file->fil_min_page = start;
-	sequence = 1;
+	USHORT sequence = 1;
 
+	fil* file;
 	for (file = main_file; file->fil_next; file = file->fil_next)
 		++sequence;
 
@@ -241,7 +240,7 @@ int PIO_connection(const TEXT* file_name, USHORT* file_length)
 }
 
 
-FIL PIO_create(DBB dbb, const TEXT* string, SSHORT length, BOOLEAN overwrite)
+FIL PIO_create(DBB dbb, const TEXT* string, SSHORT length, bool overwrite)
 {
 /**************************************
  *
@@ -256,12 +255,9 @@ FIL PIO_create(DBB dbb, const TEXT* string, SSHORT length, BOOLEAN overwrite)
  *	have been locked before entry.
  *
  **************************************/
-	int desc, flag;
-	FIL file;
-	TEXT expanded_name[256], temp[256];
-
 	const TEXT* file_name = string;
 
+    TEXT temp[256]; // Shouldn't it be MAXPATHLEN?
 	if (length) {
 		MOVE_FAST(file_name, temp, length);
 		temp[length] = 0;
@@ -269,29 +265,32 @@ FIL PIO_create(DBB dbb, const TEXT* string, SSHORT length, BOOLEAN overwrite)
 	}
 
 #ifdef SUPERSERVER_V2
-	flag =
+	const int flag =
 		SYNC | O_RDWR | O_CREAT | (overwrite ? O_TRUNC : O_EXCL) | O_BINARY;
 #else
 #ifdef SUPPORT_RAW_DEVICES
-	flag = O_RDWR |
+	const int flag = O_RDWR |
 			(raw_devices_check_file(file_name) ? 0 : O_CREAT) |
 			(overwrite ? O_TRUNC : O_EXCL) |
 			O_BINARY;
 #else
-	flag = O_RDWR | O_CREAT | (overwrite ? O_TRUNC : O_EXCL) | O_BINARY;
+	const int flag = O_RDWR | O_CREAT | (overwrite ? O_TRUNC : O_EXCL) | O_BINARY;
 #endif
 #endif
 
-	if ((desc = open(file_name, flag, MASK)) == -1)
+	const int desc = open(file_name, flag, MASK);
+	if (desc == -1) {
 		ERR_post(isc_io_error,
 				 isc_arg_string, "open O_CREAT",
 				 isc_arg_cstring, length, ERR_string(string, length),
 				 isc_arg_gds, isc_io_create_err, isc_arg_unix, errno, 0);
+	}
 
 /* File open succeeded.  Now expand the file name. */
 
+	TEXT expanded_name[256]; // Shouldn't it be MAXPATHLEN?
 	length = PIO_expand(string, length, expanded_name);
-	file = setup_file(dbb, expanded_name, length, desc);
+	fil* file = setup_file(dbb, expanded_name, length, desc);
 	return file;
 }
 
@@ -343,7 +342,7 @@ void PIO_flush(FIL main_file)
 }
 
 
-void PIO_force_write(FIL file, USHORT flag)
+void PIO_force_write(FIL file, bool flag)
 {
 /**************************************
  *

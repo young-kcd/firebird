@@ -1808,9 +1808,9 @@ void CCH_journal_page(TDBB tdbb, WIN * window)
 
 void CCH_journal_record(TDBB	tdbb,
 						WIN*	window,
-						UCHAR*	header,
+						const UCHAR*	header,
 						USHORT	h_length,
-						UCHAR*	data,
+						const UCHAR*	data,
 						USHORT	d_length)
 {
 /**************************************
@@ -3449,14 +3449,16 @@ static void THREAD_ROUTINE cache_reader(DBB dbb)
 
 		do {
 			if (!(prefetch1.prf_flags & PRF_active) &&
-				SBM_next(bcb->bcb_prefetch, &starting_page, RSE_get_forward)) {
+				SBM_next(bcb->bcb_prefetch, &starting_page, RSE_get_forward)) 
+			{
 				found = TRUE;
 				prefetch_prologue(&prefetch1, &starting_page);
 				prefetch_io(&prefetch1, status_vector);
 			}
 
 			if (!(prefetch2.prf_flags & PRF_active) &&
-				SBM_next(bcb->bcb_prefetch, &starting_page, RSE_get_forward)) {
+				SBM_next(bcb->bcb_prefetch, &starting_page, RSE_get_forward)) 
+			{
 				found = TRUE;
 				prefetch_prologue(&prefetch2, &starting_page);
 				prefetch_io(&prefetch2, status_vector);
@@ -3474,12 +3476,16 @@ static void THREAD_ROUTINE cache_reader(DBB dbb)
 #ifdef CACHE_WRITER
 				if (bcb->bcb_flags & BCB_cache_writer &&
 					!(bcb->bcb_flags & BCB_writer_active))
+				{
 						ISC_event_post(dbb->dbb_writer_event);
+				}
 #endif
 #ifdef GARBAGE_THREAD
 				if (dbb->dbb_flags & DBB_garbage_collector &&
 					!(dbb->dbb_flags & DBB_gc_active))
+				{
 					ISC_event_post(dbb->dbb_gc_event);
+				}
 #endif
 			}
 		} while (prefetch1.prf_flags & PRF_active

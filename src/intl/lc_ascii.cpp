@@ -636,15 +636,14 @@ USHORT famasc_to_upper(TEXTTYPE obj, BYTE ch)
 
 
 
-SSHORT famasc_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr)
+SSHORT famasc_str_to_upper(TEXTTYPE obj, USHORT iLen, const BYTE* pStr, USHORT iOutLen, BYTE *pOutStr)
 {
-	BYTE *p;
 	fb_assert(pStr != NULL);
 	fb_assert(pOutStr != NULL);
 	fb_assert(iLen <= 32000);		/* almost certainly an error */
 	fb_assert(iOutLen <= 32000);	/* almost certainly an error */
 	fb_assert(iOutLen >= iLen);
-	p = pOutStr;
+	const BYTE* const p = pOutStr;
 	while (iLen && iOutLen) {
 		*pOutStr++ = ASCII7_UPPER(*pStr);
 		pStr++;
@@ -672,15 +671,14 @@ USHORT cp1251_to_upper(TEXTTYPE obj, BYTE ch)
 
 
 
-SSHORT cp1251_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr)
+SSHORT cp1251_str_to_upper(TEXTTYPE obj, USHORT iLen, const BYTE* pStr, USHORT iOutLen, BYTE *pOutStr)
 {
-	BYTE *p;
 	fb_assert(pStr != NULL);
 	fb_assert(pOutStr != NULL);
 	fb_assert(iLen <= 32000);		/* almost certainly an error */
 	fb_assert(iOutLen <= 32000);	/* almost certainly an error */
 	fb_assert(iOutLen >= iLen);
-	p = pOutStr;
+	const BYTE* const p = pOutStr;
 	while (iLen && iOutLen) {
 		*pOutStr++ = CP1251_UPPER(*pStr);
 		pStr++;

@@ -103,11 +103,7 @@ typedef struct itm {
 #ifdef SUPERSERVER
 #define GETWD(buf)		JRD_getdir(buf, MAXPATHLEN)
 #else
-#ifdef HAVE_GETCWD
-#define GETWD(buf)		getcwd(buf, MAXPATHLEN)
-#else
-#define GETWD			getwd
-#endif
+#define GETWD(buf)		fb_getcwd(buf, MAXPATHLEN)
 #endif /* SUPERSERVER */
 
 

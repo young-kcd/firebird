@@ -36,14 +36,6 @@
 #include "../jrd/nbak.h"
 #include "../jrd/gds_proto.h"
 
-static const TEXT months[][4] = {
-	"Jan", "Feb", "Mar",
-	"Apr", "May", "Jun",
-	"Jul", "Aug", "Sep",
-	"Oct", "Nov", "Dec"
-};
-
-
 #ifdef SUPERSERVER
 #ifndef INCLUDE_FB_BLK
 #include "../include/fb_blk.h"
@@ -144,7 +136,7 @@ void PPG_print_header(const hdr* header, SLONG page,
 		isc_decode_date(reinterpret_cast<const ISC_QUAD*>(header->hdr_creation_date), 
 						&time);
 		FPRINTF(outfile, "\tCreation date\t\t%s %d, %d %d:%02d:%02d\n",
-				months[time.tm_mon], time.tm_mday, time.tm_year + 1900,
+				FB_SHORT_MONTHS[time.tm_mon], time.tm_mday, time.tm_year + 1900,
 				time.tm_hour, time.tm_min, time.tm_sec);
 	}
 
@@ -325,7 +317,7 @@ void PPG_print_log(const log_info_page* logp, SLONG page,
 								&time);
 			FPRINTF(outfile,
 					"\tCreation date\t%s %d, %d %d:%02d:%02d\n",
-					months[time.tm_mon],
+					FB_SHORT_MONTHS[time.tm_mon],
 					time.tm_mday,
 					time.tm_year + 1900,
 					time.tm_hour,

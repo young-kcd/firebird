@@ -30,7 +30,8 @@ void SCL_check_procedure(struct dsc*, USHORT);
 void SCL_check_relation(struct dsc*, USHORT);
 struct scl* SCL_get_class(/* INOUT */ TEXT*);
 int SCL_get_mask(const TEXT*, const TEXT*);
-void SCL_init(bool, const TEXT*, TEXT*, TEXT*, TEXT*, TEXT*, TDBB, bool);
+void SCL_init(bool, const TEXT*, const TEXT*, const TEXT*, const TEXT*,
+	const TEXT*, TDBB, bool);
 void SCL_move_priv(UCHAR**, USHORT, STR*, ULONG*);
 struct scl* SCL_recompute_class(TDBB, TEXT*);
 void SCL_release(struct scl*);

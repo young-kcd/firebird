@@ -2,7 +2,7 @@
  *	PROGRAM:	Server Code
  *	MODULE:		rpb_chain.cpp
  *	DESCRIPTION:	Keeps track of rpb's, updated_in_place in
- *	        		single transcation
+ *	        		single transaction
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -31,7 +31,8 @@
 
 int traRpbList::PushRpb(struct rpb *value) {
 	if (value->rpb_relation->rel_view_rse ||	// this is view
-		value->rpb_relation->rel_file) {		// this is external file
+		value->rpb_relation->rel_file)			// this is external file
+	{
 				return -1;
 	}
 	int pos = add(traRpbListElement(value, ~0));
@@ -39,12 +40,13 @@ int traRpbList::PushRpb(struct rpb *value) {
 	if (pos-- > 0) {
 		traRpbListElement& prev = (*this)[pos];
 		if (prev.lr_rpb->rpb_relation->rel_id == value->rpb_relation->rel_id &&
-			prev.lr_rpb->rpb_number == value->rpb_number) { 
-				// we got the same record once more - mark for refetch
-				level = prev.level;
-				fb_assert(pos >= level);
-				fb_assert((*this)[pos - level].level == 0);
-				prev.lr_rpb->rpb_stream_flags |= RPB_s_refetch;
+			prev.lr_rpb->rpb_number == value->rpb_number) 
+		{ 
+			// we got the same record once more - mark for refetch
+			level = prev.level;
+			fb_assert(pos >= level);
+			fb_assert((*this)[pos - level].level == 0);
+			prev.lr_rpb->rpb_stream_flags |= RPB_s_refetch;
 		}
 	}
 	(*this)[++pos].level = ++level;
@@ -57,7 +59,7 @@ bool traRpbList::PopRpb(struct rpb *value, int Level) {
 	}
 	int pos = -1;
 	ExecAssert(find(traRpbListElement(value, Level), pos));
-	bool rc = (*this)[pos].lr_rpb->rpb_stream_flags & RPB_s_refetch;
+	const bool rc = (*this)[pos].lr_rpb->rpb_stream_flags & RPB_s_refetch;
 	remove(pos);
 	return rc;
 }

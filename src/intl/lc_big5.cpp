@@ -93,20 +93,18 @@ static USHORT big5_to_upper(TEXTTYPE obj, UCS2_CHAR ch)
 /*
  *	Note: This function expects Multibyte input
  */
-static SSHORT big5_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr)
+static SSHORT big5_str_to_upper(TEXTTYPE obj, USHORT iLen, const BYTE* pStr, USHORT iOutLen, BYTE *pOutStr)
 {
-	BYTE *p;
-	USHORT waiting_for_big52 = FALSE;
-	BYTE c;
+	bool waiting_for_big52 = false;
 
 	fb_assert(pStr != NULL);
 	fb_assert(pOutStr != NULL);
 	fb_assert(iLen <= 32000);		/* almost certainly an error */
 	fb_assert(iOutLen <= 32000);	/* almost certainly an error */
 	fb_assert(iOutLen >= iLen);
-	p = pOutStr;
+	const BYTE* const p = pOutStr;
 	while (iLen && iOutLen) {
-		c = *pStr++;
+		BYTE c = *pStr++;
 		if (waiting_for_big52 || BIG51(c)) {
 			waiting_for_big52 = !waiting_for_big52;
 		}

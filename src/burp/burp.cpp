@@ -451,15 +451,15 @@ static int api_gbak(int argc,
 // Fill command line options 
 
 	*spb_ptr++ = isc_spb_command_line;
-	TEXT **begin = argv;
-	TEXT **end = argv + argc;
+	const TEXT* const* const begin = argv;
+	const TEXT* const* const end = argv + argc;
 	argv++;
 
 	*spb_ptr++ = length;
 	while (argv < end) {
 		if (**argv && argv > begin + 1)
 			*spb_ptr++ = ' ';
-		for (const TEXT *x = *argv++; *x;)
+		for (const TEXT* x = *argv++; *x;)
 			*spb_ptr++ = *x++;
 	}
 
@@ -614,7 +614,7 @@ int common_main(int		argc,
 	tdgbl->output_proc = output_proc;
 	tdgbl->output_data = output_data;
 
-    IN_SW_TAB in_sw_tab; // used in several parts below.
+	in_sw_tab_t* in_sw_tab; // used in several parts below.
     
 // Initialize static data. 
 	for (in_sw_tab = burp_in_sw_table; in_sw_tab->in_sw_name; in_sw_tab++) {
@@ -639,7 +639,6 @@ int common_main(int		argc,
 	tdgbl->gbl_sw_service_thd = FALSE;
 	tdgbl->service_blk = NULL;
 	tdgbl->status = const_cast<long* volatile>(tdgbl->status_vector);
-	TEXT *q = 0;
 
 	if (argc > 1 && !strcmp(argv[1], "-svc")) {
 		tdgbl->gbl_sw_service_gbak = TRUE;
@@ -734,6 +733,7 @@ int common_main(int		argc,
 			++argv;
 			if (!string[1])
 				string = "-*NONE*";
+			const TEXT* q;
 			for (in_sw_tab = burp_in_sw_table; q = in_sw_tab->in_sw_name;
 				 in_sw_tab++)
 			{
@@ -1006,17 +1006,19 @@ int common_main(int		argc,
 				break;
 
 			case (IN_SW_BURP_PASS):
-				if (!tdgbl->dpb_length)
-					*dpb++ = isc_dpb_version1;
-				if (!tdgbl->gbl_sw_service_gbak)
-					*dpb++ = isc_dpb_password;
-				else
-					*dpb++ = isc_dpb_password_enc;
-				*dpb++ = strlen(tdgbl->gbl_sw_password);
-				for (q = tdgbl->gbl_sw_password; *q;)
-					*dpb++ = *q++;
-				tdgbl->dpb_length = dpb - tdgbl->dpb_string;
-				break;
+				{
+					if (!tdgbl->dpb_length)
+						*dpb++ = isc_dpb_version1;
+					if (!tdgbl->gbl_sw_service_gbak)
+						*dpb++ = isc_dpb_password;
+					else
+						*dpb++ = isc_dpb_password_enc;
+					*dpb++ = strlen(tdgbl->gbl_sw_password);
+					for (const TEXT* q = tdgbl->gbl_sw_password; *q;)
+						*dpb++ = *q++;
+					tdgbl->dpb_length = dpb - tdgbl->dpb_string;
+					break;
+				}
 
 			case (IN_SW_BURP_R):
 				if (sw_replace == IN_SW_BURP_B)
@@ -1039,24 +1041,28 @@ int common_main(int		argc,
 				break;
 
 			case (IN_SW_BURP_ROLE):
-				if (!tdgbl->dpb_length)
-					*dpb++ = isc_dpb_version1;
-				*dpb++ = isc_dpb_sql_role_name;
-				*dpb++ = strlen(tdgbl->gbl_sw_sql_role);
-				for (q = tdgbl->gbl_sw_sql_role; *q;)
-					*dpb++ = *q++;
-				tdgbl->dpb_length = dpb - tdgbl->dpb_string;
-				break;
+				{
+					if (!tdgbl->dpb_length)
+						*dpb++ = isc_dpb_version1;
+					*dpb++ = isc_dpb_sql_role_name;
+					*dpb++ = strlen(tdgbl->gbl_sw_sql_role);
+					for (const TEXT* q = tdgbl->gbl_sw_sql_role; *q;)
+						*dpb++ = *q++;
+					tdgbl->dpb_length = dpb - tdgbl->dpb_string;
+					break;
+				}
 
 			case (IN_SW_BURP_USER):
-				if (!tdgbl->dpb_length)
-					*dpb++ = isc_dpb_version1;
-				*dpb++ = isc_dpb_user_name;
-				*dpb++ = strlen(tdgbl->gbl_sw_user);
-				for (q = tdgbl->gbl_sw_user; *q;)
-					*dpb++ = *q++;
-				tdgbl->dpb_length = dpb - tdgbl->dpb_string;
-				break;
+				{
+					if (!tdgbl->dpb_length)
+						*dpb++ = isc_dpb_version1;
+					*dpb++ = isc_dpb_user_name;
+					*dpb++ = strlen(tdgbl->gbl_sw_user);
+					for (const TEXT* q = tdgbl->gbl_sw_user; *q;)
+						*dpb++ = *q++;
+					tdgbl->dpb_length = dpb - tdgbl->dpb_string;
+					break;
+				}
 
 			case (IN_SW_BURP_V):
 				tdgbl->gbl_sw_verbose = TRUE;

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		sbm.c
+ *	MODULE:		sbm.cpp
  *	DESCRIPTION:	Sparse Bit Map manager
  *
  * The contents of this file are subject to the Interbase Public
@@ -54,34 +54,35 @@ SBM *SBM_and(SBM * bitmap1, SBM * bitmap2)
  *	destroy one or the other of the bitmaps!
  *
  **************************************/
-	SBM map1, map2;
-	SBM *result;
-
-	map1 = (bitmap1) ? *bitmap1 : NULL;
-	map2 = (bitmap2) ? *bitmap2 : NULL;
+	sbm* map1 = (bitmap1) ? *bitmap1 : NULL;
+	sbm* map2 = (bitmap2) ? *bitmap2 : NULL;
 
 /* If either bitmap is null, so is the intersection.  */
 
 	if (!map1 || !map2 ||
 		map1->sbm_state == SBM_EMPTY || map2->sbm_state == SBM_EMPTY)
+	{
 			return NULL;
+	}
 
-	if (map1->sbm_state == SBM_SINGULAR)
+	if (map1->sbm_state == SBM_SINGULAR) {
 		if (SBM_test(map2, map1->sbm_number))
 			return bitmap1;
 		else
 			return NULL;
+	}
 
-	if (map2->sbm_state == SBM_SINGULAR)
+	if (map2->sbm_state == SBM_SINGULAR) {
 		if (SBM_test(map1, map2->sbm_number))
 			return bitmap2;
 		else
 			return NULL;
+	}
 
 /* Both bitmaps exist.  Make sure that the shorter of the two is
    bitmap1.  If not, flip them. */
 
-	result = bitmap1;
+	sbm** result = bitmap1;
 
 	if (map1->sbm_high_water > map2->sbm_high_water) {
 		map2 = *bitmap1;
@@ -90,14 +91,12 @@ SBM *SBM_and(SBM * bitmap1, SBM * bitmap2)
 	}
 
 	if (map1->sbm_type == SBM_ROOT) {
-		sbm::iterator bucket1, bucket2, end_buckets;
-		SBM *result_bucket, temp;
+		sbm::iterator bucket1 = map1->sbm_segments.begin();
+		sbm::iterator bucket2 = map2->sbm_segments.begin();
+		const sbm::const_iterator end_buckets = bucket1 + map1->sbm_high_water + 1;
 
-		bucket1 = map1->sbm_segments.begin();
-		bucket2 = map2->sbm_segments.begin();
-		end_buckets = bucket1 + map1->sbm_high_water + 1;
-
-		for (; bucket1 < end_buckets; bucket1++, bucket2++)
+		for (; bucket1 < end_buckets; bucket1++, bucket2++) {
+			sbm** result_bucket;
 			if (*bucket1) {
 				if (!*bucket2) {
 					*bucket2 = *bucket1;
@@ -109,39 +108,37 @@ SBM *SBM_and(SBM * bitmap1, SBM * bitmap2)
 					*bucket1 = NULL;
 				}
 				else if (result_bucket == (SBM*) &*bucket2) {
-					temp = (SBM)*bucket2;
+					sbm* const temp = (SBM)*bucket2;
 					*bucket2 = *bucket1;
 					*bucket1 = (BMS)temp;
 				}
 			}
+		}
 	}
 	else {
-		sbm::iterator segment1, segment2, end_segments;
-		JrdMemoryPool *pool;
-		BUNCH *b1, *b2;
-		SSHORT j;
-
 		/* AND the bitmaps segment-wise.  If each bucket has a segment
 		   is a given position, AND the segment bit-wise. */
 
-		segment1 = map1->sbm_segments.begin();
-		segment2 = map2->sbm_segments.begin();
-		end_segments = segment1 + map1->sbm_high_water + 1;
+		sbm::iterator segment1 = map1->sbm_segments.begin();
+		sbm::const_iterator segment2 = map2->sbm_segments.begin();
+		const sbm::const_iterator end_segments = segment1 + map1->sbm_high_water + 1;
 
-		for (; segment1 < end_segments; segment1++, segment2++)
+		for (; segment1 < end_segments; segment1++, segment2++) {
 			if (*segment1) {
 				if (!*segment2) {
-					pool = ((BMS)(*segment1))->bms_pool;
+					JrdMemoryPool* pool = ((BMS)(*segment1))->bms_pool;
 					((BMS)(*segment1))->bms_next = pool->plb_segments;
 					pool->plb_segments = *segment1;
 					*segment1 = NULL;
 					continue;
 				}
-				b1 = ((BMS)(*segment1))->bms_bits;
-				b2 = ((BMS)(*segment2))->bms_bits;
-				for (j = 0; j < BUNCH_SEGMENT; j++)
+				BUNCH* b1 = ((BMS)(*segment1))->bms_bits;
+				const BUNCH* b2 = ((BMS)(*segment2))->bms_bits;
+				for (USHORT j = 0; j < BUNCH_SEGMENT; j++) {
 					*b1++ &= *b2++;
+				}
 			}
+		}
 	}
 
 	return result;
@@ -161,8 +158,6 @@ int SBM_clear(SBM bitmap, SLONG number)
  *	Return TRUE if the bit was found set, else return FALSE.
  *
  **************************************/
-	SLONG relative;
-	USHORT slot;
 
 /* If the bitmap is completely missing, or is known to be empty,
    give up immediately.  */
@@ -173,48 +168,48 @@ int SBM_clear(SBM bitmap, SLONG number)
 /* If the bitmap is singular (represents a single value), return it
    if appropriate, else indicate bitmap exhausted. */
 
-	if (bitmap->sbm_state == SBM_SINGULAR)
+	if (bitmap->sbm_state == SBM_SINGULAR) {
 		if (number == bitmap->sbm_number) {
 			bitmap->sbm_state = SBM_EMPTY;
 			return TRUE;
 		}
 		else
 			return FALSE;
+	}
 
 	if (bitmap->sbm_type == SBM_ROOT) {
-		SBM bucket;
-
-		slot = number >> BUCKET_BITS;
-
+		const USHORT slot = number >> BUCKET_BITS;
 // USHORT slot is never < 0
+		sbm* bucket;
 		if (slot > bitmap->sbm_high_water ||
 			!(bucket = (SBM) bitmap->sbm_segments[slot]))
+		{
 			return FALSE;
+		}
 
-		relative = number & ((1 << BUCKET_BITS) - 1);
+		const SLONG relative = number & ((1 << BUCKET_BITS) - 1);
 		return SBM_clear(bucket, relative);
 	}
 	else {
-		BMS segment;
-		BUNCH test;
-		SSHORT bit, bunch;
-
-		slot = number >> SEGMENT_BITS;
-
+		const USHORT slot = number >> SEGMENT_BITS;
 // USHORT slot is never < 0
+		bms* segment;
 		if (slot > bitmap->sbm_high_water ||
 			!(segment = bitmap->sbm_segments[slot]))
+		{
 			return FALSE;
+		}
 
-		relative = number & ((1 << SEGMENT_BITS) - 1);
-		bunch =
+		const SLONG relative = number & ((1 << SEGMENT_BITS) - 1);
+		const SSHORT bunch =
 			(relative >> BUNCH_BITS) & ((1 << (SEGMENT_BITS - BUNCH_BITS)) -
 										1);
 
-		if (!(test = segment->bms_bits[bunch]))
+		BUNCH test = segment->bms_bits[bunch];
+		if (!test)
 			return FALSE;
 
-		bit = relative & ((1 << BUNCH_BITS) - 1);
+		const SSHORT bit = relative & ((1 << BUNCH_BITS) - 1);
 
 		if (!(test & (1 << bit)))
 			return FALSE;
@@ -280,7 +275,7 @@ void SBM_dump(IB_FILE * f, SBM bitmap1)
 #endif
 
 
-BOOLEAN SBM_equal(SBM bitmap1, SBM bitmap2)
+bool SBM_equal(SBM bitmap1, SBM bitmap2)
 {
 /**************************************
  *
@@ -298,35 +293,34 @@ BOOLEAN SBM_equal(SBM bitmap1, SBM bitmap2)
  *	for a quicker probe.
  *
  **************************************/
-	SLONG bit1, bit2;
-
 /* Check the highest bit in the bitmap - just as
    a quick optimization */
+	SLONG bit1, bit2;
 	bit1 = bit2 = -1;
 	if ((SBM_next(bitmap1, &bit1, RSE_get_backward) !=
 		 SBM_next(bitmap2, &bit2, RSE_get_backward))
 		|| (bit1 != bit2))
-		return FALSE;
+	{
+		return false;
+	}
 
 /* Now check each bit */
 	bit1 = bit2 = -1;
 	while (true) {
-		int res1, res2;
-
-		res1 = SBM_next(bitmap1, &bit1, RSE_get_forward);
-		res2 = SBM_next(bitmap2, &bit2, RSE_get_forward);
+		const bool res1 = SBM_next(bitmap1, &bit1, RSE_get_forward);
+		const bool res2 = SBM_next(bitmap2, &bit2, RSE_get_forward);
 
 		/* Reached end of one bitmap, but not the other? */
 		if (res1 != res2)
-			return FALSE;
+			return false;
 
 		/* Have we reached the end of both bitmaps? */
 		if (!res1)
-			return TRUE;
+			return true;
 
 		/* Is the next-bit-set the same for each? */
 		if (bit1 != bit2)
-			return FALSE;
+			return false;
 	}
 }
 
@@ -362,7 +356,7 @@ void SBM_init(void)
 }
 
 
-int SBM_next(SBM bitmap, SLONG * number, RSE_GET_MODE mode)
+bool SBM_next(SBM bitmap, SLONG * number, RSE_GET_MODE mode)
 {
 /**************************************
  *
@@ -378,42 +372,39 @@ int SBM_next(SBM bitmap, SLONG * number, RSE_GET_MODE mode)
  *
  **************************************/
 	SLONG relative, slot;
-	BOOLEAN garbage_collect;
 
 /* If the bitmap is completely missing, or is known to be empty,
    give up immediately.  */
 
 	if (!bitmap || bitmap->sbm_state == SBM_EMPTY)
-		return FALSE;
+		return false;
 
 /* If the bitmap is singular (represents a single value), return it
    if appropriate, else indicate bitmap exhausted. */
 
 	if (bitmap->sbm_state == SBM_SINGULAR) {
 		if (mode == RSE_get_forward && *number >= bitmap->sbm_number)
-			return FALSE;
+			return false;
 		if (mode == RSE_get_backward &&
 			*number <= bitmap->sbm_number && *number != -1)
-			return FALSE;
+			return false;
 #ifdef PC_ENGINE
 		if (mode == RSE_get_current && *number != bitmap->sbm_number)
-			return FALSE;
+			return false;
 #endif
 
 		*number = bitmap->sbm_number;
-		return TRUE;
+		return true;
 	}
 
 /* Advance the number and search for the next bit set */
 
 	if (bitmap->sbm_type == SBM_ROOT) {
-		SBM bucket;
-
 		if (mode == RSE_get_forward)
 			(*number)++;
 		else if (mode == RSE_get_backward)
 			if (!*number)
-				return FALSE;
+				return false;
 			else if (*number > 0)
 				(*number)--;
 
@@ -437,7 +428,7 @@ int SBM_next(SBM bitmap, SLONG * number, RSE_GET_MODE mode)
 		/* garbage collection occurs when a bucket is completely empty from beginning 
 		   to end; flag that we started at the beginning of the bucket in this pass */
 
-		garbage_collect = (relative == -1) ? TRUE : FALSE;
+		bool garbage_collect = (relative == -1);
 
 		for (;;) {
 			if (slot < 0 || slot > (SLONG) bitmap->sbm_high_water)
@@ -445,19 +436,21 @@ int SBM_next(SBM bitmap, SLONG * number, RSE_GET_MODE mode)
 
 			/* recursively find the next bit set within this bucket */
 
-			if ( (bucket = (SBM) bitmap->sbm_segments[slot]) ) {
+			sbm* bucket = (SBM) bitmap->sbm_segments[slot];
+			if (bucket) {
 				if (SBM_next(bucket, &relative, mode)) {
 					*number = ((SLONG) slot << BUCKET_BITS) + relative;
-					return TRUE;
+					return true;
 				}
 				else if (garbage_collect && mode == RSE_get_forward) {
 					bucket_reset(bucket);
 					bitmap->sbm_segments[slot] = 0;
 					--bitmap->sbm_used;
 					if (slot == bitmap->sbm_high_water) {
-						for (; slot > 0; --slot)
+						for (; slot > 0; --slot) {
 							if (bitmap->sbm_segments[slot])
 								break;
+						}
 						bitmap->sbm_high_water = slot;
 					}
 				}
@@ -475,17 +468,12 @@ int SBM_next(SBM bitmap, SLONG * number, RSE_GET_MODE mode)
 			/* signify that we are at the beginning of the bucket */
 
 			relative = -1;
-			garbage_collect = TRUE;
+			garbage_collect = true;
 		}
 
-		return FALSE;
+		return false;
 	}
 	else {
-		BMS segment;
-		BUNCH test;
-		SSHORT bit, bunch;
-		JrdMemoryPool *pool;
-
 		/* -1 signifies beginning of bucket in either direction, so
 		   adjust the actual number as appropriate */
 
@@ -498,7 +486,7 @@ int SBM_next(SBM bitmap, SLONG * number, RSE_GET_MODE mode)
 					BITS_SEGMENT - 1;
 #ifdef PC_ENGINE
 			else if (mode == RSE_get_current)
-				return FALSE;
+				return false;
 #endif
 		}
 
@@ -510,82 +498,97 @@ int SBM_next(SBM bitmap, SLONG * number, RSE_GET_MODE mode)
 
 		/* within the offset longword, find the exact bit */
 
-		bunch =
+		SSHORT bunch =
 			(relative >> BUNCH_BITS) & ((1 << (SEGMENT_BITS - BUNCH_BITS)) -
 										1);
-		bit = relative & ((1 << BUNCH_BITS) - 1);
+		SSHORT bit = relative & ((1 << BUNCH_BITS) - 1);
 
-		garbage_collect = (!bunch && !bit) ? TRUE : FALSE;
+		bool garbage_collect = (!bunch && !bit) != 0;
 
 		/* go through all the longwords in the segment, and all the bits
 		   in the longword, in either direction */
 
 		if (mode == RSE_get_forward) {
 			for (; slot <= (SLONG) bitmap->sbm_high_water;
-				 slot++, bunch = 0, bit = 0) {
-				if ( (segment = bitmap->sbm_segments[slot]) ) {
-					for (; bunch < BUNCH_SEGMENT; bunch++, bit = 0)
-						if ( (test = segment->bms_bits[bunch]) )
-							for (; bit < BITS_BUNCH; bit++)
+				 slot++, bunch = 0, bit = 0) 
+			{
+				bms* segment = bitmap->sbm_segments[slot];
+				if (segment) {
+					for (; bunch < BUNCH_SEGMENT; bunch++, bit = 0) {
+						BUNCH test = segment->bms_bits[bunch];
+						if (test) {
+							for (; bit < BITS_BUNCH; bit++) {
 								if (test & (1 << bit)) {
 									*number = ((SLONG) slot << SEGMENT_BITS) +
 										(bunch << BUNCH_BITS) + bit;
-									return TRUE;
+									return true;
 								}
+							}
+						}
+					}
 
 					/* didn't find any bits in this bucket, so release it */
 
 					if (garbage_collect) {
-						pool = segment->bms_pool;
+						JrdMemoryPool* pool = segment->bms_pool;
 						segment->bms_next = pool->plb_segments;
 						pool->plb_segments = segment;
 						bitmap->sbm_segments[slot] = 0;
 						--bitmap->sbm_used;
 						if (slot == bitmap->sbm_high_water) {
-							for (; slot > 0; --slot)
+							for (; slot > 0; --slot) {
 								if (bitmap->sbm_segments[slot])
 									break;
+							}
 							bitmap->sbm_high_water = slot;
 						}
 					}
 				}
-				garbage_collect = TRUE;
+				garbage_collect = true;
 			}
 		}
 		else if (mode == RSE_get_backward) {
 			for (; slot >= 0;
 				 slot--, bunch = BUNCH_SEGMENT - 1, bit = BITS_BUNCH - 1)
-				if ( (segment = bitmap->sbm_segments[slot]) )
-					for (; bunch >= 0; bunch--, bit = BITS_BUNCH - 1)
-						if ( (test = segment->bms_bits[bunch]) )
-							for (; bit >= 0; bit--)
+			{
+				bms* segment = bitmap->sbm_segments[slot];
+				if (segment) {
+					for (; bunch >= 0; bunch--, bit = BITS_BUNCH - 1) {
+						BUNCH test = segment->bms_bits[bunch];
+						if (test) {
+							for (; bit >= 0; bit--) {
 								if (test & (1 << bit)) {
 									*number = ((SLONG) slot << SEGMENT_BITS) +
 										(bunch << BUNCH_BITS) + bit;
-									return TRUE;
+									return true;
 								}
+							}
+						}
+					}
+				}
+			}
 		}
 #ifdef PC_ENGINE
 		else if (mode == RSE_get_current) {
 			if (slot < 0 || slot > bitmap->sbm_high_water)
-				return FALSE;
+				return false;
 			if (!(segment = bitmap->sbm_segments[slot]))
-				return FALSE;
+				return false;
 			if (bunch < 0 || bunch >= BUNCH_SEGMENT)
-				return FALSE;
+				return false;
 			if (!(test = segment->bms_bits[bunch]))
-				return FALSE;
+				return false;
 			if (bit < 0 || bit >= BITS_BUNCH)
-				return FALSE;
+				return false;
 			if (test & (1 << bit)) {
 				*number = ((SLONG) slot << SEGMENT_BITS) +
 					(bunch << BUNCH_BITS) + bit;
-				return TRUE;
+				return true;
 			}
 		}
 #endif
 
-		return FALSE;
+		return false;
 	}
 }
 
@@ -604,11 +607,8 @@ SBM *SBM_or(SBM * bitmap1, SBM * bitmap2)
  *	or both bitmaps.
  *
  **************************************/
-	SBM map1, map2;
-	SBM *result;
-
-	map1 = (bitmap1) ? *bitmap1 : NULL;
-	map2 = (bitmap2) ? *bitmap2 : NULL;
+	sbm* map1 = (bitmap1) ? *bitmap1 : NULL;
+	sbm* map2 = (bitmap2) ? *bitmap2 : NULL;
 
 /* If either bitmap is empty, return the other. */
 
@@ -634,7 +634,7 @@ SBM *SBM_or(SBM * bitmap1, SBM * bitmap2)
 /* We need to loop thru the segments.  Sigh.  Make sure the first
    is the SLONGer of the two.  If not, switch them. */
 
-	result = bitmap1;
+	sbm** result = bitmap1;
 
 	if (map1->sbm_high_water < map2->sbm_high_water) {
 		map2 = map1;
@@ -643,14 +643,11 @@ SBM *SBM_or(SBM * bitmap1, SBM * bitmap2)
 	}
 
 	if (map1->sbm_type == SBM_ROOT) {
-		SBM *bucket1, *bucket2, *end_buckets;
-		SBM temp;
-
         //bucket1 = (SBM *) &*(map1->sbm_segments.begin());
 		//bucket2 = (SBM *) &*(map2->sbm_segments.begin());
-		bucket1 = (SBM *) &(map1->sbm_segments[0]);
-		bucket2 = (SBM *) &(map2->sbm_segments[0]);
-		end_buckets = bucket2 + map2->sbm_high_water + 1;
+		sbm** bucket1 = (SBM *) &(map1->sbm_segments[0]);
+		sbm** bucket2 = (SBM *) &(map2->sbm_segments[0]);
+		const sbm* const* const end_buckets = bucket2 + map2->sbm_high_water + 1;
 
 		for (; bucket2 < end_buckets; bucket1++, bucket2++) {
 			if (!*bucket2)
@@ -660,22 +657,18 @@ SBM *SBM_or(SBM * bitmap1, SBM * bitmap2)
 				*bucket2 = NULL;
 				continue;
 			}
-			temp = *bucket1;
+			sbm* const temp = *bucket1;
 			*bucket1 = *(SBM_or(bucket1, bucket2));
 			if (*bucket1 == *bucket2)
 				*bucket2 = temp;
 		}
 	}
 	else {
-		sbm::iterator segment1, segment2, end_segments;
-		BUNCH *b1, *b2;
-		USHORT j;
-
 		/* Both bitmaps exist.  Form the bitwise union in the first bitmap */
 
-		segment1 = map1->sbm_segments.begin();
-		segment2 = map2->sbm_segments.begin();
-		end_segments = segment2 + map2->sbm_high_water + 1;
+		sbm::iterator segment1 = map1->sbm_segments.begin();
+		sbm::iterator segment2 = map2->sbm_segments.begin();
+		const sbm::const_iterator end_segments = segment2 + map2->sbm_high_water + 1;
 
 		for (; segment2 < end_segments; segment1++, segment2++) {
 			if (!*segment2)
@@ -685,10 +678,11 @@ SBM *SBM_or(SBM * bitmap1, SBM * bitmap2)
 				*segment2 = NULL;
 				continue;
 			}
-			b1 = ((BMS)(*segment1))->bms_bits;
-			b2 = ((BMS)(*segment2))->bms_bits;
-			for (j = 0; j < BUNCH_SEGMENT; j++)
+			BUNCH* b1 = ((BMS)(*segment1))->bms_bits;
+			const BUNCH* b2 = ((BMS)(*segment2))->bms_bits;
+			for (USHORT j = 0; j < BUNCH_SEGMENT; j++) {
 				*b1++ |= *b2++;
+			}
 		}
 	}
 
@@ -717,7 +711,7 @@ void SBM_release(SBM bitmap)
 }
 
 
-void SBM_reset(SBM * bitmap)
+void SBM_reset(SBM* bitmap)
 {
 /**************************************
  *
@@ -730,19 +724,20 @@ void SBM_reset(SBM * bitmap)
  *	vector, just the segments.
  *
  **************************************/
-	sbm::iterator tail;
-	SBM vector, bucket;
-	USHORT i;
-
-	if (!(vector = *bitmap) || vector->sbm_state == SBM_EMPTY)
+	sbm* vector = *bitmap;
+	if (!vector || vector->sbm_state == SBM_EMPTY)
 		return;
 
-	for (i = 0, tail = vector->sbm_segments.begin(); i < vector->sbm_count;
-		 i++, tail++)
-		if ( (bucket = (SBM)*tail) ) {
+	USHORT i = 0;
+	for (sbm::iterator tail = vector->sbm_segments.begin(); i < vector->sbm_count;
+		i++, tail++) 
+	{
+		sbm* bucket = (SBM)*tail;
+		if (bucket) {
 			bucket_reset(bucket);
 			*tail = NULL;
 		}
+	}
 
 	vector->sbm_state = SBM_EMPTY;
 	vector->sbm_used = vector->sbm_high_water = 0;
@@ -761,13 +756,10 @@ void SBM_set(TDBB tdbb, SBM * bitmap, SLONG number)
  *	Set a bit in a sparse bit map.
  *
  **************************************/
-	SBM vector;
-	SLONG relative;
-	USHORT slot;
-
 	SET_TDBB(tdbb);
 
-	if (!(vector = *bitmap)) {
+	sbm* vector = *bitmap;
+	if (!vector) {
 		*bitmap = vector = FB_NEW(*tdbb->tdbb_default) sbm(*tdbb->tdbb_default, 5);
 		vector->sbm_type = SBM_ROOT;
 		vector->sbm_count = 5;
@@ -786,8 +778,8 @@ void SBM_set(TDBB tdbb, SBM * bitmap, SLONG number)
 		SBM bucket;
 		ULONG end;
 
-		slot = number >> BUCKET_BITS;
-		relative = number & ((1 << BUCKET_BITS) - 1);
+		const USHORT slot = number >> BUCKET_BITS;
+		const SLONG relative = number & ((1 << BUCKET_BITS) - 1);
 
 		/* Make sure a vector is allocated and sufficiently large */
 
@@ -832,8 +824,8 @@ void SBM_set(TDBB tdbb, SBM * bitmap, SLONG number)
 		BMS segment;
 		SSHORT bit, bunch;
 
-		slot = number >> SEGMENT_BITS;
-		relative = number & ((1 << SEGMENT_BITS) - 1);
+		const USHORT slot = number >> SEGMENT_BITS;
+		const SLONG relative = number & ((1 << SEGMENT_BITS) - 1);
 		bunch =
 			(relative >> BUNCH_BITS) & ((1 << (SEGMENT_BITS - BUNCH_BITS)) -
 										1);
@@ -887,8 +879,6 @@ int SBM_test(SBM bitmap, SLONG number)
  *	Test whether or not a particular bit is set.
  *
  **************************************/
-	SLONG relative;
-	USHORT slot;
 
 /* If the bitmap is completely missing, or is known to be empty,
    give up immediately.  */
@@ -905,37 +895,37 @@ int SBM_test(SBM bitmap, SLONG number)
 	if (bitmap->sbm_type == SBM_ROOT) {
 		SBM bucket;
 
-		slot = number >> BUCKET_BITS;
+		const USHORT slot = number >> BUCKET_BITS;
 
 // USHORT slot is never < 0
 		if (slot > bitmap->sbm_high_water ||
 			!(bucket = (SBM) bitmap->sbm_segments[slot]))
 			return FALSE;
 
-		relative = number & ((1 << BUCKET_BITS) - 1);
+		const SLONG relative = number & ((1 << BUCKET_BITS) - 1);
 		return SBM_test(bucket, relative);
 	}
 	else {
-		BMS segment;
-		BUNCH test;
-		SSHORT bit, bunch;
+		const USHORT slot = number >> SEGMENT_BITS;
 
-		slot = number >> SEGMENT_BITS;
-
+		bms* segment;
 // USHORT slot is never < 0
 		if (slot > bitmap->sbm_high_water ||
 			!(segment = bitmap->sbm_segments[slot]))
+		{
 			return FALSE;
+		}
 
-		relative = number & ((1 << SEGMENT_BITS) - 1);
-		bunch =
+		const SLONG relative = number & ((1 << SEGMENT_BITS) - 1);
+		const SSHORT bunch =
 			(relative >> BUNCH_BITS) & ((1 << (SEGMENT_BITS - BUNCH_BITS)) -
 										1);
 
-		if (!(test = segment->bms_bits[bunch]))
+		BUNCH test = segment->bms_bits[bunch];
+		if (!test)
 			return FALSE;
 
-		bit = relative & ((1 << BUNCH_BITS) - 1);
+		const SSHORT bit = relative & ((1 << BUNCH_BITS) - 1);
 
 		if (!(test & (1 << bit)))
 			return FALSE;
@@ -959,28 +949,25 @@ SLONG SBM_size(SBM * bitmap)
  *      used for this sparce bitmap)
  *
  **************************************/
-	sbm::iterator tail;
-	SBM vector, bucket;
-	sbm::iterator node;
-	BMS segment;
-	USHORT i, j;
-	SLONG count;
-
-	vector = *bitmap;
+	sbm* vector = *bitmap;
 	if (!vector)
 		return 0;				/* not even the root sbm is allocated */
 
 	if (vector->sbm_state == SBM_EMPTY)
 		return 1;				/* only the the root sbm is allocated */
 
-	count = 1;					/* one for the root sbm */
-	for (i = 0, tail = vector->sbm_segments.begin(); i < vector->sbm_count;
-		 i++, tail++) {
-		bucket = (SBM)*tail;
+	SLONG count = 1;					/* one for the root sbm */
+	USHORT i = 0;
+	for (sbm::iterator tail = vector->sbm_segments.begin(); i < vector->sbm_count;
+		 i++, tail++) 
+	{
+		sbm* bucket = (SBM)*tail;
 		if (bucket) {
-			for (j = 0, node = bucket->sbm_segments.begin();
-				 j < (USHORT) BUNCH_BUCKET; j++, node++) {
-				segment = *node;
+			USHORT j = 0;
+			for (sbm::iterator node = bucket->sbm_segments.begin();
+				 j < (USHORT) BUNCH_BUCKET; j++, node++)
+			{
+				const bms* segment = *node;
 				if (segment)
 					count++;	/* one for the bms */
 			}
@@ -1005,24 +992,23 @@ static void bucket_reset(SBM bucket)
  *	Reset a bucket and all its segments..
  *
  **************************************/
-	sbm::iterator node;
-	BMS segment;
-	SSHORT i;
-	JrdMemoryPool *pool;
-
 	if (!bucket)
 		return;
 
-	for (i = 0, node = bucket->sbm_segments.begin();
+	SSHORT i = 0;
+	for (sbm::iterator node = bucket->sbm_segments.begin();
 				i < BUNCH_BUCKET; i++, node++)
-		if ( (segment = *node) ) {
-			pool = segment->bms_pool;
+	{
+		bms* segment = *node;
+		if (segment) {
+			JrdMemoryPool* pool = segment->bms_pool;
 			segment->bms_next = pool->plb_segments;
 			pool->plb_segments = segment;
 			*node = NULL;
 		}
+	}
 
-	pool = bucket->sbm_pool;
+	JrdMemoryPool* pool = bucket->sbm_pool;
 	bucket->sbm_next = pool->plb_buckets;
 	pool->plb_buckets = bucket;
 }
@@ -1040,9 +1026,6 @@ static void clear_bucket(SBM bucket)
  *	Clear out a bit map bucket.
  *
  **************************************/
-	sbm::iterator p;
-	SSHORT l;
-
 	bucket->sbm_next = NULL;
 	bucket->sbm_type = SBM_BUCKET;
 	bucket->sbm_state = SBM_EMPTY;
@@ -1050,8 +1033,8 @@ static void clear_bucket(SBM bucket)
 	bucket->sbm_used = 0;
 	bucket->sbm_high_water = 0;
 	bucket->sbm_number = 0;
-	p = bucket->sbm_segments.begin();
-	l = BUNCH_BUCKET;
+	sbm::iterator p = bucket->sbm_segments.begin();
+	SSHORT l = BUNCH_BUCKET;
 
 	do {
 		*p = 0;
@@ -1072,15 +1055,13 @@ static void clear_segment(BMS segment)
  *	Clear out a used bit map segment.
  *
  **************************************/
-	BUNCH *p;
-	SSHORT l;
-
 	segment->bms_min = segment->bms_max = 0;
-	p = segment->bms_bits;
-	l = BUNCH_SEGMENT;
+	BUNCH* p = segment->bms_bits;
+	SSHORT l = BUNCH_SEGMENT;
 
 	do {
 		*p = 0;
 		p++;
 	} while (--l);
 }
+

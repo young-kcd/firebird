@@ -188,7 +188,7 @@ typedef struct spb {
 } SPB;
 
 static void conv_switches(USHORT, USHORT, const SCHAR*, TEXT**);
-static TEXT* find_switch(int, IN_SW_TAB);
+static const TEXT* find_switch(int, const in_sw_tab_t*);
 static USHORT process_switches(USHORT, const SCHAR*, TEXT*);
 static void get_options(const UCHAR*, USHORT, TEXT*, SPB*);
 static TEXT* get_string_parameter(const UCHAR**, TEXT**);
@@ -196,12 +196,12 @@ static TEXT* get_string_parameter(const UCHAR**, TEXT**);
 static void io_error(TEXT *, SLONG, TEXT *, ISC_STATUS, BOOLEAN);
 static void service_close(SVC);
 #endif
-static BOOLEAN get_action_svc_bitmask(const TEXT**, IN_SW_TAB, TEXT**, USHORT*,
-									  USHORT*);
+static BOOLEAN get_action_svc_bitmask(const TEXT**, const in_sw_tab_t*,
+									TEXT**, USHORT*, USHORT*);
 static void get_action_svc_string(const TEXT**, TEXT**, USHORT*, USHORT*);
 static void get_action_svc_data(const TEXT**, TEXT**, USHORT*, USHORT*);
-static BOOLEAN get_action_svc_parameter(const TEXT**, IN_SW_TAB, TEXT**, USHORT*,
-										USHORT*);
+static BOOLEAN get_action_svc_parameter(const TEXT**, const in_sw_tab_t*,
+									TEXT**, USHORT*, USHORT*);
 
 #ifdef SUPERSERVER
 static UCHAR service_dequeue_byte(SVC);
@@ -391,15 +391,12 @@ SVC SVC_attach(USHORT	service_length,
  *	Connect to a Firebird service.
  *
  **************************************/
-	TEXT misc_buf[512];
-#ifndef SUPERSERVER
-	TEXT service_path[MAXPATHLEN];
-#endif
-	SPB options;
-	TEXT name[129];
+	// CVC: There's a logical bug here. This var is initialized to zero, it's
+	// never touched/changed in the lines below until a condition that checks
+	// (options.spb_user_name || id == -1)
+	// where obviously it doesn't have any influence. Not sure if the solution
+	// is to initialize it to -1 or to simplify the aforementioned condition.
 	int id = 0;
-	int group;
-	int node_id;
 
 /* If the service name begins with a slash, ignore it. */
 
@@ -408,13 +405,14 @@ SVC SVC_attach(USHORT	service_length,
 		if (service_length)
 			service_length--;
 	}
-	if (service_length) {
-		strncpy(misc_buf, service_name, (int) service_length);
-		misc_buf[service_length] = 0;
+	
+	TEXT misc_buf[512];
+	// CVC: Close easy buffer overrun attack
+	if (!service_length || service_length >= sizeof(misc_buf)) {
+	    service_length = (USHORT) sizeof(misc_buf) - 1;
 	}
-	else {
-		strcpy(misc_buf, service_name);
-	}
+	strncpy(misc_buf, service_name, (size_t) service_length);
+	misc_buf[service_length] = 0;
 
 /* Find the service by looking for an exact match. */
 	const struct serv* serv;
@@ -462,7 +460,7 @@ SVC SVC_attach(USHORT	service_length,
 		case isc_spb_password:
 		case isc_spb_password_enc:
 			{
-			USHORT length = *p++;
+			const USHORT length = *p++;
 			p += length;
 			}
 			break;
@@ -510,13 +508,15 @@ SVC SVC_attach(USHORT	service_length,
 		misc = misc_buf;
 	}
 
+	SPB options;
 	get_options(reinterpret_cast<const UCHAR*>(spb), spb_length, misc, &options);
 
 /* Perhaps checkout the user in the security database. */
 	USHORT user_flag;
 	if (!strcmp(serv->serv_name, "anonymous")) {
 		user_flag = SVC_user_none;
-	} else {
+	}
+	else {
 		if (!options.spb_user_name)
 		{
 			// user name and password are required while
@@ -525,6 +525,8 @@ SVC SVC_attach(USHORT	service_length,
 		}
 		if (options.spb_user_name || id == -1)
 		{
+			TEXT name[129]; // unused after retrieved
+			int group, node_id;
 			SecurityDatabase::verifyUser(name, options.spb_user_name,
 					                     options.spb_password, options.spb_password_enc,
 										 &id, &group, &node_id);
@@ -532,25 +534,19 @@ SVC SVC_attach(USHORT	service_length,
 
 /* Check that the validated user has the authority to access this service */
 
-#ifdef HAVE_STRCASECMP
-		if (strcasecmp(options.spb_user_name, SYSDBA_USER_NAME))
-#else
-#ifdef HAVE_STRICMP
-		if (stricmp(options.spb_user_name, SYSDBA_USER_NAME))
-#else
-#error dont know how to compare strings case insensitive on this system
-#endif /* HAVE_STRICMP */
-#endif /* HAVE_STRCASECMP */
+		if (fb_stricmp(options.spb_user_name, SYSDBA_USER_NAME))
 		{
 			user_flag = SVC_user_any;
-		} else {
+		}
+		else {
 			user_flag = SVC_user_dba | SVC_user_any;
 		}
 	}
 
 /* Allocate a buffer for the service switches, if any.  Then move them in. */
 
-	USHORT len = ((serv->serv_std_switches) ? strlen(serv->serv_std_switches) : 0) +
+	const USHORT len =
+		((serv->serv_std_switches) ? strlen(serv->serv_std_switches) : 0) +
 		((options.spb_command_line) ? strlen(options.spb_command_line) : 0) +
 		1;
 
@@ -620,8 +616,8 @@ SVC SVC_attach(USHORT	service_length,
  */
 	if (options.spb_password) {
 		UCHAR* s = reinterpret_cast<UCHAR*>(service->svc_enc_password);
-		UCHAR* p = (UCHAR *) ENC_crypt(options.spb_password, PASSWORD_SALT) + 2;
-		int l = strlen((char *) p);
+		const UCHAR* p = (UCHAR *) ENC_crypt(options.spb_password, PASSWORD_SALT) + 2;
+		const int l = strlen((const char*) p);
 		MOVE_FASTER(p, s, l);
 		service->svc_enc_password[l] = 0;
 	}
@@ -640,6 +636,7 @@ SVC SVC_attach(USHORT	service_length,
 #endif
 	{
 #ifndef SUPERSERVER
+		TEXT service_path[MAXPATHLEN];
 		gds__prefix(service_path, serv->serv_executable);
 		service_fork(service_path, service);
 #else
@@ -3375,7 +3372,7 @@ static void conv_switches(
 }
 
 
-static TEXT* find_switch(int in_spb_sw, IN_SW_TAB table)
+static const TEXT* find_switch(int in_spb_sw, const in_sw_tab_t* table)
 {
 /**************************************
  *
@@ -3386,9 +3383,8 @@ static TEXT* find_switch(int in_spb_sw, IN_SW_TAB table)
  * Functional description
  *
  **************************************/
-	IN_SW_TAB in_sw_tab;
-
-	for (in_sw_tab = table; in_sw_tab->in_sw_name; in_sw_tab++) {
+	for (const in_sw_tab_t* in_sw_tab = table; in_sw_tab->in_sw_name; in_sw_tab++)
+	{
 		if (in_spb_sw == in_sw_tab->in_spb_sw)
 			return in_sw_tab->in_sw_name;
 	}
@@ -3661,7 +3657,7 @@ static USHORT process_switches(
 
 static BOOLEAN get_action_svc_bitmask(
 									  const TEXT** spb,
-									  IN_SW_TAB table,
+									  const in_sw_tab_t* table,
 									  TEXT** cmd,
 									  USHORT* total, USHORT* len)
 {
@@ -3678,15 +3674,14 @@ static BOOLEAN get_action_svc_bitmask(
  *	adjust pointers.
  *
  **************************************/
-	const TEXT* s_ptr;
-
 	const ISC_ULONG opt =
 		gds__vax_integer(reinterpret_cast<const UCHAR*>(*spb),
 						 sizeof(ISC_ULONG));
 	ISC_ULONG mask = 1;
 	for (int count = (sizeof(ISC_ULONG) * 8) - 1; count; --count) {
 		if (opt & mask) {
-			if (!(s_ptr = find_switch((opt & mask), table)))
+			const TEXT* s_ptr = find_switch((opt & mask), table);
+			if (!s_ptr)
 				return FALSE;
 			else {
 				if (*cmd) {
@@ -3783,7 +3778,7 @@ static void get_action_svc_data(
 
 static BOOLEAN get_action_svc_parameter(
 										const TEXT** spb,
-										IN_SW_TAB table,
+										const in_sw_tab_t* table,
 										TEXT** cmd,
 										USHORT* total, USHORT* len)
 {
@@ -3800,9 +3795,8 @@ static BOOLEAN get_action_svc_parameter(
  *	adjust pointers.
  *
  **************************************/
-	const TEXT* s_ptr;
-
-	if (!(s_ptr = find_switch(**spb, table)))
+	const TEXT* s_ptr = find_switch(**spb, table);
+	if (!s_ptr)
 		return FALSE;
 
 	if (*cmd) {

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.55 2003-12-27 04:37:23 skidder Exp $ 
+  * $Id: evl.cpp,v 1.56 2003-12-31 05:35:52 robocop Exp $ 
  */
 
 /*
@@ -1233,7 +1233,7 @@ bool EVL_field(JRD_REL relation, REC record, USHORT id, dsc* desc)
 		return false;
 	}
 
-	fmt* format = record->rec_format;
+	const fmt* format = record->rec_format;
 
 	if (format) {
 		*desc = format->fmt_desc[id];

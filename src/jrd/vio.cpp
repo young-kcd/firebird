@@ -96,7 +96,7 @@ static void check_class(TDBB, JRD_TRA, RPB *, RPB *, USHORT);
 static void check_control(TDBB);
 static bool check_user(TDBB, const dsc*);
 static void delete_record(TDBB, RPB *, SLONG, JrdMemoryPool*);
-static UCHAR *delete_tail(TDBB, RPB *, SLONG, UCHAR *, UCHAR *);
+static UCHAR* delete_tail(TDBB, RPB*, SLONG, UCHAR*, const UCHAR*);
 static void expunge(TDBB, RPB *, JRD_TRA, SLONG);
 static void garbage_collect(TDBB, RPB *, SLONG, LLS);
 static void garbage_collect_idx(TDBB, RPB *, RPB *, REC);
@@ -1021,10 +1021,12 @@ void VIO_data(TDBB tdbb, RPB * rpb, BLK pool)
    optimization. */
 
 	rec* record = VIO_record(tdbb, rpb, 0, (JrdMemoryPool*) pool);
-	fmt* format = record->rec_format;
+	const fmt* format = record->rec_format;
 
 /* If the record is a delta version, start with data from prior record. */
-	UCHAR *tail, *tail_end, differences[MAX_DIFFERENCES];
+	UCHAR* tail;
+	const UCHAR* tail_end;
+	UCHAR differences[MAX_DIFFERENCES];
 	rec* prior = rpb->rpb_prior;
 	if (prior)
 	{
@@ -1049,10 +1051,10 @@ void VIO_data(TDBB tdbb, RPB * rpb, BLK pool)
 
 	tail =
 		reinterpret_cast<UCHAR*>(
-			SQZ_decompress(reinterpret_cast<char*>(rpb->rpb_address),
+			SQZ_decompress(reinterpret_cast<const char*>(rpb->rpb_address),
 							rpb->rpb_length,
 							reinterpret_cast<char*>(tail),
-							reinterpret_cast<char*>(tail_end)));
+							reinterpret_cast<const char*>(tail_end)));
 
 	if (rpb->rpb_flags & rpb_incomplete)
 	{
@@ -1062,9 +1064,9 @@ void VIO_data(TDBB tdbb, RPB * rpb, BLK pool)
 		{
 			DPM_fetch_fragment(tdbb, rpb, LCK_read);
 
-			SCHAR* pIn		= reinterpret_cast<char*>(rpb->rpb_address);
+			const SCHAR* pIn		= reinterpret_cast<const char*>(rpb->rpb_address);
 			SCHAR* pOut		= reinterpret_cast<char*>(tail);
-			SCHAR* pOutEnd	= reinterpret_cast<char*>(tail_end);
+			const SCHAR* const pOutEnd	= reinterpret_cast<const char*>(tail_end);
 
 			SCHAR* pRet = SQZ_decompress(pIn, rpb->rpb_length, pOut, pOutEnd);
 			tail = reinterpret_cast<UCHAR*>(pRet);
@@ -1092,15 +1094,17 @@ void VIO_data(TDBB tdbb, RPB * rpb, BLK pool)
 	if (format->fmt_length != length)
 	{
 #ifdef VIO_DEBUG
-	    if (debug_flag > DEBUG_WRITES)
+		if (debug_flag > DEBUG_WRITES) {
 			ib_printf ("VIO_erase (rpb %"SLONGFORMAT"d, length %d expected %d)\n", rpb->rpb_number, 
 			    length, format->fmt_length);
+		}
 	
-	    if (debug_flag > DEBUG_WRITES_INFO)
+		if (debug_flag > DEBUG_WRITES_INFO) {
 			ib_printf ("   record  %"SLONGFORMAT"d:%d, rpb_trans %"SLONGFORMAT
 					   "d, flags %d, back %"SLONGFORMAT"d:%d, fragment %"SLONGFORMAT"d:%d\n",
 				rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction, rpb->rpb_flags,
 			    rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page, rpb->rpb_f_line);
+		}
 #endif
 		BUGCHECK(183);			/* msg 183 wrong record length */
 	}
@@ -2384,7 +2388,7 @@ BOOLEAN VIO_next_record(TDBB tdbb,
 }
 
 
-REC VIO_record(TDBB tdbb, RPB * rpb, FMT format, JrdMemoryPool *pool)
+REC VIO_record(TDBB tdbb, RPB * rpb, const fmt* format, JrdMemoryPool *pool)
 {
 /**************************************
  *
@@ -2756,7 +2760,6 @@ void VIO_verb_cleanup(TDBB tdbb, JRD_TRA transaction)
 		return;
 
 	sav* sav_point = transaction->tra_save_point;
-
 	if (!sav_point)
 		return;
 
@@ -2819,7 +2822,8 @@ void VIO_verb_cleanup(TDBB tdbb, JRD_TRA transaction)
 
 				while (SBM_next
 					   (action->vct_records, &rpb.rpb_number,
-						RSE_get_forward)) {
+						RSE_get_forward)) 
+				{
 					if (!DPM_get(tdbb, &rpb, LCK_write))
 						BUGCHECK(186);	/* msg 186 record disappeared */
 					if (rpb.rpb_flags & rpb_delta)
@@ -3123,12 +3127,14 @@ static void delete_record(TDBB tdbb, RPB * rpb, SLONG prior_page, JrdMemoryPool*
 			 rpb->rpb_f_page, rpb->rpb_f_line);
 	}
 #endif
-	UCHAR *tail, *tail_end, differences[MAX_DIFFERENCES];
+	UCHAR* tail;
+	const UCHAR* tail_end;
+	UCHAR differences[MAX_DIFFERENCES];
 	rec* record;
 	const rec* prior = 0;
 	if (!pool || (rpb->rpb_flags & rpb_deleted)) {
 		prior = NULL;
-		tail = tail_end = NULL;
+		tail_end = tail = NULL;
 	}
 	else {
 		record = VIO_record(tdbb, rpb, 0, pool);
@@ -3148,9 +3154,9 @@ static void delete_record(TDBB tdbb, RPB * rpb, SLONG prior_page, JrdMemoryPool*
 			reinterpret_cast <
 			UCHAR *
 			>(SQZ_decompress
-			  (reinterpret_cast < char *>(rpb->rpb_address), rpb->rpb_length,
-			   reinterpret_cast < char *>(tail),
-			   reinterpret_cast < char *>(tail_end)));
+			  (reinterpret_cast<const char*>(rpb->rpb_address), rpb->rpb_length,
+			   reinterpret_cast<char*>(tail),
+			   reinterpret_cast<const char*>(tail_end)));
 		rpb->rpb_prior = (rpb->rpb_flags & rpb_delta) ? record : 0;
 	}
 
@@ -3164,10 +3170,10 @@ static void delete_record(TDBB tdbb, RPB * rpb, SLONG prior_page, JrdMemoryPool*
 }
 
 
-static UCHAR *delete_tail(
+static UCHAR* delete_tail(
 						  TDBB tdbb,
-						  RPB * rpb,
-						  SLONG prior_page, UCHAR * tail, UCHAR * tail_end)
+						  RPB* rpb,
+						  SLONG prior_page, UCHAR* tail, const UCHAR* tail_end)
 {
 /**************************************
  *
@@ -3212,9 +3218,9 @@ static UCHAR *delete_tail(
 				reinterpret_cast <
 				UCHAR *
 				>(SQZ_decompress
-				  (reinterpret_cast < char *>(rpb->rpb_address),
-				   rpb->rpb_length, reinterpret_cast < char *>(tail),
-				   reinterpret_cast < char *>(tail_end)));
+				  (reinterpret_cast<const char*>(rpb->rpb_address),
+				   rpb->rpb_length, reinterpret_cast<char*>(tail),
+				   reinterpret_cast<const char*>(tail_end)));
 		}
 		DPM_delete(tdbb, rpb, prior_page);
 		prior_page = rpb->rpb_page;
@@ -3542,7 +3548,8 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
 					dp_sequence = -1;
 					rpb.rpb_relation = relation;
 
-					while (SBM_next(relation->rel_gc_bitmap, &dp_sequence, RSE_get_forward)) {
+					while (SBM_next(relation->rel_gc_bitmap, &dp_sequence, RSE_get_forward)) 
+					{
 						
 						if (!(dbb->dbb_flags & DBB_garbage_collector)) {
 							--relation->rel_sweep_count;
@@ -3597,14 +3604,16 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
 rel_exit:
 					dp_sequence = -1;
 
-					if (!SBM_next(relation->rel_gc_bitmap, &dp_sequence, RSE_get_forward)) {
+					if (!SBM_next(relation->rel_gc_bitmap, &dp_sequence, RSE_get_forward)) 
+					{
 						/* If the bitmap is empty then release it */
 						SBM_release(relation->rel_gc_bitmap);
 						relation->rel_gc_bitmap = 0;
 					}
 					else {
 						/* Otherwise release bitmap segments that have been cleared. */
-						while (SBM_next(relation->rel_gc_bitmap, &dp_sequence, RSE_get_forward)) {
+						while (SBM_next(relation->rel_gc_bitmap, &dp_sequence, RSE_get_forward)) 
+						{
 							;	// do nothing
 						}
 					}

@@ -35,7 +35,6 @@ struct fmt*	MET_current(TDBB, struct jrd_rel *);
 void		MET_delete_dependencies(TDBB, TEXT *, USHORT);
 void		MET_delete_shadow(TDBB, USHORT);
 void		MET_error(const TEXT*, ...);
-SCHAR*		MET_exact_name(TEXT*);
 struct fmt*	MET_format(TDBB, struct jrd_rel *, USHORT);
 BOOLEAN		MET_get_char_subtype(TDBB, SSHORT*, const UCHAR*, USHORT);
 struct jrd_nod*	MET_get_dependencies(TDBB, struct jrd_rel*, TEXT*,

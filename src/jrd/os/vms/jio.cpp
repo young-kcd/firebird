@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		jio.c
+ *	MODULE:		jio.cpp
  *	DESCRIPTION:	Journal file i/o
  *
  * The contents of this file are subject to the Interbase Public
@@ -234,7 +234,7 @@ JIO_open(journal)
 
 JIO_put(journal, message, size)
 	 JRN journal;
-	 LTJC *message;
+	 ltjc *message;
 	 USHORT size;
 {
 /**************************************
@@ -1065,7 +1065,7 @@ static lock_create(journal, data)
 #endif
 
 
-static lock_exclusive(journal, flag)
+static bool lock_exclusive(journal, flag)
 	 JRN journal;
 	 SSHORT flag;
 {
@@ -1394,7 +1394,7 @@ static release(journal, data)
 
 
 #ifdef VMS
-static vms_convert(journal, data, mode, wait)
+static bool vms_convert(journal, data, mode, wait)
 	 JRN journal;
 	 LDATA *data;
 {
@@ -1433,7 +1433,7 @@ static vms_convert(journal, data, mode, wait)
 					  NULL, NULL);
 
 	if (!wait && status == SS$_NOTQUEUED)
-		return FALSE;
+		return false;
 
 	if (!(status & 1))
 		error(journal, status, "sys$enqw", isc_io_access_err);
@@ -1449,6 +1449,7 @@ static vms_convert(journal, data, mode, wait)
 			sys$setast(1);
 	}
 
-	return TRUE;
+	return true;
 }
 #endif
+

@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.47 2003-12-27 17:59:59 fsg Exp $
+$Id: why.cpp,v 1.48 2003-12-31 05:35:53 robocop Exp $
 */
 
 #include "firebird.h"
@@ -5687,10 +5687,10 @@ static ISC_STATUS open_marker_file(ISC_STATUS * status,
 	const TEXT* err_routine = 0;
 /* Ensure that writes are ok on the marker file for lockf(). */
 	TEXT fildes_str[5];
-	int fd = open(marker_filename, O_RDWR);
-
+	int fd = -1;
 	if (!access(marker_filename, W_OK)) {
 		for (int i = 0; i < IO_RETRY; i++) {
+			fd = open(marker_filename, O_RDWR);
 			if (fd == -1) {
 				sprintf(buffer,
 						"Couldn't open marker file %s\n", marker_filename);

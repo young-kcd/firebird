@@ -119,6 +119,10 @@ SOURCE=..\..\..\gen\isql\isql.cpp
 
 SOURCE=..\..\..\gen\isql\show.cpp
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\utils.cpp
+# End Source File
 # End Group
 # Begin Group "Header files"
 
@@ -142,6 +146,10 @@ SOURCE=..\..\..\src\isql\isql_res.h
 # Begin Source File
 
 SOURCE=..\..\..\src\isql\show_proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\utils_proto.h
 # End Source File
 # End Group
 # Begin Group "Resource files"

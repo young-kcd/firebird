@@ -4612,11 +4612,7 @@ static void add_working_directory(UCHAR*	dpb_or_spb,
 
 	if (node_name && !strcmp(node_name, "localhost"))
 	{
-#ifdef HAVE_GETCWD
-		getcwd(cwd, sizeof(cwd));
-#else
-		getwd(cwd);
-#endif
+		fb_getcwd(cwd, sizeof(cwd));
 	}
 	else
 	{

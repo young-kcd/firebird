@@ -16,16 +16,6 @@
 
 #include <string>
 
-#ifdef HAVE_STRCASECMP
-#define STRCASECMP strcasecmp
-#else
-#ifdef HAVE_STRICMP
-#define STRCASECMP stricmp
-#else
-#error dont know how to compare strings case insensitive on this system
-#endif /* HAVE_STRICMP */
-#endif /* HAVE_STRCASECMP */
-
 namespace Firebird
 {
 	typedef std::basic_string<char, std::char_traits<char>,
@@ -39,32 +29,32 @@ namespace Firebird
 		inline bool operator<(const PathName &r) const {
 			return CASE_SENSITIVITY ?
 				(string(*this) < string(r)) : 
-				(STRCASECMP(c_str(), r.c_str()) < 0);
+				(fb_stricmp(c_str(), r.c_str()) < 0);
 		}
 		inline bool operator<=(const PathName &r) const {
 			return CASE_SENSITIVITY ?
 				(string(*this) <= string(r)) : 
-				(STRCASECMP(c_str(), r.c_str()) <= 0);
+				(fb_stricmp(c_str(), r.c_str()) <= 0);
 		}
 		inline bool operator==(const PathName &r) const {
 			return CASE_SENSITIVITY ?
 				(string(*this) == string(r)) : 
-				(STRCASECMP(this->c_str(), r.c_str()) == 0);
+				(fb_stricmp(this->c_str(), r.c_str()) == 0);
 		}
 		inline bool operator>=(const PathName &r) const {
 			return CASE_SENSITIVITY ?
 				(string(*this) >= string(r)) : 
-				(STRCASECMP(this->c_str(), r.c_str()) >= 0);
+				(fb_stricmp(this->c_str(), r.c_str()) >= 0);
 		}
 		inline bool operator>(const PathName &r) const {
 			return CASE_SENSITIVITY ?
 				(string(*this) > string(r)) : 
-				(STRCASECMP(this->c_str(), r.c_str()) > 0);
+				(fb_stricmp(this->c_str(), r.c_str()) > 0);
 		}
 		inline bool operator!=(const PathName &r) const {
 			return CASE_SENSITIVITY ?
 				(string(*this) != string(r)) : 
-				(STRCASECMP(this->c_str(), r.c_str()) != 0);
+				(fb_stricmp(this->c_str(), r.c_str()) != 0);
 		}
 	};
 }

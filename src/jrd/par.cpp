@@ -63,6 +63,8 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/par_proto.h"
 #include "../jrd/thd_proto.h"
+#include "../common/utils_proto.h"
+
 
 /* blr type classes */
 
@@ -411,7 +413,7 @@ JRD_NOD PAR_make_field(TDBB tdbb, CSB csb, USHORT context,
        such view that has field "z x". This closes Firebird Bug #227758. */
 	TEXT name[32];
     strcpy (name, base_field);
-    MET_exact_name (name);
+    fb_utils::fb_exact_name(name);
 
     const SSHORT id =
 		MET_lookup_field (tdbb, csb->csb_rpt [stream].csb_relation, name, 0);

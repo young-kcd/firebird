@@ -74,6 +74,7 @@
 #include "../jrd/thd_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/sch_proto.h"
+#include "../common/utils_proto.h"
 
 #define BLANK	'\040'
 
@@ -302,8 +303,8 @@ bool DYN_is_it_sql_role(GBL		gbl,
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
 
-	USHORT major_version = dbb->dbb_ods_version;
-	USHORT minor_original = dbb->dbb_minor_original;
+	const USHORT major_version = dbb->dbb_ods_version;
+	const USHORT minor_original = dbb->dbb_minor_original;
 	bool found = false;
 
 	if (ENCODE_ODS(major_version, minor_original) < ODS_9_0)
@@ -318,7 +319,7 @@ bool DYN_is_it_sql_role(GBL		gbl,
 				DYN_REQUEST(drq_get_role_nm) = request;
 
 		found = true;
-		DYN_terminate(X.RDB$OWNER_NAME, sizeof(X.RDB$OWNER_NAME));
+		fb_utils::fb_exact_name_limit(X.RDB$OWNER_NAME, sizeof(X.RDB$OWNER_NAME));
 		strcpy(output_name, X.RDB$OWNER_NAME);
 
 	END_FOR;
@@ -799,29 +800,6 @@ USHORT DYN_skip_attribute(const UCHAR** ptr)
 	return length;
 }
 
-void DYN_terminate( TEXT* string, int length)
-{
-/**************************************
- *
- *	D Y N _ t e r m i n a t e
- *
- **************************************
- *
- * Functional description
- *	Remove trailing blanks from a string.
- *	Ensure that the resulting string (of size length) is
- *	terminated with a NULL.
- *
- **************************************/
-	TEXT* q = string - 1;
-	for (TEXT* p = string; *p && --length; p++) {
-		if (*p != BLANK)
-			q = p;
-	}
-
-	*(q + 1) = '\0';
-}
-
 
 static void grant( GBL gbl, const UCHAR** ptr)
 {
@@ -890,7 +868,7 @@ static void grant( GBL gbl, const UCHAR** ptr)
 		case isc_dyn_grant_user:
 			{
 				GET_STRING(ptr, user);
-				DYN_terminate(user, sizeof(user));
+				fb_utils::fb_exact_name_limit(user, sizeof(user));
 				/* This test may become obsolete as we now allow explicit ROLE keyword. */
 				if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
 					user_type = obj_sql_role;
@@ -910,7 +888,7 @@ static void grant( GBL gbl, const UCHAR** ptr)
 
 		case isc_dyn_grant_user_explicit:
 		    GET_STRING(ptr, user);
-			DYN_terminate(user, sizeof(user));
+			fb_utils::fb_exact_name_limit(user, sizeof(user));
 			user_type = obj_user;
 			for (ptr1 = user; *ptr1; ptr1++) {
 				*ptr1 = UPPER7(*ptr1);
@@ -920,7 +898,7 @@ static void grant( GBL gbl, const UCHAR** ptr)
 		case isc_dyn_grant_role:
 		    user_type = obj_sql_role;
 		    GET_STRING(ptr, user);
-			DYN_terminate(user, sizeof(user));
+			fb_utils::fb_exact_name_limit(user, sizeof(user));
 			if (!DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
 				DYN_error_punt(false, 188, user, NULL, NULL, NULL, NULL);
 			/* msg 188: Role doesn't exist. */
@@ -939,7 +917,7 @@ static void grant( GBL gbl, const UCHAR** ptr)
 				obj_type = obj_sql_role;
 				GET_STRING(ptr, object);
 				grant_role_stmt = true;
-				DYN_terminate(object, sizeof(object));
+				fb_utils::fb_exact_name_limit(object, sizeof(object));
 				if (!strcmp (object, "NONE")) {
 					DYN_error_punt(false, 195, object, NULL, NULL, NULL, NULL);
 				/* msg 195: keyword NONE could not be used as SQL role name. */
@@ -1293,13 +1271,13 @@ static bool grantor_can_grant(	GBL		gbl,
 		}
 		else {
 			if (PRV.RDB$GRANT_OPTION.NULL || !PRV.RDB$GRANT_OPTION) {
-				DYN_terminate(PRV.RDB$FIELD_NAME, sizeof(PRV.RDB$FIELD_NAME));
+				fb_utils::fb_exact_name_limit(PRV.RDB$FIELD_NAME, sizeof(PRV.RDB$FIELD_NAME));
 				if (field_name[0] && !strcmp(field_name, PRV.RDB$FIELD_NAME))
 					go_fld = 0;
 			}
 			else
 			{
-				DYN_terminate(PRV.RDB$FIELD_NAME, sizeof(PRV.RDB$FIELD_NAME));
+				fb_utils::fb_exact_name_limit(PRV.RDB$FIELD_NAME, sizeof(PRV.RDB$FIELD_NAME));
 				if (field_name[0] && !strcmp(field_name, PRV.RDB$FIELD_NAME))
 					go_fld = 1;
 			}
@@ -1393,9 +1371,9 @@ static bool grantor_can_grant(	GBL		gbl,
 			if (!DYN_REQUEST(drq_gcg3)) {
 				DYN_REQUEST(drq_gcg3) = request;
 			}
-			DYN_terminate(G_FLD.RDB$BASE_FIELD, sizeof(G_FLD.RDB$BASE_FIELD));
-			DYN_terminate(G_FLD.RDB$FIELD_NAME, sizeof(G_FLD.RDB$FIELD_NAME));
-			DYN_terminate(G_VIEW.RDB$RELATION_NAME,
+			fb_utils::fb_exact_name_limit(G_FLD.RDB$BASE_FIELD, sizeof(G_FLD.RDB$BASE_FIELD));
+			fb_utils::fb_exact_name_limit(G_FLD.RDB$FIELD_NAME, sizeof(G_FLD.RDB$FIELD_NAME));
+			fb_utils::fb_exact_name_limit(G_VIEW.RDB$RELATION_NAME,
 					  sizeof(G_VIEW.RDB$RELATION_NAME));
 		
 		if (field_name[0])
@@ -1562,8 +1540,8 @@ static void revoke_permission(GBL gbl, const UCHAR** ptr)
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 
-	USHORT major_version = dbb->dbb_ods_version;
-	USHORT minor_original = dbb->dbb_minor_original;
+	const USHORT major_version = dbb->dbb_ods_version;
+	const USHORT minor_original = dbb->dbb_minor_original;
 
 /* Stash away a copy of the revoker's name, in uppercase form */
 
@@ -1609,7 +1587,7 @@ static void revoke_permission(GBL gbl, const UCHAR** ptr)
 
 		case isc_dyn_grant_user:
 			GET_STRING(ptr, user);
-			DYN_terminate(user, sizeof(user));
+			fb_utils::fb_exact_name_limit(user, sizeof(user));
 			/* This test may become obsolete as we now allow explicit ROLE keyword. */
 			if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
 				user_type = obj_sql_role;
@@ -1628,7 +1606,7 @@ static void revoke_permission(GBL gbl, const UCHAR** ptr)
 
 		case isc_dyn_grant_user_explicit:
 		    GET_STRING(ptr, user);
-			DYN_terminate(user, sizeof(user));
+			fb_utils::fb_exact_name_limit(user, sizeof(user));
 	        user_type = obj_user;
 			for (ptr1 = user; *ptr1; ptr1++) {
 				*ptr1 = UPPER7(*ptr1);
@@ -1638,7 +1616,7 @@ static void revoke_permission(GBL gbl, const UCHAR** ptr)
 		case isc_dyn_grant_role:
 			user_type = obj_sql_role;
 			GET_STRING(ptr, user);
-			DYN_terminate(user, sizeof(user));
+			fb_utils::fb_exact_name_limit(user, sizeof(user));
 			if (!DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
 				DYN_error_punt(false, 188, user, NULL, NULL, NULL, NULL);
 			/* msg 188: Role doesn't exist. */
@@ -1656,7 +1634,7 @@ static void revoke_permission(GBL gbl, const UCHAR** ptr)
 			else {
 				obj_type = obj_sql_role;
 				GET_STRING(ptr, object);
-				DYN_terminate(object, sizeof(object));
+				fb_utils::fb_exact_name_limit(object, sizeof(object));
 /* CVC: Make this a warning in the future.
 				if (!strcmp(object, "NONE"))
 					DYN_error_punt(false, 195, object, NULL, NULL, NULL, NULL);
@@ -1716,7 +1694,7 @@ static void revoke_permission(GBL gbl, const UCHAR** ptr)
 					if (!DYN_REQUEST(drq_e_grant1))
 						DYN_REQUEST(drq_e_grant1) = request;
 
-				DYN_terminate(PRIV.RDB$GRANTOR, sizeof(PRIV.RDB$GRANTOR));
+				fb_utils::fb_exact_name_limit(PRIV.RDB$GRANTOR, sizeof(PRIV.RDB$GRANTOR));
 				if ((revoking_user->usr_flags & USR_locksmith) ||
 					(!strcmp(PRIV.RDB$GRANTOR, revoking_user_name)))
 				{
@@ -1741,7 +1719,7 @@ static void revoke_permission(GBL gbl, const UCHAR** ptr)
 					if (!DYN_REQUEST(drq_e_grant2))
 						DYN_REQUEST(drq_e_grant2) = request;
 
-				DYN_terminate(PRIV.RDB$GRANTOR, sizeof(PRIV.RDB$GRANTOR));
+				fb_utils::fb_exact_name_limit(PRIV.RDB$GRANTOR, sizeof(PRIV.RDB$GRANTOR));
 
 				/* revoking a permission at the table level implies
 				   revoking the perm. on all columns. So for all fields

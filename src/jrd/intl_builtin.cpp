@@ -504,7 +504,7 @@ SSHORT INTL_builtin_wc_mbtowc(TEXTTYPE obj,
 static SSHORT internal_str_to_upper(
 									TEXTTYPE obj,
 									USHORT inLen,
-									UCHAR * src, USHORT outLen, UCHAR * dest)
+									const UCHAR* src, USHORT outLen, UCHAR* dest)
 {
 /**************************************
  *
@@ -516,8 +516,7 @@ static SSHORT internal_str_to_upper(
  *      Note: dest may equal src.
  *
  **************************************/
-	UCHAR *pStart;
-	pStart = dest;
+	UCHAR* pStart = dest;
 	while (inLen-- && outLen--) {
 		*dest++ = UPPER7(*src);
 		src++;

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		pcmet.e
+ *	MODULE:		pcmet.epp
  *	DESCRIPTION:	Meta data for PC_ENGINE
  *
  * The contents of this file are subject to the Interbase Public
@@ -67,7 +67,6 @@ int PCMET_expression_index(
  *	Create a new expression index.
  *
  **************************************/
-	DBB dbb;
 	JRD_REL relation;
 	IDX idx;
 	PLB default_pool, new_pool = NULL;
@@ -75,7 +74,7 @@ int PCMET_expression_index(
 	JRD_REQ current_request;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	switch (phase) {
 	case 1:
@@ -210,18 +209,14 @@ void PCMET_lookup_index( JRD_REL relation, IDX * idx)
  *	the metadata cache if possible.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
 	CSB csb = NULL;
-	IDB index_block;
-	PLB old_pool;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 /* check the index blocks for the relation to see if we 
    have a cached block */
-
+	idb* index_block;
 	for (index_block = relation->rel_index_blocks; index_block;
 		 index_block = index_block->idb_next)
 	{
@@ -250,7 +245,7 @@ void PCMET_lookup_index( JRD_REL relation, IDX * idx)
 		   tree and request in its own pool so that it may be cached
 		   with the index block in the "permanent" metadata cache */
 
-		old_pool = tdbb->tdbb_default;
+		plb* const old_pool = tdbb->tdbb_default;
 		tdbb->tdbb_default = ALL_pool(&jrd_alloc_info);
 		idx->idx_expression =
 			MET_parse_blob(tdbb, relation, &IDX.RDB$EXPRESSION_BLR, &csb,
@@ -285,3 +280,4 @@ void PCMET_lookup_index( JRD_REL relation, IDX * idx)
 			  sizeof(struct dsc));
 }
 #endif
+

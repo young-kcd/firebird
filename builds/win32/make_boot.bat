@@ -1,5 +1,5 @@
 ::
-:: This bat file don't uses cd, all the paths are full paths.
+:: This bat file doesn't uses cd, all the paths are full paths.
 :: with this convention this bat file is position independent 
 :: and it will be easier to move the place of somefiles.
 ::

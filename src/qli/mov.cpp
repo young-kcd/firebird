@@ -47,32 +47,16 @@ static const TEXT* type_name(USHORT);
 
 #define LETTER(c)	(c >= 'A' && c <= 'Z')
 #define DIGIT(c)	(c >= '0' && c <= '9')
-#define TODAY		"TODAY"
-#define NOW		"NOW"
-#define TOMORROW	"TOMORROW"
-#define YESTERDAY	"YESTERDAY"
+const char* const TODAY = "TODAY";
+const char* const NOW = "NOW";
+const char* const TOMORROW = "TOMORROW";
+const char* const YESTERDAY = "YESTERDAY";
 
 #define PRECISION	10000
 
-static const TEXT *months[] = {
-	"JANUARY",
-	"FEBRUARY",
-	"MARCH",
-	"APRIL",
-	"MAY",
-	"JUNE",
-	"JULY",
-	"AUGUST",
-	"SEPTEMBER",
-	"OCTOBER",
-	"NOVEMBER",
-	"DECEMBER",
-	0
-};
-
 struct dtypes_t {
 	USHORT type;
-	TEXT *description;
+	const TEXT* description;
 };
 
 static const dtypes_t dtypes_table[] = {
@@ -1044,7 +1028,7 @@ static void sql_date_to_text( SLONG date[1], DSC * to)
 
 	TEXT temp[35];
 	sprintf(temp, "%2d-%.3s-%04d", times.tm_mday,
-			months[times.tm_mon], times.tm_year + 1900);
+			FB_LONG_MONTHS_UPPER[times.tm_mon], times.tm_year + 1900);
 
 	TEXT* p;
 	for (p = temp; *p; p++);
@@ -1115,7 +1099,7 @@ static void timestamp_to_text( SLONG date[2], DSC * to)
 
     TEXT temp[35];
 	sprintf(temp, "%2d-%.3s-%04d", times.tm_mday,
-			months[times.tm_mon], times.tm_year + 1900);
+			FB_LONG_MONTHS_UPPER[times.tm_mon], times.tm_year + 1900);
 
 	if (times.tm_hour || times.tm_min || times.tm_sec || date[1]) {
 		TEXT time[15];
@@ -1382,7 +1366,7 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
 				p++;
 			}
 			*t = 0;
-			const TEXT** month_ptr = months;
+			const TEXT** month_ptr = FB_LONG_MONTHS_UPPER;
 			while (true) {
 				if (!*month_ptr) {
 					while (++p < end)
@@ -1412,7 +1396,7 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
 				if (!*t)
 					break;
 			}
-			n = month_ptr - months;
+			n = month_ptr - FB_LONG_MONTHS_UPPER;
 			month_position = i;
 		}
 		else {

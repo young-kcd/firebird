@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.47 2003-12-24 13:04:59 dimitr Exp $
+ * $Id: rse.cpp,v 1.48 2003-12-31 05:35:53 robocop Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -116,7 +116,7 @@ static void map_sort_data(JRD_REQ, SMB, UCHAR *);
 static void open_merge(TDBB, RSB, IRSB_MRG);
 static void open_procedure(TDBB, RSB, IRSB_PROCEDURE);
 static void open_sort(TDBB, RSB, IRSB_SORT, UINT64);
-static void proc_assignment(DSC *, DSC *, UCHAR *, DSC *, SSHORT, REC);
+static void proc_assignment(const dsc*, const dsc*, UCHAR*, dsc*, SSHORT, REC);
 static void pop_rpbs(JRD_REQ, RSB);
 static void push_rpbs(TDBB, JRD_REQ, RSB);
 static ULONG read_merge_block(TDBB, MFB, ULONG);
@@ -838,7 +838,10 @@ BOOLEAN RSE_reset_position(TDBB tdbb, RSB rsb, RPB * new_rpb)
 		if ((bitmap = impure->irsb_bitmap) &&
 			SBM_next(*bitmap, &rpb->rpb_number, RSE_get_current) &&
 			VIO_get(tdbb, rpb, rsb, request->req_transaction,
-					request->req_pool)) return TRUE;
+					request->req_pool)) 
+		{
+			return TRUE;
+		}
 
 		RSE_MARK_CRACK(rsb, irsb_crack);
 		return FALSE;
@@ -2095,7 +2098,7 @@ static BOOLEAN get_procedure(TDBB				tdbb,
 	JRD_REQ proc_request = impure->irsb_req_handle;
 	fmt* rec_format = procedure->prc_format;
 
-	fmt* msg_format = (FMT) procedure->prc_output_msg->nod_arg[e_msg_format];
+	const fmt* msg_format = (FMT) procedure->prc_output_msg->nod_arg[e_msg_format];
 	if (!impure->irsb_message)
 	{
 		const SLONG size = msg_format->fmt_length + ALIGNMENT;
@@ -3229,10 +3232,10 @@ static void open_sort(TDBB tdbb, RSB rsb, IRSB_SORT impure, UINT64 max_records)
 
 
 static void proc_assignment(
-							DSC * from_desc,
-							DSC * flag_desc,
-							UCHAR * msg,
-							DSC * to_desc, SSHORT to_id, REC record)
+							const dsc* from_desc,
+							const dsc* flag_desc,
+							UCHAR* msg, // this param is logically const
+							dsc* to_desc, SSHORT to_id, REC record)
 {
 /**************************************
  *
@@ -3245,8 +3248,7 @@ static void proc_assignment(
  *
  **************************************/
 	DSC desc1, desc2;
-	SSHORT indicator, l;
-	UCHAR *p;
+	SSHORT indicator;
 
 	desc2.dsc_dtype = dtype_short;
 	desc2.dsc_scale = 0;
@@ -3259,16 +3261,18 @@ static void proc_assignment(
 	MOV_move(&desc1, &desc2);
 	if (indicator) {
 		SET_NULL(record, to_id);
-		l = to_desc->dsc_length;
-		p = record->rec_data + (int) to_desc->dsc_address;
+		SSHORT l = to_desc->dsc_length; // it seems safer to use USHORT
+		fb_assert(l); // l == 0 would produce undesirable results here
+		UCHAR* p = record->rec_data + (int) to_desc->dsc_address;
 		switch (to_desc->dsc_dtype) {
 		case dtype_text:
 			/* YYY - not necessarily the right thing to do */
 			/* YYY for text formats that don't have trailing spaces */
-			if (l)
-				do
+			if (l) {
+				do {
 					*p++ = ' ';
-				while (--l);
+				} while (--l);
+			}
 			break;
 
 		case dtype_cstring:
@@ -3280,9 +3284,9 @@ static void proc_assignment(
 			break;
 
 		default:
-			do
+			do {
 				*p++ = 0;
-			while (--l);
+			} while (--l);
 			break;
 		}
 		to_desc->dsc_flags |= DSC_null;
@@ -3307,8 +3311,9 @@ static void proc_assignment(
 
 		else if (((U_IPTR) desc1.dsc_address & (ALIGNMENT - 1)) ||
 				 ((U_IPTR) desc2.dsc_address & (ALIGNMENT - 1)))
+		{
 			MOVE_FAST(desc1.dsc_address, desc2.dsc_address, desc1.dsc_length);
-
+		}
 		else
 			MOVE_FASTER(desc1.dsc_address, desc2.dsc_address,
 						desc1.dsc_length);

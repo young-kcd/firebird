@@ -86,7 +86,7 @@ typedef struct old {
 
 /* OnLine Dump header page info */
 
-typedef struct hdr_page {
+struct old_hdr_page {
 	USHORT hp_file_seqno;		/* Sequence number of current file */
 	ULONG hp_start_block;		/* start block number */
 	ULONG hp_file_size;			/* max size of file */
@@ -99,7 +99,7 @@ typedef struct hdr_page {
 	USHORT hp_version;			/* OnLine Dump Version */
 	USHORT hp_length;			/* length of file name */
 	SCHAR hp_db[1];				/* database name */
-} *OLD_HDR_PAGE;
+};
 
 #endif /* JRD_OLD_H */
 

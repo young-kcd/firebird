@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		vio_proto.h
- *	DESCRIPTION:	Prototype header file for vio.c
+ *	DESCRIPTION:	Prototype header file for vio.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -50,7 +50,7 @@ BOOLEAN	VIO_writelock(TDBB, struct rpb *, class Rsb *, class jrd_tra *);
 void	VIO_modify(TDBB, struct rpb *, struct rpb *, class jrd_tra *);
 BOOLEAN	VIO_next_record(TDBB, struct rpb *, class Rsb *, class jrd_tra *,
 							   struct blk *, BOOLEAN, BOOLEAN);
-struct rec*	VIO_record(TDBB, struct rpb *, struct fmt *, JrdMemoryPool *);
+struct rec*	VIO_record(TDBB, struct rpb *, const struct fmt*, JrdMemoryPool *);
 void	VIO_start_save_point(TDBB, class jrd_tra *);
 void	VIO_store(TDBB, struct rpb *, class jrd_tra *);
 BOOLEAN	VIO_sweep(TDBB, class jrd_tra *);

@@ -55,7 +55,7 @@
 
 #define MOVE_BYTE(x_from, x_to)	*x_to++ = *x_from++;
 
-static SSHORT compare_keys(IDX *, UCHAR *, USHORT, KEY *, USHORT);
+static SSHORT compare_keys(const IDX*, const UCHAR*, USHORT, const KEY*, USHORT);
 #ifdef SCROLLABLE_CURSORS
 static void expand_index(WIN *);
 #endif
@@ -63,7 +63,7 @@ static void expand_index(WIN *);
 static BOOLEAN find_dbkey(RSB, ULONG);
 static BOOLEAN find_record(RSB, RSE_GET_MODE, KEY *, USHORT, USHORT);
 #endif
-static BTX find_current(EXP, BTR, UCHAR *);
+static BTX find_current(EXP, BTR, const UCHAR*);
 static bool find_saved_node(RSB, IRSB_NAV, WIN *, UCHAR **);
 static UCHAR* get_position(TDBB, RSB, IRSB_NAV, WIN *, RSE_GET_MODE, BTX *);
 static BOOLEAN get_record(RSB, IRSB_NAV, RPB *, KEY *, BOOLEAN);
@@ -127,10 +127,10 @@ EXP NAV_expand_index(WIN * window, IRSB_NAV impure)
 	}
 
 	// go through the nodes on the original page and reposition
-	UCHAR *pointer = BTreeNode::getPointerFirstNode(page);
-	UCHAR *endPointer = ((UCHAR*) page + page->btr_length);
+	UCHAR* pointer = BTreeNode::getPointerFirstNode(page);
+	const UCHAR* const endPointer = ((UCHAR*) page + page->btr_length);
 	BTX expanded_node = (BTX) expanded_page->exp_nodes;
-	UCHAR *current_pointer = ((UCHAR*) page + impure->irsb_nav_offset);
+	const UCHAR* current_pointer = ((UCHAR*) page + impure->irsb_nav_offset);
 
 	impure->irsb_nav_expanded_offset = -1;
 
@@ -164,17 +164,11 @@ BOOLEAN NAV_find_record(RSB rsb,
  *	This routine must set BOF, EOF, or CRACK.
  *
  **************************************/
-	TDBB tdbb;
-	JRD_REQ request;
-	IRSB_NAV impure;
-	IDX *idx;
 	KEY key_value;
-	WIN window;
 	BTN expanded_node;
-	BOOLEAN backwards;
 	USHORT search_flags;
 
-	backwards = (direction == blr_backward
+	const BOOLEAN backwards = (direction == blr_backward
 				 || direction == blr_backward_starting);
 
 	if (direction == blr_forward_starting
@@ -183,10 +177,10 @@ BOOLEAN NAV_find_record(RSB rsb,
 		search_flags = 0;
 
 
-	tdbb = GET_THREAD_DATA;
-	request = tdbb->tdbb_request;
-	impure = (IRSB_NAV) ((UCHAR *) request + rsb->rsb_impure);
-	window.win_flags = 0;
+	TDBB tdbb = GET_THREAD_DATA;
+	jrd_req* request = tdbb->tdbb_request;
+	irsb_nav* impure = (IRSB_NAV) ((UCHAR *) request + rsb->rsb_impure);
+	WIN window(-1);
 
 	init_fetch(impure);
 	if (!impure->irsb_nav_page) {
@@ -197,7 +191,7 @@ BOOLEAN NAV_find_record(RSB rsb,
 	// finding a record invalidates the visited records
 	SBM_reset(&impure->irsb_nav_records_visited);
 
-	idx =
+	IDX* idx =
 		(IDX *) ((SCHAR *) impure + (SLONG) rsb->rsb_arg[RSB_NAV_idx_offset]);
 
 	if ((idx == NULL) || (find_key->nod_count == 0) ||
@@ -490,7 +484,7 @@ BOOLEAN NAV_get_record(TDBB tdbb,
 
 	KEY key;
 	BTX expanded_next = NULL;
-	UCHAR *nextPointer = get_position(tdbb, rsb, impure, &window, 
+	UCHAR* nextPointer = get_position(tdbb, rsb, impure, &window, 
 		direction, &expanded_next);
 	MOVE_FAST(impure->irsb_nav_data, key.key_data, impure->irsb_nav_length);
 	JRD_NOD retrieval_node = (JRD_NOD) rsb->rsb_arg[RSB_NAV_index];
@@ -775,19 +769,15 @@ BOOLEAN NAV_reset_position(RSB rsb, RPB * new_rpb)
  *	rsb to the record indicated by the passed rpb.
  *
  **************************************/
-	TDBB tdbb;
-	JRD_REQ request;
 	KEY key_value;
-	IRSB_NAV impure;
 	IDX *idx;
-	WIN window;
 	BTN expanded_node;
 	ULONG record_number;
 
-	tdbb = GET_THREAD_DATA;
-	request = tdbb->tdbb_request;
-	impure = (IRSB_NAV) ((UCHAR *) request + rsb->rsb_impure);
-	window.win_flags = 0;
+	TDBB tdbb = GET_THREAD_DATA;
+	jrd_req* request = tdbb->tdbb_request;
+	irsb_nav* impure = (IRSB_NAV) ((UCHAR *) request + rsb->rsb_impure);
+	WIN window(-1);
 
 	init_fetch(impure);
 	if (!impure->irsb_nav_page) {
@@ -870,9 +860,9 @@ BOOLEAN NAV_set_bookmark(RSB rsb, IRSB_NAV impure, RPB * rpb, BKM bookmark)
 
 
 static SSHORT compare_keys(
-						   IDX * idx,
-						   UCHAR * key_string1,
-						   USHORT length1, KEY * key2, USHORT flags)
+						   const IDX* idx,
+						   const UCHAR* key_string1,
+						   USHORT length1, const KEY* key2, USHORT flags)
 {
 /**************************************
  *      
@@ -888,15 +878,11 @@ static SSHORT compare_keys(
  *	index key.
  *
  **************************************/
-	UCHAR *string1, *string2, *segment;
-	USHORT length2, l, remainder;
-	idx::idx_repeat * tail;
+	const UCHAR* string1 = key_string1;
+	const UCHAR* string2 = key2->key_data;
+	const USHORT length2 = key2->key_length;
 
-	string1 = key_string1;
-	string2 = key2->key_data;
-	length2 = key2->key_length;
-
-	l = MIN(length1, length2);
+	USHORT l = MIN(length1, length2);
 	if (l) {
 		do {
 			if (*string1++ != *string2++) {
@@ -918,6 +904,8 @@ static SSHORT compare_keys(
 	if ((flags & (irb_partial | irb_starting)) && (length1 > length2)) {
 		// figure out what segment we're on; if it's a 
 		// character segment we've matched the partial string
+		const UCHAR* segment = 0;
+		const idx::idx_repeat* tail;
 		if (idx->idx_count > 1) {
 			segment = key_string1 +
 				((length2 - 1) / (STUFF_COUNT + 1)) * (STUFF_COUNT + 1);
@@ -940,8 +928,8 @@ static SSHORT compare_keys(
 
 		if (idx->idx_count > 1) {
 			// if we've exhausted the segment, we've found a match
-			if (!(remainder = length2 % (STUFF_COUNT + 1)) &&
-				(*string1 != *segment)) 
+			USHORT remainder = length2 % (STUFF_COUNT + 1);
+			if (!remainder && (*string1 != *segment)) 
 			{
 				return 0;
 			}
@@ -1307,7 +1295,7 @@ static BOOLEAN find_record(
 #endif
 
 
-static BTX find_current(EXP expanded_page, BTR page, UCHAR * current_pointer)
+static BTX find_current(EXP expanded_page, BTR page, const UCHAR* current_pointer)
 {
 /**************************************
  *
@@ -1328,8 +1316,8 @@ static BTX find_current(EXP expanded_page, BTR page, UCHAR * current_pointer)
 
 	BTX expanded_node = expanded_page->exp_nodes;
 	SCHAR flags = page->btr_header.pag_flags;
-	UCHAR *pointer = BTreeNode::getPointerFirstNode(page);
-	UCHAR *endPointer = ((UCHAR*) page + page->btr_length);
+	UCHAR* pointer = BTreeNode::getPointerFirstNode(page);
+	const UCHAR* const endPointer = ((UCHAR*) page + page->btr_length);
 	IndexNode node;
 	while (pointer < endPointer) {
 		if (pointer == current_pointer) {

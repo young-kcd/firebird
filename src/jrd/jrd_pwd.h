@@ -36,19 +36,20 @@
 
 class SecurityDatabase
 {
-	typedef struct {
+	struct user_record {
 		SLONG gid;
 		SLONG uid;
 		SSHORT flag;
 		SCHAR password[34];
-	} user_record;
+	};
 
 public:
 
 	static void getPath(TEXT*);
 	static void initialize();
 	static void shutdown();
-	static void verifyUser(TEXT*, TEXT*, TEXT*, TEXT*, int*, int*, int*);
+	static void verifyUser(TEXT*, const TEXT*, const TEXT*, const TEXT*,
+		int*, int*, int*);
 
 private:
 

@@ -43,7 +43,7 @@ SLONG		CCH_get_incarnation(win*);
 pag*		CCH_handoff(TDBB, win*, SLONG, SSHORT, SSHORT, SSHORT, SSHORT);
 void		CCH_init(TDBB, ULONG);
 void		CCH_journal_page(TDBB, win*);
-void		CCH_journal_record(TDBB, win*, UCHAR*, USHORT, UCHAR*, USHORT);
+void		CCH_journal_record(TDBB, win*, const UCHAR*, USHORT, const UCHAR*, USHORT);
 void		CCH_mark(TDBB, win*, USHORT);
 void		CCH_mark_must_write(TDBB, win*);
 void		CCH_must_write(win*);

@@ -87,31 +87,35 @@ int stats_analyze(STATS before, STATS after, int(*callback)(), SCHAR *arg)
  * Functional description
  *
  **************************************/
-	SLONG delta[ITEM_count], *p, *end, *tail, *tail2, total;
-	SSHORT relation_id;
+	SLONG delta[ITEM_count];
 
 	if (!after)
 		return;
 
-	end = delta + ITEM_count;
+	const SLONG* const end = delta + ITEM_count;
 
-	if (before)
+	const SLONG* tail2 = 0;
+	if (before) {
 		tail2 = before->stats_counts;
+	}
 
-	for (tail = after->stats_counts, relation_id = 0;
-		 relation_id < after->stats_count; ++relation_id) {
-		total = 0;
-		for (p = delta; p < end;) {
+	SSHORT relation_id = 0
+	for (const SLONG* tail = after->stats_counts;
+		 relation_id < after->stats_count; ++relation_id)
+	{
+		SLONG total = 0;
+		for (SLONG* p = delta; p < end;) {
 			total += *tail;
 			*p++ = *tail++;
 		}
 		if (before && relation_id < before->stats_count)
-			for (p = delta; p < end;) {
+			for (SLONG* p = delta; p < end;) {
 				total -= *tail2;
 				*p++ -= *tail2++;
 			}
-		if (total)
+		if (total) {
 			(*callback) (arg, relation_id, ITEM_count, headers, delta);
+		}
 	}
 }
 
@@ -128,9 +132,7 @@ int stats_fetch(SLONG *status_vector, int **db_handle, STATS *stats_ptr)
  *	Gather statistics.
  *
  **************************************/
-	SCHAR info_buffer[4096], *p, *end;
-	STATS stats;
-	SSHORT length, item;
+	SCHAR info_buffer[4096];
 
 	if (isc_database_info(status_vector, db_handle, sizeof(info_request),
 						   info_request, sizeof(info_buffer),
@@ -139,7 +141,8 @@ int stats_fetch(SLONG *status_vector, int **db_handle, STATS *stats_ptr)
 		return status_vector[1];
 	}
 
-	if (stats = *stats_ptr)
+	STATS stats = *stats_ptr;
+	if (stats)
 		zap_longs(stats->stats_counts, stats->stats_count * ITEM_count);
 	else
 		stats = expand_stats(stats_ptr, 64);
@@ -150,11 +153,11 @@ int stats_fetch(SLONG *status_vector, int **db_handle, STATS *stats_ptr)
 		status_vector[2] = isc_arg_end;
 		return status_vector[1];
 	}
-
-	for (p = info_buffer;
-		 p < info_buffer + sizeof(info_buffer) && *p != isc_info_end;) {
-		length = gds__vax_integer(p + 1, 2);
-		item = -1;
+	
+	const SCHAR* const end = info_buffer + sizeof(info_buffer);
+	for (const SCHAR* p = info_buffer; p < end && *p != isc_info_end;) {
+		const SSHORT length = gds__vax_integer(p + 1, 2);
+		SSHORT item = -1;
 		switch (*p) {
 		case isc_info_read_seq_count:
 			item = ITEM_seq_reads;
@@ -206,14 +209,12 @@ int stats_print(int **db_handle, int **tr_handle, STATS before, STATS after)
  * Functional description
  *
  **************************************/
-	SLONG init;
-
 	if (request_handle && database_handle != *db_handle)
 		isc_release_request(gds__status, &request_handle);
 
 	db = database_handle = *db_handle;
 	gds__trans = *tr_handle;
-	init = 0;
+	SLONG init = 0;
 	stats_analyze(before, after, print_line, &init);
 	return 0;
 }
@@ -231,17 +232,15 @@ static STATS expand_stats(STATS *ptr, SSHORT count)
  *	Make sure vector is big enough.
  *
  **************************************/
-	STATS stats, old;
-	SLONG *p, *q, *end, length;
 
 /* If the thing is already big enough, don't do nothing */
-
-	if ((old = *ptr) && old->stats_count < count)
+	STATS old = *ptr;
+	if (old && old->stats_count < count)
 		return old;
 
 	count += 20;
-	length = sizeof(struct stats) + (ITEM_count * count - 1) * sizeof(SLONG);
-	stats = (STATS) gds__alloc(length);
+	const SLONG length = sizeof(struct stats) + (ITEM_count * count - 1) * sizeof(SLONG);
+	STATS stats = (STATS) gds__alloc(length);
 /* FREE: apparently never freed */
 	if (!stats)					/* NOMEM: out of memory */
 		return NULL;			/* leave *ptr unchanged */
@@ -250,11 +249,12 @@ static STATS expand_stats(STATS *ptr, SSHORT count)
 	stats->stats_items = ITEM_count;
 
 	if (old) {
-		p = stats->stats_counts;
-		q = old->stats_counts;
-		end = q + ITEM_count * old->stats_count;
-		while (q < end)
+		SLONG* p = stats->stats_counts;
+		const SLONG* q = old->stats_counts;
+		const SLONG* const end = q + ITEM_count * old->stats_count;
+		while (q < end) {
 			*p++ = *q++;
+		}
 		gds__free(old);
 	}
 
@@ -275,21 +275,19 @@ static int get_counts(ISC_STATUS *status_vector, SCHAR *info, SSHORT length,
  *	Pick up operation counts from information items.
  *
  **************************************/
-	SCHAR *p, *end;
-	SSHORT relation_id;
-	STATS stats;
+	STATS stats = *stats_ptr;
 
-	stats = *stats_ptr;
-
-	for (p = info, end = p + length; p < end; p += 6) {
-		relation_id = gds__vax_integer(p, 2);
-		if (relation_id >= stats->stats_count)
+	const SCHAR* p = info;
+	for (const SCHAR* const end = p + length; p < end; p += 6) {
+		const SSHORT relation_id = gds__vax_integer(p, 2);
+		if (relation_id >= stats->stats_count) {
 			if (!expand_stats(&stats, relation_id)) {
 				status_vector[0] = isc_arg_gds;
 				status_vector[1] = isc_virmemexh;
 				status_vector[2] = isc_arg_end;
 				return status_vector[1];
 			}
+		}
 		stats->stats_counts[relation_id * ITEM_count + item] =
 			gds__vax_integer(p + 2, 4);
 	}
@@ -310,32 +308,34 @@ static int print_line(SCHAR *arg, SSHORT relation_id, SSHORT count,
  *	Display data.
  *
  **************************************/
-	SLONG *end;
-	SSHORT n;
-
 	if (!*arg) {
 		*arg = 1;
 		ib_printf("%32s ", " ");
-		if (n = count)
-			do
+		SSHORT n = count;
+		if (n) {
+			do {
 				ib_printf("%10s", *headers++);
-			while (--n);
+			} while (--n);
+		}
 		ib_printf("\n");
 	}
 
-	for (request_handle request_handle)
-		x in rdb$relations with x.rdb$relation_id eq relation_id
-			ib_printf("%32s", x.rdb$relation_name);
-	for (end = counts + count; counts < end; counts++)
-		ib_printf("%10d", *counts);
-	ib_printf("\n");
-	end_for;
+	// This didn't work previously! GDML uses uppercased keywords.
+	FOR (REQUEST_HANDLE request_handle)
+		x IN RDB$RELATIONS
+		WITH x.RDB$RELATION_ID EQ relation_id
+		ib_printf("%32s", x.rdb$relation_name);
+		for (const SLONG* const end = counts + count; counts < end; counts++) {
+			ib_printf("%10d", *counts);
+		}
+		ib_printf("\n");
+	END_FOR
 
 	return 0;
 }
 
 
-static int zap_longs(SLONG *ptr, SSHORT count)
+static int zap_longs(SLONG* ptr, SSHORT count)
 {
 /**************************************
  *
@@ -348,10 +348,11 @@ static int zap_longs(SLONG *ptr, SSHORT count)
  *
  **************************************/
 
-	if (count)
-		do
+	if (count) {
+		do {
 			*ptr++ = 0;
-		while (--count);
+		} while (--count);
+	}
 		
 	return 0;
 }

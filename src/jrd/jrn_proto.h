@@ -42,7 +42,7 @@ int JRN_enable(ISC_STATUS*, struct jrn**, const TEXT*, USHORT, const UCHAR*,
 int JRN_fini(ISC_STATUS*, struct jrn**);
 int JRN_init(ISC_STATUS*, struct jrn**, USHORT, const UCHAR*, USHORT, const UCHAR*,
 					USHORT);
-void JRN_make_init_data(UCHAR *, SSHORT *, UCHAR *, USHORT, UCHAR *,
+void JRN_make_init_data(UCHAR*, SSHORT*, const UCHAR*, USHORT, const UCHAR*,
 							   USHORT);
 int JRN_put_wal_name(ISC_STATUS*, struct jrn*, const TEXT*, USHORT, SLONG,
 							SLONG, SLONG, USHORT);

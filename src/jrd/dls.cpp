@@ -1,6 +1,6 @@
 /*
  *      PROGRAM:        JRD Access Method
- *      MODULE:         dls.c
+ *      MODULE:         dls.cpp
  *      DESCRIPTION:    Temporary file management
  *			The file contains set of functions that
  *			are used to manage directory list.
@@ -51,7 +51,7 @@ static MDLS DLS_cfg_tmpdir = { NULL, FALSE };	/* directory list object */
  */
 
 
-BOOLEAN DLS_get_temp_space(ULONG size, SFB sfb)
+bool DLS_get_temp_space(ULONG size, SFB sfb)
 {
 /**************************************
  *
@@ -64,13 +64,12 @@ BOOLEAN DLS_get_temp_space(ULONG size, SFB sfb)
  *
  **************************************/
 
-	MDLS *ptr;
-	BOOLEAN result = FALSE;
+	bool result = false;
 
 	fb_assert(size > (ULONG) 0);
 	fb_assert(sfb);
 
-	ptr = DLS_get_access();
+	MDLS* ptr = DLS_get_access();
 
 #ifdef V4_THREADING
 	if (!ptr->mdls_mutex_init) {
@@ -85,17 +84,19 @@ BOOLEAN DLS_get_temp_space(ULONG size, SFB sfb)
 		for (sfb->sfb_dls = ptr->mdls_dls;
 			 sfb->sfb_dls;
 			 sfb->sfb_dls = sfb->sfb_dls->dls_next)
-  if (size <= (sfb->sfb_dls->dls_size - sfb->sfb_dls->dls_inuse)) {
+		{
+			if (size <= (sfb->sfb_dls->dls_size - sfb->sfb_dls->dls_inuse)) {
 				sfb->sfb_dls->dls_inuse += size;
-				result = TRUE;
+				result = true;
 				break;
 			}
+		}
 	}
 	else {
 		/* allocate temp. space from the current dls entry */
 		if (size <= (sfb->sfb_dls->dls_size - sfb->sfb_dls->dls_inuse)) {
 			sfb->sfb_dls->dls_inuse += size;
-			result = TRUE;
+			result = true;
 		}
 	}
 #ifdef V4_THREADING
@@ -118,11 +119,8 @@ void DLS_put_temp_space(SFB sfb)
  *	Release disk space occupied by sort file
  *
  **************************************/
-
-	MDLS *ptr;
-
 	if (sfb && sfb->sfb_dls) {
-		ptr = DLS_get_access();
+		MDLS* ptr = DLS_get_access();
 #ifdef V4_THREADING
 		fb_assert(ptr->mdls_mutex_init);
 		V4_MUTEX_LOCK(ptr->mdls_mutex);
@@ -139,7 +137,7 @@ void DLS_put_temp_space(SFB sfb)
 }
 
 
-BOOLEAN API_ROUTINE DLS_add_dir(ULONG size, const TEXT * dir_name)
+BOOLEAN API_ROUTINE DLS_add_dir(ULONG size, const TEXT* dir_name)
 {
 /**************************************
  *
@@ -152,12 +150,9 @@ BOOLEAN API_ROUTINE DLS_add_dir(ULONG size, const TEXT * dir_name)
  *
  **************************************/
 
-	MDLS *mdls;
-	DLS new_dls;
-
 /* allocate dls structure */
 
-	new_dls = (DLS) gds__alloc((SLONG) (sizeof(dls) +
+	dls* new_dls = (DLS) gds__alloc((SLONG) (sizeof(dls) +
 										sizeof(TEXT) * strlen(dir_name)));
 	if (!new_dls)
 		return FALSE;
@@ -169,7 +164,7 @@ BOOLEAN API_ROUTINE DLS_add_dir(ULONG size, const TEXT * dir_name)
 
 /* get access to directory list object */
 
-	mdls = DLS_get_access();
+	MDLS* mdls = DLS_get_access();
 
 #ifdef V4_THREADING
 /* lock mutex, initialize it in case of the first access */
@@ -188,7 +183,7 @@ BOOLEAN API_ROUTINE DLS_add_dir(ULONG size, const TEXT * dir_name)
 		mdls->mdls_dls = new_dls;
 	}
 	else {
-		DLS dls_iterator = mdls->mdls_dls;
+		dls* dls_iterator = mdls->mdls_dls;
 		while (dls_iterator->dls_next)
 			dls_iterator = dls_iterator->dls_next;
 		dls_iterator->dls_next = new_dls;
@@ -204,7 +199,7 @@ BOOLEAN API_ROUTINE DLS_add_dir(ULONG size, const TEXT * dir_name)
 }
 
 
-MDLS *DLS_get_access(void)
+MDLS* DLS_get_access(void)
 {
 /**************************************
  *
@@ -229,3 +224,4 @@ MDLS *DLS_get_access(void)
 
 	return (&DLS_cfg_tmpdir);
 }
+

@@ -31,7 +31,7 @@
 
 static USHORT sjis_to_upper(TEXTTYPE obj, UCS2_CHAR ch);
 static USHORT sjis_to_lower(TEXTTYPE obj, UCS2_CHAR ch);
-static SSHORT sjis_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr);
+static SSHORT sjis_str_to_upper(TEXTTYPE obj, USHORT iLen, const BYTE* pStr, USHORT iOutLen, BYTE *pOutStr);
 
 static inline void FAMILY_MULTIBYTE(TEXTTYPE cache,
 									TTYPE_ID id_number,
@@ -114,20 +114,18 @@ static USHORT sjis_to_upper(TEXTTYPE obj, UCS2_CHAR ch)
 /*
  *	Note: This function expects Multibyte input
  */
-static SSHORT sjis_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr)
+static SSHORT sjis_str_to_upper(TEXTTYPE obj, USHORT iLen, const BYTE* pStr, USHORT iOutLen, BYTE *pOutStr)
 {
-	BYTE *p;
-	USHORT waiting_for_sjis2 = FALSE;
-	BYTE c;
+	bool waiting_for_sjis2 = false;
 
 	fb_assert(pStr != NULL);
 	fb_assert(pOutStr != NULL);
 	fb_assert(iLen <= 32000);		/* almost certainly an error */
 	fb_assert(iOutLen <= 32000);	/* almost certainly an error */
 	fb_assert(iOutLen >= iLen);
-	p = pOutStr;
+	const BYTE* const p = pOutStr;
 	while (iLen && iOutLen) {
-		c = *pStr++;
+		BYTE c = *pStr++;
 		if (waiting_for_sjis2 || SJIS1(c)) {
 			waiting_for_sjis2 = !waiting_for_sjis2;
 		}

@@ -282,7 +282,7 @@ static void apply_header(HDR page, jrnd* record)
  *
  **************************************/
 	JRNDH temp, *clump;
-	JRNDA temp1;
+	jrnda temp1;
 
 	for (clump = NULL;
 		 (clump =

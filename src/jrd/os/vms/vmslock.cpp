@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Lock Manager
- *	MODULE:		vmslock.c
+ *	MODULE:		vmslock.cpp
  *	DESCRIPTION:	VMS Lock Manager
  *
  * The contents of this file are subject to the Interbase Public
@@ -54,16 +54,16 @@ typedef struct lksb {
 	SLONG lksb_value[4];
 } LKSB;
 
-static int lock_error(ISC_STATUS *, UCHAR *, int);
+static bool lock_error(ISC_STATUS *, UCHAR *, int);
 static SLONG write_data(SLONG, SLONG);
 
 
-int LOCK_convert(
+bool LOCK_convert(
 				 PTR lock_id,
 				 UCHAR type,
 				 SSHORT wait,
-				 int (*ast_routine) (int *),
-int *ast_argument, ISC_STATUS * status_vector)
+				 lock_ast_t ast_routine,
+	void* ast_argument, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -79,25 +79,24 @@ int *ast_argument, ISC_STATUS * status_vector)
  *	FALSE is returned even if wait was requested.
  *
  **************************************/
-	int status;
 	LKSB lksb;
 	struct dsc$descriptor_s desc;
 
 	lksb.lksb_lock_id = lock_id;
 
-	status = sys$enq(EVENT_FLAG,
+	int status = sys$enq(EVENT_FLAG,
 					 lock_types[type],
 					 &lksb,
 					 (wait) ? LCK$M_CONVERT : LCK$M_CONVERT | LCK$M_NOQUEUE,
 					 &desc, NULL,	/* Lock parent (not used) */
 					 gds__completion_ast,	/* AST routine when granted */
-					 ast_argument, ast_routine, NULL, NULL);
+					 (int*) ast_argument, ast_routine, NULL, NULL);
 
 	if (status & 1)
 		ISC_wait(&lksb, EVENT_FLAG);
 
 	if ((status & 1) && ((status = lksb.lksb_status) & 1))
-		return TRUE;
+		return true;
 
 	if (!wait && status == SS$_NOTQUEUED)
 		status = SS$_DEADLOCK;
@@ -118,9 +117,7 @@ int LOCK_deq(PTR lock_id)
  *	Release an outstanding lock.
  *
  **************************************/
-	int status;
-
-	status = sys$deq(lock_id, NULL, NULL, NULL);
+	int status = sys$deq(lock_id, NULL, NULL, NULL);
 
 /* The following is a deliberate compile error to force this to
    be fixed during the next VMS port.  Return FALSE if any error
@@ -137,7 +134,8 @@ SLONG LOCK_enq(PTR prior_request;
 			   UCHAR type;
 			   int (*ast_routine) (int *);
 			   int *ast_argument; SLONG data; USHORT wait;
-			   ISC_STATUS * status_vector; {
+			   ISC_STATUS * status_vector;
+{
 /**************************************
  *
  *	L O C K _ e n q
@@ -150,47 +148,47 @@ SLONG LOCK_enq(PTR prior_request;
  *	be granted because of deadlock, return NULL.
  *
  **************************************/
-			   int status, lock_id, lock_type, flags;
-			   UCHAR buffer[256], *p;
-			   LKSB lksb;
-			   struct dsc$descriptor_s desc;
-			   if (prior_reqeust)
-			   LOCK_deq(prior_request); p = buffer; *p++ = series; if (length)
-			   do
-			   *p++ = *value++; while (--length);
-			   desc.dsc$b_class = DSC$K_CLASS_S;
-			   desc.dsc$b_dtype = DSC$K_DTYPE_T;
-			   desc.dsc$w_length = p - buffer;
-			   desc.dsc$a_pointer = buffer;
-			   flags =
-			   (wait) ? LCK$M_SYSTEM | LCK$M_VALBLK : LCK$M_SYSTEM |
-			   LCK$M_NOQUEUE; lock_type = lock_types[type];
-			   status =
-			   sys$enq(EVENT_FLAG, lock_type, &lksb, flags, &desc, parent_request, gds__completion_ast,	/* AST routine when granted */
-					   ast_argument, ast_routine, PSL$C_USER, NULL);
-			   if (status & 1) ISC_wait(&lksb, EVENT_FLAG); if ((status & 1)
-																&&
-																(((status
-																   =
-																   lksb.
-																   lksb_status)
-																  & 1)
-																 || status ==
-																 SS$_VALNOTVALID))
-			   {
-			   if (data) {
-			   if (lock_type == LCK$K_EXMODE)
-			   write_data(lksb.lksb_lock_id, data);
-			   else
-			   LOCK_write_data(lksb.lksb_lock_id, data);}
-			   return lksb.lksb_lock_id;}
+	int status, lock_id, lock_type, flags;
+	UCHAR buffer[256], *p;
+	LKSB lksb;
+	struct dsc$descriptor_s desc;
+	if (prior_reqeust)
+	LOCK_deq(prior_request); p = buffer; *p++ = series; if (length)
+	do {
+		*p++ = *value++;
+	} while (--length);
+	desc.dsc$b_class = DSC$K_CLASS_S;
+	desc.dsc$b_dtype = DSC$K_DTYPE_T;
+	desc.dsc$w_length = p - buffer;
+	desc.dsc$a_pointer = buffer;
+	flags =
+	(wait) ? LCK$M_SYSTEM | LCK$M_VALBLK : LCK$M_SYSTEM |
+	LCK$M_NOQUEUE; lock_type = lock_types[type];
+	status =
+	sys$enq(EVENT_FLAG, lock_type, &lksb, flags, &desc, parent_request, gds__completion_ast,	/* AST routine when granted */
+		   ast_argument, ast_routine, PSL$C_USER, NULL);
+	if (status & 1)
+		ISC_wait(&lksb, EVENT_FLAG);
+	if ((status & 1) &&
+	    (((status = lksb.lksb_status) & 1) || status == SS$_VALNOTVALID))
+	{
+		if (data) {
+			if (lock_type == LCK$K_EXMODE)
+			write_data(lksb.lksb_lock_id, data);
+			else
+			LOCK_write_data(lksb.lksb_lock_id, data);
+		}
+		return lksb.lksb_lock_id;
+	}
 
-			   if (!wait && status == SS$_NOTQUEUED)
-			   status = SS$_DEADLOCK;
-			   return lock_error(status_vector, "sys$enq", status);}
+	if (!wait && status == SS$_NOTQUEUED)
+		status = SS$_DEADLOCK;
+	return lock_error(status_vector, "sys$enq", status);
+}
 
 
-			   void LOCK_fini(ISC_STATUS * status_vector, PTR * owner_offset) {
+void LOCK_fini(ISC_STATUS * status_vector, PTR * owner_offset)
+{
 /**************************************
  *
  *	L O C K _ f i n i
@@ -204,13 +202,15 @@ SLONG LOCK_enq(PTR prior_request;
  *
  **************************************/
 
-			   return FB_SUCCESS;}
+   return FB_SUCCESS;
+}
 
 
-			   int LOCK_init(ISC_STATUS * status_vector,
+int LOCK_init(ISC_STATUS * status_vector,
 							 SSHORT owner_flag,
 							 SLONG owner_id,
-							 UCHAR owner_type, SLONG * owner_handle) {
+							 UCHAR owner_type, SLONG * owner_handle)
+{
 /**************************************
  *
  *	L O C K _ i n i t
@@ -222,10 +222,12 @@ SLONG LOCK_enq(PTR prior_request;
  *
  **************************************/
 
-			   return FB_SUCCESS;}
+	return FB_SUCCESS;
+}
 
 
-			   SLONG LOCK_read_data(PTR lock_id) {
+SLONG LOCK_read_data(PTR lock_id)
+{
 /**************************************
  *
  *	L O C K _ r e a d _ d a t a
@@ -236,23 +238,25 @@ SLONG LOCK_enq(PTR prior_request;
  *	Read data associated with a lock.
  *
  **************************************/
-			   int status;
-			   LKSB lksb;
-			   struct dsc$descriptor_s desc;
-			   lksb.lksb_lock_id = lock_id;
-			   lksb.lksb_value[0] = 0;
-			   status = sys$enq(EVENT_FLAG,
-								LCK$K_NLMODE, &lksb,
-								LCK$M_CONVERT | LCK$M_VALBLK, &desc, NULL,	/* Lock parent (not used) */
-								gds__completion_ast,	/* AST routine when granted */
-								NULL, NULL, NULL, NULL); if (status & 1)
-			   ISC_wait(&lksb, EVENT_FLAG);
-			   if (!status && !(lksb.lksb_status & 1))
-			   return 0; return lksb.lksb_value[0];}
+	LKSB lksb;
+	struct dsc$descriptor_s desc;
+	lksb.lksb_lock_id = lock_id;
+	lksb.lksb_value[0] = 0;
+	int status = sys$enq(EVENT_FLAG,
+					LCK$K_NLMODE, &lksb,
+					LCK$M_CONVERT | LCK$M_VALBLK, &desc, NULL,	/* Lock parent (not used) */
+					gds__completion_ast,	/* AST routine when granted */
+					NULL, NULL, NULL, NULL); if (status & 1)
+	ISC_wait(&lksb, EVENT_FLAG);
+	if (!status && !(lksb.lksb_status & 1))
+		return 0;
+	return lksb.lksb_value[0];
+}
 
 
-			   void LOCK_re_post(int (*ast_routine) (int *),
-								 int ast_argument, PTR owner_offset) {
+void LOCK_re_post(int (*ast_routine) (int *),
+								 int ast_argument, PTR owner_offset)
+{
 /**************************************
  *
  *	L O C K _ r e _ p o s t
@@ -263,11 +267,13 @@ SLONG LOCK_enq(PTR prior_request;
  *	Re-post an AST.
  *
  **************************************/
-			   int status;
-			   status = sys$dclast(ast_routine, ast_argument, PSL$C_USER);}
+	int status;
+	status = sys$dclast(ast_routine, ast_argument, PSL$C_USER);
+}
 
 
-			   SLONG LOCK_write_data(PTR lock_id, SLONG data) {
+SLONG LOCK_write_data(PTR lock_id, SLONG data)
+{
 /**************************************
  *
  *	L O C K _ w r i t e _ d a t a
@@ -279,21 +285,24 @@ SLONG LOCK_enq(PTR prior_request;
  *	for a downward conversion to write data to lock.
  *
  **************************************/
-			   int status;
-			   LKSB lksb;
-			   struct dsc$descriptor_s desc;
-			   lksb.lksb_lock_id = lock_id;
-			   status =
-			   sys$enq(EVENT_FLAG, LCK$K_EXMODE, &lksb, LCK$M_CONVERT, &desc, NULL,	/* Lock parent (not used) */
-					   gds__completion_ast,	/* AST routine when granted */
-					   NULL, NULL, NULL, NULL); if (status & 1)
-			   ISC_wait(&lksb, EVENT_FLAG);
-			   if (!(status & 1) || !((status = lksb.lksb_status) & 1))
-			   return 0; return write_data(lock_id, data);}
+	int status;
+	LKSB lksb;
+	struct dsc$descriptor_s desc;
+	lksb.lksb_lock_id = lock_id;
+	status =
+	sys$enq(EVENT_FLAG, LCK$K_EXMODE, &lksb, LCK$M_CONVERT, &desc, NULL,	/* Lock parent (not used) */
+		   gds__completion_ast,	/* AST routine when granted */
+		   NULL, NULL, NULL, NULL); if (status & 1)
+	ISC_wait(&lksb, EVENT_FLAG);
+	if (!(status & 1) || !((status = lksb.lksb_status) & 1))
+		return 0;
+	return write_data(lock_id, data);
+}
 
 
-			   static int lock_error(ISC_STATUS * status_vector,
-									 UCHAR * string, int code) {
+static bool lock_error(ISC_STATUS * status_vector,
+									 UCHAR* string, int code)
+{
 /**************************************
  *
  *	l o c k _ e r r o r
@@ -305,19 +314,23 @@ SLONG LOCK_enq(PTR prior_request;
  *
  **************************************/
 
-			   if (code == SS$_DEADLOCK) {
-			   *status_vector++ = isc_arg_gds;
-			   *status_vector++ = isc_deadlock;}
+	if (code == SS$_DEADLOCK) {
+		*status_vector++ = isc_arg_gds;
+		*status_vector++ = isc_deadlock;
+	}
 
-			   *status_vector++ = isc_arg_gds;
-			   *status_vector++ = isc_sys_request;
-			   *status_vector++ = isc_arg_string;
-			   *status_vector++ = string;
-			   *status_vector++ = isc_arg_vms;
-			   *status_vector++ = code; *status_vector++ = 0; return 0;}
+	*status_vector++ = isc_arg_gds;
+	*status_vector++ = isc_sys_request;
+	*status_vector++ = isc_arg_string;
+	*status_vector++ = string;
+	*status_vector++ = isc_arg_vms;
+	*status_vector++ = code;
+	*status_vector++ = 0;
+	return 0;
+}
 
 
-			   static SLONG write_data(SLONG lock_id, SLONG data) {
+static SLONG write_data(SLONG lock_id, SLONG data) {
 /**************************************
  *
  *	w r i t e _ d a t a
@@ -328,21 +341,22 @@ SLONG LOCK_enq(PTR prior_request;
  *	Write a longword into the lock block.
  *
  **************************************/
-			   int status;
-			   LKSB lksb;
-			   struct dsc$descriptor_s desc;
-			   lksb.lksb_lock_id = lock_id;
-			   lksb.lksb_value[0] = data;
-			   lksb.lksb_value[1] = 0;
-			   lksb.lksb_value[2] = 0;
-			   lksb.lksb_value[3] = 0;
-			   status = sys$enqw(EVENT_FLAG,
-								 LCK$K_PWMODE, &lksb,
-								 LCK$M_CONVERT | LCK$M_VALBLK, &desc, NULL,	/* Lock parent (not used) */
-								 gds__completion_ast,	/* AST routine when granted */
-								 NULL,
-								 NULL,
-								 NULL,
-								 NULL);
-			   if (!(status & 1) || !((status = lksb.lksb_status) & 1))
-			   return 0;}
+	LKSB lksb;
+	struct dsc$descriptor_s desc;
+	lksb.lksb_lock_id = lock_id;
+	lksb.lksb_value[0] = data;
+	lksb.lksb_value[1] = 0;
+	lksb.lksb_value[2] = 0;
+	lksb.lksb_value[3] = 0;
+	int status = sys$enqw(EVENT_FLAG,
+					 LCK$K_PWMODE, &lksb,
+					 LCK$M_CONVERT | LCK$M_VALBLK, &desc, NULL,	/* Lock parent (not used) */
+					 gds__completion_ast,	/* AST routine when granted */
+					 NULL,
+					 NULL,
+					 NULL,
+					 NULL);
+	if (!(status & 1) || !((status = lksb.lksb_status) & 1))
+	return 0;
+}
+			   

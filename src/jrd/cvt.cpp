@@ -194,21 +194,6 @@ static const SQUAD quad_max_int = { LONG_MAX, -1 };
 #endif
 #endif
 
-static const TEXT* const months[] = {
-	"JANUARY",
-	"FEBRUARY",
-	"MARCH",
-	"APRIL",
-	"MAY",
-	"JUNE",
-	"JULY",
-	"AUGUST",
-	"SEPTEMBER",
-	"OCTOBER",
-	"NOVEMBER",
-	"DECEMBER",
-	NULL
-};
 
 #if !defined (NATIVE_QUAD)
 #include "../jrd/quad.cpp"
@@ -1875,7 +1860,7 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 			   text in the dd-Mon-yyyy format */
 			sprintf(p, "%d-%.3s-%d",
 					times.tm_mday,
-					months[times.tm_mon], times.tm_year + 1900);
+					FB_LONG_MONTHS_UPPER[times.tm_mon], times.tm_year + 1900);
 		}
 		while (*p)
 			p++;
@@ -2498,7 +2483,7 @@ static void string_to_datetime(
 				return;
 			}
 
-			const TEXT* const* month_ptr = months;
+			const TEXT* const* month_ptr = FB_LONG_MONTHS_UPPER;
 			while (true) {
 				/* Month names are only allowed in first 2 positions */
 				if (*month_ptr && i < 2) {
@@ -2550,7 +2535,7 @@ static void string_to_datetime(
 					return;
 				}
 			}
-			n = month_ptr - months;
+			n = month_ptr - FB_LONG_MONTHS_UPPER;
 			position_month = i;
 			description[i] = ENGLISH_MONTH;
 			have_english_month = true;

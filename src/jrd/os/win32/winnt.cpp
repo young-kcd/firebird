@@ -107,7 +107,7 @@ int PIO_add_file(DBB dbb, FIL main_file, const TEXT* file_name, SLONG start)
  *	sequence of 0.
  *
  **************************************/
-	FIL new_file = PIO_create(dbb, file_name, strlen(file_name), FALSE);
+	fil* new_file = PIO_create(dbb, file_name, strlen(file_name), false);
 	if (!new_file) {
 		return 0;
 	}
@@ -115,7 +115,7 @@ int PIO_add_file(DBB dbb, FIL main_file, const TEXT* file_name, SLONG start)
 	new_file->fil_min_page = start;
 	USHORT sequence = 1;
 
-	FIL file;
+	fil* file;
 	for (file = main_file; file->fil_next; file = file->fil_next) {
 		++sequence;
 	}
@@ -181,7 +181,7 @@ int PIO_connection(const TEXT* file_name, USHORT* file_length)
 
 
 
-FIL PIO_create(DBB dbb, const TEXT* string, SSHORT length, BOOLEAN overwrite)
+FIL PIO_create(DBB dbb, const TEXT* string, SSHORT length, bool overwrite)
 {
 /**************************************
  *
@@ -204,7 +204,7 @@ FIL PIO_create(DBB dbb, const TEXT* string, SSHORT length, BOOLEAN overwrite)
 		file_name = workspace;
 	}
 
-	HANDLE desc = CreateFile(file_name,
+	const HANDLE desc = CreateFile(file_name,
 					  GENERIC_READ | GENERIC_WRITE,
 					  g_dwShareFlags,
 					  NULL,
@@ -228,7 +228,7 @@ FIL PIO_create(DBB dbb, const TEXT* string, SSHORT length, BOOLEAN overwrite)
 /* workspace is the exapnded name here */
 
 	length = PIO_expand(string, length, workspace);
-	FIL file = setup_file(dbb, workspace, length, desc);
+	fil* file = setup_file(dbb, workspace, length, desc);
 
 	return file;
 }
@@ -279,7 +279,7 @@ void PIO_flush(FIL main_file)
 }
 
 
-void PIO_force_write(FIL file, USHORT flag)
+void PIO_force_write(FIL file, bool flag)
 {
 /**************************************
  *

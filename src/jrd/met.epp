@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.82 2003-12-22 10:00:47 robocop Exp $
+$Id: met.epp,v 1.83 2003-12-31 05:35:53 robocop Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -101,6 +101,8 @@ $Id: met.epp,v 1.82 2003-12-22 10:00:47 robocop Exp $
 #include "../jrd/thd_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/iberr.h"
+#include "../common/utils_proto.h"
+
 
 #ifdef HAVE_CTYPE_H
 #include <ctype.h>
@@ -795,36 +797,6 @@ void MET_error(const TEXT* string, ...)
 	ERR_post(isc_no_meta_update, isc_arg_gds, isc_random, isc_arg_string,
 			 ERR_cstring(s), 0);
 }
-
-
-SCHAR* MET_exact_name(TEXT* str)
-{
-/**************************************
- *
- *	M E T _ e x a c t _ n a m e
- *
- **************************************
- *
- * Functional description
- *	Trim off trailing spaces from a metadata name.
- *	eg: insert a null after the last non-blank character.
- *
- *	SQL delimited identifier may have blank as part of the name
- *
- *	Parameters:  str - the string to terminate
- *	Returns:     str
- *
- **************************************/
-	TEXT* q = str - 1;
-	for (TEXT* p = str; *p; p++) {
-		if (*p != BLANK)
-			q = p;
-	}
-
-	*(q + 1) = '\0';
-	return str;
-}
-
 
 FMT MET_format(TDBB tdbb, jrd_rel* relation, USHORT number)
 {
@@ -1588,8 +1560,8 @@ BLF MET_lookup_filter(TDBB tdbb, SSHORT from, SSHORT to)
 
         if (!REQUEST(irq_r_filters))
             REQUEST(irq_r_filters) = request;
-		MET_exact_name(X.RDB$MODULE_NAME);
-		MET_exact_name(X.RDB$ENTRYPOINT);
+		fb_utils::fb_exact_name(X.RDB$MODULE_NAME);
+		fb_utils::fb_exact_name(X.RDB$ENTRYPOINT);
 		filter = (FPTR_BFILTER_CALLBACK)
 			ISC_lookup_entrypoint(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT,
 								  ISC_EXT_LIB_PATH_ENV, true);
@@ -2758,7 +2730,6 @@ jrd_prc* MET_procedure(TDBB tdbb, int id, BOOLEAN noscan, USHORT flags)
 		lock->lck_type = LCK_prc_exist;
 		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 		lock->lck_object = (BLK) procedure;
-		/* TMN: Beware - this is a hairy AND UGLY cast */
 		lock->lck_ast = blocking_ast_procedure;
 
 		LCK_lock(tdbb, procedure->prc_existence_lock, LCK_SR, TRUE);
@@ -2936,10 +2907,8 @@ jrd_rel* MET_relation(TDBB tdbb, USHORT id)
  *      Find or create a relation block for a given relation id.
  *
  **************************************/
-
 	jrd_rel* relation;
 	LCK lock;
-	USHORT major_version, minor_original, max_sys_rel;
 
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
@@ -2959,11 +2928,12 @@ jrd_rel* MET_relation(TDBB tdbb, USHORT id)
 	if ( (relation = (jrd_rel*) (*vector)[id]) )
 		return relation;
 
-	major_version = (SSHORT) dbb->dbb_ods_version;
-	minor_original = (SSHORT) dbb->dbb_minor_original;
+	const USHORT major_version = dbb->dbb_ods_version;
+	const USHORT minor_original = dbb->dbb_minor_original;
 
 /* From ODS 9 onwards, the first 128 relation IDS have been 
    reserved for system relations */
+	USHORT max_sys_rel;
 	if (ENCODE_ODS(major_version, minor_original) < ODS_9_0)
 		max_sys_rel = (USHORT) USER_REL_INIT_ID_ODS8 - 1;
 	else
@@ -3758,7 +3728,7 @@ void MET_update_transaction( TDBB tdbb, jrd_tra* transaction, const bool do_comm
 }
 
 
-static int blocking_ast_procedure(void *ast_object)
+static int blocking_ast_procedure(void* ast_object)
 {
 /**************************************
  *

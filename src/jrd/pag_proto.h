@@ -24,27 +24,27 @@
 #ifndef JRD_PAG_PROTO_H
 #define JRD_PAG_PROTO_H
 
-int		PAG_add_clump(SLONG, USHORT, USHORT, const UCHAR*, USHORT, USHORT);
-USHORT	PAG_add_file(TEXT *, SLONG);
-int		PAG_add_header_entry(struct hdr *, USHORT, SSHORT, UCHAR *);
-int		PAG_replace_entry_first(struct hdr *, USHORT, SSHORT, UCHAR *);
+void	PAG_add_clump(SLONG, USHORT, USHORT, const UCHAR*, USHORT, USHORT);
+USHORT	PAG_add_file(const TEXT*, SLONG);
+int		PAG_add_header_entry(struct hdr*, USHORT, SSHORT, const UCHAR*);
+int		PAG_replace_entry_first(struct hdr*, USHORT, SSHORT, const UCHAR*);
 struct pag*	PAG_allocate(struct win *);
 SLONG	PAG_attachment_id(void);
 int		PAG_delete_clump_entry(SLONG, USHORT);
 void	PAG_format_header(void);
 void	PAG_format_log(void);
 void	PAG_format_pip(void);
-int		PAG_get_clump(SLONG, USHORT, USHORT *, UCHAR *);
+bool	PAG_get_clump(SLONG, USHORT, USHORT*, UCHAR*);
 void	PAG_header(const TEXT*, USHORT);
 void	PAG_init(void);
 void	PAG_init2(USHORT);
 SLONG	PAG_last_page(void);
 void	PAG_modify_log(SLONG, SLONG);
 void	PAG_release_page(SLONG, SLONG);
-void	PAG_set_force_write(struct dbb *, SSHORT);
-void	PAG_set_no_reserve(struct dbb *, USHORT);
-void	PAG_set_db_readonly(struct dbb *, SSHORT);
-void	PAG_set_db_SQL_dialect(struct dbb *, SSHORT);
+void	PAG_set_force_write(struct dbb*, SSHORT);
+void	PAG_set_no_reserve(struct dbb*, USHORT);
+void	PAG_set_db_readonly(struct dbb*, SSHORT);
+void	PAG_set_db_SQL_dialect(struct dbb*, SSHORT);
 void	PAG_set_page_buffers(ULONG);
 void	PAG_sweep_interval(SLONG);
 int		PAG_unlicensed(void);

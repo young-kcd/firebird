@@ -61,6 +61,7 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/thd_proto.h"
 #include "../jrd/vio_proto.h"
+#include "../common/utils_proto.h"
 
 #ifdef SUPERSERVER
 #define V4_THREADING
@@ -420,9 +421,9 @@ void DYN_delete_global_field( GBL gbl, const UCHAR** ptr)
         if (!DYN_REQUEST(drq_l_fld_src))
             DYN_REQUEST(drq_l_fld_src) = request;
 
-		DYN_terminate(Y.RDB$FIELD_SOURCE, sizeof(Y.RDB$FIELD_SOURCE));
-		DYN_terminate(Y.RDB$RELATION_NAME, sizeof(Y.RDB$RELATION_NAME));
-		DYN_terminate(Y.RDB$FIELD_NAME, sizeof(Y.RDB$FIELD_NAME));
+		fb_utils::fb_exact_name_limit(Y.RDB$FIELD_SOURCE, sizeof(Y.RDB$FIELD_SOURCE));
+		fb_utils::fb_exact_name_limit(Y.RDB$RELATION_NAME, sizeof(Y.RDB$RELATION_NAME));
+		fb_utils::fb_exact_name_limit(Y.RDB$FIELD_NAME, sizeof(Y.RDB$FIELD_NAME));
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(false, 43, Y.RDB$FIELD_SOURCE, Y.RDB$RELATION_NAME,
 					   Y.RDB$FIELD_NAME, NULL, NULL);
@@ -505,7 +506,7 @@ void DYN_delete_index( GBL gbl, const UCHAR** ptr)
             DYN_REQUEST(drq_e_indices) = request;
 
 		strcpy(rel_name, IDX.RDB$RELATION_NAME);
-		MET_exact_name(rel_name);
+		fb_utils::fb_exact_name(rel_name);
 		found = true;
 		ERASE IDX;
 	END_FOR;
@@ -657,11 +658,11 @@ void DYN_delete_local_field(
             DYN_REQUEST(drq_g_rel_constr_nm) = request;
 
 		if (IDX.RDB$SEGMENT_COUNT == 1) {
-			DYN_terminate(REL_CONST.RDB$CONSTRAINT_NAME,
+			fb_utils::fb_exact_name_limit(REL_CONST.RDB$CONSTRAINT_NAME,
 						  sizeof(REL_CONST.RDB$CONSTRAINT_NAME));
 			strcpy(constraint, REL_CONST.RDB$CONSTRAINT_NAME);
 
-			DYN_terminate(IDX.RDB$INDEX_NAME, sizeof(IDX.RDB$INDEX_NAME));
+			fb_utils::fb_exact_name_limit(IDX.RDB$INDEX_NAME, sizeof(IDX.RDB$INDEX_NAME));
 			strcpy(index_name, IDX.RDB$INDEX_NAME);
 
 			delete_f_key_constraint(tdbb, gbl, tbl_nm, col_nm,
@@ -1327,7 +1328,7 @@ void DYN_delete_role( GBL gbl, const UCHAR** ptr)
 				XX.RDB$ROLE_NAME EQ role_name if (!DYN_REQUEST(drq_drop_role))
 				  DYN_REQUEST(drq_drop_role) = request;
 
-			DYN_terminate(XX.RDB$OWNER_NAME, sizeof(XX.RDB$OWNER_NAME));
+			fb_utils::fb_exact_name_limit(XX.RDB$OWNER_NAME, sizeof(XX.RDB$OWNER_NAME));
 			strcpy(role_owner, XX.RDB$OWNER_NAME);
 
 			if ((tdbb->tdbb_attachment->att_user->usr_flags & USR_locksmith) ||

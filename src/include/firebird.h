@@ -30,7 +30,7 @@
  *       John Bellardo  <bellardo@cs.ucsd.edu>
  *
  *
- *  $Id: firebird.h,v 1.16 2003-11-03 02:05:09 brodsom Exp $
+ *  $Id: firebird.h,v 1.17 2003-12-31 05:35:43 robocop Exp $
  *
  */
 
@@ -80,3 +80,4 @@
 #endif
 
 #endif /* INCLUDE_Firebird */
+

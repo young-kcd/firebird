@@ -126,14 +126,7 @@ static void print_header(HDR);
 static void truncate_name(SCHAR *);
 
 
-static SCHAR *months[] = {
-	"Jan", "Feb", "Mar",
-	"Apr", "May", "Jun",
-	"Jul", "Aug", "Sep",
-	"Oct", "Nov", "Dec"
-};
-
-static TEXT help_text[] = "Available switches:\n\
+static const TEXT help_text[] = "Available switches:\n\
     -a      analyze data and index pages\n\
     -d      analyze data pages\n\
     -i      analyze index leaf pages\n\
@@ -1364,7 +1357,7 @@ FPRINTF (sw_outfile, "    Creation date    \n", header->hdr_creation_date);
 
 	isc_decode_date((ISC_QUAD*)header->hdr_creation_date, &time);
 	FPRINTF(sw_outfile, "    Creation date\t%s %d, %d %d:%02d:%02d\n",
-			months[time.tm_mon], time.tm_mday, time.tm_year + 1900,
+			FB_SHORT_MONTHS[time.tm_mon], time.tm_mday, time.tm_year + 1900,
 			time.tm_hour, time.tm_min, time.tm_sec);
 
 	if (flags = header->hdr_flags) {

@@ -55,6 +55,9 @@ DEFINE_TRACE_ROUTINE(cmp_trace);
 #define CMP_TRACE(args) /* nothing */
 #endif
 
+// NOTE: The definition of structures rse and lit must be defined in
+//       exactly the same way as structure jrd_nod through item nod_count.
+//       Now, inheritance takes care of those common data members.
 class jrd_node_base : public pool_alloc_rpt<class jrd_nod*, type_nod>
 {
 public:

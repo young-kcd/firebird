@@ -214,16 +214,16 @@ static void delete_connection(CNCT);
 static void delete_database(djb*);
 static void delete_history_files(CNCT, const SCHAR*, SLONG, SLONG);
 static void delete_wal(void);
-static void disable(CNCT, LTJC *);
+static void disable(CNCT, ltjc *);
 static void disconnect(CNCT);
 
 #if !(defined VMS || defined WIN_NT)
 static void divorce_terminal(fd_set *);
 #endif
 
-static void enable(CNCT, LTJC *);
-static void error(ISC_STATUS, TEXT*);
-static void error_exit(ISC_STATUS, TEXT*);
+static void enable(CNCT, const ltjc*);
+static void error(ISC_STATUS, const TEXT*);
+static void error_exit(ISC_STATUS, const TEXT*);
 static void free_database_entry(djb*);
 static void get_message(JRNH *, int);
 
@@ -240,21 +240,21 @@ static void post_address(USHORT, sockaddr_in);
 #endif
 
 static void process_command(CNCT, TEXT*);
-static void process_archive_begin(CNCT, LTJA *);
-static void process_archive_end(CNCT, LTJA *);
-static void process_archive_error(CNCT, LTJA *);
-static void process_control_point(CNCT, LTJW *);
+static void process_archive_begin(CNCT, ltja *);
+static void process_archive_end(CNCT, ltja *);
+static void process_archive_error(CNCT, ltja *);
+static void process_control_point(CNCT, ltjw *);
 static void process_disable_database(CNCT, const TEXT*);
 static void process_drop_database(CNCT, const SCHAR*);
-static void process_dump_file(CNCT, LTJW *);
-static void process_end_dump(CNCT, LTJW *);
+static void process_dump_file(CNCT, ltjw *);
+static void process_end_dump(CNCT, ltjw *);
 static void process_erase_database(CNCT, USHORT);
 static void process_message(CNCT, JRNH *, USHORT);
 static void process_reset_database(CNCT, const SCHAR*);
 static void process_restart_archive(CNCT, const SCHAR*);
 static void process_set_database(CNCT, const SCHAR*);
-static void process_start_dump(CNCT, LTJW *);
-static void process_wal_file(CNCT, LTJW *);
+static void process_start_dump(CNCT, ltjw *);
+static void process_wal_file(CNCT, ltjw *);
 static void put_line(CNCT, SSHORT, const TEXT*, const TEXT*, const TEXT*);
 static void put_message(SSHORT, djb*);
 #ifdef WIN_NT
@@ -265,8 +265,8 @@ static void restart_all_backups(int);
 static void restart_backup(djb*, int);
 static void send_reply(CNCT, JRNH *, USHORT);
 static void set_use_count(djb*);
-static void sign_off(CNCT, LTJC *);
-static void sign_on(CNCT, LTJC *);
+static void sign_off(CNCT, ltjc *);
+static void sign_on(CNCT, const ltjc*);
 #if defined(UNIX_JOURNALLING)
 static void signal_child(void*);
 #endif
@@ -334,7 +334,7 @@ bool SERVER_start_server(int argc,
 			continue;
 		}
 
-		MISC_down_case((UCHAR*) *argv++, (UCHAR*) string);
+		MISC_down_case((const UCHAR*) *argv++, (UCHAR*) string);
 		switch (string[1]) {
 		case 'v':
 			sw_v = true;
@@ -936,7 +936,7 @@ static void delete_wal(void)
 
 
 static void disable(CNCT connection,
-					LTJC * msg)
+					ltjc * msg)
 {
 /**************************************
  *
@@ -1080,7 +1080,7 @@ static void divorce_terminal(fd_set * mask)
 
 
 static void enable(CNCT connection,
-				   LTJC * msg)
+				   const ltjc* msg)
 {
 /**************************************
  *
@@ -1137,7 +1137,7 @@ static void enable(CNCT connection,
 
 #ifdef BSD_SOCKETS
 static void error(ISC_STATUS status,
-				  TEXT* string)
+				  const TEXT* string)
 {
 /**************************************
  *
@@ -1158,7 +1158,7 @@ static void error(ISC_STATUS status,
 
 #ifdef WIN_NT
 static void error(ISC_STATUS status,
-				  TEXT* string)
+				  const TEXT* string)
 {
 /**************************************
  *
@@ -1187,7 +1187,7 @@ static void error(ISC_STATUS status,
 
 
 static void error_exit(ISC_STATUS status,
-					   TEXT* string)
+					   const TEXT* string)
 {
 /**************************************
  *
@@ -1833,7 +1833,7 @@ static void process_command(CNCT connection,
 
 
 static void process_archive_begin(CNCT connection,
-								  LTJA * msg)
+								  ltja * msg)
 {
 /**************************************
  *
@@ -1882,7 +1882,7 @@ static void process_archive_begin(CNCT connection,
 
 
 static void process_archive_end(CNCT connection,
-								LTJA * msg)
+								ltja * msg)
 {
 /**************************************
  *
@@ -1961,7 +1961,7 @@ static void process_archive_end(CNCT connection,
 
 
 static void process_archive_error(CNCT connection,
-								  LTJA * msg)
+								  ltja * msg)
 {
 /**************************************
  *
@@ -2020,7 +2020,7 @@ static void process_archive_error(CNCT connection,
 
 
 static void process_control_point(CNCT connection,
-								  LTJW * msg)
+								  ltjw * msg)
 {
 /**************************************
  *
@@ -2149,7 +2149,7 @@ static void process_drop_database(CNCT connection,
 
 
 static void process_dump_file(CNCT connection,
-							  LTJW * msg)
+							  ltjw * msg)
 {
 /**************************************
  *
@@ -2190,7 +2190,7 @@ static void process_dump_file(CNCT connection,
 
 
 static void process_end_dump(CNCT connection,
-							 LTJW * msg)
+							 ltjw * msg)
 {
 /**************************************
  *
@@ -2359,23 +2359,23 @@ static void process_message(CNCT connection,
  **************************************/
 	switch (msg->jrnh_type) {
 	case JRN_ENABLE:
-		enable(connection, (LTJC *) msg);
+		enable(connection, (const ltjc*) msg);
 		break;
 
 	case JRN_DISABLE:
-		disable(connection, (LTJC *) msg);
+		disable(connection, (ltjc *) msg);
 		break;
 
 	case JRN_SIGN_ON:
-		sign_on(connection, (LTJC *) msg);
+		sign_on(connection, (const ltjc*) msg);
 		break;
 
 	case JRN_SIGN_OFF:
-		sign_off(connection, (LTJC *) msg);
+		sign_off(connection, (ltjc *) msg);
 		break;
 
 	case JRN_WAL_NAME:
-		process_wal_file(connection, (LTJW *) msg);
+		process_wal_file(connection, (ltjw *) msg);
 		break;
 
 	case JRN_CONSOLE:
@@ -2387,31 +2387,31 @@ static void process_message(CNCT connection,
 		}
 
 	case JRN_START_ONLINE_DMP:
-		process_start_dump(connection, (LTJW *) msg);
+		process_start_dump(connection, (ltjw *) msg);
 		break;
 
 	case JRN_END_ONLINE_DMP:
-		process_end_dump(connection, (LTJW *) msg);
+		process_end_dump(connection, (ltjw *) msg);
 		break;
 
 	case JRN_ONLINE_DMP_FILE:
-		process_dump_file(connection, (LTJW *) msg);
+		process_dump_file(connection, (ltjw *) msg);
 		break;
 
 	case JRN_ARCHIVE_BEGIN:
-		process_archive_begin(connection, (LTJA *) msg);
+		process_archive_begin(connection, (ltja *) msg);
 		break;
 
 	case JRN_ARCHIVE_END:
-		process_archive_end(connection, (LTJA *) msg);
+		process_archive_end(connection, (ltja *) msg);
 		break;
 
 	case JRN_ARCHIVE_ERROR:
-		process_archive_error(connection, (LTJA *) msg);
+		process_archive_error(connection, (ltja *) msg);
 		break;
 
 	case JRN_CNTRL_PT:
-		process_control_point(connection, (LTJW *) msg);
+		process_control_point(connection, (ltjw *) msg);
 		break;
 
 	default:
@@ -2551,7 +2551,7 @@ static void process_set_database(CNCT connection,
 
 
 static void process_start_dump(CNCT connection,
-							   LTJW * msg)
+							   ltjw * msg)
 {
 /**************************************
  *
@@ -2608,7 +2608,7 @@ static void process_start_dump(CNCT connection,
 
 
 static void process_wal_file(CNCT connection,
-							 LTJW * msg)
+							 ltjw * msg)
 {
 /**************************************
  *
@@ -3073,7 +3073,7 @@ static void set_use_count(djb* database)
 
 
 static void sign_off(CNCT connection,
-					 LTJC * msg)
+					 ltjc * msg)
 {
 /**************************************
  *
@@ -3094,7 +3094,7 @@ static void sign_off(CNCT connection,
 
 
 static void sign_on(CNCT connection,
-					LTJC * msg)
+					const ltjc* msg)
 {
 /**************************************
  *

@@ -113,7 +113,7 @@ typedef struct fab$ {
 } FAT$;
 
 
-nt PIO_add_file(DBB dbb, FIL main_file, TEXT * file_name, SLONG start)
+int PIO_add_file(DBB dbb, FIL main_file, const TEXT* file_name, SLONG start)
 {
 /**************************************
  *
@@ -130,15 +130,14 @@ nt PIO_add_file(DBB dbb, FIL main_file, TEXT * file_name, SLONG start)
  *	have been locked before entry.
  *
  **************************************/
-	USHORT sequence;
-	FIL file, new_file;
-
-	if (!(new_file = PIO_create(dbb, file_name, strlen(file_name), FALSE)))
+	fil* new_file = PIO_create(dbb, file_name, strlen(file_name), false);
+	if (!new_file)
 		return 0;
 
 	new_file->fil_min_page = start;
-	sequence = 1;
+	USHORT sequence = 1;
 
+	fil* file;
 	for (file = main_file; file->fil_next; file = file->fil_next)
 		++sequence;
 
@@ -201,7 +200,8 @@ int PIO_connection(const TEXT* file_name, USHORT* file_length)
 }
 
 
-FIL PIO_create(DBB dbb, const TEXT* string, SSHORT length, BOOLEAN overwrite)
+// Last param is ignored for now!
+FIL PIO_create(DBB dbb, const TEXT* string, SSHORT length, bool overwrite)
 {
 /**************************************
  *
@@ -217,7 +217,7 @@ FIL PIO_create(DBB dbb, const TEXT* string, SSHORT length, BOOLEAN overwrite)
  *
  **************************************/
 	int status;
-	TEXT *address, expanded_name[NAM$C_MAXRSS], temp[256];
+	TEXT *address, expanded_name[NAM$C_MAXRSS];
 	struct FAB fab;
 	struct NAM nam;
 
@@ -239,11 +239,12 @@ FIL PIO_create(DBB dbb, const TEXT* string, SSHORT length, BOOLEAN overwrite)
 	fab.fab$b_fac = FAB$M_UPD | FAB$M_PUT;
 	status = sys$create(&fab);
 
-	if (!(status & 1))
+	if (!(status & 1)) {
 		ERR_post(isc_io_error,
 				 isc_arg_string, "sys$create",
 				 isc_arg_cstring, length, ERR_string(string, length),
 				 isc_arg_gds, isc_io_create_err, isc_arg_vms, status, 0);
+	}
 
 /* File open succeeded.  Now expand the file name. */
 
@@ -308,7 +309,7 @@ void PIO_flush(FIL file)
 }
 
 
-void PIO_force_write(FIL file, USHORT flag)
+void PIO_force_write(FIL file, bool flag)
 {
 /**************************************
  *

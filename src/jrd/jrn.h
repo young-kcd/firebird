@@ -124,29 +124,29 @@ typedef struct jrnh {
 
 /* Long Term Journal control message format */
 
-typedef struct ltjc {
+struct ltjc {
 	JRNH ltjc_header;
 	USHORT ltjc_page_size;		/* Database page size */
 	SLONG ltjc_seqno;			/* Seqno of WAL */
 	ULONG ltjc_offset;			/* offset in WAL */
 	USHORT ltjc_length;			/* Length of data */
 	TEXT ltjc_data[1];			/* Expanded filename */
-} LTJC;
+};
 
-#define LTJC_SIZE 	OFFSETA (LTJC*, ltjc_data)
+#define LTJC_SIZE 	OFFSETA (struct ltjc*, ltjc_data)
 
 /* Long Term Journal archive message format */
 
-typedef struct ltja {
+struct ltja {
 	JRNH ltja_header;
 	SLONG ltja_db_id;			/* Database ID */
 	SLONG ltja_file_id;			/* WAL file ID */
 	SLONG ltja_error_code;		/* Error number */
 	USHORT ltja_length;			/* Length of data */
 	TEXT ltja_data[1];			/* Expanded filename */
-} LTJA;
+};
 
-#define LTJA_SIZE 	OFFSETA (LTJA*, ltja_data)
+#define LTJA_SIZE 	OFFSETA (struct ltja*, ltja_data)
 
 enum jrnr_t {
 	jrnr_accepted = 1,			/* Connection accepted */
@@ -332,7 +332,7 @@ struct jrnrp {
  * journal server.
  */
 
-typedef struct ltjw {
+struct ltjw {
 	JRNH ltjw_header;
 	USHORT ltjw_mode;			/* any mode of operation */
 	ULONG ltjw_seqno;			/* log file seqno */
@@ -342,9 +342,9 @@ typedef struct ltjw {
 	SLONG ltjw_date[2];			/* Date/time of event */
 	USHORT ltjw_length;			/* Length of WAL filename */
 	TEXT ltjw_data[1];			/* Expanded filename */
-} LTJW;
+};
 
-#define LTJW_SIZE 	OFFSETA (LTJW*, ltjw_data)
+#define LTJW_SIZE 	OFFSETA (struct ltjw*, ltjw_data)
 
 /* values of mode */
 
@@ -368,20 +368,20 @@ typedef struct ltjw {
 
 /* Secondary file name message */
 
-typedef struct jrnf {
+struct jrnf {
 	JRNH jrnf_header;
 	ULONG jrnf_start;			/* start block number */
 	USHORT jrnf_length;			/* Length of filename */
 	USHORT jrnf_sequence;		/* File sequence # */
 	TEXT jrnf_filename[1];		/* Expanded filename */
-} JRNF;
+};
 
-#define JRNF_SIZE 	OFFSETA (JRNF*, jrnf_filename)
+#define JRNF_SIZE 	OFFSETA (struct jrnf*, jrnf_filename)
 
-typedef struct jrnda {
+struct jrnda {
 	UCHAR jrnda_type;
 	ULONG jrnda_data;
-} JRNDA;
+};
 
 #define JRNDA_SIZE 	sizeof (struct jrnda)
 

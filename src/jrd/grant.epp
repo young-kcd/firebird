@@ -54,6 +54,7 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/scl_proto.h"
 #include "../jrd/thd_proto.h"
+#include "../common/utils_proto.h"
 
 /* privileges given to the owner of a relation */
 
@@ -71,13 +72,13 @@
 
 DATABASE DB = STATIC "yachts.lnk";
 
-static void define_default_class(TDBB, TEXT *, TEXT *, UCHAR *, USHORT);
+static void define_default_class(TDBB, const TEXT*, TEXT*, const UCHAR*, USHORT);
 #ifdef NOT_USED_OR_REPLACED
 static void delete_security_class(TDBB, TEXT *);
 #endif
 static void finish_security_class(UCHAR **, USHORT, STR *, ULONG *);
-static void get_object_info(TDBB, TEXT *, SSHORT,
-							TEXT *, TEXT *, TEXT *, USHORT *);
+static void get_object_info(TDBB, const TEXT*, SSHORT,
+							TEXT*, TEXT*, TEXT*, bool*);
 static USHORT get_public_privs(TDBB, TEXT *, SSHORT);
 static void get_user_privs(TDBB, UCHAR **, TEXT *,
 						   SSHORT, TEXT *, USHORT, STR *, ULONG *);
@@ -128,7 +129,8 @@ STR GRANT_realloc_acl(STR		start_ptr,
 }
 
 
-int GRANT_privileges( TDBB tdbb, SSHORT phase, DFW work)
+bool GRANT_privileges( TDBB tdbb, SSHORT phase, DFW work,
+					jrd_tra*) // unused param, makes dfw.epp happy
 {
 /**************************************
  *
@@ -147,29 +149,27 @@ int GRANT_privileges( TDBB tdbb, SSHORT phase, DFW work)
 	switch (phase) {
 	case 1:
 	case 2:
-		return TRUE;
+		return true;
 
 	case 3:
 		{
 			UCHAR *acl, *temp_acl;
 			UCHAR *default_acl;
-			TEXT s_class[32], owner[32], default_class[32];
-			STR str_buffer = NULL, str_default_buffer = NULL;
-			USHORT public_priv, aggregate_public, restrct, view;
+			USHORT public_priv, aggregate_public;
 			ULONG length = ACL_BUFFER_SIZE, *length_ptr = &length;
-			ULONG default_length = ACL_BUFFER_SIZE, *default_length_ptr =
-				&default_length;
-
-			DBB dbb;
+			ULONG default_length = ACL_BUFFER_SIZE;
+			ULONG* default_length_ptr = &default_length;
 
 			SET_TDBB(tdbb);
 
-			restrct = FALSE;
+			bool restrct = false;
 
-			dbb = tdbb->tdbb_database;
+			DBB dbb = tdbb->tdbb_database;
 #ifdef V4_THREADING
 			V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_grant_priv);
 #endif
+			TEXT s_class[32], owner[32], default_class[32];
+			bool view; // unused after being retrieved.
 			get_object_info(tdbb, work->dfw_name, work->dfw_id, owner,
 							s_class, default_class, &view);
 
@@ -177,10 +177,12 @@ int GRANT_privileges( TDBB tdbb, SSHORT phase, DFW work)
 #ifdef V4_THREADING
 				V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_grant_priv);
 #endif
-				return FALSE;
+				return false;
 			}
 
 			/* start the acl off by giving the owner all privileges */
+			str* str_buffer = NULL;
+			str* str_default_buffer = NULL;
 
 			try {
 
@@ -248,7 +250,7 @@ int GRANT_privileges( TDBB tdbb, SSHORT phase, DFW work)
 									(USHORT)(acl - str_buffer->str_data));
 
 				if (temp_acl != acl)	/* relation privs were added? */
-					restrct = TRUE;
+					restrct = true;
 
 				/* if there have been privileges added at the relation level which
 				   need to be restricted from other fields in the relation,
@@ -294,15 +296,15 @@ int GRANT_privileges( TDBB tdbb, SSHORT phase, DFW work)
 
 	DFW_perform_system_work();
 
-	return FALSE;
+	return false;
 }
 
 
 static void define_default_class(
 								 TDBB tdbb,
-								 TEXT * relation_name,
-								 TEXT * default_class,
-								 UCHAR * buffer, USHORT length)
+								 const TEXT* relation_name,
+								 TEXT* default_class,
+								 const UCHAR* buffer, USHORT length)
 {
 /**************************************
  *
@@ -320,25 +322,22 @@ static void define_default_class(
  *	for the purpose of accessing other fields.
  *
  **************************************/
-	DBB dbb;
-	BLK request;
-	DSC desc;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	if (!*default_class) {
 		sprintf(default_class, "%s%" QUADFORMAT "d", DEFAULT_CLASS,
 				DPM_gen_id(tdbb, MET_lookup_generator(tdbb, DEFAULT_CLASS), 0,
 						   (SINT64) 1));
 
-		request = (BLK) CMP_find_request(tdbb, irq_grant7, IRQ_REQUESTS);
+		blk* request = (BLK) CMP_find_request(tdbb, irq_grant7, IRQ_REQUESTS);
 
 		FOR(REQUEST_HANDLE request)
 			REL IN RDB$RELATIONS
 				WITH REL.RDB$RELATION_NAME EQ relation_name
 
-            if (!REQUEST(irq_grant7)) REQUEST(irq_grant7) = request;
+            if (!REQUEST(irq_grant7))
+				REQUEST(irq_grant7) = request;
 
             MODIFY REL USING
 				REL.RDB$DEFAULT_CLASS.NULL = FALSE;
@@ -354,6 +353,7 @@ static void define_default_class(
 
 	save_security_class(tdbb, default_class, buffer, length);
 
+	dsc desc;
 	desc.dsc_dtype = dtype_text;
 	desc.dsc_sub_type = 0;
 	desc.dsc_scale = 0;
@@ -470,10 +470,10 @@ static USHORT get_public_privs(
 
 static void get_object_info(
 							TDBB tdbb,
-							TEXT * object_name,
+							const TEXT* object_name,
 							SSHORT obj_type,
-							TEXT * owner,
-TEXT * s_class, TEXT * default_class, USHORT * view)
+							TEXT* owner,
+	TEXT* s_class, TEXT* default_class, bool* view)
 {
 /**************************************
  *
@@ -487,19 +487,16 @@ TEXT * s_class, TEXT * default_class, USHORT * view)
  *	up-to-the-minute.
  *
  **************************************/
-	DBB dbb;
-	BLK request;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	owner[0] = '\0';
 	s_class[0] = '\0';
 	default_class[0] = '\0';
-	*view = FALSE;
+	*view = false;
 
 	if (obj_type == obj_relation) {
-		request = (BLK) CMP_find_request(tdbb, irq_grant1, IRQ_REQUESTS);
+		blk* request = (BLK) CMP_find_request(tdbb, irq_grant1, IRQ_REQUESTS);
 
 		FOR(REQUEST_HANDLE request)
 			REL IN RDB$RELATIONS WITH
@@ -507,21 +504,21 @@ TEXT * s_class, TEXT * default_class, USHORT * view)
 
             if (!REQUEST(irq_grant1))
                 REQUEST(irq_grant1) = request;
-			DYN_terminate(REL.RDB$SECURITY_CLASS, sizeof(REL.RDB$SECURITY_CLASS));
+			fb_utils::fb_exact_name_limit(REL.RDB$SECURITY_CLASS, sizeof(REL.RDB$SECURITY_CLASS));
 			strcpy(s_class, REL.RDB$SECURITY_CLASS);
-			DYN_terminate(REL.RDB$DEFAULT_CLASS, sizeof(REL.RDB$DEFAULT_CLASS));
+			fb_utils::fb_exact_name_limit(REL.RDB$DEFAULT_CLASS, sizeof(REL.RDB$DEFAULT_CLASS));
 			strcpy(default_class, REL.RDB$DEFAULT_CLASS);
-			DYN_terminate(REL.RDB$OWNER_NAME, sizeof(REL.RDB$OWNER_NAME));
+			fb_utils::fb_exact_name_limit(REL.RDB$OWNER_NAME, sizeof(REL.RDB$OWNER_NAME));
 			strcpy(owner, REL.RDB$OWNER_NAME);
 			*view = (REL.RDB$VIEW_BLR.gds_quad_high ||
-					 REL.RDB$VIEW_BLR.gds_quad_low) ? TRUE : FALSE;
+					 REL.RDB$VIEW_BLR.gds_quad_low) ? true : false;
 		END_FOR;
 
 		if (!REQUEST(irq_grant1))
 			REQUEST(irq_grant1) = request;
 	}
 	else {
-		request = (BLK) CMP_find_request(tdbb, irq_grant9, IRQ_REQUESTS);
+		blk* request = (BLK) CMP_find_request(tdbb, irq_grant9, IRQ_REQUESTS);
 
 		FOR(REQUEST_HANDLE request)
 			REL IN RDB$PROCEDURES WITH
@@ -529,12 +526,12 @@ TEXT * s_class, TEXT * default_class, USHORT * view)
 
             if (!REQUEST(irq_grant9)) REQUEST(irq_grant9) = request;
 
-			DYN_terminate(REL.RDB$SECURITY_CLASS, sizeof(REL.RDB$SECURITY_CLASS));
+			fb_utils::fb_exact_name_limit(REL.RDB$SECURITY_CLASS, sizeof(REL.RDB$SECURITY_CLASS));
 			strcpy(s_class, REL.RDB$SECURITY_CLASS);
 			strcpy(default_class, "");
-			DYN_terminate(REL.RDB$OWNER_NAME, sizeof(REL.RDB$OWNER_NAME));
+			fb_utils::fb_exact_name_limit(REL.RDB$OWNER_NAME, sizeof(REL.RDB$OWNER_NAME));
 			strcpy(owner, REL.RDB$OWNER_NAME);
-			*view = FALSE;
+			*view = false;
 		END_FOR;
 
 		if (!REQUEST(irq_grant9))
@@ -589,7 +586,7 @@ static void get_user_privs(TDBB		tdbb,
 
         if (!REQUEST(irq_grant2)) REQUEST(irq_grant2) = request;
 
-		DYN_terminate(PRV.RDB$USER, sizeof(PRV.RDB$USER));
+		fb_utils::fb_exact_name_limit(PRV.RDB$USER, sizeof(PRV.RDB$USER));
 		if (strcmp(PRV.RDB$USER, user) || PRV.RDB$USER_TYPE != user_type)
 		{
 			if (user[0])
@@ -744,7 +741,7 @@ static void purge_default_class( TEXT * object_name, SSHORT obj_type)
 
         if (!REQUEST(irq_grant8))
             REQUEST(irq_grant8) = request;
-		DYN_terminate(REL.RDB$DEFAULT_CLASS, sizeof(REL.RDB$DEFAULT_CLASS));
+		fb_utils::fb_exact_name_limit(REL.RDB$DEFAULT_CLASS, sizeof(REL.RDB$DEFAULT_CLASS));
 		delete_security_class(tdbb, REL.RDB$DEFAULT_CLASS);
 
 		MODIFY REL USING
@@ -851,8 +848,8 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 
         if (!REQUEST(irq_grant6))
             REQUEST(irq_grant6) = request;
-		 DYN_terminate(PRV.RDB$USER, sizeof(PRV.RDB$USER));
-		 DYN_terminate(PRV.RDB$FIELD_NAME, sizeof(PRV.RDB$FIELD_NAME));
+		 fb_utils::fb_exact_name_limit(PRV.RDB$USER, sizeof(PRV.RDB$USER));
+		 fb_utils::fb_exact_name_limit(PRV.RDB$FIELD_NAME, sizeof(PRV.RDB$FIELD_NAME));
 
 		/* create a control break on field_name,user */
 
@@ -928,7 +925,7 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 			/* initialize for new field */
 
 			strcpy(field_name, PRV.RDB$FIELD_NAME);
-			DYN_terminate(FLD.RDB$SECURITY_CLASS, sizeof(FLD.RDB$SECURITY_CLASS));
+			fb_utils::fb_exact_name_limit(FLD.RDB$SECURITY_CLASS, sizeof(FLD.RDB$SECURITY_CLASS));
 			strcpy(s_class, FLD.RDB$SECURITY_CLASS);
 			if (!s_class[0]) {
 			    /* We should never get here (I think) because this
@@ -1065,28 +1062,23 @@ static void save_security_class(TDBB	tdbb,
  *	Store or update the named security class.
  *
  **************************************/
-	DBB dbb;
-	BLK request;
-	USHORT found;
-	ISC_QUAD blob_id;
-	BLB blob;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
-	blob = BLB_create(tdbb, dbb->dbb_sys_trans, (BID)&blob_id);
+	ISC_QUAD blob_id;
+	blb* blob = BLB_create(tdbb, dbb->dbb_sys_trans, (BID)&blob_id);
 	BLB_put_segment(tdbb, blob, buffer, length);
 	BLB_close(tdbb, blob);
 
-	request = (BLK) CMP_find_request(tdbb, irq_grant3, IRQ_REQUESTS);
+	blk* request = (BLK) CMP_find_request(tdbb, irq_grant3, IRQ_REQUESTS);
 
-	found = FALSE;
+	bool found = false;
 	FOR(REQUEST_HANDLE request)
 		CLS IN RDB$SECURITY_CLASSES
 			WITH CLS.RDB$SECURITY_CLASS EQ s_class 
         if (!REQUEST(irq_grant3))
             REQUEST(irq_grant3) = request;
-        found = TRUE;
+        found = true;
 		MODIFY CLS
 			CLS.RDB$ACL = blob_id;
 		END_MODIFY;

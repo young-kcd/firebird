@@ -754,7 +754,7 @@ void BTR_insert(TDBB tdbb, WIN * root_window, IIB * insertion)
 		journal.jrnrp_type = JRNP_ROOT_PAGE;
 		journal.jrnrp_id = idx->idx_id;
 		journal.jrnrp_page = new_window.win_page;
-		CCH_journal_record(tdbb, root_window, (UCHAR*)&journal,
+		CCH_journal_record(tdbb, root_window, (const UCHAR*)&journal,
 						   JRNRP_SIZE, 0, 0);
 	}
 
@@ -1405,7 +1405,7 @@ void BTR_remove(TDBB tdbb, WIN * root_window, IIB * insertion)
 			journal.jrnrp_type = JRNP_ROOT_PAGE;
 			journal.jrnrp_id = idx->idx_id;
 			journal.jrnrp_page = number;
-			CCH_journal_record(tdbb, root_window, (UCHAR*) &journal,
+			CCH_journal_record(tdbb, root_window, (const UCHAR*) &journal,
 							   JRNRP_SIZE, 0, 0);
 		}
 
@@ -2427,7 +2427,7 @@ static CONTENTS delete_node(TDBB tdbb, WIN *window, UCHAR *pointer)
 		journal.jrnb_offset = nodeOffset;
 		journal.jrnb_delta = delta;				// DEBUG ONLY
 		journal.jrnb_length = page->btr_length;	// DEBUG ONLY
-		CCH_journal_record(tdbb, window, (UCHAR*) &journal,
+		CCH_journal_record(tdbb, window, (const UCHAR*) &journal,
 						   JRNB_SIZE, 0, 0);*/
 	}
 
@@ -2784,7 +2784,7 @@ static SLONG fast_load(TDBB tdbb,
 					// CVC: Warning, this may overlap. It seems better to use
 					// memmove or to ensure manually that totalJumpSize[0] > l
 					// Also, "sliding down" here is moving contents higher in memory.
-					USHORT l = bucket->btr_length - headerSize;
+					const USHORT l = bucket->btr_length - headerSize;
 					UCHAR* p = (UCHAR*)bucket + headerSize;
 					memmove(p + totalJumpSize[0], p, l);
 
@@ -3056,7 +3056,7 @@ static SLONG fast_load(TDBB tdbb,
 						// CVC: Warning, this may overlap. It seems better to use
 						// memmove or to ensure manually that totalJumpSize[0] > l
 						// Also, "sliding down" here is moving contents higher in memory.
-						USHORT l = bucket->btr_length - headerSize;
+						const USHORT l = bucket->btr_length - headerSize;
 						UCHAR* p = (UCHAR*)bucket + headerSize;
 						memmove(p + totalJumpSize[level], p, l);
 
@@ -3202,7 +3202,7 @@ static SLONG fast_load(TDBB tdbb,
 				// CVC: Warning, this may overlap. It seems better to use
 				// memmove or to ensure manually that totalJumpSize[0] > l
 				// Also, "sliding down" here is moving contents higher in memory.
-				USHORT l = bucket->btr_length - headerSize;
+				const USHORT l = bucket->btr_length - headerSize;
 				UCHAR* p = (UCHAR*)bucket + headerSize;
 				memmove(p + totalJumpSize[level], p, l);
 
@@ -4395,7 +4395,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 		// Update page-size.
 		newBucket->btr_length = (leftPointer - (UCHAR*)newBucket);
 		// copy over the remainder of the page to be garbage-collected.
-		USHORT l = gc_page->btr_length - (gcPointer - (UCHAR*)(gc_page));
+		const USHORT l = gc_page->btr_length - (gcPointer - (UCHAR*)(gc_page));
 		memcpy(leftPointer, gcPointer, l);
 		// update page size.
 		newBucket->btr_length += l;
@@ -4995,7 +4995,7 @@ static SLONG insert_node(TDBB tdbb,
 	if (endOfPage) {
 		// If we're adding a node at the end we don't want that a page 
 		// splits in the middle, but at the end. We can never be sure
-		// that this will happen, but at least give it a bigger change.
+		// that this will happen, but at least give it a bigger chance.
 		ensureEndInsert = 6 + key->key_length;
 	}
 		
@@ -5124,8 +5124,9 @@ static SLONG insert_node(TDBB tdbb,
 				BTreeNode::getNodeSize(&newNode, flags, leafPage);
 			CCH_journal_record(tdbb,
 							   window,
-							   (UCHAR*) & journal, JRNB_SIZE, (UCHAR*)
-							   newBucket + nodeOffset, journal.jrnb_length);
+							   (const UCHAR*) & journal, JRNB_SIZE,
+							   (const UCHAR*) newBucket + nodeOffset,
+							   journal.jrnb_length);
 			*/
 		}
 
@@ -5199,7 +5200,7 @@ static SLONG insert_node(TDBB tdbb,
 			walkJumpNode = jumpNodes->begin();
 			for (i = 0; i < jumpNodes->getCount(); i++, index++) {
 				if (index > splitJumpNodeIndex) {
-					USHORT length = walkJumpNode[i].prefix + walkJumpNode[i].length;
+					const USHORT length = walkJumpNode[i].prefix + walkJumpNode[i].length;
 					UCHAR *newData = FB_NEW(*tdbb->tdbb_default) UCHAR[length];
 					memcpy(newData, new_key->key_data, walkJumpNode[i].prefix);
 					memcpy(newData + walkJumpNode[i].prefix, walkJumpNode[i].data, 
@@ -5449,8 +5450,8 @@ static void journal_btree_segment(TDBB tdbb, WIN * window, BTR bucket)
 	journal.jrnb_delta = 0;
 	journal.jrnb_length = bucket->btr_length;
 
-	CCH_journal_record(tdbb, window, (UCHAR*) &journal, JRNB_SIZE, (UCHAR*)
-					   bucket, journal.jrnb_length);
+	CCH_journal_record(tdbb, window, (const UCHAR*) &journal, JRNB_SIZE,
+					(const UCHAR*) bucket, journal.jrnb_length);
 } 
 
 

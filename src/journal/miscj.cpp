@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Journal Server
- *	MODULE:		misc.c
+ *	MODULE:		misc.cpp
  *	DESCRIPTION:
  *
  * The contents of this file are subject to the Interbase Public
@@ -60,24 +60,8 @@
 
 static void now_to_date(const tm*, SLONG[2]);
 
-static TEXT *months[] = {
-	"JANUARY",
-	"FEBRUARY",
-	"MARCH",
-	"APRIL",
-	"MAY",
-	"JUNE",
-	"JULY",
-	"AUGUST",
-	"SEPTEMBER",
-	"OCTOBER",
-	"NOVEMBER",
-	"DECEMBER",
-	0
-};
 
-
-UCHAR *MISC_alloc_jrnl(SLONG size)
+UCHAR* MISC_alloc_jrnl(SLONG size)
 {
 /**************************************
  *
@@ -90,24 +74,23 @@ UCHAR *MISC_alloc_jrnl(SLONG size)
  *	Zero it out.
  *
  **************************************/
-	UCHAR *p, *block;
-
-	if (!(block = (UCHAR *) gds__alloc((SLONG) size))) {
+	UCHAR* const block = (UCHAR *) gds__alloc((SLONG) size);
+	if (!block) {
 		GJRN_printf(109, NULL, NULL, NULL, NULL);	// msg 109: malloc failed???
 		return NULL;
 	}
 
-	p = block;
-	do
+	UCHAR* p = block;
+	do {
 		*p++ = 0;
-	while (--size);
+	} while (--size);
 
 	return block;
 }
 
 
-void MISC_down_case(UCHAR * in,
-					UCHAR * out)
+void MISC_down_case(const UCHAR* in,
+					UCHAR* out)
 {
 /**************************************
  *
@@ -120,9 +103,9 @@ void MISC_down_case(UCHAR * in,
  *
  **************************************/
 	UCHAR c;
-
-	while (c = *in++)
+	while (c = *in++) {
 		*out++ = (c >= 'A' && c <= 'Z') ? c - 'A' + 'a' : c;
+	}
 
 	*out = 0;
 }
@@ -145,8 +128,8 @@ void MISC_free_jrnl( int *block)
 }
 
 
-bool MISC_get_line(TEXT * prompt,
-				   TEXT * buffer,
+bool MISC_get_line(const TEXT* prompt,
+				   TEXT* buffer,
 				   SSHORT size)
 {
 /**************************************
@@ -160,18 +143,15 @@ bool MISC_get_line(TEXT * prompt,
  *	if end of file.
  *
  **************************************/
-	TEXT *end;
-	SSHORT c;
-	SSHORT count;
-
 	GJRN_output("%s", prompt);
-	end = buffer + size - 1;
-	count = 0;
+	const TEXT* const end = buffer + size - 1;
+	SSHORT count = 0;
 
 	if (sw_service_gjrn)
 		GJRN_output("\001");
 	fflush(stdout);
 
+	SSHORT c;
 	while ((c = getchar()) != '\n') {
 		count++;
 		if (c == EOF) {
@@ -192,8 +172,8 @@ bool MISC_get_line(TEXT * prompt,
 }
 
 
-void MISC_get_new_value(SCHAR * string1,
-						SCHAR * buffer,
+void MISC_get_new_value(const SCHAR* string1,
+						SCHAR* buffer,
 						int size)
 {
 /**************************************
@@ -213,7 +193,7 @@ void MISC_get_new_value(SCHAR * string1,
 	GJRN_get_msg(84, buff, NULL, NULL, NULL);
 	MISC_get_line(buff, temp, sizeof(temp));
 
-	MISC_down_case((UCHAR*) temp, (UCHAR*) temp);
+	MISC_down_case((const UCHAR*) temp, (UCHAR*) temp);
 
 	if (temp[0] != 'y')
 		return;
@@ -247,9 +227,9 @@ void MISC_get_time(timeval* current)
 }
 
 
-void MISC_get_wal_info(LTJC * msg,
-					   SCHAR * db_name,
-					   SCHAR * dir_name)
+void MISC_get_wal_info(const ltjc* msg,
+					   SCHAR* db_name,
+					   SCHAR* dir_name)
 {
 /**************************************
  *
@@ -261,35 +241,38 @@ void MISC_get_wal_info(LTJC * msg,
  *	get wal info from message
  *
  **************************************/
-	SCHAR *p, *q, *b;
-	SSHORT l;
-
 	db_name[0] = 0;
 	dir_name[0] = 0;
 
-	for (p = msg->ltjc_data; p[0] != JRNW_END; p += 2 + p[1]) {
+	for (const SCHAR* p = msg->ltjc_data; p[0] != JRNW_END; p += 2 + p[1]) {
 		switch (*p) {
 		case isc_dpb_wal_backup_dir:
-			b = dir_name;
-			q = &p[2];
-			l = p[1];
-			if (l)
-				do
-					*b++ = *q++;
-				while (--l);
-			*b++ = 0;
-			break;
+			{
+				char* b = dir_name;
+				const char* q = &p[2];
+				SSHORT l = p[1];
+				if (l) {
+					do {
+						*b++ = *q++;
+					} while (--l);
+				}
+				*b++ = 0;
+				break;
+			}
 
 		case JRNW_DB_NAME:
-			b = db_name;
-			q = &p[2];
-			l = p[1];
-			if (l)
-				do
-					*b++ = *q++;
-				while (--l);
-			*b++ = 0;
-			break;
+			{
+				char* b = db_name;
+				const char* q = &p[2];
+				SSHORT l = p[1];
+				if (l) {
+					do {
+						*b++ = *q++;
+					} while (--l);
+				}
+				*b++ = 0;
+				break;
+			}
 
 		default:;
 		}
@@ -366,21 +349,24 @@ int MISC_time_convert(const TEXT* string,
  *	otherwise FB_FAILURE.
  *
  **************************************/
-	TEXT c, temp[15], *t, **month_ptr, *m;
-	USHORT n, month_position, i, components[7];
+	TEXT temp[15];
 
 	const TEXT* p = string;
-	const TEXT* end = p + length;
-	month_position = 0;
+	const TEXT* const end = p + length;
+	USHORT month_position = 0;
 
 	const time_t xclock = time(0);
 	tm times2 = *localtime(&xclock);
 
+	USHORT i;
+	
+	USHORT components[7];
 	for (i = 0; i < 7; i++)
 		components[i] = 0;
 
 // Parse components
 
+	USHORT n;
 	for (i = 0; i < 7; i++) {
 
 		// Skip leading blanks.  If we run out of characters, we're done
@@ -393,14 +379,14 @@ int MISC_time_convert(const TEXT* string,
 
 		// Handle digit or character strings
 
-		c = UPPER(*p);
+		TEXT c = UPPER(*p);
 		if (DIGIT(c)) {
 			n = 0;
 			while (p < end && DIGIT(*p))
 				n = n * 10 + *p++ - '0';
 		}
 		else if (LETTER(c)) {
-			t = temp;
+			TEXT* t = temp;
 			while (p < end && LETTER(c)) {
 				c = UPPER(*p);
 				if (!LETTER(c))
@@ -409,16 +395,17 @@ int MISC_time_convert(const TEXT* string,
 				p++;
 			}
 			*t = 0;
-			month_ptr = months;
+			const TEXT* const* month_ptr = FB_LONG_MONTHS_UPPER;
 			while (true) {
 				if (!*month_ptr) {
 
 					// it's not a month name, so it's either a magic word or
 					// a non-date string.  If there are more characters, it's bad
 
-					while (++p < end)
+					while (++p < end) {
 						if (*p != ' ' && *p != '\t' && *p != 0)
 							return FB_FAILURE;
+					}
 					if (strcmp(temp, NOW) == 0) {
 						now_to_date(&times2, date);
 						return FB_SUCCESS;
@@ -437,11 +424,13 @@ int MISC_time_convert(const TEXT* string,
 					}
 					return FB_FAILURE;
 				}
-				for (t = temp, m = *month_ptr++; *t && *t == *m; t++, m++);
+				t = temp;
+				for (const TEXT* m = *month_ptr++; *t && *t == *m; t++, m++);
+				// empty loop body
 				if (!*t)
 					break;
 			}
-			n = month_ptr - months;
+			n = month_ptr - FB_LONG_MONTHS_UPPER;
 			month_position = i;
 		}
 		else
@@ -503,7 +492,9 @@ int MISC_time_convert(const TEXT* string,
 
 	if (times.tm_year != times2.tm_year ||
 		times.tm_mon != times2.tm_mon || times.tm_mday != times2.tm_mday)
+	{
 		return FB_FAILURE;
+	}
 
 	return FB_SUCCESS;
 }
@@ -529,3 +520,4 @@ static void now_to_date(const tm* xtime,
 
 	isc_encode_date(xtime, (ISC_QUAD*) date);
 }
+

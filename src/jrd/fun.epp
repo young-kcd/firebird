@@ -30,7 +30,7 @@
  * 2003.08.10 Claudio Valderrama: Fix SF Bugs #544132 and #728839.
  */
 /*
-$Id: fun.epp,v 1.29 2003-11-27 11:11:54 aafemt Exp $
+$Id: fun.epp,v 1.30 2003-12-31 05:35:52 robocop Exp $
 */
 
 #include "firebird.h"
@@ -119,10 +119,8 @@ void FUN_evaluate(FUN function, JRD_NOD node, VLU value)
  **************************************/
 
 	SLONG	args[MAX_UDF_ARGUMENTS + 1];
-	USHORT	length;
 	UCHAR	temp[800];
-	STR		temp_string;
-	SLONG	l, *lp;
+	str*	temp_string;
 
 	TDBB tdbb = GET_THREAD_DATA;
 
@@ -186,15 +184,15 @@ void FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 
 	if (value->vlu_desc.dsc_dtype <= dtype_varying)
 	{
-		length = value->vlu_desc.dsc_length;
-		STR string = value->vlu_string;
-		if (string && string->str_length < length) {
+		const USHORT ret_length = value->vlu_desc.dsc_length;
+		str* string = value->vlu_string;
+		if (string && string->str_length < ret_length) {
 			delete string;
 			string = NULL;
 		}
 		if (!string) {
-			string = FB_NEW_RPT(*tdbb->tdbb_default, length) str;
-			string->str_length = length;
+			string = FB_NEW_RPT(*tdbb->tdbb_default, ret_length) str;
+			string->str_length = ret_length;
 			value->vlu_string = string;
 		}
 		value->vlu_desc.dsc_address = string->str_data;
@@ -241,7 +239,8 @@ void FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 
 		temp_desc = tail->fun_desc;
 		temp_desc.dsc_address = temp_ptr;
-		length = FB_ALIGN(temp_desc.dsc_length, DOUBLE_ALIGN);
+		// CVC: There's a theoretical possibility of overflowing "length" here.
+		USHORT length = FB_ALIGN(temp_desc.dsc_length, DOUBLE_ALIGN);
 
 		// If we've got a null argument, just pass zeros (got any better ideas?)
 
@@ -266,6 +265,8 @@ void FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 		}
 		else
 		{
+			SLONG l;
+			SLONG* lp;
 			switch (tail->fun_desc.dsc_dtype)
 			{
 			case dtype_short:
@@ -418,7 +419,7 @@ void FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 				{
 				// This is not a descriptor pointing to a blob. This is a blob struct.
 				BLOB blob_desc = (BLOB) temp_ptr;
-				BLB  blob;
+				blb*  blob;
 				length = sizeof(blob_t);
 				if (tail == return_ptr)
 				{

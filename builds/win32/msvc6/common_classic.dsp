@@ -139,6 +139,10 @@ SOURCE=..\..\..\src\jrd\os\win32\mod_loader.cpp
 
 SOURCE=..\..\..\src\jrd\os\win32\path_utils.cpp
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\utils.cpp
+# End Source File
 # End Group
 # Begin Group "Header files"
 
@@ -170,6 +174,10 @@ SOURCE=..\..\..\src\jrd\os\config_root.h
 # Begin Source File
 
 SOURCE=..\..\..\src\common\config\dir_list.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\utils_proto.h
 # End Source File
 # End Group
 # End Target

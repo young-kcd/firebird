@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		pwd.e
+ *	MODULE:		pwd.cpp
  *	DESCRIPTION:	User information database access
  *
  * The contents of this file are subject to the Interbase Public
@@ -310,9 +310,9 @@ void SecurityDatabase::shutdown()
 }
 
 void SecurityDatabase::verifyUser(TEXT* name,
-								  TEXT* user_name,
-								  TEXT* password,
-								  TEXT* password_enc,
+								  const TEXT* user_name,
+								  const TEXT* password,
+								  const TEXT* password_enc,
 								  int* uid,
 								  int* gid,
 								  int* node_id)

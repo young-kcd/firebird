@@ -24,20 +24,20 @@
 #ifndef LOCK_LOCK_PROTO_H
 #define LOCK_LOCK_PROTO_H
 
-int	LOCK_convert(SLONG, UCHAR, SSHORT, int (*)(void *), void *,
-						ISC_STATUS *);
+bool	LOCK_convert(SLONG, UCHAR, SSHORT, lock_ast_t, void*,
+						ISC_STATUS*);
 int		LOCK_deq(SLONG);
 UCHAR	LOCK_downgrade(SLONG, ISC_STATUS *);
-SLONG	LOCK_enq(SLONG, SLONG, USHORT, UCHAR *, USHORT, UCHAR,
-					  int (*)(void *), void *, SLONG, SSHORT, ISC_STATUS *,
+SLONG	LOCK_enq(SLONG, SLONG, USHORT, const UCHAR*, USHORT, UCHAR,
+					  lock_ast_t, void*, SLONG, SSHORT, ISC_STATUS*,
 					  SLONG);
 void	LOCK_fini(ISC_STATUS *, SLONG *);
 int		LOCK_init(ISC_STATUS *, SSHORT, SLONG, UCHAR, SLONG *);
 void	LOCK_manager(SLONG);
 SLONG	LOCK_query_data(SLONG, USHORT, USHORT);
 SLONG	LOCK_read_data(SLONG);
-SLONG	LOCK_read_data2(SLONG, USHORT, UCHAR *, USHORT, SLONG);
-void	LOCK_re_post(int (*)(void *), void *, SLONG);
+SLONG	LOCK_read_data2(SLONG, USHORT, const UCHAR*, USHORT, SLONG);
+void	LOCK_re_post(lock_ast_t, void*, SLONG);
 bool	LOCK_shut_manager(void);
 SLONG	LOCK_write_data(SLONG, SLONG);
 void LOCK_ast_inhibit();

@@ -63,6 +63,7 @@ class sbm : public pool_alloc<type_sbm>
 	SLONG			sbm_number;			// Value when singular
 	typedef			Firebird::vector<bms*>	vector_type;
 	typedef			vector_type::iterator	iterator;
+	typedef         vector_type::const_iterator const_iterator;
 
 	vector_type				sbm_segments;
 };
@@ -93,3 +94,4 @@ public:
 typedef bms* BMS;
 
 #endif	// JRD_SBM_H
+

@@ -28,3 +28,4 @@ int PCMET_expression_index(TDBB, SSHORT, struct dfw *, class jrd_tra *);
 void PCMET_lookup_index(struct jrd_rel *, struct idx *);
 
 #endif // JRD_PCMET_PROTO_H
+

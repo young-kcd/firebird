@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		sym_proto.h
- *	DESCRIPTION:	Prototype header file for sym.c
+ *	DESCRIPTION:	Prototype header file for sym.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,9 +24,9 @@
 #ifndef JRD_SYM_PROTO_H
 #define JRD_SYM_PROTO_H
 
-void		SYM_insert(struct sym *);
-struct sym*	SYM_lookup(TEXT *);
-void		SYM_remove(struct sym *);
+void		SYM_insert(struct sym*);
+struct sym*	SYM_lookup(const TEXT*);
+void		SYM_remove(struct sym*);
 
 #endif // JRD_SYM_PROTO_H
 

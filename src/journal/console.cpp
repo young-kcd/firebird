@@ -95,27 +95,27 @@ bool CONSOLE_start_console(int argc,
  *	Journal console function.
  *
  **************************************/
-	JRNH header;
-	TEXT **end, directory[MAXPATHLEN], buffer[2 * MAXPATHLEN];
-	SLONG channel;
+
+	TEXT directory[MAXPATHLEN], buffer[2 * MAXPATHLEN];
 	USHORT cycle, len, length;
 	enum jrnr_t reply;
 	bool single_msg = false;
-	SCHAR *msg, *dir;
 	bool sw_d;
 	bool sw_v;
 	bool sw_i;
 	TEXT mssg[128];
 
-	dir = ".";
-	msg = NULL;
+	const SCHAR* dir = ".";
+	SCHAR* msg = NULL;
 	sw_i = sw_d = sw_v = false;
 
-	for (end = argv + argc, argv++; argv < end;) {
+	const TEXT* const* const end = argv + argc;
+	++argv;
+	while (argv < end) {
 		if ((*argv)[0] != '-')
 			argv++;
 		else {
-			MISC_down_case((UCHAR*) *argv++, (UCHAR*) buffer);
+			MISC_down_case((const UCHAR*) *argv++, (UCHAR*) buffer);
 			switch (buffer[1]) {
 			case 'i':
 				sw_i = true;
@@ -162,8 +162,9 @@ bool CONSOLE_start_console(int argc,
 	GJRN_get_msg(CONSOLE_PROG, mssg, NULL, NULL, NULL);
 	// Msg 215 Journal server console program
 	printf("%s\n", mssg);
-	channel = open_connection(directory, false);
+	const SLONG channel = open_connection(directory, false);
 
+	jrnh header;
 	header.jrnh_type = JRN_CONSOLE;
 	header.jrnh_version = JOURNAL_VERSION;
 
@@ -172,7 +173,7 @@ bool CONSOLE_start_console(int argc,
 	get_reply(channel);
 
 	if (single_msg == true) {
-		MISC_down_case((UCHAR*) msg, (UCHAR*) buffer);
+		MISC_down_case((const UCHAR*) msg, (UCHAR*) buffer);
 		length = strlen(msg);
 
 		if (length > strlen(START_COMMAND))
@@ -236,7 +237,6 @@ bool CONSOLE_test_server(SCHAR * journal_dir)
  *	specified directory.
  *
  **************************************/
-	SLONG channel;
 	TEXT directory[MAXPATHLEN];
 	USHORT len;
 
@@ -250,7 +250,8 @@ bool CONSOLE_test_server(SCHAR * journal_dir)
 	directory[len++] = '/';
 	directory[len] = 0;
 
-	if ((channel = open_connection(directory, true)) < 0)
+	const SLONG channel = open_connection(directory, true);
+	if (channel < 0)
 		return false;
 
 	close_connection(channel);
@@ -599,15 +600,14 @@ static SLONG open_connection(SCHAR * filename,
  *
  **************************************/
 	sockaddr_in address;
-	HANDLE channel;
 	TEXT name[MAXPATHLEN];
 
 	strcpy(name, filename);
 	strcat(name, CONSOLE_ADDR);
 
 // Allocate a port block and initialize a socket for communications
-
-	if ((channel = (SLONG) socket(AF_INET, SOCK_STREAM, 0)) < 0)
+	HANDLE channel = (SLONG) socket(AF_INET, SOCK_STREAM, 0);
+	if (channel < 0)
 		error(errno, "socket");
 
 	memset((SCHAR *) & address, 0, sizeof(address));
@@ -647,7 +647,6 @@ static SLONG open_connection(SCHAR * filename,
  *	see if journal server is running.
  *
  **************************************/
-	HANDLE channel;
 	TEXT name[MAXPATHLEN], *p, c;
 
 	p = name;
@@ -662,6 +661,7 @@ static SLONG open_connection(SCHAR * filename,
 
 	strcpy(p, CONSOLE_FILE);
 
+	HANDLE channel;
 	while (true) {
 		channel = CreateFile(name, GENERIC_READ | GENERIC_WRITE,
 							 0, NULL, OPEN_EXISTING, 0, NULL);

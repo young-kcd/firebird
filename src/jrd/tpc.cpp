@@ -59,21 +59,20 @@ int TPC_cache_state(TDBB tdbb, SLONG number)
  *	Get the current state of a transaction in the cache.
  *
  **************************************/
-	DBB dbb;
-	TPC tip_cache;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	if (!(tip_cache = dbb->dbb_tip_cache)) {
+	tpc* tip_cache = dbb->dbb_tip_cache;
+	if (!tip_cache) {
 		TPC_initialize_tpc(tdbb, number);
 		tip_cache = dbb->dbb_tip_cache;
 	}
 
-	if (number && dbb->dbb_pc_transactions)
+	if (number && dbb->dbb_pc_transactions) {
 		if (TRA_precommited(tdbb, number, number))
 			return tra_precommitted;
+	}
 
 /* if the transaction is older than the oldest
    transaction in our tip cache, it must be committed */
@@ -83,11 +82,12 @@ int TPC_cache_state(TDBB tdbb, SLONG number)
 
 /* locate the specific TIP cache block for the transaction */
 
-	for (; tip_cache; tip_cache = tip_cache->tpc_next)
+	for (; tip_cache; tip_cache = tip_cache->tpc_next) {
 		if (number < (SLONG) (tip_cache->tpc_base + dbb->dbb_pcontrol->pgc_tpt)) {
 			return TRA_state(tip_cache->tpc_transactions,
 							 tip_cache->tpc_base, number);
 		}
+	}
 
 /* Cover all possibilities by returning active */
 
@@ -108,15 +108,12 @@ void TPC_initialize_tpc(TDBB tdbb, SLONG number)
  *	number.  This is used at TRA_start () time.
  *
  **************************************/
-	DBB dbb;
-	TPC *tip_cache_ptr, tip_cache;
-	ULONG trans_per_tip;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	if (!(tip_cache = dbb->dbb_tip_cache)) {
+	tpc* tip_cache = dbb->dbb_tip_cache;
+	if (!tip_cache) {
 		cache_transactions(tdbb, NULL, (ULONG) 0);
 		return;
 	}
@@ -127,11 +124,14 @@ void TPC_initialize_tpc(TDBB tdbb, SLONG number)
  * most recent transaction
  */
 
-	trans_per_tip = dbb->dbb_pcontrol->pgc_tpt;
+	const ULONG trans_per_tip = dbb->dbb_pcontrol->pgc_tpt;
 
+	tpc** tip_cache_ptr;
 	for (tip_cache_ptr = &dbb->dbb_tip_cache; *tip_cache_ptr;
 		 tip_cache_ptr = &(*tip_cache_ptr)->tpc_next)
+	{
 		tip_cache = *tip_cache_ptr;
+	}
 
 	if (number < (SLONG)(tip_cache->tpc_base + trans_per_tip))
 		return;
@@ -154,28 +154,24 @@ void TPC_set_state(TDBB tdbb, SLONG number, SSHORT state)
  *	in the TIP cache.
  *
  **************************************/
-	DBB dbb;
-	TPC tip_cache;
-	ULONG byte, trans_per_tip;
-	SSHORT shift;
-	UCHAR *address;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	trans_per_tip = dbb->dbb_pcontrol->pgc_tpt;
-	byte = TRANS_OFFSET(number % trans_per_tip);
-	shift = TRANS_SHIFT(number);
+	const ULONG trans_per_tip = dbb->dbb_pcontrol->pgc_tpt;
+	const ULONG byte = TRANS_OFFSET(number % trans_per_tip);
+	const SSHORT shift = TRANS_SHIFT(number);
 
-	for (tip_cache = dbb->dbb_tip_cache; tip_cache;
+	for (tpc* tip_cache = dbb->dbb_tip_cache; tip_cache;
 		 tip_cache = tip_cache->tpc_next) 
+	{
 		if (number < (SLONG)(tip_cache->tpc_base + trans_per_tip)) {
-			address = tip_cache->tpc_transactions + byte;
+			UCHAR* address = tip_cache->tpc_transactions + byte;
 			*address &= ~(TRA_MASK << shift);
 			*address |= state << shift;
 			break;
 		}
+	}
 
 /* right now we don't set the state of a transaction on a page
    that has not already been cached -- this should probably be done */
@@ -197,12 +193,11 @@ int TPC_snapshot_state(TDBB tdbb, SLONG number)
  *	further checking to see if it really is.
  *
  **************************************/
-
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	TPC tip_cache = dbb->dbb_tip_cache;
+	tpc* tip_cache = dbb->dbb_tip_cache;
 	if (!tip_cache) {
 		cache_transactions(tdbb, NULL, (ULONG) 0);
 		tip_cache = dbb->dbb_tip_cache;
@@ -297,41 +292,41 @@ void TPC_update_cache(TDBB tdbb, TIP tip_page, SLONG sequence)
  *	on that page.
  *
  **************************************/
-	DBB dbb;
-	TPC tip_cache;
-	SLONG first_trans, trans_per_tip;
-	USHORT l;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	trans_per_tip = dbb->dbb_pcontrol->pgc_tpt;
-	first_trans = sequence * trans_per_tip;
+	const SLONG trans_per_tip = dbb->dbb_pcontrol->pgc_tpt; // pgc_tpt is ULONG!!!
+	const SLONG first_trans = sequence * trans_per_tip;
 
 /* while we're in the area we can check to see if there are 
    any tip cache pages we can release--this is cheaper and 
    easier than finding out when a TIP page is dropped */
 
-	while ( (tip_cache = dbb->dbb_tip_cache) )
+	tpc* tip_cache;
+	while ( (tip_cache = dbb->dbb_tip_cache) ) {
 		if (dbb->dbb_oldest_transaction >=
-			tip_cache->tpc_base + trans_per_tip) {
+			tip_cache->tpc_base + trans_per_tip) 
+		{
 			dbb->dbb_tip_cache = tip_cache->tpc_next;
 			delete tip_cache;
 		}
 		else
 			break;
+	}
 
 /* find the appropriate page in the TIP cache and assign all transaction
    bits -- it's not worth figuring out which ones are actually used */
 
-	for (; tip_cache; tip_cache = tip_cache->tpc_next)
+	for (; tip_cache; tip_cache = tip_cache->tpc_next) {
 		if (first_trans == tip_cache->tpc_base) {
-			l = TRANS_OFFSET(trans_per_tip);
+			const USHORT l = TRANS_OFFSET(trans_per_tip);
 			MOVE_FAST(tip_page->tip_transactions, tip_cache->tpc_transactions,
 					  l);
 			break;
 		}
+	}
 
 /* note that a potential optimization here would be to extend the cache
    if the fetched page is not already in cache; it would involve a little
@@ -354,17 +349,13 @@ static TPC allocate_tpc(TDBB tdbb, ULONG base)
  *	of all transactions on one page.
  *
  **************************************/
-	DBB dbb;
-	TPC tip_cache;
-	ULONG trans_per_tip;
-
-	dbb = tdbb->tdbb_database;
-	trans_per_tip = dbb->dbb_pcontrol->pgc_tpt;
+	DBB dbb = tdbb->tdbb_database;
+	const ULONG trans_per_tip = dbb->dbb_pcontrol->pgc_tpt;
 
 /* allocate a TIP cache block with enough room for 
    all desired transactions */
 
-	tip_cache = FB_NEW_RPT(*dbb->dbb_permanent, trans_per_tip / 4) tpc();
+	tpc* tip_cache = FB_NEW_RPT(*dbb->dbb_permanent, trans_per_tip / 4) tpc();
 	tip_cache->tpc_base = base;
 
 	return tip_cache;
@@ -385,23 +376,19 @@ static void cache_transactions(TDBB tdbb, TPC * tip_cache_ptr, ULONG oldest)
  *	the oldest interesting transaction.
  *
  **************************************/
-	DBB dbb;
-	HDR header;
-	ULONG top, trans_per_tip, base;
-
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 /* check the header page for the oldest and 
    newest transaction numbers */
 
 #ifdef SUPERSERVER_V2
-	top = dbb->dbb_next_transaction;
+	const ULONG top = dbb->dbb_next_transaction;
 	oldest = MAX(oldest, dbb->dbb_oldest_transaction);
 #else
 	WIN window(HEADER_PAGE);
-	header = (HDR) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
-	top = header->hdr_next_transaction;
+	const hdr* header = (HDR) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
+	const ULONG top = header->hdr_next_transaction;
 	oldest = MAX(oldest, (ULONG) header->hdr_oldest_transaction);
 	CCH_RELEASE(tdbb, &window);
 #endif
@@ -409,12 +396,13 @@ static void cache_transactions(TDBB tdbb, TPC * tip_cache_ptr, ULONG oldest)
 /* allocate tpc blocks to hold all transaction states --
    assign one tpc block per page to simplify cache maintenance */
 
-	trans_per_tip = dbb->dbb_pcontrol->pgc_tpt;
+	const ULONG trans_per_tip = dbb->dbb_pcontrol->pgc_tpt;
 	if (!tip_cache_ptr)
 		tip_cache_ptr = &dbb->dbb_tip_cache;
 
-	for (base = oldest - oldest % trans_per_tip; base <= top;
-		 base += trans_per_tip) {
+	for (ULONG base = oldest - oldest % trans_per_tip; base <= top;
+		 base += trans_per_tip) 
+	{
 		*tip_cache_ptr = allocate_tpc(tdbb, base);
 		tip_cache_ptr = &(*tip_cache_ptr)->tpc_next;
 	}
@@ -441,31 +429,32 @@ static int extend_cache(TDBB tdbb, SLONG number)
  *	the state of the passed transaction.
  *
  **************************************/
-	DBB dbb;
-	TPC *tip_cache_ptr, tip_cache;
-	ULONG trans_per_tip;
-
-	dbb = tdbb->tdbb_database;
-	trans_per_tip = dbb->dbb_pcontrol->pgc_tpt;
+	DBB dbb = tdbb->tdbb_database;
+	const ULONG trans_per_tip = dbb->dbb_pcontrol->pgc_tpt;
 
 /* find the end of the linked list, and cache
    all transactions from that point up to the
    most recent transaction */
 
+	tpc* tip_cache = 0;
+	tpc** tip_cache_ptr;
 	for (tip_cache_ptr = &dbb->dbb_tip_cache; *tip_cache_ptr;
 		 tip_cache_ptr = &(*tip_cache_ptr)->tpc_next)
+	{
 		tip_cache = *tip_cache_ptr;
+	}
 	cache_transactions(tdbb, tip_cache_ptr,
 					   tip_cache->tpc_base + trans_per_tip);
 
 /* find the right block for this transaction and return the state */
 
 	for (tip_cache = dbb->dbb_tip_cache; tip_cache;
-		 tip_cache =
-		 tip_cache->tpc_next) 
-		if (number < (SLONG) (tip_cache->tpc_base + trans_per_tip)) 
+		 tip_cache = tip_cache->tpc_next) 
+	{
+		if (number < (SLONG) (tip_cache->tpc_base + trans_per_tip))
 			 return TRA_state(tip_cache->tpc_transactions, tip_cache->tpc_base,
 				number);
+	}
 
 /* we should never get to this point, but if we do the
    safest thing to do is return active */

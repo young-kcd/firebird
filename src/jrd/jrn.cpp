@@ -82,7 +82,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/jrn_proto.h"
 
-static int do_connect(JRN*, ISC_STATUS*, const TEXT*, USHORT, LTJC*, USHORT,
+static int do_connect(JRN*, ISC_STATUS*, const TEXT*, USHORT, ltjc*, USHORT,
 					  const UCHAR*, USHORT, int);
 static void error(ISC_STATUS*, JRN, int, const TEXT*);
 #ifdef BSD_SOCKETS
@@ -91,7 +91,7 @@ static int find_address(ISC_STATUS *, JRN, struct sockaddr_in *);
 static int get_reply(ISC_STATUS*, JRN, jrnr*);
 static int journal_close(ISC_STATUS *, JRN);
 static int jrn_put(ISC_STATUS*, JRN, jrnh*, USHORT, const UCHAR*, USHORT);
-static int retry_connect(ISC_STATUS*, JRN*, const TEXT*, USHORT, LTJC*, USHORT,
+static int retry_connect(ISC_STATUS*, JRN*, const TEXT*, USHORT, ltjc*, USHORT,
 						 const UCHAR*, USHORT);
 
 
@@ -133,7 +133,7 @@ int JRN_archive_begin(
  **************************************/
 	*ret_journal = NULL;
 	
-	LTJA record;
+	ltja record;
 	record.ltja_header.jrnh_type = JRN_ARCHIVE_BEGIN;
 	record.ltja_db_id = db_id;
 	record.ltja_file_id = file_id;
@@ -143,7 +143,7 @@ int JRN_archive_begin(
 /* Establish contact with the journal server */
 
 	return retry_connect(status_vector, ret_journal, journal_name, j_length,
-						 (LTJC *) & record, LTJA_SIZE, NULL, 0);
+						 (ltjc *) & record, LTJA_SIZE, NULL, 0);
 }
 
 
@@ -178,7 +178,7 @@ int JRN_archive_end(
 		return FB_SUCCESS;
 	}
 
-	LTJA record;
+	ltja record;
 	record.ltja_header.jrnh_type = JRN_ARCHIVE_END;
 	record.ltja_db_id = db_id;
 	record.ltja_file_id = file_id;
@@ -231,7 +231,7 @@ int JRN_archive_error(
 		return FB_SUCCESS;
 	}
 
-	LTJA record;
+	ltja record;
 	record.ltja_header.jrnh_type = JRN_ARCHIVE_ERROR;
 	record.ltja_db_id = db_id;
 	record.ltja_file_id = file_id;
@@ -303,7 +303,7 @@ int JRN_enable(
 			   ISC_STATUS* status_vector,
 			   JRN* ret_journal,
 			   const TEXT* journal_name,
-			   USHORT j_length, const UCHAR* data, USHORT d_len, LTJC* control)
+			   USHORT j_length, const UCHAR* data, USHORT d_len, ltjc* control)
 {
 /**************************************
  *
@@ -324,7 +324,7 @@ int JRN_enable(
 }
 
 
-int JRN_fini(ISC_STATUS * status_vector, JRN * jrn)
+int JRN_fini(ISC_STATUS* status_vector, JRN * jrn)
 {
 /**************************************
  *
@@ -336,9 +336,7 @@ int JRN_fini(ISC_STATUS * status_vector, JRN * jrn)
  *	Check out with journal system.
  *
  **************************************/
-	JRN journal;
-
-	journal = *jrn;
+	JRN journal = *jrn;
 	*jrn = NULL;
 
 /* If there is either a null journal block or
@@ -354,7 +352,7 @@ int JRN_fini(ISC_STATUS * status_vector, JRN * jrn)
 	}
 
 /* Send a signoff record */
-	LTJC record;
+	ltjc record;
 	record.ltjc_header.jrnh_type = JRN_SIGN_OFF;
 	record.ltjc_length = 0;
 
@@ -403,7 +401,7 @@ int JRN_init(
  *
  **************************************/
 	TEXT server_name[MAXPATHLEN];
-	LTJC control;
+	ltjc control;
 
 	if (!journal_dir) {
 		*ret_journal = NULL;
@@ -428,10 +426,10 @@ int JRN_init(
 
 
 void JRN_make_init_data(
-						UCHAR * data,
-						SSHORT * ret_len,
-						UCHAR * db_name,
-						USHORT db_len, UCHAR * backup_dir, USHORT b_length)
+						UCHAR* data,
+						SSHORT* ret_len,
+						const UCHAR* db_name,
+						USHORT db_len, const UCHAR* backup_dir, USHORT b_length)
 {
 /**************************************
  *
@@ -444,29 +442,28 @@ void JRN_make_init_data(
  *	Returns the length of the string.
  *
  **************************************/
-	UCHAR *q, *t;
 	int len;
 
-	t = data;
+	UCHAR* t = data;
 
 	if (len = b_length) {
 		*t++ = isc_dpb_wal_backup_dir;
 		fb_assert(b_length <= MAX_UCHAR);
 		*t++ = (UCHAR) b_length;
-		q = backup_dir;
-		do
+		const UCHAR* q = backup_dir;
+		do {
 			*t++ = *q++;
-		while (--len);
+		} while (--len);
 	}
 
 	if (len = db_len) {
 		*t++ = JRNW_DB_NAME;
 		fb_assert(db_len <= MAX_UCHAR);
 		*t++ = (UCHAR) db_len;
-		q = db_name;
-		do
+		const UCHAR* q = db_name;
+		do {
 			*t++ = *q++;
-		while (--len);
+		} while (--len);
 	}
 	*t++ = JRNW_END;
 
@@ -635,7 +632,7 @@ int JRN_put_wal_info(
  *	For start online dump, returns the dump id.
  *
  **************************************/
-	LTJW jrnwal;
+	ltjw jrnwal;
 	struct jrnr reply;
 
 	fb_assert(type <= MAX_UCHAR);
@@ -705,7 +702,7 @@ static int do_connect(
 					  ISC_STATUS* status_vector,
 					  const TEXT* journal_name,
 					  USHORT j_length,
-					  LTJC* control,
+					  ltjc* control,
 	USHORT control_length, const UCHAR* data, USHORT d_length, int retry)
 {
 /**************************************
@@ -974,9 +971,8 @@ static int find_address(
  **************************************/
 	IB_FILE *file;
 	SLONG addr, family, port, version;
-	TEXT *filename;
 
-	filename = journal->jrn_server;
+	const TEXT* filename = journal->jrn_server;
 
 	if (!(file = ib_fopen(filename, "r"))) {
 		error(status_vector, journal, errno, "ib_fopen");
@@ -1170,7 +1166,7 @@ static int retry_connect(
 						 JRN* journal,
 						 const TEXT* journal_name,
 						 USHORT j_length,
-	LTJC* control, USHORT control_length, const UCHAR* data, USHORT d_length)
+	ltjc* control, USHORT control_length, const UCHAR* data, USHORT d_length)
 {
 /**************************************
  *

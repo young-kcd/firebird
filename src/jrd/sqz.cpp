@@ -34,7 +34,8 @@
 
 
 
-USHORT SQZ_apply_differences(REC record, SCHAR* differences, SCHAR* end)
+USHORT SQZ_apply_differences(REC record, const SCHAR* differences,
+	const SCHAR* const end)
 {
 /**************************************
  *
@@ -53,11 +54,11 @@ USHORT SQZ_apply_differences(REC record, SCHAR* differences, SCHAR* end)
 	}
 
 	SCHAR* p     = (SCHAR*) record->rec_data;
-	SCHAR* p_end = (SCHAR*) p + record->rec_length;
+	const SCHAR* const p_end = (SCHAR*) p + record->rec_length;
 
 	while (differences < end && p < p_end)
 	{
-		SSHORT l = *differences++;
+		const SSHORT l = *differences++;
 		if (l > 0)
 		{
 			if (p + l > p_end)
@@ -85,7 +86,7 @@ USHORT SQZ_apply_differences(REC record, SCHAR* differences, SCHAR* end)
 }
 
 
-USHORT SQZ_compress(DCC dcc, const SCHAR* input, SCHAR* output, int space)
+USHORT SQZ_compress(Dcc* dcc, const SCHAR* input, SCHAR* output, int space)
 {
 /**************************************
  *
@@ -99,13 +100,12 @@ USHORT SQZ_compress(DCC dcc, const SCHAR* input, SCHAR* output, int space)
  *
  **************************************/
 	SSHORT length;
-	SCHAR *control;
 
 	const SCHAR* start = input;
 
 	while (true)
 	{
-		control = dcc->dcc_string;
+		const SCHAR* control = dcc->dcc_string;
 		while (control < dcc->dcc_end)
 		{
 			if (--space <= 0)
@@ -150,7 +150,7 @@ USHORT SQZ_compress(DCC dcc, const SCHAR* input, SCHAR* output, int space)
 }
 
 
-USHORT SQZ_compress_length(DCC dcc, SCHAR* input, int space)
+USHORT SQZ_compress_length(Dcc* dcc, const SCHAR* input, int space)
 {
 /**************************************
  *
@@ -164,13 +164,11 @@ USHORT SQZ_compress_length(DCC dcc, SCHAR* input, int space)
  *
  **************************************/
 	SSHORT length;
-	SCHAR *control;
-	SCHAR *start;
 
-	start = input;
+	const SCHAR* start = input;
 
 	while (true) {
-		control = dcc->dcc_string;
+		const SCHAR* control = dcc->dcc_string;
 		while (control < dcc->dcc_end)
 			if (--space <= 0)
 				return input - start;
@@ -196,7 +194,7 @@ USHORT SQZ_compress_length(DCC dcc, SCHAR* input, int space)
 SCHAR* SQZ_decompress(const SCHAR*	input,
 					  USHORT		length,
 					  SCHAR*		output,
-					  const SCHAR*	output_end)
+					  const SCHAR* const	output_end)
 {
 /**************************************
  *
@@ -248,7 +246,7 @@ SCHAR* SQZ_decompress(const SCHAR*	input,
 }
 
 
-USHORT SQZ_no_differences(SCHAR*	out,
+USHORT SQZ_no_differences(SCHAR* const out,
 						  int	length)
 {
 /**************************************
@@ -258,20 +256,21 @@ USHORT SQZ_no_differences(SCHAR*	out,
  **************************************
  *
  * Functional description
- *  Denerates differences record marking that there are no differences
+ *  Generates differences record marking that there are no differences
  *
  **************************************/
-	SCHAR *temp = out;
+	SCHAR* temp = out;
 	while (length > 127) {
 	  *temp++ = -127;
 	  length-=127;
 	}
-	if (length)
+	if (length) {
 	  *temp++ = -length;
-	return temp-out;
+	}
+	return temp - out;
 }
 
-USHORT SQZ_differences(SCHAR*	rec1,
+USHORT SQZ_differences(const SCHAR*	rec1,
 					   USHORT	length1,
 					   SCHAR*	rec2,
 					   USHORT	length2,
@@ -297,7 +296,7 @@ USHORT SQZ_differences(SCHAR*	rec1,
  *	Return the total length of the differences string.  
  *
  **************************************/
-	SCHAR *p, *yellow, *end, *end1, *end2, *start;
+	SCHAR *p, *yellow;
 	SLONG l;					/* This could be more than 32K since the Old and New records 
 								   could be the same for more than 32K characters. 
 								   MAX record size is currently 64K. Hence it is defined as a SLONG */
@@ -317,10 +316,10 @@ USHORT SQZ_differences(SCHAR*	rec1,
  * This was investigated as a part of solving bug 10206, bsriram - 25-Feb-1999. 
  */
 
-	start = out;
-	end = out + length;
-	end1 = rec1 + MIN(length1, length2);
-	end2 = rec2 + length2;
+	const SCHAR* const start = out;
+	const SCHAR* const end = out + length;
+	const SCHAR* const end1 = rec1 + MIN(length1, length2);
+	const SCHAR* const end2 = rec2 + length2;
 
 	while (end1 - rec1 > 2) {
 		if (rec1[0] != rec2[0] || rec1[1] != rec2[1]) {
@@ -332,7 +331,8 @@ USHORT SQZ_differences(SCHAR*	rec1,
 			yellow = (SCHAR *) MIN((U_IPTR) end1, ((U_IPTR) rec1 + 127)) - 1;
 			while (rec1 <= yellow &&
 				   (rec1[0] != rec2[0] ||
-					(rec1[1] != rec2[1] && rec1 < yellow))) {
+					(rec1[1] != rec2[1] && rec1 < yellow)))
+			{
 				STUFF(*rec2++);
 				++rec1;
 			}
@@ -374,7 +374,7 @@ USHORT SQZ_differences(SCHAR*	rec1,
 }
 
 
-void SQZ_fast(DCC dcc, SCHAR* input, SCHAR* output)
+void SQZ_fast(Dcc* dcc, const SCHAR* input, SCHAR* output)
 {
 /**************************************
  *
@@ -387,15 +387,12 @@ void SQZ_fast(DCC dcc, SCHAR* input, SCHAR* output)
  *	check nuttin' -- go for speed, man, raw SPEED!
  *
  **************************************/
-	SCHAR *control;
-	SSHORT length;
-
 	while (true)
 	{
-		control = dcc->dcc_string;
+		const SCHAR* control = dcc->dcc_string;
 		while (control < dcc->dcc_end)
 		{
-			length = *control++;
+			const SSHORT length = *control++;
 			*output++ = length;
 			if (length < 0)
 			{
@@ -418,7 +415,7 @@ void SQZ_fast(DCC dcc, SCHAR* input, SCHAR* output)
 }
 
 
-USHORT SQZ_length(TDBB tdbb, SCHAR* data, int length, DCC dcc)
+USHORT SQZ_length(TDBB tdbb, const SCHAR* data, int length, Dcc* dcc)
 {
 /**************************************
  *
@@ -431,21 +428,20 @@ USHORT SQZ_length(TDBB tdbb, SCHAR* data, int length, DCC dcc)
  *	the control string for subsequent compression.
  *
  **************************************/
-	USHORT count;
-	USHORT max;
-	SCHAR c, *end, *start, *control, *end_control;
-
 	SET_TDBB(tdbb);
 
 	dcc->dcc_next = NULL;
-	control = dcc->dcc_string;
-	end_control = dcc->dcc_string + sizeof(dcc->dcc_string);
-	end = &data[length];
+	SCHAR* control = dcc->dcc_string;
+	// end_control may be updated
+	const SCHAR* end_control = dcc->dcc_string + sizeof(dcc->dcc_string);
+	const SCHAR* const end = &data[length];
 	length = 0;
 
+	USHORT count;
+	USHORT max;
 	while ( (count = end - data) )
 	{
-		start = data;
+		const SCHAR* start = data;
 
 		/* Find length of non-compressable run */
 
@@ -499,7 +495,7 @@ USHORT SQZ_length(TDBB tdbb, SCHAR* data, int length, DCC dcc)
 		if ((max = MIN(128, end - data)) >= 3)
 		{
 			start = data;
-			c = *data;
+			const SCHAR c = *data;
 			do
 			{
 				if (*data != c)

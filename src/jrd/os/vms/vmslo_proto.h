@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Lock Manager
  *	MODULE:		vmslo_proto.h
- *	DESCRIPTION:	Prototype header file for vmslock.c
+ *	DESCRIPTION:	Prototype header file for vmslock.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,8 +24,8 @@
 #ifndef JRD_VMSLO_PROTO_H
 #define JRD_VMSLO_PROTO_H
 
-int		LOCK_convert(SLONG, UCHAR, SSHORT, int (*)(int *), int *,
-						ISC_STATUS *);
+bool	LOCK_convert(SLONG, UCHAR, SSHORT, lock_ast_t, void*,
+						ISC_STATUS*);
 int		LOCK_deq(SLONG);
 UCHAR	LOCK_downgrade(SLONG, ISC_STATUS *);
 SLONG	LOCK_enq(SLONG, SLONG, USHORT, UCHAR *, USHORT, UCHAR,
@@ -39,3 +39,4 @@ void	LOCK_re_post(int (*)(int *), int *, SLONG);
 SLONG	LOCK_write_data(SLONG, SLONG);
 
 #endif // JRD_VMSLO_PROTO_H
+

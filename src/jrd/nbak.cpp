@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.cpp,v 1.16 2003-12-22 10:00:47 robocop Exp $
+ *  $Id: nbak.cpp,v 1.17 2003-12-31 05:35:53 robocop Exp $
  *
  */
 
@@ -538,7 +538,7 @@ void BackupManager::begin_backup() {
 		}
 		// Create file
 		NBAK_TRACE(("Creating difference file %s", diff_name));
-		diff_file = PIO_create(database, diff_name, strlen(diff_name), TRUE);
+		diff_file = PIO_create(database, diff_name, strlen(diff_name), true);
 		// Zero out first page (empty allocation table)
 		bdb temp_bdb;
 		temp_bdb.bdb_page = 0;
@@ -559,7 +559,8 @@ void BackupManager::begin_backup() {
 		// disk yet. This is not a problem as it can cause only a slight performance degradation
 		backup_pages = header->hdr_backup_pages = PIO_act_alloc(database);
 		ULONG adjusted_scn = ++header->hdr_header.pag_scn(); // Generate new SCN
-		PAG_replace_entry_first(header, HDR_backup_guid, sizeof(guid), (UCHAR*)&guid);
+		PAG_replace_entry_first(header, HDR_backup_guid, sizeof(guid), 
+			reinterpret_cast<const UCHAR*>(&guid));
 
 		header_locked = false;
 		CCH_RELEASE(tdbb, &window);
@@ -1025,7 +1026,7 @@ void BackupManager::set_difference(const char* filename) {
 		header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 		CCH_MARK_MUST_WRITE(tdbb, &window);
 		PAG_replace_entry_first(header, HDR_difference_file, 
-			strlen(filename), (UCHAR*)filename);
+			strlen(filename), reinterpret_cast<const UCHAR*>(filename));
 		CCH_RELEASE(tdbb, &window);
 		strncpy(diff_name, filename, sizeof(diff_name));
 	} else {

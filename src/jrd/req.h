@@ -99,10 +99,10 @@ typedef struct rpb {
 class rec : public pool_alloc_rpt<SCHAR, type_rec>
 {
     public:
-	struct fmt *rec_format;		/* what the data looks like */
+	const struct fmt* rec_format;		/* what the data looks like */
 	struct lls *rec_precedence;	/* stack of higher precedence pages */
 	USHORT rec_length;			/* how much there is */
-	struct fmt *rec_fmt_bk;
+	const struct fmt* rec_fmt_bk;   // backup format to cope with Borland's ill null signaling
 	UCHAR rec_flags;			/* misc record flags */
 	SLONG rec_number;			/* original rpb number - used for undoing multiple updates */
 	double rec_dummy;			/* this is to force next field to a double boundary */

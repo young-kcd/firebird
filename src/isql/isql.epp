@@ -60,6 +60,7 @@
 #include <math.h>
 #include <ctype.h>
 #include <errno.h>
+#include "../common/utils_proto.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -260,6 +261,7 @@ static bool have_trans = false; // translation of word "Yes"
 static TEXT yesword[MSG_LENGTH];
 static TEXT Print_buffer[PRINT_BUFFER_LENGTH];
 
+// Didn't replace it by FB_SHORT_MONTHS because these are uppercased.
 static const SCHAR* alpha_months[] = {
 	"JAN",
 	"FEB",
@@ -578,37 +580,7 @@ void ISQL_array_dimensions(TEXT* fieldname)
 }
 
 
-SCHAR* ISQL_blankterm(TEXT* str)
-{
-/**************************************
- *
- *	I S Q L _ b l a n k t e r m
- *
- **************************************
- *
- * Functional description
- *	Trim any trailing spaces off a string;
- *	eg: find the last non blank in the string and insert
- *	a null byte after that.
- *
- *	SQL delimited identifier may have blank as part of the name
- *
- *	Parameters:  str - the string to terminate
- *	Returns:	 str
- *
- **************************************/
-// Scan to the end-of-string, record position of last non-blank seen
-	TEXT* q = str - 1;
-	for (TEXT* p = str; *p; p++) {
-		if (*p != BLANK)
-			q = p;
-	}
-
-	*(q + 1) = '\0';
-	return str;
-}
-
-// Same than ISQL_blankterm, but writes the output to the second argument.
+// Same than fb_utils::fb_exact_name, but writes the output to the second argument.
 TEXT* ISQL_blankterm2(const TEXT* input, TEXT* output)
 {
 	TEXT* q = output - 1;
@@ -837,7 +809,8 @@ void ISQL_copy_SQL_id(const TEXT* in_str,
 	/* CVC: Try to detect if we can get rid of double quotes as
 	   requested by Ann. Notice empty names need double quotes.
 	   Assume the caller invoked previously ISQL_blankterm() that's
-	   just another function like DYN_terminate, MET_exact_name, etc. */
+	   just another function like DYN_terminate, MET_exact_name, etc.
+	   ISQL_blankterm has been replaced by fb_utils::fb_exact_name. */
 
 	if (escape_char == DBL_QUOTE) {
 		// Cannot rely on ANSI functions that may be localized. 
@@ -1102,9 +1075,9 @@ void ISQL_get_character_sets(SSHORT char_set_id,
 #ifdef DEV_BUILD
 			found = true;
 #endif
-			ISQL_blankterm (CST.RDB$CHARACTER_SET_NAME);
-			ISQL_blankterm (COL.RDB$COLLATION_NAME);
-			ISQL_blankterm (CST.RDB$DEFAULT_COLLATE_NAME);
+			fb_utils::fb_exact_name(CST.RDB$CHARACTER_SET_NAME);
+			fb_utils::fb_exact_name(COL.RDB$COLLATION_NAME);
+			fb_utils::fb_exact_name(CST.RDB$DEFAULT_COLLATE_NAME);
 
 			/* Is specified collation the default collation for character set? */
 			if (strcmp (CST.RDB$DEFAULT_COLLATE_NAME, COL.RDB$COLLATION_NAME) == 0) {
@@ -1138,7 +1111,7 @@ void ISQL_get_character_sets(SSHORT char_set_id,
 #ifdef DEV_BUILD
 			found = true;
 #endif
-			ISQL_blankterm (CST.RDB$CHARACTER_SET_NAME);
+			fb_utils::fb_exact_name(CST.RDB$CHARACTER_SET_NAME);
 
 			sprintf (string, " CHARACTER SET %s", CST.RDB$CHARACTER_SET_NAME);
 		END_FOR
@@ -1175,7 +1148,7 @@ void ISQL_get_default_source(const TEXT* rel_name,
  *	For a domain, a NULL is passed for rel_name
  **************************************/
 
-	ISQL_blankterm(field_name);
+	fb_utils::fb_exact_name(field_name);
 
 	*blob_id = isc_blob_null;
 
@@ -1258,7 +1231,7 @@ SLONG ISQL_get_index_segments(TEXT* segs,
 
 		// Place a comma and a blank between each segment column name 
 
-		ISQL_blankterm (SEG.RDB$FIELD_NAME);
+		fb_utils::fb_exact_name(SEG.RDB$FIELD_NAME);
 		if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION && delimited_yes) {
 			ISQL_copy_SQL_id (SEG.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
 		}
@@ -1324,8 +1297,8 @@ bool ISQL_get_base_column_null_flag(const TEXT* view_name,
 	bool done = false;
 	bool error = false;
 	while (!done && !error) {
-		ISQL_blankterm(save_view_name);
-		ISQL_blankterm(save_base_field);
+		fb_utils::fb_exact_name(save_view_name);
+		fb_utils::fb_exact_name(save_base_field);
 		FOR FIRST 1
 			VR IN RDB$VIEW_RELATIONS
 			CROSS NEWRFR IN RDB$RELATION_FIELDS
@@ -1369,7 +1342,7 @@ bool ISQL_get_null_flag(const TEXT* rel_name,
  *	We are passed the relation name and the relation_field name
  *  	For domains, the relation name is null.
  **************************************/
-	ISQL_blankterm(field_name);
+	fb_utils::fb_exact_name(field_name);
 
 	bool null_flag = true;
 
@@ -5635,7 +5608,7 @@ static SSHORT print_item(TEXT** s,
 	SLONG length = printlength;
 
 	if (List) {
-		sprintf(Print_buffer, "%-31s ", ISQL_blankterm(var->aliasname));
+		sprintf(Print_buffer, "%-31s ", fb_utils::fb_exact_name(var->aliasname));
 		ISQL_printf(Out, Print_buffer);
 	}
 

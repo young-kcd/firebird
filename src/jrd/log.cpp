@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		log.c
+ *	MODULE:		log.cpp
  *	DESCRIPTION:	Log all OSRI calls
  *
  * The contents of this file are subject to the Interbase Public
@@ -173,15 +173,15 @@ At 04:58 PM 11/6/96 -0800, David Schnepper wrote:
 
 */
 
-static void error(TEXT *);
+static void error(const TEXT*);
 static void log_char(SCHAR);
 static void log_flush(void);
 static void log_long(SLONG);
-static void log_pointer(SCHAR *);
+static void log_pointer(const SCHAR*);
 static void log_short(SSHORT);
-static void log_string(SSHORT, SCHAR *);
-static void log_teb(SSHORT, TEB *);
-static void open_log(TEXT *, SSHORT, SCHAR *);
+static void log_string(SSHORT, const SCHAR*);
+static void log_teb(SSHORT, const TEB*);
+static void open_log(const TEXT*, SSHORT, const SCHAR*);
 
 #define PUT(c)	log_char(c)
 
@@ -200,7 +200,6 @@ void LOG_call(enum log_t call_type, ...)
  *	bugs in a production environment.
  *
  **************************************/
-	DBB dbb;
 	SCHAR *arg_type;
 	SSHORT number;
 	SLONG long_number;
@@ -208,7 +207,7 @@ void LOG_call(enum log_t call_type, ...)
 	SLONG *long_pointer;
 	va_list ptr;
 
-	dbb = GET_DBB;
+	DBB dbb = GET_DBB;
 
 	if (!dbb || !dbb->dbb_log || !dbb->dbb_log->log_file)
 		return;
@@ -290,9 +289,7 @@ void LOG_disable(void)
  *	Disable logging.
  *
  **************************************/
-	DBB dbb;
-
-	dbb = GET_DBB;
+	DBB dbb = GET_DBB;
 
 /* Get header page and look for logging entry */
 
@@ -317,9 +314,7 @@ void LOG_enable(TEXT * log_file_name, USHORT l_length)
  *	Enable replay logging for the database.
  *
  **************************************/
-	DBB dbb;
-
-	dbb = GET_DBB;
+	DBB dbb = GET_DBB;
 
 /* if we are already enabled for another file, get rid of it */
 
@@ -356,11 +351,8 @@ void LOG_fini(void)
  *	Close down the log file for replay logging.
  *
  **************************************/
-	DBB dbb;
+	DBB dbb = GET_DBB;
 	LOG log;
-
-	dbb = GET_DBB;
-
 	if (dbb && (log = dbb->dbb_log)) {
 		if (log->log_file) {
 			log_flush();
@@ -400,7 +392,7 @@ void LOG_init(TEXT * name, USHORT length)
 }
 
 
-static void error(TEXT * error_string)
+static void error(const TEXT* error_string)
 {
 /**************************************
  *
@@ -413,16 +405,13 @@ static void error(TEXT * error_string)
  *	both to the terminal and to the log.
  *
  **************************************/
-	DBB dbb;
-	SSHORT length;
-
-	dbb = GET_DBB;
+	DBB dbb = GET_DBB;
 
 	ib_printf("ERROR in logging system: %s\n", error_string);
 
 	if (dbb->dbb_log && dbb->dbb_log->log_file) {
 		log_short(log_error);
-		length = strlen(error_string);
+		const SSHORT length = strlen(error_string);
 		log_short(length);
 	}
 }
@@ -441,12 +430,9 @@ static void log_char(SCHAR c)
  *	for later flushing to the log.
  *
  **************************************/
-	DBB dbb;
-	LOG log;
+	DBB dbb = GET_DBB;
 
-	dbb = GET_DBB;
-
-	log = dbb->dbb_log;
+	LOG log = dbb->dbb_log;
 	*log->log_ptr++ = c;
 
 /* this log flush could be done in the middle of an OSRI
@@ -474,17 +460,13 @@ static void log_flush(void)
  *	at it.
  *
  **************************************/
-	DBB dbb;
-	LOG log;
-	UCHAR *buffer;
+	DBB dbb = GET_DBB;
 
-	dbb = GET_DBB;
-
-	log = dbb->dbb_log;
+	LOG log = dbb->dbb_log;
 	if (!(log->log_ptr - log->log_buffer))
 		return;
 
-	buffer = log->log_buffer;
+	const UCHAR* buffer = log->log_buffer;
 	ib_fwrite(buffer, sizeof(*buffer), log->log_ptr - log->log_buffer,
 			  log->log_file);
 	log->log_ptr = log->log_buffer;
@@ -505,18 +487,14 @@ static void log_long(SLONG number)
  *	Log a longword.
  *
  **************************************/
-	SLONG vax_number;
-	USHORT i;
-	SCHAR *p;
-
-	vax_number = gds__vax_integer(&number, sizeof(number));
-	p = (SCHAR *) & vax_number;
-	for (i = 0; i < sizeof(number); i++)
+	const SLONG vax_number = gds__vax_integer(&number, sizeof(number));
+	const char* p = (SCHAR *) & vax_number;
+	for (int i = 0; i < sizeof(number); i++)
 		PUT(*p++);
 }
 
 
-static void log_pointer(SCHAR * pointer)
+static void log_pointer(const SCHAR* pointer)
 {
 /**************************************
  *
@@ -528,11 +506,8 @@ static void log_pointer(SCHAR * pointer)
  *	Log a pointer.
  *
  **************************************/
-	USHORT i;
-	SCHAR *p;
-
-	p = (SCHAR *) & pointer;
-	for (i = 0; i < sizeof(pointer); i++)
+	const char* p = (SCHAR *) & pointer;
+	for (int i = 0; i < sizeof(pointer); i++)
 		PUT(*p++);
 }
 
@@ -549,18 +524,14 @@ static void log_short(SSHORT number)
  *	Log a shortword.
  *
  **************************************/
-	USHORT vax_number;
-	USHORT i;
-	SCHAR *p;
-
-	vax_number = (USHORT) gds__vax_integer(&number, sizeof(number));
-	p = (SCHAR *) & vax_number;
-	for (i = 0; i < sizeof(number); i++)
+	const USHORT vax_number = (USHORT) gds__vax_integer(&number, sizeof(number));
+	const char* p = (SCHAR *) & vax_number;
+	for (int i = 0; i < sizeof(number); i++)
 		PUT(*p++);
 }
 
 
-static void log_string(SSHORT buffer_size, SCHAR * buffer)
+static void log_string(SSHORT buffer_size, const SCHAR* buffer)
 {
 /**************************************
  *
@@ -572,13 +543,12 @@ static void log_string(SSHORT buffer_size, SCHAR * buffer)
  *	Log a buffer of unknown content.
  *
  **************************************/
-
 	while (buffer_size--)
 		PUT(*buffer++);
 }
 
 
-static void log_teb(SSHORT count, TEB * vector)
+static void log_teb(SSHORT count, const TEB* vector)
 {
 /**************************************
  *
@@ -590,9 +560,7 @@ static void log_teb(SSHORT count, TEB * vector)
  *	Log a transaction element block.
  *
  **************************************/
-	TEB *end;
-
-	for (end = vector + count; vector < end; vector++) {
+	for (TEB* const end = vector + count; vector < end; vector++) {
 		log_pointer(*vector->teb_database);
 		log_long((SLONG) vector->teb_tpb_length);
 		log_string(vector->teb_tpb_length, vector->teb_tpb);
@@ -600,7 +568,8 @@ static void log_teb(SSHORT count, TEB * vector)
 }
 
 
-static void open_log(TEXT * file_name, SSHORT file_length, SCHAR * mode)
+static void open_log(const TEXT* file_name, SSHORT file_length, 
+					 const SCHAR* mode)
 {
 /**************************************
  *
@@ -612,31 +581,29 @@ static void open_log(TEXT * file_name, SSHORT file_length, SCHAR * mode)
  *	Open the log file.
  *
  **************************************/
-	DBB dbb;
-	LOG log;
-	SCHAR *log_name, buffer[MAXPATHLEN];
-	void *log_file;
-	int mask;
-
-	dbb = GET_DBB;
+	DBB dbb = GET_DBB;
 
 	if (dbb->dbb_log)
 		LOG_fini();
 
+	SCHAR buffer[MAXPATHLEN];
+	const SCHAR* log_name;
 	if (file_length)
 		log_name = file_name;
-	else
+	else {
 		gds__prefix(buffer, LOG_FILE_NAME);
-	log_name = buffer;
+		log_name = buffer;
+	}
 
-	mask = umask(0111);
-	log_file = ib_fopen(log_name, mode);
+	const int mask = umask(0111);
+	void* log_file = ib_fopen(log_name, mode);
 	umask(mask);
 
 	if (!log_file)
 		error("can't open log file");
 	else {
-		dbb->dbb_log = log = FB_NEW(*dbb->dbb_permanent) log();
+		LOG log = FB_NEW(*dbb->dbb_permanent) log();
+		dbb->dbb_log = log;
 		log->log_file = log_file;
 		log->log_string = FB_NEW_RPT(*dbb->dbb_permanent, LOG_BUFFER_LENGTH) str();
 		log->log_ptr = log->log_buffer = log->log_string->str_data;

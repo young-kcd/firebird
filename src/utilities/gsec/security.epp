@@ -258,15 +258,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 
 		found = false;
 		/* Do not allow SYSDBA user to be deleted */
-#ifdef HAVE_STRCASECMP
-		if (!strcasecmp(io_user_data->user_name, SYSDBA_USER_NAME))
-#else
-#ifdef HAVE_STRICMP
-		if (!stricmp(io_user_data->user_name, SYSDBA_USER_NAME))
-#else
-#error dont know how to compare strings case insensitive on this system
-#endif /* HAVE_STRICMP */
-#endif /* HAVE_STRCASECMP */
+		if (!fb_stricmp(io_user_data->user_name, SYSDBA_USER_NAME))
 			ret = GsecMsg23;
 		else {
 			FOR U IN USERS WITH U.USER_NAME EQ io_user_data->user_name

@@ -69,7 +69,7 @@ static void util_output(const SCHAR*, ...);
 
 static void data_print(void*, const internal_user_data*, bool);
 static bool get_line(int*, SCHAR**, TEXT*, tsec*);
-static bool get_switches(int, const TEXT* const*, IN_SW_TAB, tsec*, bool*);
+static bool get_switches(int, const TEXT* const*, const in_sw_tab_t*, tsec*, bool*);
 static SSHORT parse_cmd_line(int, const TEXT* const*, tsec*);
 static void printhelp(void);
 #ifndef SUPERSERVER
@@ -520,7 +520,7 @@ static bool get_line(int* argc, SCHAR** argv, TEXT* stuff, tsec* tdsec)
 static bool get_switches(
 							int argc,
 							const TEXT* const* argv,
-							IN_SW_TAB in_sw_table,
+							const in_sw_tab_t* in_sw_table,
 							tsec* tdsec, bool* quitflag)
 {
 /**************************************

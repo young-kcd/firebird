@@ -20,11 +20,11 @@ private:
 	HANDLE dir;
 	WIN32_FIND_DATA fd;
 	Firebird::string file;
-	int done;
+	bool done;
 };
 
 Win32DirItr::Win32DirItr(const Firebird::string& path)
-	: dir_iterator(path), dir(0), done(0)
+	: dir_iterator(path), dir(0), done(false)
 {
 	Firebird::string dirPrefix2 = dirPrefix;
 
@@ -35,7 +35,7 @@ Win32DirItr::Win32DirItr(const Firebird::string& path)
 	dir = FindFirstFile(dirPrefix2.c_str(), &fd);
 	if (dir == INVALID_HANDLE_VALUE) {
 		dir = 0;
-		done = 1;
+		done = true;
 	}
 }
 
@@ -45,7 +45,7 @@ Win32DirItr::~Win32DirItr()
 		FindClose(dir);
 
 	dir = 0;
-	done = 1;
+	done = true;
 }
 
 const PathUtils::dir_iterator& Win32DirItr::operator++()
@@ -54,7 +54,7 @@ const PathUtils::dir_iterator& Win32DirItr::operator++()
 		return *this;
 
 	if (!FindNextFile(dir, &fd))
-		done = 1;
+		done = true;
 	else
 		PathUtils::concatPath(file, dirPrefix, fd.cFileName);
 	
@@ -129,7 +129,8 @@ bool PathUtils::isRelative(const Firebird::string& path)
 		if (path.length() > 2) {
 			if (path[1] == ':' && 
 				(('A' <= path[0] && path[0] <= 'Z') || 
-				 ('a' <= path[0] && path[0] <= 'z'))) {
+				 ('a' <= path[0] && path[0] <= 'z')))
+			{
 						ds = path[2];
 			}
 		}

@@ -139,7 +139,7 @@ ULONG MISC_checksum_log_rec(const UCHAR* header,
 #endif /* DEV_BUILD */
 
 
-UCHAR *MISC_pop(STK * stack)
+UCHAR *MISC_pop(stk** stack)
 {
 /**************************************
  *
@@ -152,11 +152,8 @@ UCHAR *MISC_pop(STK * stack)
  *	Returns the address of the popped object.
  *
  **************************************/
-	STK node;
-	UCHAR *object;
-
-	node = *stack;
-	object = node->stk_object;
+	stk* node = *stack;
+	UCHAR* object = node->stk_object;
 	*stack = node->stk_next;
 	gds__free(node);
 
@@ -164,7 +161,7 @@ UCHAR *MISC_pop(STK * stack)
 }
 
 
-STK MISC_push(UCHAR * object, STK * stack)
+stk* MISC_push(UCHAR* object, stk** stack)
 {
 /**************************************
  *
@@ -177,9 +174,7 @@ STK MISC_push(UCHAR * object, STK * stack)
  *	Returns the address of the new top of the stack.
  *
  **************************************/
-	STK node;
-
-	node = (STK) gds__alloc((SLONG) sizeof(struct stk));
+	stk* node = (stk*) gds__alloc((SLONG) sizeof(struct stk));
 /* FREE: in MISC_pop(), NOMEM: return a NULL top of stack */
 	if (!node)
 		return NULL;

@@ -1055,7 +1055,7 @@ static void deliver_request(EVT_REQ request)
 
 	delete_request(request);
 	RELEASE;
-	reinterpret_cast<void(*)(...)>(*ast)(arg, p - event_buffer, event_buffer);
+	(*ast)(arg, p - event_buffer, event_buffer);
 	if (event_buffer != buffer)
 	{
 		gds__free(event_buffer);

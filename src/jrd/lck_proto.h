@@ -27,7 +27,7 @@
 #include "../jrd/lck.h"
 
 void	LCK_assert(TDBB, struct lck *);
-int		LCK_convert(TDBB, struct lck *, USHORT, SSHORT);
+bool	LCK_convert(TDBB, struct lck *, USHORT, SSHORT);
 int		LCK_convert_non_blocking(TDBB, struct lck *, USHORT, SSHORT);
 int		LCK_convert_opt(TDBB, struct lck *, USHORT);
 int		LCK_downgrade(TDBB, struct lck *);

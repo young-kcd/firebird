@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.93 2003-11-16 10:31:33 brodsom Exp $
+$Id: common.h,v 1.94 2003-12-31 05:35:52 robocop Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -999,22 +999,88 @@ void GDS_breakpoint(int);
 
 /* switch name and state table.  This structure should be used in all
  * command line tools to facilitate parsing options.*/
-typedef struct in_sw_tab_t {
+struct in_sw_tab_t {
 	int in_sw;
 	int in_spb_sw;
-	TEXT *in_sw_name;
+	const TEXT* in_sw_name;
 	ULONG in_sw_value;			/* alice specific field */
 	ULONG in_sw_requires;		/* alice specific field */
 	ULONG in_sw_incompatibilities;	/* alice specific field */
 	USHORT in_sw_state;
 	USHORT in_sw_msg;
 	USHORT in_sw_min_length;
-	TEXT *in_sw_text;
+	TEXT* in_sw_text;
 
-} *IN_SW_TAB;
+};
 
 #ifndef HAVE_WORKING_VFORK
 #define vfork fork
 #endif
 
+
+static const TEXT* FB_SHORT_MONTHS[][4] =
+{
+	"Jan", "Feb", "Mar",
+	"Apr", "May", "Jun",
+	"Jul", "Aug", "Sep",
+	"Oct", "Nov", "Dec",
+	0
+};
+
+static const TEXT* FB_LONG_MONTHS_UPPER[] =
+{
+	"JANUARY",
+	"FEBRUARY",
+	"MARCH",
+	"APRIL",
+	"MAY",
+	"JUNE",
+	"JULY",
+	"AUGUST",
+	"SEPTEMBER",
+	"OCTOBER",
+	"NOVEMBER",
+	"DECEMBER",
+	0
+};
+
+
+
+// ======================================
+// BEGIN AUTOCONF ABSTRACTION LAYER
+// CVC: It's unacceptable that we pollute all the sources with the
+// #ifdef HAVE_<something> feature. While the function prototypes are
+// compatible or the extra params are ignored or we can pass default values,
+// we must wrap those functions in FB names.
+
+#include <string.h>
+inline int fb_stricmp(const char* a, const char* b)
+{
+#if defined(HAVE_STRCASECMP)
+		return strcasecmp(a, b);
+#elif defined(HAVE_STRICMP)
+		return stricmp(a, b);
+#else
+#error dont know how to compare strings case insensitive on this system
+#endif
+}
+
+#ifdef WIN_NT
+#include <direct.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+inline char* fb_getcwd(char* output_buf, size_t len)
+{
+#if defined(WIN_NT)
+	return _getcwd(output_buf, len);
+#elif defined(HAVE_GETCWD)
+	return getcwd(output_buf, len);
+#else
+	return getwd(output_buf);
+#endif
+}
+
 #endif /* JRD_COMMON_H */
+

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase International support
- *	MODULE:		lc_iso8859_1.c
+ *	MODULE:		lc_iso8859_1.cpp
  *	DESCRIPTION:	Language Drivers in the is8859_1 family.
  *			(full International collation)
  *
@@ -27,7 +27,7 @@
 #include "ld_proto.h"
 
 static USHORT fam2_to_upper(TEXTTYPE obj, BYTE ch);
-static SSHORT fam2_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr);
+static SSHORT fam2_str_to_upper(TEXTTYPE obj, USHORT iLen, const BYTE* pStr, USHORT iOutLen, BYTE *pOutStr);
 static USHORT fam2_to_lower(TEXTTYPE obj, BYTE ch);
 
 #include "lc_narrow.h"
@@ -540,15 +540,14 @@ static USHORT fam2_to_upper(TEXTTYPE obj, BYTE ch)
 /*
  *	Returns -1 if output buffer was too small
  */
-static SSHORT fam2_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr)
+static SSHORT fam2_str_to_upper(TEXTTYPE obj, USHORT iLen, const BYTE* pStr, USHORT iOutLen, BYTE *pOutStr)
 {
-	BYTE *p;
 	fb_assert(pStr != NULL);
 	fb_assert(pOutStr != NULL);
 	fb_assert(iLen <= 32000);		/* almost certainly an error */
 	fb_assert(iOutLen <= 32000);	/* almost certainly an error */
 	fb_assert(iOutLen >= iLen);
-	p = pOutStr;
+	const BYTE* const p = pOutStr;
 	while (iLen && iOutLen) {
 		*pOutStr++ = LOCALE_UPPER(*pStr);
 		pStr++;
@@ -574,3 +573,4 @@ static USHORT fam2_to_lower(TEXTTYPE obj, BYTE ch)
 
 #undef LOCALE_UPPER
 #undef LOCALE_LOWER
+

@@ -287,7 +287,7 @@ typedef struct lrq {
 	srq lrq_lbl_requests;		/* Que of requests (active, pending) */
 	srq lrq_own_blocks;			/* Owner block que */
 	lock_ast_t lrq_ast_routine;	/* Block ast routine */
-	void *lrq_ast_argument;		/* Ast argument */
+	void* lrq_ast_argument;		/* Ast argument */
 } *LRQ;
 
 #define LRQ_blocking    1		/* Request is blocking */

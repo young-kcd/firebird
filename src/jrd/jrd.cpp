@@ -1986,7 +1986,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 		return user_status[1];
 	}
 	dbb->dbb_file =
-		PIO_create(dbb, expanded_name, length_expanded, options.dpb_overwrite);
+		PIO_create(dbb, expanded_name, length_expanded, options.dpb_overwrite != 0);
 	const fil* first_dbb_file = dbb->dbb_file;
 	if (options.dpb_set_page_buffers)
 		dbb->dbb_page_buffers = options.dpb_page_buffers;
@@ -4197,11 +4197,7 @@ USHORT JRD_getdir(TEXT* buf, USHORT len)
 		if (pwd)
 			strcpy(buf, pwd->pw_dir);
 		else	/* No home dir for this users here. Default to server dir */
-#ifdef HAVE_GETCWD
-			getcwd(buf, len);
-#else
-			getwd(buf);
-#endif
+			fb_getcwd(buf, len);
 #endif
 	}
 	else
@@ -5054,11 +5050,7 @@ static void get_options(const UCHAR*	dpb,
 					else {		/*No home dir for this users here. Default to server dir */
 
 					    **scratch = 0;
-#ifdef HAVE_GETCWD
-				        if (getcwd(*scratch, MIN(MAXPATHLEN, buf_size)))
-#else
-				        if (getwd(*scratch))
-#endif
+				        if (fb_getcwd(*scratch, MIN(MAXPATHLEN, buf_size)))
 							l = strlen(*scratch) + 1;
 					    else
 							l = buf_size;	

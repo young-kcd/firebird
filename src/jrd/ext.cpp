@@ -140,10 +140,7 @@ EXT EXT_file(JRD_REL relation, const TEXT * file_name, SLONG * description)
  *	Create a file block for external file access.
  *
  **************************************/
-	DBB dbb;
-	EXT file;
-
-	dbb = GET_DBB;
+	DBB dbb = GET_DBB;
 	CHECK_DBB(dbb);
 
 /* if we already have a external file associated with this relation just
@@ -166,8 +163,8 @@ EXT EXT_file(JRD_REL relation, const TEXT * file_name, SLONG * description)
 		file_name = Path.c_str();
 	}
 
-	relation->rel_file = file =
-		FB_NEW_RPT(*dbb->dbb_permanent, (strlen(file_name) + 1)) ext();
+	ext* file = FB_NEW_RPT(*dbb->dbb_permanent, (strlen(file_name) + 1)) ext();
+	relation->rel_file = file;
 	strcpy(reinterpret_cast<char*>(file->ext_filename), file_name);
 	file->ext_flags = 0;
 	file->ext_ifi = NULL;
@@ -182,14 +179,17 @@ EXT EXT_file(JRD_REL relation, const TEXT * file_name, SLONG * description)
 	{
 		/* could not open the file as read write attempt as read only */
 		if (!(file->ext_ifi = (int *) ext_fopen(file_name, FOPEN_READ_ONLY)))
+		{
 			ERR_post(isc_io_error,
 					 isc_arg_string, "ib_fopen",
 					 isc_arg_string,
 					 ERR_cstring(reinterpret_cast <
 								 char *>(file->ext_filename)),
 					isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
-		else
+		}
+		else {
 			file->ext_flags |= EXT_readonly;
+		}
 	}
 
 	return file;
@@ -208,10 +208,8 @@ void EXT_fini(JRD_REL relation)
  *	Close the file associated with a relation.
  *
  **************************************/
-	EXT file;
-
 	if (relation->rel_file) {
-		file = relation->rel_file;
+		ext* file = relation->rel_file;
 		if (file->ext_ifi)
 			ib_fclose((IB_FILE *) file->ext_ifi);
 		/* before zeroing out the rel_file we need to deallocate the memory */
@@ -233,47 +231,35 @@ int EXT_get(RSB rsb)
  *	Get a record from an external file.
  *
  **************************************/
-	TDBB tdbb;
-	JRD_REQ request;
-	JRD_REL relation;
-	EXT file;
-	RPB *rpb;
-	REC record;
-	FMT format;
-	LIT literal;
-	JRD_FLD field;
-	DSC desc;
-	SSHORT c, l, offset, i;
-	UCHAR *p;
-	vec::iterator itr;
+ 	TDBB tdbb = GET_THREAD_DATA;
 
-	tdbb = GET_THREAD_DATA;
-
-	relation = rsb->rsb_relation;
-	file = relation->rel_file;
-	request = tdbb->tdbb_request;
+	jrd_rel* relation = rsb->rsb_relation;
+	ext* file = relation->rel_file;
+	jrd_req* request = tdbb->tdbb_request;
 
 	if (request->req_flags & req_abort)
 		return FALSE;
 
-	rpb = &request->req_rpb[rsb->rsb_stream];
-	record = rpb->rpb_record;
-	format = record->rec_format;
+	RPB* rpb = &request->req_rpb[rsb->rsb_stream];
+	rec* record = rpb->rpb_record;
+	const fmt* format = record->rec_format;
 
-	offset = (SSHORT) (SLONG) format->fmt_desc[0].dsc_address;
-	p = record->rec_data + offset;
-	l = record->rec_length - offset;
+	const SSHORT offset = (SSHORT) (SLONG) format->fmt_desc[0].dsc_address;
+	UCHAR* p = record->rec_data + offset;
+	SSHORT l = record->rec_length - offset;
 
 	if (file->ext_ifi == 0 ||
 		(ib_fseek((IB_FILE *) file->ext_ifi, rpb->rpb_ext_pos, 0) != 0))
+	{
 		ERR_post(isc_io_error,
 				 isc_arg_string, "ib_fseek",
 				 isc_arg_string,
 				 ERR_cstring(reinterpret_cast < char *>(file->ext_filename)),
 				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
+	}
 
 	while (l--) {
-		c = ib_getc((IB_FILE *) file->ext_ifi);
+		const SSHORT c = ib_getc((IB_FILE *) file->ext_ifi);
 		if (c == EOF)
 			return FALSE;
 		*p++ = c;
@@ -283,15 +269,19 @@ int EXT_get(RSB rsb)
 /* Loop thru fields setting missing fields to either blanks/zeros
    or the missing value */
 
-	fmt::fmt_desc_iterator desc_ptr = format->fmt_desc.begin();
+	dsc desc;
+	fmt::fmt_desc_const_iterator desc_ptr = format->fmt_desc.begin();
 
-	for (i = 0, itr = relation->rel_fields->begin();
-			i < format->fmt_count; ++i, ++itr, ++desc_ptr) {
-	    field = (JRD_FLD) (*itr);
+    SSHORT i = 0;
+	for (vec::iterator itr = relation->rel_fields->begin();
+			i < format->fmt_count; ++i, ++itr, ++desc_ptr)
+	{
+	    const jrd_fld* field = (JRD_FLD) (*itr);
 		SET_NULL(record, i);
 		if (!desc_ptr->dsc_length || !field)
 			continue;
-		if ( (literal = (LIT) field->fld_missing_value) ) {
+		const lit* literal = (LIT) field->fld_missing_value;
+		if (literal) {
 			desc = *desc_ptr;
 			desc.dsc_address = record->rec_data + (int) desc.dsc_address;
 			if (!MOV_compare(&literal->lit_desc, &desc))
@@ -334,20 +324,15 @@ void EXT_open(RSB rsb)
  *	Open a record stream for an external file.
  *
  **************************************/
-	TDBB tdbb;
-	JRD_REL relation;
-	JRD_REQ request;
-	RPB *rpb;
-	REC record;
-	FMT format;
+	TDBB tdbb = GET_THREAD_DATA;
 
-	tdbb = GET_THREAD_DATA;
+	jrd_rel* relation = rsb->rsb_relation;
+	jrd_req* request = tdbb->tdbb_request;
+	RPB* rpb = &request->req_rpb[rsb->rsb_stream];
 
-	relation = rsb->rsb_relation;
-	request = tdbb->tdbb_request;
-	rpb = &request->req_rpb[rsb->rsb_stream];
-
-	if (!(record = rpb->rpb_record) || !(format = record->rec_format)) {
+	const fmt* format;
+	rec* record = rpb->rpb_record;
+	if (!record || !(format = record->rec_format)) {
 		format = MET_current(tdbb, relation);
 		VIO_record(tdbb, rpb, format, request->req_pool);
 	}
@@ -369,23 +354,17 @@ RSB EXT_optimize(OPT opt, SSHORT stream, JRD_NOD * sort_ptr)
  *	set of record source blocks (rsb's).
  *
  **************************************/
-	TDBB tdbb;
-	CSB csb;
-	JRD_REL relation;
-	RSB rsb_;
 /* all these are un refrenced due to the code commented below
 JRD_NOD		node, inversion;
 opt::opt_repeat	*tail, *opt_end;
 SSHORT		i, size;
 */
-	SSHORT size;
-	csb_repeat *csb_tail;
 
-	tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
 
-	csb = opt->opt_csb;
-	csb_tail = &csb->csb_rpt[stream];
-	relation = csb_tail->csb_relation;
+	CSB csb = opt->opt_csb;
+	csb_repeat* csb_tail = &csb->csb_rpt[stream];
+	jrd_rel* relation = csb_tail->csb_relation;
 
 /* Time to find inversions.  For each index on the relation
    match all unused booleans against the index looking for upper
@@ -419,9 +398,9 @@ if (opt->opt_count)
 */
 
 
-	rsb_ = FB_NEW_RPT(*tdbb->tdbb_default,0) Rsb;
+	Rsb* rsb_ = FB_NEW_RPT(*tdbb->tdbb_default,0) Rsb;
 	rsb_->rsb_type = rsb_ext_sequential;
-	size = sizeof(irsb);
+	const SSHORT size = sizeof(irsb);
 
 	rsb_->rsb_stream = stream;
 	rsb_->rsb_relation = relation;
@@ -459,20 +438,10 @@ void EXT_store(RPB * rpb, int *transaction)
  *	Update an external file.
  *
  **************************************/
-	JRD_REL relation;
-	REC record;
-	FMT format;
-	EXT file;
-	JRD_FLD field;
-	LIT literal;
-	DSC desc;
-	UCHAR *p;
-	USHORT i, l, offset;
-
-	relation = rpb->rpb_relation;
-	file = relation->rel_file;
-	record = rpb->rpb_record;
-	format = record->rec_format;
+	jrd_rel* relation = rpb->rpb_relation;
+	ext* file = relation->rel_file;
+	rec* record = rpb->rpb_record;
+	const fmt* format = record->rec_format;
 
 /* Loop thru fields setting missing fields to either blanks/zeros
    or the missing value */
@@ -480,57 +449,60 @@ void EXT_store(RPB * rpb, int *transaction)
 /* check if file is read only if read only then
    post error we cannot write to this file */
 	if (file->ext_flags & EXT_readonly) {
-		DBB dbb;
-
-		dbb = GET_DBB;
+		DBB dbb = GET_DBB;
 		CHECK_DBB(dbb);
 		/* Distinguish error message for a ReadOnly database */
 		if (dbb->dbb_flags & DBB_read_only)
 			ERR_post(isc_read_only_database, 0);
-		else
+		else {
 			ERR_post(isc_io_error,
 					 isc_arg_string, "insert",
 					 isc_arg_string, file->ext_filename,
 					 isc_arg_gds, isc_io_write_err,
 					 isc_arg_gds, isc_ext_readonly_err, 0);
+		}
 	}
 
+	dsc desc;
 	vec::iterator field_ptr = relation->rel_fields->begin();
-	fmt::fmt_desc_iterator desc_ptr = format->fmt_desc.begin();
+	fmt::fmt_desc_const_iterator desc_ptr = format->fmt_desc.begin();
 
-	for (i = 0; i < format->fmt_count; i++, field_ptr++, desc_ptr++)
+	for (USHORT i = 0; i < format->fmt_count; i++, field_ptr++, desc_ptr++)
 	{
-		field = (JRD_FLD)*field_ptr;
+		const jrd_fld* field = (JRD_FLD)*field_ptr;
 		if (field &&
 			!field->fld_computation &&
 			desc_ptr->dsc_length &&
 			TEST_NULL(record, i))
 		{
-			p = record->rec_data + (int) desc_ptr->dsc_address;
-			if ( (literal = (LIT) field->fld_missing_value) ) {
+			UCHAR* p = record->rec_data + (int) desc_ptr->dsc_address;
+			const lit* literal = (LIT) field->fld_missing_value;
+			if (literal) {
 				desc = *desc_ptr;
 				desc.dsc_address = p;
 				MOV_move(&literal->lit_desc, &desc);
 			}
 			else {
-				l = desc_ptr->dsc_length;
-				offset = (desc_ptr->dsc_dtype == dtype_text) ? ' ' : 0;
-				do
-					*p++ = offset;
-				while (--l);
+				USHORT l = desc_ptr->dsc_length;
+				const UCHAR pad = (desc_ptr->dsc_dtype == dtype_text) ? ' ' : 0;
+				do {
+					*p++ = pad;
+				} while (--l);
 			}
 		}
 	}
 
-	offset = (USHORT) (ULONG) format->fmt_desc[0].dsc_address;
-	p = record->rec_data + offset;
-	l = record->rec_length - offset;
+	const USHORT offset = (USHORT) (ULONG) format->fmt_desc[0].dsc_address;
+	const UCHAR* p = record->rec_data + offset;
+	USHORT l = record->rec_length - offset;
 
 	if (file->ext_ifi == 0
 		|| (ib_fseek((IB_FILE *) file->ext_ifi, (SLONG) 0, 2) != 0))
+	{
 		ERR_post(isc_io_error, isc_arg_string, "ib_fseek", isc_arg_string,
 				 ERR_cstring(reinterpret_cast < char *>(file->ext_filename)),
 				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
+	}
 	for (; l--; ++p)
 		ib_putc(*p, (IB_FILE *) file->ext_ifi);
 	ib_fflush((IB_FILE *) file->ext_ifi);

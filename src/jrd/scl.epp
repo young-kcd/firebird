@@ -61,6 +61,8 @@
 #include "../jrd/scl_proto.h"
 #include "../jrd/thd_proto.h"
 #include "../include/fb_exception.h"
+#include "../common/utils_proto.h"
+
 
 #ifdef VMS
 #define UIC_BASE	8
@@ -350,7 +352,7 @@ void SCL_check_procedure(DSC* dsc_name, USHORT mask)
 		*p++ = *q++;
 	*p = 0;
 	} // end scope block
-    MET_exact_name(name);
+    fb_utils::fb_exact_name(name);
 
 	DBB dbb = tdbb->tdbb_database;
 
@@ -406,7 +408,7 @@ void SCL_check_relation(DSC* dsc_name, USHORT mask)
 		*p++ = *q++;
 	*p = 0;
 	} // end scope block
-	MET_exact_name(name);
+	fb_utils::fb_exact_name(name);
 
 	DBB dbb = tdbb->tdbb_database;
 
@@ -453,7 +455,7 @@ SCL SCL_get_class(/* INOUT */ TEXT* string)
 	if (!string)
 		return NULL;
 
-	MET_exact_name(string);
+	fb_utils::fb_exact_name(string);
 
 	if (!string[0])
 		return NULL;
@@ -547,10 +549,10 @@ int SCL_get_mask(const TEXT* relation_name, const TEXT* field_name)
 
 void SCL_init(bool create,
 			  const TEXT* sys_user_name,
-			  TEXT* user_name,
-			  TEXT* password,
-			  TEXT* password_enc,
-			  TEXT* sql_role,
+			  const TEXT* user_name,
+			  const TEXT* password,
+			  const TEXT* password_enc,
+			  const TEXT* sql_role,
 			  TDBB tdbb,
 			  bool internal)
 {
@@ -576,8 +578,8 @@ void SCL_init(bool create,
 
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
-	USHORT major_version = dbb->dbb_ods_version;
-	USHORT minor_original = dbb->dbb_minor_original;
+	const USHORT major_version = dbb->dbb_ods_version;
+	const USHORT minor_original = dbb->dbb_minor_original;
 
 	*project = *organization = *name = *role_name = *login_name = '\0';
 
@@ -674,7 +676,7 @@ void SCL_init(bool create,
         // CVC: If this is ODS>=ODS_9_0 and we aren't creating a db and sql_role was specified,
         // then verify it against rdb$roles and rdb$user_privileges
         
-        if (!create && sql_role && *sql_role && strcmp (sql_role, "NONE")) {
+        if (!create && sql_role && *sql_role && strcmp(sql_role, "NONE")) {
             bool found = false;
             for (p = login_name, q = name; *p++ = UPPER7 (*q); q++);
             
@@ -722,7 +724,7 @@ void SCL_init(bool create,
             strcpy(role_name, sql_role);
         }
         /* CVC: Role is an identifier, it may have embedded blanks. */
-        MET_exact_name(role_name);
+        fb_utils::fb_exact_name(role_name);
 	}
 	else {
 		strcpy(role_name, "NONE");

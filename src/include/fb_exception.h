@@ -40,7 +40,7 @@ public:
 		{ return "Firebird::status_exception"; }
 	ISC_STATUS value() const { return m_s; }
 
-	static void raise(ISC_STATUS s);
+	static void raise(const ISC_STATUS s);
 
 private:
 	ISC_STATUS m_s;
@@ -76,12 +76,12 @@ public:
 class fatal_exception : public std::exception
 {
 public:
-	explicit fatal_exception(char *message);
+	explicit fatal_exception(const char* message);
 	virtual ~fatal_exception() throw() {}
 	virtual const char* what() const throw()
 		{ return txt; }
 
-	static void raise(char *message);
+	static void raise(const char* message);
 
 private:
 	char txt[256];
@@ -90,3 +90,4 @@ private:
 }	// namespace Firebird
 
 #endif	// FB_EXCEPTION_H
+

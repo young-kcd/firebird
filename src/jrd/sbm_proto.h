@@ -34,9 +34,9 @@ void SBM_dump(IB_FILE *, SBM);
 
 struct sbm**	SBM_and(struct sbm **, struct sbm **);
 int			SBM_clear(struct sbm *, SLONG);
-BOOLEAN		SBM_equal(SBM, SBM);
+bool		SBM_equal(SBM, SBM);
 void		SBM_init(void);
-int			SBM_next(struct sbm *, SLONG *, enum rse_get_mode);
+bool		SBM_next(struct sbm *, SLONG *, enum rse_get_mode);
 struct sbm**	SBM_or(struct sbm **, struct sbm **);
 void		SBM_release(struct sbm *);
 void		SBM_reset(struct sbm **);

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		rng.c
+ *	MODULE:		rng.cpp
  *	DESCRIPTION:	Refresh Range Handler
  *
  * The contents of this file are subject to the Interbase Public

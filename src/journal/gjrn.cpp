@@ -154,7 +154,7 @@ int CLIB_ROUTINE main(int argc,
 	if (s_argc > 1) {
 		s_argv++;
 		s_argc--;
-		MISC_down_case((UCHAR*) s_argv[0], (UCHAR*) string);
+		MISC_down_case((const UCHAR*) s_argv[0], (UCHAR*) string);
 
 		if (string[1] == 'z') {
 			s_argc--;
@@ -461,7 +461,7 @@ static bool start_disable(int argc,
 			continue;
 		}
 
-		MISC_down_case((UCHAR*) *argv++, (UCHAR*) string);
+		MISC_down_case((const UCHAR*) *argv++, (UCHAR*) string);
 		switch (string[1]) {
 		case 'v':
 			sw_v = true;
@@ -565,7 +565,7 @@ static bool start_dump(int argc,
 			continue;
 		}
 
-		MISC_down_case((UCHAR*) *argv++, (UCHAR*) string);
+		MISC_down_case((const UCHAR*) *argv++, (UCHAR*) string);
 		switch (string[1]) {
 		case 'd':
 			sw_d = true;
@@ -790,7 +790,7 @@ static bool start_enable(int argc,
 			continue;
 		}
 
-		MISC_down_case((UCHAR*) *argv++, (UCHAR*) string);
+		MISC_down_case((const UCHAR*) *argv++, (UCHAR*) string);
 		switch (string[1]) {
 		case 'a':
 			if (--argc > 0) {

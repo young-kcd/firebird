@@ -60,9 +60,9 @@ static int old_dump_page(OLD, ULONG);
 static void old_fini(OLD *, USHORT);
 static int old_init(OLD*, const SCHAR*, USHORT, SSHORT, SCHAR**, ULONG, ULONG,
 					SSHORT, SSHORT, ULONG, ULONG, ULONG);
-static int old_put(OLD, SCHAR *, USHORT);
+static int old_put(OLD, const SCHAR*, USHORT);
 static void old_put_db_filename(OLD);
-static int old_put_rec(OLD, JRNH *, USHORT, UCHAR *, USHORT);
+static int old_put_rec(OLD, JRNH*, USHORT, const UCHAR*, USHORT);
 static int open_next_file(OLD);
 
 
@@ -89,7 +89,6 @@ int OLD_dump(
  *			    Other relevent info to pick up where it leaves off.
  *
  **************************************/
-	PGC pgc;
 	UCHAR byte;
 	SLONG sequence;
 	OLD OLD_handle;
@@ -182,17 +181,17 @@ int OLD_dump(
 
 	temp_page = (PIP) gds__alloc(dbb->dbb_page_size);
 
-	pgc = dbb->dbb_pcontrol;
+	pgc* pgcontrol = dbb->dbb_pcontrol;
 
 	WIN window(-1);
 	for (sequence = 0;; sequence++) {
-		window.win_page = (sequence) ? (SLONG) (sequence * pgc->pgc_ppp - 1) :
-			(SLONG) pgc->pgc_pip;
+		window.win_page = (sequence) ? (SLONG) (sequence * pgcontrol->pgc_ppp - 1) :
+			(SLONG) pgcontrol->pgc_pip;
 		window.win_flags = 0;
 		page = (PIP) CCH_FETCH(NULL, &window, LCK_read, pag_pages);
 		MOVE_FAST((UCHAR *) page, (UCHAR *) temp_page, dbb->dbb_page_size);
 		CCH_RELEASE(NULL, &window);
-		if (start_page < (ULONG) ((sequence + 1) * pgc->pgc_ppp)) {
+		if (start_page < (ULONG) ((sequence + 1) * pgcontrol->pgc_ppp)) {
 			last_page = old_dump_all_pages(OLD_handle, temp_page,
 										   sequence, start_page);
 			/* Check for error */
@@ -202,7 +201,7 @@ int OLD_dump(
 
 		/* check if we are at end of database files */
 
-		byte = temp_page->pip_bits[pgc->pgc_bytes - 1];
+		byte = temp_page->pip_bits[pgcontrol->pgc_bytes - 1];
 
 		/* 
 		 * When pages are allocated, the last page available on a PIP
@@ -292,7 +291,7 @@ static int close_cur_file(OLD old, USHORT code)
 }
 
 
-static int create_file(OLD old, SLONG * ret_fd)
+static int create_file(OLD old, SLONG* ret_fd)
 {
 /**************************************
  *
@@ -306,21 +305,17 @@ static int create_file(OLD old, SLONG * ret_fd)
  *		FB_FAILURE - open fails 
  *
  **************************************/
-	TDBB tdbb;
 	SLONG fd;
 	SLONG len;
-	OLD_HDR hdr;
-	OLDBLK ob;
-	OLD_HDR_PAGE hp;
-	DBB dbb;
 
-	dbb = GET_DBB;
-	tdbb = GET_THREAD_DATA;
+	// Shouldn't TDBB be set first???
+	DBB dbb = GET_DBB;
+	TDBB tdbb = GET_THREAD_DATA;
 
 	*ret_fd = -1;
 
-	ob = old->old_block;
-	hdr = ob->ob_hdr;
+	oldblk* ob = old->old_block;
+	old_hdr* hdr = ob->ob_hdr;
 
 	if (LLIO_open(tdbb->tdbb_status_vector, old->old_files[old->old_cur_file],
 				  LLIO_OPEN_NEW_RW, true, &fd) == FB_FAILURE)
@@ -334,7 +329,7 @@ static int create_file(OLD old, SLONG * ret_fd)
 	hdr->oh_hdr_len = OLD_HEADER_SIZE;
 	hdr->oh_seqno = 0;
 
-	hp = (OLD_HDR_PAGE) hdr->oh_buf;
+	old_hdr_page* hp = (old_hdr_page*) hdr->oh_buf;
 	hp->hp_rec_size = old->old_rec_size;
 	hp->hp_dump_id = old->old_dump_id;
 	hp->hp_file_seqno = old->old_file_seqno;
@@ -380,12 +375,10 @@ static void get_wal_offset(
  *	Write a record to WAL to get seqno offset pair
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	LTJW record;
+	ltjw record;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = GET_DBB;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = GET_DBB;
 
 	record.ltjw_header.jrnh_type = type;
 	record.ltjw_mode = 0;
@@ -421,25 +414,19 @@ static SLONG old_dump_all_pages(
  *			next page to be dumped
  *
  **************************************/
-	DBB dbb;
-	PGC pgc;
-	UCHAR *end, *bytes, bit;
-	SSHORT i;
-	SLONG relative_bit;
-	ULONG page_num;
+	DBB dbb = GET_DBB;
 
-	dbb = GET_DBB;
+	pgc* pgcontrol = dbb->dbb_pcontrol;
 
-	pgc = dbb->dbb_pcontrol;
-
-	end = (UCHAR *) pages + dbb->dbb_page_size;
-	for (bytes = pages->pip_bits; bytes < end; bytes++) {
-		for (i = 0, bit = 1; i < 8; i++, bit <<= 1)
+	const UCHAR* const end = (UCHAR *) pages + dbb->dbb_page_size;
+	for (UCHAR* bytes = pages->pip_bits; bytes < end; bytes++) {
+		SSHORT i = 0;
+		for (UCHAR bit = 1; i < 8; i++, bit <<= 1)
 			if (!(bit & *bytes)) {
 				/* page is inuse, dump it */
 
-				relative_bit = ((bytes - pages->pip_bits) << 3) + i;
-				page_num = relative_bit + sequence * pgc->pgc_ppp;
+				const SLONG relative_bit = ((bytes - pages->pip_bits) << 3) + i;
+				const ULONG page_num = relative_bit + sequence * pgcontrol->pgc_ppp;
 
 				/* skip forward till the start page */
 				if (page_num < start_page)
@@ -465,11 +452,10 @@ static int old_dump_page(OLD OLD_handle, ULONG page_number)
  *	Dump a page to the WAL.  If necessary, fetch it.
  *
  **************************************/
-	DBB dbb;
 	jrnd record;
 	SSHORT ret_val;
 
-	dbb = GET_DBB;
+	DBB dbb = GET_DBB;
 
 	record.jrnd_header.jrnh_type = JRN_PAGE;
 	record.jrnd_page = page_number;
@@ -478,9 +464,9 @@ static int old_dump_page(OLD OLD_handle, ULONG page_number)
 	WIN window(page_number);
 	CCH_FETCH_NO_CHECKSUM(NULL, &window, LCK_read, pag_undefined);
 	ret_val = old_put_rec(OLD_handle,
-						  reinterpret_cast < jrnh * >(&record),
+						  reinterpret_cast<jrnh*>(&record),
 						  JRND_SIZE,
-						  reinterpret_cast < UCHAR * >(window.win_buffer),
+						  reinterpret_cast<const UCHAR*>(window.win_buffer),
 						  dbb->dbb_page_size);
 
 	CCH_RELEASE(NULL, &window);
@@ -573,7 +559,7 @@ static int old_init(
 }
 
 
-static int old_put(OLD OLD_handle, SCHAR * logrec, USHORT len)
+static int old_put(OLD OLD_handle, const SCHAR* logrec, USHORT len)
 {
 /**************************************
  *
@@ -587,14 +573,11 @@ static int old_put(OLD OLD_handle, SCHAR * logrec, USHORT len)
  *	If we are out of space, return an error.
  *
  **************************************/
-	UCHAR *p, *q;
-	OLD_HDR hdr;
-	OLDBLK ob;
 	SLONG l;
 	USHORT ret;
 
-	ob = OLD_handle->old_block;
-	hdr = ob->ob_hdr;
+	oldblk* ob = OLD_handle->old_block;
+	old_hdr* hdr = ob->ob_hdr;
 
 	if (len > MAX_OLDBUFLEN - OLD_OVHD)
 		len = MAX_OLDBUFLEN - OLD_OVHD;
@@ -614,11 +597,11 @@ static int old_put(OLD OLD_handle, SCHAR * logrec, USHORT len)
 	hdr->oh_type = OLD_DATA;
 	hdr->oh_hdr_len = len;
 	hdr->oh_seqno = ob->ob_cur_seqno;
-	p = (UCHAR *) hdr->oh_buf;
+	UCHAR* p = (UCHAR *) hdr->oh_buf;
 	MOVE_FAST(logrec, p, len);
 
 	p += len;
-	q = (UCHAR *) & len;
+	const UCHAR* q = (UCHAR *) & len;
 	*p++ = *q++;
 	*p++ = *q++;
 
@@ -656,11 +639,10 @@ static void old_put_db_filename(OLD OLD_handle)
  *     Write the file name of all secondary files to OLD
  *
  **************************************/
-	DBB dbb;
-	JRNF journal;
+	jrnf journal;
 	FIL fil;
 
-	dbb = GET_DBB;
+	DBB dbb = GET_DBB;
 
 	for (fil = dbb->dbb_file; fil; fil = fil->fil_next) {
 		/* Skip primary db file */
@@ -672,9 +654,9 @@ static void old_put_db_filename(OLD OLD_handle)
 		journal.jrnf_sequence = fil->fil_sequence;
 		journal.jrnf_length = fil->fil_length;
 		old_put_rec(OLD_handle,
-					reinterpret_cast < jrnh * >(&journal),
+					reinterpret_cast<jrnh*>(&journal),
 					JRNF_SIZE,
-					reinterpret_cast < UCHAR * >(fil->fil_string),
+					reinterpret_cast<const UCHAR*>(fil->fil_string),
 					fil->fil_length);
 	}
 }
@@ -683,7 +665,7 @@ static void old_put_db_filename(OLD OLD_handle)
 static int old_put_rec(
 					   OLD OLD_handle,
 					   JRNH * header,
-					   USHORT h_length, UCHAR * data, USHORT d_length)
+					   USHORT h_length, const UCHAR* data, USHORT d_length)
 {
 /**************************************
  *
@@ -695,12 +677,11 @@ static int old_put_rec(
  *	Write a journal record to WAL.
  *
  **************************************/
-	USHORT length;
-	UCHAR buffer[MAX_RECORD], *p, *q;
+	UCHAR buffer[MAX_RECORD];
 
 /* Prepare OLD record for writing */
 
-	length = h_length + d_length;
+	const USHORT length = h_length + d_length;
 
 	header->jrnh_handle = 0;
 	header->jrnh_length = length;
@@ -720,16 +701,17 @@ static int old_put_rec(
 
 /* Concatenate header and data. */
 
-	p = buffer;
-	q = (UCHAR *) header;
-	do
+	UCHAR* p = buffer;
+	const UCHAR* q = (UCHAR *) header;
+	do {
 		*p++ = *q++;
-	while (--h_length);
+	} while (--h_length);
 
-	if (d_length)
-		do
+	if (d_length) {
+		do {
 			*p++ = *data++;
-		while (--d_length);
+		} while (--d_length);
+	}
 
 	return old_put(OLD_handle, reinterpret_cast < char *>(buffer), length);
 }
@@ -749,14 +731,12 @@ static int open_next_file(OLD old)
  *		FB_FAILURE - open fails, no more file etc.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
 	SLONG fd;
 	SLONG ret_val;
 	SCHAR name[MAXPATHLEN];
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 	if (old->old_fd > 0) {
 		if (close_cur_file(old, OLD_EOF) == FB_FAILURE)

@@ -265,12 +265,11 @@ static SLONG oldr_open_file( OLD old)
  *
  **************************************/
 	OLD_HDR hdr;
-	OLD_HDR_PAGE hp;
 	OLDBLK ob;
 	SLONG fd;
 	SLONG len;
 	SCHAR buf[MAXPATHLEN];
-	hdr_page header;
+	old_hdr_page header;
 
 	ob = old->old_block;
 	hdr = ob->ob_hdr;
@@ -288,8 +287,8 @@ static SLONG oldr_open_file( OLD old)
 		return FB_FAILURE;
 	}
 
-	hp = (OLD_HDR_PAGE) hdr->oh_buf;
-	memcpy((SCHAR *) & header, (SCHAR *) hp, sizeof(hdr_page));
+	old_hdr_page* hp = (old_hdr_page*) hdr->oh_buf;
+	memcpy((SCHAR *) & header, (SCHAR *) hp, sizeof(old_hdr_page));
 
 	old->old_file_size = header.hp_file_size;
 

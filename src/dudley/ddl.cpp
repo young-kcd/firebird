@@ -80,7 +80,7 @@ enum in_sw_values {
 	IN_SW_GDEF_PASSWORD		// password for PC security
 };
 
-static in_sw_tab_t gdef_in_sw_table[] = {
+static const in_sw_tab_t gdef_in_sw_table[] = {
 	{ IN_SW_GDEF_G, 0, "EXTRACT", 0, 0, 0, FALSE, 0, 0,
 		"\t\textract definition from database"}, 	/* extract DDL from database */
 	{ IN_SW_GDEF_R, 0, "REPLACE", 0, 0, 0, FALSE, 0, 0,
@@ -120,12 +120,9 @@ int CLIB_ROUTINE main( int argc, char* argv[])
  *
  **************************************/
 	IB_FILE *input_file;
-	TEXT *p, *q, *string, file_name_1[256], file_name_2[256],
+	TEXT *string, file_name_1[256], file_name_2[256],
 		buffer[256];
 	USHORT in_sw;
-	IN_SW_TAB in_sw_tab;
-	ACT temp, stack;
-	FIL file;
 
 #ifdef VMS
 	argc = VMS_parse(&argv, argc);
@@ -186,9 +183,11 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 			/* iterate through the switch table, looking for matches */
 
 			in_sw = IN_SW_GDEF_0;
-			for (in_sw_tab = gdef_in_sw_table; q = in_sw_tab->in_sw_name;
-				 in_sw_tab++) {
-				p = string + 1;
+			const TEXT* q;
+			for (const in_sw_tab_t* in_sw_tab = gdef_in_sw_table;
+				q = in_sw_tab->in_sw_name; in_sw_tab++)
+			{
+				const TEXT* p = string + 1;
 
 				/* handle orphaned hyphen case */
 
@@ -287,10 +286,14 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 			if (*string != '?')
 				DDL_msg_put(1, string, 0, 0, 0, 0);	/* msg 1: gdef: unknown switch %s */
 			DDL_msg_put(2, 0, 0, 0, 0, 0);	/* msg 2: \tlegal switches are: */
-			for (in_sw_tab = gdef_in_sw_table; in_sw_tab->in_sw; in_sw_tab++)
-				if (in_sw_tab->in_sw_text)
+			for (const in_sw_tab_t* in_sw_tab = gdef_in_sw_table;
+				in_sw_tab->in_sw; in_sw_tab++)
+			{
+				if (in_sw_tab->in_sw_text) {
 					DDL_msg_put(3, in_sw_tab->in_sw_name,
 								in_sw_tab->in_sw_text, 0, 0, 0);	/* msg 3: %s%s */
+				}
+			}
 			DDL_exit(FINI_ERROR);
 		}
 	}
@@ -328,14 +331,16 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 
 		/* first find the extension by going to the end and backing up */
 
-		for (p = DDL_file_name; *p; p++);
+		const TEXT* p = DDL_file_name;
+		while (*p)
+			++p;
 		while ((p != DDL_file_name) && (*p != '.') && (*p != '/'))
-			p--;
+			--p;
 
 		/* then handle the case where the input already ends in .GDL */
 
 		if (*p == '.') {
-			for (const TEXT* q2 = DDL_EXT; UPPER(*p) == UPPER(*q2); p++, q2++)
+			for (const TEXT* q2 = DDL_EXT; UPPER(*p) == UPPER(*q2); p++, q2++) {
 				if (!*p) {
 					input_file = ib_fopen(DDL_file_name, FOPEN_INPUT_TYPE);
 					if (!input_file) {
@@ -343,6 +348,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 						DDL_exit(FINI_ERROR);
 					}
 				}
+			}
 		}
 
 		/* if we got this far without opening it, it's time to add the new extension */
@@ -387,9 +393,9 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 
 /* Reverse the set of actions */
 
-	stack = NULL;
+	act* stack = NULL;
 	while (DDL_actions) {
-		temp = DDL_actions;
+		act* temp = DDL_actions;
 		DDL_actions = temp->act_next;
 		temp->act_next = stack;
 		stack = temp;
@@ -415,8 +421,11 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 
 	if (DDL_errors) {
 		if (database && (database->dbb_flags & DBB_create_database)) {
-			for (file = database->dbb_files; file; file = file->fil_next)
+			for (const fil* file = database->dbb_files; file;
+				file = file->fil_next)
+			{
 				unlink(file->fil_name->sym_name);
+			}
 			unlink(database->dbb_name->sym_string);
 		}
 		DDL_exit(FINI_ERROR);

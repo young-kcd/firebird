@@ -67,14 +67,6 @@ static void dmp_transactions(TIP, ULONG);
 
 static int dmp_descending = 0;
 
-static const SCHAR months[][4] = {
-	"Jan", "Feb", "Mar",
-	"Apr", "May", "Jun",
-	"Jul", "Aug", "Sep",
-	"Oct", "Nov", "Dec"
-};
-
-
 #define TRANS_SHIFT(number)	(((number) & TRA_MASK) << 1)
 #define TRANS_OFFSET(number)	((number) >> TRA_SHIFT)
 
@@ -710,7 +702,7 @@ static void dmp_header(HDR page)
 
 	isc_decode_timestamp((GDS_TIMESTAMP *) page->hdr_creation_date, &time);
 	ib_fprintf(dbg_file, "\tCreation date:\t%s %d, %d %d:%02d:%02d\n",
-			   months[time.tm_mon], time.tm_mday, time.tm_year + 1900,
+			   FB_SHORT_MONTHS[time.tm_mon], time.tm_mday, time.tm_year + 1900,
 			   time.tm_hour, time.tm_min, time.tm_sec);
 
 	ib_fprintf(dbg_file,

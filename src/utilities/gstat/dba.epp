@@ -57,6 +57,8 @@
 #include "../utilities/common/cmd_util_proto.h"
 #include "../jrd/thd_proto.h"
 #endif
+#include "../common/utils_proto.h"
+
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -79,7 +81,7 @@ DATABASE DB = STATIC "yachts.lnk";
 #define BUCKETS		5
 #define WINDOW_SIZE	(1 << 17)
 
-typedef struct dba_idx {
+struct dba_idx {
 	struct dba_idx *idx_next;
 	SSHORT idx_id;
 	SSHORT idx_depth;
@@ -90,9 +92,9 @@ typedef struct dba_idx {
 	SLONG idx_data_length;
 	SLONG idx_fill_distribution[BUCKETS];
 	SCHAR idx_name[32];
-} *DBA_IDX;
+};
 
-typedef struct dba_rel {
+struct dba_rel {
 	struct dba_rel *rel_next;
 	struct dba_idx *rel_indexes;
 	SLONG rel_index_root;
@@ -108,11 +110,11 @@ typedef struct dba_rel {
 	ULONG rel_total_space;
 	SSHORT rel_id;
 	SCHAR rel_name[32];
-} *DBA_REL;
+};
 
 /* kidnapped from jrd/pio.h and abused */
 
-typedef struct dba_fil {
+struct dba_fil {
 	struct dba_fil *fil_next;	/* Next file in database */
 	ULONG fil_min_page;			/* Minimum page number in file */
 	ULONG fil_max_page;			/* Maximum page number in file */
@@ -124,14 +126,14 @@ typedef struct dba_fil {
 #endif
 	USHORT fil_length;			/* Length of expanded file name */
 	SCHAR fil_string[1];		/* Expanded file name */
-} *DBA_FIL;
+};
 
-static SCHAR *alloc(size_t);
-static void analyze_data(DBA_REL, bool);
-static bool analyze_data_page(DBA_REL, DPG, bool);
-static ULONG analyze_fragments(DBA_REL, RHDF);
-static ULONG analyze_versions(DBA_REL, RHDF);
-static void analyze_index(DBA_REL, DBA_IDX);
+static SCHAR* alloc(size_t);
+static void analyze_data(dba_rel*, bool);
+static bool analyze_data_page(dba_rel*, DPG, bool);
+static ULONG analyze_fragments(const dba_rel*, const rhdf*);
+static ULONG analyze_versions(dba_rel*, RHDF);
+static void analyze_index(dba_rel*, dba_idx*);
 
 #if (defined WIN_NT)
 static void db_error(SLONG);
@@ -139,16 +141,17 @@ static void db_error(SLONG);
 static void db_error(int);
 #endif
 
-static DBA_FIL db_open(const char*, USHORT);
+static dba_fil* db_open(const char*, USHORT);
 static PAG db_read(SLONG);
 #ifdef SUPERSERVER
 static void db_close(int);
 #endif
-static void move(SCHAR *, SCHAR *, SSHORT);
-static void print_distribution(SCHAR *, SLONG *);
-static void truncate_name(SCHAR *);
-static void dba_error(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
-static void dba_print(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
+static void move(const SCHAR*, SCHAR*, SSHORT);
+static void print_distribution(const SCHAR*, const SLONG*);
+static void dba_error(USHORT, const TEXT*, const TEXT*, const TEXT*,
+	const TEXT*, const TEXT*);
+static void dba_print(USHORT, const TEXT*, const TEXT*, const TEXT*,
+	const TEXT*, const TEXT*);
 
 #ifndef INCLUDE_FB_BLK
 #include "../include/fb_blk.h"
@@ -169,15 +172,15 @@ static void dba_print(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
 
 #define FPRINTF		SVC_fprintf
 
-typedef struct open_files {
+struct open_files {
 	int desc;
 	struct open_files *open_files_next;
-} open_files;
+};
 
-typedef struct dba_mem {
+struct dba_mem {
 	char *memory;
 	struct dba_mem *mem_next;
-} dba_mem;
+};
 #endif
 
 #ifndef FPRINTF
@@ -186,11 +189,11 @@ typedef struct dba_mem {
 
 /* threading declarations for thread data */
 
-typedef struct tdba {
+struct tdba {
 	struct thdd tdba_thd_data;
 	UCHAR *dba_env;
-	DBA_FIL files;
-	DBA_REL relations;
+	dba_fil* files;
+	dba_rel* relations;
 	SSHORT page_size;
 	SLONG page_number;
 	PAG buffer1;
@@ -198,29 +201,29 @@ typedef struct tdba {
 	PAG global_buffer;
 	int exit_code;
 #ifdef SUPERSERVER
-	SVC sw_outfile;
+	svc* sw_outfile;
 	dba_mem *head_of_mem_list;
 	open_files *head_of_files_list;
 	SVC dba_service_blk;
 #else
-	IB_FILE *sw_outfile;
+	IB_FILE* sw_outfile;
 #endif
 	ISC_STATUS *dba_status;
 	ISC_STATUS_ARRAY dba_status_vector;
-} *TDBA;
+};
 
 #ifdef GET_THREAD_DATA
 #undef GET_THREAD_DATA
 #endif
 
 #ifdef SUPERSERVER
-#define GET_THREAD_DATA	        ((TDBA) THD_get_specific())
+#define GET_THREAD_DATA	        ((tdba*) THD_get_specific())
 #define SET_THREAD_DATA         {  tddba = &thd_context;           \
                 		   THD_put_specific ((THDD) tddba);\
 				   tddba->tdba_thd_data.thdd_type = THDD_TYPE_TDBA; }
 #define RESTORE_THREAD_DATA     THD_restore_specific()
 #else
-static struct tdba *gddba;
+static struct tdba* gddba;
 
 #define GET_THREAD_DATA	        (gddba)
 #define SET_THREAD_DATA         gddba = tddba = &thd_context; \
@@ -228,7 +231,7 @@ static struct tdba *gddba;
 #define RESTORE_THREAD_DATA
 #endif
 
-void inline dba_exit(int code, TDBA tddba)
+void inline dba_exit(int code, tdba* tddba)
 {
 	tddba->exit_code = code;
 	Firebird::status_exception::raise(0);
@@ -250,7 +253,7 @@ static bool fAnsiCP = false;
 int main_gstat( SVC service)
 #else
 
-int CLIB_ROUTINE main(int argc, char **argv)
+int CLIB_ROUTINE main(int argc, char** argv)
 #endif
 {
 /**************************************
@@ -264,13 +267,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
  *	of a database.
  *
  **************************************/
-	IN_SW_TAB in_sw_tab;
-	DBA_REL relation;
-	DBA_IDX index;
-	HDR header;
-	DBA_FIL current;
-	SCHAR **end, *p, temp[1024], file_name[1024];
-	double average;
+	SCHAR temp[1024], file_name[1024];
 	bool sw_system = false;
 	bool sw_data = false;
 	bool sw_index = false;
@@ -279,28 +276,12 @@ int CLIB_ROUTINE main(int argc, char **argv)
 	bool sw_log = false;
 	bool sw_record = false;
 	bool sw_relation = false;
-	UCHAR *vp, *vend;
 	isc_db_handle db_handle = NULL;
-#ifdef SUPERSERVER
-	SVC sw_outfile;
-	int argc;
-	char **argv;
-	open_files *open_file, *tmp1;
-	dba_mem *alloced, *tmp2;
-#else
-	IB_FILE *sw_outfile;
-#endif
-	TEXT *q, *str, c;
-	UCHAR *dpb;
-	SSHORT dpb_length;
-	UCHAR dpb_string[256];
 	UCHAR buf[256];
 	UCHAR pass_buff[128], user_buff[128], *password = pass_buff, *username =
 		user_buff;
 	struct tdba thd_context, *tddba;
 	JMP_BUF env;
-	isc_tr_handle transact1;
-	isc_req_handle request1, request2, request3;
 #if defined (WIN95) && !defined (SUPERSERVER)
 	BOOL fAnsiCP;
 #endif
@@ -312,8 +293,8 @@ int CLIB_ROUTINE main(int argc, char **argv)
 
 #ifdef SUPERSERVER
 /* Reinitialize static variables for multi-threading */
-	argc = service->svc_argc;
-	argv = service->svc_argv;
+	int argc = service->svc_argc;
+	char** argv = service->svc_argv;
 #endif
 
 	ISC_STATUS* status_vector = NULL;
@@ -321,9 +302,9 @@ int CLIB_ROUTINE main(int argc, char **argv)
 	try {
 
 #ifdef SUPERSERVER
-	sw_outfile = tddba->sw_outfile = service;
+	svc* sw_outfile = tddba->sw_outfile = service;
 #else
-	sw_outfile = tddba->sw_outfile = ib_stdout;
+	IB_FILE* sw_outfile = tddba->sw_outfile = ib_stdout;
 #endif
 
 #if defined (WIN95) && !defined (SUPERSERVER)
@@ -377,22 +358,28 @@ int CLIB_ROUTINE main(int argc, char **argv)
 		argv += 4;
 		argc -= 4;
 	}
-	char* name = NULL;
+	const char* name = NULL;
 
 	MOVE_CLEAR(user_buff, sizeof(user_buff));
 	MOVE_CLEAR(pass_buff, sizeof(pass_buff));
 
-	for (end = argv + argc, ++argv; argv < end;) {
-		str = *argv++;
+    const TEXT* const* const end = argv + argc;
+    ++argv;
+	while (argv < end) {
+		const TEXT* str = *argv++;
 		if (*str == '-') {
 			if (!str[1])
 				str = "-*NONE*";
+			in_sw_tab_t* in_sw_tab;
+			const TEXT* q;
 			for (in_sw_tab = dba_in_sw_table; q = in_sw_tab->in_sw_name;
 				 in_sw_tab++)
 			{
-				for (p = str + 1; c = *p++;)
+				TEXT c;
+				for (const TEXT* p = str + 1; c = *p++;) {
 					if (UPPER(c) != *q++)
 						break;
+				}
 				if (!c)
 					break;
 			}
@@ -402,8 +389,10 @@ int CLIB_ROUTINE main(int argc, char **argv)
 				dba_print(21, 0, 0, 0, 0, 0);	/* msg 21: Available switches: */
 				for (in_sw_tab = dba_in_sw_table; in_sw_tab->in_sw;
 					 in_sw_tab++)
+				{
 					if (in_sw_tab->in_sw_msg)
 						dba_print(in_sw_tab->in_sw_msg, 0, 0, 0, 0, 0);
+				}
 #ifdef SUPERSERVER
 				CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
 										GSTAT_MSG_FAC, 1,
@@ -447,24 +436,25 @@ int CLIB_ROUTINE main(int argc, char **argv)
 			else if (in_sw_tab->in_sw == IN_SW_DBA_RELATION) {
 				sw_relation = true;
 				while (argv < end && **argv != '-') {
-					DBA_REL *next;
-
 					if (strlen(*argv) > 31) {
 						argv++;
 						continue;
 					}
-					relation = (DBA_REL) ALLOC(sizeof(struct dba_rel));
+					dba_rel* relation = (dba_rel*) ALLOC(sizeof(struct dba_rel));
 					strcpy(relation->rel_name, *argv++);
-					truncate_name(relation->rel_name);
+					fb_utils::fb_exact_name(relation->rel_name);
 					relation->rel_id = -1;
-					for (next = &tddba->relations; *next;
-						 next = &(*next)->rel_next);
+					dba_rel** next = &tddba->relations;
+					while (*next) {
+						next = &(*next)->rel_next;
+					}
 					*next = relation;
 				}
 			}
 		}
-		else
+		else {
 			name = str;
+		}
 	}
 
 	if (sw_version)
@@ -487,9 +477,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
 
 #if defined (WIN95) && !defined (SUPERSERVER)
 	if (!fAnsiCP) {
-		ULONG ulConsoleCP;
-
-		ulConsoleCP = GetConsoleCP();
+		const ULONG ulConsoleCP = GetConsoleCP();
 		if (ulConsoleCP == GetACP())
 			fAnsiCP = true;
 		else if (ulConsoleCP != GetOEMCP()) {
@@ -503,14 +491,15 @@ int CLIB_ROUTINE main(int argc, char **argv)
 /* Open database and go to work */
 
 	TEXT temp_buf[MAXPATHLEN];
-	if (ResolveDatabaseAlias(name, temp_buf))
+	if (ResolveDatabaseAlias(name, temp_buf)) {
 		name = temp_buf;
+	}
 
-	current = db_open(name, strlen(name));
+	dba_fil* current = db_open(name, strlen(name));
 	tddba->page_size = sizeof(temp);
 	tddba->global_buffer = (PAG) temp;
 	tddba->page_number = -1;
-	header = (HDR) db_read((SLONG) 0);
+	const hdr* header = (HDR) db_read((SLONG) 0);
 
 #ifdef SUPERSERVER
 	SVC_STARTED(service);
@@ -522,7 +511,8 @@ int CLIB_ROUTINE main(int argc, char **argv)
 
 	if (header->hdr_ods_version > ODS_VERSION ||
 		(header->hdr_ods_version < ODS_VERSION8 &&
-		 header->hdr_ods_version != ODS_VERSION6)) {
+		 header->hdr_ods_version != ODS_VERSION6))
+	{
 #ifdef SUPERSERVER
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
 								GSTAT_MSG_FAC, 3,
@@ -560,8 +550,10 @@ int CLIB_ROUTINE main(int argc, char **argv)
 			if (current != tddba->files)
 				current->fil_fudge = 1;	/* ignore header page once read it */
 			*file_name = '\0';
-			for (vp = header->hdr_data, vend = vp + header->hdr_page_size;
-				 vp < vend && *vp != HDR_end; vp += 2 + vp[1]) {
+			const UCHAR* vp = header->hdr_data;
+			for (const UCHAR* const vend = vp + header->hdr_page_size;
+				 vp < vend && *vp != HDR_end; vp += 2 + vp[1])
+			{
 				if (*vp == HDR_file) {
 					memcpy(file_name, vp + 2, vp[1]);
 					*(file_name + vp[1]) = '\0';
@@ -570,12 +562,12 @@ int CLIB_ROUTINE main(int argc, char **argv)
 						AnsiToOem(file_name, file_name);
 #endif
 				}
-				if (*vp == HDR_last_page)
+				if (*vp == HDR_last_page) {
 					memcpy(&current->fil_max_page, vp + 2,
 						   sizeof(current->fil_max_page));
+				}
 			}
-		}
-		while (page = header->hdr_next_page);
+		} while (page = header->hdr_next_page);
 		page = current->fil_max_page + 1;	/* first page of next file */
 	} while (*file_name);
 
@@ -595,9 +587,11 @@ int CLIB_ROUTINE main(int argc, char **argv)
 
 	dba_print(7, 0, 0, 0, 0, 0);
 	// msg 7: \n\nDatabase file sequence: 
-	for (current = tddba->files; current->fil_next; current = current->fil_next) 
+	for (current = tddba->files; current->fil_next; current = current->fil_next)
+	{
 		dba_print(8, current->fil_string, current->fil_next->fil_string, 0, 0, 0);
 		//* msg 8: File %s continues as file %s
+	}
 	dba_print(9, current->fil_string,
 		 (TEXT*)((current == tddba->files) ? "only" : "last"), 0, 0, 0);
 		 // msg 9: File %s is the %s file\n
@@ -616,7 +610,8 @@ int CLIB_ROUTINE main(int argc, char **argv)
 
 /* Check to make sure that the user accessing the database is either
  * SYSDBA or owner of the database */
-	dpb = dpb_string;
+	UCHAR dpb_string[256];
+	UCHAR* dpb = dpb_string;
 	*dpb++ = isc_dpb_version1;
 	*dpb++ = isc_dpb_gstat_attach;
 	*dpb++ = 0;
@@ -638,7 +633,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
 		dpb += strlen((char*) password);
 	}
 
-	dpb_length = dpb - dpb_string;
+	const SSHORT dpb_length = dpb - dpb_string;
 
 	isc_attach_database(status_vector, 0, name, &DB, dpb_length,
 						(char*) dpb_string);
@@ -648,15 +643,15 @@ int CLIB_ROUTINE main(int argc, char **argv)
 	if (sw_version)
 		isc_version(&DB, NULL, NULL);
 
-	transact1 = 0;
+	isc_tr_handle transact1 = 0;
 	START_TRANSACTION transact1 READ_ONLY;
 	ON_ERROR
 		dba_exit(FINI_ERROR, tddba);
 	END_ERROR
 
-	request1 = NULL;
-	request2 = NULL;
-	request3 = NULL;
+	isc_req_handle request1 = NULL;
+	isc_req_handle request2 = NULL;
+	isc_req_handle request3 = NULL;
 
 	FOR(TRANSACTION_HANDLE transact1 REQUEST_HANDLE request1)
 		X IN RDB$RELATIONS SORTED BY DESC X.RDB$RELATION_NAME
@@ -667,25 +662,30 @@ int CLIB_ROUTINE main(int argc, char **argv)
 		if (!X.RDB$VIEW_BLR.NULL || !X.RDB$EXTERNAL_FILE.NULL) {
 			continue;
 		}
+		
+		dba_rel* relation;
 		if (sw_relation)
 		{
-			truncate_name(X.RDB$RELATION_NAME);
-			for (relation = tddba->relations; relation; relation = relation->rel_next)
+			fb_utils::fb_exact_name(X.RDB$RELATION_NAME);
+			for (relation = tddba->relations; relation;
+				relation = relation->rel_next)
+			{
                 if (!(strcmp(relation->rel_name, X.RDB$RELATION_NAME))) {
 					relation->rel_id = X.RDB$RELATION_ID;
 					break;
                 }
+			}
 			if (!relation)
 				continue;
 		}
 		else
 		{
-			relation = (DBA_REL) ALLOC(sizeof(struct dba_rel));
+			relation = (dba_rel*) ALLOC(sizeof(struct dba_rel));
 			relation->rel_next = tddba->relations;
 			tddba->relations = relation;
 			relation->rel_id = X.RDB$RELATION_ID;
 			strcpy(relation->rel_name, X.RDB$RELATION_NAME);
-			truncate_name(relation->rel_name);
+			fb_utils::fb_exact_name(relation->rel_name);
 		}
 
 		FOR(TRANSACTION_HANDLE transact1 REQUEST_HANDLE request2)
@@ -702,17 +702,18 @@ int CLIB_ROUTINE main(int argc, char **argv)
 		ON_ERROR
 			dba_exit(FINI_ERROR, tddba);
 		END_ERROR
+		
 		if (sw_index)
 		FOR(TRANSACTION_HANDLE transact1 REQUEST_HANDLE request3)
 			Y IN RDB$INDICES WITH Y.RDB$RELATION_NAME EQ relation->rel_name
 				SORTED BY DESC Y.RDB$INDEX_NAME 
             if (Y.RDB$INDEX_INACTIVE)
 				  continue;
-			index = (DBA_IDX) ALLOC(sizeof(struct dba_idx));
+			dba_idx* index = (dba_idx*) ALLOC(sizeof(struct dba_idx));
 			index->idx_next = relation->rel_indexes;
 			relation->rel_indexes = index;
 			strcpy(index->idx_name, Y.RDB$INDEX_NAME);
-			truncate_name(index->idx_name);
+			fb_utils::fb_exact_name(index->idx_name);
 			index->idx_id = Y.RDB$INDEX_ID - 1;
         END_FOR;
 		ON_ERROR
@@ -746,7 +747,9 @@ int CLIB_ROUTINE main(int argc, char **argv)
 	dba_print(10, 0, 0, 0, 0, 0);
 	// msg 10: \nAnalyzing database pages ...\n 
 
-	for (relation = tddba->relations; relation; relation = relation->rel_next)
+	{ // scope for MSVC6
+	for (dba_rel* relation = tddba->relations; relation;
+		relation = relation->rel_next)
 	{
 		if (relation->rel_id == -1) {
 			continue;
@@ -754,14 +757,18 @@ int CLIB_ROUTINE main(int argc, char **argv)
 		if (sw_data) {
 			analyze_data(relation, sw_record);
 		}
-		for (index = relation->rel_indexes; index; index = index->idx_next) {
+		for (dba_idx* index = relation->rel_indexes; index;
+			index = index->idx_next)
+		{
 			analyze_index(relation, index);
 		}
 	}
+	} // scope for MSVC6
 
 /* Print results */
 
-	for (relation = tddba->relations; relation; relation = relation->rel_next)
+	for (const dba_rel* relation = tddba->relations; relation;
+		relation = relation->rel_next)
 	{
 		if (relation->rel_id == -1) {
 			continue;
@@ -774,7 +781,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
 					  (TEXT *) relation->rel_index_root, 0, 0, 0);
 			// msg 11: "    Primary pointer page: %ld, Index root page: %ld" 
 			if (sw_record) {
-				average = (relation->rel_records) ?
+				double average = (relation->rel_records) ?
 					(double) relation->rel_record_space /
 					relation->rel_records : 0.0;
 				sprintf((char*) buf, "%.2f", average);
@@ -796,10 +803,10 @@ int CLIB_ROUTINE main(int argc, char **argv)
 				// msg 19: " Average version length: %s, total versions: %ld, max versions: %ld 
 			}
 
-			average = (relation->rel_data_pages) ?
+			const double average = (relation->rel_data_pages) ?
 				(double) relation->rel_total_space * 100 /
 				((double) relation->rel_data_pages *
-				 (tddba->page_size - DPG_SIZE)) : 0;
+				 (tddba->page_size - DPG_SIZE)) : 0.0;
 			sprintf((char*) buf, "%.0f%%", average);
 			dba_print(12, (TEXT*) relation->rel_data_pages, (TEXT*) relation->rel_slots,
 					  (TEXT*) buf, 0, 0);	/* msg 12: "    Data pages: %ld, data page slots: %ld, average fill: %s */
@@ -807,7 +814,8 @@ int CLIB_ROUTINE main(int argc, char **argv)
 			print_distribution("\t", relation->rel_fill_distribution);
 		}
 		FPRINTF(sw_outfile, "\n");
-		for (index = relation->rel_indexes; index; index = index->idx_next)
+		
+		for (const dba_idx* index = relation->rel_indexes; index; index = index->idx_next)
 		{
 			dba_print(14, index->idx_name, (TEXT *)(SLONG) index->idx_id, 0, 0, 0);
 			// msg 14: "    Index %s (%d)" 
@@ -815,7 +823,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
 					  (TEXT *) index->idx_leaf_buckets,
 					  (TEXT *) index->idx_nodes, 0, 0);
 			// msg 15: \tDepth: %d, leaf buckets: %ld, nodes: %ld 
-			average = (index->idx_nodes) ?
+			const double average = (index->idx_nodes) ?
 				index->idx_data_length / index->idx_nodes : 0;
 			sprintf((char*) buf, "%.2f", average);
 			dba_print(16, (TEXT*) buf, (TEXT*) index->idx_total_duplicates,
@@ -841,11 +849,11 @@ int CLIB_ROUTINE main(int argc, char **argv)
 			ISC_STATUS* status = tddba->dba_service_blk->svc_status;
 			if (status != status_vector)
 			{
-			    int i = 0, j;
+			    int i = 0;
 				while (*status && (++i < ISC_STATUS_LENGTH)) {
 					status++;
 				}
-				for (j = 0; status_vector[j] && (i < ISC_STATUS_LENGTH);
+				for (int j = 0; status_vector[j] && (i < ISC_STATUS_LENGTH);
 					 j++, i++)
 				{
 					*status++ = status_vector[j];
@@ -871,14 +879,14 @@ int CLIB_ROUTINE main(int argc, char **argv)
 
 #ifdef SUPERSERVER
 		SVC_STARTED(service);
-		alloced = tddba->head_of_mem_list;
+		dba_mem* alloced = tddba->head_of_mem_list;
 		while (alloced != 0) {
 			delete[] alloced->memory;
 			alloced = alloced->mem_next;
 		}
 
 		/* close files */
-		open_file = tddba->head_of_files_list;
+		open_files* open_file = tddba->head_of_files_list;
 		while (open_file) {
 			db_close(open_file->desc);
 			open_file = open_file->open_files_next;
@@ -886,14 +894,14 @@ int CLIB_ROUTINE main(int argc, char **argv)
 
 		/* free linked lists */
 		while (tddba->head_of_files_list != 0) {
-			tmp1 = tddba->head_of_files_list;
+			open_files* tmp1 = tddba->head_of_files_list;
 			tddba->head_of_files_list =
 				tddba->head_of_files_list->open_files_next;
 			delete tmp1;
 		}
 
 		while (tddba->head_of_mem_list != 0) {
-			tmp2 = tddba->head_of_mem_list;
+			dba_mem* tmp2 = tddba->head_of_mem_list;
 			tddba->head_of_mem_list = tddba->head_of_mem_list->mem_next;
 			delete tmp2;
 		}
@@ -923,7 +931,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
 }
 
 
-static char *alloc(size_t size)
+static char* alloc(size_t size)
 {
 /**************************************
  *
@@ -935,22 +943,23 @@ static char *alloc(size_t size)
  *	Allocate and zero a piece of memory.
  *
  **************************************/
-	char *block, *p;
-
 #ifdef SUPERSERVER
-
-	TDBA tddba = GET_THREAD_DATA;
-
-	block = p = FB_NEW(*getDefaultMemoryPool()) SCHAR[size];
-	if (!p) {
+	tdba* tddba = GET_THREAD_DATA;
+	char* const block = FB_NEW(*getDefaultMemoryPool()) SCHAR[size];
+#else
+	char* const block = (char*) gds__alloc(size);
+#endif
+	if (!block) {
 		/* NOMEM: return error */
 		dba_error(31, 0, 0, 0, 0, 0);
 	}
 /* note: shouldn't we check for the NULL?? */
-	do
+	char* p = block;
+	do {
 		*p++ = 0;
-	while (--size);
+	} while (--size);
 
+#ifdef SUPERSERVER
 	dba_mem* mem_list = FB_NEW(*getDefaultMemoryPool()) dba_mem;
 	if (!mem_list) {
 		/* NOMEM: return error */
@@ -965,22 +974,13 @@ static char *alloc(size_t size)
 		mem_list->mem_next = tddba->head_of_mem_list;
 		tddba->head_of_mem_list = mem_list;
 	}
-#else
-	block = p = (char*) gds__alloc(size);
-	if (!p) {
-		/* NOMEM: return error */
-		dba_error(31, 0, 0, 0, 0, 0);
-	}
-	do
-		*p++ = 0;
-	while (--size);
 #endif
 
 	return block;
 }
 
 
-static void analyze_data( DBA_REL relation, bool sw_record)
+static void analyze_data( dba_rel* relation, bool sw_record)
 {
 /**************************************
  *
@@ -992,32 +992,33 @@ static void analyze_data( DBA_REL relation, bool sw_record)
  *	Analyze data pages associated with relation.
  *
  **************************************/
-	PPG pointer_page;
-	SLONG next_pp, *ptr, *end;
-	TDBA tddba;
+	tdba* tddba = GET_THREAD_DATA;
 
-	tddba = GET_THREAD_DATA;
+	ppg* pointer_page = (PPG) tddba->buffer1;
 
-	pointer_page = (PPG) tddba->buffer1;
-
-	for (next_pp = relation->rel_pointer_page; next_pp;
-		 next_pp = pointer_page->ppg_next) {
+	for (SLONG next_pp = relation->rel_pointer_page; next_pp;
+		 next_pp = pointer_page->ppg_next)
+	{
 		move((SCHAR*) db_read(next_pp), (SCHAR*) pointer_page, tddba->page_size);
-		for (ptr = pointer_page->ppg_page, end =
-			 ptr + pointer_page->ppg_count; ptr < end; ptr++) {
+		const SLONG* ptr = pointer_page->ppg_page;
+		for (const SLONG* const end = ptr + pointer_page->ppg_count;
+			ptr < end; ptr++)
+		{
 			++relation->rel_slots;
 			if (*ptr) {
 				++relation->rel_data_pages;
 				if (!analyze_data_page(relation, (DPG) db_read(*ptr), sw_record))
-					dba_print(18, (TEXT *) * ptr, 0, 0, 0, 0);
+				{
+					dba_print(18, (TEXT*) *ptr, 0, 0, 0, 0);
 					// msg 18: "    Expected data on page %ld" */
+				}
 			}
 		}
 	}
 }
 
 
-static bool analyze_data_page( DBA_REL relation, DPG page, bool sw_record)
+static bool analyze_data_page( dba_rel* relation, DPG page, bool sw_record)
 {
 /**************************************
  *
@@ -1031,10 +1032,9 @@ static bool analyze_data_page( DBA_REL relation, DPG page, bool sw_record)
  **************************************/
 	SSHORT bucket, space;
 	RHDF header;
-	TDBA tddba;
 	struct dpg::dpg_repeat *tail, *end;
 
-	tddba = GET_THREAD_DATA;
+	tdba* tddba = GET_THREAD_DATA;
 
 	if (page->dpg_header.pag_type != pag_data)
 		return false;
@@ -1052,9 +1052,9 @@ static bool analyze_data_page( DBA_REL relation, DPG page, bool sw_record)
 			space += tail->dpg_length;
 			if (sw_record) {
 				header = (RHDF) ((SCHAR *) page + tail->dpg_offset);
-				if (!
-					(header->
-					 rhdf_flags & (rhd_blob | rhd_chain | rhd_fragment))) {
+				if (!(header->rhdf_flags &
+					(rhd_blob | rhd_chain | rhd_fragment)))
+				{
 					++relation->rel_records;
 					relation->rel_record_space += tail->dpg_length;
 					if (header->rhdf_flags & rhd_incomplete) {
@@ -1084,7 +1084,7 @@ static bool analyze_data_page( DBA_REL relation, DPG page, bool sw_record)
 }
 
 
-static ULONG analyze_fragments( DBA_REL relation, RHDF header)
+static ULONG analyze_fragments(const dba_rel* relation, const rhdf* header)
 {
 /**************************************
  *
@@ -1096,36 +1096,32 @@ static ULONG analyze_fragments( DBA_REL relation, RHDF header)
  *	Analyze space used by a record's fragments.
  *
  **************************************/
-	ULONG space;
-	SLONG f_page;
-	USHORT f_line;
-	TDBA tddba;
-	DPG page;
-	struct dpg::dpg_repeat *index;
-
-	tddba = GET_THREAD_DATA;
-	space = 0;
+	tdba* tddba = GET_THREAD_DATA;
+	ULONG space = 0;
 
 	while (header->rhdf_flags & rhd_incomplete) {
-		f_page = header->rhdf_f_page;
-		f_line = header->rhdf_f_line;
-		page = (DPG) db_read(f_page);
+		const SLONG f_page = header->rhdf_f_page;
+		const USHORT f_line = header->rhdf_f_line;
+		const dpg* page = (DPG) db_read(f_page);
 		if (page->dpg_header.pag_type != pag_data ||
 			page->dpg_relation != relation->rel_id ||
-			page->dpg_count <= f_line) break;
-		index = &page->dpg_rpt[f_line];
+			page->dpg_count <= f_line)
+		{
+			break;
+		}
+		const dpg::dpg_repeat* index = &page->dpg_rpt[f_line];
 		if (!index->dpg_offset)
 			break;
 		space += index->dpg_length;
 		space -= RHDF_SIZE;
-		header = (RHDF) ((SCHAR *) page + index->dpg_offset);
+		header = (const rhdf*) ((SCHAR *) page + index->dpg_offset);
 	}
 
 	return space;
 }
 
 
-static void analyze_index( DBA_REL relation, DBA_IDX index)
+static void analyze_index( dba_rel* relation, dba_idx* index)
 {
 /**************************************
  *
@@ -1136,7 +1132,7 @@ static void analyze_index( DBA_REL relation, DBA_IDX index)
  * Functional description
  *
  **************************************/
-	TDBA tddba = GET_THREAD_DATA;
+	tdba* tddba = GET_THREAD_DATA;
 
 	IRT index_root = (IRT) db_read(relation->rel_index_root);
 
@@ -1167,8 +1163,6 @@ static void analyze_index( DBA_REL relation, DBA_IDX index)
 	// This value should be kept equal with size declared in btr.h
 	//UCHAR key[4096];
 	UCHAR* key = (UCHAR*) ALLOC(tddba->page_size / 4);
-	UCHAR* p;
-	UCHAR* q;
 	UCHAR* firstNode;
 	USHORT l, space, n, header;
 	USHORT key_length = 0;
@@ -1214,8 +1208,8 @@ static void analyze_index( DBA_REL relation, DBA_IDX index)
 			key_length = l;
 			l = node.length;
 			if (l) {
-				p = key + node.prefix;
-				q = node.data;
+				UCHAR* p = key + node.prefix;
+				const UCHAR* q = node.data;
 				do {
 					*p++ = *q++;
 				} while (--l);
@@ -1249,7 +1243,7 @@ static void analyze_index( DBA_REL relation, DBA_IDX index)
 }
 
 
-static ULONG analyze_versions( DBA_REL relation, RHDF header)
+static ULONG analyze_versions( dba_rel* relation, RHDF header)
 {
 /**************************************
  *
@@ -1261,23 +1255,21 @@ static ULONG analyze_versions( DBA_REL relation, RHDF header)
  *	Analyze space used by a record's back versions.
  *
  **************************************/
-	ULONG space, versions;
-	SLONG b_page;
-	USHORT b_line;
-	TDBA tddba;
-	DPG page;
 	struct dpg::dpg_repeat *index;
 
-	tddba = GET_THREAD_DATA;
-	space = versions = 0;
-	b_page = header->rhdf_b_page;
-	b_line = header->rhdf_b_line;
+	tdba* tddba = GET_THREAD_DATA;
+	ULONG space = 0, versions = 0;
+	SLONG b_page = header->rhdf_b_page;
+	USHORT b_line = header->rhdf_b_line;
 
 	while (b_page) {
-		page = (DPG) db_read(b_page);
+		dpg* page = (DPG) db_read(b_page);
 		if (page->dpg_header.pag_type != pag_data ||
 			page->dpg_relation != relation->rel_id ||
-			page->dpg_count <= b_line) break;
+			page->dpg_count <= b_line)
+		{
+			break;
+		}
 		index = &page->dpg_rpt[b_line];
 		if (!index->dpg_offset)
 			break;
@@ -1332,9 +1324,8 @@ static void db_error( SLONG status)
  *
  **************************************/
 	TEXT s[128];
-	TDBA tddba;
 
-	tddba = GET_THREAD_DATA;
+	tdba* tddba = GET_THREAD_DATA;
 	tddba->page_number = -1;
 
 	if (!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
@@ -1354,7 +1345,7 @@ static void db_error( SLONG status)
 // CVC: This function was using cast to char* for the first param always
 // and the callers had to cast their char*'s to UCHAR*, too. Since the
 // real parameter is char* and always the usage is char*, I changed signature.
-static DBA_FIL db_open(const char* file_name, USHORT file_length)
+static dba_fil* db_open(const char* file_name, USHORT file_length)
 {
 /**************************************
  *
@@ -1367,21 +1358,21 @@ static DBA_FIL db_open(const char* file_name, USHORT file_length)
  *
  **************************************/
 
-	TDBA tddba = GET_THREAD_DATA;
+	tdba* tddba = GET_THREAD_DATA;
 	
-	DBA_FIL fil;
+	dba_fil* fil;
 
 	if (tddba->files) {
 		for (fil = tddba->files; fil->fil_next; fil = fil->fil_next);
 		fil->fil_next =
-			(DBA_FIL) ALLOC(sizeof(struct dba_fil) + strlen(file_name) + 1);
+			(dba_fil*) ALLOC(sizeof(struct dba_fil) + strlen(file_name) + 1);
 		fil->fil_next->fil_min_page = fil->fil_max_page + 1;
 		fil = fil->fil_next;
 	}
 	else {						/* empty list */
 
 		fil = tddba->files =
-			(DBA_FIL) ALLOC(sizeof(struct dba_fil) + strlen(file_name) + 1);
+			(dba_fil*) ALLOC(sizeof(struct dba_fil) + strlen(file_name) + 1);
 		fil->fil_min_page = 0L;
 	}
 
@@ -1446,11 +1437,9 @@ static PAG db_read( SLONG page_number)
  *
  **************************************/
 	SLONG actual_length;
-	DBA_FIL fil;
-	TDBA tddba;
-	LARGE_INTEGER liOffset;
+	dba_fil* fil;
 
-	tddba = GET_THREAD_DATA;
+	tdba* tddba = GET_THREAD_DATA;
 
 	if (tddba->page_number == page_number)
 		return tddba->global_buffer;
@@ -1459,14 +1448,19 @@ static PAG db_read( SLONG page_number)
 
 	for (fil = tddba->files; page_number > (SLONG) fil->fil_max_page
 							 && fil->fil_next;) 
+	{
 		 fil = fil->fil_next;
+	}
 
 	page_number -= fil->fil_min_page - fil->fil_fudge;
+
+	LARGE_INTEGER liOffset;
 	liOffset.QuadPart =
 		UInt32x32To64((DWORD) page_number, (DWORD) tddba->page_size);
 	if (SetFilePointer
 		(fil->fil_desc, (LONG) liOffset.LowPart, &liOffset.HighPart,
-		 FILE_BEGIN) == (DWORD) -1) {
+		 FILE_BEGIN) == (DWORD) -1)
+	{
 #ifdef SUPERSERVER
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
 								GSTAT_MSG_FAC, 30,
@@ -1534,10 +1528,7 @@ static void db_error( int status)
  * Functional description
  *
  **************************************/
-	SCHAR *p;
-	TDBA tddba;
-
-	tddba = GET_THREAD_DATA;
+	tdba* tddba = GET_THREAD_DATA;
 	tddba->page_number = -1;
 
 	/* FIXME: The strerror() function returns the appropriate description
@@ -1550,6 +1541,7 @@ static void db_error( int status)
 #ifndef VMS
 	FPRINTF(tddba->sw_outfile, "%s\n", strerror(status));
 #else
+	const char* p;
 	if ((p = strerror(status)) || (p = strerror(EVMSERR, status)))
 		FPRINTF(tddba->sw_outfile, "%s\n", p);
 	else
@@ -1563,7 +1555,7 @@ static void db_error( int status)
 // CVC: This function was using cast to char* for the first param always
 // and the callers had to cast their char*'s to UCHAR*, too. Since the
 // real parameter is char* and always the usage is char*, I changed signature.
-static DBA_FIL db_open(const char* file_name, USHORT file_length)
+static dba_fil* db_open(const char* file_name, USHORT file_length)
 {
 /**************************************
  *
@@ -1576,25 +1568,24 @@ static DBA_FIL db_open(const char* file_name, USHORT file_length)
  *      Put the file on an ordered list.
  *
  **************************************/
-	DBA_FIL fil;
-	TDBA tddba;
+	dba_fil* fil;
 #ifdef SUPERSERVER
 	open_files *file_list;
 #endif
 
-	tddba = GET_THREAD_DATA;
+	tdba* tddba = GET_THREAD_DATA;
 
 	if (tddba->files) {
 		for (fil = tddba->files; fil->fil_next; fil = fil->fil_next);
 		fil->fil_next =
-			(DBA_FIL) ALLOC(sizeof(struct dba_fil) + strlen(file_name) + 1);
+			(dba_fil*) ALLOC(sizeof(struct dba_fil) + strlen(file_name) + 1);
 		fil->fil_next->fil_min_page = fil->fil_max_page + 1;
 		fil = fil->fil_next;
 	}
 	else {						/* empty list */
 
 		fil = tddba->files =
-			(DBA_FIL) ALLOC(sizeof(struct dba_fil) + strlen(file_name) + 1);
+			(dba_fil*) ALLOC(sizeof(struct dba_fil) + strlen(file_name) + 1);
 		fil->fil_min_page = 0L;
 	}
 
@@ -1650,24 +1641,24 @@ static PAG db_read( SLONG page_number)
  *
  **************************************/
 	SCHAR *p;
-	SSHORT length, l;
-	DBA_FIL fil;
-	TDBA tddba;
-	UINT64 offset;
+	SSHORT length;
 
-	tddba = GET_THREAD_DATA;
+	tdba* tddba = GET_THREAD_DATA;
 
 	if (tddba->page_number == page_number)
 		return tddba->global_buffer;
 
 	tddba->page_number = page_number;
 
+	dba_fil* fil;
 	for (fil = tddba->files; page_number > (SLONG) fil->fil_max_page
 							 && fil->fil_next;) 
+	{
 		fil = fil->fil_next;
+	}
 
 	page_number -= fil->fil_min_page - fil->fil_fudge;
-	offset = ((UINT64)page_number) * ((UINT64)tddba->page_size);
+	const UINT64 offset = ((UINT64)page_number) * ((UINT64)tddba->page_size);
 	if (lseek (fil->fil_desc, offset, 0) == -1) {
 #ifdef SUPERSERVER
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
@@ -1679,8 +1670,9 @@ static PAG db_read( SLONG page_number)
 	}
 
 	for (p = (SCHAR *) tddba->global_buffer, length = tddba->page_size;
-		 length > 0;) {
-		l = read(fil->fil_desc, p, length);
+		 length > 0;)
+	{
+		const SSHORT l = read(fil->fil_desc, p, length);
 		if (l < 0) {
 #ifdef SUPERSERVER
 			CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
@@ -1711,8 +1703,9 @@ static PAG db_read( SLONG page_number)
 
 static void dba_error(
 					  USHORT errcode,
-					  TEXT * arg1,
-					  TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
+					  const TEXT* arg1,
+					  const TEXT* arg2, const TEXT* arg3,
+					  const TEXT* arg4, const TEXT* arg5)
 {
 /**************************************
  *
@@ -1724,9 +1717,7 @@ static void dba_error(
  *	Format and print an error message, then punt.
  *
  **************************************/
-	TDBA tddba;
-
-	tddba = GET_THREAD_DATA;
+	tdba* tddba = GET_THREAD_DATA;
 	tddba->page_number = -1;
 
 	dba_print(errcode, arg1, arg2, arg3, arg4, arg5);
@@ -1736,8 +1727,9 @@ static void dba_error(
 
 static void dba_print(
 					  USHORT number,
-					  TEXT * arg1,
-					  TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
+					  const TEXT* arg1,
+					  const TEXT* arg2, const TEXT* arg3,
+					  const TEXT* arg4, const TEXT* arg5)
 {
 /**************************************
  *
@@ -1750,9 +1742,7 @@ static void dba_print(
  *
  **************************************/
 	TEXT buffer[256];
-	TDBA tddba;
-
-	tddba = GET_THREAD_DATA;
+	tdba* tddba = GET_THREAD_DATA;
 
 	gds__msg_format(NULL, GSTAT_MSG_FAC, number, sizeof(buffer), buffer,
 					arg1, arg2, arg3, arg4, arg5);
@@ -1761,7 +1751,7 @@ static void dba_print(
 }
 
 
-static void move( SCHAR * from, SCHAR * to, SSHORT length)
+static void move(const SCHAR* from, SCHAR* to, SSHORT length)
 {
 /**************************************
  *
@@ -1778,7 +1768,7 @@ static void move( SCHAR * from, SCHAR * to, SSHORT length)
 }
 
 
-static void print_distribution( SCHAR * prefix, SLONG * vector)
+static void print_distribution(const SCHAR* prefix, const SLONG* vector)
 {
 /**************************************
  *
@@ -1790,38 +1780,12 @@ static void print_distribution( SCHAR * prefix, SLONG * vector)
  *	Print distribution as percentages.
  *
  **************************************/
-	SSHORT n;
-	TDBA tddba;
+	tdba* tddba = GET_THREAD_DATA;
 
-	tddba = GET_THREAD_DATA;
-
-	for (n = 0; n < BUCKETS; n++) {
+	for (SSHORT n = 0; n < BUCKETS; n++) {
 		FPRINTF(tddba->sw_outfile, "%s%2d - %2d%% = %ld\n",
 				prefix,
 				n * 100 / BUCKETS, (n + 1) * 100 / BUCKETS - 1, vector[n]);
 	}
-}
-
-
-static void truncate_name( SCHAR * string)
-{
-/**************************************
- *
- *	t r u n c a t e _ n a m e
- *
- **************************************
- *
- * Functional description
- *	Zap trailing blanks.
- * CVC: But only "trailing", not embedded blanks.
- *
- **************************************/
-
-	SCHAR* tail;
-
-	for (tail = string - 1; *string; ++string)
-    	if (*string != ' ')
-			tail = string;
-	*++tail = 0;
 }
 

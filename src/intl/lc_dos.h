@@ -22,7 +22,7 @@
  */
 
 USHORT fam1_to_upper(TEXTTYPE obj, BYTE ch);
-SSHORT fam1_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr);
+SSHORT fam1_str_to_upper(TEXTTYPE obj, USHORT iLen, const BYTE* pStr, USHORT iOutLen, BYTE *pOutStr);
 USHORT fam1_to_lower(TEXTTYPE obj, BYTE ch);
 SSHORT LC_DOS_nc_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const UCHAR* ptr, USHORT count);
 

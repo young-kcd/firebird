@@ -28,9 +28,10 @@
 
 #include "../jrd/sort.h"
 
-BOOLEAN		DLS_get_temp_space(ULONG, SFB);
+bool		DLS_get_temp_space(ULONG, SFB);
 void		DLS_put_temp_space(SFB);
-BOOLEAN		API_ROUTINE DLS_add_dir(ULONG, const TEXT *);
+BOOLEAN		API_ROUTINE DLS_add_dir(ULONG, const TEXT*);
 MDLS*		DLS_get_access(void);
 
 #endif // JRD_DLS_PROTO_H
+

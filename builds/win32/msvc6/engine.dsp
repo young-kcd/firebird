@@ -84,6 +84,67 @@ LIB32=link.exe -lib
 # Begin Group "JRD files"
 
 # PROP Default_Filter ""
+# Begin Group "Generated files"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\dfw.cpp
+
+!IF  "$(CFG)" == "engine - Win32 Release"
+
+# SUBTRACT CPP /Og
+
+!ELSEIF  "$(CFG)" == "engine - Win32 Debug"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\dpm.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\dyn.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\dyn_def.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\dyn_del.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\dyn_mod.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\dyn_util.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\fun.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\ini.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\met.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\pcmet.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\scl.cpp
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\ail.cpp
@@ -143,19 +204,6 @@ SOURCE=..\..\..\src\jrd\cvt2.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\gen\jrd\dfw.cpp
-
-!IF  "$(CFG)" == "engine - Win32 Release"
-
-# SUBTRACT CPP /Og
-
-!ELSEIF  "$(CFG)" == "engine - Win32 Debug"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\divorce.cpp
 # End Source File
 # Begin Source File
@@ -164,31 +212,7 @@ SOURCE=..\..\..\src\jrd\dls.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\gen\jrd\dpm.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\dsc.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\gen\jrd\dyn.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\gen\jrd\dyn_def.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\gen\jrd\dyn_del.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\gen\jrd\dyn_mod.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\gen\jrd\dyn_util.cpp
 # End Source File
 # Begin Source File
 
@@ -237,10 +261,6 @@ SOURCE=..\..\..\src\jrd\flu.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\gen\jrd\fun.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\functions.cpp
 # End Source File
 # Begin Source File
@@ -275,10 +295,6 @@ SOURCE=..\..\..\src\jrd\idx.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\inf.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\gen\jrd\ini.cpp
 # End Source File
 # Begin Source File
 
@@ -339,10 +355,6 @@ SOURCE=..\..\..\src\jrd\log.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\gen\jrd\met.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\misc.cpp
 # End Source File
 # Begin Source File
@@ -397,10 +409,6 @@ SOURCE=..\..\..\src\jrd\par.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\gen\jrd\pcmet.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\plugin_manager.cpp
 # End Source File
 # Begin Source File
@@ -443,10 +451,6 @@ SOURCE=..\..\..\src\jrd\sbm.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\sch.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\gen\jrd\scl.cpp
 # End Source File
 # Begin Source File
 

@@ -203,7 +203,7 @@ void AIL_commit(SLONG number)
 		return;
 
 /* Prepare WAL message */
-	LTJC commit_rec;
+	ltjc commit_rec;
 	MOVE_CLEAR((SLONG*)&commit_rec, LTJC_SIZE);
 
 	commit_rec.ltjc_header.jrnh_type = JRN_COMMIT;
@@ -265,7 +265,7 @@ void AIL_disable()
 	PAG_delete_clump_entry(HEADER_PAGE, HDR_journal_server);
 	PAG_delete_clump_entry(HEADER_PAGE, HDR_backup_info);
 
-	LTJC record;
+	ltjc record;
 	record.ltjc_header.jrnh_type = JRN_DISABLE;
 	record.ltjc_page_size = 0;
 	record.ltjc_length = d_len;
@@ -478,7 +478,7 @@ void AIL_enable(
 
 /* Put a enable record in the WAL and get the current seqno/offset pair */
 
-	LTJC jrecord;
+	ltjc jrecord;
 	jrecord.ltjc_header.jrnh_type = JRN_ENABLE;
 	jrecord.ltjc_page_size = dbb->dbb_page_size;
 	jrecord.ltjc_length = d_len;
@@ -843,7 +843,7 @@ void AIL_journal_tid()
 	journal.jrndh_oit = hdr->hdr_oldest_transaction;
 	journal.jrndh_oat = hdr->hdr_oldest_active;
 
-	CCH_journal_record(tdbb, &window, reinterpret_cast < UCHAR * >(&journal),
+	CCH_journal_record(tdbb, &window, reinterpret_cast<const UCHAR*>(&journal),
 					   JRNDH_SIZE, 0, 0);
 
 	CCH_RELEASE(tdbb, &window);
@@ -911,7 +911,7 @@ void AIL_put(
 	case JRN_ONLINE_DMP_FILE:
 	case JRN_WAL_NAME:
 		MOV_time_stamp(reinterpret_cast <
-					   ISC_TIMESTAMP * >(((LTJW *) header)->ltjw_date));
+					   ISC_TIMESTAMP * >(((ltjw*) header)->ltjw_date));
 		break;
 	}
 
@@ -1175,7 +1175,7 @@ void AIL_upd_cntrl_pt(
 
 #ifdef NOT_USED_OR_REPLACED
 static void build_wal_param(
-							UCHAR * wpb,
+							UCHAR* wpb,
 							LGFILE ** log_files,
 							SLONG number,
 							LGFILE * log_ovflow, SLONG * wpb_len)
@@ -1194,7 +1194,7 @@ static void build_wal_param(
 	USHORT param2;
 	USHORT plen;
 	USHORT jd_len, d_len;
-	UCHAR data[MAXPATHLEN], *p;
+	UCHAR data[MAXPATHLEN];
 
 /* Get journal information, if any */
 	UCHAR journal_dir[MAXPATHLEN];
@@ -1204,7 +1204,7 @@ static void build_wal_param(
 
 /* Build the wal param block */
 
-	p = wpb;
+	UCHAR* p = wpb;
 
 	if (jd_len) {
 		p += MISC_build_parameters_block(p,
@@ -1238,7 +1238,8 @@ static void build_wal_param(
 
 	if (PAG_get_clump
 		(LOG_PAGE, LOG_chkpt_len, &plen,
-		 reinterpret_cast < UCHAR * >(&param1))) {
+		 reinterpret_cast < UCHAR * >(&param1)))
+	{
 		p +=
 			MISC_build_parameters_block(p, PARAM_BYTE(WAL_PARAM_CKPT_INTRVL),
 										PARAM_LONG(param1), (SCHAR) 0);
@@ -1246,7 +1247,8 @@ static void build_wal_param(
 
 	if (PAG_get_clump
 		(LOG_PAGE, LOG_num_bufs, &plen,
-		 reinterpret_cast < UCHAR * >(&param2))) {
+		 reinterpret_cast < UCHAR * >(&param2)))
+	{
 		p +=
 			MISC_build_parameters_block(p, PARAM_BYTE(WAL_PARAM_BUF_COUNT),
 										PARAM_SHORT(param2), (SCHAR) 0);
@@ -1254,7 +1256,8 @@ static void build_wal_param(
 
 	if (PAG_get_clump
 		(LOG_PAGE, LOG_bufsize, &plen,
-		 reinterpret_cast < UCHAR * >(&param2))) {
+		 reinterpret_cast < UCHAR * >(&param2)))
+	{
 		p +=
 			MISC_build_parameters_block(p, PARAM_BYTE(WAL_PARAM_BUF_LEN),
 										PARAM_SHORT(param2), (SCHAR) 0);
@@ -1262,7 +1265,8 @@ static void build_wal_param(
 
 	if (PAG_get_clump
 		(LOG_PAGE, LOG_grp_cmt_wait, &plen,
-		 reinterpret_cast < UCHAR * >(&param1))) {
+		 reinterpret_cast < UCHAR * >(&param1)))
+	{
 		p +=
 			MISC_build_parameters_block(p,
 										PARAM_BYTE(WAL_PARAM_GRPC_WAIT_USECS),
