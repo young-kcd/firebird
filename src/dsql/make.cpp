@@ -1104,7 +1104,7 @@ void MAKE_desc_from_list( DSC * desc, DSQL_NOD node)
 {
 	DSQL_NOD	*arg, *end, tnod;
 	DSC	desc1, desc2;
-	UCHAR max_exact_dtype = 0;
+	UCHAR max_exact_dtype = 0, max_exact_sub_type = 0;
 	SCHAR maxscale;
 	USHORT cnvlength, maxlength, maxtextlength = 0;
 	BOOLEAN firstarg = TRUE, all_exact = TRUE, any_approx = FALSE, text_in_list = FALSE;
@@ -1141,6 +1141,9 @@ void MAKE_desc_from_list( DSC * desc, DSQL_NOD node)
 		if (DTYPE_IS_EXACT(desc1.dsc_dtype)) {
 			if (desc1.dsc_dtype > max_exact_dtype) {
 				max_exact_dtype = desc1.dsc_dtype;
+			}
+			if (desc1.dsc_sub_type > max_exact_sub_type) {
+				max_exact_sub_type = desc1.dsc_sub_type;
 			}
 		} 
 		else {
@@ -1250,7 +1253,7 @@ void MAKE_desc_from_list( DSC * desc, DSQL_NOD node)
 	}
 	if (all_exact) {
 		desc->dsc_dtype = max_exact_dtype;
-		desc->dsc_sub_type = dsc_num_type_numeric;
+		desc->dsc_sub_type = max_exact_sub_type;
 		desc->dsc_scale = maxscale;
 		desc->dsc_length = maxlength;
 		return;
