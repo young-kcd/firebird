@@ -2761,8 +2761,8 @@ static qli_nod* possible_literal(qli_syntax* input,
 	qli_const* constant = (qli_const*) ALLOCDV(type_con, l);
 	constant->con_desc.dsc_dtype = dtype_text;
 	constant->con_desc.dsc_length = l;
-	TEXT* p = (TEXT *) constant->con_data;
-	constant->con_desc.dsc_address = (UCHAR *) p;
+	constant->con_desc.dsc_address = constant->con_data;
+	TEXT* p = (TEXT*) constant->con_data;
 	const TEXT* q = name->nam_string;
 
 	if (upper_flag) {

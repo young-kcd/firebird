@@ -37,7 +37,7 @@ static qli_symbol* key_symbols;
 
 struct qli_kword {
 	KWWORDS id;
-	SCHAR *keyword;
+	const char* keyword;
 };
 
 const qli_kword keywords[] =
@@ -84,7 +84,7 @@ void HSH_init(void)
 	const qli_kword* qword = keywords;
 
 	for (int i = 0; i < FB_NELEM(keywords); i++, qword++) {
-	    const SCHAR* string = qword->keyword;
+	    const char* string = qword->keyword;
 		while (*string)
 			++string;
 		qli_symbol* symbol = (qli_symbol*) ALLOCPV(type_sym, 0);

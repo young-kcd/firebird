@@ -258,7 +258,7 @@ typedef enum sym_t {
 
 struct qli_symbol {
     blk			sym_header;
-    TEXT*		sym_string;		// address of asciz string 
+    const TEXT*	sym_string;		// address of asciz string
     USHORT		sym_length;		// length of string (exc. term.) 
     SYM_T		sym_type;		// symbol type 
     USHORT		sym_keyword;	// keyword number, if keyword 

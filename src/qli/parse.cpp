@@ -3501,7 +3501,7 @@ static qli_syntax* parse_report(void)
 			}
 			else if (PAR_match(KW_REPORT_NAME)) {
 				PAR_match(KW_EQUALS);
-				report->rpt_name = (TEXT *) parse_header();
+				report->rpt_name = parse_header();
 			}
 			else
 				ERRQ_syntax(212);	// Msg212 report writer SET option
@@ -5152,7 +5152,8 @@ static qli_symbol* parse_symbol(void)
 	context->sym_type = SYM_context;
 	context->sym_length = l;
 	const TEXT* q = QLI_token->tok_string;
-	TEXT* p = context->sym_string = context->sym_name;
+	context->sym_string = context->sym_name;
+	TEXT* p = context->sym_name;
 
 	if (l)
 		do {
