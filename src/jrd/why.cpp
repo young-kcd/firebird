@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.82 2004-10-08 04:47:45 robocop Exp $
+$Id: why.cpp,v 1.83 2004-10-09 01:38:29 robocop Exp $
 */
 
 #include "firebird.h"
@@ -597,13 +597,6 @@ static ISC_STATUS no_entrypoint(ISC_STATUS * user_status, ...);
 #include "../jrd/entry.h"
 #endif
 
-#ifdef IPSERV
-#ifndef XNET
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	ISC_STATUS winipi(ISC_STATUS * user_status, ...);
-#include "../jrd/entry.h"
-#endif
-#endif
-
 static const IMAGE images[] =
 {
 	{"REMINT", "REMINT"},			/* Remote */
@@ -622,12 +615,6 @@ static const IMAGE images[] =
 	{"GDS_C", GDS_C_PATH},
 	{"GDS_D", GDS_D_PATH},
 #endif
-#ifdef IPSERV
-#ifndef XNET
-		{"WINIPI", "WINIPI"},
-#endif
-#endif
-
 };
 
 #define SUBSYSTEMS		sizeof (images) / (sizeof (IMAGE))
@@ -647,14 +634,6 @@ static const ENTRY entrypoints[PROC_count * SUBSYSTEMS] =
 #define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, rdb},
 #include "../jrd/entry.h"
 #endif
-/*
-#ifdef IPSERV
-#ifndef XNET
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, winipi},
-#include "../jrd/entry.h"
-#endif
-#endif
-*/
 };
 
 #ifndef SUPERCLIENT
