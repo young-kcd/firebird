@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.27 2003-02-13 22:41:20 brodsom Exp $
+ * $Id: gpre.h,v 1.28 2003-02-13 23:39:47 bellardo Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -179,7 +179,7 @@ typedef enum lang_t
 // c++ source files, cxx, cpp, cplusplus, so we only need to test lang_cxx
 // and lang_internal.
 //
-bool isLangCpp(LANG_T lang) {
+inline bool isLangCpp(LANG_T lang) {
     if (lang == lang_cxx || lang == lang_internal) {
         return true;
     }
@@ -1192,7 +1192,7 @@ typedef struct rse {
 
 #ifdef __cplusplus
 
-size_t RSE_LEN(size_t nItems)
+inline size_t RSE_LEN(size_t nItems)
 {
 	return offsetof(rse, rse_context) + nItems * sizeof(int *);
 }
