@@ -24,8 +24,8 @@
 BLKDEF(alice_type_frb, frb, 0)
 BLKDEF(alice_type_hnk, hnk, 0)
 BLKDEF(alice_type_plb, plb, 0)
-BLKDEF(alice_type_vec, vec, sizeof(((VEC) 0)->vec_object[0]))
-BLKDEF(alice_type_vcl, vcl, sizeof(((VCL) 0)->vcl_long[0]))
+BLKDEF(alice_type_vec, vec, sizeof(((VEC) NULL)->vec_object[0]))
+BLKDEF(alice_type_vcl, vcl, sizeof(((VCL) NULL)->vcl_long[0]))
 BLKDEF(alice_type_tdr, tdr, 0)	/* transaction description */
 BLKDEF(alice_type_str, str, 1)	/* general string block */
 BLKDEF(alice_type_lls, lls, 0)
