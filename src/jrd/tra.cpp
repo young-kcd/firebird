@@ -1486,7 +1486,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
 	}
 
 /* To handle the problems of relation locks, allocate a temporary
-   transaction block first, sieze relation locks, the go ahead and
+   transaction block first, seize relation locks, the go ahead and
    make up the real transaction block. */
 
 	Jrd::ContextPoolHolder context(tdbb, JrdMemoryPool::createPool());
