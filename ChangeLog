@@ -1,3 +1,77 @@
+2003-12-02 22:57  bellardo
+
+	* firebird2/: configure.in,
+	src/install/arch-specific/darwin/Makefile.in,
+	src/install/arch-specific/darwin/install-script,
+	src/install/arch-specific/darwin/preupgrade-script,
+	src/install/arch-specific/darwin/Firebird.startupitem/Firebird:
+	
+	Improved build system support for darwin SS
+
+2003-12-02 22:57  epocman
+
+	* firebird2/src/utilities/gdsclient.cpp:
+	
+	Win32 - Changed version info resource update methods for Win9x
+	compatibility.
+
+2003-12-02 17:04  brodsom
+
+	* firebird2/src/iscguard/iscguard.cpp:
+	
+	Fix posix build (const_cast needed)
+
+2003-12-02 17:03  brodsom
+
+	* firebird2/builds/posix/Makefile.in.client.util:
+	
+	Fix posix builds (new btn.cpp source)
+
+2003-12-02 16:35  arnobrinkman
+
+	* firebird2/src/jrd/btr.cpp:
+	
+	remove unnessecary code
+
+2003-12-02 16:08  alexpeshkoff
+
+	* firebird2/src/jrd/idx.cpp:
+	
+	Fixed use of descending index as table's primary key.  Problems
+	were related with referencing such table in foreign key.
+
+2003-12-02 14:40  alexpeshkoff
+
+	* firebird2/src/jrd/idx.cpp:
+	
+	Fixed use of descending index as table's primary key.  Problems
+	were related with referencing such table in foreign key.
+
+2003-12-02 12:52  aafemt
+
+	* firebird2/src/jrd/btr.cpp:
+	
+	Wrong variable name fixed. Thanks to Claudio
+
+2003-12-02 09:35  eku
+
+	* firebird2/src/dsql/parse.cpp:
+	
+	Fixed syntax error.
+
+2003-12-02 03:50  brodsom
+
+	* firebird2/builds/posix/make.shared.variables:
+	
+	Fix posix build, add new source btn.cpp.
+
+2003-12-02 03:44  brodsom
+
+	* firebird2/src/: gpre/exp.cpp, jrd/btr.cpp, isql/isql.epp,
+	dsql/parse.cpp, dsql/parse.y:
+	
+	Fix scope change that breaks posix build
+
 2003-12-01 20:44  dimitr
 
 	* firebird2/src/common/config/config.cpp:
