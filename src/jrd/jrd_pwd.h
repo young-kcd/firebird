@@ -30,7 +30,8 @@
 #include "../jrd/ibase.h"
 #include "../jrd/smp_impl.h"
 #include "../jrd/thd.h"
-#include "../jrd/os/sha.h"
+#include "../jrd/sha.h"
+#include <stdlib.h>
 #include <time.h>
 
 const size_t MAX_PASSWORD_ENC_LENGTH = 12;	// passed by remote protocol
@@ -71,7 +72,7 @@ public:
 					 const TEXT* passwd)
 	{
 		Firebird::string salt;
-		Jrd::CryptSupport::get().random(salt, SALT_LENGTH);
+		Jrd::CryptSupport::random(salt, SALT_LENGTH);
 		hash(h, userName, passwd, salt);
 	}
 
@@ -85,7 +86,7 @@ public:
 		Firebird::string allData(salt);
 		allData += userName;
 		allData += passwd;
-		Jrd::CryptSupport::get().hash(h, allData);
+		Jrd::CryptSupport::hash(h, allData);
 		h = salt + h;
 	}
 

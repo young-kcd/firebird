@@ -40,6 +40,7 @@
 #include "../jrd/jrd_proto.h"
 #include "../common/config/config.h"
 #include "../common/classes/objects_array.h"
+#include "../common/classes/init.h"
 
 using namespace Jrd;
 
@@ -186,9 +187,9 @@ checkForFreeSpace:
 			if (getCount() >= MAX_CONCURRENT_FAILURES)
 			{
 				// try to perform old entries collection
+				time_t t = time(0);
 				for (iterator i = begin(); i != end(); )
 				{
-					time_t t = time(0);
 					if (t - i->lastAttempt >= FAILURE_DELAY)
 					{
 						remove(i);
