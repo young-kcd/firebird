@@ -294,7 +294,9 @@ void ExecuteStatement::Close(TDBB tdbb) {
 	Sqlda = 0;
 	if (Transaction)
 	{
+		THREAD_EXIT;
 		WHY_cleanup_transaction(Transaction);
+		THREAD_ENTER;
 		delete Transaction;
 		Transaction = 0;
 	}
