@@ -82,6 +82,10 @@ struct index_desc {
 	} idx_rpt[MAX_INDEX_SEGMENTS];
 };
 
+struct IndexDescAlloc : public pool_alloc_rpt<index_desc> {
+	index_desc items[1];
+};
+
 /* index types and flags */
 
 /* See jrd/intl.h for notes on idx_itype and dsc_sub_type considerations */

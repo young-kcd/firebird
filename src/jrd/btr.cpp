@@ -214,7 +214,7 @@ USHORT BTR_all(thread_db*    tdbb,
 			   jrd_rel* relation,
 			   index_desc**   start_buffer,
 			   index_desc**   csb_idx,
-			   CompilerScratch::IndexDescAlloc* csb_idx_allocation)
+			   IndexDescAlloc** csb_idx_allocation)
 {
 /**************************************
  *
@@ -239,8 +239,9 @@ USHORT BTR_all(thread_db*    tdbb,
 		return 0;
 	}
 
-	fb_assert(csb_idx_allocation);
-	index_desc* buffer = *start_buffer = csb_idx_allocation->getBuffer(root->irt_count);
+	delete *csb_idx_allocation;
+	*csb_idx_allocation = FB_NEW_RPT(*tdbb->tdbb_default, root->irt_count) IndexDescAlloc();
+	index_desc* buffer = *start_buffer = (*csb_idx_allocation)->items;
 	USHORT count = 0;
 	for (USHORT i = 0; i < root->irt_count; i++) {
 		if (BTR_description(relation, root, buffer, i)) {

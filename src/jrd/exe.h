@@ -74,6 +74,7 @@ class Resource;
 class jrd_prc;
 class AccessItem;
 struct index_desc;
+struct IndexDescAlloc;
 class Format;
 
 // NOTE: The definition of structures RecordSelExpr and lit must be defined in
@@ -594,8 +595,6 @@ public:
 	SLONG			csb_impure;			/* Next offset into impure area */
 	USHORT			csb_g_flags;
 	MemoryPool&		csb_pool;				/* Memory pool to be used by csb */
-
-	typedef Firebird::HalfStaticArray<index_desc, 8> IndexDescAlloc;
 
     struct csb_repeat
 	{
