@@ -33,7 +33,7 @@
 
 #include "../jrd/thd.h"
 
-#define	ALLROOM		-1UL		/* use all available space */
+const ULONG ALLROOM			= -1UL;	 /* use all available space */
 
 /* Defined the directory list structures. */
 

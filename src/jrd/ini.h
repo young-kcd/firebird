@@ -30,6 +30,11 @@
 #include "../intl/charsets.h"
 #include "../jrd/obj.h"
 
+
+//******************************
+// names.h
+//******************************
+
 /* Define name ids */
 
 #define NAME(name, id) id,
@@ -51,6 +56,11 @@ static const TEXT* const names[] =
 };
 #undef NAME
 
+//******************************
+// fields.h
+//******************************
+const UCHAR BLOB_SIZE		= 8;
+const UCHAR TIMESTAMP_SIZE	= 8;
 
 /* Pick up global ids */
 
@@ -87,6 +97,9 @@ static const struct gfld gfields[] = {
 };
 #undef FIELD
 
+//******************************
+// relations.h
+//******************************
 
 /* Pick up relation ids */
 
@@ -130,6 +143,9 @@ static const UCHAR relfields[] =
 #undef FIELD
 #undef END_RELATION
 
+//******************************
+// types.h and intlnames.h
+//******************************
 
 /* obtain field types */
 

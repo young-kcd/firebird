@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.83 2004-05-03 21:43:56 brodsom Exp $ 
+  * $Id: evl.cpp,v 1.84 2004-05-07 07:57:20 brodsom Exp $ 
  */
 
 /*
@@ -119,8 +119,8 @@
 
 const int TEMP_LENGTH	= 128;
 
-#define MAX_INT64_LIMIT	(MAX_SINT64 / 10)
-#define MIN_INT64_LIMIT	(MIN_SINT64 / 10)
+const SINT64 MAX_INT64_LIMIT	= MAX_SINT64 / 10;
+const SINT64 MIN_INT64_LIMIT	= MIN_SINT64 / 10;
 
 #ifdef VMS
 double MTH$CVT_D_G(), MTH$CVT_G_D();
@@ -199,10 +199,10 @@ static const UCHAR special[256] = {
 
 
 
-#define SECONDS_PER_DAY				(24*60*60)
-#define ISC_TICKS_PER_DAY			(((SINT64)SECONDS_PER_DAY)*ISC_TIME_SECONDS_PRECISION)
-#define DIALECT_3_TIMESTAMP_SCALE	-9
-#define DIALECT_1_TIMESTAMP_SCALE	0
+const SINT64 SECONDS_PER_DAY			= 24*60*60;
+const SINT64 ISC_TICKS_PER_DAY			= SECONDS_PER_DAY * ISC_TIME_SECONDS_PRECISION;
+const SCHAR DIALECT_3_TIMESTAMP_SCALE	= -9;
+const SCHAR DIALECT_1_TIMESTAMP_SCALE	= 0;
 
 #ifdef SCROLLABLE_CURSORS
 static const RSE_GET_MODE g_RSE_get_mode = RSE_get_next;
@@ -2127,6 +2127,27 @@ USHORT EVL_mb_sleuth_merge(thread_db* tdbb,
 
 	return ret_val;
 }
+
+// 
+// Definitions and macros for evl_like
+//
+#define SLEUTH_insensitive	1
+#define COND_UPPER(obj, c)	((flags & SLEUTH_insensitive) ?	(obj).to_upper(c) : (c))
+
+static const char GDML_MATCH_ONE	= '?';
+static const char GDML_MATCH_ANY	= '*';
+
+static const char GDML_QUOTE		= '@';
+static const char GDML_NOT			= '~';
+static const char GDML_RANGE		= '-';
+static const char GDML_CLASS_START	= '[';
+static const char GDML_CLASS_END	= ']';
+static const char GDML_SUBSTITUTE	= '=';
+static const char GDML_FLAG_SET		= '+';
+static const char GDML_FLAG_CLEAR	= '-';
+static const char GDML_COMMA		= ',';
+static const char GDML_LPAREN		= '(';
+static const char GDML_RPAREN		= ')';
 
 /**************************************
  *

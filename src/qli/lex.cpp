@@ -65,9 +65,9 @@
 #endif
 
 #ifdef SMALL_FILE_NAMES
-#define SCRATCH		"fb_q"
+static const char* SCRATCH		= "fb_q";
 #else
-#define SCRATCH		"fb_query_"
+static const char* SCRATCH		= "fb_query_";
 #endif
 
 #ifndef FOPEN_INPUT_TYPE

@@ -226,13 +226,13 @@ inline int STREAM_INDEX(const jrd_nod* node)
 /* some arbitrary fudge factors for calculating costs, etc.--
    these could probably be better tuned someday */
 
-#define ESTIMATED_SELECTIVITY	0.01
-#define INVERSE_ESTIMATE	10
-#define INDEX_COST		30.0
-#define CACHE_PAGES_PER_STREAM	15
-#define SELECTIVITY_THRESHOLD_FACTOR	10
-#define OR_SELECTIVITY_THRESHOLD_FACTOR	2000
-#define LOWEST_PRIORITY_LEVEL 0
+const double ESTIMATED_SELECTIVITY			= 0.01;
+const int INVERSE_ESTIMATE					= 10;
+const double INDEX_COST						= 30.0;
+const int CACHE_PAGES_PER_STREAM			= 15;
+const int SELECTIVITY_THRESHOLD_FACTOR		= 10;
+const int OR_SELECTIVITY_THRESHOLD_FACTOR	= 2000;
+const UINT64 LOWEST_PRIORITY_LEVEL		= 0;
 
 /* enumeration of sort datatypes */
 

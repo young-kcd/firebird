@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.69 2004-04-28 22:39:05 brodsom Exp $
+ * $Id: rse.cpp,v 1.70 2004-05-07 07:57:20 brodsom Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -129,9 +129,9 @@ static void save_record(thread_db*, record_param*);
 static void write_merge_block(thread_db*, merge_file*, ULONG);
 
 #ifdef SMALL_FILE_NAMES
-#define SCRATCH         "fb_m"
+static const char* SCRATCH		= "fb_m";
 #else
-#define SCRATCH         "fb_merge_"
+static const char* SCRATCH		= "fb_merge_";
 #endif
 
 

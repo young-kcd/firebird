@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.65 2004-05-06 22:09:14 brodsom Exp $
+ * $Id: sort.cpp,v 1.66 2004-05-07 07:57:20 brodsom Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -148,9 +148,9 @@ FILE *trace_file = NULL;
 #endif
 
 #ifdef SMALL_FILE_NAMES
-#define SCRATCH         "fb_s"
+static const char* SCRATCH		= "fb_s";
 #else
-#define SCRATCH         "fb_sort_"
+static const char* SCRATCH		= "fb_sort_";
 #endif
 
 #ifdef SCROLLABLE_CURSORS

@@ -27,24 +27,6 @@
  * Contributor(s): ______________________________________.
  */
 
-#define SLEUTH_insensitive	1
-#define COND_UPPER(obj, c)	((flags & SLEUTH_insensitive) ?	(obj).to_upper(c) : (c))
-
-#define GDML_MATCH_ONE		'?'
-#define GDML_MATCH_ANY		'*'
-
-#define GDML_QUOTE		'@'
-#define GDML_NOT		'~'
-#define GDML_RANGE		'-'
-#define GDML_CLASS_START	'['
-#define GDML_CLASS_END		']'
-#define GDML_SUBSTITUTE		'='
-#define GDML_FLAG_SET		'+'
-#define GDML_FLAG_CLEAR		'-'
-#define GDML_COMMA		','
-#define GDML_LPAREN		'('
-#define GDML_RPAREN		')'
-
 
 bool MATCHESNAME(thread_db* tdbb,
 				   TextType obj,

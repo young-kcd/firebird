@@ -85,16 +85,6 @@
 
 #endif /* VMS */
 
-#define statistics		stat
-
-#ifdef UNIX
-#define GDS_EDIT	gds__edit
-#endif
-
-#if defined(WIN_NT)
-#define GDS_EDIT	gds__edit
-#endif
-
 #ifdef VMS
 #ifdef __ALPHA
 static const char* EDT_IMAGE	= "TPUSHR";
@@ -615,8 +605,8 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
 }
 
 
-#ifdef GDS_EDIT
-int API_ROUTINE GDS_EDIT(const TEXT* file_name, USHORT type)
+#if defined(UNIX) || defined(WIN_NT)
+int API_ROUTINE gds__edit(const TEXT* file_name, USHORT type)
 {
 /**************************************
  *
@@ -639,14 +629,14 @@ int API_ROUTINE GDS_EDIT(const TEXT* file_name, USHORT type)
 #endif
 
 	struct stat before;
-	statistics(file_name, &before);
+	stat(file_name, &before);
 	TEXT buffer[256];
 	sprintf(buffer, "%s %s", editor, file_name);
 
 	system(buffer);
 
 	struct stat after;
-	statistics(file_name, &after);
+	stat(file_name, &after);
 
 	return (before.st_mtime != after.st_mtime ||
 			before.st_size != after.st_size);
