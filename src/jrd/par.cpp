@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.50 2003-09-14 15:37:05 dimitr Exp $
+$Id: par.cpp,v 1.51 2003-09-15 08:24:08 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -1719,7 +1719,8 @@ static JRD_NOD par_plan(TDBB tdbb, CSB * csb)
 				temp->nod_arg[i] = access_type->nod_arg[i];
 			}
 			temp->nod_type = (extra_count) ? nod_navigational : nod_indices;
-			delete access_type;
+			if (extra_count)
+				delete access_type;
 			access_type = temp;
 
 			/* pick up the index names and look up the appropriate ids */
