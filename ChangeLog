@@ -1,3 +1,40 @@
+2003-05-08 21:47  skidder
+
+	* firebird2/src/intl/lc_ascii.c:
+	
+	Optimize it a little
+
+2003-05-08 19:40  skidder
+
+	* firebird2/doc/WhatsNew:
+	
+	better description for some of RC2 changes
+
+2003-05-08 12:31  alexpeshkoff
+
+	* firebird2/src/common/config/config_file.cpp:
+	
+	For BootBuild don't give any diagnostic for missing firebird.conf. 
+	For wrong firebird.conf - standard diagnostic.
+
+2003-05-08 12:30  aafemt
+
+	* firebird2/src/remote/srvr_w32.cpp:
+	
+	Missed parameter -l -- accept win32 IPC local connections
+
+2003-05-08 09:15  dimitr
+
+	* firebird2/doc/WhatsNew:
+	
+	Added RC2 changes.
+
+2003-05-08 08:21  dimitr
+
+	* firebird2/src/intl/lc_ascii.c:
+	
+	Handle special win1251 characters properly.
+
 2003-05-07 21:14  skidder
 
 	* firebird2/src/remote/xdr.cpp:
