@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.33 2003-01-17 11:11:02 dimitr Exp $
+ * $Id: ddl.cpp,v 1.34 2003-01-17 12:40:01 dimitr Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -132,11 +132,11 @@ static void define_view(DSQL_REQ, NOD_TYPE);
 static void define_view_trigger(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD);
 static void delete_procedure(DSQL_REQ, DSQL_NOD, BOOLEAN);
 static void delete_relation_view(DSQL_REQ, DSQL_NOD, BOOLEAN);
-static void foreign_key(DSQL_REQ, DSQL_NOD);
+static void foreign_key(DSQL_REQ, DSQL_NOD, SCHAR *);
 static void generate_dyn(DSQL_REQ, DSQL_NOD);
 static void grant_revoke(DSQL_REQ);
-static void make_index(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD, SCHAR *);
-static void make_index_trg_ref_int(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD, SCHAR *);
+static void make_index(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD, SCHAR *, SCHAR *);
+static void make_index_trg_ref_int(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD, SCHAR *, SCHAR *);
 static void modify_database(DSQL_REQ);
 static void modify_domain(DSQL_REQ);
 static void modify_field(DSQL_REQ, DSQL_NOD, SSHORT, STR);
@@ -1993,8 +1993,12 @@ static void define_field(
 					DSQL_NOD index = node1->nod_arg[e_pri_index];
 					assert(index);
 
+					SCHAR *index_name = constraint_name;
 					string = (STR) index->nod_arg[e_idx_name];
-					SCHAR *index_name = (string) ? reinterpret_cast<char*>(string->str_data) : 0;
+					if (string)
+					{
+						index_name = reinterpret_cast<char*>(string->str_data);
+					}
 
 					if (node1->nod_type == nod_primary)
 					{
@@ -2023,7 +2027,7 @@ static void define_field(
 					SCHAR *constraint_name =
 						reinterpret_cast<SCHAR*>(string ? string->str_data : 0);
 					request->append_cstring(gds_dyn_rel_constraint, constraint_name);
-					foreign_key(request, node1);
+					foreign_key(request, node1, constraint_name);
 				}
 				else if (node1->nod_type == nod_def_constraint) {
 					if (cnstrt_flag == FALSE) {
@@ -2524,9 +2528,9 @@ static void define_rel_constraint( DSQL_REQ request, DSQL_NOD element)
 	node = element->nod_arg[e_rct_type];
 
 	if (node->nod_type == nod_unique || node->nod_type == nod_primary)
-		make_index(request, node, node->nod_arg[0], 0, 0);
+		make_index(request, node, node->nod_arg[0], 0, 0, constraint_name);
 	else if (node->nod_type == nod_foreign)
-		foreign_key(request, node);
+		foreign_key(request, node, constraint_name);
 	else if (node->nod_type == nod_def_constraint)
 		check_constraint(request, node, FALSE /* No delete trigger */ );
 }
@@ -3957,7 +3961,7 @@ void dsql_req::end_blr()
 }
 
 
-static void foreign_key( DSQL_REQ request, DSQL_NOD element)
+static void foreign_key( DSQL_REQ request, DSQL_NOD element, TEXT* index_name)
 {
 /* *************************************
  *
@@ -4014,7 +4018,8 @@ static void foreign_key( DSQL_REQ request, DSQL_NOD element)
 
 	make_index_trg_ref_int(request, element, columns1,
 						   element->nod_arg[e_for_refcolumns],
-						   reinterpret_cast<char*>(relation2->str_data));
+						   reinterpret_cast<char*>(relation2->str_data),
+						   index_name);
 }
 
 
@@ -4300,7 +4305,8 @@ static void make_index(	DSQL_REQ		request,
 						DSQL_NOD		element,
 						DSQL_NOD		columns,
 						DSQL_NOD		referenced_columns,
-						TEXT*	relation_name)
+						TEXT*	relation_name,
+						TEXT*	index_name)
 {
 /* *************************************
  *
@@ -4326,7 +4332,10 @@ static void make_index(	DSQL_REQ		request,
 	assert(index);
 
 	STR string = (STR) index->nod_arg[e_idx_name];
-	TEXT *index_name = (string) ? reinterpret_cast<char*>(string->str_data) : 0;
+	if (string)
+	{
+		index_name = reinterpret_cast<char*>(string->str_data);
+	}
 
 	if (element->nod_type == nod_primary)
 	{
@@ -4360,7 +4369,8 @@ static void make_index_trg_ref_int(	DSQL_REQ		request,
 									DSQL_NOD		element,
 									DSQL_NOD		columns,
 									DSQL_NOD		referenced_columns,
-									TEXT*	relation_name)
+									TEXT*	relation_name,
+									TEXT*	index_name)
 {
 /******************************************************
  *
@@ -4403,7 +4413,10 @@ static void make_index_trg_ref_int(	DSQL_REQ		request,
 	assert(index);
 
 	STR string = (STR) index->nod_arg[e_idx_name];
-	TEXT *index_name = (string) ? reinterpret_cast<char*>(string->str_data) : 0;
+	if (string)
+	{
+		index_name = reinterpret_cast<char*>(string->str_data);
+	}
 
 	request->append_cstring(gds_dyn_def_foreign_key, index_name);
 
