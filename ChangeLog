@@ -1,3 +1,17 @@
+2002-11-28 16:44  kkuznetsov
+
+	* firebird2/src/: msgs/change_msgs.epp, msgs/enter_msgs.epp,
+	msgs/modify_msgs.epp, extlib/ib_udf.c:
+	
+	Fix compile errors on Solaris IA
+
+2002-11-28 16:42  kkuznetsov
+
+	* firebird2/src/jrd/: gds.cpp, ib_stdio.h:
+	
+	
+	A  A
+
 2002-11-26 10:00  dimitr
 
 	* firebird2/builds/win32/msvc6/: engine.dsp, engine_classic.dsp,
