@@ -1,3 +1,38 @@
+2004-12-26 16:32  alexpeshkoff
+
+	* firebird2/src/dsql/dsql.cpp (1.137):
+	
+	dsql_set_cursor_name cleanup
+
+2004-12-26 14:47  alexpeshkoff
+
+	* firebird2/src/remote/: inet.cpp (1.134), protocol.h (1.24),
+	xnet.cpp (1.60), os/win32/wnet.cpp (1.29):
+	
+	user_id clumplet cleanup
+
+2004-12-26 13:36  alexpeshkoff
+
+	* firebird2/src/iscguard/iscguard.cpp (1.42):
+	
+	restored cleanup, accidentially erased by my previous commit
+
+2004-12-26 13:11  alexpeshkoff
+
+	* firebird2/src/iscguard/iscguard.cpp (1.41):
+	
+	fixed assertion in guardian
+
+2004-12-26 05:08  robocop
+
+	* firebird2/src/: burp/burp.cpp (1.96), burp/mvol.cpp (1.43),
+	iscguard/iscguard.cpp (1.40), jrd/nbak.cpp (1.46), jrd/pwd.cpp
+	(1.39), jrd/sdw.cpp (1.56), jrd/utl.cpp (1.80), jrd/vio.cpp
+	(1.125), remote/inet.cpp (1.133), utilities/ibmgr/srvrmgr.cpp
+	(1.24):
+	
+	Misc.
+
 2004-12-25 10:43  robocop
 
 	* firebird2/: configure.in (1.212), src/common/classes/locks.h
