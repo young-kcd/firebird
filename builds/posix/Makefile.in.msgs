@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.msgs,v 1.10 2003-04-10 07:50:02 eku Exp $
+#  $Id: Makefile.in.msgs,v 1.11 2003-07-03 15:47:46 brodsom Exp $
 #
 ROOT=..
 ObjModuleName=msgs
@@ -82,11 +82,11 @@ Programs =		$(BUILD_FILE) $(CHECK_MESSAGES) $(ENTER_MESSAGES) \
 
 all:	build_file check_messages enter_messages modify_messages change_messages 
 
-msgs:  master_msg_db $(Programs) do_check message_file
+msgs:  master_msg_db.lnk $(Programs) do_check message_file
 
 
 do_check: $(CHECK_MESSAGES) $(BUILD_FILE)
-	$(CHECK_MESSAGES) -d $(MSGSDIR)master_msg_db -l
+	$(CHECK_MESSAGES) -d $(MSGSDIR)master_msg_db.lnk -l
 
 
 
@@ -135,19 +135,19 @@ $(CHANGE_MESSAGES):	$(CHANGE_Objects) $(LIBFBSTATIC_A) $(LIBFBCOMMON_A)
 message_file : $(FIREBIRD)/firebird.msg
 
 $(INTERBASE_MSG) : $(BUILD_FILE) indicator.msg
-	$(BIN)/build_file -d $(MSGSDIR)master_msg_db -f $@
+	$(BIN)/build_file -d $(MSGSDIR)master_msg_db.lnk -f $@
 	$(CHMOD_6) $@
 
 
 indicator.msg indicator.incl:
-	$(CHECK_MESSAGES) -d $(MSGSDIR)master_msg_db
+	$(CHECK_MESSAGES) -d $(MSGSDIR)master_msg_db.lnk
 
 indicator.loc:
-	$(CHECK_MESSAGES) -d $(MSGSDIR)master_msg_db -l
+	$(CHECK_MESSAGES) -d $(MSGSDIR)master_msg_db.lnk -l
 
 
-master_msg_db:
-	$(LN) -f $(SRC_ROOT)/msg.fdb master_msg_db
+master_msg_db.lnk:
+	$(LN) -f $(SRC_ROOT)/msg.fdb master_msg_db.lnk
 
 
 
@@ -165,16 +165,16 @@ msgs_intl locales.msg:	$(LOCALES)
 
 
 $(fr_FR_MSG) : $(BUILD_FILE) indicator.msg
-	$(BIN)/build_file -d $(MSGSDIR)master_msg_db -l fr_FR -f $@
+	$(BIN)/build_file -d $(MSGSDIR)master_msg_db.lnk -l fr_FR -f $@
 	$(CHMOD_6) $@
 
 $(de_DE_MSG) : $(BUILD_FILE) indicator.msg
-	$(BIN)/build_file -d $(MSGSDIR)master_msg_db -l de_DE -f $@
+	$(BIN)/build_file -d $(MSGSDIR)master_msg_db.lnk -l de_DE -f $@
 	$(CHMOD_6) $@
 
 
 $(ja_JP_MSG) : $(BUILD_FILE) indicator.msg
-	$(BIN)/build_file -d $(MSGSDIR)master_msg_db -l ja_JP.EUC -f $@
+	$(BIN)/build_file -d $(MSGSDIR)master_msg_db.lnk -l ja_JP.EUC -f $@
 	$(CHMOD_6) $@
 
 include $(ROOT)/gen/make.shared.targets

@@ -19,8 +19,7 @@ rm src/include/gen/blrtable.h 2>/dev/null
 rm src/indicator.* 2>/dev/null
 rm -f src/*.fdb 2>/dev/null
 rm -f src/*.FDB 2>/dev/null
-rm -f src/master_msg_db 2>/dev/null
-rm -f src/yachts.lnk 2>/dev/null
+rm -f src/*.lnk 2>/dev/null
 rm src/Makefile 2>/dev/null
 rm src/make.new/config/config.guess 2>/dev/null
 rm src/make.new/config/config.sub 2>/dev/null
