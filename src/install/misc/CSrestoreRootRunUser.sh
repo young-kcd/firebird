@@ -312,7 +312,7 @@ chmod ugo=rw interbase.log
 # make databases writable by all
 chmod ugo=rw examples/*.gdb
 chmod ugo=rw help/*.gdb
-chmod ugo=rw isc4.gdb
+chmod ugo=rw security.fdb
 
 
 

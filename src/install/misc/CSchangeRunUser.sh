@@ -264,7 +264,7 @@ fixFilePermissions() {
 
     chmod a=r interbase.msg
     chmod ug=rw,o= help/help.gdb
-    chmod ug=rw,o= isc4.gdb
+    chmod ug=rw,o= security.fdb
 
 
     # Set a default of read all files in examples
