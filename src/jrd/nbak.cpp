@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.cpp,v 1.31 2004-05-12 19:37:23 brodsom Exp $
+ *  $Id: nbak.cpp,v 1.32 2004-05-15 00:55:09 brodsom Exp $
  *
  */
 
@@ -137,10 +137,10 @@ void BackupManager::lock_state_write(bool thread_exit)
 {
 #ifdef SUPERSERVER
 	if (thread_exit)
-		THREAD_EXIT;
+		THREAD_EXIT();
 	state_lock->beginWrite();
 	if (thread_exit)
-		THREAD_ENTER;
+		THREAD_ENTER();
 #else
 	fb_assert(!(flags & NBAK_state_in_use));
 	thread_db* tdbb = GET_THREAD_DATA;
@@ -225,10 +225,10 @@ bool BackupManager::lock_alloc_write(bool thread_exit) throw()
 {
 #ifdef SUPERSERVER
 	if (thread_exit)
-		THREAD_EXIT;
+		THREAD_EXIT();
 	alloc_lock->beginWrite();
 	if (thread_exit)
-		THREAD_ENTER;
+		THREAD_ENTER();
 #else
 	fb_assert(!(flags & NBAK_alloc_in_use));
 	thread_db* tdbb = GET_THREAD_DATA;
@@ -284,10 +284,10 @@ bool BackupManager::lock_state(bool thread_exit) throw()
 		return true;
 #ifdef SUPERSERVER
 	if (thread_exit)
-		THREAD_EXIT;
+		THREAD_EXIT();
 	state_lock->beginRead();
 	if (thread_exit)
-		THREAD_ENTER;
+		THREAD_ENTER();
 #else
 	fb_assert(!(flags & NBAK_state_in_use));
 	flags |= NBAK_state_in_use;
@@ -328,10 +328,10 @@ void BackupManager::unlock_state() throw()
 bool BackupManager::lock_alloc(bool thread_exit) throw() {
 #ifdef SUPERSERVER
 	if (thread_exit)
-		THREAD_EXIT;
+		THREAD_EXIT();
 	alloc_lock->beginRead();
 	if (thread_exit)
-		THREAD_ENTER;
+		THREAD_ENTER();
 #else
 	fb_assert(!(flags & NBAK_alloc_in_use));
 	thread_db* tdbb = GET_THREAD_DATA;

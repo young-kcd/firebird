@@ -240,14 +240,14 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	}
 
 	if (connection_handle != INVALID_HANDLE_VALUE) {
-		THREAD_ENTER;
+		THREAD_ENTER();
 		if (server_flag & SRVR_inet)
 			port = INET_reconnect(connection_handle, status_vector);
 		else if (server_flag & SRVR_wnet)
 			port = WNET_reconnect(connection_handle, status_vector);
 		else if (server_flag & SRVR_xnet)
 			port = XNET_reconnect((ULONG) connection_handle, status_vector);
-		THREAD_EXIT;
+		THREAD_EXIT();
 		if (port) {
 			service_connection(port);
 		}
@@ -295,7 +295,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 			HANDLE hEvent =
 				ISC_make_signal(TRUE, TRUE, GetCurrentProcessId(), SIGSHUT);
 			WaitForSingleObject(hEvent, INFINITE);
-			THREAD_ENTER;
+			THREAD_ENTER();
 			JRD_shutdown_all();
 		}
 	}
@@ -360,9 +360,9 @@ static void THREAD_ROUTINE inet_connect_wait_thread( void* dummy)
 	if (!(server_flag & SRVR_non_service))
 		thread = CNTL_insert_thread();
 
-	THREAD_ENTER;
+	THREAD_ENTER();
 	port = INET_connect(protocol_inet, 0, status_vector, server_flag, 0, 0);
-	THREAD_EXIT;
+	THREAD_EXIT();
 	if (port)
 		SRVR_multi_thread(port, server_flag);
 	else
@@ -393,9 +393,9 @@ static void THREAD_ROUTINE wnet_connect_wait_thread( void *dummy)
 
 	while (true)
 	{
-		THREAD_ENTER;
+		THREAD_ENTER();
 		rem_port* port = WNET_connect(protocol_wnet, 0, status_vector, server_flag);
-		THREAD_EXIT;
+		THREAD_EXIT();
 		if (!port) {
 			if (status_vector[1] != isc_io_error ||
 				status_vector[6] != isc_arg_win32 ||
@@ -460,9 +460,9 @@ static void THREAD_ROUTINE xnet_connect_wait_thread(void *dummy)
 	if (!(server_flag & SRVR_non_service))
 		thread = CNTL_insert_thread();
 
-	THREAD_ENTER;
+	THREAD_ENTER();
 	XNET_srv(server_flag);
-	THREAD_EXIT;
+	THREAD_EXIT();
 
 	if (!(server_flag & SRVR_non_service))
 		CNTL_remove_thread(thread);

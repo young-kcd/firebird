@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.66 2004-05-07 07:57:20 brodsom Exp $
+ * $Id: sort.cpp,v 1.67 2004-05-15 00:55:09 brodsom Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -910,7 +910,7 @@ ULONG SORT_read_block(
 
 	// Checkout of engine on sort I/O
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 
 	// The following is a crock induced by a VMS C bug
 
@@ -918,19 +918,19 @@ ULONG SORT_read_block(
 		const ULONG len = length;
 		for (i = 0; i < IO_RETRY; i++) {
 			if (lseek(sfb->sfb_file, LSEEK_OFFSET_CAST seek, SEEK_SET) == -1) {
-				THREAD_ENTER;
+				THREAD_ENTER();
 				SORT_error(status_vector, sfb, "lseek", isc_io_read_err, errno);
 			}
 			if ((read_len = read(sfb->sfb_file, address, len)) == len)
 				break;
 			else if ((SSHORT) read_len == -1 && !SYSCALL_INTERRUPTED(errno)) {
-				THREAD_ENTER;
+				THREAD_ENTER();
 				SORT_error(status_vector, sfb, "read", isc_io_read_err, errno);
 			}
 		}
 
 		if (i == IO_RETRY) {
-			THREAD_ENTER;
+			THREAD_ENTER();
 			SORT_error(status_vector, sfb, "read", isc_io_read_err, errno);
 		}
 		length -= read_len;
@@ -938,7 +938,7 @@ ULONG SORT_read_block(
 		seek += read_len;
 	}
 
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 #ifdef DEBUG_SORT_TRACE
 	write_trace("Read", sfb, org_seek, org_address, org_length);
@@ -1199,7 +1199,7 @@ ULONG SORT_write_block(ISC_STATUS* status_vector,
 
 	// Check out of engine on sort I/O
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 
 	// The following is a crock induced by a VMS C bug
 
@@ -1207,7 +1207,7 @@ ULONG SORT_write_block(ISC_STATUS* status_vector,
 		ULONG len = length;
 		for (i = 0; i < IO_RETRY; i++) {
 			if (lseek(sfb->sfb_file, LSEEK_OFFSET_CAST seek, SEEK_SET) == -1) {
-				THREAD_ENTER;
+				THREAD_ENTER();
 				SORT_error(status_vector, sfb, "lseek", isc_io_write_err,
 						   errno);
 			}
@@ -1221,7 +1221,7 @@ ULONG SORT_write_block(ISC_STATUS* status_vector,
 					write_len = write(sfb->sfb_file, address + write_len,
 									  len - write_len);
 				if ((SSHORT) write_len == -1 && !SYSCALL_INTERRUPTED(errno)) {
-					THREAD_ENTER;
+					THREAD_ENTER();
 					SORT_error(status_vector, sfb, "write", isc_io_write_err,
 							   errno);
 				}
@@ -1229,7 +1229,7 @@ ULONG SORT_write_block(ISC_STATUS* status_vector,
 		}
 
 		if (i == IO_RETRY) {
-			THREAD_ENTER;
+			THREAD_ENTER();
 			SORT_error(status_vector, sfb, "write", isc_io_write_err, errno);
 		}
 		length -= write_len;
@@ -1237,7 +1237,7 @@ ULONG SORT_write_block(ISC_STATUS* status_vector,
 		seek += write_len;
 	}
 
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	return seek;
 }
@@ -2643,7 +2643,7 @@ static ULONG order(sort_context* scb)
 
 	// Check out the engine
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 
 	// Length of the key part of the record
 	const SSHORT length = scb->scb_longs - SIZEOF_SR_BCKPTR_IN_LONGS;
@@ -2712,7 +2712,7 @@ static ULONG order(sort_context* scb)
 
 	// Check back into the engine
 
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	// It's OK to free this after checking back into the engine, there's
 	// only fatal failures possible there 
@@ -2804,7 +2804,7 @@ static void sort(sort_context* scb)
 
 	// Check out the engine
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 
 	// First, insert a pointer to the high key
 
@@ -2846,7 +2846,7 @@ static void sort(sort_context* scb)
 
 	if (!scb->scb_dup_callback) {
 		// Check back into the engine
-		THREAD_ENTER;
+		THREAD_ENTER();
 		return;
 	}
 
@@ -2897,7 +2897,7 @@ static void sort(sort_context* scb)
 
 	// Check back into the engine
 
-	THREAD_ENTER;
+	THREAD_ENTER();
 }
 
 #ifdef NOT_USED_OR_REPLACED

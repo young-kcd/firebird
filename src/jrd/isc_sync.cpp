@@ -1426,7 +1426,7 @@ void ISC_exception_post(ULONG sig_num, const TEXT* err_msg)
  *
  **************************************/
 	if (!SCH_thread_enter_check())
-		THREAD_ENTER;
+		THREAD_ENTER();
 
 	// If there's no err_msg, we asumed the switch() finds no case or we crash.
 	// Too much goodwill put on the caller. Weak programming style.
@@ -1510,7 +1510,7 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 	
 	if (!SCH_thread_enter_check ())
 	{
-		THREAD_ENTER;
+		THREAD_ENTER();
 	}
 
 	thread_db* tdbb = GET_THREAD_DATA;

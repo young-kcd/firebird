@@ -143,10 +143,10 @@ static MUTX_T xnet_mutex;
 #elif defined(SUPERSERVER)
 
 #define XNET_LOCK		if (!xnet_shutdown)					\
-							THREAD_EXIT;					\
+							THREAD_EXIT();					\
 							THD_mutex_lock(&xnet_mutex);	\
 							if (!xnet_shutdown)				\
-								THREAD_ENTER;
+								THREAD_ENTER();
 
 #define XNET_UNLOCK		THD_mutex_unlock(&xnet_mutex)
 
@@ -1714,12 +1714,12 @@ static bool_t xnet_getbytes(XDR * xdrs, SCHAR * buff, u_int count)
 			xdrs->x_private += to_copy;
 		}
 		else {
-			THREAD_EXIT;
+			THREAD_EXIT();
 			if (!xnet_read(xdrs)) {
-				THREAD_ENTER;
+				THREAD_ENTER();
 				return FALSE;
 			};
-			THREAD_ENTER;
+			THREAD_ENTER();
 		}
 
 		if (to_copy) {
@@ -1832,7 +1832,7 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 
 			if ((ULONG) xdrs->x_handy == xch->xch_size) {
 
-				THREAD_EXIT;
+				THREAD_EXIT();
 				while (!xnet_shutdown) {
 
 					const DWORD wait_result =
@@ -1858,18 +1858,18 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 								       isc_conn_lost, 0);
 #endif
 
-							THREAD_ENTER;
+							THREAD_ENTER();
 							return FALSE;
 						}
 					}
 					else {
 						XNET_ERROR(port, "WaitForSingleObject()", isc_net_write_err, ERRNO);
-						THREAD_ENTER;
+						THREAD_ENTER();
 						return FALSE; /* a non-timeout result is an error */
 					}
 				}
 
-				THREAD_ENTER;
+				THREAD_ENTER();
 			}
 
 			if (to_copy == sizeof(SLONG))
@@ -2210,7 +2210,7 @@ static bool_t xnet_fork(ULONG client_pid, USHORT flag, ULONG* forken_pid)
 			DWORD config_len;
 
 			config = (LPQUERY_SERVICE_CONFIG) buffer;
-			THREAD_EXIT;
+			THREAD_EXIT();
 			if (!QueryServiceConfig(service, config, sizeof(buffer), &config_len))
 			{
 				config = (LPQUERY_SERVICE_CONFIG) ALLR_alloc(config_len);
@@ -2223,7 +2223,7 @@ static bool_t xnet_fork(ULONG client_pid, USHORT flag, ULONG* forken_pid)
 				ALLR_free(config);
 			}
 			CloseServiceHandle(service);
-			THREAD_ENTER;
+			THREAD_ENTER();
 		}
 		else {
 			strcpy(XNET_command_line, GetCommandLine());
@@ -2546,9 +2546,9 @@ void XNET_srv(USHORT flag)
 		// mark connect area as untouched
 //		presponse->proc_id = CurrentProcessId;
 
-		THREAD_EXIT;
+		THREAD_EXIT();
 		const DWORD wait_res = WaitForSingleObject(xnet_connect_event, INFINITE);
-		THREAD_ENTER;
+		THREAD_ENTER();
 
 		if (wait_res != WAIT_OBJECT_0) {
 			XNET_LOG_ERRORC("WaitForSingleObject() failed");

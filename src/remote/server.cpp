@@ -228,7 +228,7 @@ void SRVR_main(rem_port* main_port, USHORT flags)
 	PACKET send, receive;
 	zap_packet(&receive, true);
 	zap_packet(&send, true);
-	THREAD_ENTER;
+	THREAD_ENTER();
 	set_server(main_port, flags);
 
 	while (true)
@@ -245,7 +245,7 @@ void SRVR_main(rem_port* main_port, USHORT flags)
 		}
 	}
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 }
 
 
@@ -276,7 +276,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 
 	gds__thread_enable(-1);
 
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	SET_THREAD_DATA;
 	trdb->trdb_status_vector = status_vector;
@@ -330,9 +330,9 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 				   request and hope another thread will free memory or
 				   request blocks that we can then use. */
 
-				THREAD_EXIT;
+				THREAD_EXIT();
 				THREAD_SLEEP(1 * 1000);
-				THREAD_ENTER;
+				THREAD_ENTER();
 				continue;
 			}
 		}
@@ -352,7 +352,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 			if (!(port = main_port->receive(&request->req_receive)))
 			{
 				gds__log("SRVR_multi_thread/RECEIVE: error on main_port, shutting down");
-				THREAD_EXIT;
+				THREAD_EXIT();
 				RESTORE_THREAD_DATA;
 				return;
 			}
@@ -463,7 +463,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 	}
 /* We should never get to this point */
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 
 	}	// try
 	catch (const std::exception&)
@@ -535,7 +535,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 		gds__log("SRVR_multi_thread: error during startup, shutting down");
 
 		RESTORE_THREAD_DATA;
-		THREAD_EXIT;
+		THREAD_EXIT();
 		return;
 	}
 
@@ -651,9 +651,9 @@ static ISC_STATUS allocate_statement( rem_port* port, P_RLSE * allocate, PACKET*
 	RDB rdb = port->port_context;
 	FB_API_HANDLE handle = 0;
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	GDS_DSQL_ALLOCATE(status_vector, &rdb->rdb_handle, &handle);
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	OBJCT object;
 	if (status_vector[1])
@@ -672,9 +672,9 @@ static ISC_STATUS allocate_statement( rem_port* port, P_RLSE * allocate, PACKET*
 		}
 		else {
 			object = 0;
-			THREAD_EXIT;
+			THREAD_EXIT();
 			GDS_DSQL_FREE(status_vector, &statement->rsr_handle, DSQL_drop);
-			THREAD_ENTER;
+			THREAD_ENTER();
 			ALLR_release(statement);
 			status_vector[0] = isc_arg_gds;
 			status_vector[1] = isc_too_many_handles;
@@ -788,7 +788,7 @@ static ISC_STATUS attach_database(
    they will be stuffed in the DPB if so. */
 	REMOTE_get_timeout_params(port, dpb, dl);
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	if (operation == op_attach)
 	{
 		isc_attach_database(status_vector, l, file,
@@ -799,7 +799,7 @@ static ISC_STATUS attach_database(
 		isc_create_database(status_vector, l, file,
 							&handle, dl, reinterpret_cast<const char*>(dpb), 0);
 	}
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	if (new_dpb != new_dpb_buffer) {
 		ALLR_free(new_dpb);
@@ -932,9 +932,9 @@ static ISC_STATUS cancel_events( rem_port* port, P_EVENT * stuff, PACKET* send)
 /* cancel the event */
 
 	if (event->rvnt_id) {
-		THREAD_EXIT;
+		THREAD_EXIT();
 		isc_cancel_events(status_vector, &rdb->rdb_handle, &event->rvnt_id);
-		THREAD_ENTER;
+		THREAD_ENTER();
 	}
 
 /* zero event info */
@@ -975,11 +975,11 @@ static void cancel_operation( rem_port* port)
 	{
 		if (!(rdb->rdb_flags & RDB_service))
 		{
-			THREAD_EXIT;
+			THREAD_EXIT();
 			ISC_STATUS_ARRAY status_vector;
 			gds__cancel_operation(status_vector, (FB_API_HANDLE*) &rdb->rdb_handle,
 								  CANCEL_raise);
-			THREAD_ENTER;
+			THREAD_ENTER();
 		}
 	}
 }
@@ -1027,7 +1027,7 @@ static USHORT check_statement_type( RSR statement)
 	USHORT ret = STMT_OTHER;
 	bool done = false;
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	if (!GDS_DSQL_SQL_INFO(local_status, &statement->rsr_handle,
 						   sizeof(sql_info), (const SCHAR*) sql_info,
 						   sizeof(buffer), reinterpret_cast<char*>(buffer)))
@@ -1059,7 +1059,7 @@ static USHORT check_statement_type( RSR statement)
 			info += 3 + l;
 		}
 	}
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	return ret;
 }
@@ -1084,10 +1084,10 @@ ISC_STATUS rem_port::compile(P_CMPL* compileL, PACKET* sendL)
 	const UCHAR* blr = compileL->p_cmpl_blr.cstr_address;
 	USHORT blr_length = compileL->p_cmpl_blr.cstr_length;
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	isc_compile_request(status_vector, &rdb->rdb_handle, &handle, blr_length,
 						reinterpret_cast<const char*>(blr));
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	if (status_vector[1])
 		return this->send_response(sendL, 0, 0, status_vector);
@@ -1119,9 +1119,9 @@ ISC_STATUS rem_port::compile(P_CMPL* compileL, PACKET* sendL)
 		rdb->rdb_requests = requestL;
 	}
 	else {
-		THREAD_EXIT;
+		THREAD_EXIT();
 		isc_release_request(status_vector, &requestL->rrq_handle);
-		THREAD_ENTER;
+		THREAD_ENTER();
 		ALLR_release(requestL);
 		status_vector[0] = isc_arg_gds;
 		status_vector[1] = isc_too_many_handles;
@@ -1174,10 +1174,10 @@ ISC_STATUS rem_port::ddl(P_DDL* ddlL, PACKET* sendL)
 	const UCHAR* blr = ddlL->p_ddl_blr.cstr_address;
 	const USHORT blr_length = ddlL->p_ddl_blr.cstr_length;
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	isc_ddl(status_vector, &rdb->rdb_handle, &transaction->rtr_handle,
 			blr_length, reinterpret_cast<const char*>(blr));
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	return this->send_response(sendL, 0, 0, status_vector);
 }
@@ -1231,10 +1231,10 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 			/* Prevent a pending or spurious cancel from aborting
 			   a good, clean detach from the database. */
 
-			THREAD_EXIT;
+			THREAD_EXIT();
 			gds__cancel_operation(status_vector, (FB_API_HANDLE*) &rdb->rdb_handle,
 								  CANCEL_disable);
-			THREAD_ENTER;
+			THREAD_ENTER();
 #endif
 			while (rdb->rdb_requests)
 				release_request(rdb->rdb_requests);
@@ -1242,7 +1242,7 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 				release_sql_request(rdb->rdb_sql_requests);
 			RTR transaction;
 			while (transaction = rdb->rdb_transactions) {
-				THREAD_EXIT;
+				THREAD_EXIT();
 				if (!(transaction->rtr_flags & RTR_limbo))
 					isc_rollback_transaction(status_vector,
 											 &transaction->rtr_handle);
@@ -1258,12 +1258,12 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 					gds__handle_cleanup(status_vector,
 										(FB_API_HANDLE*) &transaction->rtr_handle);
 #endif
-				THREAD_ENTER;
+				THREAD_ENTER();
 				release_transaction(rdb->rdb_transactions);
 			}
-			THREAD_EXIT;
+			THREAD_EXIT();
 			isc_detach_database(status_vector, &rdb->rdb_handle);
-			THREAD_ENTER;
+			THREAD_ENTER();
 			while (rdb->rdb_events) {
 				release_event(rdb->rdb_events);
 			}
@@ -1273,9 +1273,9 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 		}
 		else
 		{
-			THREAD_EXIT;
+			THREAD_EXIT();
 			isc_service_detach(status_vector, &rdb->rdb_handle);
-			THREAD_ENTER;
+			THREAD_ENTER();
 		}
 
 	REMOTE_free_packet(this, sendL);
@@ -1360,9 +1360,9 @@ void rem_port::drop_database(P_RLSE* release, PACKET* sendL)
 
 	RDB rdb = this->port_context;
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	isc_drop_database(status_vector, &rdb->rdb_handle);
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	if (status_vector[1]
 		&& (status_vector[1] != isc_drdb_completed_with_errs))
@@ -1441,12 +1441,12 @@ ISC_STATUS rem_port::end_blob(P_OP operation, P_RLSE * release, PACKET* sendL)
 						release->p_rlse_object,
 						isc_bad_segstr_handle);
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	if (operation == op_close_blob)
 		isc_close_blob(status_vector, &blob->rbl_handle);
 	else
 		isc_cancel_blob(status_vector, &blob->rbl_handle);
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	if (!status_vector[1]) {
 		release_blob(blob);
@@ -1472,9 +1472,9 @@ ISC_STATUS rem_port::end_database(P_RLSE * release, PACKET* sendL)
 
 	RDB rdb = this->port_context;
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	isc_detach_database(status_vector,&rdb->rdb_handle);
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	if (status_vector[1])
 		return this->send_response(sendL, 0, 0, status_vector);
@@ -1519,9 +1519,9 @@ ISC_STATUS rem_port::end_request(P_RLSE * release, PACKET* sendL)
 						release->p_rlse_object,
 						isc_bad_req_handle);
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	isc_release_request(status_vector, &requestL->rrq_handle);
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	if (!status_vector[1])
 		release_request(requestL);
@@ -1551,11 +1551,11 @@ ISC_STATUS rem_port::end_statement(P_SQLFREE* free_stmt, PACKET* sendL)
 						free_stmt->p_sqlfree_statement,
 						isc_bad_req_handle);
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	GDS_DSQL_FREE(status_vector,
 				  &statement->rsr_handle,
 				  free_stmt->p_sqlfree_option);
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	if (status_vector[1])
 		return this->send_response(sendL, 0, 0, status_vector);
@@ -1598,7 +1598,7 @@ ISC_STATUS rem_port::end_transaction(P_OP operation, P_RLSE * release, PACKET* s
 						release->p_rlse_object,
 						isc_bad_trans_handle);
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	switch (operation)
 	{
 	case op_commit:
@@ -1622,7 +1622,7 @@ ISC_STATUS rem_port::end_transaction(P_OP operation, P_RLSE * release, PACKET* s
 				transaction->rtr_flags |= RTR_limbo;
 		break;
 	}
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	if (!status_vector[1])
 		if (operation == op_commit || operation == op_rollback) {
@@ -1726,7 +1726,7 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 
 	parser_version = (this->port_protocol < PROTOCOL_VERSION10) ? 1 : 2;
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	GDS_DSQL_EXECUTE_IMMED(status_vector,
 						   &rdb->rdb_handle,
 						   &handle,
@@ -1744,7 +1744,7 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 						   out_msg_type,
 						   out_msg_length,
 						   reinterpret_cast<char*>(out_msg));
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	if (op == op_exec_immediate2)
 	{
@@ -1844,7 +1844,7 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 
 	FB_API_HANDLE handle = (transaction) ? transaction->rtr_handle : 0;
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	GDS_DSQL_EXECUTE(status_vector,
 					 &handle,
 					 &statement->rsr_handle,
@@ -1858,7 +1858,7 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 					 out_msg_type,
 					 out_msg_length,
 					 reinterpret_cast<char*>(out_msg));
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	if (op == op_execute2)
 	{
@@ -1992,7 +1992,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 
 		if (!message->msg_address) {
 			fb_assert(statement->rsr_msgs_waiting == 0);
-			THREAD_EXIT;
+			THREAD_EXIT();
 			s = GDS_DSQL_FETCH(status_vector,
 							   &statement->rsr_handle,
 							   sqldata->p_sqldata_blr.cstr_length,
@@ -2001,7 +2001,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 							   msg_length,
 							   reinterpret_cast<char*>(message->msg_buffer));
 
-			THREAD_ENTER;
+			THREAD_ENTER();
 			statement->rsr_flags |= RSR_fetched;
 			if (s) {
 				if (s == 100 || s == 101) {
@@ -2069,7 +2069,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 			next->msg_next = message;
 			next = message;
 		}
-		THREAD_EXIT;
+		THREAD_EXIT();
 		s = GDS_DSQL_FETCH(status_vector,
 						   &statement->rsr_handle,
 						   sqldata->p_sqldata_blr.cstr_length,
@@ -2077,7 +2077,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 						   sqldata->p_sqldata_message_number,
 						   msg_length,
 						   reinterpret_cast<char*>(message->msg_buffer));
-		THREAD_ENTER;
+		THREAD_ENTER();
 		if (s) {
 			if (status_vector[1]) {
 				/* If already have an error queued, don't overwrite it */
@@ -2141,7 +2141,7 @@ ISC_STATUS rem_port::fetch_blob(P_SQLDATA * sqldata, PACKET* sendL)
 	ISC_STATUS s = 0;
 	message = statement->rsr_buffer;
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	s = GDS_DSQL_FETCH(status_vector,
 					   &statement->rsr_handle,
 					   sqldata->p_sqldata_blr.cstr_length,
@@ -2149,7 +2149,7 @@ ISC_STATUS rem_port::fetch_blob(P_SQLDATA * sqldata, PACKET* sendL)
 					   sqldata->p_sqldata_message_number,
 					   msg_length,
 					   reinterpret_cast<char*>(message->msg_buffer));
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	if (!status_vector[1] ||
 		status_vector[1] != isc_segment || status_vector[1] != isc_segstr_eof)
@@ -2229,11 +2229,11 @@ static bool get_next_msg_no(rrq* request,
 	ISC_STATUS_ARRAY status_vector;
 	UCHAR info_buffer[128];
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	isc_request_info(status_vector, &request->rrq_handle, incarnation,
 					 sizeof(request_info), reinterpret_cast<const SCHAR*>(request_info),
 					 sizeof(info_buffer), reinterpret_cast<char*>(info_buffer));
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	if (status_vector[1])
 		return false;
@@ -2314,11 +2314,11 @@ ISC_STATUS rem_port::get_segment(P_SGMT* segment, PACKET* sendL)
 	if (this->port_flags & PORT_rpc)
 	{
 		length = 0;
-		THREAD_EXIT;
+		THREAD_EXIT();
 		isc_get_segment(status_vector, &blob->rbl_handle, &length,
 						segment->p_sgmt_length,
 						reinterpret_cast<char*>(buffer));
-		THREAD_ENTER;
+		THREAD_ENTER();
 		const ISC_STATUS status =
 			this->send_response(sendL, blob->rbl_id, length, status_vector);
 #ifdef DEBUG_REMOTE_MEMORY
@@ -2342,10 +2342,10 @@ ISC_STATUS rem_port::get_segment(P_SGMT* segment, PACKET* sendL)
 	while (buffer_length > 2) {
 		buffer_length -= 2;
 		p += 2;
-		THREAD_EXIT;
+		THREAD_EXIT();
 		isc_get_segment(status_vector, &blob->rbl_handle, &length,
 						buffer_length, reinterpret_cast<char*>(p));
-		THREAD_ENTER;
+		THREAD_ENTER();
 		if (status_vector[1] == isc_segstr_eof)
 		{
 			state = 2;
@@ -2430,7 +2430,7 @@ ISC_STATUS rem_port::get_slice(P_SLC * stuff, PACKET* sendL)
 	}
 	P_SLR* response = &sendL->p_slr;
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	isc_get_slice(status_vector, &rdb->rdb_handle, &transaction->rtr_handle,
 				  (ISC_QUAD*) &stuff->p_slc_id, stuff->p_slc_sdl.cstr_length,
 				  reinterpret_cast<const char*>(stuff->p_slc_sdl.cstr_address),
@@ -2438,7 +2438,7 @@ ISC_STATUS rem_port::get_slice(P_SLC * stuff, PACKET* sendL)
 				  (const ISC_LONG*) stuff->p_slc_parameters.cstr_address,
 				  stuff->p_slc_length, slice,
 				  reinterpret_cast<SLONG*>(&response->p_slr_length));
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	ISC_STATUS status;
 	if (status_vector[1])
@@ -2512,17 +2512,17 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 							type_rbl,
 							stuff->p_info_object,
 							isc_bad_segstr_handle);
-		THREAD_EXIT;
+		THREAD_EXIT();
 		isc_blob_info(status_vector, &blob->rbl_handle,
 					  stuff->p_info_items.cstr_length,
 					  reinterpret_cast<char*>(stuff->p_info_items.cstr_address),
 					  stuff->p_info_buffer_length,
 					  reinterpret_cast<char*>(buffer));
-		THREAD_ENTER;
+		THREAD_ENTER();
 		break;
 
 	case op_info_database:
-		THREAD_EXIT;
+		THREAD_EXIT();
 		isc_database_info(status_vector, &rdb->rdb_handle,
 						  stuff->p_info_items.cstr_length,
 						  reinterpret_cast<const char*>(stuff->p_info_items.cstr_address),
@@ -2538,7 +2538,7 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 								reinterpret_cast<UCHAR*>(this->port_host->str_data),
 								0);
 		}
-		THREAD_ENTER;
+		THREAD_ENTER();
 		break;
 
 	case op_info_request:
@@ -2548,14 +2548,14 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 							type_rrq,
 							stuff->p_info_object,
 							isc_bad_req_handle);
-		THREAD_EXIT;
+		THREAD_EXIT();
 		isc_request_info(status_vector, &requestL->rrq_handle,
 						 stuff->p_info_incarnation,
 						 stuff->p_info_items.cstr_length,
 						 reinterpret_cast<const char*>(stuff->p_info_items.cstr_address),
 						 stuff->p_info_buffer_length,
 						 reinterpret_cast<char*>(buffer));
-		THREAD_ENTER;
+		THREAD_ENTER();
 		break;
 
 	case op_info_transaction:
@@ -2564,17 +2564,17 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 							type_rtr,
 							stuff->p_info_object,
 							isc_bad_trans_handle);
-		THREAD_EXIT;
+		THREAD_EXIT();
 		isc_transaction_info(status_vector, &transaction->rtr_handle,
 							 stuff->p_info_items.cstr_length,
 							 reinterpret_cast<const char*>(stuff->p_info_items.cstr_address),
 							 stuff->p_info_buffer_length,
 							 reinterpret_cast < char *>(buffer));
-		THREAD_ENTER;
+		THREAD_ENTER();
 		break;
 
 	case op_service_info:
-		THREAD_EXIT;
+		THREAD_EXIT();
 		isc_service_query(status_vector,
 						  &rdb->rdb_handle,
 						  NULL,
@@ -2586,7 +2586,7 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 						  const char*>(stuff->p_info_recv_items.cstr_address),
 						  stuff->p_info_buffer_length,
 						  reinterpret_cast<char*>(buffer));
-		THREAD_ENTER;
+		THREAD_ENTER();
 		break;
 
 	case op_info_sql:
@@ -2595,7 +2595,7 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 							type_rsr,
 							stuff->p_info_object,
 							isc_bad_req_handle);
-		THREAD_EXIT;
+		THREAD_EXIT();
 		GDS_DSQL_SQL_INFO(status_vector,
 						  &statement->rsr_handle,
 						  stuff->p_info_items.cstr_length,
@@ -2603,7 +2603,7 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 						  const char*>(stuff->p_info_items.cstr_address),
 						  stuff->p_info_buffer_length,
 						  reinterpret_cast < char *>(buffer));
-		THREAD_ENTER;
+		THREAD_ENTER();
 		break;
 	}
 
@@ -2663,14 +2663,14 @@ ISC_STATUS rem_port::insert(P_SQLDATA * sqldata, PACKET* sendL)
 		msg = NULL;
 	}
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	GDS_DSQL_INSERT(status_vector,
 					&statement->rsr_handle,
 					sqldata->p_sqldata_blr.cstr_length,
 					reinterpret_cast<const char*>(sqldata->p_sqldata_blr.cstr_address),
 					sqldata->p_sqldata_message_number, msg_length,
 					reinterpret_cast<const char*>(msg));
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	return this->send_response(sendL, 0, 0, status_vector);
 }
@@ -2736,7 +2736,7 @@ ISC_STATUS rem_port::open_blob(P_OP op, P_BLOB* stuff, PACKET* sendL)
 		bpb = stuff->p_blob_bpb.cstr_address;
 	}
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	if (op == op_open_blob || op == op_open_blob2)
 		isc_open_blob2(status_vector, &rdb->rdb_handle, 
 					   &transaction->rtr_handle, &handle,
@@ -2745,7 +2745,7 @@ ISC_STATUS rem_port::open_blob(P_OP op, P_BLOB* stuff, PACKET* sendL)
 		isc_create_blob2(status_vector, &rdb->rdb_handle, &transaction->rtr_handle,
 						 &handle, (ISC_QUAD*) &sendL->p_resp.p_resp_blob_id,
 						 bpb_length, reinterpret_cast<const char*>(bpb));
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	USHORT object;
 	if (status_vector[1])
@@ -2769,9 +2769,9 @@ ISC_STATUS rem_port::open_blob(P_OP op, P_BLOB* stuff, PACKET* sendL)
 		else
 		{
 			object = 0;
-			THREAD_EXIT;
+			THREAD_EXIT();
 			isc_cancel_blob(status_vector, &blob->rbl_handle);
-			THREAD_ENTER;
+			THREAD_ENTER();
 			ALLR_release(blob);
 			status_vector[0] = isc_arg_gds;
 			status_vector[1] = isc_too_many_handles;
@@ -2804,14 +2804,14 @@ ISC_STATUS rem_port::prepare(P_PREP * stuff, PACKET* sendL)
 						stuff->p_prep_transaction,
 						isc_bad_trans_handle);
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	if (!isc_prepare_transaction2(status_vector, &transaction->rtr_handle,
 								  stuff->p_prep_data.cstr_length,
 								  stuff->p_prep_data.cstr_address))
 	{
 		transaction->rtr_flags |= RTR_limbo;
 	}
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	return this->send_response(sendL, 0, 0, status_vector);
 }
@@ -2879,7 +2879,7 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
  */
 	const USHORT parser_version = (this->port_protocol < PROTOCOL_VERSION10) ? 1 : 2;
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	GDS_DSQL_PREPARE(status_vector,
 					 &handle,
 					 &statement->rsr_handle,
@@ -2891,7 +2891,7 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 					 reinterpret_cast<const char*>(prepareL->p_sqlst_items.cstr_address),
 					 prepareL->p_sqlst_buffer_length,
 					 reinterpret_cast<char*>(buffer));
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	if (status_vector[1]) {
 		if (buffer != local_buffer)
@@ -3251,10 +3251,10 @@ ISC_STATUS rem_port::put_segment(P_OP op, P_SGMT * segment, PACKET* sendL)
    bad news. */
 
 	if (op == op_put_segment) {
-		THREAD_EXIT;
+		THREAD_EXIT();
 		isc_put_segment(status_vector, &blob->rbl_handle, length,
 						reinterpret_cast<const char*>(p));
-		THREAD_ENTER;
+		THREAD_ENTER();
 		return this->send_response(sendL, 0, 0, status_vector);
 	}
 
@@ -3265,10 +3265,10 @@ ISC_STATUS rem_port::put_segment(P_OP op, P_SGMT * segment, PACKET* sendL)
 	while (p < end) {
 		length = *p++;
 		length += *p++ << 8;
-		THREAD_EXIT;
+		THREAD_EXIT();
 		isc_put_segment(status_vector, &blob->rbl_handle, length,
 						reinterpret_cast<const char*>(p));
-		THREAD_ENTER;
+		THREAD_ENTER();
 		if (status_vector[1])
 			return this->send_response(sendL, 0, 0, status_vector);
 		p += length;
@@ -3301,7 +3301,7 @@ ISC_STATUS rem_port::put_slice(P_SLC * stuff, PACKET* sendL)
 
 	RDB rdb = this->port_context;
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	sendL->p_resp.p_resp_blob_id = stuff->p_slc_id;
 	isc_put_slice(status_vector, &rdb->rdb_handle, &transaction->rtr_handle,
 				  (ISC_QUAD*) &sendL->p_resp.p_resp_blob_id,
@@ -3311,7 +3311,7 @@ ISC_STATUS rem_port::put_slice(P_SLC * stuff, PACKET* sendL)
 				  (ISC_LONG *) stuff->p_slc_parameters.cstr_address,
 				  stuff->p_slc_slice.lstr_length,
 				  stuff->p_slc_slice.lstr_address);
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	return this->send_response(sendL, 0, 0, status_vector);
 }
@@ -3362,14 +3362,14 @@ ISC_STATUS rem_port::que_events(P_EVENT * stuff, PACKET* sendL)
 	event->rvnt_rid = stuff->p_event_rid;
 	event->rvnt_rdb = rdb;
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	ISC_STATUS_ARRAY status_vector;
 	isc_que_events(status_vector, &rdb->rdb_handle, &event->rvnt_id,
 				   stuff->p_event_items.cstr_length,
 				   reinterpret_cast<const char*>(stuff->p_event_items.cstr_address),
 				   server_ast,
 				   event);
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	const SLONG id = event->rvnt_id;
 	if (status_vector[1]) {
@@ -3533,7 +3533,7 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 				return res;
 			}
 
-			THREAD_EXIT;
+			THREAD_EXIT();
 #ifdef SCROLLABLE_CURSORS
 			isc_receive2(status_vector, &requestL->rrq_handle, msg_number, 
 						 format->fmt_length, message->msg_buffer, level, 
@@ -3542,7 +3542,7 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 			isc_receive(status_vector, &requestL->rrq_handle, msg_number,
 						format->fmt_length, message->msg_buffer, level);
 #endif
-			THREAD_ENTER;
+			THREAD_ENTER();
 			if (status_vector[1])
 				return this->send_response(sendL, 0, 0, status_vector);
 
@@ -3670,11 +3670,11 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 		   just doing a simple lookahead continuing on in the last direction specified, 
 		   so there is no reason to do an isc_receive2() */
 
-		THREAD_EXIT;
+		THREAD_EXIT();
 		isc_receive(status_vector, &requestL->rrq_handle, msg_number,
 					format->fmt_length,
 					message->msg_buffer, data->p_data_incarnation);
-		THREAD_ENTER;
+		THREAD_ENTER();
 
 		/* Did we have an error?  If so, save it for later delivery */
 
@@ -4018,10 +4018,10 @@ ISC_STATUS rem_port::seek_blob(P_SEEK * seek, PACKET* sendL)
 	const SSHORT mode = seek->p_seek_mode;
 	const SLONG offset = seek->p_seek_offset;
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	SLONG result;
 	isc_seek_blob(status_vector, &blob->rbl_handle, mode, offset, &result);
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	sendL->p_resp.p_resp_blob_id.bid_number = result;
 
@@ -4055,10 +4055,10 @@ ISC_STATUS rem_port::send_msg(P_DATA * data, PACKET* sendL)
 	REM_MSG message = requestL->rrq_rpt[number].rrq_message;
 	const rem_fmt* format = requestL->rrq_rpt[number].rrq_format;
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	isc_send(status_vector, &requestL->rrq_handle, number, format->fmt_length,
 			 message->msg_address, data->p_data_incarnation);
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	message->msg_address = NULL;
 
@@ -4204,13 +4204,13 @@ static void server_ast(void* event_void, USHORT length, const UCHAR* items)
  **************************************/
 	RVNT event = static_cast<rvnt*>(event_void);
 
-	THREAD_ENTER;
+	THREAD_ENTER();
 	event->rvnt_id = 0;
 	RDB rdb = event->rvnt_rdb;
 
 	rem_port* port = rdb->rdb_port->port_async;
 	if (!port) {
-		THREAD_EXIT;
+		THREAD_EXIT();
 		return;
 	}
 
@@ -4230,7 +4230,7 @@ static void server_ast(void* event_void, USHORT length, const UCHAR* items)
 	p_event->p_event_rid = event->rvnt_rid;
 
 	port->send(&packet);
-	THREAD_EXIT;
+	THREAD_EXIT();
 }
 
 
@@ -4290,7 +4290,7 @@ ISC_STATUS rem_port::service_attach(P_ATCH* attach, PACKET* sendL)
    they will be stuffed in the SPB if so. */
 	REMOTE_get_timeout_params(this, spb, spb_length);
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	ISC_STATUS_ARRAY status_vector;
 	isc_service_attach(status_vector,
 					   service_length,
@@ -4298,7 +4298,7 @@ ISC_STATUS rem_port::service_attach(P_ATCH* attach, PACKET* sendL)
 					   &handle,
 					   spb_length,
 					   reinterpret_cast<const char*>(spb));
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	if (new_spb != new_spb_buffer)
 		ALLR_free(new_spb);
@@ -4334,9 +4334,9 @@ ISC_STATUS rem_port::service_end(P_RLSE * release, PACKET* sendL)
 
 	ISC_STATUS_ARRAY status_vector;
 	
-	THREAD_EXIT;
+	THREAD_EXIT();
 	isc_service_detach(status_vector, &rdb->rdb_handle);
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	return this->send_response(sendL, 0, 0, status_vector);
 }
@@ -4358,14 +4358,14 @@ ISC_STATUS rem_port::service_start(P_INFO * stuff, PACKET* sendL)
 
 	ISC_STATUS_ARRAY status_vector;
 	
-	THREAD_EXIT;
+	THREAD_EXIT();
 	SLONG* reserved = 0;		// reserved for future use
 	isc_service_start(status_vector,
 					  &rdb->rdb_handle,
 					  reserved,
 					  stuff->p_info_items.cstr_length,
 					  reinterpret_cast<char*>(stuff->p_info_items.cstr_address));
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	return this->send_response(sendL, 0, 0, status_vector);
 }
@@ -4392,12 +4392,12 @@ ISC_STATUS rem_port::set_cursor(P_SQLCUR * sqlcur, PACKET* sendL)
 						sqlcur->p_sqlcur_statement,
 						isc_bad_req_handle);
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	GDS_DSQL_SET_CURSOR(status_vector,
 						&statement->rsr_handle,
 						reinterpret_cast<const char*>(sqlcur->p_sqlcur_cursor_name.cstr_address),
 						sqlcur->p_sqlcur_type);
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	return this->send_response(sendL, 0, 0, status_vector);
 }
@@ -4468,10 +4468,10 @@ ISC_STATUS rem_port::start(P_OP operation, P_DATA * data, PACKET* sendL)
 	requestL = REMOTE_find_request(requestL, data->p_data_incarnation);
 	REMOTE_reset_request(requestL, 0);
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	isc_start_request(status_vector, &requestL->rrq_handle,
 					  &transaction->rtr_handle, data->p_data_incarnation);
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	if (!status_vector[1]) {
 		requestL->rrq_rtr = transaction;
@@ -4518,12 +4518,12 @@ ISC_STATUS rem_port::start_and_send(P_OP	operation,
 	REMOTE_reset_request(requestL, message);
 
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	isc_start_and_send(status_vector, &requestL->rrq_handle,
 					   &transaction->rtr_handle, number,
 					   format->fmt_length, message->msg_address,
 					   data->p_data_incarnation);
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	if (!status_vector[1]) {
 		requestL->rrq_rtr = transaction;
@@ -4553,7 +4553,7 @@ ISC_STATUS rem_port::start_transaction(P_OP operation, P_STTR * stuff, PACKET* s
 	RDB rdb = this->port_context;
 	FB_API_HANDLE handle = 0;
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	if (operation == op_reconnect)
 		isc_reconnect_transaction(status_vector, &rdb->rdb_handle, &handle,
 								  stuff->p_sttr_tpb.cstr_length,
@@ -4562,7 +4562,7 @@ ISC_STATUS rem_port::start_transaction(P_OP operation, P_STTR * stuff, PACKET* s
 		isc_start_transaction(status_vector, &handle, (SSHORT) 1, &rdb->rdb_handle,
 							  stuff->p_sttr_tpb.cstr_length,
 							  stuff->p_sttr_tpb.cstr_address);
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	OBJCT object;
 	if (status_vector[1])
@@ -4584,7 +4584,7 @@ ISC_STATUS rem_port::start_transaction(P_OP operation, P_STTR * stuff, PACKET* s
 		}
 		else {
 			object = 0;
-			THREAD_EXIT;
+			THREAD_EXIT();
 			if (operation != op_reconnect)
 				isc_rollback_transaction(status_vector, &handle);
 #ifdef SUPERSERVER
@@ -4600,7 +4600,7 @@ ISC_STATUS rem_port::start_transaction(P_OP operation, P_STTR * stuff, PACKET* s
 				gds__handle_cleanup(status_vector, &handle);
 			}
 #endif
-			THREAD_ENTER;
+			THREAD_ENTER();
 			status_vector[0] = isc_arg_gds;
 			status_vector[1] = isc_too_many_handles;
 			status_vector[2] = isc_arg_end;
@@ -4653,7 +4653,7 @@ static int THREAD_ROUTINE loopThread(void* flags)
 
 	USHORT inactive_count = 0;
 	USHORT timedout_count = 0;
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	rem_port* port;
 
@@ -4675,9 +4675,9 @@ static int THREAD_ROUTINE loopThread(void* flags)
 					port = request->req_port;
 					request->req_next = free_requests;
 					free_requests = request;
-					THREAD_EXIT;
+					THREAD_EXIT();
 					SRVR_main(port, port->port_server_flags);
-					THREAD_ENTER;
+					THREAD_ENTER();
 					request = 0;
 					continue;
 				}
@@ -4778,7 +4778,7 @@ static int THREAD_ROUTINE loopThread(void* flags)
 			}
 
 			threads_waiting++;
-			THREAD_EXIT;
+			THREAD_EXIT();
 			/* Wait for 1 minute (60 seconds) on a new request */
 			REMOTE_TRACE(("Wait for event"));
 			if (!requests_semaphore.tryEnter(60)) {
@@ -4788,12 +4788,12 @@ static int THREAD_ROUTINE loopThread(void* flags)
 			else {
 				REMOTE_TRACE(("got it"));
 			}
-			THREAD_ENTER;
+			THREAD_ENTER();
 			--threads_waiting;
 		}
 	}
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 
 #ifdef WIN_NT
 	if (!((SLONG) flags & SRVR_non_service))
@@ -4839,7 +4839,7 @@ ISC_STATUS rem_port::transact_request(P_TRRQ* trrq, PACKET* sendL)
 		(procedure->rpr_out_format) ? procedure->rpr_out_format->
 		fmt_length : 0;
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	isc_transact_request(status_vector,
 						 &rdb->rdb_handle,
 						 &transaction->rtr_handle,
@@ -4849,7 +4849,7 @@ ISC_STATUS rem_port::transact_request(P_TRRQ* trrq, PACKET* sendL)
 						 reinterpret_cast<char*>(in_msg),
 						 out_msg_length,
 						 reinterpret_cast<char*>(out_msg));
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	if (status_vector[1])
 		return this->send_response(sendL, 0, 0, status_vector);

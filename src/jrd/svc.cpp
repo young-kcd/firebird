@@ -139,7 +139,7 @@ using namespace Jrd;
 static inline void is_service_running(const Service* service)
 {
 	if (!(service->svc_flags & SVC_forked)) {
-		THREAD_ENTER;
+		THREAD_ENTER();
 		ERR_post (isc_svcnoexe, isc_arg_string,
 			service->svc_service->serv_name, 0); 
 	}
@@ -161,7 +161,7 @@ bool ck_space_for_numeric(char*& info, const char* const end)
     {
 		if (info < end)
 			*info++ = isc_info_truncated;
-		THREAD_ENTER;
+		THREAD_ENTER();
 		return false;
 	}
 	return true;
@@ -681,7 +681,7 @@ static int shutdown_thread(void *arg) {
  *
  **************************************/
 
-	THREAD_ENTER;
+	THREAD_ENTER();
 	JRD_shutdown_all();
 	*reinterpret_cast<int*>(arg) = 1;
 	return 0;
@@ -708,7 +708,7 @@ void SVC_detach(Service* service)
 		int flShutdownComplete = 0;
 		gds__thread_start(shutdown_thread, &flShutdownComplete, 
 			THREAD_medium, 0, 0);
-		THREAD_EXIT;
+		THREAD_EXIT();
 		int timeout = 10;	// seconds
 		while (timeout--) {
 			if (flShutdownComplete)
@@ -879,7 +879,7 @@ ISC_STATUS SVC_query2(Service* service,
 	ISC_STATUS *status;
 	USHORT timeout;
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 
 /* Setup the status vector */
 	status = tdbb->tdbb_status_vector;
@@ -1003,7 +1003,7 @@ ISC_STATUS SVC_query2(Service* service,
 							(info =
 							 INF_put_item(isc_spb_dbname, length, ptr2, info,
 										  end))) {
-							THREAD_ENTER;
+							THREAD_ENTER();
 							return 0;
 						}
 						ptr2 += length;
@@ -1066,7 +1066,7 @@ ISC_STATUS SVC_query2(Service* service,
 			 */
 			info = INF_put_item(item, strlen(buffer), buffer, info, end);
 			if (!info) {
-				THREAD_ENTER;
+				THREAD_ENTER();
 				return 0;
 			}
 			break;
@@ -1094,9 +1094,9 @@ ISC_STATUS SVC_query2(Service* service,
 		case isc_info_svc_default_config:
 			*info++ = item;
 			if (service->svc_user_flag & SVC_user_dba) {
-				THREAD_ENTER;
+				THREAD_ENTER();
 				// TODO: reset the config values to defaults
-				THREAD_EXIT;
+				THREAD_EXIT();
 			}
 			else
 				need_admin_privs(&status, "isc_info_svc_default_config");
@@ -1105,9 +1105,9 @@ ISC_STATUS SVC_query2(Service* service,
 		case isc_info_svc_set_config:
 			*info++ = item;
 			if (service->svc_user_flag & SVC_user_dba) {
-				THREAD_ENTER;
+				THREAD_ENTER();
 				// TODO: set the config values
-				THREAD_EXIT;
+				THREAD_EXIT();
 			}
 			else {
 				need_admin_privs(&status, "isc_info_svc_set_config");
@@ -1146,7 +1146,7 @@ ISC_STATUS SVC_query2(Service* service,
 			/* The version of the server engine */
 			info = INF_put_item(item, strlen(GDS_VERSION), GDS_VERSION, info, end);
 			if (!info) {
-				THREAD_ENTER;
+				THREAD_ENTER();
 				return 0;
 			}
 			break;
@@ -1157,7 +1157,7 @@ ISC_STATUS SVC_query2(Service* service,
 									  0, 0, NULL);
 			info = INF_put_item(item, strlen(buffer), buffer, info, end);
 			if (!info) {
-				THREAD_ENTER;
+				THREAD_ENTER();
 				return 0;
 			}
 
@@ -1170,7 +1170,7 @@ ISC_STATUS SVC_query2(Service* service,
 
 			if (!(info = INF_put_item(item, strlen(buffer), buffer,
 									  info, end))) {
-				THREAD_ENTER;
+				THREAD_ENTER();
 				return 0;
 			}
 			break;
@@ -1194,7 +1194,7 @@ ISC_STATUS SVC_query2(Service* service,
 				*info++ = isc_info_truncated;
 				l -= length;
 				if (l > service->svc_resp_buf_len) {
-					THREAD_ENTER;
+					THREAD_ENTER();
 					if (service->svc_resp_buf)
 						gds__free((SLONG *) service->svc_resp_buf);
 					service->svc_resp_buf = (UCHAR *) gds__alloc((SLONG) l);
@@ -1205,7 +1205,7 @@ ISC_STATUS SVC_query2(Service* service,
 						l = 0;	/* set the length to zero */
 					}
 					service->svc_resp_buf_len = l;
-					THREAD_EXIT;
+					THREAD_EXIT();
 				}
 				service_get(service,
 							reinterpret_cast < char *>(service->svc_resp_buf),
@@ -1225,7 +1225,7 @@ ISC_STATUS SVC_query2(Service* service,
 								  (service->svc_resp_ptr), 
 							  info, end))) 
 			{
-				THREAD_ENTER;
+				THREAD_ENTER();
 				return 0;
 			}
 			service->svc_resp_ptr += length;
@@ -1243,7 +1243,7 @@ ISC_STATUS SVC_query2(Service* service,
 										  UCHAR*>(buffer), 2);
 			service_get(service, buffer, l, GET_BINARY, 0, &length);
 			if (!(info = INF_put_item(item, length, buffer, info, end))) {
-				THREAD_ENTER;
+				THREAD_ENTER();
 				return 0;
 			}
 			break;
@@ -1273,7 +1273,7 @@ ISC_STATUS SVC_query2(Service* service,
 			   with an indication that more is available. */
 
 			if (!(info = INF_put_item(item, length, info + 3, info, end))) {
-				THREAD_ENTER;
+				THREAD_ENTER();
 				return 0;
 			}
 
@@ -1312,7 +1312,7 @@ ISC_STATUS SVC_query2(Service* service,
 		SVC_finish(service, SVC_finished);
 	}
 
-	THREAD_ENTER;
+	THREAD_ENTER();
 	return tdbb->tdbb_status_vector[1];
 }
 
@@ -1340,7 +1340,7 @@ void SVC_query(Service*		service,
 	USHORT l, length, version, get_flags;
 	USHORT timeout;
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 
 /* Process the send portion of the query first. */
 
@@ -1412,7 +1412,7 @@ void SVC_query(Service*		service,
 									info,
 									end);
 				if (!info) {
-					THREAD_ENTER;
+					THREAD_ENTER();
 					return;
 				}
 				length = INF_convert(num_dbs, buffer);
@@ -1422,7 +1422,7 @@ void SVC_query(Service*		service,
 									info,
 									end);
 				if (!info) {
-					THREAD_ENTER;
+					THREAD_ENTER();
 					return;
 				}
 			}
@@ -1476,7 +1476,7 @@ void SVC_query(Service*		service,
 			 */
 			if (!(info = INF_put_item(item, strlen(PathBuffer),
 									  PathBuffer, info, end))) {
-				THREAD_ENTER;
+				THREAD_ENTER();
 				return;
 			}
 			break;
@@ -1504,9 +1504,9 @@ void SVC_query(Service*		service,
 		case isc_info_svc_default_config:
 			*info++ = item;
 			if (service->svc_user_flag & SVC_user_dba) {
-				THREAD_ENTER;
+				THREAD_ENTER();
 				// TODO: reset the config values to defaults
-				THREAD_EXIT;
+				THREAD_EXIT();
 			}
 			else
 				need_admin_privs(&status, "isc_info_svc_default_config");
@@ -1515,9 +1515,9 @@ void SVC_query(Service*		service,
 		case isc_info_svc_set_config:
 			*info++ = item;
 			if (service->svc_user_flag & SVC_user_dba) {
-				THREAD_ENTER;
+				THREAD_ENTER();
 				// TODO: set the config values
-				THREAD_EXIT;
+				THREAD_EXIT();
 			}
 			else {
 				need_admin_privs(&status, "isc_info_svc_set_config");
@@ -1533,7 +1533,7 @@ void SVC_query(Service*		service,
 				(info =
 				 INF_put_item(item, length, buffer, info, end)))
 			{
-				THREAD_ENTER;
+				THREAD_ENTER();
 				return;
 			}
 			break;
@@ -1547,7 +1547,7 @@ void SVC_query(Service*		service,
 				(info =
 				 INF_put_item(item, length, buffer, info, end)))
 			{
-				THREAD_ENTER;
+				THREAD_ENTER();
 				return;
 			}
 			break;
@@ -1563,7 +1563,7 @@ void SVC_query(Service*		service,
 					*p = *gvp;
 				if (!(info = INF_put_item(item, p - buffer, buffer, info, end)))
 				{
-					THREAD_ENTER;
+					THREAD_ENTER();
 					return;
 				}
 				break;
@@ -1577,7 +1577,7 @@ void SVC_query(Service*		service,
 			*p++ = IMPLEMENTATION;
 			if (!(info = INF_put_item(item, p - buffer, buffer, info, end)))
 			{
-				THREAD_ENTER;
+				THREAD_ENTER();
 				return;
 			}
 			break;
@@ -1589,7 +1589,7 @@ void SVC_query(Service*		service,
 
 			if (!(info = INF_put_item(item, strlen(buffer), buffer, info, end)))
 			{
-				THREAD_ENTER;
+				THREAD_ENTER();
 				return;
 			}
 			break;
@@ -1614,7 +1614,7 @@ void SVC_query(Service*		service,
 				l -= length;
 				if (l > service->svc_resp_buf_len)
 				{
-					THREAD_ENTER;
+					THREAD_ENTER();
 					if (service->svc_resp_buf)
 						gds__free((SLONG *) service->svc_resp_buf);
 					service->svc_resp_buf = (UCHAR *) gds__alloc((SLONG) l);
@@ -1626,7 +1626,7 @@ void SVC_query(Service*		service,
 						l = 0;	/* set the length to zero */
 					}
 					service->svc_resp_buf_len = l;
-					THREAD_EXIT;
+					THREAD_EXIT();
 				}
 				service_get(service,
 							reinterpret_cast<char*>(service->svc_resp_buf),
@@ -1649,7 +1649,7 @@ void SVC_query(Service*		service,
 									info,
 									end)))
 			{
-				THREAD_ENTER;
+				THREAD_ENTER();
 				return;
 			}
 			service->svc_resp_ptr += length;
@@ -1666,7 +1666,7 @@ void SVC_query(Service*		service,
 			service_get(service, buffer, l, GET_BINARY, 0, &length);
 			if (!(info = INF_put_item(item, length, buffer, info, end)))
 			{
-				THREAD_ENTER;
+				THREAD_ENTER();
 				return;
 			}
 			break;
@@ -1714,7 +1714,7 @@ void SVC_query(Service*		service,
 		SVC_finish(service, SVC_finished);
 	}
 
-	THREAD_ENTER;
+	THREAD_ENTER();
 }
 
 
@@ -1993,7 +1993,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb)
 		event_t* evnt_ptr =
 			reinterpret_cast<event_t*> (&(service->svc_start_event));
 
-		THREAD_EXIT;
+		THREAD_EXIT();
 		/* create an event for the service.  The event will be signaled once the
 		 * particular service has reached a point in which it can start to return
 		 * information to the client.  This will allow isc_service_start to
@@ -2022,7 +2022,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb)
 		}
 
 		ISC_event_fini(evnt_ptr);
-		THREAD_ENTER;
+		THREAD_ENTER();
 	}
 	else
 	{
@@ -2233,7 +2233,7 @@ static void io_error(
 
 #ifdef MULTI_THREAD
 	if (reenter_flag)
-		THREAD_ENTER;
+		THREAD_ENTER();
 #endif
 
 	ERR_post(isc_io_error, isc_arg_string, string, isc_arg_string, filename,
@@ -2420,7 +2420,7 @@ static void service_fork(TEXT* service_path, Service* service)
 			*p = ' ';
 	}
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 
 	STARTUPINFO start_crud;
 	start_crud.cb = sizeof(STARTUPINFO);
@@ -2449,7 +2449,7 @@ static void service_fork(TEXT* service_path, Service* service)
 		CloseHandle(pipe_output);
 		CloseHandle(pipe_error);
 	}
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	if (argv_data != argv_data_buf)
 		gds__free((SLONG *) argv_data);
@@ -2809,10 +2809,10 @@ static void service_fork(pfn_svc_main service_executable, Service* service)
 	if (!service->svc_stdout)	/* NOMEM: */
 		ERR_post(isc_virmemexh, 0);
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>(service_executable),
 						service, 0, 0, (void*)&service->svc_handle);
-	THREAD_ENTER;
+	THREAD_ENTER();
 }
 
 
@@ -3046,13 +3046,13 @@ static void service_fork(TEXT* service_path, Service* service)
 /* At last we can fork the sub-process.  If the fork succeeds, repeat
    it so that we don't have defunct processes hanging around. */
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 
 	int pid;
 	
 	switch (pid = vfork()) {
 	case -1:
-		THREAD_ENTER;
+		THREAD_ENTER();
 		if (argv != argv_buf)
 			gds__free(argv);
 		if (argv_data != argv_data_buf)
@@ -3102,7 +3102,7 @@ static void service_fork(TEXT* service_path, Service* service)
 
 	waitpid(pid, NULL, 0);
 
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	if (argv != argv_buf)
 		gds__free(argv);

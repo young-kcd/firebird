@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.118 2004-05-14 18:43:33 brodsom Exp $
+$Id: met.epp,v 1.119 2004-05-15 00:55:08 brodsom Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -2556,15 +2556,15 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 		THD_rec_mutex_init(&dbb->dbb_sp_rec_mutex);
 		dbb->dbb_flags |= DBB_sp_rec_mutex_init;
 	}
-	THREAD_EXIT;
+	THREAD_EXIT();
 	
 	if (THD_rec_mutex_lock(&dbb->dbb_sp_rec_mutex))
 	{
-		THREAD_ENTER;
+		THREAD_ENTER();
 		return NULL;
 	}
 	
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 #endif /* SUPERSERVER */
 
@@ -3234,12 +3234,12 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 		THD_rec_mutex_init(&dbb->dbb_sp_rec_mutex);
 		dbb->dbb_flags |= DBB_sp_rec_mutex_init;
 	}
-	THREAD_EXIT;
+	THREAD_EXIT();
 	if (THD_rec_mutex_lock(&dbb->dbb_sp_rec_mutex)) {
-		THREAD_ENTER;
+		THREAD_ENTER();
 		return;
 	}
-	THREAD_ENTER;
+	THREAD_ENTER();
 #endif /* SUPERSERVER */
 
 	if (relation->rel_flags & REL_scanned

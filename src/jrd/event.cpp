@@ -642,9 +642,9 @@ static FRB alloc_global(UCHAR type, ULONG length, bool recurse)
 
 		while (true) {
 			release();
-			THREAD_EXIT;
+			THREAD_EXIT();
 			Sleep(3);
-			THREAD_ENTER;
+			THREAD_ENTER();
 			acquire();
 
 			process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
@@ -904,14 +904,14 @@ static void delete_session(SLONG session_id)
  */
 	while (session->ses_flags & SES_delivering && (++kill_anyway != 40)) {
 		release();
-		THREAD_EXIT;
+		THREAD_EXIT();
 #ifdef WIN_NT
 		Sleep(250);
 #endif
 #if (defined SOLARIS_MT || defined LINUX)
 		sleep(1);
 #endif
-		THREAD_ENTER;
+		THREAD_ENTER();
 		acquire();
 		session = (SES) SRQ_ABS_PTR(session_id);
 	}

@@ -30,7 +30,7 @@
  * 2003.08.10 Claudio Valderrama: Fix SF Bugs #544132 and #728839.
  */
 /*
-$Id: fun.epp,v 1.53 2004-05-12 19:37:17 brodsom Exp $
+$Id: fun.epp,v 1.54 2004-05-15 00:55:08 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -795,9 +795,9 @@ static SLONG blob_lseek( blb* blob, USHORT mode, SLONG offset)
  *
  **************************************/
 /* add thread enter and thread_exit wrappers */
-	THREAD_ENTER;
+	THREAD_ENTER();
 	const SLONG return_offset = BLB_lseek(blob, mode, offset);
-	THREAD_EXIT;
+	THREAD_EXIT();
 	return (return_offset);
 }
 
@@ -817,10 +817,10 @@ static void blob_put_segment( blb* blob, const UCHAR* buffer, USHORT length)
 /* As this is a call-back from a UDF, must reacquire the
    engine mutex */
 
-	THREAD_ENTER;
+	THREAD_ENTER();
 	thread_db* tdbb = GET_THREAD_DATA;
 	BLB_put_segment(tdbb, blob, buffer, length);
-	THREAD_EXIT;
+	THREAD_EXIT();
 }
 
 
@@ -844,10 +844,10 @@ static SSHORT blob_get_segment(
  *
  **************************************/
 /* add thread enter and thread_exit wrappers */
-	THREAD_ENTER;
+	THREAD_ENTER();
 	thread_db* tdbb = GET_THREAD_DATA;
 	*return_length = BLB_get_segment(tdbb, blob, buffer, length);
-	THREAD_EXIT;
+	THREAD_EXIT();
 
 	if (blob->blb_flags & BLB_eof)
 		return 0;
@@ -956,9 +956,9 @@ static void invoke(UserFunction* function,
 	START_CHECK_FOR_EXCEPTIONS(function->fun_exception_message.c_str());
 	if (function->fun_return_arg)
 	{
-		THREAD_EXIT;
+		THREAD_EXIT();
 		CALL_UDF(function->fun_entrypoint, void);
-		THREAD_ENTER;
+		THREAD_ENTER();
 	}
 	else if ((SLONG) return_ptr->fun_mechanism == FUN_value)
 	{
@@ -967,10 +967,10 @@ static void invoke(UserFunction* function,
 		case dtype_sql_time:
 		case dtype_sql_date:
 		case dtype_long:
-			THREAD_EXIT;
+			THREAD_EXIT();
 			value->vlu_misc.vlu_long =
 				CALL_UDF(function->fun_entrypoint, SLONG);
-			THREAD_ENTER;
+			THREAD_ENTER();
 			break;
 
 		case dtype_short:
@@ -978,10 +978,10 @@ static void invoke(UserFunction* function,
 			// must always be returned as a LONG.  See v3.2 release notes
 			// 1994-September-28 David Schnepper 
 
-			THREAD_EXIT;
+			THREAD_EXIT();
 			value->vlu_misc.vlu_short = (SSHORT)
 				CALL_UDF(function->fun_entrypoint, SLONG);
-			THREAD_ENTER;
+			THREAD_ENTER();
 			break;
 
 		case dtype_real:
@@ -989,27 +989,27 @@ static void invoke(UserFunction* function,
 			// must always be returned as a DOUBLE.  See v3.2 release notes
 			// 1994-September-28 David Schnepper 
 
-			THREAD_EXIT;
+			THREAD_EXIT();
 			value->vlu_misc.vlu_float = (float)
 				CALL_UDF(function->fun_entrypoint, double);
-			THREAD_ENTER;
+			THREAD_ENTER();
 			break;
 
 		case dtype_int64:
-			THREAD_EXIT;
+			THREAD_EXIT();
 			value->vlu_misc.vlu_int64 =
 				CALL_UDF(function->fun_entrypoint, SINT64);
-			THREAD_ENTER;
+			THREAD_ENTER();
 			break;
 
 		case dtype_double:
 #ifdef VMS
 		case dtype_d_float:
 #endif
-			THREAD_EXIT;
+			THREAD_EXIT();
 			value->vlu_misc.vlu_double =
 				CALL_UDF(function->fun_entrypoint, double);
-			THREAD_ENTER;
+			THREAD_ENTER();
 			break;
 
 		case dtype_timestamp:
@@ -1020,10 +1020,10 @@ static void invoke(UserFunction* function,
 	}
 	else
 	{
-		THREAD_EXIT;
+		THREAD_EXIT();
 		typedef UCHAR* pUCHAR;
 		temp_ptr = CALL_UDF(function->fun_entrypoint, pUCHAR);
-		THREAD_ENTER;
+		THREAD_ENTER();
 
 		if (temp_ptr != NULL)
 		{

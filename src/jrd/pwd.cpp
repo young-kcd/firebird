@@ -118,9 +118,9 @@ void SecurityDatabase::fini()
 #ifndef EMBEDDED
 	if (counter == 1 && lookup_db)
 	{
-		THREAD_EXIT;
+		THREAD_EXIT();
 		isc_detach_database(status, &lookup_db);
-		THREAD_ENTER;
+		THREAD_ENTER();
 	}
 #endif
 }
@@ -155,7 +155,7 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 		{
 			isc_detach_database(status, &lookup_db);
 		}
-		THREAD_ENTER;
+		THREAD_ENTER();
 		ERR_post(isc_psw_attach, 0);
 	}
 
@@ -165,7 +165,7 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 
 	if (isc_start_transaction(status, &lookup_trans, 1, &lookup_db, sizeof(TPB), TPB))
 	{
-		THREAD_ENTER;
+		THREAD_ENTER();
 		ERR_post(isc_psw_start_trans, 0);
 	}
 
@@ -192,7 +192,7 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 	{
 		isc_detach_database(status, &lookup_db);
 	}
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	return found;
 }
@@ -206,11 +206,11 @@ bool SecurityDatabase::prepare()
 
 	if (lookup_db)
 	{
-		THREAD_EXIT;
+		THREAD_EXIT();
 		return true;
 	}
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 
 	lookup_db = lookup_req = 0;
 
@@ -318,9 +318,9 @@ void SecurityDatabase::verifyUser(TEXT* name,
 	// found there. This means that another database must be accessed, and
 	// that means the current context must be saved and restored.
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	instance.mutex.aquire();
-	THREAD_ENTER;
+	THREAD_ENTER();
 	TEXT pw1[33];
 	const bool found = instance.lookup_user(name, uid, gid, pw1);
 	instance.mutex.release();

@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.105 2004-05-12 19:39:07 brodsom Exp $
+$Id: inet.cpp,v 1.106 2004-05-15 00:58:10 brodsom Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -449,13 +449,13 @@ static bool		port_mutex_inited = false;
                                     port_mutex_inited = true;          \
                                     THD_mutex_init (&port_mutex);      \
                                     }                                  \
-                                THREAD_EXIT;                           \
+                                THREAD_EXIT();                           \
                                 THD_mutex_lock (&port_mutex);          \
-                                THREAD_ENTER
+                                THREAD_ENTER();
 
-#define STOP_PORT_CRITICAL      THREAD_EXIT;                           \
+#define STOP_PORT_CRITICAL      THREAD_EXIT();                           \
                                 THD_mutex_unlock (&port_mutex);        \
-                                THREAD_ENTER
+                                THREAD_ENTER();
 
 #endif
 
@@ -808,7 +808,7 @@ rem_port* INET_connect(const TEXT* name,
 				(SCHAR*) &address.sin_addr,
 				sizeof(address.sin_addr));
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 
 	const struct servent* service = getservbyname(protocol, "tcp");
 #ifdef WIN_NT
@@ -827,7 +827,7 @@ rem_port* INET_connect(const TEXT* name,
 		}
 	}
 #endif /* WIN_NT */
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 /* Modification by luz (slightly modified by FSG)
     instead of failing here, try applying hard-wired
@@ -898,10 +898,10 @@ rem_port* INET_connect(const TEXT* name,
     int n;
     
 	if (packet) {
-		THREAD_EXIT;
+		THREAD_EXIT();
 		n = connect((SOCKET) port->port_handle,
 					(struct sockaddr *) &address, sizeof(address));
-		THREAD_ENTER;
+		THREAD_ENTER();
 		if (n != -1 && send_full(port, packet))
 			return port;
 		else {
@@ -1012,12 +1012,12 @@ rem_port* INET_connect(const TEXT* name,
 	}
 
 	while (true) {
-		THREAD_EXIT;
+		THREAD_EXIT();
 		socklen_t l = sizeof(address);
 		SOCKET s = accept((SOCKET) port->port_handle,
 				   (struct sockaddr *) &address, &l);
 		if (s == INVALID_SOCKET) {
-			THREAD_ENTER;
+			THREAD_ENTER();
 			inet_error(port, "accept", isc_net_connect_err, INET_ERRNO);
 			disconnect(port);
 			return NULL;
@@ -1028,13 +1028,13 @@ rem_port* INET_connect(const TEXT* name,
 		if ((flag & SRVR_debug) || !fork())
 #endif
 		{
-			THREAD_ENTER;
+			THREAD_ENTER();
 			SOCLOSE((SOCKET) port->port_handle);
 			port->port_handle = (HANDLE) s;
 			port->port_server_flags |= SRVR_server;
 			return port;
 		}
-		THREAD_ENTER;
+		THREAD_ENTER();
 		SOCLOSE(s);
 	}
 }
@@ -1499,9 +1499,9 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 			  (SCHAR *) & address, response->p_resp_data.cstr_length);
 	address.sin_family = AF_INET;
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	int status = connect(n, (struct sockaddr *) &address, sizeof(address));
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	if (status < 0) {
 		inet_error(port, "connect", isc_net_event_connect_err, INET_ERRNO);
@@ -2008,7 +2008,7 @@ static int fork( SOCKET old_handle, USHORT flag)
 			config = (LPQUERY_SERVICE_CONFIG) buffer;
 			if (!QueryServiceConfig
 				(service, config, sizeof(buffer), &config_len)) {
-				THREAD_ENTER;
+				THREAD_ENTER();
 				config = (LPQUERY_SERVICE_CONFIG) ALLR_alloc(config_len);
 				/* NOMEM: ALLR_alloc handled */
 				/* FREE:  later in this block */
@@ -2017,7 +2017,7 @@ static int fork( SOCKET old_handle, USHORT flag)
 			strcpy(INET_command_line, config->lpBinaryPathName);
 			if ((SCHAR *) config != buffer) {
 				ALLR_free(config);
-				THREAD_EXIT;
+				THREAD_EXIT();
 			}
 			CloseServiceHandle(service);
 		}
@@ -2099,7 +2099,7 @@ static in_addr get_host_address(const TEXT* name)
  **************************************/
 	in_addr address;
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 
 	address.s_addr = inet_addr(name);
 
@@ -2129,7 +2129,7 @@ static in_addr get_host_address(const TEXT* name)
 		}
 	}
 
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	return address;
 }
@@ -2627,7 +2627,7 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 			return FALSE;
 		}
 
-		THREAD_EXIT;
+		THREAD_EXIT();
 		++selct->slct_width;
 
 		for (;;)
@@ -2662,7 +2662,7 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 #endif
 					}
 				}
-				THREAD_ENTER;
+				THREAD_ENTER();
 				return TRUE;
 			}
 			else if (INTERRUPT_ERROR(INET_ERRNO))
@@ -2675,7 +2675,7 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 				break;
 #endif
 			else {
-				THREAD_ENTER;
+				THREAD_ENTER();
 				sprintf(msg, "INET/select_wait: select failed, errno = %d",
 						INET_ERRNO);
 				gds__log(msg, 0);
@@ -2683,7 +2683,7 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 			}
 		}	// for (;;)
 
-		THREAD_ENTER;
+		THREAD_ENTER();
 	}
 }
 
@@ -3479,7 +3479,7 @@ static int packet_receive(
 			FD_ZERO(&slct_fdset);
 			FD_SET(ph, &slct_fdset);
 
-			THREAD_EXIT;
+			THREAD_EXIT();
 			int slct_count;
 			for (;;) {
 #if (defined WIN_NT)
@@ -3499,7 +3499,7 @@ static int packet_receive(
 					break;
 				}
 			}
-			THREAD_ENTER;
+			THREAD_ENTER();
 
 			if (slct_count == -1)
 			{
@@ -3532,11 +3532,11 @@ static int packet_receive(
 		}
 #endif /* REQUESTER */
 
-		THREAD_EXIT;
+		THREAD_EXIT();
 		n =
 			recv((SOCKET) port->port_handle,
 				 reinterpret_cast<char*>(buffer), buffer_length, 0);
-		THREAD_ENTER;
+		THREAD_ENTER();
 		if (n != -1 || !INTERRUPT_ERROR(INET_ERRNO))
 			break;
 	}
@@ -3598,7 +3598,7 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 	SSHORT length = buffer_length;
 
 	while (length) {
-		THREAD_EXIT;
+		THREAD_EXIT();
 #ifdef DEBUG
 		if (INET_trace & TRACE_operations) {
 			fprintf(stdout, "Before Send\n");
@@ -3613,7 +3613,7 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 			fflush(stdout);
 		}
 #endif
-		THREAD_ENTER;
+		THREAD_ENTER();
 		if (n == length) {
 			break;
 		}
@@ -3633,7 +3633,7 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 
 	if ((port->port_flags & PORT_async) && !(port->port_flags & PORT_no_oob))
 	{
-		THREAD_EXIT;
+		THREAD_EXIT();
 		int count = 0;
 		SSHORT n;
 #ifdef SINIXZ
@@ -3689,7 +3689,7 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 		}
 #endif /* HAVE_SETITIMER */
 
-		THREAD_ENTER;
+		THREAD_ENTER();
 		if (n == -1) {
 			return inet_error(port, "send/oob", isc_net_write_err, INET_ERRNO);
 		}

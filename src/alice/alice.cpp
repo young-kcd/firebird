@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.61 2004-05-03 21:39:59 brodsom Exp $
+//	$Id: alice.cpp,v 1.62 2004-05-15 00:52:43 brodsom Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -42,14 +42,14 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+#include "../jrd/ibase.h"
+#include "../jrd/common.h"
+#include "../jrd/license.h"
 #include "../alice/alice.h"
 #include "../alice/aliceswi.h"
 #include "../alice/all.h"
 #include "../alice/all_proto.h"
 #include "../alice/exe_proto.h"
-#include "../jrd/ibase.h"
-#include "../jrd/common.h"
-#include "../jrd/license.h"
 #include "../jrd/msg_encode.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/svc.h"

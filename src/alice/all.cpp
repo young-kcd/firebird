@@ -24,10 +24,11 @@
 //
 //____________________________________________________________
 //
-//	$Id: all.cpp,v 1.20 2004-04-28 21:52:39 brodsom Exp $
+//	$Id: all.cpp,v 1.21 2004-05-15 00:52:07 brodsom Exp $
 //
 
 #include "firebird.h"
+#include "../jrd/common.h"
 #include "../alice/all.h"
 #include "../alice/alice.h"
 #include "../jrd/thd_proto.h"

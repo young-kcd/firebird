@@ -5522,9 +5522,9 @@ static void THREAD_ROUTINE event_thread( rem_port* port)
 
 		/* read what should be an event message */
 
-		THREAD_ENTER;
+		THREAD_ENTER();
 		rem_port* stuff = port->receive(&packet);
-		THREAD_EXIT;
+		THREAD_EXIT();
 
 		const P_OP operation = packet.p_operation;
 
@@ -5542,9 +5542,9 @@ static void THREAD_ROUTINE event_thread( rem_port* port)
 		if (operation == op_event) {
 			P_EVENT* pevent = &packet.p_event;
 
-			THREAD_ENTER;
+			THREAD_ENTER();
 			RVNT event = find_event(port, pevent->p_event_rid);
-			THREAD_EXIT;
+			THREAD_EXIT();
 
 			if (event) {
 				/* Call the asynchronous event routine associated
@@ -6992,9 +6992,9 @@ static void send_cancel_event(RVNT event)
 
 	if (event->rvnt_id)
 	{
-		THREAD_EXIT;
+		THREAD_EXIT();
 		(*event->rvnt_ast)(event->rvnt_arg, (USHORT) 0, NULL);
-		THREAD_ENTER;
+		THREAD_ENTER();
 		event->rvnt_id = 0;
 	}
 }
@@ -7084,7 +7084,7 @@ static void server_death(rem_port* port)
  *	Cleanup events.
  *
  **************************************/
-	THREAD_ENTER;
+	THREAD_ENTER();
 	RDB rdb = port->port_context;
 
 	if (!(port->port_flags & PORT_disconnect))
@@ -7093,16 +7093,16 @@ static void server_death(rem_port* port)
 		{
 			if (event->rvnt_id)
 			{
-				THREAD_EXIT;
+				THREAD_EXIT();
 				(*event->rvnt_ast) (event->rvnt_arg, (USHORT) 0, NULL);
-				THREAD_ENTER;
+				THREAD_ENTER();
 				event->rvnt_id = 0;
 			}
 		}
 	}
 
 	port->disconnect();
-	THREAD_EXIT;
+	THREAD_EXIT();
 }
 #endif
 

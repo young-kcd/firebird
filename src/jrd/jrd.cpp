@@ -164,14 +164,14 @@ const SSHORT WAIT_PERIOD	= -1;
 #  undef V4_JRD_MUTEX_LOCK
 #  undef V4_JRD_MUTEX_UNLOCK
 #  define V4_INIT			THD_INIT
-#  define V4_GLOBAL_MUTEX_LOCK	{THREAD_EXIT; THD_GLOBAL_MUTEX_LOCK; THREAD_ENTER;}
+#  define V4_GLOBAL_MUTEX_LOCK	{THREAD_EXIT(); THD_GLOBAL_MUTEX_LOCK; THREAD_ENTER();}
 #  define V4_GLOBAL_MUTEX_UNLOCK	THD_GLOBAL_MUTEX_UNLOCK
 #  define V4_MUTEX_INIT(mutx)	THD_MUTEX_INIT (mutx)
-#  define V4_MUTEX_LOCK(mutx)	{THREAD_EXIT; THD_MUTEX_LOCK (mutx); THREAD_ENTER;}
+#  define V4_MUTEX_LOCK(mutx)	{THREAD_EXIT(); THD_MUTEX_LOCK (mutx); THREAD_ENTER();}
 #  define V4_MUTEX_UNLOCK(mutx)	THD_MUTEX_UNLOCK (mutx)
 #  define V4_MUTEX_DESTROY(mutx)	THD_MUTEX_DESTROY (mutx)
 #  ifndef SUPERSERVER
-#   define V4_JRD_MUTEX_LOCK(mutx)	{THREAD_EXIT; THD_JRD_MUTEX_LOCK (mutx); THREAD_ENTER;}
+#   define V4_JRD_MUTEX_LOCK(mutx)	{THREAD_EXIT(); THD_JRD_MUTEX_LOCK (mutx); THREAD_ENTER();}
 #   define V4_JRD_MUTEX_UNLOCK(mutx) THD_JRD_MUTEX_UNLOCK (mutx)
 #  endif /* SUPERSERVER */
 # endif /* V4_THREADING */
@@ -199,9 +199,9 @@ static REC_MUTX_T databases_rec_mutex;
 
 #define JRD_SS_INIT_MUTEX       THD_rec_mutex_init (&databases_rec_mutex)
 #define JRD_SS_DESTROY_MUTEX    THD_rec_mutex_destroy (&databases_rec_mutex)
-#define JRD_SS_MUTEX_LOCK       {THREAD_EXIT;\
+#define JRD_SS_MUTEX_LOCK       {THREAD_EXIT();\
                                  THD_rec_mutex_lock (&databases_rec_mutex);\
-                                 THREAD_ENTER;}
+                                 THREAD_ENTER();}
 #define JRD_SS_MUTEX_UNLOCK     THD_rec_mutex_unlock (&databases_rec_mutex)
 #define JRD_SS_THD_MUTEX_LOCK   THD_rec_mutex_lock (&databases_rec_mutex)
 #define JRD_SS_THD_MUTEX_UNLOCK THD_rec_mutex_unlock (&databases_rec_mutex)
@@ -4279,9 +4279,9 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 	if (!(tdbb->tdbb_flags & TDBB_sweeper))
 		SCH_schedule();
 	else {
-		THREAD_EXIT;
-		THREAD_YIELD;
-		THREAD_ENTER;
+		THREAD_EXIT();
+		THREAD_YIELD();
+		THREAD_ENTER();
 	}
 
 /* If database has been shutdown then get out */
@@ -5406,9 +5406,9 @@ static Database* init(thread_db*	tdbb,
 
 	if (!initialized) {
 		THD_INIT;
-		THREAD_EXIT;
+		THREAD_EXIT();
 		THD_GLOBAL_MUTEX_LOCK;
-		THREAD_ENTER;
+		THREAD_ENTER();
 		PluginManager::load_engine_plugins();
 		if (!initialized) {
 #if defined(V4_THREADING) && !defined(SUPERSERVER)
@@ -6024,7 +6024,7 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 	}
 #endif
 
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 /* Zip through the list of databases and count the number of local
  * connections.  If buf is not NULL then copy all the database names
@@ -6110,7 +6110,7 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 		}
 	}
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 
 	*atts = num_att;
 	*dbs = num_dbs;

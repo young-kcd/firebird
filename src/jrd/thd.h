@@ -26,7 +26,7 @@
  *
  */
 /*
-$Id: thd.h,v 1.22 2004-05-09 05:47:59 robocop Exp $
+$Id: thd.h,v 1.23 2004-05-15 00:55:09 brodsom Exp $
 */
 
 #ifndef JRD_THD_H
@@ -125,31 +125,6 @@ struct IB_RTL_CRITICAL_SECTION
 #define GET_THREAD_DATA		gdbb
 #endif
 
-#ifdef MULTI_THREAD
-#ifdef SUPERSERVER
-#define THREAD_ENTER		SCH_enter()
-#define THREAD_EXIT		SCH_exit()
-#define THREAD_VALIDATE		SCH_validate()
-#define SWEEP_THREAD
-//#define GARBAGE_THREAD
-#else
-#define THREAD_ENTER		gds__thread_enter()
-#define THREAD_EXIT		gds__thread_exit()
-#define THREAD_VALIDATE
-#define AST_THREAD
-#endif
-#define THREAD_SLEEP(msecs)	THD_sleep (msecs)
-#define THREAD_YIELD		THD_yield()
-#endif
-
-#ifndef THREAD_ENTER
-#define THREAD_ENTER
-#define THREAD_EXIT
-#define THREAD_VALIDATE
-#define THREAD_SLEEP(msecs)	THD_sleep (msecs)
-#define THREAD_YIELD
-#endif
-
 /* Thread priorities (may be ignored) */
 
 const int THREAD_high			= 1;
@@ -232,6 +207,60 @@ typedef struct wlck_t {
 
 const int WLCK_read		= 1;
 const int WLCK_write	= 2;
+
+//
+// This stuff could be better located in the thd_proto.h
+//
+#include "../jrd/sch_proto.h"
+#include "../jrd/thd_proto.h"
+
+#ifdef MULTI_THREAD
+#ifdef SUPERSERVER
+inline void THREAD_ENTER(){
+	SCH_enter();
+}
+inline void THREAD_EXIT(){
+	SCH_exit();
+}
+inline bool THREAD_VALIDATE(){
+	return SCH_validate();
+}
+#define SWEEP_THREAD
+//#define GARBAGE_THREAD
+#else // SUPERSERVER
+inline void THREAD_ENTER(){
+	gds__thread_enter();
+}
+inline void THREAD_EXIT(){
+	gds__thread_exit();
+}
+inline bool THREAD_VALIDATE(){
+	return false;
+}
+#define AST_THREAD
+#endif // SUPERSERVER
+inline void THREAD_SLEEP(ULONG msecs){
+	THD_sleep(msecs);
+}
+inline void THREAD_YIELD(){
+	THD_yield();
+}
+#else // MULTI_THREAD
+inline void THREAD_ENTER(){
+}
+inline void THREAD_EXIT(){
+}
+inline bool THREAD_VALIDATE(){
+	return false;
+}
+inline void THREAD_SLEEP(ULONG msecs){
+	THD_sleep(msecs);
+}
+inline void THREAD_YIELD(){
+	THD_yield();
+}
+#endif // MULTI_THREAD
+
 
 /* Threading allocation size */
 

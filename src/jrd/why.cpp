@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.68 2004-05-12 19:37:23 brodsom Exp $
+$Id: why.cpp,v 1.69 2004-05-15 00:55:09 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -6117,7 +6117,7 @@ static void subsystem_enter(void)
 	THD_INIT;
 #endif
 
-	THREAD_ENTER;
+	THREAD_ENTER();
 #if !(defined REQUESTER || defined SUPERCLIENT || defined SUPERSERVER)
 	isc_enter_count++;
 	if (subsystem_usage == 0 ||
@@ -6166,7 +6166,7 @@ static void subsystem_exit(void)
 	}
 	isc_enter_count--;
 #endif
-	THREAD_EXIT;
+	THREAD_EXIT();
 }
 
 

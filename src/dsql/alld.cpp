@@ -27,27 +27,27 @@ V4 Multi-threading changes.
 
 -- direct calls to gds__ () & isc_ () entry points
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	    gds__ () or isc_ () call.
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 -- calls through embedded GDML.
 
 the following protocol will be used.  Care should be taken if
 nested FOR loops are added.
 
-    THREAD_EXIT;                // last statment before FOR loop 
+    THREAD_EXIT();                // last statment before FOR loop 
 
     FOR ...............
 
-	THREAD_ENTER;           // First statment in FOR loop
+	THREAD_ENTER();           // First statment in FOR loop
 	.....some C code....
 	.....some C code....
-	THREAD_EXIT;            // last statment in FOR loop 
+	THREAD_EXIT();            // last statment in FOR loop 
 
     END_FOR;
 
-    THREAD_ENTER;               // First statment after FOR loop
+    THREAD_ENTER();               // First statment after FOR loop
 ***************************************************************/
 
 #include "firebird.h"

@@ -22,6 +22,11 @@
  */
 
 #include "firebird.h"
+#include "../jrd/common.h"
+#include "../jrd/thd.h"
+#ifdef WIN_NT
+#include <windows.h> // HANDLE
+#endif
 #include "../jrd/os/thd_priority.h"
 #include "../common/config/config.h"
 
@@ -33,8 +38,6 @@
 
 #include <stdio.h>
 #include <errno.h>
-#include "../jrd/common.h"
-#include "../jrd/thd_proto.h"
 
 #include <process.h>
 #include <windows.h>

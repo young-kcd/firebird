@@ -1278,8 +1278,8 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, SLONG number, SSHORT s
 	if (transaction && !(transaction->tra_flags & TRA_write))
 		return;
 	else {
-		THREAD_EXIT;
-		THREAD_ENTER;
+		THREAD_EXIT();
+		THREAD_ENTER();
 		tip = reinterpret_cast<tx_inv_page*>(CCH_FETCH(tdbb, &window, LCK_write, pag_transactions));
 		if (generation == tip->pag_generation)
 			CCH_MARK_MUST_WRITE(tdbb, &window);

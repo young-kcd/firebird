@@ -1003,9 +1003,9 @@ bool VIO_check_if_updated(thread_db* tdbb, record_param* rpb)
 			}
 
 		case tra_precommitted:
-			THREAD_EXIT;
+			THREAD_EXIT();
 			THREAD_SLEEP(100);	/* milliseconds */
-			THREAD_ENTER;
+			THREAD_ENTER();
 			break;
 
 		case tra_limbo:
@@ -1494,9 +1494,9 @@ void VIO_fini(thread_db* tdbb)
 
 		dbb->dbb_flags &= ~DBB_garbage_collector;
 		ISC_event_post(dbb->dbb_gc_event); /* Wake up running thread */
-		THREAD_EXIT;
+		THREAD_EXIT();
 		ISC_event_wait(1, &gc_event_fini, &count, 0, NULL, 0);
-		THREAD_ENTER;
+		THREAD_ENTER();
 		/* Cleanup finalization event */
 		ISC_event_fini(gc_event_fini);
 	}
@@ -1856,9 +1856,9 @@ bool VIO_get_current(
 			continue;
 		}
 		else if (state == tra_precommitted) {
-			THREAD_EXIT;
+			THREAD_EXIT();
 			THREAD_SLEEP(100);	/* milliseconds */
-			THREAD_ENTER;
+			THREAD_ENTER();
 			continue;
 		}
 
@@ -1885,9 +1885,9 @@ bool VIO_get_current(
 			}
 
 			if (state == tra_active) {
-				THREAD_EXIT;
+				THREAD_EXIT();
 				THREAD_SLEEP(100);	/* milliseconds */
-				THREAD_ENTER;
+				THREAD_ENTER();
 				continue;
 			}
 		}
@@ -1980,9 +1980,9 @@ void VIO_init(thread_db* tdbb)
 		{
 			ERR_bugcheck_msg("cannot start thread");
 		}
-		THREAD_EXIT;
+		THREAD_EXIT();
 		ISC_event_wait(1, &gc_event_init, &count, 10 * 1000000, NULL, 0);
-		THREAD_ENTER;
+		THREAD_ENTER();
 		/* Clean up initialization event */
 		ISC_event_fini(gc_event_init);
 	}
@@ -3546,7 +3546,7 @@ static void THREAD_ROUTINE garbage_collector(Database* dbb)
  *	improve query response time and throughput.
  *
  **************************************/
-	THREAD_ENTER;
+	THREAD_ENTER();
 	CHECK_DBB(dbb);
 	event_t* gc_event = dbb->dbb_gc_event;
 	record_param rpb;
@@ -3629,9 +3629,9 @@ static void THREAD_ROUTINE garbage_collector(Database* dbb)
 
 				while (dbb->dbb_flags & DBB_suspend_bgio) {
 					count = ISC_event_clear(gc_event);
-					THREAD_EXIT;
+					THREAD_EXIT();
 					ISC_event_wait(1, &gc_event, &count, 10 * 1000000, NULL, 0);
-					THREAD_ENTER;
+					THREAD_ENTER();
 					if (!(dbb->dbb_flags & DBB_garbage_collector)) {
 						goto gc_exit;
 					}
@@ -3772,10 +3772,10 @@ rel_exit:
 						continue;
 					}
 					dbb->dbb_flags &= ~DBB_gc_active;
-					THREAD_EXIT;
+					THREAD_EXIT();
 					int timeout = ISC_event_wait(1, &gc_event, &count, 
 												 10 * 1000000, NULL, 0);
-					THREAD_ENTER;
+					THREAD_ENTER();
 					dbb->dbb_flags |= DBB_gc_active;
 					if (!timeout) {
 						count = ISC_event_clear(gc_event);
@@ -3814,7 +3814,7 @@ gc_exit:
 		ISC_event_fini(gc_event);
 
 		RESTORE_THREAD_DATA;
-		THREAD_EXIT;
+		THREAD_EXIT();
 
 	}	// try
 	catch (const std::exception&) {
@@ -4301,9 +4301,9 @@ static int prepare_update(	thread_db*		tdbb,
 				}
 
 				if (state == tra_active) {
-					THREAD_EXIT;
+					THREAD_EXIT();
 					THREAD_SLEEP(100);	/* milliseconds */
-					THREAD_ENTER;
+					THREAD_ENTER();
 					continue;
 				}
 			}
@@ -4357,9 +4357,9 @@ static int prepare_update(	thread_db*		tdbb,
 		}
 
 		if (state == tra_precommitted) {
-			THREAD_EXIT;
+			THREAD_EXIT();
 			THREAD_SLEEP(100);	/* milliseconds */
-			THREAD_ENTER;
+			THREAD_ENTER();
 		}
 		else {
 			VIO_backout(tdbb, rpb, transaction);

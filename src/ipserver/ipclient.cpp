@@ -4379,10 +4379,10 @@ static bool send_and_wait( ICC icc)
 
 // next, wait for the server to signal us back or die 
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	result =
 		WaitForMultipleObjects((DWORD) 2, icc->icc_waits, FALSE, INFINITE);
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	if (result != WAIT_OBJECT_0) {
 		icc->icc_flags |= ICCF_UNMAP_CLIENT;

@@ -82,7 +82,7 @@ void SRVR_WinMain(
 	PACKET send, receive;
 	zap_packet(&receive);
 	zap_packet(&send);
-	THREAD_ENTER;
+	THREAD_ENTER();
 	set_server(main_port, flags);
 
 	if (WSASetBlockingHook((FARPROC) BlockingHook)) {
@@ -120,7 +120,7 @@ void SRVR_WinMain(
 		}
 	}
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 }
 
 

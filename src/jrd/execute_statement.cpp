@@ -123,7 +123,7 @@ void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool Si
     Sqlda->version = 1;
 
 	tdbb->tdbb_transaction->tra_callback_count++;
-	THREAD_EXIT;
+	THREAD_EXIT();
 
 	// For normal diagnostic
 	const int max_diag_len = 50;
@@ -165,7 +165,7 @@ void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool Si
 
 #	undef Chk
 err_handler:
-	THREAD_ENTER;
+	THREAD_ENTER();
 	tdbb->tdbb_transaction->tra_callback_count--;
 	if (status[0] == 1 && status[1]) {
 		memcpy(tdbb->tdbb_status_vector, status, sizeof(local));
@@ -186,17 +186,17 @@ bool ExecuteStatement::Fetch(thread_db* tdbb, jrd_nod** JrdVar)
 	memset(local, 0, sizeof(local));
 	status = local;
 	tdbb->tdbb_transaction->tra_callback_count++;
-	THREAD_EXIT;
+	THREAD_EXIT();
     if (isc_dsql_fetch(status, &Statement,
                 SQLDA_VERSION1, Sqlda) == 100)
 	{
 		isc_dsql_free_statement(status, &Statement, DSQL_drop);
-		THREAD_ENTER;
+		THREAD_ENTER();
 		tdbb->tdbb_transaction->tra_callback_count--;
 		Statement = 0;
 		return false;
     }
-	THREAD_ENTER;
+	THREAD_ENTER();
 	tdbb->tdbb_transaction->tra_callback_count--;
 	if (status[0] == 1 && status[1]) {
 		memcpy(tdbb->tdbb_status_vector, status, sizeof(local));
@@ -260,17 +260,17 @@ rec_err:
 
 	if (SingleMode) {
 		tdbb->tdbb_transaction->tra_callback_count++;
-		THREAD_EXIT;
+		THREAD_EXIT();
 		if (isc_dsql_fetch(status, &Statement,
                 SQLDA_VERSION1, Sqlda) == 100)
 		{
 			isc_dsql_free_statement(status, &Statement, DSQL_drop);
-			THREAD_ENTER;
+			THREAD_ENTER();
 			tdbb->tdbb_transaction->tra_callback_count--;
 			Statement = 0;
 			return false;
 		}
-		THREAD_ENTER;
+		THREAD_ENTER();
 		tdbb->tdbb_transaction->tra_callback_count--;
 		if (! (status[0] == 1 && status[1])) {
 			status[0] = isc_arg_gds;
@@ -287,10 +287,10 @@ void ExecuteStatement::Close(thread_db* tdbb)
 {
 	if (Statement) {
 		tdbb->tdbb_transaction->tra_callback_count++;
-		THREAD_EXIT;
+		THREAD_EXIT();
 		// for a while don't check for errors while freeing statement
 		isc_dsql_free_statement(0, &Statement, DSQL_drop);
-		THREAD_ENTER;
+		THREAD_ENTER();
 		tdbb->tdbb_transaction->tra_callback_count--;
 		Statement = 0;
 	}

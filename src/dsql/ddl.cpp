@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.99 2004-05-09 05:47:46 robocop Exp $
+ * $Id: ddl.cpp,v 1.100 2004-05-15 00:53:11 brodsom Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -274,14 +274,14 @@ void DDL_execute(dsql_req* request)
 
 	const USHORT length = request->req_blr_data.getCount();
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 
 	const ISC_STATUS s =
 		isc_ddl(tdsql->tsql_status, &request->req_dbb->dbb_database_handle,
 				&request->req_trans, length, 
 				(const char*)(request->req_blr_data.begin()));
 
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	// for delete & modify, get rid of the cached relation metadata
 

@@ -222,10 +222,10 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 	default:
 		sprintf(filename, "Unknown QATEST_entrypoint #%lu",	/* TXNN */
 				*function);
-		THREAD_ENTER;
+		THREAD_ENTER();
 		ERR_post(isc_random,
 				 isc_arg_string, ERR_cstring(filename), 0);
-		THREAD_EXIT;
+		THREAD_EXIT();
 		return 0;
 	}
 }

@@ -37,27 +37,27 @@ V4 Multi-threading changes.
 
 -- direct calls to gds__ () & isc_ () entrypoints
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	    gds__ () or isc_ () call.
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 -- calls through embedded GDML.
 
 the following protocol will be used.  Care should be taken if
 nested FOR loops are added.
 
-    THREAD_EXIT;                // last statement before FOR loop
+    THREAD_EXIT();                // last statement before FOR loop
 
     FOR ...............
 
-	THREAD_ENTER;           // First statement in FOR loop
+	THREAD_ENTER();           // First statement in FOR loop
 	.....some C code....
 	.....some C code....
-	THREAD_EXIT;            // last statement in FOR loop
+	THREAD_EXIT();            // last statement in FOR loop
 
     END_FOR;
 
-    THREAD_ENTER;               // First statement after FOR loop
+    THREAD_ENTER();               // First statement after FOR loop
 ***************************************************************/
 
 #include "firebird.h"
@@ -599,12 +599,12 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 			open_cursor->opn_next = open_cursors;
 			open_cursors = open_cursor;
 			THD_MUTEX_UNLOCK(&cursors_mutex);
-			THREAD_EXIT;
+			THREAD_EXIT();
 			ISC_STATUS_ARRAY local_status;
 			gds__transaction_cleanup(local_status,
 								 trans_handle,
 								 cleanup_transaction, NULL);
-			THREAD_ENTER;
+			THREAD_ENTER();
 		}
 
 		if (!sing_status) {
@@ -852,7 +852,7 @@ ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
 	}
 
 	// 1. Locate why_db_handle, corresponding to jrd_database_handle 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	THD_MUTEX_LOCK (&databases_mutex);
 	dsql_dbb* database;
 	for (database = databases; database; database = database->dbb_next)
@@ -867,7 +867,7 @@ ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
     	status[1] = isc_bad_db_handle;
     	status[2] = isc_arg_end;
     	THD_MUTEX_UNLOCK(&databases_mutex);
-        THREAD_ENTER;
+        THREAD_ENTER();
     	return status[1];
     }
 	WHY_DBB	why_db_handle = WHY_translate_handle(database->dbb_database_handle);
@@ -880,13 +880,13 @@ ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
 		status[1] = isc_virmemexh;
 		status[2] = isc_arg_end;
     	THD_MUTEX_UNLOCK(&databases_mutex);
-        THREAD_ENTER;
+        THREAD_ENTER();
     	return status[1];
 	}
 	why_trans_handle->handle.h_tra = jrd_transaction_handle;
 	why_trans_handle->parent = why_db_handle;
 	THD_MUTEX_UNLOCK (&databases_mutex);
-    THREAD_ENTER;
+    THREAD_ENTER();
 
 	// 3. Call execute... function 
 	const ISC_STATUS rc = dsql8_execute_immediate_common(status,
@@ -903,7 +903,7 @@ ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
 WHY_DBB	GetWhyAttachment (ISC_STATUS* status,
 						  Jrd::Attachment* jrd_attachment_handle)
 {
-	THREAD_EXIT;
+	THREAD_EXIT();
 	THD_MUTEX_LOCK (&databases_mutex);
 	dsql_dbb* database;
 	WHY_DBB db_handle;
@@ -921,7 +921,7 @@ WHY_DBB	GetWhyAttachment (ISC_STATUS* status,
     	status[2] = isc_arg_end;
 	}
 	THD_MUTEX_UNLOCK (&databases_mutex);
-    THREAD_ENTER;
+    THREAD_ENTER();
 	return database ? db_handle : 0;
 }
 
@@ -1078,11 +1078,11 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 
 				MOVD_move(&desc, &offset_parameter->par_desc);
 
-				THREAD_EXIT;
+				THREAD_EXIT();
 				s = isc_receive2(tdsql->tsql_status, &request->req_handle,
 								 message->msg_number, message->msg_length,
 								 message->msg_buffer, 0, direction, offset);
-				THREAD_ENTER;
+				THREAD_ENTER();
 
 				if (s) {
 					punt();
@@ -1109,11 +1109,11 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 			USHORT* ret_length =
 				(USHORT *) (dsql_msg_buf + (IPTR) null->par_user_desc.dsc_address);
 			UCHAR* buffer = dsql_msg_buf + (IPTR) parameter->par_user_desc.dsc_address;
-			THREAD_EXIT;
+			THREAD_EXIT();
 			s = isc_get_segment(tdsql->tsql_status, &request->req_handle,
 							ret_length, parameter->par_user_desc.dsc_length,
 							reinterpret_cast<char*>(buffer));
-			THREAD_ENTER;
+			THREAD_ENTER();
 			if (!s) {
 				RESTORE_THREAD_DATA;
 				return 0;
@@ -1130,11 +1130,11 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 				punt();
 		}
 
-		THREAD_EXIT;
+		THREAD_EXIT();
 		s = isc_receive(tdsql->tsql_status, &request->req_handle,
 						message->msg_number, message->msg_length, 
 						message->msg_buffer, 0);
-		THREAD_ENTER;
+		THREAD_ENTER();
 
 		if (s) {
 			punt();
@@ -1282,11 +1282,11 @@ ISC_STATUS GDS_DSQL_INSERT_CPP(	ISC_STATUS*	user_status,
 			const SCHAR* buffer =
 				reinterpret_cast<const SCHAR*>(
 					dsql_msg_buf + (IPTR) parameter->par_user_desc.dsc_address);
-			THREAD_EXIT;
+			THREAD_EXIT();
 			const ISC_STATUS s =
 				isc_put_segment(tdsql->tsql_status, &request->req_handle,
 							parameter->par_user_desc.dsc_length, buffer);
-			THREAD_ENTER;
+			THREAD_ENTER();
 			if (s)
 				punt();
 		}
@@ -2855,7 +2855,7 @@ static void cleanup_database(FB_API_HANDLE* db_handle, void* flag)
 		return;
 
 /*	if (flag)
-		THREAD_EXIT;*/
+		THREAD_EXIT();*/
 
 	THD_MUTEX_LOCK(&databases_mutex);
 
@@ -2873,13 +2873,13 @@ static void cleanup_database(FB_API_HANDLE* db_handle, void* flag)
 				if (dbb->dbb_requests[i])
 					isc_release_request(user_status,
 								reinterpret_cast <void**>(&dbb->dbb_requests[i]));
-			THREAD_ENTER;
+			THREAD_ENTER();
 		}
 		HSHD_finish(dbb);
 		delete dbb->dbb_pool;
 	}
 	else if (flag)
-		THREAD_ENTER;
+		THREAD_ENTER();
 */
 	if (dbb) {
 		HSHD_finish(dbb);
@@ -2929,11 +2929,11 @@ static void cleanup_transaction (FB_API_HANDLE tra_handle, void* arg)
 			 * Over the long run, it might be better to move the subsystem_exit()
 			 * call in why.c below the cleanup handlers. smistry 9-27-98
 			 */
-			THREAD_ENTER; //ttt
+			THREAD_ENTER(); //ttt
 			GDS_DSQL_FREE_CPP(	local_status,
 								&open_cursor->opn_request,
 								DSQL_close);
-			THREAD_EXIT;
+			THREAD_EXIT();
 			THD_MUTEX_LOCK(&cursors_mutex);
 			open_cursor_ptr = &open_cursors;
 		}
@@ -2960,13 +2960,13 @@ static void close_cursor( dsql_req* request)
 	ISC_STATUS_ARRAY status_vector;
 
 	if (request->req_handle) {
-		THREAD_EXIT; //ttt
+		THREAD_EXIT(); //ttt
 		if (request->req_type == REQ_GET_SEGMENT ||
 			request->req_type == REQ_PUT_SEGMENT)
 				isc_close_blob(status_vector, &request->req_handle);
 		else
 			isc_unwind_request(status_vector, &request->req_handle, 0);
-		THREAD_ENTER;
+		THREAD_ENTER();
 	}
 
 	request->req_flags &= ~(REQ_cursor_open | REQ_embedded_sql_cursor);
@@ -3118,13 +3118,13 @@ static void execute_blob(	dsql_req*		request,
 		if (null && *((SSHORT *) null->par_desc.dsc_address) < 0) {
 			memset(blob_id, 0, sizeof(ISC_QUAD));
 		}
-		THREAD_EXIT;
+		THREAD_EXIT();
 		s = isc_open_blob2(tdsql->tsql_status,
 						   &request->req_dbb->dbb_database_handle,
 						   &request->req_trans, &request->req_handle,
 						   blob_id, bpb_length,
 						   bpb);
-		THREAD_ENTER;
+		THREAD_ENTER();
 		if (s) {
 			punt();
 		}
@@ -3134,13 +3134,13 @@ static void execute_blob(	dsql_req*		request,
 		request->req_handle = 0;
 		ISC_QUAD* blob_id = (ISC_QUAD*) parameter->par_desc.dsc_address;
 		memset(blob_id, 0, sizeof(ISC_QUAD));
-		THREAD_EXIT;
+		THREAD_EXIT();
 		s = isc_create_blob2(tdsql->tsql_status,
 							 &request->req_dbb->dbb_database_handle,
 							 &request->req_trans, &request->req_handle,
 							 blob_id, bpb_length,
 							 reinterpret_cast<const char*>(bpb));
-		THREAD_ENTER;
+		THREAD_ENTER();
 		if (s) {
 			punt();
 		}
@@ -3196,43 +3196,43 @@ static ISC_STATUS execute_request(dsql_req*			request,
 
 	switch (request->req_type) {
 	case REQ_START_TRANS:
-		THREAD_EXIT;
+		THREAD_EXIT();
 		s = isc_start_transaction(	tdsql->tsql_status,
 									&request->req_trans,
 									1,
 									&request->req_dbb->dbb_database_handle,
 									request->req_blr_data.getCount(),
 									request->req_blr_data.begin());
-		THREAD_ENTER;
+		THREAD_ENTER();
 		if (s)
 			punt();
 		*trans_handle = request->req_trans;
 		return FB_SUCCESS;
 
 	case REQ_COMMIT:
-		THREAD_EXIT;
+		THREAD_EXIT();
 		s = isc_commit_transaction(tdsql->tsql_status,
 								   &request->req_trans);
-		THREAD_ENTER;
+		THREAD_ENTER();
 		if (s)
 			punt();
 		*trans_handle = 0;
 		return FB_SUCCESS;
 
 	case REQ_COMMIT_RETAIN:
-		THREAD_EXIT;
+		THREAD_EXIT();
 		s = isc_commit_retaining(tdsql->tsql_status,
 								 &request->req_trans);
-		THREAD_ENTER;
+		THREAD_ENTER();
 		if (s)
 			punt();
 		return FB_SUCCESS;
 
 	case REQ_ROLLBACK:
-		THREAD_EXIT;
+		THREAD_EXIT();
 		s = isc_rollback_transaction(tdsql->tsql_status,
 									 &request->req_trans);
-		THREAD_ENTER;
+		THREAD_ENTER();
 		if (s)
 			punt();
 		*trans_handle = 0;
@@ -3289,7 +3289,7 @@ static ISC_STATUS execute_request(dsql_req*			request,
 			use_msg_length = 0;
 			use_msg = NULL;
 		}
-		THREAD_EXIT;
+		THREAD_EXIT();
 		s = isc_transact_request(tdsql->tsql_status,
 								 &request->req_dbb->dbb_database_handle,
 								 &request->req_trans,
@@ -3299,7 +3299,7 @@ static ISC_STATUS execute_request(dsql_req*			request,
 								 reinterpret_cast<char*>(in_msg),
 								 use_msg_length,
 								 reinterpret_cast<char*>(use_msg));
-		THREAD_ENTER;
+		THREAD_ENTER();
 
 		if (s)
 			punt();
@@ -3332,12 +3332,12 @@ static ISC_STATUS execute_request(dsql_req*			request,
 	message = (dsql_msg*) request->req_send;
 	if (!message)
 	{
-		THREAD_EXIT;
+		THREAD_EXIT();
 		s = isc_start_request(tdsql->tsql_status,
 							  &request->req_handle,
 							  &request->req_trans,
 							  0);
-		THREAD_ENTER;
+		THREAD_ENTER();
 		if (s)
 			punt();
 	}
@@ -3350,7 +3350,7 @@ static ISC_STATUS execute_request(dsql_req*			request,
 					in_msg_length,
 					in_msg);
 
-		THREAD_EXIT;
+		THREAD_EXIT();
 		s = isc_start_and_send(tdsql->tsql_status,
 							   &request->req_handle,
 							   &request->req_trans,
@@ -3358,7 +3358,7 @@ static ISC_STATUS execute_request(dsql_req*			request,
 							   message->msg_length,
 							   message->msg_buffer,
 							   0);
-		THREAD_ENTER;
+		THREAD_ENTER();
 		if (s)
 		{
 			punt();
@@ -3389,14 +3389,14 @@ static ISC_STATUS execute_request(dsql_req*			request,
 			message->msg_buffer = (UCHAR*)FB_ALIGN((U_IPTR) temp_buffer, DOUBLE_ALIGN);
 		}
 
-		THREAD_EXIT;
+		THREAD_EXIT();
 		s = isc_receive(tdsql->tsql_status,
 						&request->req_handle,
 						message->msg_number,
 						message->msg_length,
 						message->msg_buffer,
 						0);
-		THREAD_ENTER;
+		THREAD_ENTER();
 		if (s) {
 			punt();
 		}
@@ -3419,7 +3419,7 @@ static ISC_STATUS execute_request(dsql_req*			request,
 				(UCHAR*)gds__alloc((ULONG) message->msg_length);
 
 			s = 0;
-			THREAD_EXIT;
+			THREAD_EXIT();
 			for (counter = 0; counter < 2 && !s; counter++)
 			{
 				s = isc_receive(local_status,
@@ -3429,7 +3429,7 @@ static ISC_STATUS execute_request(dsql_req*			request,
 								message_buffer,
 								0);
 			}
-			THREAD_ENTER;
+			THREAD_ENTER();
 			gds__free(message_buffer);
 
 			/* two successful receives means more than one record
@@ -3629,14 +3629,14 @@ static USHORT get_plan_info(
 
 // get the access path info for the underlying request from the engine 
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	s = isc_request_info(tdsql->tsql_status,
 						 &request->req_handle,
 						 0,
 						 sizeof(explain_info),
 						 explain_info,
 						 sizeof(explain_buffer), explain_buffer);
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	if (s)
 		return 0;
@@ -3649,13 +3649,13 @@ static USHORT get_plan_info(
 			return 0;
 		}
 
-		THREAD_EXIT;
+		THREAD_EXIT();
 		s = isc_request_info(tdsql->tsql_status,
 							 &request->req_handle, 0,
 							 sizeof(explain_info),
 							 explain_info,
 							 BUFFER_XLARGE, explain_ptr);
-		THREAD_ENTER;
+		THREAD_ENTER();
 
 		if (s) {
 			// CVC: Before returning, deallocate the buffer!
@@ -3742,14 +3742,14 @@ static USHORT get_request_info(
 
 // get the info for the request from the engine 
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	s = isc_request_info(tdsql->tsql_status,
 						 &request->req_handle,
 						 0,
 						 sizeof(record_info),
 						 record_info,
 						 buffer_length, buffer);
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	if (s)
 		return 0;
@@ -4144,9 +4144,9 @@ static dsql_dbb* init(FB_API_HANDLE* db_handle)
 	}
 #endif
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	THD_MUTEX_LOCK(&databases_mutex);
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	if (!init_flag)
 	{
@@ -4189,22 +4189,22 @@ static dsql_dbb* init(FB_API_HANDLE* db_handle)
 
 	ISC_STATUS_ARRAY user_status;
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	isc_database_cleanup(user_status, db_handle, cleanup_database, NULL);
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 // Determine if the database is V3 or V4 
 
 	SCHAR buffer[128];
 
 	database->dbb_flags |= DBB_v3;
-	THREAD_EXIT;
+	THREAD_EXIT();
 	const ISC_STATUS s =
 		isc_database_info(user_status, db_handle,
 						  sizeof(db_hdr_info_items),
 						  db_hdr_info_items,
 						  sizeof(buffer), buffer);
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	if (s) {
 		return database;
@@ -4801,12 +4801,12 @@ static dsql_req* prepare(
 					sizeof(ISC_STATUS) * ISC_STATUS_LENGTH);
 	}
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	const ISC_STATUS status = isc_compile_request(tdsql->tsql_status,
 								 &request->req_dbb->dbb_database_handle,
 								 &request->req_handle, length,
 								 (const char*)(request->req_blr_data.begin()));
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 // restore warnings (if there are any) 
 	if (local_status[2] == isc_arg_warning)
@@ -4964,9 +4964,9 @@ static void release_request(dsql_req* request, bool top_level)
 // If a request has been compiled, release it now
 
 	if (request->req_handle) {
-		THREAD_EXIT;
+		THREAD_EXIT();
 		isc_release_request(status_vector, &request->req_handle);
-		THREAD_ENTER;
+		THREAD_ENTER();
 	}
 
 // free blr memory

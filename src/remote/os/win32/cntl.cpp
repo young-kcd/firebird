@@ -90,12 +90,12 @@ void *CNTL_insert_thread(void)
  * Functional description
  *
  **************************************/
-	THREAD_ENTER;
+	THREAD_ENTER();
 	THREAD new_thread = (THREAD) ALLR_alloc((SLONG) sizeof(struct thread));
 /* NOMEM: ALLR_alloc() handled */
 /* FREE:  in CTRL_remove_thread() */
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	DuplicateHandle(GetCurrentProcess(), GetCurrentThread(),
 					GetCurrentProcess(), &new_thread->thread_handle, 0, FALSE,
 					DUPLICATE_SAME_ACCESS);
@@ -220,9 +220,9 @@ void CNTL_remove_thread( void *thread)
 	THREAD this_thread = (THREAD) thread;
 	CloseHandle(this_thread->thread_handle);
 
-	THREAD_ENTER;
+	THREAD_ENTER();
 	ALLR_free(thread);
-	THREAD_EXIT;
+	THREAD_EXIT();
 }
 
 
@@ -355,7 +355,7 @@ static int cleanup_thread(void *lpv)
 	}
 
 
-	THREAD_ENTER;
+	THREAD_ENTER();
 	JRD_shutdown_all();
 
 /* There is no THREAD_EXIT to help ensure that no

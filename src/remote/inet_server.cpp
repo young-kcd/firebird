@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: inet_server.cpp,v 1.39 2004-05-06 18:08:41 brodsom Exp $
+$Id: inet_server.cpp,v 1.40 2004-05-15 00:58:10 brodsom Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -339,10 +339,10 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 		}
 		{ // scope block
 			ISC_STATUS_ARRAY status_vector;
-			THREAD_ENTER;
+			THREAD_ENTER();
 			port = INET_connect(protocol, 0, status_vector, INET_SERVER_flag,
 								0, 0);
-			THREAD_EXIT;
+			THREAD_EXIT();
 			if (!port) {
 				gds__print_status(status_vector);
 				exit(STARTUP_ERROR);
@@ -353,9 +353,9 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 #ifdef VMS
 		channel = assign("SYS$INPUT");
 #endif
-		THREAD_ENTER;
+		THREAD_ENTER();
 		port = INET_server(channel);
-		THREAD_EXIT;
+		THREAD_EXIT();
 		if (!port) {
 			fprintf(stderr, "fbserver: Unable to start INET_server\n");
 			exit(STARTUP_ERROR);

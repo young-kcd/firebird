@@ -358,7 +358,7 @@ rem_port* WNET_connect(const TEXT*		name,
 
 	if (packet)
 	{
-		THREAD_EXIT;
+		THREAD_EXIT();
 		while (true) {
 			port->port_handle = CreateFile(port->port_connection->str_data,
 										   GENERIC_WRITE | GENERIC_READ,
@@ -368,14 +368,14 @@ rem_port* WNET_connect(const TEXT*		name,
 			}
 			const ISC_STATUS status = GetLastError();
 			if (status != ERROR_PIPE_BUSY) {
-				THREAD_ENTER;
+				THREAD_ENTER();
 				wnet_error(port, "CreateFile", isc_net_connect_err, status);
 				disconnect(port);
 				return NULL;
 			}
 			WaitNamedPipe(port->port_connection->str_data, 3000L);
 		}
-		THREAD_ENTER;
+		THREAD_ENTER();
 		send_full(port, packet);
 		return port;
 	}
@@ -385,7 +385,7 @@ rem_port* WNET_connect(const TEXT*		name,
 
 	LPSECURITY_ATTRIBUTES security_attr;
 	security_attr = ISC_get_security_desc();
-	THREAD_EXIT;
+	THREAD_EXIT();
 	TEXT command_line[MAXPATHLEN + 32];
 	command_line[0] = 0;
 	TEXT* p = 0;
@@ -407,7 +407,7 @@ rem_port* WNET_connect(const TEXT*		name,
 			// TMN: The check for GetLastError() is redundant.
 			// This code should NEVER be called if not running on NT,
 			// since Win9x does not support the server side of named pipes!
-			THREAD_ENTER;
+			THREAD_ENTER();
 			wnet_error(port, "CreateNamedPipe", isc_net_connect_listen_err,
 					   ERRNO);
 			disconnect(port);
@@ -417,7 +417,7 @@ rem_port* WNET_connect(const TEXT*		name,
 		if (!ConnectNamedPipe(port->port_handle, 0) &&
 			GetLastError() != ERROR_PIPE_CONNECTED)
 		{
-			THREAD_ENTER;
+			THREAD_ENTER();
 			wnet_error(port, "ConnectNamedPipe", isc_net_connect_err, ERRNO);
 			disconnect(port);
 			return NULL;
@@ -425,7 +425,7 @@ rem_port* WNET_connect(const TEXT*		name,
 
 		if (flag & (SRVR_debug | SRVR_multi_client))
 		{
-			THREAD_ENTER;
+			THREAD_ENTER();
 			port->port_server_flags |= SRVR_server;
 			if (flag & SRVR_multi_client)
 			{
@@ -458,7 +458,7 @@ rem_port* WNET_connect(const TEXT*		name,
 				config = (LPQUERY_SERVICE_CONFIG) buffer;
 				if (!QueryServiceConfig
 					(service, config, sizeof(buffer), &config_len)) {
-					THREAD_ENTER;
+					THREAD_ENTER();
 					config = (LPQUERY_SERVICE_CONFIG) ALLR_alloc(config_len);
 					/* NOMEM: handled by ALLR_alloc, FREE: in this block */
 					QueryServiceConfig(service, config, config_len,
@@ -467,7 +467,7 @@ rem_port* WNET_connect(const TEXT*		name,
 				sprintf(command_line, "%s -s", config->lpBinaryPathName);
 				if ((SCHAR *) config != buffer) {
 					ALLR_free(config);
-					THREAD_EXIT;
+					THREAD_EXIT();
 				}
 				CloseServiceHandle(service);
 			}
@@ -773,7 +773,7 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet, t_event_ast ast)
 	new_port->port_connection =
 		make_pipe_name(port->port_connection->str_data, EVENT_PIPE_SUFFIX, p);
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	while (true) {
 		new_port->port_handle =
 			CreateFile(new_port->port_connection->str_data, GENERIC_READ, 0,
@@ -782,14 +782,14 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet, t_event_ast ast)
 			break;
 		const ISC_STATUS status = GetLastError();
 		if (status != ERROR_PIPE_BUSY) {
-			THREAD_ENTER;
+			THREAD_ENTER();
 			return (rem_port*) wnet_error(new_port, "CreateFile",
 									 isc_net_event_connect_err, status);
 		}
 		WaitNamedPipe(new_port->port_connection->str_data, 3000L);
 	}
 
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 	new_port->port_flags = port->port_flags & PORT_no_oob;
 
@@ -827,7 +827,7 @@ static rem_port* aux_request( rem_port* vport, PACKET* packet)
 		make_pipe_name(vport->port_connection->str_data, EVENT_PIPE_SUFFIX, str_pid);
 
 	LPSECURITY_ATTRIBUTES security_attr = ISC_get_security_desc();
-	THREAD_EXIT;
+	THREAD_EXIT();
 	new_port->port_handle =
 		CreateNamedPipe(new_port->port_connection->str_data,
 						PIPE_ACCESS_DUPLEX,
@@ -837,7 +837,7 @@ static rem_port* aux_request( rem_port* vport, PACKET* packet)
 						MAX_DATA,
 						0,
 						security_attr);
-	THREAD_ENTER;
+	THREAD_ENTER();
 	if (new_port->port_handle == INVALID_HANDLE_VALUE) {
 		wnet_error(new_port, "CreateNamedPipe", isc_net_event_listen_err,
 				   ERRNO);
@@ -1617,10 +1617,10 @@ static int packet_receive(
  **************************************/
 	DWORD n = 0;
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	const USHORT status =
 		ReadFile(port->port_handle, buffer, buffer_length, &n, NULL);
-	THREAD_ENTER;
+	THREAD_ENTER();
 	if (!status && GetLastError() != ERROR_BROKEN_PIPE)
 		return wnet_error(port, "ReadFile", isc_net_read_err, ERRNO);
 	if (!n)
@@ -1653,10 +1653,10 @@ static int packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_lengt
 	const SCHAR* data = buffer;
 	const DWORD length = buffer_length;
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	DWORD n;
 	const USHORT status = WriteFile(port->port_handle, data, length, &n, NULL);
-	THREAD_ENTER;
+	THREAD_ENTER();
 	if (!status)
 		return wnet_error(port, "WriteFile", isc_net_write_err, ERRNO);
 	if (n != length)

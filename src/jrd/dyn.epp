@@ -132,9 +132,9 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 	try {
 
 #if defined(SUPERSERVER) && defined(WIN_NT)
-		THREAD_EXIT;
+		THREAD_EXIT();
 		THD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
-		THREAD_ENTER;
+		THREAD_ENTER();
 #else
 #ifdef V4_THREADING
 		V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);

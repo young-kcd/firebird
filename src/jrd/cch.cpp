@@ -659,9 +659,9 @@ const int CCH_EXCLUSIVE_RETRY_INTERVAL	=1;	/* retry interval in seconds */
 
 		if (remaining > CCH_EXCLUSIVE_RETRY_INTERVAL)
 		{
-			THREAD_EXIT;
+			THREAD_EXIT();
 			THREAD_SLEEP(CCH_EXCLUSIVE_RETRY_INTERVAL * 1000);
-			THREAD_ENTER;
+			THREAD_ENTER();
 		}
 
 #ifdef CANCEL_OPERATION
@@ -991,7 +991,7 @@ void CCH_fetch_page(
 	AST_CHECK;
 	++dbb->dbb_reads;
 #ifdef SUPERSERVER
-	THREAD_EXIT;
+	THREAD_EXIT();
 #endif
 	page = bdb->bdb_buffer;
 	jrd_file* file = dbb->dbb_file;
@@ -1050,7 +1050,7 @@ void CCH_fetch_page(
 				break;
 			}
 #ifdef SUPERSERVER
-			THREAD_ENTER;
+			THREAD_ENTER();
 #endif
 			if (!CCH_rollover_to_shadow(dbb, file, false)) {
 				PAGE_LOCK_RELEASE(bdb->bdb_lock);
@@ -1070,7 +1070,7 @@ void CCH_fetch_page(
 				}
 			}
 #ifdef SUPERSERVER
-			THREAD_EXIT;
+			THREAD_EXIT();
 #endif
 		}
 	}
@@ -1100,7 +1100,7 @@ void CCH_fetch_page(
 					break;
 				}
 #ifdef SUPERSERVER
-				THREAD_ENTER;
+				THREAD_ENTER();
 #endif
 				if (!CCH_rollover_to_shadow(dbb, file, false)) {
 					PAGE_LOCK_RELEASE(bdb->bdb_lock);
@@ -1120,7 +1120,7 @@ void CCH_fetch_page(
 					}
 				}
 #ifdef SUPERSERVER
-				THREAD_EXIT;
+				THREAD_EXIT();
 #endif
 			}
 		}
@@ -1135,7 +1135,7 @@ void CCH_fetch_page(
 			&& !(dbb->dbb_flags & DBB_damaged)))
 	{
 #ifdef SUPERSERVER
-		THREAD_ENTER;
+		THREAD_ENTER();
 #endif
 		IBERR_build_status(tdbb->tdbb_status_vector,
 						   isc_db_corrupt,
@@ -1151,7 +1151,7 @@ void CCH_fetch_page(
 #endif /* NO_CHECKSUM */
 
 #ifdef SUPERSERVER
-	THREAD_ENTER;
+	THREAD_ENTER();
 #endif
 	AST_CHECK;
 
@@ -1217,9 +1217,9 @@ void CCH_fini(thread_db* tdbb)
 			bcb->bcb_flags &= ~BCB_cache_reader;
 			ISC_event_post(event);
 			SLONG count = ISC_event_clear(event);
-			THREAD_EXIT;
+			THREAD_EXIT();
 			ISC_event_wait(1, &event, &count, 0, NULL, 0);
-			THREAD_ENTER;
+			THREAD_ENTER();
 			/* Now dispose off the cache reader associated semaphore */
 			ISC_event_fini(event);
 		}
@@ -1237,9 +1237,9 @@ void CCH_fini(thread_db* tdbb)
 
 			bcb->bcb_flags &= ~BCB_cache_writer;
 			ISC_event_post(dbb->dbb_writer_event); /* Wake up running thread */
-			THREAD_EXIT;
+			THREAD_EXIT();
 			ISC_event_wait(1, &event, &count, 0, NULL, 0);
-			THREAD_ENTER;
+			THREAD_ENTER();
 			/* Cleanup initialization event */
 			ISC_event_fini(event);
 		}
@@ -1713,9 +1713,9 @@ void CCH_init(thread_db* tdbb, ULONG number)
 		ERR_bugcheck_msg("cannot start thread");
 	}
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	ISC_event_wait(1, &event, &count, 5 * 1000000, NULL, 0);
-	THREAD_ENTER;
+	THREAD_ENTER();
 #endif
 
 #ifdef CACHE_WRITER
@@ -1731,9 +1731,9 @@ void CCH_init(thread_db* tdbb, ULONG number)
 		{
 			ERR_bugcheck_msg("cannot start thread");
 		}
-		THREAD_EXIT;
+		THREAD_EXIT();
 		ISC_event_wait(1, &event, &count, 5 * 1000000, NULL, 0);
-		THREAD_ENTER;
+		THREAD_ENTER();
 		/* Clean up initialization event */
 		ISC_event_fini(event);
 	}
@@ -3067,7 +3067,7 @@ static void THREAD_ROUTINE cache_reader(Database* dbb)
  *	busy at a time.
  *
  **************************************/
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 /* Establish a thread context. */
 /* Note: Since this function operates as its own thread,
@@ -3105,7 +3105,7 @@ static void THREAD_ROUTINE cache_reader(Database* dbb)
 	catch (const std::exception& ex) {
 		Firebird::stuff_exception(status_vector, ex);
 		gds__log_status(dbb->dbb_file->fil_string, status_vector);
-		THREAD_EXIT;
+		THREAD_EXIT();
 		return;
 	}
 
@@ -3127,9 +3127,9 @@ static void THREAD_ROUTINE cache_reader(Database* dbb)
 		prf* next_prefetch = &prefetch1;
 
 		if (dbb->dbb_flags & DBB_suspend_bgio) {
-			THREAD_EXIT;
+			THREAD_EXIT();
 			ISC_event_wait(1, &reader_event, &count, 10 * 1000000, NULL, 0);
-			THREAD_ENTER;
+			THREAD_ENTER();
 			continue;
 		}
 
@@ -3197,9 +3197,9 @@ static void THREAD_ROUTINE cache_reader(Database* dbb)
 		}
 		else {
 			bcb->bcb_flags &= ~BCB_reader_active;
-			THREAD_EXIT;
+			THREAD_EXIT();
 			ISC_event_wait(1, &reader_event, &count, 10 * 1000000, NULL, 0);
-			THREAD_ENTER;
+			THREAD_ENTER();
 		}
 		bcb = dbb->dbb_bcb;
 	}
@@ -3208,7 +3208,7 @@ static void THREAD_ROUTINE cache_reader(Database* dbb)
 	delete tdbb->tdbb_attachment;
 	bcb->bcb_flags &= ~BCB_cache_reader;
 	ISC_event_post(reader_event);
-	THREAD_EXIT;
+	THREAD_EXIT();
 
 	}	// try
 	catch (const std::exception& ex) {
@@ -3236,7 +3236,7 @@ static void THREAD_ROUTINE cache_writer(Database* dbb)
  *	deems it necessary.
  *
  **************************************/
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 /* Establish a thread context. */
 /* Note: Since this function operates as its own thread,
@@ -3276,7 +3276,7 @@ static void THREAD_ROUTINE cache_writer(Database* dbb)
 		Firebird::stuff_exception(status_vector, ex);
 		gds__log_status(dbb->dbb_file->fil_string, status_vector);
 		ISC_event_fini(writer_event);
-		THREAD_EXIT;
+		THREAD_EXIT();
 		return;
 	}
 
@@ -3288,9 +3288,9 @@ static void THREAD_ROUTINE cache_writer(Database* dbb)
 			SLONG starting_page = -1;
 
 			if (dbb->dbb_flags & DBB_suspend_bgio) {
-				THREAD_EXIT;
+				THREAD_EXIT();
 				ISC_event_wait(1, &writer_event, &count, 10 * 1000000, NULL, 0);
-				THREAD_ENTER;
+				THREAD_ENTER();
 				continue;
 			}
 	
@@ -3305,9 +3305,9 @@ static void THREAD_ROUTINE cache_writer(Database* dbb)
 			}
 #endif
 
-			THREAD_EXIT;
-			THREAD_YIELD;
-			THREAD_ENTER;
+			THREAD_EXIT();
+			THREAD_YIELD();
+			THREAD_ENTER();
 
 			if (bcb->bcb_flags & BCB_free_pending) {
 				BufferDesc* bdb = get_buffer(tdbb, FREE_PAGE, LATCH_none, 1);
@@ -3357,9 +3357,9 @@ static void THREAD_ROUTINE cache_writer(Database* dbb)
 #endif
 			else {
 				bcb->bcb_flags &= ~BCB_writer_active;
-				THREAD_EXIT;
+				THREAD_EXIT();
 				ISC_event_wait(1, &writer_event, &count, 10 * 1000000, NULL, 0);
-				THREAD_ENTER;
+				THREAD_ENTER();
 			}
 			bcb = dbb->dbb_bcb;
 		}
@@ -3370,7 +3370,7 @@ static void THREAD_ROUTINE cache_writer(Database* dbb)
 		/* Notify the finalization caller that we're finishing. */
 		ISC_event_post(dbb->dbb_writer_event_fini);
 		ISC_event_fini(writer_event);
-		THREAD_EXIT;
+		THREAD_EXIT();
 
 	}	// try
 	catch (const std::exception& ex) {
@@ -3946,7 +3946,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, SLONG page, LATCH latch, SSHORT l
 			/* This code is only used by the background I/O threads:
 			   cache writer, cache reader and garbage collector. */
 
-			THREAD_EXIT;
+			THREAD_EXIT();
 
 			for (que_inst = bcb->bcb_in_use.que_backward;
 				 que_inst != &bcb->bcb_in_use; que_inst = que_inst->que_backward)
@@ -3959,7 +3959,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, SLONG page, LATCH latch, SSHORT l
 						continue;
 					}
 					if (bdb->bdb_flags & BDB_db_dirty) {
-						THREAD_ENTER;
+						THREAD_ENTER();
 //						BCB_MUTEX_RELEASE;
 						return bdb;
 					}
@@ -3971,14 +3971,14 @@ static BufferDesc* get_buffer(thread_db* tdbb, SLONG page, LATCH latch, SSHORT l
 				else {			/* if (page == CHECKPOINT_PAGE) */
 
 					if (bdb->bdb_flags & BDB_checkpoint) {
-						THREAD_ENTER;
+						THREAD_ENTER();
 //						BCB_MUTEX_RELEASE;
 						return bdb;
 					}
 				}
 			}
 
-			THREAD_ENTER;
+			THREAD_ENTER();
 //			BCB_MUTEX_RELEASE;
 			return NULL;
 		}
@@ -4390,7 +4390,7 @@ static SSHORT latch_bdb(
 		 count = ISC_event_clear(event))
 	{
 //		LATCH_MUTEX_RELEASE;
-		THREAD_EXIT;
+		THREAD_EXIT();
 		if (latch_wait == 1) {
 			timeout_occurred =
 				ISC_event_wait(1, &event, &count, 120 * 1000000, NULL, event);
@@ -4400,7 +4400,7 @@ static SSHORT latch_bdb(
 				ISC_event_wait(1, &event, &count, -latch_wait * 1000000,
 							   NULL, event);
 		}
-		THREAD_ENTER;
+		THREAD_ENTER();
 //		LATCH_MUTEX_ACQUIRE;
 	}
 
@@ -4810,10 +4810,10 @@ static void prefetch_epilogue(Prefetch* prefetch, ISC_STATUS* status_vector)
 		return;
 	}
 
-	THREAD_EXIT;
+	THREAD_EXIT();
 	prefetch->prf_piob.piob_wait = TRUE;
 	const bool async_status = PIO_status(&prefetch->prf_piob, status_vector);
-	THREAD_ENTER;
+	THREAD_ENTER();
 
 /* If there was an I/O error release all buffer latches acquired
    for the prefetch request. */
@@ -4909,12 +4909,12 @@ static void prefetch_io(Prefetch* prefetch, ISC_STATUS* status_vector)
 			ISC_event_post(dbb->dbb_reader_event);
 		}
 
-		THREAD_EXIT;
+		THREAD_EXIT();
 		const bool async_status =
 			PIO_read_ahead(dbb, prefetch->prf_start_page,
 						   prefetch->prf_io_buffer, prefetch->prf_page_count,
 						   &prefetch->prf_piob, status_vector);
-		THREAD_ENTER;
+		THREAD_ENTER();
 		if (!async_status) {
 			BufferDesc** next_bdb = prefetch->prf_bdbs;
 			for (USHORT i = 0; i < prefetch->prf_max_prefetch; i++) {
@@ -5576,12 +5576,12 @@ static bool write_page(
 			else {
 				// We need to write our pages to main database files
 #ifdef SUPERSERVER
-				THREAD_EXIT;
+				THREAD_EXIT();
 #endif
 				jrd_file* file = dbb->dbb_file;
 				while (!PIO_write(file, bdb, page, status)) {
 #ifdef SUPERSERVER
-					THREAD_ENTER;
+					THREAD_ENTER();
 #endif
 					if (!CCH_rollover_to_shadow(dbb, file, inAst)) {
 						bdb->bdb_flags |= BDB_io_error;
@@ -5589,13 +5589,13 @@ static bool write_page(
 						return false;
 					}
 #ifdef SUPERSERVER
-					THREAD_EXIT;
+					THREAD_EXIT();
 #endif
 					file = dbb->dbb_file;
 				}
 
 #ifdef SUPERSERVER
-				THREAD_ENTER;
+				THREAD_ENTER();
 #endif
 				if (bdb->bdb_page == HEADER_PAGE) {
 					dbb->dbb_last_header_write =

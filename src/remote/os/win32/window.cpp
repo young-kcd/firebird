@@ -261,7 +261,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 #ifdef DEV_BUILD
 				gds_alloc_report(ALLOC_verbose, "from server", 0);
 #endif
-				THREAD_ENTER;
+				THREAD_ENTER();
 				JRD_shutdown_all();
 				DestroyWindow(hWnd);
 

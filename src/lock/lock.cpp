@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.96 2004-05-13 19:47:30 brodsom Exp $
+$Id: lock.cpp,v 1.97 2004-05-15 00:57:23 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -4972,7 +4972,7 @@ static USHORT wait_for_request(
    monopolizing the engine
 */
 #ifdef SUPERSERVER
-				THREAD_EXIT;
+				THREAD_EXIT();
 #endif
 				AST_ENABLE;
 				ret = ISC_event_wait(1, &event_ptr, &value,
@@ -4980,7 +4980,7 @@ static USHORT wait_for_request(
 									 lock_alarm_handler, event_ptr);
 				AST_DISABLE;
 #ifdef SUPERSERVER
-				THREAD_ENTER;
+				THREAD_ENTER();
 #endif
 			}
 		}
@@ -4999,10 +4999,10 @@ static USHORT wait_for_request(
    The only thing we could do now is to wait. But let's do it without
    monopolizing the engine
 */
-		THREAD_EXIT;		
+		THREAD_EXIT();		
 		ret = WaitForSingleObject(owner->own_wakeup_hndl,
 								(timeout - current_time) * 1000);
-		THREAD_ENTER;
+		THREAD_ENTER();
 #else
 		ret = WaitForSingleObject(wakeup_event[0], (timeout - current_time) * 1000);
 #endif
