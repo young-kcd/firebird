@@ -8,7 +8,8 @@ M2.- Remove PYXIS macro
 M3.- Remove NO_CHECKSUM macro (and CCH_Checksum function in cch.cpp)
 M4.- Remove GDS_VAL and GDS_REF macros.
 M5.- Remove NULL_PTR macro
-M6.- Remove TRUE and FALSE macros and replace with builtin "true" and "false"
+M6.- Remove BOOLEAN, TRUE and FALSE macros and replace with keywords.
+M7.- Remove TEXT and SCHAR macros.
 
 Code
 C1.- Remove warnings (excluding parentheses, unused var, non complete switches and pragmas)
@@ -19,6 +20,7 @@ C2.- Define (type-safe?) unions for nod_arg and lls_object.
 C3.- Modify gds__msg_format and derivated functions to use arglist instead of TEXT arguments. This change will also remove a lot of casts.
 C4.- Remove casts.
 C5.- Replace macros with code with inline? functions.
+C6.- Assertion cleaning. Now there are in the code compiler and custom assertions.
 
 Builds
 B1.- Posix take cpp generated from epp out of src directory.
