@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.29 2003-03-05 16:19:08 brodsom Exp $
+#  $Id: Makefile.in.firebird,v 1.30 2003-03-12 12:39:56 eku Exp $
 #
 
 ROOT=..
@@ -183,13 +183,13 @@ jrd/build_no.h : misc/writeBuildNum.sh
 # 
 EXTERNAL_LIBRARIES=
 ifeq ($(EDITLINE_FLG),Y)
-EXTERNAL_LIBRARIES:= $(EXTERNAL_LIBRARIES) $(LIBEDIT_A)
+EXTERNAL_LIBRARIES:= $(EXTERNAL_LIBRARIES) $(LIBEDITLINE_A)
 endif
 
 external_libraries: $(EXTERNAL_LIBRARIES)
 
-$(LIBEDIT_A): 
-	$(MAKE) -C $(SRC_ROOT)/extern/editline
+$(LIBEDITLINE_A): 
+	$(MAKE) -f $(MAKE_ROOT)/Makefile.extern.editline
 
 
 #---------------------------------------------------------------------------

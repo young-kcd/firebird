@@ -1,11 +1,11 @@
-/*  $Revision: 1.1 $
+/*  $Revision: 1.2 $
 **
 **  History and file completion functions for editline library.
 */
 #include "editline.h"
 
 
-#if	defined(NEED_STRDUP)
+#ifndef HAVE_STRDUP
 /*
 **  Return an allocated copy of a string.
 */
@@ -19,7 +19,7 @@ strdup(p)
 	(void)strcpy(new, p);
     return new;
 }
-#endif	/* defined(NEED_STRDUP) */
+#endif	/* !HAVE_STRDUP */
 
 /*
 **  strcmp-like sorting predicate for qsort.

@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.128 2003-03-12 11:57:54 skidder Exp $
+dnl $Id: configure.in,v 1.129 2003-03-12 12:39:54 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -100,7 +100,7 @@ case "$target" in
     PLATFORM="SINIX-Z"
     AC_DEFINE(SINIXZ)
     LOCK_MANAGER_FLG=N
-    EDITLINE_FLG=N
+    EDITLINE_FLG=Y
     SHRLIB_EXT=so
     ;;
 
@@ -290,9 +290,10 @@ AC_CHECK_HEADERS(stdlib.h)
 AC_CHECK_HEADERS(string.h)
 AC_CHECK_HEADERS(signal.h)
 if test "$EDITLINE_FLG" = "Y"; then
+  AC_CHECK_HEADERS(termio.h termios.h)
+  AC_HEADER_DIRENT
   AC_DEFINE(HAVE_EDITLINE_H)
 fi
-AC_CHECK_HEADERS(pwd.h)
 AC_CHECK_HEADERS(unistd.h)
 AC_CHECK_HEADERS(varargs.h)
 AC_CHECK_HEADERS(crypt.h)
@@ -314,7 +315,7 @@ AC_CHECK_LIB(crypt, main)
 AC_CHECK_LIB(curses, main)
 dnl AC_CHECK_LIB(termcap, main)
 if test "$EDITLINE_FLG" = "Y"; then
-  AC_SUBST(EDITLINE_A, -ledit)
+  AC_SUBST(EDITLINE_A, -leditline)
 fi
 AC_CHECK_LIB(stdc++, main,,, $LIBS)
 
@@ -379,6 +380,7 @@ if test "$ac_cv_func_getmntent" = "yes"; then
   [AC_DEFINE(GETMNTENT_TAKES_TWO_ARGUMENTS) AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)])
 fi
+AC_CHECK_FUNCS(tcgetattr strdup)
 
 
 dnl Check for other things
@@ -485,7 +487,7 @@ case "$PLATFORM" in
       [FB_PIPE_NAME=${withval}])
     AC_DEFINE_UNQUOTED(FB_PIPE_NAME,"$FB_PIPE_NAME")
     AC_SUBST(FB_PIPE_NAME)
-    XE_PREPEND(-lmpr -lcomctl32 -lversion -lws2_32 -lgdi32 ,LIBS)
+    XE_PREPEND(-lmpr -lcomctl32 -lversion -lws2_32 -lgdi32,LIBS)
     ;;
 
   *)
@@ -687,6 +689,8 @@ mkdir -p gen/libfbembed/common/classes
 mkdir -p gen/libfbembed/common/config
 mkdir -p gen/RPM/RPMS/i686
 mkdir -p gen/RPM/BUILD
+
+mkdir -p gen/editline/extern/editline
 ])
 
 
@@ -769,6 +773,7 @@ gen/Makefile.embed.gpre:${MAKE_SRC_DIR}/Makefile.in.embed.gpre
 src/v5_examples/Makefile:${MAKE_SRC_DIR}/Makefile.in.example5
 gen/Makefile.install:src/install/arch-specific/${MAKEFILE_PREFIX}/Makefile.in
 Makefile:Makefile.in
+gen/Makefile.extern.editline:${MAKE_SRC_DIR}/Makefile.in.extern.editline
 )
 
 

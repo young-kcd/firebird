@@ -98,6 +98,12 @@
 #define HAVE_STRING_H
 #define HAVE_SIGNAL_H
 #undef HAVE_EDITLINE_H
+#undef HAVE_TERMIO_H
+#undef HAVE_TERMIOS_H
+#undef HAVE_DIRENT_H 
+#undef HAVE_SYS_NDIR_H 
+#undef HAVE_SYS_DIR_H 
+#undef HAVE_NDIR_H 
 #undef HAVE_UNISTD_H
 #undef HAVE_VARARGS_H
 #undef HAVE_VFORK_H
@@ -153,6 +159,8 @@
 #undef HAVE_SETMNTENT
 #undef HAVE_GETMNTENT
 #undef GETMNTENT_TAKES_TWO_ARGUMENTS
+#undef HAVE_TCGETATTR
+#define HAVE_STRDUP
 
 
 /* Types */

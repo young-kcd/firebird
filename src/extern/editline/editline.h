@@ -1,12 +1,15 @@
-/*  $Revision: 1.1 $
+/*  $Revision: 1.2 $
 **
 **  Internal header file for editline library.
 */
+
+#include "gen/autoconfig.h"
+
 #include <stdio.h>
-#if	defined(HAVE_STDLIB)
+#if	defined(HAVE_STDLIB_H)
 #include <stdlib.h>
 #include <string.h>
-#endif	/* defined(HAVE_STDLIB) */
+#endif	/* defined(HAVE_STDLIB_H) */
 #if	defined(SYS_UNIX)
 #include "unix.h"
 #endif	/* defined(SYS_UNIX) */
@@ -63,7 +66,7 @@ extern int	rl_list_possib();
 extern void	rl_ttyset();
 extern void	rl_add_slash();
 
-#if	!defined(HAVE_STDLIB)
+#if	!defined(HAVE_STDLIB_H)
 extern char	*getenv();
 extern char	*malloc();
 extern char	*realloc();
@@ -76,4 +79,4 @@ extern char	*strdup();
 extern int	strcmp();
 extern int	strlen();
 extern int	strncmp();
-#endif	/* !defined(HAVE_STDLIB) */
+#endif	/* !defined(HAVE_STDLIB_H) */

@@ -1,4 +1,4 @@
-/*  $Revision: 1.1 $
+/*  $Revision: 1.2 $
 **
 **  Editline system header file for Unix.
 */
@@ -9,13 +9,13 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#if	defined(USE_DIRENT)
+#ifdef HAVE_DIRENT_H
 #include <dirent.h>
 typedef struct dirent	DIRENTRY;
 #else
 #include <sys/dir.h>
 typedef struct direct	DIRENTRY;
-#endif	/* defined(USE_DIRENT) */
+#endif	/* HAVE_DIRENT_H */
 
 #if	!defined(S_ISDIR)
 #define S_ISDIR(m)		(((m) & S_IFMT) == S_IFDIR)
