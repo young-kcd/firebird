@@ -30,7 +30,7 @@
  *       John Bellardo  <bellardo@cs.ucsd.edu>
  *
  *
- *  $Id: firebird.h,v 1.10 2003-03-01 18:15:43 brodsom Exp $
+ *  $Id: firebird.h,v 1.11 2003-03-05 23:43:36 brodsom Exp $
  *
  */
 
@@ -61,7 +61,7 @@
 #endif
 
 // 
-#ifdef SUPERSERVER
+#if defined(SUPERSERVER) || defined(WIN_NT)
 #define SERVER_SHUTDOWN		1
 #endif
 
