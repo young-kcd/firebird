@@ -43,6 +43,9 @@
 #ifdef _AIX
 #include <sys/select.h>
 #endif
+
+#include "firebird.h"
+#include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
 
 
@@ -75,6 +78,10 @@
 #include <sys/stat.h>
 #define UNIX_JOURNALLING
 #define BSD_SOCKETS
+#endif
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
 #endif
 
 #ifndef MAX_PATH_LENGTH

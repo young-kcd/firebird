@@ -38,6 +38,8 @@
 #define MAX_PATH_LENGTH			512
 #endif
 
+#include "firebird.h"
+#include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
 
 #include "../jrd/ods.h"
@@ -73,8 +75,11 @@
 #define SYS_ERROR	gds_arg_unix
 #define ERRNO		errno
 #include <sys/types.h>
-
 extern int errno;
+#endif
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
 #endif
 
 // VMS Stuff

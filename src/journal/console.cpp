@@ -48,6 +48,10 @@
 #define BSD_SOCKETS
 #endif
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #ifdef BSD_SOCKETS
 #define BSD_INCLUDES
 #ifndef FCNTL_INCLUDED
@@ -70,7 +74,7 @@
 #define START_COMMAND	"status"
 
 static void close_connection(SLONG);
-static void error(ISC_STATUS, UCHAR *);
+static void error(ISC_STATUS, const char*);
 static void expand_dbname(TEXT *);
 
 #ifdef BSD_SOCKETS
@@ -276,7 +280,7 @@ static void close_connection(SLONG channel)
  **************************************/
 
 	if (close(channel) < 0)
-		error((ISC_STATUS) errno, (UCHAR*) "close socket");
+		error((ISC_STATUS) errno, "close socket");
 }
 #endif
 
@@ -296,14 +300,14 @@ static void close_connection(SLONG channel)
  **************************************/
 
 	if (!CloseHandle((HANDLE) channel))
-		error(GetLastError(), (UCHAR*) "CloseHandle (pipe)");
+		error(GetLastError(), "CloseHandle (pipe)");
 }
 #endif
 
 
 #ifdef BSD_SOCKETS
 static void error(ISC_STATUS status,
-				  UCHAR * string)
+				  const char* string)
 {
 /**************************************
  *
@@ -328,7 +332,7 @@ static void error(ISC_STATUS status,
 
 #ifdef WIN_NT
 static void error(ISC_STATUS status,
-				  UCHAR * string)
+				  const char* string)
 {
 /**************************************
  *
@@ -460,14 +464,14 @@ static SSHORT find_address(TEXT * filename,
 		if (test_only)
 			return (-1);
 
-		error(errno, (UCHAR*) "journal socket file open");
+		error(errno, "journal socket file open");
 	}
 
 	if (fscanf(file, "%ld %ld %ld %ld", &version, &addr, &family, &port) != 4) {
 		if (test_only)
 			return (-1);
 
-		error(0, (UCHAR*) "journal socket file format");
+		error(0, "journal socket file format");
 	}
 	fclose(file);
 
@@ -475,7 +479,7 @@ static SSHORT find_address(TEXT * filename,
 		if (test_only)
 			return (-1);
 
-		error(0, (UCHAR*) " address version");
+		error(0, " address version");
 	}
 
 	address->sin_addr.s_addr = addr;
@@ -515,14 +519,14 @@ static enum jrnr_t get_reply(SLONG channel)
 		length = sizeof(reply->jrnr_header);
 
 		if ((len = read(channel, buffer, length)) != length)
-			error(errno, (UCHAR*) "socket read");
+			error(errno, "socket read");
 
 		// read the rest of the response
 
 		length = reply->jrnr_header.jrnh_length - length;
 
 		if ((len = read(channel, &buffer[len], length)) != length)
-			error(errno, (UCHAR*) "socket read");
+			error(errno, "socket read");
 
 		if (reply->jrnr_response != jrnr_msg)
 			return reply->jrnr_response;
@@ -563,7 +567,7 @@ static enum jrnr_t get_reply(SLONG channel)
 		if (!ReadFile((HANDLE) channel, buffer, length, &len, NULL) ||
 			len != length)
 		{
-			error(GetLastError(), (UCHAR*) "ReadFile (pipe)");
+			error(GetLastError(), "ReadFile (pipe)");
 		}
 
 		// read the rest of the response
@@ -573,7 +577,7 @@ static enum jrnr_t get_reply(SLONG channel)
 		if (!ReadFile((HANDLE) channel, &buffer[len], length, &len, NULL) ||
 			len != length)
 		{
-			error(GetLastError(), (UCHAR*) "ReadFile (pipe)");
+			error(GetLastError(), "ReadFile (pipe)");
 		}
 
 		if (reply->jrnr_response != jrnr_msg)
@@ -612,7 +616,7 @@ static SLONG open_connection(SCHAR * filename,
 // Allocate a port block and initialize a socket for communications
 
 	if ((channel = (SLONG) socket(AF_INET, SOCK_STREAM, 0)) < 0)
-		error(errno, (UCHAR*) "socket");
+		error(errno, "socket");
 
 	memset((SCHAR *) & address, 0, sizeof(address));
 
@@ -625,7 +629,7 @@ static SLONG open_connection(SCHAR * filename,
 		if (test_only)
 			return (-1);
 
-		error(errno, (UCHAR*) "connect console");
+		error(errno, "connect console");
 	}
 
 	return channel;
@@ -674,7 +678,7 @@ static SLONG open_connection(SCHAR * filename,
 			if (test_only)
 				return (-1);
 
-			error(GetLastError(), (UCHAR*) "CreateFile (pipe)");
+			error(GetLastError(), "CreateFile (pipe)");
 		}
 
 		WaitNamedPipe(name, 2000L);
@@ -723,7 +727,7 @@ static void put_command(SLONG channel,
 		while (--data_length);
 
 	if (write(channel, buffer, l) < 0)
-		error(errno, (UCHAR*) "write socket");
+		error(errno, "write socket");
 }
 #endif
 
@@ -766,6 +770,6 @@ static void put_command(SLONG channel,
 		while (--data_length);
 
 	if (!WriteFile((HANDLE) channel, buffer, l, &len, NULL) || l != len)
-		error(GetLastError(), (UCHAR*) "WriteFile (pipe)");
+		error(GetLastError(), "WriteFile (pipe)");
 }
 #endif
