@@ -1,3 +1,69 @@
+2003-06-30 20:12  brodsom
+
+	* firebird2/: builds/win32/prepare.bat, src/msgs/include.epp:
+	
+	Remove unneeded sed commands in build
+
+2003-06-30 20:09  brodsom
+
+	* firebird2/: src/dudley/exe.epp, builds/win32/msvc6/gbak.dsp:
+	
+	Changes only inside #ifdef DEBUG.  Needed to be able to build with
+	-DDEBUG on gcc.(there are also some format corrections)
+
+2003-06-30 16:31  skidder
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	Forbid pessimistic locks in queries with DISTINCT clause
+
+2003-06-30 15:11  alexpeshkoff
+
+	* firebird2/src/jrd/: cmp.cpp, met.epp:
+	
+	fixed AV in fbserver when JRD_PRC::prc_request == 0 at commit time
+
+2003-06-30 14:48  alexpeshkoff
+
+	* firebird2/src/jrd/: fun.epp, fun_proto.h, intl.cpp, par.cpp:
+	
+	fixed restore of backup file without required UDF(s)
+
+2003-06-30 14:42  brodsom
+
+	* firebird2/builds/posix/prefix.mingw.README.html:
+	
+	Update mingw instructions
+
+2003-06-30 13:26  brodsom
+
+	* firebird2/src/remote/: inet.cpp, interface.cpp, protocol.cpp,
+	remote.cpp, server.cpp, wnet.cpp:
+	
+	Changes only inside #ifdef DEBUG.  Needed to be able to build with
+	-DDEBUG on gcc.(there are also some format corrections)
+
+2003-06-30 13:02  brodsom
+
+	* firebird2/src/lock/lock.cpp:
+	
+	Changes only inside #ifdef DEBUG.  Needed to be able to build with
+	-DDEBUG on gcc.(there are also some format corrections)
+
+2003-06-30 12:47  brodsom
+
+	* firebird2/src/: dsql/ddl.cpp, gpre/gpre_meta.epp:
+	
+	Changes only inside #ifdef DEBUG.  Needed to be able to build with
+	-DDEBUG on gcc.(there are also some format corrections)
+
+2003-06-30 12:42  brodsom
+
+	* firebird2/src/burp/: backup.epp, mvol.cpp, restore.epp:
+	
+	Changes only inside #ifdef DEBUG.  Needed to be able to build with
+	-DDEBUG on gcc.(there are also some format corrections)
+
 2003-06-29 22:36  skidder
 
 	* firebird2/src/dsql/: dsql.h, metd.epp, pass1.cpp:
