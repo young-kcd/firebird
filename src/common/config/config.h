@@ -86,7 +86,8 @@ class Config
 		KEY_SOLARIS_STALL_VALUE,					// 21
 		KEY_TRACE_MEMORY_POOLS,						// 22	
 		KEY_PRIORITY_SWITCH_DELAY,					// 23
-		KEY_DEAD_THREADS_COLLECTION,				// 24
+		//KEY_DEAD_THREADS_COLLECTION,				deprecated
+		KEY_USE_PRIORITY_SCHEDULER,					// 24
 		KEY_PRIORITY_BOOST,							// 25
 		KEY_REMOTE_SERVICE_NAME,					// 26
 		KEY_REMOTE_SERVICE_PORT,					// 27
@@ -228,6 +229,11 @@ public:
 		Priority switch delay
 	*/
 	static int getPrioritySwitchDelay();
+
+	/*
+		Use priority scheduler
+	*/
+	static bool getUsePriorityScheduler();
 
 	/*
 		Priority boost

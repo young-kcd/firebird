@@ -35,9 +35,6 @@
 #include "../jrd/gds_proto.h"
 #include "../common/classes/fb_tls.h"
 
-// configurable parameters
-#define THPS_TIME (Config::getPrioritySwitchDelay())	// ms between rescheds
-
 #include <stdio.h>
 #include <errno.h>
 #include <process.h>
@@ -46,11 +43,12 @@
 // #define DEBUG_THREAD_PSCHED
 
 Firebird::Mutex ThreadPriorityScheduler::mutex;
-ThreadPriorityScheduler * ThreadPriorityScheduler::chain = 0;
+ThreadPriorityScheduler* ThreadPriorityScheduler::chain = 0;
 Firebird::InitMutex<ThreadPriorityScheduler> ThreadPriorityScheduler::initialized;
 ThreadPriorityScheduler::OperationMode 
 	ThreadPriorityScheduler::opMode = ThreadPriorityScheduler::Running;
 ThreadPriorityScheduler::TpsPointers* ThreadPriorityScheduler::toDetach = 0;
+bool ThreadPriorityScheduler::active = true;
 
 namespace {
 
@@ -71,6 +69,7 @@ void ThreadPriorityScheduler::init()
 		Firebird::fatal_exception::raise("Attempt to initialize after shutdown");
 	}
 
+	active = Config::getUsePriorityScheduler();
 	toDetach = FB_NEW(*getDefaultMemoryPool()) TpsPointers(*getDefaultMemoryPool());
 
 	// allocate thps for current (i.e. server's main) thread
@@ -79,15 +78,18 @@ void ThreadPriorityScheduler::init()
 	tps->attach();
 
 	// start scheduler
-	unsigned thread_id;
-	HANDLE handle = (HANDLE)_beginthreadex(NULL, 0,
-		schedulerMain, 0, 0, &thread_id);
-	if (! handle)
+	if (active)
 	{
-		Firebird::system_call_failed::raise("_beginthreadex", GetLastError());
+		unsigned thread_id;
+		HANDLE handle = (HANDLE)_beginthreadex(NULL, 0,
+			schedulerMain, 0, 0, &thread_id);
+		if (! handle)
+		{
+			Firebird::system_call_failed::raise("_beginthreadex", GetLastError());
+		}
+		SetThreadPriority(handle, THREAD_PRIORITY_TIME_CRITICAL);
+		CloseHandle(handle);
 	}
-	SetThreadPriority(handle, THREAD_PRIORITY_TIME_CRITICAL);
-	CloseHandle(handle);
 
 	// register
 	gds__register_cleanup(Cleanup, 0);
@@ -107,22 +109,30 @@ void ThreadPriorityScheduler::cleanup()
 
 void ThreadPriorityScheduler::attach()
 {
-	HANDLE process = GetCurrentProcess();
-	HANDLE thread = GetCurrentThread();
-	if (! DuplicateHandle(process, thread, process, &handle, 0, 
-			FALSE, DUPLICATE_SAME_ACCESS))
+	if (active)
 	{
-		Firebird::system_call_failed::raise("DuplicateHandle", GetLastError());
-	}
-	mutex.enter();
-	next = chain;
-	chain = this;
-	mutex.leave();
+		HANDLE process = GetCurrentProcess();
+		HANDLE thread = GetCurrentThread();
+		if (! DuplicateHandle(process, thread, process, &handle, 0, 
+				FALSE, DUPLICATE_SAME_ACCESS))
+		{
+			Firebird::system_call_failed::raise("DuplicateHandle", GetLastError());
+		}
+		mutex.enter();
+		next = chain;
+		chain = this;
+		mutex.leave();
 #ifdef DEBUG_THREAD_PSCHED
-	gds__log("^ handle=%p priority=%d", handle, 
+		gds__log("^ handle=%p priority=%d", handle, 
 				flags & THPS_BOOSTED ? 
-				THREAD_PRIORITY_HIGHEST : THREAD_PRIORITY_NORMAL);
+				highPriority : lowPriority);
 #endif
+	}
+	else
+	{
+		next = 0;
+		handle = INVALID_HANDLE_VALUE;
+	}
 	TLS_SET(currentScheduler, this);
 }
 
@@ -133,28 +143,38 @@ void ThreadPriorityScheduler::run() {
 
 void ThreadPriorityScheduler::detach() 
 {
-	mutex.enter();
-	TLS_SET(currentScheduler, 0);
-	if (opMode == ShutdownComplete)
+	if (active)
 	{
-		for (ThreadPriorityScheduler** pt = &chain; *pt; pt = &(*pt)->next) 
+		mutex.enter();
+		TLS_SET(currentScheduler, 0);
+		if (opMode == ShutdownComplete)
 		{
-			if (*pt == this)
+			for (ThreadPriorityScheduler** pt = &chain; *pt; pt = &(*pt)->next) 
 			{
-				*pt = this->next;
+				if (*pt == this)
+				{
+					*pt = this->next;
 #ifdef DEBUG_THREAD_PSCHED
-				gds__log("~ handle=%p", handle);
+					gds__log("~ handle=%p", handle);
 #endif
-				delete this;
-				break;
+					delete this;
+					break;
+				}
 			}
 		}
+		else
+		{
+			toDetach->add(this);
+		}
+		mutex.leave();
 	}
 	else
 	{
-		toDetach->add(this);
+#ifdef DEBUG_THREAD_PSCHED
+		gds__log("~ handle=%p", handle);
+#endif
+		delete this;
 	}
-	mutex.leave();
 }
 
 unsigned int __stdcall ThreadPriorityScheduler::schedulerMain(LPVOID) 
@@ -169,7 +189,7 @@ unsigned int __stdcall ThreadPriorityScheduler::schedulerMain(LPVOID)
 			mutex.leave();
 			break;
 		}
-		Sleep(THPS_TIME);
+		Sleep(Config::getPrioritySwitchDelay());
 		UCHAR StateCloseHandles = 0;
 		// We needn't lock mutex, because we don't modify
 		// next here, and new thps object may be added
@@ -194,13 +214,13 @@ unsigned int __stdcall ThreadPriorityScheduler::schedulerMain(LPVOID)
 				//		return into it since this &last cycle:
 				//			increase priority
 						if (! SetThreadPriority(t->handle, 
-									THREAD_PRIORITY_HIGHEST))
+									highPriority))
 						{
 							Firebird::system_call_failed::raise("SetThreadPriority");
 						}
 
 #ifdef DEBUG_THREAD_PSCHED
-						gds__log("+ handle=%p priority=%d", t->handle, THREAD_PRIORITY_HIGHEST);
+						gds__log("+ handle=%p priority=%d", t->handle, highPriority);
 #endif
 						t->flags |= THPS_BOOSTED;
 						continue;
@@ -220,12 +240,12 @@ unsigned int __stdcall ThreadPriorityScheduler::schedulerMain(LPVOID)
 				//		this cycle:
 				//		decrease priority
 						if (! SetThreadPriority(t->handle, 
-									THREAD_PRIORITY_NORMAL))
+									lowPriority))
 						{
 							Firebird::system_call_failed::raise("SetThreadPriority");
 						}
 #ifdef DEBUG_THREAD_PSCHED
-						gds__log("- handle=%p priority=%d", t->handle, THREAD_PRIORITY_NORMAL);
+						gds__log("- handle=%p priority=%d", t->handle, lowPriority);
 #endif
 						t->flags &= ~THPS_BOOSTED;
 						continue;

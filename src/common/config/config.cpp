@@ -84,7 +84,9 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_INTEGER,		"SolarisStallValue",		(ConfigValue) 60},			// seconds
 	{TYPE_BOOLEAN,		"TraceMemoryPools",			(ConfigValue) false},		// for internal use only
 	{TYPE_INTEGER,		"PrioritySwitchDelay",		(ConfigValue) 100},			// milliseconds
-	{TYPE_INTEGER,		"DeadThreadsCollection",	(ConfigValue) 50},			// number of PrioritySwitchDelay cycles before dead threads collection
+	// deprecated
+	//{TYPE_INTEGER,		"DeadThreadsCollection",	(ConfigValue) 50},			// number of PrioritySwitchDelay cycles before dead threads collection
+	{TYPE_BOOLEAN,		"UsePriorityScheduler",		(ConfigValue) true},
 	{TYPE_INTEGER,		"PriorityBoost",			(ConfigValue) 5},			// ratio oh high- to low-priority thread ticks in jrd.cpp
 	{TYPE_STRING,		"RemoteServiceName",		(ConfigValue) FB_SERVICE_NAME},
 	{TYPE_INTEGER,		"RemoteServicePort",		(ConfigValue) 0},
@@ -381,6 +383,11 @@ int Config::getPriorityBoost()
 	if (rc > 1000)
 		rc = 1000;
 	return rc;
+}
+
+bool Config::getUsePriorityScheduler()
+{
+	return (bool) sysConfig.values[KEY_USE_PRIORITY_SCHEDULER];
 }
 
 const char *Config::getRemoteServiceName()

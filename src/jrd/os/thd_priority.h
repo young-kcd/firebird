@@ -43,6 +43,9 @@ const UCHAR THPS_UP			= 2;	// candidate for priority boost
 const UCHAR THPS_LOW		= 4;	// candidate for priority decrement
 const UCHAR THPS_BOOSTED	= 8;	// thread priority raised by priority scheduler
 
+const int highPriority = THREAD_PRIORITY_HIGHEST;
+const int lowPriority = THREAD_PRIORITY_NORMAL;
+
 #endif // THREAD_PSCHED
 
 class ThreadPriorityScheduler {
@@ -58,6 +61,7 @@ private:
 	static Firebird::InitMutex<ThreadPriorityScheduler> initialized;
 	static OperationMode opMode;	// current mode
 	static TpsPointers* toDetach;	// instances to be detached
+	static bool active;				// may be turned off in firebird.conf
 
 	ThreadEntryPoint* routine;		// real thread entrypoint
 	void* arg;						// arg to pass to it
@@ -81,7 +85,10 @@ private:
 	// Add current instance to the chain
 	void attach();
 	~ThreadPriorityScheduler() {
-		CloseHandle(handle);
+		if (active)
+		{
+			CloseHandle(handle);
+		}
 	}
 
 public:
@@ -130,10 +137,11 @@ public:
 	static UCHAR adjustPriority(int& p)
 	{
 		UCHAR flags = 0;
-		if (p == THREAD_PRIORITY_NORMAL)
+// priority scheduling is done for threads with initially normal priority
+		if (active && (p == THREAD_PRIORITY_NORMAL))	
 		{
 			flags = THPS_PSCHED | THPS_BOOSTED;
-			p = THREAD_PRIORITY_HIGHEST;
+			p = highPriority;
 		}
 		return flags;
 	}
