@@ -152,7 +152,9 @@ static const char * FB_PID_FILE = "fb_%d";
 
 #include "gen/sql_code.h"
 #include "../jrd/thd.h"
-#include "../jrd/gdsold.h"
+#include "gen/codes.h"
+#include "../jrd/ibase.h"
+
 #include "../jrd/blr.h"
 #include "../jrd/msg.h"
 #include "../jrd/fil.h"
@@ -1951,31 +1953,31 @@ USHORT API_ROUTINE gds__parse_bpb2(USHORT bpb_length,
 	const UCHAR* p = bpb;
 	const UCHAR* const end = p + bpb_length;
 
-	if (*p++ != gds_bpb_version1)
+	if (*p++ != isc_bpb_version1)
 		return type;
 
 	while (p < end) {
 		const UCHAR op = *p++;
 		const USHORT length = *p++;
 		switch (op) {
-		case gds_bpb_source_type:
+		case isc_bpb_source_type:
 			*source = (USHORT) gds__vax_integer(p, length);
 			break;
 
-		case gds_bpb_target_type:
+		case isc_bpb_target_type:
 			*target = (USHORT) gds__vax_integer(p, length);
 			break;
 
-		case gds_bpb_type:
+		case isc_bpb_type:
 			type = (USHORT) gds__vax_integer(p, length);
 			break;
 
-		case gds_bpb_source_interp:
+		case isc_bpb_source_interp:
 			if (source_interp)
 				*source_interp = (USHORT) gds__vax_integer(p, length);
 			break;
 
-		case gds_bpb_target_interp:
+		case isc_bpb_target_interp:
 			if (target_interp)
 				*target_interp = (USHORT) gds__vax_integer(p, length);
 			break;
