@@ -195,7 +195,8 @@ SECURITY_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SECURITY_So
 #
 # fbutil
 
-FBUTIL_ClientFiles=FirebirdConfig.cpp FirebirdConfigFile.cpp
+FBUTIL_ClientFiles=
+#FBUTIL_ClientFiles=FirebirdConfig.cpp FirebirdConfigFile.cpp
 FBUTIL_ServerFiles=
 
 FBUTIL_Files = $(FBUTIL_ClientFiles) $(FBUTIL_ServerFiles)

@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.71 2002-11-07 14:06:13 eku Exp $
+dnl $Id: configure.in,v 1.72 2002-11-09 13:23:55 skywalker Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -428,8 +428,9 @@ mkdir -p gen/client.util/utilities
 mkdir -p gen/intl/intl
 
 mkdir -p gen/libfbcommon/common/memory
+mkdir -p gen/libfbcommon/common/config
 mkdir -p gen/libfbcommon/fbutil
-mkdir -p gen/boot.gpre/jrd
+mkdir -p gen/boot.gpre/jrd/os/posix
 mkdir -p gen/boot.gpre/gpre
 mkdir -p gen/static.gpre
 mkdir -p gen/static.gpre/jrd

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbcommon,v 1.3 2002-10-07 01:29:09 skywalker Exp $
+#  $Id: Makefile.in.libfbcommon,v 1.4 2002-11-09 13:23:56 skywalker Exp $
 #
 ROOT=..
 ObjModuleName=libfbcommon
@@ -40,7 +40,7 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
-LIBFBCOMMON_Objects = $(FBMEMORY_Objects) $(FBCOMMON_Objects) $(FBUTIL_Objects)
+LIBFBCOMMON_Objects = $(FBMEMORY_Objects) $(FBCOMMON_Objects) $(FBCONFIG_Objects) 
 
 
 AllObjects= $(LIBFBCOMMON_Objects)
