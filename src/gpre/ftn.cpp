@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.36 2003-10-29 10:53:07 robocop Exp $
+//	$Id: ftn.cpp,v 1.37 2003-10-31 08:30:04 eku Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -218,7 +218,7 @@ const char* const COMMENT			= "*     ";
 const char* const INLINE_COMMENT	= "\n*                ";
 const char* const COMMA				= ",";
 #elif defined(SINIXZ)
-const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '/usr/interbase/include/gds.f\' \n\n"
+const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '/usr/interbase/include/gds.f\' \n\n";
 const char* const INCLUDE_FTN_FILE	= "include/gds.f";
 const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
 const char* const I2CONST_1			= "";
