@@ -85,6 +85,7 @@ char* fb_exact_name_limit(char* const str, size_t bufsize)
  *	SQL delimited identifier may have blank as part of the name
  *
  *	Parameters:  str - the string to terminate
+ *               bufsize - the size of the variable containing the string.
  *	Returns:     str
  *
  **************************************/
