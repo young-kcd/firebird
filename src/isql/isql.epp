@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.32.2.3 2003-11-13 22:46:06 bellardo Exp $
+  $Id: isql.epp,v 1.32.2.4 2004-01-17 16:41:52 alexpeshkoff Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -2680,7 +2680,8 @@ static void do_isql(void)
 			 */
 			if (Stmt)
 				isc_dsql_free_statement(isc_status, &Stmt, DSQL_drop);
-			isc_detach_database(isc_status, &DB);
+			if (DB)
+				isc_detach_database(isc_status, &DB);
 			done = TRUE;
 			break;
 
