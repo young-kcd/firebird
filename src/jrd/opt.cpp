@@ -1653,7 +1653,7 @@ static void check_sorts(RecordSelExpr* rse)
 		for (; sort_ptr < sort_end; sort_ptr++) {
 			if ((*sort_ptr)->nod_type == nod_field) {
 				// Get stream for this field at this position.
-				const UCHAR current_stream = (UCHAR)(*sort_ptr)->nod_arg[e_fld_stream];
+				const UCHAR current_stream = (UCHAR)(IPTR)(*sort_ptr)->nod_arg[e_fld_stream];
 				// If this is the first position node, save this stream.
 				if (sort_ptr == sort->nod_arg) {
 			    	sort_stream = current_stream;
@@ -1688,7 +1688,7 @@ static void check_sorts(RecordSelExpr* rse)
 							for (int i = 0; i < new_rse->rse_count; i++) {
 								jrd_nod* subNode = (jrd_nod*) new_rse->rse_relation[i];
 								if (subNode->nod_type == nod_relation && 
-									((USHORT)subNode->nod_arg[e_rel_stream]) == sort_stream && 
+									((USHORT)(IPTR)subNode->nod_arg[e_rel_stream]) == sort_stream && 
 									new_rse != rse) 
 								{
 									sortStreamFound = true;
@@ -1712,7 +1712,7 @@ static void check_sorts(RecordSelExpr* rse)
 				}
 				else {
 					if (node->nod_type == nod_relation && 
-						((USHORT)node->nod_arg[e_rel_stream]) == sort_stream && 
+						((USHORT)(IPTR)node->nod_arg[e_rel_stream]) == sort_stream && 
 						new_rse && new_rse != rse) 
 					{
 						new_rse->rse_sorted = sort;
