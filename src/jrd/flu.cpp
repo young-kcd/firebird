@@ -31,11 +31,11 @@
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "HP700" port
  *
- * 2002.10.28 Sean Leyne - Completed removal of obsolete "HM300" port
+ * 2002.11.28 Sean Leyne - Code cleanup, removed obsolete "HM300" port
  *
  */
 /*
-$Id: flu.cpp,v 1.18 2002-11-29 04:06:39 seanleyne Exp $
+$Id: flu.cpp,v 1.19 2002-11-29 04:10:17 seanleyne Exp $
 */
 
 #include "firebird.h"
