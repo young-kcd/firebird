@@ -27,7 +27,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: alice_meta.epp,v 1.13 2003-08-30 02:02:36 brodsom Exp $
+ *	$Id: alice_meta.epp,v 1.14 2003-09-14 01:08:37 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -349,7 +349,8 @@ static TDR get_description(SLONG blob_id[2])
 			break;
 
 		default:
-			ALICE_print(108, 0, 0, 0, 0, 0);	/* msg 108: Transaction description item unknown. */
+			ALICE_print(108, 0, 0, 0, 0, 0);
+			// msg 108: Transaction description item unknown.
 
 			if (length)
 				gds__free(bigger_buffer);
