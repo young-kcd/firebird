@@ -52,8 +52,17 @@
 
 #else	// DEV_BUILD
 
-#define fb_assert(ex)				/* nothing */
+#define fb_assert(ex)				// nothing 
 
-#endif /* DEV_BUILD */
+#endif // DEV_BUILD 
 
-#endif /* JRD_GDSASSERT_H */
+// It's a bit poor, since assert is a standard macro but this was the way it
+// was done.  It is preferable to use the gds_assert(x) function, but I've left
+// the following for back compatibility since I don't want to wade through that
+// much code at the moment.
+
+#ifndef assert
+#define assert(ex)     fb_assert(ex)
+#endif // assert
+
+#endif // JRD_GDSASSERT_H 

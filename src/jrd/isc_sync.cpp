@@ -46,6 +46,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef SOLARIS
+#ifndef DEV_BUILD
+#define NDEBUG                                 // Turn off assert() macros
+#endif
+#include <assert.h>
+#endif
+
 #ifdef HAVE_SETJMP_H
 #include <setjmp.h>
 #endif

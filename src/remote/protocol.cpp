@@ -220,8 +220,8 @@ void xdr_debug_memory(
 	ULONG i, j;
 
 	port = (PORT) xdrs->x_public;
-	fb_assert(port != 0);
-	fb_assert(port->port_header.blk_type == type_port);
+	assert(port != 0);
+	assert(port->port_header.blk_type == type_port);
 
 /* Compare the XDR variable address with the lower and upper bounds
    of each packet to determine which packet contains it. Record or
@@ -232,7 +232,7 @@ void xdr_debug_memory(
 
 	for (i = 0; i < vector->vec_count; i++) {
 		if (packet = (PACKET *) vector->vec_object[i]) {
-			fb_assert(packet->p_operation > op_void
+			assert(packet->p_operation > op_void
 				   && packet->p_operation < op_max);
 
 			if ((SCHAR *) xdrvar >= (SCHAR *) packet &&
@@ -250,7 +250,7 @@ void xdr_debug_memory(
 					}
 					else {		/* XDR_ENCODE or XDR_DECODE */
 
-						fb_assert(xop == XDR_ENCODE || xop == XDR_DECODE);
+						assert(xop == XDR_ENCODE || xop == XDR_DECODE);
 						if (packet->p_malloc[j].p_operation == op_void) {
 							packet->p_malloc[j].p_operation =
 								packet->p_operation;
@@ -264,11 +264,11 @@ void xdr_debug_memory(
 				/* Assertion failure if not enough entries to record every xdr
 				   memory allocation or an entry to be freed can't be found. */
 
-				fb_assert(j < P_MALLOC_SIZE);	/* Increase P_MALLOC_SIZE if necessary */
+				assert(j < P_MALLOC_SIZE);	/* Increase P_MALLOC_SIZE if necessary */
 			}
 		}
 	}
-	fb_assert(i < vector->vec_count);	/* Couldn't find packet for this xdr arg */
+	assert(i < vector->vec_count);	/* Couldn't find packet for this xdr arg */
 }
 #endif
 
@@ -783,7 +783,7 @@ bool_t xdr_protocol(XDR * xdrs, PACKET * p)
 			ib_fprintf(ib_stderr, "xdr_packet: operation %d not recognized\n",
 					   p->p_operation);
 #endif
-		fb_assert(xdrs->x_op == XDR_FREE);
+		assert(xdrs->x_op == XDR_FREE);
 		return P_FALSE;
 	}
 }
@@ -843,7 +843,7 @@ ULONG xdr_protocol_overhead(P_OP op)
 		break;
 
 	default:
-		fb_assert(FALSE);			/* Not supported operation */
+		assert(FALSE);			/* Not supported operation */
 		return 0;
 	}
 	return size;
@@ -989,7 +989,7 @@ static bool_t xdr_datum( XDR * xdrs, DSC * desc, BLOB_PTR * buffer)
 		break;
 
 	case dtype_varying:
-		fb_assert(desc->dsc_length >= sizeof(USHORT));
+		assert(desc->dsc_length >= sizeof(USHORT));
 		if (!xdr_short
 			(xdrs,
 			 reinterpret_cast <
@@ -1014,7 +1014,7 @@ static bool_t xdr_datum( XDR * xdrs, DSC * desc, BLOB_PTR * buffer)
 		break;
 
 	case dtype_short:
-		fb_assert(desc->dsc_length >= sizeof(SSHORT));
+		assert(desc->dsc_length >= sizeof(SSHORT));
 		if (!xdr_short(xdrs, reinterpret_cast < SSHORT * >(p)))
 			return FALSE;
 		break;
@@ -1022,33 +1022,33 @@ static bool_t xdr_datum( XDR * xdrs, DSC * desc, BLOB_PTR * buffer)
 	case dtype_sql_time:
 	case dtype_sql_date:
 	case dtype_long:
-		fb_assert(desc->dsc_length >= sizeof(SLONG));
+		assert(desc->dsc_length >= sizeof(SLONG));
 		if (!xdr_long(xdrs, reinterpret_cast < SLONG * >(p)))
 			return FALSE;
 		break;
 
 	case dtype_real:
-		fb_assert(desc->dsc_length >= sizeof(float));
+		assert(desc->dsc_length >= sizeof(float));
 		if (!xdr_float(xdrs, reinterpret_cast < float *>(p)))
 			  return FALSE;
 		break;
 
 	case dtype_double:
-		fb_assert(desc->dsc_length >= sizeof(double));
+		assert(desc->dsc_length >= sizeof(double));
 		if (!xdr_double(xdrs, reinterpret_cast < double *>(p)))
 			  return FALSE;
 		break;
 
 #ifdef VMS
 	case dtype_d_float:
-		fb_assert(desc->dsc_length >= sizeof(d_float));
+		assert(desc->dsc_length >= sizeof(d_float));
 		if (!xdr_d_float(xdrs, p))
 			return FALSE;
 		break;
 #endif
 
 	case dtype_timestamp:
-		fb_assert(desc->dsc_length >= 2 * sizeof(SLONG));
+		assert(desc->dsc_length >= 2 * sizeof(SLONG));
 		if (!xdr_long(xdrs, &((SLONG *) p)[0]))
 			return FALSE;
 		if (!xdr_long(xdrs, &((SLONG *) p)[1]))
@@ -1056,7 +1056,7 @@ static bool_t xdr_datum( XDR * xdrs, DSC * desc, BLOB_PTR * buffer)
 		break;
 
 	case dtype_int64:
-		fb_assert(desc->dsc_length >= sizeof(SINT64));
+		assert(desc->dsc_length >= sizeof(SINT64));
 		if (!xdr_hyper(xdrs, (SINT64 *) p))
 			return FALSE;
 		break;
@@ -1064,13 +1064,13 @@ static bool_t xdr_datum( XDR * xdrs, DSC * desc, BLOB_PTR * buffer)
 	case dtype_array:
 	case dtype_quad:
 	case dtype_blob:
-		fb_assert(desc->dsc_length >= sizeof(struct bid));
+		assert(desc->dsc_length >= sizeof(struct bid));
 		if (!xdr_quad(xdrs, (struct bid *) p))
 			return FALSE;
 		break;
 
 	default:
-		fb_assert(FALSE);
+		assert(FALSE);
 		return FALSE;
 	}
 
@@ -1097,8 +1097,8 @@ static bool_t xdr_debug_packet( XDR * xdrs, enum xdr_op xop, PACKET * packet)
 	ULONG i;
 
 	port = (PORT) xdrs->x_public;
-	fb_assert(port != 0);
-	fb_assert(port->port_header.blk_type == type_port);
+	assert(port != 0);
+	assert(port->port_header.blk_type == type_port);
 
 	if (xop == XDR_FREE) {
 		/* Free a slot in the packet tracking vector */
@@ -1115,7 +1115,7 @@ static bool_t xdr_debug_packet( XDR * xdrs, enum xdr_op xop, PACKET * packet)
 		/* Allocate an unused slot in the packet tracking vector
 		   to start recording memory allocations for this packet. */
 
-		fb_assert(xop == XDR_ENCODE || xop == XDR_DECODE);
+		assert(xop == XDR_ENCODE || xop == XDR_DECODE);
 		vector = ALLR_vector(&port->port_packet_vector, 0);
 
 		for (i = 0; i < vector->vec_count; i++)
@@ -1838,7 +1838,7 @@ static bool_t xdr_trrq_blr( XDR * xdrs, CSTRING * blr)
 		}
 	}
 	else
-		fb_assert(FALSE);
+		assert(FALSE);
 
 	return TRUE;
 }
@@ -2030,7 +2030,7 @@ if (statement_id == -1)
 else
 */
 
-	fb_assert(statement_id >= -1);
+	assert(statement_id >= -1);
 
 	if ((port->port_objects) &&
 		((SLONG) statement_id < (SLONG) port->port_object_vector->vec_count)
@@ -2038,7 +2038,7 @@ else
 		statement = (RSR) port->port_objects[(SLONG) statement_id];
 
 /* Check that what we found really is a statement structure */
-	fb_assert(!statement || (statement->rsr_header.blk_type == type_rsr));
+	assert(!statement || (statement->rsr_header.blk_type == type_rsr));
 	return statement;
 }
 
