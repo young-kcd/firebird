@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.46 2003-11-03 23:53:50 brodsom Exp $ 
+  * $Id: evl.cpp,v 1.47 2003-11-04 11:35:50 aafemt Exp $ 
  */
 
 /*
@@ -524,8 +524,7 @@ BOOLEAN EVL_boolean(TDBB tdbb, JRD_NOD node)
 	case nod_ansi_all:
 		{
 			USHORT *invariant_flags;
-			RSB rsb;
-			RSE rse;
+			RSB select;
 
 			if (node->nod_flags & nod_invariant)
 			{
@@ -551,24 +550,18 @@ BOOLEAN EVL_boolean(TDBB tdbb, JRD_NOD node)
 			   the unoptimized boolean expression must be used, since the
 			   processing of these clauses is order dependant (see rse.c) */
 
-			rse = (RSE) (node->nod_arg[e_any_rse]);
-			rsb = (RSB) (node->nod_arg[e_any_rsb]);
+			select = (RSB) (node->nod_arg[e_any_rsb]);
 			if (node->nod_type != nod_any)
 			{
-				rsb->rsb_any_boolean = (JRD_NOD) rse->rse_boolean;
+				select->rsb_any_boolean = ((RSE) (node->nod_arg[e_any_rse]))->rse_boolean;
 				if (node->nod_type == nod_ansi_any)
 					request->req_flags |= req_ansi_any;
 				else
 					request->req_flags |= req_ansi_all;
 			}
-			RSE_open(tdbb,
-					 reinterpret_cast<struct Rsb*>(node->nod_arg[e_any_rsb]));
-			value =
-				RSE_get_record(tdbb,
-							   reinterpret_cast<struct Rsb*>(node->nod_arg[e_any_rsb]),
-							   g_RSE_get_mode);
-			RSE_close(tdbb,
-					  reinterpret_cast<struct Rsb*>(node->nod_arg[e_any_rsb]));
+			RSE_open(tdbb, select);
+			value = RSE_get_record(tdbb, select, g_RSE_get_mode);
+			RSE_close(tdbb, select);
 			if (node->nod_type == nod_any)
 				request->req_flags &= ~req_null;
 
@@ -862,7 +855,7 @@ DSC* EVL_expr(TDBB tdbb, JRD_NOD node)
 	case nod_current_timestamp:
 		{
 			time_t clock;
-			struct tm times;
+			tm times;
 			GDS_TIMESTAMP enc_times;
 
 			// Use the request timestamp, if there is one.  Otherwise
@@ -953,7 +946,7 @@ DSC* EVL_expr(TDBB tdbb, JRD_NOD node)
 	case nod_extract:
 		{
 			DSC *value;
-			struct tm times;
+			tm times;
 			USHORT part;
 			GDS_TIMESTAMP timestamp;
 			ULONG extract_part;
@@ -1359,7 +1352,7 @@ BOOLEAN EVL_field(JRD_REL relation, REC record, USHORT id, DSC * desc)
 }
 
 
-USHORT EVL_group(TDBB tdbb, BLK rsb, JRD_NOD node, USHORT state)
+USHORT EVL_group(TDBB tdbb, Rsb* rsb, JRD_NOD node, USHORT state)
 {
 /**************************************
  *
@@ -1382,7 +1375,7 @@ USHORT EVL_group(TDBB tdbb, BLK rsb, JRD_NOD node, USHORT state)
 	JRD_NOD group, map, *ptr, *end, from, field;
 	DSC temp, *desc;
 	VLUX impure;
-	struct vlu vtemp;
+	vlu vtemp;
 	REC record;
 	USHORT id;
 	SLONG result;
@@ -1510,8 +1503,8 @@ USHORT EVL_group(TDBB tdbb, BLK rsb, JRD_NOD node, USHORT state)
 
 	if ((state == 0) || (state == 3))
 	{
-		RSE_open(tdbb, reinterpret_cast<struct Rsb*>(rsb));
-		if (!RSE_get_record(tdbb, reinterpret_cast<struct Rsb*>(rsb), g_RSE_get_mode))
+		RSE_open(tdbb, rsb);
+		if (!RSE_get_record(tdbb, rsb, g_RSE_get_mode))
 		{
 			if (group) {
 				return 0;
@@ -1663,9 +1656,7 @@ USHORT EVL_group(TDBB tdbb, BLK rsb, JRD_NOD node, USHORT state)
 			}
 		}
 
-		if (!RSE_get_record(tdbb,
-		                    reinterpret_cast<struct Rsb*>(rsb),
-		                    g_RSE_get_mode))
+		if (!RSE_get_record(tdbb, rsb, g_RSE_get_mode))
 		{
 			  state = 2;
 		}

@@ -26,12 +26,12 @@
 
 #include "../jrd/intl_classes.h"
 
-struct dsc*		EVL_assign_to(TDBB tdbb, struct jrd_nod *);
-struct sbm**	EVL_bitmap(TDBB tdbb, struct jrd_nod *);
-BOOLEAN		EVL_boolean(TDBB tdbb, struct jrd_nod *);
-struct dsc*	EVL_expr(TDBB tdbb, struct jrd_nod *);
-BOOLEAN		EVL_field(struct jrd_rel *, struct rec *, USHORT, DSC *);
-USHORT		EVL_group(TDBB tdbb, struct blk *, struct jrd_nod *, USHORT);
+dsc*		EVL_assign_to(TDBB tdbb, jrd_nod*);
+sbm**		EVL_bitmap(TDBB tdbb, jrd_nod*);
+BOOLEAN		EVL_boolean(TDBB tdbb, jrd_nod*);
+dsc*		EVL_expr(TDBB tdbb, jrd_nod*);
+BOOLEAN		EVL_field(jrd_rel*, rec*, USHORT, DSC*);
+USHORT		EVL_group(TDBB tdbb, Rsb*, jrd_nod*, USHORT);
 USHORT		EVL_mb_contains(TDBB tdbb, TextType, UCHAR *, USHORT, UCHAR *, USHORT);
 USHORT		EVL_mb_like(TDBB tdbb, TextType, UCHAR *, SSHORT, UCHAR *, SSHORT, USHORT);
 USHORT		EVL_mb_matches(TDBB tdbb, TextType, UCHAR *, SSHORT, UCHAR *, SSHORT);
@@ -39,8 +39,8 @@ USHORT		EVL_mb_sleuth_check(TDBB tdbb, TextType, USHORT, UCHAR *, USHORT,
 								UCHAR *,USHORT);
 USHORT		EVL_mb_sleuth_merge(TDBB tdbb, TextType, UCHAR *, USHORT, UCHAR *, 
 								USHORT, UCHAR *, USHORT);
-void		EVL_make_value(TDBB tdbb, struct dsc *, struct vlu *);
-USHORT		EVL_nc_contains(TDBB tdbb, TextType, UCHAR *, USHORT, UCHAR *, USHORT);
+void		EVL_make_value(TDBB tdbb, dsc*, vlu*);
+USHORT		EVL_nc_contains(TDBB tdbb, TextType, UCHAR*, USHORT, UCHAR*, USHORT);
 USHORT		EVL_nc_like(TDBB tdbb, TextType, UCHAR *, SSHORT, UCHAR *, SSHORT, USHORT);
 USHORT		EVL_nc_matches(TDBB tdbb, TextType, UCHAR *, SSHORT, UCHAR *, SSHORT);
 USHORT		EVL_nc_sleuth_check(TDBB tdbb, TextType, USHORT, UCHAR *, USHORT, 

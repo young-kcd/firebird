@@ -43,6 +43,7 @@ typedef enum nod_t {
 } NOD_T;
 
 #include "../jrd/dsc.h"
+#include "../jrd/rse.h"
 
 // This macro enables DSQL tracing code
 //#define CMP_DEBUG
@@ -108,7 +109,7 @@ public:
 	USHORT	rse_count;
 	USHORT	rse_jointype;		/* inner, left, full */
 	BOOLEAN rse_writelock;
-	struct rsb *rse_rsb;
+	Rsb*		rse_rsb;
 	jrd_nod*	rse_first;
     jrd_nod*	rse_skip;
 	jrd_nod*	rse_boolean;
@@ -563,7 +564,7 @@ struct csb_repeat
 	float csb_cardinality;		/* Cardinality of relation */
 	jrd_nod* csb_plan;				/* user-specified plan for this relation */
 	UCHAR* csb_map;				/* Stream map for views */
-	struct rsb** csb_rsb_ptr;	/* point to rsb for nod_stream */
+	Rsb** csb_rsb_ptr;	/* point to rsb for nod_stream */
 };
 
 

@@ -39,8 +39,8 @@ void		EXE_seek(TDBB, struct jrd_req *, USHORT, ULONG);
 #endif
 
 #ifdef PC_ENGINE
-BOOLEAN EXE_crack(TDBB, struct rsb *, USHORT);
-void		EXE_mark_crack(TDBB, struct rsb *, USHORT);
+BOOLEAN EXE_crack(TDBB, Rsb*, USHORT);
+void		EXE_mark_crack(TDBB, Rsb*, USHORT);
 #endif
 
 #ifdef __cplusplus

@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.40 2003-11-03 23:53:50 brodsom Exp $
+ * $Id: rse.cpp,v 1.41 2003-11-04 11:35:51 aafemt Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -2766,7 +2766,7 @@ static BOOLEAN get_record(TDBB			tdbb,
 		break;
 
 	case rsb_aggregate:
-		if ( (impure->irsb_count = EVL_group(tdbb, (BLK) rsb->rsb_next,
+		if ( (impure->irsb_count = EVL_group(tdbb, rsb->rsb_next,
 										   (JRD_NOD) rsb->rsb_arg[0],
 										   impure->irsb_count)) ) break;
 		return FALSE;
