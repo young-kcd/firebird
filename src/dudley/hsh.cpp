@@ -39,7 +39,7 @@ static SYM key_symbols;
 
 struct word {
 	enum kwwords id;
-	SCHAR *keyword;
+	const char* keyword;
 } keywords[] = {
 	{KW_OR, "||"},
 		{KW_AND, "&&"},
@@ -269,13 +269,12 @@ void HSH_init(void)
  *	inserting all known keywords.
  *
  **************************************/
-	SCHAR *string;
 	SYM symbol;
 	int i;
 	SSHORT length;
 
 	for (i = 0; i < FB_NELEM(keywords); i++) {
-		string = keywords[i].keyword;
+		const char* string = keywords[i].keyword;
 		for (length = 0; string[length] != '\0'; length++);
 		symbol = (SYM) DDL_alloc(SYM_LEN);
 		symbol->sym_type = SYM_keyword;
@@ -319,7 +318,7 @@ void HSH_insert( SYM symbol)
 }
 
 
-SYM HSH_lookup(SCHAR * string, USHORT length)
+SYM HSH_lookup(const SCHAR* string, USHORT length)
 {
 /**************************************
  *
@@ -382,7 +381,7 @@ void HSH_remove( SYM symbol)
 }
 
 
-SYM HSH_typed_lookup(TEXT* string,
+SYM HSH_typed_lookup(const TEXT* string,
 					 USHORT length, enum sym_t type)
 {
 /**************************************
@@ -398,17 +397,15 @@ SYM HSH_typed_lookup(TEXT* string,
  *	a null or space and compute the length.
  *
  **************************************/
-	SYM symbol;
-	TEXT *p;
-
 	if (!length) {
+		const TEXT* p;
 		for (p = string; *p && *p != ' '; p++)
 			if ((p - string) >= 32)
 				break;
 		length = p - string;
 	}
 
-	symbol = HSH_lookup(string, length);
+	SYM symbol = HSH_lookup(string, length);
 
 	for (; symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == type)

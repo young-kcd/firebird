@@ -26,9 +26,9 @@
 
 void	HSH_init(void);
 void	HSH_insert(SYM);
-SYM		HSH_lookup(SCHAR*, USHORT);
+SYM		HSH_lookup(const SCHAR*, USHORT);
 void	HSH_remove(SYM);
-SYM		HSH_typed_lookup(TEXT*, USHORT, enum sym_t);
+SYM		HSH_typed_lookup(const TEXT*, USHORT, enum sym_t);
 
 #endif /* DUDLEY_HSH_PROTO_H */
 

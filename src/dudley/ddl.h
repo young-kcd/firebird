@@ -431,7 +431,7 @@ enum sym_t {
 };
 
 typedef struct sym {
-	TEXT* sym_string;			/* address of asciz string */
+	const char* sym_string;			/* address of asciz string */
 	SSHORT sym_length;			/* length of string (exc. term.) */
 	enum sym_t sym_type;		/* symbol type */
 	SSHORT sym_keyword;			/* keyword number, if keyword */
@@ -613,11 +613,11 @@ struct DudleyGlobals {
 	const TEXT* DDL_prompt;
 	const TEXT* DDL_file_name;
 	TEXT DYN_file_name[256];
-	TEXT* DB_file_name;
+	const TEXT* DB_file_name;
 	TEXT DDL_file_string[256];
 	TEXT DB_file_string[256];
-	TEXT* DDL_default_user;
-	TEXT* DDL_default_password;
+	const TEXT* DDL_default_user;
+	const TEXT* DDL_default_password;
 	ACT DDL_actions;
 	DBB database;
 	// from parse.h

@@ -33,7 +33,8 @@
 #include "../jrd/gds_proto.h"
 
 static void expand_action(ACT);
-static void expand_error(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
+static void expand_error(USHORT, const TEXT*, const TEXT*, const TEXT*,
+	const TEXT*, const TEXT*);
 static void expand_field(DUDLEY_FLD);
 static void expand_global_field(DUDLEY_FLD);
 static void expand_index(ACT);
@@ -193,8 +194,9 @@ static void expand_action( ACT action)
 
 static void expand_error(
 						 USHORT number,
-						 TEXT * arg1,
-						 TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
+						 const TEXT* arg1,
+						 const TEXT* arg2, const TEXT* arg3,
+						 const TEXT* arg4, const TEXT* arg5)
 {
 /**************************************
  *
@@ -719,7 +721,7 @@ static DUDLEY_NOD resolve( DUDLEY_NOD node, dudley_lls* right, dudley_lls* left)
 	DUDLEY_NOD field, sub;
 	SYM symbol, name;
 	DUDLEY_CTX context, old_context;
-	TEXT name_string[65], *p, *q;
+	TEXT name_string[65], *p;
 
 	if (!node)
 		return NULL;
@@ -860,7 +862,7 @@ static DUDLEY_NOD resolve( DUDLEY_NOD node, dudley_lls* right, dudley_lls* left)
 	p = name_string;
 	for (int pos = 0; pos < node->nod_count ; pos++) {
 		if (symbol = (SYM) node->nod_arg[pos]) {
-			q = symbol->sym_string;
+			const char* q = symbol->sym_string;
 			while (*q)
 				*p++ = *q++;
 			*p++ = '.';

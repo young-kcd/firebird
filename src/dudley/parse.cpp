@@ -192,7 +192,7 @@ void PARSE_actions(void)
 }
 
 
-void PARSE_error( USHORT number, TEXT * arg1, TEXT * arg2)
+void PARSE_error( USHORT number, const TEXT* arg1, const TEXT* arg2)
 {
 /**************************************
  *
@@ -462,7 +462,8 @@ SYM PARSE_symbol(enum tok_t type)
 
 	SYM symbol = (SYM) DDL_alloc(SYM_LEN + l);
 	symbol->sym_length = l;
-	TEXT* p = symbol->sym_string = symbol->sym_name;
+	symbol->sym_string = symbol->sym_name;
+	TEXT* p = symbol->sym_name;
 
 	if (l)
 		if (type == tok_ident)
@@ -1835,7 +1836,9 @@ static void drop_type(void)
 		TYP fldtype = (TYP) DDL_alloc(sizeof(typ));
 		fldtype->typ_field_name = PARSE_symbol(tok_ident);
 		fldtype->typ_name->sym_length = 3;
-		strncpy(fldtype->typ_name->sym_string, "ALL", 3);
+		//strncpy(fldtype->typ_name->sym_string, "ALL", 3);
+		// Bug: writing in null pointer?
+		fldtype->typ_name->sym_string = "ALL";
 		make_action(act_d_type, (DBB) fldtype);
 	}
 	else {
@@ -1893,7 +1896,7 @@ static SYM gen_trigger_name( TRG_T type, DUDLEY_REL relation)
  **************************************/
 	SYM symbol = (SYM) DDL_alloc(SYM_LEN + GDS_NAME_LEN);
 	symbol->sym_string = symbol->sym_name;
-	TEXT* p = symbol->sym_string;
+	TEXT* p = symbol->sym_name;
 	const TEXT* const end = p + GDS_NAME_LEN;
 
 /* Start by copying relation name */

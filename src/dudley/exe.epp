@@ -113,7 +113,7 @@ static void store_range(DUDLEY_FLD);
 static void store_text(TXT, ISC_QUAD*);
 static void store_userpriv(USERPRIV, TEXT *, TEXT *, USRE, UPFE);
 static int string_length(SCHAR);
-static void wal_info(const UCHAR*, SLONG*, SCHAR*, SLONG*);
+//static void wal_info(const UCHAR*, SLONG*, SCHAR*, SLONG*);
 
 static dudley_lls* files_to_delete = NULL;
 static const TEXT alloc_info[] = { isc_info_allocation, isc_info_end };
@@ -177,7 +177,7 @@ void EXE_create_database( DBB dbb)
 	TEXT* d = dpb;
 	*d++ = isc_dpb_version1;
 
-	TEXT* p;
+	const TEXT* p;
 	
 	if (p = dudleyGlob.DDL_default_user) {
 		*d++ = isc_dpb_user_name;
@@ -375,7 +375,7 @@ void EXE_drop_database( DBB dbb)
 	TEXT* d = dpb;
 	*d++ = isc_dpb_version1;
 
-	TEXT* p;
+	const TEXT* p;
 
 	if (p = dudleyGlob.DDL_default_user) {
 		*d++ = isc_dpb_user_name;
@@ -680,7 +680,7 @@ void EXE_modify_database( DBB dbb)
 	TEXT* d = dpb;
 	*d++ = isc_dpb_version1;
 
-	TEXT* p;
+	const TEXT* p;
 
 	if (p = dudleyGlob.DDL_default_user) {
 		*d++ = isc_dpb_user_name;
@@ -2275,12 +2275,13 @@ static void drop_function( FUNC function)
  **************************************/
 	bool if_any = false;
 
-	TEXT* name = function->func_name->sym_string;
+	const TEXT* name = function->func_name->sym_string;
 
 /* Clean out function argument first.  */
 
-	FOR FUNCARG IN RDB$FUNCTION_ARGUMENTS WITH FUNCARG.
-		RDB$FUNCTION_NAME EQ name ERASE FUNCARG;
+	FOR FUNCARG IN RDB$FUNCTION_ARGUMENTS
+		WITH FUNCARG.RDB$FUNCTION_NAME EQ name
+		ERASE FUNCARG;
 	END_FOR;
 
 	FOR FUNC IN RDB$FUNCTIONS WITH FUNC.RDB$FUNCTION_NAME EQ name 
@@ -2366,7 +2367,7 @@ static void drop_index( DUDLEY_IDX index)
  **************************************/
 	bool if_any = false;
 
-	TEXT* name = index->idx_name->sym_string;
+	const TEXT* name = index->idx_name->sym_string;
 
 /* Clean out index segments first.  */
 
@@ -2399,7 +2400,7 @@ static void drop_relation( DUDLEY_REL relation)
  **************************************/
 	bool if_any = false;
 
-	TEXT* name = relation->rel_name->sym_string;
+	const TEXT* name = relation->rel_name->sym_string;
 
 	FOR X IN RDB$VIEW_RELATIONS WITH X.RDB$RELATION_NAME EQ name
 		DDL_err(67, name, X.RDB$VIEW_NAME, NULL, NULL, NULL);
@@ -2547,7 +2548,7 @@ static void drop_trigger( DUDLEY_TRG trigger)
 	bool others = false;
 	BASED_ON RDB$TRIGGERS.RDB$RELATION_NAME relation_name;
 
-	TEXT* name = trigger->trg_name->sym_string;
+	const TEXT* name = trigger->trg_name->sym_string;
 
 /* Clean out possible trigger messages first. */
 
@@ -2629,7 +2630,8 @@ static void drop_type( TYP fldtype)
 	bool if_any = false;
 
 	if (fldtype->typ_name->sym_length == 3 &&
-		!strncmp(fldtype->typ_name->sym_string, "ALL", 3)) {
+		!strncmp(fldtype->typ_name->sym_string, "ALL", 3))
+	{
 		FOR X IN RDB$TYPES WITH
 			X.RDB$FIELD_NAME EQ fldtype->typ_field_name->sym_string 
 			ERASE X;
@@ -2733,16 +2735,15 @@ static void erase_userpriv( USERPRIV upriv, TEXT * priv, USRE usr, UPFE upf)
  *	Erase a user/privilege/field combination for a REVOKE statement.
  *
  **************************************/
-	TEXT *fldname, *relname, *usrname;
 	bool if_any = false;
 
-	usrname = usr->usre_name->sym_string;
-	relname = upriv->userpriv_relation->sym_string;
+	const TEXT* usrname = usr->usre_name->sym_string;
+	const TEXT* relname = upriv->userpriv_relation->sym_string;
 
 /* for UPDATE privilege the field is specified */
 
 	if (upf) {
-		fldname = upf->upfe_fldname->sym_string;
+		const TEXT* fldname = upf->upfe_fldname->sym_string;
 		FOR X IN RDB$USER_PRIVILEGES WITH
 			X.RDB$USER EQ usrname AND
 			X.RDB$USER_TYPE EQ obj_user AND
@@ -3754,7 +3755,6 @@ static void move_symbol( SYM symbol, SCHAR * field, SSHORT length)
  *	Move a string from a symbol to a field.
  *
  **************************************/
-	SCHAR *p;
 	SSHORT l;
 
 	if (symbol) {
@@ -3765,7 +3765,7 @@ static void move_symbol( SYM symbol, SCHAR * field, SSHORT length)
 			dudleyGlob.DDL_errors--;
 			l = length;
 		}
-		p = symbol->sym_string;
+		const char* p = symbol->sym_string;
 		while (l--)
 			*field++ = *p++;
 	}

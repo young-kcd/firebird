@@ -127,7 +127,8 @@ static void generate( STR blr, DUDLEY_NOD node)
 	CON constant;
 	DUDLEY_NOD sub;
 	DUDLEY_CTX context;
-	SCHAR operatr, *p;
+	SCHAR operatr;
+	const char* p;
 	SLONG value;
 	USHORT l, pos;
 
@@ -152,7 +153,7 @@ static void generate( STR blr, DUDLEY_NOD node)
 		blr->add_byte(context->ctx_context_id);
 		symbol = field->fld_name;
 		blr->add_byte(l = symbol->sym_length);
-		p = (SCHAR *) symbol->sym_string;
+		p = symbol->sym_string;
 		if (l) {
 			check_blr(blr, l);
 			do
@@ -172,7 +173,7 @@ static void generate( STR blr, DUDLEY_NOD node)
 		blr->add_byte(blr_function);
 		symbol = (SYM) node->nod_arg[1];
 		blr->add_byte(l = symbol->sym_length);
-		p = (SCHAR *) symbol->sym_string;
+		p = symbol->sym_string;
 		if (l) {
 			check_blr(blr, l);
 			do
@@ -193,7 +194,7 @@ static void generate( STR blr, DUDLEY_NOD node)
 		blr->add_byte(blr_relation);
 		symbol = relation->rel_name;
 		blr->add_byte(l = symbol->sym_length);
-		p = (SCHAR *) symbol->sym_string;
+		p = symbol->sym_string;
 		if (l) {
 			check_blr(blr, l);
 			do
@@ -209,7 +210,7 @@ static void generate( STR blr, DUDLEY_NOD node)
 		blr->add_byte(blr_gen_id);
 		symbol = (SYM) node->nod_arg[1];
 		blr->add_byte(l = symbol->sym_length);
-		p = (SCHAR *) symbol->sym_string;
+		p = symbol->sym_string;
 		if (l) {
 			check_blr(blr, l);
 			do {
@@ -284,7 +285,7 @@ static void generate( STR blr, DUDLEY_NOD node)
 			DDL_err(95, NULL, NULL, NULL, NULL, NULL);
 			// msg 95: GENERATE_blr: dtype not supported
 		}
-		p = (SCHAR *) constant->con_data;
+		p = (const char*) constant->con_data;
 		switch (constant->con_desc.dsc_dtype) {
 		case dtype_short:
 			value = *(SSHORT *) p;
@@ -588,7 +589,6 @@ static void get_set_generator( STR blr, DUDLEY_NOD node)
  *	generator name and the increment.
  *	The rest is canned.
  **************************************/
-	SCHAR *p;
 	SYM symbol;
 	static SCHAR gen_prologue[] = {
 		blr_begin, blr_message, 0, 1, 0, blr_long, 0,
@@ -604,7 +604,7 @@ static void get_set_generator( STR blr, DUDLEY_NOD node)
 /* copy the beginning of the blr into the buffer */
 
 	l = sizeof(gen_prologue);
-	p = gen_prologue;
+	const char* p = gen_prologue;
 	check_blr(blr, l);
 	do {
 		blr->add_byte(*p++);
@@ -615,7 +615,7 @@ static void get_set_generator( STR blr, DUDLEY_NOD node)
 	symbol = (SYM) node->nod_arg[1];
 	check_blr(blr, 1);
 	blr->add_byte(l = symbol->sym_length);
-	p = (SCHAR *) symbol->sym_string;
+	p = symbol->sym_string;
 	if (l) {
 		check_blr(blr, l);
 		do {
@@ -630,14 +630,14 @@ static void get_set_generator( STR blr, DUDLEY_NOD node)
 	constant = (CON) node->nod_arg[0]->nod_arg[0];
 	blr->add_byte(blr_long);
 	blr->add_byte(constant->con_desc.dsc_scale);
-	p = (SCHAR *) constant->con_data;
+	p = (const char*) constant->con_data;
 	value = *(SLONG *) p;
 	blr->add_word(value);
 	blr->add_word(value >> 16);
 
 /* complete the string */
 	l = sizeof(gen_epilogue);
-	p = (SCHAR *) gen_epilogue;
+	p = gen_epilogue;
 	check_blr(blr, l);
 	do {
 		blr->add_byte(*p++);
