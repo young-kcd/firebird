@@ -52,10 +52,11 @@ static void build_codes_h(void);
 static void build_iberror_h(void);
 static void build_other_headers(void);
 static void build_msgfac_h(void);
-static void move_if_not_identical(char *, char *);
+static void move_if_not_identical(char *, char *, char*);
 static void add_text(IB_FILE *, int, const char **);
 
 static  char* genDirectory = NULL;
+static  char* genFtnPasDirectory = NULL;
 
 #define CHECK_OPEN(f, name, tmp, mode)	\
 if (((f) = ib_fopen ((tmp), (mode))) == NULL) \
@@ -65,9 +66,9 @@ if (((f) = ib_fopen ((tmp), (mode))) == NULL) \
     exit (FINI_ERROR); \
     }
 
-#define CHECK_CLOSE(f, name, tmp, mode)	\
+#define CHECK_CLOSE(f, name, tmp, mode, dir)	\
     ib_fclose (f);\
-    move_if_not_identical ((name), (tmp))
+    move_if_not_identical ((name), (tmp), (dir))
 
 
 #define CSTYLE		1
@@ -250,6 +251,9 @@ int CLIB_ROUTINE main( int argc, char *argv[])
     if (argc >=1 ) {
         genDirectory = argv[1];
     }
+    if (argc >=2 ) {
+        genFtnPasDirectory = argv[2];
+    }
 
 	START_TRANSACTION;
 
@@ -313,7 +317,7 @@ static void build_msgfac_h(void)
 
 	ib_fprintf(msgfac, "\t{0, NULL}\n};\n\n");
 	ib_fprintf(msgfac, "\n");
-	CHECK_CLOSE(msgfac, MSGFAC_H, "tmpcode1", "w");
+	CHECK_CLOSE(msgfac, MSGFAC_H, "tmpcode1", "w", genDirectory);
 }
 
 static void build_iberror_h(void)
@@ -388,7 +392,7 @@ static void build_iberror_h(void)
 	ib_fprintf(iberror, "#define isc_%-32.32s %d\n", "err_max", code);
 	ib_fprintf(iberror, "\n");
 	ib_fprintf(iberror, "#endif /* JRD_GEN_IBERROR_H */\n");
-	CHECK_CLOSE(iberror, IBERROR_H, "tmpcode2", "w");
+	CHECK_CLOSE(iberror, IBERROR_H, "tmpcode2", "w", genDirectory);
 }
 
 
@@ -573,7 +577,7 @@ static void build_codes_h(void)
 
     ib_fprintf(c_codes, "#endif /* JRD_GEN_CODES_H */\n");
 
-	CHECK_CLOSE(c_codes, CODES_H, "tmpcode3", "w");
+	CHECK_CLOSE(c_codes, CODES_H, "tmpcode3", "w", genDirectory);
 }
 
 
@@ -653,9 +657,20 @@ const\n\
 		ib_fprintf(ftn_codes, "%s\n", ftn_boiler_plate_data[i]);
     }
 
+/* Start the rdb_codes.h */
+	ib_fprintf(rdbcodes, "static SLONG user_codes[] = {\n");
+	ib_fprintf(rdbcodes, "1,\n");
+
+/* Start the codetext.h */
+
+	ib_fprintf(code_text, "static const struct {\n");
+	ib_fprintf(code_text, "\tconst SCHAR *code_string;\n");
+	ib_fprintf(code_text, "\tSLONG code_number;\n");
+	ib_fprintf(code_text, "\t} codes[] = {\n");
 
 /* Start the MSGS file */
 
+	ib_fprintf(msgs, "static const SCHAR * const messages[] = {\n");
 	ib_fprintf(msgs, "\"unassigned code\",\n");
 
 /* Fetch error codes from SYSTEM_ERRORS relation.  Write them
@@ -703,11 +718,22 @@ const\n\
 		++code;
 
 	END_FOR;
-	CHECK_CLOSE(pas_codes, CODES_PAS, "tmpcode4", "w");
-	CHECK_CLOSE(ftn_codes, CODES_FTN, "tmpcode5", "w");
-	CHECK_CLOSE(code_text, CODETEXT_H, "tmpcode6", "w");
-	CHECK_CLOSE(msgs, MSGS_H, "tmpcode7", "w");
-	CHECK_CLOSE(rdbcodes, RDBCODES_H, "tmpcode8", "w");
+
+/* end the rdb_codes.h */
+	ib_fprintf(rdbcodes, "};\n");
+/* end the codetext.h */	
+	ib_fprintf(code_text, "\t{NULL, 0}\n");
+	ib_fprintf(code_text, "\t};\n");
+/* end the msgs.h */	
+	ib_fprintf(msgs, "\t0\t\t\t\t\t\t/* Null entry to terminate list */\n");
+	ib_fprintf(msgs, "};\n");
+
+
+	CHECK_CLOSE(pas_codes, CODES_PAS, "tmpcode4", "w", genFtnPasDirectory);
+	CHECK_CLOSE(ftn_codes, CODES_FTN, "tmpcode5", "w", genFtnPasDirectory);
+	CHECK_CLOSE(code_text, CODETEXT_H, "tmpcode6", "w", genDirectory);
+	CHECK_CLOSE(msgs, MSGS_H, "tmpcode7", "w", genDirectory);
+	CHECK_CLOSE(rdbcodes, RDBCODES_H, "tmpcode8", "w", genDirectory);
 
 /* build sql_code.h */
 
@@ -741,20 +767,20 @@ const\n\
 
 	--code;
 	ib_fprintf(sql_codes, "\n};\n");
-	CHECK_CLOSE(sql_codes, SQL_CODES_H, "tmpcode9", "w");
+	CHECK_CLOSE(sql_codes, SQL_CODES_H, "tmpcode9", "w", genDirectory);
 
 }
 
 
-static void move_if_not_identical( char* original, char* new_file)
+static void move_if_not_identical( char* original, char* new_file, char *directory)
 {
 
 	
 	char origName[1000];
 	char buffer[1000];
-#ifdef WIN_NT
-	if ( genDirectory != NULL) {
-		sprintf(origName,"%s\\%s", genDirectory, original);
+#if defined(WIN_NT) && !defined(__GNUC__)
+	if ( directory != NULL) {
+		sprintf(origName,"%s\\%s", directory, original);
 	}
 	else {
 		sprintf(origName,".\\%s", original);
@@ -766,8 +792,8 @@ static void move_if_not_identical( char* original, char* new_file)
 	 */
 	sprintf(buffer, "fc %s %s | find \"FC:\" > nul", new_file, origName);
 #else
-	if ( genDirectory != NULL) {
-		sprintf(origName,"%s/%s", genDirectory, original);
+	if ( directory != NULL) {
+		sprintf(origName,"%s/%s", directory, original);
 	}
 	else {
 		sprintf(origName,"./%s", original);
@@ -783,7 +809,7 @@ static void move_if_not_identical( char* original, char* new_file)
 	}
 	else {
 		/* Original file is missing or different */
-#ifdef WIN_NT
+#if defined(WIN_NT) && !defined(__GNUC__)
 		sprintf(buffer, "move %s %s > nul", new_file, origName);
 #else
 		sprintf(buffer, "mv -f %s %s", new_file, origName);

@@ -62,10 +62,10 @@ static int translate_status(ISC_STATUS *, ISC_STATUS *, SCHAR **);
 #define WRKBUF_SIZ		256
 #define DEFAULT_STATUS_FLAGS	0xF0000L
 
-static SLONG user_codes[] = {
-	1,
+//static SLONG user_codes[] = {
+//	1,
 #include "../include/gen/rdb_codes.h"
-};
+//};
 
 static SCHAR workbuf[1024];
 
@@ -397,10 +397,10 @@ int MAP_status_to_gds(ISC_STATUS * vms_status, ISC_STATUS * gds_status)
 	USHORT shift, flag;
 	SCHAR msgbuff[WRKBUF_SIZ], *p, *q, *pw1, *pw2, flags[4], part;
 	struct dsc$descriptor_s desc, *dsc_ptr;
-	static SCHAR *messages[] = {
+//	static const SCHAR * const messages[] = {
 #include "gen/msgs.h"
-		0
-	};
+//		0
+//	};
 
 	tmp = temp;
 	pw1 = pw2 = workbuf;

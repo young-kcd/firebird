@@ -210,12 +210,7 @@ static char *ib_prefix = 0;
 static char *ib_prefix_lock = 0;
 static char *ib_prefix_msg = 0;
 
-
-
-static const SCHAR * const messages[] = {
 #include "gen/msgs.h"
-	0							/* Null entry to terminate list */
-};
 
 #ifndef FOPEN_APPEND_TYPE
 #define FOPEN_APPEND_TYPE	"a"
@@ -494,19 +489,7 @@ static const UCHAR
 	range_relation[] = { op_line, op_verb, op_indent, op_relation, op_line, 0},
 	extract[]	= { op_line, op_byte, op_verb, 0};
 
-static const struct
-{
-	const char *blr_string;
-	const UCHAR *blr_operators;
-} blr_table[] =
-{
-
-#pragma FB_COMPILER_MESSAGE("Fix this!")
-
 #include "../jrd/blp.h"
-	{0, 0}
-};
-
 
 #define FB_ENV			"FIREBIRD"
 #define FB_LOCK_ENV		"FIREBIRD_LOCK"

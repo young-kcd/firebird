@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.43 2003-06-30 12:48:09 alexpeshkoff Exp $
+$Id: par.cpp,v 1.44 2003-07-12 10:22:20 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -84,13 +84,8 @@ extern "C" {
 
 static const TEXT elements[][10] =
 	{ "", "statement", "boolean", "value", "RSE", "TABLE" };
-static const struct {
-	const SCHAR *code_string;
-	SLONG code_number;
-} codes[] = {
+
 #include "gen/codetext.h"
-	{NULL, 0}
-};
 
 static void error(CSB, ...);
 static SSHORT find_proc_field(JRD_PRC, TEXT *);
