@@ -228,7 +228,7 @@ static FILE* Ifp;
 static SCHAR Password[128];
 static SCHAR Charset[128];
 static bool Merge_stderr;
-static USHORT minor_ods;
+//static USHORT minor_ods; CVC: We do nothing useful with it!
 
 static collist* global_Cols = NULL;
 static SCHAR statistics[256];
@@ -409,7 +409,7 @@ int CLIB_ROUTINE main(int argc,
 #endif
 	// Initialize globals
 	isqlGlob.major_ods = 0;
-	minor_ods = 0;
+	//minor_ods = 0;
 
 	Exit_value = ISQL_main(argc, argv);
 
@@ -3707,7 +3707,7 @@ static processing_state get_statement(TEXT* statement,
 
 	int count = 0;
 	int valuable_count = 0; // counter of valuable (non-space) chars
-	const int term_length = Termlen-1; // additional variable for decreasing calculation
+	const int term_length = Termlen - 1; // additional variable for decreasing calculation
 
 	bool done = false;
 
@@ -3861,7 +3861,7 @@ static processing_state get_statement(TEXT* statement,
 				// one-char terminator or the beginning also match
 				(Termlen == 1 ||
 				 (valuable_count >= term_length &&
-				  strncmp(p-term_length, isqlGlob.global_Term, term_length) == 0)))
+				  strncmp(p - term_length, isqlGlob.global_Term, term_length) == 0)))
 			{
 				c = 0;
 				done = true;
@@ -3895,7 +3895,7 @@ static processing_state get_statement(TEXT* statement,
 				TEXT* errbuf = (TEXT*) ISQL_ALLOC((SLONG) MSG_LENGTH);
 				if (errbuf) {
 					gds__msg_format(NULL, ISQL_MSG_FAC, BUFFER_OVERFLOW,
-									MSG_LENGTH, (TEXT*) errbuf, NULL, NULL,
+									MSG_LENGTH, errbuf, NULL, NULL,
 									NULL, NULL, NULL);
 					STDERROUT(errbuf, 1);
 					ISQL_FREE(errbuf);
@@ -3905,7 +3905,7 @@ static processing_state get_statement(TEXT* statement,
 				// move some content to start of buffer just in case if
 				// the overflow has splitter terminator
 				count = MAX(Termlen, 2);
-				memcpy(statement, p-count, count);
+				memcpy(statement, p - count, count);
 				p = statement + count;
 				*p = '\0';
 		}
@@ -4042,7 +4042,7 @@ void ISQL_get_version(bool call_by_create_db)
  **************************************/
 	static const UCHAR db_version_info[] = {
 		isc_info_ods_version,
-		isc_info_ods_minor_version,
+		//isc_info_ods_minor_version,
 		isc_info_db_sql_dialect,
 		isc_info_firebird_version,
 		isc_info_end
@@ -4086,9 +4086,9 @@ void ISQL_get_version(bool call_by_create_db)
 		case isc_info_ods_version:
 			isqlGlob.major_ods = gds__vax_integer(p, length);
 			break;
-		case isc_info_ods_minor_version:
-			minor_ods = gds__vax_integer(p, length);
-			break;
+		//case isc_info_ods_minor_version:
+		//	minor_ods = gds__vax_integer(p, length);
+		//	break;
 		case isc_info_db_sql_dialect:
 			dialect_spoken = gds__vax_integer(p, length);
 			if (isqlGlob.major_ods < ODS_VERSION10) {
@@ -6241,10 +6241,8 @@ static int process_statement(const TEXT* string,
 
 #ifdef DEV_BUILD
 	if (Sqlda_display) {
-		XSQLDA* input_sqlda;
-
-		// Describe the input 
-		input_sqlda = (XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(10)));
+		// Describe the input
+		XSQLDA* input_sqlda = (XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(10)));
 		input_sqlda->version = SQLDA_VERSION1;
 		input_sqlda->sqld = input_sqlda->sqln = 10;
 
