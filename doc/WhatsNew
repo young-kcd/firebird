@@ -23,9 +23,12 @@
         Vlad Horsun <horsun@kdb.dp.ua>
         Dmitry Yemanov <yemanov@yandex.ru>
 
-    * Fixed RC2 bug (SF #745090).
-        Permissions problem for firebird.conf.
+    * Fixed RC2 installation issues on Linux.
+        1) Permissions problem for firebird.conf (SF #745090).
+        2) Generate aliases.conf on install.
+        3) Use rpmbuild to create packages.
       Contributor(s):
+        Erik S. LaBianca <labiance@users.sourceforge.net>
         Nickolay Samofatov <skidder@bssys.com>
 
     * Fixed RC2 bug.
@@ -36,7 +39,12 @@
     * Fixed RC2 bugs.
         1) UDF linkage problems on Linux.
         2) Allow C programs use our shared libraries on POSIX platforms.
-        3) Allow easy adjustment of LockSemCount on POSIX platforms.
+        3) Make libfbembed.so compatible with third-party tools such as Kylix.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+	
+    * Fixed unregistered bug.
+        Allow easy adjustment of LockSemCount on POSIX platforms. No need to use gds_drop or reboot machine to make new setting take effect
       Contributor(s):
         Nickolay Samofatov <skidder@bssys.com>
 
@@ -51,7 +59,7 @@
         Alexander Peshkoff <peshkoff@hotmail.ru>
 
     * Fixed RC2 bug.
-	    Optimizer crash when all indices of a table had the selectivity of 1.
+        Optimizer crash when all indices of a table had the selectivity of 1.
       Contributor(s):
         Arno Brinkman <firebird@abvisie.nl>
 
