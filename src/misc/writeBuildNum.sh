@@ -3,18 +3,27 @@
 # This file is used both to rebuild the header file and to set the 
 # environment variables on the config call
 
-BuildVersion="$Id: writeBuildNum.sh,v 1.8721 2004-10-17 23:48:49 skidder Exp $"
+BuildVersion="$Id: writeBuildNum.sh,v 1.8722 2004-10-17 23:51:11 skidder Exp $"
 
 BuildType=T
 MajorVer=2
 MinorVer=0
 RevNo=0
 BuildNum=8719
+
+if [ "$SPECIAL_BUILD_SUFFIX" == "" ]; then
+# Normal builds
 BuildSuffix="Firebird 2.0 UNSTABLE"
 FIREBIRD_PACKAGE_VERSION=0.UNSTABLE
+PRODUCT_VER_STRING="$MajorVer.$MinorVer.$RevNo.$BuildNum"
+else
+# Special builds (dayly snapshots, etc)
+BuildSuffix="Firebird 2.0 $SPECIAL_BUILD_SUFFIX"
+FIREBIRD_PACKAGE_VERSION=$SPECIAL_BUILD_SUFFIX
+PRODUCT_VER_STRING="$MajorVer.$MinorVer.$RevNo.$BuildNum-$SPECIAL_BUILD_SUFFIX"
+fi
 
 FIREBIRD_VERSION="$MajorVer.$MinorVer.$RevNo"
-PRODUCT_VER_STRING="$MajorVer.$MinorVer.$RevNo.$BuildNum"
 FILE_VER_STRING="WI-$BuildType$MajorVer.$MinorVer.$RevNo.$BuildNum"
 FILE_VER_NUMBER="$MajorVer, $MinorVer, $RevNo, $BuildNum"
 
