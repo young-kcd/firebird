@@ -1,3 +1,36 @@
+2003-05-02 20:41  dimitr
+
+	* firebird2/src/jrd/: jrd_pwd.h, pwd.cpp:
+	
+	Fixed threading issues in the security database manager.
+
+2003-05-02 19:17  dimitr
+
+	* firebird2/src/remote/: protocol.h, server.cpp:
+	
+	Rolled back asymmetric protocol due to found bugs and lack of time
+	to fix them in v1.5.
+
+2003-05-02 18:04  alexpeshkoff
+
+	* firebird2/src/burp/: burp.cpp, spit.cpp, spit.h, std_desc.h:
+	
+	Fixed bug with stdin/stdout use in win32 version of gbak
+
+2003-05-02 17:20  alexpeshkoff
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	Fixed server crash in EXECUTE STATEMENT combined with exceptions
+	handling block
+
+2003-05-02 17:13  alexpeshkoff
+
+	* firebird2/src/jrd/cmp.cpp:
+	
+	Once I've seen att_requests == 0x00000014, so some debugging code
+	added to catch it earlier in dev_builds
+
 2003-05-01 15:28  dimitr
 
 	* firebird2/: src/common/config/config_file.cpp,
