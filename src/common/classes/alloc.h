@@ -79,19 +79,20 @@ private:
 	FreeBlocksTree freeBlocks; // B+ tree ordered by (length,address)
 	MemoryExtent *extents; // Linked list of all memory extents
 
-	void* spareLeaf;
+	Vector<void*,2> spareLeafs;
+	Vector<void*,MAX_TREE_DEPTH+1> spareNodes;
 	bool internalAlloc;
 	bool needSpare;
-	Vector<void*,MAX_TREE_DEPTH> spareNodes;
+	bool updatingSpare;
 	PendingFreeBlock *pendingFree;
 	
 	// Do not allow to create and destroy pool directly from outside
 	MemoryPool(void *first_extent, void *root_page) : 
 		freeBlocks(this, root_page),
 		extents((MemoryExtent *)first_extent), 
-		spareLeaf(NULL),
 		internalAlloc(false),
 		needSpare(false),
+		updatingSpare(false),
 		pendingFree(NULL)
 	{
 	}
@@ -104,6 +105,12 @@ private:
 	static void* external_alloc(size_t size);
 	
 	static void external_free(void *blk);
+	
+	void updateSpare();
+	
+	void addFreeBlock(MemoryBlock *blk);
+		
+	void removeFreeBlock(MemoryBlock *blk);
 public:
 	static MemoryPool* createPool();
 

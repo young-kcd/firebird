@@ -30,6 +30,8 @@
 #include <string.h>
 #include <malloc.h>
 #include "vector.h"
+// FIXME: Temporary until we switch out of using STL
+#include <new>
 
 // This macro controls merging of nodes of all B+ trees
 // Now it merges pages only when resulting page will be 3/4 filled or less
@@ -57,9 +59,9 @@ public:
 
 enum LocType { locEqual, locLess, locGreat, locGreatEqual, locLessEqual };
 
-inline void* operator new (size_t size, void *place) {
+/*inline void* operator new (size_t size, void *place) {
 	return place;
-}
+}*/
 
 // Fast and simple B+ tree of simple types
 // Tree has state (current item) and no iterator classes. 
@@ -286,10 +288,6 @@ private:
 template <typename Value, typename Key, typename Allocator, typename KeyOfValue, typename Cmp, int LeafCount, int NodeCount>
 void BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::_removePage(int nodeLevel, void *node)
 {
-	// We need to defer all deallocations until we finish manipulating the
-	// tree to enable re-enterance. That is why we use recursion instead
-	// of loops to climb up the tree. This doesn't hurt performance in any
-	// way but makes allocator implementation simplier
 	NodeList *list;
 	// Get parent and adjust the links
 	if (nodeLevel) {
@@ -612,11 +610,9 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 			newNode = lower;
 			curLevel--;
 		}
-		Value temp = (*(ItemList*)newNode)[0];
+		addErrorValue = (*(ItemList*)newNode)[0];
 		((ItemList *)newNode)->~ItemList();
 		pool->free(newNode);
-		addErrorValue = temp; // We can do this only after all deallocations to prevent problems
-							  // caused by re-enterance from allocator
 		throw;
 	}
 	return true;

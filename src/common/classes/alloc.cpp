@@ -35,10 +35,12 @@
 
 #define FB_MAX(M,N) ((M)>(N)?(M):(N))
 
-// TODO: 
-// 1. red zones checking
-// 2. alloc/free pattern
+// TODO (in order of importance):
+// 1. Pool size limit
+// 2. debug alloc/free pattern
 // 3. line number debug info
+// 4. pool locking and allocation source
+// 5. red zones checking (not really needed because verify_pool is able to detect most corruption cases)
 
 namespace Firebird {
 
@@ -50,8 +52,42 @@ static void pool_out_of_memory()
 	throw std::bad_alloc();
 }
 
+void MemoryPool::updateSpare() {
+	updatingSpare = true; // This is to prevent re-enterance
+	do {
+		try {
+			do {
+				needSpare = false;
+				while (spareLeafs.getCount() < spareLeafs.getCapacity())
+					spareLeafs.add(alloc(sizeof(FreeBlocksTree::ItemList), TYPE_LEAFPAGE));
+				while (spareNodes.getCount() <= freeBlocks.level)
+					spareNodes.add(alloc(sizeof(FreeBlocksTree::NodeList), TYPE_TREEPAGE));
+				break;
+			} while (needSpare);
+			// Great, if we were able to restore free blocks tree operations after critically low
+			// memory condition then try to add pending free blocks to our tree
+			while (pendingFree) {
+				PendingFreeBlock *temp = pendingFree;
+				pendingFree = temp->next;
+				MemoryBlock *blk = (MemoryBlock*)((char*)temp-ALIGN(sizeof(MemoryBlock)));
+				BlockInfo info = {
+					blk,
+					blk->length
+				};
+				internalAlloc = true;
+				freeBlocks.add(info); // We should be able to do this because we had all needed spare blocks
+				internalAlloc = false;
+			}
+		} catch(...) {
+			// We can always recover after this
+			break;
+		}
+	} while (needSpare);
+	updatingSpare = false;
+}
+
 void* MemoryPool::external_alloc(size_t size) {
-	// This method is assumed to throw exceptions in case it cannot alloc
+	// This method is assumed to return NULL in case it cannot alloc
 	return malloc(size);
 }
 	
@@ -156,9 +192,7 @@ MemoryPool* MemoryPool::createPool() {
 	blk->prev = hdr;
 	BlockInfo temp = {blk, blockLength};
 	pool->freeBlocks.add(temp);
-	// This code may not work if tree factor is 2 (but if MIN_EXTENT_SIZE is large enough it will)
-	pool->spareLeaf = pool->alloc(sizeof(FreeBlocksTree::ItemList));
-	pool->spareNodes.add(pool->alloc(sizeof(FreeBlocksTree::NodeList)));
+	pool->updateSpare();
 	return pool;
 }
 
@@ -176,11 +210,13 @@ void* MemoryPool::alloc(size_t size, SSHORT type) {
 	if (internalAlloc) {
 		if (size == sizeof(FreeBlocksTree::ItemList))
 			// This condition is to handle case when nodelist and itemlist have equal size
-			if (sizeof(FreeBlocksTree::ItemList)!=sizeof(FreeBlocksTree::ItemList) || spareLeaf) {
-				void *temp = spareLeaf;
-				spareLeaf = NULL;	
+			if (sizeof(FreeBlocksTree::ItemList)!=sizeof(FreeBlocksTree::NodeList) || 
+				spareLeafs.getCount()) 
+			{
+				if (!spareLeafs.getCount()) pool_out_of_memory();
+				void *temp = spareLeafs[spareLeafs.getCount()-1];
+				spareLeafs.shrink(spareLeafs.getCount()-1);
 				needSpare = true;
-				if (!temp) pool_out_of_memory();
 				return temp;
 			}
 		if (size == sizeof(FreeBlocksTree::NodeList)) {
@@ -204,7 +240,9 @@ void* MemoryPool::alloc(size_t size, SSHORT type) {
 			current->block->used = true;
 			current->block->type = type;
 			result = (char *)current->block + ALIGN(sizeof(MemoryBlock));
+			internalAlloc = true;
 			freeBlocks.fastRemove();
+			internalAlloc = false;
 		} else {
 			// Cut a piece at the end of block in hope to avoid structural
 			// modification of free blocks tree
@@ -221,7 +259,7 @@ void* MemoryPool::alloc(size_t size, SSHORT type) {
 			if (!blk->last)
 				((MemoryBlock *)((char*)blk + ALIGN(sizeof(MemoryBlock)) + blk->length))->prev = blk;
 			// Update tree of free blocks
-			if (!freeBlocks.getPrev() || freeBlocks.current().length <= current->block->length)
+			if (!freeBlocks.getPrev() || freeBlocks.current().length < current->block->length)
 				current->length = current->block->length;
 			else {
 				// Tree needs to be modified structurally
@@ -230,23 +268,15 @@ void* MemoryPool::alloc(size_t size, SSHORT type) {
 #else
 				bool res = freeBlocks.getNext();
 				assert(res);
+				assert(&freeBlocks.current()==current);
 #endif
-				BlockInfo temp = {current->block, current->block->length};
-				freeBlocks.fastRemove();
 				internalAlloc = true;
-				try {
-					freeBlocks.add(temp);
-				} catch(...) {
-					// Add item to the list of pending free blocks in case of critically-low memory condition
-					PendingFreeBlock* temp = 
-						(PendingFreeBlock *)((char *)freeBlocks.getAddErrorValue().block + 
-							ALIGN(sizeof(MemoryBlock)));
-					temp->next = pendingFree;
-					pendingFree = temp;
-				}
+				MemoryBlock *block = current->block;
+				freeBlocks.fastRemove();
+				addFreeBlock(block);
 				internalAlloc = false;
 			}
-			result = blk+1;
+			result = (char*)blk+ALIGN(sizeof(MemoryBlock));
 		}
 	} else {
 		// If we are in a critically low memory condition look up for a block in a list
@@ -263,7 +293,7 @@ void* MemoryPool::alloc(size_t size, SSHORT type) {
 					if (prev)
 						prev->next = itr->next;
 					else
-						pendingFree = itr->next;
+						pendingFree = itr->next;						
 					return itr;
 				} else {
 					// Cut a piece at the end of block
@@ -315,158 +345,107 @@ void* MemoryPool::alloc(size_t size, SSHORT type) {
 			rest->length = alloc_size - ALIGN(sizeof(MemoryExtent)) - 
 				ALIGN(sizeof(MemoryBlock)) - size - ALIGN(sizeof(MemoryBlock));
 			rest->prev = blk;
-			BlockInfo temp = {rest, rest->length};
 			internalAlloc = true;
-			try {
-				freeBlocks.add(temp);
-			} catch(...) {
-				// Add item to the list of pending free blocks in case of critically-low memory condition
-				PendingFreeBlock* temp = (PendingFreeBlock *)((char*)freeBlocks.getAddErrorValue().block+
-					ALIGN(sizeof(MemoryBlock)));
-				temp->next = pendingFree;
-				pendingFree = temp;
-			}
+			addFreeBlock(rest);
 			internalAlloc = false;
 		}
 		result = (char*)blk+ALIGN(sizeof(MemoryBlock));
 	}
 	// Grow spare blocks pool if necessary
-	if (needSpare) {
-		try {
-			if (!spareLeaf)
-				spareLeaf = alloc(sizeof(FreeBlocksTree::ItemList), TYPE_LEAFPAGE);
-			while (spareNodes.getCount() <= freeBlocks.level)
-				spareNodes.add(alloc(sizeof(FreeBlocksTree::NodeList), TYPE_TREEPAGE));
-			needSpare = false;
-			// We do not try to add pending blocks here because it is REALLY unlikely
-			// that we'll be able to recover after critically low memory condition
-			// during alloc()
-		} catch(...) {
-			// We can recover after this
-		}
-	}
+	if (needSpare && !updatingSpare) updateSpare();
 	return result;
 }
 
-void MemoryPool::free(void *block) {
-	MemoryBlock *blk = (MemoryBlock *)((char*)block - ALIGN(sizeof(MemoryBlock))), *prev;
-	// Try to merge block with preceding free block
-	if ((prev = blk->prev) && !prev->used) {
-		BlockInfo temp = {prev, prev->length};
-		if (freeBlocks.locate(temp)) {
-			freeBlocks.fastRemove();
-		} else {
-			// If we are in a critically-low memory condition our block could be in the
-			// pending free blocks list. Remove it from there
-			PendingFreeBlock *itr = pendingFree, *temp = (PendingFreeBlock *)(prev+1);
-			if (itr == temp)
-				pendingFree = itr->next;
-			else
-			{
-				while ( itr ) {
-					PendingFreeBlock *next = itr->next;
-					if (next==temp) {
-						itr->next = temp->next;
-						break;
-					}
-					itr = next;
+void MemoryPool::addFreeBlock(MemoryBlock *blk) {
+	BlockInfo info = {blk, blk->length};
+	try {
+		freeBlocks.add(info);
+	} catch(...) {
+		// Add item to the list of pending free blocks in case of critically-low memory condition
+		PendingFreeBlock* temp = (PendingFreeBlock *)((char *)freeBlocks.getAddErrorValue().block+
+			ALIGN(sizeof(MemoryBlock)));
+		temp->next = pendingFree;
+		pendingFree = temp;
+	}
+}
+		
+void MemoryPool::removeFreeBlock(MemoryBlock *blk) {
+	BlockInfo info = {blk, blk->length};
+	if (freeBlocks.locate(info)) {
+		freeBlocks.fastRemove();
+	} else {
+		// If we are in a critically-low memory condition our block could be in the
+		// pending free blocks list. Remove it from there
+		PendingFreeBlock *itr = pendingFree, 
+			*temp = (PendingFreeBlock *)((char *)blk+ALIGN(sizeof(MemoryBlock)));
+		if (itr == temp)
+			pendingFree = itr->next;
+		else
+		{
+			while ( itr ) {
+				PendingFreeBlock *next = itr->next;
+				if (next==temp) {
+					itr->next = temp->next;
+					break;
 				}
+				itr = next;
 			}
 			assert(itr); // We had to find it somewhere
 		}
+	}
+}
+
+void MemoryPool::free(void *block) {
+	if (internalAlloc) {
+		((PendingFreeBlock*)block)->next = pendingFree;
+		((MemoryBlock*)((char*)block-ALIGN(sizeof(MemoryBlock))))->used = false;
+		pendingFree = (PendingFreeBlock*)block;
+		needSpare = true;
+		return;
+	}
+	internalAlloc = true;
+	MemoryBlock *blk = (MemoryBlock *)((char*)block - ALIGN(sizeof(MemoryBlock))), *prev;
+	// Try to merge block with preceding free block
+	if ((prev = blk->prev) && !prev->used) {
+		removeFreeBlock(prev);
 		prev->length += blk->length + ALIGN(sizeof(MemoryBlock));
-		prev->last = blk->last;
-		if (!blk->last)
-			((MemoryBlock *)((char *)blk+ALIGN(sizeof(MemoryBlock))+blk->length))->prev = prev;
-		temp.length = prev->length;
-		internalAlloc = true;
-		try {
-			freeBlocks.add(temp);
-		} catch(...) {
-			// Add item to the list of pending free blocks in case of critically-low memory condition
-			PendingFreeBlock* temp = (PendingFreeBlock *)(freeBlocks.getAddErrorValue().block+1);
-			temp->next = pendingFree;
-			pendingFree = temp;
-		}
-		internalAlloc = false;
-	} else {	
-		// Try to merge block with next free block
-		if (!blk->last) {
-			MemoryBlock *next = (MemoryBlock *)((char*)blk+ALIGN(sizeof(MemoryBlock))+blk->length);
-			if (!next->used) {
-				blk->length += next->length + ALIGN(sizeof(MemoryBlock));
-				blk->last = next->last;
+
+		MemoryBlock *next = NULL;
+		if (blk->last) {
+			prev->last = true;
+		} else {
+			next = (MemoryBlock *)((char *)blk+ALIGN(sizeof(MemoryBlock))+blk->length);
+			if (next->used) {
+				next->prev = prev;
+				prev->last = false;
+			} else {
+				// Merge next block too
+				removeFreeBlock(next);
+				prev->length += next->length + ALIGN(sizeof(MemoryBlock));
+				prev->last = next->last;
 				if (!next->last)
-					((MemoryBlock *)((char *)next+ALIGN(sizeof(MemoryBlock))+next->length))->prev = blk;
-				BlockInfo temp = {next, next->length};
-				if (freeBlocks.locate(temp)) {
-					freeBlocks.fastRemove();
-				} else {
-					// If we are in a critically-low memory condition our block could be in the
-					// pending free blocks list. Remove it from there
-		  			PendingFreeBlock *itr = pendingFree, 
-						*temp = (PendingFreeBlock *)((char*)prev+ALIGN(sizeof(MemoryBlock)));
-					if (itr == temp)
-						pendingFree = itr->next;
-					else
-					{
-						while ( itr ) {
-							PendingFreeBlock *next = itr->next;
-							if (next==temp) {
-								itr->next = temp->next;
-								break;
-							}
-							itr = next;
-						}
-					}
-					assert(itr); // We had to find it somewhere
-				}
+					((MemoryBlock *)((char *)next+ALIGN(sizeof(MemoryBlock))+next->length))->prev = prev;
 			}
 		}
-		// Mark block as free and add it to freeBlocks array
+		addFreeBlock(prev);
+	} else {	
+		MemoryBlock *next;
+		// Mark block as free
 		blk->used = false;
-		BlockInfo temp = {blk, blk->length};
-		internalAlloc = true;
-		try {
-			freeBlocks.add(temp);
-		} catch(...) {
-			// Add item to the list of pending free blocks in case of critically-low memory condition
-			PendingFreeBlock* temp = (PendingFreeBlock *)(
-				(char*)freeBlocks.getAddErrorValue().block+ALIGN(sizeof(MemoryBlock)));
-			temp->next = pendingFree;
-			pendingFree = temp;
+		// Try to merge block with next free block
+		if (!blk->last && 
+			!(next = (MemoryBlock *)((char*)blk+ALIGN(sizeof(MemoryBlock))+blk->length))->used) 
+		{
+			removeFreeBlock(next);
+			blk->length += next->length + ALIGN(sizeof(MemoryBlock));
+			blk->last = next->last;
+			if (!next->last)
+				((MemoryBlock *)((char *)next+ALIGN(sizeof(MemoryBlock))+next->length))->prev = blk;
 		}
-		internalAlloc = false;
+		addFreeBlock(blk);
 	}
-	// Grow spare blocks pool if necessary
-	if (needSpare) {
-		updateSpareBlocks: {
-			try {
-				if (!spareLeaf)
-					spareLeaf = alloc(sizeof(FreeBlocksTree::ItemList), TYPE_LEAFPAGE);
-				while (spareNodes.getCount() <= freeBlocks.level)
-					spareNodes.add(alloc(sizeof(FreeBlocksTree::NodeList), TYPE_TREEPAGE));
-				needSpare = false;
-				// Great, if we were able to restore free blocks tree operations after critically low
-				// memory condition then try to add pending free blocks to our tree
-				while (pendingFree) {
-					PendingFreeBlock *temp = pendingFree;
-					pendingFree = temp->next;
-					BlockInfo info = {
-						(MemoryBlock*)((char*)temp-ALIGN(sizeof(MemoryBlock))), 
-						((MemoryBlock*)temp)->length
-					};
-					internalAlloc = true;
-					freeBlocks.add(info); // We should be able to do this because we had spare blocks
-					internalAlloc = false;
-					if (needSpare)
-						goto updateSpareBlocks;
-				}
-			} catch(...) {
-				// We can recover after this
-			}
-		}
-	}
+	internalAlloc = false;
+	if (needSpare && !updatingSpare) updateSpare();
 }
 
 } /* namespace Firebird */

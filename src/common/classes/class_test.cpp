@@ -55,7 +55,7 @@ void testSortedVector() {
 	printf(passed?"PASSED\n":"FAILED\n");
 }
 
-#define TEST_ITEMS 100000
+#define TEST_ITEMS 1000000
 
 struct Test {
 	int value;
@@ -244,8 +244,10 @@ void testBePlusTree() {
 
 }
 
-#define ALLOC_ITEMS 10
-#define MAX_ITEM_SIZE 100
+#define ALLOC_ITEMS 1000000
+#define MAX_ITEM_SIZE 50
+#define BIG_ITEMS (ALLOC_ITEMS/10)
+#define BIG_SIZE (MAX_ITEM_SIZE*5)
 
 struct AllocItem {
 	int order;
@@ -260,7 +262,8 @@ void testAllocator() {
 	MemoryPool* pool = MemoryPool::createPool();
 	
 	MallocAllocator allocator;
-	BePlusTree<AllocItem,AllocItem,MallocAllocator,DefaultKeyValue<AllocItem>,AllocItem> items(&allocator);
+	BePlusTree<AllocItem,AllocItem,MallocAllocator,DefaultKeyValue<AllocItem>,AllocItem> items(&allocator),
+		bigItems(&allocator);
 	printf("Allocate %d items: ", ALLOC_ITEMS);
 	int n = 0;
 	pool->verify_pool();
@@ -268,18 +271,44 @@ void testAllocator() {
 		n = n * 47163 - 57412;
 		AllocItem temp = {n, pool->alloc((n % MAX_ITEM_SIZE + MAX_ITEM_SIZE)/2+1)};
 		items.add(temp);
-		pool->verify_pool();
 	}
 	printf(" DONE\n");
+	pool->verify_pool();
 	
-	printf("Deallocate items in quasi-random order: ");
+	printf("Deallocate half of items in quasi-random order: ");
+	n = 0;
 	if (items.getFirst()) do {
 		pool->free(items.current().item);
-		pool->verify_pool();
+		n++;
+	} while (n < ALLOC_ITEMS/2 && items.getNext());
+	printf(" DONE\n");
+	pool->verify_pool();
+	
+	printf("Allocate %d big items: ", BIG_ITEMS);
+	n = 0;
+	pool->verify_pool();
+	for (int i=0;i<BIG_ITEMS;i++) {
+		n = n * 47163 - 57412;
+		AllocItem temp = {n, pool->alloc((n % BIG_SIZE + BIG_SIZE)/2+1)};
+		bigItems.add(temp);
+	}
+	printf(" DONE\n");
+	pool->verify_pool();
+	
+	printf("Deallocate the rest of small items in quasi-random order: ");
+	do {
+		pool->free(items.current().item);
 	} while (items.getNext());
 	printf(" DONE\n");
+	pool->verify_pool();
+	
+	printf("Deallocate big items in quasi-random order: ");
+	if (bigItems.getFirst()) do {
+		pool->free(bigItems.current().item);
+	} while (bigItems.getNext());
+	printf(" DONE\n");
+	pool->verify_pool();
 //  TODO:
-//	printf("Check that pool contains one free block per each segment and blocks have correct sizes");
 //	Test critically low memory conditions
 	MemoryPool::deletePool(pool);
 }
