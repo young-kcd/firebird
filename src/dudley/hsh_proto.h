@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _DUDLEY_HSH_PROTO_H_
-#define _DUDLEY_HSH_PROTO_H_
+#ifndef DUDLEY_HSH_PROTO_H
+#define DUDLEY_HSH_PROTO_H
 
 extern void HSH_init(void);
 extern void HSH_insert(SYM);
@@ -30,4 +30,4 @@ extern SYM HSH_lookup(SCHAR *, USHORT);
 extern void HSH_remove(SYM);
 extern SYM HSH_typed_lookup(TEXT *, USHORT, enum sym_t);
 
-#endif /* _DUDLEY_HSH_PROTO_H_ */
+#endif /* DUDLEY_HSH_PROTO_H */
