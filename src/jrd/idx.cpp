@@ -947,7 +947,22 @@ static IDX_E check_duplicates(
 			&& VIO_get_current(tdbb, &rpb, insertion->iib_transaction,
 							   reinterpret_cast < BLK > (tdbb->tdbb_default),
 							   record_idx->idx_flags & idx_foreign)) {
-			if (rpb.rpb_flags & rpb_deleted) {
+			// dimitr: we shouldn't ignore status exceptions which take place
+			//		   inside the lock manager. Namely, they are: gds_deadlock,
+			//		   gds_lock_conflict, gds_lock_timeout. Otherwise we may
+			//		   have logically corrupted database as a result. If any
+			//		   of the mentioned errors appeared, it means that there's
+			//		   an active transaction out there which has modified our
+			//		   record. For "nowait" transaction, it means we have
+			//		   an update conflict.
+			//
+			// was: if (rpb.rpb_flags & rpb_deleted) {
+			//
+			// P.S. I think the check for a status vector should be enough,
+			//      but for sure let's keep the old one as well.
+			//														2003.05.27
+			//
+			if (rpb.rpb_flags & rpb_deleted || tdbb->tdbb_status_vector[1]) {
 				result = idx_e_duplicate;
 				break;
 			}
