@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.41 2003-07-11 13:29:06 brodsom Exp $
+#  $Id: Makefile.in.firebird,v 1.42 2003-07-17 02:15:46 brodsom Exp $
 #
 
 ROOT=..
@@ -325,16 +325,7 @@ includes:	include_generic
 
                        # examples still need a good makefile to ship with them
 examples_cp:
-	$(CP) $(ROOT)/examples/readme $(FIREBIRD)/examples/README
-	$(CP) $(ROOT)/examples/*.* $(FIREBIRD)/examples/
-	$(CP) $(ROOT)/examples/api/*.* $(FIREBIRD)/examples/api/
-	$(CP) $(ROOT)/examples/build_unix/*.* $(FIREBIRD)/examples/build_unix/
-	$(CP) $(ROOT)/examples/build_win32/*.* $(FIREBIRD)/examples/build_win32/
-	$(CP) $(ROOT)/examples/dyn/*.* $(FIREBIRD)/examples/dyn/
-	$(CP) $(ROOT)/examples/empbuild/*.* $(FIREBIRD)/examples/empbuild/
-	$(CP) $(ROOT)/examples/include/*.* $(FIREBIRD)/examples/include/
-	$(CP) $(ROOT)/examples/stat/*.* $(FIREBIRD)/examples/stat/
-	$(CP) $(ROOT)/examples/udf/*.* $(FIREBIRD)/examples/udf/
+	$(MAKE) -f $(GEN_ROOT)/Makefile.examples
 
 otherfiles: misc_files script_files
 
