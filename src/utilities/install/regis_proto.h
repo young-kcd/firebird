@@ -24,7 +24,10 @@
 #ifndef UTILITIES_REGIS_PROTO_H
 #define UTILITIES_REGIS_PROTO_H
 
-USHORT	REGISTRY_install (HKEY, TEXT*, USHORT (*)(SLONG, TEXT*, HKEY));
-USHORT	REGISTRY_remove (HKEY, bool, USHORT (*)(SLONG, TEXT*, HKEY));
+typedef USHORT (*pfnRegError)(SLONG, const TEXT*, HKEY);
+
+USHORT	REGISTRY_install (HKEY, const TEXT*, pfnRegError);
+USHORT	REGISTRY_remove (HKEY, bool, pfnRegError);
 
 #endif // UTILITIES_REGIS_PROTO_H
+

@@ -136,6 +136,11 @@ BLK ALLR_block(UCHAR type, ULONG count)
 			}
 			else
 			{
+			    // This is suspicious. The address of a local, non-static var
+				// is being passed. If REMOTE_save_status_strings() is not called,
+				// then embedded srv clearly shouldn't try to read the status
+				// vector where the exception is trapped, because "errmsg" would
+				// vanish before that => illegal address in the stack.
 				status_vector[3] = (ISC_STATUS) errmsg;
 #ifndef EMBEDDED
 				REMOTE_save_status_strings(tdrdb->trdb_status_vector);

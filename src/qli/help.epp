@@ -106,7 +106,7 @@ void HELP_help( qli_syntax* node)
 
 	max_level = 0;
 	topic = topics;
-	*topic++ = "QLI";
+	*topic++ = "QLI"; // to be reviewed later; requires several changes.
 
 	for (ptr = (NAM *) node->syn_arg, end = ptr + node->syn_count; ptr < end;
 		 ptr++)

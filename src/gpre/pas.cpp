@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.40 2004-06-03 07:31:10 robocop Exp $
+//	$Id: pas.cpp,v 1.41 2004-06-05 09:36:56 robocop Exp $
 //
 
 #include "firebird.h"
@@ -124,8 +124,8 @@ static void make_port(const gpre_port*, int);
 static void make_ready(const dbb*, const TEXT*, const TEXT*, USHORT, const gpre_req*);
 static void printa(int, const char*, ...);
 static const TEXT* request_trans(const act*, const gpre_req*);
-static TEXT* status_vector(const act*);
-static void t_start_auto(const act*, const gpre_req*, TEXT*, int);
+static const TEXT* status_vector(const act*);
+static void t_start_auto(const act*, const gpre_req*, const TEXT*, int);
 
 static bool global_first_flag = false;
 
@@ -1082,8 +1082,8 @@ static void gen_create_database( const act* action, int column)
 static int gen_cursor_close( const act* action, const gpre_req* request, int column)
 {
 	PAT args;
-	TEXT *pattern1 = "if %RIs <> nil then";
-	TEXT *pattern2 = "isc_dsql_free_statement (%V1, %RF%RIs, %N1);";
+	const TEXT* pattern1 = "if %RIs <> nil then";
+	const TEXT* pattern2 = "isc_dsql_free_statement (%V1, %RF%RIs, %N1);";
 
 	args.pat_request = request;
 	args.pat_vector1 = status_vector(action);
@@ -1131,13 +1131,13 @@ static int gen_cursor_open( const act* action, const gpre_req* request, int colu
 {
 	PAT args;
 	TEXT s[64];
-	TEXT *pattern1 =
+	const TEXT *pattern1 =
 		"if (%RIs = nil) and (%RH <> nil)%IF and (%DH <> nil)%EN then",
-		*pattern2 = "if (%RIs = nil)%IF and (%DH <> nil)%EN then", *pattern3 =
-		"isc_dsql_alloc_statement2 (%V1, %RF%DH, %RF%RIs);", *pattern4 =
-		"if (%RIs <> nil)%IF and (%S3 <> nil)%EN then", *pattern5 =
-		"isc_dsql_set_cursor_name (%V1, %RF%RIs, %S1, 0);", *pattern6 =
-		"isc_dsql_execute_m (%V1, %RF%S3, %RF%RIs, 0, gds__null, %N2, 0, gds__null);";
+		*pattern2 = "if (%RIs = nil)%IF and (%DH <> nil)%EN then",
+		*pattern3 = "isc_dsql_alloc_statement2 (%V1, %RF%DH, %RF%RIs);",
+		*pattern4 = "if (%RIs <> nil)%IF and (%S3 <> nil)%EN then",
+		*pattern5 = "isc_dsql_set_cursor_name (%V1, %RF%RIs, %S1, 0);",
+		*pattern6 = "isc_dsql_execute_m (%V1, %RF%S3, %RF%RIs, 0, gds__null, %N2, 0, gds__null);";
 
 	args.pat_request = request;
 	args.pat_database = request->req_database;
@@ -1921,10 +1921,10 @@ static void gen_event_init( const act* action, int column)
 	PAT args;
 	SSHORT count;
 	TEXT variable[20];
-	TEXT *pattern1 =
+	const TEXT* pattern1 =
 		"gds__%N1l := GDS__EVENT_BLOCK_A (%RFgds__%N1a, %RFgds__%N1b, %N2, %RFgds__event_names%RE);";
-	TEXT *pattern2 = "%S1 (%V1, %RF%DH, gds__%N1l, gds__%N1a, gds__%N1b);";
-	TEXT *pattern3 = "%S2 (gds__events, gds__%N1l, gds__%N1a, gds__%N1b);";
+	const TEXT* pattern2 = "%S1 (%V1, %RF%DH, gds__%N1l, gds__%N1a, gds__%N1b);";
+	const TEXT* pattern3 = "%S2 (gds__events, gds__%N1l, gds__%N1a, gds__%N1b);";
 
 	if (action->act_error)
 		begin(column);
@@ -1991,8 +1991,8 @@ static void gen_event_wait( const act* action, int column)
 	const act* event_action;
 	int ident;
 	TEXT s[64];
-	TEXT *pattern1 = "%S1 (%V1, %RF%DH, gds__%N1l, gds__%N1a, gds__%N1b);";
-	TEXT *pattern2 = "%S2 (gds__events, gds__%N1l, gds__%N1a, gds__%N1b);";
+	const TEXT* pattern1 = "%S1 (%V1, %RF%DH, gds__%N1l, gds__%N1a, gds__%N1b);";
+	const TEXT* pattern2 = "%S2 (gds__events, gds__%N1l, gds__%N1a, gds__%N1b);";
 
 	if (action->act_error)
 		begin(column);
@@ -2057,8 +2057,8 @@ static void gen_fetch( const act* action, int column)
 	gpre_port*		port;
 	const ref*		reference;
 	VAL		value;
-	TEXT*	direction;
-	TEXT*	offset;
+	const TEXT*	direction;
+	const TEXT*	offset;
 
 	if (port = request->req_aport) {
 		/* set up the reference to point to the correct value 
@@ -2544,23 +2544,25 @@ static void gen_raw(const UCHAR* blr, int request_length, int column)
 
 static void gen_ready( const act* action, int column)
 {
-	rdy* ready;
-	DBB db;
-	TEXT *filename, *vector;
+	const TEXT* vector = status_vector(action);
 
-	vector = status_vector(action);
-
-	for (ready = (rdy*) action->act_object; ready; ready = ready->rdy_next) {
-		db = ready->rdy_database;
-		if (!(filename = ready->rdy_filename))
+	for (rdy* ready = (rdy*) action->act_object; ready; ready = ready->rdy_next)
+	{
+		DBB db = ready->rdy_database;
+		const TEXT* filename = ready->rdy_filename;
+		if (!filename)
 			filename = db->dbb_runtime;
 		if ((action->act_error || (action->act_flags & ACT_sql)) &&
 			ready != (rdy*) action->act_object)
+		{
 			printa(column, "if (gds__status[2] = 0) then begin");
+		}
 		make_ready(db, filename, vector, column, ready->rdy_request);
 		if ((action->act_error || (action->act_flags & ACT_sql)) &&
 			ready != (rdy*) action->act_object)
+		{
 			endp(column);
+		}
 	}
 	set_sqlcode(action, column);
 }
@@ -3320,7 +3322,7 @@ static void gen_variable( const act* action, int column)
 
 static void gen_whenever( const swe* label, int column)
 {
-	TEXT *condition;
+	const TEXT* condition;
 
 	if (label)
 		fprintf(gpreGlob.out_file, ";");
@@ -3618,7 +3620,7 @@ static const TEXT* request_trans( const act* action, const gpre_req* request)
 //		call depending on where or not the action has an error clause.
 //  
 
-static TEXT *status_vector( const act* action)
+static const TEXT* status_vector( const act* action)
 {
 
 	if (action && (action->act_error || (action->act_flags & ACT_sql)))
@@ -3637,17 +3639,17 @@ static TEXT *status_vector( const act* action)
 //  
 
 static void t_start_auto( const act* action, const gpre_req* request, 
-						 TEXT* vector, int column)
+						 const TEXT* vector, int column)
 {
 	DBB db;
-	int count, stat, and_count;
+	int count, and_count;
 	TEXT *filename, buffer[256], temp[40];
 
 	buffer[0] = 0;
 
 //  find out whether we're using a status vector or not 
 
-	stat = !strcmp(vector, "gds__status");
+	const bool stat = !strcmp(vector, "gds__status");
 
 //  this is a default transaction, make sure all databases are ready 
 

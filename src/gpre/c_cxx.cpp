@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.50 2004-06-03 07:31:09 robocop Exp $
+//	$Id: c_cxx.cpp,v 1.51 2004-06-05 09:36:56 robocop Exp $
 //
 
 #include "firebird.h"
@@ -132,7 +132,7 @@ static const TEXT* status_vector(const act*);
 static void t_start_auto(const act*, const gpre_req*, const TEXT*, int, bool);
 
 static bool global_first_flag = false;
-static TEXT* global_status_name;
+static const TEXT* global_status_name;
 
 const int INDENT	= 3;
 
@@ -1399,7 +1399,7 @@ static void gen_database( const act* action, int column)
 			   "static %slong *gds__null = 0;\t/* dummy status vector */",
 			   CONST_STR);
 
-	TEXT* scope = "";
+	const TEXT* scope = "";
 
 	bool all_static = true;
 	bool all_extern = true;
@@ -2857,6 +2857,7 @@ static void gen_request(const gpre_req* request)
 			   request->req_ident, request->req_length);
 		printa(0, "static %schar\n   isc_%d [] = {",
 			   CONST_STR, request->req_ident);
+			   
 		const TEXT* string_type = "blr";
 		if (gpreGlob.sw_raw) {
 			gen_raw(request->req_blr, request->req_length);

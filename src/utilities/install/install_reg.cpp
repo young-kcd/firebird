@@ -30,7 +30,7 @@
 #include "../utilities/install/install_nt.h"
 #include "../utilities/install/regis_proto.h"
 
-static USHORT reg_error(SLONG, TEXT*, HKEY);
+static USHORT reg_error(SLONG, const TEXT*, HKEY);
 static void usage(void);
 
 static struct
@@ -150,7 +150,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 	return (ret == FB_SUCCESS) ? FINI_OK : FINI_ERROR;
 }
 
-static USHORT reg_error( SLONG status, TEXT* string, HKEY hkey)
+static USHORT reg_error( SLONG status, const TEXT* string, HKEY hkey)
 {
 /**************************************
  *
@@ -217,3 +217,4 @@ static void usage(void)
 
 	exit(FINI_ERROR);
 }
+

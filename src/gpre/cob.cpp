@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.46 2004-06-03 07:31:09 robocop Exp $
+//	$Id: cob.cpp,v 1.47 2004-06-05 09:36:56 robocop Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -858,7 +858,8 @@ static void align( int column)
 static void asgn_from( const act* action, REF reference)
 {
 	gpre_fld* field;
-	TEXT *value, name[64], variable[20], temp[20];
+	TEXT name[64], variable[20], temp[20];
+	const char* value;
 
 	for (; reference; reference = reference->ref_next) {
 		field = reference->ref_field;
@@ -2567,7 +2568,7 @@ static void gen_fetch( const act* action)
 #ifdef SCROLLABLE_CURSORS
 	gpre_port* port;
 	REF reference;
-	SCHAR *direction, *offset;
+	const char *direction, *offset;
 	VAL value;
 #endif
 
@@ -2725,36 +2726,38 @@ static void gen_for( const act* action)
 
 static void gen_function( const act* function)
 {
-	gpre_req* request;
-	gpre_port* port;
 	REF reference;
 	gpre_fld* field;
-	const act* action;
-	TEXT *dtype, s[64];
+	TEXT s[64];
+	const char* dtype;
 
-	action = (const act*) function->act_object;
+	const act* action = (const act*) function->act_object;
 
 	if (action->act_type != ACT_any) {
 		CPR_error("can't generate function");
 		return;
 	}
 
-	request = action->act_request;
+	gpre_req* request = action->act_request;
 
 	fprintf(gpreGlob.out_file, "static %s_r (request, transaction", request->req_handle);
 
-	if (port = request->req_vport)
+	gpre_port* port = request->req_vport;
+	if (port)
 		for (reference = port->por_references; reference;
 			 reference = reference->ref_next)
-				fprintf(gpreGlob.out_file, ", %s",
-						   gen_name(s, reference->ref_source, true));
+		{
+			fprintf(gpreGlob.out_file, ", %s",
+					   gen_name(s, reference->ref_source, true));
+		}
 
 	fprintf(gpreGlob.out_file,
 			   ")\n    isc_req_handle\trequest;\n    isc_tr_handle\ttransaction;\n");
 
 	if (port)
 		for (reference = port->por_references; reference;
-			 reference = reference->ref_next) {
+			 reference = reference->ref_next)
+		{
 			field = reference->ref_field;
 			switch (field->fld_dtype) {
 			case dtype_short:
@@ -3261,7 +3264,6 @@ static void gen_request( gpre_req* request)
 	REF reference;
 	blb* blob;
 	gpre_port* port;
-	TEXT *string_type;
 
 	if (!(request->req_flags & (REQ_exp_hand | REQ_sql_blob_open 
 		| REQ_sql_blob_create)) && request->req_type != REQ_slice
@@ -3309,6 +3311,8 @@ static void gen_request( gpre_req* request)
 			   names[isc_a_pos], request->req_ident);
 		gen_raw(request->req_blr, request->req_type, request->req_length,
 				request->req_ident);
+				
+		const char* string_type;
 		if (!(gpreGlob.sw_raw)) {
 			printa(names[COMMENT], false, " ");
 			printa(names[COMMENT], false, "FORMATTED REQUEST BLR FOR %s%d = ",

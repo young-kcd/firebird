@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.51 2004-06-03 07:31:10 robocop Exp $
+//  $Id: par.cpp,v 1.52 2004-06-05 09:36:56 robocop Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -813,8 +813,7 @@ TEXT* PAR_native_value(bool array_ref,
     **/
 		if (gpreGlob.sw_sql_dialect == 1) {
 			if (isQuoted(gpreGlob.token_global.tok_type)) {
-				enum tok_t typ;
-				typ = gpreGlob.token_global.tok_type;
+				//const enum tok_t typ = gpreGlob.token_global.tok_type;
 				gpreGlob.token_global.tok_length += 2;
 				*string++ = '\"';
 				gobble(string, s1);

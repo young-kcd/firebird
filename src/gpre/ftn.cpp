@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.48 2004-06-03 07:31:09 robocop Exp $
+//	$Id: ftn.cpp,v 1.49 2004-06-05 09:36:56 robocop Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -712,7 +712,7 @@ static void asgn_from(const act* action, const ref* reference)
 			continue;
 		gen_name(variable, reference, true);
 		
-		SCHAR* value;
+		const TEXT* value;
 		if (reference->ref_source)
 			value = gen_name(temp, reference->ref_source, true);
 		else

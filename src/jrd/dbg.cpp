@@ -809,7 +809,7 @@ int DBG_pretty(const jrd_nod* node, int column)
 	case nod_exec_proc:
 		procedure = (jrd_prc*) node->nod_arg[e_esp_procedure];
 		fprintf(dbg_file, ", name: %s (%X)\n",
-				   procedure->prc_name->str_data, procedure);
+				   procedure->prc_name->c_str(), procedure);
 		for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end;
 			 ptr++)
 		{

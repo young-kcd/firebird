@@ -34,7 +34,7 @@
  *    compatibility with Kylix
  * 
  *
- *  $Id: config_root.cpp,v 1.10 2004-02-29 05:41:45 skidder Exp $
+ *  $Id: config_root.cpp,v 1.11 2004-06-05 09:37:03 robocop Exp $
  */
 
 #include "firebird.h"
@@ -61,9 +61,9 @@ typedef Firebird::PathName string;
 static string getExePathViaProcEntry() 
 {
     char buffer[MAXPATHLEN];
-    int len = readlink("/proc/self/exe", buffer, sizeof(buffer));
+    const int len = readlink("/proc/self/exe", buffer, sizeof(buffer));
 	if (len >= 0) {
-		buffer[len]=0;
+		buffer[len] = 0;
 		return buffer;
 	}
 	return "";
@@ -122,3 +122,4 @@ void ConfigRoot::osConfigRoot()
     // As a last resort get it from the default install directory
     root_dir = string(FB_PREFIX) + PathUtils::dir_sep;    
 }
+

@@ -21,6 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
+#pragma FB_COMPILER_MESSAGE("CVC: This file is unused and out of sync. It may a candidate for deletion.")
+
 #include "firebird.h"
 #include <windows.h>
 #include <string.h>
@@ -48,7 +50,7 @@ static int InitApplication(int, HINSTANCE, HINSTANCE);
 static BOOL BlockingHook(void);
 
 /* Global Variables */
-static char szAppName[] = "IB_Server";
+static char szAppName[] = "FB_Server";
 static int isStarted = 0;
 static HWND hStcText;
 
@@ -158,7 +160,7 @@ static int InitApplication(
 			return FALSE;
 	}
 
-	HWND hWnd = CreateWindow(szAppName, "InterBase Server",
+	HWND hWnd = CreateWindow(szAppName, "Firebird Server",
 							  WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU |
 							  WS_MINIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT,
 							  APP_HSIZE, APP_VSIZE, NULL, NULL, hInstance,

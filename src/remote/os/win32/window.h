@@ -46,8 +46,8 @@ const int TMP_STRINGLEN		= 512;
 /* This is the class name used by the hidden msgs window in the engine.
    Both fbclient.dll and fbserver.exe should use the same. */
 
-static char *szClassName = "FB_Server";
-static char *szWindowName = "Firebird Server";
+static const char* szClassName = "FB_Server";
+static const char* szWindowName = "Firebird Server"; // Used in iscguard.cpp
 
 #endif // OS_WIN32_WINDOW_H
 

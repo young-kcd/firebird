@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.104 2004-05-27 16:26:10 alexpeshkoff Exp $
+ * $Id: ddl.cpp,v 1.105 2004-06-05 09:36:51 robocop Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -5072,7 +5072,8 @@ static SCHAR modify_privileges(dsql_req*		request,
  **************************************/
 
 	SCHAR  privileges[10];
-	SCHAR* p;
+	const char* p = 0;
+	char* q;
 	const dsql_nod* fields;
 	const dsql_nod* const* ptr;
 	const dsql_nod* const* end;
@@ -5093,7 +5094,7 @@ static SCHAR modify_privileges(dsql_req*		request,
 
 	case nod_references:
 	case nod_update:
-		p = (privs->nod_type == nod_references) ? (SCHAR*) "R" : (SCHAR*) "U";
+		p = (privs->nod_type == nod_references) ? "R" : "U";
 		fields = privs->nod_arg[0];
 		if (!fields) {
 			return *p;
@@ -5112,18 +5113,17 @@ static SCHAR modify_privileges(dsql_req*		request,
 		return 'D';
 
 	case nod_list:
-		p = privileges;
+		p = q = privileges;
 		for (ptr = privs->nod_arg, end = ptr + privs->nod_count; ptr < end;
 			 ptr++)
 		{
-			*p = modify_privileges(request, type, option, *ptr, table,
+			*q = modify_privileges(request, type, option, *ptr, table,
 								  user);
-			if (*p) {
-				p++;
+			if (*q) {
+				q++;
 			}
 		}
-		*p = 0;
-		p = privileges;
+		*q = 0;
 		break;
 
 	default:

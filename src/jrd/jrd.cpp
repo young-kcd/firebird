@@ -4185,8 +4185,8 @@ void JRD_print_procedure_info(thread_db* tdbb, const char* mesg)
 			const jrd_prc* procedure = (jrd_prc*) *ptr;
 			if (procedure)
 				fprintf(fptr, "%s  ,  %d,  %X,  %d, %d\n",
-							(procedure->prc_name) ?
-								(char*) procedure->prc_name->str_data : "NULL",
+							(procedure->prc_name->hasData()) ?
+								procedure->prc_name->c_str() : "NULL",
 							procedure->prc_id,
 							procedure->prc_flags, procedure->prc_use_count,
 							procedure->prc_alter_count);
@@ -4508,7 +4508,8 @@ static ISC_STATUS check_database(thread_db* tdbb, Attachment* attachment, ISC_ST
 
 	++dbb->dbb_use_count;
 
-    TEXT* string;
+	// Want to avoid problems of literal strings v/s non-const pointers.
+    static TEXT string[] = "can't continue after bugcheck";
     ISC_STATUS* ptr;
     
 	if (dbb->dbb_flags & DBB_bugcheck) {
@@ -4516,8 +4517,7 @@ static ISC_STATUS check_database(thread_db* tdbb, Attachment* attachment, ISC_ST
 		*ptr++ = isc_arg_gds;
 		*ptr++ = isc_bug_check;
 		*ptr++ = isc_arg_string;
-		string = "can't continue after bugcheck";
-		*ptr++ = (ISC_STATUS) string;
+		*ptr++ = (ISC_STATUS) string; // Warning: possible address truncation.
 		*ptr = isc_arg_end;
 		return error(user_status);
 	}

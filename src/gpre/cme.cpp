@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cme.cpp,v 1.30 2004-06-03 07:31:09 robocop Exp $
+//	$Id: cme.cpp,v 1.31 2004-06-05 09:36:56 robocop Exp $
 //
 
 #include "firebird.h"
@@ -1419,7 +1419,7 @@ static void cmp_literal( const gpre_nod* node, gpre_req* request)
 
 	request->add_byte(blr_literal);
 	const ref* reference = (REF) node->nod_arg[0];
-	const char* string = (char *) reference->ref_value;
+	const char* string = reference->ref_value;
 
 	if (*string != '"' && *string != '\'')
 	{
@@ -1428,7 +1428,7 @@ static void cmp_literal( const gpre_nod* node, gpre_req* request)
     **/
 		if (strpbrk(string, "Ee"))
 		{
-			string = (char *) reference->ref_value;
+			string = reference->ref_value;
 
 			if (!(request->req_database->dbb_flags & DBB_v3))
 				request->add_byte(blr_double);

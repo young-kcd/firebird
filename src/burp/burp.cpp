@@ -222,6 +222,10 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 /* Parse the command line for the -USER, -PASSWORD, -SERVICE,
    and -VERBOSE options. Calculate a length for the new command line to be
    passed to a server using services APIs */
+   
+	// This is to avoid overwriting literal strings later. Read the warning near
+	// the end of this function.
+	char none[] = "-*NONE*";
 
 	while (argvp < end && !err)
 	{
@@ -231,13 +235,13 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 			continue;
 		}
 		if (!string[1])
-			string = "-*NONE*";
+			string = none;
 		const in_sw_tab_t* in_sw_tab = burp_in_sw_table;
 		const TEXT* q;
 		for (; q = in_sw_tab->in_sw_name; in_sw_tab++)
 		{
 			TEXT c;
-			for (const TEXT *p = string + 1; c = *p++;) {
+			for (const TEXT* p = string + 1; c = *p++;) {
 				if (UPPER(c) != *q++)
 					break;
 			}
@@ -683,6 +687,9 @@ int common_main(int		argc,
 	burp_fil* file_list = NULL;
 	tdgbl->io_buffer_size = GBAK_IO_BUFFER_SIZE;
 	
+	// Avoid overwriting literal strings.
+	char none[] = "-*NONE*";
+	
 	const TEXT* const* const end = argv + argc;
 	++argv;
 
@@ -712,7 +719,7 @@ int common_main(int		argc,
 		else {
 			++argv;
 			if (!string[1])
-				string = "-*NONE*";
+				string = none;
 			const TEXT* q;
 			for (in_sw_tab = burp_in_sw_table; q = in_sw_tab->in_sw_name;
 				 in_sw_tab++)

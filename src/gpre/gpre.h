@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.69 2004-06-03 07:31:09 robocop Exp $
+ * $Id: gpre.h,v 1.70 2004-06-05 09:36:56 robocop Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -325,7 +325,7 @@ const size_t USN_LEN = sizeof(gpre_usn);
 
 typedef struct val {
 	val* val_next;				/* next value in list */
-	TEXT *val_value;			/* value */
+	const TEXT* val_value;			/* value */
 } *VAL;
 
 const size_t VAL_LEN = sizeof(val);
@@ -1119,7 +1119,7 @@ class gpre_req {
 	UCHAR *req_blr;				/* raw blr string */
 	SCHAR *req_handle;			/* request handle */
 	const TEXT* req_trans;		/* transaction handle */
-	SCHAR *req_request_level;	/* request level expression */
+	const SCHAR* req_request_level;	/* request level expression */
 	USHORT req_level;			/* access level */
 	USHORT req_count;			/* number of ports in request */
 	USHORT req_internal;		/* next internal context number */
@@ -1240,7 +1240,7 @@ class ref {
 	ref* ref_master;			/* master field for null value */
 	ref* ref_friend;			/* value for variable */
 	gpre_nod* ref_expr;			/* expression, if node is expression */
-	TEXT *ref_value;			/* value string if host language value */
+	const TEXT* ref_value;		/* value string if host language value */
 	val* ref_values;			/* linked list of values */
 	TEXT* ref_null_value;		/* value string if host language value */
 	UCHAR* ref_sdl;				/* Raw slice description language for an array */
@@ -1485,7 +1485,7 @@ struct GpreGlobals{
 	USHORT compiletime_db_dialect;
 
 	TEXT ada_package[256];
-	TEXT* ada_null_address;
+	const TEXT* ada_null_address;
 	DBB isc_databases;
 	TEXT* default_user;
 	TEXT* default_password;

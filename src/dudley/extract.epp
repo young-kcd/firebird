@@ -914,7 +914,8 @@ static void extract_grants(const TEXT * relname)
  *	for the relation from reading user privilge records.
  *
  **************************************/
-	TEXT relation_name[32], user_name[32], field_name[32], *user_priv;
+	TEXT relation_name[32], user_name[32], field_name[32];
+	const char* user_priv;
 
 	if (EXT_capabilities & EXT_v4) {
         FOR U IN RDB$USER_PRIVILEGES WITH U.RDB$RELATION_NAME EQ relname
@@ -944,7 +945,7 @@ static void extract_grants(const TEXT * relname)
                 
                 continue;
                 
-	       default:
+	        default:
 	           user_priv = "**unknown**";
 	           break;
             }

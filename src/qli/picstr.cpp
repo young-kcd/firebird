@@ -37,7 +37,7 @@
 const int PRECISION	= 10000;
 
 static TEXT* cvt_to_ascii(SLONG, TEXT*, int);
-static TEXT* default_edit_string(const dsc*, TEXT*);
+static const TEXT* default_edit_string(const dsc*, TEXT*);
 static void edit_alpha(const dsc*, pics*, TEXT**, USHORT);
 static void edit_date(const dsc*, pics*, TEXT**);
 static void edit_float(const dsc*, pics*, TEXT**);
@@ -386,7 +386,7 @@ static TEXT* cvt_to_ascii( SLONG number, TEXT* pointer, int length)
 }
 
 
-static TEXT* default_edit_string(const dsc* desc, TEXT* buff)
+static const TEXT* default_edit_string(const dsc* desc, TEXT* buff)
 {
 /**************************************
  *
@@ -916,7 +916,6 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
  *	output pointer.
  *
  **************************************/
-	TEXT temp[512];
 	bool negative = false;
 	bool overflow = false;
 
@@ -942,6 +941,7 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
 				number *= 10.;
 			} while (--scale);
 
+	TEXT temp[512];
 	TEXT* p = temp;
 	TEXT* digits = p;
 

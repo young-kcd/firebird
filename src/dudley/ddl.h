@@ -612,7 +612,7 @@ struct DudleyGlobals {
 	bool DDL_trace;
 	bool DDL_version;
 	const TEXT* DDL_prompt;
-	TEXT* DDL_file_name;
+	const TEXT* DDL_file_name;
 	TEXT DYN_file_name[256];
 	TEXT* DB_file_name;
 	TEXT DDL_file_string[256];

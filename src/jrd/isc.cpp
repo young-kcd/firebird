@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.50 2004-05-29 13:33:08 brodsom Exp $
+$Id: isc.cpp,v 1.51 2004-06-05 09:37:01 robocop Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -407,12 +407,13 @@ int ISC_get_user(TEXT*	name,
 /* egid and euid need to be signed, uid_t is unsigned on SUN! */
 	SLONG egid, euid;
 	TEXT user_name[256];
-	TEXT* p = 0;
+	const TEXT* p = 0;
 
 	if (user_string && *user_string) {
 		const TEXT* q = user_string;
-		for (p = user_name; (*p = *q++) && *p != '.'; p++);
-		*p = 0;
+		char* un;
+		for (un = user_name; (*un = *q++) && *un != '.'; un++);
+		*un = 0;
 		p = user_name;
 		egid = euid = -1;
 		if (*q) {

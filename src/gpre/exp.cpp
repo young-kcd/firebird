@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exp.cpp,v 1.34 2004-05-24 17:13:37 brodsom Exp $
+//	$Id: exp.cpp,v 1.35 2004-06-05 09:36:56 robocop Exp $
 //
 
 #include "firebird.h"
@@ -1006,8 +1006,9 @@ static GPRE_NOD normalize_index( dim* dimension, GPRE_NOD user_index, USHORT arr
 	}
 
 	ref* reference = (REF) MSC_alloc(REF_LEN);
-	reference->ref_value = (TEXT *) MSC_alloc(strlen(string));
-	strcpy(reference->ref_value, string);
+	char* tmp = (TEXT *) MSC_alloc(strlen(string));
+	reference->ref_value = tmp;
+	strcpy(tmp, string);
 	gpre_nod* adjustment_node = MSC_unary(nod_literal, (GPRE_NOD) reference);
 
 	gpre_nod* negate_node;

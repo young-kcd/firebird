@@ -31,7 +31,7 @@ FILE *output;
 
 static bool check_option(SCHAR *, SSHORT *, SCHAR **);
 static int define_format(SCHAR *, SCHAR *);
-static int gen(SCHAR *, SCHAR *);
+static int gen(const char*, const char*);
 static int process_line(FILE *, SCHAR *);
 static int put_error(FILE *, SCHAR **, SCHAR *, SSHORT);
 static int put_symbol(FILE *, SCHAR *, SCHAR *, SLONG, SSHORT);
@@ -57,14 +57,14 @@ void main( int argc, char **argv)
  *	Generate include files.
  *
  **************************************/
-	SCHAR **end, *p, *file, *language, *db_name;
+	SCHAR **end, *file, *db_name;
 	bool sw_all = false;
 
 	file = db_name = 0;
-	language = "C";
+	const char* language = "C";
 
 	for (end = argv + argc, ++argv; argv < end;) {
-		p = *argv++;
+		const char* p = *argv++;
 		if (*p == '-')
 			switch (UPPER(p[1])) {
 			case 'F':
@@ -192,7 +192,7 @@ static int define_format( SCHAR * name, SCHAR * format)
 }
 
 
-static int gen( SCHAR * language, SCHAR * filename)
+static int gen( const char* language, const char* filename)
 {
 /**************************************
  *

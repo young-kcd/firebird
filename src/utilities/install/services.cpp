@@ -43,10 +43,10 @@ USHORT SERVICES_install(SC_HANDLE manager,
 						const char* display_name,
 						const char* executable,
 						const TEXT* directory,
-						TEXT * dependencies,
+						const TEXT* dependencies,
 						USHORT sw_startup,
-						TEXT * nt_user_name,
-						TEXT * nt_user_password,
+						const TEXT* nt_user_name,
+						const TEXT* nt_user_password,
 						pfnSvcError err_handler)
 {
 /**************************************
@@ -61,13 +61,12 @@ USHORT SERVICES_install(SC_HANDLE manager,
  **************************************/
 	SC_HANDLE service;
 	TEXT path_name[MAXPATHLEN];
-	USHORT len;
 	DWORD errnum;
 	DWORD dwServiceType;
 
 	// No check made on directory length?
 	strcpy(path_name, directory);
-	len = strlen(path_name);
+	USHORT len = strlen(path_name);
 	if (len && path_name[len - 1] != '/' && path_name[len - 1] != '\\')
 	{
 		path_name[len++] = '\\';
@@ -183,12 +182,11 @@ USHORT SERVICES_start(SC_HANDLE manager,
  *	Start an installed service.
  *
  **************************************/
-	SC_HANDLE service;
 	SERVICE_STATUS service_status;
-	const TEXT *mode;
+	const TEXT* mode;
 	DWORD errnum;
 
-	service = OpenService(manager, service_name, SERVICE_ALL_ACCESS);
+	SC_HANDLE service = OpenService(manager, service_name, SERVICE_ALL_ACCESS);
 	if (service == NULL)
 		return (*err_handler) (GetLastError(), "OpenService", NULL);
 

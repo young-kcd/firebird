@@ -37,11 +37,12 @@
 
 static void cleanup_key(HKEY, const char*);
 #ifdef THIS_CODE_IS_TEMPORARILY_NOT_USED_ANYMORE
-static USHORT remove_subkeys(HKEY, bool, USHORT(*)(SLONG, TEXT*, HKEY));
+static USHORT remove_subkeys(HKEY, bool, pfnRegError);
 #endif
 
 USHORT REGISTRY_install(HKEY hkey_rootnode,
-						TEXT* directory, USHORT(*err_handler)(SLONG, TEXT*, HKEY))
+						const TEXT* directory,
+						pfnRegError err_handler)
 {
 /**************************************
  *
@@ -55,8 +56,6 @@ USHORT REGISTRY_install(HKEY hkey_rootnode,
  **************************************/
 	HKEY hkey_instances;
 	DWORD disp;
-	TEXT path_name[MAXPATHLEN];
-
 	SLONG status = RegCreateKeyEx(hkey_rootnode,
 			REG_KEY_ROOT_INSTANCES,
 			0,
@@ -68,6 +67,7 @@ USHORT REGISTRY_install(HKEY hkey_rootnode,
 		return (*err_handler) (status, "RegCreateKeyEx", NULL);
 	}
 
+	TEXT path_name[MAXPATHLEN];
 	TEXT* p;
 	USHORT len = GetFullPathName(directory, sizeof(path_name), path_name, &p);
 	if (len && path_name[len - 1] != '/' && path_name[len - 1] != '\\') {
@@ -76,7 +76,7 @@ USHORT REGISTRY_install(HKEY hkey_rootnode,
 	}
 
 	if ((status = RegSetValueEx(hkey_instances, FB_DEFAULT_INSTANCE, 0,
-			REG_SZ, reinterpret_cast<UCHAR*>(path_name),
+			REG_SZ, reinterpret_cast<const BYTE*>(path_name),
 			(DWORD) (len + 1))) != ERROR_SUCCESS)
 	{
 		(*err_handler) (status, "RegSetValueEx", hkey_instances);
@@ -98,7 +98,8 @@ USHORT REGISTRY_install(HKEY hkey_rootnode,
 }
 
 USHORT REGISTRY_remove(HKEY hkey_rootnode,
-					   bool silent_flag, USHORT(*err_handler)(SLONG, TEXT*, HKEY))
+					   bool silent_flag,
+					   pfnRegError err_handler)
 {
 /**************************************
  *
@@ -177,7 +178,8 @@ static void cleanup_key(HKEY hkey_rootnode, const char* key)
 // I keep it here for possible re-use after FB 1.5 release. OM, sept 30, 2003.
 static USHORT remove_subkeys(
 							 HKEY hkey,
-							 bool silent_flag, USHORT(*err_handler)(SLONG, TEXT*, HKEY))
+							 bool silent_flag,
+							 pfnRegError err_handler)
 {
 /**************************************
  *
@@ -189,7 +191,7 @@ static USHORT remove_subkeys(
  *	Remove all sub-keys of an Firebird key from the registry.
  *
  **************************************/
-	TEXT buffer[MAXPATHLEN], *p;
+	TEXT buffer[MAXPATHLEN];
 	DWORD n_sub_keys, max_sub_key;
 	FILETIME last_write_time;
 
@@ -209,12 +211,13 @@ static USHORT remove_subkeys(
 	TEXT* sub_key = (++max_sub_key > sizeof(buffer)) ?
 		(TEXT*) malloc((SLONG) max_sub_key) : buffer;
 
-	TEXT* p = NULL;
+	const TEXT* p = NULL;
 	for (DWORD i = 0; i < n_sub_keys; i++) {
 		DWORD sub_key_len = max_sub_key;
 		if ((status = RegEnumKeyEx(hkey, i, sub_key, &sub_key_len,
 								   NULL, NULL, NULL,
-								   &last_write_time)) != ERROR_SUCCESS) {
+								   &last_write_time)) != ERROR_SUCCESS)
+		{
 			p = "RegEnumKeyEx";
 			break;
 		}
@@ -250,3 +253,4 @@ static USHORT remove_subkeys(
 	return FB_SUCCESS;
 }
 #endif
+

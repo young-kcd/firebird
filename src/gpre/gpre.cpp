@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.61 2004-05-29 04:52:00 robocop Exp $
+//  $Id: gpre.cpp,v 1.62 2004-06-05 09:36:56 robocop Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -136,7 +136,7 @@ static int warnings_global;
 static int fatals_global;
 
 //static jmp_buf fatal_env;
-static TEXT *comment_start, *comment_stop;
+static const TEXT *comment_start, *comment_stop;
 
 typedef void (*pfn_gen_routine) (const act*, int);
 static pfn_gen_routine gen_routine;
