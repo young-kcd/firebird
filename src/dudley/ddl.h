@@ -639,11 +639,6 @@ EXTERN TEXT *DDL_default_user, *DDL_default_password;
 EXTERN ACT DDL_actions;
 EXTERN DBB database;
 
-#if (defined JPN_EUC || defined JPN_SJIS)
-EXTERN USHORT DDL_interp;
-EXTERN TEXT DDL_tagged_verbs[256];
-#endif
-
 #undef EXTERN
 
 #include "../dudley/ddl_proto.h"

@@ -1632,21 +1632,8 @@ static void put_query_header( STR dyn, TEXT attribute, DUDLEY_NOD node)
 	if (!node)
 		return;
 
-#if (!(defined JPN_SJIS || defined JPN_EUC))
-
 	CHECK_DYN(3);
 	STUFF(attribute);
-
-#else
-
-/* Put tagged version of the dynamic verb */
-
-	CHECK_DYN(5);
-	STUFF((DDL_tagged_verbs[attribute]));
-	STUFF_WORD(DDL_interp);
-
-#endif
-
 
 	offset = dyn->str_current - dyn->str_start;
 	dyn->str_current = dyn->str_current + 2;
@@ -1684,22 +1671,7 @@ static void put_symbol( STR dyn, TEXT attribute, SYM symbol)
 	l = symbol->sym_length;
 
 	CHECK_DYN(l + 5);
-#if (! (defined JPN_SJIS || defined JPN_EUC) )
-
 	STUFF(attribute);
-
-#else
-
-/* If a taggged version of the dynamic verb exists then put the tagged verb */
-
-	if (DDL_tagged_verbs[attribute]) {
-		STUFF((DDL_tagged_verbs[attribute]));
-		STUFF_WORD(DDL_interp);
-	}
-	else
-		STUFF(attribute);
-
-#endif
 	STUFF_WORD(l);
 
 	for (string = symbol->sym_string; *string;)
@@ -1729,22 +1701,7 @@ static void put_text( STR dyn, UCHAR attribute, TXT text)
 		return;
 
 	CHECK_DYN(length + 5);
-#if (! (defined JPN_SJIS || defined JPN_EUC) )
-
 	STUFF(attribute);
-
-#else
-
-/* If a taggged version of the dynamic verb exists then put the tagged verb */
-
-	if (DDL_tagged_verbs[attribute]) {
-		STUFF(DDL_tagged_verbs[attribute]);
-		STUFF_WORD(DDL_interp);
-	}
-	else
-		STUFF(attribute);
-
-#endif
 
 	STUFF_WORD(length);
 	LEX_get_text(dyn->str_current, text);

@@ -184,24 +184,6 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	sw_ods7 = FALSE;
 #endif
 
-#if (defined JPN_EUC || defined JPN_SJIS)
-	DDL_interp = HOST_INTERP;
-
-/* Initialize the array which is used to map untagged versions of
-   ddl verbs into tagged versions. */
-
-	DDL_tagged_verbs[gds__dyn_description] = gds__dyn_description2;
-	DDL_tagged_verbs[gds__dyn_fld_computed_source] =
-		gds__dyn_fld_computed_source2;
-	DDL_tagged_verbs[gds__dyn_fld_edit_string] = gds__dyn_fld_edit_string2;
-	DDL_tagged_verbs[gds__dyn_fld_query_header] = gds__dyn_fld_query_header2;
-	DDL_tagged_verbs[gds__dyn_fld_validation_source] =
-		gds__dyn_fld_validation_source2;
-	DDL_tagged_verbs[gds__dyn_trg_msg] = gds__dyn_trg_msg2;
-	DDL_tagged_verbs[gds__dyn_trg_source] = gds__dyn_trg_source2;
-	DDL_tagged_verbs[gds__dyn_view_source] = gds__dyn_view_source2;
-#endif
-
 	file_name_1[0] = file_name_2[0] = 0;
 
 	for (--argc; argc; argc--) {

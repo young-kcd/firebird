@@ -293,59 +293,6 @@ static void decompile_blr_literal(SCHAR * string)
 		*b = 0;
 		break;
 
-#if (defined JPN_SJIS || defined JPN_EUC)
-	case (blr_text2):
-		{
-			USHORT len;
-
-			/* Convert strings to local encoding */
-
-			scale = gds__vax_integer((UCHAR*) p, 2);
-			p += 2;
-			size = gds__vax_integer((UCHAR*) p, 2);
-			p += 2;
-			*b++ = '"';
-
-			if (DDL_interp == scale) {
-				while (size--)
-					*b++ = *p++;
-			}
-
-			else if (DDL_interp == gds__interp_jpn_euc &&
-					 scale == gds__interp_jpn_sjis) {
-				if (KANJI_sjis2euc(p, size, b, 253, &len)) {
-					put_comment(250);
-					/* msg 250: **** unable to decompile missing value *** */
-					return;
-				}
-				b += len;
-				p += size;
-			}
-
-			else if (DDL_interp == gds__interp_jpn_sjis &&
-					 scale == gds__interp_jpn_euc) {
-				if (KANJI_euc2sjis(p, size, b, 253, &len)) {
-					put_comment(250);
-					/* msg 250: **** unable to decompile missing value *** */
-					return;
-				}
-				b += len;
-				p += size;
-			}
-
-			else {
-				put_comment(250);
-				/* msg 250: **** unable to decompile missing value *** */
-				return;
-			}
-
-
-			*b++ = '"';
-			*b = 0;
-			break;
-		}
-#endif
-
 	case (blr_long):
 		scale = *p++;
 		value = gds__vax_integer((UCHAR*) p, 4);
@@ -1859,18 +1806,6 @@ static void print_blob(SLONG * blob_id, TEXT type)
 	blob = NULL;
 	bpb = r = bpb_buffer;
 
-#if (defined JPN_EUC || defined JPN_SJIS)
-	if ((type == 'u') || (type == 'h')) {
-		/* create bpb for description blob and query header blob */
-
-		*r++ = gds__bpb_version1;
-		*r++ = gds__bpb_target_interp;
-		*r++ = 2;
-		*r++ = DDL_interp;
-		*r++ = DDL_interp >> 8;
-	}
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
-
 	if (gds__open_blob2(status_vector,
 						GDS_REF(DB),
 						GDS_REF(gds_trans),
@@ -2117,11 +2052,7 @@ static void type_scalar(USHORT dtype,
 	}
 
 	if (scale)
-#if (defined JPN_SJIS || defined JPN_EUC)
-
-		if (dtype != blr_text && dtype != blr_cstring && dtype != blr_varying)
-#endif
-			ib_fprintf(output_file, " scale %d", scale);
+		ib_fprintf(output_file, " scale %d", scale);
 
 	if (subtype
 		&& (dtype == blr_text || dtype == blr_varying

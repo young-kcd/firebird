@@ -25,9 +25,6 @@
 #include "../dudley/ddl.h"
 #include "../dudley/parse.h"
 
-#if (defined JPN_SJIS || defined JPN_EUC)
-#include "../intl/kanji.h"
-#endif
 #include "../dudley/ddl_proto.h"
 #include "../dudley/hsh_proto.h"
 
@@ -472,22 +469,8 @@ static BOOLEAN scompare(
 		return FALSE;
 
 	while (length1--)
-#ifdef JPN_SJIS
-	{
-#endif
 		if ((c1 = *string1++) != (c2 = *string2++) && UPPER(c1) != UPPER(c2))
 			return FALSE;
-#ifdef JPN_SJIS
-
-		/* Do not upcase second byte of a sjis kanji character */
-
-		if (KANJI1(c1) && length1 > 1) {
-			if ((c1 = *string1++) != (c2 = *string2++))
-				return FALSE;
-			length1--;
-		}
-	}
-#endif
 
 	return TRUE;
 }

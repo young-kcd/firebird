@@ -4143,19 +4143,7 @@ static void store_query_header( DUDLEY_NOD node, SLONG * blob_id)
 	USHORT bpb_length;
 	UCHAR bpb[20];
 
-#if (defined JPN_EUC || defined JPN_SJIS)
-/* always create bpb since query header is a text blob */
-
-	UCHAR* p = bpb;
-	*p++ = gds__bpb_version1;
-	*p++ = gds__bpb_source_interp;
-	*p++ = 2;
-	*p++ = DDL_interp;
-	*p++ = DDL_interp >> 8;
-	bpb_length = p - bpb;
-#else
 	bpb_length = 0;
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
 
 	blob = create_blob(blob_id, bpb_length, bpb);
 
@@ -4227,19 +4215,7 @@ static void store_text( TXT text, SLONG * blob_id)
 	USHORT bpb_length;
 	UCHAR bpb[20];
 
-#if (defined JPN_EUC || defined JPN_SJIS)
-/* create bpb for text blob */
-
-	UCHAR* p = bpb;
-	*p++ = gds__bpb_version1;
-	*p++ = gds__bpb_source_interp;
-	*p++ = 2;
-	*p++ = DDL_interp;
-	*p++ = DDL_interp >> 8;
-	bpb_length = p - bpb;
-#else
 	bpb_length = 0;
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
 
 	blob = create_blob(blob_id, bpb_length, bpb);
 	LEX_put_text(blob, text);

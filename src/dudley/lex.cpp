@@ -237,7 +237,9 @@ void LEX_init( void *file)
  *	scratch trace file to keep all input.
  *
  **************************************/
+#ifdef __BORLANDC__
 	TEXT *p;
+#endif
 
 #if !(defined WIN_NT)
 	trace_file = (IB_FILE *) gds__temp_file(TRUE, SCRATCH, 0);
@@ -355,11 +357,7 @@ TOK LEX_token(void)
 
 /* On end of file, generate furious but phony end of line tokens */
 
-#if (defined JPN_SJIS || defined JPN_EUC)
-	class_ = (JPN1_CHAR(c) ? CHR_LETTER : classes[c]);
-#else
 	class_ = classes[c];
-#endif
 
 	if (DDL_eof) {
 		p = token->tok_string;
@@ -376,39 +374,8 @@ TOK LEX_token(void)
 		return NULL;
 	}
 	else if (class_ & CHR_letter) {
-#if (! ( defined JPN_EUC || defined JPN_SJIS) )
 		while (classes[c = nextchar()] & CHR_ident)
 			*p++ = c;
-#else
-
-		p--;
-		while (1) {
-			if (KANJI1(c)) {
-				/* If it is a double byte kanji either EUC or SJIS
-				   then handle both the bytes together */
-
-				*p++ = c;
-				c = nextchar(TRUE);
-				if (!KANJI2(c)) {
-					c = *(--p);
-					break;
-				}
-				else
-					*p++ = c;
-			}
-			else {
-#ifdef JPN_SJIS
-				if ((SJIS_SINGLE(c)) || (classes[c] & CHR_ident))
-#else
-				if (classes[c] & CHR_ident)
-#endif
-					*p++ = c;
-				else
-					break;
-			}
-			c = nextchar(TRUE);
-		}
-#endif /* JPN_SJIS || JPN_EUC */
 
 		retchar(c);
 		token->tok_type = tok_ident;
@@ -572,9 +539,6 @@ static int skip_white(void)
 	SSHORT c, next, class_;
 
 	while ((c = nextchar()) != EOF) {
-#if (defined JPN_SJIS || defined JPN_EUC)
-		c = c & 0xff;
-#endif
 
 		class_ = classes[c];
 		if (class_ & CHR_white)

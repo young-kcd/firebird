@@ -56,12 +56,6 @@ int GENERATE_acl( SCL class_, UCHAR * buffer)
 	SCE item;
 	USHORT i;
 
-#if (defined JPN_SJIS || defined JPN_EUC)
-
-/* This does not need Japanization because Kanji User names are not supported */
-
-#endif
-
 	p = buffer;
 	*p++ = ACL_version;
 
@@ -241,16 +235,8 @@ static void generate( STR blr, DUDLEY_NOD node)
 		l = constant->con_desc.dsc_length;
 		switch (constant->con_desc.dsc_dtype) {
 		case dtype_text:
-#if (!(defined JPN_SJIS || defined JPN_EUC))
-
 			STUFF(blr_text);
-
-#else
-
-			STUFF(blr_text2);
-			STUFF_WORD(DDL_interp)
-#endif
-				STUFF_WORD(l);
+			STUFF_WORD(l);
 			break;
 
 		case dtype_short:

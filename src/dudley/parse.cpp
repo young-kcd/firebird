@@ -477,15 +477,6 @@ SYM PARSE_symbol(enum tok_t type)
 			do {
 				c = *q++;
 				*p++ = UPPER(c);
-#ifdef JPN_SJIS
-				/* Do not uppercase the second byte of a SJIS character */
-
-				if (KANJI1(c) && l > 1) {
-					*p++ = *q++;
-					l--;
-				}
-
-#endif
 			}
 			while (--l);
 		else
