@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.22 2003-02-13 22:49:16 brodsom Exp $
+$Id: btr.cpp,v 1.23 2003-02-20 00:24:33 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -79,7 +79,7 @@ extern double	MTH$CVT_G_D();
 
 #define MAX_LEVELS	16
 
-void MOVE_BYTE(UCHAR*& x_from, UCHAR*& x_to)
+inline void MOVE_BYTE(const UCHAR*& x_from, UCHAR*& x_to)
 {
 	*x_to++ = *x_from++;
 }
@@ -177,36 +177,54 @@ static INT64_KEY make_int64_key(SINT64, SSHORT);
 static void print_int64_key(SINT64, SSHORT, INT64_KEY);
 #endif
 static void quad_put(SLONG, SCHAR *);
-static void quad_move(UCHAR *, UCHAR *);
+static void quad_move(const UCHAR*, UCHAR*);
 static CONTENTS remove_node(TDBB, IIB *, WIN *);
 static CONTENTS remove_leaf_node(TDBB, IIB *, WIN *);
 static BOOLEAN scan(TDBB, BTN, SBM *, UCHAR, KEY *, USHORT);
 
 
-
-//
-// TMN: Ease C -> C++ conversion. This MUST be outside the extern "C"
-// block, since it uses function overloading.
-//
-
 }                             // extern "C"
 
-SLONG BTR_get_quad(UCHAR * p)
+
+//
+// TMN: Ease C -> C++ conversion. These functions must be outside the
+// extern "C" block since it uses function overloading.
+//
+inline SLONG BTR_get_quad(const UCHAR* p)
 {
-	return BTR_get_quad(reinterpret_cast < char *>(p));
+#if defined(i386) || defined(I386) || defined(_M_IX86)
+	// For IA32 (little-endian) this optimization is a _very_ large speed-up!
+	return *reinterpret_cast<const SLONG*>(p);
+#else
+	// Non-IA32
+
+	// Copied from BTR_get_quad(const SCHAR*);
+	LONGCHAR value;
+
+	value.c[0] = p[0];
+	value.c[1] = p[1];
+	value.c[2] = p[2];
+	value.c[3] = p[3];
+
+	return value.n;
+
+#endif	// endianness
 }
 
-void quad_put(SLONG value, UCHAR * data)
+inline void quad_put(SLONG value, UCHAR * data)
 {
-	quad_put(value, reinterpret_cast < SCHAR * >(data));
+	quad_put(value, reinterpret_cast<SCHAR*>(data));
 }
 
 
 extern "C" {
-USHORT BTR_all(TDBB tdbb,
+
+USHORT BTR_all(TDBB    tdbb,
 			   JRD_REL relation,
-			   IDX ** start_buffer,
-			   IDX ** csb_idx, STR * csb_idx_allocation, SLONG * idx_size)
+			   IDX**   start_buffer,
+			   IDX**   csb_idx,
+			   STR*    csb_idx_allocation,
+			   SLONG*  idx_size)
 {
 /**************************************
  *
@@ -750,7 +768,7 @@ BTR BTR_find_page(TDBB tdbb,
 }
 
 
-SLONG BTR_get_quad(SCHAR * data)
+SLONG BTR_get_quad(const SCHAR* data)
 {
 /**************************************
  *
@@ -4123,7 +4141,9 @@ static void print_int64_key(SINT64 value, SSHORT scale, INT64_KEY key)
 	return;
 }
 #endif /* DEBUG_INDEXKEY */
-static void quad_put(SLONG value, SCHAR * data)
+
+
+static void quad_put(SLONG value, SCHAR* data)
 {
 /**************************************
  *
@@ -4135,16 +4155,17 @@ static void quad_put(SLONG value, SCHAR * data)
  *	Move SLONG to a four byte vector.
  *
  **************************************/
-	SCHAR *p;
 
-	p = (SCHAR *) & value;
+	const SCHAR* p = (SCHAR*) &value;
 
 	data[0] = p[0];
 	data[1] = p[1];
 	data[2] = p[2];
 	data[3] = p[3];
 }
-static void quad_move(UCHAR * a, UCHAR * b)
+
+
+static void quad_move(const UCHAR* a, UCHAR* b)
 {
 /**************************************
  *
@@ -4162,6 +4183,8 @@ static void quad_move(UCHAR * a, UCHAR * b)
 	MOVE_BYTE(a, b);
 	MOVE_BYTE(a, b);
 }
+
+
 static CONTENTS remove_node(TDBB tdbb, IIB * insertion, WIN * window)
 {
 /**************************************
