@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin,v 1.11 2003-09-08 20:23:31 skidder Exp $
+#$Id: prefix.darwin,v 1.12 2004-02-13 10:14:39 stryqx Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 OS_ServerFiles=inet_server.cpp
@@ -26,6 +26,6 @@ LIB_LINK_OPTIONS:=-shared
 LIB_LINK_RPATH:=-Wl,-rpath,
 LIB_LINK_SONAME:=-Wl,-soname,
 EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec nbackup fb_lock_print
-CLIENT_UTIL_TARGETS=gds_drop gds_delay gstat gsec fbguard fbmgr_bin nbackup fb_lock_print
+CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec fbguard fbmgr_bin nbackup fb_lock_print
 
 Physical_IO_Module=os/posix/unix.cpp
