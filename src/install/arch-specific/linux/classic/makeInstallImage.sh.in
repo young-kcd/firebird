@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.8 2003-03-20 11:11:51 aafemt Exp $
+#   $Id: makeInstallImage.sh.in,v 1.9 2003-04-03 21:41:07 skidder Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -136,7 +136,7 @@ copyFiles() {
     fi
 
     copyIfExists $BuiltFBDir/help/help.gbak $DestDir/help 
-    cp $BuiltFBDir/help/help.gdb $DestDir/help 
+    cp $BuiltFBDir/help/help.fdb $DestDir/help 
 
     #cp -r $BuildSrcDir/doc $DestDir 
     #cp -r $BuiltFBDir/doc $DestDir 

@@ -263,7 +263,7 @@ fixFilePermissions() {
     chmod ug=rw,o= interbase.log
 
     chmod a=r interbase.msg
-    chmod ug=rw,o= help/help.gdb
+    chmod ug=rw,o= help/help.fdb
     chmod ug=rw,o= security.fdb
 
 
