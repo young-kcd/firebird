@@ -382,6 +382,7 @@ static void		get_options(UCHAR *, USHORT, TEXT **, ULONG, DPB *);
 static SLONG	get_parameter(UCHAR**);
 static TEXT*	get_string_parameter(UCHAR **, TEXT **, ULONG *);
 static STATUS	handle_error(STATUS*, STATUS, TDBB);
+static bool		verify_database_name(TEXT *, STATUS *);
 
 #if defined (WIN_NT)
 #ifdef SERVER_SHUTDOWN
@@ -602,11 +603,11 @@ extern "C" {
 
 STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 									  SSHORT	file_length,
-									  SCHAR*	file_name,
+									  TEXT*		file_name,
 									  ATT*		handle,
 									  SSHORT	dpb_length,
-									  SCHAR*	dpb,
-									  SCHAR*	expanded_filename)
+									  UCHAR*	dpb,
+									  TEXT*		expanded_filename)
 {
 /**************************************
  *
@@ -673,6 +674,9 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 	SSHORT length_expanded = strlen(expanded_filename);
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
+	if (!verify_database_name(file_name, user_status)) {
+		return user_status[1];
+	}
 
 /* Unless we're already attached, do some initialization */
 
@@ -727,7 +731,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 
 /* Process database parameter block */
 
-	get_options((UCHAR *) dpb, dpb_length, &opt_ptr, DPB_EXPAND_BUFFER, &options);
+	get_options(dpb, dpb_length, &opt_ptr, DPB_EXPAND_BUFFER, &options);
 
 #ifndef NO_NFS
 /* Don't check nfs if single user */
@@ -753,7 +757,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 						 gds_arg_string, "encryption",
 						 gds_arg_string, "database",
 						 gds_arg_string, 
-                         ERR_string(reinterpret_cast<char*>(file_name), fl), 
+                         ERR_string(file_name, fl), 
                          0);
 		}
 		else if (options.dpb_key)
@@ -881,7 +885,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
     if (options.dpb_disable_wal) {
 		ERR_post(gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
 				 gds_arg_string, 
-                 ERR_string(reinterpret_cast<char*>(file_name), fl), 
+                 ERR_string(file_name, fl), 
                  0);
 	}
 
@@ -1078,7 +1082,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 						 gds_arg_string, "shutdown or online",
 						 gds_arg_string, "database",
 						 gds_arg_string, 
-                         ERR_string(reinterpret_cast < char *>(file_name), fl), 
+                         ERR_string(file_name, fl), 
                          0);
 		}
 		JRD_SS_MUTEX_LOCK;
@@ -1105,7 +1109,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 #endif
 		if (attachment->att_flags & ATT_shutdown)
 			ERR_post(gds_shutdown, gds_arg_string, 
-                     ERR_string(reinterpret_cast < char *>(file_name), fl),
+                     ERR_string(file_name, fl),
 					 0);
 	}
 #endif
@@ -1115,7 +1119,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 	if (dbb->dbb_ast_flags & (DBB_shut_attach | DBB_shut_tran))
 	{
 		ERR_post(gds_shutinprog, gds_arg_string, 
-                 ERR_string(reinterpret_cast < char *>(file_name), fl),
+                 ERR_string(file_name, fl),
 				 0);
 	}
 
@@ -1123,7 +1127,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 		!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner)))
 	{
 		ERR_post(gds_shutdown, gds_arg_string, 
-                 ERR_string(reinterpret_cast < char *>(file_name), fl), 
+                 ERR_string(file_name, fl), 
                  0);
 	}
 
@@ -1203,7 +1207,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 		if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD)) {
 			ERR_post(gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
 					 gds_arg_string, 
-                     ERR_string(reinterpret_cast < char *>(file_name), fl), 0);
+                     ERR_string(file_name, fl), 0);
 		}
 
 		/* journal has to be disabled before dropping WAL */
@@ -1248,7 +1252,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 			if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD))
 				ERR_post(gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
 						 gds_arg_string, 
-                         ERR_string(reinterpret_cast < char *>(file_name), fl),
+                         ERR_string(file_name, fl),
                          0);
 			LOG_enable(options.dpb_log, strlen(options.dpb_log));
 		}
@@ -1284,7 +1288,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 		if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD)) {
 			ERR_post(gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
 					 gds_arg_string,
-					 ERR_string(reinterpret_cast < char *>(file_name), fl), 
+					 ERR_string(file_name, fl), 
 					 0); 
 		}
 		PAG_set_db_readonly(dbb, options.dpb_db_readonly);
@@ -1784,12 +1788,12 @@ STATUS DLL_EXPORT GDS_CREATE_BLOB2(STATUS * user_status,
 
 STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 									  USHORT	file_length,
-									  UCHAR*	file_name,
+									  TEXT*		file_name,
 									  ATT*		handle,
 									  USHORT	dpb_length,
 									  UCHAR*	dpb,
 									  USHORT	db_type,
-									  UCHAR*	expanded_filename)
+									  TEXT*		expanded_filename)
 {
 /**************************************
  *
@@ -1820,8 +1824,7 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 /* Get length of database file name, if not already known */
 
 	length =
-		(file_length) ? file_length : strlen(reinterpret_cast <
-											 char *>(file_name));
+		file_length ? file_length : strlen(file_name);
 	MOVE_FAST(file_name, expanded_name, length);
 	expanded_name[length] = 0;
 
@@ -1863,7 +1866,7 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 
 	opt_ptr = opt_buffer;
 
-	get_options((UCHAR *)dpb, dpb_length, &opt_ptr, DPB_EXPAND_BUFFER, &options);
+	get_options(dpb, dpb_length, &opt_ptr, DPB_EXPAND_BUFFER, &options);
 	if (invalid_client_SQL_dialect == FALSE && options.dpb_sql_dialect == 99)
 		options.dpb_sql_dialect = 0;
 
@@ -1877,9 +1880,9 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 		/* Check to see if the database is truly local or if it just looks
 		   that way */
 
-		if (ISC_check_if_remote
-			(reinterpret_cast < char *>(expanded_filename),
-			 TRUE)) ERR_post(gds_unavailable, 0);
+		if (ISC_check_if_remote (expanded_filename, TRUE)) {
+			ERR_post(gds_unavailable, 0);
+		}
 	}
 
 	if (options.dpb_key)
@@ -1985,8 +1988,11 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 	V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 #endif
 	length =
-		PIO_expand(reinterpret_cast < char *>(file_name), length,
+		PIO_expand(file_name, length,
 				   expanded_name);
+	if (!verify_database_name(file_name, user_status)) {
+		return user_status[1];
+	}
 	dbb->dbb_file =
 		PIO_create(dbb, expanded_name, length, options.dpb_overwrite);
 	first_dbb_file = dbb->dbb_file;
@@ -2024,8 +2030,7 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 					 gds_arg_string, "shutdown or online",
 					 gds_arg_string, "database",
 					 gds_arg_string,
-					 ERR_string(reinterpret_cast < char *>(file_name),
-								length), 0);
+					 ERR_string(file_name, length), 0);
 		}
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
 		V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
@@ -2058,7 +2063,7 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
         if (!CCH_exclusive (tdbb, LCK_EX, WAIT_PERIOD))
             ERR_post (gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
                       gds_arg_string, 
-                      ERR_string (reinterpret_cast < char *>(file_name), length), 
+                      ERR_string (file_name, length), 
                       0);
         
         PAG_set_db_readonly (dbb, options.dpb_db_readonly);
@@ -6608,6 +6613,44 @@ static void purge_attachment(TDBB		tdbb,
 			shutdown_database(dbb, TRUE);
 		}
 	}
+}
+
+/**
+  
+ 	verify_database_name
+  
+    @brief	Verify database name for open/create 
+	against given in conf file list of available directories
+
+    @param name
+    @param status
+
+ **/
+static bool verify_database_name(TEXT *name, STATUS *status)
+{
+	// Check for security.fdb
+	static TEXT SecurityNameBuffer[MAXPATHLEN] = "";
+	if (! SecurityNameBuffer[0]) {
+//		char TempBuffer[MAXPATHLEN];
+		SecurityDatabase::getPath(SecurityNameBuffer);
+//		ISC_expand_filename(TempBuffer, 0, SecurityNameBuffer);
+	}
+	if (strcmp(SecurityNameBuffer, name) == 0)
+		return true;
+	
+	// Check for .conf
+	if (!ISC_verify_databases_dirs(name)) {
+		static TEXT *tempdiag = "DatabasesDirs - access denied";
+		status[0] = gds_arg_gds;
+		status[1] = gds_io_error;
+		status[2] = gds_arg_string;
+		status[3] = reinterpret_cast <long> (tempdiag);
+		status[4] = gds_arg_string;
+		status[5] = reinterpret_cast <long> (tempdiag);
+		status[6] = gds_arg_end;
+		return false;
+	}
+	return true;
 }
 
 } // extern "C"
