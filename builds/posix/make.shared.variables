@@ -108,7 +108,6 @@ INTERFACE_Files=	$(REMOTE_ClientFiles)
 INTERFACE_Sources = $(addprefix remote/, $(INTERFACE_Files))
 INTERFACE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(INTERFACE_Sources))))
 
-
 #________________________________________________________________________
 #
 # intl
@@ -201,7 +200,7 @@ FBUTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBUTIL_Source
 #
 # common/classes
 
-FBCLASSES_ClientFiles=alloc.cpp
+FBCLASSES_ClientFiles=alloc.cpp locks.cpp
 FBCLASSES_ServerFiles=
 
 FBCLASSES_Files= $(FBCLASSES_ClientFiles) $(FBCLASSES_ServerFiles)
@@ -249,7 +248,7 @@ OS_SPECIFIC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(OS_SPECI
 #
 
 # These are the lists of object/shared object files that will go into libgds.a
-# and libgds.so.
+# and libgds.$(SHRLIB_EXT).
 
 LIBFBEMBED_Objects =$(OS_SPECIFIC_Objects) \
                 $(JRD_Objects) \

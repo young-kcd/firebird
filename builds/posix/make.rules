@@ -26,7 +26,7 @@
 #   Contributor(s):
 #
 #
-#   $Id: make.rules,v 1.12 2003-02-28 05:22:09 aafemt Exp $
+#   $Id: make.rules,v 1.13 2003-03-05 15:51:44 brodsom Exp $
 #
 
 #____________________________________________________________________________
@@ -139,8 +139,8 @@ else
 
     LIB_LINK= @CC@
     STATICLIB_LINK= ar cruvs
-#    LIB_LINK_OPTIONS = -soname libgds.so -rpath /usr/lib
-#    LIB_LINK_OPTIONS = -soname libgds.so.2 -rpath /usr/lib
+#    LIB_LINK_OPTIONS = -soname libgds.$(SHRLIB_EXT) -rpath /usr/lib
+#    LIB_LINK_OPTIONS = -soname libgds.$(SHRLIB_EXT).2 -rpath /usr/lib
 #    LIB_LINK_OPTIONS :=  $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib
 
 #    EXE_LINK = g++
