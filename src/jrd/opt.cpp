@@ -1644,7 +1644,7 @@ static void check_sorts(RecordSelExpr* rse)
 		for (; sort_ptr < sort_end; sort_ptr++) {
 			if ((*sort_ptr)->nod_type == nod_field) {
 				// Get stream for this field at this position.
-				UCHAR current_stream = (UCHAR)(*sort_ptr)->nod_arg[e_fld_stream];
+				const UCHAR current_stream = (UCHAR)(*sort_ptr)->nod_arg[e_fld_stream];
 				// If this is the first position node, save this stream.
 				if (sort_ptr == sort->nod_arg) {
 			    	sort_stream = current_stream;
@@ -3687,10 +3687,6 @@ static void form_rivers(thread_db*		tdbb,
 			   (tdbb, opt, count, streams, temp, river_stack, sort_clause,
 				project_clause, 0));
 	}
-
-
-
-
 }
 
 
@@ -4742,7 +4738,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	bool full_unique_match = false;
 
 	Database* dbb = tdbb->tdbb_database;
-	bool ods11orHigher = (dbb->dbb_ods_version >= ODS_VERSION11);
+	const bool ods11orHigher = (dbb->dbb_ods_version >= ODS_VERSION11);
 	if (ods11orHigher) {
 		// For ODS11 and higher databases we can use new calculations
 
@@ -5054,7 +5050,6 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 			}				
 		}
 	}
-
 
 	if (full) {
 		return gen_rsb(tdbb, opt, rsb, inversion, stream, relation, alias,

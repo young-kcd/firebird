@@ -4368,7 +4368,7 @@ static bool pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 	DEV_BLKCHK(node, type_nod);
 
 	// if updateable views with triggers are involved, there
-	// maybe a recursive call to be ignored
+	// may be a recursive call to be ignored
 
 	if (node->nod_arg[e_sto_sub_store])
 		return false;
