@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.35 2004-08-27 08:34:41 robocop Exp $
+ * $Id: isql.h,v 1.36 2004-09-22 01:55:37 robocop Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -240,6 +240,9 @@ const int VARCHAR		= 37;
 const int CSTRING		= 40;
 const int BLOB_ID		= 45;
 const int BLOB			= 261;
+//const int SQL_DATE      = 12;
+//const int SQL_TIME      = 13;
+const int BIGINT        = 16;
 
 static const sqltypes Column_types[] = {
 	{SMALLINT, "SMALLINT"},		// NTX: keyword
@@ -255,7 +258,7 @@ static const sqltypes Column_types[] = {
 	{blr_sql_time, "TIME"},		// NTX: keyword
 	{blr_sql_date, "DATE"},		// NTX: keyword
 	{blr_timestamp, "TIMESTAMP"},	// NTX: keyword
-	{blr_int64, "BIGINT"},		// NTX: keyword
+	{BIGINT, "BIGINT"},		// keyword
 	{0, ""}
 };
 
@@ -295,9 +298,9 @@ BY REFERENCE_WITH_NULL his supported in FB2 to be able to signal SQL NULL
 in input parameters.
 The names mentioned here are documented in jrd/types.h. */
 
-const int MAX_UDFPARAM_TYPES = 4;
+const int MAX_UDFPARAM_TYPES = 6;
 
-static const SCHAR* UDF_param_types[] = {
+static const char* UDF_param_types[] = {
 	" BY VALUE",			// NTX: keyword
 	"",						// BY REFERENCE
 	" BY DESCRIPTOR",		// keyword in FB, internally VMS descriptor
@@ -314,7 +317,7 @@ struct IsqlGlobals {
 	SCHAR global_Target_db[128];
 	SCHAR global_Term[MAXTERM_LENGTH];
 	SCHAR User[128];
-	SCHAR Role[128];
+	SCHAR Role[256];
 	USHORT SQL_dialect;
 	USHORT db_SQL_dialect;
 	// from isql.epp

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.40 2004-07-21 10:34:27 brodsom Exp $
+ * $Id: extract.epp,v 1.41 2004-09-22 01:55:37 robocop Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -433,7 +433,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 						// Handle Integral subtypes NUMERIC and DECIMAL 
 						if ((FLD.RDB$FIELD_TYPE == SMALLINT) ||
 							(FLD.RDB$FIELD_TYPE == INTEGER)  ||
-							(FLD.RDB$FIELD_TYPE == blr_int64))
+							(FLD.RDB$FIELD_TYPE == BIGINT))
 						{
 							FOR FLD1 IN RDB$FIELDS WITH
 								FLD1.RDB$FIELD_NAME EQ FLD.RDB$FIELD_NAME
@@ -765,7 +765,7 @@ static void get_procedure_args(char* proc_name)
 							// Handle Integral subtypes NUMERIC and DECIMAL 
 							if ((FLD.RDB$FIELD_TYPE == SMALLINT) ||
 								(FLD.RDB$FIELD_TYPE == INTEGER) ||
-								(FLD.RDB$FIELD_TYPE == blr_int64))
+								(FLD.RDB$FIELD_TYPE == BIGINT))
 							{
 								/* We are ODS >= 10 and could be any Dialect */
 
@@ -1444,7 +1444,10 @@ static void list_create_db()
 
 	// Get the page size from db_info call 
 	SCHAR info_buf[20];
-	const bool translate = false; // ???
+	// CVC: Finally I got the idea: translate is associated with WISQL that
+	// no longer exists. Localizing the messages means also not printing
+	// any CRLF and therefore the output looks ugly.
+	const bool translate = true;
 	if (!SHOW_dbb_parameters(DB, info_buf, page_items, sizeof(page_items),
 						translate))
 	{
@@ -1800,7 +1803,7 @@ static void list_domain_table(const SCHAR* table_name,
 					// Handle Integral subtypes NUMERIC and DECIMAL 
 					if ((FLD.RDB$FIELD_TYPE == SMALLINT) ||
 						(FLD.RDB$FIELD_TYPE == INTEGER) ||
-						(FLD.RDB$FIELD_TYPE == blr_int64))
+						(FLD.RDB$FIELD_TYPE == BIGINT))
 					{
 						/* We are ODS >= 10 and could be any Dialect */
 
@@ -1993,7 +1996,7 @@ static void list_domains(SSHORT default_char_set_id)
 					// Handle Integral subtypes NUMERIC and DECIMAL 
 					if ((FLD.RDB$FIELD_TYPE == SMALLINT) ||
 						(FLD.RDB$FIELD_TYPE == INTEGER) ||
-						(FLD.RDB$FIELD_TYPE == blr_int64))
+						(FLD.RDB$FIELD_TYPE == BIGINT))
 					{
 						/* We are ODS >= 10 and could be any Dialect */
 						FOR FLD1 IN RDB$FIELDS WITH
@@ -2482,7 +2485,7 @@ static void list_functions()
 				if ( (isqlGlob.major_ods >= ODS_VERSION10) &&
 					((FNA.RDB$FIELD_TYPE == SMALLINT) ||
 					(FNA.RDB$FIELD_TYPE == INTEGER) ||
-					(FNA.RDB$FIELD_TYPE == blr_int64)))
+					(FNA.RDB$FIELD_TYPE == BIGINT)))
 				{
 					FOR FNA1 IN RDB$FUNCTION_ARGUMENTS WITH
 						FNA1.RDB$FUNCTION_NAME EQ FNA.RDB$FUNCTION_NAME AND
@@ -2549,9 +2552,9 @@ static void list_functions()
 			 CVC: Finally enhanced the UDF metadata extraction.
 			*/
 
-			ptype = (SSHORT) abs (FNA.RDB$MECHANISM);
-			if (ptype > MAX_UDFPARAM_TYPES + 1 || ptype < 0)
-				ptype = MAX_UDFPARAM_TYPES + 1;
+			ptype = (SSHORT) abs(FNA.RDB$MECHANISM);
+			if (ptype > MAX_UDFPARAM_TYPES)
+				ptype = MAX_UDFPARAM_TYPES;
 
 			printarg = true;
 

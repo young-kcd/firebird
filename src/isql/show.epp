@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.55 2004-08-31 06:26:27 robocop Exp $
+ * $Id: show.epp,v 1.56 2004-09-22 01:55:37 robocop Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -276,6 +276,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
  * This is not the best solution but it fixes the lack of <LF> characters
  * in Windows ISQL.  This will need to remain until we modify the messages
  * to remove the '\n' (on the PC its '\n\r').
+ * CVC: WISQL is dead. I've restored the the missing newlines for isql.
  */
 		switch (item) {
 		case isc_info_end:
@@ -291,7 +292,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 			if (translate) {
 				ISQL_msg_get(NUMBER_PAGES, msg, (TEXT*) (IPTR)value_out, NULL,
 							 NULL, NULL, NULL);
-				sprintf(info, msg);
+				sprintf(info, "%s%s", msg, NEWLINE);
 			}
 			else
 				sprintf(info, "Number of DB pages allocated = %ld %s",
@@ -303,7 +304,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 			if (translate) {
 				ISQL_msg_get(SWEEP_INTERV, msg, (TEXT*)(IPTR) value_out, NULL,
 							 NULL, NULL, NULL);
-				sprintf(info, msg);
+				sprintf(info, "%s%s", msg, NEWLINE);
 			}
 			else
 				sprintf(info, "Sweep interval = %ld %s", value_out, NEWLINE);
@@ -399,7 +400,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 			if (translate) {
 				ISQL_msg_get(BASE_LEVEL, msg, (TEXT*)(IPTR)value_out, NULL, NULL,
 							 NULL, NULL);
-				sprintf(info, msg);
+				sprintf(info, "%s%s", msg, NEWLINE);
 			}
 			else
 				sprintf(info, "Base level = %ld %s", value_out, NEWLINE);
@@ -410,7 +411,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 			if (translate) {
 				ISQL_msg_get(LIMBO, msg, (TEXT*)(IPTR)value_out, NULL, NULL, NULL,
 							 NULL);
-				sprintf(info, msg);
+				sprintf(info, "%s%s", msg, NEWLINE);
 			}
 			else
 				sprintf(info, "Transaction in limbo = %ld %s",
@@ -1913,7 +1914,7 @@ static processing_state show_domains(const SCHAR* domain_name)
 						// Handle Integral subtypes NUMERIC and DECIMAL
 						if ((FLD.RDB$FIELD_TYPE == SMALLINT) ||
 							(FLD.RDB$FIELD_TYPE == INTEGER) ||
-							(FLD.RDB$FIELD_TYPE == blr_int64))
+							(FLD.RDB$FIELD_TYPE == BIGINT))
 						{
 							FOR FLD1 IN RDB$FIELDS WITH
 								FLD1.RDB$FIELD_NAME EQ domain_name;
@@ -2269,15 +2270,15 @@ static processing_state show_functions(const SCHAR* object)
 		}
 
 		SSHORT ptype = (SSHORT) abs (FNA.RDB$MECHANISM);
-		if (ptype > MAX_UDFPARAM_TYPES + 1 || ptype < 0) {
-			ptype = MAX_UDFPARAM_TYPES + 1;
+		if (ptype > MAX_UDFPARAM_TYPES) {
+			ptype = MAX_UDFPARAM_TYPES;
 		}
 
 		first = false;
 		if (FUN.RDB$RETURN_ARGUMENT == FNA.RDB$ARGUMENT_POSITION) {
-			sprintf (Print_buffer, "Returns %s%s ",
+			sprintf (Print_buffer, "Returns %s%s",
 					 UDF_param_types[ptype],
-					 (FNA.RDB$MECHANISM < 0 ? "FREE_IT " : ""));
+					 (FNA.RDB$MECHANISM < 0 ? " FREE_IT " : " "));
 			ISQL_printf (isqlGlob.Out, Print_buffer);
 		}
 		else {
@@ -2295,7 +2296,7 @@ static processing_state show_functions(const SCHAR* object)
 				if ( (isqlGlob.major_ods >= ODS_VERSION10) &&
 					 ((FNA.RDB$FIELD_TYPE == SMALLINT) ||
 					  (FNA.RDB$FIELD_TYPE == INTEGER) ||
-					  (FNA.RDB$FIELD_TYPE == blr_int64)) )
+					  (FNA.RDB$FIELD_TYPE == BIGINT)) )
 				{
 					FOR FNA1 IN RDB$FUNCTION_ARGUMENTS WITH
 						FNA1.RDB$FUNCTION_NAME = FNA.RDB$FUNCTION_NAME AND
@@ -2747,7 +2748,7 @@ static processing_state show_proc(const SCHAR* procname)
 
 						if ((FLD.RDB$FIELD_TYPE == SMALLINT) ||
 							(FLD.RDB$FIELD_TYPE == INTEGER) ||
-							(FLD.RDB$FIELD_TYPE == blr_int64))
+							(FLD.RDB$FIELD_TYPE == BIGINT))
 						{
 							FOR FLD1 IN RDB$FIELDS
 								WITH FLD1.RDB$FIELD_NAME EQ FLD.RDB$FIELD_NAME
@@ -3070,7 +3071,7 @@ static processing_state show_table(
 					// Handle Integral subtypes NUMERIC and DECIMAL
 					if ((FLD.RDB$FIELD_TYPE == SMALLINT) ||
 						(FLD.RDB$FIELD_TYPE == INTEGER) ||
-						(FLD.RDB$FIELD_TYPE == blr_int64))
+						(FLD.RDB$FIELD_TYPE == BIGINT))
 					{
 						FOR FLD1 IN RDB$FIELDS WITH
 							FLD1.RDB$FIELD_NAME EQ FLD.RDB$FIELD_NAME
