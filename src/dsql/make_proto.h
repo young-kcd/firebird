@@ -33,7 +33,7 @@ struct dsql_nod* MAKE_str_constant(class str* , SSHORT);
 class str* MAKE_cstring(const char*);
 void MAKE_desc(struct dsc* , struct dsql_nod*);
 void MAKE_desc_from_field(struct dsc* , class dsql_fld*);
-void MAKE_desc_from_list(struct dsc* , struct dsql_nod*);
+void MAKE_desc_from_list(struct dsc* , struct dsql_nod*, const TEXT*);
 struct dsql_nod* MAKE_field(class dsql_ctx* , class dsql_fld* , struct dsql_nod*);
 struct dsql_nod* MAKE_list(class dsql_lls*);
 struct dsql_nod* MAKE_node(ENUM nod_t, int);

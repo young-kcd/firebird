@@ -1544,7 +1544,9 @@ static BOOLEAN aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT * curren
 					else {
 						*deepest_level = ldeepest_level;
 					}
-					if ((ldeepest_level == 0) || (ldeepest_level == request->req_scope_level)) {
+					// If the deepest_value is the same as the current scope_level
+					// this an aggregate that belongs to the current context.
+					if (*deepest_level == request->req_scope_level) {
 						aggregate = TRUE;
 					}
 					else {
@@ -4724,7 +4726,7 @@ static DSQL_NOD pass1_simple_case( DSQL_REQ request, DSQL_NOD input, USHORT proc
 	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++, i++) {
 		node1->nod_arg[i] = *ptr;
 	}
-	MAKE_desc_from_list(&node1->nod_desc, node1);
+	MAKE_desc_from_list(&node1->nod_desc, node1, "CASE");
 	/* Set parameter describe information */
 	set_parameter_type(node->nod_arg[e_simple_case_case_operand], node1, FALSE);
 	for (ptr = node->nod_arg[e_simple_case_when_operands]->nod_arg, 
