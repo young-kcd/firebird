@@ -34,7 +34,7 @@
  *    compatibility with Kylix
  * 
  *
- *  $Id: config_root.cpp,v 1.6 2003-05-25 00:24:23 skidder Exp $
+ *  $Id: config_root.cpp,v 1.7 2003-08-09 22:35:10 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -78,6 +78,7 @@ static string getExePathViaProcEntry()
  *	
  */
 
+#if defined SUPERSERVER || defined EMBEDDED
 static string getRootPathFromExePath()
 {
 #ifdef HAVE__PROC_SELF_EXE
@@ -108,6 +109,7 @@ static string getRootPathFromExePath()
 	return "";
 #endif
 }
+#endif
 
 static string getRootPathFromEnvVar()
 {
