@@ -121,7 +121,7 @@ string ConfigFile::parseValueFrom(string inputLine, string::size_type initialPos
     }
 
     // skip leading white spaces
-    unsigned int startPos = inputLine.find_first_not_of("= \t", initialPos);
+    const string::size_type startPos = inputLine.find_first_not_of("= \t", initialPos);
     if (startPos == string::npos)
     {
         return string();
@@ -230,3 +230,4 @@ void ConfigFile::loadConfig()
 	}
 #endif
 }
+

@@ -173,7 +173,7 @@ ConfigImpl::ConfigImpl(MemoryPool& p) : ConfigRoot(p)
 
 	ConfigFile file(true);
 	root_dir = getRootDirectory();
-	int size = FB_NELEM(entries);
+	const int size = FB_NELEM(entries);
 	values = FB_NEW(p) ConfigValue[size];
 
 	string val_sep = ",";
@@ -213,14 +213,14 @@ ConfigImpl::ConfigImpl(MemoryPool& p) : ConfigRoot(p)
 			}
 			break;
 		case TYPE_STRING_VECTOR:
-			;
+			break;
 		}
 	}
 }
 
 ConfigImpl::~ConfigImpl()
 {
-	int size = FB_NELEM(entries);
+	const int size = FB_NELEM(entries);
 
 	/* Free allocated memory */
 
@@ -235,7 +235,7 @@ ConfigImpl::~ConfigImpl()
 			delete[] (char*)values[i];
 			break;
 		case TYPE_STRING_VECTOR:
-			;
+			break;
 		}
 	}
 	delete[] values;
@@ -503,3 +503,4 @@ const char *Config::getGCPolicy()
 {
 	return (const char *) sysConfig.values[KEY_GC_POLICY];
 }
+
