@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: tree.h,v 1.30 2004-06-13 03:09:14 brodsom Exp $
+ *  $Id: tree.h,v 1.31 2004-06-13 23:49:28 skidder Exp $
  *
  */
 
@@ -149,8 +149,9 @@ public:
 	
 	bool add(const Value& item);
 	
-	/* Remove item as quickly as possible. Current position is undefined after this call */
-    void fastRemove() { defaultAccessor.fastRemove(); }
+	// Remove item. Current position moves to next item after this call. 
+	// If next item doesn't exist method returns false
+    bool fastRemove() { return defaultAccessor.fastRemove(); }
 	
 	bool locate(Key& key) { return defaultAccessor.locate(locEqual, key); }
 	
@@ -237,11 +238,12 @@ public:
 	public:
 		Accessor(BePlusTree* _tree) : tree(_tree), curr(NULL), curPos(0) {}		
 	
-		/* Remove item as quickly as possible. Current position is undefined after this call */
-		void fastRemove() {
+		// Remove item. Current position moves to next item after this call. 
+		// If next item doesn't exist method returns false
+		bool fastRemove() {
 			if ( !tree->level ) {
 				curr->remove(curPos);
-				return;
+				return curPos < curr->getCount();
 			}
 			if ( curr->getCount() == 1 ) {
 				// Only one node left in the current page. We cannot remove it directly
@@ -249,52 +251,66 @@ public:
 				fb_assert(curPos == 0);
 				ItemList *temp;
 				if ( (temp = curr->prev) && NEED_MERGE(temp->getCount(), LeafCount) ) {
+					temp = curr->next;
 					tree->_removePage(0, curr);
+					curr = temp;
+					return curr;
 				}
-				else
 				if ( (temp = curr->next) && NEED_MERGE(temp->getCount(), LeafCount) ) {
 					tree->_removePage(0, curr);
+					curr = temp;
+					return true;
 				}
-				else
 				if ( (temp = curr->prev) ) {
 					(*curr)[0] = (*temp)[temp->getCount() - 1];
 					temp->shrink(temp->getCount() - 1);
+					curr = curr->next;
+					return curr;
 				}
-				else
 				if ( (temp = curr->next) ) {
 					(*curr)[0] = (*temp)[0];
 					temp->remove(0);
+					return true;
 				}
-				else
-				{
-					// It means the tree is broken
-					fb_assert(false);
-				}
+				// It means the tree is broken
+				fb_assert(false);
+				return false;
 			}
-			else {
-				curr->remove(curPos);
-				ItemList *temp;
-				if ( (temp = curr->prev) && NEED_MERGE(temp->getCount() + curr->getCount(), LeafCount) ) {
-					// After join upper levels of the tree remain stable because join doesn't change
-					// key of the page. The same applies to lower case too.
-					temp->join(*curr);
-					tree->_removePage(0, curr);
-				}
-				else
+			curr->remove(curPos);
+			ItemList *temp;
+			if ( (temp = curr->prev) && NEED_MERGE(temp->getCount() + curr->getCount(), LeafCount) ) {
+				// After join upper levels of the tree remain stable because join doesn't change
+				// key of the page. The same applies to lower case too.
+				curPos += temp->getCount();
+				temp->join(*curr);
+				tree->_removePage(0, curr);
+				curr = temp;
+				// The code below will adjust current position if needed
+			} else {
 				if ( (temp = curr->next) && NEED_MERGE(temp->getCount() + curr->getCount(), LeafCount) ) {
 					curr->join(*temp);
 					tree->_removePage(0, temp);
+					return true;
 				}
 			}
+			if (curPos >= curr->getCount()) {
+				fb_assert(curPos == curr->getCount());
+				curPos = 0;
+				curr = curr->next;
+				return curr;
+			}
+			return true;
 		}
 	
 		bool locate(Key& key) {
 			return locate(locEqual, key);
 		}
 	
-		// Inlining is efficient here because LocType will be known in most cases
-		// and compiler will be able to eliminate most of code
+		// Position accessor on item having LocType relationship with given key
+		// If method returns false position of accessor is not defined.
 		bool locate(LocType lt, Key& key) {
+			// Inlining is efficient here because LocType will be known in most cases
+			// and compiler will be able to eliminate most of code
 			void *list = tree->root;
 			if (!list) return false; // Uninitalized tree
 			for (int lev = tree->level; lev; lev--) {
@@ -334,6 +350,8 @@ public:
 			}
 			return false;
 		}
+		// If method returns false it means list is empty and 
+		// position of accessor is not defined.
 		bool getFirst() {
 			void *items = tree->root;
 			if (!items) return false; // Uninitalized tree
@@ -343,6 +361,8 @@ public:
 			curPos = 0;
 			return ((ItemList *)items)->getCount();
 		}
+		// If method returns false it means list is empty and 
+		// position of accessor is not defined.
 		bool getLast() {
 			void *items = tree->root;
 			if (!items) return false; // Uninitalized tree
@@ -352,20 +372,35 @@ public:
 			curPos = ((ItemList *)items)->getCount() - 1;
 			return curPos >= 0;
 		}
+		// Accessor position must be establised via successful call to getFirst(), 
+		// getLast() or locate() before you can call this method
 		bool getNext() {
 			curPos++;
 			if (curPos >= curr->getCount()) {
-				curr = curr->next;
-				curPos = 0;
+				if (curr->next) {
+					curr = curr->next;
+					curPos = 0;
+				} else {
+					// If we reached end of the list just return false and do not invalidate position
+					curPos--;
+					return false;
+				}
 			}
-			return curr != 0;
+			return true;
 		}
+		// Accessor position must be establised via successful call to getFirst(), 
+		// getLast() or locate() before you can call this method
 		bool getPrev() {
 			curPos--;
 			if (curPos < 0) {
-				curr = curr->prev;
-				if (!curr) return false;
-				curPos = curr->getCount()-1;
+				if (curr->prev) {
+					curr = curr->prev;
+					curPos = curr->getCount()-1;
+				} else {
+					// If we reached beginning of the list just return false and do not invalidate position
+					curPos = 0;
+					return false;
+				}
 			}
 			return true;
 		}

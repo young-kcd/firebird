@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: class_test.cpp,v 1.16 2004-06-13 18:30:20 skidder Exp $
+ *  $Id: class_test.cpp,v 1.17 2004-06-13 23:49:28 skidder Exp $
  *
  */
 
@@ -129,6 +129,67 @@ void testBePlusTree() {
 	printf(" DONE\n");
 	
 	bool passed = true;
+
+	printf("Empty trees verifying fastRemove() result: ");
+	for (i = 0; i < v.getCount()-1; i++) {
+		if (!tree1.getLast())
+			passed = false;
+		tree1.current().count--;
+		if (!tree1.current().count)
+			if (tree1.fastRemove())
+				passed = false;
+		if (!tree2.getLast())
+			passed = false;
+		tree2.current().count--;
+		if (!tree2.current().count)
+			if (tree2.fastRemove())
+				passed = false;
+	}
+	if (!tree1.getLast())
+		passed = false;
+	tree1.current().count--;
+	if (tree1.current().count)
+		passed = false;
+	else
+		if (tree1.fastRemove())
+			passed = false;
+
+	if (!tree2.getLast())
+		passed = false;
+	tree2.current().count--;
+	if (tree2.current().count)
+		passed = false;
+	else
+		if (tree2.fastRemove())
+			passed = false;
+	printf(passed ? "PASSED\n" : "FAILED\n");
+	passed = true;
+	
+	printf("Fill trees with data again: ");
+	cnt1 = 0; cnt2 = 0;
+	for (i = 0; i < v.getCount(); i++) {
+		if (tree1.locate(locEqual, v[i]))
+			tree1.current().count++;
+		else {
+			Test t;
+			t.value = v[i];
+			t.count = 1;
+			if (!tree1.add(t))
+				fb_assert(false);
+			cnt1++;
+		}
+		if (tree2.locate(locEqual, v[i]))
+			tree2.current().count++;
+		else {
+			Test t;
+			t.value = v[i];
+			t.count = 1;
+			if (!tree2.add(t))
+				fb_assert(false);
+			cnt2++;
+		}	
+	}
+	printf(" DONE\n");
 	
 	printf("Check that tree(2) contains test data: ");
 	for (i = 0; i < v.getCount(); i++) {
@@ -171,13 +232,25 @@ void testBePlusTree() {
 	printf(passed ? "PASSED\n" : "FAILED\n");
 	
 	printf("Remove half of data from the trees: ");
+	passed = true;
 	while (v.getCount() > TEST_ITEMS / 2) {
 		if (!tree1.locate(locEqual, v[v.getCount() - 1]))
 			fb_assert(false);
 		if (tree1.current().count > 1) 
 			tree1.current().count--;
 		else {
-			tree1.fastRemove();
+			int nextValue = -1;
+			if (tree1.getNext()) {
+				nextValue = tree1.current().value;
+				tree1.getPrev();
+			}
+			if (tree1.fastRemove()) {
+				if (tree1.current().value != nextValue)
+					passed = false;
+			} else {
+				if (nextValue >= 0)
+					passed = false;
+			}
 			cnt1--;
 		}
 		if (!tree2.locate(locEqual, v[v.getCount() - 1]))
@@ -185,13 +258,26 @@ void testBePlusTree() {
 		if (tree2.current().count > 1) 
 			tree2.current().count--;
 		else {
-			tree2.fastRemove();
+			int nextValue = -1;
+			if (tree2.getNext()) {
+				nextValue = tree2.current().value;
+				tree2.getPrev();
+			}
+			if (tree2.fastRemove()) {
+				if (tree2.current().value != nextValue)
+					passed = false;
+			} else {
+				if (nextValue >= 0)
+					passed = false;
+			}
 			cnt2--;
 		}
 		v.shrink(v.getCount() - 1);
 	}
-	printf(" DONE\n");
+	printf(passed ? "PASSED\n" : "FAILED\n");
 	
+	passed = true;
+
 	printf("Check that tree(2) contains test data: ");
 	for (i = 0; i < v.getCount(); i++) {
 		if(!tree1.locate(locEqual, v[i]))
@@ -243,7 +329,18 @@ void testBePlusTree() {
 		if (tree1.current().count > 1) 
 			tree1.current().count--;
 		else {
-			tree1.fastRemove();
+			int nextValue = -1;
+			if (tree1.getNext()) {
+				nextValue = tree1.current().value;
+				tree1.getPrev();
+			}
+			if (tree1.fastRemove()) {
+				if (tree1.current().value != nextValue)
+					passed = false;
+			} else {
+				if (nextValue >= 0)
+					passed = false;
+			}
 			cnt1--;
 		}
 		if (!tree2.locate(locEqual, v[i]))
@@ -251,11 +348,23 @@ void testBePlusTree() {
 		if (tree2.current().count > 1)
 			tree2.current().count--;
 		else {
-			tree2.fastRemove();
+			int nextValue = -1;
+			if (tree2.getNext()) {
+				nextValue = tree2.current().value;
+				tree2.getPrev();
+			}
+			if (tree2.fastRemove()) {
+				if (tree2.current().value != nextValue)
+					passed = false;
+			} else {
+				if (nextValue >= 0)
+					passed = false;
+			}
 			cnt2--;
 		}
 	}
-	printf(" DONE\n");
+	printf(passed ? "PASSED\n" : "FAILED\n");
+	passed = true;
 
 	printf("Check that both trees do not contain anything: ");
 	if (tree1.getFirst())
