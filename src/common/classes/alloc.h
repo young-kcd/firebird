@@ -29,7 +29,7 @@
  *		Alex Peshkoff <peshkoff@mail.ru>
  *				added PermanentStorage and AutoStorage classes.
  *
- *  $Id: alloc.h,v 1.53 2004-10-25 05:14:05 skidder Exp $
+ *  $Id: alloc.h,v 1.54 2004-11-16 05:02:02 robocop Exp $
  *
  */
 
@@ -477,8 +477,8 @@ static inline void* operator new[](size_t s, Firebird::MemoryPool& pool) {
 	The allocator, by default, allocates all memory from the process
 	wide pool FB_MemoryPool.  Typically this is NOT the behavior you
 	want.  Selection of the correct pool to allocate your memory from is
-	important.  If you select a pool to far down in (a statement pool,
-	for example) you memory may be freed before you are done with it.
+	important.  If you select a pool too far down in (a statement pool,
+	for example) your memory may be freed before you are done with it.
 	On the other hand if you always use the global pool you will
 	either leak memory or have to make sure you always delete the objects
 	you create.
