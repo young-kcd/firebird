@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.cpp,v 1.17 2003-12-31 05:35:53 robocop Exp $
+ *  $Id: nbak.cpp,v 1.18 2004-01-28 07:50:32 robocop Exp $
  *
  */
 
@@ -221,7 +221,8 @@ bool BackupManager::lock_alloc_write(bool thread_exit) throw() {
 	if (alloc_lock->lck_physical != LCK_none)
 		if (LCK_convert(tdbb, alloc_lock, LCK_EX, LCK_NO_WAIT)) {
 			locked = true;
-		} else {
+		}
+		else {
 			LCK_release(tdbb, alloc_lock);
 			ast_flags &= ~NBAK_alloc_blocking;
 			ast_flags |= NBAK_alloc_dirty;
@@ -630,7 +631,8 @@ void BackupManager::end_backup(bool recover) {
 				CCH_RELEASE(tdbb, &window);
 				return;
 			}
-		} else
+		}
+		else
 			lock_state_write(true);
 		state_locked = true;
 		NBAK_TRACE(("state locked"));
@@ -1029,7 +1031,8 @@ void BackupManager::set_difference(const char* filename) {
 			strlen(filename), reinterpret_cast<const UCHAR*>(filename));
 		CCH_RELEASE(tdbb, &window);
 		strncpy(diff_name, filename, sizeof(diff_name));
-	} else {
+	}
+	else {
 		PAG_delete_clump_entry(HEADER_PAGE, HDR_difference_file);
 		generate_filename();
 	}

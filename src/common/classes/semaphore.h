@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: semaphore.h,v 1.5 2003-11-03 23:50:05 brodsom Exp $
+ *  $Id: semaphore.h,v 1.6 2004-01-28 07:50:18 robocop Exp $
  *
  */
 
@@ -110,10 +110,12 @@ public:
 				return true;
 			if (errno == EAGAIN) 
 				return false;
-		} else if (seconds < 0) {
+		}
+		else if (seconds < 0) {
 			if (sem_wait(&sem) != -1)
 				return false;
-		} else {
+		}
+		else {
 			struct timespec timeout;
 			timeout.tv_sec = time(NULL) + seconds;
 			timeout.tv_nsec = 0;

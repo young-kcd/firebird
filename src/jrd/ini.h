@@ -69,7 +69,7 @@ gfld_MAX} GFLDS;
 #define FIELD(type,name,dtype,length,sub_type,ods,dflt_blr)	{ (UCHAR) type, (UCHAR) name, dtype, length, sub_type, ods, NULL, 0 },
 #endif
 
-typedef struct gfld
+struct gfld
 {
 	UCHAR gfld_type;
 	UCHAR gfld_name;
@@ -79,7 +79,7 @@ typedef struct gfld
 	UCHAR gfld_minor;
 	const UCHAR *gfld_dflt_blr;
 	USHORT gfld_dflt_len;
-} GFLD;
+};
 
 static const struct gfld gfields[] = {
 #include "../jrd/fields.h"
@@ -133,11 +133,11 @@ static const UCHAR relfields[] =
 
 /* obtain field types */
 
-typedef struct rtyp {
-	const TEXT *rtyp_name;
+struct rtyp {
+	const TEXT* rtyp_name;
 	SSHORT rtyp_value;
 	UCHAR rtyp_field;
-} RTYP;
+};
 
 #define TYPE(text, type, field)	{ text, type, (UCHAR) field },
 
@@ -147,7 +147,7 @@ typedef struct rtyp {
 #define COLLATION(name, cc_id, cs_id, coll_id, sym)
 #define END_CHARSET
 
-static const RTYP types[] = {
+static const rtyp types[] = {
 #include "../jrd/types.h"
 #include "../jrd/intlnames.h"
 	{NULL, 0, 0}

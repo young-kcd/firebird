@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: parser.cpp,v 1.14 2004-01-21 07:18:30 skidder Exp $
+$Id: parser.cpp,v 1.15 2004-01-28 07:50:38 robocop Exp $
 */
 
 #include "firebird.h"
@@ -71,7 +71,7 @@ REM_MSG PARSE_messages(const UCHAR* blr, USHORT blr_length)
 		const USHORT msg_number = *blr++;
 		USHORT count = *blr++;
 		count += (*blr++) << 8;
-		fmt* format = (FMT) ALLOCV(type_fmt, count);
+		rem_fmt* format = (rem_fmt*) ALLOCV(type_fmt, count);
 #ifdef DEBUG_REMOTE_MEMORY
 		ib_printf("PARSE_messages            allocate format  %x\n", format);
 #endif

@@ -76,6 +76,8 @@ DEFINE_TRACE_ROUTINE(remote_trace);
 #include "../include/old_fb_blk.h"
 #endif
 
+// fwd. decl.
+struct rem_port;
 
 /* Block types */
 
@@ -85,7 +87,7 @@ typedef struct rdb
 	USHORT			rdb_id;
 	USHORT			rdb_flags;
 	FRBRD*			rdb_handle;			/* database handle */
-	struct port*	rdb_port;			/* communication port */
+	rem_port*		rdb_port;			/* communication port */
 	struct rtr*		rdb_transactions;	/* linked list of transactions */
 	struct rrq*		rdb_requests;		/* compiled requests */
 	struct rvnt*	rdb_events;			/* known events */
@@ -143,7 +145,7 @@ typedef struct rvnt
 	void*		rvnt_arg;
 	SLONG		rvnt_id;
 	SLONG		rvnt_rid;	/* used by server to store client-side id */
-	struct port*rvnt_port;	/* used to id server from whence async came */
+	rem_port*	rvnt_port;	/* used to id server from whence async came */
 	const UCHAR*		rvnt_items;
 	SSHORT		rvnt_length;
 } *RVNT;
@@ -177,7 +179,7 @@ struct rem_str
 
 //typedef vary* VARY;
 
-typedef struct fmt
+struct rem_fmt
 {
 	struct blk	fmt_header;
 	USHORT		fmt_length;
@@ -186,7 +188,7 @@ typedef struct fmt
 	USHORT		fmt_version;
 	USHORT		fmt_flags;
 	struct dsc	fmt_desc[1];
-} *FMT;
+};
 
 #define FMT_has_P10_specific_datatypes	0x1	/* datatypes don't exist in P9 */
 
@@ -220,20 +222,20 @@ typedef struct rpr
 	FRBRD*			rpr_handle;
 	struct message*	rpr_in_msg;		/* input message */
 	struct message*	rpr_out_msg;	/* output message */
-	struct fmt*		rpr_in_format;	/* Format of input message */
-	struct fmt*		rpr_out_format;	/* Format of output message */
+	struct rem_fmt*		rpr_in_format;	/* Format of input message */
+	struct rem_fmt*		rpr_out_format;	/* Format of output message */
 	USHORT			rpr_flags;
 } *RPR;
 
 #define RPR_eof		1		/* End-of-stream encountered */
 
-typedef struct rrq
+struct rrq
 {
 	struct blk	rrq_header;
 	struct rdb*	rrq_rdb;
 	struct rtr*	rrq_rtr;
-	struct rrq*	rrq_next;
-	struct rrq*	rrq_levels;		/* RRQ block for next level */
+	rrq*	rrq_next;
+	rrq*	rrq_levels;		/* RRQ block for next level */
 	FRBRD*		rrq_handle;
 	USHORT		rrq_id;
 	USHORT		rrq_max_msg;
@@ -241,7 +243,7 @@ typedef struct rrq
 	ISC_STATUS_ARRAY	rrq_status_vector;
 	struct		rrq_repeat
 	{
-		struct fmt*		rrq_format;		/* format for this message */
+		rem_fmt*		rrq_format;		/* format for this message */
 		struct message*	rrq_message; 	/* beginning or end of cache, depending on whether it is client or server */
 		struct message*	rrq_xdr;		/* point at which cache is read or written by xdr */ 
 #ifdef SCROLLABLE_CURSORS
@@ -255,7 +257,7 @@ typedef struct rrq
 		USHORT			rrq_batch_count;	/* Count of batches in pipeline */
 
 	} rrq_rpt[1];
-} *RRQ;
+};
 
 /* rrq flags */
 
@@ -272,10 +274,10 @@ typedef struct rsr
 	struct rdb*		rsr_rdb;
 	struct rtr*		rsr_rtr;
 	FRBRD*			rsr_handle;
-	struct fmt*		rsr_bind_format;		/* Format of bind message */
-	struct fmt*		rsr_select_format;		/* Format of select message */
-	struct fmt*		rsr_user_select_format; /* Format of user's select message */
-	struct fmt*		rsr_format;				/* Format of current message */
+	struct rem_fmt*		rsr_bind_format;		/* Format of bind message */
+	struct rem_fmt*		rsr_select_format;		/* Format of select message */
+	struct rem_fmt*		rsr_user_select_format; /* Format of user's select message */
+	struct rem_fmt*		rsr_format;				/* Format of current message */
 	struct message*	rsr_message;			/* Next message to process */
 	struct message*	rsr_buffer;				/* Next buffer to use */
 	ISC_STATUS_ARRAY	rsr_status_vector;	/* saved status for buffered errors */
@@ -354,25 +356,24 @@ enum state_t
 
 //////////////////////////////////////////////////////////////////
 // fwd. decl.
-struct port;
 struct p_cnct;
 
 class port_interface
 {
 public:
-	virtual int		accept_(port* pPort, p_cnct* pConnection) = 0;
+	virtual int		accept_(rem_port* pPort, p_cnct* pConnection) = 0;
 };
 
-typedef struct port
+struct rem_port
 {
 	struct blk		port_header;
 	enum rem_port_t	port_type;			/* type of port */
 	enum state_t	port_state;			/* state of port */
 	P_ARCH			port_client_arch;	/* so we can tell arch of client */
-	struct port*	port_clients;		/* client ports */
-	struct port*	port_next;			/* next client port */
-	struct port*	port_parent;		/* parent port (for client ports) */
-	struct port*	port_async;			/* asynchronous sibling port */
+	rem_port*		port_clients;		/* client ports */
+	rem_port*		port_next;			/* next client port */
+	rem_port*		port_parent;		/* parent port (for client ports) */
+	rem_port*		port_async;			/* asynchronous sibling port */
 	struct srvr*	port_server;		/* server of port */
 	USHORT			port_server_flags;	/* TRUE if server */
 	USHORT			port_protocol;		/* protocol version number */
@@ -389,13 +390,13 @@ typedef struct port
 	struct linger	port_linger;		/* linger value as defined by SO_LINGER */
 
 	/* port function pointers (C "emulation" of virtual functions) */
-	int				(*port_accept)(struct port*, struct p_cnct*);
-	void			(*port_disconnect)(struct port*);
-	struct port*	(*port_receive_packet)(struct port*, PACKET*);
-	XDR_INT			(*port_send_packet)(struct port*, PACKET*);
-	XDR_INT			(*port_send_partial)(struct port*, PACKET*);
-	struct port*	(*port_connect)(struct port*, PACKET*, void(*)());	/* Establish secondary connection */
-	struct port*	(*port_request)(struct port*, PACKET*);	/* Request to establish secondary connection */
+	int				(*port_accept)(rem_port*, struct p_cnct*);
+	void			(*port_disconnect)(rem_port*);
+	rem_port*		(*port_receive_packet)(rem_port*, PACKET*);
+	XDR_INT			(*port_send_packet)(rem_port*, PACKET*);
+	XDR_INT			(*port_send_partial)(rem_port*, PACKET*);
+	rem_port*		(*port_connect)(rem_port*, PACKET*, void(*)());	/* Establish secondary connection */
+	rem_port*		(*port_request)(rem_port*, PACKET*);	/* Request to establish secondary connection */
 
 	struct rdb*		port_context;
 	XDR_INT			(*port_ast)();		/* AST for events */
@@ -426,11 +427,11 @@ typedef struct port
 	/* TMN: ugly, but at least a start */
 	int		accept(p_cnct* cnct);
 	void	disconnect();
-	port*	receive(PACKET* pckt);
+	rem_port*	receive(PACKET* pckt);
 	XDR_INT	send(PACKET* pckt);
 	XDR_INT	send_partial(PACKET* pckt);
-	port*	connect(PACKET* pckt, void(*ast)());
-	port*	request(PACKET* pckt);
+	rem_port*	connect(PACKET* pckt, void(*ast)());
+	rem_port*	request(PACKET* pckt);
 
 	/* TMN: The following member functions are conceptually private
 	 *      to server.cpp and should be _made_ private in due time!
@@ -477,7 +478,7 @@ typedef struct port
 
 #endif	/* __cplusplus */
 
-} *PORT;
+};
 
 #define PORT_symmetric		1	/* Server/client archiectures are symmetic */
 #define PORT_rpc			2	/* Protocol is remote procedure call */
@@ -525,7 +526,7 @@ typedef struct rmtque
 
 	/* Fn that receives queued entry */
 	bool	(*rmtque_function) (struct trdb*,
-								struct port*,
+								rem_port*,
 								struct rmtque*,
 								ISC_STATUS*,
 								USHORT);

@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.85 2004-01-21 07:16:11 skidder Exp $
+ * $Id: ddl.cpp,v 1.86 2004-01-28 07:50:23 robocop Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -152,6 +152,7 @@ static void modify_privilege(dsql_req*, NOD_TYPE, SSHORT, const UCHAR*,
 static SCHAR modify_privileges(dsql_req*, NOD_TYPE, SSHORT, const dsql_nod*,
 	const dsql_nod*, const dsql_nod*);
 static void modify_relation(dsql_req*);
+static par* parameter_reverse_order(par* parameter, par* prev);
 static void process_role_nm_list(dsql_req*, SSHORT, dsql_nod*, dsql_nod*, NOD_TYPE);
 static void put_descriptor(dsql_req*, const dsc*);
 static void put_dtype(dsql_req*, const dsql_fld*, bool);
@@ -768,7 +769,7 @@ static bool is_array_or_blob(const dsql_nod* node)
 			if (is_array_or_blob(*ptr)) {
 				return true;
 			}
-		 }
+		}
 	}
 
 		return false;
@@ -1517,7 +1518,7 @@ static void define_set_default_trg(	dsql_req*    request,
 
 				/* case: (1-b): domain name is available. Column level default
 				   is not declared. so get the domain default */
-				USHORT def_len = 
+				const USHORT def_len = 
 					METD_get_domain_default(request, domain_name, &found_default,
 										default_val,
 										sizeof(default_val));
@@ -1540,7 +1541,7 @@ static void define_set_default_trg(	dsql_req*    request,
 		{
 			// case 2: see if the column/domain has already been created 
 
-			USHORT def_len = 
+			const USHORT def_len = 
 				METD_get_col_default(request, for_rel_name,
 								 for_key_fld_name_str->str_data,
 								 &found_default,
@@ -1549,7 +1550,8 @@ static void define_set_default_trg(	dsql_req*    request,
 
 			if (found_default) {
 				stuff_default_blr(request, default_val, def_len);
-			} else {
+			}
+			else {
 				request->append_uchar(blr_null);
 			}
 
@@ -2071,8 +2073,10 @@ static void define_index(dsql_req* request)
 	    const dsql_nod* const* ptr = field_list->nod_arg;
 	    const dsql_nod* const* const end = ptr + field_list->nod_count;
 		for (; ptr < end; ptr++)
+		{
 			request->append_cstring(isc_dyn_fld_name,
 						((dsql_str*) (*ptr)->nod_arg[1])->str_data);
+		}
 	}
 #ifdef EXPRESSION_INDICES
 	else if (field_list->nod_type == nod_def_computed)
@@ -2330,7 +2334,7 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 				}
 				defaults++;
 			}
-			else if(defaults) { 
+			else if (defaults) {
 				// parameter without default value after parameters with default 
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,
 						  isc_arg_gds, isc_bad_default_value,
@@ -2472,29 +2476,6 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 	request->append_uchar(isc_dyn_end);
 }
 
-static par* par_reverse_order(par *parameter, par *prev)
-{
-/**************************************
- *
- *	p a r _ r e v e r s e _ o r d e r
- *
- **************************************
- *
- * Function
- *	Reverse parameters order for EXECUTE BLOCK statement
- * 
- **************************************/
-	par *result;
-
-	if(parameter->par_next)
-		result = par_reverse_order(parameter->par_next, parameter);
-	else
-		result = parameter;
-	parameter->par_next = prev;
-
-	return result;
-}
-
 void DDL_gen_block(dsql_req* request, dsql_nod* node)
 {
 /**************************************
@@ -2512,20 +2493,20 @@ void DDL_gen_block(dsql_req* request, dsql_nod* node)
 	
 	TSQL tdsql = GET_THREAD_DATA;
 	
-	dsql_nod *parameters, *parameter, **ptr, **end;
-	dsql_fld *field; 
+	dsql_nod* parameters;
 
 	// now do the input parameters 
 	if (parameters = node->nod_arg[e_exe_blk_inputs])
 	{
 		SSHORT position = 0;
 		
-		end = parameters->nod_arg + parameters->nod_count;
-		for (ptr = parameters->nod_arg; ptr < end; ptr++)
+		dsql_nod** ptr = parameters->nod_arg;
+		for (const dsql_nod* const* const end = ptr + parameters->nod_count;
+			ptr < end; ptr++)
 		{
-			parameter = (*ptr)->nod_arg[e_prm_val_fld];
-			field = (dsql_fld*) parameter->nod_arg[e_dfl_field];
-			parameter = (*ptr)->nod_arg[e_prm_val_val];
+			dsql_nod* parameter = (*ptr)->nod_arg[e_prm_val_fld];
+			dsql_fld* field = (dsql_fld*) parameter->nod_arg[e_dfl_field];
+			// parameter = (*ptr)->nod_arg[e_prm_val_val]; USELESS
 
 			DDL_resolve_intl_type(request, field, NULL);
 
@@ -2541,10 +2522,11 @@ void DDL_gen_block(dsql_req* request, dsql_nod* node)
 	if (parameters = node->nod_arg[e_exe_blk_outputs])
 	{
 		SSHORT position = 0;
-		end = parameters->nod_arg + parameters->nod_count;
-		for (ptr = parameters->nod_arg; ptr < end; ++ptr)
+		dsql_nod** ptr = parameters->nod_arg;
+		for (const dsql_nod* const* const end = ptr + parameters->nod_count;
+			ptr < end; ++ptr)
 		{
-			field = (dsql_fld*) (*ptr)->nod_arg[e_dfl_field];
+			dsql_fld* field = (dsql_fld*) (*ptr)->nod_arg[e_dfl_field];
 
 			DDL_resolve_intl_type(request, field, NULL);
 
@@ -2560,43 +2542,42 @@ void DDL_gen_block(dsql_req* request, dsql_nod* node)
 
 	if (inputs) {
 		request->req_send->msg_parameters = 
-			par_reverse_order(request->req_send->msg_parameters, NULL);
+			parameter_reverse_order(request->req_send->msg_parameters, NULL);
 		GEN_port(request, request->req_send);
 	}
 	else
 		request->req_send = NULL;
-
-	par *param;
 
 	if (outputs)
 	{
 		SSHORT	position = 0;
 		parameters = node->nod_arg[e_exe_blk_outputs];
 
-		for (ptr = parameters->nod_arg, end = ptr + parameters->nod_count;
+		dsql_nod** ptr = parameters->nod_arg;
+		for (const dsql_nod* const* const end = ptr + parameters->nod_count;
 			 ptr < end; ptr++)
 		{
-			param = MAKE_parameter(request->req_receive, true, true, ++position);
+			par* param = MAKE_parameter(request->req_receive, true, true, ++position);
 			param->par_node = *ptr;
 			MAKE_desc(&param->par_desc, *ptr);
 			param->par_desc.dsc_flags |= DSC_nullable;
 
-			parameter = *ptr;
+			dsql_nod* parameter = *ptr;
 			var* variable = (var*) parameter->nod_arg[e_var_variable];
-			field = variable->var_field;
+			dsql_fld* field = variable->var_field;
 			param->par_name = param->par_alias = field->fld_name;
 		}
 	}
 
 	// Set up parameter to handle EOF 
-	request->req_eof = param =
-		MAKE_parameter(request->req_receive, false, false, 0);
+	par* param = MAKE_parameter(request->req_receive, false, false, 0);
+	request->req_eof = param;
 	param->par_desc.dsc_dtype = dtype_short;
 	param->par_desc.dsc_scale = 0;
 	param->par_desc.dsc_length = sizeof(SSHORT);
 
 	request->req_receive->msg_parameters = 
-		par_reverse_order(request->req_receive->msg_parameters, NULL);
+		parameter_reverse_order(request->req_receive->msg_parameters, NULL);
 	GEN_port(request, request->req_receive);
 
 	if (inputs) {
@@ -2609,10 +2590,11 @@ void DDL_gen_block(dsql_req* request, dsql_nod* node)
 	if (outputs)
 	{
 		parameters = node->nod_arg[e_exe_blk_outputs];
-		for (ptr = parameters->nod_arg, end = ptr + parameters->nod_count;
+		dsql_nod** ptr = parameters->nod_arg;
+		for (const dsql_nod* const* const end = ptr + parameters->nod_count;
 			 ptr < end; ptr++)
 		{
-			parameter = *ptr;
+			dsql_nod* parameter = *ptr;
 			var* variable = (var*) parameter->nod_arg[e_var_variable];
 			put_local_variable(request, variable, 0);
 		}
@@ -2621,8 +2603,8 @@ void DDL_gen_block(dsql_req* request, dsql_nod* node)
 	put_local_variables(request, node->nod_arg[e_exe_blk_dcls], locals);
 
 	request->append_uchar(blr_stall);
-/* Put a label before body of procedure, so that
-   any exit statement can get out */
+// Put a label before body of procedure, so that
+//   any exit statement can get out
 	request->append_uchar(blr_label);
 	request->append_uchar(0);
 	request->req_loop_level = 0;
@@ -2636,6 +2618,7 @@ void DDL_gen_block(dsql_req* request, dsql_nod* node)
 	GEN_return(request, node->nod_arg[e_exe_blk_outputs], true);
 	request->append_uchar(blr_end);
 }
+
 
 //
 // Define a constraint, either as part of a create
@@ -3037,8 +3020,9 @@ static void define_trigger( dsql_req* request, dsql_nod* node)
 	const dsql_nod* temp = node->nod_arg[e_trg_messages];
 	if (temp)
 	{
-		const dsql_nod* const* const end = temp->nod_arg + temp->nod_count;
-		for (const dsql_nod* const* ptr = temp->nod_arg; ptr < end; ++ptr)
+		const dsql_nod* const* ptr = temp->nod_arg;
+		for (const dsql_nod* const* const end = ptr + temp->nod_count;
+			ptr < end; ++ptr)
 		{
 			const dsql_nod*    message = *ptr;
 			const SSHORT number  = (SSHORT)(IPTR) message->nod_arg[e_msg_number];
@@ -3052,7 +3036,8 @@ static void define_trigger( dsql_req* request, dsql_nod* node)
 				const dsql_str* message_text = (dsql_str*) message->nod_arg[e_msg_text];
 				if (message->nod_type == nod_def_trigger_msg) {
 					request->append_number(isc_dyn_def_trigger_msg, number);
-				} else {
+				}
+				else {
 					request->append_number(isc_dyn_mod_trigger_msg, number);
 				}
 				fb_assert(message_text->str_length <= MAX_USHORT);
@@ -4442,8 +4427,9 @@ static void make_index(	dsql_req*    request,
 		request->append_number(isc_dyn_idx_type, 1);
 	}
 
-	const dsql_nod* const* const end = columns->nod_arg + columns->nod_count;
-	for (const dsql_nod* const* ptr = columns->nod_arg; ptr < end; ++ptr)
+	const dsql_nod* const* ptr = columns->nod_arg;
+	for (const dsql_nod* const* const end = ptr + columns->nod_count;
+		ptr < end; ++ptr)
 	{
 		const dsql_str* field_name = (dsql_str*) (*ptr)->nod_arg[1];
 		request->append_cstring(isc_dyn_fld_name, field_name->str_data);
@@ -4591,9 +4577,9 @@ static void make_index_trg_ref_int(	dsql_req*    request,
 	}
 
 
-	dsql_nod** ptr;
-	dsql_nod** end = columns->nod_arg + columns->nod_count;
-	for (ptr = columns->nod_arg; ptr < end; ++ptr)
+	const dsql_nod* const* ptr = columns->nod_arg;
+	for (const dsql_nod* const* const end = ptr + columns->nod_count;
+		ptr < end; ++ptr)
 	{
 		const dsql_str* field_name = (dsql_str*) (*ptr)->nod_arg[1];
 		request->append_cstring(isc_dyn_fld_name,
@@ -4603,8 +4589,9 @@ static void make_index_trg_ref_int(	dsql_req*    request,
 	request->append_cstring(isc_dyn_idx_foreign_key, relation_name);
 	if (referenced_columns)
 	{
-		end = referenced_columns->nod_arg + referenced_columns->nod_count;
-		for (ptr = referenced_columns->nod_arg; ptr < end; ++ptr)
+		ptr = referenced_columns->nod_arg;
+		for (const dsql_nod* const* const end = ptr + referenced_columns->nod_count;
+			ptr < end; ++ptr)
 		{
 			const dsql_str* field_name = (dsql_str*) (*ptr)->nod_arg[1];
 			request->append_cstring(isc_dyn_idx_ref_column,
@@ -4628,28 +4615,21 @@ static void modify_database( dsql_req* request)
  *	Modify a database.
  *
  **************************************/
-	SLONG start = 0;
-	dsql_fil* file;
-	SSHORT number = 0;
-	SLONG temp_long;
-	SSHORT temp_short;
+	const dsql_nod* ddl_node = request->req_ddl_node;
+
+	request->append_uchar(isc_dyn_mod_database);
+// request->append_number(isc_dyn_rel_sql_protection, 1);
 	bool drop_log = false;
 	bool drop_cache = false;
 	bool drop_difference = false;
 
-	dsql_nod* ddl_node = request->req_ddl_node;
-
-	request->append_uchar(isc_dyn_mod_database);
-/*
-request->append_number(isc_dyn_rel_sql_protection, 1);
-*/
-	dsql_nod*  elements = ddl_node->nod_arg[e_adb_all];
-	dsql_nod** end      = elements->nod_arg + elements->nod_count;
-	dsql_nod** ptr;
+	const dsql_nod* elements = ddl_node->nod_arg[e_adb_all];
+	const dsql_nod* const* end = elements->nod_arg + elements->nod_count;
+	const dsql_nod* const* ptr;
 	
 	for (ptr = elements->nod_arg; ptr < end; ptr++)
 	{
-		dsql_nod* element = *ptr;
+		const dsql_nod* element = *ptr;
 		switch (element->nod_type) {
 		case nod_drop_log:
 			drop_log = true;
@@ -4676,11 +4656,17 @@ request->append_number(isc_dyn_rel_sql_protection, 1);
 		request->append_uchar(isc_dyn_drop_difference);
 	}
 
+	SLONG start = 0;
+	SSHORT number = 0;
+	SLONG temp_long;
+	SSHORT temp_short;
+
 	elements = ddl_node->nod_arg[e_adb_all];
 	end = elements->nod_arg + elements->nod_count;
 	for (ptr = elements->nod_arg; ptr < end; ptr++)
 	{
-		dsql_nod* element = *ptr;
+		const dsql_fil* file;
+		const dsql_nod* element = *ptr;
 
 		switch (element->nod_type) {
 		case nod_file_desc:
@@ -4816,7 +4802,8 @@ static void modify_domain( dsql_req* request)
 
 	dsql_nod* ops = ddl_node->nod_arg[e_alt_dom_ops];
 	dsql_nod** ptr = ops->nod_arg;
-	for (dsql_nod** const end = ptr + ops->nod_count; ptr < end; ptr++)
+	for (const dsql_nod* const* const end = ptr + ops->nod_count;
+		ptr < end; ptr++)
 	{
 		dsql_nod* element = *ptr;
 		switch (element->nod_type)
@@ -4951,7 +4938,8 @@ static void modify_index( dsql_req* request)
 
 	if (index_node->nod_type == nod_idx_active) {
 		request->append_number(isc_dyn_idx_inactive, 0);
-	} else if (index_node->nod_type == nod_idx_inactive) {
+	}
+	else if (index_node->nod_type == nod_idx_inactive) {
 		request->append_number(isc_dyn_idx_inactive, 1);
 	}
 
@@ -4980,7 +4968,8 @@ static void modify_privilege(	dsql_req*			request,
 
 	if (type == nod_grant) {
 		request->append_uchar(isc_dyn_grant);
-	} else {
+	}
+	else {
 		request->append_uchar(isc_dyn_revoke);
 	}
 
@@ -5004,7 +4993,8 @@ static void modify_privilege(	dsql_req*			request,
 	const dsql_str* name = (dsql_str*) table->nod_arg[0];
 	if (table->nod_type == nod_procedure_name) {
 		request->append_cstring(isc_dyn_prc_name, name->str_data);
-	} else {
+	}
+	else {
 		request->append_cstring(isc_dyn_rel_name, name->str_data);
 	}
 	name = (dsql_str*) user->nod_arg[0];
@@ -5166,8 +5156,6 @@ static void modify_relation( dsql_req* request)
  *	global fields for the local fields.
  *
  **************************************/
-	dsql_nod **ptr, **end, *field_node;
-	const dsql_str* field_name;
 	TSQL tdsql = GET_THREAD_DATA;
 
 	dsql_nod* ddl_node = request->req_ddl_node;
@@ -5185,12 +5173,17 @@ static void modify_relation( dsql_req* request)
 	try {
 
 	dsql_nod* ops = ddl_node->nod_arg[e_alt_ops];
-	for (ptr = ops->nod_arg, end = ptr + ops->nod_count; ptr < end; ptr++) {
+	dsql_nod** ptr = ops->nod_arg;
+	for (const dsql_nod* const* const end = ptr + ops->nod_count; ptr < end; ptr++)
+	{
+		const dsql_nod* field_node;
+		const dsql_str* field_name;
 		dsql_nod* element = *ptr;
+		
 		switch (element->nod_type) {
 		case nod_mod_field_name:
 			{
-				dsql_nod* old_field = element->nod_arg[e_mod_fld_name_orig_name];
+				const dsql_nod* old_field = element->nod_arg[e_mod_fld_name_orig_name];
 				const dsql_str* old_field_name = (dsql_str*) old_field->nod_arg[e_fln_name];
 				request->append_cstring(isc_dyn_mod_local_fld,
 							old_field_name->str_data);
@@ -5207,16 +5200,13 @@ static void modify_relation( dsql_req* request)
 
 		case nod_mod_field_pos:
 			{
-				SSHORT constant;
-				dsql_nod* const_node;
-
 				field_node = element->nod_arg[e_mod_fld_pos_orig_name];
 				field_name = (dsql_str*) field_node->nod_arg[e_fln_name];
 				request->append_cstring(isc_dyn_mod_local_fld, field_name->str_data);
-				const_node = element->nod_arg[e_mod_fld_pos_new_position];
+				const dsql_nod* const_node = element->nod_arg[e_mod_fld_pos_new_position];
 
                 /* CVC: Since now the parser accepts pos=1..N, let's subtract one here. */
-                constant = (SSHORT)(IPTR) const_node->nod_arg[0] - 1;
+                const SSHORT constant = (SSHORT)(IPTR) const_node->nod_arg[0] - 1;
 
 				request->append_cstring(isc_dyn_rel_name,
 							relation_name->str_data);
@@ -5289,6 +5279,30 @@ static void modify_relation( dsql_req* request)
 }
 
 
+static par* parameter_reverse_order(par* parameter, par* prev)
+{
+/**************************************
+ *
+ *	p a r a m e t e r _ r e v e r s e _ o r d e r
+ *
+ **************************************
+ *
+ * Function
+ *	Reverse parameters order for EXECUTE BLOCK statement
+ *
+ **************************************/
+	par* result;
+
+	if (parameter->par_next)
+		result = parameter_reverse_order(parameter->par_next, parameter);
+	else
+		result = parameter;
+	parameter->par_next = prev;
+
+	return result;
+}
+
+
 static void process_role_nm_list(	dsql_req*			request,
 									SSHORT		option,
 									dsql_nod*			user_ptr,
@@ -5307,7 +5321,8 @@ static void process_role_nm_list(	dsql_req*			request,
  **************************************/
 	if (type == nod_grant) {
 		request->append_uchar(isc_dyn_grant);
-	} else {
+	}
+	else {
 		request->append_uchar(isc_dyn_revoke);
 	}
 
@@ -5346,7 +5361,8 @@ static void put_descriptor(dsql_req* request, const dsc* desc)
 	if (desc->dsc_dtype == dtype_varying) {
 		request->append_number(isc_dyn_fld_length,
 				   (SSHORT) (desc->dsc_length - sizeof(USHORT)));
-	} else {
+	}
+	else {
 		request->append_number(isc_dyn_fld_length, desc->dsc_length);
 	}
 	request->append_number(isc_dyn_fld_scale, desc->dsc_scale);
@@ -5394,7 +5410,8 @@ static void put_dtype(dsql_req* request, const dsql_fld* field, bool use_subtype
 
 		if (field->fld_dtype == dtype_varying) {
 			request->append_ushort(field->fld_length - sizeof(USHORT));
-		} else {
+		}
+		else {
 			request->append_ushort(field->fld_length);
 		}
 	}
@@ -5556,7 +5573,8 @@ static void put_local_variables(dsql_req* request, dsql_nod* parameters,
 	if (parameters)
 	{
 		dsql_nod** ptr = parameters->nod_arg;
-		for (dsql_nod** end = ptr + parameters->nod_count; ptr < end; ptr++)
+		for (const dsql_nod* const* const end = ptr + parameters->nod_count;
+			ptr < end; ptr++)
 		{
 			dsql_nod* parameter = *ptr;
 			if (parameter->nod_type == nod_def_field)
@@ -5666,8 +5684,8 @@ static dsql_nod* replace_field_names(dsql_nod*		input,
 			// found a field node, check if it needs to be replaced
 
 			const dsql_str* field_name = (dsql_str*) (*ptr)->nod_arg[e_fln_name];
-			dsql_nod** search     = search_fields->nod_arg;
-			dsql_nod** end        = search + search_fields->nod_count;
+			dsql_nod** search = search_fields->nod_arg;
+			const dsql_nod* const* const end = search + search_fields->nod_count;
 			dsql_nod** replace = NULL;
 			if (replace_fields) {
 				replace = replace_fields->nod_arg;
@@ -5675,7 +5693,7 @@ static dsql_nod* replace_field_names(dsql_nod*		input,
 			bool found = false;
 			for (; search < end; search++, (replace_fields) ? replace++ : NULL)
 			{
-				const dsql_str* replace_name;
+				const dsql_str* replace_name = 0;
 				if (replace_fields) {
 					replace_name = (dsql_str*) (*replace)->nod_arg[e_fln_name];
 				}
@@ -6163,7 +6181,8 @@ void dsql_req::append_uchar(UCHAR byte)
 {
 	if (req_blr < req_blr_yellow) {
 		*req_blr++ = byte;
-	} else {
+	}
+	else {
 		GEN_expand_buffer(this, byte);
 	}
 }

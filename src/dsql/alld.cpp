@@ -140,7 +140,7 @@ DsqlMemoryPool* DsqlMemoryPool::createPool()
 	if (!DSQL_permanent_pool)
 		return result;
 		
-	for(pool_vec_t::iterator curr = pools->begin(); curr != pools->end(); ++curr)
+	for (pool_vec_t::iterator curr = pools->begin(); curr != pools->end(); ++curr)
 	{
 		if (!*curr)
 		{
@@ -150,7 +150,7 @@ DsqlMemoryPool* DsqlMemoryPool::createPool()
 	}
 
 	pools->resize(pools->size() + 10);
-	for(pool_vec_t::iterator curr = pools->begin(); curr != pools->end(); ++curr)
+	for (pool_vec_t::iterator curr = pools->begin(); curr != pools->end(); ++curr)
 	{
 		if (!*curr)
 		{
@@ -171,7 +171,7 @@ void DsqlMemoryPool::deletePool(DsqlMemoryPool* pool)
 	if (pool == DSQL_permanent_pool)
 		return;
 		
-	for(pool_vec_t::iterator curr = pools->begin(); curr != pools->end(); ++curr)
+	for (pool_vec_t::iterator curr = pools->begin(); curr != pools->end(); ++curr)
 	{
 		if (*curr == pool)
 		{

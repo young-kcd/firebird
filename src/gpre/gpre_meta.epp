@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.35 2003-11-28 06:48:12 robocop Exp $
+ *	$Id: gpre_meta.epp,v 1.36 2004-01-28 07:50:27 robocop Exp $
  */
 
 #include "firebird.h"
@@ -65,8 +65,8 @@ static const UCHAR blr_bpb[] = {
 static const SCHAR db_version_info[] = { isc_info_base_level };
 #endif
 
-static SLONG array_size(GPRE_FLD);
-static void get_array(dbb*, const TEXT*, GPRE_FLD);
+static SLONG array_size(gpre_fld*);
+static void get_array(dbb*, const TEXT*, gpre_fld*);
 static bool get_intl_char_subtype(SSHORT*, const UCHAR*, USHORT, dbb*);
 static bool resolve_charset_and_collation(SSHORT*, const UCHAR*, const UCHAR*);
 static int symbol_length(const TEXT*);
@@ -80,7 +80,7 @@ static int upcase(const TEXT*, TEXT*);
  *		If found, return field block.  If not, return NULL.
  */  
 
-GPRE_FLD MET_context_field( GPRE_CTX context, const char* string)
+gpre_fld* MET_context_field( gpre_ctx* context, const char* string)
 {
 	if (context->ctx_relation) {
 		return MET_field(context->ctx_relation, string);
@@ -92,16 +92,16 @@ GPRE_FLD MET_context_field( GPRE_CTX context, const char* string)
 
 	SCHAR name[NAME_SIZE];
 	strcpy(name, string);
-	GPRE_PRC procedure = context->ctx_procedure;
+	gpre_prc* procedure = context->ctx_procedure;
 
 /*  At this point the procedure should have been scanned, so all
  *  its fields are in the symbol table.
  */
 
-	GPRE_FLD field = NULL;
-	for (SYM symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym) {
+	gpre_fld* field = NULL;
+	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym) {
 		if (symbol->sym_type == SYM_field &&
-			(field = (GPRE_FLD) symbol->sym_object) &&
+			(field = (gpre_fld*) symbol->sym_object) &&
 			field->fld_procedure == procedure)
 		{
 			return field;
@@ -340,7 +340,7 @@ bool MET_database(dbb* database, bool print_version)
  *		Initialize the size of the field.
  */  
 
-bool MET_domain_lookup(GPRE_REQ request, GPRE_FLD field, const char* string)
+bool MET_domain_lookup(gpre_req* request, gpre_fld* field, const char* string)
 {
 	SCHAR name[NAME_SIZE];
 	bool found = false;
@@ -352,11 +352,11 @@ bool MET_domain_lookup(GPRE_REQ request, GPRE_FLD field, const char* string)
  *  database.
  */
 
-	for (SYM symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
+	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 	{
-		GPRE_FLD d_field;
+		gpre_fld* d_field;
 		if ((symbol->sym_type == SYM_field) &&
-			((d_field = (GPRE_FLD) symbol->sym_object) && (d_field != field))) 
+			((d_field = (gpre_fld*) symbol->sym_object) && (d_field != field)))
 		{
 			field->fld_length = d_field->fld_length;
 			field->fld_scale = d_field->fld_scale;
@@ -478,10 +478,10 @@ bool MET_get_domain_default(dbb* database,
 
 	bool has_default = false;
 	FOR(REQUEST_HANDLE database->dbb_domain_request)
-	GPRE_FLD IN RDB$FIELDS WITH
-		GPRE_FLD.RDB$FIELD_NAME EQ name
-		if (!GPRE_FLD.RDB$DEFAULT_VALUE.NULL) {
-			ISC_QUAD* blob_id = &GPRE_FLD.RDB$DEFAULT_VALUE;
+	GLOB_FLD IN RDB$FIELDS WITH
+		GLOB_FLD.RDB$FIELD_NAME EQ name
+		if (!GLOB_FLD.RDB$DEFAULT_VALUE.NULL) {
+			ISC_QUAD* blob_id = &GLOB_FLD.RDB$DEFAULT_VALUE;
 
 			// open the blob 
 			isc_blob_handle blob_handle = NULL;
@@ -707,7 +707,7 @@ LLS MET_get_primary_key(dbb* database, const TEXT* relation_name)
  *		If found, return field block.  If not, return NULL.
  */  
 
-GPRE_FLD MET_field(GPRE_REL relation, const char* string)
+gpre_fld* MET_field(gpre_rel* relation, const char* string)
 {
 	SCHAR name[NAME_SIZE];
 
@@ -717,8 +717,8 @@ GPRE_FLD MET_field(GPRE_REL relation, const char* string)
 //  Lookup field.  If we find it, nifty.  If not, look it up in the
 //  database.
 
-	GPRE_FLD field = NULL;
-	SYM symbol;
+	gpre_fld* field = NULL;
+	gpre_sym* symbol;
 	for (symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_keyword &&
 			symbol->sym_keyword == (int) KW_DBKEY)
@@ -726,7 +726,7 @@ GPRE_FLD MET_field(GPRE_REL relation, const char* string)
 			return relation->rel_dbkey;
 		}
 		else if (symbol->sym_type == SYM_field &&
-				 (field = (GPRE_FLD) symbol->sym_object) &&
+				 (field = (gpre_fld*) symbol->sym_object) &&
 				 field->fld_relation == relation)
 		{
 			return field;
@@ -750,7 +750,7 @@ GPRE_FLD MET_field(GPRE_REL relation, const char* string)
 			RFR.RDB$FIELD_SOURCE EQ F.RDB$FIELD_NAME AND
 			RFR.RDB$FIELD_NAME EQ name AND
 			RFR.RDB$RELATION_NAME EQ relation->rel_symbol->sym_string
-			field = (GPRE_FLD) MSC_alloc(FLD_LEN);
+			field = (gpre_fld*) MSC_alloc(FLD_LEN);
 			field->fld_relation = relation;
 			field->fld_next = relation->rel_fields;
 			relation->rel_fields = field;
@@ -795,11 +795,11 @@ GPRE_FLD MET_field(GPRE_REL relation, const char* string)
 				INTL_CS_COLL_TO_TTYPE(field->fld_charset_id,
 									  field->fld_collate_id);
 			field->fld_symbol = symbol =
-				MSC_symbol(SYM_field, name, length, (GPRE_CTX) field);
+				MSC_symbol(SYM_field, name, length, (gpre_ctx*) field);
 			HSH_insert(symbol);
 			field->fld_global = symbol =
 				MSC_symbol(SYM_field, RFR.RDB$FIELD_SOURCE,
-						   symbol_length(RFR.RDB$FIELD_SOURCE), (GPRE_CTX) field);
+						   symbol_length(RFR.RDB$FIELD_SOURCE), (gpre_ctx*) field);
 		END_FOR;
 	}
 	else {
@@ -808,7 +808,7 @@ GPRE_FLD MET_field(GPRE_REL relation, const char* string)
 			RFR.RDB$FIELD_SOURCE EQ F.RDB$FIELD_NAME AND
 			RFR.RDB$FIELD_NAME EQ name AND
 			RFR.RDB$RELATION_NAME EQ relation->rel_symbol->sym_string
-			field = (GPRE_FLD) MSC_alloc(FLD_LEN);
+			field = (gpre_fld*) MSC_alloc(FLD_LEN);
 			field->fld_relation = relation;
 			field->fld_next = relation->rel_fields;
 			relation->rel_fields = field;
@@ -840,11 +840,11 @@ GPRE_FLD MET_field(GPRE_REL relation, const char* string)
 				INTL_CS_COLL_TO_TTYPE(field->fld_charset_id,
 									  field->fld_collate_id);
 			field->fld_symbol = symbol =
-				MSC_symbol(SYM_field, name, length, (GPRE_CTX) field);
+				MSC_symbol(SYM_field, name, length, (gpre_ctx*) field);
 			HSH_insert(symbol);
 			field->fld_global = symbol =
 				MSC_symbol(SYM_field, RFR.RDB$FIELD_SOURCE,
-						   symbol_length(RFR.RDB$FIELD_SOURCE), (GPRE_CTX) field);
+						   symbol_length(RFR.RDB$FIELD_SOURCE), (gpre_ctx*) field);
 		END_FOR;
 	}
 
@@ -857,13 +857,13 @@ GPRE_FLD MET_field(GPRE_REL relation, const char* string)
  *     Return a list of the fields in a relation
  */  
 
-GPRE_NOD MET_fields(GPRE_CTX context)
+GPRE_NOD MET_fields(gpre_ctx* context)
 {
-	GPRE_FLD field;
+	gpre_fld* field;
 	GPRE_NOD field_node;
 	REF reference;
 
-	GPRE_PRC procedure = context->ctx_procedure;
+	gpre_prc* procedure = context->ctx_procedure;
 	if (procedure) {
 		GPRE_NOD node = MSC_node(nod_list, procedure->prc_out_count);
 		//count = 0;
@@ -878,7 +878,7 @@ GPRE_NOD MET_fields(GPRE_CTX context)
 		return node;
 	}
 
-	GPRE_REL relation = context->ctx_relation;
+	gpre_rel* relation = context->ctx_relation;
 	if (relation->rel_meta) {
 		int count = 0;
 		for (field = relation->rel_fields; field; field = field->fld_next) {
@@ -907,8 +907,8 @@ GPRE_NOD MET_fields(GPRE_CTX context)
 	int count = 0;
 	LLS stack = NULL;
 	FOR(REQUEST_HANDLE database->dbb_flds_request)
-	RFR IN RDB$RELATION_FIELDS CROSS GPRE_FLD IN RDB$FIELDS WITH
-		RFR.RDB$FIELD_SOURCE EQ GPRE_FLD.RDB$FIELD_NAME AND
+	RFR IN RDB$RELATION_FIELDS CROSS GLOB_FLD IN RDB$FIELDS WITH
+		RFR.RDB$FIELD_SOURCE EQ GLOB_FLD.RDB$FIELD_NAME AND
 		RFR.RDB$RELATION_NAME EQ relation->rel_symbol->sym_string
 		SORTED BY RFR.RDB$FIELD_POSITION
 
@@ -923,7 +923,7 @@ GPRE_NOD MET_fields(GPRE_CTX context)
 	GPRE_NOD node = MSC_node(nod_list, count);
 
 	while (stack) {
-		field = (GPRE_FLD) MSC_pop(&stack);
+		field = (gpre_fld*) MSC_pop(&stack);
 		reference = (REF) MSC_alloc(REF_LEN);
 		reference->ref_field = field;
 		reference->ref_context = context;
@@ -986,7 +986,7 @@ const SCHAR* MET_generator(const TEXT* string, dbb* database)
 
 	strcpy(name, string);
 
-	for (SYM symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
+	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 		if ((symbol->sym_type == SYM_generator) &&
 			(database == (dbb*) (symbol->sym_object)))
 		{
@@ -1093,17 +1093,17 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT* length)
  *		This function has been cloned into MET_get_udf
  */  
 
-GPRE_PRC MET_get_procedure(dbb* database, const TEXT* string, const TEXT* owner_name)
+gpre_prc* MET_get_procedure(dbb* database, const TEXT* string, const TEXT* owner_name)
 {
 	SCHAR name[NAME_SIZE], owner[NAME_SIZE];
 
 	strcpy(name, string);
 	strcpy(owner, owner_name);
-	GPRE_PRC procedure = NULL;
+	gpre_prc* procedure = NULL;
 
-	for (SYM symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
+	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_procedure &&
-			(procedure = (GPRE_PRC) symbol->sym_object) &&
+			(procedure = (gpre_prc*) symbol->sym_object) &&
 			procedure->prc_database == database &&
 			(!owner[0] ||
 			 (procedure->prc_owner
@@ -1123,7 +1123,7 @@ GPRE_PRC MET_get_procedure(dbb* database, const TEXT* string, const TEXT* owner_
 
 	for (USHORT type = 0; type < 2; type++) {
 		USHORT count = 0;
-		GPRE_FLD* fld_list;
+		gpre_fld** fld_list;
 		if (type)
 			fld_list = &procedure->prc_outputs;
 		else
@@ -1139,7 +1139,7 @@ GPRE_PRC MET_get_procedure(dbb* database, const TEXT* string, const TEXT* owner_
 			FOR(REQUEST_HANDLE database->dbb_proc_prm_fld_request)
 			F IN RDB$FIELDS WITH
 				Y.RDB$FIELD_SOURCE EQ F.RDB$FIELD_NAME
-				gpre_fld* field = (GPRE_FLD) MSC_alloc(FLD_LEN);
+				gpre_fld* field = (gpre_fld*) MSC_alloc(FLD_LEN);
 				field->fld_procedure = procedure;
 				field->fld_next = *fld_list;
 				*fld_list = field;
@@ -1175,7 +1175,7 @@ GPRE_PRC MET_get_procedure(dbb* database, const TEXT* string, const TEXT* owner_
 				field->fld_symbol = MSC_symbol(SYM_field,
 											   Y.RDB$PARAMETER_NAME,
 											   symbol_length(Y.RDB$PARAMETER_NAME),
-											   (GPRE_CTX) field);
+											   (gpre_ctx*) field);
 				/* If output parameter, insert in symbol table as a
 				   field. */
 				if (type)
@@ -1208,17 +1208,17 @@ GPRE_PRC MET_get_procedure(dbb* database, const TEXT* string, const TEXT* owner_
  *		Return a relation block (if name is found) or NULL.
  */  
 
-GPRE_REL MET_get_relation(dbb* database, const TEXT* string, const TEXT* owner_name)
+gpre_rel* MET_get_relation(dbb* database, const TEXT* string, const TEXT* owner_name)
 {
-	GPRE_REL relation;
+	gpre_rel* relation;
 	SCHAR name[NAME_SIZE], owner[NAME_SIZE];
 
 	strcpy(name, string);
 	strcpy(owner, owner_name);
 
-	for (SYM symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
+	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_relation &&
-			(relation = (GPRE_REL) symbol->sym_object) &&
+			(relation = (gpre_rel*) symbol->sym_object) &&
 			relation->rel_database == database &&
 			(!owner[0] ||
 			 (relation->rel_owner
@@ -1253,13 +1253,13 @@ INTLSYM MET_get_text_subtype(SSHORT ttype)
  *		This function was cloned from MET_get_procedure
  */  
 
-UDF MET_get_udf(dbb* database, const TEXT* string)
+udf* MET_get_udf(dbb* database, const TEXT* string)
 {
 	SCHAR name[NAME_SIZE];
 
 	strcpy(name, string);
 	udf* the_udf = NULL;
-	for (SYM symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
+	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_udf &&
 			(the_udf = (udf*) symbol->sym_object) && the_udf->udf_database == database)
 			break;
@@ -1279,7 +1279,7 @@ UDF MET_get_udf(dbb* database, const TEXT* string)
 			UDF_DEF.RDB$RETURN_ARGUMENT != UDF_ARG.RDB$ARGUMENT_POSITION
 			SORTED BY DESCENDING UDF_ARG.RDB$ARGUMENT_POSITION;
 
-			gpre_fld* field = (GPRE_FLD) MSC_alloc(FLD_LEN);
+			gpre_fld* field = (gpre_fld*) MSC_alloc(FLD_LEN);
 			field->fld_next = the_udf->udf_inputs;
 			the_udf->udf_inputs = field;
 			the_udf->udf_args++;
@@ -1313,7 +1313,7 @@ UDF MET_get_udf(dbb* database, const TEXT* string)
 			UDF_DEF.RDB$RETURN_ARGUMENT != UDF_ARG.RDB$ARGUMENT_POSITION
 			SORTED BY DESCENDING UDF_ARG.RDB$ARGUMENT_POSITION;
 
-			gpre_fld* field = (GPRE_FLD) MSC_alloc(FLD_LEN);
+			gpre_fld* field = (gpre_fld*) MSC_alloc(FLD_LEN);
 			field->fld_next = the_udf->udf_inputs;
 			the_udf->udf_inputs = field;
 			the_udf->udf_args++;
@@ -1357,7 +1357,7 @@ UDF MET_get_udf(dbb* database, const TEXT* string)
  *		(the relation could be an alias).
  */  
 
-GPRE_REL MET_get_view_relation(GPRE_REQ request,
+gpre_rel* MET_get_view_relation(gpre_req* request,
 							   const char* view_name,
 							   const char* relation_or_alias, 
 							   USHORT level)
@@ -1366,7 +1366,7 @@ GPRE_REL MET_get_view_relation(GPRE_REQ request,
 	DB = database->dbb_handle;
 	gds_trans = database->dbb_transaction;
 
-	GPRE_REL relation = NULL;
+	gpre_rel* relation = NULL;
 
 	FOR(REQUEST_HANDLE database->dbb_view_request, LEVEL level)
 	X IN RDB$VIEW_RELATIONS WITH
@@ -1411,7 +1411,7 @@ IND MET_index(dbb* database, const TEXT* string)
 	strcpy(name, string);
 	const USHORT length = strlen(name);
 
-	SYM symbol;
+	gpre_sym* symbol;
 	for (symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_index &&
 			(index = (IND) symbol->sym_object) &&
@@ -1431,7 +1431,7 @@ IND MET_index(dbb* database, const TEXT* string)
 	FOR(REQUEST_HANDLE database->dbb_index_request)
 	X IN RDB$INDICES WITH X.RDB$INDEX_NAME EQ name
 		index = (IND) MSC_alloc(IND_LEN);
-		index->ind_symbol = symbol = MSC_symbol(SYM_index, name, length, (GPRE_CTX) index);
+		index->ind_symbol = symbol = MSC_symbol(SYM_index, name, length, (gpre_ctx*) index);
 		index->ind_relation = MET_get_relation(database, X.RDB$RELATION_NAME, "");
 		HSH_insert(symbol);
 
@@ -1489,7 +1489,7 @@ void MET_load_hash_table(dbb* database)
 	if (!post_v3_flag)
 		database->dbb_flags |= DBB_v3;
 
-	SYM symbol;
+	gpre_sym* symbol;
 	TEXT* p;
 	SLONG length;
 
@@ -1498,17 +1498,17 @@ void MET_load_hash_table(dbb* database)
 	if (database->dbb_flags & DBB_v3) {
 		FOR(REQUEST_HANDLE handle)
 		X IN RDB$RELATIONS
-			gpre_rel* relation = (GPRE_REL) MSC_alloc(REL_LEN);
+			gpre_rel* relation = (gpre_rel*) MSC_alloc(REL_LEN);
 			relation->rel_database = database;
 			relation->rel_next = database->dbb_relations;
 			database->dbb_relations = relation;
 			relation->rel_id = X.RDB$RELATION_ID;
 			relation->rel_symbol = symbol =
 				MSC_symbol(SYM_relation, X.RDB$RELATION_NAME,
-						   symbol_length(X.RDB$RELATION_NAME), (GPRE_CTX) relation);
+						   symbol_length(X.RDB$RELATION_NAME), (gpre_ctx*) relation);
 			HSH_insert(symbol);
 			const USHORT dbk_len = (X.RDB$DBKEY_LENGTH) ? X.RDB$DBKEY_LENGTH : 8;
-			GPRE_FLD dbkey = MET_make_field("rdb$db_key", dtype_text,
+			gpre_fld* dbkey = MET_make_field("rdb$db_key", dtype_text,
 			                                dbk_len, false);
 			relation->rel_dbkey = dbkey;
 			dbkey->fld_flags |= FLD_dbkey | FLD_text | FLD_charset;
@@ -1519,17 +1519,17 @@ void MET_load_hash_table(dbb* database)
 	else {
 		FOR(REQUEST_HANDLE handle)
 		X IN RDB$RELATIONS
-			gpre_rel* relation = (GPRE_REL) MSC_alloc(REL_LEN);
+			gpre_rel* relation = (gpre_rel*) MSC_alloc(REL_LEN);
 			relation->rel_database = database;
 			relation->rel_next = database->dbb_relations;
 			database->dbb_relations = relation;
 			relation->rel_id = X.RDB$RELATION_ID;
 			relation->rel_symbol = symbol =
 				MSC_symbol(SYM_relation, X.RDB$RELATION_NAME,
-						   symbol_length(X.RDB$RELATION_NAME), (GPRE_CTX) relation);
+						   symbol_length(X.RDB$RELATION_NAME), (gpre_ctx*) relation);
 			HSH_insert(symbol);
 			const USHORT dbk_len = (X.RDB$DBKEY_LENGTH) ? X.RDB$DBKEY_LENGTH : 8;
-			GPRE_FLD dbkey = MET_make_field("rdb$db_key", dtype_text,
+			gpre_fld* dbkey = MET_make_field("rdb$db_key", dtype_text,
 			                            	dbk_len, false);
 			relation->rel_dbkey = dbkey;
 			dbkey->fld_flags |= FLD_dbkey | FLD_text | FLD_charset;
@@ -1551,14 +1551,14 @@ void MET_load_hash_table(dbb* database)
 
 	FOR(REQUEST_HANDLE handle)
 	X IN RDB$PROCEDURES
-		gpre_prc* procedure = (GPRE_PRC) MSC_alloc(REL_LEN);
+		gpre_prc* procedure = (gpre_prc*) MSC_alloc(REL_LEN);
 		procedure->prc_database = database;
-		procedure->prc_next = (GPRE_PRC) database->dbb_procedures;
-		database->dbb_procedures = (GPRE_REL) procedure;
+		procedure->prc_next = (gpre_prc*) database->dbb_procedures;
+		database->dbb_procedures = (gpre_rel*) procedure;
 		procedure->prc_id = X.RDB$PROCEDURE_ID;
 		procedure->prc_symbol = symbol =
 			MSC_symbol(SYM_procedure, X.RDB$PROCEDURE_NAME,
-					   symbol_length(X.RDB$PROCEDURE_NAME), (GPRE_CTX) procedure);
+					   symbol_length(X.RDB$PROCEDURE_NAME), (gpre_ctx*) procedure);
 		HSH_insert(symbol);
 		if (!X.RDB$OWNER_NAME.NULL && (length = symbol_length(X.RDB$OWNER_NAME)))
 			procedure->prc_owner =
@@ -1571,7 +1571,7 @@ void MET_load_hash_table(dbb* database)
 	if (handle)
 		isc_release_request(gds_status, &handle);
 
-/*  Pickup any user defined functions.  If the database does not support UDF's,
+/*  Pickup any user defined functions.  If the database does not support udf's,
  *  this may fail
  */
 
@@ -1594,7 +1594,7 @@ void MET_load_hash_table(dbb* database)
 			p = FUN.RDB$QUERY_NAME;
 			p[length] = 0;
 		}
-		an_udf->udf_symbol = symbol = MSC_symbol(SYM_udf, p, strlen(p), (GPRE_CTX) an_udf);
+		an_udf->udf_symbol = symbol = MSC_symbol(SYM_udf, p, strlen(p), (gpre_ctx*) an_udf);
 		HSH_insert(symbol);
 
 		an_udf->udf_length = ARG.RDB$FIELD_LENGTH;
@@ -1647,7 +1647,7 @@ void MET_load_hash_table(dbb* database)
 		strcpy(iname->intlsym_name, p);
 		iname->intlsym_database = database;
 		iname->intlsym_symbol = symbol =
-			MSC_symbol(SYM_collate, p, strlen(p), (GPRE_CTX) iname);
+			MSC_symbol(SYM_collate, p, strlen(p), (gpre_ctx*) iname);
 		HSH_insert(symbol);
 		iname->intlsym_type = INTLSYM_collation;
 		iname->intlsym_flags = 0;
@@ -1671,7 +1671,7 @@ void MET_load_hash_table(dbb* database)
 			p = TYPE.RDB$TYPE_NAME;
 			length = symbol_length(p);
 			p[length] = 0;
-			symbol = MSC_symbol(SYM_collate, p, length, (GPRE_CTX) iname);
+			symbol = MSC_symbol(SYM_collate, p, length, (gpre_ctx*) iname);
 			HSH_insert(symbol);
 		END_FOR
 		ON_ERROR
@@ -1701,7 +1701,7 @@ void MET_load_hash_table(dbb* database)
 		strcpy(iname->intlsym_name, p);
 		iname->intlsym_database = database;
 		iname->intlsym_symbol = symbol =
-			MSC_symbol(SYM_charset, p, strlen(p), (GPRE_CTX) iname);
+			MSC_symbol(SYM_charset, p, strlen(p), (gpre_ctx*) iname);
 		HSH_insert(symbol);
 		iname->intlsym_type = INTLSYM_collation;
 		iname->intlsym_flags = 0;
@@ -1723,7 +1723,7 @@ void MET_load_hash_table(dbb* database)
 			p = TYPE.RDB$TYPE_NAME;
 			length = symbol_length(p);
 			p[length] = 0;
-			symbol = MSC_symbol(SYM_charset, p, length, (GPRE_CTX) iname);
+			symbol = MSC_symbol(SYM_charset, p, length, (gpre_ctx*) iname);
 			HSH_insert(symbol);
 		END_FOR
 		ON_ERROR
@@ -1763,7 +1763,7 @@ void MET_load_hash_table(dbb* database)
 	FOR(REQUEST_HANDLE handle)
 	X IN RDB$GENERATORS
 		symbol = MSC_symbol(SYM_generator, X.RDB$GENERATOR_NAME,
-							symbol_length(X.RDB$GENERATOR_NAME), (GPRE_CTX) database);
+							symbol_length(X.RDB$GENERATOR_NAME), (gpre_ctx*) database);
 		HSH_insert(symbol);
 
 	END_FOR 
@@ -1802,15 +1802,15 @@ void MET_load_hash_table(dbb* database)
  *		Make a field symbol.
  */  
 
-GPRE_FLD MET_make_field(const SCHAR* name,
+gpre_fld* MET_make_field(const SCHAR* name,
 						SSHORT dtype,
 						SSHORT length,
 						bool insert_flag)
 {
-	GPRE_FLD field = (GPRE_FLD) MSC_alloc(FLD_LEN);
+	gpre_fld* field = (gpre_fld*) MSC_alloc(FLD_LEN);
 	field->fld_length = length;
 	field->fld_dtype = dtype;
-	SYM symbol = MSC_symbol(SYM_field, name, strlen(name), (GPRE_CTX) field);
+	gpre_sym* symbol = MSC_symbol(SYM_field, name, strlen(name), (gpre_ctx*) field);
 	field->fld_symbol = symbol;
 	if (insert_flag)
 		HSH_insert(symbol);
@@ -1827,7 +1827,7 @@ GPRE_FLD MET_make_field(const SCHAR* name,
 IND MET_make_index(const SCHAR* name)
 {
 	IND index = (IND) MSC_alloc(IND_LEN);
-	index->ind_symbol = MSC_symbol(SYM_index, name, strlen(name), (GPRE_CTX) index);
+	index->ind_symbol = MSC_symbol(SYM_index, name, strlen(name), (gpre_ctx*) index);
 
 	return index;
 }
@@ -1838,11 +1838,11 @@ IND MET_make_index(const SCHAR* name)
  *		Make an relation symbol.
  */  
 
-GPRE_REL MET_make_relation(const SCHAR* name)
+gpre_rel* MET_make_relation(const SCHAR* name)
 {
-	GPRE_REL relation = (GPRE_REL) MSC_alloc(REL_LEN);
+	gpre_rel* relation = (gpre_rel*) MSC_alloc(REL_LEN);
 	relation->rel_symbol =
-		MSC_symbol(SYM_relation, name, strlen(name), (GPRE_CTX) relation);
+		MSC_symbol(SYM_relation, name, strlen(name), (gpre_ctx*) relation);
 
 	return relation;
 }
@@ -1853,24 +1853,24 @@ GPRE_REL MET_make_relation(const SCHAR* name)
  *		Lookup a type name for a field.
  */  
 
-bool MET_type(GPRE_FLD field,
+bool MET_type(gpre_fld* field,
 			  const TEXT* string,
 			  SSHORT* ptr)
 {
-	TYP type;
+	field_type* type;
 	UCHAR buffer[32];			/* BASED ON RDB$TYPES.RDB$TYPE_NAME */
 
-	SYM symbol;
+	gpre_sym* symbol;
 	for (symbol = HSH_lookup(string); symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_type &&
-			(type = (TYP) symbol->sym_object) &&
+			(type = (field_type*) symbol->sym_object) &&
 			(!type->typ_field || type->typ_field == field))
 		{
 			*ptr = type->typ_value;
 			return true;
 		}
 
-	GPRE_REL relation = field->fld_relation;
+	gpre_rel* relation = field->fld_relation;
 	dbb* database = relation->rel_database;
 	DB = database->dbb_handle;
 	gds_trans = database->dbb_transaction;
@@ -1887,11 +1887,11 @@ bool MET_type(GPRE_FLD field,
 	FOR(REQUEST_HANDLE database->dbb_type_request)
 	X IN RDB$TYPES WITH X.RDB$FIELD_NAME EQ field->fld_global->sym_string AND
 		X.RDB$TYPE_NAME EQ buffer
-		type = (TYP) MSC_alloc(TYP_LEN);
+		type = (field_type*) MSC_alloc(TYP_LEN);
 		type->typ_field = field;
 		*ptr = type->typ_value = X.RDB$TYPE;
 		type->typ_symbol = symbol =
-			MSC_symbol(SYM_type, string, strlen(string), (GPRE_CTX) type);
+			MSC_symbol(SYM_type, string, strlen(string), (gpre_ctx*) type);
 		HSH_insert(symbol);
 		return true;
 	END_FOR
@@ -1935,11 +1935,11 @@ bool MET_trigger_exists(dbb* database,
  *		Compute and return the size of the array.
  */  
 
-static SLONG array_size( GPRE_FLD field)
+static SLONG array_size( gpre_fld* field)
 {
-	ARY array_block = field->fld_array_info;
+	ary* array_block = field->fld_array_info;
 	SLONG count = field->fld_array->fld_length;
-	for (DIM dimension = array_block->ary_dimension; dimension;
+	for (dim* dimension = array_block->ary_dimension; dimension;
 		 dimension = dimension->dim_next)
 	{
 		count =
@@ -1955,16 +1955,16 @@ static SLONG array_size( GPRE_FLD field)
  *		See if field is array.
  */  
 
-static void get_array(dbb* database, const TEXT* field_name, GPRE_FLD field)
+static void get_array(dbb* database, const TEXT* field_name, gpre_fld* field)
 {
-	ARY array_block = NULL;
+	ary* array_block = NULL;
 	USHORT field_dimensions = 0;
 
 	FOR(REQUEST_HANDLE database->dbb_array_request)
 
 	F IN RDB$FIELDS WITH F.RDB$FIELD_NAME EQ field_name
 		if (F.RDB$DIMENSIONS) {
-			GPRE_FLD sub_field = (GPRE_FLD) MSC_alloc(FLD_LEN);
+			gpre_fld* sub_field = (gpre_fld*) MSC_alloc(FLD_LEN);
 			*sub_field = *field;
 			// CVC: beware, the above line is far from deep copy;
 			// there are only 13 non-pointer members in gpre_fld.
@@ -1979,7 +1979,7 @@ static void get_array(dbb* database, const TEXT* field_name, GPRE_FLD field)
 			fb_assert(field_dimensions <= MAX_ARRAY_DIMENSIONS);
 			fb_assert(field_dimensions > 0); // Sometimes, sys tables screw
 			field->fld_array_info = array_block = (ary*) MSC_alloc(ARY_LEN);
-				//(ARY) MSC_alloc(ARY_LEN(F.RDB$DIMENSIONS));
+				//(ary*) MSC_alloc(ARY_LEN(F.RDB$DIMENSIONS));
 			array_block->ary_dtype = sub_field->fld_dtype;
 		} 
 	END_FOR
@@ -1992,14 +1992,14 @@ static void get_array(dbb* database, const TEXT* field_name, GPRE_FLD field)
 	if (!array_block)
 		return;
 
-    DIM last_dimension_block = 0;
+    dim* last_dimension_block = 0;
     USHORT dimension_counter = 0;
 	FOR(REQUEST_HANDLE database->dbb_dimension_request)
 	D IN RDB$FIELD_DIMENSIONS WITH D.RDB$FIELD_NAME EQ field_name
 		SORTED BY ASCENDING D.RDB$DIMENSION
 		array_block->ary_rpt[D.RDB$DIMENSION].ary_lower = D.RDB$LOWER_BOUND;
 		array_block->ary_rpt[D.RDB$DIMENSION].ary_upper = D.RDB$UPPER_BOUND;
-		DIM dimension_block = (DIM) MSC_alloc(DIM_LEN);
+		dim* dimension_block = (dim*) MSC_alloc(DIM_LEN);
 		dimension_block->dim_number = D.RDB$DIMENSION;
 		dimension_block->dim_lower = D.RDB$LOWER_BOUND;
 		dimension_block->dim_upper = D.RDB$UPPER_BOUND;

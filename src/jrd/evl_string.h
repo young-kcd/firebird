@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: evl_string.h,v 1.5 2003-12-27 17:59:59 fsg Exp $
+ *  $Id: evl_string.h,v 1.6 2004-01-28 07:50:32 robocop Exp $
  *
  */
 
@@ -125,7 +125,8 @@ public:
 			result = allocBuffer + allocated;
 			allocated += count;		
 			return result;
-		} else {
+		}
+		else {
 			result = pool->allocate(count);
 			chunksToFree.add(result);
 			return result;
@@ -215,7 +216,8 @@ public:
 		branches.shrink(0);
 		if (patternItems[0].type == piNone) {
 			match_type = (patternItems[0].match_any ? MATCH_ANY : MATCH_FIXED);
-		} else {
+		}
+		else {
 			BranchItem temp = {&patternItems[0], 0};
 			branches.add(temp);
 			match_type = MATCH_NONE;
@@ -389,7 +391,8 @@ LikeEvaluator<CharType>::LikeEvaluator(
 				// Convert this node to SkipFixed if possible
 				item->type = piSkipFixed;
 				item->match_any = true;
-			} else {
+			}
+			else {
 				if (i > 0) {
 					// Mark previous node if it exists
 					patternItems[i-1].match_any = true;
@@ -497,12 +500,14 @@ bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SSHORT data
 						// We are looking for the pattern at the end of string
 						current_branch->offset = current_pattern->str.kmpNext[current_branch->offset];
 						finishCandidate = data_pos;
-					} else {
+					}
+					else {
 						if (next_pattern->type == piSearch) {
 							// Search for the next pattern
 							current_branch->pattern = next_pattern;
 							current_branch->offset = 0;
-						} else {
+						}
+						else {
 							// Try to apply further non-search patterns and continue searching
 							current_branch->offset = current_pattern->str.kmpNext[current_branch->offset];
 							BranchItem temp = {next_pattern, 0};

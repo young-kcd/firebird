@@ -501,7 +501,8 @@ SVC SVC_attach(USHORT	service_length,
 		if (!misc) {
 			ERR_post(isc_virmemexh, 0);
 		}
-	} else {
+	}
+	else {
 		misc = misc_buf;
 	}
 

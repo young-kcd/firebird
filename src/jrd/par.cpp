@@ -1891,8 +1891,9 @@ static void par_procedure_parms(
 
 				asgn->nod_arg[asgn_arg1] = parameter->prm_default_val;
 			}
-			else
+			else {
 				asgn->nod_arg[asgn_arg1] = parse(tdbb, csb, VALUE);
+			}
 			jrd_nod* prm = asgn->nod_arg[asgn_arg2] =
 				PAR_make_node(tdbb, e_arg_length);
 			prm->nod_type = nod_argument;
@@ -2662,7 +2663,7 @@ static jrd_nod* parse(TDBB tdbb, Csb* csb, USHORT expected, USHORT expected_opti
 			node->nod_arg[e_arg_message] = message;
 			n = BLR_WORD;
 			node->nod_arg[e_arg_number] = (jrd_nod*) (IPTR) n;
-			const fmt* format = (FMT) message->nod_arg[e_msg_format];
+			const fmt* format = (fmt*) message->nod_arg[e_msg_format];
 			if (n >= format->fmt_count)
 				error(csb, isc_badparnum, 0);
 			if (operator_ != blr_parameter) {

@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.49 2004-01-21 07:16:15 skidder Exp $
+//  $Id: gpre.cpp,v 1.50 2004-01-28 07:50:27 robocop Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -90,7 +90,7 @@ static SSHORT		compare_ASCII7z(const char*, const char*);
 static SLONG		compile_module(SLONG, const TEXT*);
 static bool			file_rename(TEXT*, const TEXT*, const TEXT*);
 #ifdef GPRE_FORTRAN
-static void			finish_based(ACT);
+static void			finish_based(act*);
 #endif
 static int			get_char(IB_FILE*);
 static bool			get_switches(int, TEXT**, const in_sw_tab_t*, SW_TAB,
@@ -112,9 +112,10 @@ const TEXT*	file_name;
 TEXT*	out_file_name;
 SLONG position, last_position, line_position, first_position,
 	prior_line_position;
-ACT global_last_action, global_first_action;
+act* global_last_action;
+act* global_first_action;
 UCHAR classes[256], fortran_labels[1024];
-TEXT *ident_pattern, *utility_name, *count_name, *slack_name,
+const TEXT *ident_pattern, *utility_name, *count_name, *slack_name,
 	*transaction_name, *database_name;
 
 static TEXT input_buffer[512], *input_char;
@@ -237,7 +238,7 @@ enum char_types {
 
 int main(int argc, char* argv[])
 {
-	SYM symbol;
+	gpre_sym* symbol;
 	SLONG end_position;
 	int i;
 	TEXT*	p;
@@ -430,7 +431,8 @@ int main(int argc, char* argv[])
 			if (renamed) {
 				ib_fprintf(ib_stderr, "gpre: can't open %s or %s\n",
 						   file_name, spare_file_name);
-			} else {
+			}
+			else {
 				ib_fprintf(ib_stderr, "gpre: can't open %s\n", file_name);
 			}
 			CPR_exit(FINI_ERROR);
@@ -485,12 +487,12 @@ int main(int argc, char* argv[])
 
 			// allocate symbol block 
 
-			symbol = (SYM) MSC_alloc_permanent(SYM_LEN);
+			symbol = (gpre_sym*) MSC_alloc_permanent(SYM_LEN);
 
 			// make it a database, specifically this one 
 
 			symbol->sym_type	= SYM_database;
-			symbol->sym_object	= (GPRE_CTX) db;
+			symbol->sym_object	= (gpre_ctx*) db;
 			symbol->sym_string	= database_name;
 
 			// database block points to the symbol block 
@@ -1229,7 +1231,7 @@ TOK CPR_token()
 		return NULL;
 
 	if (token->tok_type == tok_introducer) {
-		SYM symbol = MSC_find_symbol(HSH_lookup(token->tok_string + 1), SYM_charset);
+		gpre_sym* symbol = MSC_find_symbol(HSH_lookup(token->tok_string + 1), SYM_charset);
 		if (!symbol) {
 			TEXT err_buffer[100];
 
@@ -1394,8 +1396,10 @@ static SLONG compile_module( SLONG start_position, const TEXT* base_directory)
 	if (errors)
 		return end_position;
 
-	for (GPRE_REQ request = requests; request; request = request->req_next)
+	for (gpre_req* request = requests; request; request = request->req_next)
+	{
 		CMP_compile_request(request);
+	}
 
 	ib_fseek(input_file, start_position, 0);
 	input_char = input_buffer;
@@ -1488,10 +1492,10 @@ static bool file_rename(TEXT* file_name,
 //       for the relation.
 //  
 
-static void finish_based( ACT action)
+static void finish_based( act* action)
 {
-	GPRE_REL relation;
-	GPRE_FLD field;
+	gpre_rel* relation;
+	gpre_fld* field;
 	TEXT s[128];
 
 	for (; action; action = action->act_rest) {
@@ -1507,13 +1511,13 @@ static void finish_based( ACT action)
 			continue;
 		}
 
-		BAS based_on = (BAS) action->act_object;
+		bas* based_on = (bas*) action->act_object;
 		if (!based_on->bas_fld_name)
 			continue;
 
 		DBB db = NULL;
 		if (based_on->bas_db_name) {
-			SYM symbol = HSH_lookup(based_on->bas_db_name->str_string);
+			gpre_sym* symbol = HSH_lookup(based_on->bas_db_name->str_string);
 			for (; symbol; symbol = symbol->sym_homonym)
 				if (symbol->sym_type == SYM_database)
 					break;
@@ -1667,7 +1671,8 @@ static bool get_switches(int			argc,
 				{
 					if (!file_array[0]) {
 						file_array[0] = string;
-					} else {
+					}
+					else {
 						file_array[1] = string;
 					}
 					continue;
@@ -2123,7 +2128,8 @@ static TOK get_token()
 				peek = nextchar();
 				if (peek == '\n') {
 					token.tok_white_space += 2;
-				} else if (p < end) {
+				}
+				else if (p < end) {
 					*p++ = (TEXT) next;
 					if (p < end) {
 						*p++ = (TEXT) peek;
@@ -2181,7 +2187,7 @@ static TOK get_token()
 			return_char(*--p);
 	}
 
-	SYM symbol;
+	gpre_sym* symbol;
 
 	token.tok_length = p - token.tok_string;
 	*p++ = 0;
@@ -2328,7 +2334,7 @@ static int nextchar()
 
 static SLONG pass1(const TEXT* base_directory)
 {
-	ACT action;
+	act* action;
 	SLONG start;
 
 //  FSG 14.Nov.2000 
@@ -2347,14 +2353,16 @@ static SLONG pass1(const TEXT* base_directory)
 				action->act_position = start;
 				if (!(action->act_flags & ACT_back_token)) {
 					action->act_length = last_position - start;
-				} else {
+				}
+				else {
 					action->act_length =
 						prior_token.tok_position +
 						prior_token.tok_length - 1 - start;
 				}
 				if (global_first_action) {
 					global_last_action->act_rest = action;
-				} else {
+				}
+				else {
 					global_first_action = action;
 				}
 
@@ -2507,7 +2515,8 @@ static void pass2( SLONG start_position)
 			ib_putc(c, out_file);
 			if (c == '\t') {
 				column = (column + 8) & ~7;
-			} else {
+			}
+			else {
 				++column;
 			}
 		}

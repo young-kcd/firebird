@@ -203,9 +203,9 @@ jrd_rel[] = {
 },
 fmt[] = {
 	"FORMAT",
-		FLD(FMT, "Count: %d", fmt_count),
-		FLD(FMT, "Length: %d", fmt_length),
-		FLD(FMT, "Version: %d", fmt_version),
+		FLD(fmt*, "Count: %d", fmt_count),
+		FLD(fmt*, "Length: %d", fmt_length),
+		FLD(fmt*, "Version: %d", fmt_version),
 		0
 },
 jrd_req[] = {
@@ -259,11 +259,11 @@ rec[] = {
 },
 Rsb[] = {
 	"RECORD SOURCE BLOCK",
-		FLD(RSB, "Type: %x", rsb_type),
-		FLD(RSB, "Stream: %x", rsb_stream),
-		FLD(RSB, "Relation: %x", rsb_relation),
-		FLD(RSB, "Next: %x", rsb_next),
-		FLD(RSB, "Count: %x", rsb_count),
+		FLD(Rsb*, "Type: %x", rsb_type),
+		FLD(Rsb*, "Stream: %x", rsb_stream),
+		FLD(Rsb*, "Relation: %x", rsb_relation),
+		FLD(Rsb*, "Next: %x", rsb_next),
+		FLD(Rsb*, "Count: %x", rsb_count),
 		0
 },
 opt[] = {

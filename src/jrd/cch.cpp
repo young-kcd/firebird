@@ -2087,7 +2087,8 @@ void update_write_direction(TDBB tdbb, BDB bdb)
 			}
 			NBAK_TRACE(("Allocate difference page %d for database page %d", 
 				bdb->bdb_difference_page, bdb->bdb_page));
-		} else {
+		}
+		else {
 			NBAK_TRACE(("Map existing difference page %d to database page %d", 
 				bdb->bdb_difference_page, bdb->bdb_page));
 		}

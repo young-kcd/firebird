@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.39 2004-01-21 07:16:15 skidder Exp $
+//	$Id: sql.cpp,v 1.40 2004-01-28 07:50:27 robocop Exp $
 //
 
 #include "firebird.h"
@@ -56,57 +56,57 @@ const int DEF_CACHE_BUFFERS	= 1000;
 #endif
 const int DEFAULT_BLOB_SEGMENT_LENGTH	= 80;	// bytes 
 
-extern ACT cur_routine;
-extern TEXT* database_name;
+extern act* cur_routine;
+extern const TEXT* database_name;
 
 const TEXT* module_lc_ctype = NULL;
 
-static ACT act_alter(void);
-static ACT act_alter_database(void);
-static ACT act_alter_domain(void);
-static ACT act_alter_index(void);
-static ACT act_alter_table(void);
-static ACT act_comment(void);
-static ACT act_connect(void);
-static ACT act_create(void);
-static ACT act_create_database(void);
-static ACT act_create_domain(void);
-static ACT act_create_generator(void);
-static ACT act_create_index(bool, bool);
-static ACT act_create_shadow(void);
-static ACT act_create_table(void);
-static ACT act_create_view(void);
-static ACT act_d_section(enum act_t);
-static ACT act_declare(void);
-static ACT act_declare_filter(void);
-static ACT act_declare_table(SYM, DBB);
-static ACT act_declare_udf(void);
-static ACT act_delete(void);
-static ACT act_describe(void);
-static ACT act_disconnect(void);
-static ACT act_drop(void);
-static ACT act_event(void);
-static ACT act_execute(void);
-static ACT act_fetch(void);
-static ACT act_grant_revoke(enum act_t);
-static ACT act_include(void);
-static ACT act_insert(void);
-static ACT act_insert_blob(const TEXT *);
-static ACT act_lock(void);
-static ACT act_openclose(enum act_t);
-static ACT act_open_blob(ACT_T, SYM);
-static ACT act_prepare(void);
-static ACT act_procedure(void);
-static ACT act_select(void);
-static ACT act_set(const TEXT*);
-static ACT act_set_dialect(void);
-static ACT act_set_generator(void);
-static ACT act_set_names(void);
-static ACT act_set_statistics(void);
-static ACT act_set_transaction(void);
-static ACT act_transaction(enum act_t);
-static ACT act_update(void);
-static ACT act_whenever(void);
+static act* act_alter(void);
+static act* act_alter_database(void);
+static act* act_alter_domain(void);
+static act* act_alter_index(void);
+static act* act_alter_table(void);
+static act* act_comment(void);
+static act* act_connect(void);
+static act* act_create(void);
+static act* act_create_database(void);
+static act* act_create_domain(void);
+static act* act_create_generator(void);
+static act* act_create_index(bool, bool);
+static act* act_create_shadow(void);
+static act* act_create_table(void);
+static act* act_create_view(void);
+static act* act_d_section(enum act_t);
+static act* act_declare(void);
+static act* act_declare_filter(void);
+static act* act_declare_table(gpre_sym*, DBB);
+static act* act_declare_udf(void);
+static act* act_delete(void);
+static act* act_describe(void);
+static act* act_disconnect(void);
+static act* act_drop(void);
+static act* act_event(void);
+static act* act_execute(void);
+static act* act_fetch(void);
+static act* act_grant_revoke(enum act_t);
+static act* act_include(void);
+static act* act_insert(void);
+static act* act_insert_blob(const TEXT *);
+static act* act_lock(void);
+static act* act_openclose(enum act_t);
+static act* act_open_blob(ACT_T, gpre_sym*);
+static act* act_prepare(void);
+static act* act_procedure(void);
+static act* act_select(void);
+static act* act_set(const TEXT*);
+static act* act_set_dialect(void);
+static act* act_set_generator(void);
+static act* act_set_names(void);
+static act* act_set_statistics(void);
+static act* act_set_transaction(void);
+static act* act_transaction(enum act_t);
+static act* act_update(void);
+static act* act_whenever(void);
 
 static bool		check_filename(const TEXT *);
 static void		connect_opts(TEXT **, TEXT **, TEXT **, TEXT **, USHORT *);
@@ -119,26 +119,26 @@ static dbb*		dup_dbb(const dbb*);
 static void		error(const TEXT *, const TEXT *);
 static TEXT		*extract_string(bool);
 static swe*		gen_whenever(void);
-static void		into(GPRE_REQ, GPRE_NOD, GPRE_NOD);
-static GPRE_FLD	make_field(GPRE_REL);
-static IND		make_index(GPRE_REQ, TEXT *);
-static GPRE_REL make_relation(GPRE_REQ, const TEXT *);
+static void		into(gpre_req*, GPRE_NOD, GPRE_NOD);
+static gpre_fld*	make_field(gpre_rel*);
+static IND		make_index(gpre_req*, TEXT *);
+static gpre_rel* make_relation(gpre_req*, const TEXT *);
 static void		pair(GPRE_NOD, GPRE_NOD);
-static void		par_array(GPRE_FLD);
+static void		par_array(gpre_fld*);
 static SSHORT	par_char_set(void);
-static void		par_computed(GPRE_REQ, GPRE_FLD);
-static GPRE_REQ par_cursor(SYM *);
+static void		par_computed(gpre_req*, gpre_fld*);
+static gpre_req* par_cursor(gpre_sym**);
 static DYN		par_dynamic_cursor(void);
-static GPRE_FLD par_field(GPRE_REQ, GPRE_REL);
-static CNSTRT	par_field_constraint(GPRE_REQ, GPRE_FLD, GPRE_REL);
+static gpre_fld* par_field(gpre_req*, gpre_rel*);
+static CNSTRT	par_field_constraint(gpre_req*, gpre_fld*, gpre_rel*);
 static void		par_fkey_extension(CNSTRT);
 static bool		par_into(DYN);
 static void		par_options(const TEXT**);
 static int		par_page_size(void);
-static GPRE_REL par_relation(GPRE_REQ);
+static gpre_rel* par_relation(gpre_req*);
 static DYN		par_statement(void);
-static CNSTRT	par_table_constraint(GPRE_REQ, GPRE_REL);
-static bool		par_transaction_modes(GPRE_TRA, bool);
+static CNSTRT	par_table_constraint(gpre_req*, gpre_rel*);
+static bool		par_transaction_modes(gpre_tra*, bool);
 static bool		par_using(DYN);
 static USHORT	resolve_dtypes(KWWORDS, bool);
 static bool		tail_database(enum act_t, DBB);
@@ -171,9 +171,9 @@ static inline bool range_positive_short_integer(const SLONG x)
 //		Parse and return a sequel action.
 //  
 
-ACT SQL_action(const TEXT* base_directory)
+act* SQL_action(const TEXT* base_directory)
 {
-	ACT action;
+	act* action;
 	enum kwwords keyword;
 
 
@@ -345,7 +345,7 @@ ACT SQL_action(const TEXT* base_directory)
 //		a user datatype, and set the length field.
 //  
 
-void SQL_adjust_field_dtype( GPRE_FLD field)
+void SQL_adjust_field_dtype( gpre_fld* field)
 {
 	ULONG field_length;
 
@@ -478,7 +478,7 @@ void SQL_init(void)
 //  
 //  
 
-void SQL_par_field_collate( GPRE_REQ request, GPRE_FLD field)
+void SQL_par_field_collate( gpre_req* request, gpre_fld* field)
 {
 	if (MSC_match(KW_COLLATE)) {
 
@@ -488,7 +488,7 @@ void SQL_par_field_collate( GPRE_REQ request, GPRE_FLD field)
 				PAR_error("COLLATE applies only to character columns");
 		if (token.tok_type != tok_ident)
 			CPR_s_error("<collation name>");
-		SYM symbol = MSC_find_symbol(token.tok_symbol, SYM_collate);
+		gpre_sym* symbol = MSC_find_symbol(token.tok_symbol, SYM_collate);
 		if (!symbol)
 			PAR_error("The named COLLATION was not found");
 		field->fld_collate = (INTLSYM) symbol->sym_object;
@@ -519,13 +519,13 @@ void SQL_par_field_collate( GPRE_REQ request, GPRE_FLD field)
 //		Also for CAST statement
 //  
 
-void SQL_par_field_dtype(GPRE_REQ request,
-						 GPRE_FLD field,
+void SQL_par_field_dtype(gpre_req* request,
+						 gpre_fld* field,
 						 bool is_udf)
 {
 	int l, p, q;
 	enum kwwords keyword;
-	SYM symbol;
+	gpre_sym* symbol;
 	char s[ERROR_LENGTH];
 	bool sql_date = false;
 
@@ -591,7 +591,7 @@ void SQL_par_field_dtype(GPRE_REQ request,
 		else {
 			SQL_resolve_identifier("<domain name>", s);
 			field->fld_global = symbol =
-				MSC_symbol(SYM_field, s, (USHORT) strlen(s), (GPRE_CTX) field);
+				MSC_symbol(SYM_field, s, (USHORT) strlen(s), (gpre_ctx*) field);
 			if (!MET_domain_lookup(request, field, s))
 				PAR_error("Specified DOMAIN or source column not found");
 			PAR_get_token();
@@ -764,7 +764,7 @@ void SQL_par_field_dtype(GPRE_REQ request,
 	}
 
 	if (MSC_match(KW_CHAR)) {
-		SYM symbol;
+		gpre_sym* symbol;
 		if ((field->fld_dtype != dtype_text) &&
 			(field->fld_dtype != dtype_cstring) &&
 			(field->fld_dtype != dtype_varying) &&
@@ -826,7 +826,7 @@ void SQL_par_field_dtype(GPRE_REQ request,
 //		find the procedure in that database only.
 //  
 
-GPRE_PRC SQL_procedure(GPRE_REQ request,
+gpre_prc* SQL_procedure(gpre_req* request,
 					   TEXT * prc_string,
 					   TEXT * db_string,
 					   TEXT * owner_string,
@@ -835,13 +835,13 @@ GPRE_PRC SQL_procedure(GPRE_REQ request,
 	DBB db;
 	SCHAR s[ERROR_LENGTH];
 
-	GPRE_PRC procedure = NULL;
+	gpre_prc* procedure = NULL;
 
 	if (db_string && db_string[0]) {
 		// a database was specified for the procedure
 		// search the known symbols for the database name
 
-		SYM symbol = MSC_find_symbol(HSH_lookup(db_string), SYM_database);
+		gpre_sym* symbol = MSC_find_symbol(HSH_lookup(db_string), SYM_database);
 		if (!symbol)
 			PAR_error("Unknown database specifier.");
 		if (request->req_database) {
@@ -862,7 +862,7 @@ GPRE_PRC SQL_procedure(GPRE_REQ request,
 		procedure = NULL; // redundant
 		for (db = isc_databases; db; db = db->dbb_next)
 		{
-			GPRE_PRC tmp_procedure = MET_get_procedure(db, prc_string,
+			gpre_prc* tmp_procedure = MET_get_procedure(db, prc_string,
 														owner_string);
 			if (tmp_procedure) {
 				if (procedure) {
@@ -900,7 +900,7 @@ GPRE_PRC SQL_procedure(GPRE_REQ request,
 //		find the relation in that database only.
 //  
 
-GPRE_REL SQL_relation(GPRE_REQ request,
+gpre_rel* SQL_relation(gpre_req* request,
 					  TEXT * rel_string,
 					  TEXT * db_string,
 					  TEXT * owner_string,
@@ -909,13 +909,13 @@ GPRE_REL SQL_relation(GPRE_REQ request,
 	DBB db;
 	SCHAR s[ERROR_LENGTH];
 
-	GPRE_REL relation = NULL;
+	gpre_rel* relation = NULL;
 
 	if (db_string && db_string[0]) {
 		/* a database was specified for the relation,
 		   search the known symbols for the database name */
 
-		SYM symbol = MSC_find_symbol(HSH_lookup(db_string), SYM_database);
+		gpre_sym* symbol = MSC_find_symbol(HSH_lookup(db_string), SYM_database);
 		if (!symbol)
 			PAR_error("Unknown database specifier.");
 		if (request->req_database) {
@@ -936,7 +936,7 @@ GPRE_REL SQL_relation(GPRE_REQ request,
 		relation = NULL;
 		for (db = isc_databases; db; db = db->dbb_next)
 		{
-			GPRE_REL tmp_relation = MET_get_relation(db, rel_string, owner_string);
+			gpre_rel* tmp_relation = MET_get_relation(db, rel_string, owner_string);
 			if (tmp_relation) {
 				if (relation) {
 					// relation was found in more than one database 
@@ -981,7 +981,7 @@ void SQL_relation_name(TEXT * r_name,
 	TEXT* t_str = (TEXT*) MSC_alloc(NAME_SIZE + 1);
 	SQL_resolve_identifier("<Table name>", t_str);
 
-	SYM symbol = MSC_find_symbol(token.tok_symbol, SYM_database);
+	gpre_sym* symbol = MSC_find_symbol(token.tok_symbol, SYM_database);
 	if (symbol) {
 		strcpy(db_name, symbol->sym_name);
 		PAR_get_token();
@@ -1034,7 +1034,7 @@ TEXT *SQL_var_or_string(bool string_only)
 //		Handle an SQL alter statement.
 //  
 
-static ACT act_alter(void)
+static act* act_alter(void)
 {
 
 	switch (token.tok_keyword) {
@@ -1072,9 +1072,9 @@ static ACT act_alter(void)
 //		Handle an SQL alter database statement
 //  
 
-static ACT act_alter_database(void)
+static act* act_alter_database(void)
 {
-	GPRE_REQ request = MSC_request(REQ_ddl);
+	gpre_req* request = MSC_request(REQ_ddl);
 	if (isc_databases && !isc_databases->dbb_next)
 		request->req_database = isc_databases;
 	else
@@ -1083,7 +1083,7 @@ static ACT act_alter_database(void)
 	PAR_get_token();
 
 	//  create action block 
-	ACT action = MSC_action(request, ACT_alter_database);
+	act* action = MSC_action(request, ACT_alter_database);
 	action->act_whenever = gen_whenever();
 	DBB database = (DBB) MSC_alloc(DBB_LEN);
 	action->act_object = (REF) database;
@@ -1185,11 +1185,11 @@ static ACT act_alter_database(void)
 //		Handle altering of a domain (global field). 
 //  
 
-static ACT act_alter_domain(void)
+static act* act_alter_domain(void)
 {
 //  create request block 
 
-	GPRE_REQ request = MSC_request(REQ_ddl);
+	gpre_req* request = MSC_request(REQ_ddl);
 	if (isc_databases && !isc_databases->dbb_next)
 		request->req_database = isc_databases;
 	else
@@ -1197,10 +1197,10 @@ static ACT act_alter_domain(void)
 
 //  create action block 
 
-	ACT action = MSC_action(request, ACT_alter_domain);
+	act* action = MSC_action(request, ACT_alter_domain);
 
 	PAR_get_token();
-	GPRE_FLD field = make_field(0);
+	gpre_fld* field = make_field(0);
 	cnstrt** cnstrt_ptr = &field->fld_constraints;
 
 //  Check if default value was specified 
@@ -1272,13 +1272,13 @@ static ACT act_alter_domain(void)
 //		Handle an SQL alter index statement.
 //  
 
-static ACT act_alter_index(void)
+static act* act_alter_index(void)
 {
 	SCHAR i_name[NAME_SIZE + 1];
 
 //  create request block 
 
-	GPRE_REQ request = MSC_request(REQ_ddl);
+	gpre_req* request = MSC_request(REQ_ddl);
 
 	if (token.tok_length > NAME_SIZE)
 		PAR_error("Index name too long");
@@ -1296,7 +1296,7 @@ static ACT act_alter_index(void)
 	else
 		PAR_error("Unsupported ALTER INDEX option");
 
-	ACT action = MSC_action(request, ACT_alter_index);
+	act* action = MSC_action(request, ACT_alter_index);
 	action->act_object = (REF) index;
 	action->act_whenever = gen_whenever();
 
@@ -1309,18 +1309,18 @@ static ACT act_alter_index(void)
 //		Handle an SQL alter table statement.
 //  
 
-static ACT act_alter_table(void)
+static act* act_alter_table(void)
 {
-	GPRE_FLD field;
-	GPRE_CTX context;
+	gpre_fld* field;
+	gpre_ctx* context;
 
 //  create request block 
 
-	GPRE_REQ request = MSC_request(REQ_ddl);
+	gpre_req* request = MSC_request(REQ_ddl);
 
 //  get table name and create relation block 
 
-	GPRE_REL relation = par_relation(request);
+	gpre_rel* relation = par_relation(request);
 
 //  CHECK Constraints require the context to be set to the
 //  current relation 
@@ -1336,13 +1336,13 @@ static ACT act_alter_table(void)
 
 //  create action block 
 
-	ACT action = MSC_action(request, ACT_alter_table);
+	act* action = MSC_action(request, ACT_alter_table);
 	action->act_whenever = gen_whenever();
 	action->act_object = (REF) relation;
 
 //  parse action list and create corresponding field blocks 
 
-	GPRE_FLD* ptr = &relation->rel_fields;
+	gpre_fld** ptr = &relation->rel_fields;
 	cnstrt** cnstrt_ptr = &relation->rel_constraints;
 	cnstrt* cnstrt_str;
 
@@ -1419,7 +1419,7 @@ static ACT act_alter_table(void)
 //			Reject
 //  
 
-static ACT act_comment(void)
+static act* act_comment(void)
 {
 
 	PAR_error("SQL COMMENT ON request not allowed");
@@ -1432,9 +1432,9 @@ static ACT act_comment(void)
 //		Parse a CONNECT statement.
 //  
 
-static ACT act_connect(void)
+static act* act_connect(void)
 {
-	ACT action = MSC_action(0, ACT_ready);
+	act* action = MSC_action(0, ACT_ready);
 	action->act_whenever = gen_whenever();
 	bool need_handle = false;
 	const USHORT default_buffers = 0; // useless?
@@ -1447,7 +1447,7 @@ static ACT act_connect(void)
 			ready->rdy_next = (rdy*) action->act_object;
 			action->act_object = (REF) ready;
 
-			SYM symbol = token.tok_symbol;
+			gpre_sym* symbol = token.tok_symbol;
 			if (!symbol || symbol->sym_type != SYM_database) {
 				ready->rdy_filename = SQL_var_or_string(false);
 				if (MSC_match(KW_AS))
@@ -1477,7 +1477,7 @@ static ACT act_connect(void)
 						 &db->dbb_r_sql_role, &db->dbb_r_lc_messages,
 						 &buffers);
 
-			GPRE_REQ request = NULL;
+			gpre_req* request = NULL;
 			if (buffers)
 				request = PAR_set_up_dpb_info(ready, action, buffers);
 
@@ -1534,7 +1534,7 @@ static ACT act_connect(void)
 	else
 		for (rdy* ready = (rdy*) action->act_object; ready; ready = ready->rdy_next)
 		{
-		    GPRE_REQ request;
+		    gpre_req* request;
 			if (buffers)
 				request = PAR_set_up_dpb_info(ready, action, buffers);
 			else
@@ -1574,7 +1574,7 @@ static ACT act_connect(void)
 //		Handle an SQL create statement.
 //  
 
-static ACT act_create(void)
+static act* act_create(void)
 {
 	if (MSC_match(KW_DATABASE) || MSC_match(KW_SCHEMA))
 		return act_create_database();
@@ -1631,7 +1631,7 @@ static ACT act_create(void)
 //		Handle an SQLish create database statement.
 //  
 
-static ACT act_create_database(void)
+static act* act_create_database(void)
 {
 	bool dummy;
 
@@ -1647,12 +1647,12 @@ static ACT act_create_database(void)
 
 		// allocate symbol block 
 
-		SYM symbol = (SYM) MSC_alloc_permanent(SYM_LEN);
+		gpre_sym* symbol = (gpre_sym*) MSC_alloc_permanent(SYM_LEN);
 
 		// make it the default database 
 
 		symbol->sym_type = SYM_database;
-		symbol->sym_object = (GPRE_CTX) isc_databases;
+		symbol->sym_object = (gpre_ctx*) isc_databases;
 		symbol->sym_string = database_name;
 
 		// database block points to the symbol block 
@@ -1681,14 +1681,14 @@ static ACT act_create_database(void)
 
 //  Create a request for generating DYN to add files to database. 
 
-//  GPRE_REQ request = MSC_request (REQ_create_database); 
-	GPRE_REQ request = MSC_request(REQ_ddl);
+//  gpre_req* request = MSC_request (REQ_create_database);
+	gpre_req* request = MSC_request(REQ_ddl);
 	request->req_flags |= REQ_sql_database_dyn;
 	request->req_database = db;
 
 //  create action block 
 
-	ACT action = MSC_action(request, ACT_create_database);
+	act* action = MSC_action(request, ACT_create_database);
 
 	mdbb* mdb = (mdbb*) MSC_alloc(sizeof(mdbb));
 	mdb->mdbb_database = db;
@@ -1726,11 +1726,11 @@ static ACT act_create_database(void)
 //		Handle creation of a domain (global field). 
 //  
 
-static ACT act_create_domain(void)
+static act* act_create_domain(void)
 {
 //  create request block 
 
-	GPRE_REQ request = MSC_request(REQ_ddl);
+	gpre_req* request = MSC_request(REQ_ddl);
 	if (isc_databases && !isc_databases->dbb_next)
 		request->req_database = isc_databases;
 	else
@@ -1738,9 +1738,9 @@ static ACT act_create_domain(void)
 
 //  create action block 
 
-	ACT action = MSC_action(request, ACT_create_domain);
+	act* action = MSC_action(request, ACT_create_domain);
 
-	GPRE_FLD field = make_field(0);
+	gpre_fld* field = make_field(0);
 	MSC_match(KW_AS);
 	SQL_par_field_dtype(request, field, false);
 
@@ -1805,12 +1805,12 @@ static ACT act_create_domain(void)
 //		Handle an SQL create generator statement
 //  
 
-static ACT act_create_generator(void)
+static act* act_create_generator(void)
 {
 	TEXT* generator_name = (TEXT*) MSC_alloc(NAME_SIZE + 1);
 	SQL_resolve_identifier("<identifier>", generator_name);
 
-	GPRE_REQ request = MSC_request(REQ_ddl);
+	gpre_req* request = MSC_request(REQ_ddl);
 	if (isc_databases && !isc_databases->dbb_next)
 		request->req_database = isc_databases;
 	else
@@ -1821,7 +1821,7 @@ static ACT act_create_generator(void)
 
 
 //  create action block 
-	ACT action = MSC_action(request, ACT_create_generator);
+	act* action = MSC_action(request, ACT_create_generator);
 	action->act_whenever = gen_whenever();
 	action->act_object = (REF) generator_name;
 
@@ -1835,12 +1835,12 @@ static ACT act_create_generator(void)
 //		Handle an SQL create index statement.
 //  
 
-static ACT act_create_index(bool dups,
+static act* act_create_index(bool dups,
 							bool descending)
 {
 //  create request block 
 
-	GPRE_REQ request = MSC_request(REQ_ddl);
+	gpre_req* request = MSC_request(REQ_ddl);
 
 //  get index and table names and create index and relation blocks 
 
@@ -1855,7 +1855,7 @@ static ACT act_create_index(bool dups,
 	if (!MSC_match(KW_ON))
 		CPR_s_error("ON");
 
-	GPRE_REL relation = par_relation(request);
+	gpre_rel* relation = par_relation(request);
 
 	IND index = make_index(request, i_name);
 	index->ind_relation = relation;
@@ -1864,14 +1864,14 @@ static ACT act_create_index(bool dups,
 
 //  create action block 
 
-	ACT action = MSC_action(request, ACT_create_index);
+	act* action = MSC_action(request, ACT_create_index);
 	action->act_whenever = gen_whenever();
 	action->act_object = (REF) index;
 
 //  parse field list and create corresponding field blocks 
 
 	EXP_left_paren(0);
-	GPRE_FLD *ptr = &index->ind_fields;
+	gpre_fld** ptr = &index->ind_fields;
 
 	for (;;) {
 		*ptr = make_field(relation);
@@ -1891,15 +1891,15 @@ static ACT act_create_index(bool dups,
 //		Handle an SQL create shadow statement
 //  
 
-static ACT act_create_shadow(void)
+static act* act_create_shadow(void)
 {
-	GPRE_REQ request = MSC_request(REQ_ddl);
+	gpre_req* request = MSC_request(REQ_ddl);
 	if (isc_databases && !isc_databases->dbb_next)
 		request->req_database = isc_databases;
 	else
 		PAR_error("Can only CREATE SHADOW in context of single database");
 
-	ACT action = MSC_action(request, ACT_create_shadow);
+	act* action = MSC_action(request, ACT_create_shadow);
 	action->act_whenever = gen_whenever();
 	SLONG shadow_number = EXP_USHORT_ordinal(true);
 
@@ -1949,10 +1949,10 @@ static ACT act_create_shadow(void)
 //		Handle an SQL create table statement.
 //  
 
-static ACT act_create_table(void)
+static act* act_create_table(void)
 {
-	GPRE_REQ request = MSC_request(REQ_ddl);
-	GPRE_REL relation = par_relation(request);
+	gpre_req* request = MSC_request(REQ_ddl);
+	gpre_rel* relation = par_relation(request);
 
 	if (MSC_match(KW_EXTERNAL)) {
 		TEXT* string = NULL;
@@ -1973,7 +1973,7 @@ static ACT act_create_table(void)
 //  CHECK Constraints require the context to be set to the
 //  current relation 
 
-	GPRE_CTX context = MSC_context(request);
+	gpre_ctx* context = MSC_context(request);
 	request->req_contexts = context;
 	context->ctx_relation = relation;
 
@@ -1984,12 +1984,12 @@ static ACT act_create_table(void)
 
 //  create action block 
 
-	ACT action = MSC_action(request, ACT_create_table);
+	act* action = MSC_action(request, ACT_create_table);
 	action->act_whenever = gen_whenever();
 	action->act_object = (REF) relation;
 
 	EXP_left_paren(0);
-	GPRE_FLD *ptr = &relation->rel_fields;
+	gpre_fld** ptr = &relation->rel_fields;
 	cnstrt** cnstrt_ptr = &relation->rel_constraints;
 
 	for (;;) {
@@ -2023,21 +2023,21 @@ static ACT act_create_table(void)
 //		Handle an SQL create view statement.
 //  
 
-static ACT act_create_view(void)
+static act* act_create_view(void)
 {
-	GPRE_REQ request = MSC_request(REQ_ddl);
-	GPRE_REL relation = par_relation(request);
+	gpre_req* request = MSC_request(REQ_ddl);
+	gpre_rel* relation = par_relation(request);
 
 //  create action block 
 
-	ACT action = MSC_action(request, ACT_create_view);
+	act* action = MSC_action(request, ACT_create_view);
 	action->act_whenever = gen_whenever();
 	action->act_object = (REF) relation;
 
 //  if field list is present parse it and create corresponding field blocks 
 
 	if (MSC_match(KW_LEFT_PAREN)) {
-		GPRE_FLD *ptr = &relation->rel_fields;
+		gpre_fld** ptr = &relation->rel_fields;
 		for (;;) {
 			*ptr = make_field(relation);
 			ptr = &(*ptr)->fld_next;
@@ -2062,7 +2062,7 @@ static ACT act_create_view(void)
 
 //  parse the view SELECT 
 
-	GPRE_RSE select = SQE_select(request, true);
+	gpre_rse* select = SQE_select(request, true);
 	relation->rel_view_rse = select;
 	EXP_rse_cleanup(select);
 
@@ -2087,7 +2087,7 @@ static ACT act_create_view(void)
 //     global routine stuff.
 //  
 
-static ACT act_d_section( enum act_t type)
+static act* act_d_section( enum act_t type)
 {
 	if (!MSC_match(KW_DECLARE))
 		CPR_s_error("DECLARE SECTION");
@@ -2097,7 +2097,7 @@ static ACT act_d_section( enum act_t type)
 
 	MSC_match(KW_SEMI_COLON);
 
-	ACT action = (ACT) MSC_alloc(ACT_LEN);
+	act* action = (act*) MSC_alloc(ACT_LEN);
 	action->act_type = type;
 
 	if (type == ACT_b_declare)
@@ -2110,12 +2110,12 @@ static ACT act_d_section( enum act_t type)
 
 		// allocate symbol block 
 
-		SYM symbol = (SYM) MSC_alloc_permanent(SYM_LEN);
+		gpre_sym* symbol = (gpre_sym*) MSC_alloc_permanent(SYM_LEN);
 
 		// make it a database, specifically this one 
 
 		symbol->sym_type = SYM_database;
-		symbol->sym_object = (GPRE_CTX) isc_databases;
+		symbol->sym_object = (gpre_ctx*) isc_databases;
 		symbol->sym_string = database_name;
 
 		// database block points to the symbol block 
@@ -2140,7 +2140,7 @@ static ACT act_d_section( enum act_t type)
 			CPR_s_error("NAMES ARE");
 		if (!MSC_match(KW_ARE))
 			CPR_s_error("NAMES ARE");
-		SYM symbol = MSC_find_symbol(token.tok_symbol, SYM_charset);
+		gpre_sym* symbol = MSC_find_symbol(token.tok_symbol, SYM_charset);
 		if (!symbol)
 			PAR_error("The named CHARACTER SET was not found");
 		if (module_lc_ctype && !strcmp(module_lc_ctype, symbol->sym_string))
@@ -2159,9 +2159,9 @@ static ACT act_d_section( enum act_t type)
 //		Parse the SQL cursor declaration.
 //  
 
-static ACT act_declare(void)
+static act* act_declare(void)
 {
-	ACT action = NULL;
+	act* action = NULL;
 	DBB db = NULL;
 
 	if (token.tok_symbol && (token.tok_symbol->sym_type == SYM_database)) {
@@ -2171,7 +2171,7 @@ static ACT act_declare(void)
 		PAR_get_token();
 		if (!MSC_match(KW_DOT))
 			CPR_s_error(". (period)");
-		SYM symbol = PAR_symbol(SYM_dummy);
+		gpre_sym* symbol = PAR_symbol(SYM_dummy);
 		if (token.tok_keyword != KW_TABLE)
 			CPR_s_error("TABLE");
 		return (act_declare_table(symbol, db));
@@ -2201,7 +2201,7 @@ static ACT act_declare(void)
 	if (token.tok_type == tok_dblquoted)
 		delimited = true;
 	else {
-		SYM symb = HSH_lookup2(token.tok_string);
+		gpre_sym* symb = HSH_lookup2(token.tok_string);
 		if (symb &&
 			(symb->sym_type == SYM_cursor ||
 			 symb->sym_type == SYM_delimited_cursor)) {
@@ -2212,7 +2212,7 @@ static ACT act_declare(void)
 	}
 
 
-	SYM symbol = PAR_symbol(SYM_cursor);
+	gpre_sym* symbol = PAR_symbol(SYM_cursor);
 
 	switch (token.tok_keyword) {
 	case KW_TABLE:
@@ -2230,13 +2230,13 @@ static ACT act_declare(void)
 		if (!MSC_match(KW_FOR))
 			CPR_s_error("FOR");
 		if (MSC_match(KW_SELECT)) {
-			GPRE_REQ request = MSC_request(REQ_cursor);
+			gpre_req* request = MSC_request(REQ_cursor);
 			request->req_flags |= REQ_sql_cursor | REQ_sql_declare_cursor;
 #ifdef SCROLLABLE_CURSORS
 			if (scroll)
 				request->req_flags |= REQ_scroll;
 #endif
-			symbol->sym_object = (GPRE_CTX) request;
+			symbol->sym_object = (gpre_ctx*) request;
 			action = MSC_action(request, ACT_cursor);
 			action->act_object = (REF) symbol;
 			symbol->sym_type =
@@ -2266,7 +2266,7 @@ static ACT act_declare(void)
 		}
 		else {
 			DYN statement = par_statement();
-			symbol->sym_object = (GPRE_CTX) statement;
+			symbol->sym_object = (gpre_ctx*) statement;
 			if (MSC_match(KW_FOR)) {
 				if (!MSC_match(KW_UPDATE))
 					CPR_s_error("UPDATE");
@@ -2279,7 +2279,7 @@ static ACT act_declare(void)
 			}
 			symbol->sym_type = SYM_dyn_cursor;
 			statement->dyn_cursor_name = symbol;
-			action = (ACT) MSC_alloc(ACT_LEN);
+			action = (act*) MSC_alloc(ACT_LEN);
 			action->act_type = ACT_dyn_cursor;
 			action->act_object = (REF) statement;
 			action->act_whenever = gen_whenever();
@@ -2290,7 +2290,7 @@ static ACT act_declare(void)
 	default:
 		while (MSC_match(KW_COMMA));
 		if (MSC_match(KW_STATEMENT)) {
-			action = (ACT) MSC_alloc(ACT_LEN);
+			action = (act*) MSC_alloc(ACT_LEN);
 			action->act_type = ACT_dyn_statement;
 			return action;
 		}
@@ -2305,9 +2305,9 @@ static ACT act_declare(void)
 //		Handle an SQL declare filter statement
 //  
 
-static ACT act_declare_filter(void)
+static act* act_declare_filter(void)
 {
-	GPRE_REQ request = MSC_request(REQ_ddl);
+	gpre_req* request = MSC_request(REQ_ddl);
 
 	if (isc_databases && !isc_databases->dbb_next)
 		request->req_database = isc_databases;
@@ -2324,7 +2324,7 @@ static ACT act_declare_filter(void)
 	PAR_get_token();
 
 //  create action block 
-	ACT action = MSC_action(request, ACT_declare_filter);
+	act* action = MSC_action(request, ACT_declare_filter);
 	action->act_whenever = gen_whenever();
 	action->act_object = (REF) filter;
 
@@ -2366,16 +2366,16 @@ static ACT act_declare_filter(void)
 //		Handle an SQL declare table statement.
 //  
 
-static ACT act_declare_table( SYM symbol, DBB db)
+static act* act_declare_table( gpre_sym* symbol, DBB db)
 {
 //  create a local request block
 
-	GPRE_REQ request = (GPRE_REQ) MSC_alloc(REQ_LEN);
+	gpre_req* request = (gpre_req*) MSC_alloc(REQ_LEN);
 	request->req_type = REQ_ddl;
 
 //  create relation block 
 
-	GPRE_REL relation = make_relation(0, symbol->sym_string);
+	gpre_rel* relation = make_relation(0, symbol->sym_string);
 
 	if (!db)
 		db = relation->rel_database;
@@ -2384,24 +2384,24 @@ static ACT act_declare_table( SYM symbol, DBB db)
 
 	relation->rel_next = db->dbb_relations;
 	db->dbb_relations = relation;
-	GPRE_FLD dbkey = MET_make_field("rdb$db_key", dtype_text, 8, false);
+	gpre_fld* dbkey = MET_make_field("rdb$db_key", dtype_text, 8, false);
 	relation->rel_dbkey = dbkey;
 	dbkey->fld_flags |= FLD_dbkey | FLD_text | FLD_charset;
 	dbkey->fld_ttype = ttype_binary;
 
 //  if relation name already in incore metadata, remove it & its fields 
 
-	SYM old_symbol = HSH_lookup(relation->rel_symbol->sym_string);
+	gpre_sym* old_symbol = HSH_lookup(relation->rel_symbol->sym_string);
 
 	while (old_symbol) 
 	{
 		if (old_symbol->sym_type == SYM_relation) {
-			GPRE_REL tmp_relation = (GPRE_REL) old_symbol->sym_object;
+			gpre_rel* tmp_relation = (gpre_rel*) old_symbol->sym_object;
 			if (tmp_relation->rel_meta)
 				PAR_error("Multiple DECLARE TABLE statements for table");
-			SYM tmp_symbol = old_symbol->sym_homonym;
+			gpre_sym* tmp_symbol = old_symbol->sym_homonym;
 			HSH_remove(old_symbol);
-			for (GPRE_FLD field = tmp_relation->rel_fields; field;
+			for (gpre_fld* field = tmp_relation->rel_fields; field;
 				field = field->fld_next)
 			{
 				 HSH_remove(field->fld_symbol);
@@ -2418,7 +2418,7 @@ static ACT act_declare_table( SYM symbol, DBB db)
 
 //  create action block 
 
-	ACT action = (ACT) MSC_alloc(ACT_LEN);
+	act* action = (act*) MSC_alloc(ACT_LEN);
 	action->act_type = ACT_noop;
 	action->act_object = (REF) relation;
 
@@ -2428,10 +2428,10 @@ static ACT act_declare_table( SYM symbol, DBB db)
 	PAR_get_token();
 	EXP_left_paren(0);
 	USHORT count = 0;
-	GPRE_FLD* ptr = &relation->rel_fields;
+	gpre_fld** ptr = &relation->rel_fields;
 
 	for (;;) {
-		GPRE_FLD field = par_field(request, relation);
+		gpre_fld* field = par_field(request, relation);
 		*ptr = field;
 		ptr = &field->fld_next;
 		HSH_insert(field->fld_symbol);
@@ -2454,11 +2454,11 @@ static ACT act_declare_table( SYM symbol, DBB db)
 //		Handle an SQL declare external statement
 //  
 
-static ACT act_declare_udf(void)
+static act* act_declare_udf(void)
 {
 	SLONG return_parameter;
 
-	GPRE_REQ request = MSC_request(REQ_ddl);
+	gpre_req* request = MSC_request(REQ_ddl);
 
 	if (isc_databases && !isc_databases->dbb_next)
 		request->req_database = isc_databases;
@@ -2466,7 +2466,7 @@ static ACT act_declare_udf(void)
 		PAR_error
 			("Can only DECLARE EXTERNAL FUNCTION in context of single database");
 
-	DECL_UDF udf_declaration = (DECL_UDF) MSC_alloc(DECL_UDF_LEN);
+	decl_udf* udf_declaration = (decl_udf*) MSC_alloc(DECL_UDF_LEN);
 	udf_declaration->decl_udf_name = (TEXT*) MSC_alloc(NAME_SIZE + 1);
 	SQL_resolve_identifier("<identifier>", udf_declaration->decl_udf_name);
 	if (token.tok_length > NAME_SIZE)
@@ -2474,11 +2474,11 @@ static ACT act_declare_udf(void)
 	PAR_get_token();
 
 //  create action block 
-	ACT action = MSC_action(request, ACT_declare_udf);
+	act* action = MSC_action(request, ACT_declare_udf);
 	action->act_whenever = gen_whenever();
 	action->act_object = (REF) udf_declaration;
 
-	GPRE_FLD *ptr = &udf_declaration->decl_udf_arg_list;
+	gpre_fld** ptr = &udf_declaration->decl_udf_arg_list;
 	while (true) {
 		if (MSC_match(KW_RETURNS)) {
 			if (MSC_match(KW_PARAMETER)) {
@@ -2489,7 +2489,7 @@ static ACT act_declare_udf(void)
 				udf_declaration->decl_udf_return_parameter = (SSHORT) return_parameter;
 			}
 			else {
-				GPRE_FLD field = (GPRE_FLD) MSC_alloc(FLD_LEN);
+				gpre_fld* field = (gpre_fld*) MSC_alloc(FLD_LEN);
 				field->fld_flags |= (FLD_meta | FLD_meta_cstring);
 				SQL_par_field_dtype(request, field, true);
 				SQL_adjust_field_dtype(field);
@@ -2503,7 +2503,7 @@ static ACT act_declare_udf(void)
 			break;
 		}
 		else {
-			GPRE_FLD field = (GPRE_FLD) MSC_alloc(FLD_LEN);
+			gpre_fld* field = (gpre_fld*) MSC_alloc(FLD_LEN);
 			field->fld_flags |= (FLD_meta | FLD_meta_cstring);
 			SQL_par_field_dtype(request, field, true);
 			SQL_adjust_field_dtype(field);
@@ -2534,7 +2534,7 @@ static ACT act_declare_udf(void)
 //		The syntax, and therefor the code, I fear, is a mess.
 //  
 
-static ACT act_delete(void)
+static act* act_delete(void)
 {
 	const TEXT* transaction;
 
@@ -2551,14 +2551,14 @@ static ACT act_delete(void)
 
 //  Parse the optional alias (context variable) 
 
-	SYM alias = (token.tok_symbol) ? NULL : PAR_symbol(SYM_dummy);
+	gpre_sym* alias = (token.tok_symbol) ? NULL : PAR_symbol(SYM_dummy);
 
 //  Now the moment of truth.  If the next few tokens are WHERE CURRENT OF
 //  then this is a sub-action of an existing request.  If not, then it is
 //  a free standing request 
 
-	GPRE_REQ request = MSC_request(REQ_mass_update);
-	UPD update = (UPD) MSC_alloc(UPD_LEN);
+	gpre_req* request = MSC_request(REQ_mass_update);
+	upd* update = (upd*) MSC_alloc(UPD_LEN);
 
 	bool where = MSC_match(KW_WITH);
 	if (where && MSC_match(KW_CURRENT)) {
@@ -2585,9 +2585,9 @@ static ACT act_delete(void)
 			}
 		}
 		request->req_trans = transaction;
-		GPRE_REL relation = SQL_relation(request, r_name, db_name, owner_name, true);
+		gpre_rel* relation = SQL_relation(request, r_name, db_name, owner_name, true);
 		gpre_rse* selection = request->req_rse;
-		GPRE_CTX context = NULL;
+		gpre_ctx* context = NULL;
 		SSHORT i;
 		for (i = 0; i < selection->rse_count; i++) {
 			context = selection->rse_context[i];
@@ -2599,7 +2599,7 @@ static ACT act_delete(void)
 		update->upd_request = request;
 		update->upd_source = context;
 
-		ACT action = MSC_action(request, ACT_erase);
+		act* action = MSC_action(request, ACT_erase);
 		action->act_object = (REF) update;
 		action->act_whenever = gen_whenever();
 		return action;
@@ -2611,12 +2611,12 @@ static ACT act_delete(void)
 //  Neat.  Take the pieces and build a complete request.  Start by
 //  figuring out what database is involved.  
 
-	GPRE_REL relation = SQL_relation(request, r_name, db_name, owner_name, true);
+	gpre_rel* relation = SQL_relation(request, r_name, db_name, owner_name, true);
 
 	gpre_rse* selection = (gpre_rse*) MSC_alloc(RSE_LEN(1));
 	request->req_rse = selection;
 	selection->rse_count = 1;
-	GPRE_CTX context = MSC_context(request);
+	gpre_ctx* context = MSC_context(request);
 	selection->rse_context[0] = context;
 	context->ctx_relation = relation;
 
@@ -2635,7 +2635,7 @@ static ACT act_delete(void)
 
 	request->req_node = MSC_node(nod_erase, 0);
 
-	ACT action = MSC_action(request, ACT_loop);
+	act* action = MSC_action(request, ACT_loop);
 	action->act_whenever = gen_whenever();
 
 	if (hsh_rm)
@@ -2651,7 +2651,7 @@ static ACT act_delete(void)
 //			Reject
 //  
 
-static ACT act_describe(void)
+static act* act_describe(void)
 {
 	bool in_sqlda;
 
@@ -2675,7 +2675,7 @@ static ACT act_describe(void)
 		CPR_s_error("INTO SQL DESCRIPTOR sqlda");
 
 	statement->dyn_sqlda = PAR_native_value(false, false);
-	ACT action = (ACT) MSC_alloc(ACT_LEN);
+	act* action = (act*) MSC_alloc(ACT_LEN);
 	if (in_sqlda)
 		action->act_type = ACT_dyn_describe_input;
 	else
@@ -2692,22 +2692,22 @@ static ACT act_describe(void)
 //		Parse a FINISH statement.
 //  
 
-static ACT act_disconnect(void)
+static act* act_disconnect(void)
 {
-	ACT action = MSC_action(0, ACT_disconnect);
+	act* action = MSC_action(0, ACT_disconnect);
 	action->act_whenever = gen_whenever();
 	bool all = MSC_match(KW_ALL) || MSC_match(KW_DEFAULT);
 
 	if (!all) {
 		if (MSC_match(KW_CURRENT))
 			PAR_error("DISCONNECT CURRENT not supported");
-		SYM test_symbol = token.tok_symbol;
+		gpre_sym* test_symbol = token.tok_symbol;
 		if (!(test_symbol && test_symbol->sym_type == SYM_database))
 		{
 			CPR_s_error("ALL, DEFAULT, or <database handle>");
 		}
 		while (true) {
-			SYM symbol = token.tok_symbol;
+			gpre_sym* symbol = token.tok_symbol;
 			if (symbol && symbol->sym_type == SYM_database) {
 				rdy* ready = (rdy*) MSC_alloc(RDY_LEN);
 				ready->rdy_next = (rdy*) action->act_object;
@@ -2733,12 +2733,12 @@ static ACT act_disconnect(void)
 //		Handle an SQL drop statement.
 //  
 
-static ACT act_drop(void)
+static act* act_drop(void)
 {
-	ACT action = NULL;
+	act* action = NULL;
 	dbb* db = NULL;
-	GPRE_REQ request = NULL;
-	GPRE_REL relation = NULL;
+	gpre_req* request = NULL;
+	gpre_rel* relation = NULL;
 	SCHAR* db_string;
 	TEXT* identifier_name;
 
@@ -2754,10 +2754,10 @@ static ACT act_drop(void)
 		db = (DBB) MSC_alloc(DBB_LEN);
 		db->dbb_filename = db_string = (TEXT*) MSC_alloc(token.tok_length + 1);
 		MSC_copy(token.tok_string, token.tok_length, db_string);
-		SYM symbol = PAR_symbol(SYM_dummy);
+		gpre_sym* symbol = PAR_symbol(SYM_dummy);
 		db->dbb_name = symbol;
 		symbol->sym_type = SYM_database;
-		symbol->sym_object = (GPRE_CTX) db;
+		symbol->sym_object = (gpre_ctx*) db;
 		action = MSC_action(request, ACT_drop_database);
 		action->act_whenever = gen_whenever();
 		action->act_object = (REF) db;
@@ -2885,9 +2885,9 @@ static ACT act_drop(void)
 //		Handle an SQL event statement
 //  
 
-static ACT act_event(void)
+static act* act_event(void)
 {
-	ACT action = NULL;
+	act* action = NULL;
 
 	if (MSC_match(KW_INIT))
 		action = PAR_event_init(true);
@@ -2906,7 +2906,7 @@ static ACT act_event(void)
 //			Reject
 //  
 
-static ACT act_execute(void)
+static act* act_execute(void)
 {
 	if (MSC_match(KW_PROCEDURE))
 		return act_procedure();
@@ -2942,7 +2942,7 @@ static ACT act_execute(void)
 		par_into(statement);
 		statement->dyn_database = isc_databases;
 
-		ACT action = (ACT) MSC_alloc(ACT_LEN);
+		act* action = (act*) MSC_alloc(ACT_LEN);
 		action->act_type = ACT_dyn_immediate;
 		action->act_object = (REF) statement;
 		action->act_whenever = gen_whenever();
@@ -2961,7 +2961,7 @@ static ACT act_execute(void)
 		PAR_error("Using host-variable list not supported.");
 	par_into(statement);
 
-	ACT action = (ACT) MSC_alloc(ACT_LEN);
+	act* action = (act*) MSC_alloc(ACT_LEN);
 	action->act_type = ACT_dyn_execute;
 	action->act_object = (REF) statement;
 	action->act_whenever = gen_whenever();
@@ -2975,7 +2975,7 @@ static ACT act_execute(void)
 //		Parse the SQL fetch statement.
 //  
 
-static ACT act_fetch(void)
+static act* act_fetch(void)
 {
 //  Handle dynamic SQL statement, if appropriate 
 
@@ -2994,7 +2994,7 @@ static ACT act_fetch(void)
 			if (statement->dyn_using)
 				PAR_error("Using host-variable list not supported.");
 		}
-		ACT action = (ACT) MSC_alloc(ACT_LEN);
+		act* action = (act*) MSC_alloc(ACT_LEN);
 		action->act_type = ACT_dyn_fetch;
 		action->act_object = (REF) statement;
 		action->act_whenever = gen_whenever();
@@ -3040,7 +3040,7 @@ static ACT act_fetch(void)
 	MSC_match(KW_FROM);
 #endif
 
-	GPRE_REQ request = par_cursor(NULL);
+	gpre_req* request = par_cursor(NULL);
 
 #ifdef SCROLLABLE_CURSORS
 //  if scrolling is required, set up the offset and direction parameters 
@@ -3105,7 +3105,7 @@ static ACT act_fetch(void)
 	if (request->req_flags & REQ_sql_blob_create)
 		PAR_error("Fetching from a blob being created is not allowed.");
 
-	ACT action = MSC_action(request, ACT_fetch);
+	act* action = MSC_action(request, ACT_fetch);
 	action->act_whenever = gen_whenever();
 
 	if (request->req_flags & REQ_sql_blob_open) {
@@ -3116,7 +3116,7 @@ static ACT act_fetch(void)
 	}
 	else if (MSC_match(KW_INTO)) {
 		action->act_object = (REF) SQE_list(SQE_variable, request, false);
-		GPRE_RSE select = request->req_rse;
+		gpre_rse* select = request->req_rse;
 		into(request, select->rse_fields, (GPRE_NOD) action->act_object);
 	}
 
@@ -3131,9 +3131,9 @@ static ACT act_fetch(void)
 //		attach them to an action block of type GRANT or REVOKE.
 //  
 
-static ACT act_grant_revoke( enum act_t type)
+static act* act_grant_revoke( enum act_t type)
 {
-	GPRE_REQ request = MSC_request(REQ_ddl);
+	gpre_req* request = MSC_request(REQ_ddl);
 	PRV priv_block = MSC_privilege_block();
 
 //  if it is revoke action, parse the optional grant option for 
@@ -3199,7 +3199,7 @@ static ACT act_grant_revoke( enum act_t type)
 		if (!MSC_match(KW_PROCEDURE))
 			CPR_s_error("PROCEDURE");
 		SQL_relation_name(r_name, db_name, owner_name);
-		GPRE_PRC procedure = SQL_procedure(request, r_name, db_name, owner_name, true);
+		gpre_prc* procedure = SQL_procedure(request, r_name, db_name, owner_name, true);
 		relation_name = (STR) MSC_string(r_name);
 		priv_block->prv_relation = relation_name;
 		priv_block->prv_object_dyn = isc_dyn_prc_name;
@@ -3207,7 +3207,7 @@ static ACT act_grant_revoke( enum act_t type)
 	else {
 		MSC_match(KW_TABLE);		// filler word 
 		SQL_relation_name(r_name, db_name, owner_name);
-		GPRE_REL relation = SQL_relation(request, r_name, db_name, owner_name, true);
+		gpre_rel* relation = SQL_relation(request, r_name, db_name, owner_name, true);
 		relation_name = (STR) MSC_string(r_name);
 		priv_block->prv_relation = relation_name;
 		priv_block->prv_object_dyn = isc_dyn_rel_name;
@@ -3224,15 +3224,15 @@ static ACT act_grant_revoke( enum act_t type)
 	}
 
 	bool grant_option_legal = true;
-	GPRE_USN usernames = 0;
-	GPRE_USN user = 0;
+	gpre_usn* usernames = 0;
+	gpre_usn* user = 0;
 	USHORT user_dyn = 0;
 	SCHAR s[ERROR_LENGTH];
 
 	while (true) {
 		if (MSC_match(KW_PROCEDURE)) {
 			SQL_relation_name(r_name, db_name, owner_name);
-			GPRE_PRC procedure =
+			gpre_prc* procedure =
 				SQL_procedure(request, r_name, db_name, owner_name, true);
 			user_dyn = isc_dyn_grant_proc;
 			grant_option_legal = false;
@@ -3297,7 +3297,7 @@ static ACT act_grant_revoke( enum act_t type)
 
 //  create action block 
 
-	ACT action = MSC_action(request, type);
+	act* action = MSC_action(request, type);
 	action->act_next = 0;
 
 	PRV last_priv_block = priv_block;
@@ -3332,12 +3332,12 @@ static ACT act_grant_revoke( enum act_t type)
 //  
 //  
 
-static ACT act_include(void)
+static act* act_include(void)
 {
 	PAR_get_token();
 	MSC_match(KW_SEMI_COLON);
 
-	ACT action = (ACT) MSC_alloc(ACT_LEN);
+	act* action = (act*) MSC_alloc(ACT_LEN);
 	action->act_type = ACT_b_declare;
 	cur_routine = action; // Hmm, global var
 
@@ -3348,12 +3348,12 @@ static ACT act_include(void)
 
 		// allocate symbol block 
 
-		SYM symbol = (SYM) MSC_alloc_permanent(SYM_LEN);
+		gpre_sym* symbol = (gpre_sym*) MSC_alloc_permanent(SYM_LEN);
 
 		// make it a database, specifically this one 
 
 		symbol->sym_type = SYM_database;
-		symbol->sym_object = (GPRE_CTX) isc_databases;
+		symbol->sym_object = (gpre_ctx*) isc_databases;
 		symbol->sym_string = database_name;
 
 		// database block points to the symbol block 
@@ -3380,7 +3380,7 @@ static ACT act_include(void)
 //		Process SQL INSERT statement.
 //  
 
-static ACT act_insert(void)
+static act* act_insert(void)
 {
 	const TEXT* transaction = NULL;
 
@@ -3392,9 +3392,9 @@ static ACT act_insert(void)
 	if (!MSC_match(KW_INTO))
 		CPR_s_error("INTO");
 
-	GPRE_REQ request = MSC_request(REQ_insert);
+	gpre_req* request = MSC_request(REQ_insert);
 	request->req_trans = transaction;
-	GPRE_CTX context = SQE_context(request);
+	gpre_ctx* context = SQE_context(request);
 
 	int count = 0, count2 = 0;
 	LLS fields = NULL;
@@ -3476,7 +3476,7 @@ static ACT act_insert(void)
 
 		if (context->ctx_symbol)
 			HSH_remove(context->ctx_symbol);
-		ACT action = MSC_action(request, ACT_insert);
+		act* action = MSC_action(request, ACT_insert);
 		action->act_whenever = gen_whenever();
 		return action;
 	}
@@ -3491,7 +3491,7 @@ static ACT act_insert(void)
 	request->req_type = REQ_mass_update;
 	request->req_contexts = NULL;
 	request->req_update = context;
-	GPRE_RSE select = SQE_select(request, false);
+	gpre_rse* select = SQE_select(request, false);
 	request->req_rse = select;
 	context->ctx_next = request->req_contexts;
 	request->req_contexts = context;
@@ -3522,7 +3522,7 @@ static ACT act_insert(void)
 	if (context->ctx_symbol)
 		HSH_remove(context->ctx_symbol);
 
-	ACT action = MSC_action(request, ACT_loop);
+	act* action = MSC_action(request, ACT_loop);
 	action->act_whenever = gen_whenever();
 
 	return action;
@@ -3536,7 +3536,7 @@ static ACT act_insert(void)
 
 // Do I miss anything here? The parameter is not used!
 // TEXT is supposedly to be transaction.
-static ACT act_insert_blob(const TEXT* transaction)
+static act* act_insert_blob(const TEXT* transaction)
 {
 //  Handle dynamic SQL statement, if appropriate 
 
@@ -3549,7 +3549,7 @@ static ACT act_insert_blob(const TEXT* transaction)
 		if (statement->dyn_using)
 			PAR_error("Using host-variable list not supported.");
 
-		ACT action = (ACT) MSC_alloc(ACT_LEN);
+		act* action = (act*) MSC_alloc(ACT_LEN);
 		action->act_type = ACT_dyn_insert;
 		action->act_object = (REF) statement;
 		action->act_whenever = gen_whenever();
@@ -3558,11 +3558,11 @@ static ACT act_insert_blob(const TEXT* transaction)
 
 //  Statement is static SQL 
 
-	GPRE_REQ request = par_cursor(NULL);
+	gpre_req* request = par_cursor(NULL);
 	if (request->req_flags & REQ_sql_blob_open)
 		PAR_error("Inserting into a blob being opened is not allowed.");
 
-	ACT action = MSC_action(request, ACT_put_segment);
+	act* action = MSC_action(request, ACT_put_segment);
 	action->act_whenever = gen_whenever();
 
 	if (!MSC_match(KW_VALUES))
@@ -3584,7 +3584,7 @@ static ACT act_insert_blob(const TEXT* transaction)
 //			Reject
 //  
 
-static ACT act_lock(void)
+static act* act_lock(void)
 {
 
 	PAR_error("SQL LOCK TABLE request not allowed");
@@ -3597,7 +3597,7 @@ static ACT act_lock(void)
 //		Handle the SQL actions OPEN and CLOSE cursors.
 //  
 
-static ACT act_openclose( enum act_t type)
+static act* act_openclose( enum act_t type)
 {
 	const TEXT* transaction = 0;
 
@@ -3611,7 +3611,7 @@ static ACT act_openclose( enum act_t type)
 		DYN statement = (DYN) MSC_alloc(DYN_LEN);
 		statement->dyn_statement_name = cursor->dyn_statement_name;
 		statement->dyn_cursor_name = cursor->dyn_cursor_name;
-		ACT action = (ACT) MSC_alloc(ACT_LEN);
+		act* action = (act*) MSC_alloc(ACT_LEN);
 		action->act_object = (REF) statement;
 		action->act_whenever = gen_whenever();
 		if (type == ACT_open) {
@@ -3629,12 +3629,12 @@ static ACT act_openclose( enum act_t type)
 
 //  Statement is static SQL 
 
-	SYM symbol = NULL;
-	GPRE_REQ request = par_cursor(&symbol);
+	gpre_sym* symbol = NULL;
+	gpre_req* request = par_cursor(&symbol);
 
-	ACT action = MSC_action(request, type);
+	act* action = MSC_action(request, type);
 	if (type == ACT_open) {
-		OPN open = (OPN) MSC_alloc(OPN_LEN);
+		open_cursor* open = (open_cursor*) MSC_alloc(OPN_LEN);
 		open->opn_trans = transaction;
 		open->opn_cursor = symbol;
 		action->act_object = (REF) open;
@@ -3674,7 +3674,7 @@ static ACT act_openclose( enum act_t type)
 //		These include READ BLOB and INSERT BLOB.
 //  
 
-static ACT act_open_blob( ACT_T act_op, SYM symbol)
+static act* act_open_blob( ACT_T act_op, gpre_sym* symbol)
 {
 	if (!MSC_match(KW_BLOB))
 		CPR_s_error("BLOB");
@@ -3694,7 +3694,7 @@ static ACT act_open_blob( ACT_T act_op, SYM symbol)
 	else if (!MSC_match(KW_INTO))
 		CPR_s_error("INTO");
 
-	GPRE_REQ request = MSC_request(REQ_cursor);
+	gpre_req* request = MSC_request(REQ_cursor);
 	request->req_flags =
 		(act_op == ACT_blob_open) ? REQ_sql_blob_open : REQ_sql_blob_create;
 
@@ -3703,8 +3703,8 @@ static ACT act_open_blob( ACT_T act_op, SYM symbol)
 
 
 	SCHAR s[128];
-	GPRE_REL relation = SQL_relation(request, r_name, db_name, owner_name, true);
-	GPRE_FLD field = MET_field(relation, f_token->tok_string);
+	gpre_rel* relation = SQL_relation(request, r_name, db_name, owner_name, true);
+	gpre_fld* field = MET_field(relation, f_token->tok_string);
 	if (!field) {
 		sprintf(s, "column \"%s\" not in context", f_token->tok_string);
 		PAR_error(s);
@@ -3724,14 +3724,14 @@ static ACT act_open_blob( ACT_T act_op, SYM symbol)
 	REF reference = MSC_reference(0);
 	reference->ref_field = field;
 
-	GPRE_CTX context = MSC_context(request);
+	gpre_ctx* context = MSC_context(request);
 	context->ctx_relation = relation;
 
-	BLB blob = (BLB) MSC_alloc(BLB_LEN);
+	blb* blob = (blb*) MSC_alloc(BLB_LEN);
 	blob->blb_symbol = symbol;
 	blob->blb_request = request;
 	blob->blb_next = request->req_blobs;
-	symbol->sym_object = (GPRE_CTX) request;
+	symbol->sym_object = (gpre_ctx*) request;
 	symbol->sym_type = SYM_cursor;
 
 	request->req_references = reference;
@@ -3820,7 +3820,7 @@ static ACT act_open_blob( ACT_T act_op, SYM symbol)
 	if (!blob->blb_seg_length)
 		blob->blb_seg_length = 512;
 
-	ACT action = MSC_action(request, ACT_cursor);
+	act* action = MSC_action(request, ACT_cursor);
 	action->act_object = (REF) blob;
 
 	return action;
@@ -3832,7 +3832,7 @@ static ACT act_open_blob( ACT_T act_op, SYM symbol)
 //		Handle an SQL prepare statement.
 //  
 
-static ACT act_prepare(void)
+static act* act_prepare(void)
 {
 	if (isc_databases && isc_databases->dbb_next) {
 		TEXT s[ERROR_LENGTH];
@@ -3872,7 +3872,7 @@ static ACT act_prepare(void)
 
 	statement->dyn_string = PAR_native_value(false, false);
 
-	ACT action = (ACT) MSC_alloc(ACT_LEN);
+	act* action = (act*) MSC_alloc(ACT_LEN);
 	action->act_type = ACT_dyn_prepare;
 	action->act_object = (REF) statement;
 	action->act_whenever = gen_whenever();
@@ -3886,16 +3886,16 @@ static ACT act_prepare(void)
 //		Handle the EXECUTE PROCEDURE statement.
 //  
 
-static ACT act_procedure(void)
+static act* act_procedure(void)
 {
-	GPRE_REQ request = MSC_request(REQ_procedure);
+	gpre_req* request = MSC_request(REQ_procedure);
 	par_options(&request->req_trans);
 
 	SCHAR p_name[NAME_SIZE + 1], db_name[NAME_SIZE + 1],
 		owner_name[NAME_SIZE + 1];
 
 	SQL_relation_name(p_name, db_name, owner_name);
-	GPRE_PRC procedure = SQL_procedure(request, p_name, db_name, owner_name, true);
+	gpre_prc* procedure = SQL_procedure(request, p_name, db_name, owner_name, true);
 	
 	LLS values = NULL;
 
@@ -3904,7 +3904,7 @@ static ACT act_procedure(void)
 		// parse input references
 
 		bool paren = MSC_match(KW_LEFT_PAREN);
-		GPRE_FLD field = procedure->prc_inputs;
+		gpre_fld* field = procedure->prc_inputs;
 		REF *ref_ptr = &request->req_values;
 		do {
 			if (MSC_match(KW_NULL))
@@ -3929,7 +3929,7 @@ static ACT act_procedure(void)
 		// parse output references 
 
 		bool paren = MSC_match(KW_LEFT_PAREN);
-		GPRE_FLD field = procedure->prc_outputs;
+		gpre_fld* field = procedure->prc_outputs;
 		REF *ref_ptr = &request->req_references;
 		do {
 			REF reference = (REF) SQE_variable(request, false, NULL, NULL);
@@ -3950,11 +3950,11 @@ static ACT act_procedure(void)
 
 	GPRE_NOD list = MSC_node(nod_list, inputs);
 	request->req_node = list;
-	GPRE_NOD *ptr = &list->nod_arg[inputs];
+	GPRE_NOD* ptr = &list->nod_arg[inputs];
 	while (values)
 		*--ptr = (GPRE_NOD) MSC_pop(&values);
 
-	ACT action = MSC_action(request, ACT_procedure);
+	act* action = MSC_action(request, ACT_procedure);
 	action->act_object = (REF) procedure;
 	action->act_whenever = gen_whenever();
 
@@ -3967,11 +3967,11 @@ static ACT act_procedure(void)
 //		Handle the stand alone SQL select statement.
 //  
 
-static ACT act_select(void)
+static act* act_select(void)
 {
-	GPRE_REQ request = MSC_request(REQ_for);
+	gpre_req* request = MSC_request(REQ_for);
 	par_options(&request->req_trans);
-	GPRE_RSE select = SQE_select(request, false);
+	gpre_rse* select = SQE_select(request, false);
 	request->req_rse = select;
 
 	if (!MSC_match(KW_SEMI_COLON)) {
@@ -3983,7 +3983,7 @@ static ACT act_select(void)
 	if (select->rse_into)
 		into(request, select->rse_fields, select->rse_into);
 
-	ACT action = MSC_action(request, ACT_select);
+	act* action = MSC_action(request, ACT_select);
 	action->act_object = (REF) select->rse_into;
 	action->act_whenever = gen_whenever();
 	EXP_rse_cleanup(select);
@@ -3996,7 +3996,7 @@ static ACT act_select(void)
 //		Parse a SET <something>
 //  
 
-static ACT act_set(const TEXT* base_directory)
+static act* act_set(const TEXT* base_directory)
 {
 
 	if (MSC_match(KW_TRANSACTION))
@@ -4030,9 +4030,9 @@ static ACT act_set(const TEXT* base_directory)
 //		Parse a SET SQL DIALECT
 //  
 
-static ACT act_set_dialect(void)
+static act* act_set_dialect(void)
 {
-	ACT action = (ACT) MSC_alloc(ACT_LEN);
+	act* action = (act*) MSC_alloc(ACT_LEN);
 	action->act_type = ACT_sql_dialect;
 
 	USHORT dialect = EXP_USHORT_ordinal(false);
@@ -4073,9 +4073,9 @@ static ACT act_set_dialect(void)
 //		Parse a SET generator
 //  
 
-static ACT act_set_generator(void)
+static act* act_set_generator(void)
 {
-	GPRE_REQ request = MSC_request(REQ_set_generator);
+	gpre_req* request = MSC_request(REQ_set_generator);
 	
 	if (isc_databases && !isc_databases->dbb_next)
 		request->req_database = isc_databases;
@@ -4106,7 +4106,7 @@ static ACT act_set_generator(void)
 		setgen->sgen_dialect = SQL_DIALECT_V5 + 1;
 	}
 
-	ACT action = (ACT) MSC_action(request, ACT_s_start);
+	act* action = (act*) MSC_action(request, ACT_s_start);
 	action->act_whenever = gen_whenever();
 	action->act_object = (REF) setgen;
 	return action;
@@ -4118,12 +4118,12 @@ static ACT act_set_generator(void)
 //		Parse a SET NAMES <charset>;
 //  
 
-static ACT act_set_names(void)
+static act* act_set_names(void)
 {
 	if (sw_auto)
 		CPR_warn("SET NAMES requires -manual switch to gpre.");
 
-	ACT action = (ACT) MSC_alloc(ACT_LEN);
+	act* action = (act*) MSC_alloc(ACT_LEN);
 	action->act_type = ACT_noop;
 
 	if (MSC_match(KW_COLON)) {
@@ -4192,9 +4192,9 @@ static ACT act_set_names(void)
 //		Parse a SET statistics
 //  
 
-static ACT act_set_statistics(void)
+static act* act_set_statistics(void)
 {
-	GPRE_REQ request = MSC_request(REQ_ddl);
+	gpre_req* request = MSC_request(REQ_ddl);
 	STS stats = (STS) MSC_alloc(STS_LEN);
 
 	if (isc_databases && !isc_databases->dbb_next)
@@ -4213,7 +4213,7 @@ static ACT act_set_statistics(void)
 	else
 		CPR_s_error("INDEX");
 
-	ACT action = (ACT) MSC_action(request, ACT_statistics);
+	act* action = (act*) MSC_action(request, ACT_statistics);
 	action->act_object = (REF) stats;
 	return action;
 }
@@ -4224,9 +4224,9 @@ static ACT act_set_statistics(void)
 //		Generate a set transaction
 //  
 
-static ACT act_set_transaction(void)
+static act* act_set_transaction(void)
 {
-	GPRE_TRA trans = (GPRE_TRA) MSC_alloc(TRA_LEN);
+	gpre_tra* trans = (gpre_tra*) MSC_alloc(TRA_LEN);
 
 	if (MSC_match(KW_NAME))
 		trans->tra_handle = PAR_native_value(false, true);
@@ -4284,7 +4284,7 @@ static ACT act_set_transaction(void)
 
 	CMP_t_start(trans);
 
-	ACT action = (ACT) MSC_alloc(ACT_LEN);
+	act* action = (act*) MSC_alloc(ACT_LEN);
 	action->act_type = ACT_start;
 	action->act_object = (REF) trans;
 	action->act_whenever = gen_whenever();
@@ -4298,14 +4298,14 @@ static ACT act_set_transaction(void)
 //		Generate a COMMIT, FINISH, or ROLLBACK.
 //  
 
-static ACT act_transaction( enum act_t type)
+static act* act_transaction( enum act_t type)
 {
 	const TEXT* transaction = NULL;
 
 	par_options(&transaction);
 	MSC_match(KW_WORK);
 
-	ACT action = (ACT) MSC_alloc(ACT_LEN);
+	act* action = (act*) MSC_alloc(ACT_LEN);
 	action->act_type = type;
 	action->act_whenever = gen_whenever();
 	action->act_object = (REF) transaction;
@@ -4313,7 +4313,7 @@ static ACT act_transaction( enum act_t type)
 	if (MSC_match(KW_RELEASE)) {
 		type = (type == ACT_commit) ? ACT_finish : ACT_rfinish;
 		if (transaction) {
-			action->act_rest = (ACT) MSC_alloc(ACT_LEN);
+			action->act_rest = (act*) MSC_alloc(ACT_LEN);
 			action->act_rest->act_type = type;
 		}
 		else
@@ -4335,7 +4335,7 @@ static ACT act_transaction( enum act_t type)
 //		The syntax, and therefor the code, I fear, is a mess.
 //  
 
-static ACT act_update(void)
+static act* act_update(void)
 {
 	const TEXT* transaction = NULL;
 
@@ -4349,16 +4349,16 @@ static ACT act_update(void)
 
 //  Parse the optional alias (context variable) 
 
-	SYM alias = (token.tok_symbol) ? NULL : PAR_symbol(SYM_dummy);
+	gpre_sym* alias = (token.tok_symbol) ? NULL : PAR_symbol(SYM_dummy);
 
 //  Now we need the SET list list.  Do this thru a linked list stack 
 
 	if (!MSC_match(KW_SET))
 		CPR_s_error("SET");
 
-	GPRE_REQ request = MSC_request(REQ_mass_update);
-	GPRE_REL relation = SQL_relation(request, r_name, db_name, owner_name, true);
-	GPRE_CTX input_context = MSC_context(request);
+	gpre_req* request = MSC_request(REQ_mass_update);
+	gpre_rel* relation = SQL_relation(request, r_name, db_name, owner_name, true);
+	gpre_ctx* input_context = MSC_context(request);
 	input_context->ctx_relation = relation;
 
 	if (alias) {
@@ -4403,7 +4403,7 @@ static ACT act_update(void)
 		/* Allocate update block, flush old request block, then
 		   find the right request block, and the target relation */
 
-		UPD update = (UPD) MSC_alloc(UPD_LEN);
+		upd* update = (upd*) MSC_alloc(UPD_LEN);
 		update->upd_references = request->req_values;
 		MSC_free_request(request);
 
@@ -4431,7 +4431,7 @@ static ACT act_update(void)
 
 		// Given the target relation, find the input context for the modify 
 
-		GPRE_RSE select = request->req_rse;
+		gpre_rse* select = request->req_rse;
 		SSHORT i;
 		for (i = 0; i < select->rse_count; i++) {
 			input_context = select->rse_context[i];
@@ -4458,12 +4458,12 @@ static ACT act_update(void)
 
 		update->upd_request = request;
 		update->upd_source = input_context;
-		GPRE_CTX update_context = MSC_context(request);
+		gpre_ctx* update_context = MSC_context(request);
 		update->upd_update = update_context;
 		update_context->ctx_relation = relation;
 		update->upd_assignments = set_list;
 
-		ACT action = MSC_action(request, ACT_update);
+		act* action = MSC_action(request, ACT_update);
 
 		// Resolve update fields next 
 
@@ -4475,13 +4475,13 @@ static ACT act_update(void)
 			SQE_resolve(set_item->nod_arg[1], request, 0);
 			REF field_ref = (REF) ((set_item->nod_arg[1])->nod_arg[0]);
 
-			SLC slice = NULL;
-			ACT slice_action = (ACT) field_ref->ref_slice;
+			slc* slice = NULL;
+			act* slice_action = (act*) field_ref->ref_slice;
 			if (slice_action &&
-				(slice = (SLC) slice_action->act_object)) {
+				(slice = (slc*) slice_action->act_object)) {
 				// These requests got lost in freeing the main request  
 
-				GPRE_REQ slice_request = slice_action->act_request;
+				gpre_req* slice_request = slice_action->act_request;
 				slice_request->req_next = requests;
 				requests = slice_request;
 				slice->slc_field_ref = field_ref;
@@ -4529,7 +4529,7 @@ static ACT act_update(void)
 
 //  Generate record select expression, then resolve input values 
 
-	GPRE_RSE select = (GPRE_RSE) MSC_alloc(RSE_LEN(1));
+	gpre_rse* select = (gpre_rse*) MSC_alloc(RSE_LEN(1));
 	request->req_rse = select;
 	select->rse_count = 1;
 	select->rse_context[0] = input_context;
@@ -4550,7 +4550,7 @@ static ACT act_update(void)
 
 //  Resolve update fields to update context 
 
-	GPRE_CTX update_context = MSC_context(request);
+	gpre_ctx* update_context = MSC_context(request);
 	request->req_update = update_context;
 	update_context->ctx_relation = relation;
 
@@ -4562,7 +4562,7 @@ static ACT act_update(void)
 		SQE_resolve(set_item->nod_arg[1], request, 0);
 		REF field_ref = (REF) ((set_item->nod_arg[1])->nod_arg[0]);
 
-		ACT slice_action = (ACT) field_ref->ref_slice;
+		act* slice_action = (act*) field_ref->ref_slice;
 		if (slice_action) {
 			// Slices not allowed in searched updates  
 
@@ -4594,7 +4594,7 @@ static ACT act_update(void)
 	request->req_node = modify;
 	modify->nod_arg[0] = set_list;
 
-	ACT action = MSC_action(request, ACT_loop);
+	act* action = MSC_action(request, ACT_loop);
 	action->act_whenever = gen_whenever();
 
 	if (alias)
@@ -4610,7 +4610,7 @@ static ACT act_update(void)
 //		rather than a significant action.
 //  
 
-static ACT act_whenever(void)
+static act* act_whenever(void)
 {
 	global_whenever_list = NULL; // global var
 
@@ -4654,7 +4654,7 @@ static ACT act_whenever(void)
 
 	global_whenever[condition] = label;
 
-	ACT action = (ACT) MSC_alloc(ACT_LEN);
+	act* action = (act*) MSC_alloc(ACT_LEN);
 	action->act_type = ACT_noop;
 
 	MSC_match(KW_SEMI_COLON);
@@ -4955,7 +4955,7 @@ static swe* gen_whenever(void)
 //		to form full references (post same against request).
 //  
 
-static void into( GPRE_REQ request, GPRE_NOD field_list, GPRE_NOD var_list)
+static void into( gpre_req* request, GPRE_NOD field_list, GPRE_NOD var_list)
 {
 	if (!var_list)
 		PAR_error("INTO list is required");
@@ -4972,16 +4972,16 @@ static void into( GPRE_REQ request, GPRE_NOD field_list, GPRE_NOD var_list)
 	{
 		REF var_ref = (REF) *var_ptr;
 		REF field_ref = NULL;
-		GPRE_REQ slice_req = NULL;
+		gpre_req* slice_req = NULL;
 		if (((*fld_ptr)->nod_type == nod_field)
 			|| ((*fld_ptr)->nod_type == nod_array))
 		{
 			field_ref = (REF) (*fld_ptr)->nod_arg[0];
-			slice_req = (GPRE_REQ) (*fld_ptr)->nod_arg[2];
+			slice_req = (gpre_req*) (*fld_ptr)->nod_arg[2];
 		}
 
 		REF reference = NULL;
-		GPRE_FLD field;
+		gpre_fld* field;
 		if (field_ref && slice_req && (field = field_ref->ref_field)
 			&& field->fld_array)
 		{
@@ -5016,12 +5016,12 @@ static void into( GPRE_REQ request, GPRE_NOD field_list, GPRE_NOD var_list)
 //		Create field in a relation for a metadata request.
 //  
 
-static GPRE_FLD make_field( GPRE_REL relation)
+static gpre_fld* make_field( gpre_rel* relation)
 {
 	char s[ERROR_LENGTH];
 
 	SQL_resolve_identifier("<column name>", s);
-	GPRE_FLD field = MET_make_field(s, 0, 0, true);
+	gpre_fld* field = MET_make_field(s, 0, 0, true);
 	field->fld_relation = relation;
 	field->fld_flags |= FLD_meta;
 	PAR_get_token();
@@ -5035,7 +5035,7 @@ static GPRE_FLD make_field( GPRE_REL relation)
 //		Create index for metadata request.
 //  
 
-static IND make_index( GPRE_REQ request, TEXT * string)
+static IND make_index( gpre_req* request, TEXT * string)
 {
 	IND index = NULL;
 	TEXT s[ERROR_LENGTH];
@@ -5059,9 +5059,9 @@ static IND make_index( GPRE_REQ request, TEXT * string)
 //		Create relation for a metadata request.
 //  
 
-static GPRE_REL make_relation( GPRE_REQ request, const TEXT * relation_name)
+static gpre_rel* make_relation( gpre_req* request, const TEXT * relation_name)
 {
-	GPRE_REL relation = NULL;
+	gpre_rel* relation = NULL;
 	TEXT r[ERROR_LENGTH];
 
 	if (isc_databases && !isc_databases->dbb_next) {
@@ -5104,7 +5104,7 @@ static void pair( GPRE_NOD expr, GPRE_NOD field_expr)
 		ref2 = (REF) expr->nod_arg[0];
 
 		/* We're done if we've already determined the type of this reference
-		 * (if, for instance, it's a parameter to a UDF or PROCEDURE)
+		 * (if, for instance, it's a parameter to a udf or PROCEDURE)
 		 */
 		if (ref2->ref_field)
 			return;
@@ -5143,13 +5143,13 @@ static void pair( GPRE_NOD expr, GPRE_NOD field_expr)
 //		Parse the multi-dimensional array specification.
 //  
 
-static void par_array( GPRE_FLD field)
+static void par_array( gpre_fld* field)
 {
 	SSHORT i = 0;
 
 //  Pick up ranges 
 
-	ARY array_info = field->fld_array_info;
+	ary* array_info = field->fld_array_info;
 
 	while (true) {
 		SLONG rangel = EXP_SSHORT_ordinal(true);
@@ -5203,7 +5203,7 @@ static SSHORT par_char_set(void)
 	if (token.tok_type != tok_ident)
 		CPR_s_error("<character set name>");
 
-	SYM symbol = MSC_find_symbol(token.tok_symbol, SYM_charset);
+	gpre_sym* symbol = MSC_find_symbol(token.tok_symbol, SYM_charset);
 	if (!symbol)
 		PAR_error("The named CHARACTER SET was not found");
 
@@ -5218,7 +5218,7 @@ static SSHORT par_char_set(void)
 //		Create a computed field
 //  
 
-static void par_computed( GPRE_REQ request, GPRE_FLD field)
+static void par_computed( gpre_req* request, gpre_fld* field)
 {
 	MSC_match(KW_BY);
 
@@ -5264,7 +5264,7 @@ static void par_computed( GPRE_REQ request, GPRE_FLD field)
 //		not, produce an error and return NULL.
 //  
 
-static GPRE_REQ par_cursor( SYM * symbol_ptr)
+static gpre_req* par_cursor( gpre_sym** symbol_ptr)
 {
 // ** 
 //   par_cursor() is called to use a previously declared cursor.
@@ -5284,7 +5284,7 @@ static GPRE_REQ par_cursor( SYM * symbol_ptr)
 
 	TEXT t_cur[128];
 	SQL_resolve_identifier("<cursor name>", t_cur);
-	SYM symbol = HSH_lookup(token.tok_string);
+	gpre_sym* symbol = HSH_lookup(token.tok_string);
 	token.tok_symbol = symbol;
 	if (symbol && symbol->sym_type == SYM_keyword)
 		token.tok_keyword = (KWWORDS) symbol->sym_keyword;
@@ -5298,7 +5298,7 @@ static GPRE_REQ par_cursor( SYM * symbol_ptr)
 		PAR_get_token();
 		if (symbol_ptr)
 			*symbol_ptr = symbol;
-		return (GPRE_REQ) symbol->sym_object;
+		return (gpre_req*) symbol->sym_object;
 	}
 	else {
 		symbol = MSC_find_symbol(token.tok_symbol, SYM_dyn_cursor);
@@ -5317,7 +5317,7 @@ static GPRE_REQ par_cursor( SYM * symbol_ptr)
 
 static DYN par_dynamic_cursor(void)
 {
-	SYM symbol = NULL;
+	gpre_sym* symbol = NULL;
 
 	if (token.tok_symbol == NULL) {
 		TEXT t_cur[128];
@@ -5343,9 +5343,9 @@ static DYN par_dynamic_cursor(void)
 //		ALTER TABLE statement.
 //  
 
-static GPRE_FLD par_field( GPRE_REQ request, GPRE_REL relation)
+static gpre_fld* par_field( gpre_req* request, gpre_rel* relation)
 {
-	GPRE_FLD field = make_field(relation);
+	gpre_fld* field = make_field(relation);
 
 	SQL_par_field_dtype(request, field, false);
 
@@ -5443,7 +5443,8 @@ static GPRE_FLD par_field( GPRE_REQ request, GPRE_REL relation)
 //		ALTER TABLE statement. Constraint maybe table or column level.
 //  
 
-static CNSTRT par_field_constraint( GPRE_REQ request, GPRE_FLD for_field, GPRE_REL relation)
+static CNSTRT par_field_constraint( gpre_req* request, gpre_fld* for_field,
+	gpre_rel* relation)
 {
 	enum kwwords keyword;
 	STR field_name;
@@ -5613,7 +5614,7 @@ static int par_page_size(void)
 //		Parse the next thing as a relation.
 //  
 
-static GPRE_REL par_relation( GPRE_REQ request)
+static gpre_rel* par_relation( gpre_req* request)
 {
 	SCHAR r_name[NAME_SIZE + 1], db_name[NAME_SIZE + 1],
 		owner_name[NAME_SIZE + 1];
@@ -5736,7 +5737,7 @@ static void par_fkey_extension(cnstrt* cnstrt_val)
 //		ALTER TABLE statement. Constraint maybe table or column level.
 //  
 
-static CNSTRT par_table_constraint( GPRE_REQ request, GPRE_REL relation)
+static CNSTRT par_table_constraint( gpre_req* request, gpre_rel* relation)
 {
 	enum kwwords keyword;
 	LLS *fields;
@@ -5864,7 +5865,7 @@ static CNSTRT par_table_constraint( GPRE_REQ request, GPRE_REL relation)
 //		Returns true if found a match else false.
 //  
 
-static bool par_transaction_modes(GPRE_TRA trans,
+static bool par_transaction_modes(gpre_tra* trans,
 								  bool expect_iso)
 {
 

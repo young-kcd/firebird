@@ -1837,7 +1837,7 @@ static RTN walk_record(TDBB tdbb,
 	RHDF fragment;
 	USHORT record_length, line_number;
 	SLONG page_number;
-	FMT format;
+	fmt* format;
 	UCHAR flags;
 	SCHAR c, *p, *end;
 	RTN result;

@@ -24,19 +24,19 @@
 #ifndef GPRE_SQE_PROTO_H
 #define GPRE_SQE_PROTO_H
 
-typedef GPRE_NOD(*pfn_SQE_list_cb) (GPRE_REQ, bool, USHORT*, bool*);
+typedef GPRE_NOD (*pfn_SQE_list_cb) (gpre_req*, bool, USHORT*, bool*);
 
-GPRE_NOD	SQE_boolean(GPRE_REQ, USHORT*);
-GPRE_CTX	SQE_context(GPRE_REQ);
-GPRE_NOD	SQE_field(GPRE_REQ, bool);
-GPRE_NOD	SQE_list(pfn_SQE_list_cb, GPRE_REQ, bool);
-REF			SQE_parameter(GPRE_REQ, bool);
-void		SQE_post_field(GPRE_NOD, GPRE_FLD);
-REF			SQE_post_reference(GPRE_REQ, GPRE_FLD, GPRE_CTX, GPRE_NOD);
-bool		SQE_resolve(GPRE_NOD, GPRE_REQ, GPRE_RSE);
-GPRE_RSE	SQE_select(GPRE_REQ, bool);
-GPRE_NOD	SQE_value(GPRE_REQ, bool, USHORT*, bool*);
-GPRE_NOD	SQE_variable(GPRE_REQ, bool, USHORT*, bool*);
+GPRE_NOD	SQE_boolean(gpre_req*, USHORT*);
+gpre_ctx*	SQE_context(gpre_req*);
+GPRE_NOD	SQE_field(gpre_req*, bool);
+GPRE_NOD	SQE_list(pfn_SQE_list_cb, gpre_req*, bool);
+REF			SQE_parameter(gpre_req*, bool);
+void		SQE_post_field(GPRE_NOD, gpre_fld*);
+REF			SQE_post_reference(gpre_req*, gpre_fld*, gpre_ctx*, GPRE_NOD);
+bool		SQE_resolve(GPRE_NOD, gpre_req*, gpre_rse*);
+gpre_rse*	SQE_select(gpre_req*, bool);
+GPRE_NOD	SQE_value(gpre_req*, bool, USHORT*, bool*);
+GPRE_NOD	SQE_variable(gpre_req*, bool, USHORT*, bool*);
 
 #endif // GPRE_SQE_PROTO_H
 

@@ -588,7 +588,8 @@ static void ipi_end_thread( ICC icc)
 
 		if (ipserver_private_data.ipms == ipm){
 			ipserver_private_data.ipms = ipm->ipm_next;
-		} else {
+		}
+		else {
 			for (IPM pipm = ipserver_private_data.ipms;
 				 pipm->ipm_next;
 				 pipm = pipm->ipm_next)
@@ -1547,7 +1548,7 @@ static void event_ast(void* event_void, USHORT length, const UCHAR* data)
  **************************************/
 	COPYDATASTRUCT cpdata;
 	ULONG result;
-	IVNT event = reinterpret_cast<IVNT>(event_void);
+	ivnt* event = static_cast<IVNT>(event_void);
 
 	if (!event->ivnt_ast)
 		return;

@@ -324,7 +324,8 @@ void PIO_force_write(FIL file, bool flag)
 		
 		if (flag) {
 			file->fil_flags |= (FIL_force_write | FIL_force_write_init);
-		} else {
+		}
+		else {
 			file->fil_flags &= ~FIL_force_write;
 		}
 	}

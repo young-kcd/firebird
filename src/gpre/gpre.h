@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.56 2004-01-06 10:33:11 robocop Exp $
+ * $Id: gpre.h,v 1.57 2004-01-28 07:50:27 robocop Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -133,21 +133,21 @@ bool isLangCpp(LANG_T lang);
 /* Structure used by Fortran and Basic to determine whether or not
    an array has been declared in a subroutine. */
 
-typedef struct adl {
+struct adl {
 	USHORT adl_gds_ident;		/* Identifier of array for which Gpre has
 								   generated a declaration in main or a
 								   subroutine */
 	adl* adl_next;				/* Next declared array identifier */
-} *ADL;
+};
 
 const size_t ADL_LEN = sizeof(adl);
 
 
 /* database block data, for generating block data section in fussy fortran */
 
-typedef struct dbd {
+struct dbd {
 	TEXT dbb_name[128];			/* database name */
-} *DBD;
+};
 
 
 /* Dimension block, used for arrays
@@ -157,13 +157,13 @@ typedef struct dbd {
  *
  */
 
-typedef struct dim {
+struct dim {
 	int dim_number;				/* Dimension number i (i=1 to n) */
 	SLONG dim_lower;			/* Lower bound */
 	SLONG dim_upper;			/* Upper bound */
 	dim* dim_next;				/* Information for dimension i+1 */
 	dim* dim_previous;			/* Information for dimension i-1 */
-} *DIM;
+};
 
 const size_t DIM_LEN = sizeof(dim);
 
@@ -309,12 +309,12 @@ const size_t TXT_LEN = sizeof(gpre_txt);
 
 /* User name -- used for SQL GRANT/REVOKE */
 
-typedef struct gpre_usn {
+struct gpre_usn {
 	gpre_usn* usn_next;
 	SCHAR *usn_name;
 	USHORT usn_dyn;				/* describes the type of user via a dyn-verb,
 								   i.e. gds__dyn_grant_user/view/proc/trig */
-} *GPRE_USN;
+};
 
 const size_t USN_LEN = sizeof(gpre_usn);
 
@@ -330,23 +330,23 @@ const size_t VAL_LEN = sizeof(val);
 
 
 /* Array information block.  Used to hold info about an array field.
-   Note: the dimension (DIM) block used to hold dimension information.
+   Note: the dimension (dim) block used to hold dimension information.
    The preferred mechanism is the repeating tail on the array block. */
 
 const int MAX_ARRAY_DIMENSIONS = 16;
 
-typedef struct ary {
+struct ary {
 	USHORT ary_dtype;			/* data type of array */
 	int ary_dimension_count;	/* Number of dimensions in this array */
 	dim* ary_dimension;			/* Linked list of range info for each dimension */
 	SLONG ary_size;				/* Size of the array */
 	USHORT ary_ident;			/* Array identifier */
-	bool ary_declared;		/* True if a declaration already was generated */
+	bool ary_declared;			/* True if a declaration already was generated */
 	struct ary_repeat {
 		SLONG ary_lower;
 		SLONG ary_upper;
 	} ary_rpt[MAX_ARRAY_DIMENSIONS];
-} *ARY;
+};
 
 // CVC: The count is ignored, the array is hardcoded at 16.
 const size_t ARY_LEN = sizeof(ary);
@@ -358,13 +358,13 @@ const size_t ARY_LEN = sizeof(ary);
    use is to create a trigger for CHECK constraints which always
    abort on error                                                   */
 
-typedef struct gpre_trg {
+struct gpre_trg {
 	str* trg_name;
 	USHORT trg_type;			/* Type of trigger */
 	str* trg_source;			/* source for trigger */
 	gpre_nod* trg_boolean;		/* boolean expression, for trigger */
 	str* trg_message;			/* Message the trigger prints */
-} *GPRE_TRG;
+};
 
 const size_t TRG_LEN = sizeof(gpre_trg);
 
@@ -391,18 +391,18 @@ const size_t LLS_LEN = sizeof(lls);
 /* Constraint block, used to hold information about integrity constraints */
 
 typedef struct cnstrt {
-	str* cnstrt_name;			/* Name of constraint */
-	USHORT cnstrt_type;			/* Type of constraint */
-	lls* cnstrt_fields;			/* list of fields */
+	str* cnstrt_name;				/* Name of constraint */
+	USHORT cnstrt_type;				/* Type of constraint */
+	lls* cnstrt_fields;				/* list of fields */
 	USHORT cnstrt_fkey_def_type;	/* extended foreign key definition */
-	str* cnstrt_referred_rel;	/* referred relation, if foreign key */
+	str* cnstrt_referred_rel;		/* referred relation, if foreign key */
 	lls* cnstrt_referred_fields;	/* optional list of fields from
 									   referred relation */
-	cnstrt* cnstrt_next;		/* next contraint for field or relation */
+	cnstrt* cnstrt_next;			/* next contraint for field or relation */
 	gpre_txt* cnstrt_text;			/* source for CHECK constraints */
-	gpre_nod* cnstrt_boolean;	/* boolean expression, for CHECK
-								   constraints */
-	USHORT cnstrt_flags;		/* see below */
+	gpre_nod* cnstrt_boolean;		/* boolean expression, for CHECK
+									   constraints */
+	USHORT cnstrt_flags;			/* see below */
 } *CNSTRT;
 
 const size_t CNSTRT_LEN = sizeof(cnstrt);
@@ -489,7 +489,7 @@ enum sts_flags_vals {
 /* Computed field block */
 
 typedef struct cmpf {
-	gpre_txt* cmpf_text;				/* source for computed field */
+	gpre_txt* cmpf_text;		/* source for computed field */
 	gpre_nod* cmpf_boolean;		/* expression, for computed field */
 } *CMPF;
 
@@ -619,7 +619,7 @@ typedef enum act_t {
 
 /* Action block, used to make action points in source */
 
-typedef struct act {
+struct act {
 	SLONG act_position;			/* position in input stream */
 	SLONG act_length;			/* length to be commented out */
 	enum act_t act_type;		/* type of action */
@@ -632,7 +632,7 @@ typedef struct act {
 	swe* act_whenever;			/* SQL whenever blocks */
 	USHORT act_flags;			/* flags that affect the action */
 	USHORT act_count;			/* used to hold begin/end count for routines */
-} *ACT;
+};
 
 enum act_flags_vals {
 	ACT_mark	= 1,		/* action is mark only - no comment */
@@ -641,7 +641,7 @@ enum act_flags_vals {
 	ACT_sql		= 8,		/* action is SQL statement */
 	ACT_decl	= 16,		/* action is a PASCAL forward or extern routine */
 	ACT_main	= 32,		/* action is the main routine in the program/module */
-	ACT_back_token	= 128		/* end of action marked by prior token */
+	ACT_back_token	= 128	/* end of action marked by prior token */
 };
 
 const size_t ACT_LEN = sizeof(act);
@@ -672,20 +672,20 @@ enum sym_t {
 	SYM_generator,
 	SYM_dummy,
 
-	SYM_LASTSYM					/* Leave this debugging SYM last */
+	SYM_LASTSYM					/* Leave this debugging sym last */
 };
 
-typedef struct sym {
-	const char* sym_string;			/* address of asciz string */
+struct gpre_sym {
+	const char* sym_string;		/* address of asciz string */
 	enum sym_t sym_type;		/* symbol type */
 	USHORT sym_keyword;			/* keyword number, if keyword */
 	gpre_ctx* sym_object;		/* general pointer to object */
-	sym* sym_collision;			/* collision pointer */
-	sym* sym_homonym;			/* homonym pointer */
+	gpre_sym* sym_collision;	/* collision pointer */
+	gpre_sym* sym_homonym;		/* homonym pointer */
 	SCHAR sym_name[1];			/* space for name, if necessary */
-} *SYM;
+};
 
-const size_t SYM_LEN = sizeof(sym);
+const size_t SYM_LEN = sizeof(gpre_sym);
 
 
 /* Blob block.  Used for blob calls */
@@ -696,7 +696,7 @@ public:
 	gpre_req* blb_request;		/* parent request */
 	blb* blb_next;				/* next blob in request */
 	ref* blb_reference;			/* field reference for blob field */
-	sym* blb_symbol;			/* Blob context variable */
+	gpre_sym* blb_symbol;		/* Blob context variable */
 	USHORT blb_ident;			/* Blob handle */
 	USHORT blb_buff_ident;		/* Ident of segment buffer */
 	USHORT blb_len_ident;		/* Ident of segment length */
@@ -723,7 +723,6 @@ public:
 	USHORT blb_to_charset;		/* charset to translate to */
 	UCHAR blb_bpb[24];
 };
-typedef blb* BLB;
 
 const size_t BLB_LEN = sizeof(blb);
 
@@ -735,12 +734,12 @@ enum blb_flags_vals {
 
 /* Reserved relation lock block */
 
-typedef struct rrl {
+struct rrl {
 	rrl* rrl_next;				/* next locked relation */
 	UCHAR rrl_lock_level;		/* lock level (SHARE, PROT, EXC */
 	UCHAR rrl_lock_mode;		/* lock mode (READ/WRITE) */
 	gpre_rel* rrl_relation;		/* relation block */
-} *RRL;
+};
 
 const size_t RRL_LEN = sizeof(rrl);
 
@@ -755,7 +754,7 @@ typedef struct dbb {
 	gpre_rel* dbb_procedures;	/* procedures in database */
 	USHORT dbb_id;				/* database id in program */
 	USHORT dbb_flags;			/* Misc flag bytes */
-	sym* dbb_name;				/* database name */
+	gpre_sym* dbb_name;			/* database name */
 	FRBRD *dbb_handle;			/* OUR db handle */
 	FRBRD *dbb_transaction;		/* default transaction */
 	rrl* dbb_rrls;				/* temporary list of relation locks */
@@ -769,7 +768,7 @@ typedef struct dbb {
 	TEXT *dbb_r_password;		/* runtime password */
 	TEXT *dbb_r_sql_role;		/* runtime SQL role */
 	TEXT *dbb_c_lc_messages;	/* compiletime user natural language */
-	const TEXT* dbb_c_lc_ctype;		/* compiletime user character set */
+	const TEXT* dbb_c_lc_ctype;	/* compiletime user character set */
 	TEXT *dbb_r_lc_messages;	/* runtime user natural language */
 	TEXT *dbb_r_lc_ctype;		/* runtime user character set */
 	TEXT *dbb_def_charset;		/* charset for CREATE DATABASE */
@@ -829,14 +828,14 @@ enum dbb_scope_vals {
 
 /* TPB block */
 
-typedef struct tpb {
+struct tpb {
 	tpb* tpb_tra_next;			/* next TPB for this transaction */
 	tpb* tpb_dbb_next;			/* next TPB for this database */
 	dbb* tpb_database;			/* DBB of this part of the transaction */
 	USHORT tpb_length;			/* length of actual TPB */
 	USHORT tpb_ident;			/* unique part of name for this TPB */
 	UCHAR tpb_string[1];		/* actual TPB */
-} *TPB;
+};
 
 inline size_t TPB_LEN(const size_t tpb_string_len)
 {
@@ -846,10 +845,10 @@ inline size_t TPB_LEN(const size_t tpb_string_len)
 
 /* Procedure structure */
 
-typedef struct gpre_prc {
-	sym* prc_symbol;			/* symbol for relation */
+struct gpre_prc {
+	gpre_sym* prc_symbol;		/* symbol for relation */
 	SSHORT prc_id;				/* procedure id */
-	sym* prc_owner;				/* owner of procedure, if any */
+	gpre_sym* prc_owner;		/* owner of procedure, if any */
 	dbb* prc_database;			/* parent database */
 	gpre_prc* prc_next;			/* next procedure in database */
 	gpre_fld* prc_inputs;		/* linked list of input parameters */
@@ -857,7 +856,7 @@ typedef struct gpre_prc {
 	SSHORT prc_in_count;		/* count of input parameters */
 	SSHORT prc_out_count;		/* count of output parameters */
 	SSHORT prc_flags;			/* procedure flags */
-} *GPRE_PRC;
+};
 
 const size_t PRC_LEN = sizeof(gpre_prc);
 enum prc_flags_vals {
@@ -884,7 +883,7 @@ typedef struct map {
 
 /* Record selection expresion syntax node */
 
-typedef struct gpre_rse {
+struct gpre_rse {
 	USHORT rse_type;			/* node type */
 	gpre_nod* rse_boolean;		/* boolean expression, if present */
 	gpre_nod* rse_first;		/* "first n" clause, if present */
@@ -896,12 +895,12 @@ typedef struct gpre_rse {
 	gpre_nod* rse_group_by;		/* list of grouping fields */
 	gpre_nod* rse_plan;			/* user-specified access plan */
 	map* rse_map;				/* map for aggregates */
-	gpre_rse* rse_aggregate;			/* Aggregate rse */
+	gpre_rse* rse_aggregate;	/* Aggregate rse */
 	enum nod_t rse_join_type;	/* Join type */
 	USHORT rse_flags;			/* flags */
 	USHORT rse_count;			/* number of relations */
 	gpre_ctx* rse_context[1];	/* context block */
-} *GPRE_RSE;
+};
 
 
 inline size_t RSE_LEN(const size_t cnt)
@@ -919,22 +918,22 @@ enum rse_flags_vals {
 
 /* Relation block, not to be confused with siblings or in-laws */
 
-typedef struct gpre_rel {
+struct gpre_rel {
 	USHORT rel_id;				/* relation id */
 	gpre_fld* rel_fields;		/* linked list of known fields */
 	gpre_fld* rel_dbkey;		/* linked list of known fields */
-	sym* rel_symbol;			/* symbol for relation */
+	gpre_sym* rel_symbol;		/* symbol for relation */
 	dbb* rel_database;			/* parent database */
 	gpre_rel* rel_next;			/* next relation in database */
 	bool rel_meta;				/* if true, created for a metadata operation */
 	gpre_rse* rel_view_rse;
-	gpre_txt* rel_view_text;			/* source for VIEW definition */
-	sym* rel_owner;				/* owner of relation, if any */
+	gpre_txt* rel_view_text;	/* source for VIEW definition */
+	gpre_sym* rel_owner;		/* owner of relation, if any */
 	cnstrt* rel_constraints;	/* linked list of constraints defined
 								   during a meta operation */
 	TEXT *rel_ext_file;			/* external file name */
 	USHORT rel_flags;
-} *GPRE_REL;
+};
 
 const size_t REL_LEN = sizeof(gpre_rel);
 
@@ -946,7 +945,7 @@ enum rel_flags_vals {
 /* Index block. Used for DDL INDEX commands */
 
 typedef struct ind {
-	sym* ind_symbol;			/* index name */
+	gpre_sym* ind_symbol;		/* index name */
 	gpre_rel* ind_relation;		/* relation name */
 	gpre_fld* ind_fields;		/* list of fields */
 	USHORT ind_flags;			/* Miscellaneous flags */
@@ -968,7 +967,7 @@ enum ind_flags_vals {
 
 typedef struct intlsym {		/* International symbol */
 	dbb* intlsym_database;
-	sym* intlsym_symbol;		/* Hash symbol for intlsym */
+	gpre_sym* intlsym_symbol;	/* Hash symbol for intlsym */
 	intlsym* intlsym_next;
 	USHORT intlsym_type;		/* what type of name */
 	USHORT intlsym_flags;
@@ -991,7 +990,7 @@ enum intlsym_type_vals {
 
 /* Field block.  Fields are what farms and databases are all about */
 
-typedef struct gpre_fld {
+struct gpre_fld {
 	USHORT fld_dtype;			/* data type of field */
 	FLD_LENGTH fld_length;		/* field length in bytes */
 	SSHORT fld_scale;			/* scale factor */
@@ -1005,8 +1004,8 @@ typedef struct gpre_fld {
 	gpre_fld* fld_array;		/* array element if field is array */
 	gpre_rel* fld_relation;		/* relation */
 	gpre_prc* fld_procedure;	/* procedure */
-	sym* fld_symbol;			/* symbol for field */
-	sym* fld_global;			/* symbol for global field */
+	gpre_sym* fld_symbol;		/* symbol for field */
+	gpre_sym* fld_global;		/* symbol for global field */
 	ary* fld_array_info;		/* Dimension and range information about an
 								   array field */
 	gpre_nod* fld_default_value;/* field's default value */
@@ -1022,7 +1021,7 @@ typedef struct gpre_fld {
 	SSHORT fld_charset_id;		/* Field character set id for text */
 	SSHORT fld_collate_id;		/* Field collation id for text */
 	SSHORT fld_ttype;			/* ID of text type's implementation */
-} *GPRE_FLD;
+};
 
 const size_t FLD_LEN = sizeof(gpre_fld);
 
@@ -1047,37 +1046,37 @@ typedef enum {
 	FUN_descriptor,
 	FUN_blob_struct,
 	FUN_scalar_array
-}FUN_T;
+} FUN_T;
 
 
 /* Port block */
 
-typedef struct por {
+struct gpre_port {
 	USHORT por_msg_number;		/* message number within request */
 	USHORT por_ident;			/* ident in source */
 	int por_length;				/* length of port in bytes */
 	ref* por_references;		/* linked list of field references */
-	por* por_next;				/* next port in request */
+	gpre_port* por_next;		/* next port in request */
 	USHORT por_count;			/* number of items in port */
-} *POR;
+};
 
-const size_t POR_LEN = sizeof(por);
+const size_t POR_LEN = sizeof(gpre_port);
 
 
 /* Slice description block */
 
-typedef struct slc {
-	gpre_req* slc_parent_request;		/* request for blob id */
-	gpre_fld* slc_field;				/* database array field */
-	gpre_nod* slc_array;				/* user defined array */
-	ref* slc_field_ref;			/* array field reference */
-	USHORT slc_dimensions;		/* dimensions */
-	USHORT slc_parameters;		/* number of parameters */
+struct slc {
+	gpre_req* slc_parent_request;	/* request for blob id */
+	gpre_fld* slc_field;			/* database array field */
+	gpre_nod* slc_array;			/* user defined array */
+	ref* slc_field_ref;				/* array field reference */
+	USHORT slc_dimensions;			/* dimensions */
+	USHORT slc_parameters;			/* number of parameters */
 	struct slc_repeat {
 		gpre_nod* slc_lower;
 		gpre_nod* slc_upper;
 	} slc_rpt[1];
-} *SLC;
+};
 
 inline size_t SLC_LEN(const size_t count)
 {
@@ -1104,10 +1103,10 @@ enum req_t {
 	REQ_procedure,
 	REQ_set_generator,
 
-	REQ_LASTREQUEST				/* Leave this debugging GPRE_REQ last */
+	REQ_LASTREQUEST				/* Leave this debugging gpre_req last */
 };
 
-typedef struct gpre_req {
+struct gpre_req {
 	enum req_t req_type;		/* request type */
 	USHORT req_ident;			/* ident for request handle */
 	USHORT req_act_flag;		/* activity flag ident, if used */
@@ -1115,7 +1114,7 @@ typedef struct gpre_req {
 	UCHAR *req_base;			/* base of blr string during generation */
 	UCHAR *req_blr;				/* raw blr string */
 	SCHAR *req_handle;			/* request handle */
-	const TEXT* req_trans;			/* transaction handle */
+	const TEXT* req_trans;		/* transaction handle */
 	SCHAR *req_request_level;	/* request level expression */
 	USHORT req_level;			/* access level */
 	USHORT req_count;			/* number of ports in request */
@@ -1137,13 +1136,13 @@ typedef struct gpre_req {
 	ref* req_index;				/* index variable */
 	ref* req_references;		/* fields referenced in context */
 	map* req_map;				/* map for aggregates, etc */
-	gpre_rse* req_rse;				/* record selection expression */
-	por* req_ports;				/* linked list of ports */
-	por* req_primary;			/* primary input or output port */
-	por* req_sync;				/* synchronization port */
-	por* req_vport;				/* port to send values in */
+	gpre_rse* req_rse;			/* record selection expression */
+	gpre_port* req_ports;		/* linked list of ports */
+	gpre_port* req_primary;		/* primary input or output port */
+	gpre_port* req_sync;		/* synchronization port */
+	gpre_port* req_vport;		/* port to send values in */
 #ifdef SCROLLABLE_CURSORS
-	por* req_aport;				/* port for asynchronous message */
+	gpre_port* req_aport;		/* port for asynchronous message */
 #endif
 	gpre_req* req_routine;		/* other requests in routine */
 	blb*		req_blobs;		/* blobs in request */
@@ -1157,7 +1156,7 @@ typedef struct gpre_req {
 	USHORT req_in_order_by_clause;	/* processing order by clause */
 	USHORT req_in_subselect;	/* processing a subselect clause */
 	ULONG req_flags;
-} *GPRE_REQ;
+};
 
 enum req_flags_vals {
 	REQ_exp_hand			= 1,
@@ -1180,18 +1179,18 @@ const size_t REQ_LEN = sizeof(gpre_req);
 
 /* Context block, used to define context symbols, etc. */
 
-typedef struct gpre_ctx {
+struct gpre_ctx {
 	USHORT ctx_internal;		/* internal context number */
 	USHORT ctx_scope_level;		/* scope level for SQL alias subquery scoping */
 	gpre_req* ctx_request;		/* parent request */
 	gpre_ctx* ctx_next;			/* next context in request */
-	sym* ctx_symbol;			/* symbol for context */
+	gpre_sym* ctx_symbol;		/* symbol for context */
 	gpre_rel* ctx_relation;		/* relation for context */
 	TEXT *ctx_alias;			/* holds SQL alias for passing to engine */
 	gpre_prc* ctx_procedure;	/* procedure for context */
 	gpre_nod* ctx_prc_inputs;	/* procedure input parameters */
 	gpre_rse* ctx_stream;			/* stream for context */
-} *GPRE_CTX;
+};
 
 const size_t CTX_LEN = sizeof(gpre_ctx);
 
@@ -1206,7 +1205,7 @@ typedef struct ref {
 	gpre_fld* ref_field;		/* field in question */
 	gpre_ctx* ref_context;		/* context for reference */
 	ref* ref_next;				/* next reference in context */
-	por* ref_port;				/* associated port */
+	gpre_port* ref_port;		/* associated port */
 	ref* ref_source;			/* source reference for modified field */
 	ref* ref_null;				/* reference for null value */
 	ref* ref_master;			/* master field for null value */
@@ -1245,7 +1244,7 @@ const size_t REF_LEN = sizeof(ref);
 
 /* Based on block.  Used for based on clause */
 
-typedef struct bas {
+struct bas {
 	gpre_fld* bas_field;		/* database field referenced */
 	lls* bas_variables;			/* list of variables based on above */
 	str* bas_db_name;			/* database name if present and required */
@@ -1253,7 +1252,7 @@ typedef struct bas {
 	str* bas_fld_name;			/* field if no db statement */
 	USHORT bas_flags;
 	char bas_terminator[2];		/* terminating character */
-} *BAS;
+};
 
 const size_t BAS_LEN = sizeof(bas);
 
@@ -1265,7 +1264,7 @@ enum bas_flags_vals {
 
 /* declare udf block */
 
-typedef struct decl_udf {
+struct decl_udf {
 	TEXT *decl_udf_name;
 	TEXT *decl_udf_entry_point;
 	TEXT *decl_udf_module_name;
@@ -1273,7 +1272,7 @@ typedef struct decl_udf {
 	gpre_fld* decl_udf_return_type;
 	USHORT decl_udf_return_mode;	/* BY VALUE or BY REFERENCE */
 	SSHORT decl_udf_return_parameter;
-} *DECL_UDF;
+};
 
 
 const size_t DECL_UDF_LEN = sizeof(decl_udf);
@@ -1283,8 +1282,8 @@ const size_t DECL_UDF_LEN = sizeof(decl_udf);
 
 typedef struct dyn {
 	dbb* dyn_database;			/* Database involved */
-	sym* dyn_statement_name;	/* Name of dynamic statement */
-	sym* dyn_cursor_name;		/* Cursor name */
+	gpre_sym* dyn_statement_name;	/* Name of dynamic statement */
+	gpre_sym* dyn_cursor_name;		/* Cursor name */
 	const TEXT* dyn_trans;			/* Transaction handle */
 	TEXT *dyn_string;			/* Dynamic string or variable name */
 	TEXT *dyn_sqlda;			/* Name of SQLDA structure, if any */
@@ -1297,13 +1296,13 @@ const size_t DYN_LEN = sizeof(dyn);
 
 /* Start transaction block */
 
-typedef struct gpre_tra {
+struct gpre_tra {
 	gpre_tra* tra_next;			/* next transaction */
 	TEXT *tra_handle;			/* this handle */
 	USHORT tra_flags;			/* transaction options */
 	tpb* tra_tpb;				/* TPB's for this transaction */
 	int tra_db_count;			/* number of db's and TPB's */
-} *GPRE_TRA;
+};
 
 const size_t TRA_LEN = sizeof(gpre_tra);
 
@@ -1326,55 +1325,55 @@ const int MAX_TRA_OPTIONS	= 8;
 
 /* act_object block for SQL database commands. */
 
-typedef struct mdbb {
+struct mdbb {
 	dbb* mdbb_database;
 	gpre_req* mdbb_dpb_request;
 	gpre_req* mdbb_dpb_extend_request;
-} *MDBB;
+};
 
 
 /* Open cursor block */
 
-typedef struct opn {
-	sym* opn_cursor;			/* Symbol block of cursor */
-	const TEXT* opn_trans;			/* Transaction handle */
+struct open_cursor {
+	gpre_sym* opn_cursor;		/* Symbol block of cursor */
+	const TEXT* opn_trans;		/* Transaction handle */
 	ref* opn_using;				/* Using variables */
-} *OPN;
+};
 
-const size_t OPN_LEN = sizeof(opn);
+const size_t OPN_LEN = sizeof(open_cursor);
 
 
 /* Ready block */
 
-typedef struct rdy {
+struct rdy {
 	gpre_req* rdy_request;		/* dpb message & info */
 	rdy* rdy_next;
 	dbb* rdy_database;
 	USHORT rdy_id;				/* id for unique string variable- MPEXL COB */
 	TEXT *rdy_filename;
-} *RDY;
+};
 
 const size_t RDY_LEN = sizeof(rdy);
 
 
 /* Enumerated field type block */
 
-typedef struct typ {
-	sym* typ_symbol;			/* Actual symbol */
+struct field_type {
+	gpre_sym* typ_symbol;		/* Actual symbol */
 	gpre_fld* typ_field;		/* Owner */
 	SSHORT typ_value;			/* Value of type */
-} *TYP;
+};
 
-const size_t TYP_LEN = sizeof(typ);
+const size_t TYP_LEN = sizeof(field_type);
 
 
 /* User Defined Function */
 
-typedef struct udf {
+struct udf {
 	dbb* udf_database;
-	sym* udf_symbol;			/* Function name or query name */
+	gpre_sym* udf_symbol;		/* Function name or query name */
 	USHORT udf_args;			/* Number of arguments */
-	USHORT udf_flags;			/* UDF flags */
+	USHORT udf_flags;			/* udf flags */
 	USHORT udf_dtype;			/* Return data type */
 	SSHORT udf_scale;			/* Return scale */
 	USHORT udf_length;			/* Return length */
@@ -1384,7 +1383,7 @@ typedef struct udf {
 	USHORT udf_type;			/* Function type */
 	gpre_fld* udf_inputs;		/* List of udf input arguments */
 	TEXT udf_function[1];		/* Function name */
-} *UDF;
+};
 
 const size_t UDF_LEN = sizeof(udf);
 
@@ -1400,17 +1399,17 @@ enum udf_flags_vals {
 
 /* Update block -- used for (at least) MODIFY */
 
-typedef struct upd {
+struct upd {
 	USHORT upd_level;			/* reference level */
 	gpre_req* upd_request;		/* parent request */
 	ref* upd_references;		/* references under modify */
 	gpre_ctx* upd_source;		/* context being modified */
 	gpre_ctx* upd_update;		/* update context */
-	por* upd_port;				/* port for update */
+	gpre_port* upd_port;		/* port for update */
 	upd* upd_outer;				/* outer modify, if any */
 	gpre_nod* upd_assignments;	/* assignments to port */
 	ref* upd_array_references;	/* array references under modify */
-} *UPD;
+};
 
 const size_t UPD_LEN = sizeof(upd);
 
@@ -1461,7 +1460,7 @@ EXTERN DBB isc_databases;
 EXTERN TEXT *default_user, *default_password;
 EXTERN TEXT *default_lc_ctype;
 EXTERN TEXT *default_lc_messages;
-EXTERN GPRE_REQ requests;
+EXTERN gpre_req* requests;
 EXTERN LLS events;
 EXTERN IB_FILE *out_file;
 EXTERN LANG_T sw_language;

@@ -26,7 +26,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: jrdmet.cpp,v 1.13 2003-11-08 16:31:39 brodsom Exp $
+//	$Id: jrdmet.cpp,v 1.14 2004-01-28 07:50:27 robocop Exp $
 //
 
 #include "firebird.h"
@@ -52,19 +52,19 @@
 
 void JRDMET_init( DBB db)
 {
-	SYM symbol;
+	gpre_sym* symbol;
 
 	const UCHAR* relfld = relfields;
 
 	while (relfld[RFLD_R_NAME]) {
-		GPRE_REL relation = (GPRE_REL) MSC_alloc(REL_LEN);
+		gpre_rel* relation = (gpre_rel*) MSC_alloc(REL_LEN);
 		relation->rel_database = db;
 		relation->rel_next = db->dbb_relations;
 		relation->rel_id = relfld[RFLD_R_ID];
 		db->dbb_relations = relation;
-		relation->rel_symbol = symbol = (SYM) MSC_alloc(SYM_LEN);
+		relation->rel_symbol = symbol = (gpre_sym*) MSC_alloc(SYM_LEN);
 		symbol->sym_type = SYM_relation;
-		symbol->sym_object = (GPRE_CTX) relation;
+		symbol->sym_object = (gpre_ctx*) relation;
 
 		symbol->sym_string = names[relfld[RFLD_R_NAME]];
 		HSH_insert(symbol);
@@ -75,7 +75,7 @@ void JRDMET_init( DBB db)
 			const gfld* gfield = (fld[RFLD_F_UPD_MINOR]) ?
 										   &gfields[fld[RFLD_F_UPD_ID]] :
 										   &gfields[fld[RFLD_F_ID]];
-			GPRE_FLD field = (GPRE_FLD) MSC_alloc(FLD_LEN);
+			gpre_fld* field = (gpre_fld*) MSC_alloc(FLD_LEN);
 			relation->rel_fields = field;
 			field->fld_relation = relation;
 			field->fld_next = relation->rel_fields;
@@ -108,26 +108,26 @@ void JRDMET_init( DBB db)
 					field->fld_charset_id = CS_METADATA;
 			}
 
-			field->fld_symbol = symbol = (SYM) MSC_alloc(SYM_LEN);
+			field->fld_symbol = symbol = (gpre_sym*) MSC_alloc(SYM_LEN);
 			symbol->sym_type = SYM_field;
-			symbol->sym_object = (GPRE_CTX) field;
+			symbol->sym_object = (gpre_ctx*) field;
 			symbol->sym_string = names[fld[RFLD_F_NAME]];
 			HSH_insert(symbol);
 
-			field->fld_global = symbol = (SYM) MSC_alloc(SYM_LEN);
+			field->fld_global = symbol = (gpre_sym*) MSC_alloc(SYM_LEN);
 			symbol->sym_type = SYM_field;
-			symbol->sym_object = (GPRE_CTX) field;
+			symbol->sym_object = (gpre_ctx*) field;
 			symbol->sym_string = names[gfield->gfld_name];
 		}
 		relfld = fld + 1;
 	}
 
-	for (const RTYP* rtype = types; rtype->rtyp_name; rtype++) {
-		TYP type = (TYP) MSC_alloc(TYP_LEN);
-		type->typ_symbol = symbol = (SYM) MSC_alloc(SYM_LEN);
+	for (const rtyp* rtype = types; rtype->rtyp_name; rtype++) {
+		field_type* type = (field_type*) MSC_alloc(TYP_LEN);
+		type->typ_symbol = symbol = (gpre_sym*) MSC_alloc(SYM_LEN);
 		type->typ_value = rtype->rtyp_value;
 		symbol->sym_type = SYM_type;
-		symbol->sym_object = (GPRE_CTX) type;
+		symbol->sym_object = (gpre_ctx*) type;
 		symbol->sym_string = rtype->rtyp_name;
 		HSH_insert(symbol);
 	}

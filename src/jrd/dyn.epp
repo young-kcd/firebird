@@ -1117,9 +1117,11 @@ static void grant( GBL gbl, const UCHAR** ptr)
 			ERR_punt();
 			// store_priviledge || grantor_can_grant error already handled, 
 			// just bail out
-		} else if (id == drq_get_role_nm) {
+		}
+		else if (id == drq_get_role_nm) {
 			ERR_punt();
-		} else {
+		}
+		else {
 			fb_assert(id == drq_gcg1);
 			DYN_error_punt(true, 78, NULL, NULL, NULL, NULL, NULL);
 			// msg 78: "SELECT RDB$USER_PRIVILEGES failed in grant"
@@ -1479,7 +1481,8 @@ static bool grantor_can_grant_role(	TDBB	tdbb,
 
 		if (PRV.RDB$GRANT_OPTION == 2) {
 			grantable = true;
-		} else {
+		}
+		else {
 			/****************************************************
 			**
 			**  user have no admin option.

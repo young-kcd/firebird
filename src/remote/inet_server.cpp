@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: inet_server.cpp,v 1.32 2003-11-08 16:30:20 brodsom Exp $
+$Id: inet_server.cpp,v 1.33 2004-01-28 07:50:38 robocop Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -185,7 +185,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
  *
  **************************************/
 	int n, clients;
-	PORT port;
+	rem_port* port;
 	int child, channel;
 	TEXT *p, c;
 #if !(defined VMS)

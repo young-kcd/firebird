@@ -24,13 +24,13 @@
 #ifndef GPRE_SQL_PROTO_H
 #define GPRE_SQL_PROTO_H
 
-ACT		SQL_action(const TEXT*);
-void	SQL_adjust_field_dtype(GPRE_FLD);
+act*	SQL_action(const TEXT*);
+void	SQL_adjust_field_dtype(gpre_fld*);
 void	SQL_init(void);
-void	SQL_par_field_collate(GPRE_REQ, GPRE_FLD);
-void	SQL_par_field_dtype(GPRE_REQ, GPRE_FLD, bool);
-GPRE_PRC SQL_procedure(GPRE_REQ, TEXT*, TEXT*, TEXT*, bool);
-GPRE_REL SQL_relation(GPRE_REQ, TEXT*, TEXT*, TEXT*, bool);
+void	SQL_par_field_collate(gpre_req*, gpre_fld*);
+void	SQL_par_field_dtype(gpre_req*, gpre_fld*, bool);
+gpre_prc* SQL_procedure(gpre_req*, TEXT*, TEXT*, TEXT*, bool);
+gpre_rel* SQL_relation(gpre_req*, TEXT*, TEXT*, TEXT*, bool);
 void	SQL_relation_name(TEXT*, TEXT*, TEXT*);
 void	SQL_resolve_identifier(TEXT*, TEXT*);
 TEXT*	SQL_var_or_string(bool);

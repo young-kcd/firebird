@@ -96,7 +96,7 @@ IB_FILE *ext_fopen(const char *filename, const char *mode) {
 
 //static void io_error(EXT, TEXT *, ISC_STATUS, SLONG);
 
-void EXT_close(RSB rsb)
+void EXT_close(Rsb* rsb)
 {
 /**************************************
  *
@@ -219,7 +219,7 @@ void EXT_fini(jrd_rel* relation)
 }
 
 
-int EXT_get(RSB rsb)
+int EXT_get(Rsb* rsb)
 {
 /**************************************
  *
@@ -312,7 +312,7 @@ void EXT_modify(RPB * old_rpb, RPB * new_rpb, int *transaction)
 }
 
 
-void EXT_open(RSB rsb)
+void EXT_open(Rsb* rsb)
 {
 /**************************************
  *
@@ -341,7 +341,7 @@ void EXT_open(RSB rsb)
 }
 
 
-RSB EXT_optimize(OPT opt, SSHORT stream, jrd_nod** sort_ptr)
+Rsb* EXT_optimize(OPT opt, SSHORT stream, jrd_nod** sort_ptr)
 {
 /**************************************
  *

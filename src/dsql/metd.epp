@@ -478,6 +478,7 @@ USHORT METD_get_col_default(dsql_req*    request,
 	return result;
 }
 
+
 dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* name) // UTF-8
 {
 /**************************************
@@ -1328,7 +1329,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
                 parameter->fld_seg_length = RFR.RDB$SEGMENT_LENGTH;
             }
 
-			if(!RFR.RDB$DEFAULT_VALUE.NULL && (type == 0)) {
+			if (!RFR.RDB$DEFAULT_VALUE.NULL && (type == 0)) {
 				defaults++;
             }
 

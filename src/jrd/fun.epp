@@ -30,7 +30,7 @@
  * 2003.08.10 Claudio Valderrama: Fix SF Bugs #544132 and #728839.
  */
 /*
-$Id: fun.epp,v 1.34 2004-01-26 13:16:12 dimitr Exp $
+$Id: fun.epp,v 1.35 2004-01-28 07:50:32 robocop Exp $
 */
 
 #include "firebird.h"
@@ -279,7 +279,7 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 			{
 			case dtype_short:
 				{
-					SSHORT s = MOV_get_long(input, (SSHORT) tail->fun_desc.dsc_scale);
+					const SSHORT s = MOV_get_long(input, (SSHORT) tail->fun_desc.dsc_scale);
 					if (tail->fun_mechanism == FUN_value)
 					{
 						// For (apparent) portability reasons, SHORT by value
@@ -333,7 +333,7 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 			case dtype_int64:
 				{
 					SINT64* pi64;
-					SINT64 i64 = MOV_get_int64(input, (SSHORT) tail->fun_desc.dsc_scale);
+					const SINT64 i64 = MOV_get_int64(input, (SSHORT) tail->fun_desc.dsc_scale);
 
 					if (tail->fun_mechanism == FUN_value)
 					{
@@ -349,7 +349,7 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 
 			case dtype_real:
 				{
-					float f = (float) MOV_get_double(input);
+					const float f = (float) MOV_get_double(input);
 					if (tail->fun_mechanism == FUN_value)
 					{
 						// For (apparent) portability reasons, FLOAT by value

@@ -1646,7 +1646,8 @@ static void remove_name(dsql_name* name, dsql_name** list_ptr)
 
 	if (name->name_prev) {
 		name->name_prev->name_next = name->name_next;
-	} else {
+	}
+	else {
 		*list_ptr = name->name_next;
 	}
 

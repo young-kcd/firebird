@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.96 2004-01-13 13:38:34 eku Exp $
+$Id: inet.cpp,v 1.97 2004-01-28 07:50:38 robocop Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -316,23 +316,23 @@ typedef struct slct
 	fd_set	slct_fdset;
 } SLCT;
 
-static int		accept_connection(PORT, P_CNCT *);
+static int		accept_connection(rem_port*, P_CNCT *);
 #ifdef HAVE_SETITIMER
 static void		alarm_handler(int);
 #endif
-static PORT		alloc_port(PORT);
-static PORT		aux_connect(PORT, PACKET *, XDR_INT(*)(void));
-static PORT		aux_request(PORT, PACKET *);
+static rem_port*		alloc_port(rem_port*);
+static rem_port*		aux_connect(rem_port*, PACKET *, XDR_INT(*)(void));
+static rem_port*		aux_request(rem_port*, PACKET *);
 #if !defined(WIN_NT)
 #ifndef VMS
-static int		check_host(PORT, TEXT *, TEXT *, struct passwd *);
+static int		check_host(rem_port*, TEXT *, TEXT *, struct passwd *);
 #else
-static int		check_host(PORT, TEXT *, TEXT *);
+static int		check_host(rem_port*, TEXT *, TEXT *);
 #endif // VMS
-static bool		check_proxy(PORT, TEXT *, TEXT *);
+static bool		check_proxy(rem_port*, TEXT *, TEXT *);
 #endif // WIN_NT
-static void		cleanup_port(PORT);
-static void		disconnect(PORT);
+static void		cleanup_port(rem_port*);
+static void		disconnect(rem_port*);
 static void		exit_handler(void *);
 
 #ifdef NO_FORK
@@ -352,7 +352,7 @@ static void copy_p_cnct_repeat_array(	p_cnct::p_cnct_repeat*			pDest,
 
 static void		inet_copy(const SCHAR*, SCHAR*, int);
 static int		inet_destroy(XDR *);
-static void		inet_gen_error(PORT, ISC_STATUS, ...);
+static void		inet_gen_error(rem_port*, ISC_STATUS, ...);
 static bool_t	inet_getbytes(XDR *, SCHAR *, u_int);
 static bool_t	inet_getlong(XDR *, SLONG *);
 static u_int	inet_getpostn(XDR *);
@@ -360,12 +360,12 @@ static u_int	inet_getpostn(XDR *);
 static void		inet_handler(void* _port);
 #endif
 static caddr_t	inet_inline(XDR *, u_int);
-static int		inet_error(PORT, const TEXT*, ISC_STATUS, int);
+static int		inet_error(rem_port*, const TEXT*, ISC_STATUS, int);
 static bool_t	inet_putlong(XDR*, SLONG*);
 static bool_t	inet_putbytes(XDR*, const SCHAR*, u_int);
 static bool_t	inet_read(XDR *);
 static bool_t	inet_setpostn(XDR *, u_int);
-static PORT		inet_try_connect(	PACKET*,
+static rem_port*		inet_try_connect(	PACKET*,
 									RDB,
 									USHORT,
 									TEXT*,
@@ -384,22 +384,22 @@ static int		parse_line(TEXT *, TEXT *, TEXT *, TEXT *);
 static void packet_print(const TEXT*, const UCHAR*, int, int);
 #endif
 
-static bool_t	packet_receive(PORT, UCHAR*, SSHORT, SSHORT*);
-static bool_t	packet_send(PORT, const SCHAR*, SSHORT);
-static PORT		receive(PORT, PACKET *);
-static PORT		select_accept(PORT);
+static bool_t	packet_receive(rem_port*, UCHAR*, SSHORT, SSHORT*);
+static bool_t	packet_send(rem_port*, const SCHAR*, SSHORT);
+static rem_port*		receive(rem_port*, PACKET *);
+static rem_port*		select_accept(rem_port*);
 
-static PORT		select_port(PORT, SLCT *);
-static int		select_wait(PORT, SLCT *);
-static int		send_full(PORT, PACKET *);
-static int		send_partial(PORT, PACKET *);
+static rem_port*		select_port(rem_port*, SLCT *);
+static int		select_wait(rem_port*, SLCT *);
+static int		send_full(rem_port*, PACKET *);
+static int		send_partial(rem_port*, PACKET *);
 
 #ifdef  SUPERSERVER
-static void		unhook_disconnected_ports(PORT);
+static void		unhook_disconnected_ports(rem_port*);
 #endif
 
-static void		unhook_port(PORT, PORT);
-static int		xdrinet_create(XDR *, PORT, UCHAR *, USHORT, enum xdr_op);
+static void		unhook_port(rem_port*, rem_port*);
+static int		xdrinet_create(XDR *, rem_port*, UCHAR *, USHORT, enum xdr_op);
 static bool_t	xdrinet_endofrecord(XDR *, bool_t);
 
 
@@ -500,7 +500,7 @@ static bool		port_mutex_inited = false;
 #endif
 
 
-PORT INET_analyze(	TEXT*	file_name,
+rem_port* INET_analyze(	TEXT*	file_name,
 					USHORT*	file_length,
 					ISC_STATUS*	status_vector,
 					const TEXT*	node_name,
@@ -605,7 +605,7 @@ PORT INET_analyze(	TEXT*	file_name,
 
 /* Try connection using first set of protocols.  punt if error */
 
-	PORT port = inet_try_connect(packet, rdb, *file_length, file_name,
+	rem_port* port = inet_try_connect(packet, rdb, *file_length, file_name,
 								 node_name, status_vector, dpb, dpb_length);
 	if (!port) {
 		return NULL;
@@ -700,7 +700,7 @@ PORT INET_analyze(	TEXT*	file_name,
 	return port;
 }
 
-PORT INET_connect(const TEXT* name,
+rem_port* INET_connect(const TEXT* name,
 							 PACKET* packet,
 							 ISC_STATUS* status_vector,
 							 USHORT flag, const SCHAR* dpb, SSHORT dpb_length)
@@ -741,7 +741,7 @@ PORT INET_connect(const TEXT* name,
 	}
 #endif
 
-	PORT port = alloc_port(0);
+	rem_port* port = alloc_port(0);
 	port->port_status_vector = status_vector;
 	REMOTE_get_timeout_params(port, reinterpret_cast<const UCHAR*>(dpb),
 							  dpb_length);
@@ -1079,7 +1079,7 @@ PORT INET_connect(const TEXT* name,
 	}
 }
 
-PORT INET_reconnect(HANDLE handle, ISC_STATUS* status_vector)
+rem_port* INET_reconnect(HANDLE handle, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -1094,7 +1094,7 @@ PORT INET_reconnect(HANDLE handle, ISC_STATUS* status_vector)
  *
  **************************************/
 
-	PORT port = alloc_port(0);
+	rem_port* port = alloc_port(0);
 	port->port_status_vector = status_vector;
 	status_vector[0] = isc_arg_gds;
 	status_vector[1] = 0;
@@ -1106,7 +1106,7 @@ PORT INET_reconnect(HANDLE handle, ISC_STATUS* status_vector)
 	return port;
 }
 
-PORT INET_server(int sock)
+rem_port* INET_server(int sock)
 {
 /**************************************
  *
@@ -1122,7 +1122,7 @@ PORT INET_server(int sock)
 #ifdef VMS
 	ISC_tcp_setup(ISC_wait, gds__completion_ast);
 #endif
-	PORT port = alloc_port(0);
+	rem_port* port = alloc_port(0);
 	port->port_server_flags |= SRVR_server;
 	port->port_handle = (HANDLE) sock;
 
@@ -1148,7 +1148,7 @@ void INET_set_clients( int count)
 	INET_max_clients = (count && count < MAXCLIENTS) ? count : MAXCLIENTS;
 }
 
-static int accept_connection(PORT port,
+static int accept_connection(rem_port* port,
 							 P_CNCT* cnct)
 {
 /**************************************
@@ -1384,7 +1384,7 @@ extern "C" {
 #endif	// SUPERSERVER && WIN_NT
 
 
-static PORT alloc_port( PORT parent)
+static rem_port* alloc_port( rem_port* parent)
 {
 /**************************************
  *
@@ -1444,7 +1444,7 @@ static PORT alloc_port( PORT parent)
 #endif
 		first_time = false;
 	}
-	PORT port = (PORT) ALLOCV(type_port, INET_remote_buffer * 2);
+	rem_port* port = (rem_port*) ALLOCV(type_port, INET_remote_buffer * 2);
 	port->port_type = port_inet;
 	port->port_state = state_pending;
 	REMOTE_get_timeout_params(port, 0, 0);
@@ -1472,7 +1472,7 @@ static PORT alloc_port( PORT parent)
 	port->port_send_packet = send_full;
 	port->port_send_partial = send_partial;
 	port->port_connect =
-		reinterpret_cast<PORT(*)(PORT, PACKET*, void (*)())>(aux_connect);
+		reinterpret_cast<rem_port* (*)(rem_port*, PACKET*, void (*)())>(aux_connect);
 	port->port_request = aux_request;
 	port->port_buff_size = (USHORT) INET_remote_buffer;
 
@@ -1489,7 +1489,7 @@ static PORT alloc_port( PORT parent)
 	return port;
 }
 
-static PORT aux_connect(PORT port, PACKET* packet, XDR_INT (*ast)(void))
+static rem_port* aux_connect(rem_port* port, PACKET* packet, XDR_INT (*ast)(void))
 {
 /**************************************
  *
@@ -1521,7 +1521,7 @@ static PORT aux_connect(PORT port, PACKET* packet, XDR_INT (*ast)(void))
 		return port;
 	}
 
-	PORT new_port = alloc_port(port->port_parent);
+	rem_port* new_port = alloc_port(port->port_parent);
 	port->port_async = new_port;
 	new_port->port_dummy_packet_interval = port->port_dummy_packet_interval;
 	new_port->port_dummy_timeout = new_port->port_dummy_packet_interval;
@@ -1578,7 +1578,7 @@ static PORT aux_connect(PORT port, PACKET* packet, XDR_INT (*ast)(void))
 	return new_port;
 }
 
-static PORT aux_request( PORT port, PACKET * packet)
+static rem_port* aux_request( rem_port* port, PACKET * packet)
 {
 /**************************************
  *
@@ -1629,7 +1629,7 @@ static PORT aux_request( PORT port, PACKET * packet)
 		return NULL;
 	}
 
-    PORT new_port = alloc_port(port->port_parent);
+    rem_port* new_port = alloc_port(port->port_parent);
 	port->port_async = new_port;
 	new_port->port_dummy_packet_interval = port->port_dummy_packet_interval;
 	new_port->port_dummy_timeout = new_port->port_dummy_packet_interval;
@@ -1660,7 +1660,7 @@ static PORT aux_request( PORT port, PACKET * packet)
 
 #ifndef WIN_NT
 #ifdef VMS
-static int check_host(PORT port,
+static int check_host(rem_port* port,
 					  TEXT * host_name,
 					  TEXT * user_name)
 {
@@ -1697,7 +1697,7 @@ static int check_host(PORT port,
 #else
 
 static int check_host(
-					  PORT port,
+					  rem_port* port,
 					  TEXT * host_name,
 					  TEXT * user_name, struct passwd *passwd)
 {
@@ -1762,7 +1762,7 @@ static int check_host(
 #endif // !defined(WIN_NT)
 
 #if !(defined WIN_NT)
-static bool check_proxy(PORT port,
+static bool check_proxy(rem_port* port,
 						TEXT * host_name,
 						TEXT * user_name)
 {
@@ -1830,7 +1830,7 @@ static bool check_proxy(PORT port,
 }
 #endif
 
-static void disconnect( PORT port)
+static void disconnect( rem_port* port)
 {
 /**************************************
  *
@@ -1888,7 +1888,7 @@ static void disconnect( PORT port)
 	bool defer_cleanup = false;
 	port->port_state = state_disconnected;
 #endif
-	PORT parent = port->port_parent;
+	rem_port* parent = port->port_parent;
 	if (parent != NULL) {
 		if (port->port_async) {
 			disconnect(port->port_async);
@@ -1938,7 +1938,7 @@ static void disconnect( PORT port)
 }
 
 
-static void cleanup_port( PORT port)
+static void cleanup_port( rem_port* port)
 {
 /**************************************
  *
@@ -1990,7 +1990,7 @@ static void exit_handler( void *arg)
  *
  **************************************/
 
-	PORT main_port = (PORT) arg;
+	rem_port* main_port = (rem_port*) arg;
 
 #ifdef WIN_NT
 	if (!main_port) {
@@ -2000,7 +2000,7 @@ static void exit_handler( void *arg)
 #endif
 
 #ifndef VMS
-	for (PORT port = main_port; port; port = port->port_next) {
+	for (rem_port* port = main_port; port; port = port->port_next) {
 		shutdown((int) port->port_handle, 2);
 		SOCLOSE((SOCKET) port->port_handle);
 	}
@@ -2374,7 +2374,7 @@ static int parse_line(
 }
 #endif
 
-static PORT receive( PORT main_port, PACKET * packet)
+static rem_port* receive( rem_port* main_port, PACKET * packet)
 {
 /**************************************
  *
@@ -2423,7 +2423,7 @@ static PORT receive( PORT main_port, PACKET * packet)
 /* Multi-client server multiplexes all known ports for incoming packets. */
 
 	for (;;) {
-		PORT port = select_port(main_port, &INET_select);
+		rem_port* port = select_port(main_port, &INET_select);
 		if (port == main_port) {
 			if (port = select_accept(main_port))
 				return port;
@@ -2472,7 +2472,7 @@ static PORT receive( PORT main_port, PACKET * packet)
 	}
 }
 
-static PORT select_accept( PORT main_port)
+static rem_port* select_accept( rem_port* main_port)
 {
 /**************************************
  *
@@ -2489,7 +2489,7 @@ static PORT select_accept( PORT main_port)
  **************************************/
 	struct sockaddr_in address;
 
-	PORT port = alloc_port(main_port);
+	rem_port* port = alloc_port(main_port);
 	socklen_t l = sizeof(address);
 
 	port->port_handle = (HANDLE) accept((SOCKET) main_port->port_handle,
@@ -2530,7 +2530,7 @@ static PORT select_accept( PORT main_port)
 	return 0;
 }
 
-static PORT select_port( PORT main_port, SLCT * selct)
+static rem_port* select_port( rem_port* main_port, SLCT * selct)
 {
 /**************************************
  *
@@ -2556,7 +2556,7 @@ static PORT select_port( PORT main_port, SLCT * selct)
 #ifdef  DEFER_PORT_CLEANUP
 	unhook_disconnected_ports(main_port);
 #endif
-	for (PORT port = main_port; port; port = port->port_next) {
+	for (rem_port* port = main_port; port; port = port->port_next) {
 		if (FD_ISSET(port->port_handle, &selct->slct_fdset)) {
 			port->port_dummy_timeout = port->port_dummy_packet_interval;
 
@@ -2579,7 +2579,7 @@ static PORT select_port( PORT main_port, SLCT * selct)
 #ifdef  DEFER_PORT_CLEANUP
 	unhook_disconnected_ports(main_port);
 #endif
-	for (PORT port = main_port; port; port = port->port_next) {
+	for (rem_port* port = main_port; port; port = port->port_next) {
 		const int n = (int) port->port_handle;
 		if (n < selct->slct_width && FD_ISSET(n, &selct->slct_fdset)) {
 			port->port_dummy_timeout = port->port_dummy_packet_interval;
@@ -2599,7 +2599,7 @@ static PORT select_port( PORT main_port, SLCT * selct)
 	return NULL;
 }
 
-static int select_wait( PORT main_port, SLCT * selct)
+static int select_wait( rem_port* main_port, SLCT * selct)
 {
 /**************************************
  *
@@ -2641,7 +2641,7 @@ static int select_wait( PORT main_port, SLCT * selct)
 #ifdef  DEFER_PORT_CLEANUP
 		unhook_disconnected_ports(main_port);
 #endif
-		for (PORT port = main_port; port; port = port->port_next)
+		for (rem_port* port = main_port; port; port = port->port_next)
 		{
 			if ((port->port_state == state_active) ||
 				(port->port_state == state_pending))
@@ -2698,7 +2698,7 @@ static int select_wait( PORT main_port, SLCT * selct)
 				   they can be used in select_port() */
 				if (selct->slct_count == 0)
 				{
-					for (PORT port = main_port; port; port = port->port_next)
+					for (rem_port* port = main_port; port; port = port->port_next)
 					{
 #ifdef WIN_NT
 						FD_CLR((SOCKET)port->port_handle, &selct->slct_fdset);
@@ -2732,7 +2732,7 @@ static int select_wait( PORT main_port, SLCT * selct)
 	}
 }
 
-static int send_full( PORT port, PACKET * packet)
+static int send_full( rem_port* port, PACKET * packet)
 {
 /**************************************
  *
@@ -2764,7 +2764,7 @@ static int send_full( PORT port, PACKET * packet)
 	return xdrinet_endofrecord(&port->port_send, TRUE);
 }
 
-static int send_partial( PORT port, PACKET * packet)
+static int send_partial( rem_port* port, PACKET * packet)
 {
 /**************************************
  *
@@ -2796,7 +2796,7 @@ static int send_partial( PORT port, PACKET * packet)
 
 static int xdrinet_create(
 						  XDR * xdrs,
-						  PORT port,
+						  rem_port* port,
 						  UCHAR * buffer, USHORT length, enum xdr_op x_op)
 {
 /**************************************
@@ -2866,7 +2866,7 @@ static XDR_INT inet_destroy( XDR* xdrs)
 	return (XDR_INT)0;
 }
 
-static void inet_gen_error( PORT port, ISC_STATUS status, ...)
+static void inet_gen_error( rem_port* port, ISC_STATUS status, ...)
 {
 /**************************************
  *
@@ -2996,7 +2996,7 @@ static u_int inet_getpostn( XDR * xdrs)
 }
 
 #if !(defined WIN_NT)
-static void inet_handler(void *_port)
+static void inet_handler(void* port_void)
 {
 /**************************************
  *
@@ -3012,7 +3012,7 @@ static void inet_handler(void *_port)
  *	handler to do something appropriate.
  *
  **************************************/
-	PORT port = reinterpret_cast<PORT>(_port);
+	rem_port* port = static_cast<rem_port*>(port_void);
 
 /* If there isn't any out of band data, this signal isn't for us */
 	SCHAR junk;
@@ -3021,7 +3021,7 @@ static void inet_handler(void *_port)
 		return;
 	}
 	
-	(*((void(*)(PORT))port->port_ast)) (port);
+	(*((void(*)(rem_port*))port->port_ast)) (port);
 }
 #endif
 
@@ -3045,7 +3045,7 @@ static caddr_t inet_inline( XDR* xdrs, u_int bytecount)
 }
 
 static int inet_error(
-					  PORT port,
+					  rem_port* port,
 					  const TEXT* function, ISC_STATUS operation, int status)
 {
 /**************************************
@@ -3189,7 +3189,7 @@ static bool_t inet_read( XDR * xdrs)
  *	message sent will handle this.
  *
  **************************************/
-	PORT port = (PORT) xdrs->x_public;
+	rem_port* port = (rem_port*) xdrs->x_public;
 	char* p = xdrs->x_base;
 	const char* const end = p + INET_remote_buffer;
 
@@ -3256,7 +3256,7 @@ static bool_t inet_setpostn( XDR * xdrs, u_int bytecount)
 	return TRUE;
 }
 
-static PORT inet_try_connect(
+static rem_port* inet_try_connect(
 							 PACKET* packet,
 							 RDB rdb,
 							 USHORT file_length,
@@ -3289,7 +3289,7 @@ static PORT inet_try_connect(
 /* If we can't talk to a server, punt.  Let somebody else generate
    an error.  status_vector will have the network error info. */
 
-	PORT port =
+	rem_port* port =
 		INET_connect(node_name, packet, status_vector, FALSE, dpb,
 					 dpb_length);
 	if (!port) {
@@ -3328,7 +3328,7 @@ static bool_t inet_write( XDR * xdrs, bool_t end_flag)
  **************************************/
 /* Encode the data portion of the packet */
 
-	PORT port = (PORT) xdrs->x_public;
+	rem_port* port = (rem_port*) xdrs->x_public;
 	const char* p = xdrs->x_base;
 	SSHORT length = xdrs->x_private - p;
 
@@ -3433,7 +3433,7 @@ static void packet_print(
 #endif
 
 static int packet_receive(
-						  PORT port,
+						  rem_port* port,
 						  UCHAR* buffer,
 						  SSHORT buffer_length, SSHORT* length)
 {
@@ -3615,7 +3615,7 @@ static int packet_receive(
 	return TRUE;
 }
 
-static bool_t packet_send( PORT port, const SCHAR* buffer, SSHORT buffer_length)
+static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_length)
 {
 /**************************************
  *
@@ -3760,7 +3760,7 @@ static bool_t packet_send( PORT port, const SCHAR* buffer, SSHORT buffer_length)
 	return TRUE;
 }
 
-static void unhook_port( PORT port, PORT parent)
+static void unhook_port( rem_port* port, rem_port* parent)
 {
 /**************************************
  *
@@ -3775,7 +3775,7 @@ static void unhook_port( PORT port, PORT parent)
  *
  **************************************/
 
-	for (PORT* ptr = &parent->port_clients; *ptr; ptr = &(*ptr)->port_next) {
+	for (rem_port** ptr = &parent->port_clients; *ptr; ptr = &(*ptr)->port_next) {
 		if (*ptr == port) {
 			*ptr = port->port_next;
 			if (ptr == &parent->port_clients) {
@@ -3787,7 +3787,7 @@ static void unhook_port( PORT port, PORT parent)
 }
 
 #ifdef  SUPERSERVER
-static void unhook_disconnected_ports(PORT main_port)
+static void unhook_disconnected_ports(rem_port* main_port)
 {
 /**************************************
  *
@@ -3807,7 +3807,7 @@ static void unhook_disconnected_ports(PORT main_port)
 
 	while (more) {
 		more = false;
-		for (PORT port = main_port; port; port = port->port_next) {
+		for (rem_port* port = main_port; port; port = port->port_next) {
 			if (port->port_state == state_disconnected) {
 				more = true;
 				unhook_port(port, port->port_parent);

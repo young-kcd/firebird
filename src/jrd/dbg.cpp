@@ -70,7 +70,7 @@ int (*dbg_eval) (int) = DBG_eval;
 int (*dbg_open) () = DBG_open;
 int (*dbg_close) () = DBG_close;
 int (*dbg_pool) (JrdMemoryPool*) = DBG_pool;
-int (*dbg_pretty) (jrd_nod *, int) = DBG_pretty;
+int (*dbg_pretty) (const jrd_nod*, int) = DBG_pretty;
 int (*dbg_window) (int *) = DBG_window;
 int (*dbg_rpb) (rpb *) = DBG_rpb;
 static int (*dbg_bdbs) () = DBG_bdbs;
@@ -94,7 +94,7 @@ static void go_column(int);
 static void prt_dsc(DSC *, int);
 static int prt_fields(SCHAR *, int *);
 static int prt_que(SCHAR *, QUE);
-static int rsb_pretty(RSB, int);
+static int rsb_pretty(const Rsb*, int);
 
 /* Pick up node names */
 
@@ -510,8 +510,8 @@ int DBG_block(BLK block)
 
 	case type_fmt:
 		ib_fprintf(dbg_file, "\t");
-		for (i = 0, desc = BLOCK(FMT)->fmt_desc;
-			 i < BLOCK(FMT)->fmt_count; desc++, i++) {
+		for (i = 0, desc = BLOCK(fmt*)->fmt_desc;
+			 i < BLOCK(fmt*)->fmt_count; desc++, i++) {
 			prt_dsc(desc, (i % 4) * 20);
 			if (i % 4 == 3)
 				ib_fprintf(dbg_file, "\n\t");
@@ -701,7 +701,7 @@ int DBG_pool(JrdMemoryPool *pool)
 }
 
 
-int DBG_pretty(jrd_nod* node, int column)
+int DBG_pretty(const jrd_nod* node, int column)
 {
 /**************************************
  *
@@ -713,18 +713,12 @@ int DBG_pretty(jrd_nod* node, int column)
  *	Pretty print a node tree.
  *
  **************************************/
-	RSE rse;
-	jrd_rel* relation;
-	jrd_prc* procedure;
-	jrd_nod** ptr;
-	jrd_nod** end;
-	IRB retrieval;
 	int i;
 
 #define NODE(struct)	((struct) node)
 
 	if (node && node->blk_type == (SCHAR) type_rsb)
-		return rsb_pretty(reinterpret_cast < Rsb * >(node), column);
+		return rsb_pretty(reinterpret_cast<const Rsb*>(node), column);
 
 	ib_fprintf(dbg_file, "%8X\t", node);
 	for (i = 0; i < column; i++)
@@ -740,22 +734,32 @@ int DBG_pretty(jrd_nod* node, int column)
 			   node->nod_impure);
 	column += 4;
 
+	const jrd_rel* relation;
+	const jrd_prc* procedure;
+	const jrd_nod* const* ptr;
+	const jrd_nod* const* end;
+	const irb* retrieval;
+
 	switch (node->nod_type) {
 	case nod_rse:
-		rse = (RSE) node;
-		ib_fprintf(dbg_file, "\n");
-		if (rse->rse_rsb)
-			DBG_pretty(reinterpret_cast < jrd_nod * >(rse->rse_rsb), column);
-		else {
-			DBG_pretty(rse->rse_first, column);
-			DBG_pretty(rse->rse_boolean, column);
-			DBG_pretty(rse->rse_sorted, column);
-			DBG_pretty(rse->rse_projection, column);
-			for (ptr = rse->rse_relation, end = ptr + rse->rse_count;
-				 ptr < end; ptr++)
-				DBG_pretty(*ptr, column);
+		{
+			const rse* recse = (RSE) node;
+			ib_fprintf(dbg_file, "\n");
+			if (recse->rse_rsb)
+				DBG_pretty(reinterpret_cast<const jrd_nod*>(recse->rse_rsb), column);
+			else {
+				DBG_pretty(recse->rse_first, column);
+				DBG_pretty(recse->rse_boolean, column);
+				DBG_pretty(recse->rse_sorted, column);
+				DBG_pretty(recse->rse_projection, column);
+				for (ptr = recse->rse_relation, end = ptr + recse->rse_count;
+					 ptr < end; ptr++)
+				{
+					DBG_pretty(*ptr, column);
+				}
+			}
+			break;
 		}
-		break;
 
 	case nod_argument:
 		ib_fprintf(dbg_file, ", id: %d, message: %X\n",
@@ -789,7 +793,9 @@ int DBG_pretty(jrd_nod* node, int column)
 		ib_fprintf(dbg_file, ", id: %d\n", retrieval->irb_index);
 		for (ptr = retrieval->irb_value, end =
 			 ptr + retrieval->irb_lower_count; ptr < end; ptr++)
+		{
 			DBG_pretty(*ptr, column);
+		}
 		for (end = ptr + retrieval->irb_upper_count; ptr < end; ptr++)
 			DBG_pretty(*ptr, column);
 		return TRUE;
@@ -801,12 +807,14 @@ int DBG_pretty(jrd_nod* node, int column)
 		return TRUE;
 
 	case nod_procedure:
-		SSHORT procedure_id = (SSHORT)(SLONG) node->nod_arg[e_prc_procedure];
-		ib_fprintf(dbg_file, ", stream: %d, prc_id: %d\n",
-				   node->nod_arg[e_prc_stream], procedure_id);
-		if (node->nod_arg[e_prc_inputs])
-			DBG_pretty(node->nod_arg[e_prc_inputs], column);
-		return TRUE;
+		{
+			const SSHORT procedure_id = (SSHORT)(SLONG) node->nod_arg[e_prc_procedure];
+			ib_fprintf(dbg_file, ", stream: %d, prc_id: %d\n",
+					   node->nod_arg[e_prc_stream], procedure_id);
+			if (node->nod_arg[e_prc_inputs])
+				DBG_pretty(node->nod_arg[e_prc_inputs], column);
+			return TRUE;
+		}
 
 	case nod_exec_proc:
 		procedure = (jrd_prc*) node->nod_arg[e_esp_procedure];
@@ -814,7 +822,9 @@ int DBG_pretty(jrd_nod* node, int column)
 				   procedure->prc_name->str_data, procedure);
 		for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end;
 			 ptr++)
+		{
 			DBG_pretty(*ptr, column);
+		}
 		return TRUE;
 
 	case nod_union:
@@ -844,14 +854,16 @@ int DBG_pretty(jrd_nod* node, int column)
 		ib_fprintf(dbg_file, "\n");
 		for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end;
 			 ptr++)
+		{
 			DBG_pretty(*ptr, column);
+		}
 	}
 
-	if (node->nod_type == nod_for && node->nod_arg[e_for_rsb])
-		rsb_pretty(reinterpret_cast < Rsb * >(node->nod_arg[e_for_rsb]),
+	if (node->nod_type == nod_for && node->nod_arg[e_for_rsb]) {
+		rsb_pretty(reinterpret_cast<const Rsb*>(node->nod_arg[e_for_rsb]),
 				   column);
-	return TRUE;
-
+		return TRUE;
+	}
     return FALSE;
 }
 
@@ -1186,7 +1198,7 @@ static int prt_que(SCHAR * string, QUE que)
 }
 
 
-static int rsb_pretty(RSB rsb, int column)
+static int rsb_pretty(const Rsb* rsb, int column)
 {
 /**************************************
  *
@@ -1198,8 +1210,6 @@ static int rsb_pretty(RSB rsb, int column)
  *	Pretty print an rsb tree.
  *
  **************************************/
-	jrd_rel* relation;
-	RSB *ptr, *end;
 	USHORT i;
 
 	ib_fprintf(dbg_file, "%X\t", rsb);
@@ -1216,24 +1226,36 @@ static int rsb_pretty(RSB rsb, int column)
 			   rsb_names[(int) rsb->rsb_type], rsb->rsb_impure,
 			   rsb->rsb_stream);
 
-	if ( (relation = rsb->rsb_relation) )
+	jrd_rel* relation = rsb->rsb_relation;
+	if (relation) {
 		ib_fprintf(dbg_file, " %s", relation->rel_name);
+	}
 
 	column += 4;
 
 	ib_fprintf(dbg_file, "\n");
 
-	if (rsb->rsb_type == rsb_merge)
-		for (ptr = rsb->rsb_arg, end = ptr + rsb->rsb_count * 2; ptr < end;
+	const Rsb* const* ptr = rsb->rsb_arg;
+	if (rsb->rsb_type == rsb_merge) {
+		for (const Rsb* const* const end = ptr + rsb->rsb_count * 2; ptr < end;
 			 ptr += 2)
+		{
 			DBG_pretty(reinterpret_cast < jrd_nod * >(*ptr), column);
-	else if (rsb->rsb_type != rsb_left_cross)
-		for (ptr = rsb->rsb_arg, end = ptr + rsb->rsb_count; ptr < end; ptr++)
+		}
+	}
+	else if (rsb->rsb_type != rsb_left_cross) {
+		for (const Rsb* const* const end = ptr + rsb->rsb_count; ptr < end; ptr++)
+		{
 			DBG_pretty(reinterpret_cast < jrd_nod * >(*ptr), column);
-	else
-		for (ptr = rsb->rsb_arg, end = ptr + rsb->rsb_count + 1; ptr < end;
+		}
+	}
+	else {
+		for (const Rsb* const* const end = ptr + rsb->rsb_count + 1; ptr < end;
 			 ptr++)
+		{
 			DBG_pretty(reinterpret_cast < jrd_nod * >(*ptr), column);
+		}
+	}
 
 	if (rsb->rsb_next)
 		DBG_pretty(reinterpret_cast < jrd_nod * >(rsb->rsb_next), column);

@@ -181,13 +181,13 @@ static bool end_backup(TDBB, SSHORT, DFW, jrd_tra*);
 
 static void check_dependencies(TDBB, const TEXT*, const TEXT*, USHORT, jrd_tra*);
 static void check_filename(const TEXT*, USHORT);
-static bool formatsAreEqual(FMT, FMT);
+static bool formatsAreEqual(const fmt*, const fmt*);
 static bool	find_depend_in_dfw(TDBB, TEXT*, USHORT, USHORT, jrd_tra*);
 static void get_array_desc(TDBB, const TEXT*, ads*);
 static void get_procedure_dependencies(DFW);
 static void get_trigger_dependencies(DFW);
 static void	load_trigs(TDBB, jrd_rel*, TRIG_VEC *);
-static FMT	make_format(TDBB, jrd_rel*, USHORT *, TFB);
+static fmt*	make_format(TDBB, jrd_rel*, USHORT *, TFB);
 static USHORT name_length(const TEXT*);
 static DFW	post_work(jrd_tra*, SLONG, DFW *, enum dfw_t, DSC *, USHORT);
 static void put_summary_blob(BLB, enum rsr_t, BID);
@@ -1358,7 +1358,7 @@ static void check_filename(const TEXT* name, USHORT l)
 }
 
 
-static bool formatsAreEqual(fmt* old_format, fmt* new_format)
+static bool formatsAreEqual(const fmt* old_format, const fmt* new_format)
 {
 /**************************************
  *
@@ -3295,7 +3295,7 @@ static void load_trigs(TDBB tdbb, jrd_rel* relation, TRIG_VEC * triggers)
 }
 
 
-static FMT make_format(TDBB tdbb, jrd_rel* relation, USHORT * version, TFB stack)
+static fmt* make_format(TDBB tdbb, jrd_rel* relation, USHORT * version, TFB stack)
 {
 /**************************************
  *
@@ -3308,7 +3308,7 @@ static FMT make_format(TDBB tdbb, jrd_rel* relation, USHORT * version, TFB stack
  *
  **************************************/
 	BLK request;
-	FMT	 old_format;
+	fmt*	 old_format;
 	TFB tfb;
 	BLB blob;
 	ULONG offset, old_offset;
@@ -3420,12 +3420,12 @@ static FMT make_format(TDBB tdbb, jrd_rel* relation, USHORT * version, TFB stack
 	request = (BLK) CMP_find_request(tdbb, irq_format3, IRQ_REQUESTS);
 
 	STORE(REQUEST_HANDLE request)
-		FMT IN RDB$FORMATS 
+		FMTS IN RDB$FORMATS
         if (!REQUEST(irq_format3))
             REQUEST(irq_format3) = (BLK) request;
-		FMT.RDB$FORMAT = format->fmt_version;
-		FMT.RDB$RELATION_ID = relation->rel_id;
-		blob = BLB_create(tdbb, dbb->dbb_sys_trans, &FMT.RDB$DESCRIPTOR);
+		FMTS.RDB$FORMAT = format->fmt_version;
+		FMTS.RDB$RELATION_ID = relation->rel_id;
+		blob = BLB_create(tdbb, dbb->dbb_sys_trans, &FMTS.RDB$DESCRIPTOR);
 		BLB_put_segment(tdbb,
 						blob,
 //						(UCHAR*) &*(format->fmt_desc.begin()),
@@ -3725,10 +3725,10 @@ static bool make_version(TDBB tdbb, SSHORT phase, DFW work, jrd_tra* transaction
 		if (external_flag)
 		{
 			temp = NULL;
-			FOR(REQUEST_HANDLE temp) FMT IN RDB$FORMATS WITH
-				FMT.RDB$RELATION_ID EQ relation->rel_id AND
-                FMT.RDB$FORMAT EQ 0 
-                ERASE FMT;
+			FOR(REQUEST_HANDLE temp) FMTS IN RDB$FORMATS WITH
+				FMTS.RDB$RELATION_ID EQ relation->rel_id AND
+                FMTS.RDB$FORMAT EQ 0
+                ERASE FMTS;
 			END_FOR;
 			CMP_release(tdbb, (jrd_req*)temp);
 			make_format(tdbb, relation, 0, external);
@@ -4106,7 +4106,7 @@ static void put_summary_blob(BLB blob, RSR_T type, BID blob_id)
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB  dbb  = tdbb->tdbb_database;
 
-	/* If blob is null, don't both */
+	/* If blob is null, don't bother */
 
 	if (blob_id->isEmpty())
 		return;

@@ -53,21 +53,21 @@ static bool compare(UCHAR *, UCHAR *, USHORT);
 static int compare_segment(NOD, UCHAR *, DSC *);
 static int connect(EXT, USHORT);
 static void disconnect(EXT);
-static void expand_format(FMT, FMT);
+static void expand_format(fmt*, fmt*);
 static SLONG find_field(const fmt*, USHORT, USHORT, USHORT);
-static bool get_dbkey(RSB);
-static bool get_indexed(RSB);
+static bool get_dbkey(Rsb*);
+static bool get_indexed(Rsb*);
 static USHORT get_key_segment(NOD, UCHAR *, DSC *);
-static bool get_sequential(RSB);
+static bool get_sequential(Rsb*);
 static bool match_index(const fmt*, struct XABKEY *, IDX *);
-static int open_indexed(RSB);
-static int open_sequential(RSB);
+static int open_indexed(Rsb*);
+static int open_sequential(Rsb*);
 static void position_by_rfa(EXT, USHORT *);
 static void set_flags(REL, REC);
 static void set_missing(REL, REC);
 
 
-void EXT_close(RSB rsb)
+void EXT_close(Rsb* rsb)
 {
 /**************************************
  *
@@ -293,7 +293,7 @@ void EXT_fini(REL relation)
 }
 
 
-int EXT_get(RSB rsb)
+int EXT_get(Rsb* rsb)
 {
 /**************************************
  *
@@ -373,7 +373,7 @@ void EXT_modify(RPB * old_rpb, RPB * new_rpb, int *transaction)
 }
 
 
-EXT_open(RSB rsb)
+EXT_open(Rsb* rsb)
 {
 /**************************************
  *
@@ -422,7 +422,7 @@ EXT_open(RSB rsb)
 }
 
 
-RSB EXT_optimize(OPT opt, SSHORT stream, NOD * sort_ptr)
+Rsb* EXT_optimize(OPT opt, SSHORT stream, NOD * sort_ptr)
 {
 /**************************************
  *
@@ -438,7 +438,7 @@ RSB EXT_optimize(OPT opt, SSHORT stream, NOD * sort_ptr)
 	TDBB tdbb;
 	Csb* csb;
 	REL relation;
-	RSB rsb;
+	Rsb* rsb;
 	NOD dbkey, inversion;
 	EXT file;
 	IDX *idx;
@@ -490,14 +490,14 @@ RSB EXT_optimize(OPT opt, SSHORT stream, NOD * sort_ptr)
 		rsb->rsb_type = rsb_ext_dbkey;
 		rsb->rsb_count = 1;
 		size = sizeof(struct irsb_index);
-		rsb->rsb_arg[0] = (RSB) dbkey;
+		rsb->rsb_arg[0] = (Rsb*) dbkey;
 	}
 	else if (inversion) {
 		rsb = FB_NEW_RPT(tdbb->tdbb_default, 1) rsb();
 		rsb->rsb_type = rsb_ext_indexed;
 		rsb->rsb_count = 1;
 		size = sizeof(struct irsb_index);
-		rsb->rsb_arg[0] = (RSB) inversion;
+		rsb->rsb_arg[0] = (Rsb*) inversion;
 	}
 	else {
 		rsb = FB_NEW(tdbb->tdbb_default) rsb();
@@ -779,7 +779,7 @@ static void disconnect(EXT file)
 }
 
 
-static void expand_format(FMT external, FMT internal)
+static void expand_format(fmt* external, fmt* internal)
 {
 /**************************************
  *
@@ -865,7 +865,7 @@ static SLONG find_field(
 }
 
 
-static bool get_dbkey(RSB rsb)
+static bool get_dbkey(Rsb* rsb)
 {
 /**************************************
  *
@@ -936,7 +936,7 @@ static bool get_dbkey(RSB rsb)
 }
 
 
-static bool get_indexed(RSB rsb)
+static bool get_indexed(Rsb* rsb)
 {
 /**************************************
  *
@@ -1065,7 +1065,7 @@ static USHORT get_key_segment(NOD node, UCHAR * buffer, DSC * target)
 }
 
 
-static bool get_sequential(RSB rsb)
+static bool get_sequential(Rsb* rsb)
 {
 /**************************************
  *
@@ -1182,7 +1182,7 @@ static bool match_index(const fmt* format, struct XABKEY *xab, IDX * idx)
 }
 
 
-static open_indexed(RSB rsb)
+static open_indexed(Rsb* rsb)
 {
 /**************************************
  *
@@ -1222,7 +1222,7 @@ static open_indexed(RSB rsb)
 }
 
 
-static open_sequential(RSB rsb)
+static open_sequential(Rsb* rsb)
 {
 /**************************************
  *

@@ -60,17 +60,17 @@ static SSHORT compare_keys(const IDX*, const UCHAR*, USHORT, const KEY*, USHORT)
 static void expand_index(WIN *);
 #endif
 #ifdef PC_ENGINE
-static BOOLEAN find_dbkey(RSB, ULONG);
-static BOOLEAN find_record(RSB, RSE_GET_MODE, KEY *, USHORT, USHORT);
+static BOOLEAN find_dbkey(Rsb*, ULONG);
+static BOOLEAN find_record(Rsb*, RSE_GET_MODE, KEY *, USHORT, USHORT);
 #endif
 static BTX find_current(EXP, BTR, const UCHAR*);
-static bool find_saved_node(RSB, IRSB_NAV, WIN *, UCHAR **);
-static UCHAR* get_position(TDBB, RSB, IRSB_NAV, WIN *, RSE_GET_MODE, BTX *);
-static BOOLEAN get_record(RSB, IRSB_NAV, RPB *, KEY *, BOOLEAN);
+static bool find_saved_node(Rsb*, IRSB_NAV, WIN *, UCHAR **);
+static UCHAR* get_position(TDBB, Rsb*, IRSB_NAV, WIN *, RSE_GET_MODE, BTX *);
+static BOOLEAN get_record(Rsb*, IRSB_NAV, RPB *, KEY *, BOOLEAN);
 static void init_fetch(IRSB_NAV);
-static UCHAR* nav_open(TDBB, RSB, IRSB_NAV, WIN *, RSE_GET_MODE, BTX *);
+static UCHAR* nav_open(TDBB, Rsb*, IRSB_NAV, WIN *, RSE_GET_MODE, BTX *);
 static void set_position(IRSB_NAV, RPB *, WIN *, UCHAR *, BTX, UCHAR *, USHORT);
-static void setup_bitmaps(RSB, IRSB_NAV);
+static void setup_bitmaps(Rsb*, IRSB_NAV);
 
 
 #ifdef SCROLLABLE_CURSORS
@@ -149,7 +149,7 @@ EXP NAV_expand_index(WIN * window, IRSB_NAV impure)
 
 
 #ifdef PC_ENGINE
-BOOLEAN NAV_find_record(RSB rsb,
+BOOLEAN NAV_find_record(Rsb* rsb,
 						USHORT operator, USHORT direction, jrd_nod* find_key)
 {
 /**************************************
@@ -391,7 +391,7 @@ BOOLEAN NAV_find_record(RSB rsb,
 
 
 #ifdef PC_ENGINE
-void NAV_get_bookmark(RSB rsb, IRSB_NAV impure, BKM bookmark)
+void NAV_get_bookmark(Rsb* rsb, IRSB_NAV impure, BKM bookmark)
 {
 /**************************************
  *
@@ -424,7 +424,7 @@ void NAV_get_bookmark(RSB rsb, IRSB_NAV impure, BKM bookmark)
 
 
 BOOLEAN NAV_get_record(TDBB tdbb,
-					   RSB rsb,
+					   Rsb* rsb,
 					   IRSB_NAV impure, RPB * rpb, RSE_GET_MODE direction)
 {
 /**************************************
@@ -756,7 +756,7 @@ BOOLEAN NAV_get_record(TDBB tdbb,
 
 
 #ifdef PC_ENGINE
-BOOLEAN NAV_reset_position(RSB rsb, RPB * new_rpb)
+BOOLEAN NAV_reset_position(Rsb* rsb, RPB * new_rpb)
 {
 /**************************************
  *
@@ -811,7 +811,7 @@ BOOLEAN NAV_reset_position(RSB rsb, RPB * new_rpb)
 
 
 #ifdef PC_ENGINE
-BOOLEAN NAV_set_bookmark(RSB rsb, IRSB_NAV impure, RPB * rpb, BKM bookmark)
+BOOLEAN NAV_set_bookmark(Rsb* rsb, IRSB_NAV impure, RPB * rpb, BKM bookmark)
 {
 /**************************************
  *
@@ -1036,7 +1036,7 @@ static void expand_index(WIN * window)
 
 
 #ifdef PC_ENGINE
-static BOOLEAN find_dbkey(RSB rsb, ULONG record_number)
+static BOOLEAN find_dbkey(Rsb* rsb, ULONG record_number)
 {
 /**************************************
  *
@@ -1124,7 +1124,7 @@ static BOOLEAN find_dbkey(RSB rsb, ULONG record_number)
 
 #ifdef PC_ENGINE
 static BOOLEAN find_record(
-						   RSB rsb,
+						   Rsb* rsb,
 						   RSE_GET_MODE mode,
 						   KEY * find_key,
 						   USHORT find_count, USHORT search_flags)
@@ -1334,7 +1334,7 @@ static BTX find_current(EXP expanded_page, BTR page, const UCHAR* current_pointe
 }
 
 
-static bool find_saved_node(RSB rsb, IRSB_NAV impure,
+static bool find_saved_node(Rsb* rsb, IRSB_NAV impure,
 						WIN * window, UCHAR ** return_pointer)
 {
 /**************************************
@@ -1426,7 +1426,7 @@ static bool find_saved_node(RSB rsb, IRSB_NAV impure,
 
 static UCHAR* get_position(
 						TDBB tdbb,
-						RSB rsb,
+						Rsb* rsb,
 						IRSB_NAV impure,
 						WIN * window,
 						RSE_GET_MODE direction, BTX * expanded_node)
@@ -1552,7 +1552,7 @@ static UCHAR* get_position(
 
 
 static BOOLEAN get_record(
-						  RSB rsb,
+						  Rsb* rsb,
 						  IRSB_NAV impure,
 						  RPB * rpb, KEY * key, BOOLEAN inhibit_cleanup)
 {
@@ -1666,7 +1666,7 @@ static void init_fetch(IRSB_NAV impure)
 
 static UCHAR* nav_open(
 					TDBB tdbb,
-					RSB rsb,
+					Rsb* rsb,
 					IRSB_NAV impure,
 					WIN * window, RSE_GET_MODE direction, BTX * expanded_node)
 {
@@ -1861,7 +1861,7 @@ static void set_position(IRSB_NAV impure, RPB * rpb, WIN * window,
 }
 
 
-static void setup_bitmaps(RSB rsb, IRSB_NAV impure)
+static void setup_bitmaps(Rsb* rsb, IRSB_NAV impure)
 {
 /**************************************
  *

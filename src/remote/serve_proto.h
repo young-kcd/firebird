@@ -28,21 +28,21 @@
 extern "C" {
 #endif
 
-
-#ifdef WINDOWS_ROUTER
-void SRVR_WinMain(struct port *, USHORT, HINSTANCE, HINSTANCE, int);
-#else	/* WINDOWS_ROUTER */
-void SRVR_main(struct port *, USHORT);
-#endif	/* WINDOWS_ROUTER */
-
 #ifdef NO_PORT
-#define PORT void*
+#define rem_port void
 #endif
 
-void SRVR_multi_thread(struct port *, USHORT);
-bool process_packet(PORT, PACKET *, PACKET *, PORT *);
-void set_server(PORT, USHORT);
-void THREAD_ROUTINE process_connection_thread(PORT);
+
+#ifdef WINDOWS_ROUTER
+void SRVR_WinMain(rem_port*, USHORT, HINSTANCE, HINSTANCE, int);
+#else	/* WINDOWS_ROUTER */
+void SRVR_main(rem_port*, USHORT);
+#endif	/* WINDOWS_ROUTER */
+
+void SRVR_multi_thread(rem_port*, USHORT);
+bool process_packet(rem_port*, PACKET *, PACKET *, rem_port**);
+void set_server(rem_port*, USHORT);
+void THREAD_ROUTINE process_connection_thread(rem_port*);
 
 #ifdef __cplusplus
 } // extern "C"

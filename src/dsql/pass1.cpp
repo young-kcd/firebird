@@ -164,12 +164,29 @@
 void DSQL_pretty(const dsql_nod*, int);
 #endif
 
+
+class CStrCmp
+{
+public:
+	static int greaterThan(const char* s1, const char* s2)
+	{
+		return strcmp(s1, s2) > 0;
+	}
+};
+
+typedef Firebird::SortedArray<const char*, const char*,
+			Firebird::DefaultKeyValue<const char*>,
+			CStrCmp>
+		StrArray;
+
+
 static bool aggregate_found(const dsql_req*, const dsql_nod*);
 static bool aggregate_found2(const dsql_req*, const dsql_nod*, USHORT*,
 	USHORT*, bool);
 static dsql_nod* ambiguity_check(dsql_req*, dsql_nod*, const dsql_str*,
 	const dsql_lls*);
 static void assign_fld_dtype_from_dsc(dsql_fld*, const dsc*);
+static void check_unique_fields_names(StrArray& names, const dsql_nod* fields);
 static dsql_nod* compose(dsql_nod*, dsql_nod*, NOD_TYPE);
 static void explode_asterisk(dsql_req*, dsql_nod*, const dsql_nod*, dsql_lls**);
 static dsql_nod* explode_outputs(dsql_req*, const dsql_prc*);
@@ -222,6 +239,7 @@ static dsql_nod* remap_field(dsql_req*, dsql_nod*, dsql_ctx*, USHORT);
 static dsql_nod* remap_fields(dsql_req*, dsql_nod*, dsql_ctx*);
 static void remap_streams_to_parent_context(dsql_nod*, dsql_ctx*);
 static dsql_fld* resolve_context(dsql_req*, const dsql_str*, dsql_ctx*, bool);
+static dsql_nod* resolve_variable_name(const dsql_nod* var_nodes, const dsql_str* var_name);
 static bool set_parameter_type(dsql_nod*, dsql_nod*, bool);
 static void set_parameters_name(dsql_nod*, const dsql_nod*);
 static void set_parameter_name(dsql_nod*, const dsql_nod*, const dsql_rel*);
@@ -249,18 +267,6 @@ enum field_match_val {
 	FIELD_MATCH_TYPE_HIGHER = 3,
 	FIELD_MATCH_TYPE_HIGHER_EQUAL = 4
 };
-
-class CStrCmp {
-public:
-	static int greaterThan(char* s1, char* s2) {
-		return strcmp(s1, s2) > 0;
-	}
-};
-
-typedef Firebird::SortedArray<char*, char*, 
-			Firebird::DefaultKeyValue<char*>, 
-			CStrCmp>	
-		StrArray;
 
 
 /**
@@ -458,8 +464,8 @@ dsql_ctx* PASS1_make_context(dsql_req* request, dsql_nod* relation_node)
 				// Initialize this stack variable, and make it look like a node
 				std::auto_ptr<dsql_nod> desc_node(FB_NEW_RPT(*tdsql->tsql_default, 0) dsql_nod);
 
-				dsql_nod *const *input = context->ctx_proc_inputs->nod_arg;
-				for (dsql_fld *field = procedure->prc_inputs;
+				dsql_nod* const* input = context->ctx_proc_inputs->nod_arg;
+				for (dsql_fld* field = procedure->prc_inputs;
 					 *input; input++, field = field->fld_next)
 				{
 					DEV_BLKCHK(field, dsql_type_fld);
@@ -1007,59 +1013,6 @@ dsql_nod* PASS1_rse(dsql_req* request, dsql_nod* input, dsql_nod* order,
 	return node;
 }
 
-/**
-	check_unique_fields_names
-
-	check fields (params, variables, cursors etc) names against
-	sorted array 
-	if success, add them into array 
- **/
-static void check_unique_fields_names(StrArray &names, dsql_nod *fields)
-{
-	if(!fields)
-		return;
-	
-	dsql_nod **ptr = fields->nod_arg, *temp;
-	dsql_nod **end = ptr + fields->nod_count;
-	dsql_fld *field;
-	dsql_str *str;
-	char *name = NULL;
-
-	for(; ptr < end; ptr++) {
-		switch((*ptr)->nod_type) {
-			case nod_def_field:
-				field = (dsql_fld*) (*ptr)->nod_arg[e_dfl_field];
-				DEV_BLKCHK(field, dsql_type_fld);
-				name = field->fld_name;
-			break;
-
-			case nod_param_val:
-				temp = (*ptr)->nod_arg[e_prm_val_fld];
-				field = (dsql_fld*) temp->nod_arg[e_dfl_field];
-				DEV_BLKCHK(field, dsql_type_fld);
-				name = field->fld_name;
-			break;
-
-			case nod_cursor:
-				str = (dsql_str*) (*ptr)->nod_arg[e_cur_name];
-				DEV_BLKCHK(str, dsql_type_str);
-				name = str->str_data;
-			break;
-
-			default:
-				fb_assert(false);
-		}
-
-		int pos;
-		if (!names.find(name, pos))
-			names.add(name);
-		else {
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -637,
-					  isc_arg_gds, isc_dsql_duplicate_spec,
-					  isc_arg_string, name, 0);
-		}
-	}
-}
 
 /**
   
@@ -1262,9 +1215,10 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 				// Initialize this stack variable, and make it look like a node
                 std::auto_ptr<dsql_nod> desc_node(FB_NEW_RPT(*getDefaultMemoryPool(), 0) dsql_nod);
 
-				dsql_nod *const *ptr = node->nod_arg[e_exe_inputs]->nod_arg;
-				for (const dsql_fld *field = request->req_procedure->prc_inputs;
-					 *ptr; ptr++, field = field->fld_next) {
+				dsql_nod* const* ptr = node->nod_arg[e_exe_inputs]->nod_arg;
+				for (const dsql_fld* field = request->req_procedure->prc_inputs;
+					 *ptr; ptr++, field = field->fld_next)
+				{
 					DEV_BLKCHK(field, dsql_type_fld);
 					DEV_BLKCHK(*ptr, dsql_type_nod);
 					// MAKE_desc_from_field(&desc_node.nod_desc, field);
@@ -1280,7 +1234,9 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 	case nod_exec_block: 
 		if (input->nod_arg[e_exe_blk_outputs] &&
 			input->nod_arg[e_exe_blk_outputs]->nod_count)
+		{
 			request->req_type = REQ_SELECT_BLOCK;
+		}
 		else
 			request->req_type = REQ_EXEC_BLOCK;
 		request->req_flags |= REQ_exec_block;
@@ -2072,6 +2028,62 @@ static void assign_fld_dtype_from_dsc( dsql_fld* field, const dsc* nod_desc)
 	}
 	else if (nod_desc->dsc_dtype == dtype_blob)
 		field->fld_character_set_id = nod_desc->dsc_scale;
+}
+
+
+/**
+	check_unique_fields_names
+
+	check fields (params, variables, cursors etc) names against
+	sorted array 
+	if success, add them into array 
+ **/
+static void check_unique_fields_names(StrArray& names, const dsql_nod* fields)
+{
+	if (!fields)
+		return;
+	
+	const dsql_nod* const* ptr = fields->nod_arg;
+	const dsql_nod* const* const end = ptr + fields->nod_count;
+	const dsql_nod* temp;
+	const dsql_fld* field;
+	const dsql_str* str;
+	const char* name = NULL;
+
+	for (; ptr < end; ptr++) {
+		switch((*ptr)->nod_type) {
+			case nod_def_field:
+				field = (dsql_fld*) (*ptr)->nod_arg[e_dfl_field];
+				DEV_BLKCHK(field, dsql_type_fld);
+				name = field->fld_name;
+			break;
+
+			case nod_param_val:
+				temp = (*ptr)->nod_arg[e_prm_val_fld];
+				field = (dsql_fld*) temp->nod_arg[e_dfl_field];
+				DEV_BLKCHK(field, dsql_type_fld);
+				name = field->fld_name;
+			break;
+
+			case nod_cursor:
+				str = (dsql_str*) (*ptr)->nod_arg[e_cur_name];
+				DEV_BLKCHK(str, dsql_type_str);
+				name = str->str_data;
+			break;
+
+			default:
+				fb_assert(false);
+		}
+
+		int pos;
+		if (!names.find(name, pos))
+			names.add(name);
+		else {
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -637,
+					  isc_arg_gds, isc_dsql_duplicate_spec,
+					  isc_arg_string, name, 0);
+		}
+	}
 }
 
 
@@ -6380,21 +6392,23 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input)
 	resolve_variable_name
 
  **/
-static dsql_nod* resolve_variable_name(const dsql_nod *var_nodes, const dsql_str *var_name)
+static dsql_nod* resolve_variable_name(const dsql_nod* var_nodes, const dsql_str* var_name)
 {
-	dsql_nod *const *ptr = var_nodes->nod_arg;
-	dsql_nod *const *const end = ptr + var_nodes->nod_count;
+	dsql_nod* const* ptr = var_nodes->nod_arg;
+	dsql_nod* const* const end = ptr + var_nodes->nod_count;
 
 	for (; ptr < end; ptr++) {
-		dsql_nod *var_node = *ptr;
+		dsql_nod* var_node = *ptr;
 		if (var_node->nod_type == nod_variable)
 		{
-			const var *variable = (var*) var_node->nod_arg[e_var_variable];
+			const var* variable = (var*) var_node->nod_arg[e_var_variable];
 			DEV_BLKCHK(variable, dsql_type_var);
 			if (!strcmp
-				(reinterpret_cast < const char *>(var_name->str_data),
+				(reinterpret_cast<const char*>(var_name->str_data),
 				 variable->var_name)) 
+			{
 				 return var_node;
+			}
 		}
 	}
 
@@ -6511,7 +6525,7 @@ static dsql_nod* pass1_variable( dsql_req* request, dsql_nod* input)
 	}
 
 	if (request->req_blk_node) {
-		dsql_nod *var_node;
+		dsql_nod* var_node;
 
 		if (var_nodes = request->req_blk_node->nod_arg[e_exe_blk_dcls])
 			if (var_node = resolve_variable_name(var_nodes, var_name))

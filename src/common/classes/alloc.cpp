@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.cpp,v 1.36 2003-11-07 08:05:49 robocop Exp $
+ *  $Id: alloc.cpp,v 1.37 2004-01-28 07:50:18 robocop Exp $
  *
  */
 
@@ -207,7 +207,8 @@ bool MemoryPool::verify_pool() {
 			
 			if (!blk->used) {
 				fb_assert(foundTree || foundPending); // Block is free. Should be somewhere
-			} else
+			}
+			else
 				fb_assert(!foundTree && !foundPending); // Block is not free. Should not be in free lists
 #endif
 			prev = blk;
@@ -246,7 +247,8 @@ void MemoryPool::print_contents(IB_FILE *file, bool used_only) {
 				else
 					ib_fprintf(file, "Block %p: size=%d\n", mem, blk->length);
 #endif
-			} else {
+			}
+			else {
 				if (!used_only) 
 					ib_fprintf(file, "Free block %p: size=%d\n", mem, blk->length);
 			}
@@ -371,7 +373,8 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 			blk->line = line;
 #endif
 			freeBlocks.fastRemove();
-		} else {
+		}
+		else {
 			// Cut a piece at the end of block in hope to avoid structural
 			// modification of free blocks tree
 			current->block->length -= MEM_ALIGN(sizeof(MemoryBlock))+size;
@@ -407,7 +410,8 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 				addFreeBlock(block);
 			}
 		}
-	} else {
+	}
+	else {
 		// If we are in a critically low memory condition look up for a block in a list
 		// of pending free blocks. We do not do "best fit" in this case
 		PendingFreeBlock *itr = pendingFree, *prev = NULL;
@@ -437,7 +441,8 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 					}
 					PATTERN_FILL(itr,size,ALLOC_PATTERN);
 					return itr;
-				} else {
+				}
+				else {
 					// Cut a piece at the end of block
 					// We don't need to modify tree of free blocks or a list of
 					// pending free blocks in this case
@@ -493,7 +498,8 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 			// Block is small enough to be returned AS IS
 			blk->last = true;
 			blk->length = alloc_size - MEM_ALIGN(sizeof(MemoryExtent)) - MEM_ALIGN(sizeof(MemoryBlock));
-		} else {
+		}
+		else {
 			// Cut a piece at the beginning of the block
 			blk->last = false;
 			blk->length = size;
@@ -536,7 +542,8 @@ void MemoryPool::removeFreeBlock(MemoryBlock *blk) {
 	BlockInfo info = {blk, blk->length};
 	if (freeBlocks.locate(info)) {
 		freeBlocks.fastRemove();
-	} else {
+	}
+	else {
 		// If we are in a critically-low memory condition our block could be in the
 		// pending free blocks list. Remove it from there
 		PendingFreeBlock *itr = pendingFree, 
@@ -595,12 +602,14 @@ void MemoryPool::deallocate(void *block) {
 		MemoryBlock *next = NULL;
 		if (blk->last) {
 			prev->last = true;
-		} else {
+		}
+		else {
 			next = (MemoryBlock *)((char *)blk+MEM_ALIGN(sizeof(MemoryBlock))+blk->length);
 			if (next->used) {
 				next->prev = prev;
 				prev->last = false;
-			} else {
+			}
+			else {
 				// Merge next block too
 				removeFreeBlock(next);
 				prev->length += next->length + MEM_ALIGN(sizeof(MemoryBlock));
@@ -614,7 +623,8 @@ void MemoryPool::deallocate(void *block) {
 			free_blk_extent(prev);
 		else
 			addFreeBlock(prev);
-	} else {	
+	}
+	else {	
 		MemoryBlock *next;
 		// Mark block as free
 		blk->used = false;

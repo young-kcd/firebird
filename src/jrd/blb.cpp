@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.50 2004-01-22 06:50:05 skidder Exp $
+$Id: blb.cpp,v 1.51 2004-01-28 07:50:32 robocop Exp $
 */
 
 #include "firebird.h"
@@ -309,7 +309,7 @@ void BLB_garbage_collect(
 		rec* rec1 = (REC) stack1->lls_object;
 		if (!rec1)
 			continue;
-		const fmt* format = (FMT) rec1->rec_format;
+		const fmt* format = (fmt*) rec1->rec_format;
 
 		/* Look for active blob records */
 
@@ -1142,7 +1142,7 @@ BLB BLB_open2(TDBB tdbb,
 					(UCHAR *) ((BLP) new_blob->blb_data)->blp_data;
 			}
 			return blob;
-	  }
+		}
 
 /* Ordinarily, we would call MET_relation to get the relation id.
    However, since the blob id must be consider suspect, this is
@@ -1545,7 +1545,8 @@ void BLB_scalar(TDBB	tdbb,
 	dsc desc = array_desc->ads_rpt[0].ads_desc;
 	if (desc.dsc_length <= sizeof(temp)) {
 		desc.dsc_address = temp_ptr;
-	} else {
+	}
+	else {
 		temp_str =
 			FB_NEW_RPT(*tdbb->tdbb_default, desc.dsc_length + DOUBLE_ALIGN - 1) str;
 		desc.dsc_address =
@@ -1785,7 +1786,7 @@ static void check_BID_validity(const blb* blob, TDBB tdbb)
  **************************************/
 
 	if (!blob ||
-		// Nickolay Samofatov. This checks are now unnecessary since we
+		// Nickolay Samofatov. These checks are now unnecessary since we
 		// look up blob using temp_id inside the transaction blobs only.
 		// They were unreliable, anyway.
 		//   MemoryPool::blk_type(blob) != type_blb ||

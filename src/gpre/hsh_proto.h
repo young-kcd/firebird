@@ -26,10 +26,10 @@
 
 void	HSH_fini(void);
 void	HSH_init(void);
-void	HSH_insert(SYM);
-SYM		HSH_lookup(const SCHAR*);
-SYM		HSH_lookup2(const SCHAR*);
-void	HSH_remove(SYM);
+void	HSH_insert(gpre_sym*);
+gpre_sym*		HSH_lookup(const SCHAR*);
+gpre_sym*		HSH_lookup2(const SCHAR*);
+void	HSH_remove(gpre_sym*);
 
 #endif // GPRE_HSH_PROTO_H
 

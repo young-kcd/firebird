@@ -241,7 +241,8 @@ void trig::compile(tdbb* _tdbb)
 			if (request) {
 				CMP_release(_tdbb,request);
 				request = NULL;
-			} else {
+			}
+			else {
 				JrdMemoryPool::deletePool(new_pool);
 			}
 			throw;
@@ -3782,7 +3783,8 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 		{
 			if ((int) (IPTR) node->nod_arg[e_msg_number] == 0) {
 				in_message = node;
-			} else if ((int) (IPTR) node->nod_arg[e_msg_number] == 1) {
+			}
+			else if ((int) (IPTR) node->nod_arg[e_msg_number] == 1) {
 				out_message = node;
 			}
 		}
@@ -3797,7 +3799,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 	if (in_msg_length)
 	{
 		if (in_message) {
-			const fmt* format = (FMT) in_message->nod_arg[e_msg_format];
+			const fmt* format = (fmt*) in_message->nod_arg[e_msg_format];
 			len = format->fmt_length;
 		}
 		else {
@@ -3822,7 +3824,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 	EXE_start(tdbb, request, transaction);
 
 	if (out_message) {
-		const fmt* format = (FMT) out_message->nod_arg[e_msg_format];
+		const fmt* format = (fmt*) out_message->nod_arg[e_msg_format];
 		len = format->fmt_length;
 	}
 	else {
@@ -3862,7 +3864,8 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 			}
 			if (request) {
 				CMP_release(tdbb, request);
-			} else if (new_pool) {
+			}
+			else if (new_pool) {
 				JrdMemoryPool::deletePool(new_pool);
 			}
 		}	// try
@@ -4046,7 +4049,8 @@ void JRD_blocked(ATT blocking, BTB * que)
 	BTB block = dbb->dbb_free_btbs;
 	if (block) {
 		dbb->dbb_free_btbs = block->btb_next;
-	} else {
+	}
+	else {
 		block = FB_NEW(*dbb->dbb_permanent) btb;
 	}
 

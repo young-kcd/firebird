@@ -453,7 +453,7 @@ void VIO_bump_count(TDBB tdbb, USHORT count_id, jrd_rel* relation, bool error)
 }
 
 
-int VIO_chase_record_version(TDBB tdbb, RPB * rpb, RSB rsb, jrd_tra* transaction,
+int VIO_chase_record_version(TDBB tdbb, RPB * rpb, Rsb* rsb, jrd_tra* transaction,
 							 BLK pool, BOOLEAN writelock)
 {
 /**************************************
@@ -1676,7 +1676,7 @@ REC VIO_gc_record(TDBB tdbb, jrd_rel* relation)
 }
 
 
-int VIO_get(TDBB tdbb, RPB * rpb, RSB rsb, jrd_tra* transaction, BLK pool)
+int VIO_get(TDBB tdbb, RPB * rpb, Rsb* rsb, jrd_tra* transaction, BLK pool)
 {
 /**************************************
  *
@@ -2259,7 +2259,7 @@ void VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, jrd_tra* transaction)
 }
 
 
-BOOLEAN VIO_writelock(TDBB tdbb, RPB * org_rpb, RSB rsb, jrd_tra* transaction)
+BOOLEAN VIO_writelock(TDBB tdbb, RPB * org_rpb, Rsb* rsb, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -2326,7 +2326,7 @@ BOOLEAN VIO_writelock(TDBB tdbb, RPB * org_rpb, RSB rsb, jrd_tra* transaction)
 			org_rpb->rpb_stream_flags &= ~RPB_s_refetch;
 			
 			// Make sure refetched record still fulfills search condition
-			RSB r;			
+			Rsb* r;
 			for (r = rsb; r && r->rsb_type != rsb_boolean ; r = r->rsb_next);
 			if (r && !EVL_boolean(tdbb, (jrd_nod*) r->rsb_arg[0]))
 				return FALSE;
@@ -2385,7 +2385,7 @@ BOOLEAN VIO_writelock(TDBB tdbb, RPB * org_rpb, RSB rsb, jrd_tra* transaction)
 
 BOOLEAN VIO_next_record(TDBB tdbb,
 						RPB * rpb,
-						RSB rsb,
+						Rsb* rsb,
 						jrd_tra* transaction,
 						BLK pool, BOOLEAN backwards, BOOLEAN onepage)
 {

@@ -147,7 +147,7 @@ static jrd_nod* pass2_union(TDBB, Csb*, jrd_nod*);
 static void plan_check(Csb*, RSE);
 static void plan_set(Csb*, RSE, jrd_nod*);
 static void post_procedure_access(TDBB, Csb*, jrd_prc*);
-static RSB post_rse(TDBB, Csb*, RSE);
+static Rsb* post_rse(TDBB, Csb*, RSE);
 static void	post_trigger_access(TDBB, Csb*, jrd_rel*, TRIG_VEC, jrd_rel*);
 static void process_map(TDBB, Csb*, jrd_nod*, fmt**);
 static bool stream_in_rse(USHORT, RSE);
@@ -393,7 +393,8 @@ jrd_req* CMP_compile2(TDBB tdbb, const UCHAR* blr, USHORT internal_flag)
 		tdbb->tdbb_default = old_pool;
 		if (request) {
 			CMP_release(tdbb, request);
-		} else if (new_pool) {
+		}
+		else if (new_pool) {
 			JrdMemoryPool::deletePool(new_pool);
 		}
 		ERR_punt();
@@ -532,7 +533,7 @@ void CMP_fini(TDBB tdbb)
 }
 
 
-FMT CMP_format(TDBB tdbb, Csb* csb, USHORT stream)
+fmt* CMP_format(TDBB tdbb, Csb* csb, USHORT stream)
 {
 /**************************************
  *
@@ -1547,7 +1548,7 @@ void CMP_get_desc(TDBB tdbb, Csb* csb, jrd_nod* node, DSC * desc)
 
 	case nod_cast:
 		{
-			const fmt* format = (FMT) node->nod_arg[e_cast_fmt];
+			const fmt* format = (fmt*) node->nod_arg[e_cast_fmt];
 			*desc = format->fmt_desc[0];
 			if ((desc->dsc_dtype <= dtype_any_text && !desc->dsc_length) ||
 				(desc->dsc_dtype == dtype_varying
@@ -1569,7 +1570,7 @@ void CMP_get_desc(TDBB tdbb, Csb* csb, jrd_nod* node, DSC * desc)
 	case nod_argument:
 		{
 			const jrd_nod* message = node->nod_arg[e_arg_message];
-			const fmt* format = (FMT) message->nod_arg[e_msg_format];
+			const fmt* format = (fmt*) message->nod_arg[e_msg_format];
 			*desc = format->fmt_desc[(IPTR) node->nod_arg[e_arg_number]];
 			return;
 		}
@@ -1843,7 +1844,8 @@ jrd_req* CMP_make_request(TDBB tdbb, Csb* csb)
 							MsgInvariantArray(tdbb->tdbb_default);
 						msg->nod_arg[e_msg_invariants] = 
 							reinterpret_cast<jrd_nod*>(msg_invariants);
-					} else {
+					}
+					else {
 						msg_invariants = reinterpret_cast<MsgInvariantArray *>(
 							msg->nod_arg[e_msg_invariants]);
 					}
@@ -3193,7 +3195,8 @@ static jrd_nod* pass1(TDBB tdbb,
 							break;
 						}
 						reinterpret_cast<RSE>(*i_node)->nod_flags |= rse_variant;
-					} else {
+					}
+					else {
 						(*i_node)->nod_flags &= ~nod_invariant;
 					}
 				}
@@ -4392,7 +4395,7 @@ static jrd_nod* pass2(TDBB tdbb, Csb* csb, jrd_nod* const node, jrd_nod* parent)
 	USHORT stream;
 
 	DEBUG;
-	RSB* rsb_ptr = 0;
+	Rsb** rsb_ptr = 0;
 	jrd_nod* rse_node = NULL;
 
 	switch (node->nod_type) {
@@ -4404,7 +4407,7 @@ static jrd_nod* pass2(TDBB tdbb, Csb* csb, jrd_nod* const node, jrd_nod* parent)
 
 	case nod_for:
 		rse_node = node->nod_arg[e_for_re];
-		rsb_ptr = (RSB *) & node->nod_arg[e_for_rsb];
+		rsb_ptr = (Rsb**) & node->nod_arg[e_for_rsb];
 #ifdef SCROLLABLE_CURSORS
 		csb->csb_current_rse = rse_node;
 #endif
@@ -4412,7 +4415,7 @@ static jrd_nod* pass2(TDBB tdbb, Csb* csb, jrd_nod* const node, jrd_nod* parent)
 
 	case nod_dcl_cursor:
 		rse_node = node->nod_arg[e_dcl_cursor_rse];
-		rsb_ptr = (RSB *) & node->nod_arg[e_dcl_cursor_rsb];
+		rsb_ptr = (Rsb**) & node->nod_arg[e_dcl_cursor_rsb];
 #ifdef SCROLLABLE_CURSORS
 		csb->csb_current_rse = rse_node;
 #endif
@@ -4448,7 +4451,7 @@ static jrd_nod* pass2(TDBB tdbb, Csb* csb, jrd_nod* const node, jrd_nod* parent)
 			node->nod_flags |= nod_invariant;
 			csb->csb_invariants.push(node);
 		}
-		rsb_ptr = (RSB *) & node->nod_arg[e_stat_rsb];
+		rsb_ptr = (Rsb**) & node->nod_arg[e_stat_rsb];
 		break;
 
 	case nod_ansi_all:
@@ -4461,7 +4464,7 @@ static jrd_nod* pass2(TDBB tdbb, Csb* csb, jrd_nod* const node, jrd_nod* parent)
 			node->nod_flags |= nod_invariant;
 			csb->csb_invariants.push(node);
 		}
-		rsb_ptr = (RSB *) & node->nod_arg[e_any_rsb];
+		rsb_ptr = (Rsb**) & node->nod_arg[e_any_rsb];
 		break;
 
 	case nod_like:
@@ -4733,7 +4736,7 @@ static jrd_nod* pass2(TDBB tdbb, Csb* csb, jrd_nod* const node, jrd_nod* parent)
 
 	case nod_message:
 		{
-			const fmt* format = (FMT) node->nod_arg[e_msg_format];
+			const fmt* format = (fmt*) node->nod_arg[e_msg_format];
 			if (!((tdbb->tdbb_flags & TDBB_prc_being_dropped) && !format)) {
 				csb->csb_impure += FB_ALIGN(format->fmt_length, 2);
 			}
@@ -5367,7 +5370,7 @@ static void post_procedure_access(TDBB tdbb, Csb* csb, jrd_prc* procedure)
 }
 
 
-static RSB post_rse(TDBB tdbb, Csb* csb, RSE rse)
+static Rsb* post_rse(TDBB tdbb, Csb* csb, RSE rse)
 {
 /**************************************
  *
@@ -5384,7 +5387,7 @@ static RSB post_rse(TDBB tdbb, Csb* csb, RSE rse)
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(rse, type_nod);
 
-	RSB rsb = OPT_compile(tdbb, csb, rse, NULL);
+	Rsb* rsb = OPT_compile(tdbb, csb, rse, NULL);
 
 	if (rse->nod_flags & rse_singular) {
 		rsb->rsb_flags |= rsb_singular;

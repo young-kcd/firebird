@@ -562,7 +562,8 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 		bool singleton;
 		if (request->req_type == REQ_SELECT && out_msg_length != 0) {
 			singleton = true;
-		} else {
+		}
+		else {
 			singleton = false;
 		}
 
@@ -1549,7 +1550,8 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 		if (!request->req_cursor) {
 			request->req_cursor = MAKE_symbol(request->req_dbb, cursor,
 										  length, SYM_cursor, request);
-		} else {
+		}
+		else {
 			fb_assert(request->req_cursor != symbol);
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 502,
 				  isc_arg_gds, isc_dsql_decl_err, 0);
@@ -2702,7 +2704,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		const dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_rel_context];
 		const dsql_rel* relation = context->ctx_relation;
 		const dsql_prc* procedure = context->ctx_procedure;
- 		if( relation != NULL ) {
+ 		if ( relation != NULL ) {
  			trace_line("%srelation %s, context %d\n",
  				buffer, relation->rel_name, context->ctx_context);
  		}
@@ -2781,7 +2783,8 @@ void DSQL_pretty(const dsql_nod* node, int column)
 			   buffer, verb,
 			   node->nod_desc.dsc_dtype,
 			   node->nod_desc.dsc_length, node->nod_desc.dsc_address);
-	} else {
+	}
+	else {
 		trace_line("%s%s\n", buffer, verb);
 	}
 	++column;
@@ -2836,8 +2839,6 @@ static void cleanup( void *arg)
  **/
 static void cleanup_database(FRBRD ** db_handle, void* flag)
 {
-	DBB *dbb_ptr, dbb;
-
 	if (flag)
 		Firebird::fatal_exception::raise("Illegal call to cleanup_database");
 
@@ -2849,7 +2850,8 @@ static void cleanup_database(FRBRD ** db_handle, void* flag)
 
 	THD_MUTEX_LOCK(&databases_mutex);
 
-	for (dbb_ptr = &databases; dbb = *dbb_ptr; dbb_ptr = &dbb->dbb_next)
+	DBB dbb;
+	for (DBB* dbb_ptr = &databases; dbb = *dbb_ptr; dbb_ptr = &dbb->dbb_next)
 		if (dbb->dbb_database_handle == *db_handle) {
 			*dbb_ptr = dbb->dbb_next;
 			dbb->dbb_next = NULL;
@@ -2898,13 +2900,14 @@ static void cleanup_database(FRBRD ** db_handle, void* flag)
 static void cleanup_transaction (FRBRD * tra_handle, void* arg)
 {
 	ISC_STATUS_ARRAY local_status;
-	OPN *open_cursor_ptr, open_cursor;
 
 // find this transaction/request pair in the list of pairs 
 
 	THD_MUTEX_LOCK(&cursors_mutex);
-	open_cursor_ptr = &open_cursors;
+	opn** open_cursor_ptr = &open_cursors;
+	opn* open_cursor;
 	while (open_cursor = *open_cursor_ptr)
+	{
 		if (open_cursor->opn_transaction == tra_handle) {
 			/* Found it, close the cursor but don't remove it from the list.
 			   The close routine will have done that. */
@@ -2927,6 +2930,7 @@ static void cleanup_transaction (FRBRD * tra_handle, void* arg)
 		}
 		else
 			open_cursor_ptr = &open_cursor->opn_next;
+	}
 
 	THD_MUTEX_UNLOCK(&cursors_mutex);
 }
@@ -2944,7 +2948,6 @@ static void cleanup_transaction (FRBRD * tra_handle, void* arg)
  **/
 static void close_cursor( dsql_req* request)
 {
-	OPN *open_cursor_ptr, open_cursor;
 	ISC_STATUS_ARRAY status_vector;
 
 	if (request->req_handle) {
@@ -2962,7 +2965,8 @@ static void close_cursor( dsql_req* request)
 // Remove the open cursor from the list 
 
 	THD_MUTEX_LOCK(&cursors_mutex);
-	open_cursor_ptr = &open_cursors;
+	opn** open_cursor_ptr = &open_cursors;
+	opn* open_cursor;
 	for (; open_cursor = *open_cursor_ptr;
 		 open_cursor_ptr = &open_cursor->opn_next)
 	{
@@ -3032,7 +3036,6 @@ static USHORT convert( SLONG number, UCHAR* buffer)
  **/
 static ISC_STATUS error()
 {
-
 	TSQL tdsql = GET_THREAD_DATA;
 
 	return tdsql->tsql_status[1];

@@ -694,7 +694,8 @@ void GEN_request( dsql_req* request, dsql_nod* node)
       	  gen_select(request, node);
   		}
 		else if (request->req_type == REQ_EXEC_BLOCK ||
-				 request->req_type == REQ_SELECT_BLOCK ) {
+				 request->req_type == REQ_SELECT_BLOCK )
+		{
 			GEN_statement(request, node);
   		}
 		else {
@@ -1070,11 +1071,13 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 		return;
 	
 	case nod_return:
-		if(temp = node->nod_arg[e_rtn_procedure])
-			if(temp->nod_type == nod_exec_block)
+		if (temp = node->nod_arg[e_rtn_procedure])
+		{
+			if (temp->nod_type == nod_exec_block)
 				GEN_return(request, temp->nod_arg[e_exe_blk_outputs], false);
 			else 
 				GEN_return(request, temp->nod_arg[e_prc_outputs], false);
+		}
 		return;
 
 	case nod_exit:

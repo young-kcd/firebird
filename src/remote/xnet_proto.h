@@ -27,16 +27,16 @@
 #define REMOTE_XNET_PROTO_H
 
 #ifdef NO_PORT
-#define PORT void*
+#define rem_port void
 #endif
 
-PORT	XNET_analyze(TEXT*, USHORT*, ISC_STATUS*, const TEXT*,
+rem_port*	XNET_analyze(TEXT*, USHORT*, ISC_STATUS*, const TEXT*,
 	const TEXT*, bool);
-PORT	XNET_connect(const TEXT*, struct packet*, ISC_STATUS*, USHORT);
+rem_port*	XNET_connect(const TEXT*, struct packet*, ISC_STATUS*, USHORT);
 
 #ifndef SUPERCLIENT
 void	XNET_srv(USHORT flag);
-PORT	XNET_reconnect(ULONG, ISC_STATUS*);
+rem_port*	XNET_reconnect(ULONG, ISC_STATUS*);
 #endif
 
 #endif // REMOTE_XNET_PROTO_H

@@ -1735,7 +1735,8 @@ static void change_backup_mode( GBL gbl, UCHAR verb)
 			case isc_dyn_begin_backup:
 				if (X.RDB$FILE_FLAGS & FILE_backing_up) {
 					invalid_state = true;
-				} else {
+				}
+				else {
 					MODIFY X USING
 						X.RDB$FILE_FLAGS |= FILE_backing_up;
 					END_MODIFY;
@@ -1751,7 +1752,8 @@ static void change_backup_mode( GBL gbl, UCHAR verb)
 							X.RDB$FILE_FLAGS &= ~FILE_backing_up;
 						END_MODIFY;
 					}
-				} else {
+				}
+				else {
 					invalid_state = true;
 				}
 				break;

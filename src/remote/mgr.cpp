@@ -42,7 +42,7 @@ void main( int argc, char *argv[])
  * Functional description
  *
  **************************************/
-	PORT port;
+	rem_port* port;
 	UCHAR mailbox[256];
 
 	AMBX_mailbox("//frank", mailbox);
@@ -50,7 +50,7 @@ void main( int argc, char *argv[])
 }
 
 
-static PORT init_connection( UCHAR * node)
+static rem_port* init_connection( UCHAR * node)
 {
 /**************************************
  *
@@ -62,7 +62,7 @@ static PORT init_connection( UCHAR * node)
  *	Establish connection to remote server.
  *
  **************************************/
-	PORT port;
+	rem_port* port;
 	PACKET packet;
 	P_CNCT *connect;
 	ISC_STATUS_ARRAY status_vector;

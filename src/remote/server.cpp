@@ -111,7 +111,7 @@ typedef struct server_req_t
 {
 	server_req_t*	req_next;
 	server_req_t*	req_chain;
-	PORT			req_port;
+	rem_port*			req_port;
 	PACKET			req_send;
 	PACKET			req_receive;
 } *SERVER_REQ;
@@ -119,37 +119,37 @@ typedef struct server_req_t
 typedef struct srvr
 {
 	struct srvr*	srvr_next;
-	struct port*	srvr_parent_port;
+	rem_port*		srvr_parent_port;
 	enum rem_port_t	srvr_port_type;
 	USHORT			srvr_flags;
 } *SRVR;
 
-static bool	accept_connection(PORT, P_CNCT*, PACKET*);
-static ISC_STATUS	allocate_statement(PORT, P_RLSE*, PACKET*);
+static bool	accept_connection(rem_port*, P_CNCT*, PACKET*);
+static ISC_STATUS	allocate_statement(rem_port*, P_RLSE*, PACKET*);
 static SLONG	append_request_chain(SERVER_REQ, SERVER_REQ*);
 static SLONG	append_request_next(SERVER_REQ, SERVER_REQ*);
-static ISC_STATUS	attach_database(PORT, P_OP, P_ATCH*, PACKET*);
-static void		aux_connect(PORT, P_REQ*, PACKET*);
-static void		aux_request(PORT, P_REQ*, PACKET*);
-static ISC_STATUS	cancel_events(PORT, P_EVENT*, PACKET*);
+static ISC_STATUS	attach_database(rem_port*, P_OP, P_ATCH*, PACKET*);
+static void		aux_connect(rem_port*, P_REQ*, PACKET*);
+static void		aux_request(rem_port*, P_REQ*, PACKET*);
+static ISC_STATUS	cancel_events(rem_port*, P_EVENT*, PACKET*);
 
 #ifdef CANCEL_OPERATION
-static void	cancel_operation(PORT);
+static void	cancel_operation(rem_port*);
 #endif
 
-static bool	check_request(RRQ, USHORT, USHORT);
+static bool	check_request(rrq*, USHORT, USHORT);
 static USHORT	check_statement_type(RSR);
 
 #ifdef SCROLLABLE_CURSORS
 static REM_MSG		dump_cache(rrq::rrq_repeat*);
 #endif
 
-static bool		get_next_msg_no(RRQ, USHORT, USHORT*);
+static bool		get_next_msg_no(rrq*, USHORT, USHORT*);
 static RTR		make_transaction(RDB, FRBRD*);
 
 static void	release_blob(RBL);
 static void	release_event(RVNT);
-static void	release_request(RRQ);
+static void	release_request(rrq*);
 static void	release_statement(RSR*);
 static void	release_sql_request(RSR);
 static void	release_transaction(RTR);
@@ -205,7 +205,7 @@ static const UCHAR sql_info[] =
 #define GDS_DSQL_SQL_INFO	isc_dsql_sql_info
 
 
-void SRVR_main(PORT main_port, USHORT flags)
+void SRVR_main(rem_port* main_port, USHORT flags)
 {
 /**************************************
  *
@@ -218,7 +218,7 @@ void SRVR_main(PORT main_port, USHORT flags)
  *
  **************************************/
 	PACKET send, receive;
-	PORT port;
+	rem_port* port;
 
 #ifdef SUPERSERVER
 	ISC_enter();				/* Setup floating point exception handler once and for all. */
@@ -247,7 +247,7 @@ void SRVR_main(PORT main_port, USHORT flags)
 }
 
 
-void SRVR_multi_thread( PORT main_port, USHORT flags)
+void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 {
 #ifdef MULTI_THREAD
 /**************************************
@@ -261,7 +261,7 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
  *
  **************************************/
 	SERVER_REQ request = NULL, active;
-	volatile PORT port = NULL;
+	rem_port* volatile port = NULL; // Was volatile PORT port = NULL;
 	SLONG pending_requests;
 	P_OP operation;
 #ifdef DEV_BUILD
@@ -546,7 +546,7 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
 }
 
 
-static bool accept_connection(PORT port,
+static bool accept_connection(rem_port* port,
 							  P_CNCT * connect,
 							  PACKET* send)
 {
@@ -633,7 +633,7 @@ static bool accept_connection(PORT port,
 }
 
 
-static ISC_STATUS allocate_statement( PORT port, P_RLSE * allocate, PACKET* send)
+static ISC_STATUS allocate_statement( rem_port* port, P_RLSE * allocate, PACKET* send)
 {
 /**************************************
  *
@@ -738,7 +738,7 @@ static SLONG append_request_next( SERVER_REQ request, SERVER_REQ * que)
 
 
 static ISC_STATUS attach_database(
-							  PORT port,
+							  rem_port* port,
 							  P_OP operation, P_ATCH * attach, PACKET* send)
 {
 /**************************************
@@ -821,7 +821,7 @@ static ISC_STATUS attach_database(
 }
 
 
-static void aux_connect( PORT port, P_REQ * request, PACKET* send)
+static void aux_connect( rem_port* port, P_REQ * request, PACKET* send)
 {
 /**************************************
  *
@@ -834,15 +834,13 @@ static void aux_connect( PORT port, P_REQ * request, PACKET* send)
  *	channel.  Accept connection and reply politely.
  *
  **************************************/
-	PORT partner;
-
 	port->connect(0, 0);
-	partner = (PORT) request->p_req_partner;
+	rem_port* partner = (rem_port*) request->p_req_partner;
 	partner->port_async = port;
 }
 
 
-static void aux_request( PORT port, P_REQ * request, PACKET* send)
+static void aux_request( rem_port* port, P_REQ * request, PACKET* send)
 {
 /**************************************
  *
@@ -857,7 +855,7 @@ static void aux_request( PORT port, P_REQ * request, PACKET* send)
  **************************************/
 	ISC_STATUS *save_status;
 	ISC_STATUS_ARRAY status_vector;
-	PORT aux_port;
+	rem_port* aux_port;
 	RDB rdb;
 	UCHAR buffer[12];
 	CSTRING save_cstring;
@@ -900,7 +898,7 @@ static void aux_request( PORT port, P_REQ * request, PACKET* send)
 }
 
 
-static ISC_STATUS cancel_events( PORT port, P_EVENT * stuff, PACKET* send)
+static ISC_STATUS cancel_events( rem_port* port, P_EVENT * stuff, PACKET* send)
 {
 /**************************************
  *
@@ -952,7 +950,7 @@ static ISC_STATUS cancel_events( PORT port, P_EVENT * stuff, PACKET* send)
 
 
 #ifdef CANCEL_OPERATION
-static void cancel_operation( PORT port)
+static void cancel_operation( rem_port* port)
 {
 /**************************************
  *
@@ -989,7 +987,7 @@ static void cancel_operation( PORT port)
 #endif
 
 
-static bool check_request(RRQ request,
+static bool check_request(rrq* request,
 						  USHORT incarnation,
 						  USHORT msg_number)
 {
@@ -1069,7 +1067,7 @@ static USHORT check_statement_type( RSR statement)
 }
 
 
-ISC_STATUS port::compile(P_CMPL* compile, PACKET* send)
+ISC_STATUS rem_port::compile(P_CMPL* compile, PACKET* send)
 {
 /**************************************
  *
@@ -1109,7 +1107,7 @@ ISC_STATUS port::compile(P_CMPL* compile, PACKET* send)
 
 /* Allocate block and merge into data structures */
 
-	RRQ request = (RRQ) ALLOCV(type_rrq, max_msg + 1);
+	rrq* request = (rrq*) ALLOCV(type_rrq, max_msg + 1);
 #ifdef DEBUG_REMOTE_MEMORY
 	ib_printf("compile(server)           allocate request %x\n", request);
 #endif
@@ -1143,7 +1141,7 @@ ISC_STATUS port::compile(P_CMPL* compile, PACKET* send)
 		tail = request->rrq_rpt + message->msg_number;
 		tail->rrq_message = message;
 		tail->rrq_xdr = message;
-		tail->rrq_format = (FMT) message->msg_address;
+		tail->rrq_format = (rem_fmt*) message->msg_address;
 
 		message->msg_address = NULL;
 		message = next;
@@ -1153,7 +1151,7 @@ ISC_STATUS port::compile(P_CMPL* compile, PACKET* send)
 }
 
 
-ISC_STATUS port::ddl(P_DDL* ddl, PACKET* send)
+ISC_STATUS rem_port::ddl(P_DDL* ddl, PACKET* send)
 {
 /**************************************
  *
@@ -1188,7 +1186,7 @@ ISC_STATUS port::ddl(P_DDL* ddl, PACKET* send)
 }
 
 
-void port::disconnect(PACKET* send, PACKET* receive)
+void rem_port::disconnect(PACKET* send, PACKET* receive)
 {
 /**************************************
  *
@@ -1350,7 +1348,7 @@ void port::disconnect(PACKET* send, PACKET* receive)
 }
 
 
-void port::drop_database(P_RLSE* release, PACKET* send)
+void rem_port::drop_database(P_RLSE* release, PACKET* send)
 {
 /**************************************
  *
@@ -1428,7 +1426,7 @@ static REM_MSG dump_cache( rrq::rrq_repeat* tail)
 #endif
 
 
-ISC_STATUS port::end_blob(P_OP operation, P_RLSE * release, PACKET* send)
+ISC_STATUS rem_port::end_blob(P_OP operation, P_RLSE * release, PACKET* send)
 {
 /**************************************
  *
@@ -1464,7 +1462,7 @@ ISC_STATUS port::end_blob(P_OP operation, P_RLSE * release, PACKET* send)
 }
 
 
-ISC_STATUS port::end_database(P_RLSE * release, PACKET* send)
+ISC_STATUS rem_port::end_database(P_RLSE * release, PACKET* send)
 {
 /**************************************
  *
@@ -1507,7 +1505,7 @@ ISC_STATUS port::end_database(P_RLSE * release, PACKET* send)
 }
 
 
-ISC_STATUS port::end_request(P_RLSE * release, PACKET* send)
+ISC_STATUS rem_port::end_request(P_RLSE * release, PACKET* send)
 {
 /**************************************
  *
@@ -1519,11 +1517,11 @@ ISC_STATUS port::end_request(P_RLSE * release, PACKET* send)
  *	End a request.
  *
  **************************************/
-	RRQ request;
+	rrq* request;
 	ISC_STATUS_ARRAY status_vector;
 
 	CHECK_HANDLE_MEMBER(request,
-						RRQ,
+						rrq*,
 						type_rrq,
 						release->p_rlse_object,
 						isc_bad_req_handle);
@@ -1539,7 +1537,7 @@ ISC_STATUS port::end_request(P_RLSE * release, PACKET* send)
 }
 
 
-ISC_STATUS port::end_statement(P_SQLFREE* free_stmt, PACKET* send)
+ISC_STATUS rem_port::end_statement(P_SQLFREE* free_stmt, PACKET* send)
 {
 /*****************************************
  *
@@ -1587,7 +1585,7 @@ ISC_STATUS port::end_statement(P_SQLFREE* free_stmt, PACKET* send)
 }
 
 
-ISC_STATUS port::end_transaction(P_OP operation, P_RLSE * release, PACKET* send)
+ISC_STATUS rem_port::end_transaction(P_OP operation, P_RLSE * release, PACKET* send)
 {
 /**************************************
  *
@@ -1644,7 +1642,7 @@ ISC_STATUS port::end_transaction(P_OP operation, P_RLSE * release, PACKET* send)
 }
 
 
-ISC_STATUS port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* send)
+ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* send)
 {
 /*****************************************
  *
@@ -1789,7 +1787,7 @@ ISC_STATUS port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* send)
 }
 
 
-ISC_STATUS port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send)
+ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send)
 {
 /*****************************************
  *
@@ -1903,7 +1901,7 @@ ISC_STATUS port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send)
 }
 
 
-ISC_STATUS port::fetch(P_SQLDATA * sqldata, PACKET* send)
+ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* send)
 {
 /*****************************************
  *
@@ -1934,7 +1932,8 @@ ISC_STATUS port::fetch(P_SQLDATA * sqldata, PACKET* send)
 
 	if (statement->rsr_format) {
 		msg_length = statement->rsr_format->fmt_length;
-	} else {
+	}
+	else {
 		msg_length = 0;
 	}
 	count = ((this->port_flags & PORT_rpc) ||
@@ -2015,7 +2014,8 @@ ISC_STATUS port::fetch(P_SQLDATA * sqldata, PACKET* send)
 				if (s == 100 || s == 101) {
 					count2 = 0;
 					break;
-				} else {
+				}
+				else {
 					return this->send_response(send, 0, 0, status_vector);
 				}
 			}
@@ -2107,7 +2107,7 @@ ISC_STATUS port::fetch(P_SQLDATA * sqldata, PACKET* send)
 }
 
 
-ISC_STATUS port::fetch_blob(P_SQLDATA * sqldata, PACKET* send)
+ISC_STATUS rem_port::fetch_blob(P_SQLDATA * sqldata, PACKET* send)
 {
 /*****************************************
  *
@@ -2174,7 +2174,7 @@ ISC_STATUS port::fetch_blob(P_SQLDATA * sqldata, PACKET* send)
 }
 
 
-OBJCT port::get_id(BLK block)
+OBJCT rem_port::get_id(BLK block)
 {
 /**************************************
  *
@@ -2220,7 +2220,7 @@ OBJCT port::get_id(BLK block)
 }
 
 
-static bool get_next_msg_no(RRQ request,
+static bool get_next_msg_no(rrq* request,
 							USHORT incarnation,
 							USHORT * msg_number)
 {
@@ -2274,7 +2274,7 @@ static bool get_next_msg_no(RRQ request,
 }
 
 
-ISC_STATUS port::get_segment(P_SGMT* segment, PACKET* send)
+ISC_STATUS rem_port::get_segment(P_SGMT* segment, PACKET* send)
 {
 /**************************************
  *
@@ -2401,7 +2401,7 @@ ISC_STATUS port::get_segment(P_SGMT* segment, PACKET* send)
 }
 
 
-ISC_STATUS port::get_slice(P_SLC * stuff, PACKET* send)
+ISC_STATUS rem_port::get_slice(P_SLC * stuff, PACKET* send)
 {
 /**************************************
  *
@@ -2480,7 +2480,7 @@ ISC_STATUS port::get_slice(P_SLC * stuff, PACKET* send)
 }
 
 
-ISC_STATUS port::info(P_OP op, P_INFO * stuff, PACKET* send)
+ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* send)
 {
 /**************************************
  *
@@ -2496,7 +2496,7 @@ ISC_STATUS port::info(P_OP op, P_INFO * stuff, PACKET* send)
 	RDB rdb;
 	RBL blob;
 	RTR transaction;
-	RRQ request;
+	rrq* request;
 	RSR statement;
 	UCHAR *buffer, temp [1024], *temp_buffer;
 	TEXT version [256];
@@ -2559,7 +2559,7 @@ ISC_STATUS port::info(P_OP op, P_INFO * stuff, PACKET* send)
 
 	case op_info_request:
 		CHECK_HANDLE_MEMBER(request,
-							RRQ,
+							rrq*,
 							type_rrq,
 							stuff->p_info_object,
 							isc_bad_req_handle);
@@ -2644,7 +2644,7 @@ ISC_STATUS port::info(P_OP op, P_INFO * stuff, PACKET* send)
 }
 
 
-ISC_STATUS port::insert(P_SQLDATA * sqldata, PACKET* send)
+ISC_STATUS rem_port::insert(P_SQLDATA * sqldata, PACKET* send)
 {
 /*****************************************
  *
@@ -2722,7 +2722,7 @@ static RTR make_transaction (RDB rdb, FRBRD *handle)
 }
 
 
-ISC_STATUS port::open_blob(P_OP op, P_BLOB* stuff, PACKET* send)
+ISC_STATUS rem_port::open_blob(P_OP op, P_BLOB* stuff, PACKET* send)
 {
 /**************************************
  *
@@ -2804,7 +2804,7 @@ ISC_STATUS port::open_blob(P_OP op, P_BLOB* stuff, PACKET* send)
 }
 
 
-ISC_STATUS port::prepare(P_PREP * stuff, PACKET* send)
+ISC_STATUS rem_port::prepare(P_PREP * stuff, PACKET* send)
 {
 /**************************************
  *
@@ -2838,7 +2838,7 @@ ISC_STATUS port::prepare(P_PREP * stuff, PACKET* send)
 }
 
 
-ISC_STATUS port::prepare_statement(P_SQLST * prepare, PACKET* send)
+ISC_STATUS rem_port::prepare_statement(P_SQLST * prepare, PACKET* send)
 {
 /*****************************************
  *
@@ -2950,10 +2950,10 @@ ISC_STATUS port::prepare_statement(P_SQLST * prepare, PACKET* send)
 }
 
 
-bool process_packet(PORT port,
+bool process_packet(rem_port* port,
 					PACKET* send,
 					PACKET* receive,
-					PORT * result)
+					rem_port** result)
 {
 /**************************************
  *
@@ -3241,7 +3241,7 @@ bool process_packet(PORT port,
 }
 
 
-ISC_STATUS port::put_segment(P_OP op, P_SGMT * segment, PACKET* send)
+ISC_STATUS rem_port::put_segment(P_OP op, P_SGMT * segment, PACKET* send)
 {
 /**************************************
  *
@@ -3297,7 +3297,7 @@ ISC_STATUS port::put_segment(P_OP op, P_SGMT * segment, PACKET* send)
 }
 
 
-ISC_STATUS port::put_slice(P_SLC * stuff, PACKET* send)
+ISC_STATUS rem_port::put_slice(P_SLC * stuff, PACKET* send)
 {
 /**************************************
  *
@@ -3337,7 +3337,7 @@ ISC_STATUS port::put_slice(P_SLC * stuff, PACKET* send)
 }
 
 
-ISC_STATUS port::que_events(P_EVENT * stuff, PACKET* send)
+ISC_STATUS rem_port::que_events(P_EVENT * stuff, PACKET* send)
 {
 /**************************************
  *
@@ -3396,7 +3396,7 @@ ISC_STATUS port::que_events(P_EVENT * stuff, PACKET* send)
 }
 
 
-ISC_STATUS port::receive_after_start(	P_DATA*	data,
+ISC_STATUS rem_port::receive_after_start(	P_DATA*	data,
 									PACKET*	send,
 									ISC_STATUS*	status_vector)
 {
@@ -3410,14 +3410,13 @@ ISC_STATUS port::receive_after_start(	P_DATA*	data,
  *	Receive a message.
  *
  **************************************/
-	RRQ request;
+	rrq* request;
 	USHORT level, msg_number;
-	FMT format;
 	P_RESP *response;
 	rrq::rrq_repeat* tail;
 
 	CHECK_HANDLE_MEMBER(request,
-						RRQ,
+						rrq*,
 						type_rrq,
 						data->p_data_request,
 						isc_bad_req_handle);
@@ -3443,7 +3442,7 @@ ISC_STATUS port::receive_after_start(	P_DATA*	data,
    called directly by the client. */
 
 	tail = request->rrq_rpt + msg_number;
-	format = tail->rrq_format;
+	rem_fmt* format = tail->rrq_format;
 
 	data->p_data_message_number = msg_number;
 	if (this->port_flags & PORT_rpc)
@@ -3465,7 +3464,7 @@ ISC_STATUS port::receive_after_start(	P_DATA*	data,
 }
 
 
-ISC_STATUS port::receive_msg(P_DATA * data, PACKET* send)
+ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* send)
 {
 /**************************************
  *
@@ -3480,8 +3479,7 @@ ISC_STATUS port::receive_msg(P_DATA * data, PACKET* send)
 
 	ISC_STATUS_ARRAY status_vector;
 	REM_MSG message, next, prior;
-	RRQ request;
-	FMT format;
+	rrq* request;
 	USHORT msg_number, count, count2, level;
 
 #ifdef SCROLLABLE_CURSORS
@@ -3496,7 +3494,7 @@ ISC_STATUS port::receive_msg(P_DATA * data, PACKET* send)
    message control block for the request and message type. */
 
 	CHECK_HANDLE_MEMBER(request,
-						RRQ,
+						rrq*,
 						type_rrq,
 						data->p_data_request,
 						isc_bad_req_handle);
@@ -3507,7 +3505,7 @@ ISC_STATUS port::receive_msg(P_DATA * data, PACKET* send)
 	count2 = count =
 		(this->port_flags & PORT_rpc) ? 1 : data->p_data_messages;
 	tail = request->rrq_rpt + msg_number;
-	format = tail->rrq_format;
+	rem_fmt* format = tail->rrq_format;
 
 /* Get ready to ship the data out */
 
@@ -3802,7 +3800,7 @@ static void release_event( RVNT event)
 }
 
 
-static void release_request( RRQ request)
+static void release_request( rrq* request)
 {
 /**************************************
  *
@@ -4027,7 +4025,7 @@ static REM_MSG scroll_cache(
 #endif
 
 
-ISC_STATUS port::seek_blob(P_SEEK * seek, PACKET* send)
+ISC_STATUS rem_port::seek_blob(P_SEEK * seek, PACKET* send)
 {
 /**************************************
  *
@@ -4063,7 +4061,7 @@ ISC_STATUS port::seek_blob(P_SEEK * seek, PACKET* send)
 }
 
 
-ISC_STATUS port::send_msg(P_DATA * data, PACKET* send)
+ISC_STATUS rem_port::send_msg(P_DATA * data, PACKET* send)
 {
 /**************************************
  *
@@ -4076,20 +4074,18 @@ ISC_STATUS port::send_msg(P_DATA * data, PACKET* send)
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	RRQ request;
-	FMT format;
-	USHORT number;
 
+	rrq* request;
 	CHECK_HANDLE_MEMBER(request,
-						RRQ,
+						rrq*,
 						type_rrq,
 						data->p_data_request,
 						isc_bad_req_handle);
 
-	number = data->p_data_message_number;
+	const USHORT number = data->p_data_message_number;
 	request = REMOTE_find_request(request, data->p_data_incarnation);
 	REM_MSG message = request->rrq_rpt[number].rrq_message;
-	format = request->rrq_rpt[number].rrq_format;
+	const rem_fmt* format = request->rrq_rpt[number].rrq_format;
 
 	THREAD_EXIT;
 	isc_send(status_vector, &request->rrq_handle, number, format->fmt_length,
@@ -4102,7 +4098,7 @@ ISC_STATUS port::send_msg(P_DATA * data, PACKET* send)
 }
 
 
-ISC_STATUS port::send_response(	PACKET*	send,
+ISC_STATUS rem_port::send_response(	PACKET*	send,
 							OBJCT	object,
 							USHORT	length,
 							const ISC_STATUS* status_vector)
@@ -4117,17 +4113,17 @@ ISC_STATUS port::send_response(	PACKET*	send,
  *	Send a response packet.
  *
  **************************************/
-	ISC_STATUS *v, code, exit_code;
+	ISC_STATUS code;
 	ISC_STATUS_ARRAY new_vector;
 	USHORT l, sw;
-	TEXT *p, *q, **sp, buffer[1024];
+	TEXT *q, **sp, buffer[1024];
 	P_RESP *response;
 
 /* Start by translating the status vector into "generic" form */
 
-	v = new_vector;
-	p = buffer;
-	exit_code = status_vector[1];
+	ISC_STATUS* v = new_vector;
+	TEXT* p = buffer;
+	const ISC_STATUS exit_code = status_vector[1];
 
 	for (sw = TRUE; *status_vector && sw;)
 	{
@@ -4239,29 +4235,27 @@ static void server_ast(void* event_void, USHORT length, const UCHAR* items)
  *	Send an asynchrous event packet back to client.
  *
  **************************************/
-	RVNT event = reinterpret_cast<RVNT>(event_void);
-	RDB rdb;
-	PORT port;
-	PACKET packet;
-	P_EVENT *p_event;
+	RVNT event = static_cast<rvnt*>(event_void);
 
 	THREAD_ENTER;
 	event->rvnt_id = 0;
-	rdb = event->rvnt_rdb;
+	RDB rdb = event->rvnt_rdb;
 
-	if (!(port = rdb->rdb_port->port_async)) {
+	rem_port* port = rdb->rdb_port->port_async;
+	if (!port) {
 		THREAD_EXIT;
 		return;
 	}
 
+	PACKET packet;
 	packet.p_operation = op_event;
-	p_event = &packet.p_event;
+	P_EVENT* p_event = &packet.p_event;
 	p_event->p_event_database = rdb->rdb_id;
 	p_event->p_event_items.cstr_length = length;
 	// Probalby should define this item with CSTRING_CONST instead.
 	p_event->p_event_items.cstr_address = const_cast<UCHAR*>(items);
 	
-	// Nickolay Samofatov: We keep this values and even pass them to the client
+	// Nickolay Samofatov: We keep these values and even pass them to the client
 	// (as 32-bit values) when event is fired, but client ignores them.
 	p_event->p_event_ast = event->rvnt_ast;
 	p_event->p_event_arg = (SLONG)(IPTR) event->rvnt_arg;
@@ -4273,7 +4267,7 @@ static void server_ast(void* event_void, USHORT length, const UCHAR* items)
 }
 
 
-ISC_STATUS port::service_attach(P_ATCH* attach, PACKET* send)
+ISC_STATUS rem_port::service_attach(P_ATCH* attach, PACKET* send)
 {
 /**************************************
  *
@@ -4285,40 +4279,44 @@ ISC_STATUS port::service_attach(P_ATCH* attach, PACKET* send)
  *	Connect to an Interbase service.
  *
  **************************************/
-	USHORT service_length, spb_length;
-	UCHAR *service_name, *spb, new_spb_buffer[512], *new_spb, *p, *end;
-	FRBRD *handle;
+	UCHAR new_spb_buffer[512];
 	ISC_STATUS_ARRAY status_vector;
-	RDB rdb;
-	rem_str* string;
 
 	send->p_operation = op_accept;
-	handle = NULL;
-	service_name = attach->p_atch_file.cstr_address;
-	service_length = attach->p_atch_file.cstr_length;
-	spb = attach->p_atch_dpb.cstr_address;
-	spb_length = attach->p_atch_dpb.cstr_length;
+	FRBRD* handle = NULL;
+	const UCHAR* service_name = attach->p_atch_file.cstr_address;
+	const USHORT service_length = attach->p_atch_file.cstr_length;
+	const UCHAR* spb = attach->p_atch_dpb.cstr_address;
+	USHORT spb_length = attach->p_atch_dpb.cstr_length;
 
 /* If we have user identification, append it to database parameter block */
 
-	new_spb = new_spb_buffer;
-	if (string = this->port_user_name)
+	UCHAR* new_spb = new_spb_buffer;
+	rem_str* string = this->port_user_name;
+	if (string)
 	{
 		if ((spb_length + 3 + string->str_length) > (int)sizeof(new_spb_buffer))
 			new_spb =
 				ALLR_alloc((SLONG) (spb_length + 3 + string->str_length));
-		p = new_spb;
-		if (spb_length)
-			for (end = spb + spb_length; spb < end;)
+		UCHAR* p = new_spb;
+		if (spb_length) {
+			for (const UCHAR* const end = spb + spb_length; spb < end;)
+			{
 				*p++ = *spb++;
-		else
+			}
+		}
+		else {
 			*p++ = isc_spb_current_version;
+		}
 
 		*p++ = isc_spb_sys_user_name;
 		*p++ = (UCHAR) string->str_length;
-		for (spb = (UCHAR *) string->str_data, end = spb + string->str_length;
+		spb = (UCHAR *) string->str_data;
+		for (const UCHAR* const end = spb + string->str_length;
 			 spb < end;)
+		{
 			*p++ = *spb++;
+		}
 		spb = new_spb;
 		spb_length = p - new_spb;
 	}
@@ -4330,17 +4328,18 @@ ISC_STATUS port::service_attach(P_ATCH* attach, PACKET* send)
 	THREAD_EXIT;
 	isc_service_attach(status_vector,
 					   service_length,
-					   reinterpret_cast<char*>(service_name),
+					   reinterpret_cast<const char*>(service_name),
 					   &handle,
 					   spb_length,
-					   reinterpret_cast<char*>(spb));
+					   reinterpret_cast<const char*>(spb));
 	THREAD_ENTER;
 
 	if (new_spb != new_spb_buffer)
 		ALLR_free(new_spb);
 
 	if (!status_vector[1]) {
-		this->port_context = rdb = (RDB) ALLOC(type_rdb);
+		RDB rdb = (RDB) ALLOC(type_rdb);
+		this->port_context = rdb;
 #ifdef DEBUG_REMOTE_MEMORY
 		ib_printf("attach_service(server)  allocate rdb     %x\n", rdb);
 #endif
@@ -4353,7 +4352,7 @@ ISC_STATUS port::service_attach(P_ATCH* attach, PACKET* send)
 }
 
 
-ISC_STATUS port::service_end(P_RLSE * release, PACKET* send)
+ISC_STATUS rem_port::service_end(P_RLSE * release, PACKET* send)
 {
 /**************************************
  *
@@ -4378,7 +4377,7 @@ ISC_STATUS port::service_end(P_RLSE * release, PACKET* send)
 }
 
 
-ISC_STATUS port::service_start(P_INFO * stuff, PACKET* send)
+ISC_STATUS rem_port::service_start(P_INFO * stuff, PACKET* send)
 {
 /**************************************
  *
@@ -4390,11 +4389,10 @@ ISC_STATUS port::service_start(P_INFO * stuff, PACKET* send)
  *	Start a service on the server
  *
  **************************************/
-	RDB rdb;
 	ISC_STATUS_ARRAY status_vector;
 	ULONG *reserved = 0;		/* reserved for future use */
 
-	rdb = this->port_context;
+	RDB rdb = this->port_context;
 
 	THREAD_EXIT;
 	isc_service_start(status_vector,
@@ -4408,7 +4406,7 @@ ISC_STATUS port::service_start(P_INFO * stuff, PACKET* send)
 }
 
 
-ISC_STATUS port::set_cursor(P_SQLCUR * sqlcur, PACKET* send)
+ISC_STATUS rem_port::set_cursor(P_SQLCUR * sqlcur, PACKET* send)
 {
 /*****************************************
  *
@@ -4440,7 +4438,7 @@ ISC_STATUS port::set_cursor(P_SQLCUR * sqlcur, PACKET* send)
 }
 
 
-void set_server( PORT port, USHORT flags)
+void set_server( rem_port* port, USHORT flags)
 {
 /**************************************
  *
@@ -4475,7 +4473,7 @@ void set_server( PORT port, USHORT flags)
 }
 
 
-ISC_STATUS port::start(P_OP operation, P_DATA * data, PACKET* send)
+ISC_STATUS rem_port::start(P_OP operation, P_DATA * data, PACKET* send)
 {
 /**************************************
  *
@@ -4487,7 +4485,7 @@ ISC_STATUS port::start(P_OP operation, P_DATA * data, PACKET* send)
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	RRQ request;
+	rrq* request;
 	RTR transaction;
 
 	CHECK_HANDLE_MEMBER(transaction,
@@ -4497,7 +4495,7 @@ ISC_STATUS port::start(P_OP operation, P_DATA * data, PACKET* send)
 						isc_bad_trans_handle);
 
 	CHECK_HANDLE_MEMBER(request,
-						RRQ,
+						rrq*,
 						type_rrq,
 						data->p_data_request,
 						isc_bad_req_handle);
@@ -4520,7 +4518,7 @@ ISC_STATUS port::start(P_OP operation, P_DATA * data, PACKET* send)
 }
 
 
-ISC_STATUS port::start_and_send(P_OP	operation,
+ISC_STATUS rem_port::start_and_send(P_OP	operation,
 							P_DATA*	data,
 							PACKET*	send)
 {
@@ -4534,8 +4532,7 @@ ISC_STATUS port::start_and_send(P_OP	operation,
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	RRQ request;
-	FMT format;
+	rrq* request;
 	RTR transaction;
 	USHORT number;
 
@@ -4546,7 +4543,7 @@ ISC_STATUS port::start_and_send(P_OP	operation,
 						isc_bad_trans_handle);
 
 	CHECK_HANDLE_MEMBER(request,
-						RRQ,
+						rrq*,
 						type_rrq,
 						data->p_data_request,
 						isc_bad_req_handle);
@@ -4554,7 +4551,7 @@ ISC_STATUS port::start_and_send(P_OP	operation,
 	request = REMOTE_find_request(request, data->p_data_incarnation);
 	number = data->p_data_message_number;
 	REM_MSG message = request->rrq_rpt[number].rrq_message;
-	format = request->rrq_rpt[number].rrq_format;
+	const rem_fmt* format = request->rrq_rpt[number].rrq_format;
 	REMOTE_reset_request(request, message);
 
 	THREAD_EXIT;
@@ -4575,7 +4572,7 @@ ISC_STATUS port::start_and_send(P_OP	operation,
 }
 
 
-ISC_STATUS port::start_transaction(P_OP operation, P_STTR * stuff, PACKET* send)
+ISC_STATUS rem_port::start_transaction(P_OP operation, P_STTR * stuff, PACKET* send)
 {
 /**************************************
  *
@@ -4683,7 +4680,8 @@ static int THREAD_ROUTINE thread(void* flags)
  *
  **************************************/
 	SERVER_REQ request, next, *req_ptr;
-	PORT port, parent_port;
+	rem_port* port;
+	rem_port* parent_port;
 	SCHAR *thread;
 	USHORT inactive_count;
 	USHORT timedout_count;
@@ -4745,7 +4743,8 @@ static int THREAD_ROUTINE thread(void* flags)
 					{
 
 						if (port == request->req_port
-							&& port->port_state != state_disconnected) {
+							&& port->port_state != state_disconnected)
+						{
 							process_packet(port, &request->req_send,
 										   &request->req_receive, &port);
 							break;
@@ -4775,7 +4774,8 @@ static int THREAD_ROUTINE thread(void* flags)
 						free_requests = next;
 					}
 					if (request->req_send.p_operation == op_void &&
-						request->req_receive.p_operation == op_void) {
+						request->req_receive.p_operation == op_void)
+					{
 						gds__free(request);
 						request = 0;
 					}
@@ -4805,7 +4805,8 @@ static int THREAD_ROUTINE thread(void* flags)
 			   and I have been idling for a while, it is time to quit and thereby
 			   release some valuable system resources like memory */
 			if ((extra_threads > 1)
-				&& ((inactive_count > 20) || (timedout_count > 2))) {
+				&& ((inactive_count > 20) || (timedout_count > 2)))
+			{
 				extra_threads--;	/* Count me out */
 				break;
 			}
@@ -4817,7 +4818,8 @@ static int THREAD_ROUTINE thread(void* flags)
 			if (!requests_semaphore.tryEnter(60)) {
 				REMOTE_TRACE(("timeout!"));
 				timedout_count++;
-			} else {
+			}
+			else {
 				REMOTE_TRACE(("got it"));
 			}
 			THREAD_ENTER;
@@ -4837,7 +4839,7 @@ static int THREAD_ROUTINE thread(void* flags)
 #endif
 
 
-ISC_STATUS port::transact_request(P_TRRQ * trrq, PACKET* send)
+ISC_STATUS rem_port::transact_request(P_TRRQ * trrq, PACKET* send)
 {
 /**************************************
  *

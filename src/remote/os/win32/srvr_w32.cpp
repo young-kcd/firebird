@@ -115,7 +115,7 @@ static void THREAD_ROUTINE start_connections_thread(int);
 static void THREAD_ROUTINE wnet_connect_wait_thread(void*);
 static void THREAD_ROUTINE xnet_connect_wait_thread(void*);
 static HANDLE parse_args(LPSTR, USHORT*);
-static void service_connection(PORT);
+static void service_connection(rem_port*);
 
 static HINSTANCE hInst;
 
@@ -153,7 +153,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 	HANDLE connection_handle;
-	PORT port;
+	rem_port* port;
 	int nReturnValue = 0;
 
 	hInst = hThisInst;
@@ -319,7 +319,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 }
 
 
-void THREAD_ROUTINE process_connection_thread( PORT port)
+void THREAD_ROUTINE process_connection_thread( rem_port* port)
 {
 /**************************************
  *
@@ -355,7 +355,7 @@ static void THREAD_ROUTINE inet_connect_wait_thread( void* dummy)
  **************************************/
 	void *thread;
 	ISC_STATUS_ARRAY status_vector;
-	PORT port;
+	rem_port* port;
 
 	if (!(server_flag & SRVR_non_service))
 		thread = CNTL_insert_thread();
@@ -394,7 +394,7 @@ static void THREAD_ROUTINE wnet_connect_wait_thread( void *dummy)
 	while (true)
 	{
 		THREAD_ENTER;
-		PORT port = WNET_connect(protocol_wnet, 0, status_vector, server_flag);
+		rem_port* port = WNET_connect(protocol_wnet, 0, status_vector, server_flag);
 		THREAD_EXIT;
 		if (!port) {
 			if (status_vector[1] != isc_io_error ||
@@ -469,7 +469,7 @@ static void THREAD_ROUTINE xnet_connect_wait_thread(void *dummy)
 }
 
 
-static void service_connection( PORT port)
+static void service_connection( rem_port* port)
 {
 /**************************************
  *

@@ -879,7 +879,7 @@ USHORT BTR_key_length(jrd_rel* relation, IDX * idx)
  *	Compute the maximum key length for an index.
  *
  **************************************/
-	FMT format;
+	fmt* format;
 	USHORT n, key_length, length;
 	idx::idx_repeat * tail;
 	TDBB tdbb;

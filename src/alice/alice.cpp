@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.48 2004-01-07 10:18:38 dimitr Exp $
+//	$Id: alice.cpp,v 1.49 2004-01-28 07:50:13 robocop Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -427,7 +427,8 @@ int common_main(int			argc,
 			ALICE_down_case(*argv++, string, sizeof(string));
 			if (!strcmp(string, ALICE_SW_SYNC)) {
 				tdgbl->ALICE_data.ua_force = true;
-			} else if (!strcmp(string, ALICE_SW_ASYNC)) {
+			}
+			else if (!strcmp(string, ALICE_SW_ASYNC)) {
 				tdgbl->ALICE_data.ua_force = false;
 			}
 			else {
@@ -445,7 +446,8 @@ int common_main(int			argc,
 			}
 			else if (!strcmp(string, "reserve")) {
 				tdgbl->ALICE_data.ua_use = false;
-			} else {
+			}
+			else {
 				ALICE_error(12);	// msg 12: "full" or "reserve" required 
 			}
 		}
@@ -503,7 +505,8 @@ int common_main(int			argc,
 			}
 			else if (!strcmp(string, ALICE_SW_MODE_RW)) {
 				tdgbl->ALICE_data.ua_read_only = false;
-			} else {
+			}
+			else {
 				ALICE_error(110);	// msg 110: "read_only" or "read_write" required 
 			}
 		}

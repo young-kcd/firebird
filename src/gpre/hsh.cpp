@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: hsh.cpp,v 1.17 2003-10-15 01:18:01 brodsom Exp $
+//	$Id: hsh.cpp,v 1.18 2004-01-28 07:50:27 robocop Exp $
 //
 
 #include "firebird.h"
@@ -42,8 +42,8 @@ static bool scompare2(const SCHAR*, const SCHAR*);
 
 const int HASH_SIZE = 211;
 
-static SYM hash_table[HASH_SIZE];
-static SYM key_symbols;
+static gpre_sym* hash_table[HASH_SIZE];
+static gpre_sym* key_symbols;
 
 static struct word {
 	SCHAR *keyword;
@@ -60,11 +60,11 @@ static struct word {
 
 void HSH_fini(void)
 {
-	SYM symbol;
+	gpre_sym* symbol;
 
 	while (key_symbols) {
 		symbol = key_symbols;
-		key_symbols = (SYM) key_symbols->sym_object;
+		key_symbols = (gpre_sym*) key_symbols->sym_object;
 		HSH_remove(symbol);
 		MSC_free((UCHAR *) symbol);
 	}
@@ -80,7 +80,8 @@ void HSH_fini(void)
 void HSH_init(void)
 {
 	SCHAR *string;
-	SYM symbol, *ptr;
+	gpre_sym* symbol;
+	gpre_sym** ptr;
 	int i;
 	word* a_word;
 
@@ -90,12 +91,12 @@ void HSH_init(void)
 	fflush(stdout);
 	for (i = 0, a_word = keywords; i < FB_NELEM(keywords); i++, a_word++) {
 		for (string = a_word->keyword; *string; string++);
-		symbol = (SYM) MSC_alloc(SYM_LEN);
+		symbol = (gpre_sym*) MSC_alloc(SYM_LEN);
 		symbol->sym_type = SYM_keyword;
 		symbol->sym_string = a_word->keyword;
 		symbol->sym_keyword = (int) a_word->id;
 		HSH_insert(symbol);
-		symbol->sym_object = (GPRE_CTX) key_symbols;
+		symbol->sym_object = (gpre_ctx*) key_symbols;
 		key_symbols = symbol;
 	}
 }
@@ -106,10 +107,10 @@ void HSH_init(void)
 //		Insert a symbol into the hash table.
 //  
 
-void HSH_insert( SYM symbol)
+void HSH_insert( gpre_sym* symbol)
 {
-	SYM *next;
-	SYM ptr;
+	gpre_sym** next;
+	gpre_sym* ptr;
 
 	int h = hash(symbol->sym_string);
 
@@ -151,9 +152,9 @@ void HSH_insert( SYM symbol)
 //		Perform a string lookup against hash table.
 //  
 
-SYM HSH_lookup(const SCHAR* string)
+gpre_sym* HSH_lookup(const SCHAR* string)
 {
-	for (SYM symbol = hash_table[hash(string)]; symbol;
+	for (gpre_sym* symbol = hash_table[hash(string)]; symbol;
 		 symbol = symbol->sym_collision)
 	{
 		if (scompare(string, symbol->sym_string)) 
@@ -170,9 +171,9 @@ SYM HSH_lookup(const SCHAR* string)
 //		compare.
 //  
 
-SYM HSH_lookup2(const SCHAR* string)
+gpre_sym* HSH_lookup2(const SCHAR* string)
 {
-	for (SYM symbol = hash_table[hash(string)]; symbol;
+	for (gpre_sym* symbol = hash_table[hash(string)]; symbol;
 		 symbol = symbol->sym_collision)
 	{
 		if (scompare2(string, symbol->sym_string)) 
@@ -188,9 +189,11 @@ SYM HSH_lookup2(const SCHAR* string)
 //		Remove a symbol from the hash table.
 //  
 
-void HSH_remove( SYM symbol)
+void HSH_remove( gpre_sym* symbol)
 {
-	SYM *next, *ptr, homonym;
+	gpre_sym** next;
+	gpre_sym** ptr;
+	gpre_sym* homonym;
 
 	int h = hash(symbol->sym_string);
 

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		ini.e
+ *	MODULE:		ini.epp
  *	DESCRIPTION:	Metadata initialization / population
  *
  * The contents of this file are subject to the Interbase Public
@@ -68,7 +68,7 @@ DATABASE DB = FILENAME "ODS.RDB";
 static void add_generator(TEXT*, BLK*);
 #endif
 static void add_global_fields(USHORT);
-static void add_index_set(DBB, USHORT, USHORT, USHORT);
+static void add_index_set(DBB, bool, USHORT, USHORT);
 static void add_new_triggers(USHORT, USHORT);
 static void add_relation_fields(USHORT);
 static void add_security_to_sys_rel(TDBB, const TEXT*, const TEXT*, const UCHAR*,
@@ -78,10 +78,10 @@ static void add_trigger(TEXT*, BLK*, BLK*);
 #endif
 //static void add_user_priv(TDBB, TEXT*, TEXT*, TEXT*, TEXT);
 static void modify_relation_field(TDBB, const UCHAR*, const UCHAR*, BLK*);
-static void store_generator(TDBB, const GEN*, BLK*);
-static void store_global_field(TDBB, GFLD*, BLK*);
+static void store_generator(TDBB, const gen*, BLK*);
+static void store_global_field(TDBB, const gfld*, BLK*);
 static void store_intlnames(TDBB, DBB);
-static void store_message(TDBB, const TRIGMSG*, BLK*);
+static void store_message(TDBB, const trigger_msg*, BLK*);
 static void store_relation_field(TDBB, const UCHAR*, const UCHAR*, int, BLK*, bool);
 static void store_trigger(TDBB, const jrd_trg*, BLK*);
 
@@ -202,7 +202,7 @@ static const jrd_trg triggers[] =
 
 /* this table is used in defining messages for system triggers */
 
-static const TRIGMSG trigger_messages[] =
+static const trigger_msg trigger_messages[] =
 {
 	{ "RDB$TRIGGER_9", 0, "grant_obj_notfound", ODS_8_0 },
 	{ "RDB$TRIGGER_9", 1, "grant_fld_notfound", ODS_8_0 },
@@ -257,18 +257,6 @@ void INI_format(const TEXT* owner, const TEXT* charset)
  *	stored here.
  *
  **************************************/
-	int				n;
-	const RTYP*		type;
-	const UCHAR*	relfld;
-	const UCHAR*	fld;
-	GFLD*			gfield;
-	const jrd_trg*	trigger;
-	const TRIGMSG*	message;
-	const GEN*		generator;
-	BLK				handle1;
-	BLK				handle2;
-
-
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 
@@ -296,6 +284,8 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 		}
 	}
 
+	int n;
+	
 /* Make sure relations exist already */
 
 	for (n = 0; n < (int) rel_MAX; n++) {
@@ -304,8 +294,10 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 
 /* Store RELATIONS and RELATION_FIELDS */
 
-	handle1 = handle2 = NULL;
-	for (relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
+	blk* handle1 = NULL;
+	blk* handle2 = NULL;
+	const UCHAR* fld;
+	for (const UCHAR* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
 	{
 		for (n = 0, fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];
 			 fld += RFLD_F_LENGTH)
@@ -343,7 +335,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 
 /* Store global FIELDS */
 
-	for (gfield = (GFLD*) gfields; gfield->gfld_name; gfield++)
+	for (const gfld* gfield = (gfld*) gfields; gfield->gfld_name; gfield++)
 	{
 		store_global_field(tdbb, gfield, &handle1);
 	}
@@ -368,13 +360,13 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	handle1 = NULL;
 
 /* Create indices for system relations */
-	add_index_set(dbb, FALSE, 0, 0);
+	add_index_set(dbb, false, 0, 0);
 
 /* Create parameter types */
 
 	handle1 = NULL;
 
-	for (type = types; type->rtyp_name; ++type)
+	for (const rtyp* type = types; type->rtyp_name; ++type)
 	{
 		STORE(REQUEST_HANDLE handle1) X IN RDB$TYPES
 			PAD(names[type->rtyp_field], X.RDB$FIELD_NAME);
@@ -393,7 +385,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 /* Create generators to be used by system triggers */
 
 	handle1 = NULL;
-	for (generator = generators; generator->gen_name; generator++)
+	for (const gen* generator = generators; generator->gen_name; generator++)
 	{
 		store_generator(tdbb, generator, &handle1);
 	}
@@ -402,7 +394,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 /* store system-defined triggers */
 
 	handle1 = NULL;
-	for (trigger = triggers; trigger->trg_relation; ++trigger)
+	for (const jrd_trg* trigger = triggers; trigger->trg_relation; ++trigger)
 	{
 		store_trigger(tdbb, trigger, &handle1);
 	}
@@ -411,7 +403,8 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 /* store trigger messages to go with triggers */
 
 	handle1 = NULL;
-	for (message = trigger_messages; message->trigmsg_name; ++message)
+	for (const trigger_msg* message = trigger_messages; message->trigmsg_name;
+		++message)
 	{
 		store_message(tdbb, message, &handle1);
 	}
@@ -504,32 +497,20 @@ void INI_init(void)
  *	format descriptor.
  *
  **************************************/
-	DBB				dbb;
-	jrd_rel*				relation;
-	FMT				format;
-	VEC				formats;
-	VEC				fields;
-	int				n;
-	const UCHAR*	relfld;
-	const UCHAR*	fld_;
-	fmt::fmt_desc_iterator	desc;
-	const GFLD*		gfield;
-	const jrd_trg*	trigger;
-	TDBB			tdbb;
-	vec::iterator	itr;
-
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	for (relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld_ + 1)
+	const UCHAR* fld_;
+	for (const UCHAR* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld_ + 1)
 	{
-		relation = MET_relation(tdbb, relfld[RFLD_R_ID]);
+		jrd_rel* relation = MET_relation(tdbb, relfld[RFLD_R_ID]);
 		relation->rel_flags |= REL_system;
 		relation->rel_name = (/* const_cast */ TEXT*)names[relfld[RFLD_R_NAME]];
 		relation->rel_length = strlen(relation->rel_name);
-		n = 0;
-		for (fld_ = relfld + RFLD_RPT; fld_[RFLD_F_NAME]; fld_ += RFLD_F_LENGTH)
+		int n = 0;
+		for (fld_ = relfld + RFLD_RPT; fld_[RFLD_F_NAME];
+			fld_ += RFLD_F_LENGTH)
 		{
 			n++;
 		}
@@ -537,7 +518,7 @@ void INI_init(void)
 		/* Set a flag if their is a trigger on the relation.  Later we may
 		   need to compile it. */
 
-		for (trigger = triggers; trigger->trg_relation; trigger++)
+		for (const jrd_trg* trigger = triggers; trigger->trg_relation; trigger++)
 		{
 			if (relation->rel_name == names[trigger->trg_relation])
 			{
@@ -546,21 +527,24 @@ void INI_init(void)
 			}
 		}
 
-		relation->rel_fields = fields = vec::newVector(*dbb->dbb_permanent, n);
-		itr = fields->begin();
-		relation->rel_current_format = format = fmt::newFmt(*dbb->dbb_permanent, n);
-		relation->rel_formats = formats = vec::newVector(*dbb->dbb_permanent, 1);
+		vec* fields = vec::newVector(*dbb->dbb_permanent, n);
+		relation->rel_fields = fields;
+		vec::iterator itr = fields->begin();
+		fmt* format = fmt::newFmt(*dbb->dbb_permanent, n);
+		relation->rel_current_format = format;
+		vec* formats = vec::newVector(*dbb->dbb_permanent, 1);
+		relation->rel_formats = formats;
 		(*formats)[0] = format;
 		format->fmt_count = n;
-		desc = format->fmt_desc.begin();
+		fmt::fmt_desc_iterator desc = format->fmt_desc.begin();
 
 		for (fld_ = relfld + RFLD_RPT; fld_[RFLD_F_NAME];
 			 fld_ += RFLD_F_LENGTH, desc++, itr++)
 		{
-			gfield = &gfields[fld_[RFLD_F_ID]];
+			const gfld* gfield = &gfields[fld_[RFLD_F_ID]];
 			desc->dsc_length = gfield->gfld_length;
 			desc->dsc_dtype = gfield->gfld_dtype;
-			jrd_fld* field = FB_NEW_RPT(*dbb->dbb_permanent,0) jrd_fld();
+			jrd_fld* field = FB_NEW_RPT(*dbb->dbb_permanent, 0) jrd_fld();
 			*itr = field;
 			field->fld_name = names[fld_[RFLD_F_NAME]];
 			field->fld_length = strlen(field->fld_name);
@@ -583,23 +567,15 @@ void INI_init2(void)
  *	the database when it was created.
  *
  **************************************/
-	jrd_rel*				relation;
-	FMT				format;
-	int				n;
-	const UCHAR*	relfld;
-	const UCHAR*	fld;
-	fmt::fmt_desc_iterator			desc;
-	USHORT			id;
-	VEC	vector;
-
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 
 	const USHORT major_version = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
-	vector = dbb->dbb_relations;
+	vec* vector = dbb->dbb_relations;
 
-	for (relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
+	const UCHAR*	fld;
+	for (const UCHAR* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
 	{
 		if (relfld[RFLD_R_MINOR] > ENCODE_ODS(major_version, minor_original))
 		{
@@ -608,8 +584,8 @@ void INI_init2(void)
         ** free the space allocated for RDB$ROLES
         **
         ******************************************************/
-			id = relfld[RFLD_R_ID];
-			relation = (jrd_rel*)(*vector)[id];
+			const USHORT id = relfld[RFLD_R_ID];
+			jrd_rel* relation = (jrd_rel*)(*vector)[id];
 			delete relation->rel_current_format;
 			delete relation->rel_formats;
 			delete relation->rel_fields;
@@ -622,10 +598,11 @@ void INI_init2(void)
 		}
 		else
 		{
-			relation = MET_relation(tdbb, relfld[RFLD_R_ID]);
-			format = relation->rel_current_format;
+			jrd_rel* relation = MET_relation(tdbb, relfld[RFLD_R_ID]);
+			fmt* format = relation->rel_current_format;
 
-			for (n = 0, fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];
+			int n = 0;
+			for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];
 				 fld += RFLD_F_LENGTH)
 			{
 				/* If the ODS is less than 10, then remove all fields named
@@ -686,7 +663,7 @@ void INI_init2(void)
 			relation->rel_fields->resize(n);
 			format->fmt_count = n;
 			format->fmt_length = (USHORT)FLAG_BYTES(n);
-			desc = format->fmt_desc.begin();
+			fmt::fmt_desc_iterator desc = format->fmt_desc.begin();
 			for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];
 				 fld += RFLD_F_LENGTH, desc++)
 			{
@@ -753,8 +730,6 @@ void INI_update_database()
  * %% Note %% Update the switch() statement to reflect new major ODS 
  *            addition
  **************************************/
-	HDR header;
-
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
@@ -799,7 +774,7 @@ void INI_update_database()
 		add_relation_fields(minor_version);
 	}
 
-	add_index_set(dbb, TRUE, major_version, minor_version);
+	add_index_set(dbb, true, major_version, minor_version);
 	add_new_triggers(major_version, minor_version);
 
 	/* if the database was updated; mark it with the current ODS minor
@@ -808,7 +783,7 @@ void INI_update_database()
 	   version but not the update. */
 
 	WIN window(HEADER_PAGE);
-	header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	hdr* header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK(tdbb, &window);
 
 /* Only minor upgrades can occur within a major ODS, define which one   
@@ -853,10 +828,9 @@ static void add_generator(TEXT* generator_name, BLK* handle)
  *	now, since it may be used when we go to 8.1.
  *
  **************************************/
-	TDBB tdbb;
-	const GEN* generator = generators;
+	const gen* generator = generators;
 
-	tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
 
 /* find the new generator to be stored; assume it exists in the table */
 /* TMN: If it doesn't exist in the table, we will CRASH here! */
@@ -885,16 +859,12 @@ static void add_global_fields( USHORT minor_version)
  *	ODS change.
  *
  **************************************/
-	TDBB tdbb;
-	BLK handle;
-	GFLD*gfield;
-
-	tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
 
 /* add desired global fields to system relations  */
 
-	handle = NULL;
-	for (gfield = (GFLD*) gfields; gfield->gfld_name; gfield++)
+	blk* handle = NULL;
+	for (const gfld* gfield = (gfld*) gfields; gfield->gfld_name; gfield++)
 	{
 		if (minor_version < gfield->gfld_minor)
 		{
@@ -911,7 +881,7 @@ static void add_global_fields( USHORT minor_version)
 
 
 static void add_index_set(DBB		dbb,
-						  USHORT	update_ods,
+						  bool		update_ods,
 						  USHORT	major_version,
 						  USHORT	minor_version)
 {
@@ -922,22 +892,17 @@ static void add_index_set(DBB		dbb,
  **************************************
  *
  * Functional description
- *	Add system indices.  If update_ods is TRUE we are performing
+ *	Add system indices.  If update_ods is true we are performing
  *	an ODS update, and only add the indices marked as newer than
  *	ODS (major_version,minor_version).
  *
  **************************************/
-	jrd_rel*		relation;
 	TEXT	string[32];
-	const ini_idx_t::ini_idx_segment_t* segment;
 	IDX		idx;
-	idx::idx_repeat* tail;
-	USHORT	position;
-	jrd_fld*		field;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	BLK handle1 = NULL;
-	BLK handle2 = NULL;
+	blk* handle1 = NULL;
+	blk* handle2 = NULL;
 
 	for (int n = 0; n < SYSTEM_INDEX_COUNT; n++)
 	{
@@ -957,7 +922,7 @@ static void add_index_set(DBB		dbb,
 		}
 
 		STORE(REQUEST_HANDLE handle1) X IN RDB$INDICES
-			relation = MET_relation(tdbb, index->ini_idx_relid);
+			jrd_rel* relation = MET_relation(tdbb, index->ini_idx_relid);
 			PAD(relation->rel_name, X.RDB$RELATION_NAME);
 			sprintf(string, "RDB$INDEX_%d", index->ini_idx_index_id);
 			PAD(string, X.RDB$INDEX_NAME);
@@ -966,19 +931,22 @@ static void add_index_set(DBB		dbb,
 			if (index->ini_idx_flags & idx_descending) {
 				X.RDB$INDEX_TYPE.NULL = FALSE;
 				X.RDB$INDEX_TYPE = 1;
-			} else
+			}
+			else {
 				X.RDB$INDEX_TYPE.NULL = TRUE;
+			}
 			X.RDB$SYSTEM_FLAG = 1;
 			X.RDB$INDEX_INACTIVE = 0;
 
 			/* Store each segment for the index */
-
-			for (position = 0, tail = idx.idx_rpt;
+			idx::idx_repeat* tail = idx.idx_rpt;
+			for (USHORT position = 0;
 				 position < index->ini_idx_segment_count; position++, tail++)
 			{
-				segment = &index->ini_idx_segment[position];
+				const ini_idx_t::ini_idx_segment_t* segment =
+					&index->ini_idx_segment[position];
 				STORE(REQUEST_HANDLE handle2) Y IN RDB$INDEX_SEGMENTS
-					field =
+					jrd_fld* field =
 						(jrd_fld*) (*relation->rel_fields)[segment->ini_idx_rfld_id];
 
 					Y.RDB$FIELD_POSITION = position;
@@ -1075,8 +1043,8 @@ static void add_relation_fields( USHORT minor_version)
 
 /* add desired fields to system relations, forcing a new format version */
 
-	BLK s_handle = NULL;
-	BLK m_handle = NULL;
+	blk* s_handle = NULL;
+	blk* m_handle = NULL;
 	const UCHAR*	fld;
 	for (const UCHAR* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
 	{
@@ -1323,7 +1291,7 @@ static void modify_relation_field(TDBB			tdbb,
 }
 
 
-static void store_generator(TDBB tdbb, const GEN* generator, BLK* handle)
+static void store_generator(TDBB tdbb, const gen* generator, BLK* handle)
 {
 /**************************************
  *
@@ -1347,7 +1315,7 @@ static void store_generator(TDBB tdbb, const GEN* generator, BLK* handle)
 }
 
 
-static void store_global_field(TDBB tdbb, GFLD* gfield, BLK* handle)
+static void store_global_field(TDBB tdbb, const gfld* gfield, BLK* handle)
 {
 /**************************************
  *
@@ -1528,7 +1496,7 @@ static void store_intlnames(TDBB tdbb, DBB dbb)
 }
 
 
-static void store_message(TDBB tdbb, const TRIGMSG* message, BLK* handle)
+static void store_message(TDBB tdbb, const trigger_msg* message, BLK* handle)
 {
 /**************************************
  *

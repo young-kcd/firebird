@@ -156,7 +156,7 @@ static void release_blobs(TDBB, jrd_req*);
 static void release_proc_save_points(jrd_req*);
 #ifdef SCROLLABLE_CURSORS
 static jrd_nod* seek_rse(TDBB, jrd_req*, jrd_nod*);
-static void seek_rsb(TDBB, jrd_req*, RSB, USHORT, SLONG);
+static void seek_rsb(TDBB, jrd_req*, Rsb*, USHORT, SLONG);
 #endif
 static jrd_nod* selct(TDBB, jrd_nod*);
 static jrd_nod* send_msg(TDBB, jrd_nod*);
@@ -296,7 +296,8 @@ void EXE_assignment(TDBB tdbb, jrd_nod* node)
 				(TEXT_LEN(from_desc) > TEXT_LEN(to_desc)))
 			{
 				len = TEXT_LEN(from_desc);
-			} else {
+			}
+			else {
 				len = 0;
 			}
 
@@ -308,7 +309,8 @@ void EXE_assignment(TDBB tdbb, jrd_nod* node)
 				temp.dsc_length = TEXT_LEN(to_desc);
 				if (temp.dsc_dtype == dtype_cstring) {
 					temp.dsc_length += 1;
-				} else if (temp.dsc_dtype == dtype_varying) {
+				}
+				else if (temp.dsc_dtype == dtype_varying) {
 					temp.dsc_length += 2;
 				}
 				from_desc = &temp;
@@ -447,7 +449,7 @@ void EXE_assignment(TDBB tdbb, jrd_nod* node)
 
 
 #ifdef PC_ENGINE
-bool EXE_crack(TDBB tdbb, RSB rsb, USHORT flags)
+bool EXE_crack(TDBB tdbb, Rsb* rsb, USHORT flags)
 {
 /**************************************
  *
@@ -550,7 +552,7 @@ jrd_req* EXE_find_request(TDBB tdbb, jrd_req* request, bool validate)
 
 
 #ifdef PC_ENGINE
-void EXE_mark_crack(TDBB tdbb, RSB rsb, USHORT flag)
+void EXE_mark_crack(TDBB tdbb, Rsb* rsb, USHORT flag)
 {
 /**************************************
  *
@@ -648,7 +650,7 @@ void EXE_receive(TDBB		tdbb,
 	}
 
 	const jrd_nod* message = request->req_message;
-	const fmt* format = (FMT) message->nod_arg[e_msg_format];
+	const fmt* format = (fmt*) message->nod_arg[e_msg_format];
 
 	if (msg != (USHORT)(IPTR) message->nod_arg[e_msg_number])
 		ERR_post(isc_req_sync, 0);
@@ -716,7 +718,7 @@ void EXE_seek(TDBB tdbb, jrd_req* request, USHORT direction, ULONG offset)
 /* find the top-level rsb in the request and seek it */
 
 	for (SLONG i = request->req_fors.getCount() - 1; i >= 0; i--) {
-		RSB rsb = request->req_fors[i];
+		Rsb* rsb = request->req_fors[i];
 		if (rsb) {
 			seek_rsb(tdbb, request, rsb, direction, offset);
 			break;
@@ -804,7 +806,7 @@ void EXE_send(TDBB		tdbb,
 	else
 		BUGCHECK(167);			/* msg 167 invalid SEND request */
 
-	const fmt* format = (FMT) message->nod_arg[e_msg_format];
+	const fmt* format = (fmt*) message->nod_arg[e_msg_format];
 
 	if (msg != (USHORT)(IPTR) message->nod_arg[e_msg_number])
 		ERR_post(isc_req_sync, 0);
@@ -1134,10 +1136,10 @@ static jrd_nod* erase(TDBB tdbb, jrd_nod* node, SSHORT which_trig)
 
 #ifdef PC_ENGINE
 /* for navigational streams, retrieve the rsb */
-	RSB rsb = NULL;
+	Rsb* rsb = NULL;
 	irsb* impure = NULL;
 	if (node->nod_arg[e_erase_rsb]) {
-		rsb = *(RSB *) node->nod_arg[e_erase_rsb];
+		rsb = *(Rsb**) node->nod_arg[e_erase_rsb];
 		impure = (IRSB) ((UCHAR *) request + rsb->rsb_impure);
 	}
 #endif
@@ -1454,7 +1456,7 @@ static void execute_procedure(TDBB tdbb, jrd_nod* node)
 	SCHAR* in_msg;
 	jrd_nod* in_message = node->nod_arg[e_esp_in_msg];
 	if (in_message) {
-		const fmt* format = (FMT) in_message->nod_arg[e_msg_format];
+		const fmt* format = (fmt*) in_message->nod_arg[e_msg_format];
 		in_msg_length = format->fmt_length;
 		in_msg = (SCHAR *) request + in_message->nod_impure;
 	}
@@ -1463,7 +1465,7 @@ static void execute_procedure(TDBB tdbb, jrd_nod* node)
 	SCHAR* out_msg;
 	jrd_nod* out_message = node->nod_arg[e_esp_out_msg];
 	if (out_message) {
-		const fmt* format = (FMT) out_message->nod_arg[e_msg_format];
+		const fmt* format = (fmt*) out_message->nod_arg[e_msg_format];
 		out_msg_length = format->fmt_length;
 		out_msg = (SCHAR *) request + out_message->nod_impure;
 	}
@@ -1474,7 +1476,7 @@ static void execute_procedure(TDBB tdbb, jrd_nod* node)
 	str* temp_buffer = NULL;
 	
 	if (!out_message) {
-		const fmt* format = (FMT) procedure->prc_output_msg->nod_arg[e_msg_format];
+		const fmt* format = (fmt*) procedure->prc_output_msg->nod_arg[e_msg_format];
 		out_msg_length = format->fmt_length;
 		temp_buffer =
 			FB_NEW_RPT(*tdbb->tdbb_default, out_msg_length + DOUBLE_ALIGN - 1) str();
@@ -1646,7 +1648,7 @@ static jrd_nod* find(TDBB tdbb, jrd_nod* node)
 
 	if (request->req_operation == jrd_req::req_evaluate)
 	{
-		RSB rsb = *((RSB *) node->nod_arg[e_find_rsb]);
+		Rsb* rsb = *((Rsb**) node->nod_arg[e_find_rsb]);
 
 		USHORT operator_ =
 			(USHORT) MOV_get_long(EVL_expr(	tdbb,
@@ -1688,11 +1690,14 @@ static jrd_nod* find(TDBB tdbb, jrd_nod* node)
 			{
 				if (EXE_crack(tdbb, rsb, irsb_forced_crack)) {
 					EXE_mark_crack(tdbb, rsb, irsb_crack | irsb_forced_crack);
-				} else if (EXE_crack(tdbb, rsb, irsb_bof)) {
+				}
+				else if (EXE_crack(tdbb, rsb, irsb_bof)) {
 					EXE_mark_crack(tdbb, rsb, irsb_bof);
-				} else if (EXE_crack(tdbb, rsb, irsb_eof)) {
+				}
+				else if (EXE_crack(tdbb, rsb, irsb_eof)) {
 					EXE_mark_crack(tdbb, rsb, irsb_eof);
-				} else {
+				}
+				else {
 					EXE_mark_crack(tdbb, rsb, irsb_crack);
 				}
 			}
@@ -1725,7 +1730,7 @@ static jrd_nod* find_dbkey(TDBB tdbb, jrd_nod* node)
 
 	if (request->req_operation == jrd_req::req_evaluate)
 	{
-		RSB rsb = *((RSB *) node->nod_arg[e_find_dbkey_rsb]);
+		Rsb* rsb = *((Rsb**) node->nod_arg[e_find_dbkey_rsb]);
 
 		if (!RSE_find_dbkey(tdbb,
 							rsb,
@@ -1963,14 +1968,14 @@ static jrd_nod* looper(TDBB tdbb, jrd_req* request, jrd_nod* in_node)
 			switch (request->req_operation) {
 			case jrd_req::req_evaluate:
 				request->req_records_affected = 0;
-				RSE_open(tdbb, (RSB) node->nod_arg[e_for_rsb]);
+				RSE_open(tdbb, (Rsb*) node->nod_arg[e_for_rsb]);
 			case jrd_req::req_return:
 				if (node->nod_arg[e_for_stall]) {
 					node = node->nod_arg[e_for_stall];
 					break;
 				}
 			case jrd_req::req_sync:
-				if (RSE_get_record(tdbb, (RSB) node->nod_arg[e_for_rsb],
+				if (RSE_get_record(tdbb, (Rsb*) node->nod_arg[e_for_rsb],
 #ifdef SCROLLABLE_CURSORS
 								   RSE_get_next))
 #else
@@ -1983,7 +1988,7 @@ static jrd_nod* looper(TDBB tdbb, jrd_req* request, jrd_nod* in_node)
 				}
 				request->req_operation = jrd_req::req_return;
 			default:
-				RSE_close(tdbb, (RSB) node->nod_arg[e_for_rsb]);
+				RSE_close(tdbb, (Rsb*) node->nod_arg[e_for_rsb]);
 				node = node->nod_parent;
 			}
 			break;
@@ -2007,7 +2012,7 @@ static jrd_nod* looper(TDBB tdbb, jrd_req* request, jrd_nod* in_node)
 			const USHORT number = (USHORT) (IPTR) node->nod_arg[e_cursor_stmt_number];
 			// get RSB and the impure area
 			fb_assert(request->req_cursors && number < request->req_cursors->count());
-			RSB rsb = (RSB) (*request->req_cursors)[number];
+			Rsb* rsb = (Rsb*) (*request->req_cursors)[number];
 			IRSB impure = (IRSB) ((UCHAR*) tdbb->tdbb_request + rsb->rsb_impure);
 			switch (op) {
 			case blr_cursor_open:
@@ -2721,7 +2726,7 @@ static jrd_nod* looper(TDBB tdbb, jrd_req* request, jrd_nod* in_node)
 
 		case nod_force_crack:
 			if (request->req_operation == jrd_req::req_evaluate) {
-				RSE_MARK_CRACK(tdbb, *(RSB *) node->nod_arg[1],
+				RSE_MARK_CRACK(tdbb, *(Rsb**) node->nod_arg[1],
 							   irsb_crack | irsb_forced_crack);
 				request->req_operation = jrd_req::req_return;
 			}
@@ -2731,7 +2736,7 @@ static jrd_nod* looper(TDBB tdbb, jrd_req* request, jrd_nod* in_node)
 		case nod_reset_stream:
 			if (request->req_operation == jrd_req::req_evaluate) {
 				RSE_reset_position(tdbb,
-								   *(RSB *) node->nod_arg[e_reset_from_rsb],
+								   *(Rsb**) node->nod_arg[e_reset_from_rsb],
 								   request->req_rpb +
 								   (USHORT)(ULONG) node->nod_arg[e_reset_to_stream]);
 				request->req_operation = jrd_req::req_return;
@@ -2810,7 +2815,7 @@ static jrd_nod* looper(TDBB tdbb, jrd_req* request, jrd_nod* in_node)
 				end = request->req_cursors->end(); ptr < end; ptr++)
 			{
 				if (*ptr)
-					RSE_close(tdbb, (RSB) *ptr);
+					RSE_close(tdbb, (Rsb*) *ptr);
 			}
 		}
 
@@ -2883,11 +2888,11 @@ static jrd_nod* modify(TDBB tdbb, jrd_nod* node, SSHORT which_trig)
 
 #ifdef PC_ENGINE
 /* for navigational streams, retrieve the rsb */
-	RSB rsb = NULL;
+	Rsb* rsb = NULL;
 	IRSB irsb;
 
 	if (node->nod_arg[e_mod_rsb]) {
-		rsb = *(RSB *) node->nod_arg[e_mod_rsb];
+		rsb = *(Rsb**) node->nod_arg[e_mod_rsb];
 		irsb = (IRSB) ((UCHAR *) request + rsb->rsb_impure);
 	}
 
@@ -3334,7 +3339,7 @@ static jrd_nod* seek_rse(TDBB tdbb, jrd_req* request, jrd_nod* node)
 #ifdef SCROLLABLE_CURSORS
 static void seek_rsb(
 					 TDBB tdbb,
-					 jrd_req* request, RSB rsb, USHORT direction, SLONG offset)
+					 jrd_req* request, Rsb* rsb, USHORT direction, SLONG offset)
 {
 /**************************************
  *
@@ -3601,7 +3606,7 @@ static jrd_nod* set_bookmark(TDBB tdbb, jrd_nod* node)
 		bkm* bookmark = BKM_lookup(node->nod_arg[e_setmark_id]);
 		const USHORT stream = (USHORT)(ULONG) node->nod_arg[e_setmark_stream];
 		RPB* rpb = &request->req_rpb[stream];
-		RSB rsb = *((RSB *) node->nod_arg[e_setmark_rsb]);
+		Rsb* rsb = *((Rsb**) node->nod_arg[e_setmark_rsb]);
 		irsb* impure = (IRSB) ((UCHAR *) request + rsb->rsb_impure);
 
 		/* check if the bookmark was at beginning or end of file 
@@ -3766,10 +3771,10 @@ static jrd_nod* set_index(TDBB tdbb, jrd_nod* node)
 
 		/* generate a new rsb in place of the old */
 
-		RSE_close(tdbb, *(RSB *) node->nod_arg[e_index_rsb]);
-		OPT_set_index(tdbb, request, (RSB *) node->nod_arg[e_index_rsb],
+		RSE_close(tdbb, *(Rsb**) node->nod_arg[e_index_rsb]);
+		OPT_set_index(tdbb, request, (Rsb**) node->nod_arg[e_index_rsb],
 					  relation, id ? &idx : NULL);
-		RSE_open(tdbb, *(RSB *) node->nod_arg[e_index_rsb]);
+		RSE_open(tdbb, *(Rsb**) node->nod_arg[e_index_rsb]);
 
 		request->req_operation = jrd_req::req_return;
 	}
@@ -3995,7 +4000,7 @@ static jrd_nod* stream(TDBB tdbb, jrd_nod* node)
 	jrd_req* request = tdbb->tdbb_request;
 	BLKCHK(node, type_nod);
 
-	RSB rsb = ((RSE) node)->rse_rsb;
+	Rsb* rsb = ((RSE) node)->rse_rsb;
 
 	switch (request->req_operation) {
 	case jrd_req::req_evaluate:
@@ -4152,10 +4157,8 @@ static void validate(TDBB tdbb, jrd_nod* list)
 	SET_TDBB(tdbb);
 	BLKCHK(list, type_nod);
 
-	jrd_nod** ptr1;
-	jrd_nod** end;
-
-	for (ptr1 = list->nod_arg, end = ptr1 + list->nod_count;
+	jrd_nod** ptr1 = list->nod_arg;
+	for (const jrd_nod* const* const end = ptr1 + list->nod_count;
 		 ptr1 < end; ptr1++)
 	{
 		if (!EVL_boolean(tdbb, (*ptr1)->nod_arg[e_val_boolean]))

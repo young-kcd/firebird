@@ -832,7 +832,7 @@ int INF_request_info(const jrd_req* request,
  *
  **************************************/
 	jrd_nod* node;
-	FMT format;
+	const fmt* format;
 	SCHAR item;
 	SSHORT state;
 	USHORT length = 0;
@@ -930,7 +930,7 @@ int INF_request_info(const jrd_req* request,
 					INF_convert((IPTR) node->nod_arg[e_msg_number],
 								buffer_ptr);
 			else {
-				format = (FMT) node->nod_arg[e_msg_format];
+				format = (fmt*) node->nod_arg[e_msg_format];
 				length = INF_convert(format->fmt_length, buffer_ptr);
 			}
 			break;

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.60 2004-01-21 07:18:25 skidder Exp $ 
+  * $Id: evl.cpp,v 1.61 2004-01-28 07:50:32 robocop Exp $ 
  */
 
 /*
@@ -223,7 +223,7 @@ dsc* EVL_assign_to(TDBB tdbb, jrd_nod* node)
  *
  **************************************/
 	dsc* desc;
-	FMT format;
+	fmt* format;
 	jrd_nod* message;
 	REC record;
 
@@ -243,7 +243,7 @@ dsc* EVL_assign_to(TDBB tdbb, jrd_nod* node)
 	switch (node->nod_type) {
 	case nod_argument:
 		message = node->nod_arg[e_arg_message];
-		format = (FMT) message->nod_arg[e_msg_format];
+		format = (fmt*) message->nod_arg[e_msg_format];
 		arg_number = (int) (IPTR)node->nod_arg[e_arg_number];
 		desc = &format->fmt_desc[arg_number];
 		impure->vlu_desc.dsc_address =
@@ -451,10 +451,12 @@ BOOLEAN EVL_boolean(TDBB tdbb, jrd_nod* node)
 					if (request->req_flags & req_null) {
 						impure->vlu_flags |= VLU_computed;
 						impure->vlu_flags |= VLU_null;
-					} else
+					}
+					else
 						impure->vlu_flags &= ~VLU_null;
 				}
-			} else
+			}
+			else
 				desc[1] = EVL_expr(tdbb, *ptr++);
 			
 			/* If either of expressions above returned NULL set req_null flag and return FALSE */
@@ -821,7 +823,7 @@ dsc* EVL_expr(TDBB tdbb, jrd_nod* node)
 				}
 			}
 			const jrd_nod* message = node->nod_arg[e_arg_message];
-			const fmt* format = (FMT) message->nod_arg[e_msg_format];
+			const fmt* format = (fmt*) message->nod_arg[e_msg_format];
 			desc = &format->fmt_desc[(int)(IPTR) node->nod_arg[e_arg_number]];
 
 			impure->vlu_desc.dsc_address = (UCHAR *) request +
@@ -1101,7 +1103,7 @@ dsc* EVL_expr(TDBB tdbb, jrd_nod* node)
 #ifdef PC_ENGINE
 	case nod_crack:
 		{
-			RSB rsb = *(RSB *) node->nod_arg[1];
+			Rsb* rsb = *(Rsb**) node->nod_arg[1];
 			if (rsb->rsb_type == rsb_boolean)
 				rsb = rsb->rsb_next;
 			IRSB irsb = (IRSB) ((UCHAR *) request + rsb->rsb_impure);
@@ -1118,7 +1120,7 @@ dsc* EVL_expr(TDBB tdbb, jrd_nod* node)
 	case nod_get_bookmark:
 		{
 			bkm* bookmark =
-				RSE_get_bookmark(tdbb, *(RSB *) node->nod_arg[e_getmark_rsb]);
+				RSE_get_bookmark(tdbb, *(Rsb**) node->nod_arg[e_getmark_rsb]);
 			return &bookmark->bkm_desc;
 		}
 
@@ -1130,7 +1132,7 @@ dsc* EVL_expr(TDBB tdbb, jrd_nod* node)
 
 	case nod_cardinality:
 		impure->vlu_misc.vlu_long =
-			(*(RSB *) node->nod_arg[e_card_rsb])->rsb_cardinality;
+			(*(Rsb**) node->nod_arg[e_card_rsb])->rsb_cardinality;
 		impure->vlu_desc.dsc_dtype = dtype_long;
 		impure->vlu_desc.dsc_length = sizeof(ULONG);
 		impure->vlu_desc.dsc_scale = 0;
@@ -2928,7 +2930,7 @@ static dsc* cast(TDBB tdbb, const dsc* value, const jrd_nod* node, VLU impure)
 
 /* value is present; make the conversion */
 
-	const fmt* format = (FMT) node->nod_arg[e_cast_fmt];
+	const fmt* format = (fmt*) node->nod_arg[e_cast_fmt];
 	impure->vlu_desc = format->fmt_desc[0];
 	impure->vlu_desc.dsc_address = (UCHAR *) & impure->vlu_misc;
 	if (DTYPE_IS_TEXT(impure->vlu_desc.dsc_dtype)) {
@@ -3565,10 +3567,9 @@ static dsc* lock_record(TDBB tdbb, jrd_nod* node, VLU impure)
  *
  **************************************/
 	jrd_req* request;
-	dsc* desc;
 	USHORT lock_level;
-	RSB rsb;
-	RPB *rpb;
+	Rsb* rsb;
+	RPB* rpb;
 	LCK lock = NULL;
 
 	SET_TDBB(tdbb);
@@ -3586,14 +3587,14 @@ static dsc* lock_record(TDBB tdbb, jrd_nod* node, VLU impure)
 
 /* get the locking level */
 
-	desc = EVL_expr(tdbb, node->nod_arg[e_lockrec_level]);
+	dsc* desc = EVL_expr(tdbb, node->nod_arg[e_lockrec_level]);
 	lock_level = (USHORT) MOV_get_long(desc, 0);
 	if (lock_level > LCK_EX)
 		ERR_post(isc_bad_lock_level, isc_arg_number, (SLONG) lock_level, 0);
 
 /* perform the actual lock (or unlock) */
 
-	rsb = *(RSB *) node->nod_arg[e_lockrec_rsb];
+	rsb = *(Rsb**) node->nod_arg[e_lockrec_rsb];
 	rpb = request->req_rpb + rsb->rsb_stream;
 	if (!lock_level)
 		RLCK_unlock_record(0, rpb);
@@ -4534,7 +4535,8 @@ static SSHORT string_boolean(TDBB tdbb, jrd_nod* node, dsc* desc1, dsc* desc2, b
 						evaluator = impure->vlu_misc.vlu_invariant;
 						obj.like_reset(evaluator);
 					}
-				} else
+				}
+				else
 					evaluator = obj.like_create(tdbb, p2, l2, escape);
 
 				while (!(blob->blb_flags & BLB_eof)) {
@@ -4562,7 +4564,8 @@ static SSHORT string_boolean(TDBB tdbb, jrd_nod* node, dsc* desc1, dsc* desc2, b
 						evaluator = impure->vlu_misc.vlu_invariant;
 						obj.contains_reset(evaluator);
 					}
-				} else
+				}
+				else
 					evaluator = obj.contains_create(tdbb, p2, l2);
 
 				while (!(blob->blb_flags & BLB_eof)) {
@@ -4628,11 +4631,13 @@ static SSHORT string_function(
 				obj.contains_destroy(impure->vlu_misc.vlu_invariant);
 				impure->vlu_misc.vlu_invariant = obj.contains_create(tdbb, p2, l2);
 				impure->vlu_flags |= VLU_computed;
-			} else
+			}
+			else
 				obj.contains_reset(impure->vlu_misc.vlu_invariant);
 			obj.contains_process(tdbb, impure->vlu_misc.vlu_invariant, p1, l1);
 			return obj.contains_result(impure->vlu_misc.vlu_invariant);
-		} else
+		}
+		else
 			return obj.contains(tdbb, p1, l1, p2, l2);
 	}
 
@@ -4675,11 +4680,13 @@ static SSHORT string_function(
 				obj.like_destroy(impure->vlu_misc.vlu_invariant);
 				impure->vlu_misc.vlu_invariant = obj.like_create(tdbb, p2, l2, escape);
 				impure->vlu_flags |= VLU_computed;
-			} else
+			}
+			else
 				obj.like_reset(impure->vlu_misc.vlu_invariant);
 			obj.like_process(tdbb, impure->vlu_misc.vlu_invariant, p1, l1);
 			return obj.like_result(impure->vlu_misc.vlu_invariant);
-		} else
+		}
+		else
 			return obj.like(tdbb, p1, l1, p2, l2, escape);
 	}
 

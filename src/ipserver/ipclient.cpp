@@ -278,7 +278,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(
 	char temp[MAXPATHLEN];
 	if (ResolveDatabaseAlias(file_name, temp)) {
 		IPS_C_IN(comm, ips_name, IPS_ATTACH_NAME, file_name, l);
-	} else {
+	}
+	else {
 		IPS_C_IN(comm, ips_name, IPS_ATTACH_NAME, 
 				 expanded_filename, strlen(expanded_filename));
 	}
@@ -843,7 +844,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	char temp[MAXPATHLEN];
 	if (ResolveDatabaseAlias(file_name, temp)) {
 		IPS_C_IN(comm, ips_name, IPS_CREATE_NAME, file_name, l);
-	} else {
+	}
+	else {
 		IPS_C_IN(comm, ips_name, IPS_CREATE_NAME, 
 				 expanded_filename, strlen(expanded_filename));
 	}

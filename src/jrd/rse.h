@@ -78,7 +78,6 @@ public:
 	struct jrd_nod* rsb_any_boolean;	// any/all boolean
 	Rsb* rsb_arg[1];
 };
-typedef Rsb *RSB;
 
 // bits for the rsb_flags field
 
@@ -358,12 +357,11 @@ const USHORT opt_g_stream = 1;				// indicate that this is a blr_stream
 class riv : public pool_alloc_rpt<SCHAR, type_riv>
 {
 public:
-	struct Rsb *riv_rsb;		// record source block for river
+	Rsb* riv_rsb;				// record source block for river
 	USHORT riv_number;			// temporary number for river
 	UCHAR riv_count;			// count of streams
 	UCHAR riv_streams[1];		// actual streams
 };
-typedef riv *RIV;
 
 
 // bookmark block, used to hold information about the current position 
@@ -404,3 +402,4 @@ typedef enum rse_get_mode {
 } RSE_GET_MODE;
 
 #endif // JRD_RSE_H
+

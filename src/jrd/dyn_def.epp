@@ -121,6 +121,7 @@ static void check_unique_name(TDBB, GBL, const TEXT*, bool);
 static bool find_field_source(TDBB, GBL, const TEXT*, USHORT, const TEXT*, TEXT*);
 static bool get_who(TDBB, GBL, SCHAR*);
 static bool is_it_user_name(GBL, const TEXT*, TDBB);
+static USHORT skip_blr_blob(const UCHAR** ptr);
 
 
 void DYN_define_cache( GBL gbl, const UCHAR** ptr)
@@ -2610,35 +2611,6 @@ local_punt_false_151:
 	/* msg 151: "Write ahead log already exists" */
 }
 
-static USHORT skip_blr_blob(const UCHAR** ptr)
-{
-/**************************************
- *
- *	s k i p _ b l r _ b l o b
- *
- **************************************
- *
- * Functional description
- *	Skip a blr blob.
- *
- **************************************/
-	USHORT	length;
-	const UCHAR*	p;
-
-	p = *ptr;
-	length = *p++;
-	length |= (*p++) << 8;
-
-	if (!length) {
-		*ptr = p;
-		return length;
-	}
-
-	*ptr = p + length;
-
-	return length;
-}
-
 
 void DYN_define_parameter( GBL gbl, const UCHAR** ptr, TEXT* procedure_name)
 {
@@ -2662,7 +2634,8 @@ void DYN_define_parameter( GBL gbl, const UCHAR** ptr, TEXT* procedure_name)
 	volatile SSHORT id;
 	SSHORT f_subtype, f_scale, f_precision;
 	SSHORT f_charset, f_collation;
-	const UCHAR *default_value_ptr = NULL, *default_source_ptr = NULL;
+	const UCHAR* default_value_ptr = NULL;
+	const UCHAR* default_source_ptr = NULL;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
@@ -2847,12 +2820,12 @@ void DYN_define_parameter( GBL gbl, const UCHAR** ptr, TEXT* procedure_name)
 				PS.RDB$COLLATION_ID = f_collation;
 				PS.RDB$COLLATION_ID.NULL = f_collation_null;
 
-				PS.RDB$DEFAULT_VALUE.NULL = (default_value_ptr == NULL);
+				PS.RDB$DEFAULT_VALUE.NULL = (default_value_ptr == NULL) ? TRUE : FALSE;
 				if (default_value_ptr) {
 					DYN_put_blr_blob(gbl, &default_value_ptr, &PS.RDB$DEFAULT_VALUE);
 				}
 
-				PS.RDB$DEFAULT_SOURCE.NULL = (default_source_ptr == NULL);
+				PS.RDB$DEFAULT_SOURCE.NULL = (default_source_ptr == NULL) ? TRUE : FALSE;
 				if (default_source_ptr) {
 					DYN_put_text_blob(gbl, &default_source_ptr, &PS.RDB$DEFAULT_SOURCE);
 				}
@@ -4432,5 +4405,32 @@ bool is_it_user_name(GBL gbl, const TEXT* role_name, TDBB tdbb)
 	}
 
 	return found;
+}
+
+
+static USHORT skip_blr_blob(const UCHAR** ptr)
+{
+/**************************************
+ *
+ *	s k i p _ b l r _ b l o b
+ *
+ **************************************
+ *
+ * Functional description
+ *	Skip a blr blob.
+ *
+ **************************************/
+	const UCHAR* p = *ptr;
+	USHORT length = *p++;
+	length |= (*p++) << 8;
+
+	if (!length) {
+		*ptr = p;
+		return length;
+	}
+
+	*ptr = p + length;
+
+	return length;
 }
 

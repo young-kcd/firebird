@@ -38,7 +38,7 @@ BLKDEF(type_lck, lck, 1)
 BLKDEF(type_fil, fil, 1)
 BLKDEF(type_pgc, pgc, 0)
 BLKDEF(type_rel, jrd_rel, 0)
-BLKDEF(type_fmt, fmt, sizeof(((FMT) NULL)->fmt_desc[0]))   /* Done */
+BLKDEF(type_fmt, fmt, sizeof(((fmt*) NULL)->fmt_desc[0]))   /* Done */
 BLKDEF(type_vcl, vcl, sizeof(((VCL) NULL)->vcl_long[0]))   /* Done */
 BLKDEF(type_req, jrd_req, sizeof(((jrd_req*) NULL)->req_rpb[0]))    /* Done */
 BLKDEF(type_tra, jrd_tra, 1)
@@ -46,7 +46,7 @@ BLKDEF(type_nod, jrd_nod, sizeof(((jrd_nod*) NULL)->nod_arg[0]))    /* Done */
 BLKDEF(type_csb, Csb, sizeof(((CSB) NULL)->csb_rpt[0]))    /* Done */
 BLKDEF(type_lls, lls, 0)	/* linked list stack */
 BLKDEF(type_rec, rec, 1)	/* record parameter */
-BLKDEF(type_rsb, Rsb, sizeof(((RSB) NULL)->rsb_arg[0]))	/* Done record source */
+BLKDEF(type_rsb, Rsb, sizeof(((Rsb*) NULL)->rsb_arg[0]))	/* Done record source */
 BLKDEF(type_bms, bms, 0)	/* bit map segment */
 BLKDEF(type_dfw, dfw, 1)	/* deferred work block */
 BLKDEF(type_tfb, tfb, 0)	/* temporary field block */

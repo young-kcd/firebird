@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbackup.cpp,v 1.10 2003-11-16 12:53:31 brodsom Exp $
+ *  $Id: nbackup.cpp,v 1.11 2004-01-28 07:50:41 robocop Exp $
  *
  */
  
@@ -337,7 +337,8 @@ void nbackup::create_backup() {
 #ifdef WIN_NT
 	if (strcmp(bakname, "stdout") == 0) {
 		backup = GetStdHandle(STD_OUTPUT_HANDLE);
-	} else {		
+	}
+	else {		
 		backup = CreateFile(bakname, GENERIC_WRITE, FILE_SHARE_DELETE, 
 			NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	}
@@ -346,7 +347,8 @@ void nbackup::create_backup() {
 #else
 	if (strcmp(bakname, "stdout") == 0) {
 		backup = 1 /* Posix file handle for stdout */;
-	} else {
+	}
+	else {
 		backup = open(bakname, O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, 0660);
 		if (backup < 0)
 			b_error::raise("Error (%d) creating backup file: %s", errno, bakname);
@@ -607,7 +609,8 @@ void nbackup::backup_database(int level, const char* fname) {
 					write_file(backup, &curPage, sizeof(curPage));
 					write_file(backup, page_buff, header.hdr_page_size);
 				}
-			} else
+			}
+			else
 				write_file(backup, page_buff, header.hdr_page_size);
 			size_t bytesDone;
 			if ((bytesDone = read_file(dbase, page_buff, header.hdr_page_size)) == 0)
@@ -722,12 +725,14 @@ void nbackup::restore_database(int filecount, char* files[]) {
 						close_backup();
 #endif
 				}
-			} else {
+			}
+			else {
 				if (curLevel >= filecount) {
 					close_database();
 					fixup_database();
 					return;
-				} else {
+				}
+				else {
 					strncpy(bakname, files[curLevel], sizeof(bakname));
 #ifdef WIN_NT
 					if (curLevel)
@@ -768,7 +773,8 @@ void nbackup::restore_database(int filecount, char* files[]) {
 					write_file(dbase, page, bakheader.page_size);
 				}
 				delete_database = false;
-			} else {
+			}
+			else {
 #ifdef WIN_NT
 				if (!CopyFile(bakname, dbname, FALSE))
 					b_error::raise("Error (%d) creating database file: %s via copying from: %s", GetLastError(), dbname, bakname);

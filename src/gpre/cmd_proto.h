@@ -24,7 +24,7 @@
 #ifndef GPRE_CMD_PROTO_H
 #define GPRE_CMD_PROTO_H
 
-int CMD_compile_ddl(GPRE_REQ);
+int CMD_compile_ddl(gpre_req*);
 
 #endif // GPRE_CMD_PROTO_H
 

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exp.cpp,v 1.29 2004-01-21 07:16:15 skidder Exp $
+//	$Id: exp.cpp,v 1.30 2004-01-28 07:50:27 robocop Exp $
 //
 
 #include "firebird.h"
@@ -54,19 +54,19 @@ static bool check_relation(void);
 static GPRE_NOD lookup_field(gpre_ctx*);
 static GPRE_NOD make_and(GPRE_NOD, GPRE_NOD);
 static GPRE_NOD make_list(LLS);
-static GPRE_NOD normalize_index(DIM, GPRE_NOD, USHORT);
-static GPRE_NOD par_and(GPRE_REQ);
-static GPRE_NOD par_array(GPRE_REQ, GPRE_FLD, bool, bool);
-static GPRE_NOD par_boolean(GPRE_REQ);
-static GPRE_NOD par_field(GPRE_REQ);
-static GPRE_NOD par_multiply(GPRE_REQ, GPRE_FLD);
-static GPRE_NOD par_native_value(GPRE_REQ, GPRE_FLD);
-static GPRE_NOD par_not(GPRE_REQ);
-static GPRE_NOD par_over(GPRE_CTX);
-static GPRE_NOD par_primitive_value(GPRE_REQ, GPRE_FLD);
-static GPRE_NOD par_relational(GPRE_REQ);
-static GPRE_NOD par_udf(GPRE_REQ, USHORT, GPRE_FLD);
-static GPRE_NOD par_value(GPRE_REQ, GPRE_FLD);
+static GPRE_NOD normalize_index(dim*, GPRE_NOD, USHORT);
+static GPRE_NOD par_and(gpre_req*);
+static GPRE_NOD par_array(gpre_req*, gpre_fld*, bool, bool);
+static GPRE_NOD par_boolean(gpre_req*);
+static GPRE_NOD par_field(gpre_req*);
+static GPRE_NOD par_multiply(gpre_req*, gpre_fld*);
+static GPRE_NOD par_native_value(gpre_req*, gpre_fld*);
+static GPRE_NOD par_not(gpre_req*);
+static GPRE_NOD par_over(gpre_ctx*);
+static GPRE_NOD par_primitive_value(gpre_req*, gpre_fld*);
+static GPRE_NOD par_relational(gpre_req*);
+static GPRE_NOD par_udf(gpre_req*, USHORT, gpre_fld*);
+static GPRE_NOD par_value(gpre_req*, gpre_fld*);
 
 static gpre_fld* global_count_field;
 static gpre_fld* global_subscript_field;
@@ -118,7 +118,7 @@ static const dtypes data_types[] = {
 //		Parse array subscript.
 //  
 
-GPRE_NOD EXP_array(GPRE_REQ request, GPRE_FLD field, bool subscript_flag, bool sql_flag)
+GPRE_NOD EXP_array(gpre_req* request, gpre_fld* field, bool subscript_flag, bool sql_flag)
 {
 	return par_array(request, field, subscript_flag, sql_flag);
 }
@@ -129,7 +129,7 @@ GPRE_NOD EXP_array(GPRE_REQ request, GPRE_FLD field, bool subscript_flag, bool s
 //		Parse a datatype cast (sans leading period).
 //  
 
-GPRE_FLD EXP_cast(GPRE_FLD field)
+gpre_fld* EXP_cast(gpre_fld* field)
 {
 	const dtypes* dtype = data_types;
 	while (true) {
@@ -140,7 +140,7 @@ GPRE_FLD EXP_cast(GPRE_FLD field)
 		++dtype;
 	}
 
-	gpre_fld* cast = (GPRE_FLD) MSC_alloc(FLD_LEN);
+	gpre_fld* cast = (gpre_fld*) MSC_alloc(FLD_LEN);
 	cast->fld_symbol = field->fld_symbol;
 
 	switch (cast->fld_dtype = dtype->dtype_dtype) {
@@ -220,7 +220,7 @@ GPRE_FLD EXP_cast(GPRE_FLD field)
 //		and return a CONTEXT block as value.
 //
 
-GPRE_CTX EXP_context(GPRE_REQ request, SYM initial_symbol)
+gpre_ctx* EXP_context(gpre_req* request, gpre_sym* initial_symbol)
 {
 //  Use the token (context name) to make up a symbol
 //  block.  Then check for the keyword IN.  If it's
@@ -228,7 +228,7 @@ GPRE_CTX EXP_context(GPRE_REQ request, SYM initial_symbol)
 //  error flag.  In either case, be sure to get rid of
 //  the symbol.  If things look kosher, continue. 
 
-	sym* symbol = initial_symbol;
+	gpre_sym* symbol = initial_symbol;
 	if (!symbol) {
 		symbol = PAR_symbol(SYM_context);
 		if (!MSC_match(KW_IN)) {
@@ -256,9 +256,9 @@ GPRE_CTX EXP_context(GPRE_REQ request, SYM initial_symbol)
 //		context block (by reference).
 //  
 
-GPRE_FLD EXP_field(GPRE_CTX* rcontext)
+gpre_fld* EXP_field(gpre_ctx** rcontext)
 {
-	sym* symbol;
+	gpre_sym* symbol;
 	for (symbol = token.tok_symbol; symbol; symbol = symbol->sym_homonym) {
 		if (symbol->sym_type == SYM_context)
 			break;
@@ -356,7 +356,7 @@ GPRE_NOD EXP_literal(void)
 		 && (token.tok_charset)))
 	{
 		reference->ref_flags |= REF_ttype;
-		sym* symbol = token.tok_charset;
+		gpre_sym* symbol = token.tok_charset;
 		reference->ref_ttype =
 			((INTLSYM) (symbol->sym_object))->intlsym_ttype;
 	}
@@ -534,7 +534,7 @@ void EXP_post_array( REF reference)
 	array_reference->ref_level = request->req_level;
 	field->fld_array_info->ary_ident = CMP_next_ident();
 
-	blb* blob = (BLB) MSC_alloc(BLB_LEN);
+	blb* blob = (blb*) MSC_alloc(BLB_LEN);
 	blob->blb_symbol = field->fld_symbol;
 	blob->blb_reference = reference;
 
@@ -553,7 +553,7 @@ void EXP_post_array( REF reference)
 //		(cross request field reference).
 //  
 
-REF EXP_post_field(GPRE_FLD field, GPRE_CTX context, bool null_flag)
+REF EXP_post_field(gpre_fld* field, gpre_ctx* context, bool null_flag)
 {
 	TEXT s[128];
 
@@ -629,7 +629,7 @@ bool EXP_match_paren(void)
 //		Parse and look up a qualfied relation name.
 //  
 
-GPRE_REL EXP_relation(void)
+gpre_rel* EXP_relation(void)
 {
 	TEXT s[256];
 
@@ -644,7 +644,7 @@ GPRE_REL EXP_relation(void)
 	gpre_rel* relation = NULL;
 
 	SQL_resolve_identifier("<identifier>", s);
-	sym* symbol = MSC_find_symbol(token.tok_symbol, SYM_database);
+	gpre_sym* symbol = MSC_find_symbol(token.tok_symbol, SYM_database);
 	if (symbol) {
 		dbb* db = (DBB) symbol->sym_object;
 		PAR_get_token();
@@ -688,7 +688,7 @@ GPRE_REL EXP_relation(void)
 //		parsed the <contect> IN part of the expression.
 //  
 
-GPRE_RSE EXP_rse(GPRE_REQ request, SYM initial_symbol)
+gpre_rse* EXP_rse(gpre_req* request, gpre_sym* initial_symbol)
 {
 //  parse FIRST n clause, if present
 
@@ -722,7 +722,7 @@ GPRE_RSE EXP_rse(GPRE_REQ request, SYM initial_symbol)
 
 //  build rse node 
 
-	gpre_rse* rec_expr = (GPRE_RSE) MSC_alloc(RSE_LEN(count));
+	gpre_rse* rec_expr = (gpre_rse*) MSC_alloc(RSE_LEN(count));
 	rec_expr->rse_count = count;
 	rec_expr->rse_first = first;
 	rec_expr->rse_boolean = boolean;
@@ -830,7 +830,7 @@ GPRE_RSE EXP_rse(GPRE_REQ request, SYM initial_symbol)
 //		selection expression.
 //  
 
-void EXP_rse_cleanup( GPRE_RSE rs)
+void EXP_rse_cleanup( gpre_rse* rs)
 {
 //  Clean up simple context variables
 
@@ -851,7 +851,7 @@ void EXP_rse_cleanup( GPRE_RSE rs)
 	gpre_nod* node = rs->rse_union;
 	if (node) {
 		for (int i = 0; i < node->nod_count; i++)
-			EXP_rse_cleanup((GPRE_RSE) node->nod_arg[i]);
+			EXP_rse_cleanup((gpre_rse*) node->nod_arg[i]);
 	}
 }
 
@@ -861,7 +861,7 @@ void EXP_rse_cleanup( GPRE_RSE rs)
 //		Parse a subscript value.  This is called by PAR\par_slice.
 //  
 
-GPRE_NOD EXP_subscript(GPRE_REQ request)
+GPRE_NOD EXP_subscript(gpre_req* request)
 {
 	ref* reference = (REF) MSC_alloc(REF_LEN);
 	gpre_nod* node = MSC_unary(nod_value, (GPRE_NOD) reference);
@@ -900,7 +900,7 @@ static bool check_relation(void)
 //  it for the relation name.  If it's an unqualified relation
 //  name, search all databases for the name 
 
-	sym* symbol = token.tok_symbol;
+	gpre_sym* symbol = token.tok_symbol;
 	if (symbol && symbol->sym_type == SYM_database)
 		return true;
 
@@ -985,7 +985,7 @@ static GPRE_NOD make_list( LLS stack)
 //		in the user's program.
 //  
 
-static GPRE_NOD normalize_index( DIM dimension, GPRE_NOD user_index, USHORT array_base)
+static GPRE_NOD normalize_index( dim* dimension, GPRE_NOD user_index, USHORT array_base)
 {
 	TEXT string[33];
 	bool negate = false;
@@ -1029,7 +1029,7 @@ static GPRE_NOD normalize_index( DIM dimension, GPRE_NOD user_index, USHORT arra
 //		Parse a boolean AND.
 //  
 
-static GPRE_NOD par_and( GPRE_REQ request)
+static GPRE_NOD par_and( gpre_req* request)
 {
 	gpre_nod* expr1 = par_not(request);
 
@@ -1044,11 +1044,11 @@ static GPRE_NOD par_and( GPRE_REQ request)
 //  
 //		Parse a array element reference
 //		(array name and subscript list)
-//		in an GPRE_RSE.
+//		in an gpre_rse.
 //  
 
-static GPRE_NOD par_array(GPRE_REQ request,
-					 GPRE_FLD field, bool subscript_flag, bool sql_flag)
+static GPRE_NOD par_array(gpre_req* request,
+					 gpre_fld* field, bool subscript_flag, bool sql_flag)
 {
 	bool paren = false;
 	bool bracket = false;
@@ -1142,7 +1142,7 @@ static GPRE_NOD par_array(GPRE_REQ request,
 //		an OR node or anything of lower precedence.
 //  
 
-static GPRE_NOD par_boolean( GPRE_REQ request)
+static GPRE_NOD par_boolean( gpre_req* request)
 {
 	gpre_nod* expr1 = par_and(request);
 
@@ -1158,9 +1158,9 @@ static GPRE_NOD par_boolean( GPRE_REQ request)
 //		Parse a field reference.  Anything else is an error.
 //  
 
-static GPRE_NOD par_field( GPRE_REQ request)
+static GPRE_NOD par_field( gpre_req* request)
 {
-	const sym* symbol = token.tok_symbol;
+	const gpre_sym* symbol = token.tok_symbol;
 	if (!symbol)
 		CPR_s_error("qualified field reference");
 		
@@ -1243,7 +1243,7 @@ static GPRE_NOD par_field( GPRE_REQ request)
 //		precedence operator plus/minus.
 //  
 
-static GPRE_NOD par_multiply( GPRE_REQ request, GPRE_FLD field)
+static GPRE_NOD par_multiply( gpre_req* request, gpre_fld* field)
 {
 	gpre_nod* node = par_primitive_value(request, field);
 
@@ -1267,7 +1267,7 @@ static GPRE_NOD par_multiply( GPRE_REQ request, GPRE_FLD field)
 //		Parse a native C value.
 //  
 
-static GPRE_NOD par_native_value( GPRE_REQ request, GPRE_FLD field)
+static GPRE_NOD par_native_value( gpre_req* request, gpre_fld* field)
 {
 	TEXT s[64];
 
@@ -1307,7 +1307,7 @@ static GPRE_NOD par_native_value( GPRE_REQ request, GPRE_FLD field)
 //		Parse either a boolean NOT or a boolean parenthetical.
 //  
 
-static GPRE_NOD par_not( GPRE_REQ request)
+static GPRE_NOD par_not( gpre_req* request)
 {
 	if (MSC_match(KW_LEFT_PAREN)) {
 		gpre_nod* anode = par_boolean(request);
@@ -1331,7 +1331,7 @@ static GPRE_NOD par_not( GPRE_REQ request)
 //		Parse the substance of an OVER clause (but not the leading keyword).
 //  
 
-static GPRE_NOD par_over( GPRE_CTX context)
+static GPRE_NOD par_over( gpre_ctx* context)
 {
 	TEXT s[64];
 
@@ -1369,7 +1369,7 @@ static GPRE_NOD par_over( GPRE_CTX context)
 //		precedence operator plus/minus.
 //  
 
-static GPRE_NOD par_primitive_value( GPRE_REQ request, GPRE_FLD field)
+static GPRE_NOD par_primitive_value( gpre_req* request, gpre_fld* field)
 {
 	if (MSC_match(KW_MINUS))
 		return MSC_unary(nod_negate, par_primitive_value(request, field));
@@ -1396,7 +1396,7 @@ static GPRE_NOD par_primitive_value( GPRE_REQ request, GPRE_FLD field)
 	if (node)
 		return node;
 
-	const sym* symbol = token.tok_symbol;
+	const gpre_sym* symbol = token.tok_symbol;
 	if (!symbol || (symbol->sym_type != SYM_context))
 		return par_native_value(request, field);
 
@@ -1409,13 +1409,13 @@ static GPRE_NOD par_primitive_value( GPRE_REQ request, GPRE_FLD field)
 //		Parse a relational expression.
 //  
 
-static GPRE_NOD par_relational( GPRE_REQ request)
+static GPRE_NOD par_relational( gpre_req* request)
 {
 	if (MSC_match(KW_ANY)) {
 		gpre_nod* expr = MSC_node(nod_any, 1);
 		expr->nod_count = 0;
 		expr->nod_arg[0] = (GPRE_NOD) EXP_rse(request, 0);
-		EXP_rse_cleanup((GPRE_RSE) expr->nod_arg[0]);
+		EXP_rse_cleanup((gpre_rse*) expr->nod_arg[0]);
 		return expr;
 	}
 
@@ -1423,7 +1423,7 @@ static GPRE_NOD par_relational( GPRE_REQ request)
 		gpre_nod* expr = MSC_node(nod_unique, 1);
 		expr->nod_count = 0;
 		expr->nod_arg[0] = (GPRE_NOD) EXP_rse(request, 0);
-		EXP_rse_cleanup((GPRE_RSE) expr->nod_arg[0]);
+		EXP_rse_cleanup((gpre_rse*) expr->nod_arg[0]);
 		return expr;
 	}
 
@@ -1515,7 +1515,7 @@ static GPRE_NOD par_relational( GPRE_REQ request)
 //		complain bitterly.
 //  
 
-static GPRE_NOD par_udf( GPRE_REQ request, USHORT type, GPRE_FLD field)
+static GPRE_NOD par_udf( gpre_req* request, USHORT type, gpre_fld* field)
 {
 	if (!request)
 		return NULL;
@@ -1523,8 +1523,8 @@ static GPRE_NOD par_udf( GPRE_REQ request, USHORT type, GPRE_FLD field)
 //  Check for user defined functions 
 
 	udf* new_udf;
-	for (sym* symbol = token.tok_symbol; symbol; symbol = symbol->sym_homonym)
-		if (symbol->sym_type == SYM_udf && (new_udf = (UDF) symbol->sym_object) &&
+	for (gpre_sym* symbol = token.tok_symbol; symbol; symbol = symbol->sym_homonym)
+		if (symbol->sym_type == SYM_udf && (new_udf = (udf*) symbol->sym_object) &&
 			// request->req_database == new_udf->udf_database &&
 			new_udf->udf_type == type)
 		{
@@ -1555,7 +1555,7 @@ static GPRE_NOD par_udf( GPRE_REQ request, USHORT type, GPRE_FLD field)
 //		precedence operator plus/minus.
 //  
 
-static GPRE_NOD par_value( GPRE_REQ request, GPRE_FLD field)
+static GPRE_NOD par_value( gpre_req* request, gpre_fld* field)
 {
 	gpre_nod* node = par_multiply(request, field);
 

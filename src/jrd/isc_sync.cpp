@@ -1702,7 +1702,8 @@ void *ISC_make_signal(
 	HANDLE hEvent;
 	if (create_flag) {
 		hEvent = CreateEvent(ISC_get_security_desc(), manual_reset, FALSE, event_name);
-	} else {
+	}
+	else {
 		hEvent = OpenEvent(EVENT_ALL_ACCESS, TRUE, event_name);
 	}
 	return hEvent;

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmd.cpp,v 1.27 2004-01-21 07:16:15 skidder Exp $
+//	$Id: cmd.cpp,v 1.28 2004-01-28 07:50:27 robocop Exp $
 //
 
 #include "firebird.h"
@@ -42,70 +42,70 @@
 #include "../gpre/msc_proto.h"
 #include "../gpre/gpre_meta.h"
 
-//typedef void (*pfn_local_trigger_cb) (GPRE_NOD, GPRE_REQ,
+//typedef void (*pfn_local_trigger_cb) (gpre_nod*, gpre_req*,
 //									  void*
 //									  /* TMN: NOTE, parameter type unknown! */
 //									  );
 // CVC: This was an unaceptable hack in the original code and Mike only
 // found the problem when C++ couldn't compile. Let's see, the
 // two functions that get this cast are
-// void	CME_expr(GPRE_NOD, GPRE_REQ);
+// void	CME_expr(gpre_nod*, gpre_req*);
 // and
-// void	CME_rse(GPRE_RSE, GPRE_REQ);
+// void	CME_rse(gpre_rse*, gpre_req*);
 // Obviously, they can't see a third parameter. Therefore, I've changed the
 // signature, after verifying the third param was always zero.
-typedef void (*pfn_local_trigger_cb) (GPRE_NOD, GPRE_REQ);
+typedef void (*pfn_local_trigger_cb) (gpre_nod*, gpre_req*);
 // The call to CME_rse still needs the cast due to the different first param.
 
 
 
-static void add_cache(GPRE_REQ, const act*, DBB);
-static void alter_database(GPRE_REQ, ACT);
-static void alter_domain(GPRE_REQ, const act*);
-static void alter_index(GPRE_REQ, const act*);
-static void alter_table(GPRE_REQ, const act*);
-static void create_check_constraint(GPRE_REQ, const act*, CNSTRT);
-static void create_constraint(GPRE_REQ, const act*, CNSTRT);
-static void create_database(GPRE_REQ, const act*);
-static void create_database_modify_dyn(GPRE_REQ, ACT);
-static void create_default_blr(GPRE_REQ, const TEXT*, const USHORT);
-static void create_del_cascade_trg(GPRE_REQ, const act*, CNSTRT);
-static void create_domain(GPRE_REQ, const act*);
-static void create_domain_constraint(GPRE_REQ, const act*, const cnstrt*);
-static void create_generator(GPRE_REQ, const act*);
-static void create_index(GPRE_REQ, const ind*);
+static void add_cache(gpre_req*, const act*, DBB);
+static void alter_database(gpre_req*, act*);
+static void alter_domain(gpre_req*, const act*);
+static void alter_index(gpre_req*, const act*);
+static void alter_table(gpre_req*, const act*);
+static void create_check_constraint(gpre_req*, const act*, CNSTRT);
+static void create_constraint(gpre_req*, const act*, CNSTRT);
+static void create_database(gpre_req*, const act*);
+static void create_database_modify_dyn(gpre_req*, act*);
+static void create_default_blr(gpre_req*, const TEXT*, const USHORT);
+static void create_del_cascade_trg(gpre_req*, const act*, CNSTRT);
+static void create_domain(gpre_req*, const act*);
+static void create_domain_constraint(gpre_req*, const act*, const cnstrt*);
+static void create_generator(gpre_req*, const act*);
+static void create_index(gpre_req*, const ind*);
 static void create_matching_blr(gpre_req*, const cnstrt*);
-static void create_set_default_trg(GPRE_REQ, const act*, CNSTRT, bool);
-static void create_set_null_trg(GPRE_REQ, const act*, CNSTRT, bool);
-static void create_shadow(GPRE_REQ, ACT);
-static void create_table(GPRE_REQ, const act*);
-static void create_trg_firing_cond(GPRE_REQ, const cnstrt*);
-static void create_trigger(GPRE_REQ, const act*, GPRE_TRG, pfn_local_trigger_cb);
-static void create_upd_cascade_trg(GPRE_REQ, const act*, CNSTRT);
-static bool create_view(GPRE_REQ, ACT);
-static void create_view_trigger(GPRE_REQ, const act*, GPRE_TRG, GPRE_NOD, GPRE_CTX*, GPRE_NOD);
-static void declare_filter(GPRE_REQ, const act*);
-static void declare_udf(GPRE_REQ, const act*);
+static void create_set_default_trg(gpre_req*, const act*, CNSTRT, bool);
+static void create_set_null_trg(gpre_req*, const act*, CNSTRT, bool);
+static void create_shadow(gpre_req*, act*);
+static void create_table(gpre_req*, const act*);
+static void create_trg_firing_cond(gpre_req*, const cnstrt*);
+static void create_trigger(gpre_req*, const act*, gpre_trg*, pfn_local_trigger_cb);
+static void create_upd_cascade_trg(gpre_req*, const act*, CNSTRT);
+static bool create_view(gpre_req*, act*);
+static void create_view_trigger(gpre_req*, const act*, gpre_trg*, GPRE_NOD, gpre_ctx**, GPRE_NOD);
+static void declare_filter(gpre_req*, const act*);
+static void declare_udf(gpre_req*, const act*);
 static void get_referred_fields(const act*, CNSTRT);
-static void grant_revoke_privileges(GPRE_REQ, const act*);
-static void init_field_struct(GPRE_FLD);
-static void put_array_info(GPRE_REQ, const gpre_fld*);
-static void put_blr(GPRE_REQ, USHORT, GPRE_NOD, pfn_local_trigger_cb);
-static void put_computed_blr(GPRE_REQ, const gpre_fld*);
-static void put_computed_source(GPRE_REQ, const gpre_fld*);
+static void grant_revoke_privileges(gpre_req*, const act*);
+static void init_field_struct(gpre_fld*);
+static void put_array_info(gpre_req*, const gpre_fld*);
+static void put_blr(gpre_req*, USHORT, GPRE_NOD, pfn_local_trigger_cb);
+static void put_computed_blr(gpre_req*, const gpre_fld*);
+static void put_computed_source(gpre_req*, const gpre_fld*);
 static void put_cstring(gpre_req*, USHORT, const TEXT*);
-static void put_dtype(GPRE_REQ, const gpre_fld*);
-static void put_field_attributes(GPRE_REQ, const gpre_fld*);
-static void put_numeric(GPRE_REQ, USHORT, SSHORT);
+static void put_dtype(gpre_req*, const gpre_fld*);
+static void put_field_attributes(gpre_req*, const gpre_fld*);
+static void put_numeric(gpre_req*, USHORT, SSHORT);
 static void put_short_cstring(gpre_req*, USHORT, const TEXT*);
 static void put_string(gpre_req*, USHORT, const TEXT*, USHORT);
-static void put_symbol(gpre_req*, int, const sym*);
-static void put_trigger_blr(GPRE_REQ, USHORT, GPRE_NOD, pfn_local_trigger_cb);
-static void put_view_trigger_blr(GPRE_REQ, const gpre_rel*, USHORT, GPRE_TRG, 
-								 GPRE_NOD, GPRE_CTX*, GPRE_NOD);
+static void put_symbol(gpre_req*, int, const gpre_sym*);
+static void put_trigger_blr(gpre_req*, USHORT, GPRE_NOD, pfn_local_trigger_cb);
+static void put_view_trigger_blr(gpre_req*, const gpre_rel*, USHORT, gpre_trg*,
+								 GPRE_NOD, gpre_ctx**, GPRE_NOD);
 static void replace_field_names(gpre_nod* const, const gpre_nod* const,
 								gpre_fld* const, bool, gpre_ctx**);
-static void set_statistics(GPRE_REQ, const act*);
+static void set_statistics(gpre_req*, const act*);
 
 #define STUFF(blr)	*request->req_blr++ = (UCHAR)(blr)
 #define STUFF_END	STUFF (isc_dyn_end);
@@ -124,14 +124,14 @@ const int BLOB_BUFFER_SIZE = 4096;	// to read in blr blob for default values
 //		numbers, and internal idents.  Compute length of request.
 //
 
-int CMD_compile_ddl(GPRE_REQ request)
+int CMD_compile_ddl(gpre_req* request)
 {
 	IND index;
-	GPRE_REL relation;
+	gpre_rel* relation;
 
 //  Initialize the blr string 
 
-	ACT action = request->req_actions;
+	act* action = request->req_actions;
 	request->req_blr = request->req_base = MSC_alloc(250);
 	request->req_length = 250;
 	request->req_flags |= REQ_exp_hand;
@@ -221,7 +221,7 @@ int CMD_compile_ddl(GPRE_REQ request)
 
 	case ACT_drop_table:
 	case ACT_drop_view:
-		relation = (GPRE_REL) action->act_object;
+		relation = (gpre_rel*) action->act_object;
 		put_symbol(request, isc_dyn_delete_rel, relation->rel_symbol);
 		STUFF_END;
 		break;
@@ -271,7 +271,7 @@ int CMD_compile_ddl(GPRE_REQ request)
 //		Add cache file to a database.
 //  
 
-static void add_cache( GPRE_REQ request, const act* action, dbb* database)
+static void add_cache( gpre_req* request, const act* action, dbb* database)
 {
 	TEXT file_name[254]; // CVC: Maybe MAXPATHLEN?
 
@@ -293,7 +293,7 @@ static void add_cache( GPRE_REQ request, const act* action, dbb* database)
 //		Generate dynamic DDL for modifying database.
 //  
 
-static void alter_database( GPRE_REQ request, ACT action)
+static void alter_database( gpre_req* request, act* action)
 {
 	FIL file, next;
 
@@ -343,9 +343,9 @@ static void alter_database( GPRE_REQ request, ACT action)
 //		Generate dynamic DDL for CREATE DOMAIN action.
 //  
 
-static void alter_domain( GPRE_REQ request, const act* action)
+static void alter_domain( gpre_req* request, const act* action)
 {
-	const gpre_fld* field = (GPRE_FLD) action->act_object;
+	const gpre_fld* field = (gpre_fld*) action->act_object;
 
 //  modify field info 
 
@@ -387,7 +387,7 @@ static void alter_domain( GPRE_REQ request, const act* action)
 //		Generate dynamic DDL for ALTER INDEX statement
 //  
 
-static void alter_index( GPRE_REQ request, const act* action)
+static void alter_index( gpre_req* request, const act* action)
 {
 	const ind* index = (IND) action->act_object;
 	put_symbol(request, isc_dyn_mod_idx, index->ind_symbol);
@@ -404,11 +404,11 @@ static void alter_index( GPRE_REQ request, const act* action)
 //		Generate dynamic DDL for ALTER TABLE action.
 //  
 
-static void alter_table( GPRE_REQ request, const act* action)
+static void alter_table( gpre_req* request, const act* action)
 {
 //  add relation name 
 
-	const gpre_rel* relation = (GPRE_REL) action->act_object;
+	const gpre_rel* relation = (gpre_rel*) action->act_object;
 	put_symbol(request, isc_dyn_mod_rel, relation->rel_symbol);
 
 //  add field info 
@@ -472,9 +472,9 @@ static void alter_table( GPRE_REQ request, const act* action)
 //		Generate dyn for creating a CHECK constraint.
 //  
 
-static void create_check_constraint( GPRE_REQ request, const act* action, cnstrt* constraint)
+static void create_check_constraint( gpre_req* request, const act* action, cnstrt* constraint)
 {
-	GPRE_TRG trigger = (GPRE_TRG) MSC_alloc(TRG_LEN);
+	gpre_trg* trigger = (gpre_trg*) MSC_alloc(TRG_LEN);
 
 //  create the INSERT trigger 
 
@@ -505,7 +505,7 @@ static void create_check_constraint( GPRE_REQ request, const act* action, cnstrt
 //		do a column by column comparison.
 //  
 
-static void create_trg_firing_cond( GPRE_REQ request, const cnstrt* constraint)
+static void create_trg_firing_cond( gpre_req* request, const cnstrt* constraint)
 {
 //  count primary key columns 
 	const lls* prim_key_fld = constraint->cnstrt_referred_fields;
@@ -628,7 +628,7 @@ static void create_matching_blr(gpre_req* request, const cnstrt* constraint)
 //  
 
 static void create_default_blr(
-							   GPRE_REQ request,
+							   gpre_req* request,
 							   const TEXT* default_buff, const USHORT buff_size)
 {
 	int i;
@@ -649,12 +649,12 @@ static void create_default_blr(
 //		integrity) along with the trigger blr.
 //  
 
-static void create_upd_cascade_trg( GPRE_REQ request, const act* action,
+static void create_upd_cascade_trg( gpre_req* request, const act* action,
 								   cnstrt* constraint)
 {
 	lls* for_key_fld = constraint->cnstrt_fields;
 	lls* prim_key_fld = constraint->cnstrt_referred_fields;
-	gpre_rel* relation = (GPRE_REL) action->act_object;
+	gpre_rel* relation = (gpre_rel*) action->act_object;
 
 //  no trigger name is generated here. Let the engine make one up 
 	put_string(request, isc_dyn_def_trigger, "", (USHORT) 0);
@@ -740,10 +740,10 @@ static void create_upd_cascade_trg( GPRE_REQ request, const act* action,
 //		integrity) along with the trigger blr.
 //  
 
-static void create_del_cascade_trg( GPRE_REQ request, const act* action,
+static void create_del_cascade_trg( gpre_req* request, const act* action,
 								   cnstrt* constraint)
 {
-	const gpre_rel* relation = (GPRE_REL) action->act_object;
+	const gpre_rel* relation = (gpre_rel*) action->act_object;
 
 //  stuff a trigger_name of size 0. So the dyn-parser will make one up.  
 	put_string(request, isc_dyn_def_trigger, "", (USHORT) 0);
@@ -800,16 +800,15 @@ static void create_del_cascade_trg( GPRE_REQ request, const act* action,
 //		The non_upd_trg parameter == true is an update trigger.
 //  
 
-static void create_set_default_trg(GPRE_REQ request,
+static void create_set_default_trg(gpre_req* request,
 								   const act* action,
 								   cnstrt* constraint,
 								   bool on_upd_trg)
 {
-	GPRE_FLD field, domain, fld;
 	USHORT offset, length;
-	GPRE_REL rel;
-	GPRE_REQ req;
-	ACT request_action;
+	gpre_rel* rel;
+	gpre_req* req;
+	act* request_action;
 	TEXT s[512];
 	TEXT default_val[BLOB_BUFFER_SIZE];
 
@@ -817,7 +816,7 @@ static void create_set_default_trg(GPRE_REQ request,
 		   request->req_actions->act_type == ACT_alter_table);
 
 	lls* for_key_fld = constraint->cnstrt_fields;
-	const gpre_rel* relation = (GPRE_REL) action->act_object;
+	const gpre_rel* relation = (gpre_rel*) action->act_object;
 
 //  no trigger name. It is generated by the engine 
 	put_string(request, isc_dyn_def_trigger, "", (USHORT) 0);
@@ -899,6 +898,7 @@ static void create_set_default_trg(GPRE_REQ request,
 		const TEXT* search_for_domain = NULL;
 
 		// Is the column being created in this ddl statement?
+		gpre_fld* field;
 		for (field = relation->rel_fields; field; field = field->fld_next) {
 			if (strcmp(field->fld_symbol->sym_string,
 						for_key_fld_name->str_string) == 0)
@@ -943,12 +943,13 @@ static void create_set_default_trg(GPRE_REQ request,
 					(request_action = req->req_actions) &&
 					(request_action->act_type == ACT_create_table ||
 					 request_action->act_type == ACT_alter_table) &&
-					(rel = (GPRE_REL) request_action->act_object) &&
+					(rel = (gpre_rel*) request_action->act_object) &&
 					(strcmp(rel->rel_symbol->sym_string,
 							relation->rel_symbol->sym_string) == 0)) {
 					// ... then try to check for the default in memory 
-					for (fld = (GPRE_FLD) rel->rel_fields;
-						 fld; fld = fld->fld_next) {
+					for (gpre_fld* fld = (gpre_fld*) rel->rel_fields;
+						 fld; fld = fld->fld_next)
+					{
 						if (strcmp(fld->fld_symbol->sym_string,
 								   for_key_fld_name->str_string) != 0)
 							continue;
@@ -982,14 +983,16 @@ static void create_set_default_trg(GPRE_REQ request,
 			fb_assert(search_for_column == false);
 			// search for domain in memory 
 			for (req = requests; req; req = req->req_next) {
+				gpre_fld* domain;
 				if ((req->req_type == REQ_ddl) &&
 					(request_action = req->req_actions) &&
 					((request_action->act_type == ACT_create_domain) ||
 					 (request_action->act_type == ACT_alter_domain)) &&
-					(domain = (GPRE_FLD) request_action->act_object) &&
+					(domain = (gpre_fld*) request_action->act_object) &&
 					(strcmp(search_for_domain,
 							domain->fld_symbol->sym_string) == 0) &&
-					(domain->fld_default_value->nod_type != nod_erase)) {
+					(domain->fld_default_value->nod_type != nod_erase))
+				{
 					// domain found in memory 
 					if (domain->fld_default_value) {
 						// case (1-b)
@@ -1069,13 +1072,13 @@ static void create_set_default_trg(GPRE_REQ request,
 //		The non_upd_trg parameter == true is an update trigger.
 //  
 
-static void create_set_null_trg(GPRE_REQ request,
+static void create_set_null_trg(gpre_req* request,
 								const act* action,
 								cnstrt* constraint,
 								bool on_upd_trg)
 {
 	lls* for_key_fld = constraint->cnstrt_fields;
-	const gpre_rel* relation = (GPRE_REL) action->act_object;
+	const gpre_rel* relation = (gpre_rel*) action->act_object;
 
 //  no trigger name. It is generated by the engine 
 	put_string(request, isc_dyn_def_trigger, "", (USHORT) 0);
@@ -1165,7 +1168,7 @@ static void create_set_null_trg(GPRE_REQ request,
 static void get_referred_fields(const act* action, cnstrt* constraint)
 {
 	TEXT s[512];
-	const gpre_rel* relation = (GPRE_REL) action->act_object;
+	const gpre_rel* relation = (gpre_rel*) action->act_object;
 
 	for (gpre_req* req = requests; req; req = req->req_next) {
 		const act* request_action;
@@ -1174,7 +1177,7 @@ static void get_referred_fields(const act* action, cnstrt* constraint)
 			(request_action = req->req_actions) &&
 			(request_action->act_type == ACT_create_table ||
 			 request_action->act_type == ACT_alter_table) &&
-			(rel = (GPRE_REL) request_action->act_object) &&
+			(rel = (gpre_rel*) request_action->act_object) &&
 			(strcmp(rel->rel_symbol->sym_string,
 					constraint->cnstrt_referred_rel->str_string) == 0)) 
 		{
@@ -1242,7 +1245,7 @@ static void get_referred_fields(const act* action, cnstrt* constraint)
 //		Generate dyn for creating a constraint.
 //  
 
-static void create_constraint( GPRE_REQ request, const act* action,
+static void create_constraint( gpre_req* request, const act* action,
 							  cnstrt* constraint)
 {
 	for (; constraint; constraint = constraint->cnstrt_next) {
@@ -1359,9 +1362,9 @@ static void create_constraint( GPRE_REQ request, const act* action,
 //		Generate parameter buffer for CREATE DATABASE action.
 //  
 
-static void create_database( GPRE_REQ request, const act* action)
+static void create_database( gpre_req* request, const act* action)
 {
-	const dbb* db = ((MDBB) action->act_object)->mdbb_database;
+	const dbb* db = ((mdbb*) action->act_object)->mdbb_database;
 	STUFF(isc_dpb_version1);
 	STUFF(isc_dpb_overwrite);
 	STUFF(1);
@@ -1438,9 +1441,9 @@ static void create_database( GPRE_REQ request, const act* action)
 //		Generate dynamic DDL for second stage of create database
 //  
 
-static void create_database_modify_dyn( GPRE_REQ request, act* action)
+static void create_database_modify_dyn( gpre_req* request, act* action)
 {
-	dbb* db = ((MDBB) action->act_object)->mdbb_database;
+	dbb* db = ((mdbb*) action->act_object)->mdbb_database;
 
 	STUFF(isc_dyn_mod_database);
 
@@ -1485,9 +1488,9 @@ static void create_database_modify_dyn( GPRE_REQ request, act* action)
 //		Generate dynamic DDL for CREATE DOMAIN action.
 //  
 
-static void create_domain( GPRE_REQ request, const act* action)
+static void create_domain( gpre_req* request, const act* action)
 {
-	const gpre_fld* field = (GPRE_FLD) action->act_object;
+	const gpre_fld* field = (gpre_fld*) action->act_object;
 
 //  add field info 
 
@@ -1515,7 +1518,7 @@ static void create_domain( GPRE_REQ request, const act* action)
 //		Generate dyn for creating a constraints for domains.
 //  
 
-static void create_domain_constraint(GPRE_REQ request, const act* action,
+static void create_domain_constraint(gpre_req* request, const act* action,
 									 const cnstrt* constraint)
 {
 	for (; constraint; constraint = constraint->cnstrt_next) {
@@ -1543,7 +1546,7 @@ static void create_domain_constraint(GPRE_REQ request, const act* action,
 //		Generate dynamic DDL for creating a generator.
 //  
 
-static void create_generator( GPRE_REQ request, const act* action)
+static void create_generator( gpre_req* request, const act* action)
 {
 	const TEXT* generator_name = (TEXT*) action->act_object;
 	put_cstring(request, isc_dyn_def_generator, generator_name);
@@ -1556,7 +1559,7 @@ static void create_generator( GPRE_REQ request, const act* action)
 //		Generate dynamic DDL for CREATE INDEX action.
 //  
 
-static void create_index( GPRE_REQ request, const ind* index)
+static void create_index( gpre_req* request, const ind* index)
 {
 	if (index->ind_symbol)
 		put_symbol(request, isc_dyn_def_idx, index->ind_symbol);
@@ -1595,7 +1598,7 @@ static void create_index( GPRE_REQ request, const ind* index)
 //		Generate dynamic DDL for creating a shadow
 //  
 
-static void create_shadow( GPRE_REQ request, ACT action)
+static void create_shadow( gpre_req* request, act* action)
 {
 	fil* files = (FIL) action->act_object;
 
@@ -1633,11 +1636,11 @@ static void create_shadow( GPRE_REQ request, ACT action)
 //		Generate dynamic DDL for CREATE TABLE action.
 //  
 
-static void create_table( GPRE_REQ request, const act* action)
+static void create_table( gpre_req* request, const act* action)
 {
 //  add relation name 
 
-	const gpre_rel* relation = (GPRE_REL) action->act_object;
+	const gpre_rel* relation = (gpre_rel*) action->act_object;
 	put_symbol(request, isc_dyn_def_rel, relation->rel_symbol);
 
 //  If the relation is defined as an external file, add dyn for that 
@@ -1695,11 +1698,11 @@ static void create_table( GPRE_REQ request, const act* action)
 //		Generate dynamic DDL for a trigger.
 //  
 
-static void create_trigger(GPRE_REQ request,
+static void create_trigger(gpre_req* request,
 						   const act* action,
-						   GPRE_TRG trigger, pfn_local_trigger_cb routine)
+						   gpre_trg* trigger, pfn_local_trigger_cb routine)
 {
-	const gpre_rel* relation = (GPRE_REL) action->act_object;
+	const gpre_rel* relation = (gpre_rel*) action->act_object;
 
 //  Name of trigger to be generated    
 
@@ -1734,12 +1737,12 @@ static void create_trigger(GPRE_REQ request,
 //		Generate dynamic DDL for CREATE VIEW action.
 //  
 
-static bool create_view(GPRE_REQ request,
-						ACT action)
+static bool create_view(gpre_req* request,
+						act* action)
 {
 //  add relation name 
 
-	gpre_rel* relation = (GPRE_REL) action->act_object;
+	gpre_rel* relation = (gpre_rel*) action->act_object;
 	put_symbol(request, isc_dyn_def_view, relation->rel_symbol);
 	put_numeric(request, isc_dyn_rel_sql_protection, 1);
 
@@ -1756,7 +1759,7 @@ static bool create_view(GPRE_REQ request,
 
 //  Write out view context info 
 	gpre_rel* sub_relation = 0;
-	GPRE_CTX context;
+	gpre_ctx* context;
 	for (context = request->req_contexts; context;
 		 context = context->ctx_next) 
 	{
@@ -1792,14 +1795,14 @@ static bool create_view(GPRE_REQ request,
 			const gpre_req* slice_req;
 			const slc* slice;
 			if ((value->nod_count >= 2)
-				&& (slice_req = (GPRE_REQ) value->nod_arg[2])
+				&& (slice_req = (gpre_req*) value->nod_arg[2])
 				&& (slice =	slice_req->req_slice))
 			{
 					CPR_error("Array slices not supported in views");
 			}
 			context = reference->ref_context;
 		}
-		const sym* symbol;
+		const gpre_sym* symbol;
 		if (field)
 			symbol = field->fld_symbol;
 		else if (fld)
@@ -1841,7 +1844,7 @@ static bool create_view(GPRE_REQ request,
 			return false;
 		}
 
-		gpre_trg* trigger = (GPRE_TRG) MSC_alloc(TRG_LEN);
+		gpre_trg* trigger = (gpre_trg*) MSC_alloc(TRG_LEN);
 
 		// For the triggers, the OLD, NEW contexts are reserved  
 
@@ -1968,13 +1971,13 @@ static bool create_view(GPRE_REQ request,
 //		Generate dynamic DDL for a trigger.
 //  
 
-static void create_view_trigger(GPRE_REQ request,
+static void create_view_trigger(gpre_req* request,
 								const act* action,
 								gpre_trg* trigger,
 								gpre_nod* view_boolean,
-								GPRE_CTX* contexts, GPRE_NOD set_list)
+								gpre_ctx** contexts, GPRE_NOD set_list)
 {
-	const gpre_rel* relation = (GPRE_REL) action->act_object;
+	const gpre_rel* relation = (gpre_rel*) action->act_object;
 
 //  Name of trigger to be generated    
 
@@ -2009,7 +2012,7 @@ static void create_view_trigger(GPRE_REQ request,
 //		Generate dynamic DDL for DECLARE FILTER action.
 //  
 
-static void declare_filter( GPRE_REQ request, const act* action)
+static void declare_filter( gpre_req* request, const act* action)
 {
 	const fltr* filter = (FLTR) action->act_object;
 	put_cstring(request, isc_dyn_def_filter, filter->fltr_name);
@@ -2028,9 +2031,9 @@ static void declare_filter( GPRE_REQ request, const act* action)
 //		Generate dynamic DDL for DECLARE EXTERNAL
 //  
 
-static void declare_udf( GPRE_REQ request, const act* action)
+static void declare_udf( gpre_req* request, const act* action)
 {
-	const decl_udf* udf_declaration = (DECL_UDF) action->act_object;
+	const decl_udf* udf_declaration = (decl_udf*) action->act_object;
 	const TEXT* udf_name = udf_declaration->decl_udf_name;
 	put_cstring(request, isc_dyn_def_function, udf_name);
 	put_cstring(request, isc_dyn_func_entry_point, udf_declaration->decl_udf_entry_point);
@@ -2135,7 +2138,7 @@ static void declare_udf( GPRE_REQ request, const act* action)
 //		REVOKE privileges action.
 //  
 
-static void grant_revoke_privileges( GPRE_REQ request, const act* action)
+static void grant_revoke_privileges( gpre_req* request, const act* action)
 {
 	TEXT privileges[5];
 	TEXT* p = privileges;
@@ -2256,7 +2259,7 @@ static void grant_revoke_privileges( GPRE_REQ request, const act* action)
 //  
 //  
 
-static void init_field_struct( GPRE_FLD field)
+static void init_field_struct( gpre_fld* field)
 {
 	field->fld_dtype = 0;
 	field->fld_length = 0;
@@ -2291,7 +2294,7 @@ static void init_field_struct( GPRE_FLD field)
 //		Put dimensions for the array field.
 //  
 
-static void put_array_info( GPRE_REQ request, const gpre_fld* field)
+static void put_array_info( gpre_req* request, const gpre_fld* field)
 {
 	const ary* array_info = field->fld_array_info;
 	const SSHORT dims = (SSHORT) array_info->ary_dimension_count;
@@ -2316,7 +2319,7 @@ static void put_array_info( GPRE_REQ request, const gpre_fld* field)
 //		Put an expression expressed in BLR.
 //  
 
-static void put_blr(GPRE_REQ request,
+static void put_blr(gpre_req* request,
 					USHORT operator_, GPRE_NOD node, pfn_local_trigger_cb routine)
 {
 	STUFF(operator_);
@@ -2339,14 +2342,14 @@ static void put_blr(GPRE_REQ request,
 //		Generate dynamic DDL for a computed field.
 //  
 
-static void put_computed_blr( GPRE_REQ request, const gpre_fld* field)
+static void put_computed_blr( gpre_req* request, const gpre_fld* field)
 {
 	const act* action = request->req_actions;
-	const gpre_rel* relation = (GPRE_REL) action->act_object;
+	const gpre_rel* relation = (gpre_rel*) action->act_object;
 
 //  Computed field context has to be 0 - so force it 
 
-	GPRE_CTX context = request->req_contexts;
+	gpre_ctx* context = request->req_contexts;
 	const USHORT save_ctx_int = context->ctx_internal;
 	context->ctx_internal = 0;
 	STUFF(isc_dyn_fld_computed_blr);
@@ -2373,10 +2376,10 @@ static void put_computed_blr( GPRE_REQ request, const gpre_fld* field)
 //		Generate dynamic DDL for a computed field.
 //  
 
-static void put_computed_source( GPRE_REQ request, const gpre_fld* field)
+static void put_computed_source( gpre_req* request, const gpre_fld* field)
 {
 	const act* action = request->req_actions;
-	const gpre_rel* relation = (GPRE_REL) action->act_object;
+	const gpre_rel* relation = (gpre_rel*) action->act_object;
 
 	if (field->fld_computed->cmpf_text != NULL) {
 		TEXT* computed_source = (TEXT*)
@@ -2409,7 +2412,7 @@ static void put_cstring(gpre_req* request, USHORT ddl_operator,
 //		or ALTER TABLE action.
 //  
 
-static void put_dtype( GPRE_REQ request, const gpre_fld* field)
+static void put_dtype( gpre_req* request, const gpre_fld* field)
 {
 	USHORT dtype;
 
@@ -2566,7 +2569,7 @@ static void put_dtype( GPRE_REQ request, const gpre_fld* field)
 //		global field (DOMAIN in SQL).
 //  
 
-static void put_field_attributes( GPRE_REQ request, const gpre_fld* field)
+static void put_field_attributes( gpre_req* request, const gpre_fld* field)
 {
 
 	if (field->fld_flags & FLD_computed)
@@ -2599,7 +2602,7 @@ static void put_field_attributes( GPRE_REQ request, const gpre_fld* field)
 //		Put a numeric valued attributed to the output string.
 //  
 
-static void put_numeric( GPRE_REQ request, USHORT operator_, SSHORT number)
+static void put_numeric( gpre_req* request, USHORT operator_, SSHORT number)
 {
 
 	STUFF(operator_);
@@ -2665,7 +2668,7 @@ static void put_string(gpre_req* request, USHORT ddl_operator,
 //  
 
 static void put_symbol(gpre_req* request, int ddl_operator,
-					   const sym* symbol)
+					   const gpre_sym* symbol)
 {
 	put_cstring(request, (USHORT) ddl_operator, symbol->sym_string);
 }
@@ -2677,7 +2680,7 @@ static void put_symbol(gpre_req* request, int ddl_operator,
 //		Abort with a gds_error code error.
 //  
 
-static void put_trigger_blr(GPRE_REQ request,
+static void put_trigger_blr(gpre_req* request,
 							USHORT operator_,
 							GPRE_NOD node, pfn_local_trigger_cb routine)
 {
@@ -2709,7 +2712,7 @@ static void put_trigger_blr(GPRE_REQ request,
 //____________________________________________________________
 //  
 //		Generate BLR for a trigger for a VIEW WITH CHECK OPTION.
-//		This is messy, the GPRE_RSE passed in is mutilated by the end.
+//		This is messy, the gpre_rse passed in is mutilated by the end.
 //		Fields in the where clause and in the VIEW definition, are replaced
 //		by the VIEW fields.
 //		For fields in the where clause but not in the VIEW definition,
@@ -2717,13 +2720,13 @@ static void put_trigger_blr(GPRE_REQ request,
 //  
 //  
 
-static void put_view_trigger_blr(GPRE_REQ request,
+static void put_view_trigger_blr(gpre_req* request,
 								 const gpre_rel* relation,
 								 USHORT operator_,
-								 GPRE_TRG trigger,
-	GPRE_NOD view_boolean, GPRE_CTX* contexts, GPRE_NOD set_list)
+								 gpre_trg* trigger,
+	GPRE_NOD view_boolean, gpre_ctx** contexts, GPRE_NOD set_list)
 {
-	gpre_rse* node = (GPRE_RSE) trigger->trg_boolean;
+	gpre_rse* node = (gpre_rse*) trigger->trg_boolean;
 	STUFF(operator_);
 	const USHORT offset = request->req_blr - request->req_base;
 	STUFF_WORD(0);
@@ -2788,7 +2791,7 @@ static void put_view_trigger_blr(GPRE_REQ request,
 //____________________________________________________________
 //  
 //		Replace fields in given rse by fields referenced in VIEW.
-//		if fields in GPRE_RSE are not part of VIEW definition, then they 
+//		if fields in gpre_rse are not part of VIEW definition, then they
 //		are not changed.
 //		If search list is not specified, then only the context of the fields
 //		in the rse is chaged to contexts[2].
@@ -2856,7 +2859,7 @@ static void replace_field_names(gpre_nod* const input,
 //		Generate dynamic DDL for a set statistics
 //  
 
-static void set_statistics( GPRE_REQ request, const act* action)
+static void set_statistics( gpre_req* request, const act* action)
 {
 	const sts* stats = (STS) action->act_object;
 	if (stats)

@@ -52,7 +52,7 @@ static int isStarted = 0;
 static HWND hStcText;
 
 void SRVR_WinMain(
-				  PORT main_port,
+				  rem_port* main_port,
 				  USHORT flags,
 				  HINSTANCE hInstance, HINSTANCE hPrevInstance, int nCmdShow)
 {
@@ -67,7 +67,7 @@ void SRVR_WinMain(
  *
  **************************************/
 	PACKET send, receive;
-	PORT port;
+	rem_port* port;
 
 	MSG msg;
 	HWND hWnd;

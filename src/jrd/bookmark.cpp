@@ -36,7 +36,7 @@
 
 
 #ifdef PC_ENGINE
-BKM BKM_allocate(RSB rsb, USHORT length)
+BKM BKM_allocate(Rsb* rsb, USHORT length)
 {
 /**************************************
  *
@@ -51,7 +51,7 @@ BKM BKM_allocate(RSB rsb, USHORT length)
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 	jrd_req* request = tdbb->tdbb_request;
-	irsb* impure = (IRSB) ((UCHAR *) request + rsb->rsb_impure);
+	irsb* impure = (irsb*) ((UCHAR *) request + rsb->rsb_impure);
 
 /* allocate the bookmark and link it into the 
    linked list hanging off the attachment block */

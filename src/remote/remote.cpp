@@ -69,14 +69,14 @@ void REMOTE_cleanup_transaction( RTR transaction)
  *	receive while we still have something cached.
  *
  **************************************/
-	for (RRQ request = transaction->rtr_rdb->rdb_requests; request;
+	for (rrq* request = transaction->rtr_rdb->rdb_requests; request;
 		 request = request->rrq_next) 
 	{
 		if (request->rrq_rtr == transaction) {
 			REMOTE_reset_request(request, 0);
 			request->rrq_rtr = NULL;
 		}
-		for (RRQ level = request->rrq_levels; level; level = level->rrq_next)
+		for (rrq* level = request->rrq_levels; level; level = level->rrq_next)
 			if (level->rrq_rtr == transaction) {
 				REMOTE_reset_request(level, 0);
 				level->rrq_rtr = NULL;
@@ -95,8 +95,8 @@ void REMOTE_cleanup_transaction( RTR transaction)
 }
 
 
-ULONG REMOTE_compute_batch_size(PORT port,
-								USHORT buffer_used, P_OP op_code, FMT format)
+ULONG REMOTE_compute_batch_size(rem_port* port,
+								USHORT buffer_used, P_OP op_code, rem_fmt* format)
 {
 /**************************************
  *
@@ -223,7 +223,7 @@ ULONG REMOTE_compute_batch_size(PORT port,
 }
 
 
-RRQ REMOTE_find_request(RRQ request, USHORT level)
+rrq* REMOTE_find_request(rrq* request, USHORT level)
 {
 /**************************************
  *
@@ -248,7 +248,7 @@ RRQ REMOTE_find_request(RRQ request, USHORT level)
 
 /* This is a new level -- make up a new request block. */
 
-	request->rrq_levels = (RRQ) ALLR_clone(&request->rrq_header);
+	request->rrq_levels = (rrq*) ALLR_clone(&request->rrq_header);
 /* NOMEM: handled by ALLR_clone, FREE: REMOTE_remove_request() */
 #ifdef DEBUG_REMOTE_MEMORY
 	ib_printf("REMOTE_find_request       allocate request %x\n",
@@ -263,7 +263,7 @@ RRQ REMOTE_find_request(RRQ request, USHORT level)
 	rrq::rrq_repeat* tail = request->rrq_rpt;
 	const rrq::rrq_repeat* const end = tail + request->rrq_max_msg;
 	for (; tail <= end; tail++) {
-		FMT format = tail->rrq_format;
+		const rem_fmt* format = tail->rrq_format;
 		if (!format)
 			continue;
 		REM_MSG msg = (REM_MSG) ALLOCV(type_msg, format->fmt_length);
@@ -283,7 +283,7 @@ RRQ REMOTE_find_request(RRQ request, USHORT level)
 }
 
 
-void REMOTE_free_packet( PORT port, PACKET * packet)
+void REMOTE_free_packet( rem_port* port, PACKET * packet)
 {
 /**************************************
  *
@@ -319,7 +319,7 @@ void REMOTE_free_packet( PORT port, PACKET * packet)
 
 
 void REMOTE_get_timeout_params(
-										  PORT port,
+										  rem_port* port,
 										  const UCHAR* dpb, USHORT dpb_length)
 {
 /**************************************
@@ -494,7 +494,7 @@ void REMOTE_release_messages( REM_MSG messages)
 }
 
 
-void REMOTE_release_request( RRQ request)
+void REMOTE_release_request( rrq* request)
 {
 /**************************************
  *
@@ -508,7 +508,7 @@ void REMOTE_release_request( RRQ request)
  **************************************/
 	RDB rdb = request->rrq_rdb;
 
-	for (RRQ* p = &rdb->rdb_requests; *p; p = &(*p)->rrq_next)
+	for (rrq** p = &rdb->rdb_requests; *p; p = &(*p)->rrq_next)
 		if (*p == request) {
 			*p = request->rrq_next;
 			break;
@@ -534,7 +534,7 @@ void REMOTE_release_request( RRQ request)
 				REMOTE_release_messages(message);
 			}
 		}
-		RRQ next = request->rrq_levels;
+		rrq* next = request->rrq_levels;
 #ifdef DEBUG_REMOTE_MEMORY
 		ib_printf("REMOTE_release_request    free request     %x\n", request);
 #endif
@@ -545,7 +545,7 @@ void REMOTE_release_request( RRQ request)
 }
 
 
-void REMOTE_reset_request( RRQ request, REM_MSG active_message)
+void REMOTE_reset_request( rrq* request, REM_MSG active_message)
 {
 /**************************************
  *
@@ -698,7 +698,7 @@ void REMOTE_save_status_strings( ISC_STATUS* vector)
 }
 
 
-OBJCT REMOTE_set_object(PORT port, BLK object, OBJCT slot)
+OBJCT REMOTE_set_object(rem_port* port, BLK object, OBJCT slot)
 {
 /**************************************
  *
@@ -797,37 +797,37 @@ static SLONG get_parameter(const UCHAR** ptr)
 
 // TMN: Beginning of C++ port - ugly but a start
 
-int port::accept(p_cnct* cnct)
+int rem_port::accept(p_cnct* cnct)
 {
 	return (*this->port_accept)(this, cnct);
 }
 
-void port::disconnect()
+void rem_port::disconnect()
 {
 	(*this->port_disconnect)(this);
 }
 
-port* port::receive(PACKET* pckt)
+rem_port* rem_port::receive(PACKET* pckt)
 {
 	return (*this->port_receive_packet)(this, pckt);
 }
 
-XDR_INT port::send(PACKET* pckt)
+XDR_INT rem_port::send(PACKET* pckt)
 {
 	return (*this->port_send_packet)(this, pckt);
 }
 
-XDR_INT port::send_partial(PACKET* pckt)
+XDR_INT rem_port::send_partial(PACKET* pckt)
 {
 	return (*this->port_send_partial)(this, pckt);
 }
 
-port* port::connect(PACKET* pckt, void(*ast)())
+rem_port* rem_port::connect(PACKET* pckt, void(*ast)())
 {
 	return (*this->port_connect)(this, pckt, ast);
 }
 
-port* port::request(PACKET* pckt)
+rem_port* rem_port::request(PACKET* pckt)
 {
 	return (*this->port_request)(this, pckt);
 }

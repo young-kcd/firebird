@@ -1215,7 +1215,8 @@ void API_ROUTINE isc_set_single_user(const UCHAR** dpb,
 
 }
 
-static void print_version(void* dummy, const char* version) {
+static void print_version(void* dummy, const char* version)
+{
 	ib_printf("\t%s\n", version);
 }
 

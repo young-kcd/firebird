@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: tree.h,v 1.22 2003-11-03 23:50:05 brodsom Exp $
+ *  $Id: tree.h,v 1.23 2004-01-28 07:50:18 robocop Exp $
  *
  */
 
@@ -213,7 +213,8 @@ private:
 			if (level) {
 				((NodeList *)node)->parent = parent;
 				((NodeList *)node)->level = level-1;
-			} else
+			}
+			else
 				((ItemList *)node)->parent = parent;
 		}		
 		static void setNodeParent(void *node, int level, NodeList *parent) {
@@ -632,7 +633,8 @@ void BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::_
 			NodeList::setNodeParent(root, level, NULL);
 			list->~NodeList();
 			pool->deallocate(list);
-		} else {		
+		}
+		else {		
 			NodeList *temp;
 			if ( (temp = list->prev) && 
 				 NEED_MERGE(temp->getCount()+list->getCount(), NodeCount) ) 

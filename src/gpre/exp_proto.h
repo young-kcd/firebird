@@ -24,19 +24,19 @@
 #ifndef GPRE_EXP_PROTO_H
 #define GPRE_EXP_PROTO_H
 
-GPRE_NOD	EXP_array(GPRE_REQ, GPRE_FLD, bool, bool);
-GPRE_FLD	EXP_cast(GPRE_FLD);
-GPRE_CTX	EXP_context(GPRE_REQ, SYM);
-GPRE_FLD	EXP_field(GPRE_CTX*);
+GPRE_NOD	EXP_array(gpre_req*, gpre_fld*, bool, bool);
+gpre_fld*	EXP_cast(gpre_fld*);
+gpre_ctx*	EXP_context(gpre_req*, gpre_sym*);
+gpre_fld*	EXP_field(gpre_ctx**);
 void		EXP_left_paren(const TEXT*);
 GPRE_NOD	EXP_literal(void);
 void		EXP_post_array(REF);
-REF			EXP_post_field(GPRE_FLD, GPRE_CTX, bool);
+REF			EXP_post_field(gpre_fld*, gpre_ctx*, bool);
 bool		EXP_match_paren(void);
-GPRE_REL	EXP_relation(void);
-GPRE_RSE	EXP_rse(GPRE_REQ, SYM);
-void		EXP_rse_cleanup(GPRE_RSE);
-GPRE_NOD	EXP_subscript(GPRE_REQ);
+gpre_rel*	EXP_relation(void);
+gpre_rse*	EXP_rse(gpre_req*, gpre_sym*);
+void		EXP_rse_cleanup(gpre_rse*);
+GPRE_NOD	EXP_subscript(gpre_req*);
 SLONG		EXP_SLONG_ordinal(bool);
 SINT64		EXP_SINT64_ordinal(bool);
 SSHORT		EXP_SSHORT_ordinal(bool);

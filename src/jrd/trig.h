@@ -58,25 +58,25 @@ struct jrd_trg
 
 /* trigger message structure */
 
-typedef struct trigger_msg
+struct trigger_msg
 {
 	const SCHAR*	trigmsg_name;
 	USHORT			trigmsg_number;
 	const SCHAR*	trigmsg_text;
 	UCHAR			trg_ods_version;
-} TRIGMSG;
+};
 
 /* generator definition structure */
 
-typedef struct gen
+struct gen
 {
 	const SCHAR*	gen_name;
 	USHORT			gen_id;
-} GEN;
+};
 
 /* generators needed by the system triggers */
 
-static const GEN generators[] =
+static const gen generators[] =
 {
 	{ "RDB$SECURITY_CLASS", 0 },
 	{ "SQL$DEFAULT", 0 },
@@ -2304,3 +2304,4 @@ static const UCHAR trigger35[] = {
 };
 
 #endif /* JRD_TRIG_H */
+

@@ -40,7 +40,7 @@ int DBG_examine(int *);
 int DBG_init(void);
 int DBG_open(void);
 int DBG_pool(class JrdMemoryPool*);
-int DBG_pretty(jrd_nod*, int);
+int DBG_pretty(const jrd_nod*, int);
 int DBG_rpb(rpb*);
 int DBG_smb(smb*, int);
 int DBG_verify(void);

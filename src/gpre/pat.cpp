@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pat.cpp,v 1.21 2003-11-28 06:48:12 robocop Exp $
+//	$Id: pat.cpp,v 1.22 2004-01-28 07:50:27 robocop Exp $
 //
 
 #include "firebird.h"
@@ -37,7 +37,7 @@
 #include "../gpre/lang_proto.h"
 
 
-extern TEXT* ident_pattern;
+extern const TEXT* ident_pattern;
 
 typedef enum {
 	NL,

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int_cxx.cpp,v 1.27 2004-01-21 07:16:15 skidder Exp $
+//	$Id: int_cxx.cpp,v 1.28 2004-01-28 07:50:27 robocop Exp $
 //
 
 #include "firebird.h"
@@ -55,17 +55,17 @@ static void gen_erase(const act*, int);
 static void gen_for(const act*, int);
 static char* gen_name(char*, const ref*);
 static void gen_raw(const gpre_req*);
-static void gen_receive(const gpre_req*, const por*);
+static void gen_receive(const gpre_req*, const gpre_port*);
 static void gen_request(const gpre_req*);
 static void gen_routine(const act*, int);
 static void gen_s_end(const act*, int);
 static void gen_s_fetch(const act*, int);
 static void gen_s_start(const act*, int);
-static void gen_send(const gpre_req*, const por*, int, bool);
-static void gen_start(const gpre_req*, const por*, int, bool);
+static void gen_send(const gpre_req*, const gpre_port*, int, bool);
+static void gen_start(const gpre_req*, const gpre_port*, int, bool);
 static void gen_type(const act*, int);
 static void gen_variable(const act*, int);
-static void make_port(POR, int);
+static void make_port(gpre_port*, int);
 static void printa(const int, const TEXT*, ...);
 
 static bool global_first_flag = false;
@@ -198,7 +198,7 @@ static void asgn_from( REF reference, int column)
 
 	for (; reference; reference = reference->ref_next)
 	{
-		const GPRE_FLD field = reference->ref_field;
+		const gpre_fld* field = reference->ref_field;
 		align(column);
 		gen_name(variable, reference);
 		const TEXT* value;
@@ -240,7 +240,7 @@ static void asgn_to( REF reference)
 	TEXT s[20];
 
 	REF source = reference->ref_friend;
-	GPRE_FLD field = source->ref_field;
+	gpre_fld* field = source->ref_field;
 	gen_name(s, source);
 
 	// Repeated later down in function gen_emodify, but then
@@ -293,7 +293,7 @@ static void gen_compile( const gpre_req* request, int column)
 {
 	column += INDENT;
 	const dbb* db = request->req_database;
-	const sym* symbol = db->dbb_name;
+	const gpre_sym* symbol = db->dbb_name;
 	ib_fprintf(out_file, "if (!%s)", request->req_handle);
 	align(column);
 	ib_fprintf(out_file,
@@ -328,7 +328,7 @@ static void gen_emodify( const act* action, int column)
 {
 	TEXT s1[20], s2[20];
 
-	const upd* modify = (UPD) action->act_object;
+	const upd* modify = (upd*) action->act_object;
 
 	for (const ref* reference = modify->upd_port->por_references; reference;
 		 reference = reference->ref_next)
@@ -396,7 +396,7 @@ static void gen_endfor( const act* action, int column)
 
 static void gen_erase( const act* action, int column)
 {
-	UPD erase = (UPD) action->act_object;
+	upd* erase = (upd*) action->act_object;
 	gen_send(erase->upd_request, erase->upd_port, column, false);
 }
 
@@ -478,7 +478,7 @@ static void gen_raw( const gpre_req* request)
 //		Generate a send or receive call for a port.
 //  
 
-static void gen_receive( const gpre_req* request, const por* port)
+static void gen_receive( const gpre_req* request, const gpre_port* port)
 {
 
 	ib_fprintf(out_file,
@@ -522,10 +522,10 @@ static void gen_request( const gpre_req* request)
 
 static void gen_routine( const act* action, int column)
 {
-	for (const gpre_req* request = (GPRE_REQ) action->act_object; request;
+	for (const gpre_req* request = (gpre_req*) action->act_object; request;
 		 request = request->req_routine) 
 	{
-		for (POR port = request->req_ports; port; port = port->por_next)
+		for (gpre_port* port = request->req_ports; port; port = port->por_next)
 			make_port(port, column + INDENT);
 	}
 }
@@ -569,7 +569,7 @@ static void gen_s_start( const act* action, int column)
 	const gpre_req* request = action->act_request;
 	gen_compile(request, column);
 
-    const por* port = request->req_vport;
+    const gpre_port* port = request->req_vport;
 	if (port)
 		asgn_from(port->por_references, column);
 
@@ -582,7 +582,8 @@ static void gen_s_start( const act* action, int column)
 //		Generate a send or receive call for a port.
 //  
 
-static void gen_send( const gpre_req* request, const por* port, int column, bool special)
+static void gen_send( const gpre_req* request, const gpre_port* port,
+	int column, bool special)
 {
 	if (special) {
 		align(column);
@@ -603,7 +604,8 @@ static void gen_send( const gpre_req* request, const por* port, int column, bool
 //		Generate a START.
 //  
 
-static void gen_start( const gpre_req* request, const por* port, int column, bool special)
+static void gen_start( const gpre_req* request, const gpre_port* port,
+	int column, bool special)
 {
 	align(column);
 
@@ -647,7 +649,7 @@ static void gen_variable( const act* action, int column)
 //		Insert a port record description in output.
 //  
 
-static void make_port( POR port, int column)
+static void make_port( gpre_port* port, int column)
 {
 	printa(column, "struct {");
 
@@ -655,8 +657,8 @@ static void make_port( POR port, int column)
 		 reference = reference->ref_next)
 	{
 		align(column + INDENT);
-		GPRE_FLD field = reference->ref_field;
-		SYM symbol = field->fld_symbol;
+		gpre_fld* field = reference->ref_field;
+		gpre_sym* symbol = field->fld_symbol;
 		const TEXT* name = symbol->sym_string;
 
 		switch (field->fld_dtype) {

@@ -74,11 +74,11 @@ static bool_t xdr_datum(XDR *, DSC *, BLOB_PTR *);
 static bool_t xdr_debug_packet(XDR *, enum xdr_op, PACKET *);
 #endif
 static bool_t xdr_longs(XDR *, CSTRING *);
-static bool_t xdr_message(XDR *, REM_MSG, FMT);
+static bool_t xdr_message(XDR *, REM_MSG, rem_fmt*);
 static bool_t xdr_quad(XDR *, struct bid *);
 static bool_t xdr_request(XDR *, USHORT, USHORT, USHORT);
 #ifdef VMS
-static bool_t xdr_semi_opaque(XDR *, REM_MSG, FMT);
+static bool_t xdr_semi_opaque(XDR *, REM_MSG, rem_fmt*);
 static bool_t xdr_semi_opaque_slice(XDR *, lstring *);
 #endif
 static bool_t xdr_slice(XDR*, lstring*, USHORT, const UCHAR*);
@@ -176,7 +176,7 @@ void xdr_debug_memory(
  *	status vector.
  *
  **************************************/
-	PORT port = (PORT) xdrs->x_public;
+	rem_port* port = (rem_port*) xdrs->x_public;
 	fb_assert(port != 0);
 	fb_assert(port->port_header.blk_type == type_port);
 
@@ -248,7 +248,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
  **************************************/
 	USHORT i;
 	p_cnct::p_cnct_repeat * tail;
-	PORT port;
+	rem_port* port;
 	P_CNCT *connect;
 	P_ACPT *accept;
 	P_ATCH *attach;
@@ -361,7 +361,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 			reinterpret_cast < SSHORT & >(data->p_data_message_number));
 		MAP(xdr_short, reinterpret_cast < SSHORT & >(data->p_data_messages));
 #ifdef SCROLLABLE_CURSORS
-		port = (PORT) xdrs->x_public;
+		port = (rem_port*) xdrs->x_public;
 		if ((p->p_operation == op_receive) &&
 			(port->port_protocol > PROTOCOL_VERSION8)) {
 			MAP(xdr_short,
@@ -532,7 +532,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 				reinterpret_cast<SSHORT&>(event->p_event_database));
 			MAP(xdr_cstring, event->p_event_items);
 			
-			// Nickolay Samofatov: this values are parsed, but are ignored by the client.
+			// Nickolay Samofatov: these values are parsed, but are ignored by the client.
 			// Values are useful only for debugging, anyway since upper words of pointers
 			// are trimmed for 64-bit clients
 			MAP(xdr_long, reinterpret_cast<SLONG&>(event->p_event_ast));
@@ -689,7 +689,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 
 		/* Changes to this op's protocol must mirror in xdr_protocol_overhead */
 
-		port = (PORT) xdrs->x_public;
+		port = (rem_port*) xdrs->x_public;
 		if (
 			(port->port_protocol > PROTOCOL_VERSION7
 			 && sqldata->p_sqldata_messages)
@@ -1105,7 +1105,7 @@ static bool_t xdr_debug_packet( XDR* xdrs, enum xdr_op xop, PACKET* packet)
  **************************************/
 	ULONG i;
 
-	PORT port = (PORT) xdrs->x_public;
+	rem_port* port = (rem_port*) xdrs->x_public;
 	fb_assert(port != 0);
 	fb_assert(port->port_header.blk_type == type_port);
 
@@ -1195,7 +1195,7 @@ static bool_t xdr_longs( XDR* xdrs, CSTRING* cstring)
 }
 
 
-static bool_t xdr_message( XDR* xdrs, REM_MSG message, FMT format)
+static bool_t xdr_message( XDR* xdrs, REM_MSG message, rem_fmt* format)
 {
 /**************************************
  *
@@ -1210,7 +1210,7 @@ static bool_t xdr_message( XDR* xdrs, REM_MSG message, FMT format)
 	if (xdrs->x_op == XDR_FREE)
 		return TRUE;
 
-	PORT port = (PORT) xdrs->x_public;
+	rem_port* port = (rem_port*) xdrs->x_public;
 
 /* If we are running a symmetric version of the protocol, just slop
    the bits and don't sweat the translations */
@@ -1303,8 +1303,8 @@ static bool_t xdr_request(
 	if (xdrs->x_op == XDR_FREE)
 		return TRUE;
 
-	PORT port = (PORT) xdrs->x_public;
-	RRQ request = (RRQ) port->port_objects[request_id];
+	rem_port* port = (rem_port*) xdrs->x_public;
+	rrq* request = (rrq*) port->port_objects[request_id];
 
 	if (!request)
 		return FALSE;
@@ -1319,7 +1319,7 @@ static bool_t xdr_request(
 		return FALSE;
 
 	tail->rrq_xdr = message->msg_next;
-	FMT format = tail->rrq_format;
+	rem_fmt* format = tail->rrq_format;
 
 /* Find the address of the record */
 
@@ -1331,7 +1331,7 @@ static bool_t xdr_request(
 
 
 #ifdef VMS
-static bool_t xdr_semi_opaque( XDR* xdrs, REM_MSG message, FMT format)
+static bool_t xdr_semi_opaque( XDR* xdrs, REM_MSG message, rem_fmt* format)
 {
 /**************************************
  *
@@ -1474,7 +1474,7 @@ static bool_t xdr_slice(
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	PORT port;
+	rem_port* port;
 	ULONG n;
 	BLOB_PTR *p;
 	DSC *desc;
@@ -1528,7 +1528,7 @@ static bool_t xdr_slice(
 		return FALSE;
 
 	desc = &info.sdl_info_element;
-	port = (PORT) xdrs->x_public;
+	port = (rem_port*) xdrs->x_public;
 	p = (BLOB_PTR *) slice->lstr_address;
 
 	if (port->port_flags & PORT_symmetric) {
@@ -1584,7 +1584,7 @@ static bool_t xdr_sql_blr(
 	if (xdrs->x_op == XDR_FREE)
 		return TRUE;
 
-	PORT port = (PORT) xdrs->x_public;
+	rem_port* port = (rem_port*) xdrs->x_public;
 	RSR statement;
 	if (statement_id >= 0) {
 		if (!(statement = (RSR) port->port_objects[statement_id]))
@@ -1603,7 +1603,7 @@ static bool_t xdr_sql_blr(
 
 /* Parse the blr describing the message. */
 
-	FMT* fmt_ptr = (direction) ?
+	rem_fmt** fmt_ptr = (direction) ?
 		&statement->rsr_select_format : &statement->rsr_bind_format;
 
 	if (xdrs->x_op == XDR_DECODE) {
@@ -1625,7 +1625,7 @@ static bool_t xdr_sql_blr(
 			REM_MSG temp_msg =
 				(REM_MSG) PARSE_messages(blr->cstr_address, blr->cstr_length);
 			if (temp_msg != (REM_MSG) -1) {
-				*fmt_ptr = (FMT) temp_msg->msg_address;
+				*fmt_ptr = (rem_fmt*) temp_msg->msg_address;
 				ALLR_release(temp_msg);
 			}
 		}
@@ -1673,7 +1673,7 @@ static bool_t xdr_sql_message( XDR* xdrs, SLONG statement_id)
 	if (xdrs->x_op == XDR_FREE)
 		return TRUE;
 
-	PORT port = (PORT) xdrs->x_public;
+	rem_port* port = (rem_port*) xdrs->x_public;
 	if (statement_id >= 0) {
 		if (!(statement = (RSR) port->port_objects[statement_id]))
 			return FALSE;
@@ -1795,7 +1795,7 @@ static bool_t xdr_trrq_blr( XDR* xdrs, CSTRING* blr)
 	if (xdrs->x_op == XDR_FREE || xdrs->x_op == XDR_ENCODE)
 		return TRUE;
 
-	PORT port = (PORT) xdrs->x_public;
+	rem_port* port = (rem_port*) xdrs->x_public;
 	RPR procedure = port->port_rpr;
 	if (!procedure)
 		procedure = port->port_rpr = (RPR) ALLOC(type_rpr);
@@ -1823,14 +1823,14 @@ static bool_t xdr_trrq_blr( XDR* xdrs, CSTRING* blr)
 		while (message) {
 			if (message->msg_number == 0) {
 				procedure->rpr_in_msg = message;
-				procedure->rpr_in_format = (FMT) message->msg_address;
+				procedure->rpr_in_format = (rem_fmt*) message->msg_address;
 				message->msg_address = message->msg_buffer;
 				message = message->msg_next;
 				procedure->rpr_in_msg->msg_next = NULL;
 			}
 			else if (message->msg_number == 1) {
 				procedure->rpr_out_msg = message;
-				procedure->rpr_out_format = (FMT) message->msg_address;
+				procedure->rpr_out_format = (rem_fmt*) message->msg_address;
 				message->msg_address = message->msg_buffer;
 				message = message->msg_next;
 				procedure->rpr_out_msg->msg_next = NULL;
@@ -1864,7 +1864,7 @@ static bool_t xdr_trrq_message( XDR* xdrs, USHORT msg_type)
 	if (xdrs->x_op == XDR_FREE)
 		return TRUE;
 
-	PORT port = (PORT) xdrs->x_public;
+	rem_port* port = (rem_port*) xdrs->x_public;
 	RPR procedure = port->port_rpr;
 
 	if (msg_type == 1)
@@ -1893,7 +1893,7 @@ static RSR get_statement( XDR * xdrs, SSHORT statement_id)
  **************************************/
 
 	RSR statement = NULL;
-	PORT port = (PORT) xdrs->x_public;
+	rem_port* port = (rem_port*) xdrs->x_public;
 
 /* if the statement ID is -1, this seems to indicate that we are
    re-executing the previous statement.  This is not a

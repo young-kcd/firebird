@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.89 2004-01-21 07:18:25 skidder Exp $
+$Id: met.epp,v 1.90 2004-01-28 07:50:32 robocop Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -670,7 +670,7 @@ void MET_change_fields( TDBB tdbb, jrd_tra* transaction, DSC * field_source)
 }
 
 
-FMT MET_current(TDBB tdbb, jrd_rel* relation)
+fmt* MET_current(TDBB tdbb, jrd_rel* relation)
 {
 /**************************************
  *
@@ -794,7 +794,7 @@ void MET_error(const TEXT* string, ...)
 			 ERR_cstring(s), 0);
 }
 
-FMT MET_format(TDBB tdbb, jrd_rel* relation, USHORT number)
+fmt* MET_format(TDBB tdbb, jrd_rel* relation, USHORT number)
 {
 /**************************************
  *
@@ -813,7 +813,7 @@ FMT MET_format(TDBB tdbb, jrd_rel* relation, USHORT number)
 	vec* formats = relation->rel_formats;
 	if (formats &&
 		(number < formats->count()) &&
-		(format = (FMT) (*formats)[number]))
+		(format = (fmt*) (*formats)[number]))
 	{
 		return format;
 	}
@@ -2544,7 +2544,7 @@ jrd_prc* MET_procedure(TDBB tdbb, int id, BOOLEAN noscan, USHORT flags)
 	PRM parameter;
 	JrdMemoryPool *old_pool;
 	jrd_nod* node;
-	FMT format;
+	fmt* format;
 	fmt::fmt_desc_iterator desc;
 	SSHORT i;
 
@@ -2703,7 +2703,8 @@ jrd_prc* MET_procedure(TDBB tdbb, int id, BOOLEAN noscan, USHORT flags)
 
 				if (PA.RDB$PARAMETER_TYPE) {
 					vector = procedure->prc_output_fields;
-				} else {
+				}
+				else {
 					vector = procedure->prc_input_fields;
 				}
 
@@ -2725,7 +2726,7 @@ jrd_prc* MET_procedure(TDBB tdbb, int id, BOOLEAN noscan, USHORT flags)
 					old_pool = tdbb->tdbb_default;
 					tdbb->tdbb_default = JrdMemoryPool::createPool();
 
-					Csb *csb_ = Csb::newCsb(*tdbb->tdbb_default, 5);
+					Csb* csb_ = Csb::newCsb(*tdbb->tdbb_default, 5);
 					parameter->prm_default_val = 
 						parse_param_blr(tdbb, procedure, &F.RDB$DEFAULT_VALUE, csb_);
 					
@@ -2778,7 +2779,8 @@ jrd_prc* MET_procedure(TDBB tdbb, int id, BOOLEAN noscan, USHORT flags)
 					if ((int) (IPTR) node->nod_arg[e_msg_number] == 0)
 					{
 						procedure->prc_input_msg = node;
-					} else if ((int) (IPTR) node->nod_arg[e_msg_number] == 1)
+					}
+					else if ((int) (IPTR) node->nod_arg[e_msg_number] == 1)
 					{
 						procedure->prc_output_msg = node;
 					}

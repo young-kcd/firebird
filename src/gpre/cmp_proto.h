@@ -24,13 +24,13 @@
 #ifndef GPRE_CMP_PROTO_H
 #define GPRE_CMP_PROTO_H
 
-void	CMP_check(GPRE_REQ, SSHORT);
-void	CMP_compile_request(GPRE_REQ);
-void	CMP_external_field(GPRE_REQ, GPRE_FLD);
+void	CMP_check(gpre_req*, SSHORT);
+void	CMP_compile_request(gpre_req*);
+void	CMP_external_field(gpre_req*, gpre_fld*);
 void	CMP_init(void);
 USHORT	CMP_next_ident(void);
-void	CMP_stuff_symbol(GPRE_REQ, SYM);
-void	CMP_t_start(GPRE_TRA);
+void	CMP_stuff_symbol(gpre_req*, gpre_sym*);
+void	CMP_t_start(gpre_tra*);
 
 #endif // GPRE_CMP_PROTO_H
 

@@ -24,12 +24,12 @@
 #ifndef REMOTE_INET_PROTO_H
 #define REMOTE_INET_PROTO_H
 
-PORT	INET_analyze(TEXT*, USHORT*, ISC_STATUS*, const TEXT*, const TEXT*,
+rem_port*	INET_analyze(TEXT*, USHORT*, ISC_STATUS*, const TEXT*, const TEXT*,
 	bool, const SCHAR*, SSHORT);
-PORT	INET_connect(const TEXT*, struct packet*, ISC_STATUS*, USHORT,
+rem_port*	INET_connect(const TEXT*, struct packet*, ISC_STATUS*, USHORT,
 	const SCHAR*, SSHORT);
-PORT	INET_reconnect(HANDLE, ISC_STATUS*);
-PORT	INET_server(int);
+rem_port*	INET_reconnect(HANDLE, ISC_STATUS*);
+rem_port*	INET_server(int);
 void	INET_set_clients(int);
 
 #endif // REMOTE_INET_PROTO_H

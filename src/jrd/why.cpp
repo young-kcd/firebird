@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.50 2004-01-21 07:18:26 skidder Exp $
+$Id: why.cpp,v 1.51 2004-01-28 07:50:33 robocop Exp $
 */
 
 #include "firebird.h"
@@ -2316,7 +2316,8 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2_M(ISC_STATUS* user_status,
 												HANDLE_transaction);
 				if (*tra_handle) {
 					(*tra_handle)->parent = statement->parent;
-				} else {
+				}
+				else {
 					status[0] = isc_arg_gds;
 					status[1] = isc_virmemexh;
 					status[2] = isc_arg_end;
@@ -3990,7 +3991,8 @@ ISC_STATUS API_ROUTINE GDS_RECONNECT(ISC_STATUS* user_status,
 									HANDLE_transaction);
 	if (*tra_handle) {
 		(*tra_handle)->parent = database;
-	} else {
+	}
+	else {
 		status[0] = isc_arg_gds;
 		status[1] = isc_virmemexh;
 		status[2] = isc_arg_end;

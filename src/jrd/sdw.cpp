@@ -235,7 +235,8 @@ else
 /** Temporarly reverting the change ------- Sudesh 07/07/95 *******/
 	if (shadow_file == file) {
 		copy_header();
-	} else {
+	}
+	else {
 		--start;
 		header->hdr_data[0] = HDR_end;
 		header->hdr_end = HDR_SIZE;

@@ -98,37 +98,37 @@ static USHORT ostype = 0;
 #define MAX_USER_LENGTH		33
 #define MAX_OTHER_PARAMS	(1 + 1 + sizeof(port->port_dummy_packet_interval))
 
-static RVNT add_event(PORT);
-static void add_other_params(PORT, UCHAR*, USHORT*);
+static RVNT add_event(rem_port*);
+static void add_other_params(rem_port*, UCHAR*, USHORT*);
 static void add_working_directory(UCHAR*, USHORT*, const TEXT*);
-static PORT analyze(TEXT*, USHORT*, ISC_STATUS*, const TEXT*,
+static rem_port* analyze(TEXT*, USHORT*, ISC_STATUS*, const TEXT*,
 					bool, const SCHAR*, SSHORT, TEXT*);
-static PORT analyze_service(TEXT*, USHORT*, ISC_STATUS*, const TEXT*, bool,
+static rem_port* analyze_service(TEXT*, USHORT*, ISC_STATUS*, const TEXT*, bool,
 							const SCHAR*, SSHORT);
-static bool batch_gds_receive(struct trdb *, PORT, struct rmtque *,
+static bool batch_gds_receive(struct trdb *, rem_port*, struct rmtque *,
 								 ISC_STATUS *, USHORT);
-static bool batch_dsql_fetch(struct trdb *, PORT, struct rmtque *,
+static bool batch_dsql_fetch(struct trdb *, rem_port*, struct rmtque *,
 								ISC_STATUS *, USHORT);
 static bool check_response(RDB, PACKET *);
-static bool clear_queue(PORT, ISC_STATUS *);
-static void disconnect(PORT);
+static bool clear_queue(rem_port*, ISC_STATUS *);
+static void disconnect(rem_port*);
 #ifdef SCROLLABLE_CURSORS
-static REM_MSG dump_cache(PORT, ISC_STATUS *, rrq::rrq_repeat *);
+static REM_MSG dump_cache(rem_port*, ISC_STATUS *, rrq::rrq_repeat *);
 #endif
-static void enqueue_receive(PORT,
-							bool(*fn) (struct trdb *, PORT,
+static void enqueue_receive(rem_port*,
+							bool(*fn) (struct trdb *, rem_port*,
 										  struct rmtque *, ISC_STATUS *, USHORT),
 							RDB, void *, void *);
-static void dequeue_receive(PORT);
+static void dequeue_receive(rem_port*);
 static ISC_STATUS error(ISC_STATUS *);
 #ifndef MULTI_THREAD
-static void event_handler(PORT);
+static void event_handler(rem_port*);
 #else
-static void THREAD_ROUTINE event_thread(PORT);
+static void THREAD_ROUTINE event_thread(rem_port*);
 #endif
 static ISC_STATUS fetch_blob(ISC_STATUS*, RSR, USHORT, const UCHAR*, USHORT,
 						USHORT, UCHAR*);
-static RVNT find_event(PORT, SLONG);
+static RVNT find_event(rem_port*, SLONG);
 static bool get_new_dpb(const UCHAR*, SSHORT, bool, UCHAR*, USHORT*, TEXT*);
 #ifdef UNIX
 static bool get_single_user(USHORT, const SCHAR*);
@@ -136,36 +136,36 @@ static bool get_single_user(USHORT, const SCHAR*);
 static ISC_STATUS handle_error(ISC_STATUS *, ISC_STATUS);
 static ISC_STATUS info(ISC_STATUS*, RDB, P_OP, USHORT, USHORT, USHORT,
 					const SCHAR*, USHORT, const SCHAR*, USHORT, SCHAR*);
-static bool init(ISC_STATUS *, PORT, P_OP, UCHAR *, USHORT, UCHAR *, USHORT);
+static bool init(ISC_STATUS *, rem_port*, P_OP, UCHAR *, USHORT, UCHAR *, USHORT);
 static RTR make_transaction(RDB, USHORT);
-static ISC_STATUS mov_dsql_message(const UCHAR*, const fmt*, UCHAR*, const fmt*);
+static ISC_STATUS mov_dsql_message(const UCHAR*, const rem_fmt*, UCHAR*, const rem_fmt*);
 static void move_error(ISC_STATUS, ...);
-static void receive_after_start(RRQ, USHORT);
-static bool receive_packet(PORT, PACKET *, ISC_STATUS *);
-static bool receive_packet_noqueue(PORT, PACKET *, ISC_STATUS *);
-static bool receive_queued_packet(struct trdb *, PORT, ISC_STATUS *, USHORT);
+static void receive_after_start(rrq*, USHORT);
+static bool receive_packet(rem_port*, PACKET *, ISC_STATUS *);
+static bool receive_packet_noqueue(rem_port*, PACKET *, ISC_STATUS *);
+static bool receive_queued_packet(struct trdb *, rem_port*, ISC_STATUS *, USHORT);
 static bool receive_response(RDB, PACKET *);
 static void release_blob(RBL);
 static void release_event(RVNT);
 static bool release_object(RDB, P_OP, USHORT);
-static void release_request(RRQ);
+static void release_request(rrq*);
 static void release_statement(RSR *);
 static void release_sql_request(RSR);
 static void release_transaction(RTR);
 static ISC_STATUS return_success(RDB);
 #ifdef SCROLLABLE_CURSORS
-static REM_MSG scroll_cache(ISC_STATUS *, struct trdb *, RRQ, PORT, rrq::rrq_repeat *,
+static REM_MSG scroll_cache(ISC_STATUS *, struct trdb *, rrq*, rem_port*, rrq::rrq_repeat *,
 						USHORT *, ULONG *);
 #endif
 static ISC_STATUS send_and_receive(RDB, PACKET *, ISC_STATUS *);
 static ISC_STATUS send_blob(ISC_STATUS*, RBL, USHORT, const UCHAR*);
 static void send_cancel_event(RVNT);
-static bool send_packet(PORT, PACKET *, ISC_STATUS *);
+static bool send_packet(rem_port*, PACKET *, ISC_STATUS *);
 #ifdef NOT_USED_OR_REPLACED
-static bool send_partial_packet(PORT, PACKET *, ISC_STATUS *);
+static bool send_partial_packet(rem_port*, PACKET *, ISC_STATUS *);
 #endif
 #ifdef MULTI_THREAD
-static void server_death(PORT);
+static void server_death(rem_port*);
 #endif
 static void stuff_vax_integer(UCHAR*, SLONG, USHORT);
 static ISC_STATUS svcstart(ISC_STATUS*, RDB, P_OP, USHORT, USHORT, USHORT, const SCHAR*);
@@ -295,7 +295,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	UCHAR	new_dpb[MAXPATHLEN];
 	UCHAR* new_dpb_ptr = new_dpb;
-	PORT port = 0; // MAX_OTHER_PARAMS uses port_dummy_packet_interval
+	rem_port* port = 0; // MAX_OTHER_PARAMS uses port_dummy_packet_interval
 
 	if ((dpb_length + MAX_USER_LENGTH + MAX_PASSWORD_ENC_LENGTH +
 		 MAX_OTHER_PARAMS) > sizeof(new_dpb))
@@ -485,7 +485,7 @@ ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS * user_status, RDB * handle, SLONG * id)
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
 	trdb->trdb_database = rdb;
-	PORT port = rdb->rdb_port;
+	rem_port* port = rdb->rdb_port;
 
 	try
 	{
@@ -535,7 +535,7 @@ ISC_STATUS GDS_CLOSE_BLOB(ISC_STATUS * user_status, RBL * blob_handle)
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
 	trdb->trdb_database = rdb;
-	PORT port = rdb->rdb_port;
+	rem_port* port = rdb->rdb_port;
 
 	try
 	{
@@ -654,7 +654,7 @@ ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS * user_status, RTR * rtr_handle)
 
 ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 				   RDB* db_handle,
-				   RRQ* req_handle, USHORT blr_length, const UCHAR* blr)
+				   rrq** req_handle, USHORT blr_length, const UCHAR* blr)
 {
 /**************************************
  *
@@ -686,7 +686,8 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 		const UCHAR* new_blr;
 		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION5) {
 			new_blr = PARSE_prepare_messages(blr, blr_length);
-		} else {
+		}
+		else {
 			new_blr = blr;
 		}
 
@@ -718,7 +719,7 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 		}
 
 		/* Allocate request block */
-		RRQ request = (RRQ) ALLOCV(type_rrq, max_msg + 1);
+		rrq* request = (rrq*) ALLOCV(type_rrq, max_msg + 1);
 		*req_handle = request;
 		request->rrq_rdb = rdb;
 		request->rrq_id = packet->p_resp.p_resp_object;
@@ -746,7 +747,7 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 #ifdef SCROLLABLE_CURSORS
 			tail->rrq_last = NULL;
 #endif
-			tail->rrq_format = (FMT) message->msg_address;
+			tail->rrq_format = (rem_fmt*) message->msg_address;
 
 			message->msg_address = NULL;
 		}
@@ -883,7 +884,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	strcpy((char *) expanded_name, (char *) expanded_filename);
 	USHORT length = strlen((char *) expanded_name);
 
-	PORT port;
+	rem_port* port;
 	UCHAR new_dpb[MAXPATHLEN];
 	UCHAR* new_dpb_ptr = new_dpb;
 
@@ -1000,7 +1001,7 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS*	user_status,
 
 		if (!status)
 		{
-			PORT port = rdb->rdb_port;
+			rem_port* port = rdb->rdb_port;
 
 			/* two bytes too much allocated, better safe than sorry */
 			const size_t nLen = strlen(GDS_VERSION) +
@@ -1109,7 +1110,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, RDB* handle)
 	RDB rdb = *handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 
-	PORT port = rdb->rdb_port;
+	rem_port* port = rdb->rdb_port;
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
 	trdb->trdb_database = rdb;
@@ -1197,7 +1198,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, RDB* handle)
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
 	trdb->trdb_database = rdb;
-	PORT port = rdb->rdb_port;
+	rem_port* port = rdb->rdb_port;
 
 	try
 	{
@@ -1368,7 +1369,7 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
 		CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
 	}
 
-	PORT port = rdb->rdb_port;
+	rem_port* port = rdb->rdb_port;
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
 	trdb->trdb_database = rdb;
@@ -1392,7 +1393,7 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
 			}
 			REM_MSG message = PARSE_messages(in_blr, in_blr_length);
 			if (message != (REM_MSG) - 1) {
-				statement->rsr_bind_format = (FMT) message->msg_address;
+				statement->rsr_bind_format = (rem_fmt*) message->msg_address;
 				ALLR_RELEASE(message);
 			}
 		}
@@ -1411,7 +1412,7 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
 			REM_MSG message = PARSE_messages(out_blr, out_blr_length);
 			if (message != (REM_MSG) - 1) {
 				port->port_statement->rsr_select_format =
-					(FMT) message->msg_address;
+					(rem_fmt*) message->msg_address;
 				ALLR_RELEASE(message);
 			}
 
@@ -1573,7 +1574,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 		CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
 	}
 
-	PORT port = rdb->rdb_port;
+	rem_port* port = rdb->rdb_port;
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
 	trdb->trdb_database = rdb;
@@ -1625,7 +1626,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 			{
 				REM_MSG message = PARSE_messages(in_blr, in_blr_length);
 				if ((message) != (REM_MSG) - 1) {
-					statement->rsr_bind_format = (FMT) message->msg_address;
+					statement->rsr_bind_format = (rem_fmt*) message->msg_address;
 					ALLR_RELEASE(message);
 				}
 			}
@@ -1633,7 +1634,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 			{
 				REM_MSG message = PARSE_messages(out_blr, out_blr_length);
 				if ((message) != (REM_MSG) - 1) {
-					statement->rsr_select_format = (FMT) message->msg_address;
+					statement->rsr_select_format = (rem_fmt*) message->msg_address;
 					ALLR_RELEASE(message);
 				}
 			}
@@ -1749,7 +1750,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 	RSR statement = *stmt_handle;
 	CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
 	RDB rdb = statement->rsr_rdb;
-	PORT port = rdb->rdb_port;
+	rem_port* port = rdb->rdb_port;
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
 	trdb->trdb_database = rdb;
@@ -1793,7 +1794,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 				ALLR_RELEASE(statement->rsr_user_select_format);
 			REM_MSG message = PARSE_messages(blr, blr_length);
 			if (message != (REM_MSG) - 1) {
-				statement->rsr_user_select_format = (FMT) message->msg_address;
+				statement->rsr_user_select_format = (rem_fmt*) message->msg_address;
 				ALLR_RELEASE(message);
 			}
 			else
@@ -1973,7 +1974,10 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 		else {
 			if (mov_dsql_message
 				(message->msg_address, statement->rsr_select_format, msg,
-				 statement->rsr_user_select_format)) return error(user_status);
+				 statement->rsr_user_select_format))
+			{
+				return error(user_status);
+			}
 		}
 
 		message->msg_address = NULL;
@@ -2101,7 +2105,7 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS * user_status,
 			}
 			REM_MSG message = PARSE_messages(blr, blr_length);
 			if (message != (REM_MSG) - 1) {
-				statement->rsr_bind_format = (FMT) message->msg_address;
+				statement->rsr_bind_format = (rem_fmt*) message->msg_address;
 				ALLR_RELEASE(message);
 			}
 		}
@@ -2407,7 +2411,7 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
 	trdb->trdb_database = rdb;
-	PORT port = rdb->rdb_port;
+	rem_port* port = rdb->rdb_port;
 
 	try
 	{
@@ -2650,7 +2654,8 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 		const UCHAR* new_sdl;
 		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION6) {
 			new_sdl = SDL_prepare_slice(sdl, sdl_length);
-		} else {
+		}
+		else {
 			new_sdl = sdl;
 		}
 
@@ -2883,7 +2888,7 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
 	trdb->trdb_database = rdb;
-	PORT port = rdb->rdb_port;
+	rem_port* port = rdb->rdb_port;
 
 	try
 	{
@@ -3070,7 +3075,7 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
 	trdb->trdb_database = rdb;
-	PORT port = rdb->rdb_port;
+	rem_port* port = rdb->rdb_port;
 	PACKET* packet = &rdb->rdb_packet;
 
 	try
@@ -3156,7 +3161,7 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 
 
 ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
-				   RRQ * req_handle,
+				   rrq** req_handle,
 				   USHORT msg_type,
 				   USHORT msg_length, UCHAR * msg, SSHORT level
 #ifdef SCROLLABLE_CURSORS
@@ -3182,7 +3187,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 /* Check handles and environment, then set up error handling */
 
 	CHECK_HANDLE((*req_handle), type_rrq, isc_bad_req_handle);
-	RRQ request = REMOTE_find_request(*req_handle, level);
+	rrq* request = REMOTE_find_request(*req_handle, level);
 	RDB rdb = request->rrq_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
@@ -3191,7 +3196,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 
 	try
 	{
-		PORT port = rdb->rdb_port;
+		rem_port* port = rdb->rdb_port;
 		rrq::rrq_repeat* tail = &request->rrq_rpt[msg_type];
 
 		REM_MSG message = tail->rrq_message;
@@ -3450,7 +3455,7 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, RRQ * req_handle)
+ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, rrq** req_handle)
 {
 /**************************************
  *
@@ -3466,7 +3471,7 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, RRQ * req_handle)
 
 	SET_THREAD_DATA;
 
-	RRQ request = *req_handle;
+	rrq* request = *req_handle;
 	CHECK_HANDLE(request, type_rrq, isc_bad_req_handle);
 	RDB rdb = request->rrq_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
@@ -3493,7 +3498,7 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, RRQ * req_handle)
 
 
 ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
-						RRQ* req_handle,
+						rrq** req_handle,
 						SSHORT level,
 						SSHORT item_length,
 						const UCHAR* items, SSHORT buffer_length, UCHAR* buffer)
@@ -3513,7 +3518,7 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 
 	SET_THREAD_DATA;
 
-	RRQ request = REMOTE_find_request(*req_handle, level);
+	rrq* request = REMOTE_find_request(*req_handle, level);
 	CHECK_HANDLE(request, type_rrq, isc_bad_req_handle);
 	RDB rdb = request->rrq_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
@@ -3535,7 +3540,7 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 
 			/* We've got a pending message, respond locally */
 
-			const fmt* format = tail->rrq_format;
+			const rem_fmt* format = tail->rrq_format;
 			UCHAR* out = buffer;
 			const UCHAR* info_items = items;
 			const UCHAR* const end_items = info_items + item_length;
@@ -3746,7 +3751,7 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS * user_status,
 
 
 ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
-				RRQ * req_handle,
+				rrq** req_handle,
 				USHORT msg_type, USHORT msg_length, UCHAR * msg, SSHORT level)
 {
 /**************************************
@@ -3764,7 +3769,7 @@ ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
 	SET_THREAD_DATA;
 
 	CHECK_HANDLE((*req_handle), type_rrq, isc_bad_req_handle);
-	RRQ request = REMOTE_find_request(*req_handle, level);
+	rrq* request = REMOTE_find_request(*req_handle, level);
 	RDB rdb = request->rrq_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	if (msg_type > request->rrq_max_msg)
@@ -3845,7 +3850,7 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 	*v++ = isc_unavailable;
 	*v = isc_arg_end;
 
-	PORT port;
+	rem_port* port;
 	UCHAR new_spb[MAXPATHLEN];
 	UCHAR* new_spb_ptr = new_spb;
 	if ((spb_length + MAX_USER_LENGTH + MAX_PASSWORD_ENC_LENGTH +
@@ -3947,7 +3952,7 @@ ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS * user_status, RDB * handle)
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
 	trdb->trdb_database = rdb;
-	PORT port = rdb->rdb_port;
+	rem_port* port = rdb->rdb_port;
 
 	try
 	{
@@ -4097,8 +4102,8 @@ ISC_STATUS GDS_SERVICE_START(ISC_STATUS * user_status,
 
 
 ISC_STATUS GDS_START_AND_SEND(ISC_STATUS * user_status,
-						  RRQ * req_handle,
-						  RTR * rtr_handle,
+						  rrq** req_handle,
+						  RTR* rtr_handle,
 						  USHORT msg_type,
 						  USHORT msg_length, UCHAR * msg, SSHORT level)
 {
@@ -4118,7 +4123,7 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS * user_status,
 
 	CHECK_HANDLE((*req_handle), type_rrq, isc_bad_req_handle);
 	CHECK_HANDLE((*rtr_handle), type_rtr, isc_bad_trans_handle);
-	RRQ request = REMOTE_find_request(*req_handle, level);
+	rrq* request = REMOTE_find_request(*req_handle, level);
 	RTR transaction = *rtr_handle;
 	RDB rdb = request->rrq_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
@@ -4186,8 +4191,8 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS * user_status,
 
 
 ISC_STATUS GDS_START(ISC_STATUS * user_status,
-				 RRQ * req_handle,
-				 RTR * rtr_handle, USHORT level)
+				 rrq** req_handle,
+				 RTR* rtr_handle, USHORT level)
 {
 /**************************************
  *
@@ -4205,7 +4210,7 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
 
 	CHECK_HANDLE((*req_handle), type_rrq, isc_bad_req_handle);
 	CHECK_HANDLE((*rtr_handle), type_rtr, isc_bad_trans_handle);
-	RRQ request = REMOTE_find_request(*req_handle, level);
+	rrq* request = REMOTE_find_request(*req_handle, level);
 	RTR transaction = *rtr_handle;
 	RDB rdb = request->rrq_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
@@ -4338,7 +4343,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
 	trdb->trdb_database = rdb;
-	PORT port = rdb->rdb_port;
+	rem_port* port = rdb->rdb_port;
 
 	try
 	{
@@ -4384,14 +4389,14 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
 			while (message) {
 				if (message->msg_number == 0) {
 					procedure->rpr_in_msg = message;
-					procedure->rpr_in_format = (FMT) message->msg_address;
+					procedure->rpr_in_format = (rem_fmt*) message->msg_address;
 					message->msg_address = in_msg;
 					message = message->msg_next;
 					procedure->rpr_in_msg->msg_next = NULL;
 				}
 				else if (message->msg_number == 1) {
 					procedure->rpr_out_msg = message;
-					procedure->rpr_out_format = (FMT) message->msg_address;
+					procedure->rpr_out_format = (rem_fmt*) message->msg_address;
 					message->msg_address = out_msg;
 					message = message->msg_next;
 					procedure->rpr_out_msg->msg_next = NULL;
@@ -4493,7 +4498,7 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status, RRQ * req_handle, USHORT level)
+ISC_STATUS GDS_UNWIND(ISC_STATUS* user_status, rrq** req_handle, USHORT level)
 {
 /**************************************
  *
@@ -4509,7 +4514,7 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status, RRQ * req_handle, USHORT level)
 
 	SET_THREAD_DATA;
 
-	RRQ request = REMOTE_find_request(*req_handle, level);
+	rrq* request = REMOTE_find_request(*req_handle, level);
 	CHECK_HANDLE(request, type_rrq, isc_bad_req_handle);
 	RDB rdb = request->rrq_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
@@ -4530,7 +4535,7 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status, RRQ * req_handle, USHORT level)
 }
 
 
-static RVNT add_event( PORT port)
+static RVNT add_event( rem_port* port)
 {
 /*************************************
  * 
@@ -4564,7 +4569,7 @@ static RVNT add_event( PORT port)
 }
 
 
-static void add_other_params( PORT port, UCHAR* dpb_or_spb, USHORT* length)
+static void add_other_params( rem_port* port, UCHAR* dpb_or_spb, USHORT* length)
 {
 /**************************************
  *
@@ -4633,7 +4638,7 @@ static void add_working_directory(UCHAR*	dpb_or_spb,
 }
 
 
-static PORT analyze(TEXT*	file_name,
+static rem_port* analyze(TEXT*	file_name,
 					USHORT*	file_length,
 					ISC_STATUS*	status_vector,
 					const TEXT*	user_string,
@@ -4669,7 +4674,7 @@ static PORT analyze(TEXT*	file_name,
 #endif
 
 	file_name[*file_length] = 0;
-	PORT port = NULL;
+	rem_port* port = NULL;
 
 /* Analyze the file name to see if a remote connection is required.  If not,
    quietly (sic) return. */
@@ -4808,7 +4813,7 @@ static PORT analyze(TEXT*	file_name,
 }
 
 
-static PORT analyze_service(TEXT* service_name,
+static rem_port* analyze_service(TEXT* service_name,
 							USHORT* service_length,
 							ISC_STATUS* status_vector,
 							const TEXT* user_string,
@@ -4834,7 +4839,7 @@ static PORT analyze_service(TEXT* service_name,
 	service_name[*service_length] = 0;
 	TEXT node_name[MAXPATHLEN];
 	node_name[0] = '\0';
-	PORT port = NULL;
+	rem_port* port = NULL;
 
 /* Analyze the service name to see if a remote connection is required.  If not,
    quietly (sic) return. */
@@ -4897,7 +4902,7 @@ static PORT analyze_service(TEXT* service_name,
 
 
 static bool batch_dsql_fetch(trdb*	trdb,
-							 PORT	port,
+							 rem_port*	port,
 							 rmtque*	que,
 							 ISC_STATUS*	user_status,
 							 USHORT		id)
@@ -5056,7 +5061,7 @@ static bool batch_dsql_fetch(trdb*	trdb,
 
 
 static bool batch_gds_receive(trdb*		trdb,
-							  PORT		port,
+							  rem_port*		port,
 							  rmtque*	que,
 							  ISC_STATUS*	user_status,
 							  USHORT		id)
@@ -5090,7 +5095,7 @@ static bool batch_gds_receive(trdb*		trdb,
 	fb_assert(que->rmtque_function == batch_gds_receive);
 
 	RDB rdb = que->rmtque_rdb;
-	RRQ request = reinterpret_cast<RRQ>(que->rmtque_parm);
+	rrq* request = reinterpret_cast<rrq*>(que->rmtque_parm);
 	rrq::rrq_repeat* tail =
 		reinterpret_cast<rrq::rrq_repeat*>(que->rmtque_message);
 	PACKET *packet = &rdb->rdb_packet;
@@ -5125,7 +5130,7 @@ static bool batch_gds_receive(trdb*		trdb,
 
 		if (message->msg_address)
 		{
-			FMT format = tail->rrq_format;
+			const rem_fmt* format = tail->rrq_format;
 			REM_MSG new_msg = (REM_MSG) ALLOCV(type_msg, format->fmt_length);
 			tail->rrq_xdr = new_msg;
 			new_msg->msg_next = message;
@@ -5189,7 +5194,8 @@ static bool batch_gds_receive(trdb*		trdb,
 
 		if (bIsBackward == bIsAbsBackward) {
 				tail->rrq_absolute++;
-		} else {
+		}
+		else {
 			tail->rrq_absolute--;
 		}
 		message->msg_absolute = tail->rrq_absolute;
@@ -5249,7 +5255,7 @@ static bool check_response(RDB rdb,
  *	Check response to a remote call.
  *
  **************************************/
-	PORT port = rdb->rdb_port;
+	rem_port* port = rdb->rdb_port;
 	ISC_STATUS* vector = packet->p_resp.p_resp_status_vector;
 
 /* Translate any gds codes into local operating specific codes */
@@ -5289,7 +5295,7 @@ static bool check_response(RDB rdb,
 }
 
 
-static bool clear_queue(PORT port,
+static bool clear_queue(rem_port* port,
 						ISC_STATUS * user_status)
 {
 /**************************************
@@ -5319,7 +5325,7 @@ static bool clear_queue(PORT port,
 }
 
 
-static void disconnect( PORT port)
+static void disconnect( rem_port* port)
 {
 /**************************************
  *
@@ -5374,7 +5380,7 @@ static void disconnect( PORT port)
 
 #ifdef SCROLLABLE_CURSORS
 static REM_MSG dump_cache(
-					  PORT port, ISC_STATUS * user_status, rrq::rrq_repeat * tail)
+					  rem_port* port, ISC_STATUS * user_status, rrq::rrq_repeat * tail)
 {
 /**************************************
  *
@@ -5428,7 +5434,7 @@ static ISC_STATUS error( ISC_STATUS * user_status)
 
 
 #ifndef MULTI_THREAD
-static void event_handler( PORT port)
+static void event_handler( rem_port* port)
 {
 /**************************************
  *
@@ -5474,7 +5480,7 @@ static void event_handler( PORT port)
 
 
 #else /* MULTI_THREAD  */
-static void THREAD_ROUTINE event_thread( PORT port)
+static void THREAD_ROUTINE event_thread( rem_port* port)
 {
 /**************************************
  *
@@ -5496,7 +5502,7 @@ static void THREAD_ROUTINE event_thread( PORT port)
 		/* read what should be an event message */
 
 		THREAD_ENTER;
-		PORT stuff = port->receive(&packet);
+		rem_port* stuff = port->receive(&packet);
 		THREAD_EXIT;
 
 		const P_OP operation = packet.p_operation;
@@ -5560,7 +5566,7 @@ static ISC_STATUS fetch_blob(
  **************************************/
 	RDB rdb = statement->rsr_rdb;
 
-	PORT port = rdb->rdb_port;
+	rem_port* port = rdb->rdb_port;
 	PACKET* packet = &rdb->rdb_packet;
 	packet->p_operation = op_fetch;
 	P_SQLDATA* sqldata = &packet->p_sqldata;
@@ -5598,7 +5604,7 @@ static ISC_STATUS fetch_blob(
 }
 
 
-static RVNT find_event( PORT port, SLONG id)
+static RVNT find_event( rem_port* port, SLONG id)
 {
 /*************************************
  * 
@@ -5664,7 +5670,8 @@ static bool get_new_dpb(const UCHAR*	dpb,
 		{
 			if (*dpb == isc_spb_version) {
 				pb_version = dpb[1];
-			} else {
+			}
+			else {
 				pb_version = *dpb;
 			}
 		}
@@ -5686,7 +5693,8 @@ static bool get_new_dpb(const UCHAR*	dpb,
 	{
 		if (dpb_vs_spb) {
 			gds__log("REMOTE INTERFACE: wrong dpb version", 0);
-		} else {
+		}
+		else {
 			gds__log("REMOTE INTERFACE: wrong spb version", 0);
 		}
 	}
@@ -5783,7 +5791,8 @@ static bool get_new_dpb(const UCHAR*	dpb,
 
 	if (moved_some || ((s - new_dpb) > 1)) {
 		*new_dpb_length = s - new_dpb;
-	} else {
+	}
+	else {
 		*new_dpb_length = 0;
 	}
 
@@ -5925,7 +5934,7 @@ static ISC_STATUS info(
 
 
 static bool init(ISC_STATUS* user_status,
-				 PORT port,
+				 rem_port* port,
 				 P_OP op,
 				 UCHAR* file_name,
 				 USHORT file_length,
@@ -5998,9 +6007,9 @@ static RTR make_transaction( RDB rdb, USHORT id)
 
 
 static ISC_STATUS mov_dsql_message(const UCHAR*	from_msg,
-								const fmt*		from_fmt,
+								const rem_fmt*		from_fmt,
 								UCHAR*	to_msg,
-								const fmt*		to_fmt)
+								const rem_fmt*		to_fmt)
 {
 /**************************************
  *
@@ -6136,7 +6145,7 @@ static void move_error( ISC_STATUS status, ...)
 }
 
 
-static void receive_after_start( RRQ request, USHORT msg_type)
+static void receive_after_start( rrq* request, USHORT msg_type)
 {
 /*****************************************
  *
@@ -6161,12 +6170,12 @@ static void receive_after_start( RRQ request, USHORT msg_type)
 /* Check to see if any data is waiting to happen */
 
 	RDB rdb = request->rrq_rdb;
-	PORT port = rdb->rdb_port;
+	rem_port* port = rdb->rdb_port;
 	PACKET* packet = &rdb->rdb_packet;
 	rrq::rrq_repeat* tail = &request->rrq_rpt[msg_type];
 	// CVC: I commented this line because it's overwritten immediately in the loop.
 	// REM_MSG message = tail->rrq_message;
-	const fmt* format = tail->rrq_format;
+	const rem_fmt* format = tail->rrq_format;
 
 /* save the status vector in the request block, as the API call
    which started this function already has a status (the result of
@@ -6225,7 +6234,7 @@ static void receive_after_start( RRQ request, USHORT msg_type)
 }
 
 
-static bool receive_packet(PORT port,
+static bool receive_packet(rem_port* port,
 						   PACKET * packet,
 						   ISC_STATUS * user_status)
 {
@@ -6256,7 +6265,7 @@ static bool receive_packet(PORT port,
 }
 
 
-static bool receive_packet_noqueue(PORT port,
+static bool receive_packet_noqueue(rem_port* port,
 								   PACKET * packet,
 								   ISC_STATUS * user_status)
 {
@@ -6305,7 +6314,7 @@ static bool receive_packet_noqueue(PORT port,
 
 
 static bool receive_queued_packet(struct trdb*	trdb,
-								  PORT		port,
+								  rem_port*		port,
 								  ISC_STATUS*	user_status,
 								  USHORT id)
 {
@@ -6342,8 +6351,8 @@ static bool receive_queued_packet(struct trdb*	trdb,
 }
 
 
-static void enqueue_receive(PORT port,
-							bool(*fn) (struct trdb *, PORT,
+static void enqueue_receive(rem_port* port,
+							bool(*fn) (struct trdb *, rem_port*,
 									   struct rmtque *, ISC_STATUS *, USHORT),
 							RDB rdb,
 							void *parm,
@@ -6380,7 +6389,7 @@ static void enqueue_receive(PORT port,
 }
 
 
-static void dequeue_receive( PORT port)
+static void dequeue_receive( rem_port* port)
 {
 /**************************************
  *
@@ -6506,7 +6515,7 @@ static bool release_object(RDB rdb,
 }
 
 
-static void release_request( RRQ request)
+static void release_request( rrq* request)
 {
 /**************************************
  *
@@ -6643,8 +6652,8 @@ static ISC_STATUS return_success( RDB rdb)
 static REM_MSG scroll_cache(
 						ISC_STATUS * user_status,
 						struct trdb *trdb,
-						RRQ request,
-						PORT port,
+						rrq* request,
+						rem_port* port,
 						rrq::rrq_repeat * tail,
 						USHORT * direction, ULONG * offset)
 {
@@ -6970,7 +6979,7 @@ static void send_cancel_event(RVNT event)
 }
 
 
-static bool send_packet(PORT port,
+static bool send_packet(rem_port* port,
 						PACKET* packet,
 						ISC_STATUS* user_status)
 {
@@ -7003,7 +7012,7 @@ static bool send_packet(PORT port,
 }
 
 #ifdef NOT_USED_OR_REPLACED
-static bool send_partial_packet(PORT		port,
+static bool send_partial_packet(rem_port*		port,
 								PACKET*	packet,
 								ISC_STATUS*	user_status)
 {
@@ -7041,7 +7050,7 @@ static bool send_partial_packet(PORT		port,
 #endif
 
 #ifdef MULTI_THREAD
-static void server_death(PORT port)
+static void server_death(rem_port* port)
 {
 /**************************************
  *

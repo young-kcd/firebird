@@ -111,7 +111,8 @@ USHORT CVJIS_eucj_to_unicode(CSCONVERT obj,
     if (s1 >= 0xe0) j1 = (s1*2 - 0xe0); \
     else j1 = (s1*2 - 0x60); \
     j2 = (s2 + 2); \
-  } else { \
+  } \
+  else { \
     if (s1 >= 0xe0) j1 = (s1*2 - 0xe1); \
     else j1 = (s1*2 - 0x61);\
     if (s2 >= 0x7f) j2 = (s2 + 0x60); \

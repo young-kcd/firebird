@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: msc.cpp,v 1.17 2003-11-28 06:48:12 robocop Exp $
+//	$Id: msc.cpp,v 1.18 2004-01-28 07:50:27 robocop Exp $
 //
 //  
 //  
@@ -56,7 +56,7 @@
 #include "../jrd/gds_proto.h"
 
 
-extern ACT cur_routine;
+extern act* cur_routine;
 
 typedef struct spc {
 	spc* spc_next;
@@ -72,9 +72,9 @@ static LLS free_lls;
 //		Make an action and link it to a request.
 //  
 
-ACT MSC_action( GPRE_REQ request, enum act_t type)
+act* MSC_action( gpre_req* request, enum act_t type)
 {
-	ACT action = (ACT) MSC_alloc(ACT_LEN);
+	act* action = (act*) MSC_alloc(ACT_LEN);
 	action->act_type = type;
 
 	if (request) {
@@ -177,11 +177,11 @@ GPRE_NOD MSC_binary(NOD_T type, GPRE_NOD arg1, GPRE_NOD arg2)
 //		Make a new context for a request and link it up to the request.
 //  
 
-GPRE_CTX MSC_context(GPRE_REQ request)
+gpre_ctx* MSC_context(gpre_req* request)
 {
 //  allocate and initialize
 
-	GPRE_CTX context = (GPRE_CTX) MSC_alloc(CTX_LEN);
+	gpre_ctx* context = (gpre_ctx*) MSC_alloc(CTX_LEN);
 	context->ctx_request = request;
 	context->ctx_internal = request->req_internal++;
 	context->ctx_scope_level = request->req_scope_level;
@@ -237,7 +237,7 @@ void MSC_copy_cat(const char* from1, int length1, const char* from2, int length2
 //		Find a symbol of a particular type.
 //  
 
-SYM MSC_find_symbol(SYM symbol, enum sym_t type)
+gpre_sym* MSC_find_symbol(gpre_sym* symbol, enum sym_t type)
 {
 
 	for (; symbol; symbol = symbol->sym_homonym)
@@ -264,7 +264,7 @@ void MSC_free( UCHAR* block)
 //		Get rid of an erroroneously allocated request block.
 //  
 
-void MSC_free_request( GPRE_REQ request)
+void MSC_free_request( gpre_req* request)
 {
 
 	requests = request->req_next;
@@ -302,7 +302,7 @@ bool MSC_match(KWWORDS keyword)
 {
 
 	if (token.tok_keyword == KW_none && token.tok_symbol) {
-		SYM symbol;
+		gpre_sym* symbol;
 		for (symbol = token.tok_symbol->sym_collision; symbol;
 			 symbol = symbol->sym_collision)
 		{
@@ -436,14 +436,14 @@ REF MSC_reference(REF* link)
 //		blocks, all linked up and ready to go.
 //  
 
-GPRE_REQ MSC_request(enum req_t type)
+gpre_req* MSC_request(enum req_t type)
 {
-	GPRE_REQ request = (GPRE_REQ) MSC_alloc(REQ_LEN);
+	gpre_req* request = (gpre_req*) MSC_alloc(REQ_LEN);
 	request->req_type = type;
 	request->req_next = requests;
 	requests = request;
 
-	request->req_routine = (GPRE_REQ) cur_routine->act_object;
+	request->req_routine = (gpre_req*) cur_routine->act_object;
 	cur_routine->act_object = (REF) request;
 
 	if (!(cur_routine->act_flags & ACT_main))
@@ -474,9 +474,9 @@ SCHAR* MSC_string(const TEXT* input)
 //		Allocate and initialize a symbol block.
 //  
 
-SYM MSC_symbol(enum sym_t type, const TEXT* string, USHORT length, GPRE_CTX object)
+gpre_sym* MSC_symbol(enum sym_t type, const TEXT* string, USHORT length, gpre_ctx* object)
 {
-	SYM symbol = (SYM) MSC_alloc(SYM_LEN + length);
+	gpre_sym* symbol = (gpre_sym*) MSC_alloc(SYM_LEN + length);
 	symbol->sym_type = type;
 	symbol->sym_object = object;
 	TEXT* p = symbol->sym_name;
@@ -510,9 +510,9 @@ GPRE_NOD MSC_unary(NOD_T type, GPRE_NOD arg)
 //		Set up for a new username.
 //  
 
-GPRE_USN MSC_username(SCHAR* name, USHORT name_dyn)
+gpre_usn* MSC_username(SCHAR* name, USHORT name_dyn)
 {
-	GPRE_USN username = (GPRE_USN) MSC_alloc(USN_LEN);
+	gpre_usn* username = (gpre_usn*) MSC_alloc(USN_LEN);
 	username->usn_name = (SCHAR*) MSC_alloc(strlen(name) + 1);
 	strcpy(username->usn_name, name);
 	username->usn_dyn = name_dyn;

@@ -61,29 +61,29 @@
 
 #define MAX_SEQUENCE	256
 
-static int accept_connection(PORT, P_CNCT *);
-static PORT xnet_alloc_port(PORT, UCHAR *, ULONG, UCHAR *, ULONG);
-static PORT aux_connect(PORT, PACKET *, XDR_INT(*)(void));
-static PORT aux_request(PORT, PACKET *);
+static int accept_connection(rem_port*, P_CNCT *);
+static rem_port* xnet_alloc_port(rem_port*, UCHAR *, ULONG, UCHAR *, ULONG);
+static rem_port* aux_connect(rem_port*, PACKET *, XDR_INT(*)(void));
+static rem_port* aux_request(rem_port*, PACKET *);
 
 static void xnet_cleanup_comm(XCC);
-static void xnet_cleanup_port(PORT);
-static void disconnect(PORT);
-static void exit_handler(PORT);
+static void xnet_cleanup_port(rem_port*);
+static void disconnect(rem_port*);
+static void exit_handler(rem_port*);
 
-static PORT receive(PORT, PACKET *);
-static int send_full(PORT, PACKET *);
-static int send_partial(PORT, PACKET *);
+static rem_port* receive(rem_port*, PACKET *);
+static int send_full(rem_port*, PACKET *);
+static int send_partial(rem_port*, PACKET *);
 
 #ifdef SUPERCLIENT
 static HANDLE server_process_handle = 0;
-static void xnet_on_server_shutdown(PORT port);
+static void xnet_on_server_shutdown(rem_port* port);
 #else
 static TEXT XNET_command_line[MAXPATHLEN + 32], *XNET_p;
 static XPM xnet_make_xpm(ULONG, time_t);
 #endif // SUPERCLIENT
 
-static int xdrxnet_create(XDR *, PORT, UCHAR *, USHORT, enum xdr_op);
+static int xdrxnet_create(XDR *, rem_port*, UCHAR *, USHORT, enum xdr_op);
 
 static int xnet_destroy(XDR *);
 static bool_t xnet_getbytes(XDR *, SCHAR *, u_int);
@@ -169,7 +169,7 @@ static MUTX_T xnet_mutex;
 
 #endif
 
-static int xnet_error(PORT, TEXT *, ISC_STATUS, int, ULONG);
+static int xnet_error(rem_port*, TEXT *, ISC_STATUS, int, ULONG);
 
 #define XNET_ERROR(po,fu,op,st) xnet_error(po,fu,op,st,__LINE__);
 #define XNET_LOG_ERROR(msg) xnet_log_error(__LINE__,msg)
@@ -200,7 +200,7 @@ static void xnet_log_error(int source_line_num, char* err_msg, ULONG err_code=0)
 }
 
 
-PORT XNET_analyze(
+rem_port* XNET_analyze(
 				  TEXT* file_name,
 				  USHORT* file_length,
 				  ISC_STATUS* status_vector,
@@ -221,7 +221,7 @@ PORT XNET_analyze(
  *
  **************************************/
 	RDB rdb;
-	PORT port;
+	rem_port* port;
 	PACKET *packet;
 	P_CNCT *cnct;
 	TEXT *p, user_id[128], buffer[64];
@@ -414,7 +414,7 @@ PORT XNET_analyze(
 }
 
 
-PORT XNET_connect(const TEXT* name, PACKET* packet,
+rem_port* XNET_connect(const TEXT* name, PACKET* packet,
                   ISC_STATUS* status_vector, USHORT flag)
 {
 /**************************************
@@ -456,7 +456,7 @@ PORT XNET_connect(const TEXT* name, PACKET* packet,
 			Sleep(10);
 	}
 */
-	PORT port = NULL;
+	rem_port* port = NULL;
 	XCC xcc = NULL;
 	XPM xpm = NULL;
 	XPS xps = NULL;
@@ -828,7 +828,7 @@ static void xnet_connect_fini()
 }
 
 
-static int accept_connection(PORT port, P_CNCT * cnct)
+static int accept_connection(rem_port* port, P_CNCT * cnct)
 {
 /**************************************
  *
@@ -844,7 +844,7 @@ static int accept_connection(PORT port, P_CNCT * cnct)
 }
 
 
-static PORT xnet_alloc_port(PORT parent,
+static rem_port* xnet_alloc_port(rem_port* parent,
 							UCHAR * send_buffer,
 							ULONG send_length,
 							UCHAR * receive_buffer,
@@ -861,10 +861,10 @@ static PORT xnet_alloc_port(PORT parent,
  *	and initialize input and output XDR streams.
  *
  **************************************/
-	PORT port;
+	rem_port* port;
 	TEXT buffer[64];
 
-	port = (PORT) ALLOCV(type_port, 0);
+	port = (rem_port*) ALLOCV(type_port, 0);
 	port->port_type = port_xnet;
 	port->port_state = state_pending;
 	ISC_get_host(buffer, sizeof(buffer));
@@ -891,7 +891,7 @@ static PORT xnet_alloc_port(PORT parent,
 	port->port_send_packet = send_full;
 	port->port_send_partial = send_partial;
 	port->port_connect = 
-		reinterpret_cast<PORT(*)(PORT, PACKET *, void (*)())>(aux_connect);
+		reinterpret_cast<rem_port* (*)(rem_port*, PACKET *, void (*)())>(aux_connect);
 	port->port_request = aux_request;
 	port->port_buff_size = send_length;
 	port->port_status_vector = NULL;
@@ -903,7 +903,7 @@ static PORT xnet_alloc_port(PORT parent,
 }
 
 
-static PORT aux_connect(PORT port, PACKET * packet, XDR_INT(*ast) (void))
+static rem_port* aux_connect(rem_port* port, PACKET * packet, XDR_INT (*ast)(void))
 {
 /**************************************
  *
@@ -925,7 +925,7 @@ static PORT aux_connect(PORT port, PACKET * packet, XDR_INT(*ast) (void))
 		return port;
 	}
 
- 	PORT new_port = NULL;
+ 	rem_port* new_port = NULL;
 	XCC parent_xcc = NULL;
 	XCC xcc = NULL;
 	TEXT name_buffer[128];
@@ -1053,7 +1053,7 @@ static PORT aux_connect(PORT port, PACKET * packet, XDR_INT(*ast) (void))
 }
 
 
-static PORT aux_request(PORT port, PACKET * packet)
+static rem_port* aux_request(rem_port* port, PACKET * packet)
 {
 /**************************************
  *
@@ -1070,7 +1070,7 @@ static PORT aux_request(PORT port, PACKET * packet)
  *
  **************************************/
 
- 	PORT new_port = NULL;
+ 	rem_port* new_port = NULL;
 	XCC parent_xcc = NULL;
 	XCC xcc = NULL;
 	TEXT name_buffer[128];
@@ -1273,7 +1273,7 @@ static void xnet_cleanup_comm(XCC xcc)
 }
 
 
-static void xnet_cleanup_port(PORT port)
+static void xnet_cleanup_port(rem_port* port)
 {
 /**************************************
  *
@@ -1323,7 +1323,7 @@ static void xnet_cleanup_port(PORT port)
 }
 
 
-static void disconnect(PORT port)
+static void disconnect(rem_port* port)
 {
 /**************************************
  *
@@ -1335,7 +1335,7 @@ static void disconnect(PORT port)
  *	Break a remote connection.
  *
  **************************************/
-	PORT parent, *ptr;
+	rem_port* parent;
 
 /* If this is a sub-port, unlink it from it's parent */
 
@@ -1346,7 +1346,7 @@ static void disconnect(PORT port)
 			port->port_async = NULL;
 		}
 
-		for (ptr = &parent->port_clients; *ptr; ptr = &(*ptr)->port_next){
+		for (rem_port** ptr = &parent->port_clients; *ptr; ptr = &(*ptr)->port_next){
 			if (*ptr == port) {
 				*ptr = port->port_next;
 				if (ptr == &parent->port_clients)
@@ -1375,7 +1375,7 @@ static void disconnect(PORT port)
 }
 
 
-static void exit_handler(PORT main_port)
+static void exit_handler(rem_port* main_port)
 {
 /**************************************
  *
@@ -1476,7 +1476,7 @@ static XPM xnet_make_xpm(ULONG map_number, time_t timestamp)
 }
 
 
-static PORT receive( PORT main_port, PACKET * packet)
+static rem_port* receive( rem_port* main_port, PACKET * packet)
 {
 /**************************************
  *
@@ -1496,7 +1496,7 @@ static PORT receive( PORT main_port, PACKET * packet)
 }
 
 
-static int send_full( PORT port, PACKET * packet)
+static int send_full( rem_port* port, PACKET * packet)
 {
 /**************************************
  *
@@ -1522,7 +1522,7 @@ static int send_full( PORT port, PACKET * packet)
 }
 
 
-static int send_partial( PORT port, PACKET * packet)
+static int send_partial( rem_port* port, PACKET * packet)
 {													
 /**************************************
  *
@@ -1540,7 +1540,7 @@ static int send_partial( PORT port, PACKET * packet)
 
 #ifdef SUPERCLIENT
 #ifdef WIN_NT
-static void xnet_on_server_shutdown(PORT port)
+static void xnet_on_server_shutdown(rem_port* port)
 {
 /**************************************
  *
@@ -1578,7 +1578,7 @@ static void xnet_on_server_shutdown(PORT port)
 #endif	// SUPERCLIENT
 
 
-static int xdrxnet_create(XDR * xdrs, PORT port, UCHAR * buffer,
+static int xdrxnet_create(XDR * xdrs, rem_port* port, UCHAR * buffer,
 						  USHORT length, enum xdr_op x_op)
 {
 /**************************************
@@ -1620,7 +1620,7 @@ static int xnet_destroy( XDR * xdrs)
 }
 
 
-static void xnet_gen_error( PORT port, ISC_STATUS status, ...)
+static void xnet_gen_error( rem_port* port, ISC_STATUS status, ...)
 {
 /**************************************
  *
@@ -1650,7 +1650,7 @@ static void xnet_gen_error( PORT port, ISC_STATUS status, ...)
 }
 
 
-static int xnet_error(PORT port,TEXT * function, ISC_STATUS operation,
+static int xnet_error(rem_port* port,TEXT * function, ISC_STATUS operation,
 											int status, ULONG source_line_num)
 {
 /**************************************
@@ -1691,7 +1691,7 @@ static bool_t xnet_getbytes(XDR * xdrs, SCHAR * buff, u_int count)
 	SLONG bytecount = count;
 	SLONG to_copy;
 
-	PORT port = (PORT)xdrs->x_public;
+	rem_port* port = (rem_port*)xdrs->x_public;
 	XCC xcc = (XCC)port->port_xcc;
 	XCH xch = (XCH)xcc->xcc_recv_channel;
 	XPM xpm = xcc->xcc_xpm;
@@ -1815,7 +1815,7 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 	SLONG to_copy;
 	DWORD wait_result;
 
-	PORT port = (PORT)xdrs->x_public;
+	rem_port* port = (rem_port*)xdrs->x_public;
 	XCC xcc = (XCC)port->port_xcc;
 	XCH xch = (XCH)xcc->xcc_send_channel;
 	XPM xpm = xcc->xcc_xpm;
@@ -1940,7 +1940,7 @@ static bool_t xnet_read(XDR * xdrs)
  *
  **************************************/
 	DWORD wait_result;
-	PORT port = (PORT)xdrs->x_public;
+	rem_port* port = (rem_port*)xdrs->x_public;
 	XCC xcc = (XCC)port->port_xcc;
 	XCH xch = (XCH)xcc->xcc_recv_channel;
 	XPM xpm = xcc->xcc_xpm;
@@ -2018,7 +2018,7 @@ static bool_t xnet_write(XDR * xdrs)
  *  filled and ready for reading.
  *
  **************************************/
-	PORT port = (PORT)xdrs->x_public;
+	rem_port* port = (rem_port*)xdrs->x_public;
 	XCC xcc = (XCC)(port)->port_xcc;
 	XCH xch = (XCH)xcc->xcc_send_channel;
 
@@ -2343,7 +2343,7 @@ static XPM xnet_get_free_slot(ULONG* map_num, ULONG* slot_num, time_t* timestamp
 #endif // SUPERSERVER
 
 
-static PORT xnet_get_srv_port(ULONG client_pid, XPM xpm,
+static rem_port* xnet_get_srv_port(ULONG client_pid, XPM xpm,
                               ULONG map_num, ULONG slot_num,
 															time_t timestamp,
 															ISC_STATUS* status_vector)
@@ -2355,11 +2355,11 @@ static PORT xnet_get_srv_port(ULONG client_pid, XPM xpm,
  **************************************
  *
  * Functional description
- *	Allocates	new PORT for server side communication .
+ *	Allocates	new rem_port for server side communication .
  *
  **************************************/
 	XCC xcc = NULL;
-	PORT port = NULL;
+	rem_port* port = NULL;
 	TEXT name_buffer[128];
 	UCHAR *p;
 	XPS xps;
@@ -2528,7 +2528,7 @@ void XNET_srv(USHORT flag)
 #ifdef WIN_NT
 
 #ifdef SUPERSERVER
-	PORT port;
+	rem_port* port;
 	ULONG map_num, slot_num;
 	XPM xpm;
 
@@ -2633,7 +2633,7 @@ void XNET_srv(USHORT flag)
 }
 
 
-PORT XNET_reconnect(ULONG client_pid, ISC_STATUS* status_vector)
+rem_port* XNET_reconnect(ULONG client_pid, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -2646,7 +2646,7 @@ PORT XNET_reconnect(ULONG client_pid, ISC_STATUS* status_vector)
  *
  **************************************/
 
-	PORT port = NULL;
+	rem_port* port = NULL;
 	XPM xpm = NULL;
 	TEXT name_buffer[128];
 
