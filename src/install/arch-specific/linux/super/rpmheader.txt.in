@@ -4,7 +4,7 @@ Version: @FIREBIRD_VERSION@.@FB_BUILD_NUM@
 Release: @FIREBIRD_PACKAGE_VERSION@
 Copyright: Distributable 
 Group: Applications/Databases 
-Source: FirebirdCS0.9src.tar.gz 
+Source: FirebirdSS1.5src.tar.gz 
 URL: http://firebird.sourceforge.net 
 # Prefix: /
 AutoReqProv: no 
@@ -15,4 +15,3 @@ BuildRoot: @BUILD_ROOT_DIR@/gen/buildroot
 %description
 Firebird is a powerful, high-performance relational database designed to be embedded into
 applications on multiple platforms.  
-

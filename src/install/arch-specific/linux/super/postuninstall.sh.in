@@ -19,14 +19,9 @@ removeLineFromFile() {
 
 
 
-#= Main ProstUn ===============================================================
+#= Main PostUn ===============================================================
 
     
-    if [ -L /usr/lib/libgds.so ]
-      then
-        rm -f /usr/lib/libgds.so
-    fi
-
     # Update /etc/services
 
 

@@ -8,7 +8,7 @@
 
 stopServerIfRunning() {
 
-    checkString=`ps -ef| egrep "(ibserver|ibguard)" |grep -v grep`
+    checkString=`ps -ef| egrep "(ibserver|ibguard|fbserver|fbguard)" |grep -v grep`
 
     if [ ! -z "$checkString" ] 
       then
@@ -22,8 +22,9 @@ stopServerIfRunning() {
 
 
 
-    IBRootDir=/opt/interbase
+    IBRootDir=/usr/local/firebird
     IBBin=$IBRootDir/bin
+    SecurityDatabase=isc4.gdb
 
 
     stopServerIfRunning
@@ -32,14 +33,14 @@ stopServerIfRunning() {
 
 
     cd $IBRootDir
-    if [ -f isc4.gdb ] 
+    if [ -f $SecurityDatabase ] 
       then 
-        cp isc4.gdb /tmp 
-        echo "Saved a copy of isc4.gdb in /tmp" 
+        cp $SecurityDatabase /tmp 
+        echo "Saved a copy of SecurityDatabase ($SecurityDatabase) in /tmp" 
     fi 
         
 
-    for i in isc_init1* isc_event1* isc_lock1* isc_guard* interbase.log SYSDBA.password
+    for i in isc_init1* isc_event1* isc_lock1* isc_guard* firebird.log SYSDBA.password
       do
         if [ -f $i ]
           then
@@ -48,10 +49,6 @@ stopServerIfRunning() {
       done
 
 
-    rm -f $IBBin/ibmgr
+    rm -f $IBBin/fbmgr
 
-
-
-
-
-
+    userdel firebird

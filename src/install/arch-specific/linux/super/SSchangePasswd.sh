@@ -55,9 +55,9 @@ generateNewDBAPassword() {
     echo "daemon init routine in the file /etc/rc.d/init.d/firebird)" >> $DBAPasswordFile
     echo "" >> $DBAPasswordFile
     echo "Your password can be changed to a more suitable one using the" >> $DBAPasswordFile
-    echo "/opt/interbase/bin/gsec program as show below:" >> $DBAPasswordFile
+    echo "/usr/local/firebird/bin/gsec program as show below:" >> $DBAPasswordFile
     echo "" >> $DBAPasswordFile
-    echo ">cd /opt/interbase" >> $DBAPasswordFile
+    echo ">cd /usr/local/firebird" >> $DBAPasswordFile
     echo ">bin/gsec -user sysdba -password <password>" >> $DBAPasswordFile
     echo "GSEC>modify sysdba -pw <newpassword>" >> $DBAPasswordFile
     echo "GSEC>quit" >> $DBAPasswordFile
@@ -129,9 +129,9 @@ changeDBAPassword() {
 #= Main Post ===============================================================
 
 
-    IBRootDir=/opt/interbase
+    IBRootDir=/usr/local/firebird
     IBBin=$IBRootDir/bin
-    RunUser=root
+    RunUser=firebird
 
     InteractiveInstall=true
     export InteractiveInstall
