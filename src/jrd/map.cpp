@@ -38,7 +38,7 @@
 
 /* Struct used to describe records that request mapping */
 
-typedef struct msg {
+typedef struct map_msg {
 	struct msg *msg_next;		/* Next message in request */
 	USHORT msg_number;			/* Message number */
 	USHORT msg_gds_length;		/* Length of GDS form */
@@ -48,7 +48,7 @@ typedef struct msg {
 		USHORT msg_dtype;		/* Parameter dtype */
 		USHORT msg_length;		/* Parameter length */
 	} msg_rpt[];
-} *MSG;
+} *MAP_MSG;
 
 #include "../jrd/map_proto.h"
 
@@ -56,7 +56,7 @@ extern double MTH$CVT_D_G(), MTH$CVT_G_D();
 
 static void bugcheck(int);
 static BOOLEAN check_message(UCHAR **);
-static MSG rebuild_message(UCHAR **, UCHAR **);
+static MAP_MSG rebuild_message(UCHAR **, UCHAR **);
 static int translate_status(STATUS *, STATUS *, SCHAR **);
 
 #define WRKBUF_SIZ		256
@@ -117,7 +117,7 @@ void MAP_date_to_rdb(SLONG * gds_date, SLONG * vms_date)
 }
 
 
-int MAP_gds_to_rdb(USHORT number, MSG msg, UCHAR * from, UCHAR * to)
+int MAP_gds_to_rdb(USHORT number, MAP_MSG msg, UCHAR * from, UCHAR * to)
 {
 /**************************************
  *
@@ -190,7 +190,7 @@ int MAP_gds_to_rdb(USHORT number, MSG msg, UCHAR * from, UCHAR * to)
 }
 
 
-MSG MAP_parse_blr(UCHAR * org_blr,
+MAP_MSG MAP_parse_blr(UCHAR * org_blr,
 				  USHORT org_blr_length,
 				  UCHAR * new_blr,
 				  USHORT * new_blr_length, SLONG * max_length)
@@ -208,7 +208,7 @@ MSG MAP_parse_blr(UCHAR * org_blr,
  *	types and build message blocks for the offending messages.
  *
  **************************************/
-	MSG msg, next;
+	MAP_MSG msg, next;
 	UCHAR *end_org_blr, *new, *org, *last_copied;
 	SLONG max;
 
@@ -265,7 +265,7 @@ MSG MAP_parse_blr(UCHAR * org_blr,
 }
 
 
-int MAP_rdb_length(USHORT number, MSG msg)
+int MAP_rdb_length(USHORT number, MAP_MSG msg)
 {
 /**************************************
  *
@@ -287,7 +287,7 @@ int MAP_rdb_length(USHORT number, MSG msg)
 }
 
 
-int MAP_rdb_to_gds(USHORT number, MSG msg, UCHAR * from, UCHAR * to)
+int MAP_rdb_to_gds(USHORT number, MAP_MSG msg, UCHAR * from, UCHAR * to)
 {
 /**************************************
  *
@@ -359,7 +359,7 @@ int MAP_rdb_to_gds(USHORT number, MSG msg, UCHAR * from, UCHAR * to)
 }
 
 
-void MAP_release(MSG msg)
+void MAP_release(MAP_MSG msg)
 {
 /**************************************
  *
@@ -371,7 +371,7 @@ void MAP_release(MSG msg)
  *	Release any mapping blocks.
  *
  **************************************/
-	MSG next;
+	MAP_MSG next;
 
 	while (next = msg) {
 		msg = msg->msg_next;
@@ -676,7 +676,7 @@ static BOOLEAN check_message(UCHAR ** org_ptr)
 }
 
 
-static MSG rebuild_message(UCHAR ** org_ptr, UCHAR ** new_ptr)
+static MAP_MSG rebuild_message(UCHAR ** org_ptr, UCHAR ** new_ptr)
 {
 /**************************************
  *
@@ -687,11 +687,11 @@ static MSG rebuild_message(UCHAR ** org_ptr, UCHAR ** new_ptr)
  * Functional description
  *	A message contains an offensive gds datatype.  Rebuild it as a
  *	valid Rdb message while building a msg block to drive the data
- *	mapping.  If we succeed, return the MSG block.  If we fail for
+ *	mapping.  If we succeed, return the MAP_MSG block.  If we fail for
  *	any reason, return NULL;
  *
  **************************************/
-	MSG msg;
+	MAP_MSG msg;
 	UCHAR *org, *new, *last_copied;
 	USHORT number, l, length, gds_length, rdb_length;
 	struct msg_repeat *desc, *end;
