@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: sparse_bitmap.h,v 1.3 2004-09-29 21:58:58 arnobrinkman Exp $
+ *  $Id: sparse_bitmap.h,v 1.4 2004-10-01 06:27:57 hvlad Exp $
  *
  */
 
@@ -52,6 +52,8 @@ struct BitmapTypes_64 {
 		BUNCH_BITS = 64
 	};
 };
+
+#define BUNCH_ONE  ((BUNCH_T)1)
 
 template <typename T, typename InternalTypes = BitmapTypes_64>
 class SparseBitmap : public AutoStorage {
@@ -107,7 +109,7 @@ public:
 
 			Bucket bucket;
 			bucket.start_value = singular_value & ~(T) (BUNCH_BITS - 1);
-			bucket.bits = ONE << (singular_value - bucket.start_value);
+			bucket.bits = BUNCH_ONE << (singular_value - bucket.start_value);
 			tree.add(bucket);
 		} else {
 			if (tree.isEmpty()) {
@@ -118,7 +120,7 @@ public:
 		}
 
 		T val_aligned = value & ~(T) (BUNCH_BITS - 1);
-		BUNCH_T bit_mask = ONE << (value - val_aligned);
+		BUNCH_T bit_mask = BUNCH_ONE << (value - val_aligned);
 		if (tree.locate(val_aligned)) {
 			tree.current().bits |= bit_mask;
 		} else {
@@ -141,7 +143,7 @@ public:
 		}
 
 		T val_aligned = value & ~(T)(BUNCH_BITS-1);
-		BUNCH_T bit_mask = ONE << (value - val_aligned);
+		BUNCH_T bit_mask = BUNCH_ONE << (value - val_aligned);
 		if (tree.locate(val_aligned)) {
 			Bucket *current = &tree.current();
 			if (current->bits & bit_mask) {
@@ -161,7 +163,7 @@ public:
 		}
 
 		T val_aligned = value & ~(T) (BUNCH_BITS - 1);
-		BUNCH_T bit_mask = ONE << (value - val_aligned);
+		BUNCH_T bit_mask = BUNCH_ONE << (value - val_aligned);
 		BitmapTreeAccessor i(&tree); // Use accessor to be const-correct
 		if (i.locate(val_aligned)) {
 			return i.current().bits & bit_mask;
@@ -207,8 +209,6 @@ protected:
 		BUNCH_BITS = InternalTypes::BUNCH_BITS
 	};
 
-	static const BUNCH_T ONE = 1;
-
 	// Bucket with bits
 	struct Bucket {
 		T start_value; // starting value, BUNCH_BITS-aligned
@@ -235,7 +235,7 @@ public:
 	class Accessor {
 	public:
 		Accessor(SparseBitmap* _bitmap) : 
-			bitmap(_bitmap), treeAccessor(_bitmap ? &_bitmap->tree : NULL), bit_mask(ONE), current_value(0) {}
+			bitmap(_bitmap), treeAccessor(_bitmap ? &_bitmap->tree : NULL), bit_mask(BUNCH_ONE), current_value(0) {}
 	
 		bool locate(const T& key) {
 			return locate(locEqual, key);
@@ -297,16 +297,16 @@ public:
 			switch(lt) {
 				case locEqual:
 					current_value = key;
-					bit_mask = ONE << (key - key_aligned);
+					bit_mask = BUNCH_ONE << (key - key_aligned);
 					return treeAccessor.current().bits & bit_mask;
 				case locGreatEqual: {
 					// Initialize bit_mask
 					if (treeAccessor.current().start_value == key_aligned) {
 						current_value = key;
-						bit_mask = ONE << (key - key_aligned);
+						bit_mask = BUNCH_ONE << (key - key_aligned);
 					} else {
 						current_value = treeAccessor.current().start_value;
-						bit_mask = ONE;
+						bit_mask = BUNCH_ONE;
 					}
 
 					// Scan bucket forwards looking for a match
@@ -324,7 +324,7 @@ public:
 						return false;
 
 					tree_bits = treeAccessor.current().bits;
-					bit_mask = ONE;
+					bit_mask = BUNCH_ONE;
 					current_value = treeAccessor.current().start_value;
 					do {
 						if (tree_bits & bit_mask)
@@ -340,10 +340,10 @@ public:
 					// Initialize bit_mask
 					if (treeAccessor.current().start_value == key_aligned) {
 						current_value = key;
-						bit_mask = ONE << (key - key_aligned);
+						bit_mask = BUNCH_ONE << (key - key_aligned);
 					} else {
 						current_value = treeAccessor.current().start_value;
-						bit_mask = ONE << (BUNCH_BITS - 1);
+						bit_mask = BUNCH_ONE << (BUNCH_BITS - 1);
 					}
 
 					// Scan bucket backwards looking for a match
@@ -361,7 +361,7 @@ public:
 						return false;
 
 					tree_bits = treeAccessor.current().bits;
-					bit_mask = ONE << (BUNCH_BITS - 1);
+					bit_mask = BUNCH_ONE << (BUNCH_BITS - 1);
 					current_value = treeAccessor.current().start_value + BUNCH_BITS - 1;
 					do {
 						if (tree_bits & bit_mask)
@@ -392,7 +392,7 @@ public:
 			if (!treeAccessor.getFirst()) return false;
 
 			BUNCH_T tree_bits = treeAccessor.current().bits;
-			bit_mask = ONE;
+			bit_mask = BUNCH_ONE;
 			current_value = treeAccessor.current().start_value;
 			do {
 				if (tree_bits & bit_mask)
@@ -422,7 +422,7 @@ public:
 				return false;
 
 			BUNCH_T tree_bits = treeAccessor.current().bits;
-			bit_mask = ONE << (BUNCH_BITS - 1);
+			bit_mask = BUNCH_ONE << (BUNCH_BITS - 1);
 			current_value = treeAccessor.current().start_value + BUNCH_BITS - 1;
 			do {
 				if (tree_bits & bit_mask)
@@ -467,7 +467,7 @@ public:
 				return false;
 
 			tree_bits = treeAccessor.current().bits;
-			try_mask = ONE;
+			try_mask = BUNCH_ONE;
 			try_value = treeAccessor.current().start_value;
 			do {
 				if (tree_bits & try_mask) {
@@ -516,7 +516,7 @@ public:
 				return false;
 
 			tree_bits = treeAccessor.current().bits;
-			try_mask = ONE << (BUNCH_BITS - 1);
+			try_mask = BUNCH_ONE << (BUNCH_BITS - 1);
 			try_value = treeAccessor.current().start_value + BUNCH_BITS - 1;
 			do {
 				if (tree_bits & try_mask) {
@@ -541,6 +541,8 @@ public:
 	};
 private:
 	Accessor defaultAccessor;
+
+	friend class Accessor;
 };
 
 template <typename T, typename InternalTypes>
