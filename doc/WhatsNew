@@ -358,7 +358,8 @@
     * New autoconf-based build configuration.
       Contributor(s):
         John Bellardo <bellardo@cs.ucsd.edu>,
-        Mark O'Donohue <mark.odonohue@cytopia.com.au>
+        Mark O'Donohue <mark.odonohue@cytopia.com.au>,
+        Erik Kunze <erik.kunze@philosys.de>
         
     * The code port from C to C++.
       Contributor(s):
