@@ -6429,10 +6429,15 @@ static int process_statement(const TEXT* string,
 			return ret;
 		}
 
-		//  This is a non-select DML statement. or trans 
+		//  This is a non-select DML statement or trans
 
 		if (isc_dsql_execute(isc_status, &M__trans, &global_Stmt, isqlGlob.SQL_dialect, NULL))
+		{
 			ISQL_errmsg(isc_status);
+			// CVC: Make this conditional if it causes problems. For example
+			// if (BailOnError)
+			ret = ERR;
+		}
 
 		// check for warnings 
 		if (isc_status[2] == isc_arg_warning)
