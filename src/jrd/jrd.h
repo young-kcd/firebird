@@ -112,29 +112,21 @@ class dbb : private pool_alloc<type_dbb>
 public:
 	static dbb* newDbb(MemoryPool& p) { return new(p) dbb(p); }
 	
-	~dbb()
+	// The deleteDbb function MUST be used to delete a dbb object.
+	// The function hides some tricky order of operations.  Since the
+	// memory for the vectors in the dbb is allocated out of the dbb's
+	// permanent memory pool, the entire delete() operation needs
+	// to complete _before_ the permanent pool is deleted, or else
+	// risk an aborted engine.
+	static void deleteDbb(dbb *toDelete)
 	{
-		pool_vec_type::iterator itr;
-		
-		for(itr = dbb_pools.begin(); itr != dbb_pools.end(); ++itr)
-		{
-			if (*itr == dbb_bufferpool)
-				dbb_bufferpool = 0;
-			if (*itr != dbb_permanent)
-				delete *itr;
-		}
-		if (dbb_bufferpool != 0)
-			delete dbb_bufferpool;
-		delete dbb_permanent;
+		if (toDelete == 0)
+			return;
+		JrdMemoryPool *perm = toDelete->dbb_permanent;
+		delete toDelete;
+		delete perm;
 	}
 	
-	// The delete operators are no-oped because the dbb memory is allocated from the
-	// dbb's own permanent pool.  That pool has already been released by the dbb
-	// destructor, so the memory has already been released.  Hence the operator
-	// delete no-op.
-	void operator delete(void *mem) {}
-	void operator delete[](void *mem) {}
-
 	class dbb *dbb_next;		/* Next database block in system */
 	class att *dbb_attachments;	/* Active attachments */
 	struct bcb *dbb_bcb;		/* Buffer control block */
@@ -238,6 +230,29 @@ private:
 		dbb_charsets(p)
 	{
 	}
+	
+	~dbb()
+	{
+		pool_vec_type::iterator itr;
+		
+		for(itr = dbb_pools.begin(); itr != dbb_pools.end(); ++itr)
+		{
+			if (*itr == dbb_bufferpool)
+				dbb_bufferpool = 0;
+			if (*itr != dbb_permanent)
+				delete *itr;
+		}
+		if (dbb_bufferpool != 0)
+			delete dbb_bufferpool;
+	}
+	
+	// The delete operators are no-oped because the dbb memory is allocated from the
+	// dbb's own permanent pool.  That pool has already been released by the dbb
+	// destructor, so the memory has already been released.  Hence the operator
+	// delete no-op.
+	void operator delete(void *mem) {}
+	void operator delete[](void *mem) {}
+
 	dbb(const dbb&);	// no impl.
 	const dbb& operator =(const dbb&) { return *this; }
 };
