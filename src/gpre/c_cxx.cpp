@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.56 2004-10-30 05:30:08 robocop Exp $
+//	$Id: c_cxx.cpp,v 1.57 2004-11-08 03:29:08 robocop Exp $
 //
 
 #include "firebird.h"
@@ -500,7 +500,7 @@ void C_CXX_action(const act* action, int column)
 		return;
 	default:
 		return;
-	};
+	}
 
 //  Put in a trailing brace for those actions still with us 
 
@@ -2738,7 +2738,7 @@ static void gen_ready( const act* action, int column)
 
 	for (rdy* ready = (rdy*) action->act_object; ready; ready = ready->rdy_next) {
 		const dbb* db = ready->rdy_database;
-		TEXT* filename = ready->rdy_filename;
+		const TEXT* filename = ready->rdy_filename;
 		if (!filename)
 			filename = db->dbb_runtime;
 		if ((action->act_error || (action->act_flags & ACT_sql)) &&
@@ -3349,7 +3349,7 @@ static void gen_t_start( const act* action, int column)
 			 tpb_iterator = tpb_iterator->tpb_tra_next)
 		{
 			const dbb* db = tpb_iterator->tpb_database;
-			TEXT* filename = db->dbb_runtime;
+			const TEXT* filename = db->dbb_runtime;
 			if (filename || !(db->dbb_flags & DBB_sqlca)) {
 				printa(column, "if (!%s)", db->dbb_name->sym_string);
 				make_ready(db, filename, vector, (USHORT) (column + INDENT),
@@ -3953,7 +3953,7 @@ static void t_start_auto(const act* action,
 		buffer[0] = 0;
 		for (count = 0, db = gpreGlob.isc_databases; db; db = db->dbb_next, count++)
 		{
-		    TEXT* filename = db->dbb_runtime;
+		    const TEXT* filename = db->dbb_runtime;
 			if (filename || !(db->dbb_flags & DBB_sqlca)) {
 				align(column);
 				fprintf(gpreGlob.out_file, "if (!%s", db->dbb_name->sym_string);

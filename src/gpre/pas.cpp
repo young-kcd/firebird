@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.43 2004-10-30 05:30:08 robocop Exp $
+//	$Id: pas.cpp,v 1.44 2004-11-08 03:29:16 robocop Exp $
 //
 
 #include "firebird.h"
@@ -257,7 +257,7 @@ void PAS_action(const act* action, int column)
 	case ACT_update:
 	case ACT_statistics:
 		begin(column);
-	};
+	}
 
 	switch (action->act_type) {
 	case ACT_alter_domain:
@@ -503,7 +503,7 @@ void PAS_action(const act* action, int column)
 		return;
 	default:
 		return;
-	};
+	}
 
 //  Put in a trailing brace for those actions still with us 
 
@@ -3144,7 +3144,6 @@ static void gen_t_start( const act* action, int column)
 	gpre_tra* trans;
 	tpb* tpb_val;
 	int count;
-	TEXT *filename;
 
 //  
 //  for automatically generated transactions, and transactions that are
@@ -3166,12 +3165,15 @@ static void gen_t_start( const act* action, int column)
 		count++;
 		db = tpb_val->tpb_database;
 		if (gpreGlob.sw_auto)
-			if ((filename = db->dbb_runtime) || !(db->dbb_flags & DBB_sqlca)) {
+		{
+			const TEXT* filename = db->dbb_runtime;
+			if (filename || !(db->dbb_flags & DBB_sqlca)) {
 				printa(column, "if (%s = nil) then",
 					   db->dbb_name->sym_string);
 				make_ready(db, filename, status_vector(action),
 						   column + INDENT, 0);
 			}
+		}
 
 #ifndef VMS
 		printa(column, "gds__teb[%d].tpb_len := %d;", count, tpb_val->tpb_length);
@@ -3644,7 +3646,7 @@ static void t_start_auto( const act* action, const gpre_req* request,
 {
 	DBB db;
 	int count, and_count;
-	TEXT *filename, buffer[256], temp[40];
+	TEXT buffer[256], temp[40];
 
 	buffer[0] = 0;
 
@@ -3658,7 +3660,9 @@ static void t_start_auto( const act* action, const gpre_req* request,
 
 	for (db = gpreGlob.isc_databases, count = and_count = 0; db; db = db->dbb_next) {
 		if (gpreGlob.sw_auto)
-			if ((filename = db->dbb_runtime) || !(db->dbb_flags & DBB_sqlca)) {
+		{
+			const TEXT* filename = db->dbb_runtime;
+			if (filename || !(db->dbb_flags & DBB_sqlca)) {
 				align(column);
 				fprintf(gpreGlob.out_file, "if (%s = nil",
 						   db->dbb_name->sym_string);
@@ -3677,6 +3681,7 @@ static void t_start_auto( const act* action, const gpre_req* request,
 				printa(column, "if (%s) then", buffer);
 				align(column + INDENT);
 			}
+		}
 
 		count++;
 #ifndef VMS

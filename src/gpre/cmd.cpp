@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmd.cpp,v 1.38 2004-10-03 04:48:49 robocop Exp $
+//	$Id: cmd.cpp,v 1.39 2004-11-08 03:29:16 robocop Exp $
 //
 
 #include "firebird.h"
@@ -1410,13 +1410,12 @@ static void create_database( gpre_req* request, const act* action)
 	}
 
 	SSHORT l;
-	SCHAR* ch;
 
 	if (db->dbb_c_user && !db->dbb_r_user) {
 		request->add_byte(isc_dpb_user_name);
 		l = strlen(db->dbb_c_user);
 		request->add_byte(l);
-		ch = db->dbb_c_user;
+		const char* ch = db->dbb_c_user;
 		while (*ch)
 			request->add_byte(*ch++);
 	}
@@ -1425,7 +1424,7 @@ static void create_database( gpre_req* request, const act* action)
 		request->add_byte(isc_dpb_password);
 		l = strlen(db->dbb_c_password);
 		request->add_byte(l);
-		ch = db->dbb_c_password;
+		const char* ch = db->dbb_c_password;
 		while (*ch)
 			request->add_byte(*ch++);
 	}

@@ -24,18 +24,20 @@
 //
 //____________________________________________________________
 //
-//	$Id: dyntable.cpp,v 1.8 2004-05-02 23:04:16 skidder Exp $
+//	$Id: dyntable.cpp,v 1.9 2004-11-08 03:29:16 robocop Exp $
 //
+// CVC: Strange, this file is only referenced in a MacOsX project and gpre
+// works directly with dyntable.h.
 
 #include "firebird.h"
 #include <stdio.h>
 #include "../jrd/ibase.h"
 
-#define NODE(dyn) dyn, "dyn",
+#define NODE(dyn) {dyn, "dyn"},
 
 struct dyn {
 	SSHORT dyn_value;
-	SCHAR *dyn_string;
+	const char* dyn_string;
 } dyn_table[] = {
 	NODE(gds__dyn_begin)
 		NODE(gds__dyn_end)
@@ -109,8 +111,9 @@ struct dyn {
 		NODE(gds__dyn_trg_type)
 		NODE(gds__dyn_trg_blr)
 		NODE(gds__dyn_trg_source)
-0, 0};
-int *table[256];
+		{0, 0}
+};
+//int *table[256];
 
 
 //____________________________________________________________
@@ -118,17 +121,16 @@ int *table[256];
 //		Spit out a conversion table.
 //  
 
-main()
+int main()
 {
-	dyn* item;
-	int max, *stuff, dyn;
-	SCHAR *table[256];
+	int max;
+	const char* table[256];
 
 	for (max = 0; max < 256; max++)
 		table[max] = NULL;
 
 	max = 0;
-	for (item = dyn_table; item->dyn_string; item++) {
+	for (const dyn* item = dyn_table; item->dyn_string; item++) {
 		if (table[item->dyn_value])
 			fprintf(stderr, "%s (%d) is duplicate\n",
 					   item->dyn_string, item->dyn_value);
@@ -137,9 +139,12 @@ main()
 			max = item->dyn_value;
 	}
 
-	for (dyn = 0; dyn <= max; dyn++)
-		if (table[dyn])
-			printf("    \"%s\",\n", table[dyn]);
+	for (int dyn_iter = 0; dyn_iter <= max; dyn_iter++)
+		if (table[dyn_iter])
+			printf("    \"%s\",\n", table[dyn_iter]);
 		else
 			printf("    NULL,\n");
+
+	return 0;
 }
+

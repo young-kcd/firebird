@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.50 2004-10-30 05:30:08 robocop Exp $
+//	$Id: cob.cpp,v 1.51 2004-11-08 03:29:16 robocop Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -3150,7 +3150,7 @@ static void gen_ready( const act* action)
 {
 	rdy* ready;
 	DBB db, dbisc;
-	TEXT *filename, dbname[96];
+	TEXT dbname[96];
 	USHORT namelength;
 
 	const TEXT* vector = status_vector(action);
@@ -3158,7 +3158,8 @@ static void gen_ready( const act* action)
 	for (ready = (rdy*) action->act_object; ready; ready = ready->rdy_next) {
 		db = ready->rdy_database;
 		dbisc = (DBB) db->dbb_name->sym_object;
-		if (!(filename = ready->rdy_filename)) {
+		const TEXT* filename = ready->rdy_filename;
+		if (!filename) {
 			filename = db->dbb_runtime;
 			if (filename) {
 				namelength = strlen(filename);
@@ -4505,7 +4506,7 @@ static void t_start_auto(const gpre_req* request,
 	DBB db;
 	int count;
 	USHORT namelength;
-	TEXT *filename, dbname[80], buffer[256], temp[40];
+	TEXT dbname[80], buffer[256], temp[40];
 
 	const TEXT* trname = request_trans(action, request);
 
@@ -4518,7 +4519,9 @@ static void t_start_auto(const gpre_req* request,
 	if (gpreGlob.sw_auto) {
 		buffer[0] = 0;
 		for (count = 0, db = gpreGlob.isc_databases; db; db = db->dbb_next, count++)
-			if ((filename = db->dbb_runtime) || !(db->dbb_flags & DBB_sqlca)) {
+		{
+			const TEXT* filename = db->dbb_runtime;
+			if (filename || !(db->dbb_flags & DBB_sqlca)) {
 				fprintf(gpreGlob.out_file, "%sIF %s = 0", names[COLUMN],
 						   db->dbb_name->sym_string);
 				if (stat && buffer[0])
@@ -4538,6 +4541,7 @@ static void t_start_auto(const gpre_req* request,
 				sprintf(temp, "%s NOT = 0", db->dbb_name->sym_string);
 				strcat(buffer, temp);
 			}
+		}
 		if (test)
 			if (buffer[0])
 				printa(names[COLUMN], false, "IF (%s) AND %s = 0 THEN",

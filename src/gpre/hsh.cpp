@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: hsh.cpp,v 1.20 2004-06-03 07:31:10 robocop Exp $
+//	$Id: hsh.cpp,v 1.21 2004-11-08 03:29:16 robocop Exp $
 //
 
 #include "firebird.h"
@@ -45,7 +45,7 @@ static gpre_sym* hash_table[HASH_SIZE];
 static gpre_sym* key_symbols;
 
 static struct word {
-	SCHAR *keyword;
+	const char* keyword;
 	enum kwwords id;
 }  keywords[] = {
 #include "../gpre/hsh.h"
@@ -76,14 +76,14 @@ void HSH_fini(void)
 
 void HSH_init(void)
 {
-	//SCHAR *string;
+	//const char *string;
 
 	int i = 0;
 	for (gpre_sym** ptr = hash_table; i < HASH_SIZE; i++)
 		*ptr++ = NULL;
 
 	fflush(stdout);
-	word* a_word;
+	const word* a_word;
 	for (i = 0, a_word = keywords; i < FB_NELEM(keywords); i++, a_word++) {
 		// Unused code: SYM_LEN is used always.
 		//for (string = a_word->keyword; *string; string++);

@@ -38,9 +38,9 @@ const UCHAR CHR_HEX		= 32;
 
 extern struct symb dbt_symbols[];
 
-static SSHORT symb_types[] = { ROUTINE, OFFSET, PRINTER, SYMBOL };
+static const SSHORT symb_types[] = { ROUTINE, OFFSET, PRINTER, SYMBOL };
 
-static SCHAR classes[] = {
+static const SCHAR classes[] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 0, 8, 0, 4, 0, 0, 8,
 	0, 0, 0, 0, 0, 0, 0, 0, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38,

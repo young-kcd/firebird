@@ -24,12 +24,12 @@ DATABASE DB = "msg.fdb";
 
 struct stuff {
 	SLONG value;
-	SCHAR *symbol;
-	SCHAR *class;
-	SCHAR *type;
+	const char* symbol;
+	const char* class_name;
+	const char* type;
 };
 
-#define ITEM(symbol, class, type)	symbol, "symbol", "class", "type",
+#define ITEM(symbol, class, type)	{symbol, "symbol", "class", "type"},
 
 static const stuff a_stuff[] = {
 
@@ -493,7 +493,7 @@ static const stuff a_stuff[] = {
 		ITEM(SQL_DATE, SQL, DTYPE)
 		ITEM(SQL_BLOB, SQL, DTYPE)
 
-	0, 0, 0, 0
+	{0, 0, 0, 0}
 };
 
 int main( int argc, char **argv)
@@ -512,7 +512,7 @@ int main( int argc, char **argv)
 		X.SEQUENCE = ++sequence;
 		X.VALUE = item->value;
 		strcpy(X.SYMBOL, item->symbol);
-		strcpy(X.CLASS, item->class);
+		strcpy(X.CLASS, item->class_name);
 		strcpy(X.TYPE, item->type);
 	END_STORE;
 
@@ -520,3 +520,4 @@ int main( int argc, char **argv)
 	FINISH;
 	return FINI_OK;
 }
+

@@ -17,7 +17,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: align.cpp,v 1.7 2004-06-08 18:25:41 brodsom Exp $
+$Id: align.cpp,v 1.8 2004-11-08 03:33:19 robocop Exp $
 */
 
 #include "firebird.h"
@@ -40,11 +40,11 @@ struct alignment {
 	short rule_faults;
 	short rule_base_align;
 	short rule_double_align;
-	char *rule_rule;
-	char *rule_system;
+	const char *rule_rule;
+	const char *rule_system;
 };
 
-static alignment rules[] = {
+static const alignment rules[] = {
 	1, 9, 0, 4, 4, NO_OP, "VMS",	/* VMS */
 	2, 10, 0, 4, 4, EVEN, "MC 68K",	/* Generic Motorola */
 	4, 12, 0, 4, 4, MAJOR_MINOR, "VAX Ultrix, 386i, RT",	/* VAX Ultrix */
@@ -69,13 +69,12 @@ int main(int argc, char *argv[])
 	long vector[3];
 #endif
 	short offset, length, faults;
-	alignment* rule;
 
 	offset = (int) &((XYZ) NULL)->b;
 	length = sizeof(xyz);
 	faults = check_double();
 
-	for (rule = rules; rule->rule_offset; ++rule)
+	for (const alignment* rule = rules; rule->rule_offset; ++rule)
 		if (rule->rule_offset == offset &&
 			rule->rule_length == length && rule->rule_faults == faults) {
 			printf("\n/* %s */\n\n", rule->rule_system);
@@ -138,3 +137,4 @@ static void handler()
 {
 	Firebird::status_exception::raise();
 }
+

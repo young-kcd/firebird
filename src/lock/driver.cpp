@@ -39,23 +39,30 @@ static int lookup_lock(UCHAR *);
 static void print_help(void);
 
 static struct tbl {
-	SCHAR *tbl_string;
+	const char* tbl_string;
 	SSHORT tbl_code;
 } types[] = {
-	"null", LCK_null,
-		"pr", LCK_PR,
-		"sr", LCK_SR,
-
-		"pw", LCK_PW, "sw", LCK_SW, "ex", LCK_EX, NULL, LCK_none};
+	{"null", LCK_null},
+	{"pr", LCK_PR},
+	{"sr", LCK_SR},
+	{"pw", LCK_PW},
+	{"sw", LCK_SW},
+	{"ex", LCK_EX},
+	{NULL, LCK_none}
+	};
 
 static struct tagg {
-	SCHAR *tagg_string;
+	const char* tagg_string;
 	SSHORT tagg_code;
 } aggs[] = {
-	"min", LCK_MIN,
-		"max", LCK_MAX,
-		"cnt", LCK_CNT,
-		"sum", LCK_SUM, "avg", LCK_AVG, "any", LCK_ANY, NULL, NULL};
+	{"min", LCK_MIN},
+	{"max", LCK_MAX},
+	{"cnt", LCK_CNT},
+	{"sum", LCK_SUM},
+	{"avg", LCK_AVG},
+	{"any", LCK_ANY},
+	{NULL, NULL}
+	};
 
 static int wait, sw_release, locks[100], levels[100];
 static SLONG lck_owner_handle = 0;

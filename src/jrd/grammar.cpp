@@ -135,7 +135,7 @@ int yydef[] = {
 	16, 17, 20
 };
 typedef struct {
-	char *t_name;
+	const char* t_name;
 	int t_val;
 } yytoktype;
 #ifndef YYDEBUG
