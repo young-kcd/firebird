@@ -50,6 +50,7 @@ enum pp_vals {
 };
 
 
+const int MAX_TOKEN_SIZE = 1024;
 static void generate_error(ISC_STATUS*, const Firebird::string&, SSHORT, SSHORT);
 static SSHORT get_next_token(const SCHAR**, const SCHAR*, Firebird::string&);
 static SSHORT get_token(ISC_STATUS*, SSHORT, bool, const SCHAR**,
@@ -403,6 +404,15 @@ static SSHORT get_next_token(
 			token += *s++;
 		}
 		*stmt = s;
+/* CVC: Will adjust this check.
+		if (p >= token_end) {
+			// '=' used as then there is no place for null termination 
+
+			*token_length = MAX_TOKEN_SIZE;
+			token[MAX_TOKEN_SIZE] = '\0';
+			return TOKEN_TOO_LONG;
+		}
+*/
 		return STRING;
 	}
 
@@ -412,6 +422,14 @@ static SSHORT get_next_token(
 		for (; s < stmt_end && (classes[c = *s] & CHR_DIGIT); ++s); // empty body
 		const ptrdiff_t length = (s - start_of_token);
 		*stmt = s;
+/* CVC: Will adjust this check.
+		if (length > MAX_TOKEN_SIZE) {
+			memcpy(token, start_of_token, MAX_TOKEN_SIZE);
+			token[MAX_TOKEN_SIZE] = '\0';
+			*token_length = MAX_TOKEN_SIZE;
+			return TOKEN_TOO_LONG;
+		}
+*/
 		token.assign(start_of_token, length);
 		return NUMERIC;
 	}
@@ -425,6 +443,13 @@ static SSHORT get_next_token(
 		}
 
 		*stmt = s;
+/* CVC: Will adjust this check.
+		if (p >= token_end) {
+			*token_length = MAX_TOKEN_SIZE;
+			token[MAX_TOKEN_SIZE] = '\0';
+			return TOKEN_TOO_LONG;
+		}
+*/
 		return SYMBOL;
 	}
 
