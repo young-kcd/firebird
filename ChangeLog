@@ -1,3 +1,15 @@
+2004-02-03 12:25  aafemt
+
+	* firebird2/src/jrd/: why.cpp, why_proto.h:
+	
+	Parameter's type consistency
+
+2004-02-03 12:20  aafemt
+
+	* firebird2/src/gpre/c_cxx.cpp:
+	
+	Avoid warning with isc_put_slice() after Nikolay's port
+
 2004-02-02 12:00  robocop
 
 	* firebird2/src/: alice/all.cpp, alice/all.h, alice/lls.h,
