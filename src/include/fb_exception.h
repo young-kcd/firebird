@@ -40,7 +40,6 @@ public:
 		{ return "Firebird::status_exception"; }
 	STATUS value() const { return m_s; }
 
-	// TMN: to be moved into its own source file!
 	static void raise(STATUS s);
 
 private:
@@ -53,8 +52,7 @@ public:
 	virtual const char* what() const throw()
 		{ return "Firebird::red_zone_error"; }
 
-	// TMN: to be moved into its own source file!
-	static void raise() { throw red_zone_error(); }
+	static void raise();
 };
 
 class memory_corrupt : public std::exception
@@ -63,8 +61,30 @@ public:
 	virtual const char* what() const throw()
 		{ return "Firebird::memory_corrupt"; }
 
-	// TMN: to be moved into its own source file!
-	static void raise() { throw memory_corrupt(); }
+	static void raise();
+};
+
+class system_call_failed : public std::exception
+{
+public:
+	virtual const char* what() const throw()
+		{ return "Firebird::system_call_failed"; }
+
+	static void raise();
+};
+
+class fatal_exception : public std::exception
+{
+public:
+	explicit fatal_exception(char *message);
+	virtual ~fatal_exception() throw() {}
+	virtual const char* what() const throw()
+		{ return txt; }
+
+	static void raise(char *message);
+
+private:
+	char txt[256];
 };
 
 }	// namespace Firebird
