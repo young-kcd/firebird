@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.70.2.4 2003-12-11 08:18:19 dimitr Exp $
+$Id: inet.cpp,v 1.70.2.5 2004-09-25 19:32:33 dimitr Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -1261,7 +1261,7 @@ static int accept_connection(PORT port, P_CNCT* cnct)
  *	response for protocol selection.
  *
  **************************************/
-	TEXT name[64], password[64], *id, *end, *p;
+	TEXT name[BUFFER_SMALL], password[BUFFER_TINY], *id, *end, *p;
 	STR string;
 	SLONG eff_gid, eff_uid;
 	int length, l;
@@ -1451,14 +1451,15 @@ static int accept_connection(PORT port, P_CNCT* cnct)
 
 /* store FULL user identity in port_user_name for security purposes */
 
+	if (port->port_user_name)
 	{
 		strncpy(name, port->port_user_name->str_data,
 				port->port_user_name->str_length);
 		p = &name[port->port_user_name->str_length];
 		sprintf(p, ".%ld.%ld", eff_gid, eff_uid);
 		ALLR_free((UCHAR *) port->port_user_name);
-		port->port_user_name = REMOTE_make_string(name);
 	}
+	port->port_user_name = REMOTE_make_string(name);
 
 	return TRUE;
 }
@@ -1604,10 +1605,11 @@ static PORT aux_connect(PORT port, PACKET* packet, XDR_INT (*ast)(void))
 	int arg;
 #endif
 
+	l = sizeof(address);
+
 /* If this is a server, we're got an auxiliary connection.  Accept it */
 
 	if (port->port_server_flags) {
-		l = sizeof(address);
 		n = accept(port->port_channel, (struct sockaddr *) &address, &l);
 		if (n == INVALID_SOCKET) {
 			inet_error(port, "accept", isc_net_event_connect_err, ERRNO);
@@ -1634,10 +1636,27 @@ static PORT aux_connect(PORT port, PACKET* packet, XDR_INT (*ast)(void))
 		return NULL;
 	}
 
-	inet_zero((SCHAR *) & address, sizeof(address));
-	inet_copy(reinterpret_cast < char *>(response->p_resp_data.cstr_address),
-			  (SCHAR *) & address, response->p_resp_data.cstr_length);
+	/*
+	* NJK - Determine address and port to use.
+	*
+	* The address returned by the server may be incorrect if it is behind a NAT box
+	* so we must use the address that was used to connect the main socket, not the
+	* address reported by the server.
+	*
+	* The port number reported by the server is used. For NAT support the port number
+	* should be configured to be a fixed port number in the server configuration.
+	*/
+
+	inet_zero((SCHAR *) &address, sizeof(address));
+	status = getpeername((SOCKET) port->port_handle, (struct sockaddr *) &address, &l);
+	if (status != 0) {
+		inet_error(port, "socket", isc_net_event_connect_err, ERRNO);
+		SOCLOSE(n);
+		return NULL;
+	}
 	address.sin_family = AF_INET;
+	address.sin_port =
+		((struct sockaddr_in *)(response->p_resp_data.cstr_address))->sin_port;
 
 	THREAD_EXIT;
 	status = connect(n, (struct sockaddr *) &address, sizeof(address));
