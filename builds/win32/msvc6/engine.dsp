@@ -910,6 +910,14 @@ SOURCE=..\..\..\src\jrd\jrd_proto.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\jrd_pwd.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\jrd_time.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\jrn.h
 # End Source File
 # Begin Source File
@@ -1102,10 +1110,6 @@ SOURCE=..\..\..\src\jrd\prv_m_bypass.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\pwd.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\pwd_proto.h
 # End Source File
 # Begin Source File
@@ -1271,10 +1275,6 @@ SOURCE=..\..\..\src\jrd\os\thd_priority.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\thd_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\time.h
 # End Source File
 # Begin Source File
 
