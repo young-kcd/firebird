@@ -201,7 +201,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		full_username[sizeof(full_username) - 1] = '\0';
 		CharToOem(full_username, oem_username);
 		username = full_username;
-		
+
 		if (password == 0)
 		{
 			printf("Enter %s user password : ", oem_username);
@@ -255,8 +255,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			if (sw_guardian)
 			{
 				status = SERVICES_install(manager, ISCGUARD_SERVICE,
-					ISCGUARD_DISPLAY_NAME, ISCGUARD_EXECUTABLE, directory,
-						NULL, sw_startup, username, password, svc_error);
+					ISCGUARD_DISPLAY_NAME, ISCGUARD_DISPLAY_DESCR,
+					ISCGUARD_EXECUTABLE, directory, 	NULL, sw_startup,
+					username, password, svc_error);
 				status2 = FB_SUCCESS;
 				if (username != 0)
 				{
@@ -272,7 +273,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 			/* do the install of the server */
 			status = SERVICES_install(manager, REMOTE_SERVICE,
-					REMOTE_DISPLAY_NAME, REMOTE_EXECUTABLE,
+					REMOTE_DISPLAY_NAME, REMOTE_DISPLAY_DESCR, REMOTE_EXECUTABLE,
 						directory, NULL, sw_startup, username, password, svc_error);
 			status2 = FB_SUCCESS;
 			if (username != 0)

@@ -41,6 +41,7 @@ const char* RUNAS_SERVICE = " -s";
 USHORT SERVICES_install(SC_HANDLE manager,
 						const char* service_name,
 						const char* display_name,
+						const char* display_description,
 						const char* executable,
 						const TEXT* directory,
 						const TEXT* dependencies,
@@ -92,7 +93,7 @@ USHORT SERVICES_install(SC_HANDLE manager,
 							(sw_startup ==
 							 STARTUP_DEMAND) ? SERVICE_DEMAND_START :
 							SERVICE_AUTO_START, SERVICE_ERROR_NORMAL,
-							path_name, NULL, NULL, dependencies, 
+							path_name, NULL, NULL, dependencies,
 							nt_user_name, nt_user_password);
 
 	if (service == NULL)
@@ -102,6 +103,24 @@ USHORT SERVICES_install(SC_HANDLE manager,
 			return IB_SERVICE_ALREADY_DEFINED;
 		else
 			return (*err_handler) (errnum, "CreateService", NULL);
+	}
+
+	// Now enter the description string into the service config, if this is
+	// available on the current platform.
+	HMODULE advapi32 = LoadLibrary("ADVAPI32.DLL");
+	if (advapi32 != 0)
+	{
+		typedef BOOL __stdcall proto_config2(SC_HANDLE, DWORD, LPVOID);
+		proto_config2* config2 =
+			(proto_config2*)GetProcAddress(advapi32, "ChangeServiceConfig2A");
+		if (config2 != 0)
+		{
+			// This system supports the ChangeServiceConfig2 API.
+			// LPSTR descr = display_description;
+			//(*config2)(service, SERVICE_CONFIG_DESCRIPTION, &descr);
+			(*config2)(service, SERVICE_CONFIG_DESCRIPTION, &display_description);
+		}
+		FreeLibrary(advapi32);
 	}
 
 	CloseServiceHandle(service);
@@ -239,7 +258,7 @@ USHORT SERVICES_stop(SC_HANDLE manager,
  **************************************
  *
  * Functional description
- *	Start a running service.
+ *	Stop a running service.
  *
  **************************************/
 	SERVICE_STATUS service_status;
@@ -368,7 +387,7 @@ USHORT SERVICES_grant_logon_right(TEXT* account,
 	LookupAccountName(NULL, account, NULL, &cbSid, NULL, &cchDomain, &peUse);
 	PSID pSid = (PSID)LocalAlloc(LMEM_ZEROINIT, cbSid);
 	if (pSid == 0)
-	{	
+	{
 		DWORD err = GetLastError();
 		LsaClose(PolicyHandle);
 		return (*err_handler)(err, "LocalAlloc(Sid)", NULL);
@@ -391,7 +410,7 @@ USHORT SERVICES_grant_logon_right(TEXT* account,
 		LocalFree(pDomain);
 		return (*err_handler)(err, "LookupAccountName", NULL);
 	}
-	
+
 	PLSA_UNICODE_STRING UserRights;
 	ULONG CountOfRights = 0;
 	LsaEnumerateAccountRights(PolicyHandle, pSid, &UserRights, &CountOfRights);
@@ -426,7 +445,7 @@ USHORT SERVICES_grant_logon_right(TEXT* account,
 		LocalFree(pDomain);
 		return FB_LOGON_SRVC_RIGHT_ALREADY_DEFINED;
 	}
-	
+
 	LsaClose(PolicyHandle);
 	LocalFree(pSid);
 	LocalFree(pDomain);
