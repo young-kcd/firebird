@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.59 2003-08-09 21:51:33 brodsom Exp $
+$Id: lock.cpp,v 1.60 2003-08-09 22:36:26 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -2072,7 +2072,11 @@ static void bug( ISC_STATUS * status_vector, const TEXT * string)
 		}
 	}
 
+#ifdef WIN_NT
 	sprintf(s, "Fatal lock manager error: %s, errno: %ld", string, ERRNO);
+#else
+	sprintf(s, "Fatal lock manager error: %s, errno: %d", string, ERRNO);
+#endif
 	gds__log(s);
 	ib_fprintf(ib_stderr, "%s\n", s);
 
