@@ -22,6 +22,7 @@
  * 2001.11.29 John Bellardo: Reworked all routines to create the MemoryPool
  *   class as part of the C++ conversion.  Additionally the class now handles
  *   generic memory allocations instead of typed-only allocations.
+ * 2002.09.23 Nickolay Samofatov: Added debug allocation routines and FB_NEW macro
  */
 
 #ifndef COMMON_ALLOCATORS_H
@@ -49,6 +50,14 @@ FB_DLL_EXPORT void* operator new(size_t, MemoryPool&);
 FB_DLL_EXPORT void  operator delete(void* mem, MemoryPool&);
 FB_DLL_EXPORT void* operator new[](size_t s, MemoryPool&);
 FB_DLL_EXPORT void  operator delete[](void* mem, MemoryPool&);
+
+#ifdef DEBUG_GDS_ALLOC
+FB_DLL_EXPORT void* operator new(size_t, MemoryPool&, char*, int);
+FB_DLL_EXPORT void* operator new[](size_t s, MemoryPool&, char*, int);
+#define FB_NEW(pool) new(pool,__FILE__,__LINE__)
+#else
+#define FB_NEW(pool) new(pool)
+#endif
 
 FB_DLL_EXPORT void* operator new(size_t, MemoryPool*);
 FB_DLL_EXPORT void* operator new[](size_t s, MemoryPool*);

@@ -227,6 +227,22 @@ void* operator new[](size_t s, MemoryPool& p)
 	return p.allocate(s, 0);
 }
 
+#ifdef DEBUG_GDS_ALLOC
+
+// Debugging operators new used by FB_NEW macro. Work the same as the above
+// except they save file name/line number information
+void* operator new(size_t s, MemoryPool& p, char *file, int line)
+{
+	return p.allocate(s, 0, file, line);
+}
+
+void* operator new[](size_t s, MemoryPool& p, char *file, int line)
+{
+	return p.allocate(s, 0, file, line);
+}
+
+#endif
+
 /**	operator delete[] to handle exceptions thrown while contructing object with
 	our custom operator new.
 **/
