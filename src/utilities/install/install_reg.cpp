@@ -30,12 +30,12 @@
 #include "../utilities/install/install_nt.h"
 #include "../utilities/install/regis_proto.h"
 
-static USHORT reg_error(SLONG, TEXT *, HKEY);
+static USHORT reg_error(SLONG, TEXT*, HKEY);
 static void usage(void);
 
 static struct
 {
-	TEXT *name;
+	TEXT* name;
 	USHORT abbrev;
 	USHORT code;
 } commands[] =
@@ -46,7 +46,7 @@ static struct
 };
 
 
-int CLIB_ROUTINE main( int argc, char **argv)
+int CLIB_ROUTINE main( int argc, char** argv)
 {
 /**************************************
  *
@@ -58,26 +58,21 @@ int CLIB_ROUTINE main( int argc, char **argv)
  *	Install or remove InterBase.
  *
  **************************************/
-	TEXT **end, *p, *q, *cmd;
 	TEXT directory[MAXPATHLEN];
-	USHORT sw_command;
-	bool sw_version;
-	USHORT i, ret, len;
-	HKEY hkey_node;
 
-	sw_command = COMMAND_NONE;
-	sw_version = false;
+	USHORT sw_command = COMMAND_NONE;
+	bool sw_version = false;
 
 	// Let's get the root directory from the instance path of this program.
 	// argv[0] is only _mostly_ guaranteed to give this info,
 	// so we GetModuleFileName()
-	len = GetModuleFileName(NULL, directory, sizeof(directory));
+	USHORT len = GetModuleFileName(NULL, directory, sizeof(directory));
 	if (len == 0)
 		return reg_error(GetLastError(), "GetModuleFileName", NULL);
 
 	// Get to the last '\' (this one precedes the filename part). There is
 	// always one after a call to GetModuleFileName().
-	p = directory + len;
+	TEXT* p = directory + len;
 	do {--p;} while (*p != '\\');
 
 	// Get to the previous '\' (this one should precede the supposed 'bin\\' part).
@@ -85,13 +80,16 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	do {--p;} while (*p != '\\' && *p != ':');
 	*p = '\0';
 
-	end = argv + argc;
+	const TEXT* const* const end = argv + argc;
 	while (++argv < end)
 	{
 		if (**argv != '-') {
+			const TEXT* cmd;
+			USHORT i;
 			for (i = 0; cmd = commands[i].name; i++)
 			{
-				for (p = *argv, q = cmd; *p && UPPER(*p) == *q; p++, q++);
+				const TEXT* q = cmd;
+				for (p = *argv; *p && UPPER(*p) == *q; ++p, ++q);
 				if (!*p && commands[i].abbrev <= (USHORT) (q - cmd))
 					break;
 			}
@@ -124,8 +122,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	if (sw_command == COMMAND_NONE)
 		usage();
 
-	hkey_node = HKEY_LOCAL_MACHINE;
+	HKEY hkey_node = HKEY_LOCAL_MACHINE;
 
+	USHORT ret;
 	switch (sw_command)
 	{
 		case COMMAND_INSTALL:
@@ -151,7 +150,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	return (ret == FB_SUCCESS) ? FINI_OK : FINI_ERROR;
 }
 
-static USHORT reg_error( SLONG status, TEXT * string, HKEY hkey)
+static USHORT reg_error( SLONG status, TEXT* string, HKEY hkey)
 {
 /**************************************
  *
@@ -164,7 +163,6 @@ static USHORT reg_error( SLONG status, TEXT * string, HKEY hkey)
  *
  **************************************/
 	TEXT buffer[512];
-	SSHORT l;
 
 	if (hkey != NULL && hkey != HKEY_LOCAL_MACHINE)
 		RegCloseKey(hkey);
@@ -178,14 +176,14 @@ static USHORT reg_error( SLONG status, TEXT * string, HKEY hkey)
 	{
 		ib_printf("Error occurred during \"%s\"\n", string);
 
-		if (!(l = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
+		const SSHORT l = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
 								NULL,
 								status,
 								MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 								buffer,
 								sizeof(buffer),
-								NULL)))
-		{
+								NULL);
+		if (!l) {
 			ib_printf("Windows NT error %"SLONGFORMAT"\n", status);
 		}
 		else
