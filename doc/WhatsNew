@@ -1,4 +1,86 @@
   **************
+  * v1.5 RC 3
+  **************
+
+    * Fixed RC2 bug.
+        Server crash on restore of some databases.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Configuration improvement.
+        Make path management in firebird.conf to follow the OS requirements.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff@hotmail.ru>
+
+    * Fixed unregistered bug.
+        Wrong UDF arguments of types DATE/TIME (dialect 3).
+      Contributor(s):
+        Oleg LOA <loa@mail.ru>
+
+    * Fixed unregistered bug.
+        Possible reference integrity violation.
+      Contributor(s):
+        Vlad Horsun <horsun@kdb.dp.ua>
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed RC2 bug (SF #745090).
+        Permissions problem for firebird.conf.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Fixed RC2 bug.
+        Incorrect handling of numeric NULLs as EXCEPTION or EXECUTE STATEMENT arguments.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed RC2 bugs.
+        1) UDF linkage problems on Linux.
+        2) Allow C programs use our shared libraries on POSIX platforms.
+        3) Allow easy adjustment of LockSemCount on POSIX platforms.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Parser improvement.
+        Make FIRST/SKIP keywords non-reserved.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Fixed RC2 bug.
+        Problems with fbclient.dll on Win9x.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff@hotmail.ru>
+
+    * Fixed RC2 bug.
+	    Optimizer crash when all indices of a table had the selectivity of 1.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Fixed RC2 bug.
+        Various issues with the lock manager.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Fixed unregistered bug.
+        Wrong attachment reference after exception in PSQL.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff@hotmail.ru>
+
+    * Fixed unregistered bug.
+        BREAK/LEAVE and EXIT statements are now available for usage in triggers.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed RC2 bug.
+        Server crash when NULL is used as EXECUTE STATEMENT argument.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff@hotmail.ru>
+
+    * Fixed RC2 bug.
+        Server crash when explicit pessimistic locks are used from PSQL.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+  **************
   * v1.5 RC 2
   **************
 
