@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: srvrmgr.cpp,v 1.6 2002-09-20 10:23:15 eku Exp $
+ * $Id: srvrmgr.cpp,v 1.7 2002-10-07 01:29:12 skywalker Exp $
  */
 
 #include "firebird.h"
@@ -45,6 +45,7 @@
 
 #include "../jrd/common.h"
 #include "../jrd/gds.h"
+#include "../jrd/gds_proto.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/svc_undoc.h"
 #include "../utilities/ibmgr.h"

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.static.gpre,v 1.4 2002-09-24 13:01:12 eku Exp $
+#  $Id: Makefile.in.static.gpre,v 1.5 2002-10-07 01:29:09 skywalker Exp $
 #
 ROOT=..
 ObjModuleName=static.gpre
@@ -67,12 +67,7 @@ $(GPRE_STATIC):	$(GPRESTATIC_Objects) $(LIBFBCOMMON_A) $(LIBFBSTATIC_A)
 	$(LN) $(@F) $(GPRE_CURRENT)
 
 
+include $(ROOT)/gen/make.shared.targets
 
-# gpre_meta needs a special boot build since there is no database.
-$(SRC)/gpre/gpre_meta.cpp:  $(SRC)/gpre/gpre_meta.epp
-	$(GPRE_BOOT) -lang_internal $(GPRE_FLAGS) $< $@
-
-
-FORCE:
 
 -include $(Dependencies)

@@ -1,5 +1,3 @@
-
-
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
 # License as published by the Free Software Foundation; either
@@ -29,9 +27,9 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.install,v 1.3 2002-09-19 15:25:38 skidder Exp $
+#  $Id: Makefile.in.install,v 1.4 2002-10-07 01:29:09 skywalker Exp $
 #
-ROOT=../..
+ROOT=..
 
 
 
@@ -70,34 +68,47 @@ FirebirdBuildPrefix=$(GEN_ROOT)
 #export FirebirdInstallPrefix
 #export PackageVersion
 
+BuildVersion=@FIREBIRD_VERSION@.@FB_BUILD_NUM@
+PackageVersion=@FIREBIRD_PACKAGE_VERSION@
+
+Version=$(BuildVersion)-$(PackageVersion)
 
 
 
 # This means something like: FirebirdCS-2.0.0-1.i386.tar.gz
-TarFile=Firebird$(ArchPrefix)-$(FirebirdVersion)-$(PackageVersion).$(CpuType).tar.gz
+TarFile=Firebird$(ArchPrefix)-$(Version).$(CpuType).tar.gz
+RPMFile=Firebird$(ArchPrefix)-$(Version).$(CpuType).rpm
+
+
+# Determine where the packages are built.  Each distribution builds them in
+# their own spot.
+# This should be moved to configure.in file
+RedhatPackageDir=/usr/src/redhat/RPMS/$(CpuType)
+MandrakePackageDir=/usr/src/RPM/RPMS/$(CpuType)
+SuSEPackageDir=/usr/src/packages/RPMS/$(CpuType)
+
+PackageDir:=$(shell if [ -d $(RedhatPackageDir) ]; then echo $(RedhatPackageDir); \
+		           elif [ -d $(MandrakePackageDir) ]; then echo $(MandrakePackageDir); \
+		           elif [ -d $(SuSEPackageDir) ]; then echo $(SuSEPackageDir); \
+				   fi)
+
+
+
 PkgSrcDir=$(InstallRoot)/$(ArchType)
+RPMSrcDir=$(SRC)/install/@FIREBIRD_ARCH_TYPE@/
+ScriptDir=$(GEN_ROOT)/install/scripts/
 
 
-LastInstallFlg=.lastinstallflg
+TarInstallDir=$(GEN_ROOT)/install
 
 
-install: runinstall
+.PHONY: install tarfile rpmfile dist packages
+
+
 dist : packages
 
-
-runinstall: $(LastInstallFlg)
-
-
-$(LastInstallFlg) : $(BIN)/gsec
-	(cd $(GEN_ROOT)/install; ./install.sh)
-#	(cd $(ROOT); sh $(InstallRoot)/classic/CSTarInstall.sh)
-#	touch $(LastInstallFlg)
-
-
-
-
-
 packages: tarfile
+#packages: tarfile rpmfile
 
 tarfile:  $(TarFile)
 
@@ -105,9 +116,48 @@ $(TarFile) :  buildInstallDir
 	(cd $(GEN_ROOT); tar -czf $(TarFile) install)
 
 
-TarInstallDir=$(GEN_ROOT)/install
-
 buildInstallDir:
-#	(cd $(BuildRoot); tar -czf - interbase ) | cat > $(CSTarInstallDir)/interbase.tar.gz
 	(cd $(GEN_ROOT); tar -czf install/firebird.tar.gz firebird)
 
+
+install:
+	(cd $(GEN_ROOT)/install; ./install.sh)
+
+rpmfile: $(RPMFile)
+
+$(RPMFile) : $(GEN_ROOT)/rpmscript
+	rpm -bb $(GEN_ROOT)/rpmscript
+#	rpm -bb --buildroot `pwd`/buildroot $(GEN_ROOT)/rpmscript
+	cp $(PackageDir)/$(RPMFile) .
+
+
+.PHONY: $(GEN_ROOT)/rpmscript
+
+$(GEN_ROOT)/rpmscript :
+	echo $@
+	cat $(RPMSrcDir)/rpmheader.txt.in | sed 's/^Version:.*/Version: $(BuildVersion)/' \
+	     | sed 's/Release:.*/Release: $(PackageVersion)/' > $@
+	echo "" >> $@
+	echo "%prep" >> $@
+#	cat $(ClassicSrcDir)/prepinstall.sh >> $@
+	echo "" >> $@
+	echo "%build" >> $@
+#	cat $(ScriptDir)/buildinstall.sh >> $@
+	echo "" >> $@
+	echo "%install" >> $@
+#	cat $(ScriptDir)/install.sh >> $@
+	echo "" >> $@
+	echo "%files" >> $@
+	cat $(RPMSrcDir)/rpmfiles.txt.in >> $@
+	echo "" >> $@
+	echo "%pre" >> $@
+	cat $(ScriptDir)/preinstall.sh >> $@
+	echo "" >> $@
+	echo "%post" >> $@
+	cat $(ScriptDir)/postinstall.sh >> $@
+	echo "" >> $@
+	echo "%preun" >> $@
+	cat $(ScriptDir)/preuninstall.sh >> $@
+	echo "" >> $@
+	echo "%postun" >> $@
+	cat $(ScriptDir)/postuninstall.sh >> $@

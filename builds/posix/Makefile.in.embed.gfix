@@ -1,5 +1,3 @@
-
-
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
 # License as published by the Free Software Foundation; either
@@ -29,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.gfix,v 1.3 2002-09-24 13:01:12 eku Exp $
+#  $Id: Makefile.in.embed.gfix,v 1.4 2002-10-07 01:29:09 skywalker Exp $
 #
 ROOT=..
 ObjModuleName=embed.gfix
@@ -62,6 +60,6 @@ $(BIN)/gfix:	$(GFIX_Objects) $(LIB)/libfbembed.so
 	$(LD) $(LINK_OPTS) $(GFIX_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
 
 
-FORCE:
+include $(ROOT)/gen/make.shared.targets
 
 -include $(Dependencies)

@@ -1,5 +1,3 @@
-
-
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
 # License as published by the Free Software Foundation; either
@@ -29,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbclient,v 1.3 2002-09-24 13:01:12 eku Exp $
+#  $Id: Makefile.in.libfbclient,v 1.4 2002-10-07 01:29:09 skywalker Exp $
 #
 ROOT=..
 ObjModuleName=libfbclient
@@ -67,6 +65,14 @@ REMOTE_ClientSources = $(addprefix remote/, $(REMOTE_ClientFiles))
 REMOTE_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(REMOTE_ClientSources))))
 
 
+GPRELIB_ClientSources = $(addprefix gpre/, $(GPRELIB_ClientFiles))
+GPRELIB_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GPRELIB_ClientSources))))
+
+
+WAL_ClientSources = $(addprefix wal/, $(WAL_ClientFiles))
+WAL_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(WAL_ClientSources))))
+
+
 SECURITY_ClientSources = $(addprefix utilities/, $(SECURITY_ClientFiles))
 SECURITY_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SECURITY_ClientSources))))
 
@@ -81,10 +87,15 @@ FBMEMORY_ClientSources = $(addprefix common/memory/, $(FBMEMORY_ClientFiles))
 FBMEMORY_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBMEMORY_ClientSources))))
 
 
-FBCLIENT_Objects = $(JRD_ClientObjects) $(DSQL_ClientObjects) \
-						 $(REMOTE_ClientObjects) $(SECURITY_ClientObjects) \
+FBCLIENT_Objects =  $(JRD_ClientObjects) \
+					$(DSQL_ClientObjects) \
+					$(REMOTE_ClientObjects) \
+					$(GPRELIB_ClientObjects) \
+					$(WAL_ClientObjects) \
+					$(SECURITY_ClientObjects) \
 					$(FBUTIL_ClientObjects) \
-					$(FBCOMMON_ClientObjects) $(FBMEMORY_ClientObjects)
+					$(FBCOMMON_ClientObjects)\
+					$(FBMEMORY_ClientObjects)
 
 
 .PHONY: libfbclient
@@ -99,38 +110,11 @@ $(LIBFBCLIENT_SO):	$(FBCLIENT_Objects)
 	-$(LN) $(notdir $(LIBFBCLIENT_SOBASENAME)) $(LIBFBCLIENT_SONAME)
 
 
-# This is the one where dyn_def.epp produced dyn_def.cpp and then the sed
-# script is run to remove a component of it.  This is pretty ugly, and even
-# if we have to live with it, the makefile should be changed to make the
-# dependencies clearer.
-
-$(SRC)/dyn_def.cpp : $(SRC)/dyn_def.epp $(SRC)/dyn_def.sed
-	$(GPRE_BOOT) $(GPRE_FLAGS) $< $(GEN_SRC)/dyn_deffoo.cpp
-	sed -f $(SRC)/dyn_def.sed $(GEN_SRC)/dyn_deffoo.cpp > $@
-
-# This was the old dependancies.
-#$(BIN)/dyn_def.o: $(SRC)/dyn_def.cpp $(SRC)/dyn_def.sed
-#	sed -f dyn_def.sed $< > dyn_deffoo.cpp
-#	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) dyn_deffoo.cpp
-#	$(MV) dyn_deffoo.o dyn_def.bin
-#	-$(RM) dyn_deffoo.cpp dyn_deffoo.o
-
-
-
-buildb: isc4.gdb yachts.lnk
-
-isc4.gdb : $(ISC_GDB)
-	-ln -sf $(ISC_GDB) $@
-
-yachts.lnk: 
-	ln -fs $(SRC_ROOT)/refDatabases/empty.gdb yachts.lnk
-
 
 AllObjects = $(FBCLIENT_Objects)
-
 Dependencies = $(AllObjects:.o=.d)
 
 
-FORCE:
+include $(ROOT)/gen/make.shared.targets
 
 -include $(Dependencies)

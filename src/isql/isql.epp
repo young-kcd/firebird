@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.14 2002-09-27 01:29:50 bellardo Exp $
+  $Id: isql.epp,v 1.15 2002-10-07 01:29:12 skywalker Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -64,6 +64,13 @@
 #endif
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
+#endif
+
+
+#ifdef HAVE_EDITLINE_H
+// This is a local file included in our distribution - but not always 
+// compiled into the system
+#include "editline.h"
 #endif
 
 #ifdef HAVE_READLINE_READLINE_H
@@ -679,7 +686,7 @@ static void readNextInputLine(const char* prompt) {
         lastInputLine = NULL;
     }
 
-#ifdef HAVE_READLINE_READLINE_H
+#ifdef HAVE_EDITLINE_H
     lastInputLine = readline((char*) prompt);
 
     if (lastInputLine != NULL && strlen(lastInputLine) != 0) {

@@ -127,7 +127,11 @@ PIPE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(PIPE_Sources)))
 #
 # wal
 
-WAL_Files=	wal.cpp walc.cpp walf.cpp walr.cpp wstatus.cpp walw.cpp
+WAL_ClientFiles = 
+
+WAL_ServerFiles=	walf.cpp wal.cpp walc.cpp walr.cpp wstatus.cpp walw.cpp
+
+WAL_Files = $(WAL_ClientFiles) $(WAL_ServerFiles)
 
 WAL_Sources = $(addprefix wal/, $(WAL_Files))
 WAL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(WAL_Sources))))
@@ -136,7 +140,9 @@ WAL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(WAL_Sources))))
 #
 # gpre
 
-GPRELIB_Files = pretty.cpp
+GPRELIB_ClientFiles = pretty.cpp
+
+GPRELIB_Files = $(GPRELIB_ClientFiles) $(GPRELIB_ServerFiles)
 
 GPRELIB_Sources = $(addprefix gpre/, $(GPRELIB_Files))
 GPRELIB_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GPRELIB_Sources))))

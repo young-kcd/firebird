@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.51 2002-10-01 10:38:13 eku Exp $
+dnl $Id: configure.in,v 1.52 2002-10-07 01:29:08 skywalker Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -143,7 +143,8 @@ AC_CHECK_HEADERS(stdlib.h)
 AC_CHECK_HEADERS(string.h)
 AC_CHECK_HEADERS(signal.h)
 if test "$READLINE_FLG" = "Y"; then
-  AC_CHECK_HEADERS(readline/readline.h)
+  AC_DEFINE(HAVE_EDITLINE_H)
+#  AC_CHECK_HEADERS(readline/readline.h)
 fi
 AC_CHECK_HEADERS(pwd.h)
 AC_CHECK_HEADERS(unistd.h)
@@ -161,7 +162,8 @@ AC_CHECK_LIB(crypt, main)
 AC_CHECK_LIB(curses, main)
 dnl AC_CHECK_LIB(termcap, main)
 if test "$READLINE_FLG" = "Y"; then
-  AC_CHECK_LIB(readline, main,,, $LIBS)
+   AC_SUBST(EDITLINE_A, -ledit)
+#  AC_CHECK_LIB(readline, main,,, $LIBS)
 fi
 AC_CHECK_LIB(stdc++, main,,, $LIBS)
 
@@ -281,7 +283,7 @@ AC_SUBST(FIREBIRD_LIBGDS_SO_X_LNK)
 
 AC_SUBST(FIREBIRD_VERSION)
 AC_SUBST(FIREBIRD_PACKAGE_VERSION)
-
+AC_SUBST(FB_BUILD_NUM, $BuildNum)
 
 BUILD_ROOT_DIR=`pwd`
 SRC_ROOT=$BUILD_ROOT_DIR/src
@@ -357,6 +359,8 @@ mkdir -p gen/libfbserver/jrd/os/posix
 mkdir -p gen/fbserver/remote
 mkdir -p gen/libfbclient/jrd
 mkdir -p gen/libfbclient/dsql
+mkdir -p gen/libfbclient/gpre
+mkdir -p gen/libfbclient/wal
 mkdir -p gen/libfbclient/remote
 mkdir -p gen/libfbclient/utilities
 mkdir -p gen/libfbclient/fbutil
@@ -364,6 +368,7 @@ mkdir -p gen/libfbclient/common/memory
 mkdir -p gen/client.gbak/burp
 mkdir -p gen/client.gfix/alice
 mkdir -p gen/client.gpre/gpre
+mkdir -p gen/client.gdef/dudley
 mkdir -p gen/client.isql/isql
 mkdir -p gen/client.util/utilities
 mkdir -p gen/intl/intl
@@ -439,6 +444,7 @@ gen/make.rules:${MAKE_SRC_DIR}/make.rules
 gen/make.defaults:${MAKE_SRC_DIR}/make.defaults
 gen/make.platform:${MAKE_SRC_DIR}/prefix.${MAKEFILE_PREFIX}
 gen/make.shared.variables:${MAKE_SRC_DIR}/make.shared.variables
+gen/make.shared.targets:${MAKE_SRC_DIR}/make.shared.targets
 src/Makefile:${MAKE_SRC_DIR}/Makefile.in.firebird
 gen/Makefile.libfbcommon:${MAKE_SRC_DIR}/Makefile.in.libfbcommon
 gen/Makefile.boot.gpre:${MAKE_SRC_DIR}/Makefile.in.boot.gpre
@@ -452,6 +458,7 @@ gen/Makefile.fbserver:${MAKE_SRC_DIR}/Makefile.in.fbserver
 gen/Makefile.libfbclient:${MAKE_SRC_DIR}/Makefile.in.libfbclient
 gen/Makefile.client.gbak:${MAKE_SRC_DIR}/Makefile.in.client.gbak
 gen/Makefile.client.gfix:${MAKE_SRC_DIR}/Makefile.in.client.gfix
+gen/Makefile.client.gdef:${MAKE_SRC_DIR}/Makefile.in.client.gdef
 gen/Makefile.client.isql:${MAKE_SRC_DIR}/Makefile.in.client.isql
 gen/Makefile.client.gpre:${MAKE_SRC_DIR}/Makefile.in.client.gpre
 gen/Makefile.client.util:${MAKE_SRC_DIR}/Makefile.in.client.util
@@ -470,7 +477,7 @@ gen/Makefile.embed.gdef:${MAKE_SRC_DIR}/Makefile.in.embed.gdef
 gen/Makefile.embed.qli:${MAKE_SRC_DIR}/Makefile.in.embed.qli
 gen/Makefile.embed.gpre:${MAKE_SRC_DIR}/Makefile.in.embed.gpre
 src/v5_examples/Makefile:${MAKE_SRC_DIR}/Makefile.in.example5
-src/install/Makefile:${MAKE_SRC_DIR}/Makefile.in.install
+gen/Makefile.install:${MAKE_SRC_DIR}/Makefile.in.install
 Makefile:Makefile.in
 gen/install/scripts/preinstall.sh:src/install/${FIREBIRD_ARCH_TYPE}/preinstall.sh.in
 gen/install/scripts/install.sh:src/install/${FIREBIRD_ARCH_TYPE}/install.sh.in
@@ -498,6 +505,7 @@ dnl AC_DEFINE_UNQUOTED(PRODUCT_VER_STRING, "$PRODUCT_VER_STRING")
 dnl AC_DEFINE_UNQUOTED(FILE_VER_NUMBER, $FILE_VER_NUMBER)
 dnl AC_DEFINE_UNQUOTED(FILE_VER_STRING, "$FILE_VER_STRING")
 dnl AC_DEFINE_UNQUOTED(LICENSE_VER_STRING, "$FILE_VER_STRING")
+
 
 
 dnl EKU: must be executed after AC_OUTPUT

@@ -1,4 +1,3 @@
-
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
 # License as published by the Free Software Foundation; either
@@ -28,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.9 2002-10-02 12:43:15 eku Exp $
+#  $Id: Makefile.in.firebird,v 1.10 2002-10-07 01:29:09 skywalker Exp $
 #
 
 ROOT=..
@@ -135,15 +134,17 @@ export LD_LIBRARY_PATH
 .PHONY: firebird_super firebird_classic
 
 
-# The main targets, firebird_embedded and firebird_server
+# The main targets are firebird_embedded or firebird_server
+# or their older names _classic or _super.
+# The following target is expanded by autoconf process to 
+# either _classic or _super.
 
-firebird : firebird_embedded
-firebird_embedded: firebird_basic classic_targets
-firebird_server: firebird_basic super_targets
 
-# To help those remember to 'older' forms
-firebird_classic: firebird_embedded
-firebird_super: firebird_server
+firebird : firebird_@FIREBIRD_ARCH_TYPE@
+
+firebird_classic firebird_embedded: firebird_basic classic_targets
+firebird_super firebird_server: firebird_basic super_targets
+
 
 
 
@@ -154,7 +155,7 @@ firebird_super: firebird_server
 # some complications particularly for super in needing to start the server
 # that you are currently building. MOD 28-July-2002
 
-firebird_basic: firebird_boot basic_targets
+firebird_basic: external_libraries firebird_boot basic_targets
 
 firebird_boot: updateBuildNum boot_phase1 boot_phase2 
 
@@ -167,12 +168,24 @@ firebird_boot: updateBuildNum boot_phase1 boot_phase2
 # writeBuildNum.sh script is autoupdated by CVS checkins.
 #
 
-.PHONY: updateBuildNum
+.PHONY: updateBuildNum external_libraries
 
 updateBuildNum : jrd/build_no.h
 
 jrd/build_no.h : misc/writeBuildNum.sh
 	(cd ..; ./src/misc/writeBuildNum.sh rebuildHeader)
+
+
+
+# 
+# Libraries that come from outside the project but are built 
+# as part of the project are included here.  Currently editline
+# is the only external library we have included.
+# 
+external_libraries: $(LIBEDIT_A)
+
+$(LIBEDIT_A): 
+	$(MAKE) -C $(SRC_ROOT)/extern/editline
 
 
 #---------------------------------------------------------------------------
@@ -199,6 +212,7 @@ $(GPRE_STATIC):
 	$(MAKE) boot_phase1_build
 
 boot_phase1_build: libfbcommon gpre_boot libfbstatic gpre_static @MANAGER_PROCESS_TARGET@
+
 
 libfbcommon:
 	$(MAKE) -f $(MAKE_ROOT)/Makefile.libfbcommon $@
@@ -348,7 +362,7 @@ embed_qli:
 .PHONY: libfbclient client_gfix client_gbak client_isql client_gpre client_util
 
 super_targets: libfbserver fbserver libfbclient client_gfix client_gbak \
-			client_isql client_gpre client_util client_gdef
+			client_isql client_gpre client_util # client_gdef
 
 libfbserver:
 	$(MAKE) -f $(MAKE_ROOT)/Makefile.libfbserver $@
@@ -369,10 +383,13 @@ client_gpre:
 	$(MAKE) -f $(MAKE_ROOT)/Makefile.client.gpre
 
 client_isql:
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.client.gbak
+	$(MAKE) -f $(MAKE_ROOT)/Makefile.client.isql
 
 client_util:
 	$(MAKE) -f $(MAKE_ROOT)/Makefile.client.util	
+
+# Not sure we need this target in super - problems with WAL includes
+# MOD 04-Oct-2002
 
 client_gdef:
 	$(MAKE) -f $(MAKE_ROOT)/Makefile.client.gdef
@@ -512,11 +529,11 @@ $(BIN)/% :: $(SRC_ROOT)/install/misc/%
 .PHONY: install
 
 install:
-	$(MAKE) -C install $@
+	$(MAKE) -f $(MAKE_ROOT)/Makefile.install $@
 
 
 packages:
-	$(MAKE) -C install $@
+	$(MAKE) -f $(MAKE_ROOT)/Makefile.install $@
 
 
 installclassic:
@@ -529,27 +546,19 @@ dist:
 
 
 #___________________________________________________________________________
-# This one needs some more work.
+# 
 
 
-clean: clean_objs clean_libs clean_exes clean_dbs clean_dependancies clean_build
-
-clean_objs:
-	-echo $(GDSLIB_Objects) | xargs rm -f
-	-echo $(GDSLIB_SharedObjects) | xargs rm -f
+clean: clean_objects clean_dependancies clean_build
 
 
-
-clean_libs:
-	-rm $(GDSLIB_LA)
-	-rm $(JRD_BOOT)
-
-clean_exes:
-	-rm -f $(BIN)/*
-#	-rm $(Executables)
-
+# Not sure if this one is still needed MOD 7-Oct-2002
 clean_dbs:
 	-rm -f refDatabases/*\.gdb
+
+
+clean_objects:
+	rm -f `find $(GEN_ROOT)/ -type f -name '*.o' -print`
 
 
 # Clear out dependancies files created by the gcc compiler

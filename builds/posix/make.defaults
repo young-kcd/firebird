@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.3 2002-09-24 13:01:12 eku Exp $
+#   $Id: make.defaults,v 1.4 2002-10-07 01:29:09 skywalker Exp $
 # 
 
 
@@ -128,6 +128,7 @@ LIBFBINTL_SO = $(FIREBIRD)/intl/libfbintl.so
 
 LIBFBCOMMON_A = $(LIB)/libfbcommon.a
 LIBFBSTATIC_A = $(LIB)/libfbstatic.a
+LIBEDIT_A = $(LIB)/libedit.a
 
 ifdef UseSharedLibraries   
     LIBGDS_LA = $(LIBGDS_SO)

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.boot.gpre,v 1.4 2002-09-24 13:01:11 eku Exp $
+#  $Id: Makefile.in.boot.gpre,v 1.5 2002-10-07 01:29:09 skywalker Exp $
 #
 ROOT=..
 ObjModuleName=boot.gpre
@@ -75,6 +75,8 @@ $(GPRE_BOOT):	$(GPREBOOT_Objects) $(LIB)/libfbcommon.a
 	$(LN) $(@F) $(GPRE_CURRENT)
 
 
-FORCE:
+
+include $(ROOT)/gen/make.shared.targets
+
 
 -include $(Dependencies)

@@ -26,7 +26,7 @@
 #   Contributor(s):
 #
 #
-#   $Id: make.rules,v 1.7 2002-09-25 11:20:30 kkuznetsov Exp $
+#   $Id: make.rules,v 1.8 2002-10-07 01:29:09 skywalker Exp $
 #
 
 #____________________________________________________________________________
@@ -164,8 +164,8 @@ LINK_OPTIONS=
 #LINK_LIBS:= -lm -lstdc++ $(ReadlineLibs) @LIBS@ -lc -ldl -lcrypt
 #STATICLINK_LIBS := -lm -lstdc++ $(ReadlineLibs) -lc -ldl -lcrypt
 
-LINK_LIBS = @LIBS@
-STATICLINK_LIBS = @LIBS@
+LINK_LIBS = @LIBS@ @EDITLINE_A@
+STATICLINK_LIBS = @LIBS@ @EDITLINE_A@
 
 #LINK_LIBS= -L$(LIB)  -lgds -lm -lc -ldl -lcrypt
 # -lgcc

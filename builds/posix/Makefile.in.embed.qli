@@ -1,5 +1,3 @@
-
-
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
 # License as published by the Free Software Foundation; either
@@ -29,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.qli,v 1.3 2002-09-24 13:01:12 eku Exp $
+#  $Id: Makefile.in.embed.qli,v 1.4 2002-10-07 01:29:09 skywalker Exp $
 #
 ROOT=..
 ObjModuleName=embed.qli
@@ -73,19 +71,8 @@ $(QLI): $(QLI_Objects) $(LIBFBEMBED_SO)
 # need to be rebuilt here.
 
 
-# These need to change to $(GEN_SRC) at some stage
-$(SRC)/meta.cpp $(SRC)/proc.cpp $(SRC)/show.cpp: yachts.lnk 
-$(SRC)/help.cpp:	help.gdb 
 
-
-yachts.lnk:
-	ln -fs $(SRC_ROOT)/refDatabases/metadata.gdb yachts.lnk
-
-help.gdb:
-	ln -fs $(SRC_ROOT)/refDatabases/help.gdb help.gdb
-
-FORCE:
-
+include $(ROOT)/gen/make.shared.targets
 
 -include $(Dependencies)
 

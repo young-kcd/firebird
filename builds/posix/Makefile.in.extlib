@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.extlib,v 1.3 2002-09-24 13:01:12 eku Exp $
+#  $Id: Makefile.in.extlib,v 1.4 2002-10-07 01:29:09 skywalker Exp $
 #
 ROOT=..
 ObjModuleName=extlib
@@ -113,6 +113,6 @@ $(LIB)/ib_util.so:	$(UTIL_Objects)
 #	ar crv $@  $%
 
 
-FORCE:
+include $(ROOT)/gen/make.shared.targets
 
 -include $(Dependencies)
