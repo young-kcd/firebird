@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: evl_string.h,v 1.9 2004-03-18 05:55:22 robocop Exp $
+ *  $Id: evl_string.h,v 1.10 2004-04-25 02:30:31 skidder Exp $
  *
  */
 
@@ -149,7 +149,7 @@ public:
 		StaticAllocator(_pool),	pattern_len(_pattern_len)
 	{
 		CharType* temp = reinterpret_cast<CharType*>(alloc(_pattern_len * sizeof(CharType)));
-		memcpy(temp, _pattern_str, _pattern_len);
+		memcpy(temp, _pattern_str, _pattern_len * sizeof(CharType));
 		pattern_str = temp;
 		kmpNext = reinterpret_cast<SSHORT*>(alloc((_pattern_len + 1) * sizeof(SSHORT)));
 		preKmp<CharType>(_pattern_str, _pattern_len, kmpNext);
@@ -268,7 +268,7 @@ LikeEvaluator<CharType>::LikeEvaluator(
 {
 	// Create local copy of the string.
 	CharType* pattern_str = reinterpret_cast<CharType*>(alloc(pattern_len*sizeof(CharType)));
-	memcpy(pattern_str, _pattern_str, pattern_len);
+	memcpy(pattern_str, _pattern_str, pattern_len * sizeof(CharType));
 
 	patternItems.grow(1);
 	// PASS1. Parse pattern.

@@ -27,6 +27,19 @@
 #ifndef JRD_INTLOBJ_H
 #define JRD_INTLOBJ_H
 
+#ifdef __cplusplus
+namespace Jrd {
+  class LikeObject;
+  class ContainsObject;
+}
+using Jrd::LikeObject;
+using Jrd::ContainsObject;
+#else
+struct LikeObject;
+struct ContainsObject;
+#endif
+
+
 #ifndef INCLUDE_FB_TYPES_H
 typedef unsigned short USHORT;
 typedef short SSHORT;
@@ -38,6 +51,7 @@ typedef unsigned char BYTE;
 typedef unsigned int ULONG;
 typedef int LONG;
 typedef signed int SLONG;
+
 #endif
 
 typedef USHORT (*FPTR_SHORT) ();
@@ -151,26 +165,13 @@ typedef struct texttype {
 	//\\ END OF COLLATION DRIVER DATA ----------------------------------------------
 
 	// ENGINE INTERNAL FUNCTIONS - do not implement in collation drivers -----------
-	typedef void* (*pfn_INTL_like_create)(Jrd::thread_db*, Jrd::TextType, 
+	typedef LikeObject* (*pfn_INTL_like_create)(Jrd::thread_db*, Jrd::TextType, 
 		const UCHAR*, SSHORT, UCS2_CHAR);
-	typedef void* (*pfn_INTL_contains_create)(Jrd::thread_db*, Jrd::TextType, 
+	typedef ContainsObject* (*pfn_INTL_contains_create)(Jrd::thread_db*, Jrd::TextType, 
 		const UCHAR*, SSHORT);
-	typedef void (*pfn_INTL_destroy_reset)(void*);
-	typedef bool (*pfn_INTL_process)(Jrd::thread_db*, Jrd::TextType, void*, 
-		const UCHAR*, SSHORT);
-	typedef bool (*pfn_INTL_result)(void*);
 
 	pfn_INTL_like_create		texttype_fn_like_create;
-	pfn_INTL_destroy_reset		texttype_fn_like_destroy;
-	pfn_INTL_destroy_reset		texttype_fn_like_reset;
-	pfn_INTL_process			texttype_fn_like_process;
-	pfn_INTL_result				texttype_fn_like_result;
-
 	pfn_INTL_contains_create	texttype_fn_contains_create;
-	pfn_INTL_destroy_reset		texttype_fn_contains_destroy;
-	pfn_INTL_destroy_reset		texttype_fn_contains_reset;
-	pfn_INTL_process			texttype_fn_contains_process;
-	pfn_INTL_result				texttype_fn_contains_result;
 	//\\ END OF INTERNAL FUNCTIONS -------------------------------------------------
 } *TEXTTYPE;
 

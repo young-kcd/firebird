@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.78 2004-04-10 00:25:21 robocop Exp $ 
+  * $Id: evl.cpp,v 1.79 2004-04-25 02:30:30 skidder Exp $ 
  */
 
 /*
@@ -443,6 +443,20 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			// Currently only nod_like and nod_contains may be marked invariant
 			if (node->nod_flags & nod_invariant) {
 				impure = reinterpret_cast<impure_value*>((SCHAR *)request + node->nod_impure);
+
+				// Check that data type of operand is still the same.
+				// It may change due to multiple formats present in stream
+				// Tystem tables are the good example of such streams -
+				// data coming from ini.epp has ASCII ttype, user data is UNICODE_FSS
+				if ((impure->vlu_flags & VLU_computed) &&
+					(impure->vlu_desc.dsc_dtype != desc[0]->dsc_dtype ||
+					 impure->vlu_desc.dsc_sub_type != desc[0]->dsc_sub_type ||
+					 impure->vlu_desc.dsc_scale != desc[0]->dsc_scale)
+					)
+				{
+					impure->vlu_flags &= ~VLU_computed;
+				}
+
 				if (impure->vlu_flags & VLU_computed) {
 					if (impure->vlu_flags & VLU_null)
 						request->req_flags |= req_null;
@@ -455,8 +469,15 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 						impure->vlu_flags |= VLU_computed;
 						impure->vlu_flags |= VLU_null;
 					}
-					else
+					else {
 						impure->vlu_flags &= ~VLU_null;
+
+						// Search object depends on operand data type.
+						// Thus save data type which we use to compute invariant
+					    impure->vlu_desc.dsc_dtype = desc[0]->dsc_dtype;
+					    impure->vlu_desc.dsc_sub_type = desc[0]->dsc_sub_type;
+					    impure->vlu_desc.dsc_scale = desc[0]->dsc_scale;
+					}
 				}
 			}
 			else
@@ -4565,17 +4586,17 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 						ERR_post(isc_like_escape_invalid, 0);
 				}
 
-				void* evaluator;
+				LikeObject* evaluator;
 				if (node->nod_flags & nod_invariant) {
 					impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 					if (!(impure->vlu_flags & VLU_computed)) {
-						obj.like_destroy(impure->vlu_misc.vlu_invariant);
+						delete reinterpret_cast<LikeObject*>(impure->vlu_misc.vlu_invariant);
 						impure->vlu_misc.vlu_invariant = evaluator = obj.like_create(tdbb, p2, l2, escape);
 						impure->vlu_flags |= VLU_computed;
 					}
 					else {
-						evaluator = impure->vlu_misc.vlu_invariant;
-						obj.like_reset(evaluator);
+						evaluator = reinterpret_cast<LikeObject*>(impure->vlu_misc.vlu_invariant);
+						evaluator->reset();
 					}
 				}
 				else
@@ -4583,29 +4604,29 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 
 				while (!(blob->blb_flags & BLB_eof)) {
 					const SSHORT l1 = BLB_get_segment(tdbb, blob, buffer, sizeof(buffer));
-					if (l1 && !obj.like_process(tdbb, evaluator, buffer, l1))
+					if (l1 && !evaluator->process(tdbb, obj, buffer, l1))
 						break;
 				}
 
-				ret_val = obj.like_result(evaluator);
+				ret_val = evaluator->result();
 				if (!(node->nod_flags & nod_invariant))
-					obj.like_destroy(evaluator);
+					delete evaluator;
 			}
 			break;
 		case nod_contains:
 			{
 				TextType obj = INTL_texttype_lookup(tdbb, type1, ERR_post, NULL);
-				void* evaluator;
+				ContainsObject* evaluator;
 				if (node->nod_flags & nod_invariant) {
 					impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 					if (!(impure->vlu_flags & VLU_computed)) {
-						obj.contains_destroy(impure->vlu_misc.vlu_invariant);
+						delete reinterpret_cast<ContainsObject*>(impure->vlu_misc.vlu_invariant);
 						impure->vlu_misc.vlu_invariant = evaluator = obj.contains_create(tdbb, p2, l2);
 						impure->vlu_flags |= VLU_computed;
 					} 
 					else {
-						evaluator = impure->vlu_misc.vlu_invariant;
-						obj.contains_reset(evaluator);
+						evaluator = reinterpret_cast<ContainsObject*>(impure->vlu_misc.vlu_invariant);
+						evaluator->reset();
 					}
 				}
 				else
@@ -4613,13 +4634,13 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 
 				while (!(blob->blb_flags & BLB_eof)) {
 					const SSHORT l1 = BLB_get_segment(tdbb, blob, buffer, sizeof(buffer));
-					if (l1 && !obj.contains_process(tdbb, evaluator, buffer, l1))
+					if (l1 && !evaluator->process(tdbb, obj, buffer, l1))
 						break;
 				}
 
-				ret_val = obj.contains_result(evaluator);
+				ret_val = evaluator->result();
 				if (!(node->nod_flags & nod_invariant))
-					obj.contains_destroy(evaluator);
+					delete evaluator;
 			}
 			break;
 		}
@@ -4671,15 +4692,18 @@ static bool string_function(
 	if (node->nod_type == nod_contains) {
 		if (node->nod_flags & nod_invariant) {
 			impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
+			ContainsObject* evaluator;
 			if (!(impure->vlu_flags & VLU_computed)) {
-				obj.contains_destroy(impure->vlu_misc.vlu_invariant);
-				impure->vlu_misc.vlu_invariant = obj.contains_create(tdbb, p2, l2);
+				delete reinterpret_cast<ContainsObject*>(impure->vlu_misc.vlu_invariant);
+				impure->vlu_misc.vlu_invariant = evaluator = obj.contains_create(tdbb, p2, l2);
 				impure->vlu_flags |= VLU_computed;
 			}
-			else
-				obj.contains_reset(impure->vlu_misc.vlu_invariant);
-			obj.contains_process(tdbb, impure->vlu_misc.vlu_invariant, p1, l1);
-			return obj.contains_result(impure->vlu_misc.vlu_invariant);
+			else {
+				evaluator = reinterpret_cast<ContainsObject*>(impure->vlu_misc.vlu_invariant);
+				evaluator->reset();
+			}
+			evaluator->process(tdbb, obj, p1, l1);
+			return evaluator->result();
 		}
 		else
 			return obj.contains(tdbb, p1, l1, p2, l2);
@@ -4720,15 +4744,18 @@ static bool string_function(
 		}
 		if (node->nod_flags & nod_invariant) {
 			impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
+			LikeObject* evaluator;
 			if (!(impure->vlu_flags & VLU_computed)) {
-				obj.like_destroy(impure->vlu_misc.vlu_invariant);
-				impure->vlu_misc.vlu_invariant = obj.like_create(tdbb, p2, l2, escape);
+				delete reinterpret_cast<LikeObject*>(impure->vlu_misc.vlu_invariant);
+				impure->vlu_misc.vlu_invariant = evaluator = obj.like_create(tdbb, p2, l2, escape);
 				impure->vlu_flags |= VLU_computed;
 			}
-			else
-				obj.like_reset(impure->vlu_misc.vlu_invariant);
-			obj.like_process(tdbb, impure->vlu_misc.vlu_invariant, p1, l1);
-			return obj.like_result(impure->vlu_misc.vlu_invariant);
+			else {
+				evaluator = reinterpret_cast<LikeObject*>(impure->vlu_misc.vlu_invariant);
+				evaluator->reset();
+			}
+			evaluator->process(tdbb, obj, p1, l1);
+			return evaluator->result();
 		}
 		else
 			return obj.like(tdbb, p1, l1, p2, l2, escape);

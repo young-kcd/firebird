@@ -377,7 +377,8 @@ public:
 			out_str = FB_NEW(*tdbb->tdbb_default) UCS2_CHAR[out_len/2];
 		else
 			out_str = tempBuffer;
-		len = obj.to_wc(NULL, out_len, str, len, &err_code, &err_pos);
+		len = obj.to_wc(out_str, out_len, str, len, &err_code, &err_pos);
+		str = reinterpret_cast<UCHAR*>(out_str);
 	}
 	~MBStrConverter() {
 		if (out_str != tempBuffer)
@@ -413,37 +414,34 @@ private:
 	UCHAR tempBuffer[100], *out_str;
 };
 
-template <typename Algorithm, typename StrConverter, typename CharType>
-class StringFunctions {
-public:
-	static bool process(thread_db* tdbb, TextType ttype, void* object, const UCHAR* str, SSHORT length)
-	{
-		StrConverter cvt(tdbb, ttype, str, length);
-		fb_assert(length % sizeof(CharType) == 0);
-		return static_cast<Algorithm*>(object)->processNextChunk(
-			reinterpret_cast<const CharType*>(str), length / sizeof(CharType));
-	}
-	static void destroy(void* object) {
-		delete static_cast<Algorithm*>(object);
-	}
-	static void reset(void* object) {
-		static_cast<Algorithm*>(object)->reset();
-	}
-	static bool result(void* object) {
-		return static_cast<Algorithm*>(object)->getResult();
-	}
-};
-
 template <typename StrConverter, typename CharType>
-class ContainsFunctions : public StringFunctions<Firebird::ContainsEvaluator<CharType>, StrConverter, CharType> {
+class ContainsObjectImpl : public ContainsObject
+{
 public:
-	static void* create(thread_db* tdbb, TextType ttype, const UCHAR* str, SSHORT length)
-	{
+	ContainsObjectImpl(MemoryPool& pool, const CharType* str, SSHORT str_len)
+		: evaluator(pool, str, str_len)
+	{ }
+
+	void reset() { evaluator.reset(); }
+
+	bool result() { return evaluator.getResult(); };
+
+	bool process(thread_db* tdbb, Jrd::TextType ttype, const UCHAR* str, SSHORT length) {
 		StrConverter cvt(tdbb, ttype, str, length);
 		fb_assert(length % sizeof(CharType) == 0);
-		return FB_NEW(*tdbb->tdbb_default) Firebird::ContainsEvaluator<CharType>(*tdbb->tdbb_default, 
+		return evaluator.processNextChunk(
 			reinterpret_cast<const CharType*>(str), length / sizeof(CharType));
 	}
+
+	~ContainsObjectImpl() {};
+
+	static ContainsObject* create(thread_db* tdbb, TextType ttype, const UCHAR* str, SSHORT length) {
+		StrConverter cvt(tdbb, ttype, str, length);
+		fb_assert(length % sizeof(CharType) == 0);
+		return FB_NEW(*tdbb->tdbb_default) ContainsObjectImpl(*tdbb->tdbb_default, 
+			reinterpret_cast<const CharType*>(str), length / sizeof(CharType));
+	}
+
 	static bool evaluate(thread_db* tdbb, TextType ttype, const UCHAR* s, SSHORT sl,
 			const UCHAR* p, SSHORT pl) 
 	{
@@ -455,28 +453,45 @@ public:
 		evaluator.processNextChunk(reinterpret_cast<const CharType*>(s), sl / sizeof(CharType));
 		return evaluator.getResult();
 	}
+
 	static void ttype_init(TEXTTYPE txtobj) {
-	    txtobj->texttype_fn_contains_destroy = destroy;
-	    txtobj->texttype_fn_contains_reset = reset;
-	    txtobj->texttype_fn_contains_process = process;
-	    txtobj->texttype_fn_contains_result = result;
 	    txtobj->texttype_fn_contains = evaluate;
 	    txtobj->texttype_fn_contains_create = create;
 	}
+
+private:
+	Firebird::ContainsEvaluator<CharType> evaluator;
 };
 
 template <typename StrConverter, typename CharType>
-class LikeFunctions : public StringFunctions<Firebird::LikeEvaluator<CharType>, StrConverter, CharType> {
+class LikeObjectImpl : public LikeObject {
 public:
-	static void* create(thread_db* tdbb, TextType ttype, const UCHAR* str, SSHORT length,
+	LikeObjectImpl(MemoryPool& pool, const CharType* str, SSHORT str_len, CharType escape)
+		: evaluator(pool, str, str_len, escape, SQL_MATCH_ANY_CHARS, SQL_MATCH_1_CHAR)
+	{ }
+
+	void reset() { evaluator.reset(); }
+
+	bool result() { return evaluator.getResult(); };
+
+	bool process(thread_db* tdbb, Jrd::TextType ttype, const UCHAR* str, SSHORT length) {
+		StrConverter cvt(tdbb, ttype, str, length);
+		fb_assert(length % sizeof(CharType) == 0);
+		return evaluator.processNextChunk(
+			reinterpret_cast<const CharType*>(str), length / sizeof(CharType));
+	}
+
+	~LikeObjectImpl() {};
+
+	static LikeObject* create(thread_db* tdbb, TextType ttype, const UCHAR* str, SSHORT length,
 		UCS2_CHAR escape)
 	{
 		StrConverter cvt(tdbb, ttype, str, length);
 		fb_assert(length % sizeof(CharType) == 0);
-		return FB_NEW(*tdbb->tdbb_default) Firebird::LikeEvaluator<CharType>(*tdbb->tdbb_default, 
-			reinterpret_cast<const CharType*>(str), length / sizeof(CharType), 
-			escape, SQL_MATCH_ANY_CHARS, SQL_MATCH_1_CHAR);
+		return FB_NEW(*tdbb->tdbb_default) LikeObjectImpl(*tdbb->tdbb_default, 
+			reinterpret_cast<const CharType*>(str), length / sizeof(CharType), escape);
 	}
+
 	static bool evaluate(thread_db* tdbb, TextType ttype, const UCHAR* s, SSHORT sl,
 		const UCHAR* p, SSHORT pl, UCS2_CHAR escape) 
 	{
@@ -489,14 +504,14 @@ public:
 		evaluator.processNextChunk(reinterpret_cast<const CharType*>(s), sl / sizeof(CharType));
 		return evaluator.getResult();
 	}
+
 	static void ttype_init(TEXTTYPE txtobj) {
-	    txtobj->texttype_fn_like_destroy = destroy;
-	    txtobj->texttype_fn_like_reset = reset;
-	    txtobj->texttype_fn_like_process = process;
-	    txtobj->texttype_fn_like_result = result;
 	    txtobj->texttype_fn_like = evaluate;
 	    txtobj->texttype_fn_like_create = create;
 	}
+
+private:
+	Firebird::LikeEvaluator<CharType> evaluator;
 };
 
 static void finish_texttype_init(TEXTTYPE txtobj)
@@ -520,14 +535,14 @@ static void finish_texttype_init(TEXTTYPE txtobj)
  *
  **************************************/
 
-	typedef LikeFunctions<NullStrConverter, UCHAR> nc_like;
-	typedef ContainsFunctions<UpcaseConverter<NullStrConverter>, UCHAR> nc_contains;
+	typedef LikeObjectImpl<NullStrConverter, UCHAR> nc_like;
+	typedef ContainsObjectImpl<UpcaseConverter<NullStrConverter>, UCHAR> nc_contains;
 
-	typedef LikeFunctions<NullStrConverter, UCS2_CHAR> wc_like;
-	typedef ContainsFunctions<UpcaseConverter<NullStrConverter>, UCS2_CHAR> wc_contains;
+	typedef LikeObjectImpl<NullStrConverter, UCS2_CHAR> wc_like;
+	typedef ContainsObjectImpl<UpcaseConverter<NullStrConverter>, UCS2_CHAR> wc_contains;
 
-	typedef LikeFunctions<MBStrConverter, UCS2_CHAR> mb_like;
-	typedef ContainsFunctions<UpcaseConverter<MBStrConverter>, UCS2_CHAR> mb_contains;
+	typedef LikeObjectImpl<MBStrConverter, UCS2_CHAR> mb_like;
+	typedef ContainsObjectImpl<UpcaseConverter<MBStrConverter>, UCS2_CHAR> mb_contains;
 		
 	if ((txtobj->texttype_fn_to_wc == NULL) &&
 		(txtobj->texttype_bytes_per_char == 1))
