@@ -98,7 +98,7 @@
 #undef SETPGRP_VOID
 #undef HAVE_FLOCK
 #undef HAVE_INITGROUPS
-#undef HAVE_GETPAGESIZE
+#define HAVE_GETPAGESIZE
 #undef HAVE_CRYPT
 #undef HAVE_XDR_HYPER
 #undef HAVE_PREAD
@@ -120,6 +120,9 @@
 /* Is union semun defined? */
 #undef HAVE_SEMUN
 
+/* Is struct xdr_ops defined? */
+#undef HAVE_STRUCT_XDR_OPS
+
 /* alignment of long */
 #define ALIGNMENT 4
 
@@ -132,11 +135,8 @@
 /* Is the platform big endian? */
 #undef WORDS_BIGENDIAN
 
-
 /* Return type of signal handler */
 #define RETSIGTYPE void
-
-#undef HAVE_STRUCT_XDR_OPS
 
 /* Are paths case sensitive? */
 #define CASE_SENSITIVITY false
