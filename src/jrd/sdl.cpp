@@ -627,16 +627,15 @@ static bool execute(sdl_arg* arg)
  **************************************/
 	SLONG* variable;
 	SLONG stack[64];
-	SLONG value, count, subscript;
+	SLONG value, count;
 	dsc element_desc;
-	const internal_array_desc::iad_repeat* range;
 
 	internal_array_desc* array_desc = arg->sdl_arg_desc;
 	const internal_array_desc::iad_repeat* const range_end = 
 		array_desc->iad_rpt + array_desc->iad_dimensions;
 	SLONG* variables = arg->sdl_arg_variables;
 	const IPTR* next = arg->sdl_arg_compiled;
-	SLONG* stack_ptr = stack + 64;
+	SLONG* stack_ptr = stack + FB_NELEM(stack);
 
 	for (;;) {
 		const SLONG x = *next++;
@@ -696,30 +695,33 @@ static bool execute(sdl_arg* arg)
 			break;
 
 		case op_scalar:
-			value = *next++;
-			next++;				/* Skip count, unsupported. */
-			for (range = array_desc->iad_rpt, subscript = 0;
-				 range < range_end; ++range) 
 			{
-				const SLONG n = *stack_ptr++;
-				if (n < range->iad_lower || n > range->iad_upper) {
-					error(arg->sdl_arg_status_vector, isc_out_of_bounds, 0);
-					return false;
+				value = *next++;
+				next++;				/* Skip count, unsupported. */
+				SLONG subscript = 0;
+				for (const internal_array_desc::iad_repeat* range = array_desc->iad_rpt;
+					 range < range_end; ++range)
+				{
+					const SLONG n = *stack_ptr++;
+					if (n < range->iad_lower || n > range->iad_upper) {
+						error(arg->sdl_arg_status_vector, isc_out_of_bounds, 0);
+						return false;
+					}
+					subscript += (n - range->iad_lower) * range->iad_length;
 				}
-				subscript += (n - range->iad_lower) * range->iad_length;
-			}
-			element_desc = array_desc->iad_rpt[value].iad_desc;
-			element_desc.dsc_address = (BLOB_PTR *) arg->sdl_arg_array +
-				(IPTR) element_desc.dsc_address +
-				(array_desc->iad_element_length * subscript);
+				element_desc = array_desc->iad_rpt[value].iad_desc;
+				element_desc.dsc_address = arg->sdl_arg_array +
+					(IPTR) element_desc.dsc_address +
+					(array_desc->iad_element_length * subscript);
 
-			/* Is this element within the array bounds? */
-			fb_assert_continue((BLOB_PTR *) element_desc.dsc_address >=
-								(BLOB_PTR *) arg->sdl_arg_array);
-			fb_assert_continue((BLOB_PTR *) element_desc.dsc_address +
-								element_desc.dsc_length <=
-								(BLOB_PTR *) arg->sdl_arg_array +
-								array_desc->iad_total_length);
+				/* Is this element within the array bounds? */
+				fb_assert_continue(element_desc.dsc_address >=
+									arg->sdl_arg_array);
+				fb_assert_continue(element_desc.dsc_address +
+									element_desc.dsc_length <=
+									arg->sdl_arg_array +
+									array_desc->iad_total_length);
+				}
 			break;
 
 		case op_element:
@@ -734,8 +736,8 @@ static bool execute(sdl_arg* arg)
 			else {
 				/* Fetching FROM array */
 
-				if ((BLOB_PTR *) element_desc.dsc_address <
-					(BLOB_PTR *) arg->sdl_arg_argument->slice_high_water) 
+				if (element_desc.dsc_address <
+					arg->sdl_arg_argument->slice_high_water)
 				{
 
 					(*arg->sdl_arg_callback) (arg->sdl_arg_argument,

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.86 2004-08-30 18:10:33 alexpeshkoff Exp $
+$Id: blb.cpp,v 1.87 2004-09-15 03:47:43 robocop Exp $
 */
 
 #include "firebird.h"
@@ -415,8 +415,7 @@ SLONG BLB_get_data(thread_db* tdbb, blb* blob, UCHAR* buffer, SLONG length)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	// Redundant cast.
-	BLOB_PTR* p = (BLOB_PTR*) buffer;
+	BLOB_PTR* p = buffer;
 
 	while (length > 0) {
 		/* I have no idea why this limit is 32768 instead of 32767
@@ -431,8 +430,7 @@ SLONG BLB_get_data(thread_db* tdbb, blb* blob, UCHAR* buffer, SLONG length)
 	}
 
 	BLB_close(tdbb, blob);
-	// Redundant cast
-	return (SLONG) ((BLOB_PTR *) p - (BLOB_PTR *) buffer);
+	return (SLONG) (p - buffer);
 }
 
 
@@ -723,12 +721,12 @@ SLONG BLB_get_slice(thread_db* tdbb,
 /* Walk array */
 	arg.slice_desc = info.sdl_info_element;
 	arg.slice_desc.dsc_address = slice_addr;
-	arg.slice_end = (BLOB_PTR*) slice_addr + slice_length;
+	arg.slice_end = slice_addr + slice_length;
 	arg.slice_count = 0;
 	arg.slice_element_length = info.sdl_info_element.dsc_length;
 	arg.slice_direction = FALSE;	/* fetching from array */
-	arg.slice_high_water = (BLOB_PTR*) data + length;
-	arg.slice_base = (BLOB_PTR*) data + offset;
+	arg.slice_high_water = data + length;
+	arg.slice_base = data + offset;
 
 	status = SDL_walk(tdbb->tdbb_status_vector,
 					  sdl,
@@ -1278,8 +1276,7 @@ void BLB_put_segment(thread_db* tdbb, blb* blob, const UCHAR* seg, USHORT segmen
  **************************************/
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
-	// Anyway, BLOB_PTR is UCHAR, so this is redundant.
-	const BLOB_PTR* segment = reinterpret_cast<const BLOB_PTR*>(seg);
+	const BLOB_PTR* segment = seg;
 
 /* Make sure blob is a temporary blob.  If not, complain bitterly. */
 
@@ -1494,12 +1491,11 @@ void BLB_put_slice(	thread_db*	tdbb,
 		}
 		if (array)
 		{
-			arg.slice_high_water =
-				(BLOB_PTR*) array->arr_data + array->arr_effective_length;
+			arg.slice_high_water = array->arr_data + array->arr_effective_length;
 		}
 		else
 		{
-			// CVC: maybe char temp[ADS_LEN(16)]; may work.
+			// CVC: maybe char temp[IAD_LEN(16)]; may work but it won't be aligned.
 			SLONG temp[IAD_LEN(16) / 4];
 			internal_array_desc* p_ads = reinterpret_cast<internal_array_desc*>(temp);
 			blb* blob = BLB_get_array(tdbb, transaction, blob_id, p_ads);
@@ -1508,8 +1504,7 @@ void BLB_put_slice(	thread_db*	tdbb,
 				blob->blb_length - array->arr_desc.iad_length;
 			BLB_get_data(tdbb, blob, array->arr_data,
 						 array->arr_desc.iad_total_length);
-			arg.slice_high_water =
-				(BLOB_PTR*) array->arr_data + array->arr_effective_length;
+			arg.slice_high_water = array->arr_data + array->arr_effective_length;
 			array->arr_blob = allocate_blob(tdbb, transaction);
 			(array->arr_blob)->blb_blob_id = *blob_id;
 		}
@@ -1521,23 +1516,22 @@ void BLB_put_slice(	thread_db*	tdbb,
 			ERR_post(isc_invalid_array_id, 0);
 		}
 
-		arg.slice_high_water =
-			(BLOB_PTR *) array->arr_data + array->arr_effective_length;
+		arg.slice_high_water = array->arr_data + array->arr_effective_length;
 	}
 	else {
 		array = alloc_array(transaction, &array_desc->arr_desc);
-		arg.slice_high_water = (BLOB_PTR *) array->arr_data;
+		arg.slice_high_water = array->arr_data;
 	}
 
 /* Walk array */
 
 	arg.slice_desc = info.sdl_info_element;
 	arg.slice_desc.dsc_address = slice_addr;
-	arg.slice_end = (BLOB_PTR*) slice_addr + slice_length;
+	arg.slice_end = slice_addr + slice_length;
 	arg.slice_count = 0;
 	arg.slice_element_length = info.sdl_info_element.dsc_length;
 	arg.slice_direction = TRUE;	/* storing INTO array */
-	arg.slice_base = (BLOB_PTR*) array->arr_data;
+	arg.slice_base = array->arr_data;
 
 	SLONG variables[64];
 	MOVE_FAST(param, variables, MIN(sizeof(variables), param_length));
@@ -1554,7 +1548,7 @@ void BLB_put_slice(	thread_db*	tdbb,
 		ERR_punt();
 	}
 
-	const SLONG length = arg.slice_high_water - (BLOB_PTR*)array->arr_data;
+	const SLONG length = arg.slice_high_water - array->arr_data;
 
 	if (length > array->arr_effective_length) {
 		array->arr_effective_length = length;
@@ -2326,12 +2320,12 @@ static void slice_callback(array_slice* arg, ULONG count, DSC* descriptors)
 	dsc* array_desc = descriptors;
 	dsc* slice_desc = &arg->slice_desc;
 	BLOB_PTR* const next =
-		(BLOB_PTR*) slice_desc->dsc_address + arg->slice_element_length;
+		slice_desc->dsc_address + arg->slice_element_length;
 
 	if (next > arg->slice_end)
 		ERR_post(isc_out_of_bounds, 0);
 
-	if ((BLOB_PTR *) array_desc->dsc_address < arg->slice_base)
+	if (array_desc->dsc_address < arg->slice_base)
 		ERR_error(198);			/* msg 198 array subscript computation error */
 
 	if (arg->slice_direction) {
@@ -2345,8 +2339,7 @@ static void slice_callback(array_slice* arg, ULONG count, DSC* descriptors)
 
 		// Since we are only initializing, it makes sense to throw away
 		// the constness of arg->slice_high_water.
-		const SLONG l =
-			(BLOB_PTR*) array_desc->dsc_address - arg->slice_high_water;
+		const SLONG l = array_desc->dsc_address - arg->slice_high_water;
 		if (l > 0)
 			memset(const_cast<BLOB_PTR*>(arg->slice_high_water), 0, l);
 
@@ -2380,7 +2373,7 @@ static void slice_callback(array_slice* arg, ULONG count, DSC* descriptors)
 			MOV_move(slice_desc, array_desc);
 		}
 		const BLOB_PTR* const end =
-			(BLOB_PTR*) array_desc->dsc_address + array_desc->dsc_length;
+			array_desc->dsc_address + array_desc->dsc_length;
 		if (end > arg->slice_high_water)
 			arg->slice_high_water = end;
 	}
@@ -2392,7 +2385,7 @@ static void slice_callback(array_slice* arg, ULONG count, DSC* descriptors)
 		/* If the element is under the high-water mark, fetch it,
 		 * otherwise just zero it
 		 */
-		if ((BLOB_PTR *) array_desc->dsc_address < arg->slice_high_water) {
+		if (array_desc->dsc_address < arg->slice_high_water) {
 			/* If a varying string isn't aligned correctly, calculate the actual
 			   length and then treat the string as if it had type text. */
 
@@ -2462,7 +2455,7 @@ static blb* store_array(thread_db* tdbb, jrd_tra* transaction, bid* blob_id)
 
 /* Write out actual array */
 	const USHORT seg_limit = 32768;
-	const BLOB_PTR* p = (BLOB_PTR*) array->arr_data;
+	const BLOB_PTR* p = array->arr_data;
 	SLONG length = array->arr_effective_length;
 	while (length > seg_limit) {
 		BLB_put_segment(tdbb, blob, p, seg_limit);
