@@ -126,6 +126,10 @@
  *
  * 2003.04.05 Dmitry Yemanov: Changed logic of ORDER BY with collations
  *							  (because of the parser change)
+ *
+ * 2003.08.14 Arno Brinkman: Added derived table support.
+ *
+ * 2003.08.16 Arno Brinkman: Changed ambiguous column name checking.
  */
 
 #include "firebird.h"
@@ -159,7 +163,7 @@ ASSERT_FILENAME					/* Define things assert() needs */
 ASSERT_BLKCHK_MSG
 static BOOLEAN aggregate_found(DSQL_REQ, DSQL_NOD);
 static BOOLEAN aggregate_found2(DSQL_REQ, DSQL_NOD, USHORT *, USHORT *, BOOLEAN);
-static DSQL_NOD ambiguity_check (DSQL_NOD, DSQL_REQ, DSQL_FLD, DLLS, DLLS);
+static DSQL_NOD ambiguity_check(DSQL_REQ, DSQL_NOD, STR, DLLS);
 static void assign_fld_dtype_from_dsc(DSQL_FLD, DSC *);
 static DSQL_NOD compose(DSQL_NOD, DSQL_NOD, NOD_TYPE);
 static void explode_asterisk(DSQL_NOD, DSQL_NOD, DLLS *);
@@ -1757,98 +1761,105 @@ static BOOLEAN aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT * curren
  	ambiguity
   
     @brief	Check for ambiguity in a field
-   reference.  We've got these nice lists
-   of procedures and relations and if there
-   is more than one, things are bad.
+   reference. The list with contexts were the
+   field was found is checked and the necessary
+   message is build from it.
  
 
-    @param node
     @param request
-    @param field
-    @param relations
-    @param procedures
+    @param node
+    @param name
+    @param ambiguous_contexts
 
  **/
-static DSQL_NOD ambiguity_check (DSQL_NOD node, DSQL_REQ request, DSQL_FLD field, 
-                            DLLS relations,DLLS procedures)
+static DSQL_NOD ambiguity_check(DSQL_REQ request, DSQL_NOD node, 
+								STR name, DLLS ambiguous_contexts)
 {
-    
-    TEXT   buffer[1024], *b, *p;
-    DSQL_REL    relation;
-    DSQL_PRC	    procedure;
-    USHORT	loop;
-    
-    buffer[0] = 0;
-    b = buffer;
-    p = 0;
-    loop = 0;
-    
-    if ((relations && relations->lls_next)
-        ||(procedures && procedures->lls_next)
-        ||(procedures && relations))
-        /* nothing to do */;
-    else {
-        if (relations)
-            LLS_POP (&relations);
-        if (procedures)
-            LLS_POP (&procedures);
-        return node;
-    }
+    // If there are no relations or only 1 there's no ambiguity, thus return.
+	if (!ambiguous_contexts || (ambiguous_contexts && !ambiguous_contexts->lls_next)) {
+		return node;
+	}
 
-    while ((relations) && (relation = (DSQL_REL) LLS_POP (&relations))) {
-        if (strlen (b) > (sizeof (buffer) - 50))
-            continue;
-        if (++loop > 2)
+	DLLS stack;
+	TEXT buffer[1024], *b, *p;
+	DSQL_REL relation;
+	DSQL_PRC procedure;
+	DSQL_CTX context;
+	USHORT loop = 0;
+
+	buffer[0] = 0;
+	b = buffer;
+	p = 0;
+
+	for (stack = ambiguous_contexts; stack; stack = stack->lls_next)
+	{
+		context = (DSQL_CTX) stack->lls_object;
+		DEV_BLKCHK(context, dsql_type_ctx);
+		relation = context->ctx_relation;
+		procedure = context->ctx_procedure;
+        if (strlen (b) > (sizeof (buffer) - 50)) {
+			// Buffer full
+            break;
+		}
+		// if this is the second loop add "and " before relation.
+        if (++loop > 2) {
             strcat (buffer, "and ");
-        if (!(relation->rel_flags & REL_view))
-            strcat (buffer, "table ");
-        else
-            strcat (buffer, "view ");
-        strcat (buffer, relation->rel_name);
-        strcat (buffer, " ");
-        if (!p)
-            p = b + strlen (b);
-    }
+		}
+		// Process relation when present.
+		if (relation) {
+			if (!(relation->rel_flags & REL_view)) {
+		        strcat (buffer, "table ");
+			}
+			else {
+				strcat (buffer, "view ");
+			}
+	        strcat (buffer, relation->rel_name);
+		}
+		else if (procedure) {
+			// Process procedure when present.		
+			strcat (b, "procedure ");
+			strcat (b, procedure->prc_name);
+		}
+		else {
+			// When there's no relation and no procedure it's a derived table.
+			strcat (b, "derived table ");
+			if (context->ctx_alias) {
+				strcat (b, context->ctx_alias);
+			}
+		}
+		strcat (buffer, " ");
+		if (!p) {
+			p = b + strlen (b);
+		}
+	}
 
-    while ((procedures) && (procedure = (DSQL_PRC) LLS_POP (&procedures))) {
-        if (strlen (b) > (sizeof (buffer) - 50))
-            continue;
-        if (++loop > 2)
-            strcat (buffer, "and ");
-        strcat (b, "procedure ");
-        strcat (b, procedure->prc_name);
-        strcat (b, " ");
-        if (!p)
-            p = b + strlen (b);
-    }
-    
-    if (p)
-        *--p = 0;
-    
-    if (request->req_client_dialect >= SQL_DIALECT_V6) {
-        if (node) {
-            delete node;
-        }
-        ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -204,
-                   gds_arg_gds, isc_dsql_ambiguous_field_name,
-                   gds_arg_string, buffer,
-                   gds_arg_string, ++p,
-                   gds_arg_gds, gds_random,
-                   gds_arg_string, field->fld_name,
-                   0);
-        return NULL;
-    }
+	if (p) {
+		*--p = 0;
+	}
 
+	if (request->req_client_dialect >= SQL_DIALECT_V6) {
+		if (node) {
+			delete node;
+		}
+		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -204,
+					gds_arg_gds, isc_dsql_ambiguous_field_name,
+					gds_arg_string, buffer,
+					gds_arg_string, ++p,
+					gds_arg_gds, gds_random,
+					gds_arg_string, name->str_data,
+					0);
+		return NULL;
+	}
 
-    ERRD_post_warning (isc_sqlwarn, gds_arg_number, (SLONG) 204,
-                       gds_arg_warning, isc_dsql_ambiguous_field_name,
-                       gds_arg_string, buffer,
-                       gds_arg_string, ++p,
-                       gds_arg_gds, gds_random,
-                       gds_arg_string, field->fld_name,
-                       0);
-    
-    return node;
+	ERRD_post_warning(isc_sqlwarn, gds_arg_number, (SLONG) 204,
+						gds_arg_warning, isc_dsql_ambiguous_field_name,
+						gds_arg_string, buffer,
+						gds_arg_string, ++p,
+						gds_arg_gds, gds_random,
+						gds_arg_string, name->str_data,
+						0);
+
+	return node;
 }
 
 
@@ -3333,15 +3344,29 @@ static DSQL_NOD pass1_derived_table(DSQL_REQ request, DSQL_NOD input)
 			// Column list by derived table %s [alias-name] has %s [more/fewer] columns 
 			// than the number of items.
 			// 
-			TEXT columnnumber[100];
+			TEXT columnnumber[200], aliasname[100];
+			aliasname[0] = 0;
 			alias = (STR) input->nod_arg[e_derived_table_alias];
+			if (alias) {
+				TEXT *src, *dest;
+				int length = alias->str_length;
+				if (length > 99) {
+					length = 99;
+				}
+				src = alias->str_data;
+				dest = aliasname;
+				for (; length; length--) {
+					*dest++ = *src++;
+				}
+				*dest = 0;
+			}
 			if (list->nod_count > rse->nod_arg[e_rse_items]->nod_count) {
 				sprintf (columnnumber, "list by derived table %s has more columns than the number of items.", 
-					alias->str_data);
+					aliasname);
 			}
 			else {
 				sprintf (columnnumber, "list by derived table %s has fewer columns than the number of items.", 
-					alias->str_data);
+					aliasname);
 			}
 			//
 			// !!! THIS MESSAGE SHOULD BE CHANGED !!!
@@ -3462,9 +3487,8 @@ static DSQL_NOD pass1_field( DSQL_REQ request, DSQL_NOD input, USHORT list)
 	DSQL_NOD node = 0, indices; /* Changes made need this var initialized. */
 	STR name, qualifier;
 	DSQL_FLD field;
-	DLLS stack;
+	DLLS stack, ambiguous_ctx_stack = NULL;
 	DSQL_CTX context;
-    DLLS	relations, procedures;
     DSQL_NOD ddl_node;
     BOOLEAN is_check_constraint;
 	bool is_derived_table;
@@ -3472,22 +3496,24 @@ static DSQL_NOD pass1_field( DSQL_REQ request, DSQL_NOD input, USHORT list)
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
-    /* CVC: This shameful hack added to allow CHECK constraint implementation via triggers
-       to be able to work. */
+	// CVC: This shameful hack added to allow CHECK constraint implementation via triggers
+	// to be able to work.
 
-    if ((ddl_node = request->req_ddl_node) != 0 && ddl_node->nod_type == nod_def_constraint)
-        is_check_constraint = TRUE;
-    else
-        is_check_constraint = FALSE;
+	if ((ddl_node = request->req_ddl_node) != 0 && ddl_node->nod_type == nod_def_constraint) {
+		is_check_constraint = TRUE;
+	}
+	else {
+		is_check_constraint = FALSE;
+	}
 
-/* handle an array element */
-
+	// handle an array element.
 	if (input->nod_type == nod_array) {
 		indices = input->nod_arg[e_ary_indices];
 		input = input->nod_arg[e_ary_array];
 	}
-	else
+	else {
 		indices = NULL;
+	}
 
 	if (input->nod_count == 1) {
 		name = (STR) input->nod_arg[0];
@@ -3500,10 +3526,10 @@ static DSQL_NOD pass1_field( DSQL_REQ request, DSQL_NOD input, USHORT list)
 	DEV_BLKCHK(name, dsql_type_str);
 	DEV_BLKCHK(qualifier, dsql_type_str);
 
-
-    /* CVC: Let's strip trailing blanks or comparisons may fail in dialect 3. */
-    if (name && name->str_data)
-        pass_exact_name ( (TEXT*) name->str_data);
+    // CVC: Let's strip trailing blanks or comparisons may fail in dialect 3.
+	if (name && name->str_data) {
+		pass_exact_name ( (TEXT*) name->str_data);
+	}
 
     /* CVC: PLEASE READ THIS EXPLANATION IF YOU NEED TO CHANGE THIS CODE.
        You should ensure that this function:
@@ -3532,21 +3558,16 @@ static DSQL_NOD pass1_field( DSQL_REQ request, DSQL_NOD input, USHORT list)
        priority. Typically, they only check a field against a contant. The problem
        appears when they check a field against a subselect, for example. For now,
        allow the user to write ambiguous subselects in check() statements.
-       5.- Doesn't attempt to use "relations" and "procedures" after ambiguity_check()
-       has been called, because this function will POP() those stacks but they
-       are passed as values, hence they aren't updated upon return.
        Claudio Valderrama - 2001.1.29.
     */
-
-    relations = procedures = NULL;
 
 /* Try to resolve field against various contexts;
    if there is an alias, check only against the first matching */
 
 	for (stack = request->req_context; stack; stack = stack->lls_next)
 	{
-		/* resolve_context() checks the type of the   */
-		/* given context, so the cast to DSQL_CTX is safe. */
+		// resolve_context() checks the type of the
+		// given context, so the cast to DSQL_CTX is safe.
 
         context = reinterpret_cast<DSQL_CTX>(stack->lls_object);
         field = resolve_context (request, name, qualifier, context);
@@ -3555,33 +3576,36 @@ static DSQL_NOD pass1_field( DSQL_REQ request, DSQL_NOD input, USHORT list)
 
 		if (field)
 		{
-			if (list && !name) {
-				node = MAKE_node(nod_relation, e_rel_count);
-				node->nod_arg[e_rel_context] = reinterpret_cast<DSQL_NOD>(stack->lls_object);
-				return node;
+			// If there's no name then we have most probable a asterisk that
+			// needs to be exploded. This should be handled by the caller and
+			// when the caller can handle this, list is true.
+			if (!name) {
+				if (list) {
+					node = MAKE_node(nod_relation, e_rel_count);
+					node->nod_arg[e_rel_context] = reinterpret_cast<DSQL_NOD>(stack->lls_object);
+					return node;
+				}
+				else {
+					break;
+				}
 			}
-
-			if (!name)
-				break;
 
 			for (; field; field = field->fld_next) {
 				if (!strcmp(reinterpret_cast < const char *>(name->str_data), field->fld_name)) {
-                    if (!is_check_constraint && !qualifier) {
-                        if (context->ctx_relation)
-                            LLS_PUSH (context->ctx_relation, &relations);
-                        if (context->ctx_procedure)
-                            LLS_PUSH (context->ctx_procedure, &procedures);
-                    }
-                    break;
-                }
-            }
+					if (!is_check_constraint && !qualifier) {
+						LLS_PUSH(context, &ambiguous_ctx_stack);
+					}
+					break;
+				}
+			}
 
-			if (qualifier && !field)
+			if (qualifier && !field) {
 				break;
+			}
 
 			if (field) {
-				/* Intercept any reference to a field with datatype that
-				   did not exist prior to V6 and post an error */
+				// Intercept any reference to a field with datatype that
+				// did not exist prior to V6 and post an error
 
 				if (request->req_client_dialect <= SQL_DIALECT_V5 &&
 					(field->fld_dtype == dtype_sql_date ||
@@ -3600,13 +3624,15 @@ static DSQL_NOD pass1_field( DSQL_REQ request, DSQL_NOD input, USHORT list)
 						return NULL;
                 };
 
-                /* CVC: Stop here if this is our second or third iteration.
-                   Anyway, we can't report more than one ambiguity to the status vector. */
-                if (node)
-                    continue;
+				// CVC: Stop here if this is our second or third iteration.
+				// Anyway, we can't report more than one ambiguity to the status vector.
+				if (node) {
+					continue;
+				}
 
-				if (indices)
+				if (indices) {
 					indices = PASS1_node(request, indices, FALSE);
+				}
 				node = MAKE_field(context, field, indices);
 
                 if (is_check_constraint || qualifier) {
@@ -3618,23 +3644,30 @@ static DSQL_NOD pass1_field( DSQL_REQ request, DSQL_NOD input, USHORT list)
 			// if an qualifier is present check if we have the same derived 
 			// table else continue;
 			if (qualifier) {
-				if (strcmp(reinterpret_cast < const char *>(qualifier->str_data), 
-						reinterpret_cast < const char *>(context->ctx_alias))) {
+				if (context->ctx_alias) {
+					if (strcmp(reinterpret_cast < const char *>(qualifier->str_data), 
+							reinterpret_cast < const char *>(context->ctx_alias))) {
+						continue;
+					}
+				}
+				else {
 					continue;
 				}
 			}
 
-			// If no name specified and list is true we have a relation.asterisk (r.*).
-			if (list && !name) {
-				// Node is created so caller pass1_sel_list() can deal with it.
-				node = MAKE_node(nod_derived_table, e_derived_table_count);
-				node->nod_arg[e_derived_table_rse] = context->ctx_rse;
-				return node;
-			}
-
-			// If no name specified stop looking here.
+			// If there's no name then we have most probable a asterisk that
+			// needs to be exploded. This should be handled by the caller and
+			// when the caller can handle this, list is true.
 			if (!name) {
-				break;
+				if (list) {
+					// Node is created so caller pass1_sel_list() can deal with it.
+					node = MAKE_node(nod_derived_table, e_derived_table_count);
+					node->nod_arg[e_derived_table_rse] = context->ctx_rse;
+					return node;
+				}
+				else {
+					break;
+				}				
 			}
 
 			// Because every select item has an alias we can just walk 
@@ -3650,14 +3683,24 @@ static DSQL_NOD pass1_field( DSQL_REQ request, DSQL_NOD input, USHORT list)
 					string = (STR) node_select_item->nod_arg[e_alias_alias];
 					if (!strcmp(reinterpret_cast < const char *>(name->str_data), 
 							reinterpret_cast < const char *>(string->str_data))) {
-						DSQL_NOD node_alias;
+
+						// This is a matching item so add the context to the ambiguous list.
+						if (!is_check_constraint && !qualifier) {
+							LLS_PUSH(context, &ambiguous_ctx_stack);
+						}
+
+						// Stop here if this is our second or more iteration.
+						if (node) {
+							break;
+						}
+
 						// Create a new alias else mappings would be mangled.
-						node_alias = MAKE_node(nod_alias, e_alias_count);
-						node_alias->nod_arg[e_alias_value] = node_select_item->nod_arg[e_alias_value];
-						node_alias->nod_arg[e_alias_alias] = node_select_item->nod_arg[e_alias_alias];
-						node_alias->nod_desc = node_select_item->nod_desc;
-						node_alias->nod_flags = node_select_item->nod_flags;
-						return node_alias;
+						node = MAKE_node(nod_alias, e_alias_count);
+						node->nod_arg[e_alias_value] = node_select_item->nod_arg[e_alias_value];
+						node->nod_arg[e_alias_alias] = node_select_item->nod_arg[e_alias_alias];
+						node->nod_desc = node_select_item->nod_desc;
+						node->nod_flags = node_select_item->nod_flags;
+						break;
 					}
 				}
 				else {
@@ -3669,28 +3712,27 @@ static DSQL_NOD pass1_field( DSQL_REQ request, DSQL_NOD input, USHORT list)
 						  gds_arg_gds, gds_dsql_command_err, 0);
 				}
 			}
+
+			// If we found the field and qualifier is present or this
+			// is a check constraint we're done.
+			if (node && (is_check_constraint || qualifier)) {
+				break;
+			}
 		}
 	}
 
-    /* CVC: We can't return blindly if this is a check constraint, because there's
-       the possibility of an invalid field that wasn't found. The multiple places that
-       call this function pass1_field() don't expect a NULL pointer, hence will crash.
-       Don't check ambiguity if we don't have a field.
-    */
+	// CVC: We can't return blindly if this is a check constraint, because there's
+	// the possibility of an invalid field that wasn't found. The multiple places that
+	// call this function pass1_field() don't expect a NULL pointer, hence will crash.
+	// Don't check ambiguity if we don't have a field.
 
-    if (!is_check_constraint && !qualifier && field) {
-        node = ambiguity_check (node, request, field, relations, procedures);
-    }
-    else {
-        /* This else is superflous as we post none in the loop above
-           when there's a check constraint or qualifier, but be safe if
-           the code structure changes in the future. */
-        while (relations) {
-            LLS_POP (&relations);
-        }
-        while (procedures) {
-            LLS_POP (&procedures);
-        }
+	if (!is_check_constraint && !qualifier && node && name) {
+		node = ambiguity_check(request, node, name, ambiguous_ctx_stack);
+	}
+
+	// Clean up stack
+	while (ambiguous_ctx_stack) {
+		LLS_POP(&ambiguous_ctx_stack);
 	}
 
     if (node) {
@@ -3700,9 +3742,8 @@ static DSQL_NOD pass1_field( DSQL_REQ request, DSQL_NOD input, USHORT list)
 	field_error(qualifier ? (TEXT *) qualifier->str_data : (TEXT *) 0,
 				name ? (TEXT *) name->str_data : (TEXT *) 0, input);
 
-    /* CVC: field_error() calls ERRD_post() that never returns, so the next line
-       is only to make the compiler happy. */
-    
+	// CVC: field_error() calls ERRD_post() that never returns, so the next line
+	// is only to make the compiler happy.
 	return NULL;
 }
 

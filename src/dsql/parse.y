@@ -1786,9 +1786,7 @@ from_view_list	: view_table
 
 view_table : joined_view_table
         | table_name
-/* AB: derived table support */
-		| '(' union_expr ')' as_noise symbol_table_alias_name derived_column_list
-			{ $$ = make_node(nod_derived_table, (int) e_derived_table_count, $2, $5, $6); }
+		| derived_table
 		;
 
 joined_view_table	: view_table join_type JOIN view_table ON search_condition
@@ -2960,9 +2958,18 @@ from_list	: table_reference
 
 table_reference	: joined_table
 		| table_proc
+		| derived_table
+		;
+
 /* AB: derived table support */
-		| '(' union_expr ')' as_noise symbol_table_alias_name derived_column_list
+derived_table :
+		'(' union_expr ')' as_noise correlation_name derived_column_list
 			{ $$ = make_node(nod_derived_table, (int) e_derived_table_count, $2, $5, $6); }
+		;
+
+correlation_name : symbol_table_alias_name
+		|
+			{ $$ = NULL; }
 		;
 
 derived_column_list : '(' alias_list ')'
