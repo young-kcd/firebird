@@ -1,5 +1,5 @@
-#ifndef INCLUDE_Firebird
-#define INCLUDE_Firebird
+#ifndef INCLUDE_Firebird_H
+#define INCLUDE_Firebird_H
 
 /*
  *  The contents of this file are subject to the Mozilla Public
@@ -30,7 +30,7 @@
  *       John Bellardo  <bellardo@cs.ucsd.edu>
  *
  *
- *  $Id: firebird.h,v 1.23 2004-05-22 02:11:04 brodsom Exp $
+ *  $Id: firebird.h,v 1.24 2004-05-23 23:28:26 brodsom Exp $
  *
  */
 
@@ -104,5 +104,5 @@
 #define NULL            0L
 #endif
 
-#endif /* INCLUDE_Firebird */
+#endif /* INCLUDE_Firebird_H */
 
