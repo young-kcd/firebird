@@ -553,7 +553,7 @@ namespace Firebird
 			return StringType(&c_str()[pos], n);
 		}
 		inline int compare(const StringType& str) const {
-			return compare(0, length(), str.c_str(), str.length());
+			return compare(str.c_str(), str.length());
 		}
 		inline int compare(size_type p0, size_type n0, const StringType& str) {
 			return compare(p0, n0, str.c_str(), str.length());
@@ -563,13 +563,18 @@ namespace Firebird
 			return compare(p0, n0, &str.c_str()[pos], n);
 		}
 		inline int compare(const_pointer s) const {
-			return compare(0, length(), s, strlen(s));
+			return compare(s, strlen(s));
 		}
 		int compare(size_type p0, size_type n0, const_pointer s, size_type n) const {
 			AdjustRange(length(), p0, n0);
 			const size_type ml = n0 < n ? n0 : n;
 			const int rc = Comparator::compare(&c_str()[p0], s, ml);
 			return rc ? rc : n - n0;
+		}
+		int compare(const_pointer s, size_type n) const {
+			const size_type ml = length() < n ? length() : n;
+			const int rc = Comparator::compare(c_str(), s, ml);
+			return rc ? rc : n - length();
 		}
 
 		inline bool operator< (const StringType& str) const {return compare(str) <  0;}
