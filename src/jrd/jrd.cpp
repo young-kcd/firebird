@@ -218,28 +218,28 @@ static REC_MUTX_T databases_rec_mutex;
 #define TEXT    SCHAR
 #endif	// WIN_NT
 
-void trig::compile(tdbb* _tdbb)
+void trig::compile(thread_db* tdbb)
 {
 	if (!request && !compile_in_progress)
 	{
-		SET_TDBB(_tdbb);
+		SET_TDBB(tdbb);
 
 		compile_in_progress = true;
-		JrdMemoryPool* old_pool = _tdbb->tdbb_default,
+		JrdMemoryPool* old_pool = tdbb->tdbb_default,
 			*new_pool = JrdMemoryPool::createPool();
 		/* Allocate statement memory pool */
-		_tdbb->tdbb_default = new_pool;
+		tdbb->tdbb_default = new_pool;
 		// Trigger request is not compiled yet. Lets do it now
 		try {
-			PAR_blr(_tdbb, relation, blr->str_data,  NULL, NULL, &request, TRUE,
+			PAR_blr(tdbb, relation, blr->str_data,  NULL, NULL, &request, TRUE,
 					(USHORT)(flags & TRG_ignore_perm ? csb_ignore_perm : 0));
-			_tdbb->tdbb_default = old_pool;
+			tdbb->tdbb_default = old_pool;
 		}
 		catch (const std::exception&) {
-			_tdbb->tdbb_default = old_pool;
+			tdbb->tdbb_default = old_pool;
 			compile_in_progress = false;
 			if (request) {
-				CMP_release(_tdbb,request);
+				CMP_release(tdbb,request);
 				request = NULL;
 			}
 			else {
@@ -247,7 +247,7 @@ void trig::compile(tdbb* _tdbb)
 			}
 			throw;
 		}
-		_tdbb->tdbb_default = old_pool;
+		tdbb->tdbb_default = old_pool;
 		
 		if (name)
 			request->req_trg_name = (const TEXT*)name->str_data;
@@ -260,15 +260,15 @@ void trig::compile(tdbb* _tdbb)
 	}
 }
 
-BOOLEAN trig::release(tdbb* _tdbb)
+void trig::release(thread_db* tdbb)
 {
 	if (!blr/*sys_trigger*/ || !request || CMP_clone_is_active(request)) {
-		return FALSE;
+		return; // FALSE;
 	}
 	
-	CMP_release(_tdbb, request);
+	CMP_release(tdbb, request);
 	request = NULL;
-	return TRUE;
+	return; // TRUE;
 }
 
 #ifdef WIN_NT
@@ -285,15 +285,15 @@ BOOLEAN trig::release(tdbb* _tdbb)
 
 typedef struct dpb
 {
-	TEXT*	dpb_sys_user_name;
-	TEXT*	dpb_user_name;
-	TEXT*	dpb_password;
-	TEXT*	dpb_password_enc;
-	TEXT*	dpb_role_name;
-	TEXT*	dpb_journal;
-	TEXT*	dpb_key;
+	const TEXT*	dpb_sys_user_name;
+	const TEXT*	dpb_user_name;
+	const TEXT*	dpb_password;
+	const TEXT*	dpb_password_enc;
+	TEXT*		dpb_role_name;
+	const TEXT*	dpb_journal;
+	const TEXT*	dpb_key;
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-	TEXT*	dpb_log;
+	const TEXT*	dpb_log;
 #endif
 	USHORT	dpb_wal_action;
 	SLONG	dpb_sweep_interval;
@@ -340,20 +340,20 @@ typedef struct dpb
 	TEXT*	dpb_set_db_charset;
 } DPB;
 
-static blb*		check_blob(TDBB, ISC_STATUS*, blb**);
-static ISC_STATUS	check_database(TDBB, ATT, ISC_STATUS*);
+static blb*		check_blob(thread_db*, ISC_STATUS*, blb**);
+static ISC_STATUS	check_database(thread_db*, ATT, ISC_STATUS*);
 static void		cleanup(void*);
 static ISC_STATUS	commit(ISC_STATUS*, jrd_tra**, const bool);
 static STR		copy_string(const TEXT*, const USHORT);
 static bool		drop_files(const jrd_file*);
 static ISC_STATUS	error(ISC_STATUS*, const std::exception& ex);
 static ISC_STATUS	error(ISC_STATUS*);
-static void		find_intl_charset(TDBB, ATT, const DPB*);
-static jrd_tra*		find_transaction(TDBB, jrd_tra*, ISC_STATUS);
+static void		find_intl_charset(thread_db*, ATT, const DPB*);
+static jrd_tra*		find_transaction(thread_db*, jrd_tra*, ISC_STATUS);
 static void		get_options(const UCHAR*, USHORT, TEXT**, ULONG, DPB*);
 static SLONG	get_parameter(const UCHAR**);
 static TEXT*	get_string_parameter(const UCHAR**, TEXT**, ULONG*);
-static ISC_STATUS	handle_error(ISC_STATUS*, ISC_STATUS, TDBB);
+static ISC_STATUS	handle_error(ISC_STATUS*, ISC_STATUS, thread_db*);
 static void		verify_request_synchronization(jrd_req*& request, SSHORT level);
 static bool		verify_database_name(const TEXT*, ISC_STATUS*);
 
@@ -366,15 +366,15 @@ static BOOLEAN	handler_NT(SSHORT);
 #endif	// SERVER_SHUTDOWN
 #endif	// WIN_NT
 
-static Database*	init(TDBB, ISC_STATUS*, const TEXT*, bool);
-static ISC_STATUS	prepare(TDBB, jrd_tra*, ISC_STATUS*, USHORT, const UCHAR*);
+static Database*	init(thread_db*, ISC_STATUS*, const TEXT*, bool);
+static ISC_STATUS	prepare(thread_db*, jrd_tra*, ISC_STATUS*, USHORT, const UCHAR*);
 static void		release_attachment(ATT);
-static ISC_STATUS	return_success(TDBB);
-static bool		rollback(TDBB, jrd_tra*, ISC_STATUS*, const bool);
+static ISC_STATUS	return_success(thread_db*);
+static bool		rollback(thread_db*, jrd_tra*, ISC_STATUS*, const bool);
 
 static void		shutdown_database(Database*, const bool);
 static void		strip_quotes(const TEXT*, TEXT*);
-static void		purge_attachment(TDBB, ISC_STATUS*, ATT, const bool);
+static void		purge_attachment(thread_db*, ISC_STATUS*, ATT, const bool);
 
 static bool		initialized = false;
 static Database*		databases = NULL;
@@ -404,7 +404,7 @@ ihndl*	internal_db_handles = 0;
 // do it here to prevent committing every record update
 // in a statement
 //
-static void check_autocommit(jrd_req* request, struct tdbb* tdbb)
+static void check_autocommit(jrd_req* request, thread_db* tdbb)
 {
 	/* dimitr: we should ignore autocommit for requests
 			   created by EXECUTE STATEMENT */
@@ -425,10 +425,10 @@ inline static void api_entry_point_init(ISC_STATUS* user_status)
 	user_status[2] = isc_arg_end;
 }
 
-inline static struct tdbb* set_thread_data(struct tdbb& thd_context)
+inline static thread_db* set_thread_data(thread_db& thd_context)
 {
-	struct tdbb* tdbb = &thd_context;
-	MOVE_CLEAR(tdbb, sizeof(struct tdbb));
+	thread_db* tdbb = &thd_context;
+	MOVE_CLEAR(tdbb, sizeof(thread_db));
 	JRD_set_context(tdbb);
 	return tdbb;
 }
@@ -439,13 +439,13 @@ inline static struct tdbb* set_thread_data(struct tdbb& thd_context)
 #undef GET_DBB
 #undef SET_TDBB
 
-static TDBB get_thread_data()
+static thread_db* get_thread_data()
 {
 	THDD p1 = (THDD)(PLATFORM_GET_THREAD_DATA);
 #ifdef DEV_BUILD
 	if (p1 && p1->thdd_type == THDD_TYPE_TDBB)
 	{
-		TDBB p2 = (TDBB)p1;
+		thread_db* p2 = (thread_db*)p1;
 		if (p2->tdbb_database &&
 			MemoryPool::blk_type(p2->tdbb_database) != type_dbb)
 		{
@@ -454,7 +454,7 @@ static TDBB get_thread_data()
 	}
 #endif	// DEV_BUILD
 
-	return (TDBB)p1;
+	return (thread_db*) p1;
 }
 
 inline static void CHECK_DBB(Database* dbb)
@@ -464,7 +464,7 @@ inline static void CHECK_DBB(Database* dbb)
 #endif	// DEV_BUILD
 }
 
-inline static void check_tdbb(TDBB tdbb)
+inline static void check_tdbb(thread_db* tdbb)
 {
 #ifdef DEV_BUILD
 	fb_assert(tdbb &&
@@ -479,7 +479,7 @@ inline static Database* get_dbb()
 	return get_thread_data()->tdbb_database;
 }
 
-static void SET_TDBB(TDBB& tdbb)
+static void SET_TDBB(thread_db*& tdbb)
 {
 	if (tdbb == NULL) {
 		tdbb = get_thread_data();
@@ -582,10 +582,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
  *	sullied by user data.
  *
  **************************************/
-	TEXT expanded_name[MAXPATHLEN];
-
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
 	if (*handle) {
@@ -596,6 +592,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	if (!file_length) 
 		file_length = strlen(file_name);
+	TEXT expanded_name[MAXPATHLEN];
 	memcpy(expanded_name, file_name, file_length);
 	expanded_name[file_length] = '\0';
 
@@ -607,7 +604,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	const USHORT length_expanded = strlen(expanded_name);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 /* If database name is not alias, check it against conf file */
 	if (!is_alias && !verify_database_name(expanded_filename, user_status)) {
@@ -1348,11 +1346,10 @@ ISC_STATUS GDS_BLOB_INFO(ISC_STATUS*	user_status,
  *	Provide information on blob object.
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	const blb* blob = check_blob(tdbb, user_status, blob_handle);
 	if (!blob) {
@@ -1389,11 +1386,10 @@ ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS * user_status, blb** blob_handle)
  *	Abort a partially completed blob.
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	if (*blob_handle) {
 		blb* blob = check_blob(tdbb, user_status, blob_handle);
@@ -1434,11 +1430,10 @@ ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS*	user_status,
  *	Cancel an outstanding event.
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	if (check_database(tdbb, *handle, user_status)) {
 		return user_status[1];
@@ -1538,11 +1533,10 @@ ISC_STATUS GDS_CLOSE_BLOB(ISC_STATUS * user_status, blb** blob_handle)
  *	Abort a partially completed blob.
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	blb* blob = check_blob(tdbb, user_status, blob_handle);
 	if (!blob)
@@ -1627,11 +1621,10 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
  * Functional description
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	NULL_CHECK(req_handle, isc_bad_req_handle);
 	att* attachment = *db_handle;
@@ -1683,16 +1676,13 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
  **************************************
  *
  * Functional description
- *	Open an existing blob.
+ *	Create a new blob.
  *
  **************************************/
-	jrd_tra* transaction;
-	blb* blob;
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	NULL_CHECK(blob_handle, isc_bad_segstr_handle);
 
@@ -1708,8 +1698,8 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 	{
 		tdbb->tdbb_status_vector = user_status;
 
-		transaction = find_transaction(tdbb, *tra_handle, isc_segstr_wrong_db);
-		blob = BLB_create2(tdbb, transaction, blob_id, bpb_length, bpb);
+		jrd_tra* transaction = find_transaction(tdbb, *tra_handle, isc_segstr_wrong_db);
+		blb* blob = BLB_create2(tdbb, transaction, blob_id, bpb_length, bpb);
 		*blob_handle = blob;
 	
 	#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
@@ -1746,10 +1736,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
  *	Create a nice, squeeky clean database, uncorrupted by user data.
  *
  **************************************/
-	TEXT expanded_name[MAXPATHLEN];
-	ISC_STATUS *status;
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
 	if (*handle)
@@ -1758,6 +1744,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 /* Get length of database file name, if not already known */
 	if (!file_length) 
 		file_length = strlen(file_name);
+	TEXT expanded_name[MAXPATHLEN];
 	memcpy(expanded_name, file_name, file_length);
 	expanded_name[file_length] = '\0';
 
@@ -1768,7 +1755,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 		strcpy(expanded_name, expanded_filename);
 	const USHORT length_expanded = strlen(expanded_name);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	Database* dbb = init(tdbb, user_status, expanded_name, false);
 	if (!dbb) {
@@ -1789,7 +1777,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 
 /* Initialize error handling */
 
-	tdbb->tdbb_status_vector = status = user_status;
+	ISC_STATUS* status = user_status;
+	tdbb->tdbb_status_vector = status;
 	att* attachment = NULL;
 	tdbb->tdbb_attachment = attachment;
 	tdbb->tdbb_request = NULL;
@@ -2123,11 +2112,10 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS* user_status,
  *	Provide information on database object.
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	if (check_database(tdbb, *handle, user_status))
 		return user_status[1];
@@ -2166,11 +2154,10 @@ ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
  * Functional description
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	att* attachment = *db_handle;
 	if (check_database(tdbb, attachment, user_status))
@@ -2247,14 +2234,10 @@ ISC_STATUS GDS_DETACH(ISC_STATUS * user_status, ATT * handle)
  *	Close down a database.
  *
  **************************************/
-	struct tdbb thd_context;
-#ifdef GOVERNOR
-	USHORT attachment_flags;
-#endif
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	att* attachment = *handle;
 
@@ -2326,7 +2309,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS * user_status, ATT * handle)
 #endif
 
 #ifdef GOVERNOR
-	attachment_flags = (USHORT) attachment->att_flags;
+	const USHORT attachment_flags = (USHORT) attachment->att_flags;
 #endif
 
 	purge_attachment(tdbb, user_status, attachment, false);
@@ -2377,11 +2360,10 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS * user_status, ATT * handle)
  *	Close down and purge a database.
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	att* attachment = *handle;
 
@@ -2571,11 +2553,10 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
  *	Abort a partially completed blob.
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	blb* blob = check_blob(tdbb, user_status, blob_handle);
 	if (!blob)
@@ -2636,11 +2617,10 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
  *	Snatch a slice of an array.
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	if (check_database(tdbb, *db_handle, user_status))
 		return user_status[1];
@@ -2697,11 +2677,10 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
  *	Open an existing blob.
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	NULL_CHECK(blob_handle, isc_bad_segstr_handle);
 
@@ -2751,11 +2730,10 @@ ISC_STATUS GDS_PREPARE(ISC_STATUS * user_status,
  *	phase commit.
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	CHECK_HANDLE((*tra_handle), type_tra, isc_bad_trans_handle);
 	jrd_tra* transaction = *tra_handle;
@@ -2789,11 +2767,10 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
  *	Abort a partially completed blob.
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	blb* blob = check_blob(tdbb, user_status, blob_handle);
 	if (!blob)
@@ -2838,11 +2815,10 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS* user_status,
  *	Snatch a slice of an array.
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	if (check_database(tdbb, *db_handle, user_status))
 		return user_status[1];
@@ -2891,11 +2867,10 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
  *	Que a request for event notification.
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	if (check_database(tdbb, *handle, user_status))
 		return user_status[1];
@@ -2957,11 +2932,10 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
  *	Get a record from the host program.
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	CHECK_HANDLE((*req_handle), type_req, isc_bad_req_handle);
 	jrd_req* request = *req_handle;
@@ -3018,11 +2992,10 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
  *	Connect to a transaction in limbo.
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	NULL_CHECK(tra_handle, isc_bad_trans_handle);
 	att* attachment = *db_handle;
@@ -3065,11 +3038,10 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, jrd_req** req_handle)
  *	Release a request.
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	CHECK_HANDLE((*req_handle), type_req, isc_bad_req_handle);
 	jrd_req* request = *req_handle;
@@ -3115,11 +3087,10 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
  *	Provide information on blob object.
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	jrd_req* request = *req_handle;
 	CHECK_HANDLE(request, type_req, isc_bad_req_handle);
@@ -3161,11 +3132,10 @@ ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS * user_status,
  *	Abort a transaction but keep the environment valid
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	jrd_tra* transaction = *tra_handle;
 	CHECK_HANDLE(transaction, type_tra, isc_bad_trans_handle);
@@ -3196,11 +3166,10 @@ ISC_STATUS GDS_ROLLBACK(ISC_STATUS * user_status, jrd_tra** tra_handle)
  *	Abort a transaction.
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	jrd_tra* transaction = *tra_handle;
 	CHECK_HANDLE(transaction, type_tra, isc_bad_trans_handle);
@@ -3236,11 +3205,10 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS * user_status,
  *	Seek a stream blob.
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	blb* blob = check_blob(tdbb, user_status, blob_handle);
 	if (!blob)
@@ -3281,11 +3249,10 @@ ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
  *	Get a record from the host program.
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	CHECK_HANDLE((*req_handle), type_req, isc_bad_req_handle);
 	jrd_req* request = *req_handle;
@@ -3338,14 +3305,13 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
  *	Connect to an Interbase service.
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
 	if (*svc_handle)
 		return handle_error(user_status, isc_bad_svc_handle, 0);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	tdbb->tdbb_status_vector = user_status;
 	try
@@ -3375,11 +3341,10 @@ ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS* user_status, svc** svc_handle)
  *	Close down a service.
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	svc* service = *svc_handle;
 	CHECK_HANDLE(service, type_svc, isc_bad_svc_handle);
@@ -3428,11 +3393,10 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
  *	a later date.
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	svc* service = *svc_handle;
 	CHECK_HANDLE(service, type_svc, isc_bad_svc_handle);
@@ -3499,11 +3463,10 @@ ISC_STATUS GDS_SERVICE_START(ISC_STATUS*	user_status,
  *   	network).  This parameter will be implemented at
  * 	a later date.
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	svc* service = *svc_handle;
 	CHECK_HANDLE(service, type_svc, isc_bad_svc_handle);
@@ -3556,11 +3519,10 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS* user_status,
  *	Get a record from the host program.
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	jrd_req* request = *req_handle;
 	CHECK_HANDLE(request, type_req, isc_bad_req_handle);
@@ -3617,11 +3579,10 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
  *	Get a record from the host program.
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	jrd_req* request = *req_handle;
 	CHECK_HANDLE(request, type_req, isc_bad_req_handle);
@@ -3677,12 +3638,11 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
  *
  **************************************/
 	TEB* v;
-	struct tdbb thd_context;
-	Database* dbb;
 
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	NULL_CHECK(tra_handle, isc_bad_trans_handle);
 	const TEB* const end = vector + count;
@@ -3690,7 +3650,7 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
 	for (v = vector; v < end; v++) {
 		if (check_database(tdbb, *v->teb_database, user_status))
 			return user_status[1];
-		dbb = tdbb->tdbb_database;
+		Database* dbb = tdbb->tdbb_database;
 		--dbb->dbb_use_count;
 	}
 
@@ -3717,13 +3677,13 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
 					  reinterpret_cast<const char*>(v->teb_tpb));
 		transaction->tra_sibling = prior;
 		prior = transaction;
-		dbb = tdbb->tdbb_database;
+		Database* dbb = tdbb->tdbb_database;
 		--dbb->dbb_use_count;
 	}
 
 	}	// try
 	catch (const std::exception& ex) {
-		dbb = tdbb->tdbb_database;
+		Database* dbb = tdbb->tdbb_database;
 		--dbb->dbb_use_count;
 		if (prior) {
 			ISC_STATUS_ARRAY temp_status;
@@ -3756,11 +3716,12 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
  *	Start a transaction.
  *
  **************************************/
-	TEB tebs[16], *teb, *end;
-	va_list ptr;
-
 	api_entry_point_init(user_status);
 
+	TEB tebs[16];
+	TEB* teb;
+	const TEB* end;
+	va_list ptr;
 	VA_START(ptr, count);
 
 	for (teb = tebs, end = teb + count; teb < end; teb++) {
@@ -3793,11 +3754,10 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
  *	Execute a procedure.
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	att* attachment = *db_handle;
 	if (check_database(tdbb, attachment, user_status))
@@ -3953,11 +3913,10 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
  *	Provide information on blob object.
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	jrd_tra* transaction = *tra_handle;
 	CHECK_HANDLE(transaction, type_tra, isc_bad_trans_handle);
@@ -4000,11 +3959,10 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status,
  *	be called asynchronously.
  *
  **************************************/
-	struct tdbb thd_context;
-
 	api_entry_point_init(user_status);
 
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	CHECK_HANDLE((*req_handle), type_req, isc_bad_req_handle);
 	jrd_req* request = *req_handle;
@@ -4091,7 +4049,7 @@ void JRD_blocked(ATT blocking, BTB * que)
  *	wake us up.
  *
  **************************************/
-	TDBB tdbb = get_thread_data();
+	thread_db* tdbb = get_thread_data();
 	Database*  dbb  = tdbb->tdbb_database;
 
 /* Check for deadlock.  If there is one, complain */
@@ -4166,13 +4124,12 @@ USHORT JRD_getdir(TEXT* buf, USHORT len)
 	}
 	else
 	{
-		TDBB tdbb = get_thread_data();
-		att* attachment;
+		thread_db* tdbb = get_thread_data();
 
    /** If the server has not done a SET_THREAD_DATA prior to this call
-       (which will be the case when connecting via IPC), tdbb will
+       (which will be the case when connecting via IPC), thread_db will
        be NULL so do not attempt to get the attachment handle from
-       tdbb. Just return 0 as described below.  NOTE:  The only time
+       thread_db. Just return 0 as described below.  NOTE:  The only time
        this code is entered via IPC is if the database name = "".
    **/
 
@@ -4181,6 +4138,7 @@ USHORT JRD_getdir(TEXT* buf, USHORT len)
        attachment from there.
    **/
 
+		att* attachment;
 		if (tdbb && (tdbb->tdbb_thd_data.thdd_type == THDD_TYPE_TDBB))
 			attachment = tdbb->tdbb_attachment;
 		else
@@ -4219,7 +4177,7 @@ void JRD_mutex_lock(MUTX mutex)
  *	in the thread context block.
  *
  **************************************/
-	TDBB tdbb = get_thread_data();
+	thread_db* tdbb = get_thread_data();
 	INUSE_insert(&tdbb->tdbb_mutexes, (void *) mutex, true);
 	THD_MUTEX_LOCK(mutex);
 }
@@ -4238,7 +4196,7 @@ void JRD_mutex_unlock(MUTX mutex)
  *	in the thread context block.
  *
  **************************************/
-	TDBB tdbb = get_thread_data();
+	thread_db* tdbb = get_thread_data();
 	INUSE_remove(&tdbb->tdbb_mutexes, (void *) mutex, false);
 	THD_MUTEX_UNLOCK(mutex);
 }
@@ -4266,7 +4224,7 @@ void JRD_print_all_counters(const char* fname)
 #endif
 
 #ifdef DEBUG_PROCS
-void JRD_print_procedure_info(TDBB tdbb, const char* mesg)
+void JRD_print_procedure_info(thread_db* tdbb, const char* mesg)
 {
 /*****************************************************
  *
@@ -4329,7 +4287,7 @@ void JRD_print_procedure_info(TDBB tdbb, const char* mesg)
 
 
 #ifdef MULTI_THREAD
-BOOLEAN JRD_reschedule(TDBB tdbb, SLONG quantum, bool punt)
+bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 {
 /**************************************
  *
@@ -4343,7 +4301,7 @@ BOOLEAN JRD_reschedule(TDBB tdbb, SLONG quantum, bool punt)
  *
  **************************************/
 	if (tdbb->tdbb_inhibit)
-		return FALSE;
+		return false;
 
 /* Force garbage colletion activity to yield the
    processor in case client threads haven't had
@@ -4374,7 +4332,7 @@ BOOLEAN JRD_reschedule(TDBB tdbb, SLONG quantum, bool punt)
 				*status++ = isc_arg_gds;
 				*status++ = isc_shutdown;
 				*status++ = isc_arg_end;
-				return TRUE;
+				return true;
 			}
 		}
 #ifdef CANCEL_OPERATION
@@ -4403,7 +4361,7 @@ BOOLEAN JRD_reschedule(TDBB tdbb, SLONG quantum, bool punt)
 					*status++ = isc_arg_gds;
 					*status++ = isc_cancelled;
 					*status++ = isc_arg_end;
-					return TRUE;
+					return true;
 				}
 			}
 		}
@@ -4415,7 +4373,7 @@ BOOLEAN JRD_reschedule(TDBB tdbb, SLONG quantum, bool punt)
 			Config::getPriorityBoost() : 1) * QUANTUM) : 
 		tdbb->tdbb_quantum;
 
-	return FALSE;
+	return false;
 }
 #endif
 
@@ -4433,7 +4391,7 @@ void JRD_restore_context(void)
  *	and cleanup and objects that remain in use.
  *
  **************************************/
-	TDBB tdbb = get_thread_data();
+	thread_db* tdbb = get_thread_data();
 
 	bool cleaned_up =
 		INUSE_cleanup(&tdbb->tdbb_mutexes, (FPTR_VOID) THD_mutex_unlock);
@@ -4458,7 +4416,7 @@ cleaned_up |= INUSE_cleanup (&tdbb->tdbb_pages, (FPTR_VOID) CCH_?);
 }
 
 
-void JRD_set_context(TDBB tdbb)
+void JRD_set_context(thread_db* tdbb)
 {
 /**************************************
  *
@@ -4547,7 +4505,7 @@ void jrd_vtof(const char* string, char* field, SSHORT length)
 	}
 }
 
-static blb* check_blob(TDBB tdbb, ISC_STATUS* user_status, blb** blob_handle)
+static blb* check_blob(thread_db* tdbb, ISC_STATUS* user_status, blb** blob_handle)
 {
 /**************************************
  *
@@ -4582,7 +4540,7 @@ static blb* check_blob(TDBB tdbb, ISC_STATUS* user_status, blb** blob_handle)
 }
 
 
-static ISC_STATUS check_database(TDBB tdbb, ATT attachment, ISC_STATUS * user_status)
+static ISC_STATUS check_database(thread_db* tdbb, ATT attachment, ISC_STATUS * user_status)
 {
 /**************************************
  *
@@ -4714,9 +4672,8 @@ static ISC_STATUS commit(
  *	Commit a transaction.
  *
  **************************************/
-	struct tdbb thd_context;
-
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	CHECK_HANDLE((*tra_handle), type_tra, isc_bad_trans_handle);
 	jrd_tra* transaction = *tra_handle;
@@ -4739,8 +4696,6 @@ static ISC_STATUS commit(
 		return error(user_status);
 	}
 	
-	Database* dbb;
-	
 	try {
 
 	while ( (transaction = next) ) {
@@ -4748,7 +4703,7 @@ static ISC_STATUS commit(
 		check_database(tdbb, transaction->tra_attachment, user_status);
 		tdbb->tdbb_status_vector = ptr;
 		TRA_commit(tdbb, transaction, retaining_flag);
-		dbb = tdbb->tdbb_database;
+		Database* dbb = tdbb->tdbb_database;
 		--dbb->dbb_use_count;
 	}
 
@@ -4756,7 +4711,7 @@ static ISC_STATUS commit(
 
 	}	// try
 	catch (const std::exception& ex) {
-		dbb = tdbb->tdbb_database;
+		Database* dbb = tdbb->tdbb_database;
 		--dbb->dbb_use_count;
 		return error(user_status, ex);
 	}
@@ -4821,7 +4776,7 @@ static bool drop_files(const jrd_file* file)
 }
 
 
-static jrd_tra* find_transaction(TDBB tdbb, jrd_tra* transaction, ISC_STATUS error_code)
+static jrd_tra* find_transaction(thread_db* tdbb, jrd_tra* transaction, ISC_STATUS error_code)
 {
 /**************************************
  *
@@ -4879,7 +4834,7 @@ static ISC_STATUS error(ISC_STATUS* user_status)
  *	An error returned has been trapped.  Return a status code.
  *
  **************************************/
-	TDBB tdbb = get_thread_data();
+	thread_db* tdbb = get_thread_data();
 
 /* Decrement count of active threads in database */
 	Database* dbb = tdbb->tdbb_database;
@@ -4912,7 +4867,7 @@ static ISC_STATUS error(ISC_STATUS* user_status)
 }
 
 
-static void find_intl_charset(TDBB tdbb, ATT attachment, const DPB* options)
+static void find_intl_charset(thread_db* tdbb, ATT attachment, const DPB* options)
 {
 /**************************************
  *
@@ -4926,10 +4881,9 @@ static void find_intl_charset(TDBB tdbb, ATT attachment, const DPB* options)
  *	block.  Now let's resolve that to an internal subtype id.
  *
  **************************************/
-	SSHORT len;
-
 	SET_TDBB(tdbb);
 
+	SSHORT len;
 	if (!options->dpb_lc_ctype || (len = strlen(options->dpb_lc_ctype)) == 0) {
 		/* No declaration of character set, act like 3.x Interbase */
 		attachment->att_charset = DEFAULT_ATTACHMENT_CHARSET;
@@ -5425,7 +5379,7 @@ static TEXT* get_string_parameter(const UCHAR** dpb_ptr, TEXT** opt_ptr,
 }
 
 
-static ISC_STATUS handle_error(ISC_STATUS* user_status, ISC_STATUS code, TDBB tdbb)
+static ISC_STATUS handle_error(ISC_STATUS* user_status, ISC_STATUS code, thread_db* tdbb)
 {
 /**************************************
  *
@@ -5482,7 +5436,7 @@ static BOOLEAN handler_NT(SSHORT controlAction)
 #endif
 
 
-static Database* init(TDBB	tdbb,
+static Database* init(thread_db*	tdbb,
 				ISC_STATUS*	user_status,
 				const TEXT*	expanded_filename,
 				bool attach_flag)
@@ -5644,7 +5598,7 @@ static Database* init(TDBB	tdbb,
 
 
 
-static ISC_STATUS prepare(TDBB		tdbb,
+static ISC_STATUS prepare(thread_db*		tdbb,
 					  jrd_tra*		transaction,
 					  ISC_STATUS*	status_vector,
 					  USHORT	length,
@@ -5703,7 +5657,7 @@ static void release_attachment(ATT attachment)
  *	responsibility of the caller to unlock it.
  *
  **************************************/
-	TDBB tdbb = get_thread_data();
+	thread_db* tdbb = get_thread_data();
 	Database*  dbb  = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
@@ -5803,7 +5757,7 @@ static void release_attachment(ATT attachment)
 }
 
 
-static ISC_STATUS return_success(TDBB tdbb)
+static ISC_STATUS return_success(thread_db* tdbb)
 {
 /**************************************
  *
@@ -5862,7 +5816,7 @@ static ISC_STATUS return_success(TDBB tdbb)
 }
 
 
-static bool rollback(TDBB	tdbb,
+static bool rollback(thread_db*	tdbb,
 						jrd_tra*		next,
 						ISC_STATUS*	status_vector,
 						const bool	retaining_flag)
@@ -5943,7 +5897,7 @@ static void shutdown_database(Database* dbb, const bool release_pools)
  *	mutex databases_mutex will be locked.
  *
  **************************************/
-	TDBB tdbb = get_thread_data();
+	thread_db* tdbb = get_thread_data();
 
 /* Shutdown file and/or remote connection */
 
@@ -6159,7 +6113,8 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 													 sizeof(TEXT) *
 													 dbb->
 													 dbb_filename->str_length));
-					if (!dbfp) throw std::bad_alloc();
+					if (!dbfp)
+						throw std::bad_alloc();
 					dbf = dbfp;
 				}
 				else {
@@ -6168,7 +6123,8 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 								   (sizeof(struct dbf) +
 									sizeof(TEXT) *
 									dbb->dbb_filename->str_length));
-					if (!dbfp) throw std::bad_alloc();
+					if (!dbfp)
+						throw std::bad_alloc();
 					dbfp = dbfp->dbf_next;
 				}
 				if (dbfp) {
@@ -6331,14 +6287,13 @@ ULONG JRD_shutdown_all()
  *	and shutdown every database.
  *
  **************************************/
-	ISC_STATUS_ARRAY user_status;
-	struct tdbb thd_context;
-
-	struct tdbb* tdbb = set_thread_data(thd_context);
+	thread_db thd_context;
+	thread_db* tdbb = set_thread_data(thd_context);
 
 	if (initialized) {
 		JRD_SS_MUTEX_LOCK;
 	}
+	ISC_STATUS_ARRAY user_status;
 
 	Database* dbb_next;
 	for (Database* dbb = databases; dbb; dbb = dbb_next)
@@ -6396,7 +6351,7 @@ ULONG JRD_shutdown_all()
 #endif /* SERVER_SHUTDOWN */
 
 
-static void purge_attachment(TDBB		tdbb,
+static void purge_attachment(thread_db*		tdbb,
 							 ISC_STATUS*	user_status,
 							 ATT		attachment,
 							 const bool	force_flag)

@@ -27,27 +27,27 @@
 #include "../jrd/req.h"
 
 bool CMP_clone_is_active(const jrd_req*);
-jrd_nod* CMP_clone_node(TDBB, Csb*, jrd_nod*);
-jrd_req* CMP_clone_request(TDBB, jrd_req*, USHORT, bool);
+jrd_nod* CMP_clone_node(thread_db*, Csb*, jrd_nod*);
+jrd_req* CMP_clone_request(thread_db*, jrd_req*, USHORT, bool);
 jrd_req* CMP_compile(USHORT, const UCHAR*, USHORT);
-jrd_req* CMP_compile2(TDBB, const UCHAR*, USHORT);
+jrd_req* CMP_compile2(thread_db*, const UCHAR*, USHORT);
 csb_repeat* CMP_csb_element(Csb*, USHORT);
 void CMP_expunge_transaction(jrd_tra*);
-void CMP_decrement_prc_use_count(TDBB, jrd_prc*);
-jrd_req* CMP_find_request(TDBB, USHORT, USHORT);
-void CMP_fini(TDBB);
-fmt* CMP_format(TDBB, Csb*, USHORT);
-void CMP_get_desc(TDBB, Csb*, jrd_nod*, dsc*);
-idl* CMP_get_index_lock(TDBB, jrd_rel*, USHORT);
+void CMP_decrement_prc_use_count(thread_db*, jrd_prc*);
+jrd_req* CMP_find_request(thread_db*, USHORT, USHORT);
+void CMP_fini(thread_db*);
+fmt* CMP_format(thread_db*, Csb*, USHORT);
+void CMP_get_desc(thread_db*, Csb*, jrd_nod*, dsc*);
+idl* CMP_get_index_lock(thread_db*, jrd_rel*, USHORT);
 SLONG CMP_impure(Csb*, USHORT);
-jrd_req* CMP_make_request(TDBB, Csb*);
-void CMP_post_access(TDBB, Csb*, const TEXT*, SLONG,
+jrd_req* CMP_make_request(thread_db*, Csb*);
+void CMP_post_access(thread_db*, Csb*, const TEXT*, SLONG,
 					 const TEXT*, const TEXT*, USHORT, const TEXT*,
 					 const TEXT*);
-void CMP_post_resource(TDBB, Resource**, blk*, enum Resource::rsc_s, USHORT);
+void CMP_post_resource(thread_db*, Resource**, blk*, enum Resource::rsc_s, USHORT);
 void CMP_release_resource(Resource**, enum Resource::rsc_s, USHORT);
-void CMP_release(TDBB, jrd_req*);
-void CMP_shutdown_database(TDBB);
+void CMP_release(thread_db*, jrd_req*);
+void CMP_shutdown_database(thread_db*);
 
 #endif // JRD_CMP_PROTO_H
 

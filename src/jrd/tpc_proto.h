@@ -24,10 +24,11 @@
 #ifndef JRD_TPC_PROTO_H
 #define JRD_TPC_PROTO_H
 
-int		TPC_cache_state(TDBB, SLONG);
-void	TPC_initialize_tpc(TDBB, SLONG);
-void	TPC_set_state(TDBB, SLONG, SSHORT);
-int		TPC_snapshot_state(TDBB, SLONG);
-void	TPC_update_cache(TDBB, struct tx_inv_page*, SLONG);
+int		TPC_cache_state(thread_db*, SLONG);
+void	TPC_initialize_tpc(thread_db*, SLONG);
+void	TPC_set_state(thread_db*, SLONG, SSHORT);
+int		TPC_snapshot_state(thread_db*, SLONG);
+void	TPC_update_cache(thread_db*, struct tx_inv_page*, SLONG);
 
 #endif // JRD_TPC_PROTO_H
+

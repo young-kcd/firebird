@@ -39,12 +39,12 @@ static inline void FAMILY2(TEXTTYPE cache,
 							CHARSET_ID charset,
 							SSHORT country,
 							USHORT flags,
-							const SortOrderTblEntry * NoCaseOrderTbl,
-							const BYTE * ToUpperConversionTbl,
-							const BYTE * ToLowerConversionTbl,
-							const CompressPair * CompressTbl,
-							const ExpandChar * ExpansionTbl,
-							const ASCII *POSIX)
+							const SortOrderTblEntry* NoCaseOrderTbl,
+							const BYTE* ToUpperConversionTbl,
+							const BYTE* ToLowerConversionTbl,
+							const CompressPair* CompressTbl,
+							const ExpandChar* ExpansionTbl,
+							const ASCII* POSIX)
 //#define FAMILY2(id_number, name, charset, country)
 {
 	cache->texttype_version			= IB_LANGDRV_VERSION;
@@ -60,11 +60,11 @@ static inline void FAMILY2(TEXTTYPE cache,
 	cache->texttype_fn_to_lower		= fam2_to_lower;
 	cache->texttype_fn_str_to_upper = fam2_str_to_upper;
 	cache->texttype_fn_mbtowc		= LC_DOS_nc_mbtowc;
-	cache->texttype_collation_table = (BYTE *) NoCaseOrderTbl;
-	cache->texttype_toupper_table	= (BYTE *) ToUpperConversionTbl;
-	cache->texttype_tolower_table	= (BYTE *) ToLowerConversionTbl;
-	cache->texttype_compress_table	= (BYTE *) CompressTbl;
-	cache->texttype_expand_table	= (BYTE *) ExpansionTbl;
+	cache->texttype_collation_table = (const BYTE*) NoCaseOrderTbl;
+	cache->texttype_toupper_table	= ToUpperConversionTbl;
+	cache->texttype_tolower_table	= ToLowerConversionTbl;
+	cache->texttype_compress_table	= (const BYTE*) CompressTbl;
+	cache->texttype_expand_table	= (const BYTE*) ExpansionTbl;
 	cache->texttype_name			= POSIX;
 	cache->texttype_flags			|= ((flags) & REVERSE) ?
 									TEXTTYPE_reverse_secondary : 0;
@@ -553,7 +553,7 @@ static SSHORT fam2_str_to_upper(TEXTTYPE obj, USHORT iLen, const BYTE* pStr, USH
 		pStr++;
 		iLen--;
 		iOutLen--;
-	};
+	}
 	if (iLen != 0)
 		return (-1);
 	return (pOutStr - p);

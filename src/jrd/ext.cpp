@@ -232,7 +232,7 @@ int EXT_get(Rsb* rsb)
  *	Get a record from an external file.
  *
  **************************************/
- 	TDBB tdbb = GET_THREAD_DATA;
+ 	thread_db* tdbb = GET_THREAD_DATA;
 
 	jrd_rel* relation = rsb->rsb_relation;
 	external_file* file = relation->rel_file;
@@ -325,7 +325,7 @@ void EXT_open(Rsb* rsb)
  *	Open a record stream for an external file.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	jrd_rel* relation = rsb->rsb_relation;
 	jrd_req* request = tdbb->tdbb_request;
@@ -361,7 +361,7 @@ opt::opt_repeat	*tail, *opt_end;
 SSHORT		i, size;
 */
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	Csb* csb = opt->opt_csb;
 	csb_repeat* csb_tail = &csb->csb_rpt[stream];

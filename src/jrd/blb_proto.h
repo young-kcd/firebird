@@ -30,31 +30,31 @@
 #include "../jrd/lls.h"
 #include "../jrd/val.h"
 
-void   BLB_cancel(TDBB, blb*);
-void   BLB_close(TDBB, blb*);
-blb*   BLB_create(TDBB, jrd_tra*, bid*);
-blb*   BLB_create2(TDBB, jrd_tra*, bid*, USHORT, const UCHAR*);
-void   BLB_garbage_collect(TDBB, lls*, lls*, SLONG, jrd_rel*);
-blb*   BLB_get_array(TDBB, jrd_tra*, const bid*, ads*);
-SLONG  BLB_get_data(TDBB, blb*, UCHAR*, SLONG);
-USHORT BLB_get_segment(TDBB, blb*, UCHAR*, USHORT);
-SLONG  BLB_get_slice(TDBB, jrd_tra*, const bid*, const UCHAR*, USHORT,
+void   BLB_cancel(thread_db*, blb*);
+void   BLB_close(thread_db*, blb*);
+blb*   BLB_create(thread_db*, jrd_tra*, bid*);
+blb*   BLB_create2(thread_db*, jrd_tra*, bid*, USHORT, const UCHAR*);
+void   BLB_garbage_collect(thread_db*, lls*, lls*, SLONG, jrd_rel*);
+blb*   BLB_get_array(thread_db*, jrd_tra*, const bid*, ads*);
+SLONG  BLB_get_data(thread_db*, blb*, UCHAR*, SLONG);
+USHORT BLB_get_segment(thread_db*, blb*, UCHAR*, USHORT);
+SLONG  BLB_get_slice(thread_db*, jrd_tra*, const bid*, const UCHAR*, USHORT,
 	const SLONG*, SLONG, UCHAR*);
 SLONG  BLB_lseek(blb*, USHORT, SLONG);
 
-void BLB_move(TDBB, dsc*, dsc*, jrd_nod*);
-void BLB_move_from_string(TDBB, const dsc*, dsc*, jrd_nod*);
-blb* BLB_open(TDBB, jrd_tra*, const bid*);
-blb* BLB_open2(TDBB, jrd_tra*, const bid*, USHORT, const UCHAR*);
-void BLB_put_segment(TDBB, blb*, const UCHAR*, USHORT);
-void BLB_put_slice(TDBB, jrd_tra*, bid*, const UCHAR*, USHORT,
+void BLB_move(thread_db*, dsc*, dsc*, jrd_nod*);
+void BLB_move_from_string(thread_db*, const dsc*, dsc*, jrd_nod*);
+blb* BLB_open(thread_db*, jrd_tra*, const bid*);
+blb* BLB_open2(thread_db*, jrd_tra*, const bid*, USHORT, const UCHAR*);
+void BLB_put_segment(thread_db*, blb*, const UCHAR*, USHORT);
+void BLB_put_slice(thread_db*, jrd_tra*, bid*, const UCHAR*, USHORT,
 	const SLONG*, SLONG, UCHAR*);
 void BLB_release_array(arr*);
-void BLB_scalar(TDBB, jrd_tra*, const bid*, USHORT, SLONG*, vlu*);
+void BLB_scalar(thread_db*, jrd_tra*, const bid*, USHORT, SLONG*, vlu*);
 
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-void BLB_map_blobs(TDBB, blb*, blb*);
+void BLB_map_blobs(thread_db*, blb*, blb*);
 #endif
 
 #endif	// JRD_BLB_PROTO_H

@@ -57,7 +57,7 @@
 gds__completion_ast();
 
 static bool extend_file(jrd_file*, ISC_STATUS *);
-static jrd_file* seek_file(jrd_file*, BDB, int *);
+static jrd_file* seek_file(jrd_file*, Buffer_desc*, int *);
 static jrd_file* setup_file(Database*, const TEXT*, USHORT, USHORT, struct NAM*);
 static void setup_trace(jrd_file*, SSHORT);
 static void trace_event(jrd_file*, SSHORT, SCHAR *, SSHORT);
@@ -526,7 +526,7 @@ jrd_file* PIO_open(Database* dbb,
 }
 
 
-bool PIO_read(jrd_file* file, BDB bdb, PAG page, ISC_STATUS* status_vector)
+bool PIO_read(jrd_file* file, Buffer_desc* bdb, PAG page, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -595,7 +595,7 @@ bool PIO_read(jrd_file* file, BDB bdb, PAG page, ISC_STATUS* status_vector)
 }
 
 
-bool PIO_write(jrd_file* file, BDB bdb, PAG page, ISC_STATUS* status_vector)
+bool PIO_write(jrd_file* file, Buffer_desc* bdb, PAG page, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -760,7 +760,7 @@ static bool extend_file(jrd_file* file, ISC_STATUS* status_vector)
 }
 
 
-static jrd_file* seek_file(jrd_file* file, BDB bdb, int *block)
+static jrd_file* seek_file(jrd_file* file, Buffer_desc* bdb, int *block)
 {
 /**************************************
  *

@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * 2001.07.28: Added rse_skip to struct rse to support LIMIT.
+ * 2001.07.28: Added rse_skip to class rse to support LIMIT.
  * 2002.09.28 Dmitry Yemanov: Reworked internal_info stuff, enhanced
  *                            exception handling in SPs/triggers,
  *                            implemented ROWS_AFFECTED system variable
@@ -59,10 +59,14 @@ DEFINE_TRACE_ROUTINE(cmp_trace);
 #define CMP_TRACE(args) /* nothing */
 #endif
 
+class jrd_rel;
+class jrd_nod;
+struct sort_key_def;
+
 // NOTE: The definition of structures rse and lit must be defined in
 //       exactly the same way as structure jrd_nod through item nod_count.
 //       Now, inheritance takes care of those common data members.
-class jrd_node_base : public pool_alloc_rpt<class jrd_nod*, type_nod>
+class jrd_node_base : public pool_alloc_rpt<jrd_nod*, type_nod>
 {
 public:
 	jrd_nod*	nod_parent;
@@ -163,7 +167,7 @@ public:
 	SCHAR	nod_scale;
 	USHORT	nod_count;
 	dsc		asb_desc;
-	struct skd* asb_key_desc;	/* for the aggregate   */
+	sort_key_def* asb_key_desc;	/* for the aggregate   */
 	UCHAR	asb_key_data[1];
 };
 typedef asb* ASB;
@@ -540,10 +544,10 @@ struct csb_repeat
 	USHORT csb_flags;
 	USHORT csb_indices;			/* Number of indices */
 
-	struct jrd_rel* csb_relation;
+	jrd_rel* csb_relation;
 	struct str* csb_alias;		/* SQL alias name for this instance of relation */
 	class jrd_prc* csb_procedure;
-	struct jrd_rel* csb_view;		/* parent view */
+	jrd_rel* csb_view;		/* parent view */
 
 	struct idx* csb_idx;		/* Packed description of indices */
 	struct str* csb_idx_allocation;	/* Memory allocated to hold index descriptions */

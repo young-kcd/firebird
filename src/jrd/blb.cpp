@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.56 2004-03-07 07:58:39 robocop Exp $
+$Id: blb.cpp,v 1.57 2004-03-11 05:03:57 robocop Exp $
 */
 
 #include "firebird.h"
@@ -78,25 +78,25 @@ inline bool SEGMENTED(const blb* blob)
 }
 
 static ARR alloc_array(jrd_tra*, ADS);
-static blb* allocate_blob(TDBB, jrd_tra*);
+static blb* allocate_blob(thread_db*, jrd_tra*);
 static ISC_STATUS blob_filter(USHORT, CTL, SSHORT, SLONG);
-static void check_BID_validity(const blb*, TDBB);
-static blb* copy_blob(TDBB, const bid*, bid*);
-static void delete_blob(TDBB, blb*, ULONG);
-static void delete_blob_id(TDBB, const bid*, ULONG, jrd_rel*);
+static void check_BID_validity(const blb*, thread_db*);
+static blb* copy_blob(thread_db*, const bid*, bid*);
+static void delete_blob(thread_db*, blb*, ULONG);
+static void delete_blob_id(thread_db*, const bid*, ULONG, jrd_rel*);
 static ARR find_array(jrd_tra*, const bid*);
-static BLF find_filter(TDBB, SSHORT, SSHORT);
-static blob_page* get_next_page(TDBB, blb*, WIN *);
+static BLF find_filter(thread_db*, SSHORT, SSHORT);
+static blob_page* get_next_page(thread_db*, blb*, WIN *);
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-static void get_replay_blob(TDBB, const bid*);
+static void get_replay_blob(thread_db*, const bid*);
 #endif
-static void insert_page(TDBB, blb*);
+static void insert_page(thread_db*, blb*);
 static void release_blob(blb*, const bool);
 static void slice_callback(SLICE, ULONG, DSC *);
-static blb* store_array(TDBB, jrd_tra*, bid*);
+static blb* store_array(thread_db*, jrd_tra*, bid*);
 
 
-void BLB_cancel(TDBB tdbb, blb* blob)
+void BLB_cancel(thread_db* tdbb, blb* blob)
 {
 /**************************************
  *
@@ -122,7 +122,7 @@ void BLB_cancel(TDBB tdbb, blb* blob)
 }
 
 
-void BLB_close(TDBB tdbb, class blb* blob)
+void BLB_close(thread_db* tdbb, class blb* blob)
 {
 /**************************************
  *
@@ -159,7 +159,7 @@ void BLB_close(TDBB tdbb, class blb* blob)
 }
 
 
-blb* BLB_create(TDBB tdbb, jrd_tra* transaction, bid* blob_id)
+blb* BLB_create(thread_db* tdbb, jrd_tra* transaction, bid* blob_id)
 {
 /**************************************
  *
@@ -177,7 +177,7 @@ blb* BLB_create(TDBB tdbb, jrd_tra* transaction, bid* blob_id)
 }
 
 
-blb* BLB_create2(TDBB tdbb,
+blb* BLB_create2(thread_db* tdbb,
 				jrd_tra* transaction, bid* blob_id,
 				USHORT bpb_length, const UCHAR* bpb)
 {
@@ -276,7 +276,7 @@ blb* BLB_create2(TDBB tdbb,
 
 
 void BLB_garbage_collect(
-						 TDBB tdbb,
+						 thread_db* tdbb,
 						 LLS going,
 						 LLS staying, SLONG prior_page, jrd_rel* relation)
 {
@@ -360,7 +360,7 @@ void BLB_garbage_collect(
 }
 
 
-blb* BLB_get_array(TDBB tdbb, jrd_tra* transaction, const bid* blob_id, ADS desc)
+blb* BLB_get_array(thread_db* tdbb, jrd_tra* transaction, const bid* blob_id, ADS desc)
 {
 /**************************************
  *
@@ -392,7 +392,7 @@ blb* BLB_get_array(TDBB tdbb, jrd_tra* transaction, const bid* blob_id, ADS desc
 }
 
 
-SLONG BLB_get_data(TDBB tdbb, blb* blob, UCHAR* buffer, SLONG length)
+SLONG BLB_get_data(thread_db* tdbb, blb* blob, UCHAR* buffer, SLONG length)
 {
 /**************************************
  *
@@ -428,7 +428,7 @@ SLONG BLB_get_data(TDBB tdbb, blb* blob, UCHAR* buffer, SLONG length)
 }
 
 
-USHORT BLB_get_segment(TDBB tdbb,
+USHORT BLB_get_segment(thread_db* tdbb,
 					   blb* blob, UCHAR* segment, USHORT buffer_length)
 {
 /**************************************
@@ -632,7 +632,7 @@ USHORT BLB_get_segment(TDBB tdbb,
 }
 
 
-SLONG BLB_get_slice(TDBB tdbb,
+SLONG BLB_get_slice(thread_db* tdbb,
 					jrd_tra* transaction,
 					const bid* blob_id,
 					const UCHAR* sdl,
@@ -785,7 +785,7 @@ SLONG BLB_lseek(blb* blob, USHORT mode, SLONG offset)
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 
-void BLB_map_blobs(TDBB tdbb, blb* old_blob, blb* new_blob)
+void BLB_map_blobs(thread_db* tdbb, blb* old_blob, blb* new_blob)
 {
 /**************************************
  *
@@ -821,7 +821,7 @@ void BLB_map_blobs(TDBB tdbb, blb* old_blob, blb* new_blob)
 // which in turn calls BLB_create2 that writes in the blob id. Although the
 // compiler allows to modify from_desc->dsc_address' contents when from_desc is
 // constant, this is misleading so I didn't make the source descriptor constant.
-void BLB_move(TDBB tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
+void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 {
 /**************************************
  *
@@ -946,7 +946,7 @@ void BLB_move(TDBB tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 }
 
 
-void BLB_move_from_string(TDBB tdbb, const dsc* from_desc, dsc* to_desc, jrd_nod* field)
+void BLB_move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc, jrd_nod* field)
 {
 /**************************************
  *
@@ -1002,7 +1002,7 @@ void BLB_move_from_string(TDBB tdbb, const dsc* from_desc, dsc* to_desc, jrd_nod
 }
 
 
-blb* BLB_open(TDBB tdbb, jrd_tra* transaction, const bid* blob_id)
+blb* BLB_open(thread_db* tdbb, jrd_tra* transaction, const bid* blob_id)
 {
 /**************************************
  *
@@ -1020,7 +1020,7 @@ blb* BLB_open(TDBB tdbb, jrd_tra* transaction, const bid* blob_id)
 }
 
 
-blb* BLB_open2(TDBB tdbb,
+blb* BLB_open2(thread_db* tdbb,
 			  jrd_tra* transaction, const bid* blob_id,
 			  USHORT bpb_length, const UCHAR* bpb)
 {
@@ -1180,7 +1180,7 @@ blb* BLB_open2(TDBB tdbb,
 }
 
 
-void BLB_put_segment(TDBB tdbb, blb* blob, const UCHAR* seg, USHORT segment_length)
+void BLB_put_segment(thread_db* tdbb, blb* blob, const UCHAR* seg, USHORT segment_length)
 {
 /**************************************
  *
@@ -1325,7 +1325,7 @@ void BLB_put_segment(TDBB tdbb, blb* blob, const UCHAR* seg, USHORT segment_leng
 }
 
 
-void BLB_put_slice(	TDBB	tdbb,
+void BLB_put_slice(	thread_db*	tdbb,
 					jrd_tra*		transaction,
 					bid*		blob_id,
 					const UCHAR*	sdl,
@@ -1513,7 +1513,7 @@ void BLB_release_array(ARR array)
 }
 
 
-void BLB_scalar(TDBB	tdbb,
+void BLB_scalar(thread_db*	tdbb,
 				jrd_tra*		transaction,
 				const bid*		blob_id,
 				USHORT	count,
@@ -1628,7 +1628,7 @@ static ARR alloc_array(jrd_tra* transaction, ADS proto_desc)
 }
 
 
-static blb* allocate_blob(TDBB tdbb, jrd_tra* transaction)
+static blb* allocate_blob(thread_db* tdbb, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -1686,7 +1686,7 @@ static ISC_STATUS blob_filter(	USHORT	action,
 /* Note: Cannot remove this GET_THREAD_DATA without API change to
    blob filter routines */
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	jrd_tra* transaction = (jrd_tra*) control->ctl_internal[1];
 	bid* blob_id = reinterpret_cast<bid*>(control->ctl_internal[2]);
@@ -1755,7 +1755,7 @@ static ISC_STATUS blob_filter(	USHORT	action,
 }
 
 
-static void check_BID_validity(const blb* blob, TDBB tdbb)
+static void check_BID_validity(const blb* blob, thread_db* tdbb)
 {
 /**************************************
  *
@@ -1799,7 +1799,7 @@ static void check_BID_validity(const blb* blob, TDBB tdbb)
 }
 
 
-static blb* copy_blob(TDBB tdbb, const bid* source, bid* destination)
+static blb* copy_blob(thread_db* tdbb, const bid* source, bid* destination)
 {
 /**************************************
  *
@@ -1854,7 +1854,7 @@ static blb* copy_blob(TDBB tdbb, const bid* source, bid* destination)
 }
 
 
-static void delete_blob(TDBB tdbb, blb* blob, ULONG prior_page)
+static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
 {
 /**************************************
  *
@@ -1924,7 +1924,7 @@ static void delete_blob(TDBB tdbb, blb* blob, ULONG prior_page)
 
 
 static void delete_blob_id(
-						   TDBB tdbb,
+						   thread_db* tdbb,
 						   const bid* blob_id, ULONG prior_page, jrd_rel* relation)
 {
 /**************************************
@@ -1988,7 +1988,7 @@ static ARR find_array(jrd_tra* transaction, const bid* blob_id)
 }
 
 
-static BLF find_filter(TDBB tdbb, SSHORT from, SSHORT to)
+static BLF find_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 {
 /**************************************
  *
@@ -2024,7 +2024,7 @@ static BLF find_filter(TDBB tdbb, SSHORT from, SSHORT to)
 }
 
 
-static blob_page* get_next_page(TDBB tdbb, blb* blob, WIN * window)
+static blob_page* get_next_page(thread_db* tdbb, blb* blob, WIN * window)
 {
 /**************************************
  *
@@ -2114,7 +2114,7 @@ static blob_page* get_next_page(TDBB tdbb, blb* blob, WIN * window)
 
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-static void get_replay_blob(TDBB tdbb, bid* blob_id)
+static void get_replay_blob(thread_db* tdbb, bid* blob_id)
 {
 /**************************************
  *
@@ -2150,7 +2150,7 @@ static void get_replay_blob(TDBB tdbb, bid* blob_id)
 #endif
 
 
-static void insert_page(TDBB tdbb, blb* blob)
+static void insert_page(thread_db* tdbb, blb* blob)
 {
 /**************************************
  *
@@ -2335,7 +2335,7 @@ static void slice_callback(SLICE arg, ULONG count, DSC * descriptors)
 		{
 			/* Note: cannot remove this GET_THREAD_DATA without api change
 			   to slice callback routines */
-			TDBB tdbb = GET_THREAD_DATA;
+			thread_db* tdbb = GET_THREAD_DATA;
 
 			const USHORT tmp_len = array_desc->dsc_length;
 			STR tmp_buffer = FB_NEW_RPT(*tdbb->tdbb_default, tmp_len) str();
@@ -2403,7 +2403,7 @@ static void slice_callback(SLICE arg, ULONG count, DSC * descriptors)
 }
 
 
-static blb* store_array(TDBB tdbb, jrd_tra* transaction, bid* blob_id)
+static blb* store_array(thread_db* tdbb, jrd_tra* transaction, bid* blob_id)
 {
 /**************************************
  *

@@ -107,7 +107,7 @@ static const UCHAR prot_blr[] = {
 
 
 
-SINT64 DYN_UTIL_gen_unique_id(TDBB		tdbb,
+SINT64 DYN_UTIL_gen_unique_id(thread_db*		tdbb,
 							  GBL		gbl,
 							  SSHORT	id,
 							  const SCHAR*	generator_name,
@@ -162,7 +162,7 @@ SINT64 DYN_UTIL_gen_unique_id(TDBB		tdbb,
 }
 
 
-void DYN_UTIL_generate_constraint_name( TDBB tdbb, GBL gbl, TEXT* buffer)
+void DYN_UTIL_generate_constraint_name( thread_db* tdbb, GBL gbl, TEXT* buffer)
 {
 /**************************************
  *
@@ -223,7 +223,7 @@ void DYN_UTIL_generate_constraint_name( TDBB tdbb, GBL gbl, TEXT* buffer)
 }
 
 
-void DYN_UTIL_generate_field_name( TDBB tdbb, GBL gbl, TEXT* buffer)
+void DYN_UTIL_generate_field_name( thread_db* tdbb, GBL gbl, TEXT* buffer)
 {
 /**************************************
  *
@@ -284,7 +284,7 @@ void DYN_UTIL_generate_field_name( TDBB tdbb, GBL gbl, TEXT* buffer)
 
 
 void DYN_UTIL_generate_field_position(
-									  TDBB tdbb,
+									  thread_db* tdbb,
 									  GBL gbl,
 									  const TEXT* relation_name,
 									  SLONG* field_pos)
@@ -339,7 +339,7 @@ void DYN_UTIL_generate_field_position(
 }
 
 
-void DYN_UTIL_generate_index_name(TDBB tdbb,
+void DYN_UTIL_generate_index_name(thread_db* tdbb,
 								  GBL gbl, TEXT* buffer, UCHAR verb)
 {
 /**************************************
@@ -406,7 +406,7 @@ void DYN_UTIL_generate_index_name(TDBB tdbb,
 }
 
 
-void DYN_UTIL_generate_trigger_name( TDBB tdbb, GBL gbl, TEXT* buffer)
+void DYN_UTIL_generate_trigger_name( thread_db* tdbb, GBL gbl, TEXT* buffer)
 {
 /**************************************
  *
@@ -465,7 +465,7 @@ void DYN_UTIL_generate_trigger_name( TDBB tdbb, GBL gbl, TEXT* buffer)
 }
 
 
-bool DYN_UTIL_get_prot(TDBB		tdbb,
+bool DYN_UTIL_get_prot(thread_db*		tdbb,
 						  GBL		gbl,
 						  const SCHAR*	rname,
 						  const SCHAR*	fname,
@@ -518,7 +518,7 @@ bool DYN_UTIL_get_prot(TDBB		tdbb,
 }
 
 
-void DYN_UTIL_store_check_constraints(TDBB	tdbb,
+void DYN_UTIL_store_check_constraints(thread_db*	tdbb,
 									  GBL	gbl,
 									  const TEXT*	constraint_name,
 									  const TEXT*	trigger_name)

@@ -26,7 +26,7 @@
 #include "../intl/cv_big5.h"
 #include "ld_proto.h"
 
-USHORT CVBIG5_big5_to_unicode(CSCONVERT obj,
+USHORT CVBIG5_big5_to_unicode(csconvert* obj,
 							  UCS2_CHAR *dest_ptr,
 							  USHORT dest_len,
 							  const UCHAR* src_ptr,
@@ -92,16 +92,16 @@ USHORT CVBIG5_big5_to_unicode(CSCONVERT obj,
 		*dest_ptr++ = ch;
 		dest_len -= sizeof(UCS2_CHAR);
 		src_len -= this_len;
-	};
+	}
 	if (src_len && !*err_code) {
 		*err_code = CS_TRUNCATION_ERROR;
-	};
+	}
 	*err_position = src_start - src_len;
 	return ((dest_ptr - start) * sizeof(*dest_ptr));
 }
 
 
-USHORT CVBIG5_unicode_to_big5(CSCONVERT obj,
+USHORT CVBIG5_unicode_to_big5(csconvert* obj,
 							  UCHAR *big5_str,
 							  USHORT big5_len,
 							  const UCS2_CHAR* unicode_str,
@@ -134,7 +134,7 @@ USHORT CVBIG5_unicode_to_big5(CSCONVERT obj,
 		if ((big5_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
 			break;
-		};
+		}
 
 		// int ???
 		const int tmp1 = big5_ch / 256;
@@ -144,7 +144,7 @@ USHORT CVBIG5_unicode_to_big5(CSCONVERT obj,
 			big5_len--;
 			unicode_len -= sizeof(*unicode_str);
 			continue;
-		};
+		}
 		if (big5_len < 2) {
 			*err_code = CS_TRUNCATION_ERROR;
 			break;
@@ -156,7 +156,7 @@ USHORT CVBIG5_unicode_to_big5(CSCONVERT obj,
 			*big5_str++ = tmp2;
 			unicode_len -= sizeof(*unicode_str);
 			big5_len -= 2;
-		};
+		}
 	}
 	if (unicode_len && !*err_code) {
 		*err_code = CS_TRUNCATION_ERROR;
@@ -231,7 +231,7 @@ USHORT CVBIG5_big5_byte2short(TEXTTYPE obj,
 			if (src_len < 2) {
 				*err_code = CS_BAD_INPUT;
 				break;
-			};
+			}
 			x = (*src << 8) + (*(src + 1));
 			src += 2;
 			src_len -= 2;
@@ -239,7 +239,7 @@ USHORT CVBIG5_big5_byte2short(TEXTTYPE obj,
 		else {
 			x = *src++;
 			src_len--;
-		};
+		}
 		*dst = x;	/* Assumes alignment */
 		++dst;
 		dst_len -= sizeof(USHORT);
@@ -270,7 +270,7 @@ SSHORT CVBIG5_big5_mbtowc(TEXTTYPE obj,
 	if (BIG51(*src)) {
 		if (src_len < 2) {
 			return -1;
-		};
+		}
 		if (wc)
 			*wc = (*src << 8) + (*(src + 1));
 		return 2;
@@ -279,6 +279,6 @@ SSHORT CVBIG5_big5_mbtowc(TEXTTYPE obj,
 		if (wc)
 			*wc = *src++;
 		return 1;
-	};
+	}
 }
 

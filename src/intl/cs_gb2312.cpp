@@ -1,6 +1,6 @@
 /*
- *	PROGRAM:	InterBase International support
- *	MODULE:		cs_gb2312.cpp
+ *	PROGRAM:		InterBase International support
+ *	MODULE:			cs_gb2312.cpp
  *	DESCRIPTION:	Character Set definitions for GB2312 family.
  *
  * The contents of this file are subject to the Interbase Public

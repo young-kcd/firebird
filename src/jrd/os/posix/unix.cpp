@@ -122,7 +122,7 @@
 #endif
 
 static void close_marker_file(TEXT *);
-static jrd_file* seek_file(jrd_file*, BDB, UINT64 *, ISC_STATUS *);
+static jrd_file* seek_file(jrd_file*, Buffer_desc*, UINT64 *, ISC_STATUS *);
 static jrd_file* setup_file(Database*, const TEXT*, USHORT, int);
 static bool unix_error(TEXT*, jrd_file*, ISC_STATUS, ISC_STATUS*);
 #if defined PREAD_PWRITE && !(defined HAVE_PREAD && defined HAVE_PWRITE)
@@ -678,7 +678,7 @@ jrd_file* PIO_open(Database* dbb,
 }
 
 
-bool PIO_read(jrd_file* file, BDB bdb, PAG page, ISC_STATUS* status_vector)
+bool PIO_read(jrd_file* file, Buffer_desc* bdb, PAG page, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -771,7 +771,7 @@ bool PIO_read(jrd_file* file, BDB bdb, PAG page, ISC_STATUS* status_vector)
 }
 
 
-bool PIO_write(jrd_file* file, BDB bdb, PAG page, ISC_STATUS* status_vector)
+bool PIO_write(jrd_file* file, Buffer_desc* bdb, PAG page, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -893,7 +893,7 @@ static void close_marker_file(TEXT * marker_filename)
 #endif
 
 
-static jrd_file* seek_file(jrd_file* file, BDB bdb, UINT64* offset,
+static jrd_file* seek_file(jrd_file* file, Buffer_desc* bdb, UINT64* offset,
 	ISC_STATUS* status_vector)
 {
 /**************************************
@@ -1025,7 +1025,7 @@ static jrd_file* setup_file(Database* dbb, const TEXT* file_name, USHORT file_le
 	dbb->dbb_flags |= DBB_exclusive;
 	if (!LCK_lock(NULL, lock, LCK_EX, LCK_NO_WAIT)) {
 		dbb->dbb_flags &= ~DBB_exclusive;
-		TDBB tdbb = GET_THREAD_DATA;
+		thread_db* tdbb = GET_THREAD_DATA;
 		
 		while (!LCK_lock(tdbb, lock, LCK_SW, -1)) {
 			tdbb->tdbb_status_vector[0] = 0; // Clean status vector from lock manager error code

@@ -29,7 +29,10 @@
 #define ExecAssert(x) x
 #endif //DEBUG_GDS_ALLOC
 
-int traRpbList::PushRpb(struct rpb *value) {
+// rpb_chain.h includes req.h => struct rpb.
+
+int traRpbList::PushRpb(rpb* value)
+{
 	if (value->rpb_relation->rel_view_rse ||	// this is view
 		value->rpb_relation->rel_file)			// this is external file
 	{
@@ -53,7 +56,8 @@ int traRpbList::PushRpb(struct rpb *value) {
 	return level;
 }
 
-bool traRpbList::PopRpb(struct rpb *value, int Level) {
+bool traRpbList::PopRpb(rpb* value, int Level)
+{
 	if (Level < 0) {
 		return false;
 	}
@@ -63,3 +67,4 @@ bool traRpbList::PopRpb(struct rpb *value, int Level) {
 	remove(pos);
 	return rc;
 }
+

@@ -167,32 +167,32 @@ typedef enum contents {
 	contents_above_threshold
 } CONTENTS;
 
-static SLONG add_node(TDBB, WIN *, IIB *, KEY *, SLONG *, SLONG *, SLONG *);
+static SLONG add_node(thread_db*, WIN *, IIB *, KEY *, SLONG *, SLONG *, SLONG *);
 static void complement_key(KEY *);
-static void compress(TDBB, DSC *, KEY *, USHORT, bool, bool, USHORT);
-static USHORT compress_root(TDBB, index_root_page*);
+static void compress(thread_db*, const dsc*, KEY *, USHORT, bool, bool, bool);
+static USHORT compress_root(thread_db*, index_root_page*);
 static void copy_key(const KEY*, KEY*);
-static CONTENTS delete_node(TDBB, WIN *, UCHAR *);
-static void delete_tree(TDBB, USHORT, USHORT, SLONG, SLONG);
-static DSC *eval(TDBB, jrd_nod*, DSC *, bool *);
-static SLONG fast_load(TDBB, jrd_rel*, IDX *, USHORT, SCB, SelectivityList&);
-static index_root_page* fetch_root(TDBB, WIN *, jrd_rel*);
+static CONTENTS delete_node(thread_db*, WIN *, UCHAR *);
+static void delete_tree(thread_db*, USHORT, USHORT, SLONG, SLONG);
+static DSC *eval(thread_db*, jrd_nod*, DSC *, bool *);
+static SLONG fast_load(thread_db*, jrd_rel*, IDX *, USHORT, SCB, SelectivityList&);
+static index_root_page* fetch_root(thread_db*, WIN *, jrd_rel*);
 static UCHAR *find_node_start_point(btree_page*, KEY *, UCHAR *, USHORT *, bool, bool, bool = false, SLONG = NO_VALUE);
 static UCHAR* find_area_start_point(btree_page*, const KEY*, UCHAR *, USHORT *, bool, bool, SLONG = NO_VALUE);
 static SLONG find_page(btree_page*, const KEY*, UCHAR, SLONG = NO_VALUE, bool = false);
-static CONTENTS garbage_collect(TDBB, WIN *, SLONG);
-static void generate_jump_nodes(TDBB, btree_page*, jumpNodeList*, USHORT, USHORT*, USHORT*, USHORT*);
-static SLONG insert_node(TDBB, WIN *, IIB *, KEY *, SLONG *, SLONG *, SLONG *);
+static CONTENTS garbage_collect(thread_db*, WIN *, SLONG);
+static void generate_jump_nodes(thread_db*, btree_page*, jumpNodeList*, USHORT, USHORT*, USHORT*, USHORT*);
+static SLONG insert_node(thread_db*, WIN *, IIB *, KEY *, SLONG *, SLONG *, SLONG *);
 static INT64_KEY make_int64_key(SINT64, SSHORT);
 #ifdef DEBUG_INDEXKEY
 static void print_int64_key(SINT64, SSHORT, INT64_KEY);
 #endif
-static CONTENTS remove_node(TDBB, IIB *, WIN *);
-static CONTENTS remove_leaf_node(TDBB, IIB *, WIN *);
-static bool scan(TDBB, UCHAR *, SBM *, USHORT, USHORT, KEY *, USHORT, SCHAR);
+static CONTENTS remove_node(thread_db*, IIB *, WIN *);
+static CONTENTS remove_leaf_node(thread_db*, IIB *, WIN *);
+static bool scan(thread_db*, UCHAR *, SBM *, USHORT, USHORT, KEY *, USHORT, SCHAR);
 static void update_selectivity(index_root_page*, USHORT, const SelectivityList&);
 
-USHORT BTR_all(TDBB    tdbb,
+USHORT BTR_all(thread_db*    tdbb,
 			   jrd_rel* relation,
 			   IDX**   start_buffer,
 			   IDX**   csb_idx,
@@ -246,7 +246,7 @@ USHORT BTR_all(TDBB    tdbb,
 }
 
 
-void BTR_create(TDBB tdbb,
+void BTR_create(thread_db* tdbb,
 				jrd_rel* relation,
 				IDX * idx,
 				USHORT key_length,
@@ -286,7 +286,7 @@ void BTR_create(TDBB tdbb,
 }
 
 
-void BTR_delete_index(TDBB tdbb, WIN * window, USHORT id)
+void BTR_delete_index(thread_db* tdbb, WIN * window, USHORT id)
 {
 /**************************************
  *
@@ -393,7 +393,7 @@ bool BTR_description(jrd_rel* relation, index_root_page* root, IDX * idx, SSHORT
 }
 
 
-void BTR_evaluate(TDBB tdbb, IRB retrieval, SBM * bitmap)
+void BTR_evaluate(thread_db* tdbb, IRB retrieval, SBM * bitmap)
 {
 /**************************************
  *
@@ -499,7 +499,7 @@ UCHAR *BTR_find_leaf(btree_page* bucket, KEY *key, UCHAR *value,
 }
 
 
-btree_page* BTR_find_page(TDBB tdbb,
+btree_page* BTR_find_page(thread_db* tdbb,
 				  IRB retrieval,
 				  WIN * window,
 				  IDX * idx, KEY * lower, KEY * upper, bool backwards)
@@ -530,14 +530,14 @@ btree_page* BTR_find_page(TDBB tdbb,
 						 retrieval->irb_value +
 						 retrieval->irb_desc.idx_count,
 						 &retrieval->irb_desc, upper,
-						 (USHORT) (retrieval->irb_generic & irb_starting));
+						 (retrieval->irb_generic & irb_starting) != 0);
 		}
 
 		if (retrieval->irb_lower_count) {
 			BTR_make_key(tdbb, retrieval->irb_lower_count,
 						 retrieval->irb_value,
 						 &retrieval->irb_desc, lower,
-						 (USHORT) (retrieval->irb_generic & irb_starting));
+						 (retrieval->irb_generic & irb_starting) != 0);
 		}
 	}
 
@@ -611,7 +611,7 @@ btree_page* BTR_find_page(TDBB tdbb,
 }
 
 
-void BTR_insert(TDBB tdbb, WIN * root_window, IIB * insertion)
+void BTR_insert(thread_db* tdbb, WIN * root_window, IIB * insertion)
 {
 /**************************************
  *
@@ -743,7 +743,7 @@ void BTR_insert(TDBB tdbb, WIN * root_window, IIB * insertion)
 }
 
 
-IDX_E BTR_key(TDBB tdbb, jrd_rel* relation, REC record, IDX * idx, KEY * key, idx_null_state * null_state)
+IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, REC record, IDX * idx, KEY * key, idx_null_state * null_state)
 {
 /**************************************
  *
@@ -807,7 +807,7 @@ IDX_E BTR_key(TDBB tdbb, jrd_rel* relation, REC record, IDX * idx, KEY * key, id
 			}
 
 			compress(tdbb, desc_ptr, key, tail->idx_itype, isNull,
-				(idx->idx_flags & idx_descending), (USHORT) FALSE);
+				(idx->idx_flags & idx_descending), false);
 		}
 		else {
 			UCHAR* p = key->key_data;
@@ -828,7 +828,7 @@ IDX_E BTR_key(TDBB tdbb, jrd_rel* relation, REC record, IDX * idx, KEY * key, id
 				}
 
 				compress(tdbb, desc_ptr, &temp, tail->idx_itype, isNull,
-					(idx->idx_flags & idx_descending), (USHORT) FALSE);
+					(idx->idx_flags & idx_descending), false);
 
 				const UCHAR* q = temp.key_data;
 				for (USHORT l = temp.key_length; l; --l, --stuff_count)	{
@@ -881,7 +881,7 @@ USHORT BTR_key_length(jrd_rel* relation, IDX * idx)
  **************************************/
 	USHORT length;
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	const fmt* format = MET_current(tdbb, relation);
 	idx::idx_repeat* tail = idx->idx_rpt;
@@ -1009,7 +1009,7 @@ UCHAR *BTR_last_node(btree_page* page, jrd_exp* expanded_page, BTX * expanded_no
 
 
 #ifdef SCROLLABLE_CURSORS
-btree_page* BTR_left_handoff(TDBB tdbb, WIN * window, btree_page* page, SSHORT lock_level)
+btree_page* BTR_left_handoff(thread_db* tdbb, WIN * window, btree_page* page, SSHORT lock_level)
 {
 /**************************************
  *
@@ -1051,9 +1051,7 @@ btree_page* BTR_left_handoff(TDBB tdbb, WIN * window, btree_page* page, SSHORT l
 			lock_level, pag_index);
 		sibling = page->btr_sibling;
 	}
-	WIN fix_win;
-	fix_win.win_page = original_page;
-	fix_win.win_flags = 0;
+	WIN fix_win(original_page);
 	btree_page* fix_page = (btree_page*) CCH_FETCH(tdbb, &fix_win, LCK_write, pag_index);
 
 	// if someone else already fixed it, just return
@@ -1072,7 +1070,7 @@ btree_page* BTR_left_handoff(TDBB tdbb, WIN * window, btree_page* page, SSHORT l
 #endif
 
 
-USHORT BTR_lookup(TDBB tdbb, jrd_rel* relation, USHORT id, IDX * buffer)
+USHORT BTR_lookup(thread_db* tdbb, jrd_rel* relation, USHORT id, IDX * buffer)
 {
 /**************************************
  *
@@ -1103,9 +1101,9 @@ USHORT BTR_lookup(TDBB tdbb, jrd_rel* relation, USHORT id, IDX * buffer)
 }
 
 
-void BTR_make_key(TDBB tdbb,
+void BTR_make_key(thread_db* tdbb,
 				  USHORT count,
-				  jrd_nod** exprs, IDX * idx, KEY * key, USHORT fuzzy)
+				  jrd_nod** exprs, IDX * idx, KEY * key, bool fuzzy)
 {
 /**************************************
  *
@@ -1118,9 +1116,8 @@ void BTR_make_key(TDBB tdbb,
  *	a vector of value expressions, and a place to put the key.
  *
  **************************************/
-	DSC *desc, temp_desc;
+	DSC temp_desc;
 	KEY temp;
-	bool isNull;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -1135,7 +1132,8 @@ void BTR_make_key(TDBB tdbb,
 	// If the index is a single segment index, don't sweat the compound
 	// stuff.
 	if (idx->idx_count == 1) {
-		desc = eval(tdbb, *exprs, &temp_desc, &isNull);
+		bool isNull;
+		const dsc* desc = eval(tdbb, *exprs, &temp_desc, &isNull);
 		compress(tdbb, desc, key, tail->idx_itype, isNull,
 			(idx->idx_flags & idx_descending), fuzzy);
 	}
@@ -1148,10 +1146,11 @@ void BTR_make_key(TDBB tdbb,
 			for (; stuff_count; --stuff_count) {
 				*p++ = 0;
 			}
-			desc = eval(tdbb, *exprs++, &temp_desc, &isNull);
+			bool isNull;
+			const dsc* desc = eval(tdbb, *exprs++, &temp_desc, &isNull);
 			compress(tdbb, desc, &temp, tail->idx_itype, isNull,
 				(idx->idx_flags & idx_descending),
-				(USHORT) ((n == count - 1) ? fuzzy : FALSE));
+				((n == count - 1) ? fuzzy : false));
 			const UCHAR* q = temp.key_data;
 			for (USHORT l = temp.key_length; l; --l, --stuff_count)
 			{
@@ -1171,7 +1170,7 @@ void BTR_make_key(TDBB tdbb,
 }
 
 
-bool BTR_next_index(TDBB tdbb,
+bool BTR_next_index(thread_db* tdbb,
 					   jrd_rel* relation, jrd_tra* transaction, IDX * idx, WIN * window)
 {
 /**************************************
@@ -1293,7 +1292,7 @@ UCHAR *BTR_previousNode(IndexNode * node, UCHAR * pointer,
 }
 
 
-void BTR_remove(TDBB tdbb, WIN * root_window, IIB * insertion)
+void BTR_remove(thread_db* tdbb, WIN * root_window, IIB * insertion)
 {
 /**************************************
  *
@@ -1373,7 +1372,7 @@ void BTR_remove(TDBB tdbb, WIN * root_window, IIB * insertion)
 }
 
 
-void BTR_reserve_slot(TDBB tdbb, jrd_rel* relation, jrd_tra* transaction, IDX * idx)
+void BTR_reserve_slot(thread_db* tdbb, jrd_rel* relation, jrd_tra* transaction, IDX * idx)
 {
 /**************************************
  *
@@ -1487,7 +1486,7 @@ retry:
 }
 
 
-void BTR_selectivity(TDBB tdbb, jrd_rel* relation, USHORT id, SelectivityList& selectivity)
+void BTR_selectivity(thread_db* tdbb, jrd_rel* relation, USHORT id, SelectivityList& selectivity)
 {
 /**************************************
  *
@@ -1682,7 +1681,7 @@ void BTR_selectivity(TDBB tdbb, jrd_rel* relation, USHORT id, SelectivityList& s
 }
 
 
-static SLONG add_node(TDBB tdbb,
+static SLONG add_node(thread_db* tdbb,
 					  WIN * window,
 					  IIB * insertion,
 					  KEY * new_key,
@@ -1817,11 +1816,11 @@ static void complement_key(KEY * key)
 }
 
 
-static void compress(TDBB tdbb,
-					 DSC * desc,
-					 KEY * key,
+static void compress(thread_db* tdbb,
+					 const dsc* desc,
+					 KEY* key,
 					 USHORT itype,
-					 bool isNull, bool descending, USHORT fuzzy)
+					 bool isNull, bool descending, bool fuzzy)
 {
 /**************************************
  *
@@ -1986,8 +1985,8 @@ static void compress(TDBB tdbb,
 		temp_is_negative = (temp.temp_sint64 < 0);
 #ifdef DEBUG_INDEXKEY
 		ib_fprintf(ib_stderr, "TIMESTAMP2: %d:%u ",
-				   ((SLONG *) desc->dsc_address)[0],
-				   ((ULONG *) desc->dsc_address)[1]);
+				   ((const SLONG*) desc->dsc_address)[0],
+				   ((const ULONG*) desc->dsc_address)[1]);
 		ib_fprintf(ib_stderr, "TIMESTAMP2: %20" QUADFORMAT "d ",
 				   temp.temp_sint64);
 #endif
@@ -2015,7 +2014,7 @@ static void compress(TDBB tdbb,
 		temp_copy_length = sizeof(temp.temp_int64_key.d_part);
 		temp_is_negative = (temp.temp_int64_key.d_part < 0);
 #ifdef DEBUG_INDEXKEY
-		print_int64_key(*(SINT64 *) desc->dsc_address,
+		print_int64_key(*(const SINT64*) desc->dsc_address,
 			desc->dsc_scale, temp.temp_int64_key);
 #endif
 	}
@@ -2148,9 +2147,8 @@ static void compress(TDBB tdbb,
 	key->key_length = (p - key->key_data) + 1;
 #ifdef DEBUG_INDEXKEY
 	{
-		USHORT i;
 		ib_fprintf(ib_stderr, "KEY: length: %d Bytes: ", key->key_length);
-		for (i = 0; i < key->key_length; i++)
+		for (int i = 0; i < key->key_length; i++)
 			ib_fprintf(ib_stderr, "%02x ", key->key_data[i]);
 		ib_fprintf(ib_stderr, "\n");
 	}
@@ -2158,7 +2156,7 @@ static void compress(TDBB tdbb,
 }
 
 
-static USHORT compress_root(TDBB tdbb, index_root_page* page)
+static USHORT compress_root(thread_db* tdbb, index_root_page* page)
 {
 /**************************************
  *
@@ -2224,7 +2222,7 @@ static void copy_key(const KEY* in, KEY* out)
 }
 
 
-static CONTENTS delete_node(TDBB tdbb, WIN *window, UCHAR *pointer)
+static CONTENTS delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
 {
 /**************************************
  *
@@ -2402,7 +2400,7 @@ static CONTENTS delete_node(TDBB tdbb, WIN *window, UCHAR *pointer)
 }
 
 
-static void delete_tree(TDBB tdbb,
+static void delete_tree(thread_db* tdbb,
 						USHORT rel_id, USHORT idx_id, SLONG next, SLONG prior)
 {
 /**************************************
@@ -2468,7 +2466,7 @@ static void delete_tree(TDBB tdbb,
 }
 
 
-static DSC *eval(TDBB tdbb, jrd_nod* node, DSC * temp, bool *isNull)
+static DSC *eval(thread_db* tdbb, jrd_nod* node, DSC * temp, bool *isNull)
 {
 /**************************************
  *
@@ -2505,7 +2503,7 @@ static DSC *eval(TDBB tdbb, jrd_nod* node, DSC * temp, bool *isNull)
 }
 
 
-static SLONG fast_load(TDBB tdbb,
+static SLONG fast_load(thread_db* tdbb,
 					   jrd_rel* relation,
 					   IDX * idx,
 					   USHORT key_length,
@@ -3302,7 +3300,7 @@ static SLONG fast_load(TDBB tdbb,
 }
 
 
-static index_root_page* fetch_root(TDBB tdbb, WIN * window, jrd_rel* relation)
+static index_root_page* fetch_root(thread_db* tdbb, WIN * window, jrd_rel* relation)
 {
 /**************************************
  *
@@ -4053,7 +4051,7 @@ static SLONG find_page(btree_page* bucket, const KEY* key, UCHAR idx_flags, SLON
 }
 
 
-static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
+static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_number)
 {
 /**************************************
  *
@@ -4624,7 +4622,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 }
 
 
-static void generate_jump_nodes(TDBB tdbb, btree_page* page, jumpNodeList* jumpNodes,
+static void generate_jump_nodes(thread_db* tdbb, btree_page* page, jumpNodeList* jumpNodes,
 								USHORT excludeOffset, USHORT* jumpersSize,  
 								USHORT* splitIndex, USHORT* splitPrefix)
 {
@@ -4776,7 +4774,7 @@ static void generate_jump_nodes(TDBB tdbb, btree_page* page, jumpNodeList* jumpN
 }
 
 
-static SLONG insert_node(TDBB tdbb,
+static SLONG insert_node(thread_db* tdbb,
 						 WIN * window,
 						 IIB * insertion,
 						 KEY * new_key,
@@ -5454,7 +5452,7 @@ static void print_int64_key(SINT64 value, SSHORT scale, INT64_KEY key)
 #endif /* DEBUG_INDEXKEY */
 
 
-static CONTENTS remove_node(TDBB tdbb, IIB * insertion, WIN * window)
+static CONTENTS remove_node(thread_db* tdbb, IIB * insertion, WIN * window)
 {
 /**************************************
  *
@@ -5528,7 +5526,7 @@ static CONTENTS remove_node(TDBB tdbb, IIB * insertion, WIN * window)
 }
 
 
-static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
+static CONTENTS remove_leaf_node(thread_db* tdbb, IIB * insertion, WIN * window)
 {
 /**************************************
  *
@@ -5675,7 +5673,7 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 }
 
 
-static bool scan(TDBB tdbb, UCHAR *pointer, SBM *bitmap, USHORT to_segment,
+static bool scan(thread_db* tdbb, UCHAR *pointer, SBM *bitmap, USHORT to_segment,
 				 USHORT prefix, KEY *key, USHORT flag, SCHAR page_flags)
 {
 /**************************************

@@ -75,7 +75,7 @@ void SDW_add(const TEXT* file_name, USHORT shadow_number, USHORT file_flags)
  *	Add a brand new shadowing file to the database.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = GET_DBB;
 
 // Verify database file path against DatabaseAccess entry of firebird.conf
@@ -122,7 +122,7 @@ int SDW_add_file(const TEXT* file_name, SLONG start, USHORT shadow_number)
  *	Return the sequence number for the new file.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 /* Find the file to be extended */
@@ -196,7 +196,7 @@ int SDW_add_file(const TEXT* file_name, SLONG start, USHORT shadow_number)
 	header->hdr_next_page = 0;
 
 /* fool PIO_write into writing the scratch page into the correct place */
-	bdb temp_bdb;
+	Buffer_desc temp_bdb;
 	temp_bdb.bdb_page = next->fil_min_page;
 	temp_bdb.bdb_dbb = dbb;
 	temp_bdb.bdb_buffer = (PAG) header;
@@ -294,7 +294,7 @@ void SDW_check(void)
  *
  **************************************/
 	Database* dbb = GET_DBB;
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 /* first get rid of any shadows that need to be 
    deleted or shutdown; deleted shadows must also
@@ -360,7 +360,7 @@ bool SDW_check_conditional(void)
  *	if so update meta data and return true
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
@@ -446,7 +446,7 @@ void SDW_dump_pages(void)
  *	to all unwritten shadow files.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 	gds__log("conditional shadow dumped for database %s",
 			 dbb->dbb_file->fil_string);
@@ -527,7 +527,7 @@ void SDW_get_shadows(void)
  *	defined.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
@@ -574,7 +574,7 @@ void SDW_init(bool activate, bool delete_)
  *	to use as a shadow.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
@@ -674,7 +674,7 @@ void SDW_notify(void)
  *	a shadow added.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
@@ -725,7 +725,7 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
  * Functional description
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = GET_DBB;
 
 	if (file != dbb->dbb_file)
@@ -893,7 +893,7 @@ void SDW_start(
 	SCHAR expanded_name[MAXPATHLEN];
 	volatile USHORT header_fetched = 0;
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 /* check that this shadow has not already been started,
@@ -943,7 +943,7 @@ void SDW_start(
 
 	shadow = NULL;
 	SLONG* const spare_buffer =
-		FB_NEW(*tdbb->tdbb_default) SLONG[(dbb->dbb_page_size + MIN_PAGE_SIZE)/sizeof(SLONG)];
+		FB_NEW(*tdbb->tdbb_default) SLONG[(dbb->dbb_page_size + MIN_PAGE_SIZE) / sizeof(SLONG)];
 	SLONG* spare_page = reinterpret_cast<SLONG*>((SCHAR *)
 											  (((U_IPTR)
 												spare_buffer + MIN_PAGE_SIZE -
@@ -1092,7 +1092,7 @@ int SDW_start_shadowing(void* ast_object)
 
 /* Since this routine will be called asynchronously, we must establish
    a thread context. */
-	struct tdbb thd_context, *tdbb;
+	thread_db thd_context, *tdbb;
 	SET_THREAD_DATA;
 
 	tdbb->tdbb_database = new_dbb;
@@ -1128,7 +1128,7 @@ static void activate_shadow(void)
  *	Change a shadow into a database.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
@@ -1209,7 +1209,7 @@ static bool check_for_file(const SCHAR* name, USHORT length)
  *
  **************************************/
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 	try {
@@ -1241,7 +1241,7 @@ static void check_if_got_ast(jrd_file* file)
  *	a shadow update
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
@@ -1273,7 +1273,7 @@ static void copy_header(void)
  *	the name of the extend file.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 

@@ -44,21 +44,21 @@
 class TextType
 {
 public:
-	typedef bool   (*FPTR_CONTAINS)(TDBB tdbb, TextType ttype, const UCHAR* s, SSHORT ls, const UCHAR* p, SSHORT lp);
-	typedef void*  (*FPTR_CONTAINS_CREATE)(TDBB tdbb, TextType ttype, const UCHAR* p, SSHORT lp);
+	typedef bool   (*FPTR_CONTAINS)(thread_db* tdbb, TextType ttype, const UCHAR* s, SSHORT ls, const UCHAR* p, SSHORT lp);
+	typedef void*  (*FPTR_CONTAINS_CREATE)(thread_db* tdbb, TextType ttype, const UCHAR* p, SSHORT lp);
 	typedef void   (*FPTR_CONTAINS_DESTROY)(void* object);
 	typedef void   (*FPTR_CONTAINS_RESET)(void* object);
-	typedef bool   (*FPTR_CONTAINS_PROCESS)(TDBB tdbb, TextType ttype, void* object, const UCHAR* s, SSHORT ls);
+	typedef bool   (*FPTR_CONTAINS_PROCESS)(thread_db* tdbb, TextType ttype, void* object, const UCHAR* s, SSHORT ls);
 	typedef bool   (*FPTR_CONTAINS_RESULT)(void* object);
 
-	typedef bool   (*FPTR_LIKE)(TDBB tdbb, TextType ttype, const UCHAR* s, SSHORT ls, const UCHAR* p, SSHORT lp, UCS2_CHAR escape);
-	typedef void*  (*FPTR_LIKE_CREATE)(TDBB tdbb, TextType ttype, const UCHAR* p, SSHORT lp, UCS2_CHAR escape);
+	typedef bool   (*FPTR_LIKE)(thread_db* tdbb, TextType ttype, const UCHAR* s, SSHORT ls, const UCHAR* p, SSHORT lp, UCS2_CHAR escape);
+	typedef void*  (*FPTR_LIKE_CREATE)(thread_db* tdbb, TextType ttype, const UCHAR* p, SSHORT lp, UCS2_CHAR escape);
 	typedef void   (*FPTR_LIKE_DESTROY)(void* object);
 	typedef void   (*FPTR_LIKE_RESET)(void* object);
-	typedef bool   (*FPTR_LIKE_PROCESS)(TDBB tdbb, TextType ttype, void* object, const UCHAR* s, SSHORT ls);
+	typedef bool   (*FPTR_LIKE_PROCESS)(thread_db* tdbb, TextType ttype, void* object, const UCHAR* s, SSHORT ls);
 	typedef bool   (*FPTR_LIKE_RESULT)(void* object);
 
-	TextType(struct texttype *_tt) : tt(_tt) {}
+	TextType(texttype *_tt) : tt(_tt) {}
 
 	// copy constructor
 	TextType(const TextType& obj) : tt(obj.tt) {}
@@ -133,14 +133,14 @@ public:
 		return (*tt->texttype_fn_mbtowc)(tt, a, b, c);
 	}
 
-	bool like(struct tdbb* tdbb, const UCHAR* s, SSHORT sl, const UCHAR* p, SSHORT pl, SSHORT escape)
+	bool like(thread_db* tdbb, const UCHAR* s, SSHORT sl, const UCHAR* p, SSHORT pl, SSHORT escape)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_like);
 		return reinterpret_cast<FPTR_LIKE>(tt->texttype_fn_like)(tdbb, tt, s, sl, p, pl, escape);
 	}
 	
-	void *like_create(struct tdbb* tdbb, const UCHAR* p, SSHORT pl, SSHORT escape)
+	void *like_create(thread_db* tdbb, const UCHAR* p, SSHORT pl, SSHORT escape)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_like_create);
@@ -168,21 +168,21 @@ public:
 		reinterpret_cast<FPTR_LIKE_DESTROY>(tt->texttype_fn_like_destroy)(object);
 	}
 	
-	bool like_process(struct tdbb* tdbb, void* object, const UCHAR* s, SSHORT sl)
+	bool like_process(thread_db* tdbb, void* object, const UCHAR* s, SSHORT sl)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_like_process);
 		return reinterpret_cast<FPTR_LIKE_PROCESS>(tt->texttype_fn_like_process)(tdbb, tt, object, s, sl);
 	}
 	
-	bool contains(struct tdbb* tdbb, const UCHAR* s, SSHORT sl, const UCHAR* p, SSHORT pl)
+	bool contains(thread_db* tdbb, const UCHAR* s, SSHORT sl, const UCHAR* p, SSHORT pl)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_contains);
 		return reinterpret_cast<FPTR_CONTAINS>(tt->texttype_fn_contains)(tdbb, tt, s, sl, p, pl);
 	}
 	
-	void *contains_create(struct tdbb* tdbb, const UCHAR* p, SSHORT pl)
+	void *contains_create(thread_db* tdbb, const UCHAR* p, SSHORT pl)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_contains_create);
@@ -210,24 +210,24 @@ public:
 		reinterpret_cast<FPTR_CONTAINS_DESTROY>(tt->texttype_fn_contains_destroy)(object);
 	}
 	
-	bool contains_process(struct tdbb* tdbb, void* object, const UCHAR* s, SSHORT sl)
+	bool contains_process(thread_db* tdbb, void* object, const UCHAR* s, SSHORT sl)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_contains_process);
 		return reinterpret_cast<FPTR_CONTAINS_PROCESS>(tt->texttype_fn_contains_process)(tdbb, tt, object, s, sl);
 	}
 	
-	USHORT matches(struct tdbb* tdbb, const UCHAR* a, SSHORT b, const UCHAR* c, SSHORT d)
+	USHORT matches(thread_db* tdbb, const UCHAR* a, SSHORT b, const UCHAR* c, SSHORT d)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_matches);
 		return (*(reinterpret_cast<
-					USHORT (*)(struct tdbb*, TextType, const UCHAR*, short, const UCHAR*, short)>
+					USHORT (*)(thread_db*, TextType, const UCHAR*, short, const UCHAR*, short)>
 						(tt->texttype_fn_matches)))
 							(tdbb, tt, a, b, c, d);
 	}
 
-	USHORT sleuth_check(struct tdbb* tdbb, USHORT a,
+	USHORT sleuth_check(thread_db* tdbb, USHORT a,
 								const UCHAR* b,
 								USHORT c,
 								const UCHAR* d,
@@ -236,12 +236,12 @@ public:
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_sleuth_check);
 		return (*(reinterpret_cast<
-					USHORT(*)(struct tdbb*, TextType, USHORT, const UCHAR*, USHORT, const UCHAR*, USHORT)>
+					USHORT(*)(thread_db*, TextType, USHORT, const UCHAR*, USHORT, const UCHAR*, USHORT)>
 						(tt->texttype_fn_sleuth_check)))
 							(tdbb, tt, a, b, c, d, e);
 	}
 	
-	USHORT sleuth_merge(struct tdbb* tdbb, const UCHAR* a,
+	USHORT sleuth_merge(thread_db* tdbb, const UCHAR* a,
 								USHORT b,
 								const UCHAR* c,
 								USHORT d,
@@ -251,7 +251,7 @@ public:
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_sleuth_merge);
 		return (*(reinterpret_cast<
-					USHORT(*)(struct tdbb*, TextType, const UCHAR*, USHORT, const UCHAR*, USHORT, UCHAR*, USHORT)>
+					USHORT(*)(thread_db*, TextType, const UCHAR*, USHORT, const UCHAR*, USHORT, UCHAR*, USHORT)>
 						(tt->texttype_fn_sleuth_merge)))
 							(tdbb, tt, a, b, c, d, e, f);
 	}
@@ -287,10 +287,10 @@ public:
 		return tt->texttype_bytes_per_char; 
 	}
 
-	struct texttype *getStruct() const { return tt; }
+	texttype* getStruct() const { return tt; }
 
 private:
-	struct texttype *tt;
+	texttype* tt;
 };
 
 static inline bool operator ==(const TextType& tt1, const TextType& tt2) {
@@ -305,7 +305,7 @@ static inline bool operator !=(const TextType& tt1, const TextType& tt2)
 class CsConvert
 { 
 public:
-	CsConvert(struct csconvert *_cnvt) : cnvt(_cnvt) {}
+	CsConvert(csconvert* _cnvt) : cnvt(_cnvt) {}
 	CsConvert(const CsConvert& obj) : cnvt(obj.cnvt) {}
 
 	// CVC: Beware of this can of worms: csconvert_convert gets assigned
@@ -328,10 +328,10 @@ public:
 	CHARSET_ID getFromCS() const { fb_assert(cnvt); return cnvt->csconvert_from; }
 	CHARSET_ID getToCS() const { fb_assert(cnvt); return cnvt->csconvert_to; }
 
-	struct csconvert *getStruct() const { return cnvt; }
+	csconvert* getStruct() const { return cnvt; }
 
 private:
-	struct csconvert *cnvt;
+	csconvert* cnvt;
 };
 
 static inline bool operator ==(const CsConvert& cv1, const CsConvert& cv2)
@@ -347,7 +347,7 @@ static inline bool operator !=(const CsConvert& cv1, const CsConvert& cv2)
 class CharSet
 {
 public:
-	CharSet(struct charset *_cs) : cs(_cs) {}
+	CharSet(charset* _cs) : cs(_cs) {}
 	CharSet(const CharSet &obj) : cs(obj.cs) {};
 
 	CHARSET_ID getId() const { fb_assert(cs); return cs->charset_id; }
@@ -361,10 +361,10 @@ public:
 
 	CsConvert getConvFromUnicode() { fb_assert(cs); return &cs->charset_from_unicode; }
 
-	struct charset* getStruct() const { return cs; }
+	charset* getStruct() const { return cs; }
 
 private:
-	struct charset *cs;
+	charset* cs;
 };
 
 static inline bool operator ==(const CharSet& cs1, const CharSet& cs2)

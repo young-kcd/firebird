@@ -79,19 +79,19 @@ DATABASE DB = FILENAME "ODS.RDB";
 #define HIGH_WATER(x)	((SSHORT) sizeof (data_page) + (SSHORT) sizeof (data_page::dpg_repeat) * (x - 1))
 #define SPACE_FUDGE	RHDF_SIZE
 
-static void delete_tail(TDBB, RHDF, USHORT);
-static void fragment(TDBB, RPB *, SSHORT, Dcc*, SSHORT, jrd_tra*);
-static void extend_relation(TDBB, jrd_rel*, WIN *);
-static UCHAR* find_space(TDBB, RPB *, SSHORT, LLS *, REC, USHORT);
+static void delete_tail(thread_db*, RHDF, USHORT);
+static void fragment(thread_db*, RPB *, SSHORT, Dcc*, SSHORT, jrd_tra*);
+static void extend_relation(thread_db*, jrd_rel*, WIN *);
+static UCHAR* find_space(thread_db*, RPB *, SSHORT, LLS *, REC, USHORT);
 static bool get_header(WIN *, SSHORT, RPB *);
-static pointer_page* get_pointer_page(TDBB, jrd_rel*, WIN *, USHORT, USHORT);
-static RHD locate_space(TDBB, RPB *, SSHORT, LLS *, REC, USHORT);
-static void mark_full(TDBB, RPB *);
+static pointer_page* get_pointer_page(thread_db*, jrd_rel*, WIN *, USHORT, USHORT);
+static RHD locate_space(thread_db*, RPB *, SSHORT, LLS *, REC, USHORT);
+static void mark_full(thread_db*, RPB *);
 static void release_dcc(Dcc*);
-static void store_big_record(TDBB, RPB *, LLS *, Dcc*, USHORT);
+static void store_big_record(thread_db*, RPB *, LLS *, Dcc*, USHORT);
 
 
-PAG DPM_allocate(TDBB tdbb, WIN* window)
+PAG DPM_allocate(thread_db* tdbb, WIN* window)
 {
 /**************************************
  *
@@ -120,7 +120,7 @@ PAG DPM_allocate(TDBB tdbb, WIN* window)
 }
 
 
-void DPM_backout( TDBB tdbb, RPB * rpb)
+void DPM_backout( thread_db* tdbb, RPB * rpb)
 {
 /**************************************
  *
@@ -188,7 +188,7 @@ void DPM_backout( TDBB tdbb, RPB * rpb)
 }
 
 
-int DPM_chain( TDBB tdbb, RPB * org_rpb, RPB * new_rpb)
+int DPM_chain( thread_db* tdbb, RPB * org_rpb, RPB * new_rpb)
 {
 /**************************************
  *
@@ -397,7 +397,7 @@ int DPM_chain( TDBB tdbb, RPB * org_rpb, RPB * new_rpb)
 }
 
 
-int DPM_compress( TDBB tdbb, data_page* page)
+int DPM_compress( thread_db* tdbb, data_page* page)
 {
 /**************************************
  *
@@ -449,7 +449,7 @@ int DPM_compress( TDBB tdbb, data_page* page)
 }
 
 
-void DPM_create_relation( TDBB tdbb, jrd_rel* relation)
+void DPM_create_relation( thread_db* tdbb, jrd_rel* relation)
 {
 /**************************************
  *
@@ -516,7 +516,7 @@ void DPM_create_relation( TDBB tdbb, jrd_rel* relation)
 }
 
 
-SLONG DPM_data_pages(TDBB tdbb, jrd_rel* relation)
+SLONG DPM_data_pages(thread_db* tdbb, jrd_rel* relation)
 {
 /**************************************
  *
@@ -575,7 +575,7 @@ SLONG DPM_data_pages(TDBB tdbb, jrd_rel* relation)
 }
 
 
-void DPM_delete( TDBB tdbb, RPB * rpb, SLONG prior_page)
+void DPM_delete( thread_db* tdbb, RPB * rpb, SLONG prior_page)
 {
 /**************************************
  *
@@ -767,7 +767,7 @@ retry_after_latch_timeout:
 }
 
 
-void DPM_delete_relation( TDBB tdbb, jrd_rel* relation)
+void DPM_delete_relation( thread_db* tdbb, jrd_rel* relation)
 {
 /**************************************
  *
@@ -860,7 +860,7 @@ void DPM_delete_relation( TDBB tdbb, jrd_rel* relation)
 }
 
 
-bool DPM_fetch(TDBB tdbb, RPB * rpb, USHORT lock)
+bool DPM_fetch(thread_db* tdbb, RPB * rpb, USHORT lock)
 {
 /**************************************
  *
@@ -910,7 +910,7 @@ bool DPM_fetch(TDBB tdbb, RPB * rpb, USHORT lock)
 }
 
 
-SSHORT DPM_fetch_back(TDBB tdbb,
+SSHORT DPM_fetch_back(thread_db* tdbb,
 					  RPB * rpb, USHORT lock, SSHORT latch_wait)
 {
 /**************************************
@@ -994,7 +994,7 @@ SSHORT DPM_fetch_back(TDBB tdbb,
 }
 
 
-void DPM_fetch_fragment( TDBB tdbb, RPB * rpb, USHORT lock)
+void DPM_fetch_fragment( thread_db* tdbb, RPB * rpb, USHORT lock)
 {
 /**************************************
  *
@@ -1044,7 +1044,7 @@ void DPM_fetch_fragment( TDBB tdbb, RPB * rpb, USHORT lock)
 }
 
 
-SINT64 DPM_gen_id(TDBB tdbb, SLONG generator, USHORT initialize, SINT64 val)
+SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, USHORT initialize, SINT64 val)
 {
 /**************************************
  *
@@ -1178,7 +1178,7 @@ SINT64 DPM_gen_id(TDBB tdbb, SLONG generator, USHORT initialize, SINT64 val)
 }
 
 
-int DPM_get( TDBB tdbb, RPB * rpb, SSHORT lock_type)
+int DPM_get( thread_db* tdbb, RPB * rpb, SSHORT lock_type)
 {
 /**************************************
  *
@@ -1246,7 +1246,7 @@ int DPM_get( TDBB tdbb, RPB * rpb, SSHORT lock_type)
 }
 
 
-ULONG DPM_get_blob(TDBB tdbb,
+ULONG DPM_get_blob(thread_db* tdbb,
 				   blb* blob,
 				   ULONG record_number, USHORT delete_flag, SLONG prior_page)
 {
@@ -1409,7 +1409,7 @@ punt:
 }
 
 
-bool DPM_next(TDBB tdbb,
+bool DPM_next(thread_db* tdbb,
 				 RPB * rpb,
 				 USHORT lock_type, bool backwards, bool onepage)
 {
@@ -1626,7 +1626,7 @@ bool DPM_next(TDBB tdbb,
 
 
 void DPM_pages(
-			   TDBB tdbb, SSHORT rel_id, int type, ULONG sequence, SLONG page)
+			   thread_db* tdbb, SSHORT rel_id, int type, ULONG sequence, SLONG page)
 {
 /**************************************
  *
@@ -1664,7 +1664,7 @@ void DPM_pages(
 
 
 #ifdef SUPERSERVER_V2
-SLONG DPM_prefetch_bitmap(TDBB tdbb, jrd_rel* relation, SBM bitmap, SLONG number)
+SLONG DPM_prefetch_bitmap(thread_db* tdbb, jrd_rel* relation, SBM bitmap, SLONG number)
 {
 /**************************************
  *
@@ -1728,7 +1728,7 @@ SLONG DPM_prefetch_bitmap(TDBB tdbb, jrd_rel* relation, SBM bitmap, SLONG number
 #endif
 
 
-void DPM_scan_pages( TDBB tdbb)
+void DPM_scan_pages( thread_db* tdbb)
 {
 /**************************************
  *
@@ -1808,7 +1808,7 @@ void DPM_scan_pages( TDBB tdbb)
 }
 
 
-void DPM_store( TDBB tdbb, RPB * rpb, LLS * stack, USHORT type)
+void DPM_store( thread_db* tdbb, RPB * rpb, LLS * stack, USHORT type)
 {
 /**************************************
  *
@@ -1893,7 +1893,7 @@ void DPM_store( TDBB tdbb, RPB * rpb, LLS * stack, USHORT type)
 }
 
 
-SLONG DPM_store_blob(TDBB tdbb, blb* blob, REC record)
+SLONG DPM_store_blob(thread_db* tdbb, blb* blob, REC record)
 {
 /**************************************
  *
@@ -1910,7 +1910,7 @@ SLONG DPM_store_blob(TDBB tdbb, blb* blob, REC record)
 	CHECK_DBB(dbb);
 
 	RPB rpb;
-	rpb.rpb_window.win_flags = 0;
+	//rpb.rpb_window.win_flags = 0; redundant.
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES)
@@ -1990,7 +1990,7 @@ SLONG DPM_store_blob(TDBB tdbb, blb* blob, REC record)
 }
 
 
-void DPM_rewrite_header( TDBB tdbb, RPB * rpb)
+void DPM_rewrite_header( thread_db* tdbb, RPB * rpb)
 {
 /**************************************
  *
@@ -2041,7 +2041,7 @@ void DPM_rewrite_header( TDBB tdbb, RPB * rpb)
 }
 
 
-void DPM_update( TDBB tdbb, RPB * rpb, LLS * stack, jrd_tra* transaction)
+void DPM_update( thread_db* tdbb, RPB * rpb, LLS * stack, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -2164,7 +2164,7 @@ void DPM_update( TDBB tdbb, RPB * rpb, LLS * stack, jrd_tra* transaction)
 }
 
 
-static void delete_tail( TDBB tdbb, RHDF header, USHORT length)
+static void delete_tail( thread_db* tdbb, RHDF header, USHORT length)
 {
 /**************************************
  *
@@ -2238,7 +2238,7 @@ static void delete_tail( TDBB tdbb, RHDF header, USHORT length)
 
 
 static void fragment(
-					 TDBB tdbb,
+					 thread_db* tdbb,
 					 RPB * rpb,
 					 SSHORT available_space,
 					 Dcc* dcc, SSHORT length, jrd_tra* transaction)
@@ -2449,7 +2449,7 @@ static void fragment(
 }
 
 
-static void extend_relation( TDBB tdbb, jrd_rel* relation, WIN * window)
+static void extend_relation( thread_db* tdbb, jrd_rel* relation, WIN * window)
 {
 /**************************************
  *
@@ -2604,7 +2604,7 @@ static void extend_relation( TDBB tdbb, jrd_rel* relation, WIN * window)
 }
 
 
-static UCHAR* find_space(TDBB	tdbb,
+static UCHAR* find_space(thread_db*	tdbb,
 						 RPB*	rpb,
 						 SSHORT	size,
 						 LLS*	stack,
@@ -2764,7 +2764,7 @@ static bool get_header( WIN * window, SSHORT line, RPB * rpb)
 
 
 static pointer_page* get_pointer_page(
-							TDBB tdbb,
+							thread_db* tdbb,
 							jrd_rel* relation,
 							WIN * window, USHORT sequence, USHORT lock)
 {
@@ -2819,7 +2819,7 @@ static pointer_page* get_pointer_page(
 
 
 static RHD locate_space(
-						TDBB tdbb,
+						thread_db* tdbb,
 						RPB * rpb,
 						SSHORT size, LLS * stack, REC record, USHORT type)
 {
@@ -2932,7 +2932,7 @@ static RHD locate_space(
 }
 
 
-static void mark_full( TDBB tdbb, RPB * rpb)
+static void mark_full( thread_db* tdbb, RPB * rpb)
 {
 /**************************************
  *
@@ -3057,7 +3057,7 @@ static void release_dcc( Dcc* dcc)
 
 
 static void store_big_record(
-							 TDBB tdbb,
+							 thread_db* tdbb,
 							 RPB * rpb,
 							 LLS * stack, Dcc* head_dcc, USHORT size)
 {

@@ -61,11 +61,9 @@ No errors
 #define UNICODE_INDEX(u)	(((u) % 256) + from_unicode_map [((u) / 256)])
 #define UNICODE_LOOKUP(u)	from_unicode_mapping_array [ UNICODE_INDEX(u) ]
 
-main()
+int main()
 {
-	unsigned short uch, uch2;
-	int i, j, k;
-	unsigned char ch2;
+	int i;
 
 	if (sizeof(to_unicode_map) != 256 * sizeof(to_unicode_map[0]))
 		ib_printf("The to_unicode_map is too small! %d entries!\n",
@@ -76,16 +74,17 @@ main()
 				  sizeof(from_unicode_map) / sizeof(from_unicode_map[0]));
 
 	for (i = 0; i <= 255; i++) {
-		uch = to_unicode_map[i];
+		const unsigned short uch = to_unicode_map[i];
 		if (uch == CANT_MAP_CHARACTER)
 			continue;
-		ch2 = UNICODE_LOOKUP(uch);
+		const unsigned char ch2 = UNICODE_LOOKUP(uch);
 		if (ch2 != i) {
 			ib_printf
 				("Mapping error: Character %02x -> Unicode %04x (index %3d) -> Char %02x\n",
 				 i, uch, UNICODE_INDEX(uch), ch2);
 
 			/* Find the Character in the from_unicode_mapping_array */
+			int j;
 			for (j = 0; j < sizeof(from_unicode_mapping_array); j++)
 				if (from_unicode_mapping_array[j] == i) {
 					/* Mapping table is wrong - recommend a fix for it */
@@ -114,17 +113,18 @@ main()
 			continue;
 		}
 
-		for (j = 0; j <= 255; j++) {
-			uch = i * 256 + j;
-			ch2 = UNICODE_LOOKUP(uch);
+		for (int j = 0; j <= 255; j++) {
+			const unsigned short uch = i * 256 + j;
+			const unsigned char ch2 = UNICODE_LOOKUP(uch);
 			if (ch2 == CANT_MAP_CHARACTER)
 				continue;
-			uch2 = to_unicode_map[ch2];
+			const unsigned short uch2 = to_unicode_map[ch2];
 			if (uch != uch2) {
 				ib_printf
 					("Mapping error: Unicode %04x -> ch %02x -> Unicode %04x\n",
 					 uch, ch2, uch2);
 
+				int k;
 				for (k = 0; k <= 255; k++)
 					if (to_unicode_map[k] == uch) {
 						/* Can map this character from charset to unicode */
@@ -142,4 +142,6 @@ main()
 	}
 
 	ib_printf("Test completed\n");
+	return 0;
 }
+

@@ -26,25 +26,25 @@
 
 #include "../jrd/intl_classes.h"
 
-CHARSET_ID	INTL_charset(TDBB, USHORT, FPTR_ERROR);
-int			INTL_compare(TDBB, const struct dsc*, const struct dsc*, FPTR_ERROR);
-USHORT		INTL_convert_bytes(TDBB, CHARSET_ID, UCHAR*, USHORT, CHARSET_ID,
+CHARSET_ID	INTL_charset(thread_db*, USHORT, FPTR_ERROR);
+int			INTL_compare(thread_db*, const struct dsc*, const struct dsc*, FPTR_ERROR);
+USHORT		INTL_convert_bytes(thread_db*, CHARSET_ID, UCHAR*, USHORT, CHARSET_ID,
 								const BYTE*, USHORT, FPTR_ERROR);
-CsConvert	INTL_convert_lookup(TDBB, CHARSET_ID, CHARSET_ID);
+CsConvert	INTL_convert_lookup(thread_db*, CHARSET_ID, CHARSET_ID);
 int			INTL_convert_string(struct dsc*, const struct dsc*, FPTR_ERROR);
 int			INTL_data(const struct dsc*);
 int			INTL_data_or_binary(const struct dsc*);
-int			INTL_defined_type(TDBB, ISC_STATUS*, SSHORT);
-UCS2_CHAR	INTL_getch(TDBB, TextType*, SSHORT, const UCHAR**, USHORT*);
-void		INTL_init(TDBB);
-USHORT		INTL_key_length(TDBB, USHORT, USHORT);
-CharSet		INTL_charset_lookup(TDBB tdbb, SSHORT parm1, ISC_STATUS* status);
-TextType	INTL_texttype_lookup(TDBB tdbb, SSHORT parm1, FPTR_ERROR err, 
+int			INTL_defined_type(thread_db*, ISC_STATUS*, SSHORT);
+UCS2_CHAR	INTL_getch(thread_db*, TextType*, SSHORT, const UCHAR**, USHORT*);
+void		INTL_init(thread_db*);
+USHORT		INTL_key_length(thread_db*, USHORT, USHORT);
+CharSet		INTL_charset_lookup(thread_db* tdbb, SSHORT parm1, ISC_STATUS* status);
+TextType	INTL_texttype_lookup(thread_db* tdbb, SSHORT parm1, FPTR_ERROR err,
 								ISC_STATUS* status);
-void		INTL_pad_spaces(TDBB, struct dsc*, UCHAR*, USHORT);
-USHORT		INTL_string_to_key(TDBB, USHORT, const struct dsc*, struct dsc*, USHORT);
-int			INTL_str_to_upper(TDBB, struct dsc*);
-UCHAR		INTL_upper(TDBB, USHORT, UCHAR);
+void		INTL_pad_spaces(thread_db*, struct dsc*, UCHAR*, USHORT);
+USHORT		INTL_string_to_key(thread_db*, USHORT, const struct dsc*, struct dsc*, bool);
+int			INTL_str_to_upper(thread_db*, struct dsc*);
+UCHAR		INTL_upper(thread_db*, USHORT, UCHAR);
 
 // Built-in charsets interface
 FPTR_SHORT INTL_builtin_lookup(USHORT, SSHORT, SSHORT);

@@ -71,7 +71,7 @@ DATABASE DB = STATIC "ODS.RDB";
 
 static bool delete_constraint_records(GBL, const TEXT*, const TEXT*);
 static bool delete_dimension_records(GBL, const TEXT*);
-static void delete_f_key_constraint(TDBB, GBL, const TEXT*, const TEXT*,
+static void delete_f_key_constraint(thread_db*, GBL, const TEXT*, const TEXT*,
 									const TEXT*, const TEXT*);
 static void delete_gfield_for_lfield(GBL, const TEXT*);
 static bool delete_index_segment_records(GBL, const TEXT*);
@@ -160,7 +160,7 @@ void DYN_delete_exception( GBL gbl, const UCHAR** ptr)
  **************************************/
 	SqlIdentifier t;
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 	GET_STRING(ptr, t);
@@ -214,7 +214,7 @@ void DYN_delete_filter( GBL gbl, const UCHAR** ptr)
  **************************************/
 	SqlIdentifier f;
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 	BLK request = CMP_find_request(tdbb, drq_e_filters, DYN_REQUESTS);
@@ -270,7 +270,7 @@ void DYN_delete_function( GBL gbl, const UCHAR** ptr)
  **************************************/
 	SqlIdentifier f;
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 	BLK request = CMP_find_request(tdbb, drq_e_func_args, DYN_REQUESTS);
@@ -349,7 +349,7 @@ void DYN_delete_generator(GBL gbl, const UCHAR**ptr)
  **************************************/
 	SqlIdentifier t;
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 	BLK request = NULL;
@@ -407,7 +407,7 @@ void DYN_delete_global_field( GBL gbl, const UCHAR** ptr)
  **************************************/
 	SqlIdentifier f;
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 	BLK request = CMP_find_request(tdbb, drq_l_fld_src, DYN_REQUESTS);
@@ -492,7 +492,7 @@ void DYN_delete_index( GBL gbl, const UCHAR** ptr)
  **************************************/
 	SqlIdentifier idx_name, rel_name;
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 	BLK request = CMP_find_request(tdbb, drq_e_indices, DYN_REQUESTS);
@@ -584,7 +584,7 @@ void DYN_delete_local_field(
  **************************************/
 	SqlIdentifier tbl_nm, col_nm, constraint, index_name;
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 	GET_STRING(ptr, col_nm);
@@ -806,7 +806,7 @@ void DYN_delete_parameter( GBL gbl, const UCHAR** ptr, TEXT* proc_name)
 			MAX_SQL_IDENTIFIER_SIZE, true);
 	}
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 	BLK request = CMP_find_request(tdbb, drq_e_prm, DYN_REQUESTS);
@@ -896,7 +896,7 @@ void DYN_delete_procedure( GBL gbl, const UCHAR** ptr)
 	SqlIdentifier name;
 
 	GET_STRING(ptr, name);
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 	tdbb->tdbb_flags |= TDBB_prc_being_dropped;
@@ -1054,7 +1054,7 @@ void DYN_delete_relation( GBL gbl, const UCHAR** ptr, const TEXT* relation)
 	USHORT id;
 	SqlIdentifier relation_name;
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 	if (relation)
@@ -1296,7 +1296,7 @@ void DYN_delete_role( GBL gbl, const UCHAR** ptr)
 	SqlIdentifier role_name, role_owner, user;
 	TEXT *ptr1, *ptr2;
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 	const USHORT major_version = dbb->dbb_ods_version;
@@ -1449,7 +1449,7 @@ void DYN_delete_shadow( GBL gbl, const UCHAR** ptr)
  **************************************/
 	int shadow_number;
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 /*****
@@ -1524,7 +1524,7 @@ void DYN_delete_trigger( GBL gbl, const UCHAR** ptr)
 	USHORT id;
 	SqlIdentifier r, t;
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 	BLK request = CMP_find_request(tdbb, drq_e_trg_msgs, DYN_REQUESTS);
@@ -1661,7 +1661,7 @@ void DYN_delete_trigger_msg( GBL gbl, const UCHAR** ptr, TEXT* trigger_name)
 	int number;
 	SqlIdentifier t;
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 	number = DYN_get_number(ptr);
@@ -1729,7 +1729,7 @@ static bool delete_constraint_records(GBL	gbl,
  *	based on a constraint name.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 	BLK request = CMP_find_request(tdbb, drq_e_rel_con, DYN_REQUESTS);
@@ -1779,7 +1779,7 @@ static bool delete_dimension_records(GBL gbl, const TEXT* field_name)
  *	pertaining to a field.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 	BLK request = CMP_find_request(tdbb, drq_e_dims, DYN_REQUESTS);
@@ -1814,7 +1814,7 @@ static bool delete_dimension_records(GBL gbl, const TEXT* field_name)
 }
 
 
-static void delete_f_key_constraint(TDBB	tdbb,
+static void delete_f_key_constraint(thread_db*	tdbb,
 									GBL		gbl,
 									const TEXT*	tbl_nm,
 									const TEXT*	col_nm, // unused
@@ -1903,7 +1903,7 @@ static void delete_gfield_for_lfield( GBL gbl, const TEXT* lfield_name)
  *	deletes a global field for a given local field.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 	BLK request = CMP_find_request(tdbb, drq_e_l_gfld, DYN_REQUESTS);
 
@@ -1944,7 +1944,7 @@ static bool delete_index_segment_records( GBL gbl, const TEXT* index_name)
  *	pertaining to an index.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 	BLK request = CMP_find_request(tdbb, drq_e_idx_segs, DYN_REQUESTS);
@@ -1992,7 +1992,7 @@ static bool delete_security_class2( GBL gbl, const TEXT* security_class)
  *
  **************************************/
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 	BLK request = CMP_find_request(tdbb, drq_e_class, DYN_REQUESTS);

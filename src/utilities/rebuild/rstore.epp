@@ -47,7 +47,6 @@ void RSTORE( RBDB rbdb)
  *	into a database.
  *
  **************************************/
-
 	READY
 	ON_ERROR
 		isc_print_status(gds__status);
@@ -81,7 +80,6 @@ static void store_headers( RBDB rbdb)
  *	into a database.
  *
  **************************************/
-	ULONG page_number;
 	PAG page;
 	header_page* header;
 	BLP blob;
@@ -92,7 +90,7 @@ static void store_headers( RBDB rbdb)
 	PPG pointer;
 	ISC_QUAD temp;
 
-	page_number = 0;
+	ULONG page_number = 0;
 
 	while (page = RBDB_read(rbdb, page_number)) {
 		STORE P IN FULL_PAGES USING
@@ -246,3 +244,4 @@ static void store_headers( RBDB rbdb)
 		page_number++;
 	}
 }
+

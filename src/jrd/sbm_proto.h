@@ -40,7 +40,7 @@ bool		SBM_next(struct sbm *, SLONG *, enum rse_get_mode);
 struct sbm**	SBM_or(struct sbm **, struct sbm **);
 void		SBM_release(struct sbm *);
 void		SBM_reset(struct sbm **);
-void		SBM_set(TDBB, struct sbm **, SLONG);
+void		SBM_set(thread_db*, struct sbm **, SLONG);
 int			SBM_test(struct sbm *, SLONG);
 SLONG		SBM_size(struct sbm **);
 

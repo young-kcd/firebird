@@ -123,13 +123,13 @@ typedef struct texttype {
 	//\\ END OF DRIVER API FUNCTIONS -----------------------------------------------
 
     // DATA USED BY COLLATION DRIVERS. Never used by engine directly ---------------
-	BYTE *texttype_collation_table;
-	BYTE *texttype_toupper_table;
-	BYTE *texttype_tolower_table;
-	BYTE *texttype_expand_table;
-	BYTE *texttype_compress_table;
-	BYTE *texttype_misc;		/* Used by some drivers */
-	ULONG *texttype_unused[4];	/* spare space for use by drivers */
+	const BYTE* texttype_collation_table;
+	const BYTE* texttype_toupper_table;
+	const BYTE* texttype_tolower_table;
+	const BYTE* texttype_expand_table;
+	const BYTE* texttype_compress_table;
+	const BYTE* texttype_misc;		/* Used by some drivers */
+	ULONG* texttype_unused[4];	/* spare space for use by drivers */
 	//\\ END OF COLLATION DRIVER DATA ----------------------------------------------
 
 	// ENGINE INTERNAL FUNCTIONS - do not implement in collation drivers -----------
@@ -157,7 +157,7 @@ typedef struct texttype {
 typedef USHORT (*pfn_INTL_convert)(csconvert*, UCHAR*, USHORT,
 	const UCHAR*, USHORT, SSHORT*, USHORT*);
 
-typedef struct csconvert {
+struct csconvert {
 	struct intl_blk csconvert_blk;
 	USHORT csconvert_version;
 	USHORT csconvert_flags;
@@ -169,7 +169,7 @@ typedef struct csconvert {
 	const BYTE* csconvert_datatable;
 	const BYTE* csconvert_misc;
 	ULONG* csconvert_unused[2];
-} *CSCONVERT;
+};
 
 /* values for csconvert_flags */
 
@@ -188,7 +188,7 @@ typedef struct csconvert {
 
 typedef USHORT (*pfn_well_formed)(const UCHAR*, USHORT);
 
-typedef struct charset
+struct charset
 {
 	struct intl_blk charset_blk;
 	USHORT charset_version;
@@ -207,8 +207,8 @@ typedef struct charset
 
 	VEC charset_converters;
 	VEC charset_collations;
-	ULONG *charset_unused[2];
-} *CHARSET;
+	ULONG* charset_unused[2];
+};
 
 /* values for charset_flags */
 

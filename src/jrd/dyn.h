@@ -75,7 +75,7 @@ USHORT	DYN_get_string(const TEXT**, TEXT*, USHORT, bool);
 // void	DYN_get_string2(TEXT**, TEXT*, USHORT);
 
 // This function doesn't need to be exported currently.
-bool	DYN_is_it_sql_role(GBL, const TEXT*, TEXT*, TDBB);
+bool	DYN_is_it_sql_role(GBL, const TEXT*, TEXT*, thread_db*);
 USHORT	DYN_put_blr_blob(GBL, const UCHAR**, struct bid*);
 
 // This function is not defined anywhere.

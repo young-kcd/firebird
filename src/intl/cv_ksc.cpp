@@ -32,7 +32,7 @@
 *	KSC-5601 to EUC is not needed.
 */
 
-USHORT CVKSC_ksc_to_unicode(CSCONVERT obj,
+USHORT CVKSC_ksc_to_unicode(csconvert* obj,
 							UCS2_CHAR *dest_ptr,
 							USHORT dest_len,
 							const UCHAR* ksc_str,
@@ -80,7 +80,6 @@ USHORT CVKSC_ksc_to_unicode(CSCONVERT obj,
 			}
 		}
 		else {					/* it is ASCII */
-
 			wide = *ksc_str++;
 			this_len = 1;
 		}
@@ -105,7 +104,7 @@ USHORT CVKSC_ksc_to_unicode(CSCONVERT obj,
 }
 
 
-USHORT CVKSC_unicode_to_ksc(CSCONVERT obj,
+USHORT CVKSC_unicode_to_ksc(csconvert* obj,
 							UCHAR *ksc_str,
 							USHORT ksc_len,
 							const UCS2_CHAR* unicode_str,
@@ -229,7 +228,6 @@ USHORT CVKSC_ksc_byte2short(TEXTTYPE obj,
 			break;
 		}
 		else {					/* ASCII */
-
 			x = *src++;
 			src_len -= 1;
 		}
@@ -273,7 +271,6 @@ SSHORT CVKSC_ksc_mbtowc(TEXTTYPE obj,
 	else if (*src > 0x7f)		/* error */
 		return -1;
 	else {						/* ASCII */
-
 		if (wc)
 			*wc = *src++;
 		return 1;

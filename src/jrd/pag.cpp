@@ -221,7 +221,7 @@ void PAG_add_clump(
  *		FALSE - nothing done
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
@@ -342,7 +342,7 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
  *	number for the new file.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
@@ -459,7 +459,7 @@ int PAG_add_header_entry(header_page* header, USHORT type, SSHORT len, const UCH
  *		FALSE - nothing done
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
@@ -528,7 +528,7 @@ int PAG_replace_entry_first(header_page* header, USHORT type, SSHORT len, const 
  *		FALSE - nothing done
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
@@ -582,7 +582,7 @@ PAG PAG_allocate(WIN * window)
  *	the universal sequence when allocating pages.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
@@ -681,7 +681,7 @@ SLONG PAG_attachment_id(void)
  *	effect, get a lock on it as well.
  *
  ******************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 	att* attachment = tdbb->tdbb_attachment;
@@ -734,7 +734,7 @@ int PAG_delete_clump_entry(SLONG page_num, USHORT type)
  *	Gets rid on the entry 'type' from page.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
@@ -799,7 +799,7 @@ void PAG_format_header(void)
  *	Create the header page for a new file.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
@@ -851,7 +851,7 @@ void PAG_format_log(void)
  *	Set all parameters to 0
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	WIN window(LOG_PAGE);
 	log_info_page* logp = (log_info_page*) CCH_fake(tdbb, &window, 1);
@@ -875,7 +875,7 @@ void PAG_format_pip(void)
  *	into a rudimentary database.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
@@ -917,7 +917,7 @@ bool PAG_get_clump(SLONG page_num, USHORT type, USHORT* len, UCHAR* entry)
  *		length in len
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	*len = 0;
 	WIN window(page_num);
@@ -964,7 +964,7 @@ void PAG_header(const TEXT* file_name, USHORT file_length)
  *	Checkout database header page.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 /* allocate a spare buffer which is large enough,
@@ -1134,7 +1134,7 @@ void PAG_init(void)
  *	Initialize stuff for page handling.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
@@ -1204,7 +1204,7 @@ void PAG_init2(USHORT shadow_number)
  *	search for additional files.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
 
@@ -1245,7 +1245,7 @@ void PAG_init2(USHORT shadow_number)
 		window.win_page = file->fil_min_page;
 		USHORT file_length = 0;
 		ULONG last_page = 0;
-		bdb temp_bdb;
+		Buffer_desc temp_bdb;
 		SLONG next_page = 0;
 		do {
 			/* note that we do not have to get a read lock on
@@ -1362,7 +1362,7 @@ SLONG PAG_last_page(void)
  *	shadow stuff to dump a database.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
@@ -1408,7 +1408,7 @@ void PAG_release_page(SLONG number, SLONG prior_page)
  *	Release a page to the free page page.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
@@ -1450,7 +1450,7 @@ void PAG_set_force_write(Database* dbb, SSHORT flag)
  *      The value 2 for flag means set to default.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	ERR_POST_IF_DATABASE_IS_READONLY(dbb);
 
@@ -1500,7 +1500,7 @@ void PAG_set_no_reserve(Database* dbb, USHORT flag)
  *	Turn on/off reserving space for versions
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	ERR_POST_IF_DATABASE_IS_READONLY(dbb);
 
@@ -1533,7 +1533,7 @@ void PAG_set_db_readonly(Database* dbb, bool flag)
  *	Set database access mode to readonly OR readwrite
  *
  *********************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	WIN window(HEADER_PAGE);
 	header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
@@ -1571,7 +1571,7 @@ void PAG_set_db_SQL_dialect(Database* dbb, SSHORT flag)
  *	Set database SQL dialect to SQL_DIALECT_V5 or SQL_DIALECT_V6
  *
  *********************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	const USHORT major_version = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
@@ -1626,7 +1626,7 @@ void PAG_set_page_buffers(ULONG buffers)
  *	Set database-specific page buffer cache
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
@@ -1671,7 +1671,7 @@ int PAG_unlicensed(void)
  *	sort of non-sense.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	WIN window(HEADER_PAGE);
 	CCH_FETCH(tdbb, &window, LCK_write, pag_header);
@@ -1714,7 +1714,7 @@ static void find_clump_space(
  *	Allocate a new page if required.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
@@ -1861,7 +1861,7 @@ static bool find_type(
  *		false - Not present
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	while (true) {
 		header_page* header = 0;

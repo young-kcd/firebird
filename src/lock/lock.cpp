@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.86 2004-02-02 11:01:43 robocop Exp $
+$Id: lock.cpp,v 1.87 2004-03-11 05:04:22 robocop Exp $
 */
 
 #include "firebird.h"
@@ -1222,7 +1222,6 @@ void LOCK_re_post( lock_ast_t ast, void* arg, PTR owner_offset)
  *	at the re-post list only test the ast element.
  *
  **************************************/
-	OWN owner;
 	LRQ request;
 
 	LOCK_TRACE(("LOCK_re_post(%ld)\n", owner_offset));
@@ -1245,7 +1244,7 @@ void LOCK_re_post( lock_ast_t ast, void* arg, PTR owner_offset)
 		remove_que(&request->lrq_lbl_requests);
 	}
 
-	owner = (OWN) ABS_PTR(owner_offset);
+	OWN owner = (OWN) ABS_PTR(owner_offset);
 	request->lrq_type = type_lrq;
 	request->lrq_flags = LRQ_repost;
 	request->lrq_ast_routine = ast;

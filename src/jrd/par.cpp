@@ -88,31 +88,31 @@ static const TEXT elements[][10] =
 
 static void error(Csb*, ...);
 static SSHORT find_proc_field(jrd_prc*, TEXT *);
-static jrd_nod* par_args(TDBB, Csb*, USHORT);
-static jrd_nod* par_cast(TDBB, Csb*);
-static XCP par_condition(TDBB, Csb*);
-static XCP par_conditions(TDBB, Csb*);
+static jrd_nod* par_args(thread_db*, Csb*, USHORT);
+static jrd_nod* par_cast(thread_db*, Csb*);
+static XCP par_condition(thread_db*, Csb*);
+static XCP par_conditions(thread_db*, Csb*);
 static SSHORT par_context(Csb*, SSHORT *);
-static void par_dependency(TDBB, Csb*, SSHORT, SSHORT, TEXT *);
-static jrd_nod* par_exec_proc(TDBB, Csb*, SSHORT);
-static jrd_nod* par_fetch(TDBB, Csb*, jrd_nod*);
-static jrd_nod* par_field(TDBB, Csb*, SSHORT);
-static jrd_nod* par_function(TDBB, Csb*);
-static jrd_nod* par_literal(TDBB, Csb*);
-static jrd_nod* par_map(TDBB, Csb*, USHORT);
-static jrd_nod* par_message(TDBB, Csb*);
-static jrd_nod* par_modify(TDBB, Csb*);
+static void par_dependency(thread_db*, Csb*, SSHORT, SSHORT, TEXT *);
+static jrd_nod* par_exec_proc(thread_db*, Csb*, SSHORT);
+static jrd_nod* par_fetch(thread_db*, Csb*, jrd_nod*);
+static jrd_nod* par_field(thread_db*, Csb*, SSHORT);
+static jrd_nod* par_function(thread_db*, Csb*);
+static jrd_nod* par_literal(thread_db*, Csb*);
+static jrd_nod* par_map(thread_db*, Csb*, USHORT);
+static jrd_nod* par_message(thread_db*, Csb*);
+static jrd_nod* par_modify(thread_db*, Csb*);
 static USHORT par_name(Csb*, TEXT *);
-static jrd_nod* par_plan(TDBB, Csb*);
-static jrd_nod* par_procedure(TDBB, Csb*, SSHORT);
-static void par_procedure_parms(TDBB, Csb*, jrd_prc*, jrd_nod**, jrd_nod**, USHORT);
-static jrd_nod* par_relation(TDBB, Csb*, SSHORT, BOOLEAN);
-static jrd_nod* par_rse(TDBB, Csb*, SSHORT);
-static jrd_nod* par_sort(TDBB, Csb*, BOOLEAN);
-static jrd_nod* par_stream(TDBB, Csb*);
-static jrd_nod* par_union(TDBB, Csb*);
+static jrd_nod* par_plan(thread_db*, Csb*);
+static jrd_nod* par_procedure(thread_db*, Csb*, SSHORT);
+static void par_procedure_parms(thread_db*, Csb*, jrd_prc*, jrd_nod**, jrd_nod**, USHORT);
+static jrd_nod* par_relation(thread_db*, Csb*, SSHORT, BOOLEAN);
+static jrd_nod* par_rse(thread_db*, Csb*, SSHORT);
+static jrd_nod* par_sort(thread_db*, Csb*, BOOLEAN);
+static jrd_nod* par_stream(thread_db*, Csb*);
+static jrd_nod* par_union(thread_db*, Csb*);
 static USHORT par_word(Csb*);
-static jrd_nod* parse(TDBB, Csb*, USHORT, USHORT expected_optional = 0);
+static jrd_nod* parse(thread_db*, Csb*, USHORT, USHORT expected_optional = 0);
 static void syntax_error(Csb*, const TEXT *);
 static void warning(Csb*, ...);
 
@@ -122,7 +122,7 @@ static void warning(Csb*, ...);
 #define BLR_WORD	par_word (csb)
 
 
-jrd_nod* PAR_blr(TDBB	tdbb,
+jrd_nod* PAR_blr(thread_db*	tdbb,
 			jrd_rel*		relation,
 			const UCHAR*	blr,
 			Csb*		view_csb,
@@ -192,7 +192,7 @@ jrd_nod* PAR_blr(TDBB	tdbb,
 		// AB: csb_n_stream replaced by view_csb->csb_rpt.getCount(), because there could
 		// be more then just csb_n_stream-numbers that hold data. 
 		// Certainly csb_stream (see par_context where the context is retrieved)
-		const Csb::rpt_itr end = view_csb->csb_rpt.end();
+		const Csb::rpt_itr const end = view_csb->csb_rpt.end();
 		for (stream = 0; ptr != end; ++ptr, ++stream) {
 			t2 = CMP_csb_element(csb, stream);
 			t2->csb_relation = ptr->csb_relation;
@@ -232,7 +232,7 @@ jrd_nod* PAR_blr(TDBB	tdbb,
 }
 
 
-int PAR_desc(Csb* csb, DSC * desc)
+USHORT PAR_desc(Csb* csb, DSC* desc)
 {
 /**************************************
  *
@@ -363,7 +363,7 @@ int PAR_desc(Csb* csb, DSC * desc)
 }
 
 
-jrd_nod* PAR_gen_field(TDBB tdbb, USHORT stream, USHORT id)
+jrd_nod* PAR_gen_field(thread_db* tdbb, USHORT stream, USHORT id)
 {
 /**************************************
  *
@@ -386,7 +386,7 @@ jrd_nod* PAR_gen_field(TDBB tdbb, USHORT stream, USHORT id)
 }
 
 
-jrd_nod* PAR_make_field(TDBB tdbb, Csb* csb, USHORT context,
+jrd_nod* PAR_make_field(thread_db* tdbb, Csb* csb, USHORT context,
 	const TEXT* base_field)
 {
 /**************************************
@@ -456,7 +456,7 @@ jrd_nod* PAR_make_field(TDBB tdbb, Csb* csb, USHORT context,
 }
 
 
-jrd_nod* PAR_make_list(TDBB tdbb, LLS stack)
+jrd_nod* PAR_make_list(thread_db* tdbb, LLS stack)
 {
 /**************************************
  *
@@ -487,7 +487,7 @@ jrd_nod* PAR_make_list(TDBB tdbb, LLS stack)
 }
 
 
-jrd_nod* PAR_make_node(TDBB tdbb, int size)
+jrd_nod* PAR_make_node(thread_db* tdbb, int size)
 {
 /**************************************
  *
@@ -508,7 +508,7 @@ jrd_nod* PAR_make_node(TDBB tdbb, int size)
 }
 
 
-Csb* PAR_parse(TDBB tdbb, const UCHAR* blr, USHORT internal_flag)
+Csb* PAR_parse(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag)
 {
 /**************************************
  *
@@ -606,7 +606,7 @@ static void error(Csb* csb, ...)
 	va_list args;
 
 /* Don't bother to pass tdbb for error handling */
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	VA_START(args, csb);
 
@@ -686,7 +686,7 @@ static SSHORT find_proc_field(jrd_prc* procedure, TEXT * name)
 }
 
 
-static jrd_nod* par_args(TDBB tdbb, Csb* csb, USHORT expected)
+static jrd_nod* par_args(thread_db* tdbb, Csb* csb, USHORT expected)
 {
 /**************************************
  *
@@ -715,7 +715,7 @@ static jrd_nod* par_args(TDBB tdbb, Csb* csb, USHORT expected)
 }
 
 
-static jrd_nod* par_cast(TDBB tdbb, Csb* csb)
+static jrd_nod* par_cast(thread_db* tdbb, Csb* csb)
 {
 /**************************************
  *
@@ -746,7 +746,7 @@ static jrd_nod* par_cast(TDBB tdbb, Csb* csb)
 }
 
 
-static XCP par_condition(TDBB tdbb, Csb* csb)
+static XCP par_condition(thread_db* tdbb, Csb* csb)
 {
 /**************************************
  *
@@ -820,7 +820,7 @@ static XCP par_condition(TDBB tdbb, Csb* csb)
 }
 
 
-static XCP par_conditions(TDBB tdbb, Csb* csb)
+static XCP par_conditions(thread_db* tdbb, Csb* csb)
 {
 /**************************************
  *
@@ -931,7 +931,7 @@ static SSHORT par_context(Csb* csb, SSHORT* context_ptr)
 }
 
 
-static void par_dependency(TDBB   tdbb,
+static void par_dependency(thread_db*   tdbb,
 						   Csb*    csb,
 						   SSHORT stream,
 						   SSHORT id,
@@ -984,7 +984,7 @@ static void par_dependency(TDBB   tdbb,
 }
 
 
-static jrd_nod* par_exec_proc(TDBB tdbb, Csb* csb, SSHORT blr_operator)
+static jrd_nod* par_exec_proc(thread_db* tdbb, Csb* csb, SSHORT blr_operator)
 {
 /**************************************
  *
@@ -1036,7 +1036,7 @@ static jrd_nod* par_exec_proc(TDBB tdbb, Csb* csb, SSHORT blr_operator)
 }
 
 
-static jrd_nod* par_fetch(TDBB tdbb, Csb* csb, jrd_nod* for_node)
+static jrd_nod* par_fetch(thread_db* tdbb, Csb* csb, jrd_nod* for_node)
 {
 /**************************************
  *
@@ -1082,7 +1082,7 @@ static jrd_nod* par_fetch(TDBB tdbb, Csb* csb, jrd_nod* for_node)
 }
 
 
-static jrd_nod* par_field(TDBB tdbb, Csb* csb, SSHORT blr_operator)
+static jrd_nod* par_field(thread_db* tdbb, Csb* csb, SSHORT blr_operator)
 {
 /**************************************
  *
@@ -1208,7 +1208,7 @@ static jrd_nod* par_field(TDBB tdbb, Csb* csb, SSHORT blr_operator)
 }
 
 
-static jrd_nod* par_function(TDBB tdbb, Csb* csb)
+static jrd_nod* par_function(thread_db* tdbb, Csb* csb)
 {
 /**************************************
  *
@@ -1279,7 +1279,7 @@ static jrd_nod* par_function(TDBB tdbb, Csb* csb)
 }
 
 
-static jrd_nod* par_literal(TDBB tdbb, Csb* csb)
+static jrd_nod* par_literal(thread_db* tdbb, Csb* csb)
 {
 /**************************************
  *
@@ -1379,7 +1379,7 @@ static jrd_nod* par_literal(TDBB tdbb, Csb* csb)
 }
 
 
-static jrd_nod* par_map(TDBB tdbb, Csb* csb, USHORT stream)
+static jrd_nod* par_map(thread_db* tdbb, Csb* csb, USHORT stream)
 {
 /**************************************
  *
@@ -1416,7 +1416,7 @@ static jrd_nod* par_map(TDBB tdbb, Csb* csb, USHORT stream)
 }
 
 
-static jrd_nod* par_message(TDBB tdbb, Csb* csb)
+static jrd_nod* par_message(thread_db* tdbb, Csb* csb)
 {
 /**************************************
  *
@@ -1469,7 +1469,7 @@ static jrd_nod* par_message(TDBB tdbb, Csb* csb)
 }
 
 
-static jrd_nod* par_modify(TDBB tdbb, Csb* csb)
+static jrd_nod* par_modify(thread_db* tdbb, Csb* csb)
 {
 /**************************************
  *
@@ -1548,7 +1548,7 @@ static USHORT par_name(Csb* csb, TEXT* string)
 }
 
 
-static jrd_nod* par_plan(TDBB tdbb, Csb* csb)
+static jrd_nod* par_plan(thread_db* tdbb, Csb* csb)
 {
 /**************************************
  *
@@ -1731,7 +1731,7 @@ static jrd_nod* par_plan(TDBB tdbb, Csb* csb)
 }
 
 
-static jrd_nod* par_procedure(TDBB tdbb, Csb* csb, SSHORT blr_operator)
+static jrd_nod* par_procedure(thread_db* tdbb, Csb* csb, SSHORT blr_operator)
 {
 /**************************************
  *
@@ -1783,7 +1783,7 @@ static jrd_nod* par_procedure(TDBB tdbb, Csb* csb, SSHORT blr_operator)
 
 
 static void par_procedure_parms(
-								TDBB tdbb,
+								thread_db* tdbb,
 								Csb* csb,
 								jrd_prc* procedure,
 								jrd_nod** message_ptr,
@@ -1922,7 +1922,7 @@ static void par_procedure_parms(
 
 
 static jrd_nod* par_relation(
-						TDBB tdbb,
+						thread_db* tdbb,
 						Csb* csb, SSHORT blr_operator, BOOLEAN parse_context)
 {
 /**************************************
@@ -2015,7 +2015,7 @@ static jrd_nod* par_relation(
 }
 
 
-static jrd_nod* par_rse(TDBB tdbb, Csb* csb, SSHORT rse_op)
+static jrd_nod* par_rse(thread_db* tdbb, Csb* csb, SSHORT rse_op)
 {
 /**************************************
  *
@@ -2135,7 +2135,7 @@ static jrd_nod* par_rse(TDBB tdbb, Csb* csb, SSHORT rse_op)
 }
 
 
-static jrd_nod* par_sort(TDBB tdbb, Csb* csb, BOOLEAN flag)
+static jrd_nod* par_sort(thread_db* tdbb, Csb* csb, BOOLEAN flag)
 {
 /**************************************
  *
@@ -2184,7 +2184,7 @@ static jrd_nod* par_sort(TDBB tdbb, Csb* csb, BOOLEAN flag)
 }
 
 
-static jrd_nod* par_stream(TDBB tdbb, Csb* csb)
+static jrd_nod* par_stream(thread_db* tdbb, Csb* csb)
 {
 /**************************************
  *
@@ -2219,7 +2219,7 @@ static jrd_nod* par_stream(TDBB tdbb, Csb* csb)
 }
 
 
-static jrd_nod* par_union(TDBB tdbb, Csb* csb)
+static jrd_nod* par_union(thread_db* tdbb, Csb* csb)
 {
 /**************************************
  *
@@ -2276,7 +2276,7 @@ static USHORT par_word(Csb* csb)
 }
 
 
-static jrd_nod* parse(TDBB tdbb, Csb* csb, USHORT expected, USHORT expected_optional)
+static jrd_nod* parse(thread_db* tdbb, Csb* csb, USHORT expected, USHORT expected_optional)
 {
 /**************************************
  *
@@ -3000,7 +3000,7 @@ static void warning(Csb* csb, ...)
 	int type;
 	va_list args;
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	VA_START(args, csb);
 

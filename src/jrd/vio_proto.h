@@ -26,36 +26,43 @@
 #ifndef JRD_VIO_PROTO_H
 #define JRD_VIO_PROTO_H
 
-void	VIO_backout(TDBB, struct rpb *, class jrd_tra *);
-void	VIO_bump_count(TDBB, USHORT, struct jrd_rel *, bool);
-int		VIO_chase_record_version(TDBB, struct rpb *, class Rsb *,
-									class jrd_tra *, struct blk *, BOOLEAN);
+class jrd_rel;
+class jrd_tra;
+class rec;
+class Rsb;
+struct rpb;
+struct sav;
+
+void	VIO_backout(thread_db*, rpb*, jrd_tra*);
+void	VIO_bump_count(thread_db*, USHORT, jrd_rel*, bool);
+bool	VIO_chase_record_version(thread_db*, rpb*, Rsb*,
+									jrd_tra*, struct blk *, bool);
 #ifdef PC_ENGINE
-int		VIO_check_if_updated(TDBB, struct rpb *);
+bool	VIO_check_if_updated(thread_db*, rpb*);
 #endif
-void	VIO_data(TDBB, struct rpb *, struct blk *);
-void	VIO_erase(TDBB, struct rpb *, class jrd_tra *);
+void	VIO_data(thread_db*, rpb*, struct blk *);
+void	VIO_erase(thread_db*, rpb*, jrd_tra*);
 #ifdef GARBAGE_THREAD
-void	VIO_fini(TDBB);
+void	VIO_fini(thread_db*);
 #endif
-bool	VIO_garbage_collect(TDBB, struct rpb *, class jrd_tra *);
-struct rec*	VIO_gc_record(TDBB, struct jrd_rel *);
-bool	VIO_get(TDBB, struct rpb *, class Rsb *, class jrd_tra *, struct blk *);
-bool	VIO_get_current(TDBB, struct rpb*, class jrd_tra*, struct blk*, bool);
+bool	VIO_garbage_collect(thread_db*, rpb*, jrd_tra*);
+rec*	VIO_gc_record(thread_db*, jrd_rel*);
+bool	VIO_get(thread_db*, rpb*, Rsb*, jrd_tra*, struct blk *);
+bool	VIO_get_current(thread_db*, rpb*, jrd_tra*, struct blk*, bool);
 #ifdef GARBAGE_THREAD
-void	VIO_init(TDBB);
+void	VIO_init(thread_db*);
 #endif
-void	VIO_merge_proc_sav_points(TDBB, class jrd_tra *, struct sav **);
-BOOLEAN	VIO_writelock(TDBB, struct rpb *, class Rsb *, class jrd_tra *);
-void	VIO_modify(TDBB, struct rpb *, struct rpb *, class jrd_tra *);
-bool	VIO_next_record(TDBB, struct rpb *, class Rsb *, class jrd_tra *,
+void	VIO_merge_proc_sav_points(thread_db*, jrd_tra*, sav**);
+bool	VIO_writelock(thread_db*, rpb*, Rsb*, jrd_tra*);
+void	VIO_modify(thread_db*, rpb*, rpb*, jrd_tra*);
+bool	VIO_next_record(thread_db*, rpb*, Rsb*, jrd_tra*,
 							   struct blk *, bool, bool);
-struct rec*	VIO_record(TDBB, struct rpb *, const class fmt*, JrdMemoryPool *);
-void	VIO_start_save_point(TDBB, class jrd_tra *);
-void	VIO_store(TDBB, struct rpb *, class jrd_tra *);
-BOOLEAN	VIO_sweep(TDBB, class jrd_tra *);
-void	VIO_verb_cleanup(TDBB, class jrd_tra *);
-SLONG	VIO_savepoint_large(struct sav *, SLONG);
+rec*	VIO_record(thread_db*, rpb*, const class fmt*, JrdMemoryPool*);
+void	VIO_start_save_point(thread_db*, jrd_tra*);
+void	VIO_store(thread_db*, rpb*, jrd_tra*);
+bool	VIO_sweep(thread_db*, jrd_tra*);
+void	VIO_verb_cleanup(thread_db*, jrd_tra*);
+SLONG	VIO_savepoint_large(sav*, SLONG);
 
 #endif // JRD_VIO_PROTO_H
 

@@ -28,8 +28,9 @@
 
 class lck;
 class Precedence;
-struct tdbb;
+struct thread_db;
 struct que;
+class Buffer_desc;
 
 /* Page buffer cache size constraints. */
 
@@ -39,8 +40,8 @@ struct que;
 /* BCB -- Buffer control block -- one per system */
 	struct bcb_repeat
 	{
-		class bdb*	bcb_bdb;		/* Buffer descriptor block */
-		que			bcb_page_mod;	/* Que of buffers with page mod n */
+		Buffer_desc*	bcb_bdb;		/* Buffer descriptor block */
+		que				bcb_page_mod;	/* Que of buffers with page mod n */
 	};
 
 class bcb : public pool_alloc_rpt<bcb_repeat, type_bcb>
@@ -49,7 +50,7 @@ class bcb : public pool_alloc_rpt<bcb_repeat, type_bcb>
 	class lls*	bcb_memory;			/* Large block partitioned into buffers */
 	que			bcb_in_use;			/* Que of buffers in use */
 	que			bcb_empty;			/* Que of empty buffers */
-	class bdb*	bcb_btree;			/* root of dirty page btree */
+	Buffer_desc*	bcb_btree;			/* root of dirty page btree */
 	Precedence*	bcb_free;			/* Free precedence blocks */
 	que			bcb_free_lwt;		/* Free latch wait blocks */
 	SSHORT		bcb_flags;			/* see below */
@@ -70,11 +71,11 @@ typedef bcb *BCB;
 #define BCB_free_pending	64	/* request cache writer to free pages */
 
 
-/* BDB -- Buffer descriptor block */
+/* Buffer_desc -- Buffer descriptor block */
 
-#define BDB_max_shared		20	/* maximum number of shared latch owners per bdb */
+#define BDB_max_shared		20	/* maximum number of shared latch owners per Buffer_desc */
 
-class bdb : public pool_alloc<type_bdb>
+class Buffer_desc : public pool_alloc<type_bdb>
 {
     public:
 	class Database*	bdb_dbb;				/* Database block (for ASTs) */
@@ -89,14 +90,14 @@ class bdb : public pool_alloc<type_bdb>
 	SLONG		bdb_incarnation;
 	ULONG		bdb_transactions;		/* vector of dirty flags to reduce commit overhead */
 	SLONG		bdb_mark_transaction;	/* hi-water mark transaction to defer header page I/O */
-	bdb*		bdb_left;				/* dirty page binary tree link */
-	bdb*		bdb_right;				/* dirty page binary tree link */
-	bdb*		bdb_parent;				/* dirty page binary tree link */
+	Buffer_desc*	bdb_left;				/* dirty page binary tree link */
+	Buffer_desc*	bdb_right;				/* dirty page binary tree link */
+	Buffer_desc*	bdb_parent;				/* dirty page binary tree link */
 	que			bdb_lower;				/* lower precedence que */
 	que			bdb_higher;				/* higher precedence que */
 	que			bdb_waiters;			/* latch wait que */
-	tdbb*		bdb_exclusive;			/* thread holding exclusive latch */
-	tdbb*		bdb_io;					/* thread holding io latch */
+	thread_db*	bdb_exclusive;			/* thread holding exclusive latch */
+	thread_db*	bdb_io;					/* thread holding io latch */
 	UATOM		bdb_ast_flags;			/* flags manipulated at AST level */
 	USHORT		bdb_flags;
 	SSHORT		bdb_use_count;			/* Number of active users */
@@ -106,9 +107,8 @@ class bdb : public pool_alloc<type_bdb>
 	SLONG       bdb_diff_generation;    /* Number of backup/restore cycle for 
 										   this database in current process.
 										   Used in CS only. */
-	tdbb*		bdb_shared[BDB_max_shared];	/* threads holding shared latches */
+	thread_db*	bdb_shared[BDB_max_shared];	/* threads holding shared latches */
 };
-typedef bdb *BDB;
 
 /* bdb_flags */
 
@@ -146,11 +146,11 @@ typedef bdb *BDB;
 class Precedence : public pool_alloc<type_pre>
 {
     public:
-	bdb*		pre_hi;
-	bdb*		pre_low;
-	que			pre_lower;
-	que			pre_higher;
-	SSHORT		pre_flags;
+	Buffer_desc*	pre_hi;
+	Buffer_desc*	pre_low;
+	que				pre_lower;
+	que				pre_higher;
+	SSHORT			pre_flags;
 };
 
 #define PRE_cleared	1
@@ -195,7 +195,7 @@ typedef enum
 class Latch_wait : public pool_alloc<type_lwt>
 {
     public:
-	tdbb*			lwt_tdbb;
+	thread_db*		lwt_tdbb;
 	LATCH			lwt_latch;		/* latch type requested */
 	que				lwt_waiters;	/* latch queue */
 	struct event_t	lwt_event;		/* grant event to wait on */
@@ -216,7 +216,7 @@ class Latch_wait : public pool_alloc<type_lwt>
 class Prefetch : public pool_alloc<type_prf>
 {
     public:
-	tdbb*		prf_tdbb;			/* thread database context */
+	thread_db*	prf_tdbb;			/* thread database context */
 	SLONG		prf_start_page;		/* starting page of multipage prefetch */
 	USHORT		prf_max_prefetch;	/* maximum no. of pages to prefetch */
 	USHORT		prf_page_count;		/* actual no. of pages being prefetched */
@@ -224,7 +224,7 @@ class Prefetch : public pool_alloc<type_prf>
 	SCHAR*		prf_aligned_buffer;	/* buffer address aligned for raw (OS cache bypass) I/O */
 	SCHAR*		prf_io_buffer;		/* I/O buffer address */
 	UCHAR		prf_flags;
-	bdb*		prf_bdbs[PREFETCH_MAX_TRANSFER / MIN_PAGE_SIZE];
+	Buffer_desc*	prf_bdbs[PREFETCH_MAX_TRANSFER / MIN_PAGE_SIZE];
 	SCHAR		prf_unaligned_buffer[PREFETCH_MAX_TRANSFER + MIN_PAGE_SIZE];
 };
 

@@ -36,8 +36,8 @@ void gds__log(UCHAR*, ...);
 */
 
 #define	EXTERN_texttype(name)	USHORT name (TEXTTYPE, USHORT, USHORT)
-#define EXTERN_convert(name)	USHORT name (CSCONVERT, SSHORT, SSHORT)
-#define EXTERN_charset(name)	USHORT name (CHARSET, SSHORT, SSHORT)
+#define EXTERN_convert(name)	USHORT name (csconvert*, SSHORT, SSHORT)
+#define EXTERN_charset(name)	USHORT name (charset*, SSHORT, SSHORT)
 
 EXTERN_texttype(DOS101_init);
 EXTERN_texttype(DOS101_c2_init);
@@ -273,12 +273,12 @@ void LD_assert(const SCHAR* filename, int lineno)
 	case (num): \
 		*fun = (FPTR_SHORT) (name); \
 		return (0);
-*/
 
 #define CHARSET_INIT(num, name) \
 	case (num): \
 		*fun = (FPTR_SHORT) (name); \
 		return (0);
+*/
 
 #define CONVERT_INIT_BI(to_cs, from_cs, name)\
 	if (((parm1 == (to_cs)) && (parm2 == (from_cs))) ||\
@@ -379,7 +379,7 @@ USHORT FB_DLL_EXPORT LD_lookup(USHORT objtype,
 		default:
 			*fun = NULL;
 			return (1);
-		};
+		}
 	case type_charset:
 		switch (parm1) {
 #define CHARSET(name, cs_id, coll_id, bytes, num, cs_symbol, cp_symbol) \
@@ -414,7 +414,7 @@ USHORT FB_DLL_EXPORT LD_lookup(USHORT objtype,
 		default:
 			*fun = NULL;
 			return (1);
-		};
+		}
 	case type_csconvert:
 		{
 			CONVERT_INIT_BI(CS_DOS_437, CS_ISO8859_1, CV_dos_437_x_iso8859_1);

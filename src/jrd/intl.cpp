@@ -145,8 +145,8 @@
 
 typedef unsigned char FILECHAR;
 
-static bool all_spaces(TDBB, CHARSET_ID, const BYTE*, USHORT, USHORT);
-static void pad_spaces(TDBB, CHARSET_ID, BYTE *, USHORT);
+static bool all_spaces(thread_db*, CHARSET_ID, const BYTE*, USHORT, USHORT);
+static void pad_spaces(thread_db*, CHARSET_ID, BYTE *, USHORT);
 static FPTR_SHORT lookup_init_function(USHORT, SSHORT, SSHORT);
 static void finish_texttype_init(TEXTTYPE);
 static USHORT nc_to_wc(TEXTTYPE, UCS2_CHAR*, USHORT, const UCHAR*, USHORT,
@@ -212,11 +212,11 @@ public:
 	
 	CharSet getCharSet() { return cs; }
 	
-	TextType lookupCollation(TDBB tdbb, USHORT tt_id);
+	TextType lookupCollation(thread_db* tdbb, USHORT tt_id);
 	
-	CsConvert lookupConverter(TDBB tdbb, CHARSET_ID to_cs);
+	CsConvert lookupConverter(thread_db* tdbb, CHARSET_ID to_cs);
 	
-	static CharSetContainer* lookupCharset(TDBB tdbb, SSHORT ttype, ISC_STATUS *status);
+	static CharSetContainer* lookupCharset(thread_db* tdbb, SSHORT ttype, ISC_STATUS *status);
 	
 private:
 	Firebird::SortedArray<CsConvert, CHARSET_ID, CharsetIDGetter> charset_converters;
@@ -225,7 +225,7 @@ private:
 	CharSet cs;
 };
 
-CharSetContainer* CharSetContainer::lookupCharset(TDBB tdbb, SSHORT ttype, ISC_STATUS *status)
+CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, SSHORT ttype, ISC_STATUS *status)
 {
 /**************************************
  *
@@ -282,10 +282,10 @@ CharSetContainer::CharSetContainer(MemoryPool *p, USHORT cs_id) :
 	impossible_conversions(p),
 	cs(NULL)
 {
-	typedef USHORT (*CSInitFunc)(CHARSET, SSHORT, SSHORT);
+	typedef USHORT (*CSInitFunc)(charset*, SSHORT, SSHORT);
 	CSInitFunc csInitFunc = 
 		reinterpret_cast<CSInitFunc>(lookup_init_function(type_charset, cs_id, 0));
-	CHARSET cs = FB_NEW(*p) charset;
+	charset* cs = FB_NEW(*p) charset;
 	memset(cs, 0, sizeof(charset));
 
 	if (!csInitFunc || (*csInitFunc)(cs, cs_id, 0) != 0)
@@ -297,7 +297,7 @@ CharSetContainer::CharSetContainer(MemoryPool *p, USHORT cs_id) :
 	this->cs = cs;
 }
 
-CsConvert CharSetContainer::lookupConverter(TDBB tdbb, CHARSET_ID to_cs)
+CsConvert CharSetContainer::lookupConverter(thread_db* tdbb, CHARSET_ID to_cs)
 {
 	int pos;
 	if (charset_converters.find(to_cs, pos))
@@ -314,7 +314,7 @@ CsConvert CharSetContainer::lookupConverter(TDBB tdbb, CHARSET_ID to_cs)
 		return to_charset.getConvFromUnicode();
 	}
 
-	typedef USHORT (*CVTInitFunc)(CSCONVERT, SSHORT, SSHORT);
+	typedef USHORT (*CVTInitFunc)(csconvert*, SSHORT, SSHORT);
 	CVTInitFunc cvtInitFunc = 
 		reinterpret_cast<CVTInitFunc>(lookup_init_function(type_csconvert, to_cs, cs.getId()));
 	if (!cvtInitFunc) {
@@ -322,7 +322,7 @@ CsConvert CharSetContainer::lookupConverter(TDBB tdbb, CHARSET_ID to_cs)
 		return NULL;
 	}
 
-	CSCONVERT cvt = FB_NEW(*tdbb->tdbb_database->dbb_permanent) csconvert;
+	csconvert* cvt = FB_NEW(*tdbb->tdbb_database->dbb_permanent) csconvert;
 	memset(cvt, 0, sizeof(csconvert));
 	if ((*cvtInitFunc)(cvt, to_cs, cs.getId()) != 0)
 	{
@@ -337,7 +337,7 @@ CsConvert CharSetContainer::lookupConverter(TDBB tdbb, CHARSET_ID to_cs)
 	return cvt;
 }
 
-TextType CharSetContainer::lookupCollation(TDBB tdbb, USHORT tt_id)
+TextType CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 {
 	const USHORT id = TTYPE_TO_COLLATION(tt_id);
 	
@@ -367,7 +367,7 @@ TextType CharSetContainer::lookupCollation(TDBB tdbb, USHORT tt_id)
 
 class MBStrConverter {
 public:
-	MBStrConverter(TDBB tdbb, TextType obj, const UCHAR* &str, SSHORT &len) {
+	MBStrConverter(thread_db* tdbb, TextType obj, const UCHAR* &str, SSHORT &len) {
 		SSHORT err_code;
 		USHORT err_pos;
 		SSHORT out_len = obj.to_wc(NULL, 0, str, len, &err_code, &err_pos);
@@ -387,13 +387,13 @@ private:
 
 class NullStrConverter {
 public:
-	NullStrConverter(TDBB tdbb, TextType obj, const UCHAR *str, SSHORT len) { }
+	NullStrConverter(thread_db* tdbb, TextType obj, const UCHAR *str, SSHORT len) { }
 };
 
 template <typename PrevConverter>
 class UpcaseConverter : public PrevConverter {
 public:
-	UpcaseConverter(TDBB tdbb, TextType obj, const UCHAR* &str, SSHORT &len) : 
+	UpcaseConverter(thread_db* tdbb, TextType obj, const UCHAR* &str, SSHORT &len) :
 		PrevConverter(tdbb, obj, str, len) 
 	{
 		if (len > (int) sizeof(tempBuffer))
@@ -414,7 +414,7 @@ private:
 template <typename Algorithm, typename StrConverter, typename CharType>
 class StringFunctions {
 public:
-	static bool process(TDBB tdbb, TextType ttype, void* object, const UCHAR* str, SSHORT length) 
+	static bool process(thread_db* tdbb, TextType ttype, void* object, const UCHAR* str, SSHORT length)
 	{
 		StrConverter cvt(tdbb, ttype, str, length);
 		fb_assert(length % sizeof(CharType) == 0);
@@ -435,14 +435,14 @@ public:
 template <typename StrConverter, typename CharType>
 class ContainsFunctions : public StringFunctions<Firebird::ContainsEvaluator<CharType>, StrConverter, CharType> {
 public:
-	static void* create(TDBB tdbb, TextType ttype, const UCHAR* str, SSHORT length)
+	static void* create(thread_db* tdbb, TextType ttype, const UCHAR* str, SSHORT length)
 	{
 		StrConverter cvt(tdbb, ttype, str, length);
 		fb_assert(length % sizeof(CharType) == 0);
 		return FB_NEW(*tdbb->tdbb_default) Firebird::ContainsEvaluator<CharType>(tdbb->tdbb_default, 
 			reinterpret_cast<const CharType*>(str), length / sizeof(CharType));
 	}
-	static bool evaluate(TDBB tdbb, TextType ttype, const UCHAR* s, SSHORT sl, 
+	static bool evaluate(thread_db* tdbb, TextType ttype, const UCHAR* s, SSHORT sl,
 			const UCHAR* p, SSHORT pl) 
 	{
 		StrConverter cvt1(tdbb, ttype, p, pl), cvt2(tdbb, ttype, s, sl);
@@ -466,7 +466,7 @@ public:
 template <typename StrConverter, typename CharType>
 class LikeFunctions : public StringFunctions<Firebird::LikeEvaluator<CharType>, StrConverter, CharType> {
 public:
-	static void* create(TDBB tdbb, TextType ttype, const UCHAR* str, SSHORT length,
+	static void* create(thread_db* tdbb, TextType ttype, const UCHAR* str, SSHORT length,
 		UCS2_CHAR escape)
 	{
 		StrConverter cvt(tdbb, ttype, str, length);
@@ -475,7 +475,7 @@ public:
 			reinterpret_cast<const CharType*>(str), length / sizeof(CharType), 
 			escape, SQL_MATCH_ANY_CHARS, SQL_MATCH_1_CHAR);
 	}
-	static bool evaluate(TDBB tdbb, TextType ttype, const UCHAR* s, SSHORT sl,
+	static bool evaluate(thread_db* tdbb, TextType ttype, const UCHAR* s, SSHORT sl,
 		const UCHAR* p, SSHORT pl, UCS2_CHAR escape) 
 	{
 		StrConverter cvt1(tdbb, ttype, p, pl), cvt2(tdbb, ttype, s, sl);
@@ -717,7 +717,7 @@ static FPTR_SHORT lookup_init_function(
 }
 
 
-CHARSET_ID INTL_charset(TDBB tdbb, USHORT ttype, FPTR_ERROR err)
+CHARSET_ID INTL_charset(thread_db* tdbb, USHORT ttype, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -749,7 +749,7 @@ CHARSET_ID INTL_charset(TDBB tdbb, USHORT ttype, FPTR_ERROR err)
 }
 
 
-int INTL_compare(TDBB tdbb,
+int INTL_compare(thread_db* tdbb,
 				const dsc* pText1,
 				const dsc* pText2,
 				FPTR_ERROR err)
@@ -826,7 +826,7 @@ int INTL_compare(TDBB tdbb,
 }
 
 
-USHORT INTL_convert_bytes(TDBB tdbb,
+USHORT INTL_convert_bytes(thread_db* tdbb,
 						CHARSET_ID dest_type,
 						BYTE* dest_ptr,
 						USHORT dest_len,
@@ -971,7 +971,7 @@ USHORT INTL_convert_bytes(TDBB tdbb,
 }
 
 
-CsConvert INTL_convert_lookup(TDBB tdbb,
+CsConvert INTL_convert_lookup(thread_db* tdbb,
 								CHARSET_ID to_cs,
 								CHARSET_ID from_cs)
 {
@@ -1031,7 +1031,7 @@ int INTL_convert_string(dsc* to, const dsc* from, FPTR_ERROR err)
 
 /* Note: This function is called from outside the engine as
    well as inside - we likely can't get rid of GET_THREAD_DATA here */
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	if (tdbb == NULL)			/* are we in the Engine? */
 		return (1);				/* no, then can't access intl gah */
 
@@ -1178,7 +1178,7 @@ int INTL_data_or_binary(const dsc* pText)
 }
 
 
-int INTL_defined_type(TDBB tdbb, ISC_STATUS * status, SSHORT t_type)
+int INTL_defined_type(thread_db* tdbb, ISC_STATUS * status, SSHORT t_type)
 {
 /**************************************
  *
@@ -1209,7 +1209,7 @@ int INTL_defined_type(TDBB tdbb, ISC_STATUS * status, SSHORT t_type)
 }
 
 
-UCS2_CHAR INTL_getch(TDBB tdbb,
+UCS2_CHAR INTL_getch(thread_db* tdbb,
 							TextType* obj,
 							SSHORT t_type, const UCHAR** ptr, USHORT* count)
 {
@@ -1242,7 +1242,7 @@ UCS2_CHAR INTL_getch(TDBB tdbb,
 }
 
 
-void INTL_init(TDBB tdbb)
+void INTL_init(thread_db* tdbb)
 {
 /**************************************
  *
@@ -1256,7 +1256,7 @@ void INTL_init(TDBB tdbb)
 }
 
 
-USHORT INTL_key_length(TDBB tdbb, USHORT idxType, USHORT iLength)
+USHORT INTL_key_length(thread_db* tdbb, USHORT idxType, USHORT iLength)
 {
 /**************************************
  *
@@ -1295,7 +1295,7 @@ USHORT INTL_key_length(TDBB tdbb, USHORT idxType, USHORT iLength)
 	return (key_length);
 }
 
-CharSet INTL_charset_lookup(TDBB tdbb, SSHORT parm1, ISC_STATUS* status)
+CharSet INTL_charset_lookup(thread_db* tdbb, SSHORT parm1, ISC_STATUS* status)
 {
 /**************************************
  *
@@ -1324,7 +1324,7 @@ CharSet INTL_charset_lookup(TDBB tdbb, SSHORT parm1, ISC_STATUS* status)
 }
 
 
-TextType INTL_texttype_lookup(TDBB tdbb,
+TextType INTL_texttype_lookup(thread_db* tdbb,
 								SSHORT parm1,
 								FPTR_ERROR err,
 								ISC_STATUS* status)
@@ -1362,7 +1362,7 @@ TextType INTL_texttype_lookup(TDBB tdbb,
 	return csc->lookupCollation(tdbb, parm1);
 }
 
-void INTL_pad_spaces(TDBB tdbb, DSC * type, UCHAR * string, USHORT length)
+void INTL_pad_spaces(thread_db* tdbb, DSC * type, UCHAR * string, USHORT length)
 {
 /**************************************
  *
@@ -1386,11 +1386,11 @@ void INTL_pad_spaces(TDBB tdbb, DSC * type, UCHAR * string, USHORT length)
 }
 
 
-USHORT INTL_string_to_key(TDBB tdbb,
+USHORT INTL_string_to_key(thread_db* tdbb,
 						USHORT idxType,
 						const dsc* pString,
 						DSC* pByte,
-						USHORT partial)
+						bool partial)
 {
 /**************************************
  *
@@ -1470,7 +1470,7 @@ USHORT INTL_string_to_key(TDBB tdbb,
 									reinterpret_cast<const unsigned char*>(src),
 									pByte->dsc_length,
 									reinterpret_cast<unsigned char*>(dest),
-									partial);
+									partial ? TRUE : FALSE);
 		break;
 	}
 
@@ -1478,7 +1478,7 @@ USHORT INTL_string_to_key(TDBB tdbb,
 }
 
 
-int INTL_str_to_upper(TDBB tdbb, DSC * pString)
+int INTL_str_to_upper(thread_db* tdbb, DSC * pString)
 {
 /**************************************
  *
@@ -1532,7 +1532,7 @@ int INTL_str_to_upper(TDBB tdbb, DSC * pString)
 }
 
 
-UCHAR INTL_upper(TDBB tdbb, USHORT ttype, UCHAR ch)
+UCHAR INTL_upper(thread_db* tdbb, USHORT ttype, UCHAR ch)
 {
 /**************************************
  *
@@ -1566,7 +1566,7 @@ UCHAR INTL_upper(TDBB tdbb, USHORT ttype, UCHAR ch)
 
 
 static bool all_spaces(
-						  TDBB tdbb,
+						  thread_db* tdbb,
 						  CHARSET_ID charset,
 						  const BYTE* ptr, USHORT len, USHORT offset)
 {
@@ -1699,7 +1699,7 @@ static USHORT wc_to_wc(TEXTTYPE obj, UCS2_CHAR* pDest, USHORT nDest,	/* byte cou
 	return ((pDest - pStart) * sizeof(*pDest));
 }
 
-static void pad_spaces(TDBB tdbb, CHARSET_ID charset, BYTE* ptr, USHORT len)
+static void pad_spaces(thread_db* tdbb, CHARSET_ID charset, BYTE* ptr, USHORT len)
 {								/* byte count */
 /**************************************
  *

@@ -90,9 +90,8 @@
  */
 USHORT LC_NARROW_key_length(TEXTTYPE obj, USHORT inLen)
 {
-	USHORT len;
 /* fb_assert (inLen <= LANGFAM2_MAX_KEY); *//* almost certainly an error */
-	len = 3 * MAX(inLen, 2);
+	const USHORT len = 3 * MAX(inLen, 2);
 	return (MIN(len, LANGFAM2_MAX_KEY));
 }
 
@@ -113,20 +112,6 @@ static ULONG do_debug = 0;
 USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar, USHORT iOutLen, BYTE *pOutChar,
 							   USHORT partial)
 {
-	USHORT lprimary;
-	BYTE secondary[LANGFAM2_MAX_KEY];
-	USHORT lsecondary;
-	BYTE tertiary[LANGFAM2_MAX_KEY];
-	USHORT ltertiary;
-	BYTE special[LANGFAM2_MAX_KEY * 2];
-	USHORT lspecial;
-
-	USHORT i, j;
-
-	BYTE *outbuff;
-	const BYTE *inbuff;
-	SortOrderTblEntry* coll;
-
 	fb_assert(pOutChar != NULL);
 	fb_assert(pInChar != NULL);
 /* fb_assert (iInLen   <= LANGFAM2_MAX_KEY); */
@@ -138,22 +123,28 @@ USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar,
 	if (do_debug) {
 		ib_printf("string: (%02d) '%*s'\n", iInLen, iInLen, pInChar);
 		ib_fflush(ib_stdout);
-	};
+	}
 #endif	/* DEBUG */
 
-	outbuff = pOutChar;
-	lprimary = 0;
-	lsecondary = 0;
-	ltertiary = 0;
-	lspecial = 0;
+	BYTE* outbuff = pOutChar;
+	USHORT lprimary = 0;
+	USHORT lsecondary = 0;
+	USHORT ltertiary = 0;
+	USHORT lspecial = 0;
+
+	BYTE secondary[LANGFAM2_MAX_KEY];
+	BYTE tertiary[LANGFAM2_MAX_KEY];
+	BYTE special[LANGFAM2_MAX_KEY * 2];
 
 /* point inbuff at last character */
-	inbuff = pInChar + iInLen - 1;
+	const BYTE* inbuff = pInChar + iInLen - 1;
 
 /* skip backwards over all spaces & reset input length */
 	while ((inbuff >= pInChar) && (*inbuff == ASCII_SPACE))
 		inbuff--;
 	iInLen = (inbuff - pInChar + 1);
+	
+	USHORT i;
 
 	for (i = 0; i < iInLen; i++, pInChar++) {
 		fb_assert(lprimary < iOutLen);
@@ -161,8 +152,8 @@ USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar,
 		fb_assert(ltertiary < sizeof(tertiary));
 		fb_assert(lspecial < sizeof(special));
 
-		coll =
-			&((SortOrderTblEntry*) obj->
+		const SortOrderTblEntry* coll =
+			&((const SortOrderTblEntry*) obj->
 			  texttype_collation_table)[*pInChar];
 		if (!(coll->IsExpand || coll->IsCompress)) {
 			if (coll->Primary != NULL_WEIGHT)
@@ -175,20 +166,21 @@ USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar,
 		else if (coll->IsExpand && coll->IsCompress) {
 			/* Both flags set indicate a special value */
 			if ((coll->Primary != NULL_WEIGHT) &&
-				!(obj->texttype_flags & TEXTTYPE_ignore_specials)) {
+				!(obj->texttype_flags & TEXTTYPE_ignore_specials))
+			{
 				special[lspecial++] = (i + 1);	/* position */
 				special[lspecial++] = coll->Primary;
-			};
+			}
 		}
 		else if (coll->IsExpand) {
-			ExpandChar* exp = &((ExpandChar*) obj->texttype_expand_table)[0];
+			const ExpandChar* exp = &((const ExpandChar*) obj->texttype_expand_table)[0];
 			while (exp->Ch && exp->Ch != *pInChar)
 				exp++;
 			fb_assert(exp->Ch == *pInChar);
-			for (j = 0; j < 2; j++) {
+			for (int j = 0; j < 2; j++) {
 				if (j)
 					coll =
-						&((SortOrderTblEntry*) obj->
+						&((const SortOrderTblEntry*) obj->
 						  texttype_collation_table)[exp->ExpCh2];
 				if (coll->Primary != NULL_WEIGHT)
 					outbuff[lprimary++] = coll->Primary;
@@ -200,15 +192,14 @@ USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar,
 		}
 		else {					/* (col->IsCompress) */
 
-			CompressPair* cmp;
 			if ((USHORT) (i + 1) < iInLen) {
-				cmp =
-					&((CompressPair*) obj->
+				const CompressPair* cmp =
+					&((const CompressPair*) obj->
 					  texttype_compress_table)[0];
 				while (cmp->CharPair[0]) {
 					if ((cmp->CharPair[0] == *pInChar) &&
-						(cmp->CharPair[1] == *(pInChar + 1))) {
-
+						(cmp->CharPair[1] == *(pInChar + 1)))
+					{
 						/* Gobble the two-to-1 entry */
 						coll = &cmp->NoCaseWeight;
 						pInChar++;
@@ -225,7 +216,7 @@ USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar,
 			if (coll->Tertiary != NULL_TERTIARY)
 				tertiary[ltertiary++] = coll->Tertiary;
 		}
-	};
+	}
 
 /* primary keys are already in output key */
 
@@ -247,37 +238,37 @@ USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar,
 		for (i = 0; i < lsecondary && iOutLen; i++) {
 			*outbuff++ = secondary[i];
 			iOutLen--;
-		};
-	};
+		}
+	}
 
 /* put tertiary keys into output key */
 	for (i = 0; i < ltertiary && iOutLen; i++) {
 		*outbuff++ = tertiary[i];
 		iOutLen--;
-	};
+	}
 
 /* put special keys into output key */
 	if ((lspecial && iOutLen) &&
-		!(obj->texttype_flags & TEXTTYPE_ignore_specials)) {
+		!(obj->texttype_flags & TEXTTYPE_ignore_specials))
+	{
 		/* Insert the marker-byte */
 		*outbuff++ = 0;
 		iOutLen--;
 		for (i = 0; i < lspecial && iOutLen; i++) {
 			*outbuff++ = special[i];
 			iOutLen--;
-		};
-	};
+		}
+	}
 
 #ifdef DEBUG
 /* Dump out the computed key */
 	if (do_debug) {
-		UCHAR *p;
 		ib_printf("   key: (%02d) ", (outbuff - pOutChar));
-		for (p = pOutChar; p < outbuff; p++)
+		for (const UCHAR* p = pOutChar; p < outbuff; p++)
 			ib_printf("%2x ", *p);
 		ib_printf("\n");
 		ib_fflush(ib_stdout);
-	};
+	}
 #endif
 
 /* return length of key */
@@ -292,27 +283,27 @@ USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar,
 /* expansion char go before the expansion. */
 /* eg: S-set collates before ss */
 
-typedef struct coltab_status {
+struct coltab_status {
 	USHORT stat_flags;
-	SortOrderTblEntry* stat_waiting;
-} *COLSTAT;
+	const SortOrderTblEntry* stat_waiting;
+};
 
 
 
 
 static SSHORT special_scan(TEXTTYPE obj, USHORT l1, const BYTE* s1, USHORT l2, const BYTE* s2)
 {
-	SortOrderTblEntry* col1;
-	SortOrderTblEntry* col2;
+	const SortOrderTblEntry* col1 = 0;
+	const SortOrderTblEntry* col2 = 0;
 
 	USHORT index1 = 0;
 	USHORT index2 = 0;
 
-	while (1) {
+	while (true) {
 		/* Scan to find ignore char from l1 */
 		while (l1) {
 			col1 =
-				&((SortOrderTblEntry*) obj->
+				&((const SortOrderTblEntry*) obj->
 				  texttype_collation_table)[*s1];
 			if (col1->IsExpand && col1->IsCompress)
 				break;
@@ -324,7 +315,7 @@ static SSHORT special_scan(TEXTTYPE obj, USHORT l1, const BYTE* s1, USHORT l2, c
 		/* Scan to find ignore char from l2 */
 		while (l2) {
 			col2 =
-				&((SortOrderTblEntry*) obj->
+				&((const SortOrderTblEntry*) obj->
 				  texttype_collation_table)[*s2];
 			if (col2->IsExpand && col2->IsCompress)
 				break;
@@ -354,10 +345,9 @@ static SSHORT special_scan(TEXTTYPE obj, USHORT l1, const BYTE* s1, USHORT l2, c
 }
 
 
-SortOrderTblEntry* get_coltab_entry(TEXTTYPE obj, const UCHAR** p, USHORT *l, COLSTAT stat)
+static const SortOrderTblEntry* get_coltab_entry(TEXTTYPE obj, const UCHAR** p,
+	USHORT* l, coltab_status* stat)
 {
-	SortOrderTblEntry* col;
-
 	if (stat->stat_flags & HAVE_WAITING) {
 		(*l)--;
 		(*p)++;
@@ -368,8 +358,8 @@ SortOrderTblEntry* get_coltab_entry(TEXTTYPE obj, const UCHAR** p, USHORT *l, CO
 
 	stat->stat_waiting = NULL;
 	while (*l) {
-		col =
-			&((SortOrderTblEntry*) obj->
+		const SortOrderTblEntry* col =
+			&((const SortOrderTblEntry*) obj->
 			  texttype_collation_table)[**p];
 		if (!(col->IsExpand || col->IsCompress)) {
 			/* Have col */
@@ -386,7 +376,7 @@ SortOrderTblEntry* get_coltab_entry(TEXTTYPE obj, const UCHAR** p, USHORT *l, CO
 			continue;
 		}
 		else if (col->IsExpand) {
-			ExpandChar* exp = &((ExpandChar*) obj->texttype_expand_table)[0];
+			const ExpandChar* exp = &((const ExpandChar*) obj->texttype_expand_table)[0];
 			while (exp->Ch && exp->Ch != **p)
 				exp++;
 			fb_assert(exp->Ch == **p);
@@ -394,21 +384,20 @@ SortOrderTblEntry* get_coltab_entry(TEXTTYPE obj, const UCHAR** p, USHORT *l, CO
 			/* Have waiting */
 
 			stat->stat_waiting =
-				&((SortOrderTblEntry*) obj->
+				&((const SortOrderTblEntry*) obj->
 				  texttype_collation_table)[exp->ExpCh2];
 			stat->stat_flags |= HAVE_WAITING;
 			return col;
 		}
 		else {					/* (col->IsCompress) */
-
-			CompressPair* cmp;
 			if (*l > 1) {
-				cmp =
-					&((CompressPair*) obj->
+				const CompressPair* cmp =
+					&((const CompressPair*) obj->
 					  texttype_compress_table)[0];
 				while (cmp->CharPair[0]) {
 					if ((cmp->CharPair[0] == **p) &&
-						(cmp->CharPair[1] == *(*p + 1))) {
+						(cmp->CharPair[1] == *(*p + 1)))
+					{
 						/* Have Col */
 						col = &cmp->NoCaseWeight;
 						(*l) -= 2;
@@ -433,17 +422,6 @@ SortOrderTblEntry* get_coltab_entry(TEXTTYPE obj, const UCHAR** p, USHORT *l, CO
 
 SSHORT LC_NARROW_compare(TEXTTYPE obj, USHORT l1, const BYTE* s1, USHORT l2, const BYTE* s2)
 {
-	SortOrderTblEntry* col1;
-	SortOrderTblEntry* col2;
-	coltab_status stat1, stat2;
-	SSHORT save_secondary = 0;
-	SSHORT save_tertiary = 0;
-	SSHORT save_quandary = 0;
-	USHORT save_l1, save_l2;
-
-	stat1.stat_flags = 0;
-	stat2.stat_flags = 0;
-
 /* Start at EOS, scan backwards to find non-space */
 	const BYTE* p = s1 + l1 - 1;
 	while ((p >= s1) && (*p == ASCII_SPACE))
@@ -455,12 +433,22 @@ SSHORT LC_NARROW_compare(TEXTTYPE obj, USHORT l1, const BYTE* s1, USHORT l2, con
 		p--;
 	l2 = (p - s2 + 1);
 
-	save_l1 = l1;
-	save_l2 = l2;
-	const BYTE* save_s1 = s1;
-	const BYTE* save_s2 = s2;
+	const USHORT save_l1 = l1;
+	const USHORT save_l2 = l2;
+	const BYTE* const save_s1 = s1;
+	const BYTE* const save_s2 = s2;
+	SSHORT save_secondary = 0;
+	SSHORT save_tertiary = 0;
+	SSHORT save_quandary = 0;
 
-	while (1) {
+	coltab_status stat1, stat2;
+	stat1.stat_flags = 0;
+	stat2.stat_flags = 0;
+	
+	const SortOrderTblEntry* col1 = 0;
+	const SortOrderTblEntry* col2 = 0;
+
+	while (true) {
 		col1 = get_coltab_entry(obj, &s1, &l1, &stat1);
 		col2 = get_coltab_entry(obj, &s2, &l2, &stat2);
 		if (!col1 || !col2)
@@ -470,14 +458,17 @@ SSHORT LC_NARROW_compare(TEXTTYPE obj, USHORT l1, const BYTE* s1, USHORT l2, con
 		if (col1->Secondary != col2->Secondary) {
 			if ((obj->texttype_flags & TEXTTYPE_reverse_secondary) ||
 				!save_secondary)
-					save_secondary = (col1->Secondary - col2->Secondary);
+			{
+				save_secondary = (col1->Secondary - col2->Secondary);
+			}
 		}
 		else if (col1->Tertiary != col2->Tertiary) {
 			if (!save_tertiary)
 				save_tertiary = (col1->Tertiary - col2->Tertiary);
 		}
 		else if (((stat1.stat_flags & HAVE_WAITING) XOR
-				  (stat2.stat_flags & HAVE_WAITING)) && !save_quandary) {
+				  (stat2.stat_flags & HAVE_WAITING)) && !save_quandary)
+		{
 			if (obj->texttype_flags & TEXTTYPE_expand_before)
 				save_quandary = (stat1.stat_flags & HAVE_WAITING) ? -1 : 1;
 			else
@@ -527,7 +518,8 @@ SSHORT LC_NARROW_compare(TEXTTYPE obj, USHORT l1, const BYTE* s1, USHORT l2, con
  * Routine used for comparing results from comparision algorithm
  * to results from key creation algorithm
  */
-static SSHORT old_fam2_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2)
+static SSHORT old_fam2_compare(TEXTTYPE obj, USHORT l1, const BYTE* s1,
+	USHORT l2, const BYTE* s2)
 {
 	BYTE key1[LANGFAM2_MAX_KEY];
 	BYTE key2[LANGFAM2_MAX_KEY];
@@ -546,7 +538,7 @@ static SSHORT old_fam2_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYT
 			return (-1);
 		else
 			return (1);
-	};
+	}
 	if (len1 < len2)
 		return (-1);
 	else if (len1 > len2)
@@ -558,19 +550,18 @@ static SSHORT old_fam2_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYT
 
 #ifdef DEBUG_COMPARE
 
-#define	SIGN(x)	(((x) < 0)?-1:(((x) == 0)?0:1))
+#define	SIGN(x)	(((x) < 0) ? -1 : (((x) == 0)? 0 : 1))
 
 /*
  * Debugging only
  * Routine used for comparing results from comparision algorithm
  * to results from key creation algorithm
  */
-static SSHORT fam2_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2)
+static SSHORT fam2_compare(TEXTTYPE obj, USHORT l1, const BYTE* s1,
+	USHORT l2, const BYTE* s2)
 {
-	SSHORT res1, res2;
-
-	res1 = old_fam2_compare(obj, l1, s1, l2, s2);
-	res2 = LC_NARROW_compare(obj, l1, s1, l2, s2);
+	SSHORT res1 = old_fam2_compare(obj, l1, s1, l2, s2);
+	SSHORT res2 = LC_NARROW_compare(obj, l1, s1, l2, s2);
 
 	if (SIGN(res1) != SIGN(res2)) {
 		ib_printf("different compares:\n%d %s\n%d %s\nold = %d new = %d\n",
@@ -594,3 +585,4 @@ static SSHORT fam2_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s
 #undef NULL_WEIGHT
 #undef NULL_SECONDARY
 #undef NULL_TERTIARY
+

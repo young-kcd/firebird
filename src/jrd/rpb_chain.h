@@ -30,28 +30,35 @@
 #include "../jrd/jrd.h"
 #include "../jrd/req.h"
 
-class traRpbListElement {
+class traRpbListElement
+{
 public:
-	struct rpb *lr_rpb;
+	struct rpb* lr_rpb;
 	int level;
 	traRpbListElement(struct rpb *r, USHORT l) : 
 			lr_rpb(r), level(l) {}
 	traRpbListElement() {}
-	static inline const bool greaterThan(const traRpbListElement& i1, const traRpbListElement& i2) {
+
+	static inline const bool greaterThan(const traRpbListElement& i1, const traRpbListElement& i2)
+	{
 		return i1.lr_rpb->rpb_relation->rel_id != i2.lr_rpb->rpb_relation->rel_id ? 
 			   i1.lr_rpb->rpb_relation->rel_id > i2.lr_rpb->rpb_relation->rel_id :
 			   i1.lr_rpb->rpb_number != i2.lr_rpb->rpb_number ?
 			   i1.lr_rpb->rpb_number > i2.lr_rpb->rpb_number : 
 			   i1.level > i2.level;
 	}
-	static inline const traRpbListElement& generate(void *sender, const traRpbListElement& Item) {
+
+	static inline const traRpbListElement& generate(void *sender, const traRpbListElement& Item)
+	{
 		return Item;
 	}
 };
 
+
 typedef Firebird::SortedArray<traRpbListElement, traRpbListElement, 
 			traRpbListElement, traRpbListElement> traRpbArray;
-class traRpbList : public traRpbArray {
+class traRpbList : public traRpbArray
+{
 public:
 	traRpbList(Firebird::MemoryPool *p) : 
 		traRpbArray(p, 16) {}

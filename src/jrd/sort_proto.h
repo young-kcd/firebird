@@ -25,6 +25,7 @@
 #define JRD_SORT_PROTO_H
 
 class att;
+struct sort_key_def;
 
 #ifdef SCROLLABLE_CURSORS
 void	SORT_diddle_key(UCHAR *, struct scb *, bool);
@@ -38,7 +39,7 @@ ULONG	SORT_read_block(ISC_STATUS *, struct sfb *, ULONG, BLOB_PTR *,
 
 void	SORT_error(ISC_STATUS *, struct sfb *, TEXT *, ISC_STATUS, int);
 void	SORT_fini(struct scb *, att*);
-struct scb*	SORT_init(ISC_STATUS*, USHORT, USHORT, const struct skd*,
+struct scb*	SORT_init(ISC_STATUS*, USHORT, USHORT, const sort_key_def*,
 						FPTR_REJECT_DUP_CALLBACK, void*, att*, UINT64);
 void	SORT_put(ISC_STATUS *, struct scb *, ULONG **);
 void	SORT_shutdown(att*);

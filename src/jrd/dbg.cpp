@@ -108,7 +108,8 @@ static TEXT *node_names[] = {
 
 /* rsb types */
 
-static TEXT *rsb_names[] = {
+static const TEXT* rsb_names[] =
+{
 	"boolean",
 	"cross",
 	"dbkey",
@@ -143,7 +144,6 @@ int DBG_all(void)
  *	Print all known blocks.
  *
  **************************************/
-
 	Database* dbb = GET_DBB;
 
 	if (!dbg_file) {
@@ -329,19 +329,18 @@ int DBG_precedence(void)
  * Functional description
  *
  **************************************/
-	BDB bdb;
 	QUE que;
 	Precedence* precedence;
-	BDB hi_bdb;
-	BDB lo_bdb;
+	Buffer_desc* hi_bdb;
+	Buffer_desc* lo_bdb;
 
 	Database* dbb = GET_DBB;
 
 	BCB bcb = dbb->dbb_bcb;
 	for (unsigned int i = 0; i < bcb->bcb_count; i++) {
-		bdb = bcb->bcb_rpt[i].bcb_bdb;
+		const Buffer_desc* bdb = bcb->bcb_rpt[i].bcb_bdb;
 		if (bdb->bdb_flags || bdb->bdb_ast_flags) {
-			ib_fprintf(dbg_file, "BDB %d:\tpage %"SLONGFORMAT"", i, bdb->bdb_page);
+			ib_fprintf(dbg_file, "Buffer_desc %d:\tpage %"SLONGFORMAT"", i, bdb->bdb_page);
 			if (bdb->bdb_flags & BDB_dirty)
 				ib_fprintf(dbg_file, ", dirty");
 			if (bdb->bdb_ast_flags & BDB_blocking)
@@ -372,7 +371,8 @@ int DBG_precedence(void)
 			if (QUE_NOT_EMPTY(bdb->bdb_higher)) {
 				ib_fprintf(dbg_file, "\tdirect higher precedence pages:");
 				for (que = bdb->bdb_higher.que_forward;
-					 que != &bdb->bdb_higher; que = que->que_forward) {
+					 que != &bdb->bdb_higher; que = que->que_forward)
+				{
 					precedence = BLOCK(que, Precedence*, pre_higher);
 					hi_bdb = precedence->pre_hi;
 					ib_fprintf(dbg_file, " %"SLONGFORMAT"", hi_bdb->bdb_page);
@@ -384,7 +384,8 @@ int DBG_precedence(void)
 			if (QUE_NOT_EMPTY(bdb->bdb_lower)) {
 				ib_fprintf(dbg_file, "\tdirect lower precedence pages:");
 				for (que = bdb->bdb_lower.que_forward; que != &bdb->bdb_lower;
-					 que = que->que_forward) {
+					 que = que->que_forward)
+				{
 					precedence = BLOCK(que, Precedence*, pre_lower);
 					lo_bdb = precedence->pre_low;
 					ib_fprintf(dbg_file, " %"SLONGFORMAT"", lo_bdb->bdb_page);
@@ -489,15 +490,15 @@ int DBG_block(BLK block)
 	case type_bdb:
 		ib_fprintf(dbg_file,
 				   "\tUse count: %d, page: %d, flags: %x, ast flags: %x\n",
-				   ((BDB) block)->bdb_use_count, ((BDB) block)->bdb_page,
-				   ((BDB) block)->bdb_flags, ((BDB) block)->bdb_ast_flags);
+				   ((Buffer_desc*) block)->bdb_use_count, ((Buffer_desc*) block)->bdb_page,
+				   ((Buffer_desc*) block)->bdb_flags, ((Buffer_desc*) block)->bdb_ast_flags);
 		ib_fprintf(dbg_file,
 				   "\tParent: %X, left: %X, right: %X, dirty mask: %X\n",
-				   ((BDB) block)->bdb_parent, ((BDB) block)->bdb_left,
-				   ((BDB) block)->bdb_right, ((BDB) block)->bdb_transactions);
-		prt_que("Que", &BLOCK(BDB)->bdb_que);
-		prt_que("Higher", &BLOCK(BDB)->bdb_higher);
-		prt_que("Lower", &BLOCK(BDB)->bdb_lower);
+				   ((Buffer_desc*) block)->bdb_parent, ((Buffer_desc*) block)->bdb_left,
+				   ((Buffer_desc*) block)->bdb_right, ((Buffer_desc*) block)->bdb_transactions);
+		prt_que("Que", &BLOCK(Buffer_desc*)->bdb_que);
+		prt_que("Higher", &BLOCK(Buffer_desc*)->bdb_higher);
+		prt_que("Lower", &BLOCK(Buffer_desc*)->bdb_lower);
 		break;
 
 	case type_pre:
@@ -508,7 +509,8 @@ int DBG_block(BLK block)
 	case type_fmt:
 		ib_fprintf(dbg_file, "\t");
 		for (i = 0, desc = BLOCK(fmt*)->fmt_desc;
-			 i < BLOCK(fmt*)->fmt_count; desc++, i++) {
+			 i < BLOCK(fmt*)->fmt_count; desc++, i++)
+		{
 			prt_dsc(desc, (i % 4) * 20);
 			if (i % 4 == 3)
 				ib_fprintf(dbg_file, "\n\t");
@@ -557,7 +559,8 @@ int DBG_check(int pool_id)
 					break;
 				}
 				if (block->blk_type <= (SCHAR) type_MIN
-					|| block->blk_type >= (SCHAR) type_MAX) {
+					|| block->blk_type >= (SCHAR) type_MAX)
+				{
 					ib_fprintf(dbg_file, "%X\t*** BAD BLOCK (%d) ***\n",
 							   block, block->blk_type);
 					++corrupt;
@@ -591,7 +594,6 @@ int DBG_close(void)
  *	Close the debugging file.
  *
  **************************************/
-
 	ib_fprintf(dbg_file, "\014\014");
 	ib_fclose(dbg_file);
 	dbg_file = ib_stdout;
@@ -611,7 +613,6 @@ int DBG_eval(int n)
  *	Examine a value.
  *
  **************************************/
-
 	ib_fprintf(dbg_file, "octal = %X, decimal = %d, hex = %x\n", n, n, n);
 	return TRUE;
 }
@@ -629,7 +630,6 @@ int DBG_examine(int *n)
  *	Examine a value.
  *
  **************************************/
-
 	ib_fprintf(dbg_file, "octal = %X, decimal = %d, hex = %x\n", *n, *n, *n);
 	return TRUE;
 }
@@ -869,7 +869,6 @@ int DBG_supervisor(int arg)
  * Functional description
  *
  **************************************/
-
 	prior_frame = (int *) *(&arg - 2);
 
 	debug = 0;
@@ -898,7 +897,6 @@ int DBG_rpb(RPB * rpb)
  *	Print a record paramter block
  *
  **************************************/
-
 	ib_fprintf(dbg_file, "\n%X\tRECORD PARAMETER BLOCK", rpb);
 	prt_fields(reinterpret_cast<char*>(rpb), dbt_rpb);
 	DBG_window(reinterpret_cast<int*>(&rpb->rpb_window));
@@ -1086,7 +1084,6 @@ static void go_column(int column)
  *	Utility function to print a bunch of spaces.
  *
  **************************************/
-
 	while (column-- > 0)
 		ib_fprintf(dbg_file, " ");
 }
@@ -1172,7 +1169,6 @@ static int prt_que(SCHAR * string, QUE que)
  *	Print a formatted que entry.
  *
  **************************************/
-
 	ib_fprintf(dbg_file, "\t%X %s forward: %X, backward: %X\n",
 			   que, string, que->que_forward, que->que_backward);
 	return TRUE;
@@ -1254,7 +1250,6 @@ void yyerror(const char* string)
  *	YACC error function.  Boring.
  *
  **************************************/
-
 	ib_fprintf(dbg_file, "%s\n", string);
 }
 
@@ -1271,7 +1266,6 @@ int yywrap(void)
  *	Wrapup function for YACC.
  *
  **************************************/
-
 	return (1);
 }
 

@@ -126,15 +126,15 @@ int LOCK_deq(PTR lock_id)
 }
 
 
-SLONG LOCK_enq(PTR prior_request;
-			   PTR parent_request;
-			   USHORT series;
-			   UCHAR * value;
-			   USHORT length;
-			   UCHAR type;
-			   int (*ast_routine) (int *);
-			   int *ast_argument; SLONG data; USHORT wait;
-			   ISC_STATUS * status_vector;
+SLONG LOCK_enq(PTR prior_request,
+			   PTR parent_request,
+			   USHORT series,
+			   const UCHAR* value,
+			   USHORT length,
+			   UCHAR type,
+			   lock_ast_t ast_routine,
+			   int *ast_argument, SLONG data, USHORT wait,
+			   ISC_STATUS* status_vector
 {
 /**************************************
  *
@@ -254,7 +254,7 @@ SLONG LOCK_read_data(PTR lock_id)
 }
 
 
-void LOCK_re_post(int (*ast_routine) (int *),
+void LOCK_re_post(lock_ast_t ast_routine,
 								 int ast_argument, PTR owner_offset)
 {
 /**************************************

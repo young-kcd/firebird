@@ -174,7 +174,7 @@ TEXT* ALL_cstring(const TEXT* in_string)
  *	return to the user or where ever.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	JrdMemoryPool* pool = tdbb->tdbb_default;
 	if (!pool) {
@@ -236,7 +236,7 @@ void ALL_init(void)
  *	have been locked before entry.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 	JrdMemoryPool* pool = tdbb->tdbb_default = dbb->dbb_permanent;
@@ -258,7 +258,7 @@ void JrdMemoryPool::ALL_push(BLK object, LLS* stack)
  *	Push an object on an LLS stack.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	JrdMemoryPool* pool = tdbb->tdbb_default;
 	lls* node = pool->lls_cache.newBlock();

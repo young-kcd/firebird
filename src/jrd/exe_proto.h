@@ -26,19 +26,19 @@
 
 class jrd_req;
 
-void EXE_assignment(TDBB, struct jrd_nod*);
-jrd_req* EXE_find_request(TDBB, jrd_req *, bool);
-void EXE_receive(TDBB, jrd_req*, USHORT, USHORT, UCHAR*);
-void EXE_send(TDBB, jrd_req*, USHORT, USHORT, UCHAR *);
-void EXE_start(TDBB, jrd_req*, class jrd_tra *);
-void EXE_unwind(TDBB, jrd_req*);
+void EXE_assignment(thread_db*, class jrd_nod*);
+jrd_req* EXE_find_request(thread_db*, jrd_req *, bool);
+void EXE_receive(thread_db*, jrd_req*, USHORT, USHORT, UCHAR*);
+void EXE_send(thread_db*, jrd_req*, USHORT, USHORT, UCHAR *);
+void EXE_start(thread_db*, jrd_req*, class jrd_tra *);
+void EXE_unwind(thread_db*, jrd_req*);
 #ifdef SCROLLABLE_CURSORS
-void EXE_seek(TDBB, jrd_req*, USHORT, ULONG);
+void EXE_seek(thread_db*, jrd_req*, USHORT, ULONG);
 #endif
 
 #ifdef PC_ENGINE
-bool EXE_crack(TDBB, Rsb*, USHORT);
-void EXE_mark_crack(TDBB, Rsb*, USHORT);
+bool EXE_crack(thread_db*, Rsb*, USHORT);
+void EXE_mark_crack(thread_db*, Rsb*, USHORT);
 #endif
 
 

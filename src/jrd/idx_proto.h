@@ -28,26 +28,28 @@
 #include "../jrd/exe.h"
 #include "../jrd/req.h"
 
+class jrd_rel;
+class jrd_tra;
+struct rpb;
 
-void IDX_check_access(TDBB, class Csb *, struct jrd_rel *, struct jrd_rel *,
+void IDX_check_access(thread_db*, class Csb *, jrd_rel*, jrd_rel*,
 							 class jrd_fld*);
-void IDX_create_index(TDBB, struct jrd_rel*, struct idx*, const TEXT*,
-					  USHORT*, class jrd_tra*, SelectivityList&);
-struct idb* IDX_create_index_block(TDBB, struct jrd_rel *, USHORT);
-void IDX_delete_index(TDBB, struct jrd_rel *, USHORT);
-void IDX_delete_indices(TDBB, struct jrd_rel *);
-enum idx_e IDX_erase(TDBB, struct rpb *, class jrd_tra *, struct jrd_rel **,
+void IDX_create_index(thread_db*, jrd_rel*, struct idx*, const TEXT*,
+					  USHORT*, jrd_tra*, SelectivityList&);
+struct idb* IDX_create_index_block(thread_db*, jrd_rel*, USHORT);
+void IDX_delete_index(thread_db*, jrd_rel*, USHORT);
+void IDX_delete_indices(thread_db*, jrd_rel*);
+enum idx_e IDX_erase(thread_db*, rpb*, jrd_tra*, jrd_rel**,
 							USHORT *);
-void IDX_garbage_collect(TDBB, struct rpb *, class lls*,
-								class lls*);
-enum idx_e IDX_modify(struct tdbb *, struct rpb *, struct rpb *,
-							 class jrd_tra *, struct jrd_rel **, USHORT *);
-enum idx_e IDX_modify_check_constraints(TDBB, struct rpb *, struct rpb *,
-											  class jrd_tra *, struct jrd_rel **,
+void IDX_garbage_collect(thread_db*, rpb*, class lls*, class lls*);
+enum idx_e IDX_modify(thread_db*, rpb*, rpb*,
+							 jrd_tra*, jrd_rel**, USHORT *);
+enum idx_e IDX_modify_check_constraints(thread_db*, rpb*, rpb*,
+											  jrd_tra*, jrd_rel**,
 											  USHORT *);
-void IDX_statistics(TDBB, struct jrd_rel *, USHORT, SelectivityList&);
-enum idx_e IDX_store(struct tdbb *, struct rpb *, class jrd_tra *,
-							struct jrd_rel **, USHORT *);
+void IDX_statistics(thread_db*, jrd_rel*, USHORT, SelectivityList&);
+enum idx_e IDX_store(thread_db*, rpb*, jrd_tra*,
+							jrd_rel**, USHORT *);
 
 
 #endif // JRD_IDX_PROTO_H

@@ -133,7 +133,7 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
  *	These entrypoints are *NOT* designed for customer use!
  *
  **************************************/
-	TDBB tdbb;
+	thread_db* tdbb;
 	char filename[MAXPATHLEN];
 	Shadow* shadow;
 #ifdef WIN_NT

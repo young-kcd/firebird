@@ -1013,7 +1013,7 @@ void API_ROUTINE gds__map_blobs(int* handle1, int* handle2)
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 #ifndef SUPERCLIENT
 /* Note: gds__map_blobs is almost like an API call,
-   it needs a TDBB structure setup for it in order
+   it needs a thread_db structure setup for it in order
    to function properly.  This currently does
    not function.
    1996-Nov-06 David Schnepper  */

@@ -69,50 +69,42 @@ char *defaults[] = {
 #endif
 
 
-try(c, f)
-	 char *c;
-	 FPTR_INT f;
+void try_fc(char* c, FPTR_INT f)
 {
 	unsigned char buffer[200];
-	int res;
-	int i;
-	res = (*f) (strlen(c), c, sizeof(buffer), buffer);
+	const int res = (*f) (strlen(c), c, sizeof(buffer), buffer);
 	ib_printf("%s => ", c);
-	for (i = 0; i < res; i++)
+	for (int i = 0; i < res; i++)
 		ib_printf("%d ", buffer[i]);
 	ib_printf("\n");
-};
+}
 
-main(argc, argv)
-	 int argc;
-	 char *argv[];
+int main(int argc, char** argv)
 {
-	FPTR_INT func;
 	char buffer[200];
-	int i;
 	struct texttype this_textobj;
-	char **vector;
 
 #ifdef VMS
-	vector = defaults;
+	char** vector = defaults;
 	argc = FB_NELEM(defaults);
 #else
 	if (argc <= 1) {
 		ib_printf("usage: dtest Intl_module_name\n");
 		return (1);
-	};
-	vector = argv;
+	}
+	char** vector = argv;
 #endif
 
-	for (i = 1; i < argc; i++) {
+	FPTR_INT func = 0;
+
+	for (int i = 1; i < argc; i++) {
 
 #ifdef LIKE_JRD
 		{
 			char module[200];
 			char path[MAXPATHLEN];
 			char entry[200];
-			int t_type;
-			t_type = atoi(vector[i]);
+			const int t_type = atoi(vector[i]);
 			sprintf(module, INTL_MODULE, t_type);
 			gds__prefix(path, module);
 			sprintf(entry, INTL_INIT_ENTRY, t_type);
@@ -151,7 +143,7 @@ main(argc, argv)
 					(*func) (sizeof(buffer), buffer);
 					FULL_DEBUG("Back from ID fn \n");
 					ib_printf("%s.id => %s\n", vector[i], buffer);
-				};
+				}
 
 				func = this_textobj.texttype_functions[intl_fn_string_to_key];
 
@@ -159,13 +151,14 @@ main(argc, argv)
 				if (func == NULL)
 					ib_printf("%s: Can't find str_to_key\n", vector[i]);
 				else {
-					try("cote", func);
-					try("COTE", func);
-					try("co-te", func);
-					try("CO-TE", func);
-				};
-			};
-		};
-	};
+					try_fc("cote", func);
+					try_fc("COTE", func);
+					try_fc("co-te", func);
+					try_fc("CO-TE", func);
+				}
+			}
+		}
+	}
 	return (0);
 }
+

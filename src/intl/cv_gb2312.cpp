@@ -26,7 +26,7 @@
 #include "../intl/cv_gb2312.h"
 #include "ld_proto.h"
 
-USHORT CVGB_gb2312_to_unicode(CSCONVERT obj,
+USHORT CVGB_gb2312_to_unicode(csconvert* obj,
 							  UCS2_CHAR *dest_ptr,
 							  USHORT dest_len,
 							  const UCHAR* src_ptr,
@@ -93,16 +93,16 @@ USHORT CVGB_gb2312_to_unicode(CSCONVERT obj,
 		*dest_ptr++ = ch;
 		dest_len -= sizeof(*dest_ptr);
 		src_len -= this_len;
-	};
+	}
 	if (src_len && !*err_code) {
 		*err_code = CS_TRUNCATION_ERROR;
-	};
+	}
 	*err_position = src_start - src_len;
 	return ((dest_ptr - start) * sizeof(*dest_ptr));
 }
 
 
-USHORT CVGB_unicode_to_gb2312(CSCONVERT obj,
+USHORT CVGB_unicode_to_gb2312(csconvert* obj,
 							  UCHAR *gb_str,
 							  USHORT gb_len,
 							  const UCS2_CHAR* unicode_str,
@@ -137,7 +137,7 @@ USHORT CVGB_unicode_to_gb2312(CSCONVERT obj,
 		if ((gb_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
 			break;
-		};
+		}
 
 		const int tmp1 = gb_ch / 256;
 		const int tmp2 = gb_ch % 256;
@@ -146,7 +146,7 @@ USHORT CVGB_unicode_to_gb2312(CSCONVERT obj,
 			gb_len--;
 			unicode_len -= sizeof(*unicode_str);
 			continue;
-		};
+		}
 		if (gb_len < 2) {
 			*err_code = CS_TRUNCATION_ERROR;
 			break;
@@ -158,7 +158,7 @@ USHORT CVGB_unicode_to_gb2312(CSCONVERT obj,
 			*gb_str++ = tmp2;
 			unicode_len -= sizeof(*unicode_str);
 			gb_len -= 2;
-		};
+		}
 	}
 	if (unicode_len && !*err_code) {
 		*err_code = CS_TRUNCATION_ERROR;
@@ -233,7 +233,7 @@ USHORT CVGB_gb2312_byte2short(TEXTTYPE obj,
 			if (src_len < 2) {
 				*err_code = CS_BAD_INPUT;
 				break;
-			};
+			}
 			x = (*src << 8) + (*(src + 1));
 			src += 2;
 			src_len -= 2;
@@ -241,7 +241,7 @@ USHORT CVGB_gb2312_byte2short(TEXTTYPE obj,
 		else {
 			x = *src++;
 			src_len--;
-		};
+		}
 		*dst = x;	/* Assumes alignment */
 		++dst;
 		dst_len -= sizeof(USHORT);
@@ -272,7 +272,7 @@ SSHORT CVGB_gb2312_mbtowc(TEXTTYPE obj,
 	if (GB1(*src)) {
 		if (src_len < 2) {
 			return -1;
-		};
+		}
 		if (wc)
 			*wc = (*src << 8) + (*(src + 1));
 		return 2;
@@ -281,6 +281,6 @@ SSHORT CVGB_gb2312_mbtowc(TEXTTYPE obj,
 		if (wc)
 			*wc = *src++;
 		return 1;
-	};
+	}
 }
 

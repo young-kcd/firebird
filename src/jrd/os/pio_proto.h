@@ -39,7 +39,7 @@ SLONG	PIO_max_alloc(Database*);
 SLONG	PIO_act_alloc(Database*);
 jrd_file*	PIO_open(Database*, const TEXT*, SSHORT, bool,
 							struct blk*, const TEXT*, USHORT);
-bool	PIO_read(jrd_file*, class bdb*, struct pag*, ISC_STATUS*);
+bool	PIO_read(jrd_file*, class Buffer_desc*, struct pag*, ISC_STATUS*);
 
 #ifdef SUPERSERVER_V2
 bool	PIO_read_ahead(Database*, SLONG, SCHAR*, SLONG, struct phys_io_blk*,
@@ -48,7 +48,7 @@ bool		PIO_status(struct phys_io_blk*, ISC_STATUS*);
 #endif
 
 int		PIO_unlink(const TEXT*);
-bool	PIO_write(jrd_file*, class bdb*, struct pag*, ISC_STATUS*);
+bool	PIO_write(jrd_file*, class Buffer_desc*, struct pag*, ISC_STATUS*);
 
 #endif // JRD_PIO_PROTO_H
 

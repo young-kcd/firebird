@@ -106,13 +106,14 @@ typedef union {
 
 // fwd. decl.
 class vec;
-struct tdbb;
+struct thread_db;
 class att;
 class jrd_tra;
 class jrd_req;
 class lck;
 class jrd_file;
 class fmt;
+class jrd_nod;
 
 
 class Database : private pool_alloc<type_dbb>
@@ -496,8 +497,8 @@ class jrd_prc : public pool_alloc_rpt<SCHAR, type_prc>
 	USHORT prc_inputs;
 	USHORT prc_defaults;
 	USHORT prc_outputs;
-	struct jrd_nod *prc_input_msg;
-	struct jrd_nod *prc_output_msg;
+	jrd_nod*	prc_input_msg;
+	jrd_nod*	prc_output_msg;
 	fmt*	prc_input_fmt;
 	fmt*	prc_output_fmt;
 	fmt*	prc_format;
@@ -534,11 +535,11 @@ class jrd_prc : public pool_alloc_rpt<SCHAR, type_prc>
 class prm : public pool_alloc_rpt<SCHAR, type_prm>
 {
     public:
-	USHORT prm_number;
-	struct dsc prm_desc;
-	jrd_nod *prm_default_val;
-	TEXT *prm_name;				/* pointer to asciiz name */
-	TEXT prm_string[2];			/* one byte for ALLOC and one for the terminating null */
+	USHORT 		prm_number;
+	struct dsc 	prm_desc;
+	jrd_nod*	prm_default_val;
+	const TEXT*	prm_name;			/* pointer to asciiz name */
+	TEXT 		prm_string[2];		/* one byte for ALLOC and one for the terminating null */
 };
 typedef prm* PRM;
 
@@ -569,8 +570,8 @@ struct trig {
 	USHORT flags; // Flags as they are in RDB$TRIGGERS table
 	class jrd_rel* relation; // Trigger parent relation
 	class str* name; // Trigger name
-	void compile(tdbb* _tdbb); // Ensure that trigger is compiled
-	BOOLEAN release(tdbb* _tdbb); // Try to free trigger request
+	void compile(thread_db*); // Ensure that trigger is compiled
+	void release(thread_db*); // Try to free trigger request
 };
 
 typedef Firebird::vector<trig> trig_vec;
@@ -594,7 +595,7 @@ public:
 	class vcl*	rel_pages;		/* vector of pointer page numbers */
 	vec*	rel_fields;		/* vector of field blocks */
 
-	struct rse *rel_view_rse;	/* view record select expression */
+	class rse* rel_view_rse;	/* view record select expression */
 	class vcx *rel_view_contexts;	/* linked list of view contexts */
 
 	TEXT *rel_security_name;	/* pointer to security class name for relation */
@@ -654,13 +655,13 @@ public:
 class jrd_fld : public pool_alloc_rpt<SCHAR, type_fld>
 {
     public:
-	struct jrd_nod*	fld_validation;		/* validation clause, if any */
-	struct jrd_nod*	fld_not_null;		/* if field cannot be NULL */
-	struct jrd_nod*	fld_missing_value;	/* missing value, if any */
-	struct jrd_nod*	fld_computation;	/* computation for virtual field */
-	struct jrd_nod*	fld_source;			/* source for view fields */
-	struct jrd_nod*	fld_default_value;	/* default value, if any */
-	TEXT *		fld_security_name;	/* pointer to security class name for field */
+	jrd_nod*	fld_validation;		/* validation clause, if any */
+	jrd_nod*	fld_not_null;		/* if field cannot be NULL */
+	jrd_nod*	fld_missing_value;	/* missing value, if any */
+	jrd_nod*	fld_computation;	/* computation for virtual field */
+	jrd_nod*	fld_source;			/* source for view fields */
+	jrd_nod*	fld_default_value;	/* default value, if any */
+	TEXT*		fld_security_name;	/* pointer to security class name for field */
 	struct arr*	fld_array;			/* array description, if array */
 	const TEXT*	fld_name;			/* Field name */
 	UCHAR		fld_length;			/* Field name length */
@@ -674,8 +675,8 @@ class jrd_fld : public pool_alloc_rpt<SCHAR, type_fld>
 class idb : public pool_alloc<type_idb>
 {
     public:
-	idb*	idb_next;
-	struct jrd_nod*	idb_expression;			/* node tree for index expression */
+	idb*		idb_next;
+	jrd_nod*	idb_expression;			/* node tree for index expression */
 	jrd_req*	idb_expression_request;	/* request in which index expression is evaluated */
 	struct dsc	idb_expression_desc;	/* descriptor for expression result */
 	lck*		idb_lock;				/* lock to synchronize changes to index */
@@ -914,7 +915,7 @@ typedef struct win {
 	SLONG win_page;
 	struct pag* win_buffer;
 	struct jrd_exp* win_expanded_buffer;
-	class bdb* win_bdb;
+	class Buffer_desc* win_bdb;
 	SSHORT win_scans;
 	USHORT win_flags;
 	explicit win(SLONG wp) : win_page(wp), win_flags(0) {}
@@ -941,7 +942,7 @@ struct win_for_array: public win
 
 /* Thread specific database block */
 
-typedef struct tdbb
+struct thread_db
 {
 	struct thdd	tdbb_thd_data;
 	Database*	tdbb_database;
@@ -961,7 +962,7 @@ typedef struct tdbb
 #if defined(UNIX) && defined(SUPERSERVER)
     sigjmp_buf tdbb_sigsetjmp;
 #endif
-} *TDBB;
+};
 
 #define	TDBB_sweeper			1	/* Thread sweeper or garbage collector */
 #define TDBB_no_cache_unwind	2	/* Don't unwind page buffer cache */
@@ -985,20 +986,20 @@ struct ihndl
 #endif
 
 #ifdef V4_THREADING
-#define PLATFORM_GET_THREAD_DATA ((TDBB) THD_get_specific())
+#define PLATFORM_GET_THREAD_DATA ((thread_db*) THD_get_specific())
 #endif
 
 /* RITTER - changed HP10 to HPUX in the expression below */
 #ifdef MULTI_THREAD
 #if (defined SOLARIS_MT || defined WIN_NT || \
 	defined HPUX || defined LINUX || defined DARWIN || defined FREEBSD )
-#define PLATFORM_GET_THREAD_DATA ((TDBB) THD_get_specific())
+#define PLATFORM_GET_THREAD_DATA ((thread_db*) THD_get_specific())
 #endif
 #endif
 
 #ifndef PLATFORM_GET_THREAD_DATA
 
-extern TDBB gdbb;
+extern thread_db* gdbb;
 
 #define PLATFORM_GET_THREAD_DATA (gdbb)
 #endif
@@ -1010,7 +1011,7 @@ extern TDBB gdbb;
  *
  * This allows for NULL thread data (which might be an error by itself)
  * If there is thread data, 
- * AND it is tagged as being a TDBB.
+ * AND it is tagged as being a thread_db.
  * AND it has a non-NULL tdbb_database field, 
  * THEN we validate that the structure there is a database block.
  * Otherwise, we return what we got.
@@ -1020,8 +1021,8 @@ extern TDBB gdbb;
 #ifdef DEV_BUILD
 #define GET_THREAD_DATA (((PLATFORM_GET_THREAD_DATA) && \
                          (((THDD)(PLATFORM_GET_THREAD_DATA))->thdd_type == THDD_TYPE_TDBB) && \
-			 (((TDBB)(PLATFORM_GET_THREAD_DATA))->tdbb_database)) \
-			 ? ((MemoryPool::blk_type(((TDBB)(PLATFORM_GET_THREAD_DATA))->tdbb_database) == type_dbb) \
+			 (((thread_db*)(PLATFORM_GET_THREAD_DATA))->tdbb_database)) \
+			 ? ((MemoryPool::blk_type(((thread_db*)(PLATFORM_GET_THREAD_DATA))->tdbb_database) == type_dbb) \
 			    ? (PLATFORM_GET_THREAD_DATA) \
 			    : (BUGCHECK (147), (PLATFORM_GET_THREAD_DATA))) \
 			 : (PLATFORM_GET_THREAD_DATA))
@@ -1036,10 +1037,10 @@ extern TDBB gdbb;
 #define CHECK_DBB(dbb)			/* nothing */
 #endif
 
-#define GET_DBB         (((TDBB) (GET_THREAD_DATA))->tdbb_database)
+#define GET_DBB         (((thread_db*) (GET_THREAD_DATA))->tdbb_database)
 
 /*-------------------------------------------------------------------------*
- * macros used to set tdbb and dbb pointers when there are not set already *
+ * macros used to set thread_db and Database pointers when there are not set already *
  *-------------------------------------------------------------------------*/
 
 #define	SET_TDBB(tdbb)	if ((tdbb) == NULL) { (tdbb) = GET_THREAD_DATA; }; CHECK_TDBB (tdbb)

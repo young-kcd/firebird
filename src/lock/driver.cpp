@@ -34,7 +34,7 @@
 #include <process.h>
 #endif
 
-static void ast(int);
+static int ast(void*);
 static int lookup_agg(UCHAR *);
 static int lookup_lock(UCHAR *);
 static void print_help(void);
@@ -234,7 +234,7 @@ void main( int argc, char **argv)
 }
 
 
-static void ast( int slot)
+static int ast(void* slot_void)
 {
 /**************************************
  *
@@ -248,6 +248,8 @@ static void ast( int slot)
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 	int sw_release_use = sw_release;
+	
+	const int slot = (int)(IPTR) slot_void; // static cast
 
 	ib_printf("*** blocking AST for lock# %d ", slot);
 
@@ -259,18 +261,19 @@ static void ast( int slot)
 
 	if (sw_release_use == 1) {
 		ib_printf("-- ignored ***\n");
-		return;
+		return 0;
 	}
 
 	if (sw_release_use > 2 && levels[slot] == LCK_EX) {
 		LOCK_convert(locks[slot], LCK_SR, wait, NULL, 0, status_vector);
 		levels[slot] = LCK_SR;
 		ib_printf("-- down graded to SR ***\n");
-		return;
+		return 0;
 	}
 
 	LOCK_deq(locks[slot]);
 	ib_printf("-- released ***\n");
+	return 0;
 }
 
 

@@ -79,7 +79,7 @@ void EXT_close(Rsb* rsb)
  *	Close a record stream for an external file.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	jrd_rel* relation = rsb->rsb_relation;
 	external_file* file = relation->rel_file;
@@ -141,7 +141,7 @@ external_file* EXT_file(jrd_rel* relation, TEXT* file_name, bid* description)
  **************************************/
 	UCHAR index_buffer[MAX_KEYS * sizeof(IDX)];
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 /* Allocate and fill out an external file block.  Get the
@@ -288,7 +288,7 @@ int EXT_get(Rsb* rsb)
  *	Get a record from an external file.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	if (tdbb->tdbb_request->req_flags & req_abort)
 		return FALSE;
@@ -359,7 +359,7 @@ EXT_open(Rsb* rsb)
  *	Open a record stream for an external file.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	jrd_rel* relation = rsb->rsb_relation;
 	jrd_req* request = tdbb->tdbb_request;
@@ -405,7 +405,7 @@ Rsb* EXT_optimize(OPT opt, SSHORT stream, NOD * sort_ptr)
  *	set of record source blocks (rsb's).
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 /* Start by chasing around finding pointers to the various
    data structures */
@@ -835,7 +835,7 @@ static bool get_dbkey(Rsb* rsb)
  *	Get a record from an external file.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 /* Chase down misc pointers */
 
@@ -896,7 +896,7 @@ static bool get_indexed(Rsb* rsb)
  **************************************/
 	UCHAR key_buffer[256];
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 /* Start by finding the signficant data structures for the stream.  These
    are mainly used to initialize the stream at some particular key value */
@@ -1013,7 +1013,7 @@ static bool get_sequential(Rsb* rsb)
  *	Get a record from an external file.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	jrd_rel* relation = rsb->rsb_relation;
 	external_file* file = relation->rel_file;
@@ -1115,7 +1115,7 @@ static open_indexed(Rsb* rsb)
  *	Open a record stream for an external file.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	jrd_rel* relation = rsb->rsb_relation;
 	external_file* file = relation->rel_file;
@@ -1145,7 +1145,7 @@ static open_sequential(Rsb* rsb)
  *	Open a record stream for an external file.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	jrd_rel* relation = rsb->rsb_relation;
 	external_file* file = relation->rel_file;

@@ -21,19 +21,19 @@
  * Contributor(s): ______________________________________.
  */
 
-USHORT CVJIS_sjis_to_unicode(CSCONVERT obj, USHORT *dest_ptr, USHORT dest_len,
+USHORT CVJIS_sjis_to_unicode(csconvert* obj, USHORT *dest_ptr, USHORT dest_len,
 							const UCHAR* sjis_str,
 							USHORT sjis_len, SSHORT *err_code, USHORT *err_position);
 
-USHORT CVJIS_unicode_to_sjis(CSCONVERT obj, UCHAR *sjis_str, USHORT sjis_len,
+USHORT CVJIS_unicode_to_sjis(csconvert* obj, UCHAR *sjis_str, USHORT sjis_len,
 							const USHORT* unicode_str,
 							 USHORT unicode_len, SSHORT *err_code, USHORT *err_position);
 
-USHORT CVJIS_eucj_to_unicode(CSCONVERT obj, USHORT *dest_ptr, USHORT dest_len,
+USHORT CVJIS_eucj_to_unicode(csconvert* obj, USHORT *dest_ptr, USHORT dest_len,
 							const UCHAR* src_ptr,
 							USHORT src_len, SSHORT *err_code, USHORT *err_position);
 
-USHORT CVJIS_unicode_to_eucj(CSCONVERT obj, UCHAR *eucj_str, USHORT eucj_len,
+USHORT CVJIS_unicode_to_eucj(csconvert* obj, UCHAR *eucj_str, USHORT eucj_len,
 							const USHORT* unicode_str,
 							 USHORT unicode_len, SSHORT *err_code, USHORT *err_position);
 
@@ -42,9 +42,9 @@ static USHORT CVJIS_check_euc(UCHAR *euc_str, USHORT euc_len);
 
 static USHORT CVJIS_check_sjis(UCHAR *sjis_str, USHORT sjis_len);
 
-static USHORT CVJIS_euc2sjis(CSCONVERT obj, UCHAR *sjis_str, USHORT sjis_len, UCHAR *euc_str
+static USHORT CVJIS_euc2sjis(csconvert* obj, UCHAR *sjis_str, USHORT sjis_len, UCHAR *euc_str
 							, USHORT euc_len, SSHORT *err_code, USHORT *err_position);
-static USHORT CVJIS_sjis2euc(CSCONVERT obj, UCHAR *euc_str, USHORT euc_len, UCHAR *sjis_str
+static USHORT CVJIS_sjis2euc(csconvert* obj, UCHAR *euc_str, USHORT euc_len, UCHAR *sjis_str
 							, USHORT sjis_len, SSHORT *err_code, USHORT *err_position);
 */
 

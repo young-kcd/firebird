@@ -392,7 +392,7 @@ svc* SVC_attach(USHORT	service_length,
  *
  **************************************/
 /* If the service name begins with a slash, ignore it. */
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	if (*service_name == '/' || *service_name == '\\') {
 		service_name++;
@@ -479,7 +479,8 @@ svc* SVC_attach(USHORT	service_length,
 		USHORT param_length = sizeof(SERVICE_THD_PARAM) - 1;
 		USHORT spb_buf_length = spb_length + param_length - ignored_length + 1;
 		SCHAR* q = spb_buf = (TEXT*) gds__alloc(spb_buf_length + 1);
-		if(!q) ERR_post(isc_virmemexh, 0);
+		if (!q)
+			ERR_post(isc_virmemexh, 0);
 		memcpy(q, spb, p - spb);
 		q += p - spb - 1;
 		*q++ += param_length - ignored_length + 1;
@@ -871,7 +872,7 @@ int SVC_output(svc* output_data, const UCHAR* output_buf)
 
 #endif /*SUPERSERVER*/
 	ISC_STATUS SVC_query2(svc* service,
-					  TDBB tdbb,
+					  thread_db* tdbb,
 					  USHORT send_item_length,
 					  const SCHAR* send_items,
 					  USHORT recv_item_length,
@@ -1788,7 +1789,7 @@ void* SVC_start(svc* service, USHORT spb_length, const SCHAR* spb)
 	}
 	THD_MUTEX_UNLOCK(thd_mutex);
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	try {
 

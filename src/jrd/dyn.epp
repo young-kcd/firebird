@@ -83,7 +83,7 @@ DATABASE DB = STATIC "ODS.RDB";
 
 
 static void grant(GBL, const UCHAR**);
-static bool grantor_can_grant_role(TDBB, GBL, const TEXT*, const TEXT*);
+static bool grantor_can_grant_role(thread_db*, GBL, const TEXT*, const TEXT*);
 static bool grantor_can_grant(GBL, const TEXT*, const TEXT*, const TEXT*,
 	const TEXT*, bool);
 static void	revoke_permission(GBL, const UCHAR**);
@@ -106,7 +106,7 @@ void DYN_ddl(att* attachment, jrd_tra* transaction, USHORT length,
  *
  **************************************/
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 #if defined(V4_THREADING) || (defined(SUPERSERVER) && defined(WIN_NT))
 	Database* dbb = tdbb->tdbb_database;
@@ -213,7 +213,7 @@ void DYN_error(bool	status_flag,
  *	DDL failed.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	if (tdbb->tdbb_status_vector[1] == isc_no_meta_update)
 		return;
@@ -287,7 +287,7 @@ void DYN_error_punt(bool	status_flag,
 bool DYN_is_it_sql_role(GBL		gbl,
 						   const TEXT*	input_name,
 						   TEXT*	output_name,
-						   TDBB		tdbb)
+						   thread_db*		tdbb)
 {
 /**************************************
  *
@@ -678,7 +678,7 @@ USHORT DYN_put_blr_blob(GBL gbl, const UCHAR** ptr, bid* blob_id)
  *	Write out a blr blob.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	const UCHAR *p = *ptr;
 	USHORT length = *p++;
@@ -717,7 +717,7 @@ USHORT DYN_put_text_blob(GBL gbl, const UCHAR** ptr, bid* blob_id)
  *	Write out a text blob.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	const UCHAR* p = *ptr;
 	USHORT length = *p++;
@@ -766,7 +766,7 @@ void DYN_rundown_request(BLK handle, SSHORT id)
  *
  **************************************/
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database*  dbb  = tdbb->tdbb_database;
 
 #pragma FB_COMPILER_MESSAGE("TMN: FIXME! We do not have a jmp_buf anymore!")
@@ -828,7 +828,7 @@ static void grant( GBL gbl, const UCHAR** ptr)
 	TEXT* ptr1;
 	TEXT* ptr2;
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 	const USHORT major_version  = dbb->dbb_ods_version;
@@ -1161,7 +1161,7 @@ static bool grantor_can_grant(	GBL		gbl,
  **************************************/
 	USHORT err_num;
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 /* Verify that the input relation exists. */
@@ -1424,7 +1424,7 @@ static bool grantor_can_grant(	GBL		gbl,
 }
 
 
-static bool grantor_can_grant_role(	TDBB	tdbb,
+static bool grantor_can_grant_role(	thread_db*	tdbb,
 									GBL		gbl,
 									const TEXT* grantor,
 									const TEXT* role_name)
@@ -1547,7 +1547,7 @@ static void revoke_permission(GBL gbl, const UCHAR** ptr)
 	SqlIdentifier revoking_user_name, dummy_name;
     TEXT* ptr1;
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 	const USHORT major_version = dbb->dbb_ods_version;
@@ -1803,7 +1803,7 @@ static void set_field_class_name(GBL gbl, const TEXT* relation, const TEXT* fiel
  *      field has a unique class name.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 	BLK request = CMP_find_request(tdbb, drq_s_f_class, DYN_REQUESTS);
@@ -1867,7 +1867,7 @@ static void store_privilege(GBL		gbl,
  *	routine should not.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 	BLK request = CMP_find_request(tdbb, drq_s_grant, DYN_REQUESTS);

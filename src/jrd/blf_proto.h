@@ -27,16 +27,16 @@
 // Does this file really need the extern C for external blob filters?
 extern "C" {
 
-ISC_STATUS	BLF_close_blob(TDBB, ctl**);
-ISC_STATUS	BLF_create_blob(TDBB, jrd_tra*, ctl**, struct bid*,
+ISC_STATUS	BLF_close_blob(thread_db*, ctl**);
+ISC_STATUS	BLF_create_blob(thread_db*, jrd_tra*, ctl**, struct bid*,
 										 USHORT, const UCHAR*,
 										 FPTR_BFILTER_CALLBACK, BLF);
-ISC_STATUS	BLF_get_segment(TDBB, ctl**, USHORT*, USHORT, UCHAR*);
-BLF			BLF_lookup_internal_filter(TDBB, SSHORT, SSHORT);
-ISC_STATUS	BLF_open_blob(TDBB, jrd_tra*, ctl**, const struct bid*,
+ISC_STATUS	BLF_get_segment(thread_db*, ctl**, USHORT*, USHORT, UCHAR*);
+BLF			BLF_lookup_internal_filter(thread_db*, SSHORT, SSHORT);
+ISC_STATUS	BLF_open_blob(thread_db*, jrd_tra*, ctl**, const struct bid*,
 									   USHORT, const UCHAR*,
 									   FPTR_BFILTER_CALLBACK, BLF);
-ISC_STATUS	BLF_put_segment(TDBB, ctl**, USHORT, const UCHAR*);
+ISC_STATUS	BLF_put_segment(thread_db*, ctl**, USHORT, const UCHAR*);
 
 } /* extern "C" */
 

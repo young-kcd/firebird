@@ -26,7 +26,7 @@
 #include "ld_proto.h"
 #include "cv_narrow.h"
 
-void CV_convert_init(CSCONVERT csptr,
+void CV_convert_init(csconvert* csptr,
 					 SSHORT to_cs,
 					 SSHORT from_cs,
 					 pfn_INTL_convert cvt_fn,
@@ -44,7 +44,7 @@ void CV_convert_init(CSCONVERT csptr,
 
 
 
-USHORT CV_unicode_to_nc(CSCONVERT obj,
+USHORT CV_unicode_to_nc(csconvert* obj,
 						BYTE *dest_ptr,
 						USHORT dest_len,
 						const BYTE* src_ptr,
@@ -82,20 +82,20 @@ USHORT CV_unicode_to_nc(CSCONVERT obj,
 		src_ptr += 2;
 		src_len -= 2;
 		dest_len -= 1;
-	};
+	}
 	if (src_len && !*err_code) {
 		if (src_len == 1)
 			*err_code = CS_BAD_INPUT;
 		else
 			*err_code = CS_TRUNCATION_ERROR;
-	};
+	}
 	*err_position = src_start - src_len;
 	return (dest_ptr - start);
 }
 
 
-USHORT CV_wc_to_wc(CSCONVERT obj,
-				   USHORT *dest_ptr,
+USHORT CV_wc_to_wc(csconvert* obj,
+				   USHORT* dest_ptr,
 				   USHORT dest_len,
 				   const USHORT* src_ptr,
 				   USHORT src_len,
@@ -133,19 +133,19 @@ USHORT CV_wc_to_wc(CSCONVERT obj,
 		src_ptr++;
 		src_len -= 2;
 		dest_len -= 2;
-	};
+	}
 	if (src_len && !*err_code) {
 		if (src_len == 1)
 			*err_code = CS_BAD_INPUT;
 		else
 			*err_code = CS_TRUNCATION_ERROR;
-	};
+	}
 	*err_position = src_start - src_len;
 	return ((dest_ptr - start) * sizeof(*dest_ptr));
 }
 
 
-USHORT CV_nc_to_unicode(CSCONVERT obj,
+USHORT CV_nc_to_unicode(csconvert* obj,
 						BYTE *dest_ptr,
 						USHORT dest_len,
 						const BYTE* src_ptr,
@@ -180,16 +180,16 @@ USHORT CV_nc_to_unicode(CSCONVERT obj,
 		src_len--;
 		dest_len -= sizeof(UNICODE);
 		dest_ptr += sizeof(UNICODE);
-	};
+	}
 	if (src_len && !*err_code) {
 		*err_code = CS_TRUNCATION_ERROR;
-	};
+	}
 	*err_position = src_start - src_len;
 	return (dest_ptr - start);
 }
 
 
-USHORT CV_wc_copy(CSCONVERT obj,
+USHORT CV_wc_copy(csconvert* obj,
 				  BYTE *dest_ptr,
 				  USHORT dest_len,
 				  const BYTE* src_ptr,
@@ -216,19 +216,19 @@ USHORT CV_wc_copy(CSCONVERT obj,
 		*dest_ptr++ = *src_ptr++;	/* 2nd   byte of unicode */
 		src_len -= 2;
 		dest_len -= 2;
-	};
+	}
 	if (src_len && !*err_code) {
 		if (src_len == 1)
 			*err_code = CS_BAD_INPUT;
 		else
 			*err_code = CS_TRUNCATION_ERROR;
-	};
+	}
 	*err_position = src_start - src_len;
 	return (dest_ptr - start);
 }
 
 
-USHORT eight_bit_convert(CSCONVERT obj,
+USHORT eight_bit_convert(csconvert* obj,
 						 BYTE *dest_ptr,
 						 USHORT dest_len,
 						 const BYTE* src_ptr,
@@ -256,15 +256,15 @@ USHORT eight_bit_convert(CSCONVERT obj,
 		if ((ch == CS_CANT_MAP) && (*src_ptr != CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
 			break;
-		};
+		}
 		*dest_ptr++ = ch;
 		src_ptr++;
 		src_len--;
 		dest_len--;
-	};
+	}
 	if (src_len && !*err_code) {
 		*err_code = CS_TRUNCATION_ERROR;
-	};
+	}
 	*err_position = src_start - src_len;
 	return (dest_ptr - start);
 }

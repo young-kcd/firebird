@@ -84,7 +84,7 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/dsc_proto.h"
 #include "../jrd/dbg_proto.h"	// DBG_supervisor
-#include "../jrd/ExecuteStatement.h"
+#include "../jrd/execute_statement.h"
 
 /* Pick up relation ids */
 
@@ -125,31 +125,31 @@ rel_MAX} RIDS;
 
 #define MAX_REQUEST_SIZE	10485760	// 10 MB - just to be safe
 
-static UCHAR* alloc_map(TDBB, Csb*, USHORT);
-static jrd_nod* catenate_nodes(TDBB, LLS);
-static jrd_nod* copy(TDBB, Csb*, jrd_nod*, UCHAR *, USHORT, jrd_nod*, bool);
-static void expand_view_nodes(TDBB, Csb*, USHORT, LLS *, NOD_T);
-static void ignore_dbkey(TDBB, Csb*, RSE, const jrd_rel*);
-static jrd_nod* make_defaults(TDBB, Csb*, USHORT, jrd_nod*);
-static jrd_nod* make_validation(TDBB, Csb*, USHORT);
-static jrd_nod* pass1(TDBB, Csb*, jrd_nod*, jrd_rel*, USHORT, bool);
-static void pass1_erase(TDBB, Csb*, jrd_nod*);
-static jrd_nod* pass1_expand_view(TDBB, Csb*, USHORT, USHORT, bool);
-static void pass1_modify(TDBB, Csb*, jrd_nod*);
-static RSE pass1_rse(TDBB, Csb*, RSE, jrd_rel*, USHORT);
-static void pass1_source(TDBB, Csb*, RSE, jrd_nod*, jrd_nod**, LLS *, jrd_rel*, USHORT);
-static jrd_nod* pass1_store(TDBB, Csb*, jrd_nod*);
-static jrd_nod* pass1_update(TDBB, Csb*, jrd_rel*, trig_vec*, USHORT, USHORT, USHORT, jrd_rel*,
+static UCHAR* alloc_map(thread_db*, Csb*, USHORT);
+static jrd_nod* catenate_nodes(thread_db*, LLS);
+static jrd_nod* copy(thread_db*, Csb*, jrd_nod*, UCHAR *, USHORT, jrd_nod*, bool);
+static void expand_view_nodes(thread_db*, Csb*, USHORT, LLS *, NOD_T);
+static void ignore_dbkey(thread_db*, Csb*, RSE, const jrd_rel*);
+static jrd_nod* make_defaults(thread_db*, Csb*, USHORT, jrd_nod*);
+static jrd_nod* make_validation(thread_db*, Csb*, USHORT);
+static jrd_nod* pass1(thread_db*, Csb*, jrd_nod*, jrd_rel*, USHORT, bool);
+static void pass1_erase(thread_db*, Csb*, jrd_nod*);
+static jrd_nod* pass1_expand_view(thread_db*, Csb*, USHORT, USHORT, bool);
+static void pass1_modify(thread_db*, Csb*, jrd_nod*);
+static RSE pass1_rse(thread_db*, Csb*, RSE, jrd_rel*, USHORT);
+static void pass1_source(thread_db*, Csb*, RSE, jrd_nod*, jrd_nod**, LLS *, jrd_rel*, USHORT);
+static jrd_nod* pass1_store(thread_db*, Csb*, jrd_nod*);
+static jrd_nod* pass1_update(thread_db*, Csb*, jrd_rel*, trig_vec*, USHORT, USHORT, USHORT, jrd_rel*,
 						USHORT);
-static jrd_nod* pass2(TDBB, Csb*, jrd_nod* const, jrd_nod*);
-static void pass2_rse(TDBB, Csb*, RSE);
-static jrd_nod* pass2_union(TDBB, Csb*, jrd_nod*);
-static void plan_check(Csb*, RSE);
+static jrd_nod* pass2(thread_db*, Csb*, jrd_nod* const, jrd_nod*);
+static void pass2_rse(thread_db*, Csb*, RSE);
+static jrd_nod* pass2_union(thread_db*, Csb*, jrd_nod*);
+static void plan_check(const Csb*, const class rse*);
 static void plan_set(Csb*, RSE, jrd_nod*);
-static void post_procedure_access(TDBB, Csb*, jrd_prc*);
-static Rsb* post_rse(TDBB, Csb*, RSE);
-static void	post_trigger_access(TDBB, Csb*, jrd_rel*, trig_vec*, jrd_rel*);
-static void process_map(TDBB, Csb*, jrd_nod*, fmt**);
+static void post_procedure_access(thread_db*, Csb*, jrd_prc*);
+static Rsb* post_rse(thread_db*, Csb*, RSE);
+static void	post_trigger_access(thread_db*, Csb*, jrd_rel*, trig_vec*, jrd_rel*);
+static void process_map(thread_db*, Csb*, jrd_nod*, fmt**);
 static bool stream_in_rse(USHORT, RSE);
 static SSHORT strcmp_space(const TEXT*, const TEXT*);
 
@@ -206,7 +206,7 @@ bool CMP_clone_is_active(const jrd_req* request)
 }
 
 
-jrd_nod* CMP_clone_node(TDBB tdbb, Csb* csb, jrd_nod* node)
+jrd_nod* CMP_clone_node(thread_db* tdbb, Csb* csb, jrd_nod* node)
 {
 /**************************************
  *
@@ -235,7 +235,7 @@ jrd_nod* CMP_clone_node(TDBB tdbb, Csb* csb, jrd_nod* node)
 }
 
 
-jrd_req* CMP_clone_request(TDBB tdbb, jrd_req* request, USHORT level, bool validate)
+jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool validate)
 {
 /**************************************
  *
@@ -346,7 +346,7 @@ jrd_req* CMP_compile(USHORT blr_length, const UCHAR* blr, USHORT internal_flag)
 }
 
 
-jrd_req* CMP_compile2(TDBB tdbb, const UCHAR* blr, USHORT internal_flag)
+jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag)
 {
 /**************************************
  *
@@ -463,7 +463,7 @@ void CMP_expunge_transaction(jrd_tra* transaction)
 }
 
 
-jrd_req* CMP_find_request(TDBB tdbb, USHORT id, USHORT which)
+jrd_req* CMP_find_request(thread_db* tdbb, USHORT id, USHORT which)
 {
 /**************************************
  *
@@ -517,7 +517,7 @@ jrd_req* CMP_find_request(TDBB tdbb, USHORT id, USHORT which)
 }
 
 
-void CMP_fini(TDBB tdbb)
+void CMP_fini(thread_db* tdbb)
 {
 /**************************************
  *
@@ -534,7 +534,7 @@ void CMP_fini(TDBB tdbb)
 }
 
 
-fmt* CMP_format(TDBB tdbb, Csb* csb, USHORT stream)
+fmt* CMP_format(thread_db* tdbb, Csb* csb, USHORT stream)
 {
 /**************************************
  *
@@ -568,7 +568,7 @@ fmt* CMP_format(TDBB tdbb, Csb* csb, USHORT stream)
 }
 
 
-void CMP_get_desc(TDBB tdbb, Csb* csb, jrd_nod* node, DSC * desc)
+void CMP_get_desc(thread_db* tdbb, Csb* csb, jrd_nod* node, DSC * desc)
 {
 /**************************************
  *
@@ -1663,7 +1663,7 @@ void CMP_get_desc(TDBB tdbb, Csb* csb, jrd_nod* node, DSC * desc)
 }
 
 
-IDL CMP_get_index_lock(TDBB tdbb, jrd_rel* relation, USHORT id)
+IDL CMP_get_index_lock(thread_db* tdbb, jrd_rel* relation, USHORT id)
 {
 /**************************************
  *
@@ -1739,7 +1739,7 @@ SLONG CMP_impure(Csb* csb, USHORT size)
 }
 
 
-jrd_req* CMP_make_request(TDBB tdbb, Csb* csb)
+jrd_req* CMP_make_request(thread_db* tdbb, Csb* csb)
 {
 /**************************************
  *
@@ -1965,7 +1965,7 @@ jrd_req* CMP_make_request(TDBB tdbb, Csb* csb)
 }
 
 
-void CMP_post_access(TDBB tdbb,
+void CMP_post_access(thread_db* tdbb,
 					 Csb* csb,
 					 const TEXT* security_name,
 					 SLONG view_id,
@@ -2051,7 +2051,7 @@ void CMP_post_access(TDBB tdbb,
 }
 
 
-void CMP_post_resource(TDBB tdbb,
+void CMP_post_resource(thread_db* tdbb,
 						Resource** rsc_ptr,
 						BLK rel_or_prc,
 						enum Resource::rsc_s type,
@@ -2127,7 +2127,7 @@ void CMP_release_resource(Resource** rsc_ptr, enum Resource::rsc_s type, USHORT 
 }
 
 
-void CMP_decrement_prc_use_count(TDBB tdbb, jrd_prc* procedure)
+void CMP_decrement_prc_use_count(thread_db* tdbb, jrd_prc* procedure)
 {
 /*********************************************
  *
@@ -2148,7 +2148,8 @@ void CMP_decrement_prc_use_count(TDBB tdbb, jrd_prc* procedure)
 	if (!procedure->prc_use_count)
 		return;
 
-	if (procedure->prc_int_use_count > 0) procedure->prc_int_use_count--;
+	if (procedure->prc_int_use_count > 0)
+		procedure->prc_int_use_count--;
 	
 	--procedure->prc_use_count;
 
@@ -2180,7 +2181,7 @@ void CMP_decrement_prc_use_count(TDBB tdbb, jrd_prc* procedure)
 }
 
 
-void CMP_release(TDBB tdbb, jrd_req* request)
+void CMP_release(thread_db* tdbb, jrd_req* request)
 {
 /**************************************
  *
@@ -2268,7 +2269,7 @@ void CMP_release(TDBB tdbb, jrd_req* request)
 }
 
 
-void CMP_shutdown_database(TDBB tdbb)
+void CMP_shutdown_database(thread_db* tdbb)
 {
 /**************************************
  *
@@ -2334,7 +2335,7 @@ void CMP_shutdown_database(TDBB tdbb)
 }
 
 
-static UCHAR* alloc_map(TDBB tdbb, Csb* csb, USHORT stream)
+static UCHAR* alloc_map(thread_db* tdbb, Csb* csb, USHORT stream)
 {
 /**************************************
  *
@@ -2408,7 +2409,7 @@ static USHORT base_stream(Csb* csb, jrd_nod** stream_number, bool nav_stream)
 #endif
 
 
-static jrd_nod* catenate_nodes(TDBB tdbb, LLS stack)
+static jrd_nod* catenate_nodes(thread_db* tdbb, LLS stack)
 {
 /**************************************
  *
@@ -2439,7 +2440,7 @@ static jrd_nod* catenate_nodes(TDBB tdbb, LLS stack)
 }
 
 
-static jrd_nod* copy(TDBB tdbb,
+static jrd_nod* copy(thread_db* tdbb,
 					Csb* csb,
 					jrd_nod* input,
 					UCHAR * remap,
@@ -2851,7 +2852,7 @@ static jrd_nod* copy(TDBB tdbb,
 }
 
 
-static void expand_view_nodes(TDBB tdbb,
+static void expand_view_nodes(thread_db* tdbb,
 							  Csb* csb,
 							  USHORT stream,
 							  LLS * stack,
@@ -2899,7 +2900,7 @@ static void expand_view_nodes(TDBB tdbb,
 }
 
 
-static void ignore_dbkey(TDBB tdbb, Csb* csb, RSE rse, const jrd_rel* view)
+static void ignore_dbkey(thread_db* tdbb, Csb* csb, RSE rse, const jrd_rel* view)
 {
 /**************************************
  *
@@ -2959,7 +2960,7 @@ static void ignore_dbkey(TDBB tdbb, Csb* csb, RSE rse, const jrd_rel* view)
 }
 
 
-static jrd_nod* make_defaults(TDBB tdbb, Csb* csb, USHORT stream, jrd_nod* statement)
+static jrd_nod* make_defaults(thread_db* tdbb, Csb* csb, USHORT stream, jrd_nod* statement)
 {
 /**************************************
  *
@@ -3022,7 +3023,7 @@ static jrd_nod* make_defaults(TDBB tdbb, Csb* csb, USHORT stream, jrd_nod* state
 }
 
 
-static jrd_nod* make_validation(TDBB tdbb, Csb* csb, USHORT stream)
+static jrd_nod* make_validation(thread_db* tdbb, Csb* csb, USHORT stream)
 {
 /**************************************
  *
@@ -3090,7 +3091,7 @@ static jrd_nod* make_validation(TDBB tdbb, Csb* csb, USHORT stream)
 }
 
 
-static jrd_nod* pass1(TDBB tdbb,
+static jrd_nod* pass1(thread_db* tdbb,
 					 Csb* csb,
 					 jrd_nod* node,
 					 jrd_rel* view,
@@ -3503,7 +3504,7 @@ static jrd_nod* pass1(TDBB tdbb,
 }
 
 
-static void pass1_erase(TDBB tdbb, Csb* csb, jrd_nod* node)
+static void pass1_erase(thread_db* tdbb, Csb* csb, jrd_nod* node)
 {
 /**************************************
  *
@@ -3606,7 +3607,7 @@ static void pass1_erase(TDBB tdbb, Csb* csb, jrd_nod* node)
 }
 
 
-static jrd_nod* pass1_expand_view(TDBB tdbb,
+static jrd_nod* pass1_expand_view(thread_db* tdbb,
 								 Csb* csb,
 								 USHORT org_stream,
 								 USHORT new_stream,
@@ -3671,7 +3672,7 @@ static jrd_nod* pass1_expand_view(TDBB tdbb,
 }
 
 
-static void pass1_modify(TDBB tdbb, Csb* csb, jrd_nod* node)
+static void pass1_modify(thread_db* tdbb, Csb* csb, jrd_nod* node)
 {
 /**************************************
  *
@@ -3789,7 +3790,7 @@ static void pass1_modify(TDBB tdbb, Csb* csb, jrd_nod* node)
 }
 
 
-static RSE pass1_rse(TDBB tdbb,
+static RSE pass1_rse(thread_db* tdbb,
 					 Csb* csb,
 					 RSE rse,
 					 jrd_rel* view,
@@ -3940,7 +3941,7 @@ static RSE pass1_rse(TDBB tdbb,
 }
 
 
-static void pass1_source(TDBB     tdbb,
+static void pass1_source(thread_db*     tdbb,
 						 Csb*      csb,
 						 RSE      rse,
 						 jrd_nod*  source,
@@ -4184,7 +4185,7 @@ static void pass1_source(TDBB     tdbb,
 }
 
 
-static jrd_nod* pass1_store(TDBB tdbb, Csb* csb, jrd_nod* node)
+static jrd_nod* pass1_store(thread_db* tdbb, Csb* csb, jrd_nod* node)
 {
 /**************************************
  *
@@ -4293,7 +4294,7 @@ static jrd_nod* pass1_store(TDBB tdbb, Csb* csb, jrd_nod* node)
 }
 
 
-static jrd_nod* pass1_update(TDBB tdbb,
+static jrd_nod* pass1_update(thread_db* tdbb,
 							Csb* csb,
 							jrd_rel* relation,
 							trig_vec* trigger,
@@ -4367,7 +4368,7 @@ static jrd_nod* pass1_update(TDBB tdbb,
 }
 
 
-static jrd_nod* pass2(TDBB tdbb, Csb* csb, jrd_nod* const node, jrd_nod* parent)
+static jrd_nod* pass2(thread_db* tdbb, Csb* csb, jrd_nod* const node, jrd_nod* parent)
 {
 /**************************************
  *
@@ -4943,7 +4944,7 @@ static jrd_nod* pass2(TDBB tdbb, Csb* csb, jrd_nod* const node, jrd_nod* parent)
 }
 
 
-static void pass2_rse(TDBB tdbb, Csb* csb, RSE rse)
+static void pass2_rse(thread_db* tdbb, Csb* csb, RSE rse)
 {
 /**************************************
  *
@@ -5032,7 +5033,7 @@ static void pass2_rse(TDBB tdbb, Csb* csb, RSE rse)
 }
 
 
-static jrd_nod* pass2_union(TDBB tdbb, Csb* csb, jrd_nod* node)
+static jrd_nod* pass2_union(thread_db* tdbb, Csb* csb, jrd_nod* node)
 {
 /**************************************
  *
@@ -5069,7 +5070,7 @@ static jrd_nod* pass2_union(TDBB tdbb, Csb* csb, jrd_nod* node)
 }
 
 
-static void plan_check(Csb* csb, RSE rse)
+static void plan_check(const Csb* csb, const class rse* rse)
 {
 /**************************************
  *
@@ -5090,7 +5091,7 @@ static void plan_check(Csb* csb, RSE rse)
 
 	// if any streams are not marked with a plan, give an error
 
-	jrd_nod** ptr = rse->rse_relation;
+	const jrd_nod* const* ptr = rse->rse_relation;
 	for (const jrd_nod* const* const end = ptr + rse->rse_count;
 		 ptr < end; ptr++)
 	{
@@ -5102,7 +5103,7 @@ static void plan_check(Csb* csb, RSE rse)
 			}
 		}
 		else if ((*ptr)->nod_type == nod_rse) {
-			plan_check(csb, (RSE) *ptr);
+			plan_check(csb, (const class rse*) *ptr);
 		}
 	}
 }
@@ -5343,7 +5344,7 @@ static void plan_set(Csb* csb, RSE rse, jrd_nod* plan)
 }
 
 
-static void post_procedure_access(TDBB tdbb, Csb* csb, jrd_prc* procedure)
+static void post_procedure_access(thread_db* tdbb, Csb* csb, jrd_prc* procedure)
 {
 /**************************************
  *
@@ -5401,7 +5402,7 @@ static void post_procedure_access(TDBB tdbb, Csb* csb, jrd_prc* procedure)
 }
 
 
-static Rsb* post_rse(TDBB tdbb, Csb* csb, RSE rse)
+static Rsb* post_rse(thread_db* tdbb, Csb* csb, RSE rse)
 {
 /**************************************
  *
@@ -5462,7 +5463,7 @@ static Rsb* post_rse(TDBB tdbb, Csb* csb, RSE rse)
 }
 
 
-static void post_trigger_access(TDBB tdbb, Csb* csb, jrd_rel* owner_relation,
+static void post_trigger_access(thread_db* tdbb, Csb* csb, jrd_rel* owner_relation,
 	trig_vec* triggers, jrd_rel* view)
 {
 /**************************************
@@ -5614,7 +5615,7 @@ static void post_trigger_access(TDBB tdbb, Csb* csb, jrd_rel* owner_relation,
 }
 
 
-static void process_map(TDBB tdbb, Csb* csb, jrd_nod* map, fmt** input_format)
+static void process_map(thread_db* tdbb, Csb* csb, jrd_nod* map, fmt** input_format)
 {
 /**************************************
  *

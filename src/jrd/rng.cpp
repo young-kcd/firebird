@@ -54,7 +54,7 @@
 #ifdef PC_ENGINE
 static void delete_range(RNG);
 static void post_event(RNG);
-static void post_event_ast(RNG);
+static void post_event_ast(blk*);
 static void stop_creating(RNG);
 #endif
 
@@ -73,18 +73,17 @@ void RNG_add_page(ULONG page_number)
  *	currently being defined.
  *
  **************************************/
-	TDBB tdbb;
-	jrd_req* request;
 	RNG refresh_range, next_refresh_range;
 	VEC page_locks;
 	lck* page_lock;
 	USHORT i, next_range;
 
-	tdbb = GET_THREAD_DATA;
-	request = tdbb->tdbb_request;
+	thread_db* tdbb = GET_THREAD_DATA;
+	jrd_req* request = tdbb->tdbb_request;
 
 	for (refresh_range = request->req_begin_ranges; refresh_range;
-		 refresh_range = next_refresh_range) {
+		 refresh_range = next_refresh_range)
+	{
 		next_refresh_range = refresh_range->rng_next;
 		if (refresh_range->rng_flags & RNG_posted)
 			continue;
@@ -147,18 +146,17 @@ void RNG_add_record(RPB * rpb)
  *	currently being defined.
  *
  **************************************/
-	TDBB tdbb;
-	jrd_req* request;
 	RNG refresh_range, next_refresh_range;
 	VEC record_locks;
 	lck* record_lock;
 	USHORT i, next_range;
 
-	tdbb = GET_THREAD_DATA;
-	request = tdbb->tdbb_request;
+	thread_db* tdbb = GET_THREAD_DATA;
+	jrd_req* request = tdbb->tdbb_request;
 
 	for (refresh_range = request->req_begin_ranges; refresh_range;
-		 refresh_range = next_refresh_range) {
+		 refresh_range = next_refresh_range)
+	{
 		next_refresh_range = refresh_range->rng_next;
 		if (refresh_range->rng_flags & RNG_posted)
 			continue;
@@ -184,7 +182,7 @@ void RNG_add_record(RPB * rpb)
 		   the refresh range, otherwise we will thrash trying to establish */
 
 		record_lock = RLCK_lock_record(rpb, LCK_PR,
-									   (int (*)()) post_event_ast,
+									   post_event_ast,
 									   (BLK) refresh_range);
 		if (!record_lock) {
 			post_event(refresh_range);
@@ -219,8 +217,6 @@ jrd_nod* RNG_add_relation(jrd_nod* node)
  *	currently being defined.
  *
  **************************************/
-	TDBB tdbb;
-	jrd_req* request;
 	DSC *desc;
 	USHORT range_number;
 	VEC refresh_ranges;
@@ -230,8 +226,8 @@ jrd_nod* RNG_add_relation(jrd_nod* node)
 	lck* relation_lock;
 	VEC relation_locks;
 
-	tdbb = GET_THREAD_DATA;
-	request = tdbb->tdbb_request;
+	thread_db* tdbb = GET_THREAD_DATA;
+	jrd_req* request = tdbb->tdbb_request;
 
 	if (request->req_operation == req_evaluate) {
 		desc = EVL_expr(tdbb, node->nod_arg[e_range_relation_number]);
@@ -251,7 +247,7 @@ jrd_nod* RNG_add_relation(jrd_nod* node)
 
 			relation_lock = RLCK_range_relation(request->req_transaction,
 												relation,
-												(int (*)()) post_event_ast,
+												post_event_ast,
 												(BLK) refresh_range);
 			if (!relation_lock) {
 				post_event(refresh_range);
@@ -297,15 +293,13 @@ void RNG_add_uncommitted_record(RPB * rpb)
  *	registering interest in the transaction that created it.
  *
  **************************************/
-	TDBB tdbb;
-	jrd_req* request;
 	RNG refresh_range, next_refresh_range;
 	VEC transaction_locks;
 	lck* transaction_lock;
 	USHORT i, next_range;
 
-	tdbb = GET_THREAD_DATA;
-	request = tdbb->tdbb_request;
+	thread_db* tdbb = GET_THREAD_DATA;
+	jrd_req* request = tdbb->tdbb_request;
 
 	for (refresh_range = request->req_begin_ranges; refresh_range;
 		 refresh_range = next_refresh_range) {
@@ -371,28 +365,26 @@ DSC *RNG_begin(jrd_nod* node, VLU impure)
  *	Initialize a refresh range.
  *
  **************************************/
-	TDBB tdbb;
-	jrd_req* request;
-	jrd_tra* transaction;
-	DSC desc, *desc2;
+	DSC desc;
 	RNG refresh_range;
 	USHORT range_number;
 	VEC refresh_ranges;
 	char event_name[RANGE_NAME_LENGTH], *p, *q;
 
-	tdbb = GET_THREAD_DATA;
-	request = tdbb->tdbb_request;
+	thread_db* tdbb = GET_THREAD_DATA;
+	jrd_req* request = tdbb->tdbb_request;
 	Database* dbb = tdbb->tdbb_database;
-	transaction = request->req_transaction;
+	jrd_tra* transaction = request->req_transaction;
 
 /* check to make sure the range number is not already in use */
 
-	desc2 = EVL_expr(tdbb, node->nod_arg[e_brange_number]);
+	const dsc* desc2 = EVL_expr(tdbb, node->nod_arg[e_brange_number]);
 	range_number = (USHORT) MOV_get_long(desc2, 0);
 
 	if ((refresh_ranges = request->req_refresh_ranges) &&
 		(range_number < refresh_ranges->vec_count) &&
-		(refresh_range = (RNG) refresh_ranges->vec_object[range_number])) {
+		(refresh_range = (RNG) refresh_ranges->vec_object[range_number]))
+	{
 		if (refresh_range->rng_flags & RNG_posted)
 			delete_range(refresh_range);
 		else
@@ -475,28 +467,24 @@ jrd_nod* RNG_delete(jrd_nod* node)
  *	Delete a previously created refresh range.
  *
  **************************************/
-	TDBB tdbb;
-	jrd_req* request;
-	DSC *desc;
-	RNG refresh_range;
-	USHORT range_number;
-	VEC refresh_ranges;
-
-	tdbb = GET_THREAD_DATA;
-	request = tdbb->tdbb_request;
+	thread_db* tdbb = GET_THREAD_DATA;
+	jrd_req* request = tdbb->tdbb_request;
 
 	if (request->req_operation == req_evaluate) {
-		desc = EVL_expr(tdbb, node->nod_arg[e_drange_number]);
-		range_number = (USHORT) MOV_get_long(desc, 0);
+		const dsc* desc = EVL_expr(tdbb, node->nod_arg[e_drange_number]);
+		const USHORT range_number = (USHORT) MOV_get_long(desc, 0);
 
 		/* check to see if the range exists */
-
-		if (!(refresh_ranges = request->req_refresh_ranges) ||
+		RNG refresh_range;
+		VEC refresh_ranges = request->req_refresh_ranges;
+		if (!refresh_ranges ||
 			(range_number >= refresh_ranges->vec_count) ||
 			!(refresh_range = (RNG) refresh_ranges->vec_object[range_number]))
+		{
 			ERR_post(isc_range_not_found, isc_arg_number,
 					 (SLONG) range_number, 0);
-
+		}
+		
 		delete_range(refresh_range);
 
 		request->req_operation = req_return;
@@ -520,18 +508,18 @@ void RNG_delete_ranges(jrd_req* request)
  *	Delete all refresh ranges in a request.
  *
  **************************************/
-	VEC refresh_ranges;
-	RNG refresh_range;
-	USHORT range_number;
 
 /* release all refresh ranges associated with request */
-
-	if (refresh_ranges = request->req_refresh_ranges)
-		for (range_number = 0; range_number < refresh_ranges->vec_count;
+	VEC refresh_ranges = request->req_refresh_ranges;
+	if (refresh_ranges) {
+		for (USHORT range_number = 0; range_number < refresh_ranges->vec_count;
 			 range_number++)
-			if (refresh_range =
-				(RNG) refresh_ranges->vec_object[range_number])
-					delete_range(refresh_range);
+		{
+			RNG refresh_range = (RNG) refresh_ranges->vec_object[range_number];
+			if (refresh_range)
+				delete_range(refresh_range);
+		}
+	}
 }
 #endif
 
@@ -549,25 +537,20 @@ jrd_nod* RNG_end(jrd_nod* node)
  *	Stop adding records to refresh range.
  *
  **************************************/
-	TDBB tdbb;
-	jrd_req* request;
-	DSC *desc;
-	RNG refresh_range, *ptr;
-	USHORT range_number;
-	VEC refresh_ranges;
-
-	tdbb = GET_THREAD_DATA;
-	request = tdbb->tdbb_request;
+	thread_db* tdbb = GET_THREAD_DATA;
+	jrd_req* request = tdbb->tdbb_request;
 
 	if (request->req_operation == req_evaluate) {
-		desc = EVL_expr(tdbb, node->nod_arg[e_erange_number]);
-		range_number = (USHORT) MOV_get_long(desc, 0);
+		const dsc* desc = EVL_expr(tdbb, node->nod_arg[e_erange_number]);
+		const USHORT range_number = (USHORT) MOV_get_long(desc, 0);
 
 		/* check to see if the range exists */
-
-		if ((refresh_ranges = request->req_refresh_ranges) &&
+		RNG refresh_range;
+		VEC refresh_ranges = request->req_refresh_ranges;
+		if (refresh_ranges &&
 			(range_number < refresh_ranges->vec_count) &&
-			(refresh_range = (RNG) refresh_ranges->vec_object[range_number])) {
+			(refresh_range = (RNG) refresh_ranges->vec_object[range_number]))
+		{
 			/* if we've already posted the range, go ahead
 			   and delete it; otherwise stop adding locks */
 
@@ -598,18 +581,13 @@ void RNG_release_locks(RNG refresh_range)
  *	Release all locks held by a refresh range.
  *
  **************************************/
-	lck** lock_ptr;
-	RNG *range_ptr;
-	USHORT i;
-	TDBB tdbb;
-
-	tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 /* release all the relation locks */
 
 	if (refresh_range->rng_relation_locks) {
-		lock_ptr = (lck**) refresh_range->rng_relation_locks->vec_object;
-		for (i = 0; i < refresh_range->rng_relations; i++) {
+		lck** lock_ptr = (lck**) refresh_range->rng_relation_locks->vec_object;
+		for (int i = 0; i < refresh_range->rng_relations; i++) {
 			LCK_release(tdbb, *lock_ptr);
 			ALL_release(*lock_ptr);
 			*lock_ptr = NULL;
@@ -621,8 +599,8 @@ void RNG_release_locks(RNG refresh_range)
 /* release all the record locks */
 
 	if (refresh_range->rng_record_locks) {
-		lock_ptr = (lck**) refresh_range->rng_record_locks->vec_object;
-		for (i = 0; i < refresh_range->rng_records; i++) {
+		lck** lock_ptr = (lck**) refresh_range->rng_record_locks->vec_object;
+		for (int i = 0; i < refresh_range->rng_records; i++) {
 			RLCK_unlock_record(*lock_ptr, 0);
 			*lock_ptr = NULL;
 			lock_ptr++;
@@ -633,8 +611,8 @@ void RNG_release_locks(RNG refresh_range)
 /* release all page locks */
 
 	if (refresh_range->rng_page_locks) {
-		lock_ptr = (lck**) refresh_range->rng_page_locks->vec_object;
-		for (i = 0; i < refresh_range->rng_pages; i++) {
+		lck** lock_ptr = (lck**) refresh_range->rng_page_locks->vec_object;
+		for (int i = 0; i < refresh_range->rng_pages; i++) {
 			LCK_release(tdbb, *lock_ptr);
 			ALL_release(*lock_ptr);
 			*lock_ptr = NULL;
@@ -646,8 +624,8 @@ void RNG_release_locks(RNG refresh_range)
 /* release all transaction locks */
 
 	if (refresh_range->rng_transaction_locks) {
-		lock_ptr = (lck**) refresh_range->rng_transaction_locks->vec_object;
-		for (i = 0; i < refresh_range->rng_transactions; i++) {
+		lck** lock_ptr = (lck**) refresh_range->rng_transaction_locks->vec_object;
+		for (int i = 0; i < refresh_range->rng_transactions; i++) {
 			LCK_release(tdbb, *lock_ptr);
 			ALL_release(*lock_ptr);
 			*lock_ptr = NULL;
@@ -673,20 +651,20 @@ void RNG_release_ranges(jrd_req* request)
  *	Release the locks for all ranges in a request.
  *
  **************************************/
-	VEC refresh_ranges;
-	RNG refresh_range;
-	USHORT range_number;
-
 	Database* dbb = GET_DBB;
 
-	if (refresh_ranges = request->req_refresh_ranges)
-		for (range_number = 0; range_number < refresh_ranges->vec_count;
+	VEC refresh_ranges = request->req_refresh_ranges;
+	if (refresh_ranges) {
+		for (USHORT range_number = 0; range_number < refresh_ranges->vec_count;
 			 range_number++)
-			if (refresh_range =
-				(RNG) refresh_ranges->vec_object[range_number]) {
+		{
+			RNG refresh_range = (RNG) refresh_ranges->vec_object[range_number];
+			if (refresh_range) {
 				RNG_release_locks(refresh_range);
 				--dbb->dbb_refresh_ranges;
 			}
+		}
+	}
 }
 #endif
 
@@ -705,31 +683,26 @@ void RNG_shutdown_attachment(ATT attachment)
  *	This may be called at AST level, don't release memory.
  *
  **************************************/
-	VEC refresh_ranges;
-	RNG refresh_range;
-	USHORT range_number, i;
-	jrd_req* request;
-	lck** lock_ptr;
-	TDBB tdbb;
+	thread_db* tdbb = GET_THREAD_DATA;
 
-	tdbb = GET_THREAD_DATA;
-
-	for (request = attachment->att_requests; request;
+	for (jrd_req* request = attachment->att_requests; request;
 		 request = request->req_request)
 	{
-		if (refresh_ranges = request->req_refresh_ranges)
-			for (range_number = 0; range_number < refresh_ranges->vec_count;
+		VEC refresh_ranges = request->req_refresh_ranges;
+		if (refresh_ranges)
+		{
+			for (int range_number = 0; range_number < refresh_ranges->vec_count;
 				range_number++)
 			{
-				if (refresh_range =
-					(RNG) refresh_ranges->vec_object[range_number])
+				RNG refresh_range = (RNG) refresh_ranges->vec_object[range_number];
+				if (refresh_range)
 				{
 					/* Shutdown range page locks */
 
 					if (refresh_range->rng_page_locks) {
-						lock_ptr =
+						lck** lock_ptr =
 							(lck**) refresh_range->rng_page_locks->vec_object;
-						for (i = 0; i < refresh_range->rng_pages; i++) {
+						for (int i = 0; i < refresh_range->rng_pages; i++) {
 							LCK_release(tdbb, *lock_ptr);
 							lock_ptr++;
 						}
@@ -737,16 +710,17 @@ void RNG_shutdown_attachment(ATT attachment)
 					/* Shutdown range transaction locks */
 
 					if (refresh_range->rng_transaction_locks) {
-						lock_ptr =
+						lck** lock_ptr =
 							(lck**) refresh_range->
 							rng_transaction_locks->vec_object;
-						for (i = 0; i < refresh_range->rng_transactions; i++) {
+						for (int i = 0; i < refresh_range->rng_transactions; i++) {
 							LCK_release(tdbb, *lock_ptr);
 							lock_ptr++;
 						}
 					}
 				}
 			}
+		}
 	}
 }
 #endif
@@ -766,18 +740,13 @@ static void delete_range(RNG refresh_range)
  *	a refresh range.
  *
  **************************************/
-	TDBB tdbb;
-	jrd_req* request;
-	VEC refresh_ranges;
-	RNG *ptr;
-
-	tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
-	request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->tdbb_request;
 
 /* remove from the vector of refresh ranges for the request */
 
-	refresh_ranges = request->req_refresh_ranges;
+	VEC refresh_ranges = request->req_refresh_ranges;
 	refresh_ranges->vec_object[refresh_range->rng_number] = NULL;
 
 	stop_creating(refresh_range);
@@ -805,11 +774,10 @@ static void post_event(RNG refresh_range)
  *	refresh range.
  *
  **************************************/
-	lck* dbb_lock;
 	ISC_STATUS_ARRAY status;
 
 	Database* dbb = GET_DBB;
-	dbb_lock = dbb->dbb_lock;
+	lck* dbb_lock = dbb->dbb_lock;
 
 /* detect duplicate posts and filter them out */
 
@@ -828,7 +796,7 @@ static void post_event(RNG refresh_range)
 
 
 #ifdef PC_ENGINE
-static void post_event_ast(RNG refresh_range)
+static void post_event_ast(void* refresh_range_void)
 {
 /**************************************
  *
@@ -841,13 +809,14 @@ static void post_event_ast(RNG refresh_range)
  *	refresh range.
  *
  **************************************/
-	struct tdbb thd_context, *tdbb;
+	thread_db thd_context, *tdbb;
 
 /* Since this routine will be called asynchronously, we must establish
    a thread context. */
 
 	SET_THREAD_DATA;
 
+	RNG refresh_range = static_cast<RNG>(refresh_range_void);
 	tdbb->tdbb_database = refresh_range->rng_attachment->att_database;
 	tdbb->tdbb_attachment = refresh_range->rng_attachment;
 	tdbb->tdbb_quantum = QUANTUM;
@@ -878,19 +847,16 @@ static void stop_creating(RNG refresh_range)
  *	those being created.
  *
  **************************************/
-	TDBB tdbb;
-	jrd_req* request;
-	RNG *ptr;
-
-	tdbb = GET_THREAD_DATA;
-	request = tdbb->tdbb_request;
+	thread_db* tdbb = GET_THREAD_DATA;
+	jrd_req* request = tdbb->tdbb_request;
 
 /* delete from the list of ranges being created */
 
-	for (ptr = &request->req_begin_ranges; *ptr; ptr = &(*ptr)->rng_next)
+	for (RNG* ptr = &request->req_begin_ranges; *ptr; ptr = &(*ptr)->rng_next)
 		if (*ptr == refresh_range) {
 			*ptr = (*ptr)->rng_next;
 			break;
 		}
 }
 #endif
+

@@ -73,11 +73,11 @@ static const FPTR_BFILTER_CALLBACK filters[] =
 };
 
 
-static ISC_STATUS open_blob(TDBB, jrd_tra*, CTL*, bid*, USHORT, const UCHAR*,
+static ISC_STATUS open_blob(thread_db*, jrd_tra*, CTL*, bid*, USHORT, const UCHAR*,
 							FPTR_BFILTER_CALLBACK,
 							USHORT, BLF);
 
-ISC_STATUS BLF_close_blob(TDBB tdbb, CTL * filter_handle)
+ISC_STATUS BLF_close_blob(thread_db* tdbb, CTL * filter_handle)
 {
 /**************************************
  *
@@ -128,7 +128,7 @@ ISC_STATUS BLF_close_blob(TDBB tdbb, CTL * filter_handle)
 }
 
 
-ISC_STATUS BLF_create_blob(TDBB tdbb,
+ISC_STATUS BLF_create_blob(thread_db* tdbb,
 							jrd_tra* tra_handle,
 							CTL* filter_handle,
 							bid* blob_id,
@@ -155,7 +155,7 @@ ISC_STATUS BLF_create_blob(TDBB tdbb,
 }
 
 
-ISC_STATUS BLF_get_segment(TDBB tdbb,
+ISC_STATUS BLF_get_segment(thread_db* tdbb,
 							CTL * filter_handle,
 							USHORT * length,
 							USHORT buffer_length,
@@ -204,7 +204,7 @@ ISC_STATUS BLF_get_segment(TDBB tdbb,
 }
 
 
-BLF BLF_lookup_internal_filter(TDBB tdbb, SSHORT from, SSHORT to)
+BLF BLF_lookup_internal_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 {
 /**************************************
  *
@@ -239,7 +239,7 @@ BLF BLF_lookup_internal_filter(TDBB tdbb, SSHORT from, SSHORT to)
 }
 
 
-ISC_STATUS BLF_open_blob(TDBB tdbb,
+ISC_STATUS BLF_open_blob(thread_db* tdbb,
 						jrd_tra* tra_handle,
 						CTL* filter_handle,
 						const bid* blob_id,
@@ -270,7 +270,7 @@ ISC_STATUS BLF_open_blob(TDBB tdbb,
 }
 
 
-ISC_STATUS BLF_put_segment(TDBB tdbb,
+ISC_STATUS BLF_put_segment(thread_db* tdbb,
 							CTL* filter_handle,
 							USHORT length,
 							const UCHAR* buffer)
@@ -316,7 +316,7 @@ ISC_STATUS BLF_put_segment(TDBB tdbb,
 }
 
 static ISC_STATUS open_blob(
-					TDBB tdbb,
+					thread_db* tdbb,
 					jrd_tra* tra_handle,
 					CTL* filter_handle,
 					bid* blob_id,

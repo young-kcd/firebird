@@ -30,7 +30,7 @@ void DMP_btc_errors(void);
 void DMP_btc_ordered(void);
 void DMP_dirty(void);
 void DMP_page(SLONG, USHORT);
-void DMP_fetched_page(struct pag *, ULONG, ULONG, USHORT);
+void DMP_fetched_page(const struct pag*, ULONG, ULONG, USHORT);
 
 #endif // JRD_DMP_PROTO_H
 

@@ -190,17 +190,15 @@ SSHORT CS_UTFFSS_fss_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const NCHAR* p, USHORT 
 
 static fss_size_t fss_mbtowc( fss_wchar_t* p, const NCHAR* s, fss_size_t n)
 {
-	long l;
-	int c0, c, nc;
-
 	if (s == 0)
 		return 0;
 
-	nc = 0;
+	int nc = 0;
 	if (n <= nc)
 		return -1;
-	c0 = *s & 0xff;
-	l = c0;
+		
+	const int c0 = *s & 0xff;
+	long l = c0;
 	for (const Fss_table* t = fss_sequence_table; t->cmask; t++) {
 		nc++;
 		if ((c0 & t->cmask) == t->cval) {
@@ -213,7 +211,7 @@ static fss_size_t fss_mbtowc( fss_wchar_t* p, const NCHAR* s, fss_size_t n)
 		if (n <= nc)
 			return -1;
 		s++;
-		c = (*s ^ 0x80) & 0xFF;
+		const int c = (*s ^ 0x80) & 0xFF;
 		if (c & 0xC0)
 			return -1;
 		l = (l << 6) | c;
@@ -224,18 +222,15 @@ static fss_size_t fss_mbtowc( fss_wchar_t* p, const NCHAR* s, fss_size_t n)
 
 static fss_size_t fss_wctomb(MBCHAR* s, fss_wchar_t wc)
 {
-	long l;
-	int c, nc;
-
 	if (s == 0)
 		return 0;
 
-	l = wc;
-	nc = 0;
+	const long l = wc;
+	int nc = 0;
 	for (const Fss_table* t = fss_sequence_table; t->cmask; t++) {
 		nc++;
 		if (l <= t->lmask) {
-			c = t->shift;
+			int c = t->shift;
 			*s = t->cval | (l >> c);
 			while (c > 0) {
 				c -= 6;
@@ -263,8 +258,8 @@ USHORT fss_to_unicode(UNICODE *dest_ptr,
 	if (dest_ptr == NULL)
 		return (src_len * 2);	/* All single byte narrow characters */
 
-	UNICODE* start = dest_ptr;
-	USHORT src_start = src_len;
+	const UNICODE* const start = dest_ptr;
+	const USHORT src_start = src_len;
 	while ((src_len) && (dest_len >= sizeof(*dest_ptr))) {
 		const fss_size_t res = fss_mbtowc(dest_ptr, src_ptr, src_len);
 		if (res == -1) {
@@ -285,7 +280,7 @@ USHORT fss_to_unicode(UNICODE *dest_ptr,
 }
 
 
-USHORT CS_UTFFSS_fss_to_unicode_cc(CSCONVERT obj,
+USHORT CS_UTFFSS_fss_to_unicode_cc(csconvert* obj,
 								UNICODE *dest_ptr,
 								USHORT dest_len,
 								const NCHAR* src_ptr,
@@ -322,7 +317,7 @@ USHORT CS_UTFFSS_fss_to_unicode_tt(TEXTTYPE obj,
 }
 
 
-USHORT CS_UTFFSS_unicode_to_fss(CSCONVERT obj,
+USHORT CS_UTFFSS_unicode_to_fss(csconvert* obj,
 								MBCHAR *fss_str,
 								USHORT fss_len,
 								const UNICODE* unicode_str,
@@ -330,28 +325,24 @@ USHORT CS_UTFFSS_unicode_to_fss(CSCONVERT obj,
 								SSHORT *err_code,
 								USHORT *err_position)
 {
-	MBCHAR *start;
-	USHORT src_start = unicode_len;
-	MBCHAR tmp_buffer[6];
-	MBCHAR *p;
-	fss_size_t res;
-
 	fb_assert(unicode_str != NULL || fss_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
 	fb_assert(obj->csconvert_convert == reinterpret_cast<pfn_INTL_convert>(CS_UTFFSS_unicode_to_fss));
 
+	const USHORT src_start = unicode_len;
 	*err_code = 0;
 
 /* See if we're only after a length estimate */
 	if (fss_str == NULL)
 		return ((USHORT) (unicode_len + 1) / 2 * 3);	/* worst case - all han character input */
 
-	start = fss_str;
+	MBCHAR tmp_buffer[6];
+	const MBCHAR* const start = fss_str;
 	while ((fss_len) && (unicode_len >= sizeof(*unicode_str))) {
 		/* Convert the wide character into temp buffer */
-		res = fss_wctomb(tmp_buffer, *unicode_str);
+		fss_size_t res = fss_wctomb(tmp_buffer, *unicode_str);
 		if (res == -1) {
 			*err_code = CS_BAD_INPUT;
 			break;
@@ -362,7 +353,7 @@ USHORT CS_UTFFSS_unicode_to_fss(CSCONVERT obj,
 			break;
 		}
 		/* copy the converted bytes into the destination */
-		p = tmp_buffer;
+		const MBCHAR* p = tmp_buffer;
 		for (; res; res--, fss_len--)
 			*fss_str++ = *p++;
 		unicode_len -= sizeof(*unicode_str);

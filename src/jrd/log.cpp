@@ -303,7 +303,7 @@ void LOG_disable(void)
 }
 
 
-void LOG_enable(TEXT * log_file_name, USHORT l_length)
+void LOG_enable(const TEXT* log_file_name, USHORT l_length)
 {
 /**************************************
  *
@@ -365,7 +365,7 @@ void LOG_fini(void)
 	}
 }
 
-void LOG_init(TEXT * name, USHORT length)
+void LOG_init(const TEXT* name, USHORT length)
 {
 /**************************************
  *

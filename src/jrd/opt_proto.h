@@ -30,16 +30,18 @@
 #include "../jrd/lls.h"
 
 class jrd_req;
+class jrd_rel;
+class jrd_nod;
 
 bool OPT_access_path(const jrd_req*, SCHAR*, SSHORT, USHORT*);
-class Rsb* OPT_compile(TDBB, class Csb *,
-							   struct rse *, class lls*);
-struct jrd_nod* OPT_make_dbkey(struct opt *, struct jrd_nod *,
+class Rsb* OPT_compile(thread_db*, class Csb *,
+							   class rse*, class lls*);
+jrd_nod* OPT_make_dbkey(struct opt *, jrd_nod*,
 								  USHORT);
-struct jrd_nod* OPT_make_index(TDBB, struct opt *, struct jrd_rel *,
+jrd_nod* OPT_make_index(thread_db*, struct opt *, jrd_rel*,
 								  struct idx *);
 int OPT_match_index(struct opt *, USHORT, struct idx *);
-void OPT_set_index(TDBB, jrd_req *, class Rsb **, struct jrd_rel *,
+void OPT_set_index(thread_db*, jrd_req *, class Rsb **, jrd_rel*,
 						  struct idx *);
 
 #endif // JRD_OPT_PROTO_H

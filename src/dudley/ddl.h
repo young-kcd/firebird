@@ -84,10 +84,12 @@ enum act_t {
 	act_s_generator				/* reset generator value */
 };
 
+struct dbb;
+
 typedef struct act {
 	enum act_t act_type;		// what to do
 	act* act_next;				// next action in system
-	struct dbb* act_object;		// object in question (dudley_rel, dudley_fld, idx, etc.)
+	dbb* act_object;		// object in question (dudley_rel, dudley_fld, idx, etc.)
 	USHORT act_line;			// line the action started on
 	USHORT act_flags;
 } *ACT;

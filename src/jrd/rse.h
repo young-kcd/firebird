@@ -35,6 +35,9 @@
 #include "../jrd/dsc.h"
 
 class jrd_req;
+class jrd_rel;
+class jrd_nod;
+struct sort_key_def;
 
 // Record source block (RSB) types
 
@@ -73,11 +76,11 @@ public:
 	ULONG rsb_cardinality;				// estimated cardinality of stream
 	ULONG rsb_record_count;				// count of records returned from rsb (not candidate records processed)
 	Rsb* rsb_next;						// next rsb, if appropriate
-	struct jrd_rel* rsb_relation;		// relation, if appropriate
+	jrd_rel* 		rsb_relation;		// relation, if appropriate
 	struct str*	rsb_alias;				// SQL alias for relation
 	class jrd_prc* rsb_procedure;		// procedure, if appropriate
 	class fmt* rsb_format;				// format, if appropriate
-	struct jrd_nod* rsb_any_boolean;	// any/all boolean
+	jrd_nod* rsb_any_boolean;	// any/all boolean
 	Rsb* rsb_arg[1];
 };
 
@@ -236,7 +239,7 @@ struct smb_repeat {
 	USHORT smb_flag_offset;		// offset of missing flag
 	USHORT smb_stream;			// stream for field id
 	SSHORT smb_field_id;		// id for field (-1 if dbkey)
-	struct jrd_nod *smb_node;	// expression node
+	jrd_nod*	smb_node;	// expression node
 };
 
 class smb : public pool_alloc_rpt<smb_repeat, type_smb>
@@ -246,7 +249,7 @@ public:
 	USHORT smb_count;			// total number of fields
 	USHORT smb_length;			// sort record length
 	USHORT smb_key_length;		// key length in longwords
-	struct skd *smb_key_desc;	// address of key descriptors
+	sort_key_def* smb_key_desc;	// address of key descriptors
 	USHORT smb_flags;			// misc sort flags
     smb_repeat smb_rpt[1];
 };
@@ -315,13 +318,13 @@ public:
 	// and improve performance
 	struct opt_segment {
 		// Index segments and their options
-		struct jrd_nod* opt_lower;			// lower bound on index value
-		struct jrd_nod* opt_upper;			// upper bound on index value
-		struct jrd_nod* opt_match;			// conjunct which matches index segment
+		jrd_nod* opt_lower;			// lower bound on index value
+		jrd_nod* opt_upper;			// upper bound on index value
+		jrd_nod* opt_match;			// conjunct which matches index segment
 	} opt_segments[MAX_INDEX_SEGMENTS];
 	struct opt_conjunct {
 		// Conjunctions and their options
-		struct jrd_nod* opt_conjunct_node;	// conjunction
+		jrd_nod* opt_conjunct_node;	// conjunction
 		// Stream dependencies to compute conjunct
 		ULONG opt_dependencies[(MAX_STREAMS + 1) / 32];
 		UCHAR opt_conjunct_flags;

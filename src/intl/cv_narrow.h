@@ -21,26 +21,26 @@
  * Contributor(s): ______________________________________.
  */
 
-void CV_convert_init(CSCONVERT csptr, SSHORT to_cs, SSHORT from_cs,
+void CV_convert_init(csconvert* csptr, SSHORT to_cs, SSHORT from_cs,
 		pfn_INTL_convert cvt_fn, const void *datatable, const void *datatable2);
 
-USHORT CV_wc_to_wc(CSCONVERT obj, USHORT *dest_ptr, USHORT dest_len,
+USHORT CV_wc_to_wc(csconvert* obj, USHORT *dest_ptr, USHORT dest_len,
 				const USHORT* src_ptr, USHORT src_len,
 				SSHORT *err_code, USHORT *err_position);
 
-USHORT CV_unicode_to_nc(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len,
+USHORT CV_unicode_to_nc(csconvert* obj, BYTE *dest_ptr, USHORT dest_len,
 						const BYTE* src_ptr, USHORT src_len,
 						SSHORT *err_code,	USHORT *err_position);
 
-USHORT CV_nc_to_unicode(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len,
+USHORT CV_nc_to_unicode(csconvert* obj, BYTE *dest_ptr, USHORT dest_len,
 						const BYTE* src_ptr, USHORT src_len,
 						SSHORT *err_code,	USHORT *err_position);
 
-USHORT CV_wc_copy(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len,
+USHORT CV_wc_copy(csconvert* obj, BYTE *dest_ptr, USHORT dest_len,
 				const BYTE* src_ptr, USHORT src_len,
 				SSHORT *err_code, USHORT *err_position);
 
-USHORT eight_bit_convert(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len,
+USHORT eight_bit_convert(csconvert* obj, BYTE *dest_ptr, USHORT dest_len,
 						const BYTE* src_ptr,
 						USHORT src_len, SSHORT *err_code, USHORT *err_position);
 

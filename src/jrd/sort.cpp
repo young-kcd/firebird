@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.55 2004-03-09 00:17:03 skidder Exp $
+ * $Id: sort.cpp,v 1.56 2004-03-11 05:03:58 robocop Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -187,8 +187,8 @@ void SORT_diddle_key(UCHAR* record, SCB scb, bool direction)
  *      direction - true for SORT_put() and false for SORT_get()
  *
  **************************************/
-	const skd* key = scb->scb_description;
-	for (const skd* const end = key + scb->scb_keys; key < end; key++)
+	const sort_key_def* key = scb->scb_description;
+	for (const sort_key_def* const end = key + scb->scb_keys; key < end; key++)
 	{
 		UCHAR* p = record + key->skd_offset;
 		USHORT n = key->skd_length;
@@ -312,8 +312,8 @@ void SORT_diddle_key(UCHAR* record, SCB scb, bool direction)
 	double *dp;
 #endif
 
-	const skd* key = scb->scb_description;
-	for (const skd* const end = key + scb->scb_keys; key < end; key++)
+	const sort_key_def* key = scb->scb_description;
+	for (const sort_key_def* const end = key + scb->scb_keys; key < end; key++)
 	{
 		BLOB_PTR* p = (BLOB_PTR *) record + key->skd_offset;
 		USHORT* wp = (USHORT *) p;
@@ -705,7 +705,7 @@ void SORT_get(ISC_STATUS * status_vector, SCB scb, ULONG ** record_address)
 SCB SORT_init(ISC_STATUS* status_vector,
 			  USHORT record_length,
 			  USHORT keys,
-			  const skd* key_description,
+			  const sort_key_def* key_description,
 			  FPTR_REJECT_DUP_CALLBACK call_back,
 			  void* user_arg,
 			  ATT att,
@@ -727,13 +727,12 @@ SCB SORT_init(ISC_STATUS* status_vector,
  *      duplicate record is eliminated.
  *
  **************************************/
-	SCB scb;
 
 	// Allocate and setup a sort context block, including copying the
 	// key description vector. Round the record length up to the next
 	// longword, and add a longword to a pointer back to the pointer slot.
 
-	scb = (SCB) gds__alloc((SLONG) SCB_LEN(keys));
+	SCB scb = (SCB) gds__alloc((SLONG) SCB_LEN(keys));
 	if (!scb) {
 		// FREE: scb is freed by SORT_fini(), called by higher level cleanup
 		// FREE: or later in this module in error cases
@@ -754,8 +753,8 @@ SCB SORT_init(ISC_STATUS* status_vector,
 
 	scb->scb_max_records = max_records;
 
-	skd* p = scb->scb_description;
-	const skd* q = key_description;
+	sort_key_def* p = scb->scb_description;
+	const sort_key_def* q = key_description;
 	do {
 		*p++ = *q++;
 	} while (--keys);
@@ -778,12 +777,16 @@ SCB SORT_init(ISC_STATUS* status_vector,
 
 	for (scb->scb_size_memory = MAX_SORT_BUFFER_SIZE;;
 		scb->scb_size_memory -= SORT_BUFFER_CHUNK_SIZE)
+	{
 		if (scb->scb_size_memory < MIN_SORT_BUFFER_SIZE)
 			break;
 		else if ( (scb->scb_memory =
 			 (SORTP *) gds__alloc((SLONG) scb->scb_size_memory)) )
+		{
 		// FREE: scb_memory is freed by local_fini()
 			break;
+		}
+	}
 #endif // DEBUG_MERGE
 	if (!scb->scb_memory) {
 		*status_vector++ = isc_arg_gds;
@@ -1074,7 +1077,7 @@ bool SORT_sort(ISC_STATUS * status_vector, SCB scb)
 	if (count > 1) {
 		fb_assert(!scb->scb_merge_pool);	// shouldn't have a pool
 		scb->scb_merge_pool =
-			(MRG) gds__alloc((SLONG) (count - 1)*sizeof(struct mrg));
+			(MRG) gds__alloc((SLONG) (count - 1) * sizeof(struct mrg));
 		// FREE: smb_merge_pool freed in local_fini() when the scb is released
 		merge_pool = scb->scb_merge_pool;
 		if(!merge_pool) {
@@ -1286,9 +1289,7 @@ static UCHAR *sort_alloc(SCB scb, ULONG size)
  *      1994-October-11 David Schnepper 
  *
  **************************************/
-	UCHAR* block = 0;
-
-	block =
+	UCHAR* const block =
 		reinterpret_cast<UCHAR*>(gds__alloc(size));
 	// FREE: caller responsible for freeing
 	if (!block)
@@ -1321,7 +1322,7 @@ static void diddle_key(UCHAR * record, SCB scb, bool direction)
 	UCHAR *fill_pos, fill_char;
 	USHORT l, fill, flag;
 
-	for (SKD* key = scb->scb_description, *end = key + scb->scb_keys;
+	for (sort_key_def* key = scb->scb_description, *end = key + scb->scb_keys;
 		 key < end; key++)
 	{
 		UCHAR* p = record + key->skd_offset;
@@ -1454,7 +1455,7 @@ static void diddle_key(UCHAR * record, SCB scb, bool direction)
 	USHORT w;
 #endif
 
-	for (SKD* key = scb->scb_description, *end = key + scb->scb_keys;
+	for (sort_key_def* key = scb->scb_description, *end = key + scb->scb_keys;
 		 key < end; key++)
 	{
 		BLOB_PTR* p = (BLOB_PTR *) record + key->skd_offset;

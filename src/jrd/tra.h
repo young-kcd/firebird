@@ -39,6 +39,7 @@
 
 class blb;
 class lck;
+class jrd_rel;
 
 /* Transaction block */
 
@@ -230,9 +231,9 @@ class vct : public pool_alloc<type_vct>
 {
     public:
 	vct* 			vct_next;		/* Next action within verb */
-	struct jrd_rel *vct_relation;	/* Relation involved */
-	struct sbm *vct_records;	/* Record involved */
-	UndoItemTree* vct_undo;     /* Data for undo records */
+	jrd_rel*		vct_relation;	/* Relation involved */
+	struct sbm*		vct_records;	/* Record involved */
+	UndoItemTree*	vct_undo;		/* Data for undo records */
 };
 typedef vct *VCT;
 

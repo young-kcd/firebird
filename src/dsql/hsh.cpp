@@ -93,7 +93,8 @@ void HSHD_init(void)
 
 	UCHAR* p = (UCHAR *) gds__alloc(sizeof(DSQL_SYM) * HASH_SIZE);
 	// This is appropriate to throw exception here, callers check for it
-	if(!p) throw std::bad_alloc();
+	if(!p)
+		throw std::bad_alloc();
 
 	memset(p, 0, sizeof(DSQL_SYM) * HASH_SIZE);
 

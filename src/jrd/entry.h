@@ -54,6 +54,7 @@
 #if defined(NOT_USED_OR_REPLACED) && defined(__cplusplus)
 class att;
 class jrd_req;
+class jrd_tra;
 
 
 ENTRYPOINT( "gds_attach_database",
@@ -120,7 +121,7 @@ ENTRYPOINT( "gds_commit_transaction",
 		    PSI5_commit_transaction,
 		  "_jrd8_commit_transaction",
 		     IPI_commit_transaction,
-		   (ISC_STATUS*, class jrd_tra**))
+		   (ISC_STATUS*, jrd_tra**))
 
 ENTRYPOINT( "gds_compile_request",
 		    jrd8_compile_request,
@@ -225,7 +226,7 @@ ENTRYPOINT( "gds_prepare_transaction",
 			PSI5_prepare_transaction,
 		  "_jrd8_prepare_transaction",
 			 IPI_prepare_transaction,
-			 (ISC_STATUS*, class jrd_tra**, USHORT, UCHAR*))
+			 (ISC_STATUS*, jrd_tra**, USHORT, UCHAR*))
 
 ENTRYPOINT( "gds_put_segment",
 		    jrd8_put_segment,
@@ -251,7 +252,7 @@ ENTRYPOINT( "gds_reconnect_transaction",
 			PSI5_reconnect_transaction,
 		  "_jrd8_reconnect_transaction",
 		     IPI_reconnect_transaction,
-			 (ISC_STATUS*, att**, class jrd_tra**, SSHORT, const UCHAR*))
+			 (ISC_STATUS*, att**, jrd_tra**, SSHORT, const UCHAR*))
 
 ENTRYPOINT( "gds_receive",
 		    jrd8_receive,
@@ -303,7 +304,7 @@ ENTRYPOINT("gds_rollback_transaction",
 			PSI5_rollback_transaction,
 			"_jrd8_rollback_transaction",
 			IPI_rollback_transaction,
-			(ISC_STATUS *, class jrd_tra **))
+			(ISC_STATUS *, jrd_tra**))
 
 ENTRYPOINT("gds_send",
 			jrd8_send,
@@ -329,7 +330,7 @@ ENTRYPOINT("gds_start_and_send",
 			PSI5_start_and_send,
 			"_jrd8_start_and_send",
 			IPI_start_and_send,
-			(ISC_STATUS*, jrd_req**, class jrd_tra**, USHORT, USHORT,
+			(ISC_STATUS*, jrd_req**, jrd_tra**, USHORT, USHORT,
 			    SCHAR*, SSHORT))
 
 ENTRYPOINT("gds_start_request",
@@ -343,7 +344,7 @@ ENTRYPOINT("gds_start_request",
 			PSI5_start_request,
 			"_jrd8_start_request",
 			IPI_start_request,
-			(ISC_STATUS*, jrd_req**, class jrd_tra**, SSHORT))
+			(ISC_STATUS*, jrd_req**, jrd_tra**, SSHORT))
 
 ENTRYPOINT( "gds_start_multiple",
 			jrd8_start_multiple,
@@ -356,7 +357,7 @@ ENTRYPOINT( "gds_start_multiple",
 			PSI5_start_multiple,
 		  "_jrd8_start_multiple",
 			 IPI_start_multiple,
-		   (ISC_STATUS *, class jrd_tra **, USHORT, struct teb *))
+		   (ISC_STATUS *, jrd_tra**, USHORT, struct teb *))
 
 ENTRYPOINT("gds_start_transaction",
 		   jrd8_start_transaction,
@@ -369,7 +370,7 @@ ENTRYPOINT("gds_start_transaction",
 		   PSI5_start_transaction,
 		   "_jrd8_start_transaction",
 		   IPI_start_transaction,
-		   (ISC_STATUS*, class jrd_tra**, SSHORT, ...))
+		   (ISC_STATUS*, jrd_tra**, SSHORT, ...))
 
 ENTRYPOINT( "gds_transaction_info",
 		    jrd8_transaction_info,
@@ -382,7 +383,7 @@ ENTRYPOINT( "gds_transaction_info",
 		    PSI5_transaction_info,
 		  "_jrd8_transaction_info",
 		     IPI_transaction_info,
-		   (ISC_STATUS*, class jrd_tra**, SSHORT, const SCHAR*, SSHORT, SCHAR*))
+		   (ISC_STATUS*, jrd_tra**, SSHORT, const SCHAR*, SSHORT, SCHAR*))
 
 ENTRYPOINT("gds_unwind_request",
 		   jrd8_unwind_request,
@@ -408,7 +409,7 @@ ENTRYPOINT("gds_commit_retaining",
 			PSI5_commit_retaining,
 			"_jrd8_commit_retaining",
 			IPI_commit_retaining,
-			(ISC_STATUS *, class jrd_tra **))
+			(ISC_STATUS *, jrd_tra**))
 
 ENTRYPOINT("gds_que_events",
 			jrd8_que_events,
@@ -448,7 +449,7 @@ ENTRYPOINT("gds_ddl",
 			PSI5_ddl,
 			"_jrd8_ddl",
 			IPI_ddl,
-			(ISC_STATUS*, att**, class jrd_tra**,
+			(ISC_STATUS*, att**, jrd_tra**,
 				USHORT, const SCHAR*))
 
 ENTRYPOINT("gds_open_blob2",
@@ -462,7 +463,7 @@ ENTRYPOINT("gds_open_blob2",
 			PSI5_open_blob2,
 			"_jrd8_open_blob2",
 			IPI_open_blob2,
-			(ISC_STATUS*, att**, class jrd_tra**, struct blb**,
+			(ISC_STATUS*, att**, jrd_tra**, struct blb**,
 				struct bid*, USHORT, const UCHAR*))
 
 ENTRYPOINT("gds_create_blob2",
@@ -476,7 +477,7 @@ ENTRYPOINT("gds_create_blob2",
 			PSI5_create_blob2,
 			"_jrd8_create_blob2",
 			IPI_create_blob2,
-			(ISC_STATUS*, att**, class jrd_tra**, struct blb**,
+			(ISC_STATUS*, att**, jrd_tra**, struct blb**,
 				struct bid*, USHORT, const UCHAR*))
 
 ENTRYPOINT( "gds_get_slice",
@@ -490,7 +491,7 @@ ENTRYPOINT( "gds_get_slice",
 			PSI5_get_slice,
 			"_jrd8_get_slice",
 			IPI_get_slice,
-			(ISC_STATUS*, att**, class jrd_tra**, ISC_QUAD*, USHORT,
+			(ISC_STATUS*, att**, jrd_tra**, ISC_QUAD*, USHORT,
 				const UCHAR*, USHORT, const UCHAR*, SLONG, UCHAR*, SLONG*))
 
 ENTRYPOINT( "gds_put_slice",
@@ -504,7 +505,7 @@ ENTRYPOINT( "gds_put_slice",
 			PSI5_put_slice,
 			"_jrd8_put_slice",
 			IPI_put_slice,
-			(ISC_STATUS*, att**, class jrd_tra**, ISC_QUAD*, USHORT,
+			(ISC_STATUS*, att**, jrd_tra**, ISC_QUAD*, USHORT,
 				const UCHAR*, USHORT, const UCHAR*, SLONG, UCHAR*))
 
 ENTRYPOINT( "gds_seek_blob",
@@ -531,7 +532,7 @@ ENTRYPOINT( "isc_transact_request",
    /****    PSI5_transact_request    ***/ y_valve_no_entrypoint,
 			"_jrd8_transact_request",
 			IPI_transact_request,
-			(ISC_STATUS*, att**, class jrd_tra**, USHORT, const SCHAR*,
+			(ISC_STATUS*, att**, jrd_tra**, USHORT, const SCHAR*,
 				USHORT, SCHAR*, USHORT, SCHAR*))
 
 ENTRYPOINT( "isc_drop_database",
@@ -755,7 +756,7 @@ ENTRYPOINT("isc_rollback_retaining", jrd8_rollback_retaining,
    /****    PSI_rollback_retaining    ***/ y_valve_no_entrypoint,
    /****    PSI5_rollback_retaining    ***/ y_valve_no_entrypoint,
 			   "_jrd8_rollback_retaining",
-			   IPI_rollback_retaining, (ISC_STATUS *, class jrd_tra **))
+			   IPI_rollback_retaining, (ISC_STATUS *, jrd_tra**))
 #ifdef CANCEL_OPERATION
 ENTRYPOINT("gds_cancel_operation", jrd8_cancel_operation,
    /***    "jrd5_cancel_operation"  ***/ NULL,

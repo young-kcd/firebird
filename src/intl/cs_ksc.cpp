@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:        InterBase International support
- *	MODULE: 	cs_ksc.cpp
+ *	MODULE: 		cs_ksc.cpp
  *	DESCRIPTION:	Character set definitions for KSC-5601.
  *
  * The contents of this file are subject to the Interbase Public

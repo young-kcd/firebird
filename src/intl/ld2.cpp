@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase International support
- *	MODULE:		ld2.c
+ *	MODULE:		ld2.cpp
  *	DESCRIPTION:	Additional Language Driver lookup & support routines
  *
  * The contents of this file are subject to the Interbase Public
@@ -35,9 +35,7 @@
 
 
 #ifdef DEV_BUILD
-void LD2_assert(filename, lineno)
-	 SCHAR *filename;
-	 int lineno;
+void LD2_assert(const char* filename, int lineno)
 {
 /**************************************
  *
@@ -69,6 +67,7 @@ void LD2_assert(filename, lineno)
  * shared libraries
  */
 
+/*
 #define DRIVER(num, name) \
 	case (num): \
 		*fun = (FPTR_SHORT) (name); \
@@ -86,11 +85,11 @@ void LD2_assert(filename, lineno)
 	    *fun = (FPTR_SHORT) (name);\
 	    return (0);\
 	    }
-
+*/
 
 
 USHORT FB_DLL_EXPORT LD2_lookup(USHORT objtype,
-                            FPTR_SHORT * fun, SSHORT parm1, SSHORT parm2)
+                            FPTR_SHORT* fun, SSHORT parm1, SSHORT parm2)
 {
 
    switch (objtype) {
@@ -99,13 +98,13 @@ USHORT FB_DLL_EXPORT LD2_lookup(USHORT objtype,
        default:
            *fun = NULL;
            return 1;
-       };
+       }
    case type_charset:
        switch (parm1) {
        default:
            *fun = NULL;
            return 1;
-       };
+       }
    case type_csconvert:
        {
            *fun = NULL;
@@ -124,3 +123,4 @@ USHORT FB_DLL_EXPORT LD2_lookup(USHORT objtype,
 #undef DRIVER
 #undef CHARSET_INIT
 #undef CONVERT_INIT_BI
+

@@ -31,7 +31,7 @@ static inline void FAMILY_ASCII(TEXTTYPE cache,
 								pfn_INTL_init name,
 								CHARSET_ID charset,
 								SSHORT country,
-								const ASCII *POSIX)
+								const ASCII* POSIX)
 {
 	cache->texttype_version			= IB_LANGDRV_VERSION;
 	cache->texttype_type			= id_number;
@@ -51,7 +51,7 @@ static inline void FAMILY_ASCII(TEXTTYPE cache,
 	cache->texttype_tolower_table	= NULL;
 	cache->texttype_compress_table	= NULL;
 	cache->texttype_expand_table	= NULL;
-	cache->texttype_name			= (SCHAR *) POSIX;
+	cache->texttype_name			= POSIX;
 }
 
 
@@ -581,9 +581,10 @@ static bool all_spaces(const BYTE* s, SSHORT len)
 {
 	fb_assert(s != NULL);
 
-	while (len-- > 0)
+	while (len-- > 0) {
 		if (*s++ != ASCII_SPACE)
 			return false;
+	}
 	return true;
 }
 
@@ -643,12 +644,11 @@ SSHORT famasc_str_to_upper(TEXTTYPE obj, USHORT iLen, const BYTE* pStr, USHORT i
 		pStr++;
 		iLen--;
 		iOutLen--;
-	};
+	}
 	if (iLen != 0)
 		return (-1);
 	return (pOutStr - p);
 }
-
 
 
 
@@ -678,7 +678,7 @@ SSHORT cp1251_str_to_upper(TEXTTYPE obj, USHORT iLen, const BYTE* pStr, USHORT i
 		pStr++;
 		iLen--;
 		iOutLen--;
-	};
+	}
 	if (iLen != 0)
 		return (-1);
 	return (pOutStr - p);

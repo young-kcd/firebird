@@ -129,14 +129,14 @@ until we are out of records to sort or memory.
 
 /* Sort key definition block */
 
-typedef struct skd
+struct sort_key_def
 {
 	UCHAR	skd_dtype;			/* Data type */
 	UCHAR	skd_flags;			/* Flags */
 	USHORT	skd_length;			/* Length if string */
 	USHORT	skd_offset;			/* Offset from beginning */
 	USHORT	skd_vary_offset;	/* Offset to varying/cstring length */
-} SKD;
+};
 
 /* skd_dtype */
 
@@ -274,7 +274,7 @@ typedef struct scb
 	struct mrg *scb_merge_pool;	/* ALLOC: pool of mrg blocks */
 	class att *scb_attachment;	/* back pointer to attachment */
 	struct irsb_sort *scb_impure;	/* back pointer to request's impure area */
-	SKD scb_description[1];
+	sort_key_def scb_description[1];
 } *SCB;
 
 /* flags as set in scb_flags */
@@ -282,7 +282,7 @@ typedef struct scb
 #define scb_initialized		1
 #define scb_sorted		2		/* stream has been sorted */
 
-#define SCB_LEN(n_k)	(sizeof (struct scb) + (SLONG)(n_k) * sizeof (SKD))
+#define SCB_LEN(n_k)	(sizeof (struct scb) + (SLONG)(n_k) * sizeof (sort_key_def))
 
 #endif // JRD_SORT_H
 

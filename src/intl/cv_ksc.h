@@ -37,11 +37,11 @@
 
 #define	LANGKSC_MAX_KEY	4096
 
-USHORT CVKSC_ksc_to_unicode(CSCONVERT obj, USHORT *dest_ptr, USHORT dest_len,
+USHORT CVKSC_ksc_to_unicode(csconvert* obj, USHORT *dest_ptr, USHORT dest_len,
 							const UCHAR* ksc_str, USHORT ksc_len,
 							SSHORT *err_code, USHORT *err_position);
 
-USHORT CVKSC_unicode_to_ksc(CSCONVERT obj, UCHAR *ksc_str, USHORT ksc_len,
+USHORT CVKSC_unicode_to_ksc(csconvert* obj, UCHAR *ksc_str, USHORT ksc_len,
 							const USHORT* unicode_str,
 							USHORT unicode_len, SSHORT *err_code, USHORT *err_position);
 

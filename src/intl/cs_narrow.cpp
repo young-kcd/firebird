@@ -25,7 +25,7 @@
 #include "../intl/ldcommon.h"
 #include "cv_narrow.h"
 
-static void common_8bit_init(CHARSET csptr,
+static void common_8bit_init(charset* csptr,
 							 SSHORT id,
 							 const ASCII* name,
 							 const USHORT* to_unicode_tbl,

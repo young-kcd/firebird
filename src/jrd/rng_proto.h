@@ -27,15 +27,17 @@
 #ifdef PC_ENGINE
 
 class jrd_req;
+struct rpb;
+class jrd_nod;
 
 void RNG_add_page(ULONG);
-void RNG_add_record(struct rpb *);
-struct jrd_nod *RNG_add_relation(struct jrd_nod *);
-void RNG_add_uncommitted_record(struct rpb *);
-struct dsc *RNG_begin(struct jrd_nod *, struct vlu *);
-struct jrd_nod *RNG_delete(struct jrd_nod *);
+void RNG_add_record(rpb*);
+jrd_nod* RNG_add_relation(jrd_nod*);
+void RNG_add_uncommitted_record(rpb*);
+struct dsc *RNG_begin(jrd_nod*, struct vlu *);
+jrd_nod *RNG_delete(jrd_nod*);
 void RNG_delete_ranges(jrd_req *);
-struct jrd_nod *RNG_end(struct jrd_nod *);
+jrd_nod* RNG_end(jrd_nod*);
 void RNG_release_locks(struct rng *);
 void RNG_release_ranges(jrd_req *);
 void RNG_shutdown_attachment(class att *);

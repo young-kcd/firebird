@@ -125,7 +125,7 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
  *	Schedule database for shutdown
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	att* attachment = tdbb->tdbb_attachment;
 
 /* Only platform's user locksmith can shutdown or bring online
@@ -294,7 +294,7 @@ bool SHUT_online(Database* dbb, SSHORT flag)
  *
  **************************************/
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	att* attachment = tdbb->tdbb_attachment;
 
 /* Only platform's user locksmith can shutdown or bring online
@@ -383,7 +383,7 @@ bool SHUT_online(Database* dbb, SSHORT flag)
 
 static bool bad_mode(bool ignore) {
 	if (!ignore) {
-		TDBB tdbb = GET_THREAD_DATA;
+		thread_db* tdbb = GET_THREAD_DATA;
 		
 		ISC_STATUS* status = tdbb->tdbb_status_vector;
 		*status++ = isc_arg_gds;
@@ -413,7 +413,7 @@ static bool notify_shutdown(Database* dbb, SSHORT flag, SSHORT delay)
  *
  **************************************/
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	SDATA data;
 
 	data.data_items.flag = flag;
@@ -452,7 +452,7 @@ static bool shutdown_locks(Database* dbb, SSHORT flag)
  *	locks if database is quiet.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 /* Mark database and all active attachments as shutdown. */
 

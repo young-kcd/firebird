@@ -48,8 +48,6 @@ ULONG *RMET_tips(TEXT * db_in)
  *	build a list of tips in order
  *
  **************************************/
-	ULONG last, *tip, *tips;
-
 	READY db_in AS DB
 	ON_ERROR
 		isc_print_status(gds__status);
@@ -64,7 +62,7 @@ ULONG *RMET_tips(TEXT * db_in)
 		return NULL;
 	END_ERROR;
 
-	last = 0;
+	ULONG last = 0;
 	FOR X IN RDB$PAGES WITH X.RDB$PAGE_TYPE = pag_transactions
 		last++;
 	END_FOR
@@ -75,7 +73,8 @@ ULONG *RMET_tips(TEXT * db_in)
 		return NULL;
 	END_ERROR;
 
-	tips = tip = (ULONG *) RBDB_alloc(++last * sizeof(ULONG));
+	ULONG* const tips = (ULONG *) RBDB_alloc(++last * sizeof(ULONG));
+	ULONG* tip = tips;
 
 	FOR X IN RDB$PAGES WITH X.RDB$PAGE_TYPE = pag_transactions
 		{
@@ -95,3 +94,4 @@ ULONG *RMET_tips(TEXT * db_in)
 
 	return tips;
 }
+

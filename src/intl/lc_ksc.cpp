@@ -32,15 +32,15 @@ static USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInCh
 static USHORT LCKSC_key_length(TEXTTYPE obj, USHORT inLen);
 static SSHORT LCKSC_compare(TEXTTYPE obj, USHORT l1, const BYTE* s1, USHORT l2, const BYTE* s2);
 
-static int GetGenHanNdx(unsigned char b1, unsigned char b2);
-static int GetSpeHanNdx(unsigned char b1, unsigned char b2);
+static int GetGenHanNdx(UCHAR b1, UCHAR b2);
+static int GetSpeHanNdx(UCHAR b1, UCHAR b2);
 
 static inline void FAMILY_MULTIBYTE(TEXTTYPE cache,
 									TTYPE_ID id_number,
 									pfn_INTL_init name,
 									CHARSET_ID charset,
 									SSHORT country,
-									const ASCII *POSIX)
+									const ASCII* POSIX)
 {
 //static inline void FAMILY_MULTIBYTE(id_number, name, charset, country)
 	cache->texttype_version			= IB_LANGDRV_VERSION;
@@ -92,7 +92,8 @@ TEXTTYPE_ENTRY(ksc_5601_dict_init)
 }
 
 
-unsigned char spe_han[18][2] = {
+const UCHAR spe_han[18][2] =
+{
 /* special hangul -> character sets with dictionary collation */
 	{ 0xa4, 0xa2 },
 	{ 0xa4, 0xa4 },
@@ -114,7 +115,8 @@ unsigned char spe_han[18][2] = {
 	{ 0xa4, 0xbe }
 };
 
-unsigned char gen_han[18][2] = {
+const UCHAR gen_han[18][2] =
+{
 /* general hangul -> character sets with binary collation */
 	{ 0xb1, 0xed },
 	{ 0xb3, 0xa9 },
@@ -144,29 +146,24 @@ static USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInCh
 	USHORT iOutLen, BYTE *pOutChar,
 	USHORT partial) // unused
 {
-	USHORT i;
-	int idx;
-	const BYTE *inbuff;
-	BYTE *outbuff;
-
 	fb_assert(pOutChar != NULL);
 	fb_assert(pInChar != NULL);
 	fb_assert(iInLen <= LANGKSC_MAX_KEY);
 	fb_assert(iOutLen <= LANGKSC_MAX_KEY);
 	fb_assert(iOutLen >= LCKSC_key_length(obj, iInLen));
 
-	inbuff = pInChar + iInLen - 1;
+	const BYTE* inbuff = pInChar + iInLen - 1;
 	while ((inbuff >= pInChar) && (*inbuff == ASCII_SPACE))
 		inbuff--;
 	iInLen = (inbuff - pInChar + 1);
 
-	outbuff = pOutChar;
+	BYTE* outbuff = pOutChar;
 
-	for (i = 0; i < iInLen && iOutLen; i++, pInChar++) {
+	for (USHORT i = 0; i < iInLen && iOutLen; i++, pInChar++) {
 		if (GEN_HAN(*pInChar, *(pInChar + 1))) {	/* general hangul */
 			if (!iOutLen)
 				break;
-			idx = GetGenHanNdx(*pInChar, *(pInChar + 1));
+			const int idx = GetGenHanNdx(*pInChar, *(pInChar + 1));
 			if (idx >= 0) {
 				*outbuff++ = gen_han[idx][0];
 				*outbuff++ = gen_han[idx][1];
@@ -184,7 +181,7 @@ static USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInCh
 		else if (SPE_HAN(*pInChar, *(pInChar + 1))) {	/* special hangul */
 			if (!iOutLen)
 				break;
-			idx = GetSpeHanNdx(*pInChar, *(pInChar + 1));
+			const int idx = GetSpeHanNdx(*pInChar, *(pInChar + 1));
 			fb_assert(idx >= 0);
 			*outbuff++ = gen_han[idx][0];
 			*outbuff++ = gen_han[idx][1];
@@ -221,11 +218,9 @@ static USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInCh
 *	description	:	in case of gen_han, get the index number from gen_han table
 */
 
-static int GetGenHanNdx(unsigned char b1, unsigned char b2)
+static int GetGenHanNdx(UCHAR b1, UCHAR b2)
 {
-	int i;
-
-	for (i = 0; i < 18; i++) {
+	for (int i = 0; i < 18; i++) {
 		if (gen_han[i][0] == b1 && b2 == gen_han[i][1])
 			return i;
 	}
@@ -238,11 +233,9 @@ static int GetGenHanNdx(unsigned char b1, unsigned char b2)
 *	description	:	in case of spe_han, get index from spe_han table
 */
 
-static int GetSpeHanNdx(unsigned char b1, unsigned char b2)
+static int GetSpeHanNdx(UCHAR b1, UCHAR b2)
 {
-	int i;
-
-	for (i = 0; i < 18; i++) {
+	for (int i = 0; i < 18; i++) {
 		if (b2 == spe_han[i][1])
 			return i;
 	}
@@ -266,12 +259,11 @@ static SSHORT LCKSC_compare(TEXTTYPE obj, USHORT l1, const BYTE* s1, USHORT l2, 
 {
 	BYTE key1[LANGKSC_MAX_KEY];
 	BYTE key2[LANGKSC_MAX_KEY];
-	USHORT i;
 
 	const USHORT len1 = LCKSC_string_to_key(obj, l1, s1, sizeof(key1), key1, FALSE);
 	const USHORT len2 = LCKSC_string_to_key(obj, l2, s2, sizeof(key2), key2, FALSE);
 	const USHORT len = MIN(len1, len2);
-	for (i = 0; i < len; i++) {
+	for (USHORT i = 0; i < len; i++) {
 		if (key1[i] == key2[i])
 			continue;
 		else if (key1[i] < key2[i])

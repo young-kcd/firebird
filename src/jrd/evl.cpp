@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.66 2004-03-07 07:58:40 robocop Exp $ 
+  * $Id: evl.cpp,v 1.67 2004-03-11 05:03:57 robocop Exp $ 
  */
 
 /*
@@ -137,29 +137,29 @@ static dsc* add_datetime(const dsc*, const jrd_nod*, VLU);
 static dsc* add_sql_date(const dsc*, const jrd_nod*, VLU);
 static dsc* add_sql_time(const dsc*, const jrd_nod*, VLU);
 static dsc* add_timestamp(const dsc*, const jrd_nod*, VLU);
-static dsc* binary_value(TDBB, const jrd_nod*, VLU);
-static dsc* cast(TDBB, const dsc*, const jrd_nod*, VLU);
-static void compute_agg_distinct(TDBB, jrd_nod*);
-static dsc* concatenate(TDBB, jrd_nod*, VLU);
-static dsc* dbkey(TDBB, const jrd_nod*, VLU);
-static dsc* eval_statistical(TDBB, jrd_nod*, VLU);
+static dsc* binary_value(thread_db*, const jrd_nod*, VLU);
+static dsc* cast(thread_db*, const dsc*, const jrd_nod*, VLU);
+static void compute_agg_distinct(thread_db*, jrd_nod*);
+static dsc* concatenate(thread_db*, jrd_nod*, VLU);
+static dsc* dbkey(thread_db*, const jrd_nod*, VLU);
+static dsc* eval_statistical(thread_db*, jrd_nod*, VLU);
 static SINT64 get_day_fraction(const dsc* d);
-static dsc* get_mask(TDBB, jrd_nod*, VLU);
+static dsc* get_mask(thread_db*, jrd_nod*, VLU);
 static SINT64 get_timestamp_to_isc_ticks(const dsc* d);
-static void init_agg_distinct(TDBB, const jrd_nod*);
+static void init_agg_distinct(thread_db*, const jrd_nod*);
 #ifdef PC_ENGINE
-static dsc* lock_record(TDBB, jrd_nod*, VLU);
-static dsc* lock_relation(TDBB, jrd_nod*, VLU);
+static dsc* lock_record(thread_db*, jrd_nod*, VLU);
+static dsc* lock_relation(thread_db*, jrd_nod*, VLU);
 #endif
-static dsc* lock_state(TDBB, jrd_nod*, VLU);
+static dsc* lock_state(thread_db*, jrd_nod*, VLU);
 static dsc* multiply(const dsc*, VLU, const jrd_nod*);
 static dsc* multiply2(const dsc*, VLU, const jrd_nod*);
 static dsc* divide2(const dsc*, VLU, const jrd_nod*);
-static dsc* negate_dsc(TDBB, const dsc*, VLU);
-static dsc* record_version(TDBB, const jrd_nod*, VLU);
+static dsc* negate_dsc(thread_db*, const dsc*, VLU);
+static dsc* record_version(thread_db*, const jrd_nod*, VLU);
 static bool reject_duplicate(const UCHAR*, const UCHAR*, void*);
-static dsc* scalar(TDBB, jrd_nod*, VLU);
-static SSHORT sleuth(TDBB, jrd_nod*, dsc*, dsc*);
+static dsc* scalar(thread_db*, jrd_nod*, VLU);
+static SSHORT sleuth(thread_db*, jrd_nod*, dsc*, dsc*);
 static bool nc_sleuth_check(TextType, USHORT, const UCHAR*, const UCHAR*,
 	const UCHAR*, const UCHAR*);
 static bool nc_sleuth_class(TextType, USHORT, const UCHAR*, const UCHAR*, UCHAR);
@@ -167,11 +167,11 @@ static bool wc_sleuth_check(TextType, USHORT, const UCS2_CHAR*, const UCS2_CHAR*
 						const UCS2_CHAR*, const UCS2_CHAR*);
 static bool wc_sleuth_class(TextType, USHORT, const UCS2_CHAR*, const UCS2_CHAR*,
 						UCS2_CHAR);
-static SSHORT string_boolean(TDBB, jrd_nod*, dsc*, dsc*, bool);
-static SSHORT string_function(TDBB, jrd_nod*, SSHORT, const UCHAR*, SSHORT, const UCHAR*, USHORT, bool);
-static dsc* substring(TDBB, VLU, dsc*, SLONG, SLONG);
-static dsc* upcase(TDBB, const dsc*, VLU);
-static dsc* internal_info(TDBB, const dsc*, VLU);
+static SSHORT string_boolean(thread_db*, jrd_nod*, dsc*, dsc*, bool);
+static SSHORT string_function(thread_db*, jrd_nod*, SSHORT, const UCHAR*, SSHORT, const UCHAR*, USHORT, bool);
+static dsc* substring(thread_db*, VLU, dsc*, SLONG, SLONG);
+static dsc* upcase(thread_db*, const dsc*, VLU);
+static dsc* internal_info(thread_db*, const dsc*, VLU);
 
 
 static const UCHAR special[256] = {
@@ -209,7 +209,7 @@ static const RSE_GET_MODE g_RSE_get_mode = RSE_get_forward;
 
 
 
-dsc* EVL_assign_to(TDBB tdbb, jrd_nod* node)
+dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 {
 /**************************************
  *
@@ -322,7 +322,7 @@ dsc* EVL_assign_to(TDBB tdbb, jrd_nod* node)
 }
 
 
-SBM* EVL_bitmap(TDBB tdbb, jrd_nod* node)
+SBM* EVL_bitmap(thread_db* tdbb, jrd_nod* node)
 {
 /**************************************
  *
@@ -379,7 +379,7 @@ SBM* EVL_bitmap(TDBB tdbb, jrd_nod* node)
 }
 
 
-BOOLEAN EVL_boolean(TDBB tdbb, jrd_nod* node)
+BOOLEAN EVL_boolean(thread_db* tdbb, jrd_nod* node)
 {
 /**************************************
  *
@@ -773,7 +773,7 @@ BOOLEAN EVL_boolean(TDBB tdbb, jrd_nod* node)
 }
 
 
-dsc* EVL_expr(TDBB tdbb, jrd_nod* node)
+dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 {
 /**************************************
  *
@@ -1263,7 +1263,7 @@ bool EVL_field(jrd_rel* relation, REC record, USHORT id, dsc* desc)
 			 */
 			if (!relation->rel_fields)
 			{
-				TDBB tdbb = NULL;
+				thread_db* tdbb = NULL;
 
 				SET_TDBB(tdbb);
 				MET_scan_relation(tdbb, relation);
@@ -1375,7 +1375,7 @@ bool EVL_field(jrd_rel* relation, REC record, USHORT id, dsc* desc)
 }
 
 
-USHORT EVL_group(TDBB tdbb, Rsb* rsb, jrd_nod* node, USHORT state)
+USHORT EVL_group(thread_db* tdbb, Rsb* rsb, jrd_nod* node, USHORT state)
 {
 /**************************************
  *
@@ -1830,7 +1830,7 @@ USHORT EVL_group(TDBB tdbb, Rsb* rsb, jrd_nod* node, USHORT state)
 }
 
 
-void EVL_make_value(TDBB tdbb, const dsc* desc, VLU value)
+void EVL_make_value(thread_db* tdbb, const dsc* desc, VLU value)
 {
 /**************************************
  *
@@ -1928,7 +1928,7 @@ void EVL_make_value(TDBB tdbb, const dsc* desc, VLU value)
 
 
 
-USHORT EVL_mb_matches(TDBB tdbb,
+USHORT EVL_mb_matches(thread_db* tdbb,
 						TextType obj,
 						const UCHAR* p1,
 						SSHORT l1,
@@ -1982,7 +1982,7 @@ USHORT EVL_mb_matches(TDBB tdbb,
 }
 
 
-USHORT EVL_mb_sleuth_check(TDBB tdbb,
+USHORT EVL_mb_sleuth_check(thread_db* tdbb,
 							TextType obj,
 							USHORT flags,
 							const UCHAR* search,
@@ -2037,7 +2037,7 @@ USHORT EVL_mb_sleuth_check(TDBB tdbb,
 }
 
 
-USHORT EVL_mb_sleuth_merge(TDBB tdbb,
+USHORT EVL_mb_sleuth_merge(thread_db* tdbb,
 							TextType obj,
 							const UCHAR* match,
 							USHORT match_bytes,
@@ -2862,7 +2862,7 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, VLU value)
 }
 
 
-static dsc* binary_value(TDBB tdbb, const jrd_nod* node, VLU impure)
+static dsc* binary_value(thread_db* tdbb, const jrd_nod* node, VLU impure)
 {
 /**************************************
  *
@@ -2939,7 +2939,7 @@ static dsc* binary_value(TDBB tdbb, const jrd_nod* node, VLU impure)
 }
 
 
-static dsc* cast(TDBB tdbb, const dsc* value, const jrd_nod* node, VLU impure)
+static dsc* cast(thread_db* tdbb, const dsc* value, const jrd_nod* node, VLU impure)
 {
 /**************************************
  *
@@ -2996,7 +2996,7 @@ static dsc* cast(TDBB tdbb, const dsc* value, const jrd_nod* node, VLU impure)
 }
 
 
-static void compute_agg_distinct(TDBB tdbb, jrd_nod* node)
+static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 {
 /**************************************
  *
@@ -3070,7 +3070,7 @@ static void compute_agg_distinct(TDBB tdbb, jrd_nod* node)
 }
 
 
-static dsc* concatenate(TDBB tdbb, jrd_nod* node, VLU impure)
+static dsc* concatenate(thread_db* tdbb, jrd_nod* node, VLU impure)
 {
 /**************************************
  *
@@ -3164,7 +3164,7 @@ static dsc* concatenate(TDBB tdbb, jrd_nod* node, VLU impure)
 }
 
 
-static dsc* dbkey(TDBB tdbb, const jrd_nod* node, VLU impure)
+static dsc* dbkey(thread_db* tdbb, const jrd_nod* node, VLU impure)
 {
 /**************************************
  *
@@ -3210,7 +3210,7 @@ static dsc* dbkey(TDBB tdbb, const jrd_nod* node, VLU impure)
 }
 
 
-static dsc* eval_statistical(TDBB tdbb, jrd_nod* node, VLU impure)
+static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, VLU impure)
 {
 /**************************************
  *
@@ -3457,7 +3457,7 @@ static SINT64 get_day_fraction(const dsc* d)
 
 
 
-static dsc* get_mask(TDBB tdbb, jrd_nod* node, VLU impure)
+static dsc* get_mask(thread_db* tdbb, jrd_nod* node, VLU impure)
 {
 /**************************************
  *
@@ -3537,7 +3537,7 @@ static SINT64 get_timestamp_to_isc_ticks(const dsc* d)
 }
 
 
-static void init_agg_distinct(TDBB tdbb, const jrd_nod* node)
+static void init_agg_distinct(thread_db* tdbb, const jrd_nod* node)
 {
 /**************************************
  *
@@ -3557,7 +3557,7 @@ static void init_agg_distinct(TDBB tdbb, const jrd_nod* node)
 
 	const asb* agSortBlk = (asb*) node->nod_arg[1];
 	iasb* asb_impure = (iasb*) ((char*) request + agSortBlk->nod_impure);
-	const skd* sort_key = agSortBlk->asb_key_desc;
+	const sort_key_def* sort_key = agSortBlk->asb_key_desc;
 
 	scb* handle =
 		SORT_init(tdbb->tdbb_status_vector,
@@ -3571,7 +3571,7 @@ static void init_agg_distinct(TDBB tdbb, const jrd_nod* node)
 
 
 #ifdef PC_ENGINE
-static dsc* lock_record(TDBB tdbb, jrd_nod* node, VLU impure)
+static dsc* lock_record(thread_db* tdbb, jrd_nod* node, VLU impure)
 {
 /**************************************
  *
@@ -3648,7 +3648,7 @@ static dsc* lock_record(TDBB tdbb, jrd_nod* node, VLU impure)
 
 
 #ifdef PC_ENGINE
-static dsc* lock_relation(TDBB tdbb, jrd_nod* node, VLU impure)
+static dsc* lock_relation(thread_db* tdbb, jrd_nod* node, VLU impure)
 {
 /**************************************
  *
@@ -3716,7 +3716,7 @@ static dsc* lock_relation(TDBB tdbb, jrd_nod* node, VLU impure)
 #endif
 
 
-static dsc* lock_state(TDBB tdbb, jrd_nod* node, VLU impure)
+static dsc* lock_state(thread_db* tdbb, jrd_nod* node, VLU impure)
 {
 /**************************************
  *
@@ -4109,7 +4109,7 @@ static dsc* divide2(const dsc* desc, VLU value, const jrd_nod* node)
 }
 
 
-static dsc* negate_dsc(TDBB tdbb, const dsc* desc, VLU value)
+static dsc* negate_dsc(thread_db* tdbb, const dsc* desc, VLU value)
 {
 /**************************************
  *
@@ -4178,7 +4178,7 @@ static dsc* negate_dsc(TDBB tdbb, const dsc* desc, VLU value)
 }
 
 
-static dsc* record_version(TDBB tdbb, const jrd_nod* node, VLU impure)
+static dsc* record_version(thread_db* tdbb, const jrd_nod* node, VLU impure)
 {
 /**************************************
  *
@@ -4260,7 +4260,7 @@ static bool reject_duplicate(const UCHAR* data1, const UCHAR* data2, void* user_
 }
 
 
-static dsc* scalar(TDBB tdbb, jrd_nod* node, VLU impure)
+static dsc* scalar(thread_db* tdbb, jrd_nod* node, VLU impure)
 {
 /**************************************
  *
@@ -4310,7 +4310,7 @@ static dsc* scalar(TDBB tdbb, jrd_nod* node, VLU impure)
 }
 
 
-static SSHORT sleuth(TDBB tdbb, jrd_nod* node, dsc* desc1, dsc* desc2)
+static SSHORT sleuth(thread_db* tdbb, jrd_nod* node, dsc* desc1, dsc* desc2)
 {
 /**************************************
  *
@@ -4409,7 +4409,7 @@ static SSHORT sleuth(TDBB tdbb, jrd_nod* node, dsc* desc1, dsc* desc2)
 }
 
 
-static SSHORT string_boolean(TDBB tdbb, jrd_nod* node, dsc* desc1, dsc* desc2, bool computed_invariant)
+static SSHORT string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1, dsc* desc2, bool computed_invariant)
 {
 /**************************************
  *
@@ -4604,7 +4604,7 @@ static SSHORT string_boolean(TDBB tdbb, jrd_nod* node, dsc* desc1, dsc* desc2, b
 
 
 static SSHORT string_function(
-							  TDBB tdbb,
+							  thread_db* tdbb,
 							  jrd_nod* node,
 							  SSHORT l1,
 							  const UCHAR* p1, SSHORT l2, const UCHAR* p2, 
@@ -4709,7 +4709,7 @@ static SSHORT string_function(
 
 
 static dsc* substring(
-					  TDBB tdbb,
+					  thread_db* tdbb,
 					  VLU impure, dsc* value, SLONG offset_arg, SLONG length_arg)
 {
 /**************************************
@@ -4876,7 +4876,7 @@ static dsc* substring(
 }
 
 
-static dsc* upcase(TDBB tdbb, const dsc* value, VLU impure)
+static dsc* upcase(thread_db* tdbb, const dsc* value, VLU impure)
 {
 /**************************************
  *
@@ -4917,7 +4917,7 @@ static dsc* upcase(TDBB tdbb, const dsc* value, VLU impure)
 }
 
 
-static dsc* internal_info(TDBB tdbb, const dsc* value, VLU impure)
+static dsc* internal_info(thread_db* tdbb, const dsc* value, VLU impure)
 {
 /**************************************
  *

@@ -49,14 +49,14 @@
 #include <fcntl.h>
 #endif
 
-struct dbb dbb_struct;
-struct tdbb tdbb_struct, *gdbb;
+Database dbb_struct;
+thread_db tdbb_struct, *gdbb;
 struct pgc dim;
-struct tra dull;
+jrd_tra dull;
 
-ULONG *tips;
+const ULONG* tips;
 
-IB_FILE *dbg_file;
+IB_FILE* dbg_file;
 
 static void checksum(RBDB, ULONG, ULONG, bool);
 static USHORT compute_checksum(RBDB, PAG);
@@ -65,7 +65,7 @@ static void dump(IB_FILE *, RBDB, ULONG, ULONG, UCHAR);
 static void dump_tips(IB_FILE *, RBDB);
 static void format_header(RBDB, header_page*, int, ULONG, ULONG, ULONG, ULONG);
 static void format_index_root(index_root_page*, int, SSHORT, SSHORT);
-static void format_pointer(pointer_page*, int, SSHORT, SSHORT, int, SSHORT, SLONG *);
+static void format_pointer(pointer_page*, int, SSHORT, SSHORT, bool, SSHORT, SLONG *);
 static void format_pip(page_inv_page*, int, int);
 static void format_tip(tx_inv_page*, int, SLONG);
 static void get_next_file(RBDB, header_page*);
@@ -108,11 +108,8 @@ int main( int argc, char *argv[])
  *	of things.
  *
  **************************************/
-	TEXT **end, *db_in, *ascii_out, out_file[128];
-	header_page* header;
-	RBDB rbdb;
+	TEXT out_file[128];
 	struct swc switch_space;
-	SWC token;
 	RBDB next_db;
 	ULONG c_lower_bound, c_upper_bound, d_lower_bound, d_upper_bound,
 		p_lower_bound, p_upper_bound, pg_size;
@@ -130,14 +127,14 @@ int main( int argc, char *argv[])
 	argc = VMS_parse(&argv, argc);
 #endif
 
-	end = argv + argc;
+	const TEXT* const* const end = argv + argc;
 	++argv;
-	token = &switch_space;
+	SWC token = &switch_space;
 
-	rbdb = NULL;
-	header = NULL;
-	ascii_out = NULL;
-	db_in = NULL;
+	RBDB rbdb = NULL;
+	header_page* header = NULL;
+	TEXT* ascii_out = NULL;
+	TEXT* db_in = NULL;
 
 	while (argv < end) {
 		get_switch(argv, token);
@@ -326,12 +323,11 @@ SCHAR *RBDB_alloc(SLONG size)
  *	Allocate and zero a piece of memory.
  *
  **************************************/
-	SCHAR *block, *p;
-
-	block = p = gds__alloc(size);
-	do
+	char* const block = gds__alloc(size);
+	char* p = block;
+	do {
 		*p++ = 0;
-	while (--size);
+	} while (--size);
 
 	return block;
 }
@@ -348,7 +344,6 @@ void RBDB_close( RBDB rbdb)
  * Functional description
  *
  **************************************/
-
 	for (; rbdb; rbdb = rbdb->rbdb_next)
 		close(rbdb->rbdb_file.fil_file);
 }
@@ -366,10 +361,11 @@ void RBDB_open( RBDB rbdb)
  *	Open a database file.
  *
  **************************************/
-
 	if ((rbdb->rbdb_file.fil_file = open(rbdb->rbdb_file.fil_name, O_RDWR, 0))
 		== -1)
+	{
 		db_error(errno);
+	}
 }
 
 
@@ -385,20 +381,17 @@ PAG RBDB_read(RBDB rbdb, SLONG page_number)
  *	Read a database page.
  *
  **************************************/
-	SCHAR *p;
-	SSHORT length, l;
-	int file;
-	UINT64 offset;
+	int file = rbdb->rbdb_file.fil_file;
 
-	file = rbdb->rbdb_file.fil_file;
-
-	offset = ((UINT64)page_number) * ((UINT64)rbdb->rbdb_page_size);
+	const UINT64 offset = ((UINT64)page_number) * ((UINT64)rbdb->rbdb_page_size);
 	if (lseek (file, offset, 0) == -1)
 		db_error(errno);
 
-	for (p = (SCHAR *) rbdb->rbdb_buffer1, length = rbdb->rbdb_page_size;
-		 length > 0;) {
-		l = read(file, p, length);
+	SSHORT length = rbdb->rbdb_page_size;
+	for (char* p = (SCHAR *) rbdb->rbdb_buffer1;
+		 length > 0;)
+	{
+		const SSHORT l = read(file, p, length);
 		if (l < 0)
 			db_error(errno);
 		else if (l == 0)
@@ -423,15 +416,11 @@ void RBDB_write( RBDB rbdb, PAG page, SLONG page_number)
  *	Write a database page.
  *
  **************************************/
-	ULONG page_size;
-	int fd;
-	UINT64 offset;
-
 	page->pag_checksum = compute_checksum(rbdb, page);
-	page_size = rbdb->rbdb_page_size;
-	fd = rbdb->rbdb_file.fil_file;
+	const ULONG page_size = rbdb->rbdb_page_size;
+	int fd = rbdb->rbdb_file.fil_file;
 
-	offset = ((UINT64)page_number) * ((UINT64)page_size);
+	const UINT64 offset = ((UINT64)page_number) * ((UINT64)page_size);
 	if (lseek (fd, offset, 0) == -1)
 		db_error(errno);
 	if (write(fd, page, page_size) == -1)
@@ -452,16 +441,14 @@ static void checksum( RBDB rbdb, ULONG lower, ULONG upper, bool sw_fix)
  *	checksums in this database.
  *
  **************************************/
-	PAG page;
-	ULONG page_number;
-	USHORT old_checksum, new_checksum;
 	TEXT s[128];
 
-	for (page_number = lower; page_number <= upper; page_number++) {
-		if (!(page = RBDB_read(rbdb, page_number)))
+	for (ULONG page_number = lower; page_number <= upper; page_number++) {
+		pag* page = RBDB_read(rbdb, page_number);
+		if (!page)
 			return;
-		old_checksum = page->pag_checksum;
-		new_checksum = compute_checksum(rbdb, page);
+		const USHORT old_checksum = page->pag_checksum;
+		const USHORT new_checksum = compute_checksum(rbdb, page);
 		if (sw_fix)
 			page->pag_checksum = new_checksum;
 		if (new_checksum == old_checksum)
@@ -486,14 +473,11 @@ static USHORT compute_checksum( RBDB rbdb, PAG page)
  *	compute checksum for a V3 page.
  *
  **************************************/
-	ULONG checksum, *p, *end;
-	USHORT old_checksum;
-
-	end = (ULONG *) ((SCHAR *) page + rbdb->rbdb_page_size);
-	old_checksum = page->pag_checksum;
+	const ULONG* const end = (ULONG *) ((SCHAR *) page + rbdb->rbdb_page_size);
+	const USHORT old_checksum = page->pag_checksum;
 	page->pag_checksum = 0;
-	p = (ULONG *) page;
-	checksum = 0;
+	const ULONG* p = (ULONG *) page;
+	ULONG checksum = 0;
 
 	do {
 		checksum += *p++;
@@ -504,8 +488,7 @@ static USHORT compute_checksum( RBDB rbdb, PAG page)
 		checksum += *p++;
 		checksum += *p++;
 		checksum += *p++;
-	}
-	while (p < end);
+	} while (p < end);
 
 	page->pag_checksum = old_checksum;
 
@@ -534,7 +517,6 @@ static void db_error( int status)
  * Functional description
  *
  **************************************/
-
 	ib_printf(strerror(status));
 	exit(FINI_ERROR);
 }
@@ -555,19 +537,15 @@ static void dump(
  *	or pages in the database.
  *
  **************************************/
-	PAG page;
-	ULONG sequence;
-	ULONG *tip;
-	ULONG *p, *end;
-
-	sequence = 0;
+	ULONG sequence = 0;
 
 	if (rbdb->rbdb_last_page && upper == BIG_NUMBER)
 		upper = rbdb->rbdb_last_page;
 
+	PAG page;
 	while (page = RBDB_read(rbdb, lower)) {
 		if (page->pag_type == pag_transactions && tips) {
-			for (tip = tips; tip[sequence]; sequence++) {
+			for (const ULONG* tip = tips; tip[sequence]; sequence++) {
 				if (tip[sequence] == lower)
 					break;
 				else if (!tip[sequence]) {
@@ -584,9 +562,9 @@ static void dump(
 			page->pag_type = pg_type;
 		}
 		DMP_fetched_page(page, lower, sequence, rbdb->rbdb_page_size);
-		for (p = (ULONG *) page, end =
-			 p + (rbdb->rbdb_page_size / sizeof(ULONG)) - 1; !*p && p < end;
-			 p++);
+		const ULONG* p = (ULONG *) page;
+		for (const ULONG* const end = p + (rbdb->rbdb_page_size / sizeof(ULONG)) - 1;
+			!*p && p < end; p++); // empty loop body
 		if (!*p)
 			ib_printf("    Page is all zeroes.\n");
 		if (sw_fudge)
@@ -610,16 +588,16 @@ static void dump_tips( IB_FILE * file, RBDB rbdb)
  *	in the database.
  *
  **************************************/
-	PAG page;
-	ULONG sequence;
-	ULONG *tip;
-
 	if (!tips)
 		ib_printf("not enough database.  Store headers and look there\n");
 
-	for (sequence = 1, tip = tips; *tip && (page = RBDB_read(rbdb, *tip));
+	PAG page;
+	ULONG sequence = 1;
+	for (const ULONG* tip = tips; *tip && (page = RBDB_read(rbdb, *tip));
 		 sequence++)
+	{
 		DMP_fetched_page(page, *tip++, sequence, rbdb->rbdb_page_size);
+	}
 }
 
 
@@ -680,7 +658,7 @@ static void format_pointer(
 						   int page_size,
 						   SSHORT relation_id,
 						   SSHORT sequence,
-int eof, SSHORT count, SLONG * page_vector)
+						   bool eof, SSHORT count, SLONG * page_vector)
 {
 /**************************************
  *
@@ -1124,7 +1102,7 @@ static void rebuild( RBDB rbdb)
 		 number++)
 	{
 		pointer_page* pointer = (pointer_page*) page;
-/*    format_pointer (page, page_size, 25, 3, 1, 37, page_numbers);   */
+/*    format_pointer (page, page_size, 25, 3, true, 37, page_numbers);   */
 
 		RBDB_write(rbdb, page, number);
 	}

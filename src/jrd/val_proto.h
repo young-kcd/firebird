@@ -24,7 +24,7 @@
 #ifndef JRD_VAL_PROTO_H
 #define JRD_VAL_PROTO_H
 
-bool VAL_validate(TDBB, USHORT);
+bool VAL_validate(thread_db*, USHORT);
 
 #endif // JRD_VAL_PROTO_H
 

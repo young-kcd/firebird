@@ -42,12 +42,12 @@
 #include "../jrd/tra_proto.h"
 #include <memory>
 
-static TPC allocate_tpc(TDBB, ULONG);
-static void cache_transactions(TDBB, TPC *, ULONG);
-static int extend_cache(TDBB, SLONG);
+static TPC allocate_tpc(thread_db*, ULONG);
+static void cache_transactions(thread_db*, TPC *, ULONG);
+static int extend_cache(thread_db*, SLONG);
 
 
-int TPC_cache_state(TDBB tdbb, SLONG number)
+int TPC_cache_state(thread_db* tdbb, SLONG number)
 {
 /**************************************
  *
@@ -95,7 +95,7 @@ int TPC_cache_state(TDBB tdbb, SLONG number)
 }
 
 
-void TPC_initialize_tpc(TDBB tdbb, SLONG number)
+void TPC_initialize_tpc(thread_db* tdbb, SLONG number)
 {
 /**************************************
  *
@@ -141,7 +141,7 @@ void TPC_initialize_tpc(TDBB tdbb, SLONG number)
 }
 
 
-void TPC_set_state(TDBB tdbb, SLONG number, SSHORT state)
+void TPC_set_state(thread_db* tdbb, SLONG number, SSHORT state)
 {
 /**************************************
  *
@@ -178,7 +178,7 @@ void TPC_set_state(TDBB tdbb, SLONG number, SSHORT state)
 }
 
 
-int TPC_snapshot_state(TDBB tdbb, SLONG number)
+int TPC_snapshot_state(thread_db* tdbb, SLONG number)
 {
 /**************************************
  *
@@ -277,7 +277,7 @@ int TPC_snapshot_state(TDBB tdbb, SLONG number)
 }
 
 
-void TPC_update_cache(TDBB tdbb, tx_inv_page* tip_page, SLONG sequence)
+void TPC_update_cache(thread_db* tdbb, tx_inv_page* tip_page, SLONG sequence)
 {
 /**************************************
  *
@@ -336,7 +336,7 @@ void TPC_update_cache(TDBB tdbb, tx_inv_page* tip_page, SLONG sequence)
 }
 
 
-static TPC allocate_tpc(TDBB tdbb, ULONG base)
+static TPC allocate_tpc(thread_db* tdbb, ULONG base)
 {
 /**************************************
  *
@@ -362,7 +362,7 @@ static TPC allocate_tpc(TDBB tdbb, ULONG base)
 }
 
 
-static void cache_transactions(TDBB tdbb, TPC * tip_cache_ptr, ULONG oldest)
+static void cache_transactions(thread_db* tdbb, TPC * tip_cache_ptr, ULONG oldest)
 {
 /**************************************
  *
@@ -414,7 +414,7 @@ static void cache_transactions(TDBB tdbb, TPC * tip_cache_ptr, ULONG oldest)
 }
 
 
-static int extend_cache(TDBB tdbb, SLONG number)
+static int extend_cache(thread_db* tdbb, SLONG number)
 {
 /**************************************
  *

@@ -27,30 +27,33 @@
 // fwd. decl.
 class blb;
 class lls;
+class jrd_rel;
+struct rpb;
 
-struct pag* DPM_allocate(TDBB, struct win*);
-void	DPM_backout(TDBB, struct rpb *);
-int		DPM_chain(TDBB, struct rpb *, struct rpb *);
-int		DPM_compress(TDBB, struct data_page*);
-void	DPM_create_relation(TDBB, struct jrd_rel *);
-SLONG	DPM_data_pages(TDBB, struct jrd_rel *);
-void	DPM_delete(TDBB, struct rpb *, SLONG);
-void	DPM_delete_relation(TDBB, struct jrd_rel *);
-bool	DPM_fetch(TDBB, struct rpb *, USHORT);
-SSHORT	DPM_fetch_back(TDBB, struct rpb *, USHORT, SSHORT);
-void	DPM_fetch_fragment(TDBB, struct rpb *, USHORT);
-SINT64	DPM_gen_id(TDBB, SLONG, USHORT, SINT64);
-int		DPM_get(TDBB, struct rpb *, SSHORT);
-ULONG	DPM_get_blob(TDBB, blb*, ULONG, USHORT, SLONG);
-bool	DPM_next(TDBB, struct rpb*, USHORT, bool, bool);
-void	DPM_pages(TDBB, SSHORT, int, ULONG, SLONG);
-SLONG	DPM_prefetch_bitmap(struct tdbb *, struct jrd_rel *, struct sbm *,
+struct pag* DPM_allocate(thread_db*, struct win*);
+void	DPM_backout(thread_db*, rpb*);
+int		DPM_chain(thread_db*, rpb*, rpb*);
+int		DPM_compress(thread_db*, struct data_page*);
+void	DPM_create_relation(thread_db*, jrd_rel*);
+SLONG	DPM_data_pages(thread_db*, jrd_rel*);
+void	DPM_delete(thread_db*, rpb*, SLONG);
+void	DPM_delete_relation(thread_db*, jrd_rel*);
+bool	DPM_fetch(thread_db*, rpb*, USHORT);
+SSHORT	DPM_fetch_back(thread_db*, rpb*, USHORT, SSHORT);
+void	DPM_fetch_fragment(thread_db*, rpb*, USHORT);
+SINT64	DPM_gen_id(thread_db*, SLONG, USHORT, SINT64);
+int		DPM_get(thread_db*, rpb*, SSHORT);
+ULONG	DPM_get_blob(thread_db*, blb*, ULONG, USHORT, SLONG);
+bool	DPM_next(thread_db*, rpb*, USHORT, bool, bool);
+void	DPM_pages(thread_db*, SSHORT, int, ULONG, SLONG);
+SLONG	DPM_prefetch_bitmap(struct thread_db*, jrd_rel*, struct sbm *,
 								 SLONG);
-void	DPM_scan_pages(TDBB);
-void	DPM_store(TDBB, struct rpb *, lls**, USHORT);
-SLONG	DPM_store_blob(TDBB, blb*, struct rec *);
-void	DPM_rewrite_header(TDBB, struct rpb *);
-void	DPM_update(TDBB, struct rpb *, lls**,
+void	DPM_scan_pages(thread_db*);
+void	DPM_store(thread_db*, rpb*, lls**, USHORT);
+SLONG	DPM_store_blob(thread_db*, blb*, class rec*);
+void	DPM_rewrite_header(thread_db*, rpb*);
+void	DPM_update(thread_db*, rpb*, lls**,
 					   class jrd_tra *);
 
 #endif // JRD_DPM_PROTO_H
+

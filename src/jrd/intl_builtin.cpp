@@ -27,12 +27,12 @@
 	cache->texttype_fn_to_lower =           internal_ch_to_lower; \
 	cache->texttype_fn_str_to_upper =       internal_str_to_upper; \
 	cache->texttype_fn_mbtowc =             INTL_builtin_nc_mbtowc; \
-	cache->texttype_collation_table =       (BYTE *) " "; \
+	cache->texttype_collation_table =       (const BYTE*) " "; \
 	cache->texttype_toupper_table =         NULL; \
 	cache->texttype_tolower_table =         NULL; \
 	cache->texttype_compress_table =        NULL; \
 	cache->texttype_expand_table =          NULL; \
-	cache->texttype_name =                  const_cast<char*>(POSIX);
+	cache->texttype_name =                  POSIX;
 
 
 
@@ -181,7 +181,7 @@ static USHORT internal_fss_to_unicode(TEXTTYPE obj,
 	return ((dest_ptr - start) * sizeof(*dest_ptr));
 }
 
-USHORT internal_unicode_to_fss(CSCONVERT obj,
+USHORT internal_unicode_to_fss(csconvert* obj,
 									  MBCHAR* fss_str,
 									  USHORT fss_len,
 									  const UNICODE* unicode_str,
@@ -521,7 +521,7 @@ static USHORT internal_ch_copy(TEXTTYPE obj, UCHAR ch)
 	return (ch);
 }
 
-static USHORT wc_to_nc(CSCONVERT obj, NCHAR* pDest, USHORT nDest,	/* byte count */
+static USHORT wc_to_nc(csconvert* obj, NCHAR* pDest, USHORT nDest,	/* byte count */
 					   const UCS2_CHAR* pSrc, USHORT nSrc,	/* byte count */
 					   SSHORT* err_code, USHORT* err_position)
 {
@@ -564,7 +564,7 @@ static USHORT wc_to_nc(CSCONVERT obj, NCHAR* pDest, USHORT nDest,	/* byte count 
 }
 
 
-static USHORT mb_to_wc(CSCONVERT obj, UCS2_CHAR* pDest, USHORT nDest,	/* byte count */
+static USHORT mb_to_wc(csconvert* obj, UCS2_CHAR* pDest, USHORT nDest,	/* byte count */
 					   const MBCHAR* pSrc, USHORT nSrc,	/* byte count */
 					   SSHORT* err_code, USHORT* err_position)
 {
@@ -605,7 +605,7 @@ static USHORT mb_to_wc(CSCONVERT obj, UCS2_CHAR* pDest, USHORT nDest,	/* byte co
 }
 
 
-static USHORT wc_to_mb(CSCONVERT obj, MBCHAR* pDest, USHORT nDest,	/* byte count */
+static USHORT wc_to_mb(csconvert* obj, MBCHAR* pDest, USHORT nDest,	/* byte count */
 					   const UCS2_CHAR* pSrc, USHORT nSrc,	/* byte count */
 					   SSHORT* err_code, USHORT* err_position)
 {
@@ -725,7 +725,7 @@ static USHORT ttype_binary_init(TEXTTYPE cache, USHORT parm1, USHORT dummy)
 	cache->texttype_fn_to_upper = internal_ch_copy;
 	cache->texttype_fn_to_lower = internal_ch_copy;
 	cache->texttype_fn_str_to_upper = internal_str_copy;
-	cache->texttype_collation_table = (BYTE *) "\0";	/* pad character */
+	cache->texttype_collation_table = (const BYTE*) "\0";	/* pad character */
 
 	TEXTTYPE_RETURN;
 }
@@ -738,7 +738,7 @@ static USHORT ttype_binary_init(TEXTTYPE cache, USHORT parm1, USHORT dummy)
 #define CHARSET_RETURN          return (0)
 
 static void common_8bit_init(
-							 CHARSET csptr,
+							 charset* csptr,
 							 USHORT id,
 							 const ASCII* name,
 							 const USHORT* to_unicode_tbl,
@@ -768,7 +768,7 @@ static void common_8bit_init(
 
 
 static void common_convert_init(
-								CSCONVERT csptr,
+								csconvert* csptr,
 								USHORT to_cs,
 								USHORT from_cs,
 								pfn_INTL_convert cvt_fn,
@@ -794,7 +794,7 @@ static void common_convert_init(
 	csptr->csconvert_misc = datatable2;
 }
 
-static USHORT cvt_ascii_to_unicode(CSCONVERT obj, UCS2_CHAR* pDest, USHORT nDest,	/* byte count */
+static USHORT cvt_ascii_to_unicode(csconvert* obj, UCS2_CHAR* pDest, USHORT nDest,	/* byte count */
 								   const UCHAR* pSrc, USHORT nSrc,	/* byte count */
 								   SSHORT* err_code, USHORT* err_position)
 {
@@ -837,7 +837,7 @@ static USHORT cvt_ascii_to_unicode(CSCONVERT obj, UCS2_CHAR* pDest, USHORT nDest
 	return ((pDest - pStart) * sizeof(*pDest));
 }
 
-static USHORT cvt_unicode_to_ascii(CSCONVERT obj, NCHAR* pDest, USHORT nDest,	/* byte count */
+static USHORT cvt_unicode_to_ascii(csconvert* obj, NCHAR* pDest, USHORT nDest,	/* byte count */
 								   const UCS2_CHAR* pSrc, USHORT nSrc,	/* byte count */
 								   SSHORT* err_code, USHORT* err_position)
 {
@@ -880,7 +880,7 @@ static USHORT cvt_unicode_to_ascii(CSCONVERT obj, NCHAR* pDest, USHORT nDest,	/*
 	return ((pDest - pStart) * sizeof(*pDest));
 }
 
-static USHORT cvt_none_to_unicode(CSCONVERT obj, UCS2_CHAR* pDest, USHORT nDest,	/* byte count */
+static USHORT cvt_none_to_unicode(csconvert* obj, UCS2_CHAR* pDest, USHORT nDest,	/* byte count */
 								  const UCHAR* pSrc, USHORT nSrc,	/* byte count */
 								  SSHORT* err_code, USHORT* err_position)
 {
@@ -923,7 +923,7 @@ static USHORT cvt_none_to_unicode(CSCONVERT obj, UCS2_CHAR* pDest, USHORT nDest,
 	return ((pDest - pStart) * sizeof(*pDest));
 }
 
-static USHORT cvt_utffss_to_ascii(CSCONVERT obj, UCHAR* pDest, USHORT nDest,	/* byte count */
+static USHORT cvt_utffss_to_ascii(csconvert* obj, UCHAR* pDest, USHORT nDest,	/* byte count */
 								  const UCHAR* pSrc, USHORT nSrc,	/* byte count */
 								  SSHORT* err_code, USHORT* err_position)
 {
@@ -973,7 +973,7 @@ static USHORT cvt_utffss_to_ascii(CSCONVERT obj, UCHAR* pDest, USHORT nDest,	/* 
 	return ((pDest - pStart) * sizeof(*pDest));
 }
 
-static USHORT cs_ascii_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
+static USHORT cs_ascii_init(charset* csptr, USHORT cs_id, USHORT dummy)
 {
 /**************************************
  *
@@ -996,7 +996,7 @@ static USHORT cs_ascii_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
 }
 
 
-static USHORT cs_none_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
+static USHORT cs_none_init(charset* csptr, USHORT cs_id, USHORT dummy)
 {
 /**************************************
  *
@@ -1023,7 +1023,7 @@ common_convert_init (&csptr->charset_to_unicode, CS_UNICODE_UCS2, id,
 }
 
 
-static USHORT cs_unicode_fss_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
+static USHORT cs_unicode_fss_init(charset* csptr, USHORT cs_id, USHORT dummy)
 {
 /**************************************
  *
@@ -1049,7 +1049,7 @@ static USHORT cs_unicode_fss_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
 }
 
 
-static USHORT cs_unicode_ucs2_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
+static USHORT cs_unicode_ucs2_init(charset* csptr, USHORT cs_id, USHORT dummy)
 {
 /**************************************
  *
@@ -1075,7 +1075,7 @@ static USHORT cs_unicode_ucs2_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
 }
 
 
-static USHORT cs_binary_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
+static USHORT cs_binary_init(charset* csptr, USHORT cs_id, USHORT dummy)
 {
 /**************************************
  *
@@ -1107,7 +1107,7 @@ static USHORT cs_binary_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
 
 
 static USHORT cvt_ascii_utf_init(
-								 CSCONVERT csptr,
+								 csconvert* csptr,
 								 USHORT dest_cs, USHORT source_cs)
 {
 /**************************************

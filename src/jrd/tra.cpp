@@ -92,27 +92,27 @@ static const SCHAR lock_types[] =
 
 
 #ifdef SUPERSERVER_V2
-static SLONG bump_transaction_id(TDBB, WIN *);
+static SLONG bump_transaction_id(thread_db*, WIN *);
 #else
-static header_page* bump_transaction_id(TDBB, WIN *);
+static header_page* bump_transaction_id(thread_db*, WIN *);
 #endif
-static void retain_context(TDBB, jrd_tra*, const bool);
+static void retain_context(thread_db*, jrd_tra*, const bool);
 #ifdef VMS
-static void compute_oldest_retaining(TDBB, jrd_tra*, const bool);
+static void compute_oldest_retaining(thread_db*, jrd_tra*, const bool);
 #endif
 #ifdef PC_ENGINE
 static void downgrade_lock(jrd_tra*);
 #endif
 static void expand_view_lock(jrd_tra*, jrd_rel*, SCHAR);
-static tx_inv_page* fetch_inventory_page(TDBB, WIN *, SLONG, USHORT);
-static SLONG inventory_page(TDBB, SLONG);
-static SSHORT limbo_transaction(TDBB, SLONG);
-static void restart_requests(TDBB, jrd_tra*);
+static tx_inv_page* fetch_inventory_page(thread_db*, WIN *, SLONG, USHORT);
+static SLONG inventory_page(thread_db*, SLONG);
+static SSHORT limbo_transaction(thread_db*, SLONG);
+static void restart_requests(thread_db*, jrd_tra*);
 #ifdef SWEEP_THREAD
-static BOOLEAN start_sweeper(TDBB, Database*);
+static BOOLEAN start_sweeper(thread_db*, Database*);
 static void THREAD_ROUTINE sweep_database(char*);
 #endif
-static void transaction_options(TDBB, jrd_tra*, const UCHAR*, USHORT);
+static void transaction_options(thread_db*, jrd_tra*, const UCHAR*, USHORT);
 #ifdef VMS
 static BOOLEAN vms_convert(lck*, SLONG *, SCHAR, BOOLEAN);
 #endif
@@ -124,7 +124,7 @@ static const UCHAR sweep_tpb[] =
 };
 
 
-bool TRA_active_transactions(TDBB tdbb, Database* dbb)
+bool TRA_active_transactions(thread_db* tdbb, Database* dbb)
 {
 /**************************************
  *
@@ -203,7 +203,7 @@ bool TRA_active_transactions(TDBB tdbb, Database* dbb)
 #endif
 }
 
-void TRA_cleanup(TDBB tdbb)
+void TRA_cleanup(thread_db* tdbb)
 {
 /**************************************
  *
@@ -327,7 +327,7 @@ void TRA_cleanup(TDBB tdbb)
 }
 
 
-void TRA_commit(TDBB tdbb, jrd_tra* transaction, const bool retaining_flag)
+void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag)
 {
 /**************************************
  *
@@ -418,7 +418,7 @@ void TRA_commit(TDBB tdbb, jrd_tra* transaction, const bool retaining_flag)
 }
 
 
-void TRA_extend_tip(TDBB tdbb, ULONG sequence, WIN * precedence_window)
+void TRA_extend_tip(thread_db* tdbb, ULONG sequence, WIN * precedence_window)
 {
 /**************************************
  *
@@ -472,7 +472,7 @@ void TRA_extend_tip(TDBB tdbb, ULONG sequence, WIN * precedence_window)
 }
 
 
-int TRA_fetch_state(TDBB tdbb, SLONG number)
+int TRA_fetch_state(thread_db* tdbb, SLONG number)
 {
 /**************************************
  *
@@ -510,7 +510,7 @@ int TRA_fetch_state(TDBB tdbb, SLONG number)
 }
 
 
-void TRA_get_inventory(TDBB tdbb, UCHAR * bit_vector, ULONG base, ULONG top)
+void TRA_get_inventory(thread_db* tdbb, UCHAR * bit_vector, ULONG base, ULONG top)
 {
 /**************************************
  *
@@ -574,7 +574,7 @@ void TRA_get_inventory(TDBB tdbb, UCHAR * bit_vector, ULONG base, ULONG top)
 }
 
 
-int TRA_get_state(TDBB tdbb, SLONG number)
+int TRA_get_state(thread_db* tdbb, SLONG number)
 {
 /**************************************
  *
@@ -603,7 +603,7 @@ int TRA_get_state(TDBB tdbb, SLONG number)
 
 
 #ifdef SUPERSERVER_V2
-void TRA_header_write(TDBB tdbb, Database* dbb, SLONG number)
+void TRA_header_write(thread_db* tdbb, Database* dbb, SLONG number)
 {
 /**************************************
  *
@@ -663,7 +663,7 @@ void TRA_header_write(TDBB tdbb, Database* dbb, SLONG number)
 #endif
 
 
-void TRA_init(TDBB tdbb)
+void TRA_init(thread_db* tdbb)
 {
 /**************************************
  *
@@ -715,7 +715,7 @@ void TRA_invalidate(Database* database, ULONG mask)
 }
 
 
-void TRA_link_transaction(TDBB tdbb, jrd_tra* transaction)
+void TRA_link_transaction(thread_db* tdbb, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -736,7 +736,7 @@ void TRA_link_transaction(TDBB tdbb, jrd_tra* transaction)
 }
 
 
-void TRA_post_resources(TDBB tdbb, jrd_tra* transaction, Resource* resources)
+void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, Resource* resources)
 {
 /**************************************
  *
@@ -802,7 +802,7 @@ void TRA_post_resources(TDBB tdbb, jrd_tra* transaction, Resource* resources)
 }
 
 
-bool TRA_precommited(TDBB tdbb, SLONG old_number, SLONG new_number)
+bool TRA_precommited(thread_db* tdbb, SLONG old_number, SLONG new_number)
 {
 /**************************************
  *
@@ -851,7 +851,7 @@ bool TRA_precommited(TDBB tdbb, SLONG old_number, SLONG new_number)
 }
 
 
-void TRA_prepare(TDBB tdbb, jrd_tra* transaction, USHORT length,
+void TRA_prepare(thread_db* tdbb, jrd_tra* transaction, USHORT length,
 	const UCHAR* msg)
 {
 /**************************************
@@ -923,7 +923,7 @@ void TRA_prepare(TDBB tdbb, jrd_tra* transaction, USHORT length,
 }
 
 
-jrd_tra* TRA_reconnect(TDBB tdbb, const UCHAR* id, USHORT length)
+jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 {
 /**************************************
  *
@@ -988,7 +988,7 @@ jrd_tra* TRA_reconnect(TDBB tdbb, const UCHAR* id, USHORT length)
 }
 
 
-void TRA_release_transaction(TDBB tdbb, jrd_tra* transaction)
+void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -1073,7 +1073,7 @@ void TRA_release_transaction(TDBB tdbb, jrd_tra* transaction)
 }
 
 
-void TRA_rollback(TDBB tdbb, jrd_tra* transaction, const bool retaining_flag)
+void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag)
 {
 /**************************************
  *
@@ -1204,7 +1204,7 @@ void TRA_rollback(TDBB tdbb, jrd_tra* transaction, const bool retaining_flag)
 }
 
 
-void TRA_set_state(TDBB tdbb, jrd_tra* transaction, SLONG number, SSHORT state)
+void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, SLONG number, SSHORT state)
 {
 /**************************************
  *
@@ -1286,7 +1286,7 @@ void TRA_set_state(TDBB tdbb, jrd_tra* transaction, SLONG number, SSHORT state)
 }
 
 
-void TRA_shutdown_attachment(TDBB tdbb, ATT attachment)
+void TRA_shutdown_attachment(thread_db* tdbb, ATT attachment)
 {
 /**************************************
  *
@@ -1324,7 +1324,7 @@ void TRA_shutdown_attachment(TDBB tdbb, ATT attachment)
 }
 
 
-int TRA_snapshot_state(TDBB tdbb, jrd_tra* trans, SLONG number)
+int TRA_snapshot_state(thread_db* tdbb, jrd_tra* trans, SLONG number)
 {
 /**************************************
  *
@@ -1378,7 +1378,7 @@ int TRA_snapshot_state(TDBB tdbb, jrd_tra* trans, SLONG number)
 }
 
 
-jrd_tra* TRA_start(TDBB tdbb, int tpb_length, const SCHAR* tpb)
+jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
 {
 /**************************************
  *
@@ -1725,7 +1725,7 @@ int TRA_state(UCHAR * bit_vector, ULONG oldest, ULONG number)
 }
 
 
-int TRA_sweep(TDBB tdbb, jrd_tra* trans)
+int TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 {
 /**************************************
  *
@@ -1889,7 +1889,7 @@ int TRA_sweep(TDBB tdbb, jrd_tra* trans)
 }
 
 
-lck* TRA_transaction_lock(TDBB tdbb, BLK object)
+lck* TRA_transaction_lock(thread_db* tdbb, BLK object)
 {
 /**************************************
  *
@@ -1917,7 +1917,7 @@ lck* TRA_transaction_lock(TDBB tdbb, BLK object)
 }
 
 
-int TRA_wait(TDBB tdbb, jrd_tra* trans, SLONG number, bool wait)
+int TRA_wait(thread_db* tdbb, jrd_tra* trans, SLONG number, bool wait)
 {
 /**************************************
  *
@@ -1999,7 +1999,7 @@ int TRA_wait(TDBB tdbb, jrd_tra* trans, SLONG number, bool wait)
 
 
 #ifdef SUPERSERVER_V2
-static SLONG bump_transaction_id(TDBB tdbb, WIN * window)
+static SLONG bump_transaction_id(thread_db* tdbb, WIN * window)
 {
 /**************************************
  *
@@ -2036,7 +2036,7 @@ static SLONG bump_transaction_id(TDBB tdbb, WIN * window)
 #else
 
 
-static header_page* bump_transaction_id(TDBB tdbb, WIN * window)
+static header_page* bump_transaction_id(thread_db* tdbb, WIN * window)
 {
 /**************************************
  *
@@ -2098,7 +2098,7 @@ static header_page* bump_transaction_id(TDBB tdbb, WIN * window)
 
 #ifdef VMS
 static void compute_oldest_retaining(
-									 TDBB tdbb,
+									 thread_db* tdbb,
 									 jrd_tra* transaction, const bool write_flag)
 {
 /**************************************
@@ -2215,13 +2215,12 @@ static void downgrade_lock(jrd_tra* transaction)
  *	notified if and when the transaction commits.
  *
  **************************************/
-	struct tdbb thd_context, *tdbb;
-
 	ISC_ast_enter();
 
 /* Since this routine will be called asynchronously, we must establish
    a thread context. */
 
+	thread_db thd_context, *tdbb;
 	SET_THREAD_DATA;
 
 /* Ignore the request if the transaction or lock block does not appear
@@ -2266,7 +2265,7 @@ static void expand_view_lock(jrd_tra* transaction, jrd_rel* relation, SCHAR lock
  *
  **************************************/
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	/* set up the lock on the relation/view */
 
@@ -2303,7 +2302,7 @@ static void expand_view_lock(jrd_tra* transaction, jrd_rel* relation, SCHAR lock
 
 
 static tx_inv_page* fetch_inventory_page(
-								TDBB tdbb,
+								thread_db* tdbb,
 								WIN * window,
 								SLONG sequence, USHORT lock_level)
 {
@@ -2330,7 +2329,7 @@ static tx_inv_page* fetch_inventory_page(
 }
 
 
-static SLONG inventory_page(TDBB tdbb, SLONG sequence)
+static SLONG inventory_page(thread_db* tdbb, SLONG sequence)
 {
 /**************************************
  *
@@ -2374,7 +2373,7 @@ static SLONG inventory_page(TDBB tdbb, SLONG sequence)
 }
 
 
-static SSHORT limbo_transaction(TDBB tdbb, SLONG id)
+static SSHORT limbo_transaction(thread_db* tdbb, SLONG id)
 {
 /**************************************
  *
@@ -2412,7 +2411,7 @@ static SSHORT limbo_transaction(TDBB tdbb, SLONG id)
 }
 
 
-static void restart_requests(TDBB tdbb, jrd_tra* trans)
+static void restart_requests(thread_db* tdbb, jrd_tra* trans)
 {
 /**************************************
  *
@@ -2452,7 +2451,7 @@ static void restart_requests(TDBB tdbb, jrd_tra* trans)
 }
 
 
-static void retain_context(TDBB tdbb, jrd_tra* transaction, const bool commit)
+static void retain_context(thread_db* tdbb, jrd_tra* transaction, const bool commit)
 {
 /**************************************
  *
@@ -2607,7 +2606,7 @@ static void retain_context(TDBB tdbb, jrd_tra* transaction, const bool commit)
 
 
 #ifdef SWEEP_THREAD
-static BOOLEAN start_sweeper(TDBB tdbb, Database* dbb)
+static BOOLEAN start_sweeper(thread_db* tdbb, Database* dbb)
 {
 /**************************************
  *
@@ -2757,7 +2756,7 @@ static void THREAD_ROUTINE sweep_database(char* database)
 
 
 static void transaction_options(
-								TDBB tdbb,
+								thread_db* tdbb,
 								jrd_tra* transaction,
 								const UCHAR* tpb, USHORT tpb_length)
 {

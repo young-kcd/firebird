@@ -70,7 +70,7 @@ static void release_io_event(jrd_file*, OVERLAPPED*);
 #endif
 static ULONG get_number_of_pages(const jrd_file*, const USHORT);
 static bool	MaybeCloseFile(SLONG*);
-static jrd_file* seek_file(jrd_file*, BDB, ISC_STATUS*, OVERLAPPED*, OVERLAPPED**);
+static jrd_file* seek_file(jrd_file*, Buffer_desc*, ISC_STATUS*, OVERLAPPED*, OVERLAPPED**);
 static jrd_file* setup_file(Database*, const TEXT*, USHORT, HANDLE);
 static bool nt_error(TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS*);
 
@@ -572,7 +572,7 @@ jrd_file* PIO_open(Database* dbb,
 }
 
 
-bool PIO_read(jrd_file* file, BDB bdb, PAG page, ISC_STATUS* status_vector)
+bool PIO_read(jrd_file* file, Buffer_desc* bdb, PAG page, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -668,7 +668,7 @@ bool PIO_read_ahead(Database*		dbb,
  **************************************/
 	DWORD actual_length;
 	OVERLAPPED overlapped, *overlapped_ptr;
-	struct bdb bdb;
+	class bdb bdb;
 
 /* If an I/O status block was passed the caller wants to
    queue an asynchronous I/O. */
@@ -790,7 +790,7 @@ bool PIO_status(phys_io_blk* piob, ISC_STATUS* status_vector)
 #endif
 
 
-bool PIO_write(jrd_file* file, BDB bdb, PAG page, ISC_STATUS* status_vector)
+bool PIO_write(jrd_file* file, Buffer_desc* bdb, PAG page, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -929,7 +929,7 @@ static void release_io_event(jrd_file* file, OVERLAPPED* overlapped)
 
 
 static jrd_file* seek_file(jrd_file*			file,
-					 BDB			bdb,
+					 Buffer_desc*			bdb,
 					 ISC_STATUS*		status_vector,
 					 OVERLAPPED*	overlapped,
 					 OVERLAPPED**	overlapped_ptr)
@@ -1096,7 +1096,7 @@ static jrd_file* setup_file(Database*		dbb,
 	dbb->dbb_flags |= DBB_exclusive;
 	if (!LCK_lock(NULL, lock, LCK_EX, LCK_NO_WAIT)) {
 		dbb->dbb_flags &= ~DBB_exclusive;
-		TDBB tdbb = GET_THREAD_DATA;
+		thread_db* tdbb = GET_THREAD_DATA;
 		
 		while (!LCK_lock(tdbb, lock, LCK_SW, -1)) {
 			tdbb->tdbb_status_vector[0] = 0; // Clean status vector from lock manager error code

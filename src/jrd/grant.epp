@@ -72,24 +72,24 @@
 
 DATABASE DB = STATIC "yachts.lnk";
 
-static void define_default_class(TDBB, const TEXT*, TEXT*, const UCHAR*, USHORT);
+static void define_default_class(thread_db*, const TEXT*, TEXT*, const UCHAR*, USHORT);
 #ifdef NOT_USED_OR_REPLACED
-static void delete_security_class(TDBB, TEXT *);
+static void delete_security_class(thread_db*, TEXT *);
 #endif
 static void finish_security_class(UCHAR **, USHORT, STR *, ULONG *);
-static void get_object_info(TDBB, const TEXT*, SSHORT,
+static void get_object_info(thread_db*, const TEXT*, SSHORT,
 							TEXT*, TEXT*, TEXT*, bool*);
-static USHORT get_public_privs(TDBB, TEXT *, SSHORT);
-static void get_user_privs(TDBB, UCHAR **, TEXT *,
+static USHORT get_public_privs(thread_db*, TEXT *, SSHORT);
+static void get_user_privs(thread_db*, UCHAR **, TEXT *,
 						   SSHORT, TEXT *, USHORT, STR *, ULONG *);
 static void grant_user(UCHAR**, TEXT*, SSHORT, USHORT, STR*, ULONG*);
 #ifdef NOT_USED_OR_REPLACED
 static void grant_views(UCHAR **, USHORT, STR *, ULONG *);
 static void purge_default_class(TEXT *, SSHORT);
 #endif
-static USHORT save_field_privileges(TDBB, STR *, UCHAR **,
+static USHORT save_field_privileges(thread_db*, STR *, UCHAR **,
 									TEXT *, TEXT *, USHORT, ULONG *);
-static void save_security_class(TDBB, const TEXT*, const UCHAR*, USHORT);
+static void save_security_class(thread_db*, const TEXT*, const UCHAR*, USHORT);
 static USHORT trans_sql_priv(TEXT *);
 static SLONG squeeze_acl(UCHAR *, UCHAR **, TEXT *, SSHORT);
 static bool check_string(const TEXT*, const TEXT*);
@@ -129,7 +129,7 @@ STR GRANT_realloc_acl(STR		start_ptr,
 }
 
 
-bool GRANT_privileges( TDBB tdbb, SSHORT phase, Deferred_work* work,
+bool GRANT_privileges( thread_db* tdbb, SSHORT phase, Deferred_work* work,
 					jrd_tra*) // unused param, makes dfw.epp happy
 {
 /**************************************
@@ -301,7 +301,7 @@ bool GRANT_privileges( TDBB tdbb, SSHORT phase, Deferred_work* work,
 
 
 static void define_default_class(
-								 TDBB tdbb,
+								 thread_db* tdbb,
 								 const TEXT* relation_name,
 								 TEXT* default_class,
 								 const UCHAR* buffer, USHORT length)
@@ -364,7 +364,7 @@ static void define_default_class(
 }
 
 #ifdef NOT_USED_OR_REPLACED
-static void delete_security_class( TDBB tdbb, TEXT * s_class)
+static void delete_security_class( thread_db* tdbb, TEXT * s_class)
 {
 /**************************************
  *
@@ -421,7 +421,7 @@ static void finish_security_class(UCHAR**	acl_ptr,
 
 
 static USHORT get_public_privs(
-							   TDBB tdbb, TEXT * object_name, SSHORT obj_type)
+							   thread_db* tdbb, TEXT * object_name, SSHORT obj_type)
 {
 /**************************************
  *
@@ -460,7 +460,7 @@ static USHORT get_public_privs(
 
 
 static void get_object_info(
-							TDBB tdbb,
+							thread_db* tdbb,
 							const TEXT* object_name,
 							SSHORT obj_type,
 							TEXT* owner,
@@ -530,7 +530,7 @@ static void get_object_info(
 }
 
 
-static void get_user_privs(TDBB		tdbb,
+static void get_user_privs(thread_db*		tdbb,
 						   UCHAR**	acl_ptr,
 						   TEXT*	object_name,
 						   SSHORT	obj_type,
@@ -705,7 +705,7 @@ static void purge_default_class( TEXT * object_name, SSHORT obj_type)
  *	default security class for this relation.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 	BLK request = CMP_find_request(tdbb, irq_grant8, IRQ_REQUESTS);
@@ -742,7 +742,7 @@ static void purge_default_class( TEXT * object_name, SSHORT obj_type)
 
 
 static USHORT save_field_privileges(
-									TDBB tdbb,
+									thread_db* tdbb,
 									STR * str_relation_buffer,
 									UCHAR ** acl_ptr,
 TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
@@ -1023,7 +1023,7 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 }
 
 
-static void save_security_class(TDBB	tdbb,
+static void save_security_class(thread_db*	tdbb,
 								const TEXT*	s_class,
 								const UCHAR*	buffer,
 								USHORT	length)

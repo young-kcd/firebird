@@ -39,6 +39,8 @@ class lck;
 class fmt;
 class jrd_rel;
 class jrd_prc;
+class rec;
+class jrd_nod;
 
 /* record parameter block */
 
@@ -47,10 +49,10 @@ typedef struct rpb {
 	SLONG rpb_number;			/* record number in relation */
 	SLONG rpb_transaction;		/* transaction number */
 	jrd_rel*	rpb_relation;	/* relation of record */
-	class rec *rpb_record;		/* final record block */
-	class rec *rpb_prior;		/* prior record block if this is a delta record */
+	rec*		rpb_record;		/* final record block */
+	rec*		rpb_prior;		/* prior record block if this is a delta record */
 	struct srpb *rpb_copy;		/* rpb copy for singleton verification */
-	class rec *rpb_undo;		/* our first version of data if this is a second modification */
+	rec*		rpb_undo;		/* our first version of data if this is a second modification */
 	USHORT rpb_format_number;	/* format number in relation */
 
 	SLONG rpb_page;				/* page number */
@@ -86,9 +88,9 @@ typedef struct rpb {
 #define RPB_s_refetch	0x1		/* re-fetch required due to sort */
 #define RPB_s_update	0x2		/* input stream fetched for update */
 
-#define SET_NULL(record,id)	record->rec_data [id >> 3] |=  (1 << (id & 7))
-#define CLEAR_NULL(record,id)	record->rec_data [id >> 3] &= ~(1 << (id & 7))
-#define TEST_NULL(record,id)	record->rec_data [id >> 3] &   (1 << (id & 7))
+#define SET_NULL(record, id)	record->rec_data [id >> 3] |=  (1 << (id & 7))
+#define CLEAR_NULL(record, id)	record->rec_data [id >> 3] &= ~(1 << (id & 7))
+#define TEST_NULL(record, id)	record->rec_data [id >> 3] &   (1 << (id & 7))
 
 #define MAX_DIFFERENCES		1024	/* Max length of generated Differences string 
 									   between two records */
@@ -124,7 +126,7 @@ typedef rec *REC;
 class srpb : public pool_alloc<type_srpb>
 {
     public:
-	struct rpb srpb_rpb[1];		/* record parameter blocks */
+	rpb srpb_rpb[1];		/* record parameter blocks */
 };
 typedef srpb *SRPB;
 
@@ -145,9 +147,9 @@ public:
 	struct acc*	req_access;		/* Access items to be checked */
 	struct vec*	req_variables;	/* Vector of variables, if any */
 	class Resource*	req_resources;	/* Resources (relations and indices) */
-	struct jrd_nod*	req_message;	/* Current message for send/receive */
+	jrd_nod*	req_message;	/* Current message for send/receive */
 #ifdef SCROLLABLE_CURSORS
-	struct jrd_nod *req_async_message;	/* Asynchronous message (used in scrolling) */
+	jrd_nod*	req_async_message;	/* Asynchronous message (used in scrolling) */
 #endif
 	struct vec*	req_refresh_ranges;	/* Vector of refresh_ranges */
 	struct rng*	req_begin_ranges;	/* Vector of refresh_ranges */
@@ -171,11 +173,11 @@ public:
 	jrd_rel*	req_top_view_modify;	/* the top view in modify(), if any */
 	jrd_rel*	req_top_view_erase;	/* the top view in erase(), if any */
 
-	struct jrd_nod* req_top_node;	/* top of execution tree */
-	struct jrd_nod* req_next;		/* next node for execution */
+	jrd_nod*	req_top_node;	/* top of execution tree */
+	jrd_nod*	req_next;		/* next node for execution */
 	Firebird::Array<class Rsb*> req_fors;		/* Vector of for loops, if any */
 	struct vec* req_cursors;	/* Vector of named cursors, if any */
-	Firebird::Array<struct jrd_nod*> req_invariants;	/* Vector of invariant nodes, if any */
+	Firebird::Array<jrd_nod*> req_invariants;	/* Vector of invariant nodes, if any */
 	USHORT req_label;			/* label for leave */
 	ULONG req_flags;			/* misc request flags */
 	struct sav *req_proc_sav_point;	/* procedure savepoint list */

@@ -55,7 +55,7 @@
 
 #define MOVE_BYTE(x_from, x_to)	*x_to++ = *x_from++;
 
-static SSHORT compare_keys(const IDX*, const UCHAR*, USHORT, const KEY*, USHORT);
+static int compare_keys(const IDX*, const UCHAR*, USHORT, const KEY*, USHORT);
 #ifdef SCROLLABLE_CURSORS
 static void expand_index(WIN *);
 #endif
@@ -65,11 +65,11 @@ static bool find_record(Rsb*, RSE_GET_MODE, KEY *, USHORT, USHORT);
 #endif
 static BTX find_current(jrd_exp*, btree_page*, const UCHAR*);
 static bool find_saved_node(Rsb*, IRSB_NAV, WIN *, UCHAR **);
-static UCHAR* get_position(TDBB, Rsb*, IRSB_NAV, WIN *, RSE_GET_MODE, BTX *);
+static UCHAR* get_position(thread_db*, Rsb*, IRSB_NAV, WIN *, RSE_GET_MODE, BTX *);
 static bool get_record(Rsb*, IRSB_NAV, RPB *, KEY *, bool);
 static void init_fetch(IRSB_NAV);
-static UCHAR* nav_open(TDBB, Rsb*, IRSB_NAV, WIN *, RSE_GET_MODE, BTX *);
-static void set_position(IRSB_NAV, RPB *, WIN *, UCHAR *, BTX, UCHAR *, USHORT);
+static UCHAR* nav_open(thread_db*, Rsb*, IRSB_NAV, WIN *, RSE_GET_MODE, BTX *);
+static void set_position(IRSB_NAV, RPB*, WIN*, const UCHAR*, BTX, const UCHAR*, USHORT);
 static void setup_bitmaps(Rsb*, IRSB_NAV);
 
 
@@ -101,8 +101,8 @@ jrd_exp* NAV_expand_index(WIN * window, IRSB_NAV impure)
 
 	// if the right version of expanded page is available, there 
 	// is no work to be done 
-	jrd_exp* expanded_page;
-	if ((expanded_page = window->win_expanded_buffer) &&
+	jrd_exp* expanded_page = window->win_expanded_buffer;
+	if (expanded_page &&
 		(expanded_page->exp_incarnation == CCH_get_incarnation(window)))
 	{
 		return expanded_page;
@@ -164,24 +164,22 @@ bool NAV_find_record(Rsb* rsb,
  *	This routine must set BOF, EOF, or CRACK.
  *
  **************************************/
-	KEY key_value;
-	BTN expanded_node;
-	USHORT search_flags;
-
 	const bool backwards = (direction == blr_backward
 				 || direction == blr_backward_starting);
 
+	USHORT search_flags;
 	if (direction == blr_forward_starting || direction == blr_backward_starting)
 		search_flags = irb_starting;
 	else
 		search_flags = 0;
 
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	jrd_req* request = tdbb->tdbb_request;
 	irsb_nav* impure = (IRSB_NAV) ((UCHAR *) request + rsb->rsb_impure);
 	WIN window(-1);
 
+	BTN expanded_node;
 	init_fetch(impure);
 	if (!impure->irsb_nav_page) {
 		nav_open(tdbb, rsb, impure, &window, RSE_get_forward, &expanded_node);
@@ -203,8 +201,9 @@ bool NAV_find_record(Rsb* rsb,
 	if (find_key->nod_count < idx->idx_count)
 		search_flags |= irb_partial;
 
+	KEY key_value;
 	BTR_make_key(tdbb, find_key->nod_count, &find_key->nod_arg[0], idx,
-				 &key_value, search_flags & irb_starting);
+				 &key_value, (search_flags & irb_starting) != 0);
 
 	// save the key value 
 	impure->irsb_nav_length = key_value.key_length;
@@ -460,7 +459,7 @@ void NAV_get_bookmark(Rsb* rsb, IRSB_NAV impure, BKM bookmark)
 #endif
 
 
-bool NAV_get_record(TDBB tdbb,
+bool NAV_get_record(thread_db* tdbb,
 					   Rsb* rsb,
 					   IRSB_NAV impure, RPB * rpb, RSE_GET_MODE direction)
 {
@@ -477,7 +476,6 @@ bool NAV_get_record(TDBB tdbb,
  *	BOF, EOF, or CRACK properly.
  *
  **************************************/
-
 	SET_TDBB(tdbb);
 
 #ifdef SCROLLABLE_CURSORS
@@ -519,10 +517,10 @@ bool NAV_get_record(TDBB tdbb,
 	// find the last fetched position from the index
 	WIN window(impure->irsb_nav_page);
 
-	KEY key;
 	BTX expanded_next = NULL;
 	UCHAR* nextPointer = get_position(tdbb, rsb, impure, &window, 
 		direction, &expanded_next);
+	KEY key;
 	MOVE_FAST(impure->irsb_nav_data, key.key_data, impure->irsb_nav_length);
 	jrd_nod* retrieval_node = (jrd_nod*) rsb->rsb_arg[RSB_NAV_index];
 	IRB retrieval = (IRB) retrieval_node->nod_arg[e_idx_retrieval];
@@ -573,22 +571,16 @@ bool NAV_get_record(TDBB tdbb,
 	}
 
 	// Find the next interesting node.  If necessary, skip to the next page
-	jrd_exp* expanded_page;
-	BTX expanded_node;
 	bool page_changed = false;
 	// AB: I don't see number is initialized? 
 	SLONG number;
-	SCHAR flags;
-	UCHAR *p, *q;
-	UCHAR *pointer;
-	USHORT l;
 	IndexNode node;
 	while (true) {
 		btree_page* page = (btree_page*) window.win_buffer;
-		flags = page->btr_header.pag_flags;
+		const SCHAR flags = page->btr_header.pag_flags;
 
-		pointer = nextPointer;
-		expanded_node = expanded_next;
+		UCHAR* pointer = nextPointer;
+		BTX expanded_node = expanded_next;
 		if (pointer) {
 			BTreeNode::readNode(&node, pointer, flags, true);
 			number = node.recordNumber;
@@ -599,7 +591,7 @@ bool NAV_get_record(TDBB tdbb,
 		// beginning of a page, and if so fetch the left sibling page.
 		if (direction == RSE_get_backward) {
 			if (pointer < BTreeNode::getPointerFirstNode(page)) {
-				expanded_page = window.win_expanded_buffer;
+				jrd_exp* expanded_page = window.win_expanded_buffer;
 
 				if (!page->btr_left_sibling) {
 					impure->irsb_flags |= irsb_bof;
@@ -635,7 +627,8 @@ bool NAV_get_record(TDBB tdbb,
 				RNG_add_page(window.win_page);
 #endif
 				nextPointer = BTreeNode::getPointerFirstNode(page);
-				if ( (expanded_page = window.win_expanded_buffer) ) {
+				jrd_exp* expanded_page = window.win_expanded_buffer;
+				if (expanded_page) {
 					expanded_next = (BTX) expanded_page->exp_nodes;
 				}
 
@@ -663,9 +656,9 @@ bool NAV_get_record(TDBB tdbb,
 					impure->irsb_flags |= irsb_key_changed;
 				}
 				else {
-					p = key.key_data;
-					q = node.data;
-					l = key.key_length;
+					UCHAR* p = key.key_data;
+					const UCHAR* q = node.data;
+					USHORT l = key.key_length;
 					for (; l; l--) {
 						if (*p++ != *q++) {
 							break;
@@ -684,10 +677,10 @@ bool NAV_get_record(TDBB tdbb,
 
 		// Build the current key value from the prefix and current node data.
 		if (expanded_node) {
-			l = node.length + node.prefix;
+			USHORT l = node.length + node.prefix;
 			if (l) {
-				p = key.key_data;
-				q = expanded_node->btx_data;
+				UCHAR* p = key.key_data;
+				const UCHAR* q = expanded_node->btx_data;
 				do {
 					*p++ = *q++;
 				} while (--l);
@@ -695,10 +688,10 @@ bool NAV_get_record(TDBB tdbb,
 
 		}
 		else {
-			l = node.length;
+			USHORT l = node.length;
 			if (l) {
-				p = key.key_data + node.prefix;
-				q = node.data;
+				UCHAR* p = key.key_data + node.prefix;
+				const UCHAR* q = node.data;
 				do {
 					*p++ = *q++;
 				} while (--l);
@@ -805,16 +798,12 @@ bool NAV_reset_position(Rsb* rsb, RPB * new_rpb)
  *	rsb to the record indicated by the passed rpb.
  *
  **************************************/
-	KEY key_value;
-	IDX *idx;
-	BTN expanded_node;
-	ULONG record_number;
-
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	jrd_req* request = tdbb->tdbb_request;
 	irsb_nav* impure = (IRSB_NAV) ((UCHAR *) request + rsb->rsb_impure);
 	WIN window(-1);
 
+	BTN expanded_node;
 	init_fetch(impure);
 	if (!impure->irsb_nav_page) {
 		nav_open(tdbb, rsb, impure, &window, RSE_get_current, &expanded_node);
@@ -830,9 +819,10 @@ bool NAV_reset_position(Rsb* rsb, RPB * new_rpb)
 	// the same as the one on the rpb, in which case it will 
 	// be updated by find_record()--bug #7426
 
-	record_number = new_rpb->rpb_number;
+	const ULONG record_number = new_rpb->rpb_number;
 
 	// find the key value of the new position, and set the stream to it
+	KEY key_value;
 	BTR_key(tdbb, new_rpb->rpb_relation, new_rpb->rpb_record, idx,
 			&key_value, 0);
 	if (!find_record(rsb, RSE_get_first, &key_value, idx->idx_count, 0)) // XXX
@@ -894,7 +884,7 @@ bool NAV_set_bookmark(Rsb* rsb, IRSB_NAV impure, RPB * rpb, BKM bookmark)
 #endif
 
 
-static SSHORT compare_keys(
+static int compare_keys(
 						   const IDX* idx,
 						   const UCHAR* key_string1,
 						   USHORT length1, const KEY* key2, USHORT flags)
@@ -1011,7 +1001,6 @@ static void expand_index(WIN * window)
  *	the prior node.
  *
  **************************************/
-
 	btree_page* page = (btree_page*) window->win_buffer;
 	jrd_exp* expanded_page = window->win_expanded_buffer;
 	expanded_page->exp_incarnation = CCH_get_incarnation(window);
@@ -1020,12 +1009,10 @@ static void expand_index(WIN * window)
 	KEY key;
 	BTX expanded_node = (BTX) expanded_page->exp_nodes;
 	bool priorPointer = false;
-	UCHAR *pointer = BTreeNode::getPointerFirstNode(page);
-	UCHAR *endPointer = ((UCHAR*) page + page->btr_length);
+	UCHAR* pointer = BTreeNode::getPointerFirstNode(page);
+	const UCHAR* const endPointer = ((UCHAR*) page + page->btr_length);
 
-	SCHAR flags = page->btr_header.pag_flags;
-	UCHAR *p, *q;
-	USHORT l;
+	const SCHAR flags = page->btr_header.pag_flags;
 	IndexNode node, priorNode;
 
 	while (pointer < endPointer) {
@@ -1034,8 +1021,9 @@ static void expand_index(WIN * window)
 			pointer = BTreeNode::readNode(&node, pointer, flags);
 		}
 
-		p = key.key_data + node.prefix;
-		q = node.data;
+		UCHAR* p = key.key_data + node.prefix;
+		const UCHAR* q = node.data;
+		USHORT l;
 		for (l = node.length; l; l--) {
 			*p++ = *q++;
 		}		
@@ -1086,19 +1074,10 @@ static bool find_dbkey(Rsb* rsb, ULONG record_number)
  *	record within a set of equivalent keys.
  *
  **************************************/
-	TDBB tdbb;
-	jrd_req* request;
-	IRSB_NAV impure;
-	RPB *rpb;
-	WIN window;
-	BTN node;
-	BTX expanded_node = NULL;
-	KEY key;
-
-	tdbb = GET_THREAD_DATA;
-	request = tdbb->tdbb_request;
-	impure = (IRSB_NAV) ((UCHAR *) request + rsb->rsb_impure);
-	rpb = request->req_rpb + rsb->rsb_stream;
+	thread_db* tdbb = GET_THREAD_DATA;
+	jrd_req* request = tdbb->tdbb_request;
+	irsb_nav* impure = (IRSB_NAV) ((UCHAR *) request + rsb->rsb_impure);
+	RPB* rpb = request->req_rpb + rsb->rsb_stream;
 
 	init_fetch(impure);
 
@@ -1109,11 +1088,12 @@ static bool find_dbkey(Rsb* rsb, ULONG record_number)
 
 	// find the last fetched position from the index,
 	// and get the current key value
-	window.win_page = impure->irsb_nav_page;
-	window.win_flags = 0;
-	node =
+	BTX expanded_node = NULL;
+	WIN window(impure->irsb_nav_page);
+	BTN node =
 		get_position(tdbb, rsb, impure, &window, RSE_get_current,
 					 &expanded_node);
+	KEY key;
 	MOVE_FAST(impure->irsb_nav_data, key.key_data, impure->irsb_nav_length);
 	key.key_length = impure->irsb_nav_length;
 
@@ -1178,44 +1158,28 @@ static bool find_record(
  *	must handle CRACK semantics.
  *
  **************************************/
-	TDBB tdbb;
-	jrd_req* request;
-	IRSB_NAV impure;
-	RPB *rpb;
-	jrd_nod* retrieval_node;
-	IRB retrieval;
-	IDX *idx;
-	btree_page* page;
-	WIN window;
-	BTN node;
-	jrd_exp* expanded_page;
-	BTX expanded_node;
-	KEY lower, upper, *tmp, value;
-	USHORT upper_count, lower_count;
-	UCHAR *p, *q;
-	USHORT l;
+	thread_db* tdbb = GET_THREAD_DATA;
+	jrd_req* request = tdbb->tdbb_request;
+	irsb_nav* impure = (IRSB_NAV) ((UCHAR *) request + rsb->rsb_impure);
+	RPB* rpb = request->req_rpb + rsb->rsb_stream;
+	WIN window(-1);
 
-	tdbb = GET_THREAD_DATA;
-	request = tdbb->tdbb_request;
-	impure = (IRSB_NAV) ((UCHAR *) request + rsb->rsb_impure);
-	rpb = request->req_rpb + rsb->rsb_stream;
-	window.win_flags = 0;
-
-	retrieval_node = (jrd_nod*) rsb->rsb_arg[RSB_NAV_index];
-	retrieval = (IRB) retrieval_node->nod_arg[e_idx_retrieval];
+	jrd_nod* retrieval_node = (jrd_nod*) rsb->rsb_arg[RSB_NAV_index];
+	IRB retrieval = (IRB) retrieval_node->nod_arg[e_idx_retrieval];
 
 	// save the current equality retrieval key
-	tmp = retrieval->irb_key;
-	lower_count = retrieval->irb_lower_count;
-	upper_count = retrieval->irb_upper_count;
+	KEY* const tmp = retrieval->irb_key;
+	const USHORT lower_count = retrieval->irb_lower_count;
+	const USHORT upper_count = retrieval->irb_upper_count;
 
 	// find the page that the key value should be on
 	retrieval->irb_key = find_key;
 	retrieval->irb_upper_count = retrieval->irb_lower_count = find_count;
 
-	idx =
+	IDX* idx =
 		(IDX *) ((SCHAR *) impure + (SLONG) rsb->rsb_arg[RSB_NAV_idx_offset]);
-	page =
+	KEY lower, upper;
+	btree_page* page =
 		BTR_find_page(tdbb, retrieval, &window, idx, &lower, &upper, false);
 
 	// restore the saved equality retrieval key
@@ -1224,6 +1188,7 @@ static bool find_record(
 	retrieval->irb_upper_count = upper_count;
 
 	// find the appropriate leaf node
+	BTN node;
 	while (!(node = BTR_find_leaf(page, find_key, impure->irsb_nav_data,
 								  0, idx->idx_flags & idx_descending, true)))
 	{
@@ -1232,7 +1197,9 @@ static bool find_record(
 							  pag_index);
 	}
 
-	if (expanded_page = window.win_expanded_buffer) {
+	BTX expanded_node;
+	jrd_exp* expanded_page = window.win_expanded_buffer;
+	if (expanded_page) {
 		expanded_node = find_current(expanded_page, page, node);
 	}
 	else {
@@ -1240,6 +1207,7 @@ static bool find_record(
 	}
 
 	// seed the key value with the prefix seen up to the current key 
+	KEY value;
 	MOVE_FAST(impure->irsb_nav_data, value.key_data, node->btn_prefix);
 
 	// In case of an error, we still need to release the window we hold
@@ -1282,15 +1250,16 @@ static bool find_record(
 
 		// update the current stored key value
 		value.key_length = node->btn_length + node->btn_prefix;
-		p = value.key_data + node->btn_prefix;
-		q = node->btn_data;
-		for (l = node->btn_length; l--;)
+		UCHAR* p = value.key_data + node->btn_prefix;
+		const UCHAR* q = node->btn_data;
+		for (USHORT l = node->btn_length; l--;)
 			*p++ = *q++;
 
 		// if the index key is greater than the search key, we didn't find the key 
 		if (compare_keys
 			(idx, value.key_data, value.key_length, find_key,
-			 search_flags) > 0) {
+			 search_flags) > 0)
+		{
 			// if we never saw a valid record, mark as a forced crack so that
 			// we will be at a position before the current record
 
@@ -1345,13 +1314,12 @@ static BTX find_current(jrd_exp* expanded_page, btree_page* page, const UCHAR* c
  *	btree page.
  *
  **************************************/
-
 	if (!expanded_page) {
 		return NULL;
 	}
 
 	BTX expanded_node = expanded_page->exp_nodes;
-	SCHAR flags = page->btr_header.pag_flags;
+	const SCHAR flags = page->btr_header.pag_flags;
 	UCHAR* pointer = BTreeNode::getPointerFirstNode(page);
 	const UCHAR* const endPointer = ((UCHAR*) page + page->btr_length);
 	IndexNode node;
@@ -1386,25 +1354,20 @@ static bool find_saved_node(Rsb* rsb, IRSB_NAV impure,
  *	the actual node, return TRUE.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
-	IDX *idx = (IDX*) ((SCHAR*) impure + (IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]);
+	IDX* idx = (IDX*) ((SCHAR*) impure + (IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]);
 	btree_page* page = (btree_page*) CCH_FETCH(tdbb, window, LCK_read, pag_index);
 
 	// the outer loop goes through all the sibling pages
 	// looking for the node (in case the page has split);
 	// the inner loop goes through the nodes on each page
 	KEY key;
-	SCHAR flags = page->btr_header.pag_flags;
-	UCHAR *pointer;
-	UCHAR *endPointer;
-	UCHAR *p, *q;
-	USHORT l;
-	int result;
+	const SCHAR flags = page->btr_header.pag_flags;
 	IndexNode node;
 	while (true) {
-		pointer = BTreeNode::getPointerFirstNode(page);
-		endPointer = ((UCHAR*)page + page->btr_length);
+		UCHAR* pointer = BTreeNode::getPointerFirstNode(page);
+		const UCHAR* const endPointer = ((UCHAR*) page + page->btr_length);
 		while (pointer < endPointer) {
 
 			pointer = BTreeNode::readNode(&node, pointer, flags, true);
@@ -1420,16 +1383,16 @@ static bool find_saved_node(Rsb* rsb, IRSB_NAV impure,
 			}
 
 			// maintain the running key value and compare it with the stored value
-			l = node.length;
+			USHORT l = node.length;
 			if (l) {
-				p = key.key_data + node.prefix;
-				q = node.data;
+				UCHAR* p = key.key_data + node.prefix;
+				const UCHAR* q = node.data;
 				do {
 					*p++ = *q++;
 				} while (--l);
 			}
 			key.key_length = node.length + node.prefix;
-			result = compare_keys(idx, impure->irsb_nav_data,
+			const int result = compare_keys(idx, impure->irsb_nav_data,
 						impure->irsb_nav_length, &key, FALSE);
 
 			// if the keys are equal, return this node even if it is just a duplicate node;
@@ -1461,7 +1424,7 @@ static bool find_saved_node(Rsb* rsb, IRSB_NAV impure,
 
 
 static UCHAR* get_position(
-						TDBB tdbb,
+						thread_db* tdbb,
 						Rsb* rsb,
 						IRSB_NAV impure,
 						WIN * window,
@@ -1480,7 +1443,6 @@ static UCHAR* get_position(
  *	any chance the page has changed, we need to resynch.
  *
  **************************************/
-
 	SET_TDBB(tdbb);
 
 	// If this is the first time, start at the beginning (or the end)
@@ -1513,9 +1475,9 @@ static UCHAR* get_position(
 	expanded_page = window->win_expanded_buffer;
 #endif
 
-	UCHAR *pointer;
-	SCHAR flags = page->btr_header.pag_flags;
-	SLONG incarnation = CCH_get_incarnation(window);
+	UCHAR* pointer = 0;
+	const SCHAR flags = page->btr_header.pag_flags;
+	const SLONG incarnation = CCH_get_incarnation(window);
 	IndexNode node;
 	if (incarnation == impure->irsb_nav_incarnation) {
 		pointer = ((UCHAR*) page + impure->irsb_nav_offset);
@@ -1552,7 +1514,7 @@ static UCHAR* get_position(
 		return nav_open(tdbb, rsb, impure, window, direction, expanded_node);
 	}
 
-	bool found = find_saved_node(rsb, impure, window, &pointer);
+	const bool found = find_saved_node(rsb, impure, window, &pointer);
 	page = (btree_page*) window->win_buffer;
 	if (pointer) {
 		*expanded_node = find_current(window->win_expanded_buffer, page, pointer);
@@ -1603,13 +1565,11 @@ static bool get_record(
  *	This routine must set or clear the CRACK flag.
  *
  **************************************/
-
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	jrd_req* request = tdbb->tdbb_request;
 	IDX *idx = (IDX*) ((SCHAR*) impure + (IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]);
 
-	KEY value;
-	USHORT old_att_flags;
+	USHORT old_att_flags = 0;
 	bool result = false;
 
 	try {
@@ -1638,6 +1598,7 @@ static bool get_record(
 				request->req_transaction,
 				reinterpret_cast<blk*>(request->req_pool));
 
+	KEY value;
 	if (result)
 	{
 		BTR_key(tdbb, rpb->rpb_relation, rpb->rpb_record,
@@ -1692,7 +1653,6 @@ static void init_fetch(IRSB_NAV impure)
  *	Initialize for a fetch operation.
  *
  **************************************/
-
 	if (impure->irsb_flags & irsb_first) {
 		impure->irsb_flags &= ~irsb_first;
 		impure->irsb_nav_page = 0;
@@ -1701,7 +1661,7 @@ static void init_fetch(IRSB_NAV impure)
 
 
 static UCHAR* nav_open(
-					TDBB tdbb,
+					thread_db* tdbb,
 					Rsb* rsb,
 					IRSB_NAV impure,
 					WIN * window, RSE_GET_MODE direction, BTX * expanded_node)
@@ -1716,11 +1676,6 @@ static UCHAR* nav_open(
  *	Open a stream to walk an index.
  *
  **************************************/
-	IRB retrieval;
-	KEY lower, upper, *limit_ptr;
-	//jrd_exp* expanded_page;
-	jrd_nod* retrieval_node;
-
 	SET_TDBB(tdbb);
 
 	// initialize for a retrieval
@@ -1736,9 +1691,10 @@ static UCHAR* nav_open(
 	}
 
 	// Find the starting leaf page
-	retrieval_node = (jrd_nod*) rsb->rsb_arg[RSB_NAV_index];
-	retrieval = (IRB) retrieval_node->nod_arg[e_idx_retrieval];
+	jrd_nod* retrieval_node = (jrd_nod*) rsb->rsb_arg[RSB_NAV_index];
+	IRB retrieval = (IRB) retrieval_node->nod_arg[e_idx_retrieval];
 	IDX *idx = (IDX *) ((SCHAR *) impure + (IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]);
+	KEY lower, upper;
 	btree_page* page = BTR_find_page(tdbb, retrieval, window, idx, &lower,
 		&upper, (direction == RSE_get_backward));
 	impure->irsb_nav_page = window->win_page;
@@ -1763,7 +1719,7 @@ static UCHAR* nav_open(
 	}
 
 	// find the limit the search needs to begin with, if any
-	limit_ptr = NULL;
+	KEY* limit_ptr = NULL;
 	if (direction == RSE_get_forward) {
 		if (retrieval->irb_lower_count)
 			limit_ptr = &lower;
@@ -1775,7 +1731,7 @@ static UCHAR* nav_open(
 #else
 
 	// find the upper limit for the search (or lower for backwards)
-	limit_ptr = NULL;
+	KEY* limit_ptr = NULL;
 	if (direction == RSE_get_forward) {
 		if (retrieval->irb_upper_count) {
 			impure->irsb_nav_upper_length = upper.key_length;
@@ -1805,7 +1761,7 @@ static UCHAR* nav_open(
 	// isn't a starting descriptor, walk down the left side of the index (or the
 	// right side if backwards).
 
-	UCHAR *pointer = NULL;
+	UCHAR* pointer = NULL;
 	if (limit_ptr) {
 		
 		// If END_BUCKET is reached BTR_find_leaf will return NULL
@@ -1856,9 +1812,9 @@ static UCHAR* nav_open(
 }
 
 
-static void set_position(IRSB_NAV impure, RPB * rpb, WIN * window,
-				UCHAR * pointer, BTX expanded_node, 
-				UCHAR * key_data, USHORT length)
+static void set_position(IRSB_NAV impure, RPB* rpb, WIN* window,
+				const UCHAR* pointer, BTX expanded_node, 
+				const UCHAR* key_data, USHORT length)
 {
 /**************************************
  *
@@ -1910,8 +1866,7 @@ static void setup_bitmaps(Rsb* rsb, IRSB_NAV impure)
  *	with a stream.
  *
  **************************************/
-
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	// Start a bitmap which tells us we have already visited
 	// this record; this is to handle the case where there is more

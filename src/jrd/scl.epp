@@ -82,10 +82,10 @@ static bool check_hex(const TEXT*, USHORT);
 static bool check_number(const TEXT*, USHORT);
 static bool check_user_group(const TEXT*, USHORT, STR*, ULONG*);
 static bool check_string(const TEXT*, const TEXT*);
-static SLONG compute_access(TDBB, const scl*, const jrd_rel*, const TEXT*,
+static SLONG compute_access(thread_db*, const scl*, const jrd_rel*, const TEXT*,
 	const TEXT*);
 static TEXT* save_string(const TEXT*, TEXT**);
-static SLONG walk_acl(TDBB, const TEXT*, const jrd_rel*, const TEXT*,
+static SLONG walk_acl(thread_db*, const TEXT*, const jrd_rel*, const TEXT*,
 	const TEXT*, STR*, ULONG*);
 
 static inline void check_and_move(UCHAR*& to, UCHAR from, STR& start, ULONG* length_ptr)
@@ -140,7 +140,7 @@ void SCL_check_access(const scl* s_class,
  *	object in question.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	if (s_class && (s_class->scl_flags & SCL_corrupt))
 	{
@@ -199,7 +199,7 @@ void SCL_check_access(const scl* s_class,
 }
 
 
-void SCL_check_index(TDBB tdbb, const TEXT* index_name, UCHAR index_id, USHORT mask)
+void SCL_check_index(thread_db* tdbb, const TEXT* index_name, UCHAR index_id, USHORT mask)
 {
 /******************************************************
  *
@@ -265,9 +265,9 @@ void SCL_check_index(TDBB tdbb, const TEXT* index_name, UCHAR index_id, USHORT m
             strcpy (reln_name, REL.RDB$RELATION_NAME);
             strcpy (aux_idx_name, IND.RDB$INDEX_NAME);
             if (!REL.RDB$SECURITY_CLASS.NULL)
-                s_class = SCL_get_class (REL.RDB$SECURITY_CLASS);
+                s_class = SCL_get_class(REL.RDB$SECURITY_CLASS);
             if (!REL.RDB$DEFAULT_CLASS.NULL)
-                default_s_class = SCL_get_class (REL.RDB$DEFAULT_CLASS);
+                default_s_class = SCL_get_class(REL.RDB$DEFAULT_CLASS);
         END_FOR;
 	
         CMP_release (tdbb, (jrd_req*)request);
@@ -342,7 +342,7 @@ void SCL_check_procedure(const dsc* dsc_name, USHORT mask)
  **************************************/
 	TEXT name[32];
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	// Get the name in CSTRING format, ending on NULL or SPACE
 
@@ -399,7 +399,7 @@ void SCL_check_relation(const dsc* dsc_name, USHORT mask)
  **************************************/
 	TEXT name[32];
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	// Get the name in CSTRING format, ending on NULL or SPACE
 
@@ -454,7 +454,7 @@ SCL SCL_get_class(/* INOUT */ TEXT* string)
  *	class block.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 	// Name may be absent or terminated with NULL or blank.  Clean up name.
@@ -517,7 +517,7 @@ int SCL_get_mask(const TEXT* relation_name, const TEXT* field_name)
  *	access for database.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	ATT attachment = tdbb->tdbb_attachment;
 
 	// Start with database security class
@@ -560,8 +560,8 @@ void SCL_init(bool create,
 			  const TEXT* password,
 			  const TEXT* password_enc,
 			  const TEXT* sql_role,
-			  TDBB tdbb,
-			  bool internal)
+			  thread_db* tdbb,
+			  const bool internal)
 {
 /**************************************
  *
@@ -821,7 +821,7 @@ void SCL_move_priv(UCHAR** acl_ptr, USHORT mask, STR* start_ptr, ULONG* length_p
 }
 
 
-SCL SCL_recompute_class(TDBB tdbb, TEXT* string)
+SCL SCL_recompute_class(thread_db* tdbb, TEXT* string)
 {
 /**************************************
  *
@@ -868,7 +868,7 @@ void SCL_release(SCL s_class)
  *	Release an unneeded and unloved security class.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	ATT attachment = tdbb->tdbb_attachment;
 
 	for (scl** next = &attachment->att_security_classes; *next;
@@ -974,7 +974,7 @@ static bool check_user_group(const TEXT* acl,
  *  If they don't match, return true.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 	STR buffer = NULL;
@@ -1066,7 +1066,7 @@ static bool check_string(const TEXT* acl, const TEXT* string)
 }
 
 
-static SLONG compute_access(TDBB tdbb,
+static SLONG compute_access(thread_db* tdbb,
 							const scl* s_class,
 							const jrd_rel* view,
 							const TEXT* trg_name,
@@ -1189,7 +1189,7 @@ static TEXT* save_string(const TEXT* string, TEXT** ptr)
 }
 
 
-static SLONG walk_acl(TDBB tdbb,
+static SLONG walk_acl(thread_db* tdbb,
 					  const TEXT* acl,
 					  const jrd_rel* view,
 					  const TEXT* trg_name,

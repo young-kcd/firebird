@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.57 2004-03-09 00:17:03 skidder Exp $
+$Id: why.cpp,v 1.58 2004-03-11 05:03:58 robocop Exp $
 */
 
 #include "firebird.h"
@@ -5415,7 +5415,7 @@ static const PTR get_entrypoint(int proc,
 	{
 #define BufSize 128		
 		TEXT Buffer[BufSize];
-		SLONG NameLength = strlen(name) + 1;
+		const SLONG NameLength = strlen(name) + 1;
 		fb_assert(NameLength < BufSize);
 		TEXT *NamePointer = Buffer;
 		memcpy(NamePointer, name, NameLength);

@@ -65,15 +65,14 @@
 #define FLD(struct, string, field) string, (SCHAR*) OFFSET (struct, field), (SCHAR*) sizeof (((struct) NULL)->field)
 
 
-typedef SCHAR *TEXT_PTR;
+typedef SCHAR* TEXT_PTR;
 
-int
- *ptr;
+int* ptr;
 
 TEXT_PTR dbt_window[] = {
 	FLD(WIN *, "Page: %ld", win_page),
 	FLD(WIN *, "Buffer: %x", win_buffer),
-	FLD(WIN *, "BDB: %x", win_bdb),
+	FLD(WIN *, "Buffer_desc: %x", win_bdb),
 	FLD(WIN *, "Scans: %d", win_scans),
 	FLD(WIN *, "Flags: %x", win_flags),
 	0
@@ -99,14 +98,14 @@ dbt_rpb[] = {
 
 static TEXT_PTR dbb_stuff[] = {
 	"DATABASE",
-	FLD(DBB, "BCB: %x", dbb_bcb),
-	FLD(DBB, "Relations: %x", dbb_relations),
-	FLD(DBB, "Lock: %x", dbb_lock),
-	FLD(DBB, "File: %x", dbb_file),
-	FLD(DBB, "Permanent: %x", dbb_permanent),
-	FLD(DBB, "Pools: %x", dbb_pools),
-	FLD(DBB, "Page_size: %d", dbb_page_size),
-	FLD(DBB, "dp_per_pp: %d", dbb_dp_per_pp),
+	FLD(Database*, "BCB: %x", dbb_bcb),
+	FLD(Database*, "Relations: %x", dbb_relations),
+	FLD(Database*, "Lock: %x", dbb_lock),
+	FLD(Database*, "File: %x", dbb_file),
+	FLD(Database*, "Permanent: %x", dbb_permanent),
+	FLD(Database*, "Pools: %x", dbb_pools),
+	FLD(Database*, "Page_size: %d", dbb_page_size),
+	FLD(Database*, "dp_per_pp: %d", dbb_dp_per_pp),
 	0
 },
 vec[] = {
@@ -153,11 +152,11 @@ static TEXT_PTR bcb[] = {
 },
 bdb[] = {
 	"BUFFER DESCRIPTOR",
-		FLD(BDB, "Page: %ld", bdb_page),
-		FLD(BDB, "Lock: %x", bdb_lock),
-		FLD(BDB, "Buffer: %x", bdb_buffer),
-		FLD(BDB, "Use count: %x", bdb_use_count),
-		FLD(BDB, "Flags: %x", bdb_flags),
+		FLD(Buffer_desc*, "Page: %ld", bdb_page),
+		FLD(Buffer_desc*, "Lock: %x", bdb_lock),
+		FLD(Buffer_desc*, "Buffer: %x", bdb_buffer),
+		FLD(Buffer_desc*, "Use count: %x", bdb_use_count),
+		FLD(Buffer_desc*, "Flags: %x", bdb_flags),
 		0
 },
 pre[] = {
@@ -286,7 +285,7 @@ Deferred_work[] = {
 		0
 },
 tfb[] = {
-	"TEMPORY FIELD BLOCK",
+	"TEMPORARY FIELD BLOCK",
 		FLD(TFB, "id: %d", tfb_id),
 		FLD(TFB, "dtype: %d", tfb_desc.dsc_dtype),
 		FLD(TFB, "scale: %d", tfb_desc.dsc_scale),
@@ -368,10 +367,12 @@ static TEXT_PTR arr[] = {	"ARRAY DESCRIPTION", 0};
 static TEXT_PTR blb_map[] = {	"MAP BLOCK", 0};
 static TEXT_PTR log[] = {	"LOG BLOCK", 0};
 static TEXT_PTR dls[] = {	"DIR LIST BLOCK", 0};
-static TEXT_PTR jrd_prc[] = {
+static TEXT_PTR jrd_prc[] =
+{
 	"PROCEDURE",
 		FLD(jrd_prc*, "%s", prc_name),
-		FLD(jrd_prc*, "Id: %d", prc_id), 0};
+		FLD(jrd_prc*, "Id: %d", prc_id), 0
+};
 static TEXT_PTR prm[] = {	"PARAMETER", FLD(PRM, "%s", prm_name), 0};
 static TEXT_PTR idb[] = {	"INDEX BLOCK", 0};
 static TEXT_PTR bkm[] = {	"BOOKMARK BLOCK", 0};
@@ -413,26 +414,26 @@ static TEXT_PTR texttype[] = {
 };
 static TEXT_PTR charset[] = {
 /*	"INTL Character Set",
-		FLD(CHARSET, "Name: %s", charset_name),
-		FLD(CHARSET, "Vers: %d", charset_version),
-		FLD(CHARSET, "ID:   %d", charset_id),
-		FLD(CHARSET, "B/Ch: %d", charset_max_bytes_per_char),
-		FLD(CHARSET, "B/Ch: %d", charset_min_bytes_per_char),
-		FLD(CHARSET, "Flags:%d", charset_flags), */
+		FLD(charset*, "Name: %s", charset_name),
+		FLD(charset*, "Vers: %d", charset_version),
+		FLD(charset*, "ID:   %d", charset_id),
+		FLD(charset*, "B/Ch: %d", charset_max_bytes_per_char),
+		FLD(charset*, "B/Ch: %d", charset_min_bytes_per_char),
+		FLD(charset*, "Flags:%d", charset_flags), */
 		0
 };
 static TEXT_PTR csconvert[] = {
 /*	"INTL Character set converter",
-		FLD(CSCONVERT, "Name: %s", csconvert_name),
-		FLD(CSCONVERT, "from: %d", csconvert_from),
-		FLD(CSCONVERT, "to:   %d", csconvert_to), */
+		FLD(csconvert*, "Name: %s", csconvert_name),
+		FLD(csconvert*, "from: %d", csconvert_from),
+		FLD(csconvert*, "to:   %d", csconvert_to), */
 		0
 };
-static TEXT_PTR tdbb[] = {
+static TEXT_PTR thread_db[] = {
 
 	"THREAD DATA BLOCK",
-		FLD(TDBB, "Status vec: %x", tdbb_status_vector),
-		FLD(TDBB, "Default: %x", tdbb_default),
+		FLD(thread_db*, "Status vec: %x", tdbb_status_vector),
+		FLD(thread_db*, "Default: %x", tdbb_default),
 		0
 };
 static TEXT_PTR svc[] =		{	"SERVICE MANAGER BLOCK", 0};
@@ -469,11 +470,11 @@ struct symb dbt_symbols[] = {
 	{"verify", &dbg_verify, symb_routine, 0},
 
 /*
-    "dbb", &dbb, symb_absolute, sizeof (dbb),
-    SYM (DBB, dbb_bcb)
-    SYM (DBB, dbb_relations)
-    SYM (DBB, dbb_pools)
-    SYM (DBB, dbb_requests)
+    "Database", &Database, symb_absolute, sizeof(Database),
+    SYM (Database*, dbb_bcb)
+    SYM (Database*, dbb_relations)
+    SYM (Database*, dbb_pools)
+    SYM (Database*, dbb_requests)
     SYM (REL, rel_formats)
     SYM (REL, rel_pages)
     SYM (jrd_req*, req_top_node)
@@ -484,9 +485,11 @@ struct symb dbt_symbols[] = {
 
 #define BLKDEF(type, name, tail) (TEXT*) name,
 
-#define dbb dbb_stuff
+#define Database dbb_stuff
 
-TEXT* dbt_blocks[] = { 0,
+TEXT* dbt_blocks[] =
+{
+	0,
 #include "../jrd/blk.h"
 	0
 };

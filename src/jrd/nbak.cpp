@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.cpp,v 1.22 2004-03-07 07:58:41 robocop Exp $
+ *  $Id: nbak.cpp,v 1.23 2004-03-11 05:03:58 robocop Exp $
  *
  */
 
@@ -92,7 +92,7 @@ bool BackupManager::get_sw_database_lock(bool enable_signals) throw() {
 	return true;
 #else
 	NBAK_TRACE(("get_sw_database_lock %d", database_use_count));
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	database_use_count++;
 	if (enable_signals) LCK_ast_enable();
 	if (database_lock->lck_physical >= LCK_SW) return true;
@@ -115,7 +115,7 @@ void BackupManager::release_sw_database_lock() throw() {
 #else
 	NBAK_TRACE(("release_sw_database_lock %d", database_use_count));
 	fb_assert(database_use_count > 0);
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	database_use_count--;
 	if (ast_flags & NBAK_database_blocking) {
 		LCK_release(tdbb, database_lock);
@@ -131,7 +131,7 @@ void BackupManager::lock_state_write(bool thread_exit) {
 	if (thread_exit) THREAD_ENTER;
 #else
 	fb_assert(!(flags & NBAK_state_in_use));
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	flags |= NBAK_state_in_use;
 	bool locked = false;
 	// Release shared lock to prevent possible deadlocks
@@ -163,7 +163,7 @@ bool BackupManager::try_lock_state_write() {
 		return false;
 #else
 	fb_assert(!(flags & NBAK_state_in_use));
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	flags |= NBAK_state_in_use;
 	bool result;
 	if (state_lock->lck_physical == LCK_none)
@@ -194,7 +194,7 @@ void BackupManager::unlock_state_write() throw() {
 	state_lock->endWrite();
 #else
 	fb_assert(flags & NBAK_state_in_use);
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	// ASTs are going to be reposted after CONVERT
 	ast_flags &= ~NBAK_state_blocking;
 	LCK_convert(tdbb, state_lock, LCK_SR, LCK_WAIT);
@@ -214,7 +214,7 @@ bool BackupManager::lock_alloc_write(bool thread_exit) throw() {
 	if (thread_exit) THREAD_ENTER;
 #else
 	fb_assert(!(flags & NBAK_alloc_in_use));
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	flags |= NBAK_alloc_in_use;
 	// Release shared lock to prevent possible deadlocks
 	bool locked = false;
@@ -245,7 +245,7 @@ void BackupManager::unlock_alloc_write() throw() {
 	alloc_lock->endWrite();
 #else
 	fb_assert(flags & NBAK_alloc_in_use);
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	// ASTs are going to be reposted after CONVERT
 	ast_flags &= ~NBAK_alloc_blocking;
 	LCK_convert(tdbb, alloc_lock, LCK_SR, LCK_WAIT);
@@ -259,7 +259,7 @@ void BackupManager::unlock_alloc_write() throw() {
 }
 
 bool BackupManager::lock_state(bool thread_exit) throw() {
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	// If we own exlock here no need to do anything else
 	if (tdbb->tdbb_flags & TDBB_set_backup_state) return true; 
 #ifdef SUPERSERVER
@@ -285,7 +285,7 @@ bool BackupManager::lock_state(bool thread_exit) throw() {
 }
 
 void BackupManager::unlock_state() throw() {
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	// If we own exlock here no need to do anything else
 	if (tdbb->tdbb_flags & TDBB_set_backup_state) return;
 #ifdef SUPERSERVER
@@ -308,7 +308,7 @@ bool BackupManager::lock_alloc(bool thread_exit) throw() {
 	if (thread_exit) THREAD_ENTER;
 #else
 	fb_assert(!(flags & NBAK_alloc_in_use));
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	flags |= NBAK_alloc_in_use;
 	if (alloc_lock->lck_physical < LCK_SR) {
 		if (!LCK_lock(tdbb, alloc_lock, LCK_SR, LCK_WAIT)) {
@@ -330,7 +330,7 @@ void BackupManager::unlock_alloc() throw() {
 	alloc_lock->endRead();
 #else
 	fb_assert(flags & NBAK_alloc_in_use);
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	flags &= ~NBAK_alloc_in_use;
 	if (ast_flags & NBAK_alloc_blocking) {
 		LCK_release(tdbb, alloc_lock);
@@ -361,8 +361,6 @@ int BackupManager::backup_state_ast(void *ast_object) throw()
  *
  **************************************/
 	Database* new_dbb = static_cast<Database*>(ast_object);
-	struct tdbb thd_context, *tdbb;
-
 	lck* lock = new_dbb->backup_manager->state_lock;
 
 	ISC_ast_enter();
@@ -370,6 +368,7 @@ int BackupManager::backup_state_ast(void *ast_object) throw()
 /* Since this routine will be called asynchronously, we must establish
    a thread context. */
 
+	thread_db thd_context, *tdbb;
 	SET_THREAD_DATA;
 
 	tdbb->tdbb_database = new_dbb;
@@ -413,8 +412,6 @@ int BackupManager::alloc_table_ast(void *ast_object) throw()
  *
  **************************************/
 	Database* new_dbb = static_cast<Database*>(ast_object);
-	struct tdbb thd_context, *tdbb;
-
 	lck* lock = new_dbb->backup_manager->alloc_lock;
 
 	ISC_ast_enter();
@@ -422,6 +419,7 @@ int BackupManager::alloc_table_ast(void *ast_object) throw()
 /* Since this routine will be called asynchronously, we must establish
    a thread context. */
 
+	thread_db thd_context, *tdbb;
 	SET_THREAD_DATA;
 
 	tdbb->tdbb_database = new_dbb;
@@ -464,7 +462,6 @@ int BackupManager::backup_database_ast(void *ast_object) throw()
  *
  **************************************/
 	Database* new_dbb = static_cast<Database*>(ast_object);
-	struct tdbb thd_context, *tdbb;
 	ISC_STATUS_ARRAY ast_status;
 
 	lck* lock = new_dbb->backup_manager->database_lock;
@@ -474,6 +471,7 @@ int BackupManager::backup_database_ast(void *ast_object) throw()
 /* Since this routine will be called asynchronously, we must establish
    a thread context. */
 
+	thread_db thd_context, *tdbb;
 	SET_THREAD_DATA;
 
 	tdbb->tdbb_database = new_dbb;
@@ -513,7 +511,7 @@ void BackupManager::generate_filename() throw() {
 // Initialize and open difference file for writing
 void BackupManager::begin_backup() {
 	NBAK_TRACE(("begin_backup"));
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	// Lock header page first to prevent possible deadlock
 	WIN window(HEADER_PAGE);
@@ -535,7 +533,7 @@ void BackupManager::begin_backup() {
 		NBAK_TRACE(("Creating difference file %s", diff_name));
 		diff_file = PIO_create(database, diff_name, strlen(diff_name), true);
 		// Zero out first page (empty allocation table)
-		bdb temp_bdb;
+		Buffer_desc temp_bdb;
 		temp_bdb.bdb_page = 0;
 		temp_bdb.bdb_dbb = database;
 		temp_bdb.bdb_buffer = reinterpret_cast<PAG>(alloc_buffer);
@@ -608,7 +606,7 @@ void BackupManager::begin_backup() {
 // does nothing (so it can be used for recovery on database startup). 
 void BackupManager::end_backup(bool recover) {
 	NBAK_TRACE(("end_backup"));
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	ULONG adjusted_scn; // We use this value to prevent race conditions.
 						// They are possible because we release state lock
 						// for some instants and anything is possible at
@@ -784,7 +782,7 @@ bool BackupManager::actualize_alloc() throw() {
 		if (!alloc_table)
 			alloc_table = FB_NEW(*database->dbb_permanent) AllocItemTree(database->dbb_permanent);
 		while (true) {
-			bdb temp_bdb;
+			Buffer_desc temp_bdb;
 			// Difference file pointer pages have one ULONG as number of pages allocated on the page and
 			// then go physical numbers of pages from main database file. Offsets of numbers correspond
 			// to difference file pages.
@@ -850,7 +848,7 @@ ULONG BackupManager::allocate_difference_page(ULONG db_page) throw() {
 	// Grow file first. This is done in such order to keep difference
 	// file consistent in case of write error. We should always be able 
 	// to read next alloc page when previous one is full.
-	bdb temp_bdb;
+	Buffer_desc temp_bdb;
 	temp_bdb.bdb_page = last_allocated_page+1;
 	temp_bdb.bdb_dbb = database;
 	temp_bdb.bdb_buffer = reinterpret_cast<PAG>(empty_buffer);
@@ -898,7 +896,7 @@ ULONG BackupManager::allocate_difference_page(ULONG db_page) throw() {
 
 bool BackupManager::write_difference(ISC_STATUS* status, ULONG diff_page, struct pag* page) throw()
 {
-	bdb temp_bdb;
+	Buffer_desc temp_bdb;
 	temp_bdb.bdb_page = diff_page;
 	temp_bdb.bdb_dbb = database;
 	temp_bdb.bdb_buffer = page;
@@ -909,7 +907,7 @@ bool BackupManager::write_difference(ISC_STATUS* status, ULONG diff_page, struct
 	
 bool BackupManager::read_difference(ULONG diff_page, struct pag* page) throw()
 {
-	bdb temp_bdb;
+	Buffer_desc temp_bdb;
 	temp_bdb.bdb_page = diff_page;
 	temp_bdb.bdb_dbb = database;
 	temp_bdb.bdb_buffer = page;
@@ -923,7 +921,7 @@ BackupManager::BackupManager(Database* _database, int ini_state) :
 	backup_state(ini_state), last_allocated_page(0),
 	current_scn(0), backup_pages(0), diff_pending_close(false)
 {
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	diff_name[0] = 0;
 	
 	// Allocate various database page buffers needed for operation
@@ -986,7 +984,7 @@ BackupManager::BackupManager(Database* _database, int ini_state) :
 
 void BackupManager::shutdown_locks() throw() {
 #ifndef SUPERSERVER
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	if (state_lock)
 		LCK_release(tdbb, state_lock);
 	if (alloc_lock)
@@ -1012,7 +1010,7 @@ BackupManager::~BackupManager() {
 }
 
 void BackupManager::set_difference(const char* filename) {
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	
 	if (filename) {
 		header_page* header;
@@ -1042,7 +1040,7 @@ bool BackupManager::actualize_state() throw() {
 	// Read original page from database file or shadows.
 	SSHORT retryCount = 0;
 	header_page* header = reinterpret_cast<header_page*>(spare_buffer);
-	struct bdb temp_bdb;
+	Buffer_desc temp_bdb;
 	temp_bdb.bdb_page = HEADER_PAGE;
 	temp_bdb.bdb_dbb = database;
 	temp_bdb.bdb_buffer = reinterpret_cast<PAG>(header);

@@ -3694,7 +3694,8 @@ static USHORT get_plan_info(
 					// NOMEM. Do not attempt one more try
 					i++;
 					continue;
-				} else {
+				}
+				else {
 					buffer_ptr = temp;
 					buffer_length = BUFFER_XLARGE;
 				}

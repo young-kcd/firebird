@@ -32,7 +32,7 @@ class codepage_map {
 	unsigned short sizeof_to_unicode_map;
 	unsigned short sizeof_from_unicode_mapping_array;
 	unsigned short sizeof_from_unicode_map;
-	char *name;
+	const char* name;
 
 	  codepage_map(void) {
 		to_unicode_map = NULL;
@@ -42,14 +42,15 @@ class codepage_map {
 		sizeof_from_unicode_map = 0;
 		sizeof_from_unicode_mapping_array = 0;
 		name = NULL;
-	};
+	}
 
-	codepage_map(unsigned short *_to,
-				 unsigned char *_from_array,
-				 unsigned short *_from_map,
-				 unsigned short sizeof_to,
+	codepage_map(const unsigned short *_to,
+				 const unsigned char *_from_array,
+				 const unsigned short *_from_map,
+				 const unsigned short sizeof_to,
 				 unsigned short sizeof_from_array,
-				 unsigned short sizeof_from_map, char *_name) {
+				 unsigned short sizeof_from_map, const char *_name)
+	{
 		to_unicode_map = _to;
 		from_unicode_mapping_array = _from_array;
 		from_unicode_map = _from_map;
@@ -58,16 +59,16 @@ class codepage_map {
 		sizeof_from_unicode_map = sizeof_from_map;
 		name = _name;
 		test_codepage();
-	};
+	}
 
 	unsigned short to_unicode(unsigned char c) {
 		return to_unicode_map[c];
-	};
+	}
 
 	unsigned short from_unicode(unsigned short c) {
 		return from_unicode_mapping_array[from_unicode_map[c / 256] +
 										  (c % 256)];
-	};
+	}
 
 	void test_codepage(void) {
 		if (sizeof_to_unicode_map != 256 * sizeof(to_unicode_map[0]))
@@ -149,8 +150,8 @@ class codepage_map {
 		}
 
 		printf("Test of %s completed\n", name);
-	};
-};
+	}
+}
 
 
 
@@ -174,7 +175,7 @@ codepage_map *get_w1250(void)
 							sizeof(to_unicode_map),
 							sizeof(from_unicode_mapping_array),
 							sizeof(from_unicode_map), "cs_w1250.h");
-};
+}
 
 
 int main(int argc, char *argv[])

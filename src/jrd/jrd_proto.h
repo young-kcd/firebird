@@ -144,6 +144,8 @@ ISC_STATUS jrd8_transact_request(ISC_STATUS*, att**,
 ISC_STATUS jrd8_unwind_request(ISC_STATUS *, jrd_req**, SSHORT);
 void jrd_vtof(const char*, char*, SSHORT);
 
+// CVC: It looks to me that these JRD_ functions should be outside the extern "C" directive.
+
 #ifdef SERVER_SHUTDOWN
 /* Defines for paramater 3 of JRD_num_attachments */
 #define JRD_info_drivemask	1
@@ -157,9 +159,9 @@ void	JRD_set_cache_default(ULONG *);
 void	JRD_blocked(att *, struct btb **);
 void	JRD_mutex_lock(struct mutx_t *);
 void	JRD_mutex_unlock(struct mutx_t *);
-BOOLEAN	JRD_reschedule(struct tdbb*, SLONG, bool);
+bool	JRD_reschedule(struct thread_db*, SLONG, bool);
 void	JRD_restore_context(void);
-void	JRD_set_context(struct tdbb *);
+void	JRD_set_context(struct thread_db*);
 void	JRD_unblock(struct btb **);
 void	JRD_wlck_lock(struct mutx_t *);
 void	JRD_wlck_unlock(struct mutx_t *);
@@ -170,7 +172,7 @@ USHORT	JRD_getdir(TEXT*, USHORT);
 #endif
 
 #ifdef DEBUG_PROCS
-void	JRD_print_procedure_info(TDBB, const char*);
+void	JRD_print_procedure_info(thread_db*, const char*);
 #endif
 
 #ifdef __cplusplus

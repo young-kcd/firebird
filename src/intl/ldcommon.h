@@ -67,18 +67,18 @@ typedef USHORT UNICODE;
 
 
 
-#define CONVERT_ENTRY(cs1, cs2, name)	USHORT	name (CSCONVERT csptr, SSHORT dest_cs, SSHORT source_cs)
+#define CONVERT_ENTRY(cs1, cs2, name)	USHORT	name (csconvert* csptr, SSHORT dest_cs, SSHORT source_cs)
 
 #define	CONVERT_RETURN	return (0)
 
 
 
 
-#define CHARSET_ENTRY(name)	USHORT	name (CHARSET csptr, SSHORT cs_id, SSHORT dummy)
+#define CHARSET_ENTRY(name)	USHORT	name (charset* csptr, SSHORT cs_id, SSHORT dummy)
 
 #define CHARSET_RETURN	return (0)
 
-void CV_convert_init(CSCONVERT, SSHORT, SSHORT, pfn_INTL_convert, const void*, const void*);
+void CV_convert_init(csconvert*, SSHORT, SSHORT, pfn_INTL_convert, const void*, const void*);
 
 #endif /* INTL_LDCOMMON_H */
 

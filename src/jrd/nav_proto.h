@@ -26,18 +26,23 @@
 
 #include "../jrd/rse.h"
 
+struct rpb;
+class jrd_nod;
+class Rsb;
+
 #ifdef SCROLLABLE_CURSORS
 struct jrd_exp* NAV_expand_index(struct win*, struct irsb_nav*);
 #endif
-bool NAV_get_record(TDBB tdbb, class Rsb*, struct irsb_nav*, struct rpb*,
+bool NAV_get_record(thread_db* tdbb, Rsb*, struct irsb_nav*, rpb*,
 							  enum rse_get_mode);
 
 #ifdef PC_ENGINE
-bool NAV_find_record(class Rsb*, USHORT, USHORT, struct jrd_nod*);
-void NAV_get_bookmark(class Rsb*, struct irsb_nav*, struct bkm*);
-bool NAV_reset_position(class Rsb*, struct rpb*);
-bool NAV_set_bookmark(class Rsb*, struct irsb_nav*, struct rpb*,
+bool NAV_find_record(Rsb*, USHORT, USHORT, jrd_nod*);
+void NAV_get_bookmark(Rsb*, struct irsb_nav*, struct bkm*);
+bool NAV_reset_position(Rsb*, rpb*);
+bool NAV_set_bookmark(Rsb*, struct irsb_nav*, rpb*,
 								struct bkm*);
 #endif
 
 #endif // JRD_NAV_PROTO_H
+

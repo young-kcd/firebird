@@ -36,7 +36,8 @@
 #include "../common/classes/array.h"
 
 // format of expanded index node, used for backwards navigation
-typedef struct btx {
+typedef struct btx
+{
 	UCHAR btx_previous_length;		// AB: total size for previous node --length of data for previous node
 	UCHAR btx_btr_previous_length;	// length of data for previous node on btree page
 	UCHAR btx_data[1];				// expanded data element
@@ -51,7 +52,8 @@ typedef struct btx {
 #define BTN_DUPLICATE_MARKER	1
 
 // format of expanded index buffer
-struct jrd_exp {
+struct jrd_exp
+{
 	USHORT exp_length;
 	ULONG exp_incarnation;
 	btx exp_nodes[1];
@@ -59,7 +61,8 @@ struct jrd_exp {
 
 #define EXP_SIZE	OFFSETA (jrd_exp*, exp_nodes)
 
-struct dynKey {
+struct dynKey
+{
 	USHORT keyLength;
 	UCHAR* keyData;
 };
@@ -108,3 +111,4 @@ namespace BTreeNode {
 } // namespace BTreeNode
 
 #endif // JRD_BTN_H_
+

@@ -206,7 +206,7 @@ int INF_database_info(const SCHAR* items,
 	SLONG err_val;
 	bool header_refreshed = false;
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
@@ -1020,7 +1020,7 @@ static USHORT get_counts(USHORT count_id, SCHAR* buffer, USHORT length)
  *	Return operation counts for relation.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	vcl* vector = tdbb->tdbb_attachment->att_counts[count_id];
 	if (!vector)

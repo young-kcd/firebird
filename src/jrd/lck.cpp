@@ -65,7 +65,7 @@ static void bug_lck(TEXT*);
 static void check_lock(lck*, USHORT);
 #endif
 static bool compatible(lck*, lck*, USHORT);
-static void enqueue(TDBB, lck*, USHORT, SSHORT);
+static void enqueue(thread_db*, lck*, USHORT, SSHORT);
 static int external_ast(void*);
 #ifdef MULTI_THREAD
 static lck* find_block(lck*, USHORT);
@@ -77,9 +77,9 @@ static void hash_insert_lock(lck*);
 static bool hash_remove_lock(lck*, lck**);
 static void internal_ast(lck*);
 static bool internal_compatible(lck*, lck*, USHORT);
-static void internal_dequeue(TDBB, lck*);
-static USHORT internal_downgrade(TDBB, lck*);
-static bool internal_enqueue(TDBB, lck*, USHORT, SSHORT, bool);
+static void internal_dequeue(thread_db*, lck*);
+static USHORT internal_downgrade(thread_db*, lck*);
+static bool internal_enqueue(thread_db*, lck*, USHORT, SSHORT, bool);
 
 
 /* globals and macros */
@@ -137,7 +137,7 @@ static const UCHAR compatibility[] = {
 #define COMPATIBLE(st1, st2)	compatibility [st1 * LCK_max + st2]
 #define LOCK_HASH_SIZE		19
 
-inline void ENQUEUE(TDBB tdbb, lck* lock, USHORT level, SSHORT wait)
+inline void ENQUEUE(thread_db* tdbb, lck* lock, USHORT level, SSHORT wait)
 {
 	if (lock->lck_compatible)
 		internal_enqueue (tdbb, lock, level, wait, false);
@@ -145,14 +145,14 @@ inline void ENQUEUE(TDBB tdbb, lck* lock, USHORT level, SSHORT wait)
 		enqueue (tdbb, lock, level, wait);
 }
 
-inline bool CONVERT(TDBB tdbb, lck* lock, USHORT level, SSHORT wait, ISC_STATUS* status)
+inline bool CONVERT(thread_db* tdbb, lck* lock, USHORT level, SSHORT wait, ISC_STATUS* status)
 {
 	return (lock->lck_compatible) ?
 		internal_enqueue (tdbb, lock, level, wait, true) :
 		LOCK_convert (lock->lck_id, level, wait, lock->lck_ast, lock->lck_object, status);
 }
 
-inline void DEQUEUE(TDBB tdbb, lck* lock)
+inline void DEQUEUE(thread_db* tdbb, lck* lock)
 {
 	if (lock->lck_compatible)
 		internal_dequeue (tdbb, lock);
@@ -160,7 +160,7 @@ inline void DEQUEUE(TDBB tdbb, lck* lock)
 		LOCK_deq (lock->lck_id);
 }
 
-inline USHORT DOWNGRADE(TDBB tdbb, lck* lock, ISC_STATUS* status)
+inline USHORT DOWNGRADE(thread_db* tdbb, lck* lock, ISC_STATUS* status)
 {
 	return (lock->lck_compatible) ?
 		internal_downgrade (tdbb, lock) :
@@ -211,7 +211,7 @@ void LCK_ast_enable() {
 	LOCK_ast_enable();
 }
 
-void LCK_assert(TDBB tdbb, lck* lock)
+void LCK_assert(thread_db* tdbb, lck* lock)
 {
 /**************************************
  *
@@ -239,7 +239,7 @@ void LCK_assert(TDBB tdbb, lck* lock)
 }
 
 
-bool LCK_convert(TDBB tdbb, lck* lock, USHORT level, SSHORT wait)
+bool LCK_convert(thread_db* tdbb, lck* lock, USHORT level, SSHORT wait)
 {
 /**************************************
  *
@@ -281,7 +281,7 @@ bool LCK_convert(TDBB tdbb, lck* lock, USHORT level, SSHORT wait)
 
 
 #ifdef MULTI_THREAD
-int LCK_convert_non_blocking(TDBB tdbb, lck* lock, USHORT level, SSHORT wait)
+int LCK_convert_non_blocking(thread_db* tdbb, lck* lock, USHORT level, SSHORT wait)
 {
 /**************************************
  *
@@ -348,7 +348,7 @@ int LCK_convert_non_blocking(TDBB tdbb, lck* lock, USHORT level, SSHORT wait)
 
 
 #else
-int LCK_convert_non_blocking(TDBB tdbb, lck* lock, USHORT level, SSHORT wait)
+int LCK_convert_non_blocking(thread_db* tdbb, lck* lock, USHORT level, SSHORT wait)
 {
 /**************************************
  *
@@ -370,7 +370,7 @@ int LCK_convert_non_blocking(TDBB tdbb, lck* lock, USHORT level, SSHORT wait)
 #endif
 
 
-int LCK_convert_opt(TDBB tdbb, lck* lock, USHORT level)
+int LCK_convert_opt(thread_db* tdbb, lck* lock, USHORT level)
 {
 /**************************************
  *
@@ -399,7 +399,7 @@ int LCK_convert_opt(TDBB tdbb, lck* lock, USHORT level)
 
 
 #ifndef VMS
-int LCK_downgrade(TDBB tdbb, lck* lock)
+int LCK_downgrade(thread_db* tdbb, lck* lock)
 {
 /**************************************
  *
@@ -433,7 +433,7 @@ int LCK_downgrade(TDBB tdbb, lck* lock)
 #endif
 
 
-void LCK_fini(TDBB tdbb, enum lck_owner_t owner_type)
+void LCK_fini(thread_db* tdbb, enum lck_owner_t owner_type)
 {
 /**************************************
  *
@@ -473,7 +473,7 @@ void LCK_fini(TDBB tdbb, enum lck_owner_t owner_type)
 }
 
 
-SLONG LCK_get_owner_handle(TDBB tdbb, enum lck_t lock_type)
+SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 {
 /**************************************
  *
@@ -522,7 +522,7 @@ SLONG LCK_get_owner_handle(TDBB tdbb, enum lck_t lock_type)
 }
 
 
-void LCK_init(TDBB tdbb, enum lck_owner_t owner_type)
+void LCK_init(thread_db* tdbb, enum lck_owner_t owner_type)
 {
 /**************************************
  *
@@ -572,7 +572,7 @@ void LCK_init(TDBB tdbb, enum lck_owner_t owner_type)
 }
 
 
-int LCK_lock(TDBB tdbb, lck* lock, USHORT level, SSHORT wait)
+int LCK_lock(thread_db* tdbb, lck* lock, USHORT level, SSHORT wait)
 {
 /**************************************
  *
@@ -618,7 +618,7 @@ int LCK_lock(TDBB tdbb, lck* lock, USHORT level, SSHORT wait)
 }
 
 
-int LCK_lock_non_blocking(TDBB tdbb, lck* lock, USHORT level, SSHORT wait)
+int LCK_lock_non_blocking(thread_db* tdbb, lck* lock, USHORT level, SSHORT wait)
 {
 /**************************************
  *
@@ -723,7 +723,7 @@ int LCK_lock_non_blocking(TDBB tdbb, lck* lock, USHORT level, SSHORT wait)
 }
 
 
-int LCK_lock_opt(TDBB tdbb, lck* lock, USHORT level, SSHORT wait)
+int LCK_lock_opt(thread_db* tdbb, lck* lock, USHORT level, SSHORT wait)
 {
 /**************************************
  *
@@ -806,7 +806,7 @@ SLONG LCK_read_data(lck* lock)
 }
 
 
-void LCK_release(TDBB tdbb, lck* lock)
+void LCK_release(thread_db* tdbb, lck* lock)
 {
 /**************************************
  *
@@ -999,7 +999,7 @@ static bool compatible(lck* lock1, lck* lock2, USHORT level2)
 }
 
 
-static void enqueue(TDBB tdbb, lck* lock, USHORT level, SSHORT wait)
+static void enqueue(thread_db* tdbb, lck* lock, USHORT level, SSHORT wait)
 {
 /**************************************
  *
@@ -1019,7 +1019,7 @@ static void enqueue(TDBB tdbb, lck* lock, USHORT level, SSHORT wait)
 	lock->lck_id = LOCK_enq(lock->lck_id,
 							parent ? parent->lck_id : 0,
 							lock->lck_type,
-							(UCHAR *) & lock->lck_key,
+							(const UCHAR*) & lock->lck_key,
 							lock->lck_length,
 							level,
 							lock->lck_ast,
@@ -1414,7 +1414,7 @@ static bool internal_compatible(lck* match, lck* lock, USHORT level)
 }
 
 
-static void internal_dequeue(TDBB tdbb, lck* lock)
+static void internal_dequeue(thread_db* tdbb, lck* lock)
 {
 /**************************************
  *
@@ -1449,7 +1449,7 @@ static void internal_dequeue(TDBB tdbb, lck* lock)
 }
 
 
-static USHORT internal_downgrade(TDBB tdbb, lck* first)
+static USHORT internal_downgrade(thread_db* tdbb, lck* first)
 {
 /**************************************
  *
@@ -1496,7 +1496,7 @@ static USHORT internal_downgrade(TDBB tdbb, lck* first)
 
 
 static bool internal_enqueue(
-								TDBB tdbb,
+								thread_db* tdbb,
 								lck* lock,
 								USHORT level,
 								SSHORT wait, bool convert_flg)
@@ -1581,7 +1581,7 @@ static bool internal_enqueue(
 	lock->lck_id = LOCK_enq(lock->lck_id,
 							lock->lck_parent ? lock->lck_parent->lck_id : 0,
 							lock->lck_type,
-							(UCHAR *) & lock->lck_key,
+							(const UCHAR*) & lock->lck_key,
 							lock->lck_length,
 							level,
 							external_ast,

@@ -76,7 +76,6 @@ USHORT KANJI_check_euc(const UCHAR* euc_str, USHORT euc_len)
 			}
 		}
 		else {					/* it is a ASCII */
-
 			euc_str++;
 		}
 	}
@@ -111,12 +110,10 @@ USHORT KANJI_check_sjis(const UCHAR* sjis_str, USHORT sjis_len)
 				}
 			}
 			else {				/*It is a KANA */
-
 				sjis_str++;
 			}
 		}
 		else {					/* it is a ASCII */
-
 			sjis_str++;
 		}
 	}
@@ -164,7 +161,6 @@ USHORT KANJI_euc2sjis(const UCHAR* euc_str,
 					*sjis_str++ = c2;
 				}
 				else {			/* Kanji */
-
 					*sjis_len += 2;
 					if (*sjis_len > sjis_buf_len)	/*buffer full */
 						return (1);
@@ -182,7 +178,6 @@ USHORT KANJI_euc2sjis(const UCHAR* euc_str,
 				return (1);
 		}
 		else {					/* ASCII */
-
 			euc_len--;
 			*sjis_len += 1;
 			*sjis_str++ = *euc_str++;
@@ -315,7 +310,6 @@ USHORT KANJI_sjis2euc(const UCHAR* sjis_str,
 				return (1);		/* It is some bad character */
 		}
 		else {					/* it is a ASCII */
-
 			*euc_len += 1;
 			sjis_len--;
 			*euc_str++ = *sjis_str++;
@@ -419,7 +413,6 @@ USHORT KANJI_sjis2euc5(const UCHAR* sjis_str,
 				return (2);		/* It is some bad character */
 		}
 		else {					/* it is a ASCII */
-
 			*euc_len += 1;
 			sjis_len--;
 			*euc_str++ = *sjis_str++;
@@ -467,7 +460,6 @@ USHORT KANJI_sjis_len(const UCHAR* euc_str, USHORT euc_len, USHORT* sjis_len)
 				return (1);
 		}
 		else {					/* ASCII */
-
 			euc_len--;
 			*sjis_len += 1;
 			euc_str++;

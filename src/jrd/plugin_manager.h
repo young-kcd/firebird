@@ -126,8 +126,15 @@ public:
 		friend class PluginManager;
 		Plugin() : module(0) {}
 		Plugin(const Plugin& src) : module(src.module)
-			{ if (module) module->aquire(); }
-		~Plugin() { if (module) module->release(); }
+		{
+			if (module)
+				module->aquire();
+		}
+		~Plugin()
+		{
+			if (module)
+				module->release();
+		}
 		const Plugin& operator=(const Plugin&);
 		bool operator ==(const Plugin &other) const
 			{ return module == other.module; }
@@ -143,7 +150,10 @@ public:
 	private:
 		friend class iterator;
 		Plugin(Module *mod) : module(mod)
-			{ if (module) module->aquire(); }
+		{
+			if (module)
+				module->aquire();
+		}
 		
 		Module *module;
 	};
@@ -157,7 +167,11 @@ public:
 	public:
 		friend class PluginManager;
 		const iterator &operator++()
-			{ if (curr) curr = curr->next; return *this; }
+		{
+			if (curr)
+				curr = curr->next;
+			return *this;
+		}
 		Plugin operator*()
 			{ return Plugin(curr); }
 		bool operator==(const iterator& cmp) const

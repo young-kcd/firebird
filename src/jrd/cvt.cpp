@@ -1361,20 +1361,18 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 			return;
 
 		case dtype_sql_time:
-			((GDS_TIMESTAMP *) (to->dsc_address))->timestamp_date = 0;
-			((GDS_TIMESTAMP *) (to->dsc_address))->timestamp_time =
-				*(GDS_TIME *) (from->dsc_address);
+			((GDS_TIMESTAMP*) (to->dsc_address))->timestamp_date = 0;
+			((GDS_TIMESTAMP*) (to->dsc_address))->timestamp_time =
+				*(GDS_TIME*) (from->dsc_address);
 
 			/* Per SQL Specs, we need to set the DATE
 			   portion to the current date */
 			{
-				TDBB tdbb = NULL;
 				time_t clock;
-
-		/** Cannot call GET_THREAD_DATA because that macro calls 
-		    BUGCHECK i.e. ERR_bugcheck() which is not part of 
-		    client library **/
-				tdbb = PLATFORM_GET_THREAD_DATA;
+				/** Cannot call GET_THREAD_DATA because that macro calls
+				BUGCHECK i.e. ERR_bugcheck() which is not part of
+				client library **/
+				thread_db* tdbb = PLATFORM_GET_THREAD_DATA;
 
 				/* If we're in the engine, then the THDD type must
 				   be a THDD_TYPE_TDBB.  So, if we're in the engine
@@ -1385,7 +1383,8 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 
 				if ((tdbb) &&
 					(((THDD) tdbb)->thdd_type == THDD_TYPE_TDBB) &&
-					tdbb->tdbb_request) {
+					tdbb->tdbb_request)
+				{
 					if (tdbb->tdbb_request->req_timestamp)
 						clock = tdbb->tdbb_request->req_timestamp;
 					else {
@@ -1399,7 +1398,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 				const tm times = *localtime(&clock);
 				GDS_TIMESTAMP enc_times;
 				isc_encode_timestamp(&times, &enc_times);
-				((GDS_TIMESTAMP *) (to->dsc_address))->timestamp_date =
+				((GDS_TIMESTAMP*) (to->dsc_address))->timestamp_date =
 					enc_times.timestamp_date;
 			}
 			return;
@@ -1800,7 +1799,7 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
  *      Convert a timestamp, date or time value to text.
  *
  **************************************/
-	TDBB tdbb = NULL;
+	thread_db* tdbb = NULL;
 	bool version4 = true;
 
 	fb_assert(DTYPE_IS_TEXT(to->dsc_dtype));

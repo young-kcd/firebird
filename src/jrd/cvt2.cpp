@@ -114,7 +114,7 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 	SSHORT fill;
 	USHORT t1, t2;
 	CHARSET_ID charset1, charset2;
-	TDBB tdbb = NULL;
+	thread_db* tdbb = NULL;
 
 	// AB: Maybe we need a other error-message, but at least throw 
 	// a message when 1 or both input paramters are empty.
@@ -517,7 +517,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 	TextType obj1 = NULL, obj2 = NULL;
 	DSC desc1, desc2;
 
-	TDBB tdbb = NULL;
+	thread_db* tdbb = NULL;
 	SET_TDBB(tdbb);
 
 /* DEV_BLKCHK (node, type_nod); */
@@ -862,7 +862,7 @@ USHORT CVT2_make_string2(const dsc* desc,
 			return from_len;
 		}
 
-		TDBB tdbb = GET_THREAD_DATA;
+		thread_db* tdbb = GET_THREAD_DATA;
 		const USHORT cs1 = INTL_charset(tdbb, to_interp, err);
 		const USHORT cs2 = INTL_charset(tdbb, from_interp, err);
 		if (cs1 == cs2) {

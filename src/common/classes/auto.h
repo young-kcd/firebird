@@ -28,8 +28,8 @@
  *  Contributor(s): ______________________________________.
  */
 
-#ifndef AUTO_Ptr_H
-#define AUTO_Ptr_H
+#ifndef CLASSES_AUTO_PTR_H
+#define CLASSES_AUTO_PTR_H
 
 template <typename Where>
 class AutoPtr {
@@ -42,4 +42,30 @@ public:
 	~AutoPtr<Where>() {delete ptr;}
 };
 
-#endif // AUTO_Ptr_H
+
+// CVC: It turns out that AutoPtr was designed to deallocate single objects,
+// not arrays. Worse even, we need in many places to allocate dynamically an
+// array of char*/UCHAR* that's later converted into a pointer to a single
+// object and passed to AutoPtr. In that case, AutoPtr will invoke the wrong
+// deallocation logic and therefore we have undefined behavior, typically a leak.
+// See execute_statement.cpp for an example. This is the reason this
+// AutoPtrFromString beast was created.
+
+template <typename Where>
+class AutoPtrFromString {
+private:
+	Where* ptr;
+public:
+	AutoPtrFromString<Where>(Where* v) {ptr = v;}
+	operator Where* () {return ptr;}
+	Where* operator-> () {return ptr;}
+	~AutoPtrFromString<Where>()
+	{
+		char* p = reinterpret_cast<char*>(ptr);
+		delete[] p;
+	}
+};
+
+
+#endif // CLASSES_AUTO_PTR_H
+

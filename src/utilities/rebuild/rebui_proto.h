@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Rebuild scrambled database
  *	MODULE:		rebui_proto.h
- *	DESCRIPTION:	Prototype header file for rebuild.c
+ *	DESCRIPTION:	Prototype header file for rebuild.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -31,3 +31,4 @@ struct pag*	RBDB_read (struct rbdb *, SLONG);
 void		RBDB_write (struct rbdb *, struct pag *, SLONG);
 
 #endif // UTILITIES_REBUI_PROTO_H
+

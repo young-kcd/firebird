@@ -34,7 +34,7 @@ static inline void FAMILY_UNICODE_WIDE_BIN(TEXTTYPE cache,
 										   pfn_INTL_init name,
 										   CHARSET_ID charset,
 										   SSHORT country,
-										   const ASCII *POSIX)
+										   const ASCII* POSIX)
 //#define FAMILY_UNICODE_WIDE_BIN(id_number, name, charset, country)
 {
 	cache->texttype_version			= IB_LANGDRV_VERSION;
@@ -62,7 +62,7 @@ static inline void FAMILY_UNICODE_MB_BIN(TEXTTYPE cache,
 										 pfn_INTL_init name,
 										 CHARSET_ID charset,
 										 SSHORT country,
-										 const ASCII *POSIX)
+										 const ASCII* POSIX)
 //#define FAMILY_UNICODE_MB_BIN(id_number, name, charset, country)
 {
 	cache->texttype_version			= IB_LANGDRV_VERSION;

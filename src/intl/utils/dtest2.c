@@ -41,50 +41,41 @@ char *defaults[] = {
 };
 #endif
 
-
-try(c, f)
-	 char *c;
-	 FUN_PTR f;
+/*
+void try_fc(char* c, FUN_PTR f)
 {
 	unsigned char buffer[200];
-	int res;
-	int i;
-	res = (*f) (strlen(c), c, sizeof(buffer), buffer);
+	const int res = (*f) (strlen(c), c, sizeof(buffer), buffer);
 	ib_printf("%s => ", c);
-	for (i = 0; i < res; i++)
+	for (int i = 0; i < res; i++)
 		ib_printf("%d ", buffer[i]);
 	ib_printf("\n");
-};
+}
+*/
 
-my_err()
+void my_err()
 {
 	ib_printf("Error routine called!\n");
 };
 
-main(argc, argv)
-	 int argc;
-	 char *argv[];
+int main(int argc, char** argv)
 {
-	struct texttype this_textobj;
-	char **vector;
-	int i;
-
 #ifdef VMS
-	vector = defaults;
+	char** vector = defaults;
 	argc = FB_NELEM(defaults);
 #else
 	if (argc <= 1) {
 		ib_printf("usage: dtest Intl_module_name\n");
 		return (1);
 	};
-	vector = argv;
+	char** vector = argv;
 #endif
 
-	for (i = 1; i < argc; i++) {
-
-		int t_type;
-		t_type = atoi(vector[i]);
+	struct texttype this_textobj;
+	for (int i = 1; i < argc; i++) {
+		const int t_type = atoi(vector[i]);
 		INTL_fn_init(t_type, &this_textobj, my_err);
 	};
 	return (0);
 }
+

@@ -30,7 +30,7 @@
  * 2003.08.10 Claudio Valderrama: Fix SF Bugs #544132 and #728839.
  */
 /*
-$Id: fun.epp,v 1.38 2004-03-07 07:58:40 robocop Exp $
+$Id: fun.epp,v 1.39 2004-03-11 05:03:57 robocop Exp $
 */
 
 #include "firebird.h"
@@ -122,7 +122,7 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 	SLONG args[MAX_UDF_ARGUMENTS + 1];
 	UCHAR temp[800];
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	// Start by constructing argument list
 	str* temp_string;
@@ -745,7 +745,7 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 }
 
 
-void FUN_fini( TDBB tdbb)
+void FUN_fini( thread_db* tdbb)
 {
 /**************************************
  *
@@ -791,7 +791,7 @@ FUN FUN_lookup_function(const TEXT* name, bool ShowAccessError)
  *	Lookup function by name.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
 /* Start by looking for already defined symbol */
@@ -956,7 +956,7 @@ FUN FUN_resolve(Csb* csb, FUN function, jrd_nod* args)
  **************************************/
 	DSC arg;
 
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 	fun* best = NULL;
 	int best_score = 0;
@@ -1030,7 +1030,7 @@ static void blob_put_segment( blb* blob, const UCHAR* buffer, USHORT length)
    engine mutex */
 
 	THREAD_ENTER;
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	BLB_put_segment(tdbb, blob, buffer, length);
 	THREAD_EXIT;
 }
@@ -1057,7 +1057,7 @@ static SSHORT blob_get_segment(
  **************************************/
 /* add thread enter and thread_exit wrappers */
 	THREAD_ENTER;
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 	*return_length = BLB_get_segment(tdbb, blob, buffer, length);
 	THREAD_EXIT;
 
@@ -1088,7 +1088,7 @@ static SLONG get_scalar_array(fun_repeat*	arg,
  *	Return length of array desc.
  *
  **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = GET_THREAD_DATA;
 
 /* Get first the array descriptor, then the array */
 

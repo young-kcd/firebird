@@ -39,6 +39,8 @@
 
 #define MAX_KEY_LIMIT		(dbb->dbb_page_size / 4)
 
+class jrd_rel;
+
 enum idx_null_state {
   idx_nulls_none,
   idx_nulls_some,
@@ -124,7 +126,7 @@ typedef struct iib {
 	SLONG iib_number;			/* record number (or lower level page) */
 	SLONG iib_sibling;			/* right sibling page */
 	idx* iib_descriptor;		/* index descriptor */
-	struct jrd_rel *iib_relation;	/* relation block */
+	jrd_rel*	iib_relation;	/* relation block */
 	struct key *iib_key;		/* varying string for insertion */
 	struct sbm *iib_duplicates;	/* spare bit map of duplicates */
 	class jrd_tra *iib_transaction;	/* insertion transaction */
@@ -166,7 +168,7 @@ class irb : public pool_alloc_rpt<jrd_nod*, type_irb>
 	IDX irb_desc;				/* Index descriptor */
 	USHORT irb_index;			/* Index id */
 	USHORT irb_generic;			/* Flags for generic search */
-	struct jrd_rel *irb_relation;	/* Relation for retrieval */
+	jrd_rel*	irb_relation;	/* Relation for retrieval */
 	USHORT irb_lower_count;		/* Number of segments for retrieval */
 	USHORT irb_upper_count;		/* Number of segments for retrieval */
 	KEY *irb_key;				/* key for equality retrival */

@@ -33,7 +33,7 @@ static inline void FAMILY_MULTIBYTE(TEXTTYPE cache,
 									pfn_INTL_init name,
 									CHARSET_ID charset,
 									SSHORT country,
-									const ASCII *POSIX)
+									const ASCII* POSIX)
 //#define FAMILY_MULTIBYTE(id_number, name, charset, country)
 {
 	cache->texttype_version			= IB_LANGDRV_VERSION;

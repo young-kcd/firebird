@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.cpp,v 1.43 2004-03-09 00:16:55 skidder Exp $
+ *  $Id: alloc.cpp,v 1.44 2004-03-11 05:03:44 robocop Exp $
  *
  */
 
@@ -266,7 +266,8 @@ void* MemoryPool::allocate_nothrow(size_t size, SSHORT type
 		, file, line
 #endif
 	);
-	if (needSpare) updateSpare();
+	if (needSpare)
+		updateSpare();
 	lock.leave();
 	// test with older behavior
 	// memset(result,0,size);

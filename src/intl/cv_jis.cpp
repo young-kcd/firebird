@@ -29,7 +29,7 @@
 #include "cv_narrow.h"
 #include "ld_proto.h"
 
-USHORT CVJIS_eucj_to_unicode(CSCONVERT obj,
+USHORT CVJIS_eucj_to_unicode(csconvert* obj,
 							 UCS2_CHAR *dest_ptr,
 							 USHORT dest_len,
 							 const UCHAR* src_ptr,
@@ -83,7 +83,7 @@ USHORT CVJIS_eucj_to_unicode(CSCONVERT obj,
 				[((const USHORT*) obj->csconvert_misc)
 					[(USHORT)wide /	256]
 				 + (wide % 256)];
-		};
+		}
 
 
 		/* No need to check for CS_CONVERT_ERROR -
@@ -93,10 +93,10 @@ USHORT CVJIS_eucj_to_unicode(CSCONVERT obj,
 		*dest_ptr++ = ch;
 		dest_len -= sizeof(*dest_ptr);
 		src_len -= this_len;
-	};
+	}
 	if (src_len && !*err_code) {
 		*err_code = CS_TRUNCATION_ERROR;
-	};
+	}
 	*err_position = src_start - src_len;
 	return ((dest_ptr - start) * sizeof(*dest_ptr));
 }
@@ -124,7 +124,7 @@ static void S2E(const UCHAR s1, const UCHAR s2, UCHAR& j1, UCHAR& j2)
 }
 
 
-USHORT CVJIS_sjis_to_unicode(CSCONVERT obj,
+USHORT CVJIS_sjis_to_unicode(csconvert* obj,
 							 UCS2_CHAR *dest_ptr,
 							 USHORT dest_len,
 							 const UCHAR* sjis_str,
@@ -205,13 +205,13 @@ USHORT CVJIS_sjis_to_unicode(CSCONVERT obj,
 			fb_assert(wide <= 255);
 			ch = sjis_to_unicode_mapping_array
 				[sjis_to_unicode_map[(USHORT) wide / 256] + (wide % 256)];
-		};
+		}
 
 		/* This is only important for bad-SJIS in input stream */
 		if ((ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
 			break;
-		};
+		}
 		*dest_ptr++ = ch;
 		dest_len -= sizeof(*dest_ptr);
 		sjis_len -= this_len;
@@ -379,7 +379,7 @@ I hope this helps in the discussion.
 */
 
 
-USHORT CVJIS_unicode_to_sjis(CSCONVERT obj,
+USHORT CVJIS_unicode_to_sjis(csconvert* obj,
 							 UCHAR* sjis_str,
 							 USHORT sjis_len,
 							 const UCS2_CHAR* unicode_str,
@@ -418,8 +418,8 @@ USHORT CVJIS_unicode_to_sjis(CSCONVERT obj,
 			if ((jis_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 				*err_code = CS_CONVERT_ERROR;
 				break;
-			};
-		};
+			}
+		}
 
 		/* Step 2: Convert from JIS code to SJIS */
 		USHORT tmp1 = jis_ch / 256;
@@ -429,7 +429,7 @@ USHORT CVJIS_unicode_to_sjis(CSCONVERT obj,
 			sjis_len--;
 			unicode_len -= sizeof(*unicode_str);
 			continue;
-		};
+		}
 		seven2eight(&tmp1, &tmp2);
 		if (tmp1 == 0) {		/* half-width kana ? */
 			fb_assert(SJIS_SINGLE(tmp2));
@@ -448,7 +448,7 @@ USHORT CVJIS_unicode_to_sjis(CSCONVERT obj,
 			*sjis_str++ = tmp2;
 			unicode_len -= sizeof(*unicode_str);
 			sjis_len -= 2;
-		};
+		}
 	}
 	if (unicode_len && !*err_code) {
 		*err_code = CS_TRUNCATION_ERROR;
@@ -458,7 +458,7 @@ USHORT CVJIS_unicode_to_sjis(CSCONVERT obj,
 }
 
 
-USHORT CVJIS_unicode_to_eucj(CSCONVERT obj, UCHAR *eucj_str, USHORT eucj_len,
+USHORT CVJIS_unicode_to_eucj(csconvert* obj, UCHAR *eucj_str, USHORT eucj_len,
 							 const UCS2_CHAR* unicode_str,
 							 USHORT unicode_len, SSHORT *err_code, USHORT *err_position)
 {
@@ -494,7 +494,7 @@ USHORT CVJIS_unicode_to_eucj(CSCONVERT obj, UCHAR *eucj_str, USHORT eucj_len,
 		if ((jis_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
 			break;
-		};
+		}
 
 		/* Step 2: Convert from JIS code to EUC-J */
 		const USHORT tmp1 = jis_ch / 256;
@@ -505,7 +505,7 @@ USHORT CVJIS_unicode_to_eucj(CSCONVERT obj, UCHAR *eucj_str, USHORT eucj_len,
 			eucj_len--;
 			unicode_len -= sizeof(*unicode_str);
 			continue;
-		};
+		}
 		if (eucj_len < 2) {
 			*err_code = CS_TRUNCATION_ERROR;
 			break;
@@ -517,7 +517,7 @@ USHORT CVJIS_unicode_to_eucj(CSCONVERT obj, UCHAR *eucj_str, USHORT eucj_len,
 			*eucj_str++ = tmp2 | 0x80;
 			unicode_len -= sizeof(*unicode_str);
 			eucj_len -= 2;
-		};
+		}
 	}
 	if (unicode_len && !*err_code) {
 		*err_code = CS_TRUNCATION_ERROR;
@@ -553,7 +553,6 @@ static USHORT CVJIS_check_euc(const UCHAR* euc_str, USHORT euc_len)
 			}
 		}
 		else {					/* it is a ASCII */
-
 			euc_str++;
 		}
 	}
@@ -590,12 +589,10 @@ static USHORT CVJIS_check_sjis(const UCHAR* sjis_str, USHORT sjis_len)
 				}
 			}
 			else {				/*It is a KANA */
-
 				sjis_str++;
 			}
 		}
 		else {					/* it is a ASCII */
-
 			sjis_str++;
 		}
 	}
@@ -604,7 +601,7 @@ static USHORT CVJIS_check_sjis(const UCHAR* sjis_str, USHORT sjis_len)
 #endif
 
 
-static USHORT CVJIS_euc2sjis(CSCONVERT obj, UCHAR *sjis_str, USHORT sjis_len,
+static USHORT CVJIS_euc2sjis(csconvert* obj, UCHAR *sjis_str, USHORT sjis_len,
 							const UCHAR* euc_str,
 							 USHORT euc_len, SSHORT *err_code, USHORT *err_position)
 {
@@ -657,7 +654,7 @@ static USHORT CVJIS_euc2sjis(CSCONVERT obj, UCHAR *sjis_str, USHORT sjis_len,
 					if (sjis_len < 2) {	/*buffer full */
 						*err_code = CS_TRUNCATION_ERROR;
 						break;
-					};
+					}
 					sjis_len -= 2;
 					euc_len -= 2;
 					c1 ^= 0x80;
@@ -678,7 +675,6 @@ static USHORT CVJIS_euc2sjis(CSCONVERT obj, UCHAR *sjis_str, USHORT sjis_len,
 			}
 		}
 		else {					/* ASCII */
-
 			euc_len--;
 			sjis_len--;
 			*sjis_str++ = *euc_str++;
@@ -728,7 +724,7 @@ USHORT CVJIS_euc_byte2short(TEXTTYPE obj, USHORT* dst, USHORT dst_len, // length
 			if (src_len <= 1) {
 				*err_code = CS_BAD_INPUT;
 				break;
-			};
+			}
 			x = (*src << 8) + (*(src + 1));
 			src += 2;
 			src_len -= 2;
@@ -736,7 +732,7 @@ USHORT CVJIS_euc_byte2short(TEXTTYPE obj, USHORT* dst, USHORT dst_len, // length
 		else {
 			x = *src++;
 			src_len--;
-		};
+		}
 		*dst = x;	/* Assumes alignment */
 		++dst;
 		dst_len -= sizeof(USHORT);
@@ -769,7 +765,7 @@ SSHORT CVJIS_euc_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const UCHAR* src, USHORT sr
 	if (EUC1(*src)) {
 		if (src_len <= 1) {
 			return -1;
-		};
+		}
 		if (wc)
 			*wc = (*src << 8) + (*(src + 1));
 		return 2;
@@ -778,10 +774,10 @@ SSHORT CVJIS_euc_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const UCHAR* src, USHORT sr
 		if (wc)
 			*wc = *src++;
 		return 1;
-	};
+	}
 }
 
-static USHORT CVJIS_sjis2euc(CSCONVERT obj, UCHAR *euc_str, USHORT euc_len,
+static USHORT CVJIS_sjis2euc(csconvert* obj, UCHAR *euc_str, USHORT euc_len,
 							const UCHAR* sjis_str,
 							 USHORT sjis_len, SSHORT *err_code, USHORT *err_position)
 {
@@ -823,7 +819,7 @@ static USHORT CVJIS_sjis2euc(CSCONVERT obj, UCHAR *euc_str, USHORT euc_len,
 				if (euc_len < 2) {	/*buffer full */
 					*err_code = CS_TRUNCATION_ERROR;
 					break;
-				};
+				}
 				S2E(c1, c2, *euc_str, *(euc_str + 1));
 				euc_str += 2;
 				euc_len -= 2;
@@ -840,13 +836,11 @@ static USHORT CVJIS_sjis2euc(CSCONVERT obj, UCHAR *euc_str, USHORT euc_len,
 				*euc_str++ = c1;
 			}
 			else {				/* It is some bad character */
-
 				*err_code = CS_BAD_INPUT;
 				break;
 			}
 		}
 		else {					/* it is a ASCII */
-
 			euc_len--;
 			sjis_len--;
 			*euc_str++ = *sjis_str++;
@@ -897,7 +891,7 @@ USHORT CVJIS_sjis_byte2short(TEXTTYPE obj, USHORT* dst, USHORT dst_len, // byte 
 			if (src_len <= 1) {
 				*err_code = CS_BAD_INPUT;
 				break;
-			};
+			}
 			x = (*src << 8) + *(src + 1);
 			src_len -= 2;
 			src += 2;
@@ -940,7 +934,7 @@ SSHORT CVJIS_sjis_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const UCHAR* src, USHORT s
 	if (SJIS1(*src)) {
 		if (src_len <= 1) {
 			return -1;
-		};
+		}
 		if (wc)
 			*wc = (*src << 8) + (*(src + 1));
 		return 2;
@@ -949,7 +943,7 @@ SSHORT CVJIS_sjis_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const UCHAR* src, USHORT s
 		if (wc)
 			*wc = *src++;
 		return 1;
-	};
+	}
 }
 
 CONVERT_ENTRY(CS_SJIS, CS_EUCJ, CVJIS_sjis_x_eucj)

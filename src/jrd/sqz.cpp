@@ -415,7 +415,7 @@ void SQZ_fast(Dcc* dcc, const SCHAR* input, SCHAR* output)
 }
 
 
-USHORT SQZ_length(TDBB tdbb, const SCHAR* data, int length, Dcc* dcc)
+USHORT SQZ_length(thread_db* tdbb, const SCHAR* data, int length, Dcc* dcc)
 {
 /**************************************
  *

@@ -744,7 +744,7 @@ void SBM_reset(SBM* bitmap)
 }
 
 
-void SBM_set(TDBB tdbb, SBM * bitmap, SLONG number)
+void SBM_set(thread_db* tdbb, SBM * bitmap, SLONG number)
 {
 /**************************************
  *

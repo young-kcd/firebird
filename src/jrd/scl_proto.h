@@ -33,11 +33,11 @@ void SCL_check_relation(const struct dsc*, USHORT);
 scl* SCL_get_class(/* INOUT */ TEXT*);
 int SCL_get_mask(const TEXT*, const TEXT*);
 void SCL_init(bool, const TEXT*, const TEXT*, const TEXT*, const TEXT*,
-	const TEXT*, TDBB, bool);
+	const TEXT*, thread_db*, const bool);
 void SCL_move_priv(UCHAR**, USHORT, STR*, ULONG*);
-scl* SCL_recompute_class(TDBB, TEXT*);
+scl* SCL_recompute_class(thread_db*, TEXT*);
 void SCL_release(scl*);
-void SCL_check_index(TDBB, const TEXT*, UCHAR, USHORT);
+void SCL_check_index(thread_db*, const TEXT*, UCHAR, USHORT);
 
 #endif // JRD_SCL_PROTO_H
 

@@ -28,14 +28,14 @@ bool	LOCK_convert(SLONG, UCHAR, SSHORT, lock_ast_t, void*,
 						ISC_STATUS*);
 int		LOCK_deq(SLONG);
 UCHAR	LOCK_downgrade(SLONG, ISC_STATUS *);
-SLONG	LOCK_enq(SLONG, SLONG, USHORT, UCHAR *, USHORT, UCHAR,
-					  int (*)(int *), int *, SLONG, SSHORT, ISC_STATUS *, SLONG);
+SLONG	LOCK_enq(SLONG, SLONG, USHORT, const UCHAR*, USHORT, UCHAR,
+					  lock_ast_t, int*, SLONG, SSHORT, ISC_STATUS*, SLONG);
 void	LOCK_fini(ISC_STATUS *, SLONG *);
 int		LOCK_init(ISC_STATUS *, SSHORT, SLONG, UCHAR, SLONG *);
 void	LOCK_manager(SLONG);
 SLONG	LOCK_read_data(SLONG);
 SLONG	LOCK_read_data2(SLONG, USHORT, UCHAR *, USHORT, SLONG);
-void	LOCK_re_post(int (*)(int *), int *, SLONG);
+void	LOCK_re_post(lock_ast_t, int*, SLONG);
 SLONG	LOCK_write_data(SLONG, SLONG);
 
 #endif // JRD_VMSLO_PROTO_H

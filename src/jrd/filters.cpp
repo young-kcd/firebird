@@ -654,7 +654,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, ctl* control)
 		USHORT ctlaux_buffer1_unused;	/* unused bytes in ctlaux_buffer1 */
 	};
 
-	TDBB tdbb = NULL;
+	thread_db* tdbb = NULL;
 /* Note: Cannot pass tdbb without API change to user filters */
 
 #define EXP_SCALE		128		/* to keep expansion non-floating */
