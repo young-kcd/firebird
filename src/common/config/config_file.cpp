@@ -186,20 +186,17 @@ void ConfigFile::loadConfig()
     if (!ifile)
     {
         // config file does not exist
-#ifdef INFORM_ON_NO_CONF
-		Firebird::string Msg = Firebird::string("Missing configuration file: ") + configFile.c_str();
 #ifdef EXIT_ON_NO_CONF
 		if (fExitOnError)
-			Msg += ", exiting";
-#endif
-		Firebird::Syslog::Record(fExitOnError ? 
+		{
+			Firebird::string Msg = "Missing configuration file: " + 
+				configFile.ToString() + ", exiting";
+			Firebird::Syslog::Record(fExitOnError ? 
 				Firebird::Syslog::Error :
-				Firebird::Syslog::Warning, Msg.ToString());
-#ifdef EXIT_ON_NO_CONF
-		if (fExitOnError)
+				Firebird::Syslog::Warning, Msg);
 			exit(1);
-#endif
-#endif //INFORM_ON_NO_CONF
+		}
+#endif //EXIT_ON_NO_CONF
 		return;
     }
     string inputLine;
