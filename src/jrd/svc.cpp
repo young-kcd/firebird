@@ -338,7 +338,7 @@ typedef const void (*PFN_SERV_t) ();
 
 static const serv services[] =
 {
-#if !(defined LINUX || defined FREEBSD || defined NETBSD)
+#if !(NOT_USED_OR_REPLACED)
 #ifdef WIN_NT
 	{ isc_action_max, "print_cache", "-svc", "bin/fb_cache_print", NULL, 0 },
 	{ isc_action_max, "print_locks", "-svc", "bin/fb_lock_print", NULL, 0 },
@@ -511,7 +511,7 @@ SVC SVC_attach(USHORT	service_length,
 			break;
 
 	if (!serv->serv_name)
-#if ((defined LINUX || defined FREEBSD || defined NETBSD) && !defined SUPERSERVER)
+#ifdef NOT_USED_OR_REPLACED
 		ERR_post(isc_service_att_err, isc_arg_gds, isc_service_not_supported,
 				 0);
 #else
