@@ -27,10 +27,11 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.fbudf,v 1.2 2004-04-30 23:02:07 brodsom Exp $
+#  $Id: Makefile.in.client.fbudf,v 1.3 2004-10-07 20:44:52 skidder Exp $
 #
 ROOT=..
 ObjModuleType=std
+CFLAGS:=@PTHREAD_CFLAGS@
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -76,9 +77,11 @@ lib_fbudf: $(UDF)/fbudf.$(SHRLIB_EXT)
 
 $(UDF)/fbudf.$(SHRLIB_EXT):	$(FBUDF_Objects) $(FBUTIL_Objects)
 ifeq ($(PLATFORM),win32)
-	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)fbudf.$(SHRLIB_EXT) -L$(LIB) -lfbclient -o $@ $^
+	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)fbudf.$(SHRLIB_EXT) \
+-L$(LIB) -lfbclient -o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 else
-	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)fbudf.$(SHRLIB_EXT) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^
+	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)fbudf.$(SHRLIB_EXT) \
+$(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 endif
 
 
