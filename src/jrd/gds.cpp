@@ -1871,7 +1871,7 @@ void API_ROUTINE gds__interprete_a(
 }
 
 
-void API_ROUTINE gds__log(TEXT * text, ...)
+void API_ROUTINE gds__log(const TEXT * text, ...)
 {
 /**************************************
  *

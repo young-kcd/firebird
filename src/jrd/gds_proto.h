@@ -86,7 +86,7 @@ void	API_ROUTINE isc_encode_timestamp(void*, GDS_TIMESTAMP*);
 ULONG	API_ROUTINE gds__free(void*);
 SLONG	API_ROUTINE gds__interprete(char*, ISC_STATUS**);
 void	API_ROUTINE gds__interprete_a(SCHAR*, SSHORT*, ISC_STATUS*, SSHORT*);
-void	API_ROUTINE gds__log(TEXT*, ...);
+void	API_ROUTINE gds__log(const TEXT*, ...);
 void	API_ROUTINE gds__log_status(TEXT*, ISC_STATUS*);
 int		API_ROUTINE gds__msg_close(void*);
 SSHORT	API_ROUTINE gds__msg_format(void*  handle,
