@@ -75,7 +75,7 @@ SortMem::MemoryBlock::~MemoryBlock()
 	gds__free(address);
 }
 
-size_t SortMem::MemoryBlock::read(STATUS *status, size_t position, char *buffer, size_t length)
+size_t SortMem::MemoryBlock::read(ISC_STATUS *status, size_t position, char *buffer, size_t length)
 {
 	// Read block from memory
 	if (position + length > size)
@@ -86,7 +86,7 @@ size_t SortMem::MemoryBlock::read(STATUS *status, size_t position, char *buffer,
 	return length;
 }
 
-size_t SortMem::MemoryBlock::write(STATUS *status, size_t position, char *buffer, size_t length)
+size_t SortMem::MemoryBlock::write(ISC_STATUS *status, size_t position, char *buffer, size_t length)
 {
 	// Write block to memory
 	if (position + length > size)
@@ -111,7 +111,7 @@ SortMem::FileBlock::~FileBlock()
 {
 }
 
-size_t SortMem::FileBlock::read(STATUS *status, size_t position, char *buffer, size_t length)
+size_t SortMem::FileBlock::read(ISC_STATUS *status, size_t position, char *buffer, size_t length)
 {
 	// Read block from file
 	if (position + length > size)
@@ -124,7 +124,7 @@ size_t SortMem::FileBlock::read(STATUS *status, size_t position, char *buffer, s
 //	return _read(file->sfb_file, buffer, length);
 }
 
-size_t SortMem::FileBlock::write(STATUS *status, size_t position, char *buffer, size_t length)
+size_t SortMem::FileBlock::write(ISC_STATUS *status, size_t position, char *buffer, size_t length)
 {
 	// Write block to file
 	if (position + length > size)
@@ -273,7 +273,7 @@ SortMem::Block* SortMem::seek(size_t &position)
 	return block;
 }
 
-size_t SortMem::read(STATUS *status, size_t position, char *address, size_t length)
+size_t SortMem::read(ISC_STATUS *status, size_t position, char *address, size_t length)
 {
 	// If we'are not allowed to use memory, don't waste time
 	// playing with all these memory blocks - just use scratch file and return
@@ -307,7 +307,7 @@ size_t SortMem::read(STATUS *status, size_t position, char *address, size_t leng
 	return position + copied;
 }
 
-size_t SortMem::write(STATUS *status, size_t position, char *address, size_t length)
+size_t SortMem::write(ISC_STATUS *status, size_t position, char *address, size_t length)
 {
 	// If we'are not allowed to use memory, don't waste time
 	// playing with all these memory blocks - just use scratch file and return

@@ -30,108 +30,108 @@ extern "C" {
 
 
 #ifndef JRD_IBASE_H
-extern STATUS API_ROUTINE isc_dsql_allocate_statement(STATUS *,
+extern ISC_STATUS API_ROUTINE isc_dsql_allocate_statement(ISC_STATUS *,
 													  FRBRD **,
 													  FRBRD **);
-extern STATUS API_ROUTINE isc_dsql_alloc_statement2(STATUS *, FRBRD **,
+extern ISC_STATUS API_ROUTINE isc_dsql_alloc_statement2(ISC_STATUS *, FRBRD **,
 													FRBRD **);
-extern STATUS API_ROUTINE isc_dsql_describe(STATUS *, FRBRD **, USHORT,
+extern ISC_STATUS API_ROUTINE isc_dsql_describe(ISC_STATUS *, FRBRD **, USHORT,
 											XSQLDA *);
-extern STATUS API_ROUTINE isc_dsql_describe_bind(STATUS *, FRBRD **,
+extern ISC_STATUS API_ROUTINE isc_dsql_describe_bind(ISC_STATUS *, FRBRD **,
 												 USHORT, XSQLDA *);
-extern STATUS API_ROUTINE isc_dsql_execute2(STATUS *, FRBRD **,
+extern ISC_STATUS API_ROUTINE isc_dsql_execute2(ISC_STATUS *, FRBRD **,
 											FRBRD **, USHORT, XSQLDA *,
 											XSQLDA *);
-extern STATUS API_ROUTINE isc_dsql_execute2_m(STATUS *, FRBRD **,
+extern ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS *, FRBRD **,
 											  FRBRD **, USHORT, SCHAR *,
 											  USHORT, USHORT, SCHAR *, USHORT,
 											  SCHAR *, USHORT, USHORT,
 											  SCHAR *);
-extern STATUS API_ROUTINE isc_dsql_execute_immediate(STATUS *, FRBRD **,
+extern ISC_STATUS API_ROUTINE isc_dsql_execute_immediate(ISC_STATUS *, FRBRD **,
 													 FRBRD **, USHORT,
 													 SCHAR *, USHORT,
 													 XSQLDA *);
-extern STATUS API_ROUTINE isc_dsql_exec_immed2(STATUS *, FRBRD **,
+extern ISC_STATUS API_ROUTINE isc_dsql_exec_immed2(ISC_STATUS *, FRBRD **,
 											   FRBRD **, USHORT,
 											   SCHAR *, USHORT, XSQLDA *,
 											   XSQLDA *);
-extern STATUS API_ROUTINE isc_dsql_execute_immediate_m(STATUS *,
+extern ISC_STATUS API_ROUTINE isc_dsql_execute_immediate_m(ISC_STATUS *,
 													   FRBRD **,
 													   FRBRD **, USHORT,
 													   SCHAR *, USHORT,
 													   USHORT, SCHAR *,
 													   USHORT, USHORT,
 													   SCHAR *);
-extern STATUS API_ROUTINE isc_dsql_exec_immed2_m(STATUS *, FRBRD **,
+extern ISC_STATUS API_ROUTINE isc_dsql_exec_immed2_m(ISC_STATUS *, FRBRD **,
 												 FRBRD **, USHORT,
 												 SCHAR *, USHORT, USHORT,
 												 SCHAR *, USHORT, USHORT,
 												 SCHAR *, USHORT, SCHAR *,
 												 USHORT, USHORT, SCHAR *);
-extern STATUS API_ROUTINE isc_dsql_exec_immed3_m(STATUS *, FRBRD **,
+extern ISC_STATUS API_ROUTINE isc_dsql_exec_immed3_m(ISC_STATUS *, FRBRD **,
 												 FRBRD **, USHORT,
 												 SCHAR *, USHORT, USHORT,
 												 SCHAR *, USHORT, USHORT,
 												 SCHAR *, USHORT, SCHAR *,
 												 USHORT, USHORT, SCHAR *);
-extern STATUS API_ROUTINE isc_dsql_fetch(STATUS *, FRBRD **, USHORT,
+extern ISC_STATUS API_ROUTINE isc_dsql_fetch(ISC_STATUS *, FRBRD **, USHORT,
 										 XSQLDA *);
 #ifdef SCROLLABLE_CURSORS
-extern STATUS API_ROUTINE isc_dsql_fetch2(STATUS *, FRBRD **, USHORT,
+extern ISC_STATUS API_ROUTINE isc_dsql_fetch2(ISC_STATUS *, FRBRD **, USHORT,
 										  XSQLDA *, USHORT, SLONG);
 #endif
-extern STATUS API_ROUTINE isc_dsql_fetch_m(STATUS *, FRBRD **, USHORT,
+extern ISC_STATUS API_ROUTINE isc_dsql_fetch_m(ISC_STATUS *, FRBRD **, USHORT,
 										   SCHAR *, USHORT, USHORT, SCHAR *);
 #ifdef SCROLLABLE_CURSORS
-extern STATUS API_ROUTINE isc_dsql_fetch2_m(STATUS *, FRBRD **, USHORT,
+extern ISC_STATUS API_ROUTINE isc_dsql_fetch2_m(ISC_STATUS *, FRBRD **, USHORT,
 											SCHAR *, USHORT, USHORT, SCHAR *,
 											USHORT, SLONG);
 #endif
-extern STATUS API_ROUTINE isc_dsql_free_statement(STATUS *, FRBRD **,
+extern ISC_STATUS API_ROUTINE isc_dsql_free_statement(ISC_STATUS *, FRBRD **,
 												  USHORT);
-extern STATUS API_ROUTINE isc_dsql_insert(STATUS *, FRBRD **, USHORT,
+extern ISC_STATUS API_ROUTINE isc_dsql_insert(ISC_STATUS *, FRBRD **, USHORT,
 										  XSQLDA *);
-extern STATUS API_ROUTINE isc_dsql_insert_m(STATUS *, FRBRD **, USHORT,
+extern ISC_STATUS API_ROUTINE isc_dsql_insert_m(ISC_STATUS *, FRBRD **, USHORT,
 											SCHAR *, USHORT, USHORT, SCHAR *);
-extern STATUS API_ROUTINE isc_dsql_prepare(STATUS *, FRBRD **,
+extern ISC_STATUS API_ROUTINE isc_dsql_prepare(ISC_STATUS *, FRBRD **,
 										   FRBRD **, USHORT, SCHAR *,
 										   USHORT, XSQLDA *);
-extern STATUS API_ROUTINE isc_dsql_prepare_m(STATUS *, FRBRD **,
+extern ISC_STATUS API_ROUTINE isc_dsql_prepare_m(ISC_STATUS *, FRBRD **,
 											 FRBRD **, USHORT, SCHAR *,
 											 USHORT, USHORT, const SCHAR *, USHORT,
 											 SCHAR *);
-extern STATUS API_ROUTINE isc_dsql_set_cursor_name(STATUS *, FRBRD **,
+extern ISC_STATUS API_ROUTINE isc_dsql_set_cursor_name(ISC_STATUS *, FRBRD **,
 												   SCHAR *, USHORT);
-extern STATUS API_ROUTINE isc_dsql_sql_info(STATUS *, FRBRD **, SSHORT,
+extern ISC_STATUS API_ROUTINE isc_dsql_sql_info(ISC_STATUS *, FRBRD **, SSHORT,
 											const SCHAR *, SSHORT, SCHAR *);
-extern STATUS API_ROUTINE isc_prepare_transaction2(STATUS *, FRBRD **, USHORT,
+extern ISC_STATUS API_ROUTINE isc_prepare_transaction2(ISC_STATUS *, FRBRD **, USHORT,
 												   UCHAR *);
 typedef void event_ast_routine(UCHAR*, USHORT, UCHAR*);
-extern STATUS API_ROUTINE isc_que_events(STATUS *, FRBRD **, SLONG *,
+extern ISC_STATUS API_ROUTINE isc_que_events(ISC_STATUS *, FRBRD **, SLONG *,
 										 USHORT, UCHAR *, event_ast_routine *, void *);
 #ifdef SCROLLABLE_CURSORS
-extern STATUS API_ROUTINE isc_receive2(STATUS *, FRBRD **, USHORT,
+extern ISC_STATUS API_ROUTINE isc_receive2(ISC_STATUS *, FRBRD **, USHORT,
 									   USHORT, SCHAR *, SSHORT, USHORT,
 									   ULONG);
 #endif
-extern STATUS API_ROUTINE isc_rollback_transaction(STATUS *, FRBRD **);
-extern STATUS API_ROUTINE_VARARG isc_start_transaction(STATUS *,
+extern ISC_STATUS API_ROUTINE isc_rollback_transaction(ISC_STATUS *, FRBRD **);
+extern ISC_STATUS API_ROUTINE_VARARG isc_start_transaction(ISC_STATUS *,
 													   FRBRD **, SSHORT,
 													   ...);
 #endif
 
 #ifdef CANCEL_OPERATION
-extern STATUS API_ROUTINE gds__cancel_operation(STATUS *, FRBRD **,
+extern ISC_STATUS API_ROUTINE gds__cancel_operation(ISC_STATUS *, FRBRD **,
 												USHORT);
 #endif
 typedef void DatabaseCleanupRoutine(FRBRD **, SLONG);
-extern STATUS API_ROUTINE gds__database_cleanup(STATUS *, FRBRD **,
+extern ISC_STATUS API_ROUTINE gds__database_cleanup(ISC_STATUS *, FRBRD **,
 												DatabaseCleanupRoutine *, SLONG);
 extern int API_ROUTINE gds__disable_subsystem(TEXT *);
 extern int API_ROUTINE gds__enable_subsystem(TEXT *);
-extern STATUS gds__handle_cleanup(STATUS *, FRBRD **);
+extern ISC_STATUS gds__handle_cleanup(ISC_STATUS *, FRBRD **);
 typedef void TransactionCleanupRoutine(FRBRD *, SLONG);
-extern STATUS API_ROUTINE gds__transaction_cleanup(STATUS *, FRBRD **,
+extern ISC_STATUS API_ROUTINE gds__transaction_cleanup(ISC_STATUS *, FRBRD **,
 												   TransactionCleanupRoutine *, SLONG);
 
 #ifdef SERVER_SHUTDOWN

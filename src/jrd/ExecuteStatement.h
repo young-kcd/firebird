@@ -41,7 +41,7 @@ private:
 	SCHAR	* Buffer;
 	bool	SingleMode;
 	XSQLDA	* MakeSqlda(TDBB tdbb, SSHORT n);
-	STATUS	ReMakeSqlda(STATUS *vector, TDBB tdbb);
+	ISC_STATUS	ReMakeSqlda(ISC_STATUS *vector, TDBB tdbb);
 	SSHORT	ParseSqlda(void);
 public:
 	void Open(TDBB tdbb, JRD_NOD sql, SSHORT nVars, bool SingleTon);

@@ -40,16 +40,16 @@ extern SLONG PIO_max_alloc(struct dbb *);
 extern SLONG PIO_act_alloc(struct dbb *);
 extern struct fil *PIO_open(struct dbb *, TEXT *, SSHORT, SSHORT,
 							struct blk *, TEXT *, USHORT);
-extern int PIO_read(struct fil *, struct bdb *, struct pag *, STATUS *);
+extern int PIO_read(struct fil *, struct bdb *, struct pag *, ISC_STATUS *);
 
 #ifdef SUPERSERVER_V2
 extern int PIO_read_ahead(struct dbb *, SLONG, SCHAR *, SLONG, struct piob *,
-						  STATUS *);
-extern int PIO_status(struct piob *, STATUS *);
+						  ISC_STATUS *);
+extern int PIO_status(struct piob *, ISC_STATUS *);
 #endif
 
 extern int PIO_unlink(TEXT *);
-extern int PIO_write(struct fil *, struct bdb *, struct pag *, STATUS *);
+extern int PIO_write(struct fil *, struct bdb *, struct pag *, ISC_STATUS *);
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -70,9 +70,9 @@ static void release_io_event(FIL, OVERLAPPED *);
 #endif
 static ULONG get_number_of_pages(FIL, USHORT);
 static bool	MaybeCloseFile(SLONG *);
-static FIL seek_file(FIL, BDB, STATUS *, OVERLAPPED *, OVERLAPPED **);
+static FIL seek_file(FIL, BDB, ISC_STATUS *, OVERLAPPED *, OVERLAPPED **);
 static FIL setup_file(DBB, TEXT *, USHORT, HANDLE);
-static BOOLEAN nt_error(TEXT *, FIL, STATUS, STATUS *);
+static BOOLEAN nt_error(TEXT *, FIL, ISC_STATUS, ISC_STATUS *);
 
 static USHORT ostype;
 
@@ -570,7 +570,7 @@ FIL PIO_open(DBB dbb,
 }
 
 
-int PIO_read(FIL file, BDB bdb, PAG page, STATUS * status_vector)
+int PIO_read(FIL file, BDB bdb, PAG page, ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -652,7 +652,7 @@ int PIO_read_ahead(DBB		dbb,
 				   SCHAR*	buffer,
 				   SLONG	pages,
 				   PIOB		piob,
-				   STATUS*	status_vector)
+				   ISC_STATUS*	status_vector)
 {
 /**************************************
  *
@@ -754,7 +754,7 @@ int PIO_read_ahead(DBB		dbb,
 
 
 #ifdef SUPERSERVER_V2
-int PIO_status(PIOB piob, STATUS * status_vector)
+int PIO_status(PIOB piob, ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -790,7 +790,7 @@ int PIO_status(PIOB piob, STATUS * status_vector)
 #endif
 
 
-int PIO_write(FIL file, BDB bdb, PAG page, STATUS* status_vector)
+int PIO_write(FIL file, BDB bdb, PAG page, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -935,7 +935,7 @@ static void release_io_event(FIL file, OVERLAPPED* overlapped)
 
 static FIL seek_file(FIL			file,
 					 BDB			bdb,
-					 STATUS*		status_vector,
+					 ISC_STATUS*		status_vector,
 					 OVERLAPPED*	overlapped,
 					 OVERLAPPED**	overlapped_ptr)
 {
@@ -1135,8 +1135,8 @@ static bool MaybeCloseFile(SLONG* pFile)
 
 static BOOLEAN nt_error(TEXT*	string,
 						FIL		file,
-						STATUS	operation,
-						STATUS*	status_vector)
+						ISC_STATUS	operation,
+						ISC_STATUS*	status_vector)
 {
 /**************************************
  *
@@ -1154,10 +1154,10 @@ static BOOLEAN nt_error(TEXT*	string,
 		*status_vector++ = isc_arg_gds;
 		*status_vector++ = isc_io_error;
 		*status_vector++ = gds_arg_string;
-		*status_vector++ = (STATUS) string;
+		*status_vector++ = (ISC_STATUS) string;
 		*status_vector++ = gds_arg_string;
 		*status_vector++ =
-			(STATUS) ERR_string(file->fil_string, file->fil_length);
+			(ISC_STATUS) ERR_string(file->fil_string, file->fil_length);
 		*status_vector++ = isc_arg_gds;
 		*status_vector++ = operation;
 		*status_vector++ = gds_arg_win32;

@@ -68,7 +68,7 @@ BOOLEAN		CCH_rollover_to_shadow(struct dbb *, struct fil *, BOOLEAN);
 void		CCH_unwind(TDBB, BOOLEAN);
 BOOLEAN		CCH_validate(struct win *);
 BOOLEAN		CCH_write_all_shadows(TDBB, struct sdw *, struct bdb *,
-									 STATUS *, USHORT, BOOLEAN);
+					 ISC_STATUS *, USHORT, BOOLEAN);
 
 /* macros for dealing with cache pages */
 

@@ -62,8 +62,8 @@ typedef struct teb {
 	UCHAR *teb_tpb;
 } TEB;
 
-FRBRD *open_security_db(STATUS *, TEXT *, TEXT *, int, TEXT *);
-void get_security_error(STATUS *, int);
+FRBRD *open_security_db(ISC_STATUS *, TEXT *, TEXT *, int, TEXT *);
+void get_security_error(ISC_STATUS *, int);
 
 SLONG API_ROUTINE_VARARG isc_event_block(SCHAR ** event_buffer,
 										 SCHAR ** result_buffer,
@@ -252,13 +252,13 @@ TEXT ** name_buffer, USHORT * return_count)
 }
 
 
-STATUS API_ROUTINE_VARARG gds__start_transaction(
-												 STATUS * status_vector,
+ISC_STATUS API_ROUTINE_VARARG gds__start_transaction(
+												 ISC_STATUS * status_vector,
 												 FRBRD **tra_handle,
 												 SSHORT count, ...)
 {
 	TEB tebs[16], *teb, *end;
-	STATUS status;
+	ISC_STATUS status;
 	va_list ptr;
 
 	if (count <= FB_NELEM(tebs))
@@ -294,7 +294,7 @@ STATUS API_ROUTINE_VARARG gds__start_transaction(
 }
 
 
-STATUS API_ROUTINE gds__attach_database(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__attach_database(ISC_STATUS * status_vector,
 										SSHORT file_length,
 										SCHAR * file_name,
 										FRBRD **db_handle,
@@ -306,7 +306,7 @@ STATUS API_ROUTINE gds__attach_database(STATUS * status_vector,
 							   GDS_VAL(db_handle), dpb_length, GDS_VAL(dpb));
 }
 
-STATUS API_ROUTINE gds__blob_info(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__blob_info(ISC_STATUS * status_vector,
 								  FRBRD **blob_handle,
 								  SSHORT msg_length,
 								  SCHAR * msg,
@@ -318,38 +318,38 @@ STATUS API_ROUTINE gds__blob_info(STATUS * status_vector,
 						 GDS_VAL(msg), buffer_length, GDS_VAL(buffer));
 }
 
-STATUS API_ROUTINE gds__cancel_blob(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__cancel_blob(ISC_STATUS * status_vector,
 									FRBRD **blob_handle)
 {
 	return isc_cancel_blob(GDS_VAL(status_vector), GDS_VAL(blob_handle));
 }
 
-STATUS API_ROUTINE gds__cancel_events(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__cancel_events(ISC_STATUS * status_vector,
 									  FRBRD **db_handle, SLONG * event_id)
 {
 	return isc_cancel_events(GDS_VAL(status_vector),
 							 GDS_VAL(db_handle), GDS_VAL(event_id));
 }
 
-STATUS API_ROUTINE gds__close_blob(STATUS * status_vector, FRBRD **blob_handle)
+ISC_STATUS API_ROUTINE gds__close_blob(ISC_STATUS * status_vector, FRBRD **blob_handle)
 {
 	return isc_close_blob(GDS_VAL(status_vector), GDS_VAL(blob_handle));
 }
 
-STATUS API_ROUTINE gds__commit_retaining(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__commit_retaining(ISC_STATUS * status_vector,
 										 FRBRD **tra_handle)
 {
 	return isc_commit_retaining(GDS_VAL(status_vector), GDS_VAL(tra_handle));
 }
 
-STATUS API_ROUTINE gds__commit_transaction(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__commit_transaction(ISC_STATUS * status_vector,
 										   FRBRD **tra_handle)
 {
 	return isc_commit_transaction(GDS_VAL(status_vector),
 								  GDS_VAL(tra_handle));
 }
 
-STATUS API_ROUTINE gds__compile_request(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__compile_request(ISC_STATUS * status_vector,
 										FRBRD **db_handle,
 										FRBRD **req_handle,
 										SSHORT blr_length, SCHAR * blr)
@@ -359,7 +359,7 @@ STATUS API_ROUTINE gds__compile_request(STATUS * status_vector,
 							   GDS_VAL(req_handle), blr_length, GDS_VAL(blr));
 }
 
-STATUS API_ROUTINE gds__compile_request2(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__compile_request2(ISC_STATUS * status_vector,
 										 FRBRD **db_handle,
 										 FRBRD **req_handle,
 										 SSHORT blr_length, SCHAR * blr)
@@ -370,7 +370,7 @@ STATUS API_ROUTINE gds__compile_request2(STATUS * status_vector,
 								blr_length, GDS_VAL(blr));
 }
 
-STATUS API_ROUTINE gds__create_blob(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__create_blob(ISC_STATUS * status_vector,
 									FRBRD **db_handle,
 									FRBRD **tra_handle,
 									FRBRD **blob_handle, GDS_QUAD * blob_id)
@@ -381,7 +381,7 @@ STATUS API_ROUTINE gds__create_blob(STATUS * status_vector,
 						   GDS_VAL(blob_handle), GDS_VAL(blob_id));
 }
 
-STATUS API_ROUTINE gds__create_blob2(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__create_blob2(ISC_STATUS * status_vector,
 									 FRBRD **db_handle,
 									 FRBRD **tra_handle,
 									 FRBRD **blob_handle,
@@ -395,7 +395,7 @@ STATUS API_ROUTINE gds__create_blob2(STATUS * status_vector,
 							GDS_VAL(blob_id), bpb_length, GDS_VAL(bpb));
 }
 
-STATUS API_ROUTINE gds__create_database(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__create_database(ISC_STATUS * status_vector,
 										SSHORT file_length,
 										SCHAR * file_name,
 										FRBRD **db_handle,
@@ -409,7 +409,7 @@ STATUS API_ROUTINE gds__create_database(STATUS * status_vector,
 							   dpb_length, GDS_VAL(dpb), db_type);
 }
 
-STATUS API_ROUTINE isc_database_cleanup(STATUS * status_vector,
+ISC_STATUS API_ROUTINE isc_database_cleanup(ISC_STATUS * status_vector,
 										FRBRD **db_handle,
 										DatabaseCleanupRoutine *routine, SCHAR * arg)
 {
@@ -419,7 +419,7 @@ STATUS API_ROUTINE isc_database_cleanup(STATUS * status_vector,
 								 routine, (SLONG) arg);
 }
 
-STATUS API_ROUTINE gds__database_info(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__database_info(ISC_STATUS * status_vector,
 									  FRBRD **db_handle,
 									  SSHORT msg_length,
 									  SCHAR * msg,
@@ -431,13 +431,13 @@ STATUS API_ROUTINE gds__database_info(STATUS * status_vector,
 							 GDS_VAL(msg), buffer_length, GDS_VAL(buffer));
 }
 
-STATUS API_ROUTINE gds__detach_database(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__detach_database(ISC_STATUS * status_vector,
 										FRBRD **db_handle)
 {
 	return isc_detach_database(GDS_VAL(status_vector), GDS_VAL(db_handle));
 }
 
-STATUS API_ROUTINE gds__get_segment(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__get_segment(ISC_STATUS * status_vector,
 									FRBRD **blob_handle,
 									USHORT * return_length,
 									USHORT buffer_length, SCHAR * buffer)
@@ -448,7 +448,7 @@ STATUS API_ROUTINE gds__get_segment(STATUS * status_vector,
 						   buffer_length, GDS_VAL(buffer));
 }
 
-STATUS API_ROUTINE gds__get_slice(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__get_slice(ISC_STATUS * status_vector,
 								  FRBRD **db_handle,
 								  FRBRD **tra_handle,
 								  GDS_QUAD * array_id,
@@ -471,7 +471,7 @@ STATUS API_ROUTINE gds__get_slice(STATUS * status_vector,
 						 GDS_VAL((SCHAR *) slice), GDS_VAL(return_length));
 }
 
-STATUS API_ROUTINE gds__open_blob(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__open_blob(ISC_STATUS * status_vector,
 								  FRBRD **db_handle,
 								  FRBRD **tra_handle,
 								  FRBRD **blob_handle, GDS_QUAD * blob_id)
@@ -482,7 +482,7 @@ STATUS API_ROUTINE gds__open_blob(STATUS * status_vector,
 						 GDS_VAL(blob_handle), GDS_VAL(blob_id));
 }
 
-STATUS API_ROUTINE gds__open_blob2(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__open_blob2(ISC_STATUS * status_vector,
 								   FRBRD **db_handle,
 								   FRBRD **tra_handle,
 								   FRBRD **blob_handle,
@@ -498,14 +498,14 @@ STATUS API_ROUTINE gds__open_blob2(STATUS * status_vector,
 						  reinterpret_cast<UCHAR*>(GDS_VAL(bpb)));
 }
 
-STATUS API_ROUTINE gds__prepare_transaction(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__prepare_transaction(ISC_STATUS * status_vector,
 											FRBRD **tra_handle)
 {
 	return isc_prepare_transaction(GDS_VAL(status_vector),
 								   GDS_VAL(tra_handle));
 }
 
-STATUS API_ROUTINE gds__prepare_transaction2(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__prepare_transaction2(ISC_STATUS * status_vector,
 											 FRBRD **tra_handle,
 											 SSHORT msg_length, SCHAR * msg)
 {
@@ -515,7 +515,7 @@ STATUS API_ROUTINE gds__prepare_transaction2(STATUS * status_vector,
 									reinterpret_cast<UCHAR*>(GDS_VAL(msg)));
 }
 
-STATUS API_ROUTINE gds__put_segment(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__put_segment(ISC_STATUS * status_vector,
 									FRBRD **blob_handle,
 									USHORT segment_length, SCHAR * segment)
 {
@@ -524,7 +524,7 @@ STATUS API_ROUTINE gds__put_segment(STATUS * status_vector,
 						   segment_length, GDS_VAL(segment));
 }
 
-STATUS API_ROUTINE gds__put_slice(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__put_slice(ISC_STATUS * status_vector,
 								  FRBRD **db_handle,
 								  FRBRD **tra_handle,
 								  GDS_QUAD * array_id,
@@ -545,7 +545,7 @@ STATUS API_ROUTINE gds__put_slice(STATUS * status_vector,
 						 slice_length, GDS_VAL((SCHAR *) slice));
 }
 
-STATUS API_ROUTINE gds__que_events(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__que_events(ISC_STATUS * status_vector,
 								   FRBRD **db_handle,
 								   SLONG * event_id,
 								   SSHORT events_length,
@@ -561,7 +561,7 @@ STATUS API_ROUTINE gds__que_events(STATUS * status_vector,
 						  GDS_VAL((int *) ast_argument));
 }
 
-STATUS API_ROUTINE gds__receive(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__receive(ISC_STATUS * status_vector,
 								FRBRD **req_handle,
 								SSHORT msg_type,
 								SSHORT msg_length,
@@ -573,7 +573,7 @@ STATUS API_ROUTINE gds__receive(STATUS * status_vector,
 					   msg_length, GDS_VAL((SCHAR *) msg), req_level);
 }
 
-STATUS API_ROUTINE gds__reconnect_transaction(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__reconnect_transaction(ISC_STATUS * status_vector,
 											  FRBRD **db_handle,
 											  FRBRD **tra_handle,
 											  SSHORT msg_length, SCHAR * msg)
@@ -584,13 +584,13 @@ STATUS API_ROUTINE gds__reconnect_transaction(STATUS * status_vector,
 									 msg_length, GDS_VAL(msg));
 }
 
-STATUS API_ROUTINE gds__release_request(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__release_request(ISC_STATUS * status_vector,
 										FRBRD **req_handle)
 {
 	return isc_release_request(GDS_VAL(status_vector), GDS_VAL(req_handle));
 }
 
-STATUS API_ROUTINE gds__request_info(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__request_info(ISC_STATUS * status_vector,
 									 FRBRD **req_handle,
 									 SSHORT req_level,
 									 SSHORT msg_length,
@@ -604,14 +604,14 @@ STATUS API_ROUTINE gds__request_info(STATUS * status_vector,
 							GDS_VAL(msg), buffer_length, GDS_VAL(buffer));
 }
 
-STATUS API_ROUTINE gds__rollback_transaction(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__rollback_transaction(ISC_STATUS * status_vector,
 											 FRBRD **tra_handle)
 {
 	return isc_rollback_transaction(GDS_VAL(status_vector),
 									GDS_VAL(tra_handle));
 }
 
-STATUS API_ROUTINE gds__seek_blob(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__seek_blob(ISC_STATUS * status_vector,
 								  FRBRD **blob_handle,
 								  SSHORT mode, SLONG offset, SLONG * result)
 {
@@ -619,7 +619,7 @@ STATUS API_ROUTINE gds__seek_blob(STATUS * status_vector,
 						 GDS_VAL(blob_handle), mode, offset, GDS_VAL(result));
 }
 
-STATUS API_ROUTINE gds__send(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__send(ISC_STATUS * status_vector,
 							 FRBRD **req_handle,
 							 SSHORT msg_type,
 							 SSHORT msg_length, void *msg, SSHORT req_level)
@@ -629,7 +629,7 @@ STATUS API_ROUTINE gds__send(STATUS * status_vector,
 					msg_type, msg_length, GDS_VAL((SCHAR *) msg), req_level);
 }
 
-STATUS API_ROUTINE gds__start_and_send(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__start_and_send(ISC_STATUS * status_vector,
 									   FRBRD **req_handle,
 									   FRBRD **tra_handle,
 									   SSHORT msg_type,
@@ -643,7 +643,7 @@ STATUS API_ROUTINE gds__start_and_send(STATUS * status_vector,
 							  msg_length, GDS_VAL((SCHAR *) msg), req_level);
 }
 
-STATUS API_ROUTINE gds__start_multiple(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__start_multiple(ISC_STATUS * status_vector,
 									   FRBRD **tra_handle,
 									   SSHORT db_count, void *teb_vector)
 {
@@ -652,7 +652,7 @@ STATUS API_ROUTINE gds__start_multiple(STATUS * status_vector,
 							  db_count, GDS_VAL((SCHAR *) teb_vector));
 }
 
-STATUS API_ROUTINE gds__start_request(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__start_request(ISC_STATUS * status_vector,
 									  FRBRD **req_handle,
 									  FRBRD **tra_handle, SSHORT req_level)
 {
@@ -661,7 +661,7 @@ STATUS API_ROUTINE gds__start_request(STATUS * status_vector,
 							 GDS_VAL(tra_handle), req_level);
 }
 
-STATUS API_ROUTINE gds__transaction_info(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__transaction_info(ISC_STATUS * status_vector,
 										 FRBRD **tra_handle,
 										 SSHORT msg_length,
 										 SCHAR * msg,
@@ -673,14 +673,14 @@ STATUS API_ROUTINE gds__transaction_info(STATUS * status_vector,
 								GDS_VAL(msg), buffer_length, GDS_VAL(buffer));
 }
 
-STATUS API_ROUTINE gds__unwind_request(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__unwind_request(ISC_STATUS * status_vector,
 									   FRBRD **req_handle, SSHORT req_level)
 {
 	return isc_unwind_request(GDS_VAL(status_vector),
 							  GDS_VAL(req_handle), req_level);
 }
 
-STATUS API_ROUTINE gds__ddl(STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__ddl(ISC_STATUS * status_vector,
 							FRBRD **db_handle,
 							FRBRD **tra_handle, SSHORT ddl_length, SCHAR * ddl)
 {
@@ -725,7 +725,7 @@ int API_ROUTINE isc_get_client_minor_version()
 	return gds__get_client_minor_version();
 }
 
-STATUS API_ROUTINE isc_print_blr(SCHAR * blr,
+ISC_STATUS API_ROUTINE isc_print_blr(SCHAR * blr,
 								 void (*callback) (),
 								 void *callback_argument, SSHORT language)
 {
@@ -733,7 +733,7 @@ STATUS API_ROUTINE isc_print_blr(SCHAR * blr,
 						  (SCHAR *) callback_argument, language);
 }
 
-STATUS API_ROUTINE isc_print_status(STATUS * status_vector)
+ISC_STATUS API_ROUTINE isc_print_status(ISC_STATUS * status_vector)
 {
 	return gds__print_status(GDS_VAL(status_vector));
 }
@@ -743,12 +743,12 @@ void API_ROUTINE isc_qtoq(GDS_QUAD * quad1, GDS_QUAD * quad2)
 	gds__qtoq(quad1, quad2);
 }
 
-SLONG API_ROUTINE isc_sqlcode(STATUS * status_vector)
+SLONG API_ROUTINE isc_sqlcode(ISC_STATUS * status_vector)
 {
 	return gds__sqlcode(GDS_VAL(status_vector));
 }
 
-void API_ROUTINE isc_sqlcode_s(STATUS * status_vector, ULONG * sqlcode)
+void API_ROUTINE isc_sqlcode_s(ISC_STATUS * status_vector, ULONG * sqlcode)
 {
 	*sqlcode = gds__sqlcode(status_vector);
 	return;
@@ -780,7 +780,7 @@ SLONG API_ROUTINE isc_vax_integer(SCHAR * input, SSHORT length)
 }
 
 #ifndef REQUESTER
-STATUS API_ROUTINE isc_wait_for_event(STATUS * status_vector,
+ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS * status_vector,
 									  FRBRD **db_handle,
 									  SSHORT events_length,
 									  SCHAR * events, SCHAR * events_update)
@@ -792,7 +792,7 @@ STATUS API_ROUTINE isc_wait_for_event(STATUS * status_vector,
 }
 #endif
 
-STATUS API_ROUTINE isc_interprete(SCHAR * buffer, STATUS ** status_vector_p)
+ISC_STATUS API_ROUTINE isc_interprete(SCHAR * buffer, ISC_STATUS ** status_vector_p)
 {
 	return gds__interprete(buffer, status_vector_p);
 }
@@ -814,7 +814,7 @@ void API_ROUTINE isc_set_debug(int flag)
 }
 
 int API_ROUTINE isc_blob_display(
-								 STATUS * status_vector,
+								 ISC_STATUS * status_vector,
 								 GDS_QUAD * blob_id,
 								 FRBRD **database,
 								 FRBRD **transaction,
@@ -839,7 +839,7 @@ int API_ROUTINE isc_blob_display(
 }
 
 int API_ROUTINE isc_blob_dump(
-							  STATUS * status_vector,
+							  ISC_STATUS * status_vector,
 							  GDS_QUAD * blob_id,
 							  FRBRD **database,
 							  FRBRD **transaction,
@@ -865,7 +865,7 @@ int API_ROUTINE isc_blob_dump(
 }
 
 int API_ROUTINE isc_blob_edit(
-							  STATUS * status_vector,
+							  ISC_STATUS * status_vector,
 							  GDS_QUAD * blob_id,
 							  FRBRD **database,
 							  FRBRD **transaction,
@@ -890,7 +890,7 @@ int API_ROUTINE isc_blob_edit(
 					  name_length);
 }
 
-int API_ROUTINE isc_add_user(STATUS * status, USER_SEC_DATA * user_data)
+int API_ROUTINE isc_add_user(ISC_STATUS * status, USER_SEC_DATA * user_data)
 {
 /**************************************
  *
@@ -1037,7 +1037,7 @@ return 1;
 								 user_data->dba_password,
 								 user_data->protocol, user_data->server);
 	if (db_handle) {
-		STATUS user_status[ISC_STATUS_LENGTH];
+		ISC_STATUS user_status[ISC_STATUS_LENGTH];
 		retval = SECURITY_exec_line(status, db_handle, &userInfo, NULL, NULL);
 		/* if retval != 0 then there was a gsec error */
 		if (retval)
@@ -1050,7 +1050,7 @@ return 1;
 }
 
 int API_ROUTINE isc_blob_load(
-							  STATUS * status_vector,
+							  ISC_STATUS * status_vector,
 							  GDS_QUAD * blob_id,
 							  FRBRD **database,
 							  FRBRD **transaction,
@@ -1075,7 +1075,7 @@ int API_ROUTINE isc_blob_load(
 					  name_length);
 }
 
-int API_ROUTINE isc_delete_user(STATUS * status, USER_SEC_DATA * user_data)
+int API_ROUTINE isc_delete_user(ISC_STATUS * status, USER_SEC_DATA * user_data)
 {
 /**************************************
  *
@@ -1128,7 +1128,7 @@ return 1;
 								 user_data->dba_password,
 								 user_data->protocol, user_data->server);
 	if (db_handle) {
-		STATUS user_status[ISC_STATUS_LENGTH];
+		ISC_STATUS user_status[ISC_STATUS_LENGTH];
 		retval = SECURITY_exec_line(status, db_handle, &userInfo, NULL, NULL);
 		/* if retval != 0 then there was a gsec error */
 		if (retval)
@@ -1140,7 +1140,7 @@ return 1;
 #endif
 }
 
-int API_ROUTINE isc_modify_user(STATUS * status, USER_SEC_DATA * user_data)
+int API_ROUTINE isc_modify_user(ISC_STATUS * status, USER_SEC_DATA * user_data)
 {
 /**************************************
  *
@@ -1284,7 +1284,7 @@ return 1;
 								 user_data->dba_password,
 								 user_data->protocol, user_data->server);
 	if (db_handle) {
-		STATUS user_status[ISC_STATUS_LENGTH];
+		ISC_STATUS user_status[ISC_STATUS_LENGTH];
 		retval = SECURITY_exec_line(status, db_handle, &userInfo, NULL, NULL);
 		/* if retval != 0 then there was a gsec error */
 		if (retval)
@@ -1296,7 +1296,7 @@ return 1;
 }
 
 FRBRD *open_security_db(
-					   STATUS * status,
+					   ISC_STATUS * status,
 					   TEXT * username,
 					   TEXT * password, int protocol, TEXT * server)
 {
@@ -1379,7 +1379,7 @@ return 0;
 #endif
 }
 
-void get_security_error(STATUS * status, int gsec_err)
+void get_security_error(ISC_STATUS * status, int gsec_err)
 {
 /**************************************
  *

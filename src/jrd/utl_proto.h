@@ -79,7 +79,7 @@ extern int API_ROUTINE blob__load(SLONG *, FRBRD **, FRBRD **, TEXT *,
 extern int API_ROUTINE BLOB_put(SCHAR, struct bstream *);
 
 #ifdef VMS
-extern STATUS API_ROUTINE gds__attach_database_d(STATUS *,
+extern ISC_STATUS API_ROUTINE gds__attach_database_d(ISC_STATUS *,
 												 struct dsc$descriptor_s *,
 												 int, SSHORT, SCHAR *,
 												 SSHORT);

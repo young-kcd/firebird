@@ -44,92 +44,92 @@ extern "C" {
 #endif
 
 
-extern STATUS DLL_EXPORT jrd8_attach_database(STATUS *, SSHORT, TEXT *,
+extern ISC_STATUS DLL_EXPORT jrd8_attach_database(ISC_STATUS *, SSHORT, TEXT *,
 											  struct att **, SSHORT, UCHAR *,
 											  TEXT *);
-extern STATUS DLL_EXPORT jrd8_blob_info(STATUS *, struct blb **, SSHORT,
+extern ISC_STATUS DLL_EXPORT jrd8_blob_info(ISC_STATUS *, struct blb **, SSHORT,
 										SCHAR *, SSHORT, SCHAR *);
-extern STATUS DLL_EXPORT jrd8_cancel_blob(STATUS *, struct blb **);
-extern STATUS DLL_EXPORT jrd8_cancel_events(STATUS *, struct att **, SLONG *);
+extern ISC_STATUS DLL_EXPORT jrd8_cancel_blob(ISC_STATUS *, struct blb **);
+extern ISC_STATUS DLL_EXPORT jrd8_cancel_events(ISC_STATUS *, struct att **, SLONG *);
 #ifdef CANCEL_OPERATION
-extern STATUS DLL_EXPORT jrd8_cancel_operation(STATUS *, struct att **,
+extern ISC_STATUS DLL_EXPORT jrd8_cancel_operation(ISC_STATUS *, struct att **,
 											   USHORT);
 #endif
-extern STATUS DLL_EXPORT jrd8_close_blob(STATUS *, struct blb **);
-extern STATUS DLL_EXPORT jrd8_commit_transaction(STATUS *, struct jrd_tra **);
-extern STATUS DLL_EXPORT jrd8_commit_retaining(STATUS *, struct jrd_tra **);
-extern STATUS DLL_EXPORT jrd8_compile_request(STATUS *, struct att **,
+extern ISC_STATUS DLL_EXPORT jrd8_close_blob(ISC_STATUS *, struct blb **);
+extern ISC_STATUS DLL_EXPORT jrd8_commit_transaction(ISC_STATUS *, struct jrd_tra **);
+extern ISC_STATUS DLL_EXPORT jrd8_commit_retaining(ISC_STATUS *, struct jrd_tra **);
+extern ISC_STATUS DLL_EXPORT jrd8_compile_request(ISC_STATUS *, struct att **,
 											  struct jrd_req **, SSHORT, SCHAR *);
-extern STATUS DLL_EXPORT jrd8_create_blob2(STATUS *, struct att **,
+extern ISC_STATUS DLL_EXPORT jrd8_create_blob2(ISC_STATUS *, struct att **,
 										   struct jrd_tra **, struct blb **,
 										   struct bid *, USHORT, UCHAR *);
-extern STATUS DLL_EXPORT jrd8_create_database(STATUS *, USHORT, TEXT *,
+extern ISC_STATUS DLL_EXPORT jrd8_create_database(ISC_STATUS *, USHORT, TEXT *,
 											  struct att **, USHORT, UCHAR *,
 											  USHORT, TEXT *);
-extern STATUS DLL_EXPORT jrd8_database_info(STATUS *, struct att **, SSHORT,
+extern ISC_STATUS DLL_EXPORT jrd8_database_info(ISC_STATUS *, struct att **, SSHORT,
 											SCHAR *, SSHORT, SCHAR *);
-extern STATUS DLL_EXPORT jrd8_ddl(STATUS *, struct att **, struct jrd_tra **,
+extern ISC_STATUS DLL_EXPORT jrd8_ddl(ISC_STATUS *, struct att **, struct jrd_tra **,
 								  USHORT, SCHAR *);
-extern STATUS DLL_EXPORT jrd8_detach_database(STATUS *, struct att **);
-extern STATUS DLL_EXPORT jrd8_drop_database(STATUS *, struct att **);
-extern STATUS DLL_EXPORT jrd8_get_segment(STATUS *, struct blb **, USHORT *,
+extern ISC_STATUS DLL_EXPORT jrd8_detach_database(ISC_STATUS *, struct att **);
+extern ISC_STATUS DLL_EXPORT jrd8_drop_database(ISC_STATUS *, struct att **);
+extern ISC_STATUS DLL_EXPORT jrd8_get_segment(ISC_STATUS *, struct blb **, USHORT *,
 										  USHORT, UCHAR *);
-extern STATUS DLL_EXPORT jrd8_get_slice(STATUS *, struct att **,
+extern ISC_STATUS DLL_EXPORT jrd8_get_slice(ISC_STATUS *, struct att **,
 										struct jrd_tra **, SLONG *, USHORT,
 										UCHAR *, USHORT, UCHAR *, SLONG,
 										UCHAR *, SLONG *);
-extern STATUS DLL_EXPORT jrd8_open_blob2(STATUS *, struct att **,
+extern ISC_STATUS DLL_EXPORT jrd8_open_blob2(ISC_STATUS *, struct att **,
 										 struct jrd_tra **, struct blb **,
 										 struct bid *, USHORT, UCHAR *);
-extern STATUS DLL_EXPORT jrd8_prepare_transaction(STATUS *, struct jrd_tra **,
+extern ISC_STATUS DLL_EXPORT jrd8_prepare_transaction(ISC_STATUS *, struct jrd_tra **,
 												  USHORT, UCHAR *);
-extern STATUS DLL_EXPORT jrd8_put_segment(STATUS *, struct blb **, USHORT,
+extern ISC_STATUS DLL_EXPORT jrd8_put_segment(ISC_STATUS *, struct blb **, USHORT,
 										  UCHAR *);
-extern STATUS DLL_EXPORT jrd8_put_slice(STATUS *, struct att **,
+extern ISC_STATUS DLL_EXPORT jrd8_put_slice(ISC_STATUS *, struct att **,
 										struct jrd_tra **, SLONG *, USHORT,
 										UCHAR *, USHORT, UCHAR *, SLONG,
 										UCHAR *);
-extern STATUS DLL_EXPORT jrd8_que_events(STATUS *, struct att **, SLONG *,
+extern ISC_STATUS DLL_EXPORT jrd8_que_events(ISC_STATUS *, struct att **, SLONG *,
 										 SSHORT, UCHAR *, FPTR_VOID, void *);
-extern STATUS DLL_EXPORT jrd8_receive(STATUS *, struct jrd_req **, USHORT, USHORT,
+extern ISC_STATUS DLL_EXPORT jrd8_receive(ISC_STATUS *, struct jrd_req **, USHORT, USHORT,
 									  SCHAR *, SSHORT);
-extern STATUS DLL_EXPORT jrd8_reconnect_transaction(STATUS *, struct att **,
+extern ISC_STATUS DLL_EXPORT jrd8_reconnect_transaction(ISC_STATUS *, struct att **,
 													struct jrd_tra **, SSHORT,
 													UCHAR *);
-extern STATUS DLL_EXPORT jrd8_release_request(STATUS *, struct jrd_req **);
-extern STATUS DLL_EXPORT jrd8_request_info(STATUS *, struct jrd_req **, SSHORT,
+extern ISC_STATUS DLL_EXPORT jrd8_release_request(ISC_STATUS *, struct jrd_req **);
+extern ISC_STATUS DLL_EXPORT jrd8_request_info(ISC_STATUS *, struct jrd_req **, SSHORT,
 										   SSHORT, SCHAR *, SSHORT, SCHAR *);
-extern STATUS DLL_EXPORT jrd8_rollback_transaction(STATUS *, struct jrd_tra **);
-extern STATUS DLL_EXPORT jrd8_rollback_retaining(STATUS *, struct jrd_tra **);
-extern STATUS DLL_EXPORT jrd8_seek_blob(STATUS *, struct blb **, SSHORT,
+extern ISC_STATUS DLL_EXPORT jrd8_rollback_transaction(ISC_STATUS *, struct jrd_tra **);
+extern ISC_STATUS DLL_EXPORT jrd8_rollback_retaining(ISC_STATUS *, struct jrd_tra **);
+extern ISC_STATUS DLL_EXPORT jrd8_seek_blob(ISC_STATUS *, struct blb **, SSHORT,
 										SLONG, SLONG *);
-extern STATUS DLL_EXPORT jrd8_send(STATUS *, struct jrd_req **, USHORT, USHORT,
+extern ISC_STATUS DLL_EXPORT jrd8_send(ISC_STATUS *, struct jrd_req **, USHORT, USHORT,
 								   SCHAR *, SSHORT);
-extern STATUS DLL_EXPORT jrd8_service_attach(STATUS *, USHORT, SCHAR *,
+extern ISC_STATUS DLL_EXPORT jrd8_service_attach(ISC_STATUS *, USHORT, SCHAR *,
 											 struct svc **, USHORT, SCHAR *);
-extern STATUS DLL_EXPORT jrd8_service_detach(STATUS *, struct svc **);
-extern STATUS DLL_EXPORT jrd8_service_query(STATUS *, struct svc **, ULONG *,
+extern ISC_STATUS DLL_EXPORT jrd8_service_detach(ISC_STATUS *, struct svc **);
+extern ISC_STATUS DLL_EXPORT jrd8_service_query(ISC_STATUS *, struct svc **, ULONG *,
 											USHORT, SCHAR *, USHORT, SCHAR *,
 											USHORT, SCHAR *);
-extern STATUS DLL_EXPORT jrd8_service_start(STATUS *, struct svc **, ULONG *,
+extern ISC_STATUS DLL_EXPORT jrd8_service_start(ISC_STATUS *, struct svc **, ULONG *,
 											USHORT, SCHAR *);
-extern STATUS DLL_EXPORT jrd8_start_and_send(STATUS *, struct jrd_req **,
+extern ISC_STATUS DLL_EXPORT jrd8_start_and_send(ISC_STATUS *, struct jrd_req **,
 											 struct jrd_tra **, USHORT, USHORT,
 											 SCHAR *, SSHORT);
-extern STATUS DLL_EXPORT jrd8_start_request(STATUS *, struct jrd_req **,
+extern ISC_STATUS DLL_EXPORT jrd8_start_request(ISC_STATUS *, struct jrd_req **,
 											struct jrd_tra **, SSHORT);
-extern STATUS DLL_EXPORT jrd8_start_multiple(STATUS *, struct jrd_tra **, USHORT,
+extern ISC_STATUS DLL_EXPORT jrd8_start_multiple(ISC_STATUS *, struct jrd_tra **, USHORT,
 											 struct teb *);
-extern STATUS DLL_EXPORT jrd8_start_transaction(STATUS *, struct jrd_tra **,
+extern ISC_STATUS DLL_EXPORT jrd8_start_transaction(ISC_STATUS *, struct jrd_tra **,
 												SSHORT, ...);
-extern STATUS DLL_EXPORT jrd8_transaction_info(STATUS *, struct jrd_tra **,
+extern ISC_STATUS DLL_EXPORT jrd8_transaction_info(ISC_STATUS *, struct jrd_tra **,
 											   SSHORT, SCHAR *, SSHORT,
 											   SCHAR *);
-extern STATUS DLL_EXPORT jrd8_transact_request(STATUS *, struct att **,
+extern ISC_STATUS DLL_EXPORT jrd8_transact_request(ISC_STATUS *, struct att **,
 											   struct jrd_tra **, USHORT, SCHAR *,
 											   USHORT, SCHAR *, USHORT,
 											   SCHAR *);
-extern STATUS DLL_EXPORT jrd8_unwind_request(STATUS *, struct jrd_req **, SSHORT);
+extern ISC_STATUS DLL_EXPORT jrd8_unwind_request(ISC_STATUS *, struct jrd_req **, SSHORT);
 extern void jrd_vtof(const char*, char*, SSHORT);
 
 #ifdef SERVER_SHUTDOWN

@@ -70,48 +70,48 @@ typedef GDS_QUAD GDS__QUAD;
 #define FRBRD void
 #endif
 
-STATUS GDS_EXPORT gds__attach_database(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__attach_database(ISC_STATUS  *,
 										   short,
 										   char  *,
 										   FRBRD  **,
 										   short,
 										   char  *);
 
-STATUS GDS_EXPORT gds__blob_info(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__blob_info(ISC_STATUS  *,
 									 FRBRD  **,
 									 short,
 									 char  *,
 									 short,
 									 char  *);
 
-STATUS GDS_EXPORT gds__cancel_blob(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__cancel_blob(ISC_STATUS  *,
 									   FRBRD  **);
 
-STATUS GDS_EXPORT gds__close_blob(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__close_blob(ISC_STATUS  *,
 									  FRBRD  **);
 
-STATUS GDS_EXPORT gds__commit_transaction(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__commit_transaction(ISC_STATUS  *,
 											  FRBRD  **);
 
-STATUS GDS_EXPORT gds__compile_request(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__compile_request(ISC_STATUS  *,
 										   FRBRD  **,
 										   FRBRD  **,
 										   short,
 										   char  *);
 
-STATUS GDS_EXPORT gds__compile_request2(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__compile_request2(ISC_STATUS  *,
 											FRBRD  **,
 											FRBRD  **,
 											short,
 											char  *);
 
-STATUS GDS_EXPORT gds__create_blob(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__create_blob(ISC_STATUS  *,
 									   FRBRD  **,
 									   FRBRD  **,
 									   FRBRD  **,
 									   GDS__QUAD  *);
 
-STATUS GDS_EXPORT gds__create_blob2(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__create_blob2(ISC_STATUS  *,
 										FRBRD  **,
 										FRBRD  **,
 										FRBRD  **,
@@ -119,7 +119,7 @@ STATUS GDS_EXPORT gds__create_blob2(STATUS  *,
 										short,
 										char  *);
 
-STATUS GDS_EXPORT gds__create_database(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__create_database(ISC_STATUS  *,
 										   short,
 										   char  *,
 										   FRBRD  **,
@@ -127,7 +127,7 @@ STATUS GDS_EXPORT gds__create_database(STATUS  *,
 										   char  *,
 										   short);
 
-STATUS GDS_EXPORT gds__database_info(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__database_info(ISC_STATUS  *,
 										 FRBRD  **,
 										 short,
 										 char  *,
@@ -137,24 +137,24 @@ STATUS GDS_EXPORT gds__database_info(STATUS  *,
 void GDS_EXPORT gds__decode_date(GDS__QUAD  *,
 								 void  *);
 
-STATUS GDS_EXPORT gds__detach_database(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__detach_database(ISC_STATUS  *,
 										   FRBRD  **);
 
 ULONG GDS_EXPORT gds__free(void  *);
 
-STATUS GDS_EXPORT gds__get_segment(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__get_segment(ISC_STATUS  *,
 									   FRBRD  **,
 									   unsigned short  *,
 									   unsigned short,
 									   char  *);
 
-STATUS GDS_EXPORT gds__open_blob(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__open_blob(ISC_STATUS  *,
 									 FRBRD  **,
 									 FRBRD  **,
 									 FRBRD  **,
 									 GDS__QUAD  *);
 
-STATUS GDS_EXPORT gds__open_blob2(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__open_blob2(ISC_STATUS  *,
 									  FRBRD  **,
 									  FRBRD  **,
 									  FRBRD  **,
@@ -162,33 +162,33 @@ STATUS GDS_EXPORT gds__open_blob2(STATUS  *,
 									  short,
 									  char  *);
 
-STATUS GDS_EXPORT gds__prepare_transaction(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__prepare_transaction(ISC_STATUS  *,
 											   FRBRD  **);
 
-STATUS GDS_EXPORT gds__prepare_transaction2(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__prepare_transaction2(ISC_STATUS  *,
 												FRBRD  **,
 												short,
 												char  *);
 
-STATUS GDS_EXPORT gds__put_segment(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__put_segment(ISC_STATUS  *,
 									   FRBRD  **,
 									   unsigned short,
 									   char  *);
 
-STATUS GDS_EXPORT gds__receive(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__receive(ISC_STATUS  *,
 								   FRBRD  **,
 								   short,
 								   short,
 								   void  *,
 								   short);
 
-STATUS GDS_EXPORT gds__reconnect_transaction(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__reconnect_transaction(ISC_STATUS  *,
 												 FRBRD  **,
 												 FRBRD  **,
 												 short,
 												 char  *);
 
-STATUS GDS_EXPORT gds__request_info(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__request_info(ISC_STATUS  *,
 										FRBRD  **,
 										short,
 										short,
@@ -196,19 +196,19 @@ STATUS GDS_EXPORT gds__request_info(STATUS  *,
 										short,
 										char  *);
 
-STATUS GDS_EXPORT gds__release_request(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__release_request(ISC_STATUS  *,
 										   FRBRD  **);
 
-STATUS GDS_EXPORT gds__rollback_transaction(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__rollback_transaction(ISC_STATUS  *,
 												FRBRD  **);
 
-STATUS GDS_EXPORT gds__seek_blob(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__seek_blob(ISC_STATUS  *,
 									 FRBRD  **,
 									 short,
 									 SLONG,
 									 SLONG  *);
 
-STATUS GDS_EXPORT gds__send(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__send(ISC_STATUS  *,
 								FRBRD  **,
 								short,
 								short,
@@ -217,7 +217,7 @@ STATUS GDS_EXPORT gds__send(STATUS  *,
 
 void GDS_EXPORT gds__set_debug(int);
 
-STATUS GDS_EXPORT gds__start_and_send(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__start_and_send(ISC_STATUS  *,
 										  FRBRD  **,
 										  FRBRD  **,
 										  short,
@@ -225,32 +225,32 @@ STATUS GDS_EXPORT gds__start_and_send(STATUS  *,
 										  void  *,
 										  short);
 
-STATUS GDS_EXPORT gds__start_multiple(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__start_multiple(ISC_STATUS  *,
 										  FRBRD  **,
 										  short,
 										  void  *);
 
-STATUS GDS_EXPORT gds__start_request(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__start_request(ISC_STATUS  *,
 										 FRBRD  **,
 										 FRBRD  **,
 										 short);
 
-STATUS GDS_EXPORT gds__start_transaction(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__start_transaction(ISC_STATUS  *,
 											 FRBRD  **,
 											 short, ...);
 
-STATUS GDS_EXPORT gds__transaction_info(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__transaction_info(ISC_STATUS  *,
 											FRBRD  **,
 											short,
 											char  *,
 											short,
 											char  *);
 
-STATUS GDS_EXPORT gds__unwind_request(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__unwind_request(ISC_STATUS  *,
 										  FRBRD  **,
 										  short);
 
-STATUS GDS_EXPORT gds__ftof(char  *,
+ISC_STATUS GDS_EXPORT gds__ftof(char  *,
 							  unsigned short,
 							  char  *,
 							  unsigned short);
@@ -265,23 +265,23 @@ int GDS_EXPORT gds__disable_subsystem(char  *);
 
 int GDS_EXPORT gds__enable_subsystem(char  *);
 
-STATUS GDS_EXPORT gds__print_status(STATUS  *);
+ISC_STATUS GDS_EXPORT gds__print_status(ISC_STATUS  *);
 
-STATUS GDS_EXPORT gds__sqlcode(STATUS  *);
+ISC_STATUS GDS_EXPORT gds__sqlcode(ISC_STATUS  *);
 
-STATUS GDS_EXPORT gds__ddl(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__ddl(ISC_STATUS  *,
 							   FRBRD  **,
 							   FRBRD  **,
 							   short,
 							   char  *);
 
-STATUS GDS_EXPORT gds__commit_retaining(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__commit_retaining(ISC_STATUS  *,
 											FRBRD  **);
 
 void GDS_EXPORT gds__encode_date(void  *,
 								 GDS__QUAD  *);
 
-STATUS GDS_EXPORT gds__que_events(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__que_events(ISC_STATUS  *,
 									  FRBRD  **,
 									  SLONG  *,
 									  short,
@@ -289,11 +289,11 @@ STATUS GDS_EXPORT gds__que_events(STATUS  *,
 									  void ( *) (),
 									  void  *);
 
-STATUS GDS_EXPORT gds__cancel_events(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__cancel_events(ISC_STATUS  *,
 										 FRBRD  **,
 										 SLONG  *);
 
-STATUS GDS_EXPORT gds__event_wait(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__event_wait(ISC_STATUS  *,
 									  FRBRD  **,
 									  short,
 									  char  *,
@@ -304,11 +304,11 @@ void GDS_EXPORT gds__event_counts(ULONG  *,
 								  char  *,
 								  char  *);
 
-STATUS GDS_EXPORT gds__event_block(char  **,
+ISC_STATUS GDS_EXPORT gds__event_block(char  **,
 									 char  **,
 									 unsigned short, ...);
 
-STATUS GDS_EXPORT gds__get_slice(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__get_slice(ISC_STATUS  *,
 									 FRBRD  **,
 									 FRBRD  **,
 									 GDS__QUAD  *,
@@ -320,7 +320,7 @@ STATUS GDS_EXPORT gds__get_slice(STATUS  *,
 									 void  *,
 									 SLONG  *);
 
-STATUS GDS_EXPORT gds__put_slice(STATUS  *,
+ISC_STATUS GDS_EXPORT gds__put_slice(ISC_STATUS  *,
 									 FRBRD  **,
 									 FRBRD  **,
 									 GDS__QUAD  *,

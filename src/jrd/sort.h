@@ -278,7 +278,7 @@ typedef struct scb
 	SORTP *scb_merge_space;		/* ALLOC: memory space to do merging */
 	ULONG scb_run_start;		/* Record number of run */
 	ULONG scb_flags;			/* see flag bits below */
-	STATUS *scb_status_vector;	/* Status vector for errors */
+	ISC_STATUS *scb_status_vector;	/* Status vector for errors */
 	  BOOLEAN(*scb_dup_callback) ();	/* Duplicate handling callback */
 	void *scb_dup_callback_arg;	/* Duplicate handling callback arg */
 	struct dls *scb_dls;

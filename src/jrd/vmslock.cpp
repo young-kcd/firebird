@@ -53,7 +53,7 @@ typedef struct lksb {
 	SLONG lksb_value[4];
 } LKSB;
 
-static int lock_error(STATUS *, UCHAR *, int);
+static int lock_error(ISC_STATUS *, UCHAR *, int);
 static SLONG write_data(SLONG, SLONG);
 
 
@@ -62,7 +62,7 @@ int LOCK_convert(
 				 UCHAR type,
 				 SSHORT wait,
 				 int (*ast_routine) (int *),
-int *ast_argument, STATUS * status_vector)
+int *ast_argument, ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -136,7 +136,7 @@ SLONG LOCK_enq(PTR prior_request;
 			   UCHAR type;
 			   int (*ast_routine) (int *);
 			   int *ast_argument; SLONG data; USHORT wait;
-			   STATUS * status_vector; {
+			   ISC_STATUS * status_vector; {
 /**************************************
  *
  *	L O C K _ e n q
@@ -189,7 +189,7 @@ SLONG LOCK_enq(PTR prior_request;
 			   return lock_error(status_vector, "sys$enq", status);}
 
 
-			   void LOCK_fini(STATUS * status_vector, PTR * owner_offset) {
+			   void LOCK_fini(ISC_STATUS * status_vector, PTR * owner_offset) {
 /**************************************
  *
  *	L O C K _ f i n i
@@ -206,7 +206,7 @@ SLONG LOCK_enq(PTR prior_request;
 			   return FB_SUCCESS;}
 
 
-			   int LOCK_init(STATUS * status_vector,
+			   int LOCK_init(ISC_STATUS * status_vector,
 							 SSHORT owner_flag,
 							 SLONG owner_id,
 							 UCHAR owner_type, SLONG * owner_handle) {
@@ -291,7 +291,7 @@ SLONG LOCK_enq(PTR prior_request;
 			   return 0; return write_data(lock_id, data);}
 
 
-			   static int lock_error(STATUS * status_vector,
+			   static int lock_error(ISC_STATUS * status_vector,
 									 UCHAR * string, int code) {
 /**************************************
  *

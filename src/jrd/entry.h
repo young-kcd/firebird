@@ -65,7 +65,7 @@ ENTRYPOINT( "gds_attach_database",
 		    PSI5_attach_database,
 		  "_jrd8_attach_database",
 		     IPI_attach_database,
-		   (STATUS*, SSHORT, SCHAR*, struct att**, SSHORT, SCHAR*,SCHAR*))
+		   (ISC_STATUS*, SSHORT, SCHAR*, struct att**, SSHORT, SCHAR*,SCHAR*))
 
 ENTRYPOINT( "gds_blob_info",
 		    jrd8_blob_info,
@@ -78,7 +78,7 @@ ENTRYPOINT( "gds_blob_info",
 		    PSI5_blob_info,
 		  "_jrd8_blob_info",
 		     IPI_blob_info,
-		   (STATUS*, struct blb**, SSHORT, SCHAR*, SSHORT, SCHAR*))
+		   (ISC_STATUS*, struct blb**, SSHORT, SCHAR*, SSHORT, SCHAR*))
 
 ENTRYPOINT( "gds_cancel_blob",
 		    jrd8_cancel_blob,
@@ -91,7 +91,7 @@ ENTRYPOINT( "gds_cancel_blob",
 		    PSI5_cancel_blob,
 		  "_jrd8_cancel_blob",
 		     IPI_cancel_blob,
-		   (STATUS*, struct blb**))
+		   (ISC_STATUS*, struct blb**))
 
 ENTRYPOINT( "gds_close_blob",
 		    jrd8_close_blob,
@@ -104,7 +104,7 @@ ENTRYPOINT( "gds_close_blob",
 		    PSI5_close_blob,
 		  "_jrd8_close_blob",
 		     IPI_close_blob,
-		   (STATUS*, struct blb**))
+		   (ISC_STATUS*, struct blb**))
 
 ENTRYPOINT( "gds_commit_transaction",
 		    jrd8_commit_transaction,
@@ -117,7 +117,7 @@ ENTRYPOINT( "gds_commit_transaction",
 		    PSI5_commit_transaction,
 		  "_jrd8_commit_transaction",
 		     IPI_commit_transaction,
-		   (STATUS*, struct jrd_tra**))
+		   (ISC_STATUS*, struct jrd_tra**))
 
 ENTRYPOINT( "gds_compile_request",
 		    jrd8_compile_request,
@@ -130,7 +130,7 @@ ENTRYPOINT( "gds_compile_request",
 		    PSI5_compile_request,
 		  "_jrd8_compile_request",
 		     IPI_compile_request,
-		   (STATUS*, struct att**, struct jrd_req**, SSHORT, SCHAR*))
+		   (ISC_STATUS*, struct att**, struct jrd_req**, SSHORT, SCHAR*))
 
 ENTRYPOINT( "gds_create_blob",
    /****    jrd8_create_blob    ***/ y_valve_no_entrypoint,
@@ -143,7 +143,7 @@ ENTRYPOINT( "gds_create_blob",
 			PSI5_create_blob,
    /****  "_jrd8_create_blob"    ***/ "no_entrypoint",
 			 IPI_create_blob,
-			(STATUS*, struct rdb**, struct rtr**, struct rbl**, struct bid*))
+			(ISC_STATUS*, struct rdb**, struct rtr**, struct rbl**, struct bid*))
 
 ENTRYPOINT( "gds_create_database",
 		    jrd8_create_database,
@@ -156,7 +156,7 @@ ENTRYPOINT( "gds_create_database",
    /****    PSI5_create_database    ***/ y_valve_no_entrypoint,
 		  "_jrd8_create_database",
 		     IPI_create_database,
-			(STATUS*, USHORT, UCHAR*, struct att**, USHORT, UCHAR*, USHORT, UCHAR*))
+			(ISC_STATUS*, USHORT, UCHAR*, struct att**, USHORT, UCHAR*, USHORT, UCHAR*))
 
 ENTRYPOINT( "gds_database_info",
 		    jrd8_database_info,
@@ -169,7 +169,7 @@ ENTRYPOINT( "gds_database_info",
 			PSI5_database_info,
 		  "_jrd8_database_info",
 		     IPI_database_info,
-		   (STATUS*, struct att**, SSHORT, SCHAR*, SSHORT, SCHAR*))
+		   (ISC_STATUS*, struct att**, SSHORT, SCHAR*, SSHORT, SCHAR*))
 
 ENTRYPOINT( "gds_detach_database",
 		    jrd8_detach_database,
@@ -182,7 +182,7 @@ ENTRYPOINT( "gds_detach_database",
 			PSI5_detach_database,
 		  "_jrd8_detach_database",
 		     IPI_detach_database,
-		   (STATUS*, struct att**))
+		   (ISC_STATUS*, struct att**))
 
 ENTRYPOINT( "gds_get_segment",
 		    jrd8_get_segment,
@@ -195,7 +195,7 @@ ENTRYPOINT( "gds_get_segment",
 			PSI5_get_segment,
 		  "_jrd8_get_segment",
 		     IPI_get_segment,
-		   (STATUS*, struct blb**, USHORT*, USHORT, UCHAR*))
+		   (ISC_STATUS*, struct blb**, USHORT*, USHORT, UCHAR*))
 
 ENTRYPOINT( "gds_open_blob",
    /****    jrd8_open_blob    ***/ y_valve_no_entrypoint,
@@ -208,7 +208,7 @@ ENTRYPOINT( "gds_open_blob",
 			PSI5_open_blob,
    /****  "_jrd8_open_blob"   ***/ "no_entrypoint",
 			 IPI_open_blob,
-			(STATUS*, struct rdb**, struct rtr**, struct rbl**, struct bid*))
+			(ISC_STATUS*, struct rdb**, struct rtr**, struct rbl**, struct bid*))
 
 ENTRYPOINT( "gds_prepare_transaction",
 		    jrd8_prepare_transaction,
@@ -221,7 +221,7 @@ ENTRYPOINT( "gds_prepare_transaction",
 			PSI5_prepare_transaction,
 		  "_jrd8_prepare_transaction",
 			 IPI_prepare_transaction,
-			 (STATUS*, struct jrd_tra**, USHORT, UCHAR*))
+			 (ISC_STATUS*, struct jrd_tra**, USHORT, UCHAR*))
 
 ENTRYPOINT( "gds_put_segment",
 		    jrd8_put_segment,
@@ -234,7 +234,7 @@ ENTRYPOINT( "gds_put_segment",
 			PSI5_put_segment,
 		  "_jrd8_put_segment",
 			 IPI_put_segment,
-			 (STATUS*, struct blb**, USHORT, UCHAR*))
+			 (ISC_STATUS*, struct blb**, USHORT, UCHAR*))
 
 ENTRYPOINT( "gds_reconnect_transaction",
 		    jrd8_reconnect_transaction,
@@ -247,7 +247,7 @@ ENTRYPOINT( "gds_reconnect_transaction",
 			PSI5_reconnect_transaction,
 		  "_jrd8_reconnect_transaction",
 		     IPI_reconnect_transaction,
-			 (STATUS*, struct att**, struct jrd_tra**, SSHORT, UCHAR*))
+			 (ISC_STATUS*, struct att**, struct jrd_tra**, SSHORT, UCHAR*))
 
 ENTRYPOINT( "gds_receive",
 		    jrd8_receive,
@@ -260,7 +260,7 @@ ENTRYPOINT( "gds_receive",
 			PSI5_receive,	/* the bridge pipe server will have two less params, but should be OK */
 		  "_jrd8_receive",
 		     IPI_receive,
-			(STATUS*, struct jrd_req**, USHORT, USHORT, SCHAR*, SSHORT))
+			(ISC_STATUS*, struct jrd_req**, USHORT, USHORT, SCHAR*, SSHORT))
 
 ENTRYPOINT( "gds_release_request",
 		    jrd8_release_request,
@@ -273,7 +273,7 @@ ENTRYPOINT( "gds_release_request",
 			PSI5_release_request,
 		  "_jrd8_release_request",
 		     IPI_release_request,
-		   (STATUS*, struct jrd_req**))
+		   (ISC_STATUS*, struct jrd_req**))
 
 ENTRYPOINT( "gds_request_info",
 		    jrd8_request_info,
@@ -286,23 +286,23 @@ ENTRYPOINT( "gds_request_info",
 			PSI5_request_info,
 		  "_jrd8_request_info",
 		     IPI_request_info,
-			(STATUS*, struct jrd_req**, SSHORT, SSHORT, SCHAR*, SSHORT, SCHAR*))
+			(ISC_STATUS*, struct jrd_req**, SSHORT, SSHORT, SCHAR*, SSHORT, SCHAR*))
 
 ENTRYPOINT("gds_rollback_transaction", jrd8_rollback_transaction,
 		   "jrd5_rollback_transaction", REM_rollback_transaction,
 			   "_REM_rollback_transaction", CSI_rollback_transaction,
 			   RDB_rollback_transaction, PSI_rollback_transaction,
 			   PSI5_rollback_transaction, "_jrd8_rollback_transaction",
-			   IPI_rollback_transaction, (STATUS *, struct jrd_tra **))
+			   IPI_rollback_transaction, (ISC_STATUS *, struct jrd_tra **))
 
 ENTRYPOINT("gds_send", jrd8_send, "jrd5_send", REM_send, "_REM_send",
 		   CSI_send, RDB_send, PSI_send, PSI5_send, "_jrd8_send", IPI_send,
-			   (STATUS *, struct jrd_req **, USHORT, USHORT, SCHAR *, SSHORT))
+			   (ISC_STATUS *, struct jrd_req **, USHORT, USHORT, SCHAR *, SSHORT))
 
 ENTRYPOINT("gds_start_and_send", jrd8_start_and_send, "jrd5_start_and_send",
 		   REM_start_and_send, "_REM_start_and_send", CSI_start_and_send,
 			   RDB_start_and_send, PSI_start_and_send, PSI5_start_and_send,
-			   "_jrd8_start_and_send", IPI_start_and_send, (STATUS *,
+			   "_jrd8_start_and_send", IPI_start_and_send, (ISC_STATUS *,
 															struct jrd_req **,
 															struct jrd_tra **,
 															USHORT, USHORT,
@@ -311,7 +311,7 @@ ENTRYPOINT("gds_start_and_send", jrd8_start_and_send, "jrd5_start_and_send",
 ENTRYPOINT("gds_start_request", jrd8_start_request, "jrd5_start_request",
 		   REM_start_request, "_REM_start_request", CSI_start_request,
 			   RDB_start_request, PSI_start_request, PSI5_start_request,
-			   "_jrd8_start_request", IPI_start_request, (STATUS *,
+			   "_jrd8_start_request", IPI_start_request, (ISC_STATUS *,
 														  struct jrd_req
 														  **,
 														  struct jrd_tra
@@ -328,7 +328,7 @@ ENTRYPOINT( "gds_start_multiple",
 			PSI5_start_multiple,
 		  "_jrd8_start_multiple",
 			 IPI_start_multiple,
-		   (STATUS *, struct jrd_tra **, USHORT, struct teb *))
+		   (ISC_STATUS *, struct jrd_tra **, USHORT, struct teb *))
 
 ENTRYPOINT("gds_start_transaction",
 		   jrd8_start_transaction,
@@ -341,7 +341,7 @@ ENTRYPOINT("gds_start_transaction",
 		   PSI5_start_transaction,
 		   "_jrd8_start_transaction",
 		   IPI_start_transaction,
-		   (STATUS*, struct jrd_tra**, SSHORT, ...))
+		   (ISC_STATUS*, struct jrd_tra**, SSHORT, ...))
 
 ENTRYPOINT( "gds_transaction_info",
 		    jrd8_transaction_info,
@@ -354,7 +354,7 @@ ENTRYPOINT( "gds_transaction_info",
 		    PSI5_transaction_info,
 		  "_jrd8_transaction_info",
 		     IPI_transaction_info,
-		   (STATUS*, struct jrd_tra**, SSHORT, SCHAR*, SSHORT, SCHAR*))
+		   (ISC_STATUS*, struct jrd_tra**, SSHORT, SCHAR*, SSHORT, SCHAR*))
 
 ENTRYPOINT("gds_unwind_request",
 		   jrd8_unwind_request,
@@ -367,7 +367,7 @@ ENTRYPOINT("gds_unwind_request",
 		   PSI5_unwind_request,
 		   "_jrd8_unwind_request",
 		   IPI_unwind_request,
-		   (STATUS*, struct jrd_req**, SSHORT))
+		   (ISC_STATUS*, struct jrd_req**, SSHORT))
 
 ENTRYPOINT("gds_commit_retaining",
 		   jrd8_commit_retaining,
@@ -380,7 +380,7 @@ ENTRYPOINT("gds_commit_retaining",
 			PSI5_commit_retaining,
 			"_jrd8_commit_retaining",
 			IPI_commit_retaining,
-			(STATUS *, struct jrd_tra **))
+			(ISC_STATUS *, struct jrd_tra **))
 
 ENTRYPOINT("gds_que_events",
 		   jrd8_que_events,
@@ -393,7 +393,7 @@ ENTRYPOINT("gds_que_events",
 			   PSI5_que_events,
 			   "_jrd8_que_events",
 			   IPI_que_events,
-			   (STATUS*, struct att**, SLONG*, SSHORT, UCHAR*, FPTR_VOID,
+			   (ISC_STATUS*, struct att**, SLONG*, SSHORT, UCHAR*, FPTR_VOID,
 				void*))
 
 ENTRYPOINT("gds_cancel_events",
@@ -407,7 +407,7 @@ ENTRYPOINT("gds_cancel_events",
 			   PSI5_cancel_events,
 			   "_jrd8_cancel_events",
 			   IPI_cancel_events,
-			   (STATUS*, struct att**, SLONG*))
+			   (ISC_STATUS*, struct att**, SLONG*))
 
 ENTRYPOINT("gds_ddl",
 		   jrd8_ddl,
@@ -420,7 +420,7 @@ ENTRYPOINT("gds_ddl",
 			   PSI5_ddl,
 			   "_jrd8_ddl",
 			   IPI_ddl,
-			   (STATUS*, struct att**, struct jrd_tra**, USHORT, SCHAR*))
+			   (ISC_STATUS*, struct att**, struct jrd_tra**, USHORT, SCHAR*))
 
 ENTRYPOINT("gds_open_blob2",
 		   jrd8_open_blob2,
@@ -433,7 +433,7 @@ ENTRYPOINT("gds_open_blob2",
 			   PSI5_open_blob2,
 			   "_jrd8_open_blob2",
 			   IPI_open_blob2,
-			   (STATUS*, struct att**, struct jrd_tra**, struct blb**,
+			   (ISC_STATUS*, struct att**, struct jrd_tra**, struct blb**,
 				struct bid*, USHORT, UCHAR*))
 
 ENTRYPOINT("gds_create_blob2",
@@ -447,7 +447,7 @@ ENTRYPOINT("gds_create_blob2",
 			   PSI5_create_blob2,
 			   "_jrd8_create_blob2",
 			   IPI_create_blob2,
-			   (STATUS*, struct att**, struct jrd_tra**, struct blb**,
+			   (ISC_STATUS*, struct att**, struct jrd_tra**, struct blb**,
 				struct bid*, USHORT, UCHAR*))
 
 ENTRYPOINT( "gds_get_slice",
@@ -461,7 +461,7 @@ ENTRYPOINT( "gds_get_slice",
 			PSI5_get_slice,
 		  "_jrd8_get_slice",
 			 IPI_get_slice,
-			   (STATUS*, struct att **, struct jrd_tra **, SLONG *, USHORT,
+			   (ISC_STATUS*, struct att **, struct jrd_tra **, SLONG *, USHORT,
 				UCHAR *, USHORT, UCHAR *, SLONG, UCHAR *, SLONG *))
 
 ENTRYPOINT( "gds_put_slice",
@@ -475,7 +475,7 @@ ENTRYPOINT( "gds_put_slice",
 			PSI5_put_slice,
 		  "_jrd8_put_slice",
 		    IPI_put_slice,
-			   (STATUS*, struct att**, struct jrd_tra**, SLONG*, USHORT,
+			   (ISC_STATUS*, struct att**, struct jrd_tra**, SLONG*, USHORT,
 				UCHAR*, USHORT, UCHAR*, SLONG, UCHAR*))
 
 ENTRYPOINT( "gds_seek_blob",
@@ -489,7 +489,7 @@ ENTRYPOINT( "gds_seek_blob",
 			PSI5_seek_blob,
 		  "_jrd8_seek_blob",
 		     IPI_seek_blob,
-			   (STATUS*, struct blb**, SSHORT, SLONG, SLONG*))
+			   (ISC_STATUS*, struct blb**, SSHORT, SLONG, SLONG*))
 
 ENTRYPOINT( "isc_transact_request",
 		    jrd8_transact_request,
@@ -502,7 +502,7 @@ ENTRYPOINT( "isc_transact_request",
    /****    PSI5_transact_request    ***/ y_valve_no_entrypoint,
 		  "_jrd8_transact_request",
 			 IPI_transact_request,
-			   (STATUS*, struct att**, struct jrd_tra**, USHORT, SCHAR*,
+			   (ISC_STATUS*, struct att**, struct jrd_tra**, USHORT, SCHAR*,
 				USHORT, SCHAR*, USHORT, SCHAR*))
 
 ENTRYPOINT( "isc_drop_database",
@@ -516,7 +516,7 @@ ENTRYPOINT( "isc_drop_database",
    /****    PSI5_drop_database    ***/ y_valve_no_entrypoint,
 		  "_jrd8_drop_database",
 			 IPI_drop_database,
-			   (STATUS*, struct att**))
+			   (ISC_STATUS*, struct att**))
 
 /* and the DSQL entry points */
 ENTRYPOINT("isc_dsql_allocate_statement",
@@ -530,7 +530,7 @@ ENTRYPOINT("isc_dsql_allocate_statement",
 			     PSI5_allocate_statement,
    /****       "_jrd8_allocate_statement"   ***/ "no_entrypoint",
 			      IPI_allocate_statement,
-			   (STATUS*, struct rdb**, struct rsr**))
+			   (ISC_STATUS*, struct rdb**, struct rsr**))
 
 ENTRYPOINT( "isc_dsql_execute",
    /****         jrd8_execute    ***/ y_valve_no_entrypoint,
@@ -543,7 +543,7 @@ ENTRYPOINT( "isc_dsql_execute",
 			     PSI5_execute,
    /****       "_jrd8_execute"   ***/ "no_entrypoint",
 			      IPI_execute,
-			   (STATUS*, struct rtr**, struct rsr**, USHORT, UCHAR*,
+			   (ISC_STATUS*, struct rtr**, struct rsr**, USHORT, UCHAR*,
 				USHORT, USHORT, UCHAR*))
 
 ENTRYPOINT("isc_dsql_execute2",
@@ -557,7 +557,7 @@ ENTRYPOINT("isc_dsql_execute2",
    /****         PSI5_execute2    ***/ y_valve_no_entrypoint,
    /****       "_jrd8_execute2"   ***/ "no_entrypoint",
 			      IPI_execute2,
-			   (STATUS*, struct rtr**, struct rsr**, USHORT, UCHAR*,
+			   (ISC_STATUS*, struct rtr**, struct rsr**, USHORT, UCHAR*,
 				USHORT, USHORT, UCHAR*, USHORT, UCHAR*, USHORT, USHORT,
 				UCHAR*))
 
@@ -572,7 +572,7 @@ ENTRYPOINT( "isc_dsql_execute_immediate",
 			     PSI5_execute_immediate,
    /****       "_jrd8_execute_immediate"   ***/ "no_entrypoint",
 			      IPI_execute_immediate,
-			   (STATUS*, struct rdb**, struct rtr**, USHORT, UCHAR*,
+			   (ISC_STATUS*, struct rdb**, struct rtr**, USHORT, UCHAR*,
 				USHORT, USHORT, UCHAR *, USHORT, USHORT, UCHAR*))
 
 ENTRYPOINT( "isc_dsql_execute_immediate2",
@@ -586,7 +586,7 @@ ENTRYPOINT( "isc_dsql_execute_immediate2",
    /****         PSI5_execute_immediate2    ***/ y_valve_no_entrypoint,
    /****       "_jrd8_execute_immediate2"   ***/ "no_entrypoint",
 			      IPI_execute_immediate2,
-			   (STATUS*, struct rdb**, struct rtr**, USHORT, UCHAR*,
+			   (ISC_STATUS*, struct rdb**, struct rtr**, USHORT, UCHAR*,
 				USHORT, USHORT, UCHAR *, USHORT, USHORT, UCHAR *, USHORT,
 				UCHAR*, USHORT, USHORT, UCHAR*))
 
@@ -601,7 +601,7 @@ ENTRYPOINT( "isc_dsql_fetch",
 				 PSI5_fetch,
    /****       "_jrd8_fetch"   ***/ "no_entrypoint",
 			      IPI_fetch,
-			   (STATUS*, struct rsr**, USHORT, UCHAR*, USHORT, USHORT, UCHAR*))
+			   (ISC_STATUS*, struct rsr**, USHORT, UCHAR*, USHORT, USHORT, UCHAR*))
 
 ENTRYPOINT( "isc_dsql_free_statement",
    /****         jrd8_free_statement    ***/ y_valve_no_entrypoint,
@@ -614,7 +614,7 @@ ENTRYPOINT( "isc_dsql_free_statement",
 				 PSI5_free_statement,
    /****       "_jrd8_free_statement"   ***/ "no_entrypoint",
 				 IPI_free_statement,
-			   (STATUS *, struct rsr **, USHORT))
+			   (ISC_STATUS *, struct rsr **, USHORT))
 
 ENTRYPOINT( "isc_dsql_insert",
    /****         jrd8_insert    ***/ y_valve_no_entrypoint,
@@ -627,7 +627,7 @@ ENTRYPOINT( "isc_dsql_insert",
    /****         PSI5_insert    ***/ y_valve_no_entrypoint,
    /****       "_jrd8_insert"   ***/ "no_entrypoint",
 			      IPI_insert,
-			   (STATUS*, struct rsr**, USHORT, UCHAR*, USHORT, USHORT, UCHAR*))
+			   (ISC_STATUS*, struct rsr**, USHORT, UCHAR*, USHORT, USHORT, UCHAR*))
 
 ENTRYPOINT( "isc_dsql_prepare",
    /****         jrd8_prepare    ***/ y_valve_no_entrypoint,
@@ -640,7 +640,7 @@ ENTRYPOINT( "isc_dsql_prepare",
 			      PSI5_prepare,
    /****       "_jrd8_prepare"   ***/ "no_entrypoint",
 			      IPI_prepare,
-			   (STATUS *, struct rtr **, struct rsr **, USHORT, UCHAR *,
+			   (ISC_STATUS *, struct rtr **, struct rsr **, USHORT, UCHAR *,
 				USHORT, USHORT, UCHAR *, USHORT, UCHAR *))
 
 ENTRYPOINT( "isc_dsql_set_cursor",
@@ -654,7 +654,7 @@ ENTRYPOINT( "isc_dsql_set_cursor",
 			     PSI5_set_cursor_name,
    /****       "_jrd8_set_cursor"   ***/ "no_entrypoint",
 			      IPI_set_cursor_name,
-			   (STATUS *, struct rsr **, UCHAR *, USHORT))
+			   (ISC_STATUS *, struct rsr **, UCHAR *, USHORT))
 
 ENTRYPOINT( "isc_dsql_sql_info",
    /****         jrd8_sql_info    ***/ y_valve_no_entrypoint,
@@ -667,7 +667,7 @@ ENTRYPOINT( "isc_dsql_sql_info",
 			     PSI5_sql_info,
    /****       "_jrd8_sql_info"   ***/ "no_entrypoint",
 			      IPI_sql_info,
-			   (STATUS *, struct rsr **, SSHORT, UCHAR *, SSHORT, UCHAR *))
+			   (ISC_STATUS *, struct rsr **, SSHORT, UCHAR *, SSHORT, UCHAR *))
 
 /* and service entry points */
 ENTRYPOINT( "isc_service_attach",
@@ -681,7 +681,7 @@ ENTRYPOINT( "isc_service_attach",
    /****    PSI5_service_attach    ***/ y_valve_no_entrypoint,
 		  "_jrd8_service_attach",
 			 IPI_service_attach,
-			   (STATUS *, USHORT, TEXT *, struct rdb **, USHORT, SCHAR *))
+			   (ISC_STATUS *, USHORT, TEXT *, struct rdb **, USHORT, SCHAR *))
 
 ENTRYPOINT("isc_service_detach", jrd8_service_detach,
    /****   "jrd5_service_detach"   ***/ NULL,
@@ -691,7 +691,7 @@ ENTRYPOINT("isc_service_detach", jrd8_service_detach,
 			   PSI_detach_service,
    /****    PSI5_service_detach    ***/ y_valve_no_entrypoint,
 			   "_jrd8_service_detach",
-			   IPI_service_detach, (STATUS *, struct rdb **))
+			   IPI_service_detach, (ISC_STATUS *, struct rdb **))
 
 ENTRYPOINT("isc_service_query", jrd8_service_query,
    /****   "jrd5_service_query"   ***/ NULL,
@@ -702,7 +702,7 @@ ENTRYPOINT("isc_service_query", jrd8_service_query,
    /****    PSI5_service_query    ***/ y_valve_no_entrypoint,
 			   "_jrd8_service_query",
 			   IPI_service_query,
-			   (STATUS *, struct rdb **, USHORT, SCHAR *, USHORT, SCHAR *,
+			   (ISC_STATUS *, struct rdb **, USHORT, SCHAR *, USHORT, SCHAR *,
 				USHORT, SCHAR *))
 
 ENTRYPOINT("isc_service_start", jrd8_service_start,
@@ -714,7 +714,7 @@ ENTRYPOINT("isc_service_start", jrd8_service_start,
    /****    PSI5_service_start    ***/ y_valve_no_entrypoint,
 			   "_jrd8_service_start",
 			   IPI_service_start,
-			   (STATUS *, struct svc **, ULONG *, USHORT, SCHAR *))
+			   (ISC_STATUS *, struct svc **, ULONG *, USHORT, SCHAR *))
 
 ENTRYPOINT("isc_rollback_retaining", jrd8_rollback_retaining,
    /****    "jrd5_rollback_retaining"   ***/ NULL,
@@ -724,7 +724,7 @@ ENTRYPOINT("isc_rollback_retaining", jrd8_rollback_retaining,
    /****    PSI_rollback_retaining    ***/ y_valve_no_entrypoint,
    /****    PSI5_rollback_retaining    ***/ y_valve_no_entrypoint,
 			   "_jrd8_rollback_retaining",
-			   IPI_rollback_retaining, (STATUS *, struct jrd_tra **))
+			   IPI_rollback_retaining, (ISC_STATUS *, struct jrd_tra **))
 #ifdef CANCEL_OPERATION
 ENTRYPOINT("gds_cancel_operation", jrd8_cancel_operation,
    /***    "jrd5_cancel_operation"  ***/ NULL,
@@ -736,7 +736,7 @@ ENTRYPOINT("gds_cancel_operation", jrd8_cancel_operation,
    /***     PSI5_cancel_operation   ***/ y_valve_no_entrypoint,
    /***    "_jrd8_cancel_operation" ***/ NULL,
    /***     IPI_cancel_operation    ***/ y_valve_no_entrypoint,
-			   (STATUS *, struct att **, USHORT))
+			   (ISC_STATUS *, struct att **, USHORT))
 #else
 ENTRYPOINT("gds_cancel_operation",
    /***	    jrd8_cancel_operation   ***/ y_valve_no_entrypoint,
@@ -749,7 +749,7 @@ ENTRYPOINT("gds_cancel_operation",
    /***     PSI5_cancel_operation   ***/ y_valve_no_entrypoint,
    /***    "_jrd8_cancel_operation" ***/ NULL,
    /***     IPI_cancel_operation    ***/ y_valve_no_entrypoint,
-			   (STATUS *, struct att **, USHORT))
+			   (ISC_STATUS *, struct att **, USHORT))
 #endif
 #undef ENTRYPOINT
 #else // 0/1

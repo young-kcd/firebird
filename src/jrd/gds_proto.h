@@ -73,21 +73,21 @@ extern void*	API_ROUTINE gds__alloc(SLONG);
 typedef GDS_QUAD GDS__QUAD;
 #endif
 
-STATUS	API_ROUTINE gds__decode(STATUS, USHORT*, USHORT*);
+ISC_STATUS	API_ROUTINE gds__decode(ISC_STATUS, USHORT*, USHORT*);
 void	API_ROUTINE isc_decode_date(GDS_QUAD*, void*);
 void	API_ROUTINE isc_decode_sql_date(GDS_DATE*, void*);
 void	API_ROUTINE isc_decode_sql_time(GDS_TIME*, void*);
 void	API_ROUTINE isc_decode_timestamp(GDS_TIMESTAMP*, void*);
-STATUS	API_ROUTINE gds__encode(STATUS, USHORT);
+ISC_STATUS	API_ROUTINE gds__encode(ISC_STATUS, USHORT);
 void	API_ROUTINE isc_encode_date(void*, GDS_QUAD*);
 void	API_ROUTINE isc_encode_sql_date(void*, GDS_DATE*);
 void	API_ROUTINE isc_encode_sql_time(void*, GDS_TIME*);
 void	API_ROUTINE isc_encode_timestamp(void*, GDS_TIMESTAMP*);
 ULONG	API_ROUTINE gds__free(void*);
-SLONG	API_ROUTINE gds__interprete(char*, STATUS**);
-void	API_ROUTINE gds__interprete_a(SCHAR*, SSHORT*, STATUS*, SSHORT*);
+SLONG	API_ROUTINE gds__interprete(char*, ISC_STATUS**);
+void	API_ROUTINE gds__interprete_a(SCHAR*, SSHORT*, ISC_STATUS*, SSHORT*);
 void	API_ROUTINE gds__log(TEXT*, ...);
-void	API_ROUTINE gds__log_status(TEXT*, STATUS*);
+void	API_ROUTINE gds__log_status(TEXT*, ISC_STATUS*);
 int		API_ROUTINE gds__msg_close(void*);
 SSHORT	API_ROUTINE gds__msg_format(void*  handle,
 									USHORT facility,
@@ -109,7 +109,7 @@ void	API_ROUTINE gds__prefix_lock(TEXT*, const TEXT*);
 void	API_ROUTINE gds__prefix_msg(TEXT*, const TEXT*);
 
 SLONG	API_ROUTINE gds__get_prefix(SSHORT, TEXT*);
-STATUS	API_ROUTINE gds__print_status(STATUS*);
+ISC_STATUS	API_ROUTINE gds__print_status(ISC_STATUS*);
 USHORT	API_ROUTINE gds__parse_bpb(USHORT, UCHAR*, USHORT*, USHORT*);
 USHORT	API_ROUTINE gds__parse_bpb2(USHORT, UCHAR*, SSHORT*, SSHORT*,
 									  USHORT*, USHORT*);
@@ -119,8 +119,8 @@ int		API_ROUTINE gds__print_blr(UCHAR*, FPTR_VOID, SCHAR*, SSHORT);
 void	API_ROUTINE gds__put_error(TEXT*);
 void	API_ROUTINE gds__qtoq(void*, void*);
 void	API_ROUTINE gds__register_cleanup(FPTR_VOID_PTR, void*);
-SLONG	API_ROUTINE gds__sqlcode(STATUS*);
-void	API_ROUTINE gds__sqlcode_s(STATUS*, ULONG*);
+SLONG	API_ROUTINE gds__sqlcode(ISC_STATUS*);
+void	API_ROUTINE gds__sqlcode_s(ISC_STATUS*, ULONG*);
 void*	API_ROUTINE gds__temp_file(BOOLEAN, TEXT*, TEXT*);
 void		API_ROUTINE gds__unregister_cleanup(FPTR_VOID_PTR, void*);
 BOOLEAN	API_ROUTINE gds__validate_lib_path(TEXT*, TEXT*, TEXT*,
@@ -128,7 +128,7 @@ BOOLEAN	API_ROUTINE gds__validate_lib_path(TEXT*, TEXT*, TEXT*,
 SLONG	API_ROUTINE gds__vax_integer(const UCHAR*, SSHORT);
 void	API_ROUTINE gds__vtof(SCHAR*, SCHAR*, USHORT);
 void	API_ROUTINE gds__vtov(const SCHAR*, char*, SSHORT);
-void	API_ROUTINE isc_print_sqlerror(SSHORT, STATUS*);
+void	API_ROUTINE isc_print_sqlerror(SSHORT, ISC_STATUS*);
 void	API_ROUTINE isc_sql_interprete(SSHORT, TEXT*, SSHORT);
 void*	gds__tmp_file2(BOOLEAN, TEXT*, TEXT*, TEXT*);
 SINT64	API_ROUTINE isc_portable_integer(UCHAR*, SSHORT);

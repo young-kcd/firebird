@@ -36,7 +36,7 @@
 *	Fix bugs in fortran ISC_ calling convention
 *
 *	15607	katz	24-FEB-1994
-*	Use STATUS to declare status vectors instead of SLONG
+*	Use ISC_STATUS to declare status vectors instead of SLONG
 *
 *	15078	daves	27-JAN-1994
 *	ANSI compile error: fixed return result of isc_print_sqlerror
@@ -92,7 +92,7 @@
 
 extern UCHAR *gds__alloc();
 
-typedef STATUS(*PTR) ();
+typedef ISC_STATUS(*PTR) ();
 
 typedef struct handle {
 	struct handle **user_handle;
@@ -426,9 +426,9 @@ UCHAR *GDS_ALLOC(size)
 }
 
 
-STATUS GDS_ATTACH_DATABASE(user_status, file_length, file_name, handle,
+ISC_STATUS GDS_ATTACH_DATABASE(user_status, file_length, file_name, handle,
 						   dpb_length, dpb)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 SLONG GDS_VAL(file_length);
 	 SCHAR *file_name;
 	 ATT *handle;
@@ -453,9 +453,9 @@ STATUS GDS_ATTACH_DATABASE(user_status, file_length, file_name, handle,
 }
 
 
-STATUS GDS_BLOB_INFO(user_status, blob_handle, item_length, items,
+ISC_STATUS GDS_BLOB_INFO(user_status, blob_handle, item_length, items,
 					 buffer_length, buffer)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 BLB *blob_handle;
 	 SLONG GDS_VAL(item_length), GDS_VAL(buffer_length);
 	 SCHAR *items, *buffer;
@@ -496,8 +496,8 @@ int GDS_BLOB_SIZE(b, size, seg_count, max_seg)
 }
 
 
-STATUS GDS_CANCEL_BLOB(user_status, blob_handle)
-	 STATUS *user_status;
+ISC_STATUS GDS_CANCEL_BLOB(user_status, blob_handle)
+	 ISC_STATUS *user_status;
 	 BLB *blob_handle;
 {
 /**************************************
@@ -515,8 +515,8 @@ STATUS GDS_CANCEL_BLOB(user_status, blob_handle)
 }
 
 
-STATUS GDS_CANCEL_EVENTS(user_status, handle, id)
-	 STATUS *user_status;
+ISC_STATUS GDS_CANCEL_EVENTS(user_status, handle, id)
+	 ISC_STATUS *user_status;
 	 ATT *handle;
 	 SLONG *id;
 {
@@ -536,7 +536,7 @@ STATUS GDS_CANCEL_EVENTS(user_status, handle, id)
 
 
 GDS_CLOSE(user_status, name)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 TEXT *name;
 {
 /**************************************
@@ -554,8 +554,8 @@ GDS_CLOSE(user_status, name)
 }
 
 
-STATUS GDS_CLOSE_BLOB(user_status, blob_handle)
-	 STATUS *user_status;
+ISC_STATUS GDS_CLOSE_BLOB(user_status, blob_handle)
+	 ISC_STATUS *user_status;
 	 BLB *blob_handle;
 {
 /**************************************
@@ -573,8 +573,8 @@ STATUS GDS_CLOSE_BLOB(user_status, blob_handle)
 }
 
 
-STATUS GDS_COMMIT(user_status, tra_handle)
-	 STATUS *user_status;
+ISC_STATUS GDS_COMMIT(user_status, tra_handle)
+	 ISC_STATUS *user_status;
 	 TRA *tra_handle;
 {
 /**************************************
@@ -592,8 +592,8 @@ STATUS GDS_COMMIT(user_status, tra_handle)
 }
 
 
-STATUS GDS_COMMIT_RETAINING(user_status, tra_handle)
-	 STATUS *user_status;
+ISC_STATUS GDS_COMMIT_RETAINING(user_status, tra_handle)
+	 ISC_STATUS *user_status;
 	 TRA *tra_handle;
 {
 /**************************************
@@ -611,8 +611,8 @@ STATUS GDS_COMMIT_RETAINING(user_status, tra_handle)
 }
 
 
-STATUS GDS_COMPILE(user_status, db_handle, req_handle, blr_length, blr)
-	 STATUS *user_status;
+ISC_STATUS GDS_COMPILE(user_status, db_handle, req_handle, blr_length, blr)
+	 ISC_STATUS *user_status;
 	 ATT *db_handle;
 	 REQ *req_handle;
 	 SLONG GDS_VAL(blr_length);
@@ -633,8 +633,8 @@ STATUS GDS_COMPILE(user_status, db_handle, req_handle, blr_length, blr)
 }
 
 
-STATUS GDS_COMPILE2(user_status, db_handle, req_handle, blr_length, blr)
-	 STATUS *user_status;
+ISC_STATUS GDS_COMPILE2(user_status, db_handle, req_handle, blr_length, blr)
+	 ISC_STATUS *user_status;
 	 ATT *db_handle;
 	 REQ *req_handle;
 	 SLONG GDS_VAL(blr_length);
@@ -655,9 +655,9 @@ STATUS GDS_COMPILE2(user_status, db_handle, req_handle, blr_length, blr)
 }
 
 
-STATUS GDS_CREATE_BLOB(user_status, db_handle, tra_handle, blob_handle,
+ISC_STATUS GDS_CREATE_BLOB(user_status, db_handle, tra_handle, blob_handle,
 					   blob_id)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 ATT *db_handle;
 	 TRA *tra_handle;
 	 BLB *blob_handle;
@@ -679,9 +679,9 @@ STATUS GDS_CREATE_BLOB(user_status, db_handle, tra_handle, blob_handle,
 }
 
 
-STATUS GDS_CREATE_BLOB2(user_status, db_handle, tra_handle, blob_handle,
+ISC_STATUS GDS_CREATE_BLOB2(user_status, db_handle, tra_handle, blob_handle,
 						blob_id, bpb_length, bpb)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 ATT *db_handle;
 	 TRA *tra_handle;
 	 BLB *blob_handle;
@@ -705,9 +705,9 @@ STATUS GDS_CREATE_BLOB2(user_status, db_handle, tra_handle, blob_handle,
 }
 
 
-STATUS GDS_CREATE_DATABASE(user_status, file_length, file_name, handle,
+ISC_STATUS GDS_CREATE_DATABASE(user_status, file_length, file_name, handle,
 						   dpb_length, dpb, db_type)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 SLONG GDS_VAL(file_length);
 	 UCHAR *file_name;
 	 ATT *handle;
@@ -732,9 +732,9 @@ STATUS GDS_CREATE_DATABASE(user_status, file_length, file_name, handle,
 }
 
 
-STATUS GDS_DATABASE_INFO(user_status, handle, item_length, items,
+ISC_STATUS GDS_DATABASE_INFO(user_status, handle, item_length, items,
 						 buffer_length, buffer)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 ATT *handle;
 	 SLONG GDS_VAL(item_length), GDS_VAL(buffer_length);
 	 SCHAR *items, *buffer;
@@ -755,8 +755,8 @@ STATUS GDS_DATABASE_INFO(user_status, handle, item_length, items,
 }
 
 
-STATUS GDS_DDL(user_status, db_handle, tra_handle, length, ddl)
-	 STATUS *user_status;
+ISC_STATUS GDS_DDL(user_status, db_handle, tra_handle, length, ddl)
+	 ISC_STATUS *user_status;
 	 ATT *db_handle;
 	 TRA *tra_handle;
 	 SLONG GDS_VAL(length);
@@ -779,7 +779,7 @@ STATUS GDS_DDL(user_status, db_handle, tra_handle, length, ddl)
 
 
 GDS_DECLARE(user_status, statement, cursor)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 TEXT *statement, *cursor;
 {
 /**************************************
@@ -817,7 +817,7 @@ void GDS_DECODE_DATE(date, times)
 
 
 GDS_DESCRIBE(user_status, name, sqlda)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 TEXT *name;
 	 XSQLDA *sqlda;
 {
@@ -837,7 +837,7 @@ GDS_DESCRIBE(user_status, name, sqlda)
 
 
 GDS_DESCRIBE_BIND(user_status, name, sqlda)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 TEXT *name;
 	 XSQLDA *sqlda;
 {
@@ -856,8 +856,8 @@ GDS_DESCRIBE_BIND(user_status, name, sqlda)
 }
 
 
-STATUS GDS_DETACH(user_status, handle)
-	 STATUS *user_status;
+ISC_STATUS GDS_DETACH(user_status, handle)
+	 ISC_STATUS *user_status;
 	 ATT *handle;
 {
 /**************************************
@@ -962,7 +962,7 @@ void GDS_EVENT_COUNTS(result_vector, buffer_length, event_buffer,
 }
 
 
-STATUS GDS_EVENT_WAIT(user_status, handle, length, events, buffer)
+ISC_STATUS GDS_EVENT_WAIT(user_status, handle, length, events, buffer)
 	 ULONG *user_status;
 	 ATT *handle;
 	 USHORT GDS_VAL(length);
@@ -985,7 +985,7 @@ STATUS GDS_EVENT_WAIT(user_status, handle, length, events, buffer)
 
 
 GDS_EXECUTE(user_status, trans_handle, name, sqlda)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 TEXT *name;
 	 TRA *trans_handle;
 	 XSQLDA *sqlda;
@@ -1007,7 +1007,7 @@ GDS_EXECUTE(user_status, trans_handle, name, sqlda)
 
 
 GDS_EXECUTE_IMMEDIATE(user_status, db_handle, trans_handle, length, string)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 int **db_handle, **trans_handle;
 	 SLONG *length;
 	 TEXT *string;
@@ -1031,7 +1031,7 @@ GDS_EXECUTE_IMMEDIATE(user_status, db_handle, trans_handle, length, string)
 
 
 GDS_FETCH(user_status, name, sqlda)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 TEXT *name;
 	 XSQLDA *sqlda;
 {
@@ -1089,9 +1089,9 @@ GDS_FTOF(string, length1, field, length2)
 }
 
 
-STATUS GDS_GET_SEGMENT(user_status, blob_handle, length, buffer_length,
+ISC_STATUS GDS_GET_SEGMENT(user_status, blob_handle, length, buffer_length,
 					   buffer)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 BLB *blob_handle;
 	 SSHORT *length;
 	 SLONG GDS_VAL(buffer_length);
@@ -1107,7 +1107,7 @@ STATUS GDS_GET_SEGMENT(user_status, blob_handle, length, buffer_length,
  *	Abort a partially completed blob.
  *
  **************************************/
-	STATUS status;
+	ISC_STATUS status;
 	SSHORT return_length;
 
 	status = gds__get_segment(user_status, blob_handle,
@@ -1119,10 +1119,10 @@ STATUS GDS_GET_SEGMENT(user_status, blob_handle, length, buffer_length,
 }
 
 
-STATUS GDS_GET_SLICE(user_status, db_handle, tra_handle, array_id,
+ISC_STATUS GDS_GET_SLICE(user_status, db_handle, tra_handle, array_id,
 					 sdl_length, sdl, param_length, param, slice_length,
 					 slice, return_length)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 ATT *db_handle;
 	 TRA *tra_handle;
 	 SLONG *array_id;
@@ -1153,7 +1153,7 @@ STATUS GDS_GET_SLICE(user_status, db_handle, tra_handle, array_id,
 
 
 GDS_OPEN(user_status, trans_handle, name, sqlda)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 TEXT *name;
 	 TRA *trans_handle;
 	 XSQLDA *sqlda;
@@ -1173,8 +1173,8 @@ GDS_OPEN(user_status, trans_handle, name, sqlda)
 }
 
 
-STATUS GDS_OPEN_BLOB(user_status, db_handle, tra_handle, blob_handle, blob_id)
-	 STATUS *user_status;
+ISC_STATUS GDS_OPEN_BLOB(user_status, db_handle, tra_handle, blob_handle, blob_id)
+	 ISC_STATUS *user_status;
 	 ATT *db_handle;
 	 TRA *tra_handle;
 	 BLB *blob_handle;
@@ -1196,9 +1196,9 @@ STATUS GDS_OPEN_BLOB(user_status, db_handle, tra_handle, blob_handle, blob_id)
 }
 
 
-STATUS GDS_OPEN_BLOB2(user_status, db_handle, tra_handle, blob_handle,
+ISC_STATUS GDS_OPEN_BLOB2(user_status, db_handle, tra_handle, blob_handle,
 					  blob_id, bpb_length, bpb)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 ATT *db_handle;
 	 TRA *tra_handle;
 	 BLB *blob_handle;
@@ -1223,7 +1223,7 @@ STATUS GDS_OPEN_BLOB2(user_status, db_handle, tra_handle, blob_handle,
 
 
 GDS_PREPARE(user_status, db_handle, trans_handle, name, length, string, sqlda)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 int **db_handle, **trans_handle;
 	 TEXT *name;
 	 SLONG *length;
@@ -1249,8 +1249,8 @@ GDS_PREPARE(user_status, db_handle, trans_handle, name, length, string, sqlda)
 }
 
 
-STATUS GDS_PREPARE_TRANS(user_status, tra_handle)
-	 STATUS *user_status;
+ISC_STATUS GDS_PREPARE_TRANS(user_status, tra_handle)
+	 ISC_STATUS *user_status;
 	 TRA *tra_handle;
 {
 /**************************************
@@ -1269,8 +1269,8 @@ STATUS GDS_PREPARE_TRANS(user_status, tra_handle)
 }
 
 
-STATUS GDS_PREPARE2(user_status, tra_handle, msg_length, msg)
-	 STATUS *user_status;
+ISC_STATUS GDS_PREPARE2(user_status, tra_handle, msg_length, msg)
+	 ISC_STATUS *user_status;
 	 TRA *tra_handle;
 	 SLONG GDS_VAL(msg_length);
 	 UCHAR *msg;
@@ -1293,7 +1293,7 @@ STATUS GDS_PREPARE2(user_status, tra_handle, msg_length, msg)
 
 
 GDS_PRINT_STATUS(status_vector)
-	 STATUS *status_vector;
+	 ISC_STATUS *status_vector;
 {
 /**************************************
  *
@@ -1310,8 +1310,8 @@ GDS_PRINT_STATUS(status_vector)
 }
 
 
-STATUS GDS_PUT_SEGMENT(user_status, blob_handle, buffer_length, buffer)
-	 STATUS *user_status;
+ISC_STATUS GDS_PUT_SEGMENT(user_status, blob_handle, buffer_length, buffer)
+	 ISC_STATUS *user_status;
 	 BLB *blob_handle;
 	 SSHORT GDS_VAL(buffer_length);
 	 SCHAR *buffer;
@@ -1331,10 +1331,10 @@ STATUS GDS_PUT_SEGMENT(user_status, blob_handle, buffer_length, buffer)
 }
 
 
-STATUS GDS_PUT_SLICE(user_status, db_handle, tra_handle, array_id,
+ISC_STATUS GDS_PUT_SLICE(user_status, db_handle, tra_handle, array_id,
 					 sdl_length, sdl, param_length, param, slice_length,
 					 slice)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 ATT *db_handle;
 	 TRA *tra_handle;
 	 SLONG *array_id;
@@ -1383,8 +1383,8 @@ void GDS_QTOQ(quad_in, quad_out)
 }
 
 
-STATUS GDS_QUE_EVENTS(user_status, handle, id, length, events, ast, arg)
-	 STATUS *user_status;
+ISC_STATUS GDS_QUE_EVENTS(user_status, handle, id, length, events, ast, arg)
+	 ISC_STATUS *user_status;
 	 ATT *handle;
 	 SLONG *id;
 	 USHORT GDS_VAL(length);
@@ -1408,8 +1408,8 @@ STATUS GDS_QUE_EVENTS(user_status, handle, id, length, events, ast, arg)
 }
 
 
-STATUS GDS_RECEIVE(user_status, req_handle, msg_type, msg_length, msg, level)
-	 STATUS *user_status;
+ISC_STATUS GDS_RECEIVE(user_status, req_handle, msg_type, msg_length, msg, level)
+	 ISC_STATUS *user_status;
 	 REQ *req_handle;
 	 SLONG GDS_VAL(msg_type), GDS_VAL(msg_length);
 	 SCHAR *msg;
@@ -1432,8 +1432,8 @@ STATUS GDS_RECEIVE(user_status, req_handle, msg_type, msg_length, msg, level)
 }
 
 
-STATUS GDS_RECONNECT(user_status, db_handle, tra_handle, length, id)
-	 STATUS *user_status;
+ISC_STATUS GDS_RECONNECT(user_status, db_handle, tra_handle, length, id)
+	 ISC_STATUS *user_status;
 	 ATT *db_handle;
 	 TRA *tra_handle;
 	 SLONG GDS_VAL(length);
@@ -1455,8 +1455,8 @@ STATUS GDS_RECONNECT(user_status, db_handle, tra_handle, length, id)
 }
 
 
-STATUS GDS_RELEASE_REQUEST(user_status, req_handle)
-	 STATUS *user_status;
+ISC_STATUS GDS_RELEASE_REQUEST(user_status, req_handle)
+	 ISC_STATUS *user_status;
 	 REQ *req_handle;
 {
 /**************************************
@@ -1474,9 +1474,9 @@ STATUS GDS_RELEASE_REQUEST(user_status, req_handle)
 }
 
 
-STATUS GDS_REQUEST_INFO(user_status, req_handle, level, item_length, items,
+ISC_STATUS GDS_REQUEST_INFO(user_status, req_handle, level, item_length, items,
 						buffer_length, buffer)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 REQ *req_handle;
 	 SLONG GDS_VAL(item_length), GDS_VAL(buffer_length);
 	 SCHAR *items, *buffer;
@@ -1499,8 +1499,8 @@ STATUS GDS_REQUEST_INFO(user_status, req_handle, level, item_length, items,
 }
 
 
-STATUS GDS_ROLLBACK(user_status, tra_handle)
-	 STATUS *user_status;
+ISC_STATUS GDS_ROLLBACK(user_status, tra_handle)
+	 ISC_STATUS *user_status;
 	 TRA *tra_handle;
 {
 /**************************************
@@ -1518,8 +1518,8 @@ STATUS GDS_ROLLBACK(user_status, tra_handle)
 }
 
 
-STATUS GDS_SEEK_BLOB(user_status, blob_handle, mode, offset, result)
-	 STATUS *user_status;
+ISC_STATUS GDS_SEEK_BLOB(user_status, blob_handle, mode, offset, result)
+	 ISC_STATUS *user_status;
 	 BLB *blob_handle;
 	 SLONG GDS_VAL(mode);
 	 SLONG GDS_VAL(offset);
@@ -1541,8 +1541,8 @@ STATUS GDS_SEEK_BLOB(user_status, blob_handle, mode, offset, result)
 }
 
 
-STATUS GDS_SEND(user_status, req_handle, msg_type, msg_length, msg, level)
-	 STATUS *user_status;
+ISC_STATUS GDS_SEND(user_status, req_handle, msg_type, msg_length, msg, level)
+	 ISC_STATUS *user_status;
 	 REQ *req_handle;
 	 SLONG GDS_VAL(msg_type), GDS_VAL(msg_length);
 	 SCHAR *msg;
@@ -1564,8 +1564,8 @@ STATUS GDS_SEND(user_status, req_handle, msg_type, msg_length, msg, level)
 }
 
 
-STATUS GDS_SQLCODE(user_status)
-	 STATUS *user_status;
+ISC_STATUS GDS_SQLCODE(user_status)
+	 ISC_STATUS *user_status;
 {
 /**************************************
  *
@@ -1581,8 +1581,8 @@ STATUS GDS_SQLCODE(user_status)
 }
 
 
-STATUS GDS_START(user_status, req_handle, tra_handle, level)
-	 STATUS *user_status;
+ISC_STATUS GDS_START(user_status, req_handle, tra_handle, level)
+	 ISC_STATUS *user_status;
 	 REQ *req_handle;
 	 TRA *tra_handle;
 	 SLONG GDS_VAL(level);
@@ -1603,9 +1603,9 @@ STATUS GDS_START(user_status, req_handle, tra_handle, level)
 }
 
 
-STATUS GDS_START_AND_SEND(user_status, req_handle, tra_handle,
+ISC_STATUS GDS_START_AND_SEND(user_status, req_handle, tra_handle,
 						  msg_type, msg_length, msg, level)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 REQ *req_handle;
 	 TRA *tra_handle;
 	 SLONG GDS_VAL(msg_type), GDS_VAL(msg_length);
@@ -1629,8 +1629,8 @@ STATUS GDS_START_AND_SEND(user_status, req_handle, tra_handle,
 }
 
 
-STATUS GDS_START_MULTIPLE(user_status, tra_handle, count, vector)
-	 STATUS *user_status;
+ISC_STATUS GDS_START_MULTIPLE(user_status, tra_handle, count, vector)
+	 ISC_STATUS *user_status;
 	 TRA *tra_handle;
 	 SLONG GDS_VAL(count);
 	 TEB *vector;
@@ -1651,7 +1651,7 @@ STATUS GDS_START_MULTIPLE(user_status, tra_handle, count, vector)
 }
 
 
-STATUS GDS_START_TRANSACTION(STATUS * user_status,
+ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
 							 TRA * tra_handle, SLONG GDS_VAL(count), ...)
 {
 /**************************************
@@ -1682,9 +1682,9 @@ STATUS GDS_START_TRANSACTION(STATUS * user_status,
 }
 
 
-STATUS GDS_TRANSACTION_INFO(user_status, tra_handle,
+ISC_STATUS GDS_TRANSACTION_INFO(user_status, tra_handle,
 							item_length, items, buffer_length, buffer)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 TRA *tra_handle;
 	 SLONG GDS_VAL(item_length), GDS_VAL(buffer_length);
 	 SCHAR *items, *buffer;
@@ -1706,8 +1706,8 @@ STATUS GDS_TRANSACTION_INFO(user_status, tra_handle,
 }
 
 
-STATUS GDS_UNWIND_REQUEST(user_status, req_handle, level)
-	 STATUS *user_status;
+ISC_STATUS GDS_UNWIND_REQUEST(user_status, req_handle, level)
+	 ISC_STATUS *user_status;
 	 REQ *req_handle;
 	 SLONG GDS_VAL(level);
 {
@@ -1786,9 +1786,9 @@ SLONG ISC_BADDRESS(object)
 }
 
 
-STATUS ISC_ARRAY_GEN_SDL(status, desc, sdl_buffer_length, sdl_buffer,
+ISC_STATUS ISC_ARRAY_GEN_SDL(status, desc, sdl_buffer_length, sdl_buffer,
 						 sdl_length)
-	 STATUS *status;
+	 ISC_STATUS *status;
 	 ARRAY_DESC *desc;
 	 SSHORT *sdl_buffer_length;
 	 SCHAR *sdl_buffer;
@@ -1809,9 +1809,9 @@ STATUS ISC_ARRAY_GEN_SDL(status, desc, sdl_buffer_length, sdl_buffer,
 }
 
 
-STATUS ISC_ARRAY_GET_SLICE(status, db_handle, trans_handle, array_id,
+ISC_STATUS ISC_ARRAY_GET_SLICE(status, db_handle, trans_handle, array_id,
 						   desc, array, slice_length)
-	 STATUS *status;
+	 ISC_STATUS *status;
 	 SLONG *db_handle;
 	 SLONG *trans_handle;
 	 GDS__QUAD *array_id;
@@ -1834,9 +1834,9 @@ STATUS ISC_ARRAY_GET_SLICE(status, db_handle, trans_handle, array_id,
 }
 
 
-STATUS ISC_ARRAY_LOOKUP_BOUNDS(status, db_handle, trans_handle,
+ISC_STATUS ISC_ARRAY_LOOKUP_BOUNDS(status, db_handle, trans_handle,
 							   relation_name, field_name, desc)
-	 STATUS *status;
+	 ISC_STATUS *status;
 	 SLONG *db_handle;
 	 SLONG *trans_handle;
 	 SCHAR *relation_name;
@@ -1858,9 +1858,9 @@ STATUS ISC_ARRAY_LOOKUP_BOUNDS(status, db_handle, trans_handle,
 }
 
 
-STATUS ISC_ARRAY_LOOKUP_DESC(status, db_handle, trans_handle,
+ISC_STATUS ISC_ARRAY_LOOKUP_DESC(status, db_handle, trans_handle,
 							 relation_name, field_name, desc)
-	 STATUS *status;
+	 ISC_STATUS *status;
 	 SLONG *db_handle;
 	 SLONG *trans_handle;
 	 SCHAR *relation_name;
@@ -1882,9 +1882,9 @@ STATUS ISC_ARRAY_LOOKUP_DESC(status, db_handle, trans_handle,
 }
 
 
-STATUS ISC_ARRAY_PUT_SLICE(status, db_handle, trans_handle, array_id,
+ISC_STATUS ISC_ARRAY_PUT_SLICE(status, db_handle, trans_handle, array_id,
 						   desc, array, slice_length)
-	 STATUS *status;
+	 ISC_STATUS *status;
 	 SLONG *db_handle;
 	 SLONG *trans_handle;
 	 GDS__QUAD *array_id;
@@ -1907,9 +1907,9 @@ STATUS ISC_ARRAY_PUT_SLICE(status, db_handle, trans_handle, array_id,
 }
 
 
-STATUS ISC_ARRAY_SET_DESC(status, relation_name, field_name, sql_dtype,
+ISC_STATUS ISC_ARRAY_SET_DESC(status, relation_name, field_name, sql_dtype,
 						  sql_length, dimensions, desc)
-	 STATUS *status;
+	 ISC_STATUS *status;
 	 SCHAR *relation_name;
 	 SCHAR *field_name;
 	 SSHORT *sql_dtype;
@@ -1932,9 +1932,9 @@ STATUS ISC_ARRAY_SET_DESC(status, relation_name, field_name, sql_dtype,
 }
 
 
-STATUS ISC_ATTACH_DATABASE(user_status, file_length, file_name, handle,
+ISC_STATUS ISC_ATTACH_DATABASE(user_status, file_length, file_name, handle,
 						   dpb_length, dpb)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 SLONG GDS_VAL(file_length);
 	 SCHAR *file_name;
 	 ATT *handle;
@@ -1999,9 +1999,9 @@ SLONG ISC_FREE(blk)
 }
 
 
-STATUS ISC_BLOB_INFO(user_status, blob_handle, item_length, items,
+ISC_STATUS ISC_BLOB_INFO(user_status, blob_handle, item_length, items,
 					 buffer_length, buffer)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 BLB *blob_handle;
 	 SLONG GDS_VAL(item_length), GDS_VAL(buffer_length);
 	 SCHAR *items, *buffer;
@@ -2022,8 +2022,8 @@ STATUS ISC_BLOB_INFO(user_status, blob_handle, item_length, items,
 }
 
 
-STATUS ISC_CANCEL_BLOB(user_status, blob_handle)
-	 STATUS *user_status;
+ISC_STATUS ISC_CANCEL_BLOB(user_status, blob_handle)
+	 ISC_STATUS *user_status;
 	 BLB *blob_handle;
 {
 /**************************************
@@ -2041,8 +2041,8 @@ STATUS ISC_CANCEL_BLOB(user_status, blob_handle)
 }
 
 
-STATUS ISC_CANCEL_EVENTS(user_status, handle, id)
-	 STATUS *user_status;
+ISC_STATUS ISC_CANCEL_EVENTS(user_status, handle, id)
+	 ISC_STATUS *user_status;
 	 ATT *handle;
 	 SLONG *id;
 {
@@ -2061,8 +2061,8 @@ STATUS ISC_CANCEL_EVENTS(user_status, handle, id)
 }
 
 
-STATUS ISC_CLOSE(user_status, name)
-	 STATUS *user_status;
+ISC_STATUS ISC_CLOSE(user_status, name)
+	 ISC_STATUS *user_status;
 	 TEXT *name;
 {
 /**************************************
@@ -2080,8 +2080,8 @@ STATUS ISC_CLOSE(user_status, name)
 }
 
 
-STATUS ISC_CLOSE_BLOB(user_status, blob_handle)
-	 STATUS *user_status;
+ISC_STATUS ISC_CLOSE_BLOB(user_status, blob_handle)
+	 ISC_STATUS *user_status;
 	 BLB *blob_handle;
 {
 /**************************************
@@ -2099,8 +2099,8 @@ STATUS ISC_CLOSE_BLOB(user_status, blob_handle)
 }
 
 
-STATUS ISC_COMMIT(user_status, tra_handle)
-	 STATUS *user_status;
+ISC_STATUS ISC_COMMIT(user_status, tra_handle)
+	 ISC_STATUS *user_status;
 	 TRA *tra_handle;
 {
 /**************************************
@@ -2118,8 +2118,8 @@ STATUS ISC_COMMIT(user_status, tra_handle)
 }
 
 
-STATUS ISC_COMMIT_RETAINING(user_status, tra_handle)
-	 STATUS *user_status;
+ISC_STATUS ISC_COMMIT_RETAINING(user_status, tra_handle)
+	 ISC_STATUS *user_status;
 	 TRA *tra_handle;
 {
 /**************************************
@@ -2137,8 +2137,8 @@ STATUS ISC_COMMIT_RETAINING(user_status, tra_handle)
 }
 
 
-STATUS ISC_COMPILE(user_status, db_handle, req_handle, blr_length, blr)
-	 STATUS *user_status;
+ISC_STATUS ISC_COMPILE(user_status, db_handle, req_handle, blr_length, blr)
+	 ISC_STATUS *user_status;
 	 ATT *db_handle;
 	 REQ *req_handle;
 	 SLONG GDS_VAL(blr_length);
@@ -2159,8 +2159,8 @@ STATUS ISC_COMPILE(user_status, db_handle, req_handle, blr_length, blr)
 }
 
 
-STATUS ISC_COMPILE2(user_status, db_handle, req_handle, blr_length, blr)
-	 STATUS *user_status;
+ISC_STATUS ISC_COMPILE2(user_status, db_handle, req_handle, blr_length, blr)
+	 ISC_STATUS *user_status;
 	 ATT *db_handle;
 	 REQ *req_handle;
 	 SLONG GDS_VAL(blr_length);
@@ -2181,9 +2181,9 @@ STATUS ISC_COMPILE2(user_status, db_handle, req_handle, blr_length, blr)
 }
 
 
-STATUS ISC_CREATE_BLOB(user_status, db_handle, tra_handle, blob_handle,
+ISC_STATUS ISC_CREATE_BLOB(user_status, db_handle, tra_handle, blob_handle,
 					   blob_id)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 ATT *db_handle;
 	 TRA *tra_handle;
 	 BLB *blob_handle;
@@ -2205,9 +2205,9 @@ STATUS ISC_CREATE_BLOB(user_status, db_handle, tra_handle, blob_handle,
 }
 
 
-STATUS ISC_CREATE_BLOB2(user_status, db_handle, tra_handle, blob_handle,
+ISC_STATUS ISC_CREATE_BLOB2(user_status, db_handle, tra_handle, blob_handle,
 						blob_id, bpb_length, bpb)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 ATT *db_handle;
 	 TRA *tra_handle;
 	 BLB *blob_handle;
@@ -2231,9 +2231,9 @@ STATUS ISC_CREATE_BLOB2(user_status, db_handle, tra_handle, blob_handle,
 }
 
 
-STATUS ISC_CREATE_DATABASE(user_status, file_length, file_name, handle,
+ISC_STATUS ISC_CREATE_DATABASE(user_status, file_length, file_name, handle,
 						   dpb_length, dpb, db_type)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 SLONG GDS_VAL(file_length);
 	 UCHAR *file_name;
 	 ATT *handle;
@@ -2258,9 +2258,9 @@ STATUS ISC_CREATE_DATABASE(user_status, file_length, file_name, handle,
 }
 
 
-STATUS ISC_DATABASE_INFO(user_status, handle, item_length, items,
+ISC_STATUS ISC_DATABASE_INFO(user_status, handle, item_length, items,
 						 buffer_length, buffer)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 ATT *handle;
 	 SLONG GDS_VAL(item_length), GDS_VAL(buffer_length);
 	 SCHAR *items, *buffer;
@@ -2281,8 +2281,8 @@ STATUS ISC_DATABASE_INFO(user_status, handle, item_length, items,
 }
 
 
-STATUS ISC_DDL(user_status, db_handle, tra_handle, length, ddl)
-	 STATUS *user_status;
+ISC_STATUS ISC_DDL(user_status, db_handle, tra_handle, length, ddl)
+	 ISC_STATUS *user_status;
 	 ATT *db_handle;
 	 TRA *tra_handle;
 	 SLONG GDS_VAL(length);
@@ -2305,7 +2305,7 @@ STATUS ISC_DDL(user_status, db_handle, tra_handle, length, ddl)
 
 
 ISC_DECLARE(user_status, statement, cursor)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 TEXT *statement, *cursor;
 {
 /**************************************
@@ -2343,7 +2343,7 @@ void ISC_DECODE_DATE(date, times)
 
 
 ISC_DESCRIBE(user_status, name, sqlda)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 TEXT *name;
 	 XSQLDA *sqlda;
 {
@@ -2363,7 +2363,7 @@ ISC_DESCRIBE(user_status, name, sqlda)
 
 
 ISC_DESCRIBE_BIND(user_status, name, sqlda)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 TEXT *name;
 	 XSQLDA *sqlda;
 {
@@ -2382,8 +2382,8 @@ ISC_DESCRIBE_BIND(user_status, name, sqlda)
 }
 
 
-STATUS ISC_DETACH(user_status, handle)
-	 STATUS *user_status;
+ISC_STATUS ISC_DETACH(user_status, handle)
+	 ISC_STATUS *user_status;
 	 ATT *handle;
 {
 /**************************************
@@ -2401,8 +2401,8 @@ STATUS ISC_DETACH(user_status, handle)
 }
 
 
-STATUS ISC_DROP_DATABASE(user_status, handle)
-	 STATUS *user_status;
+ISC_STATUS ISC_DROP_DATABASE(user_status, handle)
+	 ISC_STATUS *user_status;
 	 ATT *handle;
 {
 /**************************************
@@ -2421,7 +2421,7 @@ STATUS ISC_DROP_DATABASE(user_status, handle)
 
 
 ISC_DSQL_ALLOCATE(user_status, db_handle, stmt_handle)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 ATT *db_handle;
 	 STMT *stmt_handle;
 {
@@ -2441,7 +2441,7 @@ ISC_DSQL_ALLOCATE(user_status, db_handle, stmt_handle)
 
 
 ISC_DSQL_ALLOCATE2(user_status, db_handle, stmt_handle)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 ATT *db_handle;
 	 STMT *stmt_handle;
 {
@@ -2461,7 +2461,7 @@ ISC_DSQL_ALLOCATE2(user_status, db_handle, stmt_handle)
 
 
 ISC_DSQL_DESCRIBE(user_status, stmt_handle, dialect, sqlda)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 STMT *stmt_handle;
 	 SLONG GDS_VAL(dialect);
 	 XSQLDA *sqlda;
@@ -2483,7 +2483,7 @@ ISC_DSQL_DESCRIBE(user_status, stmt_handle, dialect, sqlda)
 
 
 ISC_DSQL_DESCRIBE_BIND(user_status, stmt_handle, dialect, sqlda)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 STMT *stmt_handle;
 	 SLONG GDS_VAL(dialect);
 	 XSQLDA *sqlda;
@@ -2505,7 +2505,7 @@ ISC_DSQL_DESCRIBE_BIND(user_status, stmt_handle, dialect, sqlda)
 
 
 ISC_DSQL_EXECUTE(user_status, tra_handle, stmt_handle, dialect, sqlda)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 TRA *tra_handle;
 	 STMT *stmt_handle;
 	 SLONG GDS_VAL(dialect);
@@ -2529,7 +2529,7 @@ ISC_DSQL_EXECUTE(user_status, tra_handle, stmt_handle, dialect, sqlda)
 
 ISC_DSQL_EXECUTE2(user_status, tra_handle, stmt_handle, dialect,
 				  in_sqlda, out_sqlda, sqlda)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 TRA *tra_handle;
 	 STMT *stmt_handle;
 	 SLONG GDS_VAL(dialect);
@@ -2554,7 +2554,7 @@ ISC_DSQL_EXECUTE2(user_status, tra_handle, stmt_handle, dialect,
 ISC_DSQL_EXECUTE_M(user_status,
 				   tra_handle, stmt_handle, blr_length, blr, msg_type,
 				   msg_length, msg)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 TRA *tra_handle;
 	 STMT *stmt_handle;
 	 SLONG GDS_VAL(blr_length), GDS_VAL(msg_type), GDS_VAL(msg_length);
@@ -2581,7 +2581,7 @@ ISC_DSQL_EXECUTE2_M(user_status, tra_handle, stmt_handle,
 					in_blr_length, in_blr, in_msg_type, in_msg_length, in_msg,
 					out_blr_length, out_blr, out_msg_type, out_msg_length,
 					out_msg)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 TRA *tra_handle;
 	 STMT *stmt_handle;
 	 SLONG GDS_VAL(in_blr_length), GDS_VAL(in_msg_type);
@@ -2612,7 +2612,7 @@ ISC_DSQL_EXECUTE2_M(user_status, tra_handle, stmt_handle,
 
 ISC_DSQL_EXECUTE_IMMED(user_status,
 					   db_handle, tra_handle, length, string, dialect, sqlda)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 ATT *db_handle;
 	 TRA *tra_handle;
 	 SLONG GDS_VAL(length);
@@ -2640,7 +2640,7 @@ ISC_DSQL_EXECUTE_IMMED(user_status,
 ISC_DSQL_EXEC_IMMED2(user_status,
 					 db_handle, tra_handle, length, string, dialect, in_sqlda,
 					 out_sqlda)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 ATT *db_handle;
 	 TRA *tra_handle;
 	 SLONG GDS_VAL(length);
@@ -2668,7 +2668,7 @@ ISC_DSQL_EXEC_IMMED2(user_status,
 ISC_DSQL_EXECUTE_IMM_M(user_status, db_handle, tra_handle,
 					   length, string, dialect, blr_length, blr, msg_type,
 					   msg_length, msg)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 ATT *db_handle;
 	 TRA *tra_handle;
 	 SLONG GDS_VAL(length);
@@ -2702,7 +2702,7 @@ ISC_DSQL_EXEC_IMMED2_M(user_status, db_handle, tra_handle,
 					   in_blr_length, in_blr, in_msg_type, in_msg_length,
 					   in_msg, out_blr_length, out_blr, out_msg_type,
 					   out_msg_length, out_msg)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 ATT *db_handle;
 	 TRA *tra_handle;
 	 SLONG GDS_VAL(length);
@@ -2737,7 +2737,7 @@ ISC_DSQL_EXEC_IMMED2_M(user_status, db_handle, tra_handle,
 
 
 ISC_DSQL_FETCH(user_status, stmt_handle, dialect, sqlda)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 STMT *stmt_handle;
 	 SLONG GDS_VAL(dialect);
 	 XSQLDA *sqlda;
@@ -2760,7 +2760,7 @@ ISC_DSQL_FETCH(user_status, stmt_handle, dialect, sqlda)
 
 #ifdef SCROLLABLE_CURSORS
 ISC_DSQL_FETCH2(user_status, stmt_handle, dialect, sqlda, direction, offset)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 STMT *stmt_handle;
 	 SLONG GDS_VAL(dialect);
 	 XSQLDA *sqlda;
@@ -2786,7 +2786,7 @@ ISC_DSQL_FETCH2(user_status, stmt_handle, dialect, sqlda, direction, offset)
 
 ISC_DSQL_FETCH_M(user_status,
 				 stmt_handle, blr_length, blr, msg_type, msg_length, msg)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 STMT *stmt_handle;
 	 SLONG GDS_VAL(blr_length), GDS_VAL(msg_type), GDS_VAL(msg_length);
 	 SCHAR *blr, *msg;
@@ -2812,7 +2812,7 @@ ISC_DSQL_FETCH_M(user_status,
 ISC_DSQL_FETCH2_M(user_status,
 				  stmt_handle, blr_length, blr, msg_type, msg_length, msg,
 				  direction, offset)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 STMT *stmt_handle;
 	 SLONG GDS_VAL(blr_length), GDS_VAL(msg_type), GDS_VAL(msg_length);
 	 SCHAR *blr, *msg;
@@ -2856,7 +2856,7 @@ ISC_DSQL_FINISH(db_handle)
 
 
 ISC_DSQL_FREE(user_status, stmt_handle, option)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 STMT *stmt_handle;
 	 SLONG GDS_VAL(option);
 {
@@ -2877,7 +2877,7 @@ ISC_DSQL_FREE(user_status, stmt_handle, option)
 
 
 ISC_DSQL_INSERT(user_status, stmt_handle, dialect, sqlda)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 STMT *stmt_handle;
 	 SLONG GDS_VAL(dialect);
 	 XSQLDA *sqlda;
@@ -2900,7 +2900,7 @@ ISC_DSQL_INSERT(user_status, stmt_handle, dialect, sqlda)
 
 ISC_DSQL_INSERT_M(user_status,
 				  stmt_handle, blr_length, blr, msg_type, msg_length, msg)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 STMT *stmt_handle;
 	 SLONG GDS_VAL(blr_length), GDS_VAL(msg_type), GDS_VAL(msg_length);
 	 SCHAR *blr, *msg;
@@ -2924,7 +2924,7 @@ ISC_DSQL_INSERT_M(user_status,
 
 ISC_DSQL_PREPARE(user_status,
 				 tra_handle, stmt_handle, length, string, dialect, sqlda)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 TRA *tra_handle;
 	 STMT *stmt_handle;
 	 SLONG GDS_VAL(length);
@@ -2952,7 +2952,7 @@ ISC_DSQL_PREPARE(user_status,
 ISC_DSQL_PREPARE_M(user_status, tra_handle, stmt_handle,
 				   length, string, dialect, item_length, items, buffer_length,
 				   buffer)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 TRA *tra_handle;
 	 STMT *stmt_handle;
 	 SLONG GDS_VAL(length);
@@ -2980,7 +2980,7 @@ ISC_DSQL_PREPARE_M(user_status, tra_handle, stmt_handle,
 
 
 ISC_DSQL_RELEASE(user_status, name)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 TEXT *name;
 {
 /**************************************
@@ -2999,7 +2999,7 @@ ISC_DSQL_RELEASE(user_status, name)
 
 
 ISC_DSQL_SET_CURSOR(user_status, stmt_handle, cursor, type)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 STMT *stmt_handle;
 	 SCHAR *cursor;
 	 SLONG GDS_VAL(type);
@@ -3022,7 +3022,7 @@ ISC_DSQL_SET_CURSOR(user_status, stmt_handle, cursor, type)
 
 ISC_DSQL_SQL_INFO(user_status, stmt_handle, item_length, items,
 				  buffer_length, buffer)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 STMT *stmt_handle;
 	 SLONG GDS_VAL(item_length), GDS_VAL(buffer_length);
 	 SCHAR *items, *buffer;
@@ -3044,7 +3044,7 @@ ISC_DSQL_SQL_INFO(user_status, stmt_handle, item_length, items,
 
 
 ISC_EMBED_DSQL_CLOSE(user_status, name)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 SCHAR *name;
 {
 /**************************************
@@ -3063,7 +3063,7 @@ ISC_EMBED_DSQL_CLOSE(user_status, name)
 
 
 ISC_EMBED_DSQL_DECLARE(user_status, stmt_name, cursor)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 SCHAR *stmt_name;
 	 SCHAR *cursor;
 {
@@ -3083,7 +3083,7 @@ ISC_EMBED_DSQL_DECLARE(user_status, stmt_name, cursor)
 
 
 ISC_EMBED_DSQL_DESCR(user_status, stmt_name, dialect, sqlda)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 SCHAR *stmt_name;
 	 SLONG GDS_VAL(dialect);
 	 XSQLDA *sqlda;
@@ -3105,7 +3105,7 @@ ISC_EMBED_DSQL_DESCR(user_status, stmt_name, dialect, sqlda)
 
 
 ISC_EMBED_DSQL_DESCR_B(user_status, stmt_name, dialect, sqlda)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 SCHAR *stmt_name;
 	 SLONG GDS_VAL(dialect);
 	 XSQLDA *sqlda;
@@ -3128,7 +3128,7 @@ ISC_EMBED_DSQL_DESCR_B(user_status, stmt_name, dialect, sqlda)
 
 ISC_EMBED_DSQL_EXECUTE(user_status, trans_handle, stmt_name, dialect,
 					   SQLDA_PROTOTYPE)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 SLONG **trans_handle;
 	 SCHAR *stmt_name;
 	 SLONG GDS_VAL(dialect);
@@ -3152,7 +3152,7 @@ ISC_EMBED_DSQL_EXECUTE(user_status, trans_handle, stmt_name, dialect,
 
 ISC_EMBED_DSQL_EXECUTE2(user_status, trans_handle, stmt_name, dialect,
 						in_sqlda, out_sqlda)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 SLONG **trans_handle;
 	 SCHAR *stmt_name;
 	 SLONG GDS_VAL(dialect);
@@ -3176,7 +3176,7 @@ ISC_EMBED_DSQL_EXECUTE2(user_status, trans_handle, stmt_name, dialect,
 
 ISC_EMBED_DSQL_EXEC_IMM(user_status, db_handle, trans_handle, length, string,
 						dialect, SQLDA_PROTOTYPE)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 SLONG **db_handle;
 	 SLONG **trans_handle;
 	 SLONG GDS_VAL(length);
@@ -3203,7 +3203,7 @@ ISC_EMBED_DSQL_EXEC_IMM(user_status, db_handle, trans_handle, length, string,
 
 ISC_EMBED_DSQL_EXEC_IM2(user_status, db_handle, trans_handle, length,
 						string, dialect, in_sqlda, out_sqlda)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 SLONG **db_handle;
 	 SLONG **trans_handle;
 	 SLONG GDS_VAL(length);
@@ -3230,7 +3230,7 @@ ISC_EMBED_DSQL_EXEC_IM2(user_status, db_handle, trans_handle, length,
 
 
 ISC_EMBED_DSQL_FETCH(user_status, cursor_name, dialect, SQLDA_PROTOTYPE)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 SCHAR *cursor_name;
 	 SLONG GDS_VAL(dialect);
 	 XSQLDA *sqlda;
@@ -3254,7 +3254,7 @@ ISC_EMBED_DSQL_FETCH(user_status, cursor_name, dialect, SQLDA_PROTOTYPE)
 #ifdef SCROLLABLE_CURSORS
 ISC_EMBED_DSQL_FETCH2(user_status, cursor_name, dialect, SQLDA_PROTOTYPE,
 					  direction, offset)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 SCHAR *cursor_name;
 	 SLONG GDS_VAL(dialect);
 	 XSQLDA *sqlda;
@@ -3279,7 +3279,7 @@ ISC_EMBED_DSQL_FETCH2(user_status, cursor_name, dialect, SQLDA_PROTOTYPE,
 
 
 ISC_EMBED_DSQL_INSERT(user_status, cursor_name, dialect, sqlda)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 SCHAR *cursor_name;
 	 SLONG GDS_VAL(dialect);
 	 XSQLDA *sqlda;
@@ -3321,7 +3321,7 @@ ISC_EMBED_DSQL_LENGTH(string, length)
 
 ISC_EMBED_DSQL_OPEN(user_status, trans_handle, cursor_name, dialect,
 					SQLDA_PROTOTYPE)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 SLONG **trans_handle;
 	 SCHAR *cursor_name;
 	 SLONG GDS_VAL(dialect);
@@ -3345,7 +3345,7 @@ ISC_EMBED_DSQL_OPEN(user_status, trans_handle, cursor_name, dialect,
 
 ISC_EMBED_DSQL_OPEN2(user_status, trans_handle, cursor_name, dialect,
 					 in_sqlda, out_sqlda)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 SLONG **trans_handle;
 	 SCHAR *cursor_name;
 	 SLONG GDS_VAL(dialect);
@@ -3369,7 +3369,7 @@ ISC_EMBED_DSQL_OPEN2(user_status, trans_handle, cursor_name, dialect,
 
 ISC_EMBED_DSQL_PREPARE(user_status, db_handle, trans_handle, stmt_name,
 					   length, string, dialect, SQLDA_PROTOTYPE)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 SLONG **db_handle;
 	 SLONG **trans_handle;
 	 SCHAR *stmt_name;
@@ -3396,7 +3396,7 @@ ISC_EMBED_DSQL_PREPARE(user_status, db_handle, trans_handle, stmt_name,
 
 
 ISC_EMBED_DSQL_RELEASE(user_status, stmt_name)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 SCHAR *stmt_name;
 {
 /**************************************
@@ -3482,7 +3482,7 @@ void ISC_EVENT_COUNTS(result_vector, buffer_length, event_buffer,
 
 
 ISC_EXECUTE(user_status, trans_handle, name, sqlda)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 TEXT *name;
 	 TRA *trans_handle;
 	 XSQLDA *sqlda;
@@ -3503,7 +3503,7 @@ ISC_EXECUTE(user_status, trans_handle, name, sqlda)
 
 
 ISC_EXECUTE_IMMEDIATE(user_status, db_handle, trans_handle, length, string)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 int **db_handle, **trans_handle;
 	 SLONG *length;
 	 TEXT *string;
@@ -3527,7 +3527,7 @@ ISC_EXECUTE_IMMEDIATE(user_status, db_handle, trans_handle, length, string)
 
 
 ISC_FETCH(user_status, name, sqlda)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 TEXT *name;
 	 XSQLDA *sqlda;
 {
@@ -3566,9 +3566,9 @@ ISC_FTOF(string, length1, field, length2)
 }
 
 
-STATUS ISC_GET_SEGMENT(user_status, blob_handle, length, buffer_length,
+ISC_STATUS ISC_GET_SEGMENT(user_status, blob_handle, length, buffer_length,
 					   buffer)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 BLB *blob_handle;
 	 SSHORT *length;
 	 SLONG GDS_VAL(buffer_length);
@@ -3584,7 +3584,7 @@ STATUS ISC_GET_SEGMENT(user_status, blob_handle, length, buffer_length,
  *	Abort a partially completed blob.
  *
  **************************************/
-	STATUS status;
+	ISC_STATUS status;
 	SSHORT return_length;
 
 	status = isc_get_segment(user_status, blob_handle,
@@ -3596,10 +3596,10 @@ STATUS ISC_GET_SEGMENT(user_status, blob_handle, length, buffer_length,
 }
 
 
-STATUS ISC_GET_SLICE(user_status, db_handle, tra_handle, array_id,
+ISC_STATUS ISC_GET_SLICE(user_status, db_handle, tra_handle, array_id,
 					 sdl_length, sdl, param_length, param, slice_length,
 					 slice, return_length)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 ATT *db_handle;
 	 TRA *tra_handle;
 	 SLONG *array_id;
@@ -3630,7 +3630,7 @@ STATUS ISC_GET_SLICE(user_status, db_handle, tra_handle, array_id,
 
 
 ISC_OPEN(user_status, trans_handle, name, sqlda)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 TEXT *name;
 	 TRA *trans_handle;
 	 XSQLDA *sqlda;
@@ -3650,8 +3650,8 @@ ISC_OPEN(user_status, trans_handle, name, sqlda)
 }
 
 
-STATUS ISC_OPEN_BLOB(user_status, db_handle, tra_handle, blob_handle, blob_id)
-	 STATUS *user_status;
+ISC_STATUS ISC_OPEN_BLOB(user_status, db_handle, tra_handle, blob_handle, blob_id)
+	 ISC_STATUS *user_status;
 	 ATT *db_handle;
 	 TRA *tra_handle;
 	 BLB *blob_handle;
@@ -3673,9 +3673,9 @@ STATUS ISC_OPEN_BLOB(user_status, db_handle, tra_handle, blob_handle, blob_id)
 }
 
 
-STATUS ISC_OPEN_BLOB2(user_status, db_handle, tra_handle, blob_handle,
+ISC_STATUS ISC_OPEN_BLOB2(user_status, db_handle, tra_handle, blob_handle,
 					  blob_id, bpb_length, bpb)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 ATT *db_handle;
 	 TRA *tra_handle;
 	 BLB *blob_handle;
@@ -3700,7 +3700,7 @@ STATUS ISC_OPEN_BLOB2(user_status, db_handle, tra_handle, blob_handle,
 
 
 ISC_PREPARE(user_status, db_handle, trans_handle, name, length, string, sqlda)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 int **db_handle, **trans_handle;
 	 TEXT *name;
 	 SLONG *length;
@@ -3726,8 +3726,8 @@ ISC_PREPARE(user_status, db_handle, trans_handle, name, length, string, sqlda)
 }
 
 
-STATUS ISC_PREPARE_TRANS(user_status, tra_handle)
-	 STATUS *user_status;
+ISC_STATUS ISC_PREPARE_TRANS(user_status, tra_handle)
+	 ISC_STATUS *user_status;
 	 TRA *tra_handle;
 {
 /**************************************
@@ -3746,8 +3746,8 @@ STATUS ISC_PREPARE_TRANS(user_status, tra_handle)
 }
 
 
-STATUS ISC_PREPARE2(user_status, tra_handle, msg_length, msg)
-	 STATUS *user_status;
+ISC_STATUS ISC_PREPARE2(user_status, tra_handle, msg_length, msg)
+	 ISC_STATUS *user_status;
 	 TRA *tra_handle;
 	 SLONG GDS_VAL(msg_length);
 	 UCHAR *msg;
@@ -3771,7 +3771,7 @@ STATUS ISC_PREPARE2(user_status, tra_handle, msg_length, msg)
 
 void ISC_PRINT_SQLERROR(sqlcode, status_vector)
 	 SLONG GDS_VAL(sqlcode);
-	 STATUS *status_vector;
+	 ISC_STATUS *status_vector;
 {
 /**************************************
  *
@@ -3790,7 +3790,7 @@ void ISC_PRINT_SQLERROR(sqlcode, status_vector)
 
 
 ISC_PRINT_STATUS(status_vector)
-	 STATUS *status_vector;
+	 ISC_STATUS *status_vector;
 {
 /**************************************
  *
@@ -3807,8 +3807,8 @@ ISC_PRINT_STATUS(status_vector)
 }
 
 
-STATUS ISC_PUT_SEGMENT(user_status, blob_handle, buffer_length, buffer)
-	 STATUS *user_status;
+ISC_STATUS ISC_PUT_SEGMENT(user_status, blob_handle, buffer_length, buffer)
+	 ISC_STATUS *user_status;
 	 BLB *blob_handle;
 	 SSHORT GDS_VAL(buffer_length);
 	 SCHAR *buffer;
@@ -3828,10 +3828,10 @@ STATUS ISC_PUT_SEGMENT(user_status, blob_handle, buffer_length, buffer)
 }
 
 
-STATUS ISC_PUT_SLICE(user_status, db_handle, tra_handle, array_id,
+ISC_STATUS ISC_PUT_SLICE(user_status, db_handle, tra_handle, array_id,
 					 sdl_length, sdl, param_length, param, slice_length,
 					 slice)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 ATT *db_handle;
 	 TRA *tra_handle;
 	 SLONG *array_id;
@@ -3880,8 +3880,8 @@ void ISC_QTOQ(quad_in, quad_out)
 }
 
 
-STATUS ISC_QUE_EVENTS(user_status, handle, id, length, events, ast, arg)
-	 STATUS *user_status;
+ISC_STATUS ISC_QUE_EVENTS(user_status, handle, id, length, events, ast, arg)
+	 ISC_STATUS *user_status;
 	 ATT *handle;
 	 SLONG *id;
 	 USHORT GDS_VAL(length);
@@ -3905,8 +3905,8 @@ STATUS ISC_QUE_EVENTS(user_status, handle, id, length, events, ast, arg)
 }
 
 
-STATUS ISC_RECEIVE(user_status, req_handle, msg_type, msg_length, msg, level)
-	 STATUS *user_status;
+ISC_STATUS ISC_RECEIVE(user_status, req_handle, msg_type, msg_length, msg, level)
+	 ISC_STATUS *user_status;
 	 REQ *req_handle;
 	 SLONG *msg_type, *msg_length;
 	 SCHAR *msg;
@@ -3929,8 +3929,8 @@ STATUS ISC_RECEIVE(user_status, req_handle, msg_type, msg_length, msg, level)
 }
 
 
-STATUS ISC_RECONNECT(user_status, db_handle, tra_handle, length, id)
-	 STATUS *user_status;
+ISC_STATUS ISC_RECONNECT(user_status, db_handle, tra_handle, length, id)
+	 ISC_STATUS *user_status;
 	 ATT *db_handle;
 	 TRA *tra_handle;
 	 SLONG *length;
@@ -3952,8 +3952,8 @@ STATUS ISC_RECONNECT(user_status, db_handle, tra_handle, length, id)
 }
 
 
-STATUS ISC_RELEASE_REQUEST(user_status, req_handle)
-	 STATUS *user_status;
+ISC_STATUS ISC_RELEASE_REQUEST(user_status, req_handle)
+	 ISC_STATUS *user_status;
 	 REQ *req_handle;
 {
 /**************************************
@@ -3971,9 +3971,9 @@ STATUS ISC_RELEASE_REQUEST(user_status, req_handle)
 }
 
 
-STATUS ISC_REQUEST_INFO(user_status, req_handle, level, item_length, items,
+ISC_STATUS ISC_REQUEST_INFO(user_status, req_handle, level, item_length, items,
 						buffer_length, buffer)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 REQ *req_handle;
 	 SLONG *item_length, *buffer_length;
 	 SCHAR *items, *buffer;
@@ -3996,8 +3996,8 @@ STATUS ISC_REQUEST_INFO(user_status, req_handle, level, item_length, items,
 }
 
 
-STATUS ISC_ROLLBACK(user_status, tra_handle)
-	 STATUS *user_status;
+ISC_STATUS ISC_ROLLBACK(user_status, tra_handle)
+	 ISC_STATUS *user_status;
 	 TRA *tra_handle;
 {
 /**************************************
@@ -4015,8 +4015,8 @@ STATUS ISC_ROLLBACK(user_status, tra_handle)
 }
 
 
-STATUS ISC_SEEK_BLOB(user_status, blob_handle, mode, offset, result)
-	 STATUS *user_status;
+ISC_STATUS ISC_SEEK_BLOB(user_status, blob_handle, mode, offset, result)
+	 ISC_STATUS *user_status;
 	 BLB *blob_handle;
 	 SLONG *mode;
 	 SLONG *offset;
@@ -4038,8 +4038,8 @@ STATUS ISC_SEEK_BLOB(user_status, blob_handle, mode, offset, result)
 }
 
 
-STATUS ISC_SEND(user_status, req_handle, msg_type, msg_length, msg, level)
-	 STATUS *user_status;
+ISC_STATUS ISC_SEND(user_status, req_handle, msg_type, msg_length, msg, level)
+	 ISC_STATUS *user_status;
 	 REQ *req_handle;
 	 SLONG *msg_type, *msg_length;
 	 SCHAR *msg;
@@ -4061,8 +4061,8 @@ STATUS ISC_SEND(user_status, req_handle, msg_type, msg_length, msg, level)
 }
 
 
-STATUS ISC_SQLCODE(user_status)
-	 STATUS *user_status;
+ISC_STATUS ISC_SQLCODE(user_status)
+	 ISC_STATUS *user_status;
 {
 /**************************************
  *
@@ -4078,9 +4078,9 @@ STATUS ISC_SQLCODE(user_status)
 }
 
 
-STATUS ISC_START_AND_SEND(user_status, req_handle, tra_handle,
+ISC_STATUS ISC_START_AND_SEND(user_status, req_handle, tra_handle,
 						  msg_type, msg_length, msg, level)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 REQ *req_handle;
 	 TRA *tra_handle;
 	 SLONG *msg_type, *msg_length;
@@ -4104,8 +4104,8 @@ STATUS ISC_START_AND_SEND(user_status, req_handle, tra_handle,
 }
 
 
-STATUS ISC_START(user_status, req_handle, tra_handle, level)
-	 STATUS *user_status;
+ISC_STATUS ISC_START(user_status, req_handle, tra_handle, level)
+	 ISC_STATUS *user_status;
 	 REQ *req_handle;
 	 TRA *tra_handle;
 	 SLONG *level;
@@ -4126,8 +4126,8 @@ STATUS ISC_START(user_status, req_handle, tra_handle, level)
 }
 
 
-STATUS ISC_START_MULTIPLE(user_status, tra_handle, count, vector)
-	 STATUS *user_status;
+ISC_STATUS ISC_START_MULTIPLE(user_status, tra_handle, count, vector)
+	 ISC_STATUS *user_status;
 	 TRA *tra_handle;
 	 SLONG GDS_VAL(count);
 	 TEB *vector;
@@ -4148,7 +4148,7 @@ STATUS ISC_START_MULTIPLE(user_status, tra_handle, count, vector)
 }
 
 
-STATUS ISC_START_TRANSACTION(STATUS * user_status,
+ISC_STATUS ISC_START_TRANSACTION(ISC_STATUS * user_status,
 							 TRA * tra_handle, SLONG GDS_VAL(count), ...)
 {
 /**************************************
@@ -4179,10 +4179,10 @@ STATUS ISC_START_TRANSACTION(STATUS * user_status,
 }
 
 
-STATUS ISC_TRANSACT_REQUEST(user_status, db_handle, tra_handle,
+ISC_STATUS ISC_TRANSACT_REQUEST(user_status, db_handle, tra_handle,
 							blr_length, blr, in_msg_length, in_msg,
 							out_msg_length, out_msg)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 ATT *db_handle;
 	 TRA *tra_handle;
 	 SCHAR *blr;
@@ -4208,9 +4208,9 @@ STATUS ISC_TRANSACT_REQUEST(user_status, db_handle, tra_handle,
 }
 
 
-STATUS ISC_TRANSACTION_INFO(user_status, tra_handle,
+ISC_STATUS ISC_TRANSACTION_INFO(user_status, tra_handle,
 							item_length, items, buffer_length, buffer)
-	 STATUS *user_status;
+	 ISC_STATUS *user_status;
 	 TRA *tra_handle;
 	 SLONG *item_length, *buffer_length;
 	 SCHAR *items, *buffer;
@@ -4232,8 +4232,8 @@ STATUS ISC_TRANSACTION_INFO(user_status, tra_handle,
 }
 
 
-STATUS ISC_UNWIND_REQUEST(user_status, req_handle, level)
-	 STATUS *user_status;
+ISC_STATUS ISC_UNWIND_REQUEST(user_status, req_handle, level)
+	 ISC_STATUS *user_status;
 	 REQ *req_handle;
 	 SLONG *level;
 {
@@ -4294,8 +4294,8 @@ ISC_VERSION(handle, routine, user_arg)
 }
 
 
-STATUS ISC_WAIT_FOR_EVENT(user_status, handle, length, events, buffer)
-	 STATUS *user_status;
+ISC_STATUS ISC_WAIT_FOR_EVENT(user_status, handle, length, events, buffer)
+	 ISC_STATUS *user_status;
 	 ATT *handle;
 	 SLONG length;
 	 UCHAR **events, **buffer;

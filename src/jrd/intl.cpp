@@ -159,7 +159,7 @@ static void dump_hex(UCHAR *, USHORT);
 static void dump_latin(UCHAR *, USHORT);
 #endif
 #endif
-//static void finish_texttype_init(TextType*, FPTR_VOID, STATUS *);
+//static void finish_texttype_init(TextType*, FPTR_VOID, ISC_STATUS *);
 //static SSHORT internal_str_to_upper(TextType*, USHORT, UCHAR *, USHORT,
 //									UCHAR *);
 //static USHORT internal_string_to_key(TextType*, USHORT, UCHAR *, USHORT,
@@ -178,7 +178,7 @@ static void pad_spaces(TDBB, CHARSET_ID, BYTE *, USHORT);
 //static USHORT wc_to_wc(CsConvert*, UCS2_CHAR *, USHORT, UCS2_CHAR *, USHORT, SSHORT *,
 //					   USHORT *);
 					   
-static CharSetContainer *internal_charset_container_lookup(TDBB, SSHORT, STATUS *);
+static CharSetContainer *internal_charset_container_lookup(TDBB, SSHORT, ISC_STATUS *);
 static void* search_out_alloc_func(const char *, CHARSET_ID, CHARSET_ID);
 static void* intl_back_compat_alloc_func_lookup(USHORT, CHARSET_ID, CHARSET_ID);
 static void* intl_back_compat_obj_init_lookup(USHORT, SSHORT, SSHORT);
@@ -808,7 +808,7 @@ int DLL_EXPORT INTL_data_or_binary(DSC * pText)
 #endif
 
 
-int DLL_EXPORT INTL_defined_type(TDBB tdbb, STATUS * status, SSHORT t_type)
+int DLL_EXPORT INTL_defined_type(TDBB tdbb, ISC_STATUS * status, SSHORT t_type)
 {
 /**************************************
  *
@@ -946,7 +946,7 @@ USHORT DLL_EXPORT INTL_key_length(TDBB tdbb, USHORT idxType, USHORT iLength)
 	return (key_length);
 }
 
-static CharSetContainer *internal_charset_container_lookup(TDBB tdbb, SSHORT parm1, STATUS * status)
+static CharSetContainer *internal_charset_container_lookup(TDBB tdbb, SSHORT parm1, ISC_STATUS * status)
 {
 /**************************************
  *
@@ -1018,7 +1018,7 @@ static CharSetContainer *internal_charset_container_lookup(TDBB tdbb, SSHORT par
 	return cs;
 }
 
-CharSet *DLL_EXPORT INTL_charset_lookup(TDBB tdbb, SSHORT parm1, STATUS * status)
+CharSet *DLL_EXPORT INTL_charset_lookup(TDBB tdbb, SSHORT parm1, ISC_STATUS * status)
 {
 /**************************************
  *
@@ -1052,7 +1052,7 @@ CharSet *DLL_EXPORT INTL_charset_lookup(TDBB tdbb, SSHORT parm1, STATUS * status
 
 TextType *DLL_EXPORT INTL_texttype_lookup(
 								 TDBB tdbb,
-								 SSHORT parm1, FPTR_VOID err, STATUS * status)
+								 SSHORT parm1, FPTR_VOID err, ISC_STATUS * status)
 {
 /**************************************
  *

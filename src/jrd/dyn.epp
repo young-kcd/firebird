@@ -119,7 +119,7 @@ void DYN_ddl(ATT attachment, JRD_TRA transaction, USHORT length, UCHAR * ddl)
 		ERR_post(gds_wrodynver, 0);
 	}
 
-	STATUS* status = tdbb->tdbb_status_vector;
+	ISC_STATUS* status = tdbb->tdbb_status_vector;
 	*status++ = gds_arg_gds;
 	*status++ = 0;
 	*status = gds_arg_end;
@@ -214,7 +214,7 @@ void DYN_error(USHORT	status_flag,
  *
  **************************************/
 	TDBB tdbb;
-	STATUS local_status[ISC_STATUS_LENGTH], *v1, *v2, *end, arg;
+	ISC_STATUS local_status[ISC_STATUS_LENGTH], *v1, *v2, *end, arg;
 
 
 	tdbb = GET_THREAD_DATA;
@@ -237,7 +237,7 @@ void DYN_error(USHORT	status_flag,
 		*v1++ = gds_arg_gds;
 		*v1++ = gds_random;
 		*v1++ = gds_arg_string;
-		*v1++ = (STATUS) ERR_cstring(error_buffer);
+		*v1++ = (ISC_STATUS) ERR_cstring(error_buffer);
 	}
 	if (status_flag) {
 		v2 = tdbb->tdbb_status_vector;

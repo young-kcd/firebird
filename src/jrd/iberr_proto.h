@@ -24,9 +24,9 @@
 #ifndef _JRD_IBERR_PROTO_H_
 #define _JRD_IBERR_PROTO_H_
 
-extern void IBERR_append_status(STATUS *, STATUS, ...);
-extern void IBERR_build_status(STATUS *, STATUS, ...);
-extern void IBERR_bugcheck(STATUS *, SCHAR *, UCHAR *, int, TEXT *);
-extern void IBERR_error(STATUS *, SCHAR *, UCHAR *, int, TEXT *);
+extern void IBERR_append_status(ISC_STATUS *, ISC_STATUS, ...);
+extern void IBERR_build_status(ISC_STATUS *, ISC_STATUS, ...);
+extern void IBERR_bugcheck(ISC_STATUS *, SCHAR *, UCHAR *, int, TEXT *);
+extern void IBERR_error(ISC_STATUS *, SCHAR *, UCHAR *, int, TEXT *);
 
 #endif /* _JRD_IBERR_PROTO_H_ */

@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.48 2003-03-24 14:41:39 skidder Exp $
+$Id: exe.cpp,v 1.49 2003-04-10 06:49:11 aafemt Exp $
 */
 
 #include "firebird.h"
@@ -1364,8 +1364,8 @@ static void exec_sql(TDBB tdbb, JRD_REQ request, DSC* dsc)
  *
  **************************************/
 
-	extern STATUS DLL_EXPORT callback_execute_immediate(
-		STATUS *status,
+	extern ISC_STATUS DLL_EXPORT callback_execute_immediate(
+		ISC_STATUS *status,
 		int* jrd_attachment_handle,
 		int* jrd_transaction_handle,
 		UCHAR *sql_operator,
@@ -1376,7 +1376,7 @@ static void exec_sql(TDBB tdbb, JRD_REQ request, DSC* dsc)
 		FB_NEW(*tdbb->tdbb_transaction->tra_pool) char[BUFFER_LARGE + sizeof(vary)]);
 	v->vary_length = BUFFER_LARGE;
 	SSHORT l;
-	STATUS *status, local[ISC_STATUS_LENGTH];
+	ISC_STATUS *status, local[ISC_STATUS_LENGTH];
 	static char *cba = "Callback Argument";
 
 	memset(local, 0, sizeof(local));
@@ -3946,7 +3946,7 @@ static BOOLEAN test_and_fixup_error(TDBB tdbb, XCP conditions, JRD_REQ request)
  *
  **************************************/
 	SSHORT i, sqlcode;
-	STATUS *status_vector;
+	ISC_STATUS *status_vector;
 
 	SET_TDBB(tdbb);
 	status_vector = tdbb->tdbb_status_vector;
@@ -4067,7 +4067,7 @@ static void trigger_failure(TDBB tdbb, JRD_REQ trigger)
 		{
 			if (trigger->req_flags & req_sys_trigger)
 			{
-				STATUS code = PAR_symbol_to_gdscode(msg);
+				ISC_STATUS code = PAR_symbol_to_gdscode(msg);
 				if (code)
 				{
 					ERR_post(gds_integ_fail,

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.33 2003-03-03 09:22:28 brodsom Exp $
+ * $Id: sort.cpp,v 1.34 2003-04-10 06:49:15 aafemt Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -519,8 +519,8 @@ void SORT_diddle_key(UCHAR * record, SCB scb, USHORT direction)
 
 
 void SORT_error(
-				STATUS * status_vector,
-				SFB sfb, TEXT * string, STATUS operation, int errcode)
+				ISC_STATUS * status_vector,
+				SFB sfb, TEXT * string, ISC_STATUS operation, int errcode)
 {
 /**************************************
  *
@@ -538,9 +538,9 @@ void SORT_error(
 	*status_vector++ = gds_arg_gds;
 	*status_vector++ = isc_io_error;
 	*status_vector++ = gds_arg_string;
-	*status_vector++ = (STATUS) string;
+	*status_vector++ = (ISC_STATUS) string;
 	*status_vector++ = gds_arg_string;
-	*status_vector++ = (STATUS) ERR_cstring(sfb->sfb_file_name);
+	*status_vector++ = (ISC_STATUS) ERR_cstring(sfb->sfb_file_name);
 	*status_vector++ = isc_arg_gds;
 	*status_vector++ = operation;
 	if (errcode) {
@@ -582,7 +582,7 @@ void SORT_fini(SCB scb, ATT att)
 
 #ifdef SCROLLABLE_CURSORS
 void SORT_get(
-			  STATUS * status_vector,
+			  ISC_STATUS * status_vector,
 			  SCB scb, ULONG ** record_address, RSE_GET_MODE mode)
 {
 /**************************************
@@ -677,7 +677,7 @@ void SORT_get(
 	*record_address = (ULONG *) record;
 }
 #else
-void SORT_get(STATUS * status_vector, SCB scb, ULONG ** record_address)
+void SORT_get(ISC_STATUS * status_vector, SCB scb, ULONG ** record_address)
 {
 /**************************************
  *
@@ -719,7 +719,7 @@ void SORT_get(STATUS * status_vector, SCB scb, ULONG ** record_address)
 #endif
 
 
-SCB SORT_init(STATUS * status_vector,
+SCB SORT_init(ISC_STATUS * status_vector,
 			  USHORT record_length,
 			  USHORT keys,
 			  SKD * key_description,
@@ -836,7 +836,7 @@ SCB SORT_init(STATUS * status_vector,
 }
 
 
-int SORT_put(STATUS * status_vector, SCB scb, ULONG ** record_address)
+int SORT_put(ISC_STATUS * status_vector, SCB scb, ULONG ** record_address)
 {
 /**************************************
  *
@@ -923,7 +923,7 @@ void SORT_read_block(
 #else
 ULONG SORT_read_block(
 #endif
-						 STATUS * status_vector,
+						 ISC_STATUS * status_vector,
 						 SFB sfb,
 						 ULONG seek, BLOB_PTR * address, ULONG length)
 {
@@ -1017,7 +1017,7 @@ void SORT_shutdown(ATT att)
 }
 
 
-int SORT_sort(STATUS * status_vector, SCB scb)
+int SORT_sort(ISC_STATUS * status_vector, SCB scb)
 {
 /**************************************
  *
@@ -1222,7 +1222,7 @@ int SORT_sort(STATUS * status_vector, SCB scb)
 }
 
 
-ULONG SORT_write_block(STATUS * status_vector,
+ULONG SORT_write_block(ISC_STATUS * status_vector,
 					   SFB sfb, ULONG seek, BLOB_PTR * address, ULONG length)
 {
 /**************************************
@@ -1705,7 +1705,7 @@ static void error_memory(SCB scb)
  *      Report fatal out of memory error.
  *
  **************************************/
-	STATUS *status_vector;
+	ISC_STATUS *status_vector;
 
 	status_vector = scb->scb_status_vector;
 
@@ -2990,7 +2990,7 @@ static void validate(SCB scb)
  **************************************/
 	SORTP **ptr;
 	SORTP *record;
-	STATUS *status_vector;
+	ISC_STATUS *status_vector;
 
 	for (ptr = (SORTP **) (scb->scb_first_pointer + 1);
 		 ptr < (SORTP **) scb->scb_next_pointer; ptr++) {

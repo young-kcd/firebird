@@ -519,7 +519,7 @@ void ALL_init(void)
  **************************************/
 	TDBB tdbb;
 	DBB dbb;
-	STATUS temp_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS temp_vector[ISC_STATUS_LENGTH];
 	VEC vector;
 	PLB pool;
 

@@ -47,51 +47,51 @@
 #define STUFF_STATUS(status_vector,status)      \
 {						\
 va_list args;                                   \
-STATUS  *p, *q;                                 \
+ISC_STATUS  *p, *q;                                 \
 int     type, len;                              \
                                                 \
 VA_START (args, status);                        \
 p = status_vector;                              \
                                                 \
-*p++ = (STATUS)gds_arg_gds;                     \
+*p++ = (ISC_STATUS)gds_arg_gds;                     \
 *p++ = status;                                  \
                                                 \
 while ((type = va_arg (args, int)) && ((p - status_vector) < 17))    \
     switch (*p++ = type)                        \
     {                                           \
     case gds_arg_gds:                           \
-        *p++ = (STATUS) va_arg (args, STATUS);  \
+        *p++ = (ISC_STATUS) va_arg (args, ISC_STATUS);  \
         break;                                  \
                                                 \
     case gds_arg_string:                        \
-        q = (STATUS*) va_arg (args, TEXT*);	\
+        q = (ISC_STATUS*) va_arg (args, TEXT*);	\
 	if (strlen ((TEXT*)q) >= MAX_ERRSTR_LEN)\
 	    {					\
 	    *(p -1) = gds_arg_cstring;		\
-	    *p++ = (STATUS) MAX_ERRSTR_LEN;	\
+	    *p++ = (ISC_STATUS) MAX_ERRSTR_LEN;	\
 	    }					\
-	*p++ = (STATUS) q;			\
+	*p++ = (ISC_STATUS) q;			\
         break;                                  \
                                                 \
     case gds_arg_interpreted:                   \
-	*p++ = (STATUS) va_arg (args, TEXT*);   \
+	*p++ = (ISC_STATUS) va_arg (args, TEXT*);   \
 	break;                                  \
 						\
     case gds_arg_cstring:                       \
 	len = (int) va_arg (args, int);		\
-        *p++ = (STATUS) (len >= MAX_ERRSTR_LEN) ? MAX_ERRSTR_LEN : len;\
-        *p++ = (STATUS) va_arg (args, TEXT*);   \
+        *p++ = (ISC_STATUS) (len >= MAX_ERRSTR_LEN) ? MAX_ERRSTR_LEN : len;\
+        *p++ = (ISC_STATUS) va_arg (args, TEXT*);   \
         break;                                  \
                                                 \
     case gds_arg_number:                        \
-        *p++ = (STATUS) va_arg (args, SLONG);   \
+        *p++ = (ISC_STATUS) va_arg (args, SLONG);   \
         break;                                  \
                                                 \
     case gds_arg_vms:                           \
     case gds_arg_unix:                          \
     case gds_arg_win32:                         \
     default:                                    \
-        *p++ = (STATUS) va_arg (args, int);     \
+        *p++ = (ISC_STATUS) va_arg (args, int);     \
         break;                                  \
     }						\
 *p = gds_arg_end;				\

@@ -32,10 +32,10 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/iberr_proto.h"
 
-static void post_error(STATUS *, SCHAR *, UCHAR *, STATUS, ...);
+static void post_error(ISC_STATUS *, SCHAR *, UCHAR *, ISC_STATUS, ...);
 
 
-void IBERR_append_status(STATUS * status_vector, STATUS status, ...)
+void IBERR_append_status(ISC_STATUS * status_vector, ISC_STATUS status, ...)
 {
 /**************************************
  *
@@ -47,7 +47,7 @@ void IBERR_append_status(STATUS * status_vector, STATUS status, ...)
  *	Append the given status vector with the passed arguments.
  *
  **************************************/
-	STATUS local_status[ISC_STATUS_LENGTH], *appended, *status_end;
+	ISC_STATUS local_status[ISC_STATUS_LENGTH], *appended, *status_end;
 
 /* First build a local status vector with the passed arguments */
 
@@ -64,7 +64,7 @@ void IBERR_append_status(STATUS * status_vector, STATUS status, ...)
 }
 
 
-void IBERR_build_status(STATUS * status_vector, STATUS status, ...)
+void IBERR_build_status(ISC_STATUS * status_vector, ISC_STATUS status, ...)
 {
 /**************************************
  *
@@ -82,7 +82,7 @@ void IBERR_build_status(STATUS * status_vector, STATUS status, ...)
 
 
 void IBERR_bugcheck(
-					STATUS * status_vector,
+					ISC_STATUS * status_vector,
 					SCHAR * dbname,
 					UCHAR * longjmp_addr, int number, TEXT * errmsg)
 {
@@ -111,7 +111,7 @@ void IBERR_bugcheck(
 
 
 void IBERR_error(
-				 STATUS * status_vector,
+				 ISC_STATUS * status_vector,
 				 SCHAR * dbname,
 				 UCHAR * longjmp_addr, int number, TEXT * errmsg)
 {
@@ -138,9 +138,9 @@ void IBERR_error(
 
 
 static void post_error(
-					   STATUS * status_vector,
+					   ISC_STATUS * status_vector,
 					   SCHAR * dbname,
-					   UCHAR * longjmp_addr, STATUS status, ...)
+					   UCHAR * longjmp_addr, ISC_STATUS status, ...)
 {
 /**************************************
  *

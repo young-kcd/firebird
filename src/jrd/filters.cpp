@@ -40,10 +40,10 @@
 #include "../jrd/intl_proto.h"
 #include "../jrd/thd_proto.h"
 
-static STATUS caller(USHORT, CTL, USHORT, SCHAR *, USHORT *);
+static ISC_STATUS caller(USHORT, CTL, USHORT, SCHAR *, USHORT *);
 static void dump_blr(CTL, USHORT, SCHAR *);
 static void move(SCHAR *, SCHAR *, USHORT);
-static STATUS string_filter(USHORT, CTL);
+static ISC_STATUS string_filter(USHORT, CTL);
 static void string_put(CTL, SCHAR *);
 
 /* Note:  This table is used to indicate which bytes could represent
@@ -118,7 +118,7 @@ static const TEXT dtypes[][36] = {
 };
 
 
-STATUS filter_acl(USHORT action, CTL control)
+ISC_STATUS filter_acl(USHORT action, CTL control)
 {
 /**************************************
  *
@@ -134,7 +134,7 @@ STATUS filter_acl(USHORT action, CTL control)
 	TEXT line[256], *out;
 	SLONG l;
 	USHORT length;
-	STATUS status;
+	ISC_STATUS status;
 	BOOLEAN all_wild;
 
 	if (action != ACTION_open)
@@ -198,7 +198,7 @@ STATUS filter_acl(USHORT action, CTL control)
 }
 
 
-STATUS filter_blr(USHORT action, CTL control)
+ISC_STATUS filter_blr(USHORT action, CTL control)
 {
 /**************************************
  *
@@ -216,7 +216,7 @@ STATUS filter_blr(USHORT action, CTL control)
 	SCHAR *temp, buffer[512];
 	USHORT length;
 	SLONG l;
-	STATUS status;
+	ISC_STATUS status;
 
 	if (action != ACTION_open)
 		return string_filter(action, control);
@@ -248,7 +248,7 @@ STATUS filter_blr(USHORT action, CTL control)
 }
 
 
-STATUS filter_format(USHORT action, CTL control)
+ISC_STATUS filter_format(USHORT action, CTL control)
 {
 /**************************************
  *
@@ -261,7 +261,7 @@ STATUS filter_format(USHORT action, CTL control)
  *
  **************************************/
 	USHORT length;
-	STATUS status;
+	ISC_STATUS status;
 	int value;
 	DSC desc;
 	TEXT *p, temp1[64], temp2[64];
@@ -316,7 +316,7 @@ STATUS filter_format(USHORT action, CTL control)
 }
 
 
-STATUS filter_runtime(USHORT action, CTL control)
+ISC_STATUS filter_runtime(USHORT action, CTL control)
 {
 /**************************************
  *
@@ -329,7 +329,7 @@ STATUS filter_runtime(USHORT action, CTL control)
  *
  **************************************/
 	USHORT length, buff_len, n, blr;
-	STATUS status;
+	ISC_STATUS status;
 	TEXT *p, *q, *buff, temp[256], line[128];
 
 	if (action == ACTION_close)
@@ -457,7 +457,7 @@ STATUS filter_runtime(USHORT action, CTL control)
 }
 
 
-STATUS filter_text(USHORT action, CTL control)
+ISC_STATUS filter_text(USHORT action, CTL control)
 {
 /**************************************
  *
@@ -480,7 +480,7 @@ STATUS filter_text(USHORT action, CTL control)
 	CTL source;
 	TEXT *p, *left_over;
 	USHORT length, l, left_length, buffer_used;
-	STATUS status;
+	ISC_STATUS status;
 
 	switch (action) {
 	case ACTION_open:
@@ -641,7 +641,7 @@ STATUS filter_text(USHORT action, CTL control)
 }
 
 
-STATUS filter_transliterate_text(USHORT action, CTL control)
+ISC_STATUS filter_transliterate_text(USHORT action, CTL control)
 {
 /**************************************
  *
@@ -660,7 +660,7 @@ STATUS filter_transliterate_text(USHORT action, CTL control)
 	CTL source;
 	USHORT length;
 	USHORT unused_len;
-	STATUS status;
+	ISC_STATUS status;
 	SSHORT err_code;
 	USHORT err_position;
 	SSHORT can_use_more;
@@ -673,7 +673,7 @@ STATUS filter_transliterate_text(USHORT action, CTL control)
 		CsConvert *ctlaux_obj1;	/* Intl object that does tx for us */
 		BYTE *ctlaux_buffer1;	/* Temporary buffer for transliteration */
 		CTL ctlaux_subfilter;	/* For chaining transliterate filters */
-		STATUS ctlaux_source_blob_status;	/* marks when source is EOF, etc */
+		ISC_STATUS ctlaux_source_blob_status;	/* marks when source is EOF, etc */
 		USHORT ctlaux_buffer1_len;	/* size of ctlaux_buffer1 in bytes */
 		USHORT ctlaux_expansion_factor;	/* factor for text expand/contraction */
 		USHORT ctlaux_buffer1_unused;	/* unused bytes in ctlaux_buffer1 */
@@ -750,7 +750,7 @@ STATUS filter_transliterate_text(USHORT action, CTL control)
 
 			control->ctl_source_handle = aux->ctlaux_subfilter;
 			control->ctl_source =
-				reinterpret_cast < STATUS (*) (USHORT, CTL) > (filter_transliterate_text);
+				reinterpret_cast < ISC_STATUS (*) (USHORT, CTL) > (filter_transliterate_text);
 			source = control->ctl_source_handle;
 
 			if (action == ACTION_open) {
@@ -1011,7 +1011,7 @@ STATUS filter_transliterate_text(USHORT action, CTL control)
 }
 
 
-STATUS filter_trans(USHORT action, CTL control)
+ISC_STATUS filter_trans(USHORT action, CTL control)
 {
 /**************************************
  *
@@ -1026,7 +1026,7 @@ STATUS filter_trans(USHORT action, CTL control)
 	SCHAR *p, *end, *temp, c, buffer[512];
 	TEXT *out, line[256];
 	USHORT length;
-	STATUS status;
+	ISC_STATUS status;
 	SLONG id, l;
 
 	if (action != ACTION_open)
@@ -1091,7 +1091,7 @@ STATUS filter_trans(USHORT action, CTL control)
 }
 
 
-static STATUS caller(
+static ISC_STATUS caller(
 					 USHORT action,
 					 CTL control,
 					 USHORT buffer_length,
@@ -1107,7 +1107,7 @@ static STATUS caller(
  *	Call next source filter.
  *
  **************************************/
-	STATUS status;
+	ISC_STATUS status;
 	CTL source;
 
 	source = control->ctl_source_handle;
@@ -1116,7 +1116,7 @@ static STATUS caller(
 	source->ctl_buffer_length = buffer_length;
 
 	status =
-		reinterpret_cast < STATUS(*)(...) > (*source->ctl_source) (action,
+		reinterpret_cast < ISC_STATUS(*)(...) > (*source->ctl_source) (action,
 																   source);
 
 	if (return_length)
@@ -1182,7 +1182,7 @@ static void move(TEXT * from, TEXT * to, USHORT length)
 }
 
 
-static STATUS string_filter(USHORT action, CTL control)
+static ISC_STATUS string_filter(USHORT action, CTL control)
 {
 /**************************************
  *

@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.55 2003-02-24 15:37:15 dimitr Exp $
+$Id: met.epp,v 1.56 2003-04-10 06:49:14 aafemt Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -1472,7 +1472,7 @@ BLF MET_lookup_filter(TDBB tdbb, SSHORT from, SSHORT to)
             REQUEST(irq_r_filters) = request;
 		MET_exact_name(X.RDB$MODULE_NAME);
 		MET_exact_name(X.RDB$ENTRYPOINT);
-		filter = (STATUS (*)(USHORT, CTL))
+		filter = (ISC_STATUS (*)(USHORT, CTL))
 			ISC_lookup_entrypoint(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT,
 								  ISC_EXT_LIB_PATH_ENV);
 		if (filter)

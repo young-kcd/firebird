@@ -220,7 +220,7 @@ void API_ROUTINE perf_get_info(FRBRD **handle, PERF * perf)
  **************************************/
 	SCHAR *p, buffer[256];
 	SSHORT l, buffer_length, item_length;
-	STATUS jrd_status[ISC_STATUS_LENGTH];
+	ISC_STATUS jrd_status[ISC_STATUS_LENGTH];
 #ifdef HAVE_GETTIMEOFDAY
 	struct timeval tp;
 #else

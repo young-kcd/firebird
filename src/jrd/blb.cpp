@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.29 2003-04-03 13:52:42 brodsom Exp $
+$Id: blb.cpp,v 1.30 2003-04-10 06:49:10 aafemt Exp $
 */
 
 #include "firebird.h"
@@ -77,7 +77,7 @@ $Id: blb.cpp,v 1.29 2003-04-03 13:52:42 brodsom Exp $
 
 static ARR alloc_array(JRD_TRA, ADS);
 static BLB allocate_blob(TDBB, JRD_TRA);
-static STATUS blob_filter(USHORT, CTL, SSHORT, SLONG);
+static ISC_STATUS blob_filter(USHORT, CTL, SSHORT, SLONG);
 static void check_BID_validity(BLB, TDBB);
 static BLB copy_blob(TDBB, BID, JRD_REL, BID);
 static void delete_blob(TDBB, BLB, ULONG);
@@ -232,7 +232,7 @@ BLB BLB_create2(TDBB tdbb,
 		if ((to_charset != CS_NONE) && (from_charset != to_charset)) {
 			filter = FB_NEW(*dbb->dbb_permanent) blf();
 			filter->blf_filter =
-				reinterpret_cast<STATUS (*)(USHORT, CTL)>(filter_transliterate_text);
+				reinterpret_cast<ISC_STATUS (*)(USHORT, CTL)>(filter_transliterate_text);
 			filter_required = TRUE;
 		}
 	}
@@ -444,7 +444,7 @@ USHORT BLB_get_segment(TDBB tdbb,
 	UCHAR *p;
 	WIN window;
 	BLP page;
-	STATUS status;
+	ISC_STATUS status;
 	USHORT length, l, active_page, seek;
 
 	SET_TDBB(tdbb);
@@ -644,7 +644,7 @@ SLONG BLB_get_slice(TDBB tdbb,
  **************************************/
 	BLB blob;
 	ADS desc;
-	STATUS status;
+	ISC_STATUS status;
 	UCHAR *data;
 	SLONG offset, length, variables[64], stuff[ADS_LEN(16) / 4], from, to;
 	struct sdl_info info;
@@ -1079,7 +1079,7 @@ BLB BLB_open2(TDBB tdbb,
 		if ((to_charset != CS_NONE) && (from_charset != to_charset)) {
 			filter = FB_NEW(*dbb->dbb_permanent) blf();
 			filter->blf_filter =
-				reinterpret_cast < STATUS (*) (USHORT, CTL) > (filter_transliterate_text);
+				reinterpret_cast < ISC_STATUS (*) (USHORT, CTL) > (filter_transliterate_text);
 			filter_required = TRUE;
 		}
 	}
@@ -1669,7 +1669,7 @@ static BLB allocate_blob(TDBB tdbb, JRD_TRA transaction)
 }
 
 
-static STATUS blob_filter(	USHORT	action,
+static ISC_STATUS blob_filter(	USHORT	action,
 							CTL		control,
 							SSHORT	mode,
 							SLONG	offset)
@@ -1746,7 +1746,7 @@ static STATUS blob_filter(	USHORT	action,
 		return FB_SUCCESS;
 
 	case ACTION_alloc:
-		return (STATUS) FB_NEW(*transaction->tra_pool) ctl();
+		return (ISC_STATUS) FB_NEW(*transaction->tra_pool) ctl();
 
 	case ACTION_free:
 		delete control;

@@ -73,7 +73,7 @@ static PTR filters[] = {
 
 extern "C" {
 
-static STATUS open_blob(TDBB,
+static ISC_STATUS open_blob(TDBB,
 						JRD_TRA,
 						CTL*,
 						SLONG*,
@@ -84,7 +84,7 @@ static STATUS open_blob(TDBB,
 						BLF);
 
 
-STATUS DLL_EXPORT BLF_close_blob(TDBB tdbb, CTL * filter_handle)
+ISC_STATUS DLL_EXPORT BLF_close_blob(TDBB tdbb, CTL * filter_handle)
 {
 /**************************************
  *
@@ -98,8 +98,8 @@ STATUS DLL_EXPORT BLF_close_blob(TDBB tdbb, CTL * filter_handle)
  **************************************/
 	CTL control, next;
 	PTR callback;
-	STATUS status;
-	STATUS *user_status;
+	ISC_STATUS status;
+	ISC_STATUS *user_status;
 
 	user_status = tdbb->tdbb_status_vector;
 
@@ -140,12 +140,12 @@ STATUS DLL_EXPORT BLF_close_blob(TDBB tdbb, CTL * filter_handle)
 }
 
 
-STATUS DLL_EXPORT BLF_create_blob(TDBB tdbb,
+ISC_STATUS DLL_EXPORT BLF_create_blob(TDBB tdbb,
 								  JRD_TRA tra_handle,
 								  CTL * filter_handle,
 								  SLONG * blob_id,
 								  USHORT bpb_length,
-								  UCHAR * bpb, STATUS (*callback)(), BLF filter)
+								  UCHAR * bpb, ISC_STATUS (*callback)(), BLF filter)
 {
 /**************************************
  *
@@ -159,12 +159,12 @@ STATUS DLL_EXPORT BLF_create_blob(TDBB tdbb,
  **************************************/
 
 	return open_blob(tdbb, tra_handle, filter_handle,
-					 blob_id, bpb_length, bpb, (STATUS (*)(USHORT, CTL)) callback, ACTION_create,
+					 blob_id, bpb_length, bpb, (ISC_STATUS (*)(USHORT, CTL)) callback, ACTION_create,
 					 filter);
 }
 
 
-STATUS DLL_EXPORT BLF_get_segment(TDBB tdbb,
+ISC_STATUS DLL_EXPORT BLF_get_segment(TDBB tdbb,
 								  CTL * filter_handle,
 								  USHORT * length,
 								  USHORT buffer_length, UCHAR * buffer)
@@ -180,8 +180,8 @@ STATUS DLL_EXPORT BLF_get_segment(TDBB tdbb,
  *
  **************************************/
 	CTL control;
-	STATUS status;
-	STATUS *user_status;
+	ISC_STATUS status;
+	ISC_STATUS *user_status;
 
 	user_status = tdbb->tdbb_status_vector;
 
@@ -253,12 +253,12 @@ BLF DLL_EXPORT BLF_lookup_internal_filter(TDBB tdbb, SSHORT from, SSHORT to)
 }
 
 
-STATUS DLL_EXPORT BLF_open_blob(TDBB tdbb,
+ISC_STATUS DLL_EXPORT BLF_open_blob(TDBB tdbb,
 								JRD_TRA tra_handle,
 								CTL * filter_handle,
 								SLONG * blob_id,
 								USHORT bpb_length,
-								UCHAR * bpb, STATUS (*callback)(), BLF filter)
+								UCHAR * bpb, ISC_STATUS (*callback)(), BLF filter)
 {
 /**************************************
  *
@@ -272,11 +272,11 @@ STATUS DLL_EXPORT BLF_open_blob(TDBB tdbb,
  **************************************/
 
 	return open_blob(tdbb, tra_handle, filter_handle,
-					 blob_id, bpb_length, bpb, (STATUS (*)(USHORT, CTL)) callback, ACTION_open, filter);
+					 blob_id, bpb_length, bpb, (ISC_STATUS (*)(USHORT, CTL)) callback, ACTION_open, filter);
 }
 
 
-STATUS DLL_EXPORT BLF_put_segment(TDBB tdbb,
+ISC_STATUS DLL_EXPORT BLF_put_segment(TDBB tdbb,
 								  CTL * filter_handle,
 								  USHORT length, UCHAR * buffer)
 {
@@ -291,8 +291,8 @@ STATUS DLL_EXPORT BLF_put_segment(TDBB tdbb,
  *
  **************************************/
 	CTL control;
-	STATUS status;
-	STATUS *user_status;
+	ISC_STATUS status;
+	ISC_STATUS *user_status;
 
 	user_status = tdbb->tdbb_status_vector;
 
@@ -320,7 +320,7 @@ STATUS DLL_EXPORT BLF_put_segment(TDBB tdbb,
 }
 
 
-static STATUS open_blob(
+static ISC_STATUS open_blob(
 						TDBB tdbb,
 						JRD_TRA tra_handle,
 						CTL * filter_handle,
@@ -337,13 +337,13 @@ USHORT bpb_length, UCHAR * bpb, PTR callback, USHORT action, BLF filter)
  *	Open a blob and invoke a filter.
  *
  **************************************/
-	STATUS status;
+	ISC_STATUS status;
 	CTL prior, control;
 	SSHORT from, to;
 	USHORT from_charset, to_charset;
 	struct ctl temp;
 	DBB dbb;
-	STATUS *user_status;
+	ISC_STATUS *user_status;
 
 	dbb = tdbb->tdbb_database;
 	user_status = tdbb->tdbb_status_vector;
@@ -354,9 +354,9 @@ USHORT bpb_length, UCHAR * bpb, PTR callback, USHORT action, BLF filter)
 		*user_status++ = gds_arg_gds;
 		*user_status++ = gds_nofilter;
 		*user_status++ = gds_arg_number;
-		*user_status++ = (STATUS) from;
+		*user_status++ = (ISC_STATUS) from;
 		*user_status++ = gds_arg_number;
-		*user_status++ = (STATUS) to;
+		*user_status++ = (ISC_STATUS) to;
 		*user_status = gds_arg_end;
 		return gds_nofilter;
 	}
@@ -420,8 +420,8 @@ USHORT bpb_length, UCHAR * bpb, PTR callback, USHORT action, BLF filter)
 	END_CHECK_FOR_EXCEPTIONS((TEXT*)control->ctl_exception_message)
 
 		if (status) {
-		STATUS local_status[ISC_STATUS_LENGTH];
-		STATUS *tmp_status;
+		ISC_STATUS local_status[ISC_STATUS_LENGTH];
+		ISC_STATUS *tmp_status;
 		tmp_status = tdbb->tdbb_status_vector;
 		tdbb->tdbb_status_vector = local_status;
 		/* This is OK to do since we know that we will return

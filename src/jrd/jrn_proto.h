@@ -24,29 +24,29 @@
 #ifndef _JRD_JRN_PROTO_H_
 #define _JRD_JRN_PROTO_H_
 
-extern int JRN_archive_begin(STATUS *, struct jrn **, SLONG, SLONG, TEXT *,
+extern int JRN_archive_begin(ISC_STATUS *, struct jrn **, SLONG, SLONG, TEXT *,
 							 USHORT);
-extern int JRN_archive_end(STATUS *, struct jrn **, SLONG, SLONG);
-extern int JRN_archive_error(STATUS *, struct jrn **, SLONG, SLONG, SLONG);
-extern int JRN_disable(STATUS *, struct jrn *, struct jrnh *, UCHAR *,
+extern int JRN_archive_end(ISC_STATUS *, struct jrn **, SLONG, SLONG);
+extern int JRN_archive_error(ISC_STATUS *, struct jrn **, SLONG, SLONG, SLONG);
+extern int JRN_disable(ISC_STATUS *, struct jrn *, struct jrnh *, UCHAR *,
 					   USHORT);
 extern void JRN_dump_page(void);
-extern int JRN_enable(STATUS *, struct jrn **, TEXT *, USHORT, UCHAR *,
+extern int JRN_enable(ISC_STATUS *, struct jrn **, TEXT *, USHORT, UCHAR *,
 					  USHORT, struct ltjc *);
-extern int JRN_fini(STATUS *, struct jrn **);
-extern int JRN_init(STATUS *, struct jrn **, USHORT, UCHAR *, USHORT, UCHAR *,
+extern int JRN_fini(ISC_STATUS *, struct jrn **);
+extern int JRN_init(ISC_STATUS *, struct jrn **, USHORT, UCHAR *, USHORT, UCHAR *,
 					USHORT);
 extern void JRN_make_init_data(UCHAR *, SSHORT *, UCHAR *, USHORT, UCHAR *,
 							   USHORT);
-extern int JRN_put_wal_name(STATUS *, struct jrn *, TEXT *, USHORT, SLONG,
+extern int JRN_put_wal_name(ISC_STATUS *, struct jrn *, TEXT *, USHORT, SLONG,
 							SLONG, SLONG, USHORT);
-extern int JRN_put_wal_info(STATUS *, struct jrn *, TEXT *, USHORT, SLONG,
+extern int JRN_put_wal_info(ISC_STATUS *, struct jrn *, TEXT *, USHORT, SLONG,
 							SLONG, SLONG, USHORT, USHORT, USHORT *, USHORT);
-extern int JRN_put_old_start(STATUS *, struct jrn *, SLONG, SLONG, SLONG,
+extern int JRN_put_old_start(ISC_STATUS *, struct jrn *, SLONG, SLONG, SLONG,
 							 USHORT *);
-extern int JRN_put_old_end(STATUS *, struct jrn *, SLONG, SLONG, SLONG,
+extern int JRN_put_old_end(ISC_STATUS *, struct jrn *, SLONG, SLONG, SLONG,
 						   USHORT);
-extern int JRN_put_old_file(STATUS *, struct jrn *, SCHAR *, USHORT, SLONG,
+extern int JRN_put_old_file(ISC_STATUS *, struct jrn *, SCHAR *, USHORT, SLONG,
 							USHORT, USHORT);
 extern void JRN_sync(void);
 

@@ -31,7 +31,7 @@ extern struct map *MAP_parse_blr(UCHAR *, USHORT, UCHAR *, USHORT *, SLONG *);
 extern int MAP_rdb_length(USHORT, struct map_msg *);
 extern int MAP_rdb_to_gds(USHORT, struct map_msg *, UCHAR *, UCHAR *);
 extern void MAP_release(struct map_msg *);
-extern int MAP_status_to_gds(STATUS *, STATUS *);
-extern int MAP_status_to_rdb(STATUS *, STATUS *);
+extern int MAP_status_to_gds(ISC_STATUS *, ISC_STATUS *);
+extern int MAP_status_to_rdb(ISC_STATUS *, ISC_STATUS *);
 
 #endif /* _JRD_MAP_PROTO_H_ */

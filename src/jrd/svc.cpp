@@ -155,14 +155,14 @@
 
 #define NEED_ADMIN_PRIVS(svc)	{*status++ = isc_insufficient_svc_privileges; \
 		      	         *status++ = isc_arg_string; \
-				 *status++ = (STATUS) ERR_string(svc,strlen(svc)); \
+				 *status++ = (ISC_STATUS) ERR_string(svc,strlen(svc)); \
 				 *status++ = isc_arg_end; }
 
 #define ERR_FILE_IN_USE		{ TEXT buffer[MAXPATHLEN]; \
 		                  gds__prefix (buffer, LOCK_HEADER); \
  		                  *status++ = isc_file_in_use; \
 		                  *status++ = isc_arg_string; \
-		                  *status++ = (STATUS) ERR_string (buffer, strlen(buffer)); \
+		                  *status++ = (ISC_STATUS) ERR_string (buffer, strlen(buffer)); \
                                   *status++ = isc_arg_end; }
 
 
@@ -183,7 +183,7 @@ static USHORT process_switches(USHORT, SCHAR *, TEXT *);
 static void get_options(UCHAR *, USHORT, TEXT *, SPB *);
 static TEXT *get_string_parameter(UCHAR **, TEXT **);
 #ifndef SUPERSERVER
-static void io_error(TEXT *, SLONG, TEXT *, STATUS, BOOLEAN);
+static void io_error(TEXT *, SLONG, TEXT *, ISC_STATUS, BOOLEAN);
 static void service_close(SVC);
 #endif
 static BOOLEAN get_action_svc_bitmask(TEXT **, IN_SW_TAB, TEXT **, USHORT *,
@@ -302,7 +302,7 @@ extern int main_gsec(SVC service);
 #define MAIN_GSEC		NULL
 #endif
 
-void SVC_STATUS_ARG(STATUS*& status, USHORT type, const void* value)
+void SVC_STATUS_ARG(ISC_STATUS*& status, USHORT type, const void* value)
 {
 	if (value)
 	{
@@ -310,11 +310,11 @@ void SVC_STATUS_ARG(STATUS*& status, USHORT type, const void* value)
 		{
 		case isc_arg_number:
 			*status++ = type;
-			*status++ = reinterpret_cast<STATUS>(value);
+			*status++ = reinterpret_cast<ISC_STATUS>(value);
 			break;
 		case isc_arg_string:
 			*status++ = type;
-			*status++ = (STATUS)
+			*status++ = (ISC_STATUS)
 			SVC_err_string(static_cast<const char*>(value),
 						   strlen(static_cast<const char*>(value)));
 			break;
@@ -654,13 +654,13 @@ SVC SVC_attach(USHORT	service_length,
 	memset((void *) service, 0, sizeof(struct svc));
 
 	service->svc_status =
-		(STATUS *) gds__alloc(ISC_STATUS_LENGTH * sizeof(STATUS));
+		(ISC_STATUS *) gds__alloc(ISC_STATUS_LENGTH * sizeof(ISC_STATUS));
 /* FREE: by exception handler */
 	if (!service->svc_status)
 		ERR_post(isc_virmemexh, 0);
 
 	memset((void *) service->svc_status, 0,
-		   ISC_STATUS_LENGTH * sizeof(STATUS));
+		   ISC_STATUS_LENGTH * sizeof(ISC_STATUS));
 
 	//service->blk_type = type_svc;
 	//service->blk_pool_id = 0;
@@ -880,7 +880,7 @@ void SVC_putc(SVC service, UCHAR ch)
 		service_enqueue_byte(ch, service);
 }
 #endif /*SUPERSERVER*/
-	STATUS SVC_query2(SVC service,
+	ISC_STATUS SVC_query2(SVC service,
 					  TDBB tdbb,
 					  USHORT send_item_length,
 					  SCHAR * send_items,
@@ -900,7 +900,7 @@ void SVC_putc(SVC service, UCHAR ch)
 	SCHAR item, *items, *end_items, *end;
 	char buffer[MAXPATHLEN];
 	USHORT l, length, version, get_flags;
-	STATUS *status;
+	ISC_STATUS *status;
 	USHORT timeout;
 
 	THREAD_EXIT;
@@ -2156,7 +2156,7 @@ void *SVC_start(SVC service, USHORT spb_length, SCHAR * spb)
  */
 
 	memset((void *) service->svc_status, 0,
-		   ISC_STATUS_LENGTH * sizeof(STATUS));
+		   ISC_STATUS_LENGTH * sizeof(ISC_STATUS));
 
 	if (service->svc_stdout)
 		gds__free(service->svc_stdout);
@@ -2253,7 +2253,7 @@ void SVC_read_ib_log(SVC service)
 	TEXT name[MAXPATHLEN], buffer[100];
 	BOOLEAN svc_started = FALSE;
 #ifdef SUPERSERVER
-	STATUS *status;
+	ISC_STATUS *status;
 
 	status = service->svc_status;
 	*status++ = isc_arg_gds;
@@ -2411,7 +2411,7 @@ static TEXT *get_string_parameter(UCHAR ** spb_ptr, TEXT ** opt_ptr)
 static void io_error(
 					 TEXT * string,
 					 SLONG status,
-					 TEXT * filename, STATUS operation, BOOLEAN reenter_flag)
+					 TEXT * filename, ISC_STATUS operation, BOOLEAN reenter_flag)
 {
 /**************************************
  *

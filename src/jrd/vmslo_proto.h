@@ -25,13 +25,13 @@
 #define _JRD_VMSLO_PROTO_H_
 
 extern int LOCK_convert(SLONG, UCHAR, SSHORT, int (*)(int *), int *,
-						STATUS *);
+						ISC_STATUS *);
 extern int LOCK_deq(SLONG);
-extern UCHAR LOCK_downgrade(SLONG, STATUS *);
+extern UCHAR LOCK_downgrade(SLONG, ISC_STATUS *);
 extern SLONG LOCK_enq(SLONG, SLONG, USHORT, UCHAR *, USHORT, UCHAR,
-					  int (*)(int *), int *, SLONG, SSHORT, STATUS *, SLONG);
-extern void LOCK_fini(STATUS *, SLONG *);
-extern int LOCK_init(STATUS *, SSHORT, SLONG, UCHAR, SLONG *);
+					  int (*)(int *), int *, SLONG, SSHORT, ISC_STATUS *, SLONG);
+extern void LOCK_fini(ISC_STATUS *, SLONG *);
+extern int LOCK_init(ISC_STATUS *, SSHORT, SLONG, UCHAR, SLONG *);
 extern void LOCK_manager(SLONG);
 extern SLONG LOCK_read_data(SLONG);
 extern SLONG LOCK_read_data2(SLONG, USHORT, UCHAR *, USHORT, SLONG);

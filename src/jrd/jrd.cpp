@@ -369,20 +369,20 @@ typedef struct dpb
 	TEXT*	dpb_set_db_charset;
 } DPB;
 
-static BLB		check_blob(TDBB, STATUS*, BLB*);
-static STATUS	check_database(TDBB, ATT, STATUS*);
+static BLB		check_blob(TDBB, ISC_STATUS*, BLB*);
+static ISC_STATUS	check_database(TDBB, ATT, ISC_STATUS*);
 static void		cleanup(void*);
-static STATUS	commit(STATUS*, JRD_TRA*, USHORT);
+static ISC_STATUS	commit(ISC_STATUS*, JRD_TRA*, USHORT);
 static STR		copy_string(TEXT*, USHORT);
 static BOOLEAN	drop_files(FIL);
-static STATUS	error(STATUS*);
+static ISC_STATUS	error(ISC_STATUS*);
 static void		find_intl_charset(TDBB, ATT, DPB*);
-static JRD_TRA		find_transaction(TDBB, JRD_TRA, STATUS);
+static JRD_TRA		find_transaction(TDBB, JRD_TRA, ISC_STATUS);
 static void		get_options(UCHAR *, USHORT, TEXT **, ULONG, DPB *);
 static SLONG	get_parameter(UCHAR**);
 static TEXT*	get_string_parameter(UCHAR **, TEXT **, ULONG *);
-static STATUS	handle_error(STATUS*, STATUS, TDBB);
-static bool		verify_database_name(TEXT *, STATUS *);
+static ISC_STATUS	handle_error(ISC_STATUS*, ISC_STATUS, TDBB);
+static bool		verify_database_name(TEXT *, ISC_STATUS *);
 
 #if defined (WIN_NT)
 #ifdef SERVER_SHUTDOWN
@@ -393,16 +393,16 @@ static BOOLEAN	handler_NT(SSHORT);
 #endif	// SERVER_SHUTDOWN
 #endif	// WIN_NT
 
-static DBB		init(TDBB, STATUS*, TEXT*, USHORT);
+static DBB		init(TDBB, ISC_STATUS*, TEXT*, USHORT);
 static void		make_jrn_data(UCHAR*, USHORT*, TEXT*, USHORT, TEXT*, USHORT);
-static STATUS	prepare(TDBB, JRD_TRA, STATUS*, USHORT, UCHAR*);
+static ISC_STATUS	prepare(TDBB, JRD_TRA, ISC_STATUS*, USHORT, UCHAR*);
 static void		release_attachment(ATT);
-static STATUS	return_success(TDBB);
-static BOOLEAN	rollback(TDBB, JRD_TRA, STATUS*, USHORT);
+static ISC_STATUS	return_success(TDBB);
+static BOOLEAN	rollback(TDBB, JRD_TRA, ISC_STATUS*, USHORT);
 
 static void		shutdown_database(DBB, BOOLEAN);
 static void		strip_quotes(TEXT*, TEXT*);
-static void		purge_attachment(TDBB, STATUS *, ATT, BOOLEAN);
+static void		purge_attachment(TDBB, ISC_STATUS *, ATT, BOOLEAN);
 
 static int		initialized = 0;
 static DBB		databases = NULL;
@@ -446,7 +446,7 @@ static void check_autocommit(JRD_REQ request, struct tdbb* tdbb)
 	}
 }
 
-inline static void api_entry_point_init(STATUS* user_status)
+inline static void api_entry_point_init(ISC_STATUS* user_status)
 {
 	user_status[0] = gds_arg_gds;
 	user_status[1] = FB_SUCCESS;
@@ -601,7 +601,7 @@ extern "C" {
 /* every GDS function now has a DLL_EXPORT */
 
 
-STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
+ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 									  SSHORT	file_length,
 									  TEXT*		file_name,
 									  ATT*		handle,
@@ -628,7 +628,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 	extern bool ResolveDatabaseAlias(const char*, char*);
 
 	SSHORT first;
-	STATUS temp_status[ISC_STATUS_LENGTH], *status;
+	ISC_STATUS temp_status[ISC_STATUS_LENGTH], *status;
 	DPB options;
 	ATT attachment;
 	USHORT d_len, jd_len;
@@ -1394,7 +1394,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_BLOB_INFO(STATUS*	user_status,
+ISC_STATUS DLL_EXPORT GDS_BLOB_INFO(ISC_STATUS*	user_status,
 								BLB*	blob_handle,
 								SSHORT	item_length,
 								SCHAR*	items,
@@ -1440,7 +1440,7 @@ STATUS DLL_EXPORT GDS_BLOB_INFO(STATUS*	user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_CANCEL_BLOB(STATUS * user_status, BLB * blob_handle)
+ISC_STATUS DLL_EXPORT GDS_CANCEL_BLOB(ISC_STATUS * user_status, BLB * blob_handle)
 {
 /**************************************
  *
@@ -1483,7 +1483,7 @@ STATUS DLL_EXPORT GDS_CANCEL_BLOB(STATUS * user_status, BLB * blob_handle)
 }
 
 
-STATUS DLL_EXPORT GDS_CANCEL_EVENTS(STATUS*	user_status,
+ISC_STATUS DLL_EXPORT GDS_CANCEL_EVENTS(ISC_STATUS*	user_status,
 									ATT*	handle,
 									SLONG*	id)
 {
@@ -1527,7 +1527,7 @@ STATUS DLL_EXPORT GDS_CANCEL_EVENTS(STATUS*	user_status,
 
 
 #ifdef CANCEL_OPERATION
-STATUS DLL_EXPORT GDS_CANCEL_OPERATION(STATUS * user_status,
+ISC_STATUS DLL_EXPORT GDS_CANCEL_OPERATION(ISC_STATUS * user_status,
 									   ATT * handle, USHORT option)
 {
 /**************************************
@@ -1587,7 +1587,7 @@ STATUS DLL_EXPORT GDS_CANCEL_OPERATION(STATUS * user_status,
 #endif
 
 
-STATUS DLL_EXPORT GDS_CLOSE_BLOB(STATUS * user_status, BLB * blob_handle)
+ISC_STATUS DLL_EXPORT GDS_CLOSE_BLOB(ISC_STATUS * user_status, BLB * blob_handle)
 {
 /**************************************
  *
@@ -1630,7 +1630,7 @@ STATUS DLL_EXPORT GDS_CLOSE_BLOB(STATUS * user_status, BLB * blob_handle)
 }
 
 
-STATUS DLL_EXPORT GDS_COMMIT(STATUS * user_status, JRD_TRA * tra_handle)
+ISC_STATUS DLL_EXPORT GDS_COMMIT(ISC_STATUS * user_status, JRD_TRA * tra_handle)
 {
 /**************************************
  *
@@ -1654,7 +1654,7 @@ STATUS DLL_EXPORT GDS_COMMIT(STATUS * user_status, JRD_TRA * tra_handle)
 }
 
 
-STATUS DLL_EXPORT GDS_COMMIT_RETAINING(STATUS * user_status, JRD_TRA * tra_handle)
+ISC_STATUS DLL_EXPORT GDS_COMMIT_RETAINING(ISC_STATUS * user_status, JRD_TRA * tra_handle)
 {
 /**************************************
  *
@@ -1673,7 +1673,7 @@ STATUS DLL_EXPORT GDS_COMMIT_RETAINING(STATUS * user_status, JRD_TRA * tra_handl
 }
 
 
-STATUS DLL_EXPORT GDS_COMPILE(STATUS * user_status,
+ISC_STATUS DLL_EXPORT GDS_COMPILE(ISC_STATUS * user_status,
 							  ATT * db_handle,
 							  JRD_REQ * req_handle,
 							  SSHORT blr_length, SCHAR * blr)
@@ -1729,7 +1729,7 @@ STATUS DLL_EXPORT GDS_COMPILE(STATUS * user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_CREATE_BLOB2(STATUS * user_status,
+ISC_STATUS DLL_EXPORT GDS_CREATE_BLOB2(ISC_STATUS * user_status,
 								   ATT * db_handle,
 								   JRD_TRA * tra_handle,
 								   BLB * blob_handle,
@@ -1787,7 +1787,7 @@ STATUS DLL_EXPORT GDS_CREATE_BLOB2(STATUS * user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
+ISC_STATUS DLL_EXPORT GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 									  USHORT	file_length,
 									  TEXT*		file_name,
 									  ATT*		handle,
@@ -1812,7 +1812,7 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 	TEXT *opt_ptr;
 	USHORT length, page_size;
 	ATT attachment;
-	STATUS temp_status[ISC_STATUS_LENGTH], *status;
+	ISC_STATUS temp_status[ISC_STATUS_LENGTH], *status;
 	DPB options;
 	struct tdbb thd_context;
 	FIL first_dbb_file;
@@ -2147,7 +2147,7 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_DATABASE_INFO(STATUS * user_status,
+ISC_STATUS DLL_EXPORT GDS_DATABASE_INFO(ISC_STATUS * user_status,
 									ATT * handle,
 									SSHORT item_length,
 									SCHAR * items,
@@ -2191,7 +2191,7 @@ STATUS DLL_EXPORT GDS_DATABASE_INFO(STATUS * user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_DDL(STATUS * user_status,
+ISC_STATUS DLL_EXPORT GDS_DDL(ISC_STATUS * user_status,
 						  ATT * db_handle,
 						  JRD_TRA * tra_handle, USHORT ddl_length, SCHAR * ddl)
 {
@@ -2207,7 +2207,7 @@ STATUS DLL_EXPORT GDS_DDL(STATUS * user_status,
 	ATT attachment;
 	JRD_TRA transaction;
 	struct tdbb thd_context;
-	STATUS temp_status[ISC_STATUS_LENGTH];
+	ISC_STATUS temp_status[ISC_STATUS_LENGTH];
 
 	api_entry_point_init(user_status);
 
@@ -2270,7 +2270,7 @@ STATUS DLL_EXPORT GDS_DDL(STATUS * user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_DETACH(STATUS * user_status, ATT * handle)
+ISC_STATUS DLL_EXPORT GDS_DETACH(ISC_STATUS * user_status, ATT * handle)
 {
 /**************************************
  *
@@ -2398,7 +2398,7 @@ STATUS DLL_EXPORT GDS_DETACH(STATUS * user_status, ATT * handle)
 }
 
 
-STATUS DLL_EXPORT GDS_DROP_DATABASE(STATUS * user_status, ATT * handle)
+ISC_STATUS DLL_EXPORT GDS_DROP_DATABASE(ISC_STATUS * user_status, ATT * handle)
 {
 /**************************************
  *
@@ -2591,7 +2591,7 @@ STATUS DLL_EXPORT GDS_DROP_DATABASE(STATUS * user_status, ATT * handle)
 }
 
 
-STATUS DLL_EXPORT GDS_GET_SEGMENT(STATUS * user_status,
+ISC_STATUS DLL_EXPORT GDS_GET_SEGMENT(ISC_STATUS * user_status,
 								  BLB * blob_handle,
 								  USHORT * length,
 								  USHORT buffer_length, UCHAR * buffer)
@@ -2650,7 +2650,7 @@ STATUS DLL_EXPORT GDS_GET_SEGMENT(STATUS * user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_GET_SLICE(STATUS * user_status,
+ISC_STATUS DLL_EXPORT GDS_GET_SLICE(ISC_STATUS * user_status,
 								ATT * db_handle,
 								JRD_TRA * tra_handle,
 								SLONG * array_id,
@@ -2714,7 +2714,7 @@ STATUS DLL_EXPORT GDS_GET_SLICE(STATUS * user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_OPEN_BLOB2(STATUS * user_status,
+ISC_STATUS DLL_EXPORT GDS_OPEN_BLOB2(ISC_STATUS * user_status,
 								 ATT * db_handle,
 								 JRD_TRA * tra_handle,
 								 BLB * blob_handle,
@@ -2769,7 +2769,7 @@ STATUS DLL_EXPORT GDS_OPEN_BLOB2(STATUS * user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_PREPARE(STATUS * user_status,
+ISC_STATUS DLL_EXPORT GDS_PREPARE(ISC_STATUS * user_status,
 							  JRD_TRA * tra_handle, USHORT length, UCHAR * msg)
 {
 /**************************************
@@ -2807,7 +2807,7 @@ STATUS DLL_EXPORT GDS_PREPARE(STATUS * user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_PUT_SEGMENT(STATUS * user_status,
+ISC_STATUS DLL_EXPORT GDS_PUT_SEGMENT(ISC_STATUS * user_status,
 								  BLB * blob_handle,
 								  USHORT buffer_length, UCHAR * buffer)
 {
@@ -2849,7 +2849,7 @@ STATUS DLL_EXPORT GDS_PUT_SEGMENT(STATUS * user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_PUT_SLICE(STATUS * user_status,
+ISC_STATUS DLL_EXPORT GDS_PUT_SLICE(ISC_STATUS * user_status,
 								ATT * db_handle,
 								JRD_TRA * tra_handle,
 								SLONG * array_id,
@@ -2905,7 +2905,7 @@ STATUS DLL_EXPORT GDS_PUT_SLICE(STATUS * user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_QUE_EVENTS(STATUS * user_status,
+ISC_STATUS DLL_EXPORT GDS_QUE_EVENTS(ISC_STATUS * user_status,
 								 ATT * handle,
 								 SLONG * id,
 								 SSHORT length,
@@ -2966,7 +2966,7 @@ STATUS DLL_EXPORT GDS_QUE_EVENTS(STATUS * user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_RECEIVE(STATUS * user_status,
+ISC_STATUS DLL_EXPORT GDS_RECEIVE(ISC_STATUS * user_status,
 							  JRD_REQ * req_handle,
 							  USHORT msg_type,
 							  USHORT msg_length, SCHAR * msg, SSHORT level
@@ -3037,7 +3037,7 @@ STATUS DLL_EXPORT GDS_RECEIVE(STATUS * user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_RECONNECT(STATUS * user_status,
+ISC_STATUS DLL_EXPORT GDS_RECONNECT(ISC_STATUS * user_status,
 								ATT * db_handle,
 								JRD_TRA * tra_handle, SSHORT length, UCHAR * id)
 {
@@ -3088,7 +3088,7 @@ STATUS DLL_EXPORT GDS_RECONNECT(STATUS * user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_RELEASE_REQUEST(STATUS * user_status, JRD_REQ * req_handle)
+ISC_STATUS DLL_EXPORT GDS_RELEASE_REQUEST(ISC_STATUS * user_status, JRD_REQ * req_handle)
 {
 /**************************************
  *
@@ -3134,7 +3134,7 @@ STATUS DLL_EXPORT GDS_RELEASE_REQUEST(STATUS * user_status, JRD_REQ * req_handle
 }
 
 
-STATUS DLL_EXPORT GDS_REQUEST_INFO(STATUS * user_status,
+ISC_STATUS DLL_EXPORT GDS_REQUEST_INFO(ISC_STATUS * user_status,
 								   JRD_REQ * req_handle,
 								   SSHORT level,
 								   SSHORT item_length,
@@ -3191,7 +3191,7 @@ STATUS DLL_EXPORT GDS_REQUEST_INFO(STATUS * user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_ROLLBACK_RETAINING(STATUS * user_status,
+ISC_STATUS DLL_EXPORT GDS_ROLLBACK_RETAINING(ISC_STATUS * user_status,
 										 JRD_TRA * tra_handle)
 {
 /**************************************
@@ -3228,7 +3228,7 @@ STATUS DLL_EXPORT GDS_ROLLBACK_RETAINING(STATUS * user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_ROLLBACK(STATUS * user_status, JRD_TRA * tra_handle)
+ISC_STATUS DLL_EXPORT GDS_ROLLBACK(ISC_STATUS * user_status, JRD_TRA * tra_handle)
 {
 /**************************************
  *
@@ -3265,7 +3265,7 @@ STATUS DLL_EXPORT GDS_ROLLBACK(STATUS * user_status, JRD_TRA * tra_handle)
 }
 
 
-STATUS DLL_EXPORT GDS_SEEK_BLOB(STATUS * user_status,
+ISC_STATUS DLL_EXPORT GDS_SEEK_BLOB(ISC_STATUS * user_status,
 								BLB * blob_handle,
 								SSHORT mode, SLONG offset, SLONG * result)
 {
@@ -3307,7 +3307,7 @@ STATUS DLL_EXPORT GDS_SEEK_BLOB(STATUS * user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_SEND(STATUS * user_status,
+ISC_STATUS DLL_EXPORT GDS_SEND(ISC_STATUS * user_status,
 						   JRD_REQ * req_handle,
 						   USHORT msg_type,
 						   USHORT msg_length, SCHAR * msg, SSHORT level)
@@ -3369,7 +3369,7 @@ STATUS DLL_EXPORT GDS_SEND(STATUS * user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_SERVICE_ATTACH(STATUS * user_status,
+ISC_STATUS DLL_EXPORT GDS_SERVICE_ATTACH(ISC_STATUS * user_status,
 									 USHORT service_length,
 									 TEXT * service_name,
 									 SVC * svc_handle,
@@ -3410,7 +3410,7 @@ STATUS DLL_EXPORT GDS_SERVICE_ATTACH(STATUS * user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_SERVICE_DETACH(STATUS * user_status, SVC * svc_handle)
+ISC_STATUS DLL_EXPORT GDS_SERVICE_DETACH(ISC_STATUS * user_status, SVC * svc_handle)
 {
 /**************************************
  *
@@ -3450,7 +3450,7 @@ STATUS DLL_EXPORT GDS_SERVICE_DETACH(STATUS * user_status, SVC * svc_handle)
 }
 
 
-STATUS DLL_EXPORT GDS_SERVICE_QUERY(STATUS*	user_status,
+ISC_STATUS DLL_EXPORT GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
 									SVC*	svc_handle,
 									ULONG*	reserved,
 									USHORT	send_item_length,
@@ -3508,11 +3508,11 @@ STATUS DLL_EXPORT GDS_SERVICE_QUERY(STATUS*	user_status,
 			PARSE_STATUS(service->svc_status, len, warning);
 			if (len) {
 				MOVE_FASTER(service->svc_status, tdbb->tdbb_status_vector,
-							sizeof(STATUS) * len);
+							sizeof(ISC_STATUS) * len);
 	
 				/* Empty out the service status vector */
 				memset(service->svc_status, 0,
-					ISC_STATUS_LENGTH * sizeof(STATUS));
+					ISC_STATUS_LENGTH * sizeof(ISC_STATUS));
 			}
 	
 			if (user_status[1])
@@ -3527,7 +3527,7 @@ STATUS DLL_EXPORT GDS_SERVICE_QUERY(STATUS*	user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_SERVICE_START(STATUS*	user_status,
+ISC_STATUS DLL_EXPORT GDS_SERVICE_START(ISC_STATUS*	user_status,
 									SVC*	svc_handle,
 									ULONG*	reserved,
 									USHORT	spb_length,
@@ -3566,8 +3566,8 @@ STATUS DLL_EXPORT GDS_SERVICE_START(STATUS*	user_status,
 		SVC_start(service, spb_length, spb);
 	
 		if (service->svc_status[1]) {
-			STATUS* svc_status = service->svc_status;
-			STATUS* tdbb_status = tdbb->tdbb_status_vector;
+			ISC_STATUS* svc_status = service->svc_status;
+			ISC_STATUS* tdbb_status = tdbb->tdbb_status_vector;
 	
 			while (*svc_status) {
 				*tdbb_status++ = *svc_status++;
@@ -3588,7 +3588,7 @@ STATUS DLL_EXPORT GDS_SERVICE_START(STATUS*	user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_START_AND_SEND(STATUS * user_status,
+ISC_STATUS DLL_EXPORT GDS_START_AND_SEND(ISC_STATUS * user_status,
 									 JRD_REQ * req_handle,
 									 JRD_TRA * tra_handle,
 									 USHORT msg_type,
@@ -3651,7 +3651,7 @@ STATUS DLL_EXPORT GDS_START_AND_SEND(STATUS * user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_START(STATUS * user_status,
+ISC_STATUS DLL_EXPORT GDS_START(ISC_STATUS * user_status,
 							JRD_REQ * req_handle,
 							JRD_TRA * tra_handle, SSHORT level)
 {
@@ -3710,7 +3710,7 @@ STATUS DLL_EXPORT GDS_START(STATUS * user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_START_MULTIPLE(STATUS * user_status,
+ISC_STATUS DLL_EXPORT GDS_START_MULTIPLE(ISC_STATUS * user_status,
 									 JRD_TRA * tra_handle,
 									 USHORT count, TEB * vector)
 {
@@ -3725,7 +3725,7 @@ STATUS DLL_EXPORT GDS_START_MULTIPLE(STATUS * user_status,
  *
  **************************************/
 	volatile JRD_TRA transaction, prior;
-	STATUS temp_status[ISC_STATUS_LENGTH];
+	ISC_STATUS temp_status[ISC_STATUS_LENGTH];
 	TEB *v, *end;
 	ATT attachment;
 	struct tdbb thd_context;
@@ -3790,7 +3790,7 @@ STATUS DLL_EXPORT GDS_START_MULTIPLE(STATUS * user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_START_TRANSACTION(STATUS * user_status,
+ISC_STATUS DLL_EXPORT GDS_START_TRANSACTION(ISC_STATUS * user_status,
 										JRD_TRA * tra_handle, SSHORT count, ...)
 {
 /**************************************
@@ -3820,7 +3820,7 @@ STATUS DLL_EXPORT GDS_START_TRANSACTION(STATUS * user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_TRANSACT_REQUEST(STATUS*	user_status,
+ISC_STATUS DLL_EXPORT GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 									   ATT*		db_handle,
 									   JRD_TRA*		tra_handle,
 									   USHORT	blr_length,
@@ -3986,7 +3986,7 @@ STATUS DLL_EXPORT GDS_TRANSACT_REQUEST(STATUS*	user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_TRANSACTION_INFO(STATUS * user_status,
+ISC_STATUS DLL_EXPORT GDS_TRANSACTION_INFO(ISC_STATUS * user_status,
 									   JRD_TRA * tra_handle,
 									   SSHORT item_length,
 									   SCHAR * items,
@@ -4035,7 +4035,7 @@ STATUS DLL_EXPORT GDS_TRANSACTION_INFO(STATUS * user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_UNWIND(STATUS * user_status,
+ISC_STATUS DLL_EXPORT GDS_UNWIND(ISC_STATUS * user_status,
 							 JRD_REQ * req_handle, SSHORT level)
 {
 /**************************************
@@ -4423,7 +4423,7 @@ BOOLEAN JRD_reschedule(TDBB tdbb, SLONG quantum, BOOLEAN punt)
  **************************************/
 	DBB dbb;
 	ATT attachment;
-	STATUS *status;
+	ISC_STATUS *status;
 
 	if (tdbb->tdbb_inhibit)
 		return FALSE;
@@ -4625,7 +4625,7 @@ void jrd_vtof(const char* string, char* field, SSHORT length)
 	}
 }
 
-static BLB check_blob(TDBB tdbb, STATUS * user_status, BLB * blob_handle)
+static BLB check_blob(TDBB tdbb, ISC_STATUS * user_status, BLB * blob_handle)
 {
 /**************************************
  *
@@ -4659,7 +4659,7 @@ static BLB check_blob(TDBB tdbb, STATUS * user_status, BLB * blob_handle)
 }
 
 
-static STATUS check_database(TDBB tdbb, ATT attachment, STATUS * user_status)
+static ISC_STATUS check_database(TDBB tdbb, ATT attachment, ISC_STATUS * user_status)
 {
 /**************************************
  *
@@ -4673,7 +4673,7 @@ static STATUS check_database(TDBB tdbb, ATT attachment, STATUS * user_status)
  *
  **************************************/
 	DBB dbb;
-	STATUS *ptr;
+	ISC_STATUS *ptr;
 	TEXT *string;
 
 #ifndef SUPERSERVER
@@ -4720,7 +4720,7 @@ static STATUS check_database(TDBB tdbb, ATT attachment, STATUS * user_status)
 		*ptr++ = gds_bug_check;
 		*ptr++ = gds_arg_string;
 		string = "can't continue after bugcheck";
-		*ptr++ = (STATUS) string;
+		*ptr++ = (ISC_STATUS) string;
 		*ptr = gds_arg_end;
 		return error(user_status);
 	}
@@ -4734,7 +4734,7 @@ static STATUS check_database(TDBB tdbb, ATT attachment, STATUS * user_status)
 		*ptr++ = gds_arg_cstring;
 		*ptr++ = attachment->att_filename->str_length;
 		string = reinterpret_cast<char*>(attachment->att_filename->str_data);
-		*ptr++ = (STATUS) string;
+		*ptr++ = (ISC_STATUS) string;
 		*ptr = gds_arg_end;
 		return error(user_status);
 	}
@@ -4776,8 +4776,8 @@ static void cleanup(void *arg)
 }
 
 
-static STATUS commit(
-					 STATUS * user_status,
+static ISC_STATUS commit(
+					 ISC_STATUS * user_status,
 					 JRD_TRA * tra_handle, USHORT retaining_flag)
 {
 /**************************************
@@ -4791,7 +4791,7 @@ static STATUS commit(
  *
  **************************************/
 	JRD_TRA transaction, next;
-	STATUS *ptr;
+	ISC_STATUS *ptr;
 	DBB dbb;
 	struct tdbb thd_context;
 
@@ -4874,7 +4874,7 @@ static BOOLEAN drop_files(FIL file)
  *
  **************************************/
 	DBB dbb;
-	STATUS status[ISC_STATUS_LENGTH];
+	ISC_STATUS status[ISC_STATUS_LENGTH];
 
 	status[1] = FB_SUCCESS;
 
@@ -4898,7 +4898,7 @@ static BOOLEAN drop_files(FIL file)
 }
 
 
-static JRD_TRA find_transaction(TDBB tdbb, JRD_TRA transaction, STATUS error_code)
+static JRD_TRA find_transaction(TDBB tdbb, JRD_TRA transaction, ISC_STATUS error_code)
 {
 /**************************************
  *
@@ -4928,7 +4928,7 @@ static JRD_TRA find_transaction(TDBB tdbb, JRD_TRA transaction, STATUS error_cod
 }
 
 
-static STATUS error(STATUS * user_status)
+static ISC_STATUS error(ISC_STATUS * user_status)
 {
 /**************************************
  *
@@ -4958,14 +4958,14 @@ static STATUS error(STATUS * user_status)
 
 #if (defined DEV_BUILD && !defined MULTI_THREAD)
 	if (dbb && dbb->dbb_use_count && !(dbb->dbb_flags & DBB_security_db)) {
-		STATUS *p;
+		ISC_STATUS *p;
 
 		dbb->dbb_use_count = 0;
 		p = user_status;
 		*p++ = gds_arg_gds;
 		*p++ = gds_random;
 		*p++ = gds_arg_string;
-		*p++ = (STATUS) "database use count set on error return";
+		*p++ = (ISC_STATUS) "database use count set on error return";
 		*p = gds_arg_end;
 	}
 #endif
@@ -4999,7 +4999,7 @@ static void find_intl_charset(TDBB tdbb, ATT attachment, DPB * options)
 	}
 
 	SSHORT id;
-	STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS local_status[ISC_STATUS_LENGTH];
 
 	if (MET_get_char_subtype(tdbb,
 							&id,
@@ -5487,7 +5487,7 @@ static TEXT* get_string_parameter(UCHAR** dpb_ptr, TEXT** opt_ptr, ULONG* buf_av
 }
 
 
-static STATUS handle_error(STATUS * user_status, STATUS code, TDBB tdbb)
+static ISC_STATUS handle_error(ISC_STATUS * user_status, ISC_STATUS code, TDBB tdbb)
 {
 /**************************************
  *
@@ -5501,7 +5501,7 @@ static STATUS handle_error(STATUS * user_status, STATUS code, TDBB tdbb)
  *	"error" and abort.
  *
  **************************************/
-	STATUS *vector;
+	ISC_STATUS *vector;
 
 	if (tdbb)
 		JRD_restore_context();
@@ -5547,7 +5547,7 @@ static BOOLEAN handler_NT(SSHORT controlAction)
 
 
 static DBB init(TDBB	tdbb,
-				STATUS*	user_status,
+				ISC_STATUS*	user_status,
 				TEXT*	expanded_filename,
 				USHORT	attach_flag)
 {
@@ -5750,9 +5750,9 @@ static void make_jrn_data(UCHAR*	data,
 }
 
 
-static STATUS prepare(TDBB		tdbb,
+static ISC_STATUS prepare(TDBB		tdbb,
 					  JRD_TRA		transaction,
-					  STATUS*	status_vector,
+					  ISC_STATUS*	status_vector,
 					  USHORT	length,
 					  UCHAR*	msg)
 {
@@ -5910,7 +5910,7 @@ static void release_attachment(ATT attachment)
 }
 
 
-static STATUS return_success(TDBB tdbb)
+static ISC_STATUS return_success(TDBB tdbb)
 {
 /**************************************
  *
@@ -5923,7 +5923,7 @@ static STATUS return_success(TDBB tdbb)
  *
  **************************************/
 	DBB dbb;
-	STATUS *p, *user_status;
+	ISC_STATUS *p, *user_status;
 
 	SET_TDBB(tdbb);
 
@@ -5961,7 +5961,7 @@ static STATUS return_success(TDBB tdbb)
 		*p++ = gds_arg_gds;
 		*p++ = gds_random;
 		*p++ = gds_arg_string;
-		*p++ = (STATUS) "database use count set on success return";
+		*p++ = (ISC_STATUS) "database use count set on success return";
 		*p = gds_arg_end;
 	}
 #endif
@@ -5972,7 +5972,7 @@ static STATUS return_success(TDBB tdbb)
 
 static BOOLEAN rollback(TDBB	tdbb,
 						JRD_TRA		next,
-						STATUS*	status_vector,
+						ISC_STATUS*	status_vector,
 						USHORT	retaining_flag)
 {
 /**************************************
@@ -5987,7 +5987,7 @@ static BOOLEAN rollback(TDBB	tdbb,
  **************************************/
 	DBB dbb;
 	JRD_TRA transaction;
-	STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS local_status[ISC_STATUS_LENGTH];
 
 	SET_TDBB(tdbb);
 
@@ -6432,7 +6432,7 @@ ULONG JRD_shutdown_all()
  *	and shutdown every database.
  *
  **************************************/
-	STATUS user_status[ISC_STATUS_LENGTH];
+	ISC_STATUS user_status[ISC_STATUS_LENGTH];
 	ATT att, att_next;
 	DBB dbb, dbb_next;
 	struct tdbb thd_context;
@@ -6496,7 +6496,7 @@ ULONG JRD_shutdown_all()
 
 
 static void purge_attachment(TDBB		tdbb,
-							 STATUS*	user_status,
+							 ISC_STATUS*	user_status,
 							 ATT		attachment,
 							 BOOLEAN	force_flag)
 {
@@ -6626,7 +6626,7 @@ static void purge_attachment(TDBB		tdbb,
     @param status
 
  **/
-static bool verify_database_name(TEXT *name, STATUS *status)
+static bool verify_database_name(TEXT *name, ISC_STATUS *status)
 {
 	// Check for security.fdb
 	static TEXT SecurityNameBuffer[MAXPATHLEN] = "";

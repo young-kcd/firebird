@@ -114,7 +114,7 @@ extern "C" {
 
 #endif /* SUPERSERVER */
 
-void SVC_STATUS_ARG(STATUS*& status, USHORT type, const void* value);
+void SVC_STATUS_ARG(ISC_STATUS*& status, USHORT type, const void* value);
 
 #define CK_SPACE_FOR_NUMERIC 	{{if ((info + 1 + sizeof (ULONG)) > end) \
     				      { \
@@ -129,7 +129,7 @@ class svc : public pool_alloc<type_svc>
 {
 public:
 	SLONG	svc_handle;			/* "handle" of process/thread running service */
-	STATUS*	svc_status;			/* status vector for svc_handle */
+	ISC_STATUS*	svc_status;			/* status vector for svc_handle */
 	void*	svc_input;			/* input to service */
 	void*	svc_output;			/* output from service */
 	ULONG	svc_stdout_head;

@@ -34,7 +34,7 @@ void   SVC_detach(class svc *);
 void   SVC_fprintf(class svc *, const SCHAR *, ...);
 void   SVC_putc(class svc*, UCHAR);
 void   SVC_query(class svc*, USHORT, SCHAR*, USHORT, SCHAR*, USHORT, SCHAR*);
-STATUS SVC_query2(class svc*, struct tdbb*, USHORT, SCHAR *, USHORT, SCHAR*, USHORT, SCHAR*);
+ISC_STATUS SVC_query2(class svc*, struct tdbb*, USHORT, SCHAR *, USHORT, SCHAR*, USHORT, SCHAR*);
 void*  SVC_start(class svc*, USHORT, SCHAR*);
 void   SVC_finish(class svc*, USHORT);
 void   SVC_read_ib_log(class svc*);

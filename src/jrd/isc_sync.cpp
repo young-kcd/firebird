@@ -181,12 +181,12 @@ static size_t getpagesize(void) {return PAGESIZE;}
 
 extern "C" {
 
-static void		error(STATUS *, TEXT *, STATUS);
+static void		error(ISC_STATUS *, TEXT *, ISC_STATUS);
 
 #ifdef UNIX
 static void		alarm_handler(void);
-static SLONG	find_key(STATUS *, TEXT *);
-static SLONG	init_semaphores(STATUS *, SLONG, int);
+static SLONG	find_key(ISC_STATUS *, TEXT *);
+static SLONG	init_semaphores(ISC_STATUS *, SLONG, int);
 static BOOLEAN	semaphore_wait_isc_sync(int, int, int *);
 #endif
 
@@ -1807,7 +1807,7 @@ void *ISC_make_signal(
 
 #ifdef VMS
 #define ISC_MAP_FILE_DEFINED
-UCHAR *ISC_map_file(STATUS * status_vector,
+UCHAR *ISC_map_file(ISC_STATUS * status_vector,
 					TEXT * filename,
 					void (*init_routine) (void *, struct sh_mem *, int),
 					void *init_arg, SLONG length, SH_MEM shmem_data)
@@ -1827,7 +1827,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 	SLONG inadr[2], retadr[2], flags;
 	TEXT section[64], *p, *q, expanded_filename[MAXPATHLEN], temp[MAXPATHLEN],
 		hostname[64];
-	STATUS status;
+	ISC_STATUS status;
 	struct FAB fab;
 	struct XABPRO xab;
 	struct dsc$descriptor_s desc;
@@ -1951,7 +1951,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 #ifdef UNIX
 #ifdef HAVE_MMAP
 #define ISC_MAP_FILE_DEFINED
-UCHAR *ISC_map_file(STATUS * status_vector,
+UCHAR *ISC_map_file(ISC_STATUS * status_vector,
 					TEXT * filename,
 					void (*init_routine) (void *, struct sh_mem *, int),
 					void *init_arg, SLONG length, SH_MEM shmem_data)
@@ -2266,7 +2266,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 #ifdef UNIX
 #ifndef HAVE_MMAP
 #define ISC_MAP_FILE_DEFINED
-UCHAR *ISC_map_file(STATUS * status_vector,
+UCHAR *ISC_map_file(ISC_STATUS * status_vector,
 					TEXT * filename,
 					void (*init_routine) (void *, struct sh_mem *, int),
 					void *init_arg, SLONG length, SH_MEM shmem_data)
@@ -2575,7 +2575,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 #ifdef WIN_NT
 #define ISC_MAP_FILE_DEFINED
 UCHAR *DLL_EXPORT ISC_map_file(
-	   STATUS * status_vector,
+	   ISC_STATUS * status_vector,
 	   TEXT * filename,
 #ifdef NOT_USED_OR_REPLACED
 	   // MUST of course match header.
@@ -2847,7 +2847,7 @@ UCHAR *DLL_EXPORT ISC_map_file(
 
 #ifndef REQUESTER
 #ifndef ISC_MAP_FILE_DEFINED
-UCHAR *ISC_map_file(STATUS * status_vector,
+UCHAR *ISC_map_file(ISC_STATUS * status_vector,
 					TEXT * filename,
 					void (*init_routine) (void *, struct sh_mem *, int),
 					void *init_arg, SLONG length, SH_MEM shmem_data)
@@ -2877,7 +2877,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 
 #ifdef HAVE_MMAP
 #define ISC_MAP_OBJECT_DEFINED
-UCHAR *ISC_map_object(STATUS * status_vector,
+UCHAR *ISC_map_object(ISC_STATUS * status_vector,
 					  SH_MEM shmem_data,
 					  SLONG object_offset, SLONG object_length)
 {
@@ -2935,7 +2935,7 @@ UCHAR *ISC_map_object(STATUS * status_vector,
 
 #ifdef HAVE_MMAP
 #define ISC_UNMAP_OBJECT_DEFINED
-BOOLEAN ISC_unmap_object(STATUS * status_vector,
+BOOLEAN ISC_unmap_object(ISC_STATUS * status_vector,
 						 SH_MEM shmem_data,
 						 UCHAR ** object_pointer, SLONG object_length)
 {
@@ -3600,7 +3600,7 @@ int ISC_mutex_unlock(MTX mutex)
 #ifdef UNIX
 #ifdef HAVE_MMAP
 #define ISC_REMAP_FILE_DEFINED
-UCHAR *ISC_remap_file(STATUS * status_vector,
+UCHAR *ISC_remap_file(ISC_STATUS * status_vector,
 					  SH_MEM shmem_data, SLONG new_length, USHORT flag)
 {
 /**************************************
@@ -3638,7 +3638,7 @@ UCHAR *ISC_remap_file(STATUS * status_vector,
 
 #ifdef WIN_NT
 #define ISC_REMAP_FILE_DEFINED
-UCHAR *DLL_EXPORT ISC_remap_file(STATUS * status_vector,
+UCHAR *DLL_EXPORT ISC_remap_file(ISC_STATUS * status_vector,
 				 SH_MEM shmem_data,
 				 SLONG new_length,
 				 USHORT flag)
@@ -3727,7 +3727,7 @@ UCHAR *DLL_EXPORT ISC_remap_file(STATUS * status_vector,
 
 
 #ifndef ISC_REMAP_FILE_DEFINED
-UCHAR *DLL_EXPORT ISC_remap_file(STATUS * status_vector,
+UCHAR *DLL_EXPORT ISC_remap_file(ISC_STATUS * status_vector,
 								 SH_MEM shmem_data,
 								 SLONG new_length, USHORT flag)
 {
@@ -3934,7 +3934,7 @@ void ISC_sync_signals_reset()
 #ifdef UNIX
 #ifdef HAVE_MMAP
 #define UNMAP_FILE
-void ISC_unmap_file(STATUS * status_vector, SH_MEM shmem_data, USHORT flag)
+void ISC_unmap_file(ISC_STATUS * status_vector, SH_MEM shmem_data, USHORT flag)
 {
 /**************************************
  *
@@ -3965,7 +3965,7 @@ void ISC_unmap_file(STATUS * status_vector, SH_MEM shmem_data, USHORT flag)
 #ifdef UNIX
 #ifndef HAVE_MMAP
 #define UNMAP_FILE
-void ISC_unmap_file(STATUS * status_vector, SH_MEM shmem_data, USHORT flag)
+void ISC_unmap_file(ISC_STATUS * status_vector, SH_MEM shmem_data, USHORT flag)
 {
 /**************************************
  *
@@ -3994,7 +3994,7 @@ void ISC_unmap_file(STATUS * status_vector, SH_MEM shmem_data, USHORT flag)
 #ifdef WIN_NT
 #define UNMAP_FILE
 void DLL_EXPORT ISC_unmap_file(
-				STATUS * status_vector,
+				ISC_STATUS * status_vector,
 				SH_MEM shmem_data,
 				USHORT flag)
 {
@@ -4026,7 +4026,7 @@ void DLL_EXPORT ISC_unmap_file(
 
 #ifndef UNMAP_FILE
 void DLL_EXPORT ISC_unmap_file(
-							   STATUS * status_vector,
+							   ISC_STATUS * status_vector,
 							   SH_MEM shmem_data, USHORT flag)
 {
 /**************************************
@@ -4064,7 +4064,7 @@ static void alarm_handler(void)
 #endif
 
 
-static void error(STATUS * status_vector, TEXT * string, STATUS status)
+static void error(ISC_STATUS * status_vector, TEXT * string, ISC_STATUS status)
 {
 /**************************************
  *
@@ -4080,7 +4080,7 @@ static void error(STATUS * status_vector, TEXT * string, STATUS status)
 	*status_vector++ = gds_arg_gds;
 	*status_vector++ = gds_sys_request;
 	*status_vector++ = gds_arg_string;
-	*status_vector++ = (STATUS) string;
+	*status_vector++ = (ISC_STATUS) string;
 	*status_vector++ = SYS_ARG;
 	*status_vector++ = status;
 	*status_vector++ = gds_arg_end;
@@ -4109,7 +4109,7 @@ static int event_test(WAIT * wait)
 
 
 #ifdef UNIX
-static SLONG find_key(STATUS * status_vector, TEXT * filename)
+static SLONG find_key(ISC_STATUS * status_vector, TEXT * filename)
 {
 /**************************************
  *
@@ -4145,7 +4145,7 @@ static SLONG find_key(STATUS * status_vector, TEXT * filename)
 
 #ifdef UNIX
 static SLONG init_semaphores(
-							 STATUS * status_vector,
+							 ISC_STATUS * status_vector,
 							 SLONG key, int semaphores)
 {
 /**************************************

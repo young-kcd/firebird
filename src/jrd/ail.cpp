@@ -142,7 +142,7 @@ void AIL_add_log(void)
 
 
 void AIL_checkpoint_finish(
-						   STATUS * status_vector,
+						   ISC_STATUS * status_vector,
 						   DBB dbb,
 						   SLONG seq, TEXT * walname, SLONG p_off, SLONG off)
 {
@@ -607,7 +607,7 @@ void AIL_get_file_list(LLS * stack)
  **************************************/
 	DBB dbb;
 	WALS WAL_segment;
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	SCHAR *curr_name;
 	SLONG curr_log_partition_offset;
 	SCHAR *prev_name;
@@ -929,7 +929,7 @@ void AIL_process_jrn_error(SLONG ret_val)
 
 void AIL_put(
 			 DBB dbb,
-			 STATUS * status,
+			 ISC_STATUS * status,
 			 JRNH * header,
 			 USHORT h_length,
 			 UCHAR * data,
@@ -1361,7 +1361,7 @@ static void delete_log_files(
 	TDBB tdbb;
 	DBB dbb;
 	STR fname;
-	STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS local_status[ISC_STATUS_LENGTH];
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;

@@ -2963,7 +2963,7 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
 	UCHAR verb;
 	USHORT sql_prot, is_a_view, priv;
 	volatile SSHORT id, old_id;
-	STATUS *s;
+	ISC_STATUS *s;
 	TEXT relation_name[32], owner_name[32], field_name[32], *p;
 
 	tdbb = GET_THREAD_DATA;
@@ -3099,12 +3099,12 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
 							*s++ = gds_arg_gds;
 							*s++ = gds_no_priv;
 							*s++ = gds_arg_string;
-							*s++ = (STATUS) "SELECT";	/* Non-Translatable */
+							*s++ = (ISC_STATUS) "SELECT";	/* Non-Translatable */
 							*s++ = gds_arg_string;
-							*s++ = (STATUS) "TABLE";	/* Non-Translatable */
+							*s++ = (ISC_STATUS) "TABLE";	/* Non-Translatable */
 							*s++ = gds_arg_string;
 							*s++ =
-								(STATUS) ERR_cstring(REL.RDB$RELATION_NAME);
+								(ISC_STATUS) ERR_cstring(REL.RDB$RELATION_NAME);
 							*s = 0;
 							/* msg 32: no permission for %s access to %s %s */
 							DYN_error_punt(TRUE, 115, NULL, NULL, NULL, NULL,

@@ -47,7 +47,7 @@ typedef enum idx_e {
 extern "C" {
 #endif
 
-BOOLEAN DLL_EXPORT ERR_post_warning(STATUS, ...);
+BOOLEAN DLL_EXPORT ERR_post_warning(ISC_STATUS, ...);
 void ERR_assert(const TEXT*, int);
 void DLL_EXPORT ERR_bugcheck(int);
 void DLL_EXPORT ERR_bugcheck_msg(const TEXT*);
@@ -55,9 +55,9 @@ void DLL_EXPORT ERR_corrupt(int);
 void DLL_EXPORT ERR_duplicate_error(enum idx_e, struct jrd_rel*, USHORT);
 void DLL_EXPORT ERR_error(int);
 void DLL_EXPORT ERR_error_msg(const TEXT *);
-void DLL_EXPORT ERR_post(STATUS, ...);
+void DLL_EXPORT ERR_post(ISC_STATUS, ...);
 void DLL_EXPORT ERR_punt(void);
-void DLL_EXPORT ERR_warning(STATUS, ...);
+void DLL_EXPORT ERR_warning(ISC_STATUS, ...);
 void DLL_EXPORT ERR_log(int, int, const TEXT *);
 
 #ifdef __cplusplus

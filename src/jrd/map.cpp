@@ -57,7 +57,7 @@ extern double MTH$CVT_D_G(), MTH$CVT_G_D();
 static void bugcheck(int);
 static BOOLEAN check_message(UCHAR **);
 static MAP_MSG rebuild_message(UCHAR **, UCHAR **);
-static int translate_status(STATUS *, STATUS *, SCHAR **);
+static int translate_status(ISC_STATUS *, ISC_STATUS *, SCHAR **);
 
 #define WRKBUF_SIZ		256
 #define DEFAULT_STATUS_FLAGS	0xF0000L
@@ -380,7 +380,7 @@ void MAP_release(MAP_MSG msg)
 }
 
 
-int MAP_status_to_gds(STATUS * vms_status, STATUS * gds_status)
+int MAP_status_to_gds(ISC_STATUS * vms_status, ISC_STATUS * gds_status)
 {
 /**************************************
  *
@@ -392,7 +392,7 @@ int MAP_status_to_gds(STATUS * vms_status, STATUS * gds_status)
  *	Translate an RDB status vector to a GDS error status vector.
  *
  **************************************/
-	STATUS code, number, length, gds_index, *tmp, temp[ISC_STATUS_LENGTH];
+	ISC_STATUS code, number, length, gds_index, *tmp, temp[ISC_STATUS_LENGTH];
 	USHORT shift, flag;
 	SCHAR msgbuff[WRKBUF_SIZ], *p, *q, *pw1, *pw2, flags[4], part;
 	struct dsc$descriptor_s desc, *dsc_ptr;
@@ -566,7 +566,7 @@ int MAP_status_to_gds(STATUS * vms_status, STATUS * gds_status)
 }
 
 
-int MAP_status_to_rdb(STATUS * status_vector, STATUS * user_status)
+int MAP_status_to_rdb(ISC_STATUS * status_vector, ISC_STATUS * user_status)
 {
 /**************************************
  *
@@ -580,7 +580,7 @@ int MAP_status_to_rdb(STATUS * status_vector, STATUS * user_status)
  *	we hit a code that we don't know.
  *
  **************************************/
-	STATUS *gds, *rdb;
+	ISC_STATUS *gds, *rdb;
 	SLONG total_longwds, ret_value;
 	SCHAR *buf_ptr;
 
@@ -792,8 +792,8 @@ static MAP_MSG rebuild_message(UCHAR ** org_ptr, UCHAR ** new_ptr)
 
 
 static int translate_status(
-							STATUS * status_vector,
-							STATUS * user_status, SCHAR ** buf_ptr)
+							ISC_STATUS * status_vector,
+							ISC_STATUS * user_status, SCHAR ** buf_ptr)
 {
 /**************************************
  *
@@ -807,7 +807,7 @@ static int translate_status(
  *	If we don't know the status code, return it to caller.
  *
  **************************************/
-	STATUS *gds, *rdb, code, *count_addr;
+	ISC_STATUS *gds, *rdb, code, *count_addr;
 	USHORT fac = 0, class_ = 0;
 	SSHORT count, length;
 	SCHAR msgbuff[WRKBUF_SIZ], *p, *q, *pw1, *pw2, flags[4];

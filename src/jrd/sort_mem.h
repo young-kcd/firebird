@@ -50,9 +50,9 @@ private:
 
 	public:
 		// Read bytes from the block into the given buffer
-		virtual size_t read(STATUS*, size_t, char*, size_t) = 0;
+		virtual size_t read(ISC_STATUS*, size_t, char*, size_t) = 0;
 		// Write bytes from the given buffer into the block
-		virtual size_t write(STATUS*, size_t, char*, size_t) = 0;
+		virtual size_t write(ISC_STATUS*, size_t, char*, size_t) = 0;
 
 		Block(Block*, size_t);
 		virtual ~Block() {}
@@ -65,8 +65,8 @@ private:
 		char* address;
 
 	public:
-		size_t read(STATUS*, size_t, char*, size_t);
-		size_t write(STATUS*, size_t, char*, size_t);
+		size_t read(ISC_STATUS*, size_t, char*, size_t);
+		size_t write(ISC_STATUS*, size_t, char*, size_t);
 		
 		MemoryBlock(Block*, size_t);
 		~MemoryBlock();
@@ -81,8 +81,8 @@ private:
 		size_t offset;
 
 	public:
-		size_t read(STATUS*, size_t, char*, size_t);
-		size_t write(STATUS*, size_t, char*, size_t);
+		size_t read(ISC_STATUS*, size_t, char*, size_t);
+		size_t write(ISC_STATUS*, size_t, char*, size_t);
 
 		FileBlock(Block*, size_t, struct sfb*, size_t);
 		~FileBlock();
@@ -119,9 +119,9 @@ private:
 
 public:
 	// Read bytes from the scratch file
-	size_t read(STATUS*, size_t, char*, size_t);
+	size_t read(ISC_STATUS*, size_t, char*, size_t);
 	// Write bytes into the scratch file
-	size_t write(STATUS*, size_t, char*, size_t);
+	size_t write(ISC_STATUS*, size_t, char*, size_t);
 
 	SortMem(struct sfb*, size_t);
 	~SortMem();

@@ -646,7 +646,7 @@ static error(journal, value, string, operation)
 	 JRN journal;
 	 int value;
 	 TEXT *string;
-	 STATUS operation;
+	 ISC_STATUS operation;
 {
 /**************************************
  *

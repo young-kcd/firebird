@@ -225,7 +225,7 @@ int LCK_convert(TDBB tdbb, LCK lock, USHORT level, SSHORT wait)
  *	Convert an existing lock to a new level.
  *
  **************************************/
-	STATUS *status;
+	ISC_STATUS *status;
 	DBB dbb;
 	int result;
 
@@ -270,7 +270,7 @@ int LCK_convert_non_blocking(TDBB tdbb, LCK lock, USHORT level, SSHORT wait)
  *
  **************************************/
 	ATT attachment;
-	STATUS *status;
+	ISC_STATUS *status;
 	int result;
 	DBB dbb;
 
@@ -393,7 +393,7 @@ int LCK_downgrade(TDBB tdbb, LCK lock)
  *	Downgrade a lock.
  *
  **************************************/
-	STATUS *status;
+	ISC_STATUS *status;
 	USHORT level;
 
 	assert(LCK_CHECK_LOCK(lock));
@@ -569,7 +569,7 @@ int LCK_lock(TDBB tdbb, LCK lock, USHORT level, SSHORT wait)
  *	Lock a block.  There had better not have been a lock there.
  *
  **************************************/
-	STATUS *status;
+	ISC_STATUS *status;
 	DBB dbb;
 
 	assert(LCK_CHECK_LOCK(lock));
@@ -618,7 +618,7 @@ int LCK_lock_non_blocking(TDBB tdbb, LCK lock, USHORT level, SSHORT wait)
  **************************************/
 #ifdef MULTI_THREAD
 	ATT attachment;
-	STATUS *status;
+	ISC_STATUS *status;
 	LCK next;
 	DBB dbb;
 
@@ -1511,7 +1511,7 @@ static BOOLEAN internal_enqueue(
  *
  **************************************/
 	LCK match, update;
-	STATUS *status;
+	ISC_STATUS *status;
 
 	assert(LCK_CHECK_LOCK(lock));
 	assert(lock->lck_compatible);

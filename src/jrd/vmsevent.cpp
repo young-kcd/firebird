@@ -101,14 +101,14 @@ static void deliver(EVNT);
 static void deliver_request(VMS_REQ);
 static void delivery_thread(void);
 static int delivery_wait(void);
-static STATUS error(STATUS *, TEXT *, STATUS);
+static ISC_STATUS error(ISC_STATUS *, TEXT *, ISC_STATUS);
 static EVNT find_event(USHORT, TEXT *, EVNT);
 static void free(SCHAR *);
 static RINT historical_interest(SES, EVNT);
 static EVNT make_event(USHORT, TEXT *, EVNT);
 static void poke_ast(POKE);
 static BOOLEAN request_completed(VMS_REQ);
-static int return_ok(STATUS *);
+static int return_ok(ISC_STATUS *);
 
 
 int EVENT_cancel(SLONG request_id)
@@ -136,7 +136,7 @@ int EVENT_cancel(SLONG request_id)
 }
 
 
-SLONG EVENT_create_session(STATUS status_vector)
+SLONG EVENT_create_session(ISC_STATUS status_vector)
 {
 /**************************************
  *
@@ -218,7 +218,7 @@ void EVENT_delete_session(SLONG session_id)
 }
 
 
-EVH EVENT_init(STATUS * status_vector, USHORT server_flag)
+EVH EVENT_init(ISC_STATUS * status_vector, USHORT server_flag)
 {
 /**************************************
  *
@@ -240,7 +240,7 @@ EVH EVENT_init(STATUS * status_vector, USHORT server_flag)
 
 
 int EVENT_post(
-			   STATUS * status_vector,
+			   ISC_STATUS * status_vector,
 			   USHORT major_length,
 			   TEXT * major, USHORT minor_length, TEXT * minor, USHORT count)
 {
@@ -320,7 +320,7 @@ int EVENT_post(
 }
 
 
-SLONG EVENT_que(STATUS * status_vector,
+SLONG EVENT_que(ISC_STATUS * status_vector,
 				SLONG session_id,
 				USHORT string_length,
 				TEXT * string,
@@ -731,9 +731,9 @@ static int delivery_wait(void)
 }
 
 
-static STATUS error(STATUS * status_vector;
+static ISC_STATUS error(ISC_STATUS * status_vector;
 					TEXT * string;
-					STATUS status; {
+					ISC_STATUS status; {
 /**************************************
  *
  *	e r r o r
@@ -748,7 +748,7 @@ static STATUS error(STATUS * status_vector;
 					*status_vector++ = gds_arg_gds;
 					*status_vector++ = gds__sys_request;
 					*status_vector++ = gds_arg_string;
-					*status_vector++ = (STATUS) string;
+					*status_vector++ = (ISC_STATUS) string;
 					*status_vector++ = gds_arg_vms;
 					*status_vector++ = status; *status_vector++ = gds_arg_end;
 					return gds__sys_request;
@@ -926,7 +926,7 @@ static STATUS error(STATUS * status_vector;
 					return FALSE;}
 
 
-					static int return_ok(STATUS * status_vector) {
+					static int return_ok(ISC_STATUS * status_vector) {
 /**************************************
  *
  *	r e t u r n _ o k

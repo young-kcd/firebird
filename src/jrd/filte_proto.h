@@ -28,13 +28,13 @@
 extern "C" {
 #endif
 
-extern STATUS filter_acl(USHORT, struct ctl *);
-extern STATUS filter_blr(USHORT, struct ctl *);
-extern STATUS filter_format(USHORT, struct ctl *);
-extern STATUS filter_runtime(USHORT, struct ctl *);
-extern STATUS filter_text(USHORT, struct ctl *);
-extern STATUS filter_transliterate_text(USHORT, struct ctl *);
-extern STATUS filter_trans(USHORT, struct ctl *);
+extern ISC_STATUS filter_acl(USHORT, struct ctl *);
+extern ISC_STATUS filter_blr(USHORT, struct ctl *);
+extern ISC_STATUS filter_format(USHORT, struct ctl *);
+extern ISC_STATUS filter_runtime(USHORT, struct ctl *);
+extern ISC_STATUS filter_text(USHORT, struct ctl *);
+extern ISC_STATUS filter_transliterate_text(USHORT, struct ctl *);
+extern ISC_STATUS filter_trans(USHORT, struct ctl *);
 
 #ifdef __cplusplus
 } /* extern "C" */

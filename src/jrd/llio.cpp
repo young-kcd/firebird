@@ -84,7 +84,7 @@
 #define IO_RETRY	20
 #define BUFSIZE		32768
 
-static void io_error(STATUS *, TEXT *, TEXT *, STATUS);
+static void io_error(ISC_STATUS *, TEXT *, TEXT *, ISC_STATUS);
 
 #ifdef SHLIB_DEFS
 #define fsync		(*_libgds_fsync)
@@ -94,7 +94,7 @@ extern int fsync();
 
 
 int LLIO_allocate_file_space(
-							 STATUS * status_vector,
+							 ISC_STATUS * status_vector,
 							 TEXT * filename,
 							 SLONG size, UCHAR fill_char, USHORT overwrite)
 {
@@ -156,7 +156,7 @@ int LLIO_allocate_file_space(
 
 #ifdef WIN_NT
 #define IO_DEFINED
-int LLIO_close(STATUS * status_vector, SLONG file_desc)
+int LLIO_close(ISC_STATUS * status_vector, SLONG file_desc)
 {
 /**************************************
  *
@@ -174,7 +174,7 @@ int LLIO_close(STATUS * status_vector, SLONG file_desc)
 
 
 int LLIO_open(
-			  STATUS * status_vector,
+			  ISC_STATUS * status_vector,
 			  TEXT * filename,
 			  USHORT open_mode, USHORT share_flag, SLONG * file_desc)
 {
@@ -248,7 +248,7 @@ int LLIO_open(
 
 
 int LLIO_read(
-			  STATUS * status_vector,
+			  ISC_STATUS * status_vector,
 			  SLONG file_desc,
 			  TEXT * filename,
 			  SLONG offset,
@@ -287,7 +287,7 @@ UCHAR * buffer, SLONG length, SLONG * length_read)
 
 
 int LLIO_seek(
-			  STATUS * status_vector,
+			  ISC_STATUS * status_vector,
 			  SLONG file_desc, TEXT * filename, SLONG offset, USHORT whence)
 {
 /**************************************
@@ -326,7 +326,7 @@ int LLIO_seek(
 }
 
 
-int LLIO_sync(STATUS * status_vector, SLONG file_desc)
+int LLIO_sync(ISC_STATUS * status_vector, SLONG file_desc)
 {
 /**************************************
  *
@@ -344,7 +344,7 @@ int LLIO_sync(STATUS * status_vector, SLONG file_desc)
 
 
 int LLIO_write(
-			   STATUS * status_vector,
+			   ISC_STATUS * status_vector,
 			   SLONG file_desc,
 			   TEXT * filename,
 			   SLONG offset,
@@ -382,8 +382,8 @@ USHORT whence, UCHAR * buffer, SLONG length, SLONG * length_written)
 
 
 static void io_error(
-					 STATUS * status_vector,
-					 TEXT * op, TEXT * filename, STATUS operation)
+					 ISC_STATUS * status_vector,
+					 TEXT * op, TEXT * filename, ISC_STATUS operation)
 {
 /**************************************
  *
@@ -404,7 +404,7 @@ static void io_error(
 
 
 #ifndef IO_DEFINED
-int LLIO_close(STATUS * status_vector, SLONG file_desc)
+int LLIO_close(ISC_STATUS * status_vector, SLONG file_desc)
 {
 /**************************************
  *
@@ -422,7 +422,7 @@ int LLIO_close(STATUS * status_vector, SLONG file_desc)
 
 
 int LLIO_open(
-			  STATUS * status_vector,
+			  ISC_STATUS * status_vector,
 			  TEXT * filename,
 			  USHORT open_mode, USHORT share_flag, SLONG * file_desc)
 {
@@ -477,7 +477,7 @@ int LLIO_open(
 }
 
 int LLIO_read(
-			  STATUS * status_vector,
+			  ISC_STATUS * status_vector,
 			  SLONG file_desc,
 			  TEXT * filename,
 			  SLONG offset,
@@ -525,7 +525,7 @@ UCHAR * buffer, SLONG length, SLONG * length_read)
 
 
 int LLIO_seek(
-			  STATUS * status_vector,
+			  ISC_STATUS * status_vector,
 			  SLONG file_desc, TEXT * filename, SLONG offset, USHORT whence)
 {
 /**************************************
@@ -566,7 +566,7 @@ int LLIO_seek(
 }
 
 
-int LLIO_sync(STATUS * status_vector, SLONG file_desc)
+int LLIO_sync(ISC_STATUS * status_vector, SLONG file_desc)
 {
 /**************************************
  *
@@ -584,7 +584,7 @@ int LLIO_sync(STATUS * status_vector, SLONG file_desc)
 
 
 int LLIO_write(
-			   STATUS * status_vector,
+			   ISC_STATUS * status_vector,
 			   SLONG file_desc,
 			   TEXT * filename,
 			   SLONG offset,
@@ -631,8 +631,8 @@ USHORT whence, UCHAR * buffer, SLONG length, SLONG * length_written)
 
 
 static void io_error(
-					 STATUS * status_vector,
-					 TEXT * op, TEXT * filename, STATUS operation)
+					 ISC_STATUS * status_vector,
+					 TEXT * op, TEXT * filename, ISC_STATUS operation)
 {
 /**************************************
  *

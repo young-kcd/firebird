@@ -36,7 +36,7 @@
 class ctl : public pool_alloc<type_ctl>
 {
 public:
-	STATUS	(*ctl_source)(USHORT, struct ctl*);		/* Source filter */
+	ISC_STATUS	(*ctl_source)(USHORT, struct ctl*);		/* Source filter */
 	struct ctl*	ctl_source_handle;		/* Argument to pass to source filter */
 	SSHORT		ctl_to_sub_type;		/* Target type */
 	SSHORT		ctl_from_sub_type;		/* Source type */
@@ -48,14 +48,14 @@ public:
 	SLONG		ctl_max_segment;		/* Length of longest segment */
 	SLONG		ctl_number_segments;	/* Total number of segments */
 	SLONG		ctl_total_length;		/* Total length of blob */
-	STATUS*		ctl_status;				/* Address of status vector */
+	ISC_STATUS*		ctl_status;				/* Address of status vector */
 	IPTR		ctl_data[8];			/* Application specific data */
 	void*		ctl_internal[3];		/* InterBase internal-use only */
 	UCHAR*		ctl_exception_message;	/* Message to use in case of filter exception */
 };
 typedef ctl *CTL;
 
-typedef STATUS(*PTR) (USHORT, CTL);
+typedef ISC_STATUS(*PTR) (USHORT, CTL);
 
 /* Blob filter management */
 

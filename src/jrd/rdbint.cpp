@@ -114,7 +114,7 @@ SSHORT dpb_length, SCHAR * dpb, SSHORT db_type)
  *      are bad, so we strip off our extended parameters.
  *
  **************************************/
-	STATUS stat, status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS stat, status_vector[ISC_STATUS_LENGTH];
 	struct dsc$descriptor_s name;
 	SCHAR new_dpb[128], *p, *q;
 	SSHORT new_length, l, c_len;
@@ -181,7 +181,7 @@ int RDB_blob_info(
  *	Get info on object.
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 
 	CHECK_HANDLE(handle, gds_bad_segstr_handle);
 
@@ -205,7 +205,7 @@ int RDB_cancel_blob(int *user_status, BLB * blob_handle)
  *	Cancel a blob (surprise!)
  *
  **************************************/
-	STATUS stat, status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS stat, status_vector[ISC_STATUS_LENGTH];
 
 	if (!*blob_handle) {
 		if (user_status) {
@@ -239,7 +239,7 @@ int RDB_close_blob(int *user_status, BLB * blob_handle)
  *	Close a blob (surprise!)
  *
  **************************************/
-	STATUS stat, status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS stat, status_vector[ISC_STATUS_LENGTH];
 
 	CHECK_HANDLE(blob_handle, gds_bad_segstr_handle);
 
@@ -267,7 +267,7 @@ int RDB_commit_transaction(int *user_status, TRA * tra_handle)
  *	Commit a transaction.
  *
  **************************************/
-	STATUS stat, status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS stat, status_vector[ISC_STATUS_LENGTH];
 
 	CHECK_HANDLE(tra_handle, gds_bad_trans_handle);
 	RDB_CALL(RDB$COMMIT_TRANSACTION) (status_vector, &(*tra_handle)->handle);
@@ -295,7 +295,7 @@ int RDB_compile_request(
  * Functional description
  *
  **************************************/
-	STATUS stat, status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS stat, status_vector[ISC_STATUS_LENGTH];
 	int *messages;
 	UCHAR *temp;
 	USHORT temp_length;
@@ -348,7 +348,7 @@ int RDB_create_blob(
  *	Get a segment from a blob (surprise!)
  *
  **************************************/
-	STATUS stat, status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS stat, status_vector[ISC_STATUS_LENGTH];
 
 	CHECK_HANDLE(db_handle, gds_bad_db_handle);
 	CHECK_HANDLE(tra_handle, gds_bad_trans_handle);
@@ -382,7 +382,7 @@ USHORT dpb_length, UCHAR * dpb, USHORT db_type)
  *	Create a nice, squeeky clean database, uncorrupted by user data.
  *
  **************************************/
-	STATUS stat, status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS stat, status_vector[ISC_STATUS_LENGTH];
 	struct dsc$descriptor_s name;
 
 /* Try GDS first; if ok, we're done */
@@ -423,7 +423,7 @@ int RDB_database_info(
  *	Get info on object.
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	SCHAR item, *item_ptr, *end, *tmp_ptr, tmp_buff[32];
 	SSHORT len;
 
@@ -478,7 +478,7 @@ int RDB_detach_database(int *user_status, DBB * handle)
  *	Close down a database.
  *
  **************************************/
-	STATUS stat, status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS stat, status_vector[ISC_STATUS_LENGTH];
 	DBB database;
 	REQ request;
 
@@ -516,7 +516,7 @@ int RDB_get_segment(
  *	Get a segment from a blob (surprise!)
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 
 	CHECK_HANDLE(blob_handle, gds_bad_segstr_handle);
 
@@ -543,7 +543,7 @@ int RDB_open_blob(
  *	Get a segment from a blob (surprise!)
  *
  **************************************/
-	STATUS stat, status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS stat, status_vector[ISC_STATUS_LENGTH];
 
 	CHECK_HANDLE(db_handle, gds_bad_db_handle);
 	CHECK_HANDLE(tra_handle, gds_bad_trans_handle);
@@ -572,7 +572,7 @@ int RDB_prepare_transaction(int *user_status, TRA * tra_handle)
  *	phase commit.
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 
 	CHECK_HANDLE(tra_handle, gds_bad_trans_handle);
 	RDB_CALL(RDB$PREPARE_TRANSACTION) (status_vector, &(*tra_handle)->handle);
@@ -595,7 +595,7 @@ int RDB_put_segment(
  *	Put a segment into a blob (surprise!)
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 
 	CHECK_HANDLE(blob_handle, gds_bad_segstr_handle);
 
@@ -624,7 +624,7 @@ int RDB_receive(
  *	for the largest message.
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	int length;
 	UCHAR *temp;
 
@@ -660,7 +660,7 @@ int RDB_reconnect_transaction(
  *	Reconnect to a transaction in limbo.
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 
 	RDB_CALL(RDB$RECONNECT_TRANSACTION) (status_vector,
 										 (*db_handle)->handle,
@@ -682,7 +682,7 @@ int RDB_release_request(int *user_status, REQ * req_handle)
  *	Release a request.
  *
  **************************************/
-	STATUS stat, status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS stat, status_vector[ISC_STATUS_LENGTH];
 	DBB database;
 	REQ request, *ptr;
 
@@ -724,7 +724,7 @@ int RDB_request_info(
  *	Get info on object.
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 
 	CHECK_HANDLE(handle, gds_bad_req_handle);
 
@@ -747,7 +747,7 @@ int RDB_rollback_transaction(int *user_status, TRA * tra_handle)
  *	Abort a transaction.
  *
  **************************************/
-	STATUS stat, status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS stat, status_vector[ISC_STATUS_LENGTH];
 
 	CHECK_HANDLE(tra_handle, gds_bad_trans_handle);
 	RDB_CALL(RDB$ROLLBACK_TRANSACTION) (status_vector,
@@ -779,7 +779,7 @@ int RDB_send(
  *	buffer big enough.
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	UCHAR *temp;
 	int length;
 
@@ -817,7 +817,7 @@ USHORT msg_length, SCHAR * msg, SSHORT level)
  *	buffer large enough for the largest message.
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	UCHAR *temp;
 	int length;
 
@@ -853,7 +853,7 @@ int RDB_start_request(
  *	Get a record from the host program.
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 
 	CHECK_HANDLE(tra_handle, gds_bad_trans_handle);
 	CHECK_HANDLE(req_handle, gds_bad_req_handle);
@@ -879,7 +879,7 @@ int RDB_start_multiple(
  *	Start a transaction.
  *
  **************************************/
-	STATUS stat, status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS stat, status_vector[ISC_STATUS_LENGTH];
 	DBB database;
 	int rdb_vector[32], *rdb, c;
 
@@ -929,7 +929,7 @@ int RDB_start_transaction(
  *	Start a transaction.
  *
  **************************************/
-	STATUS stat, status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS stat, status_vector[ISC_STATUS_LENGTH];
 	TEB *teb;
 	DBB database;
 	int rdb_vector[32], *rdb, c;
@@ -980,7 +980,7 @@ int RDB_transaction_info(
  *	Get info on object.
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 
 	CHECK_HANDLE(handle, gds_bad_trans_handle);
 
@@ -1004,7 +1004,7 @@ int RDB_unwind_request(int *user_status, REQ * req_handle, SSHORT level)
  *	Unwind a running request.
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 
 	CHECK_HANDLE(req_handle, gds_bad_req_handle);
 
@@ -1069,7 +1069,7 @@ static UCHAR *allocate_temp(int length)
 }
 
 
-static STATUS bad_handle(STATUS *user_status, STATUS code)
+static ISC_STATUS bad_handle(ISC_STATUS *user_status, ISC_STATUS code)
 {
 /**************************************
  *
@@ -1081,8 +1081,8 @@ static STATUS bad_handle(STATUS *user_status, STATUS code)
  *	Generate an error for a bad handle.
  *
  **************************************/
-	STATUS local_status[ISC_STATUS_LENGTH];
-	STATUS *vector;
+	ISC_STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS *vector;
 
 	vector = (user_status) ? user_status : local_status;
 	*vector++ = gds_arg_gds;

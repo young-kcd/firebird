@@ -915,7 +915,7 @@ typedef struct tdbb
 	struct jrd_tra*	tdbb_transaction;
 	struct jrd_req*	tdbb_request;
 	JrdMemoryPool*	tdbb_default;
-	STATUS*		tdbb_status_vector;
+	ISC_STATUS*	tdbb_status_vector;
 	void*		tdbb_setjmp;
 	USHORT		tdbb_inhibit;		/* Inhibit context switch if non-zero */
 	SSHORT		tdbb_quantum;		/* Cycles remaining until voluntary schedule */

@@ -28,12 +28,12 @@
 extern "C" {
 #endif
 
-extern SLONG DLL_EXPORT SDL_compute_subscript(STATUS *, struct ads *, USHORT,
+extern SLONG DLL_EXPORT SDL_compute_subscript(ISC_STATUS *, struct ads *, USHORT,
 											  SLONG *);
-extern STATUS API_ROUTINE SDL_info(STATUS *, UCHAR *, struct sdl_info *,
+extern ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS *, UCHAR *, struct sdl_info *,
 								   SLONG *);
 extern UCHAR *DLL_EXPORT SDL_prepare_slice(UCHAR *, USHORT);
-extern int DLL_EXPORT SDL_walk(STATUS *, UCHAR *, USHORT, UCHAR *,
+extern int DLL_EXPORT SDL_walk(ISC_STATUS *, UCHAR *, USHORT, UCHAR *,
 							   struct ads *, SLONG *, FPTR_VOID,
 							   struct slice *);
 

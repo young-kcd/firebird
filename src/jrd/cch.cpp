@@ -111,7 +111,7 @@ static BDB alloc_bdb(TDBB, BCB, UCHAR **);
 #ifndef PAGE_LATCHING
 static int blocking_ast_bdb(BDB);
 #endif
-static void btc_flush(TDBB, SLONG, BOOLEAN, STATUS *);
+static void btc_flush(TDBB, SLONG, BOOLEAN, ISC_STATUS *);
 static void btc_insert(DBB, BDB);
 static void btc_remove(BDB);
 static void cache_bugcheck(int);
@@ -129,22 +129,22 @@ static BOOLEAN down_grade(TDBB, BDB);
 #endif
 static void expand_buffers(TDBB, ULONG);
 static BDB get_buffer(TDBB, SLONG, LATCH, SSHORT);
-static void journal_buffer(STATUS *, BDB);
+static void journal_buffer(ISC_STATUS *, BDB);
 static SSHORT latch_bdb(TDBB, LATCH, BDB, SLONG, SSHORT);
 static SSHORT lock_buffer(TDBB, BDB, SSHORT, SSHORT);
 static ULONG memory_init(TDBB, BCB, ULONG);
 static void page_validation_error(TDBB, struct win *, SSHORT);
 #ifdef CACHE_READER
-static void prefetch_epilogue(PRF, STATUS *);
+static void prefetch_epilogue(PRF, ISC_STATUS *);
 static void prefetch_init(PRF, TDBB);
-static void prefetch_io(PRF, STATUS *);
+static void prefetch_io(PRF, ISC_STATUS *);
 static void prefetch_prologue(PRF, SLONG *);
 #endif
 static SSHORT related(BDB, BDB, SSHORT);
 static void release_bdb(TDBB, BDB, BOOLEAN, BOOLEAN, BOOLEAN);
 static BOOLEAN writeable(BDB);
-static int write_buffer(TDBB, BDB, SLONG, USHORT, STATUS *, BOOLEAN);
-static BOOLEAN write_page(TDBB, BDB, USHORT, STATUS *, BOOLEAN);
+static int write_buffer(TDBB, BDB, SLONG, USHORT, ISC_STATUS *, BOOLEAN);
+static BOOLEAN write_page(TDBB, BDB, USHORT, ISC_STATUS *, BOOLEAN);
 static void unmark(TDBB, WIN *);
 
 #define MIN_BUFFER_SEGMENT	65536L
@@ -320,7 +320,7 @@ void CCH_down_grade_dbb(DBB dbb)
 	LCK lock;
 	struct tdbb thd_context, *tdbb;
 	bcb_repeat *tail, *end;
-	STATUS ast_status[ISC_STATUS_LENGTH];
+	ISC_STATUS ast_status[ISC_STATUS_LENGTH];
 
 /* Ignore the request if the database or lock block does not appear
    to be valid . */
@@ -878,7 +878,7 @@ void CCH_fetch_page(
 	DBB dbb;
 	BDB bdb;
 	PAG page;
-	STATUS *status;
+	ISC_STATUS *status;
 	FIL file;
 	SSHORT retryCount;
 
@@ -1132,7 +1132,7 @@ void CCH_flush(TDBB tdbb, USHORT flush_flag, SLONG tra_number)
 	BDB bdb;
 	ULONG i;
 	SLONG transaction_mask;
-	STATUS *status;
+	ISC_STATUS *status;
 	LATCH latch;
 	BOOLEAN all_flag, release_flag, sweep_flag, sys_only, write_thru;
 
@@ -1989,7 +1989,7 @@ void CCH_recover_shadow(TDBB tdbb, SBM sbm_rec)
 	SLONG page_no = -1;
 	WIN window;
 	DBB dbb;
-	STATUS *status;
+	ISC_STATUS *status;
 	int result;
 	SLONG seqno, offset, p_offset;
 	SCHAR walname[257];
@@ -2481,7 +2481,7 @@ BOOLEAN CCH_validate(WIN * window)
 BOOLEAN CCH_write_all_shadows(TDBB tdbb,
 							  SDW shadow,
 							  BDB bdb,
-							  STATUS * status, USHORT checksum, BOOLEAN inAst)
+							  ISC_STATUS * status, USHORT checksum, BOOLEAN inAst)
 {
 /**************************************
  *
@@ -2700,7 +2700,7 @@ static int blocking_ast_bdb(BDB bdb)
  **************************************/
 	DBB dbb;
 	BOOLEAN keep_pages;
-	STATUS ast_status[ISC_STATUS_LENGTH];
+	ISC_STATUS ast_status[ISC_STATUS_LENGTH];
 	struct tdbb thd_context, *tdbb;
 
 	ISC_ast_enter();
@@ -2750,7 +2750,7 @@ static int blocking_ast_bdb(BDB bdb)
 static void btc_flush(
 					  TDBB tdbb,
 					  SLONG transaction_mask,
-					  BOOLEAN sys_only, STATUS * status)
+					  BOOLEAN sys_only, ISC_STATUS * status)
 {
 /**************************************
  *
@@ -3044,7 +3044,7 @@ static void THREAD_ROUTINE cache_reader(DBB dbb)
 	BCB bcb;
 	BDB bdb;
 	SLONG count, starting_page;
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	EVENT reader_event;
 	BOOLEAN found;
 	struct prf prefetch1, prefetch2;
@@ -3215,7 +3215,7 @@ static void THREAD_ROUTINE cache_writer(DBB dbb)
 	SLONG commit_mask;
 #endif
 	SSHORT start_chkpt;
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	SCHAR walname[256];
 	EVENT writer_event;
 
@@ -4150,7 +4150,7 @@ static BDB get_buffer(TDBB tdbb, SLONG page, LATCH latch, SSHORT latch_wait)
 }
 
 
-static void journal_buffer(STATUS * status, BDB bdb)
+static void journal_buffer(ISC_STATUS * status, BDB bdb)
 {
 /**************************************
  *
@@ -4532,8 +4532,8 @@ static SSHORT lock_buffer(
 	LCK lock;
 	USHORT lock_type;
 	USHORT must_read;
-	STATUS alt_status[ISC_STATUS_LENGTH];
-	STATUS *status;
+	ISC_STATUS alt_status[ISC_STATUS_LENGTH];
+	ISC_STATUS *status;
 	TEXT errmsg[MAX_ERRMSG_LEN + 1];
 #endif
 
@@ -4814,7 +4814,7 @@ static void page_validation_error(TDBB tdbb, WIN * window, SSHORT type)
 
 
 #ifdef CACHE_READER
-static void prefetch_epilogue(PRF prefetch, STATUS * status_vector)
+static void prefetch_epilogue(PRF prefetch, ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -4834,7 +4834,7 @@ static void prefetch_epilogue(PRF prefetch, STATUS * status_vector)
 	SCHAR *next_buffer;
 	BDB *next_bdb;
 	PAG page;
-	STATUS status;
+	ISC_STATUS status;
 	USHORT i;
 
 	if (!(prefetch->prf_flags & PRF_active))
@@ -4913,7 +4913,7 @@ static void prefetch_init(PRF prefetch, TDBB tdbb)
 }
 
 
-static void prefetch_io(PRF prefetch, STATUS * status_vector)
+static void prefetch_io(PRF prefetch, ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -4930,7 +4930,7 @@ static void prefetch_io(PRF prefetch, STATUS * status_vector)
 	DBB dbb;
 	BDB *next_bdb;
 	USHORT i;
-	STATUS status;
+	ISC_STATUS status;
 
 	tdbb = prefetch->prf_tdbb;
 	dbb = tdbb->tdbb_database;
@@ -5340,7 +5340,7 @@ static int write_buffer(
 						BDB bdb,
 						SLONG page,
 						USHORT write_thru,
-						STATUS * status, BOOLEAN write_this_page)
+						ISC_STATUS * status, BOOLEAN write_this_page)
 {
 /**************************************
  *
@@ -5476,7 +5476,7 @@ static int write_buffer(
 static BOOLEAN write_page(
 						  TDBB tdbb,
 						  BDB bdb,
-						  USHORT write_thru, STATUS * status, BOOLEAN inAst)
+						  USHORT write_thru, ISC_STATUS * status, BOOLEAN inAst)
 {
 /**************************************
  *
@@ -5492,7 +5492,7 @@ static BOOLEAN write_page(
 	PAG page;
 	DBB dbb;
 	BOOLEAN result;
-	STATUS saved_status;
+	ISC_STATUS saved_status;
 	FIL file;
 
 	if (bdb->bdb_flags & BDB_not_valid) {

@@ -90,16 +90,16 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/jrn_proto.h"
 
-static int do_connect(JRN *, STATUS *, TEXT *, USHORT, LTJC *, USHORT,
+static int do_connect(JRN *, ISC_STATUS *, TEXT *, USHORT, LTJC *, USHORT,
 					  UCHAR *, USHORT, USHORT);
-static void error(STATUS *, JRN, int, TEXT *);
+static void error(ISC_STATUS *, JRN, int, TEXT *);
 #ifdef BSD_SOCKETS
-static int find_address(STATUS *, JRN, struct sockaddr_in *);
+static int find_address(ISC_STATUS *, JRN, struct sockaddr_in *);
 #endif
-static int get_reply(STATUS *, JRN, JRNR *);
-static int journal_close(STATUS *, JRN);
-static int jrn_put(STATUS *, JRN, JRNH *, USHORT, UCHAR *, USHORT);
-static int retry_connect(STATUS *, JRN *, TEXT *, USHORT, LTJC *, USHORT,
+static int get_reply(ISC_STATUS *, JRN, JRNR *);
+static int journal_close(ISC_STATUS *, JRN);
+static int jrn_put(ISC_STATUS *, JRN, JRNH *, USHORT, UCHAR *, USHORT);
+static int retry_connect(ISC_STATUS *, JRN *, TEXT *, USHORT, LTJC *, USHORT,
 						 UCHAR *, USHORT);
 
 #ifdef SHLIB_DEFS
@@ -151,7 +151,7 @@ Error Handling:
 
 
 int JRN_archive_begin(
-					  STATUS * status_vector,
+					  ISC_STATUS * status_vector,
 					  JRN * ret_journal,
 					  SLONG db_id,
 					  SLONG file_id, TEXT * journal_name, USHORT j_length)
@@ -187,7 +187,7 @@ int JRN_archive_begin(
 
 
 int JRN_archive_end(
-					STATUS * status_vector,
+					ISC_STATUS * status_vector,
 					JRN * ret_journal, SLONG db_id, SLONG file_id)
 {
 /**************************************
@@ -245,7 +245,7 @@ int JRN_archive_end(
 
 
 int JRN_archive_error(
-					  STATUS * status_vector,
+					  ISC_STATUS * status_vector,
 					  JRN * ret_journal,
 					  SLONG db_id, SLONG file_id, SLONG error_code)
 {
@@ -300,7 +300,7 @@ int JRN_archive_error(
 
 
 int JRN_disable(
-				STATUS * status_vector,
+				ISC_STATUS * status_vector,
 				JRN journal, JRNH * header, UCHAR * data, USHORT d_len)
 {
 /**************************************
@@ -341,7 +341,7 @@ void JRN_dump_page(void)
 
 
 int JRN_enable(
-			   STATUS * status_vector,
+			   ISC_STATUS * status_vector,
 			   JRN * ret_journal,
 			   TEXT * journal_name,
 			   USHORT j_length, UCHAR * data, USHORT d_len, LTJC * control)
@@ -365,7 +365,7 @@ int JRN_enable(
 }
 
 
-int JRN_fini(STATUS * status_vector, JRN * jrn)
+int JRN_fini(ISC_STATUS * status_vector, JRN * jrn)
 {
 /**************************************
  *
@@ -422,7 +422,7 @@ int JRN_fini(STATUS * status_vector, JRN * jrn)
 
 
 int JRN_init(
-			 STATUS * status_vector,
+			 ISC_STATUS * status_vector,
 			 JRN * ret_journal,
 			 USHORT page_size,
 			 UCHAR * journal_dir, USHORT jd_len, UCHAR * data, USHORT d_len)
@@ -515,7 +515,7 @@ void JRN_make_init_data(
 
 
 int JRN_put_wal_name(
-					 STATUS * status_vector,
+					 ISC_STATUS * status_vector,
 					 JRN journal,
 					 TEXT * walname,
 					 USHORT w_length,
@@ -549,7 +549,7 @@ SLONG seqno, SLONG offset, SLONG p_offset, USHORT mode)
 
 
 int JRN_put_old_start(
-					  STATUS * status_vector,
+					  ISC_STATUS * status_vector,
 					  JRN journal,
 					  SLONG seqno,
 					  SLONG offset, SLONG p_offset, USHORT * dump_id)
@@ -581,7 +581,7 @@ int JRN_put_old_start(
 
 
 int JRN_put_old_end(
-					STATUS * status_vector,
+					ISC_STATUS * status_vector,
 					JRN journal,
 					SLONG seqno, SLONG offset, SLONG p_offset, USHORT dump_id)
 {
@@ -610,7 +610,7 @@ int JRN_put_old_end(
 
 
 int JRN_put_old_file(
-					 STATUS * status_vector,
+					 ISC_STATUS * status_vector,
 					 JRN journal,
 					 TEXT * old_file_name,
 					 USHORT file_length,
@@ -645,7 +645,7 @@ SLONG file_size, USHORT file_seqno, USHORT dump_id)
 
 
 int JRN_put_wal_info(
-					 STATUS * status_vector,
+					 ISC_STATUS * status_vector,
 					 JRN journal,
 					 TEXT * walname,
 					 USHORT w_length,
@@ -741,7 +741,7 @@ void JRN_sync(void)
 
 static int do_connect(
 					  JRN * ret_jrn,
-					  STATUS * status_vector,
+					  ISC_STATUS * status_vector,
 					  TEXT * journal_name,
 					  USHORT j_length,
 LTJC * control,
@@ -961,7 +961,7 @@ USHORT control_length, UCHAR * data, USHORT d_length, USHORT retry)
 
 
 static void error(
-				  STATUS * status_vector,
+				  ISC_STATUS * status_vector,
 				  JRN journal, status_t status, TEXT * string)
 {
 /**************************************
@@ -991,7 +991,7 @@ static void error(
 
 #ifdef BSD_SOCKETS
 static int find_address(
-						STATUS * status_vector,
+						ISC_STATUS * status_vector,
 						JRN journal, struct sockaddr_in *address)
 {
 /**************************************
@@ -1037,7 +1037,7 @@ static int find_address(
 #endif
 
 
-static int get_reply(STATUS * status_vector, JRN journal, JRNR * reply)
+static int get_reply(ISC_STATUS * status_vector, JRN journal, JRNR * reply)
 {
 /**************************************
  *
@@ -1080,7 +1080,7 @@ static int get_reply(STATUS * status_vector, JRN journal, JRNR * reply)
 }
 
 
-static int journal_close(STATUS * status_vector, JRN journal)
+static int journal_close(ISC_STATUS * status_vector, JRN journal)
 {
 /**************************************
  *
@@ -1115,7 +1115,7 @@ static int journal_close(STATUS * status_vector, JRN journal)
 
 
 static int jrn_put(
-				   STATUS * status_vector,
+				   ISC_STATUS * status_vector,
 				   JRN journal,
 				   JRNH * header,
 				   USHORT h_length, UCHAR * data, USHORT d_length)
@@ -1199,7 +1199,7 @@ static int jrn_put(
 
 
 static int retry_connect(
-						 STATUS * status_vector,
+						 ISC_STATUS * status_vector,
 						 JRN * journal,
 						 TEXT * journal_name,
 						 USHORT j_length,

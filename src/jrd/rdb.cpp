@@ -61,7 +61,7 @@ typedef struct handle {
 } *HANDLE, *REQ, *DBB, *TRA, *BLB;
 
 static TRA *dyn_tra_handle;
-static STATUS status_vector[ISC_STATUS_LENGTH];
+static ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 static UCHAR *temp_buffer;
 static SLONG temp_buffer_length;
 
@@ -282,7 +282,7 @@ int rdb$compile_request(
  * Functional description
  *
  **************************************/
-	STATUS stat;
+	ISC_STATUS stat;
 	int *messages;
 	REQ request;
 	DBB database;
@@ -758,7 +758,7 @@ int rdb$receive(
  *	Get a record from the host program.
  *
  **************************************/
-	STATUS stat;
+	ISC_STATUS stat;
 	REQ request;
 	UCHAR *temp;
 	int length;

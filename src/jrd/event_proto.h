@@ -32,12 +32,12 @@ extern "C" {
 #endif
 
 void EVENT_cancel(SLONG);
-SLONG EVENT_create_session(STATUS *);
+SLONG EVENT_create_session(ISC_STATUS *);
 void EVENT_delete_session(SLONG);
 void EVENT_deliver();
-struct evh *EVENT_init(STATUS *, USHORT);
-int EVENT_post(STATUS *, USHORT, TEXT *, USHORT, TEXT *, USHORT);
-SLONG EVENT_que(STATUS *, SLONG, USHORT, TEXT *, USHORT, UCHAR *, FPTR_VOID,
+struct evh *EVENT_init(ISC_STATUS *, USHORT);
+int EVENT_post(ISC_STATUS *, USHORT, TEXT *, USHORT, TEXT *, USHORT);
+SLONG EVENT_que(ISC_STATUS *, SLONG, USHORT, TEXT *, USHORT, UCHAR *, FPTR_VOID,
 				void *);
 
 #ifdef __cplusplus

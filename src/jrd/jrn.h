@@ -46,7 +46,7 @@
 class jrn : public pool_alloc_rpt<SCHAR, type_jrn>
 {
     public:
-	STATUS *jrn_status_vector;	/* Status vector for errors */
+	ISC_STATUS *jrn_status_vector;	/* Status vector for errors */
 	int *jrn_channel;			/* Communication channel */
 	int jrn_iri;				/* RMS internal RAB id */
 	SLONG jrn_lock_id;			/* Controlling lock id */

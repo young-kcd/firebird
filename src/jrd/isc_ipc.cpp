@@ -34,7 +34,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.36 2003-04-02 11:21:25 brodsom Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.37 2003-04-10 06:49:12 aafemt Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -211,7 +211,7 @@ extern "C" {
 static void cleanup(void *);
 #ifdef NOT_USED_OR_REPLACED
 #ifndef REQUESTER
-static void error(STATUS *, TEXT *, STATUS);
+static void error(ISC_STATUS *, TEXT *, ISC_STATUS);
 #endif
 #endif
 static void isc_signal2(int, SIG_FPTR, void *, ULONG);
@@ -890,7 +890,7 @@ static void cleanup(void *arg)
 
 #ifdef NOT_USED_OR_REPLACED
 #ifndef REQUESTER
-static void error(STATUS * status_vector, TEXT * string, STATUS status)
+static void error(ISC_STATUS * status_vector, TEXT * string, ISC_STATUS status)
 {
 /**************************************
  *
@@ -906,7 +906,7 @@ static void error(STATUS * status_vector, TEXT * string, STATUS status)
 	*status_vector++ = gds_arg_gds;
 	*status_vector++ = gds_sys_request;
 	*status_vector++ = gds_arg_string;
-	*status_vector++ = (STATUS) string;
+	*status_vector++ = (ISC_STATUS) string;
 	*status_vector++ = SYS_ARG;
 	*status_vector++ = status;
 	*status_vector++ = gds_arg_end;

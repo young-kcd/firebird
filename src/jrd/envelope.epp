@@ -177,7 +177,7 @@ static gen_function(name, new_name, std_call, return_type, add_status_vector)
 					   x.argument_name, name);
 	switch (get_dtype(y.argument_type)) {
 	case mech_status_vector:
-		ib_fprintf(output, "    STATUS	*%s;\n", x.argument_name);
+		ib_fprintf(output, "    ISC_STATUS	*%s;\n", x.argument_name);
 		break;
 
 	case mech_handle:

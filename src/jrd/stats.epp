@@ -261,7 +261,7 @@ static STATS expand_stats(STATS *ptr, SSHORT count)
 }
 
 
-static int get_counts(STATUS *status_vector, SCHAR *info, SSHORT length,
+static int get_counts(ISC_STATUS *status_vector, SCHAR *info, SSHORT length,
 		STATS *stats_ptr, SSHORT item)
 {
 /**************************************

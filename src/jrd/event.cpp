@@ -116,7 +116,7 @@ static void punt(TEXT *);
 static void release(void);
 static void remove_que(SRQ *);
 static BOOLEAN request_completed(EVT_REQ);
-static STATUS return_ok(STATUS *);
+static ISC_STATUS return_ok(ISC_STATUS *);
 static void THREAD_ROUTINE watcher_thread(void *);
 
 static SSHORT acquire_count;
@@ -172,7 +172,7 @@ void EVENT_cancel(SLONG request_id)
 }
 
 
-SLONG EVENT_create_session(STATUS * status_vector)
+SLONG EVENT_create_session(ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -283,7 +283,7 @@ void EVENT_deliver()
 }
 
 
-EVH EVENT_init(STATUS * status_vector, USHORT server_flag)
+EVH EVENT_init(ISC_STATUS * status_vector, USHORT server_flag)
 {
 /**************************************
  *
@@ -359,7 +359,7 @@ EVH EVENT_init(STATUS * status_vector, USHORT server_flag)
 }
 
 
-int EVENT_post(STATUS * status_vector,
+int EVENT_post(ISC_STATUS * status_vector,
 			   USHORT major_length,
 			   TEXT * major_code,
 			   USHORT minor_length,
@@ -411,7 +411,7 @@ int EVENT_post(STATUS * status_vector,
 }
 
 
-SLONG EVENT_que(STATUS * status_vector,
+SLONG EVENT_que(ISC_STATUS * status_vector,
 				SLONG session_id,
 				USHORT string_length,
 				TEXT * string,
@@ -593,7 +593,7 @@ static EVH acquire(void)
 #endif /* WIN_NT */
 
 #if (!(defined SUPERSERVER) && (defined HAVE_MMAP))
-		STATUS status_vector[ISC_STATUS_LENGTH];
+		ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 		header = (evh*) ISC_remap_file(status_vector, &EVENT_data, length, FALSE);
 #endif
 		if (!header) {
@@ -628,7 +628,7 @@ static FRB alloc_global(UCHAR type, ULONG length, BOOLEAN recurse)
 	PTR *ptr, *best;
 	FRB free;
 	SLONG tail, best_tail, ev_length, old_length;
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 #ifdef WIN_NT
 	PRB process;
 	EVENT event;
@@ -755,7 +755,7 @@ static SLONG create_process(void)
 #ifdef MULTI_THREAD
 
 #ifdef SOLARIS_MT
-	STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS local_status[ISC_STATUS_LENGTH];
 	ISC_event_init(process->prb_event, 0, EVENT_SIGNAL);
 	EVENT_process = (PRB) ISC_map_object(local_status, &EVENT_data,
 										 EVENT_process_offset,
@@ -1125,7 +1125,7 @@ static void exit_handler(void *arg)
  *	Cleanup on exit.
  *
  **************************************/
-	STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS local_status[ISC_STATUS_LENGTH];
 
 	if (EVENT_process_offset) {
 		if (EVENT_header->evh_current_process != EVENT_process_offset)
@@ -1558,7 +1558,7 @@ static BOOLEAN request_completed(EVT_REQ request)
 }
 
 
-static STATUS return_ok(STATUS * status_vector)
+static ISC_STATUS return_ok(ISC_STATUS * status_vector)
 {
 /**************************************
  *

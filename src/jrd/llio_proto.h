@@ -24,14 +24,14 @@
 #ifndef _JRD_LLIO_PROTO_H_
 #define _JRD_LLIO_PROTO_H_
 
-extern int LLIO_allocate_file_space(STATUS *, TEXT *, SLONG, UCHAR, USHORT);
-extern int LLIO_close(STATUS *, SLONG);
-extern int LLIO_open(STATUS *, TEXT *, USHORT, USHORT, SLONG *);
-extern int LLIO_read(STATUS *, SLONG, TEXT *, SLONG, USHORT, UCHAR *, SLONG,
+extern int LLIO_allocate_file_space(ISC_STATUS *, TEXT *, SLONG, UCHAR, USHORT);
+extern int LLIO_close(ISC_STATUS *, SLONG);
+extern int LLIO_open(ISC_STATUS *, TEXT *, USHORT, USHORT, SLONG *);
+extern int LLIO_read(ISC_STATUS *, SLONG, TEXT *, SLONG, USHORT, UCHAR *, SLONG,
 					 SLONG *);
-extern int LLIO_seek(STATUS *, SLONG, TEXT *, SLONG, USHORT);
-extern int LLIO_sync(STATUS *, SLONG);
-extern int LLIO_write(STATUS *, SLONG, TEXT *, SLONG, USHORT, UCHAR *, SLONG,
+extern int LLIO_seek(ISC_STATUS *, SLONG, TEXT *, SLONG, USHORT);
+extern int LLIO_sync(ISC_STATUS *, SLONG);
+extern int LLIO_write(ISC_STATUS *, SLONG, TEXT *, SLONG, USHORT, UCHAR *, SLONG,
 					  SLONG *);
 
 #endif /* _JRD_LLIO_PROTO_H_ */

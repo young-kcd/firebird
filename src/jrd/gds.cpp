@@ -920,7 +920,7 @@ void* API_ROUTINE gds__alloc(SLONG size_request)
 }
 #endif // NOT_USED_OR_REPLACED
 
-STATUS API_ROUTINE gds__decode(STATUS code, USHORT* fac, USHORT* class_)
+ISC_STATUS API_ROUTINE gds__decode(ISC_STATUS code, USHORT* fac, USHORT* class_)
 {
 /**************************************
  *
@@ -1053,7 +1053,7 @@ void API_ROUTINE isc_decode_timestamp(GDS_TIMESTAMP * date, void *times_arg)
 }
 
 
-STATUS API_ROUTINE gds__encode(STATUS code, USHORT facility)
+ISC_STATUS API_ROUTINE gds__encode(ISC_STATUS code, USHORT facility)
 {
 /**************************************
  *
@@ -1663,7 +1663,7 @@ void API_ROUTINE gds_alloc_report(ULONG flags, char* filename, int lineno)
 #endif // DEBUG_GDS_ALLOC
 
 
-SLONG API_ROUTINE gds__interprete(char *s, STATUS ** vector)
+SLONG API_ROUTINE gds__interprete(char *s, ISC_STATUS ** vector)
 {
 /**************************************
  *
@@ -1681,11 +1681,11 @@ SLONG API_ROUTINE gds__interprete(char *s, STATUS ** vector)
 	SSHORT l, temp_len;
 
 	TEXT **arg, *args[10];
-	STATUS code, *v;
+	ISC_STATUS code, *v;
 	UCHAR x;
-	STATUS decoded;
+	ISC_STATUS decoded;
 #ifdef VMS
-	STATUS status;
+	ISC_STATUS status;
 	TEXT flags[4];
 	struct dsc$descriptor_s desc;
 #endif
@@ -1847,7 +1847,7 @@ SLONG API_ROUTINE gds__interprete(char *s, STATUS ** vector)
 void API_ROUTINE gds__interprete_a(
 								   SCHAR * s,
 								   SSHORT * length,
-								   STATUS * vector, SSHORT * offset)
+								   ISC_STATUS * vector, SSHORT * offset)
 {
 /**************************************
  *
@@ -1863,7 +1863,7 @@ void API_ROUTINE gds__interprete_a(
  *	the concept of indexing into the vector.
  *
  **************************************/
-	STATUS *v;
+	ISC_STATUS *v;
 
 	v = vector + *offset;
 	*length = (SSHORT) gds__interprete(s, &v);
@@ -1922,7 +1922,7 @@ void API_ROUTINE gds__log(TEXT * text, ...)
 }
 
 
-void API_ROUTINE gds__log_status(TEXT * database, STATUS * status_vector)
+void API_ROUTINE gds__log_status(TEXT * database, ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -2612,7 +2612,7 @@ void API_ROUTINE gds__prefix_msg(TEXT * string, const TEXT * root)
 #endif
 
 
-STATUS API_ROUTINE gds__print_status(STATUS * vec)
+ISC_STATUS API_ROUTINE gds__print_status(ISC_STATUS * vec)
 {
 /**************************************
  *
@@ -2624,7 +2624,7 @@ STATUS API_ROUTINE gds__print_status(STATUS * vec)
  *	Interprete a status vector.
  *
  **************************************/
-	STATUS *vector;
+	ISC_STATUS *vector;
 	TEXT *s;
 
 	if (!vec || (!vec[1] && vec[2] == gds_arg_end))
@@ -2939,7 +2939,7 @@ void API_ROUTINE gds__register_cleanup(FPTR_VOID_PTR routine, void *arg)
 }
 
 
-SLONG API_ROUTINE gds__sqlcode(STATUS * status_vector)
+SLONG API_ROUTINE gds__sqlcode(ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -2960,7 +2960,7 @@ SLONG API_ROUTINE gds__sqlcode(STATUS * status_vector)
  **************************************/
 	USHORT code;
 	SLONG sqlcode;
-	STATUS *s;
+	ISC_STATUS *s;
 	USHORT have_sqlcode;
 
 	if (!status_vector) {
@@ -3015,7 +3015,7 @@ SLONG API_ROUTINE gds__sqlcode(STATUS * status_vector)
 }
 
 
-void API_ROUTINE gds__sqlcode_s(STATUS * status_vector, ULONG * sqlcode)
+void API_ROUTINE gds__sqlcode_s(ISC_STATUS * status_vector, ULONG * sqlcode)
 {
 /**************************************
  *
@@ -3421,7 +3421,7 @@ void API_ROUTINE gds__vtov(const SCHAR* string, char* field, SSHORT length)
 }
 
 
-void API_ROUTINE isc_print_sqlerror(SSHORT sqlcode, STATUS * status)
+void API_ROUTINE isc_print_sqlerror(SSHORT sqlcode, ISC_STATUS * status)
 {
 /**************************************
  *
@@ -4343,7 +4343,7 @@ static void init(void)
  *
  **************************************/
 #if defined(VMS)
-	STATUS status;
+	ISC_STATUS status;
 #endif
 
 	if (initialized)

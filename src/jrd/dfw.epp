@@ -197,7 +197,7 @@ static BLB	setup_triggers(TDBB, JRD_REL, BOOLEAN, TRIG_VEC *, BLB);
 static void	setup_trigger_details(TDBB, JRD_REL, BLB, TRIG_VEC *, TEXT*, TEXT*, BOOLEAN);
 //static void	setup_trigger_details(TDBB, JRD_REL, BLB, VEC *, UCHAR *, UCHAR *, BOOLEAN);
 static bool shadow_defined(TDBB);
-static bool validate_text_type (TDBB, STATUS *, TFB);
+static bool validate_text_type (TDBB, ISC_STATUS *, TFB);
 static bool wal_defined(TDBB);
 
 static const UCHAR nonnull_validation_blr[] =
@@ -290,7 +290,7 @@ USHORT DFW_assign_index_type(DFW work, SSHORT field_type, SSHORT ttype)
 
 	if (field_type == dtype_varying || field_type == dtype_text)
 	{
-		STATUS status[ISC_STATUS_LENGTH];
+		ISC_STATUS status[ISC_STATUS_LENGTH];
 
 		if (ttype == ttype_none)
 			return idx_string;
@@ -605,7 +605,7 @@ void DFW_perform_post_commit_work(JRD_TRA transaction)
  **************************************/
 	DBB dbb;
 	LCK lock;
-	STATUS status[ISC_STATUS_LENGTH];
+	ISC_STATUS status[ISC_STATUS_LENGTH];
 	DFW work, *ptr;
 
 	if (!transaction->tra_deferred_work)
@@ -1071,7 +1071,7 @@ static void check_dependencies(TDBB tdbb,
 	DBB dbb;
 	BLK request;
 	USHORT dep_counts[obj_count], i;
-	STATUS obj_type;
+	ISC_STATUS obj_type;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -3485,7 +3485,7 @@ static bool make_version(TDBB tdbb, SSHORT phase, DFW work, JRD_TRA transaction)
 	BLK temp;
 	USHORT version, n, external_flag;
 	BOOLEAN null_view, computed_field;
-	STATUS status[ISC_STATUS_LENGTH];
+	ISC_STATUS status[ISC_STATUS_LENGTH];
 	SSHORT collation;
 	TRIG_VEC triggers[TRIGGER_MAX];
 
@@ -4434,7 +4434,7 @@ static void setup_trigger_details(TDBB tdbb,
 }	
 
 
-static bool validate_text_type(TDBB tdbb, STATUS * status, TFB tfb)
+static bool validate_text_type(TDBB tdbb, ISC_STATUS * status, TFB tfb)
 {
 /**************************************
  *

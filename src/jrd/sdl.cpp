@@ -68,7 +68,7 @@ typedef struct sdl_arg {
 	SLONG *sdl_arg_variables;
 	void (*sdl_arg_callback) ();
 	SLICE sdl_arg_argument;
-	STATUS *sdl_arg_status_vector;
+	ISC_STATUS *sdl_arg_status_vector;
 	IPTR sdl_arg_compiled[COMPILE_SIZE];
 	IPTR *sdl_arg_next;
 	IPTR *sdl_arg_end;
@@ -83,7 +83,7 @@ typedef struct rng {
 } *RNG;
 
 static UCHAR *compile(UCHAR *, SDL_ARG);
-static STATUS error(STATUS *, ...);
+static ISC_STATUS error(ISC_STATUS *, ...);
 static BOOLEAN execute(SDL_ARG);
 static UCHAR *get_range(UCHAR *, RNG, SLONG *, SLONG *);
 static SSHORT get_word(UCHAR **);
@@ -116,7 +116,7 @@ static IPTR *stuff(IPTR, SDL_ARG);
 
 
 SLONG DLL_EXPORT SDL_compute_subscript(
-									   STATUS * status_vector,
+									   ISC_STATUS * status_vector,
 									   ADS desc,
 									   USHORT dimensions, SLONG * subscripts)
 {
@@ -158,7 +158,7 @@ SLONG DLL_EXPORT SDL_compute_subscript(
 }
 
 
-STATUS API_ROUTINE SDL_info(STATUS * status_vector,
+ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS * status_vector,
 							UCHAR * sdl, SDL_INFO info, SLONG * vector)
 {
 /**************************************
@@ -309,7 +309,7 @@ UCHAR *DLL_EXPORT SDL_prepare_slice(UCHAR * sdl, USHORT sdl_length)
 
 
 int DLL_EXPORT SDL_walk(
-						STATUS * status_vector,
+						ISC_STATUS * status_vector,
 						UCHAR * sdl,
 						USHORT mode,
 						UCHAR * array,
@@ -536,7 +536,7 @@ static UCHAR *compile(UCHAR * sdl, SDL_ARG arg)
 }
 
 
-static STATUS error(STATUS * status_vector, ...)
+static ISC_STATUS error(ISC_STATUS * status_vector, ...)
 {
 /**************************************
  *
@@ -551,7 +551,7 @@ static STATUS error(STATUS * status_vector, ...)
  *
  **************************************/
 	va_list args;
-	STATUS *p;
+	ISC_STATUS *p;
 	int type;
 
 /* Get the addresses of the argument vector and the status vector, and do
@@ -563,25 +563,25 @@ static STATUS error(STATUS * status_vector, ...)
 /* Copy first argument */
 
 	*p++ = gds_arg_gds;
-	*p++ = va_arg(args, STATUS);
+	*p++ = va_arg(args, ISC_STATUS);
 
 /* Pick up remaining args */
 
 	while (*p++ = type = va_arg(args, int))
 		switch (type) {
 		case gds_arg_gds:
-			*p++ = (STATUS) va_arg(args, STATUS);
+			*p++ = (ISC_STATUS) va_arg(args, ISC_STATUS);
 			break;
 
 		case gds_arg_string:
 		case gds_arg_interpreted:
-			*p++ = (STATUS) va_arg(args, TEXT *);
+			*p++ = (ISC_STATUS) va_arg(args, TEXT *);
 			break;
 
 /****
 	case gds_arg_cstring:
-	    *p++ = (STATUS) va_arg (args, int);
-	    *p++ = (STATUS) va_arg (args, TEXT*);
+	    *p++ = (ISC_STATUS) va_arg (args, int);
+	    *p++ = (ISC_STATUS) va_arg (args, TEXT*);
 	    break;
 ****/
 

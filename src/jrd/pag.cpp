@@ -1190,7 +1190,7 @@ void PAG_init2(USHORT shadow_number)
 	struct bdb temp_bdb;
 	SLONG next_page;
 	UCHAR buf[MAXPATHLEN];
-	STATUS *status;
+	ISC_STATUS *status;
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;

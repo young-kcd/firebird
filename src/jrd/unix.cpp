@@ -129,9 +129,9 @@ extern "C" {
 #endif
 
 static void close_marker_file(TEXT *);
-static FIL seek_file(FIL, BDB, UINT64 *, STATUS *);
+static FIL seek_file(FIL, BDB, UINT64 *, ISC_STATUS *);
 static FIL setup_file(DBB, TEXT *, USHORT, int);
-static BOOLEAN unix_error(TEXT *, FIL, STATUS, STATUS *);
+static BOOLEAN unix_error(TEXT *, FIL, ISC_STATUS, ISC_STATUS *);
 #if defined PREAD_PWRITE && !(defined HAVE_PREAD && defined HAVE_PWRITE)
 static SLONG pread(int, SCHAR *, SLONG, SLONG);
 static SLONG pwrite(int, SCHAR *, SLONG, SLONG);
@@ -716,7 +716,7 @@ FIL PIO_open(DBB dbb,
 }
 
 
-int PIO_read(FIL file, BDB bdb, PAG page, STATUS * status_vector)
+int PIO_read(FIL file, BDB bdb, PAG page, ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -810,7 +810,7 @@ int PIO_read(FIL file, BDB bdb, PAG page, STATUS * status_vector)
 }
 
 
-int PIO_write(FIL file, BDB bdb, PAG page, STATUS * status_vector)
+int PIO_write(FIL file, BDB bdb, PAG page, ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -933,7 +933,7 @@ static void close_marker_file(TEXT * marker_filename)
 #endif
 
 
-static FIL seek_file(FIL file, BDB bdb, UINT64 * offset, STATUS * status_vector)
+static FIL seek_file(FIL file, BDB bdb, UINT64 * offset, ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -1071,7 +1071,7 @@ static FIL setup_file(
 
 static BOOLEAN unix_error(
 						  TEXT * string,
-						  FIL file, STATUS operation, STATUS * status_vector)
+						  FIL file, ISC_STATUS operation, ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -1084,7 +1084,7 @@ static BOOLEAN unix_error(
  *	to do something about it.  Harumph!
  *
  **************************************/
-	STATUS *status;
+	ISC_STATUS *status;
 
 	ISC_enable();
 
@@ -1092,9 +1092,9 @@ static BOOLEAN unix_error(
 		*status++ = isc_arg_gds;
 		*status++ = isc_io_error;
 		*status++ = gds_arg_string;
-		*status++ = (STATUS) string;
+		*status++ = (ISC_STATUS) string;
 		*status++ = gds_arg_string;
-		*status++ = (STATUS) ERR_string(file->fil_string, file->fil_length);
+		*status++ = (ISC_STATUS) ERR_string(file->fil_string, file->fil_length);
 		*status++ = isc_arg_gds;
 		*status++ = operation;
 		*status++ = gds_arg_unix;

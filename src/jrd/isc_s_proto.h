@@ -55,7 +55,7 @@ extern int DLL_EXPORT ISC_event_wait(SSHORT,
 extern void *ISC_make_signal(BOOLEAN, BOOLEAN, int, int);
 #endif /* WIN_NT */
 
-extern UCHAR *DLL_EXPORT ISC_map_file(STATUS *,
+extern UCHAR *DLL_EXPORT ISC_map_file(ISC_STATUS *,
 									  TEXT *,
 									  void (*)(void *, struct sh_mem *, int),
 									  void *, SLONG, struct sh_mem *);
@@ -70,8 +70,8 @@ int DLL_EXPORT ISC_mutex_lock_cond(struct mtx *);
 int DLL_EXPORT ISC_mutex_unlock(struct mtx *);
 
 #ifdef HAVE_MMAP
-extern UCHAR *ISC_map_object(STATUS *, SH_MEM, SLONG, SLONG);
-extern BOOLEAN ISC_unmap_object(STATUS *, SH_MEM, UCHAR **, SLONG);
+extern UCHAR *ISC_map_object(ISC_STATUS *, SH_MEM, SLONG, SLONG);
+extern BOOLEAN ISC_unmap_object(ISC_STATUS *, SH_MEM, UCHAR **, SLONG);
 #endif
 
 #ifdef SUPERSERVER
@@ -87,11 +87,11 @@ extern ULONG ISC_exception_post(ULONG, TEXT *);
 
 #endif /* SUPERSERVER */
 
-extern UCHAR *DLL_EXPORT ISC_remap_file(STATUS *,
+extern UCHAR *DLL_EXPORT ISC_remap_file(ISC_STATUS *,
 										struct sh_mem *, SLONG, USHORT);
 extern void ISC_reset_timer(FPTR_VOID, void *, SLONG *, void **);
 extern void ISC_set_timer(SLONG, FPTR_VOID, void *, SLONG *, void **);
-extern void DLL_EXPORT ISC_unmap_file(STATUS *, struct sh_mem *, USHORT);
+extern void DLL_EXPORT ISC_unmap_file(ISC_STATUS *, struct sh_mem *, USHORT);
 
 
 #ifdef __cplusplus

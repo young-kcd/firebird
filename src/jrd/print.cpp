@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
  *	contents of the InterBase event table file.
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 
 	if (!(EVENT_header = EVENT_init(status_vector, TRUE))) {
 		ib_fprintf(ib_stderr, "Can't access global event region\n");

@@ -39,7 +39,7 @@
 
 #include "../jrd/ExecuteStatement.h"
 
-extern "C" WHY_DBB GetWhyAttachment(STATUS* status,
+extern "C" WHY_DBB GetWhyAttachment(ISC_STATUS* status,
 						  class att* jrd_attachment_handle);
 
 static struct {
@@ -125,7 +125,7 @@ void ExecuteStatement::Open(TDBB tdbb, JRD_NOD sql, SSHORT nVars, bool SingleTon
 	THREAD_EXIT;
 
 // this check uses local error handler for local status vector
-	STATUS local[ISC_STATUS_LENGTH], *status = local;
+	ISC_STATUS local[ISC_STATUS_LENGTH], *status = local;
 	memset(local, 0, sizeof(local));
 #	define Chk(x) if ((x) != 0) goto err_handler
 
@@ -173,7 +173,7 @@ bool ExecuteStatement::Fetch(TDBB tdbb, JRD_NOD * JrdVar) {
 	if (! Statement)
 		return false;
 
-	STATUS local[ISC_STATUS_LENGTH], *status = local;
+	ISC_STATUS local[ISC_STATUS_LENGTH], *status = local;
 	memset(local, 0, sizeof(local));
 	status = local;
 	tdbb->tdbb_transaction->tra_callback_count++;
@@ -298,7 +298,7 @@ XSQLDA * ExecuteStatement::MakeSqlda(TDBB tdbb, short n) {
 		(FB_NEW(*tdbb->tdbb_default) char[XSQLDA_LENGTH(n)]);
 }
 
-STATUS ExecuteStatement::ReMakeSqlda(STATUS *vector, TDBB tdbb)
+ISC_STATUS ExecuteStatement::ReMakeSqlda(ISC_STATUS *vector, TDBB tdbb)
 {
 	if (Sqlda->sqln != Sqlda->sqld) {
 		vector[0] = gds_arg_gds;

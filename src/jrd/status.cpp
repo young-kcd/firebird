@@ -29,11 +29,11 @@
 /* Get the addresses of the argument vector and the status vector, and do
    word-wise copy. */
 
-void STUFF_STATUS_function(STATUS* status_vector, STATUS status, va_list args)
+void STUFF_STATUS_function(ISC_STATUS* status_vector, ISC_STATUS status, va_list args)
 {
 	int type, len;
 
-	STATUS* p = status_vector;
+	ISC_STATUS* p = status_vector;
 
 	*p++ = gds_arg_gds;
 	*p++ = status;
@@ -43,40 +43,40 @@ void STUFF_STATUS_function(STATUS* status_vector, STATUS status, va_list args)
 		switch (*p++ = type)
 		{
 			case gds_arg_gds:
-				*p++ = va_arg(args, STATUS);
+				*p++ = va_arg(args, ISC_STATUS);
 				break;
 
 			case gds_arg_string:
 				{
-					STATUS* q = va_arg(args, STATUS*);
+					ISC_STATUS* q = va_arg(args, ISC_STATUS*);
 					if (strlen((TEXT *) q) >= MAX_ERRSTR_LEN)
 					{
 						*(p - 1) = gds_arg_cstring;
-						*p++ = (STATUS) MAX_ERRSTR_LEN;
+						*p++ = (ISC_STATUS) MAX_ERRSTR_LEN;
 					}
-					*p++ = (STATUS) q;
+					*p++ = (ISC_STATUS) q;
 				}
 				break;
 
 			case gds_arg_interpreted:
-				*p++ = (STATUS) va_arg(args, TEXT *);
+				*p++ = (ISC_STATUS) va_arg(args, TEXT *);
 				break;
 
 			case gds_arg_cstring:
 				len = (int) va_arg(args, int);
-				*p++ = (STATUS) (len >= MAX_ERRSTR_LEN) ? MAX_ERRSTR_LEN : len;
-				*p++ = (STATUS) va_arg(args, TEXT *);
+				*p++ = (ISC_STATUS) (len >= MAX_ERRSTR_LEN) ? MAX_ERRSTR_LEN : len;
+				*p++ = (ISC_STATUS) va_arg(args, TEXT *);
 				break;
 
 			case gds_arg_number:
-				*p++ = (STATUS) va_arg(args, SLONG);
+				*p++ = (ISC_STATUS) va_arg(args, SLONG);
 				break;
 
 			case gds_arg_vms:
 			case gds_arg_unix:
 			case gds_arg_win32:
 			default:
-				*p++ = (STATUS) va_arg(args, int);
+				*p++ = (ISC_STATUS) va_arg(args, int);
 				break;
 		}
 	}
@@ -89,7 +89,7 @@ void STUFF_STATUS_function(STATUS* status_vector, STATUS status, va_list args)
  * type.  So check for 17 or less
  */
 
-void PARSE_STATUS(STATUS * status_vector, int &length, int &warning)
+void PARSE_STATUS(ISC_STATUS * status_vector, int &length, int &warning)
 {
 	warning = 0;
 	length = 0;

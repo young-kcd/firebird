@@ -34,7 +34,7 @@ extern "C" {
 #endif
 
 extern void AIL_add_log(void);
-extern void AIL_checkpoint_finish(STATUS *, struct dbb *, SLONG, TEXT *,
+extern void AIL_checkpoint_finish(ISC_STATUS *, struct dbb *, SLONG, TEXT *,
 								  SLONG, SLONG);
 extern void AIL_commit(SLONG);
 extern void AIL_disable(void);
@@ -47,7 +47,7 @@ extern void AIL_init(TEXT *, SSHORT, struct win *, USHORT, struct sbm **);
 extern void AIL_init_log_page(struct log_info_page *, SLONG);
 extern void AIL_journal_tid(void);
 extern void AIL_process_jrn_error(SLONG);
-extern void AIL_put(struct dbb *, STATUS *, struct jrnh *, USHORT, UCHAR *,
+extern void AIL_put(struct dbb *, ISC_STATUS *, struct jrnh *, USHORT, UCHAR *,
 					USHORT, ULONG, ULONG, ULONG *, ULONG *);
 extern void AIL_recover_page(SLONG, struct pag *);
 extern void AIL_set_log_options(SLONG, SSHORT, USHORT, SLONG);

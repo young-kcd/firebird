@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.40 2003-03-05 12:50:44 dimitr Exp $
+$Id: par.cpp,v 1.41 2003-04-10 06:49:14 aafemt Exp $
 */
 
 #include "firebird.h"
@@ -615,7 +615,7 @@ static void error(CSB csb, ...)
  *
  **************************************/
 	TDBB tdbb;
-	STATUS *p;
+	ISC_STATUS *p;
 	USHORT offset;
 	int type;
 	va_list args;
@@ -634,7 +634,7 @@ static void error(CSB csb, ...)
 	*p++ = offset;
 
 	*p++ = gds_arg_gds;
-	*p++ = va_arg(args, STATUS);
+	*p++ = va_arg(args, ISC_STATUS);
 
 /* Pick up remaining args */
 
@@ -642,21 +642,21 @@ static void error(CSB csb, ...)
 	{
 		switch (type) {
 		case gds_arg_gds:
-			*p++ = (STATUS) va_arg(args, STATUS);
+			*p++ = (ISC_STATUS) va_arg(args, ISC_STATUS);
 			break;
 
 		case gds_arg_string:
 		case gds_arg_interpreted:
-			*p++ = (STATUS) va_arg(args, TEXT *);
+			*p++ = (ISC_STATUS) va_arg(args, TEXT *);
 			break;
 
 		case gds_arg_cstring:
-			*p++ = (STATUS) va_arg(args, int);
-			*p++ = (STATUS) va_arg(args, TEXT *);
+			*p++ = (ISC_STATUS) va_arg(args, int);
+			*p++ = (ISC_STATUS) va_arg(args, TEXT *);
 			break;
 
 		case gds_arg_number:
-			*p++ = (STATUS) va_arg(args, SLONG);
+			*p++ = (ISC_STATUS) va_arg(args, SLONG);
 			break;
 
 		default:
@@ -2959,7 +2959,7 @@ static void warning(CSB csb, ...)
  *
  **************************************/
 	TDBB tdbb;
-	STATUS *p;
+	ISC_STATUS *p;
 	int type;
 	va_list args;
 
@@ -2979,7 +2979,7 @@ static void warning(CSB csb, ...)
    with position [2] */
 
 	*p++ = gds_arg_gds;
-	*p++ = va_arg(args, STATUS);
+	*p++ = va_arg(args, ISC_STATUS);
 
 /* Pick up remaining args */
 
@@ -2987,21 +2987,21 @@ static void warning(CSB csb, ...)
 	{
 		switch (type) {
 		case gds_arg_gds:
-			*p++ = (STATUS) va_arg(args, STATUS);
+			*p++ = (ISC_STATUS) va_arg(args, ISC_STATUS);
 			break;
 
 		case gds_arg_string:
 		case gds_arg_interpreted:
-			*p++ = (STATUS) va_arg(args, TEXT *);
+			*p++ = (ISC_STATUS) va_arg(args, TEXT *);
 			break;
 
 		case gds_arg_cstring:
-			*p++ = (STATUS) va_arg(args, int);
-			*p++ = (STATUS) va_arg(args, TEXT *);
+			*p++ = (ISC_STATUS) va_arg(args, int);
+			*p++ = (ISC_STATUS) va_arg(args, TEXT *);
 			break;
 
 		case gds_arg_number:
-			*p++ = (STATUS) va_arg(args, SLONG);
+			*p++ = (ISC_STATUS) va_arg(args, SLONG);
 			break;
 
 		default:

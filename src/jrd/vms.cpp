@@ -58,12 +58,12 @@ extern "C" {
 
 extern gds__completion_ast();
 
-static BOOLEAN extend_file(FIL, STATUS *);
+static BOOLEAN extend_file(FIL, ISC_STATUS *);
 static FIL seek_file(FIL, BDB, int *);
 static FIL setup_file(DBB, TEXT *, USHORT, USHORT, struct NAM *);
 static void setup_trace(FIL, SSHORT);
 static void trace_event(FIL, SSHORT, SCHAR *, SSHORT);
-static BOOLEAN vms_io_error(STATUS *, TEXT *, STATUS, int, FIL);
+static BOOLEAN vms_io_error(ISC_STATUS *, TEXT *, ISC_STATUS, int, FIL);
 
 #define DVI$_DEVLOCKNAM		240
 
@@ -525,7 +525,7 @@ FIL PIO_open(DBB dbb,
 }
 
 
-int PIO_read(FIL file, BDB bdb, PAG page, STATUS * status_vector)
+int PIO_read(FIL file, BDB bdb, PAG page, ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -595,7 +595,7 @@ int PIO_read(FIL file, BDB bdb, PAG page, STATUS * status_vector)
 }
 
 
-int PIO_write(FIL file, BDB bdb, PAG page, STATUS * status_vector)
+int PIO_write(FIL file, BDB bdb, PAG page, ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -671,7 +671,7 @@ int PIO_write(FIL file, BDB bdb, PAG page, STATUS * status_vector)
 }
 
 
-static BOOLEAN extend_file(FIL file, STATUS * status_vector)
+static BOOLEAN extend_file(FIL file, ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -931,9 +931,9 @@ static void trace_event(FIL file, SSHORT type, SCHAR * ptr, SSHORT length)
 
 
 static BOOLEAN vms_io_error(
-							STATUS * status_vector,
+							ISC_STATUS * status_vector,
 							TEXT * string,
-							STATUS operation, int code, FIL file)
+							ISC_STATUS operation, int code, FIL file)
 {
 /**************************************
  *
@@ -949,10 +949,10 @@ static BOOLEAN vms_io_error(
 	*status_vector++ = isc_arg_gds;
 	*status_vector++ = isc_io_error;
 	*status_vector++ = gds_arg_string;
-	*status_vector++ = (STATUS) string;
+	*status_vector++ = (ISC_STATUS) string;
 	*status_vector++ = gds_arg_string;
 	*status_vector++ =
-		(STATUS) ERR_string(file->fil_string, file->fil_length);
+		(ISC_STATUS) ERR_string(file->fil_string, file->fil_length);
 	*status_vector++ = isc_arg_gds;
 	*status_vector++ = operation;
 	*status_vector++ = gds_arg_vms;

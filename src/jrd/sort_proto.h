@@ -27,22 +27,22 @@
 
 #ifdef SCROLLABLE_CURSORS
 extern void SORT_diddle_key(UCHAR *, struct scb *, USHORT);
-extern void SORT_get(STATUS *, struct scb *, ULONG **, RSE_GET_MODE);
-extern void SORT_read_block(STATUS *, struct sfb *, ULONG, BLOB_PTR *, ULONG);
+extern void SORT_get(ISC_STATUS *, struct scb *, ULONG **, RSE_GET_MODE);
+extern void SORT_read_block(ISC_STATUS *, struct sfb *, ULONG, BLOB_PTR *, ULONG);
 #else
-extern void SORT_get(STATUS *, struct scb *, ULONG **);
-extern ULONG SORT_read_block(STATUS *, struct sfb *, ULONG, BLOB_PTR *,
+extern void SORT_get(ISC_STATUS *, struct scb *, ULONG **);
+extern ULONG SORT_read_block(ISC_STATUS *, struct sfb *, ULONG, BLOB_PTR *,
 							 ULONG);
 #endif
 
-extern void SORT_error(STATUS *, struct sfb *, TEXT *, STATUS, int);
+extern void SORT_error(ISC_STATUS *, struct sfb *, TEXT *, ISC_STATUS, int);
 extern void SORT_fini(struct scb *, struct att *);
-extern struct scb *SORT_init(STATUS *, USHORT, USHORT, struct skd *,
+extern struct scb *SORT_init(ISC_STATUS *, USHORT, USHORT, struct skd *,
 							 BOOLEAN(*)(), void *, struct att *, ULONG);
-extern int SORT_put(STATUS *, struct scb *, ULONG **);
+extern int SORT_put(ISC_STATUS *, struct scb *, ULONG **);
 extern void SORT_shutdown(struct att *);
-extern int SORT_sort(STATUS *, struct scb *);
-extern ULONG SORT_write_block(STATUS *, struct sfb *, ULONG, BLOB_PTR *,
+extern int SORT_sort(ISC_STATUS *, struct scb *);
+extern ULONG SORT_write_block(ISC_STATUS *, struct sfb *, ULONG, BLOB_PTR *,
 							  ULONG);
 
 #endif /* _JRD_SORT_PROTO_H_ */

@@ -37,7 +37,7 @@ extern int DLL_EXPORT INTL_convert_string(struct dsc *, struct dsc *,
 										  FPTR_VOID);
 extern int DLL_EXPORT INTL_data(struct dsc *);
 extern int DLL_EXPORT INTL_data_or_binary(struct dsc *);
-extern int DLL_EXPORT INTL_defined_type(TDBB, STATUS *, SSHORT);
+extern int DLL_EXPORT INTL_defined_type(TDBB, ISC_STATUS *, SSHORT);
 //extern SSHORT DLL_EXPORT INTL_fss_mbtowc(struct texttype **, unsigned short *,
 //										 unsigned char *, USHORT);
 //extern USHORT DLL_EXPORT INTL_fss_to_unicode(CsConvert *, USHORT *,
@@ -48,12 +48,12 @@ extern unsigned short DLL_EXPORT INTL_getch(TDBB, TextType**, SSHORT,
 extern void DLL_EXPORT INTL_init(TDBB);
 extern USHORT DLL_EXPORT INTL_key_length(TDBB, USHORT, USHORT);
 extern CharSet *DLL_EXPORT INTL_charset_lookup(TDBB tdbb, SSHORT parm1,
-												STATUS * status);
+												ISC_STATUS * status);
 extern TextType *DLL_EXPORT INTL_texttype_lookup(
 								 TDBB tdbb,
-								 SSHORT parm1, FPTR_VOID err, STATUS * status);
+								 SSHORT parm1, FPTR_VOID err, ISC_STATUS * status);
 //extern void *DLL_EXPORT INTL_obj_lookup(TDBB, USHORT, SSHORT, FPTR_VOID,
-//										STATUS *);
+//										ISC_STATUS *);
 extern void DLL_EXPORT INTL_pad_spaces(TDBB, struct dsc *, UCHAR *, USHORT);
 extern USHORT DLL_EXPORT INTL_string_to_key(TDBB, USHORT, struct dsc *,
 											struct dsc *, USHORT);

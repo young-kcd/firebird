@@ -2844,7 +2844,7 @@ static void THREAD_ROUTINE sweep_database(UCHAR* database)
  *	Sweep database.
  *
  **************************************/
-	STATUS	status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS	status_vector[ISC_STATUS_LENGTH];
 	char*	q;
 	UCHAR	sweep_dpb[100];
 
