@@ -421,7 +421,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 
 			if (length > MAX_COLUMN_SIZE)
 			{
-				length = MAX_COLUMN_SIZE - sizeof (USHORT);
+				length = MAX_COLUMN_SIZE - sizeof(USHORT);
 			}
 
 			desc->dsc_length = length;
@@ -458,7 +458,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 				// We have a constant passed as length, so
 				// use the real length
 				length = *(SLONG *) for_node->nod_desc.dsc_address;
-				if (length <= MAX_COLUMN_SIZE - sizeof(USHORT) && length >= 0)
+				if (length < 0 || length > MAX_COLUMN_SIZE - sizeof(USHORT))
 				{
 					length = MAX_COLUMN_SIZE - sizeof(USHORT);
 				}
