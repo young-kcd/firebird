@@ -547,7 +547,7 @@ static SSHORT old_fam2_compare(TEXTTYPE obj, USHORT l1, const BYTE* s1,
 
 #ifdef DEBUG_COMPARE
 
-#define	SIGN(x)	(((x) < 0) ? -1 : (((x) == 0)? 0 : 1))
+#define	SIGN(x)	(((x) < 0) ? -1 : (((x) == 0) ? 0 : 1))
 
 /*
  * Debugging only

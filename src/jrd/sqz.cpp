@@ -209,13 +209,11 @@ SCHAR* SQZ_decompress(const SCHAR*	input,
  *	where the output stopped.
  *
  **************************************/
-	SSHORT l;
-
 	const SCHAR* last = input + length;
 
 	while (input < last)
 	{
-		l = *input++;
+		const SSHORT l = *input++;
 		if (l < 0)
 		{
 			const SCHAR c = *input++;

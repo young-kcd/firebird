@@ -192,7 +192,7 @@ nether regions of the anatomy...
 #endif /* SWAP_DONE */
 
     for (i = 16; i < 80; ++i) {
-	W[i] = W[i-3] ^ W[i-8] ^ W[i-14] ^ W[i-16];
+	W[i] = W[i - 3] ^ W[i - 8] ^ W[i - 14] ^ W[i - 16];
 #if (SHA_VERSION == 1)
 	W[i] = R32(W[i], 1);
 #endif /* SHA_VERSION */

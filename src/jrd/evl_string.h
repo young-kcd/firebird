@@ -69,7 +69,7 @@ public:
 		if (!result || offset >= pattern_len)
 			return false;
 		const SSHORT comp_length = 
-			data_len < pattern_len - offset ? data_len : pattern_len-offset;
+			data_len < pattern_len - offset ? data_len : pattern_len - offset;
 		if (memcmp(data, pattern_str + offset, sizeof(CharType) * comp_length) != 0) 
 		{
 			result = false;

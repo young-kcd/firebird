@@ -48,7 +48,7 @@ struct SQLDA
 	SQLVAR	sqlvar[1];
 };
 
-#define SQLDA_LENGTH(n)		(sizeof (SQLDA) + (n-1) * sizeof (SQLVAR))
+#define SQLDA_LENGTH(n)		(sizeof (SQLDA) + (n - 1) * sizeof (SQLVAR))
 
 // Structure to support conversion of SQLDA's to messages 
 

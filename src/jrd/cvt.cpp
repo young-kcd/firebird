@@ -104,7 +104,7 @@ double MTH$CVT_D_G(), MTH$CVT_G_D();
    a way that will do the right thing on all platforms.  Here we go. */
 
 #define LONG_MAX_int64 ((SINT64)2147483647)	/* max int64 value of an SLONG */
-#define LONG_MIN_int64 (-LONG_MAX_int64-1)	/* min int64 value of an SLONG */
+#define LONG_MIN_int64 (-LONG_MAX_int64 - 1)	/* min int64 value of an SLONG */
 
 #define QUAD_MIN_real   -9223372036854775808.	/* min decimal value of quad */
 #define QUAD_MAX_real   9223372036854775807.	/* max decimal value of quad */

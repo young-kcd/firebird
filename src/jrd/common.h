@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.130 2004-11-29 10:14:05 alexpeshkoff Exp $
+$Id: common.h,v 1.131 2004-12-08 05:58:41 robocop Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -844,25 +844,25 @@ struct ISC_TIMESTAMP
 #define MIN_UCHAR		0x00
 
 #define MAX_SCHAR		0x7F
-#define MIN_SCHAR		(-MAX_SCHAR-1)
+#define MIN_SCHAR		(-MAX_SCHAR - 1)
 
 #define MAX_USHORT		((USHORT)0xFFFF)
 #define MIN_USHORT		0x0000
 
 #define MAX_SSHORT		0x7FFF
-#define MIN_SSHORT		(-MAX_SSHORT-1)
+#define MIN_SSHORT		(-MAX_SSHORT - 1)
 
 #define MAX_ULONG		((ULONG)0xFFFFFFFF)
 #define MIN_ULONG		0x00000000
 
 #define MAX_SLONG		0x7FFFFFFF
-#define MIN_SLONG		(-MAX_SLONG-1)
+#define MIN_SLONG		(-MAX_SLONG - 1)
 
 #define MAX_UINT64              ((UINT64) QUADCONST(0xFFFFFFFFFFFFFFFF))
 #define MIN_UINT64              QUADCONST(0x0000000000000000)
 
 #define MAX_SINT64              QUADCONST(0x7FFFFFFFFFFFFFFF)
-#define MIN_SINT64              (-MAX_SINT64-1)
+#define MIN_SINT64              (-MAX_SINT64 - 1)
 
 
 

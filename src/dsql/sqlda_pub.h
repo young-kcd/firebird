@@ -61,7 +61,7 @@ typedef struct
 	XSQLVAR	sqlvar[1];			/* first field address */
 } XSQLDA;
 
-#define XSQLDA_LENGTH(n)	(sizeof (XSQLDA) + (n-1) * sizeof (XSQLVAR))
+#define XSQLDA_LENGTH(n)	(sizeof (XSQLDA) + (n - 1) * sizeof (XSQLVAR))
 
 #define SQL_TEXT                           452
 #define SQL_VARYING                        448

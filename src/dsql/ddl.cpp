@@ -5626,7 +5626,7 @@ static void put_local_variables(dsql_req* request, dsql_nod* parameters,
 			{
 				dsql_fld* field = (dsql_fld*) parameter->nod_arg[e_dfl_field];
 				dsql_nod** rest = ptr;
-				while ((++rest) != end)
+				while (++rest != end)
 				{
 					if ((*rest)->nod_type == nod_def_field)
 					{

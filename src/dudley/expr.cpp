@@ -350,27 +350,24 @@ static CON make_numeric_constant( const TEXT* string, USHORT length)
  *      more pain than gain.
  *
  **************************************/
-	USHORT fraction;
-	SLONG *number;
-
 	const TEXT* p = string;
 	USHORT l = length;
 
 	CON constant = (CON) DDL_alloc(sizeof(con) + sizeof(SLONG));
 	constant->con_desc.dsc_dtype = dtype_long;
 	constant->con_desc.dsc_length = sizeof(SLONG);
-	number = (SLONG *) constant->con_data;
+	SLONG* number = (SLONG *) constant->con_data;
 	constant->con_desc.dsc_address = (UCHAR*) (IPTR) number;
 	USHORT scale = 0;
 
 	do {
-		TEXT c;
-		if ((c = *p++) == '.')
+		const TEXT c = *p++;
+		if (c == '.')
 			scale = 1;
 		else {
 			/* The right side of the following comparison had originally been:
 
-			   ((1 << 31) -1 ) / 10
+			   ((1 << 31) - 1) / 10
 
 			   For some reason, this doesn't work on 64-bit platforms.  Its
 			   replacement does. */
@@ -400,7 +397,7 @@ static CON make_numeric_constant( const TEXT* string, USHORT length)
 		p = string;
 		*q++ = ' ';
 
-		fraction = 0;
+		bool fraction = false;
 		for (l = 1; l < length; p++, l++)
 			if (*p >= '0' && *p <= '9')
 				*q++ = *p;
@@ -409,7 +406,7 @@ static CON make_numeric_constant( const TEXT* string, USHORT length)
 				if (fraction)
 					DDL_err(237, NULL, NULL, NULL, NULL, NULL);	/* msg 237: too many decimal points */
 				else
-					fraction = 1;
+					fraction = true;
 			}
 			else
 				DDL_err(238, NULL, NULL, NULL, NULL, NULL);	/* msg 238: unrecognized character in numeric string */

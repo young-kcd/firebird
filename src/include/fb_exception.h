@@ -47,7 +47,7 @@ public:
 		buffer_ptr = buffer;
 	}
 	virtual char* alloc(const char* string, size_t length) {
-		// fb_assert(length+1 < BUFFER_SIZE);
+		// fb_assert(length + 1 < BUFFER_SIZE);
 		// If there isn't any more room in the buffer, start at the beginning again
 		if (buffer_ptr + length + 1 > buffer + BUFFER_SIZE)
 			buffer_ptr = buffer;
