@@ -1,3 +1,25 @@
+2002-12-30 19:53  skidder
+
+	* firebird2/src/remote/xdr.cpp:
+	
+	Fixed FB XDR double representation for Linux server and client.
+	This fixes numerous bugs with double precision columns and UDF's
+	when using Linux server and Jaybird or Windows client
+
+2002-12-30 17:00  nmcc
+
+	* firebird2/builds/posix/prefix.solaris:
+	
+	Firebird2 make rules for Solaris Sparc.
+
+2002-12-30 16:46  nmcc
+
+	* firebird2/src/: common/memory/memory_pool.cpp, jrd/gds.cpp,
+	jrd/gds_proto.h:
+	
+	Use system system anon mmap on Solaris where supported ie: >=
+	Solaris8 otherwise use orginal FB1 version.
+
 2002-12-29 23:26  arnobrinkman
 
 	* firebird2/src/dsql/dsql.cpp:
