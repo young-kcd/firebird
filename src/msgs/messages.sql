@@ -3166,7 +3166,7 @@ INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FL
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('', 'DYN_define_difference', 'dyn_def.epp', NULL, 8, 217, NULL, 'Database is already in the physical backup mode', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('', 'change_backup_mode', 'dyn_mod.epp', NULL, 8, 218, NULL, 'Database is not in the physical backup mode', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('dsql_datatypes_not_comparable', 'MAKE_desc_from_list', 'make.cpp', NULL, 7, 16, NULL, 'Datatypes %sare not comparable in expression %s', NULL, NULL);
-INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('invalid_cursor_state', 'looper', 'exe.cpp', NULL, 0, 514, NULL, 'Invalid cursor state: %s', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('cursor_not_open', NULL, 'exe.cpp', NULL, 0, 514, NULL, 'Cursor is not open', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('bad_shutdown_mode', 'SHUT_database', 'shut.cpp', NULL, 0, 515, NULL, 'Target shutdown mode is invalid for database "%s"', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('concat_overflow', NULL, 'evl.cpp', NULL, 0, 516, NULL, 'Concatenation overflow. Resulting string cannot exceed 32K in length.', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('bad_substring_param', NULL, 'evl.cpp', NULL, 0, 517, NULL, 'Invalid %s parameter to SUBSTRING. Only positive integers are allowed.', NULL, NULL);
@@ -3181,6 +3181,7 @@ INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FL
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('dsql_cursor_rel_ambiguous', NULL, 'pass1.cpp', NULL, 7, 21, NULL, 'Relation %s is ambiguous in cursor %s', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('dsql_cursor_rel_not_found', NULL, 'pass1.cpp', NULL, 7, 22, NULL, 'Relation %s is not found in cursor %s', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('dsql_cursor_not_open', NULL, 'dsql.cpp', NULL, 7, 23, NULL, 'Cursor is not open', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('cursor_already_open', NULL, 'exe.epp', NULL, 0, 521, NULL, 'Cursor is already open', NULL, NULL);
 
 COMMIT WORK;
 

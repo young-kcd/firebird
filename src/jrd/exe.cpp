@@ -2019,7 +2019,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 				if (request->req_operation == jrd_req::req_evaluate) {
 					// check cursor state
 					if (impure->irsb_flags & irsb_open) {
-						ERR_post(isc_invalid_cursor_state, isc_arg_string, "open", 0);
+						ERR_post(isc_cursor_already_open, 0);
 					}
 					// open cursor
 					RSE_open(tdbb, rsb);
@@ -2031,7 +2031,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 				if (request->req_operation == jrd_req::req_evaluate) {
 					// check cursor state
 					if (!(impure->irsb_flags & irsb_open)) {
-						ERR_post(isc_invalid_cursor_state, isc_arg_string, "closed", 0);
+						ERR_post(isc_cursor_not_open, 0);
 					}
 					// close cursor
 					RSE_close(tdbb, rsb);
@@ -2044,7 +2044,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 				case jrd_req::req_evaluate:
 					// check cursor state
 					if (!(impure->irsb_flags & irsb_open)) {
-						ERR_post(isc_invalid_cursor_state, isc_arg_string, "closed", 0);
+						ERR_post(isc_cursor_not_open, 0);
 					}
 					// perform preliminary navigation, if specified
 					if (node->nod_arg[e_cursor_stmt_seek]) {
