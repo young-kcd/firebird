@@ -1754,7 +1754,8 @@ void API_ROUTINE gds__prefix(TEXT* string, const TEXT* root)
 /* Check for the existence of an InterBase logical name.  If there is 
    one use it, otherwise use the system directories. */
 	TEXT temp[256];
-	if (ISC_expand_logical_once(ISC_LOGICAL, sizeof(ISC_LOGICAL) - 2, temp)) {
+	if (ISC_expand_logical_once(ISC_LOGICAL, sizeof(ISC_LOGICAL) - 2, temp, sizeof(temp)))
+	{
 		strcpy(string, ISC_LOGICAL);
 		strcat(string, root);
 		return;
@@ -1845,7 +1846,7 @@ void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
    one use it, otherwise use the system directories. */
 	TEXT temp[256];
 	if (ISC_expand_logical_once
-		(ISC_LOGICAL_LOCK, sizeof(ISC_LOGICAL_LOCK) - 2, temp))
+		(ISC_LOGICAL_LOCK, sizeof(ISC_LOGICAL_LOCK) - 2, temp, sizeof(temp)))
 	{
 		strcpy(string, ISC_LOGICAL_LOCK);
 		strcat(string, root);
@@ -1930,7 +1931,7 @@ void API_ROUTINE gds__prefix_msg(TEXT* string, const TEXT* root)
    for functionality. */
 	TEXT temp[256];
 	if (ISC_expand_logical_once
-		(ISC_LOGICAL_MSG, sizeof(ISC_LOGICAL_MSG) - 2, temp))
+		(ISC_LOGICAL_MSG, sizeof(ISC_LOGICAL_MSG) - 2, temp, sizeof(temp)))
 	{
 		strcpy(string, ISC_LOGICAL_MSG);
 		strcat(string, root);
@@ -2629,11 +2630,14 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
 		MAKE SURE THAT THIS FUNCTION WORKS THE SAME WAY
 		AS THE NON -
 		VMS ONE
-		DOES.if (!
+		DOES.
+	if (!
 				 (ISC_expand_logical_once
-				  (ib_env_var, strlen(ib_env_var) - 2, path))) return TRUE;
+				  (ib_env_var, strlen(ib_env_var) - 2, path, sizeof(path))))
+		return TRUE;
 
-	if (ISC_expand_logical_once(module, strlen(module) - 2, abs_module)) {
+	if (ISC_expand_logical_once(module, strlen(module) - 2, abs_module, sizeof(abs_module)))
+	{
 		/* Extract the path from the module name */
 		for (p = abs_module, q = NULL; *p; p++)
 			if (*p == ']')
