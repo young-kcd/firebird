@@ -1,4 +1,7 @@
 #include "intl_classes.h"
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 #include "../common/classes/alloc.h"
 #include "../jrd/intl.h"
 #include "../intl/country_codes.h"
