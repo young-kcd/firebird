@@ -37,8 +37,8 @@
 //
 //____________________________________________________________
 //
-//	$Id: sqe.cpp,v 1.35 2005-01-03 08:07:41 robocop Exp $
 //
+
 #include "firebird.h"
 #include <stdio.h>
 #include <string.h>
