@@ -299,7 +299,9 @@ void ExecuteStatement::Close(thread_db* tdbb)
 	delete[] p;
 	Sqlda = 0;
 	if (Transaction) {
+		THREAD_EXIT();
 		WHY_cleanup_transaction(WHY_translate_handle(Transaction));
+		THREAD_ENTER();
 	}
 	WHY_free_handle(Transaction);
 	Transaction = 0;
