@@ -261,7 +261,7 @@ static int WINDOW_main(int option)
 		(thread_id =
 		 _beginthread(reinterpret_cast <
 					  void (*)(void *) >(start_and_watch_server), 0,
-					  (char *)FBSERVER)) == -1) {
+					  (char *)FBSERVER)) == (DWORD) -1) {
 		/* error starting server thread */
 		char szMsgString[256];
 		LoadString(hInstance_gbl, IDS_CANT_START_THREAD, szMsgString, 256);
@@ -682,7 +682,7 @@ void start_and_watch_server(char *server_name)
 			}
 
 			if ((ret_val = WaitForSingleObject(procHandle, INFINITE)) ==
-				WAIT_ABANDONED) exit_status = CRASHED;
+				WAIT_ABANDONED) exit_status = (DWORD) CRASHED;
 			else if (ret_val == WAIT_OBJECT_0)
 				exit_status = NORMAL_EXIT;
 
