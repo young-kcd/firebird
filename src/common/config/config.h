@@ -202,7 +202,7 @@ public:
 	/*
 		Lock manager acquire spins
 	*/
-	static bool getLockAcquireSpins();
+	static int getLockAcquireSpins();
 
 	/*
 		Event manager memory size

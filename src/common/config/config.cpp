@@ -76,7 +76,7 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_INTEGER,		"LockSignal",				(ConfigValue) 16},			// signal #
 	{TYPE_BOOLEAN,		"LockGrantOrder",			(ConfigValue) true},
 	{TYPE_INTEGER,		"LockHashSlots",			(ConfigValue) 101},			// slots
-	{TYPE_BOOLEAN,		"LockRequireSpins",			(ConfigValue) false},
+	{TYPE_INTEGER,		"LockAquireSpins",			(ConfigValue) false},
 	{TYPE_INTEGER,		"EventMemSize",				(ConfigValue) 65536},		// bytes
 	{TYPE_INTEGER,		"DeadlockTimeout",			(ConfigValue) 10},			// seconds
 	{TYPE_INTEGER,		"SolarisStallValue",		(ConfigValue) 60},			// seconds
@@ -320,9 +320,9 @@ int Config::getLockHashSlots()
 	return (int) sysConfig.values[KEY_LOCK_HASH_SLOTS];
 }
 
-bool Config::getLockAcquireSpins()
+int Config::getLockAcquireSpins()
 {
-	return (bool) sysConfig.values[KEY_LOCK_ACQUIRE_SPINS];
+	return (int) sysConfig.values[KEY_LOCK_ACQUIRE_SPINS];
 }
 
 int Config::getEventMemSize()
