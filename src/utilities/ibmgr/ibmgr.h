@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: ibmgr.h,v 1.8 2004-05-18 00:45:14 brodsom Exp $
+ * $Id: ibmgr.h,v 1.9 2004-11-07 14:38:21 alexpeshkoff Exp $
  */
 
 #ifndef UTILITIES_IBMGR_H
@@ -32,7 +32,6 @@ static const char* FIREBIRD_USER_NAME	= "firebird";
 static const char* INTERBASE_USER_NAME	= "interbase";
 static const char* INTERBASE_USER_SHORT= "interbas";
 static const char* SERVER_GUARDIAN	= "bin/fbguard";
-static const char* USER_INFO_NAME	= "security.fdb";
 
 const USHORT MSG_FAC	= 18;
 const int MSG_LEN		= 128;

@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: srvrmgr.cpp,v 1.18 2004-10-08 08:11:54 robocop Exp $
+ * $Id: srvrmgr.cpp,v 1.19 2004-11-07 14:38:21 alexpeshkoff Exp $
  */
 
 #include "firebird.h"
@@ -544,51 +544,6 @@ static bool start_server( ibmgr_data_t* data)
 	return false;
 }
 
-
-#ifdef NOT_USED_OR_REPLACED
-static bool server_is_ok( ibmgr_data_t* data)
-{
-/**************************************
- *
- *      s e r v e r _ i s _ o k
- *
- **************************************
- *
- * Functional description
- *      checks if superserver is running and
- *	functional by trying to attach to the
- *	security database.
- *
- **************************************/
-	ISC_STATUS_ARRAY status;
-	TEXT path[MAXPATHLEN];
-	TEXT db_name[MAXPATHLEN];
-	isc_db_handle db_handle = 0L;
-
-	strcpy(db_name, data->host);
-	gds__prefix(path, USER_INFO_NAME);
-	sprintf(db_name, "%s:%s", db_name, path); // May be buffer overrun
-
-	isc_attach_database(status, strlen(db_name), db_name, &db_handle, 0,
-						NULL);
-	if (status[0] == 1 && status[1] > 0) {
-#ifdef DEBUG
-		fprintf(OUTFILE, "server_is_ok/isc_attach_database ERROR: %lu\n",
-				   status[1]);
-#endif
-		return false;
-	}
-	isc_detach_database(status, &db_handle);
-	if (status[0] == 1 && status[1] > 0) {
-#ifdef DEBUG
-		fprintf(OUTFILE, "server_is_ok/isc_detach_database ERROR: %lu\n",
-				   status[1]);
-#endif
-		return false;
-	}
-	return true;
-}
-#endif
 
 static bool server_is_up( ibmgr_data_t* data)
 {
