@@ -266,9 +266,9 @@ cv_narrow.o: source/jrd/jrd.h
 cv_narrow.o: source/jrd/kanji.h
 cv_narrow.o: source/jrd/ods.h
 cv_narrow.o: source/jrd/thd.h
-cv_narrow.o: tx437_865.h
-cv_narrow.o: tx437_lat1.h
-cv_narrow.o: tx865_lat1.h
+cv_narrow.o: conversions/tx437_865.h
+cv_narrow.o: conversions/tx437_lat1.h
+cv_narrow.o: conversions/tx865_lat1.h
 dtest.o: charsets.h
 dtest.o: dtest.c
 dtest.o: source/jrd/intl.h
