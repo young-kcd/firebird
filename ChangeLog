@@ -1,3 +1,28 @@
+2004-10-18 22:50  skidder
+
+	* firebird2/src/install/misc/firebird.conf (1.28.2.7):
+	
+	Update BugCheckAbort option description
+
+2004-10-18 22:35  skidder
+
+	* firebird2/doc/WhatsNew (1.36.2.27):
+	
+	Clarify change description
+
+2004-10-18 21:22  skidder
+
+	* firebird2/doc/WhatsNew (1.36.2.26):
+	
+	Document the last change
+
+2004-10-18 20:53  skidder
+
+	* firebird2/src/remote/srvr_w32.cpp (1.26.2.3):
+	
+	Backport fix making Windows server crash silently if this ever
+	happens
+
 2004-10-18 02:28  skidder
 
 	* firebird2/src/misc/src_bundle.sh (1.2.2.2):
