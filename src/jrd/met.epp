@@ -35,7 +35,7 @@
  * 2002-09-16 Nickolay Samofatov - Deferred trigger compilation changes
  */
 /*
-$Id: met.epp,v 1.20 2002-09-27 22:59:24 skidder Exp $
+$Id: met.epp,v 1.21 2002-09-28 20:58:39 skidder Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -2929,11 +2929,11 @@ void MET_remove_procedure( TDBB tdbb, int id, PRC procedure)
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
 
+	if (!(vector = dbb->dbb_procedures))
+		return;
+
 	if (!procedure) {
 	/** If we are in here then dfw.e/modify_procedure() called us **/
-		if (!(vector = dbb->dbb_procedures))
-			return;
-
 		if (!(procedure = (PRC) (*vector)[id]))
 			return;
 	}
@@ -2945,8 +2945,8 @@ void MET_remove_procedure( TDBB tdbb, int id, PRC procedure)
 // Its absence caused coredumps in some cases because its request and other
 // data is freed after this call and procedure block is no longer valid
 
-if (!(procedure->prc_flags & PRC_being_altered))
-    (*vector)[id] = (BLK) NULL_PTR;
+	if (!(procedure->prc_flags & PRC_being_altered))
+	    (*vector)[id] = (BLK) NULL_PTR;
 
 /* deallocate all structure which were allocated.  The procedure
  * blr is originally read into a new pool from which all request
