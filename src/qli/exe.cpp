@@ -268,6 +268,8 @@ file* EXEC_open_output(QLI_NOD node)
  **************************************/
 // Evaluate filename and copy to a null terminated string
 
+  IB_FILE *out_file; 
+
 	dsc* desc = EVAL_value(node->nod_arg[e_out_file]);
 	TEXT* p = NULL;
 	TEXT temp[64];
@@ -284,7 +286,7 @@ file* EXEC_open_output(QLI_NOD node)
 // If output is to a file, just do it
 
 	if (!node->nod_arg[e_out_pipe]) {
-	    IB_FILE* out_file = ib_fopen(filename, FOPEN_WRITE_TYPE);
+	    out_file = ib_fopen(filename, FOPEN_WRITE_TYPE);
 		if (out_file)
 			return (file*) out_file;
 
@@ -299,7 +301,7 @@ file* EXEC_open_output(QLI_NOD node)
 #else
 
 #ifdef WIN_NT
-	IB_FILE* out_file = _popen(filename, "w");
+	out_file = _popen(filename, "w");
 	if (out_file)
 		return (file*) out_file;
 #else
