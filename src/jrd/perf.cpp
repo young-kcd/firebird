@@ -75,7 +75,8 @@ extern void ftime();
 #define TICK	100
 #endif
 
-#if defined(CLOCKS_PER_SEC)
+/* EKU: TICK (sys/param.h) and CLOCKS_PER_SEC (time.h) may both be defined */
+#if !defined(TICK) && defined(CLOCKS_PER_SEC)
 #define TICK CLOCKS_PER_SEC
 #endif
 
