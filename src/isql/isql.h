@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.34 2004-08-27 05:01:56 robocop Exp $
+ * $Id: isql.h,v 1.35 2004-08-27 08:34:41 robocop Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -217,6 +217,7 @@ const int INCOMPLETE_STR			= 105;		// Incomplete string in %s
 const int HLP_SETSQLDIALECT			= 106;		//\tSET SQL DIALECT <n>    -- set sql dialect to <n>
 const int NO_GRANT_ON_ANY			= 107;		// There is no privilege granted in this database. 
 const int HLP_SETPLANONLY			= 108;		// Toggle display of query plan without executing 
+const int HLP_SETHEADING            = 109;      // Toggle display of query column titles
 
 // Initialize types
 

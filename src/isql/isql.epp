@@ -4532,6 +4532,7 @@ static processing_state help(const TEXT* what)
 		HLP_SETBLOB2,			/*	SET BLOB			   -- turn off BLOB display */
 		HLP_SETCOUNT,			/*	SET COUNT			  -- toggle count of selected rows on/off */
 		HLP_SETECHO,			/*	SET ECHO			   -- toggle command echo on/off */
+		HLP_SETHEADING,         //  SET HEADING         -- toggle column titles display on/off
 		HLP_SETLIST,			/*	SET LIST			   -- toggle column or table display format */
 		HLP_SETNAMES,			/*	SET NAMES <csname>	 -- set name of runtime character set */
 		HLP_SETPLAN,			/*	SET PLAN			   -- toggle display of query access plan */
