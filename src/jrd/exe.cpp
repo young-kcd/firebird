@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.49 2003-04-10 06:49:11 aafemt Exp $
+$Id: exe.cpp,v 1.50 2003-04-13 13:22:23 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -2031,24 +2031,24 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 			break;
 
 		case nod_undo_savepoint:
-			
+
 			if (transaction != dbb->dbb_sys_trans) {
 				// Skip the savepoint created by EXE_start
 				savepoint = transaction->tra_save_point->sav_next;
-			
+
 				// Find savepoint to undo
 				while(TRUE) {
 					if (!savepoint || !(savepoint->sav_flags & SAV_user))
 						ERR_post(gds_invalid_savepoint,
-							gds_arg_number, (SLONG) node->nod_arg[e_sav_name], 0);
+							gds_arg_string, (TEXT*) node->nod_arg[e_sav_name], 0);
 								
 					if (!strcmp((TEXT*)node->nod_arg[e_sav_name],(TEXT*)savepoint->sav_name))
 						break;
-				
+
 					savepoint = savepoint->sav_next;
 				}
 				sav_number = savepoint->sav_number;
-			
+
 				// Actually undo the savepoint
 				while ( transaction->tra_save_point && 
 					transaction->tra_save_point->sav_number >= sav_number ) 
@@ -2056,7 +2056,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 					transaction->tra_save_point->sav_verb_count++;
 					VERB_CLEANUP;
 				}
-			
+
 				// Now set the savepoint again to allow to return to it later
 				VIO_start_save_point(tdbb, transaction);
 				transaction->tra_save_point->sav_flags |= SAV_user;
