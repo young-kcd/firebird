@@ -48,7 +48,9 @@ static void ascii_str_upper(UCHAR *);
 static void explicit_print(TEXT *);
 static int get_sql_class(UCHAR *);
 static int get_sql_subclass(UCHAR *);
+#ifdef NOT_USED_OR_REPLACED
 static int get_symbol(UCHAR *);
+#endif
 static SSHORT mustget(SCHAR *);
 static int translate(SCHAR *, SCHAR *, SSHORT);
 
@@ -358,7 +360,7 @@ static int get_sql_subclass( UCHAR * sql_sub_class)
 	return FALSE;
 }
 
-
+#ifdef NOT_USED_OR_REPLACED
 static int get_symbol( UCHAR * symbol)
 {
 /**************************************
@@ -380,7 +382,7 @@ static int get_symbol( UCHAR * symbol)
 			return TRUE;
 	}
 }
-
+#endif
 
 static SSHORT mustget( SCHAR * s)
 {

@@ -660,7 +660,9 @@ extern "C" {
 
 SLONG trace_pools = 0;
 SLONG free_map_debug = 0;
+#ifdef SUPERSERVER
 static void freemap(int cod);
+#endif
 void gds_print_delta_counters(IB_FILE *);
 
 #endif	// SUPERSERVER

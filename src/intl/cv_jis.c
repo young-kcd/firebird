@@ -519,7 +519,7 @@ USHORT CVJIS_unicode_to_eucj(CSCONVERT obj, UCHAR *eucj_str, USHORT eucj_len, UC
 	return ((eucj_str - start) * sizeof(*eucj_str));
 }
 
-
+#ifdef NOT_USED_OR_REPLACED
 static USHORT CVJIS_check_euc(UCHAR *euc_str, USHORT euc_len)
 {
 /**************************************
@@ -597,7 +597,7 @@ static USHORT CVJIS_check_sjis(UCHAR *sjis_str, USHORT sjis_len)
 	}
 	return (0);
 }
-
+#endif
 
 
 static USHORT CVJIS_euc2sjis(CSCONVERT obj, UCHAR *sjis_str, USHORT sjis_len, UCHAR *euc_str, USHORT euc_len,

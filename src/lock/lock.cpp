@@ -29,7 +29,7 @@
  *
  */
 /*
-$Id: lock.cpp,v 1.36 2003-03-02 17:47:22 fsg Exp $
+$Id: lock.cpp,v 1.37 2003-03-04 00:04:33 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -198,7 +198,9 @@ static LBL alloc_lock(USHORT, STATUS *);
 #ifdef STATIC_SEMAPHORES
 static USHORT alloc_semaphore(OWN, STATUS *);
 #endif
+#if !(defined WIN_NT || defined SOLARIS_MT || POSIX_THREADS)
 static void blocking_action(PTR);
+#endif
 static void blocking_action2(PTR, PTR);
 #if (defined WIN_NT && !defined SUPERSERVER) || (defined SOLARIS_MT && !defined SUPERSERVER)
 static void THREAD_ROUTINE blocking_action_thread(PTR *);
@@ -253,7 +255,11 @@ static void release_request(LRQ);
 #ifdef STATIC_SEMAPHORES
 static void release_semaphore(OWN);
 #endif
+#ifndef SUPERSERVER
+#if (defined WIN_NT || defined SOLARIS_MT)
 static void shutdown_blocking_thread(STATUS *);
+#endif
+#endif
 static int signal_owner(OWN, PTR);
 #ifdef VALIDATE_LOCK_TABLE
 static void validate_lhb(LHB);
@@ -1738,6 +1744,7 @@ static USHORT alloc_semaphore( OWN owner, STATUS * status_vector)
 #endif
 
 
+#if !(defined WIN_NT || defined SOLARIS_MT || POSIX_THREADS)
 static void blocking_action( PTR owner_offset)
 {
 /**************************************
@@ -1804,7 +1811,7 @@ static void blocking_action( PTR owner_offset)
 	DEBUG_DELAY;
 #endif
 }
-
+#endif
 
 static void blocking_action2(
 							 PTR blocking_owner_offset,
@@ -4091,6 +4098,8 @@ static void release_semaphore( OWN owner)
 #endif
 
 
+#ifndef SUPERSERVER
+#if (defined WIN_NT || defined SOLARIS_MT)
 static void shutdown_blocking_thread( STATUS * status_vector)
 {
 /**************************************
@@ -4159,7 +4168,8 @@ static void shutdown_blocking_thread( STATUS * status_vector)
 #endif
 #endif
 }
-
+#endif
+#endif
 
 static int signal_owner( OWN blocking_owner, PTR blocked_owner_offset)
 {

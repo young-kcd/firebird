@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.24 2003-02-28 15:17:50 brodsom Exp $
+  $Id: isql.epp,v 1.25 2003-03-04 00:02:52 brodsom Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -224,9 +224,11 @@ static SSHORT Pagelength = 20;
 static SSHORT Stats = FALSE;
 static SSHORT Autocommit = TRUE;	/* Commit ddl */
 static SSHORT Warnings = TRUE;	/* Print warnings */
+#ifdef SCROLLABLE_CURSORS
 static SSHORT Autofetch = TRUE;	/* automatically fetch all records */
 static USHORT fetch_direction = 0;
 static SLONG fetch_offset = 1;
+#endif
 static SSHORT Doblob = 1;		/* Default to printing only text types */
 static SSHORT List = FALSE;
 static SSHORT Docount = FALSE;
@@ -237,7 +239,9 @@ static SCHAR ISQL_charset[MAXCHARSET_LENGTH] = { 0 };
 static IB_FILE *Diag;
 static IB_FILE *Help;
 static TEXT *sql_prompt = "SQL> ";
+#ifdef SCROLLABLE_CURSORS
 static TEXT *fetch_prompt = "FETCH> ";
+#endif
 
 static BOOLEAN global_psw = FALSE;
 static BOOLEAN global_usr = FALSE;
@@ -247,20 +251,25 @@ static BOOLEAN have_trans = FALSE;	/* translation of word "Yes" */
 static TEXT yesword[MSG_LENGTH];
 static TEXT Print_buffer[PRINT_BUFFER_LENGTH];
 
+#ifdef NOT_USED_OR_REPLACED
 static UCHAR db_version_info[] = { isc_info_ods_version,
 	isc_info_ods_minor_version,
 	isc_info_db_sql_dialect
 };
+#endif
 static UCHAR blr_bpb[] = { isc_bpb_version1,
 	isc_bpb_source_type, 1, BLOB_blr,
 	isc_bpb_target_type, 1, BLOB_text
-}, text_bpb[] = {
+	};
+#ifdef NOT_USED_OR_REPLACED
+static UCHAR text_bpb[] = {
 	isc_bpb_version1,
-		isc_bpb_source_type, 1, BLOB_text,
-
-		isc_bpb_target_type, 1, BLOB_text}, acl_bpb[] = {
+	isc_bpb_source_type, 1, BLOB_text,
+	isc_bpb_target_type, 1, BLOB_text};
+#endif
+static UCHAR acl_bpb[] = {
 	isc_bpb_version1,
-		isc_bpb_source_type, 1, BLOB_acl, isc_bpb_target_type, 1, BLOB_text};
+	isc_bpb_source_type, 1, BLOB_acl, isc_bpb_target_type, 1, BLOB_text};
 
 /* Note that these transaction options aren't understood in Version 3.3 */
 static UCHAR default_tpb[] = { isc_tpb_version1, isc_tpb_write,
@@ -268,18 +277,22 @@ static UCHAR default_tpb[] = { isc_tpb_version1, isc_tpb_write,
 	isc_tpb_no_rec_version
 };
 
+#ifdef NOT_USED_OR_REPLACED
 /* CVC: Just in case we need it for R/O operations in the future. */
 static UCHAR	batch_tpb [] = {isc_tpb_version3, isc_tpb_read,
 				isc_tpb_read_committed, isc_tpb_nowait,
 				isc_tpb_rec_version
 };
+#endif
 
 /* InterBase Performance Statistic format Variables */
 
 static struct perf perf_before, perf_after;
 static BOOLEAN have_report = FALSE;	/* translation of report strings */
 static TEXT report_1[MSG_LENGTH + MSG_LENGTH];
+#ifdef NOT_USED_OR_REPLACED
 static TEXT report_2[MSG_LENGTH];
+#endif
 static TEXT rec_count[MSG_LENGTH];
 
 /* if the action is rrstrict, do not print anything at all */
