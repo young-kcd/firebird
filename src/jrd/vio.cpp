@@ -2356,7 +2356,6 @@ BOOLEAN VIO_sweep(TDBB tdbb, TRA transaction)
 	RPB rpb;
 	VEC vector;
 	USHORT i;
-	JMP_BUF env, *old_env;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -2367,49 +2366,53 @@ BOOLEAN VIO_sweep(TDBB tdbb, TRA transaction)
 				  transaction ? transaction->tra_number : 0);
 #endif
 
-	if (transaction->tra_attachment->att_flags & ATT_NO_CLEANUP)
+	if (transaction->tra_attachment->att_flags & ATT_NO_CLEANUP) {
 		return FALSE;
+	}
 
 	DPM_scan_pages(tdbb);
 	rpb.rpb_record = NULL;
 	rpb.rpb_stream_flags = 0;
 	rpb.rpb_window.win_flags = WIN_large_scan;
 
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
-
 	try {
 
-	for (i = 1; (vector = dbb->dbb_relations) && i < vector->count(); i++)
-		if ((relation = (REL) (*vector)[i]) && relation->rel_pages &&
-			!(relation->rel_flags & (REL_deleted | REL_deleting))) {
-			rpb.rpb_relation = relation;
-			rpb.rpb_number = -1;
-			rpb.rpb_org_scans = relation->rel_scan_count++;
-			++relation->rel_sweep_count;
-			while (VIO_next_record
-				   (tdbb, &rpb, NULL, transaction, 0, FALSE, FALSE)) {
-				CCH_RELEASE(tdbb, &rpb.rpb_window);
-				if (relation->rel_flags & REL_deleting)
-					break;
+		for (i = 1; (vector = dbb->dbb_relations) && i < vector->count(); i++)
+		{
+			if ((relation = (REL) (*vector)[i]) && relation->rel_pages &&
+				!(relation->rel_flags & (REL_deleted | REL_deleting)))
+			{
+				rpb.rpb_relation = relation;
+				rpb.rpb_number = -1;
+				rpb.rpb_org_scans = relation->rel_scan_count++;
+				++relation->rel_sweep_count;
+				while (VIO_next_record(tdbb,
+										&rpb,
+										NULL,
+										transaction,
+										0,
+										FALSE,
+										FALSE))
+				{
+					CCH_RELEASE(tdbb, &rpb.rpb_window);
+					if (relation->rel_flags & REL_deleting)
+						break;
 #ifdef MULTI_THREAD
-				if (--tdbb->tdbb_quantum < 0 && !tdbb->tdbb_inhibit)
-					(void) JRD_reschedule(tdbb, SWEEP_QUANTUM, TRUE);
-				transaction->tra_oldest_active = dbb->dbb_oldest_snapshot;
+					if (--tdbb->tdbb_quantum < 0 && !tdbb->tdbb_inhibit) {
+						(void) JRD_reschedule(tdbb, SWEEP_QUANTUM, TRUE);
+					}
+					transaction->tra_oldest_active = dbb->dbb_oldest_snapshot;
 #endif
+				}
+				--relation->rel_sweep_count;
+				--relation->rel_scan_count;
 			}
-			--relation->rel_sweep_count;
-			--relation->rel_scan_count;
 		}
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-	if (rpb.rpb_record) {
 		delete rpb.rpb_record;
-	}
 
 	}	// try
 	catch (...) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		delete rpb.rpb_record;
 		if (relation)
 		{
@@ -3207,9 +3210,7 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
 	REL relation;
 	TRA transaction;
 	RPB rpb;
-	VEC vector;
 	EVENT gc_event;
-	JMP_BUF env;
 
 	THREAD_ENTER;
 	CHECK_DBB(dbb);
@@ -3230,7 +3231,6 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
 	tdbb->tdbb_default = dbb->dbb_permanent;
 	tdbb->tdbb_status_vector = status_vector;
 	tdbb->tdbb_quantum = SWEEP_QUANTUM;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 	tdbb->tdbb_flags = TDBB_sweeper;
 
 /* Surrender if resources to start up aren't available. */
@@ -3278,17 +3278,21 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
 		   In particular, make worker threads perform their own
 		   garbage collection so that errors are reported to users. */
 
-		if (dbb->dbb_flags & DBB_suspend_bgio) {
+		if (dbb->dbb_flags & DBB_suspend_bgio)
+		{
 			ATT attachment;
 
 			for (attachment = dbb->dbb_attachments;
 				 attachment != 0; attachment = attachment->att_next)
+			{
 				if (attachment->att_flags & ATT_notify_gc) {
 					attachment->att_flags &= ~ATT_notify_gc;
 					attachment->att_flags |= ATT_disable_notify_gc;
 				}
+			}
 
-			while (dbb->dbb_flags & DBB_suspend_bgio) {
+			while (dbb->dbb_flags & DBB_suspend_bgio)
+			{
 				count = ISC_event_clear(gc_event);
 				THREAD_EXIT;
 				(void) ISC_event_wait(1, &gc_event, &count,
@@ -3300,30 +3304,39 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
 
 			for (attachment = dbb->dbb_attachments;
 				 attachment != 0; attachment = attachment->att_next)
-				if (attachment->att_flags & ATT_disable_notify_gc) {
+			{
+				if (attachment->att_flags & ATT_disable_notify_gc)
+				{
 					attachment->att_flags &= ~ATT_disable_notify_gc;
 					attachment->att_flags |= ATT_notify_gc;
 				}
+			}
 		}
 
 		/* Scan relation garbage collection bitmaps for candidate data pages.
 		   Express interest in the relation to prevent it from being deleted
 		   out from under us while garbage collection is in-progress. */
 
-		for (id = 0; (vector = dbb->dbb_relations) && id < vector->count();
-			 id++)
-			if ((relation = (REL) (*vector)[id])
-				&& relation->rel_gc_bitmap != 0
-				&& !(relation->rel_flags & (REL_deleted | REL_deleting))) {
+		VEC vector;
+		for (id = 0; (vector = dbb->dbb_relations) && id < vector->count(); ++id)
+		{
+			relation = (REL) (*vector)[id];
+
+			if (relation &&
+				relation->rel_gc_bitmap != 0 &&
+				!(relation->rel_flags & (REL_deleted | REL_deleting)))
+			{
 				++relation->rel_sweep_count;
 				dp_sequence = -1;
 				rpb.rpb_relation = relation;
-				while (SBM_next
-					   (relation->rel_gc_bitmap, &dp_sequence,
-						RSE_get_forward)) {
+				while (SBM_next(relation->rel_gc_bitmap,
+								&dp_sequence,
+								RSE_get_forward))
+				{
 					(void) SBM_clear(relation->rel_gc_bitmap, dp_sequence);
 
-					if (!transaction) {
+					if (!transaction)
+					{
 						/* Start a "precommitted" transaction by using read-only,
 						   read committed. Of particular note is the absence of a
 						   transaction lock which means the transaction does not
@@ -3331,7 +3344,7 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
 
 						transaction =
 							TRA_start(tdbb, sizeof(gc_tpb),
-									  const_cast < char *>(gc_tpb));
+									  const_cast<char*>(gc_tpb));
 						tdbb->tdbb_transaction = transaction;
 					}
 					else {
@@ -3349,8 +3362,14 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
 
 					/* Attempt to garbage collect all records on the data page. */
 
-					while (VIO_next_record
-						   (tdbb, &rpb, NULL, transaction, NULL, FALSE, TRUE)) {
+					while (VIO_next_record(tdbb,
+											&rpb,
+											NULL,
+											transaction,
+											NULL,
+											FALSE,
+											TRUE))
+					{
 						CCH_RELEASE(tdbb, &rpb.rpb_window);
 						if (!(dbb->dbb_flags & DBB_garbage_collector)) {
 							--relation->rel_sweep_count;
@@ -3365,11 +3384,12 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
 					}
 				}
 
-			  rel_exit:
+rel_exit:
 				dp_sequence = -1;
-				if (!SBM_next
-					(relation->rel_gc_bitmap, &dp_sequence,
-					 RSE_get_forward)) {
+				if (!SBM_next(relation->rel_gc_bitmap,
+								&dp_sequence,
+								RSE_get_forward))
+				{
 					/* If the bitmap is empty then release it */
 
 					SBM_release(relation->rel_gc_bitmap);
@@ -3378,19 +3398,26 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
 				else {
 					/* Otherwise release bitmap segments that have been cleared. */
 
-					while (SBM_next
-						   (relation->rel_gc_bitmap, &dp_sequence,
-							RSE_get_forward));
+					while (SBM_next(relation->rel_gc_bitmap,
+									&dp_sequence,
+									RSE_get_forward))
+					{
+						;	// do nothing
+					}
 				}
 				--relation->rel_sweep_count;
 			}
+		}
 
 		/* If there's more work to do voluntarily ask to be rescheduled.
 		   Otherwise, wait for event notification. */
 
 		if (found)
+		{
 			(void) JRD_reschedule(tdbb, SWEEP_QUANTUM, TRUE);
-		else {
+		}
+		else
+		{
 			dbb->dbb_flags &= ~DBB_gc_pending;
 
 			/* Make no mistake about it, garbage collection is our first
@@ -3532,9 +3559,11 @@ static void list_staying(TDBB tdbb, RPB * rpb, LLS * staying)
 
 		if (temp.rpb_b_page != rpb->rpb_b_page ||
 			temp.rpb_b_line != rpb->rpb_b_line ||
-			temp.rpb_flags != rpb->rpb_flags) {
-			while (*staying)
+			temp.rpb_flags != rpb->rpb_flags)
+		{
+			while (*staying) {
 				delete LLS_POP(staying);
+			}
 			next_page = temp.rpb_page;
 			next_line = temp.rpb_line;
 			max_depth = 0;
@@ -3547,7 +3576,8 @@ static void list_staying(TDBB tdbb, RPB * rpb, LLS * staying)
 		   The while-loop finds this next older version. */
 
 		while (temp.rpb_b_page &&
-			   !(temp.rpb_page == next_page && temp.rpb_line == next_line)) {
+			   !(temp.rpb_page == next_page && temp.rpb_line == next_line))
+		{
 			temp.rpb_prior = (temp.rpb_flags & rpb_delta) ? data : NULL;
 			DPM_fetch_back(tdbb, &temp, LCK_read, 1);
 			depth++;
@@ -3555,21 +3585,23 @@ static void list_staying(TDBB tdbb, RPB * rpb, LLS * staying)
 			/* Don't monopolize the server while chasing long
 			   back version chains. */
 
-			if (--tdbb->tdbb_quantum < 0 && !tdbb->tdbb_inhibit)
+			if (--tdbb->tdbb_quantum < 0 && !tdbb->tdbb_inhibit) {
 				(void) JRD_reschedule(tdbb, 0, TRUE);
+			}
 #endif
 		}
 
 		/* If there is a next older version, then process it: remember that
 		   version's data in 'staying'. */
 
-		if (temp.rpb_page == next_page && temp.rpb_line == next_line) {
+		if (temp.rpb_page == next_page && temp.rpb_line == next_line)
+		{
 			next_page = temp.rpb_b_page;
 			next_line = temp.rpb_b_line;
 			temp.rpb_record = NULL;
-			if (temp.rpb_flags & rpb_deleted)
+			if (temp.rpb_flags & rpb_deleted) {
 				CCH_RELEASE(tdbb, &temp.rpb_window);
-			else {
+			} else {
 				VIO_data(tdbb, &temp,
 						 reinterpret_cast < blk * >(tdbb->tdbb_default));
 				LLS_PUSH(temp.rpb_record, staying);
@@ -3589,9 +3621,11 @@ static void list_staying(TDBB tdbb, RPB * rpb, LLS * staying)
    of back versions that we saw in a previous iteration (max_depth), then
    somebody else must have been garbage collecting also.  Remove the entries
    in 'staying' that have already been garbage collected. */
-	while (depth < max_depth--)
-		if (*staying)
+	while (depth < max_depth--) {
+		if (*staying) {
 			delete LLS_POP(staying);
+		}
+	}
 }
 
 
@@ -3612,13 +3646,9 @@ static void notify_garbage_collector(TDBB tdbb, RPB * rpb)
  *	which are candidates for garbage collection.
  *
  **************************************/
-	DBB dbb;
-	REL relation;
-	JrdMemoryPool *old_pool;
-	SLONG dp_sequence;
 
-	dbb = tdbb->tdbb_database;
-	relation = rpb->rpb_relation;
+	DBB dbb      = tdbb->tdbb_database;
+	REL relation = rpb->rpb_relation;
 
 /* If this is a large sequential scan then defer the release
    of the data page to the LRU tail until the garbage collector
@@ -3630,9 +3660,10 @@ static void notify_garbage_collector(TDBB tdbb, RPB * rpb)
 /* A relation's garbage collect bitmap is allocated
    from the database permanent pool. */
 
-	old_pool = tdbb->tdbb_default;
+	JrdMemoryPool* old_pool = tdbb->tdbb_default;
+
 	tdbb->tdbb_default = dbb->dbb_permanent;
-	dp_sequence = rpb->rpb_number / dbb->dbb_max_records;
+	SLONG dp_sequence = rpb->rpb_number / dbb->dbb_max_records;
 	SBM_set(tdbb, &relation->rel_gc_bitmap, dp_sequence);
 	tdbb->tdbb_default = old_pool;
 
@@ -3640,17 +3671,20 @@ static void notify_garbage_collector(TDBB tdbb, RPB * rpb)
    the event on which it sleeps to awaken it. */
 
 	dbb->dbb_flags |= DBB_gc_pending;
-	if (!(dbb->dbb_flags & DBB_gc_active))
+	if (!(dbb->dbb_flags & DBB_gc_active)) {
 		ISC_event_post(dbb->dbb_gc_event);
+	}
 }
 #endif
 
 
-static void prepare_update(
-						   TDBB tdbb,
-						   TRA transaction,
-						   SLONG commit_tid_read,
-						   RPB * rpb, RPB * temp, RPB * new_rpb, LLS * stack)
+static void prepare_update(	TDBB	tdbb,
+							TRA		transaction,
+							SLONG	commit_tid_read,
+							RPB*	rpb,
+							RPB*	temp,
+							RPB*	new_rpb,
+							LLS*	stack)
 {
 /**************************************
  *
@@ -3722,14 +3756,16 @@ static void prepare_update(
 
 /* If it makes sense, store a differences record */
 
-	if (new_rpb) {
-		l = SQZ_differences(reinterpret_cast < char *>(new_rpb->rpb_address),
+	if (new_rpb)
+	{
+		l = SQZ_differences(reinterpret_cast<char*>(new_rpb->rpb_address),
 							new_rpb->rpb_length,
-							reinterpret_cast < char *>(temp->rpb_address),
+							reinterpret_cast<char*>(temp->rpb_address),
 							temp->rpb_length,
-							reinterpret_cast < char *>(differences),
+							reinterpret_cast<char*>(differences),
 							sizeof(differences));
-		if ((l < sizeof(differences)) && (l < temp->rpb_length)) {
+		if ((l < sizeof(differences)) && (l < temp->rpb_length))
+		{
 			temp->rpb_address = differences;
 			temp->rpb_length = l;
 			new_rpb->rpb_flags |= rpb_delta;
@@ -3738,9 +3774,13 @@ static void prepare_update(
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES_INFO)
+	{
 		if (new_rpb)
+		{
 			ib_printf("    new record is%sa delta \n",
 					  (new_rpb->rpb_flags & rpb_delta) ? " " : " NOT ");
+		}
+	}
 #endif
 
 	temp->rpb_number = rpb->rpb_number;
@@ -3750,23 +3790,28 @@ static void prepare_update(
    replacing it with a completely new version.  Make sure it
    was the same one we stored above. */
 
-	while (TRUE) {
+	while (TRUE)
+	{
 		org_rpb.rpb_flags = rpb->rpb_flags;
 		org_rpb.rpb_f_line = rpb->rpb_f_line;
 		org_rpb.rpb_f_page = rpb->rpb_f_page;
 
-		if (!DPM_get(tdbb, rpb, LCK_write)) {
+		if (!DPM_get(tdbb, rpb, LCK_write))
+		{
 			/* There is no reason why this record would disappear for a
 			   snapshot transaction. */
 			if (!(transaction->tra_flags & TRA_read_committed))
+			{
 				BUGCHECK(186);	/* msg 186 record disappeared */
+			}
 			else
+			{
 				/* A read-committed transaction, on the other hand, doesn't
 				   insist on the presence of any version, so versions of records
 				   and entire records it has already read might be garbage-collected. */
-			{
-				if (!DPM_fetch(tdbb, temp, LCK_write))
+				if (!DPM_fetch(tdbb, temp, LCK_write)) {
 					BUGCHECK(291);	/* msg 291 cannot find record back version */
+				}
 				delete_(tdbb, temp, (SLONG) 0, 0);
 				ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
 			}
@@ -3782,6 +3827,7 @@ static void prepare_update(
 		   reattempt the backout. */
 
 		if (rpb->rpb_flags & rpb_gc_active)
+		{
 			switch (state) {
 			case tra_committed:
 				state = tra_dead;
@@ -3795,6 +3841,7 @@ static void prepare_update(
 			default:
 				break;
 			}
+		}
 
 		switch (state) {
 		case tra_committed:
@@ -3973,13 +4020,14 @@ static void prepare_update(
 			THREAD_SLEEP(100);	/* milliseconds */
 			THREAD_ENTER;
 		}
-		else
+		else {
 			VIO_backout(tdbb, rpb, transaction);
+		}
 	}
 }
 
 
-static BOOLEAN purge(TDBB tdbb, RPB * rpb)
+static BOOLEAN purge(TDBB tdbb, RPB* rpb)
 {
 /**************************************
  *
