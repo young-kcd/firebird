@@ -55,12 +55,13 @@ public:
 };
 
 
-typedef Firebird::SortedArray<traRpbListElement, traRpbListElement, 
-			traRpbListElement, traRpbListElement> traRpbArray;
+typedef Firebird::SortedArray<traRpbListElement, 
+	Firebird::InlineStorage<traRpbListElement, 16>, traRpbListElement, 
+	traRpbListElement, traRpbListElement> traRpbArray;
 class traRpbList : public traRpbArray
 {
 public:
-	traRpbList(Firebird::MemoryPool *p) : 
+	traRpbList(Firebird::MemoryPool& p) : 
 		traRpbArray(p, 16) {}
 	int PushRpb(struct rpb* value);
 	bool PopRpb(struct rpb* value, int Level);
