@@ -1006,6 +1006,7 @@ static UCHAR *sdl_desc(UCHAR * ptr, DSC * desc)
 	case dtype_short:
 	case dtype_long:
 	case dtype_quad:
+	case dtype_int64:
 		desc->dsc_scale = *((SCHAR *) sdl);
 		++sdl;
 		break;
