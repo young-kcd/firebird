@@ -23,9 +23,12 @@
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
  *
+ *
+ * 2002-02-23 Sean Leyne - Code Cleanup, removed old M88K and NCR3000 port
+ *
  */
 
- /* $Id: head.cpp,v 1.5 2002-02-16 02:21:28 seanleyne Exp $ */
+ /* $Id: head.cpp,v 1.6 2002-02-23 22:15:23 seanleyne Exp $ */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -71,7 +74,7 @@
 #include <fcntl.h>
 #endif
 
-#if (defined UNIXWARE || defined NCR3000)
+#ifdef UNIXWARE
 #include <sys/fcntl.h>
 #endif
 

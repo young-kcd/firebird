@@ -27,9 +27,11 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "NCR3000" port
  *
+ * 2002-02-23 Sean Leyne - Code Cleanup, removed old M88K and NCR3000 port
+ *
  */
 /*
-$Id: inet.cpp,v 1.9 2002-02-16 03:33:53 seanleyne Exp $
+$Id: inet.cpp,v 1.10 2002-02-23 22:15:24 seanleyne Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -123,7 +125,7 @@ NETDB_DEFINE_CONTEXT
 extern int h_errno;
 #endif
 
-#if (defined UNIXWARE || defined NCR3000 || defined M88K)
+#ifdef UNIXWARE
 #include <sys/sockio.h>
 #endif
 
@@ -2480,7 +2482,7 @@ static int parse_line(
 
 	if (strcmp(entry1, host_name))
 #ifdef UNIX
-#if !(defined UNIXWARE || defined NCR3000)
+#ifndef UNIXWARE
 		if (entry1[1] == '@') {
 			if (!innetgr(&entry1[2], host_name, 0, 0))
 				return -1;
@@ -2509,7 +2511,7 @@ static int parse_line(
 /* if they're in the user group: + they're in, - they're out */
 
 #ifdef UNIX
-#if !(defined UNIXWARE || defined NCR3000)
+#ifndef UNIXWARE
 	if (entry2[1] == '@') {
 		if (innetgr(&entry2[2], 0, user_name, 0)) {
 			if (entry2[0] == '+')

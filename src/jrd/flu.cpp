@@ -22,9 +22,12 @@
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
  *
+ *
+ * 2002-02-23 Sean Leyne - Code Cleanup, removed old M88K and NCR3000 port
+ *
  */
 /*
-$Id: flu.cpp,v 1.6 2002-02-16 02:21:27 seanleyne Exp $
+$Id: flu.cpp,v 1.7 2002-02-23 22:15:23 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -79,9 +82,9 @@ static int condition_handler(int *, int *, int *);
 #endif
 
 
-/* SGI, UNIXWARE, M88K, DECOSF specific stuff */
+/* SGI, UNIXWARE, DECOSF specific stuff */
 
-#if (defined SOLARIS || defined sgi || defined M88K || defined UNIXWARE || defined NCR3000 || defined DECOSF || defined SCO_EV || defined linux || defined AIX_PPC)
+#if (defined SOLARIS || defined sgi || defined UNIXWARE || defined DECOSF || defined SCO_EV || defined linux || defined AIX_PPC)
 #include <dlfcn.h>
 #define DYNAMIC_SHARED_LIBRARIES
 #include <unistd.h>

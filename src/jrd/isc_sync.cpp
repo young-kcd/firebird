@@ -24,6 +24,9 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  *
+ *
+ * 2002-02-23 Sean Leyne - Code Cleanup, removed old M88K and NCR3000 port
+ *
  */
 
 #if defined(_WIN32) || defined(WIN32) || defined(__WIN32__) || defined(WIN_NT)
@@ -3295,7 +3298,7 @@ UCHAR *ISC_map_object(STATUS * status_vector,
 
 /* Get system page size as this is the unit of mapping. */
 
-#if (defined SOLARIS || defined NCR3000)
+#ifdef SOLARIS
 	if ((page_size = sysconf(_SC_PAGESIZE)) == -1) {
 		error(status_vector, "sysconf", errno);
 		return NULL;
@@ -3353,7 +3356,7 @@ BOOLEAN ISC_unmap_object(STATUS * status_vector,
 
 /* Get system page size as this is the unit of mapping. */
 
-#if (defined SOLARIS || defined NCR3000)
+#ifdef SOLARIS
 	if ((page_size = sysconf(_SC_PAGESIZE)) == -1) {
 		error(status_vector, "sysconf", errno);
 		return NULL;

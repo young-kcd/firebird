@@ -23,6 +23,9 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
  *
+ * 2002-02-23 Sean Leyne - Code Cleanup, removed old M88K and NCR3000 port
+ *
+ *
  */
 
 #ifdef SHLIB_DEFS
@@ -97,7 +100,7 @@ typedef struct itm {
 #define MTAB			"/etc/mnttab"
 #endif
 
-#if (defined SOLARIS || defined M88K || defined UNIXWARE || defined NCR3000)
+#if (defined SOLARIS || defined UNIXWARE)
 #define SV_MNTENT
 #define NON_MNTENT
 #include <sys/mnttab.h>
@@ -137,7 +140,7 @@ typedef struct itm {
 #include <sys/vmount.h>
 #endif
 
-#if (defined SOLARIS || defined UNIXWARE || defined NCR3000 || defined linux || defined M88K || defined FREEBSD || defined NETBSD || defined DARWIN)
+#if (defined SOLARIS || defined UNIXWARE || defined linux || defined FREEBSD || defined NETBSD || defined DARWIN)
 #define GETWD(buf)		getcwd (buf, MAXPATHLEN)
 #endif
 

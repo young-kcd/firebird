@@ -22,9 +22,12 @@
  *
  * 2002-02-23 Sean Leyne - Code Cleanup, removed old Win3.1 port (Windows_Only)
  *
+ *
+ * 2002-02-23 Sean Leyne - Code Cleanup, removed old M88K and NCR3000 port
+ *
  */
 /*
-$Id: y-valve.cpp,v 1.2 2002-02-23 22:08:37 seanleyne Exp $
+$Id: y-valve.cpp,v 1.3 2002-02-23 22:15:23 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -494,7 +497,7 @@ static CONST_IMAGE IMAGE images[] =
 #endif
 
 #if (defined UNIX) && \
-    !(defined SUPERCLIENT || defined SUPERSERVER || defined DECOSF || defined NCR3000 || defined DG_X86 || defined linux || defined FREEBSD || defined NETBSD || defined AIX_PPC || defined DARWIN /* platforms without a V3 bridge */)
+    !(defined SUPERCLIENT || defined SUPERSERVER || defined DECOSF || defined DG_X86 || defined linux || defined FREEBSD || defined NETBSD || defined AIX_PPC || defined DARWIN /* platforms without a V3 bridge */)
 #ifndef PIPE_SERVER_YVALUE
 #define PIPE_BRIDGE_TO_V3
 #endif
