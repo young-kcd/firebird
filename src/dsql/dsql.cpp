@@ -201,7 +201,7 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*		user_status,
 							 USHORT		msg_length,
 							 UCHAR*		dsql_msg_buf
 #ifdef SCROLLABLE_CURSORS
-							 , USHORT direction, SLONG offset
+							 , USHORT direction, SLONG offset);
 #else
 							);
 #endif
