@@ -99,7 +99,8 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_INTEGER,		"RemoteAuxPort",			(ConfigValue) 0},
 	{TYPE_STRING,		"RemoteBindAddress",		(ConfigValue) 0},
 	{TYPE_STRING,		"ExternalFileAccess",		(ConfigValue) "None"},	// location(s) of external files for tables
-	{TYPE_STRING,		"DatabaseAccess",			(ConfigValue) "Full"}	// location(s) of databases
+	{TYPE_STRING,		"DatabaseAccess",			(ConfigValue) "Full"},	// location(s) of databases
+	{TYPE_STRING,		"UdfAccess",				(ConfigValue) "Restrict UDF"}	// location(s) of UDFs
 };
 
 /******************************************************************************
@@ -430,4 +431,9 @@ const char *Config::getExternalFileAccess()
 const char *Config::getDatabaseAccess()
 {
 	return (const char*) sysConfig.values[KEY_DATABASE_ACCESS];
+}
+
+const char *Config::getUdfAccess()
+{
+	return (const char*) sysConfig.values[KEY_UDF_ACCESS];
 }

@@ -102,7 +102,8 @@ class Config
 		KEY_REMOTE_AUX_PORT,						// 35
 		KEY_REMOTE_BIND_ADDRESS,					// 36
 		KEY_EXTERNAL_FILE_ACCESS,					// 37
-		KEY_DATABASE_ACCESS							// 38
+		KEY_DATABASE_ACCESS,						// 38
+		KEY_UDF_ACCESS								// 39
 	};
 
 public:
@@ -301,6 +302,10 @@ public:
 		Directory list for external tables
 	*/
 	static const char *getDatabaseAccess();
+	/*
+		Directory list for UDF
+	*/
+	static const char *getUdfAccess();
 };
 
 #endif // CONFIG_H
