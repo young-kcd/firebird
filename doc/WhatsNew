@@ -2,19 +2,133 @@
   * v2.0 Alpha 1
   **************
 
-    * Fixed SF #1116809
+    * Fixed bug SF #1124720
+        Problem with "FOR EXECUTE STATEMENT ... DO SUSPEND;"
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Compatibility related change
+        New security.fdb is renamed to security2.fdb
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Optimizer improvements
+        1) Usage of segment-level selectivities
+        2) Better support for IS NULL
+        3) Better support for STARTING WITH
+        4) Matching both OR and AND nodes to indices
+        5) Better cost estimations and hence better join orders
+        6) Allowed indexed order (navigational walk) for outer joins
+      Note(s):
+        Available in ODS 11.0 only
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Improved GROUP BY and ORDER BY clauses
+        Allowed column aliases in both these clauses
+      Example(s):
+        SELECT RDB$RELATION_ID AS ID
+        FROM RDB$RELATIONS
+        ORDER BY ID
+
+        SELECT RDB$RELATION_NAME AS ID, COUNT(*)
+        FROM RDB$RELATION_FIELDS
+        GROUP BY ID
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Improved ORDER BY clause
+        Allowed ordinals to work on a select list which contain an asterisk
+      Example(s):
+        SELECT *
+        FROM RDB$RELATIONS
+        ORDER BY 9
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed bug SF #1076858
+        Possible corruption in classic server
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Changed view updates logic
+        Apply NOT NULL constraints to base tables only, ignoring the ones inherited by view columns from domain definitions
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug SF #1116809
         Incorrect data type conversion
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-  
+
+    * Fixed bug SF #1111570
+        Drop table having check references more than one column
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed unregistered bug
+        Possible server lockup/crash when 'RELEASE SAVEPOINT xxx ONLY' syntax is used or when existing savepoint name is reused in transaction context
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Improved configuration
+        Allow the first path of ExternalFilesAccess to be used as default when external file is to be created
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed bug SF #1108909
+        View can be created w/o rights on table name like "a b"
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Partially fixed bug SF #217042
+        IB doesn't validate weird constructions
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Extended isc_dsql_info() API call
+        Allows to retrieve relation aliases, if required
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug
+        Usage of an invalid index in an explicit plan causes garbage to be shown in the error message instead of the rejected index name
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed unregistered bug
+        Rare client crashes caused by improperly cleaned XDR packets
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bugs SF #504978, #527677, #1103666, #1103670, #1103683, #1103740
+        1) GPRE variable names being truncated
+        2) "ANSI85 compatible COBOL" switch broken
+        3) GPRE uses inconsistent lengths
+        4) GPRE invalidates a quoted cursor name after it's opened
+        5) GPRE doesn't check the length of the db alias
+        6) GPRE doesn't detect duplicate quoted cursors names
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed bug SF #512975
+        Embed spaces and CR+LF before DEFAULT
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed unregistered bug
+        Server crash during SuperServer shutdown
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Cleanup
-        Command line switch L for SuperServer is no longer recognized as the old local protocol was deleted.
+        Command line switch L for SuperServer is no longer recognized as the old local protocol was deleted
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * Security improvement
         Another layout of security.fdb
-        Also, security.fdb has been renamed security2.fdb
+        Also, security.fdb has been renamed to security2.fdb
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
@@ -83,7 +197,7 @@
       Contributor(s):
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
-    * Fixed SF #1065511
+    * Fixed bug SF #1065511
         XP SP2 slow to connect to Linux server
       Contributor(s):
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
