@@ -424,7 +424,6 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			desc[0] = EVL_expr(tdbb, *ptr++);
 			const ULONG flags = request->req_flags;
 			request->req_flags &= ~req_null;
-			request->req_flags &= ~req_clone_data_from_default_clause;
 			force_equal |= request->req_flags & req_same_tx_upd;
 
 			// Currently only nod_like and nod_contains may be marked invariant
@@ -680,12 +679,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			request->req_flags &= ~req_null;
 		}
 		else {
-			if (request->req_flags & req_clone_data_from_default_clause) {
-				value = true;
-				request->req_flags &= ~req_clone_data_from_default_clause;
-			}
-			else
-				value = false;
+			value = false;
 		}
 		return value;
 
@@ -841,7 +835,6 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 	jrd_req* request = tdbb->tdbb_request;
 	impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 	request->req_flags &= ~req_null;
-	request->req_flags &= ~req_clone_data_from_default_clause;
 
 /* Do a preliminary screen for either simple nodes or nodes that
    are special cased elsewhere */

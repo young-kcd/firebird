@@ -4225,9 +4225,7 @@ static void validate(thread_db* tdbb, jrd_nod* list)
 								reinterpret_cast<vary*>(temp),
 								sizeof(temp)) : 0;
 
-			if (!desc ||
-				request->req_flags & req_null ||
-				request->req_flags & req_clone_data_from_default_clause)
+			if (!desc || (request->req_flags & req_null))
 			{
 				value = "*** null ***";
 			}
