@@ -275,6 +275,14 @@ SortMem::Block* SortMem::seek(size_t &position)
 
 size_t SortMem::read(STATUS *status, size_t position, char *address, size_t length)
 {
+	// If we'are not allowed to use memory, don't waste time
+	// playing with all these memory blocks - just use scratch file and return
+	if (!mem_upper_limit)
+	{
+		return SORT_read_block(status, internal, position, 
+			reinterpret_cast<unsigned char*>(address), length);
+	}
+
 	size_t copied = 0;
 
 	if (length > 0)
@@ -301,6 +309,14 @@ size_t SortMem::read(STATUS *status, size_t position, char *address, size_t leng
 
 size_t SortMem::write(STATUS *status, size_t position, char *address, size_t length)
 {
+	// If we'are not allowed to use memory, don't waste time
+	// playing with all these memory blocks - just use scratch file and return
+	if (!mem_upper_limit)
+	{
+		return SORT_write_block(status, internal, position, 
+			reinterpret_cast<unsigned char*>(address), length);
+	}
+
 	// There's probably not enough space, try to allocate one more block
 	if (position + length >= logical_size)
 	{
