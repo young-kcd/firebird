@@ -1341,10 +1341,9 @@ variable	: ':' symbol_variable_name
 							$2); }
 		;
 
-
-proc_inputs	: var_const_list
+proc_inputs	: null_or_value_list
 			{ $$ = make_list ($1); }
-		| '(' var_const_list ')'
+		| '(' null_or_value_list ')'
 			{ $$ = make_list ($2); }
 		|
 			{ $$ = NULL; }
@@ -1356,20 +1355,6 @@ proc_outputs	: RETURNING_VALUES variable_list
 			{ $$ = make_list ($3); }
 		|
 			{ $$ = NULL; }
-		;
-
-var_const_list	: variable
-		| constant
- 		| column_name
- 		| null_value
-		| var_const_list ',' variable
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		| var_const_list ',' constant
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		| var_const_list ',' column_name
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		| var_const_list ',' null_value
-			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
 
 variable_list	: variable
