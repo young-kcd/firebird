@@ -28,6 +28,7 @@
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h> /* for MAXPATHLEN */
 #endif
+#include <stdio.h>
 
 /* Commented out to make Linux version work because it is inaccessiable on all 
   known platforms. Nickolay Samofatov, 10 Sept 2002
