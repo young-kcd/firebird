@@ -46,8 +46,15 @@ class Database;
 
 /* Page buffer cache size constraints. */
 
-const ULONG MIN_PAGE_BUFFERS	= 50L;
-const ULONG MAX_PAGE_BUFFERS	= 65535L;
+const ULONG MIN_PAGE_BUFFERS = 50;
+const ULONG MAX_PAGE_BUFFERS = 131072;
+
+/* AVL-balanced tree node */
+
+struct BalancedTreeNode {
+	BufferDesc* bdb_node;
+	SLONG comp;
+};
 
 /* BufferControl -- Buffer control block -- one per system */
 
@@ -105,6 +112,7 @@ class BufferDesc : public pool_alloc<type_bdb>
 	BufferDesc*	bdb_left;				/* dirty page binary tree link */
 	BufferDesc*	bdb_right;				/* dirty page binary tree link */
 	BufferDesc*	bdb_parent;				/* dirty page binary tree link */
+	SCHAR		bdb_balance;			/* AVL-tree balance (-1, 0, 1) */
 	que			bdb_lower;				/* lower precedence que */
 	que			bdb_higher;				/* higher precedence que */
 	que			bdb_waiters;			/* latch wait que */

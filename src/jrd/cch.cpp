@@ -112,8 +112,12 @@ static BufferDesc* alloc_bdb(thread_db*, BufferControl*, UCHAR **);
 static int blocking_ast_bdb(void*);
 #endif
 static void btc_flush(thread_db*, SLONG, const bool, ISC_STATUS*);
-static void btc_insert(Database*, BufferDesc*);
-static void btc_remove(BufferDesc*);
+static void btc_insert_balanced(Database*, BufferDesc*);
+static bool btc_insert_balance(BufferDesc**, bool, SCHAR);
+static void btc_insert_unbalanced(Database*, BufferDesc*);
+static void btc_remove_balanced(BufferDesc*);
+static bool btc_remove_balance(BufferDesc**, bool, SCHAR);
+static void btc_remove_unbalanced(BufferDesc*);
 static void cache_bugcheck(int);
 #ifdef CACHE_READER
 static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM);
@@ -147,7 +151,18 @@ static bool write_page(thread_db*, BufferDesc*, const bool, ISC_STATUS*, const b
 static void unmark(thread_db*, WIN *);
 static void update_write_direction(thread_db*, BufferDesc*);
 
-const SLONG MIN_BUFFER_SEGMENT	= 65536L;
+// comment this macro out to revert back to the old tree
+#define BALANCED_DIRTY_PAGE_TREE
+
+#ifdef BALANCED_DIRTY_PAGE_TREE
+#define btc_insert btc_insert_balanced
+#define btc_remove btc_remove_balanced
+#else
+#define btc_insert btc_insert_unbalanced
+#define btc_remove btc_remove_unbalanced
+#endif
+
+const SLONG MIN_BUFFER_SEGMENT = 65536;
 
 /* Given pointer a field in the block, find the block */
 
@@ -1365,7 +1380,7 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 #ifdef SUPERSERVER
 			if (bdb->bdb_flags & BDB_db_dirty) {
 				if (all_flag
-					|| (sweep_flag
+					|| (sweep_flag))
 						&& (!bdb->bdb_parent && bdb != bcb->bcb_btree)))
 				{
 					if (!write_buffer
@@ -2749,8 +2764,7 @@ static int blocking_ast_bdb(void* ast_object)
 #endif
 
 
-static void btc_flush(
-					  thread_db* tdbb,
+static void btc_flush(thread_db* tdbb,
 					  SLONG transaction_mask,
 					  const bool sys_only, ISC_STATUS* status)
 {
@@ -2883,11 +2897,291 @@ static void btc_flush(
 }
 
 
-static void btc_insert(Database* dbb, BufferDesc* bdb)
+static void btc_insert_balanced(Database* dbb, BufferDesc* bdb)
 {
 /**************************************
  *
- *	b t c _ i n s e r t
+ *	b t c _ i n s e r t _ b a l a n c e d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Insert a buffer into the dirty page
+ *	AVL-binary tree.
+ *
+ **************************************/
+
+	BalancedTreeNode stack[40];	// avoid recursion when rebalancing tree
+								// (40 - enough to hold 2^32 nodes)
+
+/* if the page is already in the tree (as in when it is
+   written out as a dependency while walking the tree),
+   just leave well enough alone -- this won't check if
+   it's at the root but who cares then */
+
+	if (bdb->bdb_parent) {
+		return;
+	}
+
+	SET_DBB(dbb);
+
+/* if the tree is empty, this is now the tree */
+
+//	BTC_MUTEX_ACQUIRE;
+	BufferDesc* p = dbb->dbb_bcb->bcb_btree;
+	if (!p) {
+		dbb->dbb_bcb->bcb_btree = bdb;
+		bdb->bdb_parent = bdb->bdb_left = bdb->bdb_right = NULL;
+		bdb->bdb_balance = 0;
+//		BTC_MUTEX_RELEASE;
+		return;
+	}
+
+/* insert the page sorted by page number;
+   do this iteratively to minimize call overhead */
+
+	const SLONG page = bdb->bdb_page;
+
+/* find where new node should fit in tree */
+
+	SSHORT stackp = -1;
+	SCHAR comp = 0;
+
+	while (p)
+	{
+		if (page == p->bdb_page)
+		{
+			comp = 0;
+		}
+		else if (page > p->bdb_page)
+		{
+			comp = 1;
+		}
+		else
+		{
+			comp = -1;
+		}
+	
+		if (comp == 0)
+		{
+//			BTC_MUTEX_RELEASE;
+			return;
+		} // already in the tree
+
+		stackp++;
+		stack[stackp].bdb_node = p;
+		stack[stackp].comp = comp;
+
+		p = (comp > 0) ? p->bdb_right : p->bdb_left;
+	}
+
+/* insert new node */
+
+	if (comp > 0)
+	{
+		stack[stackp].bdb_node->bdb_right = bdb;
+	}
+	else
+	{
+		stack[stackp].bdb_node->bdb_left = bdb;
+	}
+
+	bdb->bdb_parent = stack[stackp].bdb_node;
+	bdb->bdb_left = bdb->bdb_right = NULL;
+	bdb->bdb_balance = 0;
+
+/* unwind the stack and rebalance */
+
+	bool subtree = true;
+
+	while (stackp >= 0 && subtree)
+	{
+		if (stackp == 0)
+		{
+			subtree = btc_insert_balance(&dbb->dbb_bcb->bcb_btree,
+										 subtree, stack[0].comp);
+		}
+		else
+		{
+			if (stack[stackp-1].comp > 0)
+			{
+				subtree = btc_insert_balance(&stack[stackp - 1].bdb_node->bdb_right,
+											 subtree, stack[stackp].comp);
+			}
+			else
+			{
+				subtree = btc_insert_balance(&stack[stackp - 1].bdb_node->bdb_left,
+											 subtree, stack[stackp].comp);
+			}
+		}
+		stackp--;
+	}
+//	BTC_MUTEX_RELEASE;
+}
+
+
+static bool btc_insert_balance(BufferDesc** bdb, bool subtree, SCHAR comp)
+{
+/**************************************
+ *
+ *	b t c _ i n s e r t _ b a l a n c e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Rebalance the AVL-binary tree.
+ *
+ **************************************/
+
+	BufferDesc *p1, *p2;
+	BufferDesc* p = *bdb;
+
+	if (p->bdb_balance == -comp)
+	{
+		p->bdb_balance = 0;
+		subtree = false;
+	}
+	else
+	{
+	    if (p->bdb_balance == 0)
+		{
+			p->bdb_balance = comp;
+		}
+		else
+		{
+			if (comp > 0)
+			{
+				p1 = p->bdb_right;
+
+				if (p1->bdb_balance == comp)
+				{
+					if ( (p->bdb_right = p1->bdb_left) )
+					{
+						p1->bdb_left->bdb_parent = p;
+					}
+
+					p1->bdb_left = p;
+					p1->bdb_parent = p->bdb_parent;
+					p->bdb_parent = p1;
+					p->bdb_balance = 0;
+					p = p1;
+				}
+				else
+				{
+					p2 = p1->bdb_left;
+
+					if ( (p1->bdb_left = p2->bdb_right) )
+					{
+						p2->bdb_right->bdb_parent = p1;
+					}
+
+					p2->bdb_right = p1;
+					p1->bdb_parent = p2;
+
+					if ( (p->bdb_right = p2->bdb_left) )
+					{
+						p2->bdb_left->bdb_parent = p;
+					}
+
+					p2->bdb_left = p;
+					p2->bdb_parent = p->bdb_parent;
+					p->bdb_parent = p2;
+
+					if (p2->bdb_balance == comp)
+					{
+						p->bdb_balance = -comp;
+					}
+					else
+					{
+						p->bdb_balance = 0;
+					}
+
+					if (p2->bdb_balance == -comp)
+					{
+						p1->bdb_balance = comp;
+					}
+					else
+					{
+						p1->bdb_balance = 0;
+					}
+
+					p = p2;
+	            }
+		    }
+			else
+			{
+				p1 = p->bdb_left;
+				
+				if (p1->bdb_balance == comp)
+				{
+					if ( (p->bdb_left = p1->bdb_right) )
+					{
+						p1->bdb_right->bdb_parent = p;
+					}
+	
+					p1->bdb_right = p;
+					p1->bdb_parent = p->bdb_parent;
+					p->bdb_parent = p1;
+					p->bdb_balance = 0;
+					p = p1;
+				}
+				else
+				{
+					p2 = p1->bdb_right;
+
+					if ( (p1->bdb_right = p2->bdb_left) )
+					{
+						p2->bdb_left->bdb_parent = p1;
+					}
+
+					p2->bdb_left = p1;
+					p1->bdb_parent = p2;
+
+					if ( (p->bdb_left = p2->bdb_right) )
+					{
+						p2->bdb_right->bdb_parent = p;
+					}
+
+					p2->bdb_right = p;
+					p2->bdb_parent = p->bdb_parent;
+					p->bdb_parent = p2;
+
+					if (p2->bdb_balance == comp)
+					{
+						p->bdb_balance = -comp;
+					}
+					else
+					{
+						p->bdb_balance = 0;
+					}
+
+					if (p2->bdb_balance == -comp)
+					{
+						p1->bdb_balance = comp;
+					}
+					else
+					{
+						p1->bdb_balance = 0;
+					}
+
+					p = p2;
+	            }
+	        }
+			p->bdb_balance = 0;
+			subtree = false;
+			*bdb = p;
+		}
+	}
+
+	return subtree;
+}
+
+
+static void btc_insert_unbalanced(Database* dbb, BufferDesc* bdb)
+{
+/**************************************
+ *
+ *	b t c _ i n s e r t _ u n b a l a n c e d
  *
  **************************************
  *
@@ -2953,11 +3247,450 @@ static void btc_insert(Database* dbb, BufferDesc* bdb)
 }
 
 
-static void btc_remove(BufferDesc* bdb)
+static void btc_remove_balanced(BufferDesc* bdb)
 {
 /**************************************
  *
- *	b t c _ r e m o v e
+ *	b t c _ r e m o v e _ b a l a n c e d
+ *
+ **************************************
+ *
+ * Functional description
+ * 	Remove a page from the dirty page
+ *  AVL-binary tree.
+ *
+ **************************************/
+
+	BalancedTreeNode stack[40];	// avoid recursion when rebalancing tree
+								// (40 - enough to hold 2^32 nodes)
+
+	Database* dbb = bdb->bdb_dbb;
+
+/* engage in a little defensive programming to make
+   sure the node is actually in the tree */
+
+//	BTC_MUTEX_ACQUIRE;
+	BufferControl* bcb = dbb->dbb_bcb;
+
+	if ((!bcb->bcb_btree) ||
+		(!bdb->bdb_parent &&
+		 !bdb->bdb_left && !bdb->bdb_right && (bcb->bcb_btree != bdb)))
+	{
+		if ((bdb->bdb_flags & BDB_must_write) || !(bdb->bdb_flags & BDB_dirty))
+		{
+			/* Must writes aren't worth the effort */
+//			BTC_MUTEX_RELEASE;
+			return;
+		}
+		else {
+			cache_bugcheck(211);
+			/* msg 211 attempt to remove page from dirty page list when not there */
+		}
+	}
+
+/* stack the way to node from root */
+
+	const SLONG page = bdb->bdb_page;
+
+	BufferDesc* p = bcb->bcb_btree;
+	SSHORT stackp_save, stackp = -1;
+	SCHAR comp;
+
+	while (true)
+	{
+		if (page == p->bdb_page)
+		{
+			comp = 0;
+		}
+		else if (page > p->bdb_page)
+		{
+			comp = 1;
+		}
+		else
+		{
+			comp = -1;
+		}
+	
+		stackp++;
+
+		if (comp == 0)
+		{
+			stack[stackp].bdb_node = p;
+			stack[stackp].comp = -1;
+			break;
+		}
+		else
+		{
+			stack[stackp].bdb_node = p;
+			stack[stackp].comp = comp;
+			
+			p = (comp > 0) ? p->bdb_right : p->bdb_left;
+
+			// node not found, bad tree
+			if (!p)
+			{
+				cache_bugcheck(211);
+			}
+		}
+	}
+
+	// wrong node found, bad tree
+
+	if (bdb != p)
+	{
+		cache_bugcheck(211);
+	}
+
+/* delete node */
+
+	if (!bdb->bdb_right || !bdb->bdb_left)
+	{
+		// node has at most one branch
+		stackp--;
+		p = bdb->bdb_right ? bdb->bdb_right : bdb->bdb_left;
+
+		if (stackp == -1)
+		{
+			if (bcb->bcb_btree = p)
+			{
+				p->bdb_parent = NULL;
+			}
+		}
+		else
+		{
+			if (stack[stackp].comp > 0)
+			{
+                stack[stackp].bdb_node->bdb_right = p;
+			}
+			else
+			{
+				stack[stackp].bdb_node->bdb_left = p;
+			}
+		
+			if (p)
+			{
+				p->bdb_parent = stack[stackp].bdb_node;
+			}
+		}
+	}
+	else
+	{
+		// node has two branches, stack nodes to reach one with no right child
+
+		p = bdb->bdb_left;
+
+		if (!p->bdb_right)
+		{
+			if (stack[stackp].comp > 0)
+			{
+				cache_bugcheck(211);
+			}
+
+			if ( (p->bdb_parent = bdb->bdb_parent) )
+			{
+				if (p->bdb_parent->bdb_right == bdb)
+				{
+					p->bdb_parent->bdb_right = p;
+				}
+				else
+				{
+					p->bdb_parent->bdb_left = p;
+				}
+			}
+			else
+			{
+				bcb->bcb_btree = p;	// new tree root
+			}
+
+			if ( (p->bdb_right = bdb->bdb_right) )
+			{
+				bdb->bdb_right->bdb_parent = p;
+			}
+
+			p->bdb_balance = bdb->bdb_balance;
+		}
+		else
+		{
+			stackp_save = stackp; 
+
+			while (p->bdb_right)
+			{
+				stackp++;
+				stack[stackp].bdb_node = p;
+				stack[stackp].comp = 1;
+				p = p->bdb_right;
+			}
+
+			if (p->bdb_parent = bdb->bdb_parent)
+			{
+				if (p->bdb_parent->bdb_right == bdb)
+				{
+					p->bdb_parent->bdb_right = p;
+				}
+				else
+				{
+					p->bdb_parent->bdb_left = p;
+				}
+			}
+			else
+			{
+				bcb->bcb_btree = p;	// new tree root
+			}
+
+			if ( (stack[stackp].bdb_node->bdb_right = p->bdb_left) )
+			{
+				p->bdb_left->bdb_parent = stack[stackp].bdb_node;
+			}
+
+			if ( (p->bdb_left = bdb->bdb_left) )
+			{
+				p->bdb_left->bdb_parent = p;
+			}
+
+			if ( (p->bdb_right = bdb->bdb_right) )
+			{
+				p->bdb_right->bdb_parent = p;
+			}
+
+			p->bdb_balance = bdb->bdb_balance;
+			stack[stackp_save].bdb_node = p; // replace BufferDesc in stack
+		}
+	}
+
+/*unwind the stack and rebalance */
+
+	bool subtree = true;
+
+	while (stackp >=0 && subtree)
+	{
+		if (stackp == 0)
+		{
+			subtree = btc_remove_balance(&bcb->bcb_btree,
+										 subtree, stack[0].comp);
+		}
+		else
+		{
+			if (stack[stackp-1].comp > 0)
+			{
+				subtree = btc_remove_balance(&stack[stackp-1].bdb_node->bdb_right,
+											 subtree, stack[stackp].comp);
+			}
+			else
+			{
+				subtree = btc_remove_balance(&stack[stackp-1].bdb_node->bdb_left,
+											 subtree, stack[stackp].comp);
+			}
+		}
+		stackp--;
+	}
+
+/* initialize the node for next usage */
+
+	bdb->bdb_left = bdb->bdb_right = bdb->bdb_parent = NULL;
+//	BTC_MUTEX_RELEASE;
+}
+
+
+static bool btc_remove_balance(BufferDesc** bdb, bool subtree, SCHAR comp)
+{
+/**************************************
+ *
+ *	b t c _ r e m o v e _ b a l a n c e
+ *
+ **************************************
+ *
+ * Functional description
+ * 	Rebalance the AVL-binary tree.
+ *
+ **************************************/
+
+	SCHAR b1, b2;
+	BufferDesc *p1, *p2;
+	BufferDesc* p = *bdb;
+
+	if (p->bdb_balance == comp)
+	{
+		p->bdb_balance = 0;
+	}
+	else
+	{
+		if (p->bdb_balance == 0)
+		{
+			p->bdb_balance = -comp;
+			subtree = false;
+        }
+		else
+		{
+			if (comp < 0)
+			{
+				p1 = p->bdb_right;
+				b1 = p1->bdb_balance;
+
+				if ((b1 == 0) || (b1 == -comp))
+				{
+					// single RR or LL rotation
+
+					if ( (p->bdb_right = p1->bdb_left) )
+					{
+						p1->bdb_left->bdb_parent = p;
+					}
+
+					p1->bdb_left = p;
+					p1->bdb_parent = p->bdb_parent;
+					p->bdb_parent = p1;
+
+					if (b1 == 0)
+					{
+						p->bdb_balance = -comp;
+						p1->bdb_balance = comp;
+						subtree = false;
+					}
+					else
+					{
+						p->bdb_balance = 0;
+						p1->bdb_balance = 0;
+					}
+
+					p = p1;
+				}
+				else
+				{
+					// double RL or LR rotation
+
+					p2 = p1->bdb_left; 
+					b2 = p2->bdb_balance;
+
+					if ( (p1->bdb_left = p2->bdb_right) )
+					{
+						p2->bdb_right->bdb_parent = p1;
+					}
+
+					p2->bdb_right = p1; 
+					p1->bdb_parent = p2;
+
+					if ( (p->bdb_right = p2->bdb_left) )
+					{
+						p2->bdb_left->bdb_parent = p;
+					}
+
+					p2->bdb_left = p;
+					p2->bdb_parent = p->bdb_parent; 
+					p->bdb_parent = p2;
+
+					if (b2 == -comp)
+					{
+						p->bdb_balance = comp;
+					}
+					else
+					{
+						p->bdb_balance = 0;
+					}
+
+					if (b2 == comp)
+					{
+						p1->bdb_balance = -comp;
+					}
+					else
+					{
+						p1->bdb_balance = 0;
+					}
+
+					p = p2;
+					p2->bdb_balance = 0;
+				}
+			}
+			else
+			{
+				p1 = p->bdb_left;
+				b1 = p1->bdb_balance;
+
+				if ((b1 == 0) || (b1 == -comp))
+				{
+					// single RR or LL rotation
+
+					if ( (p->bdb_left = p1->bdb_right) )
+					{
+						p1->bdb_right->bdb_parent = p;
+					}
+
+					p1->bdb_right = p;
+					p1->bdb_parent = p->bdb_parent; 
+					p->bdb_parent = p1;
+
+					if (b1 == 0)
+					{
+						p->bdb_balance = -comp;
+						p1->bdb_balance = comp;
+						subtree = false;
+					}
+					else
+					{
+						p->bdb_balance = 0;
+						p1->bdb_balance = 0;
+					}
+
+					p = p1;
+				}
+				else
+				{
+					// double RL or LR rotation
+
+					p2 = p1->bdb_right;
+					b2 = p2->bdb_balance;
+
+					if ( (p1->bdb_right = p2->bdb_left) )
+					{
+						p2->bdb_left->bdb_parent = p1;
+					}
+
+					p2->bdb_left = p1;
+					p1->bdb_parent = p2;
+
+					if ( (p->bdb_left = p2->bdb_right) )
+					{
+						p2->bdb_right->bdb_parent = p;
+					}
+
+					p2->bdb_right = p; 
+					p2->bdb_parent = p->bdb_parent;
+					p->bdb_parent = p2;
+
+					if (b2 == -comp) 
+					{
+						p->bdb_balance = comp;
+					}
+					else
+					{
+						p->bdb_balance = 0;
+					}
+
+					if (b2 == comp)
+					{
+						p1->bdb_balance = -comp;
+					}
+					else
+					{
+						p1->bdb_balance = 0;
+					}
+
+					p = p2;
+					p2->bdb_balance = 0;
+				}
+			}
+
+			*bdb = p;
+		}
+	}
+
+	return subtree;
+}
+
+
+static void btc_remove_unbalanced(BufferDesc* bdb)
+{
+/**************************************
+ *
+ *	b t c _ r e m o v e _ u n b a l a n c e d
  *
  **************************************
  *
