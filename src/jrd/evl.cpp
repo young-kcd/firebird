@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.111 2004-10-08 11:10:58 hvlad Exp $ 
+  * $Id: evl.cpp,v 1.112 2004-10-09 01:40:32 robocop Exp $ 
  */
 
 /*
@@ -1245,7 +1245,6 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 
 
 bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
-
 {
 /**************************************
  *
@@ -1410,6 +1409,7 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 		return true;
 	}
 }
+
 
 USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, const jrd_nod *const node, USHORT state)
 {
@@ -3545,6 +3545,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 	return desc;
 }
 
+
 static void fini_agg_distinct(thread_db* tdbb, const jrd_nod *const node)
 {
 /**************************************
@@ -3586,6 +3587,7 @@ static void fini_agg_distinct(thread_db* tdbb, const jrd_nod *const node)
 		}
 	}
 }
+
 
 static SINT64 get_day_fraction(const dsc* d)
 {
