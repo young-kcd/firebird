@@ -7,11 +7,26 @@
 class V4Mutex : public SmpLock
 {
     public:
-        V4Mutex() { V4_MUTEX_INIT(&mutex); }
-        ~V4Mutex() { V4_MUTEX_DESTROY(&mutex); }
-
-        virtual void aquire(void) { V4_MUTEX_LOCK(&mutex); }
-        virtual void release(void) { V4_MUTEX_UNLOCK(&mutex); }
+        V4Mutex() { 
+#ifdef V4_THREADING
+		V4_MUTEX_INIT(&mutex); 
+#endif
+		}
+        ~V4Mutex() { 
+#ifdef V4_THREADING
+		V4_MUTEX_DESTROY(&mutex); 
+#endif
+		}
+        virtual void aquire(void) { 
+#ifdef V4_THREADING
+		V4_MUTEX_LOCK(&mutex); 
+#endif
+		}
+        virtual void release(void) { 
+#ifdef V4_THREADING
+		V4_MUTEX_UNLOCK(&mutex); 
+#endif
+		}
 
     private:
         MUTX mutex;

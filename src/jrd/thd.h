@@ -26,7 +26,7 @@
  *
  */
 /*
-$Id: thd.h,v 1.11 2003-03-01 18:15:42 brodsom Exp $
+$Id: thd.h,v 1.12 2003-03-24 13:35:28 brodsom Exp $
 */
 
 #ifndef _JRD_THD_H_
@@ -278,20 +278,22 @@ typedef struct wlck_t {
 #define V4_RW_LOCK_UNLOCK(wlck)		THD_wlck_unlock (wlck)
 #define V4_RW_LOCK_DESTROY(wlck)	THD_wlck_destroy (wlck)
 #define V4_RW_LOCK_DESTROY_N(wlck,n)	THD_wlck_destroy_n (wlck, n)
-#else
-#define V4_INIT
-#define V4_GLOBAL_MUTEX_LOCK
-#define V4_GLOBAL_MUTEX_UNLOCK
-#define V4_MUTEX_INIT(mutx)
-#define V4_MUTEX_LOCK(mutx)
-#define V4_MUTEX_UNLOCK(mutx)
-#define V4_MUTEX_DESTROY(mutx)
-#define V4_RW_LOCK_INIT_N(wlck,n)
-#define V4_RW_LOCK_INIT(wlck)
-#define V4_RW_LOCK_LOCK(wlck,type)
-#define V4_RW_LOCK_UNLOCK(wlck)
-#define V4_RW_LOCK_DESTROY_N(wlck,n)
-#define V4_RW_LOCK_DESTROY(wlck)
+// BRS. 03/23/2003
+// Those empty defines was substituted with #ifdef V4_THREADING
+//#else
+//#define V4_INIT
+//#define V4_GLOBAL_MUTEX_LOCK
+//#define V4_GLOBAL_MUTEX_UNLOCK
+//#define V4_MUTEX_INIT(mutx)
+//#define V4_MUTEX_LOCK(mutx)
+//#define V4_MUTEX_UNLOCK(mutx)
+//#define V4_MUTEX_DESTROY(mutx)
+//#define V4_RW_LOCK_INIT_N(wlck,n)
+//#define V4_RW_LOCK_INIT(wlck)
+//#define V4_RW_LOCK_LOCK(wlck,type)
+//#define V4_RW_LOCK_UNLOCK(wlck)
+//#define V4_RW_LOCK_DESTROY_N(wlck,n)
+//#define V4_RW_LOCK_DESTROY(wlck)
 #endif
 
 #ifdef ANY_THREADING

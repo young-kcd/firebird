@@ -86,7 +86,9 @@ void ALL_check_memory()
 
 	DBB Dbb = GET_DBB;
 
+#ifdef V4_THREADING
 	V4_RW_LOCK_LOCK(dbb->dbb_rw_locks + DBB_WLCK_pools, WLCK_read);
+#endif
 
 	// walk through all the pools in the database
 	for (itr = Dbb->dbb_pools.begin(); itr < Dbb->dbb_pools.end(); ++itr)
@@ -98,7 +100,9 @@ void ALL_check_memory()
 		}
 	}
 
+#ifdef V4_THREADING
 	V4_RW_LOCK_UNLOCK(dbb->dbb_rw_locks + DBB_WLCK_pools);
+#endif
 }
 #endif /* DEV_BUILD */
 

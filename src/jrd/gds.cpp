@@ -109,8 +109,13 @@
 
 #include "../common/config/config.h"
 
-/* Turn on V4 mutex protection for gds__alloc/free */
-
+// Turn on V4 mutex protection for gds__alloc/free 
+// 03/23/2003 BRS. Those defines don't do anything, V4_ macros are defined in thd.h 
+// but this file is included before this definition and so the macros are defined as empty
+// Those definitions are commented to allow V4_ macros to be inside V4_THREADING ifdefs
+// The include chain is
+// gdsassert.h -> gds_proto.h -> fil.h -> thd.h
+/*
 #ifdef WIN_NT
 #define V4_THREADING
 #endif
@@ -120,20 +125,21 @@
 #endif
 
 #ifdef SUPERSERVER
-#define V4_THREADING			/* RFM: 9/22/2000 fix from Inprise tree,
-								   Inprise bug 114840 */
+#define V4_THREADING			// RFM: 9/22/2000 fix from Inprise tree,
+								// Inprise bug 114840
 #endif
 
-/* The following ifdef was added to build thread safe gds shared
-   library on linux platform. It seems the gdslib works now (20020220)
-   with thread enabled applications. Anyway, more tests should be 
-   done as I don't have deep knowledge of the interbase/firebird 
-   engine and this change may imply side effect I haven't known 
-   about yet. Tomas Nejedlik (tomas@nejedlik.cz)
-*/
+// The following ifdef was added to build thread safe gds shared
+//  library on linux platform. It seems the gdslib works now (20020220)
+//  with thread enabled applications. Anyway, more tests should be 
+//  done as I don't have deep knowledge of the interbase/firebird 
+//  engine and this change may imply side effect I haven't known 
+//  about yet. Tomas Nejedlik (tomas@nejedlik.cz)
+
 #if ((defined(LINUX) || defined(FREEBSD)) && defined(SUPERCLIENT))
 #define V4_THREADING
 #endif
+*/
 
 
 #ifdef SUPERSERVER
@@ -722,9 +728,13 @@ void* API_ROUTINE gds__alloc(SLONG size_request)
 	if ((gds_alloc_state < gds_alloc_call_count) ||
 		(gds_bug_alloc_count && (gds_bug_alloc_count < gds_alloc_call_count))
 		|| ((gds_alloc_call_count % ALLOC_FREQUENCY) == 0)) {
+#ifdef V4_THREADING
 		V4_MUTEX_LOCK(&alloc_mutex);
+#endif
 		gds_alloc_report(ALLOC_silent, __FILE__, __LINE__);
+#ifdef V4_THREADING
 		V4_MUTEX_UNLOCK(&alloc_mutex);
+#endif
 	}
 
 /* Simulate out of memory */
@@ -751,8 +761,9 @@ void* API_ROUTINE gds__alloc(SLONG size_request)
 	gds_delta_alloc += size;
 #endif
 
+#ifdef V4_THREADING
 	V4_MUTEX_LOCK(&alloc_mutex);
-
+#endif
 /* Find the free block with the shortest tail */
 
 	best = NULL;
@@ -813,7 +824,9 @@ void* API_ROUTINE gds__alloc(SLONG size_request)
 
 		SAVE_DEBUG_INFO(block, filename, lineno);
 
+#ifdef V4_THREADING
 		V4_MUTEX_UNLOCK(&alloc_mutex);
+#endif
 		return (UCHAR *) block + ALLOC_HEADER_SIZE;
 	}
 
@@ -837,7 +850,9 @@ void* API_ROUTINE gds__alloc(SLONG size_request)
 		status = lib$get_vm(&tail, &block);
 		if (!(status & 1))
 		{
+#ifdef V4_THREADING
 			V4_MUTEX_UNLOCK(&alloc_mutex);
+#endif
 			return NULL;
 		}
 	}
@@ -851,7 +866,9 @@ void* API_ROUTINE gds__alloc(SLONG size_request)
 				ALLOC_ROUNDUP(sizeof(void *)) + ALLOC_OVERHEAD);
 		if ((block = (SLONG *) malloc(tail)) == NULL)
 		{
+#ifdef V4_THREADING
 			V4_MUTEX_UNLOCK(&alloc_mutex);
+#endif
 			return NULL;
 		}
 	}
@@ -892,7 +909,9 @@ void* API_ROUTINE gds__alloc(SLONG size_request)
 
 	SAVE_DEBUG_INFO(block, filename, lineno);
 
+#ifdef V4_THREADING
 	V4_MUTEX_UNLOCK(&alloc_mutex);
+#endif
 	return (UCHAR *) block + ALLOC_HEADER_SIZE;
 }
 #endif // NOT_USED_OR_REPLACED
@@ -1150,7 +1169,9 @@ ULONG API_ROUTINE gds__free(void* blk)
  **************************************/
 	ULONG released;
 
+#ifdef V4_THREADING
 	V4_MUTEX_LOCK(&alloc_mutex);
+#endif
 
 #ifdef DEBUG_GDS_ALLOC
 	gds_free_call_count++;
@@ -1204,7 +1225,9 @@ ULONG API_ROUTINE gds__free(void* blk)
 
 	released = free_memory(blk);
 	blk = NULL;
+#ifdef V4_THREADING
 	V4_MUTEX_UNLOCK(&alloc_mutex);
+#endif
 	return released;
 }
 #endif // NOT_USED_OR_REPLACED
@@ -4137,8 +4160,10 @@ void gds__cleanup(void)
 		((void (*)(void *)) (*routine)) (arg);
 	}
 
+#ifdef V4_THREADING
 	V4_MUTEX_DESTROY(&alloc_mutex);
 /* V4_DESTROY; */
+#endif
 	initialized = 0;
 }
 
@@ -4375,7 +4400,9 @@ static void init(void)
 		return;
 	}
 
+#ifdef V4_THREADING
 	V4_MUTEX_INIT(&alloc_mutex);
+#endif
 
 #ifdef VMS
 	exit_description.exit_handler = cleanup;

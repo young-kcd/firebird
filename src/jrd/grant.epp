@@ -165,12 +165,16 @@ int GRANT_privileges( TDBB tdbb, SSHORT phase, DFW work)
 			restrct = FALSE;
 
 			dbb = tdbb->tdbb_database;
+#ifdef V4_THREADING
 			V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_grant_priv);
+#endif
 			get_object_info(tdbb, work->dfw_name, work->dfw_id, owner,
 							s_class, default_class, &view);
 
 			if (!s_class[0]) {
+#ifdef V4_THREADING
 				V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_grant_priv);
+#endif
 				return FALSE;
 			}
 
@@ -276,7 +280,9 @@ int GRANT_privileges( TDBB tdbb, SSHORT phase, DFW work)
 			delete str_buffer;
 			delete str_default_buffer;
 
+#ifdef V4_THREADING
 			V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_grant_priv);
+#endif
 			break;
 		}
 

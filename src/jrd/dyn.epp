@@ -109,7 +109,7 @@ void DYN_ddl(ATT attachment, JRD_TRA transaction, USHORT length, UCHAR * ddl)
 
 	TDBB tdbb = GET_THREAD_DATA;
 
-#ifdef V4_THREADING
+#if defined(V4_THREADING) || (defined(SUPERSERVER) && defined(WIN_NT))
 	DBB dbb = tdbb->tdbb_database;
 #endif
 
@@ -140,7 +140,9 @@ void DYN_ddl(ATT attachment, JRD_TRA transaction, USHORT length, UCHAR * ddl)
 		THD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
 		THREAD_ENTER;
 #else
+#ifdef V4_THREADING
 		V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
+#endif
 #endif
 
 		VIO_start_save_point(tdbb, transaction);
@@ -153,7 +155,9 @@ void DYN_ddl(ATT attachment, JRD_TRA transaction, USHORT length, UCHAR * ddl)
 #if defined(SUPERSERVER) && defined(WIN_NT)
 		THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
 #else
+#ifdef V4_THREADING
 		V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
+#endif
 #endif
 
 	}
@@ -176,7 +180,9 @@ void DYN_ddl(ATT attachment, JRD_TRA transaction, USHORT length, UCHAR * ddl)
 #if defined(SUPERSERVER) && defined(WIN_NT)
 		THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
 #else
+#ifdef V4_THREADING
 		V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
+#endif
 #endif
 
 		tdbb->tdbb_default = old_pool;

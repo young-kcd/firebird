@@ -187,6 +187,17 @@ void gds_print_delta_counters(IB_FILE *);
 #  endif /* SUPERSERVER */
 # endif /* V4_THREADING */
 
+// BRS. 03/23/2003
+// Those two macros are defined in thd.h when V4_THREADING is true, but thd.h is included
+// before V4_THREADING is defined, so the two must be defined as empty if not defined 
+// to allow the use of V4_THREADING ifdefs
+// The include chain is
+// os/thd_priority.h -> thd.h
+#if defined(V4_THREADING) && !defined(V4_RW_LOCK_DESTROY_N)
+#   define V4_RW_LOCK_DESTROY_N(wlck,n)
+#   define V4_RW_LOCK_INIT_N(wlck,n)
+#endif
+
 #ifdef SUPERSERVER
 
 extern "C" {
@@ -194,8 +205,10 @@ extern SLONG trace_pools;
 static REC_MUTX_T databases_rec_mutex;
 } // extern "C"
 
-#define V4_JRD_MUTEX_LOCK(mutx)
-#define V4_JRD_MUTEX_UNLOCK(mutx)
+// BRS. 03/23/2003
+// Those empty defines was substituted with #if defined(V4_THREADING) && !defined(SUPERSERVER)
+//#define V4_JRD_MUTEX_LOCK(mutx)
+//#define V4_JRD_MUTEX_UNLOCK(mutx)
 
 #define JRD_SS_INIT_MUTEX       THD_rec_mutex_init (&databases_rec_mutex)
 #define JRD_SS_DESTROY_MUTEX    THD_rec_mutex_destroy (&databases_rec_mutex)
@@ -392,7 +405,9 @@ static void		purge_attachment(TDBB, STATUS *, ATT, BOOLEAN);
 
 static int		initialized = 0;
 static DBB		databases = NULL;
+#ifdef V4_THREADING
 static MUTX_T	databases_mutex[1];
+#endif
 static ULONG	JRD_cache_default;
 
 #ifdef GOVERNOR
@@ -663,16 +678,19 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 
 	dbb = init(tdbb, user_status, expanded_filename, TRUE);
 	if (!dbb) {
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 		V4_JRD_MUTEX_UNLOCK(databases_mutex);
+#endif
 		JRD_SS_MUTEX_UNLOCK;
 		JRD_restore_context();
 		return user_status[1];
 	}
 
 	dbb->dbb_flags |= DBB_being_opened;
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 	V4_JRD_MUTEX_UNLOCK(databases_mutex);
-
+#endif
 	tdbb->tdbb_database = dbb;
 
 /* Initialize special error handling */
@@ -685,7 +703,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 /* Count active thread in database */
 
 	++dbb->dbb_use_count;
-#ifdef V4_THREADING
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	BOOLEAN initing_security = FALSE;
 #endif
 
@@ -876,7 +894,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 		TRA_cleanup(tdbb);
 	}
 
-#ifdef V4_THREADING
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 	initing_security = TRUE;
 #endif
@@ -1031,7 +1049,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 				tdbb,
 				internal);
 
-#ifdef V4_THREADING
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	initing_security = FALSE;
 	V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 #endif
@@ -1043,12 +1061,16 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 		   not timeout for exclusive access and other threads don't have to wait
 		   behind shutdown */
 
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 		V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
+#endif
 		JRD_SS_MUTEX_UNLOCK;
 		if (!SHUT_database
 			(dbb, options.dpb_shutdown, options.dpb_shutdown_delay)) {
 			JRD_SS_MUTEX_LOCK;
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 			V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
+#endif
 			if (user_status[1] != FB_SUCCESS)
 				ERR_punt();
 			else
@@ -1060,7 +1082,9 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
                          0);
 		}
 		JRD_SS_MUTEX_LOCK;
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 		V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
+#endif
 	}
 
 #ifdef SUPERSERVER
@@ -1070,11 +1094,15 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
    when a client tries to connect to the security database itself. */
 
 	if (!options.dpb_sec_attach) {
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 		V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
+#endif
 		JRD_SS_MUTEX_UNLOCK;
 		CCH_exclusive_attachment(tdbb, LCK_none, LCK_WAIT);
 		JRD_SS_MUTEX_LOCK;
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 		V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
+#endif
 		if (attachment->att_flags & ATT_shutdown)
 			ERR_post(gds_shutdown, gds_arg_string, 
                      ERR_string(reinterpret_cast < char *>(file_name), fl),
@@ -1124,15 +1152,21 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 
 		VIO_fini(tdbb);
 #endif
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 		V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
+#endif
 		JRD_SS_MUTEX_UNLOCK;
 		if (!VAL_validate(tdbb, options.dpb_verify)) {
 			JRD_SS_MUTEX_LOCK;
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 			V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
+#endif
 			ERR_punt();
 		}
 		JRD_SS_MUTEX_LOCK;
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 		V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
+#endif
 	}
 
 	if (options.dpb_journal) {
@@ -1285,8 +1319,9 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 	}
 #endif /* GOVERNOR */
 
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
-
+#endif
 /* if there was an error, the status vector is all set */
 
 	if (options.dpb_sweep & gds_dpb_records)
@@ -1319,7 +1354,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 	{
 		try
 		{
-#ifdef V4_THREADING
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 			if (initing_security)
 			{
 				V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
@@ -1342,7 +1377,9 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 					delete attachment;
 				}
 			}
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 			V4_JRD_MUTEX_UNLOCK(databases_mutex);
+#endif
 		}	// try
 		catch (const std::exception&) {}
 		tdbb->tdbb_status_vector = status;
@@ -1791,16 +1828,19 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
 	if (!(dbb = init(tdbb, user_status, expanded_name, FALSE))) {
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 		V4_JRD_MUTEX_UNLOCK(databases_mutex);
+#endif
 		JRD_SS_MUTEX_UNLOCK;
 		JRD_restore_context();
 		return user_status[1];
 	}
 
 	dbb->dbb_flags |= DBB_being_opened;
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 	V4_JRD_MUTEX_UNLOCK(databases_mutex);
-
+#endif
 	tdbb->tdbb_database = dbb;
 
 /* Initialize error handling */
@@ -1813,7 +1853,7 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 /* Count active thread in database */
 
 	++dbb->dbb_use_count;
-#ifdef V4_THREADING
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	BOOLEAN initing_security = FALSE;
 #endif
 
@@ -1911,7 +1951,7 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 	FUN_init();
 	PAG_init();
 	SBM_init();
-#ifdef V4_THREADING
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 	initing_security = TRUE;
 #endif
@@ -1940,7 +1980,7 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 				tdbb,
 				internal);
 
-#ifdef V4_THREADING
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	initing_security = FALSE;
 	V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 #endif
@@ -1972,10 +2012,14 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 		   not timeout for exclusive access and other threads don't have to wait
 		   behind shutdown */
 
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 		V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
+#endif
 		if (!SHUT_database
 			(dbb, options.dpb_shutdown, options.dpb_shutdown_delay)) {
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 			V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
+#endif
 			ERR_post(gds_no_priv,
 					 gds_arg_string, "shutdown or online",
 					 gds_arg_string, "database",
@@ -1983,7 +2027,9 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 					 ERR_string(reinterpret_cast < char *>(file_name),
 								length), 0);
 		}
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 		V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
+#endif
 	}
 
 	if (options.dpb_sweep_interval != -1) {
@@ -2045,8 +2091,9 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 	}
 #endif /* GOVERNOR */
 
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
-
+#endif
 	JRD_SS_MUTEX_UNLOCK;
 
 	*handle = attachment;
@@ -2059,7 +2106,7 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 	{
 		try
 		{
-#ifdef V4_THREADING
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 			if (initing_security)
 			{
 				V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
@@ -2082,7 +2129,9 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 					delete attachment;
 				}
 			}
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 			V4_JRD_MUTEX_UNLOCK(databases_mutex);
+#endif
 		}
 		catch (const std::exception&) {}
 		tdbb->tdbb_status_vector = status;
@@ -2261,11 +2310,15 @@ STATUS DLL_EXPORT GDS_DETACH(STATUS * user_status, ATT * handle)
 /* if this is the last attachment, mark dbb as not in use */
 
 	JRD_SS_MUTEX_LOCK;
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	V4_JRD_MUTEX_LOCK(databases_mutex);
+#endif
 	if (dbb->dbb_attachments == attachment && !attachment->att_next &&
 		!(dbb->dbb_flags & DBB_being_opened))
 		dbb->dbb_flags |= DBB_not_in_use;
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	V4_JRD_MUTEX_UNLOCK(databases_mutex);
+#endif
 
 	tdbb->tdbb_database = dbb;
 	tdbb->tdbb_attachment = attachment;
@@ -2291,7 +2344,9 @@ STATUS DLL_EXPORT GDS_DETACH(STATUS * user_status, ATT * handle)
 
 /* Purge attachment, don't rollback open transactions */
 
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
+#endif
 
 #ifdef CANCEL_OPERATION
 	attachment->att_flags |= ATT_cancel_disable;
@@ -2312,7 +2367,9 @@ STATUS DLL_EXPORT GDS_DETACH(STATUS * user_status, ATT * handle)
 	}
 #endif /* GOVERNOR */
 
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	V4_JRD_MUTEX_UNLOCK(databases_mutex);
+#endif
 	JRD_SS_MUTEX_UNLOCK;
 
 	*handle = NULL;
@@ -2321,9 +2378,13 @@ STATUS DLL_EXPORT GDS_DETACH(STATUS * user_status, ATT * handle)
 
 	}	// try
 	catch (const std::exception&) {
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 		V4_JRD_MUTEX_LOCK(databases_mutex);
+#endif
 		dbb->dbb_flags &= ~DBB_not_in_use;
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 		V4_JRD_MUTEX_UNLOCK(databases_mutex);
+#endif
 
 		JRD_SS_MUTEX_UNLOCK;
 		return error(user_status);
@@ -2412,8 +2473,10 @@ STATUS DLL_EXPORT GDS_DROP_DATABASE(STATUS * user_status, ATT * handle)
 					ERR_cstring((SCHAR*) tdbb->tdbb_attachment->att_filename->str_data), 0);
 
 		JRD_SS_MUTEX_LOCK;
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 		V4_JRD_MUTEX_LOCK(databases_mutex);
 		V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
+#endif
 	}
 	catch(const std::exception&)
 	{
@@ -2447,8 +2510,10 @@ STATUS DLL_EXPORT GDS_DROP_DATABASE(STATUS * user_status, ATT * handle)
 
 	}	// try
 	catch (const std::exception&) {
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 		V4_JRD_MUTEX_UNLOCK(databases_mutex);
 		V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
+#endif
 		JRD_SS_MUTEX_UNLOCK;
 		return error(user_status);
 	}
@@ -2463,8 +2528,9 @@ STATUS DLL_EXPORT GDS_DROP_DATABASE(STATUS * user_status, ATT * handle)
 	dbb->dbb_flags |= DBB_not_in_use;
 	*handle = NULL;
 
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	V4_JRD_MUTEX_UNLOCK(databases_mutex);
-
+#endif
 	file = dbb->dbb_file;
 	shadow = dbb->dbb_shadow;
 
@@ -2495,7 +2561,9 @@ STATUS DLL_EXPORT GDS_DROP_DATABASE(STATUS * user_status, ATT * handle)
 		err |= drop_files(shadow->sdw_file);
 	}
 
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	V4_JRD_MUTEX_UNLOCK(databases_mutex);
+#endif
 	}	// try
 	catch (const std::exception&) {
 		JRD_SS_MUTEX_UNLOCK;
@@ -4254,7 +4322,9 @@ void JRD_print_all_counters(char *fname)
 		gds__log(buff, 0);
 		return;
 	}
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	V4_JRD_MUTEX_LOCK(databases_mutex);
+#endif
 
 	ib_fprintf(fptr, "\nPrinting Block type Report\n");
 	ib_fprintf(fptr, "==========================\n");
@@ -4262,7 +4332,9 @@ void JRD_print_all_counters(char *fname)
 	ALL_print_memory_pool_info(fptr, databases);
 //	ALLD_print_memory_pool_info(fptr);
 
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	V4_JRD_MUTEX_UNLOCK(databases_mutex);
+#endif
 
 	ib_fclose(fptr);
 }
@@ -4300,7 +4372,9 @@ void JRD_print_procedure_info(TDBB tdbb, char *mesg)
 	ib_fprintf(fptr,
 			   "Prc Name      , prc id , flags  ,  Use Count , Alter Count\n");
 
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	V4_JRD_MUTEX_LOCK(databases_mutex);
+#endif
 
 	if (procedures = tdbb->tdbb_database->dbb_procedures) {
 		for (ptr = procedures->begin(), end = procedures->end();
@@ -4316,7 +4390,9 @@ void JRD_print_procedure_info(TDBB tdbb, char *mesg)
 	else
 		ib_fprintf(fptr, "No Cached Procedures\n");
 
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	V4_JRD_MUTEX_UNLOCK(databases_mutex);
+#endif
 
 	ib_fclose(fptr);
 
@@ -4685,8 +4761,9 @@ static void cleanup(void *arg)
  *	Exit handler for image exit.
  *
  **************************************/
-
+#ifdef V4_THREADING
 	V4_MUTEX_DESTROY(databases_mutex);
+#endif
 	JRD_SS_DESTROY_MUTEX;
 	initialized = FALSE;
 	databases = NULL;
@@ -5498,7 +5575,9 @@ static DBB init(TDBB	tdbb,
 		THREAD_ENTER;
 		PluginManager::load_engine_plugins();
 		if (!initialized) {
+#ifdef V4_THREADING
 			V4_MUTEX_INIT(databases_mutex);
+#endif
 			JRD_SS_INIT_MUTEX;
 			gds__register_cleanup(cleanup, 0);
 			initialized = TRUE;
@@ -5515,7 +5594,9 @@ static DBB init(TDBB	tdbb,
 	}
 
 	JRD_SS_MUTEX_LOCK;
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	V4_JRD_MUTEX_LOCK(databases_mutex);
+#endif
 
 /* Check to see if the database is already actively attached */
 
@@ -5538,7 +5619,9 @@ static DBB init(TDBB	tdbb,
 
 	/* MOVE_CLEAR(&temp, (SLONG) sizeof(struct dbb)); */
 	THD_MUTEX_INIT_N(temp_mutx, DBB_MUTX_max);
+#ifdef V4_THREADING
 	V4_RW_LOCK_INIT_N(temp_wlck, DBB_WLCK_max);
+#endif
 
 /* set up the temporary database block with fields that are
    required for doing the ALL_init() */
@@ -5565,7 +5648,9 @@ static DBB init(TDBB	tdbb,
 	ALL_init();
 
 	THD_MUTEX_DESTROY_N(temp_mutx, DBB_MUTX_max);
+#ifdef V4_THREADING
 	V4_RW_LOCK_DESTROY_N(temp_wlck, DBB_WLCK_max);
+#endif
 
 	dbb_->dbb_next = databases;
 	databases = dbb_;
@@ -5578,7 +5663,9 @@ static DBB init(TDBB	tdbb,
 	string =
 		FB_NEW_RPT(*dbb_->dbb_permanent, THREAD_STRUCT_SIZE(WLCK_T, DBB_WLCK_max)) str();
 	dbb_->dbb_rw_locks = (WLCK) THREAD_STRUCT_ALIGN(string->str_data);
+#ifdef V4_THREADING
 	V4_RW_LOCK_INIT_N(dbb_->dbb_rw_locks, DBB_WLCK_max);
+#endif
 	dbb_->dbb_internal = vector = vec::newVector(*dbb_->dbb_permanent, irq_MAX);
 	dbb_->dbb_dyn_req = vector = vec::newVector(*dbb_->dbb_permanent, drq_MAX);
 	dbb_->dbb_flags |= DBB_exclusive;
@@ -5730,8 +5817,10 @@ static void release_attachment(ATT attachment)
 	CHECK_DBB(dbb);
 
 	if (!attachment) {
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 		V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 		V4_JRD_MUTEX_LOCK(databases_mutex);
+#endif
 		return;
 	}
 
@@ -5797,8 +5886,10 @@ static void release_attachment(ATT attachment)
 	if (attachment->att_compatibility_table)
 		delete attachment->att_compatibility_table;
 
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 	V4_JRD_MUTEX_LOCK(databases_mutex);
+#endif
 
 	if (MemoryPool::blk_type(dbb) != type_dbb)
 		return;
@@ -6030,7 +6121,9 @@ static void shutdown_database(DBB dbb, BOOLEAN release_pools)
 	}
 
 	THD_MUTEX_DESTROY_N(dbb->dbb_mutexes, DBB_MUTX_max);
+#ifdef V4_THREADING
 	V4_RW_LOCK_DESTROY_N(dbb->dbb_rw_locks, DBB_WLCK_max);
+#endif
 #ifdef SUPERSERVER
 	if (dbb->dbb_flags & DBB_sp_rec_mutex_init) {
 		THD_rec_mutex_destroy(&dbb->dbb_sp_rec_mutex);
@@ -6369,9 +6462,13 @@ ULONG JRD_shutdown_all()
 				try {
 					/* purge_attachment, rollback any open transactions */
 
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 					V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
+#endif
 					purge_attachment(tdbb, user_status, att, TRUE);
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
 					V4_JRD_MUTEX_UNLOCK(databases_mutex);
+#endif
 				}	// try
 				catch (const std::exception&) {
 					if (initialized) {

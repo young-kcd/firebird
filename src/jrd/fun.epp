@@ -27,7 +27,7 @@
  *
  */
 /*
-$Id: fun.epp,v 1.18 2003-02-17 08:41:58 eku Exp $
+$Id: fun.epp,v 1.19 2003-03-24 13:35:33 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -671,13 +671,15 @@ FUN DLL_EXPORT FUN_lookup_function(TEXT * name)
 	dbb = tdbb->tdbb_database;
 
 /* Start by looking for already defined symbol */
-
+#ifdef V4_THREADING
 	V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_udf);
-
+#endif
 	for (symbol = SYM_lookup(name); symbol; symbol = symbol->sym_homonym)
 	{
 	    if (symbol->sym_type == SYM_fun) {
+#ifdef V4_THREADING
 			V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_udf);
+#endif
 			return (FUN) symbol->sym_object;
 		}
 	}
@@ -805,8 +807,9 @@ FUN DLL_EXPORT FUN_lookup_function(TEXT * name)
 	if (!REQUEST(irq_l_args))
 		REQUEST(irq_l_args) = request_arg;
 
+#ifdef V4_THREADING
 	V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_udf);
-
+#endif
 	return prior;
 }
 

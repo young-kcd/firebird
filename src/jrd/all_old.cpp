@@ -138,14 +138,18 @@ BLK ALL_alloc(PLB pool, UCHAR type, ULONG count_argument, ERR_T err_ret)
    tail.  If there isn't a fit, extend the pool and try, try again. */
 
 	while (TRUE) {
+#ifdef V4_THREADING
 		V4_MUTEX_LOCK(pool->plb_mutex);
+#endif
 
 		best = NULL;
 		best_tail = MAX_BLOCK;
 		for (ptr = &pool->plb_free; (free = *ptr); ptr = &free->frb_next) {
 			if ((SCHAR *) free >= (SCHAR *) free->frb_next
 				&& free->frb_next) {
+#ifdef V4_THREADING
 				V4_MUTEX_UNLOCK(pool->plb_mutex);
+#endif
 				BUGCHECK(152);	/* msg 152 memory pool free list is invalid */
 			}
 			if ((tail = (ULONG) free->frb_header.blk_length - (ULONG) units)
@@ -159,7 +163,9 @@ BLK ALL_alloc(PLB pool, UCHAR type, ULONG count_argument, ERR_T err_ret)
 		if (best)
 			break;
 
+#ifdef V4_THREADING
 		V4_MUTEX_UNLOCK(pool->plb_mutex);
+#endif
 		if (!extend_pool(pool, size, err_ret))
 			return 0;
 	}
@@ -191,8 +197,9 @@ BLK ALL_alloc(PLB pool, UCHAR type, ULONG count_argument, ERR_T err_ret)
 	}
 #endif
 
+#ifdef V4_THREADING
 	V4_MUTEX_UNLOCK(pool->plb_mutex);
-
+#endif
 	MOVE_CLEAR(block, size);
 	block->blk_type = type;
 /* TMN: Here we should really have the following assert */
@@ -233,7 +240,9 @@ void ALL_check_memory(void)
 
 	dbb = GET_DBB;
 
+#ifdef V4_THREADING
 	V4_RW_LOCK_LOCK(dbb->dbb_rw_locks + DBB_WLCK_pools, WLCK_read);
+#endif
 
 /* walk through all the pools in the database */
 
@@ -245,13 +254,19 @@ void ALL_check_memory(void)
 
 		/* walk through all the hunks in the pool */
 
+#ifdef V4_THREADING
 		V4_MUTEX_LOCK(pool->plb_mutex);
+#endif
 		for (hunk = pool->plb_hunks; hunk; hunk = hunk->hnk_next);
 		for (hunk = pool->plb_huge_hunks; hunk; hunk = hunk->hnk_next);
+#ifdef V4_THREADING
 		V4_MUTEX_UNLOCK(pool->plb_mutex);
+#endif
 	}
 
+#ifdef V4_THREADING
 	V4_RW_LOCK_UNLOCK(dbb->dbb_rw_locks + DBB_WLCK_pools);
+#endif
 }
 #endif /* DEV_BUILD */
 
@@ -426,7 +441,9 @@ void ALL_free(SCHAR * memory)
 
 	dbb = GET_DBB;
 
+#ifdef V4_THREADING
 	V4_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_statistics);
+#endif
 
 #ifdef SUPERSERVER
 	{
@@ -439,7 +456,9 @@ void ALL_free(SCHAR * memory)
 	dbb->dbb_current_memory -= gds__free(memory);
 #endif
 
+#ifdef V4_THREADING
 	V4_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_statistics);
+#endif
 }
 
 
@@ -540,14 +559,18 @@ SCHAR *ALL_malloc(ULONG size, ERR_T err_ret)
 
 		dbb = GET_DBB;
 
+#ifdef V4_THREADING
 		V4_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_statistics);
+#endif
 #ifdef SUPERSERVER
 		all_delta_alloc += size;
 #endif
 		dbb->dbb_current_memory += size;
 		if (dbb->dbb_current_memory > dbb->dbb_max_memory)
 			dbb->dbb_max_memory = dbb->dbb_current_memory;
+#ifdef V4_THREADING
 		V4_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_statistics);
+#endif
 		return memory;
 	}
 
@@ -582,7 +605,9 @@ PLB ALL_pool(void)
 
 	dbb = GET_DBB;
 
+#ifdef V4_THREADING
 	V4_RW_LOCK_LOCK(dbb->dbb_rw_locks + DBB_WLCK_pools, WLCK_write);
+#endif
 
 /* Start by assigning a pool id */
 
@@ -614,7 +639,9 @@ PLB ALL_pool(void)
 				   sizeof(all_block_type_count));
 	}
 #endif
+#ifdef V4_THREADING
 	V4_MUTEX_INIT(temp_pool.plb_mutex);
+#endif
 	if (pool_id == 0) {
 		dbb->dbb_permanent = &temp_pool;
 		temp_pool.plb_extend_size = PERM_EXTEND_SIZE;
@@ -632,11 +659,12 @@ PLB ALL_pool(void)
 #endif
 	vector->vec_object[pool_id] = (BLK) pool;
 
+#ifdef V4_THREADING
 	V4_MUTEX_DESTROY(temp_pool.plb_mutex);
 	V4_MUTEX_INIT(pool->plb_mutex);
 
 	V4_RW_LOCK_UNLOCK(dbb->dbb_rw_locks + DBB_WLCK_pools);
-
+#endif
 	if (pool_id == 0)
 		dbb->dbb_permanent = pool;
 
@@ -664,14 +692,19 @@ void ALL_push(BLK object, LLS * stack)
 
 	pool = tdbb->tdbb_default;
 
+#ifdef V4_THREADING
 	V4_MUTEX_LOCK(pool->plb_mutex);
-
+#endif
 	if (node = pool->plb_lls) {
 		pool->plb_lls = node->lls_next;
+#ifdef V4_THREADING
 		V4_MUTEX_UNLOCK(pool->plb_mutex);
+#endif
 	}
 	else {
+#ifdef V4_THREADING
 		V4_MUTEX_UNLOCK(pool->plb_mutex);
+#endif
 		node = (LLS) ALL_alloc(pool, type_lls, 0, ERR_jmp);
 	}
 
@@ -703,10 +736,14 @@ BLK ALL_pop(LLS * stack)
 	object = node->lls_object;
 
 	pool = find_pool((BLK) node);
+#ifdef V4_THREADING
 	V4_MUTEX_LOCK(pool->plb_mutex);
+#endif
 	node->lls_next = pool->plb_lls;
 	pool->plb_lls = node;
+#ifdef V4_THREADING
 	V4_MUTEX_UNLOCK(pool->plb_mutex);
+#endif
 
 	return object;
 }
@@ -829,11 +866,15 @@ void ALL_rlpool(PLB pool)
 
 	dbb = GET_DBB;
 
+#ifdef V4_THREADING
 	V4_RW_LOCK_LOCK(dbb->dbb_rw_locks + DBB_WLCK_pools, WLCK_write);
+#endif
 	dbb->dbb_pools->vec_object[pool->plb_pool_id] = NULL;
+#ifdef V4_THREADING
 	V4_RW_LOCK_UNLOCK(dbb->dbb_rw_locks + DBB_WLCK_pools);
 
 	V4_MUTEX_DESTROY(pool->plb_mutex);
+#endif
 
 #ifdef SUPERSERVER
 	if (trace_pools && pool->plb_blk_type_count) {
@@ -876,11 +917,15 @@ SCHAR *ALL_sys_alloc(ULONG size, ERR_T err_ret)
 
 		dbb = GET_DBB;
 
+#ifdef V4_THREADING
 		V4_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_statistics);
+#endif
 		dbb->dbb_current_memory += size;
 		if (dbb->dbb_current_memory > dbb->dbb_max_memory)
 			dbb->dbb_max_memory = dbb->dbb_current_memory;
+#ifdef V4_THREADING
 		V4_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_statistics);
+#endif
 		return memory;
 	}
 
@@ -909,11 +954,15 @@ void ALL_sys_free(SCHAR * memory)
 
 	dbb = GET_DBB;
 
+#ifdef V4_THREADING
 	V4_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_statistics);
+#endif
 
 	dbb->dbb_current_memory -= gds__sys_free(memory);
 
+#ifdef V4_THREADING
 	V4_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_statistics);
+#endif
 }
 
 
@@ -1009,10 +1058,14 @@ static BLK alloc_huge_hunk(PLB pool, UCHAR type, ULONG size, ERR_T err_ret)
 	hunk->hnk_header.blk_pool_id = (UCHAR) pool->plb_pool_id;
 	hunk->hnk_address = (SCHAR *) hunk;
 	hunk->hnk_length = size;
+#ifdef V4_THREADING
 	V4_MUTEX_LOCK(pool->plb_mutex);
+#endif
 	hunk->hnk_next = pool->plb_huge_hunks;
 	pool->plb_huge_hunks = hunk;
+#ifdef V4_THREADING
 	V4_MUTEX_UNLOCK(pool->plb_mutex);
+#endif
 
 	block = (BLK) (hunk + 1);
 	MOVE_CLEAR(block, size - sizeof(struct hnk));
@@ -1076,10 +1129,14 @@ static BOOLEAN extend_pool(PLB pool, ULONG size, ERR_T err_ret)
 	hunk->hnk_address = (SCHAR *) block;
 	hunk->hnk_length = size;
 
+#ifdef V4_THREADING
 	V4_MUTEX_LOCK(pool->plb_mutex);
+#endif
 	hunk->hnk_next = pool->plb_hunks;
 	pool->plb_hunks = hunk;
+#ifdef V4_THREADING
 	V4_MUTEX_UNLOCK(pool->plb_mutex);
+#endif
 	return TRUE;
 }
 
@@ -1208,7 +1265,9 @@ static void release(FRB block, PLB pool)
 	UCHAR blk_header_type;
 #endif
 
+#ifdef V4_THREADING
 	V4_MUTEX_LOCK(pool->plb_mutex);
+#endif
 
 	if (!block->frb_header.blk_length) {
 		/* A block with no length indicates a HUGE hunk.  Find it and free it. */
@@ -1220,11 +1279,15 @@ static void release(FRB block, PLB pool)
 				(SCHAR *) block <
 				(SCHAR *) hunk->hnk_address + hunk->hnk_length) {
 				*ptr = hunk->hnk_next;
+#ifdef V4_THREADING
 				V4_MUTEX_UNLOCK(pool->plb_mutex);
+#endif
 				ALL_sys_free(hunk->hnk_address);
 				return;
 			}
+#ifdef V4_THREADING
 		V4_MUTEX_UNLOCK(pool->plb_mutex);
+#endif
 		BUGCHECK(154);			/* msg 154 attempt to release free block */
 	}
 
@@ -1259,7 +1322,9 @@ static void release(FRB block, PLB pool)
 							  (SCHAR *) free) break;
 
 	if ((SCHAR *) block == (SCHAR *) free) {
+#ifdef V4_THREADING
 		V4_MUTEX_UNLOCK(pool->plb_mutex);
+#endif
 		BUGCHECK(154);			/* msg 154 attempt to release free block */
 	}
 
@@ -1285,7 +1350,9 @@ static void release(FRB block, PLB pool)
 #endif
 		}
 		else if ((SCHAR *) block + length > (SCHAR *) free) {
+#ifdef V4_THREADING
 			V4_MUTEX_UNLOCK(pool->plb_mutex);
+#endif
 			BUGCHECK(155);		/* msg 155 attempt to release block overlapping following free block */
 		}
 	}
@@ -1305,7 +1372,9 @@ static void release(FRB block, PLB pool)
 #endif
 		}
 		else if ((SCHAR *) prior + length > (SCHAR *) block) {
+#ifdef V4_THREADING
 			V4_MUTEX_UNLOCK(pool->plb_mutex);
+#endif
 			BUGCHECK(156);		/* msg 156 attempt to release block overlapping prior free block */
 		}
 	}
@@ -1317,7 +1386,9 @@ static void release(FRB block, PLB pool)
 	}
 #endif
 
+#ifdef V4_THREADING
 	V4_MUTEX_UNLOCK(pool->plb_mutex);
+#endif
 }
 
 

@@ -53,14 +53,18 @@ static MDLS DLS_cfg_tmpdir = { NULL, FALSE };	/* directory list object */
 /* external function directory list */
 
 static FDLS first_fdls = { 0, { 0 } };
+#ifdef V4_THREADING
 static BOOLEAN fdls_mutex_init = FALSE;
 static MUTX_T fdls_mutex[1];
+#endif
 
 /* external file directory list */
 
 static EDLS     first_edls      = { 0, { 0 } };
+#ifdef V4_THREADING
 static BOOLEAN  edls_mutex_init = FALSE;
 static MUTX_T   edls_mutex[1];
+#endif
 
 BOOLEAN DLS_get_temp_space(ULONG size, SFB sfb)
 {
@@ -93,12 +97,14 @@ BOOLEAN DLS_get_temp_space(ULONG size, SFB sfb)
 
 	ptr = DLS_get_access();
 
+#ifdef V4_THREADING
 	if (!ptr->mdls_mutex_init) {
 		V4_MUTEX_INIT(ptr->mdls_mutex);
 		ptr->mdls_mutex_init = TRUE;
 	}
 
 	V4_MUTEX_LOCK(ptr->mdls_mutex);
+#endif
 	if (!sfb->sfb_dls) {
 		/* allocate temp. space starting search from the begining of the dls list */
 		for (sfb->sfb_dls = ptr->mdls_dls;
@@ -117,7 +123,9 @@ BOOLEAN DLS_get_temp_space(ULONG size, SFB sfb)
 			result = TRUE;
 		}
 	}
+#ifdef V4_THREADING
 	V4_MUTEX_UNLOCK(ptr->mdls_mutex);
+#endif
 
 	return (result);
 }
@@ -140,14 +148,18 @@ void DLS_put_temp_space(SFB sfb)
 
 	if (sfb && sfb->sfb_dls) {
 		ptr = DLS_get_access();
+#ifdef V4_THREADING
 		assert(ptr->mdls_mutex_init);
 		V4_MUTEX_LOCK(ptr->mdls_mutex);
+#endif
 		assert(sfb->sfb_dls->dls_inuse >= sfb->sfb_file_size);
 		if (sfb->sfb_dls->dls_inuse > sfb->sfb_file_size)
 			sfb->sfb_dls->dls_inuse -= sfb->sfb_file_size;
 		else
 			sfb->sfb_dls->dls_inuse = 0;
+#ifdef V4_THREADING
 		V4_MUTEX_UNLOCK(ptr->mdls_mutex);
+#endif
 	}
 }
 
@@ -184,6 +196,7 @@ BOOLEAN API_ROUTINE DLS_add_dir(ULONG size, TEXT * dir_name)
 
 	mdls = DLS_get_access();
 
+#ifdef V4_THREADING
 /* lock mutex, initialize it in case of the first access */
 
 	if (!mdls->mdls_mutex_init) {
@@ -192,6 +205,7 @@ BOOLEAN API_ROUTINE DLS_add_dir(ULONG size, TEXT * dir_name)
 	}
 
 	V4_MUTEX_LOCK(mdls->mdls_mutex);
+#endif
 
 /* add new entry to the end of list */
 
@@ -205,9 +219,11 @@ BOOLEAN API_ROUTINE DLS_add_dir(ULONG size, TEXT * dir_name)
 		dls->dls_next = new_dls;
 	}
 
+#ifdef V4_THREADING
 /* release lock */
 
 	V4_MUTEX_UNLOCK(mdls->mdls_mutex);
+#endif
 
 	return TRUE;
 }
@@ -254,6 +270,7 @@ BOOLEAN DLS_add_func_dir(TEXT * directory_name)
 	new_fdls->fdls_next = 0;
 	strcpy(new_fdls->fdls_directory, directory_name);
 
+#ifdef V4_THREADING
 	/* Lock the mutex for the directory list, initializing it if
 	   this is the first access. */
 
@@ -265,6 +282,7 @@ BOOLEAN DLS_add_func_dir(TEXT * directory_name)
 	/* Note that when the distinction is implemented, the
 	   following should be a write lock. */
 	V4_MUTEX_LOCK(fdls_mutex);
+#endif
 
 	/* Append the new fdls to the list, then release the mutex */
 	current_fdls = &first_fdls;
@@ -272,8 +290,10 @@ BOOLEAN DLS_add_func_dir(TEXT * directory_name)
 		current_fdls = current_fdls->fdls_next;
 	current_fdls->fdls_next = new_fdls;
 
+#ifdef V4_THREADING
 	/* Release the (write) lock for the fdls linked list. */
 	V4_MUTEX_UNLOCK(fdls_mutex);
+#endif
 
 	return TRUE;
 }
