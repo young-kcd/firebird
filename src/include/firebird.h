@@ -30,7 +30,7 @@
  *       John Bellardo  <bellardo@cs.ucsd.edu>
  *
  *
- *  $Id: firebird.h,v 1.24 2004-05-23 23:28:26 brodsom Exp $
+ *  $Id: firebird.h,v 1.25 2004-05-26 16:13:22 alexpeshkoff Exp $
  *
  */
 
@@ -67,21 +67,6 @@
 #define SERVER_SHUTDOWN
 #endif
 
-// Check if we need thread synchronization
-#if defined(HAVE_MULTI_THREAD)
-# if defined(SUPERSERVER) || defined(SUPERCLIENT) || \
-     defined(WIN_NT) || defined(SOLARIS_MT) || defined (VMS)
-# define MULTI_THREAD
-# endif
-#endif
-
-#ifdef MULTI_THREAD
-#define ANY_THREADING
-#endif
-#ifdef V4_THREADING
-#define ANY_THREADING
-#endif
-
 // from thd.h
 #ifdef HAVE_POSIX_THREADS
 #ifdef SUPERSERVER
@@ -98,6 +83,26 @@
 #define USE_POSIX_THREADS
 #endif
 #endif
+#endif
+
+// Check if we need thread synchronization
+#if defined(HAVE_MULTI_THREAD)
+# if defined(SUPERSERVER) || defined(SUPERCLIENT) || \
+     defined(WIN_NT) || defined(SOLARIS_MT) || defined (VMS)
+# define MULTI_THREAD
+# endif
+#endif
+
+// This is needed to build client library on threaded platforms for classic server
+#if defined(HAVE_POSIX_THREADS) && defined(SUPERCLIENT)
+# define MULTI_THREAD
+#endif
+
+#ifdef MULTI_THREAD
+#define ANY_THREADING
+#endif
+#ifdef V4_THREADING
+#define ANY_THREADING
 #endif
 
 #ifndef NULL
