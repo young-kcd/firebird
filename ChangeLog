@@ -1,3 +1,38 @@
+2003-12-05 21:39  skidder
+
+	* firebird2/builds/win32/msvc7/: engine.vcproj,
+	engine_classic.vcproj, engine_embed.vcproj, gstat.vcproj:
+	
+	Update MSVC7 makefiles. Files were actually edited using VS2003 and
+	then version numbers were replaced back to 7.0
+
+2003-12-05 11:40  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp:
+	
+	fixed SS shutdown in case on internal deadlock
+
+2003-12-05 11:35  robocop
+
+	* firebird2/src/: common/classes/alloc.h, common/classes/array.h,
+	common/classes/vector.h, journal/archive.cpp, journal/oldr.cpp,
+	journal/rebuild.epp, journal/server.epp, jrd/ail.cpp, jrd/ail.h,
+	jrd/cch.cpp, jrd/cch_proto.h, jrd/enc.cpp, jrd/enc_proto.h,
+	jrd/jrd.cpp, jrd/jrn.cpp, jrd/jrn_proto.h, jrd/llio.cpp,
+	jrd/llio_proto.h, jrd/met.epp, jrd/met_proto.h, jrd/misc.cpp,
+	jrd/misc.h, jrd/misc_proto.h, jrd/ods.h, jrd/old.cpp, jrd/pag.cpp,
+	jrd/pag_proto.h, jrd/perf.cpp, jrd/perf_proto.h, jrd/rec.cpp,
+	jrd/rec_proto.h, jrd/rpb_chain.h, jrd/sdw.cpp, jrd/sdw_proto.h,
+	jrd/val.cpp, jrd/os/guid.h, jrd/os/posix/guid.cpp,
+	jrd/os/win32/guid.cpp, misc/codes.epp, remote/inet.cpp,
+	utilities/gstat/dba.epp, utilities/gstat/ppg.cpp,
+	utilities/gstat/ppg_proto.h, wal/driver.cpp, wal/wal.cpp,
+	wal/wal_proto.h, wal/walc.cpp, wal/walc_proto.h, wal/walf.cpp,
+	wal/walf_proto.h, wal/walr.cpp, wal/walw.cpp:
+	
+	Cleanup Some name changes Try to fix SINIX-Z problems with send()
+	prototype
+
 2003-12-04 01:55  arnobrinkman
 
 	* firebird2/src/jrd/btr.cpp:
