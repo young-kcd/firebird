@@ -19,9 +19,12 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2001.9.18 Claudio Valderrama: Allow return parameter by descriptor
+ * to signal NULL by testing the flags of the parameter's descriptor.
  */
 /*
-$Id: fun.epp,v 1.4 2002-04-04 07:10:40 bellardo Exp $
+$Id: fun.epp,v 1.5 2002-06-30 10:44:49 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -187,7 +190,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, NOD node, VLU value)
 	{
 		DSC* input;
 		if (tail == return_ptr) {
-			input = (DSC *) value;
+			input = &value->vlu_desc; /*(DSC*) value;*/
 		} else {
 			input = EVL_expr(tdbb, *ptr++);
 		}
@@ -357,7 +360,21 @@ void DLL_EXPORT FUN_evaluate(FUN function, NOD node, VLU value)
 					MOV_move(input, &temp_desc);
 				break;
 
+			/* CVC: There's no other solution for now: timestamp can't be returned
+					by value and the other way is to force the user to pass a dummy value as
+					an argument to keep the engine happy. So, here's the hack. */
 			case dtype_timestamp:
+			    if (tail == return_ptr)
+				{
+					temp_ptr = value->vlu_desc.dsc_address;
+					length = sizeof(GDS_TIMESTAMP);
+				}
+				else
+				{
+					MOV_move(input, &temp_desc);
+				}
+				break;
+
 			case dtype_quad:
 			case dtype_array:
 				MOV_move(input, &temp_desc);
@@ -494,58 +511,68 @@ void DLL_EXPORT FUN_evaluate(FUN function, NOD node, VLU value)
 
 		if (temp_ptr != NULL)
 		{
-			switch (value->vlu_desc.dsc_dtype)
+			/* CVC: Allow processing of return by descriptor.
+					The assumption is that the user didn't modify the return type,
+					that has no sense after all, because it is carved in stone. */
+			if (return_ptr->fun_mechanism == FUN_descriptor)
 			{
-			case dtype_sql_date:
-			case dtype_sql_time:
-			case dtype_long:
-				value->vlu_misc.vlu_long = *(SLONG *) temp_ptr;
-				break;
-
-			case dtype_short:
-				value->vlu_misc.vlu_short = *(SSHORT *) temp_ptr;
-				break;
-
-			case dtype_real:
-				value->vlu_misc.vlu_float = *(float *) temp_ptr;
-				break;
-
-			case dtype_int64:
-				value->vlu_misc.vlu_int64 = *(SINT64 *) temp_ptr;
-				break;
-
-			case dtype_double:
-#ifdef VMS
-			case dtype_d_float:
-#endif
-				value->vlu_misc.vlu_double = *(double *) temp_ptr;
-				break;
-
-			case dtype_text:
-			case dtype_cstring:
-			case dtype_varying:
-				temp_desc = value->vlu_desc;
-				temp_desc.dsc_address = temp_ptr;
-				temp_desc.dsc_length = strlen((char*)temp_ptr) + 1;
-				MOV_move(&temp_desc, &value->vlu_desc);
-				break;
-
-			case dtype_timestamp:
-				{
-					SLONG* ip = (SLONG *) temp_ptr;
-					value->vlu_misc.vlu_dbkey[0] = *ip++;
-					value->vlu_misc.vlu_dbkey[1] = *ip;
-				}
-				break;
-
-			default:
-				unsup_datatype = 1;
-				break;
+				temp_ptr = ((DSC*) temp_ptr)->dsc_address;
 			}
-			/* check if this is function has the FREE_IT set, if set and
-			   return_value is not null, then free the return value */
-			if (((SLONG) return_ptr->fun_mechanism < 0) && temp_ptr)
-				free(temp_ptr);
+			if (temp_ptr)
+			{
+				switch (value->vlu_desc.dsc_dtype)
+				{
+				case dtype_sql_date:
+				case dtype_sql_time:
+				case dtype_long:
+					value->vlu_misc.vlu_long = *(SLONG *) temp_ptr;
+					break;
+
+				case dtype_short:
+					value->vlu_misc.vlu_short = *(SSHORT *) temp_ptr;
+					break;
+
+				case dtype_real:
+					value->vlu_misc.vlu_float = *(float *) temp_ptr;
+					break;
+
+				case dtype_int64:
+					value->vlu_misc.vlu_int64 = *(SINT64 *) temp_ptr;
+					break;
+
+				case dtype_double:
+#ifdef VMS
+				case dtype_d_float:
+#endif
+					value->vlu_misc.vlu_double = *(double *) temp_ptr;
+					break;
+
+				case dtype_text:
+				case dtype_cstring:
+				case dtype_varying:
+					temp_desc = value->vlu_desc;
+					temp_desc.dsc_address = temp_ptr;
+					temp_desc.dsc_length = strlen((char*)temp_ptr) + 1;
+					MOV_move(&temp_desc, &value->vlu_desc);
+					break;
+
+				case dtype_timestamp:
+					{
+						SLONG* ip = (SLONG *) temp_ptr;
+						value->vlu_misc.vlu_dbkey[0] = *ip++;
+						value->vlu_misc.vlu_dbkey[1] = *ip;
+					}
+					break;
+
+				default:
+					unsup_datatype = 1;
+					break;
+				}
+				/* check if this is function has the FREE_IT set, if set and
+				   return_value is not null, then free the return value */
+				if (((SLONG) return_ptr->fun_mechanism < 0) && temp_ptr)
+					free(temp_ptr);
+			}
 		}
 	}
 
@@ -578,7 +605,9 @@ void DLL_EXPORT FUN_evaluate(FUN function, NOD node, VLU value)
 		delete LLS_POP(&array_stack);
 	}
 
-	if (temp_ptr == NULL)
+	if (temp_ptr == NULL || function->fun_return_arg &&
+		return_ptr->fun_mechanism == FUN_descriptor &&
+		(value->vlu_desc.dsc_flags & DSC_null))
 	{
 		request->req_flags |= req_null;
 	}
@@ -661,7 +690,7 @@ FUN DLL_EXPORT FUN_lookup_function(TEXT * name)
 
 	for (symbol = SYM_lookup(name); symbol; symbol = symbol->sym_homonym)
 	{
-		if ((int) (symbol->sym_type = SYM_fun)) {
+	    if (symbol->sym_type == SYM_fun) {
 			V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_udf);
 			return (FUN) symbol->sym_object;
 		}

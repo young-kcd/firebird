@@ -121,6 +121,18 @@
 								   Inprise bug 114840 */
 #endif
 
+/* The following ifdef was added to build thread safe gds shared
+   library on linux platform. It seems the gdslib works now (20020220)
+   with thread enabled applications. Anyway, more tests should be 
+   done as I don't have deep knowledge of the interbase/firebird 
+   engine and this change may imply side effect I haven't known 
+   about yet. Tomas Nejedlik (tomas@nejedlik.cz)
+*/
+#if (defined(LINUX) && defined(SUPERCLIENT))
+#define V4_THREADING
+#endif
+
+
 #ifdef SUPERSERVER
 static CONST TEXT gdslogid[] = " (Server)";
 #else
@@ -397,7 +409,7 @@ static void		blr_format(CTL, const char *, ...);
 static void		blr_indent(CTL, SSHORT);
 static void		blr_print_blr(CTL, UCHAR);
 static SCHAR	blr_print_byte(CTL);
-static int		blr_print_char(CTL);
+static SCHAR	blr_print_char(CTL);
 static void		blr_print_cond(CTL);
 static int		blr_print_dtype(CTL);
 static void		blr_print_join(CTL);
@@ -932,8 +944,7 @@ STATUS API_ROUTINE gds__decode(STATUS code, USHORT* fac, USHORT* class_)
 	{
 		return SUCCESS;
 	}
-
-	if (code & ISC_MASK != ISC_MASK)
+	else if ((code & ISC_MASK) != ISC_MASK)
 	{
 		/* not an ISC error message */
 		return code;
@@ -1544,6 +1555,8 @@ void API_ROUTINE gds_alloc_flag_unfreed(void *blk)
  **************************************/
 // JMB: need to rework this for the new pools
 #if 0
+	if (!blk)
+		return;
 /* Point to the start of the block */
 	ALLOC p = (ALLOC) (((UCHAR *) blk) - ALLOC_HEADER_SIZE);
 
@@ -1845,6 +1858,13 @@ SLONG API_ROUTINE gds__interprete(char *s, STATUS ** vector)
 										 NULL,
 										 code,
 										 GetUserDefaultLangID(),
+										 s,
+										 128,
+						                 NULL))
+		  && !(l = (SSHORT)FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
+										 NULL,
+										 code,
+										 NULL, /* TMN: Fallback to system known language */
 										 s,
 										 128,
 										 NULL))) sprintf(s, "unknown Win32 error %ld", code);	/* TXNN */
@@ -3174,7 +3194,9 @@ void* API_ROUTINE gds__sys_alloc(SLONG size)
 #define SYS_ALLOC_DEFINED
 #endif
 #ifdef UNIX
-#ifdef MAP_ANONYMOUS
+#if (defined MAP_ANONYMOUS & !defined SOLARIS)
+/* Because in Solaris 8 MAP_ANONYMOUS is defined now
+against of previos sun releases */
 	  memory = mmap(NULL, size, (PROT_READ | PROT_WRITE),
 #ifdef MAP_ANONYMOUS
 					(MAP_ANONYMOUS |
@@ -3182,7 +3204,7 @@ void* API_ROUTINE gds__sys_alloc(SLONG size)
 					(MAP_ANON |
 #endif
 #if (!defined(LINUX) && !defined(DARWIN))
-/* In LINUX and Darwin there is no such thing as MAP_VARIABLE. Hence, it gives 
+/* In LINUX, Solaris and Darwin there is no such thing as MAP_VARIABLE. Hence, it gives 
    compilation error. The equivalent functionality is default, 
    if you do not specify MAP_FIXED */
 					 MAP_VARIABLE |
@@ -3952,7 +3974,7 @@ static SCHAR blr_print_byte(CTL control)
 }
 
 
-static int blr_print_char(CTL control)
+static SCHAR blr_print_char(CTL control)
 {
 /**************************************
  *
@@ -3971,7 +3993,9 @@ static int blr_print_char(CTL control)
 	v = c = BLR_BYTE;
 	printable = (c >= 'a' && c <= 'z') ||
 		(c >= 'A' && c <= 'Z') ||
-		(c >= '0' && c <= '9' || c == '$' || c == '_');
+	    (c >= '0' && c <= '9') ||
+	     c == '$' ||
+	     c == '_';
 
 	if (printable)
 		blr_format(control, "'%c',", (TEXT *) c);
@@ -4734,7 +4758,7 @@ static void init(void)
 #ifdef UNIX
 	gds_pid = getpid();
 #ifdef SUPERSERVER
-#if (defined SOLARIS || defined HP10 || defined LINUX)
+#if (defined SOLARIS || defined HPUX || defined LINUX)
 	{
 		/* Increase max open files to hard limit for Unix
 		   platforms which are known to have low soft limits. */
@@ -4744,8 +4768,15 @@ static void init(void)
 		if (!getrlimit(RLIMIT_NOFILE, &old) && old.rlim_cur < old.rlim_max) {
 			new.rlim_cur = new.rlim_max = old.rlim_max;
 			if (!setrlimit(RLIMIT_NOFILE, &new))
+#if (defined UNIX_64_BIT_IO && defined SOLARIS)
+				gds__log("64 bit i/o support is on.");
+				gds__log("Open file limit increased from %lld to %lld",
+						 old.rlim_cur, new.rlim_cur);
+		       
+#else
 				gds__log("Open file limit increased from %d to %d",
 						 old.rlim_cur, new.rlim_cur);
+#endif
 		}
 	}
 #endif

@@ -42,11 +42,16 @@ typedef struct {
 FPTR_INT FUNCTIONS_entrypoint(char *, char *);
 static int test(long, char *);
 
+static DSC* ni(DSC*, DSC*);
+
 
 #pragma FB_COMPILER_MESSAGE("Fix! function pointer cast!")
 
 static FN isc_functions[] = {
 	{"test_module", "test_function", (int (*)()) test},
+	{"test_module", "ni", (int (*)()) ni},
+	{"test_module", "ns", (int (*)()) ni},
+	{"test_module", "nn", (int (*)()) ni},
 	{0, 0, 0}
 };
 
@@ -127,5 +132,13 @@ static int test(long n, char *result)
 	return 0;
 }
 
+
+static DSC* ni(DSC* v, DSC* v2)
+{
+	if (v)
+		return v;
+	else
+		return v2;
+}
 
 } // extern "C"
