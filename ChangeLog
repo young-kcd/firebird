@@ -1,3 +1,29 @@
+2003-01-28 17:03  dimitr
+
+	* firebird2/src/utilities/: install_nt.h, install_svc.cpp:
+	
+	A bit changed installation of the services.
+
+2003-01-28 16:23  dimitr
+
+	* firebird2/src/jrd/lck.h:
+	
+	Fixed initialization problem in the current codebase.
+
+2003-01-28 09:58  dimitr
+
+	* firebird2/builds/win32/msvc6/: alice.dsp, alice_classic.dsp,
+	burp.dsp, burp_classic.dsp, common.dsp, common_classic.dsp,
+	dsql_server.dsp, dsql_server_classic.dsp, engine.dsp,
+	fb_inet_server.dsp, fb_lock_print.dsp, fbclient.dsp, fbguard.dsp,
+	fbserver.dsp, gbak.dsp, gdef.dsp, gds32.dsp, gfix.dsp, gpre.dsp,
+	gpre_boot.dsp, gsec.dsp, gstat.dsp, ib_udf.dsp, ib_util.dsp,
+	instreg.dsp, instsvc.dsp, ipserver.dsp, isql.dsp, lock.dsp,
+	lock_classic.dsp, qli.dsp, remote.dsp, remote_classic.dsp,
+	utilities.dsp, utilities_classic.dsp, wal.dsp, wal_classic.dsp:
+	
+	Updated project files.
+
 2003-01-27 12:46  dimitr
 
 	* firebird2/src/: common/classes/alloc.cpp, common/classes/alloc.h,
