@@ -3980,6 +3980,10 @@ static BDB get_buffer(TDBB tdbb, SLONG page, LATCH latch, SSHORT latch_wait)
 				}
 			}
 
+			if (page == FREE_PAGE) {
+				 bcb->bcb_flags &= ~BCB_free_pending;
+			}
+
 			BCB_MUTEX_RELEASE;
 			return (BDB) 0;
 		}
