@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.19 2002-11-20 23:16:37 hippoman Exp $
+$Id: blb.cpp,v 1.20 2002-11-25 10:24:48 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -55,7 +55,6 @@ $Id: blb.cpp,v 1.19 2002-11-20 23:16:37 hippoman Exp $
 #include "../jrd/constants.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/all_proto.h"
-#include "../jrd/blb_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/blf_proto.h"
 #include "../jrd/cch_proto.h"
