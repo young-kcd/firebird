@@ -1,3 +1,41 @@
+2005-01-16 13:35  dimitr
+
+	* firebird2/src/common/config/: config.cpp (1.60), config.h (1.35):
+	
+	Changes and cleanup regarding XNET vs old-style IPC.
+
+2005-01-16 13:31  dimitr
+
+	* firebird2/builds/install/misc/firebird.conf (1.14):
+	
+	Changes and cleanup regarding XNET vs old-style IPC.
+
+2005-01-16 13:26  dimitr
+
+	* firebird2/src/remote/os/win32/: ibconfig.cpp (1.14), property.cpp
+	(1.13), srvr_w32.cpp (1.28), window.cpp (1.13), wnet.cpp (1.31):
+	
+	Changes and cleanup regarding XNET vs old-style IPC.
+
+2005-01-16 13:20  dimitr
+
+	* firebird2/src/remote/: xnet.cpp (1.62), xnet.h (1.12),
+	xnet_proto.h (1.15):
+	
+	Changes and cleanup regarding XNET vs old-style IPC.
+
+2005-01-16 12:25  dimitr
+
+	* firebird2/src/remote/: inet.cpp (1.137), remote_def.h (1.27):
+	
+	Changes and cleanup regarding XNET vs old-style IPC.
+
+2005-01-16 11:21  dimitr
+
+	* firebird2/src/include/gen/autoconfig_msvc.h (1.97):
+	
+	Changes and cleanup regarding XNET vs old-style IPC.
+
 2005-01-15 00:52  skidder
 
 	* firebird2/src/utilities/nbackup.cpp (1.44):
