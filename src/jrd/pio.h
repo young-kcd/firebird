@@ -46,6 +46,7 @@ class fil : public pool_alloc_rpt<SCHAR, type_fil>
 	int fil_desc;
 	int *fil_trace;				/* Trace file, if any */
 	MUTX_T fil_mutex[1];
+	USHORT fil_flags;
 	USHORT fil_length;			/* Length of expanded file name */
 	SCHAR fil_string[1];		/* Expanded file name */
 };
@@ -71,6 +72,7 @@ class fil : public pool_alloc_rpt<SCHAR, type_fil>
 	USHORT fil_length;			/* Length of expanded file name */
 	USHORT fil_fid[3];			/* File id */
 	USHORT fil_did[3];			/* Directory id */
+	USHORT fil_flags;
 	SCHAR fil_string[1];		/* Expanded file name */
 };
 tyepdef fil *FIL;
