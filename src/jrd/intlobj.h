@@ -72,7 +72,6 @@ typedef SCHAR ASCII;
 typedef unsigned char NCHAR;	/* Narrow Char */
 typedef unsigned short UCS2_CHAR;	/* Not very Wide Char */
 typedef unsigned char MBCHAR;	/* Multibyte Char */
-//typedef class vec* VEC;
 
 #define type_texttype 54
 #define type_charset 55
@@ -84,12 +83,12 @@ typedef struct intl_blk {
     USHORT blk_length;
 } intl_blk;
 
-struct texttype; // forward decl for the fc signatures before the struct itself.
+struct texttype; /* forward decl for the fc signatures before the struct itself. */
 struct csconvert;
 
 typedef USHORT (*pfn_INTL_init)(texttype*, USHORT, USHORT);
 typedef USHORT (*pfn_INTL_keylength)(texttype*, USHORT);
-// Last param is bool, but since it's a C interface, I left it as USHORT.
+/* Last param is bool, but since it's a C interface, I left it as USHORT. */
 typedef USHORT (*pfn_INTL_str2key)(texttype*, USHORT, const UCHAR*, USHORT, UCHAR*, USHORT);
 typedef SSHORT (*pfn_INTL_compare)(texttype*, USHORT, const UCHAR*, USHORT, const UCHAR*);
 typedef USHORT (*pfn_INTL_ch_case)(texttype*, UCHAR ch);
@@ -100,8 +99,8 @@ typedef SSHORT (*pfn_INTL_mb2wc)(texttype*, UCS2_CHAR*, const UCHAR*, USHORT);
 
 
 typedef struct texttype {
-	// DATA THAT IS USED BY BOTH ENGINE AND DRIVERS --------------------------------
-	struct intl_blk texttype_blk; // Filled by engine for backward compatibility
+	/* DATA THAT IS USED BY BOTH ENGINE AND DRIVERS -------------------------------- */
+	struct intl_blk texttype_blk; /* Filled by engine for backward compatibility */
 	USHORT texttype_version;	/* version ID of object */
 	USHORT texttype_flags;		/* miscellanous flags */
 	TTYPE_ID texttype_type;		/* Interpretation ID */
@@ -117,9 +116,9 @@ typedef struct texttype {
     texttype_license_mask, but since it's useless in the open source version, I
     followed the new name given in the BSC tree. */
     ULONG texttype_obsolete_field;		/* required bits for license */
-	//\\ END OF INTL PUBLIC DATA ---------------------------------------------------
+	/*\\ END OF INTL PUBLIC DATA --------------------------------------------------- */
 
-	// DRIVER API FUNCTIONS. Called by the engine ----------------------------------
+	/* DRIVER API FUNCTIONS. Called by the engine ---------------------------------- */
 	pfn_INTL_init		texttype_fn_init;
 	pfn_INTL_keylength	texttype_fn_key_length;
 	pfn_INTL_str2key	texttype_fn_string_to_key;
@@ -128,9 +127,9 @@ typedef struct texttype {
 	pfn_INTL_ch_case	texttype_fn_to_lower;	/* One ch to lowercase */
 	pfn_INTL_str2upper	texttype_fn_str_to_upper;	/* Convert string to uppercase */
 	pfn_INTL_2wc		texttype_fn_to_wc;	/* convert string to wc */
-	//\\ END OF DRIVER API FUNCTIONS -----------------------------------------------
+	/*\\ END OF DRIVER API FUNCTIONS ----------------------------------------------- */
 
-	// ENGINE INTERNAL FUNCTIONS - do not implement in collation drivers -----------
+	/* ENGINE INTERNAL FUNCTIONS - do not implement in collation drivers ----------- */
 	typedef bool (*pfn_INTL_contains)(engine_thread_db*, engine_TextType, const UCHAR*,
 		SSHORT, const UCHAR*, SSHORT);
 	typedef bool (*pfn_INTL_like)(engine_thread_db*, engine_TextType, const UCHAR*,
@@ -147,13 +146,13 @@ typedef struct texttype {
 	pfn_INTL_matches		texttype_fn_matches;	/* s1 matches s2 */
 	pfn_INTL_sleuth_check	texttype_fn_sleuth_check;	/* s1 sleuth s2 */
 	pfn_INTL_sleuth_merge	texttype_fn_sleuth_merge;	/* aux function for sleuth */
-	//\\ END OF INTERNAL FUNCTIONS -------------------------------------------------
+	/*\\ END OF INTERNAL FUNCTIONS ------------------------------------------------- */
 
-	// DRIVER API FUNCTIONS. Called by the engine ----------------------------------	
+	/* DRIVER API FUNCTIONS. Called by the engine ---------------------------------- */
 	pfn_INTL_mb2wc		texttype_fn_mbtowc;	/* get next character */
-	//\\ END OF DRIVER API FUNCTIONS -----------------------------------------------
+	/*\\ END OF DRIVER API FUNCTIONS ----------------------------------------------- */
 
-    // DATA USED BY COLLATION DRIVERS. Never used by engine directly ---------------
+    /* DATA USED BY COLLATION DRIVERS. Never used by engine directly --------------- */
 	const BYTE* texttype_collation_table;
 	const BYTE* texttype_toupper_table;
 	const BYTE* texttype_tolower_table;
@@ -161,9 +160,9 @@ typedef struct texttype {
 	const BYTE* texttype_compress_table;
 	const BYTE* texttype_misc;		/* Used by some drivers */
 	ULONG* texttype_unused[4];	/* spare space for use by drivers */
-	//\\ END OF COLLATION DRIVER DATA ----------------------------------------------
+	/*\\ END OF COLLATION DRIVER DATA ---------------------------------------------- */
 
-	// ENGINE INTERNAL FUNCTIONS - do not implement in collation drivers -----------
+	/* ENGINE INTERNAL FUNCTIONS - do not implement in collation drivers ----------- */
 	typedef engine_LikeObject* (*pfn_INTL_like_create)(engine_thread_db*, engine_TextType, 
 		const UCHAR*, SSHORT, UCS2_CHAR);
 	typedef engine_ContainsObject* (*pfn_INTL_contains_create)(engine_thread_db*, engine_TextType, 
@@ -171,7 +170,7 @@ typedef struct texttype {
 
 	pfn_INTL_like_create		texttype_fn_like_create;
 	pfn_INTL_contains_create	texttype_fn_contains_create;
-	//\\ END OF INTERNAL FUNCTIONS -------------------------------------------------
+	/*\\ END OF INTERNAL FUNCTIONS ------------------------------------------------- */
 } *TEXTTYPE;
 
 #define TEXTTYPE_init               1	/* object has been init'ed */
