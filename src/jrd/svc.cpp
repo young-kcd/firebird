@@ -2646,6 +2646,8 @@ static void service_fork(TEXT * service_path, SVC service)
 	service->svc_input = (void *) my_input;
 	service->svc_output = (void *) my_output;
 }
+
+
 static void service_get(
 						SVC service,
 						SCHAR * buffer,
