@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.msgs,v 1.4 2001-08-07 02:15:26 bellardo Exp $
+#   $Id: Makefile.in.msgs,v 1.5 2001-08-13 08:14:38 skywalker Exp $
 # 
 
 ROOT=../..
@@ -155,5 +155,7 @@ $(ja_JA_MSG) : $(BUILD_FILE) indicator.msg
 	$(BIN)/build_file -d $(MSGSDIR)master_msg_db -l ja_JA -f $@
 	$(CHMOD_6) $@
 
+
+FORCE:
 
 -include $(Dependencies)

@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.refDatabases,v 1.1 2001-07-29 23:43:23 skywalker Exp $
+#   $Id: Makefile.in.refDatabases,v 1.2 2001-08-13 08:14:38 skywalker Exp $
 # 
 
 ROOT=../..
@@ -104,3 +104,6 @@ metadata.gdb.x:	$(SRC_ROOT)/misc/metadata.sql
 	$(BIN)/isql -i $<
 	chmod 444 metadata.gdb
 	touch $@
+
+
+FORCE:

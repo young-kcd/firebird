@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.remote,v 1.4 2001-08-07 02:15:26 bellardo Exp $
+#   $Id: Makefile.in.remote,v 1.5 2001-08-13 08:14:38 skywalker Exp $
 # 
 
 ROOT=../..
@@ -295,5 +295,7 @@ force:
 # .j objects are a special SOLARIS make
 merge.j:	merge.o
 
+
+FORCE:
 
 -include $(Dependencies)

@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.wal,v 1.3 2001-08-07 02:15:26 bellardo Exp $
+#   $Id: Makefile.in.wal,v 1.4 2001-08-13 08:14:38 skywalker Exp $
 # 
 
 ROOT=../..
@@ -123,6 +123,8 @@ driver.exe:	driver.o $(WAL_OBJECTS) $(JRD_OBJECTS) $(OBJS)/jrd/thd.o
 		@wal.rsp $(CONLIBSDLL) $(ADVAPILIB) $(MPRLIB)
 	$(RM) wal.rsp
 
+
+FORCE:
 
 -include $(Dependencies)
 
