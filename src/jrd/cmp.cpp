@@ -4138,7 +4138,8 @@ static void pass1_source(thread_db*			tdbb,
 		RecordSelExpr* sub_rse = (RecordSelExpr*) source;
 		if (!rse->rse_jointype && !sub_rse->rse_jointype
 			&& !sub_rse->rse_sorted && !sub_rse->rse_projection
-			&& !sub_rse->rse_first && !sub_rse->rse_plan)
+			&& !sub_rse->rse_first && !sub_rse->rse_skip
+			&& !sub_rse->rse_plan)
 		{
 			jrd_nod** arg = sub_rse->rse_relation;
 			for (const jrd_nod* const* const end = arg + sub_rse->rse_count;
@@ -4252,17 +4253,13 @@ static void pass1_source(thread_db*			tdbb,
 	UCHAR* map = alloc_map(tdbb, csb, stream);
 
 	// We don't expand the view in two cases: 
-	// 1) If the view has a projection, and the query RecordSelExpr already has a projection 
-	//    defined; there is probably some way to merge these projections and do them 
-	//    both at once, but for now we'll punt on that.
+	// 1) If the view has a projection, sort, first/skip or explicit plan.
 	// 2) If it's part of an outer join. 
-	//
-	// AB: If the view has an projection we never expand it.
-	// Because this can create wierd PLANs with multiple views/tables/sp joins.
 
-	if ((view_rse->rse_projection)
-	//if ((view_rse->rse_projection && rse->rse_projection)
-		|| rse->rse_jointype)
+	if (rse->rse_jointype //|| view_rse->rse_jointype ???
+		|| view_rse->rse_sorted || view_rse->rse_projection
+		|| view_rse->rse_first || view_rse->rse_skip
+		|| view_rse->rse_plan)
 	{
 		jrd_nod* node = copy(tdbb, csb, (jrd_nod*) view_rse, map, 0, NULL, false);
 		DEBUG;
