@@ -376,15 +376,21 @@ bool BTR_description(JRD_REL relation, IRT root, IDX * idx, SSHORT id)
 	idx->idx_expression_request = NULL;
 
 	// pick up field ids and type descriptions for each of the fields
-	irtd* key_descriptor = (irtd*) ((UCHAR*) root + irt_desc->irt_desc);
+	UCHAR* ptr = (UCHAR*) root + irt_desc->irt_desc;
 	idx::idx_repeat* idx_desc = idx->idx_rpt;
-	for (int i = 0; i < idx->idx_count; i++, key_descriptor++, idx_desc++) {
+	for (int i = 0; i < idx->idx_count; i++, idx_desc++) {
+		irtd* key_descriptor = (irtd*) ptr;
 		idx_desc->idx_field = key_descriptor->irtd_field;
 		idx_desc->idx_itype = key_descriptor->irtd_itype;
-		idx_desc->idx_selectivity =
-			(dbb->dbb_ods_version >= ODS_VERSION11) ?
-				key_descriptor->irtd_selectivity :
-				irt_desc->irt_stuff.irt_selectivity;
+		// dimitr: adjust the ODS stuff accurately
+		if (dbb->dbb_ods_version >= ODS_VERSION11) {
+			idx_desc->idx_selectivity = key_descriptor->irtd_selectivity;
+			ptr += sizeof(irtd);
+		}
+		else {
+			idx_desc->idx_selectivity = irt_desc->irt_stuff.irt_selectivity;
+			ptr += (sizeof(irtd) - sizeof(float));
+		}
 	}
 	idx->idx_selectivity = irt_desc->irt_stuff.irt_selectivity;
 
