@@ -5092,7 +5092,7 @@ static void plan_check(Csb* csb, RSE rse)
 
 	jrd_nod** ptr = rse->rse_relation;
 	for (const jrd_nod* const* const end = ptr + rse->rse_count;
-		ptr < end; ptr++)
+		 ptr < end; ptr++)
 	{
 		if ((*ptr)->nod_type == nod_relation) {
 			const USHORT stream = (USHORT)(IPTR) (*ptr)->nod_arg[e_rel_stream];
@@ -5100,6 +5100,9 @@ static void plan_check(Csb* csb, RSE rse)
 				ERR_post(isc_no_stream_plan, isc_arg_string,
 						 csb->csb_rpt[stream].csb_relation->rel_name, 0);
 			}
+		}
+		else if ((*ptr)->nod_type == nod_rse) {
+			plan_check(csb, (RSE) *ptr);
 		}
 	}
 }
@@ -5126,12 +5129,32 @@ static void plan_set(Csb* csb, RSE rse, jrd_nod* plan)
 	DEV_BLKCHK(rse, type_nod);
 	DEV_BLKCHK(plan, type_nod);
 
-	if (plan->nod_type == nod_join || plan->nod_type == nod_merge) {
+	if (plan->nod_type == nod_join || plan->nod_type == nod_merge)
+	{
+		rse->rse_plan = NULL;
+
+		if (rse->nod_type == nod_rse)
+		{
+			if (rse->rse_count == 1)
+			{
+				// dummy inner join over an outer one, go deeper
+				plan_set(csb, (RSE) rse->rse_relation[0], plan);
+				return;
+			}
+			else if (rse->rse_count == plan->nod_count)
+			{
+				// save the join plan to be used later in opt.cpp
+				rse->rse_plan = plan;
+			}
+		}
+
         jrd_nod** ptr = plan->nod_arg;
+
 		for (const jrd_nod* const* const end = ptr + plan->nod_count; ptr < end;
 			 ptr++)
 		{
-			plan_set(csb, rse, *ptr);
+			plan_set(csb, rse->rse_plan ?
+				(RSE) rse->rse_relation[ptr - plan->nod_arg] : rse, *ptr);
 		}
 		return;
 	}
