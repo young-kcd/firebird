@@ -1,3 +1,16 @@
+2004-08-10 15:40  hvlad
+
+	* firebird2/src/jrd/err.cpp (1.52):
+	
+	Fix comments
+
+2004-08-10 06:10  skidder
+
+	* firebird2/src/common/classes/: alloc.cpp (1.58), alloc.h (1.47),
+	class_perf.cpp (1.13), test.sh (1.12):
+	
+	Optimize memory manager a little bit
+
 2004-08-09 03:24  skidder
 
 	* firebird2/src/common/classes/: alloc.cpp (1.57), alloc.h (1.46),
