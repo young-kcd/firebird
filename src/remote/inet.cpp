@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.117 2004-06-21 02:48:47 robocop Exp $
+$Id: inet.cpp,v 1.118 2004-08-01 17:44:24 dimitr Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -1421,10 +1421,11 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
  **************************************/
 	struct sockaddr_in address;
 
+	socklen_t l = sizeof(address);
+
 /* If this is a server, we're got an auxiliary connection.  Accept it */
 
 	if (port->port_server_flags) {
-		socklen_t l = sizeof(address);
 		SOCKET n = accept(port->port_channel, (struct sockaddr *) &address, &l);
 		if (n == INVALID_SOCKET) {
 			inet_error(port, "accept", isc_net_event_connect_err, INET_ERRNO);
@@ -1453,13 +1454,29 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 		return NULL;
 	}
 
-	inet_zero((SCHAR *) & address, sizeof(address));
-	inet_copy(reinterpret_cast<const char*>(response->p_resp_data.cstr_address),
-			  (SCHAR *) & address, response->p_resp_data.cstr_length);
+/*
+ * NJK - Determine address and port to use.
+ *
+ * The address returned by the server may be incorrect if it is behind a NAT box
+ * so we must use the address that was used to connect the main socket, not the
+ * address reported by the server.
+ *
+ * The port number reported by the server is used. For NAT support the port number
+ * should be configured to be a fixed port number in the server configuration.
+ */
+
+	inet_zero((SCHAR *) &address, sizeof(address));
+	int status = getpeername((SOCKET) port->port_handle, (struct sockaddr *) &address, &l);
+	if (status != 0) {
+		inet_error(port, "socket", isc_net_event_connect_err, INET_ERRNO);
+		SOCLOSE(n);
+		return NULL;
+	}
 	address.sin_family = AF_INET;
+	address.sin_port = ((struct sockaddr_in *)(response->p_resp_data.cstr_address))->sin_port;
 
 	THREAD_EXIT();
-	int status = connect(n, (struct sockaddr *) &address, sizeof(address));
+	status = connect(n, (struct sockaddr *) &address, sizeof(address));
 	THREAD_ENTER();
 
 	if (status < 0) {
