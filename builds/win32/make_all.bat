@@ -103,6 +103,7 @@ goto :EOF
 :: build headers
 copy %ROOT_PATH%\src\misc\ibase_header.txt %ROOT_PATH%\output\include\ibase.tmp > nul
 type %ROOT_PATH%\src\include\fb_types.h >> %ROOT_PATH%\output\include\ibase.tmp
+type %ROOT_PATH%\src\dsql\sqlda_pub.h >> %ROOT_PATH%\output\include\ibase.tmp
 type %ROOT_PATH%\src\jrd\ibase.h >> %ROOT_PATH%\output\include\ibase.tmp 
 type %ROOT_PATH%\src\jrd\blr.h >> %ROOT_PATH%\output\include\ibase.tmp
 type %ROOT_PATH%\src\include\gen\iberror.h >> %ROOT_PATH%\output\include\ibase.tmp
