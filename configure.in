@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.197 2004-05-02 08:53:23 skidder Exp $
+dnl $Id: configure.in,v 1.198 2004-05-03 11:31:54 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -377,7 +377,6 @@ AC_CHECK_LIB(stdc++, main,,, $LIBS)
 
 
 dnl Check for functions
-AC_CHECK_FUNCS(strlcpy strlcat)
 AC_CHECK_FUNCS(gettimeofday)
 if test "$ac_cv_func_gettimeofday" = "yes"; then
   dnl EKU: SINIX-Z has no prototype for gettimeofday() so the following test

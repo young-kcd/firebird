@@ -128,8 +128,6 @@
 
 
 /* Functions */
-#undef HAVE_STRLCPY
-#undef HAVE_STRLCAT
 #undef HAVE_GETTIMEOFDAY
 #undef HAVE_TIME
 #undef HAVE_TIMES
