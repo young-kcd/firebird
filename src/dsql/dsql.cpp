@@ -1417,8 +1417,14 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 
 		try {
 
-			if (!length)
+			if (!string) {
+				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, 
+					gds_arg_gds, gds_command_end_err, 0);	// Unexpected end of command
+			}
+
+			if (!length) {
 				length = strlen(string);
+			}
 
 /* Figure out which parser version to use */
 /* Since the API to GDS_DSQL_PREPARE is public and can not be changed, there needs to
