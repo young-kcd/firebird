@@ -114,6 +114,7 @@
 #include "../jrd/sort_proto.h"
 #include "../jrd/svc_proto.h"
 #include "../jrd/thd_proto.h"
+#include "../jrd/thread_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/val_proto.h"
 #include "../jrd/file_params.h"

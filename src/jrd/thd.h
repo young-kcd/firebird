@@ -26,7 +26,7 @@
  *
  */
 /*
-$Id: thd.h,v 1.24 2004-05-17 01:52:11 brodsom Exp $
+$Id: thd.h,v 1.25 2004-05-17 22:27:56 brodsom Exp $
 */
 
 #ifndef JRD_THD_H
@@ -207,60 +207,6 @@ typedef struct wlck_t {
 
 const int WLCK_read		= 1;
 const int WLCK_write	= 2;
-
-//
-// This stuff could be better located in the thd_proto.h
-//
-#include "../jrd/sch_proto.h"
-#include "../jrd/thd_proto.h"
-
-#ifdef MULTI_THREAD
-#ifdef SUPERSERVER
-inline void THREAD_ENTER(){
-	SCH_enter();
-}
-inline void THREAD_EXIT(){
-	SCH_exit();
-}
-//inline bool THREAD_VALIDATE(){
-//	return SCH_validate();
-//}
-#define SWEEP_THREAD
-//#define GARBAGE_THREAD
-#else // SUPERSERVER
-inline void THREAD_ENTER(){
-	gds__thread_enter();
-}
-inline void THREAD_EXIT(){
-	gds__thread_exit();
-}
-//inline bool THREAD_VALIDATE(){
-//	return true;
-//}
-#define AST_THREAD
-#endif // SUPERSERVER
-inline void THREAD_SLEEP(ULONG msecs){
-	THD_sleep(msecs);
-}
-inline void THREAD_YIELD(){
-	THD_yield();
-}
-#else // MULTI_THREAD
-inline void THREAD_ENTER(){
-}
-inline void THREAD_EXIT(){
-}
-//inline bool THREAD_VALIDATE(){
-//	return true;
-//}
-inline void THREAD_SLEEP(ULONG msecs){
-	THD_sleep(msecs);
-}
-inline void THREAD_YIELD(){
-	THD_yield();
-}
-#endif // MULTI_THREAD
-
 
 /* Threading allocation size */
 

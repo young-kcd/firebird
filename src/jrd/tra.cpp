@@ -59,6 +59,7 @@
 #include "../jrd/sbm_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thd_proto.h"
+#include "../jrd/thread_proto.h"
 #include "../jrd/tpc_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/vio_proto.h"

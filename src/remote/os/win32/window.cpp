@@ -36,6 +36,7 @@
 #include "../jrd/svc_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thd.h"
+#include "../jrd/thread_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../remote/os/win32/window_proto.h"
 #include "../remote/os/win32/propty_proto.h"

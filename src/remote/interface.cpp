@@ -64,6 +64,7 @@
 #include "../jrd/sdl_proto.h"
 #include "../jrd/thd_proto.h"
 #include "../jrd/sch_proto.h"
+#include "../jrd/thread_proto.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>

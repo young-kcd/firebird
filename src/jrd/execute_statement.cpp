@@ -40,6 +40,7 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/sch_proto.h"
+#include "../jrd/thread_proto.h"
 #define	WHY_NO_API 
 #include "../jrd/why_proto.h"
 

@@ -103,6 +103,7 @@
 #include "../jrd/sbm_proto.h"
 #include "../jrd/sdw_proto.h"
 #include "../jrd/thd_proto.h"
+#include "../jrd/thread_proto.h"
 #include "../jrd/event_proto.h"
 #include "../jrd/nbak.h"
 #include "../common/utils_proto.h"

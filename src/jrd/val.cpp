@@ -571,6 +571,7 @@ VI. ADDITIONAL NOTES
 #include "../jrd/thd_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/val_proto.h"
+#include "../jrd/thread_proto.h"
 
 #ifdef DEBUG_VAL_VERBOSE
 #include "../jrd/dmp_proto.h"

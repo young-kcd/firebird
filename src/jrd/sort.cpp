@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.67 2004-05-15 00:55:09 brodsom Exp $
+ * $Id: sort.cpp,v 1.68 2004-05-17 22:27:56 brodsom Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -47,6 +47,7 @@
 #include "../jrd/sort_proto.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/sch_proto.h"
+#include "../jrd/thread_proto.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>

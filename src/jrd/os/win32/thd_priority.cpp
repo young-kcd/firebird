@@ -23,7 +23,7 @@
 
 #include "firebird.h"
 #include "../jrd/common.h"
-#include "../jrd/thd.h"
+#include "../jrd/thd_proto.h"
 #ifdef WIN_NT
 #include <windows.h> // HANDLE
 #endif

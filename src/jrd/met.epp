@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.119 2004-05-15 00:55:08 brodsom Exp $
+$Id: met.epp,v 1.120 2004-05-17 22:27:56 brodsom Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -99,6 +99,7 @@ $Id: met.epp,v 1.119 2004-05-15 00:55:08 brodsom Exp $
 #include "../jrd/sdw_proto.h"
 #include "../jrd/thd_proto.h"
 #include "../jrd/sch_proto.h"
+#include "../jrd/thread_proto.h"
 #include "../jrd/iberr.h"
 #include "../common/utils_proto.h"
 

@@ -100,6 +100,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/license.h"
 #include "../jrd/sch_proto.h"
+#include "../jrd/thread_proto.h"
 #include "../jrd/svc_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/thd_proto.h"

@@ -35,6 +35,7 @@
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thd_proto.h"
+#include "../jrd/thread_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/iberr_proto.h"
 #include "../jrd/gdsassert.h"

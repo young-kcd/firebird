@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.99 2004-05-17 15:14:09 brodsom Exp $
+$Id: lock.cpp,v 1.100 2004-05-17 22:29:14 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -58,6 +58,7 @@ $Id: lock.cpp,v 1.99 2004-05-17 15:14:09 brodsom Exp $
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thd_proto.h"
+#include "../jrd/thread_proto.h"
 #include "../common/config/config.h"
 #include <errno.h>
 

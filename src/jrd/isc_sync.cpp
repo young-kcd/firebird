@@ -67,6 +67,7 @@
 #include "../jrd/sch_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/thd_proto.h"
+#include "../jrd/thread_proto.h"
 
 #if defined(SIG_RESTART) || defined(UNIX) 
 static ULONG inhibit_restart;

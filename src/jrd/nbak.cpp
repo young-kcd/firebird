@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.cpp,v 1.32 2004-05-15 00:55:09 brodsom Exp $
+ *  $Id: nbak.cpp,v 1.33 2004-05-17 22:27:56 brodsom Exp $
  *
  */
 
@@ -48,6 +48,7 @@
 #include "cch_proto.h"
 #include "isc_proto.h"
 #include "thd_proto.h"
+#include "../jrd/thread_proto.h"
 #include "os/pio_proto.h"
 #include "gen/iberror.h"
 #include "gds_proto.h"

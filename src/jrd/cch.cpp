@@ -66,6 +66,7 @@
 #include "../jrd/sdw_proto.h"
 #include "../jrd/shut_proto.h"
 #include "../jrd/thd_proto.h"
+#include "../jrd/thread_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../common/config/config.h"
 #include "../jrd/jrd_time.h"

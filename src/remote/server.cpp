@@ -52,6 +52,7 @@
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thd_proto.h"
+#include "../jrd/thread_proto.h"
 #include "../jrd/why_proto.h"
 #include "../common/classes/semaphore.h"
 #ifdef DEBUG

@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.107 2004-05-17 10:21:03 brodsom Exp $
+$Id: inet.cpp,v 1.108 2004-05-17 22:29:41 brodsom Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -117,6 +117,7 @@ const int INET_RETRY_CALL	= 5;
 #include "../jrd/sch_proto.h"
 #endif /* REQUESTER */
 
+#include "../jrd/thread_proto.h"
 #include "../common/config/config.h"
 
 #if (defined hpux || defined SCO_UNIX)

@@ -102,6 +102,7 @@ defined APIs for this function.
 #include "../jrd/flu_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thd_proto.h"
+#include "../jrd/thread_proto.h"
 #ifdef WIN_NT
 #include <windows.h>
 #ifdef TEXT

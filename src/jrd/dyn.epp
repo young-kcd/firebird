@@ -73,6 +73,7 @@
 #include "../jrd/thd_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/sch_proto.h"
+#include "../jrd/thread_proto.h"
 #include "../common/utils_proto.h"
 
 DATABASE DB = STATIC "ODS.RDB";

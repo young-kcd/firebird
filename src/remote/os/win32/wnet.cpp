@@ -43,6 +43,7 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/sch_proto.h"
+#include "../jrd/thread_proto.h"
 #include "../common/config/config.h"
 
 #include <stdarg.h>

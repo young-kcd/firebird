@@ -62,6 +62,7 @@
 #include "../jrd/rse.h"
 #include "../jrd/rng.h"
 #include "../jrd/thd.h"
+#include "../jrd/thread_proto.h"
 #ifdef VIO_DEBUG
 #include "../jrd/all.h"
 #include "../jrd/vio_debug.h"

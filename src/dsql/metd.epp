@@ -48,6 +48,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thd_proto.h"
+#include "../jrd/thread_proto.h"
 #include "../common/utils_proto.h"
 
 /* NOTE: The static definition of DB and gds_trans by gpre will not

@@ -85,6 +85,7 @@ nested FOR loops are added.
 #include "../jrd/gds_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thd_proto.h"
+#include "../jrd/thread_proto.h"
 #include "../jrd/why_proto.h"
 #include "../jrd/y_handle.h"
 #include "../common/config/config.h"

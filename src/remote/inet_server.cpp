@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: inet_server.cpp,v 1.41 2004-05-17 10:21:03 brodsom Exp $
+$Id: inet_server.cpp,v 1.42 2004-05-17 22:29:41 brodsom Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -94,6 +94,7 @@ $Id: inet_server.cpp,v 1.41 2004-05-17 10:21:03 brodsom Exp $
 #include "../remote/serve_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/sch_proto.h"
+#include "../jrd/thread_proto.h"
 
 #ifdef UNIX
 #ifdef NETBSD

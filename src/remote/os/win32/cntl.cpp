@@ -33,6 +33,7 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thd_proto.h"
+#include "../jrd/thread_proto.h"
 #include "../jrd/jrd_proto.h"
 
 #ifdef WIN_NT

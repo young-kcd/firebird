@@ -26,6 +26,7 @@
 #include <string.h>
 #include "../remote/remote.h"
 #include "../remote/serve_proto.h"
+#include "../jrd/thread_proto.h"
 #include "../jrd/common.h"
 #include <winsock2.h>
 

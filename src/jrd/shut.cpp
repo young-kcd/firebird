@@ -37,6 +37,7 @@
 #include "../jrd/sch_proto.h"
 #include "../jrd/shut_proto.h"
 #include "../jrd/thd_proto.h"
+#include "../jrd/thread_proto.h"
 #include "../jrd/tra_proto.h"
 
 using namespace Jrd;
