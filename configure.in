@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.12 2003-11-09 21:24:10 bellardo Exp $
+dnl $Id: configure.in,v 1.141.2.13 2003-11-11 00:26:23 bellardo Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -734,11 +734,21 @@ case "$PLATFORM" in
     ;;
 esac
 
+if test -f ${MAKE_SRC_DIR}/postfix.${MAKEFILE_PREFIX};then
+	POSTFIX_FILE=gen/make.platform.postfix:${MAKE_SRC_DIR}/postfix.${MAKEFILE_PREFIX}
+	POSTFIX_INCLUDE='include $(ROOT)/gen/make.platform.postfix'
+else
+	POSTFIX_FILE=
+	POSTFIX_INCLUDE=
+fi
+AC_SUBST(POSTFIX_INCLUDE)
+
 
 AC_OUTPUT(
 gen/make.rules:${MAKE_SRC_DIR}/make.rules
 gen/make.defaults:${MAKE_SRC_DIR}/make.defaults
 gen/make.platform:${MAKE_SRC_DIR}/prefix.${MAKEFILE_PREFIX}
+${POSTFIX_FILE}
 gen/make.shared.variables:${MAKE_SRC_DIR}/make.shared.variables
 gen/make.shared.targets:${MAKE_SRC_DIR}/make.shared.targets
 src/Makefile:${MAKE_SRC_DIR}/Makefile.in.firebird
