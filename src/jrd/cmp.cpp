@@ -3026,9 +3026,8 @@ static JRD_NOD pass1(
 
 			for (stack = (*csb)->csb_current_rses; stack;
 				 stack = stack->lls_next) {
-				RSE rse;
 
-				rse = (RSE) stack->lls_object;
+				RSE rse = (RSE) stack->lls_object;
 				if (stream_in_rse(stream, rse))
 					break;
 				rse->nod_flags |= rse_variant;
