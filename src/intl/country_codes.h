@@ -24,8 +24,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _INTL_COUNTRY_CODES_H_
-#define _INTL_COUNTRY_CODES_H_
+#ifndef INTL_COUNTRY_CODES_H
+#define INTL_COUNTRY_CODES_H
 
 #define   CC_C                     0	/* 'C' Language locale */
 
@@ -61,4 +61,4 @@
 #define   CC_NORDAN                92	/* NORDAY + DENMARK */
 #define   CC_SWEDFIN               404	/* SWEDIN + FINLAND */
 
-#endif /* _INTL_COUNTRY_CODES_H_ */
+#endif /* INTL_COUNTRY_CODES_H */

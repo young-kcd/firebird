@@ -45,8 +45,8 @@
  *	the type names as used on the PC
  */
 
-#ifndef _INTL_LD_H_
-#define _INTL_LD_H_
+#ifndef INTL_LD_H
+#define INTL_LD_H
 
 #ifdef CHAR
 #undef CHAR
@@ -80,8 +80,8 @@
 //-----------------------------------------------------------------
 */
 
-#ifndef __LD_H
-#define __LD_H
+//#ifndef __LD_H
+//#define __LD_H
 
 /*
 //-----------------------------------------------------------------
@@ -472,7 +472,7 @@ struct CompressPair {
 */
 //#define LDERR_UNKNOWN             ERRBASE_LDAPI + 0xA7
 
-#endif
+//#endif
 /*
 //-----------------------------------------------------------------
 
@@ -481,9 +481,12 @@ struct CompressPair {
 // VCS AREA
 //-----------------------------------------------------------------
 
-//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.24 2004-05-17 10:18:37 brodsom Exp $
+//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.25 2004-05-19 15:21:15 brodsom Exp $
 
 //	$Log: not supported by cvs2svn $
+//	Revision 1.24  2004/05/17 10:18:37  brodsom
+//	Macro cleaning
+//	
 //	Revision 1.23  2004/05/16 02:53:34  brodsom
 //	Macro cleaning
 //	
@@ -615,4 +618,4 @@ struct CompressPair {
 //-----------------------------------------------------------------
 */
 
-#endif /* _INTL_LD_H_ */
+#endif /* INTL_LD_H */

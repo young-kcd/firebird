@@ -22,12 +22,12 @@
  */
 
 
-#ifndef REGISTRY_DEFINES
-#define REGISTRY_DEFINES
+#ifndef REGISTRY_DEFINES_H
+#define REGISTRY_DEFINES_H
 
 static const char* REG_KEY_ROOT_COMPANY	= "SOFTWARE\\Firebird Project";
 static const char* REG_KEY_ROOT_PRODUCT	= "SOFTWARE\\Firebird Project\\Firebird Server";
 static const char* REG_KEY_ROOT_INSTANCES	= "SOFTWARE\\Firebird Project\\Firebird Server\\Instances";
 static const char* FB_DEFAULT_INSTANCE		= "DefaultInstance";
 
-#endif /* REGISTRY_DEFINES */
+#endif /* REGISTRY_DEFINES_H */
