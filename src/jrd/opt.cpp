@@ -833,7 +833,8 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 			test_rsb = rsb->rsb_next;
 		}
 		if ((sort_present && !sort_can_be_used) ||
-			((test_rsb) && (test_rsb->rsb_type == rsb_merge) && !sort && sort_present)) {
+			((test_rsb) && (test_rsb->rsb_type == rsb_merge) && !sort && sort_present))
+		{
 			sort = saved_sort_node;
 		}
 

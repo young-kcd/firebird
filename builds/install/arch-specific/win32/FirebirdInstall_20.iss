@@ -828,7 +828,7 @@ begin
 
 end;
 
-//InnoSetup has a Check Parameter that allows installtion if the function returns true.
+//InnoSetup has a Check Parameter that allows installation if the function returns true.
 //For firebird.conf we want to do two things:
 // o if firebird.conf already exists then install firebird.conf.default
 // o if firebird.conf does not exist then install firebird.conf

@@ -256,7 +256,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			{
 				status = SERVICES_install(manager, ISCGUARD_SERVICE,
 					ISCGUARD_DISPLAY_NAME, ISCGUARD_DISPLAY_DESCR,
-					ISCGUARD_EXECUTABLE, directory, 	NULL, sw_startup,
+					ISCGUARD_EXECUTABLE, directory, NULL, sw_startup,
 					username, password, svc_error);
 				status2 = FB_SUCCESS;
 				if (username != 0)
