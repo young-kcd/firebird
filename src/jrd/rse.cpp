@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.26 2003-04-03 13:52:35 brodsom Exp $
+ * $Id: rse.cpp,v 1.27 2003-05-11 19:38:11 skidder Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -454,10 +454,16 @@ BOOLEAN RSE_get_record(TDBB tdbb, RSB rsb, RSE_GET_MODE mode)
 			// Lock record if we were asked for it
 			JRD_TRA transaction = request->req_transaction;
 
-			RPB* org_rpb = request->req_rpb + rsb->rsb_stream;
+			RSB test_rsb;
+			if (rsb->rsb_type == rsb_boolean)
+				test_rsb = rsb->rsb_next;
+			else
+				test_rsb = rsb;
+
+			RPB* org_rpb = request->req_rpb + test_rsb->rsb_stream;
 			JRD_REL relation = org_rpb->rpb_relation;
 
-			if (!relation->rel_view_rse && !relation->rel_file) 
+			if (relation && !relation->rel_view_rse && !relation->rel_file) 
 			{
 				RLCK_reserve_relation(tdbb, transaction, relation, TRUE, TRUE);
 				
