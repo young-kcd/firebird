@@ -82,7 +82,7 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 shlwapi.lib /nologo /version:1.0 /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept
+# ADD BASE LINK32 fbclient.lib shlwapi.lib /nologo /version:1.0 /subsystem:windows /dll /debug /machine:I386 /out:"c:\winnt\system32\Firebird2Control.cpl" /pdbtype:sept /libpath:"..\..\..\temp\debug\fbclient"
 # ADD LINK32 shlwapi.lib mfc42d.lib mfcs42d.lib th32.lib version.lib /nologo /version:1.0 /subsystem:windows /dll /incremental:no /debug /machine:I386 /out:"..\..\..\temp\debug\firebird\system32\Firebird2Control.cpl" /pdbtype:sept
 # SUBTRACT LINK32 /pdb:none
 
@@ -95,54 +95,6 @@ LINK32=link.exe
 # Begin Group "Source Files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
-# Begin Group "MEMORY files"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\alloc.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\locks.cpp
-# End Source File
-# End Group
-# Begin Group "CONFIG files"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\src\common\config\config.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\config\config_file.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\os\win32\config_root.cpp
-# End Source File
-# End Group
-# Begin Group "OTHER files"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\src\common\fb_exception.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\fb_string.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\os\win32\fbsyslog.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\os\win32\path_utils.cpp
-# End Source File
-# End Group
 # Begin Source File
 
 SOURCE=..\..\..\src\utilities\fbcpl\ctrlpan.cpp
@@ -178,22 +130,6 @@ SOURCE=..\..\..\src\utilities\fbcpl\StdAfx.cpp
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
-SOURCE=..\..\..\src\common\classes\alloc.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\include\gen\autoconfig.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\common.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\config\config.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\utilities\fbcpl\ctrlpan.h
 # End Source File
 # Begin Source File
@@ -210,11 +146,7 @@ SOURCE=..\..\..\src\utilities\fbcpl\FBPanel.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\os\fbsyslog.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\utilities\registry.h
+SOURCE=..\..\..\src\utilities\install\registry.h
 # End Source File
 # Begin Source File
 
@@ -222,7 +154,7 @@ SOURCE=..\..\..\src\utilities\fbcpl\Resource.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\servi_proto.h
+SOURCE=..\..\..\src\utilities\install\servi_proto.h
 # End Source File
 # Begin Source File
 
