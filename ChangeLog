@@ -1,3 +1,15 @@
+2004-02-27 13:04  eku
+
+	* firebird2/builds/install/arch-specific/sinixz/prototype.in:
+	
+	SINIX-Z: fixed package list
+
+2004-02-27 10:32  eku
+
+	* firebird2/src/jrd/common.h:
+	
+	SINIX-Z: added prototype for strncasecmp
+
 2004-02-26 18:41  skidder
 
 	* firebird2/src/jrd/intl.cpp:
