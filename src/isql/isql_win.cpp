@@ -329,7 +329,7 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 			if (ret) {
 				ib_fflush(chf);
 				ib_fclose(chf);
-				xfer_file(defHistFile, tmpDialogParam, FALSE);
+				xfer_file(defHistFile, tmpDialogParam, false);
 				chf = ib_fopen(defHistFile, "a");
 			}
 			break;
@@ -344,7 +344,7 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 			if (ret) {
 				ib_fflush(opf);
 				ib_fclose(opf);
-				xfer_file(defOutputFile, tmpDialogParam, FALSE);
+				xfer_file(defOutputFile, tmpDialogParam, false);
 				opf = ib_fopen(defOutputFile, "a");
 			}
 			break;
@@ -787,7 +787,7 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 }
 
 
-void ISQL_win_err( SCHAR * string)
+void ISQL_win_err(const char* string)
 {
 /***************************************************************
  *
@@ -1182,8 +1182,8 @@ static void init_isql_first( HINSTANCE hInstance)
 
 static SSHORT open_temp_file(
 							 HINSTANCE hInstance,
-							 IB_FILE ** file,
-							 SCHAR * fileName, SSHORT errStrNum)
+							 IB_FILE** file,
+							 SCHAR* fileName, SSHORT errStrNum)
 {
 /********************************************************************
  *
@@ -1322,7 +1322,7 @@ static void paint_isql( HWND hWnd)
 }
 
 
-static void pusharg( SCHAR * argument)
+static void pusharg(const char* argument)
 {
 /********************************************************************
  *
@@ -1407,8 +1407,8 @@ static void test_overwrite()
 
 
 static void xfer_file(
-					  SCHAR * inFileName,
-					  SCHAR * outFileName, SSHORT appendFlag)
+					  const char* inFileName,
+					  const char* outFileName, bool appendFlag)
 {
 /***************************************************************
  *
@@ -1420,12 +1420,11 @@ static void xfer_file(
  *      Copy current file to a save file.
  *
  ***************************************************************/
-	IB_FILE *xferin;
-	IB_FILE *xferout;
 	SCHAR xferbuff[1024];
 
-	xferin = ib_fopen(inFileName, "r");
+	IB_FILE* xferin = ib_fopen(inFileName, "r");
 	if (xferin) {
+        IB_FILE* xferout;
 		if (appendFlag)
 			xferout = ib_fopen(outFileName, "a");
 		else

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.36 2004-04-10 00:25:19 robocop Exp $
+ * $Id: show.epp,v 1.37 2004-04-11 04:04:16 robocop Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -1018,7 +1018,8 @@ void SHOW_print_metadata_text_blob(IB_FILE* fp,
 	USHORT length = 0;
 	while (!isc_get_segment(isc_status, &blob_handle, &length,
 							(USHORT) (BUFFER_LENGTH512 - 1), buffer) ||
-		   isc_status[1] == isc_segment) {
+		   isc_status[1] == isc_segment)
+	{
 /*
  * Need to step through the buffer until we hit a '\n' and then print the
  * line.  This is because '\n' are included in blob text.
@@ -2441,7 +2442,7 @@ static processing_state show_functions(const SCHAR* object)
 
 					fb_utils::fb_exact_name(CHARSET.RDB$CHARACTER_SET_NAME);
 					sprintf (Print_buffer, "(%d) CHARACTER SET %s",
-							 (FNA.RDB$FIELD_LENGTH / MAX (1,CHARSET.RDB$BYTES_PER_CHARACTER)),
+							 (FNA.RDB$FIELD_LENGTH / MAX (1, CHARSET.RDB$BYTES_PER_CHARACTER)),
 							 CHARSET.RDB$CHARACTER_SET_NAME);
 					ISQL_printf (Out, Print_buffer);
 

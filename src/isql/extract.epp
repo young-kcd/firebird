@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.27 2004-04-10 00:25:18 robocop Exp $
+ * $Id: extract.epp,v 1.28 2004-04-11 04:04:16 robocop Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -2728,8 +2728,6 @@ static void list_index()
  *	Uses get_index_segment to provide a key list for each index
  *
  **************************************/
-	bool first = true;
-
 	char* collist = (SCHAR*) ISQL_ALLOC(BUFFER_LENGTH512 * 2);
 	if (!collist)
 	{
@@ -2740,6 +2738,8 @@ static void list_index()
 		return;
 	}
 
+	bool first = true;
+	
 	FOR IDX IN RDB$INDICES CROSS RELC IN RDB$RELATIONS
 		OVER RDB$RELATION_NAME
 		WITH (RELC.RDB$SYSTEM_FLAG NE 1 OR RELC.RDB$SYSTEM_FLAG MISSING)
@@ -2813,7 +2813,6 @@ static void list_views()
  *	Note: This should also contain check option
  *
  **************************************/
-	bool first;
 
 // If this is a view, use print_blob to print the view text 
 
@@ -2823,7 +2822,7 @@ static void list_views()
 		REL.RDB$FLAGS = REL_sql
 		SORTED BY REL.RDB$RELATION_ID
 
-		first = true;
+		bool first = true;
 		fb_utils::fb_exact_name(REL.RDB$RELATION_NAME);
 
 		if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)

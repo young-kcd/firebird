@@ -24,7 +24,7 @@
 #ifndef ISQL_ISQL_PROTO_H
 #define ISQL_ISQL_PROTO_H
 
-void	ISQL_array_dimensions(TEXT*);
+void	ISQL_array_dimensions(const TEXT*);
 TEXT*	ISQL_blankterm2(const TEXT* input, TEXT* output);
 void	ISQL_build_table_list(void**, IB_FILE*, IB_FILE*, IB_FILE*);
 void	ISQL_build_view_list(void**, IB_FILE*, IB_FILE*, IB_FILE*);
@@ -52,7 +52,9 @@ SLONG	ISQL_get_index_segments(TEXT*, const TEXT*, bool);
 bool	ISQL_get_null_flag(const TEXT*, TEXT*);
 void	ISQL_get_version(bool);
 SSHORT	ISQL_init(IB_FILE*, IB_FILE*);
-bool	ISQL_is_domain(TEXT*);
+#ifdef NOT_USED_OR_REPLACED
+bool	ISQL_is_domain(const TEXT*);
+#endif
 int		ISQL_main(int, char**);
 void	ISQL_make_upper(TEXT*);
 void	ISQL_msg_get(USHORT, TEXT*, const TEXT*, const TEXT*, const TEXT*,
@@ -65,7 +67,7 @@ void	ISQL_reset_settings();
 void	ISQL_ri_action_print(const TEXT*, const TEXT*, bool);
 int		ISQL_sql_statement(TEXT*, IB_FILE*, IB_FILE*, IB_FILE*);
 void	ISQL_truncate_term(TEXT*, USHORT);
-void	ISQL_win_err(SCHAR*);
+void	ISQL_win_err(const char*);
 
 #endif // ISQL_ISQL_PROTO_H
 

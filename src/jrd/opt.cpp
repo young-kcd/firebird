@@ -1443,7 +1443,6 @@ static void check_sorts(RecordSelExpr* rse)
 			const jrd_nod* const* sort_ptr = sort->nod_arg;
 			const jrd_nod* const* const sort_end = sort_ptr + sort->nod_count;
 			for (; sort_ptr < sort_end; sort_ptr++)
-				 
 			{
 				const jrd_nod* const* group_ptr = group->nod_arg;
 				const jrd_nod* const* const group_end = group_ptr + sort->nod_count;
