@@ -1,3 +1,92 @@
+2003-07-12 22:41  brodsom
+
+	* firebird2/src/jrd/iscmsgs.msg:
+	
+	Remove unused file
+
+2003-07-12 22:37  brodsom
+
+	* firebird2/: builds/posix/Makefile.in.codes, src/jrd/ids.m:
+	
+	Adding generator for fields.h, relations.h, ids.h and names.h
+
+2003-07-12 22:10  brodsom
+
+	* firebird2/: builds/win32/make_boot.bat,
+	builds/win32/preprocess.bat, builds/win32/msvc6/Firebird2Boot.dsw,
+	builds/win32/msvc6/relations.dsp, src/jrd/idx.h, src/jrd/ini.epp,
+	src/jrd/ini.h, src/jrd/relations.epp, src/jrd/types.h,
+	src/jrd/vio.cpp, src/include/gen/relations.h,
+	src/include/gen/fields.h, src/include/gen/ids.h,
+	src/include/gen/names.h:
+	
+	Adding generator for fields.h, relations.h, ids.h and names.h
+
+2003-07-12 22:02  brodsom
+
+	* firebird2/builds/posix/Makefile.in.codes:
+	
+	Correction
+
+2003-07-12 15:24  brodsom
+
+	* firebird2/src/jrd/: cmp.cpp, dfw.epp, ids.m, ini.h, met.epp,
+	vio.cpp:
+	
+	Move fields.h, relations.h and names.h to include/gen, generator
+	will follow
+
+2003-07-12 15:00  brodsom
+
+	* firebird2/src/: jrd/fields.h, jrd/names.h, jrd/relations.h,
+	include/gen/fields.h, include/gen/names.h, include/gen/relations.h:
+	
+	Move fields.h, relations.h and names.h to include/gen, generator
+	will follow
+
+2003-07-12 12:22  brodsom
+
+	* firebird2/src/: jrd/codes.epp, jrd/gds.cpp, jrd/map.cpp,
+	jrd/par.cpp, jrd/blp.h, include/gen/codetext.h, include/gen/msgs.h,
+	include/gen/rdb_codes.h:
+	
+	-Include var definitions in rdb_codes, codetext, msgs and blh.p 
+	headers.  -Uncommited change to codes.epp to allow to used two
+	directories (moving ftn and pas)
+
+2003-07-12 11:55  brodsom
+
+	* firebird2/configure.in:
+	
+	Clean
+
+2003-07-12 11:54  brodsom
+
+	* firebird2/builds/posix/Makefile.in.gpre:
+	
+	Remove, replaced with boot.gpre, client.gpre and embed.gpre
+
+2003-07-12 11:42  brodsom
+
+	* firebird2/builds/win32/msvc6/: engine_classic.dsp,
+	engine_embed.dsp, engine.dsp:
+	
+	Remove not used rdb*.h
+
+2003-07-12 00:39  skidder
+
+	* firebird2/src/jrd/: rse.cpp, vio.cpp, vio_proto.h:
+	
+	Fix problem in explicit locking logic implicitly noted by Ann
+	Harrison
+
+2003-07-12 00:36  skidder
+
+	* firebird2/src/dsql/: node.h, parse.y, pass1.cpp:
+	
+	Separate DSQL cursors management and explicit locks as suggested by
+	Ivan Prenosil
+
 2003-07-11 18:49  brodsom
 
 	* firebird2/builds/win32/make_all.bat:
