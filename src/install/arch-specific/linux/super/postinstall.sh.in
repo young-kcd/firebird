@@ -561,7 +561,7 @@ removeLineFromFile() {
 
     # Add entries to host.equiv & hosts.allow files
     updateHostsDotFile /etc/hosts.equiv
-    updateHostsDotFile /etc/hosts.allow
+#   updateHostsDotFile /etc/hosts.allow
 	
 	
     # remove any gds_db line in the /etc/inetd.conf
