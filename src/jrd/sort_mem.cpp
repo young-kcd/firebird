@@ -293,7 +293,7 @@ size_t SortMem::read(STATUS *status, size_t position, char *address, size_t leng
 		assert(block);
 
 		// Read data from as many blocks as necessary
-		for (Block *itr = block; itr, length > 0; itr = itr->next, pos = 0)
+		for (Block *itr = block; itr && length > 0; itr = itr->next, pos = 0)
 		{
 			size_t n = itr->read(status, pos, address, length);
 			address += n;
@@ -333,7 +333,7 @@ size_t SortMem::write(STATUS *status, size_t position, char *address, size_t len
 		assert(block);
 
 		// Write data to as many blocks as necessary
-		for (Block *itr = block; itr, length > 0; itr = itr->next, pos = 0)
+		for (Block *itr = block; itr && length > 0; itr = itr->next, pos = 0)
 		{
 			size_t n = itr->write(status, pos, address, length);
 			address += n;
