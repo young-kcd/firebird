@@ -130,7 +130,7 @@ ConfigImpl::ConfigImpl()
 {
 	/* Prepare some stuff */
 
-	ConfigFile file;
+	ConfigFile file(true);
 	root_dir = getRootDirectory();
 	MemoryPool *pool = getDefaultMemoryPool();
 	int size = FB_NELEM(entries);

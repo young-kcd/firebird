@@ -68,7 +68,8 @@ class ConfigFile
 		Firebird::allocator <std::pair <const string, string> > > mymap_t;
 
 public:
-    ConfigFile() : isLoadedFlg(false) {}
+    ConfigFile(bool ExitOnError) 
+		: isLoadedFlg(false), fExitOnError(ExitOnError) {}
 
 	// configuration file management
     const string getConfigFile() { return configFile; }
@@ -93,6 +94,7 @@ public:
 private:
     string configFile;
     bool isLoadedFlg;
+	bool fExitOnError;
     mymap_t parameters;
 };
 

@@ -41,7 +41,7 @@ bool ResolveDatabaseAlias(const char* alias, char* database)
 {
 	TEXT alias_filename[MAXPATHLEN];
 	gds__prefix(alias_filename, const_cast<char*>(ALIAS_FILE));
-	ConfigFile aliasConfig;
+	ConfigFile aliasConfig(false);
 	aliasConfig.setConfigFile(alias_filename);
 
 	const char correct_dir_sep = PathUtils::dir_sep;

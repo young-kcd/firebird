@@ -26,6 +26,7 @@
 #include "firebird.h"
 
 #include "../../common/config/config_file.h"
+#include "../jrd/os/fbsyslog.h"
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -33,6 +34,18 @@
 
 #include <fstream>
 #include <iostream>
+
+// Invalid or missing CONF_FILE may lead to severe errors
+// in applications. That's why for regular SERVER builds
+// it's better to exit with appropriate diags rather continue
+// with missing / wrong configuration.
+#if (! defined(BOOT_BUILD)) && (! defined(EMBEDDED))
+#define EXIT_ON_NO_CONF
+#else
+#ifdef EXIT_ON_NO_CONF
+#undef EXIT_ON_NO_CONF
+#endif
+#endif
 
 typedef Firebird::string string;
 
@@ -222,11 +235,26 @@ void ConfigFile::loadConfig()
 	parameters.clear();
 
     std::ifstream configFileStream(configFile.c_str());
-
+	
+#ifdef EXIT_ON_NO_CONF
+	int BadLinesCount = 0;
+#endif
     if (!configFileStream)
     {
-        // config file does not exist, a warning message would be nice.
-        return;
+        // config file does not exist
+		string Msg = "Missing configuration file: " + configFile;
+#ifdef EXIT_ON_NO_CONF
+		if (fExitOnError)
+			Msg += ", exiting";
+#endif
+		Firebird::Syslog::Record(fExitOnError ? 
+				Firebird::Syslog::Error :
+				Firebird::Syslog::Warning, Msg);
+#ifdef EXIT_ON_NO_CONF
+		if (fExitOnError)
+			exit(1);
+#endif
+		return;
     }
     string inputLine;
 
@@ -242,11 +270,16 @@ void ConfigFile::loadConfig()
 			continue;	// comment-line or empty line
 		}
 
-		// cout << "read \"" << inputLine << "\"\n";
-
         if (inputLine.find('=') == string::npos)
         {
-            std::cerr << "illegal line \"" << inputLine << "\"" << std::endl;
+            string Msg = configFile + ": illegal line \"" +
+				inputLine + "\"";
+			Firebird::Syslog::Record(fExitOnError ? 
+					Firebird::Syslog::Error :
+					Firebird::Syslog::Warning, Msg);
+#ifdef EXIT_ON_NO_CONF
+			BadLinesCount++;
+#endif
             continue;
         }
 
@@ -254,12 +287,16 @@ void ConfigFile::loadConfig()
 
         string key   = parseKeyFrom(inputLine, endPos);
 		stripTrailingWhiteSpace(key);
+		// TODO: here we must check for correct parameter spelling !
         string value = parseValueFrom(inputLine, endPos);
-
-		// std::cout << "adding \"" << key << "\" \"" << value << "\"" << std::endl;
 
 		// parameters.insert(pair<string, string>(key, value));
 		// Just to display yet another template function
         parameters.insert(std::make_pair(key, value));
     }
+#ifdef EXIT_ON_NO_CONF
+	if (BadLinesCount && fExitOnError) {
+		exit(1);
+	}
+#endif
 }
