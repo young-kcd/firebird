@@ -1,3 +1,47 @@
+2003-01-20 19:38  alexpeshkoff
+
+	* firebird2/src/common/classes/: locks.cpp, locks.h:
+	
+	Make Spinlock Win95 compatible
+
+2003-01-20 15:31  skidder
+
+	* firebird2/src/common/classes/alloc.cpp:
+	
+	Fixed engine compilation problem on GCC3.2.1
+
+2003-01-20 14:50  dimitr
+
+	* firebird2/src/: jrd/enc.cpp, jrd/isc_file.cpp, jrd/svc.cpp,
+	jrd/svc_proto.h, remote/window.cpp:
+	
+	Cleanup by Dimitry Sibiryakov.
+
+2003-01-20 13:50  dimitr
+
+	* firebird2/src/utilities/security.epp:
+	
+	Sigh. Yet another porting bug fixed.
+
+2003-01-20 12:10  dimitr
+
+	* firebird2/src/jrd/: all.cpp, all.h, jrd.h:
+	
+	Fixed major memory leaks.
+
+2003-01-20 12:07  dimitr
+
+	* firebird2/src/jrd/os/win32/thd_priority.cpp:
+	
+	Let's use default memory pool in production builds. I cannot see a
+	reason to allocate 100K for small structures of the scheduler.
+
+2003-01-20 09:40  dimitr
+
+	* firebird2/src/common/classes/alloc.cpp:
+	
+	Fixed dump of the memory usage stats.
+
 2003-01-19 19:32  kkuznetsov
 
 	* firebird2/src/common/classes/locks.h:
