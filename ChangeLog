@@ -1,6 +1,7 @@
 2004-06-12 03:06  skidder
 
-	* firebird2/src/jrd/: cch.cpp (1.98), jrd.cpp (1.174):
+	* firebird2/src/: burp/restore.epp (1.78), jrd/cch.cpp (1.98),
+	jrd/jrd.cpp (1.174):
 	
 	Correct problems with single-user maintenance mode (note it is used
 	for GBAK restore process now)
