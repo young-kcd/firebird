@@ -549,21 +549,25 @@ void SCH_init(void)
  **************************************/
 	if (init_flag)
 		return;
-
+		
+#ifdef MULTI_THREAD
 	scheduler_init_lock.enter();
 
 	try {
 		if (!init_flag) {
+#endif
 			gds__register_cleanup(cleanup, 0);
 			int mutex_state;
 			if (mutex_state = THD_mutex_init(thread_mutex))
 				mutex_bugcheck("mutex init", mutex_state);
+#ifdef MULTI_THREAD
 		}
 	} catch (const std::exception&) {
 		scheduler_init_lock.leave();
 		throw;
 	}
 	scheduler_init_lock.leave();
+#endif
 
 	init_flag = TRUE;
 }

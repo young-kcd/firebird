@@ -165,7 +165,6 @@ int common_main(int argc,
  *	the specified argc/argv to SECURITY_exec_line (see below).
  *
  **************************************/
-	DebugBreak();
 	ISC_STATUS *status;
 	FRBRD *db_handle = NULL;		/* user info database handle */
 	int local_argc;

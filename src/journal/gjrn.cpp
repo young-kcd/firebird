@@ -41,6 +41,9 @@
 #include "../journal/rebui_proto.h"
 #include "../journal/serve_proto.h"
 #include "../jrd/gds_proto.h"
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 bool sw_service_gjrn;
 FILE* msg_file;
