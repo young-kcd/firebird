@@ -6258,9 +6258,11 @@ static int process_statement(const TEXT* string,
 		{
 			TEXT buffer[100];
 			sprintf(buffer,
-					"\nINPUT  SQLDA version: %d sqldaid: %s sqldabc: %ld sqln: %d sqld: %d\n",
-					input_sqlda->version, input_sqlda->sqldaid,
-					input_sqlda->sqldabc, input_sqlda->sqln,
+					//"\nINPUT  SQLDA version: %d sqldaid: %s sqldabc: %ld sqln: %d sqld: %d\n",
+					"\nINPUT  SQLDA version: %d sqln: %d sqld: %d\n",
+					//input_sqlda->version, input_sqlda->sqldaid,
+					//input_sqlda->sqldabc, input_sqlda->sqln,
+					input_sqlda->version, input_sqlda->sqln,
 					input_sqlda->sqld);
 			ISQL_printf(isqlGlob.Out, buffer);
 			int i = 0;
@@ -6488,8 +6490,10 @@ static int process_statement(const TEXT* string,
 	if (Sqlda_display) {
 		TEXT buffer[100];
 		sprintf(buffer,
-				"\nOUTPUT SQLDA version: %d sqldaid: %s sqldabc: %ld sqln: %d sqld: %d\n",
-				sqlda->version, sqlda->sqldaid, sqlda->sqldabc, sqlda->sqln,
+				//"\nOUTPUT SQLDA version: %d sqldaid: %s sqldabc: %ld sqln: %d sqld: %d\n",
+				"\nOUTPUT SQLDA version: %d sqln: %d sqld: %d\n",
+				//sqlda->version, sqlda->sqldaid, sqlda->sqldabc, sqlda->sqln,
+				sqlda->version, sqlda->sqln,
 				sqlda->sqld);
 		ISQL_printf(isqlGlob.Out, buffer);
 		int i = 0;
