@@ -54,10 +54,10 @@ const char* TARGET	= "help/help.fdb";
 
 DATABASE HELP_DB = STATIC "help.fdb" RUNTIME target;
 
-static int additional_topics(TEXT *, TEXT *, const TEXT*);
-static void print_more(USHORT, USHORT, TEXT **, USHORT *, TEXT *, bool);
-static void print_topic(USHORT, USHORT, TEXT **, USHORT *, TEXT *, bool);
-static TEXT *strip(TEXT *);
+static int additional_topics(const TEXT*, const TEXT*, const TEXT*);
+static void print_more(USHORT, USHORT, TEXT**, USHORT*, const TEXT*, bool);
+static void print_topic(USHORT, USHORT, TEXT**, USHORT*, const TEXT*, bool);
+static const TEXT* strip(const TEXT*);
 
 
 void HELP_fini(void)
@@ -91,9 +91,7 @@ void HELP_help( qli_syntax* node)
  *	Give the poor sucker help.
  *
  **************************************/
-	NAM *ptr, *end;
-	USHORT max_level;
-	TEXT target[MAXPATHLEN], **topic, *topics[16];
+	TEXT target[MAXPATHLEN];
 
 	if (!HELP_DB) {
 		gds__prefix(target, TARGET);
@@ -104,10 +102,12 @@ void HELP_help( qli_syntax* node)
 		START_TRANSACTION;
 	}
 
-	max_level = 0;
-	topic = topics;
+	USHORT max_level = 0;
+	TEXT* topics[16];
+	TEXT** topic = topics;
 	*topic++ = "QLI"; // to be reviewed later; requires several changes.
 
+	NAM *ptr, *end;
 	for (ptr = (NAM *) node->syn_arg, end = ptr + node->syn_count; ptr < end;
 		 ptr++)
 		*topic++ = (*ptr)->nam_string;
@@ -119,7 +119,7 @@ void HELP_help( qli_syntax* node)
 }
 
 
-static int additional_topics( TEXT * parent, TEXT * banner, const TEXT* string)
+static int additional_topics( const TEXT* parent, const TEXT* banner, const TEXT* string)
 {
 /**************************************
  *
@@ -143,7 +143,7 @@ static int additional_topics( TEXT * parent, TEXT * banner, const TEXT* string)
 	FOR X IN TOPICS WITH X.PARENT EQ parent SORTED BY X.TOPIC
 		if (QLI_abort)
 			return 0;
-		TEXT* p = X.TOPIC;
+		const TEXT* p = X.TOPIC;
 		while (*p && *p != ' ')
 			p++;
 		if (!(l = p - X.TOPIC))
@@ -181,7 +181,7 @@ static void print_more(
 					   USHORT depth,
 					   TEXT ** topics,
 					   USHORT * max_level,
-					   TEXT * parent,
+					   const TEXT* parent,
 					   bool error_flag) // unused
 {
 /**************************************
@@ -195,7 +195,7 @@ static void print_more(
  *	wants more.
  *
  **************************************/
-	TEXT buffer[256], topic[80], prompt[80], *p, *q;
+	TEXT buffer[256], topic[80], prompt[80];
 
 	ERRQ_msg_get(502, prompt);	/* Msg502 "Subtopic? "  */
 
@@ -205,10 +205,10 @@ static void print_more(
 		return;
 
 // Upcase the response and zap the blanks
-
+	TEXT *p;
 	topics[1] = p = topic;
 
-	for (q = buffer; *q && *q != '\n'; q++)
+	for (const TEXT* q = buffer; *q && *q != '\n'; q++)
 		if (*q != ' ')
 			*p++ = UPPER(*q);
 	*p = 0;
@@ -225,7 +225,7 @@ static void print_topic(
 						USHORT level,
 						USHORT depth,
 						TEXT ** topics,
-						USHORT * max_level, TEXT * parent, bool error_flag)
+						USHORT* max_level, const TEXT* parent, bool error_flag)
 {
 /**************************************
  *
@@ -240,23 +240,21 @@ static void print_topic(
  *	error flag is set, print out a list of sub-topics.
  *
  **************************************/
-	USHORT count;
-	TEXT string[128], banner[128], *next, *p, *q, *path, buffer[128],
-		prompt[80];
+	TEXT string[128], banner[128], buffer[128], prompt[80];
 
 // Copy the parent string inserting a blank at the end
 
-	p = string;
+	TEXT* p = string;
 
 	if (*parent) {
-		q = parent;
+		const TEXT* q = parent;
 		while (*q)
 			*p++ = *q++;
 		*p++ = ' ';
 	}
 
-	next = p;
-	count = 0;
+	TEXT* const next = p;
+	USHORT count = 0;
 
 	FOR X IN TOPICS WITH X.FACILITY EQ "QLI" AND
 		(X.TOPIC STARTING WITH * topics AND X.PARENT EQ parent) OR
@@ -286,7 +284,7 @@ static void print_topic(
 		if (level > *max_level)
 			*max_level = level;
 		p = next;
-		q = X.TOPIC;
+		const TEXT* q = X.TOPIC;
 		while (*q && *q != ' ')
 			*p++ = *q++;
 		*p = 0;
@@ -311,7 +309,7 @@ static void print_topic(
 	END_FOR;
 
 	if (!count && error_flag && level > *max_level) {
-		path = strip(parent);
+		const TEXT* path = strip(parent);
 		ERRQ_msg_put(82, path, *topics, NULL, NULL, NULL);	// Msg82 No help is available for %s %s
 		ERRQ_msg_format(83, sizeof(banner), banner, path, NULL, NULL, NULL, NULL);	// Msg83 Sub-topics available for %s are:
 		additional_topics(parent, banner, path);
@@ -319,7 +317,7 @@ static void print_topic(
 }
 
 
-static TEXT *strip( TEXT * string)
+static const TEXT* strip( const TEXT* string)
 {
 /**************************************
  *
@@ -331,9 +329,7 @@ static TEXT *strip( TEXT * string)
  *	Strip off the first topic in the path.
  *
  **************************************/
-	TEXT *p;
-
-	p = string;
+	const TEXT* p = string;
 
 	while (*p != ' ')
 		if (!*p++)
