@@ -179,7 +179,6 @@ static void get_procedure_dependencies(DeferredWork*);
 static void get_trigger_dependencies(DeferredWork*);
 static void	load_trigs(thread_db*, jrd_rel*, trig_vec**);
 static Format*	make_format(thread_db*, jrd_rel*, USHORT *, TemporaryField*);
-static USHORT name_length(const TEXT*);
 static DeferredWork*	post_work(jrd_tra*, SLONG, DeferredWork**, enum dfw_t,
 	const dsc*, USHORT);
 static void put_summary_blob(blb*, enum rsr_t, bid*);
@@ -3652,7 +3651,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					put_summary_record(blob, RSR_field_id, (UCHAR*)&n, sizeof(n));
 					put_summary_record(blob, RSR_field_name,
 									   (UCHAR*) RFR.RDB$FIELD_NAME,
-									   name_length(RFR.RDB$FIELD_NAME));
+									   fb_utils::name_length(RFR.RDB$FIELD_NAME));
 					if (!FLD.RDB$COMPUTED_BLR.isEmpty()
 						&& !RFR.RDB$VIEW_CONTEXT)
 					{
@@ -3669,7 +3668,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 											sizeof(n));
 						put_summary_record(blob, RSR_base_field,
 										   (UCHAR*) RFR.RDB$BASE_FIELD,
-										   name_length(RFR.RDB$BASE_FIELD));
+										   fb_utils::name_length(RFR.RDB$BASE_FIELD));
 					}
 					put_summary_blob(blob, RSR_missing_value,
 									 &FLD.RDB$MISSING_VALUE);
@@ -3687,7 +3686,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 											sizeof(nonnull_validation_blr));
 					}
 
-					n = name_length(RFR.RDB$SECURITY_CLASS);
+					n = fb_utils::name_length(RFR.RDB$SECURITY_CLASS);
 					if (!RFR.RDB$SECURITY_CLASS.NULL && n)
 						put_summary_record(blob, RSR_security_class,
 										   (UCHAR*) RFR.RDB$SECURITY_CLASS, n);
@@ -4006,30 +4005,6 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	}
 
 	return false;
-}
-
-
-static USHORT name_length(const TEXT* name)
-{
-/**************************************
- *
- *	n a m e _ l e n g t h
- *
- **************************************
- *
- * Functional description
- *	Compute effective length of system relation name.
- *	Trailing blanks are ignored.
- *
- **************************************/
-	const TEXT* q = name - 1;
-	for (const TEXT* p = name; *p; p++) {
-		if (*p != ' ') {
-			q = p;
-		}
-	}
-
-	return ((q + 1) - name);
 }
 
 
@@ -4443,7 +4418,7 @@ static void setup_trigger_details(thread_db* tdbb,
  **************************************/
 
 	put_summary_record(blob, RSR_trigger_name, 
-		(const UCHAR*) trigger_name, name_length(trigger_name));
+		(const UCHAR*) trigger_name, fb_utils::name_length(trigger_name));
 
 	if (!null_view) {
 		if (!relation->rel_name)

@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.138 2004-09-13 21:06:40 dimitr Exp $
+$Id: met.epp,v 1.139 2004-09-15 03:49:52 robocop Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -124,7 +124,6 @@ static void get_trigger(thread_db*, jrd_rel*, bid*, trig_vec**, const TEXT*, boo
 static bool get_type(thread_db*, SSHORT*, const UCHAR*, const TEXT*);
 static void lookup_view_contexts(thread_db*, jrd_rel*);
 static void name_copy(TEXT*, const TEXT*);
-static USHORT name_length(const TEXT *);
 static jrd_nod* parse_param_blr(thread_db*, jrd_prc*, bid*, CompilerScratch*);
 static jrd_nod* parse_procedure_blr(thread_db*, jrd_prc*, bid*, CompilerScratch*);
 static bool par_messages(thread_db*, const UCHAR*, USHORT, jrd_prc*, CompilerScratch*);
@@ -1210,7 +1209,7 @@ void MET_lookup_cnstrt_for_index(thread_db* tdbb,
         if (!REQUEST(irq_l_cnstrt))
             REQUEST(irq_l_cnstrt) = request;
 
-		X.RDB$CONSTRAINT_NAME[name_length(X.RDB$CONSTRAINT_NAME)] = 0;
+		X.RDB$CONSTRAINT_NAME[fb_utils::name_length(X.RDB$CONSTRAINT_NAME)] = 0;
 		strcpy(constraint_name, X.RDB$CONSTRAINT_NAME);
 
 	END_FOR;
@@ -1264,7 +1263,7 @@ void MET_lookup_cnstrt_for_trigger(
             if (!REQUEST(irq_l_check2))
 				REQUEST(irq_l_check2) = request2;
 
-			X.RDB$CONSTRAINT_NAME[name_length(X.RDB$CONSTRAINT_NAME)] = 0;
+			X.RDB$CONSTRAINT_NAME[fb_utils::name_length(X.RDB$CONSTRAINT_NAME)] = 0;
 			strcpy(constraint_name, X.RDB$CONSTRAINT_NAME);
 
 		END_FOR;
@@ -1272,7 +1271,7 @@ void MET_lookup_cnstrt_for_trigger(
 		if (!REQUEST(irq_l_check2))
 			REQUEST(irq_l_check2) = request2;
 
-		Y.RDB$RELATION_NAME[name_length(Y.RDB$RELATION_NAME)] = 0;
+		Y.RDB$RELATION_NAME[fb_utils::name_length(Y.RDB$RELATION_NAME)] = 0;
 		strcpy(relation_name, Y.RDB$RELATION_NAME);
 
 	END_FOR;
@@ -1412,10 +1411,10 @@ int MET_lookup_field(thread_db* tdbb, jrd_rel* relation, const TEXT* name,
 				{
 					if (!security_name) 
 						return id;
-					const size_t nl2 = name_length (security_name);
+					const size_t nl2 = fb_utils::name_length(security_name);
 					if (field->fld_security_name) 
 					{
-						const size_t nl = name_length(field->fld_security_name);
+						const size_t nl = fb_utils::name_length(field->fld_security_name);
 						if (nl == nl2 && !strncmp(field->fld_security_name, security_name, nl)) 
 							return id;
 					}
@@ -1449,9 +1448,9 @@ int MET_lookup_field(thread_db* tdbb, jrd_rel* relation, const TEXT* name,
         }
         else {
             USHORT nl;
-            const USHORT nl2 = name_length (security_name);
+            const USHORT nl2 = fb_utils::name_length(security_name);
             if (!X.RDB$SECURITY_CLASS.NULL
-                && (nl = name_length (X.RDB$SECURITY_CLASS)) == nl2
+                && (nl = fb_utils::name_length(X.RDB$SECURITY_CLASS)) == nl2
                 && !strncmp (X.RDB$SECURITY_CLASS, security_name, nl))
 			{
                 id = X.RDB$FIELD_ID;
@@ -1652,7 +1651,7 @@ void MET_lookup_index(thread_db* tdbb,
         if (!REQUEST(irq_l_index))
             REQUEST(irq_l_index) = request;
 
-		X.RDB$INDEX_NAME[name_length(X.RDB$INDEX_NAME)] = 0;
+		X.RDB$INDEX_NAME[fb_utils::name_length(X.RDB$INDEX_NAME)] = 0;
 		strcpy(index_name, X.RDB$INDEX_NAME);
 
 	END_FOR;
@@ -2638,8 +2637,8 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 
 			if (procedure->prc_name.empty())
 			{
+				P.RDB$PROCEDURE_NAME[fb_utils::name_length(P.RDB$PROCEDURE_NAME)] = 0;
 				procedure->prc_name = P.RDB$PROCEDURE_NAME;
-				procedure->prc_name.resize(name_length(P.RDB$PROCEDURE_NAME));
 			}
 			procedure->prc_id = P.RDB$PROCEDURE_ID;
 			if (!P.RDB$SECURITY_CLASS.NULL)
@@ -2686,7 +2685,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 
 				/* should be error if field already exists */
 				Parameter* parameter = 
-					FB_NEW_RPT(*dbb->dbb_permanent, name_length(PA.RDB$PARAMETER_NAME)) 
+					FB_NEW_RPT(*dbb->dbb_permanent, fb_utils::name_length(PA.RDB$PARAMETER_NAME))
 					Parameter();
 				parameter->prm_number = PA.RDB$PARAMETER_NUMBER;
 				(*vector)[parameter->prm_number] = (BLK) parameter;
@@ -2958,8 +2957,8 @@ bool MET_relation_default_class (thread_db* tdbb, const TEXT* relation_name,
             REQUEST (irq_l_relation_defsec) = request;
 
         if (!REL.RDB$DEFAULT_CLASS.NULL) {
-            const USHORT nl = name_length (REL.RDB$DEFAULT_CLASS),
-                nl2 = name_length (default_security_class_name);
+            const USHORT nl = fb_utils::name_length(REL.RDB$DEFAULT_CLASS),
+                nl2 = fb_utils::name_length(default_security_class_name);
             if (nl == nl2 &&
 				!strncmp (REL.RDB$DEFAULT_CLASS, default_security_class_name, nl))
 			{
@@ -3832,7 +3831,7 @@ static void lookup_view_contexts( thread_db* tdbb, jrd_rel* view)
 
 		/* allocate a string block for the context name */
 
-		SSHORT length = name_length(V.RDB$CONTEXT_NAME);
+		SSHORT length = fb_utils::name_length(V.RDB$CONTEXT_NAME);
 		str* alias = FB_NEW_RPT(*tdbb->getDefaultPool(), length + 1) str();
 		V.RDB$CONTEXT_NAME[length] = 0;
 		strcpy((char*)alias->str_data, V.RDB$CONTEXT_NAME);
@@ -3842,7 +3841,7 @@ static void lookup_view_contexts( thread_db* tdbb, jrd_rel* view)
 
 		/* allocate a string block for the relation name */
 
-		length = name_length(V.RDB$RELATION_NAME);
+		length = fb_utils::name_length(V.RDB$RELATION_NAME);
 		alias = FB_NEW_RPT(*tdbb->getDefaultPool(), length + 1) str();
 		V.RDB$RELATION_NAME[length] = 0;
 		strcpy((char*)alias->str_data, V.RDB$RELATION_NAME);
@@ -3869,36 +3868,11 @@ static void name_copy(TEXT* to, const TEXT* from)
  *      Copy a system name, stripping trailing blanks.
  *
  **************************************/
-	const USHORT length = name_length(from);
+	const USHORT length = fb_utils::name_length(from);
 	memcpy(to, from, length);
 	to[length] = '\0';
 }
 
-
-static USHORT name_length(const TEXT* name)
-{
-/**************************************
- *
- *      n a m e _ l e n g t h
- *
- **************************************
- *
- * Functional description
- *      Compute effective length of system relation name.
- *      SQL delimited identifier may contain blanks.
- *
- **************************************/
-	const TEXT* q = name - 1;
-	for (const TEXT* p = name; *p; p++)
-	{
-		if (*p != BLANK)
-		{
-			q = p;
-		}
-	}
-
-	return (q + 1) - name;
-}
 
 static jrd_nod* parse_param_blr(thread_db* tdbb,
 		jrd_prc* procedure, bid* blob_id, CompilerScratch* csb)
@@ -4197,7 +4171,7 @@ static str* save_name(thread_db* tdbb, const TEXT* name)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	USHORT l = name_length(name);
+	USHORT l = fb_utils::name_length(name);
 	str* string = FB_NEW_RPT(*dbb->dbb_permanent, l) str();
 	string->str_length = l;
 	TEXT* p = (TEXT *) string->str_data;

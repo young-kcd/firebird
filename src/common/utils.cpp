@@ -36,7 +36,8 @@
 
 #include "../common/utils_proto.h"
 
-namespace fb_utils {
+namespace fb_utils
+{
 
 char* fb_exact_name(char* const str)
 {
@@ -67,6 +68,7 @@ char* fb_exact_name(char* const str)
 	return str;
 }
 
+
 char* fb_exact_name_limit(char* const str, size_t bufsize)
 {
 /**************************************
@@ -96,6 +98,31 @@ char* fb_exact_name_limit(char* const str, size_t bufsize)
 		--p;
 	*(p + 1) = '\0';
 	return str;
+}
+
+
+USHORT name_length(const TEXT* const name)
+{
+/**************************************
+ *
+ *	n a m e _ l e n g t h
+ *
+ **************************************
+ *
+ * Functional description
+ *	Compute effective length of system relation name and others.
+ *	SQL delimited identifier may contain blanks. Trailing blanks are ignored.
+ *  Assumes input is null terminated.
+ *
+ **************************************/
+	const TEXT* q = name - 1;
+	for (const TEXT* p = name; *p; p++) {
+		if (*p != ' ') {
+			q = p;
+		}
+	}
+
+	return (q + 1) - name;
 }
 
 } // namespace fb_utils
