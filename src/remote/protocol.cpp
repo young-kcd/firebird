@@ -71,7 +71,9 @@ static bool_t xdr_cstring(XDR *, CSTRING *);
 static bool_t xdr_datum(XDR *, DSC *, BLOB_PTR *);
 static bool_t xdr_debug_packet(XDR *, enum xdr_op, PACKET *);
 
+#ifndef HAVE_XDR_HYPER
 static bool_t xdr_hyper(register XDR *, SINT64 *);
+#endif
 
 static bool_t xdr_longs(XDR *, CSTRING *);
 static bool_t xdr_message(XDR *, MSG, FMT);
@@ -95,9 +97,11 @@ extern bool_t xdr_enum();
 extern bool_t xdr_short();
 extern bool_t xdr_u_short();
 extern bool_t xdr_long();
-#  ifdef SOLARIS
+
+#ifndef HAVE_XDR_HYPER
 extern bool_t xdr_hyper();
-#  endif
+#endif
+
 extern bool_t xdr_opaque();
 extern bool_t xdr_string();
 extern bool_t xdr_float();
@@ -1136,7 +1140,7 @@ static bool_t xdr_debug_packet( XDR * xdrs, enum xdr_op xop, PACKET * packet)
 #endif
 
 
-#ifdef SOLARIS
+#ifndef HAVE_XDR_HYPER
 static bool_t xdr_hyper( register XDR * xdrs, SINT64 * pi64)
 {
 /**************************************
