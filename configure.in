@@ -100,7 +100,7 @@ AC_DEFINE(UNIX_64_BIT_IO)
 
 
 # The following file defines the version number strings
-source src/misc/writeBuildNum.sh
+. ./src/misc/writeBuildNum.sh
 FIREBIRD_PACKAGE_VERSION="0a.Dev1"
 
 
