@@ -30,7 +30,7 @@
  * 2003.08.10 Claudio Valderrama: Fix SF Bugs #544132 and #728839.
  */
 /*
-$Id: fun.epp,v 1.44 2004-03-30 04:10:49 robocop Exp $
+$Id: fun.epp,v 1.45 2004-03-31 18:03:50 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -62,7 +62,7 @@ $Id: fun.epp,v 1.44 2004-03-30 04:10:49 robocop Exp $
 #include "../jrd/fun_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/mov_proto.h"
-#include "../jrd/sym_proto.h"
+#include "../jrd/sym.h"
 #include "../jrd/thd_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/isc_s_proto.h"
@@ -778,7 +778,7 @@ void FUN_init(void)
 }
 
 
-UserFunction* FUN_lookup_function(const TEXT* name, bool ShowAccessError)
+UserFunction* FUN_lookup_function(const Firebird::string& name, bool ShowAccessError)
 {
 /**************************************
  *
@@ -797,9 +797,9 @@ UserFunction* FUN_lookup_function(const TEXT* name, bool ShowAccessError)
 #ifdef V4_THREADING
 	V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_udf);
 #endif
-	for (Symbol* symbol = SYM_lookup(name); symbol; symbol = symbol->sym_homonym)
+	for (Symbol* symbol = Symbol::lookup(name); symbol; symbol = symbol->sym_homonym)
 	{
-	    if (symbol->sym_type == SYM_fun) {
+	    if (symbol->sym_type == Symbol::fun) {
 #ifdef V4_THREADING
 			V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_udf);
 #endif
@@ -814,7 +814,7 @@ UserFunction* FUN_lookup_function(const TEXT* name, bool ShowAccessError)
 	jrd_req* request_arg = CMP_find_request(tdbb, irq_l_args, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request_fun) X IN RDB$FUNCTIONS
-		WITH X.RDB$FUNCTION_NAME EQ name 
+		WITH X.RDB$FUNCTION_NAME EQ name.c_str()
         if (!REQUEST(irq_l_functions))
             REQUEST(irq_l_functions) = request_fun;
 		USHORT count = 0, args = 0;
@@ -865,7 +865,7 @@ UserFunction* FUN_lookup_function(const TEXT* name, bool ShowAccessError)
 		/* Prepare the exception message to be used in case this function ever
 		   causes an exception.  This is done at this time to save us from preparing
 		   (thus allocating) this message every time the function is called. */
-		function->fun_exception_message.printf(EXCEPTION_MESSAGE, name,
+		function->fun_exception_message.printf(EXCEPTION_MESSAGE, name.c_str(),
 				X.RDB$ENTRYPOINT, X.RDB$MODULE_NAME);
 
 		function->fun_entrypoint =
@@ -913,14 +913,10 @@ UserFunction* FUN_lookup_function(const TEXT* name, bool ShowAccessError)
 		else
 		{
 			prior = function;
-			Symbol* new_symbol = FB_NEW(*dbb->dbb_permanent) Symbol;
+			Symbol* new_symbol = FB_NEW(*dbb->dbb_permanent) 
+				Symbol(*dbb->dbb_permanent, name, Symbol::fun, function);
 			function->fun_symbol = new_symbol;
-			new_symbol->sym_object = (BLK) function;
-			str* string = FB_NEW_RPT(*dbb->dbb_permanent, strlen(name)) str;
-			strcpy((char*)string->str_data, name);
-			new_symbol->sym_string = (TEXT *) string->str_data;
-			new_symbol->sym_type = SYM_fun;
-			SYM_insert(new_symbol);
+			new_symbol->insert();
 		}
 	END_FOR;
 

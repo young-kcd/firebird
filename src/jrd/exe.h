@@ -397,7 +397,7 @@ struct impure_agg_sort {
 #define e_dcl_id		0
 #define e_dcl_invariants	1
 #define e_dcl_desc		2
-#define e_dcl_length		(2 + sizeof (DSC)/sizeof (Jrd::jrd_nod*))	/* Room for descriptor */
+#define e_dcl_length		(2 + sizeof (DSC)/sizeof (::Jrd::jrd_nod*))	/* Room for descriptor */
 
 #define e_dep_object		0	/* node for registering dependencies */
 #define e_dep_object_type	1
@@ -558,6 +558,7 @@ public:
 		csb_fors(p),
 		csb_invariants(p),
 		csb_current_nodes(p),
+		csb_pool(p),
 		csb_rpt(p, len)
 	{}
 
@@ -592,6 +593,7 @@ public:
 	USHORT			csb_msg_number;		/* Highest used message number */
 	SLONG			csb_impure;			/* Next offset into impure area */
 	USHORT			csb_g_flags;
+	MemoryPool&		csb_pool;				/* Memory pool to be used by csb */
 
     struct csb_repeat
 	{
@@ -622,7 +624,7 @@ public:
 		USHORT csb_indices;			/* Number of indices */
 
 		jrd_rel* csb_relation;
-		str* csb_alias;		/* SQL alias name for this instance of relation */
+		Firebird::string* csb_alias;	/* SQL alias name for this instance of relation */
 		jrd_prc* csb_procedure;
 		jrd_rel* csb_view;		/* parent view */
 
@@ -640,7 +642,7 @@ public:
 
 	typedef csb_repeat* rpt_itr;
 	typedef const csb_repeat* rpt_const_itr;
-	Firebird::Array<csb_repeat> csb_rpt;
+	Firebird::HalfStaticArray<csb_repeat, 5> csb_rpt;
 };
 
 #define csb_internal	     	0x1	/* "csb_g_flag" switch */

@@ -45,6 +45,7 @@
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
+#include "../jrd/sym.h"
 #include "../jrd/req.h"
 #include "../jrd/val.h"
 #include "../jrd/align.h"
@@ -4084,7 +4085,10 @@ static void pass1_source(thread_db*     tdbb,
 			if ((*vcx_ptr)->vcx_context ==
 				(USHORT)(IPTR) source->nod_arg[e_rel_context])
 			{
-				element->csb_alias = (*vcx_ptr)->vcx_context_name;
+				element->csb_alias = FB_NEW(csb->csb_pool) 
+					Firebird::string(csb->csb_pool, 
+						(TEXT*)((*vcx_ptr)->vcx_context_name->str_data), 
+						(*vcx_ptr)->vcx_context_name->str_length);
 				break;
 			}
 		}
@@ -4509,7 +4513,7 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 					(jrd_nod*) FUN_resolve(csb, function, value);
 				if (!node->nod_arg[e_fun_function]) {
 					ERR_post(isc_funmismat, isc_arg_string,
-							 function->fun_symbol->sym_string, 0);
+							 function->fun_symbol->sym_string.c_str(), 0);
 				}
 			}
 		}
@@ -5174,7 +5178,7 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 	jrd_rel* view_relation = 0;
 	jrd_nod* plan_relation_node = plan->nod_arg[e_retrieve_relation];
 	const jrd_rel* plan_relation = (jrd_rel*) plan_relation_node->nod_arg[e_rel_relation];
-	const str* plan_alias = (str*) plan_relation_node->nod_arg[e_rel_alias];
+	const char* plan_alias = (const char *) plan_relation_node->nod_arg[e_rel_alias];
 
 	// find the tail for the relation specified in the RecordSelExpr
 
@@ -5186,13 +5190,7 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 	UCHAR* map = 0;
 
 	if (tail->csb_map) {
-		const TEXT* p;
-		if (plan_alias) {
-			p = (TEXT *) plan_alias->str_data;
-		}
-		else {
-			p = "\0";
-		}
+		const TEXT* p = plan_alias;
 
 		// if the user has specified an alias, skip past it to find the alias 
 		// for the base table (if multiple aliases are specified)
@@ -5201,8 +5199,7 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 			(tail->csb_relation
 			 && !strcmp_space(tail->csb_relation->rel_name, p))
 			|| (tail->csb_alias
-				&& !strcmp_space(reinterpret_cast<
-								 const char*>(tail->csb_alias->str_data), p)))
+				&& !strcmp_space(tail->csb_alias->c_str(), p)))
 		{
 			while (*p && *p != ' ') {
 				p++;
@@ -5275,7 +5272,7 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 			for (map++; *map; map++) {
 				tail = &csb->csb_rpt[*map];
 				const jrd_rel* relation = tail->csb_relation;
-				const str* alias = tail->csb_alias;
+				const Firebird::string& alias = *(tail->csb_alias);
 
 				// match the user-supplied alias with the alias supplied
 				// with the view definition; failing that, try the base
@@ -5287,9 +5284,8 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 				// a NULL relation. See exe.h for CompilerScratch struct and its inner csb_repeat struct.
 
 				if (
-					(alias
-					 && !strcmp_space(reinterpret_cast<
-									  const char*>(alias->str_data), p))
+					(tail->csb_alias
+					 && !strcmp_space(tail->csb_alias->c_str(), p))
 					|| (relation && !strcmp_space(relation->rel_name, p)))
 				{
 					  break;

@@ -89,13 +89,13 @@ static const TEXT elements[][14] =
 using namespace Jrd;
 
 static void error(CompilerScratch*, ...);
-static SSHORT find_proc_field(const jrd_prc*, const TEXT*);
+static SSHORT find_proc_field(const jrd_prc*, const Firebird::string&);
 static jrd_nod* par_args(thread_db*, CompilerScratch*, USHORT);
 static jrd_nod* par_cast(thread_db*, CompilerScratch*);
 static PsqlException* par_condition(thread_db*, CompilerScratch*);
 static PsqlException* par_conditions(thread_db*, CompilerScratch*);
 static SSHORT par_context(CompilerScratch*, SSHORT *);
-static void par_dependency(thread_db*, CompilerScratch*, SSHORT, SSHORT, const TEXT*);
+static void par_dependency(thread_db*, CompilerScratch*, SSHORT, SSHORT, const Firebird::string&);
 static jrd_nod* par_exec_proc(thread_db*, CompilerScratch*, SSHORT);
 static jrd_nod* par_fetch(thread_db*, CompilerScratch*, jrd_nod*);
 static jrd_nod* par_field(thread_db*, CompilerScratch*, SSHORT);
@@ -104,7 +104,7 @@ static jrd_nod* par_literal(thread_db*, CompilerScratch*);
 static jrd_nod* par_map(thread_db*, CompilerScratch*, USHORT);
 static jrd_nod* par_message(thread_db*, CompilerScratch*);
 static jrd_nod* par_modify(thread_db*, CompilerScratch*);
-static USHORT par_name(CompilerScratch*, TEXT*);
+static USHORT par_name(CompilerScratch*, Firebird::string&);
 static jrd_nod* par_plan(thread_db*, CompilerScratch*);
 static jrd_nod* par_procedure(thread_db*, CompilerScratch*, SSHORT);
 static void par_procedure_parms(thread_db*, CompilerScratch*, jrd_prc*, jrd_nod**, jrd_nod**, USHORT);
@@ -115,7 +115,7 @@ static jrd_nod* par_stream(thread_db*, CompilerScratch*);
 static jrd_nod* par_union(thread_db*, CompilerScratch*);
 static USHORT par_word(CompilerScratch*);
 static jrd_nod* parse(thread_db*, CompilerScratch*, USHORT, USHORT expected_optional = 0);
-static void syntax_error(CompilerScratch*, const TEXT*);
+static void syntax_error(CompilerScratch*, const TEXT *);
 static void warning(CompilerScratch*, ...);
 
 #define BLR_PEEK	*(csb->csb_running)
@@ -385,8 +385,9 @@ jrd_nod* PAR_gen_field(thread_db* tdbb, USHORT stream, USHORT id)
 }
 
 
-jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb, USHORT context,
-	const TEXT* base_field)
+jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb, 
+						USHORT context,
+						const Firebird::string& base_field)
 {
 /**************************************
  *
@@ -411,12 +412,11 @@ jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb, USHORT context,
        This means a field without entry in rdb$fields. This is the origin of the
        mysterious message "cannot access column z x in view VF" when selecting from
        such view that has field "z x". This closes Firebird Bug #227758. */
-	SqlIdentifier name;
-    strcpy (name, base_field);
+	Firebird::string name = base_field;
     fb_utils::fb_exact_name(name);
 
     const SSHORT id =
-		MET_lookup_field (tdbb, csb->csb_rpt [stream].csb_relation, name, 0);
+		MET_lookup_field (tdbb, csb->csb_rpt[stream].csb_relation, name.c_str(), 0);
 
 	if (id < 0)
 		return NULL;
@@ -551,7 +551,7 @@ CompilerScratch* PAR_parse(thread_db* tdbb, const UCHAR* blr, USHORT internal_fl
 }
 
 
-SLONG PAR_symbol_to_gdscode(const char* name)
+SLONG PAR_symbol_to_gdscode(const Firebird::string& name)
 {
 /**************************************
  *
@@ -571,14 +571,13 @@ SLONG PAR_symbol_to_gdscode(const char* name)
  *
  **************************************/
 
-	const char* p = name;
-
-	while (*p && *p != ' ') {
-		p++;
+	Firebird::string::size_type length = name.find(' ');
+	if (length == Firebird::string::npos)
+	{
+		length = name.length();
 	}
-	const size_t length = p - name;
 	for (int i = 0; codes[i].code_number; ++i) {
-		if (!strncmp(name, codes[i].code_string, length)) {
+		if (name.compare(0, length, codes[i].code_string, length) == 0) {
 			return codes[i].code_number;
 		}
 	}
@@ -659,7 +658,7 @@ static void error(CompilerScratch* csb, ...)
 }
 
 
-static SSHORT find_proc_field(const jrd_prc* procedure, const TEXT* name)
+static SSHORT find_proc_field(const jrd_prc* procedure, const Firebird::string& name)
 {
 /**************************************
  *
@@ -680,7 +679,7 @@ static SSHORT find_proc_field(const jrd_prc* procedure, const TEXT* name)
 		 ptr++)
 	{
 		const Parameter* param = (Parameter*) * ptr;
-		if (param->prm_name == name)
+		if (name == param->prm_string)
 			return param->prm_number;
 	}
 
@@ -761,9 +760,8 @@ static PsqlException* par_condition(thread_db* tdbb, CompilerScratch* csb)
  *
  **************************************/
 	jrd_nod* dep_node;
-	SqlIdentifier name;
-	TEXT* p;
 	SLONG code_number;
+	Firebird::string name;
 
 	SET_TDBB(tdbb);
 
@@ -790,8 +788,7 @@ static PsqlException* par_condition(thread_db* tdbb, CompilerScratch* csb)
 	case blr_gds_code:
 		exception_list->xcp_rpt[0].xcp_type = xcp_gds_code;
 		par_name(csb, name);
-		for (p = name; *p; *p++)
-			*p = LOWWER(*p);
+		name.lower();
 		code_number = PAR_symbol_to_gdscode(name);
 		if (code_number)
 			exception_list->xcp_rpt[0].xcp_code = code_number;
@@ -804,7 +801,7 @@ static PsqlException* par_condition(thread_db* tdbb, CompilerScratch* csb)
 		exception_list->xcp_rpt[0].xcp_type = xcp_xcp_code;
 		par_name(csb, name);
 		if (!(exception_list->xcp_rpt[0].xcp_code =
-			  MET_lookup_exception_number(tdbb, name)))
+			  MET_lookup_exception_number(tdbb, name.c_str())))
 			error(csb, isc_xcpnotdef, isc_arg_string, ERR_cstring(name), 0);
 		dep_node = PAR_make_node(tdbb, e_dep_length);
 		dep_node->nod_type = nod_dependency;
@@ -836,9 +833,8 @@ static PsqlException* par_conditions(thread_db* tdbb, CompilerScratch* csb)
  *
  **************************************/
 	jrd_nod* dep_node;
-	SqlIdentifier name;
-	TEXT* p;
 	SLONG code_number;
+	Firebird::string name;
 
 	SET_TDBB(tdbb);
 
@@ -858,8 +854,7 @@ static PsqlException* par_conditions(thread_db* tdbb, CompilerScratch* csb)
 		case blr_gds_code:
 			exception_list->xcp_rpt[i].xcp_type = xcp_gds_code;
 			par_name(csb, name);
-			for (p = name; *p; *p++)
-				*p = LOWWER(*p);
+			name.lower();
 			code_number = PAR_symbol_to_gdscode(name);
 			if (code_number)
 				exception_list->xcp_rpt[i].xcp_code = code_number;
@@ -872,7 +867,7 @@ static PsqlException* par_conditions(thread_db* tdbb, CompilerScratch* csb)
 			exception_list->xcp_rpt[i].xcp_type = xcp_xcp_code;
 			par_name(csb, name);
 			if (!(exception_list->xcp_rpt[i].xcp_code =
-				  MET_lookup_exception_number(tdbb, name)))
+				  MET_lookup_exception_number(tdbb, name.c_str())))
 				error(csb, isc_xcpnotdef,
 					  isc_arg_string, ERR_cstring(name), 0);
 			dep_node = PAR_make_node(tdbb, e_dep_length);
@@ -939,7 +934,7 @@ static void par_dependency(thread_db*   tdbb,
 						   CompilerScratch*    csb,
 						   SSHORT stream,
 						   SSHORT id,
-						   const TEXT*  field_name)
+						   const Firebird::string& field_name)
 {
 /**************************************
  *
@@ -967,15 +962,12 @@ static void par_dependency(thread_db*   tdbb,
 		node->nod_arg[e_dep_object_type] = (jrd_nod*) obj_procedure;
 	}
 
-	if (field_name) {
+	if (! field_name.empty()) {
 		jrd_nod* field_node = PAR_make_node(tdbb, 1);
 		node->nod_arg[e_dep_field] = field_node;
 		field_node->nod_type = nod_literal;
-		const int length = strlen(field_name);
-		str* string = FB_NEW_RPT(*tdbb->tdbb_default, length) str();
-		string->str_length = length;
-		strcpy(reinterpret_cast<char*>(string->str_data), field_name);
-		field_node->nod_arg[0] = (jrd_nod*) string->str_data;
+		field_node->nod_arg[0] = (jrd_nod*) 
+			stringDup(*tdbb->tdbb_default, field_name);
 	}
 	else if (id >= 0) {
 		jrd_nod* field_node = PAR_make_node(tdbb, 1);
@@ -1004,16 +996,16 @@ static jrd_nod* par_exec_proc(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_
 
 	jrd_prc* procedure = NULL;
 	{
-		SqlIdentifier name;
+		Firebird::string name;
 
 		if (blr_operator == blr_exec_pid) {
 			const USHORT pid = BLR_WORD;
 			if (!(procedure = MET_lookup_procedure_id(tdbb, pid, false, false, 0)))
-				sprintf(name, "id %d", pid);
+				name.printf("id %d", pid);
 		}
 		else {
 			par_name(csb, name);
-			procedure = MET_lookup_procedure(tdbb, name, false);
+			procedure = MET_lookup_procedure(tdbb, name.c_str(), false);
 		}
 		if (!procedure)
 			error(csb, isc_prcnotdef, isc_arg_string, ERR_cstring(name), 0);
@@ -1108,8 +1100,7 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 		error(csb, isc_ctxnotdef, 0);
 	}
 
-	SqlIdentifier name;
-	name[0] = 0;
+	Firebird::string name;
 	SSHORT id;
 	const SSHORT stream = csb->csb_rpt[context].csb_stream;
 	SSHORT flags = 0;
@@ -1156,7 +1147,7 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 			}
 
 			par_name(csb, name);
-			if ((id = MET_lookup_field(tdbb, relation, name, 0)) < 0) {
+			if ((id = MET_lookup_field(tdbb, relation, name.c_str(), 0)) < 0) {
 				if (csb->csb_g_flags & csb_validation) {
 					id = 0;
 					flags |= nod_id;
@@ -1185,7 +1176,7 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 
 	if (csb->csb_g_flags & csb_get_dependencies) {
 		if (blr_operator == blr_fid)
-			par_dependency(tdbb, csb, stream, id, 0);
+			par_dependency(tdbb, csb, stream, id, "");
 		else
 			par_dependency(tdbb, csb, stream, id, name);
 	}
@@ -1223,7 +1214,7 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb)
  **************************************/
 	SET_TDBB(tdbb);
 	
-	SqlIdentifier name;
+	Firebird::string name;
 	const USHORT count = par_name(csb, name);
 
 	UserFunction* function = FUN_lookup_function(name,
@@ -1522,7 +1513,7 @@ static jrd_nod* par_modify(thread_db* tdbb, CompilerScratch* csb)
 }
 
 
-static USHORT par_name(CompilerScratch* csb, TEXT* string)
+static USHORT par_name(CompilerScratch* csb, Firebird::string& string)
 {
 /**************************************
  *
@@ -1535,17 +1526,15 @@ static USHORT par_name(CompilerScratch* csb, TEXT* string)
  *
  **************************************/
 	USHORT l = BLR_BYTE;
-	const USHORT count = l;
+	string = "";
 
-	if (count) {
+	if (l) {
 		do {
-			*string++ = BLR_BYTE;
+			string += BLR_BYTE;
 		} while (--l);
 	}
 
-	*string = 0;
-
-	return count;
+	return string.length();
 }
 
 
@@ -1583,7 +1572,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 /* we have hit a stream; parse the context number and access type */
 
 	if (node_type == blr_retrieve) {
-		SqlIdentifier name;
+		Firebird::string name;
 
 		jrd_nod* plan = PAR_make_node(tdbb, e_retrieve_length);
 		plan->nod_type = (NOD_T) (USHORT) blr_table[node_type];
@@ -1749,7 +1738,7 @@ static jrd_nod* par_procedure(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_
 	SET_TDBB(tdbb);
 
 	{
-		SqlIdentifier name;
+		Firebird::string name;
 
 		if (blr_operator == blr_procedure) {
 			par_name(csb, name);
@@ -1758,7 +1747,7 @@ static jrd_nod* par_procedure(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_
 		else {
 			const SSHORT pid = BLR_WORD;
 			if (!(procedure = MET_lookup_procedure_id(tdbb, pid, false, false, 0)))
-				sprintf(name, "id %d", pid);
+				name.printf("id %d", pid);
 		}
 		if (!procedure)
 			error(csb, isc_prcnotdef, isc_arg_string, ERR_cstring(name), 0);
@@ -1777,7 +1766,7 @@ static jrd_nod* par_procedure(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_
 						&node->nod_arg[e_prc_inputs], TRUE);
 
 	if (csb->csb_g_flags & csb_get_dependencies)
-		par_dependency(tdbb, csb, stream, (SSHORT) - 1, 0);
+		par_dependency(tdbb, csb, stream, (SSHORT) - 1, "");
 
 	return node;
 }
@@ -1935,7 +1924,7 @@ static jrd_nod* par_relation(
  *	Parse a relation reference.
  *
  **************************************/
-	SqlIdentifier name;
+	Firebird::string name;
 
 	SET_TDBB(tdbb);
 
@@ -1945,18 +1934,17 @@ static jrd_nod* par_relation(
 	node->nod_count = 0;
 
 /* Find relation either by id or by name */
-	str* alias_string = NULL;
 	jrd_rel* relation = 0;
+	Firebird::string* alias_string = 0;
 	if (blr_operator == blr_rid || blr_operator == blr_rid2) {
 		const SSHORT id = BLR_WORD;
 		if (blr_operator == blr_rid2) {
 			const SSHORT length = BLR_PEEK;
-			alias_string = FB_NEW_RPT(*tdbb->tdbb_default, length + 1) str();
-			alias_string->str_length = length;
-			par_name(csb, reinterpret_cast<char*>(alias_string->str_data));
+			alias_string = FB_NEW(csb->csb_pool) Firebird::string(csb->csb_pool);
+			par_name(csb, *alias_string);
 		}
 		if (!(relation = MET_lookup_relation_id(tdbb, id, false))) {
-			sprintf(name, "id %d", id);
+			name.printf("id %d", id);
 			error(csb, isc_relnotdef, isc_arg_string, ERR_cstring(name), 0);
 		}
 	}
@@ -1964,18 +1952,20 @@ static jrd_nod* par_relation(
 		par_name(csb, name);
 		if (blr_operator == blr_relation2) {
 			const SSHORT length = BLR_PEEK;
-			alias_string = FB_NEW_RPT(*tdbb->tdbb_default, length + 1) str();
-			alias_string->str_length = length;
-			par_name(csb, reinterpret_cast<char*>(alias_string->str_data));
+			alias_string = FB_NEW(csb->csb_pool) Firebird::string(csb->csb_pool);
+			par_name(csb, *alias_string);
 		}
-		if (!(relation = MET_lookup_relation(tdbb, name)))
+		if (!(relation = MET_lookup_relation(tdbb, name.c_str())))
 			error(csb, isc_relnotdef, isc_arg_string, ERR_cstring(name), 0);
 	}
 
 /* if an alias was passed, store with the relation */
 
 	if (alias_string)
-		node->nod_arg[e_rel_alias] = (jrd_nod*) alias_string;
+	{
+		node->nod_arg[e_rel_alias] = 
+			(jrd_nod*) stringDup(*tdbb->tdbb_default, *alias_string);
+	}
 
 /* Scan the relation if it hasn't already been scanned for meta data */
 
@@ -2006,7 +1996,11 @@ static jrd_nod* par_relation(
 		csb->csb_rpt[stream].csb_alias = alias_string;
 
 		if (csb->csb_g_flags & csb_get_dependencies)
-			par_dependency(tdbb, csb, stream, (SSHORT) - 1, 0);
+			par_dependency(tdbb, csb, stream, (SSHORT) - 1, "");
+	}
+	else
+	{
+		delete alias_string;
 	}
 
 	node->nod_arg[e_rel_relation] = (jrd_nod*) relation;
@@ -2289,6 +2283,8 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
  *	Parse a BLR expression.
  *
  **************************************/
+	Firebird::string name;
+
 	SET_TDBB(tdbb);
 
 	const SSHORT blr_operator = BLR_BYTE;
@@ -2424,7 +2420,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	case blr_user_savepoint:
 		{
 			*arg++ = (jrd_nod*) (IPTR) BLR_BYTE;
-			SqlIdentifier name;
+			Firebird::string name;
 			par_name(csb, name);
 			*arg++ = (jrd_nod*) ALL_cstring(name);
 			break;
@@ -2565,10 +2561,10 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	case blr_gen_id:
 	case blr_set_generator:
 		{
-			SqlIdentifier name;
+			Firebird::string name;
 
 			par_name(csb, name);
-			const SLONG tmp = MET_lookup_generator(tdbb, name);
+			const SLONG tmp = MET_lookup_generator(tdbb, name.c_str());
 			if (tmp < 0) {
 				error(csb, isc_gennotdef,
 					  isc_arg_string, ERR_cstring(name), 0);

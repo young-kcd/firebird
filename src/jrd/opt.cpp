@@ -5444,7 +5444,7 @@ static STR make_alias(thread_db* tdbb, CompilerScratch* csb,
 		 csb_tail = &csb->csb_rpt[csb_tail->csb_view_stream])
 	{
 		if (csb_tail->csb_alias)
-			alias_length += csb_tail->csb_alias->str_length;
+			alias_length += csb_tail->csb_alias->length();
 		else {
 			alias_length +=
 				(!(csb_tail->csb_relation) || !(csb_tail->csb_relation->rel_name))
@@ -5468,7 +5468,7 @@ static STR make_alias(thread_db* tdbb, CompilerScratch* csb,
 	{
 		const TEXT* q;
 		if (csb_tail->csb_alias)
-			q = (TEXT *) csb_tail->csb_alias->str_data;
+			q = (TEXT *) csb_tail->csb_alias->c_str();
 		else {
 			q = (!(csb_tail->csb_relation) || !(csb_tail->csb_relation->rel_name))
 				? NULL : csb_tail->csb_relation->rel_name;

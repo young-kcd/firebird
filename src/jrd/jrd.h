@@ -257,7 +257,7 @@ public:
 	Symbol*	dbb_hash_table[HASH_SIZE];	/* keep this at the end */
 
 private:
-	Database(MemoryPool& p)
+	explicit Database(MemoryPool& p)
 	:	dbb_spare_string(p),
 		dbb_filename(p),
 		dbb_encrypt_key(p),
@@ -411,7 +411,7 @@ private:
 class Attachment : public pool_alloc<type_att>
 {
 public:
-	Attachment(Database* dbb) :
+	explicit Attachment(Database* dbb) :
 		att_database(dbb), 
 		att_lc_messages(*dbb->dbb_permanent),
 		att_working_directory(*dbb->dbb_permanent), 
@@ -540,7 +540,7 @@ class jrd_prc : public pool_alloc_rpt<SCHAR, type_prc>
 	USHORT prc_alter_count;		/* No. of times the procedure was altered */
 
 	public:
-	jrd_prc(MemoryPool& p) : prc_security_name(p), prc_name(p) {}
+	explicit jrd_prc(MemoryPool& p) : prc_security_name(p), prc_name(p) {}
 };
 
 #define PRC_scanned           1		/* Field expressions scanned */
@@ -564,10 +564,11 @@ class Parameter : public pool_alloc_rpt<SCHAR, type_prm>
 	USHORT 		prm_number;
 	dsc			prm_desc;
 	jrd_nod*	prm_default_val;
-	Firebird::string prm_name;		/* asciiz name */
+//	Firebird::string prm_name;		/* asciiz name */
 	TEXT 		prm_string[2];		/* one byte for ALLOC and one for the terminating null */
     public:
-	Parameter(MemoryPool& p) : prm_name(p) { }
+//	explicit Parameter(MemoryPool& p) : prm_name(p) { }
+	Parameter() { }
 };
 
 
@@ -832,31 +833,6 @@ typedef struct que {
 } *QUE;
 
 
-
-/* symbol definitions */
-
-typedef enum sym_t {
-	SYM_rel,					/* relation block */
-	SYM_fld,					/* field block */
-	SYM_fun,					/* UDF function block */
-	SYM_prc,					/* stored procedure block */
-	SYM_sql,					/* SQL request cache block */
-    SYM_blr,					/* BLR request cache block */
-    SYM_label					/* CVC: I need to track labels if LEAVE is implemented. */
-} SYM_T;
-
-class Symbol : public pool_alloc<type_sym>
-{
-    public:
-	TEXT*	sym_string;			/* address of asciz string */
-/*  USHORT	sym_length; *//* length of asciz string */
-	SYM_T	sym_type;				/* symbol type */
-	BLK		sym_object;		/* general pointer to object */
-	Symbol*	sym_collision;	/* collision pointer */
-	Symbol*	sym_homonym;	/* homonym pointer */
-};
-
-
 //
 // Transaction element block
 //
@@ -971,6 +947,18 @@ struct ihndl
 	ihndl*	ihndl_next;
 	void*	ihndl_object;
 };
+
+// dupilcate context of firebird string to store in jrd_nod::nod_arg
+inline char* stringDup(MemoryPool& p, const Firebird::string& s)
+{
+	char* rc = (char*) p.allocate(s.length() + 1, 0
+#ifdef DEBYG_GDS_ALLOC
+		, __FILE__, __LINE__
+#endif
+		);
+	strcpy(rc, s.c_str());
+	return rc;
+}
 
 } //namespace Jrd
 

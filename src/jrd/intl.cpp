@@ -676,27 +676,26 @@ static FPTR_SHORT lookup_init_function(
 
 /* Still not found, check if there is a UDF in the database defined the right way */
 	USHORT argcount;
-	char entry[48];
+	Firebird::string entry;
 
 	switch (type) {
 		case type_texttype:
-			sprintf(entry, INTL_USER_ENTRY, parm1);
+			entry.printf(INTL_USER_ENTRY, parm1);
 			argcount = 2;
 			break;
 		case type_charset:
-			sprintf(entry, "USER_CHARSET_%03d", parm1);
+			entry.printf("USER_CHARSET_%03d", parm1);
 			argcount = 2;
 			break;
 		case type_csconvert:
-			sprintf(entry, "USER_TRANSLATE_%03d_%03d", parm1,
-					parm2);
+			entry.printf("USER_TRANSLATE_%03d_%03d", parm1, parm2);
 			argcount = 3;
 			break;
 		default:
 			BUGCHECK(1);
 			break;
 	}
-	INTL_TRACE(("INTL: trying user fn %s\n", entry));
+	INTL_TRACE(("INTL: trying user fn %s\n", entry.c_str()));
 	UserFunction* function_block = FUN_lookup_function(entry, false);
 	if (function_block) {
 		INTL_TRACE(("INTL: found a user fn, validating\n"));

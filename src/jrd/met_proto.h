@@ -37,8 +37,8 @@ namespace Jrd {
 	class jrd_rel;
 	class CompilerScratch;
 	class jrd_nod;
+	struct bid;
 	struct index_desc;
-	class bid;
 }
 
 void		MET_activate_shadow(Jrd::thread_db*);
@@ -65,9 +65,9 @@ Jrd::BlobFilter*	MET_lookup_filter(Jrd::thread_db*, SSHORT, SSHORT);
 SLONG		MET_lookup_generator(Jrd::thread_db*, const TEXT*);
 void		MET_lookup_generator_id(Jrd::thread_db*, SLONG, TEXT *);
 void		MET_lookup_index(Jrd::thread_db*, TEXT*, const TEXT*, USHORT);
-SLONG		MET_lookup_index_name(Jrd::thread_db*, const TEXT*, SLONG*, SSHORT*);
+SLONG		MET_lookup_index_name(Jrd::thread_db*, const Firebird::string&, SLONG*, SSHORT*);
 bool		MET_lookup_partner(Jrd::thread_db*, Jrd::jrd_rel*, struct Jrd::index_desc*, const TEXT*);
-Jrd::jrd_prc*	MET_lookup_procedure(Jrd::thread_db*, SCHAR *, bool);
+Jrd::jrd_prc*	MET_lookup_procedure(Jrd::thread_db*, const Firebird::string&, bool);
 Jrd::jrd_prc*	MET_lookup_procedure_id(Jrd::thread_db*, SSHORT, bool, bool, USHORT);
 Jrd::jrd_rel*	MET_lookup_relation(Jrd::thread_db*, const char*);
 Jrd::jrd_rel*	MET_lookup_relation_id(Jrd::thread_db*, SLONG, bool);
