@@ -91,7 +91,7 @@ static void check_sorts(RSE);
 static void class_mask(USHORT, JRD_NOD *, ULONG *);
 static void clear_bounds(OPT, IDX *);
 static JRD_NOD compose(JRD_NOD *, JRD_NOD, NOD_T);
-static bool computable(CSB, JRD_NOD, SSHORT, bool);
+static bool computable(CSB, JRD_NOD, SSHORT, bool, bool);
 static void compute_dependencies(JRD_NOD, ULONG *);
 static void compute_dbkey_streams(CSB, JRD_NOD, UCHAR *);
 static void compute_rse_streams(CSB, RSE, UCHAR *);
@@ -832,7 +832,7 @@ JRD_NOD OPT_make_dbkey(OPT opt_, JRD_NOD boolean, USHORT stream)
 /* If the value isn't computable, this has been a waste of time */
 
 	csb = opt_->opt_csb;
-	if (!computable(csb, value, stream, false)) {
+	if (!computable(csb, value, stream, false, false)) {
 		return NULL;
 	}
 
@@ -989,7 +989,7 @@ int OPT_match_index(OPT opt, USHORT stream, IDX * idx)
 
 	for (tail = opt->opt_rpt; tail < opt_end; tail++) {
 		node = tail->opt_conjunct;
-		if (!(tail->opt_flags & opt_used) && computable(csb, node, -1, true)) {
+		if (!(tail->opt_flags & opt_used) && computable(csb, node, -1, true, false)) {
 			n += match_index(tdbb, opt, stream, node, idx);
 		}
 	}
@@ -1571,7 +1571,8 @@ static JRD_NOD compose(JRD_NOD * node1, JRD_NOD node2, NOD_T node_type)
 static bool computable(CSB     csb,
                        JRD_NOD node,
                        SSHORT  stream,
-                       bool    idx_use)
+                       bool    idx_use,
+					   bool    allowOnlyCurrentStream)
 {
 /**************************************
  *
@@ -1621,14 +1622,14 @@ static bool computable(CSB     csb,
 		clauses = node->nod_arg[e_uni_clauses];
 		for (ptr = clauses->nod_arg, end = ptr + clauses->nod_count; ptr < end; ptr += 2)
 		{
-			if (!computable(csb, *ptr, stream, idx_use)) {
+			if (!computable(csb, *ptr, stream, idx_use, allowOnlyCurrentStream)) {
 				return false;
 			}
 		}
 	} 
 	else {
 		for (end = ptr + node->nod_count; ptr < end; ptr++) {
-			if (!computable(csb, *ptr, stream, idx_use)) {
+			if (!computable(csb, *ptr, stream, idx_use, allowOnlyCurrentStream)) {
 				return false;
 			}
 		}
@@ -1636,8 +1637,18 @@ static bool computable(CSB     csb,
 
 	switch (node->nod_type) {
 	case nod_field:
-		if ((n = (USHORT) node->nod_arg[e_fld_stream]) == stream) {
-			return false;
+
+		n = (USHORT) node->nod_arg[e_fld_stream];
+
+		if (allowOnlyCurrentStream) {
+			if (n != stream) {
+				return false;
+			}
+		}
+		else {
+			if (n == stream) {
+				return false;
+			}
 		}
 		// AB: cbs_made_river has been replaced by find_used_streams()
 		//if (idx_use &&
@@ -1652,8 +1663,18 @@ static bool computable(CSB     csb,
 		return true;
 
 	case nod_dbkey:
-		if ((n = (USHORT) node->nod_arg[0]) == stream) {
-			return false;
+
+		n = (USHORT) node->nod_arg[0];
+
+		if (allowOnlyCurrentStream) {
+			if (n != stream) {
+				return false;
+			}
+		}
+		else {
+			if (n == stream) {
+				return false;
+			}
 		}
 		// AB: cbs_made_river has been replaced by find_used_streams()
 		//if (idx_use &&
@@ -1675,7 +1696,7 @@ static bool computable(CSB     csb,
 	case nod_count:
 	case nod_from:
 		if ((sub = node->nod_arg[e_stat_default]) &&
-			!computable(csb, sub, stream, idx_use))
+			!computable(csb, sub, stream, idx_use, allowOnlyCurrentStream))
 		{
 			return false;
 		}
@@ -1702,11 +1723,11 @@ static bool computable(CSB     csb,
 
 	bool result = true;
 
-	if ((sub = rse->rse_first) && !computable(csb, sub, stream, idx_use)) {
+	if ((sub = rse->rse_first) && !computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) {
 		return false;
 	}
 
-    if ((sub = rse->rse_skip) && !computable(csb, sub, stream, idx_use)) {
+    if ((sub = rse->rse_skip) && !computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) {
         return false;
 	}
     
@@ -1721,9 +1742,9 @@ static bool computable(CSB     csb,
 
 /* Check sub-stream */
 
-	if (((sub = rse->rse_boolean)    && !computable(csb, sub, stream, idx_use)) ||
-	    ((sub = rse->rse_sorted)     && !computable(csb, sub, stream, idx_use)) ||
-	    ((sub = rse->rse_projection) && !computable(csb, sub, stream, idx_use)))
+	if (((sub = rse->rse_boolean)    && !computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) ||
+	    ((sub = rse->rse_sorted)     && !computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) ||
+	    ((sub = rse->rse_projection) && !computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)))
 	{
 		result = false;
 	}
@@ -1732,7 +1753,7 @@ static bool computable(CSB     csb,
 		((ptr < end) && (result)); ptr++)
 	{
 		if ((*ptr)->nod_type != nod_rse) {
-			if (!computable(csb, (*ptr), stream, idx_use)) {
+			if (!computable(csb, (*ptr), stream, idx_use, allowOnlyCurrentStream)) {
 				result = FALSE;
 			}
 		}
@@ -1740,7 +1761,7 @@ static bool computable(CSB     csb,
 
 /* Check value expression, if any */
 
-	if (result && value && !computable(csb, value, stream, idx_use)) {
+	if (result && value && !computable(csb, value, stream, idx_use, allowOnlyCurrentStream)) {
 		result = false;
 	}
 
@@ -4538,7 +4559,7 @@ static RSB gen_retrieval(TDBB     tdbb,
 				}
 				node = tail->opt_conjunct;
 				if (!(tail->opt_flags & opt_used) &&
-				    computable(csb, node, -1, (inner_flag || outer_flag)))
+				    computable(csb, node, -1, (inner_flag || outer_flag), false))
 				{
 					if (count = match_index(tdbb, opt, stream, node, idx)) {
 						// mark the index in the bitmap and if this conjunct
@@ -4634,7 +4655,8 @@ static RSB gen_retrieval(TDBB     tdbb,
 						 computable(csb,
 						            node,
 									-1,
-									(inner_flag || outer_flag)))
+									(inner_flag || outer_flag),
+									false))
 					{
 						if (match_index(tdbb, opt, stream, node, idx)) {
 							position = 0;
@@ -4736,7 +4758,7 @@ static RSB gen_retrieval(TDBB     tdbb,
 		{
 			node = tail->opt_conjunct;
 			if (!(tail->opt_flags & opt_used)
-				&& computable(csb, node, -1, false))
+				&& computable(csb, node, -1, false, false))
 			{
 				compose(return_boolean, node, nod_and);
 				tail->opt_flags |= opt_used;
@@ -4763,39 +4785,35 @@ static RSB gen_retrieval(TDBB     tdbb,
 			compose(&inversion, OPT_make_dbkey(opt, node, stream), nod_bit_and);
 		}
 		if (!(tail->opt_flags & opt_used)
-			&& computable(csb, node, -1, false))
+			&& computable(csb, node, -1, false, false))
 		{
 			if (node->nod_type == nod_or) {
 				compose(&inversion, make_inversion(tdbb, opt, node, stream),
 					nod_bit_and); 
 			}
-		}
-	}
-
-	// If no index is used then leave other nodes alone, because they could be used for
-	// building a SORT/MERGE.
-	tail = opt->opt_rpt;
-	if (outer_flag) {
-		tail += opt->opt_count;
-	}
-	if (outer_flag || inversion) {
-		for (; tail < opt_end; tail++) {
-			node = tail->opt_conjunct;
-			if (!(tail->opt_flags & opt_used)
-				&& computable(csb, node, -1, false))
-			{
-				if (expression_contains_stream(node, stream)) {
-					compose(&opt_boolean, node, nod_and);
-					tail->opt_flags |= opt_used;
+			else {
+				// If no index is used then leave other nodes alone, because they 
+				// could be used for building a SORT/MERGE.
+				if ((inversion && expression_contains_stream(node, stream)) ||
+					(!inversion && computable(csb, node, stream, false, true))) 
+				{
+					// Don't allow adding IS NULL conjunction to outer stream 
+					// from parent node, because a FULL OUTER JOIN could return
+					// wrong results with it.
+					if (!outer_flag ||
+						(outer_flag && !expression_contains(node, nod_missing)))
+					{
+						compose(&opt_boolean, node, nod_and);
+						tail->opt_flags |= opt_used;
 				
-					if (!outer_flag && !(tail->opt_flags & opt_matched)) {
-						csb_tail->csb_flags |= csb_unmatched;
+						if (!outer_flag && !(tail->opt_flags & opt_matched)) {
+							csb_tail->csb_flags |= csb_unmatched;
+						}
 					}
-				}
+				}				
 			}
 		}
 	}
-
 
 	if (full)
 		return gen_rsb(tdbb, opt, rsb, inversion, stream, relation, alias,
@@ -5360,7 +5378,7 @@ static BOOLEAN gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 		{
 			node1 = tail->opt_conjunct;
 			if (!(tail->opt_flags & opt_used)
-				&& computable(opt->opt_csb, node1, -1, false))
+				&& computable(opt->opt_csb, node1, -1, false, false))
 			{
 				compose(&node, node1, nod_and);
 				tail->opt_flags |= opt_used;
@@ -5497,7 +5515,7 @@ static IRL indexed_relationship(TDBB tdbb, OPT opt, USHORT stream)
 		{
 			JRD_NOD node = tail->opt_conjunct;
 			if (!(tail->opt_flags & opt_used)
-				&& computable(csb, node, -1, false))
+				&& computable(csb, node, -1, false, false))
 			{
 				/* AB: Why only check for AND structures ? 
 				   Added match_indices for support of "OR" with INNER JOINs */
@@ -6027,7 +6045,7 @@ static JRD_NOD make_starts(TDBB tdbb,
 			 || idx->idx_rpt[0].idx_itype == idx_byte_array
 			 || idx->idx_rpt[0].idx_itype == idx_metadata
 			 || idx->idx_rpt[0].idx_itype >= idx_first_intl_string)
-		|| !computable(opt->opt_csb, value, stream, false))
+		|| !computable(opt->opt_csb, value, stream, false, false))
 	{
 		return NULL;
 	}
@@ -6177,10 +6195,10 @@ static SSHORT match_index(TDBB tdbb,
 		/* see if one side or the other is matchable to the index expression */
 
 		if (!expression_equal(tdbb, idx->idx_expression, match) ||
-			!computable(opt->opt_csb, value, stream, true))
+			!computable(opt->opt_csb, value, stream, true, false))
 		{
 			if (expression_equal(tdbb, idx->idx_expression, value) &&
-				computable(opt->opt_csb, match, stream, true))
+				computable(opt->opt_csb, match, stream, true, false))
 			{
 				match = boolean->nod_arg[1];
 				value = boolean->nod_arg[0];
@@ -6196,13 +6214,13 @@ static SSHORT match_index(TDBB tdbb,
 
 		if (match->nod_type != nod_field ||
 			(USHORT) match->nod_arg[e_fld_stream] != stream ||
-			!computable(opt->opt_csb, value, stream, true))
+			!computable(opt->opt_csb, value, stream, true, false))
 		{
 			match = value;
 			value = boolean->nod_arg[0];
 			if (match->nod_type != nod_field ||
 				(USHORT) match->nod_arg[e_fld_stream] != stream ||
-				!computable(opt->opt_csb, value, stream, true))
+				!computable(opt->opt_csb, value, stream, true, false))
 			{
 				return 0;
 			}
@@ -6238,7 +6256,8 @@ static SSHORT match_index(TDBB tdbb,
 						!computable(opt->opt_csb,
 						            boolean->nod_arg[2],
 						            stream,
-						            true))
+						            true,
+									false))
 					{
 						return 0;
 					}
