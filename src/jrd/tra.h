@@ -58,7 +58,7 @@ struct BlobIndex {
 	bool bli_materialized;
 	jrd_req* bli_request;
 	union {
-		bid bli_blob_id; // ID of materialized blob
+		ISC_QUAD bli_blob_id; // ID of materialized blob
 		blb* bli_blob_object; // Blob object
 	};
     static const ULONG& generate(const void *sender, const BlobIndex& item) {

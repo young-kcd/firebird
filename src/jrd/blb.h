@@ -62,6 +62,10 @@ struct bid {
 		} bid_quad;
 	};
 
+	bid() {
+		clear();
+	}
+
 	ULONG& bid_temp_id() {
 		// Make sure that compiler packed structure like we wanted
 		fb_assert(sizeof(*this) == 8);
