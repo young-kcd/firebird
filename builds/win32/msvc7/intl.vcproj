@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\intl"
-			IntermediateDirectory=".\release\intl"
+			OutputDirectory="..\..\..\temp\release\intl"
+			IntermediateDirectory="..\..\..\temp\release\intl"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -31,10 +31,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;INTL_EXPORTS;WINDOWS_ONLY;SUPERCLIENT;WIN32;_X86_"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\intl/intl.pch"
-				AssemblerListingLocation=".\release\intl/"
-				ObjectFile=".\release\intl/"
-				ProgramDataBaseFileName=".\release\intl/"
+				PrecompiledHeaderFile="..\..\..\temp\release\intl/intl.pch"
+				AssemblerListingLocation="..\..\..\temp\release\intl/"
+				ObjectFile="..\..\..\temp\release\intl/"
+				ProgramDataBaseFileName="..\..\..\temp\release\intl/"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
@@ -48,15 +48,15 @@
 				OutputFile="release/firebird/intl/fbintl.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile=".\release\intl/fbintl.pdb"
-				ImportLibrary=".\release\intl/fbintl.lib"/>
+				ProgramDatabaseFile="..\..\..\temp\release\intl/fbintl.pdb"
+				ImportLibrary="..\..\..\temp\release\intl/fbintl.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\release\intl/intl.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\intl/intl.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -74,8 +74,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\intl"
-			IntermediateDirectory=".\debug\intl"
+			OutputDirectory="..\..\..\temp\debug\intl"
+			IntermediateDirectory="..\..\..\temp\debug\intl"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -87,10 +87,10 @@
 				PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;WINDOWS_ONLY;SUPERCLIENT;WIN32;_X86_"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\intl/intl.pch"
-				AssemblerListingLocation=".\debug\intl/"
-				ObjectFile=".\debug\intl/"
-				ProgramDataBaseFileName=".\debug\intl/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\intl/intl.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\intl/"
+				ObjectFile="..\..\..\temp\debug\intl/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\intl/"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
@@ -106,15 +106,15 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\debug\intl/fbintl.pdb"
-				ImportLibrary=".\debug\intl/fbintl.lib"/>
+				ProgramDatabaseFile="..\..\..\temp\debug\intl/fbintl.pdb"
+				ImportLibrary="..\..\..\temp\debug\intl/fbintl.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\debug\intl/intl.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\intl/intl.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

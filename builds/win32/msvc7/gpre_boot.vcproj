@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\gpre_boot"
-			IntermediateDirectory=".\release\gpre_boot"
+			OutputDirectory="..\..\..\temp\release\gpre_boot"
+			IntermediateDirectory="..\..\..\temp\release\gpre_boot"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -30,10 +30,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\gpre_boot/gpre_boot.pch"
-				AssemblerListingLocation=".\release\gpre_boot/"
-				ObjectFile=".\release\gpre_boot/"
-				ProgramDataBaseFileName=".\release\gpre_boot/"
+				PrecompiledHeaderFile="..\..\..\temp\release\gpre_boot/gpre_boot.pch"
+				AssemblerListingLocation="..\..\..\temp\release\gpre_boot/"
+				ObjectFile="..\..\..\temp\release\gpre_boot/"
+				ProgramDataBaseFileName="..\..\..\temp\release\gpre_boot/"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
@@ -47,11 +47,11 @@
 				OutputFile="release/firebird/bin/gpre_boot.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile=".\release\gpre_boot/gpre_boot.pdb"
+				ProgramDatabaseFile="..\..\..\temp\release\gpre_boot/gpre_boot.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\release\gpre_boot/gpre_boot.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\gpre_boot/gpre_boot.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -69,8 +69,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\gpre_boot"
-			IntermediateDirectory=".\debug\gpre_boot"
+			OutputDirectory="..\..\..\temp\debug\gpre_boot"
+			IntermediateDirectory="..\..\..\temp\debug\gpre_boot"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -82,10 +82,10 @@
 				PreprocessorDefinitions="_DEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_,DEV_BUILD,_WINDOWS,_USRDLL,CLIENT"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\gpre_boot/gpre_boot.pch"
-				AssemblerListingLocation=".\debug\gpre_boot/"
-				ObjectFile=".\debug\gpre_boot/"
-				ProgramDataBaseFileName=".\debug\gpre_boot/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\gpre_boot/gpre_boot.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\gpre_boot/"
+				ObjectFile="..\..\..\temp\debug\gpre_boot/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\gpre_boot/"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
@@ -101,11 +101,11 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\debug\gpre_boot/gpre_boot.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\gpre_boot/gpre_boot.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\debug\gpre_boot/gpre_boot.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\gpre_boot/gpre_boot.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

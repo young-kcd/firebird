@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\fbudf"
-			IntermediateDirectory=".\release\fbudf"
+			OutputDirectory="..\..\..\temp\release\fbudf"
+			IntermediateDirectory="..\..\..\temp\release\fbudf"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -31,10 +31,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FBUDF_EXPORTS"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\fbudf/fbudf.pch"
-				AssemblerListingLocation=".\release\fbudf/"
-				ObjectFile=".\release\fbudf/"
-				ProgramDataBaseFileName=".\release\fbudf/"
+				PrecompiledHeaderFile="..\..\..\temp\release\fbudf/fbudf.pch"
+				AssemblerListingLocation="..\..\..\temp\release\fbudf/"
+				ObjectFile="..\..\..\temp\release\fbudf/"
+				ProgramDataBaseFileName="..\..\..\temp\release\fbudf/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -47,14 +47,14 @@
 				OutputFile="release/firebird/udf/fbudf.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ImportLibrary=".\release\fbudf/fbudf.lib"/>
+				ImportLibrary="..\..\..\temp\release\fbudf/fbudf.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="NDEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\release\fbudf/fbudf.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\fbudf/fbudf.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -72,8 +72,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\fbudf"
-			IntermediateDirectory=".\debug\fbudf"
+			OutputDirectory="..\..\..\temp\debug\fbudf"
+			IntermediateDirectory="..\..\..\temp\debug\fbudf"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -85,10 +85,10 @@
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;FBUDF_EXPORTS"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\fbudf/fbudf.pch"
-				AssemblerListingLocation=".\debug\fbudf/"
-				ObjectFile=".\debug\fbudf/"
-				ProgramDataBaseFileName=".\debug\fbudf/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\fbudf/fbudf.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\fbudf/"
+				ObjectFile="..\..\..\temp\debug\fbudf/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\fbudf/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="4"
@@ -104,15 +104,15 @@
 				SuppressStartupBanner="TRUE"
 				AdditionalLibraryDirectories="H:\ibdev\fbbuild\interbase\interbase\lib"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\debug\fbudf/fbudf.pdb"
-				ImportLibrary=".\debug\fbudf/fbudf.lib"/>
+				ProgramDatabaseFile="..\..\..\temp\debug\fbudf/fbudf.pdb"
+				ImportLibrary="..\..\..\temp\debug\fbudf/fbudf.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\debug\fbudf/fbudf.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\fbudf/fbudf.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

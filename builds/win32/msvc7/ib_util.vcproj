@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\ib_util"
-			IntermediateDirectory=".\release\ib_util"
+			OutputDirectory="..\..\..\temp\release\ib_util"
+			IntermediateDirectory="..\..\..\temp\release\ib_util"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -31,10 +31,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;IB_UTIL_EXPORTS"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\ib_util/ib_util.pch"
-				AssemblerListingLocation=".\release\ib_util/"
-				ObjectFile=".\release\ib_util/"
-				ProgramDataBaseFileName=".\release\ib_util/"
+				PrecompiledHeaderFile="..\..\..\temp\release\ib_util/ib_util.pch"
+				AssemblerListingLocation="..\..\..\temp\release\ib_util/"
+				ObjectFile="..\..\..\temp\release\ib_util/"
+				ProgramDataBaseFileName="..\..\..\temp\release\ib_util/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -48,15 +48,15 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\ib_util.def"
-				ProgramDatabaseFile=".\release\ib_util/ib_util.pdb"
-				ImportLibrary=".\release\ib_util/ib_util.lib"/>
+				ProgramDatabaseFile="..\..\..\temp\release\ib_util/ib_util.pdb"
+				ImportLibrary="..\..\..\temp\release\ib_util/ib_util.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\release\ib_util/ib_util.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\ib_util/ib_util.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -74,8 +74,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\ib_util"
-			IntermediateDirectory=".\debug\ib_util"
+			OutputDirectory="..\..\..\temp\debug\ib_util"
+			IntermediateDirectory="..\..\..\temp\debug\ib_util"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -87,10 +87,10 @@
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\ib_util/ib_util.pch"
-				AssemblerListingLocation=".\debug\ib_util/"
-				ObjectFile=".\debug\ib_util/"
-				ProgramDataBaseFileName=".\debug\ib_util/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\ib_util/ib_util.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\ib_util/"
+				ObjectFile="..\..\..\temp\debug\ib_util/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\ib_util/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
@@ -106,15 +106,15 @@
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\ib_util.def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\debug\ib_util/ib_util.pdb"
-				ImportLibrary=".\debug\ib_util/ib_util.lib"/>
+				ProgramDatabaseFile="..\..\..\temp\debug\ib_util/ib_util.pdb"
+				ImportLibrary="..\..\..\temp\debug\ib_util/ib_util.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\debug\ib_util/ib_util.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\ib_util/ib_util.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

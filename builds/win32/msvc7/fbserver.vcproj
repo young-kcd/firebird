@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\fbserver"
-			IntermediateDirectory=".\release\fbserver"
+			OutputDirectory="..\..\..\temp\release\fbserver"
+			IntermediateDirectory="..\..\..\temp\release\fbserver"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -31,10 +31,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,_WINDOWS,SUPERSERVER,WIN32,_X86_"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\fbserver/fbserver.pch"
-				AssemblerListingLocation=".\release\fbserver/"
-				ObjectFile=".\release\fbserver/"
-				ProgramDataBaseFileName=".\release\fbserver/"
+				PrecompiledHeaderFile="..\..\..\temp\release\fbserver/fbserver.pch"
+				AssemblerListingLocation="..\..\..\temp\release\fbserver/"
+				ObjectFile="..\..\..\temp\release\fbserver/"
+				ProgramDataBaseFileName="..\..\..\temp\release\fbserver/"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
@@ -48,7 +48,7 @@
 				OutputFile="release/firebird/bin/fbserver.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile=".\release\fbserver/fbserver.pdb"
+				ProgramDatabaseFile="..\..\..\temp\release\fbserver/fbserver.pdb"
 				SubSystem="2"
 				StackReserveSize="2097152"/>
 			<Tool
@@ -57,7 +57,7 @@
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\release\fbserver/fbserver.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\fbserver/fbserver.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -75,8 +75,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\fbserver"
-			IntermediateDirectory=".\debug\fbserver"
+			OutputDirectory="..\..\..\temp\debug\fbserver"
+			IntermediateDirectory="..\..\..\temp\debug\fbserver"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -88,10 +88,10 @@
 				PreprocessorDefinitions="_DEBUG,_WINDOWS,SUPERSERVER,WIN32,_X86_,DEV_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\fbserver/fbserver.pch"
-				AssemblerListingLocation=".\debug\fbserver/"
-				ObjectFile=".\debug\fbserver/"
-				ProgramDataBaseFileName=".\debug\fbserver/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\fbserver/fbserver.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\fbserver/"
+				ObjectFile="..\..\..\temp\debug\fbserver/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\fbserver/"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
@@ -107,7 +107,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\debug\fbserver/fbserver.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\fbserver/fbserver.pdb"
 				SubSystem="2"
 				StackReserveSize="2097152"/>
 			<Tool
@@ -116,7 +116,7 @@
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\debug\fbserver/fbserver.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\fbserver/fbserver.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

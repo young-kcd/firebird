@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\ib_udf"
-			IntermediateDirectory=".\debug\ib_udf"
+			OutputDirectory="..\..\..\temp\debug\ib_udf"
+			IntermediateDirectory="..\..\..\temp\debug\ib_udf"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -25,10 +25,10 @@
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\ib_udf/ib_udf.pch"
-				AssemblerListingLocation=".\debug\ib_udf/"
-				ObjectFile=".\debug\ib_udf/"
-				ProgramDataBaseFileName=".\debug\ib_udf/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\ib_udf/ib_udf.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\ib_udf/"
+				ObjectFile="..\..\..\temp\debug\ib_udf/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\ib_udf/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
@@ -44,15 +44,15 @@
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\ib_udf.def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\debug\ib_udf/ib_udf.pdb"
-				ImportLibrary=".\debug\ib_udf/ib_udf.lib"/>
+				ProgramDatabaseFile="..\..\..\temp\debug\ib_udf/ib_udf.pdb"
+				ImportLibrary="..\..\..\temp\debug\ib_udf/ib_udf.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\debug\ib_udf/ib_udf.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\ib_udf/ib_udf.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -70,8 +70,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\ib_udf"
-			IntermediateDirectory=".\release\ib_udf"
+			OutputDirectory="..\..\..\temp\release\ib_udf"
+			IntermediateDirectory="..\..\..\temp\release\ib_udf"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -89,10 +89,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\ib_udf/ib_udf.pch"
-				AssemblerListingLocation=".\release\ib_udf/"
-				ObjectFile=".\release\ib_udf/"
-				ProgramDataBaseFileName=".\release\ib_udf/"
+				PrecompiledHeaderFile="..\..\..\temp\release\ib_udf/ib_udf.pch"
+				AssemblerListingLocation="..\..\..\temp\release\ib_udf/"
+				ObjectFile="..\..\..\temp\release\ib_udf/"
+				ProgramDataBaseFileName="..\..\..\temp\release\ib_udf/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -106,15 +106,15 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\ib_udf.def"
-				ProgramDatabaseFile=".\release\ib_udf/ib_udf.pdb"
-				ImportLibrary=".\release\ib_udf/ib_udf.lib"/>
+				ProgramDatabaseFile="..\..\..\temp\release\ib_udf/ib_udf.pdb"
+				ImportLibrary="..\..\..\temp\release\ib_udf/ib_udf.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\release\ib_udf/ib_udf.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\ib_udf/ib_udf.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

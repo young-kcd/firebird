@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\utilities_ss"
-			IntermediateDirectory=".\debug\utilities_ss"
+			OutputDirectory="..\..\..\temp\debug\utilities_ss"
+			IntermediateDirectory="..\..\..\temp\debug\utilities_ss"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -25,10 +25,10 @@
 				PreprocessorDefinitions="_DEBUG,_LIB,SUPERSERVER,WIN32,_X86_,DEV_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\utilities_ss/utilities.pch"
-				AssemblerListingLocation=".\debug\utilities_ss/"
-				ObjectFile=".\debug\utilities_ss/"
-				ProgramDataBaseFileName=".\debug\utilities_ss/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\utilities_ss/utilities.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\utilities_ss/"
+				ObjectFile="..\..\..\temp\debug\utilities_ss/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\utilities_ss/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="4"
@@ -37,7 +37,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\debug\utilities_ss\utilities.lib"
+				OutputFile="..\..\..\temp\debug\utilities_ss\utilities.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -56,8 +56,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\utilities_ss"
-			IntermediateDirectory=".\release\utilities_ss"
+			OutputDirectory="..\..\..\temp\release\utilities_ss"
+			IntermediateDirectory="..\..\..\temp\release\utilities_ss"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -75,10 +75,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,WIN32,_X86_"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\utilities_ss/utilities.pch"
-				AssemblerListingLocation=".\release\utilities_ss/"
-				ObjectFile=".\release\utilities_ss/"
-				ProgramDataBaseFileName=".\release\utilities_ss/"
+				PrecompiledHeaderFile="..\..\..\temp\release\utilities_ss/utilities.pch"
+				AssemblerListingLocation="..\..\..\temp\release\utilities_ss/"
+				ObjectFile="..\..\..\temp\release\utilities_ss/"
+				ProgramDataBaseFileName="..\..\..\temp\release\utilities_ss/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -86,7 +86,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\release\utilities_ss\utilities.lib"
+				OutputFile="..\..\..\temp\release\utilities_ss\utilities.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>

@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\common_ss"
-			IntermediateDirectory=".\release\common_ss"
+			OutputDirectory="..\..\..\temp\release\common_ss"
+			IntermediateDirectory="..\..\..\temp\release\common_ss"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -31,10 +31,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32,NDEBUG,_LIB,SUPERSERVER"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\common_ss/common.pch"
-				AssemblerListingLocation=".\release\common_ss/"
-				ObjectFile=".\release\common_ss/"
-				ProgramDataBaseFileName=".\release\common_ss/"
+				PrecompiledHeaderFile="..\..\..\temp\release\common_ss/common.pch"
+				AssemblerListingLocation="..\..\..\temp\release\common_ss/"
+				ObjectFile="..\..\..\temp\release\common_ss/"
+				ProgramDataBaseFileName="..\..\..\temp\release\common_ss/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -42,7 +42,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\release\common_ss\common.lib"
+				OutputFile="..\..\..\temp\release\common_ss\common.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -61,8 +61,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\common_ss"
-			IntermediateDirectory=".\debug\common_ss"
+			OutputDirectory="..\..\..\temp\debug\common_ss"
+			IntermediateDirectory="..\..\..\temp\debug\common_ss"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -75,10 +75,10 @@
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\debug\common_ss/common.pch"
-				AssemblerListingLocation=".\debug\common_ss/"
-				ObjectFile=".\debug\common_ss/"
-				ProgramDataBaseFileName=".\debug\common_ss/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\common_ss/common.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\common_ss/"
+				ObjectFile="..\..\..\temp\debug\common_ss/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\common_ss/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
@@ -87,7 +87,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\debug\common_ss\common.lib"
+				OutputFile="..\..\..\temp\debug\common_ss\common.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>

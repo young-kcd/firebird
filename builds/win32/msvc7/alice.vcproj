@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\alice_ss"
-			IntermediateDirectory=".\release\alice_ss"
+			OutputDirectory="..\..\..\temp\release\alice_ss"
+			IntermediateDirectory="..\..\..\temp\release\alice_ss"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -31,10 +31,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,WIN32,_X86_"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\alice_ss/alice.pch"
-				AssemblerListingLocation=".\release\alice_ss/"
-				ObjectFile=".\release\alice_ss/"
-				ProgramDataBaseFileName=".\release\alice_ss/"
+				PrecompiledHeaderFile="..\..\..\temp\release\alice_ss/alice.pch"
+				AssemblerListingLocation="..\..\..\temp\release\alice_ss/"
+				ObjectFile="..\..\..\temp\release\alice_ss/"
+				ProgramDataBaseFileName="..\..\..\temp\release\alice_ss/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -42,7 +42,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\release\alice_ss\alice.lib"
+				OutputFile="..\..\..\temp\release\alice_ss\alice.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -61,8 +61,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\alice_ss"
-			IntermediateDirectory=".\debug\alice_ss"
+			OutputDirectory="..\..\..\temp\debug\alice_ss"
+			IntermediateDirectory="..\..\..\temp\debug\alice_ss"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -74,10 +74,10 @@
 				PreprocessorDefinitions="_DEBUG,_LIB,SUPERSERVER,WIN32,_X86_,DEV_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\alice_ss/alice.pch"
-				AssemblerListingLocation=".\debug\alice_ss/"
-				ObjectFile=".\debug\alice_ss/"
-				ProgramDataBaseFileName=".\debug\alice_ss/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\alice_ss/alice.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\alice_ss/"
+				ObjectFile="..\..\..\temp\debug\alice_ss/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\alice_ss/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="4"
@@ -86,7 +86,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\debug\alice_ss\alice.lib"
+				OutputFile="..\..\..\temp\debug\alice_ss\alice.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>

@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\fb_lock_print"
-			IntermediateDirectory=".\release\fb_lock_print"
+			OutputDirectory="..\..\..\temp\release\fb_lock_print"
+			IntermediateDirectory="..\..\..\temp\release\fb_lock_print"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -31,10 +31,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,_WINDOWS,CLIENT,SUPERCLIENT,WIN32,_X86_"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\fb_lock_print/fb_lock_print.pch"
-				AssemblerListingLocation=".\release\fb_lock_print/"
-				ObjectFile=".\release\fb_lock_print/"
-				ProgramDataBaseFileName=".\release\fb_lock_print/"
+				PrecompiledHeaderFile="..\..\..\temp\release\fb_lock_print/fb_lock_print.pch"
+				AssemblerListingLocation="..\..\..\temp\release\fb_lock_print/"
+				ObjectFile="..\..\..\temp\release\fb_lock_print/"
+				ProgramDataBaseFileName="..\..\..\temp\release\fb_lock_print/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -47,11 +47,11 @@
 				OutputFile="release/firebird/bin/fb_lock_print.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile=".\release\fb_lock_print/fb_lock_print.pdb"
+				ProgramDatabaseFile="..\..\..\temp\release\fb_lock_print/fb_lock_print.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\release\fb_lock_print/fb_lock_print.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\fb_lock_print/fb_lock_print.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -69,8 +69,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\fb_lock_print"
-			IntermediateDirectory=".\debug\fb_lock_print"
+			OutputDirectory="..\..\..\temp\debug\fb_lock_print"
+			IntermediateDirectory="..\..\..\temp\debug\fb_lock_print"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -82,10 +82,10 @@
 				PreprocessorDefinitions="_DEBUG,DEV_BUILD,_WINDOWS,CLIENT,SUPERCLIENT,WIN32,_X86_"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\fb_lock_print/fb_lock_print.pch"
-				AssemblerListingLocation=".\debug\fb_lock_print/"
-				ObjectFile=".\debug\fb_lock_print/"
-				ProgramDataBaseFileName=".\debug\fb_lock_print/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\fb_lock_print/fb_lock_print.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\fb_lock_print/"
+				ObjectFile="..\..\..\temp\debug\fb_lock_print/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\fb_lock_print/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
@@ -100,11 +100,11 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\debug\fb_lock_print/fb_lock_print.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\fb_lock_print/fb_lock_print.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\debug\fb_lock_print/fb_lock_print.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\fb_lock_print/fb_lock_print.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

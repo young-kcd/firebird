@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\gfix"
-			IntermediateDirectory=".\debug\gfix"
+			OutputDirectory="..\..\..\temp\debug\gfix"
+			IntermediateDirectory="..\..\..\temp\debug\gfix"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -25,10 +25,10 @@
 				PreprocessorDefinitions="WIN32,_DEBUG,_CONSOLE,DEV_BUILD,SUPERCLIENT"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\gfix/gfix.pch"
-				AssemblerListingLocation=".\debug\gfix/"
-				ObjectFile=".\debug\gfix/"
-				ProgramDataBaseFileName=".\debug\gfix/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\gfix/gfix.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\gfix/"
+				ObjectFile="..\..\..\temp\debug\gfix/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\gfix/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
@@ -43,11 +43,11 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\debug\gfix/gfix.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\gfix/gfix.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\debug\gfix/gfix.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\gfix/gfix.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -65,8 +65,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\gfix"
-			IntermediateDirectory=".\release\gfix"
+			OutputDirectory="..\..\..\temp\release\gfix"
+			IntermediateDirectory="..\..\..\temp\release\gfix"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -84,10 +84,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE,SUPERCLIENT"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\gfix/gfix.pch"
-				AssemblerListingLocation=".\release\gfix/"
-				ObjectFile=".\release\gfix/"
-				ProgramDataBaseFileName=".\release\gfix/"
+				PrecompiledHeaderFile="..\..\..\temp\release\gfix/gfix.pch"
+				AssemblerListingLocation="..\..\..\temp\release\gfix/"
+				ObjectFile="..\..\..\temp\release\gfix/"
+				ProgramDataBaseFileName="..\..\..\temp\release\gfix/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -100,11 +100,11 @@
 				OutputFile="release/firebird/bin/gfix.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile=".\release\gfix/gfix.pdb"
+				ProgramDatabaseFile="..\..\..\temp\release\gfix/gfix.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\release\gfix/gfix.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\gfix/gfix.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\common_cs"
-			IntermediateDirectory=".\debug\common_cs"
+			OutputDirectory="..\..\..\temp\debug\common_cs"
+			IntermediateDirectory="..\..\..\temp\debug\common_cs"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -26,10 +26,10 @@
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\debug\common_cs/common_classic.pch"
-				AssemblerListingLocation=".\debug\common_cs/"
-				ObjectFile=".\debug\common_cs/"
-				ProgramDataBaseFileName=".\debug\common_cs/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\common_cs/common_classic.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\common_cs/"
+				ObjectFile="..\..\..\temp\debug\common_cs/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\common_cs/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
@@ -38,7 +38,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\debug\common_cs\common_classic.lib"
+				OutputFile="..\..\..\temp\debug\common_cs\common_classic.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -57,8 +57,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\common_cs"
-			IntermediateDirectory=".\release\common_cs"
+			OutputDirectory="..\..\..\temp\release\common_cs"
+			IntermediateDirectory="..\..\..\temp\release\common_cs"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -76,10 +76,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32,NDEBUG,_LIB"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\common_cs/common_classic.pch"
-				AssemblerListingLocation=".\release\common_cs/"
-				ObjectFile=".\release\common_cs/"
-				ProgramDataBaseFileName=".\release\common_cs/"
+				PrecompiledHeaderFile="..\..\..\temp\release\common_cs/common_classic.pch"
+				AssemblerListingLocation="..\..\..\temp\release\common_cs/"
+				ObjectFile="..\..\..\temp\release\common_cs/"
+				ProgramDataBaseFileName="..\..\..\temp\release\common_cs/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -87,7 +87,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\release\common_cs\common_classic.lib"
+				OutputFile="..\..\..\temp\release\common_cs\common_classic.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
