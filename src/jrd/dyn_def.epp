@@ -2486,7 +2486,7 @@ void DYN_define_log_file(
  **************************************
  *
  * Functional description
- *	Define a database or shadow file.
+ *	Define log files for WAL (obsolete).
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
