@@ -1,3 +1,163 @@
+2003-09-23 21:47  brodsom
+
+	* firebird2/src/burp/: backup.epp, burp.cpp, burp.h, mvol.cpp,
+	restore.epp, spit.cpp:
+	
+	Macro cleaning
+
+2003-09-23 21:47  brodsom
+
+	* firebird2/src/alice/alice_meta.epp:
+	
+	Wait a better solution with gpre
+
+2003-09-23 21:07  skidder
+
+	* firebird2/src/install/misc/firebird.init.d.generic.in:
+	
+	file firebird.init.d.generic.in was initially added on branch
+	B1_5_Release.
+
+2003-09-23 21:07  skidder
+
+	* firebird2/src/install/misc/SSchangeRunUser.sh.in:
+	
+	file SSchangeRunUser.sh.in was initially added on branch
+	B1_5_Release.
+
+2003-09-23 21:07  skidder
+
+	* firebird2/src/install/misc/changeDBAPassword.sh.in:
+	
+	file changeDBAPassword.sh.in was initially added on branch
+	B1_5_Release.
+
+2003-09-23 21:07  skidder
+
+	* firebird2/src/install/misc/SSrestoreRootRunUser.sh.in:
+	
+	file SSrestoreRootRunUser.sh.in was initially added on branch
+	B1_5_Release.
+
+2003-09-23 21:07  skidder
+
+	* firebird2/src/install/misc/firebird.init.d.mandrake.in:
+	
+	file firebird.init.d.mandrake.in was initially added on branch
+	B1_5_Release.
+
+2003-09-23 21:07  skidder
+
+	* firebird2/src/install/misc/CSchangeRunUser.sh.in:
+	
+	file CSchangeRunUser.sh.in was initially added on branch
+	B1_5_Release.
+
+2003-09-23 21:07  skidder
+
+	* firebird2/src/install/misc/CSrestoreRootRunUser.sh.in:
+	
+	file CSrestoreRootRunUser.sh.in was initially added on branch
+	B1_5_Release.
+
+2003-09-23 21:07  skidder
+
+	*
+	
+	file SSchangePasswd.sh.in was initially added on branch
+	B1_5_Release.
+	firebird2/src/install/arch-specific/linux/super/SSchangePasswd.sh.i
+	n:
+
+2003-09-23 21:07  skidder
+
+	* firebird2/: configure.in, builds/posix/Makefile.in.firebird,
+	src/install/arch-specific/linux/misc/firebird.initd.in,
+	src/install/arch-specific/linux/super/SSchangePasswd.sh,
+	src/install/arch-specific/linux/super/SSchangePasswd.sh.in,
+	src/install/arch-specific/linux/super/makeInstallImage.sh.in,
+	src/install/arch-specific/linux/super/postinstall.sh.in,
+	src/install/arch-specific/linux/super/preinstall.sh.in,
+	src/install/arch-specific/linux/super/preuninstall.sh.in,
+	src/install/arch-specific/linux/super/rpmfiles.txt.in,
+	src/install/misc/CSchangeRunUser.sh,
+	src/install/misc/CSchangeRunUser.sh.in,
+	src/install/misc/CSrestoreRootRunUser.sh,
+	src/install/misc/CSrestoreRootRunUser.sh.in,
+	src/install/misc/SSchangeRunUser.sh,
+	src/install/misc/SSchangeRunUser.sh.in,
+	src/install/misc/SSrestoreRootRunUser.sh,
+	src/install/misc/SSrestoreRootRunUser.sh.in,
+	src/install/misc/changeDBAPassword.sh,
+	src/install/misc/changeDBAPassword.sh.in,
+	src/install/misc/firebird.init.d.generic,
+	src/install/misc/firebird.init.d.generic.in,
+	src/install/misc/firebird.init.d.mandrake,
+	src/install/misc/firebird.init.d.mandrake.in:
+	
+	Make Linux CS install prefix-aware
+
+2003-09-23 21:00  skidder
+
+	*
+	
+	Let the default Linux CS RPM install be secure
+	firebird2/src/install/arch-specific/linux/classic/postinstall.sh.in
+	:
+
+2003-09-23 16:21  dimitr
+
+	* firebird2/src/jrd/scl.epp:
+	
+	Fixed bug with CURRENT_ROLE, introduced in early v1.5 development.
+
+2003-09-23 16:15  dimitr
+
+	* firebird2/src/jrd/scl.epp:
+	
+	Fixed bug with CURRENT_ROLE, introduced in early v1.5 development.
+
+2003-09-23 12:13  aafemt
+
+	* firebird2/src/qli/: eval.cpp, exe.cpp, exe_proto.h,
+	expan_proto.h, expand.cpp, forma_proto.h, gener_proto.h, help.epp,
+	help_proto.h, hsh.cpp, hsh_proto.h, lex_proto.h, meta.epp,
+	meta_proto.h, mov.cpp, mov_proto.h:
+	
+	Partial 'struct' cleanup
+
+2003-09-22 19:54  brodsom
+
+	* firebird2/src/: remote/inet.cpp, remote/protocol.cpp,
+	remote/remote.cpp, wal/wal.cpp, wal/walc.cpp, jrd/shdef.h:
+	
+	Removing SHLIB_DEFS
+
+2003-09-22 19:51  brodsom
+
+	* firebird2/src/: dsql/parse.cpp, dsql/parse.sed, dsql/parse.y,
+	jrd/all.cpp, jrd/builtin.cpp, jrd/cmp.cpp, jrd/common.h,
+	jrd/dfw.epp, jrd/exe.cpp, jrd/flu.cpp, jrd/functions.cpp,
+	jrd/gds.cpp, jrd/isc.cpp, jrd/isc_file.cpp, jrd/isc_sync.cpp,
+	jrd/jrd.cpp, jrd/jrn.cpp, jrd/llio.cpp, jrd/met.epp, jrd/perf.cpp,
+	jrd/svc.cpp, jrd/utl.cpp, jrd/val.cpp, jrd/why.cpp,
+	jrd/os/posix/unix.cpp, lock/lock.cpp:
+	
+	Removing SHLIB_DEFS
+
+2003-09-22 16:11  brodsom
+
+	* firebird2/src/: alice/alice.cpp, burp/restore.epp,
+	burp/canonical.cpp, burp/burp.cpp, burp/burp.h:
+	
+	Style
+
+2003-09-22 10:49  brodsom
+
+	* firebird2/src/alice/: alice.h, alice_meta.epp, exe.cpp, tdr.cpp:
+	
+	Style
+
 2003-09-21 19:49  skidder
 
 	* firebird2/src/dsql/pass1.cpp:
