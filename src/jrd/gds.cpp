@@ -2454,9 +2454,9 @@ void API_ROUTINE gds__prefix_lock(TEXT * string, TEXT * root)
  ********************************************************
  *
  * Functional description
- *	Find appropriate InterBase lock file prefix.
+ *	Find appropriate Firebird lock file prefix.
  *	Override conditional defines with the enviroment
- *      variable INTERBASE_LOCK if it is set.
+ *      variable FIREBIRD_LOCK if it is set.
  *
  **************************************/
 	string[0] = 0;
@@ -2472,8 +2472,12 @@ void API_ROUTINE gds__prefix_lock(TEXT * string, TEXT * root)
 		}
 	}
 	strcat(string, ib_prefix_lock);
-	if (string[strlen(string) - 1] != '/')
-		strcat(string, "/");
+
+	int len = strlen(string);
+	if (string[len - 1] != PathUtils::dir_sep) {
+		string[len] = PathUtils::dir_sep;
+		string[len + 1] = 0;
+	}
 	strcat(string, root);
 }
 #endif
@@ -2489,9 +2493,9 @@ void API_ROUTINE gds__prefix_lock(TEXT * string, TEXT * root)
  ************************************************
  *
  * Functional description
- *	Find appropriate InterBase lock file prefix.
+ *	Find appropriate Firebird lock file prefix.
  *	Override conditional defines with the enviroment
- *      variable INTERBASE_LOCK if it is set.
+ *      variable FIREBIRD_LOCK if it is set.
  *
  *************************************************/
 	TEXT temp[256], *p, *q;
@@ -2539,9 +2543,9 @@ void API_ROUTINE gds__prefix_msg(TEXT * string, TEXT * root)
  ********************************************************
  *
  * Functional description
- *      Find appropriate InterBase message file prefix.
+ *      Find appropriate Firebird message file prefix.
  *      Override conditional defines with the enviroment
- *      variable INTERBASE_MSG if it is set.
+ *      variable FIREBIRD_MSG if it is set.
  *
  *
  **************************************/
@@ -2557,10 +2561,13 @@ void API_ROUTINE gds__prefix_msg(TEXT * string, TEXT * root)
 			ib_prefix_msg = ib_prefix_msg_val;
 		}
 	}
-
 	strcat(string, ib_prefix_msg);
-	if (string[strlen(string) - 1] != '/')
-		strcat(string, "/");
+
+	int len = strlen(string);
+	if (string[len - 1] != PathUtils::dir_sep) {
+		string[len] = PathUtils::dir_sep;
+		string[len + 1] = 0;
+	}
 	strcat(string, root);
 }
 #endif
@@ -2575,9 +2582,9 @@ void API_ROUTINE gds__prefix_msg(TEXT * string, TEXT * root)
  ************************************************
  *
  * Functional description
- *      Find appropriate InterBase message file prefix.
+ *      Find appropriate Firebird message file prefix.
  *      Override conditional defines with the enviroment
- *      variable INTERBASE_MSG if it is set.
+ *      variable FIREBIRD_MSG if it is set.
  *
  *************************************************/
 	TEXT temp[256], *p, *q;
