@@ -53,18 +53,20 @@ extern "C" {
 
 ASSERT_FILENAME					/* Define things assert() needs */
 #ifdef DEV_BUILD
+/**
+  
+ 	ERRD_assert_msg
+  
+    @brief	Generate an assertion failure with a message
+ 
+
+    @param msg
+    @param file
+    @param lineno
+
+ **/
 void ERRD_assert_msg(const char* msg, const char* file, ULONG lineno)
 {
-/**************************************
- *
- *	E R R D _ a s s e r t _ m s g
- *
- **************************************
- *
- * Functional description
- *	Generate an assertion failure with a message
- *
- **************************************/
 
 	char buffer[100];
 
@@ -75,18 +77,18 @@ void ERRD_assert_msg(const char* msg, const char* file, ULONG lineno)
 #endif /* DEV_BUILD */
 
 
+/**
+  
+ 	ERRD_bugcheck
+  
+    @brief	Somebody has screwed up.  Bugcheck.
+ 
+
+    @param text
+
+ **/
 void ERRD_bugcheck(const char* text)
 {
-/**************************************
- *
- *	E R R D _ b u g c h e c k
- *
- **************************************
- *
- * Functional description
- *	Somebody has screwed up.  Bugcheck.
- *
- **************************************/
 	TEXT s[128];
 
 	sprintf(s, "INTERNAL: %s", text);	/* TXNN */
@@ -94,23 +96,24 @@ void ERRD_bugcheck(const char* text)
 }
 
 
+/**
+  
+ 	ERRD_error
+  
+    @brief	This routine should only be used by fatal
+ 	error messages, those that cannot use the
+ 	normal error routines because something
+ 	is very badly wrong.  ERRD_post() should
+  	be used by most error messages, especially
+ 	so that strings will be handled.
+ 
+
+    @param code
+    @param text
+
+ **/
 void ERRD_error( int code, const char* text)
 {
-/**************************************
- *
- *	E R R D _ e r r o r
- *
- **************************************
- *
- * Functional description
- *	This routine should only be used by fatal
- *	error messages, those that cannot use the
- *	normal error routines because something
- *	is very badly wrong.  ERRD_post() should
- * 	be used by most error messages, especially
- *	so that strings will be handled.
- *
- **************************************/
 	TEXT s[256];
 	TSQL tdsql;
     STATUS	*status_vector;
@@ -134,18 +137,19 @@ void ERRD_error( int code, const char* text)
 }
 
 
+/**
+  
+ ERRD_post_warning
+  
+    @brief      Post a warning to the current status vector.
+ 
+
+    @param status
+    @param 
+
+ **/
 BOOLEAN ERRD_post_warning(STATUS status, ...)
 {
-/**************************************
- *
- *      E R R D _ p o s t _ w a r n i n g
- *
- **************************************
- *
- * Functional description
- *      Post a warning to the current status vector.
- *
- **************************************/
 	va_list args;
 
 #pragma FB_COMPILER_MESSAGE("Warning, using STATUS array to hold pointers to STATUSes!")
@@ -236,19 +240,20 @@ BOOLEAN ERRD_post_warning(STATUS status, ...)
 }
 
 
+/**
+  
+ 	ERRD_post
+  
+    @brief	Post an error, copying any potentially
+ 	transient data before we punt.
+ 
+
+    @param status
+    @param 
+
+ **/
 void ERRD_post(STATUS status, ...)
 {
-/**************************************
- *
- *	E R R D _ p o s t
- *
- **************************************
- *
- * Functional description
- *	Post an error, copying any potentially
- *	transient data before we punt.
- *
- **************************************/
 
 	STATUS tmp_status[ISC_STATUS_LENGTH];
 	STATUS warning_status[ISC_STATUS_LENGTH];
@@ -339,19 +344,18 @@ void ERRD_post(STATUS status, ...)
 }
 
 
+/**
+  
+ 	ERRD_punt
+  
+    @brief	Error stuff has been copied to
+ 	status vector.  Now punt.
+ 
+
+
+ **/
 void ERRD_punt(void)
 {
-/**************************************
- *
- *	E R R D _ p u n t
- *
- **************************************
- *
- * Functional description
- *	Error stuff has been copied to
- *	status vector.  Now punt.
- *
- **************************************/
 	TSQL tdsql;
 
 	tdsql = GET_THREAD_DATA;

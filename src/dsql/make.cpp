@@ -69,18 +69,19 @@ ASSERT_FILENAME					/* declare things assert() needs */
    (((d2).dsc_dtype==dtype_sql_time)&&((d1).dsc_dtype==dtype_sql_date)))
 
 
+/**
+  
+ 	MAKE_constant
+  
+    @brief	Make a constant node.
+ 
+
+    @param constant
+    @param numeric_flag
+
+ **/
 DSQL_NOD MAKE_constant(STR constant, int numeric_flag)
 {
-/**************************************
- *
- *	M A K E _ c o n s t a n t
- *
- **************************************
- *
- * Functional description
- *	Make a constant node.
- *
- **************************************/
 	DSQL_NOD node;
 	TSQL tdsql;
 
@@ -208,19 +209,20 @@ DSQL_NOD MAKE_constant(STR constant, int numeric_flag)
 }
 
 
+/**
+  
+ 	MAKE_str-constant
+  
+    @brief	Make a constant node when the 
+       character set ID is already known.
+ 
+
+    @param constant
+    @param character_set
+
+ **/
 DSQL_NOD MAKE_str_constant(STR constant, SSHORT character_set)
 {
-/**************************************
- *
- *	M A K E _ s t r - c o n s t a n t
- *
- **************************************
- *
- * Functional description
- *	Make a constant node when the 
- *      character set ID is already known.
- *
- **************************************/
 	DSQL_NOD node;
 	TSQL tdsql;
 
@@ -244,36 +246,37 @@ DSQL_NOD MAKE_str_constant(STR constant, SSHORT character_set)
 }
 
 
+/**
+  
+ 	MAKE_cstring
+  
+    @brief	Make a string node for a string whose
+ 	length is not known, but is null-terminated.
+ 
+
+    @param str
+
+ **/
 STR MAKE_cstring(const char* str)
 {
-/**************************************
- *
- *	M A K E _ c s t r i n g
- *
- **************************************
- *
- * Functional description
- *	Make a string node for a string whose
- *	length is not known, but is null-terminated.
- *
- **************************************/
 
 	return MAKE_string(str, strlen(str));
 }
 
 
+/**
+  
+ 	MAKE_desc
+  
+    @brief	Make a descriptor from input node.
+ 
+
+    @param desc
+    @param node
+
+ **/
 void MAKE_desc( DSC * desc, DSQL_NOD node)
 {
-/**************************************
- *
- *	M A K E _ d e s c
- *
- **************************************
- *
- * Functional description
- *	Make a descriptor from input node.
- *
- **************************************/
 	DSC desc1, desc2;
 	USHORT dtype, dtype1, dtype2;
 	MAP map;
@@ -1054,18 +1057,19 @@ void MAKE_desc( DSC * desc, DSQL_NOD node)
 }
 
 
+/**
+  
+ 	MAKE_desc_from_field
+  
+    @brief	Compute a DSC from a field's description information.
+ 
+
+    @param desc
+    @param field
+
+ **/
 void MAKE_desc_from_field( DSC * desc, DSQL_FLD field)
 {
-/**************************************
- *
- *	M A K E _ d e s c _ f r o m _ f i e l d
- *
- **************************************
- *
- * Functional description
- *	Compute a DSC from a field's description information.
- *
- **************************************/
 
 	DEV_BLKCHK(field, dsql_type_fld);
 
@@ -1083,18 +1087,19 @@ void MAKE_desc_from_field( DSC * desc, DSQL_FLD field)
 }
 
 
+/**
+  
+ 	MAKE_desc_from_list
+  
+    @brief	Make a descriptor from a list of values 
+   according the sql-standard.
+ 
+
+    @param desc
+    @param node
+
+ **/
 void MAKE_desc_from_list( DSC * desc, DSQL_NOD node)
-/**************************************
- *
- *	M A K E _ d e s c _ f r o m _ l i s t 
- *
- **************************************
- *
- * Functional description
- *	Make a descriptor from a list of values 
- *  according the sql-standard.
- *
- **************************************/
 {
 	DSQL_NOD	*arg, *end, tnod;
 	DSC	desc1, desc2;
@@ -1275,18 +1280,20 @@ void MAKE_desc_from_list( DSC * desc, DSQL_NOD node)
 }
 
 
+/**
+  
+ 	MAKE_field
+  
+    @brief	Make up a field node.
+ 
+
+    @param context
+    @param field
+    @param indices
+
+ **/
 DSQL_NOD MAKE_field(DSQL_CTX context, DSQL_FLD field, DSQL_NOD indices)
 {
-/**************************************
- *
- *	M A K E _ f i e l d
- *
- **************************************
- *
- * Functional description
- *	Make up a field node.
- *
- **************************************/
 	DSQL_NOD node;
 
 	DEV_BLKCHK(context, dsql_type_ctx);
@@ -1329,18 +1336,18 @@ DSQL_NOD MAKE_field(DSQL_CTX context, DSQL_FLD field, DSQL_NOD indices)
 }
 
 
+/**
+  
+ 	MAKE_list
+  
+    @brief	Make a list node from a linked list stack of things.
+ 
+
+    @param stack
+
+ **/
 DSQL_NOD MAKE_list(DLLS stack)
 {
-/**************************************
- *
- *	M A K E _ l i s t
- *
- **************************************
- *
- * Functional description
- *	Make a list node from a linked list stack of things.
- *
- **************************************/
 	DLLS temp;
 	USHORT count;
 	DSQL_NOD node, *ptr;
@@ -1360,18 +1367,19 @@ DSQL_NOD MAKE_list(DLLS stack)
 }
 
 
+/**
+  
+ 	MAKE_node
+  
+    @brief	Make a node of given type.
+ 
+
+    @param type
+    @param count
+
+ **/
 DSQL_NOD MAKE_node(NOD_TYPE type, int count)
 {
-/**************************************
- *
- *	M A K E _ n o d e
- *
- **************************************
- *
- * Functional description
- *	Make a node of given type.
- *
- **************************************/
 	DSQL_NOD node;
 	TSQL tdsql;
 
@@ -1385,19 +1393,22 @@ DSQL_NOD MAKE_node(NOD_TYPE type, int count)
 }
 
 
+/**
+  
+ 	MAKE_parameter
+  
+    @brief	Generate a parameter block for a message.  If requested,
+ 	set up for a null flag as well.
+ 
+
+    @param message
+    @param sqlda_flag
+    @param null_flag
+    @param sqlda_index
+
+ **/
 PAR MAKE_parameter(DSQL_MSG message, USHORT sqlda_flag, USHORT null_flag, USHORT sqlda_index)
 {
-/**************************************
- *
- *	M A K E _ p a r a m e t e r
- *
- **************************************
- *
- * Functional description
- *	Generate a parameter block for a message.  If requested,
- *	set up for a null flag as well.
- *
- **************************************/
 	PAR parameter, null;
 	TSQL tdsql;
 
@@ -1449,36 +1460,41 @@ PAR MAKE_parameter(DSQL_MSG message, USHORT sqlda_flag, USHORT null_flag, USHORT
 	return parameter;
 }
 
+/**
+  
+ 	MAKE_string
+  
+    @brief	Generalized routine for making a string block.
+ 
+
+    @param str
+    @param length
+
+ **/
 STR MAKE_string(const char* str, int length)
 {
-/**************************************
- *
- *	M A K E _ s t r i n g
- *
- **************************************
- *
- * Functional description
- *	Generalized routine for making a string block.
- *
- **************************************/
 
 	return MAKE_tagged_string(str, length, NULL);
 }
 
 
+/**
+  
+ 	MAKE_symbol
+  
+    @brief	Make a symbol for an object and insert symbol into hash table.
+ 
+
+    @param database
+    @param name
+    @param length
+    @param type
+    @param object
+
+ **/
 SYM MAKE_symbol(DBB database,
 				const TEXT * name, USHORT length, SYM_TYPE type, DSQL_REQ object)
 {
-/**************************************
- *
- *	M A K E _ s y m b o l
- *
- **************************************
- *
- * Functional description
- *	Make a symbol for an object and insert symbol into hash table.
- *
- **************************************/
 	SYM symbol;
 	TEXT *p;
 	TSQL tdsql;
@@ -1506,19 +1522,21 @@ SYM MAKE_symbol(DBB database,
 }
 
 
+/**
+  
+ 	MAKE_tagged_string
+  
+    @brief	Generalized routine for making a string block.
+ 	Which is tagged with a character set descriptor.
+ 
+
+    @param str_
+    @param length
+    @param charset
+
+ **/
 STR MAKE_tagged_string(const char* str_, size_t length, const char* charset)
 {
-/**************************************
- *
- *	M A K E _ t a g g e d _ s t r i n g
- *
- **************************************
- *
- * Functional description
- *	Generalized routine for making a string block.
- *	Which is tagged with a character set descriptor.
- *
- **************************************/
 
 
 	TSQL tdsql = GET_THREAD_DATA;
@@ -1532,18 +1550,19 @@ STR MAKE_tagged_string(const char* str_, size_t length, const char* charset)
 }
 
 
+/**
+  
+ 	MAKE_trigger_type
+  
+    @brief	Make a trigger type
+ 
+
+    @param prefix_node
+    @param suffix_node
+
+ **/
 DSQL_NOD MAKE_trigger_type(DSQL_NOD prefix_node, DSQL_NOD suffix_node)
 {
-/**************************************
- *
- *	M A K E _ t r i g g e r _ t y p e
- *
- **************************************
- *
- * Functional description
- *	Make a trigger type
- *
- **************************************/
 
 	long prefix = (long) prefix_node->nod_arg[0];
 	long suffix = (long) suffix_node->nod_arg[0];
@@ -1553,21 +1572,26 @@ DSQL_NOD MAKE_trigger_type(DSQL_NOD prefix_node, DSQL_NOD suffix_node)
 }
 
 
+/**
+  
+ 	MAKE_variable
+  
+    @brief	Make up a field node.
+ 
+
+    @param field
+    @param name
+    @param type
+    @param msg_number
+    @param item_number
+    @param local_number
+
+ **/
 DSQL_NOD MAKE_variable(DSQL_FLD field,
 				  const TEXT * name,
 				  USHORT type,
 				  USHORT msg_number, USHORT item_number, USHORT local_number)
 {
-/**************************************
- *
- *	M A K E _ v a r i a b l e
- *
- **************************************
- *
- * Functional description
- *	Make up a field node.
- *
- **************************************/
 	DSQL_NOD node;
 	VAR var_;
 	TSQL tdsql;

@@ -30,7 +30,7 @@
  */
 
 /*
-$Id: utld.cpp,v 1.9 2002-11-14 08:18:20 dimitr Exp $
+$Id: utld.cpp,v 1.10 2003-02-15 03:01:51 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -76,23 +76,27 @@ static TEXT *DSQL_failures, *DSQL_failures_ptr;
 #define DSQL_FAILURE_SPACE	2048
 
 
+/**
+  
+ 	UTLD_parse_sql_info
+  
+    @brief	Fill in an SQLDA using data returned
+ 	by a call to isc_dsql_sql_info.
+ 
+
+    @param status
+    @param dialect
+    @param info
+    @param xsqlda
+    @param return_index
+
+ **/
 STATUS DLL_EXPORT UTLD_parse_sql_info(
 									  STATUS * status,
 									  USHORT dialect,
 									  SCHAR * info,
 XSQLDA * xsqlda, USHORT * return_index)
 {
-/**************************************
- *
- *	U T L D _ p a r s e _ s q l _ i n f o
- *
- **************************************
- *
- * Functional description
- *	Fill in an SQLDA using data returned
- *	by a call to isc_dsql_sql_info.
- *
- **************************************/
 	SCHAR item;
 	SSHORT n;
 	XSQLVAR *xvar, xsqlvar;
@@ -218,6 +222,26 @@ XSQLDA * xsqlda, USHORT * return_index)
 }
 
 
+/**
+  
+ 	UTLD_parse_sqlda
+  
+    @brief	This routine creates a blr message that describes
+ 	a SQLDA as well as moving data from the SQLDA
+ 	into a message buffer or from the message buffer
+ 	into the SQLDA.
+ 
+
+    @param status
+    @param dasup
+    @param blr_length
+    @param msg_type
+    @param msg_length
+    @param dialect
+    @param xsqlda
+    @param clause
+
+ **/
 STATUS DLL_EXPORT UTLD_parse_sqlda(STATUS * status,
 								   DASUP dasup,
 								   USHORT * blr_length,
@@ -227,19 +251,6 @@ STATUS DLL_EXPORT UTLD_parse_sqlda(STATUS * status,
 								   XSQLDA * xsqlda,
 								   USHORT clause)
 {
-/*****************************************
- *
- *	U T L D _ p a r s e _ s q l d a
- *
- *****************************************
- *
- * Functional Description
- *	This routine creates a blr message that describes
- *	a SQLDA as well as moving data from the SQLDA
- *	into a message buffer or from the message buffer
- *	into the SQLDA.
- *
- *****************************************/
 	USHORT i, n, blr_len, par_count, dtype, same_flag, msg_len, len, align, offset,
 		null_offset;
 	SSHORT *null_ind;
@@ -636,20 +647,20 @@ STATUS DLL_EXPORT UTLD_parse_sqlda(STATUS * status,
 }
 
 
+/**
+  
+ 	UTLD_save_status_strings
+  
+    @brief	Strings in status vectors may be stored in stack variables
+ 	or memory pools that are transient.  To perserve the information,
+ 	copy any included strings to a special buffer.
+ 
+
+    @param vector
+
+ **/
 void DLL_EXPORT UTLD_save_status_strings( STATUS * vector)
 {
-/**************************************
- *
- *	U T L D _ s a v e _ s t a t u s _ s t r i n g s
- *
- **************************************
- *
- * Functional description
- *	Strings in status vectors may be stored in stack variables
- *	or memory pools that are transient.  To perserve the information,
- *	copy any included strings to a special buffer.
- *
- **************************************/
 	TEXT *p;
 	STATUS status;
 	USHORT l;
@@ -707,18 +718,18 @@ void DLL_EXPORT UTLD_save_status_strings( STATUS * vector)
 }
 
 
+/**
+  
+ 	cleanup
+  
+    @brief	Exit handler to cleanup dynamically allocated memory.
+ 
+
+    @param arg
+
+ **/
 static void cleanup( void *arg)
 {
-/**************************************
- *
- *	c l e a n u p
- *
- **************************************
- *
- * Functional description
- *	Exit handler to cleanup dynamically allocated memory.
- *
- **************************************/
 
 	if (DSQL_failures)
 		FREE_LIB_MEMORY(DSQL_failures);
@@ -728,18 +739,19 @@ static void cleanup( void *arg)
 }
 
 
+/**
+  
+ 	error_dsql_804
+  
+    @brief	Move a DSQL -804 error message into a status vector.
+ 
+
+    @param status
+    @param err
+
+ **/
 static STATUS error_dsql_804( STATUS * status, STATUS err)
 {
-/**************************************
- *
- *	e r r o r _ d s q l _ 8 0 4
- *
- **************************************
- *
- * Functional description
- *	Move a DSQL -804 error message into a status vector.
- *
- **************************************/
 	STATUS *p;
 
 	p = status;
@@ -757,19 +769,19 @@ static STATUS error_dsql_804( STATUS * status, STATUS err)
 }
 
 
+/**
+  
+ 	get_numeric_info
+  
+    @brief	Pick up a VAX format numeric info item
+ 	with a 2 byte length.
+ 
+
+    @param ptr
+
+ **/
 static SLONG get_numeric_info( SCHAR ** ptr)
 {
-/**************************************
- *
- *	g e t _ n u m e r i c _ i n f o
- *
- **************************************
- *
- * Functional description
- *	Pick up a VAX format numeric info item
- *	with a 2 byte length.
- *
- **************************************/
 	int item;
 	SSHORT l;
 
@@ -782,20 +794,22 @@ static SLONG get_numeric_info( SCHAR ** ptr)
 }
 
 
+/**
+  
+ 	get_string_info
+  
+    @brief	Pick up a string valued info item and return
+ 	its length.  The buffer_len argument is assumed
+ 	to include space for the terminating null.
+ 
+
+    @param ptr
+    @param buffer
+    @param buffer_len
+
+ **/
 static SLONG get_string_info( SCHAR ** ptr, SCHAR * buffer, int buffer_len)
 {
-/**************************************
- *
- *	g e t _ s t r i n g _ i n f o
- *
- **************************************
- *
- * Functional description
- *	Pick up a string valued info item and return
- *	its length.  The buffer_len argument is assumed
- *	to include space for the terminating null.
- *
- **************************************/
 	SSHORT l, len;
 	SCHAR *p;
 
@@ -851,19 +865,21 @@ static void print_xsqlda( XSQLDA * xsqlda)
 #endif
 
 
+/**
+  
+ 	sqlvar_to_xsqlvar
+  
+
+    @param sqlvar
+    @param xsqlvar
+
+
+    @param sqlvar
+    @param xsqlvar
+
+ **/
 static void sqlvar_to_xsqlvar( SQLVAR * sqlvar, XSQLVAR * xsqlvar)
 {
-/*****************************************
- *
- *	s q l v a r _ t o _ x s q l v a r
- *
- *****************************************
- *
- * Functional Description
- *	Move an SQLVAR to an XSQLVAR.
- *	THIS DOES NOT MOVE NAME RELATED DATA.
- *
- *****************************************/
 
 	xsqlvar->sqltype = sqlvar->sqltype;
 	xsqlvar->sqldata = sqlvar->sqldata;
@@ -891,18 +907,19 @@ static void sqlvar_to_xsqlvar( SQLVAR * sqlvar, XSQLVAR * xsqlvar)
 }
 
 
+/**
+  
+ 	xsqlvar_to_sqlvar
+  
+    @brief	Move an XSQLVAR to an SQLVAR.
+ 
+
+    @param xsqlvar
+    @param sqlvar
+
+ **/
 static void xsqlvar_to_sqlvar( XSQLVAR * xsqlvar, SQLVAR * sqlvar)
 {
-/*****************************************
- *
- *	x s q l v a r _ t o _ s q l v a r
- *
- *****************************************
- *
- * Functional Description
- *	Move an XSQLVAR to an SQLVAR.
- *
- *****************************************/
 
 	sqlvar->sqltype = xsqlvar->sqltype;
 	sqlvar->sqlname_length = xsqlvar->aliasname_length;

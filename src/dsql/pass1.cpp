@@ -224,18 +224,19 @@ STR temp_collation_name = NULL;
 #endif
 
 
+/**
+  
+ 	PASS1_make_context
+  
+    @brief	Generate a context for a request.
+ 
+
+    @param request
+    @param relation_node
+
+ **/
 DSQL_CTX PASS1_make_context( DSQL_REQ request, DSQL_NOD relation_node)
 {
-/**************************************
- *
- *	P A S S 1 _ m a k e _ c o n t e x t
- *
- **************************************
- *
- * Functional description
- *	Generate a context for a request.
- *
- **************************************/
 	DSQL_CTX context, conflict;
 	STR relation_name, string;
 	DSQL_REL relation;
@@ -440,18 +441,20 @@ DSQL_CTX PASS1_make_context( DSQL_REQ request, DSQL_NOD relation_node)
     
 
 
+/**
+  
+ 	PASS1_node
+  
+    @brief	Compile a parsed request into something more interesting.
+ 
+
+    @param request
+    @param input
+    @param proc_flag
+
+ **/
 DSQL_NOD PASS1_node(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 {
-/**************************************
- *
- *	P A S S 1 _ n o d e
- *
- **************************************
- *
- * Functional description
- *	Compile a parsed request into something more interesting.
- *
- **************************************/
 	DSQL_NOD node, temp, *ptr, *end, *ptr2, rse, sub1, sub2, sub3;
 	DLLS base;
 	DSQL_FLD field;
@@ -906,21 +909,24 @@ DSQL_NOD PASS1_node(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 }
 
 
+/**
+  
+ 	PASS1_rse
+  
+    @brief	Compile a record selection expression, 
+ 	bumping up the request scope level 
+ 	everytime an rse is seen.  The scope
+ 	level controls parsing of aliases.
+ 
+
+    @param request
+    @param input
+    @param order
+    @param update_lock
+
+ **/
 DSQL_NOD PASS1_rse(DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQL_NOD update_lock)
 {
-/**************************************
- *
- *	P A S S 1 _ r s e
- *
- **************************************
- *
- * Functional description
- *	Compile a record selection expression, 
- *	bumping up the request scope level 
- *	everytime an rse is seen.  The scope
- *	level controls parsing of aliases.
- *
- **************************************/
 	DSQL_NOD node;
 
 	DEV_BLKCHK(request, dsql_type_req);
@@ -935,18 +941,20 @@ DSQL_NOD PASS1_rse(DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQL_NOD up
 }
 
 
+/**
+  
+ 	PASS1_statement
+  
+    @brief	Compile a parsed request into something more interesting.
+ 
+
+    @param request
+    @param input
+    @param proc_flag
+
+ **/
 DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 {
-/**************************************
- *
- *	P A S S 1 _ s t a t e m e n t
- *
- **************************************
- *
- * Functional description
- *	Compile a parsed request into something more interesting.
- *
- **************************************/
 	DSQL_NOD node, *ptr, *end, *ptr2, *end2, into_in, into_out, procedure,
 		cursor, temp, parameters, variables;
 	DLLS base;
@@ -1466,20 +1474,21 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 }
 
 
+/**
+  
+ 	aggregate_found
+  
+    @brief	Check for an aggregate expression in an 
+ 	rse select list.  It could be buried in 
+ 	an expression tree.
+ 
+
+    @param 
+    @param 
+
+ **/
 static BOOLEAN aggregate_found( DSQL_REQ request, DSQL_NOD node)
 {
-/**************************************
- *
- *	a g g r e g a t e _ f o u n d
- *
- **************************************
- *
- * Functional description
- *	Check for an aggregate expression in an 
- *	rse select list.  It could be buried in 
- *	an expression tree.
- *
- **************************************/
 	BOOLEAN aggregate;
 	USHORT current_level, deepest_level;
 
@@ -1495,23 +1504,27 @@ static BOOLEAN aggregate_found( DSQL_REQ request, DSQL_NOD node)
 }
 
 
+/**
+  
+ 	aggregate_found2
+  
+    @brief	Check for an aggregate expression in an 
+ 	rse select list.  It could be buried in 
+ 	an expression tree.
+ 
+ 	field is true if a non-aggregate field reference is seen.
+ 
+
+    @param request
+    @param node
+    @param current_level
+    @param deepest_level
+    @param ignore_sub_selects
+
+ **/
 static BOOLEAN aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT * current_level, 
 								USHORT * deepest_level, BOOLEAN ignore_sub_selects)
 {
-/**************************************
- *
- *	a g g r e g a t e _ f o u n d 2
- *
- **************************************
- *
- * Functional description
- *	Check for an aggregate expression in an 
- *	rse select list.  It could be buried in 
- *	an expression tree.
- *
- *	field is true if a non-aggregate field reference is seen.
- *
- **************************************/
 	DSQL_NOD *ptr, *end;
 	DSQL_CTX lcontext;
 	BOOLEAN aggregate = FALSE;
@@ -1680,22 +1693,26 @@ static BOOLEAN aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT * curren
 }
 
 
+/**
+  
+ 	ambiguity
+  
+    @brief	Check for ambiguity in a field
+   reference.  We've got these nice lists
+   of procedures and relations and if there
+   is more than one, things are bad.
+ 
+
+    @param node
+    @param request
+    @param field
+    @param relations
+    @param procedures
+
+ **/
 static DSQL_NOD ambiguity_check (DSQL_NOD node, DSQL_REQ request, DSQL_FLD field, 
                             DLLS relations,DLLS procedures)
 {
-/**************************************
- *
- *	a m b i g u i t y
- *
- **************************************
- *
- * Functional description
- *	Check for ambiguity in a field
- *  reference.  We've got these nice lists
- *  of procedures and relations and if there
- *  is more than one, things are bad.
- *
- **************************************/
     
     TEXT   buffer[1024], *b, *p;
     DSQL_REL    relation;
@@ -1776,19 +1793,20 @@ static DSQL_NOD ambiguity_check (DSQL_NOD node, DSQL_REQ request, DSQL_FLD field
 }
 
 
+/**
+  
+ 	assign_fld_dtype_from_dsc
+  
+    @brief	Set a field's descriptor from a DSC
+ 	(If DSQL_FLD is ever redefined this can be removed)
+ 
+
+    @param field
+    @param nod_desc
+
+ **/
 static void assign_fld_dtype_from_dsc( DSQL_FLD field, DSC * nod_desc)
 {
-/**************************************
- *
- *	a s s i g n _ f l d _ d t y p e _ f r o m _ d s c
- *
- **************************************
- *
- * Functional description
- *	Set a field's descriptor from a DSC
- *	(If DSQL_FLD is ever redefined this can be removed)
- *
- **************************************/
 
 	DEV_BLKCHK(field, dsql_type_fld);
 
@@ -1805,18 +1823,20 @@ static void assign_fld_dtype_from_dsc( DSQL_FLD field, DSC * nod_desc)
 }
 
 
+/**
+  
+ 	compose
+  
+    @brief	Compose two booleans.
+ 
+
+    @param expr1
+    @param expr2
+    @param operator_
+
+ **/
 static DSQL_NOD compose( DSQL_NOD expr1, DSQL_NOD expr2, NOD_TYPE operator_)
 {
-/**************************************
- *
- *	c o m p o s e
- *
- **************************************
- *
- * Functional description
- *	Compose two booleans.
- *
- **************************************/
 	DSQL_NOD node;
 
 	DEV_BLKCHK(expr1, dsql_type_nod);
@@ -1836,18 +1856,20 @@ static DSQL_NOD compose( DSQL_NOD expr1, DSQL_NOD expr2, NOD_TYPE operator_)
 }
 
 
+/**
+  
+ 	explode_asterisk
+  
+    @brief	Expand an '   @brief' in a field list to the corresponding fields.
+ 
+
+    @param node
+    @param aggregate
+    @param stack
+
+ **/
 static void explode_asterisk( DSQL_NOD node, DSQL_NOD aggregate, DLLS * stack)
 {
-/**************************************
- *
- *	 e x p l o d e _ a s t e r i s k
- *
- **************************************
- *
- * Functional description
- *	Expand an '*' in a field list to the corresponding fields.
- *
- **************************************/
 	DSQL_CTX context;
 	DSQL_REL relation;
 	DSQL_PRC procedure;
@@ -1903,18 +1925,19 @@ static void explode_asterisk( DSQL_NOD node, DSQL_NOD aggregate, DLLS * stack)
 }
 
 
+/**
+  
+ 	explode_outputs
+  
+    @brief	Generate a parameter list to correspond to procedure outputs.
+ 
+
+    @param request
+    @param procedure
+
+ **/
 static DSQL_NOD explode_outputs( DSQL_REQ request, DSQL_PRC procedure)
 {
-/**************************************
- *
- *	 e x p l o d e _ o u t p u t s
- *
- **************************************
- *
- * Functional description
- *	Generate a parameter list to correspond to procedure outputs.
- *
- **************************************/
 	DSQL_NOD node, *ptr, p_node;
 	DSQL_FLD field;
 	PAR parameter;
@@ -1943,18 +1966,20 @@ static DSQL_NOD explode_outputs( DSQL_REQ request, DSQL_PRC procedure)
 }
 
 
+/**
+  
+ 	field_error	
+  
+    @brief	Report a field parsing recognition error.
+ 
+
+    @param qualifier_name
+    @param field_name
+    @param flawed_node
+
+ **/
 static void field_error( TEXT * qualifier_name, TEXT * field_name, DSQL_NOD flawed_node)
 {
-/**************************************
- *
- *	f i e l d _ e r r o r	
- *
- **************************************
- *
- * Functional description
- *	Report a field parsing recognition error.
- *
- **************************************/
     TEXT field_string [64], linecol [64];
 
 	if (qualifier_name) {
@@ -1986,18 +2011,19 @@ static void field_error( TEXT * qualifier_name, TEXT * field_name, DSQL_NOD flaw
 
 
 
+/**
+  
+ 	find_dbkey
+  
+    @brief	Find dbkey for named relation in request's saved dbkeys.
+ 
+
+    @param request
+    @param relation_name
+
+ **/
 static PAR find_dbkey( DSQL_REQ request, DSQL_NOD relation_name)
 {
-/**************************************
- *
- *	f i n d _ d b k e y
- *
- **************************************
- *
- * Functional description
- *	Find dbkey for named relation in request's saved dbkeys.
- *
- **************************************/
 	DSQL_CTX context;
 	DSQL_MSG message;
 	PAR parameter, candidate;
@@ -2031,18 +2057,19 @@ static PAR find_dbkey( DSQL_REQ request, DSQL_NOD relation_name)
 }
 
 
+/**
+  
+ 	find_record_version
+  
+    @brief	Find record version for relation in request's saved record version
+ 
+
+    @param request
+    @param relation_name
+
+ **/
 static PAR find_record_version( DSQL_REQ request, DSQL_NOD relation_name)
 {
-/**************************************
- *
- *	f i n d _ r e c o r d _ v e r s i o n
- *
- **************************************
- *
- * Functional description
- *	Find record version for relation in request's saved record version
- *
- **************************************/
 	DSQL_CTX context;
 	DSQL_MSG message;
 	PAR parameter, candidate;
@@ -2076,28 +2103,31 @@ static PAR find_record_version( DSQL_REQ request, DSQL_NOD relation_name)
 }
 
 
+/**
+  
+ 	invalid_reference
+  
+    @brief	Validate that an expanded field / context
+ 	pair is in a specified list.  Thus is used
+ 	in one instance to check that a simple field selected 
+ 	through a grouping rse is a grouping field - 
+ 	thus a valid field reference.  For the sake of
+       argument, we'll match qualified to unqualified
+ 	reference, but qualified reference must match
+ 	completely. 
+ 
+ 	A list element containing a simple CAST for collation purposes
+ 	is allowed.
+ 
+
+    @param context
+    @param node
+    @param list
+    @param inside_map
+
+ **/
 static BOOLEAN invalid_reference(DSQL_CTX context, DSQL_NOD node, DSQL_NOD list, BOOLEAN inside_map)
 {
-/**************************************
- *
- *	i n v a l i d _ r e f e r e n c e
- *
- **************************************
- *
- * Functional description
- *	Validate that an expanded field / context
- *	pair is in a specified list.  Thus is used
- *	in one instance to check that a simple field selected 
- *	through a grouping rse is a grouping field - 
- *	thus a valid field reference.  For the sake of
- *      argument, we'll match qualified to unqualified
- *	reference, but qualified reference must match
- *	completely. 
- *
- *	A list element containing a simple CAST for collation purposes
- *	is allowed.
- *
- **************************************/
 	DSQL_NOD *ptr, *end;
 	BOOLEAN invalid;
 	DSQL_CTX lcontext;
@@ -2285,28 +2315,28 @@ static BOOLEAN invalid_reference(DSQL_CTX context, DSQL_NOD node, DSQL_NOD list,
 }
 
 
+/**
+  
+ 	mark_ctx_outer_join
+  
+    @brief	Mark the context blocks of relations in an RSE as
+ 	participating in an Outer Join of some sort.
+ 	This is important when we are deciding whether
+ 	a particular field reference can be NULL or not.
+ 	If the field is declared NOT NULL, it normally cannot
+ 	be NULL - however, if the base relation reference is 
+ 	within the "outside" part of an outer join rse,
+ 	it CAN be null.
+ 
+ 	Our input RSE can be either a relation (table, view, or proc) 
+ 	reference or a JOIN expression.
+ 	
+
+    @param node
+
+ **/
 static void mark_ctx_outer_join( DSQL_NOD node)
 {
-/**************************************
- *
- *	m a r k _ c t x _ o u t e r _ j o i n 
- *
- **************************************
- *
- * Functional description
- *	Mark the context blocks of relations in an RSE as
- *	participating in an Outer Join of some sort.
- *	This is important when we are deciding whether
- *	a particular field reference can be NULL or not.
- *	If the field is declared NOT NULL, it normally cannot
- *	be NULL - however, if the base relation reference is 
- *	within the "outside" part of an outer join rse,
- *	it CAN be null.
- *
- *	Our input RSE can be either a relation (table, view, or proc) 
- *	reference or a JOIN expression.
- *	
- **************************************/
 	DSQL_CTX context;
 
 	DEV_BLKCHK(node, dsql_type_nod);
@@ -2331,27 +2361,29 @@ static void mark_ctx_outer_join( DSQL_NOD node)
 }
 
 
+/**
+  
+ 	node_match
+  
+    @brief	Compare two nodes for equality of value.
+ 
+   [2002-08-04]--- Arno Brinkman
+ 	If ignore_map_cast is TRUE and the node1 is 
+   type nod_cast or nod_map then node_match is 
+   calling itselfs again with the node1 
+   CASTs source or map->node.
+   This is for allow CAST to other datatypes
+   without complaining that it's an unknown
+   column reference. (Aggeregate functions) 
+ 
+
+    @param node1
+    @param node2
+    @param ignore_map_cast
+
+ **/
 static BOOLEAN node_match( DSQL_NOD node1, DSQL_NOD node2, BOOLEAN ignore_map_cast)
 {
-/**************************************
- *
- *	n o d e _ m a t c h
- *
- **************************************
- *
- * Functional description
- *	Compare two nodes for equality of value.
- *
- *  [2002-08-04]--- Arno Brinkman
- *	If ignore_map_cast is TRUE and the node1 is 
- *  type nod_cast or nod_map then node_match is 
- *  calling itselfs again with the node1 
- *  CASTs source or map->node.
- *  This is for allow CAST to other datatypes
- *  without complaining that it's an unknown
- *  column reference. (Aggeregate functions) 
- *
- **************************************/
 	DSQL_NOD *ptr1, *ptr2, *end;
 	MAP map1, map2;
 	USHORT l;
@@ -2540,18 +2572,20 @@ static BOOLEAN node_match( DSQL_NOD node1, DSQL_NOD node2, BOOLEAN ignore_map_ca
 }
 
 
+/**
+  
+ 	pass1_any
+  
+    @brief	Compile a parsed request into something more interesting.
+ 
+
+    @param request
+    @param input
+    @param ntype
+
+ **/
 static DSQL_NOD pass1_any( DSQL_REQ request, DSQL_NOD input, NOD_TYPE ntype)
 {
-/**************************************
- *
- *	p a s s 1 _ a n y
- *
- **************************************
- *
- * Functional description
- *	Compile a parsed request into something more interesting.
- *
- **************************************/
 	DSQL_NOD node, temp, rse, select, aggregate;
 	DLLS base;
 
@@ -2600,18 +2634,19 @@ static DSQL_NOD pass1_any( DSQL_REQ request, DSQL_NOD input, NOD_TYPE ntype)
 }
 
 
+/**
+  
+ 	pass1_blob
+  
+    @brief	Process a blob get or put segment.
+ 
+
+    @param request
+    @param input
+
+ **/
 static void pass1_blob( DSQL_REQ request, DSQL_NOD input)
 {
-/**************************************
- *
- *	p a s s 1 _ b l o b
- *
- **************************************
- *
- * Functional description
- *	Process a blob get or put segment.
- *
- **************************************/
 	DSQL_NOD field, list;
 	BLB blob;
 	PAR parameter;
@@ -2689,18 +2724,20 @@ static void pass1_blob( DSQL_REQ request, DSQL_NOD input)
 }
 
 
+/**
+  
+ 	pass1_coalesce
+  
+    @brief	Handle a reference to a coalesce function.
+ 
+
+    @param request
+    @param input
+    @param proc_flag
+
+ **/
 static DSQL_NOD pass1_coalesce( DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 {
-/**************************************
- *
- *	p a s s 1 _ c o a l e s c e
- *
- **************************************
- *
- * Functional description
- *	Handle a reference to a coalesce function.
- *
- **************************************/
 	DSQL_NOD	node, *ptr, *end;
 	DLLS stack;
 
@@ -2729,20 +2766,22 @@ static DSQL_NOD pass1_coalesce( DSQL_REQ request, DSQL_NOD input, USHORT proc_fl
 }
 
 
+/**
+  
+ 	pass1_collate
+  
+    @brief	Turn a collate clause into a cast clause.
+ 	If the source is not already text, report an error.
+ 	(SQL 92: Section 13.1, pg 308, item 11)
+ 
+
+    @param request
+    @param sub1
+    @param collation
+
+ **/
 static DSQL_NOD pass1_collate( DSQL_REQ request, DSQL_NOD sub1, STR collation)
 {
-/**************************************
- *
- *	p a s s 1 _  c o l l a t e
- *
- **************************************
- *
- * Functional description
- *	Turn a collate clause into a cast clause.
- *	If the source is not already text, report an error.
- *	(SQL 92: Section 13.1, pg 308, item 11)
- *
- **************************************/
 	DSQL_NOD node;
 	DSQL_FLD field;
 	TSQL tdsql;
@@ -2777,19 +2816,20 @@ static DSQL_NOD pass1_collate( DSQL_REQ request, DSQL_NOD sub1, STR collation)
 }
 
 
+/**
+  
+ 	pass1_constant
+  
+    @brief	Turn an international string reference into internal
+ 	subtype ID.
+ 
+
+    @param request
+    @param constant
+
+ **/
 static DSQL_NOD pass1_constant( DSQL_REQ request, DSQL_NOD constant)
 {
-/**************************************
- *
- *	p a s s 1 _ c o n s t a n t
- *
- **************************************
- *
- * Functional description
- *	Turn an international string reference into internal
- *	subtype ID.
- *
- **************************************/
 
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(constant, dsql_type_nod);
@@ -2836,18 +2876,20 @@ static DSQL_NOD pass1_constant( DSQL_REQ request, DSQL_NOD constant)
 }
 
 
+/**
+  
+ 	pass1_cursor
+  
+    @brief	Turn a cursor reference into a record selection expression.
+ 
+
+    @param request
+    @param cursor
+    @param relation_name
+
+ **/
 static DSQL_NOD pass1_cursor( DSQL_REQ request, DSQL_NOD cursor, DSQL_NOD relation_name)
 {
-/**************************************
- *
- *	p a s s 1 _ c u r s o r
- *
- **************************************
- *
- * Functional description
- *	Turn a cursor reference into a record selection expression.
- *
- **************************************/
 	SYM symbol;
 	DSQL_NOD rse, node, temp, relation_node;
 	DSQL_REQ parent;
@@ -2929,18 +2971,20 @@ static DSQL_NOD pass1_cursor( DSQL_REQ request, DSQL_NOD cursor, DSQL_NOD relati
 }
 
 
+/**
+  
+ 	pass1_cursor_context
+  
+    @brief	Turn a cursor reference into a record selection expression.
+ 
+
+    @param request
+    @param cursor
+    @param relation_name
+
+ **/
 static DSQL_CTX pass1_cursor_context( DSQL_REQ request, DSQL_NOD cursor, DSQL_NOD relation_name)
 {
-/**************************************
- *
- *	p a s s 1 _ c u r s o r _ c o n t e x t
- *
- **************************************
- *
- * Functional description
- *	Turn a cursor reference into a record selection expression.
- *
- **************************************/
 	DSQL_NOD node, temp, *ptr, *end, procedure, r_node;
 	DSQL_CTX context, candidate;
 	STR string, cname, rname;
@@ -3003,18 +3047,19 @@ static DSQL_CTX pass1_cursor_context( DSQL_REQ request, DSQL_NOD cursor, DSQL_NO
 }
 
 
+/**
+  
+ 	pass1_dbkey
+  
+    @brief	Resolve a dbkey to an available context.
+ 
+
+    @param request
+    @param input
+
+ **/
 static DSQL_NOD pass1_dbkey( DSQL_REQ request, DSQL_NOD input)
 {
-/**************************************
- *
- *	p a s s 1 _ d b k e y
- *
- **************************************
- *
- * Functional description
- *	Resolve a dbkey to an available context.
- *
- **************************************/
 	DSQL_NOD node, rel_node;
 	STR qualifier;
 	DLLS stack;
@@ -3069,18 +3114,19 @@ static DSQL_NOD pass1_dbkey( DSQL_REQ request, DSQL_NOD input)
 }
 
 
+/**
+  
+ 	pass1_delete
+  
+    @brief	Process INSERT statement.
+ 
+
+    @param request
+    @param input
+
+ **/
 static DSQL_NOD pass1_delete( DSQL_REQ request, DSQL_NOD input)
 {
-/**************************************
- *
- *	p a s s 1 _ d e l e t e
- *
- **************************************
- *
- * Functional description
- *	Process INSERT statement.
- *
- **************************************/
 	DSQL_NOD rse, node, temp, cursor, relation;
 
 	DEV_BLKCHK(request, dsql_type_req);
@@ -3119,27 +3165,29 @@ static DSQL_NOD pass1_delete( DSQL_REQ request, DSQL_NOD input)
 }
 
 
+/**
+  
+ 	pass1_field
+  
+    @brief	Resolve a field name to an available context.
+ 	If list is TRUE, then this function can detect and
+ 	return a relation node if there is no name.   This
+ 	is used for cases of "SELECT <table_name>. ...".
+   CVC: The function attempts to detect
+   if an unqualified field appears in more than one context
+   and hence it returns the number of occurrences. This was
+   added to allow the caller to detect ambiguous commands like
+   select  from t1 join t2 on t1.f=t2.f order by common_field.
+   While inoffensive on inner joins, it changes the result on outer joins.
+ 
+
+    @param request
+    @param input
+    @param list
+
+ **/
 static DSQL_NOD pass1_field( DSQL_REQ request, DSQL_NOD input, USHORT list)
 {
-/**************************************
- *
- *	p a s s 1 _ f i e l d
- *
- **************************************
- *
- * Functional description
- *	Resolve a field name to an available context.
- *	If list is TRUE, then this function can detect and
- *	return a relation node if there is no name.   This
- *	is used for cases of "SELECT <table_name>.* ...".
- *  CVC: The function attempts to detect
- *  if an unqualified field appears in more than one context
- *  and hence it returns the number of occurrences. This was
- *  added to allow the caller to detect ambiguous commands like
- *  select * from t1 join t2 on t1.f=t2.f order by common_field.
- *  While inoffensive on inner joins, it changes the result on outer joins.
- *
- **************************************/
 	DSQL_NOD node = 0, indices; /* Changes made need this var initialized. */
 	STR name, qualifier;
 	DSQL_FLD field;
@@ -3330,24 +3378,27 @@ static DSQL_NOD pass1_field( DSQL_REQ request, DSQL_NOD input, USHORT list)
 }
 
 
+/**
+  
+ 	pass1_found_aggregate
+  
+    @brief	Check the fields inside an aggregate 
+   and check if the field scope_level 
+   meets the specified conditions.
+   In the first call current_scope_level_equal
+   should always be true, because this is used
+   internally!
+ 
+
+    @param node
+    @param check_scope_level
+    @param match_type
+    @param current_scope_level_equal
+
+ **/
 static BOOLEAN pass1_found_aggregate(DSQL_NOD node, USHORT check_scope_level, 
 									 USHORT match_type, BOOLEAN current_scope_level_equal)
 {
-/**************************************
- *
- *	p a s s 1 _ f o u n d _ a g g r e g a t e
- *
- **************************************
- *
- * Functional description
- *	Check the fields inside an aggregate 
- *  and check if the field scope_level 
- *  meets the specified conditions.
- *  In the first call current_scope_level_equal
- *  should always be true, because this is used
- *  internally!
- *
- **************************************/
 	DSQL_NOD *ptr, *end;
 	BOOLEAN found, field;
 	MAP map_;
@@ -3517,21 +3568,24 @@ static BOOLEAN pass1_found_aggregate(DSQL_NOD node, USHORT check_scope_level,
 	return found;
 }
 
+/**
+  
+ 	pass1_found_field
+  
+    @brief	Check the fields inside an aggregate 
+   and check if the field scope_level 
+   meets the specified conditions.
+ 
+
+    @param node
+    @param check_scope_level
+    @param match_type
+    @param field
+
+ **/
 static BOOLEAN pass1_found_field(DSQL_NOD node, USHORT check_scope_level, 
 								 USHORT match_type, BOOLEAN * field)
 {
-/**************************************
- *
- *	p a s s 1 _ f o u n d _ f i e l d
- *
- **************************************
- *
- * Functional description
- *	Check the fields inside an aggregate 
- *  and check if the field scope_level 
- *  meets the specified conditions.
- *
- **************************************/
 	DSQL_NOD *ptr, *end;
 	BOOLEAN found;
 	DSQL_CTX field_context;
@@ -3700,18 +3754,19 @@ static BOOLEAN pass1_found_field(DSQL_NOD node, USHORT check_scope_level,
 }
 
 
+/**
+  
+ 	pass1_insert
+  
+    @brief	Process INSERT statement.
+ 
+
+    @param request
+    @param input
+
+ **/
 static DSQL_NOD pass1_insert( DSQL_REQ request, DSQL_NOD input)
 {
-/**************************************
- *
- *	p a s s 1 _ i n s e r t
- *
- **************************************
- *
- * Functional description
- *	Process INSERT statement.
- *
- **************************************/
 	DSQL_NOD rse, node, *ptr, *ptr2, *end, fields, values, temp;
 	DSQL_FLD field;
 	DSQL_REL relation;
@@ -3810,18 +3865,21 @@ static DSQL_NOD pass1_insert( DSQL_REQ request, DSQL_NOD input)
 }
 
 
+/**
+  
+ 	pass1_put_args_on_stack
+  
+    @brief	Put recursive non list nodes on the stack
+ 
+
+    @param request
+    @param input
+    @param stack
+    @param proc_flag
+
+ **/
 static void pass1_put_args_on_stack( DSQL_REQ request, DSQL_NOD input, DLLS *stack, USHORT proc_flag)
 {
-/**************************************
- *
- *	p a s s 1 _ p u t _ a r g s _ o n _ s t a c k
- *
- **************************************
- *
- * Functional description
- *	Put recursive non list nodes on the stack
- *
- **************************************/
 	DSQL_NOD	*ptr, *end;
 
 	DEV_BLKCHK(request, dsql_type_req);
@@ -3838,19 +3896,20 @@ static void pass1_put_args_on_stack( DSQL_REQ request, DSQL_NOD input, DLLS *sta
 }
 
 
+/**
+  
+ 	pass1_relation
+  
+    @brief	Prepare a relation name for processing.  
+ 	Allocate a new relation node.
+ 
+
+    @param request
+    @param input
+
+ **/
 static DSQL_NOD pass1_relation( DSQL_REQ request, DSQL_NOD input)
 {
-/**************************************
- *
- *	p a s s 1 _ r e l a t i o n
- *
- **************************************
- *
- * Functional description
- *	Prepare a relation name for processing.  
- *	Allocate a new relation node.
- *
- **************************************/
 	DSQL_NOD node;
 
 	DEV_BLKCHK(request, dsql_type_req);
@@ -3864,24 +3923,25 @@ static DSQL_NOD pass1_relation( DSQL_REQ request, DSQL_NOD input)
 }
 
 
+/**
+  
+ 	pass1_alias_list
+  
+    @brief	The passed alias list fully specifies a relation.
+ 	The first alias represents a relation specified in
+ 	the from list at this scope levels.  Subsequent
+ 	contexts, if there are any, represent base relations
+ 	in a view stack.  They are used to fully specify a 
+ 	base relation of a view.  The aliases used in the 
+ 	view stack are those used in the view definition.
+ 
+
+    @param request
+    @param alias_list
+
+ **/
 static DSQL_NOD pass1_alias_list( DSQL_REQ request, DSQL_NOD alias_list)
 {
-/**************************************
- *
- *	p a s s 1 _ a l i a s _ l i s t
- *
- **************************************
- *
- * Functional description
- *	The passed alias list fully specifies a relation.
- *	The first alias represents a relation specified in
- *	the from list at this scope levels.  Subsequent
- *	contexts, if there are any, represent base relations
- *	in a view stack.  They are used to fully specify a 
- *	base relation of a view.  The aliases used in the 
- *	view stack are those used in the view definition.
- *
- **************************************/
 	DSQL_CTX context, new_context;
 	DSQL_REL relation;
 	DSQL_NOD *arg, *end;
@@ -3977,21 +4037,22 @@ static DSQL_NOD pass1_alias_list( DSQL_REQ request, DSQL_NOD alias_list)
 }
 
 
+/**
+  
+ 	pass1_alias
+  
+    @brief	The passed relation or alias represents 
+ 	a context which was previously specified
+ 	in the from list.  Find and return the 
+ 	proper context.
+ 
+
+    @param request
+    @param alias
+
+ **/
 static DSQL_CTX pass1_alias( DSQL_REQ request, STR alias)
 {
-/**************************************
- *
- *	p a s s 1 _ a l i a s
- *
- **************************************
- *
- * Functional description
- *	The passed relation or alias represents 
- *	a context which was previously specified
- *	in the from list.  Find and return the 
- *	proper context.
- *
- **************************************/
 	DLLS stack;
 	DSQL_CTX context, relation_context = NULL;
 
@@ -4040,19 +4101,21 @@ static DSQL_CTX pass1_alias( DSQL_REQ request, STR alias)
 
 
 
+/**
+  
+ 	pass1_base_table
+  
+    @brief	Check if the relation in the passed context
+ 	has a base table which matches the passed alias.
+ 
+
+    @param request
+    @param relation
+    @param alias
+
+ **/
 static DSQL_REL pass1_base_table( DSQL_REQ request, DSQL_REL relation, STR alias)
 {
-/**************************************
- *
- *	p a s s 1 _ b a s e _ t a b l e
- *
- **************************************
- *
- * Functional description
- *	Check if the relation in the passed context
- *	has a base table which matches the passed alias.
- *
- **************************************/
 
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(relation, dsql_type_dsql_rel);
@@ -4064,20 +4127,23 @@ static DSQL_REL pass1_base_table( DSQL_REQ request, DSQL_REL relation, STR alias
 }
 
 
+/**
+  
+ 	pass1_rse
+  
+    @brief	Compile a record selection expression.  
+ 	The input node may either be a "select_expression" 
+ 	or a "list" (an implicit union).
+ 
+
+    @param request
+    @param input
+    @param order
+    @param update_lock
+
+ **/
 static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQL_NOD update_lock)
 {
-/**************************************
- *
- *	p a s s 1 _ r s e
- *
- **************************************
- *
- * Functional description
- *	Compile a record selection expression.  
- *	The input node may either be a "select_expression" 
- *	or a "list" (an implicit union).
- *
- **************************************/
 	DSQL_NOD rse, parent_rse, target_rse, aggregate, 
 		node, list, sub, *ptr, *end, slist_node, *ptr2;
 	DLLS stack;
@@ -4348,18 +4414,20 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 }
 
 
+/**
+  
+ 	pass1_searched_case
+  
+    @brief	Handle a reference to a searched case expression.
+ 
+
+    @param request
+    @param input
+    @param proc_flag
+
+ **/
 static DSQL_NOD pass1_searched_case( DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 {
-/**************************************
- *
- *	p a s s 1 _ s e a r c h e d _ c a s e 
- *
- **************************************
- *
- * Functional description
- *	Handle a reference to a searched case expression.
- *
- **************************************/
 	DSQL_NOD	node, list, *ptr, *end;
 	DLLS stack;
 
@@ -4401,19 +4469,20 @@ static DSQL_NOD pass1_searched_case( DSQL_REQ request, DSQL_NOD input, USHORT pr
 }
 
 
+/**
+  
+ 	pass1_sel_list
+  
+    @brief	Compile a select list, which may contain things
+ 	like "<table_name>.".
+ 
+
+    @param request
+    @param input
+
+ **/
 static DSQL_NOD pass1_sel_list( DSQL_REQ request, DSQL_NOD input)
 {
-/**************************************
- *
- *	p a s s 1 _ s e l _ l i s t
- *
- **************************************
- *
- * Functional description
- *	Compile a select list, which may contain things
- *	like "<table_name>.*".
- *
- **************************************/
 	DSQL_NOD node, *ptr, *end, frnode;
 	DLLS stack;
 
@@ -4448,18 +4517,20 @@ static DSQL_NOD pass1_sel_list( DSQL_REQ request, DSQL_NOD input)
 }
 
 
+/**
+  
+ 	pass1_simple_case
+  
+    @brief	Handle a reference to a simple case expression.
+ 
+
+    @param request
+    @param input
+    @param proc_flag
+
+ **/
 static DSQL_NOD pass1_simple_case( DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 {
-/**************************************
- *
- *	p a s s 1 _ s i m p l e _ c a s e 
- *
- **************************************
- *
- * Functional description
- *	Handle a reference to a simple case expression.
- *
- **************************************/
 	USHORT i;
 	DSQL_NOD	node, node1, list, *ptr, *end;
 	DLLS stack;
@@ -4527,18 +4598,20 @@ static DSQL_NOD pass1_simple_case( DSQL_REQ request, DSQL_NOD input, USHORT proc
 }
 
 
+/**
+  
+ 	pass1_sort
+  
+    @brief	Compile a parsed sort list
+ 
+
+    @param request
+    @param input
+    @param s_list
+
+ **/
 static DSQL_NOD pass1_sort( DSQL_REQ request, DSQL_NOD input, DSQL_NOD s_list)
 {
-/**************************************
- *
- *	p a s s 1 _ s o r t
- *
- **************************************
- *
- * Functional description
- *	Compile a parsed sort list
- *
- **************************************/
 	DSQL_NOD node, *ptr, *end, *ptr2, node1, node2;
 	SLONG position;
 
@@ -4593,18 +4666,20 @@ static DSQL_NOD pass1_sort( DSQL_REQ request, DSQL_NOD input, DSQL_NOD s_list)
 }
 
 
+/**
+  
+ 	pass1_udf
+  
+    @brief	Handle a reference to a user defined function.
+ 
+
+    @param request
+    @param input
+    @param proc_flag
+
+ **/
 static DSQL_NOD pass1_udf( DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 {
-/**************************************
- *
- *	p a s s 1 _ u d f
- *
- **************************************
- *
- * Functional description
- *	Handle a reference to a user defined function.
- *
- **************************************/
 	STR name;
 	UDF udf;
 	DSQL_NOD node;
@@ -4634,19 +4709,24 @@ static DSQL_NOD pass1_udf( DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 }
 
 
+/**
+  
+ 	pass1_udf_args
+  
+    @brief	Handle references to function arguments.
+ 
+
+    @param request
+    @param input
+    @param udf
+    @param arg_pos
+    @param stack
+    @param proc_flag
+
+ **/
 static void pass1_udf_args(DSQL_REQ request, DSQL_NOD input, UDF udf, USHORT arg_pos, 
                            DLLS * stack, USHORT proc_flag)
 {
-/**************************************
- *
- *	p a s s 1 _ u d f _ a r g s
- *
- **************************************
- *
- * Functional description
- *	Handle references to function arguments.
- *
- **************************************/
 	DSQL_NOD *ptr, *end;
     DSQL_NOD temp, args;
 
@@ -4676,21 +4756,23 @@ static void pass1_udf_args(DSQL_REQ request, DSQL_NOD input, UDF udf, USHORT arg
 }
 
 
+/**
+  
+ 	pass1_union
+  
+    @brief	Handle a UNION of substreams, generating
+ 	a mapping of all the fields and adding an
+ 	implicit PROJECT clause to ensure that all 
+ 	the records returned are unique.
+ 
+
+    @param request
+    @param input
+    @param order_list
+
+ **/
 static DSQL_NOD pass1_union( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order_list)
 {
-/**************************************
- *
- *	p a s s 1 _ u n i o n
- *
- **************************************
- *
- * Functional description
- *	Handle a UNION of substreams, generating
- *	a mapping of all the fields and adding an
- *	implicit PROJECT clause to ensure that all 
- *	the records returned are unique.
- *
- **************************************/
 	DSQL_NOD map_node, *ptr, *end, items, union_node, *uptr, nod1;
 	DSQL_NOD union_rse, union_items, order1, order2, sort, position;
 	DSQL_CTX union_context;
@@ -4840,18 +4922,19 @@ static DSQL_NOD pass1_union( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order_li
 }
 
 
+/**
+  
+ 	pass1_update
+  
+    @brief	Process UPDATE statement.
+ 
+
+    @param request
+    @param input
+
+ **/
 static DSQL_NOD pass1_update( DSQL_REQ request, DSQL_NOD input)
 {
-/**************************************
- *
- *	p a s s 1 _ u p d a t e
- *
- **************************************
- *
- * Functional description
- *	Process UPDATE statement.
- *
- **************************************/
 	DSQL_NOD rse, node, temp, relation, cursor;
 
 	DEV_BLKCHK(request, dsql_type_req);
@@ -4900,18 +4983,19 @@ static DSQL_NOD pass1_update( DSQL_REQ request, DSQL_NOD input)
 }
 
 
+/**
+  
+ 	pass1_variable
+  
+    @brief	Resolve a variable name to an available variable.
+ 
+
+    @param request
+    @param input
+
+ **/
 static DSQL_NOD pass1_variable( DSQL_REQ request, DSQL_NOD input)
 {
-/**************************************
- *
- *	p a s s 1 _ v a r i a b l e
- *
- **************************************
- *
- * Functional description
- *	Resolve a variable name to an available variable.
- *
- **************************************/
 	DSQL_NOD procedure_node, var_nodes, var_node, *ptr, *end;
 	STR var_name = 0;
 	VAR var;
@@ -4998,18 +5082,19 @@ static DSQL_NOD pass1_variable( DSQL_REQ request, DSQL_NOD input)
 }
 
 
+/**
+  
+ 	post_map
+  
+    @brief	Post an item to a map for a context.
+ 
+
+    @param node
+    @param context
+
+ **/
 static DSQL_NOD post_map( DSQL_NOD node, DSQL_CTX context)
 {
-/**************************************
- *
- *	p o s t _ m a p
- *
- **************************************
- *
- * Functional description
- *	Post an item to a map for a context.
- *
- **************************************/
 	DSQL_NOD new_node;
 	MAP map_;
 	USHORT count;
@@ -5044,19 +5129,22 @@ static DSQL_NOD post_map( DSQL_NOD node, DSQL_CTX context)
 }
 
 
+/**
+  
+ 	remap_field
+  
+    @brief	Copy a field list for a SELECT, ORDER BY
+   against an artificial context.
+ 
+
+    @param request
+    @param field
+    @param context
+    @param current_level
+
+ **/
 static DSQL_NOD remap_field(DSQL_REQ request, DSQL_NOD field, DSQL_CTX context, USHORT current_level)
 {
-/**************************************
- *
- *	r e m a p _ f i e l d
- *
- **************************************
- *
- * Functional description
- *	Copy a field list for a SELECT, ORDER BY
- *  against an artificial context.
- *
- **************************************/
 	DSQL_NOD *ptr, *end;
 	DSQL_CTX lcontext;
 	MAP lmap;
@@ -5209,18 +5297,20 @@ static DSQL_NOD remap_field(DSQL_REQ request, DSQL_NOD field, DSQL_CTX context, 
 }
 
 
+/**
+  
+ 	remap_fields
+  
+    @brief	Copy a field list for a SELECT against an artificial context.
+ 
+
+    @param request
+    @param fields
+    @param context
+
+ **/
 static DSQL_NOD remap_fields(DSQL_REQ request, DSQL_NOD fields, DSQL_CTX context)
 {
-/**************************************
- *
- *	r e m a p _ f i e l d s
- *
- **************************************
- *
- * Functional description
- *	Copy a field list for a SELECT against an artificial context.
- *
- **************************************/
 	USHORT i;
 
 	DEV_BLKCHK(request, dsql_type_req);
@@ -5235,20 +5325,21 @@ static DSQL_NOD remap_fields(DSQL_REQ request, DSQL_NOD fields, DSQL_CTX context
 }
 
 
+/**
+  
+ remap_streams_to_parent_context
+  
+    @brief	For each relation in the list, flag the relation's context
+ 	as having a parent context.  Be sure to handle joins
+ 	(Bug 6674).
+ 
+
+    @param input
+    @param parent_context
+
+ **/
 static void remap_streams_to_parent_context( DSQL_NOD input, DSQL_CTX parent_context)
 {
-/**************************************
- *
- *      r e m a p _ s t r e a m s _ t o _ p a r e n t _ c o n t e x t
- *
- **************************************
- *
- * Functional description
- *	For each relation in the list, flag the relation's context
- *	as having a parent context.  Be sure to handle joins
- *	(Bug 6674).
- *
- **************************************/
 	DSQL_CTX context;
 	DSQL_NOD *ptr, *end;
 
@@ -5282,20 +5373,23 @@ static void remap_streams_to_parent_context( DSQL_NOD input, DSQL_CTX parent_con
 }
 
 
+/**
+  
+ 	resolve_context
+  
+    @brief	Attempt to resolve field against context.  
+ 	Return first field in context if successful, 
+ 	NULL if not.
+ 
+
+    @param request
+    @param name
+    @param qualifier
+    @param context
+
+ **/
 static DSQL_FLD resolve_context( DSQL_REQ request, STR name, STR qualifier, DSQL_CTX context)
 {
-/**************************************
- *
- *	r e s o l v e _ c o n t e x t
- *
- **************************************
- *
- * Functional description
- *	Attempt to resolve field against context.  
- *	Return first field in context if successful, 
- *	NULL if not.
- *
- **************************************/
 	DSQL_REL relation;
 	DSQL_PRC procedure;
 	DSQL_FLD field;
@@ -5343,20 +5437,22 @@ static DSQL_FLD resolve_context( DSQL_REQ request, STR name, STR qualifier, DSQL
 }
 
 
+/**
+  
+ 	set_parameter_type
+  
+    @brief	Setup the datatype of a parameter.
+ 
+
+    @param in_node
+    @param node
+    @param force_varchar
+
+ **/
 static BOOLEAN set_parameter_type(
 								  DSQL_NOD in_node,
 								  DSQL_NOD node, BOOLEAN force_varchar )
 {
-/**************************************
- *
- *	s e t _ p a r a m e t e r _ t y p e
- *
- **************************************
- *
- * Functional description
- *	Setup the datatype of a parameter.
- *
- **************************************/
 	DSQL_NOD *ptr, *end;
 	PAR parameter;
 	BOOLEAN result = 0;
@@ -5435,18 +5531,19 @@ static BOOLEAN set_parameter_type(
 }
 
 
+/**
+  
+ set_parameters_name
+  
+    @brief      Setup parameter parameters name.
+ 
+
+    @param list_node
+    @param rel_node
+
+ **/
 static void set_parameters_name( DSQL_NOD list_node, DSQL_NOD rel_node)
 {
-/**************************************
- *
- *      s e t _ p a r a m e t e r s _ n a m e
- *
- **************************************
- *
- * Functional description
- *      Setup parameter parameters name.
- *
- **************************************/
 	DSQL_NOD *ptr, *end;
 	DSQL_CTX context;
 	DSQL_REL relation;
@@ -5470,26 +5567,28 @@ static void set_parameters_name( DSQL_NOD list_node, DSQL_NOD rel_node)
 }
 
 
+/**
+  
+ set_parameter_name
+  
+    @brief      Setup parameter parameter name.
+ 	This function was added as a part of array data type
+ 	support for InterClient. It is	called when either
+ 	"insert" or "update" statements are parsed. If the
+ 	statements have input parameters, than the parameter
+ 	is assigned the name of the field it is being inserted
+ 	(or updated). The same goes to the name of a relation.
+ 	The names are assigned to the parameter only if the
+ 	field is of array data type.
+ 
+
+    @param par_node
+    @param fld_node
+    @param relation
+
+ **/
 static void set_parameter_name( DSQL_NOD par_node, DSQL_NOD fld_node, DSQL_REL relation)
 {
-/**************************************
- *
- *      s e t _ p a r a m e t e r _ n a m e
- *
- **************************************
- *
- * Functional description
- *      Setup parameter parameter name.
- *	This function was added as a part of array data type
- *	support for InterClient. It is	called when either
- *	"insert" or "update" statements are parsed. If the
- *	statements have input parameters, than the parameter
- *	is assigned the name of the field it is being inserted
- *	(or updated). The same goes to the name of a relation.
- *	The names are assigned to the parameter only if the
- *	field is of array data type.
- *
- **************************************/
 	DSQL_NOD *ptr, *end;
 	PAR parameter;
 	DSQL_FLD field;
@@ -5536,21 +5635,21 @@ static void set_parameter_name( DSQL_NOD par_node, DSQL_NOD fld_node, DSQL_REL r
 	}
 }
 
+/**
+  
+ pass_exact_name
+  
+    @brief      Skim trailing blanks from identifiers.
+ 	CVC: I had to add this function because metd_exact_name
+ 	usage forced the inclusion of metd.c that currently
+ 	isn't used on other directories.
+ 
+
+    @param str
+
+ **/
 static TEXT *pass_exact_name (TEXT* str)
 {
-/**************************************
- *
- *      p a s s _ e x a c t _ n a m e
- *
- **************************************
- *
- * Functional description
- *      Skim trailing blanks from identifiers.
- *	CVC: I had to add this function because metd_exact_name
- *	usage forced the inclusion of metd.c that currently
- *	isn't used on other directories.
- *
- **************************************/
     TEXT *p;
 
     for (p = str; *p; ++p) { // go to end of string

@@ -29,7 +29,7 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 /*
-$Id: gen.cpp,v 1.25 2003-02-13 09:26:13 dimitr Exp $
+$Id: gen.cpp,v 1.26 2003-02-15 03:01:50 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -119,18 +119,19 @@ UCHAR GEN_expand_buffer( DSQL_REQ request, UCHAR byte)
 }
 
 
+/**
+  
+ 	GEN_expr
+  
+    @brief	Generate blr for an arbitrary expression.
+ 
+
+    @param request
+    @param node
+
+ **/
 void GEN_expr( DSQL_REQ request, DSQL_NOD node)
 {
-/**************************************
- *
- *	G E N _ e x p r
- *
- **************************************
- *
- * Functional description
- *	Generate blr for an arbitrary expression.
- *
- **************************************/
 	UCHAR operator_;
 	DSQL_NOD *ptr, *end, ddl_node;
 	DSQL_CTX context;
@@ -547,19 +548,20 @@ void GEN_expr( DSQL_REQ request, DSQL_NOD node)
 }
 
 
+/**
+  
+ 	GEN_port
+  
+    @brief	Generate a port from a message.  Feel free to rearrange the
+ 	order of parameters.
+ 
+
+    @param request
+    @param message
+
+ **/
 void GEN_port( DSQL_REQ request, DSQL_MSG message)
 {
-/**************************************
- *
- *	G E N _ p o r t
- *
- **************************************
- *
- * Functional description
- *	Generate a port from a message.  Feel free to rearrange the
- *	order of parameters.
- *
- **************************************/
 	STR buffer;
 	PAR parameter;
 	USHORT number, align;
@@ -625,18 +627,19 @@ void GEN_port( DSQL_REQ request, DSQL_MSG message)
 }
 
 
+/**
+  
+ 	GEN_request
+  
+    @brief	Generate complete blr for a request.
+ 		       
+
+    @param request
+    @param node
+
+ **/
 void GEN_request( DSQL_REQ request, DSQL_NOD node)
 {
-/**************************************
- *
- *	G E N _ r e q u e s t
- *
- **************************************
- *
- * Functional description
- *	Generate complete blr for a request.
- *		       
- **************************************/
 	DSQL_MSG message;
 
 	if (request->req_type == REQ_DDL) {
@@ -692,21 +695,22 @@ void GEN_request( DSQL_REQ request, DSQL_NOD node)
 }
 
 
+/**
+  
+ 	GEN_start_transaction
+  
+    @brief	Generate tpb for set transaction.  Use blr string of request.
+ 	If a value is not specified, default is not STUFF'ed, let the
+ 	engine handle it.
+ 	Do not allow an option to be specified more than once.
+ 
+
+    @param request
+    @param tran_node
+
+ **/
 void GEN_start_transaction( DSQL_REQ request, DSQL_NOD tran_node)
 {
-/**************************************
- *
- *	G E N _ s t a r t _ t r a n s a c t i o n
- *
- **************************************
- *
- * Functional description
- *	Generate tpb for set transaction.  Use blr string of request.
- *	If a value is not specified, default is not STUFF'ed, let the
- *	engine handle it.
- *	Do not allow an option to be specified more than once.
- *
- **************************************/
 	DSQL_NOD *temp, ptr, *end;
 	SSHORT count;
 	DSQL_NOD reserve, node;
@@ -830,18 +834,19 @@ void GEN_start_transaction( DSQL_REQ request, DSQL_NOD tran_node)
 }
 
 
+/**
+  
+ 	GEN_statement
+  
+    @brief	Generate blr for an arbitrary expression.
+ 
+
+    @param request
+    @param node
+
+ **/
 void GEN_statement( DSQL_REQ request, DSQL_NOD node)
 {
-/**************************************
- *
- *	G E N _ s t a t e m e n t
- *
- **************************************
- *
- * Functional description
- *	Generate blr for an arbitrary expression.
- *
- **************************************/
 	DSQL_NOD temp, *ptr, *end;
 	DSQL_CTX context;
 	DSQL_MSG message;
@@ -1123,18 +1128,19 @@ void GEN_statement( DSQL_REQ request, DSQL_NOD node)
 }
 
 
+/**
+  
+ 	gen_aggregate
+  
+    @brief	Generate blr for a relation reference.
+ 
+
+    @param 
+    @param 
+
+ **/
 static void gen_aggregate( DSQL_REQ request, DSQL_NOD node)
 {
-/**************************************
- *
- *	g e n _ a g g r e g a t e
- *
- **************************************
- *
- * Functional description
- *	Generate blr for a relation reference.
- *
- **************************************/
 	DSQL_NOD list, *ptr, *end;
 	DSQL_CTX context;
 
@@ -1162,18 +1168,19 @@ static void gen_aggregate( DSQL_REQ request, DSQL_NOD node)
 }
 
 
+/**
+  
+ gen_cast
+  
+    @brief      Generate BLR for a data-type cast operation
+ 
+
+    @param request
+    @param node
+
+ **/
 static void gen_cast( DSQL_REQ request, DSQL_NOD node)
 {
-/**************************************
- *
- *      g e n _ c a s t
- *
- **************************************
- *
- * Functional description
- *      Generate BLR for a data-type cast operation
- *
- **************************************/
 	DSQL_FLD field;
 
 	STUFF(blr_cast);
@@ -1183,18 +1190,19 @@ static void gen_cast( DSQL_REQ request, DSQL_NOD node)
 }
 
 
+/**
+  
+ gen_coalesce
+  
+    @brief      Generate BLR for coalesce function
+ 
+
+    @param request
+    @param node
+
+ **/
 static void gen_coalesce( DSQL_REQ request, DSQL_NOD node)
 {
-/**************************************
- *
- *      g e n _ c o a l e s c e
- *
- **************************************
- *
- * Functional description
- *      Generate BLR for coalesce function
- *
- **************************************/
 	DSQL_NOD list, *ptr, *end;
 
 	/* blr_value_if is used for building the coalesce function */
@@ -1216,18 +1224,20 @@ static void gen_coalesce( DSQL_REQ request, DSQL_NOD node)
 }
 
 
+/**
+  
+ 	gen_constant
+  
+    @brief	Generate BLR for a constant.
+ 
+
+    @param request
+    @param desc
+    @param negate_value
+
+ **/
 static void gen_constant( DSQL_REQ request, DSC * desc, BOOLEAN negate_value)
 {
-/**************************************
- *
- *	g e n _ c o n s t a n t
- *
- **************************************
- *
- * Functional description
- *	Generate BLR for a constant.
- *
- **************************************/
 	UCHAR *p;
 	USHORT l;
 	SLONG value;
@@ -1369,18 +1379,20 @@ static void gen_constant( DSQL_REQ request, DSC * desc, BOOLEAN negate_value)
 }
 
 
+/**
+  
+ 	gen_descriptor
+  
+    @brief	Generate a blr descriptor from an internal descriptor.
+ 
+
+    @param request
+    @param desc
+    @param texttype
+
+ **/
 static void gen_descriptor( DSQL_REQ request, DSC * desc, USHORT texttype)
 {
-/**************************************
- *
- *	g e n _ d e s c r i p t o r
- *
- **************************************
- *
- * Functional description
- *	Generate a blr descriptor from an internal descriptor.
- *
- **************************************/
 
 	switch (desc->dsc_dtype) {
 	case dtype_text:
@@ -1466,18 +1478,19 @@ static void gen_descriptor( DSQL_REQ request, DSC * desc, USHORT texttype)
 }
 
 
+/**
+  
+ 	gen_error_condition
+  
+    @brief	Generate blr for an error condtion
+ 
+
+    @param request
+    @param node
+
+ **/
 static void gen_error_condition( DSQL_REQ request, DSQL_NOD node)
 {
-/**************************************
- *
- *	g e n _ e r r o r _ c o n d i t i o n
- *
- **************************************
- *
- * Functional description
- *	Generate blr for an error condtion
- *
- **************************************/
 	STR string;
 
 	switch (node->nod_type) {
@@ -1509,19 +1522,22 @@ static void gen_error_condition( DSQL_REQ request, DSQL_NOD node)
 }
 
 
+/**
+  
+ 	gen_field
+  
+    @brief	Generate blr for a field - field id's
+ 	are preferred but not for trigger or view blr.
+ 
+
+    @param request
+    @param context
+    @param field
+    @param indices
+
+ **/
 static void gen_field( DSQL_REQ request, DSQL_CTX context, DSQL_FLD field, DSQL_NOD indices)
 {
-/**************************************
- *
- *	g e n _ f i e l d
- *
- **************************************
- *
- * Functional description
- *	Generate blr for a field - field id's
- *	are preferred but not for trigger or view blr.
- *
- **************************************/
 	DSQL_NOD *ptr, *end;
 
 /* For older clients - generate an error should they try and
@@ -1570,18 +1586,19 @@ static void gen_field( DSQL_REQ request, DSQL_CTX context, DSQL_FLD field, DSQL_
 }
 
 
+/**
+  
+ 	gen_for_select
+  
+    @brief	Generate BLR for a SELECT statement.
+ 
+
+    @param request
+    @param for_select
+
+ **/
 static void gen_for_select( DSQL_REQ request, DSQL_NOD for_select)
 {
-/**************************************
- *
- *	g e n _ f o r _ s e l e c t
- *
- **************************************
- *
- * Functional description
- *	Generate BLR for a SELECT statement.
- *
- **************************************/
 	DSQL_NOD list, list_to, *ptr, *ptr_to, *end, rse;
 
 	rse = for_select->nod_arg[e_flp_select];
@@ -1631,18 +1648,19 @@ static void gen_for_select( DSQL_REQ request, DSQL_NOD for_select)
 }
 
 
+/**
+  
+ gen_gen_id
+  
+    @brief      Generate BLR for gen_id
+ 
+
+    @param request
+    @param node
+
+ **/
 static void gen_gen_id( DSQL_REQ request, DSQL_NOD node)
 {
-/**************************************
- *
- *      g e n _ g e n _ i d
- *
- **************************************
- *
- * Functional description
- *      Generate BLR for gen_id
- *
- **************************************/
 	STR string;
 
 	STUFF(blr_gen_id);
@@ -1652,19 +1670,20 @@ static void gen_gen_id( DSQL_REQ request, DSQL_NOD node)
 }
 
 
+/**
+  
+ 	gen_join_rse
+  
+    @brief	Generate a record selection expression
+ 	with an explicit join type.
+ 
+
+    @param request
+    @param rse
+
+ **/
 static void gen_join_rse( DSQL_REQ request, DSQL_NOD rse)
 {
-/**************************************
- *
- *	g e n _ j o i n _ r s e
- *
- **************************************
- *
- * Functional description
- *	Generate a record selection expression
- *	with an explicit join type.
- *
- **************************************/
 	DSQL_NOD node;
 
 	STUFF(blr_rs_stream);
@@ -1691,18 +1710,19 @@ static void gen_join_rse( DSQL_REQ request, DSQL_NOD rse)
 }
 
 
+/**
+  
+ 	gen_map
+  
+    @brief	Generate a value map for a record selection expression.
+ 
+
+    @param request
+    @param map
+
+ **/
 static void gen_map( DSQL_REQ request, MAP map)
 {
-/**************************************
- *
- *	g e n _ m a p
- *
- **************************************
- *
- * Functional description
- *	Generate a value map for a record selection expression.
- *
- **************************************/
 	USHORT count;
 	MAP temp;
 
@@ -1720,18 +1740,19 @@ static void gen_map( DSQL_REQ request, MAP map)
 }
 
 
+/**
+  
+ 	gen_parameter
+  
+    @brief	Generate a parameter reference.
+ 
+
+    @param request
+    @param parameter
+
+ **/
 static void gen_parameter( DSQL_REQ request, PAR parameter)
 {
-/**************************************
- *
- *	g e n _ p a r a m e t e r
- *
- **************************************
- *
- * Functional description
- *	Generate a parameter reference.
- *
- **************************************/
 	DSQL_MSG message;
 	PAR null;
 
@@ -1752,18 +1773,19 @@ static void gen_parameter( DSQL_REQ request, PAR parameter)
 
 
 
+/**
+  
+ 	gen_plan
+  
+    @brief	Generate blr for an access plan expression.
+ 
+
+    @param request
+    @param plan_expression
+
+ **/
 static void gen_plan( DSQL_REQ request, DSQL_NOD plan_expression)
 {
-/**************************************
- *
- *	g e n _ p l a n
- *
- **************************************
- *
- * Functional description
- *	Generate blr for an access plan expression.
- *
- **************************************/
 	DSQL_NOD list, node, arg, *ptr, *end, *ptr2, *end2;
 	STR index_string;
 
@@ -1832,18 +1854,19 @@ static void gen_plan( DSQL_REQ request, DSQL_NOD plan_expression)
 
 
 
+/**
+  
+ 	gen_relation
+  
+    @brief	Generate blr for a relation reference.
+ 
+
+    @param request
+    @param context
+
+ **/
 static void gen_relation( DSQL_REQ request, DSQL_CTX context)
 {
-/**************************************
- *
- *	g e n _ r e l a t i o n
- *
- **************************************
- *
- * Functional description
- *	Generate blr for a relation reference.
- *
- **************************************/
 	DSQL_REL relation;
 	DSQL_PRC procedure;
 	DSQL_NOD inputs, *ptr, *end;
@@ -1891,18 +1914,20 @@ static void gen_relation( DSQL_REQ request, DSQL_CTX context)
 }
 
 
+/**
+  
+ 	gen_return
+  
+    @brief	Generate blr for a procedure return.
+ 
+
+    @param request
+    @param procedure
+    @param eos_flag
+
+ **/
 void GEN_return( DSQL_REQ request, DSQL_NOD procedure, BOOLEAN eos_flag)
 {
-/**************************************
- *
- *	g e n _ r e t u r n
- *
- **************************************
- *
- * Functional description
- *	Generate blr for a procedure return.
- *
- **************************************/
 	DSQL_NOD parameters, parameter, *ptr, *end;
 	VAR variable;
 	USHORT outputs;
@@ -1950,18 +1975,19 @@ void GEN_return( DSQL_REQ request, DSQL_NOD procedure, BOOLEAN eos_flag)
 }
 
 
+/**
+  
+ 	gen_rse
+  
+    @brief	Generate a record selection expression.
+ 
+
+    @param request
+    @param rse
+
+ **/
 static void gen_rse( DSQL_REQ request, DSQL_NOD rse)
 {
-/**************************************
- *
- *	g e n _ r s e
- *
- **************************************
- *
- * Functional description
- *	Generate a record selection expression.
- *
- **************************************/
 	DSQL_NOD node, list, *ptr, *end;
 
 	if (rse->nod_arg[e_rse_singleton]
@@ -2050,18 +2076,19 @@ static void gen_rse( DSQL_REQ request, DSQL_NOD rse)
 }
 
 
+/**
+  
+ gen_searched_case
+  
+    @brief      Generate BLR for CASE function (searched)
+ 
+
+    @param request
+    @param node
+
+ **/
 static void gen_searched_case( DSQL_REQ request, DSQL_NOD node)
 {
-/**************************************
- *
- *      g e n _ s e a r c h e d _ c a s e
- *
- **************************************
- *
- * Functional description
- *      Generate BLR for CASE function (searched)
- *
- **************************************/
 	DSQL_NOD boolean_list, results_list, *bptr, *rptr, *end;
 
 	/* blr_value_if is used for building the case expression */
@@ -2083,18 +2110,19 @@ static void gen_searched_case( DSQL_REQ request, DSQL_NOD node)
 }
 
 
+/**
+  
+ 	gen_select
+  
+    @brief	Generate BLR for a SELECT statement.
+ 
+
+    @param request
+    @param rse
+
+ **/
 static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 {
-/**************************************
- *
- *	g e n _ s e l e c t
- *
- **************************************
- *
- * Functional description
- *	Generate BLR for a SELECT statement.
- *
- **************************************/
 	DSQL_NOD list, *ptr, *end, item, alias, map_node;
 	PAR parameter;
 	DSQL_MSG message;
@@ -2375,18 +2403,19 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 }
 
 
+/**
+  
+ gen_simple_case
+  
+    @brief      Generate BLR for CASE function (simple)
+ 
+
+    @param request
+    @param node
+
+ **/
 static void gen_simple_case( DSQL_REQ request, DSQL_NOD node)
 {
-/**************************************
- *
- *      g e n _ s i m p l e _ c a s e
- *
- **************************************
- *
- * Functional description
- *      Generate BLR for CASE function (simple)
- *
- **************************************/
 	DSQL_NOD when_list, results_list, *wptr, *rptr, *end;
 
 	/* blr_value_if is used for building the case expression */
@@ -2410,18 +2439,19 @@ static void gen_simple_case( DSQL_REQ request, DSQL_NOD node)
 }
 
 
+/**
+  
+ 	gen_sort
+  
+    @brief	Generate a sort clause.
+ 
+
+    @param request
+    @param list
+
+ **/
 static void gen_sort( DSQL_REQ request, DSQL_NOD list)
 {
-/**************************************
- *
- *	g e n _ s o r t
- *
- **************************************
- *
- * Functional description
- *	Generate a sort clause.
- *
- **************************************/
 	DSQL_NOD *ptr, *end;
 
 	STUFF(blr_sort);
@@ -2439,19 +2469,21 @@ static void gen_sort( DSQL_REQ request, DSQL_NOD list)
 }
 
 
+/**
+  
+ 	gen_table_lock
+  
+    @brief	Generate tpb for table lock.
+ 	If lock level is specified, it overrrides the transaction lock level.
+ 
+
+    @param request
+    @param tbl_lock
+    @param lock_level
+
+ **/
 static void gen_table_lock( DSQL_REQ request, DSQL_NOD tbl_lock, USHORT lock_level)
 {
-/**************************************
- *
- *	g e n _ t a b l e _ l o c k
- *
- **************************************
- *
- * Functional description
- *	Generate tpb for table lock.
- *	If lock level is specified, it overrrides the transaction lock level.
- *
- **************************************/
 	DSQL_NOD tbl_names, *ptr, *end;
 	STR temp;
 	SSHORT flags;
@@ -2489,18 +2521,19 @@ static void gen_table_lock( DSQL_REQ request, DSQL_NOD tbl_lock, USHORT lock_lev
 }
 
 
+/**
+  
+ 	gen_udf
+  
+    @brief	Generate a user defined function.
+ 
+
+    @param request
+    @param node
+
+ **/
 static void gen_udf( DSQL_REQ request, DSQL_NOD node)
 {
-/**************************************
- *
- *	g e n _ u d f
- *
- **************************************
- *
- * Functional description
- *	Generate a user defined function.
- *
- **************************************/
 	UDF udf;
 	DSQL_NOD list, *ptr, *end;
 
@@ -2519,18 +2552,19 @@ static void gen_udf( DSQL_REQ request, DSQL_NOD node)
 }
 
 
+/**
+  
+ 	gen_union
+  
+    @brief	Generate a union of substreams.
+ 
+
+    @param request
+    @param union_node
+
+ **/
 static void gen_union( DSQL_REQ request, DSQL_NOD union_node)
 {
-/**************************************
- *
- *	g e n _ u n i o n
- *
- **************************************
- *
- * Functional description
- *	Generate a union of substreams.
- *
- **************************************/
 	DSQL_NOD sub_rse, *ptr, *end, streams;
 	DSQL_NOD items, *iptr, *iend;
 	USHORT count;
@@ -2564,18 +2598,19 @@ static void gen_union( DSQL_REQ request, DSQL_NOD union_node)
 }
 
 
+/**
+  
+ 	stuff_cstring
+  
+    @brief	Write out a string with one byte of length.
+ 
+
+    @param request
+    @param string
+
+ **/
 static void stuff_cstring( DSQL_REQ request, char *string)
 {
-/**************************************
- *
- *	s t u f f _ c s t r i n g
- *
- **************************************
- *
- * Functional description
- *	Write out a string with one byte of length.
- *
- **************************************/
 	UCHAR c;
 
 	STUFF(strlen(string));
@@ -2584,19 +2619,20 @@ static void stuff_cstring( DSQL_REQ request, char *string)
 }
 
 
+/**
+  
+ 	stuff_word
+  
+    @brief	Cram a word into the blr buffer.  If the buffer is getting
+ 	ready to overflow, expand it.
+ 
+
+    @param request
+    @param word
+
+ **/
 static void stuff_word( DSQL_REQ request, USHORT word)
 {
-/**************************************
- *
- *	s t u f f _ w o r d
- *
- **************************************
- *
- * Functional description
- *	Cram a word into the blr buffer.  If the buffer is getting
- *	ready to overflow, expand it.
- *
- **************************************/
 
 	STUFF(word);
 	STUFF(word >> 8);

@@ -96,21 +96,27 @@ static const PP_TABLE pp_symbols[] = {
 #define SYMBOL			259
 
 
+/**
+  
+ 	PREPARSE_execute
+  
+    @brief
+
+    @param user_status
+    @param db_handle
+    @param trans_handle
+    @param stmt_length
+    @param stmt
+    @param stmt_eaten
+    @param dialect
+
+ **/
 int DLL_EXPORT PREPARSE_execute(
 								STATUS * user_status,
 								FRBRD ** db_handle,
 								FRBRD ** trans_handle,
 USHORT stmt_length, SCHAR * stmt, BOOLEAN * stmt_eaten, USHORT dialect)
 {
-/**************************************
- *
- *	P R E P A R S E _ e x e c u t e
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
 	TEXT file_name[MAX_TOKEN_SIZE + 1];
 	SCHAR *token, *dpb_array, *dpb, *ch, *stmt_end;
 	SLONG page_size = 0;
@@ -329,19 +335,22 @@ USHORT stmt_length, SCHAR * stmt, BOOLEAN * stmt_eaten, USHORT dialect)
 }
 
 
+/**
+  
+ 	generate_error
+  
+    @brief
+
+    @param user_status
+    @param token
+    @param error
+    @param result
+
+ **/
 static void generate_error(
 						   STATUS * user_status,
 						   SCHAR * token, SSHORT error, SSHORT result)
 {
-/**************************************
- *
- *	g e n e r a t e _ e r r o r
- *
- **************************************
- *
- * Functional description:
- *
- **************************************/
 	TEXT err_string[MAX_TOKEN_SIZE + 3];
 	SSHORT length;
 
@@ -380,20 +389,23 @@ static void generate_error(
 }
 
 
+/**
+  
+ 	get_next_token
+  
+    @brief
+
+    @param stmt
+    @param stmt_end
+    @param token
+    @param token_length
+
+ **/
 static SSHORT get_next_token(
 							 SCHAR ** stmt,
 							 SCHAR * stmt_end,
 							 SCHAR * token, USHORT * token_length)
 {
-/**************************************
- *
- *	g e t _ n e x t _ t o k e n
- *
- **************************************
- *
- * Functional description:
- *
- **************************************/
 	SCHAR *s, *p, *token_end, *start_of_token;
 	UCHAR c, class_;
 	SSHORT length;
@@ -505,6 +517,21 @@ static SSHORT get_next_token(
 }
 
 
+/**
+  
+ 	get_token
+  
+    @brief
+
+    @param status
+    @param token_type
+    @param optional
+    @param stmt
+    @param stmt_end
+    @param token
+    @param token_length
+
+ **/
 static SSHORT get_token(
 						STATUS * status,
 						SSHORT token_type,
@@ -512,15 +539,6 @@ static SSHORT get_token(
 						SCHAR ** stmt,
 SCHAR * stmt_end, SCHAR * token, USHORT * token_length)
 {
-/**************************************
- *
- *	g e t _ t o k e n
- *
- **************************************
- *
- * Functional description:
- *
- **************************************/
 	SSHORT result;
 	SCHAR *temp_stmt;
 

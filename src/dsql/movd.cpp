@@ -38,35 +38,37 @@
 static void post_error(STATUS, ...);
 
 
+/**
+  
+ 	MOVD_move
+  
+    @brief	Move (and possible convert) something to something else.
+ 
+
+    @param from
+    @param to
+
+ **/
 void MOVD_move( DSC * from, DSC * to)
 {
-/**************************************
- *
- *	M O V D _ m o v e
- *
- **************************************
- *
- * Functional description
- *	Move (and possible convert) something to something else.
- *
- **************************************/
 
 	CVT_move(from, to, (FPTR_VOID) post_error);
 }
 
 
+/**
+  
+ 	post_error
+  
+    @brief	A conversion error occurred.  Complain.
+ 
+
+    @param status
+    @param 
+
+ **/
 static void post_error( STATUS status, ...)
 {
-/**************************************
- *
- *	p o s t _ e r r o r
- *
- **************************************
- *
- * Functional description
- *	A conversion error occurred.  Complain.
- *
- **************************************/
 	TSQL tdsql;
 	STATUS *v, *v_end, *temp, temp_status[ISC_STATUS_LENGTH];
 

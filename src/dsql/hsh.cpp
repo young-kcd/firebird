@@ -65,18 +65,17 @@ static USHORT hash_mutex_inited = 0;
 #endif
 
 
+/**
+  
+ 	HSHD_init
+  
+    @brief	create a new hash table
+ 
+
+
+ **/
 void HSHD_init(void)
 {
-/*************************************
- *
- *	H S H D _ i n i t
- *
- *************************************
- *
- * functional description
- *	create a new hash table
- *
- ************************************/
 	UCHAR *p;
 
 #ifdef SUPERSERVER
@@ -97,18 +96,17 @@ void HSHD_init(void)
 
 #include "../jrd/ib_stdio.h"
 
+/**
+  
+ 	HSHD_debug
+  
+    @brief	Print out the hash table for debugging.
+ 
+
+
+ **/
 void HSHD_debug(void)
 {
-/**************************************
- *
- *	H S H D _ d e b u g
- *
- **************************************
- *
- * Functional description
- *	Print out the hash table for debugging.
- *
- **************************************/
 	SYM collision;
 	SYM homptr;
 	SSHORT h;
@@ -137,19 +135,18 @@ void HSHD_debug(void)
 #endif
 
 
+/**
+  
+ 	HSHD_fini
+  
+    @brief	Clear out the symbol table.  All the 
+ 	symbols are deallocated with their pools.
+ 
+
+
+ **/
 void HSHD_fini(void)
 {
-/**************************************
- *
- *	H S H D _ f i n i
- *
- **************************************
- *
- * Functional description
- *	Clear out the symbol table.  All the 
- *	symbols are deallocated with their pools.
- *
- **************************************/
 
 	for (SSHORT i = 0; i < HASH_SIZE; i++)
 	{
@@ -161,20 +158,20 @@ void HSHD_fini(void)
 }
 
 
+/**
+  
+ 	HSHD_finish
+  
+    @brief	Remove symbols used by a particular database.
+ 	Don't bother to release them since their pools
+ 	will be released.
+ 
+
+    @param database
+
+ **/
 void HSHD_finish( void *database)
 {
-/**************************************
- *
- *	H S H D _ f i n i s h
- *
- **************************************
- *
- * Functional description
- *	Remove symbols used by a particular database.
- *	Don't bother to release them since their pools
- *	will be released.
- *
- **************************************/
 	SYM *collision;
 	SYM *homptr;
 	SYM symbol;
@@ -218,18 +215,18 @@ void HSHD_finish( void *database)
 }
 
 
+/**
+  
+ 	HSHD_insert
+  
+    @brief	Insert a symbol into the hash table.
+ 
+
+    @param symbol
+
+ **/
 void HSHD_insert(SYM symbol)
 {
-/**************************************
- *
- *	H S H D _ i n s e r t
- *
- **************************************
- *
- * Functional description
- *	Insert a symbol into the hash table.
- *
- **************************************/
 	SSHORT h;
 	void *database;
 	SYM old;
@@ -256,23 +253,27 @@ void HSHD_insert(SYM symbol)
 }
 
 
+/**
+  
+ 	HSHD_lookup
+  
+    @brief	Perform a string lookup against hash table.
+ 	Make sure to only return a symbol of the desired type.
+ 
+
+    @param database
+    @param string
+    @param length
+    @param type
+    @param parser_version
+
+ **/
 SYM HSHD_lookup(void*    database,
 				TEXT*    string,
 				SSHORT   length,
 				SYM_TYPE type,
 				USHORT   parser_version)
 {
-/**************************************
- *
- *	H S H D _ l o o k u p
- *
- **************************************
- *
- * Functional description
- *	Perform a string lookup against hash table.
- *	Make sure to only return a symbol of the desired type.
- *
- **************************************/
 
 	LOCK_HASH;
 	SSHORT h = hash(string, length);
@@ -307,18 +308,18 @@ SYM HSHD_lookup(void*    database,
 }
 
 
+/**
+  
+ 	HSHD_remove
+  
+    @brief	Remove a symbol from the hash table.
+ 
+
+    @param symbol
+
+ **/
 void HSHD_remove( SYM symbol)
 {
-/**************************************
- *
- *	H S H D _ r e m o v e 
- *
- **************************************
- *
- * Functional description
- *	Remove a symbol from the hash table.
- *
- **************************************/
 	SYM *collision;
 	SSHORT h;
 
@@ -337,31 +338,35 @@ void HSHD_remove( SYM symbol)
 }
 
 
+/**
+  
+ HSHD_set_flag
+  
+    @brief      Set a flag in all similar objects in a chain.   This
+       is used primarily to mark relations and procedures
+       as deleted.   The object must have the same name and
+       type, but not the same database, and must belong to
+       some database.   Later access to such an object by
+       another user or thread should result in that object's
+       being refreshed.   Note that even if the relation name
+       and ID, or the procedure name and ID both match, it
+       may still not represent an exact match.   This is because
+       there's no way at present for DSQL to tell if two databases
+       as represented in DSQL are attachments to the same physical
+       database.
+ 
+
+    @param database
+    @param string
+    @param length
+    @param type
+    @param flag
+
+ **/
 void HSHD_set_flag(
 				   void *database,
 				   TEXT * string, SSHORT length, SYM_TYPE type, SSHORT flag)
 {
-/**************************************
- *
- *      H S H D _ s e t _ f l a g
- *
- **************************************
- *
- * Functional description
- *      Set a flag in all similar objects in a chain.   This
- *      is used primarily to mark relations and procedures
- *      as deleted.   The object must have the same name and
- *      type, but not the same database, and must belong to
- *      some database.   Later access to such an object by
- *      another user or thread should result in that object's
- *      being refreshed.   Note that even if the relation name
- *      and ID, or the procedure name and ID both match, it
- *      may still not represent an exact match.   This is because
- *      there's no way at present for DSQL to tell if two databases
- *      as represented in DSQL are attachments to the same physical
- *      database.
- *
- **************************************/
 	SYM symbol, homonym;
 	SSHORT h;
 	DSQL_REL sym_rel;
@@ -417,18 +422,19 @@ void HSHD_set_flag(
 }
 
 
+/**
+  
+ 	hash
+  
+    @brief	Returns the hash function of a string.
+ 
+
+    @param 
+    @param 
+
+ **/
 static SSHORT hash(SCHAR * string, USHORT length)
 {
-/**************************************
- *
- *	h a s h
- *
- **************************************
- *
- * Functional description
- *	Returns the hash function of a string.
- *
- **************************************/
 	SLONG value;
 	SCHAR c;
 
@@ -443,20 +449,21 @@ static SSHORT hash(SCHAR * string, USHORT length)
 }
 
 
+/**
+  
+ 	remove_symbol
+  
+    @brief	Given the address of a collision,
+ 	remove a symbol from the collision 
+ 	and homonym linked lists.
+ 
+
+    @param collision
+    @param symbol
+
+ **/
 static BOOLEAN remove_symbol( SYM * collision, SYM symbol)
 {
-/**************************************
- *
- *	r e m o v e _ s y m b o l 
- *
- **************************************
- *
- * Functional description
- *	Given the address of a collision,
- *	remove a symbol from the collision 
- *	and homonym linked lists.
- *
- **************************************/
 	SYM *ptr, homonym;
 
 	if (symbol == *collision) {
@@ -480,24 +487,27 @@ static BOOLEAN remove_symbol( SYM * collision, SYM symbol)
 }
 
 
+/**
+  
+ 	scompare
+  
+    @brief	Compare two symbolic strings
+ 	The character set for these strings is either ASCII or
+ 	Unicode in UTF format.
+ 	Symbols are case-significant - so no uppercase operation
+ 	is performed.
+ 
+
+    @param string1
+    @param length1
+    @param string2
+    @param length2
+
+ **/
 static BOOLEAN scompare(TEXT * string1,
 						USHORT length1,
 						TEXT * string2, USHORT length2)
 {
-/**************************************
- *
- *	s c o m p a r e
- *
- **************************************
- *
- * Functional description
- *	Compare two symbolic strings
- *	The character set for these strings is either ASCII or
- *	Unicode in UTF format.
- *	Symbols are case-significant - so no uppercase operation
- *	is performed.
- *
- **************************************/
 
 	if (length1 != length2)
 		return FALSE;

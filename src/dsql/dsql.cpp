@@ -443,21 +443,23 @@ GDS_DSQL_SET_CURSOR(STATUS*		user_status,
 extern "C" {
 
 
+/**
+  
+ 	dsql_allocate_statement
+  
+    @brief	Allocate a statement handle.
+ 
+
+    @param user_status
+    @param db_handle
+    @param req_handle
+
+ **/
 static STATUS
 GDS_DSQL_ALLOCATE_CPP(	STATUS*    user_status,
 						FRBRD**    db_handle,
 						dsql_req** req_handle)
 {
-/**************************************
- *
- *	d s q l _ a l l o c a t e _ s t a t e m e n t
- *
- **************************************
- *
- * Functional description
- *	Allocate a statement handle.
- *
- **************************************/
 	DBB database;
 	DSQL_REQ request;
 	struct tsql thd_context, *tdsql;
@@ -495,6 +497,28 @@ GDS_DSQL_ALLOCATE_CPP(	STATUS*    user_status,
 }
 
 
+/**
+  
+ 	dsql_execute
+  
+    @brief	Execute a non-SELECT dynamic SQL statement.
+ 
+
+    @param user_status
+    @param trans_handle
+    @param req_handle
+    @param in_blr_length
+    @param in_blr
+    @param in_msg_type
+    @param in_msg_length
+    @param in_msg
+    @param out_blr_length
+    @param out_blr
+    @param out_msg_type
+    @param out_msg_length
+    @param out_msg
+
+ **/
 STATUS DLL_EXPORT GDS_DSQL_EXECUTE_CPP(STATUS*		user_status,
 									   FRBRD**		trans_handle,
 									   dsql_req**	req_handle,
@@ -509,16 +533,6 @@ STATUS DLL_EXPORT GDS_DSQL_EXECUTE_CPP(STATUS*		user_status,
 									   USHORT		out_msg_length,
 									   UCHAR*		out_msg)
 {
-/**************************************
- *
- *	d s q l _ e x e c u t e
- *
- **************************************
- *
- * Functional description
- *	Execute a non-SELECT dynamic SQL statement.
- *
- **************************************/
 	DSQL_REQ request;
 	OPN open_cursor;
 	STATUS local_status[ISC_STATUS_LENGTH];
@@ -804,22 +818,24 @@ STATUS DLL_EXPORT GDS_DSQL_EXECUTE_IMMED(STATUS*	user_status,
 		~0);
 }
 
+/**
+  
+ 	check_for_create_database
+  
+    @brief	When executing dynamic sql_operator in context of existing connrction and
+ 	existing transaction, it is not clear - what should do "Create Database"
+ 	operator with existing db_handle and tra_handle. Therefore we don't exec it.
+ 
+
+    @param sql
+    @param l
+    @param crdb
+
+ **/
 static int check_for_create_database( TEXT* sql,
 									  int l,
 									  TEXT* crdb)
 {
-/**************************************
- *
- *	c h e c k _ f o r _ c r e a t e _ d a t a b a s e
- *
- **************************************
- *
- * Functional description
- *	When executing dynamic sql_operator in context of existing connrction and
- *	existing transaction, it is not clear - what should do "Create Database"
- *	operator with existing db_handle and tra_handle. Therefore we don't exec it.
- *
- **************************************/
 	for (; l--; sql++) {
     	switch (*sql) {
         	case '\t':
@@ -837,22 +853,26 @@ static int check_for_create_database( TEXT* sql,
 	return 0;
 }
 
+/**
+  
+ 	callback_execute_immediate
+  
+    @brief	Execute sql_operator in context of jrd_transaction_handle
+ 
+
+    @param status
+    @param jrd_attachment_handle
+    @param jrd_transaction_handle
+    @param sql_operator
+    @param len
+
+ **/
 STATUS callback_execute_immediate( STATUS* status,
 								   class att* jrd_attachment_handle,
 								   class jrd_tra* jrd_transaction_handle,
     							   TEXT* sql_operator,
     							   int len)
 {
-/**************************************
- *
- *	c a l l b a c k _ e x e c u t e _ i m m e d i a t e
- *
- **************************************
- *
- * Functional description
- *	Execute sql_operator in context of jrd_transaction_handle
- *
- **************************************/
 
 	DBB	database;
 
@@ -904,6 +924,24 @@ STATUS callback_execute_immediate( STATUS* status,
 }
 
 
+/**
+  
+ 	dsql_fetch
+  
+    @brief	Fetch next record from a dynamic SQL cursor
+ 
+
+    @param user_status
+    @param req_handle
+    @param blr_length
+    @param blr
+    @param msg_type
+    @param msg_length
+    @param dsql_msg
+    @param direction
+    @param offset
+
+ **/
 STATUS GDS_DSQL_FETCH_CPP(	STATUS*	user_status,
 							dsql_req**	req_handle,
 							USHORT	blr_length,
@@ -916,16 +954,6 @@ STATUS GDS_DSQL_FETCH_CPP(	STATUS*	user_status,
 #endif
 							)
 {
-/**************************************
- *
- *	d s q l _ f e t c h
- *
- **************************************
- *
- * Functional description
- *	Fetch next record from a dynamic SQL cursor
- *
- **************************************/
 
 	DSQL_MSG message;
 	PAR parameter;
@@ -1134,20 +1162,22 @@ STATUS GDS_DSQL_FETCH_CPP(	STATUS*	user_status,
 }
 
 
+/**
+  
+ 	dsql_free_statement
+  
+    @brief	Release request for a dsql statement
+ 
+
+    @param user_status
+    @param req_handle
+    @param option
+
+ **/
 STATUS GDS_DSQL_FREE_CPP(STATUS*	user_status,
 						 dsql_req**		req_handle,
 						 USHORT		option)
 {
-/**************************************
- *
- *	d s q l _ f r e e _ s t a t e m e n t
- *
- **************************************
- *
- * Functional description
- *	Release request for a dsql statement
- *
- **************************************/
 	DSQL_REQ request;
 	struct tsql thd_context, *tdsql;
 
@@ -1189,6 +1219,22 @@ STATUS GDS_DSQL_FREE_CPP(STATUS*	user_status,
 }
 
 
+/**
+  
+ 	dsql_insert
+  
+    @brief	Insert next record into a dynamic SQL cursor
+ 
+
+    @param user_status
+    @param req_handle
+    @param blr_length
+    @param blr
+    @param msg_type
+    @param msg_length
+    @param dsql_msg
+
+ **/
 STATUS GDS_DSQL_INSERT_CPP(	STATUS*	user_status,
 							dsql_req**	req_handle,
 							USHORT	blr_length,
@@ -1197,16 +1243,6 @@ STATUS GDS_DSQL_INSERT_CPP(	STATUS*	user_status,
 							USHORT	msg_length,
 							UCHAR*	dsql_msg)
 {
-/**************************************
- *
- *	d s q l _ i n s e r t
- *
- **************************************
- *
- * Functional description
- *	Insert next record into a dynamic SQL cursor
- *
- **************************************/
 	DSQL_REQ request;
 	DSQL_MSG message;
 	PAR parameter;
@@ -1268,6 +1304,25 @@ STATUS GDS_DSQL_INSERT_CPP(	STATUS*	user_status,
 }
 
 
+/**
+  
+ 	dsql_prepare
+  
+    @brief	Prepare a statement for execution.
+ 
+
+    @param user_status
+    @param trans_handle
+    @param req_handle
+    @param length
+    @param string
+    @param dialect
+    @param item_length
+    @param items
+    @param buffer_length
+    @param buffer
+
+ **/
 STATUS GDS_DSQL_PREPARE_CPP(STATUS*			user_status,
 							WHY_TRA*		trans_handle,
 							dsql_req**		req_handle,
@@ -1279,16 +1334,6 @@ STATUS GDS_DSQL_PREPARE_CPP(STATUS*			user_status,
 							USHORT			buffer_length,
 							UCHAR*			buffer)
 {
-/**************************************
- *
- *	d s q l _ p r e p a r e
- *
- **************************************
- *
- * Functional description
- *	Prepare a statement for execution.
- *
- **************************************/
 	DSQL_REQ old_request, request;
 	USHORT parser_version;
 	DBB database;
@@ -1426,21 +1471,24 @@ STATUS GDS_DSQL_PREPARE_CPP(STATUS*			user_status,
 }
 
 
+/**
+  
+ 	dsql_set_cursor_name
+  
+    @brief	Set a cursor name for a dynamic request
+ 
+
+    @param user_status
+    @param req_handle
+    @param input_cursor
+    @param type
+
+ **/
 STATUS GDS_DSQL_SET_CURSOR_CPP(	STATUS*	user_status,
 								dsql_req**	req_handle,
 								TEXT*	input_cursor,
 								USHORT	type)
 {
-/*****************************************
- *
- *	d s q l _ s e t _ c u r s o r _ n a m e
- *
- **************************************
- *
- * Functional Description
- *	Set a cursor name for a dynamic request
- *
- *****************************************/
 	DSQL_REQ request;
 	SYM symbol;
 	USHORT length;
@@ -1524,6 +1572,21 @@ STATUS GDS_DSQL_SET_CURSOR_CPP(	STATUS*	user_status,
 }
 
 
+/**
+  
+ 	dsql_sql_info
+  
+    @brief	Provide information on dsql statement
+ 
+
+    @param user_status
+    @param req_handle
+    @param item_length
+    @param items
+    @param info_length
+    @param info
+
+ **/
 STATUS GDS_DSQL_SQL_INFO_CPP(	STATUS*		user_status,
 								dsql_req**		req_handle,
 								USHORT		item_length,
@@ -1531,16 +1594,6 @@ STATUS GDS_DSQL_SQL_INFO_CPP(	STATUS*		user_status,
 								USHORT		info_length,
 								UCHAR*		info)
 {
-/**************************************
- *
- *	d s q l _ s q l _ i n f o
- *
- **************************************
- *
- * Functional description
- *	Provide information on dsql statement
- *
- **************************************/
 	DSQL_REQ request;
 	DSQL_MSG *message;
 	UCHAR item, *end_info, buffer[256], *buffer_ptr;
@@ -1741,18 +1794,19 @@ STATUS GDS_DSQL_SQL_INFO_CPP(	STATUS*		user_status,
 
 
 #ifdef DEV_BUILD
+/**
+  
+ 	DSQL_pretty
+  
+    @brief	Pretty print a node tree.
+
+
+    @param node
+    @param column
+
+ **/
 void DSQL_pretty(DSQL_NOD node, int column)
 {
-/**************************************
- *
- *	D S Q L _ p r e t t y
- *
- **************************************
- *
- * Functional description
- *	Pretty print a node tree.
-*
- **************************************/
 	MAP map;
 	DSQL_REL relation;
 	DSQL_PRC procedure;
@@ -2420,18 +2474,18 @@ void DSQL_pretty(DSQL_NOD node, int column)
 #endif
 
 
+/**
+  
+ 	cleanup
+  
+    @brief	exit handler for local dsql image
+ 
+
+    @param arg
+
+ **/
 static void cleanup( void *arg)
 {
-/**************************************
- *
- *	c l e a n u p
- *
- **************************************
- *
- * Functional Description
- *	exit handler for local dsql image
- *
- **************************************/
 
 	if (init_flag) {
 		init_flag = false;
@@ -2443,23 +2497,24 @@ static void cleanup( void *arg)
 }
 
 
+/**
+  
+ 	cleanup_database
+  
+    @brief	Clean up DSQL globals.
+ 
+  N.B., the cleanup handlers (registered with gds__database_cleanup)
+  are called outside of the ISC thread mechanism...
+ 
+  These do not make use of the context at this time.
+ 
+
+    @param db_handle
+    @param flag
+
+ **/
 static void cleanup_database(FRBRD ** db_handle, SLONG flag)
 {
-/**************************************
- *
- *	c l e a n u p _ d a t a b a s e
- *
- **************************************
- *
- * Functional description
- *	Clean up DSQL globals.
- *
- * N.B., the cleanup handlers (registered with gds__database_cleanup)
- * are called outside of the ISC thread mechanism...
- *
- * These do not make use of the context at this time.
- *
- **************************************/
 	DBB *dbb_ptr, dbb;
 //	STATUS user_status[ISC_STATUS_LENGTH];
 
@@ -2510,19 +2565,20 @@ static void cleanup_database(FRBRD ** db_handle, SLONG flag)
 }
 
 
+/**
+  
+ 	cleanup_transaction
+  
+    @brief	Clean up after a transaction.  This means
+ 	closing all open cursors.
+ 
+
+    @param tra_handle
+    @param arg
+
+ **/
 static void cleanup_transaction (FRBRD * tra_handle, SLONG arg)
 {
-/**************************************
- *
- *	c l e a n u p _ t r a n s a c t i o n
- *
- **************************************
- *
- * Functional description
- *	Clean up after a transaction.  This means
- *	closing all open cursors.
- *
- **************************************/
 	STATUS local_status[ISC_STATUS_LENGTH];
 	OPN *open_cursor_ptr, open_cursor;
 
@@ -2558,18 +2614,18 @@ static void cleanup_transaction (FRBRD * tra_handle, SLONG arg)
 }
 
 
+/**
+  
+ 	close_cursor
+  
+    @brief	Close an open cursor.
+ 
+
+    @param request
+
+ **/
 static void close_cursor( DSQL_REQ request)
 {
-/**************************************
- *
- *	c l o s e _ c u r s o r
- *
- **************************************
- *
- * Functional description
- *	Close an open cursor.
- *
- **************************************/
 	OPN *open_cursor_ptr, open_cursor;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 
@@ -2608,19 +2664,20 @@ static void close_cursor( DSQL_REQ request)
 }
 
 
+/**
+  
+ 	convert
+  
+    @brief	Convert a number to VAX form -- least significant bytes first.
+ 	Return the length.
+ 
+
+    @param number
+    @param buffer
+
+ **/
 static USHORT convert( SLONG number, UCHAR * buffer)
 {
-/**************************************
- *
- *	c o n v e r t
- *
- **************************************
- *
- * Functional description
- *	Convert a number to VAX form -- least significant bytes first.
- *	Return the length.
- *
- **************************************/
 	SLONG n;
 	UCHAR *p;
 
@@ -2646,18 +2703,17 @@ static USHORT convert( SLONG number, UCHAR * buffer)
 }
 
 
+/**
+  
+ 	error
+  
+    @brief	An error returned has been trapped.
+ 
+
+
+ **/
 static STATUS error()
 {
-/**************************************
- *
- *	e r r o r
- *
- **************************************
- *
- * Functional description
- *	An error returned has been trapped.
- *
- **************************************/
 
 	TSQL tdsql = GET_THREAD_DATA;
 
@@ -2665,6 +2721,24 @@ static STATUS error()
 }
 
 
+/**
+  
+ 	execute_blob
+  
+    @brief	Open or create a blob.
+ 
+
+    @param request
+    @param in_blr_length
+    @param in_blr
+    @param in_msg_length
+    @param in_msg
+    @param out_blr_length
+    @param out_blr
+    @param out_msg_length
+    @param out_msg
+
+ **/
 static void execute_blob(	DSQL_REQ		request,
 							USHORT	in_blr_length,
 							UCHAR*	in_blr,
@@ -2675,16 +2749,6 @@ static void execute_blob(	DSQL_REQ		request,
 							USHORT	out_msg_length,
 							UCHAR*	out_msg)
 {
-/**************************************
- *
- *	e x e c u t e _ b l o b
- *
- **************************************
- *
- * Functional description
- *	Open or create a blob.
- *
- **************************************/
 	BLB blob;
 	SSHORT filter;
 	USHORT bpb_length;
@@ -2763,6 +2827,26 @@ static void execute_blob(	DSQL_REQ		request,
 }
 
 
+/**
+  
+ 	execute_request
+  
+    @brief	Execute a dynamic SQL statement.
+ 
+
+    @param request
+    @param trans_handle
+    @param in_blr_length
+    @param in_blr
+    @param in_msg_length
+    @param in_msg
+    @param out_blr_length
+    @param out_blr
+    @param out_msg_length
+    @param out_msg
+    @param singleton
+
+ **/
 static STATUS execute_request(DSQL_REQ			request,
 							  WHY_TRA*			trans_handle,
 							  USHORT			in_blr_length,
@@ -2775,16 +2859,6 @@ static STATUS execute_request(DSQL_REQ			request,
 							  UCHAR*			out_msg,
 							  USHORT			singleton)
 {
-/**************************************
- *
- *	e x e c u t e _ r e q u e s t
- *
- **************************************
- *
- * Functional description
- *	Execute a dynamic SQL statement.
- *
- **************************************/
 	DSQL_MSG message;
 	USHORT use_msg_length;
 	UCHAR *use_msg;
@@ -3081,19 +3155,20 @@ static STATUS execute_request(DSQL_REQ			request,
 }
 
 
+/**
+  
+ 	filter_sub_type
+  
+    @brief	Determine the sub_type to use in filtering
+ 	a blob.
+ 
+
+    @param request
+    @param node
+
+ **/
 static SSHORT filter_sub_type( DSQL_REQ request, DSQL_NOD node)
 {
-/**************************************
- *
- *	f i l t e r _ s u b _ t y p e
- *
- **************************************
- *
- * Functional description
- *	Determine the sub_type to use in filtering
- *	a blob.
- *
- **************************************/
 	PAR parameter, null;
 
 	if (node->nod_type == nod_constant)
@@ -3108,23 +3183,26 @@ static SSHORT filter_sub_type( DSQL_REQ request, DSQL_NOD node)
 }
 
 
+/**
+  
+ 	get_indices
+  
+    @brief	Retrieve the indices from the index tree in
+ 	the request info buffer, and print them out
+ 	in the plan buffer.
+ 
+
+    @param explain_length_ptr
+    @param explain_ptr
+    @param plan_length_ptr
+    @param plan_ptr
+
+ **/
 static BOOLEAN get_indices(
 						   SSHORT * explain_length_ptr,
 						   SCHAR ** explain_ptr,
 						   SSHORT * plan_length_ptr, SCHAR ** plan_ptr)
 {
-/**************************************
- *
- *	g e t _ i n d i c e s
- *
- **************************************
- *
- * Functional description
- *	Retrieve the indices from the index tree in
- *	the request info buffer, and print them out
- *	in the plan buffer.
- *
- **************************************/
 	SCHAR *explain, *plan;
 	SSHORT explain_length, plan_length;
 	USHORT length;
@@ -3184,22 +3262,24 @@ static BOOLEAN get_indices(
 }
 
 
+/**
+  
+ 	get_plan_info
+  
+    @brief	Get the access plan for the request and turn
+ 	it into a textual representation suitable for
+ 	human reading.
+ 
+
+    @param request
+    @param buffer_length
+    @param buffer
+
+ **/
 static USHORT get_plan_info(
 							DSQL_REQ request,
 							SSHORT buffer_length, SCHAR ** buffer)
 {
-/**************************************
- *
- *	g e t _ p l a n _ i n f o
- *
- **************************************
- *
- * Functional description
- *	Get the access plan for the request and turn
- *	it into a textual representation suitable for
- *	human reading.
- *
- **************************************/
 	SCHAR explain_buffer[256], *explain, *plan, *explain_ptr, *buffer_ptr;
 	SSHORT explain_length, i;
     //	USHORT join_count = 0, level = 0;
@@ -3282,20 +3362,22 @@ static USHORT get_plan_info(
 }
 
 
+/**
+  
+ 	get_request_info
+  
+    @brief	Get the records updated/deleted for record
+ 
+
+    @param request
+    @param buffer_length
+    @param buffer
+
+ **/
 static USHORT get_request_info(
 							   DSQL_REQ request,
 							   SSHORT buffer_length, SCHAR * buffer)
 {
-/**************************************
- *
- *	g e t _ r e q u e s t _ i n f o
- *
- **************************************
- *
- * Functional description
- *	Get the records updated/deleted for record
- *
- **************************************/
 	SCHAR *data;
 	UCHAR p;
 	TSQL tdsql;
@@ -3365,6 +3447,22 @@ static USHORT get_request_info(
 }
 
 
+/**
+  
+ 	get_rsb_item
+  
+    @brief	Use recursion to print out a reverse-polish
+ 	access plan of joins and join types.
+ 
+
+    @param explain_length_ptr
+    @param explain_ptr
+    @param plan_length_ptr
+    @param plan_ptr
+    @param parent_join_count
+    @param level_ptr
+
+ **/
 static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 							SCHAR **	explain_ptr,
 							SSHORT*		plan_length_ptr,
@@ -3372,17 +3470,6 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 							USHORT*		parent_join_count,
 							USHORT*		level_ptr)
 {
-/**************************************
- *
- *	g e t _ r s b _ i t e m
- *
- **************************************
- *
- * Functional description
- *	Use recursion to print out a reverse-polish
- *	access plan of joins and join types.
- *
- **************************************/
 	SCHAR *explain, *plan;
 	const SCHAR *p;
 	SSHORT explain_length, plan_length, rsb_type, length;
@@ -3654,18 +3741,18 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 }
 
 
+/**
+  
+ 	init
+  
+    @brief	Initialize dynamic SQL.  This is called only once.
+ 
+
+    @param db_handle
+
+ **/
 static DBB init(FRBRD** db_handle)
 {
-/**************************************
- *
- *	i n i t
- *
- **************************************
- *
- * Functional description
- *	Initialize dynamic SQL.  This is called only once.
- *
- **************************************/
 
 #ifdef ANY_THREADING
 	if (!mutex_inited) {
@@ -3812,6 +3899,22 @@ static DBB init(FRBRD** db_handle)
 }
 
 
+/**
+  
+ 	map_in_out
+  
+    @brief	Map data from external world into message or
+ 	from message to external world.
+ 
+
+    @param request
+    @param message
+    @param blr_length
+    @param blr
+    @param msg_length
+    @param dsql_msg
+
+ **/
 static void map_in_out(	DSQL_REQ		request,
 						DSQL_MSG		message,
 						USHORT	blr_length,
@@ -3819,17 +3922,6 @@ static void map_in_out(	DSQL_REQ		request,
 						USHORT	msg_length,
 						UCHAR*	dsql_msg)
 {
-/**************************************
- *
- *	m a p _ i n _ o u t
- *
- **************************************
- *
- * Functional description
- *	Map data from external world into message or
- *	from message to external world.
- *
- **************************************/
 	PAR parameter, null;
 	SSHORT *flag;
 
@@ -3917,18 +4009,18 @@ static void map_in_out(	DSQL_REQ		request,
 }
 
 
+/**
+  
+ 	name_length
+  
+    @brief	Compute length of user supplied name.
+ 
+
+    @param name
+
+ **/
 static USHORT name_length( TEXT * name)
 {
-/**************************************
- *
- *	n a m e _ l e n g t h
- *
- **************************************
- *
- * Functional description
- *	Compute length of user supplied name.
- *
- **************************************/
 	TEXT *p, *q;
 #define	BLANK	'\040'
 
@@ -3942,20 +4034,23 @@ static USHORT name_length( TEXT * name)
 }
 
 
+/**
+  
+ 	parse_blr
+  
+    @brief	Parse the message of a blr request.
+ 
+
+    @param blr_length
+    @param blr
+    @param msg_length
+    @param parameters
+
+ **/
 static USHORT parse_blr(
 						USHORT blr_length,
 						UCHAR * blr, USHORT msg_length, PAR parameters)
 {
-/**************************************
- *
- *	p a r s e _ b l r
- *
- **************************************
- *
- * Functional description
- *	Parse the message of a blr request.
- *
- **************************************/
 	PAR parameter, null;
 	USHORT count, index, offset, align, null_offset;
 	DSC desc;
@@ -4134,23 +4229,27 @@ static USHORT parse_blr(
 }
 
 
+/**
+  
+ 	prepare
+  
+    @brief	Prepare a statement for execution.  Return SQL status
+ 	code.  Note: caller is responsible for pool handing.
+ 
+
+    @param request
+    @param string_length
+    @param string
+    @param client_dialect
+    @param parser_version
+
+ **/
 static DSQL_REQ prepare(
 				   DSQL_REQ request,
 				   USHORT string_length,
 				   TEXT * string,
 				   USHORT client_dialect, USHORT parser_version)
 {
-/**************************************
- *
- *	p r e p a r e
- *
- **************************************
- *
- * Functional description
- *	Prepare a statement for execution.  Return SQL status
- *	code.  Note: caller is responsible for pool handing.
- *
- **************************************/
 	STATUS status;
 	DSQL_NOD node;
 	DSQL_MSG message;
@@ -4355,18 +4454,17 @@ static DSQL_REQ prepare(
 }
 
 
+/**
+  
+ 	punt
+  
+    @brief	Report a signification error.
+ 
+
+
+ **/
 static void punt(void)
 {
-/**************************************
- *
- *	p u n t
- *
- **************************************
- *
- * Functional description
- *	Report a signification error.
- *
- **************************************/
 	struct tsql *tdsql;
 
 	tdsql = GET_THREAD_DATA;
@@ -4375,24 +4473,28 @@ static void punt(void)
 }
 
 
+/**
+  
+ 	put_item
+  
+    @brief	Put information item in output buffer if there is room, and
+ 	return an updated pointer.  If there isn't room for the item,
+ 	indicate truncation and return NULL.
+ 
+
+    @param item
+    @param length
+    @param string
+    @param ptr
+    @param end
+
+ **/
 static UCHAR* put_item(	UCHAR	item,
 						USHORT	length,
 						UCHAR*	string,
 						UCHAR*	ptr,
 						UCHAR*	end)
 {
-/**************************************
- *
- *	p u t _ i t e m
- *
- **************************************
- *
- * Functional description
- *	Put information item in output buffer if there is room, and
- *	return an updated pointer.  If there isn't room for the item,
- *	indicate truncation and return NULL.
- *
- **************************************/
 
 	if (ptr + length + 3 >= end) {
 		*ptr = gds_info_truncated;
@@ -4414,18 +4516,19 @@ static UCHAR* put_item(	UCHAR	item,
 }
 
 
+/**
+  
+ 	release_request
+  
+    @brief	Release a dynamic request.
+ 
+
+    @param request
+    @param top_level
+
+ **/
 static void release_request(DSQL_REQ request, USHORT top_level)
 {
-/**************************************
- *
- *	r e l e a s e _ r e q u e s t
- *
- **************************************
- *
- * Functional description
- *	Release a dynamic request.
- *
- **************************************/
 
 	STATUS status_vector[ISC_STATUS_LENGTH];
 
@@ -4498,18 +4601,17 @@ static void release_request(DSQL_REQ request, USHORT top_level)
 }
 
 
+/**
+  
+ 	return_success
+  
+    @brief	Set up status vector to reflect successful execution.
+ 
+
+
+ **/
 static STATUS return_success(void)
 {
-/**************************************
- *
- *	r e t u r n _ s u c c e s s
- *
- **************************************
- *
- * Functional description
- *	Set up status vector to reflect successful execution.
- *
- **************************************/
 
 	TSQL tdsql = GET_THREAD_DATA;
 
@@ -4531,22 +4633,27 @@ static STATUS return_success(void)
 #define ToUC(s) (reinterpret_cast<UCHAR *>(s))
 #define ToSC(s) (reinterpret_cast<SCHAR *>(s))
 
+/**
+  
+ 	var_info
+  
+    @brief	Provide information on an internal message.
+ 
+
+    @param message
+    @param items
+    @param end_describe
+    @param info
+    @param end
+    @param first_index
+
+ **/
 static UCHAR *var_info(
 					   DSQL_MSG message,
 					   const UCHAR * items,
 					   const UCHAR * end_describe,
 					   UCHAR * info, UCHAR * end, USHORT first_index)
 {
-/**************************************
- *
- *	v a r _ i n f o
- *
- **************************************
- *
- * Functional description
- *	Provide information on an internal message.
- *
- **************************************/
 	PAR par;
 	UCHAR item, *buffer, buf[128];
 	const UCHAR *describe;
