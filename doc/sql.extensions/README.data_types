@@ -23,7 +23,8 @@ BIGINT (FB 1.5)
     2. CREATE TABLE TABLE1 (FIELD1 BIGINT);
 	
   Note(s):
-	Quote from the SQL-99 specification:
+    1. Available in Dialect 3 only.
+    2. Quote from the SQL-99 specification:
 
 	SMALLINT, INTEGER, and BIGINT specify the data type exact numeric,
 	with scale of 0 (zero) and binary or decimal precision. The choice

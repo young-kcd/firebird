@@ -28,6 +28,10 @@ CURRENT_CONNECTION / CURRENT_TRANSACTION (FB 1.5)
     2. NEW.CONN_ID = CURRENT_TRANSACTION;
     3. EXECUTE PROCEDURE P_LOGIN(CURRENT_CONNECTION);
 
+  Note(s):
+    These values are stored on the database header page,
+    so they will be reset after a database restore.
+
 
 ROW_COUNT (FB 1.5)
 ------------------
