@@ -161,7 +161,6 @@ static const struct
 	{"nullsfirst", zero},
 	{"writelock", zero},
 	{"nullslast", zero}, /* 180 */
-    {"current_database", zero},
 	{0, 0}
 };
 
