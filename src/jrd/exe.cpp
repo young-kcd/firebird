@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.54 2003-04-25 14:49:39 alexpeshkoff Exp $
+$Id: exe.cpp,v 1.55 2003-04-25 17:15:43 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -1228,7 +1228,7 @@ static JRD_NOD erase(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 			assert(tdbb->tdbb_transaction->tra_pool);
 			tdbb->tdbb_transaction->tra_rpblist = 
 				FB_NEW(*tdbb->tdbb_transaction->tra_pool) 
-					traRpbList(tdbb->tdbb_transaction->tra_pool);
+					traRpbList(tdbb->tdbb_database->dbb_permanent);
 		}
 		int rpblevel = tdbb->tdbb_transaction->
 					tra_rpblist->PushRpb(rpb);
@@ -2288,7 +2288,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 
 			case jrd_req::req_unwind:
 				if ((request->req_label == (USHORT) node->nod_arg[e_lbl_label]) &&
-							(request->req_flags & req_leave)) {
+						(request->req_flags & (req_leave | req_error_handler))) {
 					request->req_flags &= ~req_leave;
 					request->req_operation = jrd_req::req_return;
 				}
@@ -2859,7 +2859,7 @@ static JRD_NOD modify(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 				assert(tdbb->tdbb_transaction->tra_pool);
 				tdbb->tdbb_transaction->tra_rpblist = 
 					FB_NEW(*tdbb->tdbb_transaction->tra_pool) 
-						traRpbList(tdbb->tdbb_transaction->tra_pool);
+						traRpbList(tdbb->tdbb_database->dbb_permanent);
 			}
 			int rpblevel = tdbb->tdbb_transaction->
 							tra_rpblist->PushRpb(org_rpb);
