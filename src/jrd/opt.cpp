@@ -762,6 +762,12 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		find_index_relationship_streams(tdbb, opt, streams, 
 			dependent_streams, free_streams);
 
+		// If we have dependent and free streams then we can't rely on 
+		// the sort node to be used for index navigation.
+		if (dependent_streams[0] && free_streams[0]) {
+			sort = NULL;
+		}
+
 		if (dependent_streams[0]) {
 			// copy free streams
 			for (i = 0; i <= free_streams[0]; i++) {
