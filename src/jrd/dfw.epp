@@ -3564,6 +3564,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	//blob_id.clear();
 
 	USHORT n;
+	int physical_fields = 0;
 	bool external_flag = false;
 	bool computed_field;
 	ISC_STATUS_ARRAY status;
@@ -3762,6 +3763,8 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					// dimitr: view fields shouldn't be marked as computed
 					if (null_view && !FLD.RDB$COMPUTED_BLR.isEmpty())
 						tfb->tfb_flags |= TFB_computed;
+					else
+						++physical_fields;
 
 					tfb->tfb_id = RFR.RDB$FIELD_ID;
 
@@ -3785,6 +3788,18 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 				if (!REQUEST(irq_format2))
 					REQUEST(irq_format2) = request_fmtx;
+					
+				if (!physical_fields)
+				{
+					EXE_unwind(tdbb, request_fmt1);
+					ERR_post(isc_no_meta_update,
+							 isc_arg_gds, isc_table_name,
+							 isc_arg_string, ERR_cstring(work->dfw_name),
+							 isc_arg_gds, isc_random,
+							 isc_arg_string,
+			 				 "Can't have relation with only computed fields or constraints",
+							 0);
+				}
 
 				blob = setup_triggers(tdbb, relation, null_view, triggers, blob);
 
@@ -4156,8 +4171,8 @@ static void put_summary_blob(blb* blob, RSR_T type, bid* blob_id)
 	blb* blr = BLB_open(tdbb, dbb->dbb_sys_trans, blob_id);
 	fb_assert(blr->blb_length <= MAX_USHORT);
 	USHORT length = (USHORT)blr->blb_length;
-	UCHAR *buffer = (length > sizeof(temp)) ?
-		FB_NEW(*getDefaultMemoryPool()) UCHAR[blr->blb_length] : temp;
+	UCHAR* const buffer = (length > sizeof(temp)) ?
+		FB_NEW(*getDefaultMemoryPool()) UCHAR[length] : temp;
 	try {
 		length = (USHORT)BLB_get_data(tdbb, blr, buffer, (SLONG) length);
 		put_summary_record(blob, type, buffer, length);
@@ -4192,7 +4207,7 @@ static void put_summary_record(blb*		blob,
 	thread_db* tdbb = JRD_get_thread_data();
 	UCHAR temp[129];
 
-	UCHAR* buffer = ((size_t) (length + 1) > sizeof(temp)) ?
+	UCHAR* const buffer = ((size_t) (length + 1) > sizeof(temp)) ?
 		FB_NEW(*getDefaultMemoryPool()) UCHAR[length + 1] : temp;
 
 	UCHAR* p = buffer;
