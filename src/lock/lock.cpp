@@ -36,7 +36,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.41 2003-03-24 14:32:33 skidder Exp $
+$Id: lock.cpp,v 1.42 2003-03-25 12:07:05 skidder Exp $
 */
 
 #include "firebird.h"
@@ -350,7 +350,7 @@ extern int chmod();
 #endif
 
 #if defined WIN_NT && defined USE_BLOCKING_THREAD
-static DWORD blocking_action_thread_id;
+static HANDLE blocking_action_thread_handle;
 #endif
 
 static const UCHAR compatibility[] = {
@@ -832,7 +832,7 @@ int LOCK_init(
 	AST_ALLOC;
 	if (gds__thread_start
 		(reinterpret_cast < FPTR_INT_VOID_PTR > (blocking_action_thread),
-		 &LOCK_owner_offset, THREAD_critical, 0, &blocking_action_thread_id)) {
+		 &LOCK_owner_offset, THREAD_critical, 0, &blocking_action_thread_handle)) {
 		*status_vector++ = gds_arg_gds;
 		*status_vector++ = gds_lockmanerr;
 		*status_vector++ = gds_arg_gds;
@@ -4126,11 +4126,10 @@ static void shutdown_blocking_thread( STATUS * status_vector)
 	LOCK_owner_offset = 0;
 
 #ifdef WIN_NT
-	HANDLE hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, blocking_action_thread_id);
 	SetEvent(blocking_event[0]);
 	AST_ENABLE;
-	WaitForSingleObject(hThread, 10*1000 /* Give it 10 seconds for clean shutdown */);
-	CloseHandle(hThread);
+	WaitForSingleObject(blocking_action_thread_handle, 10*1000 /* Give it 10 seconds for clean shutdown */);
+	CloseHandle(blocking_action_thread_handle);
 	CloseHandle(blocking_event[0]);
 	CloseHandle(wakeup_event[0]);
 #endif
@@ -5176,8 +5175,10 @@ static USHORT wait_for_request(
 #ifndef SUPERSERVER
 		/* See if all the other owners are still alive.  Dead ones will be purged,
 		   purging one might resolve our lock request. */
-
-		else if (probe_owners(owner_offset) &&
+		/* Do not do rescan of owners if we received notification that
+		   blocking ASTs have completed - will do it next time if needed */
+		else if (!(owner->own_flags & OWN_asts_processed) &&
+			     probe_owners(owner_offset) &&
 				 !(request->lrq_flags & LRQ_pending))
 		{
 			release(owner_offset);
