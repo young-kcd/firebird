@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: semaphore.h,v 1.1 2003-09-16 20:45:31 skidder Exp $
+ *  $Id: semaphore.h,v 1.2 2003-09-16 21:45:47 skidder Exp $
  *
  */
 
@@ -104,10 +104,10 @@ public:
 				system_call_failed::raise();
 		} else {
 			struct timespec timeout;
-			timeout.tv_sec = time() + seconds;
+			timeout.tv_sec = time(NULL) + seconds;
 			timeout.tv_nsec = 0;
 			if (sem_timedwait(&sem, &timeout) == 0) return true;
-			if (errno == ETIMEOUT) return false;
+			if (errno == ETIMEDOUT) return false;
 			system_call_failed::raise();
 		}
 		return false;
