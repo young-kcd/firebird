@@ -69,7 +69,8 @@ void MOVD_move(const dsc* from, dsc* to)
  **/
 static void post_error( ISC_STATUS status, ...)
 {
-	ISC_STATUS *v, *v_end, *temp;
+	ISC_STATUS *v;
+	const ISC_STATUS* temp, *v_end;
 	ISC_STATUS_ARRAY temp_status;
 
 	tsql* tdsql = DSQL_get_thread_data();
@@ -82,7 +83,7 @@ static void post_error( ISC_STATUS status, ...)
 	STUFF_STATUS(temp_status, status);
 
 	v = tdsql->tsql_status;
-	v_end = v + 20;
+	v_end = v + ISC_STATUS_LENGTH;
 	*v++ = isc_arg_gds;
 	*v++ = isc_dsql_error;
 	*v++ = isc_arg_gds;
@@ -92,6 +93,7 @@ static void post_error( ISC_STATUS status, ...)
 
 	for (temp = temp_status; v < v_end && (*v = *temp) != isc_arg_end;
 		 v++, temp++)
+	{
 		switch (*v) {
 		case isc_arg_cstring:
 			*++v = *++temp;
@@ -100,7 +102,8 @@ static void post_error( ISC_STATUS status, ...)
 		default:
 			*++v = *++temp;
 			break;
-		};
+		}
+	}
 
 	ERRD_punt();
 }
