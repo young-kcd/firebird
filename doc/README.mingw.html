@@ -15,8 +15,8 @@ Date: April 8 2003<br>
 Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 
 <h3>0.-Introduction</h3>
-<p>The 1.5 beta 4 is the first available MSYS/MINGW build.<p>
-<p>The only difference between the msvc build and the mingw build, is that the later one does not support the ms SEH exception handling. This is an important difference because some exceptions will not be catched and thus FB will abort, the sources using this exception handling are jrd/blob_filter.cpp, jrd/exe.cpp and jrd/fun.epp.</p>
+<p>The MSYS/MINGW build was started with 1.5 beta 4.<p>
+<p>The only difference between the msvc build and the mingw build, is that the later one does not support the ms SEH exception handling. This means that some exceptions will not be catched and thus FB will abort.The sources using this exception handling are jrd/blob_filter.cpp, jrd/exe.cpp and jrd/fun.epp.</p>
 <p>This port is maintained by Blas Rodriguez Somoza and Dmitry Sibiriakov.</p>
 
 <h3>1.-TODO</h3>
@@ -74,7 +74,6 @@ The valid switches for autogen are<br>
 --enable-debug          Select debug build, default production build.<br>
 </li>
 <li>Make the build. For instance if you want to get compiler messages isolated from make log<br> make > make.log 2>comp.log</li>
-<li>Depending on your configuration, you can get an error in the v5_examples target. This error is related with a failure in the lock mechanism. If you get this error you can finish the build using the make again. This error can be also avoided removing the v5_examples target from the builds/posix/Makefile.in.firebird, before you use the autogen.sh.</li>
 <li>After the build finish, the firebird directory with the binaries is created as gen/firebird.</li> 
 </ol>
 
