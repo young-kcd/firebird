@@ -690,9 +690,7 @@ STATUS filter_transliterate_text(USHORT action, CTL control)
 	switch (action) {
 	case ACTION_open:
 	case ACTION_create:
-		for (i = 0;
-			 i < (sizeof(control->ctl_data) / sizeof(control->ctl_data[0]));
-			 i++)
+		for (i = 0; i < FB_NELEM(control->ctl_data); i++)
 			control->ctl_data[i] = 0;
 		aux = NULL;
 

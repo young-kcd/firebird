@@ -276,6 +276,6 @@ static CONST struct ini_idx_t indices[] = {
 
 };
 
-#define SYSTEM_INDEX_COUNT (sizeof(indices) / sizeof(indices[0]))
+#define SYSTEM_INDEX_COUNT FB_NELEM(indices)
 
 #endif /* _JRD_IDX_H_ */

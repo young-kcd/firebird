@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
 	int max, *stuff, blr;
 	SCHAR buffer[100], *s;
 
-	for (blr = 0; blr < (sizeof(table) / sizeof(table[0])); blr++) {
+	for (blr = 0; blr < FB_NELEM(table); blr++) {
 		table[blr] = NULL;
 		table2[blr] = NULL;
 		lengths[blr] = NULL;

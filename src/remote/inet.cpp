@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.43 2002-11-18 16:20:06 skidder Exp $
+$Id: inet.cpp,v 1.44 2002-12-02 09:43:50 eku Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -641,9 +641,6 @@ static BOOLEAN	port_mutex_inited = 0;
 #endif
 
 
-#define INET_PRIVATE_COUNTOF(ARRAY)	(sizeof(ARRAY) / sizeof(ARRAY[0]))
-
-
 PORT INET_analyze(	TEXT*	file_name,
 					USHORT*	file_length,
 					STATUS*	status_vector,
@@ -750,7 +747,7 @@ PORT INET_analyze(	TEXT*	file_name,
 #endif
 	};
 
-	cnct->p_cnct_count = INET_PRIVATE_COUNTOF(protocols_to_try1);
+	cnct->p_cnct_count = FB_NELEM(protocols_to_try1);
 
 	copy_p_cnct_repeat_array(	cnct->p_cnct_versions,
 								protocols_to_try1,
@@ -787,7 +784,7 @@ PORT INET_analyze(	TEXT*	file_name,
 			{PROTOCOL_VERSION7, ARCHITECTURE, ptype_rpc, MAX_PTYPE,			5}
 		};
 
-		cnct->p_cnct_count = INET_PRIVATE_COUNTOF(protocols_to_try2);
+		cnct->p_cnct_count = FB_NELEM(protocols_to_try2);
 
 		copy_p_cnct_repeat_array(	cnct->p_cnct_versions,
 									protocols_to_try2,
@@ -816,7 +813,7 @@ PORT INET_analyze(	TEXT*	file_name,
 			{PROTOCOL_VERSION4, ARCHITECTURE, ptype_rpc, ptype_batch_send, 5}
 		};
 
-		cnct->p_cnct_count = INET_PRIVATE_COUNTOF(protocols_to_try3);
+		cnct->p_cnct_count = FB_NELEM(protocols_to_try3);
 
 		copy_p_cnct_repeat_array(	cnct->p_cnct_versions,
 									protocols_to_try3,
@@ -1477,7 +1474,7 @@ static int accept_connection(PORT port, P_CNCT* cnct)
 
 			initgroups(passwd->pw_name, passwd->pw_gid);
 			if (eff_gid != -1) {
-				const int gid_count = getgroups(sizeof(gids) / sizeof(SLONG), (gid_t*)gids);
+				const int gid_count = getgroups(FB_NELEM(gids), (gid_t*)gids);
 				for (i = 0; i < gid_count; ++i) {
 					if (gids[i] == eff_gid) {
 						break;

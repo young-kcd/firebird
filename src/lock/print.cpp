@@ -80,7 +80,6 @@ struct waitque {
 	USHORT waitque_depth;
 	PTR waitque_entry[30];
 };
-#define COUNT(x)	(sizeof (x)/ sizeof ((x)[0]))
 
 static void prt_lock_activity(OUTFILE, LHB, USHORT, USHORT, USHORT);
 static void prt_lock_init(void);
@@ -1058,7 +1057,7 @@ static void prt_owner_wait_cycle(
 		USHORT counter;
 		BOOLEAN owner_conversion;
 
-		if (waiters->waitque_depth > COUNT(waiters->waitque_entry)) {
+		if (waiters->waitque_depth > FB_NELEM(waiters->waitque_entry)) {
 			FPRINTF(outfile, "Dependency too deep\n");
 			return;
 		};

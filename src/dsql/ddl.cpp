@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.27 2002-11-30 17:36:40 hippoman Exp $
+ * $Id: ddl.cpp,v 1.28 2002-12-02 09:43:45 eku Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -4713,7 +4713,7 @@ static void modify_domain( DSQL_REQ request)
 
     /* Is MOVE_CLEAR enough for all platforms?
     MOVE_CLEAR (repetition_count, sizeof (repetition_count)); */
-    USHORT rtop = sizeof (repetition_count) / sizeof (repetition_count [0]);
+    USHORT rtop = FB_NELEM(repetition_count);
     BOOLEAN *p = repetition_count;
     while (p < repetition_count + rtop) {
         *p++ = 0;
@@ -5298,7 +5298,7 @@ static void put_dtype(DSQL_REQ request, DSQL_FLD field, USHORT use_subtype)
 #ifdef DEV_BUILD
 /* Check if the field describes a known datatype */
 
-	if (field->fld_dtype > sizeof(blr_dtypes) / sizeof(blr_dtypes[0]) ||
+	if (field->fld_dtype > FB_NELEM(blr_dtypes) ||
 		!blr_dtypes[field->fld_dtype]) {
 		SCHAR buffer[100];
 

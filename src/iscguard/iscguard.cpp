@@ -777,7 +777,7 @@ HWND DisplayPropSheet(HWND hParentWnd, HINSTANCE hInst)
 	PSHdr.hInstance = hInstance;
 	PSHdr.pszIcon = MAKEINTRESOURCE(IDI_IBGUARD);
 	PSHdr.pszCaption = (LPSTR) APP_LABEL;
-	PSHdr.nPages = sizeof(PSPages) / sizeof(PROPSHEETPAGE);
+	PSHdr.nPages = FB_NELEM(PSPages);
 	PSHdr.nStartPage = 0;
 	PSHdr.ppsp = (LPCPROPSHEETPAGE) & PSPages;
 	PSHdr.pfnCallback = NULL;

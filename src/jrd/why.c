@@ -39,7 +39,7 @@
  *
  */
 /*
-$Id: why.c,v 1.27 2002-11-18 10:13:20 eku Exp $
+$Id: why.c,v 1.28 2002-12-02 09:43:49 eku Exp $
 */
 
 #include "firebird.h"
@@ -4865,7 +4865,7 @@ STATUS API_ROUTINE_VARARG GDS_START_TRANSACTION(STATUS * user_status,
 	STATUS status;
 	va_list ptr;
 
-	if (GDS_VAL(count) <= sizeof(tebs) / sizeof(struct teb))
+	if (GDS_VAL(count) <= FB_NELEM(tebs))
 		teb = tebs;
 	else
 		teb = (TEB *) alloc((SLONG) (sizeof(struct teb) * GDS_VAL(count)));

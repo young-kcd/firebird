@@ -935,7 +935,7 @@ CONST TEXT *DSC_dtype_tostring(UCHAR dtype)
      *	Convert a datatype to its textual representation	
      *	
      **************************************/
-	if (dtype < (sizeof(DSC_dtype_names) / sizeof(DSC_dtype_names[0])))
+	if (dtype < FB_NELEM(DSC_dtype_names))
 		return DSC_dtype_names[dtype];
 	else
 		return "<unknown>";

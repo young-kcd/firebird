@@ -136,8 +136,7 @@ BOOLEAN INUSE_insert(IUO inuse, void *new_object, BOOLEAN dup_flag)
 		else if (!dup_flag && *ptr == new_object)
 			return FALSE;
 
-	if (inuse->iuo_in_use_count >=
-		sizeof(inuse->iuo_object) / sizeof(inuse->iuo_object[0])) {
+	if (inuse->iuo_in_use_count >= FB_NELEM(inuse->iuo_object)) {
 		IUO new_inuse;
 
 #ifdef DEV_BUILD

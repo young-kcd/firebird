@@ -3183,10 +3183,11 @@ static void setup_creprc_info(
  **************************************/
 	ITM items[16];
 	SLONG values[16];
-	SSHORT i, lengths[16];
+	SSHORT lengths[16];
 	ITMQ *quota;
+	int i;
 
-	for (i = sizeof(items) / sizeof(ITM); i--;) {
+	for (i = FB_NELEM(items); i--;) {
 		items[i].itm_length = sizeof(SLONG);
 		items[i].itm_buffer = &values[i];
 		items[i].itm_return_length = &lengths[i];
@@ -3215,7 +3216,7 @@ static void setup_creprc_info(
 	items[15].itm_length = 0;
 
 	if (sys$getjpiw(NULL, NULL, NULL, items, NULL, NULL, NULL) & 1) {
-		for (quota = *quotas, i = sizeof(items) / sizeof(ITM); i--;)
+		for (quota = *quotas, i = FB_NELEM(items); i--;)
 			if (lengths[i]) {
 				switch (items[i].itm_code) {
 				case JPI$_ASTLM:

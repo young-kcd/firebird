@@ -71,7 +71,7 @@ main(argc, argv)
 
 #ifdef VMS
 	vector = defaults;
-	argc = sizeof(defaults) / sizeof(char *);
+	argc = FB_NELEM(defaults);
 #else
 	if (argc <= 1) {
 		ib_printf("usage: dtest Intl_module_name\n");

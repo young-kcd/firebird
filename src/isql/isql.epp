@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.16 2002-11-13 07:07:56 eku Exp $
+  $Id: isql.epp,v 1.17 2002-12-02 09:43:47 eku Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -3954,9 +3954,9 @@ static SSHORT frontend( TEXT * statement)
    to delimit.   Each word beyond a real word gets a null char 
    Shift parms to upper case, leaving original case in lparms */
 
-	for (i = 0; i < sizeof(lparms) / sizeof(lparms[0]); i++)
+	for (i = 0; i < FB_NELEM(lparms); i++)
 		lparms[i] = NULL;
-	for (i = 0; i < sizeof(parms) / sizeof(parms[0]); i++)
+	for (i = 0; i < FB_NELEM(parms); i++)
 		parms[i] = NULL;
 
 	p = statement;

@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.26 2002-11-30 17:43:19 hippoman Exp $
+$Id: par.cpp,v 1.27 2002-12-02 09:43:48 eku Exp $
 */
 
 #include "firebird.h"
@@ -2266,8 +2266,7 @@ static JRD_NOD parse(TDBB tdbb, register CSB * csb, USHORT expected)
 
 	operator_ = BLR_BYTE;
 
-	if (! (operator_ >= 0 && 
-           operator_ < sizeof(type_table) / sizeof(type_table[0]))) {
+	if (operator_ < 0 && operator_ >= FB_NELEM(type_table)) {
         syntax_error(*csb, "valid BLR code");
     }
 

@@ -234,8 +234,7 @@ BLF DLL_EXPORT BLF_lookup_internal_filter(TDBB tdbb, SSHORT from, SSHORT to)
 
 /* Check for system defined filter */
 
-	if (to == BLOB_text && from >= 0
-		&& from < sizeof(filters) / sizeof(filters[0])) {
+	if (to == BLOB_text && from >= 0 && from < FB_NELEM(filters)) {
 		result = FB_NEW(*dbb->dbb_permanent) blf;
 		result->blf_next = NULL;
 		result->blf_from = from;

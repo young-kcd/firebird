@@ -1308,12 +1308,11 @@ int API_ROUTINE gds__version(
 		implementation = *implementations++;
 		class_ = *implementations++;
 		l = *versions++;
-		if (implementation >=
-			((sizeof(impl_implementation) / sizeof(impl_implementation[0])))
+		if (implementation >= FB_NELEM(impl_implementation)
 			|| !(implementation_string =
 				 const_cast < char *>(impl_implementation[implementation])))
 			implementation_string = "**unknown**";
-		if (class_ >= ((sizeof(impl_class) / sizeof(impl_class[0]))) ||
+		if (class_ >= FB_NELEM(impl_class) ||
 			!(class_string = const_cast < char *>(impl_class[class_])))
 			class_string = "**unknown**";
 		sprintf(s, "%s (%s), version \"%.*s\"",
@@ -1358,8 +1357,7 @@ USHORT class_, USHORT cbuflen, TEXT * cbuf)
 	int len;
 
 	if (ibuflen > 0) {
-		if (implementation >= ((sizeof(impl_implementation) /
-								sizeof(impl_implementation[0]))) ||
+		if (implementation >= FB_NELEM(impl_implementation) ||
 			!(impl_implementation[implementation])) {
 			strncpy(ibuf, "**unknown**", ibuflen - 1);
 			ibuf[MIN(11, ibuflen - 1)] = '\0';
@@ -1372,8 +1370,7 @@ USHORT class_, USHORT cbuflen, TEXT * cbuf)
 	}
 
 	if (cbuflen > 0) {
-		if (class_ >= ((sizeof(impl_class) / sizeof(impl_class[0]))) ||
-			!(impl_class[class_])) {
+		if (class_ >= FB_NELEM(impl_class) || !(impl_class[class_])) {
 			strncpy(cbuf, "**unknown**", cbuflen - 1);
 			ibuf[MIN(11, cbuflen - 1)] = '\0';
 		}

@@ -1724,8 +1724,7 @@ SLONG API_ROUTINE gds__interprete(char *s, STATUS ** vector)
 			if (gds__msg_format(0, fac, (USHORT) decoded,
 								128, s, args[0], args[1], args[2], args[3],
 								args[4]) < 0) {
-				if ((decoded < (int)(sizeof(messages) / sizeof(messages[0])) - 1)
-					&& (decoded >= 0))
+				if ((decoded < FB_NELEM(messages) - 1) && (decoded >= 0))
 					sprintf(s, messages[decoded], args[0], args[1], args[2],
 							args[3], args[4]);
 				else
@@ -3006,7 +3005,7 @@ SLONG API_ROUTINE gds__sqlcode(STATUS * status_vector)
 
 				code = (USHORT) gds__decode(status_vector[1], &fac, &class_);
 
-				if ((code < sizeof(gds__sql_code) / sizeof(gds__sql_code[0])) &&
+				if ((code < FB_NELEM(gds__sql_code)) &&
 					(gds__sql_code[code] != GENERIC_SQLCODE))
 				{
 					sqlcode = gds__sql_code[code];
@@ -3773,7 +3772,7 @@ static void blr_print_blr(CTL control, UCHAR operator_)
  **************************************/
 	SCHAR *p;
 
-	if (operator_ > (sizeof(blr_table) / sizeof(blr_table[0])) ||
+	if (operator_ > FB_NELEM(blr_table) ||
 		!(p = (SCHAR *) /* const_cast */ blr_table[operator_].blr_string))
 		blr_error(control, "*** blr operator %d is undefined ***",
 				  (int) operator_);

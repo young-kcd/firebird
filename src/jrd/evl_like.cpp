@@ -279,10 +279,7 @@ USHORT SLEUTH_MERGE_NAME(TDBB tdbb_dummy,
 		c = *control++;
 		if (*control == GDML_SUBSTITUTE) {
 			/* Note: don't allow substitution characters larger than vector */
-
-			end_vector =
-				vector +
-				((((int) c) < sizeof(vector) / sizeof(vector[0])) ? c : 0);
+			end_vector = vector + (((int)c < FB_NELEM(vector)) ? c : 0);
 			while (v <= end_vector)
 				*v++ = 0;
 			*end_vector = t;

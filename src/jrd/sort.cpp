@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.18 2002-11-17 15:51:25 dimitr Exp $
+ * $Id: sort.cpp,v 1.19 2002-12-02 09:43:49 eku Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -2350,7 +2350,7 @@ static void merge_runs(SCB scb, USHORT n)
 	RMH *m1, *m2, streams[32];
 	BLOB_PTR *buffer;
 
-	assert((n - 1) <= (sizeof(blks) / sizeof(blks[0])));	/* stack var big enuf? */
+	assert((n - 1) <= FB_NELEM(blks));	/* stack var big enuf? */
 
 	scb->scb_longs -= SIZEOF_SR_BCKPTR_IN_LONGS;
 

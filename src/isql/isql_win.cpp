@@ -71,8 +71,6 @@ SCROLLKEYS key2scroll[] = {
 	{VK_RIGHT, WM_HSCROLL, SB_PAGEDOWN}
 };
 
-#define NUMKEYS (sizeof key2scroll / sizeof key2scroll[0])
-
 /* data initialized by first instance */
 
 typedef struct tagSETUPDATA {
@@ -746,7 +744,7 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 		/* Translate various keydown messages to appropriate horizontal */
 		/* and vertical scroll actions. */
 
-		for (i = 0; i < NUMKEYS; i++) {
+		for (i = 0; i < FB_NELEM(key2scroll); i++) {
 			if (wParam == key2scroll[i].wVirtkey) {
 				SendMessage(hWnd, key2scroll[i].iMessage,
 							key2scroll[i].wRequest, 0L);

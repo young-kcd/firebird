@@ -378,7 +378,7 @@ static void build_iberror_h(void)
 
 /* Append the ISC boiler plate */
 
-   int numLines = sizeof(isc_c_boiler_plate) / sizeof(SCHAR *);
+   int numLines = FB_NELEM(isc_c_boiler_plate);
     for (int i=0; i < numLines; i++) {
 		ib_fprintf(iberror, "%s\n", isc_c_boiler_plate[i]);
     }
@@ -446,7 +446,7 @@ static void build_codes_h(void)
 
 /* Append the C++ boiler plate */
 
-   int numLines = sizeof(cpp_boiler_plate) / sizeof(SCHAR *);
+   int numLines = FB_NELEM(cpp_boiler_plate);
     for (int i=0; i < numLines; i++) {
 		ib_fprintf(c_codes, "%s\n", cpp_boiler_plate[i]);
     }
@@ -518,7 +518,7 @@ static void build_codes_h(void)
     last_code = code - 1;
 	new_code = 0L;
 
-    numLines = sizeof(c_boiler_plate) / sizeof(SCHAR *);
+    numLines = FB_NELEM(c_boiler_plate);
     for (int i=0; i < numLines; i++) {
 		ib_fprintf(c_codes, "%s\n", c_boiler_plate[i]);
     }
@@ -642,7 +642,7 @@ CONST\n\
 \tgds_err_base\t\t= %ld;\n\
 \tgds_err_factor\t\t= %ld;\n", gds_facility, (SLONG) gds_base, (SLONG) gds_factor);
 
-   int numLines = sizeof(pas_boiler_plate) / sizeof(SCHAR *);
+   int numLines = FB_NELEM(pas_boiler_plate);
     for (int i=0; i < numLines; i++) {
 		ib_fprintf(pas_codes, "%s\n", pas_boiler_plate[i]);
     }
@@ -656,7 +656,7 @@ CONST\n\
      + GDS_ERR_BASE,\n\
      + GDS_ERR_FACTOR\n");
 
-    numLines = sizeof(ftn_boiler_plate_decls) / sizeof(SCHAR *);
+    numLines = FB_NELEM(ftn_boiler_plate_decls);
     for (int i=0; i < numLines; i++) {
 		ib_fprintf(ftn_codes, "%s\n", ftn_boiler_plate_decls[i]);
     }
@@ -667,7 +667,7 @@ CONST\n\
      + GDS_ERR_BASE    = %ld,\n\
      + GDS_ERR_FACTOR  = %ld)\n", gds_facility, (SLONG) gds_base, (SLONG) gds_factor);
 
-    numLines = sizeof(ftn_boiler_plate_data) / sizeof(SCHAR *);
+    numLines = FB_NELEM(ftn_boiler_plate_data);
     for (int i=0; i < numLines; i++) {
 		ib_fprintf(ftn_codes, "%s\n", ftn_boiler_plate_data[i]);
     }

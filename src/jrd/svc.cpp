@@ -3158,7 +3158,7 @@ static void service_fork(TEXT * service_path, SVC service)
 		}
 	}
 
-	if (argc > sizeof(argv_buf) / sizeof(TEXT *))
+	if (argc > FB_NELEM(argv_buf))
 		argv = (TEXT **) gds__alloc((SLONG) (argc * sizeof(TEXT *)));
 	else
 		argv = argv_buf;

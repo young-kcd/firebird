@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: y-valve.cpp,v 1.19 2002-11-17 00:10:49 hippoman Exp $
+$Id: y-valve.cpp,v 1.20 2002-12-02 09:43:49 eku Exp $
 */
 
 #include "firebird.h"
@@ -4810,7 +4810,7 @@ STATUS API_ROUTINE_VARARG GDS_START_TRANSACTION(STATUS * user_status,
 	STATUS status;
 	va_list ptr;
 
-	if (GDS_VAL(count) <= sizeof(tebs) / sizeof(struct teb))
+	if (GDS_VAL(count) <= FB_NELEM(tebs))
 		teb = tebs;
 	else
 		teb = (TEB *) alloc((SLONG) (sizeof(struct teb) * GDS_VAL(count)));

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pretty.cpp,v 1.5 2002-04-02 05:41:42 bellardo Exp $
+//	$Id: pretty.cpp,v 1.6 2002-12-02 09:43:46 eku Exp $
 //
 
 #include "firebird.h"
@@ -166,7 +166,7 @@ int PRETTY_print_cdb( SCHAR * blr,
 
 	while (parameter = BLR_BYTE) {
 		const char *p;
-		if (parameter > (sizeof(cdb_table) / sizeof(cdb_table[0])) ||
+		if (parameter > FB_NELEM(cdb_table) ||
 			!(p = cdb_table[parameter])) {
 			return error(control, 0,
 						 "*** cdb parameter %d is undefined ***\n",
@@ -760,7 +760,7 @@ static int print_dyn_verb( CTL control, SSHORT level)
 	offset = control->ctl_blr - control->ctl_blr_start;
 	operator_ = BLR_BYTE;
 
-	size = sizeof(dyn_table) / sizeof(dyn_table[0]);
+	size = FB_NELEM(dyn_table);
 	if (operator_ > size || operator_ <= 0 || !(p = dyn_table[operator_]))
 		return error(control, offset,
 					 "*** dyn operator %d is undefined ***\n",
@@ -1005,7 +1005,7 @@ static int print_sdl_verb( CTL control, SSHORT level)
 	offset = control->ctl_blr - control->ctl_blr_start;
 	operator_ = BLR_BYTE;
 
-	if (operator_ > (sizeof(sdl_table) / sizeof(sdl_table[0])) ||
+	if (operator_ > FB_NELEM(sdl_table) ||
 		operator_ <= 0 || !(p = sdl_table[operator_]))
 		return error(control, offset,
 					 "*** SDL operator %d is undefined ***\n",

@@ -29,7 +29,7 @@
  *
  */
 /*
-$Id: lock.cpp,v 1.25 2002-12-02 08:25:18 eku Exp $
+$Id: lock.cpp,v 1.26 2002-12-02 09:43:49 eku Exp $
 */
 
 #include "firebird.h"
@@ -3300,7 +3300,7 @@ static void lock_initialize( void *arg, SH_MEM shmem_data, int initialize)
 	shb->shb_insert_que = 0;
 	shb->shb_insert_prior = 0;
 	
-	for (i = sizeof(shb->shb_misc) / sizeof(shb->shb_misc[0]); i--;)
+	for (i = FB_NELEM(shb->shb_misc); i--;)
 	{
 		shb->shb_misc[i] = 0;
 	}
@@ -4464,8 +4464,7 @@ static void validate_lock( PTR lock_ptr, USHORT freed, PTR lrq_ptr)
 	CHECK(lock->lbl_length <= lock->lbl_size);
 
 /* The lbl_count's should never roll over to be negative */
-	for (i = 0; i < sizeof(lock->lbl_counts) / sizeof(lock->lbl_counts[0]);
-		 i++)
+	for (i = 0; i < FB_NELEM(lock->lbl_counts); i++)
 		CHECK(!(lock->lbl_counts[i] & 0x8000))
 
 /* The count of pending locks should never roll over to be negative */
@@ -4839,7 +4838,7 @@ static void validate_shb( PTR shb_ptr)
 
 	validate_history(shb->shb_history);
 
-	for (i = 0; i < sizeof(shb->shb_misc) / sizeof(shb->shb_misc[0]); i++)
+	for (i = 0; i < FB_NELEM(shb->shb_misc); i++)
 		CHECK(shb->shb_misc[i] == 0);
 }
 #endif

@@ -70,8 +70,7 @@ UCHAR destination[MAXSIZE + sizeof(ULONG) + 2];
 /* Test copies of these sizes of buffers */
 USHORT block_sizes[] = { 0, 1, 4, 15, 16, 17, 32, 150, 512, 1024 * 3 - 35 };
 
-#define	COUNT(x) (sizeof(x)/sizeof((x)[0]))
-#define	BSIZES COUNT(block_sizes)
+#define	BSIZES FB_NELEM(block_sizes)
 
 struct timeb tp;
 time_t first_time, last_time, curr_time;
@@ -88,7 +87,7 @@ void memcpy(), memset();
 void init_time()
 {
 	int i;
-	for (i = 0; i < COUNT(intervals); i++)
+	for (i = 0; i < FB_NELEM(intervals); i++)
 		intervals[i] = 0;
 	curr_repeat = 0;
 }

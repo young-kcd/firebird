@@ -258,7 +258,7 @@ STATUS API_ROUTINE_VARARG gds__start_transaction(
 	STATUS status;
 	va_list ptr;
 
-	if (count <= sizeof(tebs) / sizeof(struct teb))
+	if (count <= FB_NELEM(tebs))
 		teb = tebs;
 	else
 		teb = (TEB *) gds__alloc(((SLONG) sizeof(struct teb) * count));
