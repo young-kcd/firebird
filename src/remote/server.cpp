@@ -4303,7 +4303,7 @@ static void server_ast( RVNT event, USHORT length, UCHAR * items)
  **************************************
  *
  * Functional description
- *	Send an asynchrous event packet to back to client.
+ *	Send an asynchrous event packet back to client.
  *
  **************************************/
 	RDB rdb;
