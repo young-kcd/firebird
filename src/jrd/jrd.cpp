@@ -1005,7 +1005,11 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 #endif
 		JRD_SS_MUTEX_UNLOCK;
-		CCH_exclusive_attachment(tdbb, LCK_none, LCK_WAIT);
+		bool attachment_succeeded = true;
+		if (dbb->dbb_ast_flags & DBB_shutdown_single)
+			attachment_succeeded = CCH_exclusive_attachment(tdbb, LCK_none, -1);
+		else
+			CCH_exclusive_attachment(tdbb, LCK_none, LCK_WAIT);
 		JRD_SS_MUTEX_LOCK;
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
 		V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
@@ -1013,6 +1017,10 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		if (attachment->att_flags & ATT_shutdown)
 			ERR_post(isc_shutdown, isc_arg_string, 
 					ERR_string(file_name, file_length), 0);
+		if (!attachment_succeeded) {
+			ERR_post(isc_shutdown, isc_arg_string, 
+					ERR_string(file_name, file_length), 0);
+		}
 	}
 #endif
 

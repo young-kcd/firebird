@@ -629,6 +629,13 @@ const int CCH_EXCLUSIVE_RETRY_INTERVAL	=1;	/* retry interval in seconds */
 					found = true;
 					break;
 				}
+				// Forbid multiple attachments in single-user maintenance mode
+				if (attachment != tdbb->tdbb_attachment &&
+					(dbb->dbb_ast_flags & DBB_shutdown_single) )
+				{
+					found = true;
+					break;
+				}
 			}
 			else {				/* Requesting exclusive database access */
 

@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.77 2004-06-08 13:39:54 alexpeshkoff Exp $
+$Id: restore.epp,v 1.78 2004-06-12 01:06:00 skidder Exp $
 */
 
 #include "firebird.h"
@@ -538,6 +538,12 @@ int RESTORE_restore (const TEXT* file_name,
 
 	UINT64 cumul_count = MVOL_fini_read();
 
+	// Close database before we attach to it again. 
+	FINISH
+	ON_ERROR
+		general_on_error ();
+	END_ERROR;
+
 	// attach database again to put it online 
 
 	UCHAR dpb[128];
@@ -584,11 +590,6 @@ int RESTORE_restore (const TEXT* file_name,
 	}
 	if (isc_detach_database (tdgbl->status_vector, &db_handle))
 		general_on_error();
-
-	FINISH
-	ON_ERROR
-		general_on_error ();
-	END_ERROR;
 
 	if (!flag_on_line)
 	{
