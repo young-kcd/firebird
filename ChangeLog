@@ -1,3 +1,9 @@
+2003-10-11 10:12  paul_reeves
+
+	* firebird2/builds/win32/make_all.bat:
+	
+	remove intlcpp from msvc6 build
+
 2003-10-11 02:00  skidder
 
 	* firebird2/src/install/misc/CSchangeRunUser.sh.in:
