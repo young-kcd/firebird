@@ -582,9 +582,12 @@ btree_page* BTR_find_page(thread_db* tdbb,
 	// isn't a starting descriptor, walk down the left side of the index (right
 	// side if we are going backwards).
 	SLONG number;
+	// Ignore NULLs if flag is set and this is a 1 segment index,
+	// ASC index and no lower bound value is given.
 	const bool ignoreNulls = ((idx->idx_count == 1) && 
 		!(idx->idx_flags & idx_descending) && 
-		(retrieval->irb_generic & irb_ignore_null_value_key));
+		(retrieval->irb_generic & irb_ignore_null_value_key) &&
+		!(retrieval->irb_lower_count));
 
 	if ((!backwards && retrieval->irb_lower_count) ||
 		(!backwards && ignoreNulls) ||
