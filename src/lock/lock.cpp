@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.100 2004-05-17 22:29:14 brodsom Exp $
+$Id: lock.cpp,v 1.101 2004-05-18 09:44:40 kkuznetsov Exp $
 */
 
 #include "firebird.h"
@@ -285,7 +285,6 @@ const int LOCKMANTIMEOUT	= 300;
 #if (defined SOLARIS_MT && !defined SUPERSERVER)
 const int STARVATION_THRESHHOLD	= 500;	/* acquires of lock table */
 const SLONG SOLARIS_MIN_STALL	= 0;
-const SLONG SOLARIS_MAX_STALL	= 200;
 const SLONG SOLARIS_MAX_STALL	= 200;	/* Seconds */
 #endif
 
