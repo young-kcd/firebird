@@ -965,7 +965,14 @@ typedef struct ihndl
 #endif
 
 #ifndef PLATFORM_GET_THREAD_DATA
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern TDBB gdbb;
+#ifdef __cplusplus
+}
+#endif
 #define PLATFORM_GET_THREAD_DATA (gdbb)
 #endif
 

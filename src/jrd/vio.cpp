@@ -2594,7 +2594,7 @@ BOOLEAN VIO_sweep(TDBB tdbb, JRD_TRA transaction)
 					CCH_RELEASE(tdbb, &rpb.rpb_window);
 					if (relation->rel_flags & REL_deleting)
 						break;
-#ifdef MULTI_THREAD
+#ifdef SUPERSERVER
 					if (--tdbb->tdbb_quantum < 0 && !tdbb->tdbb_inhibit) {
 						(void) JRD_reschedule(tdbb, SWEEP_QUANTUM, TRUE);
 					}
@@ -3292,7 +3292,7 @@ static void garbage_collect(
 		delete_(tdbb, rpb, prior_page, tdbb->tdbb_default);
 		if (rpb->rpb_record)
 			LLS_PUSH(rpb->rpb_record, &going);
-#ifdef MULTI_THREAD
+#ifdef SUPERSERVER
 		/* Don't monopolize the server while chasing long
 		   back version chains. */
 
@@ -3747,7 +3747,7 @@ static void list_staying(TDBB tdbb, RPB * rpb, LLS * staying)
 			temp.rpb_prior = (temp.rpb_flags & rpb_delta) ? data : NULL;
 			DPM_fetch_back(tdbb, &temp, LCK_read, 1);
 			depth++;
-#ifdef MULTI_THREAD
+#ifdef SUPERSERVER
 			/* Don't monopolize the server while chasing long
 			   back version chains. */
 

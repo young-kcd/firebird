@@ -309,10 +309,6 @@ void DLL_EXPORT THD_cleanup(void)
 
 	if (initialized) {
 		initialized = FALSE;
-#ifdef WIN_NT
-		TlsFree(specific_key);
-#endif
-
 #ifdef POSIX_THREADS
 #endif
 
@@ -320,6 +316,9 @@ void DLL_EXPORT THD_cleanup(void)
 #endif
 
 #ifdef ANY_THREADING
+#ifdef WIN_NT
+		TlsFree(specific_key);
+#endif
 		/* destroy the mutex ib_mutex which was created */
 		THD_mutex_destroy(&ib_mutex);
 #ifdef WIN_NT
@@ -1499,11 +1498,11 @@ void THD_sleep(ULONG milliseconds)
  *	of milliseconds.
  *
  **************************************/
-#ifdef ANY_THREADING
-
 #ifdef WIN_NT
 	SleepEx(milliseconds, FALSE);
 #else
+
+#ifdef ANY_THREADING
 	EVENT_T timer;
 	EVENT timer_ptr = &timer;
 	SLONG count;
@@ -1514,8 +1513,6 @@ void THD_sleep(ULONG milliseconds)
 	(void) ISC_event_wait(1, &timer_ptr, &count, milliseconds * 1000,
 						  (FPTR_VOID) 0, 0);
 	ISC_event_fini(&timer);
-#endif
-
 #else /* !ANY_THREADING */
 	int seconds;
 
@@ -1528,7 +1525,9 @@ void THD_sleep(ULONG milliseconds)
 
 	while (seconds = sleep(seconds));
 
-#endif /* ANY_THREADING */
+#endif /* !ANY_THREADING */
+
+#endif /* !WIN_NT */
 }
 
 
@@ -1986,7 +1985,6 @@ static int thread_start(
 #endif
 
 
-#ifdef ANY_THREADING
 #ifdef WIN_NT
 #define START_THREAD
 static int thread_start(int (*routine) (void *),
@@ -2060,7 +2058,6 @@ static int thread_start(int (*routine) (void *),
 
 	return 0;
 }
-#endif
 #endif
 
 

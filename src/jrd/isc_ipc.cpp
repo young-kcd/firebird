@@ -34,7 +34,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.34 2003-03-11 12:29:41 brodsom Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.35 2003-03-24 14:41:41 skidder Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -529,6 +529,8 @@ int API_ROUTINE ISC_kill(SLONG pid, SLONG signal_number, void *object_hndl)
 	OPN_EVENT opn_event, end_opn_event, oldest_opn_event;
 
 /* If we're simply trying to poke ourselves, do so directly. */
+	if (!process_id)
+		process_id = GetCurrentProcessId();
 
 	if (pid == process_id) {
 		SetEvent(object_hndl);

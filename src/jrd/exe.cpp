@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.47 2003-03-05 12:50:43 dimitr Exp $
+$Id: exe.cpp,v 1.48 2003-03-24 14:41:39 skidder Exp $
 */
 
 #include "firebird.h"
@@ -1859,7 +1859,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 	{
 	try {
 
-#ifdef MULTI_THREAD
+#ifdef SUPERSERVER
 
 		if (request->req_operation == jrd_req::req_evaluate &&
 			(--tdbb->tdbb_quantum < 0) && !tdbb->tdbb_inhibit)

@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.27 2003-03-18 02:03:46 brodsom Exp $
+$Id: btr.cpp,v 1.28 2003-03-24 14:41:39 skidder Exp $
 */
 
 #include "firebird.h"
@@ -2937,7 +2937,7 @@ static SLONG fast_load(TDBB tdbb,
 			DEBUG;
 		}
 
-#ifdef MULTI_THREAD
+#ifdef SUPERSERVER
 		if (--tdbb->tdbb_quantum < 0 && !tdbb->tdbb_inhibit)
 			error = JRD_reschedule(tdbb, 0, FALSE);
 #endif
@@ -4431,7 +4431,7 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 			while (--l);
 		}
 
-#ifdef MULTI_THREAD
+#ifdef SUPERSERVER
 		/* Until deletion of duplicate nodes becomes efficient, limit
 		   leaf level traversal by rescheduling. */
 

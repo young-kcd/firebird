@@ -825,7 +825,7 @@ static FETCH_CODE fetch_page(TDBB tdbb,
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-#ifdef MULTI_THREAD
+#ifdef SUPERSERVER
 	if (--tdbb->tdbb_quantum < 0 && !tdbb->tdbb_inhibit)
 		(void) JRD_reschedule(tdbb, 0, TRUE);
 #endif

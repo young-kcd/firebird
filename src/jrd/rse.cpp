@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.24 2003-02-13 17:30:05 tamlin Exp $
+ * $Id: rse.cpp,v 1.25 2003-03-24 14:41:42 skidder Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -2189,7 +2189,7 @@ static BOOLEAN get_record(TDBB			tdbb,
 
 	SET_TDBB(tdbb);
 
-#ifdef MULTI_THREAD
+#ifdef SUPERSERVER
 
 	if (--tdbb->tdbb_quantum < 0 && !tdbb->tdbb_inhibit)
 	{

@@ -445,7 +445,7 @@ void IDX_create_index(
 				delete record;
 		}
 
-#ifdef MULTI_THREAD
+#ifdef SUPERSERVER
 		if (--tdbb->tdbb_quantum < 0 && !tdbb->tdbb_inhibit)
 			cancel = JRD_reschedule(tdbb, 0, FALSE);
 #endif

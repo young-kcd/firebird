@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.27 2003-03-01 18:04:21 brodsom Exp $
+$Id: blb.cpp,v 1.28 2003-03-24 14:41:38 skidder Exp $
 */
 
 #include "firebird.h"
@@ -450,7 +450,7 @@ USHORT BLB_get_segment(TDBB tdbb,
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
 
-#ifdef MULTI_THREAD
+#ifdef SUPERSERVER
 
 	if (--tdbb->tdbb_quantum < 0 && !tdbb->tdbb_inhibit)
 		(void) JRD_reschedule(tdbb, 0, TRUE);
