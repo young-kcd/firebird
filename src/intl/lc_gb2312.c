@@ -73,7 +73,7 @@ TEXTTYPE_ENTRY(GB_2312_init)
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 

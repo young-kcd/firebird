@@ -64,7 +64,7 @@ TEXTTYPE_ENTRY(DOS101_init)
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS107_init)
@@ -76,7 +76,7 @@ TEXTTYPE_ENTRY(DOS107_init)
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS160_init)
@@ -88,7 +88,7 @@ TEXTTYPE_ENTRY(DOS160_init)
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(LATIN1_cp_init)
@@ -100,7 +100,7 @@ TEXTTYPE_ENTRY(LATIN1_cp_init)
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 TEXTTYPE_ENTRY (LATIN2_cp_init)
 {
@@ -111,7 +111,7 @@ TEXTTYPE_ENTRY (LATIN2_cp_init)
     TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 TEXTTYPE_ENTRY(DOS852_c0_init)
 {
@@ -122,7 +122,7 @@ TEXTTYPE_ENTRY(DOS852_c0_init)
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS857_c0_init)
@@ -134,7 +134,7 @@ TEXTTYPE_ENTRY(DOS857_c0_init)
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS860_c0_init)
@@ -146,7 +146,7 @@ TEXTTYPE_ENTRY(DOS860_c0_init)
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS861_c0_init)
@@ -158,7 +158,7 @@ TEXTTYPE_ENTRY(DOS861_c0_init)
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS863_c0_init)
@@ -170,7 +170,7 @@ TEXTTYPE_ENTRY(DOS863_c0_init)
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(CYRL_c0_init)
@@ -182,7 +182,7 @@ TEXTTYPE_ENTRY(CYRL_c0_init)
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(WIN1250_c0_init)
@@ -194,7 +194,7 @@ TEXTTYPE_ENTRY(WIN1250_c0_init)
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(WIN1251_c0_init)
@@ -206,7 +206,7 @@ TEXTTYPE_ENTRY(WIN1251_c0_init)
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(WIN1252_c0_init)
@@ -218,7 +218,7 @@ TEXTTYPE_ENTRY(WIN1252_c0_init)
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(WIN1253_c0_init)
@@ -230,7 +230,7 @@ TEXTTYPE_ENTRY(WIN1253_c0_init)
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(WIN1254_c0_init)
@@ -242,7 +242,7 @@ TEXTTYPE_ENTRY(WIN1254_c0_init)
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(NEXT_c0_init)
@@ -254,7 +254,7 @@ TEXTTYPE_ENTRY(NEXT_c0_init)
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 #undef FAMILY_ASCII
 

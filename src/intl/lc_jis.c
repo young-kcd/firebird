@@ -74,7 +74,7 @@ TEXTTYPE_ENTRY(JIS220_init)
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(JIS230_init)
@@ -92,7 +92,7 @@ TEXTTYPE_ENTRY(JIS230_init)
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 

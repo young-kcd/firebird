@@ -295,7 +295,7 @@ static USHORT eight_bit_convert(obj, dest_ptr, dest_len, src_ptr, src_len,
 
 CONVERT_ENTRY(CS_LATIN1, CS_DOS_865, CV_dos_865_x_latin1)
 {
-#include "../intl/tx865_lat1.h"
+#include "../intl/conversions/tx865_lat1.h"
 	if (dest_cs == CS_LATIN1)
 		CV_convert_init(csptr, dest_cs, source_cs, eight_bit_convert,
 						cvt_865_to_Latin1, NULL);
@@ -309,7 +309,7 @@ CONVERT_ENTRY(CS_LATIN1, CS_DOS_865, CV_dos_865_x_latin1)
 
 CONVERT_ENTRY(CS_LATIN1, CS_DOS_437, CV_dos_437_x_dos_865)
 {
-#include "../intl/tx437_865.h"
+#include "../intl/conversions/tx437_865.h"
 	if (dest_cs == CS_DOS_865)
 		CV_convert_init(csptr, dest_cs, source_cs, eight_bit_convert,
 						cvt_437_to_865, NULL);
@@ -324,7 +324,7 @@ CONVERT_ENTRY(CS_LATIN1, CS_DOS_437, CV_dos_437_x_dos_865)
 
 CONVERT_ENTRY(CS_LATIN1, CS_DOS_437, CV_dos_437_x_latin1)
 {
-#include "../intl/tx437_lat1.h"
+#include "../intl/conversions/tx437_lat1.h"
 	if (dest_cs == CS_LATIN1)
 		CV_convert_init(csptr, dest_cs, source_cs, eight_bit_convert,
 						cvt_437_to_Latin1, NULL);

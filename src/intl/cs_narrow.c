@@ -55,7 +55,7 @@ static void common_8bit_init(csptr, id, name, to_unicode_tbl,
 
 CHARSET_ENTRY(CS_iso_latin1)
 {
-#include "../intl/cs_latin1.h"
+#include "../intl/charsets/cs_latin1.h"
 
 	common_8bit_init(csptr, CS_LATIN1, "LATIN1", to_unicode_map,
 					 from_unicode_mapping_array, from_unicode_map);
@@ -64,7 +64,7 @@ CHARSET_ENTRY(CS_iso_latin1)
 
 CHARSET_ENTRY (CS_iso_latin2)
 {
-#include "../intl/cs_latin2.h"
+#include "../intl/charsets/cs_latin2.h"
 
     common_8bit_init (csptr, CS_LATIN2, "LATIN2", to_unicode_map,
                       from_unicode_mapping_array, from_unicode_map);
@@ -73,7 +73,7 @@ CHARSET_ENTRY (CS_iso_latin2)
 
 CHARSET_ENTRY(CS_dos_437)
 {
-#include "../intl/cs_437.h"
+#include "../intl/charsets/cs_437.h"
 
 	common_8bit_init(csptr, CS_DOS_437, "DOS437", to_unicode_map,
 					 from_unicode_mapping_array, from_unicode_map);
@@ -82,7 +82,7 @@ CHARSET_ENTRY(CS_dos_437)
 
 CHARSET_ENTRY(CS_dos_865)
 {
-#include "../intl/cs_865.h"
+#include "../intl/charsets/cs_865.h"
 
 	common_8bit_init(csptr, CS_DOS_865, "DOS865", to_unicode_map,
 					 from_unicode_mapping_array, from_unicode_map);
@@ -91,7 +91,7 @@ CHARSET_ENTRY(CS_dos_865)
 
 CHARSET_ENTRY(CS_dos_850)
 {
-#include "../intl/cs_850.h"
+#include "../intl/charsets/cs_850.h"
 
 	common_8bit_init(csptr, CS_DOS_850, "DOS850", to_unicode_map,
 					 from_unicode_mapping_array, from_unicode_map);
@@ -100,7 +100,7 @@ CHARSET_ENTRY(CS_dos_850)
 
 CHARSET_ENTRY(CS_dos_852)
 {
-#include "../intl/cs_852.h"
+#include "../intl/charsets/cs_852.h"
 
 	common_8bit_init(csptr, CS_DOS_852, "DOS852", to_unicode_map,
 					 from_unicode_mapping_array, from_unicode_map);
@@ -109,7 +109,7 @@ CHARSET_ENTRY(CS_dos_852)
 
 CHARSET_ENTRY(CS_dos_857)
 {
-#include "../intl/cs_857.h"
+#include "../intl/charsets/cs_857.h"
 
 	common_8bit_init(csptr, CS_DOS_857, "DOS857", to_unicode_map,
 					 from_unicode_mapping_array, from_unicode_map);
@@ -118,7 +118,7 @@ CHARSET_ENTRY(CS_dos_857)
 
 CHARSET_ENTRY(CS_dos_860)
 {
-#include "../intl/cs_860.h"
+#include "../intl/charsets/cs_860.h"
 
 	common_8bit_init(csptr, CS_DOS_860, "DOS860", to_unicode_map,
 					 from_unicode_mapping_array, from_unicode_map);
@@ -127,7 +127,7 @@ CHARSET_ENTRY(CS_dos_860)
 
 CHARSET_ENTRY(CS_dos_861)
 {
-#include "../intl/cs_861.h"
+#include "../intl/charsets/cs_861.h"
 
 	common_8bit_init(csptr, CS_DOS_861, "DOS861", to_unicode_map,
 					 from_unicode_mapping_array, from_unicode_map);
@@ -136,7 +136,7 @@ CHARSET_ENTRY(CS_dos_861)
 
 CHARSET_ENTRY(CS_dos_863)
 {
-#include "../intl/cs_863.h"
+#include "../intl/charsets/cs_863.h"
 
 	common_8bit_init(csptr, CS_DOS_863, "DOS863", to_unicode_map,
 					 from_unicode_mapping_array, from_unicode_map);
@@ -145,7 +145,7 @@ CHARSET_ENTRY(CS_dos_863)
 
 CHARSET_ENTRY(CS_cyrl)
 {
-#include "../intl/cs_cyrl.h"
+#include "../intl/charsets/cs_cyrl.h"
 
 	common_8bit_init(csptr, CS_CYRL, "CYRL", to_unicode_map,
 					 from_unicode_mapping_array, from_unicode_map);
@@ -154,7 +154,7 @@ CHARSET_ENTRY(CS_cyrl)
 
 CHARSET_ENTRY(CS_win1250)
 {
-#include "../intl/cs_w1250.h"
+#include "../intl/charsets/cs_w1250.h"
 
 	common_8bit_init(csptr, CS_WIN1250, "WIN1250", to_unicode_map,
 					 from_unicode_mapping_array, from_unicode_map);
@@ -163,7 +163,7 @@ CHARSET_ENTRY(CS_win1250)
 
 CHARSET_ENTRY(CS_win1251)
 {
-#include "../intl/cs_w1251.h"
+#include "../intl/charsets/cs_w1251.h"
 
 	common_8bit_init(csptr, CS_WIN1251, "WIN1251", to_unicode_map,
 					 from_unicode_mapping_array, from_unicode_map);
@@ -172,7 +172,7 @@ CHARSET_ENTRY(CS_win1251)
 
 CHARSET_ENTRY(CS_win1252)
 {
-#include "../intl/cs_w1252.h"
+#include "../intl/charsets/cs_w1252.h"
 
 	common_8bit_init(csptr, CS_WIN1252, "WIN1252", to_unicode_map,
 					 from_unicode_mapping_array, from_unicode_map);
@@ -181,7 +181,7 @@ CHARSET_ENTRY(CS_win1252)
 
 CHARSET_ENTRY(CS_win1253)
 {
-#include "../intl/cs_w1253.h"
+#include "../intl/charsets/cs_w1253.h"
 
 	common_8bit_init(csptr, CS_WIN1253, "WIN1253", to_unicode_map,
 					 from_unicode_mapping_array, from_unicode_map);
@@ -190,7 +190,7 @@ CHARSET_ENTRY(CS_win1253)
 
 CHARSET_ENTRY(CS_win1254)
 {
-#include "../intl/cs_w1254.h"
+#include "../intl/charsets/cs_w1254.h"
 
 	common_8bit_init(csptr, CS_WIN1254, "WIN1254", to_unicode_map,
 					 from_unicode_mapping_array, from_unicode_map);
@@ -199,7 +199,7 @@ CHARSET_ENTRY(CS_win1254)
 
 CHARSET_ENTRY(CS_next)
 {
-#include "../intl/cs_next.h"
+#include "../intl/charsets/cs_next.h"
 
 	common_8bit_init(csptr, CS_NEXT, "NEXT", to_unicode_map,
 					 from_unicode_mapping_array, from_unicode_map);

@@ -32,7 +32,7 @@ extern void CV_convert_init();
 
 CHARSET_ENTRY(CS_gb_2312)
 {
-#include "../intl/cs_gb2312.h"
+#include "../intl/charsets/cs_gb2312.h"
 	static CONST ASCII POSIX[] = "GB_2312";
 
 	csptr->charset_version = 40;

@@ -73,7 +73,7 @@ TEXTTYPE_ENTRY(BIG5_init)
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 

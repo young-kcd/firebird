@@ -62,14 +62,14 @@ TEXTTYPE_ENTRY(LAT139_init)
 {
 	static CONST ASCII POSIX[] = "da_DA.ISO8859_1";
 
-#include "../intl/bllt1da0.h"
+#include "../intl/collations/bl88591da0.h"
 
 	FAMILY2(parm1, LAT139_init, CS_LATIN1, CC_DENMARK);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 
@@ -77,14 +77,14 @@ TEXTTYPE_ENTRY(LAT140_init)
 {
 	static CONST ASCII POSIX[] = "du_NL.ISO8859_1";
 
-#include "../intl/bllt1nl0.h"
+#include "../intl/collations/bl88591nl0.h"
 
 	FAMILY2(parm1, LAT140_init, CS_LATIN1, CC_NEDERLANDS);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 
@@ -92,84 +92,84 @@ TEXTTYPE_ENTRY(LAT141_init)
 {
 	static CONST ASCII POSIX[] = "fi_FI.ISO8859_1";
 
-#include "../intl/bllt1fi0.h"
+#include "../intl/collations/bl88591fi0.h"
 
 	FAMILY2(parm1, LAT141_init, CS_LATIN1, CC_FINLAND);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(LAT142_init)
 {
 	static CONST ASCII POSIX[] = "fr_FR.ISO8859_1";
 
-#include "../intl/bllt1fr0.h"
+#include "../intl/collations/bl88591fr0.h"
 
 	FAMILY2(parm1, LAT142_init, CS_LATIN1, CC_FRANCE);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(LAT143_init)
 {
 	static CONST ASCII POSIX[] = "fr_CA.ISO8859_1";
 
-#include "../intl/bllt1ca0.h"
+#include "../intl/collations/bl88591ca0.h"
 
 	FAMILY2(parm1, LAT143_init, CS_LATIN1, CC_FRENCHCAN);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(LAT144_init)
 {
 	static CONST ASCII POSIX[] = "de_DE.ISO8859_1";
 
-#include "../intl/bllt1de0.h"
+#include "../intl/collations/bl88591de0.h"
 
 	FAMILY2(parm1, LAT144_init, CS_LATIN1, CC_GERMANY);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(LAT145_init)
 {
 	static CONST ASCII POSIX[] = "is_IS.ISO8859_1";
 
-#include "../intl/bllt1is0.h"
+#include "../intl/collations/bl88591is0.h"
 
 	FAMILY2(parm1, LAT145_init, CS_LATIN1, CC_ICELAND);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(LAT146_init)
 {
 	static CONST ASCII POSIX[] = "it_IT.ISO8859_1";
 
-#include "../intl/bllt1it0.h"
+#include "../intl/collations/bl88591it0.h"
 
 	FAMILY2(parm1, LAT146_init, CS_LATIN1, CC_ITALY);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 
@@ -177,14 +177,14 @@ TEXTTYPE_ENTRY(LAT148_init)
 {
 	static CONST ASCII POSIX[] = "no_NO.ISO8859_1";
 
-#include "../intl/bllt1no0.h"
+#include "../intl/collations/bl88591no0.h"
 
 	FAMILY2(parm1, LAT148_init, CS_LATIN1, CC_NORWAY);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 
@@ -192,320 +192,320 @@ TEXTTYPE_ENTRY(LAT149_init)
 {
 	static CONST ASCII POSIX[] = "es_ES.ISO8859_1";
 
-#include "../intl/bllt1es0.h"
+#include "../intl/collations/bl88591es0.h"
 
 	FAMILY2(parm1, LAT149_init, CS_LATIN1, CC_SPAIN);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(LAT151_init)
 {
 	static CONST ASCII POSIX[] = "sv_SV.ISO8859_1";
 
-#include "../intl/bllt1sv0.h"
+#include "../intl/collations/bl88591sv0.h"
 
 	FAMILY2(parm1, LAT151_init, CS_LATIN1, CC_SWEDEN);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(LAT152_init)
 {
 	static CONST ASCII POSIX[] = "en_UK.ISO8859_1";
 
-#include "../intl/bllt1uk0.h"
+#include "../intl/collations/bl88591uk0.h"
 
 	FAMILY2(parm1, LAT152_init, CS_LATIN1, CC_UK);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(LAT153_init)
 {
 	static CONST ASCII POSIX[] = "en_US.ISO8859_1";
 
-#include "../intl/bllt1us0.h"
+#include "../intl/collations/bl88591us0.h"
 
 	FAMILY2(parm1, LAT153_init, CS_LATIN1, CC_US);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(LAT154_init)
 {
 	static CONST ASCII POSIX[] = "pt_PT.ISO8859_1";
 
-#include "../intl/bllt1pt0.h"
+#include "../intl/collations/bl88591pt0.h"
 
 	FAMILY2(parm1, LAT154_init, CS_LATIN1, CC_PORTUGAL);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(WIN1250_c1_init)
 {
 	static CONST ASCII POSIX[] = "PXW_CSY.WIN1250";
 
-#include "../intl/anczech.h"
+#include "../intl/collations/pw1250czech.h"
 
 	FAMILY2(parm1, WIN1250_c1_init, CS_WIN1250, CC_CZECH);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(WIN1250_c2_init)
 {
 	static CONST ASCII POSIX[] = "PXW_HUNDC.WIN1250";
 
-#include "../intl/anhundc.h"
+#include "../intl/collations/pw1250hundc.h"
 
 	FAMILY2(parm1, WIN1250_c2_init, CS_WIN1250, CC_HUNGARY);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(WIN1250_c3_init)
 {
 	static CONST ASCII POSIX[] = "PXW_PLK.WIN1250";
 
-#include "../intl/anpolish.h"
+#include "../intl/collations/pw1250polish.h"
 
 	FAMILY2(parm1, WIN1250_c3_init, CS_WIN1250, CC_POLAND);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(WIN1250_c4_init)
 {
 	static CONST ASCII POSIX[] = "PXW_SLOV.WIN1250";
 
-#include "../intl/ansislov.h"
+#include "../intl/collations/pw1250slov.h"
 
 	FAMILY2(parm1, WIN1250_c4_init, CS_WIN1250, CC_YUGOSLAVIA);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 TEXTTYPE_ENTRY (WIN1250_c5_init)
 {
     static CONST ASCII      POSIX[] = "PXW_HUN.WIN1250";
     
-#include "../intl/anhun.h"
+#include "../intl/collations/pw1250hun.h"
     
     FAMILY2 (parm1, WIN1250_c5_init, CS_WIN1250, CC_HUNGARY);
  
     TEXTTYPE_RETURN;
 }                           
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 TEXTTYPE_ENTRY(WIN1251_c1_init)
 {
 	static CONST ASCII POSIX[] = "PXW_CYRL.WIN1251";
 
-#include "../intl/ancyrr.h"
+#include "../intl/collations/pw1251cyrr.h"
 
 	FAMILY2(parm1, WIN1251_c1_init, CS_WIN1251, CC_RUSSIA);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(WIN1251_c2_init)
 {
 	static CONST ASCII POSIX[] = "WIN1251_UA.WIN1251";
 
-#include "../intl/win1251_ua.h"
+#include "../intl/collations/xx1251_ua.h"
 
 	FAMILY2(parm1, WIN1251_c2_init, CS_WIN1251, CC_RUSSIA);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(WIN1252_c1_init)
 {
 	static CONST ASCII POSIX[] = "PXW_INTL.WIN1252";
 
-#include "../intl/ansiintl.h"
+#include "../intl/collations/pw1252intl.h"
 
 	FAMILY2(parm1, WIN1252_c1_init, CS_WIN1252, CC_INTL);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(WIN1252_c2_init)
 {
 	static CONST ASCII POSIX[] = "PXW_INTL850.WIN1252";
 
-#include "../intl/ansii850.h"
+#include "../intl/collations/pw1252i850.h"
 
 	FAMILY2(parm1, WIN1252_c2_init, CS_WIN1252, CC_INTL);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(WIN1252_c3_init)
 {
 	static CONST ASCII POSIX[] = "PXW_NORDAN4.WIN1252";
 
-#include "../intl/ansinor4.h"
+#include "../intl/collations/pw1252nor4.h"
 
 	FAMILY2(parm1, WIN1252_c3_init, CS_WIN1252, CC_NORDAN);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(WIN1252_c4_init)
 {
 	static CONST ASCII POSIX[] = "PXW_SPAN.WIN1252";
 
-#include "../intl/ansispan.h"
+#include "../intl/collations/pw1252span.h"
 
 	FAMILY2(parm1, WIN1252_c4_init, CS_WIN1252, CC_SPAIN);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(WIN1252_c5_init)
 {
 	static CONST ASCII POSIX[] = "PXW_SWEDFIN.WIN1252";
 
-#include "../intl/ansiswfn.h"
+#include "../intl/collations/pw1252swfn.h"
 
 	FAMILY2(parm1, WIN1252_c5_init, CS_WIN1252, CC_SWEDFIN);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(WIN1253_c1_init)
 {
 	static CONST ASCII POSIX[] = "PXW_GREEK.WIN1253";
 
-#include "../intl/angreek1.h"
+#include "../intl/collations/pw1253greek1.h"
 
 	FAMILY2(parm1, WIN1253_c1_init, CS_WIN1253, CC_GREECE);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(WIN1254_c1_init)
 {
 	static CONST ASCII POSIX[] = "PXW_TURK.WIN1254";
 
-#include "../intl/anturk.h"
+#include "../intl/collations/pw1254turk.h"
 
 	FAMILY2(parm1, WIN1254_c1_init, CS_WIN1254, CC_TURKEY);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(NEXT_c1_init)
 {
 	static CONST ASCII POSIX[] = "NXT_US.NEXT";
 
-#include "../intl/blnxtus0.h"
+#include "../intl/collations/blNEXTus0.h"
 
 	FAMILY2(parm1, NEXT_c1_init, CS_NEXT, CC_US);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(NEXT_c2_init)
 {
 	static CONST ASCII POSIX[] = "NXT_DEU.NEXT";
 
-#include "../intl/blnxtde0.h"
+#include "../intl/collations/blNEXTde0.h"
 
 	FAMILY2(parm1, NEXT_c2_init, CS_NEXT, CC_GERMANY);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(NEXT_c3_init)
 {
 	static CONST ASCII POSIX[] = "NXT_FRA.NEXT";
 
-#include "../intl/blnxtfr0.h"
+#include "../intl/collations/blNEXTfr0.h"
 
 	FAMILY2(parm1, NEXT_c3_init, CS_NEXT, CC_FRANCE);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(NEXT_c4_init)
 {
 	static CONST ASCII POSIX[] = "NXT_ITA.NEXT";
 
-#include "../intl/blnxtit0.h"
+#include "../intl/collations/blNEXTit0.h"
 
 	FAMILY2(parm1, NEXT_c4_init, CS_NEXT, CC_ITALY);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 #undef FAMILY2
 #undef NULL_SECONDARY

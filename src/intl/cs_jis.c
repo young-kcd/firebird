@@ -36,7 +36,7 @@ CHARSET_ENTRY(CS_jis_0208_1990)
 {
 	static CONST WCHAR space = 0x0020;
 
-#include "../intl/cs_jis_0208_1990.h"
+#include "../intl/charsets/cs_jis_0208_1990.h"
 
 	csptr->charset_version = 40;
 	csptr->charset_id = CS_JIS_0208;

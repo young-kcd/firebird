@@ -86,7 +86,7 @@ TEXTTYPE_ENTRY(UNI200_init)
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(UNI201_init)
@@ -100,7 +100,7 @@ TEXTTYPE_ENTRY(UNI201_init)
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 static SSHORT wc_mbtowc(obj, wc, p, n)

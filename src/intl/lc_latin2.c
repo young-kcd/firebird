@@ -57,13 +57,13 @@ TEXTTYPE_ENTRY (ISO88592_c1_init)
 {
 static CONST ASCII	POSIX[] = "cs_CZ.ISO8859_2";
 
-#include "../intl/lt2czech.h"
+#include "../intl/collations/xx88592czech.h"
 
 FAMILY2 (parm1, ISO88592_c1_init, CS_LATIN2, CC_CZECH);
 
 TEXTTYPE_RETURN;
 }
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 #undef FAMILY2
 #undef NULL_SECONDARY

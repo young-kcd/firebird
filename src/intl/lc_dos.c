@@ -61,378 +61,378 @@ TEXTTYPE_ENTRY(DOS102_init)
 {
 	static CONST ASCII POSIX[] = "INTL.DOS437";
 
-#include "../intl/intl.h"
+#include "../intl/collations/pd437intl.h"
 
 	FAMILY1(parm1, DOS102_init, CS_DOS_437, CC_INTL);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS105_init)
 {
 	static CONST ASCII POSIX[] = "NORDAN4.DOS437";
 
-#include "../intl/nordan40.h"
+#include "../intl/collations/pd865nordan40.h"
 
 	FAMILY1(parm1, DOS105_init, CS_DOS_865, CC_NORDAN);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS106_init)
 {
 	static CONST ASCII POSIX[] = "SWEDFIN.DOS437";
 
-#include "../intl/swedfin.h"
+#include "../intl/collations/pd437swedfin.h"
 
 	FAMILY1(parm1, DOS106_init, CS_DOS_437, CC_SWEDFIN);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS101_c2_init)
 {
 	static CONST ASCII POSIX[] = "DBASE.DOS437";
 
-#include "../intl/db437de0.h"
+#include "../intl/collations/db437de0.h"
 
 	FAMILY1(parm1, DOS101_c2_init, CS_DOS_437, CC_GERMANY);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS101_c3_init)
 {
 	static CONST ASCII POSIX[] = "DBASE.DOS437";
 
-#include "../intl/db437es1.h"
+#include "../intl/collations/db437es1.h"
 
 	FAMILY1(parm1, DOS101_c3_init, CS_DOS_437, CC_SPAIN);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS101_c4_init)
 {
 	static CONST ASCII POSIX[] = "DBASE.DOS437";
 
-#include "../intl/db437fi0.h"
+#include "../intl/collations/db437fi0.h"
 
 	FAMILY1(parm1, DOS101_c4_init, CS_DOS_437, CC_FINLAND);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS101_c5_init)
 {
 	static CONST ASCII POSIX[] = "DBASE.DOS437";
 
-#include "../intl/db437fr0.h"
+#include "../intl/collations/db437fr0.h"
 
 	FAMILY1(parm1, DOS101_c5_init, CS_DOS_437, CC_FRANCE);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS101_c6_init)
 {
 	static CONST ASCII POSIX[] = "DBASE.DOS437";
 
-#include "../intl/db437it0.h"
+#include "../intl/collations/db437it0.h"
 
 	FAMILY1(parm1, DOS101_c6_init, CS_DOS_437, CC_ITALY);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS101_c7_init)
 {
 	static CONST ASCII POSIX[] = "DBASE.DOS437";
 
-#include "../intl/db437nl0.h"
+#include "../intl/collations/db437nl0.h"
 
 	FAMILY1(parm1, DOS101_c7_init, CS_DOS_437, CC_NEDERLANDS);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS101_c8_init)
 {
 	static CONST ASCII POSIX[] = "DBASE.DOS437";
 
-#include "../intl/db437sv0.h"
+#include "../intl/collations/db437sv0.h"
 
 	FAMILY1(parm1, DOS101_c8_init, CS_DOS_437, CC_SWEDEN);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS101_c9_init)
 {
 	static CONST ASCII POSIX[] = "DBASE.DOS437";
 
-#include "../intl/db437uk0.h"
+#include "../intl/collations/db437uk0.h"
 
 	FAMILY1(parm1, DOS101_c9_init, CS_DOS_437, CC_UK);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS101_c10_init)
 {
 	static CONST ASCII POSIX[] = "DBASE.DOS437";
 
-#include "../intl/db437us0.h"
+#include "../intl/collations/db437us0.h"
 
 	FAMILY1(parm1, DOS101_c10_init, CS_DOS_437, CC_US);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS160_c1_init)
 {
 	static CONST ASCII POSIX[] = "DBASE.DOS850";
 
-#include "../intl/db850cf0.h"
+#include "../intl/collations/db850cf0.h"
 
 	FAMILY1(parm1, DOS160_c1_init, CS_DOS_850, CC_FRENCHCAN);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS160_c2_init)
 {
 	static CONST ASCII POSIX[] = "DBASE.DOS850";
 
-#include "../intl/db850de0.h"
+#include "../intl/collations/db850de0.h"
 
 	FAMILY1(parm1, DOS160_c2_init, CS_DOS_850, CC_GERMANY);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS160_c3_init)
 {
 	static CONST ASCII POSIX[] = "DBASE.DOS850";
 
-#include "../intl/db850es0.h"
+#include "../intl/collations/db850es0.h"
 
 	FAMILY1(parm1, DOS160_c3_init, CS_DOS_850, CC_SPAIN);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS160_c4_init)
 {
 	static CONST ASCII POSIX[] = "DBASE.DOS850";
 
-#include "../intl/db850fr0.h"
+#include "../intl/collations/db850fr0.h"
 
 	FAMILY1(parm1, DOS160_c4_init, CS_DOS_850, CC_FRANCE);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS160_c5_init)
 {
 	static CONST ASCII POSIX[] = "DBASE.DOS850";
 
-#include "../intl/db850it1.h"
+#include "../intl/collations/db850it1.h"
 
 	FAMILY1(parm1, DOS160_c5_init, CS_DOS_850, CC_ITALY);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS160_c6_init)
 {
 	static CONST ASCII POSIX[] = "DBASE.DOS850";
 
-#include "../intl/db850nl0.h"
+#include "../intl/collations/db850nl0.h"
 
 	FAMILY1(parm1, DOS160_c6_init, CS_DOS_850, CC_NEDERLANDS);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS160_c7_init)
 {
 	static CONST ASCII POSIX[] = "DBASE.DOS850";
 
-#include "../intl/db850pt0.h"
+#include "../intl/collations/db850pt0.h"
 
 	FAMILY1(parm1, DOS160_c7_init, CS_DOS_850, CC_PORTUGAL);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS160_c8_init)
 {
 	static CONST ASCII POSIX[] = "DBASE.DOS850";
 
-#include "../intl/db850sv1.h"
+#include "../intl/collations/db850sv1.h"
 
 	FAMILY1(parm1, DOS160_c8_init, CS_DOS_850, CC_SWEDEN);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS160_c9_init)
 {
 	static CONST ASCII POSIX[] = "DBASE.DOS850";
 
-#include "../intl/db850uk0.h"
+#include "../intl/collations/db850uk0.h"
 
 	FAMILY1(parm1, DOS160_c9_init, CS_DOS_850, CC_UK);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS160_c10_init)
 {
 	static CONST ASCII POSIX[] = "DBASE.DOS850";
 
-#include "../intl/db850us0.h"
+#include "../intl/collations/db850us0.h"
 
 	FAMILY1(parm1, DOS160_c10_init, CS_DOS_850, CC_US);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS107_c1_init)
 {
 	static CONST ASCII POSIX[] = "PDOX.DOS865";
 
-#include "../intl/nordan40.h"
+#include "../intl/collations/pd865nordan40.h"
 
 	FAMILY1(parm1, DOS107_c1_init, CS_DOS_865, CC_NORDAN);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS107_c2_init)
 {
 	static CONST ASCII POSIX[] = "DBASE.DOS865";
 
-#include "../intl/db865da0.h"
+#include "../intl/collations/db865da0.h"
 
 	FAMILY1(parm1, DOS107_c2_init, CS_DOS_865, CC_DENMARK);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS107_c3_init)
 {
 	static CONST ASCII POSIX[] = "DBASE.DOS865";
 
-#include "../intl/db865no0.h"
+#include "../intl/collations/db865no0.h"
 
 	FAMILY1(parm1, DOS107_c3_init, CS_DOS_865, CC_NORWAY);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS852_c1_init)
 {
 	static CONST ASCII POSIX[] = "DBASE.DOS852";
 
-#include "../intl/db852cz0.h"
+#include "../intl/collations/db852cz0.h"
 
 	FAMILY1(parm1, DOS852_c1_init, CS_DOS_852, CC_CZECH);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS852_c2_init)
 {
 	static CONST ASCII POSIX[] = "DBASE.DOS852";
 
-#include "../intl/db852po0.h"
+#include "../intl/collations/db852po0.h"
 
 	FAMILY1(parm1, DOS852_c2_init, CS_DOS_852, CC_POLAND);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 #ifdef BUG_6925
 
 
@@ -440,14 +440,14 @@ TEXTTYPE_ENTRY(DOS852_c3_init)
 {
 	static CONST ASCII POSIX[] = "DBASE.DOS852";
 
-#include "../intl/db852hdc.h"
+#include "../intl/collations/db852hdc.h"
 
 	FAMILY1(parm1, DOS852_c3_init, CS_DOS_852, CC_HUNGARY);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 #endif /* BUG_6925 */
 
 
@@ -455,84 +455,84 @@ TEXTTYPE_ENTRY(DOS852_c4_init)
 {
 	static CONST ASCII POSIX[] = "DBASE.DOS852";
 
-#include "../intl/db852sl0.h"
+#include "../intl/collations/db852sl0.h"
 
 	FAMILY1(parm1, DOS852_c4_init, CS_DOS_852, CC_YUGOSLAVIA);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS852_c5_init)
 {
 	static CONST ASCII POSIX[] = "PDOX.DOS852";
 
-#include "../intl/czech.h"
+#include "../intl/collations/pd852czech.h"
 
 	FAMILY1(parm1, DOS852_c5_init, CS_DOS_852, CC_CZECH);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS852_c6_init)
 {
 	static CONST ASCII POSIX[] = "PDOX.DOS852";
 
-#include "../intl/polish.h"
+#include "../intl/collations/pd852polish.h"
 
 	FAMILY1(parm1, DOS852_c6_init, CS_DOS_852, CC_POLAND);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS852_c7_init)
 {
 	static CONST ASCII POSIX[] = "PDOX.DOS852";
 
-#include "../intl/hun852dc.h"
+#include "../intl/collations/pd852hundc.h"
 
 	FAMILY1(parm1, DOS852_c7_init, CS_DOS_852, CC_HUNGARY);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS852_c8_init)
 {
 	static CONST ASCII POSIX[] = "PDOX.DOS852";
 
-#include "../intl/slovene.h"
+#include "../intl/collations/pd852slovene.h"
 
 	FAMILY1(parm1, DOS852_c8_init, CS_DOS_852, CC_YUGOSLAVIA);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS857_c1_init)
 {
 	static CONST ASCII POSIX[] = "DBASE.DOS857";
 
-#include "../intl/db857tr0.h"
+#include "../intl/collations/db857tr0.h"
 
 	FAMILY1(parm1, DOS857_c1_init, CS_DOS_857, CC_TURKEY);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 #ifdef BUG_6925
 
 
@@ -540,14 +540,14 @@ TEXTTYPE_ENTRY(DOS857_c2_init)
 {
 	static CONST ASCII POSIX[] = "PDOX.DOS857";
 
-#include "../intl/turk.h"
+#include "../intl/collations/pd857turk.h"
 
 	FAMILY1(parm1, DOS857_c2_init, CS_DOS_857, CC_TURKEY);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 #endif /* BUG_6925 */
 
 
@@ -555,70 +555,70 @@ TEXTTYPE_ENTRY(DOS860_c1_init)
 {
 	static CONST ASCII POSIX[] = "DBASE.DOS860";
 
-#include "../intl/db860pt0.h"
+#include "../intl/collations/db860pt0.h"
 
 	FAMILY1(parm1, DOS860_c1_init, CS_DOS_860, CC_PORTUGAL);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS861_c1_init)
 {
 	static CONST ASCII POSIX[] = "PDOX.DOS861";
 
-#include "../intl/iceland.h"
+#include "../intl/collations/pd861iceland.h"
 
 	FAMILY1(parm1, DOS861_c1_init, CS_DOS_861, CC_ICELAND);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(DOS863_c1_init)
 {
 	static CONST ASCII POSIX[] = "DBASE.DOS863";
 
-#include "../intl/db863cf1.h"
+#include "../intl/collations/db863cf1.h"
 
 	FAMILY1(parm1, DOS863_c1_init, CS_DOS_863, CC_FRENCHCAN);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(CYRL_c1_init)
 {
 	static CONST ASCII POSIX[] = "DBASE.CYRL";
 
-#include "../intl/db866ru0.h"
+#include "../intl/collations/db866ru0.h"
 
 	FAMILY1(parm1, CYRL_c1_init, CS_CYRL, CC_RUSSIA);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 TEXTTYPE_ENTRY(CYRL_c2_init)
 {
 	static CONST ASCII POSIX[] = "PDOX.CYRL";
 
-#include "../intl/cyrr.h"
+#include "../intl/collations/pd866cyrr.h"
 
 	FAMILY1(parm1, CYRL_c2_init, CS_CYRL, CC_RUSSIA);
 
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/undef.h"
+#include "../intl/collations/undef.h"
 
 
 #undef FAMILY1

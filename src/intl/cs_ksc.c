@@ -31,7 +31,7 @@ CHARSET_ENTRY(CS_ksc_5601)
 {
 	static CONST char space = 0x20;
 
-#include "../intl/cs_ksc5601.h"
+#include "../intl/charsets/cs_ksc5601.h"
 
 	csptr->charset_version = 40;
 	csptr->charset_id = CS_KSC5601;

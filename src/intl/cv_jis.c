@@ -22,7 +22,7 @@
  */
 
 #include "../intl/ldcommon.h"
-#include "../intl/cs_sjis.h"
+#include "../intl/charsets/cs_sjis.h"
 #include "../intl/kanji.h"
 
 
