@@ -5987,7 +5987,10 @@ static processing_state print_item_blob(FILE* fp,
 		 * most specifically we're interested in the Character Set so
 		 * we can set up a BPB that requests character set transliteration
 		 */
-		if (!isc_blob_lookup_desc(isc_status, &DB, &trans,
+		// CVC: Adriano changed trans to D__trans with the following comment:
+		// Fix a bug that occur when a BLOB column is added after the start
+		// of the DML transaction.
+		if (!isc_blob_lookup_desc(isc_status, &DB, &D__trans,
 			(const UCHAR*) var->relname, (const UCHAR*) var->sqlname,
 			&from_desc, NULL))
 		{
