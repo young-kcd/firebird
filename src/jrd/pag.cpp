@@ -75,7 +75,6 @@
 #include "../jrd/sdw.h"
 #include "../jrd/cch.h"
 #include "../jrd/tra.h"
-#include "../jrd/llio.h"
 #ifdef VIO_DEBUG
 #include "../jrd/vio_debug.h"
 #include "../jrd/all.h"
@@ -86,7 +85,6 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/lck_proto.h"
-#include "../jrd/llio_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/pag_proto.h"
