@@ -77,6 +77,8 @@
 #define RELATION	5
 #define ACCESS_TYPE	6
 
+using namespace Jrd;
+
 #include "gen/blrtable.h"
 
 
@@ -86,7 +88,6 @@ static const TEXT elements[][14] =
 
 #include "gen/codetext.h"
 
-using namespace Jrd;
 
 static void error(CompilerScratch*, ...);
 static SSHORT find_proc_field(const jrd_prc*, const Firebird::string&);
