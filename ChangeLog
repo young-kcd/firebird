@@ -1,3 +1,110 @@
+2003-01-15 15:10  dimitr
+
+	* firebird2/src/ipserver/: ipc.h, ipclient.cpp, ipserver.cpp:
+	
+	New config values.
+
+2003-01-15 15:07  dimitr
+
+	* firebird2/src/: common/config/config.cpp, common/config/config.h,
+	remote/inet.cpp, remote/wnet.cpp, remote/xnet.cpp:
+	
+	New config values.
+
+2003-01-15 14:42  dimitr
+
+	* firebird2/src/ipserver/ipc.h:
+	
+	Added IPC prefix to the autoconf stuff.
+
+2003-01-15 14:34  dimitr
+
+	* firebird2/src/include/gen/autoconfig_msvc.h:
+	
+	Added IPC prefix to the autoconf stuff.
+
+2003-01-15 13:25  dimitr
+
+	* firebird2/src/iscguard/iscguard.cpp:
+	
+	Changed class and window names to identify us properly.
+
+2003-01-15 13:25  dimitr
+
+	* firebird2/src/ipserver/ipc.h:
+	
+	Changed IPC map prefix. This change obviously breaks compatibility
+	via local protocol with IB6/FB1 clients.  Any thoughts whether it's
+	appropriate for us or not?
+
+2003-01-15 13:20  dimitr
+
+	* firebird2/src/utilities/install_nt.h:
+	
+	Changed services names to identify us properly.
+
+2003-01-15 13:19  dimitr
+
+	* firebird2/src/remote/: window.cpp, window.h:
+	
+	Changed class and window names to identify us properly.  The only
+	thing that still doesn't allow us to run with IB/FB1 simultaneously
+	is IPC map name.
+
+2003-01-15 13:15  dimitr
+
+	* firebird2/src/remote/server.cpp:
+	
+	no message
+
+2003-01-15 13:13  dimitr
+
+	* firebird2/src/include/gen/blrtable.h:
+	
+	New BLR verb for parametrized events.
+
+2003-01-15 13:11  dimitr
+
+	* firebird2/src/jrd/why.cpp:
+	
+	Cleanup of my old changes that were never used.
+
+2003-01-15 13:08  dimitr
+
+	* firebird2/src/jrd/: evl.cpp, exe.cpp, par.cpp, req.h:
+	
+	Added support for parametrized events and runtime trigger action
+	checks.
+
+2003-01-15 13:02  dimitr
+
+	* firebird2/src/jrd/misc_func_ids.h:
+	
+	no message
+
+2003-01-15 13:00  dimitr
+
+	* firebird2/src/dsql/: dsql.tab.h, gen.cpp, keywords.cpp, make.cpp,
+	node.h, parse.cpp, parse.y, pass1.cpp:
+	
+	1. Reworked internal info stuff once more.  2. Added DSQL support
+	for parametrized events.  3. Fixed bug with cursors in triggers. 
+	4. Added support for runtime trigger action checks
+	(INSERTING/UPDATING/DELETING).	5. Fixed bug with concatenation and
+	trashed RDB$FIELD_LENGTH.
+
+2003-01-15 12:56  dimitr
+
+	* firebird2/src/dsql/: misc_func.cpp, misc_func.h, dsql.cpp:
+	
+	Reworked internal info stuff.
+
+2003-01-15 12:40  dimitr
+
+	* firebird2/src/jrd/: blr.h, blrtable.cpp:
+	
+	New BLR verb for parametrized events.
+
 2003-01-14 14:47  dimitr
 
 	* firebird2/src/dsql/dsql.cpp:
