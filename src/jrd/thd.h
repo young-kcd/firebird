@@ -26,7 +26,7 @@
  *
  */
 /*
-$Id: thd.h,v 1.37 2004-08-30 18:10:42 alexpeshkoff Exp $
+$Id: thd.h,v 1.38 2004-09-21 06:18:40 aafemt Exp $
 */
 
 #ifndef JRD_THD_H
@@ -137,7 +137,7 @@ public:
 		tddDBA = 5,		// used in DBA utility
 		tddIDB = 6,		// used by interprocess server // ??
 		tddALICE = 7,	// used by gfix
-		tddSEC = 8,		// used by gsec
+		tddSEC = 8		// used by gsec
 	};
 private:
 	ThreadData*		threadDataPriorContext;
