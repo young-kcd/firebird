@@ -2653,11 +2653,6 @@ UCHAR *DLL_EXPORT ISC_map_file(
 	DWORD ret_event, fdw_create;
 	int retry_count = 0;
 
-/* To maintain compatibility with the FAT file system we will truncate
-   the host name to 8 characters.  Heaven help us if this creates
-   an ambiguity. */
-
-
 /* retry to attach to mmapped file if the process initializing
  * dies during initialization.
  */
@@ -2666,7 +2661,6 @@ UCHAR *DLL_EXPORT ISC_map_file(
 	retry_count++;
 
 	ISC_get_host(hostname, sizeof(hostname));
-	hostname[8] = 0;
 	sprintf(map_file, filename, hostname);
 
 	if (length < 0)
@@ -2677,7 +2671,11 @@ UCHAR *DLL_EXPORT ISC_map_file(
 				 FILE_SHARE_READ | FILE_SHARE_WRITE,
 				 NULL,
 				 OPEN_ALWAYS,
+#ifdef EMBEDDED
+				 FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE,
+#else
 				 FILE_ATTRIBUTE_NORMAL,
+#endif
 				 NULL);
 	if (file_handle == INVALID_HANDLE_VALUE) {
 		error(status_vector, "CreateFile", GetLastError());
@@ -2773,7 +2771,11 @@ UCHAR *DLL_EXPORT ISC_map_file(
 				 FILE_SHARE_READ | FILE_SHARE_WRITE,
 				 NULL,
 				 fdw_create,
+#ifdef EMBEDDED
+				 FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE,
+#else
 				 FILE_ATTRIBUTE_NORMAL,
+#endif
 				 NULL);
 	if (file_handle == INVALID_HANDLE_VALUE) {
 		CloseHandle(event_handle);
