@@ -23,7 +23,6 @@
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
-#include "../jrd/ibsetjmp.h"
 #include <stdlib.h>
 #include <string.h>
 #include "../remote/remote.h"
@@ -42,7 +41,7 @@
 #include "../jrd/license.h"
 #include "../jrd/fil.h"
 #include "../jrd/sdl.h"
-#include "../jrd/pwd.h"
+#include "../jrd/pwd_old.h"
 #include "../remote/inet_proto.h"
 #include "../remote/inter_proto.h"
 #include "../remote/merge_proto.h"
@@ -181,12 +180,6 @@ static void mov_faster(SLONG *, SLONG *, USHORT);
 static ULONG remote_event_id = 0;
 
 #define ALLR_RELEASE(x)		ALLR_release ((struct blk *) (x))
-#define ERROR_INIT(env)		rdb->rdb_status_vector = user_status;\
-				trdb->trdb_setjmp = &env;\
-				trdb->trdb_status_vector = user_status;\
-				trdb->trdb_database = rdb;\
-				if (SETJMP (env)) return error (user_status);
-
 #define RETURN_SUCCESS		return return_success (rdb)
 
 #define CHECK_HANDLE(blk,type,error) if (!blk || ((BLK) blk)->blk_type != (UCHAR) type) \
@@ -287,7 +280,6 @@ STATUS GDS_ATTACH_DATABASE(STATUS*	user_status,
 	TEXT	user_string[256];
 	TEXT*	us;
 	TEXT	node_name[MAXPATHLEN];
-	JMP_BUF	env;
 	struct trdb		thd_context;
 	struct trdb*	trdb;
 
@@ -357,8 +349,10 @@ STATUS GDS_ATTACH_DATABASE(STATUS*	user_status,
 	}
 
 	rdb = port->port_context;
-	ERROR_INIT(env);
 
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 	try
 	{
 		/* The client may have set a parameter for dummy_packet_interval.  Add that to the
@@ -387,8 +381,7 @@ STATUS GDS_ATTACH_DATABASE(STATUS*	user_status,
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
 
 	RETURN_SUCCESS;
@@ -415,7 +408,6 @@ STATUS GDS_BLOB_INFO(STATUS*	user_status,
 	RBL blob;
 	RDB rdb;
 	STATUS status;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -424,19 +416,20 @@ STATUS GDS_BLOB_INFO(STATUS*	user_status,
 	CHECK_HANDLE(blob, type_rbl, gds_bad_segstr_handle);
 	rdb = blob->rbl_rdb;
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	ERROR_INIT(env);
 
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 	try
 	{
 		status = info(user_status, rdb, op_info_blob, blob->rbl_id, 0,
 					  item_length, items, 0, 0, buffer_length, buffer);
+		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		status = e.value();
+		return error(user_status);
 	}
-
-	RESTORE_THREAD_DATA;
 
 	return status;
 }
@@ -456,7 +449,6 @@ STATUS GDS_CANCEL_BLOB(STATUS * user_status, RBL * blob_handle)
  **************************************/
 	RDB rdb;
 	RBL blob;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	if (!(blob = *blob_handle)) {
@@ -473,22 +465,25 @@ STATUS GDS_CANCEL_BLOB(STATUS * user_status, RBL * blob_handle)
 	CHECK_HANDLE(blob, type_rbl, gds_bad_segstr_handle);
 	rdb = blob->rbl_rdb;
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	ERROR_INIT(env);
 
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 	try
 	{
 		if (!release_object(rdb, op_cancel_blob, blob->rbl_id)) {
 			return error(user_status);
 		}
+
+		release_blob(blob);
+		*blob_handle = NULL;
+
+		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
-
-	release_blob(blob);
-	*blob_handle = NULL;
 
 	RETURN_SUCCESS;
 }
@@ -509,36 +504,37 @@ STATUS GDS_CANCEL_EVENTS(STATUS * user_status, RDB * handle, SLONG * id)
 	RVNT event;
 	RDB rdb;
 	PORT port;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
 
 	rdb = *handle;
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	ERROR_INIT(env);
 
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 	port = rdb->rdb_port;
-
-	/* Make sure protocol supports action */
-
-	if (port->port_protocol < PROTOCOL_VERSION6) {
-		return unsupported(user_status);
-	}
-
-	/* If the event exists, tell the remote server to cancel it,
-	   and delete it from the list */
 
 	try
 	{
+		/* Make sure protocol supports action */
+
+		if (port->port_protocol < PROTOCOL_VERSION6) {
+			return unsupported(user_status);
+		}
+
+		/* If the event exists, tell the remote server to cancel it,
+	   		and delete it from the list */
+
 		if (event = find_event(port, *id)) {
 			send_cancel_event(event);
 		}
+		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
 
 	RETURN_SUCCESS;
@@ -560,7 +556,6 @@ STATUS GDS_CLOSE_BLOB(STATUS * user_status, RBL * blob_handle)
 	RDB rdb;
 	RBL blob;
 	PORT port;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -569,7 +564,9 @@ STATUS GDS_CLOSE_BLOB(STATUS * user_status, RBL * blob_handle)
 	CHECK_HANDLE(blob, type_rbl, gds_bad_segstr_handle);
 	rdb = blob->rbl_rdb;
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	ERROR_INIT(env);
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 	port = rdb->rdb_port;
 
 	try
@@ -588,11 +585,11 @@ STATUS GDS_CLOSE_BLOB(STATUS * user_status, RBL * blob_handle)
 
 		release_blob(blob);
 		*blob_handle = NULL;
+		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
 
 	RETURN_SUCCESS;
@@ -613,7 +610,6 @@ STATUS GDS_COMMIT(STATUS * user_status, RTR * rtr_handle)
  **************************************/
 	RDB rdb;
 	RTR transaction;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -622,7 +618,10 @@ STATUS GDS_COMMIT(STATUS * user_status, RTR * rtr_handle)
 	CHECK_HANDLE(transaction, type_rtr, gds_bad_trans_handle);
 	rdb = (*rtr_handle)->rtr_rdb;
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	ERROR_INIT(env);
+
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
@@ -633,11 +632,11 @@ STATUS GDS_COMMIT(STATUS * user_status, RTR * rtr_handle)
 		REMOTE_cleanup_transaction(transaction);
 		release_transaction(transaction);
 		*rtr_handle = NULL;
+		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
 
 	RETURN_SUCCESS;
@@ -657,7 +656,6 @@ STATUS GDS_COMMIT_RETAINING(STATUS * user_status, RTR * rtr_handle)
  **************************************/
 	RDB rdb;
 	RTR transaction;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -666,7 +664,10 @@ STATUS GDS_COMMIT_RETAINING(STATUS * user_status, RTR * rtr_handle)
 	CHECK_HANDLE(transaction, type_rtr, gds_bad_trans_handle);
 	rdb = (*rtr_handle)->rtr_rdb;
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	ERROR_INIT(env);
+
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
@@ -679,11 +680,11 @@ STATUS GDS_COMMIT_RETAINING(STATUS * user_status, RTR * rtr_handle)
 		if (!release_object(rdb, op_commit_retaining, transaction->rtr_id)) {
 			return error(user_status);
 		}
+		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
 
 	RETURN_SUCCESS;
@@ -710,7 +711,6 @@ STATUS GDS_COMPILE(STATUS * user_status,
 	RRQ request;
 	MSG message, next;
 	USHORT max_msg;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -720,7 +720,10 @@ STATUS GDS_COMPILE(STATUS * user_status,
 	NULL_CHECK(req_handle, gds_bad_req_handle);
 	rdb = *db_handle;
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	ERROR_INIT(env);
+
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
@@ -791,11 +794,11 @@ STATUS GDS_COMPILE(STATUS * user_status,
 
 			message->msg_address = NULL;
 		}
+		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
 
 	RETURN_SUCCESS;
@@ -823,7 +826,6 @@ STATUS GDS_CREATE_BLOB2(STATUS * user_status,
 	RBL blob;
 	PACKET *packet;
 	P_BLOB *p_blob;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -833,7 +835,10 @@ STATUS GDS_CREATE_BLOB2(STATUS * user_status,
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
 	CHECK_HANDLE((*rtr_handle), type_rtr, gds_bad_trans_handle);
 	transaction = *rtr_handle;
-	ERROR_INIT(env);
+
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
@@ -866,11 +871,11 @@ STATUS GDS_CREATE_BLOB2(STATUS * user_status,
 		SET_OBJECT(rdb, blob, blob->rbl_id);
 		blob->rbl_next = transaction->rtr_blobs;
 		transaction->rtr_blobs = blob;
+		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
 
 	RETURN_SUCCESS;
@@ -902,7 +907,6 @@ STATUS GDS_CREATE_DATABASE(STATUS * user_status,
 	UCHAR expanded_name[MAXPATHLEN], new_dpb[MAXPATHLEN], *new_dpb_ptr;
 	TEXT user_string[256], *us;
 	TEXT node_name[MAXPATHLEN];
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	(void) memset((void *) node_name, 0, (size_t) MAXPATHLEN);
@@ -962,7 +966,9 @@ STATUS GDS_CREATE_DATABASE(STATUS * user_status,
 	}
 
 	rdb = port->port_context;
-	ERROR_INIT(env);
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
@@ -984,11 +990,11 @@ STATUS GDS_CREATE_DATABASE(STATUS * user_status,
 		}
 
 		*handle = rdb;
+		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
 
 	RETURN_SUCCESS;
@@ -1017,14 +1023,16 @@ STATUS GDS_DATABASE_INFO(STATUS*	user_status,
 	STATUS	status;
 	UCHAR	temp[1024];
 	UCHAR*	temp_buffer;
-	JMP_BUF	env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
 
 	rdb = *handle;
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	ERROR_INIT(env);
+
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
@@ -1065,8 +1073,7 @@ STATUS GDS_DATABASE_INFO(STATUS*	user_status,
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
 
 	return status;
@@ -1093,7 +1100,6 @@ STATUS GDS_DDL(STATUS*	user_status,
 	PACKET *packet;
 	P_DDL *ddl;
 	STATUS status;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -1104,7 +1110,10 @@ STATUS GDS_DDL(STATUS*	user_status,
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
 	CHECK_HANDLE((*rtr_handle), type_rtr, gds_bad_trans_handle);
 	transaction = *rtr_handle;
-	ERROR_INIT(env);
+
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
@@ -1126,7 +1135,8 @@ STATUS GDS_DDL(STATUS*	user_status,
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		status = e.value();
+		RESTORE_THREAD_DATA;
+		return error(user_status);
 	}
 
 	RESTORE_THREAD_DATA;
@@ -1149,15 +1159,17 @@ STATUS GDS_DETACH(STATUS* user_status, RDB* handle)
  **************************************/
 	RDB rdb;
 	PORT port;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
 
 	rdb = *handle;
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	ERROR_INIT(env);
+
 	port = rdb->rdb_port;
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
@@ -1207,7 +1219,7 @@ STATUS GDS_DETACH(STATUS* user_status, RDB* handle)
 	catch (const Firebird::status_exception& e)
 	{
 		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
 
 	RESTORE_THREAD_DATA;
@@ -1235,14 +1247,16 @@ STATUS GDS_DROP_DATABASE(STATUS* user_status, RDB* handle)
 	RDB rdb;
 	PORT port;
 	STATUS local_status[20];
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
 
 	rdb = *handle;
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	ERROR_INIT(env);
+
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 	port = rdb->rdb_port;
 
 	try
@@ -1279,7 +1293,7 @@ STATUS GDS_DROP_DATABASE(STATUS* user_status, RDB* handle)
 	catch (const Firebird::status_exception& e)
 	{
 		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
 
 	RESTORE_THREAD_DATA;
@@ -1305,7 +1319,6 @@ STATUS GDS_DSQL_ALLOCATE(STATUS*	user_status,
 	RDB rdb;
 	RSR statement;
 	PACKET *packet;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -1313,7 +1326,10 @@ STATUS GDS_DSQL_ALLOCATE(STATUS*	user_status,
 	NULL_CHECK(stmt_handle, gds_bad_req_handle);
 	rdb = *db_handle;
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	ERROR_INIT(env);
+
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
@@ -1345,7 +1361,7 @@ STATUS GDS_DSQL_ALLOCATE(STATUS*	user_status,
 	catch (const Firebird::status_exception& e)
 	{
 		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
 
 	RETURN_SUCCESS;
@@ -1409,7 +1425,6 @@ STATUS GDS_DSQL_EXECUTE2(STATUS*	user_status,
 	MSG message;
 	PACKET *packet;
 	P_SQLDATA *sqldata;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -1422,19 +1437,22 @@ STATUS GDS_DSQL_EXECUTE2(STATUS*	user_status,
 	if (transaction = *rtr_handle) {
 		CHECK_HANDLE(transaction, type_rtr, gds_bad_trans_handle);
 	}
-	ERROR_INIT(env);
+
 	port = rdb->rdb_port;
-
-	/* bag it if the protocol doesn't support it... */
-
-	if (port->port_protocol < PROTOCOL_VERSION7 ||
-		(out_msg_length && port->port_protocol < PROTOCOL_VERSION8))
-	{
-		return unsupported(user_status);
-	}
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
+		/* bag it if the protocol doesn't support it... */
+
+		if (port->port_protocol < PROTOCOL_VERSION7 ||
+			(out_msg_length && port->port_protocol < PROTOCOL_VERSION8))
+		{
+			return unsupported(user_status);
+		}
+
 		/* Parse the blr describing the message, if there is any. */
 
 		if (in_blr_length) {
@@ -1549,7 +1567,7 @@ STATUS GDS_DSQL_EXECUTE2(STATUS*	user_status,
 	catch (const Firebird::status_exception& e)
 	{
 		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
 
 	RETURN_SUCCESS;
@@ -1617,7 +1635,6 @@ STATUS GDS_DSQL_EXECUTE_IMMED2(STATUS * user_status,
 	P_SQLST *ex_now;
 	RSR statement;
 	MSG message;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -1629,20 +1646,23 @@ STATUS GDS_DSQL_EXECUTE_IMMED2(STATUS * user_status,
 	if (transaction = *rtr_handle) {
 		CHECK_HANDLE(transaction, type_rtr, gds_bad_trans_handle);
 	}
-	ERROR_INIT(env);
+
 	port = rdb->rdb_port;
-
-	/* bag it if the protocol doesn't support it... */
-
-	if (port->port_protocol < PROTOCOL_VERSION7 ||
-		((in_msg_length || out_msg_length)
-		 && port->port_protocol < PROTOCOL_VERSION8))
-	{
-		 return unsupported(user_status);
-	}
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
+		/* bag it if the protocol doesn't support it... */
+
+		if (port->port_protocol < PROTOCOL_VERSION7 ||
+			((in_msg_length || out_msg_length)
+		 	&& port->port_protocol < PROTOCOL_VERSION8))
+		{
+		 	return unsupported(user_status);
+		}
+
 		/* If the server is pre-6.0, do not send anything if the client dialect is 3 and
 		   there is a SQLDA.  This will cause the older server to crash */
 		if (port->port_protocol < PROTOCOL_VERSION10 &&
@@ -1769,7 +1789,7 @@ STATUS GDS_DSQL_EXECUTE_IMMED2(STATUS * user_status,
 	catch (const Firebird::status_exception& e)
 	{
 		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
 
 	RETURN_SUCCESS;
@@ -1799,7 +1819,6 @@ STATUS GDS_DSQL_FETCH(STATUS * user_status,
 	PACKET *packet;
 	P_SQLDATA *sqldata;
 	STATUS status;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -1810,7 +1829,9 @@ STATUS GDS_DSQL_FETCH(STATUS * user_status,
 	CHECK_HANDLE(statement, type_rsr, gds_bad_req_handle);
 	rdb = statement->rsr_rdb;
 	port = rdb->rdb_port;
-	ERROR_INIT(env);
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
@@ -2037,7 +2058,7 @@ STATUS GDS_DSQL_FETCH(STATUS * user_status,
 	catch (const Firebird::status_exception& e)
 	{
 		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
 	RETURN_SUCCESS;
 }
@@ -2059,7 +2080,6 @@ STATUS GDS_DSQL_FREE(STATUS * user_status, RSR * stmt_handle, USHORT option)
 	RSR statement;
 	PACKET *packet;
 	P_SQLFREE *free_stmt;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -2069,16 +2089,19 @@ STATUS GDS_DSQL_FREE(STATUS * user_status, RSR * stmt_handle, USHORT option)
 	statement = *stmt_handle;
 	CHECK_HANDLE(statement, type_rsr, gds_bad_req_handle);
 	rdb = statement->rsr_rdb;
-	ERROR_INIT(env);
 
-	/* make sure the protocol supports it */
-
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7) {
-		return unsupported(user_status);
-	}
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
+		/* make sure the protocol supports it */
+
+		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7) {
+			return unsupported(user_status);
+		}
+
 		packet = &rdb->rdb_packet;
 		packet->p_operation = op_free_statement;
 		free_stmt = &packet->p_sqlfree;
@@ -2107,8 +2130,10 @@ STATUS GDS_DSQL_FREE(STATUS * user_status, RSR * stmt_handle, USHORT option)
 	catch (const Firebird::status_exception& e)
 	{
 		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
+
+	RESTORE_THREAD_DATA;
 
 	RETURN_SUCCESS;
 }
@@ -2135,7 +2160,6 @@ STATUS GDS_DSQL_INSERT(STATUS * user_status,
 	MSG message;
 	PACKET *packet;
 	P_SQLDATA *sqldata;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -2145,16 +2169,18 @@ STATUS GDS_DSQL_INSERT(STATUS * user_status,
 	statement = *stmt_handle;
 	CHECK_HANDLE(statement, type_rsr, gds_bad_req_handle);
 	rdb = statement->rsr_rdb;
-	ERROR_INIT(env);
-
-	/* make sure the protocol supports it */
-
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION8) {
-		return unsupported(user_status);
-	}
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
+		/* make sure the protocol supports it */
+
+		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION8) {
+			return unsupported(user_status);
+		}
+
 		/* Parse the blr describing the message, if there is any. */
 
 		if (blr_length) {
@@ -2208,8 +2234,10 @@ STATUS GDS_DSQL_INSERT(STATUS * user_status,
 	catch (const Firebird::status_exception& e)
 	{
 		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
+
+	RESTORE_THREAD_DATA;
 
 	RETURN_SUCCESS;
 }
@@ -2240,7 +2268,6 @@ STATUS GDS_DSQL_PREPARE(STATUS * user_status, RTR * rtr_handle, RSR * stmt_handl
 	P_RESP *response;
 	CSTRING temp;
 	BOOLEAN status;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -2254,24 +2281,26 @@ STATUS GDS_DSQL_PREPARE(STATUS * user_status, RTR * rtr_handle, RSR * stmt_handl
 	if (transaction = *rtr_handle) {
 		CHECK_HANDLE(transaction, type_rtr, gds_bad_trans_handle);
 	}
-	ERROR_INIT(env);
-
-	/* reset current statement */
-
-	if (!clear_queue(rdb->rdb_port, user_status))
-		return error(user_status);
-
-	REMOTE_reset_statement(statement);
-
-	/* if we're less than protocol 7, the remote server doesn't support 
-	 * DSQL, so we're done... */
-
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7) {
-		return unsupported(user_status);
-	}
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
+		/* reset current statement */
+
+		if (!clear_queue(rdb->rdb_port, user_status))
+			return error(user_status);
+
+		REMOTE_reset_statement(statement);
+
+		/* if we're less than protocol 7, the remote server doesn't support 
+	 	* DSQL, so we're done... */
+
+		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7) {
+			return unsupported(user_status);
+		}
+
 		/* set up the packet for the other guy... */
 
 		packet = &rdb->rdb_packet;
@@ -2311,8 +2340,9 @@ STATUS GDS_DSQL_PREPARE(STATUS * user_status, RTR * rtr_handle, RSR * stmt_handl
 	catch (const Firebird::status_exception& e)
 	{
 		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
+	RESTORE_THREAD_DATA;
 
 	RETURN_SUCCESS;
 }
@@ -2347,7 +2377,6 @@ STATUS GDS_DSQL_SET_CURSOR(STATUS * user_status,
 	RSR statement;
 	PACKET *packet;
 	P_SQLCUR *sqlcur;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 	int name_l = 0;
 
@@ -2358,16 +2387,18 @@ STATUS GDS_DSQL_SET_CURSOR(STATUS * user_status,
 	statement = *stmt_handle;
 	CHECK_HANDLE(statement, type_rsr, gds_bad_req_handle);
 	rdb = statement->rsr_rdb;
-	ERROR_INIT(env);
-
-	/* make sure the protocol supports it */
-
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7) {
-		return unsupported(user_status);
-	}
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
+		/* make sure the protocol supports it */
+
+		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7) {
+			return unsupported(user_status);
+		}
+
 		/* set up the packet for the other guy... */
 
 		packet = &rdb->rdb_packet;
@@ -2394,8 +2425,9 @@ STATUS GDS_DSQL_SET_CURSOR(STATUS * user_status,
 	catch (const Firebird::status_exception& e)
 	{
 		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
+	RESTORE_THREAD_DATA;
 
 	RETURN_SUCCESS;
 }
@@ -2419,7 +2451,6 @@ STATUS GDS_DSQL_SQL_INFO(STATUS * user_status,
 	RDB rdb;
 	RSR statement;
 	STATUS status;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -2429,22 +2460,25 @@ STATUS GDS_DSQL_SQL_INFO(STATUS * user_status,
 	statement = *stmt_handle;
 	CHECK_HANDLE(statement, type_rsr, gds_bad_req_handle);
 	rdb = statement->rsr_rdb;
-	ERROR_INIT(env);
-
-	/* make sure the protocol supports it */
-
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7) {
-		return unsupported(user_status);
-	}
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
+		/* make sure the protocol supports it */
+
+		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7) {
+			return unsupported(user_status);
+		}
+
 		status = info(user_status, rdb, op_info_sql, statement->rsr_id, 0,
 					  item_length, items, 0, 0, buffer_length, buffer);
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		status = e.value();
+		RESTORE_THREAD_DATA;
+		return error(user_status);
 	}
 
 	RESTORE_THREAD_DATA;
@@ -2478,7 +2512,6 @@ STATUS GDS_GET_SEGMENT(STATUS * user_status,
 	UCHAR *p;
 	USHORT l;
 	STATUS *v;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -2489,18 +2522,20 @@ STATUS GDS_GET_SEGMENT(STATUS * user_status,
 	blob = *blob_handle;
 	rdb = blob->rbl_rdb;
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	ERROR_INIT(env);
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 	port = rdb->rdb_port;
-
-	/* Build the primary packet to get the operation started. */
-
-	packet = &rdb->rdb_packet;
-	segment = &packet->p_sgmt;
-	response = &packet->p_resp;
-	temp = response->p_resp_data;
 
 	try
 	{
+		/* Build the primary packet to get the operation started. */
+
+		packet = &rdb->rdb_packet;
+		segment = &packet->p_sgmt;
+		response = &packet->p_resp;
+		temp = response->p_resp_data;
+
 		/* Handle old protocol.  Also handle new protocol on a blob that has
 		   been created rather than opened.   (This should yield an error.) */
 
@@ -2681,7 +2716,7 @@ STATUS GDS_GET_SEGMENT(STATUS * user_status,
 	catch (const Firebird::status_exception& e)
 	{
 		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
 
 	RESTORE_THREAD_DATA;
@@ -2717,7 +2752,6 @@ STATUS GDS_GET_SLICE(STATUS * user_status,
 	P_SLC *data;
 	P_SLR *response;
 	USHORT err_flag;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -2726,14 +2760,15 @@ STATUS GDS_GET_SLICE(STATUS * user_status,
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
 	CHECK_HANDLE((*tra_handle), type_rtr, gds_bad_trans_handle);
 	transaction = *tra_handle;
-	ERROR_INIT(env);
-
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4) {
-		return unsupported(user_status);
-	}
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
+		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4) {
+			return unsupported(user_status);
+		}
 		/* Parse the sdl in case blr_d_float must be converted to blr_double */
 
 		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION6) {
@@ -2790,8 +2825,9 @@ STATUS GDS_GET_SLICE(STATUS * user_status,
 	catch (const Firebird::status_exception& e)
 	{
 		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
+	RESTORE_THREAD_DATA;
 
 	RETURN_SUCCESS;
 }
@@ -2818,7 +2854,6 @@ STATUS GDS_OPEN_BLOB2(STATUS * user_status,
 	RBL blob;
 	PACKET *packet;
 	P_BLOB *p_blob;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -2828,22 +2863,24 @@ STATUS GDS_OPEN_BLOB2(STATUS * user_status,
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
 	CHECK_HANDLE((*rtr_handle), type_rtr, gds_bad_trans_handle);
 	transaction = *rtr_handle;
-	ERROR_INIT(env);
-
-	packet = &rdb->rdb_packet;
-	packet->p_operation = op_open_blob;
-	p_blob = &packet->p_blob;
-	p_blob->p_blob_transaction = transaction->rtr_id;
-	p_blob->p_blob_id = *blob_id;
-
-	if (rdb->rdb_port->port_protocol >= PROTOCOL_VERSION4) {
-		packet->p_operation = op_open_blob2;
-		p_blob->p_blob_bpb.cstr_length = bpb_length;
-		p_blob->p_blob_bpb.cstr_address = bpb;
-	}
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
+		packet = &rdb->rdb_packet;
+		packet->p_operation = op_open_blob;
+		p_blob = &packet->p_blob;
+		p_blob->p_blob_transaction = transaction->rtr_id;
+		p_blob->p_blob_id = *blob_id;
+
+		if (rdb->rdb_port->port_protocol >= PROTOCOL_VERSION4) {
+			packet->p_operation = op_open_blob2;
+			p_blob->p_blob_bpb.cstr_length = bpb_length;
+			p_blob->p_blob_bpb.cstr_address = bpb;
+		}
+
 		if (send_and_receive(rdb, packet, user_status)) {
 			return error(user_status);
 		}
@@ -2861,8 +2898,9 @@ STATUS GDS_OPEN_BLOB2(STATUS * user_status,
 	catch (const Firebird::status_exception& e)
 	{
 		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
+	RESTORE_THREAD_DATA;
 
 	RETURN_SUCCESS;
 }
@@ -2885,7 +2923,6 @@ STATUS GDS_PREPARE(STATUS * user_status,
 	RDB rdb;
 	RTR transaction;
 	PACKET *packet;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -2894,7 +2931,9 @@ STATUS GDS_PREPARE(STATUS * user_status,
 	CHECK_HANDLE(transaction, type_rtr, gds_bad_trans_handle);
 	rdb = (*rtr_handle)->rtr_rdb;
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	ERROR_INIT(env);
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
@@ -2925,8 +2964,9 @@ STATUS GDS_PREPARE(STATUS * user_status,
 	catch (const Firebird::status_exception& e)
 	{
 		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
+	RESTORE_THREAD_DATA;
 
 	RETURN_SUCCESS;
 }
@@ -2953,7 +2993,6 @@ STATUS GDS_PUT_SEGMENT(STATUS * user_status,
 	PORT port;
 	UCHAR *p;
 	USHORT l;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -2964,7 +3003,9 @@ STATUS GDS_PUT_SEGMENT(STATUS * user_status,
 	blob = *blob_handle;
 	rdb = blob->rbl_rdb;
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	ERROR_INIT(env);
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 	port = rdb->rdb_port;
 
 	try
@@ -3020,8 +3061,9 @@ STATUS GDS_PUT_SEGMENT(STATUS * user_status,
 	catch (const Firebird::status_exception& e)
 	{
 		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
+	RESTORE_THREAD_DATA;
 
 	RETURN_SUCCESS;
 }
@@ -3052,7 +3094,6 @@ STATUS GDS_PUT_SLICE(STATUS * user_status,
 	PACKET *packet;
 	P_SLC *data;
 	P_SLR *response;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -3061,14 +3102,16 @@ STATUS GDS_PUT_SLICE(STATUS * user_status,
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
 	CHECK_HANDLE((*tra_handle), type_rtr, gds_bad_trans_handle);
 	transaction = *tra_handle;
-	ERROR_INIT(env);
-
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4) {
-		return unsupported(user_status);
-	}
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
+		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4) {
+			return unsupported(user_status);
+		}
+
 		/* Parse the sdl in case blr_d_float must be converted to blr_double */
 
 		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION6) {
@@ -3113,8 +3156,9 @@ STATUS GDS_PUT_SLICE(STATUS * user_status,
 	catch (const Firebird::status_exception& e)
 	{
 		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
+	RESTORE_THREAD_DATA;
 
 	RETURN_SUCCESS;
 }
@@ -3143,25 +3187,26 @@ STATUS GDS_QUE_EVENTS(STATUS * user_status,
 	P_EVENT *event;
 	P_REQ *request;
 	RVNT rem_event;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
 
 	rdb = *handle;
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	ERROR_INIT(env);
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 	port = rdb->rdb_port;
 	packet = &rdb->rdb_packet;
 
-	/* Make sure protocol support action */
-
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4) {
-		return unsupported(user_status);
-	}
-
 	try
 	{
+		/* Make sure protocol support action */
+
+		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4) {
+			return unsupported(user_status);
+		}
+
 		/* If there isn't a auxiliary asynchronous port, make one now */
 
 		if (!port->port_async)
@@ -3227,8 +3272,9 @@ STATUS GDS_QUE_EVENTS(STATUS * user_status,
 	catch (const Firebird::status_exception& e)
 	{
 		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
+	RESTORE_THREAD_DATA;
 
 	RETURN_SUCCESS;
 }
@@ -3257,7 +3303,6 @@ STATUS GDS_RECEIVE(STATUS * user_status,
 	RRQ request;
 	RDB rdb;
 	MSG message;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -3268,13 +3313,14 @@ STATUS GDS_RECEIVE(STATUS * user_status,
 	request = REMOTE_find_request(*req_handle, level);
 	rdb = request->rrq_rdb;
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	ERROR_INIT(env);
-
-	PORT port = rdb->rdb_port;
-	rrq::rrq_repeat * tail = &request->rrq_rpt[msg_type];
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
+		PORT port = rdb->rdb_port;
+		rrq::rrq_repeat * tail = &request->rrq_rpt[msg_type];
 
 #ifdef SCROLLABLE_CURSORS
 		if (port->port_protocol >= PROTOCOL_SCROLLABLE_CURSORS)
@@ -3478,8 +3524,9 @@ STATUS GDS_RECEIVE(STATUS * user_status,
 	catch (const Firebird::status_exception& e)
 	{
 		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
+	RESTORE_THREAD_DATA;
 
 	RETURN_SUCCESS;
 }
@@ -3501,7 +3548,6 @@ STATUS GDS_RECONNECT(STATUS * user_status,
 	PACKET *packet;
 	P_STTR *trans;
 	RDB rdb;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -3509,17 +3555,19 @@ STATUS GDS_RECONNECT(STATUS * user_status,
 	NULL_CHECK(rtr_handle, gds_bad_trans_handle);
 	rdb = *db_handle;
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	ERROR_INIT(env);
-
-	packet = &rdb->rdb_packet;
-	packet->p_operation = op_reconnect;
-	trans = &packet->p_sttr;
-	trans->p_sttr_database = rdb->rdb_id;
-	trans->p_sttr_tpb.cstr_length = length;
-	trans->p_sttr_tpb.cstr_address = id;
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
+		packet = &rdb->rdb_packet;
+		packet->p_operation = op_reconnect;
+		trans = &packet->p_sttr;
+		trans->p_sttr_database = rdb->rdb_id;
+		trans->p_sttr_tpb.cstr_length = length;
+		trans->p_sttr_tpb.cstr_address = id;
+
 		if (send_and_receive(rdb, packet, user_status)) {
 			return error(user_status);
 		}
@@ -3529,8 +3577,9 @@ STATUS GDS_RECONNECT(STATUS * user_status,
 	catch (const Firebird::status_exception& e)
 	{
 		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
+	RESTORE_THREAD_DATA;
 
 	RETURN_SUCCESS;
 }
@@ -3550,7 +3599,6 @@ STATUS GDS_RELEASE_REQUEST(STATUS * user_status, RRQ * req_handle)
  **************************************/
 	RDB rdb;
 	RRQ request;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -3559,7 +3607,9 @@ STATUS GDS_RELEASE_REQUEST(STATUS * user_status, RRQ * req_handle)
 	CHECK_HANDLE(request, type_rrq, gds_bad_req_handle);
 	rdb = request->rrq_rdb;
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	ERROR_INIT(env);
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
@@ -3573,8 +3623,9 @@ STATUS GDS_RELEASE_REQUEST(STATUS * user_status, RRQ * req_handle)
 	catch (const Firebird::status_exception& e)
 	{
 		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
+	RESTORE_THREAD_DATA;
 
 	RETURN_SUCCESS;
 }
@@ -3604,7 +3655,6 @@ STATUS GDS_REQUEST_INFO(STATUS * user_status,
 	FMT format;
 	STATUS status;
 	rrq::rrq_repeat * tail, *end;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -3613,7 +3663,9 @@ STATUS GDS_REQUEST_INFO(STATUS * user_status,
 	CHECK_HANDLE(request, type_rrq, gds_bad_req_handle);
 	rdb = request->rrq_rdb;
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	ERROR_INIT(env);
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
@@ -3677,7 +3729,7 @@ punt:
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		status = e.value();
+		status = error(user_status);
 	}
 
 	RESTORE_THREAD_DATA;
@@ -3700,7 +3752,6 @@ STATUS GDS_ROLLBACK_RETAINING(STATUS * user_status, RTR * rtr_handle)
  **************************************/
 	RDB rdb;
 	RTR transaction;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -3709,16 +3760,18 @@ STATUS GDS_ROLLBACK_RETAINING(STATUS * user_status, RTR * rtr_handle)
 	CHECK_HANDLE(transaction, type_rtr, gds_bad_trans_handle);
 	rdb = (*rtr_handle)->rtr_rdb;
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	ERROR_INIT(env);
-
-	/* Make sure protocol support action */
-
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION10) {
-		return unsupported(user_status);
-	}
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
+		/* Make sure protocol support action */
+
+		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION10) {
+			return unsupported(user_status);
+		}
+
 		if (!release_object(rdb, op_rollback_retaining, transaction->rtr_id)) {
 			return error(user_status);
 		}
@@ -3726,8 +3779,9 @@ STATUS GDS_ROLLBACK_RETAINING(STATUS * user_status, RTR * rtr_handle)
 	catch (const Firebird::status_exception& e)
 	{
 		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
+	RESTORE_THREAD_DATA;
 
 	RETURN_SUCCESS;
 }
@@ -3747,7 +3801,6 @@ STATUS GDS_ROLLBACK(STATUS * user_status, RTR * rtr_handle)
  **************************************/
 	RDB rdb;
 	RTR transaction;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -3756,7 +3809,9 @@ STATUS GDS_ROLLBACK(STATUS * user_status, RTR * rtr_handle)
 	CHECK_HANDLE(transaction, type_rtr, gds_bad_trans_handle);
 	rdb = (*rtr_handle)->rtr_rdb;
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	ERROR_INIT(env);
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
@@ -3767,11 +3822,12 @@ STATUS GDS_ROLLBACK(STATUS * user_status, RTR * rtr_handle)
 		REMOTE_cleanup_transaction(transaction);
 		release_transaction(transaction);
 		*rtr_handle = NULL;
+		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
 		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
 
 	RETURN_SUCCESS;
@@ -3796,7 +3852,6 @@ STATUS GDS_SEEK_BLOB(STATUS * user_status,
 	RBL blob;
 	PACKET *packet;
 	P_SEEK *seek;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -3805,7 +3860,9 @@ STATUS GDS_SEEK_BLOB(STATUS * user_status,
 	CHECK_HANDLE(blob, type_rbl, gds_bad_segstr_handle);
 	rdb = blob->rbl_rdb;
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	ERROR_INIT(env);
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
@@ -3833,11 +3890,12 @@ STATUS GDS_SEEK_BLOB(STATUS * user_status,
 		blob->rbl_length = 0;
 		blob->rbl_fragment_length = 0;
 		blob->rbl_flags &= ~(RBL_eof | RBL_eof_pending | RBL_segment);
+		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
 		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
 
 	RETURN_SUCCESS;
@@ -3863,7 +3921,6 @@ STATUS GDS_SEND(STATUS * user_status,
 	MSG message;
 	PACKET *packet;
 	P_DATA *data;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -3875,20 +3932,22 @@ STATUS GDS_SEND(STATUS * user_status,
 	if (msg_type > request->rrq_max_msg)
 		return handle_error(user_status, gds_badmsgnum);
 
-	ERROR_INIT(env);
-
-	message = request->rrq_rpt[msg_type].rrq_message;
-	message->msg_address = msg;
-
-	packet = &rdb->rdb_packet;
-	packet->p_operation = op_send;
-	data = &packet->p_data;
-	data->p_data_request = request->rrq_id;
-	data->p_data_message_number = msg_type;
-	data->p_data_incarnation = level;
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
+		message = request->rrq_rpt[msg_type].rrq_message;
+		message->msg_address = msg;
+
+		packet = &rdb->rdb_packet;
+		packet->p_operation = op_send;
+		data = &packet->p_data;
+		data->p_data_request = request->rrq_id;
+		data->p_data_message_number = msg_type;
+		data->p_data_incarnation = level;
+
 		if (!send_packet(rdb->rdb_port, packet, user_status)) {
 			return error(user_status);
 		}
@@ -3902,11 +3961,12 @@ STATUS GDS_SEND(STATUS * user_status,
 		if (!receive_response(rdb, packet)) {
 			return error(user_status);
 		}
+		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
 		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
 
 	RETURN_SUCCESS;
@@ -3934,7 +3994,6 @@ STATUS GDS_SERVICE_ATTACH(STATUS * user_status,
 	STATUS *v;
 	UCHAR expanded_name[MAXPATHLEN], new_spb[MAXPATHLEN], *new_spb_ptr;
 	TEXT user_string[256], *us;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -3990,8 +4049,9 @@ STATUS GDS_SERVICE_ATTACH(STATUS * user_status,
 	}
 
 	rdb = port->port_context;
-	ERROR_INIT(env);
-
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
@@ -4022,11 +4082,12 @@ STATUS GDS_SERVICE_ATTACH(STATUS * user_status,
 		}
 
 		*handle = rdb;
+		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
 		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
 
 	RETURN_SUCCESS;
@@ -4047,7 +4108,6 @@ STATUS GDS_SERVICE_DETACH(STATUS * user_status, RDB * handle)
  **************************************/
 	RDB rdb;
 	PORT port;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -4056,17 +4116,19 @@ STATUS GDS_SERVICE_DETACH(STATUS * user_status, RDB * handle)
 
 	rdb = *handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_svc_handle);
-	ERROR_INIT(env);
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 	port = rdb->rdb_port;
-
-	/* make sure the protocol supports it */
-
-	if (port->port_protocol < PROTOCOL_VERSION8) {
-		return unsupported(user_status);
-	}
 
 	try
 	{
+		/* make sure the protocol supports it */
+
+		if (port->port_protocol < PROTOCOL_VERSION8) {
+			return unsupported(user_status);
+		}
+
 		if (!release_object(rdb, op_service_detach, rdb->rdb_id)) {
 			return error(user_status);
 		}
@@ -4077,7 +4139,7 @@ STATUS GDS_SERVICE_DETACH(STATUS * user_status, RDB * handle)
 	catch (const Firebird::status_exception& e)
 	{
 		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
 
 	/* Note: Can't RETURN_SUCCESS here as we've torn down memory already */
@@ -4118,7 +4180,6 @@ STATUS GDS_SERVICE_QUERY(STATUS * user_status,
  **************************************/
 	RDB rdb;
 	STATUS status;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -4127,23 +4188,25 @@ STATUS GDS_SERVICE_QUERY(STATUS * user_status,
 
 	rdb = *svc_handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_svc_handle);
-	ERROR_INIT(env);
-
-	/* make sure the protocol supports it */
-
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION8) {
-		return unsupported(user_status);
-	}
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
+		/* make sure the protocol supports it */
+
+		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION8) {
+			return unsupported(user_status);
+		}
+
 		status = info(user_status, rdb, op_service_info, rdb->rdb_id, 0,
 					  item_length, items, recv_item_length, recv_items,
 					  buffer_length, buffer);
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		status = e.value();
+		status = error(user_status);
 	}
 
 	RESTORE_THREAD_DATA;
@@ -4173,7 +4236,6 @@ STATUS GDS_SERVICE_START(STATUS * user_status,
  **************************************/
 	RDB rdb;
 	STATUS status;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -4182,23 +4244,25 @@ STATUS GDS_SERVICE_START(STATUS * user_status,
 
 	rdb = *svc_handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_svc_handle);
-	ERROR_INIT(env);
-
-	/* make sure the protocol supports it */
-
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION8) {
-		return unsupported(user_status);
-	}
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
+		/* make sure the protocol supports it */
+
+		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION8) {
+			return unsupported(user_status);
+		}
+
 		status =
 			svcstart(user_status, rdb, op_service_start, rdb->rdb_id, 0,
 					 item_length, items);
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		status = e.value();
+		status = error(user_status);
 	}
 
 	RESTORE_THREAD_DATA;
@@ -4229,7 +4293,6 @@ STATUS GDS_START_AND_SEND(STATUS * user_status,
 	MSG message;
 	PACKET *packet;
 	P_DATA *data;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -4242,17 +4305,19 @@ STATUS GDS_START_AND_SEND(STATUS * user_status,
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
 	if (msg_type > request->rrq_max_msg)
 		return handle_error(user_status, gds_badmsgnum);
-	ERROR_INIT(env);
-
-	if ((*rtr_handle)->rtr_rdb != rdb) {
-		user_status[0] = gds_arg_gds;
-		user_status[1] = gds_trareqmis;
-		user_status[2] = gds_arg_end;
-		return error(user_status);
-	}
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
+		if ((*rtr_handle)->rtr_rdb != rdb) {
+			user_status[0] = gds_arg_gds;
+			user_status[1] = gds_trareqmis;
+			user_status[2] = gds_arg_end;
+			return error(user_status);
+		}
+
 		if (!clear_queue(rdb->rdb_port, user_status)) {
 			return error(user_status);
 		}
@@ -4291,11 +4356,12 @@ STATUS GDS_START_AND_SEND(STATUS * user_status,
 		{
 			receive_after_start(request, packet->p_resp.p_resp_object);
 		}
+		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
 		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
 
 	RETURN_SUCCESS;
@@ -4321,7 +4387,6 @@ STATUS GDS_START(STATUS * user_status,
 	RDB rdb;
 	PACKET *packet;
 	P_DATA *data;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -4332,17 +4397,19 @@ STATUS GDS_START(STATUS * user_status,
 	transaction = *rtr_handle;
 	rdb = request->rrq_rdb;
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	ERROR_INIT(env);
-
-	if ((*rtr_handle)->rtr_rdb != rdb) {
-		user_status[0] = gds_arg_gds;
-		user_status[1] = gds_trareqmis;
-		user_status[2] = gds_arg_end;
-		return error(user_status);
-	}
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
+		if ((*rtr_handle)->rtr_rdb != rdb) {
+			user_status[0] = gds_arg_gds;
+			user_status[1] = gds_trareqmis;
+			user_status[2] = gds_arg_end;
+			return error(user_status);
+		}
+
 		if (!clear_queue(rdb->rdb_port, user_status)) {
 			return error(user_status);
 		}
@@ -4373,7 +4440,7 @@ STATUS GDS_START(STATUS * user_status,
 	catch (const Firebird::status_exception& e)
 	{
 		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
 
 	RETURN_SUCCESS;
@@ -4398,7 +4465,6 @@ STATUS GDS_START_TRANSACTION(STATUS * user_status,
 	PACKET *packet;
 	P_STTR *trans;
 	RDB rdb;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -4406,27 +4472,30 @@ STATUS GDS_START_TRANSACTION(STATUS * user_status,
 	NULL_CHECK(rtr_handle, gds_bad_trans_handle);
 	rdb = *db_handle;
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	ERROR_INIT(env);
-
-	packet = &rdb->rdb_packet;
-	packet->p_operation = op_transaction;
-	trans = &packet->p_sttr;
-	trans->p_sttr_database = rdb->rdb_id;
-	trans->p_sttr_tpb.cstr_length = tpb_length;
-	trans->p_sttr_tpb.cstr_address = tpb;
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
+		packet = &rdb->rdb_packet;
+		packet->p_operation = op_transaction;
+		trans = &packet->p_sttr;
+		trans->p_sttr_database = rdb->rdb_id;
+		trans->p_sttr_tpb.cstr_length = tpb_length;
+		trans->p_sttr_tpb.cstr_address = tpb;
+
 		if (send_and_receive(rdb, packet, user_status)) {
 			return error(user_status);
 		}
 
 		*rtr_handle = make_transaction(rdb, packet->p_resp.p_resp_object);
+		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
 		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
 
 	RETURN_SUCCESS;
@@ -4459,7 +4528,6 @@ STATUS GDS_TRANSACT_REQUEST(STATUS * user_status,
 	PACKET *packet;
 	RPR procedure;
 	P_TRRQ *trrq;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -4468,17 +4536,19 @@ STATUS GDS_TRANSACT_REQUEST(STATUS * user_status,
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
 	transaction = *rtr_handle;
 	CHECK_HANDLE(transaction, type_rtr, gds_bad_trans_handle);
-	ERROR_INIT(env);
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 	port = rdb->rdb_port;
-
-	/* bag it if the protocol doesn't support it... */
-
-	if (port->port_protocol < PROTOCOL_VERSION8) {
-		return unsupported(user_status);
-	}
 
 	try
 	{
+		/* bag it if the protocol doesn't support it... */
+	
+		if (port->port_protocol < PROTOCOL_VERSION8) {
+			return unsupported(user_status);
+		}
+
 		if (!(procedure = port->port_rpr)) {
 			procedure = port->port_rpr = (RPR) ALLOC(type_rpr);
 		}
@@ -4566,11 +4636,12 @@ STATUS GDS_TRANSACT_REQUEST(STATUS * user_status,
 				return error(user_status);
 			}
 		}
+		RESTORE_THREAD_DATA;
 	}
 	catch (const Firebird::status_exception& e)
 	{
 		RESTORE_THREAD_DATA;
-		return e.value();
+		return error(user_status);
 	}
 
 	RETURN_SUCCESS;
@@ -4595,7 +4666,6 @@ STATUS GDS_TRANSACTION_INFO(STATUS * user_status,
 	RTR transaction;
 	RDB rdb;
 	STATUS status;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -4604,7 +4674,9 @@ STATUS GDS_TRANSACTION_INFO(STATUS * user_status,
 	CHECK_HANDLE(transaction, type_rtr, gds_bad_trans_handle);
 	rdb = transaction->rtr_rdb;
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	ERROR_INIT(env);
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
 	try
 	{
@@ -4615,7 +4687,7 @@ STATUS GDS_TRANSACTION_INFO(STATUS * user_status,
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		status = e.value();
+		status = error(user_status);
 	}
 
 	RESTORE_THREAD_DATA;
@@ -4638,7 +4710,6 @@ STATUS GDS_UNWIND(STATUS * user_status, RRQ * req_handle, USHORT level)
  **************************************/
 	RDB rdb;
 	RRQ request;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -4647,9 +4718,18 @@ STATUS GDS_UNWIND(STATUS * user_status, RRQ * req_handle, USHORT level)
 	CHECK_HANDLE(request, type_rrq, gds_bad_req_handle);
 	rdb = request->rrq_rdb;
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	ERROR_INIT(env);
+	rdb->rdb_status_vector = user_status;
+	trdb->trdb_status_vector = user_status;
+	trdb->trdb_database = rdb;
 
-/* EXE_unwind (*req_handle); */
+	try
+	{
+		// EXE_unwind (*req_handle);
+	}
+	catch(...)
+	{
+		return error(user_status);
+	}
 
 	RETURN_SUCCESS;
 }
@@ -6207,14 +6287,11 @@ static STATUS mov_dsql_message(	UCHAR*	from_msg,
  **************************************/
 	DSC *from_desc, *to_desc, *end_desc, from, to;
 	TRDB trdb;
-	JMP_BUF env, *old_env;
 
 /* Set up in case we get a conversion error.
    NOTE: The code below is not amenable to multi-threading. */
 
 	trdb = GET_THREAD_DATA;
-	old_env = trdb->trdb_setjmp;
-	trdb->trdb_setjmp = &env;
 
 	try {
 
@@ -6236,7 +6313,6 @@ static STATUS mov_dsql_message(	UCHAR*	from_msg,
 
 	}	// try
 	catch (...) {
-		trdb->trdb_setjmp = old_env;
 		return FAILURE;
 	}
 

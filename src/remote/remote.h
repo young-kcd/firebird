@@ -26,14 +26,13 @@
 
 #include "../jrd/common.h"
 #include "../remote/remote_def.h"
-#include "../jrd/ibsetjmp.h"
 #include "../jrd/thd_proto.h"
 
 /* Include some apollo include files for tasking */
 
 #if !(defined VMS || defined WIN_NT)
 #if !(defined PC_PLATFORM || defined NETWARE_386)
-#include <pwd.h>
+//#include <pwd.h>
 #include <signal.h>
 #endif
 #include <fcntl.h>
@@ -79,7 +78,6 @@ typedef struct rdb
 	struct rvnt*	rdb_events;			/* known events */
 	struct rsr*		rdb_sql_requests;	/* SQL requests */
 	STATUS*			rdb_status_vector;
-	UCHAR*			rdb_setjmp;
 	PACKET			rdb_packet;			/* Communication structure */
 } *RDB;
 
@@ -498,8 +496,6 @@ typedef struct trdb
 	struct thdd	trdb_thd_data;
 	struct rdb*	trdb_database;
 	STATUS*		trdb_status_vector;
-	JMP_BUF*	trdb_setjmp;
-
 } *TRDB;
 
 

@@ -24,7 +24,6 @@
 #include "firebird.h"
 #include <stdlib.h>
 #include <string.h>
-#include "../jrd/ibsetjmp.h"
 #include "../remote/remote.h"
 #include "gen/codes.h"
 #include "../remote/allr_proto.h"

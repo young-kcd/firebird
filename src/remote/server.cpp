@@ -24,7 +24,6 @@
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
-#include "../jrd/ibsetjmp.h"
 #include "../jrd/gds.h"
 #include "../jrd/gdsassert.h"
 #include "../remote/remote.h"
@@ -262,7 +261,6 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
 #endif /* DEBUG */
 #endif /* DEV_BUILD */
 	struct trdb thd_context, *trdb;
-	JMP_BUF env, inner_env;
 	STATUS status_vector[20];
 
 	gds__thread_enable(-1);
@@ -271,7 +269,6 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
 	THREAD_ENTER;
 
 	SET_THREAD_DATA;
-	trdb->trdb_setjmp = &env;
 	trdb->trdb_status_vector = status_vector;
 
 	try {
@@ -474,7 +471,6 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
 			gds__log("SRVR_multi_thread: forcefully disconnecting a port");
 
 			/* To handle recursion within the error handler */
-			trdb->trdb_setjmp = &inner_env;
 			try {
 				/* If we have a port, request really should be non-null, but just in case ... */
 				if (request != NULL) {
@@ -498,7 +494,6 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
 				}
 				port = NULL;
 
-				trdb->trdb_setjmp = &env;
 			}	// try
 			catch (...) {
 				port->disconnect(NULL, NULL);
@@ -3010,12 +3005,10 @@ BOOLEAN process_packet(PORT port,
 	STR string;
 	TEXT msg[128];
 	SRVR server;
-	JMP_BUF env;
 	struct trdb thd_context, *trdb;
 
 	trdb = &thd_context;
 	trdb->trdb_status_vector = port->port_status_vector;
-	trdb->trdb_setjmp = &env;
 	THD_put_specific((THDD) trdb);
 	trdb->trdb_thd_data.thdd_type = THDD_TYPE_TRDB;
 
