@@ -2134,7 +2134,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					}
 					if (!found && operation != blr_savepoint_set) {
 						ERR_post(isc_invalid_savepoint,
-							isc_arg_string, node_savepoint_name, 0);
+							isc_arg_string, ERR_cstring(node_savepoint_name), 0);
 					}
 
 					switch (operation)
