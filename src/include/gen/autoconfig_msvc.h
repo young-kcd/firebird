@@ -167,11 +167,11 @@
 #define FB_PIPE_NAME "interbas"
 
 /* gpre built-in language support (C/C++ are mandatory) */
-#undef GPRE_ADA
+#define GPRE_ADA
 #undef GPRE_BASIC
-#undef GPRE_COBOL
+#define GPRE_COBOL
 #undef GPRE_FORTRAN
-#undef GPRE_PASCAL
+#define GPRE_PASCAL
 
 /* Maximum allowed pathname length */
 #define MAXPATHLEN 260 // should correspond to MAX_PATH define in windef.h
