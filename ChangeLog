@@ -1,3 +1,35 @@
+2005-01-25 00:12  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp (1.215):
+	
+	fix problems with explicit given PLAN and MERGE
+
+2005-01-25 00:02  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp (1.189):
+	
+	fix derived table issue with derived column list and columnname
+	from sub-select
+
+2005-01-24 10:35  dimitr
+
+	* firebird2/src/jrd/: btr.cpp (1.133), idx.cpp (1.84), pcmet.epp
+	(1.32):
+	
+	Fixed expression indices bugs.
+
+2005-01-24 08:58  dimitr
+
+	* firebird2/src/jrd/: cch.cpp (1.117), cch.h (1.27):
+	
+	Cleanup.
+
+2005-01-24 03:15  stryqx
+
+	* firebird2/builds/posix/prefix.netbsd (1.2):
+	
+	Fix final instance of gds_delay to gds_relay.
+
 2005-01-23 16:52  dimitr
 
 	* firebird2/src/: dsql/dsql.cpp (1.139), dsql/dsql.h (1.71),
