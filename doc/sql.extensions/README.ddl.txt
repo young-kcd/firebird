@@ -77,3 +77,53 @@ Now, the ability to grant the role can be removed by the original grantor with
 REVOKE ADMIN OPTION FROM user.
 
 
+3) Blob filter's blob types can be declared by mnemonics for known types.
+(Alex Peshkov.)
+
+The original allowed syntax for declaring a blob filter was:
+declare filter <name> input_type <number> output_type <number>
+ entry_point <function_in_library> module_name <library_name>;
+
+The alternative new syntax is:
+declare filter <name> input_type <mnemonic> output_type <mnemonic>
+ entry_point <function_in_library> module_name <library_name>;
+
+where <mnemonic> refers to a subtype known to the engine. Initially they are
+binary, text and others mostly of internal usage, but if the user is enough
+brave, having written a new name in rdb$types, that name could be used, since
+it's parsed only at declaration time. The engine keeps the numerical value.
+Remember, only negative subtype values are meant to be defined by users. To get
+the predefined types, do
+
+select * from rdb$types where rdb$field_name = 'RDB$FIELD_SUB_TYPE';
+
+RDB$FIELD_NAME      RDB$TYPE RDB$TYPE_NAME              RDB$DESCRIPTION RDB$SYSTEM_FLAG
+=================== ======== ========================== =============== ===============
+
+RDB$FIELD_SUB_TYPE         0 BINARY                          <null>                   1
+RDB$FIELD_SUB_TYPE         1 TEXT                            <null>                   1
+RDB$FIELD_SUB_TYPE         2 BLR                             <null>                   1
+RDB$FIELD_SUB_TYPE         3 ACL                             <null>                   1
+RDB$FIELD_SUB_TYPE         4 RANGES                          <null>                   1
+RDB$FIELD_SUB_TYPE         5 SUMMARY                         <null>                   1
+RDB$FIELD_SUB_TYPE         6 FORMAT                          <null>                   1
+RDB$FIELD_SUB_TYPE         7 TRANSACTION_DESCRIPTION         <null>                   1
+RDB$FIELD_SUB_TYPE         8 EXTERNAL_FILE_DESCRIPTION       <null>                   1
+
+Examples.
+
+Original declaration:
+declare filter pesh input_type 0 output_type 3 entry_point 'f' module_name 'p';
+Alternative declaration:
+declare filter pesh input_type binary output_type acl entry_point 'f' module_name 'p';
+
+Bizarre declaration for user defined blob subtype. Remember to commit after the insertion:
+SQL> insert into rdb$types values('RDB$FIELD_SUB_TYPE', -100, 'XDR', 'test type', 0);
+SQL> commit;
+SQL> declare filter pesh2 input_type xdr output_type text entry_point 'p2' module_name 'p';
+SQL> show filter pesh2;
+BLOB Filter: PESH2
+        Input subtype: -100 Output subtype: 1
+        Filter library is p
+        Entry point is p2
+

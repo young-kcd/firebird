@@ -94,3 +94,33 @@ has been redirected to.
 Note: neither -m nor -m2 have interactive counterparts through the SET command.
 They only can be specified in the command line switches for isql.
 
+4) Ability to show the line number where an error happened in a script.
+
+In previous versions, the only reasonable way to know where a script had caused
+an error was using the switched -e for echoing commands, -o to send the output
+to a file and -m to merge the error output to the same file. This way, you could
+observe the commands isql executed and the errors if they exist. The script continued
+executing to the end. The server only gives a line number related to the single command
+(statement) that it's executing, for some DSQL failures. For other errors, you
+only know the statement caused problems.
+
+With the addition of -b for bail as described in (1), the user is given the power
+to tell isql to stop executing scripts when an error happens, but you still need to
+echo the commands to the output file to discover which statement caused the failure.
+
+Now, the ability to signal a script-related line number of a failure enables the
+user to go to the script directly and find the offending statement. When the server
+provides line and column information, you will be told the exact line in the script
+that caused the problem. When the server only indicates a failure, you will be told
+the starting line of the statement that caused the failure, related to the whole script.
+
+This feature works even if there are nested scripts, namely, if script SA includes
+script SB and SB causes a failure, the line number is related to SB. When SB is
+read completely, isql continues executing SA and then isql continues counting lines
+related to SA, since each file gets a separate line counter. A script SA includes
+SB when SA uses the INPUT command to load SB.
+
+Lines are counted according to what the underlying IO layer considers separate lines.
+For ports using EDITLINE, a line is what readline() provides in a single call.
+Line length is limited to 32767 bytes, but this has been always the limit.
+
