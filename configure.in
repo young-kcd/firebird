@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.158 2003-09-30 17:48:55 brodsom Exp $
+dnl $Id: configure.in,v 1.159 2003-09-30 19:26:05 brodsom Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -749,8 +749,6 @@ gen/Makefile.client.gdef:${MAKE_SRC_DIR}/Makefile.in.client.gdef
 gen/Makefile.client.isql:${MAKE_SRC_DIR}/Makefile.in.client.isql
 gen/Makefile.client.gpre:${MAKE_SRC_DIR}/Makefile.in.client.gpre
 gen/Makefile.client.util:${MAKE_SRC_DIR}/Makefile.in.client.util
-gen/Makefile.client.fbudf:${MAKE_SRC_DIR}/Makefile.in.client.fbudf
-
 gen/Makefile.intl:${MAKE_SRC_DIR}/Makefile.in.intl
 gen/Makefile.msgs:${MAKE_SRC_DIR}/Makefile.in.msgs
 gen/Makefile.extlib:${MAKE_SRC_DIR}/Makefile.in.extlib
@@ -766,8 +764,6 @@ gen/Makefile.embed.isql:${MAKE_SRC_DIR}/Makefile.in.embed.isql
 gen/Makefile.embed.gdef:${MAKE_SRC_DIR}/Makefile.in.embed.gdef
 gen/Makefile.embed.qli:${MAKE_SRC_DIR}/Makefile.in.embed.qli
 gen/Makefile.embed.gpre:${MAKE_SRC_DIR}/Makefile.in.embed.gpre
-gen/Makefile.embed.fbudf:${MAKE_SRC_DIR}/Makefile.in.embed.fbudf
-
 gen/Makefile.install:builds/install/arch-specific/${MAKEFILE_PREFIX}/Makefile.in
 Makefile:Makefile.in
 gen/Makefile.extern.editline:${MAKE_SRC_DIR}/Makefile.in.extern.editline
