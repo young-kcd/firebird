@@ -184,9 +184,7 @@
 #define           BOOL int
 #endif
 
-#ifndef MS_DOS
 #define far
-#endif
 
 typedef VOID far *pVOID;
 typedef pVOID far *ppVOID;
@@ -208,122 +206,6 @@ typedef UINT16 PDXResult;
 
 #define hFILE  INT16
 #define phFILE pINT16
-
-
-#ifdef MS_DOS
-//-----------------------------------------------------------------
-// API PROC CALLING CONVENTION
-//-----------------------------------------------------------------
-
-#ifndef CALLTYPE
-#define CALLTYPE pascal far
-#endif
-
-//-----------------------------------------------------------------
-
-#define LdStrColl( LdObj, Str1, Str2 )                             \
-                                                                   \
-                 LdObj->pColl(   LdObj, Str1, Str2 )
-
-#define LdStrColli( LdObj, Str1, Str2 )                            \
-                                                                   \
-                 LdObj->pColli(  LdObj, Str1, Str2 )
-
-#define LdStrnColl( LdObj, Str1, Str2, MaxLen )                    \
-                                                                   \
-                 LdObj->pNColl(  LdObj, Str1, Str2, MaxLen )
-
-#define LdStrnColli( LdObj, Str1, Str2, MaxLen )                   \
-                                                                   \
-                 LdObj->pNColli( LdObj, Str1, Str2, MaxLen )
-
-#define LdStrCmp( LdObj, Str1, Str2 )                              \
-                                                                   \
-                 LdObj->pCmp(   LdObj, Str1, Str2 )
-
-#define LdStrCmpi( LdObj, Str1, Str2 )                             \
-                                                                   \
-                 LdObj->pCmpi(  LdObj, Str1, Str2 )
-
-#define LdStrnCmp( LdObj, Str1, Str2, MaxLen )                     \
-                                                                   \
-                 LdObj->pNCmp(  LdObj, Str1, Str2, MaxLen )
-
-#define LdStrnCmpi( LdObj, Str1, Str2, MaxLen )                    \
-                                                                   \
-                 LdObj->pNCmpi( LdObj, Str1, Str2, MaxLen )
-
-#define LdExStrCmp( LdObj, Right, RightLen, Left, LeftLen, Exact ) \
-                                                                   \
-                 LdObj->pExCmp( LdObj, Right, RightLen, Left, LeftLen, Exact )
-
-//  ------
-
-#define LdCharToOem( LdObj, ch )                                   \
-                                                                   \
-                 LdCharConvert( LdObj->pOemTable, ch )
-
-#define LdCharToAnsi( LdObj, ch )                                  \
-                                                                   \
-                 LdCharConvert( LdObj->pAnsiTable, ch )
-
-#define LdStrToOem( LdObj, Str )                                   \
-                                                                   \
-                 LdStrConvert( LdObj->pOemTable, Str )
-
-#define LdStrToAnsi( LdObj, Str )                                  \
-                                                                   \
-                 LdStrConvert( LdObj->pAnsiTable, Str )
-
-#define LdStrnToOem( LdObj, Str, Len )                             \
-                                                                   \
-                 LdStrnConvert( LdObj->pOemTable, Str, Len )
-
-#define LdStrnToAnsi( LdObj, Str, Len )                            \
-                                                                   \
-                 LdStrnConvert( LdObj->pAnsiTable, Str, Len )
-
-#define LdStrToOemStr( LdObj, Src, Dst )                           \
-                                                                   \
-                 LdStrConvertStr( LdObj->pOemTable, Src, Dst )
-
-#define LdStrToAnsiStr( LdObj, Src, Dst )                          \
-                                                                   \
-                 LdStrConvertStr( LdObj->pAnsiTable, Src, Dst )
-
-#define LdStrnToOemStr( LdObj, Src, Dst, Len )                     \
-                                                                   \
-                 LdStrnConvertStr( LdObj->pOemTable, Src, Dst, Len )
-
-#define LdStrnToAnsiStr( LdObj, Src, Dst, Len )                    \
-                                                                   \
-                 LdStrnConvertStr( LdObj->pAnsiTable, Src, Dst, Len )
-
-#define LdIsStrInOemCp( LdObj, Str )                               \
-                                                                   \
-                 LdIsStrConvert( LdObj->pOemTable, Str )
-
-#define LdIsStrInAnsiCp( LdObj, Str )                              \
-                                                                   \
-                 LdIsStrConvert( LdObj->pAnsiTable, Str )
-
-#define LdIsStrnInOemCp( LdObj, Str, Len )                         \
-                                                                   \
-                 LdIsStrnConvert( LdObj->pOemTable, Str, Len )
-
-#define LdIsStrnInAnsiCp( LdObj, Str, Len )                        \
-                                                                   \
-                 LdIsStrnConvert( LdObj->pAnsiTable, Str, Len )
-
-#define LdIsCharInOemCp( LdObj, ch )                               \
-                                                                   \
-                 LdIsCharConvert( LdObj->pOemTable, ch )
-
-#define LdIsCharInAnsiCp( LdObj, ch )                              \
-                                                                   \
-                 LdIsCharConvert( LdObj->pAnsiTable, ch )
-
-#endif
 
 /*
 //-----------------------------------------------------------------
@@ -445,13 +327,8 @@ typedef UINT16 PDXResult;
 struct SortOrderTblEntry {
 
 	UINT16 Primary:8;
-#ifdef MS_DOS
-	UINT16 Secondary:5;
-	UINT16 Tertiary:1;
-#else
 	UINT16 Secondary:4;
 	UINT16 Tertiary:2;
-#endif
 	UINT16 IsExpand:1;
 	UINT16 IsCompress:1;
 
@@ -482,143 +359,6 @@ struct CompressPair {
 	struct SortOrderTblEntry CaseWeight;
 	struct SortOrderTblEntry NoCaseWeight;
 };
-
-#ifdef MS_DOS
-typedef struct LdResInfo {
-
-	INT16 ID;
-	BYTE LdResName[LD_SFNAME_LEN];
-	pBYTE pLdLibraryName;
-	UINT16 hLdLibrary;
-	UINT16 hResource;
-	pBYTE pResource;
-	UINT16 CurPos;
-
-} LDRESINFO;
-
-typedef LDRESINFO *hLDRESINFO;
-#endif
-
-#ifndef __LDSYS_H
-
-#ifdef MS_DOS
-
-//-----------------------------------------------------------------
-// LDOBJECT DEFINITIONS
-//-----------------------------------------------------------------
-
-typedef struct LDTABLES {
-
-	UINT16 CaseSortTable:1;
-	UINT16 NoCaseSortTable:1;
-	UINT16 SoundexTable:1;
-	UINT16 LicsCPTable:1;
-	UINT16 CPLicsTable:1;
-	UINT16 PrimAltTable:1;
-	UINT16 AltPrimTable:1;
-	UINT16 BaseTable:1;
-	UINT16 CharDefTable:1;
-	UINT16 UpperCaseTable:1;
-	UINT16 LowerCaseTable:1;
-	UINT16 Reserved:5;
-
-} LDTABLES;
-
-//
-// Language Driver header structure
-//
-
-typedef struct LdObject {
-
-	// DRIVER ID
-	UINT16 DriverID;
-
-	// LANGUAGE/COUNTRY ID
-	UINT16 LangCountryID;
-
-	// PRIMARY LANGUAGE DRIVER CODE PAGE ID
-	UINT16 PrimaryCodePageID;
-
-	// ALTERNATE CODE PAGE ID (FOR CP TO CP CONVERSION)
-	UINT16 AltCodePageID;
-
-	// PRODUCT ID
-	UINT16 ProductID;
-
-	// OEM (DOS) / ANSI (WIN) etc.
-	BYTE PrimaryCpPlatform;
-
-	// OEM (DOS) / ANSI (WIN) etc.
-	BYTE AlternateCpPlatform;
-
-	// TYPE OF TEST FOR BREAKING TIE BREAKS FIRST
-	BYTE TieBreakPriority;
-
-	// CHARACTER SET SORT / DICTIONARY SORT
-	BYTE LanguageSortType;
-
-	// LANGUAGE DRIVER MAJOR
-	BYTE LanguageMajorVersion;
-
-	// LANGUAGE DRIVER MAJOR
-	BYTE LanguageMinorVersion;
-
-	// LANGUAGE DRIVER REVISION
-	BYTE LanguageRevision;
-
-	// LANGUAGE DRIVER DESCRIPTION
-	BYTE LanguageName[LD_SYMNAME_LEN];
-
-	// LANGUAGE DRIVER SIGNATURE & FILENAME
-	BYTE LanguageSigFileName[LD_SFNAME_LEN];
-
-	BYTE Reserved[sizeof(LDTABLES) + sizeof(UINT16)];
-
-	// PATHNAME OF ACTUAL LANGUAGE DRIVER LOADED
-	BYTE LdFullPathName[MAXPATHLEN + 1];
-
-	// LANGUAGE DRIVER RESOURCE TYPE: WINDOWS RES / DOS FILE
-	BYTE LanguageResourceType;
-
-	// CP TO CP CONVERSION
-	pUINT16 pOemTable;
-
-	// CP TO CP CONVERSION
-	pUINT16 pAnsiTable;
-
-	// STRING COMPARIONS METHODS
-	INT16 CALLTYPE(*pColl) (struct LdObject * LdObj, pBYTE Str1, pBYTE Str2);
-	INT16 CALLTYPE(*pColli) (struct LdObject * LdObj, pBYTE Str1, pBYTE Str2);
-	INT16 CALLTYPE(*pNColl) (struct LdObject * LdObj, pBYTE Str1, pBYTE Str2,
-							 UINT16 Maxlen);
-	INT16 CALLTYPE(*pNColli) (struct LdObject * LdObj, pBYTE Str1, pBYTE Str2,
-							  UINT16 Maxlen);
-	INT16 CALLTYPE(*pCmp) (struct LdObject * LdObj, pBYTE Str1, pBYTE Str2);
-	INT16 CALLTYPE(*pCmpi) (struct LdObject * LdObj, pBYTE Str1, pBYTE Str2);
-	INT16 CALLTYPE(*pNCmp) (struct LdObject * LdObj, pBYTE Str1, pBYTE Str2,
-							UINT16 Maxlen);
-	INT16 CALLTYPE(*pNCmpi) (struct LdObject * LdObj, pBYTE Str1, pBYTE Str2,
-							 UINT16 Maxlen);
-	INT16 CALLTYPE(*pExCmp) (struct LdObject * LdObj, pBYTE Right,
-							 INT16 RightLen, pBYTE Left, INT16 LeftLen,
-							 BOOL Exact);
-
-} LdObject;
-
-#endif
-
-#else
-
-#include "ldstruct.h"
-
-#endif /* //__LDSYS_H */
-
-#ifdef MS_DOS
-typedef LdObject LDOBJECT;
-typedef LdObject *pLDOBJECT;
-typedef LdObject *pLdObject;
-typedef LdObject *Ldh;
-#endif
 
 
 /*
@@ -660,185 +400,6 @@ typedef LdObject *Ldh;
 // ALPHANUMERIC CHARACTER
 */
 #define CH_ALPHANUM            CH_LOWER + CH_UPPER + CH_DIGIT
-
-#ifdef MS_DOS
-//-----------------------------------------------------------------
-// API PROC PROTOTYPES
-//-----------------------------------------------------------------
-
-LDTABLES CALLTYPE LdWhichObjTablesLoaded(LdObject * LdObj);
-
-LDTABLES CALLTYPE LdWhichObjTablesSupported(LdObject * LdObj);
-
-BOOL CALLTYPE LdIsObjTableLoaded(LdObject * LdObj, INT16 table);
-
-BOOL CALLTYPE LdIsObjTableSupported(LdObject * LdObj, INT16 table);
-
-INT16 CALLTYPE LdLoadObj(LdObject ** ReturnLdObj, pBYTE Filename,
-						 LDTABLES * Tables);
-
-INT16 CALLTYPE LdLoadObjTable(LdObject * LdObj, INT16 table);
-
-INT16 CALLTYPE LdUnLoadObj(LdObject ** LdObj);
-
-INT16 CALLTYPE LdUnLoadObjTable(LdObject * LdObj, INT16 table);
-
-INT16 CALLTYPE LdResetObjTables(LdObject * LdObj, LDTABLES * Tables);
-
-INT16 CALLTYPE LdReadObjInfo(LdObject * LdObj, pCHAR fileName);
-
-INT16 CALLTYPE LdInit(INT16 MajorVer, INT16 MinorVer);
-
-VOID CALLTYPE LdExit(VOID);
-
-UINT16 CALLTYPE LdCharToBase(LdObject * LdObj, BYTE ch);
-
-UINT16 CALLTYPE LdCharToAlt(LdObject * LdObj, BYTE ch);
-
-UINT16 CALLTYPE LdCharToPrim(LdObject * LdObj, BYTE ch);
-
-BYTE CALLTYPE LdCharToUpper(LdObject * LdObj, BYTE ch);
-
-BYTE CALLTYPE LdCharToLower(LdObject * LdObj, BYTE ch);
-
-BYTE CALLTYPE LdCharToSoundex(LdObject * LdObj, BYTE ch);
-
-BYTE CALLTYPE LdLicsToChar(LdObject * LdObj, BYTE ch);
-
-BYTE CALLTYPE LdCharToLics(LdObject * LdObj, BYTE ch);
-
-BOOL CALLTYPE LdStrToAlt(LdObject * LdObj, pBYTE Str);
-
-BOOL CALLTYPE LdStrToPrim(LdObject * LdObj, pBYTE Str);
-
-BOOL CALLTYPE LdStrnToAlt(LdObject * LdObj, pBYTE Str, UINT16 MaxLen);
-
-BOOL CALLTYPE LdStrnToPrim(LdObject * LdObj, pBYTE Str, UINT16 MaxLen);
-
-BOOL CALLTYPE LdStrToPrimStr(LdObject * LdObj, pBYTE AltStr, pBYTE PrimStr);
-
-BOOL CALLTYPE LdStrToAltStr(LdObject * LdObj, pBYTE PrimStr, pBYTE AltStr);
-
-BOOL CALLTYPE LdStrnToPrimStr(LdObject * LdObj, pBYTE AltStr, pBYTE PrimStr,
-							  UINT16 MaxLen);
-
-BOOL CALLTYPE LdStrnToAltStr(LdObject * LdObj, pBYTE PrimStr, pBYTE AltStr,
-							 UINT16 MaxLen);
-
-BOOL CALLTYPE LdIsPrimStrInAltCp(LdObject * LdObj, pBYTE Str);
-
-BOOL CALLTYPE LdIsAltStrInPrimCp(LdObject * LdObj, pBYTE Str);
-
-BOOL CALLTYPE LdIsPrimStrnInAltCp(LdObject * LdObj, pBYTE Str, UINT16 MaxLen);
-
-BOOL CALLTYPE LdIsAltStrnInPrimCp(LdObject * LdObj, pBYTE Str, UINT16 MaxLen);
-
-pBYTE CALLTYPE LdStrToUpper(LdObject * LdObj, pBYTE Str);
-
-pBYTE CALLTYPE LdStrToLower(LdObject * LdObj, pBYTE Str);
-
-pBYTE CALLTYPE LdStrnToUpper(LdObject * LdObj, pBYTE Str, UINT16 MaxLen);
-
-pBYTE CALLTYPE LdStrnToLower(LdObject * LdObj, pBYTE Str, UINT16 MaxLen);
-
-BOOL CALLTYPE LdIsAltCharInPrimCp(LdObject * LdObj, BYTE ch);
-
-BOOL CALLTYPE LdIsPrimCharInAltCp(LdObject * LdObj, BYTE ch);
-
-BOOL CALLTYPE LdIsCharAlpha(LdObject * LdObj, BYTE ch);
-
-BOOL CALLTYPE LdIsCharAlphaNumeric(LdObject * LdObj, BYTE ch);
-
-BOOL CALLTYPE LdIsCharDigit(LdObject * LdObj, BYTE ch);
-
-BOOL CALLTYPE LdIsCharLower(LdObject * LdObj, BYTE ch);
-
-BOOL CALLTYPE LdIsCharUpper(LdObject * LdObj, BYTE ch);
-
-INT16 CALLTYPE LdStrColl_(LdObject * LdObj, pBYTE Str1, pBYTE Str2);
-
-INT16 CALLTYPE LdStrnColl_(LdObject * LdObj, pBYTE Str1, pBYTE Str2,
-						   UINT16 Maxlen);
-
-INT16 CALLTYPE LdStrColli_(LdObject * LdObj, pBYTE Str1, pBYTE Str2);
-
-INT16 CALLTYPE LdStrnColli_(LdObject * LdObj, pBYTE Str1, pBYTE Str2,
-							UINT16 Maxlen);
-
-INT16 CALLTYPE LdStrCmp_(LdObject * LdObj, pBYTE Str1, pBYTE Str2);
-
-INT16 CALLTYPE LdStrnCmp_(LdObject * LdObj, pBYTE Str1, pBYTE Str2,
-						  UINT16 Maxlen);
-
-INT16 CALLTYPE LdStrCmpi_(LdObject * LdObj, pBYTE Str1, pBYTE Str2);
-
-INT16 CALLTYPE LdStrnCmpi_(LdObject * LdObj, pBYTE Str1, pBYTE Str2,
-						   UINT16 Maxlen);
-
-INT16 CALLTYPE LdExStrCmp_(LdObject * LdObj, pBYTE Right, INT16 RightLen,
-						   pBYTE Left, INT16 LeftLen, BOOL Exact);
-
-BYTE CALLTYPE LdGetCharDefinition(LdObject * LdObj, BYTE ch);
-
-//---------------------------------------------------------------
-
-UINT16 CALLTYPE LdCharConvert(pUINT16 Table, BYTE ch);
-
-BOOL CALLTYPE LdStrConvert(pUINT16 Table, pBYTE Str);
-
-BOOL CALLTYPE LdStrnConvert(pUINT16 Table, pBYTE Str, UINT16 MaxLen);
-
-BOOL CALLTYPE LdStrConvertStr(pUINT16 Table, pBYTE SrcStr, pBYTE DstStr);
-
-BOOL CALLTYPE LdStrnConvertStr(pUINT16 Table, pBYTE SrcStr, pBYTE DstStr,
-							   UINT16 MaxLen);
-
-BOOL CALLTYPE LdIsStrConvert(pUINT16 Table, pBYTE Str);
-
-BOOL CALLTYPE LdIsStrnConvert(pUINT16 Table, pBYTE Str, UINT16 MaxLen);
-
-BOOL CALLTYPE LdIsCharConvert(pUINT16 Table, BYTE ch);
-
-//---------------------------------------------------------------
-// WINDOWS SPECIFIC PROC PROTOTYPES
-//---------------------------------------------------------------
-
-INT16 CALLTYPE LdLoadResObj(LDOBJECT ** ReturnLdObj, pBYTE ResName,
-							LDTABLES * Tables, pBYTE ResLibrary);
-
-INT16 CALLTYPE LdReadResObjInfo(LDOBJECT * LdObj, pBYTE ResName,
-								pBYTE ResLibrary);
-
-INT16 CALLTYPE LdFindFirstResObj(LDRESINFO * Info);
-
-INT16 CALLTYPE LdFindNextResObj(LDRESINFO * Info);
-
-INT16 CALLTYPE LdLoadResObjTable(LDOBJECT * LdObj, INT16 table);
-
-INT16 CALLTYPE LdGetResNamebyID(LDRESINFO * Info);
-
-//---------------------------------------------------------------
-
-pLDOBJECT CALLTYPE LdFindFirstLdObj(VOID);
-
-pLDOBJECT CALLTYPE LdFindNextLdObj(LdObject * LdObj);
-
-pVOID CALLTYPE LdGetObjTableAddr(LdObject * LdObj, LDTABLES * Tables);
-
-UINT16 CALLTYPE LdGetLdObjUsage(LdObject * LdObj);
-
-UINT16 CALLTYPE LdIncLdObjUsage(LdObject * LdObj);
-
-UINT16 CALLTYPE LdGetAPIVersion(VOID);
-
-UINT16 CALLTYPE LdGetAPIRevision(VOID);
-
-pBYTE CALLTYPE LdGetAPIDate(VOID);
-
-VOID CALLTYPE LdFree(pVOID MemPtr);
-
-pVOID CALLTYPE LdCalloc(UINT16 NumberItems, UINT16 SizeItem);
-#endif
 
 /*
 //-----------------------------------------------------------------
@@ -1030,9 +591,12 @@ pVOID CALLTYPE LdCalloc(UINT16 NumberItems, UINT16 SizeItem);
 // VCS AREA
 //-----------------------------------------------------------------
 
-//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.13 2003-01-18 19:50:16 dimitr Exp $
+//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.14 2003-02-07 15:07:17 brodsom Exp $
 
 //	$Log: not supported by cvs2svn $
+//	Revision 1.13  2003/01/18 19:50:16  dimitr
+//	Cleanup.
+//	
 //	Revision 1.12  2002/11/06 07:19:00  eku
 //	Do not redefine MAXPATHLEN. Always use the value supplied by the operating
 //	system (header files).
