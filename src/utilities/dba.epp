@@ -504,11 +504,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
 
 /* Open database and go to work */
 
-	TEXT temp_buf[MAXPATHLEN];
-	if (ResolveDatabaseAlias(name, temp_buf))
-		name = temp_buf;
-
-	TEXT conn_name[MAXPATHLEN];
+	TEXT temp_buf[MAXPATHLEN], conn_name[MAXPATHLEN];
 	strncpy(conn_name, name, sizeof(conn_name));
 
 	// conn_name = connection string, name = local pathname
@@ -527,6 +523,9 @@ int CLIB_ROUTINE main(int argc, char **argv)
 			}
 		}
 	}
+
+	if (ResolveDatabaseAlias(name, temp_buf))
+		name = temp_buf;
 
 	current = db_open((UCHAR*) name, strlen(name));
 	tddba->page_size = sizeof(temp);
