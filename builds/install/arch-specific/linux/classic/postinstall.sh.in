@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: postinstall.sh.in,v 1.1 2003-07-08 22:59:57 brodsom Exp $
+#   $Id: postinstall.sh.in,v 1.2 2003-09-23 22:38:44 skidder Exp $
 # 
 
 # The post install script for Firebird Classic
@@ -367,9 +367,6 @@ fixFilePermissions() {
     chmod a=rx isql 
     chmod a=rx qli
     
-    # fix up permissions for fbintl
-    chmod a=rx intl/fbintl
-    
     # SUID is still needed for group direct access.  General users
     # cannot run though.
     for i in fb_lock_mgr gds_drop fb_inet_server
@@ -415,6 +412,9 @@ fixFilePermissions() {
         cd ..
       done
 
+    # fix up permissions for loadable plugins
+    chmod ug=rx,o= intl/fbintl UDF/fbudf.so UDF/ib_udf.so
+    
     # Set a default of read all files in examples
 
     cd examples
@@ -518,8 +518,8 @@ fixFilePermissionsRoot() {
     chmod a=rw help/help.fdb
     chmod a=rw security.fdb
 
-    # fix up permissions for fbintl
-    chmod a=rx intl/fbintl
+    # fix up permissions for loadable plugins
+    chmod a=rx intl/fbintl UDF/fbudf.so UDF/ib_udf.so
 
     # Set a default of read all files in examples
 
@@ -627,12 +627,12 @@ createLinksForBackCompatibility() {
 
     if [ ! -e /usr/lib/libgds.so ]
       then
-        ln -s ../../$FBRootDir/lib/libfbembed.so /usr/lib/libgds.so
+        ln -s $FBRootDir/lib/libfbembed.so /usr/lib/libgds.so
     fi
 
     if [ ! -e /usr/lib/libgds.so.0 ]
       then
-        ln -s ../../$FBRootDir/lib/libfbembed.so /usr/lib/libgds.so.0
+        ln -s $FBRootDir/lib/libfbembed.so /usr/lib/libgds.so.0
     fi
 
 
@@ -655,8 +655,8 @@ createLinksForBackCompatibility() {
 
     FBRootDir=$FirebirdInstallPrefix
     FBBin=$FBRootDir/bin
-    RunUser=root
-#    RunUser=firebird
+#    RunUser=root
+    RunUser=firebird
 
 
     # Update /etc/services

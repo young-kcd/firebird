@@ -73,20 +73,30 @@ checkIfServerRunning() {
 
 }
 
-
 #------------------------------------------------------------------------
 #  Add new user and group
 
 
 addFirebirdUser() {
 
-    groupadd -g 84 -o -r firebird
+    testStr=`grep firebird /etc/group`
 
-    useradd -o -r -m -d /home/firebird -s /bin/bash \
-        -c "Firebird Database Administrator" -g firebird -u 84 firebird 
+    if [ -z "$testStr" ]
+      then
+        groupadd -g 84 -o -r firebird
+    fi
 
-# >/dev/null 2>&1 
+    testStr=`grep firebird /etc/passwd`
+    if [ -z "$testDir" ]
+      then
+        useradd -o -r -m -d $IBRootDir -s /bin/bash \
+            -c "Firebird Database Administrator" -g firebird -u 84 firebird 
+
+        # >/dev/null 2>&1 
+    fi
 }
+
+
 
 
 #------------------------------------------------------------------------
@@ -163,14 +173,13 @@ updateInetdEntry() {
 
 #------------------------------------------------------------------------
 #  Update xinetd service entry
-# we assume the xinetd script file already exists since we are changing user
-# not installing from scratch.
 
 updateXinetdEntry() {
 
-#    cp $IBRootDir/misc/firebird.xinetd /etc/xinetd.d/firebird
+    cp $IBRootDir/misc/firebird.xinetd /etc/xinetd.d/firebird
     changeXinetdServiceUser
 }
+
 
 #------------------------------------------------------------------------
 #  Update inetd service entry 
@@ -190,9 +199,95 @@ updateInetdServiceEntry() {
 
 
 #------------------------------------------------------------------------
+#  fixFilePermissions
+#  Change the permissions to restrict access to server programs to 
+#  firebird group only.  This is MUCH better from a saftey point of 
+#  view than installing as root user, even if it requires a little 
+#  more work.
+
+
+fixFilePermissions() {
+
+    # Turn other access off.
+    chmod -R o= $IBRootDir
+
+
+    # Now fix up the mess.
+
+    # fix up directories 
+    for i in `find $IBRootDir -print`
+    do
+        FileName=$i
+        if [ -d $FileName ]
+        then
+            chmod o=rx $FileName
+        fi
+    done
+
+
+    cd $IBBin
+
+
+    # set up the defaults for bin
+    for i in `ls`
+      do
+         chmod ug=rx,o=  $i
+    done
+
+    # User can run these programs, they need to talk to server though.
+    # and they cannot actually create a database.
+     
+
+    chmod a=rx isql 
+    chmod a=rx qli
+    
+    # SUID is still needed for group direct access.  General users
+    # cannot run though.
+    for i in fb_lock_mgr gds_drop fb_inet_server
+    do
+        chmod ug=rx,o= $i
+        chmod ug+s $i
+    done
+
+
+    cd $IBRootDir
+
+    # Fix lock files
+    for i in isc_init1 isc_lock1 isc_event1 
+      do
+        FileName=$i.`hostname`
+        chmod ug=rw,o= $FileName
+      done
+
+
+    chmod ug=rw,o= firebird.log
+
+	chmod a=r aliases.conf
+	chmod a=r firebird.conf
+    chmod a=r firebird.msg
+    chmod ug=rw,o= help/help.fdb
+    chmod ug=rw,o= security.fdb
+
+
+    # Set a default of read all files in examples
+
+    cd examples
+
+    for i in `ls`
+      do
+         chmod a=r  $i
+    done
+
+    # make examples db's writable by group
+    chmod ug=rw,o= *.fdb
+
+}
+
+
+#------------------------------------------------------------------------
 #  resetXinitdServer
-#  Check for both inetd and xinetd, only one will actually be running.
-#  depending upon your system.
+#  Check for both inetd and xinetd, only one will be running but script
+#  will work.
 
 resetInetdServer() {
 
@@ -208,26 +303,27 @@ resetInetdServer() {
 }
 
 
-#== Main Start ==============================================================
 
+#= Main Program ============================================================
 
-IBRootDir=/usr/local/firebird
+IBRootDir=@prefix@
 IBBin=$IBRootDir/bin
 
 
 
 
-#RunUser=firebird
-#RunGroup=firebird
+RunUser=firebird
+RunGroup=firebird
 
 # Well if you really insist, here it is ;-) - Mark.
 #RunUser=interbase
 #RunGroup=interbase
 
 
+# If you want to root user (server run restructed to group root)
+# RunUser=root
+# RunGroup=root
 
-RunUser=root
-RunGroup=root
 
 checkInstallUser
 
@@ -235,23 +331,23 @@ checkIfServerRunning
 
 
 echo ""
-echo "Restore Firebird install for $IBRootDir to uid=$RunUser gid=$RunGroup"
+echo "Change Firebird install for $IBRootDir to uid=$RunUser gid=$RunGroup"
 echo "(User or group options can be changed by editing this script)"
 echo ""
 AskQuestion "Press return to continue - or ^C to abort"
 
 
+if [ $RunUser = "firebird" ]
+  then
+#    deleteFirebirdUser
+    addFirebirdUser
+fi
 
-# Update the /etc/inetd.conf
+
+
+# Update the /etc/inetd.conf or xinetd entry
 echo "Updating /etc/services file"
-
-
-FileName=/etc/inetd.conf
-newLine="gds_db  stream  tcp     nowait.30000      $RunUser $IBBin/fb_inet_server fb_inet_server # InterBase Database Remote Server"
-oldLine=`grep "^gds_db" $FileName`
-
-replaceLineInFile "$FileName" "$newLine" "$oldLine"
-
+updateInetdServiceEntry
 
 
 # Update ownership and SUID bits for programs.
@@ -260,69 +356,19 @@ echo "Updating $IBRootDir"
 
 chown -R $RunUser.$RunGroup $IBRootDir
 
-# Turn everybody to read only.
-chmod -R o=r $IBRootDir
-
-# Now fix up the mess.
-
-# fix up directories 
-for i in `find $IBRootDir -print`
-  do
-    FileName=$i
-    if [ -d $FileName ]
-       then
-         chmod o=rx $FileName
-     fi
-  done
-
-
-
-cd $IBBin
-
-# all users can run everything.
-chmod o=rx * 
-
-# SUID is needed for running server programs.
-
-for i in fb_lock_mgr gds_drop fb_inet_server
-  do
-    chmod ug+s $i
-  done
-
-
-cd $IBRootDir
-
-# Lock files
-# remember isc_guard1 in addition for super
-
-cd $IBRootDir
-
-for i in isc_init1 isc_lock1 isc_event1 
-  do
-    FileName=$i.`hostname`
-    touch $FileName
-    chmod uga=rw $FileName
-  done
-
-
-touch firebird.log
-chmod ugo=rw firebird.log
-
-
-# make databases writable by all
-chmod ugo=rw examples/*.fdb
-chmod ugo=rw help/*.fdb
-chmod ugo=rw security.fdb
-
-
-
-
-# Update the /etc/inetd.conf or xinetd entry
-updateInetdServiceEntry
-
+fixFilePermissions
 
 # Get inetd to reread new init files.
 resetInetdServer
 
+
+cd $IBRootDir
+
+touch firebird.log
+chmod ug=rw,o= firebird.log
+
+
+# make examples writable by group
+chmod ug=rw,o= examples/*.fdb
 
 echo "Completed."
