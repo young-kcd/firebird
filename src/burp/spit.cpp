@@ -801,10 +801,10 @@ static int read_and_write(FILE_DESC input_file_desc,
 						  const TEXT* file_name,
 						  SLONG io_size,
 						  double file_size,
-						  UCHAR ** io_buffer,
+						  UCHAR** io_buffer,
 						  bool* end_of_input,
 						  double *byte_read,
-						  SLONG * byte_write)
+						  SLONG* byte_write)
 {
 
 /********************************************************************
@@ -859,7 +859,7 @@ static int read_and_write(FILE_DESC input_file_desc,
 		break;
 	}
 
-	SLONG write_cnt = write(output_fl_desc, *io_buffer, read_cnt);
+	const SLONG write_cnt = write(output_fl_desc, *io_buffer, read_cnt);
 
 	switch (write_cnt) {
 	case (-1):					// write failed 
@@ -885,7 +885,7 @@ static int final_read_and_write(FILE_DESC input_file_desc,
 								FILE_DESC output_fl_desc,
 								const TEXT* file_name,
 								SLONG io_size,
-								UCHAR ** io_buffer,
+								UCHAR** io_buffer,
 								bool* end_of_input)
 {
 
@@ -903,7 +903,7 @@ static int final_read_and_write(FILE_DESC input_file_desc,
 *********************************************************************
 */
 
-	SLONG read_cnt = read(input_file_desc, *io_buffer, io_size);
+	const SLONG read_cnt = read(input_file_desc, *io_buffer, io_size);
 
 	switch (read_cnt) {
 	case (0):					// no more data to be read 
@@ -923,7 +923,7 @@ static int final_read_and_write(FILE_DESC input_file_desc,
 		break;
 	}
 
-	SLONG write_cnt = write(output_fl_desc, *io_buffer, read_cnt);
+	const SLONG write_cnt = write(output_fl_desc, *io_buffer, read_cnt);
 
 	switch (write_cnt) {
 	case (-1):					// write failed 
@@ -1067,7 +1067,7 @@ static int read_and_write_for_join(FILE_DESC output_fl_desc,
 		}
 	}
 	num_arr[indx] = '\0';
-	SLONG num_int = atoi(num_arr);
+	const SLONG num_int = atoi(num_arr);
 	if (cnt == 1) {
 		total_arr[indx] = '\0';
 		*total_int = atoi(total_arr);
@@ -1135,13 +1135,11 @@ static int conv_ntoc( SLONG numeric_in, TEXT char_out[])
 *********************************************************************
 */
 
-	SLONG indx, mod;
-
 	SLONG i = numeric_in;
-	indx = 3;
+	SLONG indx = 3;
 
 	while (true) {
-		mod = i % 10;
+		const SLONG mod = i % 10;
 		switch (mod) {
 		case (0):
 			char_out[indx] = '0';
@@ -1219,16 +1217,16 @@ static int write_header(b_fil*		fl_ptr,
 *********************************************************************
 */
 	TEXT num_arr[5];
-	SLONG end, indx, pos, ret_cd;
+	SLONG end, indx;
 
-	ret_cd = conv_ntoc(fl_ptr->b_fil_number, num_arr);
+	SLONG ret_cd = conv_ntoc(fl_ptr->b_fil_number, num_arr);
 	if (ret_cd == FB_FAILURE) {
 		printf
 			("gsplit could not convert numeric data to character data\n");
 		return FB_FAILURE;
 	}
 	num_arr[sizeof(num_arr) - 1] = TERMINAL;
-	pos = sizeof(hdr_rec.name) + sizeof(hdr_rec.date_time) +
+	SLONG pos = sizeof(hdr_rec.name) + sizeof(hdr_rec.date_time) +
 		sizeof(hdr_rec.text1);
 	ret_cd = set_hdr_str(header_str, num_arr, pos, sizeof(hdr_rec.num));
 
