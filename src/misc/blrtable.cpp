@@ -60,12 +60,12 @@ static void print(const SCHAR **, int, const SCHAR *);
 
 struct VERB {
 	UCHAR blr;
-	const SCHAR* const internal;
-	const SCHAR* const internal2;
-	const SCHAR* const length;
-	const SCHAR* const count;
-	const SCHAR* const type;
-	const SCHAR* const sub_type;
+	const SCHAR* internal;
+	const SCHAR* internal2;
+	const SCHAR* length;
+	const SCHAR* count;
+	const SCHAR* type;
+	const SCHAR* sub_type;
 };
 
 static const VERB verbs[] = 
