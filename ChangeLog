@@ -1,3 +1,35 @@
+2004-12-23 11:15  aafemt
+
+	* firebird2/src/isql/isql.epp (1.126):
+	
+	Fix extra EOLN in interactive mode without editline
+
+2004-12-23 07:42  robocop
+
+	* firebird2/src/jrd/utl.cpp (1.79):
+	
+	Fix a small bug introduced by Borland's copy/paste at unknown date
+	before year 2000 and that we inherited when Mark created the
+	Firebird tree.
+
+2004-12-23 07:28  robocop
+
+	* firebird2/src/jrd/utl.cpp (1.78):
+	
+	1.- Misc.  2.- Fix possible buffer overrun.
+
+2004-12-23 04:03  robocop
+
+	* firebird2/src/remote/inet_server.cpp (1.48):
+	
+	Misc.
+
+2004-12-23 03:59  robocop
+
+	* firebird2/src/jrd/grant.epp (1.49):
+	
+	Avoid some extra casts.
+
 2004-12-22 19:34  skidder
 
 	* firebird2/: lang_helpers/gds_codes.ftn (1.12),
