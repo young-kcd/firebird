@@ -171,7 +171,7 @@ SOURCE=..\..\..\src\jrd\version.rc
 # End Group
 # Begin Source File
 
-SOURCE=.\fbclient.def
+SOURCE=..\fbclient.def
 
 !IF  "$(CFG)" == "fbembed - Win32 Release"
 
@@ -184,7 +184,7 @@ SOURCE=.\fbclient.def
 # End Source File
 # Begin Source File
 
-SOURCE=.\fbclient_debug.def
+SOURCE=..\fbclient_debug.def
 
 !IF  "$(CFG)" == "fbembed - Win32 Release"
 

@@ -118,13 +118,6 @@ SOURCE=..\..\..\src\remote\server.ico
 # Begin Source File
 
 SOURCE=..\..\..\src\remote\window.rc
-
-!IF  "$(CFG)" == "fb_inet_server - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "fb_inet_server - Win32 Release"
-
-!ENDIF 
-
 # End Source File
 # End Group
 # End Target
