@@ -164,7 +164,7 @@ void WALC_acquire( WAL WAL_handle, WALS * address)
 		WAL_segment = (WALS) ISC_remap_file(local_status,
 											&WAL_handle->wal_shmem_data,
 											length, TRUE);
-		if (WAL_segment == (WALS) NULL) {
+		if (WAL_segment == NULL) {
 			WALC_release(WAL_handle);
 			WALC_bug(NULL, WAL_handle->wal_dbname, "WAL remap failed");
 		}

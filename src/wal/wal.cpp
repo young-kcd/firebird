@@ -1462,7 +1462,7 @@ static void setup_buffer_for_writing(
 	wblk = WAL_BLOCK(CUR_BUF);
 	if (wblk->walblk_cur_offset <= BLK_HDROVHD) {
 		WALC_release(WAL_handle);
-		WALC_bug((ISC_STATUS *) NULL, WAL_handle->wal_dbname,
+		WALC_bug(NULL, WAL_handle->wal_dbname,
 				 "An empty WAL buffer submitted for writing");
 	}
 

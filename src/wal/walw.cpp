@@ -393,7 +393,7 @@ SSHORT WALW_writer(ISC_STATUS * status_vector, WAL WAL_handle)
 		ib_fprintf(DEBUG_FD,
 				   "====================================================\n");
 		PRINT_TIME(DEBUG_FD, LOCAL_TIME);
-		ib_fprintf(DEBUG_FD, "WAL writer for database %s starting, pid=%d.\n",
+		ib_fprintf(DEBUG_FD, "WAL writer for database %s starting, pid=%ld.\n",
 				   DBNAME, getpid());
 	}
 
@@ -1336,7 +1336,7 @@ static void get_time_stamp( SLONG * date)
 	SLONG clock;
 	struct tm times;
 
-	clock = (SLONG) time((time_t *) NULL);
+	clock = (SLONG) time(NULL);
 	times = *localtime((time_t *) & clock);
 	isc_encode_date(&times, (GDS_QUAD *) date);
 }
@@ -1395,7 +1395,7 @@ static SSHORT increase_buffers(
 		WAL_segment->wals_flags2 |= WALS2_CANT_EXPAND;
 		return FB_SUCCESS;
 	}
-	if (WAL_segment == (WALS) NULL) {
+	if (WAL_segment == NULL) {
 		WAL_ERROR(status_vector, gds_wal_cant_expand, DBNAME);
 		WAL_handle->wal_segment = NULL;
 		report_walw_bug_or_error(status_vector, WAL_handle, FB_FAILURE,
@@ -2288,7 +2288,7 @@ static void write_wal_statistics( WAL WAL_handle)
 				   "-----------------------------------------------\n");
 		PRINT_TIME(stat_file, LOCAL_TIME);
 		ib_fprintf(stat_file,
-				   "WAL writer (pid=%d) for database %s, shutdown statistics:\n",
+				   "WAL writer (pid=%ld) for database %s, shutdown statistics:\n",
 				   getpid(), DBNAME);
 		ib_fprintf(stat_file,
 				   "WAL buffer size=%d, total buffers=%d, original buffers=%d\n",
