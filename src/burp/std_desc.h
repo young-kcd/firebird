@@ -30,7 +30,7 @@
 #include "firebird.h"
 
 #ifdef WIN_NT
-#include <windows.h>
+#include <windows.h> // HANDLE
 static inline HANDLE GBAK_STDIN_DESC(void)
 {
 	return GetStdHandle(STD_INPUT_HANDLE); /* standart input  file descriptor */

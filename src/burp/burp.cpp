@@ -46,13 +46,6 @@
 #include "../burp/burp.h"
 #include "../burp/burpswi.h"
 #include "../burp/std_desc.h"
-#ifdef WIN_NT
-#include <windows.h>
-#undef TEXT
-#include <winnt.h>
-#define TEXT char
-#endif
-
 #include "../jrd/license.h"
 
 #include "../jrd/jrd_time.h"
@@ -72,7 +65,6 @@
 #include "../utilities/common/cmd_util_proto.h"
 #endif
 
-
 #ifdef UNIX
 #include <unistd.h>
 #endif
@@ -86,10 +78,6 @@
 
 #ifndef VMS
 #include <fcntl.h>
-#endif
-
-#if (defined WIN_NT)
-#include <io.h>
 #endif
 
 #ifndef O_CREAT

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.42 2003-11-07 23:09:04 brodsom Exp $
+//	$Id: alice.cpp,v 1.43 2003-11-16 11:39:30 brodsom Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -66,12 +66,6 @@
 #ifdef SUPERSERVER
 #include "../utilities/common/cmd_util_proto.h"
 #endif
-
-#ifdef WIN_NT
-#include <windows.h>
-#include <io.h>
-#endif
-
 
 static const USHORT val_err_table[] = {
 	0,

@@ -40,14 +40,6 @@
 # endif
 #endif
 #include "../burp/burp.h"
-#ifdef WIN_NT
-#include <windows.h>
-#include <winnt.h>
-#ifdef TEXT
-#undef TEXT
-#endif
-#define TEXT char
-#endif
 #include "../burp/burp_proto.h"
 #include "../burp/mvol_proto.h"
 #include "../jrd/gds_proto.h"
@@ -60,9 +52,11 @@
 #include <types.h>
 #include <file.h>
 #endif
+
 #if (defined WIN_NT)
-#include <io.h>
+#include <io.h>  // isatty
 #endif
+
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif

@@ -55,8 +55,7 @@
 #endif
 
 #ifdef WIN_NT
-// usage of non-ANSI open/read/write/close functions
-#include <io.h>
+#include <io.h> // usage of non-ANSI open/read/write/close functions
 #endif
 
 static const int mode_read	= O_RDONLY;
