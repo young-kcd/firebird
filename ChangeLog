@@ -1,3 +1,10 @@
+2004-06-19 10:11  dimitr
+
+	* firebird2/src/jrd/par.cpp (1.43.2.5):
+	
+	Rolled back my bugfix until a proper solution is found.  It fixes
+	the v1.5.1 regression with UDFs.
+
 2004-06-16 12:40  paul_reeves
 
 	*
