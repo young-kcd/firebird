@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.19 2002-09-25 17:12:05 skidder Exp $
+ * $Id: ddl.cpp,v 1.20 2002-10-02 13:24:03 dimitr Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -3499,10 +3499,16 @@ static void define_view( REQ request, NOD_TYPE op)
 		if (field) {
 			field_string = field->fld_name;
 		}
-		if (ptr && ptr < end)
+		/* CVC: Small modification here to catch any mismatch between number of
+				explicit field names in a view and number of fields in the select expression,
+				see comment below. This closes Firebird Bug #223059. */
+		if (ptr)
 		{
-			field_name = (STR) (*ptr)->nod_arg[1];
-			field_string = (TEXT *) field_name->str_data;
+			if (ptr < end)
+			{
+				field_name = (STR) (*ptr)->nod_arg[1];
+				field_string = (TEXT *) field_name->str_data;
+			}
 			ptr++;
 		}
 
