@@ -6629,11 +6629,11 @@ static bool verify_database_name(TEXT *name, ISC_STATUS *status)
 	if (!ISC_verify_database_access(name)) {
 		static TEXT *tempdiag = "Database Access denied";
 		status[0] = gds_arg_gds;
-		status[1] = gds_io_error;
+		status[1] = gds_conf_access_denied;
 		status[2] = gds_arg_string;
-		status[3] = reinterpret_cast <long> (tempdiag);
+		status[3] = reinterpret_cast <ISC_STATUS> ("database");
 		status[4] = gds_arg_string;
-		status[5] = reinterpret_cast <long> (tempdiag);
+		status[5] = reinterpret_cast <ISC_STATUS> (ERR_cstring(name));
 		status[6] = gds_arg_end;
 		return false;
 	}

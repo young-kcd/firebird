@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.59 2003-06-01 16:22:47 skidder Exp $
+$Id: met.epp,v 1.60 2003-06-16 15:42:58 alexpeshkoff Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -1582,7 +1582,7 @@ BLF MET_lookup_filter(TDBB tdbb, SSHORT from, SSHORT to)
 		MET_exact_name(X.RDB$ENTRYPOINT);
 		filter = (ISC_STATUS (*)(USHORT, CTL))
 			ISC_lookup_entrypoint(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT,
-								  ISC_EXT_LIB_PATH_ENV);
+								  ISC_EXT_LIB_PATH_ENV, true);
 		if (filter)
 		{
 			blf_ = FB_NEW(*dbb->dbb_permanent) blf();

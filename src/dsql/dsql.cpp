@@ -745,8 +745,12 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
 
 			if (!((1 << request->req_type) & possible_requests))
 			{
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -901,
-					gds_arg_gds, gds_wish_list, 0);
+				const int max_diag_len = 50;
+				if (length > max_diag_len)
+					string[max_diag_len] = 0;
+				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -902,
+					gds_arg_gds, gds_exec_sql_invalid_req, 
+					gds_arg_string, string, gds_arg_end);
 			}
 
 			execute_request(request,

@@ -43,7 +43,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.33 2003-05-30 12:17:47 alexpeshkoff Exp $
+$Id: flu.cpp,v 1.34 2003-06-16 15:42:58 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -69,6 +69,10 @@ extern "C" {
 #include "../jrd/flu_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/dls_proto.h"
+#include "../jrd/err_proto.h"
+
+#include "../include/gen/codes.h"
+
 #include <string.h>
 
 
@@ -147,7 +151,7 @@ extern "C" {
 static MOD FLU_modules = 0;		/* External function/filter modules */
 
 /* prototypes for private functions */
-static MOD search_for_module(TEXT *, TEXT *);
+static MOD search_for_module(TEXT *, TEXT *, bool);
 
 
 MOD FLU_lookup_module(TEXT* module)
@@ -246,7 +250,8 @@ void FLU_unregister_module(MOD module)
 #ifdef VMS
 #define LOOKUP
 FPTR_INT ISC_lookup_entrypoint(TEXT * module,
-							   TEXT * name, TEXT * ib_path_env_var)
+							   TEXT * name, TEXT * ib_path_env_var,
+							   bool ShowAccessError)
 {
 /**************************************
  *
@@ -309,7 +314,8 @@ FPTR_INT ISC_lookup_entrypoint(TEXT * module,
 #define LOOKUP
 FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 							   TEXT* name,
-							   TEXT* ib_path_env_var)
+							   TEXT* ib_path_env_var,
+							   bool ShowAccessError)
 {
 /**************************************
  *
@@ -361,7 +367,8 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 #ifdef HP10
 #define LOOKUP
 FPTR_INT ISC_lookup_entrypoint(TEXT * module,
-							   TEXT * name, TEXT * ib_path_env_var)
+							   TEXT * name, TEXT * ib_path_env_var,
+							   bool ShowAccessError)
 {
 /**************************************
  *
@@ -402,11 +409,11 @@ FPTR_INT ISC_lookup_entrypoint(TEXT * module,
 
 		/* call search_for_module with the supplied name,
 		   and if unsuccessful, then with <name>.sl . */
-		mod = search_for_module(absolute_module, name);
+		mod = search_for_module(absolute_module, name, false);
 		if (!mod)
 		{
 			strcat(absolute_module, ".sl");
-			mod = search_for_module(absolute_module, name);
+			mod = search_for_module(absolute_module, name, ShowAccessError);
 		}
 		if (!mod)
 		{
@@ -439,7 +446,8 @@ FPTR_INT ISC_lookup_entrypoint(TEXT * module,
 #define LOOKUP
 FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 							   TEXT* name,
-							   TEXT* ib_path_env_var)
+							   TEXT* ib_path_env_var,
+							   bool ShowAccessError)
 {
 /**************************************
  *
@@ -483,17 +491,17 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 
 		/* call search_for_module with the supplied name,
 		   and if unsuccessful, then with <name>.so . */
-		mod = search_for_module(absolute_module, name);
+		mod = search_for_module(absolute_module, name, false);
 
 		if (!mod) {
 			strcat(absolute_module, ".so");
-			mod = search_for_module(absolute_module, name);
+			mod = search_for_module(absolute_module, name, false);
 		}
 
         if (!mod) {  // Start looking for "libxxxx.so" module names
             string moduleName = "lib";
             moduleName += (const char*) absolute_module;
-			mod = search_for_module((TEXT*) moduleName.c_str(), name);
+			mod = search_for_module((TEXT*) moduleName.c_str(), name, ShowAccessError);
         }
 
 		if (!mod) {
@@ -524,7 +532,8 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 #define LOOKUP
 FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 							   TEXT* name,
-							   TEXT* ib_path_env_var)
+							   TEXT* ib_path_env_var,
+							   bool ShowAccessError)
 {
 /**************************************
  *
@@ -561,14 +570,14 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 
 		/* call search_for_module with the supplied name, and if unsuccessful,
 		   then with <name>.DLL (if the name did not have a trailing "."). */
-		mod = search_for_module(absolute_module, name);
+		mod = search_for_module(absolute_module, name, false);
 		if (!mod)
 		{
 			if ((absolute_module[length - 1] != '.') &&
 				stricmp(absolute_module + length - 4, ".DLL"))
 			{
 				strcat(absolute_module, ".DLL");
-				mod = search_for_module(absolute_module, name);
+				mod = search_for_module(absolute_module, name, ShowAccessError);
 			}
 		}
 		if (!mod)
@@ -636,7 +645,8 @@ NSModule ISC_link_with_module (TEXT*);
 FPTR_INT ISC_lookup_entrypoint (
     TEXT        *module,
     TEXT        *name,
-    TEXT        *ib_path_env_var)
+    TEXT        *ib_path_env_var,
+	bool		ShowAccessError)
 {
 /**************************************
  *
@@ -685,11 +695,11 @@ if (!(mod = FLU_lookup_module (module)))
     length = strlen (absolute_module);
     /* call search_for_module with the supplied name,
        and if unsuccessful, then with <name>.so . */
-    mod = search_for_module (absolute_module, name);
+    mod = search_for_module (absolute_module, name, false);
     if (!mod)
         {
         strcat (absolute_module, ".so");
-        mod = search_for_module (absolute_module, name);
+        mod = search_for_module (absolute_module, name, ShowAccessError);
         }
     if (!mod)
     {
@@ -800,7 +810,8 @@ NSModule ISC_link_with_module (
 #ifndef LOOKUP
 FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 							   TEXT* name,
-							   TEXT* ib_path_env_var)
+							   TEXT* ib_path_env_var,
+							   bool ShowAccessError)
 {
 /**************************************
  *
@@ -837,7 +848,7 @@ static int condition_handler(int *sig, int *mech, int *enbl)
 }
 #endif
 
-static MOD search_for_module(TEXT* module, TEXT* name)
+static MOD search_for_module(TEXT* module, TEXT* name, bool ShowAccessError)
 {
 /**************************************
  *
@@ -871,8 +882,15 @@ static MOD search_for_module(TEXT* module, TEXT* name)
 
 	// The module name, including directory path,
 	// must satisfy UdfAccess entry in config file.
-	if (!iUdfDirectoryList.IsPathInList(absolute_module))
+	if (!iUdfDirectoryList.IsPathInList(absolute_module)) {
+		if (ShowAccessError) {
+			ERR_post(gds_conf_access_denied,
+				gds_arg_string, "UDF library",
+				gds_arg_string, ERR_cstring(const_cast <TEXT *>(absolute_module.c_str())),
+				gds_arg_end);
+		}
 		return NULL;
+	}
 
 	MOD mod = (MOD) gds__alloc(sizeof(struct mod) + absolute_module.length());
 	if (!mod) {

@@ -73,15 +73,12 @@ static struct {
 /* dtype_int64		*/ {SQL_INT64, sizeof(SINT64)},
 };
 
-static TEXT cba[] = "Callback Argument";
-static TEXT r_dsc[] = "Illegal type of local variable in EXECUTE STATEMENT INTO ...";
-static TEXT s_sql[] = "Local variable and returned column type does not match in EXECUTE STATEMENT";
-
 void ExecuteStatement::Open(TDBB tdbb, JRD_NOD sql, SSHORT nVars, bool SingleTon) {
 	SET_TDBB(tdbb);
 	Sqlda = 0;
 	Transaction = 0;
 	Buffer = 0;
+	StartOfSqlOperator = 0;
 	SingleMode = SingleTon;
 
 	assert(tdbb->tdbb_transaction->tra_pool);
@@ -94,15 +91,13 @@ void ExecuteStatement::Open(TDBB tdbb, JRD_NOD sql, SSHORT nVars, bool SingleTon
 		MOV_get_string(dsc, &p, v, BUFFER_LARGE) : 0;
 	if (! p) {
 		tdbb->tdbb_status_vector[0] = gds_arg_gds;
-		tdbb->tdbb_status_vector[1] = gds_convert_error;
-		tdbb->tdbb_status_vector[2] = gds_arg_string;
-		tdbb->tdbb_status_vector[3] = reinterpret_cast <long> (cba);
+		tdbb->tdbb_status_vector[1] = gds_exec_sql_invalid_arg;
 		tdbb->tdbb_status_vector[4] = gds_arg_end;
 		ERR_punt();
 	}
 	if (tdbb->tdbb_transaction->tra_callback_count >= MAX_CALLBACKS) {
 		tdbb->tdbb_status_vector[0] = gds_arg_gds;
-		tdbb->tdbb_status_vector[1] = gds_req_max_clones_exceeded;
+		tdbb->tdbb_status_vector[1] = gds_exec_sql_max_call_exceeded;
 		tdbb->tdbb_status_vector[2] = gds_arg_end;
 		ERR_punt();
 	}
@@ -127,7 +122,16 @@ void ExecuteStatement::Open(TDBB tdbb, JRD_NOD sql, SSHORT nVars, bool SingleTon
 	tdbb->tdbb_transaction->tra_callback_count++;
 	THREAD_EXIT;
 
-// this check uses local error handler for local status vector
+	// For normal diagnostic
+	const int max_diag_len = 50;
+	int diag_len = strlen((TEXT *)p);
+	if (diag_len > max_diag_len)
+		diag_len = max_diag_len;
+	StartOfSqlOperator = FB_NEW(*tdbb->tdbb_transaction->tra_pool) TEXT[diag_len + 1];
+	StartOfSqlOperator[0] = 0;
+	strncat(StartOfSqlOperator, (TEXT *)p, diag_len);
+
+	// this check uses local error handler for local status vector
 	ISC_STATUS_ARRAY local;
 	ISC_STATUS *status = local;
 	memset(local, 0, sizeof(local));
@@ -143,8 +147,10 @@ void ExecuteStatement::Open(TDBB tdbb, JRD_NOD sql, SSHORT nVars, bool SingleTon
 		Chk(isc_dsql_free_statement(status, &Statement, DSQL_drop));
 		Statement = 0;
 		status[0] = gds_arg_gds;
-		status[1] = gds_wish_list;
-		status[2] = gds_arg_end;
+		status[1] = gds_exec_sql_invalid_req;
+		status[2] = gds_arg_string;
+		status[3] = reinterpret_cast<ISC_STATUS>(ERR_cstring(StartOfSqlOperator));
+		status[4] = gds_arg_end;
 		Chk(status[1]);
 	}
 	else {
@@ -153,7 +159,7 @@ void ExecuteStatement::Open(TDBB tdbb, JRD_NOD sql, SSHORT nVars, bool SingleTon
                         SQLDA_VERSION1, Sqlda));
 		Buffer = 0;		// Buffer is used in ParseSqlda
 						// First dummy parse - to define buffer size
-		Buffer = FB_NEW(*tdbb->tdbb_default) 
+		Buffer = FB_NEW(*tdbb->tdbb_transaction->tra_pool) 
 			SCHAR[XSQLDA_LENGTH(ParseSqlda())];
 		ParseSqlda();
 		Chk(isc_dsql_execute(status, &Transaction,
@@ -201,28 +207,23 @@ bool ExecuteStatement::Fetch(TDBB tdbb, JRD_NOD * JrdVar) {
 	XSQLVAR *var=Sqlda->sqlvar;
     for (int i=0; i < Sqlda->sqld; i++, var++, JrdVar++) {
         DSC * d = EVL_assign_to(tdbb, *JrdVar);
-// UCHAR dsc_dtype is never < 0 
-//		if (d->dsc_dtype < 0 || ............
 		if (d->dsc_dtype >= 
 			  sizeof(DscType2SqlType) / sizeof(DscType2SqlType[0])) {
 rec_err:
 			tdbb->tdbb_status_vector[0] = gds_arg_gds;
-			tdbb->tdbb_status_vector[1] = gds_convert_error;
-			tdbb->tdbb_status_vector[2] = gds_arg_string;
-			tdbb->tdbb_status_vector[3] = reinterpret_cast <long> (r_dsc);
-			tdbb->tdbb_status_vector[4] = gds_arg_end;
+			tdbb->tdbb_status_vector[1] = gds_exec_sql_invalid_var;
+			tdbb->tdbb_status_vector[2] = gds_arg_number;
+			tdbb->tdbb_status_vector[3] = i;
+			tdbb->tdbb_status_vector[4] = gds_arg_string;
+			tdbb->tdbb_status_vector[5] = 
+				reinterpret_cast<ISC_STATUS>(ERR_cstring(StartOfSqlOperator));
+			tdbb->tdbb_status_vector[6] = gds_arg_end;
 			Firebird::status_exception::raise(status[1]);
 		}
 		if (DscType2SqlType[d->dsc_dtype].SqlType < 0)
 			goto rec_err;
-        if ((var->sqltype & ~1) != DscType2SqlType[d->dsc_dtype].SqlType) {
-			tdbb->tdbb_status_vector[0] = gds_arg_gds;
-			tdbb->tdbb_status_vector[1] = gds_convert_error;
-			tdbb->tdbb_status_vector[2] = gds_arg_string;
-			tdbb->tdbb_status_vector[3] = reinterpret_cast <long> (s_sql);
-			tdbb->tdbb_status_vector[4] = gds_arg_end;
-			Firebird::status_exception::raise(status[1]);
-		}
+        if ((var->sqltype & ~1) != DscType2SqlType[d->dsc_dtype].SqlType)
+			goto rec_err;
         if ((var->sqltype & 1) && (*var->sqlind < 0)) {
             d->dsc_flags |= DSC_null;
             continue;
@@ -296,11 +297,13 @@ void ExecuteStatement::Close(TDBB tdbb) {
 	Transaction = 0;
 	delete Buffer;
 	Buffer = 0;
+	delete StartOfSqlOperator;
+	StartOfSqlOperator = 0;
 }
 
 XSQLDA * ExecuteStatement::MakeSqlda(TDBB tdbb, short n) {
 	return (XSQLDA *)
-		(FB_NEW(*tdbb->tdbb_default) char[XSQLDA_LENGTH(n)]);
+		(FB_NEW(*tdbb->tdbb_transaction->tra_pool) char[XSQLDA_LENGTH(n)]);
 }
 
 ISC_STATUS ExecuteStatement::ReMakeSqlda(ISC_STATUS *vector, TDBB tdbb)

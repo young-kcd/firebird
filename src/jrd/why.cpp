@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.22 2003-06-05 19:39:01 dimitr Exp $
+$Id: why.cpp,v 1.23 2003-06-16 15:42:58 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -1595,7 +1595,7 @@ ISC_STATUS API_ROUTINE GDS_DDL(ISC_STATUS * user_status,
 #ifndef SUPERCLIENT
 	char DYN_ddl[] = "DYN_ddl";
 	if ((image = images[database->implementation].path) != NULL &&
-		((entrypoint = (PTR) ISC_lookup_entrypoint(image, DYN_ddl, NULL)) !=
+		((entrypoint = (PTR) ISC_lookup_entrypoint(image, DYN_ddl, NULL, false)) !=
 		 NULL ||
 		 FALSE) &&
 		!((*entrypoint) (status, db_handle, tra_handle, length, ddl))) {
@@ -5329,7 +5329,7 @@ static const PTR get_entrypoint(int proc, int implementation)
 		TEXT *NamePointer = NameLength > BufSize ? 
 			reinterpret_cast<TEXT *>(gds__alloc(NameLength)) : Buffer;
 		memcpy(NamePointer, name, NameLength);
-		PTR entry = (PTR) ISC_lookup_entrypoint(image, NamePointer, NULL);
+		PTR entry = (PTR) ISC_lookup_entrypoint(image, NamePointer, NULL, false);
 		if (NameLength > BufSize)
 			gds__free(NamePointer);
 		if (entry)

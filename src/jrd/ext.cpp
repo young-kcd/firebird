@@ -69,7 +69,11 @@ class ExternalFileDirectoryList : public DirectoryList {
 
 IB_FILE *ext_fopen(const char *filename, const char *mode) {
 	if (!iExternalFileDirectoryList.IsPathInList(filename))
-		return 0;
+		ERR_post(gds_conf_access_denied,
+			gds_arg_string, "external file",
+			gds_arg_string, ERR_cstring(const_cast <TEXT *>(filename)),
+			gds_arg_end);
+
 	return ib_fopen(filename, mode);
 }
 };

@@ -27,7 +27,7 @@
  *
  */
 /*
-$Id: fun.epp,v 1.20 2003-05-30 11:48:59 dimitr Exp $
+$Id: fun.epp,v 1.21 2003-06-16 15:42:58 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -752,7 +752,7 @@ FUN DLL_EXPORT FUN_lookup_function(TEXT * name)
 
 		function->fun_entrypoint =
 			ISC_lookup_entrypoint(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT,
-								  ISC_EXT_LIB_PATH_ENV);
+								  ISC_EXT_LIB_PATH_ENV, true);
 
 		if ( (module = FLU_lookup_module(X.RDB$MODULE_NAME)) ) {
 			/* Register interest in the module by database. */

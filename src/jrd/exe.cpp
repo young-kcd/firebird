@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.65 2003-06-10 13:40:16 dimitr Exp $
+$Id: exe.cpp,v 1.66 2003-06-16 15:42:58 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -1395,7 +1395,6 @@ static void exec_sql(TDBB tdbb, JRD_REQ request, DSC* dsc)
 	SSHORT l;
 	ISC_STATUS *status;
 	ISC_STATUS_ARRAY local;
-	static char *cba = "Callback Argument";
 
 	memset(local, 0, sizeof(local));
 	status = local;
@@ -1407,7 +1406,7 @@ static void exec_sql(TDBB tdbb, JRD_REQ request, DSC* dsc)
 	if (p) {
 		if (tdbb->tdbb_transaction->tra_callback_count >= MAX_CALLBACKS) {
 			status[0] = gds_arg_gds;
-			status[1] = gds_req_max_clones_exceeded;
+			status[1] = gds_exec_sql_max_call_exceeded;
 			status[2] = gds_arg_end;
 		}
 		else {
@@ -1421,9 +1420,7 @@ static void exec_sql(TDBB tdbb, JRD_REQ request, DSC* dsc)
 	}
 	else {
 		status[0] = gds_arg_gds;
-		status[1] = gds_convert_error;
-		status[2] = gds_arg_string;
-		status[3] = reinterpret_cast <long> (cba);
+		status[1] = gds_exec_sql_invalid_arg;
 		status[4] = gds_arg_end;
 	}
 

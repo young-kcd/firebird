@@ -1209,9 +1209,10 @@ static void check_filename( TEXT * name, USHORT l)
 	/* Msg305: A node name is not permitted in a secondary, shadow, or log file name */
 
 	if (!ISC_verify_database_access(name)) {
-		static TEXT *tempdiag = "DatabasesDirs - access denied";
-		ERR_post(gds_no_meta_update, gds_arg_gds, gds_io_error, 
-			gds_arg_string, tempdiag, gds_arg_string, tempdiag, 0);
+		ERR_post(gds_conf_access_denied,
+			gds_arg_string, "additional database file",
+			gds_arg_string, ERR_cstring(name),
+			gds_arg_end);
 	}
 }
 

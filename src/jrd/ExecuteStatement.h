@@ -40,6 +40,7 @@ private:
 	XSQLDA	* Sqlda;
 	SCHAR	* Buffer;
 	bool	SingleMode;
+	TEXT	* StartOfSqlOperator;
 	XSQLDA	* MakeSqlda(TDBB tdbb, SSHORT n);
 	ISC_STATUS	ReMakeSqlda(ISC_STATUS *vector, TDBB tdbb);
 	ULONG	ParseSqlda(void);
