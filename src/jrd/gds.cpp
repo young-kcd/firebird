@@ -1004,7 +1004,7 @@ Firebird::Spinlock trace_mutex;
 HANDLE trace_file_handle = INVALID_HANDLE_VALUE;
 #endif
 
-void API_ROUTINE gds__trace_raw(const char* text, int length)
+void API_ROUTINE gds__trace_raw(const char* text, unsigned int length)
 {
 /**************************************
  *
@@ -1017,7 +1017,8 @@ void API_ROUTINE gds__trace_raw(const char* text, int length)
  *  This function tries to be async-signal safe
  *
  **************************************/
-	if (!length) length = strlen(text);
+	if (!length) 
+		length = strlen(text);
 #ifdef WIN_NT
 	// Note: thread-safe code
 
@@ -1033,7 +1034,8 @@ void API_ROUTINE gds__trace_raw(const char* text, int length)
 			trace_file_handle = CreateFile(name, GENERIC_WRITE, 
 				FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
 				NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-			if (trace_file_handle == INVALID_HANDLE_VALUE) break;
+			if (trace_file_handle == INVALID_HANDLE_VALUE)
+				break;
 		}
 		DWORD bytesWritten;
 		SetFilePointer(trace_file_handle, 0, NULL, FILE_END);
@@ -1125,7 +1127,7 @@ void API_ROUTINE gds__trace(const TEXT * text)
 	*p++ = ' ';
 	strcpy(p, text); p += strlen(p);
 	strcat(p, "\n"); p += strlen(p);
-	gds__trace_raw(buffer, p-buffer);
+	gds__trace_raw(buffer, p - buffer);
 }
 
 void API_ROUTINE gds__log(const TEXT * text, ...)

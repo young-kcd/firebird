@@ -89,7 +89,7 @@ void	API_ROUTINE gds__interprete_a(SCHAR*, SSHORT*, ISC_STATUS*, SSHORT*);
 
 void	API_ROUTINE gds__log(const TEXT*, ...);
 void	API_ROUTINE gds__trace(const char*);
-void	API_ROUTINE gds__trace_raw(const char*, int = 0);
+void	API_ROUTINE gds__trace_raw(const char*, unsigned int = 0);
 void	API_ROUTINE gds__log_status(TEXT*, const ISC_STATUS*);
 int		API_ROUTINE gds__msg_close(void*);
 SSHORT	API_ROUTINE gds__msg_format(void*  handle,
