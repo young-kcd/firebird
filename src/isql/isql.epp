@@ -681,69 +681,82 @@ static void readNextInputLine(const char* prompt) {
  *  Otherwise return the line up to EOF (excluded) or '\n' (included)
  **************************************/
 
-	if (lastInputLine != NULL) {
-		free(lastInputLine);
-		lastInputLine = NULL;
-	}
+	while(true){
 
-	if (Ifp == ib_stdin) {
-#ifdef HAVE_EDITLINE_H
-		lastInputLine = readline((char*) prompt);
-
-		if (lastInputLine != NULL && strlen(lastInputLine) != 0) {
-			add_history(lastInputLine);
+		if (lastInputLine != NULL) {
+			free(lastInputLine);
+			lastInputLine = NULL;
 		}
 
-#else
-		// Write the prompt out.
-		ib_fprintf(ib_stdout, prompt);
-		ib_fflush(ib_stdout);
+		if (Ifp == ib_stdin) {
+	#ifdef HAVE_EDITLINE_H
+			lastInputLine = readline((char*) prompt);
 
-		std::string inputLine;
+			if (lastInputLine != NULL && strlen(lastInputLine) != 0) {
+				add_history(lastInputLine);
+			}
 
-		std::getline(std::cin, inputLine);
-		if (!std::cin.eof()) {
-
-			int lineSize = inputLine.length();
-
-			lastInputLine = (char*) malloc(lineSize + 1);
-			strncpy(lastInputLine, inputLine.c_str(), lineSize +1);
-		}
-#endif
-	}
-	else {
-		// Write the prompt out, only if !Interactive && Echo
-		if (!Interactive && Echo) {
+	#else
+			// Write the prompt out.
 			ib_fprintf(ib_stdout, prompt);
 			ib_fflush(ib_stdout);
-		}
 
-		int size = 0;
-		int growStep = 128;
-		int pos = 0;
-		char c = 0;
-		while (true) {
-			c = ib_getc(Ifp);
-			if (c == 0x0D)
-				c = ib_getc(Ifp);
-			if (c == EOF)
-				break;
-			if (pos >= size - 2) {
-				size += growStep;
-				char* line2 = (char*) malloc (size);
-				if (pos > 0) {
-					memcpy(line2, lastInputLine, pos + 1);
-					free(lastInputLine);
-				}
-				lastInputLine = line2;
+			std::string inputLine;
+
+			std::getline(std::cin, inputLine);
+			if (!std::cin.eof()) {
+
+				int lineSize = inputLine.length();
+
+				lastInputLine = (char*) malloc(lineSize + 1);
+				strncpy(lastInputLine, inputLine.c_str(), lineSize +1);
 			}
-			if (c == '\n')
-				break;
-			else
-				lastInputLine[pos++] = c;
+	#endif
 		}
-		if (lastInputLine != NULL)
-			lastInputLine[pos] = '\0';
+		else {
+			// Write the prompt out, only if !Interactive && Echo
+			if (!Interactive && Echo) {
+				ib_fprintf(ib_stdout, prompt);
+				ib_fflush(ib_stdout);
+			}
+
+			int size = 0;
+			int growStep = 128;
+			int pos = 0;
+			char c = 0;
+			while (true) {
+				c = ib_getc(Ifp);
+				if (c == 0x0D)
+					c = ib_getc(Ifp);
+				if (c == EOF)
+					break;
+				if (pos >= size - 2) {
+					size += growStep;
+					char* line2 = (char*) malloc (size);
+					if (pos > 0) {
+						memcpy(line2, lastInputLine, pos + 1);
+						free(lastInputLine);
+					}
+					lastInputLine = line2;
+				}
+				if (c == '\n')
+					break;
+				else
+					lastInputLine[pos++] = c;
+			}
+			if (lastInputLine != NULL)
+				lastInputLine[pos] = '\0';
+		}
+		if (lastInputLine != NULL && strlen(lastInputLine) >= 2
+			&& lastInputLine[0] == '-' && lastInputLine[1] == '-')
+		{
+			if (Interactive || Echo){
+				ib_fprintf(ib_stdout, "%s\n", lastInputLine);
+				ib_fflush(ib_stdout);
+			}
+		}
+		else
+			break;
 	}
 
 	getColumn = 0;
@@ -3165,9 +3178,9 @@ static SSHORT frontend(TEXT* statement)
 		return (ERR);
 	}
 
-/* Store the first NUM_TERMS words as they appear in parms, using blanks
-   to delimit.   Each word beyond a real word gets a null char
-   Shift parms to upper case, leaving original case in lparms */
+// Store the first NUM_TERMS words as they appear in parms, using blanks
+// to delimit.   Each word beyond a real word gets a null char
+// Shift parms to upper case, leaving original case in lparms
 
 	for (i = 0; i < FB_NELEM(lparms); i++)
 		lparms[i] = NULL;
@@ -3176,30 +3189,12 @@ static SSHORT frontend(TEXT* statement)
 
 	p = statement;
 
-	/* Cope with -- at the beginning of the command, at least.
-	   This should be done before the whitespace munching shown
-	   below, because the -- marker is only valid in the 1st pos. */
-
-	while (*p == '-' && p [1] == '-') {
-		p += 2;
-		while (*p && *p != '\n')
-			++p;
-		while (*p && isspace (*p))
-			++p;
-		/* isspace will consume control chars including LF, so
-		   we need to be sure the previous character was a LF or
-		   we have to leave the loop checking for a --, remember
-		   we want to honor it only at first position in a line. */
-		if (p [-1] != '\n')
-			break;
-	}
-
-/* Eat any whitespace at the beginning */
+// Eat any whitespace at the beginning
 
 	while (*p && isspace(*p))
 		p++;
 
-/* Is this a comment line -- chew until the last comment */
+// Is this a comment line -- chew until the last comment
 
 	while (*p == '/' && *(p + 1) == '*') {
 		p++;
@@ -3223,7 +3218,7 @@ static SSHORT frontend(TEXT* statement)
 			p++;
 	}
 
-/* Set beginning of statement past comment */
+// Set beginning of statement past comment
 	cmd = p;
 
 	if (*cmd) {
