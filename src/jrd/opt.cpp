@@ -569,17 +569,17 @@ RSB OPT_compile(TDBB tdbb,
 	else
 		rse->rse_aggregate = aggregate = NULL;
 
-/* mark the previous used streams (sub-rse's) as active */
-
-	for (i = 1; i <= used_streams[0]; i++) {
-		csb->csb_rpt[used_streams[i]].csb_flags |= csb_active;			
-	}
-
 /* outer joins require some extra processing */
 
 	if (rse->rse_jointype != blr_inner)
 		rsb = gen_outer(tdbb, opt_, rse, rivers_stack, &sort, &project);
 	else {
+
+		/* mark the previous used streams (sub-rse's) as active */
+
+		for (i = 1; i <= used_streams[0]; i++) {
+			csb->csb_rpt[used_streams[i]].csb_flags |= csb_active;			
+		}
 
 		/* attempt to form joins in decreasing order of desirability */
 
