@@ -1423,8 +1423,9 @@ static void check_indices(const CompilerScratch::csb_repeat* csb_tail)
 		(access_type = plan->nod_arg[e_retrieve_access_type]))
 	{
 		/* index %s cannot be used in the specified plan */
-		ERR_post(isc_index_unused, isc_arg_string, access_type->nod_arg[2],
-				 0);
+		const char* iname =
+			reinterpret_cast<const char*>(access_type->nod_arg[e_access_type_index_name]);
+		ERR_post(isc_index_unused, isc_arg_string, ERR_cstring(iname), 0);
 	}
 
 /* check to make sure that all indices are either used or marked not to be used,
@@ -6898,12 +6899,16 @@ static void mark_indices(CompilerScratch::csb_repeat* csb_tail, SSHORT relation_
 		if (access_type) {
 			const jrd_nod* const* arg = access_type->nod_arg;
 			const jrd_nod* const* const end = arg + plan_count;
-			for (; arg < end; arg += 3) {
-				if (relation_id != (SSHORT)(IPTR) * arg) {
+			for (; arg < end; arg += e_access_type_length) {
+				if (relation_id != (SSHORT)(IPTR) arg[e_access_type_relation])
+				{
 					/* index %s cannot be used in the specified plan */
-					ERR_post(isc_index_unused, isc_arg_string, *(arg + 2), 0);
+					const char* iname =
+						reinterpret_cast<const char*>(arg[e_access_type_index_name]);
+					ERR_post(isc_index_unused, isc_arg_string, ERR_cstring(iname), 0);
 				}
-				if (idx->idx_id == (USHORT)(IPTR) * (arg + 1)) {
+				if (idx->idx_id == (USHORT)(IPTR) arg[e_access_type_index])
+				{
 					if (access_type->nod_type == nod_navigational &&
 						arg == access_type->nod_arg)
 					{
