@@ -1054,7 +1054,7 @@ static int get_reply(STATUS * status_vector, JRN journal, JRNR * reply)
     with us, so keep trying until successful.  */
 
 	do {
-		l = recv((int) journal->jrn_channel, reply, sizeof(struct jrnr), 0);
+		l = recv((int) journal->jrn_channel, (char *) reply, sizeof(struct jrnr), 0);
 	} while (l < 0 && SYSCALL_INTERRUPTED(errno));
 
 	if (l < 0) {
@@ -1131,7 +1131,7 @@ static int jrn_put(
 	USHORT length;
 	SLONG l;
 	UCHAR *p, *q;
-	UCHAR buffer[MAX_RECORD];
+	UCHAR  buffer[MAX_RECORD];
 
 /* Prepare journal message for sending */
 
@@ -1164,7 +1164,7 @@ static int jrn_put(
     with us, so keep trying until successful.  */
 
 	do {
-		l = send((int) journal->jrn_channel, buffer, (int) length, 0);
+		l = send((int) journal->jrn_channel, (char *) buffer, (int) length, 0);
 	} while (l < 0 && SYSCALL_INTERRUPTED(errno));
 
 	if (l < 0) {
