@@ -13,11 +13,18 @@
 # Copyright (C) Inprise Corporation.
 #
 # All Rights Reserved.
-# Contributor(s): ______________________________________.
-# Start of file prefix.win32:	$(VERSION)	$(PLATFORM)
+# Contributor(s): Blas Rodriguez Somoza
+# Start of file prefix.mingw:	$(VERSION)	$(PLATFORM)
+#
+# 2003-Sep-27 BRS Removed IPSERVER after XNET is included
+# 
 
-PROD_FLAGS=-O2  -march=@CPU_TYPE@ -mcpu=@CPU_TYPE@ -DMINGW -mno-cygwin -mthreads -Wall -Wno-unused-variable -Wno-unknown-pragmas -Wno-parentheses -Wno-switch -fmessage-length=0 -DIPSERVER -Dlint -DMAXPATHLEN=255 -DWIN32_LEAN_AND_MEAN -MMD
-DEV_FLAGS=-ggdb -march=@CPU_TYPE@ -mcpu=@CPU_TYPE@ -DMINGW -mno-cygwin -mthreads -Wall -Wno-unused-variable -Wno-unknown-pragmas -Wno-parentheses -Wno-switch -fmessage-length=0 -DIPSERVER -Dlint -DMAXPATHLEN=255 -DDEBUG_GDS_ALLOC -DWIN32_LEAN_AND_MEAN -MMD 
+# To build with ipserver use the following two lines instead the uncommented ones
+# PROD_FLAGS=-O2  -march=@CPU_TYPE@ -mcpu=@CPU_TYPE@ -DMINGW -mno-cygwin -mthreads -Wall -Wno-unused-variable -Wno-unknown-pragmas -Wno-parentheses -Wno-switch -fmessage-length=0 -Dlint -DMAXPATHLEN=255 -DWIN32_LEAN_AND_MEAN -MMD
+# DEV_FLAGS=-ggdb -march=@CPU_TYPE@ -mcpu=@CPU_TYPE@ -DMINGW -mno-cygwin -mthreads -Wall -Wno-unused-variable -Wno-unknown-pragmas -Wno-parentheses -Wno-switch -fmessage-length=0 -Dlint -DMAXPATHLEN=255 -DDEBUG_GDS_ALLOC -DWIN32_LEAN_AND_MEAN -MMD 
+
+PROD_FLAGS=-O2  -march=@CPU_TYPE@ -mcpu=@CPU_TYPE@ -DMINGW -mno-cygwin -mthreads -Wall -Wno-unused-variable -Wno-unknown-pragmas -Wno-parentheses -Wno-switch -fmessage-length=0 -Dlint -DMAXPATHLEN=255 -DWIN32_LEAN_AND_MEAN -MMD
+DEV_FLAGS=-ggdb -march=@CPU_TYPE@ -mcpu=@CPU_TYPE@ -DMINGW -mno-cygwin -mthreads -Wall -Wno-unused-variable -Wno-unknown-pragmas -Wno-parentheses -Wno-switch -fmessage-length=0 -Dlint -DMAXPATHLEN=255 -DDEBUG_GDS_ALLOC -DWIN32_LEAN_AND_MEAN -MMD 
 
 PLATFORM_PATH=jrd/os/win32
 
@@ -33,7 +40,8 @@ LIB_LINK_SONAME:=-Wl,-soname,
 LIB_GUI:= -mwindows -lcomctl32 -lgdi32
 EMBED_UTIL_TARGETS:=gstat gsec nbackup fb_lock_print
 CLIENT_UTIL_TARGETS:=gstat gsec ibguard instsvc instreg nbackup fb_lock_print
-WIN_IPSERVER_Files:=ipserver.cpp alli.cpp
+# To build with ipserver uncomment the following line
+# WIN_IPSERVER_Files:=ipserver.cpp alli.cpp
 
 Physical_IO_Module=os/win32/winnt.cpp
 
