@@ -17,8 +17,6 @@ inline void THREAD_EXIT() {
 //inline bool THREAD_VALIDATE() {
 //	return SCH_validate();
 //}
-#define SWEEP_THREAD
-//#define GARBAGE_THREAD
 #else // SUPERSERVER
 inline void THREAD_ENTER() {
 	gds__thread_enter();
@@ -29,7 +27,6 @@ inline void THREAD_EXIT() {
 //inline bool THREAD_VALIDATE() {
 //	return true;
 //}
-#define AST_THREAD
 #endif // SUPERSERVER
 inline void THREAD_SLEEP(ULONG msecs) {
 	THD_sleep(msecs);

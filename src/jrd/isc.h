@@ -32,6 +32,9 @@
 #ifndef JRD_ISC_H
 #define JRD_ISC_H
 
+// For AST_THREAD
+#include "../jrd/common.h"
+#include "../jrd/sch_proto.h"
 
 /* Defines for semaphore and shared memory removal */
 

@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.122 2004-08-20 04:36:48 dimitr Exp $
+$Id: common.h,v 1.123 2004-08-21 07:55:35 skidder Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -76,6 +76,15 @@ $Id: common.h,v 1.122 2004-08-20 04:36:48 dimitr Exp $
 #ifdef DEV_BUILD
 #undef DEV_BUILD
 #endif
+#endif
+
+#ifdef MULTI_THREAD
+# ifdef SUPERSERVER
+#  define SWEEP_THREAD
+//#define GARBAGE_THREAD
+# else
+#  define AST_THREAD
+# endif
 #endif
 
 #ifdef SUPERSERVER
