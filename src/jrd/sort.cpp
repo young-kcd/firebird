@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.34 2003-04-10 06:49:15 aafemt Exp $
+ * $Id: sort.cpp,v 1.35 2003-05-09 16:18:32 skidder Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -1797,8 +1797,8 @@ static ULONG find_file_space(SCB scb, ULONG size, SFB * ret_sfb)
 			/* Create a scratch file */
 
 			sfb->sfb_file =
-				(int) gds__tmp_file2(FALSE, SCRATCH, file_name,
-									 sfb->sfb_dls->dls_directory);
+				(int) gds__temp_file(FALSE, SCRATCH, file_name,
+									 sfb->sfb_dls->dls_directory, TRUE);
 
 			/* allocate the file name even if the file is not open,
 			   because the error routine depends on it
@@ -2252,7 +2252,6 @@ static BOOLEAN local_fini(SCB scb, ATT att)
 		close(sfb->sfb_file);
 
 		if (sfb->sfb_file_name) {
-			unlink(sfb->sfb_file_name);
 			gds__free(sfb->sfb_file_name);
 			sfb->sfb_file_name = NULL;
 		}

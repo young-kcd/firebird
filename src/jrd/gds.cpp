@@ -58,6 +58,7 @@
 
 #ifndef WIN_NT
 #include <sys/param.h>
+#include <errno.h>
 #endif
 
 #include <stdarg.h>
@@ -169,6 +170,7 @@ static const TEXT gdslogid[] = "";
 #define _WINSOCKAPI_
 
 #include <windows.h>
+#include <share.h>
 #include "thd_proto.h"
 #include "err_proto.h"
 
@@ -197,6 +199,9 @@ extern int sys_nerr;
 #define PRINTF 			ib_printf
 #endif
 
+// Number of times to try to generate new name for temporary file
+#define MAX_TMPFILE_TRIES 256
+
 static char *ib_prefix = 0;
 static char *ib_prefix_lock = 0;
 static char *ib_prefix_msg = 0;
@@ -207,130 +212,6 @@ static const SCHAR * const messages[] = {
 #include "gen/msgs.h"
 	0							/* Null entry to terminate list */
 };
-
-#if (ALIGNMENT == 8)
-#define GDS_ALLOC_ALIGNMENT	8
-#else
-#define GDS_ALLOC_ALIGNMENT	4
-#endif
-#define ALLOC_ROUNDUP(n)		ROUNDUP ((n),GDS_ALLOC_ALIGNMENT)
-
-typedef struct free {
-	struct free *free_next;
-	SLONG free_length;
-#ifdef DEBUG_GDS_ALLOC
-	SLONG free_count;
-#endif
-} *FREE;
-
-
-
-#ifdef DEBUG_GDS_ALLOC
-
-#define DBG_MEM_FILE	"memory.dbg"
-
-#ifndef NEWLINE
-#define NEWLINE "\n"
-#endif
-
-typedef struct alloc
-{
-	union
-	{
-		ULONG alloc_length;		/* aka block[0] */
-		struct free alloc_freed;
-	} alloc_status;
-	TEXT alloc_magic1[6];		/* set to ALLOC_HEADER1_MAGIC */
-	TEXT alloc_filename[30];	/* filename of caller */
-	ULONG alloc_lineno;			/* lineno   of caller */
-	ULONG alloc_requested_length;	/* requested len from caller */
-	ULONG alloc_flags;			/* Internal flags */
-	ULONG alloc_callno;			/* Which call to gds__alloc() */
-	struct alloc *alloc_next;	/* Next buffer in the chain */
-	TEXT alloc_magic2[8];		/* set to ALLOC_HEADER2_MAGIC */
-} *ALLOC;
-
-
-#define ALLOC_HEADER_SIZE 	ALLOC_ROUNDUP(sizeof (struct alloc))
-#define ALLOC_TAILER_SIZE	6
-
-#define ALLOC_HEADER1_MAGIC_ALLOCATED	"FBTAG"
-#define ALLOC_HEADER1_MAGIC_FREED	"FREED"
-#define ALLOC_HEADER2_MAGIC		"@START1#"
-#define ALLOC_TAILER_MAGIC		"END01"
-
-#define ALLOC_FREED_PATTERN		0xCB
-#define ALLOC_ALLOC_PATTERN		0xFD
-
-#define ALLOC_FREQUENCY			99	/* how often to validate memory */
-
-#ifdef NOT_USED_OR_REPLACED
-static ALLOC gds_alloc_chain = NULL;
-static ULONG gds_alloc_call_count = 0;
-#endif
-static ULONG gds_alloc_state = ~0;
-static ULONG gds_alloc_nomem = ~0;
-#ifdef NOT_USED_OR_REPLACED
-static ULONG gds_free_call_count = 0;
-#endif
-static ULONG gds_bug_alloc_count = 0;
-static ULONG gds_bug_free_count = 0;
-#ifdef NOT_USED_OR_REPLACED
-static struct alloc
- *gds_alloc_watchpoint = NULL;	/* For SUN debugging */
-static ULONG gds_alloc_watch_call_count = 0;
-
-#define SAVE_DEBUG_INFO(b,f,l) {\
-	strncpy (((ALLOC) (b))->alloc_magic1, ALLOC_HEADER1_MAGIC_ALLOCATED, sizeof (((ALLOC) (b))->alloc_magic1)); \
-	strncpy (((ALLOC) (b))->alloc_magic2, ALLOC_HEADER2_MAGIC, sizeof (((ALLOC) (b))->alloc_magic2)); \
-	strncpy (((ALLOC) (b))->alloc_filename, f, sizeof (((ALLOC) (b))->alloc_filename)); \
-	((ALLOC) (b))->alloc_requested_length = size_request; \
-	((ALLOC) (b))->alloc_flags = 0; \
-	((ALLOC) (b))->alloc_lineno = l; \
-	((ALLOC) (b))->alloc_callno = gds_alloc_call_count; \
-	\
-	/* Link this block into the list of blocks */ \
-	((ALLOC) (b))->alloc_next = gds_alloc_chain; \
-	gds_alloc_chain = ((ALLOC) (b)); \
-	\
-	/* Set the "tailer" at the end of the allocated memory */ \
-	memcpy ( ((BLOB_PTR *) (b)) + ALLOC_HEADER_SIZE + size_request, \
-		ALLOC_TAILER_MAGIC, ALLOC_TAILER_SIZE); \
-	\
-	/* Initialize the allocated memory */ \
-	memset (((UCHAR *) (b)) + ALLOC_HEADER_SIZE, ALLOC_ALLOC_PATTERN, size_request); \
-	}
-
-static void		gds_alloc_validate(ALLOC);
-static BOOLEAN	gds_alloc_validate_free_pattern(UCHAR *, ULONG);
-static void		gds_alloc_validate_freed(ALLOC);
-static void		validate_memory(void);
-
-#ifndef SAVE_DEBUG_INFO
-#define SAVE_DEBUG_INFO(b,f,l)
-#endif
-
-#endif // NOT_USED_OR_REPLACED
-#endif // DEBUG_GDS_ALLOC
-
-
-#ifndef ALLOC_HEADER_SIZE
-#define ALLOC_HEADER_SIZE 	ALLOC_ROUNDUP(sizeof (ULONG))
-#endif
-
-#ifndef ALLOC_TAILER_SIZE
-#define ALLOC_TAILER_SIZE	0
-#endif
-
-#define ALLOC_OVERHEAD		(ALLOC_HEADER_SIZE + ALLOC_TAILER_SIZE)
-
-#ifndef GDS_ALLOC_EXTEND_SIZE
-#ifdef SUPERCLIENT
-#define GDS_ALLOC_EXTEND_SIZE	8192
-#else
-#define GDS_ALLOC_EXTEND_SIZE	102400
-#endif
-#endif
 
 #ifndef FOPEN_APPEND_TYPE
 #define FOPEN_APPEND_TYPE	"a"
@@ -391,10 +272,6 @@ static SLONG	blr_print_line(CTL, SSHORT);
 static void		blr_print_verb(CTL, SSHORT);
 static int		blr_print_word(CTL);
 
-static void		cleanup_malloced_memory(void *);
-#ifdef NOT_USED_OR_REPLACED
-static ULONG	free_memory(void *);
-#endif
 static void		init(void);
 static int		yday(struct tm *);
 
@@ -414,17 +291,8 @@ typedef struct clean
 } *CLEAN;
 
 static CLEAN	cleanup_handlers = NULL;
-static FREE		pool = NULL;
-static void**	malloced_memory = NULL;
 static GDS_MSG		default_msg = NULL;
 static SLONG	initialized = FALSE;
-#ifdef V4_THREADING
-static MUTX_T	alloc_mutex;
-#endif
-
-#ifdef DEV_BUILD
-SLONG gds_delta_alloc = 0, gds_max_alloc = 0;	/* Used in DBG_memory */
-#endif
 
 #ifdef DEBUG_GDS_ALLOC
 void* API_ROUTINE gds__alloc_debug(SLONG size_request,
@@ -432,13 +300,11 @@ void* API_ROUTINE gds__alloc_debug(SLONG size_request,
                                    ULONG lineno)
 {
 	return getDefaultMemoryPool()->allocate(size_request, 0, filename, lineno);
-//	return getDefaultMemoryPool()->calloc(size_request, 0, filename, lineno);
 }
 #else
 void* API_ROUTINE gds__alloc(SLONG size_request)
 {
 	return getDefaultMemoryPool()->allocate(size_request);
-//	return getDefaultMemoryPool()->calloc(size_request);
 }
 #endif
 
@@ -449,11 +315,6 @@ ULONG API_ROUTINE gds__free(void* blk) {
 
 #ifdef UNIX
 static SLONG gds_pid = 0;
-#endif
-
-#if (defined SOLARIS && defined SUPERSERVER && !defined(MAP_ANON))
-static int anon_fd = -1;
-static int page_size = -1;
 #endif
 
 /* VMS structure to declare exit handler */
@@ -655,270 +516,6 @@ static const struct
 #define COMPARE_PATH(a,b)			strcmp(a,b)
 #endif
 
-
-
-#ifdef SUPERSERVER
-
-extern SLONG allr_delta_alloc;
-
-} // extern "C"
-
-extern SLONG alld_delta_alloc;
-extern SLONG all_delta_alloc;
-
-extern "C" {
-
-SLONG trace_pools = 0;
-SLONG free_map_debug = 0;
-#if defined(NOT_USED_OR_REPLACED) && defined(SUPERSERVER)
-static void freemap(int cod);
-#endif
-void gds_print_delta_counters(IB_FILE *);
-
-#endif	// SUPERSERVER
-
-
-
-
-#ifdef NOT_USED_OR_REPLACED
-#ifdef DEBUG_GDS_ALLOC
-
-void* API_ROUTINE gds__alloc_debug(SLONG size_request,
-								   TEXT* filename,
-								   ULONG lineno)
-#else
-
-void* API_ROUTINE gds__alloc(SLONG size_request)
-#endif
-{
-/**************************************
- *
- *	g d s _ $ a l l o c
- *
- **************************************
- *
- * Functional description
- *	Allocate a block of memory.
- *
- **************************************/
-	SLONG *block = NULL;
-	SLONG size;
-	ULONG factor;
-	FREE *next, *best, free_blk;
-	SLONG tail, best_tail = 0;
-
-#ifdef VMS
-	SLONG status;
-#endif
-
-	if (size_request <= 0) {
-		DEV_REPORT("gds__alloc: non-positive size allocation request\n");	/* TXNN */
-		BREAKPOINT(__LINE__);
-		return NULL;
-	}
-
-	if (!initialized)
-		init();
-
-
-#ifdef DEBUG_GDS_ALLOC
-	gds_alloc_call_count++;
-	if (gds_alloc_call_count == gds_bug_alloc_count) {
-		PRINTF("gds_alloc() call %ld reached\n", gds_bug_alloc_count);
-		BREAKPOINT(__LINE__);
-	}
-
-/* If we want to validate all memory on each call, do so now */
-	if ((gds_alloc_state < gds_alloc_call_count) ||
-		(gds_bug_alloc_count && (gds_bug_alloc_count < gds_alloc_call_count))
-		|| ((gds_alloc_call_count % ALLOC_FREQUENCY) == 0)) {
-#ifdef V4_THREADING
-		V4_MUTEX_LOCK(&alloc_mutex);
-#endif
-		gds_alloc_report(ALLOC_silent, __FILE__, __LINE__);
-#ifdef V4_THREADING
-		V4_MUTEX_UNLOCK(&alloc_mutex);
-#endif
-	}
-
-/* Simulate out of memory */
-	if (gds_alloc_nomem <= gds_alloc_call_count)
-		return NULL;
-#endif
-
-/* Add the size of malloc overhead to the block, and then
- * round up the block size according to the desired alignment
- * for the platform
- * Make sure that for a multiple of 1K allocate ALLOC_OVERHEAD 
- * times the multiple. This ensures that on freeing and subsequent
- * re-allocating we don't fragment the free memory list
-*/
-	factor = 1;
-	if (!(size_request & (1024 - 1)))
-	{
-		factor = size_request / 1024;
-	}
-	size = size_request + ALLOC_OVERHEAD * factor;
-	size = ROUNDUP(size, GDS_ALLOC_ALIGNMENT);
-
-#ifdef DEV_BUILD
-	gds_delta_alloc += size;
-#endif
-
-#ifdef V4_THREADING
-	V4_MUTEX_LOCK(&alloc_mutex);
-#endif
-/* Find the free block with the shortest tail */
-
-	best = NULL;
-
-	for (next = &pool; (free_blk = *next) != NULL; next = &(*next)->free_next)
-	{
-		if (free_blk->free_length <= 0 ||
-			(free_blk->free_next
-			 && (UCHAR *) free_blk + free_blk->free_length >
-			 (UCHAR *) free_blk->free_next))
-		{
-			DEV_REPORT("gds__alloc: memory pool corrupted\n");	/* TXNN */
-			BREAKPOINT(__LINE__);
-			*next = NULL;
-			break;
-		}
-		if ((tail = free_blk->free_length - size) >= 0)
-		{
-			if (!best || tail < best_tail)
-			{
-				best = next;
-				if (!(best_tail = tail))
-					break;
-			}
-		}
-	}
-
-/* If there was a fit, return the block */
-
-	if (best)
-	{
-		if (best_tail <= sizeof(struct free) + ALLOC_OVERHEAD)
-		{
-			/* There's only a little left over, give client the whole chunk */
-			size = (*best)->free_length;
-			block = (SLONG *) * best;
-			*best = (*best)->free_next;
-#ifdef DEBUG_GDS_ALLOC
-			/* We're going to give some memory off the free list - before doing
-			 * so, let's make sure it still looks like free memory.
-			 */
-			gds_alloc_validate_freed((ALLOC) block);
-#endif /* DEBUG_GDS_ALLOC */
-		}
-		else
-		{
-			/* Shave off what we need from the end of the free chunk */
-			block = (SLONG *) ((UCHAR *) * best + best_tail);
-			(*best)->free_length -= size;
-#ifdef DEBUG_GDS_ALLOC
-			/* We're going to give some memory off the free list - before doing
-			 * so, let's make sure it still looks like free memory.
-			 */
-			(void) gds_alloc_validate_free_pattern((UCHAR *) block, (ULONG) size);
-#endif /* DEBUG_GDS_ALLOC */
-		}
-		block[0] = size;
-
-		SAVE_DEBUG_INFO(block, filename, lineno);
-
-#ifdef V4_THREADING
-		V4_MUTEX_UNLOCK(&alloc_mutex);
-#endif
-		return (UCHAR *) block + ALLOC_HEADER_SIZE;
-	}
-
-/* We need to extend the address space.  Do so in multiples of the
- * extend quantity, release the extra, and return the block.
- * If we can't get a multiple of the extend size, try again using
- * the minimal amount of memory needed before returning "out of memory".
- * The minimal amount must include the malloc/free overhead amounts.
- */
-
-	tail = (((size + sizeof(struct free) + ALLOC_ROUNDUP(sizeof(void *)) +
-			  ALLOC_OVERHEAD) / GDS_ALLOC_EXTEND_SIZE) +
-			1) * GDS_ALLOC_EXTEND_SIZE;
-
-#ifdef VMS
-	status = lib$get_vm(&tail, &block);
-	if (!(status & 1))
-	{
-		tail = (size + sizeof(struct free) +
-				ALLOC_ROUNDUP(sizeof(void *)) + ALLOC_OVERHEAD);
-		status = lib$get_vm(&tail, &block);
-		if (!(status & 1))
-		{
-#ifdef V4_THREADING
-			V4_MUTEX_UNLOCK(&alloc_mutex);
-#endif
-			return NULL;
-		}
-	}
-#define MEMORY_ALLOCATED
-#endif
-
-#ifndef MEMORY_ALLOCATED
-	if ((block = (SLONG *) malloc(tail)) == NULL)
-	{
-		tail = (size + sizeof(struct free) +
-				ALLOC_ROUNDUP(sizeof(void *)) + ALLOC_OVERHEAD);
-		if ((block = (SLONG *) malloc(tail)) == NULL)
-		{
-#ifdef V4_THREADING
-			V4_MUTEX_UNLOCK(&alloc_mutex);
-#endif
-			return NULL;
-		}
-	}
-#endif
-#undef MEMORY_ALLOCATED
-
-/* Insert the allocated block into a simple linked list */
-
-	*((void **) block) = (void *) malloced_memory;
-	malloced_memory = (void **) block;
-	block = (SLONG *) ((UCHAR *) block + ALLOC_ROUNDUP(sizeof(void *)));
-
-#ifdef DEV_BUILD
-	gds_max_alloc += tail;
-#endif
-
-	tail -= size + ALLOC_ROUNDUP(sizeof(void *));
-
-#ifdef DEV_BUILD
-	gds_delta_alloc += tail;
-#endif
-
-#ifdef DEBUG_GDS_ALLOC
-	memset((UCHAR *) block, ALLOC_FREED_PATTERN, tail);
-#endif
-
-	block[0] = tail;
-	(void) free_memory((SLONG *) ((UCHAR *) block + ALLOC_HEADER_SIZE));
-
-#ifdef SUPERSERVER
-	if (free_map_debug)
-		freemap(0);
-#endif
-
-
-	block = (SLONG *) ((UCHAR *) block + tail);
-	block[0] = size;
-
-	SAVE_DEBUG_INFO(block, filename, lineno);
-
-#ifdef V4_THREADING
-	V4_MUTEX_UNLOCK(&alloc_mutex);
-#endif
-	return (UCHAR *) block + ALLOC_HEADER_SIZE;
-}
-#endif // NOT_USED_OR_REPLACED
 
 ISC_STATUS API_ROUTINE gds__decode(ISC_STATUS code, USHORT* fac, USHORT* class_)
 {
@@ -1157,86 +754,6 @@ void API_ROUTINE isc_encode_timestamp(void *times_arg, GDS_TIMESTAMP * date)
 }
 
 
-#ifdef NOT_USED_OR_REPLACED
-ULONG API_ROUTINE gds__free(void* blk)
-{
-/**************************************
- *
- *	g d s _ $ f r e e
- *
- **************************************
- *
- * Functional description
- *	Release a block allocated by gds__alloc.  Return number
- *	of bytes released. Called under mutex protection.
- *
- **************************************/
-	ULONG released;
-
-#ifdef V4_THREADING
-	V4_MUTEX_LOCK(&alloc_mutex);
-#endif
-
-#ifdef DEBUG_GDS_ALLOC
-	gds_free_call_count++;
-	if (!blk) {
-		DEV_REPORT("gds__free: tried to release NULL\n");
-		BREAKPOINT(__LINE__);
-	}
-	else
-	{
-		ALLOC alloc, *p;
-		BOOLEAN found = FALSE;
-		ULONG save_length;
-
-		alloc = (ALLOC) (((char *) blk) - ALLOC_HEADER_SIZE);
-
-		for (p = &gds_alloc_chain; *p; p = &((*p)->alloc_next))
-		{
-			if (*p == alloc)
-			{
-				found++;
-				*p = (*p)->alloc_next;
-				break;
-			}
-		}
-		if (!found)
-		{
-			DEV_REPORT("gds__free: Tried to free unallocated block\n");
-			BREAKPOINT(__LINE__);
-		}
-		else {
-			/* Always validate the buffer we're about to free */
-			gds_alloc_validate(alloc);
-
-			/* If we want to validate all memory on each call, do so now */
-			if (gds_alloc_state < gds_alloc_call_count)
-				gds_alloc_report(ALLOC_silent, __FILE__, __LINE__);
-
-			/* Now zap the contents of the freed block - including the debug
-			 * information as it is difficult to distinguish blocks freed
-			 * by the suballocater vs blocks freed from a client
-			 */
-			strncpy(alloc->alloc_magic1, ALLOC_HEADER1_MAGIC_FREED,
-					sizeof(alloc->alloc_magic1));
-
-			save_length = alloc->alloc_status.alloc_length;
-			memset(alloc, ALLOC_FREED_PATTERN, save_length);
-			alloc->alloc_status.alloc_length = save_length;;
-		}
-	};
-#endif
-
-	released = free_memory(blk);
-	blk = NULL;
-#ifdef V4_THREADING
-	V4_MUTEX_UNLOCK(&alloc_mutex);
-#endif
-	return released;
-}
-#endif // NOT_USED_OR_REPLACED
-
-
 #ifdef DEV_BUILD
 
 void GDS_breakpoint(int parameter)
@@ -1297,235 +814,6 @@ SINT64 API_ROUTINE isc_portable_integer(UCHAR* ptr, SSHORT length)
 	return value;
 }
 
-#ifdef NOT_USED_OR_REPLACED
-#ifdef DEBUG_GDS_ALLOC
-
-static void validate_memory(void)
-{
-/**************************************
- *
- *	v a l i d a t e _ m e m o r y
- *
- **************************************
- *
- * Functional description
- *	Utility function to call from the debugger, which sometimes
- *	doesn't like passing parameters.
- *
- **************************************/
-	gds_alloc_report(ALLOC_silent, "from debugger", 0);
-}
-#endif
-
-
-#ifdef DEBUG_GDS_ALLOC
-
-static void gds_alloc_validate(ALLOC p)
-{
-/**************************************
- *
- *	g d s _ a l l o c _ v a l i d a t e
- *
- **************************************
- *
- * Functional description
- *	Test a memory buffer to see if it appears intact.
- *
- **************************************/
- // JMB:  Need to rework the code for the new pools
-	USHORT errors = 0;
-
-/* This might be a garbage pointer, so try and validate it first */
-
-	if (!p) {
-		errors++;
-		DEV_REPORT("gds_alloc_validate: pointer doesn't look right\n");
-	}
-
-	if (!errors &&
-		strncmp(p->alloc_magic1,
-				ALLOC_HEADER1_MAGIC_ALLOCATED,
-				sizeof(p->alloc_magic1)))
-	{
-		errors++;
-		DEV_REPORT("gds_alloc_validate: Header marker1 mismatch\n");
-	}
-
-	if (!errors &&
-		strncmp(p->alloc_magic2,
-				ALLOC_HEADER2_MAGIC,
-				sizeof(p->alloc_magic2)))
-	{
-		errors++;
-		DEV_REPORT("gds_alloc_validate: Header marker2 mismatch\n");
-	}
-
-	if (!errors &&
-		memcmp(((BLOB_PTR*) p) + ALLOC_HEADER_SIZE + p->alloc_requested_length,
-				ALLOC_TAILER_MAGIC,
-				ALLOC_TAILER_SIZE))
-	{
-		errors++;
-		DEV_REPORT("gds_alloc_validate: tailer marker mismatch\n");
-	}
-
-	if (!errors && p->alloc_status.alloc_length < p->alloc_requested_length)
-	{
-		errors++;
-		DEV_REPORT("gds_alloc_validate: Header has been trashed (smaller than req)\n");
-	}
-
-	if (!errors && p->alloc_status.alloc_length < ALLOC_OVERHEAD)
-	{
-		errors++;
-		DEV_REPORT
-			("gds_alloc_validate: Header has been trashed (smaller than min)\n");
-	}
-
-	if (errors)
-	{
-		char buffer[150];
-		sprintf(buffer,
-				"gds_alloc_validate: %lx len=%5ld file=%15.30s line=%4ld call=%ld alloc=%ld free=%ld%s",
-				p,
-				p->alloc_requested_length,
-				p->alloc_filename,
-				p->alloc_lineno,
-				p->alloc_callno,
-				gds_alloc_call_count,
-				gds_free_call_count,
-				NEWLINE);
-		DEV_REPORT(buffer);
-		BREAKPOINT(__LINE__);
-	}
-}
-#endif // DEBUG_GDS_ALLOC
-
-
-#ifdef DEBUG_GDS_ALLOC
-static BOOLEAN gds_alloc_validate_free_pattern(UCHAR* ptr,
-											   ULONG len)
-{
-/**************************************
- *
- *	g d s _ a l l o c _ v a l i d a t e _ f r e e _ p a t t e r n
- *
- **************************************
- *
- * Functional description
- *	Walk a chunk of memory to see if it is all the same
- *	"color", eg: freed.
- *
- *	Return TRUE if the memory looks OK, FALSE if it has
- *	been clobbered.
- *
- **************************************/
- // JMB: Need to rework the code for the new pool
-	while (len--)
-	{
-		if (*ptr++ != ALLOC_FREED_PATTERN)
-		{
-			char buffer[100];
-			sprintf(buffer,
-					"gds_alloc_validate_free_pattern: Write to freed memory at %lx\n",
-					(ptr - 1));
-			DEV_REPORT(buffer);
-			BREAKPOINT(__LINE__);
-			return FALSE;
-		}
-	}
-	return TRUE;
-}
-#endif // DEBUG_GDS_ALLOC 
-
-
-#ifdef DEBUG_GDS_ALLOC
-static void gds_alloc_validate_freed(ALLOC p)
-{
-/**************************************
- *
- *	g d s _ a l l o c _ v a l i d a t e _ f r e e d
- *
- **************************************
- *
- * Functional description
- *	Test a memory buffer to see if it appears freed.
- *
- **************************************/
- // JMB: need to rework this code for the new pool
-	USHORT errors = 0;
-
-/* This might be a garbage pointer, so try and validate it first */
-
-	if (!p)
-	{
-		errors++;
-		DEV_REPORT("gds_alloc_validate_freed: pointer doesn't look right\n");
-	}
-
-/* Now look at the space, is it all the same pattern? */
-	if (!errors)
-	{
-		UCHAR *ptr;
-		ULONG len;
-		ptr = ((UCHAR *) p) + sizeof(struct free);
-		len = p->alloc_status.alloc_freed.free_length - sizeof(struct free);
-		if (!gds_alloc_validate_free_pattern(ptr, len))
-		{
-			errors++;
-		}
-	}
-
-	if (errors)
-	{
-		char buffer[150];
-		sprintf(buffer,
-				"gds_alloc_validate_freed: %lx len=%5ld alloc=%ld free=%ld%s",
-				p,
-				p->alloc_status.alloc_freed.free_length,
-				gds_alloc_call_count, gds_free_call_count, NEWLINE);
-		DEV_REPORT(buffer);
-		BREAKPOINT(__LINE__);
-	}
-}
-#endif // DEBUG_GDS_ALLOC
-#endif // NOT_USED_OR_REPLACED
-
-#ifdef DEBUG_GDS_ALLOC
-
-void gds_alloc_watch(void* p)
-{
-/**************************************
- *
- *	g d s _ a l l o c _ w a t c h 
- *
- **************************************
- *
- * Functional description
- *	Start watching a memory location.
- *
- **************************************/
-// JMB: need to rework this for new pools
-#ifdef NOT_USED_OR_REPLACED
-	gds_alloc_watch_call_count++;
-
-/* Do we have a new place to watch?  If so, set our watcher */
-	if (p)
-	{
-		gds_alloc_watchpoint = (ALLOC) ((UCHAR *) p - ALLOC_HEADER_SIZE);
-		gds_alloc_watch_call_count = 1;
-	}
-
-/* If we have a watchpoint, check that it's still valid */
-	if (gds_alloc_watchpoint)
-	{
-		gds_alloc_validate(gds_alloc_watchpoint);
-	}
-#endif
-}
-#endif // DEBUG_GDS_ALLOC
-
-
 #ifdef DEBUG_GDS_ALLOC
 
 void API_ROUTINE gds_alloc_flag_unfreed(void *blk)
@@ -1542,18 +830,8 @@ void API_ROUTINE gds_alloc_flag_unfreed(void *blk)
  *
  **************************************/
 // JMB: need to rework this for the new pools
-#ifdef NOT_USED_OR_REPLACED
-	if (!blk)
-		return;
-/* Point to the start of the block */
-	ALLOC p = (ALLOC) (((UCHAR *) blk) - ALLOC_HEADER_SIZE);
-
-/* Might as well validate it while we're here */
-	gds_alloc_validate(p);
-
-/* Flag it as "already known" */
-	p->alloc_flags |= ALLOC_dont_report;
-#endif
+// Skidder: Not sure we need to rework this routine. 
+// What we really need is to fix all memory leaks including very old.
 }
 #endif // DEBUG_GDS_ALLOC
 
@@ -1573,95 +851,9 @@ void API_ROUTINE gds_alloc_report(ULONG flags, char* filename, int lineno)
  *	Or that might have been clobbered.
  *
  **************************************/
- // JMB: needs to be reworked for new pools
- #ifdef NOT_USED_OR_REPLACED
-	ALLOC p;
-	IB_FILE *f = NULL;
-	char buffer[150];
-	TEXT name[MAXPATHLEN];
-	BOOLEAN stderr_reporting = TRUE;
-
-	if (flags & ALLOC_check_each_call)
-	{
-		gds_alloc_state = gds_alloc_call_count;
-	}
-	if (flags & ALLOC_dont_check)
-	{
-		gds_alloc_state = ~0;
-	}
-
-	for (p = gds_alloc_chain; p; p = p->alloc_next)
-	{
-		gds_alloc_validate(p);
-		if ((!(p->alloc_flags & ALLOC_dont_report) &&
-			 !(flags & ALLOC_silent)) ||
-			 (flags & ALLOC_verbose))
-		{
-			if (f == NULL)
-			{
-#pragma FB_COMPILER_MESSAGE("TMN: Possible change needed")
-				gds__prefix(name, "iserver.err");
-				f = ib_fopen(name, "at");
-				ib_fflush(ib_stdout);
-				ib_fflush(ib_stderr);
-				sprintf(buffer,
-						"%sgds_alloc_report: flags %ld file %15.15s lineno %ld alloc=%ld free=%ld%s%s",
-						NEWLINE,
-						flags,
-						filename ? filename : "?",
-						lineno,
-						gds_alloc_call_count,
-						gds_free_call_count,
-						NEWLINE,
-						NEWLINE);
-
-				if (getenv("NO_GDS_ALLOC_REPORT"))
-				{
-					stderr_reporting = FALSE;
-				}
-				if (stderr_reporting)
-				{
-					DEV_REPORT(buffer);
-				}
-				if (f)
-				{
-					ib_fprintf(f, buffer);
-				}
-			}
-			sprintf(buffer,
-					"Unfreed alloc: %lx len=%5ld file=%15.30s line=%4ld call=%4ld%s",
-					p,
-					p->alloc_requested_length,
-					p->alloc_filename,
-					p->alloc_lineno, p->alloc_callno, NEWLINE);
-			if (stderr_reporting)
-			{
-				DEV_REPORT(buffer);
-			}
-			if (f)
-			{
-				ib_fprintf(f, buffer);
-			}
-		}
-		if (flags & ALLOC_mark_current) {
-			p->alloc_flags |= ALLOC_dont_report;
-		}
-	}
-
-/* Walk the list of free blocks and validate they haven't been referenced */
-	for (p = (ALLOC)pool; p; p = (ALLOC)p->alloc_status.alloc_freed.free_next)
-	{
-		gds_alloc_validate_freed(p);
-	}
-
-	if (f)
-	{
-		ib_fclose(f);
-	}
-#endif
+// Skidder: Calls to this function must be replaced with MemoryPool::print_contents
 }
 #endif // DEBUG_GDS_ALLOC
-
 
 SLONG API_ROUTINE gds__interprete(char *s, ISC_STATUS ** vector)
 {
@@ -2306,10 +1498,6 @@ SLONG API_ROUTINE gds__get_prefix(SSHORT arg_type, TEXT * passed_string)
 
 	char *prefix_ptr;
 	int count = 0;
-#ifdef NOT_USED_OR_REPLACED
-	char *prefix_array;			/* = {ib_prefix, ib_prefix_lock, ib_prefix_msg}; */
-#endif
-
 
 	if (arg_type < IB_PREFIX_TYPE || arg_type > IB_PREFIX_MSG_TYPE)
 		return ((SLONG) - 1);
@@ -3036,34 +2224,13 @@ void API_ROUTINE gds__sqlcode_s(ISC_STATUS * status_vector, ULONG * sqlcode)
 }
 
 
-void* API_ROUTINE gds__temp_file(	BOOLEAN	flag,
-									TEXT*	string,
-									TEXT*	expanded_string)
+void * API_ROUTINE gds__temp_file(
+					 BOOLEAN stdio_flag, TEXT * string, 
+					 TEXT * expanded_string, TEXT * dir, BOOLEAN unlink_flag)
 {
 /**************************************
  *
- *	g d s _ $ t e m p _ f i l e
- *
- **************************************
- *
- * Functional description
- *	Create and open a temp file with a given root.  Unless the
- *	address of a buffer for the expanded file name string is
- *	given, make up the file "pre-deleted". Return -1 on failure.
- *
- **************************************/
-
-	return gds__tmp_file2(flag, string, expanded_string, NULL);
-}
-
-
-void *gds__tmp_file2(
-					 BOOLEAN flag,
-					 TEXT * string, TEXT * expanded_string, TEXT * dir)
-{
-/**************************************
- *
- *      g d s _ _ t m p _ f i l e 2
+ *      g d s _ _ t e m p _ f i l e
  *
  **************************************
  *
@@ -3071,122 +2238,94 @@ void *gds__tmp_file2(
  *      Create and open a temp file with a given location.
  *      Unless the address of a buffer for the expanded file name string is
  *      given, make up the file "pre-deleted". Return -1 on failure.
+ *      If unlink_flag is TRUE than file is marked as pre-deleted even if 
+ *      expanded_string is not NULL.
+ * NOTE 
+ *      Function returns untyped handle that needs to be casted to either IB_FILE
+ *      or used as file descriptor. This is ugly and needs to be fixed probably 
+ *      via introducing two functions with different return types.
  *
  **************************************/
-
-	IB_FILE *file;
-	TEXT file_name[256], *p, *q, *end;
-
-	p = file_name;
-	end = p + sizeof(file_name) - 8;
-
-#ifdef VMS
-	q = WORKFILE;
-#else
-	if (!(q = dir) && !(q = getenv("INTERBASE_TMP")) && !(q = getenv("TMP")))
-	{
 #ifdef WIN_NT
-		TEXT temp_dir[256];
-		USHORT j;
-		if ((j = GetTempPath(sizeof(temp_dir), temp_dir)) &&
-			j < sizeof(temp_dir))
-			q = temp_dir;
+	/* These are the characters used in temporary filenames.  */
+	static const char letters[] = "abcdefghijklmnopqrstuvwxyz0123456789";
+
+	TEXT temp_dir[MAXPATHLEN];
+	TEXT *directory = dir;
+	if (!directory && !(directory = getenv("INTERBASE_TMP"))) {
+		DWORD len;
+		// This checks "TEMP" and "TMP" environment variables
+		if ((len = GetTempPath(sizeof(temp_dir), temp_dir)) &&
+			len < sizeof(temp_dir))
+			directory = temp_dir;
 		else
-#endif
-			q = WORKFILE;
+			directory = WORKFILE;
 	}
-#endif /* VMS */
+	if (strlen(directory) >= MAXPATHLEN-strlen(string)-strlen(TEMP_PATTERN)-1)
+		return (void *)-1;
+	void *result;
 
-	for (; p < end && *q;)
-		*p++ = *q++;
-
-#ifndef VMS
-#if (defined WIN_NT)
-	if (p > file_name && p[-1] != '\\' && p[-1] != '/' && p < end)
-		*p++ = '\\';
+	__timeb64 t;
+	_ftime64(&t);
+	int randomness = t.time*1000 + t.millitm; /* int is ok because 36^^6 ~= 2^31 */
+	for (int tryCount = 0; tryCount < MAX_TMPFILE_TRIES; tryCount++) {
+		char file_name[MAXPATHLEN];
+		strcpy(file_name, directory);
+		if (file_name[strlen(file_name)-1] != '/')
+			strcat(file_name, "/");
+		strcat(file_name, string);
+		char suffix[] = TEMP_PATTERN;
+		__int64 temp = randomness;
+		for (int i=0; i<sizeof(suffix)-1; i++) {
+			suffix[i] = letters[temp % (sizeof(letters)-1)];
+			temp /= sizeof(letters)-1;
+		}
+		strcat(file_name, suffix);
+		if (expanded_string)
+			strcpy(expanded_string, file_name);
+		result = (void*)_sopen(file_name, _O_CREAT | _O_TRUNC | _O_RDWR | 
+			_O_BINARY | _O_SHORT_LIVED | _O_NOINHERIT | _O_EXCL |
+			(expanded_string && !unlink_flag ? 0 : _O_TEMPORARY),
+			_SH_DENYRW, _S_IREAD|_S_IWRITE);
+		if ((int)result != -1 || (errno != EACCES && errno != EEXIST))
+			break;
+		randomness++;
+	}
+	if ((int)result == -1) return result;
+	if (stdio_flag) {
+		result = ib_fdopen((int)result, 
+			expanded_string && !unlink_flag ? "Tw+b" : "DTw+b");
+		if (!result) result = (void*)-1;
+	}
+	return result;
 #else
-	if (p > file_name && p[-1] != '/' && p < end)
-		*p++ = '/';
-#endif
-#endif
+	TEXT *directory = dir;
+	if (!directory && !(directory = getenv("INTERBASE_TMP")) && !(directory = getenv("TMP")))
+		directory = WORKFILE;
+	TEXT file_name[MAXPATHLEN];
+	if (strlen(directory) >= MAXPATHLEN-strlen(string)-strlen(TEMP_PATTERN)-1)
+		return (void *)-1;
+	strcpy(file_name, directory);
+	if (file_name[strlen(file_name)-1] != '/')
+		strcat(file_name, "/");
+	strcat(file_name, string);
+	strcat(file_name, TEMP_PATTERN);
+	
+	void *result = (void *)mkstemp(file_name);
+	if (result == (void *)-1)
+		return result;
 
-	for (q = string; p < end && *q;)
-		*p++ = *q++;
-
-	for (q = TEMP_PATTERN; *q;)
-		*p++ = *q++;
-
-	*p = 0;
-
-#if !(defined FREEBSD || defined NETBSD)
-	MKTEMP(file_name, string);
+	if (stdio_flag)
+		if (!(result = ib_fdopen((int) result, "w+")))
+			return (void *)-1;
 
 	if (expanded_string)
 		strcpy(expanded_string, file_name);
 
-#ifdef VMS
-	if (flag) {
-		file = (expanded_string) ?
-			ib_fopen(file_name, "w") : ib_fopen(file_name, "w", "fop=tmd");
-		if (!file)
-			return (void *) -1;
-	}
-	else {
-		file = (expanded_string) ?
-			open(file_name, O_RDWR | O_CREAT | O_TRUNC, 0600) :
-			open(file_name, O_RDWR | O_CREAT | O_TRUNC, 0600, "fop=tmd");
-		if (file == (IB_FILE *) - 1)
-			return (void *) -1;
-	}
-#else
-	SSHORT i;
-	if (flag) {
-		for (i = 0; i < IO_RETRY; i++) {
-			if (file = ib_fopen(file_name, "w+"))
-				break;
-			if (!SYSCALL_INTERRUPTED(errno))
-				return (void *) -1;
-		}
-		if (!file)
-			return (void *) -1;
-	}
-	else {
-		for (i = 0; i < IO_RETRY; i++) {
-			file =
-				(IB_FILE *) (int) open(file_name,
-									   O_RDWR | O_CREAT | O_TRUNC | O_BINARY,
-									   0600);
-			if (file != (IB_FILE *) - 1)
-				break;
-			if (!SYSCALL_INTERRUPTED(errno))
-				return (void *) -1;
-		}
-		if (file == (IB_FILE *) - 1)
-			return (void *) -1;
-	}
-
-	if (!expanded_string)
+	if (!expanded_string || unlink_flag)
 		unlink(file_name);
+	return result;
 #endif
-
-#else /* defined FREEBSD/NETBSD */
-	file = (IB_FILE *) mkstemp(file_name);
-	if (file == (IB_FILE *) - 1)
-		return (void *) -1;
-
-	if (flag)
-		if (!(file = fdopen((int) file, "w+")))
-			return (void *) -1;
-
-	if (expanded_string)
-		strcpy(expanded_string, file_name);
-
-	if (!expanded_string) {
-		unlink(file_name);
-	}
-#endif /* FREEBSD/NETBSD */
-
-	return (void *) file;
 }
 
 
@@ -4149,186 +3288,11 @@ void gds__cleanup(void)
 	}
 
 #ifdef V4_THREADING
-	V4_MUTEX_DESTROY(&alloc_mutex);
 /* V4_DESTROY; */
 #endif
 	initialized = 0;
 }
 
-
-static void cleanup_malloced_memory(void *arg)
-{
-/**************************************
- *
- *	c l e a n u p _ m a l l o c e d _ m e m o r y
- *
- **************************************
- *
- * Functional description
- *	Return the real memory that was acquired in gds__alloc
- *	to the system.  Refer to gds__alloc for the cases when
- *	the malloc pointer is saved and when the malloc pointer
- *	is not saved.
- *	This substantive work of this function is only turned on
- *	for Novell.
- *
- **************************************/
-	void *ptr;
-
-#if (defined (WIN_NT) || defined (UNIX))
-	while (ptr = malloced_memory) {
-		malloced_memory = reinterpret_cast < void **>(*malloced_memory);
-		free(ptr);
-	}
-#endif
-
-	pool = NULL;
-
-#if (defined SOLARIS && defined SUPERSERVER && !defined(MAP_ANON))
-
-/* Close the file used as the basis for generating
-   anonymous virtual memory. Since it is created
-   pre-deleted there's no need to unlink it here. */
-
-	close(anon_fd);
-	anon_fd = -1;
-#endif
-}
-
-#ifdef NOT_USED_OR_REPLACED
-static ULONG free_memory(void *blk)
-{
-/**************************************
- *
- *	f r e e _ m e m o r y
- *
- **************************************
- *
- * Functional description
- *	Release a block allocated by gds__alloc.  Return number
- *	of bytes released.
- *
- **************************************/
-	FREE *ptr, prior, free_blk, block;
-	SLONG length;
-
-#ifdef DEV_BUILD
-	if (!blk) {
-		DEV_REPORT("gds__free: Tried to free NULL\n");
-		BREAKPOINT(__LINE__);
-		return 0;
-	}
-#endif
-
-	block = (FREE) ((UCHAR *) blk - ALLOC_HEADER_SIZE);
-	blk = block;
-
-#ifdef DEV_BUILD
-	gds_delta_alloc -= *((ULONG *) blk);
-#endif
-	length = block->free_length = *((ULONG *) blk);
-
-#ifdef DEBUG_GDS_ALLOC
-	block->free_count = gds_free_call_count;
-	if (gds_bug_free_count && (gds_free_call_count == gds_bug_free_count)) {
-		PRINTF("gds__free call %d reached, address=%lx\n", gds_bug_free_count,
-			   blk);
-		BREAKPOINT(__LINE__);
-	}
-#endif
-
-#ifdef DEV_BUILD
-	if (length <= (SLONG) ALLOC_OVERHEAD) {
-		DEV_REPORT("gds__free: attempt to release bad block (too small)\n");	/* TXNN */
-		BREAKPOINT(__LINE__);
-		return 0;
-	}
-#endif
-
-/* Find the logical place in the free block list for the returning
-   block.  If it adjoins existing blocks, merge it (them). */
-
-	prior = NULL;
-
-	for (ptr = &pool; (free_blk = *ptr) != NULL;
-		 prior = free_blk, ptr = &free_blk->free_next) {
-		if (free_blk->free_next
-			&& (UCHAR *) free_blk >=
-			(UCHAR *) free_blk->free_next) {
-			DEV_REPORT("gds__free: pool corrupted");	/* TXNN */
-			BREAKPOINT(__LINE__);
-			free_blk = *ptr = NULL;
-			break;
-		}
-		if ((UCHAR *) block < (UCHAR *) free_blk)
-			break;
-	}
-
-/* Make sure everything is completely kosher */
-
-	if (block->free_length <= 0 ||
-		(prior
-		 && (UCHAR *) block <
-		 (UCHAR *) prior + prior->free_length) || (free_blk
-															&& (UCHAR  *) block +
-															block->free_length
-															>
-															(UCHAR *) free_blk)) {
-		DEV_REPORT("gds__free: attempt to release bad block\n");	/* TXNN */
-		BREAKPOINT(__LINE__);
-		return 0;
-	}
-
-/* Start by linking block into chain */
-
-	block->free_next = free_blk;
-	*ptr = block;
-
-/* Try to merge the free block with the next block */
-
-	if (free_blk
-		&& (UCHAR *) block + block->free_length ==
-		(UCHAR *) free_blk) {
-		block->free_length += free_blk->free_length;
-		block->free_next = free_blk->free_next;
-#ifdef DEBUG_GDS_ALLOC
-		/* We're making a larger free chuck - be sure to color the header
-		 * of the "merged" block as freed space 
-		 */
-		memset(free_blk, ALLOC_FREED_PATTERN, sizeof(struct free));
-#endif
-	}
-
-/* Next, try to merge the free block with the prior block */
-
-	if (prior
-		&& (UCHAR *) prior + prior->free_length ==
-		(UCHAR *) block) {
-		prior->free_length += block->free_length;
-		prior->free_next = block->free_next;
-#ifdef DEBUG_GDS_ALLOC
-		/* We're making a larger free chuck - be sure to color the header
-		 * of the "merged" block as freed space 
-		 */
-		memset(block, ALLOC_FREED_PATTERN, sizeof(struct free));
-#endif
-	}
-
-#ifdef DEBUG_GDS_ALLOC
-	if (gds_bug_free_count && (gds_free_call_count >= gds_bug_free_count))
-		gds_alloc_report(ALLOC_silent, __FILE__, __LINE__);
-#endif
-
-/* The number of bytes freed from the user's point
-   of view - eg: the block length, less the malloc overhead */
-
-	if (length % (1024 + ALLOC_OVERHEAD) == 0) {
-		return (length - ALLOC_OVERHEAD * (length / (1024 + ALLOC_OVERHEAD)));
-	}
-
-	return length - ALLOC_OVERHEAD;
-}
-#endif // NOT_USED_OR_REPLACED
 
 static void init(void)
 {
@@ -4349,48 +3313,12 @@ static void init(void)
 	if (initialized)
 		return;
 
-#ifdef DEBUG_GDS_ALLOC
-	{
-		char *t = getenv("DEBUG_GDS_ALLOC");
-		if (t) {
-			/* Set which call to gds__alloc starts full memory debugging */
-			if (*t >= '0' && *t <= '9')
-				gds_alloc_state = atoi(t);
-			else
-				gds_alloc_state = 0;
-		}
-		t = getenv("DEBUG_GDS_ALLOC_NOMEM");
-		if (t) {
-			/* Set which call to gds__alloc "exhausts" available memory */
-			if (*t >= '0' && *t <= '9')
-				gds_alloc_nomem = atoi(t);
-			else
-				gds_alloc_nomem = 0;
-		}
-		/* Open the memory debugging configuration file, if any. */
-
-		IB_FILE *file = ib_fopen(DBG_MEM_FILE, "r");
-		if (file) {
-			ib_fscanf(file, "%lu", &gds_bug_alloc_count);
-			ib_fscanf(file, "%lu", &gds_bug_free_count);
-			PRINTF("gds_bug_alloc_count=%"ULONGFORMAT", gds_bug_free_count=%"ULONGFORMAT"\n",
-				   gds_bug_alloc_count, gds_bug_free_count);
-			ib_fclose(file);
-		}
-	}
-	BREAKPOINT(__LINE__);
-#endif /* DEBUG_GDS_ALLOC */
-
 	/* V4_INIT; */
 	/* V4_GLOBAL_MUTEX_LOCK; */
 	if (initialized) {
 		/*  V4_GLOBAL_MUTEX_UNLOCK; */
 		return;
 	}
-
-#ifdef V4_THREADING
-	V4_MUTEX_INIT(&alloc_mutex);
-#endif
 
 #ifdef VMS
 	exit_description.exit_handler = cleanup;
@@ -4432,8 +3360,6 @@ static void init(void)
 	atexit(gds__cleanup);
 
 	initialized = 1;
-
-	gds__register_cleanup(cleanup_malloced_memory, 0);
 
 #ifndef REQUESTER
 	ISC_signal_init();
@@ -4492,118 +3418,6 @@ static int yday(struct tm *times)
 
 	return day;
 }
-
-
-// Solaris <=2.7 does not support map_anon use old code - nmcc dec2002
-#if (defined(SOLARIS) && !defined(MAP_ANON))
-UCHAR *mmap_anon(SLONG size)
-{
-/**************************************
- *
- *	m m a p _ a n o n			(S O L A R I S)
- *
- **************************************
- *
- * Functional description
- *	Allocate anonymous virtual memory for Solaris.
- *	Use an arbitrary file descriptor as a basis
- *	for file mapping.
- *
- **************************************/
-	char *memory, *va, *va_end, *va1;
-	ULONG chunk, errno1;
-	int     anon_fd=-1, page_size=-1;
-/* Choose SYS_ALLOC_CHUNK such that it is always valid for the
-   underlying mapped file and is a multiple of any conceivable
-   memory page size that a hardware platform might support. */
-
-#define SYS_ALLOC_CHUNK	0x20000	/* 131,072 bytes */
-
-/* All virtual addresses generated will be remapped or wrapped around
-   to the start of the mapped file. The mapped file must be at least
-   SYS_ALLOC_CHUCK large to guarantee valid memory references. */
-
-	if (anon_fd == -1) {
-		anon_fd = (int) gds__temp_file(FALSE, "gds_anon", NULL);
-		while (ftruncate(anon_fd, SYS_ALLOC_CHUNK) == -1)
-			if (!SYSCALL_INTERRUPTED(errno)) {
-				close(anon_fd);
-				anon_fd = -1;
-				ERR_post(isc_sys_request, isc_arg_string, "ftruncate",
-						 isc_arg_unix, errno, 0);
-			}
-	}
-
-/* Get memory page size for virtual memory checking. */
-
-	if ((page_size = sysconf(_SC_PAGESIZE)) == -1)
-		ERR_post(isc_sys_request, isc_arg_string, "sysconf", isc_arg_unix,
-				 errno, 0);
-
-/* Generate a virtually contiguous address space for size requested.
-   MAP_PRIVATE is critical here, otherwise the mapped file turns to jelly. */
-
-	memory = mmap(NULL, size, (PROT_READ | PROT_WRITE), MAP_PRIVATE, anon_fd, 0);
-	if (memory == MAP_FAILED) {
-		/* If no swap space or memory available maybe caller can ask for less.
-		   Punt on unexpected errors. */
-
-		if (errno == EAGAIN || errno == ENOMEM)
-			return NULL;
-		else
-			ERR_post(isc_sys_request, isc_arg_string, "mmap", isc_arg_unix,
-					 errno, 0);
-	}
-
-/* Memory returned from mmap should always be page-aligned. */
-
-	assert(((ULONG) memory & (page_size - 1)) == 0);
-
-/* Some of this virtual address space may be invalid because the
-   mapped file isn't large enough, remap all virtual addresses to
-   the beginning of the file which will validate the illegal memory
-   references. The use of MAP_FIXED guarantees that the virtual
-   address space remains contiguous during this legerdemain. */
-
-	va = memory;
-	va_end = memory + size;
-
-	for (va += SYS_ALLOC_CHUNK; va < va_end; va += chunk) {
-		chunk = MIN(va_end - va, SYS_ALLOC_CHUNK);
-		va1 = mmap(va, chunk, (PROT_READ | PROT_WRITE),
-				   (MAP_PRIVATE | MAP_FIXED), anon_fd, 0);
-		if (va1 != va) {
-			assert(FALSE);
-			errno1 = errno;
-			munmap(memory, size);
-			ERR_post(isc_sys_request, isc_arg_string, "mmap", isc_arg_unix,
-					 errno1, 0);
-		}
-	}
-
-/* All modfiy references will transparently revector from the mapped
-   file to private memory backed by the swap file. However, since the
-   database buffer pool uses this allocation mechanism, make the
-   revectoring happen now by touching each memory page. This protects
-   against DMA (Direct Memory Access) transfers used by "raw" I/O
-   device interfaces which may bypass the virtual memory manager. */
-
-	for (va = memory; va < va_end; va += page_size)
-		*(ULONG *) va = (ULONG) va;
-
-#ifdef DEV_BUILD
-/* Since the mapped object is mapped repeatedly by different
-   chunks of the virtual address space, check the same physical
-   memory pages aren't being shared by labeling each virtual page
-   with its address. Verify every page is still labeled correctly .*/
-
-	for (va = memory; va < va_end; va += page_size)
-		assert(*(ULONG *) va == (ULONG) va);
-#endif
-
-	return (UCHAR *) memory;
-}
-#endif
 
 
 static void ndate(SLONG nday, struct tm *times)
@@ -4771,41 +3585,6 @@ void* API_ROUTINE gds__alloc(SLONG size)
  *
  **************************************/
 	return gds__alloc_debug(size, "-- Unknown --", 0);
-}
-#endif
-
-#if defined(NOT_USED_OR_REPLACED) && defined(SUPERSERVER)
-static void freemap(int cod)
-{
-	FREE *next, free_blk;
-	ULONG free_list_count = 0;
-	ULONG total_free = 0;
-
-	ib_printf("\nFree Start\t\tFree Length\t\tFree End\n");
-	for (next = &pool; (free_blk = *next) != NULL; next = &(*next)->free_next) {
-		++free_list_count;
-		total_free += free_blk->free_length;
-		ib_printf("%x\t\t\t%"SLONGFORMAT"\t\t\t%x\n", (UCHAR *) free_blk,
-				  free_blk->free_length,
-				  (UCHAR *) (free_blk + free_blk->free_length));
-	}
-	ib_printf("Stats after %s\n", (cod) ? "Merging" : "Allocating");
-	ib_printf("Free list count    = %"ULONGFORMAT"\n", free_list_count);
-	ib_printf("Total Free         = %"ULONGFORMAT"\n", total_free);
-	gds_print_delta_counters(ib_stdout);
-}
-#endif
-
-#ifdef SUPERSERVER
-void gds_print_delta_counters(IB_FILE * fptr)
-{
-#ifdef DEV_BUILD
-	ib_fprintf(fptr, "gds_delta_alloc    = %"SLONGFORMAT"\n", gds_delta_alloc);
-	ib_fprintf(fptr, "gds_max_alloc      = %"SLONGFORMAT"\n", gds_max_alloc);
-#endif
-	ib_fprintf(fptr, "allr_delta_alloc   = %"SLONGFORMAT"\n", allr_delta_alloc);
-	ib_fprintf(fptr, "alld_delta_alloc   = %"SLONGFORMAT"\n", alld_delta_alloc);
-	ib_fprintf(fptr, "all_delta_alloc    = %"SLONGFORMAT"\n", all_delta_alloc);
 }
 #endif
 

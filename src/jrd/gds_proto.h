@@ -121,7 +121,7 @@ void	API_ROUTINE gds__qtoq(void*, void*);
 void	API_ROUTINE gds__register_cleanup(FPTR_VOID_PTR, void*);
 SLONG	API_ROUTINE gds__sqlcode(ISC_STATUS*);
 void	API_ROUTINE gds__sqlcode_s(ISC_STATUS*, ULONG*);
-void*	API_ROUTINE gds__temp_file(BOOLEAN, TEXT*, TEXT*);
+void*	API_ROUTINE gds__temp_file(BOOLEAN, TEXT*, TEXT*, TEXT* = NULL, BOOLEAN = FALSE);
 void		API_ROUTINE gds__unregister_cleanup(FPTR_VOID_PTR, void*);
 BOOLEAN	API_ROUTINE gds__validate_lib_path(TEXT*, TEXT*, TEXT*,
 											  SLONG);
@@ -130,7 +130,6 @@ void	API_ROUTINE gds__vtof(SCHAR*, SCHAR*, USHORT);
 void	API_ROUTINE gds__vtov(const SCHAR*, char*, SSHORT);
 void	API_ROUTINE isc_print_sqlerror(SSHORT, ISC_STATUS*);
 void	API_ROUTINE isc_sql_interprete(SSHORT, TEXT*, SSHORT);
-void*	gds__tmp_file2(BOOLEAN, TEXT*, TEXT*, TEXT*);
 SINT64	API_ROUTINE isc_portable_integer(UCHAR*, SSHORT);
 void	gds__cleanup(void);
 
