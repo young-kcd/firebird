@@ -29,7 +29,7 @@
  *		Alex Peshkoff <peshkoff@mail.ru>
  *				added PermanentStorage and AutoStorage classes.
  *
- *  $Id: alloc.h,v 1.50 2004-08-30 18:10:49 alexpeshkoff Exp $
+ *  $Id: alloc.h,v 1.51 2004-09-07 08:35:29 robocop Exp $
  *
  */
 
@@ -396,7 +396,7 @@ private:
 	MemoryPool* savedPool;	
 };
 
-// template enbaling common use of old and new pools control code
+// template enabling common use of old and new pools control code
 // to be dropped when old-style code goes away
 template <typename SubsystemThreadData, typename SubsystemPool>
 class SubsystemContextPoolHolder
