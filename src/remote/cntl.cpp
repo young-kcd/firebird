@@ -33,6 +33,7 @@
 #include "../jrd/sch_proto.h"
 #include "../jrd/thd_proto.h"
 #include "../jrd/jrd_proto.h"
+#include "../jrd/os/thd_priority.h"
 
 #ifdef WIN_NT
 #include <windows.h>
@@ -46,7 +47,7 @@ typedef struct thread {
 } *THREAD;
 
 static void control_thread(DWORD);
-static void cleanup_thread();
+static int cleanup_thread(void *lpv);
 static void parse_switch(TEXT *, int *);
 static USHORT report_status(DWORD, DWORD, DWORD, DWORD);
 
@@ -127,7 +128,10 @@ void CNTL_main_thread( SLONG argc, SCHAR * argv[])
 	DWORD temp;
 
 	HANDLE cleanup_thread_handle;
-	DWORD count, return_from_wait, cleanup_thread_id;
+	DWORD count, return_from_wait;
+#ifndef THREAD_PSCHED
+	DWORD cleanup_thread_id;
+#endif
 
 	service_handle = RegisterServiceCtrlHandler(service_name,
 												(LPHANDLER_FUNCTION)
@@ -181,9 +185,15 @@ void CNTL_main_thread( SLONG argc, SCHAR * argv[])
 /* set the status with the timer, start the cleanup thread and wait for the
  * cleanup thread to exit or the timer to expire, once we reach the max number
  * of loops or the thread exits set the state to shutdown and exit */
+#pragma FB_COMPILER_MESSAGE("May we always use gds__thread_start?")
+#ifdef THREAD_PSCHED
+	gds__thread_start(cleanup_thread, NULL, THREAD_medium, 0, 
+		&cleanup_thread_handle);
+#else
 	cleanup_thread_handle =
 		CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) cleanup_thread, NULL,
 					 0, &cleanup_thread_id);
+#endif
 	count = 1;
 
 	do {
@@ -320,7 +330,7 @@ static void control_thread( DWORD action)
 }
 
 
-static void cleanup_thread()
+static int cleanup_thread(void *lpv)
 {
 /**************************************
  *
@@ -379,6 +389,7 @@ static void cleanup_thread()
  */
 
 	THD_mutex_destroy(thread_mutex);
+	return 0;
 }
 
 

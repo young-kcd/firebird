@@ -31,6 +31,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/gdsassert.h"
+#include "../jrd/os/thd_priority.h"
 
 #include <process.h>
 #include <windows.h>
@@ -49,7 +50,6 @@ static USHORT	t_init = FALSE;
 static MUTX_T	ib_mutex;
 static DWORD	specific_key;
 static DWORD	t_key;
-
 
 //____________________________________________________________
 //
@@ -81,7 +81,7 @@ long THD_get_thread_id(void)
 //
 THDD THD_get_specific(void)
 {
-	return (THDD) TlsGetValue(specific_key);
+	return THPS_GET((THDD)TlsGetValue(specific_key));
 }
 
 
@@ -116,6 +116,7 @@ void DLL_EXPORT THD_cleanup(void)
 
 		/* destroy the mutex ib_mutex which was created */
 		THD_mutex_destroy(&ib_mutex);
+		THPS_FINI();
 	}
 }
 
@@ -306,8 +307,8 @@ void DLL_EXPORT THD_put_specific(THDD new_context)
 		THD_init();
 	}
 
+#pragma FB_COMPILER_MESSAGE("Fix! This may be slightly optimized.")
 	// Save the current context
-
 	new_context->thdd_prior_context = THD_get_specific();
 
 	put_specific(new_context);
@@ -478,6 +479,8 @@ static void init(void)
 #pragma FB_COMPILER_MESSAGE("Fix! Bad function ptr type cast.")
 	gds__register_cleanup(reinterpret_cast < FPTR_VOID_PTR > (THD_cleanup),
 						  0);
+	
+	THPS_INIT();
 }
 
 
@@ -503,10 +506,11 @@ static void init_tkey(void)
 //
 static void put_specific(THDD new_context)
 {
-	TlsSetValue(specific_key, (LPVOID) new_context);
+	THPS_SET(TlsSetValue(specific_key, (LPVOID) new_context), new_context);
 }
 
 
+#if 0
 #if !defined(__BORLANDC__)
 // Copyright (C) 2001 Mikael Nordell
 // Need a thunking layer from stdcall to cdecl, and also to serve as
@@ -528,6 +532,7 @@ static unsigned int __stdcall win32_thread_start_thunk(void* p)
 	return (unsigned int) ((*pfn)(arg));
 }
 #endif
+#endif
 
 
 //____________________________________________________________
@@ -544,12 +549,10 @@ static int thread_start(FPTR_INT_VOID_PTR	routine,
 	DWORD thread_id;
 	int priority;
 
-	DWORD create = (flags & THREAD_wait) ? CREATE_SUSPENDED : 0;
-
 #ifdef __BORLANDC__
 	handle =
 		(HANDLE) _beginthreadNT((void (_USERENTRY *) (void *)) routine, 0,
-								arg, NULL, create, &thread_id);
+								arg, NULL, CREATE_SUSPENDED, &thread_id);
 
 	if (handle == (HANDLE) - 1) {
 		return errno;
@@ -570,14 +573,14 @@ static int thread_start(FPTR_INT_VOID_PTR	routine,
 											   0,
 											   &win32_thread_start_thunk,
 											   thread_start_arg,
-											   create,
+											   CREATE_SUSPENDED,
 											   reinterpret_cast<unsigned*>(&thread_id));
 #else
 	unsigned long real_handle = _beginthreadex(NULL,
 											   0,
 											   reinterpret_cast<unsigned int(__stdcall*)(void*)>(routine),
 											   arg,
-											   create,
+											   CREATE_SUSPENDED,
 											   reinterpret_cast<unsigned*>(&thread_id));
 #endif
 
@@ -611,7 +614,11 @@ static int thread_start(FPTR_INT_VOID_PTR	routine,
 			break;
 	}
 
+	THPS_ATTACH(handle, thread_id, priority);
 	SetThreadPriority(handle, priority);
+
+	if (! (flags & THREAD_wait))
+		ResumeThread(handle);
 	if (thd_id) {
 		*(HANDLE *) thd_id = handle;
 	} else {
@@ -620,6 +627,5 @@ static int thread_start(FPTR_INT_VOID_PTR	routine,
 
 	return 0;
 }
-
 
 } // extern "C"

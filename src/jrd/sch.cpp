@@ -35,11 +35,11 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/iberr_proto.h"
 #include "../jrd/gdsassert.h"
+#include "../jrd/os/thd_priority.h"
 
 #ifdef	WIN_NT
 #include <windows.h>
 #endif
-
 
 extern "C" {
 
@@ -446,6 +446,7 @@ void SCH_enter(void)
 		thread->thread_next = thread->thread_prior = thread;
 		active_thread = thread;
 	}
+	THPS_ENTER();
 
 	if (active_thread->thread_flags & THREAD_hiber) {
 		schedule();
@@ -498,6 +499,7 @@ void SCH_exit(void)
 		prior->thread_next = next;
 		next->thread_prior = prior;
 	}
+	THPS_EXIT();
 
 	thread->thread_next = free_threads;
 	free_threads = thread;
@@ -1060,6 +1062,5 @@ static void stall_ast(THREAD thread)
 		thread->thread_next->thread_prior = thread->thread_prior;
 	}
 }
-
 
 } // extern "C"
