@@ -17,7 +17,7 @@
     * New user-defined functions.
         Functions LPAD and RPAD are added to IB_UDF library.
       Contributor(s):
-        Dmitry Yemanov <yemanov@yandex.ru>
+        Juan Guerrero <guerrero747@yahoo.es>
 
     * Fixed Beta 1 bug.
         ISQL wasn't able to extract universal triggers.
