@@ -409,10 +409,12 @@ int CLIB_ROUTINE main(int argc, char **argv)
 				dba_error(1, 0, 0, 0, 0, 0);	/* msg 1: found unknown switch */
 			}
 			else if (in_sw_tab->in_sw == IN_SW_DBA_USERNAME) {
-				strcpy((char*) username, *argv++);
+				if (argv < end)
+					strcpy((char*) username, *argv++);
 			}
 			else if (in_sw_tab->in_sw == IN_SW_DBA_PASSWORD) {
-				strcpy((char*) password, *argv++);
+				if (argv < end)
+					strcpy((char*) password, *argv++);
 			}
 			else if (in_sw_tab->in_sw == IN_SW_DBA_SYSTEM) {
 				sw_system = true;
