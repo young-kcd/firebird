@@ -27,9 +27,10 @@
  *
  * 2003.07.31 Fred Polizo, Jr. - Made FUN_evaluate() correctly determine
  * the length of string types containing binary data (char. set octets).
+ * 2003.08.10 Claudio Valderrama: Fix SF Bugs #544132 and #728839.
  */
 /*
-$Id: fun.epp,v 1.23 2003-08-04 10:20:19 skidder Exp $
+$Id: fun.epp,v 1.24 2003-08-13 11:45:30 robocop Exp $
 */
 
 #include "firebird.h"
@@ -101,7 +102,6 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 	USHORT	length;
 	UCHAR	temp[800];
 	STR		temp_string;
-	SSHORT	unsup_datatype = 0;
 	SLONG	l, *lp;
 
 	TDBB tdbb = GET_THREAD_DATA;
@@ -117,8 +117,8 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 	}
 	else
 	{
-		/* Need to align the starting address because it consists of
-		   a number of data blocks with aligned length */
+		// Need to align the starting address because it consists of
+		//   a number of data blocks with aligned length
 
 		temp_string =
 			FB_NEW_RPT(*tdbb->tdbb_default,
@@ -132,15 +132,27 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 	SLONG*		arg_ptr		= args;
 	LLS			blob_stack	= 0;
 	LLS			array_stack = 0;
+	
 	JRD_REQ			request		= tdbb->tdbb_request;
-	USHORT		null_flag	= (USHORT)(request->req_flags & req_null);
+	// CVC: restoring the null flag seems like a Borland hack to try to
+	// patch a bug with null handling. There's no evident reason to restore it
+    // because EVL_expr() resets it every time it's called.	Kept it for now.
+	bool null_flag	= (request->req_flags & req_null) == req_null;
+	
 	fun_repeat*	return_ptr	= function->fun_rpt + function->fun_return_arg;
-	JRD_NOD*		ptr			= node->nod_arg;
+	JRD_NOD*		ptr		= node->nod_arg;
 
 	value->vlu_desc = return_ptr->fun_desc;
 	value->vlu_desc.dsc_address = (UCHAR *) & value->vlu_misc;
+	
+	// We don't know or can't handle the data type is some cases.
+	bool unsup_datatype = false;
+	
+	// We'll use to this trick to give the UDF a way to signal
+    // "I sent a null blob" when not using descriptors.
+	BLOB return_blob_struct = 0;
 
-/* Trap any potential errors */
+// Trap any potential errors
 
 #pragma FB_COMPILER_MESSAGE("Note that we cannot use C++ EH here for Win32 SS!")
 #if !defined(SUPERSERVER) && !defined(WIN_NT)
@@ -151,7 +163,6 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 
 	// If the return data type is any of the string types,
 	// allocate space to hold value
-
 
 	if (value->vlu_desc.dsc_dtype <= dtype_varying)
 	{
@@ -180,8 +191,12 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 	{
 		DSC* input;
 		if (tail == return_ptr) {
-			input = &value->vlu_desc; /*(DSC*) value;*/
-		} else {
+			input = &value->vlu_desc; // (DSC*) value;
+			// CVC: The return param we build for the UDF is not null!!!
+			// This closes SF Bug #544132.
+			request->req_flags &= ~req_null;
+		}	
+		else {
 			input = EVL_expr(tdbb, *ptr++);
 		}
 		SLONG**	ap = (SLONG **) arg_ptr;
@@ -190,7 +205,16 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 		// nothing left to be done
 
 		if (tail->fun_mechanism == FUN_descriptor) {
-			*ap++ = (SLONG *) input;
+            // CVC: We have to protect the UDF from Borland's ill null signaling
+            // See EVL_expr(...), case nod_field for reference: the request may be
+            // signaling NULL, but the placeholder field created by EVL_field(...)
+            // doesn't carry the null flag in the descriptor. Why Borland didn't
+            // set on such flag is maybe because it only has local meaning.
+            // This closes SF Bug #728839.
+            if ((request->req_flags & req_null) && !(input->dsc_flags & DSC_null))
+			    *ap++ = 0;
+			else
+			    *ap++ = (SLONG *) input;
 			arg_ptr = (SLONG *) ap;
 			continue;
 		}
@@ -199,7 +223,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 		temp_desc.dsc_address = temp_ptr;
 		length = FB_ALIGN(temp_desc.dsc_length, DOUBLE_ALIGN);
 
-		/* If we've got a null argument, just pass zeros (got any better ideas?) */
+		// If we've got a null argument, just pass zeros (got any better ideas?)
 
 		if (!input || (request->req_flags & req_null))
 		{
@@ -350,9 +374,9 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 					MOV_move(input, &temp_desc);
 				break;
 
-			/* CVC: There's no other solution for now: timestamp can't be returned
-					by value and the other way is to force the user to pass a dummy value as
-					an argument to keep the engine happy. So, here's the hack. */
+			// CVC: There's no other solution for now: timestamp can't be returned
+			//		by value and the other way is to force the user to pass a dummy value as
+			//		an argument to keep the engine happy. So, here's the hack.
 			case dtype_timestamp:
 			    if (tail == return_ptr)
 				{
@@ -372,6 +396,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 
 			case dtype_blob:
 				{
+				// This is not a descriptor pointing to a blob. This is a blob struct.
 				BLOB blob_desc = (BLOB) temp_ptr;
 				BLB  blob;
 				length = sizeof(struct blob);
@@ -380,6 +405,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 					blob =
 						BLB_create(tdbb, tdbb->tdbb_request->req_transaction,
 								   (BID) & value->vlu_misc);
+					return_blob_struct = blob_desc;
 				}
 				else
 				{
@@ -489,7 +515,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 
 		case dtype_timestamp:
 		default:
-			unsup_datatype = 1;
+			unsup_datatype = true;
 			break;
 		}
 	}
@@ -502,12 +528,17 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 
 		if (temp_ptr != NULL)
 		{
-			/* CVC: Allow processing of return by descriptor.
-					The assumption is that the user didn't modify the return type,
-					that has no sense after all, because it is carved in stone. */
+			// CVC: Allow processing of return by descriptor.
+			//		The assumption is that the user didn't modify the return type,
+			//		that has no sense after all, because it is carved in stone.
+			DSC* return_dsc = 0;
 			if (return_ptr->fun_mechanism == FUN_descriptor)
 			{
-				temp_ptr = ((DSC*) temp_ptr)->dsc_address;
+			    // The formal param's type is contained in value->vlu_desc.dsc_dtype
+			    // but I want to know if the UDF changed it to a compatible type
+			    // from its returned descriptor, that will be return_dsc.
+                return_dsc = reinterpret_cast<DSC*>(temp_ptr);
+				temp_ptr = return_dsc->dsc_address;
 			}
 			if (temp_ptr)
 			{
@@ -515,8 +546,23 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 				{
 				case dtype_sql_date:
 				case dtype_sql_time:
+				    value->vlu_misc.vlu_long = *(SLONG *) temp_ptr;
+				    break;
+				    
 				case dtype_long:
-					value->vlu_misc.vlu_long = *(SLONG *) temp_ptr;
+				    if (return_dsc) switch(return_dsc->dsc_dtype) {
+                    case dtype_short:
+                        value->vlu_misc.vlu_long = *(SSHORT *) temp_ptr;
+                        break;
+                    case dtype_long:
+                        value->vlu_misc.vlu_long = *(SLONG *) temp_ptr;
+                        break;
+                    default:
+                        unsup_datatype = true;
+                        break;
+				    }
+				    else
+					    value->vlu_misc.vlu_long = *(SLONG *) temp_ptr;
 					break;
 
 				case dtype_short:
@@ -528,7 +574,22 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 					break;
 
 				case dtype_int64:
-					value->vlu_misc.vlu_int64 = *(SINT64 *) temp_ptr;
+				    if (return_dsc) switch(return_dsc->dsc_dtype) {
+				    case dtype_short:
+				        value->vlu_misc.vlu_int64 = *(SSHORT *) temp_ptr;
+				        break;
+                    case dtype_long:
+                        value->vlu_misc.vlu_int64 = *(SLONG *) temp_ptr;
+                        break;
+				    case dtype_int64:
+				        value->vlu_misc.vlu_int64 = *(SINT64 *) temp_ptr;
+				        break;
+				    default:
+                        unsup_datatype = true;
+                        break;
+				    }
+				    else
+					    value->vlu_misc.vlu_int64 = *(SINT64 *) temp_ptr;
 					break;
 
 				case dtype_double:
@@ -545,9 +606,8 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
                     break;
                                        
 				case dtype_cstring:
-                    /* For the ttype_binary char. set, this will truncate
-                     * the string after the first zero octet copied.
-                     */
+                    // For the ttype_binary char. set, this will truncate
+                    // the string after the first zero octet copied.
                     temp_desc = value->vlu_desc;
                     temp_desc.dsc_address = temp_ptr;
                     temp_desc.dsc_length =
@@ -572,11 +632,11 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 					break;
 
 				default:
-					unsup_datatype = 1;
+					unsup_datatype = true;
 					break;
 				}
-				/* check if this is function has the FREE_IT set, if set and
-				   return_value is not null, then free the return value */
+				// check if this is function has the FREE_IT set, if set and
+				//   return_value is not null, then free the return value
 				if (((SLONG) return_ptr->fun_mechanism < 0) && temp_ptr)
 					free(temp_ptr);
 			}
@@ -586,7 +646,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 	END_CHECK_FOR_EXCEPTIONS((TEXT*)function->fun_exception_message);
 
 	if (unsup_datatype) {
-		IBERROR(169);			/* msg 169 return data type not supported */
+		IBERROR(169);			// msg 169 return data type not supported
 	}
 
 #if !defined(SUPERSERVER) && !defined(WIN_NT)
@@ -600,7 +660,9 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 	}
 #endif
 
-	delete temp_string;
+    // We can't do this here: if temp_string was allocated, temp_ptr points to it
+    // if the length of the stack-based buffer is not enough. Moved below.
+	//delete temp_string;
 
 	while (blob_stack)
 	{
@@ -612,9 +674,18 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 		delete[] (UCHAR*)LLS_POP(&array_stack);
 	}
 
+    // We acknowledge null in three cases:
+    // a) temp_ptr = udf(); returns a null pointer
+    // b) Udf used RETURNS PARAMETER <n> for a descriptor whose DSC_flag is activated
+    // c) Udf used RETURNS PARAMETER <n> for a blob and made the blob handle null,
+    // because there's no current way to do that. Notice that it doesn't affect
+    // the engine internals, since blob_struct is a mere wrapper around the blob.
+    // Udfs work in the assumption that they ignore that the handle is the real
+    // internal blob and this has been always the tale.
 	if (temp_ptr == NULL || function->fun_return_arg &&
-		return_ptr->fun_mechanism == FUN_descriptor &&
-		(value->vlu_desc.dsc_flags & DSC_null))
+		(return_ptr->fun_mechanism == FUN_descriptor &&	(value->vlu_desc.dsc_flags & DSC_null)
+        || return_ptr->fun_mechanism == FUN_blob_struct && return_blob_struct &&
+            !return_blob_struct->blob_handle))
 	{
 		request->req_flags |= req_null;
 	}
@@ -622,7 +693,11 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 	{
 		request->req_flags &= ~req_null;
 	}
-	request->req_flags |= null_flag;
+	
+	delete temp_string;
+	
+	if (null_flag)
+	   request->req_flags |= req_null;
 }
 
 
