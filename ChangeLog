@@ -1,3 +1,11 @@
+2004-07-20 20:56  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp (1.73.2.20):
+	
+	Bugfix: optimizer didn't add boolean-node when it was a OR operator
+	and no index could be used.  This caused unnecessary evaluation of
+	joined rse's to that rse.
+
 2004-07-14 14:10  paul_reeves
 
 	* firebird2/: doc/README.user.embedded (1.1.2.2),
