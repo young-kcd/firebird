@@ -68,7 +68,6 @@ static void show_funcs(DBB);
 static int show_funcs_detail(DBB);
 static int show_insecure_fields(DBB, TEXT *, TEXT *);
 static void show_forms_db(DBB);
-static int show_forms_detail(DBB);
 static void show_gbl_field(SYN);
 static int show_gbl_field_detail(DBB, TEXT *);
 static void show_gbl_fields(DBB);
@@ -1591,44 +1590,10 @@ static void show_forms_db( DBB database)
  *
  **************************************/
 
-	if (!(show_forms_detail(database)))
-		ERRQ_msg_put(120, database->dbb_symbol->sym_string, NULL, NULL, NULL,
+	ERRQ_msg_put(120, database->dbb_symbol->sym_string, NULL, NULL, NULL,
 					 NULL);
 	/* Msg120 There are no forms defined for database %s */
 }
-
-
-static int show_forms_detail( DBB database)
-{
-/**************************************
- *
- *	s h o w _ f o r m s _ d e t a i l
- *
- **************************************
- *
- * Functional description
- *	Show everything we know about forms,
- *	meaning basically show form names
- *
- **************************************/
-	int count;
-
-	count = NULL;
-	MET_meta_transaction(database, FALSE);
-
-	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_forms1])
-		Y IN RDB$RELATIONS WITH Y.RDB$RELATION_NAME = "PYXIS$FORMS"
-		FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_forms2])
-			X IN PYXIS$FORMS 
-            if (!count)									
-                ERRQ_msg_put(285, database->dbb_symbol->sym_string, NULL, NULL, NULL, NULL);	/* Msg285 Forms in database %s */
-            ib_printf("    %s\t%s\n", X.PYXIS$FORM_NAME, X.PYXIS$FORM_TYPE);
-			count++;
-		END_FOR;
-	END_FOR;
-	return count;
-}
-
 
 static void show_gbl_field( SYN field_node)
 {

@@ -24,30 +24,11 @@
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
-#ifndef PYXIS
 #include "../qli/dtr.h"
-#else
-#include "../pyxis/pyxis.h"
-#endif
 #include "../jrd/jrd_time.h"
 #include "../jrd/intl.h"
-#ifndef PYXIS
 #include "../qli/err_proto.h"
-#endif
 #include "../jrd/gds_proto.h"
-
-#ifdef PYXIS
-#define MOVQ_compare		MOVP_compare
-#define MOVQ_date_to_double	MOVP_date_to_double
-#define MOVQ_decompose		MOVP_decompose
-#define MOVQ_double_to_date	MOVP_double_to_date
-#define MOVQ_fast		MOVP_fast
-#define MOVQ_get_double		MOVP_get_double
-#define MOVQ_get_long		MOVP_get_long
-#define MOVQ_get_string		MOVP_get_string
-#define MOVQ_move		MOVP_move
-#define MOVQ_terminate		MOVP_terminate
-#endif
 
 #include "../qli/mov_proto.h"
 
@@ -55,16 +36,12 @@ static void date_error(TEXT *, USHORT);
 static void timestamp_to_text(SLONG[2], DSC *);
 static void sql_time_to_text(ULONG[1], DSC *);
 static void sql_date_to_text(SLONG[1], DSC *);
-#ifndef PYXIS
 static void mover_error(int, USHORT, USHORT);
-#endif
 static void now_to_date(struct tm *, SLONG[2]);
 static void numeric_to_text(DSC *, DSC *);
 static void string_to_date(TEXT *, USHORT, SLONG[2]);
 static void string_to_time(TEXT *, USHORT, SLONG[2]);
-#ifndef PYXIS
 static TEXT *type_name(USHORT);
-#endif
 
 
 typedef vary VARY;
@@ -121,7 +98,6 @@ static struct dtypes_t dtypes_table[] = {
 };
 
 
-#ifndef PYXIS
 int MOVQ_compare( DSC * arg1, DSC * arg2)
 {
 /**************************************
@@ -357,7 +333,6 @@ int MOVQ_compare( DSC * arg1, DSC * arg2)
 	}
 	return -1;
 }
-#endif
 
 
 double PASCAL_ROUTINE MOVQ_date_to_double( DSC * desc)
@@ -423,12 +398,8 @@ int MOVQ_decompose( TEXT * string, USHORT length, SLONG * return_value)
 		}
 		else if (*p == '.')
 			if (fraction) {
-#ifndef PYXIS
 				MOVQ_terminate(string, temp, length, sizeof(temp));
 				ERRQ_error(411, temp, NULL, NULL, NULL, NULL);
-#else
-				IBERROR("conversion error");
-#endif
 			}
 			else
 				fraction = TRUE;
@@ -439,12 +410,8 @@ int MOVQ_decompose( TEXT * string, USHORT length, SLONG * return_value)
 		else if (*p == 'e' || *p == 'E')
 			break;
 		else if (*p != ' ') {
-#ifndef PYXIS
 			MOVQ_terminate(string, temp, length, sizeof(temp));
 			ERRQ_error(411, temp, NULL, NULL, NULL, NULL);
-#else
-			IBERROR("conversion error");
-#endif
 		}
 	}
 
@@ -464,12 +431,8 @@ int MOVQ_decompose( TEXT * string, USHORT length, SLONG * return_value)
 			else if (*p == '+' && !exp && !sign)
 				continue;
 			else if (*p != ' ') {
-#ifndef PYXIS
 				MOVQ_terminate(string, temp, length, sizeof(temp));
 				ERRQ_error(411, temp, NULL, NULL, NULL, NULL);
-#else
-				IBERROR("conversion error");
-#endif
 			}
 		}
 		if (sign)
@@ -573,11 +536,7 @@ double PASCAL_ROUTINE MOVQ_get_double( DSC * desc)
 			}
 			else if (*p == '.')
 				if (fraction)
-#ifndef PYXIS
 					IBERROR(52);	/* Msg 52 conversion error */
-#else
-					IBERROR("conversion error");
-#endif
 				else
 					fraction = 1;
 			else if (!value && *p == '-')
@@ -587,11 +546,7 @@ double PASCAL_ROUTINE MOVQ_get_double( DSC * desc)
 			else if (*p == 'e' || *p == 'E')
 				break;
 			else if (*p != ' ')
-#ifndef PYXIS
 				IBERROR(53);	/* Msg 53 conversion error */
-#else
-				IBERROR("conversion error");
-#endif
 		}
 
 		if (sign)
@@ -609,11 +564,7 @@ double PASCAL_ROUTINE MOVQ_get_double( DSC * desc)
 					sign = TRUE;
 				else if (*p == '+' && !exp);
 				else if (*p != ' ')
-#ifndef PYXIS
 					IBERROR(54);	/* Msg 54 conversion error */
-#else
-					IBERROR("conversion error");
-#endif
 			}
 			if (sign)
 				scale += exp;
@@ -633,11 +584,7 @@ double PASCAL_ROUTINE MOVQ_get_double( DSC * desc)
 		return value;
 
 	default:
-#ifndef PYXIS
 		mover_error(410, desc->dsc_dtype, dtype_double);
-#else
-		BUGCHECK("conversion not implemented");
-#endif
 	}
 
 /* Last, but not least, adjust for scale */
@@ -728,11 +675,7 @@ SLONG MOVQ_get_long(DSC * desc, SSHORT scale)
 		break;
 
 	default:
-#ifndef PYXIS
 		mover_error(410, desc->dsc_dtype, dtype_long);
-#else
-		BUGCHECK("conversion not implemented");
-#endif
 	}
 
 /* Last, but not least, adjust for scale */
@@ -1006,11 +949,7 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 	case dtype_short:
 		*(SSHORT *) p = l = MOVQ_get_long(from, to->dsc_scale);
 		if (*(SSHORT *) p != l)
-#ifndef PYXIS
 			IBERROR(14);		/* Msg14 integer overflow */
-#else
-			IBERROR("integer overflow");
-#endif
 		return;
 
 	case dtype_long:
@@ -1027,15 +966,9 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 	}
 
 	if (to->dsc_dtype == dtype_blob || from->dsc_dtype == dtype_blob)
-#ifndef PYXIS
 		IBERROR(55);			/* Msg 55 Blob conversion is not supported */
 
 	mover_error(410, from->dsc_dtype, to->dsc_dtype);
-#else
-		IBERROR("Blob conversion is not supported");
-
-	BUGCHECK("MOVP_move: conversion not done");
-#endif
 }
 
 
@@ -1083,17 +1016,10 @@ static void date_error( TEXT * string, USHORT length)
  *	A date conversion error occurred.  Complain.
  *
  **************************************/
-#ifndef PYXIS
 	SCHAR temp[128];
 
 	MOVQ_terminate(string, temp, length, sizeof(temp));
 	ERRQ_error(56, temp, NULL, NULL, NULL, NULL);	/* Msg 56 Error converting string \"%s\" to date */
-#else
-	SCHAR s[256];
-
-	sprintf(s, "Error converting string \"%.*s\" to date", length, string);
-	IBERROR(s);
-#endif
 }
 
 
@@ -1208,7 +1134,6 @@ static void timestamp_to_text( SLONG date[2], DSC * to)
 }
 
 
-#ifndef PYXIS
 static void mover_error( int pattern, USHORT in_type, USHORT out_type)
 {
 /**************************************
@@ -1239,7 +1164,6 @@ static void mover_error( int pattern, USHORT in_type, USHORT out_type)
 
 	ERRQ_error(pattern, (TEXT *) in, (TEXT *) out, NULL, NULL, NULL);
 }
-#endif
 
 
 static void now_to_date( struct tm *time, SLONG date[2])
@@ -1325,11 +1249,7 @@ static void numeric_to_text( DSC * from, DSC * to)
 		(to->dsc_dtype == dtype_cstring && length >= to->dsc_length) ||
 		(to->dsc_dtype == dtype_varying
 		 && length > to->dsc_length - sizeof(SSHORT)))
-#ifndef PYXIS
 		IBERROR(57);			/* Msg 57 overflow during conversion */
-#else
-		IBERROR("overflow during conversion");
-#endif
 
 	q =
 		(TEXT *) ((to->dsc_dtype == dtype_text) ? to->dsc_address : to->
@@ -1654,7 +1574,6 @@ static void string_to_time( TEXT * string, USHORT length, SLONG date[2])
 }
 
 
-#ifndef PYXIS
 static TEXT *type_name( USHORT dtype)
 {
 /**************************************
@@ -1674,4 +1593,3 @@ static TEXT *type_name( USHORT dtype)
 			return names->description;
 	return NULL;
 }
-#endif

@@ -24,17 +24,12 @@
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
-#ifndef PYXIS
 #include "../qli/dtr.h"
 #include "../qli/format.h"
 #include "../qli/all_proto.h"
 #include "../qli/err_proto.h"
 #include "../qli/picst_proto.h"
 #include "../qli/mov_proto.h"
-#else
-#include "../pyxis/pyxis.h"
-#include "../pyxis/all.h"
-#endif
 #include "../jrd/jrd_time.h"
 #include "../jrd/gds_proto.h"
 
@@ -48,24 +43,6 @@ static void edit_float(DSC *, PIC, TEXT **);
 static void edit_numeric(DSC *, PIC, TEXT **);
 static int generate(PIC);
 static void literal(PIC, TEXT, TEXT **);
-
-#ifdef PYXIS
-#define PIC_analyze		PICSTR_analyze
-#define PIC_edit		PICSTR_edit
-#define default_edit_string	PICSTR_default_edit_string
-
-#define MOVQ_get_double		MOVP_get_double
-#define MOVQ_get_string		MOVP_get_string
-#define MOVQ_move		MOVP_move
-
-#include "../qli/mov_proto.h"
-
-extern BLK PYXIS_alloc(PLB , UCHAR , int );
-#endif
-
-#ifdef PYXIS
-TEXT *PICSTR_default_edit_string(DSC *, TEXT*);
-#endif
 
 static TEXT *alpha_weekdays[] = {
 	"Sunday",
@@ -336,16 +313,11 @@ void PIC_edit( DSC * desc, PIC picture, TEXT ** output, USHORT max_length)
 		edit_float(desc, picture, output);
 		return;
 	default:
-#ifndef PYXIS
 		BUGCHECK(68);			/* Msg 68 PIC_edit: class not yet implemented */
-#else
-		BUGCHECK("PIC_edit: class not yet implemented");
-#endif
 	}
 }
 
 
-#ifndef PYXIS
 void PIC_missing( CON constant, PIC picture)
 {
 /**************************************
@@ -384,7 +356,6 @@ void PIC_missing( CON constant, PIC picture)
 		MAX(picture->pic_print_length, missing_picture->pic_print_length);
 	missing_picture->pic_length = picture->pic_length;
 }
-#endif
 
 
 static TEXT *cvt_to_ascii( SLONG number, TEXT * pointer, int length)
@@ -415,11 +386,7 @@ static TEXT *cvt_to_ascii( SLONG number, TEXT * pointer, int length)
 }
 
 
-#ifndef PYXIS
 static TEXT *default_edit_string(
-#else
-TEXT *PICSTR_default_edit_string(
-#endif
 									DSC * desc, TEXT * buff)
 {
 /**************************************
@@ -538,20 +505,15 @@ static void edit_alpha(
 		switch (c) {
 		case 'X':
 
-#ifdef PYXIS
-		case 'A':
-#endif
 			*out++ = *p++;
 			break;
 
-#ifndef PYXIS
 		case 'A':
 			if ((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z'))
 				*out++ = *p++;
 			else
 				IBERROR(69);	/* Msg 69 conversion error */
 			break;
-#endif
 
 		case 'B':
 			*out++ = ' ';
@@ -599,11 +561,6 @@ static void edit_date( DSC * desc, PIC picture, TEXT ** output)
 	temp_desc.dsc_length = sizeof(date);
 	temp_desc.dsc_address = (UCHAR *) date;
 	MOVQ_move(desc, &temp_desc);
-
-#ifdef PYXIS
-	if (!date[0] && !date[1])
-		return;
-#endif
 
 	isc_decode_date((GDS_QUAD*) date, &times);
 	p = temp;

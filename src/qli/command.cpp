@@ -339,11 +339,7 @@ void CMD_set( SYN node)
 			break;
 
 		case set_form:
-#ifdef NO_PYXIS
 			IBERROR(484);		/* FORMs not supported */
-#else
-			QLI_form_mode = (USHORT) value;
-#endif
 			break;
 
 		case set_password:

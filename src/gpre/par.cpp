@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.14 2003-02-13 12:01:28 dimitr Exp $
+//  $Id: par.cpp,v 1.15 2003-02-14 14:55:21 brodsom Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: par.cpp,v 1.14 2003-02-13 12:01:28 dimitr Exp $
+//	$Id: par.cpp,v 1.15 2003-02-14 14:55:21 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -1832,22 +1832,8 @@ static ACT par_end_for()
 
 static ACT par_end_form()
 {
-#ifdef NO_PYXIS
 	PAR_error("FORMs not supported");
 	return NULL;				/* silence compiler */
-#else
-	GPRE_REQ request;
-	GPRE_CTX context;
-
-	if (!cur_form)
-		PAR_error("unmatched END_FORM");
-
-	request = (GPRE_REQ) POP(&cur_form);
-	context = request->req_contexts;
-	HSH_remove(context->ctx_symbol);
-
-	return MAKE_ACTION(request, ACT_form_end);
-#endif
 }
 
 
@@ -2311,19 +2297,8 @@ static ACT par_for()
 
 static GPRE_CTX par_form_menu( enum sym_t type)
 {
-#ifdef NO_PYXIS
 	PAR_error("FORMs not supported");
 	return NULL;				/* silence compiler */
-#else
-	SYM symbol;
-
-	if ((symbol = MSC_find_symbol(token.tok_symbol, type))) {
-		ADVANCE_TOKEN;
-		return symbol->sym_object;
-	}
-
-	return NULL;
-#endif
 }
 
 
@@ -2334,62 +2309,8 @@ static GPRE_CTX par_form_menu( enum sym_t type)
 
 static ACT par_form_display()
 {
-#ifdef NO_PYXIS
 	PAR_error("FORMs not supported");
 	return NULL;				/* silence compiler */
-#else
-	GPRE_REQ request;
-	ACT action;
-	GPRE_CTX context;
-	FINT fint;
-
-	if (!(context = par_form_menu(SYM_form_map))) {
-		if (!(context = par_form_menu(SYM_menu)))
-			return NULL;
-		else
-			return par_menu_display(context);
-	}
-	request = context->ctx_request;
-	action = MAKE_ACTION(0, ACT_form_display);
-	fint = (FINT) ALLOC(sizeof(struct fint));
-	action->act_object = (REF) fint;
-	fint->fint_request = request;
-
-	for (;;)
-		if (MATCH(KW_DISPLAYING))
-			if (MATCH(KW_ASTERISK))
-				fint->fint_flags |= FINT_display_all;
-			else
-				par_form_fields(request, &fint->fint_display_fields);
-		else if (MATCH(KW_ACCEPTING))
-			if (MATCH(KW_ASTERISK))
-				fint->fint_flags |= FINT_update_all;
-			else
-				par_form_fields(request, &fint->fint_update_fields);
-		else if (MATCH(KW_OVERRIDING)) {
-			if (MATCH(KW_ASTERISK))
-				fint->fint_flags |= FINT_override_all;
-			else
-				par_form_fields(request, &fint->fint_override_fields);
-		}
-		else if (MATCH(KW_WAKING)) {
-			MATCH(KW_ON);
-			if (MATCH(KW_ASTERISK))
-				fint->fint_flags |= FINT_wakeup_all;
-			else
-				par_form_fields(request, &fint->fint_wakeup_fields);
-		}
-		else if (MATCH(KW_CURSOR)) {
-			MATCH(KW_ON);
-			par_form_fields(request, &fint->fint_position_fields);
-		}
-		else if (MATCH(KW_NO_WAIT))
-			fint->fint_flags |= FINT_no_wait;
-		else
-			break;
-
-	return action;
-#endif
 }
 
 
@@ -2400,31 +2321,8 @@ static ACT par_form_display()
 
 static ACT par_form_field()
 {
-#ifdef NO_PYXIS
 	PAR_error("FORMs not supported");
 	return NULL;				/* silence compiler */
-#else
-	GPRE_FLD field;
-	ACT action;
-	GPRE_CTX context;
-	USHORT first;
-
-//  
-//  Since fortran is fussy about continuations and the like,
-//  see if this variable token is the first thing in a statement.
-//  
-
-	first = token.tok_first;
-	field = EXP_form_field(&context);
-	action = MAKE_ACTION(0, ACT_variable);
-
-	if (first)
-		action->act_flags |= ACT_first;
-
-	action->act_object = EXP_post_field(field, context, FALSE);
-
-	return action;
-#endif
 }
 
 
@@ -2435,42 +2333,7 @@ static ACT par_form_field()
 
 static void par_form_fields( GPRE_REQ request, LLS * stack)
 {
-#ifdef NO_PYXIS
 	PAR_error("FORMs not supported");
-#else
-	GPRE_FLD field, subfield;
-	FORM form;
-	REF reference, parent;
-
-	form = request->req_form;
-
-	for (;;) {
-		if (!
-			(field =
-			 FORM_lookup_field(form, form->form_object,
-							   token.
-							   tok_string))) SYNTAX_ERROR("form field name");
-		ADVANCE_TOKEN;
-		parent = NULL;
-		if (field->fld_prototype && MATCH(KW_DOT)) {
-			if (!
-				(subfield =
-				 FORM_lookup_field(form, field->fld_prototype,
-								   token.
-								   tok_string)))
-		 SYNTAX_ERROR("sub-form field name");
-			ADVANCE_TOKEN;
-			parent = MAKE_REFERENCE(0);
-			parent->ref_field = field;
-			field = subfield;
-		}
-		reference = EXP_post_field(field, request->req_contexts, FALSE);
-		reference->ref_friend = parent;
-		PUSH((GPRE_NOD) reference, stack);
-		if (!MATCH(KW_COMMA))
-			break;
-	}
-#endif
 }
 
 
@@ -2480,99 +2343,8 @@ static void par_form_fields( GPRE_REQ request, LLS * stack)
 
 static ACT par_form_for()
 {
-#ifdef NO_PYXIS
 	PAR_error("FORMs not supported");
 	return NULL;				/* silence compiler */
-#else
-	FORM form;
-	SYM symbol, dbb_symbol;
-	DBB dbb;
-	GPRE_REQ request;
-	GPRE_CTX context;
-	USHORT request_flags;
-	TEXT *form_handle;
-
-	sw_pyxis = TRUE;
-	form_handle = NULL;
-	request_flags = 0;
-	request = MAKE_REQUEST(REQ_form);
-
-	if (MATCH(KW_LEFT_PAREN)) {
-		for (;;)
-			if (MATCH(KW_FORM_HANDLE))
-				form_handle = PAR_native_value(FALSE, TRUE);
-			else if (MATCH(KW_TRANSPARENT))
-				request_flags |= REQ_transparent;
-			else if (MATCH(KW_TAG))
-				request_flags |= REQ_form_tag;
-			else if (MATCH(KW_TRANSACTION_HANDLE))
-				request->req_trans = PAR_native_value(FALSE, TRUE);
-			else
-				break;
-		EXP_match_paren();
-	}
-
-	symbol = PAR_symbol(SYM_dummy);
-	symbol->sym_type = SYM_form_map;
-
-	if (!MATCH(KW_IN))
-		SYNTAX_ERROR("IN");
-
-//  Pick a database to access 
-
-	if (!isc_databases)
-		PAR_error("no database for operation");
-
-
-	if ((dbb_symbol = token.tok_symbol) &&
-		dbb_symbol->sym_type == SYM_database) {
-		ADVANCE_TOKEN;
-		if (!MATCH(KW_DOT))
-			SYNTAX_ERROR(".");
-		dbb = (DBB) dbb_symbol->sym_object;
-		form = FORM_lookup_form(dbb, (UCHAR*)token.tok_string);
-	}
-	else
-		for (dbb = isc_databases; dbb; dbb = dbb->dbb_next)
-			if ((form = FORM_lookup_form(dbb, (UCHAR*)token.tok_string)))
-				break;
-
-//  Pick up form 
-
-	if (!form)
-		SYNTAX_ERROR("form name");
-
-//  If we do it here, we will miss
-//  the next identifier
-//  FSG 26.Nov.2000 
-//  
-//ADVANCE_TOKEN;
-//  
-//  
-
-//  Set up various data structures 
-
-	request->req_form = form;
-
-	if ((request->req_form_handle = form_handle))
-		request->req_flags |= REQ_exp_form_handle;
-
-	request->req_database = dbb;
-	request->req_flags |= request_flags;
-	context = MSC_context(request);
-	context->ctx_symbol = symbol;
-	symbol->sym_object = context;
-	HSH_insert(symbol);
-	PUSH((GPRE_NOD) request, &cur_form);
-
-//  Do it here to get the next one right
-//  FSG 26.Nov.2000 
-//  
-
-	ADVANCE_TOKEN;
-
-	return MAKE_ACTION(request, ACT_form_for);
-#endif
 }
 
 
@@ -3995,17 +3767,8 @@ static ACT par_variable()
 
 static ACT par_window_create()
 {
-#ifdef NO_PYXIS
 	PAR_error("FORMs not supported");
 	return NULL;				/* silence compiler */
-#else
-	ACT action;
-
-	sw_pyxis = TRUE;
-	action = MAKE_ACTION(0, ACT_window_create);
-
-	return action;
-#endif
 }
 
 
@@ -4016,13 +3779,8 @@ static ACT par_window_create()
 
 static ACT par_window_delete()
 {
-#ifdef NO_PYXIS
 	PAR_error("FORMs not supported");
 	return NULL;				/* silence compiler */
-#else
-
-	return MAKE_ACTION(0, ACT_window_delete);
-#endif
 }
 
 
@@ -4035,27 +3793,8 @@ static ACT par_window_delete()
 
 static ACT par_window_scope()
 {
-#ifdef NO_PYXIS
 	PAR_error("FORMs not supported");
 	return NULL;				/* silence compiler */
-#else
-	ACT action;
-
-	if (MATCH(KW_EXTERN))
-		sw_window_scope = DBB_EXTERN;
-	else if (MATCH(KW_STATIC))
-		sw_window_scope = DBB_STATIC;
-	else if (MATCH(KW_GLOBAL))
-		sw_window_scope = DBB_GLOBAL;
-
-
-	action = MAKE_ACTION(0, ACT_noop);
-
-	if (sw_language != lang_fortran)
-		MATCH(KW_SEMI_COLON);
-
-	return action;
-#endif
 }
 
 
@@ -4066,13 +3805,8 @@ static ACT par_window_scope()
 
 static ACT par_window_suspend()
 {
-#ifdef NO_PYXIS
 	PAR_error("FORMs not supported");
 	return NULL;				/* silence compiler */
-#else
-
-	return MAKE_ACTION(0, ACT_window_suspend);
-#endif
 }
 
 

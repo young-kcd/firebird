@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.58 2003-02-14 02:24:44 brodsom Exp $
+$Id: common.h,v 1.59 2003-02-14 14:55:44 brodsom Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -189,7 +189,6 @@ int shutdown(int s, int how);
 
 #define setreuid(ruid,euid)     setuid(euid)
 #define setregid(rgid,egid)     setgid(egid)
-#define NO_PYXIS
 
 #define MEMMOVE(from,to,length)		memmove ((void *)to, (void *)from, (size_t) length)
 #define MOVE_FAST(from,to,length)       memcpy (to, from, (int) (length))
@@ -543,7 +542,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 *****************************************************/
 
 #ifdef WIN_NT
-#define NO_PYXIS
 #define NO_NFS
 
 #define MOVE_FAST(from,to,length)       memcpy (to, from, (int) (length))

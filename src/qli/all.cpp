@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: all.cpp,v 1.10 2003-02-10 13:28:27 eku Exp $
+$Id: all.cpp,v 1.11 2003-02-14 14:56:09 brodsom Exp $
 */
 
 /***************************************************
@@ -30,7 +30,6 @@ $Id: all.cpp,v 1.10 2003-02-10 13:28:27 eku Exp $
    LIST, PLEASE BE SURE TO CHECK THE OTHERS FOR
    SIMILAR CHANGES:
 
-        /gds/maint/pyxis/all.c
                   /dsql/all.c
                   /jrd/all.c
                   /pipe/allp.c
