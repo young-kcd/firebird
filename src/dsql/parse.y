@@ -1746,7 +1746,7 @@ alter_view_clause	: symbol_view_name column_parens_opt AS begin_string union_vie
 */
 
 union_view	  : union_view_expr
-			{ $$ = make_node (nod_select, (int) 2, $1, NULL); }
+			{ $$ = make_node (nod_select, e_select_count, $1, NULL, NULL, NULL); }
 		;
 
 union_view_expr	: select_view_expr
@@ -2778,7 +2778,7 @@ set_statistics	: SET STATISTICS INDEX symbol_index_name
 /* SELECT statement */
 
 select		: union_expr order_clause for_update_clause lock_clause
-			{ $$ = make_node (nod_select, 4, $1, $2, $3, $4); }
+			{ $$ = make_node (nod_select, e_select_count, $1, $2, $3, $4); }
 		;
 
 union_expr	: select_expr
@@ -3113,8 +3113,8 @@ access_type	: NATURAL
 			{ $$ = make_node (nod_natural, (int) 0, NULL); }
 		| INDEX '(' index_list ')'
 			{ $$ = make_node (nod_index, 1, make_list ($3)); }
-		| ORDER symbol_index_name
-			{ $$ = make_node (nod_index_order, 1, $2); }
+		| ORDER symbol_index_name extra_indices_opt
+			{ $$ = make_node (nod_index_order, 2, $2, $3); }
 		;
 
 index_list	: symbol_index_name
@@ -3122,6 +3122,11 @@ index_list	: symbol_index_name
 			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
 
+extra_indices_opt	: INDEX '(' index_list ')'
+			{ $$ = make_list ($3); }
+		|
+			{ $$ = 0; }
+		;
 
 
 /* INSERT statement */

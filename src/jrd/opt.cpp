@@ -5841,14 +5841,21 @@ static void mark_indices(csb_repeat * csb_tail, SSHORT relation_id)
 		if (access_type) {
 			for (arg = access_type->nod_arg, end = arg + plan_count;
 				 arg < end; arg += 3) {
-				if (relation_id != (SSHORT)(SLONG) * arg)
+				if (relation_id != (SSHORT)(SLONG) * arg) {
 					/* index %s cannot be used in the specified plan */
 					ERR_post(gds_index_unused, gds_arg_string, *(arg + 2), 0);
-				if (idx->idx_id == (USHORT)(ULONG) * (arg + 1))
-					if (access_type->nod_type == nod_navigational)
+				}
+				if (idx->idx_id == (USHORT)(ULONG) * (arg + 1)) {
+					if (access_type->nod_type == nod_navigational &&
+						arg == access_type->nod_arg) {
+						// dimitr:	navigational access can use only one index,
+						//			hence the extra check added (see the line above)
 						idx->idx_runtime_flags |= idx_plan_navigate;
-					else		/* nod_indices */
+					}
+					else { // nod_indices
 						break;
+					}
+				}
 			}
 
 			if (arg == end)

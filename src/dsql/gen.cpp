@@ -1891,11 +1891,13 @@ static void gen_plan( DSQL_REQ request, DSQL_NOD plan_expression)
 			STUFF(blr_navigational);
 			index_string = (STR) arg->nod_arg[0];
 			STUFF_CSTRING(index_string->str_data);
-			break;
+			if (!arg->nod_arg[1])
+				break;
+			// dimitr: FALL INTO, if the plan item is ORDER ... INDEX (...)
 
 		case nod_index:
 			STUFF(blr_indices);
-			arg = arg->nod_arg[0];
+			arg = (arg->nod_type == nod_index) ? arg->nod_arg[0] : arg->nod_arg[1];
 			STUFF(arg->nod_count);
 			for (ptr2 = arg->nod_arg, end2 = ptr2 + arg->nod_count;
 				 ptr2 < end2; ptr2++) {

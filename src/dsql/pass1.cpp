@@ -823,9 +823,14 @@ DSQL_NOD PASS1_node(DSQL_REQ request, DSQL_NOD input, bool proc_flag)
 		return node;
 
 	case nod_index:
-	case nod_index_order:
 		node = MAKE_node(input->nod_type, 1);
 		node->nod_arg[0] = input->nod_arg[0];
+		return node;
+
+	case nod_index_order:
+		node = MAKE_node(input->nod_type, 2);
+		node->nod_arg[0] = input->nod_arg[0];
+		node->nod_arg[1] = input->nod_arg[1];
 		return node;
 
 	case nod_dom_value:

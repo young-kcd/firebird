@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.49 2003-09-01 07:58:04 brodsom Exp $
+$Id: par.cpp,v 1.50 2003-09-14 15:37:05 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -1663,9 +1663,11 @@ static JRD_NOD par_plan(TDBB tdbb, CSB * csb)
 		/* Access plan types (sequential is default) */
 
 		node_type = (USHORT) BLR_BYTE;
-		if (node_type == blr_navigational) {
-			SSHORT idx_status;
+		USHORT extra_count = 0;
 
+		switch (node_type) {
+		case blr_navigational:
+			{
 			access_type = plan->nod_arg[e_retrieve_access_type] =
 				PAR_make_node(tdbb, 3);
 			access_type->nod_type = nod_navigational;
@@ -1677,19 +1679,20 @@ static JRD_NOD par_plan(TDBB tdbb, CSB * csb)
                for (p = name; *p; *p++)
                *p = UPPER (*p);
                */
+			SSHORT idx_status;
 			index_id = MET_lookup_index_name(tdbb, name, &relation_id, &idx_status);
 
 			if (idx_status == MET_object_unknown ||
-				idx_status == MET_object_inactive)
-					if (tdbb->
-						tdbb_attachment->att_flags & ATT_gbak_attachment)
-						warning(*csb, gds_indexname, gds_arg_string,
-								ERR_cstring(name), gds_arg_string,
-								relation->rel_name, 0);
+				idx_status == MET_object_inactive) {
+				if (tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment)
+					warning(*csb, gds_indexname, gds_arg_string,
+							ERR_cstring(name), gds_arg_string,
+							relation->rel_name, 0);
 				else
 					error(*csb, gds_indexname, gds_arg_string,
 						  ERR_cstring(name), gds_arg_string,
 						  relation->rel_name, 0);
+			}
 
 			/* save both the relation id and the index id, since 
 			   the relation could be a base relation of a view;
@@ -1698,39 +1701,50 @@ static JRD_NOD par_plan(TDBB tdbb, CSB * csb)
 			access_type->nod_arg[0] = (JRD_NOD) relation_id;
 			access_type->nod_arg[1] = (JRD_NOD) index_id;
 			access_type->nod_arg[2] = (JRD_NOD) ALL_cstring(name);
-		}
-		else if (node_type == blr_indices) {
-			SSHORT idx_status;
 
+			if (BLR_PEEK == blr_indices)
+				// dimitr:	FALL INTO, if the plan item is ORDER ... INDEX (...)
+				extra_count = 3;
+			else
+				break;
+			}
+		case blr_indices:
+			{
+			if (extra_count)
+				BLR_BYTE; // skip blr_indices
 			count = (USHORT) BLR_BYTE;
-			access_type = plan->nod_arg[e_retrieve_access_type] =
-				PAR_make_node(tdbb, count * 3);
-			access_type->nod_type = nod_indices;
+			JRD_NOD temp = plan->nod_arg[e_retrieve_access_type] =
+				PAR_make_node(tdbb, count * 3 + extra_count);
+			for (USHORT i = 0; i < extra_count; i++) {
+				temp->nod_arg[i] = access_type->nod_arg[i];
+			}
+			temp->nod_type = (extra_count) ? nod_navigational : nod_indices;
+			delete access_type;
+			access_type = temp;
 
 			/* pick up the index names and look up the appropriate ids */
 
-			for (arg = access_type->nod_arg; count--;) {
+			for (arg = access_type->nod_arg + extra_count; count--;) {
 				par_name(csb, name);
           		/* Nickolay Samofatov: We can't do this. Index names are identifiers.
 				 for (p = name; *p; *p++)
 				 *p = UPPER(*p);
   	             */
 
-				index_id =
-					MET_lookup_index_name(tdbb, name, &relation_id,
-										  &idx_status);
+				SSHORT idx_status;
+				index_id = MET_lookup_index_name(tdbb, name, &relation_id, &idx_status);
 
 				if (idx_status == MET_object_unknown ||
-					idx_status == MET_object_inactive)
-						if (tdbb->
-							tdbb_attachment->att_flags & ATT_gbak_attachment)
-							warning(*csb, gds_indexname, gds_arg_string,
-									ERR_cstring(name), gds_arg_string,
-									relation->rel_name, 0);
+					idx_status == MET_object_inactive) {
+					if (tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment)
+						warning(*csb, gds_indexname, gds_arg_string,
+								ERR_cstring(name), gds_arg_string,
+								relation->rel_name, 0);
 					else
 						error(*csb, gds_indexname, gds_arg_string,
 							  ERR_cstring(name), gds_arg_string,
 							  relation->rel_name, 0);
+				}
 
 				/* save both the relation id and the index id, since 
 				   the relation could be a base relation of a view;
@@ -1740,9 +1754,13 @@ static JRD_NOD par_plan(TDBB tdbb, CSB * csb)
 				*arg++ = (JRD_NOD) index_id;
 				*arg++ = (JRD_NOD) ALL_cstring(name);
 			}
-		}
-		else if (node_type != blr_sequential)
+			break;
+			}
+		case blr_sequential:
+			break;
+		default:
 			syntax_error(*csb, "access type");
+		}
 
 		return plan;
 	}
