@@ -381,8 +381,10 @@ static void expand_dbname(TEXT * in)
 	cmd[0] = operand1[0] = operand2[0] = 0;
 
 	sscanf(in, "%s%s%s", cmd, operand1, operand2);
+	
+	const cmds* command;
 
-	for (const cmds* command = commands; p = command->cmds_string; command++) {
+	for (command = commands; p = command->cmds_string; command++) {
 		const TEXT* q = cmd;
 		while (*q && UPPER(*q) == *p++)
 			q++;

@@ -76,7 +76,7 @@
 #define SYS_ERROR	isc_arg_unix
 #define ERRNO		errno
 #include <sys/types.h>
-extern int errno;
+#include <errno.h>
 #endif
 
 #ifdef HAVE_UNISTD_H
