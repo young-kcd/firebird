@@ -29,7 +29,7 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 /*
-$Id: gen.cpp,v 1.21 2002-12-18 15:01:47 dimitr Exp $
+$Id: gen.cpp,v 1.22 2003-01-15 12:00:31 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -431,7 +431,6 @@ void GEN_expr( DSQL_REQ request, DSQL_NOD node)
 		break;
 
 	case nod_internal_info:
-	case nod_proc_internal_info:
 		operator_ = blr_internal_info;
 		break;
 	case nod_upcase:
@@ -1033,8 +1032,15 @@ void GEN_statement( DSQL_REQ request, DSQL_NOD node)
 		return;
 
 	case nod_post:
-		STUFF(blr_post);
-		GEN_expr(request, node->nod_arg[e_pst_event]);
+		if ( (temp = node->nod_arg[e_pst_argument]) ) {
+			STUFF(blr_post_arg);
+			GEN_expr(request, node->nod_arg[e_pst_event]);
+			GEN_expr(request, temp);
+		}
+		else {
+			STUFF(blr_post);
+			GEN_expr(request, node->nod_arg[e_pst_event]);
+		}
 		return;
 
 	case nod_exec_sql:
@@ -2259,7 +2265,7 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
             parameter->par_name = parameter->par_alias  = "USER";
         else if (item->nod_type == nod_current_role)
             parameter->par_name = parameter->par_alias  = "ROLE";
-        else if (item->nod_type == nod_internal_info || item->nod_type == nod_proc_internal_info)
+        else if (item->nod_type == nod_internal_info)
 		{
 			internal_info_id id =
 				*reinterpret_cast<internal_info_id*>(item->nod_arg[0]->nod_desc.dsc_address);

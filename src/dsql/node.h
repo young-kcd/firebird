@@ -317,7 +317,6 @@ typedef ENUM nod_t
     nod_redef_procedure, /* allows silent creation/overwriting of a procedure. */
 	nod_exec_sql, /* EXECUTE VARCHAR */
 	nod_internal_info, /* internal engine info */
-	nod_proc_internal_info, 
 	nod_searched_case, /* searched CASE function */
 	nod_simple_case, /* simple CASE function */
 	nod_coalesce, /* COALESCE function */
@@ -446,8 +445,9 @@ typedef dsql_nod *DSQL_NOD;
 #define e_var_variable	0		/* nod_variable */
 #define e_var_count	1
 
-#define e_pst_event	0			/* nod_procedure */
-#define e_pst_count	1
+#define e_pst_event	0			/* nod_post */
+#define e_pst_argument	1
+#define e_pst_count	2
 
 #define e_exec_vc	0			/* nod_exec_sql */
 #define e_exec_vc_count	1
@@ -711,7 +711,8 @@ typedef dsql_nod *DSQL_NOD;
 #define e_trg_actions	5
 #define e_trg_source	6
 #define e_trg_messages	7
-#define e_trg_count	8
+#define e_trg_cursors	8
+#define e_trg_count	9
 
 #define e_abrt_number	0		/* nod_abort */
 #define e_abrt_count	1

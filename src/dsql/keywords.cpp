@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.11 2002-12-18 15:01:47 dimitr Exp $
+ *  $Id: keywords.cpp,v 1.12 2003-01-15 12:00:31 dimitr Exp $
  *
  */
 
@@ -113,8 +113,9 @@ static CONST TOK tokens [] = {
 	{KW_DEC, "DEC", 1},
 	{DECIMAL, "DECIMAL", 1},
 	{DECLARE, "DECLARE", 1},
-	{DEFAULT, "DEFAULT", 1}, 
-	{DELETE, "DELETE", 1}, 
+	{DEFAULT, "DEFAULT", 1},
+	{DELETE, "DELETE", 1},
+	{DELETING, "DELETING", 2},
 	{DESC, "DESC", 1},	/* Alias of DESCENDING */
 	{DESC, "DESCENDING", 1},
 	{KW_DESCRIPTOR,	"DESCRIPTOR", 2},
@@ -158,6 +159,7 @@ static CONST TOK tokens [] = {
 	{INNER, "INNER", 1},
 	{INPUT_TYPE, "INPUT_TYPE", 1},
 	{INSERT, "INSERT", 1},
+	{INSERTING, "INSERTING", 2},
 	{KW_INT, "INT", 1},
 	{INTEGER, "INTEGER", 1},
 	{INTO, "INTO", 1},
@@ -273,6 +275,7 @@ static CONST TOK tokens [] = {
 	{UNION, "UNION", 1},
 	{UNIQUE, "UNIQUE", 1},
 	{UPDATE, "UPDATE", 1},
+	{UPDATING, "UPDATING", 2},
 	{KW_UPPER, "UPPER", 1},
 	{USER, "USER", 1},
 	{USING, "USING", 2},

@@ -119,6 +119,10 @@
  *
  * 2003.01.11 Arno Brinkman: Reworked a lot of functions for bringing back backwards compatibilty
  *							 with sub-selects and aggregates.
+ *
+ * 2003.01.14 Dmitry Yemanov: Fixed bug with cursors in triggers
+ *
+ * 2003.01.15 Dmitry Yemanov: Added support for parametrized events
  */
 
 #include "firebird.h"
@@ -780,11 +784,12 @@ DSQL_NOD PASS1_node(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 		node->nod_desc = input->nod_desc;
 		return node;
 
-	case nod_proc_internal_info:
+	case nod_internal_info:
 		{
 		internal_info_id id =
 			*reinterpret_cast<internal_info_id*>(input->nod_arg[0]->nod_desc.dsc_address);
-		if (!(request->req_flags & REQ_procedure))
+		USHORT req_mask = InternalInfo::getMask(id);
+		if (req_mask && !(request->req_flags & req_mask))
 			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, gds_arg_gds, gds_token_err,	/* Token unknown */
 				gds_arg_gds, gds_random, gds_arg_string, InternalInfo::getAlias(id), 0);
 		}
@@ -1127,6 +1132,9 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 		break;
 
 	case nod_for_select:
+		{
+		const int arg_cursors =
+			(request->req_flags & REQ_trigger) ? e_trg_cursors : e_prc_cursors;
 		node = MAKE_node(input->nod_type, input->nod_count);
 		node->nod_flags = input->nod_flags;
 		cursor = node->nod_arg[e_flp_cursor] = input->nod_arg[e_flp_cursor];
@@ -1138,8 +1146,8 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 			 procedure->nod_type == nod_def_trigger || 
 			 procedure->nod_type == nod_mod_trigger ||
 			 procedure->nod_type == nod_replace_trigger )) {
-			cursor->nod_arg[e_cur_next] = procedure->nod_arg[e_prc_cursors];
-			procedure->nod_arg[e_prc_cursors] = cursor;
+			cursor->nod_arg[e_cur_next] = procedure->nod_arg[arg_cursors];
+			procedure->nod_arg[arg_cursors] = cursor;
 			cursor->nod_arg[e_cur_context] = node;
 		}
 		node->nod_arg[e_flp_select] = PASS1_statement(request,
@@ -1175,7 +1183,7 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 				procedure->nod_type == nod_def_trigger ||
 				procedure->nod_type == nod_mod_trigger ||
 				procedure->nod_type == nod_replace_trigger))
-			procedure->nod_arg[e_prc_cursors] = cursor->nod_arg[e_cur_next];
+			procedure->nod_arg[arg_cursors] = cursor->nod_arg[e_cur_next];
 
 		if (request->req_error_handlers &&
 			(input->nod_flags & NOD_SINGLETON_SELECT)) {
@@ -1184,6 +1192,7 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 			temp->nod_arg[1] = node;
 			temp->nod_arg[2] = MAKE_node(nod_end_savepoint, 0);
 			node = temp;
+		}
 		}
 		break;
 
@@ -1283,6 +1292,9 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 		node = MAKE_node(input->nod_type, input->nod_count);
 		node->nod_arg[e_pst_event] = PASS1_node(request,
 												input->nod_arg[e_pst_event],
+												proc_flag);
+		node->nod_arg[e_pst_argument] = PASS1_node(request,
+												input->nod_arg[e_pst_argument],
 												proc_flag);
 		return node;
 
@@ -2263,7 +2275,6 @@ static BOOLEAN invalid_reference(DSQL_CTX context, DSQL_NOD node, DSQL_NOD list,
 		case nod_user_name:
 		case nod_current_role:
 		case nod_internal_info:
-		case nod_proc_internal_info:
 		case nod_dbkey:
 			return FALSE;
 		}
@@ -2936,7 +2947,9 @@ static DSQL_CTX pass1_cursor_context( DSQL_REQ request, DSQL_NOD cursor, DSQL_NO
 
 	procedure = request->req_ddl_node;
 	context = NULL;
-	for (node = procedure->nod_arg[e_prc_cursors]; node;
+	const int arg_cursors =
+		(request->req_flags & REQ_trigger) ? e_trg_cursors : e_prc_cursors;
+	for (node = procedure->nod_arg[arg_cursors]; node;
 		 node = node->nod_arg[e_cur_next]) {
 		DEV_BLKCHK(node, dsql_type_nod);
 		cname = (STR) node->nod_arg[e_cur_name];

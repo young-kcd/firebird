@@ -58,6 +58,9 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  * 2002.12.03 Dmitry Yemanov: Implemented ORDER BY clause in subqueries.
  * 2002.12.18 Dmitry Yemanov: Added support for SQL-compliant labels and LEAVE statement
+ * 2002.12.28 Dmitry Yemanov: Added support for parametrized events.
+ * 2003.01.14 Dmitry Yemanov: Fixed bug with cursors in triggers.
+ * 2003.01.15 Dmitry Yemanov: Added support for runtime trigger action checks.
  */
 
 #if defined(DEV_BUILD) && defined(WIN32) && defined(SUPERSERVER)
@@ -422,6 +425,9 @@ static void	yyerror (TEXT *);
 %token SAVEPOINT
 %token STATEMENT
 %token LEAVE
+%token INSERTING
+%token UPDATING
+%token DELETING
 
 /* precedence declarations for expression evaluation */
 
@@ -1478,8 +1484,7 @@ proc_statement	: assignment ';'
 		| for_select
 		| if_then_else
 		| insert ';'
-		| POST_EVENT value ';'
-			{ $$ = make_node (nod_post, e_pst_count, $2); }
+		| post_event
 		| singleton_select
 		| update ';'
 		| while
@@ -1523,6 +1528,16 @@ if_then_else	: IF '(' search_condition ')' THEN proc_block ELSE proc_block
 			{ $$ = make_node (nod_if, e_if_count, $3, $6, $8); }
 		| IF '(' search_condition ')' THEN proc_block 
 			{ $$ = make_node (nod_if, e_if_count, $3, $6, NULL); }
+		;
+
+post_event	: POST_EVENT value event_argument_opt ';'
+			{ $$ = make_node (nod_post, e_pst_count, $2, $3); }
+		;
+
+event_argument_opt	: ',' value
+			{ $$ = $2; }
+		|
+			{ $$ = NULL; }
 		;
 
 singleton_select	: select INTO variable_list ';'
@@ -1750,7 +1765,7 @@ def_trigger_clause : symbol_trigger_name FOR simple_table_name
 		trigger_action
 		end_trigger
 			{ $$ = make_node (nod_def_trigger, (int) e_trg_count,
-				$1, $3, $4, $5, $6, $8, $9, NULL); }
+				$1, $3, $4, $5, $6, $8, $9, NULL, NULL); }
 		;
 
 replace_trigger_clause : symbol_trigger_name FOR simple_table_name
@@ -1761,7 +1776,7 @@ replace_trigger_clause : symbol_trigger_name FOR simple_table_name
 		trigger_action
 		end_trigger
 			{ $$ = make_node (nod_replace_trigger, (int) e_trg_count,
-				$1, $3, $4, $5, $6, $8, $9, NULL); }
+				$1, $3, $4, $5, $6, $8, $9, NULL, NULL); }
 		;
 
 trigger_active	: ACTIVE 
@@ -2027,7 +2042,7 @@ alter_trigger_clause : symbol_trigger_name trigger_active
 		new_trigger_action
 		end_trigger
 			{ $$ = make_node (nod_mod_trigger, (int) e_trg_count,
-				$1, NULL, $2, $3, $4, $6, $7, NULL); }
+				$1, NULL, $2, $3, $4, $6, $7, NULL, NULL); }
 		;
 
 new_trigger_type : trigger_type
@@ -2071,7 +2086,6 @@ drop_clause	: EXCEPTION symbol_exception_name
 		| GENERATOR symbol_generator_name
 			{ $$ = make_node (nod_del_generator, (int) 1, $2); }
 		;
-
 
 
 /* these are the allowable datatypes */
@@ -3170,6 +3184,7 @@ predicate	: comparison_predicate
 		| containing_predicate
 		| starting_predicate
 		| unique_predicate
+		| trigger_action_predicate
 		| '(' search_condition ')'
 			{ $$ = $2; }
 		;
@@ -3293,6 +3308,23 @@ null_predicate	: value IS KW_NULL
 		{ $$ = make_node (nod_not, 1, make_node (nod_missing, 1, $1)); }
 	;
 
+trigger_action_predicate	: INSERTING
+		{ $$ = make_node (nod_eql, 2,
+					make_node (nod_internal_info, e_internal_info_count,
+						MAKE_constant ((STR) internal_trigger_action, CONSTANT_SLONG)),
+						MAKE_constant ((STR) 1, CONSTANT_SLONG)); }
+	| UPDATING
+		{ $$ = make_node (nod_eql, 2,
+					make_node (nod_internal_info, e_internal_info_count,
+						MAKE_constant ((STR) internal_trigger_action, CONSTANT_SLONG)),
+						MAKE_constant ((STR) 2, CONSTANT_SLONG)); }
+	| DELETING
+		{ $$ = make_node (nod_eql, 2,
+					make_node (nod_internal_info, e_internal_info_count,
+						MAKE_constant ((STR) internal_trigger_action, CONSTANT_SLONG)),
+						MAKE_constant ((STR) 3, CONSTANT_SLONG)); }
+	;
+
 
 /* set values */
 
@@ -3391,9 +3423,6 @@ value		: column_name
 		| current_user
 		| current_role
 		| internal_info
-			{ $$ = $1; }
-		| proc_internal_info
-			{ $$ = $1; }
 		| DB_KEY
 			{ $$ = make_node (nod_dbkey, 1, NULL); }
 		| symbol_table_alias_name '.' DB_KEY
@@ -3405,7 +3434,6 @@ value		: column_name
 		| datetime_value_expression
 			{ $$ = $1; }
 		;
-
 
 datetime_value_expression : CURRENT_DATE
 			{ 
@@ -3528,16 +3556,14 @@ internal_info	: CONNECTION_ID
 		| TRANSACTION_ID
 			{ $$ = make_node (nod_internal_info, e_internal_info_count,
 						MAKE_constant ((STR) internal_transaction_id, CONSTANT_SLONG)); }
-		;
-		
-proc_internal_info	: GDSCODE
-			{ $$ = make_node (nod_proc_internal_info, e_internal_info_count,
+		| GDSCODE
+			{ $$ = make_node (nod_internal_info, e_internal_info_count,
 						MAKE_constant ((STR) internal_gdscode, CONSTANT_SLONG)); }
 		| SQLCODE
-			{ $$ = make_node (nod_proc_internal_info, e_internal_info_count,
+			{ $$ = make_node (nod_internal_info, e_internal_info_count,
 						MAKE_constant ((STR) internal_sqlcode, CONSTANT_SLONG)); }
 		| ROWS_AFFECTED
-			{ $$ = make_node (nod_proc_internal_info, e_internal_info_count,
+			{ $$ = make_node (nod_internal_info, e_internal_info_count,
 						MAKE_constant ((STR) internal_rows_affected, CONSTANT_SLONG)); }
 		;
 

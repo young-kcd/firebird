@@ -251,3 +251,6 @@
 #define SAVEPOINT 507
 #define STATEMENT 508
 #define LEAVE 509
+#define INSERTING 510
+#define UPDATING 511
+#define DELETING 512

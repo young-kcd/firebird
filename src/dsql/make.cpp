@@ -27,6 +27,9 @@
  * 2002.07.30 Arno Brinkman: 
  *   COALESCE, CASE support added
  *   procedure MAKE_desc_from_list added 
+ * 2003.01.25 Dmitry Yemanov: Fixed problem with concatenation which
+ *   trashed RDB$FIELD_LENGTH in the system tables. This change may
+ *   potentially interfere with the one made by Claudio one year ago.
  */
  
 //This MUST be before any other includes
@@ -365,6 +368,7 @@ void MAKE_desc( DSC * desc, DSQL_NOD node)
 		return;
 
 	case nod_concatenate:
+		{
 		MAKE_desc(&desc1, node->nod_arg[0]);
 		MAKE_desc(&desc2, node->nod_arg[1]);
 		desc->dsc_scale = 0;
@@ -373,9 +377,20 @@ void MAKE_desc( DSC * desc, DSQL_NOD node)
 			desc->dsc_ttype = desc1.dsc_ttype;
 		else
 			desc->dsc_ttype = ttype_ascii;
-		desc->dsc_length = sizeof(USHORT) +
+		ULONG length = sizeof(USHORT) +
 			DSC_string_length(&desc1) + DSC_string_length(&desc2);
+		if (length > MAX_SSHORT) {
+			length = MAX_SSHORT;
+			/* dimitr: should we post a warning about truncated descriptor length?
+			ERRD_post_warning (gds_sqlwarn,
+							   gds_arg_gds, gds_imp_exc, 
+							   gds_arg_gds, gds_blktoobig,
+							   0);
+			*/
+		}
+		desc->dsc_length = length;
 		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
+		}
 		return;
 
 	case nod_upcase:
@@ -934,7 +949,6 @@ void MAKE_desc( DSC * desc, DSQL_NOD node)
 		return;
 
 	case nod_internal_info:
-	case nod_proc_internal_info:
 		desc->dsc_dtype = dtype_long;
 		desc->dsc_scale = 0;
 		desc->dsc_flags = 0;
