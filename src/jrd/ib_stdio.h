@@ -113,8 +113,32 @@
 #error SUN
 #endif
 
-#include "../jrd/cdefs.h"
-#include "../jrd/ansi.h"
+//#include "../jrd/cdefs.h"
+/* BEGIN CDEFS.h */
+/*
+ * Compiler-dependent macros to declare that functions take printf-like
+ * or scanf-like arguments.  They are null except for versions of gcc
+ * that are known to support the features properly (old versions of gcc-2
+ * didn't permit keeping the keywords out of the application namespace).
+ */
+#if __GNUC__ < 2 || __GNUC__ == 2 && __GNUC_MINOR__ < 7
+#define	__printflike(fmtarg, firstvararg)
+#define	__scanflike(fmtarg, firstvararg)
+#else
+#define	__printflike(fmtarg, firstvararg) \
+	    __attribute__((__format__ (__printf__, fmtarg, firstvararg)))
+#define	__scanflike(fmtarg, firstvararg) \
+	    __attribute__((__format__ (__scanf__, fmtarg, firstvararg)))
+#endif
+
+/* END CDEFS.H */
+
+//#include "../jrd/ansi.h"
+
+/* BEGIN ANSI.H */
+#define	_BSD_SIZE_T_	unsigned int	/* sizeof() */
+
+/* END ANSI.H */
 
 #ifdef	_BSD_SIZE_T_
 typedef _BSD_SIZE_T_ size_t;
@@ -298,14 +322,25 @@ int ib_vprintf(const char *, va_list);
 /* size for cuserid(3); UT_NAMESIZE + 1, see <utmp.h> */
 #define	L_cuserid	17
 
-__BEGIN_DECLS IB_FILE * ib_fdopen(int, const char *);
-int ib_fileno(IB_FILE *);
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
-__END_DECLS
+IB_FILE * ib_fdopen(int, const char *);
+
+int ib_fileno(IB_FILE *);
+#if defined(__cplusplus)
+}
+#endif
+
 /*
  * Routines that are purely local.
  */
-__BEGIN_DECLS int ib_asprintf(char **, const char *, ...) __printflike(2, 3);
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+	int ib_asprintf(char **, const char *, ...) __printflike(2, 3);
 	 char *ib_fgetln(IB_FILE *, size_t *);
 	 int ib_fpurge(IB_FILE *);
 	 int ib_fseeko(IB_FILE *, off_t, int);
@@ -318,7 +353,10 @@ __BEGIN_DECLS int ib_asprintf(char **, const char *, ...) __printflike(2, 3);
 	 int ib_setlinebuf(IB_FILE *);
 /* char	*tempnam (const char *, const char *); */
 	 int ib_vscanf(const char *, va_list) __scanflike(1, 0);
-__END_DECLS
+
+#if defined(__cplusplus)
+}
+#endif
 /*
  * This is a #define because the function is used internally and
  * (unlike vfscanf) the name __svfscanf is guaranteed not to collide
@@ -328,22 +366,35 @@ __END_DECLS
 /*
  * Stdio function-access interface.
  */
-__BEGIN_DECLS
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 	IB_FILE * ib_funopen(const void *,
 							 int (*)(void *, char *, int),
 						 int (*)(void *, const char *, int),
 						 ib_fpos_t(*)(void *, ib_fpos_t, int),
 						 int (*)(void *));
-__END_DECLS
+#if defined(__cplusplus)
+}
+#endif
+
 #define	ib_fropen(cookie, fn) ib_funopen(cookie, fn, 0, 0, 0)
 #define	ib_fwopen(cookie, fn) ib_funopen(cookie, 0, fn, 0, 0)
 /*
  * Functions internal to the implementation.
  */
-	 __BEGIN_DECLS int ib__srget(IB_FILE *);
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+int ib__srget(IB_FILE *);
 	 int ib__svfscanf(IB_FILE *, const char *, va_list);
 	 int ib__swbuf(int, IB_FILE *);
-__END_DECLS
+
+#if defined(__cplusplus)
+}
+#endif
 /*
  * The __sfoo macros are here so that we can
  * define function versions in the C library.
