@@ -3905,9 +3905,14 @@ static void pass1_source(
    1) If the view has a projection, and the query rse already has a projection 
       defined; there is probably some way to merge these projections and do them 
 	  both at once, but for now we'll punt on that.
-   2) If it's part of an outer join. */
+   2) If it's part of an outer join. 
+   
+   AB: If the view has an projection we never expand it.
+   Because this can create wierd PLANs with multiple views/tables/sp joins
+*/
 
-	if ((view_rse->rse_projection && rse->rse_projection)
+	if ((view_rse->rse_projection)
+	//if ((view_rse->rse_projection && rse->rse_projection)
 		|| rse->rse_jointype) {
 		node = copy(tdbb, csb, (JRD_NOD) view_rse, map, 0, FALSE);
 		DEBUG;

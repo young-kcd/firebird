@@ -304,9 +304,10 @@ RSB OPT_compile(TDBB tdbb,
 #ifndef STACK_REDUCTION
 	UCHAR *p, *q, streams[MAX_STREAMS], beds[MAX_STREAMS],
 		*k, *b_end, *k_end, key_streams[MAX_STREAMS],
-		local_streams[MAX_STREAMS], used_streams[MAX_STREAMS];
+		local_streams[MAX_STREAMS], outer_streams[MAX_STREAMS],
+		sub_streams[MAX_STREAMS]
 #else
-	UCHAR *local_streams, *used_streams;
+	UCHAR *local_streams, *outer_streams, *sub_streams;
 	UCHAR *p, *q, *streams, *beds, *k, *b_end, *k_end, *key_streams;
 #endif
 
@@ -348,7 +349,9 @@ RSB OPT_compile(TDBB tdbb,
 		(UCHAR *) ALLOC_LIB_MEMORY((DWORD) (sizeof(UCHAR) * MAX_STREAMS));
 	local_streams =
 		(UCHAR *) ALLOC_LIB_MEMORY((DWORD) (sizeof(UCHAR) * MAX_STREAMS));
-	used_streams =
+	outer_streams =
+		(UCHAR *) ALLOC_LIB_MEMORY((DWORD) (sizeof(UCHAR) * MAX_STREAMS));
+	sub_streams =
 		(UCHAR *) ALLOC_LIB_MEMORY((DWORD) (sizeof(UCHAR) * MAX_STREAMS));
 	opt_ = (OPT) ALLOC_LIB_MEMORY((DWORD) (sizeof(Opt)));
 	if (streams == NULL || beds == NULL || key_streams == NULL ||
@@ -361,6 +364,10 @@ RSB OPT_compile(TDBB tdbb,
 			FREE_LIB_MEMORY(beds);
 		if (streams != NULL)
 			FREE_LIB_MEMORY(streams);
+		if (outer_streams != NULL)
+			FREE_LIB_MEMORY(outer_streams);
+		if (sub_streams != NULL)
+			FREE_LIB_MEMORY(sub_streams);
 		if (opt_ != NULL)
 			FREE_LIB_MEMORY(opt_);
 		ERR_post(isc_virmemexh, 0);
@@ -383,7 +390,7 @@ RSB OPT_compile(TDBB tdbb,
 	if (rse->nod_flags & rse_stream)
 		opt_->opt_g_flags |= opt_g_stream;
 
-	beds[0] = streams[0] = key_streams[0] = used_streams[0] = 0;
+	beds[0] = streams[0] = key_streams[0] = outer_streams[0] = sub_streams[0] = 0;
 	conjunct_stack = rivers_stack = NULL;
 	conjunct_count = 0;
 
@@ -459,15 +466,30 @@ RSB OPT_compile(TDBB tdbb,
 			compute_dbkey_streams(csb, node, key_streams);
 			/* pass rse boolean only to inner substreams because join condition 
 			  should never exclude records from outer substreams */
-			if ( rse->rse_jointype==blr_inner || 
-			  (rse->rse_jointype==blr_left && (ptr - rse->rse_relation)==1) ||
-			  (rse->rse_jointype==blr_right && (ptr - rse->rse_relation)==0) )
+			if (rse->rse_jointype == blr_inner || 
+			   (rse->rse_jointype == blr_left && (ptr - rse->rse_relation)==1) ||
+			   (rse->rse_jointype == blr_right && (ptr - rse->rse_relation)==0) )
 			{
+				/* AB: For an (X LEFT JOIN Y) mark the outer-streams (X) as 
+				   active because the inner-streams (Y) are always "dependent" 
+				   on the outer-streams. So that index retrieval nodes could be made.
+				   For an INNER JOIN mark previous generated RSB's as active. */
+				if (rse->rse_jointype == blr_left) {
+					for (i = 1; i <= outer_streams[0]; i++) {
+						csb->csb_rpt[outer_streams[i]].csb_flags |= csb_active;
+					}
+				}
 				*stack_end = parent_stack;
 				rsb = OPT_compile(tdbb, csb, (RSE) node, conjunct_stack);
 				*stack_end = NULL;
+				if (rse->rse_jointype == blr_left) {
+					for (i = 1; i <= outer_streams[0]; i++) {
+						csb->csb_rpt[outer_streams[i]].csb_flags &= ~csb_active;
+					}
+				}
 			} else {
 				rsb = OPT_compile(tdbb, csb, (RSE) node, parent_stack);				
+				find_used_streams(rsb, outer_streams);
 			}
 		}
 
@@ -481,7 +503,13 @@ RSB OPT_compile(TDBB tdbb,
 			river->riv_count = (UCHAR) i;
 			river->riv_rsb = rsb;
 			MOVE_FAST(local_streams + 1, river->riv_streams, i);
-			find_used_streams(rsb, used_streams);
+			/* AB: Save all inner-part streams */
+			if (rse->rse_jointype == blr_inner || 
+			   (rse->rse_jointype == blr_left && (ptr - rse->rse_relation)==0) ||
+			   (rse->rse_jointype == blr_right && (ptr - rse->rse_relation)==1) )
+			{
+				find_used_streams(rsb, sub_streams);
+			}
 			set_made_river(opt_, river);
 			set_inactive(opt_, river);
 			LLS_PUSH(river, &rivers_stack);
@@ -494,6 +522,8 @@ RSB OPT_compile(TDBB tdbb,
 
 		++streams[0];
 		*p++ = (UCHAR) stream;
+
+		outer_streams[++outer_streams[0]] = stream;
 
 		/* if we have seen any booleans or sort fields, we may be able to
 		   use an index to optimize them; retrieve the current format of 
@@ -538,7 +568,27 @@ RSB OPT_compile(TDBB tdbb,
 		ERR_post(isc_optimizer_blk_exc, 0);
 	/* Msg442: size of optimizer block exceeded */
 
-	for (i = 0; i < conjunct_count; i++) {
+/* AB: Because know we're going to use both parent & conjunct_stack
+   try to again to make additional conjuncts for an inner join,
+   but be sure that opt_->opt_count contains the real "base" */
+	for (stack_end = &conjunct_stack; *stack_end;
+		 stack_end = &(*stack_end)->lls_next);
+	SLONG saved_conjunct_count = conjunct_count;
+	*stack_end = parent_stack;
+	conjunct_count += distribute_equalities(&conjunct_stack, csb);
+	*stack_end = NULL;
+
+	if (conjunct_count > MAX_CONJUNCTS)
+		ERR_post(isc_optimizer_blk_exc, 0);
+	/* Msg442: size of optimizer block exceeded */
+
+/* AB: If equality nodes could be made get them first from the stack */
+	for (i = saved_conjunct_count; i < conjunct_count; i++) {
+		opt_->opt_rpt[i].opt_conjunct = node = (JRD_NOD) LLS_POP(&conjunct_stack);
+		compute_dependencies(node, opt_->opt_rpt[i].opt_dependencies);
+	}
+
+	for (i = 0; i < saved_conjunct_count; i++) {
 		opt_->opt_rpt[i].opt_conjunct = node = (JRD_NOD) LLS_POP(&conjunct_stack);
 		compute_dependencies(node, opt_->opt_rpt[i].opt_dependencies);
 	}
@@ -569,24 +619,31 @@ RSB OPT_compile(TDBB tdbb,
 	else
 		rse->rse_aggregate = aggregate = NULL;
 
+/* AB: Mark the previous used streams (sub-rse's) as active */
+	for (i = 1; i <= sub_streams[0]; i++) {
+		csb->csb_rpt[sub_streams[i]].csb_flags |= csb_active;			
+	}
+
 /* outer joins require some extra processing */
 
-	if (rse->rse_jointype != blr_inner)
+	if (rse->rse_jointype != blr_inner) {
 		rsb = gen_outer(tdbb, opt_, rse, rivers_stack, &sort, &project);
+	}
 	else {
-		BOOLEAN sort_present;
-		JRD_NOD saved_sort_node;
-		RSB test_rsb;
+		BOOLEAN sort_present = (sort) ? TRUE : FALSE;
+		BOOLEAN outer_rivers = FALSE;
+		JRD_NOD saved_sort_node = sort;
 
-		/* mark the previous used streams (sub-rse's) as active */
-
-		for (i = 1; i <= used_streams[0]; i++) {
-			csb->csb_rpt[used_streams[i]].csb_flags |= csb_active;			
+		/* AB: If previous rsb's are already on the stack we can't use
+		   an navigational-retrieval for an ORDER BY cause the next
+		   streams are JOINed to the previous onces */
+		if (rivers_stack) {
+			sort = NULL;
+			outer_rivers = TRUE;
 		}
 
 		/* attempt to form joins in decreasing order of desirability */
-		saved_sort_node = sort;
-		sort_present = (sort) ? TRUE : FALSE;
+		
 		gen_join(tdbb, opt_, streams, &rivers_stack, &sort, &project,
 				 rse->rse_plan);
 
@@ -601,11 +658,12 @@ RSB OPT_compile(TDBB tdbb,
 		   an index doesn't guarantee that the result will be in that
 		   order. So we assigned the sort node back.
 		   SF BUG # [ 221921 ] ORDER BY has no effect */
-		test_rsb = rsb;
+		RSB test_rsb = rsb;
 		if ((rsb) && (rsb->rsb_type == rsb_boolean) && (rsb->rsb_next)) {
 			test_rsb = rsb->rsb_next;
 		}
-		if ((test_rsb) && (test_rsb->rsb_type == rsb_merge) && !sort && sort_present) {
+		if ((sort_present && outer_rivers) ||
+			((test_rsb) && (test_rsb->rsb_type == rsb_merge) && !sort && sort_present)) {
 			sort = saved_sort_node;
 		}
 
@@ -687,7 +745,9 @@ RSB OPT_compile(TDBB tdbb,
 	DEBUG
 /* free up memory for optimizer structures */
 #ifdef STACK_REDUCTION
-		FREE_LIB_MEMORY(local_streams);
+	FREE_LIB_MEMORY(sub_streams);
+	FREE_LIB_MEMORY(outer_streams);
+	FREE_LIB_MEMORY(local_streams);
 	FREE_LIB_MEMORY(key_streams);
 	FREE_LIB_MEMORY(beds);
 	FREE_LIB_MEMORY(streams);
@@ -715,7 +775,8 @@ RSB OPT_compile(TDBB tdbb,
 			csb->csb_rpt[stream].csb_idx_allocation = 0;
 		}
 #ifdef STACK_REDUCTION
-		FREE_LIB_MEMORY(used_streams);
+		FREE_LIB_MEMORY(sub_streams);
+		FREE_LIB_MEMORY(outer_streams);
 		FREE_LIB_MEMORY(local_streams);
 		FREE_LIB_MEMORY(key_streams);
 		FREE_LIB_MEMORY(beds);
@@ -3005,11 +3066,17 @@ static void find_used_streams(RSB rsb, UCHAR * streams)
 
 	switch (rsb->rsb_type) {
 
+		case rsb_aggregate:
+		case rsb_ext_indexed:
+		case rsb_ext_sequential:
+		case rsb_indexed:
 		case rsb_navigate:
+		case rsb_procedure:
+		case rsb_sequential:
+		case rsb_union:
 			stream = rsb->rsb_stream;
 			found = TRUE;
 			break;
-
 
 		case rsb_cross:
 			for (ptr = rsb->rsb_arg, end = ptr + rsb->rsb_count; ptr < end; ptr++) {
@@ -3017,31 +3084,16 @@ static void find_used_streams(RSB rsb, UCHAR * streams)
 			}
 			break;
 
-		case rsb_union:
-			for (ptr = rsb->rsb_arg, end = ptr + rsb->rsb_count; ptr < end; ptr++) {
-				find_used_streams(*ptr, streams);
-			}
-			break;
-
 		case rsb_merge:
-			for (ptr = rsb->rsb_arg, end = ptr + rsb->rsb_count * 2; ptr < end;	ptr += 2) {
+			/*for (ptr = rsb->rsb_arg, end = ptr + rsb->rsb_count * 2; ptr < end;	ptr += 2) {
 				find_used_streams(*ptr, streams);
-			}
+			}*/
+			// Nothing
 			break;
 
 		case rsb_left_cross:
 			find_used_streams(rsb->rsb_arg[RSB_LEFT_inner], streams);
 			find_used_streams(rsb->rsb_arg[RSB_LEFT_outer], streams);
-			break;
-
-		case rsb_indexed:
-			stream = rsb->rsb_stream;
-			found = TRUE;
-			break;
-
-		case rsb_sequential:
-			stream = rsb->rsb_stream;
-			found = TRUE;
 			break;
 
         default:    /* Shut up compiler warnings */
