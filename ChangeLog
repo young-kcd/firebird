@@ -1,3 +1,28 @@
+2003-03-24 15:41  skidder
+
+	* firebird2/src/jrd/: blb.cpp, btr.cpp, exe.cpp, idx.cpp,
+	isc_ipc.cpp, jrd.h, rse.cpp, thd.cpp, val.cpp, vio.cpp:
+	
+	Fix up the reason of slowdown of Windows CS
+
+2003-03-24 15:32  skidder
+
+	* firebird2/src/lock/: lock.cpp, lock.h:
+	
+	Lock manager changes.  1. Cleanup #define's a little 2. Shutdown
+	blocking thread cleanly on Windows CS 3. Fix Windows CS lock-ups
+	(make wakeup event manual-reset) 4. Detect deadlocks instantly in
+	most cases (if blocking owner	dies during AST processing deadlock
+	scan timeout still applies)
+
+2003-03-24 14:35  brodsom
+
+	* firebird2/src/jrd/: thd.h, smp_impl.h, jrd.h, grant.epp, jrd.cpp,
+	fun.epp, gds.cpp, dls.cpp, dyn.epp, dbg.cpp, all.cpp, all_old.cpp:
+	
+	Use V4_THREADING explicitly instead and remove empty defined
+	macros. This change try to make clear V4_THREADING use.
+
 2003-03-23 18:16  dimitr
 
 	* firebird2/src/remote/interface.cpp:
