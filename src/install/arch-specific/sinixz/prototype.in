@@ -1,4 +1,4 @@
-# $Id: prototype.in,v 1.12 2003-02-10 12:10:07 dimitr Exp $
+# $Id: prototype.in,v 1.13 2003-03-11 07:35:45 eku Exp $
 #-------------------------------------------------------------------------------
 
 !SRCDIR=@NEW_FIREBIRD_DIR@
@@ -15,12 +15,12 @@ d none  /usr/lib     ? ? ?
 
 d none @prefix@ 0755 root root
 
-f none @prefix@/security.fdb=$SRCDIR/security.fdb  0666 root root
+v CONFIG.prsv @prefix@/security.fdb=$SRCDIR/security.fdb  0666 root root
 f none @prefix@/firebird.msg=$SRCDIR/firebird.msg  0644 root root
 f none @prefix@/de_DE.msg=$SRCDIR/de_DE.msg  0644 root root
 f none @prefix@/fr_FR.msg=$SRCDIR/fr_FR.msg  0644 root root
 f none @prefix@/ja_JP.msg=$SRCDIR/ja_JP.msg  0644 root root
-f none @prefix@/firebird.conf=$SRCDIR/misc/firebird.conf  0644 root root
+v CONFIG.prsv @prefix@/firebird.conf=$SRCDIR/misc/firebird.conf  0644 root root
 
 d none @prefix@/bin  0755 root root
 #f none @prefix@/bin/CSchangeRunUser.sh=$SRCDIR/bin/CSchangeRunUser.sh  0555 root root
@@ -83,3 +83,4 @@ d none @prefix@/UDF  0755 root root
 f none @prefix@/UDF/fb_udf.so=$SRCDIR/UDF/fb_udf.so  0755 root root
 f none @prefix@/UDF/ib_udf.so=$SRCDIR/UDF/ib_udf.so  0755 root root
 
+# EOF
