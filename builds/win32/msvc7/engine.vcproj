@@ -215,7 +215,7 @@
 				RelativePath="..\..\..\src\jrd\exe.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\ExecuteStatement.cpp">
+				RelativePath="..\..\..\src\jrd\execute_statement.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\ext.cpp">
@@ -599,7 +599,7 @@
 				RelativePath="..\..\..\src\jrd\exe_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\ExecuteStatement.h">
+				RelativePath="..\..\..\src\jrd\execute_statement.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\ext.h">

@@ -34,7 +34,7 @@ JRD_ServerFiles=  blob_filter.cpp dpm.epp dyn.epp dyn_def.epp \
 		dfw.cpp divorce.cpp \
 		err.cpp iberr.cpp \
 		event.cpp evl.cpp exe.cpp ext.cpp \
-		ExecuteStatement.cpp filters.cpp flu.cpp functions.cpp \
+		execute_statement.cpp filters.cpp flu.cpp functions.cpp \
 		idx.cpp inf.cpp intl.cpp intl_builtin.cpp inuse.cpp \
 		jrd.cpp lck.cpp llio.cpp log.cpp  \
 		misc.cpp mov.cpp nav.cpp opt.cpp pag.cpp par.cpp \

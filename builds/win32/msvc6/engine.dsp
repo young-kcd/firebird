@@ -241,7 +241,7 @@ SOURCE=..\..\..\src\jrd\exe.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\ExecuteStatement.cpp
+SOURCE=..\..\..\src\jrd\execute_statement.cpp
 # End Source File
 # Begin Source File
 
@@ -769,7 +769,7 @@ SOURCE=..\..\..\src\jrd\exe_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\ExecuteStatement.h
+SOURCE=..\..\..\src\jrd\execute_statement.h
 # End Source File
 # Begin Source File
 
