@@ -1,3 +1,17 @@
+2003-03-29 16:49  dimitr
+
+	* firebird2/src/jrd/svc.cpp:
+	
+	Allowed Services API for win32 CS (gbak/gfix only). gstat/gsec are
+	not supported yet.
+
+2003-03-29 16:36  alexpeshkoff
+
+	* firebird2/src/jrd/os/win32/path_utils.cpp:
+	
+	make pathSplit work with paths, not processed by
+	ISC_expand_filename
+
 2003-03-28 14:53  brodsom
 
 	* firebird2/builds/posix/prefix.mingw.README.html:
