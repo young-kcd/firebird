@@ -1,3 +1,150 @@
+2002-10-29 21:20  skidder
+
+	* firebird2/: configure.in, builds/posix/Makefile.in.codes,
+	builds/posix/Makefile.in.firebird, src/dsql/ddl.cpp,
+	src/dsql/dsql.cpp, src/dsql/dsql.h, src/dsql/dsql.tab.h,
+	src/dsql/gen.cpp, src/dsql/keywords.cpp, src/dsql/node.h,
+	src/dsql/parse.cpp, src/dsql/parse.y, src/dsql/pass1.cpp,
+	src/dsql/pass1_proto.h, src/include/gen/blrtable.h,
+	src/include/gen/codes.h, src/include/gen/codetext.h,
+	src/include/gen/gds_codes.ftn, src/include/gen/gds_codes.pas,
+	src/include/gen/iberror.h, src/include/gen/msgs.h,
+	src/include/gen/rdb_codes.h, src/include/gen/sql_code.h,
+	src/jrd/blr.h, src/jrd/blrtable.cpp, src/jrd/cmp.cpp,
+	src/jrd/dyn.epp, src/jrd/exe.cpp, src/jrd/exe.h, src/jrd/ibase.h,
+	src/jrd/ids.m, src/jrd/nod.h, src/jrd/par.cpp, src/jrd/tra.cpp,
+	src/jrd/tra.h, src/jrd/vio.cpp, src/jrd/vio_proto.h,
+	src/msgs/msg.gbak:
+	
+	Merging changes from skidder branch - explicit locks, savepoints,
+	build system changes
+
+2002-10-29 20:18  skidder
+
+	* firebird2/src/: dsql/dsql.cpp, dsql/dsql.h, dsql/dsql.tab.h,
+	dsql/gen.cpp, dsql/keywords.cpp, dsql/node.h, dsql/parse.cpp,
+	dsql/parse.y, dsql/pass1.cpp, include/gen/blrtable.h,
+	include/gen/codes.h, include/gen/codetext.h,
+	include/gen/gds_codes.ftn, include/gen/gds_codes.pas,
+	include/gen/iberror.h, include/gen/msgs.h, include/gen/rdb_codes.h,
+	include/gen/sql_code.h, jrd/blr.h, jrd/blrtable.cpp, jrd/cmp.cpp,
+	jrd/dyn.epp, jrd/exe.cpp, jrd/exe.h, jrd/ibase.h, jrd/nod.h,
+	jrd/par.cpp, jrd/tra.cpp, jrd/tra.h, jrd/vio.cpp, jrd/vio_proto.h,
+	msgs/msg.gbak:
+	
+	Added support for savepoints
+
+2002-10-29 17:31  tamlin
+
+	* firebird2/src/burp/: restore.epp, backup.epp, burp.cpp, burp.h,
+	burp_proto.h, mvol.cpp, mvol_proto.h:
+	
+	const correctness, 64-bit backup reporting (currently disabled by
+	macro TMN_THINKS_NS_SHOULD_FIX_THIS until msg DB is updated)
+
+2002-10-29 17:28  tamlin
+
+	* firebird2/src/dudley/ddl.cpp:
+	
+	removed unused locals
+
+2002-10-29 17:27  tamlin
+
+	* firebird2/src/jrd/: svc_proto.h, dfw.epp, err.cpp, err_proto.h,
+	evl.cpp, exe.cpp, gds.cpp, gds_proto.h, intl.cpp, met.epp,
+	met_proto.h, mov.cpp, mov_proto.h, opt.cpp, par.cpp, par_proto.h,
+	svc.cpp, svc.h, blb.cpp, cvt.cpp, cvt2.cpp, cvt_proto.h:
+	
+	const correctness etc
+
+2002-10-29 17:26  tamlin
+
+	* firebird2/src/utilities/: cmd_util.cpp, cmd_util_proto.h:
+	
+	const correctness
+
+2002-10-29 14:46  dimitr
+
+	* firebird2/src/jrd/svc.cpp:
+	
+	Cleanup.
+
+2002-10-29 14:24  dimitr
+
+	* firebird2/src/remote/: inet.cpp, wnet.cpp:
+	
+	Win32 classic changes.
+
+2002-10-29 07:35  dimitr
+
+	* firebird2/src/jrd/dpm.epp:
+	
+	Fixed a porting error that led up to memory corruption.
+
+2002-10-29 04:37  seanleyne
+
+	* firebird2/src/: gpre/cob.cpp, gpre/gpre.h, jrd/flu.cpp,
+	jrd/flu.h, jrd/license.h:
+	
+	Code clean, removed obsolete "HP700" port
+
+2002-10-29 04:33  seanleyne
+
+	* firebird2/src/makefiles/: prefix.decosf, prefix.hp700,
+	prefix.sgi, prefix.ul:
+	
+	Delete prefix files for obsolete ports
+
+2002-10-29 04:31  seanleyne
+
+	* firebird2/src/: gpre/ftn.cpp, gpre/gpre.h,
+	include/gen/autoconfig_msvc.h, jrd/common.h, jrd/flu.cpp,
+	jrd/isc_sync.cpp, jrd/license.h, jrd/pag.cpp, jrd/shrinit.cpp,
+	jrd/why.c, jrd/y-valve.cpp, lock/lock.h, lock/lockv3.h,
+	lock/print.cpp, make.new/config/config.h.in,
+	remote/inet_server.cpp, remote/protocol.cpp, remote/remote_def.h,
+	v5_examples/align.h:
+	
+	Code cleanup, removed obsolete "SGI" port
+
+2002-10-29 04:17  seanleyne
+
+	* firebird2/src/: gpre/c_cxx.cpp, jrd/align.h, jrd/blb.cpp,
+	jrd/blb.h, jrd/btr.h, jrd/common.h, jrd/exe.cpp, jrd/flu.cpp,
+	jrd/isc_file.cpp, jrd/isc_sync.cpp, jrd/jrd.h, jrd/license.h,
+	jrd/pag.cpp, jrd/why.c, jrd/y-valve.cpp, lock/lock.h,
+	remote/inet_server.cpp, remote/interface.cpp, remote/protocol.h,
+	remote/remote_def.h, v5_examples/align.h:
+	
+	Code cleanup, removed obsolete "DecOSF" port
+
+2002-10-29 03:59  seanleyne
+
+	* firebird2/src/: dsql/errd.cpp, dsql/user_dsql.cpp,
+	include/gen/autoconfig_msvc.h, ipserver/ipclient.cpp,
+	journal/journal_vms.e, jrd/err.cpp, jrd/iberr.h, jrd/pag.cpp,
+	jrd/par.cpp, jrd/status.cpp, jrd/utl.cpp, jrd/why.c,
+	jrd/y-valve.cpp:
+	
+	Code cleanup, removed obsolete "MPEXL" port
+
+2002-10-29 03:48  seanleyne
+
+	* firebird2/src/: intl/langdrv.h, makefiles/prefix.dg:
+	
+	Completed removal of obsolete "DG" port
+
+2002-10-29 03:45  seanleyne
+
+	* firebird2/src/: gpre/cob.cpp, gpre/ftn.cpp, gpre/gpre.h,
+	include/gen/autoconfig_msvc.h, jrd/common.h, jrd/cvt.cpp,
+	jrd/flu.cpp, jrd/isc.cpp, jrd/isc_cray.cpp, jrd/isc_file.cpp,
+	jrd/isc_ipc.cpp, jrd/isc_sync.cpp, jrd/license.h, jrd/pag.cpp,
+	jrd/thd.cpp, jrd/thd.h, lock/lock.h, lock/lockv3.h,
+	remote/inet.cpp, remote/remote_def.h:
+	
+	Removed obsolete "DGUX" port
+
 2002-10-28 17:59  skidder
 
 	* firebird2/builds/posix/Makefile.in.codes:
