@@ -37,7 +37,6 @@
 #define RUNAS_SERVICE " -s"
 
 
-
 USHORT SERVICES_config(SC_HANDLE manager,
 					   TEXT * service_name,
 					   TEXT * display_name,

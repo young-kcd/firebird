@@ -71,12 +71,10 @@ int CLIB_ROUTINE main( int argc, char *argv[])
  **************************************/
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	PORT port;
-	BOOLEAN debug;
 	TEXT *p, c;
 	HANDLE connection_handle;
 
 	argv++;
-	debug = FALSE;
 #ifdef SUPERSERVER
 	server_flag = SRVR_multi_client;
 #else
@@ -91,13 +89,16 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		if (*p++ = '-')
 			while (c = *p++)
 				switch (UPPER(c)) {
+				case 'A':
+					server_flag |= SRVR_non_service;
+					break;
+
 				case 'B':
 					server_flag |= SRVR_high_priority;
 					break;
 
 				case 'D':
-					debug = TRUE;
-					server_flag |= SRVR_debug | SRVR_non_service;
+					server_flag |= (SRVR_debug | SRVR_non_service);
 					break;
 
 				case 'H':
@@ -141,7 +142,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		THREAD_EXIT;
 		service_connection(port);
 	}
-	else if (!debug) {
+	else if (!(server_flag & SRVR_non_service)) {
 		CNTL_init((FPTR_VOID) start_connections_thread, REMOTE_SERVICE);
 		if (!StartServiceCtrlDispatcher(service_table))
 			if (GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
