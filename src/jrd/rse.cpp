@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.37 2003-09-29 08:29:36 dimitr Exp $
+ * $Id: rse.cpp,v 1.38 2003-09-29 11:00:37 dimitr Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -3776,7 +3776,7 @@ static void unget_sort(TDBB tdbb, RSB rsb, UCHAR * data)
 
 	impure = (IRSB_SORT) ((UCHAR *) request + rsb->rsb_impure);
 
-	SORT_diddle_key(data, impure->irsb_sort_handle, TRUE);
+	SORT_diddle_key(data, impure->irsb_sort_handle, true);
 }
 #endif
 

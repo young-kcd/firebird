@@ -26,7 +26,7 @@
 
 
 #ifdef SCROLLABLE_CURSORS
-extern void SORT_diddle_key(UCHAR *, struct scb *, USHORT);
+extern void SORT_diddle_key(UCHAR *, struct scb *, bool);
 extern void SORT_get(ISC_STATUS *, struct scb *, ULONG **, RSE_GET_MODE);
 extern void SORT_read_block(ISC_STATUS *, struct sfb *, ULONG, BLOB_PTR *, ULONG);
 #else
