@@ -166,6 +166,10 @@ public:
 		count--;
 		return data[count];
 	}
+	T* getBuffer(int capacity) {
+		ensureCapacity(capacity);
+		return data;
+	}
 protected:
 	int count, capacity;
 	T* data;
