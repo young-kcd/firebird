@@ -28,6 +28,8 @@
  * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  * 2003.10.05 Dmitry Yemanov: Added support for explicit cursors in PSQL
+ * 2004.01.16 Vlad Horsun: Added support for default parameters and 
+ *   EXECUTE BLOCK statement
  */
 
 #include "firebird.h"
@@ -569,7 +571,6 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 
 }
 
-
 /**
   
  	GEN_port
@@ -692,6 +693,10 @@ void GEN_request( dsql_req* request, dsql_nod* node)
 			request->req_type == REQ_SELECT_UPD ||
 			request->req_type == REQ_EMBED_SELECT) {
       	  gen_select(request, node);
+  		}
+		else if (request->req_type == REQ_EXEC_BLOCK ||
+				 request->req_type == REQ_SELECT_BLOCK ) {
+			GEN_statement(request, node);
   		}
 		else {
 			dsql_msg* message = request->req_send;
@@ -915,6 +920,10 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 		stuff(request, context->ctx_context);
 		return;
 
+	case nod_exec_block:
+		DDL_gen_block(request, node);
+		return;
+
 	case nod_exec_procedure:
 		if (request->req_type == REQ_EXEC_PROCEDURE) {
 			if (message = request->req_receive) {
@@ -928,13 +937,14 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 		stuff(request, blr_exec_proc);
 		name = (dsql_str*) node->nod_arg[e_exe_procedure];
 		stuff_cstring(request, name->str_data);
+
 		if (temp = node->nod_arg[e_exe_inputs]) {
 			stuff_word(request, temp->nod_count);
 			for (ptr = temp->nod_arg, end = ptr + temp->nod_count;
 				 ptr < end; ptr++)
-			{
-				GEN_expr(request, *ptr);
-			}
+ 			{
+ 				GEN_expr(request, *ptr);
+ 			}
 		}
 		else
 			stuff_word(request, 0);
@@ -1061,7 +1071,11 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 		return;
 	
 	case nod_return:
-		GEN_return(request, node->nod_arg[e_rtn_procedure], false);
+		if(temp = node->nod_arg[e_rtn_procedure])
+			if(temp->nod_type == nod_exec_block)
+				GEN_return(request, temp->nod_arg[e_exe_blk_outputs], false);
+			else 
+				GEN_return(request, temp->nod_arg[e_prc_outputs], false);
 		return;
 
 	case nod_exit:
@@ -2030,16 +2044,20 @@ static void gen_relation( dsql_req* request, dsql_ctx* context)
 			stuff_cstring(request, procedure->prc_name);
 		}
 		stuff(request, context->ctx_context);
-		stuff_word(request, procedure->prc_in_count);
+
 		dsql_nod* inputs = context->ctx_proc_inputs;
 		if (inputs) {
-		    dsql_nod* const* ptr = inputs->nod_arg;
+			stuff_word(request, inputs->nod_count);
+
+			dsql_nod* const* ptr = inputs->nod_arg;
 			for (const dsql_nod* const* const end = ptr + inputs->nod_count;
 				 ptr < end; ptr++)
 			{
-				GEN_expr(request, *ptr);
+ 				GEN_expr(request, *ptr);
 			}
-		}
+ 		}
+		else
+			stuff_word(request, 0);
 	}
 }
 
@@ -2056,11 +2074,8 @@ static void gen_relation( dsql_req* request, dsql_ctx* context)
     @param eos_flag
 
  **/
-void GEN_return( dsql_req* request, const dsql_nod* procedure, bool eos_flag)
+void GEN_return( dsql_req* request, const dsql_nod* parameters, bool eos_flag)
 {
-	if (!procedure)
-		return;
-
 	if (!eos_flag)
 		stuff(request, blr_begin);
 	stuff(request, blr_send);
@@ -2068,7 +2083,6 @@ void GEN_return( dsql_req* request, const dsql_nod* procedure, bool eos_flag)
 	stuff(request, blr_begin);
 
 	USHORT outputs = 0;
-	const dsql_nod* parameters = procedure->nod_arg[e_prc_outputs];
 	if (parameters) {
 		const dsql_nod* const* ptr = parameters->nod_arg;
 		for (const dsql_nod* const* const end = ptr + parameters->nod_count;

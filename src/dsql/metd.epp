@@ -27,6 +27,9 @@
  *   This request is not cached.
  * 2001.02.23 Claudio Valderrama: Fix SF Bug #228135 with views spoiling
  *    NULLs in outer joins.
+ * 2004.01.16 Vlad Horsun: make METD_get_col_default and 
+ *   METD_get_domain_default return actual length of default BLR
+ * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 
 #include "firebird.h"
@@ -352,7 +355,7 @@ dsql_intlsym* METD_get_collation(dsql_req* request, const dsql_str* name)
 }
 
 
-void METD_get_col_default(dsql_req*    request,
+USHORT METD_get_col_default(dsql_req*    request,
 						  const char* for_rel_name,
 						  const char* for_col_name,
 						  bool*    has_default,
@@ -384,7 +387,7 @@ void METD_get_col_default(dsql_req*    request,
 	TEXT *ptr_in_buffer;
 
 	ISC_STATUS stat;
-	USHORT length;
+	USHORT length, result = 0;
 	isc_blob_handle blob_handle = NULL;
 
 	*has_default = false;
@@ -435,6 +438,7 @@ void METD_get_col_default(dsql_req*    request,
 			THREAD_ENTER;
 			ptr_in_buffer = ptr_in_buffer + length;
 			buff_length = buff_length - length;
+			result += length;
 
 			if (!stat)
 				continue;
@@ -463,6 +467,7 @@ void METD_get_col_default(dsql_req*    request,
 		else
 			buffer[0] = blr_version4;
 		buffer[1] = blr_eoc;
+		result = 2;
 	}
 
 	THREAD_EXIT;
@@ -470,8 +475,8 @@ void METD_get_col_default(dsql_req*    request,
 	END_FOR ON_ERROR ERRD_punt();
 	END_ERROR THREAD_ENTER;
 
+	return result;
 }
-
 
 dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* name) // UTF-8
 {
@@ -754,7 +759,7 @@ USHORT METD_get_domain(dsql_req* request, dsql_fld* field, const char* name) // 
 }
 
 
-void METD_get_domain_default(dsql_req* request,
+USHORT METD_get_domain_default(dsql_req* request,
 							 const TEXT* domain_name,
 							 bool* has_default,
 							 TEXT* buffer, USHORT buff_length)
@@ -776,6 +781,7 @@ void METD_get_domain_default(dsql_req* request,
 	DBB dbb = request->req_dbb;
 	FRBRD* DB = dbb->dbb_database_handle;
 	FRBRD* gds_trans = request->req_trans;
+	USHORT result = 0;
 
 // V4.x multi threading requirements 
 	THREAD_EXIT;
@@ -815,6 +821,7 @@ void METD_get_domain_default(dsql_req* request,
                 THREAD_ENTER;
                 ptr_in_buffer = ptr_in_buffer + length;
                 buff_length = buff_length - length;
+				result += length;
                 
                 if (!stat)
                     continue;
@@ -843,6 +850,7 @@ void METD_get_domain_default(dsql_req* request,
             else
                 buffer[0] = blr_version4;
             buffer[1] = blr_eoc;
+			result = 2;
         }
         
         THREAD_EXIT;
@@ -854,6 +862,7 @@ void METD_get_domain_default(dsql_req* request,
 
     THREAD_ENTER;
 
+	return result;
 }
 
 
@@ -1122,7 +1131,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 }
 
 
-DSQL_NOD METD_get_primary_key(dsql_req* request, const dsql_str* relation_name)
+dsql_nod* METD_get_primary_key(dsql_req* request, const dsql_str* relation_name)
 {
 /**************************************
  *
@@ -1199,7 +1208,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 	dsql_fld** ptr;
 	dsql_prc* procedure;
 	dsql_prc* temp;
-	SSHORT type, count;
+	SSHORT type, count, defaults;
 
 
 	metd_rec_lock();
@@ -1271,7 +1280,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 			ptr = &procedure->prc_outputs;
 		else
 			ptr = &procedure->prc_inputs;
-		count = 0;
+		count = defaults = 0; 
 
 		THREAD_EXIT;
 
@@ -1319,6 +1328,10 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
                 parameter->fld_seg_length = RFR.RDB$SEGMENT_LENGTH;
             }
 
+			if(!RFR.RDB$DEFAULT_VALUE.NULL && (type == 0)) {
+				defaults++;
+            }
+
             THREAD_EXIT;
 
 		END_FOR 
@@ -1329,8 +1342,10 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 
 		if (type)
 			procedure->prc_out_count = count;
-		else
+		else {
 			procedure->prc_in_count = count;
+			procedure->prc_def_count = defaults;
+		}
 	}
 
 /* Since we could give up control due to the THREAD_EXIT and THEAD_ENTER

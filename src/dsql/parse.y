@@ -69,6 +69,8 @@
  *						   with table alias. Also removed group_by_function and ordinal.
  * 2003.08.14 Arno Brinkman: Added support for derived tables.
  * 2003.10.05 Dmitry Yemanov: Added support for explicit cursors in PSQL.
+ * 2004.01.16 Vlad Horsun: added support for default parameters and 
+ *   EXECUTE BLOCK statement
  */
 
 #include "firebird.h"
@@ -497,6 +499,7 @@ static LexerState lex;
 %token CLOSE
 %token FETCH
 %token ROWS
+%token BLOCK
 
 /* precedence declarations for expression evaluation */
 
@@ -542,6 +545,7 @@ statement	: alter
 		| grant
 		| insert
 		| invoke_procedure
+		| invoke_block
 		| recreate
 		| replace
 		| revoke
@@ -1472,26 +1476,45 @@ alter_procedure_clause	: symbol_procedure_name input_parameters
 						(int) e_prc_count, $1, $2, $3, $6, $7, $8); } 
 		;		
 
-input_parameters :	'(' proc_parameters ')'
+input_parameters :	'(' input_proc_parameters ')'
 			{ $$ = make_list ($2); }
 		|
 			{ $$ = NULL; }
 		;
 
-output_parameters :	RETURNS input_parameters
-			{ $$ = $2; }
+output_parameters :	RETURNS '(' output_proc_parameters ')'
+			{ $$ = make_list ($3); }
 		|
 			{ $$ = NULL; }
 		;
 
-proc_parameters	: proc_parameter
-		| proc_parameters ',' proc_parameter
+input_proc_parameters	: input_proc_parameter
+		| input_proc_parameters ',' input_proc_parameter
+			{ $$ = make_node (nod_list, 2, $1, $3); }
+		;
+
+input_proc_parameter	: simple_column_def_name non_array_type
+				default_par_opt end_trigger 
+			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
+				$1, $3, $4, NULL, NULL, NULL, NULL); }   
+		;
+
+output_proc_parameters	: proc_parameter
+		| output_proc_parameters ',' proc_parameter
 			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
 
 proc_parameter	: simple_column_def_name non_array_type
 			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
 				$1, NULL, NULL, NULL, NULL, NULL, NULL); }   
+		;
+
+default_par_opt	: DEFAULT begin_string default_value
+			{ $$ = $3; }
+		| '=' begin_string default_value
+			{ $$ = $3; }
+		| begin_string
+			{ $$ = (DSQL_NOD) NULL; }
 		;
 
 local_declaration_list	: local_declarations
@@ -1777,6 +1800,30 @@ invoke_procedure : EXECUTE PROCEDURE symbol_procedure_name proc_inputs
 				  $4, make_node (nod_all, (int) 0, NULL)); }
 		;
 
+/* EXECUTE BLOCK */
+
+invoke_block : EXECUTE BLOCK block_input_params output_parameters AS 
+			local_declaration_list
+			full_proc_block
+				{ $$ = make_node (nod_exec_block,
+						  (int) e_exe_blk_count, 
+					          $3, $4, $6, $7, make_node (nod_all, (int) 0, NULL)); } 
+		;
+
+block_input_params :	'(' block_parameters ')'
+				{ $$ = make_list ($2); }
+			|
+				{ $$ = NULL; }
+			;
+
+block_parameters	: block_parameter
+		| block_parameters ',' block_parameter
+			{ $$ = make_node (nod_list, 2, $1, $3); }
+		;
+
+block_parameter	: proc_parameter '=' parameter
+			{ $$ = make_node (nod_param_val, e_prm_val_count, $1, $3); }   
+		;
 
 /* CREATE VIEW */
 
@@ -4126,6 +4173,7 @@ non_reserved_word :
 	| UPDATING
 	| DELETING
 /*  | FIRST | SKIP -- this is handled by the lexer. */
+	| BLOCK
 	| BACKUP				/* added in FB 2.0 */
 	| KW_DIFFERENCE
 	;

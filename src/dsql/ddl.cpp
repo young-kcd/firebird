@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.83 2004-01-10 18:04:40 arnobrinkman Exp $
+ * $Id: ddl.cpp,v 1.84 2004-01-16 10:43:20 hvlad Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -64,6 +64,8 @@
  * 2002.08.31 Dmitry Yemanov: allowed user-defined index names for PK/FK/UK constraints
  * 2002.09.01 Dmitry Yemanov: RECREATE VIEW
  * 2002.09.12 Nickolay Samofatov: fixed cached metadata errors
+ * 2004.01.16 Vlad Horsun: added support for default parameters and 
+ *   EXECUTE BLOCK statement
  */
 
 #include "firebird.h"
@@ -1515,14 +1517,15 @@ static void define_set_default_trg(	dsql_req*    request,
 
 				/* case: (1-b): domain name is available. Column level default
 				   is not declared. so get the domain default */
-				METD_get_domain_default(request, domain_name, &found_default,
+				USHORT def_len = 
+					METD_get_domain_default(request, domain_name, &found_default,
 										default_val,
 										sizeof(default_val));
 
 				search_for_default = false;
 				if (found_default)
 				{
-					stuff_default_blr(request, default_val, sizeof(default_val));
+					stuff_default_blr(request, default_val, def_len);
 				}
 				else
 				{
@@ -1537,14 +1540,15 @@ static void define_set_default_trg(	dsql_req*    request,
 		{
 			// case 2: see if the column/domain has already been created 
 
-			METD_get_col_default(request, for_rel_name,
+			USHORT def_len = 
+				METD_get_col_default(request, for_rel_name,
 								 for_key_fld_name_str->str_data,
 								 &found_default,
 								 default_val,
 								 sizeof(default_val));
 
 			if (found_default) {
-				stuff_default_blr(request, default_val, sizeof(default_val));
+				stuff_default_blr(request, default_val, def_len);
 			} else {
 				request->append_uchar(blr_null);
 			}
@@ -2216,7 +2220,7 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
  **************************************/
 	TSQL tdsql = GET_THREAD_DATA;
 
-	SSHORT inputs  = 0;
+	SSHORT inputs  = 0, defaults = 0;
 	SSHORT outputs = 0;
 	SSHORT locals  = 0;
 	const dsql_nod* procedure_node = request->req_ddl_node;
@@ -2308,6 +2312,32 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 			DDL_resolve_intl_type(request, field, NULL);
 			put_field(request, field, false);
 
+			// check for a parameter default value 
+			dsql_nod* node = parameter->nod_arg[e_dfl_default];
+			if (node)
+			{
+				node = PASS1_node(request, node, 0);
+				request->begin_blr(isc_dyn_fld_default_value);
+				GEN_expr(request, node);
+				request->end_blr();
+				dsql_str* string = (dsql_str*) parameter->nod_arg[e_dfl_default_source];
+				if (string)
+				{
+					fb_assert(string->str_length <= MAX_USHORT);
+					request->append_string(isc_dyn_fld_default_source,
+											string->str_data,
+											string->str_length);
+				}
+				defaults++;
+			}
+			else if(defaults) { 
+				// parameter without default value after parameters with default 
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,
+						  isc_arg_gds, isc_bad_default_value,
+						  isc_arg_gds, isc_invalid_clause,
+						  isc_arg_string, "defaults must be last", 0);
+			}
+
 			*ptr = MAKE_variable(field, field->fld_name,
 								 VAR_input, 0, (USHORT) (2 * position),
 								 locals);
@@ -2363,6 +2393,7 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 	*field_ptr = NULL;
 	procedure->prc_out_count = outputs;
 	procedure->prc_in_count = inputs;
+	procedure->prc_def_count = defaults;
 
 	request->begin_blr(isc_dyn_prc_blr);
 	request->append_uchar(blr_begin);
@@ -2400,7 +2431,6 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 	}
 
 	// add slot for EOS
-
 	request->append_uchar(blr_short);
 	request->append_uchar(0);
 
@@ -2435,13 +2465,177 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 		PASS1_statement(request, procedure_node->nod_arg[e_prc_body], true));
 	request->req_type = REQ_DDL;
 	request->append_uchar(blr_end);
-	GEN_return(request, procedure_node, true);
+	GEN_return(request, procedure_node->nod_arg[e_prc_outputs], true);
 	request->append_uchar(blr_end);
 	request->end_blr();
 
 	request->append_uchar(isc_dyn_end);
 }
 
+static par* par_reverse_order(par *parameter, par *prev)
+{
+/**************************************
+ *
+ *	p a r _ r e v e r s e _ o r d e r
+ *
+ **************************************
+ *
+ * Function
+ *	Reverse parameters order for EXECUTE BLOCK statement
+ * 
+ **************************************/
+	par *result;
+
+	if(parameter->par_next)
+		result = par_reverse_order(parameter->par_next, parameter);
+	else
+		result = parameter;
+	parameter->par_next = prev;
+
+	return result;
+}
+
+void DDL_gen_block(dsql_req* request, dsql_nod* node)
+{
+/**************************************
+ *
+ *	D D L _ g e n _ b l o c k
+ *
+ **************************************
+ *
+ * Function
+ *	Generate BLR for EXECUTE BLOCK statement
+ *
+ **************************************/
+	SSHORT inputs = 0, outputs = 0, locals = 0;
+	request->req_blk_node = node;
+	
+	TSQL tdsql = GET_THREAD_DATA;
+	
+	dsql_nod *parameters, *parameter, **ptr, **end;
+	dsql_fld *field; 
+
+	// now do the input parameters 
+	if (parameters = node->nod_arg[e_exe_blk_inputs])
+	{
+		SSHORT position = 0;
+		
+		end = parameters->nod_arg + parameters->nod_count;
+		for (ptr = parameters->nod_arg; ptr < end; ptr++)
+		{
+			parameter = (*ptr)->nod_arg[e_prm_val_fld];
+			field = (dsql_fld*) parameter->nod_arg[e_dfl_field];
+			parameter = (*ptr)->nod_arg[e_prm_val_val];
+
+			DDL_resolve_intl_type(request, field, NULL);
+
+			*ptr = MAKE_variable(field, field->fld_name,
+								 VAR_input, 0, (USHORT) (2 * position),
+								 locals++);
+			position++;
+		}
+		inputs = position;
+	}
+
+	// now do the output parameters 
+	if (parameters = node->nod_arg[e_exe_blk_outputs])
+	{
+		SSHORT position = 0;
+		end = parameters->nod_arg + parameters->nod_count;
+		for (ptr = parameters->nod_arg; ptr < end; ++ptr)
+		{
+			field = (dsql_fld*) (*ptr)->nod_arg[e_dfl_field];
+
+			DDL_resolve_intl_type(request, field, NULL);
+
+			*ptr = MAKE_variable(field, field->fld_name,
+								 VAR_output, 1, (USHORT) (2 * position),
+								 locals++);
+			position++;
+		}
+		outputs = position;
+	}
+
+	request->append_uchar(blr_begin);
+
+	if (inputs) {
+		request->req_send->msg_parameters = 
+			par_reverse_order(request->req_send->msg_parameters, NULL);
+		GEN_port(request, request->req_send);
+	}
+	else
+		request->req_send = NULL;
+
+	par *param;
+
+	if (outputs)
+	{
+		SSHORT	position = 0;
+		parameters = node->nod_arg[e_exe_blk_outputs];
+
+		for (ptr = parameters->nod_arg, end = ptr + parameters->nod_count;
+			 ptr < end; ptr++)
+		{
+			param = MAKE_parameter(request->req_receive, true, true, ++position);
+			param->par_node = *ptr;
+			MAKE_desc(&param->par_desc, *ptr);
+			param->par_desc.dsc_flags |= DSC_nullable;
+
+			parameter = *ptr;
+			var* variable = (var*) parameter->nod_arg[e_var_variable];
+			field = variable->var_field;
+			param->par_name = param->par_alias = field->fld_name;
+		}
+	}
+
+	// Set up parameter to handle EOF 
+	request->req_eof = param =
+		MAKE_parameter(request->req_receive, false, false, 0);
+	param->par_desc.dsc_dtype = dtype_short;
+	param->par_desc.dsc_scale = 0;
+	param->par_desc.dsc_length = sizeof(SSHORT);
+
+	request->req_receive->msg_parameters = 
+		par_reverse_order(request->req_receive->msg_parameters, NULL);
+	GEN_port(request, request->req_receive);
+
+	if (inputs) {
+		request->append_uchar(blr_receive);
+		request->append_uchar(0);
+	}
+
+	request->append_uchar(blr_begin);
+
+	if (outputs)
+	{
+		parameters = node->nod_arg[e_exe_blk_outputs];
+		for (ptr = parameters->nod_arg, end = ptr + parameters->nod_count;
+			 ptr < end; ptr++)
+		{
+			parameter = *ptr;
+			var* variable = (var*) parameter->nod_arg[e_var_variable];
+			put_local_variable(request, variable, 0);
+		}
+	}
+
+	put_local_variables(request, node->nod_arg[e_exe_blk_dcls], locals);
+
+	request->append_uchar(blr_stall);
+/* Put a label before body of procedure, so that
+   any exit statement can get out */
+	request->append_uchar(blr_label);
+	request->append_uchar(0);
+	request->req_loop_level = 0;
+	GEN_statement(request,
+		PASS1_statement(request, node->nod_arg[e_exe_blk_body], 1));
+	if (outputs)
+		request->req_type = REQ_SELECT_BLOCK;
+	else
+		request->req_type = REQ_EXEC_BLOCK;
+	request->append_uchar(blr_end);
+	GEN_return(request, node->nod_arg[e_exe_blk_outputs], true);
+	request->append_uchar(blr_end);
+}
 
 //
 // Define a constraint, either as part of a create
@@ -5385,7 +5579,7 @@ static void put_local_variables(dsql_req* request, dsql_nod* parameters,
 					MAKE_variable(field, field->fld_name, VAR_output, 0, 0,
 									  locals);
 				*ptr = var_node;
-				VAR variable = (VAR) var_node->nod_arg[e_var_variable];
+				var* variable = (var*) var_node->nod_arg[e_var_variable];
 				put_local_variable(request, variable, parameter);
 
 				// fld_length is calculated inside put_local_variable(),
@@ -5658,7 +5852,7 @@ static void stuff_default_blr(	dsql_req*		request,
 
 	unsigned int i;
 
-	for (i = 1; ((i < buff_size) && (default_buff[i] != blr_eoc)); ++i)
+	for (i = 1; i < buff_size - 1; ++i)
 	{
 		request->append_uchar(default_buff[i]);
 	}

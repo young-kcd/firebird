@@ -30,6 +30,7 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2004.01.16 Vlad Horsun: added support for EXECUTE BLOCK statement
  */
 /**************************************************************
 V4 Multi-threading changes.
@@ -543,6 +544,8 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
    Make sure the cursor is not already open. */
 
 		if (request->req_type == REQ_SELECT ||
+			request->req_type == REQ_EXEC_BLOCK ||  
+			request->req_type == REQ_SELECT_BLOCK ||
 			request->req_type == REQ_SELECT_UPD ||
 			request->req_type == REQ_EMBED_SELECT ||
 			request->req_type == REQ_GET_SEGMENT ||
@@ -578,6 +581,7 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
  * to the list of open cursors (it's not really open).
  */
 		if ((request->req_type == REQ_SELECT && out_msg_length == 0) ||
+			(request->req_type == REQ_SELECT_BLOCK) ||  
 			request->req_type == REQ_SELECT_UPD ||
 			request->req_type == REQ_EMBED_SELECT ||
 			request->req_type == REQ_GET_SEGMENT ||
@@ -965,6 +969,7 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 
 		if (request->req_type == REQ_SELECT ||
 			request->req_type == REQ_SELECT_UPD ||
+			request->req_type == REQ_SELECT_BLOCK ||
 			request->req_type == REQ_EMBED_SELECT ||
 			request->req_type == REQ_GET_SEGMENT)
 		{
@@ -1669,6 +1674,12 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 				case REQ_SAVEPOINT:
 					number = isc_info_sql_stmt_savepoint;
 					break;
+				case REQ_EXEC_BLOCK: 
+					number = isc_info_sql_stmt_exec_procedure;
+					break;
+				case REQ_SELECT_BLOCK: 
+					number = isc_info_sql_stmt_select;
+					break;
 				default:
 					number = 0;
 					break;
@@ -2046,6 +2057,9 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_exec_procedure:
 		verb = "execute procedure";
+		break;
+	case nod_exec_block: 
+		verb = "execute block";
 		break;
 	case nod_exists:
 		verb = "exists";
@@ -3297,6 +3311,8 @@ static ISC_STATUS execute_request(dsql_req*			request,
 	case REQ_EMBED_SELECT:
 	case REQ_SET_GENERATOR:
 	case REQ_SAVEPOINT:
+	case REQ_EXEC_BLOCK:
+	case REQ_SELECT_BLOCK:
 		break;
 	}
 
@@ -3338,13 +3354,28 @@ static ISC_STATUS execute_request(dsql_req*			request,
 		}
 	}
 
-	if (out_msg_length && (message = (dsql_msg*) request->req_receive)) {
+	// REQ_EXEC_BLOCK has no outputs so there are no out_msg 
+	// supplied from client side, but REQ_EXEC_BLOCK requires
+	// 2-byte message for EOS synchronization
+	bool isBlock = (request->req_type == REQ_EXEC_BLOCK);
+
+	if (out_msg_length && (message = request->req_receive) || isBlock) {
+		char		temp_buffer[DOUBLE_ALIGN*2];
+		dsql_msg	temp_msg;
+
 		/* Insure that the blr for the message is parsed, regardless of
 		   whether anything is found by the call to receive. */
 
-		if (out_blr_length) {
+		if (out_msg_length && out_blr_length) {
 			parse_blr(out_blr_length, out_blr, out_msg_length,
 					  message->msg_parameters);
+		} 
+		else if (!out_msg_length && isBlock) {
+			message = &temp_msg;
+
+			message->msg_number = 1;
+			message->msg_length = 2;
+			message->msg_buffer = (UCHAR*)FB_ALIGN((U_IPTR) temp_buffer, DOUBLE_ALIGN);
 		}
 
 		THREAD_EXIT;
@@ -3359,7 +3390,8 @@ static ISC_STATUS execute_request(dsql_req*			request,
 			punt();
 		}
 
-		map_in_out(NULL, message, 0, out_blr, out_msg_length, out_msg);
+		if (out_msg_length)
+			map_in_out(NULL, message, 0, out_blr, out_msg_length, out_msg);
 
 		// if this is a singleton select, make sure there's in fact one record 
 

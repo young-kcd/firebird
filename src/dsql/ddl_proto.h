@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2004.01.16 Vlad Horsun: added support for default parameters and 
+ *   EXECUTE BLOCK statement
  */
 
 #ifndef DSQL_DDL_PROTO_H
@@ -38,6 +41,7 @@ bool DDL_ids(const dsql_req*);
 void DDL_put_field_dtype(dsql_req*, const dsql_fld*, bool);
 void DDL_resolve_intl_type(dsql_req*, dsql_fld*, const dsql_str*);
 void DDL_resolve_intl_type2(dsql_req*, dsql_fld*, const dsql_str*, bool);
+void DDL_gen_block(dsql_req*, dsql_nod*);
 
 #endif // DSQL_DDL_PROTO_H
 

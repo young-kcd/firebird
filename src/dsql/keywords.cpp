@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.25 2003-11-28 06:48:01 robocop Exp $
+ *  $Id: keywords.cpp,v 1.26 2004-01-16 10:43:21 hvlad Exp $
  *
  */
 
@@ -81,6 +81,7 @@ static const TOK tokens[] = {
 	{BETWEEN, "BETWEEN", 1},
 	{BIGINT, "BIGINT", 2},
 	{BLOB, "BLOB", 1},
+	{BLOCK, "BLOCK", 1},
 	{KW_BREAK, "BREAK", 2}, 
 	{BY, "BY", 1},
 	{CACHE, "CACHE", 1},

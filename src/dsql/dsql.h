@@ -26,7 +26,8 @@
  *   collisions between dropping and redefining the udf concurrently.
  *   This closes SF Bug# 409769.
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
- *
+ * 2004.01.16 Vlad Horsun: added support for default parameters and 
+ *   EXECUTE BLOCK statement
  */
 
 #ifndef DSQL_DSQL_H
@@ -250,6 +251,7 @@ public:
 	TEXT*		prc_name;		//!< Name of procedure
 	TEXT*		prc_owner;		//!< Owner of procedure
 	SSHORT		prc_in_count;
+	SSHORT		prc_def_count;	//!< number of inputs with default values
 	SSHORT		prc_out_count;
 	USHORT		prc_id;			//!< Procedure id
 	USHORT		prc_flags;
@@ -357,7 +359,8 @@ enum REQ_TYPE
 	REQ_UPDATE_CURSOR, REQ_DELETE_CURSOR,
 	REQ_COMMIT, REQ_ROLLBACK, REQ_DDL, REQ_EMBED_SELECT,
 	REQ_START_TRANS, REQ_GET_SEGMENT, REQ_PUT_SEGMENT, REQ_EXEC_PROCEDURE,
-	REQ_COMMIT_RETAIN, REQ_SET_GENERATOR, REQ_SAVEPOINT
+	REQ_COMMIT_RETAIN, REQ_SET_GENERATOR, REQ_SAVEPOINT, 
+	REQ_EXEC_BLOCK, REQ_SELECT_BLOCK 
 };
 
 class dsql_req : public pool_alloc<dsql_type_req>
@@ -397,6 +400,7 @@ public:
 	FRBRD*	req_trans;			//!< Database transaction handle
 	class opn* req_open_cursor;
 	dsql_nod* req_ddl_node;		//!< Store metadata request
+	dsql_nod* req_blk_node;		//!< exec_block node 
 	class dsql_blb* req_blob;			//!< Blob info for blob requests
 	FRBRD*	req_handle;				//!< OSRI request handle
 	dsql_str*	req_blr_string;			//!< String block during BLR generation
@@ -452,7 +456,8 @@ enum req_flags_vals {
 	REQ_no_batch			= 256,
 	REQ_backwards			= 512,
 	REQ_blr_version4		= 1024,
-	REQ_blr_version5		= 2048
+	REQ_blr_version5		= 2048,
+	REQ_exec_block			= 4096
 };
 
 //! Blob

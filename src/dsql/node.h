@@ -30,6 +30,8 @@
  * 2002.08.04 Dmitry Yemanov: ALTER VIEW
  * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
+ * 2004.01.16 Vlad Horsun: added support for default parameters and 
+ *   EXECUTE BLOCK statement
  */
 
 #ifndef DSQL_NODE_H
@@ -327,6 +329,8 @@ typedef enum nod_t
 	nod_cursor_fetch,
 	nod_cursor_close,
 	nod_fetch_seek,
+	nod_exec_block,		// EXECUTE BLOCK support
+	nod_param_val,		// default value for SP parameters support
 	nod_rows	// ROWS support
 } NOD_TYPE;
 
@@ -532,6 +536,17 @@ enum node_args {
 	e_exe_inputs,
 	e_exe_outputs,
 	e_exe_count,
+
+	e_exe_blk = 0,			// nod_exec_block 
+	e_exe_blk_inputs = 0,
+	e_exe_blk_outputs,
+	e_exe_blk_dcls,
+	e_exe_blk_body,	
+	e_exe_blk_count,	
+
+	e_prm_val_fld = 0,
+	e_prm_val_val,
+	e_prm_val_count,
 
 	e_msg_number = 0,		// nod_message
 	e_msg_text,

@@ -132,6 +132,9 @@
  * 2003.08.16 Arno Brinkman: Changed ambiguous column name checking.
  *
  * 2003.10.05 Dmitry Yemanov: Added support for explicit cursors in PSQL.
+ *
+ * 2004.01.16 Vlad Horsun: added support for default parameters and 
+ *   EXECUTE BLOCK statement
  */
 
 #include "firebird.h"
@@ -154,6 +157,7 @@
 #include "../dsql/misc_func.h"
 #include "../jrd/dsc_proto.h"
 #include "../jrd/thd_proto.h"
+#include "../common/classes/array.h"
 #include "../common/utils_proto.h"
 
 #ifdef DEV_BUILD
@@ -245,6 +249,18 @@ enum field_match_val {
 	FIELD_MATCH_TYPE_HIGHER = 3,
 	FIELD_MATCH_TYPE_HIGHER_EQUAL = 4
 };
+
+class CStrCmp {
+public:
+	static int greaterThan(char* s1, char* s2) {
+		return strcmp(s1, s2) > 0;
+	}
+};
+
+typedef Firebird::SortedArray<char*, char*, 
+			Firebird::DefaultKeyValue<char*>, 
+			CStrCmp>	
+		StrArray;
 
 
 /**
@@ -430,10 +446,11 @@ dsql_ctx* PASS1_make_context(dsql_req* request, dsql_nod* relation_node)
 		}
 
 		if (!(request->req_flags & REQ_procedure)) {
-			if (count != procedure->prc_in_count)
+			if (count > procedure->prc_in_count || 
+				count < procedure->prc_in_count - procedure->prc_def_count)
 			{
-				ERRD_post(isc_prcmismat, isc_arg_string,
-							relation_name->str_data, 0);
+                    ERRD_post(isc_prcmismat, isc_arg_string,
+                              relation_name->str_data, 0);
 			}
 
 			if (count)
@@ -441,9 +458,9 @@ dsql_ctx* PASS1_make_context(dsql_req* request, dsql_nod* relation_node)
 				// Initialize this stack variable, and make it look like a node
 				std::auto_ptr<dsql_nod> desc_node(FB_NEW_RPT(*tdsql->tsql_default, 0) dsql_nod);
 
-				dsql_nod* const* input = context->ctx_proc_inputs->nod_arg;
-				for (dsql_fld* field = procedure->prc_inputs;
-					 field; input++, field = field->fld_next)
+				dsql_nod *const *input = context->ctx_proc_inputs->nod_arg;
+				for (dsql_fld *field = procedure->prc_inputs;
+					 *input; input++, field = field->fld_next)
 				{
 					DEV_BLKCHK(field, dsql_type_fld);
 					DEV_BLKCHK(*input, dsql_type_nod);
@@ -677,6 +694,27 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 									// Pass 0 here to restore older parameter
 									// ordering behavior unconditionally.
 									  (USHORT)(ULONG) input->nod_arg[0]);
+		return node;
+
+	case nod_param_val:
+		node = MAKE_node(input->nod_type, e_prm_val_count);
+		node->nod_arg[e_prm_val_fld] = input->nod_arg[e_prm_val_fld];
+		node->nod_arg[e_prm_val_val] = PASS1_node(request, input->nod_arg[e_prm_val_val], proc_flag);
+		
+		field	= (dsql_fld*) node->nod_arg[e_prm_val_fld]->nod_arg[e_dfl_field];
+		DDL_resolve_intl_type(request, field, NULL);
+
+		{
+			dsql_nod *temp	= node->nod_arg[e_prm_val_val];
+			// Initialize this stack variable, and make it look like a node
+			std::auto_ptr<dsql_nod> desc_node(FB_NEW_RPT(*getDefaultMemoryPool(), 0) dsql_nod);
+
+			DEV_BLKCHK(field, dsql_type_fld);
+			DEV_BLKCHK(temp, dsql_type_nod);
+			MAKE_desc_from_field(&(desc_node->nod_desc), field);
+			set_parameter_type(temp, desc_node.get(), FALSE);
+		}
+		
 		return node;
 
 	case nod_udf:
@@ -969,6 +1007,59 @@ dsql_nod* PASS1_rse(dsql_req* request, dsql_nod* input, dsql_nod* order,
 	return node;
 }
 
+/**
+	check_unique_fields_names
+
+	check fields (params, variables, cursors etc) names against
+	sorted array 
+	if success, add them into array 
+ **/
+static void check_unique_fields_names(StrArray &names, dsql_nod *fields)
+{
+	if(!fields)
+		return;
+	
+	dsql_nod **ptr = fields->nod_arg, *temp;
+	dsql_nod **end = ptr + fields->nod_count;
+	dsql_fld *field;
+	dsql_str *str;
+	char *name = NULL;
+
+	for(; ptr < end; ptr++) {
+		switch((*ptr)->nod_type) {
+			case nod_def_field:
+				field = (dsql_fld*) (*ptr)->nod_arg[e_dfl_field];
+				DEV_BLKCHK(field, dsql_type_fld);
+				name = field->fld_name;
+			break;
+
+			case nod_param_val:
+				temp = (*ptr)->nod_arg[e_prm_val_fld];
+				field = (dsql_fld*) temp->nod_arg[e_dfl_field];
+				DEV_BLKCHK(field, dsql_type_fld);
+				name = field->fld_name;
+			break;
+
+			case nod_cursor:
+				str = (dsql_str*) (*ptr)->nod_arg[e_cur_name];
+				DEV_BLKCHK(str, dsql_type_str);
+				name = str->str_data;
+			break;
+
+			default:
+				fb_assert(false);
+		}
+
+		int pos;
+		if (!names.find(name, pos))
+			names.add(name);
+		else {
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -637,
+					  isc_arg_gds, isc_dsql_duplicate_spec,
+					  isc_arg_string, name, 0);
+		}
+	}
+}
 
 /**
   
@@ -1160,16 +1251,20 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 			USHORT count = 0;
 			if (node->nod_arg[e_exe_inputs])
 				count = node->nod_arg[e_exe_inputs]->nod_count;
-			if (count != request->req_procedure->prc_in_count)
+			else
+				count = 0;
+
+			if (count > request->req_procedure->prc_in_count || 
+				count < request->req_procedure->prc_in_count - request->req_procedure->prc_def_count)
 				ERRD_post(isc_prcmismat, isc_arg_string, name->str_data, 0);
+
 			if (count) {
 				// Initialize this stack variable, and make it look like a node
                 std::auto_ptr<dsql_nod> desc_node(FB_NEW_RPT(*getDefaultMemoryPool(), 0) dsql_nod);
 
-				dsql_nod** ptr = node->nod_arg[e_exe_inputs]->nod_arg;
-				for (const dsql_fld* field = request->req_procedure->prc_inputs;
-					 field; ptr++, field = field->fld_next) 
-				{
+				dsql_nod *const *ptr = node->nod_arg[e_exe_inputs]->nod_arg;
+				for (const dsql_fld *field = request->req_procedure->prc_inputs;
+					 *ptr; ptr++, field = field->fld_next) {
 					DEV_BLKCHK(field, dsql_type_fld);
 					DEV_BLKCHK(*ptr, dsql_type_nod);
 					// MAKE_desc_from_field(&desc_node.nod_desc, field);
@@ -1181,6 +1276,39 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		}
 		break;
 		}
+
+	case nod_exec_block: 
+		if (input->nod_arg[e_exe_blk_outputs] &&
+			input->nod_arg[e_exe_blk_outputs]->nod_count)
+			request->req_type = REQ_SELECT_BLOCK;
+		else
+			request->req_type = REQ_EXEC_BLOCK;
+		request->req_flags |= REQ_exec_block;
+
+		node = MAKE_node(input->nod_type, input->nod_count);
+		node->nod_arg[e_exe_blk_inputs] = 
+			PASS1_node(request, input->nod_arg[e_exe_blk_inputs], 0);
+		node->nod_arg[e_exe_blk_outputs] = 
+			input->nod_arg[e_exe_blk_outputs];
+
+		node->nod_arg[e_exe_blk_dcls] = input->nod_arg[e_exe_blk_dcls];
+		node->nod_arg[e_exe_blk_body] = input->nod_arg[e_exe_blk_body];
+
+		{
+			StrArray names( getDefaultMemoryPool(),
+				node->nod_arg[e_exe_blk_inputs] ? 
+					node->nod_arg[e_exe_blk_inputs]->nod_count : 0 +
+				node->nod_arg[e_exe_blk_outputs] ? 
+					node->nod_arg[e_exe_blk_outputs]->nod_count : 0 +
+				node->nod_arg[e_exe_blk_dcls] ? 
+					node->nod_arg[e_exe_blk_dcls]->nod_count : 0
+				);
+
+			check_unique_fields_names(names, node->nod_arg[e_exe_blk_inputs]);
+			check_unique_fields_names(names, node->nod_arg[e_exe_blk_outputs]);
+			check_unique_fields_names(names, node->nod_arg[e_exe_blk_dcls]);
+		}
+		return node;
 
 	case nod_for_select:
 		{
@@ -1361,7 +1489,9 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_token_err,	// Token unknown 
 					isc_arg_gds, isc_random, isc_arg_string, "SUSPEND", 0);
-		input->nod_arg[e_rtn_procedure] = request->req_ddl_node;
+
+		input->nod_arg[e_rtn_procedure] = 
+			request->req_ddl_node ? request->req_ddl_node : request->req_blk_node;
 		return input;
 
 	case nod_select:
@@ -6246,6 +6376,30 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input)
 	return node;
 }
 
+/**
+	resolve_variable_name
+
+ **/
+static dsql_nod* resolve_variable_name(const dsql_nod *var_nodes, const dsql_str *var_name)
+{
+	dsql_nod *const *ptr = var_nodes->nod_arg;
+	dsql_nod *const *const end = ptr + var_nodes->nod_count;
+
+	for (; ptr < end; ptr++) {
+		dsql_nod *var_node = *ptr;
+		if (var_node->nod_type == nod_variable)
+		{
+			const var *variable = (var*) var_node->nod_arg[e_var_variable];
+			DEV_BLKCHK(variable, dsql_type_var);
+			if (!strcmp
+				(reinterpret_cast < const char *>(var_name->str_data),
+				 variable->var_name)) 
+				 return var_node;
+		}
+	}
+
+	return NULL;
+}
 
 /**
   
@@ -6356,8 +6510,23 @@ static dsql_nod* pass1_variable( dsql_req* request, dsql_nod* input)
 		}
 	}
 
-    // field unresolved 
+	if (request->req_blk_node) {
+		dsql_nod *var_node;
 
+		if (var_nodes = request->req_blk_node->nod_arg[e_exe_blk_dcls])
+			if (var_node = resolve_variable_name(var_nodes, var_name))
+				return var_node;
+
+		if (var_nodes = request->req_blk_node->nod_arg[e_exe_blk_inputs])
+			if (var_node = resolve_variable_name(var_nodes, var_name))
+				return var_node;
+
+		if (var_nodes = request->req_blk_node->nod_arg[e_exe_blk_outputs])
+			if (var_node = resolve_variable_name(var_nodes, var_name))
+				return var_node;
+	}
+
+    // field unresolved 
     // CVC: That's all [the fix], folks!
 
     if (var_name)
