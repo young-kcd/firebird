@@ -1095,7 +1095,7 @@ int SDW_start_shadowing(void* ast_object)
 /* Since this routine will be called asynchronously, we must establish
    a thread context. */
 	thread_db thd_context, *tdbb;
-	JRD_set_thread_data;
+	JRD_set_thread_data(tdbb, thd_context);
 
 	tdbb->tdbb_database = new_dbb;
 	tdbb->tdbb_quantum = QUANTUM;

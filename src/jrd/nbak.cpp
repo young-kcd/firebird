@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.cpp,v 1.36 2004-05-23 03:18:09 brodsom Exp $
+ *  $Id: nbak.cpp,v 1.37 2004-05-24 01:03:41 brodsom Exp $
  *
  */
 
@@ -396,7 +396,7 @@ int BackupManager::backup_state_ast(void *ast_object) throw()
    a thread context. */
 
 	thread_db thd_context, *tdbb;
-	JRD_set_thread_data;
+	JRD_set_thread_data(tdbb, thd_context);
 
 	tdbb->tdbb_database = new_dbb;
 	tdbb->tdbb_attachment = lock->lck_attachment;
@@ -447,7 +447,7 @@ int BackupManager::alloc_table_ast(void *ast_object) throw()
    a thread context. */
 
 	thread_db thd_context, *tdbb;
-	JRD_set_thread_data;
+	JRD_set_thread_data(tdbb, thd_context);
 
 	tdbb->tdbb_database = new_dbb;
 	tdbb->tdbb_attachment = lock->lck_attachment;
@@ -499,7 +499,7 @@ int BackupManager::backup_database_ast(void *ast_object) throw()
    a thread context. */
 
 	thread_db thd_context, *tdbb;
-	JRD_set_thread_data;
+	JRD_set_thread_data(tdbb, thd_context);
 
 	tdbb->tdbb_database = new_dbb;
 	tdbb->tdbb_attachment = lock->lck_attachment;

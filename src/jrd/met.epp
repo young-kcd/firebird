@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.125 2004-05-23 23:26:30 brodsom Exp $
+$Id: met.epp,v 1.126 2004-05-24 01:03:41 brodsom Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -3668,7 +3668,7 @@ static int blocking_ast_procedure(void* ast_object)
 /* Since this routine will be called asynchronously, we must establish
    a thread context. */
 
-	JRD_set_thread_data;
+	JRD_set_thread_data(tdbb, thd_context);
 
 	tdbb->tdbb_database = procedure->prc_existence_lock->lck_dbb;
 	tdbb->tdbb_attachment = procedure->prc_existence_lock->lck_attachment;
@@ -3711,7 +3711,7 @@ static int blocking_ast_relation(void* ast_object)
 /* Since this routine will be called asynchronously, we must establish
    a thread context. */
 
-	JRD_set_thread_data;
+	JRD_set_thread_data(tdbb, thd_context);
 
 	tdbb->tdbb_database = relation->rel_existence_lock->lck_dbb;
 	tdbb->tdbb_attachment = relation->rel_existence_lock->lck_attachment;

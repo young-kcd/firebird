@@ -2231,7 +2231,7 @@ static int downgrade_lock(void* transaction_void)
    a thread context. */
 
 	thread_db thd_context, *tdbb;
-	JRD_set_thread_data;
+	JRD_set_thread_data(tdbb, thd_context);
 
 /* Ignore the request if the transaction or lock block does not appear
    to be valid or if the lock is not a write lock. */

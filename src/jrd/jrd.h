@@ -1087,10 +1087,13 @@ extern int debug;
    so in this case we define the macro as calling that function. */
 // CVC: This may be obsolete now that different subsystems use different macro/function names.
 
-#define JRD_set_thread_data		tdbb = &thd_context;\
-				MOVE_CLEAR (tdbb, sizeof (*tdbb));\
-				THD_put_specific (reinterpret_cast<struct thdd*>(tdbb));\
-				tdbb->tdbb_thd_data.thdd_type = THDD_TYPE_TDBB
+inline static void JRD_set_thread_data(Jrd::thread_db* &tdbb, Jrd::thread_db& thd_context)
+{
+	tdbb = &thd_context;
+	MOVE_CLEAR(tdbb, sizeof(Jrd::thread_db));
+	THD_put_specific(reinterpret_cast<struct thdd*>(tdbb));
+	tdbb->tdbb_thd_data.thdd_type = THDD_TYPE_TDBB;
+}
 
 inline void JRD_restore_thread_data(){
 	THD_restore_specific();

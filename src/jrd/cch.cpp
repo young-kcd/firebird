@@ -408,7 +408,7 @@ int CCH_down_grade_dbb(void* ast_object)
 /* Since this routine will be called asynchronously, we must establish
    a thread context. */
 	thread_db thd_context, *tdbb;
-	JRD_set_thread_data;
+	JRD_set_thread_data(tdbb, thd_context);
 
 	ISC_STATUS_ARRAY ast_status;
 	tdbb->tdbb_database = dbb;
@@ -2707,7 +2707,7 @@ static int blocking_ast_bdb(void* ast_object)
 /* Since this routine will be called asynchronously, we must establish
    a thread context. */
 	thread_db thd_context, *tdbb;
-	JRD_set_thread_data;
+	JRD_set_thread_data(tdbb, thd_context);
 
 	BLKCHK(bdb, type_bdb);
 	
@@ -3076,7 +3076,7 @@ static void THREAD_ROUTINE cache_reader(Database* dbb)
    Once we reach the end, the thread will die, thus implicitly
    killing all its contexts. */
 	thread_db thd_context, *tdbb;
-	JRD_set_thread_data;
+	JRD_set_thread_data(tdbb, thd_context);
 
 	ISC_STATUS_ARRAY status_vector;
 /* Dummy attachment needed for lock owner identification. */
@@ -3245,7 +3245,7 @@ static void THREAD_ROUTINE cache_writer(Database* dbb)
    Once we reach the end, the thread will die, thus implicitly
    killing all its contexts. */
 	thread_db thd_context, *tdbb;
-	JRD_set_thread_data;
+	JRD_set_thread_data(tdbb, thd_context);
 
 	ISC_STATUS_ARRAY status_vector;
 /* Dummy attachment needed for lock owner identification. */

@@ -809,7 +809,7 @@ static int post_event_ast(void* refresh_range_void)
 /* Since this routine will be called asynchronously, we must establish
    a thread context. */
 
-	JRD_set_thread_data;
+	JRD_set_thread_data(tdbb, thd_context);
 
 	RefreshRange* refresh_range = static_cast<RefreshRange*>(refresh_range_void);
 	tdbb->tdbb_database = refresh_range->rng_attachment->att_database;

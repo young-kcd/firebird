@@ -3553,7 +3553,7 @@ static void THREAD_ROUTINE garbage_collector(Database* dbb)
    Once we reach the end, the thread will die, thus implicitly
    killing all its contexts. */
 	thread_db thd_context, *tdbb;
-	JRD_set_thread_data;
+	JRD_set_thread_data(tdbb, thd_context);
 	tdbb->tdbb_database = dbb;
 	tdbb->tdbb_default = dbb->dbb_permanent;
 	tdbb->tdbb_status_vector = status_vector;
