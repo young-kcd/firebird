@@ -44,6 +44,7 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
+#include "../jrd/isc_f_proto.h"
 
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
@@ -86,6 +87,14 @@ void SDW_add(TEXT * file_name, USHORT shadow_number, USHORT file_flags)
 
 	tdbb = GET_THREAD_DATA;
 	dbb = GET_DBB;
+
+// Verify database file path against DatabaseAccess entry of firebird.conf
+	if (!ISC_verify_database_access(file_name)) {
+		ERR_post(gds_conf_access_denied,
+			gds_arg_string, "additional database file",
+			gds_arg_string, ERR_cstring(file_name),
+			gds_arg_end);
+	}
 
 	shadow_file = PIO_create(dbb, file_name, strlen(file_name), FALSE);
 
@@ -154,6 +163,16 @@ int SDW_add_file(TEXT * file_name, SLONG start, USHORT shadow_number)
 /* find the last file in the list, open the new file */
 
 	for (file = shadow_file; file->fil_next; file = file->fil_next);
+
+
+// Verify shadow file path against DatabaseAccess entry of firebird.conf
+	if (!ISC_verify_database_access(file_name)) {
+		ERR_post(gds_conf_access_denied,
+			gds_arg_string, "database shadow",
+			gds_arg_string, ERR_cstring(file_name),
+			gds_arg_end);
+	}
+
 	if (!(sequence = PIO_add_file(dbb, shadow_file, file_name, start)))
 		return 0;
 
@@ -967,6 +986,14 @@ void SDW_start(
 			ERR_post(gds_shadow_accessed, 0);
 	}
 
+// Verify shadow file path against DatabaseAccess entry of firebird.conf
+	if (!ISC_verify_database_access(expanded_name)) {
+		ERR_post(gds_conf_access_denied,
+			gds_arg_string, "database shadow",
+			gds_arg_string, ERR_cstring(expanded_name),
+			gds_arg_end);
+	}
+
 /* catch errors: delete the shadow file if missing,
    and deallocate the spare buffer */
 
@@ -1247,6 +1274,9 @@ static BOOLEAN check_for_file(SCHAR * name, USHORT length)
 	DBB  dbb  = tdbb->tdbb_database;
 
 	try {
+//  This use of PIO_open is NOT checked against DatabaseAccess configuration
+// parameter. It's not required, because here we only check for presence of
+// existing file, never really use (or create) it.
 		FIL temp_file = PIO_open(dbb, name, length, FALSE, 0, name, length);
 		PIO_close(temp_file);
 	}	// try

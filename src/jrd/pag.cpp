@@ -93,6 +93,7 @@
 #include "../jrd/pio_proto.h"
 #include "../jrd/thd_proto.h"
 #include "../jrd/ail.h"
+#include "../jrd/isc_f_proto.h"
 
 extern "C" {
 
@@ -368,13 +369,21 @@ USHORT PAG_add_file(TEXT * file_name, SLONG start)
 
 	for (file = dbb->dbb_file; file->fil_next; file = file->fil_next);
 
+// Verify database file path against DatabaseAccess entry of firebird.conf
+	if (!ISC_verify_database_access(file_name)) {
+		ERR_post(gds_conf_access_denied,
+			gds_arg_string, "additional database file",
+			gds_arg_string, ERR_cstring(file_name),
+			gds_arg_end);
+	}
+
 /* Create the file.  If the sequence number comes back zero, it didn't
    work, so punt */
 
 	if (!(sequence = PIO_add_file(dbb, dbb->dbb_file, file_name, start)))
 		return 0;
 
-	/* Create header page for new file */
+/* Create header page for new file */
 
 	next = file->fil_next;
 
@@ -1197,11 +1206,11 @@ void PAG_init2(USHORT shadow_number)
 	WIN window;
 	SCHAR *temp_buffer = NULL, *temp_page;
 	USHORT file_length, sequence;
-	UCHAR *p, *file_name;
+	TEXT *p, *file_name;
 	ULONG last_page;
 	struct bdb temp_bdb;
 	SLONG next_page;
-	UCHAR buf[MAXPATHLEN];
+	TEXT buf[MAXPATHLEN + 1];
 	ISC_STATUS *status;
 
 	tdbb = GET_THREAD_DATA;
@@ -1263,7 +1272,9 @@ void PAG_init2(USHORT shadow_number)
 			if ((shadow_number) && (!file->fil_min_page))
 				CCH_RELEASE(tdbb, &window);
 
-			for (p = header->hdr_data; *p != HDR_end; p += 2 + p[1])
+			for (p = reinterpret_cast <char *>(header->hdr_data); 
+				 *p != HDR_end; 
+				 p += 2 + p[1])
 				switch (*p) {
 				case HDR_file:
 					file_length = p[1];
@@ -1302,12 +1313,21 @@ void PAG_init2(USHORT shadow_number)
 		if (!file_name)
 			break;
 
+// Verify database file path against DatabaseAccess entry of firebird.conf
+		file_name[file_length] = 0;
+		if (!ISC_verify_database_access(file_name)) {
+			ERR_post(gds_conf_access_denied,
+				gds_arg_string, "additional database file",
+				gds_arg_string, ERR_cstring(file_name),
+				gds_arg_end);
+		}
+
 		file->fil_next = PIO_open(dbb,
-								  reinterpret_cast < char *>(file_name),
+								  file_name,
 								  file_length,
 								  FALSE,
 								  0,
-								  reinterpret_cast < char *>(file_name),
+								  file_name,
 								  file_length);
 		file->fil_max_page = last_page;
 		file = file->fil_next;
