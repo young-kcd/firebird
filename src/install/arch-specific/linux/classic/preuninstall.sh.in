@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: preuninstall.sh.in,v 1.1 2002-11-11 05:56:38 skywalker Exp $
+#   $Id: preuninstall.sh.in,v 1.2 2002-12-09 01:46:26 nmcc Exp $
 # 
 
 # The pre uninstall routines for Firebird Classic
@@ -58,7 +58,7 @@ checkIfServerRunning() {
 
 # Stop lock manager if it is the only thing running.
 
-    for i in `ps -ef | grep "gds_lock_mgr" | grep -v "grep" | cut -d' ' -f3`
+    for i in `ps -ef | egrep "[gds|fb]_lock_mgr" | cut -d' ' -f3`
      do
         kill $i
      done

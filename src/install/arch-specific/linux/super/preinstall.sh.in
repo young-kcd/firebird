@@ -65,7 +65,7 @@ checkIfServerRunning() {
 
 # Stop lock manager if it is the only thing running.
 
-    for i in `ps -efww | grep "gds_lock_mgr" | grep -v "grep" | awk '{print $2}' `
+    for i in `ps -efww | egrep "[gds|fb]_lock_mgr" | awk '{print $2}' `
      do
         kill $i
      done

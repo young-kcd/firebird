@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: preinstall.sh.in,v 1.1 2002-11-11 05:56:38 skywalker Exp $
+#   $Id: preinstall.sh.in,v 1.2 2002-12-09 01:46:26 nmcc Exp $
 # 
 
 
@@ -146,7 +146,7 @@ checkIfServerRunning() {
 
 # Stop lock manager if it is the only thing running.
 
-    for i in `ps -efww | grep "gds_lock_mgr" | grep -v "grep" | awk '{print $2}' `
+    for i in `ps -efww | egrep "[gds|fb]_lock_mgr" | awk '{print $2}' `
      do
         kill $i
      done
