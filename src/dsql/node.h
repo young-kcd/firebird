@@ -413,11 +413,11 @@ typedef dsql_nod* DSQL_NOD;
 #define e_select_expr   0       /* nod_select */
 #define e_select_order  1
 #define e_select_update 2
+#define e_select_lock   3
 #define e_select_count  4
 
 #define e_fpd_list      0       /* nod_for_update */
-#define e_fpd_lock      1
-#define e_fpd_count     2
+#define e_fpd_count     1
 
 #define e_sav_name      0       /* nod_user_savepoint, nod_undo_savepoint */
 #define e_sav_count     1
