@@ -1,3 +1,40 @@
+2004-12-12 03:03  robocop
+
+	* firebird2/src/dsql/utld.cpp (1.33):
+	
+	Misc.
+
+2004-12-12 03:01  robocop
+
+	* firebird2/src/isql/isql.epp (1.121):
+	
+	Restore output if copy_table fails.
+
+2004-12-12 02:58  robocop
+
+	* firebird2/src/dsql/utld.cpp (1.32):
+	
+	Put some variables in context.
+
+2004-12-12 02:57  robocop
+
+	* firebird2/src/dsql/preparse.cpp (1.36):
+	
+	Restore checks for length. We don't need tokens bigger than 1KB.
+
+2004-12-12 02:55  robocop
+
+	* firebird2/src/include/fb_exception.h (1.16):
+	
+	Change the license with Mike's permission.
+
+2004-12-12 02:55  robocop
+
+	* firebird2/src/common/classes/: ClumpletWriter.cpp (1.8),
+	ClumpletWriter.h (1.7):
+	
+	Misc.
+
 2004-12-11 01:08  robocop
 
 	* firebird2/src/dsql/preparse.cpp (1.35):
