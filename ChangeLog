@@ -1,3 +1,94 @@
+2004-11-28 02:00  robocop
+
+	* firebird2/: builds/posix/firebird.vers (1.6),
+	builds/win32/defs/fbclient.def (1.12), builds/win32/defs/gds32.def
+	(1.10), src/alice/alice.cpp (1.75), src/burp/burp.cpp (1.92),
+	src/isql/isql.epp (1.113), src/jrd/gds.cpp (1.164),
+	src/jrd/gds_proto.h (1.39), src/jrd/ibase.h (1.97),
+	src/jrd/os/vms/dfloat_stub.cpp (1.11), src/remote/server.cpp
+	(1.105), src/remote/os/win32/ibconfig.cpp (1.13),
+	src/utilities/gsec/gsec.cpp (1.42), src/utilities/gstat/dba.epp
+	(1.51):
+	
+	isc_interpret is fb_interpret again.  Please do a full rebuild.
+
+2004-11-27 22:19  dimitr
+
+	* firebird2/src/dsql/pass1.cpp (1.177):
+	
+	Fixed bug introduced some time ago by myself.
+
+2004-11-27 21:54  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.205):
+	
+	Improved optimization of mixed AND/OR predicates.
+
+2004-11-27 09:13  robocop
+
+	* firebird2/src/common/classes/ClumpletWriter.cpp (1.5):
+	
+	Corrections.
+
+2004-11-27 07:57  robocop
+
+	* firebird2/src/jrd/scl.epp (1.66):
+	
+	Handle possible buffer overrun.  Constant for non-specified role.
+
+2004-11-27 07:54  robocop
+
+	* firebird2/src/jrd/: constants.h (1.20), dyn.epp (1.71),
+	dyn_def.epp (1.86):
+	
+	Constant for non-specified role.
+
+2004-11-27 07:51  robocop
+
+	* firebird2/src/jrd/: jrd.cpp (1.196), functions.cpp (1.22):
+	
+	Misc.
+
+2004-11-27 06:45  robocop
+
+	* firebird2/src/remote/server.cpp (1.104):
+	
+	Comment no longer applies.
+
+2004-11-27 06:44  robocop
+
+	* firebird2/src/jrd/: functions.cpp (1.21), functions.h (1.5),
+	ini.epp (1.64):
+	
+	Leave room to register the example UDF's with the new macros.
+
+2004-11-27 04:33  robocop
+
+	* firebird2/src/remote/: inet_server.cpp (1.47),
+	os/win32/srvr_w32.cpp (1.25):
+	
+	It seems to me those debugging reports are better read as text
+	files.
+
+2004-11-27 04:31  robocop
+
+	* firebird2/src/common/classes/stack.h (1.16):
+	
+	Extra assertion and acknowledge "elem" is size_t.
+
+2004-11-27 04:30  robocop
+
+	* firebird2/src/common/classes/objects_array.h (1.14):
+	
+	Formatting and a couple of assertions.
+
+2004-11-27 04:30  robocop
+
+	* firebird2/src/common/classes/: ClumpletReader.h (1.7), fb_pair.h
+	(1.13):
+	
+	const.
+
 2004-11-27 01:52  arnobrinkman
 
 	* firebird2/src/jrd/opt.cpp (1.204):
