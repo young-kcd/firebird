@@ -1,3 +1,53 @@
+2004-11-09 15:35  paul_reeves
+
+	*
+	
+	Add Win32 Installation readme in Hungarian
+	firebird2/src/install/arch-specific/win32/hu/installation_readme_hu
+	.txt (1.1.2.1):
+
+2004-11-09 15:35  paul_reeves
+
+	*
+	
+	file installation_readme_hu.txt was initially added on branch
+	B1_5_Release.
+	firebird2/src/install/arch-specific/win32/hu/installation_readme_hu
+	.txt (1.1):
+
+2004-11-09 15:24  paul_reeves
+
+	*
+	firebird2/src/install/arch-specific/win32/hu/custom_messages_hu.inc
+	(1.1.2.2):
+	
+	Update Win32 Install custom messages in Hungarian
+
+2004-11-09 15:23  paul_reeves
+
+	* firebird2/src/install/arch-specific/win32/pt/:
+	custom_messages_pt.inc (1.1.2.2), instalação_leia-me.txt (1.1.2.1):
+	
+	add Win32 installation readme in Portuguese
+
+2004-11-09 15:23  paul_reeves
+
+	*
+	firebird2/src/install/arch-specific/win32/pt/instalação_leia-me.txt
+	(1.1):
+	
+	file instalação_leia-me.txt was initially added on branch
+	B1_5_Release.
+
+2004-11-09 08:07  paul_reeves
+
+	* firebird2/src/: jrd/isc_version.h (1.1.2.23), misc/src_bundle.sh
+	(1.2.2.3), install/arch-specific/win32/BuildExecutableInstall.bat
+	(1.10.2.16), install/arch-specific/win32/FirebirdInstall_15.iss
+	(1.5.2.19):
+	
+	Update Build Number for 1.5.2 RC2
+
 2004-11-08 18:06  skidder
 
 	* firebird2/doc/WhatsNew (1.36.2.34):
