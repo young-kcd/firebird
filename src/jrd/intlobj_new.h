@@ -246,7 +246,7 @@ struct charset
 	BYTE charset_space_length;       /* Length of space character in bytes */
 	const BYTE* charset_space_character; /* Space character, may be used for string padding */
 
-	/* Conversions to and from UTF-32 intermediate encodings. BOM marker should not be used.
+	/* Conversions to and from UTF-16 intermediate encodings. BOM marker should not be used.
       Endianness of transient encoding is the native endianness for the platform */
 	csconvert		charset_to_unicode;
 	csconvert		charset_from_unicode;
