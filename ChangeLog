@@ -1,3 +1,28 @@
+2003-09-20 16:52  brodsom
+
+	* firebird2/src/wal/wal_prnt.cpp:
+	
+	Prevent unused warning, if the file is compiled. (Thanks to
+	Claudio)
+
+2003-09-20 03:44  brodsom
+
+	* firebird2/doc/README.build.mingw.html:
+	
+	MinGW readme update
+
+2003-09-20 02:58  brodsom
+
+	* firebird2/doc/README.build.mingw.html:
+	
+	Update MinGW instructions
+
+2003-09-20 02:18  brodsom
+
+	* firebird2/doc/README.build.mingw.html:
+	
+	Update MinGW instructions
+
 2003-09-19 15:56  dimitr
 
 	* firebird2/src/jrd/ini.epp:
