@@ -275,7 +275,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(
 		comm->ips_buffers[commi].ips_flags = 0;
 	comm->ips_operation = op_attach;
 	ips = &comm->ips_operations.ips_op_object;
-	char temp[MAXPATHLEN];
+	Firebird::PathName temp;
 	if (ResolveDatabaseAlias(file_name, temp)) {
 		IPS_C_IN(comm, ips_name, IPS_ATTACH_NAME, file_name, l);
 	}
@@ -841,7 +841,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	GET_OBJECT(icc);
 	comm->ips_operation = op_create;
 	ips = &comm->ips_operations.ips_op_object;
-	char temp[MAXPATHLEN];
+	Firebird::PathName temp;
 	if (ResolveDatabaseAlias(file_name, temp)) {
 		IPS_C_IN(comm, ips_name, IPS_CREATE_NAME, file_name, l);
 	}

@@ -22,5 +22,8 @@
 
 #ifndef DB_ALIAS_H
 #define DB_ALIAS_H
+
+#include "fb_string.h"
+
 bool ResolveDatabaseAlias(const Firebird::PathName& alias, Firebird::PathName& database);
 #endif
