@@ -41,7 +41,7 @@ int		THD_wlck_init(struct wlck_t*);
 int		THD_wlck_lock(struct wlck_t*, USHORT);
 int		THD_wlck_unlock(struct wlck_t*);
 
-long	THD_get_thread_id(void);
+FB_THREAD_ID THD_get_thread_id(void);
 void	THD_getspecific_data(void** t_data);
 
 int		THD_mutex_init(struct mutx_t*);

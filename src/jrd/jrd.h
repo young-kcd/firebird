@@ -92,6 +92,7 @@
 class str;
 class CharSetContainer;
 struct dsc;
+struct thread;
 struct mod;
 
 namespace Jrd {
@@ -858,7 +859,7 @@ class BlockingThread : public pool_alloc<type_btb>
 {
     public:
 	BlockingThread* btb_next;
-	SLONG btb_thread_id;
+	thread* btb_thread_id;
 };
 
 /* Lock levels */

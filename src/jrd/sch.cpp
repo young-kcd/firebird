@@ -54,7 +54,7 @@ typedef struct thread {
 	struct thread *thread_next;	/* Next thread to be scheduled */
 	struct thread *thread_prior;	/* Prior thread */
 	event_t thread_stall[1];	/* Generic event to stall thread */
-	SLONG thread_id;			/* Current thread id */
+	FB_THREAD_ID thread_id;			/* Current thread id */
 	USHORT thread_count;		/* AST disable count */
 	USHORT thread_flags;		/* Flags */
 } *THREAD;
@@ -219,7 +219,7 @@ void SCH_abort(void)
 
 /* See if we can find thread.  If not, don't worry about it */
 
-	const SLONG id = THD_get_thread_id();
+	const FB_THREAD_ID id = THD_get_thread_id();
 	THREAD thread;
 	for (THREAD* ptr = &active_thread; thread = *ptr; ptr = &thread->thread_next) {
 		if (thread->thread_id == id)

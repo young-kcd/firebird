@@ -36,7 +36,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.9 2004-03-08 18:06:20 skidder Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.10 2004-04-20 05:57:31 skidder Exp $ */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -522,8 +522,6 @@ static SIG que_signal(
  *	Que signal for later action.
  *
  **************************************/
-	IPTR thread_id = 0;
-
 	SIG sig = (SIG) gds__alloc((SLONG) sizeof(struct sig));
 /* FREE: unknown */
 	if (!sig) {					/* NOMEM: */

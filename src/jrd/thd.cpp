@@ -112,7 +112,7 @@ int API_ROUTINE gds__thread_start(
 }
 
 
-long THD_get_thread_id(void)
+FB_THREAD_ID THD_get_thread_id(void)
 {
 /**************************************
  *
@@ -124,7 +124,7 @@ long THD_get_thread_id(void)
  *	Get platform's notion of a thread ID.
  *
  **************************************/
-	long id = 1;
+	FB_THREAD_ID id = 1;
 #ifdef WIN_NT
 	id = GetCurrentThreadId();
 #endif
@@ -137,11 +137,11 @@ long THD_get_thread_id(void)
 */
 #ifdef HP10
 
-	id = (long) (pthread_self().field1);
+	id = (FB_THREAD_ID) (pthread_self().field1);
 
 #else
 
-	id = (long) pthread_self();
+	id = (FB_THREAD_ID) pthread_self();
 
 #endif /* HP10 */
 #endif /* POSIX_THREADS */
@@ -1362,7 +1362,7 @@ int THD_rec_mutex_lock(REC_MUTX_T * rec_mutex)
  **************************************/
 	int ret;
 
-	if (rec_mutex->rec_mutx_id == (ULONG) THD_get_thread_id())
+	if (rec_mutex->rec_mutx_id == THD_get_thread_id())
 		rec_mutex->rec_mutx_count++;
 	else {
 		if (ret = THD_mutex_lock(rec_mutex->rec_mutx_mtx))
@@ -1386,7 +1386,7 @@ int THD_rec_mutex_unlock(REC_MUTX_T * rec_mutex)
  *
  **************************************/
 
-	if (rec_mutex->rec_mutx_id != (ULONG) THD_get_thread_id())
+	if (rec_mutex->rec_mutx_id != THD_get_thread_id())
 		return FB_FAILURE;
 
 	rec_mutex->rec_mutx_count--;

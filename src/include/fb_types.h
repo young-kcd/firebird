@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.42 2004-03-30 08:33:56 robocop Exp $
+ *  $Id: fb_types.h,v 1.43 2004-04-20 05:57:21 skidder Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -154,6 +154,8 @@ typedef USHORT FLD_LENGTH;
 vmslock.cpp:LOCK_convert() calls VMS' sys$enq that may require this signature,
 but our code never uses the return value. */
 typedef int (*lock_ast_t)(void*);
+
+typedef IPTR FB_THREAD_ID;
 
 #define ISC_STATUS_LENGTH	20
 typedef ISC_STATUS ISC_STATUS_ARRAY[ISC_STATUS_LENGTH];
