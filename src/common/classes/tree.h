@@ -222,7 +222,7 @@ private:
 	BePlusTree(Allocator *_pool, void *rootPage) : 	pool(_pool), level(0), 
 		curr(new(rootPage) ItemList()), root(rootPage),	curPos(0)/*, count(0)*/  {};
 		
-	class NodeList ;
+	class NodeList;
 		
     class ItemList : public SortedVector<Value,LeafCount,Key,KeyOfValue,Cmp> {
 	public:
@@ -237,8 +237,11 @@ private:
 		}
 		// Create first item in the linked list
 		ItemList() : parent(NULL), next(NULL), prev(NULL) {};
-                friend class BePlusTree;
-                friend class BePlusTree::NodeList;
+
+		friend class BePlusTree;
+#ifndef _MSC_VER
+		friend class BePlusTree::NodeList;
+#endif
 	};
 	
     class NodeList : public SortedVector<void*,NodeCount,Key,NodeList,Cmp> {
@@ -286,7 +289,7 @@ private:
 	void _removePage(int level, void *node);
 	
 	friend class MemoryPool;
-        friend class NodeList;
+	friend class NodeList;
 };
 
 /************************ BePlusTree implementation ******************/
