@@ -19,7 +19,6 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.129 2004-11-28 08:25:09 robocop Exp $ 
  */
 
 /*
