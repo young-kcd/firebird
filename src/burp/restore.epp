@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.79 2004-06-29 04:37:36 robocop Exp $
+$Id: restore.epp,v 1.80 2004-07-03 00:13:46 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -164,7 +164,7 @@ const SSHORT old_sparcs[] =
 #endif
 
 //MVOL_read returns int
-static inline int get(tgbl* tdgbl)
+static inline int get(BurpGlobals* tdgbl)
 {
 	if (--(tdgbl->io_cnt) >= 0)
 		return *(tdgbl->io_ptr)++;
@@ -172,13 +172,13 @@ static inline int get(tgbl* tdgbl)
 		return MVOL_read(&tdgbl->io_cnt, &tdgbl->io_ptr);
 }
 
-static inline ATT_TYPE get_attribute(ATT_TYPE *att, TGBL tdgbl)
+static inline ATT_TYPE get_attribute(ATT_TYPE *att, BurpGlobals* tdgbl)
 {
 	*att = (ATT_TYPE) get(tdgbl);
 	return *att;
 }
 
-static inline rec_type get_record(rec_type *rec, TGBL tdgbl)
+static inline rec_type get_record(rec_type *rec, BurpGlobals* tdgbl)
 {
 	*rec = (rec_type) get(tdgbl);
 	return *rec;
@@ -186,12 +186,12 @@ static inline rec_type get_record(rec_type *rec, TGBL tdgbl)
 
 #define GET_TEXT(text)	get_text((text), sizeof(text))
 
-static inline void get_skip(tgbl* tdgbl, ULONG n)
+static inline void get_skip(BurpGlobals* tdgbl, ULONG n)
 {
 	MVOL_skip_block(tdgbl, n);
 }
 
-static inline UCHAR* get_block(tgbl* tdgbl, UCHAR* p, ULONG n)
+static inline UCHAR* get_block(BurpGlobals* tdgbl, UCHAR* p, ULONG n)
 {
 	return MVOL_read_block(tdgbl, p, n);
 }
@@ -246,7 +246,7 @@ int RESTORE_restore (const TEXT* file_name,
 	isc_req_handle	req_handle4 = 0;
 	BASED_ON RDB$INDICES.RDB$INDEX_NAME index_name;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	tdgbl->io_ptr = NULL;
 	tdgbl->io_cnt = 0;
@@ -664,7 +664,7 @@ void add_files (const UCHAR* file_name)
  **************************************/
 	isc_req_handle  req_handle1 = 0;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	// store the RDB$FILES records 
 
@@ -740,7 +740,7 @@ void bad_attribute (scan_attr_t		scan_next_attr,
  *	look for next valid attribute to continue the process.
  *
  **************************************/
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	SLONG skip_count = 0;
 
@@ -788,7 +788,7 @@ USHORT check_db_version()
  **************************************/
 	isc_req_handle  req_handle1 = 0, req_handle2 = 0;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	USHORT db_version = DB_VERSION_DDL4;
 	FOR (REQUEST_HANDLE req_handle1)
@@ -827,7 +827,7 @@ void create_database (const TEXT* file_name)
  *	things to do.
  *
  **************************************/
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	// Get (physical) database record 
 
@@ -1046,7 +1046,7 @@ void decompress(UCHAR* buffer,
  *	Get a number of compressed bytes.
  *
  **************************************/
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	UCHAR* p = buffer;
 	const UCHAR* const end = p + length;
@@ -1102,7 +1102,7 @@ void eat_blob()
  *	Discard a blob from backup file
  *
  **************************************/
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	const SLONG length = get_numeric();
 
@@ -1122,7 +1122,7 @@ burp_rel* find_relation (const TEXT* name)
  *	one, produce a fatal error.
  *
  **************************************/
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	// Why isn't strcmp used here?
 	for (burp_rel* relation = tdgbl->relations; relation;
@@ -1152,7 +1152,7 @@ void general_on_error()
  *	Handle any general ON_ERROR clause during restore.
  *
  **************************************/
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	BURP_print_status (isc_status);
 	BURP_abort ();
@@ -1183,7 +1183,7 @@ bool get_acl (const TEXT	*owner_nm,
 					 isc_info_blob_total_length,
 					 isc_info_blob_num_segments};
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	// If the blob is null, don't store it.  It will be restored as null. 
 
@@ -1385,7 +1385,7 @@ void get_array (burp_rel*	relation,
 	UCHAR		blr_buffer[200]; // enough for a sdl with 16 dimensions
 	lstring		xdr_slice;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	// don't free something you don't allocate 
 	lstring xdr_buffer;
@@ -1881,7 +1881,7 @@ void get_blob (const burp_fld* fields,
  *	shiny, new blob.
  *
  **************************************/
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	// Pick up attributes 
 
@@ -1998,7 +1998,7 @@ void get_blr_blob (ISC_QUAD	*blob_id,
 	ISC_STATUS_ARRAY	status_vector;
 	UCHAR		*buffer, static_buffer[1024], *p;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	ULONG length = (ULONG)get_numeric();
 
@@ -2068,7 +2068,7 @@ bool get_character_set()
 	ATT_TYPE		attribute;
 	scan_attr_t		scan_next_attr;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	STORE (REQUEST_HANDLE tdgbl->handles_get_character_sets_req_handle1)
 		X IN RDB$CHARACTER_SETS
@@ -2164,7 +2164,7 @@ bool get_chk_constraint()
 	ATT_TYPE		attribute;
 	scan_attr_t		scan_next_attr;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	STORE (REQUEST_HANDLE tdgbl->handles_get_chk_constraint_req_handle1)
 		X IN RDB$CHECK_CONSTRAINTS
@@ -2214,7 +2214,7 @@ bool get_collation()
 	ATT_TYPE		attribute;
 	scan_attr_t		scan_next_attr;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	STORE (REQUEST_HANDLE tdgbl->handles_get_collation_req_handle1)
 		X IN RDB$COLLATIONS
@@ -2303,7 +2303,7 @@ rec_type get_data (burp_rel*	relation)
 	isc_req_handle  req_handle = 0;
 	BASED_ON RDB$INDICES.RDB$INDEX_NAME index_name;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	// If we're only doing meta-data, ignore data records 
 
@@ -2718,7 +2718,7 @@ bool get_exception(void)
 	ULONG		l;
 	scan_attr_t		scan_next_attr;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	STORE (REQUEST_HANDLE tdgbl->handles_get_exception_req_handle1)
 		X IN RDB$EXCEPTIONS
@@ -2781,7 +2781,7 @@ burp_fld* get_field (burp_rel*	relation)
 	ATT_TYPE		attribute;
 	scan_attr_t		scan_next_attr;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	// If it is a view and there is a global transaction then use it
 	bool global_tr = false;
@@ -3003,7 +3003,7 @@ bool get_field_dimensions()
 	ATT_TYPE		attribute;
 	scan_attr_t		scan_next_attr;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	STORE (REQUEST_HANDLE tdgbl->handles_get_field_dimensions_req_handle1)
 		X IN RDB$FIELD_DIMENSIONS
@@ -3058,7 +3058,7 @@ bool get_files()
 	ATT_TYPE		attribute;
 	scan_attr_t		scan_next_attr;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	STORE (REQUEST_HANDLE tdgbl->handles_get_files_req_handle1)
 		X IN RDB$FILES
@@ -3126,7 +3126,7 @@ bool get_filter()
 	ATT_TYPE		attribute;
 	scan_attr_t		scan_next_attr;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	STORE (REQUEST_HANDLE tdgbl->handles_get_filter_req_handle1)
 		X IN RDB$FILTERS
@@ -3200,7 +3200,7 @@ bool get_function()
 	SSHORT		l;
 	scan_attr_t	scan_next_attr;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	STORE (REQUEST_HANDLE tdgbl->handles_get_function_req_handle1)
 		X IN RDB$FUNCTIONS
@@ -3280,7 +3280,7 @@ void get_function_arg()
 	TEXT		temp[GDS_NAME_LEN];
 	scan_attr_t		scan_next_attr;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	if (tdgbl->RESTORE_format >= 6)
 	{
@@ -3432,7 +3432,7 @@ bool get_generator()
 	name[0] = 0; // just in case.
 	ATT_TYPE	attribute;
 	scan_attr_t		scan_next_attr;
-	TGBL	    tdgbl = BURP_get_thread_data();
+	BurpGlobals*	    tdgbl = BurpGlobals::getSpecific();
 
 	skip_init(&scan_next_attr);
 	while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
@@ -3482,7 +3482,7 @@ bool get_global_field()
 	SSHORT		l;
 	scan_attr_t		scan_next_attr;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	GFLD gfield = NULL;
 
@@ -4073,7 +4073,7 @@ bool get_index (const burp_rel* relation)
 	bool		foreign_index = false;
 	scan_attr_t		scan_next_attr;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	SSHORT count = 0, segments = 0;
 
@@ -4232,7 +4232,7 @@ void get_misc_blob (ISC_QUAD	*blob_id,
  **************************************/
 	ISC_STATUS_ARRAY	status_vector;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	const USHORT length = (USHORT)get_numeric();
 
@@ -4350,7 +4350,7 @@ bool get_procedure()
 	SSHORT		l;
 	scan_attr_t		scan_next_attr;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	isc_tr_handle local_trans =
 		tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
@@ -4465,7 +4465,7 @@ bool get_procedure_prm (GDS_NAME	procptr)
 	TEXT		temp[GDS_NAME_LEN];
 	scan_attr_t		scan_next_attr;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	isc_tr_handle local_trans =
 		tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
@@ -4538,7 +4538,7 @@ bool get_ref_constraint()
 	ATT_TYPE        attribute;
 	scan_attr_t		scan_next_attr;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	STORE (REQUEST_HANDLE tdgbl->handles_get_ref_constraint_req_handle1)
 		X IN RDB$REF_CONSTRAINTS
@@ -4631,7 +4631,7 @@ bool get_relation()
 	ext_file_name[0] = '\0';
 	bool		ext_file_name_null = true;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	// Pick up relation attributes 
 
@@ -4855,7 +4855,7 @@ bool get_rel_constraint()
 	ATT_TYPE		attribute;
 	scan_attr_t		scan_next_attr;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	STORE (REQUEST_HANDLE tdgbl->handles_get_rel_constraint_req_handle1)
 		X IN RDB$RELATION_CONSTRAINTS
@@ -4932,7 +4932,7 @@ bool get_relation_data()
 	ATT_TYPE	attribute;
 	scan_attr_t		scan_next_attr;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	burp_rel* relation = NULL;
 
@@ -5018,7 +5018,7 @@ bool get_sql_roles()
 	TEXT            temp[GDS_NAME_LEN];
 	SSHORT          l;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	STORE (REQUEST_HANDLE tdgbl->handles_get_sql_roles_req_handle1)
 		X IN RDB$ROLES
@@ -5108,7 +5108,7 @@ bool get_security_class()
 	scan_attr_t		scan_next_attr;
 	bool		is_valid_sec_class = false;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	STORE (REQUEST_HANDLE tdgbl->handles_get_security_class_req_handle1)
 		X IN RDB$SECURITY_CLASSES
@@ -5193,7 +5193,7 @@ void get_source_blob (
  **************************************/
 	ISC_STATUS_ARRAY	status_vector;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	SLONG length = get_numeric();
 
@@ -5259,7 +5259,7 @@ USHORT get_text (
  *	Move a text attribute to a string and fill.
  *
  **************************************/
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	const ULONG l = get(tdgbl);
 
@@ -5293,7 +5293,7 @@ bool get_trigger_old (
 	TEXT		name[GDS_NAME_LEN];
 	scan_attr_t		scan_next_attr;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	STORE (REQUEST_HANDLE tdgbl->handles_get_trigger_old_req_handle1)
 		X IN RDB$TRIGGERS
@@ -5413,7 +5413,7 @@ bool get_trigger()
 	BASED_ON RDB$TRIGGERS.RDB$TRIGGER_NAME name;
 	scan_attr_t		scan_next_attr;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	isc_tr_handle local_trans =
 		tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
@@ -5540,7 +5540,7 @@ bool get_trigger_message()
 	BASED_ON RDB$TRIGGER_MESSAGES.RDB$MESSAGE_NUMBER	number;
 	BASED_ON RDB$TRIGGER_MESSAGES.RDB$MESSAGE		message;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	bool flag = false;
 	skip_init(&scan_next_attr);
@@ -5633,7 +5633,7 @@ bool get_type()
 	TEXT		temp[GDS_NAME_LEN];
 	scan_attr_t		scan_next_attr;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	STORE (REQUEST_HANDLE tdgbl->handles_get_type_req_handle1)
 		X IN RDB$TYPES
@@ -5716,7 +5716,7 @@ bool get_user_privilege()
 	BASED_ON RDB$USER_PRIVILEGES.RDB$USER_TYPE	user_type;
 	BASED_ON RDB$USER_PRIVILEGES.RDB$OBJECT_TYPE	object_type;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 	user_type = obj_user;
 	object_type = obj_relation;
 
@@ -5908,7 +5908,7 @@ bool get_view (burp_rel*		relation)
 	ATT_TYPE	attribute;
 	scan_attr_t		scan_next_attr;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	// If there is a global transaction then use it 
 
@@ -5969,7 +5969,7 @@ void ignore_array (burp_rel*		relation)
 	USHORT		field_number;
 	scan_attr_t		scan_next_attr;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	// Pick up attributes
 
@@ -6057,7 +6057,7 @@ void ignore_blob()
 	ATT_TYPE	attribute;
 	scan_attr_t		scan_next_attr;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	// Pick up attributes 
 
@@ -6114,7 +6114,7 @@ rec_type ignore_data (burp_rel*		relation)
  *	Ignore data records for a relation.
  *
  **************************************/
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	ULONG records = 0;
 	rec_type record;
@@ -6183,7 +6183,7 @@ void realign(UCHAR* buffer,
  *	than the new.
  *
  **************************************/
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	for (const burp_fld* field = relation->rel_fields; field; field = field->fld_next)
 	{
@@ -6244,7 +6244,7 @@ USHORT recompute_length (burp_rel* relation)
 	ULONG	offset = 0; // there was garbage, possibly nobody uses sparc define?
 	const SSHORT* alignments = old_sparcs;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	for (burp_fld* field = relation->rel_fields; field; field = field->fld_next)
 	{
@@ -6310,7 +6310,7 @@ bool restore (const TEXT* file_name,
 	isc_req_handle  req_handle1 = 0, req_handle2 = 0, req_handle3 = 0,
 					req_handle5 = 0;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	// Read burp record first 
 
@@ -6640,7 +6640,7 @@ void restore_security_class (const TEXT	*owner_nm,
  **************************************/
 	isc_req_handle  req_handle2 = 0;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 	isc_tr_handle local_trans = gds_trans;
 
 	FOR (REQUEST_HANDLE req_handle2)
@@ -6694,7 +6694,7 @@ USHORT get_view_base_relation_count (const TEXT* current_view_name,
 
 	isc_req_handle  req_handle1 = 0;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	USHORT result = 0;
 
@@ -6739,7 +6739,7 @@ void store_blr_gen_id (const TEXT*	gen_name,	// TEXT GDS_NAME[GDS_NAME_LEN]
  *	Store the blr_gen_id for the relation.
  *
  **************************************/
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	STORE (REQUEST_HANDLE tdgbl->handles_store_blr_gen_id_req_handle1)
 		X IN RDB$GENERATORS
@@ -6855,7 +6855,7 @@ void update_global_field()
 	USHORT		length;
 	isc_req_handle  req_handle1 = 0;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	for (gfld* gfield = tdgbl->gbl_global_fields; gfield; )
 	{
@@ -6942,7 +6942,7 @@ void update_view_dbkey_lengths()
  **************************************/
 	isc_req_handle  req_handle2 = 0;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	FOR (REQUEST_HANDLE req_handle2)
 		R IN RDB$RELATIONS 

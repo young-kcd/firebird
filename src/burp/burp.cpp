@@ -125,7 +125,7 @@ static ULONG get_size(const SCHAR*, burp_fil*);
 static gbak_action open_files(const TEXT *, const TEXT**, bool, USHORT);
 static int common_main(int, char**, Jrd::pfn_svc_output, Jrd::Service*);
 #ifndef SUPERSERVER
-tgbl *gdgbl;
+BurpGlobals *gdgbl;
 static int output_main(Jrd::Service*, const UCHAR*);
 static int api_gbak(int, char**, USHORT, TEXT*, TEXT*, TEXT *, bool, bool);
 #endif
@@ -360,10 +360,10 @@ static int api_gbak(int argc,
  *	Run gbak using services APIs
  *
  **********************************************/
-	tgbl ldgbl;
-	tgbl* tdgbl = &ldgbl;
-	BURP_set_thread_data(tdgbl);
-	memset((void *) tdgbl, 0, sizeof(tgbl));
+	BurpGlobals ldgbl;
+	BurpGlobals* tdgbl = &ldgbl;
+	BurpGlobals::setSpecific(tdgbl);
+	memset((void *) tdgbl, 0, sizeof(BurpGlobals));
 	tdgbl->output_proc = output_main;
 
     const TEXT* usr;
@@ -577,11 +577,11 @@ int common_main(int		argc,
   	JMP_BUF					env;
 
 // TMN: This variable should probably be removed, but I left it in 
-// in case some platform should redefine the BURP BURP_set_thread_data. 
-//tgbl	thd_context;
+// in case some platform should redefine the BURP BurpGlobals::setSpecific. 
+//BurpGlobals	thd_context;
 
 	gbak_action action = QUIT;
-	tgbl *tdgbl = (tgbl*) gds__alloc(sizeof(tgbl));
+	BurpGlobals *tdgbl = (BurpGlobals*) gds__alloc(sizeof(BurpGlobals));
 // NOMEM: return error, FREE: during function exit in the SETJMP 
 	if (tdgbl == NULL)
 	{
@@ -590,9 +590,9 @@ int common_main(int		argc,
 		return FINI_ERROR;
 	}
 
-	BURP_set_thread_data(tdgbl);
+	BurpGlobals::setSpecific(tdgbl);
 	SVC_PUTSPECIFIC_DATA;
-	memset((void *) tdgbl, 0, sizeof(tgbl));
+	memset((void *) tdgbl, 0, sizeof(BurpGlobals));
 	tdgbl->burp_env = reinterpret_cast<UCHAR*>(env);
 	tdgbl->file_desc = INVALID_HANDLE_VALUE;
 	tdgbl->output_proc = output_proc;
@@ -1204,7 +1204,7 @@ int common_main(int		argc,
 			gds__free(mem);
 		}
 
-		BURP_restore_thread_data();
+		BurpGlobals::restoreSpecific();
 		if (tdgbl != NULL) {
 			gds__free(tdgbl);
 		}
@@ -1232,7 +1232,7 @@ void BURP_abort(void)
  *	Abandon a failed operation.
  *
  **************************************/
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	BURP_print(83, 0, 0, 0, 0, 0);
 	// msg 83 Exiting before completion due to errors 
@@ -1264,7 +1264,7 @@ void BURP_error(USHORT errcode, bool abort,
  *
  **************************************/
 #ifdef SUPERSERVER
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	ISC_STATUS *status = tdgbl->service_blk->svc_status;
 
@@ -1326,7 +1326,7 @@ void BURP_error_redirect(const ISC_STATUS* status_vector,
 
 
 // Raises an exception when the old SEH system would jump to another place.
-void BURP_exit_local(int code, TGBL tdgbl)
+void BURP_exit_local(int code, BurpGlobals* tdgbl)
 {
 	tdgbl->exit_code = code;
 	if (tdgbl->burp_env != NULL)
@@ -1484,7 +1484,7 @@ void BURP_print_status(const ISC_STATUS* status_vector)
 	if (status_vector) {
 		const ISC_STATUS* vector = status_vector;
 #ifdef SUPERSERVER
-		TGBL tdgbl = BURP_get_thread_data();
+		BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 		ISC_STATUS* status = tdgbl->service_blk->svc_status;
 		if (status != status_vector) {
 		    int i = 0;
@@ -1563,7 +1563,7 @@ void BURP_verbose(USHORT number,
  *	user defined yieding function.
  *
  **************************************/
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	if (tdgbl->gbl_sw_verbose)
 		BURP_print(number, arg1, arg2, arg3, arg4, arg5);
@@ -1663,7 +1663,7 @@ static gbak_action open_files(const TEXT* file1,
  *	and db handle.
  *
  **************************************/
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 	ISC_STATUS* status_vector = tdgbl->status;
 
 // try to attach the database using the first file_name 
@@ -2062,7 +2062,7 @@ static void burp_output( const SCHAR* format, ...)
 	UCHAR buf[1000];
 	int exit_code;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	if (tdgbl->sw_redirect == NOOUTPUT || format[0] == '\0') {
 		exit_code =

@@ -761,8 +761,12 @@ static const char* HDR_SPLIT_TAG	= HDR_SPLIT_TAG6;
 const unsigned int MIN_SPLIT_SIZE	= 2048;	// bytes 
 
 // Global switches and data 
+#ifndef SUPERSERVER
+class BurpGlobals;
+extern BurpGlobals* gdgbl;
+#endif
 
-class tgbl : public thdd
+class BurpGlobals : public thdd
 {
 public:
 	const TEXT*	gbl_database_file_name;
@@ -888,38 +892,33 @@ public:
 	isc_req_handle	handles_write_procedure_prms_req_handle1;
 	USHORT			hdr_forced_writes;
 	TEXT			database_security_class[GDS_NAME_LEN]; // To save database security class for deferred update 
+#ifdef SUPERSERVER
+	static inline BurpGlobals* getSpecific() {
+		return (BurpGlobals*) thdd::getSpecific();
+	}
+	static inline void setSpecific(BurpGlobals* tdgbl) {
+		tdgbl->thdd_type = THDD_TYPE_TGBL;
+		tdgbl->putSpecific();
+	}
+	static inline void restoreSpecific() {
+		thdd::restoreSpecific();
+	}
+#else
+	static inline BurpGlobals* getSpecific() {
+		return gdgbl;
+	}
+	static inline void setSpecific(BurpGlobals* tdgbl) {
+		gdgbl = tdgbl;
+		tdgbl->thdd_type = THDD_TYPE_TGBL;
+	}
+	static inline void restoreSpecific() {
+	}
+#endif
 };
-
-typedef tgbl* TGBL;
 
 // CVC: This aux routine declared here to not force inclusion of burp.h with burp_proto.h
 // in other modules.
-void	BURP_exit_local(int code, tgbl* tdgbl);
-
-#ifdef SUPERSERVER
-inline tgbl* BURP_get_thread_data() {
-	return (tgbl*) thdd::getSpecific();
-}
-inline void BURP_set_thread_data(tgbl* tdgbl) {
-	tdgbl->thdd_type = THDD_TYPE_TGBL;
-	tdgbl->putSpecific();
-}
-inline void BURP_restore_thread_data() {
-	thdd::restoreSpecific();
-}
-#else
-extern tgbl* gdgbl;
-
-inline tgbl* BURP_get_thread_data() {
-	return gdgbl;
-}
-inline void BURP_set_thread_data(tgbl* tdgbl) {
-	gdgbl = tdgbl;
-	tdgbl->thdd_type = THDD_TYPE_TGBL;
-}
-inline void BURP_restore_thread_data() {
-}
-#endif
+void	BURP_exit_local(int code, BurpGlobals* tdgbl);
 
 const int FINI_DB_NOT_ONLINE		= 2;	/* database is not on-line due to
 											failure to activate one or more

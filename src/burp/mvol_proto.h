@@ -35,10 +35,10 @@ void			MVOL_init_write(const UCHAR*, const UCHAR*, int*, UCHAR**);
 bool			MVOL_split_hdr_write();
 bool			MVOL_split_hdr_read();
 int				MVOL_read(int*, UCHAR**);
-UCHAR*			MVOL_read_block(TGBL, UCHAR*, ULONG);
-void			MVOL_skip_block(TGBL, ULONG);
+UCHAR*			MVOL_read_block(BurpGlobals*, UCHAR*, ULONG);
+void			MVOL_skip_block(BurpGlobals*, ULONG);
 UCHAR			MVOL_write(UCHAR, int*, UCHAR**);
-const UCHAR*	MVOL_write_block(TGBL, const UCHAR*, ULONG);
+const UCHAR*	MVOL_write_block(BurpGlobals*, const UCHAR*, ULONG);
 
 #if defined WIN_NT
 DESC			MVOL_open(const char*, ULONG, ULONG);

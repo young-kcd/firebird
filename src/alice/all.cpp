@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: all.cpp,v 1.25 2004-07-02 10:02:46 brodsom Exp $
+//	$Id: all.cpp,v 1.26 2004-07-03 00:13:09 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -140,7 +140,7 @@ AliceMemoryPool* AliceMemoryPool::create_new_pool(MemoryPool* parent)
 
 	// TMN: John, is this correct?
     AliceMemoryPool* pool = new(0, parent) AliceMemoryPool(parent);
-	tgbl::pool_vec_t::iterator curr;
+	AliceGlobals::pool_vec_t::iterator curr;
 
 	for (curr = tdgbl->pools.begin(); curr != tdgbl->pools.end(); ++curr)
 	{

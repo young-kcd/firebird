@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.61 2004-06-08 13:39:53 alexpeshkoff Exp $
+$Id: backup.epp,v 1.62 2004-07-03 00:13:45 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -80,7 +80,7 @@ const ULONG BACKUP_VERBOSE_INTERVAL = 20000;
 #define PUT_TEXT(attribute, text)	put_text ((attribute), (text), sizeof(text))
 #define COPY(source, target)       copy ((source), (target), sizeof(target))
 
-inline void put(tgbl* tdgbl, UCHAR c)
+inline void put(BurpGlobals* tdgbl, UCHAR c)
 {
 	if (--(tdgbl->io_cnt) >= 0)
 		*(tdgbl->io_ptr)++ = c;
@@ -88,7 +88,7 @@ inline void put(tgbl* tdgbl, UCHAR c)
 		MVOL_write(c, &tdgbl->io_cnt, &tdgbl->io_ptr);
 }
  
-inline const UCHAR* put_block(tgbl* tdgbl, const UCHAR* p, ULONG n)
+inline const UCHAR* put_block(BurpGlobals* tdgbl, const UCHAR* p, ULONG n)
 {
 	return MVOL_write_block (tdgbl, p, n);
 }
@@ -169,7 +169,7 @@ struct rfr_tab_t
 {
 	const TEXT *relation;
 	const TEXT *field;
-	// Let's be compatible with tgbl.BCK_capabilities, although we could follow
+	// Let's be compatible with BurpGlobals*.BCK_capabilities, although we could follow
 	// the enumeration backup_capabilities but the enum then should be defined
 	// in burp.h instead so BCK_capabilities isn't anymore a simple SLONG.
 	SLONG bit_mask;
@@ -254,7 +254,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 	ISC_STATUS_ARRAY status_vector;
 	TEXT temp[GDS_NAME_LEN];
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	tdgbl->gbl_database_file_name = dbb_file;
 
@@ -523,7 +523,7 @@ void compress(const UCHAR* data, ULONG length)
  *	Write out data in compressed form.
  *
  **************************************/
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	const UCHAR* p = data;
 	const UCHAR* end = p + length;
@@ -603,7 +603,7 @@ void general_on_error(void)
  *	Handle any general ON_ERROR clause during backup.
  *
  **************************************/
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	BURP_print_status(isc_status);
 	BURP_abort();
@@ -626,7 +626,7 @@ burp_fld* get_fields( burp_rel* relation)
 	burp_fld* field;
 	ISC_QUAD* blob_id;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	USHORT count = 1;
 	burp_fld* fields = NULL;
@@ -911,7 +911,7 @@ SINT64 get_gen_id( const TEXT* name, SSHORT name_len)
  **************************************/
 	UCHAR blr_buffer[100];	// enough to fit blr 
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	FB_API_HANDLE gen_id_reqh = 0;
 	UCHAR* blr = blr_buffer;
@@ -1047,7 +1047,7 @@ void get_ranges( burp_fld* field)
  *      the ranges in rdb$field_dimensions.
  *
  **************************************/
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	SLONG* rp = field->fld_ranges;
 	USHORT count = 0;
@@ -1092,7 +1092,7 @@ void put_array( burp_fld* field, burp_rel* relation, ISC_QUAD* blob_id)
 	SLONG range_buffer[16];	// enough for 16 dimensions
 	UCHAR blr_buffer[200];		// enough for a sdl with 16 dimensions 
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 // If the array is null, don't store it.  It will be restored as null. 
 
@@ -1301,7 +1301,7 @@ void put_asciz( const SCHAR attribute, const TEXT* string)
  *	Write an attribute starting with a null terminated string.
  *
  **************************************/
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	ULONG l = strlen(string);
 
@@ -1327,7 +1327,7 @@ void put_blob( burp_fld* field, ISC_QUAD* blob_id, ULONG count)
 	ISC_STATUS_ARRAY status_vector;
 	UCHAR  blob_info[32], static_buffer[1024];
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 // If the blob is null, don't store it.  It will be restored as null. 
 
@@ -1444,7 +1444,7 @@ bool put_blr_blob( SCHAR attribute, ISC_QUAD * blob_id)
 	ISC_STATUS_ARRAY status_vector;
 	UCHAR blob_info[32], static_buffer[1024];
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 // If the blob is null, don't store it.  It will be restored as null. 
 
@@ -1558,7 +1558,7 @@ void put_data(burp_rel* relation)
 	burp_fld* field;
 	ISC_STATUS_ARRAY status_vector;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	// CVC: A signed short isn't enough if the engine allows near 32K fields,
 	// each being char(1) ASCII in the worst case. Looking at BLR generation
@@ -1892,7 +1892,7 @@ void put_index( burp_rel* relation)
 	ULONG count;
 	TEXT temp[GDS_NAME_LEN];
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 /* if we have all capabilities, use the first request to get the 
    most performance out of the latest engine; if we don't 
@@ -2085,7 +2085,7 @@ int put_message( SCHAR attribute, const TEXT* text, ULONG length)
  * which function of the two you use).
  *
  **************************************/
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	ULONG l = 0;
 	for (const TEXT* p = text; *p && l < length; p++)
@@ -2114,7 +2114,7 @@ void put_numeric( SCHAR attribute, SLONG value)
  *	low byte first, high byte last, as in VAX.
  *
  **************************************/
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	const SLONG vax_value = (SLONG) isc_vax_integer((const char*) &value, sizeof(value));
 
@@ -2139,7 +2139,7 @@ void put_int64( SCHAR attribute, SINT64 value)
  *      INT64 value, while put_numeric handles a 32-bit value.
  *
  **************************************/
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	const UINT64 le_value =
 		(UINT64) isc_portable_integer((const UCHAR*) &value, sizeof(value));
@@ -2164,7 +2164,7 @@ void put_relation( burp_rel* relation)
  **************************************/
 	TEXT temp[GDS_NAME_LEN];
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 /* Write local field information.  This is made slightly more complicated
    by the requirement that computational fields be aligned. */
@@ -2354,7 +2354,7 @@ bool put_source_blob(SCHAR		attribute,
 	ISC_STATUS_ARRAY status_vector;
 	UCHAR blob_info[48], static_buffer[1024];
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 // If the blob is null, don't store it.  It will be restored as null.
 
@@ -2477,7 +2477,7 @@ int put_text( SCHAR attribute, const TEXT* text, SSHORT size_len)
  * with quoted names and embedded spaces.
  *
  **************************************/
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	const SSHORT l = (SSHORT) symbol_length (text, (ULONG) size_len);
  
@@ -2505,7 +2505,7 @@ void set_capabilities(void)
  *	unpleasantness later.
  *
  **************************************/
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	FB_API_HANDLE req = 0;
 
@@ -2582,7 +2582,7 @@ void write_character_sets(void)
  **************************************/
 	isc_req_handle req_handle1 = 0;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	FOR (REQUEST_HANDLE req_handle1)
 		X IN RDB$CHARACTER_SETS WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
@@ -2628,7 +2628,7 @@ void write_check_constraints(void)
  **************************************/
 	isc_req_handle req_handle1 = 0;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	FOR (REQUEST_HANDLE req_handle1)
 		X IN RDB$CHECK_CONSTRAINTS
@@ -2662,7 +2662,7 @@ void write_collations(void)
  **************************************/
 	isc_req_handle req_handle1 = 0;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	FOR (REQUEST_HANDLE req_handle1)
 		X IN RDB$COLLATIONS WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
@@ -2705,7 +2705,7 @@ void write_database( const TEXT* dbb_file)
 	SCHAR buffer[256];
 	isc_req_handle req_handle1 = 0, req_handle2 = 0, req_handle3 = 0;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	put(tdgbl, (UCHAR) (rec_physical_db));
 
@@ -2871,7 +2871,7 @@ void write_exceptions(void)
 	TEXT temp[GDS_NAME_LEN];
 	isc_req_handle req_handle1 = 0;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	FOR (REQUEST_HANDLE req_handle1)
 		X IN RDB$EXCEPTIONS
@@ -2907,7 +2907,7 @@ void write_field_dimensions(void)
  **************************************/
 	isc_req_handle req_handle1 = 0;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	FOR (REQUEST_HANDLE req_handle1)
 		X IN RDB$FIELD_DIMENSIONS
@@ -2942,7 +2942,7 @@ void write_filters(void)
 	TEXT temp[GDS_NAME_LEN];
 	isc_req_handle req_handle1 = 0;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	FOR (REQUEST_HANDLE req_handle1)
 		X IN RDB$FILTERS
@@ -2982,7 +2982,7 @@ void write_functions(void)
 	TEXT temp[GDS_NAME_LEN];
 	isc_req_handle req_handle1 = 0;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	FOR (REQUEST_HANDLE req_handle1)
 		X IN RDB$FUNCTIONS
@@ -3023,7 +3023,7 @@ void write_function_args( GDS_NAME funcptr)
  **************************************/ 
 	TEXT temp[GDS_NAME_LEN];
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	/* if we have all capabilities, use the first request to get the 
 	   most performance out of the latest engine; if we don't 
@@ -3120,7 +3120,7 @@ void write_generators(void)
 	isc_req_handle req_handle1 = 0;
 	TEXT temp[GDS_NAME_LEN];
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	FOR (REQUEST_HANDLE req_handle1)
 		X IN RDB$GENERATORS WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
@@ -3162,7 +3162,7 @@ void write_global_fields(void)
 	isc_req_handle req_handle1 = 0, req_handle2 = 0,
 		req_handle3 = 0, req_handle4 = 0;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	/* if we have all capabilities, use the first request to get the 
 	   most performance out of the latest engine; if we don't 
@@ -3359,7 +3359,7 @@ void write_procedures(void)
 	TEXT temp[GDS_NAME_LEN];
 	isc_req_handle req_handle1 = 0;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	FOR (REQUEST_HANDLE req_handle1)
 		X IN RDB$PROCEDURES
@@ -3405,7 +3405,7 @@ void write_procedure_prms( GDS_NAME procptr)
  **************************************/ 
 	TEXT temp[GDS_NAME_LEN];
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	FOR (REQUEST_HANDLE tdgbl->handles_write_procedure_prms_req_handle1)
 		X IN RDB$PROCEDURE_PARAMETERS WITH X.RDB$PROCEDURE_NAME EQ procptr
@@ -3442,7 +3442,7 @@ void write_ref_constraints(void)
  **************************************/
 	isc_req_handle req_handle1 = 0;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	FOR (REQUEST_HANDLE req_handle1)
 		X IN RDB$REF_CONSTRAINTS
@@ -3477,7 +3477,7 @@ void write_rel_constraints(void)
 	TEXT temp[GDS_NAME_LEN];
 	isc_req_handle req_handle1 = 0;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	FOR (REQUEST_HANDLE req_handle1)
 		X IN RDB$RELATION_CONSTRAINTS
@@ -3517,7 +3517,7 @@ void write_relations(void)
 	TEXT temp[GDS_NAME_LEN];
 	isc_req_handle req_handle1 = 0, req_handle2 = 0, req_handle3 = 0, req_handle4 = 0;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	/* if we have all capabilities, use the first request to get the 
 	most performance out of the latest engine; if we don't 
@@ -3684,7 +3684,7 @@ void write_shadow_files(void)
 	TEXT temp[GDS_NAME_LEN];
 	isc_req_handle req_handle1 = 0;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	FOR (REQUEST_HANDLE req_handle1)
 		X IN RDB$FILES 
@@ -3725,7 +3725,7 @@ void write_sql_roles(void)
 	isc_req_handle req_handle1 = 0;
 	TEXT temp[GDS_NAME_LEN];
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	FOR (REQUEST_HANDLE req_handle1)
 		X IN RDB$ROLES
@@ -3761,7 +3761,7 @@ void write_triggers(void)
 	TEXT temp[GDS_NAME_LEN];
 	isc_req_handle req_handle1 = 0, req_handle2 = 0;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	/* if we have all capabilities, use the first request to get the 
 	most performance out of the latest engine; if we don't 
@@ -3867,7 +3867,7 @@ void write_trigger_messages(void)
 	TEXT temp[GDS_NAME_LEN];
 	isc_req_handle req_handle1 = 0;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	FOR (REQUEST_HANDLE req_handle1)
 		T IN RDB$TRIGGERS CROSS X IN RDB$TRIGGER_MESSAGES
@@ -3905,7 +3905,7 @@ void write_types(void)
  **************************************/
 	isc_req_handle req_handle1 = 0;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	FOR (REQUEST_HANDLE req_handle1)
 		X IN RDB$TYPES WITH X.RDB$SYSTEM_FLAG NE 1 OR 
@@ -3945,7 +3945,7 @@ void write_user_privileges(void)
 	TEXT temp[GDS_NAME_LEN];
 	isc_req_handle req_handle1 = 0;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	if (tdgbl->BCK_capabilities & BCK_ods8)
 	{

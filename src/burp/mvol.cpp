@@ -78,12 +78,12 @@ const char* TERM_OUTPUT	= "/dev/tty";
 
 const int MAX_HEADER_SIZE	= 512;
 
-static inline int get(TGBL tdgbl)
+static inline int get(BurpGlobals* tdgbl)
 {
 	return (--(tdgbl->mvol_io_cnt) >= 0 ? *(tdgbl->mvol_io_ptr)++ : 255);
 }
 
-static inline void put(TGBL tdgbl, UCHAR c)
+static inline void put(BurpGlobals* tdgbl, UCHAR c)
 {
 	--(tdgbl->mvol_io_cnt);
 	*(tdgbl->mvol_io_ptr)++ = c;
@@ -110,7 +110,7 @@ static DESC	 next_volume(DESC, ULONG, bool);
 //
 UINT64 MVOL_fini_read()
 {
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	if (strcmp(tdgbl->mvol_old_file, "stdin") != 0)
 	{
@@ -138,7 +138,7 @@ UINT64 MVOL_fini_read()
 //
 UINT64 MVOL_fini_write(int* io_cnt, UCHAR** io_ptr)
 {
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	MVOL_write(rec_end, io_cnt, io_ptr);
 	flush_platf(tdgbl->file_desc);
@@ -166,7 +166,7 @@ UINT64 MVOL_fini_write(int* io_cnt, UCHAR** io_ptr)
 //
 void MVOL_init(ULONG io_buf_size)
 {
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	tdgbl->mvol_io_buffer_size = io_buf_size;
 }
@@ -182,7 +182,7 @@ void MVOL_init_read(const UCHAR*	database_name, // unused?
 					int*	cnt,
 					UCHAR**	ptr)
 {
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	tdgbl->mvol_volume_count = 1;
 	tdgbl->mvol_empty_file = TRUE;
@@ -230,7 +230,7 @@ void MVOL_init_write(const UCHAR*		database_name, // unused?
 					 int*		cnt,
 					 UCHAR**	ptr)
 {
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	tdgbl->mvol_volume_count = 1;
 	tdgbl->mvol_empty_file = TRUE;
@@ -275,7 +275,7 @@ void MVOL_init_write(const UCHAR*		database_name, // unused?
 //
 int MVOL_read(int* cnt, UCHAR** ptr)
 {
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	for (;;)
 	{
@@ -332,7 +332,7 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 //
 int MVOL_read(int* cnt, UCHAR** ptr)
 {
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	for (;;)
 	{
@@ -380,7 +380,7 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 // Read a chunk of data from the IO buffer.
 // Return a pointer to the first position NOT read into.
 //
-UCHAR* MVOL_read_block(TGBL tdgbl, UCHAR * ptr, ULONG count)
+UCHAR* MVOL_read_block(BurpGlobals* tdgbl, UCHAR * ptr, ULONG count)
 {
 // To handle tape drives & Multi-volume boundaries, use the normal
 // read function, instead of doing a more optimal bulk read.
@@ -420,7 +420,7 @@ UCHAR* MVOL_read_block(TGBL tdgbl, UCHAR * ptr, ULONG count)
 // Skip head in the IO buffer.  Often used when only
 // doing partial restores.
 //
-void MVOL_skip_block( TGBL tdgbl, ULONG count)
+void MVOL_skip_block( BurpGlobals* tdgbl, ULONG count)
 {
 // To handle tape drives & Multi-volume boundaries, use the normal
 // read function, instead of doing a more optimal seek.
@@ -460,7 +460,7 @@ DESC MVOL_open(const char * name, ULONG mode, ULONG create)
 	TAPE_GET_MEDIA_PARAMETERS param;
 	DWORD size = sizeof(param);
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	if (strnicmp(name, "\\\\.\\tape", 8))
 	{
@@ -523,7 +523,7 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 	UCHAR *ptr;
 	ULONG left, cnt;
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	ULONG size_to_write = BURP_UP_TO_BLOCK(*io_ptr - tdgbl->mvol_io_buffer);
 
@@ -709,7 +709,7 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 // Write a chunk of data to the IO buffer.
 // Return a pointer to the first position NOT written from.
 //
-const UCHAR *MVOL_write_block(TGBL tdgbl, const UCHAR * ptr, ULONG count)
+const UCHAR *MVOL_write_block(BurpGlobals* tdgbl, const UCHAR * ptr, ULONG count)
 {
 // To handle tape drives & Multi-volume boundaries, use the normal
 // write function, instead of doing a more optimal bulk write.
@@ -752,7 +752,7 @@ static void bad_attribute(USHORT attribute, USHORT type)
 {
 	TEXT name[128];
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	gds__msg_format(0, 12, type, sizeof(name), name, 0, 0, 0, 0, 0);
 	BURP_print(80, name, (void*) (IPTR) attribute, NULL, NULL, NULL);
@@ -772,7 +772,7 @@ static void bad_attribute(USHORT attribute, USHORT type)
 //
 static void file_not_empty(void)
 {
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	tdgbl->mvol_empty_file = FALSE;
 }
@@ -798,7 +798,7 @@ static SLONG get_numeric(void)
 //
 static int get_text(UCHAR* text, SSHORT length)
 {
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	ULONG l = get(tdgbl);
 	length -= l;
@@ -829,7 +829,7 @@ static int get_text(UCHAR* text, SSHORT length)
 //
 static DESC next_volume( DESC handle, ULONG mode, bool full_buffer)
 {
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 // We must  close the old handle before the user inserts
 // another tape, or something.
@@ -951,7 +951,7 @@ static void prompt_for_name(SCHAR* name, int length)
 	FILE*	term_out =  NULL;
 	TEXT		msg[128];
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 // Unless we are operating as a service, stdin can't necessarily be trusted.
 // Get a location to read from.
@@ -1047,7 +1047,7 @@ static void prompt_for_name(SCHAR* name, int length)
 //
 static void put_asciz( SCHAR attribute, const TEXT* string)
 {
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	SSHORT l = 0;
 	for (const TEXT *p = string; *p; p++)
@@ -1074,7 +1074,7 @@ static void put_asciz( SCHAR attribute, const TEXT* string)
 //
 static void put_numeric( SCHAR attribute, int value)
 {
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	const ULONG vax_value = gds__vax_integer(reinterpret_cast<const UCHAR*>(&value), sizeof(value));
 	const UCHAR* p = (UCHAR *) &vax_value;
@@ -1101,7 +1101,7 @@ static bool read_header(DESC	handle,
 	ULONG temp_buffer_size;
 	TEXT buffer[256], *p, msg[128];
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 // Headers are a version number, and a volume number 
 
@@ -1235,7 +1235,7 @@ static bool write_header(DESC   handle,
 						 ULONG  backup_buffer_size,
 						 bool full_buffer)
 {
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	if (backup_buffer_size)
 	{
@@ -1318,7 +1318,7 @@ bool MVOL_split_hdr_write(void)
 {
 	TEXT buffer[HDR_SPLIT_SIZE + 1];
 
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	fb_assert(tdgbl->action->act_action == ACT_backup_split);
 	fb_assert(tdgbl->action->act_file->fil_fd != INVALID_HANDLE_VALUE);
@@ -1357,7 +1357,7 @@ bool MVOL_split_hdr_write(void)
 //
 bool MVOL_split_hdr_read(void)
 {
-	TGBL tdgbl = BURP_get_thread_data();
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	fb_assert(tdgbl->action->act_file->fil_fd != INVALID_HANDLE_VALUE);
 
