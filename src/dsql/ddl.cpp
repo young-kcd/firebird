@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.94 2004-04-21 14:21:30 alexpeshkoff Exp $
+ * $Id: ddl.cpp,v 1.95 2004-04-28 21:56:49 brodsom Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -69,7 +69,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 #include "../dsql/dsql.h"
 #include "../jrd/y_ref.h"

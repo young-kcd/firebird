@@ -37,11 +37,11 @@
  */
 
 /*
-$Id: backup.epp,v 1.54 2004-03-07 07:58:08 robocop Exp $
+$Id: backup.epp,v 1.55 2004-04-28 21:54:07 brodsom Exp $
 */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <memory.h>
 #include <string.h>
 #include "../burp/burp.h"
@@ -484,7 +484,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 	}
 	else {
 		char psz[64];
-		ib_sprintf(psz, "%" QUADFORMAT "d", cumul_count);
+		sprintf(psz, "%" QUADFORMAT "d", cumul_count);
 		BURP_verbose(283, psz, NULL, NULL, NULL, NULL);
 		// msg 283 closing file, committing, and finishing.  %s bytes written 
 	}

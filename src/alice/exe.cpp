@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.30 2004-03-19 06:14:29 robocop Exp $
+//	$Id: exe.cpp,v 1.31 2004-04-28 21:52:39 brodsom Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -34,7 +34,7 @@
 //
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "../jrd/y_ref.h"

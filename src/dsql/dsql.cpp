@@ -62,7 +62,7 @@ nested FOR loops are added.
 
 #include "firebird.h"
 #include "fb_exception.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "../dsql/dsql.h"

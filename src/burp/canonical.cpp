@@ -28,11 +28,11 @@
  *
  */
 /*
-$Id: canonical.cpp,v 1.33 2004-01-21 07:16:08 skidder Exp $
+$Id: canonical.cpp,v 1.34 2004-04-28 21:54:06 brodsom Exp $
 */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 #include "../burp/burp.h"
 #include "../jrd/align.h"

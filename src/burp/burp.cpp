@@ -31,7 +31,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
@@ -162,7 +162,7 @@ static int output_svc(Jrd::Service* output_data, const UCHAR* output_buf)
  *      if gbak is run as a service
  *
  **************************************/
-	ib_fprintf(ib_stdout, "%s", output_buf);
+	fprintf(stdout, "%s", output_buf);
 	return 0;
 }
 
@@ -332,7 +332,7 @@ static int output_main(Jrd::Service* output_data, const UCHAR* output_buf)
  *	Routine which is passed to GBAK for calling back when there is output.
  *
  **************************************/
-	ib_fprintf(ib_stderr, "%s", output_buf);
+	fprintf(stderr, "%s", output_buf);
 	return 0;
 }
 
@@ -848,16 +848,16 @@ int common_main(int		argc,
 				if (tdgbl->sw_redirect == REDIRECT) { // not NOREDIRECT, and not NOOUTPUT 
 
 					// Make sure the status file doesn't already exist 
-					IB_FILE* tmp_outfile = ib_fopen(redirect, fopen_read_type);
+					FILE* tmp_outfile = fopen(redirect, fopen_read_type);
 					if (tmp_outfile) {
 						BURP_print(66, redirect, 0, 0, 0, 0);
 						// msg 66 can't open status and error output file %s 
-						ib_fclose(tmp_outfile);
+						fclose(tmp_outfile);
 						BURP_exit_local(FINI_ERROR, tdgbl);
 					}
 					if (!
 						(tdgbl->output_file =
-						 ib_fopen(redirect, fopen_write_type))) {
+						 fopen(redirect, fopen_write_type))) {
 						BURP_print(66, redirect, 0, 0, 0, 0);
 						// msg 66 can't open status and error output file %s 
 						BURP_exit_local(FINI_ERROR, tdgbl);
@@ -1185,7 +1185,7 @@ int common_main(int		argc,
 
 		// Close the status output file 
 		if (tdgbl->sw_redirect == REDIRECT && tdgbl->output_file != NULL) {
-			ib_fclose(tdgbl->output_file);
+			fclose(tdgbl->output_file);
 			tdgbl->output_file = NULL;
 		}
 
@@ -2063,7 +2063,7 @@ static void burp_output( const SCHAR* format, ...)
 	}
 	else if (tdgbl->sw_redirect == REDIRECT && tdgbl->output_file != NULL) {
 		VA_START(arglist, format);
-		ib_vfprintf(tdgbl->output_file, format, arglist);
+		vfprintf(tdgbl->output_file, format, arglist);
 		va_end(arglist);
 		exit_code =
 			tdgbl->output_proc(tdgbl->output_data,

@@ -36,7 +36,7 @@
  *		Alex Peshkoff <peshkoff@mail.ru>
  *				added PermanentStorage and AutoStorage classes.
  *
- *  $Id: alloc.h,v 1.40 2004-04-18 14:22:13 alexpeshkoff Exp $
+ *  $Id: alloc.h,v 1.41 2004-04-28 21:54:48 brodsom Exp $
  *
  */
 
@@ -47,7 +47,7 @@
 
 #include "../../include/fb_types.h"
 #include "../../include/firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include "../jrd/common.h"
 #include "../common/classes/fb_atomic.h"
 #include "../common/classes/tree.h"
@@ -315,7 +315,7 @@ public:
 	bool verify_pool();
 
 	// Print out pool contents. This is debugging routine
-	void print_contents(IB_FILE*, bool = false);
+	void print_contents(FILE*, bool = false);
 	
 	// Deallocate memory block. Pool is derived from block header
 	static void globalFree(void* block) {

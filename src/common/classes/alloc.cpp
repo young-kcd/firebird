@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.cpp,v 1.48 2004-03-31 17:13:24 alexpeshkoff Exp $
+ *  $Id: alloc.cpp,v 1.49 2004-04-28 21:54:48 brodsom Exp $
  *
  */
 
@@ -651,7 +651,7 @@ bool MemoryPool::verify_pool() {
 	return true;
 }
 
-static void print_block(IB_FILE *file, MemoryBlock *blk, bool used_only)
+static void print_block(FILE *file, MemoryBlock *blk, bool used_only)
 {
 	void *mem = (char*)blk + MEM_ALIGN(sizeof(MemoryBlock));
 	if ((blk->mbk_flags & MBK_USED && blk->mbk_type > 0) || !used_only) {
@@ -671,35 +671,35 @@ static void print_block(IB_FILE *file, MemoryBlock *blk, bool used_only)
 #ifdef DEBUG_GDS_ALLOC
 		if (blk->mbk_flags & MBK_USED) {
 			if (blk->mbk_type > 0)
-				ib_fprintf(file, "%p%s: size=%d type=%d allocated at %s:%d\n", 
+				fprintf(file, "%p%s: size=%d type=%d allocated at %s:%d\n", 
 					mem, flags, size, blk->mbk_type, blk->mbk_file, blk->mbk_line);
 			else if (blk->mbk_type == 0)
-				ib_fprintf(file, "%p%s: size=%d allocated at %s:%d\n", 
+				fprintf(file, "%p%s: size=%d allocated at %s:%d\n", 
 					mem, flags, size, blk->mbk_file, blk->mbk_line);
 			else
-				ib_fprintf(file, "%p%s: size=%d type=%d\n", 
+				fprintf(file, "%p%s: size=%d type=%d\n", 
 					mem, flags, size, blk->mbk_type);
 		}
 #else
 		if (blk->mbk_type && (blk->mbk_flags & MBK_USED))
-			ib_fprintf(file, "%p(%s): size=%d type=%d\n", 
+			fprintf(file, "%p(%s): size=%d type=%d\n", 
 				mem, flags, size, blk->mbk_type);
 #endif
 		else
-			ib_fprintf(file, "%p(%s): size=%d\n", 
+			fprintf(file, "%p(%s): size=%d\n", 
 				mem, flags, size);
 	}
 }
 
-void MemoryPool::print_contents(IB_FILE *file, bool used_only)
+void MemoryPool::print_contents(FILE *file, bool used_only)
 {
 	lock.enter();
-	ib_fprintf(file, "********* Printing contents of pool %p used=%ld mapped=%ld:\n", 
+	fprintf(file, "********* Printing contents of pool %p used=%ld mapped=%ld:\n", 
 		this, (long)used_memory, (long)mapped_memory);
 	// Print extents
 	for (MemoryExtent *extent = extents; extent; extent = extent->mxt_next) {
 		if (!used_only)
-			ib_fprintf(file, "EXTENT %p:\n", extent);
+			fprintf(file, "EXTENT %p:\n", extent);
 		for (MemoryBlock *blk = (MemoryBlock *)((char*)extent + MEM_ALIGN(sizeof(MemoryExtent))); 
 			; 
 			blk = next_block(blk))
@@ -711,20 +711,20 @@ void MemoryPool::print_contents(IB_FILE *file, bool used_only)
 	}
 	// Print large blocks
 	if (os_redirected) {
-		ib_fprintf(file, "LARGE BLOCKS:\n");
+		fprintf(file, "LARGE BLOCKS:\n");
 		for (MemoryBlock *blk = os_redirected; blk; blk = block_list_large(blk)->mrl_next)
 			print_block(file, blk, used_only);
 	}
 	lock.leave();
 	// Print redirected blocks
 	if (parent_redirected) {
-		ib_fprintf(file, "REDIRECTED TO PARENT %p:\n", parent);
+		fprintf(file, "REDIRECTED TO PARENT %p:\n", parent);
 		parent->lock.enter();
 		for (MemoryBlock *blk = parent_redirected; blk; blk = block_list_small(blk)->mrl_next)
 			print_block(file, blk, used_only);
 		parent->lock.leave();
 	}
-	ib_fprintf(file, "********* End of output for pool %p:\n", this);
+	fprintf(file, "********* End of output for pool %p:\n", this);
 }
 
 MemoryPool* MemoryPool::internal_create(size_t instance_size, MemoryPool* parent, MemoryStats &stats) 

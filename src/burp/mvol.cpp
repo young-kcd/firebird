@@ -25,7 +25,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -685,7 +685,7 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 		int dbg_cnt;
 		if (debug_on)
 			for (dbg_cnt = 0; dbg_cnt < cnt; dbg_cnt++)
-				ib_printf("%d,\n", *(ptr + dbg_cnt));
+				printf("%d,\n", *(ptr + dbg_cnt));
 	}
 #endif
 
@@ -947,8 +947,8 @@ static DESC next_volume( DESC handle, int mode, bool full_buffer)
 //
 static void prompt_for_name(SCHAR* name, int length)
 {
-	IB_FILE*	term_in = NULL;
-	IB_FILE*	term_out =  NULL;
+	FILE*	term_in = NULL;
+	FILE*	term_out =  NULL;
 	TEXT		msg[128];
 
 	TGBL tdgbl = GET_THREAD_DATA;
@@ -957,16 +957,16 @@ static void prompt_for_name(SCHAR* name, int length)
 // Get a location to read from.
 
 	if (tdgbl->gbl_sw_service_gbak ||
-		isatty(ib_fileno(ib_stdout)) ||
-		!(term_out = ib_fopen(TERM_OUTPUT, "w")))
+		isatty(fileno(stdout)) ||
+		!(term_out = fopen(TERM_OUTPUT, "w")))
 	{
-		term_out = ib_stdout;
+		term_out = stdout;
 	}
 	if (tdgbl->gbl_sw_service_gbak ||
-		isatty(ib_fileno(ib_stdin)) ||
-		!(term_in = ib_fopen(TERM_INPUT, "r")))
+		isatty(fileno(stdin)) ||
+		!(term_in = fopen(TERM_INPUT, "r")))
 	{
-		term_in = ib_stdin;
+		term_in = stdin;
 	}
 
 // Loop until we have a file name to try 
@@ -979,31 +979,31 @@ static void prompt_for_name(SCHAR* name, int length)
 		{
 			BURP_msg_get(225, msg, (void*) (IPTR) (tdgbl->mvol_volume_count - 1),
 						 tdgbl->mvol_old_file, 0, 0, 0);
-			ib_fprintf(term_out, msg);
+			fprintf(term_out, msg);
 			BURP_msg_get(226, msg, 0, 0, 0, 0, 0);
 			// \tPress return to reopen that file, or type a new\n\tname 
 			// followed by return to open a different file.\n
-			ib_fprintf(term_out, msg);
+			fprintf(term_out, msg);
 		}
 		else	// First volume 
 		{
 			BURP_msg_get(227, msg, 0, 0, 0, 0, 0);
 			// Type a file name to open and hit return 
-			ib_fprintf(term_out, msg);
+			fprintf(term_out, msg);
 		}
 		BURP_msg_get(228, msg, 0, 0, 0, 0, 0);	// "  Name: " 
-		ib_fprintf(term_out, msg);
+		fprintf(term_out, msg);
 
 		if (tdgbl->gbl_sw_service_gbak)
 		{
-			ib_putc('\001', term_out);
+			putc('\001', term_out);
 		}
-		ib_fflush(term_out);
-		if (ib_fgets(name, length, term_in) == NULL)
+		fflush(term_out);
+		if (fgets(name, length, term_in) == NULL)
 		{
 			BURP_msg_get(229, msg, 0, 0, 0, 0, 0);
 			// \n\nERROR: Backup incomplete\n
-			ib_fprintf(term_out, msg);
+			fprintf(term_out, msg);
 			BURP_exit_local(FINI_ERROR, tdgbl);
 		}
 
@@ -1032,11 +1032,11 @@ static void prompt_for_name(SCHAR* name, int length)
 		break;
 	}
 
-	if (term_out != ib_stdout) {
-		ib_fclose(term_out);
+	if (term_out != stdout) {
+		fclose(term_out);
 	}
-	if (term_in != ib_stdin) {
-		ib_fclose(term_in);
+	if (term_in != stdin) {
+		fclose(term_in);
 	}
 }
 
@@ -1154,7 +1154,7 @@ static bool read_header(DESC	handle,
 				BURP_msg_get(230, msg,
 							 tdgbl->gbl_backup_start_time, buffer, 0, 0, 0);
 				// Expected backup start time %s, found %s\n
-				ib_printf(msg);
+				printf(msg);
 				return false;
 			}
 			break;
@@ -1181,7 +1181,7 @@ static bool read_header(DESC	handle,
 				BURP_msg_get(231, msg,
 							 tdgbl->gbl_database_file_name, buffer, 0, 0, 0);
 				// Expected backup database %s, found %s\n
-				ib_printf(msg);
+				printf(msg);
 				return false;
 			}
 			if (init_flag)
@@ -1212,7 +1212,7 @@ static bool read_header(DESC	handle,
 							 (void*) (IPTR) (tdgbl->mvol_volume_count),
 							 (void*) (IPTR) temp, 0, 0, 0);
 				// Expected volume number %d, found volume %d\n
-				ib_printf(msg);
+				printf(msg);
 				return false;
 			}
 			break;

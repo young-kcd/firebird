@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.33 2004-03-19 06:14:29 robocop Exp $
+//	$Id: tdr.cpp,v 1.34 2004-04-28 21:52:39 brodsom Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -33,7 +33,7 @@
 //
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
@@ -68,7 +68,7 @@ static const UCHAR limbo_info[] = { isc_info_limbo, isc_info_end };
 //
 // The following routines are shared by the command line gfix and
 // the windows server manager.  These routines should not contain
-// any direct screen I/O (i.e. ib_printf/ib_getc statements).
+// any direct screen I/O (i.e. printf/getc statements).
 //
 
 
@@ -721,11 +721,11 @@ static ULONG ask(void)
 		ALICE_print(85, 0, 0, 0, 0, 0);
 		// msg 85: Commit, rollback, or neither (c, r, or n)?
 		if (tdgbl->sw_service)
-			ib_putc('\001', ib_stdout);
-		ib_fflush(ib_stdout);
+			putc('\001', stdout);
+		fflush(stdout);
 		int c;
 		UCHAR* p;
-		for (p = response; (c = ib_getchar()) != '\n' && c != EOF;)
+		for (p = response; (c = getchar()) != '\n' && c != EOF;)
 			*p++ = c;
 		if (c == EOF && p == response)
 			return (ULONG) -1;
@@ -827,7 +827,7 @@ static void reattach_database(TDR trans)
 	for (;;) {
 		ALICE_print(88, 0, 0, 0, 0, 0);	// msg 88: Enter a valid path:
 		UCHAR* p = buffer;
-		while (p < end && (*p = ib_getchar()) != '\n')
+		while (p < end && (*p = getchar()) != '\n')
 			++p;
 		*p = 0;
 		if (!buffer[0])

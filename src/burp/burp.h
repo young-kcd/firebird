@@ -29,7 +29,7 @@
 #ifndef BURP_BURP_H
 #define BURP_BURP_H
 
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include "../jrd/common.h"
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
@@ -822,7 +822,7 @@ typedef struct tgbl
 	UCHAR*		head_of_mem_list;
 	Jrd::pfn_svc_output	output_proc;
 	Jrd::Service*		output_data;
-	IB_FILE*	output_file;
+	FILE*	output_file;
 	Jrd::Service*	service_blk;
 	/*
 	 * Link list of global fields that were converted from V3 sub_type

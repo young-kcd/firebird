@@ -30,11 +30,11 @@
  */
 
 /*
-$Id: utld.cpp,v 1.27 2004-03-07 07:58:28 robocop Exp $
+$Id: utld.cpp,v 1.28 2004-04-28 21:56:47 brodsom Exp $
 */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 #include "../dsql/dsql.h"
 #include "../dsql/sqlda.h"
@@ -857,15 +857,15 @@ static void print_xsqlda( XSQLDA * xsqlda)
 	if (!xsqlda)
 		return;
 
-	ib_printf("SQLDA Version %d\n", xsqlda->version);
-	ib_printf("      sqldaid %.8s\n", xsqlda->sqldaid);
-	ib_printf("      sqldabc %d\n", xsqlda->sqldabc);
-	ib_printf("      sqln    %d\n", xsqlda->sqln);
-	ib_printf("      sqld    %d\n", xsqlda->sqld);
+	printf("SQLDA Version %d\n", xsqlda->version);
+	printf("      sqldaid %.8s\n", xsqlda->sqldaid);
+	printf("      sqldabc %d\n", xsqlda->sqldabc);
+	printf("      sqln    %d\n", xsqlda->sqln);
+	printf("      sqld    %d\n", xsqlda->sqld);
 
 	xvar = xsqlda->sqlvar;
 	for (end_var = xvar + xsqlda->sqld; xvar < end_var; xvar++)
-		ib_printf("         %.31s %.31s type: %d, scale %d, len %d subtype %d\n",
+		printf("         %.31s %.31s type: %d, scale %d, len %d subtype %d\n",
 			   xvar->sqlname, xvar->relname, xvar->sqltype,
 			   xvar->sqlscale, xvar->sqllen, xvar->sqlsubtype);
 }

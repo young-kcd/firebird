@@ -27,7 +27,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -59,7 +59,7 @@ static int skip_white(void);
 
 /* Input line control */
 
-static IB_FILE *input_file, *trace_file;
+static FILE *input_file, *trace_file;
 static TEXT *DDL_char, DDL_buffer[256], trace_file_name[128];
 
 enum chr_types {
@@ -159,7 +159,7 @@ void LEX_fini(void)
  **************************************/
 
 	if (trace_file != NULL)
-		ib_fclose(trace_file);
+		fclose(trace_file);
 	if (trace_file_name[0])
 		unlink(trace_file_name);
 }
@@ -207,17 +207,17 @@ void LEX_get_text(UCHAR * buffer, TXT text)
 	start = text->txt_position;
 	length = text->txt_length;
 
-	if (ib_fseek(trace_file, start, 0)) {
-		ib_fseek(trace_file, (SLONG) 0, 2);
+	if (fseek(trace_file, start, 0)) {
+		fseek(trace_file, (SLONG) 0, 2);
 		DDL_err(275, NULL, NULL, NULL, NULL, NULL);
-		/* msg 275: ib_fseek failed */
+		/* msg 275: fseek failed */
 	}
 
 	p = buffer;
 	while (length--)
-		*p++ = ib_getc(trace_file);
+		*p++ = getc(trace_file);
 
-	ib_fseek(trace_file, (SLONG) 0, 2);
+	fseek(trace_file, (SLONG) 0, 2);
 }
 
 
@@ -236,15 +236,15 @@ void LEX_init( void *file)
  **************************************/
 
 #if !(defined WIN_NT)
-	trace_file = (IB_FILE*) gds__temp_file(TRUE, SCRATCH, 0);
+	trace_file = (FILE*) gds__temp_file(TRUE, SCRATCH, 0);
 #else
-	trace_file = (IB_FILE*) gds__temp_file(TRUE, SCRATCH, trace_file_name);
+	trace_file = (FILE*) gds__temp_file(TRUE, SCRATCH, trace_file_name);
 #endif
-	if (trace_file == (IB_FILE*) - 1)
+	if (trace_file == (FILE*) - 1)
 		DDL_err(276, NULL, NULL, NULL, NULL, NULL);
 		/* msg 276: couldn't open scratch file */
 
-	input_file = (IB_FILE*) file;
+	input_file = (FILE*) file;
 	DDL_char = DDL_buffer;
 	DDL_token.tok_position = 0;
 	DDL_description = false;
@@ -273,17 +273,17 @@ void LEX_put_text (FRBRD *blob, TXT text)
 	start = text->txt_position;
 	length = text->txt_length;
 
-	if (ib_fseek(trace_file, start, 0)) {
-		ib_fseek(trace_file, (SLONG) 0, 2);
+	if (fseek(trace_file, start, 0)) {
+		fseek(trace_file, (SLONG) 0, 2);
 		DDL_err(275, NULL, NULL, NULL, NULL, NULL);	
-		/* msg 275: ib_fseek failed */
+		/* msg 275: fseek failed */
 	}
 
 	while (length) {
 		p = buffer;
 		while (length) {
 			--length;
-			*p++ = c = ib_getc(trace_file);
+			*p++ = c = getc(trace_file);
 			if (c == '\n')
 				break;
 		}
@@ -293,7 +293,7 @@ void LEX_put_text (FRBRD *blob, TXT text)
 		/* msg 277: isc_put_segment failed */
 	}
 
-	ib_fseek(trace_file, (SLONG) 0, 2);
+	fseek(trace_file, (SLONG) 0, 2);
 }
 
 
@@ -403,7 +403,7 @@ TOK LEX_token(void)
 		token->tok_keyword = KW_none;
 
 	if (DDL_trace)
-		ib_puts(token->tok_string);
+		puts(token->tok_string);
 
 	return token;
 }
@@ -433,12 +433,12 @@ static int nextchar(void)
 	while (!(c = *DDL_char++)) {
 		DDL_char = DDL_buffer;
 		if (DDL_interactive) {
-			ib_printf(DDL_prompt);
+			printf(DDL_prompt);
 			if (DDL_service)
-				ib_putc('\001', ib_stdout);
-			ib_fflush(ib_stdout);
+				putc('\001', stdout);
+			fflush(stdout);
 		}
-		while (c = ib_getc(input_file)) {
+		while (c = getc(input_file)) {
 			if (c == EOF && SYSCALL_INTERRUPTED(errno)) {
 				errno = 0;
 				continue;
@@ -457,13 +457,13 @@ static int nextchar(void)
 		if (c == EOF && DDL_char == DDL_buffer) {
 #ifdef UNIX
 			if (DDL_interactive)
-				ib_printf("\n");
+				printf("\n");
 #endif
 			DDL_eof = true;
 			return EOF;
 		}
 		DDL_char = DDL_buffer;
-		ib_fputs(DDL_buffer, trace_file);
+		fputs(DDL_buffer, trace_file);
 	}
 
 	DDL_token.tok_position++;

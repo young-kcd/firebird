@@ -24,7 +24,7 @@
 #ifndef ALICE_ALICE_H
 #define ALICE_ALICE_H
 
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
@@ -176,7 +176,7 @@ public:
 	int				exit_code;
 	Jrd::pfn_svc_output  output_proc;
 	Jrd::Service*	output_data;
-	IB_FILE*		output_file;
+	FILE*		output_file;
 	Jrd::Service*	service_blk;
 	isc_db_handle	db_handle;
 	isc_tr_handle	tr_handle;

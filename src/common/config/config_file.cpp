@@ -34,7 +34,7 @@
 #include "../../common/classes/auto.h"
 #include "../../common/config/config_file.h"
 #include "../jrd/os/fbsyslog.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -163,10 +163,10 @@ namespace {
 	class FileClose
 	{
 public:
-		static void clear(IB_FILE *f)
+		static void clear(FILE *f)
 		{
 			if (f) {
-				ib_fclose(f);
+				fclose(f);
 			}
 		}
 	};
@@ -178,7 +178,7 @@ void ConfigFile::loadConfig()
 
 	parameters.clear();
 
-	Firebird::AutoPtr<IB_FILE, FileClose> ifile(fopen(configFile.c_str(), "rt"));
+	Firebird::AutoPtr<FILE, FileClose> ifile(fopen(configFile.c_str(), "rt"));
 	
 #ifdef EXIT_ON_NO_CONF
 	int BadLinesCount = 0;

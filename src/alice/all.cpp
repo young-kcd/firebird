@@ -24,18 +24,12 @@
 //
 //____________________________________________________________
 //
-//	$Id: all.cpp,v 1.19 2004-04-18 14:22:09 alexpeshkoff Exp $
+//	$Id: all.cpp,v 1.20 2004-04-28 21:52:39 brodsom Exp $
 //
 
 #include "firebird.h"
 #include "../alice/all.h"
-//#include "../jrd/ib_stdio.h"
-//#include "../jrd/common.h"
 #include "../alice/alice.h"
-//#include "../alice/all.h"
-//#include "../alice/lls.h"
-//#include "../alice/all_proto.h"
-//#include "../jrd/gds_proto.h"
 #include "../jrd/thd_proto.h"
 #include "../common/classes/alloc.h"
 

@@ -36,7 +36,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include "../jrd/common.h"
 #include <stdarg.h>

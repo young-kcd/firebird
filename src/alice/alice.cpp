@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.58 2004-03-20 14:57:13 alexpeshkoff Exp $
+//	$Id: alice.cpp,v 1.59 2004-04-28 21:52:39 brodsom Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -40,13 +40,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include <stdio.h>
 
 #include "../alice/alice.h"
 #include "../alice/aliceswi.h"
 #include "../alice/all.h"
 #include "../alice/all_proto.h"
 #include "../alice/exe_proto.h"
-#include "../jrd/ib_stdio.h"
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/common.h"
@@ -121,7 +121,7 @@ static void alice_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
 
 static int output_svc(Jrd::Service* output_data, const UCHAR * output_buf)
 {
-	ib_fprintf(ib_stdout, "%s", output_buf);
+	fprintf(stdout, "%s", output_buf);
 	return 0;
 }
 
@@ -172,7 +172,7 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 
 static int output_main(Jrd::Service* output_data, const UCHAR* output_buf)
 {
-	ib_fprintf(ib_stderr, "%s", output_buf);
+	fprintf(stderr, "%s", output_buf);
 	return 0;
 }
 
@@ -215,7 +215,7 @@ int common_main(int			argc,
 
 //  Perform some special handling when run as an Interbase service.  The
 //  first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
-//  by 3 file descriptors to use in re-directing ib_stdin, ib_stdout, and ib_stderr.
+//  by 3 file descriptors to use in re-directing stdin, stdout, and stderr.
 
 	tdgbl->sw_service = false;
 	tdgbl->sw_service_thd = false;
@@ -626,7 +626,7 @@ int common_main(int			argc,
 
 		// Close the status output file 
 		if (tdgbl->sw_redirect == REDIRECT && tdgbl->output_file != NULL) {
-			ib_fclose(tdgbl->output_file);
+			fclose(tdgbl->output_file);
 			tdgbl->output_file = NULL;
 		}
 
@@ -787,7 +787,7 @@ static void alice_output(const SCHAR* format, ...)
 	}
 	else if (tdgbl->sw_redirect == REDIRECT && tdgbl->output_file != NULL) {
 		VA_START(arglist, format);
-		ib_vfprintf(tdgbl->output_file, format, arglist);
+		vfprintf(tdgbl->output_file, format, arglist);
 		va_end(arglist);
 		exit_code = tdgbl->output_proc(tdgbl->output_data, (UCHAR *)(""));
 	}

@@ -25,7 +25,7 @@
 
 #define DDL_MAIN
 
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "../dudley/ddl.h"
@@ -129,7 +129,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 
 /* Perform some special handling when run as an Interbase service.  The
    first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
-   by 3 file descriptors to use in re-directing ib_stdin, ib_stdout, and ib_stderr. */
+   by 3 file descriptors to use in re-directing stdin, stdout, and stderr. */
 
 	DDL_service = false;
 
@@ -299,7 +299,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 		}
 	}
 
-	IB_FILE* input_file;
+	FILE* input_file;
 	
 	if (DDL_extract) {
 		strcpy(DB_file_string, file_name_1);
@@ -319,7 +319,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 	}
 	if (DDL_file_name == NULL) {
 		DDL_file_name = "standard input";
-		input_file = ib_stdin;
+		input_file = stdin;
 		DDL_interactive = DDL_service || isatty(0);
 	}
 	else {
@@ -345,7 +345,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 		if (*p == '.') {
 			for (const TEXT* q2 = DDL_EXT; UPPER(*p) == UPPER(*q2); p++, q2++) {
 				if (!*p) {
-					input_file = ib_fopen(DDL_file_name, FOPEN_INPUT_TYPE);
+					input_file = fopen(DDL_file_name, FOPEN_INPUT_TYPE);
 					if (!input_file) {
 						DDL_msg_put(5, DDL_file_name, 0, 0, 0, 0);	/* msg 5: gdef: can't open %s */
 						DDL_exit(FINI_ERROR);
@@ -358,11 +358,11 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 
 		if (!input_file) {
 			sprintf(file_name_1, "%s%s", DDL_file_name, DDL_EXT);
-			input_file = ib_fopen(file_name_1, FOPEN_INPUT_TYPE);
+			input_file = fopen(file_name_1, FOPEN_INPUT_TYPE);
 			if (input_file)
 				DDL_file_name = file_name_1;
 			else {
-				input_file = ib_fopen(DDL_file_name, FOPEN_INPUT_TYPE);
+				input_file = fopen(DDL_file_name, FOPEN_INPUT_TYPE);
 				if (!input_file)
 					DDL_msg_put(6, DDL_file_name, file_name_1, 0, 0, 0);
 				/* msg 6: gdef: can't open %s or %s */
@@ -376,11 +376,11 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 	HSH_init();
 	PARSE_actions();
 
-	if (input_file != ib_stdin)
-		ib_fclose(input_file);
+	if (input_file != stdin)
+		fclose(input_file);
 
 	if (DDL_actions && ((DDL_errors && DDL_interactive) || DDL_quit)) {
-		ib_rewind(ib_stdin);
+		rewind(stdin);
 		//*buffer = 0;
 		if (DDL_errors > 1)
 			DDL_msg_partial(7, (TEXT *) (IPTR) DDL_errors, 0, 0, 0, 0);	/* msg 7: \n%d errors during input. */
@@ -589,7 +589,7 @@ void DDL_msg_partial(
 
 	gds__msg_format(0, DDL_MSG_FAC, number, sizeof(DDL_message), DDL_message,
 					arg1, arg2, arg3, arg4, arg5);
-	ib_printf("%s", DDL_message);
+	printf("%s", DDL_message);
 }
 
 
@@ -612,7 +612,7 @@ void DDL_msg_put(
 
 	gds__msg_format(0, DDL_MSG_FAC, number, sizeof(DDL_message), DDL_message,
 					arg1, arg2, arg3, arg4, arg5);
-	ib_printf("%s\n", DDL_message);
+	printf("%s\n", DDL_message);
 }
 
 
@@ -701,18 +701,18 @@ bool DDL_yes_no( USHORT number)
 	}
 
 	for (;;) {
-		ib_printf(prompt);
+		printf(prompt);
 		if (DDL_service)
-			ib_putc('\001', ib_stdout);
-		ib_fflush(ib_stdout);
+			putc('\001', stdout);
+		fflush(stdout);
 		int count = 0;
 		int c;
-		while ((c = ib_getc(ib_stdin)) == ' ')
+		while ((c = getc(stdin)) == ' ')
 			count++;
 		if (c != '\n' && c != EOF)
 		{
 			int d;
-			while ((d = ib_getc(ib_stdin)) != '\n' && d != EOF);
+			while ((d = getc(stdin)) != '\n' && d != EOF);
 		}
 		if (!count && c == EOF)
 			return false;
@@ -726,7 +726,7 @@ bool DDL_yes_no( USHORT number)
 		{
 			sprintf(reprompt, "Please respond with YES or NO.");	/* default if msg_format fails */
 		}
-		ib_printf("%s\n", reprompt);
+		printf("%s\n", reprompt);
 	}
 }
 

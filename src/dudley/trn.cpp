@@ -22,7 +22,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
@@ -80,7 +80,7 @@ static void raw_ada(STR);
 static void raw_cobol(STR);
 static void raw_ftn(STR);
 
-static IB_FILE *output_file;
+static FILE *output_file;
 
 #define STUFF(c)	*dyn->str_current++ = c
 #define STUFF_WORD(c)	{STUFF (c); STUFF (c >> 8);}
@@ -128,8 +128,8 @@ void TRN_translate(void)
 #endif
 
 	if (!DYN_file_name[0])
-		output_file = ib_stdout;
-	else if (!(output_file = ib_fopen(DYN_file_name, FOPEN_WRITE_TYPE))) {
+		output_file = stdout;
+	else if (!(output_file = fopen(DYN_file_name, FOPEN_WRITE_TYPE))) {
 		DDL_msg_put(281, DYN_file_name, NULL, NULL, NULL, NULL);	/* msg 281: gdef: can't open DYN output file: %s */
 		DDL_exit(FINI_ERROR);
 	}
@@ -280,56 +280,56 @@ void TRN_translate(void)
 
 	case lan_pascal:
 		length = dyn->str_current - dyn->str_start;
-		ib_fprintf(output_file, "   isc_dyn_length	: gds__short := %d;\n",
+		fprintf(output_file, "   isc_dyn_length	: gds__short := %d;\n",
 				   length);
-		ib_fprintf(output_file,
+		fprintf(output_file,
 				   "   isc_dyn	: packed array [1..%d] of char := (\n",
 				   length);
 		if (PRETTY_print_dyn(dyn->str_start, gen_dyn_pas, 0, 1))
 			DDL_err(285, NULL, NULL, NULL, NULL, NULL);	/*msg 285: internal error during DYN pretty print */
-		ib_fprintf(output_file, "   );	(* end of DYN string *)\n");
+		fprintf(output_file, "   );	(* end of DYN string *)\n");
 		break;
 
 	case lan_fortran:
 		length = dyn->str_current - dyn->str_start;
-		ib_fprintf(output_file, "       INTEGER*2 GDS__DYN_LENGTH\n");
-		ib_fprintf(output_file, "       INTEGER*4 GDS__DYN(%d)\n",
+		fprintf(output_file, "       INTEGER*2 GDS__DYN_LENGTH\n");
+		fprintf(output_file, "       INTEGER*4 GDS__DYN(%d)\n",
 				   (int) ((length + 3) / 4));
-		ib_fprintf(output_file, "       DATA GDS__DYN_LENGTH  /%d/\n",
+		fprintf(output_file, "       DATA GDS__DYN_LENGTH  /%d/\n",
 				   length);
-		ib_fprintf(output_file, "       DATA (GDS__DYN(I), I=1,%d)  /\n",
+		fprintf(output_file, "       DATA (GDS__DYN(I), I=1,%d)  /\n",
 				   (int) ((length + 3) / 4));
 		raw_ftn(dyn);
 		break;
 	case lan_ada:
 		length = dyn->str_current - dyn->str_start;
-		ib_fprintf(output_file,
+		fprintf(output_file,
 				   "isc_dyn_length: short_integer := %d;\n", length);
-		ib_fprintf(output_file,
+		fprintf(output_file,
 				   "isc_dyn	: CONSTANT interbase.blr (1..%d) := (\n", length);
 		raw_ada(dyn);
 		break;
 
 	case lan_ansi_cobol:
 		length = dyn->str_current - dyn->str_start;
-		ib_fprintf(output_file,
+		fprintf(output_file,
 				   "       01  GDS-DYN-LENGTH PIC S9(4) USAGE COMP VALUE IS %d.\n",
 				   length);
-		ib_fprintf(output_file, "       01  GDS-DYN.\n");
+		fprintf(output_file, "       01  GDS-DYN.\n");
 		raw_cobol(dyn);
 		break;
 	case lan_cobol:
 		length = dyn->str_current - dyn->str_start;
-		ib_fprintf(output_file,
+		fprintf(output_file,
 				   "       01  GDS__DYN_LENGTH PIC S9(4) USAGE COMP VALUE IS %d.\n",
 				   length);
-		ib_fprintf(output_file, "       01  GDS__DYN.\n");
+		fprintf(output_file, "       01  GDS__DYN.\n");
 		raw_cobol(dyn);
 		break;
 	}
 
-	if (output_file != ib_stdout)
-		ib_fclose(output_file);
+	if (output_file != stdout)
+		fclose(output_file);
 
 	gds__free(dyn->str_start);
 }
@@ -1083,7 +1083,7 @@ static void gen_dyn_c(void *user_arg, SSHORT offset, const char* string)
  *
  **************************************/
 
-	ib_fprintf(output_file, "    %s\n", string);
+	fprintf(output_file, "    %s\n", string);
 }
 
 
@@ -1107,20 +1107,20 @@ static void gen_dyn_cxx(void *user_arg, SSHORT offset, const char* string)
 
 	q = p = temp;
 
-	ib_fprintf(output_file, "    ");
+	fprintf(output_file, "    ");
 	for (; *q; *q++) {
 		if ((*q == '$') || (*q == '_')) {
 			r = q;
 			if ((*--r == '_') && (*--r == 's') && (*--r == 'd')
 				&& (*--r == 'g')) {
 				*q = 0;
-				ib_fprintf(output_file, "%s", p);
+				fprintf(output_file, "%s", p);
 				p = ++q;
 			}
 		}
 	}
 
-	ib_fprintf(output_file, "%s\n", p);
+	fprintf(output_file, "%s\n", p);
 }
 
 
@@ -1136,7 +1136,7 @@ static void gen_dyn_pas(void *user_arg, SSHORT offset, const char* string)
  *	Callback routine for BLR pretty printer.
  *
  **************************************/
-	ib_fprintf(output_file, "      %s\n", string);
+	fprintf(output_file, "      %s\n", string);
 }
 
 
@@ -1702,19 +1702,19 @@ static void raw_ada( STR dyn)
 	n = 0;
 	for (p = dyn->str_start; p < dyn->str_current; p++) {
 		if (p < (dyn->str_current - 1)) {
-			ib_fprintf(output_file, "%d,", *p);
+			fprintf(output_file, "%d,", *p);
 			n += 4;
 		}
 		else {
-			ib_fprintf(output_file, "%d", *p);
+			fprintf(output_file, "%d", *p);
 			n += 3;
 		}
 		if (n > 60) {
-			ib_fprintf(output_file, "\n");
+			fprintf(output_file, "\n");
 			n = 0;
 		}
 	}
-	ib_fprintf(output_file, ");\n");
+	fprintf(output_file, ");\n");
 }
 
 static void raw_cobol( STR dyn)
@@ -1747,12 +1747,12 @@ static void raw_cobol( STR dyn)
 				break;
 		}
 		if (language == lan_ansi_cobol)
-			ib_fprintf(output_file,
+			fprintf(output_file,
 					   "           03  GDS-DYN-%d PIC S9(10) USAGE COMP VALUE IS %"
 					   SLONGFORMAT".\n",
 					   length++, blr_hunk.longword_blr);
 		else
-			ib_fprintf(output_file,
+			fprintf(output_file,
 					   "           03  GDS__DYN_%d PIC S9(10) USAGE COMP VALUE IS %"
 					   SLONGFORMAT".\n",
 					   length++, blr_hunk.longword_blr);
@@ -1797,12 +1797,12 @@ static void raw_ftn( STR dyn)
 		while (*p)
 			p++;
 		if (p - buffer > 50) {
-			ib_fprintf(output_file, "%s%s\n", "     +   ", buffer);
+			fprintf(output_file, "%s%s\n", "     +   ", buffer);
 			p = buffer;
 			*p = 0;
 		}
 	}
 
 	if (p != buffer)
-		ib_fprintf(output_file, "%s%s\n", "     +   ", buffer);
+		fprintf(output_file, "%s%s\n", "     +   ", buffer);
 }

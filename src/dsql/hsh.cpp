@@ -104,7 +104,7 @@ void HSHD_init(void)
 
 #ifdef DEV_BUILD
 
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 
 /**
   
@@ -126,13 +126,13 @@ void HSHD_debug(void)
 		{
 			// check any homonyms first 
 
-			ib_fprintf(ib_stderr, "Symbol type %d: %s %p\n",
+			fprintf(stderr, "Symbol type %d: %s %p\n",
 					   collision->sym_type, collision->sym_string,
 					   collision->sym_dbb);
 			for (DSQL_SYM homptr = collision->sym_homonym; homptr;
 				 homptr = homptr->sym_homonym)
 			{
-				ib_fprintf(ib_stderr, "Homonym Symbol type %d: %s %p\n",
+				fprintf(stderr, "Homonym Symbol type %d: %s %p\n",
 						   homptr->sym_type, homptr->sym_string,
 						   homptr->sym_dbb);
 			}

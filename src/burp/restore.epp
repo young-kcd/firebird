@@ -24,11 +24,11 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.71 2004-03-07 07:58:08 robocop Exp $
+$Id: restore.epp,v 1.72 2004-04-28 21:54:06 brodsom Exp $
 */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 #include <errno.h>
 #include "../burp/burp.h"
@@ -1493,18 +1493,18 @@ void get_array (burp_rel*	relation,
 		
 		int current_dim;
 #ifdef DEBUG
-		ib_fprintf(ib_stderr, "\nLast element upper bounds read from backup file:\n");
+		fprintf(stderr, "\nLast element upper bounds read from backup file:\n");
 		for (current_dim = 1; current_dim < field->fld_dimensions * 2; current_dim += 2)
-			ib_fprintf(ib_stderr,"%ld ",fld_ranges[current_dim]);
-		ib_fprintf(ib_stderr, "\nCalculated Last element upper bounds :\n");
+			fprintf(stderr,"%ld ",fld_ranges[current_dim]);
+		fprintf(stderr, "\nCalculated Last element upper bounds :\n");
 		for (current_dim = 0; current_dim < field->fld_dimensions; current_dim++)
-			ib_fprintf(ib_stderr,"%ld ",last_element_dim[current_dim]);
-		ib_fprintf(ib_stderr,"return_length = %ld\n", return_length);
-		ib_fprintf(ib_stderr,"elements_returned = %ld\n", return_length/field_length);
-		ib_fprintf(ib_stderr,"Max dims[");
+			fprintf(stderr,"%ld ",last_element_dim[current_dim]);
+		fprintf(stderr,"return_length = %ld\n", return_length);
+		fprintf(stderr,"elements_returned = %ld\n", return_length/field_length);
+		fprintf(stderr,"Max dims[");
 		for (current_dim = 1; current_dim < field->fld_dimensions * 2; current_dim += 2)
-			ib_fprintf(ib_stderr,"%ld ",field->fld_ranges[current_dim]);
-		ib_fprintf(ib_stderr,"]");
+			fprintf(stderr,"%ld ",field->fld_ranges[current_dim]);
+		fprintf(stderr,"]");
 #endif
 		int data_at = 0;
 		//
@@ -1552,7 +1552,7 @@ void get_array (burp_rel*	relation,
 			// each element spec starts here  
 
 #ifdef DEBUG
-			ib_fprintf(ib_stderr,"\nBounds written[");
+			fprintf(stderr,"\nBounds written[");
 #endif
 			int elements_written = 1;
 			end_ranges = field->fld_ranges + 2 * field->fld_dimensions;
@@ -1657,14 +1657,14 @@ void get_array (burp_rel*	relation,
 				}
 				elements_written *= (upper - lower + 1);
 #ifdef DEBUG
-				ib_fprintf(ib_stderr,"%d..%d ", lower, upper);
+				fprintf(stderr,"%d..%d ", lower, upper);
 #endif
 			}
 			if (dont_write)
 				continue;
 #ifdef DEBUG
-			ib_fprintf(ib_stderr,"]");
-			ib_fprintf(ib_stderr,"\n Elements Written=%d  ",elements_written);
+			fprintf(stderr,"]");
+			fprintf(stderr,"\n Elements Written=%d  ",elements_written);
 #endif
 
 			stuff(&blr, isc_sdl_element);
@@ -1740,7 +1740,7 @@ void get_array (burp_rel*	relation,
 			}
 			data_at += elements_written * field->fld_length;
 #ifdef DEBUG
-			ib_fprintf(ib_stderr,"next data_at = %d\n", data_at);
+			fprintf(stderr,"next data_at = %d\n", data_at);
 #endif
 		}
 	}
