@@ -1,3 +1,10 @@
+2003-06-11 14:00  alexpeshkoff
+
+	* firebird2/src/utilities/: install_svc.cpp, servi_proto.h,
+	services.cpp:
+	
+	security fix - added -login switch to instsvc
+
 2003-06-10 15:39  dimitr
 
 	* firebird2/src/: dsql/dsql.tab.h, dsql/gen.cpp, dsql/keywords.cpp,
