@@ -29,7 +29,7 @@ namespace Jrd {
 }
 
 struct dsc;
-typedef Firebird::Array<char> CharBuffer;
+typedef Firebird::Array<UCHAR> UCharBuffer;
 
 void SCL_check_access(const Jrd::SecurityClass*, SLONG, const TEXT*,
 					  const TEXT*, USHORT, const TEXT*, const TEXT*);
@@ -39,7 +39,7 @@ Jrd::SecurityClass* SCL_get_class(const TEXT*);
 int SCL_get_mask(const TEXT*, const TEXT*);
 void SCL_init(bool, const TEXT*, const TEXT*, const TEXT*, const TEXT*,
 	const TEXT*, Jrd::thread_db*, const bool);
-void SCL_move_priv(TEXT**, USHORT, CharBuffer&, ULONG*);
+void SCL_move_priv(UCHAR**, USHORT, UCharBuffer&, ULONG*);
 Jrd::SecurityClass* SCL_recompute_class(Jrd::thread_db*, TEXT*);
 void SCL_release(Jrd::SecurityClass*);
 void SCL_check_index(Jrd::thread_db*, const TEXT*, UCHAR, USHORT);

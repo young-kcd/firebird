@@ -25,10 +25,10 @@
 #define JRD_GRANT_PROTO_H
 
 class Jrd::DeferredWork;
-typedef Firebird::Array<char> CharBuffer;
+typedef Firebird::Array<UCHAR> UCharBuffer;
 
 bool GRANT_privileges(Jrd::thread_db*, SSHORT, Jrd::DeferredWork*, Jrd::jrd_tra*);
-void GRANT_realloc_acl(CharBuffer&, TEXT**, ULONG *);
+void GRANT_realloc_acl(UCharBuffer&, UCHAR**, ULONG *);
 
 #endif // JRD_GRANT_PROTO_H
 

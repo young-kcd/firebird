@@ -80,17 +80,17 @@ using namespace Jrd;
 
 DATABASE DB = FILENAME "ODS.RDB";
 
-static bool check_hex(const TEXT*, USHORT);
-static bool check_number(const TEXT*, USHORT);
-static bool check_user_group(const TEXT*, USHORT, CharBuffer&, ULONG*);
-static bool check_string(const TEXT*, const TEXT*);
+static bool check_hex(const UCHAR*, USHORT);
+static bool check_number(const UCHAR*, USHORT);
+static bool check_user_group(const UCHAR*, USHORT, UCharBuffer&, ULONG*);
+static bool check_string(const UCHAR*, const TEXT*);
 static SLONG compute_access(thread_db*, const SecurityClass*, const jrd_rel*,
 	const TEXT*, const TEXT*);
 static TEXT* save_string(const TEXT*, TEXT**);
-static SLONG walk_acl(thread_db*, const TEXT*, const jrd_rel*, const TEXT*,
-	const TEXT*, CharBuffer&, ULONG*);
+static SLONG walk_acl(thread_db*, const UCHAR*, const jrd_rel*, const TEXT*,
+	const TEXT*, UCharBuffer&, ULONG*);
 
-static inline void check_and_move(TEXT*& to, TEXT from, CharBuffer& start, ULONG* length_ptr)
+static inline void check_and_move(UCHAR*& to, UCHAR from, UCharBuffer& start, ULONG* length_ptr)
 {
 	if ((start.begin() + *length_ptr) < (to + 1))
 	{
@@ -777,7 +777,8 @@ void SCL_init(bool create,
 			{
 				*name = strlen(p);
 				strcpy(name + 1, p);
-				if (!check_string(name, REL.RDB$OWNER_NAME))
+				if (!check_string(reinterpret_cast<UCHAR*>(name), 
+								  REL.RDB$OWNER_NAME))
 				{
 					user->usr_flags |= USR_owner;
 				}
@@ -792,7 +793,7 @@ void SCL_init(bool create,
 }
 
 
-void SCL_move_priv(TEXT** acl_ptr, USHORT mask, CharBuffer& start_ptr, ULONG* length_ptr)
+void SCL_move_priv(UCHAR** acl_ptr, USHORT mask, UCharBuffer& start_ptr, ULONG* length_ptr)
 {
 /**************************************
  *
@@ -804,7 +805,7 @@ void SCL_move_priv(TEXT** acl_ptr, USHORT mask, CharBuffer& start_ptr, ULONG* le
  *	Given a mask of privileges, move privileges types to acl.
  *
  **************************************/
-	TEXT* p = *acl_ptr;
+	UCHAR* p = *acl_ptr;
 
 	// Terminate identification criteria, and move privileges
 
@@ -890,7 +891,7 @@ void SCL_release(SecurityClass* s_class)
 }
 
 
-static bool check_hex(const TEXT* acl, USHORT number)
+static bool check_hex(const UCHAR* acl, USHORT number)
 {
 /**************************************
  *
@@ -926,7 +927,7 @@ static bool check_hex(const TEXT* acl, USHORT number)
 }
 
 
-static bool check_number(const TEXT* acl, USHORT number)
+static bool check_number(const UCHAR* acl, USHORT number)
 {
 /**************************************
  *
@@ -952,9 +953,9 @@ static bool check_number(const TEXT* acl, USHORT number)
 }
 
 
-static bool check_user_group(const TEXT* acl,
+static bool check_user_group(const UCHAR* acl,
 							 USHORT number,
-							 CharBuffer& start_ptr,
+							 UCharBuffer& start_ptr,
 							 ULONG* length_ptr)
 {
 /**************************************
@@ -995,8 +996,8 @@ static bool check_user_group(const TEXT* acl,
 		}
 		else				// processing group name
 		{
-			CharBuffer buffer;
-			TEXT* user_group_name = buffer.getBuffer(*length_ptr);
+			UCharBuffer buffer;
+			UCHAR* user_group_name = buffer.getBuffer(*length_ptr);
 			do {
 				const TEXT one_char = *acl++;
 				*user_group_name++ = LOWWER(one_char);
@@ -1006,7 +1007,7 @@ static bool check_user_group(const TEXT* acl,
 
 			// convert unix group name to unix group id
 
-			n = ISC_get_user_group_id(user_group_name);
+			n = ISC_get_user_group_id(reinterpret_cast<TEXT*>(user_group_name));
 		}
 	}
 
@@ -1014,7 +1015,7 @@ static bool check_user_group(const TEXT* acl,
 }
 
 
-static bool check_string(const TEXT* acl, const TEXT* string)
+static bool check_string(const UCHAR* acl, const TEXT* string)
 {
 /**************************************
  *
@@ -1078,8 +1079,8 @@ static SLONG compute_access(thread_db* tdbb,
  *	access permissions.  Return a flag word of recognized privileges.
  *
  **************************************/
-	CharBuffer str_buffer;
-	TEXT* buffer = str_buffer.getBuffer(BLOB_BUFFER_SIZE);
+	UCharBuffer str_buffer;
+	UCHAR* buffer = str_buffer.getBuffer(BLOB_BUFFER_SIZE);
 
 	SLONG length = BLOB_BUFFER_SIZE, *length_ptr = &length;
 
@@ -1098,7 +1099,7 @@ static SLONG compute_access(thread_db* tdbb,
 
 		privileges |= SCL_exists;
 		blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, &X.RDB$ACL);
-		TEXT* acl = buffer;
+		UCHAR* acl = buffer;
 		while (true)
 		{
 			acl += BLB_get_segment(tdbb, blob, (UCHAR*)acl,
@@ -1168,11 +1169,11 @@ static TEXT* save_string(const TEXT* string, TEXT** ptr)
 
 
 static SLONG walk_acl(thread_db* tdbb,
-					  const TEXT* acl,
+					  const UCHAR* acl,
 					  const jrd_rel* view,
 					  const TEXT* trg_name,
 					  const TEXT* prc_name,
-					  CharBuffer& start_ptr,
+					  UCharBuffer& start_ptr,
 					  ULONG* length_ptr)
 {
 /**************************************
@@ -1218,7 +1219,7 @@ static SLONG walk_acl(thread_db* tdbb,
 
 	const TEXT* p;
 	bool hit = false;
-	TEXT c;
+	UCHAR c;
 	
 	while ( (c = *acl++) )
 	{
