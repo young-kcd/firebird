@@ -35,6 +35,7 @@
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ * 2003.03.24 Nickolay Samofatov - clean up defines, improve deadlock detection logic
  *
  */
 
@@ -164,6 +165,32 @@ typedef struct srq {
 #endif
 
 #define LHB_PATTERN     123454321
+
+//
+// Define methods that lock manager uses to handle events
+// USE_WAKEUP_EVENTS - use UNIX events to handle owner wakeup.
+//    makes no sense on Windows because signals are simulated VIA events
+//    otherwise signals are used to wakeup owners
+#ifdef UNIX
+#define USE_WAKEUP_EVENTS
+#endif
+
+// STATIC_SEMAPHORES - preallocate semaphores for UNIX events
+// if undefined UNIX events allocate semaphores dynamically
+#if defined UNIX && !defined SUPERSERVER
+#define USE_STATIC_SEMAPHORES
+#endif
+
+// USE_BLOCKING_THREAD - use thread to handle blocking ASTs
+//   real UNIX guys use signals instead
+#if defined WIN_NT && !defined SUPERSERVER
+#define USE_BLOCKING_THREAD
+#endif
+
+// USE_BLOCKING_SIGNALS - use UNIX signals to deliver blocking ASTs
+#if !defined WIN_NT && !defined SUPERSERVER
+#define USE_BLOCKING_SIGNALS
+#endif
 
 /* Lock header block -- one per lock file, lives up front */
 
@@ -309,20 +336,24 @@ typedef struct own
 	EVENT_T own_blocking[1];	/* Blocking event block */
 	EVENT_T own_stall[1];		/* Owner is stalling for other owner */
 #endif
-#ifndef WIN_NT
+#if !(defined WIN_NT) || (defined WIN_NT && !defined SUPERSERVER)
 	EVENT_T own_wakeup[1];		/* Wakeup event block */
 #endif
 	USHORT own_semaphore;		/* Owner semaphore -- see note below */
 	USHORT own_flags;			/* Misc stuff */
+	USHORT own_ast_prc_count;   /* Number or blocking processes having ASTs processing pending */
 } *OWN;
 
 /* Flags in own_flags */
-#define OWN_blocking    1		/* Owner is blocking */
-#define OWN_scanned     2		/* Owner has been deadlock scanned */
-#define OWN_manager     4		/* Owner is privileged manager */
-#define OWN_signal      8		/* Owner needs signal delivered */
-#define OWN_wakeup      32		/* Owner has been awoken */
-#define OWN_starved     128		/* This thread may be starved        */
+#define OWN_blocking		1		// Owner is blocking
+#define OWN_scanned			2		// Owner has been deadlock scanned
+#define OWN_manager			4		// Owner is privileged manager
+#define OWN_signal			8		// Owner needs signal delivered
+#define OWN_wakeup			32		// Owner has been awoken
+#define OWN_starved			128		// This thread may be starved
+#define OWN_asts_processed	256     // All blocking owners processed ASTs - its time for deadlock scan.
+                                    // This is used only in CS builds because SuperServer invokes
+                                    // ASTs directly
 
 /* Flags in own_ast_flags */
 #define OWN_signaled    16		/* Signal is thought to be delivered */
@@ -333,7 +364,7 @@ typedef struct own
 /* Flags in own_ast_hung_flag */
 #define OWN_hung        64		/* Owner may be hung by OS-level bug */
 
-/* NOTE: own_semaphore, when USE_EVENTS is set, is used to indicate when a 
+/* NOTE: own_semaphore, when USE_WAKEUP_EVENTS is set, is used to indicate when a 
    owner is waiting inside wait_for_request().  post_wakeup() will only
    attempt to wakeup owners that are waiting.  The reason for this is
    likely historical - a flag bit could be used for this instead. */

@@ -26,10 +26,17 @@
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ * 2003.03.24 Nickolay Samofatov
+ *	- cleanup #define's,
+ *  - shutdown blocking thread cleanly on Windows CS
+ *  - fix Windows CS lock-ups (make wakeup event manual-reset)
+ *  - detect deadlocks instantly in most cases (if blocking owner 
+ *     dies during AST processing deadlock scan timeout still applies)
  *
  */
+
 /*
-$Id: lock.cpp,v 1.40 2003-03-11 05:53:01 tamlin Exp $
+$Id: lock.cpp,v 1.41 2003-03-24 14:32:33 skidder Exp $
 */
 
 #include "firebird.h"
@@ -88,13 +95,6 @@ $Id: lock.cpp,v 1.40 2003-03-11 05:53:01 tamlin Exp $
 #include <vfork.h>
 #endif
 
-#if defined UNIX
-#define USE_EVENTS
-#ifndef ANY_THREADING			/* #if !(defined SOLARIS || defined POSIX_THREADS) */
-#define STATIC_SEMAPHORES
-#endif /* ANY_THREADING */
-#endif /* UNIX */
-
 #ifdef WIN_NT
 #include <process.h>
 #define MUTEX		lock_manager_mutex
@@ -114,6 +114,7 @@ static BOOLEAN LOCK_post_manager;
 #if ((defined HAVE_MMAP) && !(defined SUPERSERVER))
 #define LOCK_DEBUG_ACQUIRE
 #endif
+//#define DEBUG_TRACE
 #endif
 
 #ifdef LOCK_DEBUG_ACQUIRE
@@ -144,7 +145,7 @@ static ULONG debug_acquire_count = 0;
 #endif
 
 #ifdef DEBUG_TRACE
-#define LOCK_TRACE(x)	{ time_t t; (void) time (&t); ib_printf ("%s", ctime(&t) ); ib_printf x ; ib_fflush (ib_stdout); }
+#define LOCK_TRACE(x)	{ time_t t; (void) time (&t); ib_printf ("%s", ctime(&t) ); ib_printf x ; ib_fflush (ib_stdout); gds__log x ;}
 #endif
 
 #ifdef DEBUG
@@ -195,15 +196,16 @@ extern SCHAR *sys_errlist[];
 static void acquire(PTR);
 static UCHAR *alloc(SSHORT, STATUS *);
 static LBL alloc_lock(USHORT, STATUS *);
-#ifdef STATIC_SEMAPHORES
+#ifdef USE_STATIC_SEMAPHORES
 static USHORT alloc_semaphore(OWN, STATUS *);
 #endif
-#if (!(defined WIN_NT || defined SOLARIS_MT || POSIX_THREADS)) \
-|| (defined SOLARIS_MT && !defined SUPERSERVER) || (defined WIN_NT && !defined SUPERSERVER)
+#ifndef SUPERSERVER
+// This is either signal handler of called from blocking_thread
+// only SuperServer does direct calls to blocking_action2
 static void blocking_action(PTR);
 #endif
 static void blocking_action2(PTR, PTR);
-#if (defined WIN_NT && !defined SUPERSERVER) || (defined SOLARIS_MT && !defined SUPERSERVER)
+#ifdef USE_BLOCKING_THREAD
 static void THREAD_ROUTINE blocking_action_thread(PTR *);
 #endif
 static void bug(STATUS *, const TEXT *);
@@ -233,7 +235,7 @@ static void grant(LRQ, LBL);
 static PTR grant_or_que(LRQ, LBL, SSHORT);
 static STATUS init_lock_table(STATUS *);
 static void init_owner_block(OWN, UCHAR, ULONG, USHORT);
-#ifdef USE_EVENTS
+#ifdef USE_WAKEUP_EVENTS
 static void lock_alarm_handler(EVENT);
 #endif
 static void lock_initialize(void *, SH_MEM, int);
@@ -241,7 +243,7 @@ static void insert_data_que(LBL);
 static void insert_tail(SRQ, SRQ);
 static USHORT lock_state(LBL);
 //static void port_waker(PTR *);
-static void post_blockage(LRQ, LBL, BOOLEAN);
+static int post_blockage(LRQ, LBL, BOOLEAN);
 static void post_history(USHORT, PTR, PTR, PTR, BOOLEAN);
 static void post_pending(LBL);
 static void post_wakeup(OWN);
@@ -253,13 +255,11 @@ static void remove_que(SRQ);
 static void release(PTR);
 static void release_mutex(void);
 static void release_request(LRQ);
-#ifdef STATIC_SEMAPHORES
+#ifdef USE_STATIC_SEMAPHORES
 static void release_semaphore(OWN);
 #endif
-#ifndef SUPERSERVER
-#if (defined WIN_NT || defined SOLARIS_MT)
+#ifdef USE_BLOCKING_THREAD
 static void shutdown_blocking_thread(STATUS *);
-#endif
 #endif
 static int signal_owner(OWN, PTR);
 #ifdef VALIDATE_LOCK_TABLE
@@ -349,6 +349,9 @@ extern int statistics();
 extern int chmod();
 #endif
 
+#if defined WIN_NT && defined USE_BLOCKING_THREAD
+static DWORD blocking_action_thread_id;
+#endif
 
 static const UCHAR compatibility[] = {
 
@@ -720,18 +723,19 @@ void LOCK_fini( STATUS * status_vector, PTR * owner_offset)
 	if (--owner->own_count > 0 || !LOCK_header)
 		return;
 
-#ifndef SUPERSERVER
-#if (defined WIN_NT || defined SOLARIS_MT)
+#ifdef USE_BLOCKING_THREAD
 	shutdown_blocking_thread(status_vector);
-#else
-#ifdef HAVE_MMAP
+#endif
+
+#if !defined SUPERSERVER && defined HAVE_MMAP
 	if (LOCK_owner) {
 		ISC_unmap_object(status_vector, &LOCK_data,(UCHAR**)&LOCK_owner,
 						 sizeof(struct own));
 		LOCK_owner_offset = 0;
 	}
 #endif
-#endif
+
+#ifndef SUPERSERVER
 	LOCK_owner = 0;
 #endif
 
@@ -746,7 +750,7 @@ void LOCK_fini( STATUS * status_vector, PTR * owner_offset)
 
 	release_mutex();
 
-#if !(defined WIN_NT || defined SOLARIS_MT || POSIX_THREADS)
+#ifdef USE_BLOCKING_SIGNALS
 	ISC_signal_cancel(LOCK_block_signal, ( void (*)()) blocking_action,
                   (void *) offset);
 #endif
@@ -778,9 +782,6 @@ int LOCK_init(
  *
  **************************************/
 	OWN owner;
-#if (defined SOLARIS_MT)
-	ULONG status;
-#endif
 
 	LOCK_TRACE(("LOCK_init (ownerid=%ld)\n", owner_id));
 
@@ -807,26 +808,13 @@ int LOCK_init(
 		return FB_FAILURE;
 	}
 
-#ifndef  SUPERSERVER
-#if defined(SCO_EV) || defined(LINUX) || defined(FREEBSD) || defined(NETBSD) || defined(AIX_PPC) || defined(DARWIN) || defined(SINIXZ)
-/* 5.5 SCO port: might also help other classic ports, but not sure. This
-   and a few subsequent pieces of code later, solve problem of gds_drop
-   giving following message
-Fatal lock manager error: semop failed (acquire), errno: 22
---Invalid argument
-If this happens on another classic platform add that platform too. - Shailesh
-*/
+#ifndef SUPERSERVER
 	if (LOCK_owner_offset = *owner_handle)
-#else
-	LOCK_owner_offset = *owner_handle;
-#endif
-	LOCK_owner = (OWN) ABS_PTR(*owner_handle);
+		LOCK_owner = (OWN) ABS_PTR(*owner_handle);
 #endif
 
-#if !(defined WIN_NT || defined SOLARIS_MT || POSIX_THREADS)
-#if defined(SCO_EV) || defined(LINUX) || defined(FREEBSD) || defined(NETBSD) || defined(AIX_PPC) || defined(DARWIN) || defined(SINIXZ)
-	if (LOCK_owner_offset)		/* 5.5 SCO port: gds_drop */
-#endif
+#ifdef USE_BLOCKING_SIGNALS
+	if (LOCK_owner_offset)
 		ISC_signal(LOCK_block_signal, (void(*)()) blocking_action,
 				   (void *) LOCK_owner_offset);
 #endif
@@ -835,16 +823,16 @@ If this happens on another classic platform add that platform too. - Shailesh
    This should be done after the call to create_owner() that 
    initializes owner_handle. */
 
-#if (defined WIN_NT && !defined SUPERSERVER)
+#if !defined SUPERSERVER && defined WIN_NT
 	owner = (OWN) ABS_PTR(*owner_handle);
 	wakeup_event[0] = owner->own_wakeup_hndl;
 	blocking_event[0] =
-		ISC_make_signal(TRUE, FALSE, LOCK_pid, LOCK_block_signal);
+		ISC_make_signal(TRUE, TRUE/*FALSE*/, LOCK_pid, LOCK_block_signal);
 	owner->own_blocking_hndl = blocking_event[0];
 	AST_ALLOC;
 	if (gds__thread_start
 		(reinterpret_cast < FPTR_INT_VOID_PTR > (blocking_action_thread),
-		 &LOCK_owner_offset, THREAD_critical, 0, 0)) {
+		 &LOCK_owner_offset, THREAD_critical, 0, &blocking_action_thread_id)) {
 		*status_vector++ = gds_arg_gds;
 		*status_vector++ = gds_lockmanerr;
 		*status_vector++ = gds_arg_gds;
@@ -860,20 +848,22 @@ If this happens on another classic platform add that platform too. - Shailesh
 	}
 #endif
 
-#ifndef SUPERSERVER
-#ifdef HAVE_MMAP
-#ifdef SOLARIS_MT
+#if !defined SUPERSERVER && defined HAVE_MMAP
+	if (LOCK_owner_offset &&
+		!(LOCK_owner = (OWN) ISC_map_object(status_vector, &LOCK_data,
+											LOCK_owner_offset,
+											sizeof(struct own)))) 
+		return FB_FAILURE;
+#endif
+
+#if !defined SUPERSERVER && defined SOLARIS_MT
 /* Map the owner block separately so that threads waiting
    on synchronization variables embedded in the owner block
    don't have to coordinate during lock table unmapping. */
-
-	if (!(LOCK_owner = (OWN) ISC_map_object(status_vector, &LOCK_data,
-											LOCK_owner_offset,
-											sizeof(struct own)))) return
-			FB_FAILURE;
 	AST_ALLOC;
-	if (status = gds__thread_start( reinterpret_cast < FPTR_INT_VOID_PTR > ( blocking_action_thread ),
-				   &LOCK_owner_offset, THREAD_high, 0, 0)) {
+	ULONG status = gds__thread_start( reinterpret_cast < FPTR_INT_VOID_PTR > ( 
+		blocking_action_thread ), &LOCK_owner_offset, THREAD_high, 0, 0);
+	if (status) {
 		*status_vector++ = gds_arg_gds;
 		*status_vector++ = gds_lockmanerr;
 		*status_vector++ = gds_arg_gds;
@@ -885,16 +875,6 @@ If this happens on another classic platform add that platform too. - Shailesh
 		*status_vector++ = gds_arg_end;
 		return FB_FAILURE;
 	}
-#else
-#if defined(SCO_EV) || defined(LINUX) || defined(FREEBSD) || defined(NETBSD) || defined(AIX_PPC) || defined(DARWIN) || defined(SINIXZ)
-	if (LOCK_owner_offset)		/* 5.5 SCO Port: gds_drop */
-#endif
-		if (!(LOCK_owner = (OWN) ISC_map_object(status_vector, &LOCK_data,
-												LOCK_owner_offset,
-												sizeof(struct own)))) return
-				FB_FAILURE;
-#endif
-#endif
 #endif
 
 #ifdef MANAGER_PROCESS
@@ -970,7 +950,7 @@ void LOCK_manager( PTR manager_owner_offset)
 	manager_owner = (OWN) ABS_PTR(manager_owner_offset);
 	manager_owner->own_flags |= OWN_manager;
 	LOCK_process_owner.own_flags |= OWN_manager;
-#ifdef STATIC_SEMAPHORES
+#ifdef USE_STATIC_SEMAPHORES
 	semaphore = alloc_semaphore(manager_owner, NULL);
 #else
 	manager_owner->own_semaphore = 1;
@@ -1297,7 +1277,7 @@ void LOCK_re_post( int (*ast) (void *), void *arg, PTR owner_offset)
 
 	DEBUG_DELAY;
 
-#ifdef ANY_THREADING
+#ifdef USE_BLOCKING_THREAD
 	signal_owner((OWN) ABS_PTR(owner_offset), (PTR) NULL);
 #else
 /* The deadlock detection looks at the OWN_signaled bit to decide
@@ -1406,7 +1386,6 @@ static void acquire( PTR owner_offset)
 	PTR prior_active;
 	SLONG length, spins, status;
 	LHB header;
-	STATUS status_vector[ISC_STATUS_LENGTH];
 
 #if (defined SOLARIS_MT && !defined SUPERSERVER)
   acquire_retry:
@@ -1417,7 +1396,7 @@ static void acquire( PTR owner_offset)
    of the lock table falls in the remapped portion of the map
    file, which we are yet to expand (remap) to */
 
-#ifndef ANY_THREADING
+#ifdef USE_BLOCKING_SIGNALS
 	++LOCK_asts;
 	DEBUG_DELAY;
 #endif
@@ -1431,7 +1410,6 @@ static void acquire( PTR owner_offset)
 	prior_active = LOCK_header->lhb_active_owner;
 
 #ifndef SUPERSERVER
-#ifdef HAVE_MMAP
 	if (LOCK_owner) {
 		/* Record a "timestamp" of when this owner requested the lock table */
 		LOCK_owner->own_acquire_time = LOCK_header->lhb_acquires;
@@ -1442,7 +1420,6 @@ static void acquire( PTR owner_offset)
 #endif
 		LOCK_owner->own_ast_hung_flags |= OWN_hung;
 	}
-#endif
 #endif
 
 /* Perform a spin wait on the lock table mutex. This should only
@@ -1486,12 +1463,10 @@ static void acquire( PTR owner_offset)
 	LOCK_post_manager = FALSE;
 #endif
 
-#ifndef SUPERSERVER
-#ifndef ANY_THREADING
+#ifdef USE_BLOCKING_SIGNALS
 	if (LOCK_owner) {
 		LOCK_owner->own_ast_hung_flags &= ~OWN_hung;	/* Can't be hung by OS if we got here */
 	}
-#endif
 #endif
 
 	if (LOCK_header->lhb_length > LOCK_data.sh_mem_length_mapped
@@ -1505,7 +1480,8 @@ static void acquire( PTR owner_offset)
 		length = LOCK_header->lhb_length;
 /* Do not do Lock table remapping for SUPERSERVER. Specify required
    lock table size in the configuration file */
-#if !((defined SUPERSERVER) && (defined HAVE_MMAP))
+#if !defined SUPERSERVER && defined HAVE_MMAP
+		STATUS status_vector[ISC_STATUS_LENGTH];
 		header =
 			(LHB) ISC_remap_file(status_vector, &LOCK_data, length, FALSE);
 		if (!header)
@@ -1545,7 +1521,7 @@ static void acquire( PTR owner_offset)
 			recover->shb_insert_prior = 0;
 		}
 	}
-#if (defined SOLARIS_MT && !defined SUPERSERVER)
+#if !defined SUPERSERVER && defined SOLARIS_MT
 	if (LOCK_solaris_stall) {
 		if (owner_offset > 0) {
 			OWN first_owner;
@@ -1609,8 +1585,7 @@ static UCHAR *alloc( SSHORT size, STATUS * status_vector)
  *	Allocate a block of given size.
  *
  **************************************/
-	ULONG length, block;
-	LHB header;
+	ULONG block;
 
 	size = FB_ALIGN(size, sizeof(IPTR));
 	ASSERT_ACQUIRED;
@@ -1624,9 +1599,9 @@ static UCHAR *alloc( SSHORT size, STATUS * status_vector)
 		LOCK_header->lhb_used -= size;
 /* Do not do Lock table remapping for SUPERSERVER. Specify required
    lock table size in the configuration file */
-#if (!(defined SUPERSERVER) && (defined HAVE_MMAP)) || defined (WIN_NT)
-		length = LOCK_data.sh_mem_length_mapped + EXTEND_SIZE;
-		header =
+#if !defined SUPERSERVER && defined HAVE_MMAP
+		ULONG length = LOCK_data.sh_mem_length_mapped + EXTEND_SIZE;
+		LHB header =
 			(LHB) ISC_remap_file(status_vector, &LOCK_data, length, TRUE);
 		if (header) {
 			LOCK_header = header;
@@ -1707,7 +1682,7 @@ static LBL alloc_lock( USHORT length, STATUS * status_vector)
 }
 
 
-#ifdef STATIC_SEMAPHORES
+#ifdef USE_STATIC_SEMAPHORES
 static USHORT alloc_semaphore( OWN owner, STATUS * status_vector)
 {
 /**************************************
@@ -1755,8 +1730,7 @@ static USHORT alloc_semaphore( OWN owner, STATUS * status_vector)
 #endif
 
 
-#if (!(defined WIN_NT || defined SOLARIS_MT || POSIX_THREADS)) \
-|| (defined SOLARIS_MT && !defined SUPERSERVER) || (defined WIN_NT && !defined SUPERSERVER)
+#ifndef SUPERSERVER
 static void blocking_action( PTR owner_offset)
 {
 /**************************************
@@ -1785,7 +1759,7 @@ static void blocking_action( PTR owner_offset)
 /* Ignore signals that occur when executing in lock manager
    or when there is no owner block set up */
 
-#ifndef ANY_THREADING
+#ifdef USE_BLOCKING_SIGNALS
 	if (++LOCK_asts || !owner_offset) {
 		DEBUG_DELAY;
 		if (owner_offset) {
@@ -1817,7 +1791,7 @@ static void blocking_action( PTR owner_offset)
 	blocking_action2(owner_offset, (PTR) NULL);
 	release(owner_offset);
 
-#ifndef ANY_THREADING
+#ifdef USE_BLOCKING_SIGNALS
 	DEBUG_DELAY;
 	--LOCK_asts;
 	DEBUG_DELAY;
@@ -1896,12 +1870,20 @@ static void blocking_action2(
 			reinterpret_cast<void(*)(...)>(*routine)(arg);
 			acquire(blocked_owner_offset);
 			owner = (OWN) ABS_PTR(blocking_owner_offset);
+			OWN blocked_owner = (OWN) ABS_PTR(blocked_owner_offset);
+			if (blocked_owner->own_ast_prc_count > 0) {
+				blocked_owner->own_ast_prc_count--;
+				if (blocked_owner->own_ast_prc_count == 0) {
+					blocked_owner->own_flags |= OWN_asts_processed;
+					signal_owner(owner, blocked_owner_offset);
+				}
+			}
 		}
 	}
 }
 
 
-#if (defined WIN_NT && !defined SUPERSERVER)
+#if !defined SUPERSERVER && defined WIN_NT
 static void THREAD_ROUTINE blocking_action_thread( PTR * owner_offset_ptr)
 {
 /**************************************
@@ -1922,9 +1904,10 @@ static void THREAD_ROUTINE blocking_action_thread( PTR * owner_offset_ptr)
 
 	while (TRUE) {
 		ret = WaitForSingleObject(blocking_event[0], INFINITE);
+		ResetEvent(blocking_event[0]);
 		AST_ENTER;
 		owner = (OWN) ABS_PTR(*owner_offset_ptr);
-		if ((ret && ret != WAIT_ABANDONED) ||
+		if ((ret != WAIT_OBJECT_0 && ret != WAIT_ABANDONED) ||
 			!*owner_offset_ptr ||
 			owner->own_process_id != LOCK_pid || owner->own_owner_id == 0)
 			break;
@@ -2691,7 +2674,7 @@ static void exit_handler( void *arg)
 /* Get rid of all the owners belonging to the current process */
 
 	if (owner_offset = LOCK_owner_offset) {
-#if (defined WIN_NT || defined SOLARIS_MT)
+#ifdef USE_BLOCKING_THREAD
 		shutdown_blocking_thread(local_status);
 #else
 #ifdef HAVE_MMAP
@@ -3139,6 +3122,7 @@ static void init_owner_block(
 	owner->own_ast_hung_flags = 0;
 	owner->own_count = 1;
 	owner->own_owner_id = owner_id;
+	owner->own_ast_prc_count = 0;
 	QUE_INIT(owner->own_lhb_owners);
 	QUE_INIT(owner->own_requests);
 	QUE_INIT(owner->own_blocks);
@@ -3163,7 +3147,7 @@ static void init_owner_block(
 		owner->own_wakeup_hndl =
 			ISC_make_signal(TRUE, TRUE, LOCK_pid, LOCK_wakeup_signal);
 #endif
-#ifdef USE_EVENTS
+#ifdef USE_WAKEUP_EVENTS
 #if (defined WIN_NT && defined SUPERSERVER)
 		ISC_event_init(owner->own_wakeup, 0, 0);
 #endif
@@ -3191,7 +3175,7 @@ static void init_owner_block(
 }
 
 
-#ifdef USE_EVENTS
+#ifdef USE_WAKEUP_EVENTS
 static void lock_alarm_handler( EVENT event)
 {
 /**************************************
@@ -3335,7 +3319,7 @@ static void lock_initialize( void *arg, SH_MEM shmem_data, int initialize)
 			(j == 0) ? LOCK_header->lhb_history : shb->shb_history;
 	}
 
-#ifdef STATIC_SEMAPHORES
+#ifdef USE_STATIC_SEMAPHORES
 /* Initialize the semaphores. Allocate semaphore block. */
 
 	SMB semaphores = (SMB) alloc(sizeof(struct smb) +
@@ -3483,7 +3467,7 @@ static USHORT lock_state( LBL lock)
 }
 
 
-static void post_blockage( LRQ request, LBL lock, BOOLEAN force)
+static int post_blockage( LRQ request, LBL lock, BOOLEAN force)
 {
 /**************************************
  *
@@ -3500,6 +3484,7 @@ static void post_blockage( LRQ request, LBL lock, BOOLEAN force)
 	SRQ que, next_que;
 	PTR next_que_offset;
 	LRQ block;
+	int signaled_count = 0;
 
 	owner = (OWN) ABS_PTR(request->lrq_owner);
 
@@ -3538,8 +3523,9 @@ static void post_blockage( LRQ request, LBL lock, BOOLEAN force)
 			block->lrq_flags &= ~LRQ_blocking_seen;
 		}
 
-		if (force)
+		if (force) {
 			blocking_owner->own_ast_flags &= ~OWN_signaled;
+		}
 		if (blocking_owner != owner &&
 			signal_owner(blocking_owner, REL_PTR(owner))) {
 			/* We can't signal the blocking_owner, assume he has died
@@ -3548,9 +3534,11 @@ static void post_blockage( LRQ request, LBL lock, BOOLEAN force)
 			que = (SRQ) ABS_PTR(que->srq_backward);
 			purge_owner(REL_PTR(owner), blocking_owner);
 		}
+		signaled_count++;
 		if (block->lrq_state == LCK_EX)
 			break;
 	}
+    return signaled_count;
 }
 
 
@@ -3663,7 +3651,7 @@ static void post_pending( LBL lock)
 }
 
 
-#ifdef USE_EVENTS
+#ifdef USE_WAKEUP_EVENTS
 static void post_wakeup( OWN owner)
 {
 /**************************************
@@ -3690,7 +3678,7 @@ static void post_wakeup( OWN owner)
 #endif
 
 
-#ifndef USE_EVENTS
+#ifndef USE_WAKEUP_EVENTS
 static void post_wakeup( OWN owner)
 {
 /**************************************
@@ -3782,7 +3770,7 @@ static void purge_owner(PTR purging_owner_offset, OWN owner)
 	post_history(his_del_owner, purging_owner_offset, REL_PTR(owner), 0,
 				 FALSE);
 
-#ifdef STATIC_SEMAPHORES
+#ifdef USE_STATIC_SEMAPHORES
 	release_semaphore(owner);
 #endif
 
@@ -3904,14 +3892,14 @@ static void release( PTR owner_offset)
  *
  **************************************/
 
-#if !defined(ANY_THREADING) || \
+#if defined USE_BLOCKING_SIGNALS || \
 	defined(MANAGER_PROCESS) || \
 	(defined SOLARIS_MT && !defined SUPERSERVER)
 
 	OWN owner;
 #endif
 
-#ifndef ANY_THREADING
+#ifdef USE_BLOCKING_SIGNALS
 	if (owner_offset) {
 		owner = (OWN) ABS_PTR(owner_offset);
 		if (!QUE_EMPTY(owner->own_blocks))
@@ -3998,7 +3986,7 @@ static void release_mutex(void)
 	if (ISC_mutex_unlock(MUTEX))
 		bug(NULL, "semop failed (release)");
 
-#ifndef ANY_THREADING
+#ifdef USE_BLOCKING_SIGNALS
 	DEBUG_DELAY;
 	--LOCK_asts;
 #endif
@@ -4088,7 +4076,7 @@ static void release_request( LRQ request)
 }
 
 
-#ifdef STATIC_SEMAPHORES
+#ifdef USE_STATIC_SEMAPHORES
 static void release_semaphore( OWN owner)
 {
 /**************************************
@@ -4116,8 +4104,7 @@ static void release_semaphore( OWN owner)
 #endif
 
 
-#ifndef SUPERSERVER
-#if (defined WIN_NT || defined SOLARIS_MT)
+#ifdef USE_BLOCKING_THREAD
 static void shutdown_blocking_thread( STATUS * status_vector)
 {
 /**************************************
@@ -4138,17 +4125,16 @@ static void shutdown_blocking_thread( STATUS * status_vector)
 
 	LOCK_owner_offset = 0;
 
-#ifdef SUPERSERVER
-	return;
-#endif
-
-#if (defined WIN_NT && !defined SUPERSERVER)
+#ifdef WIN_NT
+	HANDLE hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, blocking_action_thread_id);
 	SetEvent(blocking_event[0]);
+	AST_ENABLE;
+	WaitForSingleObject(hThread, 10*1000 /* Give it 10 seconds for clean shutdown */);
+	CloseHandle(hThread);
 	CloseHandle(blocking_event[0]);
 	CloseHandle(wakeup_event[0]);
 #endif
 
-#ifndef SUPERSERVER
 #ifdef SOLARIS_MT
 /* Poke the blocking action thread to wakeup and notice
    the exit flag. In turn, wait on an event ourselves
@@ -4184,9 +4170,7 @@ static void shutdown_blocking_thread( STATUS * status_vector)
 						 sizeof(struct own));
 	}
 #endif
-#endif
 }
-#endif
 #endif
 
 static int signal_owner( OWN blocking_owner, PTR blocked_owner_offset)
@@ -4215,7 +4199,7 @@ static int signal_owner( OWN blocking_owner, PTR blocked_owner_offset)
 
 	DEBUG_DELAY;
 
-#if (!defined ANY_THREADING && !defined SUPERSERVER)
+#ifdef USE_BLOCKING_SIGNALS
 	if ((blocking_owner->own_ast_flags & OWN_signaled) ||
 		(blocking_owner->own_ast_hung_flags & OWN_hung))
 #else
@@ -4231,7 +4215,7 @@ static int signal_owner( OWN blocking_owner, PTR blocked_owner_offset)
 	blocking_owner->own_ast_flags |= OWN_signaled;
 	DEBUG_DELAY;
 	blocking_owner->own_flags &= ~OWN_signal;
-#if (defined SUPERSERVER || !defined ANY_THREADING)
+#ifndef USE_BLOCKING_THREAD
 	if (blocking_owner->own_process_id == LOCK_pid) {
 		DEBUG_DELAY;
 		ISC_inhibit();
@@ -4259,7 +4243,7 @@ static int signal_owner( OWN blocking_owner, PTR blocked_owner_offset)
 
 		DEBUG_DELAY;
 
-#if !(defined WIN_NT || defined SOLARIS_MT || POSIX_THREADS)
+#if !(defined WIN_NT || defined SOLARIS_MT)
 		if (ISC_kill(blocking_owner->own_process_id, LOCK_block_signal) != -1)
 			return FB_SUCCESS;
 #endif
@@ -4416,10 +4400,8 @@ static void validate_lhb( LHB lhb)
 
 	CHECK(lhb->lhb_used <= lhb->lhb_length);
 
-#ifdef UNIX
-#ifndef ANY_THREADING
+#if defined UNIX && !defined SUPERSERVER && !defined USE_BLOCKING_THREAD
 	CHECK(lhb->lhb_mutex[0].mtx_semid == LOCK_data.sh_mem_mutex_arg);
-#endif
 #endif
 
 	validate_history(lhb->lhb_history);
@@ -4740,7 +4722,7 @@ static void validate_owner( PTR own_ptr, USHORT freed)
 		CHECK((owner_own_pending_request == owner->own_pending_request) ||
 			  !owner->own_pending_request);
 	}
-#ifdef  STATIC_SEMAPHORES
+#ifdef USE_STATIC_SEMAPHORES
 	{
 		USHORT semaphore;
 		if ((semaphore = owner->own_semaphore) && (freed == EXPECT_inuse)) {
@@ -4915,7 +4897,7 @@ static USHORT wait_for_request(
 	owner->own_pending_request = request_offset = REL_PTR(request);
 	owner->own_flags &= ~(OWN_scanned | OWN_wakeup);
 
-#ifdef STATIC_SEMAPHORES
+#ifdef USE_STATIC_SEMAPHORES
 /* If semaphore hasn't been allocated for lock, allocate it now. */
 
 	USHORT semaphore = owner->own_semaphore &= ~OWN_semavail;
@@ -4941,7 +4923,12 @@ static USHORT wait_for_request(
 /* Post blockage.  If the blocking owner has disappeared, the blockage
    may clear spontaneously. */
 
-	post_blockage(request, lock, FALSE);
+	owner->own_ast_prc_count = post_blockage(request, lock, FALSE);
+	// Do not waste time waiting before doing deadlock scan cycle if there are no AST handlers
+	if (owner->own_ast_prc_count == 0)
+		owner->own_flags |= OWN_asts_processed;
+	else
+		owner->own_flags &= ~OWN_asts_processed;
 	post_history(his_wait, owner_offset, lock_offset, REL_PTR(request), TRUE);
 	release(owner_offset);
 
@@ -4981,7 +4968,10 @@ static USHORT wait_for_request(
 
 		/* Prepare to wait for a timeout or a wakeup from somebody else.  */
 
-#ifdef USE_EVENTS
+		if (owner->own_flags & OWN_asts_processed) {
+			ret = FB_SUCCESS; // Do not wait if all ASTS are already delivered
+		} else {
+#ifdef USE_WAKEUP_EVENTS
 		SLONG value;
 		EVENT event_ptr;
 
@@ -5035,7 +5025,8 @@ static USHORT wait_for_request(
 #endif
 			}
 		}
-#endif
+
+#else
 
 #ifdef WIN_NT
 		AST_ENABLE;
@@ -5049,7 +5040,7 @@ static USHORT wait_for_request(
    The only thing we could do now is to wait. But let's do it without
    monopolizing the engine
 */
-		THREAD_EXIT;
+		THREAD_EXIT;		
 		ret =
 			WaitForSingleObject(owner->own_wakeup_hndl,
 								(timeout - current_time) * 1000);
@@ -5060,11 +5051,14 @@ static USHORT wait_for_request(
 								(timeout - current_time) * 1000);
 #endif
 		AST_DISABLE;
-		if (!ret || ret == WAIT_ABANDONED)
+		if (ret == WAIT_OBJECT_0 || ret == WAIT_ABANDONED)
 			ret = FB_SUCCESS;
 		else					/* if (ret == WAIT_TIMEOUT) */
 			ret = FB_FAILURE;
 #endif
+
+#endif
+		} /* if (!(owner->flags & OWN_asts_processed)) */
 
 		/* We've worken up from the wait - now look around and see
 		   why we wokeup */
@@ -5093,7 +5087,7 @@ static USHORT wait_for_request(
 		if (owner->own_flags & OWN_wakeup)
 #endif
 			ret = FB_SUCCESS;
-#ifdef USE_EVENTS
+#ifdef USE_WAKEUP_EVENTS
 		else
 			ret = FB_FAILURE;
 #endif
@@ -5156,14 +5150,8 @@ static USHORT wait_for_request(
 
 
 		/* Handle lock event first */
-		if (ret == FB_SUCCESS)
+		if (ret == FB_SUCCESS && !(owner->own_flags & OWN_asts_processed))
 		{
-			/* Someone posted our wakeup event, but DIDN'T grant our request.
-			   Re-post what we're blocking on and continue to wait.
-			   This could happen if the lock was granted to a different request,
-			   we have to tell the new owner of the lock that they are blocking us. */
-
-			post_blockage(request, lock, FALSE);
 #ifdef WIN_NT
 #ifdef SUPERSERVER
 			ResetEvent(owner->own_wakeup_hndl);
@@ -5171,6 +5159,18 @@ static USHORT wait_for_request(
 			ResetEvent(wakeup_event[0]);
 #endif
 #endif
+			/* Someone posted our wakeup event, but DIDN'T grant our request.
+			   Re-post what we're blocking on and continue to wait.
+			   This could happen if the lock was granted to a different request,
+			   we have to tell the new owner of the lock that they are blocking us. */
+
+			owner->own_ast_prc_count = post_blockage(request, lock, FALSE);
+			if (owner->own_ast_prc_count == 0)
+				owner->own_flags |= OWN_asts_processed;
+			else
+				owner->own_flags &= ~OWN_asts_processed;
+			release(owner_offset);
+			continue;
 		}
 
 #ifndef SUPERSERVER
@@ -5215,7 +5215,7 @@ static USHORT wait_for_request(
 			   When we get back to the top of the master loop we
 			   fall out and start cleaning up */
 		}
-		else
+		else if (!(owner->own_flags & OWN_asts_processed))
 		{
 			/* Our request is not resolved, all the owners are alive, there's
 			   no deadlock -- there's nothing else to do.  Let's
@@ -5228,7 +5228,9 @@ static USHORT wait_for_request(
 			   We need to inform the new owner. */
 
 			DEBUG_MSG(0, ("wait_for_request: forcing a resignal of blockers\n"));
-			post_blockage(request, lock, FALSE);
+			owner->own_ast_prc_count = post_blockage(request, lock, FALSE);
+			// Note: we do not set OWN_asts_processed flag here because we are 
+			// going to wait since now, not loop mindlessly
 #ifdef DEV_BUILD
 			repost_counter++;
 			if (repost_counter % 50 == 0) {
@@ -5242,6 +5244,7 @@ static USHORT wait_for_request(
 			}
 #endif /* DEV_BUILD */
 		}
+		owner->own_flags &= ~OWN_asts_processed;
 		release(owner_offset);
 	}
 
@@ -5255,7 +5258,7 @@ static USHORT wait_for_request(
 	owner = (OWN) ABS_PTR(owner_offset);
 	owner->own_pending_request = 0;
 
-#ifdef STATIC_SEMAPHORES
+#ifdef USE_STATIC_SEMAPHORES
 	owner->own_semaphore |= OWN_semavail;
 #else
 	owner->own_semaphore = 0;
