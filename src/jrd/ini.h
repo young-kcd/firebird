@@ -142,8 +142,8 @@ typedef struct rtyp {
 #define TYPE(text, type, field)	{ text, type, (UCHAR) field },
 
 #define CHARSET(name, cs_id, coll_id, bytes, num, s1, s2) \
-				{(name), (cs_id),   (UCHAR) nam_charset_name},
-#define CSALIAS(name, cs_id)	{(name), (cs_id),   (UCHAR) nam_charset_name},
+				{(name), (cs_id),   (UCHAR) nam_CHARACTER_SET_NAME},
+#define CSALIAS(name, cs_id)	{(name), (cs_id),   (UCHAR) nam_CHARACTER_SET_NAME},
 #define COLLATION(name, cc_id, cs_id, coll_id, sym)
 #define END_CHARSET
 
