@@ -306,7 +306,7 @@ void GDS_EXPORT gds__event_counts(ULONG*,
 								  char*,
 								  const char*);
 
-ISC_STATUS GDS_EXPORT gds__event_block(char  **,
+SLONG GDS_EXPORT gds__event_block(char  **,
 									 char  **,
 									 unsigned short, ...);
 
