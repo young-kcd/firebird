@@ -83,14 +83,14 @@ addFirebirdUser() {
 
     if [ -z "$testStr" ]
       then
-        groupadd -g 84 -o -r firebird
+        groupadd firebird
     fi
 
     testStr=`grep firebird /etc/passwd`
-    if [ -z "$testDir" ]
+    if [ -z "$testStr" ]
       then
-        useradd -o -r -m -d $IBRootDir -s /bin/bash \
-            -c "Firebird Database Administrator" -g firebird -u 84 firebird 
+        useradd -m -d $IBRootDir -s /bin/bash \
+            -c "Firebird Database Administrator" -g firebird firebird 
 
         # >/dev/null 2>&1 
     fi
