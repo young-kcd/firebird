@@ -1,3 +1,132 @@
+2003-09-11 23:33  skidder
+
+	* firebird2/src/jrd/gds.cpp:
+	
+	Implement fast thread-safe trace facility on Win32.  It is not
+	perfect (keeps log file open), but good enough
+
+2003-09-11 23:30  skidder
+
+	* firebird2/src/lock/lock.cpp:
+	
+	Enable lock manager buffer resizing for Win32 CS.  Further research
+	demonstrated that it should work.  This fix needs to be backported
+	to 1.5 if proves itself to work fine.
+
+2003-09-11 23:26  skidder
+
+	* firebird2/src/common/classes/rwlock.h:
+	
+	Mark volatile vars as such.  Add API to get current lock status for
+	Win32 RWLock
+
+2003-09-11 20:59  brodsom
+
+	* firebird2/src/remote/: inet.cpp, interface.cpp, protocol.cpp,
+	remote.cpp, remote.h, serve_proto.h, server.cpp:
+	
+	-BOOLEAN cleaning
+
+2003-09-11 14:01  robocop
+
+	* firebird2/src/msgs/load.epp:
+	
+	cleanup
+
+2003-09-11 13:53  robocop
+
+	* firebird2/src/jrd/dyn.epp:
+	
+	Store correct privilege
+
+2003-09-11 12:45  aafemt
+
+	* firebird2/src/jrd/dyn.epp:
+	
+	Fix mistype
+
+2003-09-11 12:36  aafemt
+
+	* firebird2/src/gpre/: gpre.h, gpre_meta_boot.cpp, pas.cpp,
+	sql.cpp:
+	
+	'struct' cleanup
+
+2003-09-11 11:08  brodsom
+
+	* firebird2/src/install/arch-specific/linux/super/:
+	SSchangePasswd.sh, makeInstallImage.sh.in, postinstall.sh.in,
+	postuninstall.sh.in, preinstall.sh.in, preuninstall.sh.in,
+	rpmfiles.txt.in, rpmheader.txt.in:
+	
+	Move Alex commit to the right place
+
+2003-09-11 10:01  epocman
+
+	* firebird2/doc/install_win32.txt:
+	
+	Minor Win32 installation notes update
+
+2003-09-11 04:53  brodsom
+
+	* firebird2/: builds/posix/Makefile.in.boot.gpre,
+	builds/posix/Makefile.in.client.gpre,
+	builds/posix/Makefile.in.embed.gpre,
+	builds/posix/Makefile.in.embed.qli,
+	builds/posix/Makefile.in.static.gpre, src/gpre/form.h,
+	src/gpre/form__proto.h, src/gpre/form_proto.h,
+	src/gpre/form_trn.cpp, src/gpre/noform.cpp, src/qli/form.h,
+	src/qli/form_proto.h, src/qli/noform.cpp:
+	
+	-Remove PYXIS
+
+2003-09-11 04:35  brodsom
+
+	* firebird2/src/gpre/sqe.cpp:
+	
+	-Scope correction
+
+2003-09-11 04:32  brodsom
+
+	* firebird2/src/jrd/os/win32/isc_ipc.cpp:
+	
+	-MINGW fix
+
+2003-09-11 04:14  brodsom
+
+	* firebird2/: src/jrd/gds.hxx, src/jrd/gdsold.h,
+	src/jrd/os/vms/dfloat_stub.cpp, src/msgs/load.epp,
+	src/msgs/msg.gdl, src/qli/eval.cpp, src/qli/everything.h,
+	src/qli/exe.cpp, src/qli/exe.h, src/qli/expand.cpp,
+	src/qli/format.cpp, src/qli/gener.cpp, src/qli/meta.epp,
+	src/qli/parse.cpp, src/qli/symbols.h, src/qli/words.h,
+	src/qli/blk.h, src/qli/compile.cpp, src/qli/dtr.cpp, src/qli/dtr.h,
+	builds/win32/msvc6/gpre.dsp, builds/win32/msvc6/gpre_boot.dsp,
+	builds/win32/msvc6/gpre_static.dsp, builds/win32/msvc6/qli.dsp,
+	builds/win32/msvc7/gpre.vcproj,
+	builds/win32/msvc7/gpre_boot.vcproj,
+	builds/win32/msvc7/gpre_static.vcproj,
+	builds/win32/msvc7/qli.vcproj,
+	builds/mac_os_x/CS/CS.pbproj/project.pbxproj:
+	
+	-Removing PYXIS
+
+2003-09-11 04:13  brodsom
+
+	* firebird2/src/gpre/: cob.cpp, exp.cpp, exp_proto.h, ftn.cpp,
+	gpre.cpp, gpre.h, hsh.h, msc.cpp, msc_proto.h, par.cpp,
+	par_proto.h, pas.cpp, pat.cpp, pat.h, prett_proto.h, pretty.cpp,
+	sqe.cpp, sql.cpp, words.h, ada.cpp, c_cxx.cpp, cmd.cpp, cmp.cpp,
+	cmp_proto.h:
+	
+	-Removing PYXIS -Cleaning BOOLEAN
+
+2003-09-11 04:12  brodsom
+
+	* firebird2/src/dbs/metadata.sql:
+	
+	Removing PYXIS
+
 2003-09-10 21:48  brodsom
 
 	* firebird2/src/gpre/: lang_proto.h, par.cpp, pas.cpp, pat.cpp,
@@ -352,12 +481,6 @@
 	* firebird2/src/jrd/opt.cpp:
 	
 	Don't forget the OR operations Arno
-
-2003-09-08 10:30  alexpeshkoff
-
-	* firebird2/src/install/arch-specific/linux/super/tarInstall.sh.in:
-	
-	fix typo in file name
 
 2003-09-08 03:50  brodsom
 
@@ -4121,8 +4244,7 @@
 	linux/super/makeInstallImage.sh.in, linux/super/postinstall.sh.in,
 	linux/super/postuninstall.sh.in, linux/super/preinstall.sh.in,
 	linux/super/preuninstall.sh.in, linux/super/rpmfiles.txt.in,
-	linux/super/rpmheader.txt.in, linux/super/tarInstall.sh.in,
-	linux/super/tarMainInstall.sh.in,
+	linux/super/rpmheader.txt.in, linux/super/tarMainInstall.sh.in,
 	linux/super/tarMainUninstall.sh.in, linux/super/taruninstall.sh.in,
 	linux/misc/changeDBAPassword.sh.in, linux/misc/firebird.xinetd.in,
 	linux/classic/README, linux/classic/makeInstallImage.sh.in,
@@ -5420,8 +5542,8 @@
 
 	* firebird2/src/install/arch-specific/linux/super/:
 	makeInstallImage.sh.in, postinstall.sh.in, rpmfiles.txt.in,
-	rpmheader.txt.in, tarInstall.sh.in, tarMainInstall.sh.in,
-	tarMainUninstall.sh.in, taruninstall.sh.in:
+	rpmheader.txt.in, tarMainInstall.sh.in, tarMainUninstall.sh.in,
+	taruninstall.sh.in:
 	
 	fixing linux SS - install files -- SORRY -- this files are not
 	checked, but are required to start SS build
@@ -15392,7 +15514,6 @@
 	arch-specific/linux/super/preuninstall.sh.in,
 	arch-specific/linux/super/rpmfiles.txt.in,
 	arch-specific/linux/super/rpmheader.txt.in,
-	arch-specific/linux/super/tarInstall.sh.in,
 	super/SSchangePasswd.sh, super/install.sh.in,
 	super/postinstall.sh.in, super/postuninstall.sh.in,
 	super/preinstall.sh.in, super/preuninstall.sh.in,
