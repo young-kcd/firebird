@@ -1,4 +1,6 @@
-# $Id: configure.in,v 1.31 2002-08-16 13:34:25 eku Exp $
+# $Id: configure.in,v 1.32 2002-08-22 07:56:28 eku Exp $
+
+################################# INITIALISATION ###############################
 
 AC_INIT(src)
 AC_CONFIG_AUX_DIR(src/make.new/config)
@@ -7,15 +9,42 @@ AC_PREFIX_DEFAULT(/usr/local/firebird)
 
 AC_CONFIG_HEADER(src/include/gen/autoconfig.h:src/make.new/config/config.h.in)
 
+dnl XE_APPEND(value, varname)
+define([XE_APPEND],[[$2]="$[$2] [$1]"])
+
+dnl XE_PREPEND(value, varname)
+define([XE_PREPEND],[[$2]="[$1] $[$2]"])
+
+################################# ADD TESTS BELOW ##############################
+
+AC_CANONICAL_SYSTEM
+
+case "$target_cpu" in
+powerpc) AC_DEFINE(PowerPC) ;;
+esac
+
+CPU_TYPE=$host_cpu # EKU: Should this be target_cpu ???
+AC_SUBST(CPU_TYPE)
+
+case "$target" in
+*-*-darwin*)      MAKEFILE_PREFIX=darwin  ; PLATFORM=DARWIN    ; AC_DEFINE(DARWIN);;
+*-*-freebsd*)     MAKEFILE_PREFIX=freebsd ; PLATFORM=FREEBSD   ; AC_DEFINE(FREEBSD);;
+*-*-linux*)       MAKEFILE_PREFIX=linux   ; PLATFORM=LINUX     ; AC_DEFINE(LINUX) ;;
+*-*-netbsd*)      MAKEFILE_PREFIX=netbsd  ; PLATFORM=NETBSD    ; AC_DEFINE(NETBSD) ;;
+*-*-hpux*)        MAKEFILE_PREFIX=hpux    ; PLATFORM=hpux      ; AC_DEFINE(hpux) ;;
+i386-pc-solaris*) MAKEFILE_PREFIX=solx86  ; PLATFORM=solx86    ; AC_DEFINE(solx86) ;;
+i*-sni-sysv4)     MAKEFILE_PREFIX=sinixz  ; PLATFORM="SINIX-Z" ; AC_DEFINE(SINIXZ) ;;
+esac
+
+AC_SUBST(PLATFORM)
 
 
 # possibly needed if we use install-sh program
 #AC_CONFIG_AUX_DIR(`pwd`)
 
-AC_CANONICAL_SYSTEM
-
 AC_PROG_AWK
-AC_PROG_CC
+AC_PROG_CC  # EKU: C++ programs should not use CC, but at the moment all
+            # makefiles use $(CC) to link objects. This has to be changed!
 AC_PROG_CXX
 AC_PROG_LEX
 AC_PROG_LN_S
@@ -39,7 +68,7 @@ PROD_BUILD_FLG=Y
 AC_ARG_ENABLE(debug,
   [  --enable-debug          build debug version [default=no]],
   [case "$enableval" in
-     yes) PROD_BUILD_FLG=;;
+     yes) PROD_BUILD_FLG=N;;
      no)  PROD_BUILD_FLG=Y;;
      *)   AC_MSG_ERROR(bad value '${enableval}' for --enable-debug);;
    esac])
@@ -77,66 +106,69 @@ AC_CHECK_HEADERS(pwd.h)
 AC_CHECK_HEADERS(unistd.h)
 AC_CHECK_HEADERS(varargs.h)
 
-AC_MSG_CHECKING(Checking for socklen_t type)
+
+# Check for libraries
+AC_CHECK_LIB(dl, main)
+AC_CHECK_LIB(c,main)
+AC_CHECK_LIB(m, main)
+if test "$FIREBIRD_ARCH_TYPE" = "super"; then
+  AC_CHECK_LIB(pthread, main)
+fi
+AC_CHECK_LIB(crypt, main)
+AC_CHECK_LIB(curses, main)
+#AC_CHECK_LIB(termcap, main)
+AC_CHECK_LIB(readline, main,,, $LIBS)
+AC_CHECK_LIB(stdc++, main,,, $LIBS)
+
+
+# Check for functions
+AC_CHECK_FUNCS(strlcpy strlcat)
+AC_CHECK_FUNCS(gettimeofday)
+if test "$ac_cv_func_gettimeofday" = "yes"; then
+  # EKU: SINIX-Z has no prototype for gettimeofday() so the following test
+  #      will always succeed, which is wrong.
+  case $PLATFORM in
+  SINIX-Z)
+    ;;
+  *)
+    AC_MSG_CHECKING(if gettimeofday accepts second (timezone) argument)
+    AC_TRY_COMPILE([#include <sys/time.h>],
+    [struct timeval tp; gettimeofday(&tp, (struct timezone *)0);],
+    [AC_DEFINE(GETTIMEOFDAY_RETURNS_TIMEZONE) AC_MSG_RESULT(yes)],
+    [AC_MSG_RESULT(no)])
+    ;;
+  esac
+fi
+AC_CHECK_FUNCS(time times)
+AC_CHECK_FUNCS(dirname)
+if test "$ac_cv_func_dirname" = "no"; then
+  # EKU: On SINIX-Z dirname is in libgen.
+  AC_CHECK_LIB(gen, dirname,
+    [XE_APPEND(-lgen,LIBS)
+     AC_CHECK_FUNCS(dirname)],, $LIBS)
+fi
+
+
+# Check for other things
+AC_C_BIGENDIAN
+AC_TYPE_SIGNAL
+
+AC_MSG_CHECKING(for socklen_t type)
 AC_TRY_COMPILE([#include <stdlib.h>
 #include <sys/types.h>
-#include <sys/socket.h>
-],
+#include <sys/socket.h>],
 [socklen_t a;],
 [AC_MSG_RESULT(yes)],
 [AC_DEFINE(socklen_t, int) AC_MSG_RESULT(no)])
 
-AC_MSG_CHECKING(Checking if gettimeofday accepts second (timezone) argument)
-AC_TRY_COMPILE([#include <sys/time.h>
-],
-[struct timeval tp; gettimeofday(&tp, (struct timezone *)0);],
-[AC_DEFINE(GETTIMEOFDAY_RETURNS_TIMEZONE) AC_MSG_RESULT(yes)],
+UNIX_64_BIT_IO=N
+AC_MSG_CHECKING(for 64 bit I/O support)
+AC_TRY_COMPILE([#include <sys/types.h>],
+[off64_t a;],
+[UNIX_64_BIT_IO=Y AC_DEFINE(UNIX_64_BIT_IO) AC_MSG_RESULT(yes)],
 [AC_MSG_RESULT(no)])
 
-AC_CHECK_LIB(dl, main)
-AC_CHECK_LIB(c,main)
-AC_CHECK_LIB(m, main)
-if `test "$FIREBIRD_ARCH_TYPE" = "super"` 
-  then
-  AC_CHECK_LIB(pthread, main)
-fi
-
-AC_CHECK_LIB(crypt, main)
-AC_CHECK_LIB(curses, main)
-#AC_CHECK_LIB(termcap, main)
-AC_CHECK_LIB(readline, main,,,$LIBS)
-AC_CHECK_LIB(stdc++, main,,, $LIBS)
-
-AC_CHECK_FUNCS(strlcpy strlcat)
-AC_CHECK_FUNCS(gettimeofday time times)
-AC_CHECK_FUNCS(dirname)
-
-AC_C_BIGENDIAN
-AC_C_CONST
-AC_TYPE_SIGNAL
-
-case "$target_cpu" in
-powerpc) AC_DEFINE(PowerPC) ;;
-esac
-
-case "$target" in
-*-*-darwin*) MAKEFILE_PREFIX=darwin ; PLATFORM=DARWIN ; AC_DEFINE(DARWIN);;
-*-*-freebsd*) MAKEFILE_PREFIX=freebsd ; PLATFORM=FREEBSD ; AC_DEFINE(FREEBSD);;
-*-*-linux*) MAKEFILE_PREFIX=linux ; PLATFORM=LINUX ; AC_DEFINE(LINUX) ;;
-*-*-netbsd*) MAKEFILE_PREFIX=netbsd ; PLATFORM=NETBSD ; AC_DEFINE(NETBSD) ;;
-*-*-hpux*) MAKEFILE_PREFIX=hpux ; PLATFORM=hpux ; AC_DEFINE(hpux) ;;
-i386-pc-solaris*) MAKEFILE_PREFIX=solx86 ; PLATFORM=solx86 ; AC_DEFINE(solx86) ;;
-i*-sni-sysv4) MAKEFILE_PREFIX=sinixz ; PLATFORM="SINIX-Z" ; AC_DEFINE(SINIXZ)
-esac
-
-AC_SUBST(PLATFORM)
-
-
-CPU_TYPE=$host_cpu
-AC_SUBST(CPU_TYPE)
-
-AC_DEFINE(UNIX_64_BIT_IO)
-
+######################### DO NOT ADD ANY TESTS BELOW ###########################
 
 # The following file defines the version number strings
 . ./src/misc/writeBuildNum.sh
@@ -386,9 +418,15 @@ esac
 
 case $PROD_BUILD_FLG in
  Y)       echo "       Debug : disabled";;
- *)       echo "       Debug : enabled";;
+ N)       echo "       Debug : enabled";;
 esac
 
+case $UNIX_64_BIT_IO in
+ Y)       echo "  64 bit I/O : enabled";;
+ N)       echo "  64 bit I/O : disabled";;
+esac
+
+echo           " Install Dir : $prefix"
 echo
 
 # EOF
