@@ -3298,7 +3298,7 @@ static RSB gen_aggregate(TDBB tdbb, OPT opt, JRD_NOD node)
 
 	// try to optimize MAX and MIN to use an index; for now, optimize
 	// only the simplest case, although it is probably possible
-	// to use an index in more complex situations */
+	// to use an index in more complex situations
 
 	JRD_NOD map = node->nod_arg[e_agg_map];
 	if ((map->nod_count == 1) &&
