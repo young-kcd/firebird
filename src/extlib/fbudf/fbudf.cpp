@@ -73,6 +73,7 @@ BOOL APIENTRY DllMain( HANDLE ,//hModule,
 #endif
 
 
+// To do: go from C++ native types to abstract FB types.
 
 const long seconds_in_day = 86400;
 const long tenthmsec_in_day = seconds_in_day * ISC_TIME_SECONDS_PRECISION;
@@ -91,35 +92,39 @@ FBUDF_API paramdsc* testreflect(paramdsc* rc)
 
 namespace internal
 {
-	// This definition comes from jrd\val.h and is equivalent to helper
+	// This definition comes from jrd\val.h and is used in helper
 	// functions {get/set}_varchar_len defined below.
-	typedef struct vvary {
+	struct vvary {
 		unsigned short	vary_length;
-		unsigned char	vary_string [1];
-	} VVARY;
+		unsigned char*	vary_string;
+	};
 
 	/*
-	inline short get_varchar_len(char* vchar) 
+	inline short get_varchar_len(const char* vchar) 
 	{
-		return  static_cast<short>((static_cast<short>(vchar[1]) << 8) + vchar[0]);
+		//return  static_cast<short>((static_cast<short>(vchar[1]) << 8) + vchar[0]);
+		return reinterpret_cast<const vvary*>(vchar)->vary_length;
 	}
 	*/
 
 	inline short get_varchar_len(const unsigned char* vchar)
 	{
-		return  static_cast<short>((static_cast<short>(vchar[1]) << 8) + vchar[0]);
+		//return static_cast<short>((static_cast<short>(vchar[1]) << 8) + vchar[0]);
+		return reinterpret_cast<const vvary*>(vchar)->vary_length;
 	}
 
 	inline void set_varchar_len(char* vchar, const short len)
 	{
-		vchar[1] = static_cast<char>(len >> 8);
-		vchar[0] = static_cast<char>(len);
+		//vchar[1] = static_cast<char>(len >> 8);
+		//vchar[0] = static_cast<char>(len);
+		reinterpret_cast<vvary*>(vchar)->vary_length = len;
 	}
 	
 	inline void set_varchar_len(unsigned char* vchar, const short len)
 	{
-		vchar[1] = static_cast<unsigned char>(len >> 8);
-		vchar[0] = static_cast<unsigned char>(len);
+		//vchar[1] = static_cast<unsigned char>(len >> 8);
+		//vchar[0] = static_cast<unsigned char>(len);
+		reinterpret_cast<vvary*>(vchar)->vary_length = len;
 	}
 
 	short get_int_type(const paramdsc* v, ISC_INT64& rc)
@@ -216,7 +221,7 @@ namespace internal
 			len -= varchar_indicator_size;
 			text = reinterpret_cast<vvary*>(v->dsc_address)->vary_string;
 			{
-				short x = get_varchar_len(v->dsc_address);
+				const short x = get_varchar_len(v->dsc_address);
 				if (x < len)
 					len = x;
 			}
@@ -374,11 +379,12 @@ namespace internal
 		//isc_decode_timestamp(&timestamp, &times);
 		isc_decode_timestamp(v, &times);
 		//isc_decode_sql_date(v, &times);
-		int dow = times.tm_wday;
+		const int dow = times.tm_wday;
 		if (dow >= 0 && dow <= 6)
 		{
 			size_t name_len = day_len[df];
 			const char* name_fmt = day_fmtstr[df];
+			// There should be a better way to do this than to alter the thread's locale.
 			if (!strcmp(setlocale(LC_TIME, NULL), "C"))
 				setlocale(LC_ALL, "");
 			name_len = strftime(rc + varchar_indicator_size, name_len,
@@ -386,7 +392,7 @@ namespace internal
 			if (name_len)
 			{
 				// There's no clarity in the docs whether '\0' is counted or not; be safe.
-				const char *p = rc + varchar_indicator_size + name_len - 1;
+				const char* p = rc + varchar_indicator_size + name_len - 1;
 				if (!*p)
 					--name_len;
 				set_varchar_len(rc, static_cast<short>(name_len));
@@ -457,7 +463,7 @@ FBUDF_API ISC_TIMESTAMP* addMonth(ISC_TIMESTAMP* v, int& nmonths)
 		times.tm_mon += 12;
 	}
 	int md[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-	int ly = times.tm_year + 1900;
+	const int ly = times.tm_year + 1900;
 	if (ly % 4 == 0 && ly % 100 != 0 || ly % 400 == 0)
 		++md[1];
 	if (times.tm_mday > md[times.tm_mon])
@@ -617,7 +623,7 @@ FBUDF_API paramdsc* fbround(paramdsc* v, paramdsc* rc)
 	{
 		if (!scale)
 		{
-			short dig = static_cast<short>(iv % 10);
+			const int dig = static_cast<int>(iv % 10);
 #if defined(SYMMETRIC_MATH)
 			if (dig >= 5 || dig <= -5)
 				gt = true;
@@ -644,8 +650,8 @@ FBUDF_API paramdsc* power(paramdsc* v, paramdsc* v2, paramdsc* rc)
 	if (internal::isnull(v) || internal::isnull(v2))
 		return internal::setnull(rc);
 	double d, d2;
-	short rct = internal::get_scaled_double(v, d);
-	short rct2 = internal::get_scaled_double(v2, d2);
+	const short rct = internal::get_scaled_double(v, d);
+	const short rct2 = internal::get_scaled_double(v2, d2);
 
 	// If we cause a div by zero, SS shutdowns in response.
 	// The doc I read says 0^0 will produce 1, so it's not tested below.

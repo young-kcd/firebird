@@ -22,9 +22,9 @@
 
 // The following ifdef block is the standard way of creating macros which make exporting 
 // from a DLL simpler. All files within this DLL are compiled with the FBUDF_EXPORTS
-// symbol defined on the command line. this symbol should not be defined on any project
+// symbol defined on the command line. This symbol should not be defined on any project
 // that uses this DLL. This way any other project whose source files include this file see 
-// FBUDF_API functions as being imported from a DLL, wheras this DLL sees symbols
+// FBUDF_API functions as being imported from a DLL, whereas this DLL sees symbols
 // defined with this macro as being exported.
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 #ifdef FBUDF_EXPORTS
@@ -83,3 +83,4 @@ FBUDF_API blobcallback* string2blob(paramdsc* v, blobcallback* outblob);
 #ifdef __cplusplus
 }
 #endif
+
