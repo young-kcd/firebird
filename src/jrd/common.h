@@ -29,10 +29,11 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "MAC" and "MAC_CP" defines
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
  *
  */
 /*
-$Id: common.h,v 1.9 2002-02-16 02:49:56 seanleyne Exp $
+$Id: common.h,v 1.10 2002-02-16 03:05:17 seanleyne Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -858,40 +859,6 @@ typedef unsigned long DWORD;
 #define STACK_REDUCTION
 
 #endif /* NETWARE_386 */
-
-
-
-#ifdef DELTA
-#define NO_PYXIS
-#define INTL
-#define INTL_BACKEND
-#define SETPGRP         setpgrp()
-#define NOINITGROUPS
-#define KILLER_SIGNALS
-#define SYSV_SIGNALS
-#define SYSV_SHMEM
-#define SMALL_FILE_NAMES
-#define vfork           fork
-#define UNIX            1
-#define CURSES_KEYPAD   1
-#define FB_ALIGN(n,b)      ((n+1) & ~1)
-#define ALIGNMENT       4
-#define DOUBLE_ALIGN    4
-#define IMPLEMENTATION  45
-#define                 IEEE
-#define SHMEM_PICKY
-
-#ifndef MAXPATHLEN
-#define MAXPATHLEN      1024
-#endif
-
-#undef LINKS_EXIST
-#define INTL
-#define setreuid(ruid,euid)     setuid(euid)
-#define setregid(rgid,egid)     setgid(egid)
-
-#endif /* DELTA */
-
 
 
 #ifdef M88K

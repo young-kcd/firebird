@@ -1,6 +1,7 @@
 /*
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "MAC" and "MAC_CP" defines
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" define
  */
 
 #ifndef AUTOCONFIG_H
@@ -76,7 +77,6 @@
 #undef sgi
 #undef mpexl
 #undef _CRAY
-#undef DELTA
 #undef M88K
 #undef UNIXWARE
 #undef NCR3000

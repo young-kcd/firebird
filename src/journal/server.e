@@ -113,10 +113,6 @@ typedef SLONG fd_mask;
 #define TEXT		SCHAR
 #endif
 
-#ifdef DELTA
-#define waitpid(x,y,z)	wait (y)
-#endif
-
 #ifndef WIN_NT
 #ifndef HANDLE
 #define HANDLE		SSHORT

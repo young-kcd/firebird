@@ -15,6 +15,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" define
+ *
  */
 #ifndef _INTL_LANGDRV_H_
 #define _INTL_LANGDRV_H_
@@ -58,9 +61,6 @@
 #ifdef mips
 #define NON_DLINK_OS
 #endif
-#endif
-#ifdef DELTA
-#define NON_DLINK_OS
 #endif
 #ifdef DG
 #define NON_DLINK_OS

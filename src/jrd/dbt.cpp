@@ -27,11 +27,7 @@
 #include "../jrd/everything.h"
 #include "../jrd/dbg.h"
 
-#ifdef DELTA
-#define FLD(struct, string, field) 0
-#else
 #define FLD(struct, string, field) string, (SCHAR*) OFFSET (struct, field), (SCHAR*) sizeof (((struct) 0)->field)
-#endif
 
 extern "C" {
 
@@ -81,7 +77,7 @@ static TEXT_PTR dbb_stuff[] = {
 	0
 },
 vec[] = {
-	"VECTOR", 
+	"VECTOR",
 // TMN: FIXFIX! John?
 //	FLD(VEC, "Count %d", vec_count),
 	"Count %d", (SCHAR*)4, (SCHAR*)4,

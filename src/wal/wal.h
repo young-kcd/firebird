@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
+ *
  */
 
 #ifndef _WAL_WAL_H_
@@ -31,15 +34,12 @@
 #define FCNTL_INCLUDED
 #endif
 #endif
-#ifdef DELTA
-#include <sys/types.h>
-#endif
 #ifdef IMP
 #include <sys/types.h>
 #endif
 #include "../jrd/common.h"
-#include "../jrd/misc.h"  
-#include "../jrd/isc.h"  
+#include "../jrd/misc.h"
+#include "../jrd/isc.h"
 
 #ifdef WIN_NT
 #define SYS_ERR			gds_arg_win32
@@ -90,7 +90,7 @@
 #define MIN_LOG_LENGTH		100
 
 /* WAL record header */
-/* the walrec_offset field is useful for easy traversal at 
+/* the walrec_offset field is useful for easy traversal at
    block level given a record offset. */
 
 typedef struct walrec_header {
@@ -191,12 +191,12 @@ typedef struct wals {
     SLONG    wals_cur_ckpt_intrvl;   /* How many bytes written so far since the last checkpoint */
     SLONG    wals_ckpted_log_seqno;  /* Sequence no of the log file which has the last checkpoint record */
     SLONG    wals_ckpt_log_p_offset; /* Where in the logname, this log file logically starts. */
-    SLONG    wals_ckpted_offset;     /* Byte offset (in the log) of the last checkpoint */ 
-    SLONG    wals_saved_ckpted_offset;/* Saving place of byte offset (in the log) of the last checkpoint */ 
+    SLONG    wals_ckpted_offset;     /* Byte offset (in the log) of the last checkpoint */
+    SLONG    wals_saved_ckpted_offset;/* Saving place of byte offset (in the log) of the last checkpoint */
 
     SLONG    wals_prev_ckpted_log_seqno;/* Sequence no of the log file which has the previous checkpoint record */
     SLONG    wals_prev_ckpt_log_p_offset;/* Where in the logname, this log file logically starts. */
-    SLONG    wals_prev_ckpted_offset;/* Byte offset (in the log) of the previous checkpoint */ 
+    SLONG    wals_prev_ckpted_offset;/* Byte offset (in the log) of the previous checkpoint */
     int     wals_buf_waiters;       /* Number of processes currently waiting for an empty buffer or a flush */
     int     wals_buf_waiting_count; /* Num of times any process had to wait for an empty buffer after the last expansion of buffer blocks. */
     SLONG    wals_buf_offset;        /* Offset in log file of the last byte put in log buffer */

@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
  *
  */
 
@@ -79,10 +80,6 @@ union semun {
 #endif
 
 #ifdef IMP
-#define SEMAPHORES	25
-#endif
-
-#ifdef DELTA
 #define SEMAPHORES	25
 #endif
 

@@ -20,7 +20,8 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
  *
  */
 
@@ -125,15 +126,6 @@ typedef struct itm {
 #include <sys/mount.h>
 #endif
 
-#ifdef DELTA
-#define NON_MNTENT
-#define MTAB			"/etc/mnttab"
-#define MTAB_OPEN(path,type)	open (path, type)
-#define MTAB_CLOSE(stream)	close (stream)
-#define GETWD(buf)		getcwd (buf, MAXPATHLEN)
-#endif
-
-
 #ifdef ultrix
 #define NON_MNTENT
 #include <sys/mount.h>
@@ -185,11 +177,6 @@ typedef struct mnt {
 #include <sys/ipc.h>
 #include <sys/file.h>
 #include <errno.h>
-
-#ifdef DELTA
-#include <sys/sysmacros.h>
-#include <sys/param.h>
-#endif
 
 #ifdef DARWIN
 #include </usr/include/pwd.h>
@@ -256,14 +243,10 @@ static void share_name_from_unc(TEXT *, TEXT *, LPREMOTE_NAME_INFO);
 #if (defined AIX || defined AIX_PPC || defined DECOSF)
 static BOOLEAN get_mounts(MNT *, TEXT *, TEXT **, int *);
 #else
-#ifdef DELTA
-static BOOLEAN get_mounts(MNT *, TEXT *, int);
-#else
 #ifdef ultrix
 static BOOLEAN get_mounts(MNT *, TEXT *, int *);
 #else
 static BOOLEAN get_mounts(MNT *, TEXT *, IB_FILE *);
-#endif
 #endif
 #endif
 static BOOLEAN get_server(TEXT *, TEXT *);
@@ -345,7 +328,7 @@ int ISC_analyze_nfs(TEXT * expanded_filename, TEXT * node_name)
  *
  * Functional description
  *	Check a file name for an NFS mount point.  If so,
- *	decompose into node name and remote file name. 
+ *	decompose into node name and remote file name.
  *
  **************************************/
 #ifdef STACK_EFFICIENT
@@ -359,11 +342,7 @@ int ISC_analyze_nfs(TEXT * expanded_filename, TEXT * node_name)
 	TEXT *p, *q, *temp;
 	USHORT flag;
 
-#ifdef DELTA
-	int mtab;
-#else
 	IB_FILE *mtab;
-#endif
 	int context, len;
 
 #ifdef STACK_EFFICIENT
@@ -552,7 +531,7 @@ int DLL_EXPORT ISC_analyze_spx(TEXT * expanded_name, TEXT * node_name)
 {
 /**************************************
  *
- *	I S C _ a n a l y z e _ s p x 
+ *	I S C _ a n a l y z e _ s p x
  *
  **************************************
  *
@@ -566,7 +545,7 @@ int DLL_EXPORT ISC_analyze_spx(TEXT * expanded_name, TEXT * node_name)
 
 	p = expanded_name;
 
-/* Scan looking for the SPX node separator character (node@path).  
+/* Scan looking for the SPX node separator character (node@path).
    Also check for an INET separator before the SPX separator in case
    this is a network hop (e.g. tcp_node:spx_node@path). */
 
@@ -624,7 +603,7 @@ int DLL_EXPORT ISC_analyze_tcp(TEXT * file_name, TEXT * node_name)
 #else
 #if (defined PC_PLATFORM)
 /* for DOS and OS/2, introduce a restriction against one-character
-   machine names as a kludge to prevent the situation of 
+   machine names as a kludge to prevent the situation of
    trying to attach to C: as a remote machine -- there has
    got to be a better way to resolve this */
 
@@ -807,10 +786,10 @@ int ISC_expand_filename(
  *      If no host is specified, it checks for an ISC_DATABASE
  *      environment variable and uses that.
  *      If there is no slash after the node name, one is inserted.
- *      If there is no trailing slash after an ISC_DATABASE path, 
+ *      If there is no trailing slash after an ISC_DATABASE path,
  *      one is inserted.
  *
- *      The final result is an expanded path name.      
+ *      The final result is an expanded path name.
  *
  **************************************/
 	TEXT c, *p, *in, *out, *default_directory, *colon, *colon2, *atsign;
@@ -870,8 +849,8 @@ int ISC_expand_filename(
 			}
 	}
 	else {
-		/* assuming the filename is not already remote, look for 
-		   an environment variable that will provide a default 
+		/* assuming the filename is not already remote, look for
+		   an environment variable that will provide a default
 		   remote path specification */
 
 		if (default_directory = getenv(ISC_DATABASE)) {
@@ -900,7 +879,7 @@ int ISC_expand_filename(
 	*out = '\0';
 
 /* If there is an explicit node name of the form \\DOPEY or //DOPEY
-   assume named pipes and translate forward slashes to back slashes. 
+   assume named pipes and translate forward slashes to back slashes.
    Otherwise, translate back slashes to forward. The end result
    is a path with consistent separators. */
 
@@ -969,7 +948,7 @@ int ISC_expand_filename(
 	strncpy(path, file_name, file_length);
 	path[file_length] = 0;
 
-/* use the NetWare routine splitpath to break down the 
+/* use the NetWare routine splitpath to break down the
    path into discrete parts */
 
 	_splitpath(path, volume, directory1, fname, ext);
@@ -979,7 +958,7 @@ int ISC_expand_filename(
 	if (!volume[0])
 		strcpy(volume, "SYS:");
 
-/* if no backslash was used at the beginning, 
+/* if no backslash was used at the beginning,
    add it for consistency */
 
 	if ((directory1[0] != '/') && (directory1[0] != '\\')) {
@@ -1166,26 +1145,26 @@ int ISC_expand_filename(
 	if (!fully_qualified_path)
 		length = JRD_getdir(expanded_name, MAXPATHLEN);
 	if (length && length < MAXPATHLEN) {
-		/** 
-	case where temp is of the form "c:foo.gdb" and 
-	expanded_name is "c:\x\y". 
+		/**
+	case where temp is of the form "c:foo.gdb" and
+	expanded_name is "c:\x\y".
         **/
 		if (drive_letter_present && device[0] == expanded_name[0]) {
 			strcat(expanded_name, "\\");
 			strcat(expanded_name, temp + 2);
 		}
-		/** 
-	case where temp is of the form "foo.gdb" and 
-	expanded_name is "c:\x\y". 
+		/**
+	case where temp is of the form "foo.gdb" and
+	expanded_name is "c:\x\y".
         **/
 		else if (!drive_letter_present) {
 			strcat(expanded_name, "\\");
 			strcat(expanded_name, temp);
 		}
 		else {
-		/** 
-	case where temp is of the form "d:foo.gdb" and 
-	expanded_name is "c:\x\y". 
+		/**
+	case where temp is of the form "d:foo.gdb" and
+	expanded_name is "c:\x\y".
 	Discard expanded_name and use temp as it is.
 	**/
 			/* in this case use the temp but we need to ensure that we expand to
@@ -1215,7 +1194,7 @@ int ISC_expand_filename(
 		if (_fullpath(expanded_name, temp, MAXPATHLEN) != NULL) {
 			TEXT expanded_name2[MAXPATHLEN];
 
-			/* convert then name to its shorter version ie. convert longfilename.gdb 
+			/* convert then name to its shorter version ie. convert longfilename.gdb
 			 * to longfi~1.gdb */
 			file_length =
 				(USHORT) GetShortPathName(expanded_name, expanded_name2,
@@ -1607,7 +1586,7 @@ static int expand_filename2(TEXT * from_buff, USHORT length, TEXT * to_buff)
 		if (n < 0)
 			continue;
 
-		/* We've got a link.  If it contains a node name or it starts 
+		/* We've got a link.  If it contains a node name or it starts
 		   with a slash, it replaces the initial segment so far */
 
 		temp[n] = 0;
@@ -1942,55 +1921,6 @@ static BOOLEAN get_mounts(
 	mount->mnt_mount = fs->f_mntonname;
 
 	return TRUE;
-}
-#endif
-
-
-#ifdef DELTA
-#define GET_MOUNTS
-static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, int file)
-{
-/**************************************
- *
- *	g e t _ m o u n t s	( D E L T A )
- *
- **************************************
- *
- * Functional description
- *	Get ALL mount points.
- *
- **************************************/
-	TEXT in_buffer[2134], *p, *q;
-	int n;
-
-/* Start by finding a mount point. */
-
-	p = buffer;
-
-	for (;;) {
-		n = read(file, in_buffer, 2134);
-
-		if (n != 2134)
-			break;
-
-		mount->mnt_node = p;
-		q = &in_buffer[1024];
-		while (*q && *q != ':')
-			*p++ = *q++;
-		*p++ = 0;
-		if (*q != ':')
-			mount->mnt_node = NULL;
-		if (*q)
-			q++;
-		mount->mnt_path = p;
-		while (*p++ = *q++);
-		mount->mnt_mount = p;
-		q = in_buffer;
-		while (*p++ = *q++);
-		return TRUE;
-	}
-
-	return FALSE;
 }
 #endif
 

@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
+ *
  */
 
 #include "firebird.h"
@@ -31,10 +34,6 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/perf_proto.h"
 #include "../jrd/gdsassert.h"
-
-#ifdef DELTA
-#include <sys/param.h>
-#endif
 
 #ifdef NETWARE_386
 #define NO_TIMES

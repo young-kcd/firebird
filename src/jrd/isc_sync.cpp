@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
  *
  */
 
@@ -143,11 +144,6 @@ static UCHAR *next_shared_memory;
 #define FTOK_KEY	15
 #define PRIV		0666
 #define LOCAL_SEMAPHORES 4
-
-#ifdef DELTA
-#include <sys/sysmacros.h>
-#include <sys/param.h>
-#endif
 
 #ifdef IMP
 typedef unsigned int mode_t;
@@ -733,7 +729,7 @@ int ISC_event_init(EVENT event, int semid, int semnum)
 		/* Prepare an Inter-Thread event block */
 		event->event_semid = -1;
 
-		/* Default attribute objects initialize sync. primitives 
+		/* Default attribute objects initialize sync. primitives
 		   to be used to sync thread within one process only.
 		 */
 #ifdef HP10
@@ -1206,7 +1202,7 @@ int ISC_event_wait(
 		(void) semaphore_wait_isc_sync(count, semid, semnums);
 		if (micro_seconds > 0) {
 			/* semaphore_wait_isc_sync() routine may return SUCCESS if our timeout
-			   handler poked the semaphore.  So make sure that the event 
+			   handler poked the semaphore.  So make sure that the event
 			   actually happened.  If it didn't, indicate failure. */
 
 			if (ISC_event_blocked(count, events, values))
@@ -1847,12 +1843,12 @@ void ISC_exception_post(ULONG sig_num, TEXT * err_msg)
 {
 /**************************************
  *
- *	I S C _ e x c e p t i o n _ p o s t ( U N I X )  
+ *	I S C _ e x c e p t i o n _ p o s t ( U N I X )
  *
  **************************************
  *
  * Functional description
- *     When we got a sync exception, fomulate the error code	
+ *     When we got a sync exception, fomulate the error code
  *     write it to the log file, and abort.
  *
  **************************************/
@@ -1916,17 +1912,17 @@ ULONG ISC_exception_post(ULONG except_code, TEXT * err_msg)
 {
 /**************************************
  *
- *	I S C _ e x c e p t i o n _ p o s t ( W I N _ N T )  
+ *	I S C _ e x c e p t i o n _ p o s t ( W I N _ N T )
  *
  **************************************
  *
  * Functional description
- *     When we got a sync exception, fomulate the error code	
+ *     When we got a sync exception, fomulate the error code
  *     write it to the log file, and abort. Note: We can not
  *     actually call "abort" since in windows this will cause
  *     a dialog to appear stating the obvious!  Since on NT we
  *     would not get a core file, there is actually no difference
- *     between abort() and exit(3). 
+ *     between abort() and exit(3).
  *
  **************************************/
 	TEXT *log_msg;
@@ -2272,9 +2268,9 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 	sprintf(expanded_filename, filename,
 			ISC_get_host(hostname, sizeof(hostname)));
 
-/* make the complete filename for the init file this file is to be used as a 
+/* make the complete filename for the init file this file is to be used as a
    master lock to eliminate possible race conditions with just a single file
-   locking. The race condition is caused as the conversion of a EXCLUSIVE 
+   locking. The race condition is caused as the conversion of a EXCLUSIVE
    lock to a SHARED lock is not atomic*/
 
 	gds__prefix_lock(tmp, INIT_FILE);
@@ -2677,7 +2673,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 			   size of the segment associated with it is less
 			   than "length" and "length" is not equal to zero.
 
-			   Let's find out what the problem is by getting the 
+			   Let's find out what the problem is by getting the
 			   system-imposed limits.
 			 */
 
@@ -2702,7 +2698,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 
 			/* If we are here then the shared memory segment already
 			   exists and the "length" we specified in shmget() is
-			   bigger than the size of the existing segment. 
+			   bigger than the size of the existing segment.
 
 			   Because the segment has to exist at this point the
 			   following shmget() does not have IPC_CREAT flag set.
@@ -2757,8 +2753,8 @@ UCHAR *ISC_map_file(STATUS * status_vector,
    bigger than length, we remove it and create new one with the
    size "length".
    Also, if "length" is zero (that means we have already mapped
-   the existing segment with the zero size) remap the segment 
-   with the existing size 
+   the existing segment with the zero size) remap the segment
+   with the existing size
 */
 	if (shmctl(shmid, IPC_STAT, &buf) == -1) {
 		error(status_vector, "shmctl/IPC_STAT", errno);
@@ -2793,7 +2789,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 #else /* !SUPERSERVER */
 
 	if (length == 0) {
-		/* Use the existing length.  This should not happen for the 
+		/* Use the existing length.  This should not happen for the
 		   very first attachment to the shared memory.  */
 
 		if (shmctl(shmid, IPC_STAT, &buf) == -1) {
@@ -3322,7 +3318,7 @@ UCHAR *ISC_map_object(STATUS * status_vector,
 {
 /**************************************
  *
- *	I S C _ m a p _ o b j e c t	
+ *	I S C _ m a p _ o b j e c t
  *
  **************************************
  *
@@ -3380,7 +3376,7 @@ BOOLEAN ISC_unmap_object(STATUS * status_vector,
 {
 /**************************************
  *
- *	I S C _ u n m a p _ o b j e c t	
+ *	I S C _ u n m a p _ o b j e c t
  *
  **************************************
  *
@@ -3594,7 +3590,7 @@ int ISC_mutex_unlock(MTX mutex)
 	int state;
 
 	for (;;) {
-		/* Note use of undocumented lwp_mutex_unlock call 
+		/* Note use of undocumented lwp_mutex_unlock call
 		 * due to Solaris 2.4 bug */
 		state = _lwp_mutex_unlock(mutex->mtx_mutex);
 		if (!state)
@@ -4224,12 +4220,12 @@ UCHAR *DLL_EXPORT ISC_remap_file(STATUS * status_vector,
 		}
 
 /* If the remap file exists, remap does not occur correctly.
- * The file number is local to the process and when it is 
+ * The file number is local to the process and when it is
  * incremented and a new filename is created, that file may
  * already exist.  In that case, the file is not expanded.
  * This will happen when the file is expanded more than once
  * by concurrently running processes.
- * 
+ *
  * The problem will be fixed by making sure that a new file name
  * is generated with the mapped file is created.
  */
@@ -4496,7 +4492,7 @@ void ISC_semaphore_close(ULONG semid)
  **************************************
  *
  * Functional description
- *	Unregister and close the passed semaphore. 
+ *	Unregister and close the passed semaphore.
  *
  **************************************/
 
@@ -4516,7 +4512,7 @@ void ISC_semaphore_open(ULONG * semid, ULONG init_value)
  **************************************
  *
  * Functional description
- *	Open and register a semaphore. 
+ *	Open and register a semaphore.
  *
  **************************************/
 
@@ -4720,7 +4716,7 @@ static void alarm_handler(void)
  **************************************
  *
  * Functional description
- *	Handle an alarm clock interrupt.  
+ *	Handle an alarm clock interrupt.
  *
  **************************************/
 }
@@ -4796,7 +4792,7 @@ static SLONG find_key(STATUS * status_vector, TEXT * filename)
 {
 /**************************************
  *
- *	f i n d _ k e y 
+ *	f i n d _ k e y
  *
  **************************************
  *
@@ -4874,7 +4870,7 @@ void longjmp_sig_handler(int sig_num)
 
 /* Note: we can only do this since we know that we
    will only be going to JRD, specifically fun and blf.
-   If we were to make this generic, we would need to 
+   If we were to make this generic, we would need to
    actally hang the sigsetjmp menber off of THDD, and
    make sure that it is set properly for all sub-systems. */
 
@@ -4948,7 +4944,7 @@ static BOOLEAN semaphore_wait_isc_sync(int count, int semid, int *semnums)
  *	Wait on the given semaphores.  Return FAILURE if
  *	interrupted (including timeout) before any
  *	semaphore was poked else return SUCCESS.
- *	
+ *
  **************************************/
 	int i, ret;
 	struct sembuf semops[16], *semptr;

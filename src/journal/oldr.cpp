@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Journal Server
  *	MODULE:		oldr.c
- *	DESCRIPTION:	
+ *	DESCRIPTION:
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -30,9 +30,6 @@
 #else
 #include <fcntl.h>
 #endif
-#ifdef DELTA
-#include <unistd.h>
-#endif
 #include "../jrd/old.h"
 #include "../jrd/llio.h"
 #include "../journal/misc_proto.h"
@@ -52,7 +49,7 @@ int OLDR_close( OLD * OLD_handle)
 {
 /**************************************
  *
- *	O L D R _ c l o s e 
+ *	O L D R _ c l o s e
  *
  **************************************
  *
@@ -91,7 +88,7 @@ int OLDR_get( OLD OLD_handle, SCHAR * logrec, SSHORT * len)
  *
  * Functional description
  *	Get a record from the OLD file.
- *	return 	
+ *	return
  *		0	OK
  *		OLD_EOD	Done
  *		OLD_EOF	EOF

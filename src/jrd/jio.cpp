@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
  *
  */
 
@@ -52,10 +53,6 @@
 #ifdef SCO_UNIX
 #include <fcntl.h>
 #include <sys/stat.h>
-#endif
-
-#ifdef DELTA
-#include <fcntl.h>
 #endif
 
 #ifdef M88K

@@ -20,11 +20,11 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  * Added TCP_NO_DELAY option for superserver on Linux
- * FSG 16.03.2001 
+ * FSG 16.03.2001
  * Solaris x86 changes - Konstantin Kuznetsov, Neil McCalden
  */
 /*
-$Id: isc.cpp,v 1.6 2002-01-04 11:34:15 skywalker Exp $
+$Id: isc.cpp,v 1.7 2002-02-16 03:05:17 seanleyne Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -151,11 +151,6 @@ static LKSB wake_lock;
 
 #ifdef DGUX
 #include <fcntl.h>
-#endif
-
-#ifdef DELTA
-#include <sys/sysmacros.h>
-#include <sys/param.h>
 #endif
 
 #ifdef IMP

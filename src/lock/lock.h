@@ -20,7 +20,8 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
  *
  */
 
@@ -105,10 +106,6 @@
 #endif
 
 #ifdef IMP
-#define SEMAPHORES      25
-#endif
-
-#ifdef DELTA
 #define SEMAPHORES      25
 #endif
 

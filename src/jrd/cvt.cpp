@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
+ *
  */
 
 #include "firebird.h"
@@ -65,10 +68,6 @@
 #endif
 
 #ifdef sun
-#define DBL_MAX_10_EXP          308
-#endif
-
-#ifdef DELTA
 #define DBL_MAX_10_EXP          308
 #endif
 

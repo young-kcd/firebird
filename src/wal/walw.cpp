@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
+ *
  */
 
 #include "firebird.h"
@@ -70,9 +73,6 @@
 #endif
 
 #ifdef IMP
-#include <unistd.h>
-#endif
-#ifdef DELTA
 #include <unistd.h>
 #endif
 #ifdef sparc
@@ -192,7 +192,7 @@ int CLIB_ROUTINE walw_classic_main( int argc, char **argv)
  **************************************
  *
  * Functional description
- *	WAL_writer is used only in the privileged WAL writer 
+ *	WAL_writer is used only in the privileged WAL writer
  *	process.  One WAL writer process is started per database.
  *
  **************************************/

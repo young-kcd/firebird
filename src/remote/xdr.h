@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
+ *
  */
 
 #ifndef REMOTE_XDR_H
@@ -59,10 +62,6 @@ typedef char *  caddr_t;
 #define FALSE	0
 #ifndef enum_t
 #define enum_t	enum xdr_op
-#endif
-
-#ifdef DELTA
-#define u_int	uint
 #endif
 
 #define xdr_getpostn(xdr)	((*(*xdr).x_ops->x_getpostn)(xdr))
@@ -114,4 +113,3 @@ struct xdr_discrim
 
 
 #endif /* REMOTE_XDR_H */
-
