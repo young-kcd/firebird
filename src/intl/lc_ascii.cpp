@@ -26,6 +26,8 @@
 #include "ld_proto.h"
 #include "lc_ascii.h"
 
+#define ASCII_SPACE	32			// ASCII code for space
+
 static inline void FAMILY_ASCII(TEXTTYPE cache,
 								TTYPE_ID id_number,
 								pfn_INTL_init name,
@@ -416,11 +418,7 @@ TEXTTYPE_ENTRY(NEXT_c0_init)
 
 #define LANGASCII_MAX_KEY	(MAX_KEY)
 
-#define ASCII_SPACE	32			// ASCII code for space
-#define ASCII_UPPER_A	65		// ASCII code for 'A'
-#define ASCII_LOWER_A	(ASCII_UPPER_A + 32)	// ASCII code for 'a'
-#define ASCII_UPPER_Z	90		/* ASCII code for 'Z' */
-#define ASCII_LOWER_Z	(ASCII_UPPER_Z + 32)	// ASCII code for 'z'
+//#define ASCII_SPACE	32			// ASCII code for space
 
 #define	ASCII7_UPPER(ch) \
 	((((UCHAR) (ch) >= (UCHAR) ASCII_LOWER_A) && ((UCHAR) (ch) <= (UCHAR) ASCII_LOWER_Z)) \
@@ -691,21 +689,3 @@ USHORT cp1251_to_lower(TEXTTYPE obj, BYTE ch)
 {
 	return (CP1251_LOWER(ch));
 }
-
-#undef ASCII_LOWER
-#undef ASCII_UPPER
-#undef ASCII_LOWER_Z
-#undef ASCII_UPPER_Z
-#undef ASCII_LOWER_A
-#undef ASCII_UPPER_A
-
-#undef CP1251_LOWER
-#undef CP1251_UPPER
-#undef CP1251_LOWER_YA
-#undef CP1251_UPPER_YA
-#undef CP1251_LOWER_A
-#undef CP1251_UPPER_A
-
-#undef ASCII_SPACE
-#undef LANGASCII_MAX_KEY
-

@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: drop.cpp,v 1.27 2004-05-17 00:18:51 brodsom Exp $
+ * $Id: drop.cpp,v 1.28 2004-05-17 10:15:52 brodsom Exp $
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
@@ -54,12 +54,6 @@
 
 #if HAVE_SYS_WAIT_H
 # include <sys/wait.h>
-#endif
-#ifndef WEXITSTATUS
-# define WEXITSTATUS(stat_val) ((unsigned)(stat_val) >> 8)
-#endif
-#ifndef WIFEXITED
-# define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
 #endif
 
 #ifdef HAVE_STRING_H

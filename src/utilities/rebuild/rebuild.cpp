@@ -40,10 +40,6 @@
 #include "../jrd/dmp_proto.h"
 #include "../jrd/gds_proto.h"
 
-#ifdef hpux
-#define CCH_DUMMY
-#endif
-
 #ifndef O_RDWR
 #include <fcntl.h>
 #endif
@@ -274,7 +270,7 @@ int main( int argc, char *argv[])
 }
 
 
-#ifdef CCH_DUMMY
+#ifdef hpux
 PAG CCH_fetch(WIN * x, USHORT y, int z)
 {
 /**************************************

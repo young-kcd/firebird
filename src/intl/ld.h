@@ -102,83 +102,83 @@
 //-----------------------------------------------------------------
 */
 
-#define YES                       TRUE
-#define NO                        FALSE
+//#define YES                       TRUE
+//#define NO                        FALSE
 
 
 /*
 // LdObject Windows resource type
 */
-#define LDRESOBJECT            1001
-#define LDOBJ_NAME1             101
+//#define LDRESOBJECT            1001
+//#define LDOBJ_NAME1             101
 
-#define LDID                   1002
+//#define LDID                   1002
 
-#define LDIDRESNAME               "LDID"
+//#define LDIDRESNAME               "LDID"
 
 /*
 // Language type (file or resource)
 */
-#define LDOBJRES                  1
-#define LDOBJFILE                 2
+//#define LDOBJRES                  1
+//#define LDOBJFILE                 2
 
 
-#define SECONDARY_DIFF          256
-#define TERTIARY_DIFF           512
-#define LENGTH_DIFF            1024
+//#define SECONDARY_DIFF          256
+//#define TERTIARY_DIFF           512
+//#define LENGTH_DIFF            1024
 
 /*
 //
 // SORT/COLLATION TYPE PROVIDED BY LANGUAGE DRIVER
 //
 */
-#define ASCII_SORT                1
-#define CODEPAGE_SORT             ASCII_SORT
-#define DICT_SORT                 2
-#define PHONETIC_SORT             3
-#define NAME_SORT                 4
+//#define ASCII_SORT                1
+//#define CODEPAGE_SORT             ASCII_SORT
+//#define DICT_SORT                 2
+//#define PHONETIC_SORT             3
+//#define NAME_SORT                 4
 
 /*
 //
 // CODE PAGE/CHARACTER SET PLATFORM TYPES
 //
 */
-#define DOS_CP                    1
-#define OEM_CP                    DOS_CP
-#define WIN_CP                    2
-#define ANSI_CP                   WIN_CP
+//#define DOS_CP                    1
+//#define OEM_CP                    DOS_CP
+//#define WIN_CP                    2
+//#define ANSI_CP                   WIN_CP
 
 /*
 // UNIX etc.
 */
-#define SUNOS_CP                  4
-#define VMS_CP                    5
-#define HPUX_CP                   6
-#define AIX_CP                    8
-#define AUX_CP                    9
+//#define SUNOS_CP                  4
+//#define VMS_CP                    5
+//#define HPUX_CP                   6
+//#define AIX_CP                    8
+//#define AUX_CP                    9
 
 /*
 // SHIFT-JIS (JAPANESE DBCS)
 */
-#define SJIS_CP                 255
+//#define SJIS_CP                 255
 
 /*
 // length of descriptive language driver name (incl zero)
 */
-#define LD_SYMNAME_LEN           20
+//#define LD_SYMNAME_LEN           20
 
 /*
 // max length of language driver signature & file name (incl zero)
 */
-#define LD_SFNAME_LEN            20
+//#define LD_SFNAME_LEN            20
 
 /*
 // max length of language driver resource file name (incl zero)
 */
-#define LD_LIBNAME_LEN           13
+//#define LD_LIBNAME_LEN           13
 
-#define LDSUCCESS                 0
-#define LDFAILURE                -1
+//#define LDSUCCESS                 0
+//#define LDFAILURE                -1
 
 #define REVERSE					  0x01
 #define EXPAND                    0x02
@@ -192,22 +192,22 @@
 //
 */
 
-#define CHARDEF_TBL               0
-#define UPPERCASE_TBL             1
-#define LOWERCASE_TBL             2
-#define EXPAND_TBL                3
-#define COMPRESS_TBL              4
-#define CASESORT_TBL              5
-#define NOCASESORT_TBL            6
-#define SOUNDEX_TBL               7
-#define LICSCP_TBL                8
-#define CPLICS_TBL                9
-#define PRIMALT_TBL              10
-#define ALTPRIM_TBL              11
-#define BASE_TBL                 12
-#define EOF_VAL                  13
+//#define CHARDEF_TBL               0
+//#define UPPERCASE_TBL             1
+//#define LOWERCASE_TBL             2
+//#define EXPAND_TBL                3
+//#define COMPRESS_TBL              4
+//#define CASESORT_TBL              5
+//#define NOCASESORT_TBL            6
+//#define SOUNDEX_TBL               7
+//#define LICSCP_TBL                8
+//#define CPLICS_TBL                9
+//#define PRIMALT_TBL              10
+//#define ALTPRIM_TBL              11
+//#define BASE_TBL                 12
+//#define EOF_VAL                  13
 
-#define NUMBER_TBLS              EOF_VAL + 1
+//#define NUMBER_TBLS              EOF_VAL + 1
 
 /*
 //-----------------------------------------------------------------
@@ -263,32 +263,32 @@ struct CompressPair {
 /*
 // NO SPECIAL QUALITIES
 */
-#define CH_UNDEFINED           0x00
+//#define CH_UNDEFINED           0x00
 
 /*
 // A NUMERIC CHARACTER
 */
-#define CH_DIGIT               0x01
+//#define CH_DIGIT               0x01
 
 /*
 // AN UPPERCASE CHARACTER
 */
-#define CH_UPPER               0x02
+//#define CH_UPPER               0x02
 
 /*
 // A LOWERCASE CHARACTER
 */
-#define CH_LOWER               0x04
+//#define CH_LOWER               0x04
 
 /*
 // ALPHA CHARACTER
 */
-#define CH_ALPHA               CH_LOWER + CH_UPPER
+//#define CH_ALPHA               CH_LOWER + CH_UPPER
 
 /*
 // ALPHANUMERIC CHARACTER
 */
-#define CH_ALPHANUM            CH_LOWER + CH_UPPER + CH_DIGIT
+//#define CH_ALPHANUM            CH_LOWER + CH_UPPER + CH_DIGIT
 
 /*
 //-----------------------------------------------------------------
@@ -298,11 +298,11 @@ struct CompressPair {
 // PRODUCT ID
 //
 */
-#define PDOX                    0x1
-#define DBASE                   0x2
-#define IBASE                   0x4
-#define OTHER                   0x8
-#define BORLAND                0x10
+//#define PDOX                    0x1
+//#define DBASE                   0x2
+//#define IBASE                   0x4
+//#define OTHER                   0x8
+//#define BORLAND                0x10
 
 /*
 //
@@ -430,47 +430,47 @@ struct CompressPair {
 //-----------------------------------------------------------------
 */
 
-#define ERRBASE_LDAPI             0x7000
+//#define ERRBASE_LDAPI             0x7000
 
 /*
 // no errors at all
 */
-#define LDERR_NONE                LDSUCCESS
+//#define LDERR_NONE                LDSUCCESS
 
 /*
 // LD memory could be allocated
 */
-#define LDERR_NOMEMORY            ERRBASE_LDAPI + 0xA1
+//#define LDERR_NOMEMORY            ERRBASE_LDAPI + 0xA1
 
 /*
 // LD file corrupt/could not be read
 */
-#define LDERR_FILECORRUPT         ERRBASE_LDAPI + 0xA2
+//#define LDERR_FILECORRUPT         ERRBASE_LDAPI + 0xA2
 
 /*
 // LD version mismatch
 */
-#define LDERR_OLDVERSION          ERRBASE_LDAPI + 0xA3
+//#define LDERR_OLDVERSION          ERRBASE_LDAPI + 0xA3
 
 /*
 // LD table not supported
 */
-#define LDERR_NOTSUPPORTED        ERRBASE_LDAPI + 0xA4
+//#define LDERR_NOTSUPPORTED        ERRBASE_LDAPI + 0xA4
 
 /*
 // LD file not accessible
 */
-#define LDERR_FILEOPEN            ERRBASE_LDAPI + 0xA5
+//#define LDERR_FILEOPEN            ERRBASE_LDAPI + 0xA5
 
 /*
 // LD resource not accessible
 */
-#define LDERR_RESOPEN             ERRBASE_LDAPI + 0xA6
+//#define LDERR_RESOPEN             ERRBASE_LDAPI + 0xA6
 
 /*
 // unknown
 */
-#define LDERR_UNKNOWN             ERRBASE_LDAPI + 0xA7
+//#define LDERR_UNKNOWN             ERRBASE_LDAPI + 0xA7
 
 #endif
 /*
@@ -481,9 +481,12 @@ struct CompressPair {
 // VCS AREA
 //-----------------------------------------------------------------
 
-//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.23 2004-05-16 02:53:34 brodsom Exp $
+//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.24 2004-05-17 10:18:37 brodsom Exp $
 
 //	$Log: not supported by cvs2svn $
+//	Revision 1.23  2004/05/16 02:53:34  brodsom
+//	Macro cleaning
+//	
 //	Revision 1.22  2003/11/23 16:44:26  skidder
 //	Change DLL_EXPORT to FB_DLL_EXPORT in intl module to match engine (needed for INTL_BUILTIN on Linux)
 //	

@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: srvrmgr.cpp,v 1.12 2004-05-17 00:28:58 brodsom Exp $
+ * $Id: srvrmgr.cpp,v 1.13 2004-05-17 10:15:23 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -34,12 +34,6 @@
 #include <sys/types.h>
 #if HAVE_SYS_WAIT_H
 # include <sys/wait.h>
-#endif
-#ifndef WEXITSTATUS
-# define WEXITSTATUS(stat_val) ((unsigned)(stat_val) >> 8)
-#endif
-#ifndef WIFEXITED
-# define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
 #endif
 
 

@@ -24,8 +24,8 @@
 #ifndef IBPAGE_H
 #define IBPAGE_H
 
-#define SERVICE_LEN			128	// MAXIMUM SERVICE PATH LENGTH
-#define SERVER_HELP_FILE	"fbserver.hlp"
+const int SERVICE_LEN		= 128;	// MAXIMUM SERVICE PATH LENGTH
+static const char* SERVER_HELP_FILE= "fbserver.hlp";
 
 void AddConfigPages(HWND, HINSTANCE);
 #ifdef __cplusplus

@@ -70,11 +70,6 @@ TEXTTYPE_ENTRY(BIG5_init)
 }
 
 
-#define ASCII_LOWER_A	'a'
-#define ASCII_UPPER_A	'A'
-#define ASCII_LOWER_Z	'z'
-#define ASCII_UPPER_Z	'Z'
-
 /*
  *	Note: This function expects Wide-Char input, not
  *	Multibyte input

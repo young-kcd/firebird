@@ -40,69 +40,67 @@
 #ifndef REMOTE_REMOTE_DEF_H
 #define REMOTE_REMOTE_DEF_H
 
+#include "../remote/protocol.h"
+
 #ifdef VMS
-#define ARCHITECTURE		arch_vms
+const P_ARCH ARCHITECTURE	= arch_vms;
 #endif
 
 #ifdef sun
 #ifdef sparc
-#define ARCHITECTURE		arch_sun4
-#endif
-#ifdef i386
-#define ARCHITECTURE		arch_sun386
-#endif
-#ifndef ARCHITECTURE
-#define ARCHITECTURE		arch_sun
+const P_ARCH ARCHITECTURE	= arch_sun4;
+#elif defined(i386)
+const P_ARCH ARCHITECTURE	= arch_sun386;
+#else
+const P_ARCH ARCHITECTURE	= arch_sun;
 #endif
 #endif
 
 #ifdef hpux
-#define ARCHITECTURE		arch_hpux
+const P_ARCH ARCHITECTURE	= arch_hpux;
 #endif
 
 #if (defined AIX || defined AIX_PPC)
-#define ARCHITECTURE		arch_rt
+const P_ARCH ARCHITECTURE	= arch_rt;
 #endif
 
 #ifdef SCO_EV
-#define ARCHITECTURE		arch_sco_ev
+const P_ARCH ARCHITECTURE	= arch_sco_ev;
 #endif
 
 #ifdef LINUX
-#define ARCHITECTURE		arch_linux
+const P_ARCH ARCHITECTURE	= arch_linux;
 #endif
 
 #ifdef FREEBSD
-#define ARCHITECTURE		arch_freebsd
+const P_ARCH ARCHITECTURE	= arch_freebsd;
 #endif
 
 #ifdef NETBSD
-#define ARCHITECTURE		arch_netbsd
+const P_ARCH ARCHITECTURE	= arch_netbsd;
 #endif
 
 #ifdef DARWIN
-#define	ARCHITECTURE		arch_darwin_ppc
+const P_ARCH ARCHITECTURE	= arch_darwin_ppc;
 #endif
 
 #ifdef I386
-#ifndef ARCHITECTURE
-#define ARCHITECTURE		arch_intel_32
-#endif
+const P_ARCH ARCHITECTURE	= arch_intel_32;
 #endif
 
 
-
-#define SRVR_server		1	/* 0x0001 server */
-#define SRVR_multi_client	2	/* 0x0002 multi-client server */
-#define SRVR_debug		4	/* 0x0004 */
-#define SRVR_inet		8	/* 0x0008 Inet protocol */
-#define SRVR_wnet		16	/* 0x0010 Wnet (named pipe) protocol (WinNT) */
-#define SRVR_ipc		64	/* 0x0040 IPC protocol (Win32) */
-#define SRVR_non_service	128	/* 0x0080 Not running as an NT service */
-#define SRVR_high_priority	256	/* 0x0100 fork off server at high priority */
-#define SRVR_auto_unload	512	/* 0x0200 Unload server after last disconnect */
-#define SRVR_xnet			1024 /* 0x0400 IPC protocol via server */
-#define SRVR_thread_per_port	2048	/* 0x0800 Bind thread to a port */
-#define SRVR_no_icon		4096	/* 0x1000 Tell the server not to show the icon */
+// port_server_flags
+const USHORT SRVR_server		= 1;	/* 0x0001 server */
+const USHORT SRVR_multi_client	= 2;	/* 0x0002 multi-client server */
+const USHORT SRVR_debug			= 4;	/* 0x0004 */
+const USHORT SRVR_inet			= 8;	/* 0x0008 Inet protocol */
+const USHORT SRVR_wnet			= 16;	/* 0x0010 Wnet (named pipe) protocol (WinNT) */
+const USHORT SRVR_ipc			= 64;	/* 0x0040 IPC protocol (Win32) */
+const USHORT SRVR_non_service	= 128;	/* 0x0080 Not running as an NT service */
+const USHORT SRVR_high_priority	= 256;	/* 0x0100 fork off server at high priority */
+const USHORT SRVR_auto_unload	= 512;	/* 0x0200 Unload server after last disconnect */
+const USHORT SRVR_xnet			= 1024; /* 0x0400 IPC protocol via server */
+const USHORT SRVR_thread_per_port	= 2048;	/* 0x0800 Bind thread to a port */
+const USHORT SRVR_no_icon		= 4096;	/* 0x1000 Tell the server not to show the icon */
 #endif /* REMOTE_REMOTE_DEF_H */
 

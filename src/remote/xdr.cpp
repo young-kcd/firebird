@@ -53,30 +53,40 @@ double MTH$CVT_D_G(), MTH$CVT_G_D();
 
 #ifdef BURP
 #include "../burp/misc_proto.h"	/* Was "../burp/misc_pro.h" -Jeevan */
-#define XDR_ALLOC(size)	    MISC_alloc_burp (size)
-#define XDR_FREE(block)	    MISC_free_burp (block)
-#endif
-
-#ifndef XDR_ALLOC
-#define XDR_ALLOC(size)	    gds__alloc (size)
-#define XDR_FREE(block)	    gds__free (block)
-#endif
+inline UCHAR* XDR_ALLOC(ULONG size){
+	return MISC_alloc_burp(size);
+}
+inline void XDR_FREEA(void* block){
+	MISC_free_burp(block);
+}
+#else // BURP
+inline UCHAR* XDR_ALLOC(ULONG size){
+	return (UCHAR*) gds__alloc((SLONG) size);
+}
+inline void XDR_FREEA(void* block){
+	gds__free(block);
+}
+#endif // BURP
 
 #ifdef DEBUG_XDR_MEMORY
-#define DEBUG_XDR_ALLOC(xdrvar, addr, len) \
-			xdr_debug_memory (xdrs, XDR_DECODE, xdrvar, addr, (ULONG) len)
-#define DEBUG_XDR_FREE(xdrvar, addr, len) \
-			xdr_debug_memory (xdrs, XDR_FREE, xdrvar, addr, (ULONG) len)
+inline void DEBUG_XDR_ALLOC(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len){
+	xdr_debug_memory(xdrs, XDR_DECODE, xdrvar, addr, len)
+}
+inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len){
+	xdr_debug_memory (xdrs, XDR_FREE, xdrvar, addr, (ULONG) len);
+}
 #else
-#define DEBUG_XDR_ALLOC(xdrvar, addr, len)
-#define DEBUG_XDR_FREE(xdrvar, addr, len)
+inline void DEBUG_XDR_ALLOC(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len){
+}
+inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len){
+}
 #endif /* DEBUG_XDR_MEMORY */
 
 /* Sun's XDR documentation says this should be "MAXUNSIGNED", but
    for InterBase purposes, limiting strings to 65K is more than
    sufficient. */
 
-#define MAXSTRING_FOR_WRAPSTRING	65535
+const u_int MAXSTRING_FOR_WRAPSTRING	= 65535;
 
 
 static XDR_INT mem_destroy(XDR *);
@@ -235,11 +245,11 @@ bool_t xdr_bytes(XDR * xdrs,
 	case XDR_DECODE:
 		if (!*bpp)
 		{
-			*bpp = (TEXT *) XDR_ALLOC((SLONG) (maxlength + 1));
+			*bpp = (SCHAR *) XDR_ALLOC((ULONG) (maxlength + 1));
 			/* FREE: via XDR_FREE call to this procedure */
 			if (!*bpp)			/* NOMEM: */
 				return FALSE;
-			DEBUG_XDR_ALLOC(bpp, *bpp, (maxlength + 1));
+			DEBUG_XDR_ALLOC(xdrs, bpp, *bpp, (maxlength + 1));
 		}
 		if (!GETLONG(xdrs, &length) ||
 			length > (SLONG) maxlength || !GETBYTES(xdrs, *bpp, length))
@@ -252,8 +262,8 @@ bool_t xdr_bytes(XDR * xdrs,
 	case XDR_FREE:
 		if (*bpp)
 		{
-			XDR_FREE(*bpp);
-			DEBUG_XDR_FREE(bpp, *bpp, (maxlength + 1));
+			XDR_FREEA(*bpp);
+			DEBUG_XDR_FREE(xdrs, bpp, *bpp, (maxlength + 1));
 			*bpp = NULL;
 		}
 		return TRUE;
@@ -674,11 +684,11 @@ bool_t xdr_string(XDR * xdrs,
 	case XDR_DECODE:
 		if (!*sp)
 		{
-			*sp = (TEXT *) XDR_ALLOC((SLONG) (maxlength + 1));
+			*sp = (SCHAR *) XDR_ALLOC((ULONG) (maxlength + 1));
 			/* FREE: via XDR_FREE call to this procedure */
 			if (!*sp)			/* NOMEM: return error */
 				return FALSE;
-			DEBUG_XDR_ALLOC(sp, *sp, (maxlength + 1));
+			DEBUG_XDR_ALLOC(xdrs, sp, *sp, (maxlength + 1));
 		}
 		if (!GETLONG(xdrs, reinterpret_cast<SLONG*>(&length)) ||
 			length > maxlength || !GETBYTES(xdrs, *sp, length))
@@ -691,8 +701,8 @@ bool_t xdr_string(XDR * xdrs,
 	case XDR_FREE:
 		if (*sp)
 		{
-			XDR_FREE(*sp);
-			DEBUG_XDR_FREE(sp, *sp, (maxlength + 1));
+			XDR_FREEA(*sp);
+			DEBUG_XDR_FREE(xdrs, sp, *sp, (maxlength + 1));
 			*sp = NULL;
 		}
 		return TRUE;

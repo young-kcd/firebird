@@ -24,21 +24,21 @@
 #ifndef OS_WIN32_WINDOW_H
 #define OS_WIN32_WINDOW_H
 
-#define APP_HSIZE			220
-#define APP_VSIZE			150
+const int APP_HSIZE			= 220;
+const int APP_VSIZE			= 150;
 
 /* This is the title used by the hidden msgs window in the engine.
    Both fbclient.dll and fbserver.exe should use the same. */
 
-#define APP_NAME			"Firebird Server"
-#define APP_LABEL			"Firebird Server"
+static const char* APP_NAME		= "Firebird Server";
+static const char* APP_LABEL		= "Firebird Server";
 
 #define ON_NOTIFYICON		WM_USER + 2
 
-#define WIN_TEXTLEN			128
-#define MSG_STRINGLEN		64
-#define DRV_STRINGLEN		32
-#define TMP_STRINGLEN		512
+const int WIN_TEXTLEN		= 128;
+const int MSG_STRINGLEN		= 64;
+const int DRV_STRINGLEN		= 32;
+const int TMP_STRINGLEN		= 512;
 
 #define CHECK_VOLUME(a)		((a)->dbcv_devicetype == DBT_DEVTYP_VOLUME)
 #define CHECK_USAGE(a)		((a)->dbcv_unitmask & ulInUseMask)

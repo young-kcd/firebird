@@ -39,7 +39,7 @@
 #include <windows.h>
 #endif
 
-#define  ERROR_BUFFER_LENGTH 1024
+const int ERROR_BUFFER_LENGTH	= 1024;
 
 typedef struct thread {
 	struct thread *thread_next;

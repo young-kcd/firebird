@@ -576,13 +576,3 @@ static SSHORT fam2_compare(TEXTTYPE obj, USHORT l1, const BYTE* s1,
 }
 
 #endif	/* DEBUG_COMPARE */
-
-
-
-#undef LANGFAM2_MAX_KEY
-
-#undef ASCII_SPACE
-#undef NULL_WEIGHT
-#undef NULL_SECONDARY
-#undef NULL_TERTIARY
-

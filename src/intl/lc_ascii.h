@@ -43,32 +43,21 @@ SSHORT LC_DOS_nc_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const UCHAR* ptr, USHORT co
  */
 
 /* CVC: Redefined in lc_ascii.cpp, the only place where this macro seems to be used.
-#define LANGASCII_MAX_KEY	(MAX_KEY)
+//#define LANGASCII_MAX_KEY	(MAX_KEY)
 
-#define ASCII_SPACE	32			// ASCII code for space
+//#define ASCII_SPACE	32			// ASCII code for space
+//
+//#define	ASCII7_UPPER(ch) \
+//	((((UCHAR) (ch) >= (UCHAR) ASCII_LOWER_A) && ((UCHAR) (ch) <= (UCHAR) ASCII_LOWER_Z)) \
+//		? (UCHAR) ((ch) - ASCII_LOWER_A + ASCII_UPPER_A) \
+//		: (UCHAR) (ch))
+//#define	ASCII7_LOWER(ch) \
+//	((((UCHAR) (ch) >= (UCHAR) ASCII_UPPER_A) && ((UCHAR) (ch) <= (UCHAR) ASCII_UPPER_Z)) \
+//		? (UCHAR) ((ch) - ASCII_UPPER_A + ASCII_LOWER_A) \
+//		: (UCHAR) (ch))
+*/
+
 #define ASCII_UPPER_A	65		// ASCII code for 'A'
 #define ASCII_LOWER_A	(ASCII_UPPER_A + 32)	// ASCII code for 'a'
 #define ASCII_UPPER_Z	90		// ASCII code for 'Z'
 #define ASCII_LOWER_Z	(ASCII_UPPER_Z + 32)	// ASCII code for 'z'
-
-#define	ASCII7_UPPER(ch) \
-	((((UCHAR) (ch) >= (UCHAR) ASCII_LOWER_A) && ((UCHAR) (ch) <= (UCHAR) ASCII_LOWER_Z)) \
-		? (UCHAR) ((ch) - ASCII_LOWER_A + ASCII_UPPER_A) \
-		: (UCHAR) (ch))
-#define	ASCII7_LOWER(ch) \
-	((((UCHAR) (ch) >= (UCHAR) ASCII_UPPER_A) && ((UCHAR) (ch) <= (UCHAR) ASCII_UPPER_Z)) \
-		? (UCHAR) ((ch) - ASCII_UPPER_A + ASCII_LOWER_A) \
-		: (UCHAR) (ch))
-*/
-
-
-#undef ASCII_LOWER
-#undef ASCII_UPPER
-#undef ASCII_LOWER_Z
-#undef ASCII_UPPER_Z
-#undef ASCII_LOWER_A
-#undef ASCII_UPPER_A
-
-#undef ASCII_SPACE
-#undef LANGASCII_MAX_KEY
-

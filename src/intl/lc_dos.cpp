@@ -677,14 +677,3 @@ SSHORT LC_DOS_nc_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const UCHAR* ptr, USHORT co
 	return -1;					/* No more characters */
 }
 
-
-#undef LANGFAM1_MAX_KEY
-
-#undef ASCII_SPACE
-#undef NULL_WEIGHT
-#undef NULL_SECONDARY
-#undef NULL_TERTIARY
-
-#undef LOCALE_UPPER
-#undef LOCALE_LOWER
-

@@ -30,14 +30,14 @@
 #include <winsock2.h>
 
 /* Windows control ids */
-#define IDM_START       1
-#define IDM_STOP        2
-#define IDM_TEXT        3
-#define IDM_EXIT        4
+const UINT IDM_START	= 1;
+const UINT IDM_STOP		= 2;
+const UINT IDM_TEXT		= 3;
+const UINT IDM_EXIT		= 4;
 
 /* Default Window Size */
-#define APP_HSIZE       200
-#define APP_VSIZE       120
+const int APP_HSIZE		= 200;
+const int APP_VSIZE		= 120;
 
 #define zap_packet(a) memset ((a), 0, sizeof (struct packet));
 

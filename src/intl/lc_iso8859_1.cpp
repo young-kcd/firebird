@@ -567,10 +567,3 @@ static USHORT fam2_to_lower(TEXTTYPE obj, BYTE ch)
 	return (LOCALE_LOWER(ch));
 }
 
-
-
-
-
-#undef LOCALE_UPPER
-#undef LOCALE_LOWER
-

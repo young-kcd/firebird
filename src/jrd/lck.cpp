@@ -340,7 +340,7 @@ int LCK_convert_non_blocking(thread_db* tdbb, Lock* lock, USHORT level, SSHORT w
 
 	check_lock(lock, level);
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
-	AST_DISABLE;
+	AST_DISABLE();
 
 /* SuperServer: Do Not release engine here, it creates a race
    condition - more than one thread RUNNING in the engine.
@@ -359,7 +359,7 @@ int LCK_convert_non_blocking(thread_db* tdbb, Lock* lock, USHORT level, SSHORT w
 	SCH_enter();
 #endif
 
-	AST_ENABLE;
+	AST_ENABLE();
 
 	if (!result) {
 		set_lock_attachment(lock, old_attachment);
@@ -698,7 +698,7 @@ int LCK_lock_non_blocking(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait
 	if (!lock->lck_id) {
 		/* Save context and checkout from the scheduler */
 
-		AST_DISABLE;
+		AST_DISABLE();
 
 /* SuperServer: Do Not release engine here, it creates a race
    condition - more than one thread RUNNING in the engine.
@@ -717,7 +717,7 @@ int LCK_lock_non_blocking(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait
 #ifndef SUPERSERVER
 		SCH_enter();
 #endif
-		AST_ENABLE;
+		AST_ENABLE();
 
 		fb_assert(LCK_CHECK_LOCK(lock));
 

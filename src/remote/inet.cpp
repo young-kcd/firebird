@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.106 2004-05-15 00:58:10 brodsom Exp $
+$Id: inet.cpp,v 1.107 2004-05-17 10:21:03 brodsom Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -95,13 +95,13 @@ $Id: inet.cpp,v 1.106 2004-05-15 00:58:10 brodsom Exp $
 #ifndef INADDR_NONE
 #define INADDR_NONE (unsigned long)-1
 #endif
-#endif
+#endif // !(defined VMS || defined WIN_NT)
 
 #ifdef DARWIN
 extern "C" int innetgr(const char*, const char*, const char*, const char*);
 #endif
 
-#define INET_RETRY_CALL		5
+const int INET_RETRY_CALL	= 5;
 
 #include "../remote/remote.h"
 #include "../jrd/ibase.h"
@@ -127,10 +127,25 @@ extern int h_errno;
 #include <perror.h>
 #include <socket.h>
 #define NO_FORK
-#define MAX_PTYPE	ptype_batch_send
-#define PROXY_FILE	"[sysmgr]gds_proxy.dat"
+const USHORT MAX_PTYPE	= ptype_batch_send;
+const char* PROXY_FILE	= "[sysmgr]gds_proxy.dat";
+const char* HOSTS_FILE = "";
+const char* GDS_HOSTS_FILE = "";
 #error "vms implementation must be completed"
+#else // VMS
+const char* PROXY_FILE	= "/etc/gds_proxy";
+const char* HOSTS_FILE	= "/etc/hosts.equiv";
+#ifdef MULTI_THREAD
+const USHORT MAX_PTYPE	= ptype_batch_send;
+#else
+const USHORT MAX_PTYPE	= ptype_out_of_band;
 #endif
+#ifdef SMALL_FILE_NAMES
+const char* GDS_HOSTS_FILE	= "/etc/gdshosts.eqv";
+#else
+const char* GDS_HOSTS_FILE	= "/etc/gds_hosts.equiv";
+#endif
+#endif // VMS
 
 #ifdef WIN_NT
 #include <fcntl.h>
@@ -171,10 +186,6 @@ extern int h_errno;
 
 #ifndef INET_RETRY_ERRNO
 #define INET_RETRY_ERRNO TRY_AGAIN
-#endif
-
-#ifndef INET_RETRY_CALL
-#define INET_RETRY_CALL 5
 #endif
 
 #ifndef SIGURG
@@ -239,40 +250,15 @@ static ULONG inet_debug_timer(void)
 #endif /* DEBUG */
 #endif /* !REQUESTER */
 
+const SLONG MAX_DATA_LW		= 1448;		/* Low  Water mark */
+const SLONG MAX_DATA_HW		= 32768;	/* High Water mark */
+const SLONG DEF_MAX_DATA	= 8192;
 
+const int MAX_SEQUENCE		= 256;
 
-#ifndef PROXY_FILE
-#define PROXY_FILE	"/etc/gds_proxy"
-#endif
+const int MAXHOSTLEN		= 64;
 
-#ifndef HOSTS_FILE
-#define HOSTS_FILE	"/etc/hosts.equiv"
-#endif
-
-#ifndef GDS_HOSTS_FILE
-#ifdef SMALL_FILE_NAMES
-#define GDS_HOSTS_FILE	"/etc/gdshosts.eqv"
-#else
-#define GDS_HOSTS_FILE	"/etc/gds_hosts.equiv"
-#endif
-#endif
-
-
-#define MAX_DATA_LW	1448		/* Low  Water mark */
-#define MAX_DATA_HW	32768		/* High Water mark */
-#define DEF_MAX_DATA	8192
-
-#define MAX_SEQUENCE	256
-
-#ifndef MAXHOSTLEN
-#define MAXHOSTLEN	64
-#endif
-
-#ifdef VMS
-#error "vms implementation must be completed"
-#endif
-
-#define	SELECT_TIMEOUT	60		/* Dispatch thread select timeout (sec) */
+const int SELECT_TIMEOUT	= 60;		/* Dispatch thread select timeout (sec) */
 
 typedef struct slct
 {
@@ -381,13 +367,6 @@ static XDR::xdr_ops inet_ops =
 	inet_destroy
 };
 
-#ifndef MAX_PTYPE
-#ifdef MULTI_THREAD
-#define MAX_PTYPE       ptype_batch_send
-#else
-#define MAX_PTYPE       ptype_out_of_band
-#endif
-#endif
 
 #define MAXCLIENTS	NOFILE - 10
 
@@ -418,20 +397,10 @@ static TEXT INET_command_line[MAXPATHLEN + 32], *INET_p;
 #endif
 
 
-#ifdef VMS
-#error "vms implementation must be completed"
-#endif /* VMS */
-
 #ifdef	WIN_NT
 #define	INTERRUPT_ERROR(x)	(SYSCALL_INTERRUPTED(x) || (x) == WSAEINTR)
 #else
 #define	INTERRUPT_ERROR(x)	(SYSCALL_INTERRUPTED(x))
-#endif
-
-#ifdef  START_PORT_CRITICAL
-#undef  START_PORT_CRITICAL
-#undef  STOP_PORT_CRITICAL
-#undef  DEFER_PORT_CLEANUP
 #endif
 
 #ifdef  SUPERSERVER
@@ -444,25 +413,27 @@ static bool		port_mutex_inited = false;
 
 #define DEFER_PORT_CLEANUP
 
-#define START_PORT_CRITICAL     if (!port_mutex_inited)                \
-                                    {                                  \
-                                    port_mutex_inited = true;          \
-                                    THD_mutex_init (&port_mutex);      \
-                                    }                                  \
-                                THREAD_EXIT();                           \
-                                THD_mutex_lock (&port_mutex);          \
-                                THREAD_ENTER();
+inline void START_PORT_CRITICAL(){
+	if (!port_mutex_inited) {
+		port_mutex_inited = true;
+		THD_mutex_init (&port_mutex);
+	}
+	THREAD_EXIT();
+	THD_mutex_lock (&port_mutex);
+	THREAD_ENTER();
+}
 
-#define STOP_PORT_CRITICAL      THREAD_EXIT();                           \
-                                THD_mutex_unlock (&port_mutex);        \
-                                THREAD_ENTER();
+inline void STOP_PORT_CRITICAL(){
+	THREAD_EXIT();
+	THD_mutex_unlock (&port_mutex);
+	THREAD_ENTER();
+}
 
-#endif
-
-
-#ifndef START_PORT_CRITICAL
-#define START_PORT_CRITICAL
-#define STOP_PORT_CRITICAL
+#else
+inline void START_PORT_CRITICAL(){
+}
+inline void STOP_PORT_CRITICAL(){
+}
 #endif
 
 
@@ -496,7 +467,7 @@ rem_port* INET_analyze(	TEXT*	file_name,
 /* We need to establish a connection to a remote server.  Allocate the necessary
    blocks and get ready to go. */
 
-	RDB		rdb		= (RDB) ALLOC(type_rdb);
+	RDB		rdb		= (RDB) ALLR_block(type_rdb, 0);
 	PACKET*	packet	= &rdb->rdb_packet;
 
 /* Pick up some user identification information */
@@ -1144,7 +1115,7 @@ static int accept_connection(rem_port* port,
 		case CNCT_user:
 			{
 				const int length = *id++;
-				rem_str* string = (rem_str*) ALLOCV(type_str, length);
+				rem_str* string = (rem_str*) ALLR_block(type_str, length);
 				port->port_user_name = string;
 				string->str_length = length;
 				if (length) {
@@ -1403,7 +1374,7 @@ static rem_port* alloc_port( rem_port* parent)
 #endif
 		first_time = false;
 	}
-	rem_port* port = (rem_port*) ALLOCV(type_port, INET_remote_buffer * 2);
+	rem_port* port = (rem_port*) ALLR_block(type_port, INET_remote_buffer * 2);
 	port->port_type = port_inet;
 	port->port_state = state_pending;
 	REMOTE_get_timeout_params(port, 0, 0);
@@ -1414,7 +1385,7 @@ static rem_port* alloc_port( rem_port* parent)
 	sprintf(buffer, "tcp (%s)", port->port_host->str_data);
 	port->port_version = REMOTE_make_string(buffer);
 
-	START_PORT_CRITICAL;
+	START_PORT_CRITICAL();
 	if (parent && !(parent->port_server_flags & SRVR_thread_per_port)) {
 		port->port_parent = parent;
 		port->port_next = parent->port_clients;
@@ -1423,7 +1394,7 @@ static rem_port* alloc_port( rem_port* parent)
 		port->port_server = parent->port_server;
 		port->port_server_flags = parent->port_server_flags;
 	}
-	STOP_PORT_CRITICAL;
+	STOP_PORT_CRITICAL();
 
 	port->port_accept = accept_connection;
 	port->port_disconnect = disconnect;
@@ -1765,7 +1736,7 @@ static bool check_proxy(rem_port* port,
 			{
 				ALLR_free(port->port_user_name);
 				const SLONG length = strlen(target_user);
-				rem_str* string = (rem_str*) ALLOCV(type_str, (int) length);
+				rem_str* string = (rem_str*) ALLR_block(type_str, (int) length);
 				port->port_user_name = string;
 				string->str_length = length;
 				strncpy(string->str_data, target_user, length);
@@ -2507,7 +2478,7 @@ static rem_port* select_port( rem_port* main_port, SLCT * selct)
 /* NT's socket handles are addresses */
 /* TMN: No, they are "black-box" handles. */
 
-	START_PORT_CRITICAL;
+	START_PORT_CRITICAL();
 #ifdef  DEFER_PORT_CLEANUP
 	unhook_disconnected_ports(main_port);
 #endif
@@ -2519,18 +2490,18 @@ static rem_port* select_port( rem_port* main_port, SLCT * selct)
 
 			FD_CLR((SOCKET) port->port_handle, &selct->slct_fdset);
 			--selct->slct_count;
-			STOP_PORT_CRITICAL;
+			STOP_PORT_CRITICAL();
 			return port;
 		}
 		else if (port->port_dummy_timeout < 0) {
-			STOP_PORT_CRITICAL;
+			STOP_PORT_CRITICAL();
 			return port;
 		}
 	}
 
-	STOP_PORT_CRITICAL;
+	STOP_PORT_CRITICAL();
 #else // !defined(WIN_NT)
-	START_PORT_CRITICAL;
+	START_PORT_CRITICAL();
 #ifdef  DEFER_PORT_CLEANUP
 	unhook_disconnected_ports(main_port);
 #endif
@@ -2540,15 +2511,15 @@ static rem_port* select_port( rem_port* main_port, SLCT * selct)
 			port->port_dummy_timeout = port->port_dummy_packet_interval;
 			FD_CLR(n, &selct->slct_fdset);
 			--selct->slct_count;
-			STOP_PORT_CRITICAL;
+			STOP_PORT_CRITICAL();
 			return port;
 		}
 		else if (port->port_dummy_timeout < 0) {
-			STOP_PORT_CRITICAL;
+			STOP_PORT_CRITICAL();
 			return port;
 		}
 	}
-	STOP_PORT_CRITICAL;
+	STOP_PORT_CRITICAL();
 #endif
 
 	return NULL;
@@ -2592,7 +2563,7 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 			selct->slct_time = (SLONG) time(NULL);
 		}
 
-		START_PORT_CRITICAL;
+		START_PORT_CRITICAL();
 #ifdef  DEFER_PORT_CLEANUP
 		unhook_disconnected_ports(main_port);
 #endif
@@ -2618,7 +2589,7 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 				found = true;
 			}
 		}
-		STOP_PORT_CRITICAL;
+		STOP_PORT_CRITICAL();
 
 		if (!found)
 		{

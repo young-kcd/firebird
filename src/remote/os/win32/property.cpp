@@ -63,9 +63,9 @@
 #include "../jrd/jrd_proto.h"	/* JRD_num_attachments() */
 #include <stdio.h>				/* sprintf() */
 
-#define WIN_TEXTLEN                     128
-#define MSG_STRINGLEN           64
-#define APP_LABEL "Firebird Server"
+const int WIN_TEXTLEN			= 128;
+const int MSG_STRINGLEN			= 64;
+static const char* APP_LABEL			= "Firebird Server";
 
 static HINSTANCE hInstance = NULL;	// Handle to the current app. instance
 static HWND hPSDlg = NULL;		// Handle to the parent prop. sheet window

@@ -103,9 +103,9 @@
 	}
 
 
-#define STMT_BLOB		1
-#define STMT_NO_BATCH	2
-#define STMT_OTHER		0
+const USHORT STMT_BLOB		= 1;
+const USHORT STMT_NO_BATCH	= 2;
+const USHORT STMT_OTHER		= 0;
 
 typedef struct server_req_t
 {
@@ -661,7 +661,7 @@ static ISC_STATUS allocate_statement( rem_port* port, P_RLSE * allocate, PACKET*
 	else {
 		/* Allocate SQL request block */
 
-		RSR statement = (RSR) ALLOC(type_rsr);
+		RSR statement = (RSR) ALLR_block(type_rsr, 0);
 		statement->rsr_rdb = rdb;
 		statement->rsr_handle = handle;
 		if (statement->rsr_id = port->get_id(&statement->rsr_header))
@@ -807,7 +807,7 @@ static ISC_STATUS attach_database(
 
 	if (!status_vector[1])
 	{
-		RDB rdb = (RDB) ALLOC(type_rdb);
+		RDB rdb = (RDB) ALLR_block(type_rdb, 0);
 		port->port_context = rdb;
 #ifdef DEBUG_REMOTE_MEMORY
 		printf("attach_databases(server)  allocate rdb     %x\n", rdb);
@@ -1103,7 +1103,7 @@ ISC_STATUS rem_port::compile(P_CMPL* compileL, PACKET* sendL)
 
 /* Allocate block and merge into data structures */
 
-	rrq* requestL = (rrq*) ALLOCV(type_rrq, max_msg + 1);
+	rrq* requestL = (rrq*) ALLR_block(type_rrq, max_msg + 1);
 #ifdef DEBUG_REMOTE_MEMORY
 	printf("compile(server)           allocate request %x\n", request);
 #endif
@@ -2063,7 +2063,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 			if (!next)
 				for (next = statement->rsr_buffer; next->msg_next != message;
 					 next = next->msg_next);
-			message = (REM_MSG) ALLOCV(type_msg, statement->rsr_fmt_length);
+			message = (REM_MSG) ALLR_block(type_msg, statement->rsr_fmt_length);
 			message->msg_number = next->msg_number;
 			message->msg_next = next->msg_next;
 			next->msg_next = message;
@@ -2688,7 +2688,7 @@ static RTR make_transaction (RDB rdb, FB_API_HANDLE handle)
  *	Create a local transaction handle.
  *
  **************************************/
-	RTR transaction = (RTR) ALLOC(type_rtr);
+	RTR transaction = (RTR) ALLR_block(type_rtr, 0);
 	transaction->rtr_rdb = rdb;
 	transaction->rtr_handle = handle;
 	if (transaction->rtr_id = rdb->rdb_port->get_id(&transaction->rtr_header))
@@ -2751,7 +2751,7 @@ ISC_STATUS rem_port::open_blob(P_OP op, P_BLOB* stuff, PACKET* sendL)
 	if (status_vector[1])
 		object = 0;
 	else {
-		RBL blob = (RBL) ALLOCV(type_rbl, 1);
+		RBL blob = (RBL) ALLR_block(type_rbl, 1);
 #ifdef DEBUG_REMOTE_MEMORY
 		printf("open_blob(server)         allocate blob    %x\n", blob);
 #endif
@@ -3341,7 +3341,7 @@ ISC_STATUS rem_port::que_events(P_EVENT * stuff, PACKET* sendL)
 
 	if (!event)
 	{
-		event = (RVNT) ALLOC(type_rvnt);
+		event = (RVNT) ALLR_block(type_rvnt, 0);
 #ifdef DEBUG_REMOTE_MEMORY
 		printf("que_events(server)        allocate event   %x\n", event);
 #endif
@@ -3651,7 +3651,7 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 
 			/* allocate a new message block and put it in the cache */
 
-			message = (REM_MSG) ALLOCV(type_msg, format->fmt_length);
+			message = (REM_MSG) ALLR_block(type_msg, format->fmt_length);
 #ifdef DEBUG_REMOTE_MEMORY
 			printf("receive_msg(server)       allocate message %x\n",
 					  message);
@@ -4304,7 +4304,7 @@ ISC_STATUS rem_port::service_attach(P_ATCH* attach, PACKET* sendL)
 		ALLR_free(new_spb);
 
 	if (!status_vector[1]) {
-		RDB rdb = (RDB) ALLOC(type_rdb);
+		RDB rdb = (RDB) ALLR_block(type_rdb, 0);
 		this->port_context = rdb;
 #ifdef DEBUG_REMOTE_MEMORY
 		printf("attach_service(server)  allocate rdb     %x\n", rdb);

@@ -85,17 +85,16 @@
 
 #include <direct.h>				// getcwd
 
-#define	OSTYPE_NT	1
-#define	OSTYPE_WIN_95	2
-
 #if defined(SUPERCLIENT) && !defined(IPSERV)
 static USHORT ostype = 0;
+const USHORT OSTYPE_NT		= 1;
+const USHORT OSTYPE_WIN_95	= 2;
 #endif
 #endif // WIN_NT
 
-#define ISC_USER		"ISC_USER"
-#define ISC_PASSWORD		"ISC_PASSWORD"
-#define MAX_USER_LENGTH		33
+const char* ISC_USER		= "ISC_USER";
+const char* ISC_PASSWORD	= "ISC_PASSWORD";
+const int MAX_USER_LENGTH	= 33;
 #define MAX_OTHER_PARAMS	(1 + 1 + sizeof(port->port_dummy_packet_interval))
 
 static RVNT add_event(rem_port*);
@@ -175,9 +174,6 @@ static void zap_packet(PACKET *);
 static void mov_faster(const SLONG*, SLONG*, USHORT);
 
 static ULONG remote_event_id = 0;
-
-#define ALLR_RELEASE(x)		ALLR_release ((struct blk *) (x))
-#define RETURN_SUCCESS		return return_success (rdb)
 
 #define CHECK_HANDLE(blk,type,error) if (!blk || ((BLK) blk)->blk_type != (UCHAR) type) \
 				return handle_error (user_status, (ISC_STATUS) error)
@@ -362,7 +358,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -459,7 +455,7 @@ ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS * user_status, RBL * blob_handle)
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -508,7 +504,7 @@ ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS * user_status, RDB * handle, SLONG * id)
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -559,7 +555,7 @@ ISC_STATUS GDS_CLOSE_BLOB(ISC_STATUS * user_status, RBL * blob_handle)
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -603,7 +599,7 @@ ISC_STATUS GDS_COMMIT(ISC_STATUS * user_status, RTR * rtr_handle)
 		return error(user_status, ex);
 	}
 	
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -648,7 +644,7 @@ ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS * user_status, RTR * rtr_handle)
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -719,7 +715,7 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 		}
 
 		/* Allocate request block */
-		rrq* request = (rrq*) ALLOCV(type_rrq, max_msg + 1);
+		rrq* request = (rrq*) ALLR_block(type_rrq, max_msg + 1);
 		*req_handle = request;
 		request->rrq_rdb = rdb;
 		request->rrq_id = packet->p_resp.p_resp_object;
@@ -758,7 +754,7 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -818,7 +814,7 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 		if (user_status[1])
 			return error(user_status);
 
-		RBL blob = (RBL) ALLOCV(type_rbl, BLOB_LENGTH);
+		RBL blob = (RBL) ALLR_block(type_rbl, BLOB_LENGTH);
 		*blob_handle = blob;
 		*blob_id = packet->p_resp.p_resp_blob_id;
 		blob->rbl_buffer_length = BLOB_LENGTH;
@@ -836,7 +832,7 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -952,7 +948,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -1158,7 +1154,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, RDB* handle)
 		disconnect(port);
 		*handle = NULL;
 
-		/* Can't RETURN_SUCCESS here as we've already torn down memory */
+		/* Can't return_success(rdb) here as we've already torn down memory */
 	}
 	catch (const std::exception& ex)
 	{
@@ -1284,7 +1280,7 @@ ISC_STATUS GDS_DSQL_ALLOCATE(ISC_STATUS*	user_status,
 
 		/* Allocate SQL request block */
 
-		RSR statement = (RSR) ALLOC(type_rsr);
+		RSR statement = (RSR) ALLR_block(type_rsr, 0);
 		*stmt_handle = statement;
 		statement->rsr_rdb = rdb;
 		statement->rsr_id = packet->p_resp.p_resp_object;
@@ -1301,7 +1297,7 @@ ISC_STATUS GDS_DSQL_ALLOCATE(ISC_STATUS*	user_status,
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -1390,11 +1386,11 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
 		// isc_dsql_prepare is called multiple times). 
 		// This should cure SF#919246
 		if (statement->rsr_bind_format) {
-			ALLR_RELEASE(statement->rsr_bind_format);
+			ALLR_release(statement->rsr_bind_format);
 			statement->rsr_bind_format = NULL;
 		}
 		if (port->port_statement && port->port_statement->rsr_select_format) {
-			ALLR_RELEASE(port->port_statement->rsr_select_format);
+			ALLR_release(port->port_statement->rsr_select_format);
 			port->port_statement->rsr_select_format = NULL;
 		}
 
@@ -1404,7 +1400,7 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
 			REM_MSG message = PARSE_messages(in_blr, in_blr_length);
 			if (message != (REM_MSG) - 1) {
 				statement->rsr_bind_format = (rem_fmt*) message->msg_address;
-				ALLR_RELEASE(message);
+				ALLR_release(message);
 			}
 		}
 
@@ -1413,17 +1409,17 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
 
 		if (out_blr_length) {
 			if (!port->port_statement)
-				port->port_statement = (RSR) ALLOC(type_rsr);
+				port->port_statement = (RSR) ALLR_block(type_rsr, 0);
 
 			REM_MSG message = PARSE_messages(out_blr, out_blr_length);
 			if (message != (REM_MSG) - 1) {
 				port->port_statement->rsr_select_format =
 					(rem_fmt*) message->msg_address;
-				ALLR_RELEASE(message);
+				ALLR_release(message);
 			}
 
 			if (!port->port_statement->rsr_buffer) {
-				REM_MSG message2 = (REM_MSG) ALLOCV(type_msg, 0);
+				REM_MSG message2 = (REM_MSG) ALLR_block(type_msg, 0);
 				port->port_statement->rsr_buffer = message2;
 				port->port_statement->rsr_message = message2;
 				message2->msg_next = message2;
@@ -1436,7 +1432,7 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
 
 		REM_MSG message = 0;
 		if (!statement->rsr_buffer) {
-			statement->rsr_buffer = message = (REM_MSG) ALLOCV(type_msg, 0);
+			statement->rsr_buffer = message = (REM_MSG) ALLR_block(type_msg, 0);
 			statement->rsr_message = message;
 
 			message->msg_next = message;
@@ -1509,7 +1505,7 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -1606,7 +1602,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 
 		RSR statement = port->port_statement;
 		if (!statement) {
-			statement = port->port_statement = (RSR) ALLOC(type_rsr);
+			statement = port->port_statement = (RSR) ALLR_block(type_rsr, 0);
 		}
 
 		/* reset statement buffers */
@@ -1617,12 +1613,12 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 		REMOTE_reset_statement(statement);
 
 		if (statement->rsr_bind_format) {
-			ALLR_RELEASE(statement->rsr_bind_format);
+			ALLR_release(statement->rsr_bind_format);
 			statement->rsr_bind_format = NULL;
 		}
 
 		if (statement->rsr_select_format) {
-			ALLR_RELEASE(statement->rsr_select_format);
+			ALLR_release(statement->rsr_select_format);
 			statement->rsr_select_format = NULL;
 		}
 
@@ -1633,7 +1629,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 				REM_MSG message = PARSE_messages(in_blr, in_blr_length);
 				if ((message) != (REM_MSG) - 1) {
 					statement->rsr_bind_format = (rem_fmt*) message->msg_address;
-					ALLR_RELEASE(message);
+					ALLR_release(message);
 				}
 			}
 			if (out_blr_length)
@@ -1641,7 +1637,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 				REM_MSG message = PARSE_messages(out_blr, out_blr_length);
 				if ((message) != (REM_MSG) - 1) {
 					statement->rsr_select_format = (rem_fmt*) message->msg_address;
-					ALLR_RELEASE(message);
+					ALLR_release(message);
 				}
 			}
 		}
@@ -1649,7 +1645,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 		REM_MSG message = 0;
 		if (!statement->rsr_buffer)
 		{
-			statement->rsr_buffer = message = (REM_MSG) ALLOCV(type_msg, 0);
+			statement->rsr_buffer = message = (REM_MSG) ALLR_block(type_msg, 0);
 			statement->rsr_message = message;
 			message->msg_next = message;
 #ifdef SCROLLABLE_CURSORS
@@ -1726,7 +1722,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -1797,11 +1793,11 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 		if (blr_length) {
 			if (statement->rsr_user_select_format &&
 				statement->rsr_user_select_format != statement->rsr_select_format)
-				ALLR_RELEASE(statement->rsr_user_select_format);
+				ALLR_release(statement->rsr_user_select_format);
 			REM_MSG message = PARSE_messages(blr, blr_length);
 			if (message != (REM_MSG) - 1) {
 				statement->rsr_user_select_format = (rem_fmt*) message->msg_address;
-				ALLR_RELEASE(message);
+				ALLR_release(message);
 			}
 			else
 				statement->rsr_user_select_format = NULL;
@@ -1809,7 +1805,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 				blr_length = 0;
 			else {
 				if (statement->rsr_select_format)
-					ALLR_RELEASE(statement->rsr_select_format);
+					ALLR_release(statement->rsr_select_format);
 				statement->rsr_select_format = statement->rsr_user_select_format;
 			}
 		}
@@ -1823,7 +1819,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 
 
 		if (!statement->rsr_buffer) {
-			statement->rsr_buffer = (REM_MSG) ALLOCV(type_msg, 0);
+			statement->rsr_buffer = (REM_MSG) ALLR_block(type_msg, 0);
 			statement->rsr_message = statement->rsr_buffer;
 			statement->rsr_message->msg_next = statement->rsr_message;
 #ifdef SCROLLABLE_CURSORS
@@ -1992,7 +1988,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -2060,7 +2056,7 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS * user_status, RSR * stmt_handle, USHORT opt
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -2104,7 +2100,7 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS * user_status,
 		// Free existing format unconditionally. 
 		// This is also related to SF#919246
 		if (statement->rsr_bind_format) {
-			ALLR_RELEASE(statement->rsr_bind_format);
+			ALLR_release(statement->rsr_bind_format);
 			statement->rsr_bind_format = NULL;
 		}
 
@@ -2114,13 +2110,13 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS * user_status,
 			REM_MSG message = PARSE_messages(blr, blr_length);
 			if (message != (REM_MSG) - 1) {
 				statement->rsr_bind_format = (rem_fmt*) message->msg_address;
-				ALLR_RELEASE(message);
+				ALLR_release(message);
 			}
 		}
 
 		REM_MSG message = 0;
 		if (!statement->rsr_buffer) {
-			statement->rsr_buffer = message = (REM_MSG) ALLOCV(type_msg, 0);
+			statement->rsr_buffer = message = (REM_MSG) ALLR_block(type_msg, 0);
 			statement->rsr_message = message;
 			message->msg_next = message;
 #ifdef SCROLLABLE_CURSORS
@@ -2161,7 +2157,7 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS * user_status,
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -2257,7 +2253,7 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status, RTR * rtr_handle, RSR * st
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -2335,7 +2331,7 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -2576,7 +2572,7 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 				if (new_size > MAX_USHORT)	/* Check if we've overflown */
 					new_size = buffer_length;
 				if (blob->rbl_buffer != blob->rbl_data)
-					ALLR_RELEASE(blob->rbl_buffer);
+					ALLR_release(blob->rbl_buffer);
 				blob->rbl_ptr = blob->rbl_buffer = ALLR_alloc((SLONG) new_size);
 				/* NOMEM: ALLR_alloc handled */
 				/* FREE:  in release_blob()  */
@@ -2726,7 +2722,7 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -2788,7 +2784,7 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 		//p_blob->p_blob_bpb.cstr_length = 0;
 		//p_blob->p_blob_bpb.cstr_address = NULL;
 
-		RBL blob = (RBL) ALLOCV(type_rbl, BLOB_LENGTH);
+		RBL blob = (RBL) ALLR_block(type_rbl, BLOB_LENGTH);
 		*blob_handle = blob;
 		blob->rbl_rdb = rdb;
 		blob->rbl_rtr = transaction;
@@ -2804,7 +2800,7 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -2845,7 +2841,7 @@ ISC_STATUS GDS_PREPARE(ISC_STATUS * user_status,
 			if (!release_object(rdb, op_prepare, transaction->rtr_id)) {
 				return error(user_status);
 			}
-			RETURN_SUCCESS;
+			return return_success(rdb);
 		}
 
 		PACKET* packet = &rdb->rdb_packet;
@@ -2865,7 +2861,7 @@ ISC_STATUS GDS_PREPARE(ISC_STATUS * user_status,
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -2959,7 +2955,7 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -3055,7 +3051,7 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS* user_status,
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -3166,7 +3162,7 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -3413,7 +3409,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -3461,7 +3457,7 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -3503,7 +3499,7 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, rrq** req_handle)
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -3588,7 +3584,7 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 				*out++ = data >> 8;
 			}
 
-			RETURN_SUCCESS;
+			return return_success(rdb);
 		}
 
 		/* No message pending, request status from other end */
@@ -3651,7 +3647,7 @@ ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS * user_status, RTR * rtr_handle)
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -3694,7 +3690,7 @@ ISC_STATUS GDS_ROLLBACK(ISC_STATUS * user_status, RTR * rtr_handle)
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -3756,7 +3752,7 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS * user_status,
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -3820,7 +3816,7 @@ ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -3935,7 +3931,7 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -3984,7 +3980,7 @@ ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS * user_status, RDB * handle)
 		return error(user_status, ex);
 	}
 
-	/* Note: Can't RETURN_SUCCESS here as we've torn down memory already */
+	/* Note: Can't return_success(rdb) here as we've torn down memory already */
 
 	RESTORE_THREAD_DATA;
 
@@ -4196,7 +4192,7 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS * user_status,
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -4269,7 +4265,7 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -4319,7 +4315,7 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -4365,7 +4361,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
 
 		RPR procedure = port->port_rpr;
 		if (!procedure) {
-			procedure = port->port_rpr = (RPR) ALLOC(type_rpr);
+			procedure = port->port_rpr = (RPR) ALLR_block(type_rpr, 0);
 		}
 
 		if ((*rtr_handle)->rtr_rdb != rdb) {
@@ -4378,19 +4374,19 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
 		/* Parse the blr describing the messages */
 
 		if (procedure->rpr_in_msg) {
-			ALLR_RELEASE(procedure->rpr_in_msg);
+			ALLR_release(procedure->rpr_in_msg);
 			procedure->rpr_in_msg = NULL;
 		}
 		if (procedure->rpr_in_format) {
-			ALLR_RELEASE(procedure->rpr_in_format);
+			ALLR_release(procedure->rpr_in_format);
 			procedure->rpr_in_format = NULL;
 		}
 		if (procedure->rpr_out_msg) {
-			ALLR_RELEASE(procedure->rpr_out_msg);
+			ALLR_release(procedure->rpr_out_msg);
 			procedure->rpr_out_msg = NULL;
 		}
 		if (procedure->rpr_out_format) {
-			ALLR_RELEASE(procedure->rpr_out_format);
+			ALLR_release(procedure->rpr_out_format);
 			procedure->rpr_out_format = NULL;
 		}
 
@@ -4414,7 +4410,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
 				else {
 					REM_MSG temp = message;
 					message = message->msg_next;
-					ALLR_RELEASE(temp);
+					ALLR_release(temp);
 				}
 			}
 		}
@@ -4458,7 +4454,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -4541,7 +4537,7 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS* user_status, rrq** req_handle, USHORT level)
 		return error(user_status, ex);
 	}
 
-	RETURN_SUCCESS;
+	return return_success(rdb);
 }
 
 
@@ -4568,7 +4564,7 @@ static RVNT add_event( rem_port* port)
 	}
 
 	if (!event) {
-		event = (RVNT) ALLOC(type_rvnt);
+		event = (RVNT) ALLR_block(type_rvnt, 0);
 		event->rvnt_next = rdb->rdb_events;
 		rdb->rdb_events = event;
 	}
@@ -4978,7 +4974,7 @@ static bool batch_dsql_fetch(trdb*	trdb,
 		REM_MSG message = statement->rsr_buffer;
 		if (message->msg_address)
 		{
-			REM_MSG new_msg = (REM_MSG) ALLOCV(type_msg, statement->rsr_fmt_length);
+			REM_MSG new_msg = (REM_MSG) ALLR_block(type_msg, statement->rsr_fmt_length);
 			statement->rsr_buffer = new_msg;
 				
 			new_msg->msg_next = message;
@@ -5134,7 +5130,7 @@ static bool batch_gds_receive(trdb*		trdb,
 		if (message->msg_address)
 		{
 			const rem_fmt* format = tail->rrq_format;
-			REM_MSG new_msg = (REM_MSG) ALLOCV(type_msg, format->fmt_length);
+			REM_MSG new_msg = (REM_MSG) ALLR_block(type_msg, format->fmt_length);
 			tail->rrq_xdr = new_msg;
 			new_msg->msg_next = message;
 			new_msg->msg_number = message->msg_number;
@@ -5376,7 +5372,7 @@ static void disconnect( rem_port* port)
 
 	port->disconnect();
 	if (rdb) {
-		ALLR_RELEASE(rdb);
+		ALLR_release(rdb);
 	}
 }
 
@@ -6016,7 +6012,7 @@ static RTR make_transaction( RDB rdb, USHORT id)
  *	Create a local transaction handle.
  *
  **************************************/
-	RTR transaction = (RTR) ALLOC(type_rtr);
+	RTR transaction = (RTR) ALLR_block(type_rtr, 0);
 	transaction->rtr_rdb = rdb;
 	transaction->rtr_id = id;
 	transaction->rtr_next = rdb->rdb_transactions;
@@ -6210,7 +6206,7 @@ static void receive_after_start( rrq* request, USHORT msg_type)
 	while (true) {
 		REM_MSG message = tail->rrq_xdr;
 		if (message->msg_address) {
-			REM_MSG new_msg = (REM_MSG) ALLOCV(type_msg, format->fmt_length);
+			REM_MSG new_msg = (REM_MSG) ALLR_block(type_msg, format->fmt_length);
 			tail->rrq_xdr = new_msg;
 			new_msg->msg_next = message;
 			new_msg->msg_number = message->msg_number;
@@ -6388,7 +6384,7 @@ static void enqueue_receive(rem_port* port,
  * Functional description
  *
  **************************************/
-	RMTQUE que_inst = (RMTQUE) ALLOC(type_rmtque);
+	RMTQUE que_inst = (RMTQUE) ALLR_block(type_rmtque, 0);
 
 /* Prepare a queue entry */
 
@@ -6480,9 +6476,9 @@ static void release_blob( RBL blob)
 		}
 
 	if (blob->rbl_buffer != blob->rbl_data)
-		ALLR_RELEASE(blob->rbl_buffer);
+		ALLR_release(blob->rbl_buffer);
 
-	ALLR_RELEASE(blob);
+	ALLR_release(blob);
 }
 
 
@@ -6506,7 +6502,7 @@ static void release_event( RVNT event)
 			break;
 		}
 
-	ALLR_RELEASE(event);
+	ALLR_release(event);
 }
 
 
@@ -6568,20 +6564,20 @@ static void release_statement( RSR* statement)
  **************************************/
 
 	if ((*statement)->rsr_bind_format) {
-		ALLR_RELEASE((*statement)->rsr_bind_format);
+		ALLR_release((*statement)->rsr_bind_format);
 	}
 	if ((*statement)->rsr_user_select_format &&
 		(*statement)->rsr_user_select_format !=
 		(*statement)->rsr_select_format)
 	{
-		ALLR_RELEASE((*statement)->rsr_user_select_format);
+		ALLR_release((*statement)->rsr_user_select_format);
 	}
 	if ((*statement)->rsr_select_format) {
-		ALLR_RELEASE((*statement)->rsr_select_format);
+		ALLR_release((*statement)->rsr_select_format);
 	}
 
 	REMOTE_release_messages((*statement)->rsr_message);
-	ALLR_RELEASE((*statement));
+	ALLR_release((*statement));
 	(*statement) = NULL;
 }
 
@@ -6632,7 +6628,7 @@ static void release_transaction( RTR transaction)
 			break;
 		}
 
-	ALLR_RELEASE(transaction);
+	ALLR_release(transaction);
 }
 
 

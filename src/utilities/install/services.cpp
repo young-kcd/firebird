@@ -36,7 +36,7 @@
 #include "../utilities/install/registry.h"
 
 /* Defines */
-#define RUNAS_SERVICE " -s"
+const char* RUNAS_SERVICE = " -s";
 
 USHORT SERVICES_install(SC_HANDLE manager,
 						const char* service_name,

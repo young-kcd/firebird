@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: inet_server.cpp,v 1.40 2004-05-15 00:58:10 brodsom Exp $
+$Id: inet_server.cpp,v 1.41 2004-05-17 10:21:03 brodsom Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -66,12 +66,6 @@ $Id: inet_server.cpp,v 1.40 2004-05-15 00:58:10 brodsom Exp $
 
 #if HAVE_SYS_WAIT_H
 # include <sys/wait.h>
-#endif
-#ifndef WEXITSTATUS
-# define WEXITSTATUS(stat_val) ((unsigned)(stat_val) >> 8)
-#endif
-#ifndef WIFEXITED
-# define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
 #endif
 
 #ifdef HAVE_STRING_H
@@ -111,12 +105,12 @@ $Id: inet_server.cpp,v 1.40 2004-05-15 00:58:10 brodsom Exp $
 
 #ifdef SUPERSERVER
 #ifndef WIN_NT
-#define TEMP_DIR "/tmp"
+const char* TEMP_DIR = "/tmp";
 #define CHANGE_DIR chdir
 #endif
-#define INTERBASE_USER_NAME     "interbase"
-#define INTERBASE_USER_SHORT    "interbas"
-#define FIREBIRD_USER_NAME	"firebird"
+const char* INTERBASE_USER_NAME		= "interbase";
+const char* INTERBASE_USER_SHORT	= "interbas";
+const char* FIREBIRD_USER_NAME		= "firebird";
 #endif
 
 

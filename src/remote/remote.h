@@ -61,11 +61,7 @@ DEFINE_TRACE_ROUTINE(remote_trace);
 
 #endif
 
-#define BLOB_LENGTH		16384   
-
-#define ALLOC(type)			ALLR_block (type, 0)
-#define ALLOCV(type, count)	ALLR_block (type, count)
-
+const int BLOB_LENGTH		= 16384;
 
 #include "../remote/protocol.h"
 
@@ -95,7 +91,8 @@ typedef struct rdb
 	PACKET			rdb_packet;			/* Communication structure */
 } *RDB;
 
-#define RDB_service	1		/* structure relates to a service */
+// rdb_flags
+const USHORT RDB_service	= 1;		/* structure relates to a service */
 
 typedef struct rtr
 {
@@ -108,7 +105,8 @@ typedef struct rtr
 	USHORT		rtr_id;
 } *RTR;
 
-#define RTR_limbo	1
+// rtr_flags
+const USHORT RTR_limbo	= 1;
 
 typedef struct rbl
 {
@@ -130,10 +128,11 @@ typedef struct rbl
 	UCHAR		rbl_data[1];
 } *RBL;
 
-#define RBL_eof		1
-#define RBL_segment	2
-#define RBL_eof_pending	4
-#define RBL_create	8
+// rbl_flags
+const USHORT RBL_eof		= 1;
+const USHORT RBL_segment	= 2;
+const USHORT RBL_eof_pending= 4;
+const USHORT RBL_create		= 8;
 
 typedef struct rvnt
 {
@@ -188,7 +187,8 @@ struct rem_fmt
 	struct dsc	fmt_desc[1];
 };
 
-#define FMT_has_P10_specific_datatypes	0x1	/* datatypes don't exist in P9 */
+// fmt_flags (not used)
+//#define FMT_has_P10_specific_datatypes	0x1	/* datatypes don't exist in P9 */
 
 /* Windows declares a msg structure, so rename the structure 
    to avoid overlap problems. */
@@ -225,7 +225,8 @@ typedef struct rpr
 	USHORT		rpr_flags;
 } *RPR;
 
-#define RPR_eof		1		/* End-of-stream encountered */
+// rpw_flags (not used)
+//#define RPR_eof		1		/* End-of-stream encountered */
 
 struct rrq
 {
@@ -259,9 +260,10 @@ struct rrq
 
 /* rrq flags */
 
-#define RRQ_backward			1	/* the cache was created in the backward direction */ 
-#define RRQ_absolute_backward	2	/* rrq_absolute is measured from the end of the stream */
-#define RRQ_last_backward		4	/* last time, the next level up asked for us to scroll in the backward direction */
+// rrq_flags
+const USHORT RRQ_backward			= 1;	/* the cache was created in the backward direction */ 
+const USHORT RRQ_absolute_backward	= 2;	/* rrq_absolute is measured from the end of the stream */
+const USHORT RRQ_last_backward		= 4;	/* last time, the next level up asked for us to scroll in the backward direction */
 
 /* remote SQL request */
 
@@ -289,11 +291,12 @@ typedef struct rsr
 	USHORT			rsr_batch_count; 	/* Count of batches in pipeline */
 } *RSR;
 
-#define RSR_fetched		1		/* Cleared by execute, set by fetch */
-#define RSR_eof			2		/* End-of-stream encountered */
-#define RSR_blob		4		/* Statement relates to blob op */
-#define RSR_no_batch	8		/* Do not batch fetch rows */
-#define RSR_stream_err	16		/* There is an error pending in the batched rows */
+// rsr_flags
+const USHORT RSR_fetched	= 1;		/* Cleared by execute, set by fetch */
+const USHORT RSR_eof		= 2;		/* End-of-stream encountered */
+const USHORT RSR_blob		= 4;		/* Statement relates to blob op */
+const USHORT RSR_no_batch	= 8;		/* Do not batch fetch rows */
+const USHORT RSR_stream_err	= 16;		/* There is an error pending in the batched rows */
 
 
 enum blk_t
@@ -348,7 +351,7 @@ enum state_t
 
 
 #ifndef WIN_NT
-#define HANDLE	int
+typdef int HANDLE;
 #endif  /* WIN_NT */
 
 
@@ -480,17 +483,18 @@ struct rem_port
 
 };
 
-#define PORT_symmetric		1	/* Server/client archiectures are symmetic */
-#define PORT_rpc			2	/* Protocol is remote procedure call */
-#define PORT_pend_ack		4	/* An ACK is pending on the port */
-#define PORT_broken			8	/* Connect is broken */
-#define PORT_async			16	/* Port is asynchronous channel for events */
-#define PORT_no_oob			32	/* Don't send out of band data */
-#define PORT_disconnect		64	/* Disconnect is in progress */
-#define PORT_pend_rec		128	/* A record is pending on the port */
-#define PORT_not_trusted	256	/* Connection is from an untrusted node */
-#define PORT_impersonate	512	/* A remote user is being impersonated */
-#define PORT_dummy_pckt_set	1024	/* A dummy packet interval is set  */
+// port_flags
+const USHORT PORT_symmetric		= 1;	/* Server/client archiectures are symmetic */
+const USHORT PORT_rpc			= 2;	/* Protocol is remote procedure call */
+const USHORT PORT_pend_ack		= 4;	/* An ACK is pending on the port */
+const USHORT PORT_broken		= 8;	/* Connect is broken */
+const USHORT PORT_async			= 16;	/* Port is asynchronous channel for events */
+const USHORT PORT_no_oob		= 32;	/* Don't send out of band data */
+const USHORT PORT_disconnect	= 64;	/* Disconnect is in progress */
+const USHORT PORT_pend_rec		= 128;	/* A record is pending on the port */
+const USHORT PORT_not_trusted	= 256;	/* Connection is from an untrusted node */
+const USHORT PORT_impersonate	= 512;	/* A remote user is being impersonated */
+const USHORT PORT_dummy_pckt_set= 1024;	/* A dummy packet interval is set  */
 
 
 /* Misc declarations */

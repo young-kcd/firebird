@@ -48,14 +48,14 @@
 #include "../common/config/config.h"
 
 // Symbolic constant definitions
-#define PASSWORD_LEN            33	// MAXIMUM PASSWORD LENGTH DEFINITION
-#define TEMP_BUFLEN             33
-#define SEND_BUFLEN             32
-#define RESP_BUFLEN             128
+const int PASSWORD_LEN		= 33;	// MAXIMUM PASSWORD LENGTH DEFINITION
+const int TEMP_BUFLEN		= 33;
+const int SEND_BUFLEN		= 32;
+const int RESP_BUFLEN		= 128;
 
-#define SPB_BUFLEN              128
-#define ERR_BUFLEN              1024
-#define HDR_BUFLEN              512
+const int SPB_BUFLEN		= 128;
+const int ERR_BUFLEN		= 1024;
+const int HDR_BUFLEN		= 512;
 
 static HINSTANCE hAppInstance = NULL;	// Handle to the app. instance
 char szSysDbaPasswd[PASSWORD_LEN];	// Pointer to hold the password

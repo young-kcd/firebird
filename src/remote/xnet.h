@@ -37,10 +37,10 @@
 #define FILE_ID	HANDLE
 #endif
 
-#define XNET_CONNECT_TIMEOUT 10000 /* client connect timeout (ms) */
+const DWORD XNET_CONNECT_TIMEOUT	= 10000;	/* client connect timeout (ms) */
 
-#define XNET_RECV_WAIT_TIMEOUT 10000                  /* Receive wait timeout (ms) */
-#define XNET_SEND_WAIT_TIMEOUT XNET_RECV_WAIT_TIMEOUT /* Send wait timeout (ms) */
+const DWORD XNET_RECV_WAIT_TIMEOUT	= 10000;	/* Receive wait timeout (ms) */
+const DWORD XNET_SEND_WAIT_TIMEOUT	= XNET_RECV_WAIT_TIMEOUT; /* Send wait timeout (ms) */
 
 /* mapped file parameters */
 
@@ -50,19 +50,18 @@
 
 #define XPS_USEFUL_SPACE(p)          (XPS_MAPPED_PER_CLI(p) - sizeof(struct xps))
 
-#define XPS_DEF_NUM_CLI         10      /* default clients per mapped file */
-#define XPS_DEF_PAGES_PER_CLI   8       /* default 1k pages space per client */
+const ULONG XPS_DEF_NUM_CLI			= 10;	/* default clients per mapped file */
+const ULONG XPS_DEF_PAGES_PER_CLI	= 8;	/* default 1k pages space per client */
 
-#define XPS_MIN_NUM_CLI         1       /* min clients per mapped file */
-#define XPS_MIN_PAGES_PER_CLI   1       /* min 1k pages space per client */
+//#define XPS_MIN_NUM_CLI         1       /* min clients per mapped file */
+//#define XPS_MIN_PAGES_PER_CLI   1       /* min 1k pages space per client */
 
-#define XPS_MAX_NUM_CLI         64      /* max clients per mapped file */
-#define XPS_MAX_PAGES_PER_CLI   16      /* max 1k pages space per client */
+const ULONG XPS_MAX_NUM_CLI			= 64;	/* max clients per mapped file */
+const ULONG XPS_MAX_PAGES_PER_CLI	= 16;	/* max 1k pages space per client */
 
+const ULONG XNET_INVALID_MAP_NUM	= 0xFFFFFFFF;
 
-#define XNET_INVALID_MAP_NUM 0xFFFFFFFF
-
-#define XNET_EVENT_SPACE 100 /* half of space (bytes) for event handling per connection */
+const ULONG XNET_EVENT_SPACE		= 100; /* half of space (bytes) for event handling per connection */
 
 /* mapped file structure */
 
@@ -79,9 +78,9 @@ typedef struct xpm {
 
 /* mapped structure flags */
 
-#define XPMF_SERVER_SHUTDOWN    1       /* server has shut down */
-#define XPM_FREE 0                      /* xpm structure is free for use */
-#define XPM_BUSY 1                      /* xpm structure is in use */
+const USHORT XPMF_SERVER_SHUTDOWN	= 1;	/* server has shut down */
+const USHORT XPM_FREE				= 0;	/* xpm structure is free for use */
+const USHORT XPM_BUSY				= 1;	/* xpm structure is in use */
 
 
 /* xch comm channel structure - four per connection (client to server data,
@@ -121,7 +120,7 @@ typedef struct xcc {
 } *XCC;
 
 /* xcc structure flags */
-#define XCCF_SERVER_SHUTDOWN    2       /* server has shutdown detected */
+const ULONG XCCF_SERVER_SHUTDOWN		= 2;	/* server has shutdown detected */
 
 
 /* This structure (xps) is mapped to the start of the allocated
@@ -141,14 +140,14 @@ typedef struct xps
 
 /* xps_channel numbers */
 
-#define XPS_CHANNEL_C2S_DATA   0        /* 0 - client to server data */
-#define XPS_CHANNEL_S2C_DATA   1        /* 1 - server to client data */
-#define XPS_CHANNEL_C2S_EVENTS 2        /* 2 - client to server events */
-#define XPS_CHANNEL_S2C_EVENTS 3        /* 3 - server to client events */
+const int XPS_CHANNEL_C2S_DATA		= 0;	/* 0 - client to server data */
+const int XPS_CHANNEL_S2C_DATA		= 1;	/* 1 - server to client data */
+const int XPS_CHANNEL_C2S_EVENTS	= 2;	/* 2 - client to server events */
+const int XPS_CHANNEL_S2C_EVENTS	= 3;	/* 3 - server to client events */
 
 
-#define XPI_CLIENT_PROTOCOL_VERSION 3L
-#define XPI_SERVER_PROTOCOL_VERSION 3L
+const ULONG XPI_CLIENT_PROTOCOL_VERSION		= 3L;
+const ULONG XPI_SERVER_PROTOCOL_VERSION		= 3L;
 
 /* XNET_RESPONSE - server response on client connect request */
 typedef struct{
@@ -161,7 +160,7 @@ typedef struct{
 } XNET_RESPONSE, *PXNET_RESPONSE;
 
 /* XNET_CONNECT_RESPONZE_SIZE - amount of bytes server writes on connect response */
-#define XNET_CONNECT_RESPONZE_SIZE  sizeof(XNET_RESPONSE)
+const size_t XNET_CONNECT_RESPONZE_SIZE	= sizeof(XNET_RESPONSE);
 
 /* Windows names used to identify various named objects */
 

@@ -988,7 +988,7 @@ void CCH_fetch_page(
 	pag* page = bdb->bdb_buffer;
 	bdb->bdb_incarnation = ++dbb->dbb_page_incarnation;
 
-	AST_CHECK;
+	AST_CHECK();
 	++dbb->dbb_reads;
 #ifdef SUPERSERVER
 	THREAD_EXIT();
@@ -1153,7 +1153,7 @@ void CCH_fetch_page(
 #ifdef SUPERSERVER
 	THREAD_ENTER();
 #endif
-	AST_CHECK;
+	AST_CHECK();
 
 	bdb->bdb_flags &= ~(BDB_not_valid | BDB_read_pending);
 	window->win_buffer = bdb->bdb_buffer;
@@ -5519,7 +5519,7 @@ static bool write_page(
 //	if (true || write_thru) then finally if (true)
 // I won't wipe out the if() itself to allow my changes be verified easily by others
 	if (true) {
-		AST_CHECK;
+		AST_CHECK();
 		dbb->dbb_writes++;
 
 		/* write out page to main database file, and to any
@@ -5619,7 +5619,7 @@ static bool write_page(
 			bdb->bdb_flags &= ~(BDB_db_dirty | BDB_checkpoint);
 		}
 #endif
-		AST_CHECK;
+		AST_CHECK();
 	}
 
 	if (!result) {

@@ -40,9 +40,9 @@
     archive at www.interbase.com.
     The following macro was expanded during the preprocessing of this file.
 
-#ifndef UNICODE_REPLACEMENT_CHARACTER
-#define UNICODE_REPLACEMENT_CHARACTER 0xFFFD
-#endif
+//#ifndef UNICODE_REPLACEMENT_CHARACTER
+//#define UNICODE_REPLACEMENT_CHARACTER 0xFFFD
+//#endif
 */
 
 static const USHORT to_unicode_mapping_array[] = {

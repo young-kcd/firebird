@@ -46,7 +46,7 @@
 #include <windows.h>
 #endif /* WIN_NT */
 
-#define MAX_SEQUENCE	256
+const int MAX_SEQUENCE	= 256;
 
 static int accept_connection(rem_port*, P_CNCT *);
 static rem_port* xnet_alloc_port(rem_port*, UCHAR *, ULONG, UCHAR *, ULONG);
@@ -95,9 +95,7 @@ static xdr_t::xdr_ops xnet_ops =
 	xnet_destroy
 };
 
-#ifndef MAX_PTYPE
-#define MAX_PTYPE	ptype_out_of_band
-#endif
+const USHORT MAX_PTYPE	= ptype_out_of_band;
 
 static ULONG global_pages_per_slot = XPS_DEF_PAGES_PER_CLI;
 static ULONG global_slots_per_map = XPS_DEF_NUM_CLI;
@@ -125,35 +123,36 @@ static bool_t xnet_connect_init();
 static void xnet_connect_fini();
 static void xnet_release_all(void);
 
-#ifdef XNET_LOCK
-#undef XNET_LOCK
-#endif
-
-#ifdef XNET_UNLOCK
-#undef XNET_UNLOCK
-#endif
-
 static MUTX_T xnet_mutex;
 
 #if defined(SUPERCLIENT)
 
-#define XNET_LOCK		THD_mutex_lock(&xnet_mutex)
-#define XNET_UNLOCK		THD_mutex_unlock(&xnet_mutex)
+inline void XNET_LOCK(){
+	THD_mutex_lock(&xnet_mutex);
+}
+inline void XNET_UNLOCK(){
+	THD_mutex_unlock(&xnet_mutex);
+}
 
 #elif defined(SUPERSERVER)
 
-#define XNET_LOCK		if (!xnet_shutdown)					\
-							THREAD_EXIT();					\
-							THD_mutex_lock(&xnet_mutex);	\
-							if (!xnet_shutdown)				\
-								THREAD_ENTER();
-
-#define XNET_UNLOCK		THD_mutex_unlock(&xnet_mutex)
+inline void XNET_LOCK(){
+	if (!xnet_shutdown)
+		THREAD_EXIT();
+	THD_mutex_lock(&xnet_mutex);
+	if (!xnet_shutdown)
+		THREAD_ENTER();
+}
+inline void XNET_UNLOCK(){
+	THD_mutex_unlock(&xnet_mutex);
+}
 
 #else // CS
 
-#define XNET_LOCK
-#define XNET_UNLOCK
+inline void XNET_LOCK(){
+}
+inline void XNET_UNLOCK(){
+}
 
 #endif
 
@@ -213,7 +212,7 @@ rem_port* XNET_analyze(
 /* We need to establish a connection to a remote server.  Allocate the necessary
    blocks and get ready to go. */
 
-	RDB rdb = (RDB) ALLOC(type_rdb);
+	RDB rdb = (RDB) ALLR_block(type_rdb, 0);
 	PACKET* packet = &rdb->rdb_packet;
 
 /* Pick up some user identification information */
@@ -459,9 +458,9 @@ rem_port* XNET_connect(const TEXT* name, PACKET* packet,
 		gds__register_cleanup((FPTR_VOID_PTR) exit_handler, NULL);
 	}
 
-	XNET_LOCK;
+	XNET_LOCK();
 	if (!xnet_connect_init()) {
-		XNET_UNLOCK;
+		XNET_UNLOCK();
 		return NULL;
 	}
 
@@ -469,7 +468,7 @@ rem_port* XNET_connect(const TEXT* name, PACKET* packet,
 	if (WaitForSingleObject(xnet_connect_mutex, XNET_CONNECT_TIMEOUT) != WAIT_OBJECT_0)
 	{
 		xnet_connect_fini();
-		XNET_UNLOCK;
+		XNET_UNLOCK();
 		return NULL;
 	}
 
@@ -487,7 +486,7 @@ rem_port* XNET_connect(const TEXT* name, PACKET* packet,
 	{
 		ReleaseMutex(xnet_connect_mutex);
 		xnet_connect_fini();
-		XNET_UNLOCK;
+		XNET_UNLOCK();
 		return NULL;
 	}
 
@@ -495,7 +494,7 @@ rem_port* XNET_connect(const TEXT* name, PACKET* packet,
 	ReleaseMutex(xnet_connect_mutex);
 	xnet_connect_fini();
 
-	XNET_UNLOCK;
+	XNET_UNLOCK();
 
 	if (response.map_num == XNET_INVALID_MAP_NUM) {
 		XNET_LOG_ERROR("server failed to response on connect request");
@@ -510,7 +509,7 @@ rem_port* XNET_connect(const TEXT* name, PACKET* packet,
 
 	try {
 
-		XNET_LOCK;
+		XNET_LOCK();
 
 		// see if area is already mapped for this client
 		for (xpm = global_client_maps; xpm; xpm = xpm->xpm_next) {
@@ -529,20 +528,20 @@ rem_port* XNET_connect(const TEXT* name, PACKET* packet,
 
 			file_handle = OpenFileMapping(FILE_MAP_WRITE, FALSE, name_buffer);
 			if (!file_handle) {
-				XNET_UNLOCK;
+				XNET_UNLOCK();
 				throw -1;
 			}
 
 			mapped_address = MapViewOfFile(file_handle, FILE_MAP_WRITE, 0L, 0L,
 										   XPS_MAPPED_SIZE(global_slots_per_map, global_pages_per_slot));
 			if (!mapped_address) {
-				XNET_UNLOCK;
+				XNET_UNLOCK();
 				throw -1;
 			}
 
 			xpm = (XPM) ALLR_alloc(sizeof(struct xpm));
 			if (!xpm) {
-				XNET_UNLOCK;
+				XNET_UNLOCK();
 				throw -1;
 			}
 
@@ -556,7 +555,7 @@ rem_port* XNET_connect(const TEXT* name, PACKET* packet,
 			xpm->xpm_flags = 0;
 		}
 
-		XNET_UNLOCK;
+		XNET_UNLOCK();
 
 		// there's no thread structure, so make one
 		xcc = (XCC) ALLR_alloc(sizeof(struct xcc));
@@ -850,7 +849,7 @@ static rem_port* xnet_alloc_port(rem_port* parent,
  *	and initialize input and output XDR streams.
  *
  **************************************/
-	rem_port* port = (rem_port*) ALLOCV(type_port, 0);
+	rem_port* port = (rem_port*) ALLR_block(type_port, 0);
 	port->port_type = port_xnet;
 	port->port_state = state_pending;
 
@@ -1279,9 +1278,9 @@ static void xnet_cleanup_port(rem_port* port)
  **************************************/
 
 	if (port->port_xcc) {
-		XNET_LOCK;
+		XNET_LOCK();
 		xnet_cleanup_comm((XCC) port->port_xcc);
-		XNET_UNLOCK;
+		XNET_UNLOCK();
 	}
 	
 	if (port->port_version) {
@@ -1546,7 +1545,7 @@ static void xnet_on_server_shutdown(rem_port* port)
 
 	XNET_LOG_ERROR("Server shutdown detected");
 
-	XNET_LOCK;
+	XNET_LOCK();
 
 	xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
 
@@ -1562,7 +1561,7 @@ static void xnet_on_server_shutdown(rem_port* port)
 		}
 	}
 
-	XNET_UNLOCK;
+	XNET_UNLOCK();
 }
 #endif	// WIN_NT
 #endif	// SUPERCLIENT
@@ -2317,7 +2316,7 @@ static XPM xnet_get_free_slot(ULONG* map_num, ULONG* slot_num, time_t* timestamp
 
 		/* check for errors in creation of mapped file */
 		if (!xpm) {
-			XNET_UNLOCK;
+			XNET_UNLOCK();
 			return NULL;
 		}
 
@@ -2571,9 +2570,9 @@ void XNET_srv(USHORT flag)
 
 		time_t timestamp = time(NULL);
 		// searhing for free slot
-		XNET_LOCK;
+		XNET_LOCK();
 		xpm = xnet_get_free_slot(&map_num, &slot_num, &timestamp);
-		XNET_UNLOCK;
+		XNET_UNLOCK();
 
 		// pack combined mapped area and number
 		if (xpm) {

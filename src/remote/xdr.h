@@ -39,22 +39,16 @@
 #include <sys/types.h>
 #include <winsock.h>
 typedef	char *	caddr_t;
-#define TYPES_DEFINED
-#endif
-
-#ifndef TYPES_DEFINED
+#else // WIN_NT
 #include <sys/types.h>
 #include <netinet/in.h>
-
 #ifdef _AIX
 #include <sys/select.h>
 #endif
-#else
-#undef TYPES_DEFINED
-#endif
+#endif // WIN_NT
 
-#define XDR_INT	int
-#define bool_t	int
+typedef int XDR_INT;
+typedef int bool_t;
 #define TRUE	1
 #define FALSE	0
 #ifndef enum_t

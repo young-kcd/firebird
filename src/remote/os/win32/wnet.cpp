@@ -23,7 +23,7 @@
 
 #ifdef DEBUG
 /* define WNET_trace to 0 (zero) for no packet debugging */
-#define WNET_trace	1
+#define WNET_trace
 #endif
 
 #include "firebird.h"
@@ -47,20 +47,13 @@
 
 #include <stdarg.h>
 
-#ifndef MAX_DATA
-#define MAX_DATA	2048
-#endif
+const int MAX_DATA		= 2048;
+const int BUFFER_SIZE	= MAX_DATA;
+const int MAX_SEQUENCE	= 256;
 
-#define BUFFER_SIZE	MAX_DATA
-#define MAX_SEQUENCE	256
-
-#ifndef MAXHOSTLEN
-#define MAXHOSTLEN	64
-#endif
-
-#define PIPE_PREFIX "pipe" // win32-specific
-#define SERVER_PIPE_SUFFIX "server"
-#define EVENT_PIPE_SUFFIX "event"
+const char* PIPE_PREFIX			= "pipe"; // win32-specific
+const char* SERVER_PIPE_SUFFIX	= "server";
+const char* EVENT_PIPE_SUFFIX	= "event";
 
 int xdrmem_create();
 
@@ -109,9 +102,7 @@ static xdr_t::xdr_ops wnet_ops =
 	wnet_destroy
 };
 
-#ifndef MAX_PTYPE
-#define MAX_PTYPE	ptype_out_of_band
-#endif
+const USHORT MAX_PTYPE	= ptype_out_of_band;
 
 
 rem_port* WNET_analyze(	TEXT*	file_name,
@@ -140,7 +131,7 @@ rem_port* WNET_analyze(	TEXT*	file_name,
 /* We need to establish a connection to a remote server.  Allocate the necessary
    blocks and get ready to go. */
 
-	RDB rdb = (RDB) ALLOC(type_rdb);
+	RDB rdb = (RDB) ALLR_block(type_rdb, 0);
 	PACKET* packet = &rdb->rdb_packet;
 
 /* Pick up some user identification information */
@@ -598,7 +589,7 @@ static int accept_connection( rem_port* port, P_CNCT * cnct)
 		case CNCT_user:
 			{
 				const int length = *id++;
-				rem_str* string= (rem_str*) ALLOCV(type_str, length);
+				rem_str* string= (rem_str*) ALLR_block(type_str, length);
 				port->port_user_name = string;
 				string->str_length = length;
 				if (length) {
@@ -676,7 +667,7 @@ static rem_port* alloc_port( rem_port* parent)
  *	and initialize input and output XDR streams.
  *
  **************************************/
-	rem_port* port = (rem_port*) ALLOCV(type_port, BUFFER_SIZE * 2);
+	rem_port* port = (rem_port*) ALLR_block(type_port, BUFFER_SIZE * 2);
 	port->port_type = port_pipe;
 	port->port_state = state_pending;
 
@@ -1627,9 +1618,8 @@ static int packet_receive(
 		return wnet_error(port, "ReadFile end-of-file", isc_net_read_err,
 						  ERRNO);
 
-#ifdef DEBUG
-	if (WNET_trace)
-		packet_print("receive", buffer, n);
+#if defined(DEBUG) && defined(WNET_trace)
+	packet_print("receive", buffer, n);
 #endif
 
 	*length = (SSHORT) n;
@@ -1663,9 +1653,8 @@ static int packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_lengt
 		return wnet_error(port, "WriteFile truncated", isc_net_write_err,
 						  ERRNO);
 
-#ifdef DEBUG
-	if (WNET_trace)
-		packet_print("send", (UCHAR*)buffer, buffer_length);
+#if defined(DEBUG) && defined(WNET_trace)
+	packet_print("send", (UCHAR*)buffer, buffer_length);
 #endif
 
 	port->port_flags &= ~PORT_pend_ack;

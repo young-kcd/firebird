@@ -55,8 +55,6 @@
 #include "../common/config/config.h"
 
 
-#define JRD_info_drivemask 1	// TEMPORARY ONLY
-
 HWND hPSDlg = NULL;
 static HINSTANCE hInstance = NULL;
 static USHORT usServerFlags;

@@ -42,8 +42,8 @@ IMPLEMENT_TRACE_ROUTINE(remote_trace, "REMOTE");
 
 int xdrmem_create(XDR *, SCHAR *, u_int, enum xdr_op);
 
-#define DUMMY_INTERVAL		60	/* seconds */
-#define ATTACH_FAILURE_SPACE	2048	/* bytes */
+const SLONG DUMMY_INTERVAL		= 60;	/* seconds */
+const int ATTACH_FAILURE_SPACE	= 2048;	/* bytes */
 
 static TEXT* attach_failures = NULL;
 static TEXT* attach_failures_ptr;
@@ -160,10 +160,10 @@ ULONG REMOTE_compute_batch_size(rem_port* port,
  * 
  **************************************/
 
-#define	MAX_PACKETS_PER_BATCH	 4	/* packets    - picked by SWAG */
-#define MIN_PACKETS_PER_BATCH	 2	/* packets    - picked by SWAG */
-#define DESIRED_ROWS_PER_BATCH	20	/* data rows  - picked by SWAG */
-#define MIN_ROWS_PER_BATCH	10	/* data rows  - picked by SWAG */
+const USHORT MAX_PACKETS_PER_BATCH	= 4;	/* packets    - picked by SWAG */
+const USHORT MIN_PACKETS_PER_BATCH	= 2;	/* packets    - picked by SWAG */
+const USHORT DESIRED_ROWS_PER_BATCH	= 20;	/* data rows  - picked by SWAG */
+const USHORT MIN_ROWS_PER_BATCH		= 10;	/* data rows  - picked by SWAG */
 
 	USHORT op_overhead = (USHORT) xdr_protocol_overhead(op_code);
 
@@ -266,7 +266,7 @@ rrq* REMOTE_find_request(rrq* request, USHORT level)
 		const rem_fmt* format = tail->rrq_format;
 		if (!format)
 			continue;
-		REM_MSG msg = (REM_MSG) ALLOCV(type_msg, format->fmt_length);
+		REM_MSG msg = (REM_MSG) ALLR_block(type_msg, format->fmt_length);
 		tail->rrq_xdr = msg;
 #ifdef DEBUG_REMOTE_MEMORY
 		printf("REMOTE_find_request       allocate message %x\n", msg);
@@ -454,7 +454,7 @@ rem_str* REMOTE_make_string(const SCHAR* input)
  *
  **************************************/
 	const USHORT length = strlen(input);
-	rem_str* string = (rem_str*) ALLOCV(type_str, length);
+	rem_str* string = (rem_str*) ALLR_block(type_str, length);
 #ifdef DEBUG_REMOTE_MEMORY
 	printf("REMOTE_make_string        allocate string  %x\n", string);
 #endif
@@ -724,7 +724,7 @@ OBJCT REMOTE_set_object(rem_port* port, BLK object, OBJCT slot)
 	if (slot + 10 > MAX_OBJCT_HANDLES)
 		return (OBJCT) NULL;
 
-	rem_vec* new_vector = (rem_vec*) ALLOCV(type_vec, slot + 10);
+	rem_vec* new_vector = (rem_vec*) ALLR_block(type_vec, slot + 10);
 	port->port_object_vector = new_vector;
 #ifdef DEBUG_REMOTE_MEMORY
 	printf("REMOTE_set_object         allocate vector  %x\n", new_vector);

@@ -235,23 +235,47 @@ enum ast_t
 /* AST thread scheduling macros */
 
 #ifdef AST_THREAD
-#define AST_ALLOC	SCH_ast (AST_alloc)
-#define AST_INIT	SCH_ast (AST_init)
-#define AST_FINI	SCH_ast (AST_fini)
-#define AST_CHECK	SCH_ast (AST_check)
-#define AST_DISABLE	SCH_ast (AST_disable)
-#define AST_ENABLE	SCH_ast (AST_enable)
-#define AST_ENTER	SCH_ast (AST_enter)
-#define AST_EXIT	SCH_ast (AST_exit)
+inline void AST_ALLOC(){
+	SCH_ast(AST_alloc);
+}
+inline void AST_INIT(){
+	SCH_ast(AST_init);
+}
+inline void AST_FINI(){
+	SCH_ast(AST_fini);
+}
+inline void AST_CHECK(){
+	SCH_ast(AST_check);
+}
+inline void AST_DISABLE(){
+	SCH_ast(AST_disable);
+}
+inline void AST_ENABLE(){
+	SCH_ast(AST_enable);
+}
+inline void AST_ENTER(){
+	SCH_ast(AST_enter);
+}
+inline void AST_EXIT(){
+	SCH_ast(AST_exit);
+}
 #else
-#define AST_ALLOC
-#define AST_INIT
-#define AST_FINI
-#define AST_CHECK
-#define AST_DISABLE
-#define AST_ENABLE
-#define AST_ENTER
-#define AST_EXIT
+inline void AST_ALLOC(){
+}
+inline void AST_INIT(){
+}
+inline void AST_FINI(){
+}
+inline void AST_CHECK(){
+}
+inline void AST_DISABLE(){
+}
+inline void AST_ENABLE(){
+}
+inline void AST_ENTER(){
+}
+inline void AST_EXIT(){
+}
 #endif
 
 

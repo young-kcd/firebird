@@ -37,15 +37,15 @@
 
 DATABASE DB = FILENAME "msg.fdb";
 
-#define CODES_PAS	"gds_codes.pas"
-#define CODES_FTN	"gds_codes.ftn"
-//#define CODES_H		"codes.h"
-#define IBERROR_H	"iberror.h"
-#define CODETEXT_H	"codetext.h"
-#define MSGS_H		"msgs.h"
-#define RDBCODES_H	"rdb_codes.h"
-#define SQL_CODES_H	"sql_code.h"
-#define MSGFAC_H	"msg_facs.h"
+const char* CODES_PAS	= "gds_codes.pas";
+const char* CODES_FTN	= "gds_codes.ftn";
+//const char* CODES_H	= "codes.h"
+const char* IBERROR_H	= "iberror.h";
+const char* CODETEXT_H	= "codetext.h";
+const char* MSGS_H	= "msgs.h";
+const char* RDBCODES_H	= "rdb_codes.h";
+const char* SQL_CODES_H	= "sql_code.h";
+const char* MSGFAC_H	= "msg_facs.h";
 
 
 enum formatStyle

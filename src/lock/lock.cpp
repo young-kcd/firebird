@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.97 2004-05-15 00:57:23 brodsom Exp $
+$Id: lock.cpp,v 1.98 2004-05-17 10:17:25 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -67,12 +67,6 @@ $Id: lock.cpp,v 1.97 2004-05-15 00:57:23 brodsom Exp $
 
 #ifdef HAVE_SYS_WAIT_H
 # include <sys/wait.h>
-#endif
-#ifndef WEXITSTATUS
-# define WEXITSTATUS(stat_val) ((unsigned)(stat_val) >> 8)
-#endif
-#ifndef WIFEXITED
-# define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
 #endif
 
 #if TIME_WITH_SYS_TIME
@@ -350,7 +344,7 @@ static const UCHAR compatibility[] = {
 
 void LOCK_ast_inhibit() {
 #ifdef MULTI_THREAD
-	AST_DISABLE;
+	AST_DISABLE();
 #else
 	ISC_inhibit();
 #endif
@@ -358,7 +352,7 @@ void LOCK_ast_inhibit() {
 
 void LOCK_ast_enable() {
 #ifdef MULTI_THREAD
-	AST_ENABLE;
+	AST_ENABLE();
 #else
 	ISC_enable();
 #endif
@@ -803,7 +797,7 @@ int LOCK_init(
 	wakeup_event[0] = owner->own_wakeup_hndl;
 	blocking_event[0] = ISC_make_signal(TRUE, FALSE, LOCK_pid, LOCK_block_signal);
 	owner->own_blocking_hndl = blocking_event[0];
-	AST_ALLOC;
+	AST_ALLOC();
 	if (gds__thread_start
 		(reinterpret_cast < FPTR_INT_VOID_PTR > (blocking_action_thread),
 		 &LOCK_owner_offset, THREAD_critical, 0, &blocking_action_thread_handle))
@@ -837,7 +831,7 @@ int LOCK_init(
 #endif
 
 #if !defined SUPERSERVER && defined SOLARIS_MT
-	AST_ALLOC;
+	AST_ALLOC();
 	const ULONG status = gds__thread_start( reinterpret_cast < FPTR_INT_VOID_PTR > (
 		blocking_action_thread ), &LOCK_owner_offset, THREAD_high, 0, 0);
 	if (status) {
@@ -1864,11 +1858,11 @@ static void THREAD_ROUTINE blocking_action_thread( SRQ_PTR * owner_offset_ptr)
  *	will send to itself.
  *
  **************************************/
-	AST_INIT;					/* Check into scheduler as AST thread */
+	AST_INIT();					/* Check into scheduler as AST thread */
 
 	while (true) {
 		const SLONG ret = WaitForSingleObject(blocking_event[0], INFINITE);
-		AST_ENTER;
+		AST_ENTER();
 		own* owner = (OWN) SRQ_ABS_PTR(*owner_offset_ptr);
 		if ((ret != WAIT_OBJECT_0 && ret != WAIT_ABANDONED) || !*owner_offset_ptr ||
 			owner->own_process_id != LOCK_pid || owner->own_owner_id == 0)
@@ -1876,11 +1870,11 @@ static void THREAD_ROUTINE blocking_action_thread( SRQ_PTR * owner_offset_ptr)
 			break;
 		}
 		blocking_action((void*)(IPTR)*owner_offset_ptr);
-		AST_EXIT;
+		AST_EXIT();
 	}
 
-	AST_EXIT;
-	AST_FINI;					/* Check out of scheduler as AST thread */
+	AST_EXIT();
+	AST_FINI();					/* Check out of scheduler as AST thread */
 }
 #endif
 
@@ -1898,10 +1892,10 @@ static void THREAD_ROUTINE blocking_action_thread( SRQ_PTR * owner_offset_ptr)
  *	Thread to handle blocking signals.
  *
  **************************************/
-	AST_INIT;					/* Check into scheduler as AST thread */
+	AST_INIT();					/* Check into scheduler as AST thread */
 
 	while (true) {
-		AST_ENTER;
+		AST_ENTER();
 
 		/* See if main thread has requested us to go away */
 		if (!*owner_offset_ptr ||
@@ -1913,7 +1907,7 @@ static void THREAD_ROUTINE blocking_action_thread( SRQ_PTR * owner_offset_ptr)
 
 		SLONG value = ISC_event_clear(LOCK_owner->own_blocking);
 		blocking_action((void*)(IPTR)*owner_offset_ptr);
-		AST_EXIT;
+		AST_EXIT();
 		event_t* event_ptr = LOCK_owner->own_blocking;
 		ISC_event_wait(1, &event_ptr, &value, 0, NULL, 0);
 	}
@@ -1922,8 +1916,8 @@ static void THREAD_ROUTINE blocking_action_thread( SRQ_PTR * owner_offset_ptr)
  * main thread we're done (see shutdown_blocking_action()).
  */
 
-	AST_EXIT;
-	AST_FINI;					/* Check out of scheduler as AST thread */
+	AST_EXIT();
+	AST_FINI();					/* Check out of scheduler as AST thread */
 
 /* Wakeup the main thread waiting for our exit. */
 /* Main thread won't wait forever, so check LOCK_owner is still mapped */
@@ -4095,7 +4089,7 @@ static void shutdown_blocking_thread( ISC_STATUS * status_vector)
 
 #ifdef WIN_NT
 	SetEvent(blocking_event[0]);
-	AST_ENABLE;
+	AST_ENABLE();
 	WaitForSingleObject(blocking_action_thread_handle, 10*1000 /* Give it 10 seconds for clean shutdown */);
 	CloseHandle(blocking_action_thread_handle);
 	CloseHandle(blocking_event[0]);
@@ -4123,7 +4117,7 @@ static void shutdown_blocking_thread( ISC_STATUS * status_vector)
 		ISC_event_post(LOCK_owner->own_stall);
 
 		/* Tell the scheduler to allow AST's to run */
-		AST_ENABLE;
+		AST_ENABLE();
 
 		/* Wait for the AST thread to finish cleanup or for 10 seconds */
 		ISC_event_wait(1, &event_ptr, &value, 10 * 1000000,
@@ -4974,11 +4968,11 @@ static USHORT wait_for_request(
 #ifdef SUPERSERVER
 				THREAD_EXIT();
 #endif
-				AST_ENABLE;
+				AST_ENABLE();
 				ret = ISC_event_wait(1, &event_ptr, &value,
 									 (timeout - current_time) * 1000000,
 									 lock_alarm_handler, event_ptr);
-				AST_DISABLE;
+				AST_DISABLE();
 #ifdef SUPERSERVER
 				THREAD_ENTER();
 #endif
@@ -4988,7 +4982,7 @@ static USHORT wait_for_request(
 #else
 
 #ifdef WIN_NT
-		AST_ENABLE;
+		AST_ENABLE();
 #ifdef SUPERSERVER
 
 /* Until here weve been the only thread in the engine (We no longer
@@ -5006,7 +5000,7 @@ static USHORT wait_for_request(
 #else
 		ret = WaitForSingleObject(wakeup_event[0], (timeout - current_time) * 1000);
 #endif
-		AST_DISABLE;
+		AST_DISABLE();
 		if (ret == WAIT_OBJECT_0 || ret == WAIT_ABANDONED)
 			ret = FB_SUCCESS;
 		else /* if (ret == WAIT_TIMEOUT) */

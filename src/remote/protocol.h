@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: protocol.h,v 1.19 2004-02-24 05:34:40 robocop Exp $
+$Id: protocol.h,v 1.20 2004-05-17 10:21:03 brodsom Exp $
 */
 #ifndef REMOTE_PROTOCOL_H
 #define REMOTE_PROTOCOL_H
@@ -44,43 +44,44 @@ $Id: protocol.h,v 1.19 2004-02-24 05:34:40 robocop Exp $
 /* The protocol is defined blocks, rather than messages, to
    separate the protocol from the transport layer.  */
 
-#define CONNECT_VERSION2	2
+// p_cnct_version
+const USHORT CONNECT_VERSION2	= 2;
 
 /* Protocol 4 is protocol 3 plus server management functions */
 
-#define PROTOCOL_VERSION3	3
-#define PROTOCOL_VERSION4	4
+const USHORT PROTOCOL_VERSION3	= 3;
+const USHORT PROTOCOL_VERSION4	= 4;
 
 /* Protocol 5 includes support for a d_float data type */
 
-#define PROTOCOL_VERSION5	5
+const USHORT PROTOCOL_VERSION5	= 5;
 
 /* Protocol 6 includes support for cancel remote events, blob seek,
    and unknown message type */
 
-#define PROTOCOL_VERSION6	6
+const USHORT PROTOCOL_VERSION6	= 6;
 
 /* Protocol 7 includes DSQL support */
 
-#define PROTOCOL_VERSION7	7
+const USHORT PROTOCOL_VERSION7	= 7;
 
 /* Protocol 8 includes collapsing first receive into a send, drop database,
    DSQL execute 2, DSQL execute immediate 2, DSQL insert, services, and
    transact request */
 
-#define PROTOCOL_VERSION8	8
+const USHORT PROTOCOL_VERSION8	= 8;
 
 /* Protocol 9 includes support for SPX32
    SPX32 uses WINSOCK instead of Novell SDK
    In order to differentiate between the old implementation
    of SPX and this one, different PROTOCOL VERSIONS are used */
 
-#define PROTOCOL_VERSION9	9
+const USHORT PROTOCOL_VERSION9	= 9;
 
 /* Protocol 10 includes support for warnings and removes the requirement for
  * encoding and decoding status codes */
 
-#define PROTOCOL_VERSION10	10
+const USHORT PROTOCOL_VERSION10	= 10;
 
 #ifdef SCROLLABLE_CURSORS
 This Protocol includes support for scrollable cursors
@@ -88,7 +89,7 @@ and is purposely being undefined so that changes can be made
 to the remote protocol version to support new features without the 'fear' that
 they will be turned off once SCROLLABLE_CURSORS is turned on.
 
-#define PROTOCOL_SCROLLABLE_CURSORS	this needs to be defined
+#error PROTOCOL_SCROLLABLE_CURSORS	this needs to be defined
 
 #endif
 
@@ -140,16 +141,16 @@ typedef enum
 } P_ARCH;
 
 /* Protocol Types */
-
-#define ptype_page			1	/* Page server protocol */
-#define ptype_rpc			2	/* Simple remote procedure call */
-#define ptype_batch_send	3	/* Batch sends, no asynchrony */
-#define ptype_out_of_band	4	/* Batch sends w/ out of band notification */
+// p_acpt_type
+const USHORT ptype_page			= 1;	/* Page server protocol */
+const USHORT ptype_rpc			= 2;	/* Simple remote procedure call */
+const USHORT ptype_batch_send	= 3;	/* Batch sends, no asynchrony */
+const USHORT ptype_out_of_band	= 4;	/* Batch sends w/ out of band notification */
 
 /* Generic object id */
 
 typedef USHORT OBJCT;
-#define MAX_OBJCT_HANDLES	65000
+const int MAX_OBJCT_HANDLES	= 65000;
 
 /* Operation (packet) types */
 
@@ -295,7 +296,7 @@ typedef struct cstring_const
 
 /* Debug xdr memory allocations */
 
-#define P_MALLOC_SIZE	64	/* Xdr memory allocations per packet */
+const USHORT P_MALLOC_SIZE	= 64;	/* Xdr memory allocations per packet */
 
 typedef struct p_malloc
 {
@@ -349,12 +350,12 @@ where
 
 */
 
-#define CNCT_user		1	/* User name */
-#define CNCT_passwd		2
-#define CNCT_ppo		3	/* Apollo person, project, organization */
-#define CNCT_host		4
-#define CNCT_group		5	/* Effective Unix group id */
-#define CNCT_user_verification	6	/* Attach/create using this connection
+const TEXT CNCT_user		= 1;	/* User name */
+const TEXT CNCT_passwd		= 2;
+const TEXT CNCT_ppo			= 3;	/* Apollo person, project, organization */
+const TEXT CNCT_host		= 4;
+const TEXT CNCT_group		= 5;	/* Effective Unix group id */
+const TEXT CNCT_user_verification	= 6;	/* Attach/create using this connection
 					   will use user verification */
 
 
@@ -499,7 +500,8 @@ typedef struct p_req {
     ULONG	p_req_partner;		/* Partner identification */
 } P_REQ;
 
-#define P_REQ_async	1		/* Auxiliary asynchronous port */
+// p_req_type
+const USHORT P_REQ_async	= 1;	/* Auxiliary asynchronous port */
 
 /* DDL request */
 

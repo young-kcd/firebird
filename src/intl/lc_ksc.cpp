@@ -279,12 +279,3 @@ static SSHORT LCKSC_compare(TEXTTYPE obj, USHORT l1, const BYTE* s1, USHORT l2, 
 		return 0;
 }
 
-
-#undef		ASCII_SPACE
-#undef		LANGKSC_MAX_KEY
-#undef		ISASCII
-#undef		KSC1
-#undef		KSC2
-#undef		GEN_HAN
-#undef		SPE_HAN
-

@@ -16,23 +16,23 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-#define ibsp_Server_Information_Properties 1000
-#define ibsp_IB_Settings_Properties 2000
-#define ibsp_OS_Settings_Properties  3000
-#define ibs_image_path 4000
-#define ibs_version 4005
-#define ibs_num_dbs_attached 4010
-#define ibs_num_dbs 4020
-#define ibs_refresh 4030
-#define ibs_db_cache 4050
-#define ibs_client_map_size 4060
-#define ibs_modify 4070
-#define ibs_reset 4080
-#define ibs_min_process_work_set 4090
-#define ibs_process_priority 5000
-#define ibs_server_icon 5010
-#define ibs_capabilities 5020
-#define ibs_prodname 5030
+const WPARAM ibsp_Server_Information_Properties	= 1000;
+const WPARAM ibsp_IB_Settings_Properties		= 2000;
+//const WPARAM ibsp_OS_Settings_Properties		= 3000;
+const DWORD ibs_image_path				= 4000;
+const DWORD ibs_version					= 4005;
+const DWORD ibs_num_dbs_attached		= 4010;
+const DWORD ibs_num_dbs					= 4020;
+const DWORD ibs_refresh					= 4030;
+const DWORD ibs_db_cache				= 4050;
+const DWORD ibs_client_map_size			= 4060;
+const DWORD ibs_modify					= 4070;
+const DWORD ibs_reset					= 4080;
+const DWORD ibs_min_process_work_set	= 4090;
+const DWORD ibs_process_priority		= 5000;
+const DWORD ibs_server_icon				= 5010;
+const DWORD ibs_capabilities			= 5020;
+const DWORD ibs_prodname				= 5030;
 
 
 

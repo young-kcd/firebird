@@ -28,7 +28,7 @@
 #include uaidef
 #include "../jrd/common.h"
 
-#define SYSUAF	"SYS$SYSTEM:SYSUAF.DAT"
+//#define SYSUAF	"SYS$SYSTEM:SYSUAF.DAT"
 
 #ifdef __ALPHA
 zap_process_alpha_15();
