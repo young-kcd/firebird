@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.75 2002-11-11 14:08:54 skywalker Exp $
+dnl $Id: configure.in,v 1.76 2002-11-11 16:04:42 skywalker Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -562,21 +562,14 @@ gen/Makefile.embed.gdef:${MAKE_SRC_DIR}/Makefile.in.embed.gdef
 gen/Makefile.embed.qli:${MAKE_SRC_DIR}/Makefile.in.embed.qli
 gen/Makefile.embed.gpre:${MAKE_SRC_DIR}/Makefile.in.embed.gpre
 src/v5_examples/Makefile:${MAKE_SRC_DIR}/Makefile.in.example5
-gen/Makefile.install:${MAKE_SRC_DIR}/Makefile.in.install
+
+gen/Makefile.install:src/install/arch-specific/${MAKEFILE_PREFIX}/Makefile.in
+
 Makefile:Makefile.in
 dnl Linux start
 dnl
-dnl EKU: These files should reside in src/install/arch-specific/linux
-dnl
 gen/install/makeInstallImage.sh:${INSTALL_SRC_DIR}/makeInstallImage.sh.in
 gen/install/scripts/preinstall.sh:${INSTALL_SRC_DIR}/preinstall.sh.in
-
-dnl these next two are old MOD 7-Nov-2002
-dnl gen/install/scripts/install.sh:${INSTALL_SRC_DIR}/install.sh.in
-dnl gen/install/install.sh:${INSTALL_SRC_DIR}/tarInstall.sh.in
-dnl
-
-
 gen/install/scripts/tarinstall.sh:${INSTALL_SRC_DIR}/tarinstall.sh.in
 gen/install/scripts/tarMainInstall.sh:${INSTALL_SRC_DIR}/tarMainInstall.sh.in
 gen/install/scripts/taruninstall.sh:${INSTALL_SRC_DIR}/taruninstall.sh.in
@@ -590,7 +583,6 @@ gen/install/scripts/rpmfiles.txt:${INSTALL_SRC_DIR}/rpmfiles.txt.in
 dnl gen/src/install/misc/firebird.xinetd
 dnl Linux end
 dnl SINIX-Z start
-gen/install/sinixz/Makefile:src/install/arch-specific/sinixz/Makefile.in
 gen/install/sinixz/pkginfo:src/install/arch-specific/sinixz/pkginfo.in
 gen/install/sinixz/prototype:src/install/arch-specific/sinixz/prototype.in
 gen/install/sinixz/preinstall:src/install/arch-specific/sinixz/preinstall.in
