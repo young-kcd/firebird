@@ -16,10 +16,6 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-#define args		args
-#define ARG(type, arg)		type arg
-#define ARGLIST(arg)
-
 #define EXPORT
 
 #define ERREXIT(status, rc)	{isc_print_status(status); return rc;}

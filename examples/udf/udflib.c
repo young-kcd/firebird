@@ -76,8 +76,7 @@ ISC_QUAD newdate;
  Input is of VARCHAR, output is of CSTRING.
  Not international or non-ascii friendly.
 ================================================================= */
-char* EXPORT fn_lower_c (ARG(char*, s))
-ARGLIST(char *s)			/* VARCHAR input */
+char* EXPORT fn_lower_c(char* s) /* VARCHAR input */
 {
 	char *buf;
 	short length = 0;
@@ -104,11 +103,9 @@ ARGLIST(char *s)			/* VARCHAR input */
 	s1 and s2 are varchar to get a length count
 ================================================================= */
 
-char* EXPORT fn_strcat(ARG(char*, s1), ARG(char*, s2))
-ARGLIST(char *s1)
-ARGLIST(char *s2)
+char* EXPORT fn_strcat(char* s1, char* s2)
 {
-        short j = 0;
+    short j = 0;
 	short length1, length2;
 	char *p;
 
@@ -142,12 +139,11 @@ ARGLIST(char *s2)
 /*===============================================================
  fn_substr(s, m, n) - Returns the substr starting m ending n in s. 
 ================================================================= */
-char* EXPORT fn_substr(ARG(char*, s), ARG(short*, m), ARG(short*, n))
-ARGLIST(char *s)
-ARGLIST(short *m)        /* starting position */
-ARGLIST(short *n)        /* ending position */
+char* EXPORT fn_substr(char* s,
+	short* m, /* starting position */
+	short* n) /* ending position */
 {
-        short i = 0;
+    short i = 0;
 	short j = 0;
 
 	char *buffer = (char *)malloc(256);
@@ -167,8 +163,7 @@ ARGLIST(short *n)        /* ending position */
 /*===============================================================
  fn_trim(s) - Returns string that has leading blanks trimmed. 
 ================================================================= */
-char* EXPORT fn_trim(ARG(char*, s))
-ARGLIST(char *s)
+char* EXPORT fn_trim(char* s)
 {
 	short j = 0;
 
@@ -189,9 +184,7 @@ ARGLIST(char *s)
  fn_trunc(s, m) - Returns the string truncated at position m; 
  Input is of CSTRING, output is of VARCHAR.
 ================================================================= */
-char* EXPORT fn_trunc(ARG(char*, s), ARG(short*, m))
-ARGLIST(char *s)
-ARGLIST(short *m)
+char* EXPORT fn_trunc(char* s, short* m)
 {
 	short j = 2;	/* leave 1st 2 bytes for VARCHAR output */
 
@@ -297,9 +290,7 @@ char* EXPORT fn_sysdate()
   fn_add2 (a, b) - returns a + b
   =============================================== */
 
-long EXPORT fn_add2 (ARG(long*, a), ARG(long*, b))
-ARGLIST(long *a)
-ARGLIST(long *b)
+long EXPORT fn_add2(long* a, long* b)
 {
 	return (*a + *b);
 }
@@ -309,9 +300,7 @@ ARGLIST(long *b)
   fn_mul (a, b) - returns a * b
  =================================================== */
 
-double EXPORT fn_mul (ARG(double*, a), ARG(double*, b))
-ARGLIST(double *a)
-ARGLIST(double *b)
+double EXPORT fn_mul(double* a, double* b)
 {
 	return (*a * *b);
 }
@@ -321,8 +310,7 @@ ARGLIST(double *b)
   fn_fact (n) - return factorial of n
  ================================================ */
 
-double EXPORT fn_fact (ARG(double*, n))
-ARGLIST(double *n)
+double EXPORT fn_fact(double* n)
 {
 	double k;
 
@@ -340,8 +328,7 @@ ARGLIST(double *n)
 /*===============================================================
  fn_abs() - returns the absolute value of its argument.
 ================================================================= */
-double EXPORT fn_abs(ARG(double*, x))
-ARGLIST(double	*x)
+double EXPORT fn_abs(double* x)
 {
 	return (*x < 0.0) ? -*x : *x;
 }
@@ -350,10 +337,8 @@ ARGLIST(double	*x)
 /*===============================================================
  fn_max() - Returns the greater of its two arguments
 ================================================================ */
-double EXPORT fn_max(ARG(double*, a), ARG(double*, b))
-ARGLIST(double	*a)
-ARGLIST(double	*b)
-{      
+double EXPORT fn_max(double* a, double* b)
+{
 	return  (*a > *b) ? *a : *b;
 }
 
@@ -362,8 +347,7 @@ ARGLIST(double	*b)
 /*===============================================================
  fn_sqrt() - Returns square root of n
 ================================================================ */
-double* EXPORT fn_sqrt(ARG(double*, n))
-ARGLIST(double *n)
+double* EXPORT fn_sqrt(double* n)
 {
 	r_double = sqrt(*n);
 	return &r_double;
@@ -376,10 +360,9 @@ ARGLIST(double *n)
  fn_blob_linecount() returns the number of lines in a blob 
   =============================================================*/
 
-long EXPORT fn_blob_linecount (ARG(BLOB, b))
-ARGLIST(BLOB b)
+long EXPORT fn_blob_linecount(BLOB b)
 {
-        char *buf, *p;
+    char *buf, *p;
 	short length, actual_length;
 
 	/* Null values */
@@ -408,8 +391,7 @@ ARGLIST(BLOB b)
  do not count newlines, so get rid of the newlines. 
  ==============================================================*/
 
-long EXPORT fn_blob_bytecount (ARG(BLOB, b))
-ARGLIST(BLOB b)
+long EXPORT fn_blob_bytecount(BLOB b)
 {
 	/* Null values */
 	if (!b->blob_handle)
@@ -426,10 +408,7 @@ ARGLIST(BLOB b)
  Newlines are eliminated to make for better printing.
   =============================================================*/
  
-char* EXPORT fn_blob_substr(ARG(BLOB, b), ARG(long*, m), ARG(long*, n))
-ARGLIST(BLOB b)
-ARGLIST(long *m)
-ARGLIST(long *n)
+char* EXPORT fn_blob_substr(BLOB b, long* m, long* n)
 {
 	char *buf, *p, *q;
 	long i = 0;
