@@ -48,7 +48,7 @@
     mkdir $DestDir/UDF 
     mkdir $DestDir/misc
 
-    cp -f $BuildDir/bin/gds_inet_server $DestDir/bin/gds_inet_server 
+    cp -f $BuildDir/bin/fb_inet_server $DestDir/bin/fb_inet_server 
 
     cp $BuildDir/bin/gbak $DestDir/bin/gbak 
     cp $BuildDir/bin/gdef $DestDir/bin/gdef 
@@ -77,7 +77,7 @@
     cp $BuildDir/help/help.gbak $DestDir/help 
     cp $BuildDir/help/help.gdb $DestDir/help 
     #cp -r $BuildDir/doc $DestDir 
-    cp $BuildDir/interbase.msg $DestDir/interbase.msg 
+    cp $BuildDir/interbase.msg $DestDir/firebird.msg 
     cp $BuildDir/isc4.gdb $DestDir/isc4.gdb 
     cp $BuildDir/isc_config $DestDir/isc_config
 
@@ -109,7 +109,7 @@
     cp -f $BuildDir/lib/ib_util.so /usr/lib/libib_util.so 
 
 
-    cp $BuildDir/intl/libgdsintl.so $DestDir/intl/
+    cp $BuildDir/intl/libfbintl.so $DestDir/intl/fbintl
     cp $BuildDir/UDF/ib_udf.so $DestDir/UDF/
 
 #    cp $BuildDir/README $DestDir/README
