@@ -412,6 +412,7 @@ void gds__ulstr(char* buffer, ULONG value, const int minlen, const char filler)
 	}
 	if (minlen > c)
 		c = minlen;
+		
 	char* p = buffer + c;
 	while (value) {
 		*--p = '0' + (value % 10);
@@ -1243,6 +1244,7 @@ void API_ROUTINE gds__log_status(const TEXT* database,
 	do {
 		while (*p)
 			p++;
+			
 		*p++ = '\n';
 		*p++ = '\t';
 	} while (p < end && gds_interprete_cpp(p, &status_vector));
@@ -1266,7 +1268,7 @@ int API_ROUTINE gds__msg_close(void *handle)
  *
  **************************************/
 
-	gds_msg* messageL = reinterpret_cast<gds_msg*>(handle);
+	gds_msg* messageL = static_cast<gds_msg*>(handle);
 
 	if (!messageL) {
 		if (!global_default_msg) {
@@ -1519,7 +1521,8 @@ int API_ROUTINE gds__msg_open(void** handle, const TEXT* filename)
 	const USHORT minor = MSG_MINOR_VERSION;
 
 	if (header.msghdr_major_version != MSG_MAJOR_VERSION ||
-		header.msghdr_minor_version < minor) {
+		header.msghdr_minor_version < minor)
+	{
 		close(n);
 		return -4;
 	}
@@ -1618,7 +1621,8 @@ SLONG API_ROUTINE gds__get_prefix(SSHORT arg_type, const TEXT* passed_string)
 		/* if the next character is space, newline or carriage return OR
 		   number of characters exceeded */
 		if (*passed_string == ' ' || *passed_string == 10
-			|| *passed_string == 13 || (count == MAXPATHLEN)) {
+			|| *passed_string == 13 || (count == MAXPATHLEN))
+		{
 			*(prefix_ptr++) = '\0';
 			break;
 		}
@@ -1786,7 +1790,8 @@ void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
    one use it, otherwise use the system directories. */
 	TEXT temp[256];
 	if (ISC_expand_logical_once
-		(ISC_LOGICAL_LOCK, sizeof(ISC_LOGICAL_LOCK) - 2, temp)) {
+		(ISC_LOGICAL_LOCK, sizeof(ISC_LOGICAL_LOCK) - 2, temp))
+	{
 		strcpy(string, ISC_LOGICAL_LOCK);
 		strcat(string, root);
 		return;
@@ -1870,7 +1875,8 @@ void API_ROUTINE gds__prefix_msg(TEXT* string, const TEXT* root)
    for functionality. */
 	TEXT temp[256];
 	if (ISC_expand_logical_once
-		(ISC_LOGICAL_MSG, sizeof(ISC_LOGICAL_MSG) - 2, temp)) {
+		(ISC_LOGICAL_MSG, sizeof(ISC_LOGICAL_MSG) - 2, temp))
+	{
 		strcpy(string, ISC_LOGICAL_MSG);
 		strcat(string, root);
 		return;
@@ -2692,11 +2698,13 @@ void API_ROUTINE isc_print_sqlerror(SSHORT sqlcode, const ISC_STATUS* status)
 	TEXT* p = error_buffer;
 	while (*p)
 		p++;
+		
 	isc_sql_interprete(sqlcode, p,
 					   (SSHORT) (sizeof(error_buffer) - (p - error_buffer) -
 								 2));
 	while (*p)
 		p++;
+		
 	*p++ = '\n';
 	*p = 0;
 	gds__put_error(error_buffer);
@@ -3682,3 +3690,4 @@ void* API_ROUTINE gds__alloc(SLONG size_request)
 #endif
 	);
 }
+
