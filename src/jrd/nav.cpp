@@ -830,7 +830,7 @@ BOOLEAN NAV_reset_position(RSB rsb, RPB * new_rpb)
 /* find the key value of the new position, and set the stream to it */
 
 	BTR_key(tdbb, new_rpb->rpb_relation, new_rpb->rpb_record, idx,
-			&key_value);
+			&key_value, 0);
 	if (!find_record(rsb, RSE_get_first, &key_value, idx->idx_count,	/* XXX */
 					 0))
 		return FALSE;
@@ -1657,7 +1657,8 @@ static BOOLEAN get_record(
 				reinterpret_cast <
 				struct idx *>((SCHAR *) impure +
 							  (SLONG) rsb->rsb_arg[RSB_NAV_idx_offset]),
-				&value);
+				&value,
+				0);
 		if (compare_keys(idx, key->key_data, key->key_length, &value, FALSE)) {
 			result = FALSE;
 		} else {

@@ -199,11 +199,6 @@ void DLL_EXPORT ERR_duplicate_error(IDX_E	code,
 				 gds_arg_string, ERR_cstring(index_name), 0);
 		break;
 
-	case idx_e_nullunique:
-		ERR_post(gds_no_dup, gds_arg_string, ERR_cstring(index_name),
-				 gds_arg_gds, gds_nullsegkey, 0);
-		break;
-
 	case idx_e_conversion:
 		ERR_punt();
 		break;

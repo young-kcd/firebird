@@ -19,6 +19,14 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2003.03.04 Dmitry Yemanov: Added support for NULLs in unique indices.
+ *							  Done in two stages:
+ *								1. Restored old behaviour of having only _one_
+ *								   NULL key allowed (i.e. two NULLs are considered
+ *								   duplicates). idx_e_nullunique error was removed.
+ *								2. Changed algorithms in IDX_create_index() and
+ *								   check_duplicates() to ignore NULL key duplicates.
  */
 
 #include "firebird.h"
@@ -227,6 +235,8 @@ void IDX_create_index(
 	ifl_data.ifl_duplicates = 0;
 	ifl_data.ifl_key_length = key_length;
 
+	bool null_duplicates = false;
+
 	key_desc.skd_dtype = SKD_bytes;
 	key_desc.skd_flags = SKD_ascending;
 	key_desc.skd_length = key_length;
@@ -299,6 +309,7 @@ void IDX_create_index(
 
 		while (stack) {
 			record = (REC) LLS_POP(&stack);
+			bool null_unique = false;
 
 			/* If foreign key index is being defined, make sure foreign
 			   key definition will not be violated */
@@ -309,22 +320,29 @@ void IDX_create_index(
 
 				if (!(idx->idx_flags & idx_unique)) {
 					idx->idx_flags |= idx_unique;
-					result = BTR_key(tdbb, relation, record, idx, &key);
+					result = BTR_key(tdbb, relation, record, idx, &key, &null_unique);
 					idx->idx_flags &= ~idx_unique;
 				}
-				if (result == idx_e_nullunique)
-					result = idx_e_ok;
-				else
+				if (!null_unique) {
 					result =
 						check_partner_index(tdbb, relation, record,
 											transaction, idx,
 											partner_relation,
 											partner_index_id);
+				}
 			}
 
-			if (result != idx_e_ok ||
-				BTR_key(tdbb, relation, record, idx,
-						&key) == idx_e_nullunique) {
+			if (result == idx_e_ok) {
+				BTR_key(tdbb, relation, record, idx, &key, &null_unique);
+				if (null_unique) {
+					// first null key is not a duplicate
+					if (null_duplicates)
+						ifl_data.ifl_duplicates--;
+					else
+						null_duplicates = true;
+				}
+			}
+			else {
 				do {
 					if (record != gc_record)
 						delete record;
@@ -333,14 +351,8 @@ void IDX_create_index(
 				gc_record->rec_flags &= ~REC_gc_active;
 				if (primary.rpb_window.win_flags & WIN_large_scan)
 					--relation->rel_scan_count;
-				if (result != idx_e_ok)
-					ERR_duplicate_error(result, partner_relation,
-										partner_index_id);
-				else
-					ERR_post(gds_no_dup, gds_arg_string,
-							 ERR_cstring(reinterpret_cast <
-										 char *>(index_name)), gds_arg_gds,
-							 gds_nullsegkey, 0);
+				ERR_duplicate_error(result, partner_relation,
+									partner_index_id);
 			}
 
 #ifdef IGNORE_NULL_IDX_KEY
@@ -376,7 +388,7 @@ void IDX_create_index(
 
 			/* try to catch duplicates early */
 
-			if ((idx->idx_flags & idx_unique) && ifl_data.ifl_duplicates) {
+			if ((idx->idx_flags & idx_unique) && ifl_data.ifl_duplicates > 0) {
 				do {
 					if (record != gc_record)
 						delete record;
@@ -441,7 +453,7 @@ void IDX_create_index(
 		ERR_punt();
 	}
 
-	if ((idx->idx_flags & idx_unique) && ifl_data.ifl_duplicates) {
+	if ((idx->idx_flags & idx_unique) && ifl_data.ifl_duplicates > 0) {
 		SORT_fini(sort_handle, tdbb->tdbb_attachment);
 		ERR_post(gds_no_dup, gds_arg_string,
 				 ERR_cstring(reinterpret_cast < char *>(index_name)), 0);
@@ -449,7 +461,7 @@ void IDX_create_index(
 
 	BTR_create(tdbb, relation, idx, key_length, sort_handle, selectivity);
 
-	if ((idx->idx_flags & idx_unique) && ifl_data.ifl_duplicates) {
+	if ((idx->idx_flags & idx_unique) && ifl_data.ifl_duplicates > 0) {
 		SORT_fini(sort_handle, tdbb->tdbb_attachment);
 		ERR_post(gds_no_dup, gds_arg_string,
 				 ERR_cstring(reinterpret_cast < char *>(index_name)), 0);
@@ -642,13 +654,13 @@ void IDX_garbage_collect(TDBB tdbb, RPB * rpb, LLS going, LLS staying)
 		if (BTR_description(rpb->rpb_relation, root, &idx, i)) {
 			for (stack1 = going; stack1; stack1 = stack1->lls_next) {
 				rec1 = (REC) stack1->lls_object;
-				BTR_key(tdbb, rpb->rpb_relation, rec1, &idx, &key1);
+				BTR_key(tdbb, rpb->rpb_relation, rec1, &idx, &key1, 0);
 
 				/* Make sure the index doesn't exist in any record remaining */
 
 				for (stack2 = staying; stack2; stack2 = stack2->lls_next) {
 					rec2 = (REC) stack2->lls_object;
-					BTR_key(tdbb, rpb->rpb_relation, rec2, &idx, &key2);
+					BTR_key(tdbb, rpb->rpb_relation, rec2, &idx, &key2, 0);
 					if (key_equal(&key1, &key2))
 						break;
 				}
@@ -708,12 +720,12 @@ IDX_E IDX_modify(TDBB tdbb,
 		*bad_relation = new_rpb->rpb_relation;
 		if ( (error_code =
 			BTR_key(tdbb, new_rpb->rpb_relation, new_rpb->rpb_record, &idx,
-					&key1)) ) {
+					&key1, 0)) ) {
 			CCH_RELEASE(tdbb, &window);
 			break;
 		}
 		BTR_key(tdbb, org_rpb->rpb_relation, org_rpb->rpb_record, &idx,
-				&key2);
+				&key2, 0);
 		if (!key_equal(&key1, &key2)) {
 			if (( error_code =
 				insert_key(tdbb, new_rpb->rpb_relation, new_rpb->rpb_record,
@@ -778,10 +790,10 @@ IDX_E IDX_modify_check_constraints(TDBB tdbb,
 		if (
 			(error_code =
 			 BTR_key(tdbb, new_rpb->rpb_relation, new_rpb->rpb_record, &idx,
-					 &key1))
+					 &key1, 0))
 			|| (error_code =
 				BTR_key(tdbb, org_rpb->rpb_relation, org_rpb->rpb_record,
-						&idx, &key2))) {
+						&idx, &key2, 0))) {
 			CCH_RELEASE(tdbb, &window);
 			break;
 		}
@@ -860,7 +872,7 @@ IDX_E IDX_store(TDBB tdbb,
 		*bad_index = idx.idx_id;
 		*bad_relation = rpb->rpb_relation;
 		if ( (error_code =
-			BTR_key(tdbb, rpb->rpb_relation, rpb->rpb_record, &idx, &key)) ) {
+			BTR_key(tdbb, rpb->rpb_relation, rpb->rpb_record, &idx, &key, 0)) ) {
 			CCH_RELEASE(tdbb, &window);
 			break;
 		}
@@ -936,11 +948,12 @@ static IDX_E check_duplicates(
 				field_id = record_idx->idx_rpt[i].idx_field;
 				flag_2 = EVL_field(relation_2, record, field_id, &desc2);
 
-				if (flag != flag_2 || MOV_compare(&desc1, &desc2) != 0)
+				// dimitr: stop if the fields are not-null and equal
+				if (flag && flag_2 && MOV_compare(&desc1, &desc2) == 0)
 					break;
 			}
 
-			if (i >= insertion_idx->idx_count) {
+			if (i < insertion_idx->idx_count) {
 				result = idx_e_duplicate;
 				break;
 			}
@@ -1073,7 +1086,7 @@ JRD_REL partner_relation, SSHORT index_id)
 
 /* get the key in the original index */
 
-	result = BTR_key(tdbb, relation, record, idx, &key);
+	result = BTR_key(tdbb, relation, record, idx, &key, 0);
 	CCH_RELEASE(tdbb, &window);
 
 /* now check for current duplicates */
@@ -1139,7 +1152,9 @@ static BOOLEAN duplicate_key(UCHAR * record1, UCHAR * record2, IFL ifl_data)
 	rec2 = (ISR) (record2 + ifl_data->ifl_key_length);
 
 	if (!(rec1->isr_flags & ISR_secondary) &&
-		!(rec2->isr_flags & ISR_secondary)) ++ifl_data->ifl_duplicates;
+		!(rec2->isr_flags & ISR_secondary)) {
+		++ifl_data->ifl_duplicates;
+	}
 
 	return FALSE;
 }
@@ -1226,7 +1241,9 @@ static IDX_E insert_key(
 						REC record,
 						JRD_TRA transaction,
 						WIN * window_ptr,
-IIB * insertion, JRD_REL * bad_relation, USHORT * bad_index)
+						IIB * insertion,
+						JRD_REL * bad_relation,
+						USHORT * bad_index)
 {
 /**************************************
  *
@@ -1272,17 +1289,17 @@ IIB * insertion, JRD_REL * bad_relation, USHORT * bad_index)
 		/* find out if there is a null segment by faking uniqueness --
 		   if there is one, don't bother to check the primary key */
 
+		bool null_unique;
 		idx->idx_flags |= idx_unique;
 		CCH_FETCH(tdbb, window_ptr, LCK_read, pag_root);
-		result = BTR_key(tdbb, relation, record, idx, &key);
+		result = BTR_key(tdbb, relation, record, idx, &key, &null_unique);
 		CCH_RELEASE(tdbb, window_ptr);
 		idx->idx_flags &= ~idx_unique;
-		if (result == idx_e_nullunique)
-			return idx_e_ok;
-
-		result =
-			check_foreign_key(tdbb, record, insertion->iib_relation,
-							  transaction, idx, bad_relation, bad_index);
+		if (!null_unique) {
+			result =
+				check_foreign_key(tdbb, record, insertion->iib_relation,
+								  transaction, idx, bad_relation, bad_index);
+		}
 	}
 
 	return result;

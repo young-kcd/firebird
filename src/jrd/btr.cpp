@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.24 2003-02-20 06:57:44 tamlin Exp $
+$Id: btr.cpp,v 1.25 2003-03-05 11:23:08 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -929,7 +929,7 @@ void BTR_insert(TDBB tdbb, WIN * root_window, IIB * insertion)
 }
 
 
-IDX_E BTR_key(TDBB tdbb, JRD_REL relation, REC record, IDX * idx, KEY * key)
+IDX_E BTR_key(TDBB tdbb, JRD_REL relation, REC record, IDX * idx, KEY * key, bool * null_unique)
 {
 /**************************************
  *
@@ -952,6 +952,7 @@ IDX_E BTR_key(TDBB tdbb, JRD_REL relation, REC record, IDX * idx, KEY * key)
 	IDX_E result;
 	idx::idx_repeat * tail;
 	int not_missing;
+	int missing_unique_segments = 0;
 
 	result = idx_e_ok;
 	tail = idx->idx_rpt;
@@ -995,7 +996,7 @@ IDX_E BTR_key(TDBB tdbb, JRD_REL relation, REC record, IDX * idx, KEY * key)
 		}
 
 		if (!not_missing && (idx->idx_flags & idx_unique))
-			result = idx_e_nullunique;
+			missing_unique_segments++;
 
 		compress(tdbb, desc_ptr, key, tail->idx_itype,
 				 (USHORT) ((not_missing) ? FALSE : TRUE),
@@ -1021,7 +1022,7 @@ IDX_E BTR_key(TDBB tdbb, JRD_REL relation, REC record, IDX * idx, KEY * key)
 			not_missing =
 				EVL_field(relation, record, tail->idx_field, desc_ptr);
 			if (!not_missing && (idx->idx_flags & idx_unique))
-				result = idx_e_nullunique;
+				missing_unique_segments++;
 
 			compress(tdbb, desc_ptr, &temp, tail->idx_itype,
 					 (USHORT) ((not_missing) ? FALSE : TRUE),
@@ -1050,6 +1051,11 @@ IDX_E BTR_key(TDBB tdbb, JRD_REL relation, REC record, IDX * idx, KEY * key)
 
 	if (idx->idx_flags & idx_descending)
 		complement_key(key);
+
+	if (null_unique) {
+		// dimitr: TRUE, if all segments of the unique index are NULL
+		*null_unique = (missing_unique_segments == idx->idx_count);
+	}
 
 	return result;
 

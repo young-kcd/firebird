@@ -35,7 +35,6 @@ typedef enum idx_e {
     idx_e_ok = 0,
     idx_e_duplicate,
     idx_e_keytoobig,
-    idx_e_nullunique,
     idx_e_conversion,
     idx_e_foreign
 } IDX_E;
