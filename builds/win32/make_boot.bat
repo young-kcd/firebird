@@ -15,6 +15,16 @@ set ERRLEV=0
 @if not exist %ROOT_PATH%\gen\dbs\metadata.fdb (goto :HELP & goto :END)
 
 ::===========
+:: Read input values
+@set DBG=
+@set DBG_DIR=release
+@set CLEAN=/build
+@if "%1"=="DEBUG" ((set DBG=TRUE) && (set DBG_DIR=debug))
+@if "%2"=="DEBUG" ((set DBG=TRUE) && (set DBG_DIR=debug))
+@if "%1"=="CLEAN" (set CLEAN=/rebuild)
+@if "%2"=="CLEAN" (set CLEAN=/rebuild)
+
+::===========
 :MAIN
 @echo.
 @echo Copy autoconfig.h
@@ -53,14 +63,24 @@ set ERRLEV=0
 @mkdir %ROOT_PATH%\gen\examples 2>nul
 
 ::=======
-@call :gpre_boot
+@if "%DBG%"=="" (
+	call :gpre_boot_release
+) else (
+	call :gpre_boot_debug
+)
 if "%ERRLEV%"=="1" goto :END
+@copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\bin\gpre_boot.exe %ROOT_PATH%\gen\ > nul
 ::=======
 @echo Preprocessing the entire source tree...
 @call preprocess.bat BOOT
 ::=======
-@call :gpre_static
+@if "%DBG%"=="" (
+	call :gpre_static_release
+) else (
+	call :gpre_static_debug
+)
 if "%ERRLEV%"=="1" goto :END
+@copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\bin\gpre_static.exe   %ROOT_PATH%\gen\ > nul
 ::=======
 @echo Preprocessing the entire source tree...
 @call preprocess.bat
@@ -82,19 +102,33 @@ if "%ERRLEV%"=="1" goto :END
 
 
 ::===================
-:: BUILD gpre_boot
-:gpre_boot
+:: BUILD gpre_boot_release
+:gpre_boot_release
 @echo.
-@echo Building gpre_boot...
+@echo Building gpre_boot (release)...
 if "%VS_VER%"=="msvc6" (
-	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "gpre_boot - Win32 Release"  /REBUILD /OUT boot1.log
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "gpre_boot - Win32 Release"  %CLEAN% /OUT boot1.log
 ) else (
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_boot /rebuild release /OUT boot1.log
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_boot %CLEAN% debug /OUT boot1.log
 )
 if errorlevel 1 goto :gpre_boot2
-@copy %ROOT_PATH%\temp\release\firebird\bin\gpre_boot.exe %ROOT_PATH%\gen\ > nul
 goto :EOF
 
+::===================
+:: BUILD gpre_boot_debug
+:gpre_boot_debug
+@echo.
+@echo Building gpre_boot (debug)...
+if "%VS_VER%"=="msvc6" (
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "gpre_boot - Win32 Debug"  %CLEAN% /OUT boot1.log
+) else (
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_boot %CLEAN% debug /OUT boot1.log
+)
+if errorlevel 1 goto :gpre_boot2
+goto :EOF
+
+::===================
+:: Error gpre_boot
 :gpre_boot2
 echo.
 echo Error building gpre_boot see boot1.log
@@ -103,24 +137,40 @@ set ERRLEV=1
 goto :EOF
 
 ::===================
-:: BUILD gpre_static
-:gpre_static
+:: BUILD gpre_static_release
+:gpre_static_release
 @echo.
-@echo Building gpre_static...
+@echo Building gpre_static (release)...
 if "%VS_VER%"=="msvc6" (
-	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "gpre_static - Win32 Release"  /REBUILD /OUT boot2.log
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "gpre_static - Win32 Release"  %CLEAN% /OUT boot2.log
 ) else (
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_static /rebuild release /OUT boot2.log
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_static %CLEAN% release /OUT boot2.log
 )
 if errorlevel 1 goto :gpre_static2
-@copy %ROOT_PATH%\temp\release\firebird\bin\gpre_static.exe   %ROOT_PATH%\gen\ > nul
 @goto :EOF
+
+::===================
+:: BUILD gpre_static_debug
+:gpre_static_debug
+@echo.
+@echo Building gpre_static (debug)...
+if "%VS_VER%"=="msvc6" (
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "gpre_static - Win32 Debug"  %CLEAN% /OUT boot2.log
+) else (
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_static %CLEAN% debug /OUT boot2.log
+)
+if errorlevel 1 goto :gpre_static2
+@goto :EOF
+
+::===================
+:: ERROR gpre_static
 :gpre_static2
 echo.
 echo Error building gpre_static see boot2.log
 echo.
 set ERRLEV=1
 goto :EOF
+
 
 ::===================
 :: BUILD messages
