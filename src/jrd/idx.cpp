@@ -309,21 +309,27 @@ void IDX_create_index(
 
 		while (stack) {
 			record = (REC) LLS_POP(&stack);
-			bool null_unique = false;
 
 			/* If foreign key index is being defined, make sure foreign
 			   key definition will not be violated */
 
 			if (idx->idx_flags & idx_foreign) {
+				idx_null_state null_state;
 				/* find out if there is a null segment by faking uniqueness --
 				   if there is one, don't bother to check the primary key */
 
 				if (!(idx->idx_flags & idx_unique)) {
 					idx->idx_flags |= idx_unique;
-					result = BTR_key(tdbb, relation, record, idx, &key, &null_unique);
+					result = BTR_key(tdbb, relation, record, idx, &key, &null_state);
 					idx->idx_flags &= ~idx_unique;
+				} 
+				else {
+					result = BTR_key(tdbb, relation, record, idx, &key, &null_state);
 				}
-				if (!null_unique) {
+				if (null_state != idx_nulls_none) {
+					result = idx_e_ok;
+				}
+				else {
 					result =
 						check_partner_index(tdbb, relation, record,
 											transaction, idx,
@@ -333,8 +339,9 @@ void IDX_create_index(
 			}
 
 			if (result == idx_e_ok) {
-				BTR_key(tdbb, relation, record, idx, &key, &null_unique);
-				if (null_unique) {
+				idx_null_state null_state;
+				BTR_key(tdbb, relation, record, idx, &key, &null_state);
+				if (null_state == idx_nulls_all) {
 					// first null key is not a duplicate
 					if (null_duplicates)
 						ifl_data.ifl_duplicates--;
@@ -935,6 +942,8 @@ static IDX_E check_duplicates(
 			/* check the values of the fields in the record being inserted with the 
 			   record retrieved -- for unique indexes the insertion index and the 
 			   record index are the same, but for foreign keys they are different */
+			
+			bool all_nulls = true;
 
 			for (i = 0; i < insertion_idx->idx_count; i++) {
 				field_id = insertion_idx->idx_rpt[i].idx_field;
@@ -948,12 +957,12 @@ static IDX_E check_duplicates(
 				field_id = record_idx->idx_rpt[i].idx_field;
 				flag_2 = EVL_field(relation_2, record, field_id, &desc2);
 
-				// dimitr: stop if the fields are not-null and equal
-				if (flag && flag_2 && MOV_compare(&desc1, &desc2) == 0)
+				if (flag != flag_2 || MOV_compare(&desc1, &desc2) != 0)
 					break;
+				all_nulls = all_nulls && !flag && !flag_2;
 			}
 
-			if (i < insertion_idx->idx_count) {
+			if (i >= insertion_idx->idx_count && !all_nulls) {
 				result = idx_e_duplicate;
 				break;
 			}
@@ -1289,13 +1298,13 @@ static IDX_E insert_key(
 		/* find out if there is a null segment by faking uniqueness --
 		   if there is one, don't bother to check the primary key */
 
-		bool null_unique;
+		idx_null_state null_state;
 		idx->idx_flags |= idx_unique;
 		CCH_FETCH(tdbb, window_ptr, LCK_read, pag_root);
-		result = BTR_key(tdbb, relation, record, idx, &key, &null_unique);
+		result = BTR_key(tdbb, relation, record, idx, &key, &null_state);
 		CCH_RELEASE(tdbb, window_ptr);
 		idx->idx_flags &= ~idx_unique;
-		if (!null_unique) {
+		if (null_state == idx_nulls_none) {
 			result =
 				check_foreign_key(tdbb, record, insertion->iib_relation,
 								  transaction, idx, bad_relation, bad_index);

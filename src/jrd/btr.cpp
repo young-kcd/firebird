@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.25 2003-03-05 11:23:08 dimitr Exp $
+$Id: btr.cpp,v 1.26 2003-03-09 21:07:27 skidder Exp $
 */
 
 #include "firebird.h"
@@ -929,7 +929,7 @@ void BTR_insert(TDBB tdbb, WIN * root_window, IIB * insertion)
 }
 
 
-IDX_E BTR_key(TDBB tdbb, JRD_REL relation, REC record, IDX * idx, KEY * key, bool * null_unique)
+IDX_E BTR_key(TDBB tdbb, JRD_REL relation, REC record, IDX * idx, KEY * key, idx_null_state * null_state)
 {
 /**************************************
  *
@@ -1052,9 +1052,11 @@ IDX_E BTR_key(TDBB tdbb, JRD_REL relation, REC record, IDX * idx, KEY * key, boo
 	if (idx->idx_flags & idx_descending)
 		complement_key(key);
 
-	if (null_unique) {
-		// dimitr: TRUE, if all segments of the unique index are NULL
-		*null_unique = (missing_unique_segments == idx->idx_count);
+	if (null_state) {
+		*null_state = !missing_unique_segments ? idx_nulls_none :
+			(missing_unique_segments == idx->idx_count) ? 
+			    idx_nulls_all : 
+				idx_nulls_some;
 	}
 
 	return result;

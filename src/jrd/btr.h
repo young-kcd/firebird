@@ -37,6 +37,11 @@
 #define MAX_IDX		 64			/* that should be plenty of indexes */
 #define MAX_KEY		256
 
+enum idx_null_state {
+  idx_nulls_none,
+  idx_nulls_some,
+  idx_nulls_all
+};
 
 /* Index descriptor block -- used to hold info from index root page */
 
