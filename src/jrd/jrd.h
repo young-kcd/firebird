@@ -819,9 +819,9 @@ public:
 
 	static bool extend(str*& s, size_t new_len)
 	{
-		gds_assert(s);
+		fb_assert(s);
 		MemoryPool* pPool = MemoryPool::blk_pool(s);
-		gds_assert(pPool);
+		fb_assert(pPool);
 		if (!pPool) {
 			return false;	// runtime safety
 		}
