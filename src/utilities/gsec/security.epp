@@ -43,7 +43,7 @@ DATABASE DB = STATIC FILENAME "security.fdb";
 SSHORT SECURITY_exec_line(ISC_STATUS * isc_status,
 						  FRBRD *DB,
 						  USER_DATA user_data,
-						  void (*display_func) (void *, USER_DATA, BOOLEAN),
+						  void (*display_func) (void *, USER_DATA, bool),
 						  void *callback_arg)
 {
 /*************************************
@@ -110,7 +110,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS * isc_status,
 	SCHAR encrypted2[MAX_PASSWORD_LENGTH + 2];
 	ISC_STATUS_ARRAY tmp_status;
 	FRBRD *gds_trans;
-	BOOLEAN found;
+	bool found;
 	SSHORT ret = 0;
 
 	gds_trans = NULL;
@@ -182,9 +182,9 @@ SSHORT SECURITY_exec_line(ISC_STATUS * isc_status,
 		   entered, and for those that were specified but not entered, it
 		   changes the current value to the null value */
 
-		found = FALSE;
+		found = false;
 		FOR U IN USERS WITH U.USER_NAME EQ user_data->user_name
-			found = TRUE;
+			found = true;
 			MODIFY U USING
 				if (user_data->uid_entered) {
 					U.UID = user_data->uid;
@@ -247,7 +247,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS * isc_status,
 	case DEL_OPER:
 		/* looks up the specified user record and deletes it */
 
-		found = FALSE;
+		found = false;
 		/* Do not allow SYSDBA user to be deleted */
 #ifdef HAVE_STRCASECMP
 		if (!strcasecmp(user_data->user_name, SYSDBA_USER_NAME))
@@ -261,7 +261,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS * isc_status,
 			ret = GsecMsg23;
 		else {
 			FOR U IN USERS WITH U.USER_NAME EQ user_data->user_name
-				found = TRUE;
+				found = true;
 				ERASE U
 				ON_ERROR
 					ret = GsecMsg23;	/* gsec - delete record error */
@@ -279,7 +279,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS * isc_status,
 	case DIS_OPER:
 		/* gets either the desired record, or all records, and displays them */
 
-		found = FALSE;
+		found = false;
 		if (!user_data->user_name_entered) {
 			FOR U IN USERS
 				user_data->uid = U.UID;
@@ -291,9 +291,9 @@ SSHORT SECURITY_exec_line(ISC_STATUS * isc_status,
 				strcpy(user_data->first_name, U.FIRST_NAME);
 				strcpy(user_data->middle_name, U.MIDDLE_NAME);
 				strcpy(user_data->last_name, U.LAST_NAME);
-				display_func(callback_arg, user_data, (BOOLEAN)!found);
+				display_func(callback_arg, user_data, !found);
 
-				found = TRUE;
+				found = true;
 			END_FOR
 			ON_ERROR
 				ret = GsecMsg28;	/* gsec - find/display record error */
@@ -310,9 +310,9 @@ SSHORT SECURITY_exec_line(ISC_STATUS * isc_status,
 				strcpy(user_data->first_name, U.FIRST_NAME);
 				strcpy(user_data->middle_name, U.MIDDLE_NAME);
 				strcpy(user_data->last_name, U.LAST_NAME);
-				display_func(callback_arg, user_data, (BOOLEAN)!found);
+				display_func(callback_arg, user_data, !found);
 
-				found = TRUE;
+				found = true;
 			END_FOR
 			ON_ERROR
 				ret = GsecMsg28;	/* gsec - find/display record error */
@@ -419,6 +419,6 @@ void SECURITY_msg_get( USHORT number, TEXT * msg)
  *
  **************************************/
 
-	gds__msg_format(NULL_PTR, GSEC_MSG_FAC, number, MSG_LENGTH, msg,
+	gds__msg_format(NULL, GSEC_MSG_FAC, number, MSG_LENGTH, msg,
 					NULL, NULL, NULL, NULL, NULL);
 }

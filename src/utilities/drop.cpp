@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: drop.cpp,v 1.21 2003-08-10 00:41:39 brodsom Exp $
+ * $Id: drop.cpp,v 1.22 2003-08-26 06:56:42 brodsom Exp $
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
@@ -98,14 +98,15 @@ int CLIB_ROUTINE main( int argc, char *argv[])
  *
  **************************************/
 	SCHAR **end, *p;
-	BOOLEAN sw_lockmngr, sw_events, sw_version, sw_nobridge,
-		sw_shutmngr;
+	bool sw_lockmngr = false;
+	bool sw_events = false;
+	bool sw_version = false;
+	bool sw_nobridge = false;
+	bool sw_shutmngr = false;
 
 	orig_argc = argc;
 	orig_argv = argv;
 
-	sw_lockmngr = sw_events = sw_version = sw_nobridge =
-		sw_shutmngr = FALSE;
 	end = argv + argc;
 	while (++argv < end)
 		if (**argv == '-')
@@ -113,27 +114,27 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 				switch (UPPER(*p)) {
 
 				case 'E':
-					sw_events = TRUE;
+					sw_events = true;
 					break;
 
 				case 'L':
-					sw_lockmngr = TRUE;
+					sw_lockmngr = true;
 					break;
 
 				case 'A':
-					sw_events = sw_lockmngr = TRUE;
+					sw_events = sw_lockmngr = true;
 					break;
 
 				case 'S':
-					sw_shutmngr = sw_nobridge = TRUE;
+					sw_shutmngr = sw_nobridge = true;
 					break;
 
 				case 'N':
-					sw_nobridge = TRUE;
+					sw_nobridge = true;
 					break;
 
 				case 'Z':
-					sw_version = TRUE;
+					sw_version = true;
 					break;
 
 				default:

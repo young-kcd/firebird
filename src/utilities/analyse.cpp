@@ -87,14 +87,15 @@ void main( int argc, char **argv)
  *	Replay all I/O to compute overhead of I/O system.
  *
  **************************************/
-	SSHORT event, detail;
+	SSHORT event;
+	bool detail;
 	USHORT *r, *w;
 	PAG *page;
 	SLONG reads, writes, n, cpu, elapsed, system, length, sequence;
 	SCHAR string[128], *p, *end;
 	struct tms after, before;
 
-	detail = TRUE;
+	detail = true;
 	sequence = 0;
 
 	for (end = argv + argc, ++argv; argv < end; argv++) {
@@ -102,7 +103,7 @@ void main( int argc, char **argv)
 		if (*p++ == '-')
 			switch (UPPER(*p)) {
 			case 'S':
-				detail = FALSE;
+				detail = false;
 				break;
 			}
 	}

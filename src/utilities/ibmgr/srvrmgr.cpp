@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: srvrmgr.cpp,v 1.3 2003-08-20 09:34:23 brodsom Exp $
+ * $Id: srvrmgr.cpp,v 1.4 2003-08-26 06:54:45 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -66,15 +66,15 @@
 #define ATTACH_RETRY		10	/* Number of attach retries */
 
 
-static BOOLEAN attach_service(IBMGR_DATA *);
-static BOOLEAN detach_service(IBMGR_DATA *);
-static BOOLEAN print_pool(IBMGR_DATA *);
-static BOOLEAN start_shutdown(IBMGR_DATA *);
-static BOOLEAN start_server(IBMGR_DATA *);
+static bool attach_service(IBMGR_DATA *);
+static bool detach_service(IBMGR_DATA *);
+static bool print_pool(IBMGR_DATA *);
+static bool start_shutdown(IBMGR_DATA *);
+static bool start_server(IBMGR_DATA *);
 #ifdef NOT_USED_OR_REPLACED
-static BOOLEAN server_is_ok(IBMGR_DATA *);
+static bool server_is_ok(IBMGR_DATA *);
 #endif
-static BOOLEAN server_is_up(IBMGR_DATA *);
+static bool server_is_up(IBMGR_DATA *);
 
 void SRVRMGR_cleanup( IBMGR_DATA * data)
 {
@@ -137,29 +137,29 @@ USHORT SRVRMGR_exec_line(IBMGR_DATA * data)
 		switch (data->suboperation) {
 		case SOP_NONE:
 		case SOP_SHUT_NOW:
-			data->shutdown = TRUE;
+			data->shutdown = true;
 			if (start_shutdown(data) == FALSE) {
-				data->shutdown = FALSE;
+				data->shutdown = false;
 				return MSG_SSHUTFAIL;
 			}
 			detach_service(data);
-			data->shutdown = FALSE;
+			data->shutdown = false;
 			data->reattach |= (REA_HOST | REA_USER | REA_PASSWORD);
 			return MSG_SHUTOK;
 
 		case SOP_SHUT_NOAT:
 			ib_printf("SHUTDOWN NO ATTACHMENTS\n");
-			data->shutdown = TRUE;
+			data->shutdown = true;
 			break;
 
 		case SOP_SHUT_NOTR:
 			ib_printf("SHUTDOWN NO TRANSACTIONS\n");
-			data->shutdown = TRUE;
+			data->shutdown = true;
 			break;
 
 		case SOP_SHUT_IGN:
 			ib_printf("SHUTDOWN IGNORE\n");
-			data->shutdown = FALSE;
+			data->shutdown = false;
 			break;
 		}
 		break;
@@ -302,7 +302,7 @@ gds__msg_format (0, MSG_FAC, number, MSG_LEN, msg,
 }
 
 
-static BOOLEAN attach_service( IBMGR_DATA * data)
+static bool attach_service( IBMGR_DATA * data)
 {
 /**************************************
  *
@@ -357,13 +357,13 @@ static BOOLEAN attach_service( IBMGR_DATA * data)
 #endif
 		assert(status[1] != isc_svcnotdef);
 		isc_print_status(status);
-		return FALSE;
+		return false;
 	}
-	return TRUE;
+	return true;
 }
 
 
-static BOOLEAN detach_service( IBMGR_DATA * data)
+static bool detach_service( IBMGR_DATA * data)
 {
 /**************************************
  *
@@ -396,13 +396,13 @@ static BOOLEAN detach_service( IBMGR_DATA * data)
 #endif
 		if (!data->shutdown)
 			isc_print_status(status);
-		return FALSE;
+		return false;
 	}
-	return TRUE;
+	return true;
 }
 
 
-static BOOLEAN start_shutdown( IBMGR_DATA * data)
+static bool start_shutdown( IBMGR_DATA * data)
 {
 /**************************************
  *
@@ -428,13 +428,13 @@ static BOOLEAN start_shutdown( IBMGR_DATA * data)
 
 	if (status[0] == 1 && status[1] > 0) {
 		isc_print_status(status);
-		return FALSE;
+		return false;
 	}
-	return TRUE;
+	return true;
 }
 
 
-static BOOLEAN start_server( IBMGR_DATA * data)
+static bool start_server( IBMGR_DATA * data)
 {
 /**************************************
  *
@@ -459,7 +459,7 @@ static BOOLEAN start_server( IBMGR_DATA * data)
 	if (data->attached && !(data->reattach & REA_HOST)) {
 		SRVRMGR_msg_get(MSG_SRVUP, msg);
 		ib_fprintf(OUTFILE, "%s\n", msg);
-		return TRUE;
+		return true;
 	}
 
 	if (data->attached) {
@@ -471,10 +471,10 @@ static BOOLEAN start_server( IBMGR_DATA * data)
 
 /* Let's see if server is already running, try to attach to it
 */
-	if (server_is_up(data) == TRUE) {
+	if (server_is_up(data) == true) {
 		SRVRMGR_msg_get(MSG_SRVUP, msg);
 		ib_fprintf(OUTFILE, "%s\n", msg);
-		return TRUE;
+		return true;
 	}
 
 /* We failed to attach to service, thus server might not be running
@@ -538,20 +538,20 @@ static BOOLEAN start_server( IBMGR_DATA * data)
 #ifdef DEBUG
 		ib_printf("Attach retries left: %d\n", retry);
 #endif
-		if (server_is_up(data) == TRUE) {
+		if (server_is_up(data) == true) {
 			SRVRMGR_msg_get(MSG_SRVUPOK, msg);
 			ib_fprintf(OUTFILE, "%s\n", msg);
-			return TRUE;
+			return true;
 		}
 	}
 	SRVRMGR_msg_get(MSG_STARTERR, msg);
 	ib_fprintf(OUTFILE, "%s\n", msg);
-	return FALSE;
+	return false;
 }
 
 
 #ifdef NOT_USED_OR_REPLACED
-static BOOLEAN server_is_ok( IBMGR_DATA * data)
+static bool server_is_ok( IBMGR_DATA * data)
 {
 /**************************************
  *
@@ -569,7 +569,6 @@ static BOOLEAN server_is_ok( IBMGR_DATA * data)
 	TEXT path[MAXPATHLEN];
 	TEXT db_name[128];
 	isc_db_handle db_handle = 0L;
-	BOOLEAN ok;
 
 	strcpy(db_name, data->host);
 	gds__prefix(path, USER_INFO_NAME);
@@ -582,7 +581,7 @@ static BOOLEAN server_is_ok( IBMGR_DATA * data)
 		ib_fprintf(OUTFILE, "server_is_ok/isc_attach_database ERROR: %lu\n",
 				   status[1]);
 #endif
-		return FALSE;
+		return false;
 	}
 	isc_detach_database(status, &db_handle);
 	if (status[0] == 1 && status[1] > 0) {
@@ -590,13 +589,13 @@ static BOOLEAN server_is_ok( IBMGR_DATA * data)
 		ib_fprintf(OUTFILE, "server_is_ok/isc_detach_database ERROR: %lu\n",
 				   status[1]);
 #endif
-		return FALSE;
+		return false;
 	}
-	return TRUE;
+	return true;
 }
 #endif
 
-static BOOLEAN server_is_up( IBMGR_DATA * data)
+static bool server_is_up( IBMGR_DATA * data)
 {
 /**************************************
  *
@@ -612,13 +611,13 @@ static BOOLEAN server_is_up( IBMGR_DATA * data)
 	ISC_STATUS_ARRAY status;
 	TEXT svc_name[128];
 	isc_svc_handle svc_handle = NULL;
-	BOOLEAN up;
+	bool up;
 
 /* Obviously we should not be already attached to service
 */
 	assert(!data->attached);
 
-	up = TRUE;
+	up = true;
 
 /* To find out if we the server is already running we
    will try to attach to it. We are going to use "anonymous"
@@ -639,16 +638,16 @@ static BOOLEAN server_is_up( IBMGR_DATA * data)
 		   not enough memory error. Let's take care of it.
 		 */
 		if (status[1] == isc_virmemexh)
-			up = TRUE;
+			up = true;
 		else
-			up = FALSE;
+			up = false;
 	}
 	isc_service_detach(status, &svc_handle);
 	return up;
 }
 
 
-static BOOLEAN print_pool( IBMGR_DATA * data)
+static bool print_pool( IBMGR_DATA * data)
 {
 /**************************************
  *
@@ -680,7 +679,7 @@ static BOOLEAN print_pool( IBMGR_DATA * data)
 					  sptr - sendbuf, sendbuf, sizeof(respbuf), respbuf);
 	if (status[0] == 1 && status[1] > 0) {
 		isc_print_status(status);
-		return FALSE;
+		return false;
 	}
-	return TRUE;
+	return true;
 }

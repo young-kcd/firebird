@@ -49,7 +49,7 @@
 #endif
 
 #if defined (WIN95)
-static BOOLEAN fAnsiCP = FALSE;
+static bool fAnsiCP = false;
 #define TRANSLATE_CP(a) if (!fAnsiCP) CharToOem(a, a)
 #else
 #define TRANSLATE_CP(a)
@@ -71,9 +71,9 @@ void UTIL_print(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
 void UTIL_print_partial(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
 static void util_output(const SCHAR *, ...);
 
-static void data_print(void *, USER_DATA, BOOLEAN);
-static int get_line(int *, SCHAR **, TEXT *, TSEC);
-static BOOLEAN get_switches(int, TEXT **, IN_SW_TAB, TSEC, BOOLEAN *);
+static void data_print(void *, USER_DATA, bool);
+static bool get_line(int *, SCHAR **, TEXT *, TSEC);
+static bool get_switches(int, TEXT **, IN_SW_TAB, TSEC, bool *);
 static SSHORT parse_cmd_line(int, TEXT **, TSEC);
 static void printhelp(void);
 int output_svc(SLONG, UCHAR *);
@@ -391,7 +391,7 @@ int UTIL_gsec(
 }
 
 
-static void data_print( void *arg, USER_DATA data, BOOLEAN first)
+static void data_print( void *arg, USER_DATA data, bool first)
 {
 /**************************************
  *
@@ -470,7 +470,7 @@ static void data_print( void *arg, USER_DATA data, BOOLEAN first)
 }
 
 
-static int get_line( int *argc, SCHAR ** argv, TEXT * stuff, TSEC tdsec)
+static bool get_line( int *argc, SCHAR ** argv, TEXT * stuff, TSEC tdsec)
 {
 /**************************************
  *
@@ -486,13 +486,13 @@ static int get_line( int *argc, SCHAR ** argv, TEXT * stuff, TSEC tdsec)
  **************************************/
 	USHORT count;
 	TEXT *cursor, c;
-	BOOLEAN first;
+	bool first;
 
 	UTIL_print_partial(GsecMsg1, NULL, NULL, NULL, NULL, NULL);
 	*argc = 1;
 	cursor = stuff;
 	count = MAXSTUFF - 1;
-	first = TRUE;
+	first = true;
 
 /* for each input character, if it's white space (or any non-printable,
    non-newline for that matter), ignore it; if it's a newline, we're
@@ -506,7 +506,7 @@ static int get_line( int *argc, SCHAR ** argv, TEXT * stuff, TSEC tdsec)
 
 			for (argv[(*argc)++] = cursor; count > 0; count--) {
 				if (first) {
-					first = FALSE;
+					first = false;
 					if (c != '?') {
 						*cursor++ = '-';
 						count--;
@@ -528,20 +528,20 @@ static int get_line( int *argc, SCHAR ** argv, TEXT * stuff, TSEC tdsec)
 				continue;
 			}
 			else
-				return TRUE;
+				return true;
 		}
 	}
 
 	*cursor = '\0';
-	return FALSE;
+	return false;
 }
 
 
-static BOOLEAN get_switches(
+static bool get_switches(
 							int argc,
 							TEXT ** argv,
 							IN_SW_TAB in_sw_table,
-							TSEC tdsec, BOOLEAN * quitflag)
+							TSEC tdsec, bool * quitflag)
 {
 /**************************************
  *
@@ -569,7 +569,7 @@ static BOOLEAN get_switches(
    parameter). */
 
 	user_data = tdsec->tsec_user_data;
-	*quitflag = FALSE;
+	*quitflag = false;
 	last_sw = IN_SW_GSEC_0;
 	tdsec->tsec_sw_version = FALSE;
 	for (--argc; argc > 0; argc--) {
@@ -594,7 +594,7 @@ static BOOLEAN get_switches(
 					UTIL_print(GsecMsg76, NULL, NULL, NULL, NULL, NULL);
 #endif
 					/* invalid user name (maximum 31 bytes allowed) */
-					return FALSE;
+					return false;
 				}
 				user_data->user_name[l] = '\0';
 				user_data->user_name_entered = TRUE;
@@ -661,7 +661,7 @@ static BOOLEAN get_switches(
 				UTIL_print(GsecMsg29, NULL, NULL, NULL, NULL, NULL);
 #endif
 				/* gsec - invalid parameter, no switch defined */
-				return FALSE;
+				return false;
 			}
 			last_sw = IN_SW_GSEC_0;
 		}
@@ -715,7 +715,7 @@ static BOOLEAN get_switches(
 				if (user_data->operation) {
 					UTIL_error(GsecMsg30, NULL, NULL, NULL, NULL, NULL);
 					/* gsec - operation already specified */
-					return FALSE;
+					return false;
 				}
 				switch (in_sw) {
 				case IN_SW_GSEC_ADD:
@@ -732,7 +732,7 @@ static BOOLEAN get_switches(
 					break;
 				case IN_SW_GSEC_QUIT:
 					user_data->operation = QUIT_OPER;
-					*quitflag = TRUE;
+					*quitflag = true;
 					break;
 				case IN_SW_GSEC_HELP:
 					user_data->operation = HELP_OPER;
@@ -854,7 +854,7 @@ static BOOLEAN get_switches(
 				}
 				if (err_msg_no) {
 					UTIL_error(err_msg_no, NULL, NULL, NULL, NULL, NULL);
-					return FALSE;
+					return false;
 				}
 				break;
 			case IN_SW_GSEC_Z:
@@ -871,7 +871,7 @@ static BOOLEAN get_switches(
 				UTIL_print(GsecMsg40, NULL, NULL, NULL, NULL, NULL);
 #endif
 				/* gsec - invalid switch specified */
-				return FALSE;
+				return false;
 			case IN_SW_GSEC_AMBIG:
 #ifdef SUPERSERVER
 				UTIL_error(GsecMsg41, NULL, NULL, NULL, NULL, NULL);
@@ -879,7 +879,7 @@ static BOOLEAN get_switches(
 				UTIL_print(GsecMsg41, NULL, NULL, NULL, NULL, NULL);
 #endif
 				/* gsec - ambiguous switch specified */
-				return FALSE;
+				return false;
 			}
 			last_sw = in_sw;
 		}
@@ -895,7 +895,7 @@ static BOOLEAN get_switches(
 			case 0:
 				UTIL_error(GsecMsg42, NULL, NULL, NULL, NULL, NULL);
 				/* gsec - no operation specified for parameters */
-				return FALSE;
+				return false;
 			case ADD_OPER:
 			case MOD_OPER:
 				/* any parameter is ok for these operation states */
@@ -906,14 +906,14 @@ static BOOLEAN get_switches(
 			case HELP_OPER:
 				UTIL_error(GsecMsg43, NULL, NULL, NULL, NULL, NULL);
 				/* gsec - no parameters allowed for this operation */
-				return FALSE;
+				return false;
 			}
 
 		if (*quitflag)
 			break;
 	}
 
-	return TRUE;
+	return true;
 }
 
 
@@ -1099,7 +1099,7 @@ static SSHORT parse_cmd_line( int argc, TEXT ** argv, TSEC tdsec)
  *
  **************************************/
 	SSHORT ret;
-	BOOLEAN quitflag = FALSE;
+	bool quitflag = false;
 	USER_DATA user_data;
 
 	user_data = tdsec->tsec_user_data;

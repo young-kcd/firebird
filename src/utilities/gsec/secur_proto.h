@@ -30,7 +30,7 @@ extern "C" {
 
 extern SSHORT	SECURITY_exec_line (ISC_STATUS *, FRBRD *, 
 			struct user_data *, 
-			void (*)(void *, USER_DATA, BOOLEAN),
+			void (*)(void *, USER_DATA, bool),
 			void *);
 extern void	SECURITY_msg_get (USHORT, TEXT *);
 extern void     SECURITY_get_db_path (TEXT *, TEXT *);

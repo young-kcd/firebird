@@ -15,7 +15,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: guard.cpp,v 1.2 2003-08-10 00:40:42 brodsom Exp $
+ * $Id: guard.cpp,v 1.3 2003-08-26 06:52:42 brodsom Exp $
  */
  /* contains the main() and not shared routines for ibguard */
 
@@ -71,7 +71,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	TEXT **end, *p, c;
 	USHORT option = FOREVER;	/* holds FOREVER or ONETIME */
 	TEXT user_name[256];		/* holds the user name */
-	USHORT done = TRUE;
+	bool done = true;
 	int fd_guard;
 	pid_t child_pid;
 	TEXT *prog_name = argv[0];
@@ -170,14 +170,14 @@ int CLIB_ROUTINE main( int argc, char **argv)
 						 server_args[1] ? server_args[1] :
 						 SUPER_SERVER_BINARY, ret_code);
 
-					done = FALSE;	/* Try it again, Sam (even if it is a startup error) FSG 8.11.2000 */
+					done = false;	/* Try it again, Sam (even if it is a startup error) FSG 8.11.2000 */
 				}
 				else {
 					gds__log("%s: %s terminated due to startup error (%d)\n",
 							 prog_name, server_args[1] ? server_args[1] :
 							 SUPER_SERVER_BINARY, ret_code);
 
-					done = TRUE;	/* do not restart we have a startup problem */
+					done = true;	/* do not restart we have a startup problem */
 				}
 			}
 			else {
@@ -185,14 +185,14 @@ int CLIB_ROUTINE main( int argc, char **argv)
 						 server_args[1] ? server_args[1] :
 						 SUPER_SERVER_BINARY, ret_code);
 				if (option == FOREVER || option == IGNORE)
-					done = FALSE;
+					done = false;
 			}
 		}
 		else {
 			/* Normal shutdown - eg: via ibmgr - don't restart the server */
 			gds__log("%s: %s normal shutdown.\n", prog_name,
 					 server_args[1] ? server_args[1] : SUPER_SERVER_BINARY);
-			done = TRUE;
+			done = true;
 		}
 	} while (!done);
 

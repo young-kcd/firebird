@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: ibmgr.h,v 1.1 2003-07-15 02:39:53 brodsom Exp $
+ * $Id: ibmgr.h,v 1.2 2003-08-26 06:54:45 brodsom Exp $
  */
 
 #ifndef _UTILITIES_IBMGR_H_
@@ -94,7 +94,7 @@ typedef struct ibmgr_data_t {
     TEXT		user[128];	/* the user name */
     TEXT		real_user[128];	/* the os user name */
     TEXT		password[32];	/* user's passwd */
-    BOOLEAN		shutdown;	/* shutdown is in progress */
+    bool		shutdown;	/* shutdown is in progress */
     USHORT		reattach;	/* need to reattach because host,
 					   passwd or user has been changed */
     isc_svc_handle	attached;	/* !=NULL if we attached to service */

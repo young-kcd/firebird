@@ -76,7 +76,7 @@ void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 	ISC_STATUS_ARRAY tmp_status, warning_status;
 	int i, tmp_status_len = 0, status_len = 0, err_status_len = 0;
 	int warning_count = 0, warning_indx = 0;
-	BOOLEAN duplicate = FALSE;
+	bool duplicate = false;
 
 	/* stuff the status into temp buffer */
 
@@ -133,7 +133,7 @@ void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 				(memcmp(&svc_status[i], &tmp_status[1],
 						sizeof(ISC_STATUS) * (tmp_status_len - 2)) == 0)) {
 				/* duplicate found */
-				duplicate = TRUE;
+				duplicate = true;
 				break;
 			}
 		}

@@ -23,7 +23,7 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
- * $Id: ibmgr.cpp,v 1.5 2003-08-21 16:20:06 brodsom Exp $
+ * $Id: ibmgr.cpp,v 1.6 2003-08-26 06:54:45 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -71,8 +71,8 @@
 #define ACT_PROMPT	2
 
 static void copy_str_upper(TEXT *, TEXT *);
-static int get_line(int *, SCHAR **, TEXT *);
-static SSHORT get_switches(int, TEXT **, IN_SW_TAB, IBMGR_DATA *, BOOLEAN *);
+static bool get_line(int *, SCHAR **, TEXT *);
+static SSHORT get_switches(int, TEXT **, IN_SW_TAB, IBMGR_DATA *, bool *);
 static SSHORT parse_cmd_line(int, TEXT **);
 static void print_config(void);
 static void print_help(void);
@@ -159,7 +159,7 @@ host = getenv ("ISC_HOST");
 /* Shutdown is not in progress and we are not attached to service yet.
    But obviously we will need attachment. 
 */
-	ibmgr_data.shutdown = FALSE;
+	ibmgr_data.shutdown = false;
 	ibmgr_data.attached = NULL;
 	ibmgr_data.reattach |= (REA_HOST | REA_USER | REA_PASSWORD);
 
@@ -216,7 +216,7 @@ host = getenv ("ISC_HOST");
 }
 
 
-static int get_line( int *argc, SCHAR ** argv, TEXT * stuff)
+static bool get_line( int *argc, SCHAR ** argv, TEXT * stuff)
 {
 /**************************************
  *
@@ -232,7 +232,7 @@ static int get_line( int *argc, SCHAR ** argv, TEXT * stuff)
  **************************************/
 	USHORT count;
 	TEXT *cursor, c;
-	BOOLEAN first;
+	bool first;
 	TEXT msg[MSG_LEN];
 
 	SRVRMGR_msg_get(MSG_PROMPT, msg);
@@ -245,7 +245,7 @@ if (sw_service_gsec)
 	*argc = 1;
 	cursor = stuff;
 	count = MAXSTUFF - 1;
-	first = TRUE;
+	first = true;
 
 /* for each input character, if it's white space (or any non-printable,
    non-newline for that matter), ignore it; if it's a newline, we're
@@ -259,7 +259,7 @@ if (sw_service_gsec)
 
 			for (argv[(*argc)++] = cursor; count > 0; count--) {
 				if (first) {
-					first = FALSE;
+					first = false;
 					if (c != '?') {
 						*cursor++ = '-';
 						count--;
@@ -281,12 +281,12 @@ if (sw_service_gsec)
 				continue;
 			}
 			else
-				return TRUE;
+				return true;
 		}
 	}
 
 	*cursor = '\0';
-	return FALSE;
+	return false;
 }
 
 
@@ -294,7 +294,7 @@ static SSHORT get_switches(
 						   int argc,
 						   TEXT ** argv,
 						   IN_SW_TAB in_sw_table,
-						   IBMGR_DATA * ibmgr_data, BOOLEAN * quitflag)
+						   IBMGR_DATA * ibmgr_data, bool * quitflag)
 {
 /**************************************
  *
@@ -315,15 +315,12 @@ static SSHORT get_switches(
 	USHORT last_sw, sw_version;
 	int l;
 	SSHORT err_msg_no;
-	BOOLEAN any_switches;
-
-
 
 /* Look at each argument. It's either a switch or a parameter.
    parameters must always follow a switch, but not all switches
    need parameters.
 */
-	*quitflag = FALSE;
+	*quitflag = false;
 	last_sw = IN_SW_IBMGR_0;
 	sw_version = FALSE;
 	for (--argc; argc > 0; argc--) {
@@ -502,7 +499,7 @@ static SSHORT get_switches(
 
 				case IN_SW_IBMGR_QUIT:
 					ibmgr_data->operation = OP_QUIT;
-					*quitflag = TRUE;
+					*quitflag = true;
 					break;
 
 				case IN_SW_IBMGR_HELP:
@@ -813,7 +810,7 @@ static SSHORT parse_cmd_line( int argc, TEXT ** argv)
  *
  **************************************/
 	TEXT msg[MSG_LEN];
-	BOOLEAN quitflag = FALSE;
+	bool quitflag = false;
 	SSHORT ret;
 
 	ibmgr_data.operation = OP_NONE;
