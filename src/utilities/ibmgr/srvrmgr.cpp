@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: srvrmgr.cpp,v 1.4 2003-08-26 06:54:45 brodsom Exp $
+ * $Id: srvrmgr.cpp,v 1.5 2003-08-26 18:45:44 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -107,12 +107,12 @@ USHORT SRVRMGR_exec_line(IBMGR_DATA * data)
  **************************************/
 	assert(data->attached || data->reattach);
 
-/* If reattach is TRUE and we currently attached, then we
+/* If reattach is true and we currently attached, then we
    will detach from service. This is potentially dangerous
-   situation, because if shutdown is TRUE (server shutdown 
+   situation, because if shutdown is true (server shutdown 
    was initiated) server will be shutdowned.
    I do not check the shutdown flag here because reattach
-   could be TRUE only if shutdown has not been initiated.
+   could be true only if shutdown has not been initiated.
 */
 	if (data->operation != OP_START)
 		if (data->reattach) {
@@ -122,14 +122,14 @@ USHORT SRVRMGR_exec_line(IBMGR_DATA * data)
 				/* Attached flag should be NULL after detach_service
 				 */
 				detach_service(data);
-			if (attach_service(data) == FALSE)
+			if (attach_service(data) == false)
 				return MSG_ATTFAIL;
 			data->reattach = 0;
 		}
 
 	switch (data->operation) {
 	case OP_START:
-		if (start_server(data) == FALSE)
+		if (start_server(data) == false)
 			return MSG_STARTFAIL;
 		break;
 
@@ -138,7 +138,7 @@ USHORT SRVRMGR_exec_line(IBMGR_DATA * data)
 		case SOP_NONE:
 		case SOP_SHUT_NOW:
 			data->shutdown = true;
-			if (start_shutdown(data) == FALSE) {
+			if (start_shutdown(data) == false) {
 				data->shutdown = false;
 				return MSG_SSHUTFAIL;
 			}
@@ -167,7 +167,7 @@ USHORT SRVRMGR_exec_line(IBMGR_DATA * data)
 	case OP_PRINT:
 		switch (data->suboperation) {
 		case SOP_PRINT_POOL:
-			if (print_pool(data) == FALSE)
+			if (print_pool(data) == false)
 				return MSG_PRPOOLFAIL;
 			return MSG_PRPOOLOK;
 		}
@@ -389,7 +389,7 @@ static bool detach_service( IBMGR_DATA * data)
 	if (status[0] == 1 && status[1] > 0) {
 /* If as a result of detach_service server has been
    shutdowned we will get an error.
-   MMM - need to check for that error and return TRUE
+   MMM - need to check for that error and return true
 */
 #ifdef DEBUG
 		ib_fprintf(OUTFILE, "ERROR: %lu\n", status[1]);

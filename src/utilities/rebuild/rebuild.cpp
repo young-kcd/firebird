@@ -57,7 +57,7 @@ ULONG *tips;
 
 IB_FILE *dbg_file;
 
-static void checksum(RBDB, ULONG, ULONG, UCHAR);
+static void checksum(RBDB, ULONG, ULONG, bool);
 static USHORT compute_checksum(RBDB, PAG);
 static void db_error(int);
 static void dump(IB_FILE *, RBDB, ULONG, ULONG, UCHAR);
@@ -76,8 +76,14 @@ static void print_db_header(IB_FILE *, HDR);
 static void rebuild(RBDB);
 static void write_headers(IB_FILE *, RBDB, ULONG, ULONG);
 
-static UCHAR sw_rebuild, sw_print, sw_store, sw_dump_pages, sw_checksum,
-	sw_fudge, sw_fix, sw_dump_tips;
+static bool sw_rebuild;
+static bool sw_print;
+static bool sw_store;
+static bool sw_dump_pages;
+static bool sw_checksum;
+static bool sw_fudge;
+static bool sw_fix;
+static bool sw_dump_tips;
 
 static TEXT *months[] = {
 	"Jan", "Feb", "Mar",
@@ -119,8 +125,8 @@ int main( int argc, char *argv[])
 	USHORT pg_type;
 
 	dbg_file = ib_stdout;
-	sw_rebuild = sw_print = sw_store = sw_dump_pages = sw_checksum = FALSE;
-	sw_dump_tips = sw_fudge = sw_fix = FALSE;
+	sw_rebuild = sw_print = sw_store = sw_dump_pages = sw_checksum = false;
+	sw_dump_tips = sw_fudge = sw_fix = false;
 
 	pg_size = p_lower_bound = c_lower_bound = d_lower_bound = 0;
 	p_upper_bound = c_upper_bound = d_upper_bound = BIG_NUMBER;
@@ -151,23 +157,23 @@ int main( int argc, char *argv[])
 				break;
 
 			case 'c':
-				sw_checksum = TRUE;
+				sw_checksum = true;
 				get_range(&argv, end, &c_lower_bound, &c_upper_bound);
 				break;
 
 			case 'd':
 				if ((argv < end) && (!strcmp(*argv, "tips"))) {
 					argv++;
-					sw_dump_tips = TRUE;
+					sw_dump_tips = true;
 				}
 				else
-					sw_dump_pages = TRUE;
+					sw_dump_pages = true;
 
 				get_range(&argv, end, &d_lower_bound, &d_upper_bound);
 				break;
 
 			case 'f':
-				sw_fix = TRUE;
+				sw_fix = true;
 				break;
 
 			case 'o':
@@ -180,16 +186,16 @@ int main( int argc, char *argv[])
 					argv++;
 				}
 			case 'p':
-				sw_print = TRUE;
+				sw_print = true;
 				get_range(&argv, end, &p_lower_bound, &p_upper_bound);
 				break;
 
 			case 'r':
-				sw_rebuild = TRUE;
+				sw_rebuild = true;
 				break;
 
 			case 's':
-				sw_store = TRUE;
+				sw_store = true;
 				break;
 
 			case 't':
@@ -439,7 +445,7 @@ void RBDB_write( RBDB rbdb, PAG page, SLONG page_number)
 }
 
 
-static void checksum( RBDB rbdb, ULONG lower, ULONG upper, UCHAR sw_fix)
+static void checksum( RBDB rbdb, ULONG lower, ULONG upper, bool sw_fix)
 {
 /**************************************
  *

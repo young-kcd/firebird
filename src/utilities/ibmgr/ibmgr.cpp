@@ -23,7 +23,7 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
- * $Id: ibmgr.cpp,v 1.6 2003-08-26 06:54:45 brodsom Exp $
+ * $Id: ibmgr.cpp,v 1.7 2003-08-26 18:45:45 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -312,7 +312,8 @@ static SSHORT get_switches(
 	TEXT *p, *q, *string, msg[MSG_LEN];
 	IN_SW_TAB in_sw_tab;
 	USHORT in_sw;
-	USHORT last_sw, sw_version;
+	USHORT last_sw;
+	bool sw_version = false;
 	int l;
 	SSHORT err_msg_no;
 
@@ -322,7 +323,6 @@ static SSHORT get_switches(
 */
 	*quitflag = false;
 	last_sw = IN_SW_IBMGR_0;
-	sw_version = FALSE;
 	for (--argc; argc > 0; argc--) {
 		string = *++argv;
 		if (*string == '?')
