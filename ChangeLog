@@ -1,3 +1,34 @@
+2004-03-15 22:19  arnobrinkman
+
+	* firebird2/src/jrd/isc_file.cpp:
+	
+	Alex, correct me if 'm wrong, but it seems this plague me the last
+	days.
+
+2004-03-15 20:35  alexpeshkoff
+
+	* firebird2/src/common/config/: dir_list.cpp, dir_list.h:
+	
+	fixing posix build
+
+2004-03-15 20:10  alexpeshkoff
+
+	* firebird2/src/common/classes/: auto.h, fb_pair.h:
+	
+	fixing posix build
+
+2004-03-15 19:48  alexpeshkoff
+
+	* firebird2/src/common/classes/fb_pair.h:
+	
+	This should fix non-VC6 builds. Thanks to Nickolay Samofatov
+
+2004-03-15 03:57  skidder
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	Allow using PSQL cursors in EXECUTE BLOCK statement
+
 2004-03-14 15:39  alexpeshkoff
 
 	* firebird2/src/: jrd/db_alias.h, ipserver/ipclient.cpp:
