@@ -538,7 +538,7 @@ void API_ROUTINE isc_decode_timestamp(const GDS_TIMESTAMP* date, void* times_arg
  *
  **************************************/
 
-	Firebird::TimeStamp(*date).decode(reinterpret_cast<tm*>(times_arg));
+	Firebird::TimeStamp(*date).decode(static_cast<tm*>(times_arg));
 }
 
 
@@ -579,7 +579,7 @@ void API_ROUTINE isc_encode_date(const void* times_arg, ISC_QUAD* date)
  *
  **************************************/
 	Firebird::TimeStamp temp;
-	temp.encode(reinterpret_cast<const tm*>(times_arg));
+	temp.encode(static_cast<const tm*>(times_arg));
 	*date = (ISC_QUAD&)temp.value();
 }
 
@@ -635,7 +635,7 @@ void API_ROUTINE isc_encode_timestamp(const void* times_arg, GDS_TIMESTAMP* date
  *
  **************************************/
 	Firebird::TimeStamp temp;
-	temp.encode(reinterpret_cast<const tm*>(times_arg));
+	temp.encode(static_cast<const tm*>(times_arg));
 	*date = temp.value();
 }
 
