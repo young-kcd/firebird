@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: hsh.cpp,v 1.5 2002-06-23 19:51:30 paul_reeves Exp $
+//	$Id: hsh.cpp,v 1.6 2002-11-04 09:03:14 eku Exp $
 //
 
 #include "firebird.h"
@@ -98,7 +98,7 @@ void HSH_init(void)
 		*ptr++ = NULL;
 
 	fflush(stdout);
-	for (i = 0, word = keywords; i < NUMWORDS; i++, word++) {
+	for (i = 0, word = keywords; i < (SSHORT)NUMWORDS; i++, word++) {
 		for (string = word->keyword; *string; string++);
 		symbol = (SYM) ALLOC(SYM_LEN);
 		symbol->sym_type = SYM_keyword;
