@@ -52,12 +52,20 @@
 @set MSG_ISQL=@"%FIREBIRD%\bin\isql" -q %SERVER_NAME%:%DB_PATH%\gen\dbs\msg.fdb -i %ROOT_PATH%\src\msgs\
 @%MSG_ISQL%msg.sql 
 @%MSG_ISQL%facilities.sql
+@echo _
+@echo loading locales
 @%MSG_ISQL%locales.sql 
+@echo loading history
 @%MSG_ISQL%history.sql 
+@echo loading messages
 @%MSG_ISQL%messages.sql 
+@echo loading symbols
 @%MSG_ISQL%symbols.sql 
+@echo loading system errors
 @%MSG_ISQL%system_errors.sql 
+@echo loading French translation
 @%MSG_ISQL%transmsgs.fr_FR.sql 
+@echo loading German translation
 @%MSG_ISQL%transmsgs.de_DE.sql 
 
 @"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\builds\misc\help.gbak %SERVER_NAME%:%DB_PATH%\gen\dbs\help.fdb 
