@@ -3392,11 +3392,11 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	SLONG count, dp_sequence, last;
 	ULONG id;
-	BOOLEAN found, flush;
 	JRD_REL relation;
 	JRD_TRA transaction;
 	RPB rpb;
 	EVENT gc_event;
+	bool found = false, flush = false;
 
 	THREAD_ENTER;
 	CHECK_DBB(dbb);
@@ -3405,7 +3405,6 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
 	MOVE_CLEAR(status_vector, sizeof(status_vector));
 	relation = 0;
 	transaction = 0;
-	found = flush = FALSE;
 
 /* Establish a thread context. */
 /* Note: Since this function operates as its own thread,
@@ -3454,9 +3453,10 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
    to finish up and exit. */
 
 		while (dbb->dbb_flags & DBB_garbage_collector) {
+
 			count = ISC_event_clear(gc_event);
 			dbb->dbb_flags |= DBB_gc_active;
-			found = FALSE;
+			found = false;
 			relation = 0;
 
 			/* If background thread activity has been suspended because
@@ -3478,7 +3478,7 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
 				while (dbb->dbb_flags & DBB_suspend_bgio) {
 					count = ISC_event_clear(gc_event);
 					THREAD_EXIT;
-					(void) ISC_event_wait(1, &gc_event, &count, 10 * 1000000, (FPTR_VOID) 0, 0);
+					ISC_event_wait(1, &gc_event, &count, 10 * 1000000, (FPTR_VOID) 0, 0);
 					THREAD_ENTER;
 					if (!(dbb->dbb_flags & DBB_garbage_collector)) {
 						goto gc_exit;
@@ -3498,17 +3498,26 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
 			   Express interest in the relation to prevent it from being deleted
 			   out from under us while garbage collection is in-progress. */
 
-			VEC vector;
-			for (id = 0; (vector = dbb->dbb_relations) && id < vector->count(); ++id) {
+			VEC vector = dbb->dbb_relations;
+			for (id = 0; vector && id < vector->count(); ++id) {
+
 				relation = (JRD_REL) (*vector)[id];
 
 				if (relation && relation->rel_gc_bitmap != 0 &&
 						!(relation->rel_flags & (REL_deleted | REL_deleting))) {
+
 					++relation->rel_sweep_count;
 					dp_sequence = -1;
 					rpb.rpb_relation = relation;
+
 					while (SBM_next(relation->rel_gc_bitmap, &dp_sequence, RSE_get_forward)) {
-						(void) SBM_clear(relation->rel_gc_bitmap, dp_sequence);
+						
+						if (!(dbb->dbb_flags & DBB_garbage_collector)) {
+							--relation->rel_sweep_count;
+							goto gc_exit;
+						}
+
+						SBM_clear(relation->rel_gc_bitmap, dp_sequence);
 
 						if (!transaction) {
 							/* Start a "precommitted" transaction by using read-only,
@@ -3527,14 +3536,16 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
 							transaction->tra_oldest_active = dbb->dbb_oldest_snapshot;
 						}
 
-						found = flush = TRUE;
+						found = flush = true;
 						rpb.rpb_number = (dp_sequence * dbb->dbb_max_records) - 1;
 						last = rpb.rpb_number + dbb->dbb_max_records;
 
 						/* Attempt to garbage collect all records on the data page. */
 
 						while (VIO_next_record(tdbb, &rpb, NULL, transaction, NULL, FALSE, TRUE)) {
+
 							CCH_RELEASE(tdbb, &rpb.rpb_window);
+
 							if (!(dbb->dbb_flags & DBB_garbage_collector)) {
 								--relation->rel_sweep_count;
 								goto gc_exit;
@@ -3553,6 +3564,7 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
 
 rel_exit:
 					dp_sequence = -1;
+
 					if (!SBM_next(relation->rel_gc_bitmap, &dp_sequence, RSE_get_forward)) {
 						/* If the bitmap is empty then release it */
 						SBM_release(relation->rel_gc_bitmap);
@@ -3583,7 +3595,6 @@ rel_exit:
 
 				while (dbb->dbb_flags & DBB_garbage_collector &&
 					   !(dbb->dbb_flags & DBB_gc_pending)) {
-					int timeout;
 
 					if (CCH_free_page(tdbb) || CCH_prefetch_pages(tdbb)) {
 						continue;
@@ -3596,7 +3607,7 @@ rel_exit:
 						   orphaning free space on lower precedence pages that
 						   haven't been written if a crash occurs. */
 
-						flush = FALSE;
+						flush = false;
 						if (transaction) {
 							CCH_flush(tdbb, (USHORT) FLUSH_SWEEP, 0);
 						}
@@ -3604,7 +3615,7 @@ rel_exit:
 					}
 					dbb->dbb_flags &= ~DBB_gc_active;
 					THREAD_EXIT;
-					timeout = ISC_event_wait(1, &gc_event, &count, 10 * 1000000, (FPTR_VOID) 0, 0);
+					int timeout = ISC_event_wait(1, &gc_event, &count, 10 * 1000000, (FPTR_VOID) 0, 0);
 					THREAD_ENTER;
 					dbb->dbb_flags |= DBB_gc_active;
 					if (!timeout) {
