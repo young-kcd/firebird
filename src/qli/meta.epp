@@ -502,7 +502,7 @@ void MET_delete_database( DBB dbb)
 		user_length = strlen(QLI_default_user);
 	}
 
-	TEXT* password;
+	const TEXT* password;
 	USHORT password_length;
 	if (dbb->dbb_password) {
 		password = (TEXT *) dbb->dbb_password->con_data;

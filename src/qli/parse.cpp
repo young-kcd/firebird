@@ -308,13 +308,16 @@ bool PAR_match( KWWORDS keyword)
 		return true;
 	}
 
-	for (qli_symbol* symbol = QLI_token->tok_symbol; symbol; symbol = symbol->sym_homonym)
+	for (const qli_symbol* symbol = QLI_token->tok_symbol; symbol;
+		symbol = symbol->sym_homonym)
+	{
 		if (symbol->sym_type == SYM_keyword &&
 			symbol->sym_keyword == (int) keyword)
 		{
 			PAR_token();
 			return true;
 		}
+	}
 
 	return false;
 }
@@ -382,7 +385,9 @@ void PAR_token(void)
 		LEX_token();
 		if (!(KEYWORD(KW_continuation)) &&
 			!(sw_statement && QLI_semi && QLI_token->tok_type == tok_eol))
+		{
 			break;
+		}
 	}
 
 	if (PAR_match(KW_COLON)) {
@@ -642,7 +647,7 @@ static KWWORDS next_keyword(void)
  **************************************/
 	PAR_real();
 
-	for (qli_symbol* symbol = QLI_token->tok_symbol; symbol; 
+	for (const qli_symbol* symbol = QLI_token->tok_symbol; symbol;
 		symbol = symbol->sym_homonym)
 	{
 		if (symbol->sym_type == SYM_keyword)
@@ -3455,7 +3460,7 @@ static qli_syntax* parse_report(void)
 						continue;
 					/* if number of field qualifiers on sort field and control field
 					   are not equal test match of rightmost set */
-					USHORT syn_count = MIN(rse_fld->syn_count, qli_fld->syn_count);
+					const USHORT syn_count = MIN(rse_fld->syn_count, qli_fld->syn_count);
 					USHORT srt_syn = 0, ctl_syn = 0;
 					if (syn_count != rse_fld->syn_count)
 						srt_syn = rse_fld->syn_count - syn_count;
@@ -4016,7 +4021,9 @@ static qli_syntax* parse_show(void)
 					else if (PAR_match(KW_RELATIONS) ||
 							 QLI_token->tok_type == tok_eol ||
 							 KEYWORD(KW_SEMI) || KEYWORD(KW_FOR))
+					{
 						sw = show_system_relations;
+					}
 					else
 						ERRQ_syntax(215);	// Msg215 RELATIONS or TRIGGERS
 				}
@@ -4445,7 +4452,9 @@ static qli_syntax* parse_sql_grant_revoke( USHORT type)
 				do {
 					if (KEYWORD(KW_SELECT) || KEYWORD(KW_INSERT)
 						|| KEYWORD(KW_DELETE) || KEYWORD(KW_UPDATE))
+					{
 						break;
+					}
 					PAR_real();
 					ALLQ_push((blk*) parse_name(), &stack);
 
@@ -5221,7 +5230,7 @@ static qli_syntax* parse_udf_or_field(void)
  *	Parse a function or field reference.
  *
  **************************************/
-	qli_symbol* symbol = QLI_token->tok_symbol;
+	const qli_symbol* symbol = QLI_token->tok_symbol;
 
 	if (symbol && symbol->sym_type == SYM_function)
 		return parse_function();
@@ -5329,7 +5338,7 @@ static bool potential_rse(void)
  *	a record selection expression.
  *
  **************************************/
-	for (qli_symbol* symbol = QLI_token->tok_symbol; symbol; 
+	for (const qli_symbol* symbol = QLI_token->tok_symbol; symbol;
 		symbol = symbol->sym_homonym)
 	{
 		if ((symbol->sym_type == SYM_keyword &&
