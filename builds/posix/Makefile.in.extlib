@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.extlib,v 1.4 2002-10-07 01:29:09 skywalker Exp $
+#  $Id: Makefile.in.extlib,v 1.5 2002-12-05 16:15:03 kkuznetsov Exp $
 #
 ROOT=..
 ObjModuleName=extlib
@@ -84,8 +84,8 @@ lib_ib_udf: $(UDF)/ib_udf.so
 #	ar crv $@  $%
 
 $(UDF)/ib_udf.so:	$(UDF_Objects)
-#	$(LIB_LINK) -Wl,-soname,ib_udf.so -Wl,-rpath,/usr/lib -o $@ $^
-	$(LIB_LINK) -Wl,-soname,ib_udf.so -Wl,-rpath,$(FirebirdInstallPrefix)/lib -o $@ $^
+#	$(LIB_LINK) $(LIB_LINK_SONAME)ib_udf.so $(LIB_LINK_RPATH)/usr/lib -o $@ $^
+	$(LIB_LINK)$(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)ib_udf.so $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^
 #	-$(LN) $(@F) $(LIBFBINTL_SOBASENAME) 
 #	-$(LN) $(notdir $(LIBFBINTL_SOBASENAME)) $(LIBFBINTL_SONAME)
 
@@ -95,7 +95,7 @@ $(UDF)/ib_udf.so:	$(UDF_Objects)
 lib_fb_udf: $(UDF)/fb_udf.so
 
 $(UDF)/fb_udf.so:	$(FBUDF_Objects)
-	$(LIB_LINK) -Wl,-soname,fb_udf.so -Wl,-rpath,$(FirebirdInstallPrefix)/lib -o $@ $^
+	$(LIB_LINK)$(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)fb_udf.so $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^
 #	-$(LN) $(@F) $(LIBFBINTL_SOBASENAME) 
 #	-$(LN) $(notdir $(LIBFBINTL_SOBASENAME)) $(LIBFBINTL_SONAME)
 
@@ -105,7 +105,7 @@ $(UDF)/fb_udf.so:	$(FBUDF_Objects)
 lib_ib_util: $(LIB)/ib_util.so
 
 $(LIB)/ib_util.so:	$(UTIL_Objects)
-	$(LIB_LINK) -Wl,-soname,ib_util.so -Wl,-rpath,$(FirebirdInstallPrefix)/lib -o $@ $^
+	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)ib_util.so $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^
 #	-$(LN) $(@F) $(LIBFBINTL_SOBASENAME) 
 #	-$(LN) $(notdir $(LIBFBINTL_SOBASENAME)) $(LIBFBINTL_SONAME)
 

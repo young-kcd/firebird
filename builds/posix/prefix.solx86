@@ -18,7 +18,7 @@
 #
 # Use SOLX86 to identify x86 version of Solaris.  Neil McCalden
 #  
-# $Id: prefix.solx86,v 1.12 2002-11-21 13:46:18 kkuznetsov Exp $
+# $Id: prefix.solx86,v 1.13 2002-12-05 16:15:05 kkuznetsov Exp $
 #
 # Start of file prefix.solaris X 86 :	$(VERSION)	$(PLATFORM)
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
@@ -33,7 +33,7 @@ SFIO= /export/home/interbase/SfIO
 #from http://www.research.att.com/sw/tools/sfio/
 
 
-#STLPort=/export/home/kostik/STL/STLport-4.5.3/stlport	
+STLPort=/export/home/kostik/STL/STLport-4.5.3/stlport	
 
 
 ifdef SFIO
@@ -48,3 +48,6 @@ DEV_FLAGS=$(COMM_SOLX_FLAGS) -ggdb  $(WARNINGS)  -MMD -p -fPIC
 #still ugly hack - becouse can not move it to configure.in
 GPRECOMMON_Files= ../jrd/thd.cpp ../jrd/isc_sync.cpp
 GPRECommon_Sources= $(GPRECOMMON_Files)
+LIB_LINK_OPTIONS:= -G 
+LIB_LINK_RPATH:=-R
+LIB_LINK_SONAME:=-h

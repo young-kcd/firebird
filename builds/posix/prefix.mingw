@@ -20,3 +20,6 @@ PROD_FLAGS=-O2 -mno-cygwin -fcheck-new -DWIN32_LEAN_AND_MEAN -MMD
 DEV_FLAGS=-ggdb -mno-cygwin -fcheck-new -DDEBUG -DDEBUG_GDS_ALLOC -DWIN32_LEAN_AND_MEAN -MMD -Wall
 
 PLATFORM_PATH=jrd/os/win32
+LIB_LINK_OPTIONS:=
+LIB_LINK_RPATH:=-Wl,-rpath,
+LIB_LINK_SONAME:=-Wl,-soname,

@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.7 2002-11-14 13:53:37 dimitr Exp $
+#   $Id: make.defaults,v 1.8 2002-12-05 16:15:04 kkuznetsov Exp $
 # 
 
 
@@ -141,7 +141,7 @@ ifdef UseSharedLibraries
 #    LINK_LIBS := -L$(LIB) -lgds $(LINK_LIBS)
 
 #    LIBGDS_LINK_OPTIONS = -soname libgds.so -rpath /usr/lib 
-    LIBGDS_LINK_OPTIONS = -Wl,-soname,$(SharedLibrarySoName) -Wl,-rpath,$(FirebirdInstallPrefix)/lib 
+    LIBGDS_LINK_OPTIONS = $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)$(SharedLibrarySoName) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib 
 #    LIBGDS_LINK_OPTIONS = -Wl,-soname,$(SharedLibrarySoName) -Wl,-rpath,/usr/lib 
 else
     LIBGDS_LA = $(LIBGDS_A)

@@ -15,8 +15,11 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin,v 1.4 2002-11-05 01:49:38 nmcc Exp $
+#$Id: prefix.darwin,v 1.5 2002-12-05 16:15:04 kkuznetsov Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 PROD_FLAGS=-O3 -DNDEBUG -DDARWIN -pipe -MMD -p -fPIC
 DEV_FLAGS=-ggdb -DDARWIN -DDEBUG_GDS_ALLOC -pipe -MMD -p -fPIC -Wall
+LIB_LINK_OPTIONS:=
+LIB_LINK_RPATH:=-Wl,-rpath,
+LIB_LINK_SONAME:=-Wl,-soname,
