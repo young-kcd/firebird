@@ -268,7 +268,7 @@ void SCL_check_index( TDBB tdbb, TEXT * index_name, UCHAR index_id, USHORT mask)
     }
 
 
-/* check if the relation exixts. It may not have been created yet.
+/* check if the relation exists. It may not have been created yet.
    Just return in that case. */
 
 	if (!reln_name || !*reln_name)
@@ -406,6 +406,7 @@ void SCL_check_relation( DSC * dsc_name, USHORT mask)
 		 q < endq && p < endp && *q;)
 		*p++ = *q++;
 	*p = 0;
+	MET_exact_name(name);
 
 	dbb = tdbb->tdbb_database;
 

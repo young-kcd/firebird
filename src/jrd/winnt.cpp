@@ -28,8 +28,6 @@
  *
  * 02-Nov-2001 Mike Nordell: Synch with FB1 changes.
  *
- * 17-Oct-2001 Mike Nordell: Non-shared file access
- *
  * 20-Nov-2001 Ann Harrison: Make page count work on db with forced write
  * 
  * 21-Nov-2001 Ann Harrison: Allow read sharing so gstat works 
