@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Client/Server Common Code
  *	MODULE:		vector.h
- *	DESCRIPTION:	Several fast and simple container classes
+ *	DESCRIPTION:	static array of simple elements
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
