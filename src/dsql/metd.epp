@@ -876,7 +876,7 @@ UDF METD_get_function(REQ request, STR name)
 
 	symbol = HSHD_lookup(request->req_dbb, (TEXT*) name->str_data,
 						 name->str_length, SYM_udf, 0);
-    if ((symbol->sym_type == SYM_udf) &&
+    if (symbol && (symbol->sym_type == SYM_udf) &&
 	    ((udf_ = (UDF) symbol->sym_object) &&
          (!(udf_->udf_flags & UDF_dropped)))) {
         METD_REC_UNLOCK;
