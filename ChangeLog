@@ -1,3 +1,9 @@
+2003-05-19 08:57  alexpeshkoff
+
+	* firebird2/src/jrd/met.epp:
+	
+	Make engine compile again with MSVC
+
 2003-05-17 00:15  arnobrinkman
 
 	* firebird2/src/jrd/opt.cpp:
