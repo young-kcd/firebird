@@ -1,3 +1,9 @@
+2004-09-21 08:18  aafemt
+
+	* firebird2/src/jrd/thd.h (1.38):
+	
+	Remove extra comma to shut up compiler
+
 2004-09-20 10:49  robocop
 
 	* firebird2/src/extlib/: ib_udf.cpp (1.1), ib_udf2.sql (1.1):
