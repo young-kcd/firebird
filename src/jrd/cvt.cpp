@@ -69,15 +69,6 @@
 # endif
 #endif
 
-#ifdef HAVE_TIME_H
-#ifdef DARWIN
-#include </usr/include/time.h>
-#endif
-#if defined DARWIN && !defined _TIME_H_
-#error john
-#endif
-#endif
-
 #if !(defined REQUESTER && defined SUPERCLIENT)
 #include "../jrd/intl_classes.h"
 #endif

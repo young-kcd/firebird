@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.16 2002-09-27 00:20:08 bellardo Exp $ 
+  * $Id: evl.cpp,v 1.17 2002-09-27 01:28:26 bellardo Exp $ 
  */
 
 /*
@@ -106,10 +106,6 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/cvt_proto.h"
 //#include "../jrd/authenticate.h"
-
-#ifdef DARWIN
-#include </usr/include/time.h>
-#endif
 
 #if defined(WIN_NT) && defined(_MSC_VER)
 #pragma warning(disable: 4244)

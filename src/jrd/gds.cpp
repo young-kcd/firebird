@@ -62,7 +62,6 @@
 #ifdef DARWIN
 #include <CoreFoundation/CFBundle.h>
 #include <CoreFoundation/CFURL.h>
-#include </usr/include/time.h>
 #endif
 
 #if (defined PC_PLATFORM && !defined NETWARE_386)

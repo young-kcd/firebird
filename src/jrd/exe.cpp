@@ -31,7 +31,7 @@
  * to count virtual operations, not real I/O on the underlying tables.
  */
 /*
-$Id: exe.cpp,v 1.18 2002-09-25 17:12:09 skidder Exp $
+$Id: exe.cpp,v 1.19 2002-09-27 01:28:26 bellardo Exp $
 */
 
 #include "firebird.h"
@@ -94,10 +94,6 @@ $Id: exe.cpp,v 1.18 2002-09-25 17:12:09 skidder Exp $
 
 #ifdef HSDEBUGSTACK
 #include "TestStck.h"
-#endif
-
-#ifdef DARWIN
-#include </usr/include/time.h>
 #endif
 
 extern "C" {
