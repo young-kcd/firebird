@@ -1016,7 +1016,7 @@ static FIL setup_file(
 	file = FB_NEW_RPT(*dbb->dbb_permanent, file_length + 1) fil();
 	file->fil_desc = desc;
 	file->fil_length = file_length;
-	file->fil_max_page = -1;
+	file->fil_max_page = -1UL;
 	MOVE_FAST(file_name, file->fil_string, file_length);
 	file->fil_string[file_length] = '\0';
 #ifndef PREAD_PWRITE
