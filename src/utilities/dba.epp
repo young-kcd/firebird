@@ -184,7 +184,7 @@ typedef struct open_files {
 typedef struct dba_mem {
 	char *memory;
 	struct dba_mem *mem_next;
-} ;
+} dba_mem;
 #endif
 
 #ifndef FPRINTF
