@@ -22,6 +22,10 @@
 #define _X86_
 #endif
 
+#ifdef DEV_BUILD
+#define DEBUG_GDS_ALLOC
+#endif
+
 /* Headers */
 #define HAVE_ASSERT_H
 #define HAVE_CTYPE_H
