@@ -749,17 +749,31 @@ const\n\
 static void move_if_not_identical( char* original, char* new_file)
 {
 
-    
-    char origName[1000];
-    if ( genDirectory != NULL) {
-        sprintf(origName,"%s/%s", genDirectory, original);
-    }
-    else {
-        sprintf(origName,"./%s", original);
-    }
-
+	
+	char origName[1000];
 	char buffer[1000];
+#ifdef WIN_NT
+	if ( genDirectory != NULL) {
+		sprintf(origName,"%s\\%s", genDirectory, original);
+	}
+	else {
+		sprintf(origName,".\\%s", original);
+	}
+	/*
+	 * This is a trick to make on systems previous to W2K were apparently 
+	 * fc does not return a errorlevel, but find return it (1 found 0 not found)
+	 * FC: appear only where there are no differences (and the switch /B is not used)
+	 */
+	sprintf(buffer, "fc %s %s | find \"FC:\" > nul", new_file, origName);
+#else
+	if ( genDirectory != NULL) {
+		sprintf(origName,"%s/%s", genDirectory, original);
+	}
+	else {
+		sprintf(origName,"./%s", original);
+	}
 	sprintf(buffer, "cmp -s %s %s", new_file, origName);
+#endif
 
 /* If the new file is identical to the original, then don't update
    the original */
@@ -769,7 +783,11 @@ static void move_if_not_identical( char* original, char* new_file)
 	}
 	else {
 		/* Original file is missing or different */
+#ifdef WIN_NT
+		sprintf(buffer, "move %s %s > nul", new_file, origName);
+#else
 		sprintf(buffer, "mv -f %s %s", new_file, origName);
+#endif
 		if (system(buffer) != 0) {
 			ib_fprintf(ib_stderr, "Error moving %s to %s!\n",
 					   new_file, origName);
