@@ -280,7 +280,7 @@ DUDLEY_NOD EXPR_statement(void)
 		node = PARSE_make_node(nod_assignment, 2);
 		node->nod_arg[1] = parse_field();
 		if (!PARSE_match(KW_EQUALS))
-			PARSE_error(236, DDL_token.tok_string, NULL);	/* msg 236: expected =, encountered \"%s\" */
+			PARSE_error(236, dudleyGlob.DDL_token.tok_string, NULL);	/* msg 236: expected =, encountered \"%s\" */
 		node->nod_arg[0] = EXPR_value(0, NULL);
 	}
 
@@ -518,7 +518,7 @@ static DUDLEY_NOD parse_field(void)
 		if (PARSE_match(KW_R_BRCKET))
 			break;
 		if (!PARSE_match(KW_COMMA))
-			PARSE_error(317, DDL_token.tok_string, NULL);	/* msg 317, expected comma or right bracket, encountered \"%s\" */
+			PARSE_error(317, dudleyGlob.DDL_token.tok_string, NULL);	/* msg 317, expected comma or right bracket, encountered \"%s\" */
 	}
 
 	array = PARSE_make_node(nod_index, 2);
@@ -547,7 +547,7 @@ static DUDLEY_NOD parse_from(USHORT * paren_count,
 	if (PARSE_match(KW_FIRST)) {
 		value = parse_primitive_value(0, NULL);
 		if (!PARSE_match(KW_FROM))
-			PARSE_error(239, DDL_token.tok_string, NULL);
+			PARSE_error(239, dudleyGlob.DDL_token.tok_string, NULL);
 		/* msg 239: expected FROM rse clause, encountered \"%s\" */
 	}
 	else {
@@ -585,7 +585,7 @@ static DUDLEY_NOD parse_function(void)
 
 /* Look for symbol of type function.  If we don't find it, give up */
 
-	for (symbol = DDL_token.tok_symbol; symbol; symbol = symbol->sym_homonym)
+	for (symbol = dudleyGlob.DDL_token.tok_symbol; symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_function)
 			break;
 
@@ -604,7 +604,7 @@ static DUDLEY_NOD parse_function(void)
 			if (PARSE_match(KW_RIGHT_PAREN))
 				break;
 			if (!PARSE_match(KW_COMMA))
-				PARSE_error(240, DDL_token.tok_string, NULL);
+				PARSE_error(240, dudleyGlob.DDL_token.tok_string, NULL);
 			/* msg 240: expected comma or right parenthesis, encountered \"%s\" */
 		}
 
@@ -633,7 +633,7 @@ static DUDLEY_NOD parse_gen_id(void)
 	LEX_token();
 
 	if (!PARSE_match(KW_LEFT_PAREN))
-		PARSE_error(241, DDL_token.tok_string, NULL);	/* msg 241: expected left parenthesis, encountered \"%s\" */
+		PARSE_error(241, dudleyGlob.DDL_token.tok_string, NULL);	/* msg 241: expected left parenthesis, encountered \"%s\" */
 
 	node = PARSE_make_node(nod_gen_id, 2);
 	node->nod_count = 1;
@@ -662,10 +662,10 @@ static CON parse_literal(void)
 	USHORT l;
 	TEXT *p, *q;
 
-	q = DDL_token.tok_string;
-	l = DDL_token.tok_length;
+	q = dudleyGlob.DDL_token.tok_string;
+	l = dudleyGlob.DDL_token.tok_length;
 
-	if (DDL_token.tok_type == tok_quoted) {
+	if (dudleyGlob.DDL_token.tok_type == tok_quoted) {
 		q++;
 		l -= 2;
 		constant = (CON) DDL_alloc(sizeof(con) + l);
@@ -678,12 +678,12 @@ static CON parse_literal(void)
 				*p++ = *q++;
 			while (--l);
 	}
-	else if (DDL_token.tok_type == tok_number) {
-		constant = make_numeric_constant(DDL_token.tok_string,
-										 DDL_token.tok_length);
+	else if (dudleyGlob.DDL_token.tok_type == tok_number) {
+		constant = make_numeric_constant(dudleyGlob.DDL_token.tok_string,
+										 dudleyGlob.DDL_token.tok_length);
 	}
 	else
-		PARSE_error(242, DDL_token.tok_string, NULL);	/* msg 242: expected value expression, encountered \"%s\" */
+		PARSE_error(242, dudleyGlob.DDL_token.tok_string, NULL);	/* msg 242: expected value expression, encountered \"%s\" */
 
 	LEX_token();
 
@@ -705,7 +705,7 @@ static void parse_matching_paren(void)
  **************************************/
 
 	if (!PARSE_match(KW_RIGHT_PAREN))
-		PARSE_error(243, DDL_token.tok_string, NULL);	/* msg 243: expected right parenthesis, encountered \"%s\" */
+		PARSE_error(243, dudleyGlob.DDL_token.tok_string, NULL);	/* msg 243: expected right parenthesis, encountered \"%s\" */
 }
 
 
@@ -853,7 +853,7 @@ static DUDLEY_NOD parse_primitive_value(USHORT * paren_count,
 		break;
 
 	default:
-		if (DDL_token.tok_type == tok_ident) {
+		if (dudleyGlob.DDL_token.tok_type == tok_ident) {
 			if (!(node = parse_function()))
 				node = parse_field();
 			break;
@@ -889,7 +889,7 @@ static DUDLEY_CTX parse_relation(void)
 	symbol->sym_object = context;
 
 	if (!PARSE_match(KW_IN))
-		PARSE_error(244, DDL_token.tok_string, NULL);	/* msg 244: expected IN, encountered \"%s\" */
+		PARSE_error(244, dudleyGlob.DDL_token.tok_string, NULL);	/* msg 244: expected IN, encountered \"%s\" */
 
 	context->ctx_relation = PARSE_relation();
 
@@ -927,7 +927,7 @@ static DUDLEY_NOD parse_relational( USHORT * paren_count)
 	}
 
 	expr1 = EXPR_value(paren_count, &local_flag);
-	if (DDL_token.tok_keyword == KW_RIGHT_PAREN)
+	if (dudleyGlob.DDL_token.tok_keyword == KW_RIGHT_PAREN)
 		return expr1;
 
 	negation = false;
@@ -1018,7 +1018,7 @@ static DUDLEY_NOD parse_relational( USHORT * paren_count)
 		for (rel_ops = relationals; *rel_ops != (enum nod_t) 0; rel_ops++)
 			if (expr1->nod_type == *rel_ops)
 				return expr1;
-		PARSE_error(245, DDL_token.tok_string, NULL);	/* msg 245: expected relational operator, encountered \"%s\" */
+		PARSE_error(245, dudleyGlob.DDL_token.tok_string, NULL);	/* msg 245: expected relational operator, encountered \"%s\" */
 	}
 
 /* If we haven't already built a node, it must be an ordinary binary operator.
@@ -1125,7 +1125,7 @@ static DUDLEY_NOD parse_statistical(void)
 		node->nod_arg[s_stt_value] = EXPR_value(0, NULL);
 
 	if (!PARSE_match(KW_OF))
-		PARSE_error(246, DDL_token.tok_string, NULL);	/* msg 246: expected OF, encountered \"%s\" */
+		PARSE_error(246, dudleyGlob.DDL_token.tok_string, NULL);	/* msg 246: expected OF, encountered \"%s\" */
 
 	node->nod_arg[s_stt_rse] = EXPR_rse(false);
 

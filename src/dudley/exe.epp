@@ -24,7 +24,6 @@
 #include "firebird.h"
 #include <string.h>
 #include "../dudley/ddl.h"
-#include "../dudley/parse.h"
 #include "../jrd/license.h"
 #include "../jrd/ibase.h"
 #include "../jrd/flags.h"
@@ -178,14 +177,14 @@ void EXE_create_database( DBB dbb)
 
 	TEXT* p;
 	
-	if (p = DDL_default_user) {
+	if (p = dudleyGlob.DDL_default_user) {
 		*d++ = isc_dpb_user_name;
 		*d++ = strlen(p);
 		while (*p)
 			*d++ = *p++;
 	}
 
-	if (p = DDL_default_password) {
+	if (p = dudleyGlob.DDL_default_password) {
 		*d++ = isc_dpb_password;
 		*d++ = strlen(p);
 		while (*p)
@@ -199,12 +198,12 @@ void EXE_create_database( DBB dbb)
 	const TEXT* file_name = dbb->dbb_name->sym_string;
 
 	const SLONG result = isc_attach_database(gds_status, 0, file_name, &DB, dpb_length, dpb);
-	if (!DDL_replace) {
+	if (!dudleyGlob.DDL_replace) {
 		if (!result) {
 			isc_detach_database(gds_status, &DB);
 			DDL_msg_put(18, file_name, NULL, NULL, NULL, NULL);
 			/* msg 18: Database \"%s\" already exists */
-			if (DDL_interactive) {
+			if (dudleyGlob.DDL_interactive) {
 				DDL_msg_partial(19, NULL, NULL, NULL, NULL, NULL);
 				/* msg 19: Do you want to replace it? */
 				if (!DDL_yes_no(286))
@@ -277,7 +276,7 @@ void EXE_create_database( DBB dbb)
 			DDL_error_abort(gds_status, 21, file_name, NULL, NULL, NULL, NULL);
 			/* msg 21: Couldn't create database \"%s\" */
 
-	if (DDL_version) {
+	if (dudleyGlob.DDL_version) {
 		DDL_msg_put(23, file_name, NULL, NULL, NULL, NULL);
 		/* msg 23: Version(s) for database \"%s\" */
 		isc_version(&DB, NULL, NULL);
@@ -371,14 +370,14 @@ void EXE_drop_database( DBB dbb)
 
 	TEXT* p;
 
-	if (p = DDL_default_user) {
+	if (p = dudleyGlob.DDL_default_user) {
 		*d++ = isc_dpb_user_name;
 		*d++ = strlen(p);
 		while (*p)
 			*d++ = *p++;
 	}
 
-	if (p = DDL_default_password) {
+	if (p = dudleyGlob.DDL_default_password) {
 		*d++ = isc_dpb_password;
 		*d++ = strlen(p);
 		while (*p)
@@ -451,16 +450,16 @@ void EXE_execute(void)
  *	give up quietly.
  *
  **************************************/
-	if (!DDL_actions)
+	if (!dudleyGlob.DDL_actions)
 		return;
 
 	if (!DB)
 		DDL_error_abort(NULL, 33, NULL, NULL, NULL, NULL, NULL);
 		// msg 33: no database specified
 
-	for (ACT action = DDL_actions; action; action = action->act_next)
+	for (ACT action = dudleyGlob.DDL_actions; action; action = action->act_next)
 		if (!(action->act_flags & ACT_ignore)) {
-			DDL_line = action->act_line;
+			dudleyGlob.DDL_line = action->act_line;
 			switch (action->act_type) {
 			case act_c_database:
 			case act_m_database:
@@ -624,7 +623,7 @@ void EXE_fini( DBB dbb)
  *
  **************************************/
 	if (DB) {
-		if (DDL_errors) {
+		if (dudleyGlob.DDL_errors) {
 			if (dbb && (dbb->dbb_flags & DBB_create_database)) {
 				FOR F IN RDB$FILES WITH F.RDB$SHADOW_NUMBER NE 0
 					alloc_file_name(&dbb->dbb_files, (UCHAR*)F.RDB$FILE_NAME);
@@ -674,14 +673,14 @@ void EXE_modify_database( DBB dbb)
 
 	TEXT* p;
 
-	if (p = DDL_default_user) {
+	if (p = dudleyGlob.DDL_default_user) {
 		*d++ = isc_dpb_user_name;
 		*d++ = strlen(p);
 		while (*p)
 			*d++ = *p++;
 	}
 
-	if (p = DDL_default_password) {
+	if (p = dudleyGlob.DDL_default_password) {
 		*d++ = isc_dpb_password;
 		*d++ = strlen(p);
 		while (*p)
@@ -734,7 +733,7 @@ void EXE_modify_database( DBB dbb)
 			DDL_error_abort(gds_status, 29, dbb->dbb_name->sym_string, NULL,
 							NULL, NULL, NULL);	/* msg 29: Couldn't attach database */
 
-	if (DDL_version) {
+	if (dudleyGlob.DDL_version) {
 		DDL_msg_put(30, dbb->dbb_name->sym_string, NULL, NULL, NULL, NULL);
 		/* msg 30:	Version(s) for database \"%s\" */
 		isc_version(&DB, NULL, NULL);
@@ -919,7 +918,7 @@ static void add_cache( DBB dbb)
 
 /* Unless there are errors, commit the new shared cache immediately! */
 
-	if (!DDL_errors) {
+	if (!dudleyGlob.DDL_errors) {
 		COMMIT ON_ERROR DDL_db_error(gds_status, 324, NULL, NULL, NULL, NULL, NULL);
 		/* msg 324: error commiting new shared cache declaration */
 		ROLLBACK;
@@ -1068,7 +1067,7 @@ static void add_files( DBB dbb, FIL files)
 
 /* Unless there are errors floating around, commit the new file immediately! */
 
-	if (!DDL_errors) {
+	if (!dudleyGlob.DDL_errors) {
 		COMMIT ON_ERROR DDL_db_error(gds_status, 40, NULL, NULL, NULL, NULL, NULL);
 		/* msg 40: error commiting new file declarations */
 		ROLLBACK;
@@ -1483,7 +1482,7 @@ static void add_log_files( DBB dbb)
 
 /* Unless there were errors , commit immediately! */
 
-	if (!DDL_errors) {
+	if (!dudleyGlob.DDL_errors) {
 		COMMIT ON_ERROR DDL_db_error(gds_status, 321, NULL, NULL, NULL, NULL, NULL);
 		// msg 321: error commiting new write ahead log declarations
 		ROLLBACK;
@@ -2129,7 +2128,7 @@ static void drop_cache( DBB dbb)
 		DDL_err(325, NULL, NULL, NULL, NULL, NULL);
 		/* msg 325: no shared cache file exists to drop */
 
-	if (!DDL_errors) {
+	if (!dudleyGlob.DDL_errors) {
 		COMMIT 
 		ON_ERROR 
 			DDL_db_error(gds_status, 326, NULL, NULL, NULL, NULL, NULL);
@@ -2491,7 +2490,7 @@ static void drop_shadow( SLONG shadow_number)
 		DDL_err(71, (TEXT *)(IPTR) shadow_number, NULL, NULL, NULL, NULL);
 		/* msg 71: shadow %ld doesn't exist */
 
-	if (!DDL_errors) {
+	if (!dudleyGlob.DDL_errors) {
 		COMMIT 
 		ON_ERROR 
 			DDL_db_error(gds_status, 72, NULL, NULL, NULL, NULL, NULL);
@@ -2835,8 +2834,8 @@ static void get_relations( DBB databaseL)
 			get_symbol(SYM_relation, R.RDB$RELATION_NAME, (DUDLEY_CTX) relation);
 		HSH_insert(symbol);
 		relation->rel_database = databaseL;
-		relation->rel_next = database->dbb_relations;
-		database->dbb_relations = relation;
+		relation->rel_next = dudleyGlob.database->dbb_relations;
+		dudleyGlob.database->dbb_relations = relation;
 		relation->rel_system = R.RDB$SYSTEM_FLAG;
 		FOR RFR IN RDB$RELATION_FIELDS WITH 
 			RFR.RDB$RELATION_NAME = R.RDB$RELATION_NAME 
@@ -3737,7 +3736,7 @@ static void move_symbol( SYM symbol, SCHAR * field, SSHORT length)
 			DDL_err(296, symbol->sym_string, (TEXT *)(IPTR) length, NULL, NULL,
 					NULL);
 			/*msg 296: symbol %s is too long, truncating it to %ld characters */
-			DDL_errors--;
+			dudleyGlob.DDL_errors--;
 			l = length;
 		}
 		p = symbol->sym_string;

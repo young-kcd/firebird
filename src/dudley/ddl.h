@@ -594,33 +594,38 @@ typedef enum lan_t {
 	lan_cxx
 } LAN_T;
 
-#ifdef DDL_MAIN
-#define EXTERN
-#else
-#define EXTERN	extern
-#endif
+#include "parse.h"
 
-EXTERN	enum lan_t language;
-EXTERN	bool DDL_eof;
-EXTERN	USHORT DDL_errors;
-EXTERN	USHORT DDL_line;
-EXTERN	bool DDL_interactive;
-EXTERN	bool DDL_quit;
-EXTERN	bool DDL_dynamic;
-EXTERN	bool DDL_drop_database;
-EXTERN	bool DDL_service;
-EXTERN	bool DDL_replace;
-EXTERN	bool DDL_description;
-EXTERN	bool DDL_extract;
-EXTERN	bool DDL_trace;
-EXTERN	bool DDL_version;
-EXTERN	TEXT *DDL_file_name, DYN_file_name[256], *DB_file_name,
-		DDL_file_string[256], DB_file_string[256];
-EXTERN	TEXT *DDL_default_user, *DDL_default_password;
-EXTERN	ACT DDL_actions;
-EXTERN	DBB database;
+struct DudleyGlobals {
+	enum lan_t language;
+	bool DDL_eof;
+	USHORT DDL_errors;
+	USHORT DDL_line;
+	bool DDL_interactive;
+	bool DDL_quit;
+	bool DDL_dynamic;
+	bool DDL_drop_database;
+	bool DDL_service;
+	bool DDL_replace;
+	bool DDL_description;
+	bool DDL_extract;
+	bool DDL_trace;
+	bool DDL_version;
+	const TEXT* DDL_prompt;
+	TEXT* DDL_file_name;
+	TEXT DYN_file_name[256];
+	TEXT* DB_file_name;
+	TEXT DDL_file_string[256];
+	TEXT DB_file_string[256];
+	TEXT* DDL_default_user;
+	TEXT* DDL_default_password;
+	ACT DDL_actions;
+	DBB database;
+	// from parse.h
+	tok DDL_token;
+};
 
-#undef EXTERN
+extern DudleyGlobals dudleyGlob;
 
 #include "../dudley/ddl_proto.h"
 

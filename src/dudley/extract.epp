@@ -33,7 +33,7 @@
 #include "../dudley/extra_proto.h"
 #include "../jrd/gds_proto.h"
 
-DATABASE DB = EXTERN FILENAME "yachts.lnk" RUNTIME DB_file_name;
+DATABASE DB = EXTERN FILENAME "yachts.lnk" RUNTIME dudleyGlob.DB_file_name;
 
 static const char* const FOPEN_WRITE_TYPE	= "w";
 
@@ -143,24 +143,25 @@ void DDL_ext(void)
 
 	output_file = NULL;
 
-	if (*DDL_file_name) {
-		if (!(output_file = fopen(DDL_file_name, FOPEN_WRITE_TYPE))) {
-			DDL_err(248, DDL_file_name, NULL, NULL, NULL, NULL);	/* msg 248: ddl: can't open %s */
+	if (*dudleyGlob.DDL_file_name) {
+		if (!(output_file = fopen(dudleyGlob.DDL_file_name, FOPEN_WRITE_TYPE))) {
+			DDL_err(248, dudleyGlob.DDL_file_name, NULL, NULL, NULL, NULL);
+			/* msg 248: ddl: can't open %s */
 			DDL_exit(FINI_ERROR);
 		}
 	}
 	else
 		output_file = stdout;
 
-	if (DDL_default_user || DDL_default_password)
-		READY DB USER DDL_default_user PASSWORD DDL_default_password;
+	if (dudleyGlob.DDL_default_user || dudleyGlob.DDL_default_password)
+		READY DB USER dudleyGlob.DDL_default_user PASSWORD dudleyGlob.DDL_default_password;
 	else
 		READY DB;
 
 /* the database version number is useful during extract - this goes
    to stdout, not to the output_file */
-	if (DDL_version) {
-		DDL_msg_put(249, DB_file_name, NULL, NULL, NULL, NULL);	/* msg 249: Version(s) for database \"%s\" */
+	if (dudleyGlob.DDL_version) {
+		DDL_msg_put(249, dudleyGlob.DB_file_name, NULL, NULL, NULL, NULL);	/* msg 249: Version(s) for database \"%s\" */
 		isc_version(&DB, NULL, NULL);
 	}
 
@@ -168,7 +169,7 @@ void DDL_ext(void)
 
 	set_capabilities();
 
-	extract_database(DB_file_name);
+	extract_database(dudleyGlob.DB_file_name);
 	if (EXT_capabilities & EXT_v3)
 		extract_functions();
 	extract_fields();

@@ -28,11 +28,9 @@
 #include <stdlib.h>
 #include <stdio.h> // a single call to sprintf()
 #include <string.h>
-#define PARSER_MAIN
 #include "../jrd/ibase.h"
 #include "../jrd/flags.h"
 #include "../dudley/ddl.h"
-#include "../dudley/parse.h"
 #include "../jrd/acl.h"
 #include "../dudley/ddl_proto.h"
 #include "../dudley/exe_proto.h"
@@ -84,8 +82,6 @@ static TRG_T trig_table[] = {
 	trg_pre_erase,
 	trg_erase
 };
-
-extern const TEXT* DDL_prompt;
 
 static bool check_filename(SYM, bool);
 static SYM copy_symbol(SYM);
@@ -174,14 +170,14 @@ void PARSE_actions(void)
  **************************************/
 
 	parse_action();
-	while (!DDL_eof && DDL_errors < 20) {
-		if ((!database || !database->dbb_handle) && (!DDL_drop_database)) {
+	while (!dudleyGlob.DDL_eof && dudleyGlob.DDL_errors < 20) {
+		if ((!dudleyGlob.database || !dudleyGlob.database->dbb_handle) && (!dudleyGlob.DDL_drop_database)) {
 			DDL_err(111, NULL, NULL, NULL, NULL, NULL);	/* msg 111: no database declared */
-			if (database) {
-				gds__free(database);
-				database = NULL;
+			if (dudleyGlob.database) {
+				gds__free(dudleyGlob.database);
+				dudleyGlob.database = NULL;
 			}
-			if (DDL_interactive)
+			if (dudleyGlob.DDL_interactive)
 				parse_action();
 			else {
 				DDL_err(112, NULL, NULL, NULL, NULL, NULL);	/* msg 112: ceasing processing */
@@ -189,7 +185,7 @@ void PARSE_actions(void)
 			}
 		}
 		else {
-			DDL_drop_database = false;
+			dudleyGlob.DDL_drop_database = false;
 			parse_action();
 		}
 	}
@@ -227,22 +223,22 @@ FUNC PARSE_function( int flag)
  *	advance the token.  Create a new function requested.  
  *
  **************************************/
-	if (DDL_token.tok_type != tok_ident)
-		PARSE_error(113, DDL_token.tok_string, 0);	/* msg 113: expected function, encountered \"%s\" */
+	if (dudleyGlob.DDL_token.tok_type != tok_ident)
+		PARSE_error(113, dudleyGlob.DDL_token.tok_string, 0);	/* msg 113: expected function, encountered \"%s\" */
 
-	SYM symbol = HSH_typed_lookup(DDL_token.tok_string, DDL_token.tok_length,
+	SYM symbol = HSH_typed_lookup(dudleyGlob.DDL_token.tok_string, dudleyGlob.DDL_token.tok_length,
 							  SYM_function);
 
 	FUNC function;
 	if (symbol && (function = (FUNC) symbol->sym_object) &&
-		function->func_database == database) 
+		function->func_database == dudleyGlob.database) 
 	{
 		LEX_token();
 		return function;
 	}
 
 	if (flag)
-		PARSE_error(114, DDL_token.tok_string, 0);	/* msg 114: expected function, encountered \"%s\" */
+		PARSE_error(114, dudleyGlob.DDL_token.tok_string, 0);	/* msg 114: expected function, encountered \"%s\" */
 	else {
 		function = (FUNC) DDL_alloc(sizeof(func));
 		function->func_name = symbol = PARSE_symbol(tok_ident);
@@ -250,7 +246,7 @@ FUNC PARSE_function( int flag)
 		symbol->sym_object = (DUDLEY_CTX) function;
 		HSH_insert(symbol);
 
-		if (!(function->func_database = database))
+		if (!(function->func_database = dudleyGlob.database))
 			PARSE_error(111, 0, 0);	/* msg 111: no database declared */
 	}
 	return function;
@@ -271,7 +267,7 @@ enum kwwords PARSE_keyword(void)
  **************************************/
 	LEX_real();
 
-	for (SYM symbol = DDL_token.tok_symbol; symbol; symbol = symbol->sym_homonym)
+	for (SYM symbol = dudleyGlob.DDL_token.tok_symbol; symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_keyword)
 			return (enum kwwords) symbol->sym_keyword;
 
@@ -342,12 +338,12 @@ bool PARSE_match( enum kwwords keyword)
  *	the token stream.
  *
  **************************************/
-	if (DDL_token.tok_keyword == keyword) {
+	if (dudleyGlob.DDL_token.tok_keyword == keyword) {
 		LEX_token();
 		return true;
 	}
 
-	for (SYM symbol = DDL_token.tok_symbol; symbol; symbol = symbol->sym_homonym)
+	for (SYM symbol = dudleyGlob.DDL_token.tok_symbol; symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_keyword &&
 			symbol->sym_keyword == (int) keyword) 
 		{
@@ -373,10 +369,10 @@ int PARSE_number(void)
  **************************************/
 	const bool negate = PARSE_match(KW_MINUS);
 
-	if (DDL_token.tok_type != tok_number)
-		PARSE_error(115, DDL_token.tok_string, 0);	/* msg 115: expected number, encountered \"%s\" */
+	if (dudleyGlob.DDL_token.tok_type != tok_number)
+		PARSE_error(115, dudleyGlob.DDL_token.tok_string, 0);	/* msg 115: expected number, encountered \"%s\" */
 
-	const int number = atoi(DDL_token.tok_string);
+	const int number = atoi(dudleyGlob.DDL_token.tok_string);
 	LEX_token();
 
 	if (negate)
@@ -401,15 +397,15 @@ DUDLEY_REL PARSE_relation(void)
  *	this one is worth keeping.
  *
  **************************************/
-	if (DDL_token.tok_type != tok_ident)
-		PARSE_error(116, DDL_token.tok_string, 0);	/* msg 116: expected relation name, encountered \"%s\" */
+	if (dudleyGlob.DDL_token.tok_type != tok_ident)
+		PARSE_error(116, dudleyGlob.DDL_token.tok_string, 0);	/* msg 116: expected relation name, encountered \"%s\" */
 
-	SYM symbol = HSH_typed_lookup(DDL_token.tok_string, DDL_token.tok_length,
+	SYM symbol = HSH_typed_lookup(dudleyGlob.DDL_token.tok_string, dudleyGlob.DDL_token.tok_length,
 							  SYM_relation);
 
 	DUDLEY_REL relation;
 	if (symbol && (relation = (DUDLEY_REL) symbol->sym_object) &&
-		relation->rel_database == database)
+		relation->rel_database == dudleyGlob.database)
 	{
 		LEX_token();
 		return relation;
@@ -420,11 +416,11 @@ DUDLEY_REL PARSE_relation(void)
 	symbol->sym_type = SYM_relation;
 	symbol->sym_object = (DUDLEY_CTX) relation;
 
-	if (!(relation->rel_database = database))
+	if (!(relation->rel_database = dudleyGlob.database))
 		PARSE_error(111, 0, 0);	/* msg 111: no database declared */
 
-	relation->rel_next = database->dbb_relations;
-	database->dbb_relations = relation;
+	relation->rel_next = dudleyGlob.database->dbb_relations;
+	dudleyGlob.database->dbb_relations = relation;
 
 	return relation;
 }
@@ -442,22 +438,22 @@ SYM PARSE_symbol(enum tok_t type)
  *	Swallow the current token as a symbol.
  *
  **************************************/
-	if (DDL_token.tok_type != type)
+	if (dudleyGlob.DDL_token.tok_type != type)
 		switch (type) {
 		case tok_ident:
-			PARSE_error(117, DDL_token.tok_string, 0);	/* msg 117: expected identifier, encountered \"%s\" */
+			PARSE_error(117, dudleyGlob.DDL_token.tok_string, 0);	/* msg 117: expected identifier, encountered \"%s\" */
 		case tok_quoted:
-			PARSE_error(118, DDL_token.tok_string, 0);	/* msg 118: expected quoted string, encountered \"%s\" */
+			PARSE_error(118, dudleyGlob.DDL_token.tok_string, 0);	/* msg 118: expected quoted string, encountered \"%s\" */
 		default:
-			PARSE_error(119, DDL_token.tok_string, 0);	/* msg 119: expected symbol, encountered \"%s\" */
+			PARSE_error(119, dudleyGlob.DDL_token.tok_string, 0);	/* msg 119: expected symbol, encountered \"%s\" */
 		}
 
-	USHORT l = DDL_token.tok_length;
-	const TEXT* q = DDL_token.tok_string;
+	USHORT l = dudleyGlob.DDL_token.tok_length;
+	const TEXT* q = dudleyGlob.DDL_token.tok_string;
 
 	if (type == tok_quoted) {
 		if (l < 2)
-			PARSE_error(118, DDL_token.tok_string, 0);	/* msg 118: expected quoted string, encountered \"%s\" */
+			PARSE_error(118, dudleyGlob.DDL_token.tok_string, 0);	/* msg 118: expected quoted string, encountered \"%s\" */
 		q++;
 		l -= 2;
 	}
@@ -651,29 +647,29 @@ static void define_database( enum act_t action_type)
  *	Parse the tail of a DEFINE, MODIFY, or DELETE DATABASE statement.
  *
  **************************************/
-	if (database)
+	if (dudleyGlob.database)
 		DDL_error_abort(0, 120, NULL, NULL, NULL, NULL, NULL);
 		// msg 120: GDEF processes only one database at a time 
 
-	database = (DBB) DDL_alloc(sizeof(dbb));
-	database->dbb_name = PARSE_symbol(tok_quoted);
-	DB_file_name = database->dbb_name->sym_name;
-	database->dbb_grp_cmt_wait = -1;	/* Initialized for default value */
+	dudleyGlob.database = (DBB) DDL_alloc(sizeof(dbb));
+	dudleyGlob.database->dbb_name = PARSE_symbol(tok_quoted);
+	dudleyGlob.DB_file_name = dudleyGlob.database->dbb_name->sym_name;
+	dudleyGlob.database->dbb_grp_cmt_wait = -1;	/* Initialized for default value */
 
 /* parse options for the database parameter block */
 
 	while (true) {
 		if (PARSE_match(KW_LENGTH)) {
-			database->dbb_length = PARSE_number();
+			dudleyGlob.database->dbb_length = PARSE_number();
 			PARSE_match(KW_PAGES);
 		}
 		else if (PARSE_match(KW_USER)) {
 			SYM symbol = PARSE_symbol(tok_quoted);
-			DDL_default_user = symbol->sym_name;
+			dudleyGlob.DDL_default_user = symbol->sym_name;
 		}
 		else if (PARSE_match(KW_PASSWORD)) {
 			SYM symbol = PARSE_symbol(tok_quoted);
-			DDL_default_password = symbol->sym_name;
+			dudleyGlob.DDL_default_password = symbol->sym_name;
 		}
 		else
 			break;
@@ -681,9 +677,9 @@ static void define_database( enum act_t action_type)
 
 	if (action_type == act_d_database) {
 		if (PARSE_match(KW_CASCADE))
-			database->dbb_flags |= DBB_cascade;
-		EXE_drop_database(database);
-		DDL_drop_database = true;
+			dudleyGlob.database->dbb_flags |= DBB_cascade;
+		EXE_drop_database(dudleyGlob.database);
+		dudleyGlob.DDL_drop_database = true;
 		return;
 	}
 
@@ -691,29 +687,29 @@ static void define_database( enum act_t action_type)
 
 	while (true) {
 		PARSE_match(KW_ADD);
-		if (DDL_token.tok_keyword == KW_DESCRIPTION)
-			database->dbb_description = parse_description();
+		if (dudleyGlob.DDL_token.tok_keyword == KW_DESCRIPTION)
+			dudleyGlob.database->dbb_description = parse_description();
 		else if (PARSE_match(KW_SECURITY_CLASS))
-			database->dbb_security_class = PARSE_symbol(tok_ident);
+			dudleyGlob.database->dbb_security_class = PARSE_symbol(tok_ident);
 		else if (PARSE_match(KW_DROP)) {
 			if (PARSE_match(KW_DESCRIP))
-				database->dbb_flags |= DBB_null_description;
+				dudleyGlob.database->dbb_flags |= DBB_null_description;
 			else if (PARSE_match(KW_SECURITY_CLASS))
-				database->dbb_flags |= DBB_null_security_class;
+				dudleyGlob.database->dbb_flags |= DBB_null_security_class;
 			else if (PARSE_match(KW_LOG_FILE)) {
-				if ((database->dbb_flags & DBB_log_default)
-					|| (database->dbb_logfiles))
+				if ((dudleyGlob.database->dbb_flags & DBB_log_default)
+					|| (dudleyGlob.database->dbb_logfiles))
 				{
 					PARSE_error(337, 0, 0);
 				}
 
-				database->dbb_flags |= DBB_drop_log;
+				dudleyGlob.database->dbb_flags |= DBB_drop_log;
 			}
 			else if (PARSE_match(KW_CASCADE))
-				database->dbb_flags |= DBB_cascade;
+				dudleyGlob.database->dbb_flags |= DBB_cascade;
 #ifdef FLINT_CACHE
 			else if (PARSE_match(KW_CACHE))
-				database->dbb_flags |= DBB_drop_cache;
+				dudleyGlob.database->dbb_flags |= DBB_drop_cache;
 #endif /* FLINT_CACHE */
 			else
 				PARSE_error(121, 0, 0);
@@ -721,68 +717,68 @@ static void define_database( enum act_t action_type)
 		}
 		else if (PARSE_match(KW_FILE)) {
 			FIL file = define_file();
-			file->fil_next = database->dbb_files;
-			database->dbb_files = file;
+			file->fil_next = dudleyGlob.database->dbb_files;
+			dudleyGlob.database->dbb_files = file;
 		}
 		else if (PARSE_match(KW_PAGE_SIZE)) {
 			if (action_type == act_m_database)
 				PARSE_error(122, 0, 0);	/* msg 122: PAGE_SIZE can not be modified */
-			database->dbb_page_size = parse_page_size();
+			dudleyGlob.database->dbb_page_size = parse_page_size();
 		}
 		else if (PARSE_match(KW_CHECK_POINT_LEN)) {
 			PARSE_match(KW_EQUALS);
-			database->dbb_chkptlen = PARSE_number();
+			dudleyGlob.database->dbb_chkptlen = PARSE_number();
 		}
 		else if (PARSE_match(KW_NUM_LOG_BUFS)) {
 			PARSE_match(KW_EQUALS);
-			database->dbb_numbufs = PARSE_number();
+			dudleyGlob.database->dbb_numbufs = PARSE_number();
 		}
 		else if (PARSE_match(KW_LOG_BUF_SIZE)) {
 			PARSE_match(KW_EQUALS);
-			database->dbb_bufsize = PARSE_number();
+			dudleyGlob.database->dbb_bufsize = PARSE_number();
 		}
 		else if (PARSE_match(KW_GROUP_COMMIT_WAIT)) {
 			PARSE_match(KW_EQUALS);
-			database->dbb_grp_cmt_wait = PARSE_number();
+			dudleyGlob.database->dbb_grp_cmt_wait = PARSE_number();
 		}
 		else if (PARSE_match(KW_LOG_FILE)) {
-			if ((database->dbb_flags & DBB_log_default)
-				|| (database->dbb_logfiles))
+			if ((dudleyGlob.database->dbb_flags & DBB_log_default)
+				|| (dudleyGlob.database->dbb_logfiles))
 			{
 					PARSE_error(338, 0, 0);
 			}
 
-			if (database->dbb_flags & DBB_drop_log)
+			if (dudleyGlob.database->dbb_flags & DBB_drop_log)
 				PARSE_error(337, 0, 0);
 
 			if (PARSE_match(KW_LEFT_PAREN)) {
-				database->dbb_flags |= DBB_log_preallocated;
+				dudleyGlob.database->dbb_flags |= DBB_log_preallocated;
 				while (true) {
 					FIL file = define_log_file(DBB_log_preallocated);
-					file->fil_next = database->dbb_logfiles;
-					database->dbb_logfiles = file;
+					file->fil_next = dudleyGlob.database->dbb_logfiles;
+					dudleyGlob.database->dbb_logfiles = file;
 					if (!PARSE_match(KW_COMMA))
 						break;
 				}
 
 				if (!PARSE_match(KW_RIGHT_PAREN))
-					PARSE_error(341, DDL_token.tok_string, 0);	/* msg 341: expected comma or ')', encountered \"%s\" */
+					PARSE_error(341, dudleyGlob.DDL_token.tok_string, 0);	/* msg 341: expected comma or ')', encountered \"%s\" */
 
 				if (PARSE_match(KW_OVERFLOW))
-					database->dbb_overflow = define_log_file(DBB_log_serial);
+					dudleyGlob.database->dbb_overflow = define_log_file(DBB_log_serial);
 				else
 					PARSE_error(340, 0, 0);
 			}
 			else if (PARSE_match(KW_BASE_NAME)) {
-				database->dbb_flags |= DBB_log_serial;
-				database->dbb_logfiles = define_log_file(DBB_log_serial);
+				dudleyGlob.database->dbb_flags |= DBB_log_serial;
+				dudleyGlob.database->dbb_logfiles = define_log_file(DBB_log_serial);
 			}
 			else
-				database->dbb_flags |= DBB_log_default;
+				dudleyGlob.database->dbb_flags |= DBB_log_default;
 		}
 #ifdef FLINT_CACHE
 		else if (PARSE_match(KW_CACHE))
-			database->dbb_cache_file = define_cache();
+			dudleyGlob.database->dbb_cache_file = define_cache();
 #endif /* FLINT_CACHE */
 		else
 			break;
@@ -791,14 +787,14 @@ static void define_database( enum act_t action_type)
 	parse_end();
 
 	if (action_type == act_c_database) {
-		database->dbb_flags |= DBB_create_database;
-		EXE_create_database(database);
+		dudleyGlob.database->dbb_flags |= DBB_create_database;
+		EXE_create_database(dudleyGlob.database);
 	}
 	else {
-		EXE_modify_database(database);
+		EXE_modify_database(dudleyGlob.database);
 	}
 
-	make_action(action_type, database);
+	make_action(action_type, dudleyGlob.database);
 }
 
 
@@ -816,7 +812,7 @@ static void define_field(void)
  **************************************/
 	DUDLEY_FLD field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 	parse_field(field);
-	field->fld_database = database;
+	field->fld_database = dudleyGlob.database;
 
 	if (!field->fld_dtype)
 		PARSE_error(123, 0, 0);	/* msg 123: data type required for global field */
@@ -877,14 +873,14 @@ static void define_filter(void)
  *	Parse a DEFINE FILTER statement.
  *
  **************************************/
-	if (DDL_token.tok_type != tok_ident)
-		PARSE_error(126, DDL_token.tok_string, 0);	/* msg 126: expected filter name, encountered \"%s\" */
+	if (dudleyGlob.DDL_token.tok_type != tok_ident)
+		PARSE_error(126, dudleyGlob.DDL_token.tok_string, 0);	/* msg 126: expected filter name, encountered \"%s\" */
 
 	FILTER new_filter = (FILTER) DDL_alloc(sizeof(filter));
 	new_filter->filter_name = PARSE_symbol(tok_ident);
 
 	while (true) {
-		if (DDL_token.tok_keyword == KW_DESCRIPTION)
+		if (dudleyGlob.DDL_token.tok_keyword == KW_DESCRIPTION)
 			new_filter->filter_description = parse_description();
 		else if (PARSE_match(KW_INPUT_TYPE))
 			new_filter->filter_input_sub_type = PARSE_number();
@@ -926,7 +922,7 @@ static void define_function(void)
 	FUNC function = PARSE_function(FALSE);
 
 	while (true) {
-		if (DDL_token.tok_keyword == KW_DESCRIPTION)
+		if (dudleyGlob.DDL_token.tok_keyword == KW_DESCRIPTION)
 			function->func_description = parse_description();
 		else if (PARSE_match(KW_FUNCTION_MODULE_NAME))
 			function->func_module_name = PARSE_symbol(tok_quoted);
@@ -951,7 +947,7 @@ static void define_function(void)
 	SSHORT position = 1;
 
 	while (true) {
-		if (DDL_token.tok_keyword == KW_SEMI)
+		if (dudleyGlob.DDL_token.tok_keyword == KW_SEMI)
 			break;
 		FUNCARG function_arg = parse_function_arg(function, (USHORT*) &position);
 		function_arg->funcarg_funcname = function->func_name;
@@ -960,8 +956,8 @@ static void define_function(void)
 			break;
 	}
 
-	if (!(DDL_token.tok_keyword == KW_SEMI))
-		PARSE_error(132, DDL_token.tok_string, 0);	/* msg 132: expected comma or semi-colon, encountered \"%s\" */
+	if (!(dudleyGlob.DDL_token.tok_keyword == KW_SEMI))
+		PARSE_error(132, dudleyGlob.DDL_token.tok_string, 0);	/* msg 132: expected comma or semi-colon, encountered \"%s\" */
 
 	make_action(act_a_function, (DBB) function);
 }
@@ -979,8 +975,8 @@ static void define_generator(void)
  *	Parse a DEFINE GENERATOR statement.
  *
  **************************************/
-	if (DDL_token.tok_type != tok_ident)
-		PARSE_error(274, DDL_token.tok_string, 0);	/* msg 274: expected generator name, encountered \"%s\" */
+	if (dudleyGlob.DDL_token.tok_type != tok_ident)
+		PARSE_error(274, dudleyGlob.DDL_token.tok_string, 0);	/* msg 274: expected generator name, encountered \"%s\" */
 
 	SYM symbol = PARSE_symbol(tok_ident);
 	parse_end();
@@ -1014,7 +1010,7 @@ static void define_index(void)
 			unique = false;
 		else if (PARSE_match(KW_UNIQUE))
 			unique = true;
-		else if (DDL_token.tok_keyword == KW_DESCRIPTION)
+		else if (dudleyGlob.DDL_token.tok_keyword == KW_DESCRIPTION)
 			description = parse_description();
 		else if (PARSE_match(KW_ACTIVE))
 			inactive = false;
@@ -1039,8 +1035,8 @@ static void define_index(void)
 			break;
 	}
 
-	if (!(DDL_token.tok_keyword == KW_SEMI))
-		PARSE_error(135, DDL_token.tok_string, 0);
+	if (!(dudleyGlob.DDL_token.tok_keyword == KW_SEMI))
+		PARSE_error(135, dudleyGlob.DDL_token.tok_string, 0);
 	// msg 135: expected comma or semi-colon, encountered \"%s\"
 	DUDLEY_IDX index = (DUDLEY_IDX) DDL_alloc(IDX_LEN(count == 0 ? 1 : count));
 	index->idx_count = count;
@@ -1132,7 +1128,7 @@ static void define_old_trigger(void)
 		else if (PARSE_match(KW_ERASE))
 			trigger->trg_type = trg_erase;
 		else
-			PARSE_error(136, DDL_token.tok_string, 0);
+			PARSE_error(136, dudleyGlob.DDL_token.tok_string, 0);
 		// msg 136: expected STORE, MODIFY, ERASE, END_TRIGGER, encountered \"%s\"
 		PARSE_match(KW_COLON);
 
@@ -1190,7 +1186,7 @@ static void define_relation(void)
 	SSHORT position = 1;
 
 	while (true)
-		if (DDL_token.tok_keyword == KW_DESCRIPTION)
+		if (dudleyGlob.DDL_token.tok_keyword == KW_DESCRIPTION)
 			relation->rel_description = parse_description();
 		else if (PARSE_match(KW_SECURITY_CLASS))
 			relation->rel_security_class = PARSE_symbol(tok_ident);
@@ -1210,7 +1206,7 @@ static void define_relation(void)
 		DUDLEY_FLD field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 		parse_field(field);
 		field->fld_relation = relation;
-		field->fld_database = database;
+		field->fld_database = dudleyGlob.database;
 		if (field->fld_computed)
 			make_computed_field(field);
 		else if (!(field->fld_flags & fld_local))
@@ -1236,8 +1232,8 @@ static void define_relation(void)
 			break;
 	}
 
-	if (!(DDL_token.tok_keyword == KW_SEMI))
-		PARSE_error(138, DDL_token.tok_string, 0);
+	if (!(dudleyGlob.DDL_token.tok_keyword == KW_SEMI))
+		PARSE_error(138, dudleyGlob.DDL_token.tok_string, 0);
 	// msg 138: expected comma or semi-colon, encountered \"%s\"
 
 // We started off by assuming that the relation and field actions that
@@ -1271,7 +1267,7 @@ static void define_security_class(void)
  **************************************/
 	SCL sec_class = (SCL) DDL_alloc(sizeof(scl));
 	sec_class->scl_name = PARSE_symbol(tok_ident);
-	if (DDL_token.tok_keyword == KW_DESCRIPTION)
+	if (dudleyGlob.DDL_token.tok_keyword == KW_DESCRIPTION)
 		sec_class->scl_description = parse_description();
 
 /* Pick up entries. Use the users's order */
@@ -1313,7 +1309,7 @@ static void define_shadow(void)
 /* get the shadow number, defaulting to 1 */
 
 	int number;
-	if (DDL_token.tok_type != tok_number)
+	if (dudleyGlob.DDL_token.tok_type != tok_number)
 		number = 1;
 	else {
 		number = PARSE_number();
@@ -1394,14 +1390,14 @@ static void define_trigger(void)
 	trigger->trg_sequence = trg_sequence;
 
 	if (!(int) trigger->trg_type)	/* still none */
-		PARSE_error(141, DDL_token.tok_string, 0);	
+		PARSE_error(141, dudleyGlob.DDL_token.tok_string, 0);	
 		/* msg 141: expected STORE, MODIFY, ERASE, encountered \"%s\" */
 
 	bool action = false;
 	bool end = false;
 
-	while (!(DDL_token.tok_keyword == KW_SEMI)) {
-		if (DDL_token.tok_keyword == KW_DESCRIPTION)
+	while (!(dudleyGlob.DDL_token.tok_keyword == KW_SEMI)) {
+		if (dudleyGlob.DDL_token.tok_keyword == KW_DESCRIPTION)
 			trigger->trg_description = parse_description();
 		else if (PARSE_match(KW_END_TRIGGER))
 			action = end = true;
@@ -1426,13 +1422,13 @@ static void define_trigger(void)
 		else {
 			/* if none of the other cases were true, we must be stuck on a bum token */
 			if (end)
-				PARSE_error(304, DDL_token.tok_string, 0);
+				PARSE_error(304, dudleyGlob.DDL_token.tok_string, 0);
 			/* msg 304: expected message keyword, encountered \"%s\" */
 			else if (!action)
-				PARSE_error(305, DDL_token.tok_string, 0);
+				PARSE_error(305, dudleyGlob.DDL_token.tok_string, 0);
 			/* msg 305: expected trigger action, encountered \"%s\" */
 			else
-				PARSE_error(306, DDL_token.tok_string, 0);
+				PARSE_error(306, dudleyGlob.DDL_token.tok_string, 0);
 			/* msg 306: expected end_trigger or description keyword, encountered \"%s\" */
 			break;
 		}
@@ -1468,7 +1464,7 @@ static void define_type(void)
 		fldtype->typ_name = PARSE_symbol(tok_ident);
 		PARSE_match(KW_COLON);
 		fldtype->typ_type = PARSE_number();
-		if (DDL_token.tok_keyword == KW_DESCRIPTION)
+		if (dudleyGlob.DDL_token.tok_keyword == KW_DESCRIPTION)
 			fldtype->typ_description = parse_description();
 		make_action(act_a_type, (DBB) fldtype);
 		if (!PARSE_match(KW_COMMA))
@@ -1526,7 +1522,7 @@ static void define_view(void)
 /* Pick up various fields and clauses */
 
 	while (true) {
-		if (DDL_token.tok_keyword == KW_DESCRIPTION)
+		if (dudleyGlob.DDL_token.tok_keyword == KW_DESCRIPTION)
 			relation->rel_description = parse_description();
 		else if (PARSE_match(KW_SECURITY_CLASS))
 			relation->rel_security_class = PARSE_symbol(tok_ident);
@@ -1556,17 +1552,17 @@ static void define_view(void)
 		DUDLEY_CTX context = lookup_context(symbol, contexts);
 		if (context) {
 			if (!PARSE_match(KW_DOT))
-				PARSE_error(144, DDL_token.tok_string, 0);	/* msg 144: expected period, encountered \"%s\" */
+				PARSE_error(144, dudleyGlob.DDL_token.tok_string, 0);	/* msg 144: expected period, encountered \"%s\" */
 			field->fld_name = field->fld_base = PARSE_symbol(tok_ident);
 		}
 		else {
 			if (PARSE_match(KW_FROM)) {
 				symbol = PARSE_symbol(tok_ident);
 				if (!(context = lookup_context(symbol, contexts)))
-					PARSE_error(145, DDL_token.tok_string, 0);
+					PARSE_error(145, dudleyGlob.DDL_token.tok_string, 0);
 				/* msg 145: expected qualified field name, encountered \"%s\" */
 				if (!PARSE_match(KW_DOT))
-					PARSE_error(146, DDL_token.tok_string, 0);
+					PARSE_error(146, dudleyGlob.DDL_token.tok_string, 0);
 				/* msg 146: expected period, encountered \"%s\" */
 				field->fld_base = PARSE_symbol(tok_ident);
 			}
@@ -1587,7 +1583,7 @@ static void define_view(void)
 					context = my_context;
 				}
 				else
-					PARSE_error(150, DDL_token.tok_string, 0);
+					PARSE_error(150, dudleyGlob.DDL_token.tok_string, 0);
 				/* msg 150: expected FROM, COMPUTED, or qualified field, encountered \"%s\" */
 			}
 		}
@@ -1805,7 +1801,7 @@ static void drop_trigger(void)
 			else if (PARSE_match(KW_ERASE))
 				trigger->trg_type = trg_erase;
 			else
-				PARSE_error(153, DDL_token.tok_string, 0);
+				PARSE_error(153, dudleyGlob.DDL_token.tok_string, 0);
 			/* msg 153: "expected STORE, MODIFY, ERASE, or END_TRIGGER, encountered \"%s\" */
 			trigger->trg_name = name =
 				gen_trigger_name(trigger->trg_type, relation);
@@ -1872,14 +1868,14 @@ static void end_text( TXT text)
  **************************************/
 
 	text->txt_length =
-		DDL_token.tok_position - DDL_token.tok_length - text->txt_position;
+		dudleyGlob.DDL_token.tok_position - dudleyGlob.DDL_token.tok_length - text->txt_position;
 
 #if (defined WIN_NT)
 /* the length of the text field should subtract out the 
    line feeds, since they are automatically filtered out
    when reading from a file */
 
-	text->txt_length -= (DDL_line - text->txt_start_line);
+	text->txt_length -= (dudleyGlob.DDL_line - text->txt_start_line);
 #endif
 }
 
@@ -2056,7 +2052,7 @@ static void grant_user_privilege(void)
 			upriv->userpriv_flags |= USERPRIV_insert;
 			upriv->userpriv_flags |= USERPRIV_update;
 			if (!PARSE_match(KW_ON))
-				PARSE_error(159, DDL_token.tok_string, 0);	/* msg 159: expected ON, encountered \"%s\" */
+				PARSE_error(159, dudleyGlob.DDL_token.tok_string, 0);	/* msg 159: expected ON, encountered \"%s\" */
 
 			break;
 		}
@@ -2075,13 +2071,13 @@ static void grant_user_privilege(void)
 			if (PARSE_match(KW_COMMA))
 				continue;
 			if (!PARSE_match(KW_LEFT_PAREN))
-				PARSE_error(313, DDL_token.tok_string, 0);	/* msg 313: expected ON or '(', encountered "%s" */
+				PARSE_error(313, dudleyGlob.DDL_token.tok_string, 0);	/* msg 313: expected ON or '(', encountered "%s" */
 
 			do {
-				if (DDL_token.tok_keyword == KW_SELECT 
-					|| DDL_token.tok_keyword == KW_INSERT 
-					|| DDL_token.tok_keyword == KW_DELETE 
-					|| DDL_token.tok_keyword == KW_UPDATE)
+				if (dudleyGlob.DDL_token.tok_keyword == KW_SELECT 
+					|| dudleyGlob.DDL_token.tok_keyword == KW_INSERT 
+					|| dudleyGlob.DDL_token.tok_keyword == KW_DELETE 
+					|| dudleyGlob.DDL_token.tok_keyword == KW_UPDATE)
 				{
 					break;
 				}
@@ -2092,13 +2088,13 @@ static void grant_user_privilege(void)
 			} while (PARSE_match(KW_COMMA));
 
 			if (!PARSE_match(KW_RIGHT_PAREN))
-				PARSE_error(314, DDL_token.tok_string, 0);	/* msg 314: expected ')', encountered "%s" */
+				PARSE_error(314, dudleyGlob.DDL_token.tok_string, 0);	/* msg 314: expected ')', encountered "%s" */
 
 			continue;
 		}
 		if (!PARSE_match(KW_COMMA)) {
 			if (!PARSE_match(KW_ON))
-				PARSE_error(159, DDL_token.tok_string, 0);	/* msg 159: expected ON, encountered \"%s\" */
+				PARSE_error(159, dudleyGlob.DDL_token.tok_string, 0);	/* msg 159: expected ON, encountered \"%s\" */
 			break;
 		}
 	}
@@ -2108,7 +2104,7 @@ static void grant_user_privilege(void)
 
 	upriv->userpriv_relation = PARSE_symbol(tok_ident);
 	if (!PARSE_match(KW_TO))
-		PARSE_error(161, DDL_token.tok_string, 0);	/* msg 161: expected TO, encountered "%s" */
+		PARSE_error(161, dudleyGlob.DDL_token.tok_string, 0);	/* msg 161: expected TO, encountered "%s" */
 
 /* get the userlist */
 
@@ -2125,9 +2121,9 @@ static void grant_user_privilege(void)
 
 	if (PARSE_match(KW_WITH)) {
 		if (!PARSE_match(KW_GRANT))
-			PARSE_error(162, DDL_token.tok_string, 0);	/* msg 162:expected GRANT, encountered \"%s\" */
+			PARSE_error(162, dudleyGlob.DDL_token.tok_string, 0);	/* msg 162:expected GRANT, encountered \"%s\" */
 		if (!PARSE_match(KW_OPTION))
-			PARSE_error(163, DDL_token.tok_string, 0);	/* msg 163: expected OPTION, encountered \"%s\" */
+			PARSE_error(163, dudleyGlob.DDL_token.tok_string, 0);	/* msg 163: expected OPTION, encountered \"%s\" */
 		upriv->userpriv_flags |= USERPRIV_grant;
 	}
 
@@ -2217,10 +2213,10 @@ static ACT make_action( enum act_t type, DBB object)
  **************************************/
 	ACT action = (ACT) DDL_alloc(sizeof(act));
 	action->act_type = type;
-	action->act_next = DDL_actions;
+	action->act_next = dudleyGlob.DDL_actions;
 	action->act_object = object;
-	action->act_line = DDL_line;
-	DDL_actions = action;
+	action->act_line = dudleyGlob.DDL_line;
+	dudleyGlob.DDL_actions = action;
 
 	return action;
 }
@@ -2341,7 +2337,7 @@ static void mod_old_trigger(void)
 		int flags = 0, type = 0, sequence = 0;
 		get_trigger_attributes(&flags, &type, &sequence);
 		if (!type)
-			PARSE_error(165, DDL_token.tok_string, 0);	/* msg 165: expected STORE, MODIFY, ERASE, END_TRIGGER, encountered \"%s\"  */
+			PARSE_error(165, dudleyGlob.DDL_token.tok_string, 0);	/* msg 165: expected STORE, MODIFY, ERASE, END_TRIGGER, encountered \"%s\"  */
 		DUDLEY_TRG trigger = (DUDLEY_TRG) DDL_alloc(sizeof(dudley_trg));
 		trigger->trg_relation = relation;
 		trigger->trg_mflag = flags & ~trg_mflag_order;
@@ -2378,12 +2374,12 @@ static void modify_field(void)
 /* Lookup global field */
 
 	SYM symbol;
-	for (symbol = DDL_token.tok_symbol; symbol; symbol = symbol->sym_homonym)
+	for (symbol = dudleyGlob.DDL_token.tok_symbol; symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_global)
 			break;
 
 	if (!symbol)
-		PARSE_error(167, DDL_token.tok_string, 0);	/*msg 167: expected global field name, encountered \"%s\" */
+		PARSE_error(167, dudleyGlob.DDL_token.tok_string, 0);	/*msg 167: expected global field name, encountered \"%s\" */
 	DUDLEY_FLD field = (DUDLEY_FLD) symbol->sym_object;
 	LEX_token();
 	field->fld_flags |= fld_modify;
@@ -2447,14 +2443,14 @@ static void modify_index(void)
 			index->idx_type = IDX_type_descend;
 			index->idx_flags |= IDX_type_flag;
 		}
-		else if (DDL_token.tok_keyword == KW_DESCRIPTION) {
+		else if (dudleyGlob.DDL_token.tok_keyword == KW_DESCRIPTION) {
 			index->idx_description = parse_description();
 		}
 		else if (PARSE_match(KW_DROP)) {
 			if (PARSE_match(KW_DESCRIP))
 				index->idx_flags |= IDX_null_description;
 			else
-				PARSE_error(172, DDL_token.tok_string, 0);	/*msg 172: expected DESCRIPTION, encountered \"%s\" */
+				PARSE_error(172, dudleyGlob.DDL_token.tok_string, 0);	/*msg 172: expected DESCRIPTION, encountered \"%s\" */
 		}
 		else if (PARSE_match(KW_STATISTICS))
 			index->idx_flags |= IDX_statistics_flag;
@@ -2490,7 +2486,7 @@ static void modify_relation(void)
 	bool modify_relation = false;
 
 	while (true) {
-		if (DDL_token.tok_keyword == KW_DESCRIPTION) {
+		if (dudleyGlob.DDL_token.tok_keyword == KW_DESCRIPTION) {
 			relation->rel_description = parse_description();
 			modify_relation = true;
 		}
@@ -2510,7 +2506,7 @@ static void modify_relation(void)
 
 /* Act on field actions */
 
-	if (!(DDL_token.tok_keyword == KW_SEMI))
+	if (!(dudleyGlob.DDL_token.tok_keyword == KW_SEMI))
 		while (true) {
 			if (PARSE_match(KW_ADD)) {
 				PARSE_match(KW_FIELD);
@@ -2518,7 +2514,7 @@ static void modify_relation(void)
 					DUDLEY_FLD field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 					parse_field(field);
 					field->fld_relation = relation;
-					field->fld_database = database;
+					field->fld_database = dudleyGlob.database;
 					DUDLEY_FLD global;
 					if (field->fld_computed)
 						make_computed_field(field);
@@ -2546,7 +2542,7 @@ static void modify_relation(void)
 				field->fld_flags |= (fld_modify | fld_local);
 				parse_field(field);
 				field->fld_relation = relation;
-				field->fld_database = database;
+				field->fld_database = dudleyGlob.database;
 				if (field->fld_computed)
 					PARSE_error(173, 0, 0);	/* msg 173: A computed expression can not be changed or added */
 				make_action(act_m_field, (DBB) field);
@@ -2556,7 +2552,7 @@ static void modify_relation(void)
 					relation->rel_flags |= rel_null_security_class;
 					modify_relation = true;
 					PARSE_match(KW_COMMA);
-					if (DDL_token.tok_keyword == KW_SEMI)
+					if (dudleyGlob.DDL_token.tok_keyword == KW_SEMI)
 						break;
 					else
 						continue;
@@ -2565,7 +2561,7 @@ static void modify_relation(void)
 					modify_relation = true;
 					relation->rel_flags |= rel_null_description;
 					PARSE_match(KW_COMMA);
-					if (DDL_token.tok_keyword == KW_SEMI)
+					if (dudleyGlob.DDL_token.tok_keyword == KW_SEMI)
 						break;
 					else
 						continue;
@@ -2575,13 +2571,13 @@ static void modify_relation(void)
 					DUDLEY_FLD field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 					field->fld_flags |= fld_local;
 					field->fld_relation = relation;
-					field->fld_database = database;
+					field->fld_database = dudleyGlob.database;
 					field->fld_name = PARSE_symbol(tok_ident);
 					make_action(act_d_field, (DBB) field);
 				}
 			}
 			else
-				PARSE_error(174, DDL_token.tok_string, 0);	/* msg 174: expected field action, encountered \"%s\" */
+				PARSE_error(174, dudleyGlob.DDL_token.tok_string, 0);	/* msg 174: expected field action, encountered \"%s\" */
 			if (!PARSE_match(KW_COMMA))
 				break;
 		}
@@ -2612,7 +2608,7 @@ static void modify_security_class(void)
 
 	SCL sec_class = (SCL) DDL_alloc(sizeof(scl));
 	sec_class->scl_name = PARSE_symbol(tok_ident);
-	if (DDL_token.tok_keyword == KW_DESCRIPTION)
+	if (dudleyGlob.DDL_token.tok_keyword == KW_DESCRIPTION)
 		sec_class->scl_description = parse_description();
 
 	while (true) {
@@ -2659,11 +2655,11 @@ static void modify_trigger(void)
 /* lookup the trigger name, complain and quit if it's unknown */
 
 	SYM name;
-	for (name = DDL_token.tok_symbol;
+	for (name = dudleyGlob.DDL_token.tok_symbol;
 		 name && (name->sym_type != SYM_trigger); name = name->sym_homonym);
 	{
 		if (!name)
-			PARSE_error(176, DDL_token.tok_string, 0);
+			PARSE_error(176, dudleyGlob.DDL_token.tok_string, 0);
 		// msg 176: expected trigger name, encountered \"%s\"
 	}
 	DUDLEY_TRG trigger = (DUDLEY_TRG) name->sym_object;
@@ -2689,7 +2685,7 @@ static void modify_trigger(void)
 	bool action = false;
 	bool end = false;
 
-	while (!(DDL_token.tok_keyword == KW_SEMI)) {
+	while (!(dudleyGlob.DDL_token.tok_keyword == KW_SEMI)) {
 		if ((PARSE_match(KW_MESSAGE)) || (PARSE_match(KW_MSGADD)) ||
 			(PARSE_match(KW_MSGMODIFY))) 
 		{
@@ -2719,14 +2715,14 @@ static void modify_trigger(void)
 		}
 		else if (PARSE_match(KW_END_TRIGGER))
 			end = true;
-		else if (DDL_token.tok_keyword == KW_DESCRIPTION)
+		else if (dudleyGlob.DDL_token.tok_keyword == KW_DESCRIPTION)
 			trigger->trg_description = parse_description();
 		else if (!action && !end) {
 			modify_trigger_action(trigger, relation);
 			action = true;
 		}
 		else
-			PARSE_error(179, DDL_token.tok_string, 0);
+			PARSE_error(179, dudleyGlob.DDL_token.tok_string, 0);
 		/* msg 179: expected message modification keyword, encountered \"%s\" */
 	}
 	if (flags || type || sequence)
@@ -2775,7 +2771,7 @@ static void modify_type(void)
 		fldtype->typ_name = PARSE_symbol(tok_ident);
 		PARSE_match(KW_COLON);
 		fldtype->typ_type = PARSE_number();
-		if (DDL_token.tok_keyword == KW_DESCRIPTION)
+		if (dudleyGlob.DDL_token.tok_keyword == KW_DESCRIPTION)
 			fldtype->typ_description = parse_description();
 		make_action(act_m_type, (DBB) fldtype);
 		if (!PARSE_match(KW_COMMA))
@@ -2803,7 +2799,7 @@ static void modify_view(void)
 	make_action(act_m_relation, (DBB) relation);
 
 	while (true) {
-		if (DDL_token.tok_keyword == KW_DESCRIPTION) {
+		if (dudleyGlob.DDL_token.tok_keyword == KW_DESCRIPTION) {
 			relation->rel_description = parse_description();
 			view_modify = true;
 		}
@@ -2822,7 +2818,7 @@ static void modify_view(void)
 
 /* Act on field actions */
 
-	if (!(DDL_token.tok_keyword == KW_SEMI))
+	if (!(dudleyGlob.DDL_token.tok_keyword == KW_SEMI))
 		while (true) {
 			if (PARSE_match(KW_MODIFY)) {
 				PARSE_match(KW_FIELD);
@@ -2830,7 +2826,7 @@ static void modify_view(void)
 				field->fld_flags |= (fld_modify | fld_local);
 				parse_field(field);
 				field->fld_relation = relation;
-				field->fld_database = database;
+				field->fld_database = dudleyGlob.database;
 				if (field->fld_computed)
 					PARSE_error(181, 0, 0);	/* msg 181: A computed expression can not be changed or added */
 				make_action(act_m_field, (DBB) field);
@@ -2840,7 +2836,7 @@ static void modify_view(void)
 					view_modify = true;
 					relation->rel_flags |= rel_null_description;
 
-					if (DDL_token.tok_keyword == KW_SEMI)
+					if (dudleyGlob.DDL_token.tok_keyword == KW_SEMI)
 						break;
 					else
 						continue;
@@ -2849,7 +2845,7 @@ static void modify_view(void)
 					view_modify = true;
 					relation->rel_flags |= rel_null_security_class;
 
-					if (DDL_token.tok_keyword == KW_SEMI)
+					if (dudleyGlob.DDL_token.tok_keyword == KW_SEMI)
 						break;
 					else
 						continue;
@@ -2859,13 +2855,13 @@ static void modify_view(void)
 					DUDLEY_FLD field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 					field->fld_flags |= fld_local;
 					field->fld_relation = relation;
-					field->fld_database = database;
+					field->fld_database = dudleyGlob.database;
 					field->fld_name = PARSE_symbol(tok_ident);
 					make_action(act_d_field, (DBB) field);
 				}
 			}
 			else
-				PARSE_error(182, DDL_token.tok_string, 0);
+				PARSE_error(182, dudleyGlob.DDL_token.tok_string, 0);
 			/* msg 182: expected drop/modify of field or security class, encountered \"%s\" */
 			if (!PARSE_match(KW_COMMA))
 				break;
@@ -2895,10 +2891,10 @@ static bool parse_action(void)
 
 	try {
 
-	DDL_prompt = PROMPT;
+	dudleyGlob.DDL_prompt = PROMPT;
 	LEX_token();
-	DDL_prompt = CONTINUATION;
-	if (DDL_eof)
+	dudleyGlob.DDL_prompt = CONTINUATION;
+	if (dudleyGlob.DDL_eof)
 		return true;
 
 	if (PARSE_match(KW_DEFINE))
@@ -2944,11 +2940,11 @@ static bool parse_action(void)
 			return true;
 
 		default:
-			if (database) {
+			if (dudleyGlob.database) {
 				define_relation();
 				return true;
 			}
-			PARSE_error(183, DDL_token.tok_string, 0);	/* msg 183: expected object for DEFINE, encountered \"%s\" */
+			PARSE_error(183, dudleyGlob.DDL_token.tok_string, 0);	/* msg 183: expected object for DEFINE, encountered \"%s\" */
 		}
 	else if (PARSE_match(KW_MODIFY))
 		switch (parse_object()) {
@@ -2983,7 +2979,7 @@ static bool parse_action(void)
 		case obj_shadow:
 			PARSE_error(232, 0, 0);	/* msg 232: action not implemented yet */
 		default:
-			PARSE_error(184, DDL_token.tok_string, 0);
+			PARSE_error(184, dudleyGlob.DDL_token.tok_string, 0);
 			/* msg 184: expected object for MODIFY, encountered \"%s\" */
 		}
 	else if (PARSE_match(KW_DROP))
@@ -3020,7 +3016,7 @@ static bool parse_action(void)
 			drop_shadow();
 			return true;
 		default:
-			PARSE_error(185, DDL_token.tok_string, 0);
+			PARSE_error(185, dudleyGlob.DDL_token.tok_string, 0);
 			/* msg 185: expected object for DROP, encountered \"%s\" */
 		}
 	else if (PARSE_match(KW_GRANT)) {
@@ -3037,28 +3033,28 @@ static bool parse_action(void)
 	}
 	else if (PARSE_match(KW_SET)) {
 		if (!PARSE_match(KW_GENERATOR))
-			PARSE_error(318, DDL_token.tok_string, 0);	/* msg 318: expected GENERATOR, encountered \"%s\" */
+			PARSE_error(318, dudleyGlob.DDL_token.tok_string, 0);	/* msg 318: expected GENERATOR, encountered \"%s\" */
 		set_generator();
 		return true;
 	}
-	else if (DDL_interactive && DDL_token.tok_keyword == KW_EXIT) {
-		DDL_eof = true;
+	else if (dudleyGlob.DDL_interactive && dudleyGlob.DDL_token.tok_keyword == KW_EXIT) {
+		dudleyGlob.DDL_eof = true;
 		return false;
 	}
-	else if (DDL_interactive && DDL_token.tok_keyword == KW_QUIT) {
-		DDL_quit = DDL_eof = true;
+	else if (dudleyGlob.DDL_interactive && dudleyGlob.DDL_token.tok_keyword == KW_QUIT) {
+		dudleyGlob.DDL_quit = dudleyGlob.DDL_eof = true;
 		return false;
 	}
 
-	PARSE_error(186, DDL_token.tok_string, 0);	/* msg 186: expected command, encountered \"%s\" */
+	PARSE_error(186, dudleyGlob.DDL_token.tok_string, 0);	/* msg 186: expected command, encountered \"%s\" */
 	return false;
 
 	}	// try
 	catch (const std::exception&) {
-		if (DDL_interactive)
+		if (dudleyGlob.DDL_interactive)
 			LEX_flush();
 		else
-			while (!DDL_eof && !(DDL_token.tok_keyword == KW_SEMI))
+			while (!dudleyGlob.DDL_eof && !(dudleyGlob.DDL_token.tok_keyword == KW_SEMI))
 				LEX_token();
 		return true;
 	}
@@ -3103,7 +3099,7 @@ static void parse_array( DUDLEY_FLD field)
 			break;
 
 		if (!PARSE_match(KW_COMMA))
-			PARSE_error(189, DDL_token.tok_string, 0);	/* msg 189: expected comma, encountered \"%s\" */
+			PARSE_error(189, dudleyGlob.DDL_token.tok_string, 0);	/* msg 189: expected comma, encountered \"%s\" */
 	}
 
 /* Allocate and copy block to hold ranges */
@@ -3131,19 +3127,19 @@ static TXT parse_description(void)
  *	of the description of a metadata item.
  *
  **************************************/
-	DDL_description = true;
+	dudleyGlob.DDL_description = true;
 	TXT description = start_text();
-	description->txt_position = DDL_token.tok_position;
+	description->txt_position = dudleyGlob.DDL_token.tok_position;
 
-	while (!DDL_eof && (!(DDL_token.tok_keyword == KW_END_DESCRIPTION)))
+	while (!dudleyGlob.DDL_eof && (!(dudleyGlob.DDL_token.tok_keyword == KW_END_DESCRIPTION)))
 		LEX_token();
 
-	if (DDL_eof)
+	if (dudleyGlob.DDL_eof)
 		return NULL;
 
 	end_text(description);
 	PARSE_match(KW_END_DESCRIPTION);
-	DDL_description = false;
+	dudleyGlob.DDL_description = false;
 
 	return description;
 }
@@ -3162,8 +3158,8 @@ static void parse_end(void)
  *
  **************************************/
 
-	if (!(DDL_token.tok_keyword == KW_SEMI))
-		PARSE_error(190, DDL_token.tok_string, 0);	/* msg 190: expected semi-colon, encountered \"%s\" */
+	if (!(dudleyGlob.DDL_token.tok_keyword == KW_SEMI))
+		PARSE_error(190, dudleyGlob.DDL_token.tok_string, 0);	/* msg 190: expected semi-colon, encountered \"%s\" */
 }
 
 
@@ -3199,8 +3195,8 @@ static DUDLEY_FLD parse_field( DUDLEY_FLD field)
 
 	parse_field_clauses(field);
 
-	if (!(DDL_token.tok_keyword == KW_COMMA) && !(DDL_token.tok_keyword == KW_SEMI))
-		PARSE_error(192, DDL_token.tok_string, 0);	/* msg 192: expected field clause, encountered \"%s\" */
+	if (!(dudleyGlob.DDL_token.tok_keyword == KW_COMMA) && !(dudleyGlob.DDL_token.tok_keyword == KW_SEMI))
+		PARSE_error(192, dudleyGlob.DDL_token.tok_string, 0);	/* msg 192: expected field clause, encountered \"%s\" */
 
 	validate_field(field);
 
@@ -3256,7 +3252,7 @@ static void parse_field_clauses( DUDLEY_FLD field)
 				field->fld_flags |= fld_null_missing_value;
 			}
 			else
-				PARSE_error(193, DDL_token.tok_string, 0);
+				PARSE_error(193, dudleyGlob.DDL_token.tok_string, 0);
 			/* msg 193: expected DESCRIPTION, EDIT_STRING, MISSING VALUE, SECURITY_CLASS or VALID_IF", encountered \"%s\" */
 			break;
 
@@ -3425,13 +3421,13 @@ static void parse_field_dtype( DUDLEY_FLD field)
 		field->fld_dtype == blr_varying || field->fld_dtype == blr_cstring) 
 	{
 		if (!PARSE_match(KW_L_BRCKET) && !PARSE_match(KW_LT))
-			PARSE_error(200, DDL_token.tok_string, 0);	/* msg 200: expected \"[\", encountered \"%s\" */
+			PARSE_error(200, dudleyGlob.DDL_token.tok_string, 0);	/* msg 200: expected \"[\", encountered \"%s\" */
 		const int n = PARSE_number();
 		field->fld_length = n;
 		if (n <= 0)
 			PARSE_error(201, 0, 0);	/* msg 201: character field length must be positive */
 		if (!PARSE_match(KW_R_BRCKET) && !PARSE_match(KW_GT))
-			PARSE_error(202, DDL_token.tok_string, 0);	/* msg 202: expected \"]\", encountered \"%s\" */
+			PARSE_error(202, dudleyGlob.DDL_token.tok_string, 0);	/* msg 202: expected \"]\", encountered \"%s\" */
 
 		if (PARSE_match(KW_SUB_TYPE))
 			parse_field_subtype(field);
@@ -3475,8 +3471,8 @@ static void parse_field_subtype( DUDLEY_FLD field)
 		field->fld_sub_type = 3;
 	else if (PARSE_keyword() == KW_MINUS)
 		field->fld_sub_type = PARSE_number();
-	else if (DDL_token.tok_type != tok_number)
-		PARSE_error(198, DDL_token.tok_string, 0);	/* msg 198: expected field sub_type, encountered \"%s\" */
+	else if (dudleyGlob.DDL_token.tok_type != tok_number)
+		PARSE_error(198, dudleyGlob.DDL_token.tok_string, 0);	/* msg 198: expected field sub_type, encountered \"%s\" */
 	else
 		field->fld_sub_type = PARSE_number();
 
@@ -3543,7 +3539,7 @@ static FUNCARG parse_function_arg( FUNC function, USHORT * position)
    return_value or a return_argument in which case it had
    better not be passed by value */
 
-	if (DDL_token.tok_keyword == KW_COMMA || DDL_token.tok_keyword == KW_SEMI) {
+	if (dudleyGlob.DDL_token.tok_keyword == KW_COMMA || dudleyGlob.DDL_token.tok_keyword == KW_SEMI) {
 		if (func_arg->funcarg_mechanism == FUNCARG_mechanism_value)
 			PARSE_error(293, 0, 0);	/* msg 293: argument mode 'by value' requires a return mode */
 	}
@@ -3602,30 +3598,30 @@ static SCE parse_identifier(void)
 
 /* Get explicit identifiers, if any */
 
-	switch (DDL_token.tok_keyword) {
+	switch (dudleyGlob.DDL_token.tok_keyword) {
 	case (KW_VIEW):
 		LEX_token();
-		if (DDL_token.tok_type != tok_ident)
-			PARSE_error(117, DDL_token.tok_string, 0);	/* msg 117: expected identifier, encountered \"%s\" */
+		if (dudleyGlob.DDL_token.tok_type != tok_ident)
+			PARSE_error(117, dudleyGlob.DDL_token.tok_string, 0);	/* msg 117: expected identifier, encountered \"%s\" */
 		idents[id_view] = p;
-		q = DDL_token.tok_string;
+		q = dudleyGlob.DDL_token.tok_string;
 		while (*p++ = *q++);
 		LEX_token();
 		break;
 
 	case (KW_USER):
 		LEX_token();
-		if (DDL_token.tok_type != tok_ident)
-			PARSE_error(117, DDL_token.tok_string, 0);	/* msg 117: expected identifier, encountered \"%s\" */
+		if (dudleyGlob.DDL_token.tok_type != tok_ident)
+			PARSE_error(117, dudleyGlob.DDL_token.tok_string, 0);	/* msg 117: expected identifier, encountered \"%s\" */
 		idents[id_user] = p;
-		q = DDL_token.tok_string;
+		q = dudleyGlob.DDL_token.tok_string;
 		while (*p++ = *q++);
 		LEX_token();
 		if (PARSE_match(KW_GROUP)) {
-			if (DDL_token.tok_type != tok_ident)
-				PARSE_error(117, DDL_token.tok_string, 0);	/* msg 117: expected identifier, encountered \"%s\" */
+			if (dudleyGlob.DDL_token.tok_type != tok_ident)
+				PARSE_error(117, dudleyGlob.DDL_token.tok_string, 0);	/* msg 117: expected identifier, encountered \"%s\" */
 			idents[id_group] = p;
-			q = DDL_token.tok_string;
+			q = dudleyGlob.DDL_token.tok_string;
 			while (*p++ = *q++);
 			LEX_token();
 		}
@@ -3633,17 +3629,17 @@ static SCE parse_identifier(void)
 
 	case (KW_GROUP):
 		LEX_token();
-		if (DDL_token.tok_type != tok_ident)
-			PARSE_error(117, DDL_token.tok_string, 0);	/* msg 117: expected identifier, encountered \"%s\" */
+		if (dudleyGlob.DDL_token.tok_type != tok_ident)
+			PARSE_error(117, dudleyGlob.DDL_token.tok_string, 0);	/* msg 117: expected identifier, encountered \"%s\" */
 		idents[id_group] = p;
-		q = DDL_token.tok_string;
+		q = dudleyGlob.DDL_token.tok_string;
 		while (*p++ = *q++);
 		LEX_token();
 		if (PARSE_match(KW_USER)) {
-			if (DDL_token.tok_type != tok_ident)
-				PARSE_error(117, DDL_token.tok_string, 0);	/* msg 117: expected identifier, encountered \"%s\" */
+			if (dudleyGlob.DDL_token.tok_type != tok_ident)
+				PARSE_error(117, dudleyGlob.DDL_token.tok_string, 0);	/* msg 117: expected identifier, encountered \"%s\" */
 			idents[id_user] = p;
-			q = DDL_token.tok_string;
+			q = dudleyGlob.DDL_token.tok_string;
 			while (*p++ = *q++);
 			LEX_token();
 		}
@@ -3653,25 +3649,25 @@ static SCE parse_identifier(void)
 	case (KW_LT):
 		LEX_token();
 		if (!PARSE_match(KW_ASTERISK)) {
-			if (DDL_token.tok_type != tok_number)
-				PARSE_error(206, DDL_token.tok_string, 0);	/* msg 206: expected number, encountered \"%s\" */
+			if (dudleyGlob.DDL_token.tok_type != tok_number)
+				PARSE_error(206, dudleyGlob.DDL_token.tok_string, 0);	/* msg 206: expected number, encountered \"%s\" */
 			idents[id_group] = p;
-			q = DDL_token.tok_string;
+			q = dudleyGlob.DDL_token.tok_string;
 			while (*p++ = *q++);
 			LEX_token();
 		}
 		if (!PARSE_match(KW_COMMA))
-			PARSE_error(207, DDL_token.tok_string, 0);	/* msg 207: expected comma between group and user ids, encountered \"%s\" */
+			PARSE_error(207, dudleyGlob.DDL_token.tok_string, 0);	/* msg 207: expected comma between group and user ids, encountered \"%s\" */
 		if (!PARSE_match(KW_ASTERISK)) {
-			if (DDL_token.tok_type != tok_number)
-				PARSE_error(206, DDL_token.tok_string, 0);	/* msg 206: expected number, encountered \"%s\" */
+			if (dudleyGlob.DDL_token.tok_type != tok_number)
+				PARSE_error(206, dudleyGlob.DDL_token.tok_string, 0);	/* msg 206: expected number, encountered \"%s\" */
 			idents[id_user] = p;
-			q = DDL_token.tok_string;
+			q = dudleyGlob.DDL_token.tok_string;
 			while (*p++ = *q++);
 			LEX_token();
 		}
 		if (!(PARSE_match(KW_R_BRCKET) || PARSE_match(KW_GT)))
-			PARSE_error(208, DDL_token.tok_string, 0);	/* msg 208: expected trailing bracket, encountered \"%s\" */
+			PARSE_error(208, dudleyGlob.DDL_token.tok_string, 0);	/* msg 208: expected trailing bracket, encountered \"%s\" */
 
 		break;
 	}
@@ -3709,7 +3705,7 @@ static OBJ_T parse_object(void)
 
 	if (PARSE_match(KW_DATABASE))
 		return obj_database;
-	else if (!database || !database->dbb_handle)
+	else if (!dudleyGlob.database || !dudleyGlob.database->dbb_handle)
 		PARSE_error(209, 0, 0);	/* msg 209: no database declared */
 
 	if (PARSE_match(KW_RELATION))
@@ -3804,9 +3800,9 @@ static SLONG parse_privileges(void)
 	SLONG privileges = 0;
 
 	if (!PARSE_match(KW_MINUS)) {
-		if (DDL_token.tok_type != tok_ident)
-			PARSE_error(117, DDL_token.tok_string, 0);	/* msg 117: expected identifier, encountered \"%s\" */
-		const TEXT* p = DDL_token.tok_string;
+		if (dudleyGlob.DDL_token.tok_type != tok_ident)
+			PARSE_error(117, dudleyGlob.DDL_token.tok_string, 0);	/* msg 117: expected identifier, encountered \"%s\" */
+		const TEXT* p = dudleyGlob.DDL_token.tok_string;
 		TEXT c;
 		while (c = *p++)
 			switch (UPPER(c)) {
@@ -3885,13 +3881,13 @@ static void revoke_user_privilege(void)
 			if (PARSE_match(KW_COMMA))
 				continue;
 			if (!PARSE_match(KW_LEFT_PAREN))
-				PARSE_error(315, DDL_token.tok_string, 0);	/* msg 315: expected ON or '(', encountered "%s" */
+				PARSE_error(315, dudleyGlob.DDL_token.tok_string, 0);	/* msg 315: expected ON or '(', encountered "%s" */
 
 			do {
-				if (DDL_token.tok_keyword == KW_SELECT
-					|| DDL_token.tok_keyword == KW_INSERT
-					|| DDL_token.tok_keyword == KW_DELETE
-					|| DDL_token.tok_keyword == KW_UPDATE)
+				if (dudleyGlob.DDL_token.tok_keyword == KW_SELECT
+					|| dudleyGlob.DDL_token.tok_keyword == KW_INSERT
+					|| dudleyGlob.DDL_token.tok_keyword == KW_DELETE
+					|| dudleyGlob.DDL_token.tok_keyword == KW_UPDATE)
 				{
 					break;
 				}
@@ -3902,13 +3898,13 @@ static void revoke_user_privilege(void)
 			} while (PARSE_match(KW_COMMA));
 
 			if (!PARSE_match(KW_RIGHT_PAREN))
-				PARSE_error(316, DDL_token.tok_string, 0);	/* msg 316: expected ')', encountered "%s" */
+				PARSE_error(316, dudleyGlob.DDL_token.tok_string, 0);	/* msg 316: expected ')', encountered "%s" */
 
 			continue;
 		}
 		if (!PARSE_match(KW_COMMA)) {
 			if (!PARSE_match(KW_ON))
-				PARSE_error(214, DDL_token.tok_string, 0);	/* msg 214: expected ON, encountered \"%s\" */
+				PARSE_error(214, dudleyGlob.DDL_token.tok_string, 0);	/* msg 214: expected ON, encountered \"%s\" */
 			break;
 		}
 	}	// while (true)
@@ -3918,7 +3914,7 @@ static void revoke_user_privilege(void)
 
 	upriv->userpriv_relation = PARSE_symbol(tok_ident);
 	if (!PARSE_match(KW_FROM))
-		PARSE_error(216, DDL_token.tok_string, 0);	/* msg 216: expected FROM, encountered \"%s\" */
+		PARSE_error(216, dudleyGlob.DDL_token.tok_string, 0);	/* msg 216: expected FROM, encountered \"%s\" */
 
 /* get the userlist */
 	while (true) {
@@ -3977,8 +3973,8 @@ static DUDLEY_NOD set_generator(void)
  * Functional description
  *      get the name and new value for generator
  **************************************/
-	if (DDL_token.tok_type != tok_ident)
-		PARSE_error(274, DDL_token.tok_string, 0);	/* msg 274: expected generator name, encountered \"%s\" */
+	if (dudleyGlob.DDL_token.tok_type != tok_ident)
+		PARSE_error(274, dudleyGlob.DDL_token.tok_string, 0);	/* msg 274: expected generator name, encountered \"%s\" */
 
 	DUDLEY_NOD node = PARSE_make_node(nod_set_generator, 2);
 	node->nod_count = 1;
@@ -4076,8 +4072,8 @@ static TXT start_text(void)
  *
  **************************************/
 	TXT text = (TXT) DDL_alloc(sizeof(txt));
-	text->txt_position = DDL_token.tok_position - DDL_token.tok_length;
-	text->txt_start_line = DDL_line;
+	text->txt_position = dudleyGlob.DDL_token.tok_position - dudleyGlob.DDL_token.tok_length;
+	text->txt_start_line = dudleyGlob.DDL_line;
 
 	return text;
 }

@@ -33,7 +33,6 @@
 #include <errno.h>
 #include "../jrd/ibase.h"
 #include "../dudley/ddl.h"
-#include "../dudley/parse.h"
 #include "../dudley/ddl_proto.h"
 #include "../dudley/hsh_proto.h"
 #include "../dudley/lex_proto.h"
@@ -48,9 +47,6 @@ const char* SCRATCH = "fb_q";
 #else
 const char* SCRATCH = "fb_query_";
 #endif
-
-extern const TEXT* DDL_prompt;
-
 
 static int nextchar(void);
 static void retchar(SSHORT);
@@ -121,11 +117,11 @@ TOK LEX_filename(void)
 	SSHORT c;
 	TEXT *p;
 
-	token = &DDL_token;
+	token = &dudleyGlob.DDL_token;
 	p = token->tok_string;
 	*p++ = c = skip_white();
 
-	if (DDL_eof) {
+	if (dudleyGlob.DDL_eof) {
 		token->tok_symbol = NULL;
 		token->tok_keyword = KW_none;
 		return NULL;
@@ -179,7 +175,7 @@ void LEX_flush(void)
  **************************************/
 	SSHORT c;
 
-	while (!DDL_eof) {
+	while (!dudleyGlob.DDL_eof) {
 		if ((c = nextchar()) == '\n')
 			break;
 	}
@@ -245,9 +241,9 @@ void LEX_init( void *file)
 
 	input_file = (FILE*) file;
 	DDL_char = DDL_buffer;
-	DDL_token.tok_position = 0;
-	DDL_description = false;
-	DDL_line = 1;
+	dudleyGlob.DDL_token.tok_position = 0;
+	dudleyGlob.DDL_description = false;
+	dudleyGlob.DDL_line = 1;
 }
 
 
@@ -309,7 +305,7 @@ void LEX_real(void)
  *
  **************************************/
 
-	if (DDL_token.tok_string[0] != '\n')
+	if (dudleyGlob.DDL_token.tok_string[0] != '\n')
 		return;
 
 	LEX_token();
@@ -331,7 +327,7 @@ TOK LEX_token(void)
 	SSHORT c, next;
 	SYM symbol;
 
-	TOK token = &DDL_token;
+	TOK token = &dudleyGlob.DDL_token;
 	TEXT* p = token->tok_string;
 	*p++ = c = skip_white();
 
@@ -339,7 +335,7 @@ TOK LEX_token(void)
 
 	TEXT char_class = classes[c];
 
-	if (DDL_eof) {
+	if (dudleyGlob.DDL_eof) {
 		p = token->tok_string;
 		*p++ = '*';
 		*p++ = 'E';
@@ -371,7 +367,7 @@ TOK LEX_token(void)
 		retchar(c);
 		token->tok_type = tok_number;
 	}
-	else if ((char_class & CHR_quote) && !DDL_description) {
+	else if ((char_class & CHR_quote) && !dudleyGlob.DDL_description) {
 		token->tok_type = tok_quoted;
 		do {
 			if (!(next = nextchar()) || next == '\n') {
@@ -401,7 +397,7 @@ TOK LEX_token(void)
 	else
 		token->tok_keyword = KW_none;
 
-	if (DDL_trace)
+	if (dudleyGlob.DDL_trace)
 		puts(token->tok_string);
 
 	return token;
@@ -431,9 +427,9 @@ static int nextchar(void)
 
 	while (!(c = *DDL_char++)) {
 		DDL_char = DDL_buffer;
-		if (DDL_interactive) {
-			printf(DDL_prompt);
-			if (DDL_service)
+		if (dudleyGlob.DDL_interactive) {
+			printf(dudleyGlob.DDL_prompt);
+			if (dudleyGlob.DDL_service)
 				putc('\001', stdout);
 			fflush(stdout);
 		}
@@ -455,23 +451,23 @@ static int nextchar(void)
 		*DDL_char = 0;
 		if (c == EOF && DDL_char == DDL_buffer) {
 #ifdef UNIX
-			if (DDL_interactive)
+			if (dudleyGlob.DDL_interactive)
 				printf("\n");
 #endif
-			DDL_eof = true;
+			dudleyGlob.DDL_eof = true;
 			return EOF;
 		}
 		DDL_char = DDL_buffer;
 		fputs(DDL_buffer, trace_file);
 	}
 
-	DDL_token.tok_position++;
+	dudleyGlob.DDL_token.tok_position++;
 	if (c == '\n') {
-		++DDL_line;
+		++dudleyGlob.DDL_line;
 #if (defined WIN_NT)
 		/* need to account for extra linefeed on newline */
 
-		DDL_token.tok_position++;
+		dudleyGlob.DDL_token.tok_position++;
 #endif
 	}
 
@@ -493,15 +489,15 @@ static void retchar( SSHORT c)
  **************************************/
 
 	if (c == '\n') {
-		--DDL_line;
+		--dudleyGlob.DDL_line;
 #if (defined WIN_NT)
 		/* account for the extra linefeed in a newline */
 
-		--DDL_token.tok_position;
+		--dudleyGlob.DDL_token.tok_position;
 #endif
 	}
 
-	--DDL_token.tok_position;
+	--dudleyGlob.DDL_token.tok_position;
 	--DDL_char;
 }
 

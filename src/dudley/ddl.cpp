@@ -23,13 +23,10 @@
 
 #include "firebird.h"
 
-#define DDL_MAIN
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "../dudley/ddl.h"
-#include "../dudley/parse.h"
 #include "../jrd/ibase.h"
 #include "../jrd/license.h"
 #include "../dudley/ddl_proto.h"
@@ -51,7 +48,7 @@
 #include <io.h> // isatty
 #endif
 
-const TEXT* DDL_prompt;
+DudleyGlobals dudleyGlob;
 
 static dudley_lls* free_stack;
 static TEXT DDL_message[256];
@@ -130,15 +127,15 @@ int CLIB_ROUTINE main( int argc, char* argv[])
    first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
    by 3 file descriptors to use in re-directing stdin, stdout, and stderr. */
 
-	DDL_service = false;
+	dudleyGlob.DDL_service = false;
 
 	if (argc > 1 && !strcmp(argv[1], "-svc")) {
-		DDL_service = true;
+		dudleyGlob.DDL_service = true;
 		argv++;
 		argc--;
 	}
 	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
-		DDL_service = true;
+		dudleyGlob.DDL_service = true;
 		long redir_in = atol(argv[2]);
 		long redir_out = atol(argv[3]);
 		long redir_err = atol(argv[4]);
@@ -160,11 +157,16 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 		argc -= 4;
 	}
 
-	DDL_file_name = NULL;
-	DB_file_name = NULL;
-	DDL_drop_database = DDL_quit = DDL_extract = DDL_dynamic = DDL_trace =
-		DDL_version = false;
-	DDL_default_user = DDL_default_password = NULL;
+	dudleyGlob.DDL_file_name = NULL;
+	dudleyGlob.DB_file_name = NULL;
+	dudleyGlob.DDL_drop_database = false;
+	dudleyGlob.DDL_quit = false;
+	dudleyGlob.DDL_extract = false;
+	dudleyGlob.DDL_dynamic = false;
+	dudleyGlob.DDL_trace = false;
+	dudleyGlob.DDL_version = false;
+	dudleyGlob.DDL_default_user = NULL;
+	dudleyGlob.DDL_default_password = NULL;
 
 	TEXT file_name_1[256], file_name_2[256];
 	file_name_1[0] = file_name_2[0] = 0;
@@ -211,73 +213,73 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 		}
 		switch (in_sw) {
 		case IN_SW_GDEF_D:
-			DDL_dynamic = true;
-			DYN_file_name[0] = 0;
+			dudleyGlob.DDL_dynamic = true;
+			dudleyGlob.DYN_file_name[0] = 0;
 			if (argc == 1)
 				break;
 			string = *++argv;
 			if (*string != '-') {
 				argc--;
-				strcpy(DYN_file_name, string);
+				strcpy(dudleyGlob.DYN_file_name, string);
 			}
 			else
 				argv--;
 			break;
 
 		case IN_SW_GDEF_C:
-			language = lan_c;
+			dudleyGlob.language = lan_c;
 			break;
 
 		case IN_SW_GDEF_P:
-			language = lan_pascal;
+			dudleyGlob.language = lan_pascal;
 			break;
 
 		case IN_SW_GDEF_COB:
-			language = lan_cobol;
+			dudleyGlob.language = lan_cobol;
 			break;
 
 		case IN_SW_GDEF_ANSI:
-			language = lan_ansi_cobol;
+			dudleyGlob.language = lan_ansi_cobol;
 			break;
 		case IN_SW_GDEF_F:
-			language = lan_fortran;
+			dudleyGlob.language = lan_fortran;
 			break;
 
 		case IN_SW_GDEF_ADA:
-			language = lan_ada;
+			dudleyGlob.language = lan_ada;
 			break;
 
 		case IN_SW_GDEF_CXX:
-			language = lan_cxx;
+			dudleyGlob.language = lan_cxx;
 			break;
 
 		case IN_SW_GDEF_G:
-			DDL_extract = true;
+			dudleyGlob.DDL_extract = true;
 			break;
 
 		case IN_SW_GDEF_R:
-			DDL_replace = true;
+			dudleyGlob.DDL_replace = true;
 			break;
 
 		case IN_SW_GDEF_T:
-			DDL_trace = true;
+			dudleyGlob.DDL_trace = true;
 			break;
 
 		case IN_SW_GDEF_Z:
 			DDL_msg_put(0, GDS_VERSION, 0, 0, 0, 0);	/* msg 0: gdef version %s\n */
-			DDL_version = true;
+			dudleyGlob.DDL_version = true;
 			break;
 
 		case IN_SW_GDEF_PASSWORD:
 			if (argc > 1) {
-				DDL_default_password = *++argv;
+				dudleyGlob.DDL_default_password = *++argv;
 				argc--;
 			}
 			break;
 
 		case IN_SW_GDEF_USER:
 			if (argc > 1) {
-				DDL_default_user = *++argv;
+				dudleyGlob.DDL_default_user = *++argv;
 				argc--;
 			}
 			break;
@@ -300,26 +302,26 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 
 	FILE* input_file;
 	
-	if (DDL_extract) {
-		strcpy(DB_file_string, file_name_1);
-		strcpy(DDL_file_string, file_name_2);
-		if (!*DB_file_string) {
+	if (dudleyGlob.DDL_extract) {
+		strcpy(dudleyGlob.DB_file_string, file_name_1);
+		strcpy(dudleyGlob.DDL_file_string, file_name_2);
+		if (!*dudleyGlob.DB_file_string) {
 			DDL_msg_put(4, 0, 0, 0, 0, 0);	/* msg 4: gdef: Database name is required for extract */
 			DDL_exit(FINI_ERROR);
 		}
-		DB_file_name = DB_file_string;
-		DDL_file_name = DDL_file_string;
+		dudleyGlob.DB_file_name = dudleyGlob.DB_file_string;
+		dudleyGlob.DDL_file_name = dudleyGlob.DDL_file_string;
 		DDL_ext();
 		DDL_exit(FINI_OK);
 	}
 	else if (*file_name_1) {
-		strcpy(DDL_file_string, file_name_1);
-		DDL_file_name = DDL_file_string;
+		strcpy(dudleyGlob.DDL_file_string, file_name_1);
+		dudleyGlob.DDL_file_name = dudleyGlob.DDL_file_string;
 	}
-	if (DDL_file_name == NULL) {
-		DDL_file_name = "standard input";
+	if (dudleyGlob.DDL_file_name == NULL) {
+		dudleyGlob.DDL_file_name = "standard input";
 		input_file = stdin;
-		DDL_interactive = DDL_service || isatty(0);
+		dudleyGlob.DDL_interactive = dudleyGlob.DDL_service || isatty(0);
 	}
 	else {
 		/* 
@@ -333,10 +335,10 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 
 		/* first find the extension by going to the end and backing up */
 
-		const TEXT* p = DDL_file_name;
+		const TEXT* p = dudleyGlob.DDL_file_name;
 		while (*p)
 			++p;
-		while ((p != DDL_file_name) && (*p != '.') && (*p != '/'))
+		while ((p != dudleyGlob.DDL_file_name) && (*p != '.') && (*p != '/'))
 			--p;
 
 		/* then handle the case where the input already ends in .GDL */
@@ -344,9 +346,9 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 		if (*p == '.') {
 			for (const TEXT* q2 = DDL_EXT; UPPER(*p) == UPPER(*q2); p++, q2++) {
 				if (!*p) {
-					input_file = fopen(DDL_file_name, FOPEN_INPUT_TYPE);
+					input_file = fopen(dudleyGlob.DDL_file_name, FOPEN_INPUT_TYPE);
 					if (!input_file) {
-						DDL_msg_put(5, DDL_file_name, 0, 0, 0, 0);	/* msg 5: gdef: can't open %s */
+						DDL_msg_put(5, dudleyGlob.DDL_file_name, 0, 0, 0, 0);	/* msg 5: gdef: can't open %s */
 						DDL_exit(FINI_ERROR);
 					}
 				}
@@ -356,14 +358,14 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 		/* if we got this far without opening it, it's time to add the new extension */
 
 		if (!input_file) {
-			sprintf(file_name_1, "%s%s", DDL_file_name, DDL_EXT);
+			sprintf(file_name_1, "%s%s", dudleyGlob.DDL_file_name, DDL_EXT);
 			input_file = fopen(file_name_1, FOPEN_INPUT_TYPE);
 			if (input_file)
-				DDL_file_name = file_name_1;
+				dudleyGlob.DDL_file_name = file_name_1;
 			else {
-				input_file = fopen(DDL_file_name, FOPEN_INPUT_TYPE);
+				input_file = fopen(dudleyGlob.DDL_file_name, FOPEN_INPUT_TYPE);
 				if (!input_file)
-					DDL_msg_put(6, DDL_file_name, file_name_1, 0, 0, 0);
+					DDL_msg_put(6, dudleyGlob.DDL_file_name, file_name_1, 0, 0, 0);
 				/* msg 6: gdef: can't open %s or %s */
 			}
 		}
@@ -378,57 +380,57 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 	if (input_file != stdin)
 		fclose(input_file);
 
-	if (DDL_actions && ((DDL_errors && DDL_interactive) || DDL_quit)) {
+	if (dudleyGlob.DDL_actions && ((dudleyGlob.DDL_errors && dudleyGlob.DDL_interactive) || dudleyGlob.DDL_quit)) {
 		rewind(stdin);
 		//*buffer = 0;
-		if (DDL_errors > 1)
-			DDL_msg_partial(7, (TEXT *) (IPTR) DDL_errors, 0, 0, 0, 0);	/* msg 7: \n%d errors during input. */
-		else if (DDL_errors)
+		if (dudleyGlob.DDL_errors > 1)
+			DDL_msg_partial(7, (TEXT *) (IPTR) dudleyGlob.DDL_errors, 0, 0, 0, 0);	/* msg 7: \n%d errors during input. */
+		else if (dudleyGlob.DDL_errors)
 			DDL_msg_partial(9, 0, 0, 0, 0, 0);	/* msg 9: \n1 error during input. */
 		else
 			DDL_msg_partial(8, 0, 0, 0, 0, 0);	/* msg 8: \nNo errors. */
 		if (DDL_yes_no(10)) { // msg 10 : save changes before exiting?
-			DDL_quit = false;
-			DDL_errors = 0;
+			dudleyGlob.DDL_quit = false;
+			dudleyGlob.DDL_errors = 0;
 		}
 	}
 
 /* Reverse the set of actions */
 
 	act* stack = NULL;
-	while (DDL_actions) {
-		act* temp = DDL_actions;
-		DDL_actions = temp->act_next;
+	while (dudleyGlob.DDL_actions) {
+		act* temp = dudleyGlob.DDL_actions;
+		dudleyGlob.DDL_actions = temp->act_next;
 		temp->act_next = stack;
 		stack = temp;
 	}
-	DDL_actions = stack;
+	dudleyGlob.DDL_actions = stack;
 
-	if (!DDL_errors && !DDL_quit) {
+	if (!dudleyGlob.DDL_errors && !dudleyGlob.DDL_quit) {
 		EXP_actions();
-		if (!DDL_errors && !DDL_quit) {
+		if (!dudleyGlob.DDL_errors && !dudleyGlob.DDL_quit) {
 			EXE_execute();
-			if (DDL_dynamic)
+			if (dudleyGlob.DDL_dynamic)
 				TRN_translate();
 		}
 	}
 
-	if (DDL_actions && (DDL_errors || DDL_quit))
-		if (DDL_errors)
+	if (dudleyGlob.DDL_actions && (dudleyGlob.DDL_errors || dudleyGlob.DDL_quit))
+		if (dudleyGlob.DDL_errors)
 			DDL_msg_put(307, 0, 0, 0, 0, 0);	/* msg 307: Ceasing processing because of errors. */
 		else
 			DDL_msg_put(308, 0, 0, 0, 0, 0);	/* msg 308: Ceasing processing. */
 
-	EXE_fini(database);
+	EXE_fini(dudleyGlob.database);
 
-	if (DDL_errors) {
-		if (database && (database->dbb_flags & DBB_create_database)) {
-			for (const fil* file = database->dbb_files; file;
+	if (dudleyGlob.DDL_errors) {
+		if (dudleyGlob.database && (dudleyGlob.database->dbb_flags & DBB_create_database)) {
+			for (const fil* file = dudleyGlob.database->dbb_files; file;
 				file = file->fil_next)
 			{
 				unlink(file->fil_name->sym_name);
 			}
-			unlink(database->dbb_name->sym_string);
+			unlink(dudleyGlob.database->dbb_name->sym_string);
 		}
 		DDL_exit(FINI_ERROR);
 	}
@@ -509,13 +511,13 @@ int DDL_err(
  *
  **************************************/
 
-	DDL_msg_partial(15, DDL_file_name, (TEXT *) (IPTR) DDL_line, 0, 0, 0);	/*msg 15: %s:%d: */
+	DDL_msg_partial(15, dudleyGlob.DDL_file_name, (TEXT *) (IPTR) dudleyGlob.DDL_line, 0, 0, 0);	/*msg 15: %s:%d: */
 	DDL_msg_put(number, arg1, arg2, arg3, arg4, arg5);
-	if (DDL_errors++ > MAX_ERRORS) {
+	if (dudleyGlob.DDL_errors++ > MAX_ERRORS) {
 		DDL_msg_put(16, (TEXT *) (SLONG) MAX_ERRORS, 0, 0, 0, 0);	/* msg 16: error count exceeds limit (%d) */
 		DDL_msg_put(17, 0, 0, 0, 0, 0);	/* msg 17: what we have here is a failure to communicate! */
-		if (database && (database->dbb_flags & DBB_create_database))
-			unlink(DB_file_name);
+		if (dudleyGlob.database && (dudleyGlob.database->dbb_flags & DBB_create_database))
+			unlink(dudleyGlob.DB_file_name);
 		DDL_exit(FINI_ERROR);
 	}
 
@@ -701,7 +703,7 @@ bool DDL_yes_no( USHORT number)
 
 	for (;;) {
 		printf(prompt);
-		if (DDL_service)
+		if (dudleyGlob.DDL_service)
 			putc('\001', stdout);
 		fflush(stdout);
 		int count = 0;

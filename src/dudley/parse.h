@@ -244,15 +244,5 @@ typedef struct tok {
 	TEXT tok_string[MAXSYMLEN];
 } *TOK;
 
-#ifdef PARSER_MAIN
-#define EXTERN
-#else
-#define EXTERN	extern
-#endif
-
-EXTERN	tok DDL_token;
-
-#undef EXTERN
-
 #endif // DUDLEY_PARSE_H
 

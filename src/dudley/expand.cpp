@@ -25,7 +25,6 @@
 #include <string.h>
 #include "../dudley/ddl.h"
 #include "../jrd/ibase.h"
-#include "../dudley/parse.h"
 #include "../dudley/ddl_proto.h"
 #include "../dudley/expan_proto.h"
 #include "../dudley/hsh_proto.h"
@@ -69,10 +68,10 @@ void EXP_actions(void)
  **************************************/
 	ACT action;
 
-	if (!DDL_actions)
+	if (!dudleyGlob.DDL_actions)
 		return;
 
-	for (action = DDL_actions; action; action = action->act_next)
+	for (action = dudleyGlob.DDL_actions; action; action = action->act_next)
 		if (!(action->act_flags & ACT_ignore))
 			expand_action(action);
 }
@@ -96,7 +95,7 @@ static void expand_action( ACT action)
 
 	try {
 
-	DDL_line = action->act_line;
+	dudleyGlob.DDL_line = action->act_line;
 
 	switch (action->act_type) {
 	case act_a_field:

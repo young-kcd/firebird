@@ -26,7 +26,6 @@
 #include <string.h>
 #include "../jrd/ibase.h"
 #include "../dudley/ddl.h"
-#include "../dudley/parse.h"
 #include "../jrd/license.h"
 #include "../dudley/gener_proto.h"
 #include "../dudley/lex_proto.h"
@@ -122,10 +121,11 @@ void TRN_translate(void)
 	gds_alloc_flag_unfreed(dyn->str_start);
 #endif
 
-	if (!DYN_file_name[0])
+	if (!dudleyGlob.DYN_file_name[0])
 		output_file = stdout;
-	else if (!(output_file = fopen(DYN_file_name, FOPEN_WRITE_TYPE))) {
-		DDL_msg_put(281, DYN_file_name, NULL, NULL, NULL, NULL);	/* msg 281: gdef: can't open DYN output file: %s */
+	else if (!(output_file = fopen(dudleyGlob.DYN_file_name, FOPEN_WRITE_TYPE))) {
+		DDL_msg_put(281, dudleyGlob.DYN_file_name, NULL, NULL, NULL, NULL);
+		/* msg 281: gdef: can't open DYN output file: %s */
 		DDL_exit(FINI_ERROR);
 	}
 
@@ -133,7 +133,7 @@ void TRN_translate(void)
 	dyn->add_byte(isc_dyn_version_1);
 	dyn->add_byte(isc_dyn_begin);
 
-	for (action = DDL_actions; action; action = action->act_next)
+	for (action = dudleyGlob.DDL_actions; action; action = action->act_next)
 		if (!(action->act_flags & ACT_ignore))
 			switch (action->act_type) {
 			case act_c_database:
@@ -261,7 +261,7 @@ void TRN_translate(void)
 	dyn->add_byte(isc_dyn_end);
 	dyn->add_byte(isc_dyn_eoc);
 
-	switch (language) {
+	switch (dudleyGlob.language) {
 	case lan_undef:
 	case lan_c:
 		if (PRETTY_print_dyn(dyn->str_start, gen_dyn_c, 0, 0))
@@ -1707,7 +1707,7 @@ static void raw_cobol( STR dyn)
 			if (!(--blr_length))
 				break;
 		}
-		if (language == lan_ansi_cobol)
+		if (dudleyGlob.language == lan_ansi_cobol)
 			fprintf(output_file,
 					   "           03  GDS-DYN-%d PIC S9(10) USAGE COMP VALUE IS %"
 					   SLONGFORMAT".\n",
