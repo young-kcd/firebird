@@ -32,7 +32,7 @@ USHORT CS_UTFFSS_fss_to_unicode(CSCONVERT obj, UNICODE *dest_ptr, USHORT dest_le
 USHORT CS_UTFFSS_unicode_to_fss(CSCONVERT obj, MBCHAR *fss_str, USHORT fss_len, UNICODE *unicode_str,
 								USHORT unicode_len, SSHORT *err_code, USHORT *err_position);
 
-SSHORT CS_UTFFSS_fss_mbtowc(TEXTTYPE obj, UCS2_CHAR *wc, NCHAR *p, USHORT n);
+SSHORT CS_UTFFSS_fss_mbtowc(TEXTTYPE *obj, UCS2_CHAR *wc, NCHAR *p, USHORT n);
 
 typedef struct {
 	int cmask;

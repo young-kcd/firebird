@@ -26,7 +26,7 @@
 #include "firebird.h"
 #include "../intl/ldcommon.h"
 #include "cv_narrow.h"
-#include "cs_unicode_fss.h"
+#include "cv_unicode_fss.h"
 
 CHARSET_ENTRY(CS_unicode_fss)
 {
@@ -41,7 +41,7 @@ CHARSET_ENTRY(CS_unicode_fss)
 	csptr->charset_well_formed = (FPTR_SHORT) NULL;
 	CV_convert_init(&csptr->charset_to_unicode, CS_UNICODE_UCS2, CS_UNICODE_FSS,
 					CS_UTFFSS_fss_to_unicode, NULL, NULL);
-	CV_convert_init(&csptr->charset_from_unicode, CS_UNICODE_FSS,
-					CS_UNICODE_UCS2, CS_UTFFSS_unicode_to_fss, NULL, NULL);
+	CV_convert_init(&csptr->charset_from_unicode, CS_UNICODE_FSS, CS_UNICODE_UCS2,
+					CS_UTFFSS_unicode_to_fss, NULL, NULL);
 	CHARSET_RETURN;
 }
