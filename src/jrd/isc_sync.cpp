@@ -3573,7 +3573,7 @@ UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
 
 	HANDLE file_obj;
 
-	while (1) {
+	while (true) {
 		TEXT expanded_filename[MAXPATHLEN];
 		sprintf(expanded_filename, "%s%"SLONGFORMAT, shmem_data->sh_mem_name,
 				shmem_data->sh_mem_hdr_address[1] + 1);

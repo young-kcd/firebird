@@ -715,7 +715,7 @@ void SVC_detach(Service* service)
 			exit(0);
 
 		/* The shutdown operation is complete, just wait to die */
-		while (1);
+		while (true);
 	}
 #endif /* SERVER_SHUTDOWN */
 
