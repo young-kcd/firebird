@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int_cxx.cpp,v 1.28 2004-01-28 07:50:27 robocop Exp $
+//	$Id: int_cxx.cpp,v 1.29 2004-03-20 14:31:57 alexpeshkoff Exp $
 //
 
 #include "firebird.h"
@@ -297,7 +297,7 @@ static void gen_compile( const gpre_req* request, int column)
 	ib_fprintf(out_file, "if (!%s)", request->req_handle);
 	align(column);
 	ib_fprintf(out_file,
-			   "%s = (BLK) CMP_compile2 (tdbb, (UCHAR*)jrd_%d, TRUE);",
+			   "%s = CMP_compile2 (tdbb, (UCHAR*)jrd_%d, TRUE);",
 			   request->req_handle, request->req_ident);
 }
 
@@ -482,7 +482,7 @@ static void gen_receive( const gpre_req* request, const gpre_port* port)
 {
 
 	ib_fprintf(out_file,
-			   "EXE_receive (tdbb, (jrd_req*)%s, %d, %d, (UCHAR*)&jrd_%d);",
+			   "EXE_receive (tdbb, %s, %d, %d, (UCHAR*)&jrd_%d);",
 			   request->req_handle, port->por_msg_number, port->por_length,
 			   port->por_ident);
 }
@@ -593,7 +593,7 @@ static void gen_send( const gpre_req* request, const gpre_port* port,
 	}
 	align(column);
 
-	ib_fprintf(out_file, "EXE_send (tdbb, (jrd_req*)%s, %d, %d, (UCHAR*)&jrd_%d);",
+	ib_fprintf(out_file, "EXE_send (tdbb, %s, %d, %d, (UCHAR*)&jrd_%d);",
 			   request->req_handle,
 			   port->por_msg_number, port->por_length, port->por_ident);
 }
@@ -609,7 +609,7 @@ static void gen_start( const gpre_req* request, const gpre_port* port,
 {
 	align(column);
 
-	ib_fprintf(out_file, "EXE_start (tdbb, (jrd_req*)%s, %s);",
+	ib_fprintf(out_file, "EXE_start (tdbb, %s, %s);",
 			   request->req_handle, request->req_trans);
 
 	if (port)
