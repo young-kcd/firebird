@@ -13,10 +13,11 @@
 
 @echo Cleaning files
 @del *.msg 2>nul
-#del *.log 2>nul
+@del *.log 2>nul
 @del %ROOT_PATH%\src\include\gen\autoconfig.h 2>nul
 @del %ROOT_PATH%\src\include\gen\blrtable.h 2>nul
 @del %ROOT_PATH%\builds\win32\msvc6\*.plg 2>nul
 @del %ROOT_PATH%\builds\win32\msvc7\*.plg 2>nul
 
-@Echo Cleaning 
+@Echo Cleaning install files
+@del %ROOT_PATH%\src\install\arch-specific\win32\*.dll
