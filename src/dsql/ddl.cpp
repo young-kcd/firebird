@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.47 2003-04-28 07:41:29 dimitr Exp $
+ * $Id: ddl.cpp,v 1.48 2003-05-14 08:15:25 dimitr Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -2845,9 +2845,15 @@ static void define_trigger( DSQL_REQ request, DSQL_NOD node)
 							node->nod_arg[e_trg_actions]->nod_arg[0], 0);
 
 		request->req_scope_level++;
-		// although trigger doesn't have global EXIT command,
-		// we must set loop number != 0 in order to avoid zero-label
-		// in trigger's for/while loops
+		// dimitr: I see no reason to deny EXIT command in triggers,
+		//		   hence I've added zero label at the beginning.
+		//		   My first suspicion regarding obvious conflict
+		//		   with trigger messages (nod_abort) is wrong,
+		//		   although the fact that they use the same BLR code
+		//		   is still a potential dangerous and must be fixed.
+		//		   Hopefully, system triggers are never recompiled.
+		request->append_uchar(blr_label);
+		request->append_uchar(0);
 		request->req_loop_level = 0;
 		GEN_statement(request, PASS1_statement(request, actions, 1));
 		request->req_scope_level--;
