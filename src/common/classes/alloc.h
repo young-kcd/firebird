@@ -113,7 +113,7 @@ private:
 	Vector<void*,MAX_TREE_DEPTH+1> spareNodes;
 	bool needSpare;
 	PendingFreeBlock *pendingFree;
-#ifdef SUPERSERVER
+#ifdef MULTI_THREAD
 	Spinlock lock;
 #else
 	SharedSpinlock lock;
@@ -241,11 +241,11 @@ inline void* operator new[](size_t s, Firebird::MemoryPool& pool, char* file, in
 #define FB_NEW(pool) new(pool,__FILE__,__LINE__)
 #define FB_NEW_RPT(pool,count) new(pool,count,__FILE__,__LINE__)
 #else
-inline void* operator new(size_t s, Firebird::MemoryPool& pool) throw(std::bad_alloc) {
+inline void* operator new(size_t s, Firebird::MemoryPool& pool) {
 	return pool.allocate(s);
 //	return pool.calloc(s);
 }
-inline void* operator new[](size_t s, Firebird::MemoryPool& pool) throw(std::bad_alloc) {
+inline void* operator new[](size_t s, Firebird::MemoryPool& pool) {
 	return pool.allocate(s);
 //	return pool.calloc(s);
 }

@@ -153,6 +153,9 @@
 			<File
 				RelativePath="..\..\..\src\jrd\isc.cpp">
 			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\locks.cpp">
+ 			</File>
 		</Filter>
 		<Filter
 			Name="Header files"

@@ -80,12 +80,12 @@ public:
 	}
 	
 	// Initialize and open difference file for writing
-	bool begin_backup();
+	void begin_backup();
 	
 	// Merge difference file to main files (if needed) and unlink() difference 
 	// file then. If merge is already in progress method silently returns false and 
 	// does nothing (so it can be used for recovery on database startup). 
-	bool end_backup(bool recover);
+	void end_backup(bool recover);
 	
 	// Prevent allocation table from modification by other threads/processes
 	// You may or may not call unlock function in case this functions fail

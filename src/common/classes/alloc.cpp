@@ -321,7 +321,7 @@ MemoryPool* MemoryPool::internal_create(size_t instance_size, int *cur_mem, int 
 void MemoryPool::deletePool(MemoryPool* pool) {
 	/* dimitr: I think we need an abstract base class or a global macro
 			   in locks.h to avoid these architecture checks. */
-#ifdef SUPERSERVER
+#ifdef MULTI_THREAD
 	pool->lock.~Spinlock();
 #else
 	pool->lock.~SharedSpinlock();

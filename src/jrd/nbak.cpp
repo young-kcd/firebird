@@ -60,7 +60,14 @@ void BackupManager::lock_state_write(bool thread_exit) {
 	state_lock->beginWrite();
 	if (thread_exit) THREAD_ENTER;
 #else
+	ast_flags |= NBAK_state_in_use; // Prevent ASTs from releasing the lock
 	TDBB tdbb = GET_THREAD_DATA;
+	// Release shared lock to prevent possible deadlocks
+	if (state_lock->lck_physical != LCK_none)
+		if (LCK_convert(tdbb, state_lock, LCK_EX, LCK_NO_WAIT))
+			return;
+		else
+			LCK_release(tdbb, state_lock);
 	if (!LCK_lock(tdbb, state_lock, LCK_EX, LCK_WAIT))
 		// This is OK because state changing code expect it
 		ERR_post(gds_lock_conflict, 0); 
@@ -72,7 +79,21 @@ bool BackupManager::try_lock_state_write() {
 	return state_lock->tryBeginWrite();
 #else
 	TDBB tdbb = GET_THREAD_DATA;
-	return LCK_lock(tdbb, state_lock, LCK_EX, LCK_NO_WAIT);
+	ast_flags |= NBAK_state_in_use; // Prevent ASTs from releasing the lock
+	bool result;
+	if (state_lock->lck_physical == LCK_none)
+		result = LCK_lock(tdbb, state_lock, LCK_EX, LCK_NO_WAIT);
+	else
+		result = LCK_convert(tdbb, state_lock, LCK_EX, LCK_NO_WAIT);
+	if (!result) {
+		if (ast_flags & NBAK_state_blocking) {
+			LCK_release(tdbb, state_lock);
+			ast_flags &= ~NBAK_state_blocking;
+			backup_state = nbak_state_unknown; // We know state only as long we lock it
+		}
+		ast_flags &= ~NBAK_state_in_use;
+	}
+	return result;
 #endif
 }
 
@@ -83,6 +104,7 @@ void BackupManager::unlock_state_write() {
 	TDBB tdbb = GET_THREAD_DATA;
 	LCK_release(tdbb, state_lock);
 	backup_state = nbak_state_unknown; // We know state only as long we lock it
+	ast_flags &= ~NBAK_state_in_use;
 #endif
 }
 
@@ -93,7 +115,14 @@ bool BackupManager::lock_alloc_write(bool thread_exit) {
 	if (thread_exit) THREAD_ENTER;
 	return true;
 #else
+	ast_flags |= NBAK_alloc_in_use; // Prevent ASTs from releasing the lock
 	TDBB tdbb = GET_THREAD_DATA;
+	// Release shared lock to prevent possible deadlocks
+	if (alloc_lock->lck_physical != LCK_none)
+		if (LCK_convert(tdbb, alloc_lock, LCK_EX, LCK_NO_WAIT))
+			return true;
+		else
+			LCK_release(tdbb, alloc_lock);
 	return LCK_lock(tdbb, alloc_lock, LCK_EX, LCK_WAIT);
 #endif
 }
@@ -109,23 +138,34 @@ void BackupManager::unlock_alloc_write() {
 		ast_flags |= NBAK_alloc_dirty;
 	} else
 		LCK_convert(tdbb, alloc_lock, LCK_SR, LCK_WAIT);
+	ast_flags &= ~NBAK_alloc_in_use;
 #endif
 }
 
 // Initialize and open difference file for writing
-bool BackupManager::begin_backup() {	
+void BackupManager::begin_backup() {
 	TRACE("begin_backup");
 	TDBB tdbb = GET_THREAD_DATA;
-	lock_state_write(true);
-	TRACE("state locked");
+
+	// Lock header page first to prevent possible deadlock
+	WIN window;
+	window.win_page = HEADER_PAGE;
+	window.win_flags = 0;
+	HDR header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	bool state_locked = false, header_locked = true;
 	try {
+		lock_state_write(true);
+		state_locked = true;
+		TRACE("state locked");
+
 		if (!actualize_state(tdbb->tdbb_status_vector))
 			ERR_punt();
 		// Check state
 		if (backup_state != nbak_state_normal) {
 			TRACE1("end backup - invalid state %d", backup_state);
 			unlock_state_write();
-			return false;
+			CCH_RELEASE(tdbb, &window);
+			return;
 		}
 		// Create file
 		TRACE1("Creating difference file %s", diff_name);
@@ -145,23 +185,18 @@ bool BackupManager::begin_backup() {
 		TRACE("Set backup state in header");
 		FB_GUID guid;
 		GenerateGuid(&guid);
-		// Flush buffers to prevent the amount of allocated pages from increasing
-		// Before lock we'll write only header then. This may not change the number of
-		// pages in file.
 		tdbb->tdbb_flags |= TDBB_set_backup_state;
-		CCH_flush(tdbb, FLUSH_ALL, 0);
 		// Set state in database header page. All changes are written to main database file yet.
-		WIN window;
-		HDR header;
-		window.win_page = HEADER_PAGE;
-		window.win_flags = 0;
-		header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 		CCH_MARK_MUST_WRITE(tdbb, &window);
 		int newState = nbak_state_stalled;
 		header->hdr_flags = (header->hdr_flags & ~hdr_backup_mask) | newState;
+		// This number may be smaller than actual because some pages may be not flushed to
+		// disk yet. This is not a problem as it can cause only a slight performance degradation
 		backup_pages = header->hdr_backup_pages = PIO_act_alloc(database);
 		ULONG adjusted_scn = ++header->hdr_header.pag_scn(); // Generate new SCN
 		PAG_replace_entry_first(header, HDR_backup_guid, sizeof(guid), (UCHAR*)&guid);
+
+		header_locked = false;
 		CCH_RELEASE(tdbb, &window);
 		CCH_flush(tdbb, FLUSH_ALL, 0);
 		tdbb->tdbb_flags &= ~TDBB_set_backup_state;
@@ -172,11 +207,13 @@ bool BackupManager::begin_backup() {
 		// We already modified state in header, error here is not very important
 		actualize_alloc(tdbb->tdbb_status_vector); 
 		unlock_state_write();
-		return true;
 	} catch (const std::exception&) {
-		unlock_state_write();
 		backup_state = nbak_state_unknown;
 		tdbb->tdbb_flags &= ~TDBB_set_backup_state;
+		if (state_locked)
+			unlock_state_write();
+		if (header_locked)
+			CCH_RELEASE(tdbb, &window);
 		throw;
 	}
 }
@@ -184,20 +221,31 @@ bool BackupManager::begin_backup() {
 // Merge difference file to main files (if needed) and unlink() difference 
 // file then. If merge is already in progress method silently returns and 
 // does nothing (so it can be used for recovery on database startup). 
-bool BackupManager::end_backup(bool recover) {
+void BackupManager::end_backup(bool recover) {
 	TRACE("end_backup");
 	TDBB tdbb = GET_THREAD_DATA;
 	ULONG adjusted_scn; // We use this value to prevent race conditions.
 						// They are possible because we release state lock
 						// for some instants and anything is possible at
 						// that times.
-	if (recover) {
-		if (!try_lock_state_write())
-			return false;		
-	} else
-		lock_state_write(true);
-	TRACE("state locked");
+
+	// Lock header page first to prevent possible deadlock
+	WIN window;
+	window.win_page = HEADER_PAGE;
+	window.win_flags = 0;
+	HDR header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	bool state_locked = false, header_locked = true;
+
 	try {
+		if (recover) {
+			if (!try_lock_state_write()) {
+				CCH_RELEASE(tdbb, &window);
+				return;
+			}
+		} else
+			lock_state_write(true);
+		state_locked = true;
+		TRACE("state locked");
 		// Check state
 		if (!actualize_state(tdbb->tdbb_status_vector))
 			ERR_punt();
@@ -205,7 +253,8 @@ bool BackupManager::end_backup(bool recover) {
 		if (backup_state == nbak_state_normal || (recover && backup_state != nbak_state_merge)) {
 			TRACE1("invalid state %d", backup_state);
 			unlock_state_write();
-			return false;
+			CCH_RELEASE(tdbb, &window);
+			return;
 		}
 		TRACE1("difference file %s", diff_name);
 		// Set state in database header
@@ -213,12 +262,7 @@ bool BackupManager::end_backup(bool recover) {
 		TRACE1("Current backup state is %d", backup_state);
 		backup_state = nbak_state_merge;
 		adjusted_scn = ++current_scn;
-		WIN window;
-		HDR header;
-		window.win_page = HEADER_PAGE;
-		window.win_flags = 0;
 		TRACE1("New state is getting to become %d", backup_state);
-		header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 		CCH_MARK_MUST_WRITE(tdbb, &window);
 		TRACE1("New state is getting to become after fetches %d", backup_state);
 		// Generate new SCN
@@ -226,16 +270,20 @@ bool BackupManager::end_backup(bool recover) {
 		TRACE1("new SCN=%d is getting written to header", adjusted_scn);
 		// Adjust state
 		header->hdr_flags = (header->hdr_flags & ~hdr_backup_mask) | backup_state;
+		header_locked = false;
 		CCH_RELEASE(tdbb, &window);
 		CCH_flush(tdbb, FLUSH_ALL, 0); // This is to adjust header in main database file
 		tdbb->tdbb_flags &= ~TDBB_set_backup_state;
 		TRACE1("Set state %d in header page", backup_state);
 	} catch (const std::exception&) {
-		tdbb->tdbb_flags &= ~TDBB_set_backup_state;
-		unlock_state_write();
 		backup_state = nbak_state_unknown;
+		tdbb->tdbb_flags &= ~TDBB_set_backup_state;
+		if (state_locked)
+			unlock_state_write();
+		if (header_locked)
+			CCH_RELEASE(tdbb, &window);
 		throw;
-	}	
+	}
 	
 	
 	// Here comes the dirty work. We need to reapply all changes from difference file to database
@@ -253,7 +301,7 @@ bool BackupManager::end_backup(bool recover) {
 		if (backup_state != nbak_state_merge || current_scn != adjusted_scn) {
 			/* Handle the case when somebody finalized merge for us */
 			unlock_state();
-			return false;
+			return;
 		}
 		TRACE("Status OK.");
 		if (!actualize_alloc(tdbb->tdbb_status_vector))
@@ -284,28 +332,31 @@ bool BackupManager::end_backup(bool recover) {
 	}
 	
 	// We finished. We need to reflect it in our database header page
-	lock_state_write(true);
+	window.win_page = HEADER_PAGE;
+	window.win_flags = 0;
+	header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	state_locked = false;
+	header_locked = true;
 	try {
+		lock_state_write(true);
+		state_locked = true;
 		// Check state
 		if (!actualize_state(tdbb->tdbb_status_vector))
 			ERR_punt();
 		if (backup_state != nbak_state_merge || current_scn != adjusted_scn) {
 			/* Handle the case when somebody finalized merge for us */
 			unlock_state_write();
-			return false;
+			CCH_RELEASE(tdbb, &window);
+			return;
 		}
 		// Set state in database header
 		tdbb->tdbb_flags |= TDBB_set_backup_state;
 		backup_state = nbak_state_normal;
-		WIN window;
-		HDR header;
-		window.win_page = HEADER_PAGE;
-		window.win_flags = 0;
-		header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 		CCH_MARK_MUST_WRITE(tdbb, &window);
 		// Adjust state
 		header->hdr_flags = (header->hdr_flags & ~hdr_backup_mask) | backup_state;
 		TRACE1("Set state %d in header page", backup_state);
+		header_locked = false;
 		CCH_RELEASE(tdbb, &window);
 		CCH_flush(tdbb, FLUSH_ALL, 0); // This is to adjust header in main database file
 		tdbb->tdbb_flags &= ~TDBB_set_backup_state;
@@ -324,12 +375,15 @@ bool BackupManager::end_backup(bool recover) {
 		unlock_state_write();
 		TRACE("backup ended");
 	} catch (const std::exception&) {
-		tdbb->tdbb_flags &= ~TDBB_set_backup_state;
-		unlock_state_write();
 		backup_state = nbak_state_unknown;
+		tdbb->tdbb_flags &= ~TDBB_set_backup_state;
+		if (state_locked)
+			unlock_state_write();
+		if (header_locked)
+			CCH_RELEASE(tdbb, &window);
 		throw;
 	}
-	return true;
+	return;
 }
 	
 bool BackupManager::actualize_alloc(ISC_STATUS* status) {
@@ -485,7 +539,7 @@ BackupManager::BackupManager(DBB _database, int ini_state) :
 	state_lock->lck_ast = backup_state_ast;
 
 	alloc_lock = FB_NEW_RPT(*database->dbb_permanent, 0) lck();
-	alloc_lock->lck_type = LCK_backup_merge;
+	alloc_lock->lck_type = LCK_backup_alloc;
 	alloc_lock->lck_owner_handle = LCK_get_owner_handle(tdbb, alloc_lock->lck_type);
 	alloc_lock->lck_parent = database->dbb_lock;
 	alloc_lock->lck_length = 0;
@@ -805,7 +859,7 @@ int BackupManager::alloc_table_ast(void *ast_object)
 	
 	TRACE("alloc_table_ast");
 
-	if (new_dbb->backup_manager->ast_flags & NBAK_alloc_in_use || lock->lck_physical != LCK_SR)
+	if (new_dbb->backup_manager->ast_flags & NBAK_alloc_in_use)
 		new_dbb->backup_manager->ast_flags |= NBAK_alloc_blocking;
 	else {
 		new_dbb->backup_manager->ast_flags |= NBAK_alloc_dirty;

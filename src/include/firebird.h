@@ -30,7 +30,7 @@
  *       John Bellardo  <bellardo@cs.ucsd.edu>
  *
  *
- *  $Id: firebird.h,v 1.12 2003-03-09 02:23:56 brodsom Exp $
+ *  $Id: firebird.h,v 1.13 2003-08-10 15:43:21 skidder Exp $
  *
  */
 
@@ -63,6 +63,12 @@
 // 
 #if defined(SUPERSERVER) || defined(WIN_NT)
 #define SERVER_SHUTDOWN		1
+#endif
+
+// Check if we need thread synchronization
+#if defined(SUPERSERVER) || defined(SUPERCLIENT) || \
+	defined(WIN_NT) || defined(SOLARIS_MT) || defined (VMS)
+#define MULTI_THREAD 1
 #endif
 
 #endif /* INCLUDE_Firebird */

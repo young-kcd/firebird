@@ -28,7 +28,7 @@
 
 #include "firebird.h"
 
-#ifdef SUPERSERVER
+#ifdef MULTI_THREAD
 #ifdef WIN_NT
 // It is relatively easy to avoid using this header. Maybe do the same stuff like
 // in thd.h ? This is Windows platform maintainers choice
@@ -41,11 +41,11 @@
 #include <thread.h>
 #endif
 #endif
-#endif /* SUPERSERVER */
+#endif /* MULTI_THREAD */
 
 namespace Firebird {
 
-#ifdef SUPERSERVER
+#ifdef MULTI_THREAD
 #ifdef WIN_NT
 
 /* Process-local spinlock. Used to manage memory heaps in threaded environment. */
@@ -126,7 +126,7 @@ public:
 
 #endif
 #endif
-#endif /* SUPERSERVER */
+#endif /* MULTI_THREAD */
 
 // Spinlock in shared memory. Not implemented yet !
 class SharedSpinlock {

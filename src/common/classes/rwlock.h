@@ -106,7 +106,7 @@ public:
 
 #else
 
-#ifdef SUPERSERVER
+#ifdef MULTI_THREAD
 
 #include <pthread.h>
 #include <errno.h>
@@ -171,7 +171,7 @@ public:
 
 }
 
-#endif /*SUPERSERVER*/
+#endif /*MULTI_THREAD*/
 
 #endif /*!WIN_NT*/
 

@@ -550,8 +550,6 @@ const TEXT* DLL_EXPORT ERR_string(const TEXT* in_string, int length)
 #endif
 		jrd_failures_ptr = jrd_failures;
 
-#pragma FB_COMPILER_MESSAGE("Fix! Can we change the API to take the real type?")
-		// ugly but currently necessary cast
 		gds__register_cleanup(cleanup, 0);
 	}
 

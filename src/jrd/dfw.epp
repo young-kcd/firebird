@@ -1201,14 +1201,7 @@ static bool begin_backup(	TDBB	tdbb,
 	case 2:
 		return true;
 	case 3:
-		if (!dbb->backup_manager->begin_backup())
-		{
-			ERR_post(gds_no_meta_update,
-					 gds_arg_gds, gds_lock_timeout,
-					 gds_arg_gds, gds_obj_in_use,
-					 gds_arg_string, "BACKUP STATE",
-					 0); /*!!!FIXME!!!*/
-		}
+		dbb->backup_manager->begin_backup();
 		return false;
 	}
 
@@ -1241,14 +1234,7 @@ static bool end_backup(	TDBB	tdbb,
 	case 2:
 		return true;
 	case 3:
-		if (!dbb->backup_manager->end_backup(false/*end backup normally*/))
-		{
-			ERR_post(gds_no_meta_update,
-					 gds_arg_gds, gds_lock_timeout,
-					 gds_arg_gds, gds_obj_in_use,
-					 gds_arg_string, "BACKUP STATE",
-					 0); /*!!!FIXME!!!*/
-		}
+		dbb->backup_manager->end_backup(false/*end backup normally*/);
 		return false;
 	}
 

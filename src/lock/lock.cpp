@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.60 2003-08-09 22:36:26 brodsom Exp $
+$Id: lock.cpp,v 1.61 2003-08-10 15:43:23 skidder Exp $
 */
 
 #include "firebird.h"
@@ -1467,7 +1467,7 @@ static void acquire( PTR owner_offset)
 	LOCK_post_manager = FALSE;
 #endif
 
-#ifdef USE_BLOCKING_SIGNALS
+#ifndef SUPERSERVER
 	if (LOCK_owner) {
 		LOCK_owner->own_ast_hung_flags &= ~OWN_hung;	/* Can't be hung by OS if we got here */
 	}
