@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.90 2004-04-28 22:31:15 brodsom Exp $
+$Id: lock.cpp,v 1.91 2004-05-03 17:35:46 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -189,11 +189,11 @@ SSHORT LOCK_debug_level = 0;
 #define SV_INTERRUPT	0
 #endif
 
-#define DUMMY_OWNER_CREATE	((PTR) -1)
-#define DUMMY_OWNER_DELETE	((PTR) -2)
-#define DUMMY_OWNER_SHUTDOWN	((PTR) -3)
+#define DUMMY_OWNER_CREATE	((SRQ_PTR) -1)
+#define DUMMY_OWNER_DELETE	((SRQ_PTR) -2)
+#define DUMMY_OWNER_SHUTDOWN	((SRQ_PTR) -3)
 
-static void acquire(PTR);
+static void acquire(SRQ_PTR);
 static UCHAR *alloc(SSHORT, ISC_STATUS *);
 static LBL alloc_lock(USHORT, ISC_STATUS *);
 #ifdef USE_STATIC_SEMAPHORES
@@ -204,15 +204,15 @@ static USHORT alloc_semaphore(OWN, ISC_STATUS *);
 // only SuperServer does direct calls to blocking_action2
 static void blocking_action(void *_owner_offset);
 #endif
-static void blocking_action2(PTR, PTR);
+static void blocking_action2(SRQ_PTR, SRQ_PTR);
 #ifdef USE_BLOCKING_THREAD
-static void THREAD_ROUTINE blocking_action_thread(PTR *);
+static void THREAD_ROUTINE blocking_action_thread(SRQ_PTR *);
 #endif
 static void bug(ISC_STATUS *, const TEXT *);
 #ifdef DEV_BUILD
 static void bug_assert(const TEXT *, ULONG);
 #endif
-static bool convert(PTR, UCHAR, SSHORT, lock_ast_t, void*, ISC_STATUS*);
+static bool convert(SRQ_PTR, UCHAR, SSHORT, lock_ast_t, void*, ISC_STATUS*);
 static USHORT create_owner(ISC_STATUS *, SLONG, UCHAR, SLONG *);
 #ifdef DEV_BUILD
 static void current_is_active_owner(bool, ULONG);
@@ -220,19 +220,19 @@ static void current_is_active_owner(bool, ULONG);
 static void deadlock_clear(void);
 static LRQ deadlock_scan(OWN, LRQ);
 static LRQ deadlock_walk(LRQ, bool *);
-static void dequeue(PTR);
+static void dequeue(SRQ_PTR);
 #ifdef DEBUG
 static void debug_delay(ULONG);
 #endif
 static void exit_handler(void *);
-static LBL find_lock(PTR, USHORT, const UCHAR*, USHORT, USHORT*);
+static LBL find_lock(SRQ_PTR, USHORT, const UCHAR*, USHORT, USHORT*);
 #ifdef MANAGER_PROCESS
 static bool fork_lock_manager(ISC_STATUS *);
 static OWN get_manager(bool);
 #endif
-static LRQ get_request(PTR);
+static LRQ get_request(SRQ_PTR);
 static void grant(LRQ, LBL);
-static PTR grant_or_que(LRQ, LBL, SSHORT);
+static SRQ_PTR grant_or_que(LRQ, LBL, SSHORT);
 static ISC_STATUS init_lock_table(ISC_STATUS *);
 static void init_owner_block(OWN, UCHAR, ULONG, USHORT);
 #ifdef USE_WAKEUP_EVENTS
@@ -242,17 +242,17 @@ static void lock_initialize(void*, SH_MEM, bool);
 static void insert_data_que(LBL);
 static void insert_tail(SRQ, SRQ);
 static USHORT lock_state(LBL);
-//static void port_waker(PTR *);
+//static void port_waker(SRQ_PTR *);
 static void post_blockage(LRQ, LBL, bool);
-static void post_history(USHORT, PTR, PTR, PTR, bool);
+static void post_history(USHORT, SRQ_PTR, SRQ_PTR, SRQ_PTR, bool);
 static void post_pending(LBL);
 static void post_wakeup(OWN);
 #ifndef SUPERSERVER
-static bool probe_owners(PTR);
+static bool probe_owners(SRQ_PTR);
 #endif
-static void purge_owner(PTR, OWN);
+static void purge_owner(SRQ_PTR, OWN);
 static void remove_que(SRQ);
-static void release(PTR);
+static void release(SRQ_PTR);
 static void release_mutex(void);
 static void release_request(LRQ);
 #ifdef USE_STATIC_SEMAPHORES
@@ -261,23 +261,23 @@ static void release_semaphore(OWN);
 #ifdef USE_BLOCKING_THREAD
 static void shutdown_blocking_thread(ISC_STATUS *);
 #endif
-static int signal_owner(OWN, PTR);
+static int signal_owner(OWN, SRQ_PTR);
 #ifdef VALIDATE_LOCK_TABLE
 static void validate_lhb(LHB);
-static void validate_shb(PTR);
-static void validate_owner(PTR, USHORT);
-static void validate_lock(PTR, USHORT, PTR);
-static void validate_request(PTR, USHORT, USHORT);
-//static void validate_block(PTR);
+static void validate_shb(SRQ_PTR);
+static void validate_owner(SRQ_PTR, USHORT);
+static void validate_lock(SRQ_PTR, USHORT, SRQ_PTR);
+static void validate_request(SRQ_PTR, USHORT, USHORT);
+//static void validate_block(SRQ_PTR);
 #endif
 
 static USHORT wait_for_request(LRQ, SSHORT, ISC_STATUS *);
-//static void wakeup_action(PTR *);
+//static void wakeup_action(SRQ_PTR *);
 
 static own LOCK_process_owner;	/* Place holder */
 static SSHORT LOCK_bugcheck = 0;
 static LHB volatile LOCK_header = NULL;
-static PTR LOCK_owner_offset = 0;
+static SRQ_PTR LOCK_owner_offset = 0;
 static OWN LOCK_owner = 0;
 #if defined(USE_BLOCKING_SIGNALS) || defined(DEBUG)
 static SSHORT volatile LOCK_asts = -1;
@@ -339,6 +339,8 @@ static HANDLE	wakeup_event[1];
 static HANDLE blocking_action_thread_handle;
 #endif
 
+#define SRQ_BASE                    ((UCHAR*) LOCK_header)
+
 static const UCHAR compatibility[] = {
 
 /*				Shared	Prot	Shared	Prot
@@ -371,7 +373,7 @@ void LOCK_ast_enable() {
 #endif
 }
 
-bool LOCK_convert(PTR		request_offset,
+bool LOCK_convert(SRQ_PTR		request_offset,
 				 UCHAR		type,
 				 SSHORT		lck_wait,
 				 lock_ast_t ast_routine,
@@ -391,15 +393,15 @@ bool LOCK_convert(PTR		request_offset,
 	LOCK_TRACE(("LOCK_convert (%d, %d)\n", type, lck_wait));
 
 	lrq* request = get_request(request_offset);
-	own* owner = (OWN) ABS_PTR(request->lrq_owner);
+	own* owner = (OWN) SRQ_ABS_PTR(request->lrq_owner);
 	if (!owner->own_count)
 		return false;
 
 	acquire(request->lrq_owner);
 	owner = NULL;				/* remap */
 	++LOCK_header->lhb_converts;
-	request = (LRQ) ABS_PTR(request_offset);	/* remap */
-	lbl* lock = (LBL) ABS_PTR(request->lrq_lock);
+	request = (LRQ) SRQ_ABS_PTR(request_offset);	/* remap */
+	lbl* lock = (LBL) SRQ_ABS_PTR(request->lrq_lock);
 	if (lock->lbl_series < LCK_MAX_SERIES)
 		++LOCK_header->lhb_operations[lock->lbl_series];
 	else
@@ -415,7 +417,7 @@ bool LOCK_convert(PTR		request_offset,
 }
 
 
-int LOCK_deq( PTR request_offset)
+int LOCK_deq( SRQ_PTR request_offset)
 {
 /**************************************
  *
@@ -430,16 +432,16 @@ int LOCK_deq( PTR request_offset)
 	LOCK_TRACE(("LOCK_deq (%ld)\n", request_offset));
 
 	lrq* request = get_request(request_offset);
-	PTR owner_offset = request->lrq_owner;
-	own* owner = (OWN) ABS_PTR(owner_offset);
+	SRQ_PTR owner_offset = request->lrq_owner;
+	own* owner = (OWN) SRQ_ABS_PTR(owner_offset);
 	if (!owner->own_count)
 		return FALSE;
 
 	acquire(owner_offset);
 	owner = NULL;				/* remap */
 	++LOCK_header->lhb_deqs;
-	request = (LRQ) ABS_PTR(request_offset);	/* remap */
-	lbl* lock = (LBL) ABS_PTR(request->lrq_lock);
+	request = (LRQ) SRQ_ABS_PTR(request_offset);	/* remap */
+	lbl* lock = (LBL) SRQ_ABS_PTR(request->lrq_lock);
 	if (lock->lbl_series < LCK_MAX_SERIES)
 		++LOCK_header->lhb_operations[lock->lbl_series];
 	else
@@ -451,7 +453,7 @@ int LOCK_deq( PTR request_offset)
 }
 
 
-UCHAR LOCK_downgrade(PTR request_offset, ISC_STATUS * status_vector)
+UCHAR LOCK_downgrade(SRQ_PTR request_offset, ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -467,8 +469,8 @@ UCHAR LOCK_downgrade(PTR request_offset, ISC_STATUS * status_vector)
 	LOCK_TRACE(("LOCK_downgrade (%ld)\n", request_offset));
 
 	lrq* request = get_request(request_offset);
-	PTR owner_offset = request->lrq_owner;
-	own* owner = (OWN) ABS_PTR(owner_offset);
+	SRQ_PTR owner_offset = request->lrq_owner;
+	own* owner = (OWN) SRQ_ABS_PTR(owner_offset);
 	if (!owner->own_count)
 		return FALSE;
 
@@ -476,16 +478,16 @@ UCHAR LOCK_downgrade(PTR request_offset, ISC_STATUS * status_vector)
 	owner = NULL;				/* remap */
 	++LOCK_header->lhb_downgrades;
 
-	request = (LRQ) ABS_PTR(request_offset);	/* Re-init after a potential remap */
-	lbl* lock = (LBL) ABS_PTR(request->lrq_lock);
+	request = (LRQ) SRQ_ABS_PTR(request_offset);	/* Re-init after a potential remap */
+	lbl* lock = (LBL) SRQ_ABS_PTR(request->lrq_lock);
 	UCHAR pending_state = LCK_none;
 
 /* Loop thru requests looking for pending conversions
    and find the highest requested state */
 
-	srq* que;
-	QUE_LOOP(lock->lbl_requests, que) {
-		const lrq* pending = (LRQ) ((UCHAR *) que - OFFSET(LRQ, lrq_lbl_requests));
+	srq* lock_srq;
+	SRQ_LOOP(lock->lbl_requests, lock_srq) {
+		const lrq* pending = (LRQ) ((UCHAR *) lock_srq - OFFSET(LRQ, lrq_lbl_requests));
 		if (pending->lrq_flags & LRQ_pending && pending != request) {
 			pending_state = MAX(pending->lrq_requested, pending_state);
 			if (pending_state == LCK_EX)
@@ -512,8 +514,8 @@ UCHAR LOCK_downgrade(PTR request_offset, ISC_STATUS * status_vector)
 }
 
 
-SLONG LOCK_enq(	PTR		prior_request,
-				PTR		parent_request,
+SLONG LOCK_enq(	SRQ_PTR		prior_request,
+				SRQ_PTR		parent_request,
 				USHORT	series,
 				const UCHAR*	value,
 				USHORT	length,
@@ -523,7 +525,7 @@ SLONG LOCK_enq(	PTR		prior_request,
 				SLONG	data,
 				SSHORT	lck_wait,
 				ISC_STATUS*	status_vector,
-				PTR		owner_offset)
+				SRQ_PTR		owner_offset)
 {
 /**************************************
  *
@@ -539,7 +541,7 @@ SLONG LOCK_enq(	PTR		prior_request,
  **************************************/
 	LOCK_TRACE(("LOCK_enq (%ld)\n", parent_request));
 
-	own* owner = (OWN) ABS_PTR(owner_offset);
+	own* owner = (OWN) SRQ_ABS_PTR(owner_offset);
 	if (!owner_offset || !owner->own_count)
 		return 0;
 
@@ -558,7 +560,7 @@ SLONG LOCK_enq(	PTR		prior_request,
 		dequeue(prior_request);
 
 	lrq* request = 0;
-	PTR parent;
+	SRQ_PTR parent;
 	if (parent_request) {
 		request = get_request(parent_request);
 		parent = request->lrq_lock;
@@ -569,7 +571,7 @@ SLONG LOCK_enq(	PTR		prior_request,
 /* Allocate or reuse a lock request block */
 
 	ASSERT_ACQUIRED;
-	if (QUE_EMPTY(LOCK_header->lhb_free_requests)) {
+	if (SRQ_EMPTY(LOCK_header->lhb_free_requests)) {
 		if (!(request = (LRQ) alloc(sizeof(lrq), status_vector))) {
 			release(owner_offset);
 			return 0;
@@ -577,13 +579,13 @@ SLONG LOCK_enq(	PTR		prior_request,
 	}
 	else {
 		ASSERT_ACQUIRED;
-		request = (LRQ) ((UCHAR *) QUE_NEXT(LOCK_header->lhb_free_requests) -
+		request = (LRQ) ((UCHAR *) SRQ_NEXT(LOCK_header->lhb_free_requests) -
 						 OFFSET(LRQ, lrq_lbl_requests));
 		remove_que(&request->lrq_lbl_requests);
 	}
 
-	owner = (OWN) ABS_PTR(owner_offset);	/* Re-init after a potential remap */
-	post_history(his_enq, owner_offset, (PTR)0, REL_PTR(request), true);
+	owner = (OWN) SRQ_ABS_PTR(owner_offset);	/* Re-init after a potential remap */
+	post_history(his_enq, owner_offset, (SRQ_PTR)0, SRQ_REL_PTR(request), true);
 
 	request->lrq_type = type_lrq;
 	request->lrq_flags = 0;
@@ -594,7 +596,7 @@ SLONG LOCK_enq(	PTR		prior_request,
 	request->lrq_ast_routine = ast_routine;
 	request->lrq_ast_argument = ast_argument;
 	insert_tail(&owner->own_requests, &request->lrq_own_requests);
-	QUE_INIT(request->lrq_own_blocks);
+	SRQ_INIT(request->lrq_own_blocks);
 
 /* See if the lock already exits */
 
@@ -624,7 +626,7 @@ SLONG LOCK_enq(	PTR		prior_request,
 
 /* Lock doesn't exist.  Allocate lock block and set it up. */
 
-	PTR request_offset = REL_PTR(request);
+	SRQ_PTR request_offset = SRQ_REL_PTR(request);
 
 	if (!(lock = alloc_lock(length, status_vector))) {
 		/* lock table is exhausted */
@@ -643,7 +645,7 @@ SLONG LOCK_enq(	PTR		prior_request,
 
 /* Maintain lock series data queue */
 
-	QUE_INIT(lock->lbl_lhb_data);
+	SRQ_INIT(lock->lbl_lhb_data);
 	if (lock->lbl_data = data)
 		insert_data_que(lock);
 
@@ -670,22 +672,22 @@ SLONG LOCK_enq(	PTR		prior_request,
 		} while (--length);
 	}
 
-	request = (LRQ) ABS_PTR(request_offset);
+	request = (LRQ) SRQ_ABS_PTR(request_offset);
 
-	QUE_INIT(lock->lbl_requests);
+	SRQ_INIT(lock->lbl_requests);
 	ASSERT_ACQUIRED;
 	insert_tail(&LOCK_header->lhb_hash[hash_slot], &lock->lbl_lhb_hash);
 	insert_tail(&lock->lbl_requests, &request->lrq_lbl_requests);
-	request->lrq_lock = REL_PTR(lock);
+	request->lrq_lock = SRQ_REL_PTR(lock);
 	grant(request, lock);
-	const SLONG lock_id = REL_PTR(request);
+	const SLONG lock_id = SRQ_REL_PTR(request);
 	release(request->lrq_owner);
 
 	return lock_id;
 }
 
 
-void LOCK_fini( ISC_STATUS* status_vector, PTR * owner_offset)
+void LOCK_fini( ISC_STATUS* status_vector, SRQ_PTR * owner_offset)
 {
 /**************************************
  *
@@ -700,8 +702,8 @@ void LOCK_fini( ISC_STATUS* status_vector, PTR * owner_offset)
  **************************************/
 	LOCK_TRACE(("LOCK_fini(%ld)\n", *owner_offset));
 
-	PTR offset = *owner_offset;
-	own* owner = (OWN) ABS_PTR(offset);
+	SRQ_PTR offset = *owner_offset;
+	own* owner = (OWN) SRQ_ABS_PTR(offset);
 	if (!offset || !owner->own_count)
 		return;
 
@@ -727,7 +729,7 @@ void LOCK_fini( ISC_STATUS* status_vector, PTR * owner_offset)
 	if (LOCK_header->lhb_active_owner != offset)
 	{
 		acquire(offset);
-		owner = (OWN) ABS_PTR(offset);	/* Re-init after a potential remap */
+		owner = (OWN) SRQ_ABS_PTR(offset);	/* Re-init after a potential remap */
 	}
 
 	if (LOCK_pid == owner->own_process_id)
@@ -739,7 +741,7 @@ void LOCK_fini( ISC_STATUS* status_vector, PTR * owner_offset)
 	ISC_signal_cancel(LOCK_block_signal, blocking_action,  (void *)(IPTR)offset);
 #endif
 
-	*owner_offset = (PTR)0;
+	*owner_offset = (SRQ_PTR)0;
 }
 
 
@@ -770,7 +772,7 @@ int LOCK_init(
 /* If everything is already initialized, just bump the use count. */
 	own* owner = 0;
 	if (*owner_handle) {
-		owner = (OWN) ABS_PTR(*owner_handle);
+		owner = (OWN) SRQ_ABS_PTR(*owner_handle);
 		owner->own_count++;
 		return FB_SUCCESS;
 	}
@@ -792,7 +794,7 @@ int LOCK_init(
 
 #ifndef SUPERSERVER
 	if (LOCK_owner_offset = *owner_handle)
-		LOCK_owner = (OWN) ABS_PTR(*owner_handle);
+		LOCK_owner = (OWN) SRQ_ABS_PTR(*owner_handle);
 #endif
 
 #ifdef USE_BLOCKING_SIGNALS
@@ -806,7 +808,7 @@ int LOCK_init(
    initializes owner_handle. */
 
 #if !defined SUPERSERVER && defined WIN_NT
-	owner = (OWN) ABS_PTR(*owner_handle);
+	owner = (OWN) SRQ_ABS_PTR(*owner_handle);
 	wakeup_event[0] = owner->own_wakeup_hndl;
 	blocking_event[0] = ISC_make_signal(TRUE, FALSE, LOCK_pid, LOCK_block_signal);
 	owner->own_blocking_hndl = blocking_event[0];
@@ -874,7 +876,7 @@ int LOCK_init(
 
 
 #ifdef MANAGER_PROCESS
-void LOCK_manager( PTR manager_owner_offset)
+void LOCK_manager( SRQ_PTR manager_owner_offset)
 {
 /**************************************
  *
@@ -890,7 +892,7 @@ void LOCK_manager( PTR manager_owner_offset)
  *	sleep.
  *
  **************************************/
-	SRQ que;
+	SRQ lock_srq;
 	ISC_STATUS_ARRAY local_status;
 	SLONG value;
 	event_t* event_ptr;
@@ -907,7 +909,7 @@ void LOCK_manager( PTR manager_owner_offset)
 
 	own* owner;
 	while (owner = get_manager(false)) {
-		if (signal_owner(owner, (PTR) NULL))
+		if (signal_owner(owner, (SRQ_PTR) NULL))
 			purge_owner(manager_owner_offset, owner);
 		else {
 			DEBUG_MSG(0,
@@ -922,7 +924,7 @@ void LOCK_manager( PTR manager_owner_offset)
 
 	DEBUG_MSG(0, ("LOCK_manager, pid %ld becoming manager\n", LOCK_pid));
 
-	own* manager_owner = (OWN) ABS_PTR(manager_owner_offset);
+	own* manager_owner = (OWN) SRQ_ABS_PTR(manager_owner_offset);
 	manager_owner->own_flags |= OWN_manager;
 	LOCK_process_owner.own_flags |= OWN_manager;
 #ifdef USE_STATIC_SEMAPHORES
@@ -952,18 +954,18 @@ void LOCK_manager( PTR manager_owner_offset)
 		if ((manager_counter++ % 100) == 0)
 			validate_lhb(LOCK_header);
 #endif
-		manager_owner = (OWN) ABS_PTR(manager_owner_offset);
+		manager_owner = (OWN) SRQ_ABS_PTR(manager_owner_offset);
 		if (LOCK_header->lhb_flags & LHB_shut_manager) {
 			purge_owner(manager_owner_offset, manager_owner);
 			release_mutex();
 			break;
 		}
 		ASSERT_ACQUIRED;
-		QUE_LOOP(LOCK_header->lhb_owners, que) {
-			owner = (OWN) ((UCHAR *) que - OFFSET(OWN, own_lhb_owners));
+		SRQ_LOOP(LOCK_header->lhb_owners, lock_srq) {
+			owner = (OWN) ((UCHAR *) lock_srq - OFFSET(OWN, own_lhb_owners));
 			if (owner->own_flags & OWN_signal) {
-				if (signal_owner(owner, (PTR) NULL)) {
-					que = (SRQ) ABS_PTR(que->srq_backward);
+				if (signal_owner(owner, (SRQ_PTR) NULL)) {
+					lock_srq = (SRQ) SRQ_ABS_PTR(lock_srq->srq_backward);
 					purge_owner(manager_owner_offset, owner);
 				}
 				else {
@@ -1028,7 +1030,7 @@ void LOCK_manager( PTR manager_owner_offset)
 #endif
 
 
-SLONG LOCK_query_data(PTR parent_request, USHORT series, USHORT aggregate)
+SLONG LOCK_query_data(SRQ_PTR parent_request, USHORT series, USHORT aggregate)
 {
 /**************************************
  *
@@ -1044,7 +1046,7 @@ SLONG LOCK_query_data(PTR parent_request, USHORT series, USHORT aggregate)
 	LBL lock;
 	LRQ parent;
 	SLONG data, count;
-	SRQ que;
+	SRQ lock_srq;
 
 /* Get root of lock hierarchy */
 
@@ -1056,7 +1058,7 @@ SLONG LOCK_query_data(PTR parent_request, USHORT series, USHORT aggregate)
 	}
 
 	acquire(parent->lrq_owner);
-	parent = (LRQ) ABS_PTR(parent_request);	/* remap */
+	parent = (LRQ) SRQ_ABS_PTR(parent_request);	/* remap */
 
 	++LOCK_header->lhb_query_data;
 	srq* data_header = &LOCK_header->lhb_data[series];
@@ -1071,10 +1073,10 @@ SLONG LOCK_query_data(PTR parent_request, USHORT series, USHORT aggregate)
 	case LCK_AVG:
 	case LCK_SUM:
 	case LCK_ANY:
-		for (que = (SRQ) ABS_PTR(data_header->srq_forward);
-			 que != data_header; que = (SRQ) ABS_PTR(que->srq_forward))
+		for (lock_srq = (SRQ) SRQ_ABS_PTR(data_header->srq_forward);
+			 lock_srq != data_header; lock_srq = (SRQ) SRQ_ABS_PTR(lock_srq->srq_forward))
 		{
-			lock = (LBL) ((UCHAR *) que - OFFSET(LBL, lbl_lhb_data));
+			lock = (LBL) ((UCHAR *) lock_srq - OFFSET(LBL, lbl_lhb_data));
 			CHECK(lock->lbl_series == series);
 			if (lock->lbl_parent != parent->lrq_lock)
 				continue;
@@ -1108,10 +1110,10 @@ SLONG LOCK_query_data(PTR parent_request, USHORT series, USHORT aggregate)
 		break;
 
 	case LCK_MAX:
-		for (que = (SRQ) ABS_PTR(data_header->srq_backward);
-			 que != data_header; que = (SRQ) ABS_PTR(que->srq_backward))
+		for (lock_srq = (SRQ) SRQ_ABS_PTR(data_header->srq_backward);
+			 lock_srq != data_header; lock_srq = (SRQ) SRQ_ABS_PTR(lock_srq->srq_backward))
 		{
-			lock = (LBL) ((UCHAR *) que - OFFSET(LBL, lbl_lhb_data));
+			lock = (LBL) ((UCHAR *) lock_srq - OFFSET(LBL, lbl_lhb_data));
 			CHECK(lock->lbl_series == series);
 			if (lock->lbl_parent != parent->lrq_lock)
 				continue;
@@ -1130,7 +1132,7 @@ SLONG LOCK_query_data(PTR parent_request, USHORT series, USHORT aggregate)
 }
 
 
-SLONG LOCK_read_data(PTR request_offset)
+SLONG LOCK_read_data(SRQ_PTR request_offset)
 {
 /**************************************
  *
@@ -1147,8 +1149,8 @@ SLONG LOCK_read_data(PTR request_offset)
 	lrq* request = get_request(request_offset);
 	acquire(request->lrq_owner);
 	++LOCK_header->lhb_read_data;
-	request = (LRQ) ABS_PTR(request_offset);	/* Re-init after a potential remap */
-	lbl* lock = (LBL) ABS_PTR(request->lrq_lock);
+	request = (LRQ) SRQ_ABS_PTR(request_offset);	/* Re-init after a potential remap */
+	lbl* lock = (LBL) SRQ_ABS_PTR(request->lrq_lock);
 	const SLONG data = lock->lbl_data;
 	if (lock->lbl_series < LCK_MAX_SERIES)
 		++LOCK_header->lhb_operations[lock->lbl_series];
@@ -1161,9 +1163,9 @@ SLONG LOCK_read_data(PTR request_offset)
 }
 
 
-SLONG LOCK_read_data2(PTR parent_request,
+SLONG LOCK_read_data2(SRQ_PTR parent_request,
 					  USHORT series,
-					  const UCHAR* value, USHORT length, PTR owner_offset)
+					  const UCHAR* value, USHORT length, SRQ_PTR owner_offset)
 {
 /**************************************
  *
@@ -1175,7 +1177,7 @@ SLONG LOCK_read_data2(PTR parent_request,
  *	Read data associated with transient locks.
  *
  **************************************/
-	PTR parent;
+	SRQ_PTR parent;
 	LRQ request;
 	LBL lock;
 	SLONG data;
@@ -1208,7 +1210,7 @@ SLONG LOCK_read_data2(PTR parent_request,
 }
 
 
-void LOCK_re_post( lock_ast_t ast, void* arg, PTR owner_offset)
+void LOCK_re_post( lock_ast_t ast, void* arg, SRQ_PTR owner_offset)
 {
 /**************************************
  *
@@ -1231,7 +1233,7 @@ void LOCK_re_post( lock_ast_t ast, void* arg, PTR owner_offset)
 /* Allocate or reuse a lock request block */
 
 	ASSERT_ACQUIRED;
-	if (QUE_EMPTY(LOCK_header->lhb_free_requests)) {
+	if (SRQ_EMPTY(LOCK_header->lhb_free_requests)) {
 		if (!(request = (LRQ) alloc(sizeof(lrq), NULL))) {
 			release(owner_offset);
 			return;
@@ -1239,12 +1241,12 @@ void LOCK_re_post( lock_ast_t ast, void* arg, PTR owner_offset)
 	}
 	else {
 		ASSERT_ACQUIRED;
-		request = (LRQ) ((UCHAR *) QUE_NEXT(LOCK_header->lhb_free_requests) -
+		request = (LRQ) ((UCHAR *) SRQ_NEXT(LOCK_header->lhb_free_requests) -
 						 OFFSET(LRQ, lrq_lbl_requests));
 		remove_que(&request->lrq_lbl_requests);
 	}
 
-	OWN owner = (OWN) ABS_PTR(owner_offset);
+	OWN owner = (OWN) SRQ_ABS_PTR(owner_offset);
 	request->lrq_type = type_lrq;
 	request->lrq_flags = LRQ_repost;
 	request->lrq_ast_routine = ast;
@@ -1252,13 +1254,13 @@ void LOCK_re_post( lock_ast_t ast, void* arg, PTR owner_offset)
 	request->lrq_requested = LCK_none;
 	request->lrq_state = LCK_none;
 	request->lrq_owner = owner_offset;
-	request->lrq_lock = (PTR) 0;
+	request->lrq_lock = (SRQ_PTR) 0;
 	insert_tail(&owner->own_blocks, &request->lrq_own_blocks);
 
 	DEBUG_DELAY;
 
 #ifdef USE_BLOCKING_THREAD
-	signal_owner((OWN) ABS_PTR(owner_offset), (PTR) NULL);
+	signal_owner((OWN) SRQ_ABS_PTR(owner_offset), (SRQ_PTR) NULL);
 #else
 /* The deadlock detection looks at the OWN_signaled bit to decide
  * whether processes have things to look at - as we're putting
@@ -1270,7 +1272,7 @@ void LOCK_re_post( lock_ast_t ast, void* arg, PTR owner_offset)
 	DEBUG_DELAY;
 	ISC_inhibit();
 	DEBUG_DELAY;
-	blocking_action2(owner_offset, (PTR) NULL);
+	blocking_action2(owner_offset, (SRQ_PTR) NULL);
 	DEBUG_DELAY;
 	ISC_enable();
 	DEBUG_DELAY;
@@ -1314,7 +1316,7 @@ bool LOCK_shut_manager(void)
 }
 
 
-SLONG LOCK_write_data(PTR request_offset, SLONG data)
+SLONG LOCK_write_data(SRQ_PTR request_offset, SLONG data)
 {
 /**************************************
  *
@@ -1331,8 +1333,8 @@ SLONG LOCK_write_data(PTR request_offset, SLONG data)
 	lrq* request = get_request(request_offset);
 	acquire(request->lrq_owner);
 	++LOCK_header->lhb_write_data;
-	request = (LRQ) ABS_PTR(request_offset);	/* Re-init after a potential remap */
-	lbl* lock = (LBL) ABS_PTR(request->lrq_lock);
+	request = (LRQ) SRQ_ABS_PTR(request_offset);	/* Re-init after a potential remap */
+	lbl* lock = (LBL) SRQ_ABS_PTR(request->lrq_lock);
 	remove_que(&lock->lbl_lhb_data);
 	if (lock->lbl_data = data)
 		insert_data_que(lock);
@@ -1348,7 +1350,7 @@ SLONG LOCK_write_data(PTR request_offset, SLONG data)
 }
 
 
-static void acquire( PTR owner_offset)
+static void acquire( SRQ_PTR owner_offset)
 {
 /**************************************
  *
@@ -1360,7 +1362,7 @@ static void acquire( PTR owner_offset)
  *	Acquire the lock file.  It it's busy, wait for it.
  *
  **************************************/
-	PTR prior_active;
+	SRQ_PTR prior_active;
 	SLONG length, spins, status;
 	LHB header;
 
@@ -1472,7 +1474,7 @@ static void acquire( PTR owner_offset)
 		LOCK_header = header;
 #ifdef WIN_NT
 		// Other platforms use directly mapped objects
-		LOCK_owner = (OWN)ABS_PTR(LOCK_owner_offset);
+		LOCK_owner = (OWN)SRQ_ABS_PTR(LOCK_owner_offset);
 #endif
 	}
 
@@ -1483,23 +1485,23 @@ static void acquire( PTR owner_offset)
  */
 	if (prior_active) {
 		SHB recover;
-		SRQ que;
+		SRQ lock_srq;
 
-		post_history(his_active, owner_offset, prior_active, (PTR) 0, false);
-		recover = (SHB) ABS_PTR(LOCK_header->lhb_secondary);
+		post_history(his_active, owner_offset, prior_active, (SRQ_PTR) 0, false);
+		recover = (SHB) SRQ_ABS_PTR(LOCK_header->lhb_secondary);
 		if (recover->shb_remove_node) {
 			/* There was a remove_que operation in progress when the prior_owner died */
 			DEBUG_MSG(0, ("Got to the funky shb_remove_node code\n"));
-			remove_que((SRQ) ABS_PTR(recover->shb_remove_node));
+			remove_que((SRQ) SRQ_ABS_PTR(recover->shb_remove_node));
 		}
 		else if (recover->shb_insert_que && recover->shb_insert_prior) {
 			/* There was a insert_que operation in progress when the prior_owner died */
 			DEBUG_MSG(0, ("Got to the funky shb_insert_que code\n"));
 
-			que = (SRQ) ABS_PTR(recover->shb_insert_que);
-			que->srq_backward = recover->shb_insert_prior;
-			que = (SRQ) ABS_PTR(recover->shb_insert_prior);
-			que->srq_forward = recover->shb_insert_que;
+			lock_srq = (SRQ) SRQ_ABS_PTR(recover->shb_insert_que);
+			lock_srq->srq_backward = recover->shb_insert_prior;
+			lock_srq = (SRQ) SRQ_ABS_PTR(recover->shb_insert_prior);
+			lock_srq->srq_forward = recover->shb_insert_que;
 			recover->shb_insert_que = 0;
 			recover->shb_insert_prior = 0;
 		}
@@ -1511,10 +1513,10 @@ static void acquire( PTR owner_offset)
 			SLONG value;
 
 			// Can't be hung by OS if we got here
-			OWN owner = (OWN)ABS_PTR(owner_offset);
+			OWN owner = (OWN)SRQ_ABS_PTR(owner_offset);
 
 			owner->own_ast_hung_flags &= ~OWN_hung;
-			own* first_owner = (OWN) ((UCHAR *) QUE_NEXT(LOCK_header->lhb_owners) -
+			own* first_owner = (OWN) ((UCHAR *) SRQ_NEXT(LOCK_header->lhb_owners) -
 								 OFFSET(OWN, own_lhb_owners));
 			if (first_owner->own_ast_hung_flags & OWN_hung &&
 				((LOCK_header->lhb_acquires - first_owner->own_acquire_time)
@@ -1540,7 +1542,7 @@ static void acquire( PTR owner_offset)
 					if (ret != FB_SUCCESS)
 						gds__log
 							("LOCK: owner %d timed out while stalling for benefit of owner %d",
-							 owner_offset, REL_PTR(first_owner));
+							 owner_offset, SRQ_REL_PTR(first_owner));
 #endif
 				}
 
@@ -1593,7 +1595,7 @@ static UCHAR* alloc( SSHORT size, ISC_STATUS * status_vector)
 			LOCK_header = header;
 #ifdef WIN_NT
 			// Other platforms use directly mapped objects
-			LOCK_owner = (OWN)ABS_PTR(LOCK_owner_offset);
+			LOCK_owner = (OWN)SRQ_ABS_PTR(LOCK_owner_offset);
 #endif
 			ASSERT_ACQUIRED;
 			LOCK_header->lhb_length = LOCK_data.sh_mem_length_mapped;
@@ -1620,10 +1622,10 @@ static UCHAR* alloc( SSHORT size, ISC_STATUS * status_vector)
 #ifdef DEV_BUILD
 /* This version of alloc() doesn't initialize memory.  To shake out
    any bugs, in DEV_BUILD we initialize it to a "funny" pattern */
-	memset(ABS_PTR(block), 0xFD, size);
+	memset((void*)SRQ_ABS_PTR(block), 0xFD, size);
 #endif
 
-	return ABS_PTR(block);
+	return (UCHAR*) SRQ_ABS_PTR(block);
 }
 
 
@@ -1644,9 +1646,9 @@ static LBL alloc_lock( USHORT length, ISC_STATUS * status_vector)
 	length = (length + 3) & ~3;
 
 	ASSERT_ACQUIRED;
-	srq* que;
-	QUE_LOOP(LOCK_header->lhb_free_locks, que) {
-		lbl* lock = (LBL) ((UCHAR *) que - OFFSET(LBL, lbl_lhb_hash));
+	srq* lock_srq;
+	SRQ_LOOP(LOCK_header->lhb_free_locks, lock_srq) {
+		lbl* lock = (LBL) ((UCHAR *) lock_srq - OFFSET(LBL, lbl_lhb_hash));
 		if (lock->lbl_size == length) {
 			remove_que(&lock->lbl_lhb_hash);
 			lock->lbl_type = type_lbl;
@@ -1685,7 +1687,7 @@ static USHORT alloc_semaphore( OWN owner, ISC_STATUS * status_vector)
  **************************************/
 	for (USHORT h = 0; h < 2; h++) {
 		ASSERT_ACQUIRED;
-		semaphore_mask* semaphores = (semaphore_mask*) ABS_PTR(LOCK_header->lhb_mask);
+		semaphore_mask* semaphores = (semaphore_mask*) SRQ_ABS_PTR(LOCK_header->lhb_mask);
 		for (USHORT i = 1; i < (USHORT) LOCK_sem_count; i++) {
 			if (semaphores->
 				smb_mask[i / BITS_PER_LONG] & (1L << (i % BITS_PER_LONG)))
@@ -1701,9 +1703,9 @@ static USHORT alloc_semaphore( OWN owner, ISC_STATUS * status_vector)
 		/* Loop thru owners to see if a semaphore is available */
 
 		ASSERT_ACQUIRED;
-		srq* que;
-		QUE_LOOP(LOCK_header->lhb_owners, que) {
-			own* other = (OWN) ((UCHAR *) que - OFFSET(OWN, own_lhb_owners));
+		srq* lock_srq;
+		SRQ_LOOP(LOCK_header->lhb_owners, lock_srq) {
+			own* other = (OWN) ((UCHAR *) lock_srq - OFFSET(OWN, own_lhb_owners));
 			if (other->own_semaphore & OWN_semavail)
 				release_semaphore(other);
 		}
@@ -1741,7 +1743,7 @@ static void blocking_action( void* _owner_offset)
  *		   been done.
  *
  **************************************/
-	PTR owner_offset = (PTR)(IPTR)_owner_offset;
+	SRQ_PTR owner_offset = (SRQ_PTR)(IPTR)_owner_offset;
 
 /* Ignore signals that occur when executing in lock manager
    or when there is no owner block set up */
@@ -1759,7 +1761,7 @@ static void blocking_action( void* _owner_offset)
 			 * when we are resignalling ourselves when we have the table
 			 * acquired already.
 			 */
-			owner = (OWN) ABS_PTR(owner_offset);
+			owner = (OWN) SRQ_ABS_PTR(owner_offset);
 			owner->own_ast_flags &= ~OWN_signaled;
 		}
 		DEBUG_DELAY;
@@ -1775,7 +1777,7 @@ static void blocking_action( void* _owner_offset)
 	DEBUG_DELAY;
 
 	acquire(owner_offset);
-	blocking_action2(owner_offset, (PTR) NULL);
+	blocking_action2(owner_offset, (SRQ_PTR) NULL);
 	release(owner_offset);
 
 #ifdef USE_BLOCKING_SIGNALS
@@ -1787,8 +1789,8 @@ static void blocking_action( void* _owner_offset)
 #endif
 
 static void blocking_action2(
-							 PTR blocking_owner_offset,
-							 PTR blocked_owner_offset)
+							 SRQ_PTR blocking_owner_offset,
+							 SRQ_PTR blocked_owner_offset)
 {
 /**************************************
  *
@@ -1815,14 +1817,14 @@ static void blocking_action2(
  *
  **************************************/
 	ASSERT_ACQUIRED;
-	own* owner = (OWN) ABS_PTR(blocking_owner_offset);
+	own* owner = (OWN) SRQ_ABS_PTR(blocking_owner_offset);
 
 	if (!blocked_owner_offset)
 		blocked_owner_offset = blocking_owner_offset;
 
 	while (owner->own_count) {
-		srq* que = QUE_NEXT(owner->own_blocks);
-		if (que == &owner->own_blocks) {
+		srq* lock_srq = SRQ_NEXT(owner->own_blocks);
+		if (lock_srq == &owner->own_blocks) {
 			/* We've processed the own_blocks queue, reset the "we've been
 			 * signaled" flag and start winding out of here
 			 */
@@ -1830,7 +1832,7 @@ static void blocking_action2(
 			/*post_history (his_leave_ast, blocking_owner_offset, 0, 0, true); */
 			break;
 		}
-		lrq* request = (LRQ) ((UCHAR *) que - OFFSET(LRQ, lrq_own_blocks));
+		lrq* request = (LRQ) ((UCHAR *) lock_srq - OFFSET(LRQ, lrq_own_blocks));
 		lock_ast_t routine = request->lrq_ast_routine;
 		void* arg = request->lrq_ast_argument;
 		remove_que(&request->lrq_own_blocks);
@@ -1839,7 +1841,7 @@ static void blocking_action2(
 			request->lrq_flags |= LRQ_blocking_seen;
 			++LOCK_header->lhb_blocks;
 			post_history(his_post_ast, blocking_owner_offset,
-						 request->lrq_lock, REL_PTR(request), true);
+						 request->lrq_lock, SRQ_REL_PTR(request), true);
 		}
 		else if (request->lrq_flags & LRQ_repost) {
 			request->lrq_type = type_null;
@@ -1851,14 +1853,14 @@ static void blocking_action2(
 			release(blocked_owner_offset);
 			(*routine)(arg);
 			acquire(blocked_owner_offset);
-			owner = (OWN) ABS_PTR(blocking_owner_offset);
+			owner = (OWN) SRQ_ABS_PTR(blocking_owner_offset);
 		}
 	}
 }
 
 
 #if !defined SUPERSERVER && defined WIN_NT
-static void THREAD_ROUTINE blocking_action_thread( PTR * owner_offset_ptr)
+static void THREAD_ROUTINE blocking_action_thread( SRQ_PTR * owner_offset_ptr)
 {
 /**************************************
  *
@@ -1876,7 +1878,7 @@ static void THREAD_ROUTINE blocking_action_thread( PTR * owner_offset_ptr)
 	while (true) {
 		const SLONG ret = WaitForSingleObject(blocking_event[0], INFINITE);
 		AST_ENTER;
-		own* owner = (OWN) ABS_PTR(*owner_offset_ptr);
+		own* owner = (OWN) SRQ_ABS_PTR(*owner_offset_ptr);
 		if ((ret != WAIT_OBJECT_0 && ret != WAIT_ABANDONED) || !*owner_offset_ptr ||
 			owner->own_process_id != LOCK_pid || owner->own_owner_id == 0)
 		{
@@ -1893,7 +1895,7 @@ static void THREAD_ROUTINE blocking_action_thread( PTR * owner_offset_ptr)
 
 
 #if (defined SOLARIS_MT && !defined SUPERSERVER)
-static void THREAD_ROUTINE blocking_action_thread( PTR * owner_offset_ptr)
+static void THREAD_ROUTINE blocking_action_thread( SRQ_PTR * owner_offset_ptr)
 {
 /**************************************
  *
@@ -2019,7 +2021,7 @@ static void bug( ISC_STATUS * status_vector, const TEXT* string)
 		   release the mutex */
 
 		if (LOCK_header && (LOCK_header->lhb_active_owner > 0)) {
-			const own* owner = (OWN) ABS_PTR(LOCK_header->lhb_active_owner);
+			const own* owner = (OWN) SRQ_ABS_PTR(LOCK_header->lhb_active_owner);
 			if (owner->own_process_id == LOCK_pid)
 				release(LOCK_header->lhb_active_owner);
 		}
@@ -2046,7 +2048,7 @@ static void bug( ISC_STATUS * status_vector, const TEXT* string)
 }
 
 
-static bool convert(PTR		request_offset,
+static bool convert(SRQ_PTR		request_offset,
 					UCHAR	type,
 					SSHORT	lck_wait,
 					lock_ast_t ast_routine,
@@ -2069,8 +2071,8 @@ static bool convert(PTR		request_offset,
  **************************************/
 	ASSERT_ACQUIRED;
 	lrq* request = get_request(request_offset);
-	lbl* lock = (LBL) ABS_PTR(request->lrq_lock);
-	PTR owner_offset = request->lrq_owner;
+	lbl* lock = (LBL) SRQ_ABS_PTR(request->lrq_lock);
+	SRQ_PTR owner_offset = request->lrq_owner;
 	post_history(his_convert, owner_offset, request->lrq_lock, request_offset,
 				 true);
 	request->lrq_requested = type;
@@ -2113,11 +2115,11 @@ static bool convert(PTR		request_offset,
 			ASSERT_RELEASED;
 			return false;
 		}
-		request = (LRQ) ABS_PTR(request_offset);
+		request = (LRQ) SRQ_ABS_PTR(request_offset);
 		if (!(request->lrq_flags & LRQ_rejected)) {
 			if (new_ast) {
 				acquire(owner_offset);
-				request = (LRQ) ABS_PTR(request_offset);
+				request = (LRQ) SRQ_ABS_PTR(request_offset);
 				request->lrq_ast_routine = ast_routine;
 				request->lrq_ast_argument = ast_argument;
 				release(owner_offset);
@@ -2127,11 +2129,11 @@ static bool convert(PTR		request_offset,
 		}
 		acquire(owner_offset);
 		request = get_request(request_offset);
-		lock = (LBL) ABS_PTR(request->lrq_lock);
+		lock = (LBL) SRQ_ABS_PTR(request->lrq_lock);
 		post_pending(lock);
 	}
 
-	request = (LRQ) ABS_PTR(request_offset);
+	request = (LRQ) SRQ_ABS_PTR(request_offset);
 	request->lrq_requested = request->lrq_state;
 	ASSERT_ACQUIRED;
 	++LOCK_header->lhb_denies;
@@ -2175,10 +2177,10 @@ static USHORT create_owner(ISC_STATUS*	status_vector,
 	acquire(DUMMY_OWNER_CREATE);	/* acquiring owner is being created */
 
 /* Look for a previous instance of owner.  If we find one, get rid of it. */
-	srq* que;
-	QUE_LOOP(LOCK_header->lhb_owners, que)
+	srq* lock_srq;
+	SRQ_LOOP(LOCK_header->lhb_owners, lock_srq)
 	{
-		own* owner = (OWN) ((UCHAR *) que - OFFSET(OWN, own_lhb_owners));
+		own* owner = (OWN) ((UCHAR *) lock_srq - OFFSET(OWN, own_lhb_owners));
 		if (owner->own_owner_id == (ULONG) owner_id &&
 			(UCHAR)owner->own_owner_type == owner_type)
 		{
@@ -2191,7 +2193,7 @@ static USHORT create_owner(ISC_STATUS*	status_vector,
 
 	own* owner = 0;
 	USHORT new_block;
-	if (QUE_EMPTY(LOCK_header->lhb_free_owners))
+	if (SRQ_EMPTY(LOCK_header->lhb_free_owners))
 	{
 		if (!(owner = (OWN) alloc(sizeof(own), status_vector)))
 		{
@@ -2202,7 +2204,7 @@ static USHORT create_owner(ISC_STATUS*	status_vector,
 	}
 	else
 	{
-		owner = (OWN) ((UCHAR *) QUE_NEXT(LOCK_header->lhb_free_owners) -
+		owner = (OWN) ((UCHAR *) SRQ_NEXT(LOCK_header->lhb_free_owners) -
 					   OFFSET(OWN, own_lhb_owners));
 		remove_que(&owner->own_lhb_owners);
 		new_block = OWN_BLOCK_reused;
@@ -2214,10 +2216,10 @@ static USHORT create_owner(ISC_STATUS*	status_vector,
 	insert_tail(&LOCK_header->lhb_owners, &owner->own_lhb_owners);
 
 #ifndef SUPERSERVER
-	probe_owners(REL_PTR(owner));
+	probe_owners(SRQ_REL_PTR(owner));
 #endif
 
-	*owner_handle = REL_PTR(owner);
+	*owner_handle = SRQ_REL_PTR(owner);
 	LOCK_header->lhb_active_owner = *owner_handle;
 
 #ifdef VALIDATE_LOCK_TABLE
@@ -2258,7 +2260,7 @@ static void current_is_active_owner(bool expect_acquired, ULONG line)
    DUMMY_OWNER_DELETE it can lead to a core drop when we try to map 
    the owner pointer */
 
-	PTR owner_ptr = LOCK_header->lhb_active_owner;
+	SRQ_PTR owner_ptr = LOCK_header->lhb_active_owner;
 
 /* If no active owner, then we certainly aren't the active owner */
 	if (!owner_ptr) {
@@ -2287,7 +2289,7 @@ static void current_is_active_owner(bool expect_acquired, ULONG line)
 		return;
 
 /* Find the active owner, and see if it is us */
-	own* owner = (OWN) ABS_PTR(owner_ptr);
+	own* owner = (OWN) SRQ_ABS_PTR(owner_ptr);
 
 
 /* SUPERSERVER uses the same pid for all threads, so the tests
@@ -2331,13 +2333,13 @@ static void deadlock_clear(void)
  *
  **************************************/
 	ASSERT_ACQUIRED;
-	srq* que;
-	QUE_LOOP(LOCK_header->lhb_owners, que) {
-		own* owner = (OWN) ((UCHAR *) que - OFFSET(OWN, own_lhb_owners));
-		PTR pending_offset = owner->own_pending_request;
+	srq* lock_srq;
+	SRQ_LOOP(LOCK_header->lhb_owners, lock_srq) {
+		own* owner = (OWN) ((UCHAR *) lock_srq - OFFSET(OWN, own_lhb_owners));
+		SRQ_PTR pending_offset = owner->own_pending_request;
 		if (!pending_offset)
 			continue;
-		lrq* pending = (LRQ) ABS_PTR(pending_offset);
+		lrq* pending = (LRQ) SRQ_ABS_PTR(pending_offset);
 		pending->lrq_flags &= ~(LRQ_deadlock | LRQ_scanned);
 	}
 }
@@ -2360,13 +2362,13 @@ static LRQ deadlock_scan(OWN owner,
  *
  **************************************/
 	LOCK_TRACE(
-			   ("deadlock_scan: owner %ld request %ld\n", REL_PTR(owner),
-				REL_PTR(request)));
+			   ("deadlock_scan: owner %ld request %ld\n", SRQ_REL_PTR(owner),
+				SRQ_REL_PTR(request)));
 
 	ASSERT_ACQUIRED;
 	++LOCK_header->lhb_scans;
 	post_history(his_scan, request->lrq_owner, request->lrq_lock,
-				 REL_PTR(request), true);
+				 SRQ_REL_PTR(request), true);
 	deadlock_clear();
 
 #ifdef VALIDATE_LOCK_TABLE
@@ -2428,13 +2430,13 @@ static LRQ deadlock_walk(LRQ request,
 
 /* Find the parent lock of the request */
 
-	lbl* lock = (LBL) ABS_PTR(request->lrq_lock);
+	lbl* lock = (LBL) SRQ_ABS_PTR(request->lrq_lock);
 
 /* Loop thru the requests granted against the lock.  If any granted request is
    blocking the request we're handling, recurse to find what's blocking him. */
-	srq* que;
-	QUE_LOOP(lock->lbl_requests, que) {
-		lrq* block = (LRQ) ((UCHAR *) que - OFFSET(LRQ, lrq_lbl_requests));
+	srq* lock_srq;
+	SRQ_LOOP(lock->lbl_requests, lock_srq) {
+		lrq* block = (LRQ) ((UCHAR *) lock_srq - OFFSET(LRQ, lrq_lbl_requests));
 
 		/* Note that the default for LOCK_ordering is 1, and the default can be
 		   changed with the isc_config modifier 'V4_LOCK_GRANT_ORDER'. */
@@ -2475,7 +2477,7 @@ static LRQ deadlock_walk(LRQ request,
 		/* Don't pursue lock owners that are not blocked themselves 
 		   (they can't cause a deadlock). */
 
-		own* owner = (OWN) ABS_PTR(block->lrq_owner);
+		own* owner = (OWN) SRQ_ABS_PTR(block->lrq_owner);
 
 		/* Don't pursue lock owners that still have to finish processing their AST.
 		   If the blocking queue is not empty, then the owner still has some
@@ -2483,7 +2485,7 @@ static LRQ deadlock_walk(LRQ request,
 		   Remember this fact because they still might be part of a deadlock. */
 
 		if (owner->own_ast_flags & OWN_signaled ||
-			!QUE_EMPTY((owner->own_blocks)))
+			!SRQ_EMPTY((owner->own_blocks)))
 		{
 			*maybe_deadlock = true;
 			continue;
@@ -2496,11 +2498,11 @@ static LRQ deadlock_walk(LRQ request,
 		/* Get pointer to the waiting request whose owner also owns a lock
 		   that blocks the input request. */
 
-		const PTR pending_offset = owner->own_pending_request;
+		const SRQ_PTR pending_offset = owner->own_pending_request;
 		if (!pending_offset)
 			continue;
 
-		lrq* target = (LRQ) ABS_PTR(pending_offset);
+		lrq* target = (LRQ) SRQ_ABS_PTR(pending_offset);
 
 		/* If this waiting request is not pending anymore, then things are changing
 		   and this request cannot be part of a deadlock. */
@@ -2526,7 +2528,7 @@ static LRQ deadlock_walk(LRQ request,
 
 
 
-static void dequeue( PTR request_offset)
+static void dequeue( SRQ_PTR request_offset)
 {
 /**************************************
  *
@@ -2635,7 +2637,7 @@ static void exit_handler( void *arg)
 
 /* Get rid of all the owners belonging to the current process */
 
-	PTR owner_offset = LOCK_owner_offset;
+	SRQ_PTR owner_offset = LOCK_owner_offset;
 	if (owner_offset) {
 #ifdef USE_BLOCKING_THREAD
 		shutdown_blocking_thread(local_status);
@@ -2650,12 +2652,12 @@ static void exit_handler( void *arg)
 		if (owner_offset != LOCK_header->lhb_active_owner)
 			acquire(DUMMY_OWNER_DELETE);
 
-		srq* que;
-		QUE_LOOP(LOCK_header->lhb_owners, que) {
-			OWN owner = (OWN) ((UCHAR *) que - OFFSET(OWN, own_lhb_owners));
+		srq* lock_srq;
+		SRQ_LOOP(LOCK_header->lhb_owners, lock_srq) {
+			OWN owner = (OWN) ((UCHAR *) lock_srq - OFFSET(OWN, own_lhb_owners));
 			if (owner->own_process_id == LOCK_pid) {
-				que = (SRQ) ABS_PTR(que->srq_backward);
-				purge_owner(REL_PTR(owner), owner);
+				lock_srq = (SRQ) SRQ_ABS_PTR(lock_srq->srq_backward);
+				purge_owner(SRQ_REL_PTR(owner), owner);
 				break;
 			}
 		}
@@ -2670,7 +2672,7 @@ static void exit_handler( void *arg)
 
 
 static LBL find_lock(
-					 PTR parent,
+					 SRQ_PTR parent,
 					 USHORT series,
 					 const UCHAR* value, USHORT length, USHORT* slot)
 {
@@ -2707,10 +2709,10 @@ static LBL find_lock(
 	ASSERT_ACQUIRED;
 	srq* hash_header = &LOCK_header->lhb_hash[hash_slot];
 
-	for (srq* que = (SRQ) ABS_PTR(hash_header->srq_forward);
-		 que != hash_header; que = (SRQ) ABS_PTR(que->srq_forward)) 
+	for (srq* lock_srq = (SRQ) SRQ_ABS_PTR(hash_header->srq_forward);
+		 lock_srq != hash_header; lock_srq = (SRQ) SRQ_ABS_PTR(lock_srq->srq_forward)) 
 	{
-		lbl* lock = (LBL) ((UCHAR *) que - OFFSET(LBL, lbl_lhb_hash));
+		lbl* lock = (LBL) ((UCHAR *) lock_srq - OFFSET(LBL, lbl_lhb_hash));
 		if (lock->lbl_series != series ||
 			lock->lbl_length != length || lock->lbl_parent != parent)
 		{
@@ -2806,18 +2808,18 @@ static OWN get_manager(bool flag)
 /* Let's perform a quick search if possible */
 
 	if (LOCK_header->lhb_manager) {
-		own* owner = (OWN) ABS_PTR(LOCK_header->lhb_manager);
+		own* owner = (OWN) SRQ_ABS_PTR(LOCK_header->lhb_manager);
 		if (owner->own_flags & OWN_manager)
 			return owner;
 	}
 
 /* Perform a long, hard search thru the owner blocks. */
 
-	srq* que;
-	QUE_LOOP(LOCK_header->lhb_owners, que) {
-		own* owner = (OWN) ((UCHAR *) que - OFFSET(OWN, own_lhb_owners));
+	srq* lock_srq;
+	SRQ_LOOP(LOCK_header->lhb_owners, lock_srq) {
+		own* owner = (OWN) ((UCHAR *) lock_srq - OFFSET(OWN, own_lhb_owners));
 		if (owner->own_flags & OWN_manager) {
-			LOCK_header->lhb_manager = REL_PTR(owner);
+			LOCK_header->lhb_manager = SRQ_REL_PTR(owner);
 			return owner;
 		}
 	}
@@ -2832,7 +2834,7 @@ static OWN get_manager(bool flag)
 #endif
 
 
-static LRQ get_request( PTR offset)
+static LRQ get_request( SRQ_PTR offset)
 {
 /**************************************
  *
@@ -2846,13 +2848,13 @@ static LRQ get_request( PTR offset)
  **************************************/
 	TEXT s[32];
 
-	lrq* request = (LRQ) ABS_PTR(offset);
+	lrq* request = (LRQ) SRQ_ABS_PTR(offset);
 	if ((SLONG) offset == -1 || request->lrq_type != type_lrq) {
 		sprintf(s, "invalid lock id (%"SLONGFORMAT")", offset);
 		bug(NULL, s);
 	}
 
-	const lbl* lock = (LBL) ABS_PTR(request->lrq_lock);
+	const lbl* lock = (LBL) SRQ_ABS_PTR(request->lrq_lock);
 	if (lock->lbl_type != type_lbl) {
 		sprintf(s, "invalid lock (%"SLONGFORMAT")", offset);
 		bug(NULL, s);
@@ -2877,10 +2879,10 @@ static void grant( LRQ request, LBL lock)
  **************************************/
 
 /* Request must be for THIS lock */
-	CHECK(REL_PTR(lock) == request->lrq_lock);
+	CHECK(SRQ_REL_PTR(lock) == request->lrq_lock);
 
 	post_history(his_grant, request->lrq_owner, request->lrq_lock,
-				 REL_PTR(request), true);
+				 SRQ_REL_PTR(request), true);
 
 	++lock->lbl_counts[request->lrq_requested];
 	request->lrq_state = request->lrq_requested;
@@ -2897,11 +2899,11 @@ static void grant( LRQ request, LBL lock)
 		request->lrq_flags &= ~LRQ_pending;
 		lock->lbl_pending_lrq_count--;
 	}
-	post_wakeup((OWN) ABS_PTR(request->lrq_owner));
+	post_wakeup((OWN) SRQ_ABS_PTR(request->lrq_owner));
 }
 
 
-static PTR grant_or_que( LRQ request, LBL lock, SSHORT lck_wait)
+static SRQ_PTR grant_or_que( LRQ request, LBL lock, SSHORT lck_wait)
 {
 /**************************************
  *
@@ -2911,13 +2913,13 @@ static PTR grant_or_que( LRQ request, LBL lock, SSHORT lck_wait)
  *
  * Functional description
  *	There is a request against an existing lock.  If the request
- *	is compatible with the lock, grant it.  Otherwise que it.
- *	If the lock is que-ed, set up the machinery to do a deadlock
+ *	is compatible with the lock, grant it.  Otherwise lock_srq it.
+ *	If the lock is lock_srq-ed, set up the machinery to do a deadlock
  *	scan in awhile.
  *
  **************************************/
-	const PTR request_offset = REL_PTR(request);
-	request->lrq_lock = REL_PTR(lock);
+	const SRQ_PTR request_offset = SRQ_REL_PTR(request);
+	request->lrq_lock = SRQ_REL_PTR(lock);
 
 /* Compatible requests are easy to satify.  Just post the request
    to the lock, update the lock state, release the data structure,
@@ -2948,7 +2950,7 @@ static PTR grant_or_que( LRQ request, LBL lock, SSHORT lck_wait)
 		 * This is safe as no-one can take away the request, once
 		 * granted, and we're doing a read-only access
 		 */
-		request = (LRQ) ABS_PTR(request_offset);
+		request = (LRQ) SRQ_ABS_PTR(request_offset);
 
 		/* Request HAS been resolved */
 		CHECK(!(request->lrq_flags & LRQ_pending));
@@ -2958,18 +2960,18 @@ static PTR grant_or_que( LRQ request, LBL lock, SSHORT lck_wait)
 		acquire(request->lrq_owner);
 	}
 
-	request = (LRQ) ABS_PTR(request_offset);
+	request = (LRQ) SRQ_ABS_PTR(request_offset);
 	post_history(his_deny, request->lrq_owner, request->lrq_lock,
-				 REL_PTR(request), true);
+				 SRQ_REL_PTR(request), true);
 	ASSERT_ACQUIRED;
 	++LOCK_header->lhb_denies;
 	if (lck_wait < 0)
 		++LOCK_header->lhb_timeouts;
-	const PTR owner_offset = request->lrq_owner;
+	const SRQ_PTR owner_offset = request->lrq_owner;
 	release_request(request);
 	release(owner_offset);
 
-	return (PTR)0;
+	return (SRQ_PTR)0;
 }
 
 
@@ -3082,9 +3084,9 @@ static void init_owner_block(
 	owner->own_ast_hung_flags = 0;
 	owner->own_count = 1;
 	owner->own_owner_id = owner_id;
-	QUE_INIT(owner->own_lhb_owners);
-	QUE_INIT(owner->own_requests);
-	QUE_INIT(owner->own_blocks);
+	SRQ_INIT(owner->own_lhb_owners);
+	SRQ_INIT(owner->own_requests);
+	SRQ_INIT(owner->own_blocks);
 	owner->own_pending_request = 0;
 
 	owner->own_process_id = LOCK_pid;
@@ -3179,9 +3181,9 @@ static void lock_initialize(void* arg, SH_MEM shmem_data, bool initialize)
  **************************************/
 	SSHORT length;
 	USHORT i, j;
-	SRQ que;
+	SRQ lock_srq;
 	HIS history;
-	PTR *prior;
+	SRQ_PTR *prior;
 
 #ifdef WIN_NT
 	char buffer[MAXPATHLEN];
@@ -3210,10 +3212,10 @@ static void lock_initialize(void* arg, SH_MEM shmem_data, bool initialize)
 /* Mark ourselves as active owner to prevent fb_assert() checks */
 	LOCK_header->lhb_active_owner = DUMMY_OWNER_CREATE;	/* In init of lock system */
 
-	QUE_INIT(LOCK_header->lhb_owners);
-	QUE_INIT(LOCK_header->lhb_free_owners);
-	QUE_INIT(LOCK_header->lhb_free_locks);
-	QUE_INIT(LOCK_header->lhb_free_requests);
+	SRQ_INIT(LOCK_header->lhb_owners);
+	SRQ_INIT(LOCK_header->lhb_free_owners);
+	SRQ_INIT(LOCK_header->lhb_free_locks);
+	SRQ_INIT(LOCK_header->lhb_free_requests);
 
 #ifndef WIN_NT
 	if (ISC_mutex_init(MUTEX, shmem_data->sh_mem_mutex_arg)) {
@@ -3227,14 +3229,14 @@ static void lock_initialize(void* arg, SH_MEM shmem_data, bool initialize)
 
 /* Initialize lock series data queues and lock hash chains. */
 
-	for (i = 0, que = LOCK_header->lhb_data; i < LCK_MAX_SERIES; i++, que++)
+	for (i = 0, lock_srq = LOCK_header->lhb_data; i < LCK_MAX_SERIES; i++, lock_srq++)
 	{
-		QUE_INIT((*que));
+		SRQ_INIT((*lock_srq));
 	}
-	for (i = 0, que = LOCK_header->lhb_hash; i < LOCK_header->lhb_hash_slots;
-		 i++, que++)
+	for (i = 0, lock_srq = LOCK_header->lhb_hash; i < LOCK_header->lhb_hash_slots;
+		 i++, lock_srq++)
 	{
-		QUE_INIT((*que));
+		SRQ_INIT((*lock_srq));
 	}
 
 /* Set lock_ordering flag for the first time */
@@ -3256,7 +3258,7 @@ static void lock_initialize(void* arg, SH_MEM shmem_data, bool initialize)
 		exit(STARTUP_ERROR);
 	}
 	
-	LOCK_header->lhb_secondary = REL_PTR(secondary_header);
+	LOCK_header->lhb_secondary = SRQ_REL_PTR(secondary_header);
 	secondary_header->shb_type = type_shb;
 	secondary_header->shb_flags = 0;
 	secondary_header->shb_remove_node = 0;
@@ -3281,7 +3283,7 @@ static void lock_initialize(void* arg, SH_MEM shmem_data, bool initialize)
 				gds__log("Fatal lock manager error: lock manager out of room");
 				exit(STARTUP_ERROR);
 			}
-			*prior = REL_PTR(history);
+			*prior = SRQ_REL_PTR(history);
 			history->his_type = type_his;
 			history->his_operation = 0;
 			prior = &history->his_next;
@@ -3302,7 +3304,7 @@ static void lock_initialize(void* arg, SH_MEM shmem_data, bool initialize)
 		gds__log("Fatal lock manager error: lock manager out of room");
 		exit(STARTUP_ERROR);
 	}
-	LOCK_header->lhb_mask = REL_PTR(semaphores);
+	LOCK_header->lhb_mask = SRQ_REL_PTR(semaphores);
 	semaphores->smb_type = type_smb;
 	for (i = LOCK_sem_count / BITS_PER_LONG + 1; i--;)
 	{
@@ -3336,17 +3338,17 @@ static void insert_data_que( LBL lock)
  *
  **************************************/
 	LBL lock2;
-	SRQ data_header, que;
+	SRQ data_header, lock_srq;
 
 	if (lock->lbl_series < LCK_MAX_SERIES && lock->lbl_parent
 		&& lock->lbl_data)
 	{
 		data_header = &LOCK_header->lhb_data[lock->lbl_series];
 
-		for (que = (SRQ) ABS_PTR(data_header->srq_forward);
-			 que != data_header; que = (SRQ) ABS_PTR(que->srq_forward))
+		for (lock_srq = (SRQ) SRQ_ABS_PTR(data_header->srq_forward);
+			 lock_srq != data_header; lock_srq = (SRQ) SRQ_ABS_PTR(lock_srq->srq_forward))
 		{
-			lock2 = (LBL) ((UCHAR *) que - OFFSET(LBL, lbl_lhb_data));
+			lock2 = (LBL) ((UCHAR *) lock_srq - OFFSET(LBL, lbl_lhb_data));
 			CHECK(lock2->lbl_series == lock->lbl_series);
 			if (lock2->lbl_parent != lock->lbl_parent)
 				continue;
@@ -3355,12 +3357,12 @@ static void insert_data_que( LBL lock)
 				break;
 		}
 
-		insert_tail(que, &lock->lbl_lhb_data);
+		insert_tail(lock_srq, &lock->lbl_lhb_data);
 	}
 }
 
 
-static void insert_tail( SRQ que, SRQ node)
+static void insert_tail( SRQ lock_srq, SRQ node)
 {
 /**************************************
  *
@@ -3369,7 +3371,7 @@ static void insert_tail( SRQ que, SRQ node)
  **************************************
  *
  * Functional description
- *	Insert a node at the tail of a que.
+ *	Insert a node at the tail of a lock_srq.
  *
  *	To handle the event of the process terminating during
  *	the insertion of the node, we set values in the shb to
@@ -3385,23 +3387,23 @@ static void insert_tail( SRQ que, SRQ node)
 	SHB recover;
 
 	ASSERT_ACQUIRED;
-	recover = (SHB) ABS_PTR(LOCK_header->lhb_secondary);
+	recover = (SHB) SRQ_ABS_PTR(LOCK_header->lhb_secondary);
 	DEBUG_DELAY;
-	recover->shb_insert_que = REL_PTR(que);
+	recover->shb_insert_que = SRQ_REL_PTR(lock_srq);
 	DEBUG_DELAY;
-	recover->shb_insert_prior = que->srq_backward;
+	recover->shb_insert_prior = lock_srq->srq_backward;
 	DEBUG_DELAY;
 
-	node->srq_forward = REL_PTR(que);
+	node->srq_forward = SRQ_REL_PTR(lock_srq);
 	DEBUG_DELAY;
-	node->srq_backward = que->srq_backward;
+	node->srq_backward = lock_srq->srq_backward;
 
 	DEBUG_DELAY;
-	prior = (SRQ) ABS_PTR(que->srq_backward);
+	prior = (SRQ) SRQ_ABS_PTR(lock_srq->srq_backward);
 	DEBUG_DELAY;
-	prior->srq_forward = REL_PTR(node);
+	prior->srq_forward = SRQ_REL_PTR(node);
 	DEBUG_DELAY;
-	que->srq_backward = REL_PTR(node);
+	lock_srq->srq_backward = SRQ_REL_PTR(node);
 	DEBUG_DELAY;
 
 	recover->shb_insert_que = 0;
@@ -3456,22 +3458,22 @@ static void post_blockage(LRQ request,
  *	any process blocking the request.
  *
  **************************************/
-	SRQ que, next_que;
-	PTR next_que_offset;
+	SRQ lock_srq, next_que;
+	SRQ_PTR next_que_offset;
 	LRQ block;
 
-	own* owner = (OWN) ABS_PTR(request->lrq_owner);
+	own* owner = (OWN) SRQ_ABS_PTR(request->lrq_owner);
 
 	ASSERT_ACQUIRED;
-	CHECK(owner->own_pending_request == REL_PTR(request));
+	CHECK(owner->own_pending_request == SRQ_REL_PTR(request));
 	CHECK(request->lrq_flags & LRQ_pending);
 
-	for (que = QUE_NEXT(lock->lbl_requests); que != &lock->lbl_requests;
-		 que = (SRQ) ABS_PTR(next_que_offset)) 
+	for (lock_srq = SRQ_NEXT(lock->lbl_requests); lock_srq != &lock->lbl_requests;
+		 lock_srq = (SRQ) SRQ_ABS_PTR(next_que_offset)) 
 	{
-		next_que = QUE_NEXT((*que));
-		next_que_offset = REL_PTR(next_que);
-		block = (LRQ) ((UCHAR *) que - OFFSET(LRQ, lrq_lbl_requests));
+		next_que = SRQ_NEXT((*lock_srq));
+		next_que_offset = SRQ_REL_PTR(next_que);
+		block = (LRQ) ((UCHAR *) lock_srq - OFFSET(LRQ, lrq_lbl_requests));
 
 		/* Figure out if this lock request is blocking our own lock request.
 		   Of course, our own request cannot block ourselves.  Compatible
@@ -3488,7 +3490,7 @@ static void post_blockage(LRQ request,
 			continue;
 		}
 
-		own* blocking_owner = (OWN) ABS_PTR(block->lrq_owner);
+		own* blocking_owner = (OWN) SRQ_ABS_PTR(block->lrq_owner);
 
 		/* Add the blocking request to the list of blocks if it's not
 		   there already (LRQ_blocking) */
@@ -3503,13 +3505,13 @@ static void post_blockage(LRQ request,
 			blocking_owner->own_ast_flags &= ~OWN_signaled;
 		}
 		if (blocking_owner != owner &&
-			signal_owner(blocking_owner, REL_PTR(owner)))
+			signal_owner(blocking_owner, SRQ_REL_PTR(owner)))
 		{
 			/* We can't signal the blocking_owner, assume he has died
 			   and purge him out */
 
-			que = (SRQ) ABS_PTR(que->srq_backward);
-			purge_owner(REL_PTR(owner), blocking_owner);
+			lock_srq = (SRQ) SRQ_ABS_PTR(lock_srq->srq_backward);
+			purge_owner(SRQ_REL_PTR(owner), blocking_owner);
 		}
 		if (block->lrq_state == LCK_EX)
 			break;
@@ -3518,9 +3520,9 @@ static void post_blockage(LRQ request,
 
 
 static void post_history(USHORT operation,
-						 PTR process,
-						 PTR lock,
-						 PTR request,
+						 SRQ_PTR process,
+						 SRQ_PTR lock,
+						 SRQ_PTR request,
 						 bool old_version)
 {
 /**************************************
@@ -3536,7 +3538,7 @@ static void post_history(USHORT operation,
 	HIS history;
 
 	if (old_version) {
-		history = (HIS) ABS_PTR(LOCK_header->lhb_history);
+		history = (HIS) SRQ_ABS_PTR(LOCK_header->lhb_history);
 		ASSERT_ACQUIRED;
 		LOCK_header->lhb_history = history->his_next;
 	}
@@ -3544,8 +3546,8 @@ static void post_history(USHORT operation,
 		SHB shb;
 
 		ASSERT_ACQUIRED;
-		shb = (SHB) ABS_PTR(LOCK_header->lhb_secondary);
-		history = (HIS) ABS_PTR(shb->shb_history);
+		shb = (SHB) SRQ_ABS_PTR(LOCK_header->lhb_secondary);
+		history = (HIS) SRQ_ABS_PTR(shb->shb_history);
 		shb->shb_history = history->his_next;
 	}
 
@@ -3570,7 +3572,7 @@ static void post_pending( LBL lock)
  *
  **************************************/
 	LRQ request;
-	SRQ que;
+	SRQ lock_srq;
 	UCHAR temp_state;
 	OWN owner;
 #ifdef DEV_BUILD
@@ -3585,8 +3587,8 @@ static void post_pending( LBL lock)
    be granted for compatibility reason, post_wakeup () that owner so that
    it can post_blockage() to the newly granted owner of the lock. */
 
-	QUE_LOOP(lock->lbl_requests, que) {
-		request = (LRQ) ((UCHAR *) que - OFFSET(LRQ, lrq_lbl_requests));
+	SRQ_LOOP(lock->lbl_requests, lock_srq) {
+		request = (LRQ) ((UCHAR *) lock_srq - OFFSET(LRQ, lrq_lbl_requests));
 		if (!(request->lrq_flags & LRQ_pending))
 			continue;
 		if (request->lrq_state)
@@ -3600,7 +3602,7 @@ static void post_pending( LBL lock)
 				pending_counter++;
 #endif
 				++lock->lbl_counts[request->lrq_state];
-				owner = (OWN) ABS_PTR(request->lrq_owner);
+				owner = (OWN) SRQ_ABS_PTR(request->lrq_owner);
 				post_wakeup(owner);
 				if (LOCK_ordering) {
 					CHECK(lock->lbl_pending_lrq_count >= pending_counter);
@@ -3614,7 +3616,7 @@ static void post_pending( LBL lock)
 #ifdef DEV_BUILD
 			pending_counter++;
 #endif
-			owner = (OWN) ABS_PTR(request->lrq_owner);
+			owner = (OWN) SRQ_ABS_PTR(request->lrq_owner);
 			post_wakeup(owner);
 			if (LOCK_ordering) {
 				CHECK(lock->lbl_pending_lrq_count >= pending_counter);
@@ -3688,7 +3690,7 @@ static void post_wakeup( OWN owner)
 
 
 #ifndef SUPERSERVER
-static bool probe_owners( PTR probing_owner_offset)
+static bool probe_owners( SRQ_PTR probing_owner_offset)
 {
 /**************************************
  *
@@ -3701,22 +3703,22 @@ static bool probe_owners( PTR probing_owner_offset)
  *	rid of it.
  *
  **************************************/
-	SRQ que;
+	SRQ lock_srq;
 	OWN owner;
 	bool purged;
 
 	purged = false;
 
 	ASSERT_ACQUIRED;
-	QUE_LOOP(LOCK_header->lhb_owners, que) {
-		owner = (OWN) ((UCHAR *) que - OFFSET(OWN, own_lhb_owners));
+	SRQ_LOOP(LOCK_header->lhb_owners, lock_srq) {
+		owner = (OWN) ((UCHAR *) lock_srq - OFFSET(OWN, own_lhb_owners));
 		if (owner->own_flags & OWN_signal)
-			signal_owner(owner, (PTR) NULL);
+			signal_owner(owner, (SRQ_PTR) NULL);
 		if (owner->own_process_id != LOCK_pid &&
 			!ISC_check_process_existence(owner->own_process_id,
 										 owner->own_process_uid, FALSE))
 		{
-			que = (SRQ) ABS_PTR(que->srq_backward);
+			lock_srq = (SRQ) SRQ_ABS_PTR(lock_srq->srq_backward);
 			purge_owner(probing_owner_offset, owner);
 			purged = true;
 		}
@@ -3727,7 +3729,7 @@ static bool probe_owners( PTR probing_owner_offset)
 #endif /* SUPERSERVER */
 
 
-static void purge_owner(PTR purging_owner_offset, OWN owner)
+static void purge_owner(SRQ_PTR purging_owner_offset, OWN owner)
 {
 /**************************************
  *
@@ -3739,12 +3741,12 @@ static void purge_owner(PTR purging_owner_offset, OWN owner)
  *	Purge an owner and all of its associated locks.
  *
  **************************************/
-	SRQ que;
+	SRQ lock_srq;
 	LRQ request;
 
 	LOCK_TRACE(("purge_owner (%ld)\n", purging_owner_offset));
 
-	post_history(his_del_owner, purging_owner_offset, REL_PTR(owner), 0,
+	post_history(his_del_owner, purging_owner_offset, SRQ_REL_PTR(owner), 0,
 				 false);
 
 #ifdef USE_STATIC_SEMAPHORES
@@ -3753,15 +3755,15 @@ static void purge_owner(PTR purging_owner_offset, OWN owner)
 
 /* Release any locks that are active. */
 
-	while ((que = QUE_NEXT(owner->own_requests)) != &owner->own_requests) {
-		request = (LRQ) ((UCHAR *) que - OFFSET(LRQ, lrq_own_requests));
+	while ((lock_srq = SRQ_NEXT(owner->own_requests)) != &owner->own_requests) {
+		request = (LRQ) ((UCHAR *) lock_srq - OFFSET(LRQ, lrq_own_requests));
 		release_request(request);
 	}
 
 /* Release any repost requests left dangling on blocking queue. */
 
-	while ((que = QUE_NEXT(owner->own_blocks)) != &owner->own_blocks) {
-		request = (LRQ) ((UCHAR *) que - OFFSET(LRQ, lrq_own_blocks));
+	while ((lock_srq = SRQ_NEXT(owner->own_blocks)) != &owner->own_blocks) {
+		request = (LRQ) ((UCHAR *) lock_srq - OFFSET(LRQ, lrq_own_blocks));
 		remove_que(&request->lrq_own_blocks);
 		request->lrq_type = type_null;
 		insert_tail(&LOCK_header->lhb_free_requests,
@@ -3795,7 +3797,7 @@ static void remove_que( SRQ node)
  **************************************
  *
  * Functional description
- *	Remove a node from a self-relative que.
+ *	Remove a node from a self-relative lock_srq.
  *
  *	To handle the event of the process terminating during
  *	the removal of the node, we set shb_remove_node to the
@@ -3809,35 +3811,35 @@ static void remove_que( SRQ node)
  *	work only based on what is in <node>.  
  *
  **************************************/
-	SRQ que;
+	SRQ lock_srq;
 	SHB recover;
 
 	ASSERT_ACQUIRED;
-	recover = (SHB) ABS_PTR(LOCK_header->lhb_secondary);
+	recover = (SHB) SRQ_ABS_PTR(LOCK_header->lhb_secondary);
 	DEBUG_DELAY;
-	recover->shb_remove_node = REL_PTR(node);
+	recover->shb_remove_node = SRQ_REL_PTR(node);
 	DEBUG_DELAY;
 
-	que = (SRQ) ABS_PTR(node->srq_forward);
+	lock_srq = (SRQ) SRQ_ABS_PTR(node->srq_forward);
 
 /* The next link might point back to us, or our prior link should
  * the backlink change occur before a crash
  */
-	CHECK(que->srq_backward == REL_PTR(node) ||
-		  que->srq_backward == node->srq_backward);
+	CHECK(lock_srq->srq_backward == SRQ_REL_PTR(node) ||
+		  lock_srq->srq_backward == node->srq_backward);
 	DEBUG_DELAY;
-	que->srq_backward = node->srq_backward;
+	lock_srq->srq_backward = node->srq_backward;
 
 	DEBUG_DELAY;
-	que = (SRQ) ABS_PTR(node->srq_backward);
+	lock_srq = (SRQ) SRQ_ABS_PTR(node->srq_backward);
 
 /* The prior link might point forward to us, or our following link should
  * the change occur before a crash
  */
-	CHECK(que->srq_forward == REL_PTR(node) ||
-		  que->srq_forward == node->srq_forward);
+	CHECK(lock_srq->srq_forward == SRQ_REL_PTR(node) ||
+		  lock_srq->srq_forward == node->srq_forward);
 	DEBUG_DELAY;
-	que->srq_forward = node->srq_forward;
+	lock_srq->srq_forward = node->srq_forward;
 
 	DEBUG_DELAY;
 	recover->shb_remove_node = 0;
@@ -3845,16 +3847,16 @@ static void remove_que( SRQ node)
 
 /* To prevent trying to remove this entry a second time, which could occur
  * for instance, when we're removing an owner, and crash while removing
- * the owner's blocking requests, reset the que entry in this node.
+ * the owner's blocking requests, reset the lock_srq entry in this node.
  * Note that if we get here, shb_remove_node has been cleared, so we
  * no longer need the queue information.
  */
 
-	QUE_INIT((*node));
+	SRQ_INIT((*node));
 }
 
 
-static void release( PTR owner_offset)
+static void release( SRQ_PTR owner_offset)
 {
 /**************************************
  *
@@ -3878,9 +3880,9 @@ static void release( PTR owner_offset)
 
 #ifdef USE_BLOCKING_SIGNALS
 	if (owner_offset) {
-		owner = (OWN) ABS_PTR(owner_offset);
-		if (!QUE_EMPTY(owner->own_blocks))
-			signal_owner(owner, (PTR) NULL);
+		owner = (OWN) SRQ_ABS_PTR(owner_offset);
+		if (!SRQ_EMPTY(owner->own_blocks))
+			signal_owner(owner, (SRQ_PTR) NULL);
 	}
 #endif
 
@@ -3898,12 +3900,12 @@ static void release( PTR owner_offset)
 		OWN first_owner;
 
 		if (owner_offset)
-			owner = (OWN) ABS_PTR(owner_offset);
+			owner = (OWN) SRQ_ABS_PTR(owner_offset);
 
 		/* Rotate first owner to tail of active owners' queue
 		   in search of mutex-starved owners. */
 
-		first_owner = (OWN) ((UCHAR *) QUE_NEXT(LOCK_header->lhb_owners) -
+		first_owner = (OWN) ((UCHAR *) SRQ_NEXT(LOCK_header->lhb_owners) -
 							 OFFSET(OWN, own_lhb_owners));
 		remove_que(&first_owner->own_lhb_owners);
 		insert_tail(&LOCK_header->lhb_owners, &first_owner->own_lhb_owners);
@@ -3911,11 +3913,11 @@ static void release( PTR owner_offset)
 		/* If others stepped aside to let us run then wake them up now. */
 
 		if (owner_offset && owner->own_flags & OWN_starved) {
-			SRQ que;
+			SRQ lock_srq;
 
 			owner->own_flags &= ~(OWN_starved | OWN_blocking);
-			QUE_LOOP(LOCK_header->lhb_owners, que) {
-				owner = (OWN) ((UCHAR *) que - OFFSET(OWN, own_lhb_owners));
+			SRQ_LOOP(LOCK_header->lhb_owners, lock_srq) {
+				owner = (OWN) ((UCHAR *) lock_srq - OFFSET(OWN, own_lhb_owners));
 				if (owner->own_flags & OWN_blocking) {
 					owner->own_flags &= ~OWN_blocking;
 					ISC_event_post(owner->own_stall);
@@ -3998,7 +4000,7 @@ static void release_request( LRQ request)
 
 	request->lrq_type = type_null;
 	insert_tail(&LOCK_header->lhb_free_requests, &request->lrq_lbl_requests);
-	lock = (LBL) ABS_PTR(request->lrq_lock);
+	lock = (LBL) SRQ_ABS_PTR(request->lrq_lock);
 
 /* If the request is marked as blocking, clean it up. */
 
@@ -4019,7 +4021,7 @@ static void release_request( LRQ request)
 
 /* If there are no outstanding requests, release the lock */
 
-	if (QUE_EMPTY(lock->lbl_requests))
+	if (SRQ_EMPTY(lock->lbl_requests))
 	{
 		CHECK(lock->lbl_pending_lrq_count == 0);
 		remove_que(&lock->lbl_lhb_hash);
@@ -4069,7 +4071,7 @@ static void release_semaphore( OWN owner)
 	USHORT semaphore = owner->own_semaphore;
 	if (semaphore) {
 		semaphore &= ~OWN_semavail;
-		semaphore_mask* semaphores = (semaphore_mask*) ABS_PTR(LOCK_header->lhb_mask);
+		semaphore_mask* semaphores = (semaphore_mask*) SRQ_ABS_PTR(LOCK_header->lhb_mask);
 		semaphores->smb_mask[semaphore / BITS_PER_LONG] |=
 			1L << (semaphore % BITS_PER_LONG);
 		owner->own_semaphore = 0;
@@ -4146,7 +4148,7 @@ static void shutdown_blocking_thread( ISC_STATUS * status_vector)
 }
 #endif
 
-static int signal_owner( OWN blocking_owner, PTR blocked_owner_offset)
+static int signal_owner( OWN blocking_owner, SRQ_PTR blocked_owner_offset)
 {
 /**************************************
  *
@@ -4163,7 +4165,7 @@ static int signal_owner( OWN blocking_owner, PTR blocked_owner_offset)
  *
  **************************************/
 
-/*post_history (his_signal, LOCK_header->lhb_iactive_owner, REL_PTR (blocking_owner), 0, true);*/
+/*post_history (his_signal, LOCK_header->lhb_iactive_owner, SRQ_REL_PTR (blocking_owner), 0, true);*/
 
 	ASSERT_ACQUIRED;
 
@@ -4193,7 +4195,7 @@ static int signal_owner( OWN blocking_owner, PTR blocked_owner_offset)
 		DEBUG_DELAY;
 		ISC_inhibit();
 		DEBUG_DELAY;
-		blocking_action2(REL_PTR(blocking_owner), blocked_owner_offset);
+		blocking_action2(SRQ_REL_PTR(blocking_owner), blocked_owner_offset);
 		DEBUG_DELAY;
 		ISC_enable();
 		DEBUG_DELAY;
@@ -4269,7 +4271,7 @@ static int signal_owner( OWN blocking_owner, PTR blocked_owner_offset)
 #define	RECURSE_yes	0
 #define	RECURSE_not	1
 
-static void validate_history( PTR history_header)
+static void validate_history( SRQ_PTR history_header)
 {
 /**************************************
  *
@@ -4285,8 +4287,8 @@ static void validate_history( PTR history_header)
 
 	LOCK_TRACE(("validate_history: %ld\n", history_header));
 
-	for (his* history = (HIS) ABS_PTR(history_header); true;
-		 history = (HIS) ABS_PTR(history->his_next)) 
+	for (his* history = (HIS) SRQ_ABS_PTR(history_header); true;
+		 history = (HIS) SRQ_ABS_PTR(history->his_next)) 
 	{
 		count++;
 		CHECK(history->his_type == type_his);
@@ -4315,7 +4317,7 @@ static void validate_lhb( LHB lhb)
  *
  **************************************/
 
-	SRQ que, que_next;
+	SRQ lock_srq, que_next;
 	OWN owner;
 	LBL lock;
 	LRQ request;
@@ -4337,40 +4339,40 @@ static void validate_lhb( LHB lhb)
 	if (lhb->lhb_active_owner > 0)
 		validate_owner(lhb->lhb_active_owner, EXPECT_inuse);
 
-	QUE_LOOP(lhb->lhb_owners, que) {
+	SRQ_LOOP(lhb->lhb_owners, lock_srq) {
 		/* Validate that the next backpointer points back to us */
-		que_next = QUE_NEXT((*que));
-		CHECK(que_next->srq_backward == REL_PTR(que));
+		que_next = SRQ_NEXT((*lock_srq));
+		CHECK(que_next->srq_backward == SRQ_REL_PTR(lock_srq));
 
-		owner = (OWN) ((UCHAR *) que - OFFSET(OWN, own_lhb_owners));
-		validate_owner(REL_PTR(owner), EXPECT_inuse);
+		owner = (OWN) ((UCHAR *) lock_srq - OFFSET(OWN, own_lhb_owners));
+		validate_owner(SRQ_REL_PTR(owner), EXPECT_inuse);
 	}
 
-	QUE_LOOP(lhb->lhb_free_owners, que) {
+	SRQ_LOOP(lhb->lhb_free_owners, lock_srq) {
 		/* Validate that the next backpointer points back to us */
-		que_next = QUE_NEXT((*que));
-		CHECK(que_next->srq_backward == REL_PTR(que));
+		que_next = SRQ_NEXT((*lock_srq));
+		CHECK(que_next->srq_backward == SRQ_REL_PTR(lock_srq));
 
-		owner = (OWN) ((UCHAR *) que - OFFSET(OWN, own_lhb_owners));
-		validate_owner(REL_PTR(owner), EXPECT_freed);
+		owner = (OWN) ((UCHAR *) lock_srq - OFFSET(OWN, own_lhb_owners));
+		validate_owner(SRQ_REL_PTR(owner), EXPECT_freed);
 	}
 
-	QUE_LOOP(lhb->lhb_free_locks, que) {
+	SRQ_LOOP(lhb->lhb_free_locks, lock_srq) {
 		/* Validate that the next backpointer points back to us */
-		que_next = QUE_NEXT((*que));
-		CHECK(que_next->srq_backward == REL_PTR(que));
+		que_next = SRQ_NEXT((*lock_srq));
+		CHECK(que_next->srq_backward == SRQ_REL_PTR(lock_srq));
 
-		lock = (LBL) ((UCHAR *) que - OFFSET(LBL, lbl_lhb_hash));
-		validate_lock(REL_PTR(lock), EXPECT_freed, (PTR) 0);
+		lock = (LBL) ((UCHAR *) lock_srq - OFFSET(LBL, lbl_lhb_hash));
+		validate_lock(SRQ_REL_PTR(lock), EXPECT_freed, (SRQ_PTR) 0);
 	}
 
-	QUE_LOOP(lhb->lhb_free_requests, que) {
+	SRQ_LOOP(lhb->lhb_free_requests, lock_srq) {
 		/* Validate that the next backpointer points back to us */
-		que_next = QUE_NEXT((*que));
-		CHECK(que_next->srq_backward == REL_PTR(que));
+		que_next = SRQ_NEXT((*lock_srq));
+		CHECK(que_next->srq_backward == SRQ_REL_PTR(lock_srq));
 
-		request = (LRQ) ((UCHAR *) que - OFFSET(LRQ, lrq_lbl_requests));
-		validate_request(REL_PTR(request), EXPECT_freed, RECURSE_not);
+		request = (LRQ) ((UCHAR *) lock_srq - OFFSET(LRQ, lrq_lbl_requests));
+		validate_request(SRQ_REL_PTR(request), EXPECT_freed, RECURSE_not);
 	}
 
 	CHECK(lhb->lhb_used <= lhb->lhb_length);
@@ -4394,7 +4396,7 @@ static void validate_lhb( LHB lhb)
 
 
 #ifdef VALIDATE_LOCK_TABLE
-static void validate_lock( PTR lock_ptr, USHORT freed, PTR lrq_ptr)
+static void validate_lock( SRQ_PTR lock_ptr, USHORT freed, SRQ_PTR lrq_ptr)
 {
 /**************************************
  *
@@ -4407,7 +4409,7 @@ static void validate_lock( PTR lock_ptr, USHORT freed, PTR lrq_ptr)
  *
  **************************************/
 	LBL lock;
-	SRQ que, que_next;
+	SRQ lock_srq, que_next;
 	LRQ request;
 	USHORT found;
 	UCHAR highest_request;
@@ -4418,7 +4420,7 @@ static void validate_lock( PTR lock_ptr, USHORT freed, PTR lrq_ptr)
 
 	LOCK_TRACE(("validate_lock: %ld\n", lock_ptr));
 
-	lock = (LBL) ABS_PTR(lock_ptr);
+	lock = (LBL) SRQ_ABS_PTR(lock_ptr);
 	lock_copy = *lock;
 
 	if (freed == EXPECT_freed)
@@ -4444,18 +4446,18 @@ static void validate_lock( PTR lock_ptr, USHORT freed, PTR lrq_ptr)
 	found = 0;
 	found_pending = 0;
 	highest_request = LCK_none;
-	QUE_LOOP(lock->lbl_requests, que) {
+	SRQ_LOOP(lock->lbl_requests, lock_srq) {
 		/* Validate that the next backpointer points back to us */
-		que_next = QUE_NEXT((*que));
-		CHECK(que_next->srq_backward == REL_PTR(que));
+		que_next = SRQ_NEXT((*lock_srq));
+		CHECK(que_next->srq_backward == SRQ_REL_PTR(lock_srq));
 
 		/* Any requests of a freed lock should also be free */
 		CHECK(freed == EXPECT_inuse);
 
-		request = (LRQ) ((UCHAR *) que - OFFSET(LRQ, lrq_lbl_requests));
+		request = (LRQ) ((UCHAR *) lock_srq - OFFSET(LRQ, lrq_lbl_requests));
 		/* Note: Don't try to validate_request here, it leads to recursion */
 
-		if (REL_PTR(request) == lrq_ptr)
+		if (SRQ_REL_PTR(request) == lrq_ptr)
 			found++;
 
 		CHECK(found <= 1);		/* check for a loop in the queue */
@@ -4514,14 +4516,14 @@ static void validate_lock( PTR lock_ptr, USHORT freed, PTR lrq_ptr)
 	}
 
 	if (lock->lbl_parent && (freed == EXPECT_inuse))
-		validate_lock(lock->lbl_parent, EXPECT_inuse, (PTR) 0);
+		validate_lock(lock->lbl_parent, EXPECT_inuse, (SRQ_PTR) 0);
 
 }
 #endif
 
 
 #ifdef VALIDATE_LOCK_TABLE
-static void validate_owner( PTR own_ptr, USHORT freed)
+static void validate_owner( SRQ_PTR own_ptr, USHORT freed)
 {
 /**************************************
  *
@@ -4534,17 +4536,17 @@ static void validate_owner( PTR own_ptr, USHORT freed)
  *
  **************************************/
 	OWN owner;
-	SRQ que, que_next;
+	SRQ lock_srq, que_next;
 	SRQ que2, que2_next;
 	LRQ request;
 	LRQ request2;
 	USHORT found;
-	PTR owner_own_pending_request;
+	SRQ_PTR owner_own_pending_request;
 	own owner_copy;
 
 	LOCK_TRACE(("validate_owner: %ld\n", own_ptr));
 
-	owner = (OWN) ABS_PTR(own_ptr);
+	owner = (OWN) SRQ_ABS_PTR(own_ptr);
 	owner_copy = *owner;
 
 /* Note that owner->own_pending_request can be reset without the lock
@@ -4585,31 +4587,31 @@ static void validate_owner( PTR own_ptr, USHORT freed)
 	if (owner->own_ast_flags & OWN_signaled)
 		CHECK(!(owner->own_flags & OWN_signal));
 
-	QUE_LOOP(owner->own_requests, que) {
+	SRQ_LOOP(owner->own_requests, lock_srq) {
 		/* Validate that the next backpointer points back to us */
-		que_next = QUE_NEXT((*que));
-		CHECK(que_next->srq_backward == REL_PTR(que));
+		que_next = SRQ_NEXT((*lock_srq));
+		CHECK(que_next->srq_backward == SRQ_REL_PTR(lock_srq));
 
 		CHECK(freed == EXPECT_inuse);	/* should not be in loop for freed owner */
 
-		request = (LRQ) ((UCHAR *) que - OFFSET(LRQ, lrq_own_requests));
-		validate_request(REL_PTR(request), EXPECT_inuse, RECURSE_not);
+		request = (LRQ) ((UCHAR *) lock_srq - OFFSET(LRQ, lrq_own_requests));
+		validate_request(SRQ_REL_PTR(request), EXPECT_inuse, RECURSE_not);
 		CHECK(request->lrq_owner == own_ptr);
 
 		/* Make sure that request marked as blocking also exists in the blocking list */
 
 		if (request->lrq_flags & LRQ_blocking) {
 			found = 0;
-			QUE_LOOP(owner->own_blocks, que2) {
+			SRQ_LOOP(owner->own_blocks, que2) {
 				/* Validate that the next backpointer points back to us */
-				que2_next = QUE_NEXT((*que2));
-				CHECK(que2_next->srq_backward == REL_PTR(que2));
+				que2_next = SRQ_NEXT((*que2));
+				CHECK(que2_next->srq_backward == SRQ_REL_PTR(que2));
 
 				request2 =
 					(LRQ) ((UCHAR *) que2 - OFFSET(LRQ, lrq_own_blocks));
 				CHECK(request2->lrq_owner == own_ptr);
 
-				if (REL_PTR(request2) == REL_PTR(request))
+				if (SRQ_REL_PTR(request2) == SRQ_REL_PTR(request))
 					found++;
 
 				CHECK(found <= 1);	/* watch for loops in queue */
@@ -4620,17 +4622,17 @@ static void validate_owner( PTR own_ptr, USHORT freed)
 
 /* Check each item in the blocking queue */
 
-	QUE_LOOP(owner->own_blocks, que) {
+	SRQ_LOOP(owner->own_blocks, lock_srq) {
 		/* Validate that the next backpointer points back to us */
-		que_next = QUE_NEXT((*que));
-		CHECK(que_next->srq_backward == REL_PTR(que));
+		que_next = SRQ_NEXT((*lock_srq));
+		CHECK(que_next->srq_backward == SRQ_REL_PTR(lock_srq));
 
 		CHECK(freed == EXPECT_inuse);	/* should not be in loop for freed owner */
 
-		request = (LRQ) ((UCHAR *) que - OFFSET(LRQ, lrq_own_blocks));
-		validate_request(REL_PTR(request), EXPECT_inuse, RECURSE_not);
+		request = (LRQ) ((UCHAR *) lock_srq - OFFSET(LRQ, lrq_own_blocks));
+		validate_request(SRQ_REL_PTR(request), EXPECT_inuse, RECURSE_not);
 
-		LOCK_TRACE(("Validate own_block: %ld\n", REL_PTR(request)));
+		LOCK_TRACE(("Validate own_block: %ld\n", SRQ_REL_PTR(request)));
 
 		CHECK(request->lrq_owner == own_ptr);
 
@@ -4642,15 +4644,15 @@ static void validate_owner( PTR own_ptr, USHORT freed)
 		/* Make sure that each block also exists in the request list */
 
 		found = 0;
-		QUE_LOOP(owner->own_requests, que2) {
+		SRQ_LOOP(owner->own_requests, que2) {
 			/* Validate that the next backpointer points back to us */
-			que2_next = QUE_NEXT((*que2));
-			CHECK(que2_next->srq_backward == REL_PTR(que2));
+			que2_next = SRQ_NEXT((*que2));
+			CHECK(que2_next->srq_backward == SRQ_REL_PTR(que2));
 
 			request2 = (LRQ) ((UCHAR *) que2 - OFFSET(LRQ, lrq_own_requests));
 			CHECK(request2->lrq_owner == own_ptr);
 
-			if (REL_PTR(request2) == REL_PTR(request))
+			if (SRQ_REL_PTR(request2) == SRQ_REL_PTR(request))
 				found++;
 
 			CHECK(found <= 1);	/* watch for loops in queue */
@@ -4669,22 +4671,22 @@ static void validate_owner( PTR own_ptr, USHORT freed)
 		SRQ que_of_lbl_requests;
 
 		/* Make sure pending request is valid, and we own it */
-		request = (LRQ) ABS_PTR(owner_own_pending_request);
-		validate_request(REL_PTR(request), EXPECT_inuse, RECURSE_not);
+		request = (LRQ) SRQ_ABS_PTR(owner_own_pending_request);
+		validate_request(SRQ_REL_PTR(request), EXPECT_inuse, RECURSE_not);
 		CHECK(request->lrq_owner == own_ptr);
 
 		/* Make sure the lock the request is for is valid */
-		lock = (LBL) ABS_PTR(request->lrq_lock);
-		validate_lock(REL_PTR(lock), EXPECT_inuse, (PTR) 0);
+		lock = (LBL) SRQ_ABS_PTR(request->lrq_lock);
+		validate_lock(SRQ_REL_PTR(lock), EXPECT_inuse, (SRQ_PTR) 0);
 
 		/* Make sure the pending request is on the list of requests for the lock */
 
 		found_pending = false;
-		QUE_LOOP(lock->lbl_requests, que_of_lbl_requests) {
+		SRQ_LOOP(lock->lbl_requests, que_of_lbl_requests) {
 			pending =
 				(LRQ) ((UCHAR *) que_of_lbl_requests -
 					   OFFSET(LRQ, lrq_lbl_requests));
-			if (REL_PTR(pending) == owner_own_pending_request) {
+			if (SRQ_REL_PTR(pending) == owner_own_pending_request) {
 				found_pending = true;
 				break;
 			}
@@ -4705,7 +4707,7 @@ static void validate_owner( PTR own_ptr, USHORT freed)
 			if (!(semaphore & OWN_semavail)) {
 				/* Check that the semaphore allocated is flagged as in use */
 				semaphore_mask* semaphores =
-					(semaphore_mask*) ABS_PTR(LOCK_header->lhb_mask);
+					(semaphore_mask*) SRQ_ABS_PTR(LOCK_header->lhb_mask);
 				CHECK(!
 					  (semaphores->
 					   smb_mask[semaphore /
@@ -4720,7 +4722,7 @@ static void validate_owner( PTR own_ptr, USHORT freed)
 
 
 #ifdef VALIDATE_LOCK_TABLE
-static void validate_request( PTR lrq_ptr, USHORT freed, USHORT recurse)
+static void validate_request( SRQ_PTR lrq_ptr, USHORT freed, USHORT recurse)
 {
 /**************************************
  *
@@ -4737,7 +4739,7 @@ static void validate_request( PTR lrq_ptr, USHORT freed, USHORT recurse)
 
 	LOCK_TRACE(("validate_request: %ld\n", lrq_ptr));
 
-	request = (LRQ) ABS_PTR(lrq_ptr);
+	request = (LRQ) SRQ_ABS_PTR(lrq_ptr);
 	request_copy = *request;
 
 	if (freed == EXPECT_freed)
@@ -4772,14 +4774,14 @@ static void validate_request( PTR lrq_ptr, USHORT freed, USHORT recurse)
 
 		/* Reposted request are pseudo requests, not attached to any real lock */
 		if (!(request->lrq_flags & LRQ_repost))
-			validate_lock(request->lrq_lock, EXPECT_inuse, REL_PTR(request));
+			validate_lock(request->lrq_lock, EXPECT_inuse, SRQ_REL_PTR(request));
 	}
 }
 #endif
 
 
 #ifdef VALIDATE_LOCK_TABLE
-static void validate_shb( PTR shb_ptr)
+static void validate_shb( SRQ_PTR shb_ptr)
 {
 /**************************************
  *
@@ -4801,7 +4803,7 @@ static void validate_shb( PTR shb_ptr)
 
 	LOCK_TRACE(("validate_shb: %ld\n", shb_ptr));
 
-	secondary_header = (SHB) ABS_PTR(shb_ptr);
+	secondary_header = (SHB) SRQ_ABS_PTR(shb_ptr);
 
 	CHECK(secondary_header->shb_type == type_shb);
 
@@ -4847,9 +4849,9 @@ static USHORT wait_for_request(
 
 	request->lrq_flags &= ~LRQ_rejected;
 	request->lrq_flags |= LRQ_pending;
-	PTR owner_offset = request->lrq_owner;
-	PTR lock_offset = request->lrq_lock;
-	lbl* lock = (LBL) ABS_PTR(lock_offset);
+	SRQ_PTR owner_offset = request->lrq_owner;
+	SRQ_PTR lock_offset = request->lrq_lock;
+	lbl* lock = (LBL) SRQ_ABS_PTR(lock_offset);
 	lock->lbl_pending_lrq_count++;
 	if (LOCK_ordering) {
 		if (!request->lrq_state) {
@@ -4861,8 +4863,8 @@ static USHORT wait_for_request(
 		}
 	}
 
-	own* owner = (OWN) ABS_PTR(owner_offset);
-	PTR request_offset = REL_PTR(request);
+	own* owner = (OWN) SRQ_ABS_PTR(owner_offset);
+	SRQ_PTR request_offset = SRQ_REL_PTR(request);
 	owner->own_pending_request = request_offset;
 	owner->own_flags &= ~(OWN_scanned | OWN_wakeup);
 
@@ -4893,7 +4895,7 @@ static USHORT wait_for_request(
    may clear spontaneously. */
 
 	post_blockage(request, lock, false);
-	post_history(his_wait, owner_offset, lock_offset, REL_PTR(request), true);
+	post_history(his_wait, owner_offset, lock_offset, SRQ_REL_PTR(request), true);
 	release(owner_offset);
 
 	SLONG current_time = GET_TIME;
@@ -4921,7 +4923,7 @@ static USHORT wait_for_request(
 		   the request for us - if so we're out easy! */
 
 		ISC_inhibit();
-		request = (LRQ) ABS_PTR(request_offset);
+		request = (LRQ) SRQ_ABS_PTR(request_offset);
 		if (!(request->lrq_flags & LRQ_pending)) {
 			ISC_enable();
 			break;
@@ -4941,7 +4943,7 @@ static USHORT wait_for_request(
 		SLONG value;
 		event_t* event_ptr;
 
-		owner = (OWN) ABS_PTR(owner_offset);
+		owner = (OWN) SRQ_ABS_PTR(owner_offset);
 #if (defined HAVE_MMAP && !defined SUPERSERVER)
 		if (!(LOCK_owner->own_flags & OWN_wakeup))
 #else
@@ -4961,7 +4963,7 @@ static USHORT wait_for_request(
 #else
 			event_ptr = owner->own_wakeup;
 			value = ISC_event_clear(event_ptr);
-			owner = (OWN) ABS_PTR(owner_offset);
+			owner = (OWN) SRQ_ABS_PTR(owner_offset);
 			event_ptr = owner->own_wakeup;
 #endif
 #if (defined HAVE_MMAP && !defined SUPERSERVER)
@@ -5028,7 +5030,7 @@ static USHORT wait_for_request(
 		/* If somebody else has resolved the lock, we're done */
 
 		ISC_inhibit();
-		request = (LRQ) ABS_PTR(request_offset);
+		request = (LRQ) SRQ_ABS_PTR(request_offset);
 		if (!(request->lrq_flags & LRQ_pending)) {
 			ISC_enable();
 			break;
@@ -5045,7 +5047,7 @@ static USHORT wait_for_request(
 #if (defined HAVE_MMAP && !defined SUPERSERVER)
 		if (LOCK_owner->own_flags & OWN_wakeup)
 #else
-		owner = (OWN) ABS_PTR(owner_offset);
+		owner = (OWN) SRQ_ABS_PTR(owner_offset);
 		if (owner->own_flags & OWN_wakeup)
 #endif
 			ret = FB_SUCCESS;
@@ -5076,9 +5078,9 @@ static USHORT wait_for_request(
 		   blocked. */
 
 		acquire(owner_offset);
-		request = (LRQ) ABS_PTR(request_offset);	/* Re-init after potential remap */
-		lock = (LBL) ABS_PTR(lock_offset);
-		owner = (OWN) ABS_PTR(owner_offset);
+		request = (LRQ) SRQ_ABS_PTR(request_offset);	/* Re-init after potential remap */
+		lock = (LBL) SRQ_ABS_PTR(lock_offset);
+		owner = (OWN) SRQ_ABS_PTR(owner_offset);
 		owner->own_flags &= ~OWN_wakeup;
 
 		/* Now that we own the lock table, see if the request was resolved
@@ -5159,10 +5161,10 @@ static USHORT wait_for_request(
 			++LOCK_header->lhb_deadlocks;
 			blocking_request->lrq_flags |= LRQ_rejected;
 			blocking_request->lrq_flags &= ~LRQ_pending;
-			lbl* blocking_lock = (LBL) ABS_PTR(blocking_request->lrq_lock);
+			lbl* blocking_lock = (LBL) SRQ_ABS_PTR(blocking_request->lrq_lock);
 			blocking_lock->lbl_pending_lrq_count--;
 
-			own* blocking_owner = (OWN) ABS_PTR(blocking_request->lrq_owner);
+			own* blocking_owner = (OWN) SRQ_ABS_PTR(blocking_request->lrq_owner);
 			blocking_owner->own_pending_request = 0;
 			blocking_owner->own_flags &= ~OWN_scanned;
 			if (blocking_request != request)
@@ -5205,11 +5207,11 @@ static USHORT wait_for_request(
 /* NOTE: lock table is not acquired at this point */
 
 #ifdef DEV_BUILD
-	request = (LRQ) ABS_PTR(request_offset);
+	request = (LRQ) SRQ_ABS_PTR(request_offset);
 	CHECK(!(request->lrq_flags & LRQ_pending));
 #endif /* DEV_BUILD */
 
-	owner = (OWN) ABS_PTR(owner_offset);
+	owner = (OWN) SRQ_ABS_PTR(owner_offset);
 	owner->own_pending_request = 0;
 
 #ifdef USE_STATIC_SEMAPHORES

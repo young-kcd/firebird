@@ -28,6 +28,7 @@
 	(que).que_backward = &(que);\
 	(que).que_forward = &(que);}
 
+
 #define QUE_DELETE(node) {\
 	(node).que_backward->que_forward = (node).que_forward;\
 	(node).que_forward->que_backward = (node).que_backward;}
@@ -66,5 +67,38 @@
 #define QUE_LEAST_RECENTLY_USED(in_use_que) {\
 	QUE_DELETE (in_use_que);\
 	QUE_APPEND (bcb->bcb_in_use, in_use_que);}
+
+//
+// general purpose queue
+//
+namespace Jrd {
+
+typedef struct que {
+	struct que* que_forward;
+	struct que* que_backward;
+} *QUE;
+
+}
+// Self-referencing queue BASE should be defined in the source which includes this
+#define SRQ_PTR SLONG
+
+#define SRQ_REL_PTR(item)           (SRQ_PTR) ((UCHAR*) item - SRQ_BASE)
+#define SRQ_ABS_PTR(item)           (SRQ_PTR) (SRQ_BASE + item)
+
+#define SRQ_INIT(que)   {que.srq_forward = que.srq_backward = SRQ_REL_PTR (&que);}
+#define SRQ_EMPTY(que)  (que.srq_forward == SRQ_REL_PTR (&que))
+#define SRQ_NEXT(que)   (srq*) SRQ_ABS_PTR (que.srq_forward)
+#define SRQ_PREV(que)	(srq*) SRQ_ABS_PTR (que.srq_backward)
+
+#define SRQ_LOOP(header,que)    for (que = SRQ_NEXT (header);\
+	que != &header; que = SRQ_NEXT ((*que)))
+
+/* Self-relative que block.  Offsets are from the block itself. */
+
+typedef struct srq {
+	SRQ_PTR srq_forward;			/* Forward offset */
+	SRQ_PTR srq_backward;			/* Backward offset */
+} *SRQ;
+
 
 #endif /* JRD_QUE_H */

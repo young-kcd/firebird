@@ -835,14 +835,6 @@ typedef vcl* VCL;
 #define TEST_VECTOR(vector,number)      ((vector && number < vector->vec_count) ? \
 					  vector->vec_object [number] : NULL)
 
-//
-// general purpose queue
-//
-typedef struct que {
-	struct que* que_forward;
-	struct que* que_backward;
-} *QUE;
-
 
 //
 // Transaction element block
@@ -861,32 +853,6 @@ class BlockingThread : public pool_alloc<type_btb>
 	BlockingThread* btb_next;
 	thread* btb_thread_id;
 };
-
-/* Lock levels */
-
-const int LCK_none			= 0;
-const int LCK_null			= 1;
-const int LCK_SR			= 2;
-const int LCK_PR			= 3;
-const int LCK_SW			= 4;
-const int LCK_PW			= 5;
-const int LCK_EX			= 6;
-
-const int LCK_read			= LCK_PR;
-const int LCK_write			= LCK_EX;
-
-const int LCK_WAIT			= TRUE;
-const int LCK_NO_WAIT		= FALSE;
-
-/* Lock query data aggregates */
-
-const int LCK_MIN			= 1;
-const int LCK_MAX			= 2;
-const int LCK_CNT			= 3;
-const int LCK_SUM			= 4;
-const int LCK_AVG			= 5;
-const int LCK_ANY			= 6;
-
 
 /* Window block for loading cached pages into */
 // CVC: Apparently, the only possible values are HEADER_PAGE==0 and LOG_PAGE==2
@@ -985,6 +951,8 @@ inline char* stringDup(MemoryPool& p, const char* s, int l)
 
 } //namespace Jrd
 
+/* Lock levels */
+#include "../lock/lock.h"
 
 /* Random string block -- jack of all kludges */
 

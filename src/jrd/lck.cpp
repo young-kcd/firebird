@@ -136,7 +136,6 @@ static const UCHAR compatibility[] = {
 /* EX */ 1, 1, 0, 0, 0, 0, 0
 };
 
-#define LCK_max			(LCK_EX + 1)
 #define COMPATIBLE(st1, st2)	compatibility [st1 * LCK_max + st2]
 #define LOCK_HASH_SIZE		19
 

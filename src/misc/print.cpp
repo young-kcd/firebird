@@ -27,12 +27,13 @@
 #include "../jrd/event_proto.h"
 #include "../jrd/gds_proto.h"
 
-static void prt_que(UCHAR *, SRQ *);
+static void prt_que(UCHAR *, srq *);
 static void event_list(void);
 static void event_dump_list(void);
 
 static EVH EVENT_header = NULL;
 
+#define SRQ_BASE                  ((UCHAR *) EVENT_header)
 
 int main(int argc, char *argv[])
 {
@@ -79,12 +80,12 @@ static void event_list(void)
  *	This format is more readable for humans.
  *
  **************************************/
-	SRQ *que;
+	srq *que_inst;
 	EVNT event;
-	SRQ *database_que;
+	srq *database_que;
 	EVNT database_event;
 
-	QUE_LOOP(EVENT_header->evh_events, database_que) {
+	SRQ_LOOP(EVENT_header->evh_events, database_que) {
 		UCHAR *p;
 		ULONG l;
 
@@ -109,10 +110,10 @@ static void event_list(void)
 
 		{
 			RINT interest;
-			SRQ *interest_que;
+			srq *interest_que;
 			/* Print out the interest list for this event */
 
-			QUE_LOOP(database_event->evnt_interests, interest_que) {
+			SRQ_LOOP(database_event->evnt_interests, interest_que) {
 				interest =
 					(RINT) ((UCHAR *) interest_que -
 							OFFSET(RINT, rint_interests));
@@ -122,8 +123,8 @@ static void event_list(void)
 					jrd_req* request;
 					PRB process;
 
-					request = (jrd_req*) ABS_PTR(interest->rint_request);
-					process = (PRB) ABS_PTR(request->req_process);
+					request = (jrd_req*) SRQ_ABS_PTR(interest->rint_request);
+					process = (PRB) SRQ_ABS_PTR(request->req_process);
 					printf("%6d ", process->prb_process_id);
 				}
 			}
@@ -131,21 +132,21 @@ static void event_list(void)
 
 		/* Print out each event belonging to this database */
 
-		QUE_LOOP(EVENT_header->evh_events, que) {
+		SRQ_LOOP(EVENT_header->evh_events, que_inst) {
 
-			event = (EVNT) ((UCHAR *) que - OFFSET(EVNT, evnt_events));
+			event = (EVNT) ((UCHAR *) que_inst - OFFSET(EVNT, evnt_events));
 			fb_assert(event->evnt_header.hdr_type == type_evnt);
-			if (event->evnt_parent != REL_PTR(database_event))
+			if (event->evnt_parent != SRQ_REL_PTR(database_event))
 				continue;
 			printf("    \"%-15s\" count: %6ld Interest",
 					  event->evnt_name, event->evnt_count);
 
 			{
 				RINT interest;
-				SRQ *interest_que;
+				srq *interest_que;
 				/* Print out the interest list for this event */
 
-				QUE_LOOP(event->evnt_interests, interest_que) {
+				SRQ_LOOP(event->evnt_interests, interest_que) {
 					interest =
 						(RINT) ((UCHAR *) interest_que -
 								OFFSET(RINT, rint_interests));
@@ -155,8 +156,8 @@ static void event_list(void)
 						jrd_req* request;
 						PRB process;
 
-						request = (jrd_req*) ABS_PTR(interest->rint_request);
-						process = (PRB) ABS_PTR(request->req_process);
+						request = (jrd_req*) SRQ_ABS_PTR(interest->rint_request);
+						process = (PRB) SRQ_ABS_PTR(request->req_process);
 						printf("%6d ", process->prb_process_id);
 					}
 				}
@@ -181,7 +182,7 @@ static void event_table_dump(void)
  *	is not very readable by humans.
  *
  **************************************/
-	SRQ *que;
+	srq *que_inst;
 	PRB process;
 	FRB free;
 	EVNT event, parent;
@@ -204,7 +205,7 @@ static void event_table_dump(void)
 		 offset += block->hdr_length) 
 	{
 		printf("\n%.5ld ", offset);
-		event_hdr* block = (event_hdr*) ABS_PTR(offset);
+		event_hdr* block = (event_hdr*) SRQ_ABS_PTR(offset);
 		switch (block->hdr_type) {
 		case type_prb:
 			printf("PROCESS_BLOCK (%ld)\n", block->hdr_length);
@@ -254,9 +255,9 @@ static void event_table_dump(void)
 			printf("INTEREST (%ld)\n", block->hdr_length);
 			interest = (RINT) block;
 			if (interest->rint_event) {
-				event = (EVNT) ABS_PTR(interest->rint_event);
+				event = (EVNT) SRQ_ABS_PTR(interest->rint_event);
 				if (event->evnt_parent) {
-					parent = (EVNT) ABS_PTR(event->evnt_parent);
+					parent = (EVNT) SRQ_ABS_PTR(event->evnt_parent);
 					printf("\t\"%s\".\"%s\"\n", parent->evnt_name,
 							  event->evnt_name);
 				}
@@ -280,7 +281,7 @@ static void event_table_dump(void)
 }
 
 
-static void prt_que(UCHAR * string, SRQ * que)
+static void prt_que(UCHAR * string, srq * que_inst)
 {
 /**************************************
  *
@@ -294,11 +295,11 @@ static void prt_que(UCHAR * string, SRQ * que)
  **************************************/
 	SLONG offset;
 
-	offset = REL_PTR(que);
+	offset = SRQ_REL_PTR(que_inst);
 
-	if (offset == que->srq_forward && offset == que->srq_backward)
+	if (offset == que_inst->srq_forward && offset == que_inst->srq_backward)
 		printf("%s: *empty*\n", string);
 	else
 		printf("%s: forward: %d, backward: %d\n",
-				  string, que->srq_forward, que->srq_backward);
+				  string, que_inst->srq_forward, que_inst->srq_backward);
 }

@@ -32,32 +32,10 @@
 
 #include "../jrd/isc.h"
 #include "../jrd/file_params.h"
-
-#define PTR			SLONG
-#define BASE                  ((UCHAR *) EVENT_header)
-#define REL_PTR(item)         ((UCHAR *) item - BASE)
-#define ABS_PTR(item)		(BASE + item)
-#define ACQUIRE			acquire()
-#define RELEASE			release()
-
-#define QUE_INIT(que)	{que.srq_forward = que.srq_backward = REL_PTR (&que);}
-#define QUE_EMPTY(que)	(que.srq_forward == REL_PTR (&que))
-#define QUE_NEXT(que)	ABS_PTR (que.srq_forward)
-#define QUE_PREV(que)	ABS_PTR (que.srq_backward)
-
-#define QUE_LOOP(header,que)	for (que = (SRQ*) QUE_NEXT (header);\
-	que != &header; que = (SRQ*) QUE_NEXT ((*que)))
-
+#include "../jrd/que.h"
 
 const int SIZE_SHIFT	= 2;
 const int FAST_ALLOC	= 16;
-
-/* Self-relative que block.  Offsets are from the block itself. */
-
-typedef struct srq {
-	PTR srq_forward;			/* Forward offset */
-	PTR srq_backward;			/* Backward offset */
-} SRQ;
 
 /* Global section header */
 
@@ -66,13 +44,13 @@ const int EVH_HASH_SIZE	= 7;
 typedef struct evh {
 	SLONG evh_length;			/* Current length of global section */
 	UCHAR evh_version;			/* Version number of global section */
-	SRQ evh_events;				/* Known processes */
-	SRQ evh_processes;			/* Known processes */
-	PTR evh_free;				/* Free blocks */
-	PTR evh_current_process;	/* Current process, if any */
+	srq evh_events;				/* Known processes */
+	srq evh_processes;			/* Known processes */
+	SRQ_PTR evh_free;				/* Free blocks */
+	SRQ_PTR evh_current_process;	/* Current process, if any */
 	MTX_T evh_mutex[1];			/* Mutex controlling access */
 	SLONG evh_request_id;		/* Next request id */
-	PTR evh_hash_table[EVH_HASH_SIZE];
+	SRQ_PTR evh_hash_table[EVH_HASH_SIZE];
 } *EVH;
 
 /* Common block header */
@@ -106,8 +84,8 @@ typedef frb *FRB;
 struct prb
 {
 	event_hdr prb_header;
-	SRQ prb_processes;			/* Process que owned by header */
-	SRQ prb_sessions;			/* Sessions within process */
+	srq prb_processes;			/* Process que owned by header */
+	srq prb_sessions;			/* Sessions within process */
 	SLONG prb_process_id;		/* Process id */
 	SLONG prb_process_uid[2];	/* Process UID (apollo) */
 	event_t prb_event[1];		/* Event on which to wait */
@@ -125,26 +103,26 @@ const int PRB_exiting	= 16;		/* Process is exiting */
 
 struct ses {
 	event_hdr ses_header;
-	SRQ ses_sessions;			/* Sessions within process */
-	SRQ ses_requests;			/* Outstanding requests */
-	PTR ses_interests;			/* Historical interests */
-	PTR ses_process;			/* Parent process */
+	srq ses_sessions;			/* Sessions within process */
+	srq ses_requests;			/* Outstanding requests */
+	SRQ_PTR ses_interests;			/* Historical interests */
+	SRQ_PTR ses_process;			/* Parent process */
 #ifdef MULTI_THREAD
 	USHORT ses_flags;
 #endif
 };
 typedef ses *SES;
 
-#define	SES_delivering	1		/* Watcher thread is delivering an event */
+const int SES_delivering	= 1;		/* Watcher thread is delivering an event */
 
 /* Event block */
 
 struct evnt {
 	event_hdr evnt_header;
-	SRQ evnt_events;			/* System event que (owned by header) */
-	SRQ evnt_interests;			/* Que of request interests in event */
-	PTR evnt_hash_collision;	/* Hash table collision pointer */
-	PTR evnt_parent;			/* Major event name */
+	srq evnt_events;			/* System event que (owned by header) */
+	srq evnt_interests;			/* Que of request interests in event */
+	SRQ_PTR evnt_hash_collision;	/* Hash table collision pointer */
+	SRQ_PTR evnt_parent;			/* Major event name */
 	SLONG evnt_count;			/* Current event count */
 	USHORT evnt_length;			/* Length of event name */
 	TEXT evnt_name[1];			/* Event name */
@@ -155,10 +133,10 @@ typedef evnt *EVNT;
 
 struct evt_req {
 	event_hdr req_header;
-	SRQ req_requests;			/* Request que owned by session block */
-	PTR req_process;			/* Parent process block */
-	PTR req_session;			/* Parent session block */
-	PTR req_interests;			/* First interest in request */
+	srq req_requests;			/* Request que owned by session block */
+	SRQ_PTR req_process;			/* Parent process block */
+	SRQ_PTR req_session;			/* Parent session block */
+	SRQ_PTR req_interests;			/* First interest in request */
 	FPTR_EVENT_CALLBACK req_ast;	/* Asynchronous routine */
 	void *req_ast_arg;			/* Argument for ast */
 	SLONG req_request_id;		/* Request id, dummy */
@@ -169,10 +147,10 @@ typedef evt_req *EVT_REQ;
 
 struct req_int {
 	event_hdr rint_header;
-	SRQ rint_interests;			/* Que owned by event */
-	PTR rint_event;				/* Event of interest */
-	PTR rint_request;			/* Request of interest */
-	PTR rint_next;				/* Next interest of request */
+	srq rint_interests;			/* Que owned by event */
+	SRQ_PTR rint_event;				/* Event of interest */
+	SRQ_PTR rint_request;			/* Request of interest */
+	SRQ_PTR rint_next;				/* Next interest of request */
 	SLONG rint_count;			/* Threshhold count */
 };
 typedef req_int *RINT;

@@ -54,9 +54,10 @@
 
 #include "../jrd/common.h"
 #include "../jrd/file_params.h"
+#include "../jrd/que.h"
 
 #ifdef WIN_NT
-#define DEFAULT_SIZE    32768
+#define DEFAULT_SIZE	32768
 #include "../jrd/isc_signal.h"
 #endif
 
@@ -65,38 +66,25 @@
 #endif
 
 #ifndef DEFAULT_SIZE
-#define DEFAULT_SIZE    98304
+#define DEFAULT_SIZE	98304
 #endif
 
 #ifndef EXTEND_SIZE
 #define EXTEND_SIZE     32768
 #endif
 
-#ifdef SCO_UNIX
-#define SEMAPHORES      25
-#endif
-
-#ifdef SINIXZ
-#define SEMAPHORES      25
-#endif
-
-#ifndef SEMAPHORES
-#define SEMAPHORES      32
-#endif
-
-#undef BASE
-#define BASE                    ((UCHAR*) LOCK_header)
-#define REL_PTR(item)           (PTR) ((UCHAR*) item - BASE)
-#define ABS_PTR(item)           (BASE + item)
-
-#define QUE_INIT(que)   {que.srq_forward = que.srq_backward = REL_PTR (&que);}
-#define QUE_EMPTY(que)  (que.srq_forward == REL_PTR (&que))
-#define QUE_NEXT(que)   (SRQ) ABS_PTR (que.srq_forward)
-
-#define QUE_LOOP(header,que)    for (que = QUE_NEXT (header);\
-	que != &header; que = QUE_NEXT ((*que)))
-
-#define PTR     SLONG
+// not used
+//#ifdef SCO_UNIX
+//#define SEMAPHORES      25
+//#endif
+//
+//#ifdef SINIXZ
+//#define SEMAPHORES      25
+//#endif
+//
+//#ifndef SEMAPHORES
+//#define SEMAPHORES      32
+//#endif
 
 /* Maximum lock series for gathering statistics
    and querying data */
@@ -114,37 +102,34 @@
 
 /* Lock states */
 
-#define LCK_none        0
-#define LCK_null        1
-#define LCK_SR          2		/* Shared Read */
-#define LCK_PR          3		/* Protected Read */
-#define LCK_SW          4		/* Shared Write */
-#define LCK_PW          5		/* Protected Write */
-#define LCK_EX          6		/* Exclusive */
-#define LCK_max         7
+#define LCK_none	0
+#define LCK_null	1
+#define LCK_SR		2		// Shared Read
+#define LCK_PR		3		// Protected Read
+#define LCK_SW		4		// Shared Write
+#define LCK_PW		5		// Protected Write
+#define LCK_EX		6		// Exclusive
+#define LCK_max		7
+
+#define LCK_read		LCK_PR
+#define LCK_write		LCK_EX
+
+#define LCK_WAIT		TRUE
+#define LCK_NO_WAIT		FALSE
 
 /* Lock block types */
 
-#define type_null       0
-#define type_lhb        1
-#define type_prb        2
-#define type_lrq        3
-#define type_lbl        4
-#define type_his        5
-#define type_smb        6
-#define type_shb        7
-#define type_own        8
+#define type_null		0
+#define type_lhb		1
+#define type_prb		2
+#define type_lrq		3
+#define type_lbl		4
+#define type_his		5
+#define type_smb		6
+#define type_shb		7
+#define type_own		8
 
-#define type_MAX        type_own
-
-
-
-/* Self-relative que block.  Offsets are from the block itself. */
-
-typedef struct srq {
-	PTR srq_forward;			/* Forward offset */
-	PTR srq_backward;			/* Backward offset */
-} *SRQ;
+#define type_MAX		type_own
 
 
 #define CLASSIC_LHB_VERSION	15 // Firebird 1.5
@@ -189,8 +174,8 @@ typedef struct srq {
 typedef struct lhb {
 	UCHAR lhb_type;				/* memory tag - always type_lbh */
 	UCHAR lhb_version;			/* Version of lock table */
-	PTR lhb_secondary;			/* Secondary lock header block */
-	PTR lhb_active_owner;		/* Active owner, if any */
+	SRQ_PTR lhb_secondary;			/* Secondary lock header block */
+	SRQ_PTR lhb_active_owner;		/* Active owner, if any */
 	srq lhb_owners;				/* Que of active owners */
 	srq lhb_free_owners;		/* Free owners blocks */
 	srq lhb_free_locks;			/* Free lock blocks */
@@ -200,10 +185,10 @@ typedef struct lhb {
 	USHORT lhb_hash_slots;		/* Number of hash slots allocated */
 	USHORT lhb_flags;			/* Miscellaneous info */
 	MTX_T lhb_mutex[1];			/* Mutex controlling access */
-	PTR lhb_manager;			/* Lock manager owner block */
-	PTR lhb_history;
+	SRQ_PTR lhb_manager;			/* Lock manager owner block */
+	SRQ_PTR lhb_history;
 	ULONG lhb_process_count;	/* To give a unique id to each process attachment to the lock table */
-	PTR lhb_mask;				/* Semaphore mask block */
+	SRQ_PTR lhb_mask;				/* Semaphore mask block */
 	ULONG lhb_scan_interval;	/* Deadlock scan interval (secs) */
 	ULONG lhb_acquire_spins;
 	ULONG lhb_acquires;
@@ -243,10 +228,10 @@ typedef struct lhb {
 typedef struct shb {
 	UCHAR shb_type;				/* memory tag - always type_shb */
 	UCHAR shb_flags;
-	PTR shb_history;
-	PTR shb_remove_node;		/* Node removing itself */
-	PTR shb_insert_que;			/* Queue inserting into */
-	PTR shb_insert_prior;		/* Prior of inserting queue */
+	SRQ_PTR shb_history;
+	SRQ_PTR shb_remove_node;		/* Node removing itself */
+	SRQ_PTR shb_insert_que;			/* Queue inserting into */
+	SRQ_PTR shb_insert_prior;		/* Prior of inserting queue */
 	SLONG shb_misc[10];			/* Unused space */
 } *SHB;
 
@@ -263,7 +248,7 @@ typedef struct lbl
 	srq lbl_lhb_hash;			/* Collision que for hash table */
 	srq lbl_lhb_data;			/* Lock data que by series */
 	SLONG lbl_data;				/* user data */
-	PTR lbl_parent;				/* Parent */
+	SRQ_PTR lbl_parent;				/* Parent */
 	UCHAR lbl_series;			/* Lock series */
 	UCHAR lbl_flags;			/* Misc flags */
 	USHORT lbl_pending_lrq_count;	/* count of lbl_requests with LRQ_pending */
@@ -280,8 +265,8 @@ typedef struct lrq {
 	UCHAR lrq_requested;		/* Level requested  */
 	UCHAR lrq_state;			/* State of lock request */
 	USHORT lrq_flags;			/* Misc crud */
-	PTR lrq_owner;				/* Owner making request */
-	PTR lrq_lock;				/* Lock requested */
+	SRQ_PTR lrq_owner;				/* Owner making request */
+	SRQ_PTR lrq_lock;				/* Lock requested */
 	SLONG lrq_data;				/* Lock data requested */
 	srq lrq_own_requests;		/* Locks granted for owner */
 	srq lrq_lbl_requests;		/* Que of requests (active, pending) */
@@ -290,15 +275,15 @@ typedef struct lrq {
 	void* lrq_ast_argument;		/* Ast argument */
 } *LRQ;
 
-#define LRQ_blocking    1		/* Request is blocking */
-#define LRQ_pending     2		/* Request is pending */
-#define LRQ_converting  4		/* Request is pending conversion */
-#define LRQ_rejected    8		/* Request is rejected */
-#define LRQ_timed_out   16		/* Wait timed out */
-#define LRQ_deadlock    32		/* Request has been seen by the deadlock-walk */
-#define LRQ_repost      64		/* Request block used for repost */
-#define LRQ_scanned     128		/* Request already scanned for deadlock */
-#define LRQ_blocking_seen 256	/* Blocking notification received by owner */
+#define LRQ_blocking	1		/* Request is blocking */
+#define LRQ_pending		2		/* Request is pending */
+#define LRQ_converting	4		/* Request is pending conversion */
+#define LRQ_rejected	8		/* Request is rejected */
+#define LRQ_timed_out	16		/* Wait timed out */
+#define LRQ_deadlock	32		/* Request has been seen by the deadlock-walk */
+#define LRQ_repost		64		/* Request block used for repost */
+#define LRQ_scanned		128		/* Request already scanned for deadlock */
+#define LRQ_blocking_seen 256		/* Blocking notification received by owner */
 
 /* Owner block */
 
@@ -313,7 +298,7 @@ typedef struct own
 	srq own_lhb_owners;			/* Owner que */
 	srq own_requests;			/* Lock requests granted */
 	srq own_blocks;				/* Lock requests blocking */
-	PTR own_pending_request;	/* Request we're waiting on */
+	SRQ_PTR own_pending_request;	/* Request we're waiting on */
 	int own_process_id;			/* Owner's process ID */
 	int own_process_uid;		/* Owner's process UID */
 	ULONG own_acquire_time;		/* lhb_acquires when owner last tried acquire() */
@@ -336,21 +321,21 @@ typedef struct own
 } *OWN;
 
 /* Flags in own_flags */
-#define OWN_blocking		1		// Owner is blocking
-#define OWN_scanned			2		// Owner has been deadlock scanned
-#define OWN_manager			4		// Owner is privileged manager
-#define OWN_signal			8		// Owner needs signal delivered
-#define OWN_wakeup			32		// Owner has been awoken
-#define OWN_starved			128		// This thread may be starved
+#define OWN_blocking	1		// Owner is blocking
+#define OWN_scanned		2		// Owner has been deadlock scanned
+#define OWN_manager		4		// Owner is privileged manager
+#define OWN_signal		8		// Owner needs signal delivered
+#define OWN_wakeup		32		// Owner has been awoken
+#define OWN_starved		128		// This thread may be starved
 
 /* Flags in own_ast_flags */
-#define OWN_signaled    16		/* Signal is thought to be delivered */
+#define OWN_signaled	16		/* Signal is thought to be delivered */
 
 /* Flags in own_semaphore */
-#define OWN_semavail    0x8000	/* Process semaphore is available */
+#define OWN_semavail	0x8000	/* Process semaphore is available */
 
 /* Flags in own_ast_hung_flag */
-#define OWN_hung        64		/* Owner may be hung by OS-level bug */
+#define OWN_hung		64		/* Owner may be hung by OS-level bug */
 
 /* NOTE: own_semaphore, when USE_WAKEUP_EVENTS is set, is used to indicate when a 
    owner is waiting inside wait_for_request().  post_wakeup() will only
@@ -371,33 +356,33 @@ struct semaphore_mask {
 typedef struct his {
 	UCHAR his_type;				/* memory tag - always type_his */
 	UCHAR his_operation;		/* operation that occured */
-	PTR his_next;				/* PTR to next item in history list */
-	PTR his_process;			/* owner to record for this operation */
-	PTR his_lock;				/* lock to record for operation */
-	PTR his_request;			/* request to record for operation */
+	SRQ_PTR his_next;				/* SRQ_PTR to next item in history list */
+	SRQ_PTR his_process;			/* owner to record for this operation */
+	SRQ_PTR his_lock;				/* lock to record for operation */
+	SRQ_PTR his_request;			/* request to record for operation */
 } *HIS;
 
 /* his_operation definitions */
-#define his_enq         1
-#define his_deq         2
-#define his_convert     3
-#define his_signal      4
-#define his_post_ast    5
-#define his_wait        6
-#define his_del_process 7
-#define his_del_lock    8
-#define his_del_request 9
-#define his_deny        10
-#define his_grant       11
-#define his_leave_ast   12
-#define his_scan        13
-#define his_dead        14
-#define his_enter       15
-#define his_bug         16
-#define his_active      17
-#define his_cleanup     18
-#define his_del_owner   19
-#define his_MAX         his_del_owner
+#define his_enq			1
+#define his_deq			2
+#define his_convert		3
+#define his_signal		4
+#define his_post_ast	5
+#define his_wait		6
+#define his_del_process	7
+#define his_del_lock	8
+#define his_del_request	9
+#define his_deny		10
+#define his_grant		11
+#define his_leave_ast	12
+#define his_scan		13
+#define his_dead		14
+#define his_enter		15
+#define his_bug			16
+#define his_active		17
+#define his_cleanup		18
+#define his_del_owner	19
+#define his_MAX			his_del_owner
 
 #endif // ISC_LOCK_LOCK_H
 
