@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.23 2003-02-10 13:28:23 eku Exp $
+ * $Id: rse.cpp,v 1.24 2003-02-13 17:30:05 tamlin Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -447,9 +447,10 @@ BOOLEAN RSE_get_record(TDBB tdbb, RSB rsb, RSE_GET_MODE mode)
 	count = (request->req_flags & req_count_records) != 0;
 	request->req_flags &= ~req_count_records;
 
-	while ( (result = get_record(tdbb, rsb, NULL, mode)) ) {
-	
-		if (rsb->rsb_flags & rsb_writelock) {
+	while ( (result = get_record(tdbb, rsb, NULL, mode)) )
+	{
+		if (rsb->rsb_flags & rsb_writelock)
+		{
 			// Lock record if we were asked for it
 			JRD_TRA transaction = request->req_transaction;
 
@@ -461,13 +462,15 @@ BOOLEAN RSE_get_record(TDBB tdbb, RSB rsb, RSE_GET_MODE mode)
 				RLCK_reserve_relation(tdbb, transaction, relation, TRUE, TRUE);
 				
 				// Fetch next record if current was deleted before being locked
-				if (!VIO_writelock(tdbb, org_rpb, transaction)) 
+				if (!VIO_writelock(tdbb, org_rpb, transaction)) {
 					continue;
+				}
 			}
 		}
 		
-		if (count)
+		if (count) {
 			request->req_records_selected++;
+		}
 		break;
 	}
 
@@ -1085,20 +1088,25 @@ static BOOLEAN fetch_record(TDBB tdbb, RSB rsb, SSHORT n
 				   , RSE_get_forward
 #endif
 		))
+	{
 		return TRUE;
+	}
 
 /* we have exhausted this stream, so close it; if there is 
    another candidate record from the n-1 streams to the left, 
    then reopen the stream and start again from the beginning */
 
-	while (TRUE) {
+	while (TRUE)
+	{
 		RSE_close(tdbb, sub_rsb);
 		if (n == 0 || !fetch_record(tdbb, rsb, n - 1
 #ifdef SCROLLABLE_CURSORS
 									, mode
 #endif
 			))
+		{
 			return FALSE;
+		}
 		RSE_open(tdbb, sub_rsb);
 
 		if (get_record(tdbb, sub_rsb, NULL
@@ -1108,7 +1116,9 @@ static BOOLEAN fetch_record(TDBB tdbb, RSB rsb, SSHORT n
 					   , RSE_get_forward
 #endif
 			))
+		{
 			return TRUE;
+		}
 	}
 }
 
@@ -1141,13 +1151,16 @@ static BOOLEAN fetch_left(TDBB tdbb, RSB rsb, IRSB impure, RSE_GET_MODE mode)
 /* loop through the outer join in either the forward or the backward direction; 
    the various modes indicate what state of the join we are in */
 
-	while (TRUE) {
-		if (!(impure->irsb_flags & irsb_join_full)) {
+	while (TRUE)
+	{
+		if (!(impure->irsb_flags & irsb_join_full))
+		{
 			/* mustread indicates to get the next record from the outer stream */
 
-			if (impure->irsb_flags & irsb_mustread) {
-				if (!get_record
-					(tdbb, rsb->rsb_arg[RSB_LEFT_outer], NULL, mode)) {
+			if (impure->irsb_flags & irsb_mustread)
+			{
+				if (!get_record(tdbb, rsb->rsb_arg[RSB_LEFT_outer], NULL, mode))
+				{
 					if (mode == RSE_get_backward)
 						return FALSE;
 					else if (!rsb->rsb_arg[RSB_LEFT_inner_streams])
@@ -1165,7 +1178,8 @@ static BOOLEAN fetch_left(TDBB tdbb, RSB rsb, IRSB impure, RSE_GET_MODE mode)
 				/* check if the outer record qualifies for the boolean */
 
 				if (rsb->rsb_arg[RSB_LEFT_boolean] &&
-					!EVL_boolean(tdbb, rsb->rsb_arg[RSB_LEFT_boolean])) {
+					!EVL_boolean(tdbb, rsb->rsb_arg[RSB_LEFT_boolean]))
+				{
 					/* The boolean pertaining to the left sub-stream is false
 					   so just join sub-stream to a null valued right sub-stream */
 					join_to_nulls(tdbb, rsb, RSB_LEFT_streams);
@@ -1180,11 +1194,14 @@ static BOOLEAN fetch_left(TDBB tdbb, RSB rsb, IRSB impure, RSE_GET_MODE mode)
 			/* fetch records from the inner stream until exhausted */
 
 			while (get_record(tdbb, rsb->rsb_arg[RSB_LEFT_inner], NULL, mode))
+			{
 				if (!rsb->rsb_arg[RSB_LEFT_inner_boolean] ||
-					EVL_boolean(tdbb, rsb->rsb_arg[RSB_LEFT_inner_boolean])) {
+					EVL_boolean(tdbb, rsb->rsb_arg[RSB_LEFT_inner_boolean]))
+				{
 					impure->irsb_flags |= irsb_joined;
 					return TRUE;
 				}
+			}
 
 			/* out of inner records, go back to reading the next outer record */
 
@@ -1199,13 +1216,15 @@ static BOOLEAN fetch_left(TDBB tdbb, RSB rsb, IRSB impure, RSE_GET_MODE mode)
 				return TRUE;
 			}
 		}
-		else {
+		else
+		{
 			/* Continue with a full outer join. */
 
 			full = rsb->rsb_arg[RSB_LEFT_inner];
 			full = (full->rsb_type == rsb_boolean) ? full->rsb_next : full;
 
-			if (impure->irsb_flags & irsb_in_opened) {
+			if (impure->irsb_flags & irsb_in_opened)
+			{
 				USHORT found;
 
 				/* The inner stream was opened at some point.  If it doesn't have a
@@ -1224,6 +1243,7 @@ static BOOLEAN fetch_left(TDBB tdbb, RSB rsb, IRSB impure, RSE_GET_MODE mode)
 					while (found =
 						   get_record(tdbb, rsb->rsb_arg[RSB_LEFT_outer],
 									  NULL, mode))
+					{
 							if (
 								(!rsb->rsb_arg[RSB_LEFT_boolean]
 								 || EVL_boolean(tdbb,
@@ -1238,11 +1258,16 @@ static BOOLEAN fetch_left(TDBB tdbb, RSB rsb, IRSB impure, RSE_GET_MODE mode)
 												   rsb->
 												   rsb_arg
 												   [RSB_LEFT_inner]->rsb_arg
-												   [0]))) break;
+												   [0])))
+							{
+								break;
+							}
+					}
 					RSE_close(tdbb, rsb->rsb_arg[RSB_LEFT_outer]);
 				} while (found);
 			}
-			else if (!get_record(tdbb, full, NULL, mode)) {
+			else if (!get_record(tdbb, full, NULL, mode))
+			{
 				if (mode == RSE_get_forward)
 					return FALSE;
 				else
@@ -1252,7 +1277,7 @@ static BOOLEAN fetch_left(TDBB tdbb, RSB rsb, IRSB impure, RSE_GET_MODE mode)
 			join_to_nulls(tdbb, rsb, RSB_LEFT_inner_streams);
 			return TRUE;
 
-		  return_to_outer:
+return_to_outer:
 			impure->irsb_flags &= ~(irsb_join_full | irsb_in_opened);
 			impure->irsb_flags |= irsb_mustread;
 			RSE_close(tdbb, rsb->rsb_arg[RSB_LEFT_inner]);
@@ -1292,8 +1317,11 @@ static BOOLEAN fetch_left(TDBB tdbb, RSB rsb, IRSB impure)
 	SET_TDBB(tdbb);
 
 	if (!(impure->irsb_flags & irsb_join_full))
-		while (TRUE) {
-			if (impure->irsb_flags & irsb_mustread) {
+	{
+		while (TRUE)
+		{
+			if (impure->irsb_flags & irsb_mustread)
+			{
 				if (!get_record
 					(tdbb, rsb->rsb_arg[RSB_LEFT_outer], NULL,
 					 RSE_get_forward)) {
@@ -1320,10 +1348,10 @@ static BOOLEAN fetch_left(TDBB tdbb, RSB rsb, IRSB impure)
 				RSE_open(tdbb, rsb->rsb_arg[RSB_LEFT_inner]);
 			}
 
-			while (get_record
-				   (tdbb, rsb->rsb_arg[RSB_LEFT_inner], NULL,
+			while (get_record(tdbb, rsb->rsb_arg[RSB_LEFT_inner], NULL,
 					RSE_get_forward))
-					if (!rsb->rsb_arg[RSB_LEFT_inner_boolean]
+			{
+				if (!rsb->rsb_arg[RSB_LEFT_inner_boolean]
 						|| EVL_boolean(tdbb,
 									   (JRD_NOD)
 									   rsb->rsb_arg[RSB_LEFT_inner_boolean]))
@@ -1331,23 +1359,27 @@ static BOOLEAN fetch_left(TDBB tdbb, RSB rsb, IRSB impure)
 					impure->irsb_flags |= irsb_joined;
 					return TRUE;
 				}
+			}
 
 			RSE_close(tdbb, rsb->rsb_arg[RSB_LEFT_inner]);
 			impure->irsb_flags |= irsb_mustread;
-			if (!(impure->irsb_flags & irsb_joined)) {
+			if (!(impure->irsb_flags & irsb_joined))
+			{
 				/* The current left sub-stream record has not been joined
 				   to anything.  Join it to a null valued right sub-stream */
 				join_to_nulls(tdbb, rsb, RSB_LEFT_streams);
 				return TRUE;
 			}
 		}
+	}
 
 /* Continue with a full outer join. */
 
 	full = rsb->rsb_arg[RSB_LEFT_inner];
 	full = (full->rsb_type == rsb_boolean) ? full->rsb_next : full;
 
-	if (impure->irsb_flags & irsb_in_opened) {
+	if (impure->irsb_flags & irsb_in_opened)
+	{
 		USHORT found;
 
 		/* The inner stream was opened at some point.  If it doesn't have a
@@ -1361,21 +1393,25 @@ static BOOLEAN fetch_left(TDBB tdbb, RSB rsb, IRSB impure)
 			while ( (found =
 				   get_record(tdbb, rsb->rsb_arg[RSB_LEFT_outer], NULL,
 							  RSE_get_forward)) )
-					if (
-						(!rsb->rsb_arg[RSB_LEFT_boolean]
-						 || EVL_boolean(tdbb,
-										(JRD_NOD) rsb->rsb_arg[RSB_LEFT_boolean]))
-						&& (!rsb->rsb_arg[RSB_LEFT_inner_boolean]
-							|| EVL_boolean(tdbb,
-										   (JRD_NOD)
-										   rsb->rsb_arg
-										   [RSB_LEFT_inner_boolean]))
-						&& (full == rsb->rsb_arg[RSB_LEFT_inner]
-							|| EVL_boolean(tdbb,
-										   (JRD_NOD)
-										   rsb->rsb_arg
-										   [RSB_LEFT_inner]->rsb_arg[0])))
-						break;
+			{
+				if (
+					(!rsb->rsb_arg[RSB_LEFT_boolean]
+					 || EVL_boolean(tdbb,
+									(JRD_NOD) rsb->rsb_arg[RSB_LEFT_boolean]))
+					&& (!rsb->rsb_arg[RSB_LEFT_inner_boolean]
+						|| EVL_boolean(tdbb,
+									   (JRD_NOD)
+									   rsb->rsb_arg
+									   [RSB_LEFT_inner_boolean]))
+					&& (full == rsb->rsb_arg[RSB_LEFT_inner]
+						|| EVL_boolean(tdbb,
+									   (JRD_NOD)
+									   rsb->rsb_arg
+									   [RSB_LEFT_inner]->rsb_arg[0])))
+				{
+					break;
+				}
+			}
 			RSE_close(tdbb, rsb->rsb_arg[RSB_LEFT_outer]);
 		} while (found);
 	}
@@ -1407,8 +1443,9 @@ static UCHAR *get_merge_data(TDBB tdbb, MFB mfb, SLONG record)
 	assert(record >= 0 && record < (SLONG) mfb->mfb_equal_records);
 
 	merge_block = record / mfb->mfb_blocking_factor;
-	if (merge_block != mfb->mfb_current_block)
+	if (merge_block != mfb->mfb_current_block) {
 		mfb->mfb_current_block = read_merge_block(tdbb, mfb, merge_block);
+	}
 
 	merge_offset = (record % mfb->mfb_blocking_factor) * mfb->mfb_record_size;
 	return (mfb->mfb_block_data + merge_offset);
@@ -1618,7 +1655,8 @@ static BOOLEAN get_merge_join(
 	highest_ptr = rsb->rsb_arg;
 
 	for (ptr = rsb->rsb_arg, tail = impure->irsb_mrg_rpt; ptr < end;
-		 ptr += 2, tail++) {
+		 ptr += 2, tail++)
+	{
 		sort_rsb = *ptr;
 		map = (SMB) sort_rsb->rsb_arg[0];
 		mfb = &tail->irsb_mrg_file;
@@ -1631,7 +1669,8 @@ static BOOLEAN get_merge_join(
 
 		/* If there is a record waiting, use it.  Otherwise get another */
 
-		if ((record = tail->irsb_mrg_last_fetched) >= 0) {
+		if ((record = tail->irsb_mrg_last_fetched) >= 0)
+		{
 			tail->irsb_mrg_last_fetched = -1;
 			last_data = get_merge_data(tdbb, mfb, record);
 			mfb->mfb_current_block = 0;
@@ -1641,7 +1680,8 @@ static BOOLEAN get_merge_join(
 			mfb->mfb_equal_records = 1;
 			record = 0;
 		}
-		else {
+		else
+		{
 			mfb->mfb_current_block = 0;
 			mfb->mfb_equal_records = 0;
 			if ((record = get_merge_record(tdbb, sort_rsb, tail, mode)) < 0)
@@ -1653,23 +1693,32 @@ static BOOLEAN get_merge_join(
 		map_sort_data(request, map, get_merge_data(tdbb, mfb, record));
 		result = compare(tdbb, highest_ptr[1], ptr[1]);
 		if (ptr != highest_ptr)
+		{
 			if (((result > 0) && (impure->irsb_flags & irsb_backwards)) ||
 				((result < 0) && ~(impure->irsb_flags & irsb_backwards)))
+			{
 				highest_ptr = ptr;
+			}
+		}
 	}
 
 /* Loop thru the streams advancing each up to (or down to) the target value.  
    If any exceeds the target value, there is no match so start over. */
 
-	for (;;) {
+	for (;;)
+	{
 		for (ptr = rsb->rsb_arg, tail = impure->irsb_mrg_rpt;
-			 ptr < end; ptr += 2, tail++) {
+			 ptr < end; ptr += 2, tail++)
+		{
 			if (highest_ptr != ptr)
-				while (result = compare(tdbb, highest_ptr[1], ptr[1])) {
+			{
+				while (result = compare(tdbb, highest_ptr[1], ptr[1]))
+				{
 					if (((result > 0)
 						 && (impure->irsb_flags & irsb_backwards))
 						|| ((result < 0)
-							&& ~(impure->irsb_flags & irsb_backwards))) {
+							&& ~(impure->irsb_flags & irsb_backwards)))
+					{
 						highest_ptr = ptr;
 						goto recycle;
 					}
@@ -1688,6 +1737,7 @@ static BOOLEAN get_merge_join(
 					map_sort_data(request, (SMB) sort_rsb->rsb_arg[0],
 								  get_merge_data(tdbb, mfb, record));
 				}
+			}
 		}
 
 		break;
@@ -1697,7 +1747,8 @@ static BOOLEAN get_merge_join(
 /* Finally compute equality group for each stream in sort/merge */
 
 	for (ptr = rsb->rsb_arg, tail = impure->irsb_mrg_rpt; ptr < end;
-		 ptr += 2, tail++) {
+		 ptr += 2, tail++)
+	{
 		ULONG key_length;
 		ULONG key[32];
 
@@ -1711,10 +1762,12 @@ static BOOLEAN get_merge_join(
 			first_data = (UCHAR *) key;
 		MOVE_FASTER(get_merge_data(tdbb, mfb, 0), first_data, key_length);
 
-		while ((record = get_merge_record(tdbb, sort_rsb, tail, mode)) >= 0) {
+		while ((record = get_merge_record(tdbb, sort_rsb, tail, mode)) >= 0)
+		{
 			if (compare_longs((SLONG *) first_data,
 							  (SLONG *) get_merge_data(tdbb, mfb, record),
-							  map->smb_key_length)) {
+							  map->smb_key_length))
+			{
 				tail->irsb_mrg_last_fetched = record;
 				break;
 			}
@@ -1736,18 +1789,25 @@ static BOOLEAN get_merge_join(
 	best_tails = 0;
 
 	for (tail = impure->irsb_mrg_rpt, tail_end = tail + rsb->rsb_count;
-		 tail < tail_end; tail++) {
+		 tail < tail_end; tail++)
+	{
 		irsb_mrg::irsb_mrg_repeat * tail2, *best_tail;
 		ULONG blocks, most_blocks;
 		LLS stack;
 
 		most_blocks = 0;
-		for (tail2 = impure->irsb_mrg_rpt; tail2 < tail_end; tail2++) {
+		for (tail2 = impure->irsb_mrg_rpt; tail2 < tail_end; tail2++)
+		{
 			for (stack = best_tails; stack; stack = stack->lls_next)
+			{
 				if (stack->lls_object == (BLK) tail2)
+				{
 					break;
-			if (stack)
+				}
+			}
+			if (stack) {
 				continue;
+			}
 			mfb = &tail2->irsb_mrg_file;
 			blocks = mfb->mfb_equal_records / mfb->mfb_blocking_factor;
 			if (++blocks > most_blocks) {
@@ -1760,8 +1820,9 @@ static BOOLEAN get_merge_join(
 		tail->irsb_mrg_order = best_tail - impure->irsb_mrg_rpt;
 	}
 
-	while (best_tails)
+	while (best_tails) {
 		(void) LLS_POP(&best_tails);
+	}
 
 	return TRUE;
 }
@@ -1804,7 +1865,8 @@ static BOOLEAN get_merge_join(TDBB tdbb, RSB rsb, IRSB_MRG impure)
 	highest_ptr = rsb->rsb_arg;
 
 	for (ptr = rsb->rsb_arg, tail = impure->irsb_mrg_rpt; ptr < end;
-		 ptr += 2, tail++) {
+		 ptr += 2, tail++)
+	{
 		sort_rsb = *ptr;
 		map = (SMB) sort_rsb->rsb_arg[0];
 		mfb = &tail->irsb_mrg_file;
@@ -1845,12 +1907,16 @@ static BOOLEAN get_merge_join(TDBB tdbb, RSB rsb, IRSB_MRG impure)
 /* Loop thru the streams advancing each up to the target value.  If any
    exceeds the target value, start over */
 
-	for (;;) {
+	for (;;)
+	{
 		for (ptr = rsb->rsb_arg, tail = impure->irsb_mrg_rpt;
 			 ptr < end; ptr += 2, tail++)
+		{
 			if (highest_ptr != ptr)
+			{
 				while ( (result =
-					   compare(tdbb, (JRD_NOD) highest_ptr[1], (JRD_NOD) ptr[1])) ) {
+					   compare(tdbb, (JRD_NOD) highest_ptr[1], (JRD_NOD) ptr[1])) )
+				{
 					if (result < 0) {
 						highest_ptr = ptr;
 						goto recycle;
@@ -1865,6 +1931,8 @@ static BOOLEAN get_merge_join(TDBB tdbb, RSB rsb, IRSB_MRG impure)
 					map_sort_data(request, (SMB) sort_rsb->rsb_arg[0],
 								  get_merge_data(tdbb, mfb, record));
 				}
+			}
+		}
 		break;
 	  recycle:;
 	}
@@ -1872,7 +1940,8 @@ static BOOLEAN get_merge_join(TDBB tdbb, RSB rsb, IRSB_MRG impure)
 /* Finally compute equality group for each stream in sort/merge */
 
 	for (ptr = rsb->rsb_arg, tail = impure->irsb_mrg_rpt; ptr < end;
-		 ptr += 2, tail++) {
+		 ptr += 2, tail++)
+	{
 		ULONG key_length;
 		ULONG key[64];
 
@@ -1886,10 +1955,12 @@ static BOOLEAN get_merge_join(TDBB tdbb, RSB rsb, IRSB_MRG impure)
 			first_data = (UCHAR *) key;
 		MOVE_FASTER(get_merge_data(tdbb, mfb, 0), first_data, key_length);
 
-		while ((record = get_merge_record(tdbb, sort_rsb, tail)) >= 0) {
+		while ((record = get_merge_record(tdbb, sort_rsb, tail)) >= 0)
+		{
 			if (compare_longs((SLONG *) first_data,
 							  (SLONG *) get_merge_data(tdbb, mfb, record),
-							  map->smb_key_length)) {
+							  map->smb_key_length))
+			{
 				tail->irsb_mrg_last_fetched = record;
 				break;
 			}
@@ -1911,18 +1982,25 @@ static BOOLEAN get_merge_join(TDBB tdbb, RSB rsb, IRSB_MRG impure)
 	best_tails = 0;
 
 	for (tail = impure->irsb_mrg_rpt, tail_end = tail + rsb->rsb_count;
-		 tail < tail_end; tail++) {
+		 tail < tail_end; tail++)
+	{
 		irsb_mrg::irsb_mrg_repeat * tail2, *best_tail;
 		ULONG blocks, most_blocks;
 		LLS stack;
 
 		most_blocks = 0;
-		for (tail2 = impure->irsb_mrg_rpt; tail2 < tail_end; tail2++) {
+		for (tail2 = impure->irsb_mrg_rpt; tail2 < tail_end; tail2++)
+		{
 			for (stack = best_tails; stack; stack = stack->lls_next)
+			{
 				if (stack->lls_object == (BLK) tail2)
+				{
 					break;
-			if (stack)
+				}
+			}
+			if (stack) {
 				continue;
+			}
 			mfb = &tail2->irsb_mrg_file;
 			blocks = mfb->mfb_equal_records / mfb->mfb_blocking_factor;
 			if (++blocks > most_blocks) {
@@ -1935,8 +2013,9 @@ static BOOLEAN get_merge_join(TDBB tdbb, RSB rsb, IRSB_MRG impure)
 		tail->irsb_mrg_order = best_tail - impure->irsb_mrg_rpt;
 	}
 
-	while (best_tails)
+	while (best_tails) {
 		(void) LLS_POP(&best_tails);
+	}
 
 	return TRUE;
 }
@@ -2261,7 +2340,6 @@ static BOOLEAN get_record(TDBB			tdbb,
 			if (column_node &&
 				(request->req_flags & (req_ansi_all | req_ansi_any)))
 			{
-
 				/* see if there's a select node to work with */
 
 				if (column_node->nod_type == nod_and)
@@ -2347,14 +2425,16 @@ static BOOLEAN get_record(TDBB			tdbb,
 						return FALSE;
 					break;
 				}
-				else {
+				else
+				{
 
 					/* do ANY */
 					/* if the subquery was true for any comparison,
 					   ANY is true */
 
 					result = FALSE;
-					while (get_record(tdbb, rsb->rsb_next, rsb, mode)) {
+					while (get_record(tdbb, rsb->rsb_next, rsb, mode))
+					{
 						if (EVL_boolean(tdbb, (JRD_NOD) rsb->rsb_arg[0])) {
 							result = TRUE;
 							break;
@@ -2370,11 +2450,13 @@ static BOOLEAN get_record(TDBB			tdbb,
 					return FALSE;
 				}
 			}
-			else if (column_node && (request->req_flags & req_ansi_all)) {
+			else if (column_node && (request->req_flags & req_ansi_all))
+			{
 				SSHORT any_false;	/* some records false for ANY/ALL */
 
 				request->req_flags &= ~req_ansi_all;
-				if (request->req_flags & req_ansi_not) {
+				if (request->req_flags & req_ansi_not)
+				{
 					request->req_flags &= ~req_ansi_not;
 
 					/* do NOT ALL */
@@ -2382,13 +2464,15 @@ static BOOLEAN get_record(TDBB			tdbb,
 					   NOT ALL is true */
 
 					any_false = FALSE;
-					while (get_record(tdbb, rsb->rsb_next, rsb, mode)) {
+					while (get_record(tdbb, rsb->rsb_next, rsb, mode))
+					{
 						request->req_flags &= ~req_null;
 
 						/* look for a FALSE (and not null either) */
 
 						if (!EVL_boolean(tdbb, (JRD_NOD) rsb->rsb_arg[0]) &&
-							!(request->req_flags & req_null)) {
+							!(request->req_flags & req_null))
+						{
 
 							/* make sure it wasn't FALSE because there's
 							   no select stream record */
@@ -2417,7 +2501,8 @@ static BOOLEAN get_record(TDBB			tdbb,
 					result = TRUE;
 					break;
 				}
-				else {
+				else
+				{
 
 					/* do ALL */
 					/* if the subquery was the empty set
@@ -2427,13 +2512,14 @@ static BOOLEAN get_record(TDBB			tdbb,
 					   ALL is true */
 
 					any_false = FALSE;
-					while (get_record(tdbb, rsb->rsb_next, rsb, mode)) {
+					while (get_record(tdbb, rsb->rsb_next, rsb, mode))
+					{
 						request->req_flags &= ~req_null;
 
 						/* look for a FALSE or null */
 
-						if (!EVL_boolean(tdbb, (JRD_NOD) rsb->rsb_arg[0])) {
-
+						if (!EVL_boolean(tdbb, (JRD_NOD) rsb->rsb_arg[0]))
+						{
 							/* make sure it wasn't FALSE because there's
 							   no select stream record */
 
@@ -2462,11 +2548,13 @@ static BOOLEAN get_record(TDBB			tdbb,
 					break;
 				}
 			}
-			else {
+			else
+			{
 				UCHAR flag = FALSE;
 
 				result = FALSE;
-				while (get_record(tdbb, rsb->rsb_next, rsb, mode)) {
+				while (get_record(tdbb, rsb->rsb_next, rsb, mode))
+				{
 					if (EVL_boolean(tdbb, (JRD_NOD) rsb->rsb_arg[0])) {
 						result = TRUE;
 						break;
