@@ -26,7 +26,7 @@
  *
  */
 /*
-$Id: thd.h,v 1.12.2.2 2003-10-29 05:18:10 stryqx Exp $
+$Id: thd.h,v 1.12.2.3 2003-11-09 22:59:29 bellardo Exp $
 */
 
 #ifndef _JRD_THD_H_
@@ -54,6 +54,10 @@ $Id: thd.h,v 1.12.2.2 2003-10-29 05:18:10 stryqx Exp $
 #define POSIX_THREADS           1
 #endif
 
+#if (defined(DARWIN) && defined(SUPERSERVER))
+#define POSIX_THREADS           1
+#endif
+
 /* The following ifdef was added to build thread safe gds shared
    library on linux platform. It seems the gdslib works now (20020220)
    with thread enabled applications. Anyway, more tests should be 
@@ -69,7 +73,7 @@ $Id: thd.h,v 1.12.2.2 2003-10-29 05:18:10 stryqx Exp $
 #define POSIX_THREADS           1
 #endif
 
-#if (defined(DARWIN) && defined(SUPERSERVER))
+#if (defined(DARWIN) && defined(SUPERCLIENT))
 #define POSIX_THREADS           1
 #endif
 
