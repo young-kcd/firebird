@@ -208,12 +208,15 @@ void MemoryPool::print_contents(IB_FILE *file, bool used_only) {
 			void *mem = (char*)blk + MEM_ALIGN(sizeof(MemoryBlock));
 			if (blk->used && (blk->type>0 || !used_only)) {
 #ifdef DEBUG_GDS_ALLOC
-				if (blk->type)
+				if (blk->type > 0)
 					ib_fprintf(file, "Block %p: size=%d allocated at %s:%d\n", 
 						mem, blk->length, blk->file, blk->line);
-				else
+				else if (blk->type == 0)
 					ib_fprintf(file, "Typed block %p: type=%d size=%d allocated at %s:%d\n", 
 						mem, blk->type, blk->length, blk->file, blk->line);
+				else
+					ib_fprintf(file, "Typed block %p: type=%d size=%d\n", 
+						mem, blk->type, blk->length);
 #else
 				if (blk->type)
 					ib_fprintf(file, "Typed block %p: type=%d size=%d\n", mem, blk->type, blk->length);
