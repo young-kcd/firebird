@@ -40,7 +40,7 @@
  *
  */
 /*
-$Id: cmp.cpp,v 1.18 2002-11-11 19:42:44 hippoman Exp $
+$Id: cmp.cpp,v 1.19 2002-11-14 07:35:44 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -2161,8 +2161,6 @@ void DLL_EXPORT CMP_release(TDBB tdbb, REQ request)
 				*next = request->req_request;
 				break;
 			}
-
-	delete request->req_last_xcp.xcp_msg;
 
 	delete request->req_pool;
 }
@@ -4430,6 +4428,15 @@ static JRD_NOD pass2(TDBB tdbb, register CSB csb, register JRD_NOD node, JRD_NOD
 	node->nod_impure = CMP_impure(csb, 0);
 
 	switch (node->nod_type) {
+	case nod_abort:
+		{
+			JRD_NOD value;
+
+			if ( (value = node->nod_arg[1]) )
+				pass2(tdbb, csb, value, node);
+		}
+		break;
+
 	case nod_assignment:
 		{
 			JRD_NOD value;
@@ -5179,7 +5186,7 @@ static void post_trigger_access(TDBB tdbb, CSB csb, REL owner_relation, TRIG_VEC
  **************************************/
 	ACC access;
 	trig_vec::iterator ptr, end;
-	USHORT read_only;
+//	USHORT read_only;
 
 	SET_TDBB(tdbb);
 

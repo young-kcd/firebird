@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.28 2002-11-13 15:57:29 alexpeshkoff Exp $
+$Id: exe.cpp,v 1.29 2002-11-14 07:35:44 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -123,6 +123,7 @@ IDX_E IDX_modify_check_constraints(TDBB tdbb,
 #endif
 
 
+static void assign_xcp_message(TDBB, STR *, const TEXT *);
 static void cleanup_rpb(TDBB, RPB *);
 static JRD_NOD erase(TDBB, JRD_NOD, SSHORT);
 static void execute_looper(TDBB, REQ, TRA, ENUM req::req_s);
@@ -987,6 +988,30 @@ void EXE_unwind(TDBB tdbb, REQ request)
 	request->req_flags |= req_abort | req_stall;
 	request->req_timestamp = 0;
 
+}
+
+
+void assign_xcp_message(TDBB tdbb, STR *xcp_msg, const TEXT *msg)
+{
+/**************************************
+ *
+ *	a s s i g n _ x c p _ m e s s a g e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Copy an exception message into XCP structure.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	if (msg)
+	{
+		USHORT len = strlen(msg);
+		*xcp_msg = FB_NEW_RPT(*tdbb->tdbb_default, len + 1) str();
+		(*xcp_msg)->str_length = len;
+		memcpy((*xcp_msg)->str_data, msg, len + 1);
+	}
 }
 
 
@@ -1982,7 +2007,6 @@ static JRD_NOD looper(TDBB tdbb, REQ request, JRD_NOD in_node)
 					last_error.xcp_rpt[0].xcp_code = request->req_last_xcp.xcp_code;
 					last_error.xcp_rpt[0].xcp_msg = request->req_last_xcp.xcp_msg;
 					request->req_last_xcp.xcp_type = 0;
-					request->req_last_xcp.xcp_msg = 0;
 					set_error(tdbb, &last_error, node->nod_arg[1]);
 				}
 				else
@@ -3670,7 +3694,8 @@ static void set_error(TDBB tdbb, XCP condition, JRD_NOD node)
  *
  **************************************/
 	register REQ request;
-	TEXT name[32], relation_name[32], message[82], temp[82], *s, *r;
+	TEXT name[32], relation_name[32], *s, *r;
+	TEXT message[XCP_MESSAGE_LENGTH + 1], temp[XCP_MESSAGE_LENGTH + 1];
 	USHORT length = 0;
 	
 	SET_TDBB(tdbb);
@@ -3678,7 +3703,7 @@ static void set_error(TDBB tdbb, XCP condition, JRD_NOD node)
 	if (condition->xcp_rpt[0].xcp_msg)
 	{
 		/* pick up message from already initiated exception */
-		length = condition->xcp_rpt[0].xcp_msg->str_length;
+		length = MIN(condition->xcp_rpt[0].xcp_msg->str_length, sizeof(message) - 1);
 		memcpy(message, condition->xcp_rpt[0].xcp_msg->str_data, length);
 		delete condition->xcp_rpt[0].xcp_msg;
 		condition->xcp_rpt[0].xcp_msg = 0;
@@ -4069,8 +4094,8 @@ static BOOLEAN test_and_fixup_error(TDBB tdbb, XCP conditions, REQ request)
 
 	const SLONG XCP_SQLCODE = -836;
 
-	delete request->req_last_xcp.xcp_msg;
-	request->req_last_xcp.xcp_msg = 0;
+ 	delete request->req_last_xcp.xcp_msg;
+ 	request->req_last_xcp.xcp_msg = 0;
 
 	for (i = 0; i < conditions->xcp_count; i++)
 	{
@@ -4113,13 +4138,7 @@ static BOOLEAN test_and_fixup_error(TDBB tdbb, XCP conditions, REQ request)
 				request->req_last_xcp.xcp_type = xcp_xcp_code;
 				request->req_last_xcp.xcp_code = status_vector[3];
 				TEXT *msg = reinterpret_cast<TEXT*>(status_vector[7]);
-				if (msg)
-				{
-					USHORT len = strlen(msg);
-					request->req_last_xcp.xcp_msg = FB_NEW_RPT(*getDefaultMemoryPool(), len + 1) str();
-					request->req_last_xcp.xcp_msg->str_length = len;
-					memcpy(request->req_last_xcp.xcp_msg->str_data, msg, len + 1);
-				}
+				assign_xcp_message(tdbb, &request->req_last_xcp.xcp_msg, msg);
 				status_vector[0] = 0;
 				status_vector[1] = 0;
 				return TRUE;
@@ -4144,13 +4163,7 @@ static BOOLEAN test_and_fixup_error(TDBB tdbb, XCP conditions, REQ request)
 					request->req_last_xcp.xcp_type = xcp_xcp_code;
 					request->req_last_xcp.xcp_code = status_vector[3];
 					TEXT *msg = reinterpret_cast<TEXT*>(status_vector[7]);
-					if (msg)
-					{
-						USHORT len = strlen(msg);
-						request->req_last_xcp.xcp_msg = FB_NEW_RPT(*getDefaultMemoryPool(), len + 1) str();
-						request->req_last_xcp.xcp_msg->str_length = len;
-						memcpy(request->req_last_xcp.xcp_msg->str_data, msg, len + 1);
-					}
+					assign_xcp_message(tdbb, &request->req_last_xcp.xcp_msg, msg);
 				}
 			}
 			status_vector[0] = 0;
@@ -4300,6 +4313,5 @@ static void validate(TDBB tdbb, JRD_NOD list)
 		}
 	}
 }
-
 
 } // extern "C"

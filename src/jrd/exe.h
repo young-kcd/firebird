@@ -640,4 +640,7 @@ typedef xcp *XCP;
 #define xcp_xcp_code	3
 #define xcp_default	4
 
+#define XCP_MESSAGE_LENGTH	78	// must correspond to the size of
+								// RDB$EXCEPTIONS.RDB$MESSAGE
+
 #endif /* _JRD_EXE_H_ */
