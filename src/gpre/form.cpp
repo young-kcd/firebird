@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: form.cpp,v 1.4 2001-12-24 02:50:49 tamlin Exp $
+//  $Id: form.cpp,v 1.5 2002-10-24 09:01:26 eku Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -35,7 +35,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: form.cpp,v 1.4 2001-12-24 02:50:49 tamlin Exp $
+//	$Id: form.cpp,v 1.5 2002-10-24 09:01:26 eku Exp $
 //
 
 #include "firebird.h"
@@ -130,7 +130,7 @@ FORM FORM_lookup_form(DBB dbb, UCHAR * string)
 	SYM symbol;
 	FORM form;
 	USHORT l;
-	STATUS status[20];
+	STATUS status[ISC_STATUS_LENGTH];
 	UCHAR name[32], *p;
 
 	if (!dbb)

@@ -23,7 +23,7 @@
  * FSG 16.03.2001 
  */
 /*
-$Id: inet_server.cpp,v 1.11 2002-09-22 20:41:55 skidder Exp $
+$Id: inet_server.cpp,v 1.12 2002-10-24 09:01:31 eku Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -440,7 +440,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 */
 	{
 		TEXT path[MAXPATHLEN];
-		STATUS status[20];
+		STATUS status[ISC_STATUS_LENGTH];
 		isc_db_handle db_handle = 0L;
 
 		gds__prefix(path, USER_INFO_NAME);

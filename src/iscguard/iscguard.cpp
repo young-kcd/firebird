@@ -534,8 +534,8 @@ void start_and_watch_server(char *server_name)
  * the thread waits for this process to exit.
  *
  **************************************/
-	char prog_name[MAX_PATH + 128];
-	char path[MAX_PATH];
+	char prog_name[MAXPATHLEN + 128];
+	char path[MAXPATHLEN];
 	char opt[3];
 	short option;
 	HANDLE procHandle = NULL;

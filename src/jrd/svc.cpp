@@ -2486,9 +2486,9 @@ static void service_fork(TEXT * service_path, SVC service)
 		 */
 		int tmp;
 		char *fname;
-		char tmpPath[MAX_PATH_LENGTH];
+		char tmpPath[MAXPATHLEN];
 
-		GetTempPath(MAX_PATH_LENGTH, tmpPath);
+		GetTempPath(MAXPATHLEN, tmpPath);
 		fname = _tempnam(tmpPath, "ibsvc");
 		tmp =
 			_open(fname, _O_RDWR | _O_CREAT | _O_TEMPORARY,

@@ -1235,7 +1235,7 @@ STATUS GDS_DROP_DATABASE(STATUS* user_status, RDB* handle)
  **************************************/
 	RDB rdb;
 	PORT port;
-	STATUS local_status[20];
+	STATUS local_status[ISC_STATUS_LENGTH];
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -5123,7 +5123,7 @@ static BOOLEAN batch_dsql_fetch(trdb*	trdb,
 
 /* Queue errors within the batched request */
 
-	STATUS tmp_status[20];
+	STATUS tmp_status[ISC_STATUS_LENGTH];
 	STATUS* save_status = packet->p_resp.p_resp_status_vector;
 	packet->p_resp.p_resp_status_vector = tmp_status;
 
@@ -5283,7 +5283,7 @@ static BOOLEAN batch_gds_receive(trdb*		trdb,
 	
 	// Queue errors within the batched request
 
-	STATUS tmp_status[20];
+	STATUS tmp_status[ISC_STATUS_LENGTH];
 	STATUS* save_status = packet->p_resp.p_resp_status_vector;
 	packet->p_resp.p_resp_status_vector = tmp_status;
 
@@ -6375,7 +6375,7 @@ static void receive_after_start( RRQ request, USHORT msg_type)
 	PORT port;
 	PACKET *packet;
 	rrq::rrq_repeat * tail;
-	STATUS tmp_status[20];
+	STATUS tmp_status[ISC_STATUS_LENGTH];
 
 /* Check to see if any data is waiting to happen */
 

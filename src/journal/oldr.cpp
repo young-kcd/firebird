@@ -36,9 +36,6 @@
 #include "../journal/oldr_proto.h"
 #include "../jrd/llio_proto.h"
 
-#ifndef MAX_PATH_LENGTH
-#define MAX_PATH_LENGTH         512
-#endif
 
 static int close_cur_file(OLD);
 static int open_next_file(OLD);
@@ -272,7 +269,7 @@ static SLONG oldr_open_file( OLD old)
 	OLDBLK ob;
 	SLONG fd;
 	SLONG len;
-	SCHAR buf[MAX_PATH_LENGTH];
+	SCHAR buf[MAXPATHLEN];
 	struct hdr_page header;
 
 	ob = old->old_block;

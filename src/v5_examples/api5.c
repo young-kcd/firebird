@@ -38,7 +38,7 @@ char *sel_str =
 
 isc_db_handle    DB = 0;                       /* database handle */
 isc_tr_handle    trans = 0;                    /* transaction handle */
-long             status[20];                   /* status vector */
+ISC_STATUS       status[ISC_STATUS_LENGTH];    /* status vector */
 
 
 int main (ARG(int, argc), ARG(char **, argv))

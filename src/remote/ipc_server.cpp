@@ -48,7 +48,7 @@ void main( int argc, char **argv)
  *
  **************************************/
 	int flag, standalone;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	TEXT *p, **end, c, protocol[128], *server_arg;
 
 	end = argc + argv;

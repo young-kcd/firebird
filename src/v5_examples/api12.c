@@ -63,7 +63,7 @@ isc_tr_handle       sales_trans = NULL,
                     cust_trans = NULL,
                     cntry_trans = NULL,
                     trans = NULL;
-long                status[20];
+ISC_STATUS           status[ISC_STATUS_LENGTH];
 
 static char *Sales[] = {"V88005", 0};
 int Inp_ptr = 0;

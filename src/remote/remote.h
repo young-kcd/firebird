@@ -225,7 +225,7 @@ typedef struct rrq
 	USHORT		rrq_id;
 	USHORT		rrq_max_msg;
 	USHORT		rrq_level;
-	STATUS		rrq_status_vector[20];
+	STATUS		rrq_status_vector[ISC_STATUS_LENGTH];
 	struct		rrq_repeat
 	{
 		struct fmt*		rrq_format;		/* format for this message */
@@ -265,7 +265,7 @@ typedef struct rsr
 	struct fmt*		rsr_format;				/* Format of current message */
 	struct message*	rsr_message;			/* Next message to process */
 	struct message*	rsr_buffer;				/* Next buffer to use */
-	STATUS			rsr_status_vector[20];	/* saved status for buffered errors */
+	STATUS			rsr_status_vector[ISC_STATUS_LENGTH];	/* saved status for buffered errors */
 	USHORT			rsr_id;
 	USHORT			rsr_flags;
 	USHORT			rsr_fmt_length;

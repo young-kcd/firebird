@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: lock.cpp,v 1.13 2002-09-27 00:20:08 bellardo Exp $
+$Id: lock.cpp,v 1.14 2002-10-24 09:01:30 eku Exp $
 */
 
 #include "firebird.h"
@@ -945,7 +945,7 @@ void LOCK_manager( PTR manager_owner_offset)
 	OWN manager_owner, owner;
 	SRQ que;
 	int ret = FAILURE;
-	STATUS local_status[20];
+	STATUS local_status[ISC_STATUS_LENGTH];
 	SLONG value;
 	USHORT semaphore;
 	EVENT event_ptr;
@@ -1422,7 +1422,7 @@ static void acquire( PTR owner_offset)
 	PTR prior_active;
 	SLONG length, spins, status;
 	LHB header;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 #if (defined SOLARIS_MT && !defined SUPERSERVER)
   acquire_retry:
@@ -2681,7 +2681,7 @@ static void exit_handler( void *arg)
  *	by the cleanup handler.
  *
  **************************************/
-	STATUS local_status[20];
+	STATUS local_status[ISC_STATUS_LENGTH];
 
 	if (!LOCK_header)
 		return;

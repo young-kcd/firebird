@@ -54,7 +54,7 @@ int GetGuardStartupInfo(char *svrpath, char *opt)
     //	LPCSTR lpSubKey = "Software\\Borland\\InterBase\\CurrentVersion";
 	DWORD buffSize, retval;
 
-	buffSize = MAX_PATH - 2;	/* reserve place for null and the \ */
+	buffSize = MAXPATHLEN - 2;	/* reserve place for null and the \ */
 
     retval = RegOpenKeyEx(HKEY_LOCAL_MACHINE, REG_KEY_ROOT_CUR_VER, 
 					  0, KEY_QUERY_VALUE, &hKeyResult);

@@ -364,7 +364,7 @@ TEXT * buffer, USHORT buff_length)
  **************************************************************/
 	SLONG *DB, *gds_trans;
 	DBB dbb;
-	long status_vect[20];
+	STATUS status_vect[ISC_STATUS_LENGTH];
 
 	ISC_QUAD *blob_id;
 	TEXT *ptr_in_buffer;
@@ -758,7 +758,7 @@ void METD_get_domain_default(REQ request,
  **************************************************************/
 	SLONG *DB, *gds_trans;
 	DBB dbb;
-	ISC_STATUS status_vect[20];
+	ISC_STATUS status_vect[ISC_STATUS_LENGTH];
 
 	ISC_QUAD *blob_id;
 	TEXT *ptr_in_buffer;

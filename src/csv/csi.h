@@ -304,7 +304,7 @@ typedef struct msg_trans {
 typedef struct msg_resp {
 	struct msg msg_resp_header;
 	SLONG msg_resp_handle;
-	STATUS msg_resp_status[20];
+	STATUS msg_resp_status[ISC_STATUS_LENGTH];
 	USHORT msg_resp_length;
 	UCHAR msg_resp_data[1];
 } *MSG_RESP;

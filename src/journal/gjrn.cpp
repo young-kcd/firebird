@@ -270,7 +270,7 @@ void GJRN_output( TEXT * format, ...)
  *
  **************************************/
 	va_list ptr;
-	TEXT buffer[MAX_PATH_LENGTH];
+	TEXT buffer[MAXPATHLEN];
 
 	VA_START(ptr, format);
 	vsprintf(buffer, format, ptr);
@@ -333,7 +333,7 @@ static void gjrn_msg_partial(
  *      without a newline.
  *
  **************************************/
-	TEXT buffer[MAX_PATH_LENGTH];
+	TEXT buffer[MAXPATHLEN];
 
 	gds__msg_format(0, GJRN_MSG_FAC, number, sizeof(buffer), buffer,
 					arg1, arg2, arg3, arg4, arg5);
@@ -357,7 +357,7 @@ static void gjrn_msg_put(
  *	Retrieve a message from the error file, format it, and print it.
  *
  **************************************/
-	TEXT buffer[MAX_PATH_LENGTH];
+	TEXT buffer[MAXPATHLEN];
 
 	gds__msg_format(0, GJRN_MSG_FAC, number, sizeof(buffer), buffer,
 					arg1, arg2, arg3, arg4, arg5);
@@ -380,27 +380,27 @@ static USHORT get_new_files( SCHAR ** old_files, SLONG * old_fs)
  *
  **************************************/
 	SSHORT num_files = 0;
-	SCHAR *p, buff[MAX_PATH_LENGTH];
+	SCHAR *p, buff[MAXPATHLEN];
 	SLONG fs = 0;
 	SCHAR msg[MSG_LENGTH];
 
 	GJRN_printf(4, NULL, NULL, NULL, NULL);	/* msg 4: reading online dump parameters */
 
 	GJRN_get_msg(5, msg, 0, 0, 0);	/* msg 5: enter file size or <Ctrl-D> to end input */
-	MISC_get_line(msg, buff, MAX_PATH_LENGTH);
+	MISC_get_line(msg, buff, MAXPATHLEN);
 	if (fs = atoi(buff))
 		*old_fs = fs;
 
 	while (TRUE) {
 		GJRN_get_msg(6, msg, 0, 0, 0);	/* msg 6: enter file name or <Ctrl-D> to end input */
 		buff[0] = 0;
-		MISC_get_line(msg, buff, MAX_PATH_LENGTH);
+		MISC_get_line(msg, buff, MAXPATHLEN);
 		if (!strlen(buff))
 			break;
 		if (buff[0] == ' ')
 			break;
 
-		p = (SCHAR *) gds__alloc(MAX_PATH_LENGTH);
+		p = (SCHAR *) gds__alloc(MAXPATHLEN);
 		strcpy(p, buff);
 		old_files[num_files++] = p;
 	}
@@ -424,8 +424,8 @@ static int start_disable( int argc, SCHAR ** argv)
 	SLONG *handle;
 	USHORT dpb_length, error;
 	UCHAR *database, string[512], *dpb;
-	STATUS status_vector[20];
-	SCHAR db_name[MAX_PATH_LENGTH];
+	STATUS status_vector[ISC_STATUS_LENGTH];
+	SCHAR db_name[MAXPATHLEN];
 	USHORT sw_v, sw_i;
 	TEXT msg[128];
 
@@ -514,8 +514,8 @@ static int start_dump( int argc, SCHAR ** argv)
 	SLONG *handle;
 	USHORT dpb_length, error, i;
 	UCHAR *database, string[512], *p, *q, *dpb;
-	SCHAR db_name[MAX_PATH_LENGTH];
-	STATUS status_vector[20];
+	SCHAR db_name[MAXPATHLEN];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	USHORT old_num_files;
 	SLONG old_file_size;
 	UCHAR *old_files[20];
@@ -737,11 +737,11 @@ static int start_enable( int argc, SCHAR ** argv)
  **************************************/
 	SLONG *handle;
 	USHORT dpb_length, error;
-	UCHAR *database, string[3 * MAX_PATH_LENGTH + 512], *p, *q, *dpb;
+	UCHAR *database, string[3 * MAXPATHLEN + 512], *p, *q, *dpb;
 	UCHAR journal[JOURNAL_PATH_LENGTH + 1];
 	UCHAR db_name[JOURNAL_PATH_LENGTH + 1];
-	UCHAR backup[MAX_PATH_LENGTH];
-	STATUS status_vector[20];
+	UCHAR backup[MAXPATHLEN];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	USHORT sw_d, sw_v, sw_i;
 	USHORT a_flag, j_flag;
 	TEXT msg[128];

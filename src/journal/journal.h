@@ -29,10 +29,6 @@
 
 #define GJRN_MSG_FAC		16
 
-#ifndef MAX_PATH_LENGTH
-#define MAX_PATH_LENGTH         512
-#endif
-
 #define ARCHIVED		"archived"
 #define ARCHIVE_PENDING		"pending"
 #define NOT_ARCHIVED		"not archived"

@@ -47,7 +47,7 @@ void IBERR_append_status(STATUS * status_vector, STATUS status, ...)
  *	Append the given status vector with the passed arguments.
  *
  **************************************/
-	STATUS local_status[20], *appended, *status_end;
+	STATUS local_status[ISC_STATUS_LENGTH], *appended, *status_end;
 
 /* First build a local status vector with the passed arguments */
 

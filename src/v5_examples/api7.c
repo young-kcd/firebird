@@ -49,7 +49,7 @@ ARGLIST(char **argv)
     char                        blob_segment[11];
     isc_db_handle               DB = NULL;        /* database handle */
     isc_tr_handle               trans = NULL;     /* transaction handle */
-    long                        status[20];       /* status vector */
+    ISC_STATUS                  status[ISC_STATUS_LENGTH]; /* status vector */
     isc_stmt_handle             stmt = NULL;      /* statement handle */
     XSQLDA ISC_FAR *            sqlda;
     long                        fetch_stat, blob_stat;

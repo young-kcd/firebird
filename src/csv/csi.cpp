@@ -2448,7 +2448,7 @@ static STATUS handle_error( STATUS * user_status, STATUS code)
  *	"error" and abort.
  *
  **************************************/
-	STATUS local_status[20];
+	STATUS local_status[ISC_STATUS_LENGTH];
 	STATUS *vector;
 
 	vector = (user_status) ? user_status : local_status;
@@ -2635,7 +2635,7 @@ USHORT client_flags, TEXT * buffer, USHORT * buffer_length)
 	USHORT expanded_length, length;
 	TEXT local_expanded[256], pipe_xl[64], version[16], var_name[16];
 	SLONG status, len, itemnums[4], items[4], isc_level, var_type;
-	STATUS local_status[20];
+	STATUS local_status[ISC_STATUS_LENGTH];
 
 /* Assume that we don't want a PIPE. */
 

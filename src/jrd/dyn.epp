@@ -207,7 +207,7 @@ void DYN_error(USHORT	status_flag,
  *
  **************************************/
 	TDBB tdbb;
-	STATUS local_status[20], *v1, *v2, *end, arg;
+	STATUS local_status[ISC_STATUS_LENGTH], *v1, *v2, *end, arg;
 
 
 	tdbb = GET_THREAD_DATA;

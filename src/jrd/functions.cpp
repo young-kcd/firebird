@@ -24,7 +24,7 @@
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
-#include "../jrd/jrd.h"  /* For MAX_PATH_LENGTH Bug #126614 */
+#include "../jrd/jrd.h"  /* For MAXPATHLEN Bug #126614 */
 
 /* defined in common.h, which is included by ib_stdio.h: typedef int (*FPTR_INT)(); */
 
@@ -79,7 +79,7 @@ FPTR_INT FUNCTIONS_entrypoint(char *module, char *entrypoint)
  *
  **************************************/
 	FN *function;
-	char *p, temp[MAX_PATH_LENGTH + 128], *ep;  /* Bug #126614 Fix */
+	char *p, temp[MAXPATHLEN + 128], *ep;  /* Bug #126614 Fix */
 
 	p = temp;
 

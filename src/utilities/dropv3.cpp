@@ -242,7 +242,7 @@ static void remove_resource(int lock_flag, TEXT *filename, int shm_length,
  * Functional description
  *
  **************************************/
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	long length, key, shmid, semid;
 	SH_MEM_T shmem;
 	TEXT expanded_filename[512], hostname[64];
@@ -309,7 +309,7 @@ static void remove_resource(int lock_flag, TEXT *filename, int shm_length,
  * Functional description
  *
  **************************************/
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	long length, key, shmid, semid;
 	TEXT expanded_filename[512], hostname[64];
 	struct stat stat_buf;

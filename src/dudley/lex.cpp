@@ -283,7 +283,7 @@ void LEX_put_text( void *blob, TXT text)
  *
  **************************************/
 	SLONG start;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	int length;
 	SSHORT l, c;
 	TEXT buffer[1024], *p;

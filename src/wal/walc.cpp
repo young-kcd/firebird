@@ -149,7 +149,7 @@ void WALC_acquire( WAL WAL_handle, WALS * address)
  **************************************/
 	WALS WAL_segment;
 	SLONG length;
-	STATUS local_status[20];
+	STATUS local_status[ISC_STATUS_LENGTH];
 
 	*address = WAL_segment = WAL_handle->wal_segment;
 	ISC_inhibit();
@@ -211,7 +211,7 @@ SSHORT WALC_bug( STATUS * status_vector, TEXT * dbname, TEXT * string)
  *	Disasterous WAL bug.  Issue message and abort process.
  *
  **************************************/
-	STATUS local_status[20];
+	STATUS local_status[ISC_STATUS_LENGTH];
 
 	IBERR_build_status(local_status, gds_wal_bugcheck,
 					   gds_arg_string, dbname,

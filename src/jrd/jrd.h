@@ -50,8 +50,6 @@ extern "C" {
 #undef WALW_DEBUG
 #endif
 
-#define MAX_PATH_LENGTH         512
-
 /* Moved to err_proto.h */
 /*#define BUGCHECK(number)        ERR_bugcheck (number)
 #define CORRUPT(number)         ERR_corrupt (number)

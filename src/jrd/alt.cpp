@@ -1028,7 +1028,7 @@ return 1;
 								 user_data->dba_password,
 								 user_data->protocol, user_data->server);
 	if (db_handle) {
-		STATUS user_status[20];
+		STATUS user_status[ISC_STATUS_LENGTH];
 		retval = SECURITY_exec_line(status, db_handle, &userInfo, NULL, NULL);
 		/* if retval != 0 then there was a gsec error */
 		if (retval)
@@ -1119,7 +1119,7 @@ return 1;
 								 user_data->dba_password,
 								 user_data->protocol, user_data->server);
 	if (db_handle) {
-		STATUS user_status[20];
+		STATUS user_status[ISC_STATUS_LENGTH];
 		retval = SECURITY_exec_line(status, db_handle, &userInfo, NULL, NULL);
 		/* if retval != 0 then there was a gsec error */
 		if (retval)
@@ -1275,7 +1275,7 @@ return 1;
 								 user_data->dba_password,
 								 user_data->protocol, user_data->server);
 	if (db_handle) {
-		STATUS user_status[20];
+		STATUS user_status[ISC_STATUS_LENGTH];
 		retval = SECURITY_exec_line(status, db_handle, &userInfo, NULL, NULL);
 		/* if retval != 0 then there was a gsec error */
 		if (retval)

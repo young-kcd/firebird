@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: pwd.cpp,v 1.7 2002-09-18 12:50:03 eku Exp $
+$Id: pwd.cpp,v 1.8 2002-10-24 09:01:29 eku Exp $
 */
 
 #include "firebird.h"
@@ -222,7 +222,7 @@ static BOOLEAN lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * pwd)
 	BOOLEAN			notfound;		/* user found flag */
 	isc_db_handle	uinfo;			/* database handle */
 	SLONG*			lookup_trans;	/* default transaction handle */
-	STATUS			status[20];		/* status vector */
+	STATUS			status[ISC_STATUS_LENGTH];		/* status vector */
 	SLONG*			lookup_req;		/* request handle */
 	TEXT			uname[129];		/* user name buffer */
 	user_record		user;			/* user record */
@@ -326,7 +326,7 @@ static BOOLEAN open_user_db(isc_db_handle* uihandle, SLONG* status)
  *              FALSE if not
  *
  **************************************/
-	TEXT			user_info_name[MAX_PATH_LENGTH];
+	TEXT			user_info_name[MAXPATHLEN];
 	isc_db_handle	uinfo;			/* database handle */
 	IHNDL			ihandle;
 	SCHAR*			dpb;

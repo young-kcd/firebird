@@ -139,7 +139,7 @@ int FORM_get_blob( NOD value, PAR parameter)
 	FRM form;
 	int *blob, *item;
 	TEXT buffer[4096], *p, *data;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	USHORT length, n;
 
 	return TRUE;
@@ -181,7 +181,7 @@ FRM FORM_lookup_form(DBB database, TEXT * string)
  *
  **************************************/
 	int *handle, *transaction;
-	STATUS status[20];
+	STATUS status[ISC_STATUS_LENGTH];
 	FRM form;
 	SYM symbol;
 	USHORT l, width, height;
@@ -225,7 +225,7 @@ int FORM_put_field( NOD from, NOD node)
 	TEXT buffer[1024], *p;
 	USHORT length, index;
 	int *blob;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	return TRUE;
 }

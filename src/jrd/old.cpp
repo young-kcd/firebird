@@ -102,10 +102,10 @@ ULONG start_seqno, USHORT start_file, USHORT num_files, SCHAR ** files)
 	PIP page;
 	SLONG last_page;
 	PIP temp_page;
-	TEXT db[MAX_PATH_LENGTH];
+	TEXT db[MAXPATHLEN];
 	SSHORT file_seqno;
 	SLONG block_seqno;
-	SCHAR journal_dir[MAX_PATH_LENGTH], data[MAX_PATH_LENGTH];
+	SCHAR journal_dir[MAXPATHLEN], data[MAXPATHLEN];
 	SSHORT jd_len, d_len;
 	SLONG ret_val;
 
@@ -755,7 +755,7 @@ static int open_next_file(OLD old)
 	DBB dbb;
 	SLONG fd;
 	SLONG ret_val;
-	SCHAR name[MAX_PATH_LENGTH];
+	SCHAR name[MAXPATHLEN];
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;

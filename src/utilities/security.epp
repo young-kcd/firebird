@@ -110,7 +110,7 @@ SSHORT SECURITY_exec_line(STATUS * isc_status,
  **************************************/
 	SCHAR encrypted1[MAX_PASSWORD_LENGTH + 2];
 	SCHAR encrypted2[MAX_PASSWORD_LENGTH + 2];
-	STATUS tmp_status[20];
+	STATUS tmp_status[ISC_STATUS_LENGTH];
 	void *gds__trans;
 	BOOLEAN found;
 	SSHORT ret = 0;
@@ -363,7 +363,7 @@ void SECURITY_get_db_path( TEXT * server, TEXT * buffer)
  *
  **************************************/
 #define RESPBUF	256
-	STATUS status[20];
+	STATUS status[ISC_STATUS_LENGTH];
 	isc_svc_handle svc_handle = NULL;
 	TEXT svc_name[256];
 	TEXT sendbuf[] = { isc_info_svc_user_dbpath };

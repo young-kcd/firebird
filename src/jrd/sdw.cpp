@@ -927,7 +927,7 @@ void SDW_start(
 	DBB dbb;
 	SDW shadow;
 	int length, expanded_length, string_length;
-	SCHAR expanded_name[MAX_PATH_LENGTH];
+	SCHAR expanded_name[MAXPATHLEN];
 	UCHAR *p;
 	FIL dbb_file, shadow_file = 0;
 	WIN window;

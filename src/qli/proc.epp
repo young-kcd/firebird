@@ -74,7 +74,7 @@ void PRO_close( DBB database, void *blob)
  *	Close out an open procedure blob.
  *
  **************************************/
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	if (database && gds__close_blob(status_vector, GDS_REF(blob)))
 		ERRQ_database_error(database, status_vector);
@@ -93,7 +93,7 @@ void PRO_commit( DBB database)
  *	Commit the procedure transaction.
  *
  **************************************/
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	if ((database->dbb_capabilities & DBB_cap_multi_trans) &&
 		!(LEX_active_procedure()))
@@ -123,7 +123,7 @@ void PRO_copy_procedure(
  **************************************/
 	void *old_blob, *new_blob;
 	void *store_request;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	TEXT s[120], buffer[255];
 	SSHORT length;
 	USHORT bpb_length;
@@ -213,7 +213,7 @@ void PRO_create( DBB database, TEXT * name)
  *	exist.
  *
  **************************************/
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	SLONG start, stop;
 	void *blob;
 	TEXT s[64];
@@ -430,7 +430,7 @@ int PRO_get_line( void *blob, TEXT * buffer, USHORT size)
  *	no more segments, return false.
  *
  **************************************/
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	TEXT *p;
 	USHORT length;
 
@@ -504,7 +504,7 @@ void *PRO_open_blob( DBB database, SLONG * blob_id)
  *
  **************************************/
 	void *blob;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	USHORT bpb_length;
 	UCHAR bpb[20], *p;
 
@@ -548,7 +548,7 @@ int PRO_rename_procedure( DBB database, TEXT * old_name, TEXT * new_name)
  *
  **************************************/
 	USHORT count;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	TEXT s[132];
 	void *request;
 
@@ -592,7 +592,7 @@ void PRO_rollback( DBB database)
  *	if there is one.
  *
  **************************************/
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	if (database->dbb_capabilities & DBB_cap_multi_trans) {
 		gds__rollback_transaction(status_vector,
@@ -691,7 +691,7 @@ void *PRO_transaction( DBB database, int update_flag)
  *	because we ould affect user data.
  *
  **************************************/
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	void *transaction;
 
 	if (!database)
@@ -763,7 +763,7 @@ static int clear_out_qli_procedures( DBB dbb)
  **************************************/
 	int count;
 	void *req;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	req = NULL;
 	count = 0;
@@ -925,7 +925,7 @@ static void probe( DBB database, TEXT * name)
  *
  **************************************/
 	void *blob;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 /* Probe to see if procedure is already in use */
 

@@ -47,7 +47,7 @@ ARGLIST(char **argv)
     isc_stmt_handle     stmt = NULL;     /* statement handle */
     isc_db_handle       DB = NULL;       /* database handle */
     isc_tr_handle       trans = NULL;    /* transaction handle */
-    long                status[20];      /* status vector */
+    ISC_STATUS          status[ISC_STATUS_LENGTH];      /* status vector */
     XSQLDA  ISC_FAR *   sqlda;
     char                empdb[128];
     char                *delete_str =

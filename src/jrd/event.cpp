@@ -721,7 +721,7 @@ static EVH acquire(void)
 #endif /* WIN_NT */
 
 #if (!(defined SUPERSERVER) && (defined HAVE_MMAP))
-		STATUS status_vector[20];
+		STATUS status_vector[ISC_STATUS_LENGTH];
 		header = (evh*) ISC_remap_file(status_vector, &EVENT_data, length, FALSE);
 #endif
 		if (!header) {
@@ -756,7 +756,7 @@ static FRB alloc_global(UCHAR type, ULONG length, BOOLEAN recurse)
 	PTR *ptr, *best;
 	FRB free;
 	SLONG tail, best_tail, ev_length, old_length;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 #ifdef WIN_NT
 	PRB process;
 	EVENT event;
@@ -887,7 +887,7 @@ static SLONG create_process(void)
 #endif
 
 #ifdef SOLARIS_MT
-	STATUS local_status[20];
+	STATUS local_status[ISC_STATUS_LENGTH];
 	ISC_event_init(process->prb_event, 0, EVENT_SIGNAL);
 	EVENT_process = (PRB) ISC_map_object(local_status, &EVENT_data,
 										 EVENT_process_offset,
@@ -1314,7 +1314,7 @@ static void exit_handler(void *arg)
  *	Cleanup on exit.
  *
  **************************************/
-	STATUS local_status[20];
+	STATUS local_status[ISC_STATUS_LENGTH];
 
 #ifndef NETWARE_386				/*  Otherwise things go away too quickly during unload */
 	if (EVENT_process_offset) {

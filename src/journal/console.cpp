@@ -90,10 +90,6 @@ static void put_command(SLONG, UCHAR *, USHORT, UCHAR *, USHORT);
 
 extern CMDS commands[];
 
-#ifndef MAX_PATH_LENGTH
-#define MAX_PATH_LENGTH         512
-#endif
-
 
 int CONSOLE_start_console( int argc, SCHAR ** argv)
 {
@@ -108,7 +104,7 @@ int CONSOLE_start_console( int argc, SCHAR ** argv)
  *
  **************************************/
 	JRNH header;
-	TEXT **end, directory[MAX_PATH_LENGTH], buffer[2 * MAX_PATH_LENGTH];
+	TEXT **end, directory[MAXPATHLEN], buffer[2 * MAXPATHLEN];
 	SLONG channel;
 	USHORT cycle, len, length;
 	ENUM jrnr_t reply;
@@ -246,7 +242,7 @@ int CONSOLE_test_server( SCHAR * journal_dir)
  *
  **************************************/
 	SLONG channel;
-	TEXT directory[MAX_PATH_LENGTH];
+	TEXT directory[MAXPATHLEN];
 	USHORT len;
 
 	len = ISC_expand_filename(journal_dir, 0, directory);
@@ -504,7 +500,7 @@ static ENUM jrnr_t get_reply( SLONG channel)
  *	Format and send off a command.
  *
  **************************************/
-	UCHAR *p, buffer[MAX_PATH_LENGTH];
+	UCHAR *p, buffer[MAXPATHLEN];
 	ULONG len, length;
 	JRNR *reply;
 	int status;
@@ -551,7 +547,7 @@ static ENUM jrnr_t get_reply( SLONG channel)
  *	Format and send off a command.
  *
  **************************************/
-	UCHAR *p, buffer[MAX_PATH_LENGTH];
+	UCHAR *p, buffer[MAXPATHLEN];
 	ULONG length, len;
 	JRNR *reply;
 
@@ -602,7 +598,7 @@ static SLONG open_connection( SCHAR * filename, SSHORT test_only)
  **************************************/
 	struct sockaddr_in address;
 	HANDLE channel;
-	TEXT name[MAX_PATH_LENGTH];
+	TEXT name[MAXPATHLEN];
 
 	strcpy(name, filename);
 	strcat(name, CONSOLE_ADDR);
@@ -647,7 +643,7 @@ static SLONG open_connection( SCHAR * filename, SSHORT test_only)
  *
  **************************************/
 	HANDLE channel;
-	TEXT name[MAX_PATH_LENGTH], *p, *q, c;
+	TEXT name[MAXPATHLEN], *p, *q, c;
 
 	p = name;
 	strcpy(p, "\\\\.\\pipe");
@@ -700,7 +696,7 @@ static void put_command(
  *	Format and send off a command.
  *
  **************************************/
-	TEXT *p, buffer[MAX_PATH_LENGTH];
+	TEXT *p, buffer[MAXPATHLEN];
 	USHORT l;
 	JRNH *header_ptr;
 
@@ -743,7 +739,7 @@ static void put_command(
  *	Format and send off a command.
  *
  **************************************/
-	TEXT *p, buffer[MAX_PATH_LENGTH];
+	TEXT *p, buffer[MAXPATHLEN];
 	ULONG l, len;
 	JRNH *header_ptr;
 

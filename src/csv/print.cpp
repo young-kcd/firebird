@@ -49,7 +49,7 @@ void main( int argc, char **argv)
 	FRB free;
 	CNCT connection;
 	SLONG offset;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	if (!(CSS_header = CSS_init(status_vector, TRUE))) {
 		printf("Can't access global region\n");

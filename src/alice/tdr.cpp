@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.8 2002-09-25 17:12:00 skidder Exp $
+//	$Id: tdr.cpp,v 1.9 2002-10-24 09:01:23 eku Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -263,7 +263,7 @@ BOOLEAN TDR_attach_database(STATUS * status_vector,
 
 void TDR_get_states(TDR trans)
 {
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	TDR ptr;
 
 	for (ptr = trans; ptr; ptr = ptr->tdr_next)
@@ -281,7 +281,7 @@ void TDR_get_states(TDR trans)
 void TDR_shutdown_databases(TDR trans)
 {
 	TDR ptr;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	for (ptr = trans; ptr; ptr = ptr->tdr_next)
 		gds__detach_database(status_vector,
@@ -307,7 +307,7 @@ void TDR_shutdown_databases(TDR trans)
 void TDR_list_limbo(int *handle, TEXT * name, ULONG switches)
 {
 	UCHAR buffer[1024], *ptr;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	SLONG id;
 	USHORT item, flag, length;
 	TDR trans;
@@ -401,7 +401,7 @@ BOOLEAN TDR_reconnect_multiple(int *handle,
 							   SLONG id, TEXT * name, ULONG switches)
 {
 	TDR trans, ptr;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	USHORT advice;
 	BOOLEAN error = FALSE;
 
@@ -768,7 +768,7 @@ static ULONG ask(void)
 
 static void reattach_database(TDR trans)
 {
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	UCHAR buffer[1024], *p, *q, *start;
 	USHORT protocols = 0;
 	STR string;
@@ -967,7 +967,7 @@ static BOOLEAN reconnect(int *handle,
 {
 	int *transaction;
 	SLONG id;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	id = gds__vax_integer((UCHAR *) & number, 4);
 	transaction = NULL;

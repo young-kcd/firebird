@@ -40,7 +40,7 @@ int RDB$MSG_VECTOR[20];
 static int gds_to_rdb(int *, int *);
 static int set_status(int *, int);
 
-static int status_vector[20];
+static STATUS status_vector[ISC_STATUS_LENGTH];
 
 static SLONG codes[] = {
 #include "rdbcodes.h"

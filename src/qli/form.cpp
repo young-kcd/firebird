@@ -232,7 +232,7 @@ int FORM_get_blob( NOD value, PAR parameter)
 	FFL field;
 	OBJ blob, item;
 	TEXT bpb[20], buffer[4096], *p, *data;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	USHORT length, n, bpb_length;
 
 	field = (FFL) value->nod_arg[e_ffl_field];
@@ -401,7 +401,7 @@ FRM FORM_lookup_form(DBB database, TEXT * string)
  *
  **************************************/
 	int *handle, *transaction;
-	STATUS status[20];
+	STATUS status[ISC_STATUS_LENGTH];
 	FRM form;
 	SYM symbol;
 	USHORT l, width, height;
@@ -485,7 +485,7 @@ int FORM_put_field( NOD from, NOD node)
 	TEXT buffer[1024], *p;
 	USHORT length, index;
 	int *blob;
-	STATUS status_vector[20], status;
+	STATUS status_vector[ISC_STATUS_LENGTH], status;
 
 	desc = EVAL_value(from);
 	field = (FFL) node->nod_arg[e_ffl_field];

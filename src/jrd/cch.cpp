@@ -265,7 +265,7 @@ void DLL_EXPORT CCH_do_log_shutdown(TDBB tdbb, SSHORT force_archive)
 	LIP logp;
 	WIN window;
 	SLONG seqno, offset, p_offset;
-	SCHAR walname[MAX_PATH_LENGTH];
+	SCHAR walname[MAXPATHLEN];
 	SSHORT w_len;
 
 	SET_TDBB(tdbb);
@@ -310,7 +310,7 @@ void CCH_down_grade_dbb(DBB dbb)
 	LCK lock;
 	struct tdbb thd_context, *tdbb;
 	bcb_repeat *tail, *end;
-	STATUS ast_status[20];
+	STATUS ast_status[ISC_STATUS_LENGTH];
 
 /* Ignore the request if the database or lock block does not appear
    to be valid . */
@@ -2638,7 +2638,7 @@ static int blocking_ast_bdb(BDB bdb)
  **************************************/
 	DBB dbb;
 	BOOLEAN keep_pages;
-	STATUS ast_status[20];
+	STATUS ast_status[ISC_STATUS_LENGTH];
 	struct tdbb thd_context, *tdbb;
 
 	ISC_ast_enter();
@@ -2982,7 +2982,7 @@ static void THREAD_ROUTINE cache_reader(DBB dbb)
 	BCB bcb;
 	BDB bdb;
 	SLONG count, starting_page;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	EVENT reader_event;
 	BOOLEAN found;
 	struct prf prefetch1, prefetch2;
@@ -3152,7 +3152,7 @@ static void THREAD_ROUTINE cache_writer(DBB dbb)
 	SLONG commit_mask;
 #endif
 	SSHORT start_chkpt;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	SCHAR walname[256];
 	EVENT writer_event;
 
@@ -4460,7 +4460,7 @@ static SSHORT lock_buffer(
 	register LCK lock;
 	USHORT lock_type;
 	USHORT must_read;
-	STATUS alt_status[20];
+	STATUS alt_status[ISC_STATUS_LENGTH];
 	STATUS *status;
 	TEXT errmsg[MAX_ERRMSG_LEN + 1];
 #endif

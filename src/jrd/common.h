@@ -35,7 +35,7 @@
  * 2002.04.16  Paul Beach - HP10 and unistd.h
  */
 /*
-$Id: common.h,v 1.35 2002-10-12 04:16:31 stryqx Exp $
+$Id: common.h,v 1.36 2002-10-24 09:01:29 eku Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -187,9 +187,11 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 
 /* Darwin Platforms */
 #ifdef DARWIN
+/* EKU: obsolete, replaced by _FILE_OFFSET_BITS
 #ifndef UNIX_64_BIT_IO
 #define UNIX_64_BIT_IO
 #endif
+*/
 #define __LINE__IS_INT
 #define SLONGFORMAT	"ld"
 /*#define ALIGNMENT       4*/
@@ -227,9 +229,11 @@ typedef RETSIGTYPE (*SIG_FPTR) (int);
 /* FreeBSD for Intel platforms */
 #ifdef FREEBSD
 
+/* EKU: obsolete, replaced by _FILE_OFFSET_BITS
 #ifndef UNIX_64_BIT_IO
 #define UNIX_64_BIT_IO
 #endif
+*/
 
 #define FB_ALIGN(n,b) ((n + b - 1) & ~(b - 1))
 /*#define ALIGNMENT     4*/
@@ -1265,9 +1269,6 @@ typedef struct in_sw_tab_t {
 	TEXT *in_sw_text;
 
 } *IN_SW_TAB;
-
-/* Just to be safe we will still define READONLY_DATABASE as it gets phased out */
-#define READONLY_DATABASE 1
 
 #ifndef HAVE_WORKING_VFORK
 #define vfork fork

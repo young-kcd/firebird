@@ -35,7 +35,7 @@
  * 2002-09-16 Nickolay Samofatov - Deferred trigger compilation changes
  */
 /*
-$Id: met.epp,v 1.25 2002-10-04 22:08:43 skidder Exp $
+$Id: met.epp,v 1.26 2002-10-24 09:01:29 eku Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -357,7 +357,7 @@ void MET_activate_shadow( TDBB tdbb)
  **************************************/
 	DBB dbb;
 	BLK handle, handle2;
-	SCHAR expanded_name[MAX_PATH_LENGTH], *dbb_file_name;
+	SCHAR expanded_name[MAXPATHLEN], *dbb_file_name;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -1012,7 +1012,7 @@ int MET_get_walinfo(
 	FOR(REQUEST_HANDLE handle)
 		LOG IN RDB$LOG_FILES SORTED BY LOG.RDB$FILE_SEQUENCE
 			logfiles_[num] = FB_NEW_RPT(*dbb->dbb_permanent,
-											   LGFILE_SIZE + MAX_PATH_LENGTH) logfiles();
+											   LGFILE_SIZE + MAXPATHLEN) logfiles();
 		strcpy(logfiles_[num]->lg_name, LOG.RDB$FILE_NAME);
 		logfiles_[num]->lg_size = LOG.RDB$FILE_LENGTH;
 		logfiles_[num]->lg_partitions = LOG.RDB$FILE_PARTITIONS;

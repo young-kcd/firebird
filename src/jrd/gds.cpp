@@ -172,13 +172,6 @@ static CONST TEXT gdslogid[] = "";
 #undef TEXT
 #endif
 #define TEXT		SCHAR
-
-/* TMN: 27 Jul 2000 - Macro redefinition warning removed */
-#ifdef MAXPATHLEN
-#undef MAXPATHLEN
-#endif /* MAXPATHLEN */
-
-#define MAXPATHLEN	MAX_PATH
 #endif /* WIN_NT */
 
 extern "C" {

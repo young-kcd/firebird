@@ -500,7 +500,7 @@ void ALL_init(void)
  **************************************/
 	TDBB tdbb;
 	DBB dbb;
-	SLONG temp_vector[20];
+	STATUS temp_vector[ISC_STATUS_LENGTH];
 	VEC vector;
 	PLB pool;
 

@@ -71,7 +71,7 @@ typedef struct _EventBlk {
 */
 char            szAppName [] = "Events";
 HINSTANCE       hInstance;
-long            status[20];
+STATUS          status[ISC_STATUS_LENGTH];
 
 
 /* 
@@ -309,7 +309,7 @@ long FAR PASCAL _export WndProc (HWND hWnd, UINT message, UINT wParam,
                                  LONG lParam)
 {
     EVENTBLK   		*lpEvent;
-    unsigned long	Vector[20];
+    ISC_STATUS		Vector[ISC_STATUS_LENGTH];
     char       		msgbuf[200];
 
     switch (message)

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: drop.cpp,v 1.9 2002-09-18 12:50:05 eku Exp $
+$Id: drop.cpp,v 1.10 2002-10-24 09:01:32 eku Exp $
 */
 
 #include "firebird.h"
@@ -250,7 +250,7 @@ static void remove_resource(
  * Functional description
  *
  **************************************/
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	SH_MEM_T shmem_data;
 	SLONG key, shmid, semid;
 	TEXT expanded_filename[MAXPATHLEN];
@@ -323,7 +323,7 @@ static void remove_resource(
  * Functional description
  *
  **************************************/
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	SLONG length, key, semid;
 	TEXT expanded_filename[MAXPATHLEN];
 	int pid;
@@ -443,7 +443,8 @@ static void shut_manager( TEXT * label)
  *	to releasing shared resources.
  *
  **************************************/
-	SLONG status_vector[20], owner_handle;
+	STATUS status_vector[ISC_STATUS_LENGTH];
+	SLONG owner_handle;
 
 	if (!(strcmp(label, "lock manager"))) {
 		owner_handle = 0;

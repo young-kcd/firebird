@@ -392,7 +392,7 @@ int MAP_status_to_gds(STATUS * vms_status, STATUS * gds_status)
  *	Translate an RDB status vector to a GDS error status vector.
  *
  **************************************/
-	STATUS code, number, length, gds_index, *tmp, temp[20];
+	STATUS code, number, length, gds_index, *tmp, temp[ISC_STATUS_LENGTH];
 	USHORT shift, flag;
 	SCHAR msgbuff[WRKBUF_SIZ], *p, *q, *pw1, *pw2, flags[4], part;
 	struct dsc$descriptor_s desc, *dsc_ptr;

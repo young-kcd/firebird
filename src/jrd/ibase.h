@@ -27,7 +27,7 @@
  * Compiler Compatibility
  */
 /*
-$Id: ibase.h,v 1.13 2002-10-13 10:24:43 dimitr Exp $
+$Id: ibase.h,v 1.14 2002-10-24 09:01:29 eku Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
  *                          - EPSON, XENIX, MAC (MAC_AUX), Cray and OS/2
@@ -60,6 +60,7 @@ $Id: ibase.h,v 1.13 2002-10-13 10:24:43 dimitr Exp $
 #define  ISC_SHORT	signed short
 #define  ISC_USHORT	unsigned short
 #define  ISC_STATUS	long
+#define  ISC_STATUS_LENGTH	20
 
 #define ISC_UCHAR	unsigned char
 

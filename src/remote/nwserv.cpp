@@ -62,7 +62,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
  *
  **************************************/
 	PORT port;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	TEXT *p, c;
 
 	SERVER_flag |= SRVR_spx;
@@ -130,7 +130,7 @@ static void inet_connect_wait_thread(void)
  * Functional description
  *
  **************************************/
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	PORT port;
 
 	THREAD_ENTER;
@@ -178,7 +178,7 @@ static void spx_connect_wait_thread(void)
  * Functional description
  *
  **************************************/
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	PORT port;
 
 	while (!NWSERV_terminating) {

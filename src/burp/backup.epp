@@ -35,7 +35,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.6 2002-06-29 05:39:38 skywalker Exp $
+$Id: backup.epp,v 1.7 2002-10-24 09:01:25 eku Exp $
 */
 
 #include "firebird.h"
@@ -237,7 +237,7 @@ int BACKUP_backup(TEXT* dbb_file, TEXT* file_name)
 	TEXT temp[GDS_NAME_LEN];
 	ULONG cumul_count_kb;
 	isc_req_handle req_handle1 = NULL;
-	long req_status[20];
+	STATUS req_status[ISC_STATUS_LENGTH];
 	TGBL tdgbl;
 	FIL fil;
 
@@ -2637,7 +2637,7 @@ static void write_character_sets(void)
  *
  **************************************/
 	isc_req_handle req_handle1 = NULL;
-	long req_status[20];
+	STATUS req_status[ISC_STATUS_LENGTH];
 	TGBL tdgbl;
 
 	tdgbl = GET_THREAD_DATA;
@@ -2685,7 +2685,7 @@ static void write_check_constraints(void)
  *
  **************************************/
 	isc_req_handle req_handle1 = NULL;
-	long req_status[20];
+	STATUS req_status[ISC_STATUS_LENGTH];
 	TGBL tdgbl;
 
 	tdgbl = GET_THREAD_DATA;
@@ -2722,7 +2722,7 @@ static void write_collations(void)
  *
  **************************************/
 	isc_req_handle req_handle1 = NULL;
-	long req_status[20];
+	STATUS req_status[ISC_STATUS_LENGTH];
 	TGBL tdgbl;
 
 	tdgbl = GET_THREAD_DATA;
@@ -2771,7 +2771,7 @@ static void write_database( TEXT * dbb_file)
 	ULONG sweep_interval, page_buffers;
 	SCHAR buffer[256], *d, item;
 	isc_req_handle req_handle1 = NULL, req_handle2 = NULL, req_handle3 = NULL;
-	long req_status[20];
+	STATUS req_status[ISC_STATUS_LENGTH];
 	TGBL tdgbl;
 
 	tdgbl = GET_THREAD_DATA;
@@ -2940,7 +2940,7 @@ static void write_exceptions(void)
     SSHORT l;
     TEXT temp[GDS_NAME_LEN];
     isc_req_handle req_handle1 = NULL;
-    long req_status[20];
+    STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
 
     tdgbl = GET_THREAD_DATA;
@@ -2978,7 +2978,7 @@ static void write_field_dimensions(void)
  *
  **************************************/
     isc_req_handle req_handle1 = NULL;
-    long req_status[20];
+    STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
 
     tdgbl = GET_THREAD_DATA;
@@ -3017,7 +3017,7 @@ static void write_filters(void)
     SSHORT l;
     TEXT temp[GDS_NAME_LEN];
     isc_req_handle req_handle1 = NULL;
-    long req_status[20];
+    STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
 
     tdgbl = GET_THREAD_DATA;
@@ -3061,7 +3061,7 @@ static void write_functions(void)
     GDS_NAME func;
     TEXT temp[GDS_NAME_LEN];
     isc_req_handle req_handle1 = NULL;
-    long req_status[20];
+    STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
 
     tdgbl = GET_THREAD_DATA;
@@ -3204,7 +3204,7 @@ static void write_generators(void)
  **************************************/
     SINT64 value;
     isc_req_handle req_handle1 = NULL;
-    long req_status[20];
+    STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
     SSHORT l;
     TEXT temp[GDS_NAME_LEN];
@@ -3249,7 +3249,7 @@ static void write_global_fields(void)
     TEXT temp[GDS_NAME_LEN];
     isc_req_handle req_handle1 = NULL, req_handle2 = NULL,
         req_handle3 = NULL, req_handle4 = NULL;
-    long req_status[20];
+    STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
 
     tdgbl = GET_THREAD_DATA;
@@ -3444,7 +3444,7 @@ static void write_procedures(void)
     GDS_NAME proc;
     TEXT temp[GDS_NAME_LEN];
     isc_req_handle req_handle1 = NULL;
-    long req_status[20];
+    STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
 
     tdgbl = GET_THREAD_DATA;
@@ -3531,7 +3531,7 @@ static void write_ref_constraints(void)
  *
  **************************************/
     isc_req_handle req_handle1 = NULL;
-    long req_status[20];
+    STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
 
     tdgbl = GET_THREAD_DATA;
@@ -3570,7 +3570,7 @@ static void write_rel_constraints(void)
     SSHORT l;
     TEXT temp[GDS_NAME_LEN];
     isc_req_handle req_handle1 = NULL;
-    long req_status[20];
+    STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
 
     tdgbl = GET_THREAD_DATA;
@@ -3616,7 +3616,7 @@ static void write_relations(void)
     TEXT temp[32];
     isc_req_handle req_handle1 = NULL, req_handle2 = NULL, req_handle3 =
         NULL, req_handle4 = NULL;
-    long req_status[20];
+    STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
 
     tdgbl = GET_THREAD_DATA;
@@ -3784,7 +3784,7 @@ static void write_shadow_files(void)
     SSHORT l;
     TEXT temp[GDS_NAME_LEN];
     isc_req_handle req_handle1 = NULL;
-    long req_status[20];
+    STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
 
     tdgbl = GET_THREAD_DATA;
@@ -3827,7 +3827,7 @@ static void write_sql_roles(void)
  *
  **************************************/
     isc_req_handle req_handle1 = NULL;
-    long req_status[20];
+    STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
     TEXT temp[GDS_NAME_LEN];
     SSHORT l;
@@ -3869,7 +3869,7 @@ static void write_triggers(void)
     SSHORT l;
     TEXT temp[GDS_NAME_LEN];
     isc_req_handle req_handle1 = NULL, req_handle2 = NULL;
-    long req_status[20];
+    STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
 
     tdgbl = GET_THREAD_DATA;
@@ -3980,7 +3980,7 @@ static void write_trigger_messages(void)
     SSHORT l;
     TEXT temp[32];
     isc_req_handle req_handle1 = NULL;
-    long req_status[20];
+    STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
 
     tdgbl = GET_THREAD_DATA;
@@ -4021,7 +4021,7 @@ static void write_types(void)
  *
  **************************************/
     isc_req_handle req_handle1 = NULL;
-    long req_status[20];
+    STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
     
     tdgbl = GET_THREAD_DATA;
@@ -4065,7 +4065,7 @@ static void write_user_privileges(void)
     SSHORT l;
     TEXT temp[32];
     isc_req_handle req_handle1 = NULL;
-    long req_status[20];
+    STATUS req_status[ISC_STATUS_LENGTH];
     TGBL tdgbl;
     
     tdgbl = GET_THREAD_DATA;

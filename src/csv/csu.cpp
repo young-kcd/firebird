@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: csu.cpp,v 1.3 2001-12-24 02:50:48 tamlin Exp $
+$Id: csu.cpp,v 1.4 2002-10-24 09:01:25 eku Exp $
 */
 
 #include "firebird.h"
@@ -60,7 +60,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
  **************************************/
 	USHORT sw_list, listed_flag, flags;
 	CSN csv_enable_names, csv_other_names, cs_name;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	SRQ *que;
 	PRB process;
 	PTR connection, server, client;
@@ -386,7 +386,7 @@ static void process_list_cmd( PTR connection, USHORT * listed_flag)
  **************************************/
 	MSG_UTIL message;
 	MSG_RESP response;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	USHORT l;
 	CSU_LIST list_msg;
 
@@ -451,7 +451,7 @@ static void process_nonlist_cmd( PTR connection, CSN cs_name)
 	MSG_UTIL message;
 	MSG_RESP response;
 	USHORT l, cmd;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	l = cs_name->csn_cs_len + cs_name->csn_db_len;
 	length = sizeof(struct msg_util) + l;

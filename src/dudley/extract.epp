@@ -535,7 +535,7 @@ static void extract_database(TEXT * DB_file_name)
 	TEXT s[32], buffer[256], *d;
 	SSHORT length, any_shadows;
 	SLONG page_size;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	BOOLEAN first_time;
 	SSHORT need_close;
 	SCHAR db_info_buffer[64];
@@ -1851,7 +1851,7 @@ static void print_blob(SLONG * blob_id, TEXT type)
 	TEXT buffer[4096];
 	SCHAR blr_buffer[2048], *p, *q;
 	SSHORT length;
-	STATUS status_vector[20], status;
+	STATUS status_vector[ISC_STATUS_LENGTH], status;
 	SLONG *blob;
 	UCHAR bpb_buffer[20], *bpb, *r;
 
@@ -2008,7 +2008,7 @@ static void set_capabilities(void)
  *
  **************************************/
 	ULONG *req;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	RFR_TAB rel_field_table;
 
 	req = NULL;

@@ -68,7 +68,7 @@ static void post_error( STATUS status, ...)
  *
  **************************************/
 	TSQL tdsql;
-	STATUS *v, *v_end, *temp, temp_status[20];
+	STATUS *v, *v_end, *temp, temp_status[ISC_STATUS_LENGTH];
 
 	tdsql = GET_THREAD_DATA;
 

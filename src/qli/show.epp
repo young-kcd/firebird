@@ -469,7 +469,7 @@ static void display_blob(
 	USHORT length, buffer_length;
 	TEXT buffer[256], *b;
 	int *blob;
-	STATUS status_vector[20], status;
+	STATUS status_vector[ISC_STATUS_LENGTH], status;
 
 	blob = NULL;
 
@@ -562,7 +562,7 @@ static void display_procedure( DBB database, UCHAR * name, int *blob)
  *	it's in, and so forth.  
  *
  **************************************/
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	SSHORT length;
 	UCHAR buffer[256];
 
@@ -816,7 +816,7 @@ static void show_dbb_parameters( DBB database)
 	UCHAR *d, buffer[127], item;
 	int length;
 	SLONG allocation, page_size;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	if (!database)
 		return;

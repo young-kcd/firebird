@@ -61,7 +61,7 @@ typedef struct handle {
 } *HANDLE, *REQ, *DBB, *TRA, *BLB;
 
 static TRA *dyn_tra_handle;
-static int status_vector[20];
+static STATUS status_vector[ISC_STATUS_LENGTH];
 static UCHAR *temp_buffer;
 static SLONG temp_buffer_length;
 

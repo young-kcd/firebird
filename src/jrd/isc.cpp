@@ -28,7 +28,7 @@
  * 01-Feb-2002 Paul Reeves: Removed hard-coded registry path
  */
 /*
-$Id: isc.cpp,v 1.14 2002-08-22 08:20:26 dimitr Exp $
+$Id: isc.cpp,v 1.15 2002-10-24 09:01:29 eku Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -366,7 +366,7 @@ void DLL_EXPORT ISC_get_config(TEXT * config_file, IPCCFG config_table)
 		TEXT buffer[256];
 #ifdef SUPERSERVER
 		int n;
-		TEXT dir_name[MAX_PATH_LENGTH];
+		TEXT dir_name[MAXPATHLEN];
 		ULONG size;
 #endif
 

@@ -388,7 +388,7 @@ void EXE_drop_database( DBB dbb)
  *	its files.
  *
  **************************************/
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	FIL file;
 	SYM string;
 	TEXT dpb[128], *d, *p;
@@ -984,7 +984,7 @@ static void add_field( FLD field)
  **************************************/
 	REL relation;
 	SYM source;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	SLONG *blob;
 
 	relation = field->fld_relation;
@@ -1260,7 +1260,7 @@ static void add_global_field( FLD field)
  **************************************/
 	SYM name;
 	DSC desc;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	SLONG *blob;
 
 	name = field->fld_name;
@@ -1367,7 +1367,7 @@ static void add_index( DUDLEY_IDX index)
 	SYM *symbol;
 	TEXT s[128];
 	USHORT i, size, error, if_any;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	SLONG *blob;
 	FLD field;
 
@@ -2129,7 +2129,7 @@ static void close_blob( void *blob)
  *	Close a blob.
  *
  **************************************/
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
     
 	if (gds__close_blob(status_vector, GDS_REF(blob)))
 		DDL_db_error(status_vector, 58, NULL, NULL, NULL, NULL, NULL);	/* msg 58: gds__close_blob failed */
@@ -2148,7 +2148,7 @@ static void *create_blob( SLONG * blob_id, USHORT bpb_length, UCHAR * bpb)
  *	Create a new blob.
  *
  **************************************/
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	void *blob;
     
 	blob = NULL;
@@ -4081,7 +4081,7 @@ static void store_acl( SCL scl_class, SLONG * blob_id)
  **************************************/
 	TEXT buffer[4096], *p;
 	USHORT length;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	void *blob;
 
 /* Generate access control list */
@@ -4114,7 +4114,7 @@ static void store_blr( NOD node, SLONG * blob_id, REL relation)
  **************************************/
 	struct str blr;
 	USHORT length, base;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	void *handle;
 
 	blr.str_current = blr.str_start = (SCHAR *) gds__alloc((SLONG) 4096);
@@ -4156,7 +4156,7 @@ static void store_query_header( NOD node, SLONG * blob_id)
  **************************************/
 	NOD *ptr, *end;
 	SYM symbol;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	void *blob;
 	USHORT bpb_length;
 	UCHAR bpb[20], *p;
@@ -4240,7 +4240,7 @@ static void store_text( TXT text, SLONG * blob_id)
  *	BLR expression in a blob.
  *
  **************************************/
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	void *blob;
 	USHORT bpb_length;
 	UCHAR bpb[20], *p;

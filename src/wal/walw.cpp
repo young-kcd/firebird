@@ -193,7 +193,7 @@ int CLIB_ROUTINE walw_classic_main( int argc, char **argv)
  *	process.  One WAL writer process is started per database.
  *
  **************************************/
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	WAL WAL_handle;
 	SCHAR dbg_file[MAXPATHLEN];
 	IB_FILE *debug_fd;
@@ -285,7 +285,7 @@ void ERR_post(stuff)
  *	trick to get the address of the argument vector.
  *
  **************************************/
-	STATUS *p, *q, status_vector[20];
+	STATUS *p, *q, status_vector[ISC_STATUS_LENGTH];
 	int type;
 
 /* Get the addresses of the argument vector and the status vector, and do
@@ -1712,7 +1712,7 @@ static void report_walw_bug_or_error(
  *	Handle bug or error for the WAL writer.
  *
  **************************************/
-	STATUS local_status[20];
+	STATUS local_status[ISC_STATUS_LENGTH];
 	TEXT errbuf[MAX_ERRMSG_LEN];
 	WALS WAL_segment;
 

@@ -127,7 +127,7 @@ static inline void INIT_DSQL(STATUS* user_status, STATUS* local_status)
 //
 STATUS API_ROUTINE isc_embed_dsql_close(STATUS* user_status, SCHAR* name)
 {
-	STATUS local_status[20];
+	STATUS local_status[ISC_STATUS_LENGTH];
 
 	INIT_DSQL(user_status, local_status);
 	try
@@ -156,7 +156,7 @@ STATUS API_ROUTINE isc_embed_dsql_declare(	STATUS*	user_status,
 											SCHAR*	stmt_name,
 											SCHAR*	cursor)
 {
-	STATUS local_status[20];
+	STATUS local_status[ISC_STATUS_LENGTH];
 
 	INIT_DSQL(user_status, local_status);
 	try
@@ -193,7 +193,7 @@ STATUS API_ROUTINE isc_embed_dsql_describe(STATUS* user_status,
 										   SCHAR* stmt_name,
 										   USHORT dialect, XSQLDA* sqlda)
 {
-	STATUS local_status[20];
+	STATUS local_status[ISC_STATUS_LENGTH];
 
 	INIT_DSQL(user_status, local_status);
 
@@ -240,7 +240,7 @@ STATUS API_ROUTINE isc_embed_dsql_describe_bind(STATUS*	user_status,
 												USHORT	dialect,
 												XSQLDA*	sqlda)
 {
-	STATUS local_status[20];
+	STATUS local_status[ISC_STATUS_LENGTH];
 
 	INIT_DSQL(user_status, local_status);
 	try
@@ -291,7 +291,7 @@ STATUS API_ROUTINE isc_embed_dsql_execute2(STATUS*	user_status,
 										   XSQLDA*	in_sqlda,
 										   XSQLDA*	out_sqlda)
 {
-	STATUS local_status[20];
+	STATUS local_status[ISC_STATUS_LENGTH];
 
 	INIT_DSQL(user_status, local_status);
 	try
@@ -433,7 +433,7 @@ STATUS API_ROUTINE isc_embed_dsql_fetch(STATUS* user_status,
 										SCHAR* cursor_name,
 										USHORT dialect, XSQLDA* sqlda)
 {
-	STATUS local_status[20];
+	STATUS local_status[ISC_STATUS_LENGTH];
 
 	INIT_DSQL(user_status, local_status);
 	try
@@ -464,7 +464,7 @@ STATUS API_ROUTINE isc_embed_dsql_fetch2(	STATUS*	user_status,
 											USHORT	direction,
 											SLONG	offset)
 {
-	STATUS local_status[20];
+	STATUS local_status[ISC_STATUS_LENGTH];
 
 	INIT_DSQL(user_status, local_status);
 	try
@@ -556,7 +556,7 @@ STATUS API_ROUTINE isc_embed_dsql_insert(STATUS* user_status,
  *	Insert next record into a dynamic SQL cursor
  *
  **************************************/
-	STATUS local_status[20];
+	STATUS local_status[ISC_STATUS_LENGTH];
 	STMT statement;
 
 	INIT_DSQL(user_status, local_status);
@@ -640,7 +640,7 @@ STATUS API_ROUTINE isc_embed_dsql_open2(STATUS* user_status,
  *	Open a dynamic SQL cursor.
  *
  **************************************/
-	STATUS local_status[20];
+	STATUS local_status[ISC_STATUS_LENGTH];
 	STMT stmt;
 
 	INIT_DSQL(user_status, local_status);
@@ -681,7 +681,7 @@ STATUS API_ROUTINE isc_embed_dsql_prepare(STATUS*	user_status,
  *	Prepare a statement for execution.
  *
  **************************************/
-	STATUS s, local_status[20], local_status2[20];
+	STATUS s, local_status[ISC_STATUS_LENGTH], local_status2[ISC_STATUS_LENGTH];
 	STMT statement;
 	HNDL stmt_handle;
 
@@ -815,7 +815,7 @@ STATUS API_ROUTINE isc_embed_dsql_release(STATUS* user_status,
  *	Release request for a dsql statement
  *
  **************************************/
-	STATUS	local_status[20];
+	STATUS	local_status[ISC_STATUS_LENGTH];
 	STMT*	stmt_ptr, p;
 
 	INIT_DSQL(user_status, local_status);
@@ -1523,7 +1523,7 @@ static void init(HNDL* db_handle)
 	databases = dbb;
 	dbb->dbb_database_handle = *db_handle;
 
-	STATUS local_status[20];
+	STATUS local_status[ISC_STATUS_LENGTH];
 	gds__database_cleanup(local_status,
 						  reinterpret_cast<hndl**>(db_handle),
 						  reinterpret_cast<void(*)()>(cleanup_database),

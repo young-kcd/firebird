@@ -506,7 +506,7 @@ void FMT_print( NOD list, PRT print)
 	NOD *ptr, *end;
 	RPT report;
 	BRK control;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 #ifdef JPN_EUC
 	USHORT n_half_kanas = 0;	/* number of half kanas in the current line */
 #endif /* JPN_EUC */
@@ -1422,7 +1422,7 @@ static int print_line( ITM item, TEXT ** ptr)
  **************************************/
 	USHORT l, length;
 	TEXT *p, *q;
-	STATUS status_vector[20], status;
+	STATUS status_vector[ISC_STATUS_LENGTH], status;
 #ifdef JPN_EUC
 	TEXT *p2;
 	USHORT x, len;

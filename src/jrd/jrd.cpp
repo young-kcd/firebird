@@ -708,18 +708,18 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 
 #ifdef STACK_REDUCTION
 	allocated_space =
-		ALL_malloc(DPB_EXPAND_BUFFER + (4 * MAX_PATH_LENGTH), ERR_jmp);
+		ALL_malloc(DPB_EXPAND_BUFFER + (4 * MAXPATHLEN), ERR_jmp);
 	TEXT*	opt_ptr			= allocated_space;
-	TEXT*	archive_name	= opt_ptr + MAX_PATH_LENGTH;
-	TEXT*	journal_name	= archive_name + MAX_PATH_LENGTH;
-	TEXT*	journal_dir		= journal_name + MAX_PATH_LENGTH;
-	UCHAR*	data			= (UCHAR*) (journal_dir + MAX_PATH_LENGTH);
+	TEXT*	archive_name	= opt_ptr + MAXPATHLEN;
+	TEXT*	journal_name	= archive_name + MAXPATHLEN;
+	TEXT*	journal_dir		= journal_name + MAXPATHLEN;
+	UCHAR*	data			= (UCHAR*) (journal_dir + MAXPATHLEN);
 #else
 	TEXT*	opt_ptr = opt_buffer;
-	TEXT	archive_name[MAX_PATH_LENGTH];
-	TEXT	journal_name[MAX_PATH_LENGTH];
-	TEXT	journal_dir[MAX_PATH_LENGTH];
-	UCHAR	data[MAX_PATH_LENGTH];
+	TEXT	archive_name[MAXPATHLEN];
+	TEXT	journal_name[MAXPATHLEN];
+	TEXT	journal_dir[MAXPATHLEN];
+	UCHAR	data[MAXPATHLEN];
 #endif
 
 /* Process database parameter block */
@@ -1788,7 +1788,7 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
  *
  **************************************/
 	DBB dbb;
-	TEXT expanded_name[MAX_PATH_LENGTH];
+	TEXT expanded_name[MAXPATHLEN];
 #ifdef STACK_REDUCTION
 	TEXT *allocated_space = NULL;
 #else

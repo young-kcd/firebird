@@ -611,7 +611,7 @@ static void allocate_statement (void)
 RDB		rdb;
 RSR		statement;
 HANDLE		handle;
-STATUS		status_vector [20];
+STATUS		status_vector[ISC_STATUS_LENGTH];
 
 RDB_GET_HANDLE (rdb);
 handle = NULL;
@@ -647,7 +647,7 @@ static void attach_database (
 USHORT	l, file_length, dpb_length, object;
 UCHAR	*p, *file_name, file_buf [256], *dpb, dpb_buf [256];
 HANDLE	handle;
-STATUS	status_vector [20];
+STATUS	status_vector[ISC_STATUS_LENGTH];
 RDB	rdb;
 
 file_length = GET_WORD;
@@ -695,7 +695,7 @@ static void service_attach (void)
 USHORT	l, service_length, spb_length, object;
 UCHAR	*p, service_name [256], *spb, spb_buf [256];
 HANDLE	handle;
-STATUS	status_vector [20];
+STATUS	status_vector[ISC_STATUS_LENGTH];
 RDB	rdb;
 
 service_length = GET_WORD;
@@ -733,7 +733,7 @@ static void cancel_events (void)
  *	Cancel an outstanding event call.
  *
  **************************************/
-STATUS	status_vector [20];
+STATUS	status_vector[ISC_STATUS_LENGTH];
 RDB	rdb;
 RVNT	event;
 SLONG	id;
@@ -773,7 +773,7 @@ RRQ	request;
 USHORT	l, blr_length, object;
 UCHAR	*p, *blr;
 HANDLE	handle;
-STATUS	status_vector [20];
+STATUS	status_vector[ISC_STATUS_LENGTH];
 
 RDB_GET_HANDLE (rdb);
 blr_length = GET_WORD;
@@ -810,7 +810,7 @@ static void ddl (void)
  *	Pass thru a DDL call.
  *
  **************************************/
-STATUS	status_vector [20];
+STATUS	status_vector[ISC_STATUS_LENGTH];
 RTR	transaction;
 RDB	rdb;
 UCHAR	*p, *buffer;
@@ -845,7 +845,7 @@ static void drop_database (void)
  *
  **************************************/
 RDB	rdb, *ptr;
-STATUS	status_vector [20];
+STATUS	status_vector[ISC_STATUS_LENGTH];
 STATUS	code;
 
 RDB_GET_HANDLE (rdb);
@@ -886,7 +886,7 @@ static void end_blob (
  *
  **************************************/
 RBL	blob;
-STATUS	status_vector [20];
+STATUS	status_vector[ISC_STATUS_LENGTH];
 
 RBL_GET_HANDLE (blob);
 
@@ -914,7 +914,7 @@ static void end_database (void)
  *
  **************************************/
 RDB	rdb, *ptr;
-STATUS	status_vector [20];
+STATUS	status_vector[ISC_STATUS_LENGTH];
 
 RDB_GET_HANDLE (rdb);
 GDS_DETACH (status_vector, 
@@ -952,7 +952,7 @@ static void end_request (void)
  **************************************/
 RDB	rdb;
 RRQ	request;
-STATUS	status_vector [20];
+STATUS	status_vector[ISC_STATUS_LENGTH];
 
 RRQ_GET_HANDLE (request);
 
@@ -977,7 +977,7 @@ static void service_end (void)
  *
  **************************************/
 RDB	rdb, *ptr;
-STATUS	status_vector [20];
+STATUS	status_vector[ISC_STATUS_LENGTH];
 
 RDB_GET_HANDLE (rdb);
 GDS_SERVICE_DETACH (status_vector, 
@@ -1010,7 +1010,7 @@ static void end_statement (void)
  **************************************/
 RSR	statement;
 USHORT	option;
-STATUS	status_vector [20];
+STATUS	status_vector[ISC_STATUS_LENGTH];
 
 RSR_GET_HANDLE (statement);
 option = GET_WORD;
@@ -1048,7 +1048,7 @@ RDB	rdb;
 RTR	transaction;
 UCHAR	*p, *msg;
 USHORT	l, msg_length;
-STATUS	status_vector [20];
+STATUS	status_vector[ISC_STATUS_LENGTH];
 
 RTR_GET_HANDLE (transaction);
 
@@ -1147,7 +1147,7 @@ HANDLE	handle;
 USHORT	l, length, dialect, in_blr_length, in_msg_type, in_msg_length,
 	out_blr_length, out_msg_type, out_msg_length;
 UCHAR	*p, *string, *in_blr, *in_msg, *out_blr, *out_msg;
-STATUS	status_vector [20];
+STATUS	status_vector[ISC_STATUS_LENGTH];
 
 RDB_GET_HANDLE (rdb);
 RTR_GET_HANDLE_NULL (transaction);
@@ -1233,7 +1233,7 @@ HANDLE	handle;
 USHORT	l, in_blr_length, in_msg_type, in_msg_length,
 	out_blr_length, out_msg_type, out_msg_length;
 UCHAR	*p, *in_blr, *in_msg, *out_blr, *out_msg;
-STATUS	status_vector [20];
+STATUS	status_vector[ISC_STATUS_LENGTH];
 
 RTR_GET_HANDLE_NULL (transaction);
 RSR_GET_HANDLE (statement);
@@ -1308,7 +1308,7 @@ static void fetch (void)
 RSR	statement;
 USHORT	l, blr_length, msg_type, msg_length;
 UCHAR	*p, *blr, *msg;
-STATUS	s, status_vector [20];
+STATUS	s, status_vector[ISC_STATUS_LENGTH];
 
 RSR_GET_HANDLE (statement);
 blr_length = GET_WORD;
@@ -1448,7 +1448,7 @@ RDB	rdb;
 RBL	blob;
 USHORT	l, buffer_length, length;
 UCHAR	*p, *buffer;
-STATUS	status_vector [20], state;
+STATUS	status_vector[ISC_STATUS_LENGTH], state;
 
 RBL_GET_HANDLE (blob);
 buffer_length = GET_WORD;
@@ -1538,7 +1538,7 @@ static void get_slice (void)
  **************************************/
 RDB		rdb;
 RTR		transaction;
-STATUS		status_vector [20];
+STATUS		status_vector[ISC_STATUS_LENGTH];
 USHORT		sdl_length, param_length;
 ULONG		l, slice_length, return_length, parameters [32];
 UCHAR		*p, *sdl, sdl_buf [256], *slice;
@@ -1613,7 +1613,7 @@ static void info (
  *
  **************************************/
 HANDLE	handle;
-STATUS	status_vector [20];
+STATUS	status_vector[ISC_STATUS_LENGTH];
 USHORT	item_length, recv_item_length, buffer_length, l, incarnation;
 UCHAR	*p, *buffer, *items, *recv_items, *temp;
 UCHAR	items_buf [128], recv_items_buf [128], temp_buf [512];
@@ -1738,7 +1738,7 @@ static void insert (void)
 RSR	statement;
 USHORT	l, blr_length, msg_type, msg_length;
 UCHAR	*p, *blr, *msg;
-STATUS	status_vector [20];
+STATUS	status_vector[ISC_STATUS_LENGTH];
 
 RSR_GET_HANDLE (statement);
 blr_length = GET_WORD;
@@ -1802,7 +1802,7 @@ RDB		rdb;
 RBL		blob;
 RTR		transaction;
 HANDLE		handle;
-STATUS		status_vector [20];
+STATUS		status_vector[ISC_STATUS_LENGTH];
 USHORT		l, bpb_length;
 UCHAR		*p, *bpb, bpb_buf [128];
 struct bid	blob_id;
@@ -1895,7 +1895,7 @@ RTR	transaction;
 RSR	statement;
 USHORT	l, length, item_length, buffer_length, dialect;
 UCHAR	*p, *string, *items, items_buf [128], *buffer;
-STATUS	status_vector [20];
+STATUS	status_vector[ISC_STATUS_LENGTH];
 HANDLE	handle;
 
 RTR_GET_HANDLE_NULL (transaction);
@@ -2023,7 +2023,7 @@ RDB	rdb;
 RBL	blob;
 USHORT	l, buffer_length, length;
 UCHAR	*p, *buffer, *end;
-STATUS	status_vector [20];
+STATUS	status_vector[ISC_STATUS_LENGTH];
 
 RBL_GET_HANDLE (blob);
 buffer_length = GET_WORD;
@@ -2077,7 +2077,7 @@ static void put_slice (void)
  **************************************/
 RDB		rdb;
 RTR		transaction;
-STATUS		status_vector [20];
+STATUS		status_vector[ISC_STATUS_LENGTH];
 USHORT		sdl_length, param_length;
 ULONG		l, slice_length, return_length, parameters [32];
 UCHAR		*p, *sdl, sdl_buf [256], *slice;
@@ -2174,7 +2174,7 @@ static void que_events (void)
 RDB	rdb;
 USHORT	l, length, object;
 UCHAR	*p, *events;
-STATUS	status_vector [20];
+STATUS	status_vector[ISC_STATUS_LENGTH];
 RVNT	event;
 
 #ifdef DEBUG
@@ -2237,7 +2237,7 @@ static void receive_msg (void)
  *	Receive a message.
  *
  **************************************/
-STATUS	status_vector [20];
+STATUS	status_vector[ISC_STATUS_LENGTH];
 RRQ	request;
 RDB	rdb;
 USHORT	l, length, number, level;
@@ -2293,7 +2293,7 @@ RTR	transaction;
 USHORT	l, length, count, object;
 UCHAR	*p, *buffer;
 HANDLE	handle;
-STATUS	status_vector [20];
+STATUS	status_vector[ISC_STATUS_LENGTH];
 
 RDB_GET_HANDLE (rdb);
 length = GET_WORD;
@@ -2448,7 +2448,7 @@ RDB	rdb;
 RBL	blob;
 SSHORT	mode;
 SLONG	offset, result;
-STATUS	status_vector [20];
+STATUS	status_vector[ISC_STATUS_LENGTH];
 
 RBL_GET_HANDLE (blob);
 mode = GET_WORD;
@@ -2479,7 +2479,7 @@ static void send_msg (void)
  * Functional description
  *
  **************************************/
-STATUS	status_vector [20];
+STATUS	status_vector[ISC_STATUS_LENGTH];
 RRQ	request;
 RTR	transaction;
 RDB	rdb;
@@ -2589,7 +2589,7 @@ static void set_cursor (void)
 RSR	statement;
 USHORT	l, length, type;
 UCHAR	*p, *cursor;
-STATUS	status_vector [20];
+STATUS	status_vector[ISC_STATUS_LENGTH];
 
 RSR_GET_HANDLE (statement);
 length = GET_WORD;
@@ -2620,7 +2620,7 @@ static void shutdown_attachments (void)
  **************************************/
 RDB	rdb;
 RTR	transaction;
-STATUS	status_vector [20];
+STATUS	status_vector[ISC_STATUS_LENGTH];
 
 for (rdb = PSV_databases; rdb; rdb = rdb->rdb_next)
     {
@@ -2643,7 +2643,7 @@ static void start (void)
  * Functional description
  *
  **************************************/
-STATUS	status_vector [20];
+STATUS	status_vector[ISC_STATUS_LENGTH];
 RRQ	request;
 RTR	transaction;
 RDB	rdb;
@@ -2672,7 +2672,7 @@ static void start_and_send (void)
  * Functional description
  *
  **************************************/
-STATUS	status_vector [20];
+STATUS	status_vector[ISC_STATUS_LENGTH];
 RRQ	request;
 RTR	transaction;
 RDB	rdb;
@@ -2716,7 +2716,7 @@ USHORT	l, length, count, c, object;
 UCHAR	*p, *buffer;
 HANDLE	handle;
 int	**v, *vector [3*16];
-STATUS	status_vector [20];
+STATUS	status_vector[ISC_STATUS_LENGTH];
 
 v = vector;
 count = GET_WORD;
@@ -2762,7 +2762,7 @@ RDB	rdb;
 RTR	transaction;
 USHORT	i, l, blr_length, in_msg_length, out_msg_length;
 UCHAR	*p, *blr, *in_buffer, *out_buffer;
-STATUS	status_vector [20];
+STATUS	status_vector[ISC_STATUS_LENGTH];
 
 RDB_GET_HANDLE (rdb);
 RTR_GET_HANDLE (transaction);
@@ -2803,7 +2803,7 @@ static void unwind (void)
 RDB	rdb;
 RRQ	request;
 USHORT	level;
-STATUS	status_vector [20];
+STATUS	status_vector[ISC_STATUS_LENGTH];
 
 RRQ_GET_HANDLE (request);
 level = GET_WORD;

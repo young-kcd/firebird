@@ -1215,7 +1215,7 @@ void PAG_init2(USHORT shadow_number)
 	ULONG last_page;
 	struct bdb temp_bdb;
 	SLONG next_page;
-	UCHAR buf[MAX_PATH_LENGTH];
+	UCHAR buf[MAXPATHLEN];
 	STATUS *status;
 
 	tdbb = GET_THREAD_DATA;

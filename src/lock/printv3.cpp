@@ -115,7 +115,7 @@ int V3_lock_print(USHORT argc, UCHAR **argv)
 	PRB process;
 	LBL lock;
 	UCHAR *p, c;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	SH_MEM_T shmem_data;
 	TEXT expanded_filename[512], hostname[64];
 	struct stat stat_buf;

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: csv.cpp,v 1.4 2002-08-22 08:20:24 dimitr Exp $
+$Id: csv.cpp,v 1.5 2002-10-24 09:01:25 eku Exp $
 */
 
 #include "firebird.h"
@@ -213,7 +213,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
  *
  **************************************/
 	MSG message;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	USHORT sw_multi, sw_name, sw_buffers, sw_limit, length;
 	TEXT **end, *p, *q, c, expanded_name[256], dflt_name[16];
 	DBN db_name;
@@ -353,7 +353,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
  *	Start up single user server.
  *
  **************************************/
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	CSH CSS_header;
 	SRQ *que;
 	PRB process;
@@ -422,7 +422,7 @@ static void allocate_statement( MSG_OP message)
 	RDB rdb;
 	RSR statement;
 	HANDLE handle;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	rdb = (RDB) message->msg_op_handle;
 	handle = NULL;
@@ -458,7 +458,7 @@ static void alt_connection( MSG_OP message)
  *
  **************************************/
 	RDB rdb;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	rdb = (RDB) message->msg_op_handle;
 	rdb->rdb_connection2 = message->msg_op_header.msg_connection;
@@ -482,7 +482,7 @@ static void attach_database( MSG_ATT message)
  *
  **************************************/
 	HANDLE handle;
-	STATUS status_vector[20], *sv;
+	STATUS status_vector[ISC_STATUS_LENGTH], *sv;
 	RDB rdb;
 	TEXT *expanded_name;
 	UCHAR *dpb;
@@ -565,7 +565,7 @@ static STATUS attach_for_servicing(
 	USHORT length;
 	HANDLE handle;
 	RDB rdb;
-	STATUS local_status[20];
+	STATUS local_status[ISC_STATUS_LENGTH];
 	SCHAR string[16], *dpb, *p;
 
 /* generate the proper database parameter block */
@@ -627,7 +627,7 @@ static void cancel_events( MSG_OP message)
 	RDB rdb;
 	EVNT event;
 	SLONG id;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	rdb = (RDB) message->msg_op_handle;
 	id = message->msg_op_level;
@@ -662,7 +662,7 @@ static void check_if_done( DBN db_name)
  *
  **************************************/
 	RDB rdb;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	DBN *ptr;
 
 /* If the database isn't disabled, in the process of being
@@ -714,7 +714,7 @@ static void compile( MSG_OP message)
 	RDB rdb;
 	RRQ request;
 	HANDLE handle;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	rdb = (RDB) message->msg_op_handle;
 	handle = NULL;
@@ -753,7 +753,7 @@ static void ddl( MSG_DDL message)
  **************************************/
 	RDB rdb;
 	RTR transaction;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	rdb = (RDB) message->msg_ddl_database;
 	transaction = (RTR) message->msg_ddl_transaction;
@@ -827,7 +827,7 @@ static void disconnect( PTR connection)
  **************************************/
 	RDB rdb;
 	RTR *ptr, transaction;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 /* Start by breaking connection to remote */
 
@@ -875,7 +875,7 @@ static void drop_database( MSG_OP message)
  *
  **************************************/
 	RDB rdb;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	rdb = (RDB) message->msg_op_handle;
 
@@ -907,7 +907,7 @@ static void end_blob( MSG_OP message)
  *
  **************************************/
 	RBL blob;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	blob = (RBL) message->msg_op_handle;
 	THREAD_EXIT;
@@ -939,7 +939,7 @@ static void end_database( MSG_OP message)
  *
  **************************************/
 	RDB rdb;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	rdb = (RDB) message->msg_op_handle;
 
@@ -973,7 +973,7 @@ static void end_request( MSG_OP message)
  **************************************/
 	RDB rdb;
 	RRQ request;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	request = (RRQ) message->msg_op_handle;
 	THREAD_EXIT;
@@ -1001,7 +1001,7 @@ static void end_statement( MSG_OP message)
  **************************************/
 	RDB rdb;
 	RSR statement;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	statement = (RSR) message->msg_op_handle;
 
@@ -1033,7 +1033,7 @@ static void end_transaction( MSG_OP message)
  **************************************/
 	RDB rdb;
 	RTR transaction;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	transaction = (RTR) message->msg_op_handle;
 	THREAD_EXIT;
@@ -1086,7 +1086,7 @@ static void execute_immediate( MSG_EXNOW message)
 	SCHAR *string, *in_blr, *in_msg, *out_blr, *out_msg;
 	USHORT buffer_length;
 	HANDLE handle;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	rdb = (RDB) message->msg_exnow_database;
 	transaction = (RTR) message->msg_exnow_transaction;
@@ -1150,7 +1150,7 @@ static void execute_statement( MSG_SQLMSG message)
 	SCHAR *in_blr, *in_msg, *out_blr, *out_msg;
 	USHORT buffer_length;
 	HANDLE handle;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	transaction = (RTR) message->msg_sqlmsg_transaction;
 	statement = (RSR) message->msg_sqlmsg_statement;
@@ -1208,7 +1208,7 @@ static void fetch( MSG_SQLMSG message)
 	RSR statement;
 	USHORT msg_length;
 	UCHAR *msg;
-	STATUS s, status_vector[20];
+	STATUS s, status_vector[ISC_STATUS_LENGTH];
 
 	statement = (RSR) message->msg_sqlmsg_statement;
 	msg_length = message->msg_sqlmsg_in_msg_length;
@@ -1369,7 +1369,7 @@ static void get_segment( MSG_SEG message)
 	USHORT l, buffer_length, length;
 	UCHAR *p, *buffer;
 	HANDLE state;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	blob = (RBL) message->msg_seg_handle;
 	buffer_length = message->msg_seg_buffer_length;
@@ -1449,7 +1449,7 @@ static void get_slice( MSG_SLICE message)
 	UCHAR *sdl, *param, *slice;
 	ARRAY array, handle;
 	USHORT length;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	rdb = (RDB) message->msg_slice_database;
 	transaction = (RTR) message->msg_slice_transaction;
@@ -1549,7 +1549,7 @@ static void info( MSG_INFO message)
  *
  **************************************/
 	HANDLE handle;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	USHORT buffer_length;
 	UCHAR *buffer, temp[1024];
 	RDB rdb;
@@ -1642,7 +1642,7 @@ static void insert( MSG_SQLMSG message)
  **************************************/
 	RSR statement;
 	UCHAR *blr, *msg;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	statement = (RSR) message->msg_sqlmsg_statement;
 
@@ -1772,7 +1772,7 @@ static void open_blob( MSG_BLOB message)
 	RTR transaction;
 	USHORT length;
 	HANDLE handle;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	rdb = (RDB) message->msg_blob_database;
 	transaction = (RTR) message->msg_blob_transaction;
@@ -1827,7 +1827,7 @@ static void ping( MSG_OP message)
  *
  **************************************/
 	RRQ request;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	status_vector[0] = gds_arg_gds;
 	status_vector[1] = 0;
@@ -1852,7 +1852,7 @@ static void prepare_statement( MSG_PSTMT message)
 	SCHAR *string, *items;
 	USHORT buffer_length;
 	UCHAR *buffer;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	HANDLE handle;
 
 	transaction = (RTR) message->msg_pstmt_transaction;
@@ -2079,7 +2079,7 @@ static void put_segment( MSG_SEG message)
 	RBL blob;
 	USHORT buffer_length, length;
 	UCHAR *buffer, *end;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	blob = (RBL) message->msg_seg_handle;
 	buffer_length = message->msg_seg_length;
@@ -2136,7 +2136,7 @@ static void put_slice( MSG_SLICE message)
 	UCHAR *sdl, *param;
 	ARRAY array, handle;
 	USHORT length;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	register UCHAR *from, *to;
 
 	status_vector[0] = gds_arg_gds;
@@ -2236,7 +2236,7 @@ static void que_events( MSG_EVENT message)
  **************************************/
 	RDB rdb;
 	EVNT event;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	rdb = (RDB) message->msg_event_database;
 
@@ -2280,7 +2280,7 @@ static void receive_msg( MSG_MSG message)
  *	Receive a message.
  *
  **************************************/
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	RRQ request;
 	USHORT buffer_length;
 	UCHAR *buffer;
@@ -2317,7 +2317,7 @@ static void reconnect( MSG_OP message)
 	RDB rdb;
 	RTR transaction;
 	HANDLE handle;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	rdb = (RDB) message->msg_op_handle;
 	handle = NULL;
@@ -2547,7 +2547,7 @@ static void seek_blob( MSG_SEEK message)
 	RDB rdb;
 	RBL blob;
 	SLONG result;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	blob = (RBL) message->msg_seek_handle;
 
@@ -2575,7 +2575,7 @@ static void send_msg( MSG_MSG message)
  * Functional description
  *
  **************************************/
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	RRQ request;
 	RTR transaction;
 	RDB rdb;
@@ -2740,7 +2740,7 @@ static void set_cursor( MSG_SETCUR message)
  *
  **************************************/
 	RSR statement;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	statement = (RSR) message->msg_setcur_statement;
 
@@ -2765,7 +2765,7 @@ static void start( MSG_MSG message)
  * Functional description
  *
  **************************************/
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	RRQ request;
 	RTR transaction;
 
@@ -2793,7 +2793,7 @@ static void start_and_send( MSG_MSG message)
  * Functional description
  *
  **************************************/
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	RRQ request;
 	RTR transaction;
 
@@ -2830,7 +2830,7 @@ static void start_transaction( MSG_TRANS message)
 	TEB tebs[16], *teb;
 	TDB *tdb, *end;
 	HANDLE handle;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	for (tdb = message->msg_trans_tdb, end =
 		 tdb + message->msg_trans_count, teb = tebs; tdb < end; tdb++, teb++) {
@@ -2868,7 +2868,7 @@ static void server_utility( MSG_UTIL message)
  *	Process a message from the central server utility.
  *
  **************************************/
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	USHORT cmd, length, l;
 	CSU_LIST list_msg, ptr_data;
 	DBN db_name, *ptr;
@@ -2995,7 +2995,7 @@ static void server_utility( MSG_UTIL message)
  *	Process a message from the central server utility.
  *
  **************************************/
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	RDB *ptr, rdb;
 	PTR connection;
 
@@ -3095,7 +3095,7 @@ static void transact_request( MSG_TRRQ message)
 	SCHAR *blr, *in_msg, *out_msg;
 	USHORT buffer_length;
 	HANDLE handle;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	rdb = (RDB) message->msg_trrq_database;
 	transaction = (RTR) message->msg_trrq_transaction;
@@ -3195,7 +3195,7 @@ static void unwind( MSG_OP message)
  *
  **************************************/
 	RRQ request;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	request = (RRQ) message->msg_op_handle;
 

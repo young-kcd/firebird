@@ -105,7 +105,7 @@ void EXEC_abort(void)
  *	requests be unwound and set flag.
  *
  **************************************/
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	REQ request;
 
 	for (request = QLI_requests; request; request = request->req_next)
@@ -233,7 +233,7 @@ void *EXEC_open_blob( NOD node)
 	UCHAR segment[20], bpb[20], *p;
 	USHORT bpb_length;
 	void *blob;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	desc = EVAL_value(node);
 	if (!desc)
@@ -407,7 +407,7 @@ DSC *EXEC_receive(MSG message, PAR parameter)
  *
  **************************************/
 	REQ request;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	request = message->msg_request;
 
@@ -439,7 +439,7 @@ void EXEC_send( MSG message)
  *
  **************************************/
 	REQ request;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	request = message->msg_request;
 
@@ -466,7 +466,7 @@ void EXEC_start_request( REQ request, MSG message)
  *	a start and send.
  *
  **************************************/
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	if (message) {
 		map_data(message);
@@ -607,7 +607,7 @@ static void commit_retaining( NOD node)
  *
  **************************************/
 	DBB database;
-	STATUS status[20];
+	STATUS status[ISC_STATUS_LENGTH];
 	NOD *ptr, *end;
 
 /* If there aren't any open databases then obviously
@@ -682,7 +682,7 @@ static int copy_blob( NOD value, PAR parameter)
 	DSC *from_desc, *to_desc;
 	NOD field;
 	SLONG *from_blob, *to_blob, size, segment_count, max_segment;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	USHORT bpb_length, length, buffer_length;
 	UCHAR bpb[20], *p, fixed_buffer[4096], *buffer;
 #if (defined JPN_EUC || defined JPN_SJIS)
@@ -1175,7 +1175,7 @@ static void print_counts( REQ request)
 	UCHAR item;
 	int length;
 	ULONG number;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	SCHAR count_buffer[COUNT_ITEMS * 7 + 1], *c;
 
 	if (gds__request_info(status_vector,
@@ -1267,7 +1267,7 @@ static void transaction_state( NOD node, DBB database)
  *	committed.
  *
  **************************************/
-	STATUS status[20];
+	STATUS status[ISC_STATUS_LENGTH];
 
 	if (database->dbb_transaction) {
 		if (node->nod_type == nod_commit_retaining) {

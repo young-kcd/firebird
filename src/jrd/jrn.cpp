@@ -445,7 +445,7 @@ int JRN_init(
  *	SUCCESS/FAILURE/BUGCHECK/ERROR.
  *
  **************************************/
-	TEXT server_name[MAX_PATH_LENGTH];
+	TEXT server_name[MAXPATHLEN];
 	LTJC control;
 
 	if (!journal_dir) {
@@ -766,7 +766,7 @@ USHORT control_length, UCHAR * data, USHORT d_length, USHORT retry)
 #ifdef BSD_SOCKETS
 	struct sockaddr_in address;
 #endif
-	TEXT *p, *q, name[MAX_PATH_LENGTH];
+	TEXT *p, *q, name[MAXPATHLEN];
 	SSHORT l;
 	JRN journal;
 	struct jrnr reply;

@@ -289,7 +289,7 @@ USHORT DFW_assign_index_type(DFW work, SSHORT field_type, SSHORT ttype)
 
 	if (field_type == dtype_varying || field_type == dtype_text)
 	{
-		STATUS status[20];
+		STATUS status[ISC_STATUS_LENGTH];
 
 		if (ttype == ttype_none)
 			return idx_string;
@@ -604,7 +604,7 @@ void DFW_perform_post_commit_work(TRA transaction)
  **************************************/
 	DBB dbb;
 	LCK lock;
-	STATUS status[20];
+	STATUS status[ISC_STATUS_LENGTH];
 	DFW work, *ptr;
 
 	if (!transaction->tra_deferred_work)
@@ -790,7 +790,7 @@ static bool add_file(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 	USHORT section, shadow_number;
 	SLONG start, max;
 	BLK handle, handle2;
-	TEXT temp[MAX_PATH_LENGTH];
+	TEXT temp[MAXPATHLEN];
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -1231,7 +1231,7 @@ static void check_filename( TEXT * name, USHORT l)
  *	inet node name.
  *
  **************************************/
-	TEXT file_name[MAX_PATH_LENGTH], *p, *q;
+	TEXT file_name[MAXPATHLEN], *p, *q;
 	BOOLEAN valid = TRUE;
 
 	l = MIN(l, sizeof(file_name) - 1);
@@ -1695,7 +1695,7 @@ static bool create_log(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
  *
  **************************************/
 	BLK handle;
-	TEXT temp[MAX_PATH_LENGTH];
+	TEXT temp[MAXPATHLEN];
 	DBB dbb;
 
 	SET_TDBB(tdbb);
@@ -3524,7 +3524,7 @@ static bool make_version(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 	BOOLEAN null_view, computed_field;
 	SLONG stuff[64];
 	ADS array;
-	STATUS status[20];
+	STATUS status[ISC_STATUS_LENGTH];
 	SSHORT collation;
 	TRIG_VEC triggers[TRIGGER_MAX];
 

@@ -69,7 +69,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
  *	pipes and/or TCP/IP sockets.
  *
  **************************************/
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	PORT port;
 	BOOLEAN debug;
 	TEXT *p, c;
@@ -214,7 +214,7 @@ static void THREAD_ROUTINE inet_connect_wait_thread( void *dummy)
  *
  **************************************/
 	void *thread;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	PORT port;
 
 	if (!(server_flag & SRVR_non_service))
@@ -289,7 +289,7 @@ static void THREAD_ROUTINE wnet_connect_wait_thread( void *dummy)
  *
  **************************************/
 	void *thread;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	PORT port;
 
 	if (!(server_flag & SRVR_non_service))

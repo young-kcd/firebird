@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: all.cpp,v 1.7 2002-07-05 15:00:21 skywalker Exp $
+$Id: all.cpp,v 1.8 2002-10-24 09:01:30 eku Exp $
 */
 
 /***************************************************
@@ -245,7 +245,7 @@ void ALLQ_init(void)
  *	Initialize the pool system.
  *
  **************************************/
-	SLONG temp_vector[20];
+	STATUS temp_vector[ISC_STATUS_LENGTH];
 	PLB pool;
 
 	pools = (VEC) temp_vector;

@@ -95,7 +95,7 @@ void AIL_add_log(void)
 	DBB dbb;
 	WIN window;
 	LIP logp;
-	SCHAR db_name[MAX_PATH_LENGTH];
+	SCHAR db_name[MAXPATHLEN];
 	SBM sbm_rec;
 	TDBB tdbb;
 
@@ -247,8 +247,8 @@ void AIL_disable(void)
 	LTJC record;
 	ULONG seqno;
 	ULONG offset;
-	TEXT journal_dir[MAX_PATH_LENGTH];
-	UCHAR data[MAX_PATH_LENGTH];
+	TEXT journal_dir[MAXPATHLEN];
+	UCHAR data[MAXPATHLEN];
 	USHORT jd_len, d_len;
 	SLONG ret_val;
 
@@ -325,7 +325,7 @@ void AIL_drop_log(void)
 	WIN window;
 	LIP logp;
 	LLS stack = NULL;
-	TEXT latest_logname[MAX_PATH_LENGTH], journal_dir[MAX_PATH_LENGTH];
+	TEXT latest_logname[MAXPATHLEN], journal_dir[MAXPATHLEN];
 	SLONG latest_log_p_offset;
 	USHORT jd_len;
 
@@ -469,7 +469,7 @@ void AIL_enable(
 	SLONG ret_val;
 	ULONG number, i;
 	USHORT jd_len;
-	TEXT journal_dir[MAX_PATH_LENGTH];
+	TEXT journal_dir[MAXPATHLEN];
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
@@ -596,7 +596,7 @@ void AIL_get_file_list(LLS * stack)
  **************************************/
 	DBB dbb;
 	WALS WAL_segment;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	SCHAR *curr_name;
 	SLONG curr_log_partition_offset;
 	SCHAR *prev_name;
@@ -721,7 +721,7 @@ void AIL_init(
 	DBB dbb;
 	WIN *win, window;
 	LIP logp;
-	TEXT dbname[MAX_PATH_LENGTH];
+	TEXT dbname[MAXPATHLEN];
 
 /* null out the sparse bit map */
 
@@ -1025,7 +1025,7 @@ void AIL_recover_page(SLONG page_no, PAG page)
 	LIP logp;
 	CP cp1;
 	UCHAR *p;
-	SCHAR rwal[MAX_PATH_LENGTH];
+	SCHAR rwal[MAXPATHLEN];
 	SLONG seqno, offset;
 
 	tdbb = GET_THREAD_DATA;
@@ -1263,9 +1263,9 @@ static void build_wal_param(
 	ULONG param1;
 	USHORT param2;
 	USHORT plen;
-	TEXT journal_dir[MAX_PATH_LENGTH];
+	TEXT journal_dir[MAXPATHLEN];
 	USHORT jd_len, d_len;
-	UCHAR data[MAX_PATH_LENGTH], *p;
+	UCHAR data[MAXPATHLEN], *p;
 
 /* Get journal information, if any */
 
@@ -1366,7 +1366,7 @@ static void delete_log_files(
 	TDBB tdbb;
 	DBB dbb;
 	STR fname;
-	STATUS local_status[20];
+	STATUS local_status[ISC_STATUS_LENGTH];
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
@@ -1454,8 +1454,8 @@ USHORT activate_shadow, SBM * sbm_rec)
 	SLONG first_time, number;
 	LGFILE *log_files[MAX_LOG_FILES];
 	LGFILE *log_ovflow;
-	SCHAR walname[MAX_PATH_LENGTH];
-	UCHAR wpb[2 * MAX_PATH_LENGTH];	/* This size is pure guess ! */
+	SCHAR walname[MAXPATHLEN];
+	UCHAR wpb[2 * MAXPATHLEN];	/* This size is pure guess ! */
 	SLONG wpb_len, wal_p_offset;
 	SLONG seqno, offset, p_offset;
 	USHORT save_flag;
@@ -1694,7 +1694,7 @@ USHORT activate_shadow, SBM * sbm_rec)
  *	user will run in exclusive mode.
  *
  **************************************/
-	TEXT root_db[MAX_PATH_LENGTH], rwal[MAX_PATH_LENGTH];
+	TEXT root_db[MAXPATHLEN], rwal[MAXPATHLEN];
 	CP cp1;
 	LIP logp;
 	UCHAR *p;

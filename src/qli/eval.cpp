@@ -1076,7 +1076,7 @@ static int sleuth( NOD node, DSC * desc1, DSC * desc2, DSC * desc3)
 		fixed_buffer[512], control[256];
 	int *blob;
 	USHORT buffer_length;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	SSHORT l1, l2, result;
 	CTX context;
 	REQ request;
@@ -1490,7 +1490,7 @@ static int string_boolean( NOD node)
 	int *blob;
 	SSHORT l1, l2, l3, l, result;
 	USHORT buffer_length;
-	STATUS status_vector[20];
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	CTX context;
 	REQ request;
 	DBB dbb;

@@ -30,7 +30,7 @@
  *
  */
 /*
-$Id: why.c,v 1.13 2002-10-18 13:26:58 dimitr Exp $
+$Id: why.c,v 1.14 2002-10-24 09:01:29 eku Exp $
 */
 
 #include "firebird.h"
@@ -610,10 +610,12 @@ static CONST_IMAGE IMAGE images[] =
 #endif
 
 #ifndef	PC_PLATFORM
+#ifndef SINIX-Z
 	{"GDS_A", GDS_A_PATH},
 	{"GDS_B", GDS_B_PATH},
 	{"GDS_C", GDS_C_PATH},
     {"GDS_D", GDS_D_PATH},
+#endif
 #endif
 #ifdef IPSERV
 #ifndef XNET
@@ -769,7 +771,7 @@ STATUS API_ROUTINE GDS_ATTACH_DATABASE(STATUS*	user_status,
  *	that recognizes it.
  *
  **************************************/
-	STATUS local[20], *status, *ptr, temp[20];
+	STATUS local[ISC_STATUS_LENGTH], *status, *ptr, temp[ISC_STATUS_LENGTH];
 	USHORT n, length, org_length, temp_length;
 	DBB database;
 	SCHAR *current_dpb_ptr, *last_dpb_ptr;
@@ -1001,7 +1003,7 @@ STATUS API_ROUTINE GDS_BLOB_INFO(STATUS*	user_status,
  *	Provide information on blob object.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	BLB blob;
 
 	GET_STATUS;
@@ -1035,7 +1037,7 @@ STATUS API_ROUTINE GDS_CANCEL_BLOB(STATUS * user_status, BLB * blob_handle)
  *	Abort a partially completed blob.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	BLB blob, *ptr;
 	ATT dbb;
 
@@ -1087,7 +1089,7 @@ STATUS API_ROUTINE GDS_CANCEL_EVENTS(STATUS * user_status,
  *	Try to cancel an event.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	ATT database;
 
 	GET_STATUS;
@@ -1118,7 +1120,7 @@ STATUS API_ROUTINE GDS_CANCEL_OPERATION(STATUS * user_status,
  *	Try to cancel an operation.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	ATT database;
 
 	GET_STATUS;
@@ -1149,7 +1151,7 @@ STATUS API_ROUTINE GDS_CLOSE_BLOB(STATUS * user_status, BLB * blob_handle)
  *	Abort a partially completed blob.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	BLB blob, *ptr;
 	ATT dbb;
 
@@ -1192,7 +1194,7 @@ STATUS API_ROUTINE GDS_COMMIT(STATUS * user_status, TRA * tra_handle)
  *	Commit a transaction.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	TRA transaction, sub;
 	CLEAN clean;
 
@@ -1263,7 +1265,7 @@ STATUS API_ROUTINE GDS_COMMIT_RETAINING(STATUS * user_status,
  * is still running.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	TRA transaction, sub;
 
 	GET_STATUS;
@@ -1297,7 +1299,7 @@ STATUS API_ROUTINE GDS_COMPILE(STATUS * user_status,
  * Functional description
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	ATT dbb;
 	REQ request;
 
@@ -1423,7 +1425,7 @@ STATUS API_ROUTINE GDS_CREATE_DATABASE(STATUS * user_status,
  *	Create a nice, squeaky clean database, uncorrupted by user data.
  *
  **************************************/
-	STATUS local[20], *status, temp[20], *ptr;
+	STATUS local[ISC_STATUS_LENGTH], *status, temp[ISC_STATUS_LENGTH], *ptr;
 	USHORT n, length, org_length, temp_length;
 	DBB database;
 #ifdef STACK_EFFICIENT
@@ -1654,7 +1656,7 @@ STATUS API_ROUTINE gds__database_cleanup(STATUS * user_status,
  *	Register a database specific cleanup handler.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	ATT database;
 	CLEAN clean;
 
@@ -1699,7 +1701,7 @@ STATUS API_ROUTINE GDS_DATABASE_INFO(STATUS * user_status,
  *	Provide information on database object.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	ATT database;
 
 	GET_STATUS;
@@ -1736,7 +1738,7 @@ STATUS API_ROUTINE GDS_DDL(STATUS * user_status,
  *	Do meta-data update.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	ATT database;
 	TRA transaction;
 
@@ -1803,7 +1805,7 @@ STATUS API_ROUTINE GDS_DETACH(STATUS * user_status, ATT * handle)
  *	Close down a database.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	ATT dbb;
 	REQ request;
 	STMT statement;
@@ -1936,7 +1938,7 @@ STATUS API_ROUTINE GDS_DROP_DATABASE(STATUS * user_status, ATT * handle)
  *	Close down a database and then purge it.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	ATT dbb;
 	REQ request;
 	STMT statement;
@@ -2067,7 +2069,7 @@ STATUS API_ROUTINE GDS_DSQL_ALLOCATE(STATUS * user_status,
  *	Allocate a statement handle.
  *
  **************************************/
-	STATUS s, *status, local[20];
+	STATUS s, *status, local[ISC_STATUS_LENGTH];
 	STMT statement;
 	ATT dbb;
 	UCHAR flag;
@@ -2161,7 +2163,7 @@ STATUS API_ROUTINE isc_dsql_describe(STATUS * user_status,
  *	Describe output parameters for a prepared statement.
  *
  **************************************/
-	STATUS *status, local[20];
+	STATUS *status, local[ISC_STATUS_LENGTH];
 	USHORT buffer_len;
 #ifdef STACK_EFFICIENT
 	SCHAR *buffer, local_buffer[1];
@@ -2224,7 +2226,7 @@ STATUS API_ROUTINE isc_dsql_describe_bind(STATUS * user_status,
  *	Describe input parameters for a prepared statement.
  *
  **************************************/
-	STATUS *status, local[20];
+	STATUS *status, local[ISC_STATUS_LENGTH];
 	USHORT buffer_len;
 #ifdef STACK_EFFICIENT
 	SCHAR *buffer, local_buffer[1];
@@ -2310,7 +2312,7 @@ STATUS API_ROUTINE GDS_DSQL_EXECUTE2(STATUS * user_status,
  *	Execute a non-SELECT dynamic SQL statement.
  *
  **************************************/
-	STATUS *status, local[20];
+	STATUS *status, local[ISC_STATUS_LENGTH];
 	STMT statement;
 	USHORT in_blr_length, in_msg_type, in_msg_length,
 		out_blr_length, out_msg_type, out_msg_length;
@@ -2401,7 +2403,7 @@ STATUS API_ROUTINE GDS_DSQL_EXECUTE2_M(STATUS * user_status,
  *	Execute a non-SELECT dynamic SQL statement.
  *
  **************************************/
-	STATUS *status, local[20];
+	STATUS *status, local[ISC_STATUS_LENGTH];
 	STMT statement;
 	TRA transaction, handle = NULL;
 	PTR entry;
@@ -2563,7 +2565,7 @@ STATUS API_ROUTINE GDS_DSQL_EXEC_IMMED2(STATUS * user_status,
  *	Prepare a statement for execution.
  *
  **************************************/
-	STATUS s, *status, local[20];
+	STATUS s, *status, local[ISC_STATUS_LENGTH];
 	USHORT in_blr_length, in_msg_type, in_msg_length,
 		out_blr_length, out_msg_type, out_msg_length;
 	struct dasup dasup;
@@ -2700,8 +2702,8 @@ STATUS API_ROUTINE GDS_DSQL_EXEC_IMM2_M(STATUS * user_status,
  *
  **************************************/
 	TRA crdb_trans_handle;
-	STATUS temp_status[20];
-	STATUS local[20], *status, *s;
+	STATUS temp_status[ISC_STATUS_LENGTH];
+	STATUS local[ISC_STATUS_LENGTH], *status, *s;
 	BOOLEAN stmt_eaten;
 	SCHAR buffer[16];
 	SCHAR ch;
@@ -2813,7 +2815,7 @@ STATUS API_ROUTINE GDS_DSQL_EXEC_IMM3_M(STATUS * user_status,
  *	Prepare a statement for execution.
  *
  **************************************/
-	STATUS s, *status, local[20];
+	STATUS s, *status, local[ISC_STATUS_LENGTH];
 	ATT dbb;
 	TRA transaction, handle = NULL;
 	PTR entry;
@@ -2939,7 +2941,7 @@ STATUS API_ROUTINE GDS_DSQL_FETCH(STATUS * user_status,
  *	Fetch next record from a dynamic SQL cursor
  *
  **************************************/
-	STATUS s, *status, local[20];
+	STATUS s, *status, local[ISC_STATUS_LENGTH];
 	STMT statement;
 	USHORT blr_length, msg_type, msg_length;
 	DASUP dasup;
@@ -2997,7 +2999,7 @@ STATUS API_ROUTINE GDS_DSQL_FETCH2(STATUS * user_status,
  *	Fetch next record from a dynamic SQL cursor
  *
  **************************************/
-	STATUS s, *status, local[20];
+	STATUS s, *status, local[ISC_STATUS_LENGTH];
 	STMT statement;
 	USHORT blr_length, msg_type, msg_length;
 	DASUP dasup;
@@ -3049,7 +3051,7 @@ STATUS API_ROUTINE GDS_DSQL_FETCH_M(STATUS * user_status,
  *	Fetch next record from a dynamic SQL cursor
  *
  **************************************/
-	STATUS s, *status, local[20];
+	STATUS s, *status, local[ISC_STATUS_LENGTH];
 	STMT statement;
 
 	GET_STATUS;
@@ -3116,7 +3118,7 @@ STATUS API_ROUTINE GDS_DSQL_FETCH2_M(STATUS * user_status,
  *	Fetch next record from a dynamic SQL cursor
  *
  **************************************/
-	STATUS s, *status, local[20];
+	STATUS s, *status, local[ISC_STATUS_LENGTH];
 	STMT statement;
 
 	GET_STATUS;
@@ -3167,7 +3169,7 @@ STATUS API_ROUTINE GDS_DSQL_FREE(STATUS * user_status,
  *	release request for an sql statement
  *
  *****************************************/
-	STATUS *status, local[20];
+	STATUS *status, local[ISC_STATUS_LENGTH];
 	STMT statement;
 	DBB dbb, *ptr;
 
@@ -3227,7 +3229,7 @@ STATUS API_ROUTINE GDS_DSQL_INSERT(STATUS * user_status,
  *	Insert next record into a dynamic SQL cursor
  *
  **************************************/
-	STATUS *status, local[20];
+	STATUS *status, local[ISC_STATUS_LENGTH];
 	STMT statement;
 	USHORT blr_length, msg_type, msg_length;
 	DASUP dasup;
@@ -3268,7 +3270,7 @@ STATUS API_ROUTINE GDS_DSQL_INSERT_M(STATUS * user_status,
  *	Insert next record into a dynamic SQL cursor
  *
  **************************************/
-	STATUS s, *status, local[20];
+	STATUS s, *status, local[ISC_STATUS_LENGTH];
 	STMT statement;
 
 	GET_STATUS;
@@ -3319,7 +3321,7 @@ STATUS API_ROUTINE GDS_DSQL_PREPARE(STATUS * user_status,
  *	Prepare a statement for execution.
  *
  **************************************/
-	STATUS *status, local[20];
+	STATUS *status, local[ISC_STATUS_LENGTH];
 	USHORT buffer_len;
 #ifdef STACK_EFFICIENT
 	SCHAR *buffer, local_buffer[1];
@@ -3402,7 +3404,7 @@ STATUS API_ROUTINE GDS_DSQL_PREPARE_M(STATUS * user_status,
  *	Prepare a statement for execution.
  *
  **************************************/
-	STATUS *status, local[20];
+	STATUS *status, local[ISC_STATUS_LENGTH];
 	STMT statement;
 	TRA handle = NULL, transaction;
 
@@ -3462,7 +3464,7 @@ STATUS API_ROUTINE GDS_DSQL_SET_CURSOR(STATUS * user_status,
  *	Set a cursor name for a dynamic request.
  *
  **************************************/
-	STATUS *status, local[20];
+	STATUS *status, local[ISC_STATUS_LENGTH];
 	STMT statement;
 
 	GET_STATUS;
@@ -3508,7 +3510,7 @@ STATUS API_ROUTINE GDS_DSQL_SQL_INFO(STATUS * user_status,
  *	Provide information on sql statement.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	STMT statement;
 
 	GET_STATUS;
@@ -3584,7 +3586,7 @@ STATUS API_ROUTINE GDS_EVENT_WAIT(STATUS * user_status,
  *	Que request for event notification.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	SLONG value, id;
 	EVENT event_ptr;
 
@@ -3627,7 +3629,7 @@ STATUS API_ROUTINE GDS_GET_SEGMENT(STATUS * user_status,
  *	Abort a partially completed blob.
  *
  **************************************/
-	STATUS local[20], *status, code;
+	STATUS local[ISC_STATUS_LENGTH], *status, code;
 	BLB blob;
 
 	GET_STATUS;
@@ -3676,7 +3678,7 @@ STATUS API_ROUTINE GDS_GET_SLICE(STATUS * user_status,
  *	Snatch a slice of an array.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	ATT dbb;
 	TRA transaction;
 
@@ -3716,7 +3718,7 @@ STATUS gds__handle_cleanup(STATUS * user_status, HNDL * user_handle)
  *	Clean up a dangling y-valve handle.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	HNDL handle;
 	TRA transaction, sub;
 	CLEAN clean;
@@ -3836,7 +3838,7 @@ STATUS API_ROUTINE GDS_PREPARE2(STATUS * user_status,
  *	phase commit.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	TRA transaction, sub;
 
 	GET_STATUS;
@@ -3873,7 +3875,7 @@ STATUS API_ROUTINE GDS_PUT_SEGMENT(STATUS * user_status,
  *	Abort a partially completed blob.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	BLB blob;
 
 	GET_STATUS;
@@ -3911,7 +3913,7 @@ STATUS API_ROUTINE GDS_PUT_SLICE(STATUS * user_status,
  *	Snatch a slice of an array.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	ATT dbb;
 	TRA transaction;
 
@@ -3955,7 +3957,7 @@ STATUS API_ROUTINE GDS_QUE_EVENTS(STATUS * user_status,
  *	Que request for event notification.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	ATT database;
 
 	/* Simple structure that incapsulates the real arguments
@@ -4023,7 +4025,7 @@ STATUS API_ROUTINE GDS_RECEIVE(STATUS * user_status,
 						msg, level, (USHORT) blr_continue,	/* means continue in same direction as before */
 						(ULONG) 1);
 #else
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	REQ request;
 
 	GET_STATUS;
@@ -4064,7 +4066,7 @@ STATUS API_ROUTINE GDS_RECEIVE2(STATUS * user_status,
  *	then get a record from the host program.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	REQ request;
 
 	GET_STATUS;
@@ -4102,7 +4104,7 @@ STATUS API_ROUTINE GDS_RECONNECT(STATUS * user_status,
  *	Connect to a transaction in limbo.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	ATT database;
 
 	GET_STATUS;
@@ -4146,7 +4148,7 @@ STATUS API_ROUTINE GDS_RELEASE_REQUEST(STATUS * user_status, REQ * req_handle)
  *	Release a request.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	REQ request, *ptr;
 	DBB dbb;
 
@@ -4195,7 +4197,7 @@ STATUS API_ROUTINE GDS_REQUEST_INFO(STATUS * user_status,
  *	Provide information on blob object.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	REQ request;
 
 	GET_STATUS;
@@ -4271,7 +4273,7 @@ STATUS API_ROUTINE GDS_ROLLBACK_RETAINING(STATUS * user_status,
  *	Abort a transaction, but keep all cursors open.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	TRA transaction, sub;
 
 	GET_STATUS;
@@ -4303,7 +4305,7 @@ STATUS API_ROUTINE GDS_ROLLBACK(STATUS * user_status, TRA * tra_handle)
  *	Abort a transaction.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	TRA transaction, sub;
 	CLEAN clean;
 
@@ -4355,7 +4357,7 @@ STATUS API_ROUTINE GDS_SEEK_BLOB(STATUS * user_status,
  *	Seek a blob.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	BLB blob;
 
 	GET_STATUS;
@@ -4400,7 +4402,7 @@ STATUS API_ROUTINE GDS_SEND(STATUS * user_status,
  *	Get a record from the host program.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	REQ request;
 
 	GET_STATUS;
@@ -4437,7 +4439,7 @@ STATUS API_ROUTINE GDS_SERVICE_ATTACH(STATUS * user_status,
  *	that recognizes it.
  *
  **************************************/
-	STATUS local[20], *status, *ptr, temp[20];
+	STATUS local[ISC_STATUS_LENGTH], *status, *ptr, temp[ISC_STATUS_LENGTH];
 	USHORT n, org_length;
 	SVC service;
 	TEXT *p;
@@ -4538,7 +4540,7 @@ STATUS API_ROUTINE GDS_SERVICE_DETACH(STATUS * user_status, SVC * handle)
  *	Close down a service.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	SVC service;
 	CLEAN clean;
 
@@ -4594,7 +4596,7 @@ STATUS API_ROUTINE GDS_SERVICE_QUERY(STATUS * user_status,
  *	network).  This parameter will be implemented at 
  *	a later date.
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	SVC service;
 
 	GET_STATUS;
@@ -4635,7 +4637,7 @@ STATUS API_ROUTINE GDS_SERVICE_START(STATUS * user_status,
  *	network).  This parameter will be implemented at 
  *	a later date.
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	SVC service;
 
 	GET_STATUS;
@@ -4671,7 +4673,7 @@ STATUS API_ROUTINE GDS_START_AND_SEND(STATUS * user_status,
  *	Get a record from the host program.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	REQ request;
 	TRA transaction;
 
@@ -4710,7 +4712,7 @@ STATUS API_ROUTINE GDS_START(STATUS * user_status,
  *	Get a record from the host program.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	REQ request;
 	TRA transaction;
 
@@ -4745,7 +4747,7 @@ STATUS API_ROUTINE GDS_START_MULTIPLE(STATUS * user_status,
  *	Start a transaction.
  *
  **************************************/
-	STATUS local[20], *status, temp[20], *s;
+	STATUS local[ISC_STATUS_LENGTH], *status, temp[ISC_STATUS_LENGTH], *s;
 	TRA transaction, sub, *ptr;
 	DBB database;
 	USHORT n;
@@ -4905,7 +4907,7 @@ STATUS API_ROUTINE GDS_TRANSACT_REQUEST(STATUS * user_status,
  *	Execute a procedure.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	ATT dbb;
 	TRA transaction;
 
@@ -4944,7 +4946,7 @@ STATUS API_ROUTINE gds__transaction_cleanup(STATUS * user_status,
  *	Register a transaction specific cleanup handler.
  *
  **************************************/
-	STATUS local[20], *status, *s;
+	STATUS local[ISC_STATUS_LENGTH], *status, *s;
 	TRA transaction;
 	CLEAN clean;
 
@@ -5017,7 +5019,7 @@ STATUS API_ROUTINE GDS_TRANSACTION_INFO(STATUS * user_status,
  *	Provide information on transaction object.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	TRA transaction, sub;
 	SCHAR *ptr, *end;
 	SSHORT buffer_len, item_len;
@@ -5084,7 +5086,7 @@ STATUS API_ROUTINE GDS_UNWIND(STATUS * user_status,
  *	asynchronously.
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	REQ request;
 
 	GET_STATUS;
@@ -5169,7 +5171,7 @@ static STATUS bad_handle(STATUS * user_status, STATUS code)
  *	Generate an error for a bad handle.
  *
  **************************************/
-	STATUS *s, *status, local[20];
+	STATUS *s, *status, local[ISC_STATUS_LENGTH];
 
 	GET_STATUS;
 	s = status;
@@ -5798,7 +5800,7 @@ static STATUS open_blob(STATUS * user_status,
  *	Open an existing blob (extended edition).
  *
  **************************************/
-	STATUS local[20], *status;
+	STATUS local[ISC_STATUS_LENGTH], *status;
 	TRA transaction;
 	ATT dbb;
 	BLB blob;

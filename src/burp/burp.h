@@ -767,8 +767,8 @@ typedef struct tgbl {
     isc_tr_handle tr_handle;
     isc_tr_handle global_trans;
     DESC    	file_desc;
-    long	*status;		/* points to either the tdgbl status or service status */
-    long    	status_vector [ISC_STATUS_LENGTH];
+    STATUS	*status;		/* points to either the tdgbl status or service status */
+    STATUS    	status_vector[ISC_STATUS_LENGTH];
     int     	exit_code;
     UCHAR   	*head_of_mem_list;
     OUTPUTPROC  output_proc;
