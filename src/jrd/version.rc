@@ -34,7 +34,7 @@ BEGIN
     BLOCK "040904E4"
     BEGIN
       VALUE "Comments", "This product created by the Firebird - All Copyright (c) retained by the individual contributors - original code Copyright (c) 2000 Inprise Corporation and predecessors.\0"
-      VALUE "CompanyName", "FirebirdSQL Project\0"
+      VALUE "CompanyName", "Firebird Project\0"
       VALUE "FileDescription", "Firebird SQL Server\0"
       VALUE "FileVersion", FILE_VER_STRING
       VALUE "InternalName", "Firebird\0"

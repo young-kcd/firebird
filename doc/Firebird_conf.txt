@@ -12,7 +12,7 @@ Windows
 On Windows this file is located by first looking inside the registry
 for a string value specifying the directory of firebird.conf.
 
-LOCAL_MACHINE\SOFTWARE\FirebirdSQL\Firebird\CurrentVersion\RootDirectory
+LOCAL_MACHINE\SOFTWARE\Firebird Project\Firebird Server\Instances\DefaultInstance
 
 If this value is not present, it assumes firebird.conf is placed in the
 directory directly above the fbserver.exe. If fbserver.exe is placed as

@@ -1426,7 +1426,7 @@
         Dmitry Kuzmenko <kdv at ibase.ru>
 
     * New registry key is used on win32.
-        Currently it's SOFTWARE\FirebirdSQL\Firebird.
+        Currently it's SOFTWARE\Firebird Project\Firebird Server.
       Contributor(s):
         -
 

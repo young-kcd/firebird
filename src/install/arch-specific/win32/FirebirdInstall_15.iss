@@ -21,10 +21,10 @@
 
 ;   Usage Notes:
 ;
-;   This script has been designed to work with My InnoSetup Extensions 3.0.6.2
-;   or later. It may work with earlier versions but this is neither guaranteed
-;   nor tested. My InnoSetup Extensions is available from
-;     http://www.wintax.nl/isx/
+;   This script has been designed to work with Inno Setup v4.0.9
+;   with Inno Setup Preprocessor v. 1.1.1.267. It is available
+;   as a quick start pack from here:
+;     http://www.jrsoftware.org/isdl.php#qsp
 ;
 ;   Known bugs and problems etc etc.
 ;
@@ -56,15 +56,13 @@
 ;     server. They must be stopped manually.
 ;
 ;
-;To Do
-;  Check for other references to classic/super
-;  Code to check registry for actual version we are installing
 ;
 
 #define msvc_version 6
 #define FirebirdURL "http://www.firebirdsql.org"
 #define BaseVer "1_5"
 #define release
+
 
 [Setup]
 AppName=Firebird Database Server 1.5
@@ -97,7 +95,7 @@ Name: SuperServerInstall; Description: "Full installation of Super Server and de
 Name: ClassicServerInstall; Description: "Full installation of Classic Server and development tools."
 Name: DeveloperInstall; Description: "Installation of Client tools for Developers and database administrators."
 Name: ClientInstall; Description: "Minimum client install - no server, no tools."
-Name: CustomInstall; Description: "Custom installation"; Flags: iscustom
+Name: CustomInstall; Description: "Custom installation"; Flags: iscustom;
 
 [Components]
 Name: SuperServerComponent; Description: Super Server binary; Types: SuperServerInstall; Flags: exclusive;
@@ -108,12 +106,12 @@ Name: ClientComponent; Description: Client components; Types: SuperServerInstall
 
 [Tasks]
 ;Server tasks
-Name: UseGuardianTask; Description: Use the &Guardian to control the server?; Components: ServerComponent; MinVersion: 4.0,4.0
-Name: UseApplicationTask; Description: Run as an &Application?; GroupDescription: Run Firebird server as:; Components: ServerComponent; MinVersion: 4,4; Flags: exclusive
-Name: UseServiceTask; Description: Run as a &Service?; GroupDescription: Run Firebird server as:; Components: ServerComponent; MinVersion: 0,4; Flags: exclusive
+Name: UseGuardianTask; Description: Use the &Guardian to control the server?; Components: ServerComponent; MinVersion: 4.0,4.0; Check: ConfigureFirebird;
+Name: UseApplicationTask; Description: Run as an &Application?; GroupDescription: Run Firebird server as:; Components: ServerComponent; MinVersion: 4,4; Flags: exclusive; Check: ConfigureFirebird;
+Name: UseServiceTask; Description: Run as a &Service?; GroupDescription: Run Firebird server as:; Components: ServerComponent; MinVersion: 0,4; Flags: exclusive; Check: ConfigureFirebird;
 ;;Name: UseClassicServerTask; Description: "Classic Server?"; GroupDescription: "Which Server Architecture do you want to run?"; Components: ServerComponent; MinVersion: 4,4; Flags: exclusive;
 ;;Name: UseSuperServerTask; Description: "Super Server"; GroupDescription: "Which Server Architecture do you want to run?"; Components: ServerComponent; MinVersion: 4,4; Flags: exclusive;
-Name: AutoStartTask; Description: Start &Firebird automatically everytime you boot up?; Components: ServerComponent; MinVersion: 4,4
+Name: AutoStartTask; Description: Start &Firebird automatically everytime you boot up?; Components: ServerComponent; MinVersion: 4,4; Check: ConfigureFirebird;
 ;Developer Tasks
 Name: MenuGroupTask; Description: Create a Menu &Group; Components: DevAdminComponent; MinVersion: 4,4
 ;One for Ron
@@ -124,7 +122,7 @@ Name: MenuGroupTask; Description: Create a Menu &Group; Components: DevAdminComp
 Filename: {app}\bin\instreg.exe; Parameters: "install "; StatusMsg: Updating the registry; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized
 
 ;If on NT/Win2k etc and 'Install and start service' requested
-Filename: {app}\bin\instsvc.exe; Parameters: "install {code:ServiceStartFlags|""""} "; StatusMsg: Setting up the service; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask
+Filename: {app}\bin\instsvc.exe; Parameters: "install {code:ServiceStartFlags|""""} "; StatusMsg: Setting up the service; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; Check: ConfigureFirebird;
 Filename: {app}\bin\instsvc.exe; Description: Start Firebird Service now?; Parameters: start; StatusMsg: Starting the server; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized postinstall; Tasks: UseServiceTask; Check: StartEngine
 
 ;If 'start as application' requested
@@ -133,17 +131,17 @@ Filename: {code:StartApp|{app}\bin\fbserver.exe}; Description: Start Firebird no
 [Registry]
 ;If user has chosen to start as App they may well want to start automatically. That is handled by a function below.
 ;Unless we set a marker here the uninstall will leave some annoying debris.
-Root: HKLM; Subkey: SOFTWARE\Microsoft\Windows\CurrentVersion\Run; ValueType: string; ValueName: Firebird; ValueData: ; Flags: uninsdeletevalue; Tasks: UseApplicationTask
+Root: HKLM; Subkey: SOFTWARE\Microsoft\Windows\CurrentVersion\Run; ValueType: string; ValueName: Firebird; ValueData: ; Flags: uninsdeletevalue; Tasks: UseApplicationTask; Check: ConfigureFirebird;
 
 ;This doesn't seem to get cleared automatically by instreg on uninstall, so lets make sure of it
-Root: HKLM; Subkey: SOFTWARE\FirebirdSQL; Flags: uninsdeletekeyifempty; Components: ClientComponent DevAdminComponent ServerComponent
+Root: HKLM; Subkey: "SOFTWARE\Firebird Project"; Flags: uninsdeletekeyifempty; Components: ClientComponent DevAdminComponent ServerComponent
 
 [Icons]
 Name: {group}\Firebird Server; Filename: {app}\bin\fb_inet_server.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0; Tasks: MenuGroupTask; Check: InstallServerIcon; IconIndex: 0; Components: ClassicServerComponent; Comment: Run Firebird classic server (without guardian)
 Name: {group}\Firebird Server; Filename: {app}\bin\fbserver.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0; Tasks: MenuGroupTask; Check: InstallServerIcon; IconIndex: 0; Components: SuperServerComponent; Comment: Run Firebird Superserver (without guardian)
 Name: {group}\Firebird Guardian; Filename: {app}\bin\fbguard.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0; Tasks: MenuGroupTask; Check: InstallGuardianIcon; IconIndex: 1; Components: SuperServerComponent; Comment: Run Firebird Super Server (with guardian)
 Name: {group}\Firebird Guardian; Filename: {app}\bin\fbguard.exe; Parameters: -c; Flags: runminimized; MinVersion: 4.0,4.0; Tasks: MenuGroupTask; Check: InstallGuardianIcon; IconIndex: 1; Components: ClassicServerComponent; Comment: Run Firebird Classic Server (with guardian)
-Name: {group}\Firebird 1.5 Release Notes; Filename: {app}\doc\Firebird_v15_ReleaseNotes.draft1.pdf; MinVersion: 4.0,4.0; Tasks: MenuGroupTask; IconIndex: 1; Comment: #AppName release notes. (Requires Acrobat Reader.)
+Name: {group}\Firebird 1.5 Release Notes; Filename: {app}\doc\Firebird_v15.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Tasks: MenuGroupTask; Comment: #AppName release notes. (Requires Acrobat Reader.)
 Name: {group}\Firebird 1.5 Readme; Filename: {app}\readme.txt; MinVersion: 4.0,4.0; Tasks: MenuGroupTask
 Name: {group}\Uninstall Firebird; Filename: {uninstallexe}; Comment: Uninstall Firebird
 
@@ -175,8 +173,9 @@ Source: output\bin\instsvc.exe; DestDir: {app}\bin; Components: ServerComponent;
 Source: output\bin\isql.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: ignoreversion
 Source: output\bin\qli.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: ignoreversion
 
-Source: output\bin\gds32.dll; DestDir: {app}\bin; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder
-Source: output\bin\gds32.local; DestDir: {app}\bin; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder; MinVersion: 0,5.0
+;This file is a bit 'special'. See the InstallGds32 procedure below for more info.
+Source: output\bin\gds32.dll; DestDir: {sys}; Components: ClientComponent; Flags: sharedfile; Check: InstallGds32
+Source: output\bin\gds32.dll; DestDir: {app}\bin\gds32.dll.stub; Components: ClientComponent; Check: InstallGds32Stub
 Source: output\bin\fbclient.dll; DestDir: {app}\bin; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder
 Source: output\bin\fbclient.local; DestDir: {app}\bin; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder; MinVersion: 0,5.0
 
@@ -195,14 +194,14 @@ Source: output\UDF\ib_udf.dll; DestDir: {app}\UDF; Components: ServerComponent; 
 Source: output\UDF\fbudf.dll; DestDir: {app}\UDF; Components: ServerComponent; Flags: sharedfile ignoreversion
 Source: output\UDF\*.sql; DestDir: {app}\UDF; Components: ServerComponent; Flags: ignoreversion
 ;Source: output\examples\*.*; DestDir: {app}\examples; Components: DevAdminComponent; Flags: ignoreversion
-Source: output\doc\Firebird_v15_ReleaseNotes.draft1.pdf; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion
+Source: output\doc\Firebird_v15.103_ReleaseNotes.pdf; DestDir: {app}\doc\Firebird_v15.ReleaseNotes.pdf; Components: DevAdminComponent; Flags: ignoreversion
 ;Source: firebird\install\doc_all_platforms\Firebird_v1_5_*.html; DestDir: {app}\doc; Components: DevAdminComponent;  Flags: ignoreversion;
 ;Note - Win9x requires 8.3 filenames for the uninsrestartdelete option to work
 Source: output\system32\Firebird2Control.cpl; DestDir: {sys}; Components: SuperServerComponent; MinVersion: 0,4.0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete
 Source: output\system32\FIREBI~1.CPL; DestDir: {sys}; Components: SuperServerComponent; MinVersion: 4.0,0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete
 
 ;TO DO note
-;We need to add in the debug files here, if #define debug has been set above.
+;We could add in the debug files here, if #define debug has been set above.
 ;Until then we don't really support the debug option
 
 [UninstallRun]
@@ -214,216 +213,179 @@ Filename: {app}\bin\instreg.exe; Parameters: " remove"; StatusMsg: Updating the 
 Type: files; Name: {app}\*.lck
 Type: files; Name: {app}\*.evn
 
+
 [_ISTool]
 EnableISX=true
 
 [Code]
 program Setup;
 
-const
-  sWinSock2 = 'ws2_32.dll';
-  sNoWinsock2 = 'Please Install Winsock 2 Update before continuing';
-  sMSWinsock2Update = 'http://www.microsoft.com/windows95/downloads/contents/WUAdminTools/S_WUNetworkingTools/W95Sockets2/Default.asp';
-  sWinsock2Web = 'Winsock 2 is not installed.'#13#13'Would you like to Visit the Winsock 2 Update Home Page?';
+//Var
 //  ProductVersion = '1.5.0';
 
-var
-  Winsock2Failure:    Boolean;
-	InterBaseVer: Array of Integer;
-  //  Likely values for installed versions of InterBase are:
-  //  [6,2,0,nnn]   Firebird 1.0.0
-  //  [6,2,2,nnn]   Firebird 1.0.2
-  //  [6,0,n,n]     InterBase 6.0
-  //  [6,5,n,n]     InterBase 6.5
-  //  [7,0,n,n]     InterBase 7.0
+(*To Do
 
-	FirebirdVer: Array of Integer;
-  //  Likely values for installed versions of Firebird are:
-  //  [6,2,0,nnn]   Firebird 1.0.0
-  //  [6,2,2,nnn]   Firebird 1.0.2
-  //  [6,2,3,nnn]   Firebird 1.0.3
-  //  [1,5,0,nnnn]  Firebird 1.5.0
-  // Note - sed will process the commas to periods in the above line
+--remove old, incorrect registry entries that exist from RC installs
 
-Type
-  TSharedFileArrayRecord = record
-    Filename: String;
-    Count: Integer;
-  end;
+}
+
 
 Var
-  SharedFileArray: Array of TSharedFileArrayRecord;
   InstallRootDir: String;
-
-Var
   FirebirdConfSaved: boolean;
 
-(*
-InnoSetup Help Extract on Windows version strings:
-4.0.950       Windows 95
-4.0.1111      Windows 95 OSR 2 & OSR 2.1
-4.0.1212      Windows 95 OSR 2.5
-4.1.1998      Windows 98
-4.1.2222      Windows 98 Second Edition
-4.9.3000      Windows Me
-Windows NT versions:
-4.0.1381      Windows NT 4.0
-5.0.2195      Windows 2000
-5.01.2600     Windows XP
-5.2.3790      Windows 2003 Standard
-*)
+#include "FirebirdInstallSupportFunctions.inc"
+#include "FirebirdInstallEnvironmentChecks.inc"
 
-function UsingWin2k: boolean;
-//return true if using Win2k OR later
-begin
-  Result := (InstallOnThisVersion('0,5.0', '0,0') = irInstall);
-end;
 
-function UsingWinXP: boolean;
-// return true if using WinXP OR later.
-// Currently not used in this script.
-begin
-  Result := (InstallOnThisVersion('0,5.01', '0,0') = irInstall);
-end;
 
-function ClassicInstallChosen: Boolean;
+function SummarizeInstalledProducts: String;
 var
-  SelectedComponents: String;
+  InstallSummaryArray: TArrayofString;
+  product: Integer;
+  i: Integer;
+  StatusDescription: String;
+  InstallSummary: String;
+  prodstr: String;
+begin
+
+//do nothing gracefully if we are called by accident.
+if ProductsInstalledCount = 0 then
+  exit;
+
+if ProductsInstalledCount = 1 then
+  prodstr := 'version has'
+else
+  prodstr := 'versions have';
+
+SetArrayLength(InstallSummaryArray,ProductsInstalledCount);
+for product := 0 to MaxProdInstalled -1 do begin
+  if (ProductsInstalledArray[product].InstallType <> NotInstalled) then begin
+    if pos('InterBase',ProductsInstalledArray[product].RegVersion)=0 then //Firebird
+      InstallSummaryArray[i] := '-- '+Format1(ProductsInstalledArray[product].Description,
+            ProductsInstalledArray[product].FirebirdVersion)
+    else
+      InstallSummaryArray[i] := Format1(ProductsInstalledArray[product].Description,
+            ProductsInstalledArray[product].ActualVersion);
+
+    if (ProductsInstalledArray[product].ServerVersion <> '') then begin
+      if ((ProductsInstalledArray[product].InstallType AND ClassicServerInstall) = ClassicServerInstall) then
+        InstallSummaryArray[i] := InstallSummaryArray[i] + ' Classic Server install.'
+      else
+        InstallSummaryArray[i] := InstallSummaryArray[i] + ' Super Server install.'
+      end
+    else begin
+      if (ProductsInstalledArray[product].GBAKVersion <> '') then
+        InstallSummaryArray[i] := InstallSummaryArray[i] + ' Admin and Dev. Tools install.'
+      else
+        InstallSummaryArray[i] := InstallSummaryArray[i] + ' Minimal client install. '
+    end;
+
+    if ((ProductsInstalledArray[product].InstallType AND BrokenInstall) = BrokenInstall) then
+      InstallSummaryArray[i] := InstallSummaryArray[i]
+      + #13 + '   (Install appears broken due to version string mismatch.)';
+
+    i:= i+1;
+  end;
+end;
+
+for i:=0 to ProductsInstalledCount-1 do
+  InstallSummary := InstallSummary + InstallSummaryArray[i] + #13;
+
+//If FB2 is installed
+If ((ProductsInstalled AND FB2) = FB2) then
+      InstallSummary := InstallSummary
+      +#13 + 'This version of Firebird will become the default install.'
+      +#13 + 'Also, take note that installing this version of Firebird '
+      +#13 + 'when a later version is already installed may lead to '
+      +#13 + 'unpredictable results. '
+      +#13;
+
+StatusDescription := Format2('Pre-installation analysis indicates that %s existing Firebird or Interbase %s been found.',
+        IntToStr(ProductsInstalledCount), prodstr);
+Result := StatusDescription
+    +#13 + InstallSummary
+    +#13 + ' If you continue with this installation Firebird will be installed but not configured.'
+    +#13 + ' You will have to complete installation manually.'
+    +#13
+    +#13 + ' Do you want to CANCEL this installation?';
+end;
+
+function AnalysisAssessment: boolean;
+var
+  MsgText: String;
+  MsgResult: Integer;
 begin
   result := false;
 
-  SelectedComponents := WizardSelectedComponents(false);
-  if pos(lowercase('ClassicServerComponent'),SelectedComponents) >0 then
+  //We've got all this information. What do we do with it?
+
+  if ProductsInstalledCount = 0 then begin
     result := true;
-end;
-
-procedure SetupSharedFilesArray;
-begin
-if UsingWin2k then
-  SetArrayLength(SharedFileArray,23)
-else
-  SetArrayLength(SharedFileArray,19);
-
-SharedFileArray[0].Filename := ExpandConstant('{app}')+'\IPLicense.txt';
-SharedFileArray[1].Filename := ExpandConstant('{app}')+'\firebird.msg';
-
-SharedFileArray[2].Filename := ExpandConstant('{app}')+'\bin\gds32.dll';
-SharedFileArray[3].Filename := ExpandConstant('{app}')+'\bin\fbclient.dll';
-
-SharedFileArray[4].Filename := ExpandConstant('{app}')+'\bin\instreg.exe';
-SharedFileArray[5].Filename := ExpandConstant('{app}')+'\bin\gbak.exe';
-SharedFileArray[6].Filename := ExpandConstant('{app}')+'\bin\gfix.exe';
-SharedFileArray[7].Filename := ExpandConstant('{app}')+'\bin\gsec.exe';
-SharedFileArray[8].Filename := ExpandConstant('{app}')+'\bin\gsplit.exe';
-SharedFileArray[9].Filename := ExpandConstant('{app}')+'\bin\gstat.exe';
-SharedFileArray[10].Filename := ExpandConstant('{app}')+'\bin\fbguard.exe';
-SharedFileArray[11].Filename := ExpandConstant('{app}')+'\bin\fb_lock_print.exe';
-SharedFileArray[12].Filename := ExpandConstant('{app}')+'\bin\ib_util.dll';
-SharedFileArray[13].Filename := ExpandConstant('{app}')+'\bin\instsvc.exe';
-SharedFileArray[14].Filename := ExpandConstant('{app}')+'\bin\fbintl.dll';
-
-if ClassicInstallChosen then
-  SharedFileArray[15].Filename := ExpandConstant('{app}')+'\bin\fb_inet_server.exe'
-else
-  SharedFileArray[15].Filename := ExpandConstant('{app}')+'\bin\fbserver.exe';
-
-if UsingWinNT then
-  SharedFileArray[16].Filename := ExpandConstant('{sys}')+'\Firebird2Control.cpl'
-else
-  SharedFileArray[16].Filename := ExpandConstant('{sys}')+'\FIREBI~1.CPL';
-
-SharedFileArray[17].Filename := ExpandConstant('{app}')+'\bin\msvcrt.dll';
-SharedFileArray[18].Filename := ExpandConstant('{app}')+'\bin\msvcp{#msvc_version}0.dll';
-
-if UsingWin2k then begin
-  SharedFileArray[19].Filename := ExpandConstant('{app}')+'\bin\gds32.local';
-  SharedFileArray[20].Filename := ExpandConstant('{app}')+'\bin\fbclient.local';
-  SharedFileArray[21].Filename := ExpandConstant('{app}')+'\bin\msvcrt.local';
-  SharedFileArray[22].Filename := ExpandConstant('{app}')+'\bin\msvcp{#msvc_version}0.local';
-end;
-
-
-end;
-
-
-procedure GetSharedLibCountBeforeCopy;
-var
-  dw: Cardinal;
-  i:  Integer;
-begin
-  for i:= 0 to GetArrayLength(SharedFileArray)-1 do begin
-    if RegQueryDWordValue(HKEY_LOCAL_MACHINE,
-          'SOFTWARE\Microsoft\Windows\CurrentVersion\SharedDLLs',SharedFileArray[i].filename, dw) then
-      SharedFileArray[i].Count := dw
-    else
-      SharedFileArray[i].Count := 0;
+    exit;
   end;
-end;
-
-
-procedure CheckSharedLibCountAtEnd;
-// If a shared file exists on disk (from a manual install perhaps?) then
-// the Installer will set the SharedFile count to 2 even if no registry
-// entry exists. Is it a bug, an anomaly or a WAD?
-// Is it InnoSetup or the O/S?
-// Anyway, let's work around it, otherwise the files will appear 'sticky'
-// after an uninstall.
-
-var
-  dw: cardinal;
-  i: Integer;
-
-begin
-  for i:= 0 to GetArrayLength(SharedFileArray)-1 do begin
-    if RegQueryDWordValue(HKEY_LOCAL_MACHINE,
-      'SOFTWARE\Microsoft\Windows\CurrentVersion\SharedDLLs',SharedFileArray[i].Filename, dw) then begin
-        if (( dw - SharedFileArray[i].Count ) > 1 ) then begin
-        dw := SharedFileArray[i].Count + 1 ;
-        RegWriteDWordValue(HKEY_LOCAL_MACHINE,
-        'SOFTWARE\Microsoft\Windows\CurrentVersion\SharedDLLs',SharedFileArray[i].Filename, dw);
-      end;
-    end;
-  end;
-end;
-
-
-function CheckWinsock2(): Boolean;
-begin
-  Result := True;
-  //Check if Winsock 2 is installed (win 95 only)
-  if (not UsingWinNt) and (not FileExists(AddBackslash(GetSystemDir) + sWinSock2)) then begin
-    Winsock2Failure := True;
-    Result := False;
+  
+  //If Fb15 RC is installed then we can install over it.
+  //unless we find the server running.
+  if (ProductsInstalledCount = 1) AND
+    (((ProductsInstalled AND FB15) = FB15) OR
+     ((ProductsInstalled AND FB15RC) = FB15RC)) then
+    if ( FirebirdOneFiveRunning ) then begin
+      result := false;
+      MsgBox('An existing Firebird 1.5 Server is running. You must close the '+
+             'application or stop the service before continuing.', mbError, MB_OK);
+      exit;
+      end
+    else begin
+      result := true;
+      exit;
     end
-  else
-  	Winsock2Failure := False;
+  ;
+
+  if ForceInstall then begin
+    result := true;
+    exit;
+  end;
+
+  //Otherwise, show user the analysis report.
+  MsgText := SummarizeInstalledProducts;
+  MsgResult := MsgBox(MsgText,mbConfirmation,MB_YESNO);
+  if (MsgResult = IDNO ) then
+    result := true;
+    //but we don't configure
+    If ((InstallAndConfigure AND Configure) = Configure) then
+      InstallAndConfigure := InstallAndConfigure - Configure;
 end;
 
 function InitializeSetup(): Boolean;
 var
   i: Integer;
+  CommandLine: String;
 begin
 
   result := true;
 
-  if not CheckWinsock2 then
+  if not CheckWinsock2 then begin
+    result := False;
     exit;
+  end
 
-  //Look for a running version of Firebird
-  i:=FindWindowByClassName('FB_Disabled');
-  if ( i=0 ) then
-    i:=FindWindowByClassName('FB_Server');
-  if ( i=0 ) then
-    i:=FindWindowByClassName('FB_Guard');
+  CommandLine:=GetCmdTail;
+  if pos('FORCE',Uppercase(CommandLine))>0 then
+    ForceInstall:=True;
+    
+  //By default we want to install and confugure,
+  //unless subsequent analysis suggest otherwise.
+  InstallAndConfigure := Install + Configure
 
-  if ( i<>0 ) then begin
-    result := false;
-    MsgBox('An existing Firebird Server is running. You must close the '+
-           'application or stop the service before continuing.', mbError, MB_OK);
-  end;
+  InitExistingInstallRecords;
+  AnalyzeEnvironment;
+  result := AnalysisAssessment;
 
   InstallRootDir := '';
+
 end;
+
 
 procedure DeInitializeSetup();
 var
@@ -437,73 +399,6 @@ begin
       InstShellExec(sMSWinsock2Update, '', '', SW_SHOWNORMAL, ErrCode);
 end;
 
-procedure DecodeVersion( VerStr: String; var VerInt: array of Integer );
-var
-  i,p: Integer; s: string;
-begin
-  VerInt := [0,0,0,0];
-  i := 0;
-  while ( (Length(VerStr) > 0) and (i < 4) ) do
-  begin
-  	p := pos('.', VerStr);
-  	if p > 0 then begin
-      if p = 1 then s:= '0' else s:= Copy( VerStr, 1, p - 1 );
-  	  VerInt[i] := StrToInt(s);
-  	  i := i + 1;
-  	  VerStr := Copy( VerStr, p+1, Length(VerStr));
-			end
-  	else begin
-  	  VerInt[i] := StrToInt( VerStr );
-  	  VerStr := '';
-  	end;
-  end;
-end;
-
-function GetInstalledVersion(ADir: String): Array of Integer;
-var
-	AString: String;
-	VerInt:  Array of Integer;
-begin
-  if (ADir<>'') then begin
-    GetVersionNumbersString( ADir+'\bin\gbak.exe', Astring);
-    DecodeVersion(AString, VerInt);
-  end;
-  result := VerInt;
-end;
-
-function GetFirebirdDir: string;
-//Check if Firebird installed, get version info to global var and return root dir
-var
-	FirebirdDir: String;
-begin
-  FirebirdDir := '';
-	FirebirdVer := [0,0,0,0];
-  RegQueryStringValue(HKEY_LOCAL_MACHINE,
-    'SOFTWARE\FirebirdSQL\Firebird\Instances','DefaultInstance', FirebirdDir);
-  //If nothing returned then check for the registry entry used during beta/RC phase
-  if (FirebirdDir='') then
-    RegQueryStringValue(HKEY_LOCAL_MACHINE,
-      'SOFTWARE\FirebirdSQL\Firebird\CurrentVersion','RootDirectory', FirebirdDir);
-  if (FirebirdDir<>'') then
-    FirebirdVer:=GetInstalledVersion(FirebirdDir);
-
-  Result := FirebirdDir;
-end;
-
-function GetInterBaseDir: string;
-//Check if InterBase installed, get version info to global var and return root dir
-var
-  InterBaseDir: String;
-begin
-  InterBaseDir := '';
-	InterBaseVer   := [0,0,0,0];
-  RegQueryStringValue(HKEY_LOCAL_MACHINE,
-    'SOFTWARE\Borland\InterBase\CurrentVersion','RootDirectory', InterBaseDir);
-  if ( InterBaseDir <> '' ) then
-    InterBaseVer:=GetInstalledVersion(InterBaseDir);
-
-  Result := InterBaseDir;
-end;
 
 //This function tries to find an existing install of Firebird 1.5
 //If it succeeds it suggests that directory for the install
@@ -515,7 +410,7 @@ var
 begin
   //The installer likes to call this FOUR times, which makes debugging a pain,
   //so let's test for a previous call.
-  if InstallRootDir = '' then begin
+  if (InstallRootDir = '') then begin
 
     // Try to find the value of "RootDirectory" in the Firebird
     // registry settings. This is either where Fb 1.0 exists or Fb 1.5
@@ -560,17 +455,6 @@ end;
 *)
 
 
-(*
-function RunClassic: Boolean;
-begin
-  result := false;
-
-  if ShouldProcessEntry('ServerComponent', 'UseClassicServerTask')= srYes then
-    result := true;
-
-end;
-*)
-
 function ServiceStartFlags(Default: String): String;
 var
   ServerType: String;
@@ -614,41 +498,35 @@ begin
 end;
 
 function StartApp(Default: String): String;
-var
-  AppPath: String;
 begin
-  AppPath := ExpandConstant('{app}');
-  AppPath := '"' + AppPath +'"';
   if ShouldProcessEntry('ServerComponent', 'UseGuardianTask')= srYes then begin
-    Result := AppPath+'\bin\fbguard.exe';
+    Result := GetAppPath+'\bin\fbguard.exe';
     if ClassicInstallChosen then
       Result := Result + ' -c';
     end
   else
   if ClassicInstallChosen then
-      Result := AppPath+'\bin\fb_inet_server.exe'
+      Result := GetAppPath+'\bin\fb_inet_server.exe'
     else
-      Result := AppPath+'\bin\fbserver.exe';
+      Result := GetAppPath+'\bin\fbserver.exe';
 end;
 
 procedure UpdateFirebirdConf;
 // Update firebird conf. If user has deselected the guardian we should update
 // firebird.conf accordingly. Otherwise we leave the file unchanged.
 var
-  fbconf: TStringList;
-  AppPath: String;
+  fbconf: TArrayOfString;
   i, position: Integer;
+  ArraySize: Integer;
+  FileChanged: boolean;
 begin
-  fbconf := TStringList.create;
-  AppPath := ExpandConstant('{app}');
-  fbconf.loadfromfile(AppPath+'\firebird.conf');
-  for i:=0 to fbconf.count-1 do begin
-    position := pos('GuardianOption',fbconf.strings[i]);
-    if (position > 0) then
-      if ShouldProcessEntry('ServerComponent', 'UseGuardianTask') = srNo  then
-        fbconf.strings[i] := 'GuardianOption = 0';
+  //There is no simple, foolproof and futureproof way to check whether
+  //we are doing a server install, so the easiest way is to see if a
+  //firebird.conf exists. If it doesn't then we don't care.
+  if FileExists(GetAppPath+'\firebird.conf') then begin
+    if ShouldProcessEntry('ServerComponent', 'UseGuardianTask') = srNo  then
+      ReplaceLine(GetAppPath+'\firebird.conf','GuardianOption','GuardianOption = 0','#');
   end;
-  fbconf.savetofile(AppPath+'\firebird.conf');
 end;
 
 
@@ -658,6 +536,7 @@ begin
     wpInfoBefore:   WizardForm.INFOBEFOREMEMO.font.name:='Courier New';
     wpInfoBefore:   WizardForm.INFOAFTERMEMO.font.name:='Courier New';
     wpSelectTasks:  WizardForm.TASKSLIST.height := WizardForm.TASKSLIST.height+20;
+    wpFinished:     ; // Create some links to Firebird and IBP here?.
   end;
 end;
 
@@ -689,23 +568,10 @@ begin
 
 end;
 
-function FirebirdOneRunning: boolean;
-var
-  i: Integer;
-begin
-  result := false;
-
-  //Look for a running copy of InterBase or Firebird 1.0.
-  i:=0;
-  i:=FindWindowByClassName('IB_Server') ;
-  if ( i<>0 ) then
-    result := true;
-
-end;
-
 function StartEngine: boolean;
 begin
-  result := not FirebirdOneRunning;
+  if ConfigureFirebird then
+    result := not FirebirdOneRunning;
 end;
 
 (*
@@ -724,14 +590,11 @@ end;
 *)
 
 function ChooseUninstallIcon(Default: String): String;
-var
-  AppPath: String;
 begin
-  AppPath:=ExpandConstant('{app}');
   if ClassicInstallChosen then
-    result := AppPath+'\bin\fb_inet_server.exe'
+    result := GetAppPath+'\bin\fb_inet_server.exe'
   else
-    result := AppPath+'\bin\fbserver.exe';
+    result := GetAppPath+'\bin\fbserver.exe';
 
 end;
 
@@ -744,35 +607,36 @@ function SaveFirebirdConf: boolean;
 // the existing config file and dynamically set install options (like use of
 // guardian). This will quickly start to get way too complicated.
 var
-  AppPath: String;
   NewFileName: String;
   i:  Integer;
 begin
-
 //for some reason the 3.0.6 installer wants to call this twice
 //so we need to check.
 if not FirebirdConfSaved then begin
-  AppPath:=ExpandConstant('{app}');
-  if fileexists(AppPath+'\firebird.conf') then begin
+  if fileexists(GetAppPath+'\firebird.conf') then begin
     i:=0;
 	// 999 previous installs ought to be enough :-)
     while i < 999  do begin
-      NewFileName := AppPath+'\firebird.conf.saved.'+IntToStr(i);
+      NewFileName := GetAppPath+'\firebird.conf.saved.'+IntToStr(i);
       if fileexists(NewFileName) then
         i := i + 1
       else
         break;
     end;
 
-    filecopy( AppPath+'\firebird.conf', NewFileName, false );
+    filecopy( GetAppPath+'\firebird.conf', NewFileName, false );
     FirebirdConfSaved := true;
   end
 end
 
 //Always return true
 result := true;
-
 end;
+
+
 
 begin
 end.
+
+
+
