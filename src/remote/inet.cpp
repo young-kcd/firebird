@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.126 2004-11-07 14:44:55 alexpeshkoff Exp $
+$Id: inet.cpp,v 1.127 2004-11-15 15:52:48 alexpeshkoff Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -311,7 +311,7 @@ static bool_t	inet_read(XDR *);
 static bool_t	inet_setpostn(XDR *, u_int);
 static rem_port*		inet_try_connect(	PACKET*,
 									RDB,
-									const Firebird::PathName&,
+									Firebird::PathName&,
 									const TEXT*,
 									ISC_STATUS*,
 									const SCHAR*,
@@ -424,7 +424,7 @@ inline void STOP_PORT_CRITICAL() {
 #endif
 
 
-rem_port* INET_analyze(const Firebird::PathName& file_name,
+rem_port* INET_analyze(Firebird::PathName& file_name,
 					ISC_STATUS*	status_vector,
 					const TEXT*	node_name,
 					const TEXT*	user_string,
@@ -1569,7 +1569,8 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 				(SCHAR*) &address.sin_addr,
 				sizeof(address.sin_addr));
 
-	response->p_resp_data.cstr_address = (UCHAR *) & response->p_resp_blob_id;
+	response->p_resp_data.cstr_address = 
+			reinterpret_cast<UCHAR*>(& response->p_resp_blob_id);
 	response->p_resp_data.cstr_length = sizeof(response->p_resp_blob_id);
 	inet_copy(reinterpret_cast<const SCHAR*>(&address),
 			  reinterpret_cast<char*>(response->p_resp_data.cstr_address),
@@ -3172,7 +3173,7 @@ static bool_t inet_setpostn( XDR * xdrs, u_int bytecount)
 static rem_port* inet_try_connect(
 							 PACKET* packet,
 							 RDB rdb,
-							 const Firebird::PathName& file_name,
+							 Firebird::PathName& file_name,
 							 const TEXT* node_name, 
 							 ISC_STATUS* status_vector,
 							 const SCHAR* dpb, 
@@ -3198,7 +3199,8 @@ static rem_port* inet_try_connect(
 	cnct->p_cnct_cversion = CONNECT_VERSION2;
 	cnct->p_cnct_client = ARCHITECTURE;
 	cnct->p_cnct_file.cstr_length = file_name.length();
-	cnct->p_cnct_file.cstr_address = (UCHAR *) file_name.c_str();
+	cnct->p_cnct_file.cstr_address = 
+		reinterpret_cast<UCHAR *>(file_name.begin());
 
 /* If we can't talk to a server, punt.  Let somebody else generate
    an error.  status_vector will have the network error info. */

@@ -26,7 +26,7 @@
 
 #include "fb_string.h"
 
-rem_port*	INET_analyze(const Firebird::PathName&, ISC_STATUS*, const TEXT*, const TEXT*,
+rem_port*	INET_analyze(Firebird::PathName&, ISC_STATUS*, const TEXT*, const TEXT*,
 	bool, const SCHAR*, SSHORT);
 rem_port*	INET_connect(const TEXT*, struct packet*, ISC_STATUS*, USHORT,
 	const SCHAR*, SSHORT);

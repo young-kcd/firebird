@@ -188,7 +188,7 @@ static void xnet_log_error(int source_line_num, char* err_msg, ULONG err_code=0)
 
 
 rem_port* XNET_analyze(
-				  const Firebird::PathName& file_name,
+				  Firebird::PathName& file_name,
 				  ISC_STATUS* status_vector,
 				  const TEXT* node_name, const TEXT* user_string,
 				  bool uv_flag)
@@ -251,7 +251,8 @@ rem_port* XNET_analyze(
 	cnct->p_cnct_cversion = CONNECT_VERSION2;
 	cnct->p_cnct_client = ARCHITECTURE;
 	cnct->p_cnct_file.cstr_length = file_name.length();
-	cnct->p_cnct_file.cstr_address = (UCHAR *) file_name.c_str();
+	cnct->p_cnct_file.cstr_address = 
+			reinterpret_cast<UCHAR*>(file_name.begin());
 
 /* Note: prior to V3.1E a recievers could not in truth handle more
    then 5 protocol descriptions; however, the interprocess server 
