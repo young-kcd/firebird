@@ -36,7 +36,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.27 2003-08-10 22:52:48 brodsom Exp $
+$Id: backup.epp,v 1.28 2003-08-12 17:32:01 skidder Exp $
 */
 
 #include "firebird.h"
@@ -228,23 +228,6 @@ static const SCHAR limbo_nau_tpb[] =
 	isc_tpb_ignore_limbo,
 	isc_tpb_no_auto_undo
 };
-
-
-#if (defined(_MSC_VER) && (_MSC_VER <= 1200)) || defined(SINIXZ)
-
-// TMN: Microsoft provide __int64, but for MSVC6 provide no ostream
-// operator<< for it. :-/
-// For now, we assume that MSVC7 provides this operator.
-
-std::ostream& operator<<(std::ostream& os, UINT64 i)
-{
-	char sz[32];
-	sprintf(sz, "%I64u", i);
-	os << sz;
-	return os;
-}
-
-#endif	// _MSC_VER
 
 
 int BACKUP_backup(TEXT* dbb_file, TEXT* file_name)
@@ -500,17 +483,8 @@ int BACKUP_backup(TEXT* dbb_file, TEXT* file_name)
 		BURP_verbose(176, (TEXT *) tempcount, NULL, NULL, NULL, NULL);
 		/* msg 176 closing file, committing, and finishing.  %ld bytes written */
 	} else {
-		// To localize the damage (no common 64-bit integer printf format
-		// string between compilers), we here convert the > MAX_SLONG
-		// value to a string using standard C++.
-#ifndef SOLX86
-		std::ostringstream foo;
-		foo << cumul_count << std::ends;
-		const char* psz = foo.str().c_str();
-#else
-		const char psz[64];
-		ib_sprintf(psz, "%ll", cumul_count);
-#endif
+		char psz[64];
+		ib_sprintf(psz, "%"QUADFORMAT, cumul_count);
 		BURP_verbose(283, psz, NULL, NULL, NULL, NULL);
 		/* msg 283 closing file, committing, and finishing.  %s bytes written */
 	}
