@@ -181,7 +181,7 @@ int UTIL_gsec(
  *
  **************************************/
 	STATUS *status;
-	struct why_hndl *db_handle = NULL;		/* user info database handle */
+	FRBRD *db_handle = NULL;		/* user info database handle */
 	TEXT user_info_name[MAXPATHLEN], *u;	/* user info database name */
 	SLONG redir_in, redir_out, redir_err;
 	int local_argc;

@@ -24,13 +24,15 @@
 #ifndef _JRD_PERF_PROTO_H_
 #define _JRD_PERF_PROTO_H_
 
+#include "../jrd/y_ref.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 extern int API_ROUTINE perf_format(struct perf *, struct perf *, SCHAR *,
 								   SCHAR *, SSHORT *);
-extern void API_ROUTINE perf_get_info(struct why_hndl **, struct perf *);
+extern void API_ROUTINE perf_get_info(FRBRD **, struct perf *);
 extern void API_ROUTINE perf_report(struct perf *, struct perf *, SCHAR *,
 									SSHORT *);
 

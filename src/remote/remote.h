@@ -32,6 +32,7 @@
 #include "../jrd/common.h"
 #include "../remote/remote_def.h"
 #include "../jrd/thd_proto.h"
+#include "../jrd/y_ref.h"
 
 /* Include some apollo include files for tasking */
 
@@ -73,7 +74,7 @@ typedef struct rdb
 	struct blk		rdb_header;
 	USHORT			rdb_id;
 	USHORT			rdb_flags;
-	struct why_hndl*rdb_handle;			/* database handle */
+	FRBRD*			rdb_handle;			/* database handle */
 	struct port*	rdb_port;			/* communication port */
 	struct rtr*		rdb_transactions;	/* linked list of transactions */
 	struct rrq*		rdb_requests;		/* compiled requests */
@@ -91,7 +92,7 @@ typedef struct rtr
 	struct rdb*	rtr_rdb;
 	struct rtr*	rtr_next;
 	struct rbl*	rtr_blobs;
-	struct why_hndl*	rtr_handle;
+	FRBRD*		rtr_handle;
 	USHORT		rtr_flags;
 	USHORT		rtr_id;
 } *RTR;
@@ -104,7 +105,7 @@ typedef struct rbl
 	struct rdb*	rbl_rdb;
 	struct rtr*	rbl_rtr;
 	struct rbl*	rbl_next;
-	struct why_hndl*	rbl_handle;
+	FRBRD*		rbl_handle;
 	SLONG		rbl_offset;			/* Apparent (to user) offset in blob */
 	USHORT		rbl_id;
 	USHORT		rbl_flags;
@@ -206,7 +207,7 @@ typedef struct rpr
 	struct blk		rpr_header;
 	struct rdb*		rpr_rdb;
 	struct rtr*		rpr_rtr;
-	struct why_hndl*rpr_handle;
+	FRBRD*			rpr_handle;
 	struct message*	rpr_in_msg;		/* input message */
 	struct message*	rpr_out_msg;	/* output message */
 	struct fmt*		rpr_in_format;	/* Format of input message */
@@ -223,7 +224,7 @@ typedef struct rrq
 	struct rtr*	rrq_rtr;
 	struct rrq*	rrq_next;
 	struct rrq*	rrq_levels;		/* RRQ block for next level */
-	struct why_hndl*rrq_handle;
+	FRBRD*		rrq_handle;
 	USHORT		rrq_id;
 	USHORT		rrq_max_msg;
 	USHORT		rrq_level;
@@ -260,7 +261,7 @@ typedef struct rsr
 	struct rsr*		rsr_next;
 	struct rdb*		rsr_rdb;
 	struct rtr*		rsr_rtr;
-	struct why_hndl*rsr_handle;
+	FRBRD*			rsr_handle;
 	struct fmt*		rsr_bind_format;		/* Format of bind message */
 	struct fmt*		rsr_select_format;		/* Format of select message */
 	struct fmt*		rsr_user_select_format; /* Format of user's select message */

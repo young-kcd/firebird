@@ -56,7 +56,7 @@
 #include "../jrd/gdsold.h"
 
 typedef struct teb {
-	struct why_hndl **teb_database;
+	FRBRD **teb_database;
 	int teb_tpb_length;
 	UCHAR *teb_tpb;
 } TEB;
@@ -253,7 +253,7 @@ TEXT ** name_buffer, USHORT * return_count)
 
 STATUS API_ROUTINE_VARARG gds__start_transaction(
 												 STATUS * status_vector,
-												 struct why_hndl **tra_handle,
+												 FRBRD **tra_handle,
 												 SSHORT count, ...)
 {
 	TEB tebs[16], *teb, *end;
@@ -277,7 +277,7 @@ STATUS API_ROUTINE_VARARG gds__start_transaction(
 	VA_START(ptr, count);
 
 	for (; teb < end; teb++) {
-		teb->teb_database = va_arg(ptr, struct why_hndl **);
+		teb->teb_database = va_arg(ptr, FRBRD **);
 		teb->teb_tpb_length = va_arg(ptr, int);
 		teb->teb_tpb = va_arg(ptr, UCHAR *);
 	}
@@ -296,7 +296,7 @@ STATUS API_ROUTINE_VARARG gds__start_transaction(
 STATUS API_ROUTINE gds__attach_database(STATUS * status_vector,
 										SSHORT file_length,
 										SCHAR * file_name,
-										struct why_hndl **db_handle,
+										FRBRD **db_handle,
 										SSHORT dpb_length, SCHAR * dpb)
 {
 	return isc_attach_database(GDS_VAL(status_vector),
@@ -306,7 +306,7 @@ STATUS API_ROUTINE gds__attach_database(STATUS * status_vector,
 }
 
 STATUS API_ROUTINE gds__blob_info(STATUS * status_vector,
-								  struct why_hndl **blob_handle,
+								  FRBRD **blob_handle,
 								  SSHORT msg_length,
 								  SCHAR * msg,
 								  SSHORT buffer_length, SCHAR * buffer)
@@ -318,39 +318,39 @@ STATUS API_ROUTINE gds__blob_info(STATUS * status_vector,
 }
 
 STATUS API_ROUTINE gds__cancel_blob(STATUS * status_vector,
-									struct why_hndl **blob_handle)
+									FRBRD **blob_handle)
 {
 	return isc_cancel_blob(GDS_VAL(status_vector), GDS_VAL(blob_handle));
 }
 
 STATUS API_ROUTINE gds__cancel_events(STATUS * status_vector,
-									  struct why_hndl **db_handle, SLONG * event_id)
+									  FRBRD **db_handle, SLONG * event_id)
 {
 	return isc_cancel_events(GDS_VAL(status_vector),
 							 GDS_VAL(db_handle), GDS_VAL(event_id));
 }
 
-STATUS API_ROUTINE gds__close_blob(STATUS * status_vector, struct why_hndl **blob_handle)
+STATUS API_ROUTINE gds__close_blob(STATUS * status_vector, FRBRD **blob_handle)
 {
 	return isc_close_blob(GDS_VAL(status_vector), GDS_VAL(blob_handle));
 }
 
 STATUS API_ROUTINE gds__commit_retaining(STATUS * status_vector,
-										 struct why_hndl **tra_handle)
+										 FRBRD **tra_handle)
 {
 	return isc_commit_retaining(GDS_VAL(status_vector), GDS_VAL(tra_handle));
 }
 
 STATUS API_ROUTINE gds__commit_transaction(STATUS * status_vector,
-										   struct why_hndl **tra_handle)
+										   FRBRD **tra_handle)
 {
 	return isc_commit_transaction(GDS_VAL(status_vector),
 								  GDS_VAL(tra_handle));
 }
 
 STATUS API_ROUTINE gds__compile_request(STATUS * status_vector,
-										struct why_hndl **db_handle,
-										struct why_hndl **req_handle,
+										FRBRD **db_handle,
+										FRBRD **req_handle,
 										SSHORT blr_length, SCHAR * blr)
 {
 	return isc_compile_request(GDS_VAL(status_vector),
@@ -359,8 +359,8 @@ STATUS API_ROUTINE gds__compile_request(STATUS * status_vector,
 }
 
 STATUS API_ROUTINE gds__compile_request2(STATUS * status_vector,
-										 struct why_hndl **db_handle,
-										 struct why_hndl **req_handle,
+										 FRBRD **db_handle,
+										 FRBRD **req_handle,
 										 SSHORT blr_length, SCHAR * blr)
 {
 	return isc_compile_request2(GDS_VAL(status_vector),
@@ -370,9 +370,9 @@ STATUS API_ROUTINE gds__compile_request2(STATUS * status_vector,
 }
 
 STATUS API_ROUTINE gds__create_blob(STATUS * status_vector,
-									struct why_hndl **db_handle,
-									struct why_hndl **tra_handle,
-									struct why_hndl **blob_handle, GDS_QUAD * blob_id)
+									FRBRD **db_handle,
+									FRBRD **tra_handle,
+									FRBRD **blob_handle, GDS_QUAD * blob_id)
 {
 	return isc_create_blob(GDS_VAL(status_vector),
 						   GDS_VAL(db_handle),
@@ -381,9 +381,9 @@ STATUS API_ROUTINE gds__create_blob(STATUS * status_vector,
 }
 
 STATUS API_ROUTINE gds__create_blob2(STATUS * status_vector,
-									 struct why_hndl **db_handle,
-									 struct why_hndl **tra_handle,
-									 struct why_hndl **blob_handle,
+									 FRBRD **db_handle,
+									 FRBRD **tra_handle,
+									 FRBRD **blob_handle,
 									 GDS_QUAD * blob_id,
 									 SSHORT bpb_length, SCHAR * bpb)
 {
@@ -397,7 +397,7 @@ STATUS API_ROUTINE gds__create_blob2(STATUS * status_vector,
 STATUS API_ROUTINE gds__create_database(STATUS * status_vector,
 										SSHORT file_length,
 										SCHAR * file_name,
-										struct why_hndl **db_handle,
+										FRBRD **db_handle,
 										SSHORT dpb_length,
 										SCHAR * dpb, SSHORT db_type)
 {
@@ -409,17 +409,17 @@ STATUS API_ROUTINE gds__create_database(STATUS * status_vector,
 }
 
 STATUS API_ROUTINE isc_database_cleanup(STATUS * status_vector,
-										struct why_hndl **db_handle,
+										FRBRD **db_handle,
 										DatabaseCleanupRoutine *routine, SCHAR * arg)
 {
 
 	return gds__database_cleanup(GDS_VAL(status_vector),
-								 (struct why_hndl **) db_handle,
+								 (FRBRD **) db_handle,
 								 routine, (SLONG) arg);
 }
 
 STATUS API_ROUTINE gds__database_info(STATUS * status_vector,
-									  struct why_hndl **db_handle,
+									  FRBRD **db_handle,
 									  SSHORT msg_length,
 									  SCHAR * msg,
 									  SSHORT buffer_length, SCHAR * buffer)
@@ -431,13 +431,13 @@ STATUS API_ROUTINE gds__database_info(STATUS * status_vector,
 }
 
 STATUS API_ROUTINE gds__detach_database(STATUS * status_vector,
-										struct why_hndl **db_handle)
+										FRBRD **db_handle)
 {
 	return isc_detach_database(GDS_VAL(status_vector), GDS_VAL(db_handle));
 }
 
 STATUS API_ROUTINE gds__get_segment(STATUS * status_vector,
-									struct why_hndl **blob_handle,
+									FRBRD **blob_handle,
 									USHORT * return_length,
 									USHORT buffer_length, SCHAR * buffer)
 {
@@ -448,8 +448,8 @@ STATUS API_ROUTINE gds__get_segment(STATUS * status_vector,
 }
 
 STATUS API_ROUTINE gds__get_slice(STATUS * status_vector,
-								  struct why_hndl **db_handle,
-								  struct why_hndl **tra_handle,
+								  FRBRD **db_handle,
+								  FRBRD **tra_handle,
 								  GDS_QUAD * array_id,
 								  SSHORT sdl_length,
 								  SCHAR * sdl,
@@ -471,9 +471,9 @@ STATUS API_ROUTINE gds__get_slice(STATUS * status_vector,
 }
 
 STATUS API_ROUTINE gds__open_blob(STATUS * status_vector,
-								  struct why_hndl **db_handle,
-								  struct why_hndl **tra_handle,
-								  struct why_hndl **blob_handle, GDS_QUAD * blob_id)
+								  FRBRD **db_handle,
+								  FRBRD **tra_handle,
+								  FRBRD **blob_handle, GDS_QUAD * blob_id)
 {
 	return isc_open_blob(GDS_VAL(status_vector),
 						 GDS_VAL(db_handle),
@@ -482,9 +482,9 @@ STATUS API_ROUTINE gds__open_blob(STATUS * status_vector,
 }
 
 STATUS API_ROUTINE gds__open_blob2(STATUS * status_vector,
-								   struct why_hndl **db_handle,
-								   struct why_hndl **tra_handle,
-								   struct why_hndl **blob_handle,
+								   FRBRD **db_handle,
+								   FRBRD **tra_handle,
+								   FRBRD **blob_handle,
 								   GDS_QUAD * blob_id,
 								   SSHORT bpb_length, SCHAR * bpb)
 {
@@ -498,14 +498,14 @@ STATUS API_ROUTINE gds__open_blob2(STATUS * status_vector,
 }
 
 STATUS API_ROUTINE gds__prepare_transaction(STATUS * status_vector,
-											struct why_hndl **tra_handle)
+											FRBRD **tra_handle)
 {
 	return isc_prepare_transaction(GDS_VAL(status_vector),
 								   GDS_VAL(tra_handle));
 }
 
 STATUS API_ROUTINE gds__prepare_transaction2(STATUS * status_vector,
-											 struct why_hndl **tra_handle,
+											 FRBRD **tra_handle,
 											 SSHORT msg_length, SCHAR * msg)
 {
 	return isc_prepare_transaction2(GDS_VAL(status_vector),
@@ -515,7 +515,7 @@ STATUS API_ROUTINE gds__prepare_transaction2(STATUS * status_vector,
 }
 
 STATUS API_ROUTINE gds__put_segment(STATUS * status_vector,
-									struct why_hndl **blob_handle,
+									FRBRD **blob_handle,
 									USHORT segment_length, SCHAR * segment)
 {
 	return isc_put_segment(GDS_VAL(status_vector),
@@ -524,8 +524,8 @@ STATUS API_ROUTINE gds__put_segment(STATUS * status_vector,
 }
 
 STATUS API_ROUTINE gds__put_slice(STATUS * status_vector,
-								  struct why_hndl **db_handle,
-								  struct why_hndl **tra_handle,
+								  FRBRD **db_handle,
+								  FRBRD **tra_handle,
 								  GDS_QUAD * array_id,
 								  SSHORT sdl_length,
 								  SCHAR * sdl,
@@ -545,7 +545,7 @@ STATUS API_ROUTINE gds__put_slice(STATUS * status_vector,
 }
 
 STATUS API_ROUTINE gds__que_events(STATUS * status_vector,
-								   struct why_hndl **db_handle,
+								   FRBRD **db_handle,
 								   SLONG * event_id,
 								   SSHORT events_length,
 								   SCHAR * events,
@@ -561,7 +561,7 @@ STATUS API_ROUTINE gds__que_events(STATUS * status_vector,
 }
 
 STATUS API_ROUTINE gds__receive(STATUS * status_vector,
-								struct why_hndl **req_handle,
+								FRBRD **req_handle,
 								SSHORT msg_type,
 								SSHORT msg_length,
 								void *msg, SSHORT req_level)
@@ -573,8 +573,8 @@ STATUS API_ROUTINE gds__receive(STATUS * status_vector,
 }
 
 STATUS API_ROUTINE gds__reconnect_transaction(STATUS * status_vector,
-											  struct why_hndl **db_handle,
-											  struct why_hndl **tra_handle,
+											  FRBRD **db_handle,
+											  FRBRD **tra_handle,
 											  SSHORT msg_length, SCHAR * msg)
 {
 	return isc_reconnect_transaction(GDS_VAL(status_vector),
@@ -584,13 +584,13 @@ STATUS API_ROUTINE gds__reconnect_transaction(STATUS * status_vector,
 }
 
 STATUS API_ROUTINE gds__release_request(STATUS * status_vector,
-										struct why_hndl **req_handle)
+										FRBRD **req_handle)
 {
 	return isc_release_request(GDS_VAL(status_vector), GDS_VAL(req_handle));
 }
 
 STATUS API_ROUTINE gds__request_info(STATUS * status_vector,
-									 struct why_hndl **req_handle,
+									 FRBRD **req_handle,
 									 SSHORT req_level,
 									 SSHORT msg_length,
 									 SCHAR * msg,
@@ -604,14 +604,14 @@ STATUS API_ROUTINE gds__request_info(STATUS * status_vector,
 }
 
 STATUS API_ROUTINE gds__rollback_transaction(STATUS * status_vector,
-											 struct why_hndl **tra_handle)
+											 FRBRD **tra_handle)
 {
 	return isc_rollback_transaction(GDS_VAL(status_vector),
 									GDS_VAL(tra_handle));
 }
 
 STATUS API_ROUTINE gds__seek_blob(STATUS * status_vector,
-								  struct why_hndl **blob_handle,
+								  FRBRD **blob_handle,
 								  SSHORT mode, SLONG offset, SLONG * result)
 {
 	return isc_seek_blob(GDS_VAL(status_vector),
@@ -619,7 +619,7 @@ STATUS API_ROUTINE gds__seek_blob(STATUS * status_vector,
 }
 
 STATUS API_ROUTINE gds__send(STATUS * status_vector,
-							 struct why_hndl **req_handle,
+							 FRBRD **req_handle,
 							 SSHORT msg_type,
 							 SSHORT msg_length, void *msg, SSHORT req_level)
 {
@@ -629,8 +629,8 @@ STATUS API_ROUTINE gds__send(STATUS * status_vector,
 }
 
 STATUS API_ROUTINE gds__start_and_send(STATUS * status_vector,
-									   struct why_hndl **req_handle,
-									   struct why_hndl **tra_handle,
+									   FRBRD **req_handle,
+									   FRBRD **tra_handle,
 									   SSHORT msg_type,
 									   SSHORT msg_length,
 									   void *msg, SSHORT req_level)
@@ -643,7 +643,7 @@ STATUS API_ROUTINE gds__start_and_send(STATUS * status_vector,
 }
 
 STATUS API_ROUTINE gds__start_multiple(STATUS * status_vector,
-									   struct why_hndl **tra_handle,
+									   FRBRD **tra_handle,
 									   SSHORT db_count, void *teb_vector)
 {
 	return isc_start_multiple(GDS_VAL(status_vector),
@@ -652,8 +652,8 @@ STATUS API_ROUTINE gds__start_multiple(STATUS * status_vector,
 }
 
 STATUS API_ROUTINE gds__start_request(STATUS * status_vector,
-									  struct why_hndl **req_handle,
-									  struct why_hndl **tra_handle, SSHORT req_level)
+									  FRBRD **req_handle,
+									  FRBRD **tra_handle, SSHORT req_level)
 {
 	return isc_start_request(GDS_VAL(status_vector),
 							 GDS_VAL(req_handle),
@@ -661,7 +661,7 @@ STATUS API_ROUTINE gds__start_request(STATUS * status_vector,
 }
 
 STATUS API_ROUTINE gds__transaction_info(STATUS * status_vector,
-										 struct why_hndl **tra_handle,
+										 FRBRD **tra_handle,
 										 SSHORT msg_length,
 										 SCHAR * msg,
 										 SSHORT buffer_length, SCHAR * buffer)
@@ -673,15 +673,15 @@ STATUS API_ROUTINE gds__transaction_info(STATUS * status_vector,
 }
 
 STATUS API_ROUTINE gds__unwind_request(STATUS * status_vector,
-									   struct why_hndl **req_handle, SSHORT req_level)
+									   FRBRD **req_handle, SSHORT req_level)
 {
 	return isc_unwind_request(GDS_VAL(status_vector),
 							  GDS_VAL(req_handle), req_level);
 }
 
 STATUS API_ROUTINE gds__ddl(STATUS * status_vector,
-							struct why_hndl **db_handle,
-							struct why_hndl **tra_handle, SSHORT ddl_length, SCHAR * ddl)
+							FRBRD **db_handle,
+							FRBRD **tra_handle, SSHORT ddl_length, SCHAR * ddl)
 {
 	return isc_ddl(GDS_VAL(status_vector),
 				   GDS_VAL(db_handle),
@@ -780,7 +780,7 @@ SLONG API_ROUTINE isc_vax_integer(SCHAR * input, SSHORT length)
 
 #ifndef REQUESTER
 STATUS API_ROUTINE isc_wait_for_event(STATUS * status_vector,
-									  struct why_hndl **db_handle,
+									  FRBRD **db_handle,
 									  SSHORT events_length,
 									  SCHAR * events, SCHAR * events_update)
 {
@@ -797,7 +797,7 @@ STATUS API_ROUTINE isc_interprete(SCHAR * buffer, STATUS ** status_vector_p)
 }
 
 int API_ROUTINE isc_version(
-							struct why_hndl **db_handle,
+							FRBRD **db_handle,
 							void (*callback) (), void *callback_argument)
 {
 	return gds__version(db_handle, callback, callback_argument);
@@ -815,8 +815,8 @@ void API_ROUTINE isc_set_debug(int flag)
 int API_ROUTINE isc_blob_display(
 								 STATUS * status_vector,
 								 GDS_QUAD * blob_id,
-								 struct why_hndl **database,
-								 struct why_hndl **transaction,
+								 FRBRD **database,
+								 FRBRD **transaction,
 								 SCHAR * field_name, SSHORT * name_length)
 {
 /**************************************
@@ -840,8 +840,8 @@ int API_ROUTINE isc_blob_display(
 int API_ROUTINE isc_blob_dump(
 							  STATUS * status_vector,
 							  GDS_QUAD * blob_id,
-							  struct why_hndl **database,
-							  struct why_hndl **transaction,
+							  FRBRD **database,
+							  FRBRD **transaction,
 							  SCHAR * file_name, SSHORT * name_length)
 {
 /**************************************
@@ -866,8 +866,8 @@ int API_ROUTINE isc_blob_dump(
 int API_ROUTINE isc_blob_edit(
 							  STATUS * status_vector,
 							  GDS_QUAD * blob_id,
-							  struct why_hndl **database,
-							  struct why_hndl **transaction,
+							  FRBRD **database,
+							  FRBRD **transaction,
 							  SCHAR * field_name, SSHORT * name_length)
 {
 /**************************************
@@ -1051,8 +1051,8 @@ return 1;
 int API_ROUTINE isc_blob_load(
 							  STATUS * status_vector,
 							  GDS_QUAD * blob_id,
-							  struct why_hndl **database,
-							  struct why_hndl **transaction,
+							  FRBRD **database,
+							  FRBRD **transaction,
 							  SCHAR * file_name, SSHORT * name_length)
 {
 /**************************************

@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.9 2003-01-18 18:18:48 dimitr Exp $
+$Id: why.cpp,v 1.10 2003-01-22 16:37:56 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -6277,7 +6277,7 @@ static WHY_HNDL allocate_handle(int		implementation,
  **************************************/
 	WHY_HNDL handle;
 
-	if (handle = (WHY_HNDL) alloc((SLONG) sizeof(struct why_hndl)))
+	if (handle = (WHY_HNDL) alloc((SLONG) sizeof(why_hndl)))
 	{
 		handle->implementation = implementation;
 		handle->type = handle_type;

@@ -914,6 +914,7 @@ STATUS API_ROUTINE isc_dsql_fetch_a(STATUS* user_status,
 
 	*sqlcode = 0;
 
+#pragma FB_COMPILER_MESSAGE("reinterpret_cast<> changes level of indirection.")
 	s = isc_dsql_fetch(	user_status,
 						reinterpret_cast<why_hndl**>(stmt_handle),
 						dialect,

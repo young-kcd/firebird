@@ -142,7 +142,7 @@ static REM_MSG		dump_cache(rrq::rrq_repeat*);
 #endif
 
 static USHORT	get_next_msg_no(RRQ, USHORT, USHORT*);
-static RTR		make_transaction(RDB, struct why_hndl*);
+static RTR		make_transaction(RDB, FRBRD*);
 
 static void	release_blob(RBL);
 static void	release_event(RVNT);
@@ -629,7 +629,7 @@ static STATUS allocate_statement( PORT port, P_RLSE * allocate, PACKET* send)
  **************************************/
 	RDB rdb;
 	RSR statement;
-	struct why_hndl *handle;
+	FRBRD *handle;
 	OBJCT object;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 
@@ -739,7 +739,7 @@ static STATUS attach_database(
  **************************************/
 	USHORT l, dl;
 	UCHAR *file, *dpb, new_dpb_buffer[512], *new_dpb, *p, *end;
-	struct why_hndl*handle;
+	FRBRD *handle;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	RDB rdb;
 	STR string;
@@ -972,7 +972,7 @@ static void cancel_operation( PORT port)
 		if (!(rdb->rdb_flags & RDB_service)) {
 			THREAD_EXIT;
 			gds__cancel_operation(status_vector,
-								  (struct why_hndl **) GDS_REF(rdb->rdb_handle),
+								  (FRBRD **) GDS_REF(rdb->rdb_handle),
 								  CANCEL_raise);
 			THREAD_ENTER;
 		}
@@ -1082,7 +1082,7 @@ STATUS port::compile(P_CMPL* compile, PACKET* send)
 	REM_MSG message, next;
 	UCHAR *blr;
 	USHORT max_msg, blr_length;
-	struct why_hndl*handle;
+	FRBRD *handle;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	rrq::rrq_repeat* tail;
 	OBJCT object;
@@ -1235,7 +1235,7 @@ void port::disconnect(PACKET* send, PACKET* receive)
 
 			THREAD_EXIT;
 			gds__cancel_operation(status_vector,
-								  (struct why_hndl **) GDS_REF(rdb->rdb_handle),
+								  (FRBRD **) GDS_REF(rdb->rdb_handle),
 								  CANCEL_disable);
 			THREAD_ENTER;
 #endif
@@ -1258,7 +1258,7 @@ void port::disconnect(PACKET* send, PACKET* receive)
 
 				else
 					gds__handle_cleanup(status_vector,
-										(struct why_hndl **) GDS_REF(transaction->
+										(FRBRD **) GDS_REF(transaction->
 																 rtr_handle));
 #endif
 				THREAD_ENTER;
@@ -1670,7 +1670,7 @@ STATUS port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* send)
 	USHORT in_blr_length, in_msg_type, in_msg_length, parser_version,
 		out_blr_length, out_msg_type, out_msg_length;
 	UCHAR *in_blr, *in_msg, *out_blr, *out_msg;
-	struct why_hndl*handle;
+	FRBRD *handle;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	rdb = this->port_context;
@@ -1814,7 +1814,7 @@ STATUS port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send)
 	RSR statement;
 	USHORT in_msg_length, out_msg_type, out_blr_length, out_msg_length;
 	UCHAR *in_msg, *out_blr, *out_msg;
-	struct why_hndl*handle;
+	FRBRD *handle;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 
 /** Do not call CHECK_HANDLE if this is the start of a transaction **/
@@ -2725,7 +2725,7 @@ STATUS port::insert(P_SQLDATA * sqldata, PACKET* send)
 }
 
 
-static RTR make_transaction( RDB rdb, struct why_hndl*handle)
+static RTR make_transaction (RDB rdb, FRBRD *handle)
 {
 /**************************************
  *
@@ -2773,7 +2773,7 @@ STATUS port::open_blob(P_OP op, P_BLOB * stuff, PACKET* send)
 	RTR transaction;
 	USHORT bpb_length;
 	UCHAR *bpb;
-	struct why_hndl*handle;
+	FRBRD *handle;
 	USHORT object;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 
@@ -2899,7 +2899,7 @@ STATUS port::prepare_statement(P_SQLST * prepare, PACKET* send)
 	UCHAR *buffer, local_buffer[1024];
 	STATUS status, status_vector[ISC_STATUS_LENGTH];
 	USHORT state, parser_version;
-	struct why_hndl*handle;
+	FRBRD *handle;
 
 /** Do not call CHECK_HANDLE if this is the start of a transaction **/
 	if (prepare->p_sqlst_transaction)
@@ -4346,7 +4346,7 @@ STATUS port::service_attach(P_ATCH* attach, PACKET* send)
  **************************************/
 	USHORT service_length, spb_length;
 	UCHAR *service_name, *spb, new_spb_buffer[512], *new_spb, *p, *end;
-	struct why_hndl*handle;
+	FRBRD *handle;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	RDB rdb;
 	STR string;
@@ -4659,7 +4659,7 @@ STATUS port::start_transaction(P_OP operation, P_STTR * stuff, PACKET* send)
 	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	RDB rdb = this->port_context;
-	struct why_hndl* handle = NULL;
+	FRBRD *handle = NULL;
 
 	THREAD_EXIT;
 	if (operation == op_reconnect)
@@ -4709,7 +4709,7 @@ STATUS port::start_transaction(P_OP operation, P_STTR * stuff, PACKET* send)
 
 			else {
 				gds__handle_cleanup(status_vector,
-									(struct why_hndl **) GDS_REF(handle));
+									(FRBRD **) GDS_REF(handle));
 			}
 #endif
 			THREAD_ENTER;
