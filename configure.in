@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.48 2002-09-20 18:58:53 skidder Exp $
+dnl $Id: configure.in,v 1.49 2002-09-23 07:49:33 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -55,7 +55,7 @@ AC_PROG_YACC
 dnl Some controllable options
 FIREBIRD_ARCH_TYPE=classic
 AC_ARG_ENABLE(superserver,
-  [  --enable-superserver    build SuperServer architecture [default=no]],
+  [  --enable-superserver    build SuperServer architecture (default=no)],
   [case "$enableval" in
      yes) FIREBIRD_ARCH_TYPE=super;;
      no)  FIREBIRD_ARCH_TYPE=classic;;
@@ -65,7 +65,7 @@ AC_SUBST(FIREBIRD_ARCH_TYPE)
 
 PROD_BUILD_FLG=Y
 AC_ARG_ENABLE(debug,
-  [  --enable-debug          build debug version [default=no]],
+  [  --enable-debug          build debug version (default=no)],
   [case "$enableval" in
      yes) PROD_BUILD_FLG=N;;
      no)  PROD_BUILD_FLG=Y;;
@@ -79,7 +79,7 @@ if test "$FIREBIRD_ARCH_TYPE" = "classic"; then
   dnl The lock manager process is only need on systems, that do not support
   dnl sending signals to process groups (man 2 kill).
   AC_ARG_WITH(lock-manager,
-    [  --with-lock-manager     build lock manager [default=no]],
+    [  --with-lock-manager     build lock manager (default=no)],
     [case "$withval" in
        yes) LOCK_MANAGER=Y;;
        no)  LOCK_MANAGER=N;;
@@ -406,7 +406,7 @@ mkdir -p gen/libfbembed/common/memory
 
 MAKE_SRC_DIR=builds/posix
 
-AC_DEFINE_UNQUOTED(ISC_PREFIX,$(if test x$prefix == xNONE ; then echo \"$ac_default_prefix\"; else echo \"$prefix\"; fi))
+AC_DEFINE_UNQUOTED(ISC_PREFIX,$(if test "x$prefix" = "xNONE" ; then echo \"$ac_default_prefix\"; else echo \"$prefix\"; fi))
 
 AC_OUTPUT(
 gen/make.rules:${MAKE_SRC_DIR}/make.rules
