@@ -5642,7 +5642,7 @@ static int par_page_size(void)
 	else if (n1 <= 16384)
 	    n2 = 16384;
 	else
-		CPR_s_error("<page size> in range 1024 to 8096");
+		CPR_s_error("<page size> in range 1024 to 16384");
 	PAR_get_token();
 
 	return n2;
