@@ -131,8 +131,8 @@ static const USHORT blr_dtypes[] =
 */
 
 struct rfr_tab_t {
-	const TEXT *relation;
-	const TEXT *field;
+	const TEXT* relation;
+	const TEXT* field;
 	int bit_mask;
 };
 

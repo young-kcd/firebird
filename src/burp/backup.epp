@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.65 2004-08-30 10:07:00 robocop Exp $
+$Id: backup.epp,v 1.66 2004-10-07 09:19:19 robocop Exp $
 */
 
 #include "firebird.h"
@@ -168,8 +168,8 @@ UCHAR debug_on = 0;		// able to turn this on in debug mode
 
 struct rfr_tab_t
 {
-	const TEXT *relation;
-	const TEXT *field;
+	const TEXT* relation;
+	const TEXT* field;
 	// Let's be compatible with BurpGlobals.BCK_capabilities, although we could follow
 	// the enumeration backup_capabilities but the enum then should be defined
 	// in burp.h instead so BCK_capabilities isn't anymore a simple SLONG.
