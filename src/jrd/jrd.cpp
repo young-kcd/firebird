@@ -43,10 +43,10 @@
 #include "../jrd/common.h"
 #include "../jrd/os/thd_priority.h"
 #include <stdarg.h>
-#ifndef	WIN_NT
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#ifndef	WIN_NT
 #ifdef DARWIN
 #include </usr/include/pwd.h>
 #else
