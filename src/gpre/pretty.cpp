@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pretty.cpp,v 1.17 2003-09-29 12:43:03 robocop Exp $
+//	$Id: pretty.cpp,v 1.18 2003-09-30 23:01:07 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -215,7 +215,7 @@ int PRETTY_print_dyn(
 		return error(control, offset,
 					 "*** expected dyn end-of-command  ***\n", 0);
 
-	blr_format(control, "gds_dyn_eoc");
+	blr_format(control, "gds__dyn_eoc");
 	PRINT_LINE;
 
 	return 0;
