@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.53 2003-02-20 14:51:05 dimitr Exp $
+$Id: met.epp,v 1.54 2003-02-24 15:19:20 dimitr Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -2123,6 +2123,15 @@ JRD_REL MET_lookup_relation(TDBB tdbb, const char* name)
 			(!(relation->rel_flags & REL_deleted)) &&
 			(p = relation->rel_name))
 		{
+			/* dimitr: for non-system relations we should also check
+					   REL_scanned and REL_being_scanned flags. Look
+					   at MET_lookup_procedure for example. */
+			if (!(relation->rel_flags & REL_system) &&
+				(!(relation->rel_flags & REL_scanned) ||
+				(relation->rel_flags & REL_being_scanned))) {
+				break;
+			}
+
 			for (q = name; *p == *q; p++, q++)
 			{
 				if (*p == 0)
