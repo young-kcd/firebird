@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.7 2002-12-16 16:05:14 alexpeshkoff Exp $
+ * $Id: extract.epp,v 1.8 2003-02-04 15:36:45 dimitr Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -38,6 +38,7 @@
  * Apparently this has to be done in show.e also,
  * but that is for another day :-)
  *
+ * 2003.02.04 Dmitry Yemanov: support for universal triggers
  */
 
 #include "firebird.h"
@@ -99,8 +100,9 @@ extern IB_FILE *Out;
 extern "C" CONST SQLTYPES Column_types[];
 extern CONST SCHAR *Integral_subtypes[];
 extern CONST SCHAR *Sub_types[];
-extern CONST SCHAR *Trigger_types[];
 extern CONST SCHAR *UDF_param_types[];
+
+extern const char* trigger_action(int);
 
 static SCHAR *Procterm = "^";	/* TXNN: script use only */
 
@@ -1416,7 +1418,7 @@ static void list_all_triggers()
 	    sprintf (Print_buffer, "CREATE TRIGGER %s FOR %s %s%s %s POSITION %d %s",
                  SQL_identifier, SQL_identifier2, NEWLINE,
                  (TRG.RDB$TRIGGER_INACTIVE ? "INACTIVE" : "ACTIVE"),
-                 Trigger_types [TRG.RDB$TRIGGER_TYPE], TRG.RDB$TRIGGER_SEQUENCE, 
+                 trigger_action (TRG.RDB$TRIGGER_TYPE), TRG.RDB$TRIGGER_SEQUENCE, 
                  NEWLINE);
 	    ISQL_printf (Out, Print_buffer);
         
