@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.fbutil,v 1.4 2002-10-07 01:29:09 skywalker Exp $
+#  $Id: Makefile.in.fbutil,v 1.5 2003-03-05 16:14:09 brodsom Exp $
 #
 ROOT=../..
 
@@ -59,7 +59,7 @@ $(LIB)/fbutil_boot.a:	$(FBUTIL_Objects)
 jrdlib_dependencies: $(FBUTIL_Objects)
 
 
-libtestx.so.2 : $(FBUTIL_Objects)
+libtestx.$(SHRLIB_EXT).2 : $(FBUTIL_Objects)
 #	g++ -shared -o $@ $^ $(STATICLINK_LIBS)
 	$(LIB_LINK) $(LIB_LINK_OPTIONS) -o $@ $^
 

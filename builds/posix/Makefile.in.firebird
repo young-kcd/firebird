@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.28 2003-02-24 09:52:30 eku Exp $
+#  $Id: Makefile.in.firebird,v 1.29 2003-03-05 16:19:08 brodsom Exp $
 #
 
 ROOT=..
@@ -90,7 +90,7 @@ export DYLD_FRAMEWORK_PATH
 #    first phase of the compilation.  I called it the first phase because
 #    none of the work (except codes.h and friends) requires database access.
 #    Phase 2 builds all the tools necessary to compile the rest of FB.  Those
-#    tools are gbak and the gds.so shared library.
+#    tools are gbak and the gds.$(SHRLIB_EXT) shared library.
 #
 #  The .epp files in gbak require the yachts.lnk database.  But the only
 #    thing the database is used for is the metadata, so an empty database
@@ -99,12 +99,12 @@ export DYLD_FRAMEWORK_PATH
 #    Once there is an empty database gbak_static is built.  gbak_static is
 #    used later on in the compilation process to restore build databases.
 #
-#  After gbak_static is built the gds.so library is built.  This library is
+#  After gbak_static is built the gds.$(SHRLIB_EXT) library is built.  This library is
 #    still missing the security functionality.
 #
 #  Now we are on phase 3, building the actual DB tools.  This is as expected.
 #    We build all tools and link them against the shared library, including
-#    gpre, gbak, and the fully functional gds.so.
+#    gpre, gbak, and the fully functional gds.$(SHRLIB_EXT).
 #
 # John Belardo ~ July 2001
 #
