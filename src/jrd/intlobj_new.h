@@ -101,10 +101,11 @@ typedef ULONG (*pfn_INTL_str2case) (
 	UCHAR* dst
 );
 
-/* Returns FALSE in case of error. Otherwise it should put exactly 
-  texttype_canonical_width number of bytes into dst for each character from src.
+/* 
+  Places exactly texttype_canonical_width number of bytes into dst for each character from src.
+  Returns INTL_BAD_STR_LENGTH in case of error or number of characters processed if successful.
  */
-typedef INTL_BOOL (*pfn_INTL_canonical) (
+typedef ULONG (*pfn_INTL_canonical) (
 	texttype* t, 
 	ULONG srcLen,
 	const UCHAR* src,
