@@ -1,3 +1,49 @@
+2004-01-27 19:19  skidder
+
+	* firebird2/src/: jrd/common.h, jrd/ibase.h, include/fb_types.h:
+	
+	Temporary hack to return Win32 to buildable state. No Win64 port is
+	possible before ULONG name clash is resolved
+
+2004-01-27 14:52  epocman
+
+	* firebird2/builds/win32/msvc6/: Firebird2.dsw, instreg.dsp,
+	instsvc.dsp:
+	
+	Static link instreg and instsvc, just as instclient.
+
+2004-01-27 12:12  paul_reeves
+
+	* firebird2/src/:
+	install/arch-specific/win32/FirebirdInstall_15.iss,
+	jrd/isc_version.h:
+	
+	Update build number. Minor tweak to win32 install script.
+
+2004-01-27 12:06  aafemt
+
+	* firebird2/src/jrd/common.h:
+	
+	Fortunatelly we know how many monthes in a year
+
+2004-01-27 08:17  stryqx
+
+	* firebird2/src/dsql/: dsql.tab.h, parse.cpp:
+	
+	Regenerate after changing PAGE_SIZE to KW_PAGE_SIZE.
+
+2004-01-27 08:09  stryqx
+
+	* firebird2/src/dsql/: dsql.tab.h, parse.cpp:
+	
+	Regenerate after changing PAGE_SIZE to KW_PAGE_SIZE.
+
+2004-01-27 07:18  skidder
+
+	* firebird2/src/remote/: xdr.cpp, xdr_proto.h:
+	
+	Get errors passed over the wire correctly on 64-bit platforms
+
 2004-01-26 17:44  skidder
 
 	* firebird2/src/jrd/common.h:
