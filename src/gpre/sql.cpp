@@ -166,10 +166,9 @@ static inline bool range_positive_short_integer(const SLONG x)
 act* SQL_action(const TEXT* base_directory)
 {
 	act* action;
-	enum kwwords keyword;
-
-
-	switch (keyword = gpreGlob.token_global.tok_keyword) {
+	const enum kwwords keyword = gpreGlob.token_global.tok_keyword;
+	
+	switch (keyword) {
 	case KW_ALTER:
 	case KW_COMMENT:
 	case KW_CONNECT:
@@ -205,6 +204,7 @@ act* SQL_action(const TEXT* base_directory)
 	default:
 		CPR_s_error("SQL operation");
 	}
+
 	switch (keyword) {
 	case KW_ALTER:
 		action = act_alter();
@@ -339,9 +339,8 @@ act* SQL_action(const TEXT* base_directory)
 
 void SQL_adjust_field_dtype( gpre_fld* field)
 {
-	ULONG field_length;
-
 	if (field->fld_dtype <= dtype_any_text) {
+		ULONG field_length;
 		// Adjust the string data types and their lengths 
 		if (field->fld_collate) {
 			if (field->fld_char_length)
@@ -517,7 +516,6 @@ void SQL_par_field_dtype(gpre_req* request,
 						 gpre_fld* field,
 						 bool is_udf)
 {
-	char s[ERROR_LENGTH];
 	bool sql_date = false;
 
 	enum kwwords keyword = gpreGlob.token_global.tok_keyword;
@@ -581,6 +579,7 @@ void SQL_par_field_dtype(gpre_req* request,
 				CPR_s_error("<data type>");
 		}
 		else {
+			char s[ERROR_LENGTH];
 			SQL_resolve_identifier("<domain name>", s);
 			gpre_sym* symbol =
 				MSC_symbol(SYM_field, s, (USHORT) strlen(s), (gpre_ctx*) field);
@@ -757,7 +756,6 @@ void SQL_par_field_dtype(gpre_req* request,
 	}
 
 	if (MSC_match(KW_CHAR)) {
-		gpre_sym* symbol2;
 		if ((field->fld_dtype != dtype_text) &&
 			(field->fld_dtype != dtype_cstring) &&
 			(field->fld_dtype != dtype_varying) &&
@@ -779,7 +777,9 @@ void SQL_par_field_dtype(gpre_req* request,
 			CPR_s_error("SET");
 		if (gpreGlob.token_global.tok_type != tok_ident)
 			CPR_s_error("<character set name>");
-		if (!(symbol2 = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_charset)))
+			
+		gpre_sym* symbol2 = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_charset);
+		if (!symbol2)
 			PAR_error("The named CHARACTER SET was not found");
 		field->fld_character_set = (INTLSYM) symbol2->sym_object;
 		PAR_get_token();
@@ -900,8 +900,6 @@ gpre_rel* SQL_relation(gpre_req* request,
 					  const TEXT* owner_string,
 					  bool err_flag)
 {
-	SCHAR s[ERROR_LENGTH];
-
 	if (db_string && db_string[0]) {
 		/* a database was specified for the relation,
 		   search the known symbols for the database name */
@@ -917,6 +915,7 @@ gpre_rel* SQL_relation(gpre_req* request,
 			request->req_database = (DBB) symbol->sym_object;
 	}
 
+	SCHAR s[ERROR_LENGTH];
 	gpre_rel* relation = NULL;
 	
 	if (request->req_database)
@@ -2158,7 +2157,6 @@ static act* act_d_section( enum act_t type)
 
 static act* act_declare(void)
 {
-	act* action = NULL;
 	DBB db = NULL;
 
 	if (gpreGlob.token_global.tok_symbol && (gpreGlob.token_global.tok_symbol->sym_type == SYM_database)) {
@@ -2209,7 +2207,7 @@ static act* act_declare(void)
 		}
 	}
 
-
+	act* action = NULL;
 	gpre_sym* symbol = PAR_symbol(SYM_cursor);
 
 	switch (gpreGlob.token_global.tok_keyword) {
@@ -3913,7 +3911,7 @@ static act* act_procedure(void)
 	{
 		// parse input references
 
-		bool paren = MSC_match(KW_LEFT_PAREN);
+		const bool paren = MSC_match(KW_LEFT_PAREN);
 		gpre_fld* field = procedure->prc_inputs;
 		REF *ref_ptr = &request->req_values;
 		do {
@@ -3938,7 +3936,7 @@ static act* act_procedure(void)
 	if (MSC_match(KW_RETURNING)) {
 		// parse output references 
 
-		bool paren = MSC_match(KW_LEFT_PAREN);
+		const bool paren = MSC_match(KW_LEFT_PAREN);
 		gpre_fld* field = procedure->prc_outputs;
 		REF *ref_ptr = &request->req_references;
 		do {
@@ -4101,8 +4099,9 @@ static act* act_set_generator(void)
 	setgen->sgen_name = (TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 1);
 	SQL_resolve_identifier("<identifier>", setgen->sgen_name);
 	if (!MET_generator(setgen->sgen_name, request->req_database)) {
-		SCHAR s[128];
-		sprintf(s, "generator %s not found", gpreGlob.token_global.tok_string);
+		SCHAR s[ERROR_LENGTH];
+		fb_utils::snprintf(s, sizeof(s),
+			"generator %s not found", gpreGlob.token_global.tok_string);
 		PAR_error(s);
 	}
 	PAR_get_token();
@@ -6055,7 +6054,6 @@ static bool tail_database(enum act_t action_type,
 
 //  parse options for the database parameter block 
 
-	bool logdefined = false;
 	bool extend_dpb = false;
 
 	while (true) {
@@ -6136,7 +6134,7 @@ static bool tail_database(enum act_t action_type,
 	}
 
 //  parse add/drop items 
-
+	bool logdefined = false;
 	while (true) {
 		MSC_match(KW_ADD);
 		if (MSC_match(KW_DROP)) {

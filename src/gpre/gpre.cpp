@@ -253,9 +253,6 @@ enum char_types {
 int main(int argc, char* argv[])
 {
 	gpre_sym* symbol;
-	int i;
-	bool renamed;
-	bool explicitt;
 	const ext_table_t* ext_tab;
 	sw_tab_t sw_table[IN_SW_GPRE_COUNT];
 
@@ -265,9 +262,7 @@ int main(int argc, char* argv[])
 	fatals_global			= 0;
 	gpreGlob.ADA_create_database	= 1;
 
-	bool use_lang_internal_gxx_output;
-
-	use_lang_internal_gxx_output = false;
+	bool use_lang_internal_gxx_output = false;
 	strcpy(gpreGlob.ada_package, "");
 	gpreGlob.ada_flags = 0;
 	input_char = input_buffer;
@@ -277,6 +272,7 @@ int main(int argc, char* argv[])
 #endif
 
 	//  Initialize character class table 
+	int i;
 	for (i = 0; i <= 127; ++i) {
 		classes[i] = 0;
 	}
@@ -430,7 +426,7 @@ int main(int argc, char* argv[])
 		{
 				 ;	// empty loop body
 		}
-		renamed = file_rename(spare_file_name, ext_tab->in, NULL);
+		const bool renamed = file_rename(spare_file_name, ext_tab->in, NULL);
 		if (renamed &&
 			(input_file = fopen(spare_file_name, FOPEN_READ_TYPE)))
 		{
@@ -518,7 +514,9 @@ int main(int argc, char* argv[])
 #ifdef FTN_BLK_DATA
 			else {
 				gpreGlob.global_db_count = 1;
-				strcpy(gpreGlob.global_db_list[0].dbb_name, db->dbb_name->sym_string);
+				char* dbn = gpreGlob.global_db_list[0].dbb_name;
+				strncpy(dbn, db->dbb_name->sym_string, dbd::dbb_size);
+				dbn[dbd::dbb_size - 1] = 0;
 			}
 #endif
 			break;
@@ -830,7 +828,8 @@ int main(int argc, char* argv[])
     		}
 		}
 
-		renamed = explicitt = true;
+		bool renamed = true;
+		bool explicitt = true;
 		if (!out_file_name) {
 			out_file_name = spare_out_file_name;
 			strcpy(spare_out_file_name, file_name);
@@ -1866,7 +1865,8 @@ static bool get_switches(int			argc,
 			{
 					return false;
 			}
-			strcpy(gpreGlob.ada_package, *++argv);
+			strncpy(gpreGlob.ada_package, *++argv, MAXPATHLEN);
+			gpreGlob.ada_package[MAXPATHLEN - 2] = 0;
 			strcat(gpreGlob.ada_package, ".");
 			break;
 

@@ -58,7 +58,7 @@
 static jmp_buf*	PAR_jmp_buf;
 
 #ifdef FTN_BLK_DATA
-static void		block_data_list(DBB);
+static void		block_data_list(const dbb*);
 #endif
 static bool		match_parentheses();
 static act*		par_any();
@@ -560,12 +560,19 @@ act* PAR_database(bool sql, const TEXT* base_directory)
 		PAR_get_token();
 		if (isQuoted(gpreGlob.token_global.tok_type))
 			CPR_s_error("quoted file name");
-		MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, s);
+		int len = gpreGlob.token_global.tok_length;
+		if (len > MAXPATHLEN - 2)
+		    len = MAXPATHLEN - 2;
+		MSC_copy(gpreGlob.token_global.tok_string, len, s);
+		s[len] = 0;
 		strcat(s, ".");
 		if (!gpreGlob.ada_package[0] || !strcmp(gpreGlob.ada_package, s))
-			strcpy(gpreGlob.ada_package, s);
+		{
+			strncpy(gpreGlob.ada_package, s, MAXPATHLEN);
+			gpreGlob.ada_package[MAXPATHLEN - 1] = 0;
+		}
 		else {
-			sprintf(s,
+			fb_utils::snprintf(s, sizeof(s),
 					"Ada handle package \"%s\" already in use, ignoring package %s",
 					gpreGlob.ada_package, gpreGlob.token_global.tok_string);
 			CPR_warn(s);
@@ -1085,10 +1092,10 @@ gpre_req* PAR_set_up_dpb_info(rdy* ready, act* action, USHORT buffercount)
 gpre_sym* PAR_symbol(enum sym_t type)
 {
 	gpre_sym* symbol;
-	TEXT s[ERROR_LENGTH];
 
 	for (symbol = gpreGlob.token_global.tok_symbol; symbol; symbol = symbol->sym_homonym)
 		if (type == SYM_dummy || symbol->sym_type == type) {
+			TEXT s[ERROR_LENGTH];
 			fb_utils::snprintf(s, sizeof(s), 
 				"symbol %s is already in use", gpreGlob.token_global.tok_string);
 			PAR_error(s);
@@ -1144,7 +1151,7 @@ void PAR_using_db()
 //		names of dbs to be so handled.  
 //  
 
-static void block_data_list( DBB db)
+static void block_data_list( const dbb* db)
 {
 	if (db->dbb_scope == DBB_EXTERN)
 		return;
@@ -1152,7 +1159,7 @@ static void block_data_list( DBB db)
 	dbd* list = gpreGlob.global_db_list;
 
 	if (gpreGlob.global_db_count)
-		if (gpreGlob.global_db_count > 32) {
+		if (gpreGlob.global_db_count > MAX_DATABASES) {
 			PAR_error
 				("Database limit exceeded: 32 databases per source file.");
 		}
@@ -1165,7 +1172,7 @@ static void block_data_list( DBB db)
 			}
 		}
 
-	if (gpreGlob.global_db_count > 32)
+	if (gpreGlob.global_db_count >= MAX_DATABASES)
 		return;
 
 	strcpy(list->dbb_name, name);
@@ -1300,24 +1307,25 @@ static act* par_at()
 
 static act* par_based()
 {
-	TEXT s[64];
 	TEXT t_str[NAME_SIZE + 1];
 	bool notSegment = false;	// a COBOL specific patch
-	char tmpChar[2];			// a COBOL specific patch 
 
 	MSC_match(KW_ON);
 	act* action = MSC_action(0, ACT_basedon);
 	bas* based_on = (bas*) MSC_alloc(BAS_LEN);
 	action->act_object = (REF) based_on;
 
-	if ((gpreGlob.sw_language != lang_fortran) || gpreGlob.isc_databases) {
+	if ((gpreGlob.sw_language != lang_fortran) || gpreGlob.isc_databases)
+	{
+		TEXT s[ERROR_LENGTH];
 		gpre_rel* relation = EXP_relation();
 		if (!MSC_match(KW_DOT))
 			CPR_s_error("dot in qualified field reference");
 		SQL_resolve_identifier("<fieldname>", t_str);
 		gpre_fld* field = MET_field(relation, gpreGlob.token_global.tok_string);
 		if (!field) {
-			sprintf(s, "undefined field %s", gpreGlob.token_global.tok_string);
+			fb_utils::snprintf(s, sizeof(s),
+				"undefined field %s", gpreGlob.token_global.tok_string);
 			PAR_error(s);
 		}
 		if (SQL_DIALECT_V5 == gpreGlob.sw_sql_dialect) {
@@ -1331,6 +1339,7 @@ static act* par_based()
 			}
 		}
 		PAR_get_token();
+		char tmpChar[2];			// a COBOL specific patch
 		if (gpreGlob.sw_language == lang_cobol && gpreGlob.token_global.tok_keyword == KW_DOT) {
 			strcpy(tmpChar, gpreGlob.token_global.tok_string);
 		}
@@ -1345,7 +1354,7 @@ static act* par_based()
 				}
 			}
 			else if (!(field->fld_flags & FLD_blob)) {
-				sprintf(s, "field %s is not a blob",
+				fb_utils::snprintf(s, sizeof(s), "field %s is not a blob",
 						field->fld_symbol->sym_string);
 				PAR_error(s);
 			}
@@ -1588,8 +1597,6 @@ static act* par_clear_handles()
 
 static act* par_derived_from()
 {
-	TEXT s[64];
-
 	if ((gpreGlob.sw_language != lang_c) && (!isLangCpp(gpreGlob.sw_language))) {
 		return (NULL);
     }
@@ -1601,11 +1608,15 @@ static act* par_derived_from()
 	gpre_rel* relation = EXP_relation();
 	if (!MSC_match(KW_DOT))
 		CPR_s_error("dot in qualified field reference");
-	SQL_resolve_identifier("<Field Name>", s);
+
+	TEXT dummy[64];
+	SQL_resolve_identifier("<Field Name>", dummy);
 	
 	gpre_fld* field = MET_field(relation, gpreGlob.token_global.tok_string);
 	if (!field) {
-		sprintf(s, "undefined field %s", gpreGlob.token_global.tok_string);
+		TEXT s[ERROR_LENGTH];
+		fb_utils::snprintf(s, sizeof(s),
+			"undefined field %s", gpreGlob.token_global.tok_string);
 		PAR_error(s);
 	}
 	PAR_get_token();
@@ -1861,7 +1872,6 @@ static act* par_end_stream()
 static act* par_end_store(bool special)
 {
 	REF reference;
-	GPRE_NOD assignments;
 
 	if (!cur_store)
 		PAR_error("unmatched END_STORE");
@@ -1885,7 +1895,8 @@ static act* par_end_store(bool special)
 				count++;
 		}
 
-		request->req_node = assignments = MSC_node(nod_list, (SSHORT) count);
+		gpre_nod* const assignments = MSC_node(nod_list, (SSHORT) count);
+		request->req_node = assignments;
 		count = 0;
 
 		for (reference = request->req_references; reference;
@@ -1936,8 +1947,8 @@ static act* par_end_store(bool special)
 
 		// Build a list node of the assignments 
 
-		return_values->upd_assignments = assignments =
-			MSC_node(nod_list, (SSHORT) count);
+		gpre_nod* const assignments = MSC_node(nod_list, (SSHORT) count);
+		return_values->upd_assignments = assignments;
 		gpre_nod** ptr = assignments->nod_arg + count;
 
 		while (stack)
@@ -2165,7 +2176,6 @@ static act* par_left_brace()
 
 static act* par_modify()
 {
-	SCHAR s[50];
 
 //  Set up modify and action blocks.  This is done here to leave the
 //  structure in place to cleanly handle END_MODIFY under error conditions. 
@@ -2177,6 +2187,7 @@ static act* par_modify()
 
 	gpre_sym* symbol = gpreGlob.token_global.tok_symbol;
 	if (!symbol || symbol->sym_type != SYM_context) {
+		SCHAR s[ERROR_LENGTH];
 		sprintf(s, "%s is not a valid context variable", gpreGlob.token_global.tok_string);
 		PAR_error(s);
 	}
@@ -2261,9 +2272,6 @@ static act* par_on_error()
 
 static act* par_open_blob( ACT_T act_op, gpre_sym* symbol)
 {
-	TEXT s[128];
-	bool filter_is_defined = false;
-
 //  If somebody hasn't already parsed up a symbol for us, parse the
 //  symbol and the mandatory IN now. 
 
@@ -2279,13 +2287,16 @@ static act* par_open_blob( ACT_T act_op, gpre_sym* symbol)
 	if (!field)
 		return NULL;
 
+	TEXT s[ERROR_LENGTH];
 	if (!(field->fld_flags & FLD_blob)) {
-		sprintf(s, "Field %s is not a blob", field->fld_symbol->sym_string);
+		fb_utils::snprintf(s, sizeof(s),
+			"Field %s is not a blob", field->fld_symbol->sym_string);
 		PAR_error(s);
 	}
 
 	if (field->fld_array_info) {
-		sprintf(s, "Field %s is an array and can not be opened as a blob",
+		fb_utils::snprintf(s, sizeof(s),
+				"Field %s is an array and can not be opened as a blob",
 				field->fld_symbol->sym_string);
 		PAR_error(s);
 	}
@@ -2299,6 +2310,7 @@ static act* par_open_blob( ACT_T act_op, gpre_sym* symbol)
 
 //   See if we need a blob filter (do we have a subtype to subtype clause?)  
 
+	bool filter_is_defined = false;
 	for (;;)
 		if (MSC_match(KW_FILTER)) {
 			blob->blb_const_from_type = (MSC_match(KW_FROM)) ?
@@ -2990,11 +3002,10 @@ static act* par_type()
 	if (!MSC_match(KW_DOT))
 		return NULL;
 
-	TEXT s[64];
-	
-//  Look for field name.  No field name, punt 
+//  Look for field name.  No field name, punt
 
-	SQL_resolve_identifier("<Field Name>", s);
+	TEXT dummy[64];
+	SQL_resolve_identifier("<Field Name>", dummy);
 	gpre_fld* field = MET_field(relation, gpreGlob.token_global.tok_string);
 	if (!field)
 		return NULL;
@@ -3008,7 +3019,9 @@ static act* par_type()
 
 	SSHORT type;
 	if (!MET_type(field, gpreGlob.token_global.tok_string, &type)) {
-		sprintf(s, "undefined type %s", gpreGlob.token_global.tok_string);
+		TEXT s[ERROR_LENGTH];
+		fb_utils::snprintf(s, sizeof(s),
+			 "undefined type %s", gpreGlob.token_global.tok_string);
 		PAR_error(s);
 	}
 

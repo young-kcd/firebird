@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pat.cpp,v 1.25 2004-11-10 04:18:58 robocop Exp $
+//	$Id: pat.cpp,v 1.26 2005-01-07 04:00:19 robocop Exp $
 //
 
 #include "firebird.h"
@@ -116,10 +116,6 @@ static const struct ops {
 
 void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 {
-	TEXT buffer[512], temp1[16], temp2[16];
-	SSHORT value;				/* value needs to be signed since some of the
-								   values printed out are signed.  */
-	SLONG long_value;
 
 	// CVC: kudos to the programmer that had chosen variables with the same
 	// names that structs in gpre.h and with type char* if not enough.
@@ -158,12 +154,16 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 #endif
 	}
 
+	TEXT buffer[512];
 	TEXT* p = buffer;
 	*p++ = '\n';
 	bool sw_gen = true;
 	for (USHORT n = column; n; --n)
 		*p++ = ' ';
 
+	SSHORT value;				/* value needs to be signed since some of the
+								   values printed out are signed.  */
+	SLONG long_value;
 	TEXT c;
 	while (c = *pattern++) {
 		if (c != '%') {
@@ -379,6 +379,7 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 			if (!reference->ref_port)
 				sprintf(p, gpreGlob.ident_pattern, reference->ref_ident);
 			else {
+				TEXT temp1[16], temp2[16];
 				sprintf(temp1, gpreGlob.ident_pattern, reference->ref_port->por_ident);
 				sprintf(temp2, gpreGlob.ident_pattern, reference->ref_ident);
 				switch (gpreGlob.sw_language) {
