@@ -102,11 +102,7 @@ void ThreadPriorityScheduler::Init(void)
 	specific_key = TlsAlloc();
 
 	// memory pool for thps allocation
-#ifdef DEV_BUILD
-	pool = MemoryPool::createPool();
-#else
 	pool = getDefaultMemoryPool();
-#endif
 
 	// mutex to sync linked list operations
 	THD_mutex_init(&mutex);
@@ -348,9 +344,6 @@ start_label:
 			break;
 	}
 	// cleanup
-#ifdef DEV_BUILD
-	MemoryPool::deletePool(pool);
-#endif
 	THD_mutex_destroy(&mutex);
 	TlsFree(specific_key);
 	return 0;
