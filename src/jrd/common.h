@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.105 2004-03-08 02:07:38 skidder Exp $
+$Id: common.h,v 1.106 2004-03-08 18:44:24 skidder Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -184,6 +184,35 @@ int syslog(int pri, char *fmt, ...);
 #include <dlfcn.h>
 #define dlopen(a,b)		dlopen((char *)(a),(b))
 #define dlsym(a,b)		dlsym((a), (char *)(b))
+
+#include <signal.h>
+#include <sys/siginfo.h>
+
+struct sinixz_sigaction
+  {
+    int sa_flags;
+    union
+      {
+        /* Used if SA_SIGINFO is not set.  */
+        void (*sa_handler)(int);
+        /* Used if SA_SIGINFO is set.  */
+        void (*sa_sigaction) (int, siginfo_t *, void *);
+      }
+    __sigaction_handler;
+#define sa_handler		__sigaction_handler.sa_handler
+#define sa_sigaction		__sigaction_handler.sa_sigaction
+    sigset_t sa_mask;
+    int sa_resv[2];
+  };
+
+static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
+                                   struct sinixz_sigaction *oact)
+{
+  return sigaction(sig, (struct sigaction*)act, (struct sigaction*)oact);
+}
+
+// Re-define things actually
+#define sigaction		sinixz_sigaction
 
 #define QUADFORMAT "ll"
 #define QUADCONST(n) (n##LL)
