@@ -71,8 +71,8 @@ Const
   IBMessageFile   = 'interbase.msg';      //IB5, IB6, IB7 and Fb 1.0
   FBMessageFile   = 'firebird.msg';       //Fb2 codebase
 
-  IBDesc = 'InterBase %s';
-  FBDesc = 'Firebird %s';
+  IBDesc = 'InterBase %s ';
+  FBDesc = 'Firebird %s ';
 
 
 
@@ -646,8 +646,8 @@ end;
 function InstallCPLApplet: boolean;
 begin
   result := False;
-  if ConfigureFirebird then
-    result := ( (not NoCPL) OR (ShouldProcessEntry('ServerComponent', 'InstallCPLAppletTask')= srYes) );
+  if ( (ConfigureFirebird) AND (not NoCPL) ) then
+     result := (ShouldProcessEntry('SuperServerComponent', 'InstallCPLAppletTask') = srYes) ;
 end;
 
 

@@ -267,6 +267,7 @@ Const
 #include "FirebirdInstallSupportFunctions.inc"
 #include "FirebirdInstallEnvironmentChecks.inc"
 
+
 function SummarizeInstalledProducts: String;
 var
   InstallSummaryArray: TArrayofString;
