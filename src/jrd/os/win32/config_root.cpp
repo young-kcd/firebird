@@ -71,6 +71,10 @@ ConfigRoot::ConfigRoot()
 	if (buffer[0])
 	{
 		root_dir = buffer;
+		if (root_dir.rfind(PathUtils::dir_sep) != root_dir.length() - 1)
+		{
+			root_dir += PathUtils::dir_sep;
+		}
 		return;
 	}
 
