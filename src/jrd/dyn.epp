@@ -83,14 +83,14 @@ DATABASE DB = STATIC "ODS.RDB";
 using namespace Jrd;
 
 
-static void grant(gbl*, const UCHAR**);
-static bool grantor_can_grant_role(thread_db*, gbl*, const TEXT*, const TEXT*);
-static bool grantor_can_grant(gbl*, const TEXT*, const TEXT*, const TEXT*,
+static void grant(Global*, const UCHAR**);
+static bool grantor_can_grant_role(thread_db*, Global*, const TEXT*, const TEXT*);
+static bool grantor_can_grant(Global*, const TEXT*, const TEXT*, const TEXT*,
 	const TEXT*, bool);
-static void	revoke_permission(gbl*, const UCHAR**);
-static void store_privilege(gbl*, const TEXT*, const TEXT*, const TEXT*,
+static void	revoke_permission(Global*, const UCHAR**);
+static void store_privilege(Global*, const TEXT*, const TEXT*, const TEXT*,
 	const TEXT*, SSHORT, SSHORT, int);
-static void	set_field_class_name(gbl*, const TEXT*, const TEXT*);
+static void	set_field_class_name(Global*, const TEXT*, const TEXT*);
 
 
 void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
@@ -124,8 +124,7 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 	*status++ = 0;
 	*status = isc_arg_end;
 
-	struct gbl gbl;
-	gbl.gbl_transaction = transaction;
+	struct Global gbl(transaction);
 
 	// Create a pool for DYN to operate in.  It will be released when
 	// the routine exits.
@@ -285,7 +284,7 @@ void DYN_error_punt(bool	status_flag,
 }
 
 
-bool DYN_is_it_sql_role(gbl*		gbl,
+bool DYN_is_it_sql_role(Global*		gbl,
 						   const TEXT*	input_name,
 						   TEXT*	output_name,
 						   thread_db*		tdbb)
@@ -351,7 +350,7 @@ void DYN_unsupported_verb(void)
 
 
 void DYN_execute(
-				 gbl* gbl,
+				 Global* gbl,
 				 const UCHAR** ptr,
 				 const TEXT* relation_name,
 				 TEXT* field_name,
@@ -667,7 +666,7 @@ USHORT DYN_get_string(const TEXT** ptr, TEXT* field, USHORT size, bool err_flag)
 	return length;
 }
 
-USHORT DYN_put_blr_blob(gbl* gbl, const UCHAR** ptr, bid* blob_id)
+USHORT DYN_put_blr_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 {
 /**************************************
  *
@@ -706,7 +705,7 @@ USHORT DYN_put_blr_blob(gbl* gbl, const UCHAR** ptr, bid* blob_id)
 	return length;
 }
 
-USHORT DYN_put_text_blob(gbl* gbl, const UCHAR** ptr, bid* blob_id)
+USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 {
 /**************************************
  *
@@ -805,7 +804,7 @@ USHORT DYN_skip_attribute(const UCHAR** ptr)
 }
 
 
-static void grant( gbl* gbl, const UCHAR** ptr)
+static void grant( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -1142,7 +1141,7 @@ do_punt:	// ugly, rethink logic of this function
 }
 
 
-static bool grantor_can_grant(	gbl*		gbl,
+static bool grantor_can_grant(	Global*		gbl,
 								const TEXT*	grantor,
 								const TEXT*	privilege,
 								const TEXT*	relation_name,
@@ -1426,7 +1425,7 @@ static bool grantor_can_grant(	gbl*		gbl,
 
 
 static bool grantor_can_grant_role(	thread_db*	tdbb,
-									gbl*		gbl,
+									Global*		gbl,
 									const TEXT* grantor,
 									const TEXT* role_name)
 {
@@ -1520,7 +1519,7 @@ static bool grantor_can_grant_role(	thread_db*	tdbb,
 }
 
 
-static void revoke_permission(gbl* gbl, const UCHAR** ptr)
+static void revoke_permission(Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -1791,7 +1790,7 @@ static void revoke_permission(gbl* gbl, const UCHAR** ptr)
 }
 
 
-static void set_field_class_name(gbl* gbl, const TEXT* relation, const TEXT* field)
+static void set_field_class_name(Global* gbl, const TEXT* relation, const TEXT* field)
 {
 /**************************************
  *
@@ -1848,7 +1847,7 @@ static void set_field_class_name(gbl* gbl, const TEXT* relation, const TEXT* fie
 }
 
 
-static void store_privilege(gbl*		gbl,
+static void store_privilege(Global*		gbl,
 							const TEXT*	object,
 							const TEXT*	user,
 							const TEXT*	field,

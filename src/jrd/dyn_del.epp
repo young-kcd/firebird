@@ -71,16 +71,16 @@ using namespace Jrd;
 
 DATABASE DB = STATIC "ODS.RDB";
 
-static bool delete_constraint_records(gbl*, const TEXT*, const TEXT*);
-static bool delete_dimension_records(gbl*, const TEXT*);
-static void delete_f_key_constraint(thread_db*, gbl*, const TEXT*, const TEXT*,
+static bool delete_constraint_records(Global*, const TEXT*, const TEXT*);
+static bool delete_dimension_records(Global*, const TEXT*);
+static void delete_f_key_constraint(thread_db*, Global*, const TEXT*, const TEXT*,
 									const TEXT*, const TEXT*);
-static void delete_gfield_for_lfield(gbl*, const TEXT*);
-static bool delete_index_segment_records(gbl*, const TEXT*);
-static bool delete_security_class2(gbl*, const TEXT*);
+static void delete_gfield_for_lfield(Global*, const TEXT*);
+static bool delete_index_segment_records(Global*, const TEXT*);
+static bool delete_security_class2(Global*, const TEXT*);
 
 
-void DYN_delete_constraint( gbl* gbl, const UCHAR** ptr, const TEXT* relation)
+void DYN_delete_constraint (Global* gbl, const UCHAR** ptr, const TEXT* relation)
 {
 /**************************************
  *
@@ -114,7 +114,7 @@ void DYN_delete_constraint( gbl* gbl, const UCHAR** ptr, const TEXT* relation)
 
 
 void DYN_delete_dimensions(
-						   gbl* gbl,
+						   Global* gbl,
 						   const UCHAR** ptr,
 						   const TEXT* relation_name, TEXT* field_name)
 {
@@ -147,7 +147,7 @@ void DYN_delete_dimensions(
 }
 
 
-void DYN_delete_exception( gbl* gbl, const UCHAR** ptr)
+void DYN_delete_exception( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -201,7 +201,7 @@ void DYN_delete_exception( gbl* gbl, const UCHAR** ptr)
 }
 
 
-void DYN_delete_filter( gbl* gbl, const UCHAR** ptr)
+void DYN_delete_filter( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -257,7 +257,7 @@ void DYN_delete_filter( gbl* gbl, const UCHAR** ptr)
 }
 
 
-void DYN_delete_function( gbl* gbl, const UCHAR** ptr)
+void DYN_delete_function( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -335,7 +335,7 @@ void DYN_delete_function( gbl* gbl, const UCHAR** ptr)
 }
 
 
-void DYN_delete_generator(gbl* gbl, const UCHAR**ptr)
+void DYN_delete_generator(Global* gbl, const UCHAR**ptr)
 {
 /**************************************
  *
@@ -394,7 +394,7 @@ void DYN_delete_generator(gbl* gbl, const UCHAR**ptr)
 }
 
 
-void DYN_delete_global_field( gbl* gbl, const UCHAR** ptr)
+void DYN_delete_global_field( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -479,7 +479,7 @@ void DYN_delete_global_field( gbl* gbl, const UCHAR** ptr)
 }
 
 
-void DYN_delete_index( gbl* gbl, const UCHAR** ptr)
+void DYN_delete_index( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -545,7 +545,7 @@ void DYN_delete_index( gbl* gbl, const UCHAR** ptr)
 
 
 void DYN_delete_local_field(
-							gbl* gbl,
+							Global* gbl,
 							const UCHAR** ptr,
 							const TEXT* relation_name, TEXT* field_name)
 {
@@ -786,7 +786,7 @@ void DYN_delete_local_field(
 }
 
 
-void DYN_delete_parameter( gbl* gbl, const UCHAR** ptr, TEXT* proc_name)
+void DYN_delete_parameter( Global* gbl, const UCHAR** ptr, TEXT* proc_name)
 {
 /**************************************
  *
@@ -881,7 +881,7 @@ void DYN_delete_parameter( gbl* gbl, const UCHAR** ptr, TEXT* proc_name)
 }
 
 
-void DYN_delete_procedure( gbl* gbl, const UCHAR** ptr)
+void DYN_delete_procedure( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -1039,7 +1039,7 @@ dyn_punt_140:
 }
 
 
-void DYN_delete_relation( gbl* gbl, const UCHAR** ptr, const TEXT* relation)
+void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const TEXT* relation)
 {
 /**************************************
  *
@@ -1280,7 +1280,7 @@ dyn_punt_61:
 }
 
 
-void DYN_delete_role( gbl* gbl, const UCHAR** ptr)
+void DYN_delete_role( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -1409,7 +1409,7 @@ do_punt:	// ugly, rethink logic of this function
 }
 
 
-void DYN_delete_security_class( gbl* gbl, const UCHAR** ptr)
+void DYN_delete_security_class( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -1437,7 +1437,7 @@ void DYN_delete_security_class( gbl* gbl, const UCHAR** ptr)
 }
 
 
-void DYN_delete_shadow( gbl* gbl, const UCHAR** ptr)
+void DYN_delete_shadow( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -1510,7 +1510,7 @@ while (files)
 }
 
 
-void DYN_delete_trigger( gbl* gbl, const UCHAR** ptr)
+void DYN_delete_trigger( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -1647,7 +1647,7 @@ dyn_punt_67:
 }
 
 
-void DYN_delete_trigger_msg( gbl* gbl, const UCHAR** ptr, TEXT* trigger_name)
+void DYN_delete_trigger_msg( Global* gbl, const UCHAR** ptr, TEXT* trigger_name)
 {
 /**************************************
  *
@@ -1716,7 +1716,7 @@ void DYN_delete_trigger_msg( gbl* gbl, const UCHAR** ptr, TEXT* trigger_name)
 }
 
 
-static bool delete_constraint_records(gbl*	gbl,
+static bool delete_constraint_records(Global*	gbl,
 										 const TEXT*	constraint_name,
 										 const TEXT*	relation_name)
 {
@@ -1768,7 +1768,7 @@ static bool delete_constraint_records(gbl*	gbl,
 }
 
 
-static bool delete_dimension_records(gbl* gbl, const TEXT* field_name)
+static bool delete_dimension_records(Global* gbl, const TEXT* field_name)
 {
 /**************************************
  *
@@ -1817,7 +1817,7 @@ static bool delete_dimension_records(gbl* gbl, const TEXT* field_name)
 
 
 static void delete_f_key_constraint(thread_db*	tdbb,
-									gbl*		gbl,
+									Global*		gbl,
 									const TEXT*	tbl_nm,
 									const TEXT*	col_nm, // unused
 									const TEXT*	constraint_nm,
@@ -1892,7 +1892,7 @@ static void delete_f_key_constraint(thread_db*	tdbb,
 }
 
 
-static void delete_gfield_for_lfield( gbl* gbl, const TEXT* lfield_name)
+static void delete_gfield_for_lfield( Global* gbl, const TEXT* lfield_name)
 {
 /**************************************
  *
@@ -1933,7 +1933,7 @@ static void delete_gfield_for_lfield( gbl* gbl, const TEXT* lfield_name)
 }
 
 
-static bool delete_index_segment_records( gbl* gbl, const TEXT* index_name)
+static bool delete_index_segment_records( Global* gbl, const TEXT* index_name)
 {
 /**************************************
  *
@@ -1980,7 +1980,7 @@ static bool delete_index_segment_records( gbl* gbl, const TEXT* index_name)
 }
 
 
-static bool delete_security_class2( gbl* gbl, const TEXT* security_class)
+static bool delete_security_class2( Global* gbl, const TEXT* security_class)
 {
 /**************************************
  *

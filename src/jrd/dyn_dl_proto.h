@@ -24,23 +24,23 @@
 #ifndef JRD_DYN_DL_PROTO_H
 #define JRD_DYN_DL_PROTO_H
 
-void	DYN_delete_constraint(Jrd::gbl*, const UCHAR**, const TEXT*);
-void	DYN_delete_dimensions(Jrd::gbl*, const UCHAR**, const TEXT*, TEXT*);
-void	DYN_delete_exception(Jrd::gbl*, const UCHAR**);
-void	DYN_delete_filter(Jrd::gbl*, const UCHAR**);
-void	DYN_delete_function(Jrd::gbl*, const UCHAR**);
-void	DYN_delete_generator(Jrd::gbl*, const UCHAR**);
-void	DYN_delete_global_field(Jrd::gbl*, const UCHAR**);
-void	DYN_delete_index(Jrd::gbl*, const UCHAR**);
-void	DYN_delete_local_field(Jrd::gbl*, const UCHAR**, const TEXT*, TEXT*);
-void	DYN_delete_parameter(Jrd::gbl*, const UCHAR**, TEXT*);
-void	DYN_delete_procedure(Jrd::gbl*, const UCHAR**);
-void	DYN_delete_relation(Jrd::gbl*, const UCHAR**, const TEXT*);
-void	DYN_delete_role(Jrd::gbl*, const UCHAR**);
-void	DYN_delete_security_class(Jrd::gbl*, const UCHAR**);
-void	DYN_delete_shadow(Jrd::gbl*, const UCHAR**);
-void	DYN_delete_trigger(Jrd::gbl*, const UCHAR**);
-void	DYN_delete_trigger_msg(Jrd::gbl*, const UCHAR**, TEXT*);
+void	DYN_delete_constraint(Jrd::Global*, const UCHAR**, const TEXT*);
+void	DYN_delete_dimensions(Jrd::Global*, const UCHAR**, const TEXT*, TEXT*);
+void	DYN_delete_exception(Jrd::Global*, const UCHAR**);
+void	DYN_delete_filter(Jrd::Global*, const UCHAR**);
+void	DYN_delete_function(Jrd::Global*, const UCHAR**);
+void	DYN_delete_generator(Jrd::Global*, const UCHAR**);
+void	DYN_delete_global_field(Jrd::Global*, const UCHAR**);
+void	DYN_delete_index(Jrd::Global*, const UCHAR**);
+void	DYN_delete_local_field(Jrd::Global*, const UCHAR**, const TEXT*, TEXT*);
+void	DYN_delete_parameter(Jrd::Global*, const UCHAR**, TEXT*);
+void	DYN_delete_procedure(Jrd::Global*, const UCHAR**);
+void	DYN_delete_relation(Jrd::Global*, const UCHAR**, const TEXT*);
+void	DYN_delete_role(Jrd::Global*, const UCHAR**);
+void	DYN_delete_security_class(Jrd::Global*, const UCHAR**);
+void	DYN_delete_shadow(Jrd::Global*, const UCHAR**);
+void	DYN_delete_trigger(Jrd::Global*, const UCHAR**);
+void	DYN_delete_trigger_msg(Jrd::Global*, const UCHAR**, TEXT*);
 
 #endif // JRD_DYN_DL_PROTO_H
 

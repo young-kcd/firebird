@@ -39,11 +39,13 @@ const char* const ALL_PROC_PRIVILEGES = "X";
 
 namespace Jrd {
 
-class bid;
+struct bid;
 class jrd_tra;
 
-struct gbl
+class Global
 {
+public:
+	explicit Global(jrd_tra* t) : gbl_transaction(t) { }
 	jrd_tra* gbl_transaction;
 };
 
@@ -67,7 +69,7 @@ void	DYN_error(bool, USHORT, const TEXT*, const TEXT*, const TEXT*,
 				const TEXT*, const TEXT*);
 void	DYN_error_punt(bool, USHORT, const TEXT*, const TEXT*,
 				const TEXT*, const TEXT*, const TEXT*);
-void	DYN_execute(Jrd::gbl*, const UCHAR**, const TEXT*, TEXT*, TEXT*, TEXT*, TEXT*);
+void	DYN_execute(Jrd::Global*, const UCHAR**, const TEXT*, TEXT*, TEXT*, TEXT*, TEXT*);
 SLONG	DYN_get_number(const UCHAR**);
 USHORT	DYN_get_string(const TEXT**, TEXT*, USHORT, bool);
 
@@ -75,13 +77,13 @@ USHORT	DYN_get_string(const TEXT**, TEXT*, USHORT, bool);
 // void	DYN_get_string2(TEXT**, TEXT*, USHORT);
 
 // This function doesn't need to be exported currently.
-bool	DYN_is_it_sql_role(Jrd::gbl*, const TEXT*, TEXT*, Jrd::thread_db*);
-USHORT	DYN_put_blr_blob(Jrd::gbl*, const UCHAR**, Jrd::bid*);
+bool	DYN_is_it_sql_role(Jrd::Global*, const TEXT*, TEXT*, Jrd::thread_db*);
+USHORT	DYN_put_blr_blob(Jrd::Global*, const UCHAR**, Jrd::bid*);
 
 // This function is not defined anywhere.
 //USHORT	DYN_put_blr_blob2(Jrd::gbl*, const UCHAR**, ISC_QUAD *);
 
-USHORT	DYN_put_text_blob(Jrd::gbl*, const UCHAR**, Jrd::bid*);
+USHORT	DYN_put_text_blob(Jrd::Global*, const UCHAR**, Jrd::bid*);
 // This function is not defined anywhere.
 //USHORT	DYN_put_text_blob2(Jrd::gbl*, const UCHAR**, ISC_QUAD *);
 

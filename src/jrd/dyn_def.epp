@@ -120,14 +120,14 @@ static const UCHAR who_blr[] =
 };
 
 
-static void check_unique_name(thread_db*, gbl*, const TEXT*, bool);
-static bool find_field_source(thread_db*, gbl*, const TEXT*, USHORT, const TEXT*, TEXT*);
-static bool get_who(thread_db*, gbl*, SCHAR*);
-static bool is_it_user_name(gbl*, const TEXT*, thread_db*);
+static void check_unique_name(thread_db*, Global*, const TEXT*, bool);
+static bool find_field_source(thread_db*, Global*, const TEXT*, USHORT, const TEXT*, TEXT*);
+static bool get_who(thread_db*, Global*, SCHAR*);
+static bool is_it_user_name(Global*, const TEXT*, thread_db*);
 static USHORT skip_blr_blob(const UCHAR** ptr);
 
 
-void DYN_define_cache( gbl* gbl, const UCHAR** ptr)
+void DYN_define_cache( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -222,7 +222,7 @@ dyn_punt_148:
 }
 
 
-void DYN_define_constraint(gbl*		gbl,
+void DYN_define_constraint(Global*		gbl,
 						   const UCHAR**	ptr,
 						   const TEXT*	relation_name,
 						   TEXT*	field_name)
@@ -623,7 +623,7 @@ dyn_punt_false_126:
 }
 
 
-void DYN_define_dimension(gbl*		gbl,
+void DYN_define_dimension(Global*		gbl,
 						  const UCHAR**	ptr,
 						  const TEXT*		relation_name,
 						  TEXT*		field_name)
@@ -707,7 +707,7 @@ void DYN_define_dimension(gbl*		gbl,
 }
 
 
-void DYN_define_exception( gbl* gbl, const UCHAR** ptr)
+void DYN_define_exception( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -780,7 +780,7 @@ void DYN_define_exception( gbl* gbl, const UCHAR** ptr)
 }
 
 
-void DYN_define_file(gbl*		gbl,
+void DYN_define_file(Global*		gbl,
 					 const UCHAR**	ptr,
 					 SLONG		shadow_number,
 					 SLONG*		start,
@@ -893,7 +893,7 @@ void DYN_define_file(gbl*		gbl,
 }
 
 
-void DYN_define_difference(gbl*		gbl,
+void DYN_define_difference(Global*		gbl,
 						   const UCHAR**	ptr)
 {
 /**************************************
@@ -975,7 +975,7 @@ dyn_punt_216:
 }
 
 
-void DYN_define_filter( gbl* gbl, const UCHAR** ptr)
+void DYN_define_filter( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -1070,7 +1070,7 @@ void DYN_define_filter( gbl* gbl, const UCHAR** ptr)
 }
 
 
-void DYN_define_function( gbl* gbl, const UCHAR** ptr)
+void DYN_define_function( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -1171,7 +1171,7 @@ void DYN_define_function( gbl* gbl, const UCHAR** ptr)
 }
 
 
-void DYN_define_function_arg(gbl* gbl, const UCHAR** ptr, TEXT* function_name)
+void DYN_define_function_arg(Global* gbl, const UCHAR** ptr, TEXT* function_name)
 {
 /**************************************
  *
@@ -1298,7 +1298,7 @@ void DYN_define_function_arg(gbl* gbl, const UCHAR** ptr, TEXT* function_name)
 }
 
 
-void DYN_define_generator( gbl* gbl, const UCHAR** ptr)
+void DYN_define_generator( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -1362,7 +1362,7 @@ void DYN_define_generator( gbl* gbl, const UCHAR** ptr)
 }
 
 
-void DYN_define_global_field(gbl*		gbl,
+void DYN_define_global_field(Global*		gbl,
 							 const UCHAR**	ptr,
 							 const TEXT*		relation_name,
 							 TEXT*		field_name)
@@ -1611,7 +1611,7 @@ void DYN_define_global_field(gbl*		gbl,
 }
 
 
-void DYN_define_index(gbl*		gbl,
+void DYN_define_index(Global*		gbl,
 					  const UCHAR**	ptr,
 					  const TEXT*		relation_name,
 					  UCHAR		index_type,
@@ -2182,7 +2182,7 @@ void DYN_define_index(gbl*		gbl,
 }
 
 
-void DYN_define_local_field(gbl*		gbl,
+void DYN_define_local_field(Global*		gbl,
 							const UCHAR**	ptr,
 							const TEXT*	relation_name,
 							TEXT*	field_name)
@@ -2501,7 +2501,7 @@ void DYN_define_local_field(gbl*		gbl,
 
 
 void DYN_define_log_file(
-						 gbl* gbl,
+						 Global* gbl,
 						 const UCHAR** ptr,
 						 bool first_log_file, bool default_log)
 {
@@ -2631,7 +2631,7 @@ local_punt_false_151:
 }
 
 
-void DYN_define_parameter( gbl* gbl, const UCHAR** ptr, TEXT* procedure_name)
+void DYN_define_parameter( Global* gbl, const UCHAR** ptr, TEXT* procedure_name)
 {
 /**************************************
  *
@@ -2883,7 +2883,7 @@ void DYN_define_parameter( gbl* gbl, const UCHAR** ptr, TEXT* procedure_name)
 }
 
 
-void DYN_define_procedure( gbl* gbl, const UCHAR** ptr)
+void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -3039,7 +3039,7 @@ void DYN_define_procedure( gbl* gbl, const UCHAR** ptr)
 }
 
 
-void DYN_define_relation( gbl* gbl, const UCHAR** ptr)
+void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -3263,7 +3263,7 @@ void DYN_define_relation( gbl* gbl, const UCHAR** ptr)
 }
 
 
-void DYN_define_role( gbl* gbl, const UCHAR** ptr)
+void DYN_define_role( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -3383,7 +3383,7 @@ do_error_punt_9:
 }
 
 
-void DYN_define_security_class( gbl* gbl, const UCHAR** ptr)
+void DYN_define_security_class( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -3452,7 +3452,7 @@ void DYN_define_security_class( gbl* gbl, const UCHAR** ptr)
 }
 
 
-void DYN_define_sql_field(gbl*		gbl,
+void DYN_define_sql_field(Global*		gbl,
 						  const UCHAR**	ptr,
 						  const TEXT*		relation_name,
 						  TEXT*		field_name)
@@ -3741,7 +3741,7 @@ void DYN_define_sql_field(gbl*		gbl,
 }
 
 
-void DYN_define_shadow( gbl* gbl, const UCHAR** ptr)
+void DYN_define_shadow( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -3808,7 +3808,7 @@ void DYN_define_shadow( gbl* gbl, const UCHAR** ptr)
 }
 
 
-void DYN_define_trigger(gbl*		gbl,
+void DYN_define_trigger(Global*		gbl,
 						const UCHAR**	ptr,
 						const TEXT*	relation_name,
 						TEXT*	trigger_name,
@@ -3986,7 +3986,7 @@ void DYN_define_trigger(gbl*		gbl,
 }
 
 
-void DYN_define_trigger_msg(gbl* gbl, const UCHAR** ptr, const TEXT* trigger_name)
+void DYN_define_trigger_msg(Global* gbl, const UCHAR** ptr, const TEXT* trigger_name)
 {
 /**************************************
  *
@@ -4062,7 +4062,7 @@ void DYN_define_trigger_msg(gbl* gbl, const UCHAR** ptr, const TEXT* trigger_nam
 }
 
 
-void DYN_define_view_relation( gbl* gbl, const UCHAR** ptr, const TEXT* view)
+void DYN_define_view_relation( Global* gbl, const UCHAR** ptr, const TEXT* view)
 {
 /**************************************
  *
@@ -4177,7 +4177,7 @@ void DYN_define_view_relation( gbl* gbl, const UCHAR** ptr, const TEXT* view)
 
 
 static void check_unique_name(	thread_db*	tdbb,
-								gbl*		gbl,
+								Global*		gbl,
 								const TEXT*	object_name,
 								bool	proc_flag)
 {
@@ -4256,7 +4256,7 @@ local_punt_false_132:
 
 
 static bool find_field_source(thread_db*	tdbb,
-								 gbl*	gbl,
+								 Global*	gbl,
 								 const TEXT* view_name,
 								 USHORT	context,
 								 const TEXT* local_name,
@@ -4320,7 +4320,7 @@ that can be used against rdb$fields' rdb$field_name. */
 }
 
 
-static bool get_who( thread_db* tdbb, gbl* gbl, SCHAR* output_name)
+static bool get_who( thread_db* tdbb, Global* gbl, SCHAR* output_name)
 {
 /**************************************
  *
@@ -4359,7 +4359,7 @@ static bool get_who( thread_db* tdbb, gbl* gbl, SCHAR* output_name)
 }
 
 
-bool is_it_user_name(gbl* gbl, const TEXT* role_name, thread_db* tdbb)
+bool is_it_user_name(Global* gbl, const TEXT* role_name, thread_db* tdbb)
 {
 /**************************************
  *

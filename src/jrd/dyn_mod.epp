@@ -90,27 +90,27 @@ DATABASE DB = STATIC "ODS.RDB";
 #define MAX_CHARS_FLOAT		13	/* 7 digits + 2 signs + E + decimal + 2 digit exp */
 
 static const UCHAR alloc_info[] = { isc_info_allocation, isc_info_end };
-static void drop_cache(gbl*);
-static void change_backup_mode(gbl*, UCHAR verb);
-static void drop_log(gbl*);
+static void drop_cache(Global*);
+static void change_backup_mode(Global*, UCHAR verb);
+static void drop_log(Global*);
 
 // Function not defined in this file MOD 04-July-2002
-// static void modify_lfield_type(gbl*, const UCHAR**, TEXT*, TEXT*);
+// static void modify_lfield_type(Global*, const UCHAR**, TEXT*, TEXT*);
 
-static void modify_lfield_position(thread_db*, Database*, gbl*, const TEXT*, const TEXT*,
+static void modify_lfield_position(thread_db*, Database*, Global*, const TEXT*, const TEXT*,
 	USHORT, USHORT);
-static bool check_view_dependency(thread_db*, Database*, gbl*, const TEXT*, const TEXT*);
-static bool check_sptrig_dependency(thread_db*, Database*, gbl*, const TEXT*, const TEXT*);
-static void modify_lfield_index(thread_db*, Database*, gbl*, const TEXT*, const TEXT*,
+static bool check_view_dependency(thread_db*, Database*, Global*, const TEXT*, const TEXT*);
+static bool check_sptrig_dependency(thread_db*, Database*, Global*, const TEXT*, const TEXT*);
+static void modify_lfield_index(thread_db*, Database*, Global*, const TEXT*, const TEXT*,
 	const TEXT*);
-static bool field_exists(thread_db*, Database*, gbl*, const TEXT*, const TEXT*);
-static bool domain_exists(thread_db*, Database*, gbl*, const TEXT*);
-static void get_domain_type(thread_db*, Database*, gbl*, dyn_fld*);
+static bool field_exists(thread_db*, Database*, Global*, const TEXT*, const TEXT*);
+static bool domain_exists(thread_db*, Database*, Global*, const TEXT*);
+static void get_domain_type(thread_db*, Database*, Global*, dyn_fld*);
 static ULONG check_update_fld_type(const dyn_fld*, const dyn_fld*);
 static void modify_err_punt(thread_db*, ULONG, const dyn_fld*, const dyn_fld*);
 
 
-void DYN_modify_database( gbl* gbl, const UCHAR** ptr)
+void DYN_modify_database( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -257,7 +257,7 @@ dyn_punt_84:
 }
 
 
-void DYN_modify_exception( gbl* gbl, const UCHAR** ptr)
+void DYN_modify_exception( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -324,7 +324,7 @@ void DYN_modify_exception( gbl* gbl, const UCHAR** ptr)
 
 
 void DYN_modify_global_field(
-							 gbl* gbl,
+							 Global* gbl,
 							 const UCHAR** ptr,
 							 const TEXT* relation_name, TEXT* field_name)
 {
@@ -876,7 +876,7 @@ void DYN_modify_global_field(
 }
 
 
-void DYN_modify_index( gbl* gbl, const UCHAR** ptr)
+void DYN_modify_index( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -961,7 +961,7 @@ void DYN_modify_index( gbl* gbl, const UCHAR** ptr)
 
 
 void DYN_modify_local_field(
-							gbl* gbl,
+							Global* gbl,
 							const UCHAR** ptr,
 							const TEXT* relation_name, TEXT* field_name)
 {
@@ -1156,7 +1156,7 @@ void DYN_modify_local_field(
 }
 
 
-void DYN_modify_procedure( gbl* gbl, const UCHAR** ptr)
+void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -1264,7 +1264,7 @@ void DYN_modify_procedure( gbl* gbl, const UCHAR** ptr)
 }
 
 
-void DYN_modify_relation( gbl* gbl, const UCHAR** ptr)
+void DYN_modify_relation( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -1363,7 +1363,7 @@ void DYN_modify_relation( gbl* gbl, const UCHAR** ptr)
 }
 
 
-void DYN_modify_trigger( gbl* gbl, const UCHAR** ptr)
+void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -1496,7 +1496,7 @@ void DYN_modify_trigger( gbl* gbl, const UCHAR** ptr)
 }
 
 
-void DYN_modify_trigger_msg( gbl* gbl, const UCHAR** ptr, TEXT* trigger_name)
+void DYN_modify_trigger_msg( Global* gbl, const UCHAR** ptr, TEXT* trigger_name)
 {
 /**************************************
  *
@@ -1567,7 +1567,7 @@ void DYN_modify_trigger_msg( gbl* gbl, const UCHAR** ptr, TEXT* trigger_name)
 }
 
 
-void DYN_modify_view( gbl* gbl, const UCHAR** ptr)
+void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -1665,7 +1665,7 @@ void DYN_modify_view( gbl* gbl, const UCHAR** ptr)
 }
 
 
-static void drop_cache( gbl* gbl)
+static void drop_cache( Global* gbl)
 {
 /**************************************
  *
@@ -1713,7 +1713,7 @@ static void drop_cache( gbl* gbl)
 }
 
 
-static void change_backup_mode( gbl* gbl, UCHAR verb)
+static void change_backup_mode( Global* gbl, UCHAR verb)
 {
 /**************************************
  *
@@ -1831,7 +1831,7 @@ static void change_backup_mode( gbl* gbl, UCHAR verb)
 }
 
 
-static void drop_log( gbl* gbl)
+static void drop_log( Global* gbl)
 {
 /**************************************
  *
@@ -1878,7 +1878,7 @@ static void drop_log( gbl* gbl)
 
 static void modify_lfield_position(thread_db* tdbb,
 								   Database* dbb,
-								   gbl* gbl,
+								   Global* gbl,
 								   const TEXT* relation_name,
 								   const TEXT* field_name,
 								   USHORT new_position,
@@ -1991,7 +1991,7 @@ static void modify_lfield_position(thread_db* tdbb,
 
 static bool check_view_dependency(thread_db* tdbb,
 									 Database* dbb,
-									 gbl* gbl,
+									 Global* gbl,
 									 const TEXT* relation_name,
 									 const TEXT* field_name)
 {
@@ -2038,7 +2038,7 @@ static bool check_view_dependency(thread_db* tdbb,
 
 static bool check_sptrig_dependency(thread_db* tdbb,
 									   Database* dbb,
-									   gbl* gbl,
+									   Global* gbl,
 									   const TEXT* relation_name,
 									   const TEXT* field_name)
 {
@@ -2077,7 +2077,7 @@ static bool check_sptrig_dependency(thread_db* tdbb,
 
 static void modify_lfield_index(thread_db*	tdbb,
 								Database* dbb,
-								gbl*		gbl,
+								Global*		gbl,
 								const TEXT*	relation_name,
 								const TEXT*	field_name,
 								const TEXT*	new_fld_name)
@@ -2117,7 +2117,7 @@ static void modify_lfield_index(thread_db*	tdbb,
 
 static bool field_exists(thread_db* tdbb,
 							Database* dbb,
-							gbl* gbl,
+							Global* gbl,
 							const TEXT* relation_name,
 							const TEXT* field_name)
 {
@@ -2143,7 +2143,7 @@ static bool field_exists(thread_db* tdbb,
 	return retval;
 }
 
-static bool domain_exists(thread_db* tdbb, Database* dbb, gbl* gbl, const TEXT* field_name)
+static bool domain_exists(thread_db* tdbb, Database* dbb, Global* gbl, const TEXT* field_name)
 {
 /***********************************************************
  *
@@ -2165,7 +2165,7 @@ static bool domain_exists(thread_db* tdbb, Database* dbb, gbl* gbl, const TEXT* 
 	return retval;
 }
 
-void DYN_modify_sql_field(gbl*		gbl,
+void DYN_modify_sql_field(Global*		gbl,
 						  const UCHAR**	ptr,
 						  const TEXT*		relation_name,
 						  TEXT*		field_name)
@@ -2649,7 +2649,7 @@ void DYN_modify_sql_field(gbl*		gbl,
 	}
 }
 
-void get_domain_type(thread_db* tdbb, Database* dbb, gbl* gbl, dyn_fld* dom_fld)
+void get_domain_type(thread_db* tdbb, Database* dbb, Global* gbl, dyn_fld* dom_fld)
 {
 /**************************************
  *

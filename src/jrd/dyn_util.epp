@@ -110,7 +110,7 @@ static const UCHAR prot_blr[] = {
 
 
 SINT64 DYN_UTIL_gen_unique_id(thread_db*		tdbb,
-							  gbl*		gbl,
+							  Global*		gbl,
 							  SSHORT	id,
 							  const SCHAR*	generator_name,
 							  jrd_req**		request)
@@ -164,7 +164,7 @@ SINT64 DYN_UTIL_gen_unique_id(thread_db*		tdbb,
 }
 
 
-void DYN_UTIL_generate_constraint_name( thread_db* tdbb, gbl* gbl, TEXT* buffer)
+void DYN_UTIL_generate_constraint_name( thread_db* tdbb, Global* gbl, TEXT* buffer)
 {
 /**************************************
  *
@@ -225,7 +225,7 @@ void DYN_UTIL_generate_constraint_name( thread_db* tdbb, gbl* gbl, TEXT* buffer)
 }
 
 
-void DYN_UTIL_generate_field_name( thread_db* tdbb, gbl* gbl, TEXT* buffer)
+void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* gbl, TEXT* buffer)
 {
 /**************************************
  *
@@ -287,7 +287,7 @@ void DYN_UTIL_generate_field_name( thread_db* tdbb, gbl* gbl, TEXT* buffer)
 
 void DYN_UTIL_generate_field_position(
 									  thread_db* tdbb,
-									  gbl* gbl,
+									  Global* gbl,
 									  const TEXT* relation_name,
 									  SLONG* field_pos)
 {
@@ -342,7 +342,7 @@ void DYN_UTIL_generate_field_position(
 
 
 void DYN_UTIL_generate_index_name(thread_db* tdbb,
-								  gbl* gbl, TEXT* buffer, UCHAR verb)
+								  Global* gbl, TEXT* buffer, UCHAR verb)
 {
 /**************************************
  *
@@ -408,7 +408,7 @@ void DYN_UTIL_generate_index_name(thread_db* tdbb,
 }
 
 
-void DYN_UTIL_generate_trigger_name( thread_db* tdbb, gbl* gbl, TEXT* buffer)
+void DYN_UTIL_generate_trigger_name( thread_db* tdbb, Global* gbl, TEXT* buffer)
 {
 /**************************************
  *
@@ -468,7 +468,7 @@ void DYN_UTIL_generate_trigger_name( thread_db* tdbb, gbl* gbl, TEXT* buffer)
 
 
 bool DYN_UTIL_get_prot(thread_db*		tdbb,
-						  gbl*		gbl,
+						  Global*		gbl,
 						  const SCHAR*	rname,
 						  const SCHAR*	fname,
 						  USHORT*	prot_mask)
@@ -519,7 +519,7 @@ bool DYN_UTIL_get_prot(thread_db*		tdbb,
 
 
 void DYN_UTIL_store_check_constraints(thread_db*	tdbb,
-									  gbl*	gbl,
+									  Global*	gbl,
 									  const TEXT*	constraint_name,
 									  const TEXT*	trigger_name)
 {
