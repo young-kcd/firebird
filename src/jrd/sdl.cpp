@@ -47,7 +47,7 @@ struct sdl_arg {
 	UCHAR* sdl_arg_array;
 	SLONG* sdl_arg_variables;
 	SDL_walk_callback sdl_arg_callback;
-	SLICE sdl_arg_argument;
+	array_slice* sdl_arg_argument;
 	ISC_STATUS* sdl_arg_status_vector;
 	IPTR sdl_arg_compiled[COMPILE_SIZE];
 	IPTR* sdl_arg_next;
@@ -327,7 +327,7 @@ int	SDL_walk(ISC_STATUS* status_vector,
 		internal_array_desc* array_desc,
 		SLONG* variables,
 		SDL_walk_callback callback,
-		SLICE argument)
+		array_slice* argument)
 {
 /**************************************
  *

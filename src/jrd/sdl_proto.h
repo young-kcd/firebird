@@ -28,14 +28,17 @@ namespace Jrd {
 	struct internal_array_desc;
 }
 
+struct sdl_info;
+struct array_alice;
+
 UCHAR* SDL_clone_sdl(const UCHAR*, size_t, UCHAR*, size_t);
 SLONG	SDL_compute_subscript(ISC_STATUS*, const Jrd::internal_array_desc*,
 							  USHORT, const SLONG*);
-ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS*, const UCHAR*, struct sdl_info*, SLONG*);
+ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS*, const UCHAR*, sdl_info*, SLONG*);
 const UCHAR* SDL_prepare_slice(const UCHAR*, USHORT);
 int		SDL_walk(ISC_STATUS*, const UCHAR*, bool, UCHAR*, 
 				Jrd::internal_array_desc*, SLONG*,
-				SDL_walk_callback, struct slice*);
+				SDL_walk_callback, array_slice*);
 
 #endif // JRD_SDL_PROTO_H
 

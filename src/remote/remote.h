@@ -177,7 +177,6 @@ struct rem_str
 
 #include "../jrd/dsc.h"
 
-//typedef vary* VARY;
 
 struct rem_fmt
 {

@@ -83,7 +83,6 @@ public:
 
 #define MAX_FORMAT_SIZE		65535
 
-//typedef vary VARY;
 
 /* A macro to define a local vary stack variable of a given length
    Usage:  VARY_STR(5)	my_var;        */
@@ -185,6 +184,8 @@ inline int IAD_LEN(int count)
 // Since we already have Scalar Array Descriptor and Array Description [Slice],
 // it was too confusing. Therefore, it was renamed ArrayField, since ultimately,
 // it represents an array field the user can manipulate.
+// There was also confusion for the casual reader due to the presence of
+// the structure "slice" in sdl.h that was renamed array_slice.
 
 class ArrayField : public pool_alloc_rpt<internal_array_desc::iad_repeat, type_arr>
 {

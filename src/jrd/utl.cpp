@@ -48,7 +48,6 @@
 #include "../jrd/license.h"
 #include <stdarg.h>
 #include "../jrd/jrd_time.h"
-#include "../jrd/misc.h"
 #include "../jrd/gdsassert.h"
 
 #include "../jrd/y_ref.h"
