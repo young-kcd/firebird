@@ -18,36 +18,38 @@
 #
 # Use SOLX86 to identify x86 version of Solaris.  Neil McCalden
 #  
-# $Id: prefix.solx86,v 1.3 2002-09-25 11:20:30 kkuznetsov Exp $
+# $Id: prefix.solx86,v 1.4 2002-09-26 09:53:42 kkuznetsov Exp $
 #
 # Start of file prefix.solaris X 86 :	$(VERSION)	$(PLATFORM)
 
 
 
-ifeq ($(IsProdTypeBuild),Y)
-DEBUG_Sources= nodebug.cpp
-CFLAGS:=   -m486 -DPROD_BUILD $(CFLAGS)
 	
-else
-	# Commented out since new memory model doesn't work with it.
 DEBUG_Sources= nodebug.cpp
+
+WARNINGS=-Wall -W -Wno-unused -Wno-parentheses -Wno-switch
+COMM_SOLX_FLAGS:=  -DSOLARIS -DSOLARIS26 -DSOLARIS_MT -DSOLX86 -DBSD_COMP -DEXACT_NUMERICS  -fwritable-strings
+
+
+
 #    DEBUG_Sources= grammar.c dbg.cpp dbt.cpp dmp.cpp
-CFLAGS:= -ggdb -DDEV_BUILD $(CFLAGS)
-endif
+
 
 SFIO= /export/home/interbase/SfIO
-#SfIO is a pretty portable stdIO from http://www.research.att.com/sw/tools/sfio/
+#SfIO is a pretty portable stdIO 
+#from http://www.research.att.com/sw/tools/sfio/
 
 
 STLPort=/export/home/kostik/STL/STLport-4.5.3/stlport	
-CFLAGS:= $(CFLAGS) -I$(STLPort)
+
 ifdef SFIO
-CFLAGS:= $(CFLAGS)  -DSFIO -DSOLARIS -DSOLARIS26 -DSOLARIS_MT -DSOLX86 -DBSD_COMP -DEXACT_NUMERICS -Isource/interbase/include  -Wall
-else
-CFLAGS:= $(CFLAGS)   -DSOLARIS -DSOLARIS26 -DSOLARIS_MT -DSOLX86 -DBSD_COMP -DEXACT_NUMERICS -Isource/interbase/include  -Wall
+COMM_SOLX_FLAGS:= $(COMM_SOLX_FLAGS)  -DSFIO -I$(SFIO)/include
 endif
 
+COMM_SOLX_FLAGS:= $(COMM_SOLX_FLAGS) -I$(STLPort)
 
+PROD_FLAGS=-DNDEBUG -w $(COMM_SOLX_FLAGS) -O2  -m486 
+DEV_FLAGS=$(COMM_SOLX_FLAGS) -ggdb  $(WARNINGS)
 
 #PROD_DEBUG_OBJECTS=	nodebug.o
 #PROD_SHRLIB_DIR=	-L source/jrd -L source/interbase/lib
