@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.104 2004-09-22 07:36:55 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.105 2004-09-25 20:29:51 skidder Exp $ 
  */
 
 /*
@@ -1253,7 +1253,7 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 
 	const Format* format = record->rec_format;
 
-	if (format) {
+	if (format && id < format->fmt_count) {
 		*desc = format->fmt_desc[id];
 	}
 
