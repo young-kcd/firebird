@@ -60,6 +60,7 @@
 #endif
 #include "../jrd/constants.h"
 #include "../common/classes/ClumpletWriter.h"
+#include "../common/utils_proto.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -639,8 +640,10 @@ int API_ROUTINE gds__edit(const TEXT* file_name, USHORT type)
 
 	struct stat before;
 	stat(file_name, &before);
-	TEXT buffer[256];
-	sprintf(buffer, "%s %s", editor, file_name);
+	// The path of the editor + the path of the file + quotes + one space.
+	// We aren't using quotes around the editor for now.
+	TEXT buffer[MAXPATHLEN * 2 + 5];
+	fb_utils::snprintf(buffer, sizeof(buffer), "%s \"%s\"", editor, file_name);
 
 	system(buffer);
 
@@ -668,7 +671,6 @@ int API_ROUTINE gds__edit(const TEXT* file_name, USHORT type)
  *	bails out, return FALSE, otherwise return TRUE.
  *
  **************************************/
-	int status, (*editor) ();
 	struct dsc$descriptor_s desc, symbol, image;
 	struct stat before, after;
 
@@ -677,8 +679,9 @@ int API_ROUTINE gds__edit(const TEXT* file_name, USHORT type)
 	ISC_make_desc(EDT_SYMBOL, &symbol, 0);
 	ISC_make_desc(EDT_IMAGE, &image, 0);
 
+	int (*editor)(dsc$descriptor_s, dsc$descriptor_s);
 	lib$find_image_symbol(&image, &symbol, &editor);
-	status = (*editor) (&desc, &desc);
+	int status = (*editor) (&desc, &desc);
 	stat(file_name, &after);
 
 	return (before.st_ctime != after.st_ctime ||
@@ -796,7 +799,7 @@ USHORT API_ROUTINE gds__event_block_a(SCHAR ** event_buffer,
    and counts for each argument */
 
 	USHORT i = count;
-	SCHAR** nb = name_buffer;
+	const SCHAR* const* nb = name_buffer;
 	SLONG length = 0;
 	while (i--) {
 		const SCHAR* q = *nb++;
@@ -1946,15 +1949,16 @@ int API_ROUTINE BLOB_put(SCHAR x, BSTREAM* bstream)
  *	block and retun TRUE if all is well. 
  *
  **************************************/
-	ISC_STATUS_ARRAY status_vector;
-
 	if (!bstream->bstr_buffer)
 		return FALSE;
 
 	*bstream->bstr_ptr++ = (x & 0377);
 	const USHORT l = (bstream->bstr_ptr - bstream->bstr_buffer);
+
+	ISC_STATUS_ARRAY status_vector;
 	if (isc_put_segment(status_vector, &bstream->bstr_blob,
-						 l, bstream->bstr_buffer)) {
+						 l, bstream->bstr_buffer))
+	{
 		return FALSE;
 	}
 	bstream->bstr_cnt = bstream->bstr_length;
@@ -1981,7 +1985,6 @@ static display(ISC_QUAD* blob_id, void* database, void* transaction)
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	struct dsc$descriptor_s desc;
 
 /* Open the blob.  If it failed, what the hell -- just return failure */
 
@@ -1993,6 +1996,7 @@ static display(ISC_QUAD* blob_id, void* database, void* transaction)
 
 /* Copy data from blob to scratch file */
 
+	struct dsc$descriptor_s desc;
 	const SSHORT short_length = sizeof(buffer);
 	SCHAR buffer[256];
 	for (;;) {
@@ -2033,8 +2037,6 @@ static int dump(ISC_QUAD* blob_id,
  *	Dump a blob into a file.
  *
  **************************************/
-	SCHAR buffer[256];
-
 	// bpb is irrelevant, not used.
 	const USHORT bpb_length = 0;
 	const UCHAR* bpb = NULL;
@@ -2044,13 +2046,15 @@ static int dump(ISC_QUAD* blob_id,
 	FB_API_HANDLE blob = 0;
 	ISC_STATUS_ARRAY status_vector;
 	if (isc_open_blob2(status_vector, &database, &transaction, &blob, blob_id,
-						bpb_length, bpb)) {
+						bpb_length, bpb))
+	{
 		isc_print_status(status_vector);
 		return FALSE;
 	}
 
 /* Copy data from blob to scratch file */
 
+	SCHAR buffer[256];
 	const SSHORT short_length = sizeof(buffer);
 
 	for (;;) {
@@ -2097,7 +2101,6 @@ static int edit(ISC_QUAD* blob_id,
  *	If the field name coming in is too big, truncate it.
  *
  **************************************/
-	TEXT file_name[50];
 #if (defined WIN_NT)
 	TEXT buffer[9];
 #else
@@ -2121,6 +2124,7 @@ static int edit(ISC_QUAD* blob_id,
    Would have saved me a lot of time, if I had seen this earlier :-(
    FSG 15.Oct.2000
 */
+	TEXT file_name[50];
 	sprintf(file_name, "%sXXXXXX", buffer);
 
 	FILE* file;
@@ -2400,7 +2404,8 @@ static int load(ISC_QUAD* blob_id,
 
 	FB_API_HANDLE blob = 0;
 	if (isc_create_blob(status_vector, &database, &transaction, &blob,
-						 blob_id)) {
+						 blob_id))
+	{
 		isc_print_status(status_vector);
 		return FALSE;
 	}
@@ -2469,3 +2474,4 @@ void setLogin(Firebird::ClumpletWriter& dpb)
 		setTag(dpb, isc_dpb_password, password);
 	}
 }
+
