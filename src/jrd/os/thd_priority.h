@@ -25,6 +25,7 @@
 #define JRD_OS_THD_PRIORITY_H
 
 #ifdef WIN_NT
+#include <windows.h>
 #if defined(SUPERSERVER) && !defined(EMBEDDED)
 // Comment this definition to build without priority scheduler 
 //	OR:
@@ -33,12 +34,12 @@
 #endif
 #endif
 
+#include "../jrd/thd.h"
+
 #ifdef THREAD_PSCHED
 
-#include "../jrd/thd.h"
 #include "../common/classes/alloc.h"
 #include <process.h>
-#include <windows.h>
 
 // Each thread, issuing THREAD_EXIT / THREAD_ENTER, must
 // have associated with it THPS class. That is
@@ -90,26 +91,52 @@ const UCHAR THPS_UP			= 2;	// candidate for priority boost
 const UCHAR THPS_LOW		= 4;	// candidate for priority decrement
 const UCHAR THPS_BOOSTED	= 8;	// thread controlled by priority scheduler
 
-#define THPS_ENTER() ThreadPriorityScheduler::Enter()
-#define THPS_EXIT() ThreadPriorityScheduler::Exit()
-#define THPS_GET(WhenMissing) ThreadPriorityScheduler::Get()
-#define THPS_SET(WhenMissing, val) ThreadPriorityScheduler::Set(val)
-#define THPS_INIT() ThreadPriorityScheduler::Init()
-#define THPS_FINI() ThreadPriorityScheduler::Cleanup()
-#define THPS_ATTACH(handle, thread_id, priority) \
-		ThreadPriorityScheduler::Attach(handle, thread_id, priority)
-#define THPS_BOOSTDONE() ThreadPriorityScheduler::Boosted()
+inline void THPS_ENTER(){
+	ThreadPriorityScheduler::Enter();
+}
+inline void THPS_EXIT(){
+	ThreadPriorityScheduler::Exit();
+}
+inline thdd* THPS_GET(DWORD specific_key){
+	return (thdd*) ThreadPriorityScheduler::Get();
+}
+inline void THPS_SET(DWORD specific_key, thdd* new_context){
+	ThreadPriorityScheduler::Set(new_context);
+}
+inline void THPS_INIT(){
+	ThreadPriorityScheduler::Init();
+}
+inline void THPS_FINI(){
+	ThreadPriorityScheduler::Cleanup();
+}
+inline void THPS_ATTACH(HANDLE handle, DWORD thread_id, int priority){
+	ThreadPriorityScheduler::Attach(handle, thread_id, priority);
+}
+inline bool THPS_BOOSTDONE() {
+	return ThreadPriorityScheduler::Boosted();
+}
 
 #else // THREAD_PSCHED
 
-#define THPS_ENTER()
-#define THPS_EXIT()
-#define THPS_GET(WhenMissing) WhenMissing
-#define THPS_SET(WhenMissing, val) WhenMissing
-#define THPS_INIT()
-#define THPS_FINI()
-#define THPS_ATTACH(handle, thread_id, priority)
-#define THPS_BOOSTDONE() false
+inline void THPS_ENTER(){
+}
+inline void THPS_EXIT(){
+}
+inline thdd* THPS_GET(DWORD specific_key){
+	return (thdd*) TlsGetValue(specific_key);
+}
+inline void THPS_SET(DWORD specific_key, thdd* new_context){
+	TlsSetValue(specific_key, (LPVOID) new_context);
+}
+inline void THPS_INIT(){
+}
+inline void THPS_FINI(){
+}
+inline void THPS_ATTACH(HANDLE handle, DWORD thread_id, int priority){
+}
+inline bool THPS_BOOSTDONE() {
+	return false;
+}
 
 #endif // THREAD_PSCHED
 

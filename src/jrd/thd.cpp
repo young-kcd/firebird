@@ -225,7 +225,7 @@ THDD THD_get_specific(void)
  *
  **************************************/
 
-	return THPS_GET((THDD)TlsGetValue(specific_key));
+	return THPS_GET(specific_key);
 }
 #endif
 #endif
@@ -1799,8 +1799,7 @@ static void put_specific(THDD new_context)
  * Functional description
  *
  **************************************/
-
-	THPS_SET(TlsSetValue(specific_key, (LPVOID) new_context), new_context);
+	THPS_SET(specific_key, new_context);
 }
 #endif
 #endif
