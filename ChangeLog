@@ -1,3 +1,15 @@
+2003-06-22 14:37  alexpeshkoff
+
+	* firebird2/doc/: README.NTSecurity, README.instsvc:
+	
+	some more readme's
+
+2003-06-22 13:52  alexpeshkoff
+
+	* firebird2/doc/sql.extensions/README.execute_statement:
+	
+	fixed word repetition
+
 2003-06-20 19:55  kkuznetsov
 
 	* firebird2/: builds/posix/prefix.solx86,
