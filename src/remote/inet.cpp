@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.122 2004-09-22 20:33:07 dimitr Exp $
+$Id: inet.cpp,v 1.123 2004-09-24 06:42:39 robocop Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -468,9 +468,11 @@ rem_port* INET_analyze(	TEXT*	file_name,
 				 user_string);
 	user_id[1] = (UCHAR) strlen((SCHAR *) p);
 	p = p + user_id[1];
+	fb_assert(user_id[1] < BUFFER_SMALL);
 
 	*p++ = CNCT_host;
 	p++;
+	fb_assert(MAXHOSTLEN <= BUFFER_SMALL - (p - user_id));
 	ISC_get_host(reinterpret_cast <char*>(p), MAXHOSTLEN);
 	p[-1] = (UCHAR) strlen((SCHAR *) p);
 
@@ -499,6 +501,7 @@ rem_port* INET_analyze(	TEXT*	file_name,
 #endif
 
 	const SSHORT user_length = (SSHORT) (p - user_id);
+	fb_assert(user_length <= sizeof(user_id));
 
 /* Establish connection to server */
 
@@ -671,7 +674,8 @@ rem_port* INET_connect(const TEXT* name,
 	TEXT temp[BUFFER_TINY];
 
 	if (name) {
-		strcpy(temp, name);
+		strncpy(temp, name, sizeof(temp));
+		temp[sizeof(temp) - 1] = 0;
 		for (TEXT* p = temp; *p;) {
 			if (*p++ == '/') {
 				p[-1] = 0;
@@ -1343,7 +1347,7 @@ static rem_port* alloc_port( rem_port* parent)
 			char msg[BUFFER_SMALL];
 			SNPRINTF(msg, FB_NELEM(msg), " Info: Remote Buffer Size set to %ld",
 					 INET_remote_buffer);
-			gds__log(messg, 0);
+			gds__log(msg, 0);
 		}
 #endif
 		first_time = false;
