@@ -1,3 +1,27 @@
+2003-05-24 19:27  skidder
+
+	* firebird2/src/dsql/parse.sed:
+	
+	Oops. Forgot to commit sed-script for parse.y
+
+2003-05-24 17:18  skidder
+
+	* firebird2/src/dsql/parse.y:
+	
+	Add comment
+
+2003-05-24 15:44  fsg
+
+	* firebird2/src/gpre/pas.cpp:
+	
+	Some fixes to allow to compile gpre with --with-gpre-pascal again
+
+2003-05-24 09:46  dimitr
+
+	* firebird2/src/jrd/svc.cpp:
+	
+	Fixed synchronization issues in the service manager.
+
 2003-05-23 18:55  skidder
 
 	* firebird2/src/dsql/parse.y:
