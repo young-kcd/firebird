@@ -64,8 +64,7 @@ LIB32=link.exe -lib
 # PROP Intermediate_Dir "release\dsql_server_ss"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "DEBUG" /D "NDEBUG" /D "_LIB" /D "_WINDOWS" /D "SUPERSERVER" /D "NOMSG" /D "WIN32_LEAN_AND_MEAN" /D "WIN32" /D "_MBCS" /D "_X86_" /FD /GZ /c
-# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "NDEBUG" /D "_LIB" /D "_WINDOWS" /D "SUPERSERVER" /D "WIN32_LEAN_AND_MEAN" /D "WIN32" /D "_MBCS" /D "_X86_" /FD /c
-# SUBTRACT CPP /Ox
+# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "NDEBUG" /D "_LIB" /D "_WINDOWS" /D "SUPERSERVER" /D "WIN32_LEAN_AND_MEAN" /D "WIN32" /D "_MBCS" /D "_X86_" /FD /EHc- /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -132,7 +131,7 @@ SOURCE=..\..\..\src\dsql\dsql.cpp
 
 !ELSEIF  "$(CFG)" == "dsql_server - Win32 Release"
 
-# SUBTRACT CPP /Og
+# ADD CPP /Og
 
 !ENDIF 
 

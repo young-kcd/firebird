@@ -41,8 +41,7 @@ RSC=rc.exe
 # PROP Intermediate_Dir "release\engine_ss"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "WIN32_LEAN_AND_MEAN" /D "_X86_" /D "SERVER_SHUTDOWN" /D "SUPERSERVER" /YX /FD /c
-# SUBTRACT CPP /Ox
+# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "WIN32_LEAN_AND_MEAN" /D "_X86_" /D "SERVER_SHUTDOWN" /D "SUPERSERVER" /YX /FD /EHc- /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -201,6 +200,15 @@ SOURCE=..\..\..\src\jrd\evl.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\exe.cpp
+
+!IF  "$(CFG)" == "engine - Win32 Release"
+
+# ADD CPP /Og
+
+!ELSEIF  "$(CFG)" == "engine - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -289,7 +297,7 @@ SOURCE=..\..\..\src\jrd\jrd.cpp
 
 !IF  "$(CFG)" == "engine - Win32 Release"
 
-# SUBTRACT CPP /Og
+# ADD CPP /Og
 
 !ELSEIF  "$(CFG)" == "engine - Win32 Debug"
 
@@ -393,6 +401,15 @@ SOURCE=..\..\..\src\jrd\rng.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\rse.cpp
+
+!IF  "$(CFG)" == "engine - Win32 Release"
+
+# ADD CPP /Og
+
+!ELSEIF  "$(CFG)" == "engine - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -485,7 +502,7 @@ SOURCE=..\..\..\src\jrd\why.cpp
 
 !IF  "$(CFG)" == "engine - Win32 Release"
 
-# SUBTRACT CPP /Og
+# ADD CPP /Og
 
 !ELSEIF  "$(CFG)" == "engine - Win32 Debug"
 

@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "fbembed_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /I "../../../src/include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "WIN32_LEAN_AND_MEAN" /D "_X86_" /D "SERVER_SHUTDOWN" /D "SUPERSERVER" /D "EMBEDDED" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /I "../../../src/include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "WIN32_LEAN_AND_MEAN" /D "_X86_" /D "SERVER_SHUTDOWN" /D "SUPERSERVER" /D "EMBEDDED" /YX /FD /EHc- /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -88,6 +88,14 @@ LINK32=link.exe
 
 # Name "fbembed - Win32 Release"
 # Name "fbembed - Win32 Debug"
+# Begin Group "COMMON"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\os\win32\config_root.cpp
+# End Source File
+# End Group
 # Begin Group "JRD files"
 
 # PROP Default_Filter ""

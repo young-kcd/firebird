@@ -72,7 +72,7 @@ LINK32=link.exe
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "SERVER_SHUTDOWN" /D "SUPERSERVER" /D "WIN32_LEAN_AND_MEAN" /D "NOMSG" /FD /GZ /c
 # SUBTRACT BASE CPP /YX
-# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "SERVER_SHUTDOWN" /D "SUPERSERVER" /D "WIN32_LEAN_AND_MEAN" /FD /c
+# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "SERVER_SHUTDOWN" /D "SUPERSERVER" /D "WIN32_LEAN_AND_MEAN" /FD /EHc- /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
