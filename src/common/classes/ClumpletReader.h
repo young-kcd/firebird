@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: ClumpletReader.h,v 1.5 2004-11-16 06:22:12 robocop Exp $
+ *  $Id: ClumpletReader.h,v 1.6 2004-11-24 18:24:51 alexpeshkoff Exp $
  *
  */
 
@@ -52,6 +52,7 @@ public:
 	size_t getClumpLength();
 
 	SLONG getInt();
+	bool getBoolean();
 	SINT64 getBigInt();
 	string& getString(string& str);
 	PathName& getPath(PathName& str);

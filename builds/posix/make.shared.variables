@@ -231,6 +231,19 @@ FBCOMMON_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCOMMON_So
 
 #________________________________________________________________________
 #
+# clumplets
+
+CLUMPLETS_ClientFiles = ClumpletReader.cpp ClumpletWriter.cpp
+CLUMPLETS_ServerFiles = 
+
+CLUMPLETS_Files = $(CLUMPLETS_ClientFiles) $(CLUMPLETS_ServerFiles)
+
+CLUMPLETS_Sources = $(addprefix common/classes/, $(CLUMPLETS_Files))
+CLUMPLETS_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CLUMPLETS_Sources))))
+
+
+#________________________________________________________________________
+#
 # Platform Manager
 
 # just in case if make.platform defined some files
@@ -256,6 +269,7 @@ LIBFBEMBED_Objects =$(OS_SPECIFIC_Objects) \
                 $(FBUTIL_Objects) \
 				$(FBCLASSES_Objects) \
                 $(FBCOMMON_Objects) \
+                $(CLUMPLETS_Objects) \
                 $(FBCONFIG_Objects) \
                 $(BURP_Objects) \
                 $(ALICE_Objects)
@@ -282,7 +296,8 @@ LIBFBSTATIC_Objects = $(OS_SPECIFIC_Objects) \
                 $(LOCK_Objects) \
                 $(INTERFACE_Objects) \
                 $(GPRELIB_Objects) \
-				$(FBCONFIG_Objects)
+				$(FBCONFIG_Objects) \
+				$(CLUMPLETS_Objects)
 
 
 # Not needed since loaded into libfbmemory.a already

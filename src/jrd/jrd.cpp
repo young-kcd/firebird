@@ -123,6 +123,7 @@
 #include "../jrd/plugin_manager.h"
 #include "../jrd/db_alias.h"
 #include "../common/classes/fb_tls.h"
+#include "../common/classes/ClumpletReader.h"
 
 
 #ifdef GARBAGE_THREAD
@@ -269,18 +270,9 @@ void Jrd::Trigger::release(thread_db* tdbb)
 
 /* Option block for database parameter block */
 
-struct dpb
+class DatabaseOptions
 {
-	const TEXT*	dpb_sys_user_name;
-	const TEXT*	dpb_user_name;
-	const TEXT*	dpb_password;
-	const TEXT*	dpb_password_enc;
-	TEXT*		dpb_role_name;
-	const TEXT*	dpb_journal;
-	const TEXT*	dpb_key;
-#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-	const TEXT*	dpb_log;
-#endif
+public:
 	USHORT	dpb_wal_action;
 	SLONG	dpb_sweep_interval;
 	ULONG	dpb_page_buffers;
@@ -307,8 +299,6 @@ struct dpb
 	UCHAR	dpb_no_reserve;
 	UCHAR	dpb_set_no_reserve;
 	SSHORT	dpb_interp;
-	TEXT*	dpb_lc_messages;
-	TEXT*	dpb_lc_ctype;
 	USHORT	dpb_single_user;
 	bool	dpb_overwrite;
 	bool	dpb_sec_attach;
@@ -320,14 +310,34 @@ struct dpb
 	bool	dpb_set_db_readonly;
 	bool	dpb_gfix_attach;
 	bool	dpb_gstat_attach;
-	TEXT*	dpb_gbak_attach;
-	TEXT*	dpb_working_directory;
 	USHORT	dpb_sql_dialect;
 	USHORT	dpb_set_db_sql_dialect;
-	TEXT*	dpb_set_db_charset;
+// here begin compound objects
+// for constructor to work properly dpb_sys_user_name 
+// MUST be FIRST
+	Firebird::string	dpb_sys_user_name;
+	Firebird::string	dpb_user_name;
+	Firebird::string	dpb_password;
+	Firebird::string	dpb_password_enc;
+	Firebird::string	dpb_role_name;
+	Firebird::string	dpb_journal;
+	Firebird::string	dpb_key;
+#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
+	Firebird::string	dpb_log;
+#endif
+	Firebird::string	dpb_lc_messages;
+	Firebird::string	dpb_lc_ctype;
+	Firebird::string	dpb_gbak_attach;
+	Firebird::PathName	dpb_working_directory;
+	Firebird::string	dpb_set_db_charset;
+public:
+	DatabaseOptions()
+	{
+		memset(this, 0, 
+			reinterpret_cast<char*>(&this->dpb_sys_user_name) - 
+			reinterpret_cast<char*>(this));
+	}
 };
-
-typedef dpb DPB;
 
 static blb*		check_blob(thread_db*, ISC_STATUS*, blb**);
 static ISC_STATUS	check_database(thread_db*, Attachment*, ISC_STATUS*);
@@ -336,11 +346,9 @@ static ISC_STATUS	commit(ISC_STATUS*, jrd_tra**, const bool);
 static bool		drop_files(const jrd_file*);
 static ISC_STATUS	error(ISC_STATUS*, const std::exception& ex);
 static ISC_STATUS	error(ISC_STATUS*);
-static void		find_intl_charset(thread_db*, Attachment*, const DPB*);
+static void		find_intl_charset(thread_db*, Attachment*, const DatabaseOptions*);
 static jrd_tra*		find_transaction(thread_db*, jrd_tra*, ISC_STATUS);
-static void		get_options(const UCHAR*, USHORT, TEXT**, ULONG, DPB*);
-static SLONG	get_parameter(const UCHAR**);
-static TEXT*	get_string_parameter(const UCHAR**, TEXT**, ULONG*);
+static void		get_options(const UCHAR*, USHORT, TEXT**, ULONG, DatabaseOptions*);
 static ISC_STATUS	handle_error(ISC_STATUS*, ISC_STATUS, thread_db*);
 static void		verify_request_synchronization(jrd_req*& request, SSHORT level);
 namespace {
@@ -363,7 +371,7 @@ static ISC_STATUS	return_success(thread_db*);
 static bool		rollback(thread_db*, jrd_tra*, ISC_STATUS*, const bool);
 
 static void		shutdown_database(Database*, const bool);
-static void		strip_quotes(const TEXT*, TEXT*);
+static void		strip_quotes(Firebird::string&);
 static void		purge_attachment(thread_db*, ISC_STATUS*, Attachment*, const bool);
 
 static bool		initialized = false;
@@ -633,7 +641,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	TEXT*	opt_ptr = opt_buffer;
 
 /* Process database parameter block */
-	DPB options;
+	DatabaseOptions options;
 	get_options(dpb, dpb_length, &opt_ptr, DPB_EXPAND_BUFFER, &options);
 
 #ifndef NO_NFS
@@ -667,10 +675,10 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	if (dbb->dbb_decrypt) {
 		if (dbb->dbb_filename.hasData() && 
-			(dbb->dbb_encrypt_key.hasData() || options.dpb_key)) 
+			(dbb->dbb_encrypt_key.hasData() || options.dpb_key.hasData()))
 		{
-			if ((dbb->dbb_encrypt_key.hasData() && !options.dpb_key) ||
-				(dbb->dbb_encrypt_key.empty() && options.dpb_key) ||
+			if ((dbb->dbb_encrypt_key.hasData() && options.dpb_key.isEmpty()) ||
+				(dbb->dbb_encrypt_key.empty() && options.dpb_key.hasData()) ||
 				(dbb->dbb_encrypt_key != options.dpb_key))
 			{
 				ERR_post(isc_no_priv,
@@ -681,7 +689,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
                          0);
 			}
 		}
-		else if (options.dpb_key) 
+		else if (options.dpb_key.hasData()) 
 		{
 			dbb->dbb_encrypt_key = options.dpb_key;
 		}
@@ -703,14 +711,14 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	attachment->att_charset = options.dpb_interp;
 
-	if (options.dpb_lc_messages) {
+	if (options.dpb_lc_messages.hasData()) {
 		attachment->att_lc_messages = options.dpb_lc_messages;
 	}
 
 	if (options.dpb_no_garbage)
 		attachment->att_flags |= ATT_no_cleanup;
 
-	if (options.dpb_gbak_attach)
+	if (options.dpb_gbak_attach.hasData())
 		attachment->att_flags |= ATT_gbak_attachment;
 
 	if (options.dpb_gstat_attach)
@@ -719,7 +727,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	if (options.dpb_gfix_attach)
 		attachment->att_flags |= ATT_gfix_attachment;
 
-	if (options.dpb_working_directory) {
+	if (options.dpb_working_directory.hasData()) {
 		attachment->att_working_directory = options.dpb_working_directory;
 	}
 
@@ -822,7 +830,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	}
 	invalid_client_SQL_dialect = false;
 
-	if (options.dpb_role_name)
+	if (options.dpb_role_name.hasData())
 	{
 		switch (options.dpb_sql_dialect)
 		{
@@ -868,74 +876,51 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 			break;
 		}
 
-		TEXT local_role_name[BUFFER_LENGTH128];
-
 		switch (options.dpb_sql_dialect)
 		{
 		case SQL_DIALECT_V5:
 			{
-				strip_quotes(options.dpb_role_name, local_role_name);
-				const size_t len = strlen(local_role_name);
-				UCHAR* p1 = reinterpret_cast<UCHAR*>(options.dpb_role_name);
-				for (size_t cnt = 0; cnt < len; cnt++) {
-					*p1++ = UPPER7(local_role_name[cnt]);
-				}
-				*p1 = '\0';
+				strip_quotes(options.dpb_role_name);
+				options.dpb_role_name.upper();
 			}
 			break;
 		case SQL_DIALECT_V6_TRANSITION:
 		case SQL_DIALECT_V6:
 			{
-				if (*options.dpb_role_name == DBL_QUOTE ||
-					*options.dpb_role_name == SINGLE_QUOTE)
+				if (options.dpb_role_name.hasData() && 
+					(options.dpb_role_name[0] == DBL_QUOTE ||
+					 options.dpb_role_name[0] == SINGLE_QUOTE))
 				{
-					const UCHAR* p1 = reinterpret_cast<UCHAR*>(options.dpb_role_name);
-					UCHAR* p2 = reinterpret_cast<UCHAR*>(local_role_name);
-					int cnt = 1;
-					bool delimited_done = false;
-					const TEXT	end_quote = *p1;
-					++p1;
+					const char end_quote = options.dpb_role_name[0];
 					/*
 					   ** remove the delimited quotes and escape quote
 					   ** from ROLE name
 					 */
-					while (*p1 && !delimited_done
-						   && cnt < BUFFER_LENGTH128 - 1)
+					options.dpb_role_name.erase(0, 1);
+					for (Firebird::string::iterator p = 
+								options.dpb_role_name.begin(); 
+						 p < options.dpb_role_name.end(); ++p)
 					{
-						if (*p1 == end_quote)
+						if (*p == end_quote)
 						{
-							cnt++;
-							*p2++ = *p1++;
-							if (*p1 && *p1 == end_quote
-								&& cnt < BUFFER_LENGTH128 - 1)
+							if (++p < options.dpb_role_name.end() &&
+								*p == end_quote)
 							{
-								p1++;	/* skip the escape quote here */
+								// skip the escape quote here
+								options.dpb_role_name.erase(p);
 							}
 							else
 							{
-								delimited_done = true;
-								p2--;
+								// delimited done
+								options.dpb_role_name.erase(--p, 
+									options.dpb_role_name.end());
 							}
 						}
-						else
-						{
-							cnt++;
-							*p2++ = *p1++;
-						}
 					}
-					*p2 = '\0';
-					strcpy(options.dpb_role_name, local_role_name);
 				}
 				else
 				{
-					strcpy(local_role_name, options.dpb_role_name);
-					const size_t len = strlen(local_role_name);
-					UCHAR* p1 = reinterpret_cast<UCHAR*>(options.dpb_role_name);
-					for (size_t cnt = 0; cnt < len; cnt++)
-					{
-						*p1++ = UPPER7(local_role_name[cnt]);
-					}
-					*p1 = '\0';
+					options.dpb_role_name.upper();
 				}
 			}
 			break;
@@ -951,11 +936,11 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	const bool internal = TLS_GET(thread_security_disabled);
 
 	SCL_init(false,
-			 options.dpb_sys_user_name,
-			 options.dpb_user_name,
-			 options.dpb_password,
-			 options.dpb_password_enc,
-			 options.dpb_role_name,
+			 options.dpb_sys_user_name.nullStr(),
+			 options.dpb_user_name.nullStr(),
+			 options.dpb_password.nullStr(),
+			 options.dpb_password_enc.nullStr(),
+			 options.dpb_role_name.nullStr(),
 			 tdbb,
 			 internal);
 
@@ -1133,7 +1118,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 #endif
 	}
 
-	if (options.dpb_journal) {
+	if (options.dpb_journal.hasData()) {
 		ERR_post(isc_bad_dpb_content,
 				 isc_arg_gds, isc_cant_start_journal,
 				 0);
@@ -1785,7 +1770,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 /* Process database parameter block */
 	TEXT opt_buffer[DPB_EXPAND_BUFFER];
 	TEXT* opt_ptr = opt_buffer;
-	DPB options;
+	DatabaseOptions options;
 	get_options(dpb, dpb_length, &opt_ptr, DPB_EXPAND_BUFFER, &options);
 	if (!invalid_client_SQL_dialect && options.dpb_sql_dialect == 99) {
 		options.dpb_sql_dialect = 0;
@@ -1817,7 +1802,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	else 
 		user_status[0] = 0; // Clear status vector.
 
-	if (options.dpb_key) 
+	if (options.dpb_key.hasData()) 
 	{
 		dbb->dbb_encrypt_key = options.dpb_key;
 	}
@@ -1834,18 +1819,18 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	tdbb->tdbb_inhibit = 0;
 	tdbb->tdbb_flags = 0;
 
-	if (options.dpb_working_directory) {
+	if (options.dpb_working_directory.hasData()) {
 		attachment->att_working_directory = options.dpb_working_directory;
 	}
 
-	if (options.dpb_gbak_attach) {
+	if (options.dpb_gbak_attach.hasData()) {
 		attachment->att_flags |= ATT_gbak_attachment;
 	}
 
 	switch (options.dpb_sql_dialect) {
 	case 0:
-		/* This can be issued by QLI, GDEF and old BDE clients.  In this case
-		 * assume dialect 1 */
+		// This can be issued by QLI, GDEF and old BDE clients.  
+		// In this case assume dialect 1
 		options.dpb_sql_dialect = SQL_DIALECT_V5;
 	case SQL_DIALECT_V5:
 		break;
@@ -1862,7 +1847,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 
 	attachment->att_charset = options.dpb_interp;
 
-	if (options.dpb_lc_messages) {
+	if (options.dpb_lc_messages.hasData()) {
 		attachment->att_lc_messages = options.dpb_lc_messages;
 	}
 
@@ -1899,11 +1884,11 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	const bool internal = TLS_GET(thread_security_disabled);
 
 	SCL_init(true,
-			 options.dpb_sys_user_name,
-			 options.dpb_user_name,
-			 options.dpb_password,
-			 options.dpb_password_enc,
-			 options.dpb_role_name,
+			 options.dpb_sys_user_name.nullStr(),
+			 options.dpb_user_name.nullStr(),
+			 options.dpb_password.nullStr(),
+			 options.dpb_password_enc.nullStr(),
+			 options.dpb_role_name.nullStr(),
 			 tdbb,
 			 internal);
 
@@ -1934,7 +1919,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	if (options.dpb_set_no_reserve)
 		PAG_set_no_reserve(dbb, options.dpb_no_reserve);
 
-	INI_format(attachment->att_user->usr_user_name, options.dpb_set_db_charset);
+	INI_format(attachment->att_user->usr_user_name, 
+			   options.dpb_set_db_charset.c_str());
 
 	// There is no point to move database online at database creation since it is online by default.
 	// We do not allow to create database that is fully shut down.
@@ -4834,7 +4820,7 @@ static ISC_STATUS error(ISC_STATUS* user_status)
 }
 
 
-static void find_intl_charset(thread_db* tdbb, Attachment* attachment, const DPB* options)
+static void find_intl_charset(thread_db* tdbb, Attachment* attachment, const DatabaseOptions* options)
 {
 /**************************************
  *
@@ -4850,8 +4836,7 @@ static void find_intl_charset(thread_db* tdbb, Attachment* attachment, const DPB
  **************************************/
 	SET_TDBB(tdbb);
 
-	SSHORT len;
-	if (!options->dpb_lc_ctype || (len = strlen(options->dpb_lc_ctype)) == 0) {
+	if (options->dpb_lc_ctype.isEmpty()) {
 		/* No declaration of character set, act like 3.x Interbase */
 		attachment->att_charset = DEFAULT_ATTACHMENT_CHARSET;
 		return;
@@ -4862,8 +4847,9 @@ static void find_intl_charset(thread_db* tdbb, Attachment* attachment, const DPB
 
 	if (MET_get_char_subtype(tdbb,
 							&id,
-							reinterpret_cast<const UCHAR*>(options->dpb_lc_ctype),
-							len) &&
+							reinterpret_cast<const UCHAR*>
+								(options->dpb_lc_ctype.c_str()),
+							options->dpb_lc_ctype.length()) &&
 		INTL_defined_type(tdbb, local_status, id) &&
 		(id != CS_BINARY))
 	{
@@ -4884,7 +4870,7 @@ static void get_options(const UCHAR*	dpb,
 						USHORT	dpb_length,
 						TEXT**	scratch,
 					    ULONG	buf_size,
-						DPB*	options)
+						DatabaseOptions*	options)
 {
 /**************************************
  *
@@ -4896,38 +4882,42 @@ static void get_options(const UCHAR*	dpb,
  *	Parse database parameter block picking up options and things.
  *
  **************************************/
-	USHORT l;
 	SSHORT num_old_files = 0;
 
 	Database* dbb = GET_DBB();
-
-	MOVE_CLEAR(options, (SLONG) sizeof(struct dpb));
 
 	options->dpb_buffers = JRD_cache_default;
 	options->dpb_sweep_interval = -1;
 	options->dpb_overwrite = true;
 	options->dpb_sql_dialect = 99;
 	invalid_client_SQL_dialect = false;
-	const UCHAR* p = dpb;
-	const UCHAR* const end_dpb = p + dpb_length;
 
-	if ((dpb == NULL) && (dpb_length > 0))
-		ERR_post(isc_bad_dpb_form, 0);
-
-	if (p < end_dpb && *p++ != isc_dpb_version1)
-		ERR_post(isc_bad_dpb_form, isc_arg_gds, isc_wrodpbver, 0);
-
-	while (p < end_dpb && buf_size)
+	if (dpb_length == 0)
 	{
-		switch (*p++)
+		return;
+	}
+	if (dpb == NULL)
+	{
+		ERR_post(isc_bad_dpb_form, 0);
+	}
+
+	Firebird::ClumpletReader rdr(true, dpb, dpb_length);
+
+	if (rdr.getBufferTag() != isc_dpb_version1)
+	{
+		ERR_post(isc_bad_dpb_form, isc_arg_gds, isc_wrodpbver, 0);
+	}
+
+	for (; !(rdr.isEof()); rdr.moveNext())
+	{
+		switch (rdr.getClumpTag())
 		{
 		case isc_dpb_working_directory:
 			{
+				rdr.getPath(options->dpb_working_directory);
+
 				// CLASSIC have no thread data. Init to zero.
 				char* t_data = 0;
-				options->dpb_working_directory =
-					get_string_parameter(&p, scratch, &buf_size);
-
 				ThreadData::getSpecificData((void **) &t_data);
 
 				/*
@@ -4935,31 +4925,18 @@ static void get_options(const UCHAR*	dpb,
 				   the users HOME directory
 				 */
 #ifndef WIN_NT
-				if (!options->dpb_working_directory[0]) {
+				if (options->dpb_working_directory.isEmpty()) {
 					struct passwd *passwd = NULL;
 
 					if (t_data)
 						passwd = getpwnam(t_data);
-					if (passwd) {
-						l = strlen(passwd->pw_dir) + 1;
-					    if (l <= buf_size)
-							strcpy(*scratch, passwd->pw_dir);
-						else
-						{
-							**scratch = 0;
-							l = buf_size;
-						}
+					if (passwd) 
+					{
+						options->dpb_working_directory = passwd->pw_dir;
 					}
 					else {		/*No home dir for this users here. Default to server dir */
-					    **scratch = 0;
-						Firebird::PathName buf;
-						fb_getcwd(buf);
-						l = buf.length() + 1 < buf_size ? buf.length() + 1 : buf_size;
-						memcpy(*scratch, buf.c_str(), l);
+						fb_getcwd(options->dpb_working_directory);
 					}
-					options->dpb_working_directory = *scratch;
-					*scratch += l;
-					buf_size -= l;
 				}
 #endif
 				if (t_data)
@@ -4973,7 +4950,7 @@ static void get_options(const UCHAR*	dpb,
 			break;
 
 		case isc_dpb_set_page_buffers:
-			options->dpb_page_buffers = get_parameter(&p);
+			options->dpb_page_buffers = rdr.getInt();
 			if (options->dpb_page_buffers &&
 				(options->dpb_page_buffers < MIN_PAGE_BUFFERS ||
 				 options->dpb_page_buffers > MAX_PAGE_BUFFERS))
@@ -4984,133 +4961,141 @@ static void get_options(const UCHAR*	dpb,
 			break;
 
 		case isc_dpb_num_buffers:
-			options->dpb_buffers = get_parameter(&p);
+			options->dpb_buffers = rdr.getInt();
 			if (options->dpb_buffers < 10)
+			{
 				ERR_post(isc_bad_dpb_content, 0);
+			}
 			break;
 
 		case isc_dpb_page_size:
-			options->dpb_page_size = (USHORT) get_parameter(&p);
+			options->dpb_page_size = (USHORT) rdr.getInt();
 			break;
 
 		case isc_dpb_debug:
-			options->dpb_debug = (USHORT) get_parameter(&p);
+			options->dpb_debug = (USHORT) rdr.getInt();
 			break;
 
 		case isc_dpb_sweep:
-			options->dpb_sweep = (USHORT) get_parameter(&p);
+			options->dpb_sweep = (USHORT) rdr.getInt();
 			break;
 
 		case isc_dpb_sweep_interval:
-			options->dpb_sweep_interval = get_parameter(&p);
+			options->dpb_sweep_interval = rdr.getInt();
 			break;
 
 		case isc_dpb_verify:
-			options->dpb_verify = (USHORT) get_parameter(&p);
+			options->dpb_verify = (USHORT) rdr.getInt();
 			if (options->dpb_verify & isc_dpb_ignore)
 				dbb->dbb_flags |= DBB_damaged;
 			break;
 
 		case isc_dpb_trace:
-			options->dpb_trace = (USHORT) get_parameter(&p);
+			options->dpb_trace = (USHORT) rdr.getInt();
 			break;
 
 		case isc_dpb_damaged:
-			if (get_parameter(&p) & 1)
+			if (rdr.getInt() & 1)
 				dbb->dbb_flags |= DBB_damaged;
 			break;
 
 		case isc_dpb_enable_journal:
-		    options->dpb_journal = get_string_parameter(&p, scratch, &buf_size);
+		    rdr.getString(options->dpb_journal);
 			break;
 
 		case isc_dpb_wal_backup_dir:
-		    get_string_parameter(&p, scratch, &buf_size); // ignore, skip
+			{
+				Firebird::PathName dummy;
+				rdr.getPath(dummy);	// ignore, skip
+			}
 			break;
 
 		case isc_dpb_drop_walfile:
-			options->dpb_wal_action = (USHORT) get_parameter(&p);
+			options->dpb_wal_action = (USHORT) rdr.getInt();
 			break;
 
 		case isc_dpb_old_dump_id:
-			get_parameter(&p); // skip
+			rdr.getInt(); // skip
 			break;
 
 		case isc_dpb_online_dump:
-			get_parameter(&p); // skip
+			rdr.getInt(); // skip
 			break;
 
 		case isc_dpb_old_file_size:
-			get_parameter(&p); // skip
+			rdr.getInt(); // skip
 			break;
 
 		case isc_dpb_old_num_files:
-			get_parameter(&p); // skip
+			rdr.getInt(); // skip
 			break;
 
 		case isc_dpb_old_start_page:
-			get_parameter(&p); // skip
+			rdr.getInt(); // skip
 			break;
 
 		case isc_dpb_old_start_seqno:
-			get_parameter(&p); // skip
+			rdr.getInt(); // skip
 			break;
 
 		case isc_dpb_old_start_file:
-			get_parameter(&p); // skip
+			rdr.getInt(); // skip
 			break;
 
 		case isc_dpb_old_file:
 			//if (num_old_files >= MAX_OLD_FILES) complain here, for now.
 				ERR_post(isc_num_old_files, 0);
-
-			get_string_parameter(&p, scratch, &buf_size); // ignore, skip
+			// following code is never executed now !
+			{
+				Firebird::PathName dummy;
+				rdr.getPath(dummy);	// ignore, skip
+			}
 			num_old_files++;
 			break;
 
 		case isc_dpb_wal_chkptlen:
-			get_parameter(&p); // skip
+			rdr.getInt(); // skip
 			break;
 
 		case isc_dpb_wal_numbufs:
-			get_parameter(&p); // skip
+			rdr.getInt(); // skip
 			break;
 
 		case isc_dpb_wal_bufsize:
-			get_parameter(&p); // skip
+			rdr.getInt(); // skip
 			break;
 
 		case isc_dpb_wal_grp_cmt_wait:
-			get_parameter(&p); // skip
+			rdr.getInt(); // skip
 			break;
 
 		case isc_dpb_dbkey_scope:
-			options->dpb_dbkey_scope = (USHORT) get_parameter(&p);
+			options->dpb_dbkey_scope = (USHORT) rdr.getInt();
 			break;
 
 		case isc_dpb_sys_user_name:
-		    options->dpb_sys_user_name = get_string_parameter(&p, scratch, &buf_size);
+		    rdr.getString(options->dpb_sys_user_name);
 			break;
 
 		case isc_dpb_sql_role_name:
-		    options->dpb_role_name = get_string_parameter(&p, scratch, &buf_size);
+		    rdr.getString(options->dpb_role_name);
 			break;
 
 		case isc_dpb_user_name:
-		    options->dpb_user_name = get_string_parameter(&p, scratch, &buf_size);
+		    rdr.getString(options->dpb_user_name);
 			break;
 
 		case isc_dpb_password:
-		    options->dpb_password = get_string_parameter(&p, scratch, &buf_size);
+		    rdr.getString(options->dpb_password);
 			break;
 
 		case isc_dpb_password_enc:
-		    options->dpb_password_enc = get_string_parameter(&p, scratch, &buf_size);
+		    rdr.getString(options->dpb_password_enc);
 			break;
 
 		case isc_dpb_encrypt_key:
 #ifdef ISC_DATABASE_ENCRYPTION
-		    options->dpb_key = get_string_parameter(&p, scratch, &buf_size);
+		    rdr.getString(options->dpb_key);
 #else
 			/* Just in case there WAS a customer using this unsupported
 			 * feature - post an error when they try to access it in 4.0
@@ -5122,38 +5107,33 @@ static void get_options(const UCHAR*	dpb,
 
 		case isc_dpb_no_garbage_collect:
 			options->dpb_no_garbage = TRUE;
-			l = *p++;
-			p += l;
 			break;
 
 		case isc_dpb_disable_journal:
 			options->dpb_disable = TRUE;
-			l = *p++;
-			p += l;
 			break;
 
 		case isc_dpb_activate_shadow:
 			options->dpb_activate_shadow = true;
-			l = *p++;
-			p += l;
 			break;
 
 		case isc_dpb_delete_shadow:
 			options->dpb_delete_shadow = true;
-			l = *p++;
-			p += l;
 			break;
 
 		case isc_dpb_force_write:
 			options->dpb_set_force_write = TRUE;
-			options->dpb_force_write = (SSHORT) get_parameter(&p);
+			options->dpb_force_write = (SSHORT) rdr.getInt();
 			break;
 
 		case isc_dpb_begin_log:
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-			options->dpb_log = get_string_parameter(&p, scratch, &buf_size);
+			rdr.getPath(options->dpb_log);
 #else
-			get_string_parameter(&p, scratch, &buf_size); // skip
+			{
+				Firebird::PathName dummy;
+				rdr.getPath(dummy);	// ignore, skip
+			}
 #endif
 			break;
 
@@ -5161,193 +5141,122 @@ static void get_options(const UCHAR*	dpb,
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 			options->dpb_quit_log = true;
 #endif
-			l = *p++;
-			p += l;
 			break;
 
 		case isc_dpb_no_reserve:
 			options->dpb_set_no_reserve = TRUE;
-			options->dpb_no_reserve = (UCHAR) get_parameter(&p);
+			options->dpb_no_reserve = (UCHAR) rdr.getInt();
 			break;
 
 		case isc_dpb_interp:
-			options->dpb_interp = (SSHORT) get_parameter(&p);
+			options->dpb_interp = (SSHORT) rdr.getInt();
 			break;
 
 		case isc_dpb_lc_messages:
-		    options->dpb_lc_messages = get_string_parameter(&p, scratch, &buf_size);
+		    rdr.getString(options->dpb_lc_messages);
 			break;
 
 		case isc_dpb_lc_ctype:
-		    options->dpb_lc_ctype = get_string_parameter(&p, scratch, &buf_size);
+		    rdr.getString(options->dpb_lc_ctype);
 			break;
 
 		case isc_dpb_shutdown:
-			options->dpb_shutdown = (USHORT) get_parameter(&p);
+			options->dpb_shutdown = (USHORT) rdr.getInt();
 			// Enforce default
 			if ((options->dpb_shutdown & isc_dpb_shut_mode_mask) == isc_dpb_shut_default)
 				options->dpb_shutdown |= isc_dpb_shut_multi;
 			break;
 
 		case isc_dpb_shutdown_delay:
-			options->dpb_shutdown_delay = (SSHORT) get_parameter(&p);
+			options->dpb_shutdown_delay = (SSHORT) rdr.getInt();
 			break;
 
 		case isc_dpb_online:
-			options->dpb_online = (USHORT) get_parameter(&p);
+			options->dpb_online = (USHORT) rdr.getInt();
 			// Enforce default
 			if ((options->dpb_online & isc_dpb_shut_mode_mask) == isc_dpb_shut_default)
+			{
 				options->dpb_online |= isc_dpb_shut_normal;
+			}
 			break;
 
 		case isc_dpb_reserved:
 			{
-				const TEXT* single = get_string_parameter(&p, scratch, &buf_size);
-		    	if (single && !strcmp(single, "YES"))
+				Firebird::string single;
+				rdr.getString(single);
+		    	if (single == "YES")
+				{
 					options->dpb_single_user = TRUE;
-			break;
+				}
 			}
+			break;
 
 		case isc_dpb_overwrite:
-			options->dpb_overwrite = get_parameter(&p) != 0;
+			options->dpb_overwrite = rdr.getInt() != 0;
 			break;
 
 		case isc_dpb_sec_attach:
-			options->dpb_sec_attach = get_parameter(&p) != 0;
+			options->dpb_sec_attach = rdr.getInt() != 0;
 			options->dpb_buffers = 50;
 			dbb->dbb_flags |= DBB_security_db;
 			break;
 
 		case isc_dpb_gbak_attach:
-		    options->dpb_gbak_attach = get_string_parameter(&p, scratch, &buf_size);
+		    rdr.getString(options->dpb_gbak_attach);
 			break;
 
 		case isc_dpb_gstat_attach:
 			options->dpb_gstat_attach = true;
-			l = *p++;
-			p += l;
 			break;
 
 		case isc_dpb_gfix_attach:
 			options->dpb_gfix_attach = true;
-			l = *p++;
-			p += l;
 			break;
 
 		case isc_dpb_gsec_attach:
-			l = *p++;
-			options->dpb_gsec_attach = l && *p;
-			p += l;
+			options->dpb_gsec_attach = rdr.getBoolean();
 			break;
 
 		case isc_dpb_disable_wal:
 			options->dpb_disable_wal = true;
-			l = *p++;
-			p += l;
 			break;
 
 		case isc_dpb_connect_timeout:
-			options->dpb_connect_timeout = get_parameter(&p);
+			options->dpb_connect_timeout = rdr.getInt();
 			break;
 
 		case isc_dpb_dummy_packet_interval:
-			options->dpb_dummy_packet_interval = get_parameter(&p);
+			options->dpb_dummy_packet_interval = rdr.getInt();
 			break;
 
 		case isc_dpb_sql_dialect:
-			options->dpb_sql_dialect = (USHORT) get_parameter(&p);
+			options->dpb_sql_dialect = (USHORT) rdr.getInt();
 			if (options->dpb_sql_dialect > SQL_DIALECT_V6)
 					invalid_client_SQL_dialect = true;
 			break;
 
 		case isc_dpb_set_db_sql_dialect:
-			options->dpb_set_db_sql_dialect = (USHORT) get_parameter(&p);
+			options->dpb_set_db_sql_dialect = (USHORT) rdr.getInt();
 			break;
 
 		case isc_dpb_set_db_readonly:
 			options->dpb_set_db_readonly = true;
-			options->dpb_db_readonly = get_parameter(&p) != 0;
+			options->dpb_db_readonly = rdr.getInt() != 0;
 			break;
 
 		case isc_dpb_set_db_charset:
-			options->dpb_set_db_charset = get_string_parameter (&p, scratch, &buf_size);
+			rdr.getString(options->dpb_set_db_charset);
 			break;
 
 		default:
-			l = *p++;
-			p += l;
+			break;
 		}
 	}
 
-	if (p != end_dpb)
-		ERR_post(isc_bad_dpb_form, 0);
-
-}
-
-
-static SLONG get_parameter(const UCHAR** ptr)
-{
-/**************************************
- *
- *	g e t _ p a r a m e t e r
- *
- **************************************
- *
- * Functional description
- *	Pick up a VAX format parameter from a parameter block, including the
- *	length byte.
- *
- **************************************/
-	const SSHORT l = *(*ptr)++;
-	const SLONG parameter = gds__vax_integer(*ptr, l);
-	*ptr += l;
-
-	return parameter;
-}
-
-
-static TEXT* get_string_parameter(const UCHAR** dpb_ptr, TEXT** opt_ptr,
-	ULONG* buf_avail)
-{
-/**************************************
- *
- *	g e t _ s t r i n g _ p a r a m e t e r
- *
- **************************************
- *
- * Functional description
- *	Pick up a string valued parameter, copy it to a running temp,
- *	and return pointer to copied string.
- *
- **************************************/
-
-	if (!*buf_avail)  /* Because "l" may be zero but the NULL term still is set. */
-		return 0;
-
-	TEXT* opt = *opt_ptr;
-	TEXT* const rc = *opt_ptr; // On success, we return the incoming position.
-	const UCHAR* dpb = *dpb_ptr;
-
-	USHORT l = *(dpb++);
-	if (l)
+	if (! rdr.isEof())
 	{
-		if (l >= *buf_avail) /* >= to count the NULL term. */
-		{
-			*buf_avail = 0;
-			return 0;
-		}
-		*buf_avail -= l;
-		do {
-			*opt++ = *dpb++;
-		} while (--l);
+		ERR_post(isc_bad_dpb_form, 0);
 	}
-
-	--*buf_avail;
-	*opt++ = 0;
-	*dpb_ptr = dpb;
-	*opt_ptr = opt;
-
-	return rc;
 }
 
 
@@ -5963,7 +5872,7 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 }
 
 
-static void strip_quotes(const TEXT* in, TEXT* out)
+static void strip_quotes(Firebird::string& out)
 {
 /**************************************
  *
@@ -5975,22 +5884,24 @@ static void strip_quotes(const TEXT* in, TEXT* out)
  *	Get rid of quotes around strings
  *
  **************************************/
-	if (!in || !*in) {
-		*out = 0;
+	if (out.isEmpty()) 
+	{
 		return;
 	}
 
-	TEXT quote = 0;
-/* Skip any initial quote */
-	if ((*in == DBL_QUOTE) || (*in == SINGLE_QUOTE))
-		quote = *in++;
-	const TEXT* p = in;
-
-/* Now copy characters until we see the same quote or EOS */
-	while (*p && (*p != quote)) {
-		*out++ = *p++;
+	char quote = 0;
+	if (out[0] == DBL_QUOTE || out[0] == SINGLE_QUOTE)
+	{
+// Skip any initial quote
+		quote = out[0];
+		out.erase(0, 1);
+// Search for same quote
+		size_t pos = out.find(quote);
+		if (pos != Firebird::string::npos)
+		{
+			out.erase(pos);
+		}
 	}
-	*out = 0;
 }
 
 

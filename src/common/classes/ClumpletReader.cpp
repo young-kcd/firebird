@@ -107,7 +107,8 @@ SLONG ClumpletReader::getInt() {
 	// This code is taken from gds__vax_integer
 	SLONG value = 0;
 	int shift = 0;
-	while (--length >= 0) {
+	while (length > 0) {
+		--length;
 		value += ((SLONG) *ptr++) << shift;
 		shift += 8;
 	}
@@ -127,7 +128,8 @@ SINT64 ClumpletReader::getBigInt() {
 	// This code is taken from isc_portable_integer
 	SINT64 value = 0;
 	int shift = 0;
-	while (--length >= 0) {
+	while (length > 0) {
+		--length;
 		value += ((SINT64) *ptr++) << shift;
 		shift += 8;
 	}
@@ -142,12 +144,19 @@ string& ClumpletReader::getString(string& str) {
 	return str;
 }
 
-PathName& ClumpletReader::getPath(PathName& str) {
+PathName& ClumpletReader::getPath(PathName& str) 
+{
 	const UCHAR* clumplet = getBuffer() + cur_offset;
 	size_t length = getClumpLength();
 	str.assign(reinterpret_cast<const char*>(clumplet + 2), length);
 	return str;
 }
 
+bool ClumpletReader::getBoolean()
+{
+	const UCHAR* clumplet = getBuffer() + cur_offset;
+	size_t length = getClumpLength();
+	return length && clumplet[2];
+}
 
 }
