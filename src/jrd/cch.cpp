@@ -1012,6 +1012,8 @@ void CCH_fini(TDBB tdbb)
 	dbb = tdbb->tdbb_database;
 	flush_error = FALSE;
 
+	do {
+
 	try {
 
 /* If we've been initialized, either flush buffers
@@ -1103,16 +1105,23 @@ void CCH_fini(TDBB tdbb)
 #endif
 	}
 
+ 	return;
+ 
 	}	// try
 	catch (const std::exception&)
 	{
 		if (!flush_error) {
-			flush_error = TRUE;
+ 			// Even if we were unable to flush our dirty buffers
+ 			// let's free resources and close files to prevent server collapse
+  			flush_error = TRUE;
+ 			continue;
 		} else {
 			ERR_punt();
 		}
 	}
 
+ 	} while (true);
+ 
 }
 
 

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.30.2.1 2004-03-29 03:50:09 skidder Exp $
+$Id: blb.cpp,v 1.30.2.2 2004-04-01 02:36:58 skidder Exp $
 */
 
 #include "firebird.h"
@@ -201,6 +201,8 @@ BLB BLB_create2(TDBB tdbb,
 
 	if (dbb->dbb_flags & DBB_read_only)
 		ERR_post(isc_read_only_database, 0);
+	if (transaction->tra_flags & TRA_readonly)
+		ERR_post(isc_read_only_trans, 0);
 
 /* Create a blob large enough to hold a single data page */
 
