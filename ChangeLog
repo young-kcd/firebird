@@ -1,3 +1,107 @@
+2003-11-10 23:57  bellardo
+
+	* firebird2/builds/posix/: Makefile.in.firebird, prefix.darwin:
+	
+	Moving closer to correct packaging on darwin.  Added generic
+	targets (platform specifif) that get run before and after classic
+	build.	Also added darwin specific rules that handle the bulk of
+	the packaging.
+
+2003-11-10 21:34  tmcsys
+
+	* firebird2/src/jrd/isc_sync.cpp:
+	
+	fix arg list for fussy compilers
+
+2003-11-10 17:03  dimitr
+
+	* firebird2/src/iscguard/iscguard.cpp:
+	
+	Fixed typo.
+
+2003-11-10 12:25  aafemt
+
+	* firebird2/: autogen.sh, configure.in:
+	
+	downgrade autoconf requirement to 2.56
+
+2003-11-10 10:47  robocop
+
+	* firebird2/src/isql/show.epp:
+	
+	Fix cleanup bug reported by Tomas Skoda
+
+2003-11-10 10:15  robocop
+
+	* firebird2/src/: dsql/alld.cpp, dsql/array.epp,
+	dsql/array_proto.h, dsql/ddl.cpp, dsql/ddl_proto.h, dsql/dsql.cpp,
+	dsql/dsql.h, dsql/dsql.tab.h, dsql/gen.cpp, dsql/gen_proto.h,
+	dsql/hsh.cpp, dsql/make.cpp, dsql/make_proto.h, dsql/metd.epp,
+	dsql/metd_proto.h, dsql/parse.cpp, dsql/parse.y, dsql/pass1.cpp,
+	dsql/user_dsql.cpp, dudley/extract.epp, gpre/gpre.cpp, gpre/gpre.h,
+	include/memory_routines.h, journal/rebuild.epp, jrd/alt.cpp,
+	jrd/cmp.cpp, jrd/ibase.h, jrd/jrd.cpp, jrd/utl.cpp,
+	lock/driver.cpp, misc/blrtable.cpp, msgs/change_msgs.epp,
+	msgs/check_msgs.epp, msgs/enter_msgs.epp, msgs/modify_msgs.epp,
+	qli/exe.cpp, qli/proc.epp, remote/xdr.cpp,
+	remote/os/win32/srvr_w32.cpp, utilities/common/cmd_util.cpp,
+	utilities/gstat/dba_full.epp, utilities/gstat/ppg.cpp,
+	utilities/ibmgr/ibmgr.cpp, utilities/install/services.cpp,
+	utilities/rebuild/rebuild.cpp, utilities/rebuild/rmet.epp,
+	utilities/rebuild/rstore.epp, wal/walf.cpp:
+	
+	const correctness and cleanup
+
+2003-11-10 07:27  stryqx
+
+	* firebird2/src/dsql/keywords.cpp:
+	
+	Undefine PAGE_SIZE to allow successful compile with gcc 3.3.3.
+
+2003-11-10 03:13  brodsom
+
+	* firebird2/src/remote/os/win32/srvr_w32.cpp:
+	
+	Correction (Thanks to Claudio)
+
+2003-11-10 03:09  bellardo
+
+	* firebird2/builds/posix/: Makefile.in.client.gbak,
+	Makefile.in.client.gdef, Makefile.in.client.gfix,
+	Makefile.in.client.gpre, Makefile.in.client.isql,
+	Makefile.in.client.util, make.defaults:
+	
+	The native shared library packaging system on Darwin is different
+	from other *nixes.  I'm in the process of adding native support. 
+	This change allows the platform makefile to specify the command
+	line options used to link against the firebird library.  It
+	shouldn't break other builds, as it is defaulted to the original
+	options.
+
+2003-11-10 01:04  brodsom
+
+	* firebird2/src/: ipserver/ipserver.cpp, jrd/alt_proto.h,
+	jrd/os/vms/extvms.cpp, jrd/os/vms/jio.cpp, jrd/os/vms/map.cpp,
+	jrd/os/vms/mblr.cpp, jrd/os/vms/rdb.cpp, jrd/os/vms/rdbint.cpp,
+	jrd/os/vms/vms.cpp, jrd/os/vms/vmsevent.cpp,
+	jrd/os/vms/vmslock.cpp, jrd/os/vms/dfloat_stub.cpp:
+	
+	-Removing gdsold.h and gds.h
+
+2003-11-10 01:01  bellardo
+
+	* firebird2/builds/posix/: Makefile.in.libfbembed, make.defaults,
+	prefix.darwin:
+	
+	Slight "improvement" to the posix build process to support darwin. 
+	Basically, darwin needs different link commands depending on the
+	intented use of the dynamic library.  If the library is intended to
+	be included in the executable at link time a dylib is created.	If
+	a library is intended to be loaded by a program while it is running
+	(for example a plugin) it needs to be a bundle.  These makefile
+	changes differentiate between these two case, providing a different
+	set of options for each.  it should be backwards compatible.
+
 2003-11-09 23:59  bellardo
 
 	* firebird2/src/jrd/thd.h:
