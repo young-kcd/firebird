@@ -137,7 +137,7 @@ TLS_DECLARE (thdd*, thdd::tData);
 
 
 int API_ROUTINE gds__thread_start(
-								  thdd::EntryPoint* entrypoint,
+								  ThreadEntryPoint* entrypoint,
 								  void *arg,
 								  int priority, int flags, void *thd_id)
 {
@@ -640,7 +640,7 @@ static THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg) {
 #ifdef ANY_THREADING
 #ifdef USE_POSIX_THREADS
 #define START_THREAD
-void thdd::start(EntryPoint* routine,
+void thdd::start(ThreadEntryPoint* routine,
 				void *arg, 
 				int priority_arg, 
 				int flags, 
@@ -733,7 +733,7 @@ void thdd::start(EntryPoint* routine,
 
 #ifdef SOLARIS_MT
 #define START_THREAD
-void thdd::start(EntryPoint* routine,
+void thdd::start(ThreadEntryPoint* routine,
 				void *arg, 
 				int priority_arg, 
 				int flags, 
@@ -777,7 +777,7 @@ void thdd::start(EntryPoint* routine,
 
 #ifdef WIN_NT
 #define START_THREAD
-void thdd::start(EntryPoint* routine,
+void thdd::start(ThreadEntryPoint* routine,
 				void *arg, 
 				int priority_arg, 
 				int flags, 
@@ -881,7 +881,7 @@ void thdd::start(EntryPoint* routine,
 
 
 #ifndef START_THREAD
-void thdd::start(EntryPoint* routine,
+void thdd::start(ThreadEntryPoint* routine,
 				void *arg, 
 				int priority_arg, 
 				int flags, 

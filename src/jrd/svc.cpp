@@ -198,7 +198,7 @@ static void service_enqueue_byte(UCHAR, Service*);
 static USHORT service_add_one(USHORT i);
 static USHORT service_empty(Service* service);
 static USHORT service_full(Service* service);
-static void service_fork(thdd::EntryPoint*, Service*);
+static void service_fork(ThreadEntryPoint*, Service*);
 #else
 static void service_fork(TEXT*, Service*);
 #endif
@@ -2738,7 +2738,7 @@ static void service_enqueue_byte(UCHAR ch, Service* service)
 }
 
 
-static void service_fork(thdd::EntryPoint* service_executable, Service* service)
+static void service_fork(ThreadEntryPoint* service_executable, Service* service)
 {
 /**************************************
  *

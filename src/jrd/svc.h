@@ -163,7 +163,7 @@ struct serv_entry
 	const TEXT*			serv_name;
 	const TEXT*			serv_std_switches;
 	const TEXT*			serv_executable;
-	thdd::EntryPoint*	serv_thd;
+	ThreadEntryPoint*	serv_thd;
 	bool*				serv_in_use;
 };
 

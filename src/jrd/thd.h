@@ -26,7 +26,7 @@
  *
  */
 /*
-$Id: thd.h,v 1.32 2004-06-15 09:02:14 kkuznetsov Exp $
+$Id: thd.h,v 1.33 2004-07-02 10:45:54 brodsom Exp $
 */
 
 #ifndef JRD_THD_H
@@ -121,20 +121,25 @@ const int SWEEP_QUANTUM		= 10;	/* Make sweeps less disruptive */
 
 #define THREAD_ENTRY_DECLARE THREAD_ENTRY_RETURN THREAD_ENTRY_CALL
 
+// BRS 01/07/2004
+// Hack due to a bug in mingw.
+// The definition inside the thdd class should be replaced with the following one.
+typedef THREAD_ENTRY_DECLARE ThreadEntryPoint(THREAD_ENTRY_PARAM);
+
 class thdd
 {
 public:
 	thdd*		thdd_prior_context;
 	ULONG		thdd_type;	/* what kind of thread context this is */
-public:
-	typedef THREAD_ENTRY_DECLARE EntryPoint(THREAD_ENTRY_PARAM);
+//public:
+//	typedef THREAD_ENTRY_DECLARE EntryPoint(THREAD_ENTRY_PARAM);
 
 private:
 	static TLS_DECLARE (void*, tSpecific);
 	static TLS_DECLARE (thdd*, tData);
 
 public:
-	static void		start(EntryPoint* routine, 
+	static void		start(ThreadEntryPoint* routine, 
 						  void* arg, 
 						  int priority_arg, 
 						  int flags, 
@@ -219,7 +224,7 @@ typedef struct wlck_t* WLCK;
 #endif
 
 extern "C" {
-	int		API_ROUTINE gds__thread_start(thdd::EntryPoint*, void*, int, int,
+	int		API_ROUTINE gds__thread_start(ThreadEntryPoint*, void*, int, int,
 										 void*);
 }
 

@@ -26,7 +26,7 @@
 
 #include "../jrd/thd.h"
 
-void	CNTL_init(thdd::EntryPoint*, const TEXT*);
+void	CNTL_init(ThreadEntryPoint*, const TEXT*);
 void*	CNTL_insert_thread(void);
 void	CNTL_main_thread(SLONG, SCHAR* []);
 void	CNTL_remove_thread(void*);

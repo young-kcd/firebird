@@ -57,7 +57,7 @@ private:
 	static OperationMode opMode;	// current mode
 	static TpsPointers* toDetach;	// instances to be detached
 
-	thdd::EntryPoint* routine;		// real thread entrypoint
+	ThreadEntryPoint* routine;		// real thread entrypoint
 	void* arg;						// arg to pass to it
 	ThreadPriorityScheduler* next;		// next thread in list
 	HANDLE handle;			// thread handle for SetPriority
@@ -86,7 +86,7 @@ private:
 	}
 
 public:
-	ThreadPriorityScheduler(thdd::EntryPoint* r, void* a, UCHAR f)
+	ThreadPriorityScheduler(ThreadEntryPoint* r, void* a, UCHAR f)
 		: routine(r), arg(a), inside(0), gonein(0), flags(f) {}
 	// Unregister thread from priorities scheduler
 	void detach();

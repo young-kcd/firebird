@@ -47,7 +47,7 @@ static void parse_switch(const TEXT*, int*);
 static USHORT report_status(DWORD, DWORD, DWORD, DWORD);
 
 static DWORD current_state;
-static thdd::EntryPoint* main_handler;
+static ThreadEntryPoint* main_handler;
 static SERVICE_STATUS_HANDLE service_handle;
 static const TEXT* service_name;
 static HANDLE stop_event_handle;
@@ -57,7 +57,7 @@ static thread* threads;
 #endif
 
 
-void CNTL_init(thdd::EntryPoint* handler, const TEXT* name)
+void CNTL_init(ThreadEntryPoint* handler, const TEXT* name)
 {
 /**************************************
  *
