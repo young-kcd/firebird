@@ -1,3 +1,85 @@
+2004-09-15 11:36  kkuznetsov
+
+	* firebird2/configure.in (1.203):
+	
+	added new directory remote/os/sun to mkdir -p
+
+2004-09-15 10:35  kkuznetsov
+
+	* firebird2/builds/posix/: Makefile.in.libfbclient (1.23),
+	prefix.solx86gcc (1.14):
+	
+	Added server_main to fix unresolved dependency error while linking
+	something against libfbclient.so using Sun-Like(TM) linker.
+	
+		The os/sun/server_main_dummy.cpp is a file with noop
+	routine
+		server_main to put into libfbclient
+		if it defined by firebird.vers mapfile while
+		linking libfbclient with Sun-like LD
+
+2004-09-15 10:31  kkuznetsov
+
+	* firebird2/src/remote/os/sun/server_main_dummy.cpp (1.1):
+	
+		os/sun/server_main_dummy.cpp is a file with noop routine
+		server_main to put into libfbclient
+		if it defined by firebird.vers mapfile while
+		linking libfbclient with Sun-like LD
+
+2004-09-15 09:32  robocop
+
+	* firebird2/src/utilities/gsec/gsec.cpp (1.35):
+	
+	Gsec should return the error code when used as a non-interactive
+	utility.  Otherwise, calling it from a batch file doesn't give
+	information if it failed or succeeded.
+
+2004-09-15 07:30  skidder
+
+	* firebird2/src/utilities/nbackup.cpp (1.32):
+	
+	Remove wrong comment
+
+2004-09-15 07:29  skidder
+
+	* firebird2/src/jrd/nbak.cpp (1.42):
+	
+	Recent changes in the engine somehow made NBAK problem to surface.
+	Cure it.
+
+2004-09-15 07:24  skidder
+
+	* firebird2/src/utilities/nbackup.cpp (1.31):
+	
+	Add user name and password options to NBACKUP
+
+2004-09-15 05:49  robocop
+
+	* firebird2/src/: common/utils.cpp (1.8), common/utils_proto.h
+	(1.5), jrd/dfw.epp (1.124), jrd/met.epp (1.139):
+	
+	Collapsed an example of Borland's advanced copy/paste technique
+	that repeats routines in different files into a single function.
+
+2004-09-15 05:47  robocop
+
+	* firebird2/src/jrd/: blb.cpp (1.87), sdl.cpp (1.39):
+	
+	Got rid of redundant cast
+
+2004-09-15 05:46  robocop
+
+	* firebird2/src/jrd/btr.cpp (1.116):
+	
+	Style
+
+2004-09-15 03:36  skidder
+
+	* firebird2/src/jrd/intlobj_new.h (1.12):
+	
+	Adjust INTL interface according to new talks with Adriano
+
 2004-09-14 18:11  skidder
 
 	* firebird2/builds/install/misc/firebird.init.d.mandrake.in (1.2):
