@@ -746,7 +746,10 @@ static void readNextInputLine(const char* prompt)
 #ifdef HAVE_EDITLINE_H
 		if (Ifp.indev_fpointer == stdin)
 		{
-			lastInputLine = readline(prompt);
+			// CVC: On 2005-04-02, use an empty prompt when not working in
+			// interactive mode to behave like @@@ below at request by Pavel.
+			const char* new_prompt = Interactive ? prompt : "";
+			lastInputLine = readline(new_prompt);
 
 			if (lastInputLine != NULL && strlen(lastInputLine) != 0) {
 				add_history(lastInputLine);
@@ -755,7 +758,8 @@ static void readNextInputLine(const char* prompt)
 		}
 
 #endif
-		if (Interactive && !Input_file || Echo)
+		// @@@ CVC: On 2005-04-02, take the "|| Echo" out at request by Pavel.
+		if (Interactive && !Input_file)// || Echo)
 		{
 			// Write the prompt out.
 			fprintf(stdout, prompt);
@@ -908,10 +912,11 @@ void ISQL_errmsg(const ISC_STATUS* status)
 #define TRANSLATE_CP
 #endif
 
-	const ISC_STATUS* vec = status;
 	if (Quiet)
 		Exit_value = FINI_ERROR;
-	else {
+	else
+	{
+		const ISC_STATUS* vec = status;
 		if (vec[0] != isc_arg_gds ||
 			(vec[0] == isc_arg_gds && vec[1] == 0 && vec[2] != isc_arg_warning)
 			|| (vec[0] == isc_arg_gds && vec[1] == 0
@@ -919,8 +924,7 @@ void ISQL_errmsg(const ISC_STATUS* status)
 		{
 			return;
 		}
-		gds__msg_format(NULL, ISQL_MSG_FAC, 0, sizeof(errbuf), errbuf,
-						(TEXT*)(IPTR)isc_sqlcode(status), NULL, NULL, NULL, NULL);
+		ISQL_msg_get(0, errbuf, (TEXT*)(IPTR)isc_sqlcode(status));
 		TRANSLATE_CP;
 		STDERROUT(errbuf);
 		if (fb_interpret(errbuf, sizeof(errbuf), &vec))
@@ -940,7 +944,8 @@ void ISQL_errmsg(const ISC_STATUS* status)
 			const char* s = 0;
 			int linenum = -1;
 			if (status[0] == isc_arg_gds && status[1] == isc_dsql_error
-				&& status[2] == isc_arg_gds && status[3] == isc_sqlerr)
+				&& status[2] == isc_arg_gds && status[3] == isc_sqlerr
+				&& vec > &status[9])
 			{
 				switch (status[7])
 				{
@@ -3356,6 +3361,12 @@ static processing_state escape(const TEXT* cmd)
 	while (*shellcmd && fb_isspace(*shellcmd))
 		shellcmd++;
 
+#ifdef WIN_NT
+	// MSDN says: You must explicitly flush (using fflush or _flushall)
+	// or close any stream before calling system.
+	_flushall();
+#endif
+
 // If no command given just spawn a shell 
 
 	if (!*shellcmd) {
@@ -5384,11 +5395,11 @@ static processing_state parse_arg(int argc,
 		}
 	} // scope
 
-// redirected stdin means act like -i was set 
+	// redirected stdin means act like -i was set
 
 	Ifp.init(stdin, "stdin");
 
-// Terminators  are initialized 
+	// Terminators are initialized
 
 	Termlen = strlen(DEFTERM);
 	if (Termlen < MAXTERM_SIZE)
