@@ -82,7 +82,7 @@ public:
 	}
 	T& back() const {
   		fb_assert(count > 0);
-		return *(data + (count ? count - 1 : 0));
+		return *(data + count - 1));
 	}
 	T* begin() const { return data; }
 	T* end() const { return data + count; }
