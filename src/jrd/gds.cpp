@@ -66,12 +66,6 @@
 #include "../jrd/jrd_time.h"
 #include "../jrd/misc.h"
 
-#ifdef DARWIN
-#include <CoreServices.framework/Frameworks/CarbonCore.framework/Headers/MacTypes.h>
-#include <CoreFoundation/CFBundle.h>
-#include <CoreFoundation/CFURL.h>
-#endif
-
 #if defined(WIN_NT)
 #include <io.h>
 #include <process.h>
