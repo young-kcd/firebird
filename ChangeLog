@@ -1,3 +1,21 @@
+2003-11-27 12:39  dimitr
+
+	* firebird2/src/jrd/: cmp.cpp, jrd.h, met.epp:
+	
+	Fixed bugs related to metadata cache and database shutdown.
+
+2003-11-27 12:11  aafemt
+
+	* firebird2/src/jrd/: fun.epp, fun_proto.h:
+	
+	'struct' cleanup
+
+2003-11-27 12:09  dimitr
+
+	* firebird2/src/jrd/: cmp.cpp, dfw.epp:
+	
+	Backported view/trigger fixes from FB2.
+
 2003-11-26 21:00  bellardo
 
 	* firebird2/src/install/arch-specific/darwin/: install-script,
