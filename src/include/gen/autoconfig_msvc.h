@@ -216,8 +216,8 @@
 /* Wnet pipe name */
 #define FB_PIPE_NAME "interbas"
 
-/* IPC map name */
-#define FB_IPC_NAME "FirebirdIPI"
+/* Xnet objects name */
+#define FB_IPC_NAME "FIREBIRD"
 
 /* Maximum allowed pathname length */
 #define MAXPATHLEN 260 // should correspond to MAX_PATH define in windef.h
