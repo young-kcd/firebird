@@ -38,7 +38,7 @@
 #define PAGE_SIZE	3
 #define USER		4
 #define PASSWORD	5
-#warning FIXME: PAGESIZE conflicts with the define from sys/param.h
+//#warning FIXME: PAGESIZE conflicts with the define from sys/param.h
 #define PAGESIZE	6
 #define LENGTH		7
 #define PAGES		8
