@@ -53,7 +53,7 @@
 
 typedef struct dls {
 	SLONG dls_header;
-	struct dls *dls_next;
+	dls* dls_next;
 	ULONG dls_size;				/* Maximum size in the directory */
 	ULONG dls_inuse;			/* Occupied space in the directory */
 	TEXT dls_directory[2];		/* Directory name */
@@ -69,14 +69,14 @@ typedef struct mdls {
 /* external function directory list */
 
 typedef struct fdls {
-	struct fdls *fdls_next;
+	fdls* fdls_next;
 	TEXT fdls_directory[1];
 } FDLS;
 
 /* external file directory list */
 
 typedef struct edls {
-    struct edls *edls_next;
+    edls* edls_next;
     TEXT edls_directory[1];
 } EDLS;
 

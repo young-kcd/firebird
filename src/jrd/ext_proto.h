@@ -24,24 +24,24 @@
 #ifndef JRD_EXT_PROTO_H
 #define JRD_EXT_PROTO_H
 
-void	EXT_close(class Rsb *);
-void	EXT_erase(struct rpb *, int *);
-struct ext*	EXT_file(struct jrd_rel *, const TEXT *, SLONG *);
-void	EXT_fini(struct jrd_rel *);
-int		EXT_get(class Rsb *);
-void	EXT_modify(struct rpb *, struct rpb *, int *);
+void	EXT_close(Rsb*);
+void	EXT_erase(rpb*, int*);
+ext*	EXT_file(jrd_rel*, const TEXT*, SLONG*);
+void	EXT_fini(jrd_rel*);
+int	EXT_get(Rsb*);
+void	EXT_modify(rpb*, rpb*, int*);
 
 #ifdef VMS
-int		EXT_open(class Rsb *);
+int	EXT_open(Rsb*);
 #else
-void	EXT_open(class Rsb *);
+void	EXT_open(Rsb*);
 #endif
-class Rsb*	EXT_optimize(class Opt *, SSHORT, struct jrd_nod **);
-void	EXT_ready(struct jrd_rel *);
-void	EXT_store(struct rpb *, int *);
-void	EXT_trans_commit(struct jrd_tra *);
-void	EXT_trans_prepare(struct jrd_tra *);
-void	EXT_trans_rollback(struct jrd_tra *);
-void	EXT_trans_start(struct jrd_tra *);
+Rsb*	EXT_optimize(Opt*, SSHORT, jrd_nod**);
+void	EXT_ready(jrd_rel*);
+void	EXT_store(rpb*, int*);
+void	EXT_trans_commit(jrd_tra*);
+void	EXT_trans_prepare(jrd_tra*);
+void	EXT_trans_rollback(jrd_tra*);
+void	EXT_trans_start(jrd_tra*);
 
 #endif // JRD_EXT_PROTO_H

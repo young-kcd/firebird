@@ -29,7 +29,7 @@
 class ext : public pool_alloc_rpt<SCHAR, type_ext>
 {
     public:
-	struct fmt *ext_format;		/* External format */
+	fmt* ext_format;			/* External format */
 	UCHAR *ext_stuff;			/* Random stuff */
 	USHORT ext_flags;			/* Misc and cruddy flags */
 #ifdef VMS

@@ -421,7 +421,7 @@ if (opt->opt_count)
 
 	rsb_ = FB_NEW_RPT(*tdbb->tdbb_default,0) Rsb;
 	rsb_->rsb_type = rsb_ext_sequential;
-	size = sizeof(struct irsb);
+	size = sizeof(irsb);
 
 	rsb_->rsb_stream = stream;
 	rsb_->rsb_relation = relation;
