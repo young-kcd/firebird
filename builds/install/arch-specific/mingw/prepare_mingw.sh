@@ -34,7 +34,7 @@ cp $GENDIR/bin/gdef.exe				$OUTDIR/bin/
 cp $GENDIR/bin/gfix.exe				$OUTDIR/bin/
 cp $GENDIR/bin/gpre.exe				$OUTDIR/bin/
 cp $GENDIR/bin/gsec.exe				$OUTDIR/bin/
-echo "to be build"	>				$OUTDIR/bin/gsplit.dll
+echo "to be build"	>				$OUTDIR/bin/gsplit.exe
 cp $GENDIR/bin/gstat.exe			$OUTDIR/bin/
 cp $GENDIR/bin/ibguard.exe			$OUTDIR/bin/fbguard.exe
 cp $GENDIR/bin/instreg.exe			$OUTDIR/bin/
@@ -83,7 +83,7 @@ cp $GENDIR/intl/fbintl.dll			$OUTDIR/intl/
 #
 echo Copying lib...
 mkdir $OUTDIR/lib
-cp $GENDIR/fbclient_ms.lib			$OUTDIR/lib/
+cp $GENDIR/lib/fbclient_ms.lib		$OUTDIR/lib/
 echo "to be build"	>				$OUTDIR/lib/gds32.lib
 #
 # Copying UDF
