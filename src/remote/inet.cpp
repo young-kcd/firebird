@@ -272,7 +272,7 @@ static int		check_host(rem_port*, TEXT*, const TEXT*, const struct passwd*);
 #else
 static int		check_host(rem_port*, TEXT*, const TEXT*);
 #endif // VMS
-static bool		check_proxy(rem_port*, TEXT *, TEXT *);
+static bool		check_proxy(rem_port*, TEXT*, Firebird::string&);
 #endif // WIN_NT
 static void		cleanup_port(rem_port*);
 static void		disconnect(rem_port*);
@@ -1172,7 +1172,7 @@ static int accept_connection(rem_port* port,
 		}
 		else
 		{
-			if (check_proxy(port, host, (TEXT*) name.c_str()))
+			if (check_proxy(port, host, name))
 				passwd = getpwnam(name.c_str());
 			if (!passwd)
 				return FALSE;
@@ -1652,8 +1652,8 @@ static int check_host(
 
 #if !(defined WIN_NT)
 static bool check_proxy(rem_port* port,
-						TEXT * host_name,
-						TEXT * user_name)
+						TEXT* host_name,
+						Firebird::string& user_name)
 {
 /**************************************
  *
@@ -1696,7 +1696,7 @@ static bool check_proxy(rem_port* port,
 		if (sscanf(line, " %[^:]:%s%s", source_host, source_user, target_user)
 			>= 3)
 			if ((!strcmp(source_host, host_name) || !strcmp(source_host, "*"))
-				&& (!strcmp(source_user, user_name)
+				&& (!strcmp(source_user, user_name.c_str())
 					|| !strcmp(source_user, "*")))
 			{
 				ALLR_free(port->port_user_name);
@@ -1705,7 +1705,7 @@ static bool check_proxy(rem_port* port,
 				port->port_user_name = string;
 				string->str_length = length;
 				strncpy(string->str_data, target_user, length);
-				strcpy(user_name, target_user);
+				user_name = target_user;
 				result = true;
 				break;
 			}
