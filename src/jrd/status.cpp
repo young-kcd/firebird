@@ -121,7 +121,7 @@ void PARSE_STATUS(STATUS * status_vector, int &length, int &warning)
 			break;
 
 		default:
-			assert(FALSE);
+			fb_assert(FALSE);
 			break;
 		}
 	}

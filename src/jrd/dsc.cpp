@@ -754,7 +754,7 @@ USHORT DLL_EXPORT DSC_convert_to_text_length(USHORT dsc_type)
 	if (dsc_type < (sizeof(_DSC_convert_to_text_length) /
 					sizeof(_DSC_convert_to_text_length[0])))
 		return _DSC_convert_to_text_length[dsc_type];
-	assert(FALSE);
+	fb_assert(FALSE);
 	return 0;
 }
 
@@ -783,7 +783,7 @@ SSHORT sub_type, SSHORT charset, SSHORT collation)
 		static BOOLEAN been_here = FALSE;
 		if (!been_here) {
 			been_here = TRUE;
-			assert(validate_dsc_tables());
+			fb_assert(validate_dsc_tables());
 		}
 	}
 #endif
@@ -865,7 +865,7 @@ SSHORT sub_type, SSHORT charset, SSHORT collation)
 		desc->dsc_length = 2 * sizeof(SLONG);
 		desc->dsc_dtype = dtype_blob;
 		if (sub_type == BLOB_text) {
-			assert(charset <= MAX_SCHAR);
+			fb_assert(charset <= MAX_SCHAR);
 			desc->dsc_scale = (SCHAR) charset;
 		}
 		break;
@@ -876,7 +876,7 @@ SSHORT sub_type, SSHORT charset, SSHORT collation)
 		break;
 
 	default:
-		assert(FALSE);
+		fb_assert(FALSE);
 		desc->dsc_dtype = dtype_null;
 		break;
 	}

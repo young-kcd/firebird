@@ -275,7 +275,7 @@ void SCH_ast(enum ast_t action)
 	if (!ast_thread && !(action == AST_alloc || action == AST_disable ||
 						 action == AST_enable)) {
 		/* Better be an AST thread before we do anything to it! */
-		assert(FALSE);
+		fb_assert(FALSE);
 		return;
 	}
 
@@ -431,7 +431,7 @@ void SCH_enter(void)
 	{
 		/* The calling thread should NOT be the active_thread 
 		   This is to prevent deadlock by the same thread */
-		assert(thread->thread_id != active_thread->thread_id);
+		fb_assert(thread->thread_id != active_thread->thread_id);
 
 		thread->thread_next = active_thread;
 		thread->thread_prior = prior = active_thread->thread_prior;

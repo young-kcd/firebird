@@ -514,9 +514,9 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR ** dpb, SSHORT * dpb_size, ...)
 			if (q = va_arg(args, char *))
 			{
 				length = strlen(q);
-				assert(type <= CHAR_MAX);
+				fb_assert(type <= CHAR_MAX);
 				*p++ = (char) type;
-				assert(length <= CHAR_MAX);
+				fb_assert(length <= CHAR_MAX);
 				*p++ = (char) length;
 				while (length--)
 					*p++ = *q++;
@@ -641,9 +641,9 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
 		if (q = (UCHAR *) str)
 		{
 			length = str_len;
-			assert(type <= MAX_UCHAR);
+			fb_assert(type <= MAX_UCHAR);
 			*p++ = (UCHAR) type;
-			assert(length <= MAX_UCHAR);
+			fb_assert(length <= MAX_UCHAR);
 			*p++ = (UCHAR) length;
 			while (length--)
 			{
