@@ -23,9 +23,6 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *
- *
- *  $Id: evl_string.h,v 1.17 2004-08-26 21:47:19 brodsom Exp $
- *
  */
 
 #ifndef JRD_EVL_STRING_H

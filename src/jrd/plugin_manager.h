@@ -1,6 +1,6 @@
 /*
- *  PROGRAM:    JRD Plugin Manager Method
- *  MODULE:     plugin_manager.h
+ *  PROGRAM:    	JRD Plugin Manager Class
+ *  MODULE:     	plugin_manager.h
  *  DESCRIPTION:    Manages dynamically loadable engine plugins
  *
  *  The contents of this file are subject to the Initial
