@@ -79,7 +79,7 @@
 #define RESTORE_THREAD_DATA     
 #endif
 
-typedef struct user_data {
+struct internal_user_data {
     int		operation;		/* what's to be done */
     TEXT	user_name [USER_NAME_LEN];	/* the user's name */
     bool	user_name_entered;	/* user name entered flag */
@@ -120,11 +120,11 @@ typedef struct user_data {
     bool	database_entered;	/* database entered flag */
     bool	database_specified;	/* database specified flag */
 
-} *USER_DATA;
+};
 
 typedef struct tsec {
     struct thdd			tsec_thd_data;
-    struct user_data*	tsec_user_data;
+    internal_user_data*	tsec_user_data;
     int					tsec_exit_code;
     jmp_buf*			tsec_env;
     ISC_STATUS*			tsec_status;

@@ -158,7 +158,7 @@ static void	release_transaction(RTR);
 static REM_MSG	scroll_cache(rrq::rrq_repeat*, USHORT *, ULONG *);
 #endif
 
-static void	server_ast(RVNT, USHORT, UCHAR*);
+static void	server_ast(void*, USHORT, const UCHAR*);
 static void		success(ISC_STATUS *);
 #ifdef MULTI_THREAD
 static int THREAD_ROUTINE thread(void *);
@@ -943,7 +943,7 @@ static ISC_STATUS cancel_events( PORT port, P_EVENT * stuff, PACKET* send)
 
 	event->rvnt_id = 0L;
 	event->rvnt_rid = 0L;
-	event->rvnt_ast = 0L;
+	event->rvnt_ast = 0;
 
 /* return response */
 
@@ -3373,8 +3373,8 @@ ISC_STATUS port::que_events(P_EVENT * stuff, PACKET* send)
 		rdb->rdb_events = event;
 	}
 
-	event->rvnt_ast =
-		reinterpret_cast<void(*)(void*, USHORT, UCHAR*)>(stuff->p_event_ast);
+	event->rvnt_ast = stuff->p_event_ast;
+	// CVC: Going from SLONG to void*, problems when sizeof(void*) > 4
 	event->rvnt_arg = (void *) stuff->p_event_arg;
 	event->rvnt_rid = stuff->p_event_rid;
 	event->rvnt_rdb = rdb;
@@ -3383,7 +3383,7 @@ ISC_STATUS port::que_events(P_EVENT * stuff, PACKET* send)
 	isc_que_events(status_vector, &rdb->rdb_handle, &event->rvnt_id,
 				   stuff->p_event_items.cstr_length,
 				   reinterpret_cast<const char*>(stuff->p_event_items.cstr_address),
-				   reinterpret_cast<void (*)()>(server_ast),
+				   server_ast,
 				   event);
 	THREAD_ENTER;
 
@@ -4226,7 +4226,7 @@ ISC_STATUS port::send_response(	PACKET*	send,
 }
 
 
-static void server_ast( RVNT event, USHORT length, UCHAR * items)
+static void server_ast(void* event_void, USHORT length, const UCHAR* items)
 {
 /**************************************
  *
@@ -4238,6 +4238,7 @@ static void server_ast( RVNT event, USHORT length, UCHAR * items)
  *	Send an asynchrous event packet back to client.
  *
  **************************************/
+	RVNT event = reinterpret_cast<RVNT>(event_void);
 	RDB rdb;
 	PORT port;
 	PACKET packet;
@@ -4256,8 +4257,10 @@ static void server_ast( RVNT event, USHORT length, UCHAR * items)
 	p_event = &packet.p_event;
 	p_event->p_event_database = rdb->rdb_id;
 	p_event->p_event_items.cstr_length = length;
-	p_event->p_event_items.cstr_address = items;
-	p_event->p_event_ast = (SLONG) event->rvnt_ast;
+	// Probalby should define this item with CSTRING_CONST instead.
+	p_event->p_event_items.cstr_address = const_cast<UCHAR*>(items);
+	p_event->p_event_ast = event->rvnt_ast;
+	// CVC: Using SLONG to keep pointer!
 	p_event->p_event_arg = (SLONG) event->rvnt_arg;
 	p_event->p_event_rid = event->rvnt_rid;
 

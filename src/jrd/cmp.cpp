@@ -167,16 +167,16 @@ inline static int strcmp_null(const char* s1, const char* s2) {
 
 inline static char* clone_cstring(JrdMemoryPool* pool, const char* source) {
 	if (!source) return NULL;
-	char *result = FB_NEW(*pool) char[strlen(source)+1];
+	char* result = FB_NEW(*pool) char[strlen(source) + 1];
     strcpy(result, source);
     return result;
 }
 
-bool CMP_clone_active(JRD_REQ request)
+bool CMP_clone_is_active(const jrd_req* request)
 {
 /**************************************
  *
- *	C M P _ c l o n e _ a c t i v e
+ *	C M P _ c l o n e _ i s _ a c t i v e
  *
  **************************************
  *
@@ -184,19 +184,21 @@ bool CMP_clone_active(JRD_REQ request)
  *	Determine if a request or any of its clones are active.
  *
  **************************************/
-	VEC vector;
-	vec::iterator sub_req, end;
-
 	DEV_BLKCHK(request, type_req);
 
 	if (request->req_flags & req_in_use)
 		return true;
 
-	if ( (vector = request->req_sub_requests) )
-		for (sub_req = vector->begin(), end = vector->end();
-			 sub_req < end; sub_req++)
-			if (*sub_req && ((JRD_REQ)(*sub_req))->req_flags & req_in_use)
+	// This should be const, but the iterator won't work then.
+	vec* vector = request->req_sub_requests;
+	if (vector) {
+		for (vec::const_iterator sub_req = vector->begin(), end = vector->end();
+			 sub_req < end; ++sub_req)
+		{
+			if (*sub_req && ((const jrd_req*)(*sub_req))->req_flags & req_in_use)
 				return true;
+		}
+	}
 
 	return false;
 }
@@ -606,8 +608,8 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 			desc->dsc_flags = 0;
 			return;
 
-		case dtype_null:
-			desc->dsc_dtype = dtype_null;
+		case dtype_unknown:
+			desc->dsc_dtype = dtype_unknown;
 			desc->dsc_length = 0;
 			node->nod_scale = 0;
 			desc->dsc_sub_type = 0;
@@ -669,8 +671,8 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 			desc->dsc_flags = 0;
 			return;
 
-		case dtype_null:
-			desc->dsc_dtype = dtype_null;
+		case dtype_unknown:
+			desc->dsc_dtype = dtype_unknown;
 			desc->dsc_length = 0;
 			node->nod_scale = 0;
 			desc->dsc_sub_type = 0;
@@ -758,7 +760,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 			const fmt* format =
 				CMP_format(tdbb, csb, (USHORT) (ULONG) node->nod_arg[e_fld_stream]);
 			if (id >= format->fmt_count) {
-				desc->dsc_dtype = dtype_null;
+				desc->dsc_dtype = dtype_unknown;
 				desc->dsc_length = 0;
 				desc->dsc_scale = 0;
 				desc->dsc_sub_type = 0;
@@ -793,12 +795,12 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 			// text types for division in blr_version4 (dialect <= 1) only
 			if (!(DTYPE_CAN_DIVIDE(desc1.dsc_dtype) ||
 				  DTYPE_IS_TEXT(desc1.dsc_dtype))) {
-				if (desc1.dsc_dtype != dtype_null)
+				if (desc1.dsc_dtype != dtype_unknown)
 					break;		// error, dtype not supported by arithmetic
 			}
 			if (!(DTYPE_CAN_DIVIDE(desc2.dsc_dtype) ||
 				  DTYPE_IS_TEXT(desc2.dsc_dtype))) {
-				if (desc2.dsc_dtype != dtype_null)
+				if (desc2.dsc_dtype != dtype_unknown)
 					break;		// error, dtype not supported by arithmetic
 			}
 		}
@@ -817,7 +819,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 		if (node->nod_type == nod_average)
 			CMP_get_desc(tdbb, csb, node->nod_arg[e_stat_value], desc);
 		if (!DTYPE_CAN_AVERAGE(desc->dsc_dtype)) {
-			if (desc->dsc_dtype != dtype_null)
+			if (desc->dsc_dtype != dtype_unknown)
 				break;
 		}
 		desc->dsc_dtype = DEFAULT_DOUBLE;
@@ -847,8 +849,8 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 			node->nod_scale = desc->dsc_scale;
 			return;
 
-		case dtype_null:
-			desc->dsc_dtype = dtype_null;
+		case dtype_unknown:
+			desc->dsc_dtype = dtype_unknown;
 			desc->dsc_length = 0;
 			desc->dsc_scale = 0;
 			desc->dsc_sub_type = 0;
@@ -1023,8 +1025,8 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 				desc->dsc_flags = 0;
 				return;
 
-			case dtype_null:
-				desc->dsc_dtype = dtype_null;
+			case dtype_unknown:
+				desc->dsc_dtype = dtype_unknown;
 				desc->dsc_length = 0;
 				desc->dsc_scale = 0;
 				desc->dsc_sub_type = 0;
@@ -1108,8 +1110,9 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 				fb_assert(DTYPE_IS_DATE(desc1.dsc_dtype) ||
 					   DTYPE_IS_DATE(desc2.dsc_dtype));
 
-				if ((DTYPE_IS_DATE(dtype1) || (dtype1 == dtype_null)) &&
-					(DTYPE_IS_DATE(dtype2) || (dtype2 == dtype_null))) {
+				if ((DTYPE_IS_DATE(dtype1) || (dtype1 == dtype_unknown)) &&
+					(DTYPE_IS_DATE(dtype2) || (dtype2 == dtype_unknown)))
+				{
 					if (node->nod_type == nod_subtract2) {
 						// <any date> - <any date>
 
@@ -1120,9 +1123,9 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 						   <date> - <timestamp>
 						   <time> - <time> */
 
-						if (dtype1 == dtype_null)
+						if (dtype1 == dtype_unknown)
 							dtype1 = dtype2;
-						else if (dtype2 == dtype_null)
+						else if (dtype2 == dtype_unknown)
 							dtype2 = dtype1;
 						if (dtype1 == dtype2)
 							dtype = dtype1;
@@ -1152,7 +1155,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 						}
 						else {
 							fb_assert(dtype == dtype_timestamp
-								   || dtype == dtype_null);
+								   || dtype == dtype_unknown);
 							desc->dsc_dtype = DEFAULT_DOUBLE;
 							desc->dsc_length = type_lengths[desc->dsc_dtype];
 							desc->dsc_scale = 0;
@@ -1220,8 +1223,8 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 				desc->dsc_flags = 0;
 				return;
 
-			case dtype_null:
-				desc->dsc_dtype = dtype_null;
+			case dtype_unknown:
+				desc->dsc_dtype = dtype_unknown;
 				desc->dsc_length = 0;
 				desc->dsc_scale = 0;
 				desc->dsc_sub_type = 0;
@@ -1283,8 +1286,8 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 				desc->dsc_flags = 0;
 				return;
 
-			case dtype_null:
-				desc->dsc_dtype = dtype_null;
+			case dtype_unknown:
+				desc->dsc_dtype = dtype_unknown;
 				desc->dsc_length = 0;
 				desc->dsc_scale = 0;
 				desc->dsc_sub_type = 0;
@@ -1331,8 +1334,8 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 				desc->dsc_flags = 0;
 				return;
 
-			case dtype_null:
-				desc->dsc_dtype = dtype_null;
+			case dtype_unknown:
+				desc->dsc_dtype = dtype_unknown;
 				desc->dsc_length = 0;
 				desc->dsc_scale = 0;
 				desc->dsc_sub_type = 0;
@@ -5482,7 +5485,7 @@ static void process_map(TDBB tdbb, CSB csb, JRD_NOD map, FMT * input_format)
 			desc->dsc_sub_type = 0;
 			desc->dsc_flags = 0;
 		}
-		else if (!min)			// eg: dtype_null
+		else if (!min)			// eg: dtype_unknown
 			*desc = desc2;
 		else if (min <= dtype_any_text) {	// either field a text field?
 			USHORT len1, len2;

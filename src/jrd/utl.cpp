@@ -1216,7 +1216,7 @@ void API_ROUTINE isc_set_single_user(const UCHAR** dpb,
 
 
 int API_ROUTINE isc_version(FRBRD** handle,
-							 FPTR_VOID routine, void* user_arg)
+							 FPTR_VERSION_CALLBACK routine, void* user_arg)
 {
 /**************************************
  *
@@ -1229,7 +1229,7 @@ int API_ROUTINE isc_version(FRBRD** handle,
  *
  **************************************/
 	if (!routine) {
-		routine = (FPTR_VOID) ib_printf;
+		routine = (FPTR_VERSION_CALLBACK) ib_printf;
 		user_arg = (void*)"\t%s\n";
 	}
 
@@ -1320,8 +1320,7 @@ int API_ROUTINE isc_version(FRBRD** handle,
 		sprintf(s, "%s (%s), version \"%.*s\"",
 				implementation_string, class_string, l, versions);
 
-#pragma FB_COMPILER_MESSAGE("Fix! Bad function ptr type cast!")
-		reinterpret_cast<void (*)(...)>(*routine)(user_arg, s);
+		(*routine)(user_arg, s);
 		versions += l;
 	}
 
@@ -1334,7 +1333,7 @@ int API_ROUTINE isc_version(FRBRD** handle,
 
 	sprintf(s, "on disk structure version %d.%d", ods_version,
 			ods_minor_version);
-	reinterpret_cast<void (*)(...)>(*routine)(user_arg, s);
+	(*routine)(user_arg, s);
 
 	return FB_SUCCESS;
 }

@@ -1001,7 +1001,7 @@ int MET_get_datatype( USHORT blr_datatype)
 		retvalue = dtype_int64;
 		break;
 	default:
-		retvalue = dtype_null;
+		retvalue = dtype_unknown;
 		break;
 	}
 

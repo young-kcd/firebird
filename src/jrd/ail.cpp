@@ -79,7 +79,7 @@ static BOOLEAN get_walinfo(TEXT *);
 static void initialize_wal(TDBB, const TEXT*, WIN*, log_info_page*, SSHORT, bool, SBM*);
 #ifdef NOT_USED_OR_REPLACED
 static void process_log_updater(log_info_page*);
-static void process_recovery(TDBB, const TEXT*, WIN*, log_info_page*,
+static void process_recovery(TDBB, const TEXT*, WIN*, log_info_page**,
 							 SSHORT, bool, SBM*);
 static void set_first_user(LGFILE **, log_info_page*, TEXT *);
 #endif
@@ -165,7 +165,7 @@ void AIL_checkpoint_finish(
 	PIO_write(dbb->dbb_file, window.win_bdb, window.win_buffer,
 			  status_vector);
 
-	CCH_write_all_shadows(tdbb, 0, window.win_bdb, status_vector, 1, FALSE);
+	CCH_write_all_shadows(tdbb, 0, window.win_bdb, status_vector, 1, false);
 	PIO_flush(dbb->dbb_file);
 	if (dbb->dbb_shadow) {
 		PIO_flush(dbb->dbb_shadow->sdw_file);
@@ -441,11 +441,6 @@ void AIL_enable(
  *		journal descriptor in ret_journal.
  *
  **************************************/
-	LGFILE *log_files[MAX_LOG_FILES];
-	LGFILE *log_ovflow;
-	ULONG number;
-	USHORT jd_len;
-
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 
@@ -456,6 +451,7 @@ void AIL_enable(
 
 /* check if journal is already enabled */
 	UCHAR journal_dir[MAXPATHLEN];
+	USHORT jd_len;
 	if (PAG_get_clump(HEADER_PAGE, HDR_journal_server, &jd_len, journal_dir)) {
 		ERR_post(isc_jrn_present, 0);
 	}
@@ -466,6 +462,9 @@ void AIL_enable(
  */
 
 	if (!archive) {
+        LGFILE* log_files[MAX_LOG_FILES];
+        LGFILE* log_ovflow;
+        ULONG number;
 		MET_get_walinfo(tdbb, log_files, &number, &log_ovflow);
 
 		for (ULONG i = 0; i < number; i++) {
@@ -540,12 +539,8 @@ void AIL_fini()
  *    Sign off with WAL substem and journal server (if needed).
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	SLONG ret_val;
-
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 	if (!dbb->dbb_wal)
 		return;
@@ -557,8 +552,11 @@ void AIL_fini()
 	if (!dbb->dbb_journal)
 		return;
 
-	if ((ret_val = JRN_fini(tdbb->tdbb_status_vector, &dbb->dbb_journal)) !=
-		FB_SUCCESS) AIL_process_jrn_error(ret_val);
+	const SLONG ret_val = JRN_fini(tdbb->tdbb_status_vector, &dbb->dbb_journal);
+	if (ret_val != FB_SUCCESS)
+	{
+		AIL_process_jrn_error(ret_val);
+	}
 
 	dbb->dbb_journal = 0;
 }
@@ -576,31 +574,11 @@ void AIL_get_file_list(LLS * stack)
  *    Get list of WAL files to drop
  *
  **************************************/
-	DBB dbb;
-	WALS WAL_segment;
-	ISC_STATUS_ARRAY status_vector;
-	SCHAR *curr_name;
-	SLONG curr_log_partition_offset;
-	SCHAR *prev_name;
-	SLONG prev_log_partition_offset;
-	SLONG log_flags;
-
-	SCHAR log_name1[MAXPATHLEN];
-	SCHAR log_name2[MAXPATHLEN];
-
-	SCHAR *temp_name;
-	SLONG log_seqno;
-	SLONG log_length;
-	STR fname;
-	SCHAR *temp_fname;
-	SSHORT count;
-	SSHORT fname_term_length;
-	LOGF *logf;
-
-	dbb = GET_DBB;
+	DBB dbb = GET_DBB;
 	if (!dbb->dbb_wal)
 		return;
 
+	WALS WAL_segment;
 	WALC_acquire(dbb->dbb_wal, &WAL_segment);
 
 /* 
@@ -608,15 +586,15 @@ void AIL_get_file_list(LLS * stack)
 ** If yes then put them on stack of files
 ** to be deleted.
 */
-
-	if ((count = WAL_segment->wals_max_logfiles) > 0) {
+	SSHORT count = WAL_segment->wals_max_logfiles;
+	if (count > 0) {
 		while (--count >= 0) {
-			logf = LOGF_INFO(count);
+			LOGF* logf = LOGF_INFO(count);
 			if (logf->logf_flags & LOGF_RAW)
 				continue;
-			temp_fname = LOGF_NAME(logf);
-			fname_term_length = strlen(temp_fname) + 1;
-			fname = FB_NEW_RPT(*dbb->dbb_permanent, fname_term_length) str();
+			const char* temp_fname = LOGF_NAME(logf);
+			const SSHORT fname_term_length = strlen(temp_fname) + 1;
+			str* fname = FB_NEW_RPT(*dbb->dbb_permanent, fname_term_length) str();
 			MOVE_FAST(temp_fname, (SCHAR*)fname->str_data, fname_term_length);
 			LLS_PUSH(fname, stack);
 		}
@@ -628,16 +606,23 @@ void AIL_get_file_list(LLS * stack)
 */
 
 /* WAL_segment->wals_logname is the current log file */
-	curr_name = log_name1;
-	prev_name = log_name2;
+	SCHAR log_name1[MAXPATHLEN];
+	SCHAR log_name2[MAXPATHLEN] = "";
+	SCHAR* curr_name = log_name1;
+	SCHAR* prev_name = log_name2;
 	strcpy(curr_name, WAL_segment->wals_logname);
-	curr_log_partition_offset = WAL_segment->wals_log_partition_offset;
+	SLONG curr_log_partition_offset = WAL_segment->wals_log_partition_offset;
 
 	WALC_release(dbb->dbb_wal);
 
+    SLONG log_flags;
+   	SLONG log_seqno;
+	SLONG log_length;
+	ISC_STATUS_ARRAY status_vector;
 	if (WALF_get_log_info(status_vector, dbb->dbb_file->fil_string, curr_name,
 						  curr_log_partition_offset, &log_seqno, &log_length,
-						  &log_flags) != FB_SUCCESS) {
+						  &log_flags) != FB_SUCCESS)
+	{
 		gds__free((SLONG *) log_name1);
 		gds__free((SLONG *) log_name2);
 		return;
@@ -645,19 +630,23 @@ void AIL_get_file_list(LLS * stack)
 
 	while (true) {
 		if (!(log_flags & WALFH_RAW)) {
-			fname_term_length = strlen(curr_name) + 1;
-			fname = FB_NEW_RPT(*dbb->dbb_permanent, fname_term_length) str();
+			const SSHORT fname_term_length = strlen(curr_name) + 1;
+			str* fname = FB_NEW_RPT(*dbb->dbb_permanent, fname_term_length) str();
 			MOVE_FAST(curr_name, (SCHAR*)fname->str_data, fname_term_length);
 			LLS_PUSH(fname, stack);
 		}
 
+		SLONG prev_log_partition_offset;
 		if (WALF_get_next_log_info(status_vector, dbb->dbb_file->fil_string,
 								   curr_name, curr_log_partition_offset,
 								   prev_name, &prev_log_partition_offset,
 								   &log_seqno, &log_length, &log_flags,
-								   -1) != FB_SUCCESS) break;
+								   -1) != FB_SUCCESS)
+		{
+			break;
+		}
 
-		temp_name = prev_name;
+		char* temp_name = prev_name;
 		prev_name = curr_name;
 		curr_name = temp_name;
 		curr_log_partition_offset = prev_log_partition_offset;
@@ -683,22 +672,16 @@ void AIL_init(
  *	If WAL has never been used for the database, do some set up work.
  *	Perform short term recovery if required.
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	log_info_page* logp;
-	TEXT dbname[MAXPATHLEN];
 
-/* null out the sparse bit map */
-
+// null out the sparse bit map
 	*sbm_rec = (SBM) 0;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 /* Get WAL file name */
-
 	dbb->dbb_wal = 0;
-
+	TEXT dbname[MAXPATHLEN];
 	if (file_len) {
 		MOVE_FAST(filename, dbname, file_len);
 		dbname[file_len] = 0;
@@ -713,6 +696,7 @@ void AIL_init(
 
 	WIN window(LOG_PAGE);
 	WIN* win;
+	log_info_page* logp;
 	if (in_win) {
 		win = in_win;
 		win->win_flags = 0;
@@ -776,16 +760,13 @@ void AIL_init_log_page(log_info_page* logp, SLONG seqno)
  *      Set all parameters to 0 except the log file
  *      sequence number which is set to the passed value.   
  **************************************/
-	UCHAR *p;
-	SLONG len;
 
 /* First zero out the whole structure except for the page header portion */
-
-	len = sizeof(log_info_page) - sizeof(pag);
-	p = (UCHAR *) logp + sizeof(pag);
-	do
+	SLONG len = sizeof(log_info_page) - sizeof(pag);
+	UCHAR* p = (UCHAR *) logp + sizeof(pag);
+	do {
 		*p++ = 0;
-	while (--len);
+	} while (--len);
 
 /* Now set individual fields as appropriate */
 
@@ -799,27 +780,27 @@ void AIL_init_log_page(log_info_page* logp, SLONG seqno)
 	*p++ = LOG_ctrl_file1;
 	*p++ = CTRL_FILE_LEN;
 	len = CTRL_FILE_LEN;
-	do
+	do {
 		*p++ = 0;
-	while (--len);
+	} while (--len);
 
 /* Set control point 2 file name */
 
 	*p++ = LOG_ctrl_file2;
 	*p++ = CTRL_FILE_LEN;
 	len = CTRL_FILE_LEN;
-	do
+	do {
 		*p++ = 0;
-	while (--len);
+	} while (--len);
 
 /* Set current log file */
 
 	*p++ = LOG_logfile;
 	*p++ = CTRL_FILE_LEN;
 	len = CTRL_FILE_LEN;
-	do
+	do {
 		*p++ = 0;
-	while (--len);
+	} while (--len);
 
 	*p = LOG_end;
 
@@ -839,8 +820,6 @@ void AIL_journal_tid()
  *	Journal the next transaction id on the header page.
  *	This will be used at WAL_init and control point time.
  **************************************/
-	JRNDH journal;
-
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB  dbb  = tdbb->tdbb_database;
 
@@ -858,6 +837,7 @@ void AIL_journal_tid()
 
 	hdr->hdr_bumped_transaction = fake_tid;
 
+	JRNDH journal;
 	journal.jrndh_type = JRNP_DB_HEADER;
 	journal.jrndh_nti = fake_tid;
 	journal.jrndh_oit = hdr->hdr_oldest_transaction;
@@ -885,7 +865,6 @@ void AIL_process_jrn_error(SLONG ret_val)
  *	Handle error from a journal call.
  *
  **************************************/
-
 	if (ret_val == FB_FAILURE)
 		ERR_punt();
 	else if (ret_val < 0)
@@ -1121,18 +1100,14 @@ void AIL_upd_cntrl_pt(
  *		  :: All control point entries are contiguous.
  *
  **************************************/
-	log_info_page* logp;
-	UCHAR *p1, *p2, *p3, *p;
-	USHORT len;
-	TDBB tdbb;
-
-	tdbb = GET_THREAD_DATA;
-
+	TDBB tdbb = GET_THREAD_DATA;
 
 	WIN window(LOG_PAGE);
-	logp = (log_info_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_log);
+	log_info_page* logp =
+		(log_info_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_log);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 
+	UCHAR *p1, *p2, *p3, *p;
 	p1 = p2 = p3 = 0;
 
 	for (p = logp->log_data; (*p != LOG_end); p += 2 + p[1]) {
@@ -1168,7 +1143,8 @@ void AIL_upd_cntrl_pt(
 	*p++ = LOG_ctrl_file2;
 	p++;
 	const UCHAR* q = reinterpret_cast<const UCHAR*>(walname);
-	if ( (len = w_len) )
+	USHORT len = w_len;
+	if (len)
 		do {
 			*p++ = *q++;
 		} while (--len);
@@ -1182,7 +1158,8 @@ void AIL_upd_cntrl_pt(
 
 	p = p3 + 2;
 	q = reinterpret_cast<const UCHAR*>(walname);
-	if ( (len = w_len) ) {
+	len = w_len;
+	if (len) {
 		do {
 			*p++ = *q++;
 		} while (--len);
@@ -1349,17 +1326,13 @@ static BOOLEAN get_walinfo(TEXT * walname)
  *	    FALSE otherwise
  *
  **************************************/
+	TDBB tdbb = GET_THREAD_DATA;
+
+	WIN window(LOG_PAGE);
+	log_info_page* logp =
+		(log_info_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_log);
+
 	USHORT len;
-	WIN window;
-	log_info_page* logp;
-	TDBB tdbb;
-
-	tdbb = GET_THREAD_DATA;
-
-	window.win_page = LOG_PAGE;
-	window.win_flags = 0;
-	logp = (log_info_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_log);
-
 	if (!PAG_get_clump
 		(LOG_PAGE, LOG_logfile, &len,
 		 reinterpret_cast < UCHAR * >(walname))) {
@@ -1432,13 +1405,9 @@ static void process_log_updater(log_info_page* logp)
  *	Fixup the log_flags appropriately.
  *
  **************************************/
-	SSHORT state;
-	TDBB tdbb;
+	TDBB tdbb = GET_THREAD_DATA;
 
-	tdbb = GET_THREAD_DATA;
-
-
-	state = TRA_get_state(tdbb, logp->log_mod_tid);
+	const SSHORT state = TRA_get_state(tdbb, logp->log_mod_tid);
 
 	logp->log_mod_tid = 0;
 	logp->log_mod_tip = 0;
@@ -1462,7 +1431,7 @@ static void process_recovery(
 							 TDBB tdbb,
 							 const TEXT* dbname,
 							 WIN* window,
-							 log_info_page* logpp,
+							 log_info_page** logpp,
 							 SSHORT release,
 							bool activate_shadow, SBM* sbm_rec)
 {
@@ -1480,23 +1449,19 @@ static void process_recovery(
  *	user will run in exclusive mode.
  *
  **************************************/
-	TEXT root_db[MAXPATHLEN], rwal[MAXPATHLEN];
-	CP cp1;
-	log_info_page* logp;
-	UCHAR *p;
-	WIN win;
-	HDR hdr;
-
 	SET_TDBB(tdbb);
 
-	logp = *logpp;
+	log_info_page* logp = *logpp;
 
+	CP cp1;
 	cp1.cp_seqno = logp->log_cp_1.cp_seqno;
 	cp1.cp_offset = logp->log_cp_1.cp_offset;
 	cp1.cp_p_offset = logp->log_cp_1.cp_p_offset;
 
+	UCHAR* p;
 	for (p = logp->log_data; (*p != LOG_ctrl_file1); p += 2 + p[1]);
 
+	TEXT rwal[MAXPATHLEN];
 	MOVE_FAST((SCHAR*)(p + 2), rwal, logp->log_cp_1.cp_fn_length);
 
 	rwal[logp->log_cp_1.cp_fn_length] = 0;
@@ -1509,10 +1474,10 @@ static void process_recovery(
 
 	if (activate_shadow) {
 		/* If activating shadow, recovery needs root file name */
-		win.win_page = HEADER_PAGE;
-		win.win_flags = 0;
-		hdr = (HDR) CCH_FETCH(tdbb, &win, LCK_read, pag_header);
+		WIN win(HEADER_PAGE);
+		HRD hdr = (HDR) CCH_FETCH(tdbb, &win, LCK_read, pag_header);
 		for (p = hdr->hdr_data; (*p != HDR_root_file_name); p += 2 + p[1]);
+		TEXT root_db[MAXPATHLEN];
 		MOVE_FAST((SCHAR*)(p + 2), root_db, p[1]);
 		root_db[p[1]] = 0;
 		CCH_RELEASE(tdbb, &win);
@@ -1555,9 +1520,6 @@ static void set_first_user(LGFILE ** log_files, log_info_page* logp, TEXT * waln
  *	Initialize log page when using the WAL for the first time.
  *
  **************************************/
-	SSHORT len;
-	UCHAR *p;
-
 	logp->log_flags &= ~log_add;
 	logp->log_flags &= ~log_no_ail;
 	logp->log_file.cp_seqno++;
@@ -1571,10 +1533,10 @@ static void set_first_user(LGFILE ** log_files, log_info_page* logp, TEXT * waln
 	else
 		strcpy(walname, log_files[0]->lg_name);
 
-	len = strlen(walname);
+	const SSHORT len = strlen(walname);
 	logp->log_file.cp_fn_length = len;
 
-	for (p = logp->log_data; (*p != LOG_end); p += 2 + p[1]) {
+	for (UCHAR* p = logp->log_data; (*p != LOG_end); p += 2 + p[1]) {
 		switch (*p) {
 		case LOG_ctrl_file1:
 			MOVE_FAST(walname, (SCHAR*)(p + 2), len);

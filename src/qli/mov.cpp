@@ -40,8 +40,8 @@ static void mover_error(int, USHORT, USHORT);
 static void now_to_date(const tm*, SLONG[2]);
 static void numeric_to_text(const dsc*, dsc*);
 static void string_to_date(const TEXT*, USHORT, SLONG[2]);
-static void string_to_time(TEXT *, USHORT, SLONG[2]);
-static TEXT *type_name(USHORT);
+static void string_to_time(const TEXT*, USHORT, SLONG[2]);
+static const TEXT* type_name(USHORT);
 
 
 
@@ -76,7 +76,7 @@ struct dtypes_t {
 };
 
 static const dtypes_t dtypes_table[] = {
-	{ dtype_null, "NULL" },
+	{ dtype_unknown, "NULL" },
 	{ dtype_text, "character string" },
 	{ dtype_cstring, "character string" },
 	{ dtype_varying, "varying string" },
@@ -1156,19 +1156,19 @@ static void mover_error( int pattern, USHORT in_type, USHORT out_type)
 
 	ERRQ_msg_get(504, msg_unknown);	// Msg504 unknown datatype %d
 
-	TEXT* in = type_name(in_type);
+	const TEXT* in = type_name(in_type);
 	if (!in) {
 		in = in_name;
 		sprintf(in_name, msg_unknown, in_type);
 	}
 
-	TEXT* out = type_name(out_type);
+	const TEXT* out = type_name(out_type);
 	if (!out) {
 		out = out_name;
-		sprintf(out, msg_unknown, out_type);
+		sprintf(out_name, msg_unknown, out_type);
 	}
 
-	ERRQ_error(pattern, (TEXT *) in, (TEXT *) out, NULL, NULL, NULL);
+	ERRQ_error(pattern, in, out, NULL, NULL, NULL);
 }
 
 
@@ -1482,7 +1482,7 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
 }
 
 
-static void string_to_time( TEXT * string, USHORT length, SLONG date[2])
+static void string_to_time(const TEXT* string, USHORT length, SLONG date[2])
 {
 /**************************************
  *
@@ -1491,7 +1491,7 @@ static void string_to_time( TEXT * string, USHORT length, SLONG date[2])
  **************************************
  *
  * Functional description
- *	Convert an arbitrary string to a t i m e.
+ *	Convert an arbitrary string to a time.
  *
  **************************************/
 	if (!length) {
@@ -1587,7 +1587,7 @@ static void string_to_time( TEXT * string, USHORT length, SLONG date[2])
 }
 
 
-static TEXT *type_name( USHORT dtype)
+static const TEXT* type_name( USHORT dtype)
 {
 /**************************************
  *
@@ -1599,9 +1599,10 @@ static TEXT *type_name( USHORT dtype)
  *	Return the name of a data type.
  *
  **************************************/
-	for (const dtypes_t* names = dtypes_table; names->description; names++)
+	for (const dtypes_t* names = dtypes_table; names->description; names++) {
 		if (names->type == dtype)
 			return names->description;
+	}
 	return NULL;
 }
 

@@ -38,7 +38,7 @@ void	VIO_erase(TDBB, struct rpb *, class jrd_tra *);
 #ifdef GARBAGE_THREAD
 void	VIO_fini(TDBB);
 #endif
-int		VIO_garbage_collect(TDBB, struct rpb *, class jrd_tra *);
+bool	VIO_garbage_collect(TDBB, struct rpb *, class jrd_tra *);
 struct rec*	VIO_gc_record(TDBB, struct jrd_rel *);
 int		VIO_get(TDBB, struct rpb *, class Rsb *, class jrd_tra *, struct blk *);
 int		VIO_get_current(TDBB, struct rpb *, class jrd_tra *, struct blk *, USHORT);

@@ -54,7 +54,7 @@ static void end_database(ICC);
 static void end_request(ICC);
 static void end_statement(ICC);
 static void end_transaction(ICC, P_OP);
-static void event_ast(IVNT, USHORT, UCHAR *);
+static void event_ast(void*, USHORT, const UCHAR*);
 static void execute_immediate(ICC, P_OP);
 static void execute_statement(ICC, P_OP);
 static void fetch(ICC);
@@ -1532,7 +1532,7 @@ static void end_transaction( ICC icc, P_OP operation)
 }
 
 
-static void event_ast( IVNT event, USHORT length, UCHAR * data)
+static void event_ast(void* event_void, USHORT length, const UCHAR* data)
 {
 /**************************************
  *
@@ -1546,7 +1546,7 @@ static void event_ast( IVNT event, USHORT length, UCHAR * data)
  **************************************/
 	COPYDATASTRUCT cpdata;
 	ULONG result;
-
+	IVNT event = reinterpret_cast<IVNT>(event_void);
 
 	if (!event->ivnt_ast)
 		return;
@@ -2797,7 +2797,7 @@ static void que_events( ICC icc)
 
 	event->ivnt_window = ips->ips_event_hwnd;
 	event->ivnt_id = ips->ips_event_id;
-	event->ivnt_ast = (void (*)()) ips->ips_ast;
+	event->ivnt_ast = ips->ips_ast;
 	event->ivnt_arg = (void *) ips->ips_arg;
 	if (!transfer_buffers(icc, comm))
 		return;
@@ -2806,7 +2806,7 @@ static void que_events( ICC icc)
 
 	result = GDS_QUE_EVENTS(status_vector, &idb->idb_handle, &event->ivnt_handle,
 							length, reinterpret_cast<const char*>(events),
-							reinterpret_cast < void (*)() > (event_ast),
+							event_ast,
 							event);
 	if (!result)
 		ips->ips_event_id = event->ivnt_handle;

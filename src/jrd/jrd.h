@@ -690,12 +690,14 @@ class vec_base : protected pool_alloc<TYPE>
 {
 public:
 	typedef typename Firebird::vector<T>::iterator iterator;
+	typedef typename Firebird::vector<T>::const_iterator const_iterator;
 
 	static vec_base* newVector(MemoryPool& p, int len)
 		{ return FB_NEW(p) vec_base<T,TYPE>(p, len); }
 	static vec_base* newVector(MemoryPool& p, const vec_base& base)
 		{ return FB_NEW(p) vec_base<T,TYPE>(p, base); }
 		
+	// CVC: THis should be size_t instead of ULONG for maximum portability.
 	ULONG count() const { return vector.size(); }
 	T& operator[](size_t index) { return vector[index]; }
 	const T& operator[](size_t index) const { return vector[index]; }
@@ -711,7 +713,7 @@ public:
 
 	void resize(size_t n, T val = T()) { vector.resize(n, val); }
 
-	void operator delete(void *mem) { MemoryPool::globalFree(mem); }
+	void operator delete(void* mem) { MemoryPool::globalFree(mem); }
 
 protected:
 	vec_base(MemoryPool& p, int len)

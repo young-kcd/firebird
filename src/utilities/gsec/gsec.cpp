@@ -67,10 +67,10 @@ struct tsec *gdsec;
 static int common_main(int, char**, pfn_svc_output, svc*);
 static void util_output(const SCHAR*, ...);
 
-static void data_print(void *, USER_DATA, bool);
-static bool get_line(int *, SCHAR **, TEXT *, TSEC);
-static bool get_switches(int, TEXT **, IN_SW_TAB, TSEC, bool *);
-static SSHORT parse_cmd_line(int, TEXT **, TSEC);
+static void data_print(void*, const internal_user_data*, bool);
+static bool get_line(int*, SCHAR**, TEXT*, tsec*);
+static bool get_switches(int, const TEXT* const*, IN_SW_TAB, tsec*, bool*);
+static SSHORT parse_cmd_line(int, const TEXT* const*, tsec*);
 static void printhelp(void);
 #ifndef SUPERSERVER
 static int output_main(svc*, const UCHAR*);
@@ -94,9 +94,7 @@ int GSEC_main(svc* service)
  * Functional Description:
  *   Entrypoint for GSEC via the services manager
  **********************************************/
-	int exit_code;
-
-	exit_code = common_main(service->svc_argc, service->svc_argv,
+	const int exit_code = common_main(service->svc_argc, service->svc_argv,
 						  SVC_output, service);
 
 	service->svc_handle = 0;
@@ -165,24 +163,15 @@ int common_main(int argc,
  *	the specified argc/argv to SECURITY_exec_line (see below).
  *
  **************************************/
-	ISC_STATUS *status;
-	FRBRD *db_handle = NULL;		/* user info database handle */
-	int local_argc;
-	SCHAR *local_argv[MAXARGS];
+	DebugBreak();
 	TEXT stuff[MAXSTUFF];		/* a place to put stuff */
-	SSHORT ret;
-	char dpb_buffer[256], *dpb, *p;
-	short dpb_length;
-	TSEC tdsec;
-	USER_DATA user_data;
 	JMP_BUF env;
 
 #ifdef VMS
-	int argc;
 	argc = VMS_parse(&argv, argc);
 #endif
 
-	tdsec = (struct tsec *) gds__alloc(sizeof(*tdsec));
+	tsec* tdsec = (struct tsec *) gds__alloc(sizeof(struct tsec));
 /* NOMEM: return error, FREE: during function exit in the SETJMP */
 	if (tdsec == NULL) {
 		gsec_exit(FINI_ERROR, tdsec);
@@ -193,13 +182,13 @@ int common_main(int argc,
 	memset((void *) tdsec, 0, sizeof(*tdsec));
 
 	tdsec->tsec_user_data =
-		(struct user_data *) gds__alloc(sizeof(*user_data));
+		(internal_user_data*) gds__alloc(sizeof(internal_user_data));
 /* NOMEM: return error, FREE: during function exit in the SETJMP */
 	if (tdsec->tsec_user_data == NULL) {
 		gsec_exit(FINI_ERROR, tdsec);
 	}
 
-	memset((void *) tdsec->tsec_user_data, 0, sizeof(*user_data));
+	memset((void *) tdsec->tsec_user_data, 0, sizeof(internal_user_data));
 
 	try {
 
@@ -215,7 +204,7 @@ int common_main(int argc,
 	tdsec->tsec_service_thd = false;
 	tdsec->tsec_service_blk = NULL;
 	tdsec->tsec_status = tdsec->tsec_status_vector;
-	user_data = tdsec->tsec_user_data;
+	internal_user_data* user_data = tdsec->tsec_user_data;
 
 	if (argc > 1 && !strcmp(argv[1], "-svc")) {
 		tdsec->tsec_service_gsec = true;
@@ -233,7 +222,8 @@ int common_main(int argc,
 	}
 #endif
 	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
-		tdsec->tsec_service_gsec = TRUE;
+		tdsec->tsec_service_gsec = true;
+		// tdsec->output_proc = output_svc;
 		long redir_in = atol(argv[2]);
 		long redir_out = atol(argv[3]);
 		long redir_err = atol(argv[4]);
@@ -255,8 +245,8 @@ int common_main(int argc,
 		argc -= 4;
 	}
 
-	status = tdsec->tsec_status;
-	ret = parse_cmd_line(argc, argv, tdsec);
+	ISC_STATUS* status = tdsec->tsec_status;
+	SSHORT ret = parse_cmd_line(argc, argv, tdsec);
 	
 	TEXT user_info_name[MAXPATHLEN];	/* user info database name */
 	const TEXT* u;
@@ -273,13 +263,14 @@ int common_main(int argc,
 		u = user_info_name;
 	}
 
-	dpb = dpb_buffer;
+    char dpb_buffer[256];
+	char* dpb = dpb_buffer;
 	*dpb++ = isc_dpb_version1;
 
 	if (user_data->dba_user_name_entered) {
 		*dpb++ = isc_dpb_user_name;
 		*dpb++ = strlen(user_data->dba_user_name);
-		for (p = user_data->dba_user_name; *p;)
+		for (const char* p = user_data->dba_user_name; *p;)
 			*dpb++ = *p++;
 	}
 
@@ -289,18 +280,19 @@ int common_main(int argc,
 		else
 			*dpb++ = isc_dpb_password;
 		*dpb++ = strlen(user_data->dba_password);
-		for (p = user_data->dba_password; *p;)
+		for (const char* p = user_data->dba_password; *p;)
 			*dpb++ = *p++;
 	}
 
 	if (user_data->sql_role_name_entered) {
 		*dpb++ = isc_dpb_sql_role_name;
 		*dpb++ = strlen(user_data->sql_role_name);
-		for (p = user_data->sql_role_name; *p;)
+		for (const char* p = user_data->sql_role_name; *p;)
 			*dpb++ = *p++;
 	}
 
-	dpb_length = dpb - dpb_buffer;
+	const SSHORT dpb_length = dpb - dpb_buffer;
+	FRBRD* db_handle = NULL;		/* user info database handle */
 
 	if (isc_attach_database(status, 0, u, &db_handle, dpb_length, dpb_buffer))
 		GSEC_error_redirect(status, GsecMsg15, NULL, NULL);
@@ -326,9 +318,11 @@ int common_main(int argc,
 		}
 	}
 	else {
+		int local_argc;
+		SCHAR* local_argv[MAXARGS];
 		for (;;) {
 			/* Clear out user data each time through this loop. */
-			MOVE_CLEAR(tdsec->tsec_user_data, sizeof(struct user_data));
+			MOVE_CLEAR(tdsec->tsec_user_data, sizeof(internal_user_data));
 			if (get_line(&local_argc, local_argv, stuff, tdsec))
 				break;
 			if (local_argc > 1) {
@@ -352,8 +346,9 @@ int common_main(int argc,
 
 	if (db_handle) {
 		ISC_STATUS_ARRAY loc_status;
-		if (isc_detach_database(loc_status, &db_handle))
+		if (isc_detach_database(loc_status, &db_handle)) {
 			GSEC_error_redirect(loc_status, 0, NULL, NULL);
+		}
 	}
 	gsec_exit(FINI_OK, tdsec);
 	return 0;					// silence compiler warning
@@ -377,7 +372,7 @@ int common_main(int argc,
 }
 
 
-static void data_print( void *arg, USER_DATA data, bool first)
+static void data_print(void* arg, const internal_user_data* data, bool first)
 {
 /**************************************
  *
@@ -390,15 +385,13 @@ static void data_print( void *arg, USER_DATA data, bool first)
  *	if first is TRUE print the header then the data
  *
  **************************************/
-	TSEC tdsec;
-	tdsec = GET_THREAD_DATA;
+	tsec* tdsec = GET_THREAD_DATA;
 
 #ifdef SUPERSERVER
 #define STUFF_USER(item) SVC_putc(tdsec->tsec_service_blk, item)
 #else
 #define STUFF_USER(item) ib_fputc(item, ib_stderr)
 #endif
-
 	if (tdsec->tsec_service_gsec) {
 		int i, len;
 		/* Send the username */
@@ -446,7 +439,8 @@ static void data_print( void *arg, USER_DATA data, bool first)
 		STUFF_USER((UCHAR) (data->gid >> 8));
 		STUFF_USER((UCHAR) (data->gid >> 16));
 		STUFF_USER((UCHAR) (data->gid >> 24));
-	} else {
+	}
+	else {
 		if (first) {
 			GSEC_print(GsecMsg26, NULL, NULL, NULL, NULL, NULL);
 			GSEC_print(GsecMsg27, NULL, NULL, NULL, NULL, NULL);
@@ -461,7 +455,7 @@ static void data_print( void *arg, USER_DATA data, bool first)
 }
 
 
-static bool get_line( int *argc, SCHAR ** argv, TEXT * stuff, TSEC tdsec)
+static bool get_line(int* argc, SCHAR** argv, TEXT* stuff, tsec* tdsec)
 {
 /**************************************
  *
@@ -475,22 +469,18 @@ static bool get_line( int *argc, SCHAR ** argv, TEXT * stuff, TSEC tdsec)
  *	unused), and a max of MAXSTUFF characters, at which point
  *
  **************************************/
-	USHORT count;
-	TEXT *cursor, c;
-	bool first;
-
 	GSEC_print_partial(GsecMsg1, NULL, NULL, NULL, NULL, NULL);
 	*argc = 1;
-	cursor = stuff;
-	count = MAXSTUFF - 1;
-	first = true;
+	TEXT* cursor = stuff;
+	USHORT count = MAXSTUFF - 1;
+	bool first = true;
 
 /* for each input character, if it's white space (or any non-printable,
    non-newline for that matter), ignore it; if it's a newline, we're
    done; otherwise, put it in the current argument */
 
 	while (*argc < MAXARGS && count > 0) {
-		c = ib_getc(ib_stdin);
+		TEXT c = ib_getc(ib_stdin);
 		if (c > ' ' && c <= '~') {
 			/* note that the first argument gets a '-' appended to the front to fool
 			   the switch checker into thinking it came from the command line */
@@ -530,9 +520,9 @@ static bool get_line( int *argc, SCHAR ** argv, TEXT * stuff, TSEC tdsec)
 
 static bool get_switches(
 							int argc,
-							TEXT ** argv,
+							const TEXT* const* argv,
 							IN_SW_TAB in_sw_table,
-							TSEC tdsec, bool * quitflag)
+							tsec* tdsec, bool* quitflag)
 {
 /**************************************
  *
@@ -545,13 +535,9 @@ static bool get_switches(
  *	interesting switches in a switch table.
  *
  **************************************/
-	TEXT *p, *q, *string, msg[MSG_LENGTH];
-	IN_SW_TAB in_sw_tab;
-	USHORT in_sw;
-	USHORT last_sw;
+	TEXT msg[MSG_LENGTH];
 	int l;
 	SSHORT err_msg_no;
-	USER_DATA user_data;
 
 /* look at each argument.   it's either a switch or a parameter.
    parameters must always follow a switch, but not all switches
@@ -559,12 +545,12 @@ static bool get_switches(
    cleared (like a -fname switch followed by no first name
    parameter). */
 
-	user_data = tdsec->tsec_user_data;
+	internal_user_data* user_data = tdsec->tsec_user_data;
 	*quitflag = false;
-	last_sw = IN_SW_GSEC_0;
+	USHORT last_sw = IN_SW_GSEC_0;
 	tdsec->tsec_sw_version = false;
 	for (--argc; argc > 0; argc--) {
-		string = *++argv;
+		const TEXT* string = *++argv;
 		if (*string == '?')
 			user_data->operation = HELP_OPER;
 		else if (*string != '-') {
@@ -659,10 +645,13 @@ static bool get_switches(
 		else {
 			/* iterate through the switch table, looking for matches */
 
-			in_sw = IN_SW_GSEC_0;
-			for (in_sw_tab = in_sw_table; q = in_sw_tab->in_sw_name;
-				 in_sw_tab++) {
-				p = string + 1;
+			USHORT in_sw = IN_SW_GSEC_0;
+			{ // scope
+			const TEXT* q;
+			for (const in_sw_tab_t* in_sw_tab = in_sw_table;
+				q = in_sw_tab->in_sw_name; in_sw_tab++)
+			{
+				const TEXT* p = string + 1;
 
 				/* handle orphaned hyphen case */
 
@@ -689,6 +678,7 @@ static bool get_switches(
 				if (!*p)
 					break;
 			}
+			} // scope
 
 			/* this checks to make sure that the switch is not a duplicate.   if
 			   it is a duplicate, it's an error.   if it's not a duplicate, the
@@ -882,6 +872,7 @@ static bool get_switches(
 			user_data->sys_user_entered || user_data->group_name_entered ||
 			user_data->password_entered || user_data->first_name_entered ||
 			user_data->middle_name_entered || user_data->last_name_entered)
+		{
 			switch (user_data->operation) {
 			case 0:
 				GSEC_error(GsecMsg42, NULL, NULL, NULL, NULL, NULL);
@@ -899,6 +890,7 @@ static bool get_switches(
 				/* gsec - no parameters allowed for this operation */
 				return false;
 			}
+		}
 
 		if (*quitflag)
 			break;
@@ -1074,7 +1066,7 @@ static void printhelp(void)
 }
 
 
-static SSHORT parse_cmd_line( int argc, TEXT ** argv, TSEC tdsec)
+static SSHORT parse_cmd_line(int argc, const TEXT* const* argv, tsec* tdsec)
 {
 /**************************************
  *
@@ -1089,16 +1081,13 @@ static SSHORT parse_cmd_line( int argc, TEXT ** argv, TSEC tdsec)
  *	   -1 on error or if user asks for help
  *
  **************************************/
-	SSHORT ret;
 	bool quitflag = false;
-	USER_DATA user_data;
-
-	user_data = tdsec->tsec_user_data;
-	memset(user_data, 0, sizeof(USER_DATA));
+	internal_user_data* user_data = tdsec->tsec_user_data;
+	memset(user_data, 0, sizeof(internal_user_data));
 
 /* Call a subroutine to process the input line. */
 
-	ret = 0;
+	SSHORT ret = 0;
 	if (!get_switches(argc, argv, gsec_in_sw_table, tdsec, &quitflag)) {
 #ifdef SUPERSERVER
 		GSEC_error(GsecMsg16, NULL, NULL, NULL, NULL, NULL);
@@ -1115,7 +1104,8 @@ static SSHORT parse_cmd_line( int argc, TEXT ** argv, TSEC tdsec)
 		}
 		else if (user_data->operation != DIS_OPER &&
 				 user_data->operation != QUIT_OPER &&
-				 !user_data->user_name_entered) {
+				 !user_data->user_name_entered)
+		{
 			GSEC_error(GsecMsg18, NULL, NULL, NULL, NULL, NULL);
 			/* gsec - no user name specified */
 			ret = -1;
@@ -1181,19 +1171,17 @@ static void util_output( const SCHAR* format, ...)
  *	Platform independent output routine.
  *
  **************************************/
-	va_list arglist;
-	UCHAR buf[1000];
 	int exit_code;
-	TSEC tdsec;
 
-	tdsec = GET_THREAD_DATA;
+	tsec* tdsec = GET_THREAD_DATA;
 
 	if (format[0] == '\0') {
-		exit_code =
-			tdsec->tsec_output_proc(tdsec->tsec_output_data,
+		exit_code = tdsec->tsec_output_proc(tdsec->tsec_output_data,
 									(UCHAR * )(""));
 	}
 	else {
+		UCHAR buf[1000];
+		va_list arglist;
 		VA_START(arglist, format);
 		vsprintf((char *) buf, format, arglist);
 		va_end(arglist);
@@ -1205,11 +1193,11 @@ static void util_output( const SCHAR* format, ...)
 }
 
 void GSEC_error_redirect(const ISC_STATUS* status_vector,
-						 USHORT errcode, TEXT * arg1, TEXT * arg2)
+						 USHORT errcode, const TEXT* arg1, const TEXT* arg2)
 {
 /**************************************
  *
- *	U T I L _ e r r o r _ r e d i r e c t
+ *	G S E C _ e r r o r _ r e d i r e c t
  *
  **************************************
  *
@@ -1224,12 +1212,13 @@ void GSEC_error_redirect(const ISC_STATUS* status_vector,
 
 void GSEC_error(
 				USHORT errcode,
-				TEXT * arg1,
-				TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
+				const TEXT* arg1,
+				const TEXT* arg2, const TEXT* arg3,
+				const TEXT* arg4, const TEXT* arg5)
 {
 /**************************************
  *
- *	 U T I L _ e r r o r
+ *	 G S E C _ e r r o r
  *
  **************************************
  *
@@ -1238,11 +1227,8 @@ void GSEC_error(
  *
  **************************************/
 #ifdef SUPERSERVER
-	TSEC tdsec;
-	ISC_STATUS *status;
-
-	tdsec = GET_THREAD_DATA;
-	status = tdsec->tsec_service_blk->svc_status;
+	tsec* tdsec = GET_THREAD_DATA;
+	ISC_STATUS* status = tdsec->tsec_service_blk->svc_status;
 
 	CMD_UTIL_put_svc_status(status, GSEC_MSG_FAC, errcode,
 							isc_arg_string, arg1,
@@ -1251,8 +1237,7 @@ void GSEC_error(
 							isc_arg_string, arg4, isc_arg_string, arg5);
 	SVC_STARTED(tdsec->tsec_service_blk);
 #else
-	TSEC tdsec;
-	tdsec = GET_THREAD_DATA;
+	tsec* tdsec = GET_THREAD_DATA;
 #endif
 
 	GSEC_print(errcode, arg1, arg2, arg3, arg4, arg5);
@@ -1261,8 +1246,9 @@ void GSEC_error(
 
 void GSEC_print(
 				USHORT number,
-				TEXT * arg1,
-				TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
+				const TEXT* arg1,
+				const TEXT* arg2, const TEXT* arg3,
+				const TEXT* arg4, const TEXT* arg5)
 {
 /**************************************
  *
@@ -1284,8 +1270,9 @@ void GSEC_print(
 
 void GSEC_print_partial(
 						USHORT number,
-						TEXT * arg1,
-						TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
+						const TEXT* arg1,
+						const TEXT* arg2, const TEXT* arg3,
+						const TEXT* arg4, const TEXT* arg5)
 {
 /**************************************
  *

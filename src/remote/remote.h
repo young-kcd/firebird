@@ -139,7 +139,7 @@ typedef struct rvnt
 	struct blk	rvnt_header;
 	struct rvnt*rvnt_next;
 	RDB			rvnt_rdb;
-	void		(*rvnt_ast)(void*, USHORT, UCHAR*);
+	FPTR_EVENT_CALLBACK	rvnt_ast;
 	void*		rvnt_arg;
 	SLONG		rvnt_id;
 	SLONG		rvnt_rid;	/* used by server to store client-side id */

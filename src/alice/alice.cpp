@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.46 2003-12-14 04:44:46 skidder Exp $
+//	$Id: alice.cpp,v 1.47 2003-12-22 09:59:55 robocop Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -418,7 +418,8 @@ int common_main(int			argc,
 			if (!(tdgbl->ALICE_data.ua_transaction = atoi(string))) {
 				if (strcmp(string, "all")) {
 					ALICE_error(10);	// msg 10: transaction number or "all" required 
-				} else {
+				}
+				else {
 					switches |= sw_list;
 				}
 			}
@@ -433,7 +434,8 @@ int common_main(int			argc,
 				tdgbl->ALICE_data.ua_force = true;
 			} else if (!strcmp(string, ALICE_SW_ASYNC)) {
 				tdgbl->ALICE_data.ua_force = false;
-			} else {
+			}
+			else {
 				ALICE_error(11);	// msg 11: "sync" or "async" required 
 			}
 		}
@@ -445,7 +447,8 @@ int common_main(int			argc,
 			ALICE_down_case(*argv++, string, sizeof(string));
 			if (!strcmp(string, "full")) {
 				tdgbl->ALICE_data.ua_use = true;
-			} else if (!strcmp(string, "reserve")) {
+			}
+			else if (!strcmp(string, "reserve")) {
 				tdgbl->ALICE_data.ua_use = false;
 			} else {
 				ALICE_error(12);	// msg 12: "full" or "reserve" required 
@@ -502,7 +505,8 @@ int common_main(int			argc,
 			ALICE_down_case(*argv++, string, sizeof(string));
 			if (!strcmp(string, ALICE_SW_MODE_RO)) {
 				tdgbl->ALICE_data.ua_read_only = true;
-			} else if (!strcmp(string, ALICE_SW_MODE_RW)) {
+			}
+			else if (!strcmp(string, ALICE_SW_MODE_RW)) {
 				tdgbl->ALICE_data.ua_read_only = false;
 			} else {
 				ALICE_error(110);	// msg 110: "read_only" or "read_write" required 

@@ -526,15 +526,19 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 
 	case op_que_events:
 	case op_event:
-		event = &p->p_event;
-		MAP(xdr_short,
-			reinterpret_cast < SSHORT & >(event->p_event_database));
-		MAP(xdr_cstring, event->p_event_items);
-		MAP(xdr_long, event->p_event_ast);
-		MAP(xdr_long, event->p_event_arg);
-		MAP(xdr_long, event->p_event_rid);
-		DEBUG_PRINTSIZE(p->p_operation);
-		return P_TRUE;
+		{
+			event = &p->p_event;
+			MAP(xdr_short,
+				reinterpret_cast<SSHORT&>(event->p_event_database));
+			MAP(xdr_cstring, event->p_event_items);
+#pragma FB_COMPILER_MESSAGE("p_event_ast is a pointer to function forced to SLONG!")
+			MAP(xdr_long, reinterpret_cast<SLONG&>(event->p_event_ast));
+#pragma FB_COMPILER_MESSAGE("p_event_arg is a void* stored as SLONG!")
+			MAP(xdr_long, event->p_event_arg);
+			MAP(xdr_long, event->p_event_rid);
+			DEBUG_PRINTSIZE(p->p_operation);
+			return P_TRUE;
+		}
 
 	case op_cancel_events:
 		event = &p->p_event;

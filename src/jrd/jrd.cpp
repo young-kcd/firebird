@@ -77,6 +77,8 @@
 #include "../jrd/iberr.h"
 #include "../jrd/jrd_time.h"
 #include "../intl/charsets.h"
+#include "../jrd/sort.h"
+
 #include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cch_proto.h"
@@ -137,7 +139,7 @@ typedef struct dbf {
 	TEXT dbf_data[2];
 } *DBF;
 
-#include "../jrd/sort.h"
+//#include "../jrd/sort.h"
 #endif /* SERVER_SHUTDOWN */
 
 #define	WAIT_PERIOD	-1
@@ -263,7 +265,7 @@ void trig::compile(tdbb* _tdbb)
 
 BOOLEAN trig::release(tdbb* _tdbb)
 {
-	if (!blr/*sys_trigger*/ || !request || CMP_clone_active(request)) {
+	if (!blr/*sys_trigger*/ || !request || CMP_clone_is_active(request)) {
 		return FALSE;
 	}
 	
@@ -357,7 +359,7 @@ static ISC_STATUS	commit(ISC_STATUS*, JRD_TRA*, const bool);
 static STR		copy_string(const TEXT*, const USHORT);
 static bool		drop_files(const fil*);
 static ISC_STATUS	error(ISC_STATUS*);
-static void		find_intl_charset(TDBB, ATT, DPB*);
+static void		find_intl_charset(TDBB, ATT, const DPB*);
 static JRD_TRA		find_transaction(TDBB, JRD_TRA, ISC_STATUS);
 static void		get_options(const UCHAR*, USHORT, TEXT**, ULONG, DPB*);
 static SLONG	get_parameter(const UCHAR**);
@@ -2916,7 +2918,7 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 							SLONG* id,
 							SSHORT length,
 							const UCHAR* items,
-							FPTR_VOID ast,
+							FPTR_EVENT_CALLBACK ast,
 							void* arg)
 {
 /**************************************
@@ -4367,7 +4369,7 @@ void JRD_print_procedure_info(TDBB tdbb, const char* mesg)
 
 
 #ifdef MULTI_THREAD
-BOOLEAN JRD_reschedule(TDBB tdbb, SLONG quantum, BOOLEAN punt)
+BOOLEAN JRD_reschedule(TDBB tdbb, SLONG quantum, bool punt)
 {
 /**************************************
  *
@@ -4931,7 +4933,7 @@ static ISC_STATUS error(ISC_STATUS* user_status)
 }
 
 
-static void find_intl_charset(TDBB tdbb, ATT attachment, DPB * options)
+static void find_intl_charset(TDBB tdbb, ATT attachment, const DPB* options)
 {
 /**************************************
  *
@@ -4960,7 +4962,7 @@ static void find_intl_charset(TDBB tdbb, ATT attachment, DPB * options)
 
 	if (MET_get_char_subtype(tdbb,
 							&id,
-							reinterpret_cast<UCHAR*>(options->dpb_lc_ctype),
+							reinterpret_cast<const UCHAR*>(options->dpb_lc_ctype),
 							len) &&
 		INTL_defined_type(tdbb, local_status, id) &&
 		(id != CS_BINARY))

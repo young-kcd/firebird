@@ -75,7 +75,8 @@ ISC_STATUS IPI_put_slice(ISC_STATUS*, struct idb**, struct itr**,
 									   struct bid*, USHORT, const UCHAR*, USHORT,
 									   const UCHAR*, SLONG, UCHAR*);
 ISC_STATUS IPI_que_events(ISC_STATUS*, struct idb**, SLONG*,
-										USHORT, const UCHAR*, FPTR_VOID, void*);
+										USHORT, const UCHAR*,
+										FPTR_EVENT_CALLBACK, void*);
 ISC_STATUS IPI_receive(ISC_STATUS *, struct irq **, SSHORT, USHORT,
 									 UCHAR *, SSHORT
 #ifdef SCROLLABLE_CURSORS

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.50 2003-12-11 10:33:25 robocop Exp $
+ * $Id: sort.cpp,v 1.51 2003-12-22 10:00:47 robocop Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -510,8 +510,8 @@ void SORT_diddle_key(UCHAR* record, SCB scb, bool direction)
 #endif
 
 
-void SORT_error(ISC_STATUS * status_vector,
-				SFB sfb, TEXT * string, ISC_STATUS operation, int errcode)
+void SORT_error(ISC_STATUS* status_vector,
+				SFB sfb, TEXT* string, ISC_STATUS operation, int errcode)
 {
 /**************************************
  *
@@ -529,6 +529,7 @@ void SORT_error(ISC_STATUS * status_vector,
 	*status_vector++ = isc_arg_gds;
 	*status_vector++ = isc_io_error;
 	*status_vector++ = isc_arg_string;
+// CVC: Warning, converting pointer to ISC_STATUS => SLONG in 32 bits.
 	*status_vector++ = (ISC_STATUS) string;
 	*status_vector++ = isc_arg_string;
 	*status_vector++ = (ISC_STATUS) ERR_cstring(sfb->sfb_file_name);

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase Access Method
- *	MODULE:		functions.c
+ *	MODULE:		functions.cpp
  *	DESCRIPTION:	External entrypoint definitions
  *
  * The contents of this file are subject to the Interbase Public
@@ -33,21 +33,20 @@ extern "C" {
 
 
 typedef struct {
-	char *fn_module;
-	char *fn_entrypoint;
+	const char* fn_module;
+	const char* fn_entrypoint;
 	FPTR_INT fn_function;
 } FN;
 
 
-FPTR_INT FUNCTIONS_entrypoint(char *, char *);
-static int test(long, char *);
-
+// FPTR_INT FUNCTIONS_entrypoint(char*, char*);
+static int test(long, char*);
 static DSC* ni(DSC*, DSC*);
 
 
 #pragma FB_COMPILER_MESSAGE("Fix! function pointer cast!")
 
-static FN isc_functions[] = {
+static const FN isc_functions[] = {
 	{"test_module", "test_function", (int (*)()) test},
 	{"test_module", "ni", (int (*)()) ni},
 	{"test_module", "ns", (int (*)()) ni},
@@ -56,7 +55,7 @@ static FN isc_functions[] = {
 };
 
 
-FPTR_INT FUNCTIONS_entrypoint(char *module, char *entrypoint)
+FPTR_INT FUNCTIONS_entrypoint(char* module, char* entrypoint)
 {
 /**************************************
  *
@@ -70,26 +69,28 @@ FPTR_INT FUNCTIONS_entrypoint(char *module, char *entrypoint)
  *	insignificant trailing blanks.
  *
  **************************************/
-	FN *function;
-	char *p, temp[MAXPATHLEN + 128], *ep;  /* Bug #126614 Fix */
+	char temp[MAXPATHLEN + 128];  /* Bug #126614 Fix */
 
-	p = temp;
+	char* p = temp;
 
 	while (*module && *module != ' ')
 		*p++ = *module++;
 
 	*p++ = 0;
-	ep = p;
+	const char* ep = p;
 
 	while (*entrypoint && *entrypoint != ' ')
 		*p++ = *entrypoint++;
 
 	*p = 0;
 
-	for (function = isc_functions; function->fn_module; ++function)
+	for (const FN* function = isc_functions; function->fn_module; ++function) {
 		if (!strcmp(temp, function->fn_module)
 			&& !strcmp(ep, function->fn_entrypoint))
+		{
 			return function->fn_function;
+		}
+	}
 
 	return 0;
 }
@@ -113,7 +114,7 @@ static int test(long n, char *result)
  **************************************/
 
 	sprintf(result, "%ld is a number", n);
-	const char *end = result + 20;
+	const char* const end = result + 20;
 
 	while (*result)
 		result++;
@@ -125,7 +126,7 @@ static int test(long n, char *result)
 }
 
 
-static DSC* ni(DSC* v, DSC* v2)
+static dsc* ni(dsc* v, dsc* v2)
 {
 	if (v)
 		return v;
@@ -134,3 +135,4 @@ static DSC* ni(DSC* v, DSC* v2)
 }
 
 } // extern "C"
+

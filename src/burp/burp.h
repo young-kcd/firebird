@@ -63,7 +63,7 @@ static inline void BURP_free(void* block)
 }
 
 const int GDS_NAME_LEN		= 32;
-typedef TEXT			GDS_NAME [GDS_NAME_LEN];
+typedef TEXT			GDS_NAME[GDS_NAME_LEN];
 
 enum redirect_vals {
 	NOREDIRECT = 0,

@@ -24,8 +24,8 @@
 #ifndef DSQL_ARRAY_PROTO_H
 #define DSQL_ARRAY_PROTO_H
 
-ISC_STATUS API_ROUTINE isc_array_gen_sdl(ISC_STATUS *, ISC_ARRAY_DESC *,
-										SSHORT *, UCHAR *, SSHORT *);
+ISC_STATUS API_ROUTINE isc_array_gen_sdl(ISC_STATUS*, const ISC_ARRAY_DESC*,
+										SSHORT*, UCHAR*, SSHORT*);
 ISC_STATUS API_ROUTINE isc_array_get_slice(ISC_STATUS*, void**, void**,
 											ISC_QUAD*, const ISC_ARRAY_DESC*,
 											void*, SLONG*);

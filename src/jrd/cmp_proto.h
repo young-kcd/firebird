@@ -26,7 +26,7 @@
 
 #include "../jrd/req.h"
 
-bool CMP_clone_active(jrd_req*);
+bool CMP_clone_is_active(const jrd_req*);
 jrd_nod* CMP_clone_node(TDBB, Csb*, jrd_nod*);
 jrd_req* CMP_clone_request(TDBB, jrd_req*, USHORT, bool);
 jrd_req* CMP_compile(USHORT, const UCHAR*, USHORT);

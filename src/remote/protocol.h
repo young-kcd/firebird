@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: protocol.h,v 1.16 2003-11-05 09:02:31 robocop Exp $
+$Id: protocol.h,v 1.17 2003-12-22 10:00:56 robocop Exp $
 */
 #ifndef REMOTE_PROTOCOL_H
 #define REMOTE_PROTOCOL_H
@@ -479,7 +479,7 @@ typedef struct p_info {
 typedef struct p_event {
     OBJCT	p_event_database;	/* Database object id */
     CSTRING	p_event_items;		/* Event description block */
-    SLONG	p_event_ast;		/* Address of ast routine */
+    FPTR_EVENT_CALLBACK p_event_ast;		/* Address of ast routine */
     SLONG	p_event_arg;		/* Argument to ast routine */
     SLONG	p_event_rid;		/* Client side id of remote event */
 } P_EVENT;

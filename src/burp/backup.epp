@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.46 2003-12-03 08:19:00 robocop Exp $
+$Id: backup.epp,v 1.47 2003-12-22 10:00:00 robocop Exp $
 */
 
 #include "firebird.h"
@@ -87,13 +87,13 @@ inline void put(tgbl* tdgbl, UCHAR c)
 		MVOL_write(c, &tdgbl->io_cnt, &tdgbl->io_ptr);
 }
  
-inline const UCHAR* put_block(tgbl* tdgbl, const UCHAR *p, ULONG n)
+inline const UCHAR* put_block(tgbl* tdgbl, const UCHAR* p, ULONG n)
 {
 	return MVOL_write_block (tdgbl, p, n);
 }
 
 
-void compress(const UCHAR *, ULONG);
+void compress(const UCHAR*, ULONG);
 int copy(const TEXT *, TEXT *, ULONG);
 BURP_FLD get_fields(BURP_REL);
 SINT64 get_gen_id(const TEXT *, SSHORT);
@@ -250,7 +250,6 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	ULONG l;
 	TEXT temp[GDS_NAME_LEN];
 
 	TGBL tdgbl = GET_THREAD_DATA;
@@ -429,7 +428,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 		FOR (REQUEST_HANDLE req_handle1)
 			X IN RDB$SECURITY_CLASSES WITH X.RDB$SECURITY_CLASS NOT STARTING "SQL$"
 			put(tdgbl, rec_security_class);
-			l = PUT_TEXT (att_class_security_class, X.RDB$SECURITY_CLASS);
+			const ULONG l = PUT_TEXT (att_class_security_class, X.RDB$SECURITY_CLASS);
 			MISC_terminate (X.RDB$SECURITY_CLASS, temp, l, sizeof(temp));
 			BURP_verbose (155, temp, NULL, NULL, NULL, NULL);
 			// msg 155 writing security class %s 
@@ -481,7 +480,8 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 		SLONG tempcount = cumul_count;
 		BURP_verbose(176, (void*) tempcount, NULL, NULL, NULL, NULL);
 		// msg 176 closing file, committing, and finishing.  %ld bytes written 
-	} else {
+	}
+	else {
 		char psz[64];
 		ib_sprintf(psz, "%" QUADFORMAT "d", cumul_count);
 		BURP_verbose(283, psz, NULL, NULL, NULL, NULL);
@@ -509,7 +509,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 namespace // unnamed, private
 {
 
-void compress(const UCHAR * data, ULONG length)
+void compress(const UCHAR* data, ULONG length)
 {
 /**************************************
  *
@@ -523,9 +523,9 @@ void compress(const UCHAR * data, ULONG length)
  **************************************/
 	TGBL tdgbl = GET_THREAD_DATA;
 
-	const UCHAR *p = data;
-	const UCHAR *end = p + length;
-	const UCHAR *q = NULL;
+	const UCHAR* p = data;
+	const UCHAR* end = p + length;
+	const UCHAR* q = NULL;
 
 	while (p < end)
 	{
@@ -566,7 +566,7 @@ void compress(const UCHAR * data, ULONG length)
 }
 
 
-int copy( const TEXT * from, TEXT * to, ULONG size_len)
+int copy( const TEXT* from, TEXT* to, ULONG size_len)
 {
 /**************************************
  *
@@ -580,7 +580,7 @@ int copy( const TEXT * from, TEXT * to, ULONG size_len)
  *
  **************************************/
 
-	ULONG l = (ULONG) symbol_length (from, size_len);
+	const ULONG l = (ULONG) symbol_length (from, size_len);
 
 	MOVE_FAST(from, to, l);
 	*(to + l) = '\0';
@@ -908,14 +908,11 @@ SINT64 get_gen_id( const TEXT* name, SSHORT name_len)
  *
  **************************************/
 	UCHAR blr_buffer[100];	// enough to fit blr 
-	SLONG read_msg0;
-	SINT64 read_msg1;
-	ISC_STATUS_ARRAY status_vector;
 
 	TGBL tdgbl = GET_THREAD_DATA;
 
-	FRBRD *gen_id_reqh = NULL;
-	UCHAR *blr = blr_buffer;
+	FRBRD* gen_id_reqh = NULL;
+	UCHAR* blr = blr_buffer;
 
 /* If this is ODS 10 (IB version 6.0) or greater, build BLR to retrieve
    the 64-bit value of the generator.  If not, build BLR to retrieve the
@@ -938,7 +935,7 @@ SINT64 get_gen_id( const TEXT* name, SSHORT name_len)
 		stuff(&blr, name_len);
 		while (name_len--)
 		{
-			UCHAR c = *name++;
+			const UCHAR c = *name++;
 			stuff(&blr, c);
 		}
 		stuff(&blr, blr_literal);
@@ -969,7 +966,7 @@ SINT64 get_gen_id( const TEXT* name, SSHORT name_len)
 		stuff(&blr, name_len);
 		while (name_len--)
 		{
-			UCHAR c = *name++;
+			const UCHAR c = *name++;
 			stuff(&blr, c);
 		}
 		stuff(&blr, blr_literal);
@@ -986,11 +983,11 @@ SINT64 get_gen_id( const TEXT* name, SSHORT name_len)
 
 #ifdef DEBUG
 	if (debug_on)
-		isc_print_blr((char*)blr_buffer, NULL, NULL, 0);
+		isc_print_blr((const char*)blr_buffer, NULL, NULL, 0);
 #endif
 
-	SSHORT blr_length = blr - blr_buffer;
-
+	ISC_STATUS_ARRAY status_vector;
+	const SSHORT blr_length = blr - blr_buffer;
 	if (isc_compile_request(status_vector, &DB, &gen_id_reqh,
 							blr_length, (const char*) blr_buffer))
 	{
@@ -1006,6 +1003,8 @@ SINT64 get_gen_id( const TEXT* name, SSHORT name_len)
 		// msg 25 Failed in put_blr_gen_id 
 	}
 
+
+	SINT64 read_msg1;
 	if (tdgbl->BCK_capabilities & BCK_ods10)
 	{
 		if (isc_receive(status_vector, &gen_id_reqh, 0, sizeof(read_msg1),
@@ -1017,6 +1016,7 @@ SINT64 get_gen_id( const TEXT* name, SSHORT name_len)
 	}
 	else
 	{
+		SLONG read_msg0;
 		if (isc_receive(status_vector, &gen_id_reqh, 0, sizeof(read_msg0),
 						&read_msg0, 0))
 		{
@@ -1047,7 +1047,7 @@ void get_ranges( BURP_FLD field)
  **************************************/
 	TGBL tdgbl = GET_THREAD_DATA;
 
-	SLONG *rp = field->fld_ranges;
+	SLONG* rp = field->fld_ranges;
 	USHORT count = 0;
 
 /* Get the array dimensions in the rdb$field_dimensions */
@@ -1087,7 +1087,6 @@ void put_array( BURP_FLD field, BURP_REL relation, ISC_QUAD * blob_id)
  *	Write out an array.  If, however, it's null, don't even bother.
  *
  **************************************/
-	ISC_STATUS_ARRAY status_vector;
 	SLONG range_buffer[16];	// enough for 16 dimensions
 	UCHAR blr_buffer[200];		// enough for a sdl with 16 dimensions 
 
@@ -1101,8 +1100,8 @@ void put_array( BURP_FLD field, BURP_REL relation, ISC_QUAD * blob_id)
 	LSTRING xdr_buffer;
 	xdr_buffer.lstr_allocated = 0;
 
-	UCHAR *blr = blr_buffer;
-	SLONG *end_ranges = field->fld_ranges + 2 * field->fld_dimensions;
+	UCHAR* blr = blr_buffer;
+	const SLONG* const end_ranges = field->fld_ranges + 2 * field->fld_dimensions;
 
 	USHORT field_length = field->fld_length;
 	if (tdgbl->gbl_sw_transportable)
@@ -1137,7 +1136,7 @@ void put_array( BURP_FLD field, BURP_REL relation, ISC_QUAD * blob_id)
 	stuff_word(&blr, field->fld_id);
 
 	USHORT count;
-	SLONG *range;
+	const SLONG* range; // used in multiple loops.
 	for (range = field->fld_ranges, count = 0; range < end_ranges;
 		 range += 2, count++)
 	{
@@ -1168,7 +1167,7 @@ void put_array( BURP_FLD field, BURP_REL relation, ISC_QUAD * blob_id)
 		PRETTY_print_sdl(blr_buffer, NULL, NULL, 0);
 #endif
 
-	USHORT blr_length = blr - blr_buffer;
+	const USHORT blr_length = blr - blr_buffer;
 
 /* compute the range size for each dimension = high_range - low_range */
 
@@ -1189,6 +1188,7 @@ void put_array( BURP_FLD field, BURP_REL relation, ISC_QUAD * blob_id)
 		xdr_buffer.lstr_allocated = xdr_buffer.lstr_length;
 	}
 
+	ISC_STATUS_ARRAY status_vector;
 	ULONG return_length = 0;
 	if (isc_get_slice(status_vector, &DB, &gds_trans, blob_id,
 					  blr_length, (const char*) blr_buffer,
@@ -1212,7 +1212,7 @@ void put_array( BURP_FLD field, BURP_REL relation, ISC_QUAD * blob_id)
 
 	if (return_length != slice_length)
 	{
-		int divisor, i1, i2, i3;
+		int i1, i3;
 		/* Ugh.  The full array wasn't returned.  We must recompute the top
 		   element to backup. */
 
@@ -1222,11 +1222,13 @@ void put_array( BURP_FLD field, BURP_REL relation, ISC_QUAD * blob_id)
 		for (i1 = 0, i3 = 0, range = end_ranges - 2;
 			 range >= field->fld_ranges; range -= 2, returned_range++, i1++)
 		{
-			divisor = 1;
-			for (i2 = (2 * (i1 + 1) + 1); i2 <= field->fld_dimensions * 2;
+			int divisor = 1;
+			for (int i2 = (2 * (i1 + 1) + 1); i2 <= field->fld_dimensions * 2;
 				 i2 += 2)
+			{
 				divisor *=
 					(field->fld_ranges[i2] - field->fld_ranges[i2 - 1] + 1);
+			}
 			*returned_range =
 				(returned_elements - 1) / divisor + field->fld_ranges[i3];
 			returned_elements -=
@@ -1285,7 +1287,7 @@ void put_array( BURP_FLD field, BURP_REL relation, ISC_QUAD * blob_id)
 }
 
 
-void put_asciz( const SCHAR attribute, const TEXT * string)
+void put_asciz( const SCHAR attribute, const TEXT* string)
 {
 /**************************************
  *
@@ -1304,7 +1306,7 @@ void put_asciz( const SCHAR attribute, const TEXT * string)
 	put(tdgbl, (UCHAR) (attribute));
 	put(tdgbl, (UCHAR) (l));
 	if (l)
-		put_block(tdgbl, (UCHAR*) string, l);
+		put_block(tdgbl, (const UCHAR*) string, l);
 }
 
 
@@ -1467,14 +1469,14 @@ bool put_blr_blob( SCHAR attribute, ISC_QUAD * blob_id)
 
 	ULONG length = 0;
 	USHORT max_segment = 0;
-	UCHAR *p = blob_info;
+	const UCHAR* p = blob_info;
 	UCHAR item;
 
 	while ((item = *p++) != isc_info_end)
 	{
-		USHORT l = (USHORT) isc_vax_integer((char*) p, 2);
+		const USHORT l = (USHORT) isc_vax_integer((const char*) p, 2);
 		p += 2;
-		USHORT n = (USHORT) isc_vax_integer((char*) p, l);
+		const USHORT n = (USHORT) isc_vax_integer((const char*) p, l);
 		p += l;
 		switch (item)
 		{
@@ -1552,7 +1554,6 @@ void put_data(BURP_REL relation)
  *
  **************************************/
 	BURP_FLD field;
-	UCHAR *p, *blr, *blr_buffer;
 	ISC_STATUS_ARRAY status_vector;
 
 	TGBL tdgbl = GET_THREAD_DATA;
@@ -1573,8 +1574,8 @@ void put_data(BURP_REL relation)
 
 /* Time to generate blr to fetch data.  Make sure we allocate a BLR buffer
    large enough to handle the per field overhead */
-
-	blr = blr_buffer = BURP_alloc(200 + field_count * 9);
+	UCHAR* const blr_buffer = BURP_alloc(200 + field_count * 9);
+	UCHAR* blr = blr_buffer;
 	stuff(&blr, blr_version4);
 	stuff(&blr, blr_begin);
 	stuff(&blr, blr_message);
@@ -1755,20 +1756,20 @@ void put_data(BURP_REL relation)
 
 #ifdef DEBUG
 	if (debug_on)
-		isc_print_blr((char*)blr_buffer, NULL, NULL, 0);
+		isc_print_blr((const char*)blr_buffer, NULL, NULL, 0);
 #endif
 
 
 // Compile request 
 
-	FRBRD *request = NULL;
+	FRBRD* request = NULL;
 	SSHORT blr_length = blr - blr_buffer;
 	if (isc_compile_request(status_vector, &DB, &request,
 							blr_length, (const SCHAR*) blr_buffer))
 	{
 		BURP_error_redirect(status_vector, 27, NULL, NULL);
 		// msg 27 isc_compile_request failed 
-		isc_print_blr((char*) blr_buffer, (isc_callback)NULL, NULL, 0);
+		isc_print_blr((const char*) blr_buffer, NULL, NULL, 0);
 	}
 
 	BURP_free(blr_buffer);
@@ -1785,8 +1786,8 @@ void put_data(BURP_REL relation)
 /* Here is the crux of the problem -- writing data.  All this work
    for the following small loop. */
 
-	UCHAR *buffer = BURP_alloc(length);
-	SSHORT *eof = (SSHORT *) (buffer + eof_offset);
+	UCHAR* buffer = BURP_alloc(length);
+	SSHORT* eof = (SSHORT *) (buffer + eof_offset);
 
 // the XDR representation may be even fluffier
 	LSTRING xdr_buffer;
@@ -1816,6 +1817,7 @@ void put_data(BURP_REL relation)
 
 		put(tdgbl, (UCHAR) (rec_data));
 		put_numeric(att_data_length, record_length);
+		const UCHAR* p;
 		if (tdgbl->gbl_sw_transportable)
 		{
 			record_length =
@@ -1885,7 +1887,7 @@ void put_index( BURP_REL relation)
  *	index exist.
  *
  **************************************/
-	ULONG l, count;
+	ULONG count;
 	TEXT temp[GDS_NAME_LEN];
 
 	TGBL tdgbl = GET_THREAD_DATA;
@@ -1927,7 +1929,7 @@ void put_index( BURP_REL relation)
 			}
 	
 			put(tdgbl, rec_index);
-			l = PUT_TEXT (att_index_name, X.RDB$INDEX_NAME);
+			const ULONG l = PUT_TEXT (att_index_name, X.RDB$INDEX_NAME);
 			MISC_terminate (X.RDB$INDEX_NAME, temp, l, sizeof(temp));
 			BURP_verbose (151, temp, NULL, NULL, NULL, NULL);
 			// msg 151 writing index %s 
@@ -2004,7 +2006,7 @@ void put_index( BURP_REL relation)
 			}
 	
 			put(tdgbl, rec_index);
-			l = PUT_TEXT (att_index_name, X.RDB$INDEX_NAME);
+			const ULONG l = PUT_TEXT (att_index_name, X.RDB$INDEX_NAME);
 			MISC_terminate (X.RDB$INDEX_NAME, temp, l, sizeof(temp));
 			BURP_verbose (151, temp, NULL, NULL, NULL, NULL);
 			// msg 151 writing index %s 
@@ -2062,7 +2064,7 @@ void put_index( BURP_REL relation)
 }
 
 
-int put_message( SCHAR attribute, const TEXT * text, ULONG length)
+int put_message( SCHAR attribute, const TEXT* text, ULONG length)
 {
 /**************************************
  *
@@ -2084,7 +2086,7 @@ int put_message( SCHAR attribute, const TEXT * text, ULONG length)
 	TGBL tdgbl = GET_THREAD_DATA;
 
 	ULONG l = 0;
-	for (const TEXT *p = text; *p && l < length; p++)
+	for (const TEXT* p = text; *p && l < length; p++)
 		l++;
 
 	l = length = MIN(l, length);
@@ -2112,11 +2114,11 @@ void put_numeric( SCHAR attribute, SLONG value)
  **************************************/
 	TGBL tdgbl = GET_THREAD_DATA;
 
-	SLONG vax_value = (SLONG) isc_vax_integer((char*) &value, sizeof(value));
+	const SLONG vax_value = (SLONG) isc_vax_integer((const char*) &value, sizeof(value));
 
 	put(tdgbl, (UCHAR) (attribute));
 	put(tdgbl, (UCHAR) sizeof(value));
-	put_block(tdgbl, (UCHAR *) &vax_value, sizeof(vax_value));
+	put_block(tdgbl, (const UCHAR*) &vax_value, sizeof(vax_value));
 }
 
 
@@ -2137,12 +2139,12 @@ void put_int64( SCHAR attribute, SINT64 value)
  **************************************/
 	TGBL tdgbl = GET_THREAD_DATA;
 
-	UINT64 le_value =
-		(UINT64) isc_portable_integer((UCHAR*) &value, sizeof(value));
+	const UINT64 le_value =
+		(UINT64) isc_portable_integer((const UCHAR*) &value, sizeof(value));
 
 	put(tdgbl, (UCHAR) (attribute));
 	put(tdgbl, (UCHAR) (sizeof(value)));
-	put_block(tdgbl, (UCHAR *) &le_value, sizeof(le_value));
+	put_block(tdgbl, (const UCHAR*) &le_value, sizeof(le_value));
 }
 
 
@@ -2159,7 +2161,6 @@ void put_relation( BURP_REL relation)
  *
  **************************************/
 	TEXT temp[GDS_NAME_LEN];
-	USHORT l;
 
 	TGBL tdgbl = GET_THREAD_DATA;
 
@@ -2176,7 +2177,7 @@ void put_relation( BURP_REL relation)
 	for (field = fields; field = fields;)
 	{
 		fields = field->fld_next;
-		l = field->fld_length;
+		USHORT l = field->fld_length;
 		if (field->fld_type == blr_varying)
 			l += sizeof(USHORT);
 		if (!(l & 7))
@@ -2238,7 +2239,7 @@ void put_relation( BURP_REL relation)
 	for (field = relation->rel_fields; field; field = field->fld_next)
 	{
 		put(tdgbl, (UCHAR) (rec_field));
-		l = PUT_TEXT(att_field_name, field->fld_name);
+		const USHORT l = PUT_TEXT(att_field_name, field->fld_name);
 		MISC_terminate(field->fld_name, temp, l, sizeof(temp));
 		BURP_verbose(144, temp, NULL, NULL, NULL, NULL);
 		// msg 144  writing field %s 
@@ -2285,7 +2286,7 @@ void put_relation( BURP_REL relation)
 		if (field->fld_flags & FLD_array)
 		{
 			put_numeric(att_field_dimensions, field->fld_dimensions);
-			SLONG *rp = field->fld_ranges;
+			const SLONG* rp = field->fld_ranges;
 			for (USHORT n = field->fld_dimensions; n; rp += 2, n--)
 			{
 				put_numeric(att_field_range_low, *rp);
@@ -2379,14 +2380,14 @@ bool put_source_blob(SCHAR		attribute,
 
 	SLONG length = 0;
 	USHORT max_segment = 0, num_seg = 0;
-	UCHAR *p = blob_info;
+	const UCHAR* p = blob_info;
 	UCHAR item;
 
 	while ((item = *p++) != isc_info_end)
 	{
-		USHORT l = (USHORT) isc_vax_integer((SCHAR*) p, 2);
+		const USHORT l = (USHORT) isc_vax_integer((const SCHAR*) p, 2);
 		p += 2;
-		USHORT n = (USHORT) isc_vax_integer((SCHAR*) p, l);
+		const USHORT n = (USHORT) isc_vax_integer((const SCHAR*) p, l);
 		p += l;
 		switch (item)
 		{
@@ -2456,7 +2457,7 @@ bool put_source_blob(SCHAR		attribute,
 }
 
 
-int put_text( SCHAR attribute, const TEXT * text, SSHORT size_len)
+int put_text( SCHAR attribute, const TEXT* text, SSHORT size_len)
 {
 /**************************************
  *
@@ -2474,12 +2475,12 @@ int put_text( SCHAR attribute, const TEXT * text, SSHORT size_len)
  **************************************/
 	TGBL tdgbl = GET_THREAD_DATA;
 
-	SSHORT l = (SSHORT) symbol_length (text, (ULONG) size_len);
+	const SSHORT l = (SSHORT) symbol_length (text, (ULONG) size_len);
  
 	put(tdgbl, (UCHAR) (attribute));
 	put(tdgbl, (UCHAR) (l));
 	if (l)
-		put_block(tdgbl, (UCHAR*) text, l);
+		put_block(tdgbl, (const UCHAR*) text, l);
 
 	return l;
 }
@@ -2502,7 +2503,7 @@ void set_capabilities(void)
  **************************************/
 	TGBL tdgbl = GET_THREAD_DATA;
 
-	FRBRD *req = NULL;
+	FRBRD* req = NULL;
 
 // Look for desireable fields in system relations
 
@@ -2545,7 +2546,7 @@ int symbol_length( const TEXT * symbol, ULONG size_len)
 	--size_len;
 
 	const TEXT* p = symbol;
-	const TEXT* q = p + size_len;
+	const TEXT* const q = p + size_len;
 
 	while (*p && p < q) {  // find end of string (null or end).
 		p++;
@@ -2711,11 +2712,12 @@ void write_database( const TEXT* dbb_file)
 	}
 
 	USHORT page_size = 0, forced_writes, no_reserve,
-		length, SQL_dialect, db_read_only;
+		SQL_dialect, db_read_only;
  	ULONG sweep_interval, page_buffers;
-	for (SCHAR *d = buffer; *d != isc_info_end; d += length)
+ 	USHORT length = 0;
+	for (const SCHAR* d = buffer; *d != isc_info_end; d += length)
 	{
-		SCHAR item = *d++;
+		const SCHAR item = *d++;
 		length = (USHORT) isc_vax_integer(d, 2);
 		d += 2;
 		switch (item)
@@ -2749,7 +2751,7 @@ void write_database( const TEXT* dbb_file)
 			break;
 
 		case isc_info_error:	// old server does not understand new isc_info 
-			break;				// parametere and returns isc_info_error. skip it 
+			break;				// parameter and returns isc_info_error. skip it 
 
 		case isc_info_db_sql_dialect:
 			SQL_dialect = (USHORT) isc_vax_integer(d, length);
@@ -2868,7 +2870,7 @@ void write_exceptions(void)
 	FOR (REQUEST_HANDLE req_handle1)
 		X IN RDB$EXCEPTIONS
 		put(tdgbl, rec_exception);
-		SSHORT l = PUT_TEXT (att_exception_name, X.RDB$EXCEPTION_NAME);
+		const SSHORT l = PUT_TEXT (att_exception_name, X.RDB$EXCEPTION_NAME);
 		MISC_terminate (X.RDB$EXCEPTION_NAME, temp, l, sizeof(temp));
 		BURP_verbose (198, temp, NULL, NULL, NULL, NULL);
 		// msg 198 writing exception %s
@@ -2938,7 +2940,7 @@ void write_filters(void)
 	FOR (REQUEST_HANDLE req_handle1)
 		X IN RDB$FILTERS
 		put(tdgbl, rec_filter);
-		SSHORT l = PUT_TEXT (att_filter_name, X.RDB$FUNCTION_NAME);
+		const SSHORT l = PUT_TEXT (att_filter_name, X.RDB$FUNCTION_NAME);
 		MISC_terminate (X.RDB$FUNCTION_NAME, temp, l, sizeof(temp));
 		BURP_verbose (145, temp, NULL, NULL, NULL, NULL);
 		// msg 145 writing filter %s
@@ -2978,7 +2980,7 @@ void write_functions(void)
 	FOR (REQUEST_HANDLE req_handle1)
 		X IN RDB$FUNCTIONS
 		put(tdgbl, rec_function);
-		SSHORT l = PUT_TEXT (att_function_name, X.RDB$FUNCTION_NAME);
+		const SSHORT l = PUT_TEXT (att_function_name, X.RDB$FUNCTION_NAME);
 		MISC_terminate (X.RDB$FUNCTION_NAME, temp, l, sizeof(temp));
 		BURP_verbose (147, temp, NULL, NULL, NULL, NULL);
 		/* msg 147 writing function %.*s */
@@ -3029,7 +3031,7 @@ void write_function_args( GDS_NAME funcptr)
 			X.RDB$FUNCTION_NAME EQ funcptr
 
 			put(tdgbl, rec_function_arg);
-			SSHORT l = PUT_TEXT (att_functionarg_name, X.RDB$FUNCTION_NAME);
+			const SSHORT l = PUT_TEXT (att_functionarg_name, X.RDB$FUNCTION_NAME);
 			MISC_terminate (X.RDB$FUNCTION_NAME, temp, l, sizeof(temp));
 			BURP_verbose (141, temp, NULL, NULL, NULL, NULL);
 			// msg 141 writing argument for function %s 
@@ -3057,7 +3059,7 @@ void write_function_args( GDS_NAME funcptr)
 			X.RDB$FUNCTION_NAME EQ funcptr
 
 			put(tdgbl, rec_function_arg);
-			SSHORT l = PUT_TEXT (att_functionarg_name, X.RDB$FUNCTION_NAME);
+			const SSHORT l = PUT_TEXT (att_functionarg_name, X.RDB$FUNCTION_NAME);
 			MISC_terminate (X.RDB$FUNCTION_NAME, temp, l, sizeof(temp));
 			BURP_verbose (141, temp, NULL, NULL, NULL, NULL);
 			// msg 141 writing argument for function %s 
@@ -3116,7 +3118,7 @@ void write_generators(void)
 	FOR (REQUEST_HANDLE req_handle1)
 		X IN RDB$GENERATORS WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
 		put(tdgbl, rec_generator);
-		SSHORT l = PUT_TEXT (att_gen_generator, X.RDB$GENERATOR_NAME);
+		const SSHORT l = PUT_TEXT (att_gen_generator, X.RDB$GENERATOR_NAME);
 		SINT64 value = 0;
 		if (!tdgbl->gbl_sw_meta) {
 			value = get_gen_id (X.RDB$GENERATOR_NAME, l);
@@ -3171,7 +3173,7 @@ void write_global_fields(void)
 			X.RDB$SYSTEM_FLAG MISSING
 
 			put(tdgbl, rec_global_field);
-			SSHORT l = PUT_TEXT (att_field_name, X.RDB$FIELD_NAME);
+			const SSHORT l = PUT_TEXT (att_field_name, X.RDB$FIELD_NAME);
 			MISC_terminate (X.RDB$FIELD_NAME, temp, l, sizeof(temp));
 			BURP_verbose (149, temp, NULL, NULL, NULL, NULL);
 			/* msg 149  writing global field %.*s */
@@ -3235,7 +3237,7 @@ void write_global_fields(void)
 			X.RDB$SYSTEM_FLAG MISSING
 
 			put(tdgbl, rec_global_field);
-			SSHORT l = PUT_TEXT (att_field_name, X.RDB$FIELD_NAME);
+			const SSHORT l = PUT_TEXT (att_field_name, X.RDB$FIELD_NAME);
 			MISC_terminate (X.RDB$FIELD_NAME, temp, l, sizeof(temp));
 			BURP_verbose (149, temp, NULL, NULL, NULL, NULL);
 			/* msg 149  writing global field %.*s */
@@ -3346,7 +3348,7 @@ void write_procedures(void)
 	FOR (REQUEST_HANDLE req_handle1)
 		X IN RDB$PROCEDURES
 		put(tdgbl, rec_procedure);
-		SSHORT l = PUT_TEXT (att_procedure_name, X.RDB$PROCEDURE_NAME);
+		const SSHORT l = PUT_TEXT (att_procedure_name, X.RDB$PROCEDURE_NAME);
 		MISC_terminate (X.RDB$PROCEDURE_NAME, temp, l, sizeof(temp));
 		BURP_verbose (193, temp, NULL, NULL, NULL, NULL);
 		/* msg 193 writing stored procedure %.*s */
@@ -3391,7 +3393,7 @@ void write_procedure_prms( GDS_NAME procptr)
 	FOR (REQUEST_HANDLE tdgbl->handles_write_procedure_prms_req_handle1)
 		X IN RDB$PROCEDURE_PARAMETERS WITH X.RDB$PROCEDURE_NAME EQ procptr
 		put(tdgbl, rec_procedure_prm);
-		SSHORT l = PUT_TEXT (att_procedureprm_name, X.RDB$PARAMETER_NAME);
+		const SSHORT l = PUT_TEXT (att_procedureprm_name, X.RDB$PARAMETER_NAME);
 		MISC_terminate (X.RDB$PARAMETER_NAME, temp, l, sizeof(temp));
 		BURP_verbose (194, temp, NULL, NULL, NULL, NULL);
 		// msg 194 writing parameter %s for stored procedure 
@@ -3462,7 +3464,7 @@ void write_rel_constraints(void)
 	FOR (REQUEST_HANDLE req_handle1)
 		X IN RDB$RELATION_CONSTRAINTS
 		put(tdgbl, rec_rel_constraint);
-		SSHORT l = PUT_TEXT (att_rel_constraint_name, X.RDB$CONSTRAINT_NAME);
+		const SSHORT l = PUT_TEXT (att_rel_constraint_name, X.RDB$CONSTRAINT_NAME);
 		MISC_terminate (X.RDB$CONSTRAINT_NAME, temp, l, sizeof(temp));
 		BURP_verbose (207, temp, NULL, NULL, NULL, NULL);
 		// msg 207 writing constraint %s 
@@ -3516,13 +3518,13 @@ void write_relations(void)
 
 			SSHORT flags = 0;
 			put(tdgbl, rec_relation);
-			SSHORT l = PUT_TEXT (att_relation_name, X.RDB$RELATION_NAME);
+			const SSHORT l = PUT_TEXT (att_relation_name, X.RDB$RELATION_NAME);
 			MISC_terminate (X.RDB$RELATION_NAME, temp, l, sizeof(temp));
 			BURP_verbose (153, temp, NULL, NULL, NULL, NULL);
 		/* msg 153 writing relation %.*s */
 
 		/* RDB$VIEW_BLR must be the first blob field in the backup file.
-			 * RESTORE.E makes this assumption in get_relation().
+			 * RESTORE.EPP makes this assumption in get_relation().
 			 */
 
 			if (put_blr_blob (att_relation_view_blr, (ISC_QUAD *)&X.RDB$VIEW_BLR))
@@ -3567,7 +3569,7 @@ void write_relations(void)
 
 			SSHORT flags = 0;
 			put(tdgbl, rec_relation);
-			SSHORT l = PUT_TEXT(att_relation_name, X.RDB$RELATION_NAME);
+			const SSHORT l = PUT_TEXT(att_relation_name, X.RDB$RELATION_NAME);
 			MISC_terminate (X.RDB$RELATION_NAME, temp, l, sizeof(temp));
 			BURP_verbose (153, temp, NULL, NULL, NULL, NULL);
 			/* msg 153 writing relation %.*s */
@@ -3666,7 +3668,7 @@ void write_shadow_files(void)
 		WITH X.RDB$SHADOW_NUMBER NOT MISSING
 		AND X.RDB$SHADOW_NUMBER NE 0
 		put(tdgbl, rec_files);
-		SSHORT l = PUT_TEXT (att_file_filename, X.RDB$FILE_NAME);
+		const SSHORT l = PUT_TEXT (att_file_filename, X.RDB$FILE_NAME);
 		MISC_terminate (X.RDB$FILE_NAME, temp, l, sizeof(temp));
 		BURP_verbose (163, temp, NULL, NULL, NULL, NULL);
 		// msg 163 writing shadow file %s
@@ -3706,7 +3708,7 @@ void write_sql_roles(void)
 		X IN RDB$ROLES
 
 		put(tdgbl, rec_sql_roles);
-		SSHORT l = PUT_TEXT(att_role_name, X.RDB$ROLE_NAME);
+		const SSHORT l = PUT_TEXT(att_role_name, X.RDB$ROLE_NAME);
 		PUT_TEXT (att_role_owner_name, X.RDB$OWNER_NAME);
 		put(tdgbl, att_end);
 		MISC_terminate (X.RDB$ROLE_NAME, temp, l, sizeof(temp));
@@ -3752,7 +3754,7 @@ void write_triggers(void)
 			X.RDB$SYSTEM_FLAG MISSING
 
 			put(tdgbl, rec_trigger);
-			SSHORT l = PUT_TEXT (att_trig_name, X.RDB$TRIGGER_NAME);
+			const SSHORT l = PUT_TEXT (att_trig_name, X.RDB$TRIGGER_NAME);
 			MISC_terminate (X.RDB$TRIGGER_NAME, temp, l, sizeof(temp));
 			BURP_verbose (156, temp, NULL, NULL, NULL, NULL);
 			// msg 156   writing trigger %s 
@@ -3784,7 +3786,7 @@ void write_triggers(void)
 			X.RDB$SYSTEM_FLAG MISSING
 
 			put(tdgbl, rec_trigger);
-			SSHORT l = PUT_TEXT (att_trig_name, X.RDB$TRIGGER_NAME);
+			const SSHORT l = PUT_TEXT (att_trig_name, X.RDB$TRIGGER_NAME);
 			MISC_terminate (X.RDB$TRIGGER_NAME, temp, l, sizeof(temp));
 			BURP_verbose (156, temp, NULL, NULL, NULL, NULL);
 			// msg 156   writing trigger %s 
@@ -3850,7 +3852,7 @@ void write_trigger_messages(void)
 		WITH T.RDB$SYSTEM_FLAG NE 1 OR T.RDB$SYSTEM_FLAG MISSING;
 
 		put(tdgbl, rec_trigger_message);
-		SSHORT l = PUT_TEXT (att_trigmsg_name, X.RDB$TRIGGER_NAME);
+		const SSHORT l = PUT_TEXT (att_trigmsg_name, X.RDB$TRIGGER_NAME);
 		MISC_terminate (X.RDB$TRIGGER_NAME, temp, l, sizeof(temp));
 		BURP_verbose (157, temp, NULL, NULL, NULL, NULL);
 		/* msg 157 writing trigger message for *s */
@@ -3927,7 +3929,7 @@ void write_user_privileges(void)
 		FOR (REQUEST_HANDLE req_handle1)
 			X IN RDB$USER_PRIVILEGES
 			put(tdgbl, rec_user_privilege);
-			SSHORT l = PUT_TEXT (att_priv_user, X.RDB$USER);
+			const SSHORT l = PUT_TEXT (att_priv_user, X.RDB$USER);
 			MISC_terminate (X.RDB$USER, temp, l, sizeof(temp));
 			BURP_verbose (152, temp, NULL, NULL, NULL, NULL);
 			// msg 152 writing privilege for user %s
@@ -3950,7 +3952,7 @@ void write_user_privileges(void)
 		FOR (REQUEST_HANDLE req_handle1)
 			X IN RDB$USER_PRIVILEGES
 			put(tdgbl, rec_user_privilege);
-			SSHORT l = PUT_TEXT (att_priv_user, X.RDB$USER);
+			const SSHORT l = PUT_TEXT (att_priv_user, X.RDB$USER);
 			MISC_terminate (X.RDB$USER, temp, l, sizeof(temp));
 			BURP_verbose (152, temp, NULL, NULL, NULL, NULL);
 			// msg 152 writing privilege for user %s

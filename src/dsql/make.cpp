@@ -133,9 +133,6 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 			   alignment of node->nod_arg, which is now only guaranteed
 			   4-byte alignment.    -- ChrisJ 1999-02-20 */
 
-			UINT64 value = 0;
-			const char* p = constant->str_data;
-
 			node->nod_desc.dsc_dtype = dtype_int64;
 			node->nod_desc.dsc_length = sizeof(SINT64);
 			node->nod_desc.dsc_scale = 0;
@@ -148,6 +145,9 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 			   We *might* have "9223372936854775808", which works an an int64
 			   only if preceded by a '-', but that issue is handled in GEN_expr,
 			   and need not be addressed here. */
+
+			UINT64 value = 0;
+			const char* p = constant->str_data;
 
 			while (isdigit(*p))
 				value = 10 * value + (*(p++) - '0');
@@ -488,9 +488,10 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 
 		dtype = MAX(dtype1, dtype2);
 
-		if (DTYPE_IS_BLOB(dtype))
+		if (DTYPE_IS_BLOB(dtype)) {
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
 					  isc_arg_gds, isc_dsql_no_blob_array, 0);
+		}
 
 		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
 		switch (dtype) {
@@ -528,12 +529,17 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 						dtype = dtype1;
 					else if ((dtype1 == dtype_timestamp) &&
 							 (dtype2 == dtype_sql_date))
+					{
 							dtype = dtype_timestamp;
+					}
 					else if ((dtype2 == dtype_timestamp) &&
 							 (dtype1 == dtype_sql_date))
+					{
 							dtype = dtype_timestamp;
-					else
+					}
+					else {
 						ERRD_post(isc_expression_eval_err, 0);
+					}
 
 					if (dtype == dtype_sql_date) {
 						desc->dsc_dtype = dtype_long;
@@ -559,9 +565,10 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 					desc->dsc_length = type_lengths[dtype_timestamp];
 					desc->dsc_scale = 0;
 				}
-				else
+				else {
 					/* <date> + <date> */
 					ERRD_post(isc_expression_eval_err, 0);
+				}
 			}
 			else if (DTYPE_IS_DATE(desc1.dsc_dtype) ||
 					 /* <date> +/- <non-date> */
@@ -610,9 +617,10 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		dtype2 = desc2.dsc_dtype;
 
 		// Arrays and blobs can never partipate in addition/subtraction 
-		if (DTYPE_IS_BLOB(desc1.dsc_dtype) || DTYPE_IS_BLOB(desc2.dsc_dtype))
+		if (DTYPE_IS_BLOB(desc1.dsc_dtype) || DTYPE_IS_BLOB(desc2.dsc_dtype)) {
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
 					  isc_arg_gds, isc_dsql_no_blob_array, 0);
+		}
 
 		/* In Dialect 2 or 3, strings can never partipate in addition / sub 
 		   (Use a specific cast instead) */
@@ -629,7 +637,8 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		if (DTYPE_IS_EXACT(desc1.dsc_dtype)
 			&& DTYPE_IS_EXACT(desc2.dsc_dtype)) dtype = dtype_int64;
 		else if (DTYPE_IS_NUMERIC(desc1.dsc_dtype)
-				 && DTYPE_IS_NUMERIC(desc2.dsc_dtype)) {
+				 && DTYPE_IS_NUMERIC(desc2.dsc_dtype))
+		{
 			fb_assert(DTYPE_IS_APPROX(desc1.dsc_dtype) ||
 				   DTYPE_IS_APPROX(desc2.dsc_dtype));
 			dtype = dtype_double;
@@ -655,8 +664,9 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		case dtype_sql_date:
 		case dtype_timestamp:
 
-			if ((DTYPE_IS_DATE(dtype1) || (dtype1 == dtype_null)) &&
-				(DTYPE_IS_DATE(dtype2) || (dtype2 == dtype_null))) {
+			if ((DTYPE_IS_DATE(dtype1) || (dtype1 == dtype_unknown)) &&
+				(DTYPE_IS_DATE(dtype2) || (dtype2 == dtype_unknown)))
+			{
 				if (node->nod_type == nod_subtract2) {
 					/* <any date> - <any date> */
 					/* Legal permutations are:
@@ -670,12 +680,17 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 						dtype = dtype1;
 					else if ((dtype1 == dtype_timestamp) &&
 							 (dtype2 == dtype_sql_date))
+					{
 							dtype = dtype_timestamp;
+					}
 					else if ((dtype2 == dtype_timestamp) &&
 							 (dtype1 == dtype_sql_date))
+					{
 							dtype = dtype_timestamp;
-					else
+					}
+					else {
 						ERRD_post(isc_expression_eval_err, 0);
+					}
 
 					if (dtype == dtype_sql_date) {
 						desc->dsc_dtype = dtype_long;
@@ -701,9 +716,10 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 					desc->dsc_length = type_lengths[dtype_timestamp];
 					desc->dsc_scale = 0;
 				}
-				else
+				else {
 					/* <date> + <date> */
 					ERRD_post(isc_expression_eval_err, 0);
+				}
 			}
 			else if (DTYPE_IS_DATE(desc1.dsc_dtype) ||
 					 /* <date> +/- <non-date> */
@@ -763,9 +779,10 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		MAKE_desc(&desc2, node->nod_arg[1]);
 		dtype = DSC_multiply_blr4_result[desc1.dsc_dtype][desc2.dsc_dtype];
 
-		if (dtype_null == dtype)
+		if (dtype_unknown == dtype) {
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
 					  isc_arg_gds, isc_dsql_no_blob_array, 0);
+		}
 
 		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
 		switch (dtype) {
@@ -839,9 +856,10 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 
 		dtype = MAX(dtype1, dtype2);
 
-		if (!DTYPE_CAN_DIVIDE(dtype))
+		if (!DTYPE_CAN_DIVIDE(dtype)) {
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
 					  isc_arg_gds, isc_dsql_no_blob_array, 0);
+		}
 		desc->dsc_dtype = dtype_double;
 		desc->dsc_length = sizeof(double);
 		desc->dsc_scale = 0;
@@ -877,9 +895,10 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 
 	case nod_negate:
 		MAKE_desc(desc, node->nod_arg[0]);
-		if (!DTYPE_CAN_NEGATE(desc->dsc_dtype))
+		if (!DTYPE_CAN_NEGATE(desc->dsc_dtype)) {
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
 					  isc_arg_gds, isc_dsql_no_blob_array, 0);
+		}
 		return;
 
 	case nod_alias:
@@ -1005,7 +1024,8 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		desc->dsc_scale = 0;
 		desc->dsc_flags = (desc1.dsc_flags & DSC_nullable);
 		if (*(ULONG *) node->nod_arg[e_extract_part]->nod_desc.dsc_address
-			== blr_extract_second) {
+			== blr_extract_second)
+		{
 			/* QUADDATE - maybe this should be DECIMAL(6,4) */
 			desc->dsc_dtype = dtype_long;
 			desc->dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
@@ -1034,9 +1054,9 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		 * CHAR(1) CHARACTER SET NONE type.
 		 * No value will ever be sent back, as the value of the select
 		 * will be NULL - this is only for purposes of DESCRIBING
-		 * the statement.  Note that this mapping could be done in dsql.c
+		 * the statement.  Note that this mapping could be done in dsql.cpp
 		 * as part of the DESCRIBE statement - but I suspect other areas
-		 * of the code would break if this is declared dtype_null.
+		 * of the code would break if this is declared dtype_unknown.
 		 */
 		desc->dsc_dtype = dtype_text;
 		desc->dsc_length = 1;
@@ -1066,7 +1086,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		   * to the type of the existing domain to which a CHECK constraint
 		   * is being added.
 		 */
-		fb_assert(node->nod_desc.dsc_dtype != dtype_null);
+		fb_assert(node->nod_desc.dsc_dtype != dtype_unknown);
 		if (desc != &node->nod_desc)
 			*desc = node->nod_desc;
 		return;
@@ -1185,7 +1205,7 @@ void MAKE_desc_from_list(dsc* desc, dsql_nod* node, const TEXT* expression_name)
 				DTYPE_IS_DATE(desc1.dsc_dtype) || DTYPE_IS_BLOB(desc1.dsc_dtype)))
 		{
 			// ERROR !!!!
-			// Unknown datetype 
+			// Unknown datatype
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
 				isc_arg_gds, isc_dsql_datatype_err, 0);
 		}
@@ -1240,7 +1260,7 @@ void MAKE_desc_from_list(dsc* desc, dsql_nod* node, const TEXT* expression_name)
 				// currently we can't
 				//
 		{ 
-			dsc* ptr = &desc1;
+			const dsc* ptr = &desc1;
 			const USHORT cnvlength = TEXT_LEN(ptr);
 			if (cnvlength > maxtextlength) {
 				maxtextlength = cnvlength;
@@ -1567,8 +1587,10 @@ par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 	if (sqlda_flag) {
 		if (sqlda_index && !Config::getOldParameterOrdering()) {
 			parameter->par_index = sqlda_index;
-			if (message->msg_index < sqlda_index) message->msg_index = sqlda_index;
-		} else {
+			if (message->msg_index < sqlda_index)
+				message->msg_index = sqlda_index;
+		}
+		else {
 			parameter->par_index = ++message->msg_index;
 		}
 	}

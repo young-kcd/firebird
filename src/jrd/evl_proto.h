@@ -30,7 +30,7 @@ dsc*		EVL_assign_to(TDBB tdbb, jrd_nod*);
 sbm**		EVL_bitmap(TDBB tdbb, jrd_nod*);
 BOOLEAN		EVL_boolean(TDBB tdbb, jrd_nod*);
 dsc*		EVL_expr(TDBB tdbb, jrd_nod*);
-BOOLEAN		EVL_field(jrd_rel*, rec*, USHORT, DSC*);
+bool		EVL_field(jrd_rel*, rec*, USHORT, DSC*);
 USHORT		EVL_group(TDBB tdbb, Rsb*, jrd_nod*, USHORT);
 USHORT		EVL_mb_contains(TDBB tdbb, TextType, const UCHAR*, USHORT, const UCHAR*, USHORT);
 USHORT		EVL_mb_like(TDBB tdbb, TextType, const UCHAR*, SSHORT, const UCHAR*, SSHORT, USHORT);

@@ -1885,7 +1885,7 @@ static void convert_dtype( dsql_fld* field, SSHORT field_type)
 		field->fld_dtype = gds_cvt_blr_dtype[field_type];
 		field->fld_length = type_lengths[field->fld_dtype];
 
-		fb_assert(field->fld_dtype != dtype_null);
+		fb_assert(field->fld_dtype != dtype_unknown);
 	}
 }
 

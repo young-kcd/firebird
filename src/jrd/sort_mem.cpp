@@ -24,6 +24,7 @@
 
 #include "../common/config/config.h"
 #include "../jrd/gds_proto.h"
+#include "../jrd/sort.h"
 #include "../jrd/sort_proto.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/sort_mem.h"
@@ -340,3 +341,4 @@ size_t SortMem::write(ISC_STATUS *status, size_t position, char *address, size_t
 	// New seek value
 	return position + copied;
 }
+

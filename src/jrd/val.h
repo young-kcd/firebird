@@ -65,6 +65,7 @@ public:
 	USHORT fmt_version;
 	Firebird::vector<dsc> fmt_desc;
 	typedef Firebird::vector<dsc>::iterator fmt_desc_iterator;
+	typedef Firebird::vector<dsc>::const_iterator fmt_desc_const_iterator;
 };
 typedef fmt* FMT;
 #endif /* REQUESTER */

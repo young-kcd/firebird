@@ -71,7 +71,7 @@ typedef struct vms_req {
 	struct vms_req *req_next;		/* Next request in session */
 	struct ses *req_session;	/* Parent session */
 	struct rint *req_interests;	/* Request interests */
-	int (*req_ast) ();			/* Associated AST (zero is fired) */
+	FPTR_EVENT_CALLBACK req_ast;	/* Associated AST (zero is fired) */
 	void *req_ast_arg;			/* Argument for ast */
 	SLONG req_request_id;		/* Request id */
 } *VMS_REQ;
@@ -330,7 +330,7 @@ SLONG EVENT_que(ISC_STATUS * status_vector,
 				TEXT * string,
 				USHORT events_length,
 				UCHAR * events,
-				void (*ast_routine) (),
+				FPTR_EVENT_CALLBACK ast_routine,
 				void *ast_arg)
 {
 /**************************************

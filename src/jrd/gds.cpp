@@ -968,7 +968,7 @@ SLONG API_ROUTINE gds__interprete(char* s, ISC_STATUS** vector)
 	while (*end)
 		end++;
 
-	return end - s;
+	return static_cast<SLONG>(end - s);
 }
 
 
@@ -3642,7 +3642,7 @@ void gds__trace_printer(void* arg, SSHORT offset, const TEXT* line)
 	gds__ulstr(p, offset, 4, ' ');
 	p += strlen(p);
 	*p++ = ' ';
-	strcpy(p, line); p+=strlen(p);
+	strcpy(p, line); p += strlen(p);
 	*p++ = '\n';
 	*p = 0;
 	gds__trace_raw(buffer);

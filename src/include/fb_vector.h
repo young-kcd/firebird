@@ -32,3 +32,4 @@ namespace Firebird
 };
 
 #endif	// FB_VECTOR_H
+

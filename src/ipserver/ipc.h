@@ -271,8 +271,8 @@ typedef struct ivnt {
 	struct blk ivnt_header;
 	struct ivnt *ivnt_next;
 	struct idb *ivnt_idb;
-	void (*ivnt_ast) ();
-	void *ivnt_arg;
+	FPTR_EVENT_CALLBACK ivnt_ast;
+	void* ivnt_arg;
 	HWND ivnt_window;
 	SLONG ivnt_id;
 	SLONG ivnt_handle;
@@ -522,8 +522,8 @@ typedef struct {
 	UCHAR *ips_db_handle;		/* database handle */
 	ULONG ips_event_id;			/* returned event id */
 	HWND ips_event_hwnd;		/* window handle to return to */
-	UCHAR *ips_ast;				/* ast address */
-	UCHAR *ips_arg;				/* ast arg */
+	FPTR_EVENT_CALLBACK ips_ast;	/* ast address */
+	UCHAR* ips_arg;				/* ast arg */
 } ips_que_events;
 
 #define	IPS_QUEUE_EVENT		0	/* use controller 0 for event */
@@ -647,7 +647,7 @@ typedef struct eventq {
 	struct eventq *evq_next;	/* next event */
 	SLONG evq_id;				/* event ID */
 	USHORT evq_length;			/* event length */
-	TEXT evq_string[1];			/* event string */
+	UCHAR evq_string[1];			/* event string */
 } *EVENTQ;
 
 /* interprocess database thread structure */

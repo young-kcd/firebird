@@ -40,7 +40,7 @@ void	BURP_msg_put(USHORT, const void*, const void*, const void*,
 					const void*, const void*);
 void	BURP_msg_get(USHORT, TEXT*, const void*, const void*, const void*,
 					const void*, const void*);
-void	BURP_output_version(const TEXT*, TEXT*);
+void	BURP_output_version(void*, const TEXT*);
 void	BURP_print(USHORT, const void*, const void*, const void*, const void*, const void*);
 void	BURP_print_warning(const ISC_STATUS*);
 void	BURP_verbose(USHORT, const void*, const void*, const void*, const void*, const void*);

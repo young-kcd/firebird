@@ -90,7 +90,7 @@ public:
 	static bool comparePaths(const Firebird::string& path1, 
 									const Firebird::string& path2);
 	
-	/** Concatinates the two paths given in the second and third parameters,
+	/** Concatenates the two paths given in the second and third parameters,
 		and writes the resulting path into the first parameter.  The
 		two path input arguments (arg 2 and 3) are concatinated in the order
 		arg2 arg3.  The concatination is done is such a way as to remove
@@ -111,14 +111,14 @@ public:
 	static void splitLastComponent(Firebird::string&, Firebird::string&,
 									const Firebird::string&);
 									
-	/** This is the factory method for allocting dir_iterator objects.
+	/** This is the factory method for allocating dir_iterator objects.
 		It takes a reference to a memory pool to use for all heap allocations,
 		and the path of the directory to iterate (in that order).  It is the
 		responsibility of the caller to delete the object when they are done with it.
 		All errors result in either exceptions being thrown, or a valid empty
 		dir_iterator being returned.
 	**/
-	static dir_iterator *newDirItr(MemoryPool&, const Firebird::string&);
+	static dir_iterator* newDirItr(MemoryPool&, const Firebird::string&);
 };
 
 #endif

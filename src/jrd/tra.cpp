@@ -379,7 +379,7 @@ void TRA_commit(TDBB tdbb, JRD_TRA transaction, const bool retaining_flag)
 		DFW_perform_work(transaction);
 
 	if (transaction->tra_flags & (TRA_prepare2 | TRA_reconnected))
-		MET_update_transaction(tdbb, transaction, TRUE);
+		MET_update_transaction(tdbb, transaction, true);
 
 /* Check in with external file system */
 
@@ -1153,7 +1153,7 @@ void TRA_rollback(TDBB tdbb, JRD_TRA transaction, const bool retaining_flag)
 /* If no writes have been made, commit the transaction instead. */
 
 	if (transaction->tra_flags & (TRA_prepare2 | TRA_reconnected))
-		MET_update_transaction(tdbb, transaction, FALSE);
+		MET_update_transaction(tdbb, transaction, false);
 
 /*  Find out if there is a transaction savepoint we can use to rollback our transaction */
 	BOOLEAN tran_sav = FALSE;

@@ -4730,7 +4730,7 @@ static dsql_req* prepare(
 #ifdef DSQL_DEBUG
 	if (DSQL_debug & 64) {
 		dsql_trace("Resulting BLR code for DSQL:");
-		gds__print_blr(reinterpret_cast<UCHAR*>(request->req_blr_string->str_data), 
+		gds__print_blr(reinterpret_cast<const UCHAR*>(request->req_blr_string->str_data),
 			gds__trace_printer, 0, 0);
 	}
 #endif

@@ -46,7 +46,7 @@ static struct {
 	SSHORT SqlType;
 	SSHORT DataLength;
 } DscType2SqlType[] = {
-/* dtype_null		*/ {-1, 0},
+/* dtype_unknown		*/ {-1, 0},
 /* dtype_text		*/ {SQL_TEXT, 0},
 /* dtype_cstring	*/ {-1, 0},
 /* dtype_varying	*/ {SQL_VARYING, 0},

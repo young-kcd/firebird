@@ -48,7 +48,7 @@
 /*
  * TMN: Equally important: Don't add a compiler directive like
  * extern "C" { } to this file since it's included to be the body
- * of an array (!) from why.c.
+ * of an array (!) from why.cpp.
  */
 
 #if defined(NOT_USED_OR_REPLACED) && defined(__cplusplus)
@@ -409,18 +409,18 @@ ENTRYPOINT("gds_commit_retaining",
 			(ISC_STATUS *, class jrd_tra **))
 
 ENTRYPOINT("gds_que_events",
-		   jrd8_que_events,
-		   "jrd5_que_events",
-		   REM_que_events,
-		   "_REM_que_events",
-		   CSI_que_events,
+			jrd8_que_events,
+			"jrd5_que_events",
+			REM_que_events,
+			"_REM_que_events",
+			CSI_que_events,
    /****     RDB_que_events    ***/ y_valve_no_entrypoint,
 			PSI_que_events,
 			PSI5_que_events,
 			"_jrd8_que_events",
 			IPI_que_events,
-			(ISC_STATUS*, struct att**, SLONG*, SSHORT, const UCHAR*, FPTR_VOID,
-				void*))
+			(ISC_STATUS*, struct att**, SLONG*, SSHORT, const UCHAR*,
+				FPTR_EVENT_CALLBACK, void*))
 
 ENTRYPOINT("gds_cancel_events",
 		   jrd8_cancel_events,

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.30 2003-12-03 08:19:13 robocop Exp $
+ * $Id: show.epp,v 1.31 2003-12-22 10:00:29 robocop Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -68,7 +68,7 @@ extern USHORT minor_ods;
 extern bool V4;
 extern bool V33;
 
-static void local_fprintf(const char*, const char*);
+static void local_fprintf(void*, const char*);
 static void remove_delimited_double_quotes(TEXT*);
 static void make_priv_string(USHORT, char*);
 static processing_state show_all_tables(SSHORT);
@@ -1062,7 +1062,7 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 						msg_string, FB_VERSION, NULL, NULL, NULL, NULL);
 		sprintf(Print_buffer, "%s%s", msg_string, NEWLINE);
 		ISQL_printf(Out, Print_buffer);
-		isc_version(&DB, (FPTR_VOID) local_fprintf, NULL);
+		isc_version(&DB, local_fprintf, NULL);
 	}
 	else if (!strcmp(cmd[1], "SQL")) {
 		if (!strcmp(cmd[2], "DIALECT"))
@@ -1398,7 +1398,7 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 }
 
 
-static void local_fprintf(const char* format,
+static void local_fprintf(void* format_ignored,
 						  const char* string)
 {
 /**************************************

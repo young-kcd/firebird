@@ -83,7 +83,7 @@ typedef struct gfld
 
 static const struct gfld gfields[] = {
 #include "../jrd/fields.h"
-	{ 0, 0, dtype_null, 0, 0, 0, NULL, 0 }
+	{ 0, 0, dtype_unknown, 0, 0, 0, NULL, 0 }
 };
 #undef FIELD
 

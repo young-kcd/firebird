@@ -401,7 +401,8 @@ SLONG EVENT_que(ISC_STATUS* status_vector,
 				USHORT string_length,
 				const TEXT* string,
 				USHORT events_length,
-				const UCHAR* events, FPTR_VOID ast_routine, void* ast_arg)
+				const UCHAR* events,
+				FPTR_EVENT_CALLBACK ast_routine, void* ast_arg)
 {
 /**************************************
  *
@@ -1004,10 +1005,9 @@ static void deliver_request(EVT_REQ request)
  *	Clean up request.
  *
  **************************************/
-	void (*ast) ();
 	UCHAR buffer[512];
 
-	ast = request->req_ast;
+	FPTR_EVENT_CALLBACK ast = request->req_ast;
 	void* arg = request->req_ast_arg;
 	UCHAR* event_buffer = buffer;
 	UCHAR* p = buffer;

@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.35 2003-11-28 06:48:12 robocop Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.36 2003-12-22 10:00:14 robocop Exp $
  */
 
 #include "firebird.h"
@@ -876,11 +876,12 @@ static int upcase(const TEXT* from, TEXT* to)
 }
 #endif // NOT_USED_OR_REPLACED
 
-ISC_STATUS API_ROUTINE isc_print_blr(SCHAR* blr,
-          void (*callback) (), void* callback_argument, SSHORT language)
+// CVC: Not sure why it's defined here, probably to not depend on jrd/alt.cpp?
+ISC_STATUS API_ROUTINE isc_print_blr(const SCHAR* blr,
+          FPTR_PRINT_CALLBACK callback, void* callback_argument, SSHORT language)
 {
-        return gds__print_blr((UCHAR*) blr, 
-							  reinterpret_cast<FPTR_PRINT_CALLBACK>(callback),
+        return gds__print_blr((const UCHAR*) blr,
+							  callback,
                               callback_argument, language);
 }
 

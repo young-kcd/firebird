@@ -3049,7 +3049,7 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 					  SLONG* id,
 					  SSHORT length,
 					  const UCHAR* items,
-					  void (*ast) (void*, USHORT, UCHAR*), void* arg)
+					  FPTR_EVENT_CALLBACK ast, void* arg)
 {
 /**************************************
  *
@@ -3133,7 +3133,7 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 		event->p_event_database = rdb->rdb_id;
 		event->p_event_items.cstr_length = length;
 		event->p_event_items.cstr_address = const_cast<UCHAR*>(items);
-		event->p_event_ast = (SLONG) ast;
+		event->p_event_ast = ast;
 		event->p_event_arg = (SLONG) arg;
 		event->p_event_rid = rem_event->rvnt_id;
 
@@ -6964,7 +6964,7 @@ static void send_cancel_event(RVNT event)
 	if (event->rvnt_id)
 	{
 		THREAD_EXIT;
-		(*event->rvnt_ast)(event->rvnt_arg, (SSHORT) 0, NULL);
+		(*event->rvnt_ast)(event->rvnt_arg, (USHORT) 0, NULL);
 		THREAD_ENTER;
 		event->rvnt_id = 0;
 	}
@@ -7065,7 +7065,7 @@ static void server_death(PORT port)
 			if (event->rvnt_id)
 			{
 				THREAD_EXIT;
-				(*event->rvnt_ast) (event->rvnt_arg, (SSHORT) 0, NULL);
+				(*event->rvnt_ast) (event->rvnt_arg, (USHORT) 0, NULL);
 				THREAD_ENTER;
 				event->rvnt_id = 0;
 			}

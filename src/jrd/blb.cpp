@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.44 2003-12-11 10:33:24 robocop Exp $
+$Id: blb.cpp,v 1.45 2003-12-22 10:00:45 robocop Exp $
 */
 
 #include "firebird.h"
@@ -447,7 +447,7 @@ USHORT BLB_get_segment(TDBB tdbb,
 #ifdef SUPERSERVER
 
 	if (--tdbb->tdbb_quantum < 0 && !tdbb->tdbb_inhibit)
-		JRD_reschedule(tdbb, 0, TRUE);
+		JRD_reschedule(tdbb, 0, true);
 
 #endif
 
@@ -1732,6 +1732,7 @@ static ISC_STATUS blob_filter(	USHORT	action,
 		return FB_SUCCESS;
 
 	case ACTION_alloc:
+	    // pointer to ISC_STATUS!!!
 		return (ISC_STATUS) FB_NEW(*transaction->tra_pool) ctl();
 
 	case ACTION_free:

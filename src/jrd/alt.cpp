@@ -51,7 +51,7 @@
 #if !defined(BOOT_BUILD)
 bool is_valid_server(ISC_STATUS* status, const TEXT* server);
 #endif
-FRBRD *open_security_db(ISC_STATUS*, const TEXT*, const TEXT*, int, const TEXT*);
+FRBRD* open_security_db(ISC_STATUS*, const TEXT*, const TEXT*, int, const TEXT*);
 void get_security_error(ISC_STATUS*, int);
 
 SLONG API_ROUTINE_VARARG isc_event_block(SCHAR** event_buffer,
@@ -127,7 +127,7 @@ SLONG API_ROUTINE_VARARG isc_event_block(SCHAR** event_buffer,
 		*p++ = 0;
 	}
 
-	return (int) (p - *event_buffer);
+	return static_cast<SLONG>(p - *event_buffer);
 }
 
 
@@ -489,7 +489,8 @@ ISC_STATUS API_ROUTINE gds__que_events(ISC_STATUS* status_vector,
 								   SLONG* event_id,
 								   SSHORT events_length,
 								   const SCHAR* events,
-								   void (*ast_address) (), void* ast_argument)
+								   FPTR_EVENT_CALLBACK ast_address,
+								   void* ast_argument)
 {
 	return isc_que_events(status_vector, db_handle, event_id, events_length,
 						  events, ast_address, (int *) ast_argument);
@@ -642,11 +643,11 @@ int API_ROUTINE gds__get_client_minor_version()
 }
 
 ISC_STATUS API_ROUTINE isc_print_blr(const SCHAR* blr,
-								 void (*callback) (),
+								 FPTR_PRINT_CALLBACK callback,
 								 void* callback_argument, SSHORT language)
 {
 	return gds__print_blr(reinterpret_cast<const UCHAR*>(blr),
-						  reinterpret_cast<FPTR_PRINT_CALLBACK>(callback),
+						  callback,
 						  callback_argument, language);
 }
 
@@ -722,8 +723,9 @@ SLONG API_ROUTINE isc_interprete_cpp(SCHAR* const buffer,
 }
 
 int API_ROUTINE gds__version(
-							FRBRD **db_handle,
-							void (*callback) (), void *callback_argument)
+							FRBRD** db_handle,
+							FPTR_VERSION_CALLBACK callback,
+							void* callback_argument)
 {
 	return isc_version(db_handle, callback, callback_argument);
 }
@@ -814,7 +816,10 @@ int API_ROUTINE isc_blob_edit(
 					  name_length);
 }
 
-int API_ROUTINE isc_add_user(ISC_STATUS* status, USER_SEC_DATA* user_data)
+// CVC: Who was the genius that named the input param "user_data" when the
+// function uses "struct user_data userInfo" to define a different variable type
+// only few lines below? Same for the other two isc_*_user functions.
+ISC_STATUS API_ROUTINE isc_add_user(ISC_STATUS* status, const USER_SEC_DATA* input_user_data)
 {
 /**************************************
  *
@@ -833,24 +838,23 @@ int API_ROUTINE isc_add_user(ISC_STATUS* status, USER_SEC_DATA* user_data)
 #ifdef BOOT_BUILD
 return 1;
 #else
-	USHORT retval = 0, l;
-	struct user_data userInfo;
-	FRBRD *db_handle;
-
+	internal_user_data userInfo;
 	userInfo.operation = ADD_OPER;
 
-	if (user_data->user_name) {
-		if (strlen(user_data->user_name) > 31) {
+	if (input_user_data->user_name) {
+		if (strlen(input_user_data->user_name) > 31) {
 			status[0] = isc_arg_gds;
 			status[1] = isc_usrname_too_long;
 			status[2] = isc_arg_end;
 			return status[1];
 		}
-
+		int l;
 		for (l = 0;
-			 user_data->user_name[l] != ' '
-			 && l < strlen(user_data->user_name); l++)
-			userInfo.user_name[l] = UPPER(user_data->user_name[l]);
+			 input_user_data->user_name[l] != ' '
+			 && l < strlen(input_user_data->user_name); l++)
+		{
+			userInfo.user_name[l] = UPPER(input_user_data->user_name[l]);
+		}
 
 		userInfo.user_name[l] = '\0';
 		userInfo.user_name_entered = true;
@@ -862,18 +866,20 @@ return 1;
 		return status[1];
 	}
 
-	if (user_data->password) {
-		if (strlen(user_data->password) > 8) {
+	if (input_user_data->password) {
+		if (strlen(input_user_data->password) > 8) {
 			status[0] = isc_arg_gds;
 			status[1] = isc_password_too_long;
 			status[2] = isc_arg_end;
 			return status[1];
 		}
-
+		int l;
 		for (l = 0;
-			 l < strlen(user_data->password) && user_data->password[l] != ' ';
+			 l < strlen(input_user_data->password) && input_user_data->password[l] != ' ';
 			 l++)
-			userInfo.password[l] = user_data->password[l];
+		{
+			userInfo.password[l] = input_user_data->password[l];
+		}
 
 		userInfo.password[l] = '\0';
 		userInfo.password_entered = true;
@@ -887,9 +893,10 @@ return 1;
 	}
 
 
-	if ((user_data->sec_flags & sec_uid_spec)
-		&& (userInfo.uid_entered = (user_data->uid))) {
-		userInfo.uid = user_data->uid;
+	if ((input_user_data->sec_flags & sec_uid_spec)
+		&& (userInfo.uid_entered = (input_user_data->uid)))
+	{
+		userInfo.uid = input_user_data->uid;
 		userInfo.uid_specified = true;
 	}
 	else {
@@ -897,9 +904,10 @@ return 1;
 		userInfo.uid_entered = false;
 	}
 
-	if ((user_data->sec_flags & sec_gid_spec)
-		&& (userInfo.gid_entered = (user_data->gid))) {
-		userInfo.gid = user_data->gid;
+	if ((input_user_data->sec_flags & sec_gid_spec)
+		&& (userInfo.gid_entered = (input_user_data->gid)))
+	{
+		userInfo.gid = input_user_data->gid;
 		userInfo.gid_specified = true;
 	}
 	else {
@@ -907,9 +915,9 @@ return 1;
 		userInfo.gid_entered = false;
 	}
 
-	if ((user_data->sec_flags & sec_group_name_spec) && user_data->group_name) {
-		int l = MIN(ALT_NAME_LEN - 1, strlen(user_data->group_name));
-		strncpy(userInfo.group_name, user_data->group_name, l);
+	if ((input_user_data->sec_flags & sec_group_name_spec) && input_user_data->group_name) {
+		int l = MIN(ALT_NAME_LEN - 1, strlen(input_user_data->group_name));
+		strncpy(userInfo.group_name, input_user_data->group_name, l);
 		userInfo.group_name[l] = '\0';
 		userInfo.group_name_entered = true;
 		userInfo.group_name_specified = true;
@@ -919,9 +927,9 @@ return 1;
 		userInfo.group_name_specified = false;
 	}
 
-	if ((user_data->sec_flags & sec_first_name_spec) && user_data->first_name) {
-		int l = MIN(NAME_LEN - 1, strlen(user_data->first_name));
-		strncpy(userInfo.first_name, user_data->first_name, l);
+	if ((input_user_data->sec_flags & sec_first_name_spec) && input_user_data->first_name) {
+		int l = MIN(NAME_LEN - 1, strlen(input_user_data->first_name));
+		strncpy(userInfo.first_name, input_user_data->first_name, l);
 		userInfo.first_name[l] = '\0';
 		userInfo.first_name_entered = true;
 		userInfo.first_name_specified = true;
@@ -931,10 +939,11 @@ return 1;
 		userInfo.first_name_specified = false;
 	}
 
-	if ((user_data->sec_flags & sec_middle_name_spec)
-		&& user_data->middle_name) {
-		int l = MIN(NAME_LEN - 1, strlen(user_data->middle_name));
-		strncpy(userInfo.middle_name, user_data->middle_name, l);
+	if ((input_user_data->sec_flags & sec_middle_name_spec)
+		&& input_user_data->middle_name)
+	{
+		int l = MIN(NAME_LEN - 1, strlen(input_user_data->middle_name));
+		strncpy(userInfo.middle_name, input_user_data->middle_name, l);
 		userInfo.middle_name[l] = '\0';
 		userInfo.middle_name_entered = true;
 		userInfo.middle_name_specified = true;
@@ -944,9 +953,9 @@ return 1;
 		userInfo.middle_name_specified = false;
 	}
 
-	if ((user_data->sec_flags & sec_last_name_spec) && user_data->last_name) {
-		int l = MIN(NAME_LEN - 1, strlen(user_data->last_name));
-		strncpy(userInfo.last_name, user_data->last_name, l);
+	if ((input_user_data->sec_flags & sec_last_name_spec) && input_user_data->last_name) {
+		int l = MIN(NAME_LEN - 1, strlen(input_user_data->last_name));
+		strncpy(userInfo.last_name, input_user_data->last_name, l);
 		userInfo.last_name[l] = '\0';
 		userInfo.last_name_entered = true;
 		userInfo.last_name_specified = true;
@@ -956,13 +965,14 @@ return 1;
 		userInfo.last_name_specified = false;
 	}
 
-	db_handle = open_security_db(status,
-								 user_data->dba_user_name,
-								 user_data->dba_password,
-								 user_data->protocol, user_data->server);
+	FRBRD* db_handle = open_security_db(status,
+								 input_user_data->dba_user_name,
+								 input_user_data->dba_password,
+								 input_user_data->protocol, input_user_data->server);
 	if (db_handle) {
 		ISC_STATUS_ARRAY user_status;
-		retval = SECURITY_exec_line(status, db_handle, &userInfo, NULL, NULL);
+		const USHORT retval =
+			SECURITY_exec_line(status, db_handle, &userInfo, NULL, NULL);
 		/* if retval != 0 then there was a gsec error */
 		if (retval)
 			get_security_error(status, retval);
@@ -999,7 +1009,7 @@ int API_ROUTINE isc_blob_load(
 					  name_length);
 }
 
-int API_ROUTINE isc_delete_user(ISC_STATUS * status, USER_SEC_DATA * user_data)
+ISC_STATUS API_ROUTINE isc_delete_user(ISC_STATUS* status, const USER_SEC_DATA* input_user_data)
 {
 /**************************************
  *
@@ -1018,24 +1028,23 @@ int API_ROUTINE isc_delete_user(ISC_STATUS * status, USER_SEC_DATA * user_data)
 #ifdef BOOT_BUILD
 return 1;
 #else
-	USHORT retval = 0, l;
-	FRBRD *db_handle;
-	struct user_data userInfo;
-
+	internal_user_data userInfo;
 	userInfo.operation = DEL_OPER;
 
-	if (user_data->user_name) {
-		if (strlen(user_data->user_name) > 32) {
+	if (input_user_data->user_name) {
+		if (strlen(input_user_data->user_name) > 32) {
 			status[0] = isc_arg_gds;
 			status[1] = isc_usrname_too_long;
 			status[2] = isc_arg_end;
 			return status[1];
 		}
-
+		int l;
 		for (l = 0;
-			 user_data->user_name[l] != ' '
-			 && l < strlen(user_data->user_name); l++)
-			userInfo.user_name[l] = UPPER(user_data->user_name[l]);
+			 input_user_data->user_name[l] != ' '
+			 && l < strlen(input_user_data->user_name); l++)
+		{
+			userInfo.user_name[l] = UPPER(input_user_data->user_name[l]);
+		}
 
 		userInfo.user_name[l] = '\0';
 		userInfo.user_name_entered = true;
@@ -1047,13 +1056,14 @@ return 1;
 		return status[1];
 	}
 
-	db_handle = open_security_db(status,
-								 user_data->dba_user_name,
-								 user_data->dba_password,
-								 user_data->protocol, user_data->server);
+	FRBRD* db_handle = open_security_db(status,
+								 input_user_data->dba_user_name,
+								 input_user_data->dba_password,
+								 input_user_data->protocol, input_user_data->server);
 	if (db_handle) {
 		ISC_STATUS_ARRAY user_status;
-		retval = SECURITY_exec_line(status, db_handle, &userInfo, NULL, NULL);
+		const USHORT retval =
+			SECURITY_exec_line(status, db_handle, &userInfo, NULL, NULL);
 		/* if retval != 0 then there was a gsec error */
 		if (retval)
 			get_security_error(status, retval);
@@ -1064,7 +1074,7 @@ return 1;
 #endif
 }
 
-int API_ROUTINE isc_modify_user(ISC_STATUS * status, USER_SEC_DATA * user_data)
+ISC_STATUS API_ROUTINE isc_modify_user(ISC_STATUS* status, const USER_SEC_DATA* input_user_data)
 {
 /**************************************
  *
@@ -1083,24 +1093,23 @@ int API_ROUTINE isc_modify_user(ISC_STATUS * status, USER_SEC_DATA * user_data)
 #ifdef BOOT_BUILD
 return 1;
 #else
-	USHORT retval = 0, l;
-	struct user_data userInfo;
-	FRBRD *db_handle;
-
+	internal_user_data userInfo;
 	userInfo.operation = MOD_OPER;
 
-	if (user_data->user_name) {
-		if (strlen(user_data->user_name) > 32) {
+	if (input_user_data->user_name) {
+		if (strlen(input_user_data->user_name) > 32) {
 			status[0] = isc_arg_gds;
 			status[1] = isc_usrname_too_long;
 			status[2] = isc_arg_end;
 			return status[1];
 		}
-
+		int l;
 		for (l = 0;
-			 user_data->user_name[l] != ' '
-			 && l < strlen(user_data->user_name); l++)
-			userInfo.user_name[l] = UPPER(user_data->user_name[l]);
+			 input_user_data->user_name[l] != ' '
+			 && l < strlen(input_user_data->user_name); l++)
+		{
+			userInfo.user_name[l] = UPPER(input_user_data->user_name[l]);
+		}
 
 		userInfo.user_name[l] = '\0';
 		userInfo.user_name_entered = true;
@@ -1112,18 +1121,20 @@ return 1;
 		return status[1];
 	}
 
-	if (user_data->sec_flags & sec_password_spec) {
-		if (strlen(user_data->password) > 8) {
+	if (input_user_data->sec_flags & sec_password_spec) {
+		if (strlen(input_user_data->password) > 8) {
 			status[0] = isc_arg_gds;
 			status[1] = isc_password_too_long;
 			status[2] = isc_arg_end;
 			return status[1];
 		}
-
+		int l;
 		for (l = 0;
-			 l < strlen(user_data->password) && user_data->password[l] != ' ';
+			 l < strlen(input_user_data->password) && input_user_data->password[l] != ' ';
 			 l++)
-			userInfo.password[l] = user_data->password[l];
+		{
+			userInfo.password[l] = input_user_data->password[l];
+		}
 
 		userInfo.password[l] = '\0';
 		userInfo.password_entered = true;
@@ -1135,8 +1146,8 @@ return 1;
 	}
 
 
-	if (user_data->sec_flags & sec_uid_spec) {
-		userInfo.uid = user_data->uid;
+	if (input_user_data->sec_flags & sec_uid_spec) {
+		userInfo.uid = input_user_data->uid;
 		userInfo.uid_specified = true;
 		userInfo.uid_entered = true;
 	}
@@ -1145,8 +1156,8 @@ return 1;
 		userInfo.uid_entered = false;
 	}
 
-	if (user_data->sec_flags & sec_gid_spec) {
-		userInfo.gid = user_data->gid;
+	if (input_user_data->sec_flags & sec_gid_spec) {
+		userInfo.gid = input_user_data->gid;
 		userInfo.gid_specified = true;
 		userInfo.gid_entered = true;
 	}
@@ -1155,9 +1166,9 @@ return 1;
 		userInfo.gid_entered = false;
 	}
 
-	if (user_data->sec_flags & sec_group_name_spec) {
-		int l = MIN(ALT_NAME_LEN - 1, strlen(user_data->group_name));
-		strncpy(userInfo.group_name, user_data->group_name, l);
+	if (input_user_data->sec_flags & sec_group_name_spec) {
+		int l = MIN(ALT_NAME_LEN - 1, strlen(input_user_data->group_name));
+		strncpy(userInfo.group_name, input_user_data->group_name, l);
 		userInfo.group_name[l] = '\0';
 		userInfo.group_name_entered = true;
 		userInfo.group_name_specified = true;
@@ -1167,9 +1178,9 @@ return 1;
 		userInfo.group_name_specified = false;
 	}
 
-	if (user_data->sec_flags & sec_first_name_spec) {
-		int l = MIN(NAME_LEN - 1, strlen(user_data->first_name));
-		strncpy(userInfo.first_name, user_data->first_name, l);
+	if (input_user_data->sec_flags & sec_first_name_spec) {
+		int l = MIN(NAME_LEN - 1, strlen(input_user_data->first_name));
+		strncpy(userInfo.first_name, input_user_data->first_name, l);
 		userInfo.first_name[l] = '\0';
 		userInfo.first_name_entered = true;
 		userInfo.first_name_specified = true;
@@ -1179,9 +1190,9 @@ return 1;
 		userInfo.first_name_specified = false;
 	}
 
-	if (user_data->sec_flags & sec_middle_name_spec) {
-		int l = MIN(NAME_LEN - 1, strlen(user_data->middle_name));
-		strncpy(userInfo.middle_name, user_data->middle_name, l);
+	if (input_user_data->sec_flags & sec_middle_name_spec) {
+		int l = MIN(NAME_LEN - 1, strlen(input_user_data->middle_name));
+		strncpy(userInfo.middle_name, input_user_data->middle_name, l);
 		userInfo.middle_name[l] = '\0';
 		userInfo.middle_name_entered = true;
 		userInfo.middle_name_specified = true;
@@ -1191,9 +1202,9 @@ return 1;
 		userInfo.middle_name_specified = false;
 	}
 
-	if (user_data->sec_flags & sec_last_name_spec) {
-		int l = MIN(NAME_LEN - 1, strlen(user_data->last_name));
-		strncpy(userInfo.last_name, user_data->last_name, l);
+	if (input_user_data->sec_flags & sec_last_name_spec) {
+		int l = MIN(NAME_LEN - 1, strlen(input_user_data->last_name));
+		strncpy(userInfo.last_name, input_user_data->last_name, l);
 		userInfo.last_name[l] = '\0';
 		userInfo.last_name_entered = true;
 		userInfo.last_name_specified = true;
@@ -1203,13 +1214,14 @@ return 1;
 		userInfo.last_name_specified = false;
 	}
 
-	db_handle = open_security_db(status,
-								 user_data->dba_user_name,
-								 user_data->dba_password,
-								 user_data->protocol, user_data->server);
+	FRBRD* db_handle = open_security_db(status,
+								 input_user_data->dba_user_name,
+								 input_user_data->dba_password,
+								 input_user_data->protocol, input_user_data->server);
 	if (db_handle) {
 		ISC_STATUS_ARRAY user_status;
-		retval = SECURITY_exec_line(status, db_handle, &userInfo, NULL, NULL);
+		const USHORT retval =
+			SECURITY_exec_line(status, db_handle, &userInfo, NULL, NULL);
 		/* if retval != 0 then there was a gsec error */
 		if (retval)
 			get_security_error(status, retval);
@@ -1239,7 +1251,7 @@ bool is_valid_server(ISC_STATUS* status, const TEXT* server)
 #endif
 
 
-FRBRD *open_security_db(
+FRBRD* open_security_db(
 					   ISC_STATUS* status,
 					   const TEXT* username,
 					   const TEXT* password, int protocol, const TEXT* server)
@@ -1260,11 +1272,8 @@ FRBRD *open_security_db(
 #ifdef BOOT_BUILD
 return 0;
 #else
-	char dpb_buffer[256];
 	TEXT default_security_db[MAXPATHLEN], connect_string[1024];
 	TEXT sec_server[256];
-
-	FRBRD* db_handle = NULL;
 
 	switch (protocol) {
 	case sec_protocol_tcpip:
@@ -1294,6 +1303,7 @@ return 0;
 	}
 
 	TEXT* database = connect_string;
+	char dpb_buffer[256];
 	char* dpb = dpb_buffer;
 	*dpb++ = isc_dpb_version1;
 
@@ -1311,8 +1321,9 @@ return 0;
 			*dpb++ = *p++;
 	}
 
-	SSHORT dpb_length = dpb - dpb_buffer;
+	const SSHORT dpb_length = dpb - dpb_buffer;
 
+	FRBRD* db_handle = NULL;
 	if (isc_attach_database(status, 0, database, &db_handle, dpb_length,
 		dpb_buffer))
 	{

@@ -240,6 +240,9 @@ typedef struct sfb
 
 /* Sort Context Block */
 
+// Used by SORT_init
+typedef bool (*FPTR_REJECT_DUP_CALLBACK)(const UCHAR*, const UCHAR*, void*);
+
 typedef struct scb
 {
 	struct scb *scb_next;		/* Next known sort in system */

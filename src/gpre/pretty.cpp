@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pretty.cpp,v 1.20 2003-11-28 06:48:12 robocop Exp $
+//	$Id: pretty.cpp,v 1.21 2003-12-22 10:00:14 robocop Exp $
 //
 
 #include "firebird.h"
@@ -560,18 +560,16 @@ static int print_char( CTL control, SSHORT offset)
 
 static int print_dyn_verb( CTL control, SSHORT level)
 {
-	int offset, length, size;
-	UCHAR operator_;
-	const char *p;
+	int offset = control->ctl_blr - control->ctl_blr_start;
+	UCHAR operator_ = BLR_BYTE;
 
-	offset = control->ctl_blr - control->ctl_blr_start;
-	operator_ = BLR_BYTE;
-
-	size = FB_NELEM(dyn_table);
-	if (operator_ > size || operator_ <= 0 || !(p = dyn_table[operator_]))
+    const char* p;
+	const int size = FB_NELEM(dyn_table);
+	if (operator_ > size || operator_ <= 0 || !(p = dyn_table[operator_])) {
 		return error(control, offset,
 					 "*** dyn operator %d is undefined ***\n",
 					 (int) operator_);
+	}
 
 	indent(control, level);
 	blr_format(control, p);
@@ -579,7 +577,8 @@ static int print_dyn_verb( CTL control, SSHORT level)
 	PUT_BYTE(' ');
 	++level;
 
-
+	int length;
+	
 	switch (operator_) {
 	case isc_dyn_drop_difference:
 	case isc_dyn_begin_backup:
@@ -604,7 +603,7 @@ static int print_dyn_verb( CTL control, SSHORT level)
 		PRINT_LINE;
 		if (length) {
 			control->ctl_level = level;
-			gds__print_blr((UCHAR *) control->ctl_blr,
+			gds__print_blr((const UCHAR*) control->ctl_blr,
 						   print_blr_line, control,
 						   control->ctl_language);
 			control->ctl_blr += length;
@@ -637,9 +636,9 @@ static int print_dyn_verb( CTL control, SSHORT level)
 
 	case isc_dyn_del_exception:
 		if (length = PRINT_WORD)
-			do
+			do {
 				PRINT_CHAR;
-			while (--length);
+			} while (--length);
 		return 0;
 
 	case isc_dyn_fld_not_null:
@@ -670,9 +669,9 @@ static int print_dyn_verb( CTL control, SSHORT level)
 	}
 
 	if (length = PRINT_WORD)
-		do
+		do {
 			PRINT_CHAR;
-		while (--length);
+		} while (--length);
 
 	PRINT_LINE;
 
@@ -760,12 +759,10 @@ static int print_line( CTL control, SSHORT offset)
 
 static SLONG print_long( CTL control, SSHORT offset)
 {
-	UCHAR v1, v2, v3, v4;
-
-	v1 = BLR_BYTE;
-	v2 = BLR_BYTE;
-	v3 = BLR_BYTE;
-	v4 = BLR_BYTE;
+	const UCHAR v1 = BLR_BYTE;
+	const UCHAR v2 = BLR_BYTE;
+	const UCHAR v3 = BLR_BYTE;
+	const UCHAR v4 = BLR_BYTE;
 	sprintf(control->ctl_ptr,
 			(control->
 			 ctl_language) ? "chr(%d),chr(%d),chr(%d),chr(%d) " :

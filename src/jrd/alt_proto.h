@@ -82,7 +82,7 @@ ISC_STATUS	API_ROUTINE gds__put_slice(ISC_STATUS*, FRBRD**, FRBRD**, GDS_QUAD*,
 										SSHORT, const SCHAR*, SSHORT, const SLONG*,
 										SLONG, void*);
 ISC_STATUS	API_ROUTINE gds__que_events(ISC_STATUS*, FRBRD**, SLONG*, SSHORT, const SCHAR*,
-										void(*)(), void*);
+										FPTR_EVENT_CALLBACK, void*);
 ISC_STATUS	API_ROUTINE gds__receive(ISC_STATUS*, FRBRD**, SSHORT, SSHORT,
 										void*, SSHORT);
 ISC_STATUS	API_ROUTINE gds__reconnect_transaction(ISC_STATUS*, FRBRD**, FRBRD**,
@@ -104,7 +104,7 @@ ISC_STATUS	API_ROUTINE gds__unwind_request(ISC_STATUS*, FRBRD**, SSHORT);
 ISC_STATUS	API_ROUTINE gds__ddl(ISC_STATUS*, FRBRD**, FRBRD**, SSHORT, const SCHAR*);
 void		API_ROUTINE gds__decode_date(const GDS_QUAD*, void*);
 void		API_ROUTINE gds__encode_date(const void*, GDS_QUAD*);
-int			API_ROUTINE gds__version(FRBRD**, void(*) (), void*);
+int			API_ROUTINE gds__version(FRBRD**, FPTR_VERSION_CALLBACK, void*);
 void		API_ROUTINE gds__set_debug(int);
 
 // isc_ functions which are not mapped to gds_ functions (the gds_ ones are in utl.cpp)
@@ -118,7 +118,7 @@ void		API_ROUTINE isc_event_block_s(SCHAR**, SCHAR**, USHORT, TEXT**, USHORT*);
 //
 SLONG		API_ROUTINE isc_free(SCHAR*);
 SLONG		API_ROUTINE isc_ftof(const SCHAR*, const USHORT, SCHAR*, const USHORT);
-ISC_STATUS	API_ROUTINE isc_print_blr(const SCHAR*, void (*) (), void*, SSHORT);
+ISC_STATUS	API_ROUTINE isc_print_blr(const SCHAR*, FPTR_PRINT_CALLBACK, void*, SSHORT);
 ISC_STATUS	API_ROUTINE isc_print_status(const ISC_STATUS*);
 void		API_ROUTINE isc_qtoq(const ISC_QUAD*, ISC_QUAD*);
 SLONG		API_ROUTINE isc_sqlcode(const ISC_STATUS*);
@@ -131,9 +131,9 @@ SLONG		API_ROUTINE isc_interprete_cpp(SCHAR* const, const ISC_STATUS**);
 
 // isc_ functions with no gds_ equivalence
 //
-int		API_ROUTINE isc_add_user(ISC_STATUS*, USER_SEC_DATA*);
-int		API_ROUTINE isc_delete_user(ISC_STATUS*, USER_SEC_DATA*);
-int		API_ROUTINE isc_modify_user(ISC_STATUS*, USER_SEC_DATA*);
+ISC_STATUS	API_ROUTINE isc_add_user(ISC_STATUS*, const USER_SEC_DATA*);
+ISC_STATUS	API_ROUTINE isc_delete_user(ISC_STATUS*, const USER_SEC_DATA*);
+ISC_STATUS	API_ROUTINE isc_modify_user(ISC_STATUS*, const USER_SEC_DATA*);
 
 } // extern "C"
 

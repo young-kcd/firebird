@@ -1888,7 +1888,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 
 		if (request->req_operation == jrd_req::req_evaluate &&
 			(--tdbb->tdbb_quantum < 0) && !tdbb->tdbb_inhibit)
-			JRD_reschedule(tdbb, 0, TRUE);
+			JRD_reschedule(tdbb, 0, true);
 
 #endif
 

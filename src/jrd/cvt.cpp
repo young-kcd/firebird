@@ -194,7 +194,7 @@ static const SQUAD quad_max_int = { LONG_MAX, -1 };
 #endif
 #endif
 
-static const TEXT *const months[] = {
+static const TEXT* const months[] = {
 	"JANUARY",
 	"FEBRUARY",
 	"MARCH",
@@ -229,7 +229,6 @@ double CVT_date_to_double(const dsc* desc, FPTR_ERROR err)
  *
  **************************************/
 	SLONG temp[2], *date;
-	volatile double retval;
 
 /* If the input descriptor is not in date form, convert it. */
 
@@ -269,7 +268,7 @@ statement, am assigning the value to a local volatile double
 variable and returning that. This is to prevent a specific kind of
 precision error caused on Intel platforms (SCO and Linux) due
 to FPU register being 80 bits long and double being 64 bits long */
-
+	volatile double retval;
 	retval =
 		date[0] +
 		(double) date[1] / (24. * 60. * 60. * ISC_TIME_SECONDS_PRECISION);
@@ -313,7 +312,6 @@ double CVT_get_double(const dsc* desc, FPTR_ERROR err)
  **************************************/
 	double value;
 	SSHORT scale;
-
 
 	switch (desc->dsc_dtype) {
 	case dtype_short:
@@ -664,17 +662,19 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 			else if (fraction < -4)
 				value--;
 		}
-		else
+		else {
 			do {
 				value /= 10;
 			} while (--scale);
+		}
 	}
-	else if (scale < 0)
+	else if (scale < 0) {
 		do {
 			if (value > LONG_LIMIT || value < -LONG_LIMIT)
 				(*err) (isc_arith_except, 0);
 			value *= 10;
 		} while (++scale);
+	}
 
 	return value;
 }
@@ -764,7 +764,8 @@ UCHAR CVT_get_numeric(const UCHAR* string,
 		conversion_error(&desc, err);
 
 	if ((p < end) ||			/* there is an exponent */
-		((value < 0) && (sign != -1))) {	/* MAX_SINT64+1 wrapped around */
+		((value < 0) && (sign != -1))) /* MAX_SINT64+1 wrapped around */
+	{
 		/* convert to double */
 		*ptr = CVT_get_double(&desc, err);
 		return dtype_double;
@@ -916,7 +917,8 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 #else
 	if (scale > 0) {
 		if (desc->dsc_dtype == dtype_short ||
-			desc->dsc_dtype == dtype_long || desc->dsc_dtype == dtype_quad) {
+			desc->dsc_dtype == dtype_long || desc->dsc_dtype == dtype_quad)
+		{
 			fraction = 0;
 			do {
 				if (scale == 1)
@@ -934,17 +936,19 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 			else if (fraction < -4)
 				value--;
 		}
-		else
+		else {
 			do {
 				value /= 10;
 			} while (--scale);
+		}
 	}
-	else
+	else {
 		do {
 			if (value > QUAD_LIMIT || value < -QUAD_LIMIT)
 				(*err) (isc_arith_except, 0);
 			value *= 10;
 		} while (++scale);
+	}
 #endif
 
 	return value;
@@ -1063,7 +1067,8 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 
 	if (scale > 0) {
 		if (desc->dsc_dtype == dtype_short ||
-			desc->dsc_dtype == dtype_long || desc->dsc_dtype == dtype_int64) {
+			desc->dsc_dtype == dtype_long || desc->dsc_dtype == dtype_int64)
+		{
 			fraction = 0;
 			do {
 				if (scale == 1)
@@ -1081,17 +1086,19 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 			else if (fraction < -4)
 				value--;
 		}
-		else
+		else {
 			do {
 				value /= 10;
 			} while (--scale);
+		}
 	}
-	else if (scale < 0)
+	else if (scale < 0) {
 		do {
 			if (value > INT64_LIMIT || value < -INT64_LIMIT)
 				(*err) (isc_arith_except, 0);
 			value *= 10;
 		} while (++scale);
+	}
 
 	return value;
 }
@@ -1180,12 +1187,11 @@ GDS_DATE CVT_get_sql_date(const dsc* desc, FPTR_ERROR err)
  *      Convert something arbitrary to a SQL date value
  *
  **************************************/
-	DSC temp_desc;
-	GDS_DATE value;
-
 	if (desc->dsc_dtype == dtype_sql_date)
 		return *((GDS_DATE *) desc->dsc_address);
 
+	DSC temp_desc;
+	GDS_DATE value;
 	memset(&temp_desc, 0, sizeof(temp_desc));
 	temp_desc.dsc_dtype = dtype_sql_date;
 	temp_desc.dsc_address = (UCHAR *) &value;
@@ -1206,12 +1212,11 @@ GDS_TIME CVT_get_sql_time(const dsc* desc, FPTR_ERROR err)
  *      Convert something arbitrary to a SQL time value
  *
  **************************************/
-	DSC temp_desc;
-	GDS_TIME value;
-
 	if (desc->dsc_dtype == dtype_sql_time)
 		return *((GDS_TIME *) desc->dsc_address);
 
+	DSC temp_desc;
+	GDS_TIME value;
 	memset(&temp_desc, 0, sizeof(temp_desc));
 	temp_desc.dsc_dtype = dtype_sql_time;
 	temp_desc.dsc_address = (UCHAR *) &value;
@@ -1232,12 +1237,11 @@ GDS_TIMESTAMP CVT_get_timestamp(const dsc* desc, FPTR_ERROR err)
  *      Convert something arbitrary to a SQL timestamp
  *
  **************************************/
-	DSC temp_desc;
-	GDS_TIMESTAMP value;
-
 	if (desc->dsc_dtype == dtype_timestamp)
 		return *((GDS_TIMESTAMP *) desc->dsc_address);
 
+	DSC temp_desc;
+	GDS_TIMESTAMP value;
 	memset(&temp_desc, 0, sizeof(temp_desc));
 	temp_desc.dsc_dtype = dtype_timestamp;
 	temp_desc.dsc_address = (UCHAR *) &value;
@@ -1777,16 +1781,15 @@ static void conversion_error(const dsc* desc, FPTR_ERROR err)
  *
  **************************************/
 	const char* p;
-	const char* string;
 	TEXT s[40];
-	USHORT length;
 
 	if (desc->dsc_dtype == dtype_blob)
 		p = "BLOB";
 	else if (desc->dsc_dtype == dtype_array)
 		p = "ARRAY";
 	else {
-		length =
+        const char* string;
+		const USHORT length =
 			CVT_make_string(desc, ttype_ascii, &string,
 							(VARY *) s, sizeof(s), err);
 #if (defined REQUESTER || defined SUPERCLIENT)
@@ -1863,16 +1866,17 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 
 	if (from->dsc_dtype != dtype_sql_time) {
 
-		if (from->dsc_dtype == dtype_sql_date || !version4)
+		if (from->dsc_dtype == dtype_sql_date || !version4) {
 			sprintf(p, "%4.4d-%2.2d-%2.2d",
 					times.tm_year + 1900, times.tm_mon + 1, times.tm_mday);
-		else
+		}
+		else {
 			/* Prior to BLR version 5 - timestamps where converted to
 			   text in the dd-Mon-yyyy format */
 			sprintf(p, "%d-%.3s-%d",
 					times.tm_mday,
 					months[times.tm_mon], times.tm_year + 1900);
-
+		}
 		while (*p)
 			p++;
 	};
@@ -1885,19 +1889,22 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 /* Add the time part for data types that include it */
 
 	if (from->dsc_dtype != dtype_sql_date) {
-		if (from->dsc_dtype == dtype_sql_time || !version4)
+		if (from->dsc_dtype == dtype_sql_time || !version4) {
 			sprintf(p, "%2.2d:%2.2d:%2.2d.%4.4d",
 					times.tm_hour, times.tm_min, times.tm_sec,
 					(USHORT) (date.timestamp_time %
 							  ISC_TIME_SECONDS_PRECISION));
+		}
 		else if (times.tm_hour || times.tm_min || times.tm_sec
 				 || date.timestamp_time)
+		{
 			/* Timestamp formating prior to BLR Version 5 is slightly
 			   different */
 			sprintf(p, " %d:%.2d:%.2d.%.4d",
 					times.tm_hour, times.tm_min, times.tm_sec,
 					(USHORT) (date.timestamp_time %
 							  ISC_TIME_SECONDS_PRECISION));
+		}
 		while (*p)
 			p++;
 	};
@@ -1911,13 +1918,12 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 	desc.dsc_ttype = ttype_ascii;
 	desc.dsc_length = (p - temp);
 	if (from->dsc_dtype == dtype_timestamp && version4) {
-		USHORT l;
 		/* Prior to BLR Version5, when a timestamp is converted to a string it
 		   is silently truncated if the destination string is not large enough */
 
 		fb_assert(to->dsc_dtype <= dtype_any_text);
 
-		l = (to->dsc_dtype == dtype_cstring) ? 1 :
+		const USHORT l = (to->dsc_dtype == dtype_cstring) ? 1 :
 			(to->dsc_dtype == dtype_varying) ? sizeof(USHORT) : 0;
 		desc.dsc_length = MIN(desc.dsc_length, (to->dsc_length - l));
 	}
@@ -2340,10 +2346,11 @@ static void integer_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
    (varying string) */
 
 	if (to->dsc_dtype == dtype_text) {
-		if ((l = to->dsc_length - length) > 0)
+		if ((l = to->dsc_length - length) > 0) {
 			do {
 				*q++ = ' ';
 			} while (--l);
+		}
 		return;
 	}
 
@@ -2414,8 +2421,7 @@ static void string_to_datetime(
  *            components.
  *
  **************************************/
-	USHORT n, components[7];
-	SSHORT description[7];
+
 /* Values inside of description
      > 0 is number of digits 
        0 means missing 
@@ -2440,6 +2446,8 @@ static void string_to_datetime(
 	const char* p = string;
 	const char* const end = p + length;
 
+	USHORT n, components[7];
+	SSHORT description[7];
 	memset(components, 0, sizeof(components));
 	memset(description, 0, sizeof(description));
 
@@ -2472,11 +2480,9 @@ static void string_to_datetime(
 			description[i] = precision;
 		}
 		else if (LETTER7(c) && !have_english_month) {
-			TEXT temp[sizeof(YESTERDAY) + 1], *t;
-			const TEXT *const * month_ptr;
-			const TEXT *m;
+			TEXT temp[sizeof(YESTERDAY) + 1];
 
-			t = temp;
+			TEXT* t = temp;
 			while ((p < end) && (t < &temp[sizeof(temp) - 1])) {
 				c = UPPER7(*p);
 				if (!LETTER7(c))
@@ -2492,12 +2498,16 @@ static void string_to_datetime(
 				return;
 			}
 
-			month_ptr = months;
+			const TEXT* const* month_ptr = months;
 			while (true) {
 				/* Month names are only allowed in first 2 positions */
 				if (*month_ptr && i < 2) {
-					for (t = temp, m = *month_ptr++; *t && *t == *m;
-						 t++, m++);
+					t = temp;
+					const TEXT* m = *month_ptr++;
+					while (*t && *t == *m) {
+						++t;
+						++m;
+					}
 					if (!*t)
 						break;
 				}
@@ -2632,7 +2642,8 @@ static void string_to_datetime(
 			description[position_month] > 2
 			|| description[position_month] == 0
 			|| description[position_day] > 2
-			|| description[position_day] <= 0) {
+			|| description[position_day] <= 0)
+		{
 			conversion_error(desc, err);
 			return;
 		}

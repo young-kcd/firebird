@@ -211,7 +211,7 @@ static int opt_debug_flag = DEBUG_NONE;
 /* enumeration of sort datatypes */
 
 static const UCHAR sort_dtypes[] = {
-	0,							/* dtype_null */
+	0,							/* dtype_unknown */
 	SKD_text,					/* dtype_text */
 	SKD_cstring,				/* dtype_cstring */
 	SKD_varying,				/* dtype_varying */
@@ -6633,7 +6633,8 @@ static void set_rse_inactive(CSB csb, RSE rse)
 	JRD_NOD node, *ptr, *end;
 	SSHORT stream;
 	for (ptr = rse->rse_relation, end = ptr + rse->rse_count;
-		 ptr < end; ptr++) {
+		 ptr < end; ptr++)
+	{
 		node = *ptr;
 		if (node->nod_type != nod_rse) {
 			stream = (USHORT)(ULONG) node->nod_arg[STREAM_INDEX(node)];

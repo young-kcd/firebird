@@ -31,9 +31,12 @@ extern "C" {
 
 mod*	FLU_lookup_module(TEXT*);
 void	FLU_unregister_module(mod*);
-int (*ISC_lookup_entrypoint(TEXT*, TEXT*, const TEXT*, bool)) (void);
-int (*FUNCTIONS_entrypoint(TEXT*, TEXT*)) (void);
-int (*BUILTIN_entrypoint(TEXT*, TEXT*)) (void);
+// int (*ISC_lookup_entrypoint(TEXT*, TEXT*, const TEXT*, bool)) (void);
+// int (*FUNCTIONS_entrypoint(TEXT*, TEXT*)) (void);
+// int (*BUILTIN_entrypoint(TEXT*, TEXT*)) (void);
+FPTR_INT ISC_lookup_entrypoint(TEXT*, TEXT*, const TEXT*, bool);
+FPTR_INT FUNCTIONS_entrypoint(char*, char*);
+FPTR_INT BUILTIN_entrypoint(const TEXT*, const TEXT*);
 
 /*
    This shouldn't be in a production server,
@@ -52,3 +55,4 @@ int (*BUILTIN_entrypoint(TEXT*, TEXT*)) (void);
 #endif
 
 #endif // JRD_FLU_PROTO_H
+

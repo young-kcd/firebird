@@ -29,7 +29,7 @@
 #include "../jrd/block_cache.h"
 #include "../jrd/lls.h"
 
-TEXT* ALL_cstring(TEXT* in_string);
+TEXT* ALL_cstring(const TEXT* in_string);
 void ALL_fini(void);
 void ALL_init(void);
 //void ALL_push(BLK , LLS *);

@@ -56,12 +56,12 @@ void		CCH_release(TDBB, win*, BOOLEAN);
 void		CCH_release_and_free(win*);
 void		CCH_release_exclusive(TDBB);
 void		CCH_release_journal(TDBB, SLONG);
-BOOLEAN		CCH_rollover_to_shadow(dbb*, fil*, BOOLEAN);
+bool		CCH_rollover_to_shadow(dbb*, fil*, const bool);
 void		CCH_unwind(TDBB, BOOLEAN);
 BOOLEAN		CCH_validate(win*);
 void		CCH_flush_database(TDBB tdbb);
-BOOLEAN		CCH_write_all_shadows(TDBB, sdw*, bdb*,
-					 ISC_STATUS *, USHORT, BOOLEAN);
+bool		CCH_write_all_shadows(TDBB, sdw*, bdb*,
+					 ISC_STATUS*, USHORT, const bool);
 
 /* macros for dealing with cache pages */
 

@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.34 2003-12-14 04:23:39 skidder Exp $
+ *  $Id: fb_types.h,v 1.35 2003-12-22 10:00:19 robocop Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -124,11 +124,11 @@ typedef struct lstring LSTRING;
 
 
 typedef unsigned char BOOLEAN;
-typedef char TEXT;				// To be expunged over time
-//typedef unsigned char STEXT;	Signed text - not used
-//typedef unsigned char UTEXT;	Unsigned text - not used
-typedef unsigned char BYTE;		// Unsigned byte - common
-//typedef char SBYTE;			Signed byte - not used
+typedef char TEXT;				/* To be expunged over time */
+/*typedef unsigned char STEXT;	Signed text - not used
+typedef unsigned char UTEXT;	Unsigned text - not used */
+typedef unsigned char BYTE;		/* Unsigned byte - common */
+/*typedef char SBYTE;			Signed byte - not used */
 typedef long ISC_STATUS;
 typedef long IPTR;
 typedef unsigned long U_IPTR;
@@ -137,10 +137,10 @@ typedef void (*FPTR_VOID_PTR) (void*);
 typedef int (*FPTR_INT) ();
 typedef int (*FPTR_INT_VOID_PTR) (void*);
 typedef void (*FPTR_PRINT_CALLBACK) (void*, SSHORT, const char*);
-#ifdef __cplusplus
-// SORT_init uses this signature for a callback
-typedef bool (*FPTR_REJECT_DUP_CALLBACK)(const UCHAR*, const UCHAR*, void*);
-#endif
+/* Used for isc_version */
+typedef void (*FPTR_VERSION_CALLBACK)(void*, const char*);
+/* Used for isc_que_events and internal functions */
+typedef void (*FPTR_EVENT_CALLBACK)(void*, USHORT, const UCHAR*);
 
 // The type of JRD's ERR_post, DSQL's ERRD_post & post_error,
 // REMOTE's move_error & GPRE's post_error.

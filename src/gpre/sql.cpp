@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.36 2003-11-28 06:48:12 robocop Exp $
+//	$Id: sql.cpp,v 1.37 2003-12-22 10:00:14 robocop Exp $
 //
 
 #include "firebird.h"
@@ -6002,7 +6002,7 @@ static USHORT resolve_dtypes(KWWORDS typ,
 						"Encountered column type DATE which is ambiguous in dialect %d\n",
 						sw_sql_dialect);
 				PAR_error(err_mesg);
-				return dtype_null;	// TMN: FIX FIX 
+				return dtype_unknown;	// TMN: FIX FIX
 				/* return; */
 			default:
 				sprintf(err_mesg,
@@ -6022,7 +6022,7 @@ static USHORT resolve_dtypes(KWWORDS typ,
 						"Encountered column type DATE which is ambiguous in dialect %d\n",
 						sw_sql_dialect);
 				PAR_error(err_mesg);
-				return dtype_null;	// TMN: FIX FIX 
+				return dtype_unknown;	// TMN: FIX FIX
 				/* return; */
 			default:
 				return dtype_sql_date;
@@ -6035,7 +6035,7 @@ static USHORT resolve_dtypes(KWWORDS typ,
 			sprintf(err_mesg,
 					"Encountered column type TIME which is not supported by pre 6.0 Servers\n");
 			PAR_error(err_mesg);
-			return dtype_null;	// TMN: FIX FIX 
+			return dtype_unknown;	// TMN: FIX FIX
 			/* return; */
 		}
 		else
@@ -6052,10 +6052,10 @@ static USHORT resolve_dtypes(KWWORDS typ,
 		break;
 	}
 //  
-//  TMN: FIX FIX Added "return dtype_null;" to silence compiler, but
+//  TMN: FIX FIX Added "return dtype_unknown;" to silence compiler, but
 //  this is really a logic error we have to fix.
 //  
-	return dtype_null;
+	return dtype_unknown;
 }
 
 

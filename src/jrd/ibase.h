@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.61 2003-12-21 23:54:24 skidder Exp $
+$Id: ibase.h,v 1.62 2003-12-22 10:00:47 robocop Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -267,8 +267,10 @@ typedef struct paramvary {
 /* Note that dtype_null actually means that we do not yet know the
    dtype for this descriptor.  A nice cleanup item would be to globally
    change it to dtype_unknown.  --chrisj 1999-02-17 */
+/* Name changed on 2003.12.17 by CVC. */
 
-#define dtype_null	0
+/* #define dtype_null      0 Enable it if some apps use the old name */
+#define dtype_unknown	0
 #define dtype_text	1
 #define dtype_cstring	2
 #define dtype_varying	3
@@ -363,11 +365,11 @@ ISC_STATUS ISC_EXPORT isc_attach_database(ISC_STATUS*,
 										  short,
 										  const char*);
 
-ISC_STATUS ISC_EXPORT isc_array_gen_sdl(ISC_STATUS *,
-										ISC_ARRAY_DESC *,
-										short *,
-										char *,
-										short *);
+ISC_STATUS ISC_EXPORT isc_array_gen_sdl(ISC_STATUS*,
+										const ISC_ARRAY_DESC*,
+										short*,
+										char*,
+										short*);
 
 ISC_STATUS ISC_EXPORT isc_array_get_slice(ISC_STATUS*,
 										  isc_db_handle*,
@@ -692,7 +694,7 @@ ISC_STATUS ISC_EXPORT isc_que_events(ISC_STATUS*,
 									 ISC_LONG*,
 									 short,
 									 const char*,
-									 isc_callback,
+									 FPTR_EVENT_CALLBACK,
 									 void*);
 
 ISC_STATUS ISC_EXPORT isc_rollback_retaining(ISC_STATUS *,
@@ -775,11 +777,11 @@ typedef struct {
 	char *dba_password;			/* the dba password */
 } USER_SEC_DATA;
 
-int ISC_EXPORT isc_add_user(ISC_STATUS*, USER_SEC_DATA*);
+ISC_STATUS ISC_EXPORT isc_add_user(ISC_STATUS*, const USER_SEC_DATA*);
 
-int ISC_EXPORT isc_delete_user(ISC_STATUS*, USER_SEC_DATA*);
+ISC_STATUS ISC_EXPORT isc_delete_user(ISC_STATUS*, const USER_SEC_DATA*);
 
-int ISC_EXPORT isc_modify_user(ISC_STATUS*, USER_SEC_DATA*);
+ISC_STATUS ISC_EXPORT isc_modify_user(ISC_STATUS*, const USER_SEC_DATA*);
 
 /**********************************/
 /*  Other OSRI functions          */
@@ -1145,7 +1147,7 @@ ISC_LONG ISC_EXPORT isc_ftof(const char*,
 							 const unsigned short);
 
 ISC_STATUS ISC_EXPORT isc_print_blr(const char*,
-									isc_callback,
+									FPTR_PRINT_CALLBACK,
 									void*,
 									short);
 
@@ -1162,9 +1164,9 @@ void ISC_EXPORT isc_vtov(const char*,
 						 char*,
 						 short);
 
-int ISC_EXPORT isc_version(isc_db_handle *,
-						   isc_callback,
-						   void *);
+int ISC_EXPORT isc_version(isc_db_handle*,
+						   FPTR_VERSION_CALLBACK,
+						   void*);
 
 ISC_LONG ISC_EXPORT isc_reset_fpe(unsigned short);
 

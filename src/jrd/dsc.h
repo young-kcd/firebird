@@ -96,8 +96,9 @@ typedef struct alt_dsc {
 /* Note that dtype_null actually means that we do not yet know the
    dtype for this descriptor.  A nice cleanup item would be to globally
    change it to dtype_unknown.  --chrisj 1999-02-17 */
+// Name changed on 2003.12.17 by CVC.
 
-#define dtype_null	0
+#define dtype_unknown	0
 #define dtype_text	1
 #define dtype_cstring	2
 #define dtype_varying	3

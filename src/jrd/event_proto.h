@@ -34,7 +34,7 @@ void EVENT_deliver();
 struct evh* EVENT_init(ISC_STATUS*, USHORT);
 int EVENT_post(ISC_STATUS*, USHORT, TEXT*, USHORT, TEXT*, USHORT);
 SLONG EVENT_que(ISC_STATUS*, SLONG, USHORT, const TEXT*, USHORT, const UCHAR*,
-				FPTR_VOID, void*);
+				FPTR_EVENT_CALLBACK, void*);
 
 #endif // JRD_EVENT_PROTO_H
 

@@ -88,26 +88,21 @@ ISC_STATUS BLF_close_blob(TDBB tdbb, CTL * filter_handle)
  *	Close a blob and close all the intermediate filters.
  *
  **************************************/
-	CTL control, next;
-	FPTR_BFILTER_CALLBACK callback;
-	ISC_STATUS status;
-	ISC_STATUS *user_status;
-
-	user_status = tdbb->tdbb_status_vector;
+	ISC_STATUS* user_status = tdbb->tdbb_status_vector;
 
 /* Walk the chain of filters to find the ultimate source */
-
+	CTL next;
 	for (next = *filter_handle; next->ctl_to_sub_type;
 		 next = next->ctl_source_handle);
 
-	callback = next->ctl_source;
-	status = FB_SUCCESS;
+	FPTR_BFILTER_CALLBACK callback = next->ctl_source;
 
 	START_CHECK_FOR_EXCEPTIONS( (TEXT*) next->ctl_exception_message)
 
 /* Sign off from filter */
 /* Walk the chain again, telling each filter stage to close */
-		for (next = *filter_handle; (control = next);) {
+	CTL control;
+	for (next = *filter_handle; (control = next);) {
 		/* Close this stage of the filter */
 
 		control->ctl_status = user_status;
@@ -128,7 +123,7 @@ ISC_STATUS BLF_close_blob(TDBB tdbb, CTL * filter_handle)
 
 	END_CHECK_FOR_EXCEPTIONS((TEXT*)next->ctl_exception_message)
 
-		return 0;
+	return FB_SUCCESS;
 }
 
 
@@ -175,17 +170,15 @@ ISC_STATUS BLF_get_segment(TDBB tdbb,
  *	Get segment from a blob filter.
  *
  **************************************/
+	ISC_STATUS* user_status = tdbb->tdbb_status_vector;
+
 	CTL control;
-	ISC_STATUS status;
-	ISC_STATUS *user_status;
-
-	user_status = tdbb->tdbb_status_vector;
-
 	control = *filter_handle;
 	control->ctl_status = user_status;
 	control->ctl_buffer = buffer;
 	control->ctl_buffer_length = buffer_length;
 
+	ISC_STATUS status;
 	START_CHECK_FOR_EXCEPTIONS((TEXT*) control->ctl_exception_message)
 
 	user_status[0] = isc_arg_gds;
@@ -222,21 +215,17 @@ BLF BLF_lookup_internal_filter(TDBB tdbb, SSHORT from, SSHORT to)
  *	Lookup blob filter in data structures.
  *
  **************************************/
-	BLF result;
-	STR exception_msg;
-	DBB dbb;
-
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 /* Check for system defined filter */
 
 	if (to == BLOB_text && from >= 0 && from < FB_NELEM(filters)) {
-		result = FB_NEW(*dbb->dbb_permanent) blf;
+		blf* result = FB_NEW(*dbb->dbb_permanent) blf;
 		result->blf_next = NULL;
 		result->blf_from = from;
 		result->blf_to = to;
 		result->blf_filter = filters[from];
-		exception_msg = FB_NEW_RPT(*dbb->dbb_permanent, 100) str;
+		str* exception_msg = FB_NEW_RPT(*dbb->dbb_permanent, 100) str;
 		// SIGN ISSUE, arg 1
 		sprintf((char*)exception_msg->str_data,
 				"Exception occurred in system provided internal filters for filtering internal subtype %d to text.",
@@ -295,12 +284,9 @@ ISC_STATUS BLF_put_segment(TDBB tdbb,
  *	Get segment from a blob filter.
  *
  **************************************/
+	ISC_STATUS* user_status = tdbb->tdbb_status_vector;
+
 	CTL control;
-	ISC_STATUS status;
-	ISC_STATUS *user_status;
-
-	user_status = tdbb->tdbb_status_vector;
-
 	control = *filter_handle;
 	control->ctl_status = user_status;
 	// If the filter is ill behaved, it won't respect the constness
@@ -309,6 +295,7 @@ ISC_STATUS BLF_put_segment(TDBB tdbb,
 	control->ctl_buffer = const_cast<UCHAR*>(buffer);
 	control->ctl_buffer_length = length;
 
+    ISC_STATUS status;
 	START_CHECK_FOR_EXCEPTIONS( (TEXT*) control->ctl_exception_message)
 
 	user_status[0] = isc_arg_gds;
@@ -348,17 +335,11 @@ static ISC_STATUS open_blob(
  *	Open a blob and invoke a filter.
  *
  **************************************/
-	ISC_STATUS status;
-	CTL prior, control;
+	DBB dbb = tdbb->tdbb_database;
+	ISC_STATUS* user_status = tdbb->tdbb_status_vector;
+
 	SSHORT from, to;
 	USHORT from_charset, to_charset;
-	ctl temp;
-	DBB dbb;
-	ISC_STATUS *user_status;
-
-	dbb = tdbb->tdbb_database;
-	user_status = tdbb->tdbb_status_vector;
-
 	gds__parse_bpb2(bpb_length, bpb, &from, &to, &from_charset, &to_charset);
 
 	if ((!filter) || (!filter->blf_filter)) {
@@ -380,13 +361,13 @@ static ISC_STATUS open_blob(
 
 /* utilize a temporary control block just to pass the three 
    necessary internal parameters to the filter */
-
+	ctl temp;
 	temp.ctl_internal[0] = dbb;
 	temp.ctl_internal[1] = tra_handle;
 	temp.ctl_internal[2] = NULL;
 	// CVC: Using ISC_STATUS (SLONG) to return a pointer!!!
 	// If we change the function signature, we'll change the public API.
-	prior = (CTL) (*callback) (ACTION_alloc, &temp);
+	ctl* prior = (CTL) (*callback) (ACTION_alloc, &temp); // ISC_STATUS to pointer!
 	prior->ctl_source = callback;
 	prior->ctl_status = user_status;
 
@@ -398,7 +379,7 @@ static ISC_STATUS open_blob(
 		return user_status[1];
 	}
 
-	control = (CTL) (*callback) (ACTION_alloc, &temp);
+	ctl* control = (CTL) (*callback) (ACTION_alloc, &temp); // ISC_STATUS to pointer!
 	control->ctl_source = filter->blf_filter;
 	control->ctl_source_handle = prior;
 	control->ctl_status = user_status;
@@ -425,17 +406,17 @@ static ISC_STATUS open_blob(
 	control->ctl_bpb = bpb;
 	control->ctl_bpb_length = bpb_length;
 
+	ISC_STATUS status;
 	START_CHECK_FOR_EXCEPTIONS( (TEXT*) control->ctl_exception_message)
 
 /* Initialize filter */
-		status = (*filter->blf_filter) (action, control);
+	status = (*filter->blf_filter) (action, control);
 
 	END_CHECK_FOR_EXCEPTIONS((TEXT*)control->ctl_exception_message)
 
-		if (status) {
+	if (status) {
 		ISC_STATUS_ARRAY local_status;
-		ISC_STATUS *tmp_status;
-		tmp_status = tdbb->tdbb_status_vector;
+		ISC_STATUS* tmp_status = tdbb->tdbb_status_vector;
 		tdbb->tdbb_status_vector = local_status;
 		/* This is OK to do since we know that we will return
 		 * from  BLF_close_blob, and get a chance to set the 

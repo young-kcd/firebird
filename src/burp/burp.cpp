@@ -156,7 +156,7 @@ static inline void exit_local(int code, TGBL tdgbl)
 		Firebird::status_exception::raise(1);
 }
 
-static int output_svc(svc* output_data, const UCHAR * output_buf)
+static int output_svc(svc* output_data, const UCHAR* output_buf)
 {
 /**************************************
  *
@@ -186,7 +186,7 @@ int BURP_main(svc* service)
  *	Entrypoint for GBAK via services manager.
  *
  **************************************/
-	int exit_code = common_main(service->svc_argc, service->svc_argv,
+	const int exit_code = common_main(service->svc_argc, service->svc_argv,
 						  SVC_output, service);
 
 	service->svc_handle = 0;
@@ -215,18 +215,19 @@ int CLIB_ROUTINE main(int argc, char* argv[])
  *	Parse and interpret command line, then "do the right thing."
  *
  **************************************/
-	TEXT *sw_user, *sw_password, *sw_service;
-	TEXT *d_user, *d_password, *d_service;
-
-// If a "-service" switch is specified then use Admin APIs 
-	TEXT **argvp = argv;
-	TEXT **end = argvp + argc;
+// If a "-service" switch is specified then use Admin APIs
+// The code will alter the command line.
+	TEXT** argvp = argv;
+	const TEXT* const* const end = argvp + argc;
 	argvp++;
 
 // Initialize data 
 	USHORT total = 0;
 	bool flag_restore, flag_verbose, err;
 	flag_restore = flag_verbose = err = false;
+	
+	TEXT *sw_user, *sw_password, *sw_service;
+	TEXT *d_user, *d_password, *d_service;
 	sw_user = sw_password = sw_service = d_user = d_password = d_service = NULL;
 
 /* Parse the command line for the -USER, -PASSWORD, -SERVICE,
@@ -235,7 +236,7 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 
 	while (argvp < end && !err)
 	{
-		TEXT *string = *argvp++;
+		TEXT* string = *argvp++;
 		if (*string != '-') {
 			total += strlen(string) + 1;
 			continue;
@@ -279,7 +280,8 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 		case IN_SW_BURP_SE:	// service name 
 			if (argvp >= end) {
 				err = true;
-			} else {
+			}
+			else {
 				sw_service = string;
 				d_service = *argvp++;
 			}
@@ -301,7 +303,7 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 		 * To make this more efficiently the isc_spb_options is used.
 		 * This allows us to skip a conversion from the gbak command line
 		 * switches to service parameter block in here as well as vice versa
-		 * conversion within svc.c
+		 * conversion within svc.cpp
 		 *
 		 * If -USER and -PASSWORD switches are used by the user within
 		 * the gbak command line then we have to eliminate them from there. The
@@ -310,6 +312,7 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 		 * the -SERVER switch because the switch has already been processed.
 		 */
 
+		// Warning: altering command line.
 		if (sw_user)
 			*sw_user = '\0';
 		if (sw_password)
@@ -344,11 +347,11 @@ static int output_main(svc* output_data, const UCHAR* output_buf)
 }
 
 static int api_gbak(int argc,
-					char *argv[],
+					char* argv[],
 					USHORT length,
-					TEXT * password,
-					TEXT * user,
-					TEXT * service,
+					TEXT* password,
+					TEXT* user,
+					TEXT* service,
 					bool restore,
 					bool verbose)
 {
@@ -362,22 +365,19 @@ static int api_gbak(int argc,
  *	Run gbak using services APIs
  *
  **********************************************/
-	ISC_STATUS_ARRAY status;
- 	char sendbuf[] = { isc_info_svc_line };
-	char respbuf[1024];
-
 	tgbl ldgbl;
 	tgbl* tdgbl = &ldgbl;
 	SET_THREAD_DATA;
 	memset((void *) tdgbl, 0, sizeof(tgbl));
 	tdgbl->output_proc = output_main;
 
-    TEXT *usr, *pswd;
+    const TEXT* usr;
 	if (!user)
 		usr = getenv("ISC_USER");
 	else
 		usr = user;
 
+	const TEXT* pswd;
 	if (!password)
 		pswd = getenv("ISC_PASSWORD");
 	else
@@ -397,6 +397,8 @@ static int api_gbak(int argc,
 	   'isc_spb_options'
 	   'length'
 	   "options" */
+	ISC_STATUS_ARRAY status;
+	
 	if (spb == NULL) {
 		status[0] = isc_arg_gds;
 		status[1] = isc_virmemexh;
@@ -406,7 +408,7 @@ static int api_gbak(int argc,
 		return FINI_ERROR;
 	}
 
-	char *spb_ptr = spb;
+	char* spb_ptr = spb;
 	*spb_ptr++ = isc_spb_version;
 	*spb_ptr++ = isc_spb_current_version;
 
@@ -513,7 +515,9 @@ static int api_gbak(int argc,
 		return FINI_ERROR;
 	}
 
-	const char *sl;
+    const char sendbuf[] = { isc_info_svc_line };
+	char respbuf[1024];
+	const char* sl;
 	do {
 		if (isc_service_query(status, (&svc_handle), NULL, 0, NULL,
 								sizeof(sendbuf), sendbuf,
@@ -528,7 +532,7 @@ static int api_gbak(int argc,
 			return FINI_ERROR;
 		}
 
-		char *p = respbuf;
+		char* p = respbuf;
 		sl = p;
 
 		if (*p++ == isc_info_svc_line)
@@ -704,10 +708,10 @@ int common_main(int		argc,
 	++argv;
 
 	while (argv < end) {
-		TEXT *string = *argv;
+		TEXT* string = *argv;
 		int temp = strlen(string) - 1;
 		if (string[temp] == ',')
-			string[temp] = '\0';
+			string[temp] = '\0'; // Modifying argv elements
 
 		if (*string != '-') {
 			if (!file || file->fil_length || !get_size(*argv, file)) {
@@ -913,7 +917,7 @@ int common_main(int		argc,
 
 	}
 
-	// Initialize 'dpb' and 'dpb_length'
+	// Initialize 'dpb' and 'dpb_length' and cast away volatile
 	UCHAR* dpb = const_cast<UCHAR*>(tdgbl->dpb_string);
 	*dpb++ = isc_dpb_version1;
 	*dpb++ = isc_dpb_gbak_attach;
@@ -1421,7 +1425,7 @@ void BURP_msg_get(	USHORT number,
 }
 
 
-void BURP_output_version( const TEXT * arg1, TEXT * arg2)
+void BURP_output_version(void* arg1, const TEXT* arg2)
 {
 /**************************************
  *
@@ -1436,7 +1440,7 @@ void BURP_output_version( const TEXT * arg1, TEXT * arg2)
  *
  **************************************/
 
-	burp_output(arg1, arg2);
+	burp_output(reinterpret_cast<const char*>(arg1), arg2);
 }
 
 
@@ -1479,10 +1483,10 @@ void BURP_print_status(const ISC_STATUS* status_vector)
  *
  **************************************/
 	if (status_vector) {
-		const ISC_STATUS *vector = status_vector;
+		const ISC_STATUS* vector = status_vector;
 #ifdef SUPERSERVER
 		TGBL tdgbl = GET_THREAD_DATA;
-		ISC_STATUS *status = tdgbl->service_blk->svc_status;
+		ISC_STATUS* status = tdgbl->service_blk->svc_status;
 		if (status != status_vector) {
 		    int i = 0;
 			while (*status && (++i < ISC_STATUS_LENGTH))
@@ -1614,7 +1618,7 @@ static void close_out_transaction(volatile gbak_action action,
 }
 
 
-static SLONG get_number( const SCHAR * string)
+static SLONG get_number( const SCHAR* string)
 {
 /**************************************
  *
@@ -1630,7 +1634,7 @@ static SLONG get_number( const SCHAR * string)
 	SCHAR c;
 	SLONG value = 0;
 
-	for (const SCHAR *p = string; c = *p++;) {
+	for (const SCHAR* p = string; c = *p++;) {
 		if (c < '0' || c > '9')
 			return 0;
 		value *= 10;
@@ -1685,9 +1689,7 @@ static gbak_action open_files(const TEXT* file1,
 			if (tdgbl->gbl_sw_version) {
 				// msg 139 Version(s) for database "%s" 
 				BURP_print(139, file1, 0, 0, 0, 0);
-				isc_version(&tdgbl->db_handle,
-							reinterpret_cast<void (*)()>(BURP_output_version),
-							(void*) "\t%s\n");
+				isc_version(&tdgbl->db_handle, BURP_output_version, "\t%s\n");
 			}
 			if (sw_verbose)
 				BURP_print(166, file1, 0, 0, 0, 0);

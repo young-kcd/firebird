@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.cpp,v 1.15 2003-12-11 10:33:25 robocop Exp $
+ *  $Id: nbak.cpp,v 1.16 2003-12-22 10:00:47 robocop Exp $
  *
  */
 
@@ -1052,7 +1052,7 @@ bool BackupManager::actualize_state() throw() {
 	temp_bdb.bdb_buffer = reinterpret_cast<PAG>(header);
 	FIL file = database->dbb_file;
 	while (!PIO_read(file, &temp_bdb, temp_bdb.bdb_buffer, status)) {
-		if (!CCH_rollover_to_shadow(database, file, FALSE)) {
+		if (!CCH_rollover_to_shadow(database, file, false)) {
 			NBAK_TRACE(("Shadow change error"));
 			return false;
 		}

@@ -2321,7 +2321,8 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 					  IDB* handle,
 					  SLONG* id,
 					  USHORT length,
-					  const UCHAR* events, void (*ast) (), void* arg)
+					  const UCHAR* events,
+					  FPTR_EVENT_CALLBACK ast, void* arg)
 {
 /**************************************
  *
@@ -2355,7 +2356,7 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 	comm->ips_operation = op_que_events;
 	ips = &comm->ips_operations.ips_op_que_evnt;
 	ips->ips_db_handle = (UCHAR *) (idb->idb_handle);
-	ips->ips_ast = (UCHAR *) ast;
+	ips->ips_ast = ast;
 	ips->ips_arg = (UCHAR *) arg;
 	IPS_C_IN(comm, ips_event, IPS_QUEUE_EVENT, events, length);
 
@@ -3653,10 +3654,9 @@ static void event_thread(void)
 						}
 			if (event) {
 				if (event->ivnt_ast) {
-					reinterpret_cast < void (*) (...) >
-						(*event->ivnt_ast) (event->ivnt_arg,
-											queued->evq_length,
-											queued->evq_string);
+					(*event->ivnt_ast) (event->ivnt_arg,
+										queued->evq_length,
+										queued->evq_string);
 					event->ivnt_id = 0;
 				}
 			}

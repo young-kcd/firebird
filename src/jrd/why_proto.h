@@ -103,9 +103,11 @@ ISC_STATUS API_ROUTINE isc_dsql_sql_info(ISC_STATUS*, FRBRD**, SSHORT,
 											const SCHAR*, SSHORT, SCHAR*);
 //ISC_STATUS API_ROUTINE isc_prepare_transaction2(ISC_STATUS*, FRBRD**, USHORT,
 //												   UCHAR*);
-typedef void event_ast_routine(UCHAR*, USHORT, UCHAR*);
+// Deprecated in favor of FPTR_EVENT_CALLBACK
+//typedef void event_ast_routine(UCHAR*, USHORT, UCHAR*);
 //ISC_STATUS API_ROUTINE isc_que_events(ISC_STATUS*, FRBRD**, SLONG*,
-//										 USHORT, const UCHAR*, event_ast_routine*, void*);
+//										 USHORT, const UCHAR*,
+//										FPTR_EVENT_CALLBACK, void*);
 //#ifdef SCROLLABLE_CURSORS
 //ISC_STATUS API_ROUTINE isc_receive2(ISC_STATUS*, FRBRD**, USHORT,
 //									   USHORT, SCHAR*, SSHORT, USHORT,
@@ -183,7 +185,8 @@ ISC_STATUS API_ROUTINE isc_put_slice(ISC_STATUS*, FRBRD**, FRBRD**, SLONG*,
 									 SLONG, UCHAR*);
 
 ISC_STATUS API_ROUTINE isc_que_events(ISC_STATUS*, FRBRD**, SLONG*, USHORT,
-									  const UCHAR*, event_ast_routine*, void*);
+									  const UCHAR*,
+									  FPTR_EVENT_CALLBACK, void*);
 
 ISC_STATUS API_ROUTINE isc_receive(ISC_STATUS*, FRBRD**, USHORT, USHORT,
 									SCHAR*, SSHORT);

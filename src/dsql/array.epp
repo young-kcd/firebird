@@ -84,10 +84,10 @@ static inline ISC_STATUS stuff_sdl_long(gen_t* gen, int word)
 }
 
 
-ISC_STATUS API_ROUTINE isc_array_gen_sdl(ISC_STATUS * status,
-									 ISC_ARRAY_DESC * desc,
-									 SSHORT * sdl_buffer_length,
-                                    UCHAR * sdl_buffer, SSHORT * sdl_length)
+ISC_STATUS API_ROUTINE isc_array_gen_sdl(ISC_STATUS* status,
+									 const ISC_ARRAY_DESC* desc,
+									 SSHORT* sdl_buffer_length,
+									 UCHAR* sdl_buffer, SSHORT* sdl_length)
 {
 /**************************************
   *
@@ -595,20 +595,22 @@ static ISC_STATUS stuff_args(gen_t* gen, SSHORT count, ...)
 	va_list ptr;
 
 	if (gen->gen_sdl + count >= gen->gen_end) {
-		if (gen->gen_internal < 0)
+		if (gen->gen_internal < 0) {
 			return error(gen->gen_status, 3, (ISC_STATUS) isc_misc_interpreted,
 						 (ISC_STATUS) isc_arg_string,
 						 (ISC_STATUS) "SDL buffer overflow");
+		}
 
 		// The sdl buffer is too small.  Allocate a larger one. 
 
 		const SSHORT new_len = gen->gen_end - *gen->gen_sdl_ptr + 512 + count;
 		UCHAR* const new_sdl = (UCHAR*) gds__alloc(new_len);
-		if (!new_sdl)
+		if (!new_sdl) {
 			return error(gen->gen_status, 5, (ISC_STATUS) isc_misc_interpreted,
 						 (ISC_STATUS) isc_arg_string,
 						 (ISC_STATUS) "SDL buffer overflow", (ISC_STATUS) isc_arg_gds,
 						 (ISC_STATUS) isc_virmemexh);
+		}
 
 		const SSHORT current_len = gen->gen_sdl - *gen->gen_sdl_ptr;
 		memcpy(new_sdl, *gen->gen_sdl_ptr, current_len);

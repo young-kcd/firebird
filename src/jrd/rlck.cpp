@@ -188,7 +188,8 @@ LCK RLCK_lock_record_implicit(JRD_TRA transaction,
 
 	if (interest_lock_level
 		&& !obtain_lock(transaction, lock->lck_parent, interest_lock_level)
-		|| !obtain_lock(transaction, lock, lock_level)) {
+		|| !obtain_lock(transaction, lock, lock_level))
+	{
 		RLCK_unlock_record_implicit(lock, rpb);
 		return NULL;
 	}

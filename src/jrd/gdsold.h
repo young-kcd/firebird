@@ -259,9 +259,9 @@ void GDS_EXPORT gds__vtof(const char*,
 						  
 void GDS_EXPORT gds__vtov(const SCHAR*, char*, SSHORT);
 
-int GDS_EXPORT gds__version(FRBRD  **,
-							FPTR_VOID,
-							void  *);
+int GDS_EXPORT gds__version(FRBRD**,
+							FPTR_VERSION_CALLBACK,
+							void*);
 
 int GDS_EXPORT gds__disable_subsystem(char  *);
 
@@ -288,7 +288,7 @@ ISC_STATUS GDS_EXPORT gds__que_events(ISC_STATUS*,
 									  SLONG*,
 									  short,
 									  const char*,
-									  void (*) (),
+									  FPTR_EVENT_CALLBACK,
 									  void*);
 
 ISC_STATUS GDS_EXPORT gds__cancel_events(ISC_STATUS  *,

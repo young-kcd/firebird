@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.45 2003-12-03 08:19:18 robocop Exp $
+$Id: why.cpp,v 1.46 2003-12-22 10:00:48 robocop Exp $
 */
 
 #include "firebird.h"
@@ -216,7 +216,7 @@ static void check_status_vector(ISC_STATUS *, ISC_STATUS);
 static void cleanup_transaction(WHY_TRA);
 static ISC_STATUS error(ISC_STATUS *, ISC_STATUS *);
 static ISC_STATUS error2(ISC_STATUS *, ISC_STATUS *);
-static void event_ast(UCHAR *, USHORT, UCHAR *);
+static void event_ast(void*, USHORT, const UCHAR*);
 static void exit_handler(EVENT);
 static WHY_TRA find_transaction(WHY_DBB, WHY_TRA);
 static void free_block(void*);
@@ -1595,7 +1595,8 @@ ISC_STATUS API_ROUTINE GDS_DDL(ISC_STATUS* user_status,
 		((entrypoint = (PTR) ISC_lookup_entrypoint(image, DYN_ddl, NULL, false)) !=
 		 NULL ||
 		 FALSE) &&
-		!((*entrypoint) (status, db_handle, tra_handle, length, ddl))) {
+		!((*entrypoint) (status, db_handle, tra_handle, length, ddl)))
+	{
 		CHECK_STATUS_SUCCESS(status);
 		return FB_SUCCESS;
 	}
@@ -1620,7 +1621,6 @@ ISC_STATUS API_ROUTINE GDS_DETACH(ISC_STATUS * user_status,
  **************************************/
 	ISC_STATUS *status;
 	ISC_STATUS_ARRAY local;
-	WHY_ATT dbb;
 	WHY_REQ request;
 	WHY_STMT statement;
 	WHY_BLB blob;
@@ -1628,7 +1628,7 @@ ISC_STATUS API_ROUTINE GDS_DETACH(ISC_STATUS * user_status,
 
 	GET_STATUS;
 
-	dbb = *handle;
+	WHY_ATT dbb = *handle;
 
 #ifdef WIN_NT
 /* This code was added to fix an IDAPI problem where our DLL exit handler
@@ -1725,10 +1725,8 @@ int API_ROUTINE gds__disable_subsystem(TEXT * subsystem)
  *	has been explicitly disabled, all are available.
  *
  **************************************/
-	const IMAGE* sys;
-	const IMAGE* end;
-
-	for (sys = images, end = sys + SUBSYSTEMS; sys < end; sys++)
+	const IMAGE* sys = images;
+	for (const IMAGE* const end = sys + SUBSYSTEMS; sys < end; sys++)
 	{
 		if (!strcmp(sys->name, subsystem)) {
 			if (!why_enabled)
@@ -1757,14 +1755,13 @@ ISC_STATUS API_ROUTINE GDS_DROP_DATABASE(ISC_STATUS * user_status,
  **************************************/
 	ISC_STATUS *status;
 	ISC_STATUS_ARRAY local;
-	WHY_ATT dbb;
 	WHY_REQ request;
 	WHY_STMT statement;
 	WHY_BLB blob;
 	CLEAN clean;
 
 	GET_STATUS;
-	dbb = *handle;
+	WHY_ATT dbb = *handle;
 	CHECK_HANDLE(dbb, HANDLE_database, isc_bad_db_handle);
 
 #ifdef SUPERSERVER
@@ -1890,21 +1887,15 @@ ISC_STATUS API_ROUTINE GDS_DSQL_ALLOCATE(ISC_STATUS * user_status,
  *	Allocate a statement handle.
  *
  **************************************/
-	ISC_STATUS s, *status;
+	ISC_STATUS* status;
 	ISC_STATUS_ARRAY local;
 	WHY_STMT statement;
-	WHY_ATT dbb;
-	UCHAR flag;
-	PTR entry;
-#ifndef NO_LOCAL_DSQL
-	dsql_req *dstatement = 0;
-#endif
 	GET_STATUS;
 
 /* check the statement handle to make sure it's NULL and then initialize it. */
 
 	NULL_CHECK(stmt_handle, isc_bad_stmt_handle, HANDLE_statement);
-	dbb = *db_handle;
+	WHY_ATT dbb = *db_handle;
 	CHECK_HANDLE(dbb, HANDLE_database, isc_bad_db_handle);
 
 /* Attempt to have the implementation which processed the database attach
@@ -1913,15 +1904,16 @@ ISC_STATUS API_ROUTINE GDS_DSQL_ALLOCATE(ISC_STATUS * user_status,
    something) in which case, execute the functionality locally (and hence 
    remotely through the original Y-valve). */
 
-	s = isc_unavailable;
-	entry = get_entrypoint(PROC_DSQL_ALLOCATE, dbb->implementation);
+	ISC_STATUS s = isc_unavailable;
+	PTR entry = get_entrypoint(PROC_DSQL_ALLOCATE, dbb->implementation);
 	if (entry != no_entrypoint) {
 		subsystem_enter();
 		s = (*entry) (status, &dbb->handle, stmt_handle);
 		subsystem_exit();
 	}
-	flag = 0;
+	UCHAR flag = 0;
 #ifndef NO_LOCAL_DSQL
+	dsql_req* dstatement = 0;
 	if (s == isc_unavailable) {
 		/* if the entry point didn't exist or if the routine said the server
 		   didn't support the protocol... do it locally */
@@ -3837,7 +3829,7 @@ ISC_STATUS API_ROUTINE GDS_QUE_EVENTS(ISC_STATUS* user_status,
 									  SLONG* id,
 									  USHORT length,
 									  const UCHAR* events,
-									  event_ast_routine* ast,
+									  FPTR_EVENT_CALLBACK ast,
 									  void* arg)
 {
 /**************************************
@@ -5248,9 +5240,9 @@ static ISC_STATUS error2(ISC_STATUS * user_status,
 
 
 #ifndef REQUESTER
-static void event_ast(UCHAR * buffer,
+static void event_ast(void* buffer_void,
 					  USHORT length,
-					  UCHAR * items)
+					  const UCHAR* items)
 {
 /**************************************
  *
@@ -5262,9 +5254,10 @@ static void event_ast(UCHAR * buffer,
  *	We're had an event complete.
  *
  **************************************/
-
-	while (length--)
+	UCHAR* buffer = static_cast<UCHAR*>(buffer_void);
+	while (length--) {
 		*buffer++ = *items++;
+	}
 	ISC_event_post(why_event);
 }
 #endif
@@ -5598,21 +5591,18 @@ static ISC_STATUS open_blob(ISC_STATUS* user_status,
 	ISC_STATUS *status;
 	ISC_STATUS_ARRAY local;
 	WHY_TRA transaction;
-	WHY_ATT dbb;
-	WHY_BLB blob;
-	USHORT from, to;
-	USHORT flags;
 
 	GET_STATUS;
 	NULL_CHECK(blob_handle, isc_bad_segstr_handle, HANDLE_blob);
 
-	dbb = *db_handle;
+	WHY_ATT dbb = *db_handle;
 	CHECK_HANDLE(dbb, HANDLE_database, isc_bad_db_handle);
 	transaction = find_transaction(dbb, *tra_handle);
 	CHECK_HANDLE(transaction, HANDLE_transaction, isc_bad_trans_handle);
 	subsystem_enter();
 
-	flags = 0;
+	USHORT flags = 0;
+	USHORT from, to;
 	gds__parse_bpb(bpb_length, bpb, &from, &to);
 
 	if (get_entrypoint(proc2, dbb->implementation) != no_entrypoint &&
@@ -5636,7 +5626,7 @@ static ISC_STATUS open_blob(ISC_STATUS* user_status,
 		return error(status, local);
 	}
 
-	blob = allocate_handle(dbb->implementation, *blob_handle, HANDLE_blob);
+	WHY_BLB blob = allocate_handle(dbb->implementation, *blob_handle, HANDLE_blob);
 	if (!blob)
 	{
 		/* No memory. Make a half-hearted attempt to cancel the blob. */
@@ -5684,25 +5674,23 @@ static ISC_STATUS open_marker_file(ISC_STATUS * status,
  *	otherwise.
  *
  *************************************/
-	int fd, i, j;
-	TEXT marker_filename[MAXPATHLEN], marker_contents[MAXPATHLEN],
-		fildes_str[5], *p;
-	TEXT *err_routine, buffer[80];
-	SLONG bytes, size;
+	TEXT buffer[80];
 
 /* Create the marker file name and see if it exists.  If not,
    don't sweat it. */
-
+	TEXT marker_filename[MAXPATHLEN], marker_contents[MAXPATHLEN];
 	strcpy(marker_filename, expanded_filename);
 	strcat(marker_filename, "_m");
 	if (access(marker_filename, F_OK))	/* Marker file doesn't exist. */
 		return FB_SUCCESS;
 
+	const TEXT* err_routine = 0;
 /* Ensure that writes are ok on the marker file for lockf(). */
-
+	TEXT fildes_str[5];
 	if (!access(marker_filename, W_OK)) {
-		for (i = 0; i < IO_RETRY; i++) {
-			if ((fd = open(marker_filename, O_RDWR)) == -1) {
+		for (int i = 0; i < IO_RETRY; i++) {
+			const int fd = open(marker_filename, O_RDWR);
+			if (fd == -1) {
 				sprintf(buffer,
 						"Couldn't open marker file %s\n", marker_filename);
 				gds__log(buffer);
@@ -5716,9 +5704,10 @@ static ISC_STATUS open_marker_file(ISC_STATUS * status,
 #else
 			if (lockf(fd, F_TLOCK, 0) != -1) {
 #endif
-				size = sizeof(marker_contents);
-				for (j = 0; j < IO_RETRY; j++) {
-					if ((bytes = read(fd, marker_contents, size)) != -1)
+				const SLONG size = sizeof(marker_contents);
+				for (int j = 0; j < IO_RETRY; j++) {
+					const SLONG bytes = read(fd, marker_contents, size);
+					if (bytes != -1)
 						break;
 
 					if ((bytes == -1) && (!SYSCALL_INTERRUPTED(errno))) {
@@ -5728,22 +5717,23 @@ static ISC_STATUS open_marker_file(ISC_STATUS * status,
 					}
 				}				/* for (j < IO_RETRY ) */
 
-				p = strchr(marker_contents, '\n');
+				TEXT* p = strchr(marker_contents, '\n');
 				*p = 0;
 				if (strcmp(expanded_filename, marker_contents))
 					close(fd);
 				else {
 					sprintf(fildes_str, "%d\n", fd);
 					strcpy(single_user, "YES");
-					size = strlen(fildes_str);
-					for (j = 0; j < IO_RETRY; j++) {
+					const SLONG size2 = strlen(fildes_str);
+					for (int j2 = 0; j2 < IO_RETRY; j2++) {
 						if (lseek(fd, LSEEK_OFFSET_CAST 0L, SEEK_END) == -1) {
 							err_routine = "lseek";
 							close(fd);
 							fd = -1;
 						}
 
-						if ((bytes = write(fd, fildes_str, size)) == size)
+						const SLONG bytes = write(fd, fildes_str, size2);
+						if (bytes == size2)
 							break;
 
 						if ((bytes == -1) && (!SYSCALL_INTERRUPTED(errno))) {
@@ -5751,7 +5741,7 @@ static ISC_STATUS open_marker_file(ISC_STATUS * status,
 							close(fd);
 							fd = -1;
 						}
-					}			/* for (j < IO_RETRY ) */
+					}			/* for (j2 < IO_RETRY ) */
 				}
 			}
 			else
@@ -5794,7 +5784,9 @@ static ISC_STATUS open_marker_file(ISC_STATUS * status,
 
 	if (marker_failures_ptr + strlen(marker_filename) + 1 >
 		marker_failures + sizeof(marker_failures) - 1)
+	{
 		marker_failures_ptr = marker_failures;
+	}
 
 	*status++ = isc_arg_gds;
 	*status++ = isc_io_error;
@@ -5852,23 +5844,21 @@ static ISC_STATUS prepare(ISC_STATUS * status,
  *
  **************************************/
 	WHY_TRA sub;
-	TEXT *p, *description;
 	TEXT tdr_buffer[1024];
 	USHORT length = 0;
 
 	for (sub = transaction->next; sub; sub = sub->next)
 		length += 256;
 
-	description =
-		(length >
-		 sizeof(tdr_buffer)) ? (TEXT *) gds__alloc((SLONG) length) :
-		tdr_buffer;
+	TEXT* const description = (length > sizeof(tdr_buffer)) ?
+		(TEXT *) gds__alloc((SLONG) length) : tdr_buffer;
 
 /* build a transaction description record containing 
    the host site and database/transaction
    information for the target databases. */
 
-	if (!(p = description)) {
+	TEXT* p = description;
+	if (!p) {
 		status[0] = isc_arg_gds;
 		status[1] = isc_virmemexh;
 		status[2] = isc_arg_end;
@@ -5933,15 +5923,12 @@ static void release_dsql_support(DASUP dasup)
  *	Release some memory.
  *
  **************************************/
-
-	struct dasup::dasup_clause* pClauses;
-
 	if (!dasup) {
 		return;
 	}
 
 	/* for C++, add "dasup::" before "dasup_clause" */
-	pClauses = dasup->dasup_clauses;
+	struct dasup::dasup_clause* pClauses = dasup->dasup_clauses;
 
 	why_priv_gds__free_if_set(pClauses[DASUP_CLAUSE_bind].dasup_blr);
 	why_priv_gds__free_if_set(pClauses[DASUP_CLAUSE_select].dasup_blr);
@@ -5963,7 +5950,6 @@ static void release_handle(WHY_HNDL handle)
  *	Release unused and unloved handle.
  *
  **************************************/
-
 	handle->type = HANDLE_invalid;
 	free_block(handle);
 }
@@ -5987,16 +5973,14 @@ static void save_error_string(ISC_STATUS * status)
  *	a standard <Unknown> string.
  *
  **************************************/
-	TEXT *p;
-	ULONG l, len;
-
 	fb_assert(status != NULL);
 
-	p = glbstr1;
-	len = sizeof(glbstr1) - 1;
+	TEXT* p = glbstr1;
+	ULONG len = sizeof(glbstr1) - 1;
 
 	while (*status != isc_arg_end)
 	{
+		ULONG l;
 		switch (*status++)
 		{
 		case isc_arg_cstring:

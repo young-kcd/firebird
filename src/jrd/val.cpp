@@ -648,7 +648,7 @@ static RTN corrupt(TDBB, VDR, USHORT, JRD_REL, ...);
 static FETCH_CODE fetch_page(TDBB, VDR, SLONG, USHORT, WIN *, void *);
 static void garbage_collect(TDBB, VDR);
 #ifdef DEBUG_VAL_VERBOSE
-static void print_rhd(USHORT, RHD);
+static void print_rhd(USHORT, const rhd*);
 #endif
 static RTN walk_blob(TDBB, VDR, JRD_REL, BLH, USHORT, SLONG);
 static RTN walk_chain(TDBB, VDR, JRD_REL, RHD, SLONG);
@@ -681,13 +681,11 @@ BOOLEAN VAL_validate(TDBB tdbb, USHORT switches)
  **************************************/
 	struct vdr control;
 	JrdMemoryPool *val_pool, *old_pool;
-	ATT att;
 	USHORT i;
-	DBB dbb;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
-	att = tdbb->tdbb_attachment;
+	DBB dbb = tdbb->tdbb_database;
+	ATT att = tdbb->tdbb_attachment;
 
 	try {
 
@@ -813,15 +811,13 @@ static FETCH_CODE fetch_page(TDBB tdbb,
  *	use.
  *
  **************************************/
-	DBB dbb;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef SUPERSERVER
 	if (--tdbb->tdbb_quantum < 0 && !tdbb->tdbb_inhibit)
-		JRD_reschedule(tdbb, 0, TRUE);
+		JRD_reschedule(tdbb, 0, true);
 #endif
 
 	window->win_page = page_number;
@@ -939,7 +935,7 @@ static void garbage_collect(TDBB tdbb, VDR control)
 }
 
 #ifdef DEBUG_VAL_VERBOSE
-static void print_rhd(USHORT length, RHD header)
+static void print_rhd(USHORT length, const rhd* header)
 {
 /**************************************
  *
@@ -1127,26 +1123,22 @@ static void walk_database(TDBB tdbb, VDR control)
  * Functional description
  *
  **************************************/
-	DBB dbb;
-	HDR page;
-	VEC vector;
-	JRD_REL relation;
-	USHORT i;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 #ifdef DEBUG_VAL_VERBOSE
-	if (VAL_debug_level)
+	if (VAL_debug_level) {
 		ib_fprintf(ib_stdout,
 				   "walk_database: %s\nODS: %d.%d  (creation ods %d)\nPage size %d\n",
 				   dbb->dbb_attachment->att_filename->str_data, dbb->dbb_ods_version,
 				   dbb->dbb_minor_version, dbb->dbb_minor_original,
 				   dbb->dbb_page_size);
+	}
 #endif
 
 	DPM_scan_pages(tdbb);
 	WIN window(-1);
+	hdr* page;
 	fetch_page(tdbb, control, (SLONG) HEADER_PAGE, pag_header, &window,
 			   &page);
 	control->vdr_max_transaction = page->hdr_next_transaction;
@@ -1157,12 +1149,14 @@ static void walk_database(TDBB tdbb, VDR control)
 	walk_tip(tdbb, control, page->hdr_next_transaction);
 	walk_generators(tdbb, control);
 
-	for (i = 0; (vector = dbb->dbb_relations) && i < vector->count(); i++) {
+	VEC vector;
+	for (USHORT i = 0; (vector = dbb->dbb_relations) && i < vector->count(); i++) {
 #ifdef DEBUG_VAL_VERBOSE
-		if (i >= 32 /* rel_MAX */ )
+		if (i >= 32 /* rel_MAX */ ) // Why not system flag instead?
 			VAL_debug_level = 2;
 #endif
-		if ( (relation = (JRD_REL) (*vector)[i]) )
+		jrd_rel* relation = (JRD_REL) (*vector)[i];
+		if (relation)
 			walk_relation(tdbb, control, relation);
 	}
 
@@ -1183,31 +1177,29 @@ static RTN walk_data_page(TDBB tdbb,
  *	Walk a single data page.
  *
  **************************************/
-	DBB dbb;
-	DPG page;
-	RHD header;
 	RTN result;
-	UCHAR *end_page;
 	SLONG number;
 	int state;
-	dpg::dpg_repeat * line, *end;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	WIN window(-1);
+	dpg* page;
 	fetch_page(tdbb, control, page_number, pag_data, &window, &page);
 
 #ifdef DEBUG_VAL_VERBOSE
-	if (VAL_debug_level)
+	if (VAL_debug_level) {
 		ib_fprintf(ib_stdout,
 				   "walk_data_page: page %d rel %d seq %d count %d\n",
 				   page_number, page->dpg_relation, page->dpg_sequence,
 				   page->dpg_count);
+	}
 #endif
 
 	if (page->dpg_relation != relation->rel_id
-		|| page->dpg_sequence != sequence) {
+		|| page->dpg_sequence != sequence)
+	{
 		++control->vdr_errors;
 		CCH_RELEASE(tdbb, &window);
 		return corrupt(tdbb, control, VAL_DATA_PAGE_CONFUSED,
@@ -1216,31 +1208,35 @@ static RTN walk_data_page(TDBB tdbb,
 
 /* Walk records */
 
-	end_page = (UCHAR *) page + dbb->dbb_page_size;
-	end = page->dpg_rpt + page->dpg_count;
+	const UCHAR* const end_page = (UCHAR *) page + dbb->dbb_page_size;
+	const dpg::dpg_repeat* const end = page->dpg_rpt + page->dpg_count;
 	number = sequence * dbb->dbb_max_records;
 
-	for (line = page->dpg_rpt; line < end; line++, number++) {
+	for (const dpg::dpg_repeat* line = page->dpg_rpt; line < end; line++, number++) {
 #ifdef DEBUG_VAL_VERBOSE
-		if (VAL_debug_level)
+		if (VAL_debug_level) {
 			ib_fprintf(ib_stdout, "Slot %02d (%d,%d): ",
 					   line - page->dpg_rpt,
 					   line->dpg_offset, line->dpg_length);
+		}
 #endif
 		if (line->dpg_length) {
-			header = (RHD) ((UCHAR *) page + line->dpg_offset);
+			rhd* header = (RHD) ((UCHAR *) page + line->dpg_offset);
 			if ((UCHAR *) header < (UCHAR *) end ||
 				(UCHAR *) header + line->dpg_length > end_page)
+			{
 				return corrupt(tdbb, control, VAL_DATA_PAGE_LINE_ERR,
 							   relation, page_number, sequence,
 							   (SLONG) (line - page->dpg_rpt));
+			}
 			if (header->rhd_flags & rhd_chain)
 				control->vdr_rel_backversion_counter++;
 
 			/* Record the existance of a primary version of a record */
 
 			if ((control->vdr_flags & vdr_records) &&
-				!(header->rhd_flags & (rhd_chain | rhd_fragment | rhd_blob))) {
+				!(header->rhd_flags & (rhd_chain | rhd_fragment | rhd_blob)))
+			{
 				/* Only set committed (or limbo) records in the bitmap. If there
 				   is a backversion then at least one of the record versions is
 				   committed. If there's no backversion then check transaction
@@ -1271,7 +1267,8 @@ static RTN walk_data_page(TDBB tdbb,
 #endif
 			if (!(header->rhd_flags & rhd_chain) &&
 				((header->rhd_flags & rhd_large) ||
-				 (control->vdr_flags & vdr_records))) {
+				 (control->vdr_flags & vdr_records)))
+			{
 				result = (header->rhd_flags & rhd_blob) ?
 					walk_blob(tdbb, control, relation, (BLH) header,
 							  line->dpg_length, number) :
@@ -1312,17 +1309,15 @@ static void walk_generators(TDBB tdbb, VDR control)
  *	Walk the page inventory pages.
  *
  **************************************/
-	DBB dbb;
-	VCL vector;
 	PPG page;
-	vcl::iterator ptr, end;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 	WIN window(-1);
 
-	if ( (vector = dbb->dbb_gen_id_pages) ) {
+	vcl* vector = dbb->dbb_gen_id_pages;
+	if (vector) {
+        vcl::iterator ptr, end;
 		for (ptr = vector->begin(), end = vector->end(); ptr < end; ptr++) {
 			if (*ptr) {
 #ifdef DEBUG_VAL_VERBOSE
@@ -1787,6 +1782,7 @@ static RTN walk_pointer_page(	TDBB	tdbb,
 
 	for (pages = page->ppg_page, slot = 0; slot < page->ppg_count;
 		 slot++, pages++, seq++)
+	{
 		if (*pages) {
 			result = walk_data_page(tdbb, control, relation, *pages, seq);
 			if (result != rtn_ok && (control->vdr_flags & vdr_repair)) {
@@ -1794,6 +1790,7 @@ static RTN walk_pointer_page(	TDBB	tdbb,
 				*pages = 0;
 			}
 		}
+	}
 
 /* If this is the last pointer page in the relation, we're done */
 
@@ -1987,7 +1984,9 @@ static RTN walk_relation(TDBB tdbb, VDR control, JRD_REL relation)
 
 	if (!(relation->rel_flags & REL_scanned) ||
 		(relation->rel_flags & REL_being_scanned))
-			MET_scan_relation(tdbb, relation);
+	{
+		MET_scan_relation(tdbb, relation);
+	}
 
 #ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level)
@@ -2011,8 +2010,7 @@ static RTN walk_relation(TDBB tdbb, VDR control, JRD_REL relation)
 		SBM_reset(&control->vdr_rel_records);
 	}
 	for (SLONG sequence = 0; true; sequence++) {
-		RTN result;
-		result = walk_pointer_page(tdbb, control, relation, sequence);
+		RTN result = walk_pointer_page(tdbb, control, relation, sequence);
 		if (result == rtn_eof) {
 			break;
 		}
@@ -2040,9 +2038,9 @@ static RTN walk_relation(TDBB tdbb, VDR control, JRD_REL relation)
 	}	// try
 	catch (const std::exception&) {
 		TEXT s[64];
-		TEXT* msg = (relation->rel_name) ?
-			(TEXT*)"bugcheck during scan of table %d (%s)" :
-			(TEXT*)"bugcheck during scan of table %d";
+		const char* msg = (relation->rel_name) ?
+			"bugcheck during scan of table %d (%s)" :
+			"bugcheck during scan of table %d";
 		sprintf(s, msg, relation->rel_id, relation->rel_name);
 		gds__log(s);
 #ifdef DEBUG_VAL_VERBOSE

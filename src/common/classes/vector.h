@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: vector.h,v 1.5 2003-12-05 10:35:29 robocop Exp $
+ *  $Id: vector.h,v 1.6 2003-12-22 10:00:04 robocop Exp $
  *
  */
  
@@ -55,11 +55,11 @@ public:
   		return data[index];
 	}
 	T* begin() { return data; }
-	T* end() { return data+count; }
+	T* end() { return data + count; }
 	void insert(int index, const T& item) {
 	  fb_assert(index >= 0 && index <= count);
 	  fb_assert(count < Capacity);
-	  memmove(data+index+1, data+index, sizeof(T)*(count++-index));
+	  memmove(data + index + 1, data + index, sizeof(T) * (count++ - index));
 	  data[index] = item;
 	}
 
@@ -70,15 +70,15 @@ public:
 	};
 	void remove(int index) {
   		fb_assert(index >= 0 && index < count);
-  		memmove(data+index, data+index+1, sizeof(T)*(--count-index));
+  		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
 	}
 	void shrink(int newCount) {
 		fb_assert(newCount <= count);
 		count = newCount;
 	};
-	void join(Vector<T,Capacity>& L) {
+	void join(Vector<T, Capacity>& L) {
 		fb_assert(count + L.count <= Capacity);
-		memcpy(data + count, L.data, sizeof(T)*L.count);
+		memcpy(data + count, L.data, sizeof(T) * L.count);
 		count += L.count;
 	}
 	int getCount() const { return count; }
@@ -101,7 +101,7 @@ public:
 template <typename T>
 class DefaultKeyValue {
 public:
-	static const T& generate(void *sender, const T& Item) { return Item; }
+	static const T& generate(void* sender, const T& Item) { return Item; }
 };
 
 // Fast sorted array of simple objects
@@ -113,22 +113,22 @@ class SortedVector : public Vector<Value, Capacity> {
 public:
 	SortedVector() : Vector<Value, Capacity>() {}
 	bool find(const Key& item, int& pos) {
-		int highBound=count, lowBound=0;
+		int highBound = count, lowBound = 0;
 		while (highBound > lowBound) {
-			int temp = (highBound + lowBound) >> 1;
-			if (Cmp::greaterThan(item, KeyOfValue::generate(this,data[temp])))
-				lowBound = temp+1;
+			const int temp = (highBound + lowBound) >> 1;
+			if (Cmp::greaterThan(item, KeyOfValue::generate(this, data[temp])))
+				lowBound = temp + 1;
 			else
 				highBound = temp;
 		}
 		pos = lowBound;
 		return highBound != count &&
-			!Cmp::greaterThan(KeyOfValue::generate(this,data[lowBound]), item);
+			!Cmp::greaterThan(KeyOfValue::generate(this, data[lowBound]), item);
 	}
 	int add(const Value& item) {
 	    int pos;
-  	    find(KeyOfValue::generate(this,item),pos);
-		insert(pos,item);
+  	    find(KeyOfValue::generate(this, item), pos);
+		insert(pos, item);
 		return pos;
 	}
 };
@@ -136,3 +136,4 @@ public:
 };
 
 #endif
+

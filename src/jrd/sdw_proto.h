@@ -34,7 +34,7 @@ void	SDW_get_shadows(void);
 void	SDW_init(bool, bool, struct sbm*);
 BOOLEAN	SDW_lck_update(SLONG);
 void	SDW_notify(void);
-BOOLEAN	SDW_rollover_to_shadow(struct fil *, BOOLEAN);
+bool	SDW_rollover_to_shadow(struct fil *, const bool);
 void	SDW_shutdown_shadow(struct sdw *);
 void	SDW_start(const TEXT*, USHORT, USHORT, bool);
 int		SDW_start_shadowing(void* ast_object);

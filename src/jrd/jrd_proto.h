@@ -95,7 +95,8 @@ ISC_STATUS jrd8_put_slice(ISC_STATUS*, struct att**,
 										const UCHAR*, USHORT, const UCHAR*, SLONG,
 										UCHAR*);
 ISC_STATUS jrd8_que_events(ISC_STATUS*, struct att**, SLONG*,
-										 SSHORT, const UCHAR*, FPTR_VOID, void*);
+										 SSHORT, const UCHAR*,
+										 FPTR_EVENT_CALLBACK, void*);
 ISC_STATUS jrd8_receive(ISC_STATUS *, struct jrd_req **, USHORT, USHORT,
 									  SCHAR *, SSHORT);
 ISC_STATUS jrd8_reconnect_transaction(ISC_STATUS*, struct att**,
@@ -151,7 +152,7 @@ void	JRD_set_cache_default(ULONG *);
 void	JRD_blocked(struct att *, struct btb **);
 void	JRD_mutex_lock(struct mutx_t *);
 void	JRD_mutex_unlock(struct mutx_t *);
-BOOLEAN	JRD_reschedule(struct tdbb *, SLONG, BOOLEAN);
+BOOLEAN	JRD_reschedule(struct tdbb*, SLONG, bool);
 void	JRD_restore_context(void);
 void	JRD_set_context(struct tdbb *);
 void	JRD_unblock(struct btb **);

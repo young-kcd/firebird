@@ -108,7 +108,7 @@ void SDW_add(TEXT * file_name, USHORT shadow_number, USHORT file_flags)
 	CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	CCH_write_all_shadows(tdbb, 0, window.win_bdb,
-						  tdbb->tdbb_status_vector, 1, FALSE);
+						  tdbb->tdbb_status_vector, 1, false);
 	CCH_RELEASE(tdbb, &window);
 	if (file_flags & FILE_conditional)
 		shadow->sdw_flags |= SDW_conditional;
@@ -508,7 +508,8 @@ void SDW_dump_pages(void)
 				CCH_FETCH_NO_CHECKSUM(tdbb, &window, LCK_read, pag_undefined);
 				if (!CCH_write_all_shadows(tdbb, shadow, window.win_bdb,
 										   tdbb->tdbb_status_vector, 1,
-										   FALSE)) {
+										   false))
+				{
 					CCH_RELEASE(tdbb, &window);
 					ERR_punt();
 				}
@@ -753,7 +754,7 @@ void SDW_notify(void)
 }
 
 
-BOOLEAN SDW_rollover_to_shadow(FIL file, BOOLEAN inAst)
+bool SDW_rollover_to_shadow(FIL file, const bool inAst)
 {
 /**************************************
  *
@@ -776,7 +777,7 @@ BOOLEAN SDW_rollover_to_shadow(FIL file, BOOLEAN inAst)
 	dbb = GET_DBB;
 
 	if (file != dbb->dbb_file)
-		return TRUE;
+		return true;
 
 	update_lock = &temp_lock;
 	update_lock->lck_dbb = dbb;
@@ -804,7 +805,7 @@ BOOLEAN SDW_rollover_to_shadow(FIL file, BOOLEAN inAst)
 
 		if (update_lock->lck_physical == LCK_SR)
 			LCK_release(tdbb, update_lock);
-		return TRUE;
+		return true;
 	}
 
 /* check the various status flags to see if there
@@ -819,12 +820,12 @@ BOOLEAN SDW_rollover_to_shadow(FIL file, BOOLEAN inAst)
 
 	if (!shadow) {
 		LCK_release(tdbb, update_lock);
-		return FALSE;
+		return false;
 	}
 
 	if (file != dbb->dbb_file) {
 		LCK_release(tdbb, update_lock);
-		return TRUE;
+		return true;
 	}
 
 /* close the main database file if possible
@@ -871,7 +872,7 @@ BOOLEAN SDW_rollover_to_shadow(FIL file, BOOLEAN inAst)
 		ERR_post(isc_deadlock, 0);
 	}
 
-	return TRUE;
+	return true;
 }
 
 

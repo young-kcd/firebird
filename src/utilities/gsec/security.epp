@@ -43,11 +43,11 @@ DATABASE DB = STATIC FILENAME "security.fdb";
 #define SYSDBA_USER_NAME	"SYSDBA"
 
 
-SSHORT SECURITY_exec_line(ISC_STATUS * isc_status,
-						  FRBRD *DB,
-						  USER_DATA user_data,
-						  void (*display_func) (void *, USER_DATA, bool),
-						  void *callback_arg)
+SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
+						  FRBRD* DB,
+						  internal_user_data* io_user_data,
+						  FPTR_SECURITY_CALLBACK display_func,
+						  void* callback_arg)
 {
 /*************************************
  *
@@ -117,7 +117,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS * isc_status,
 	SSHORT ret = 0;
 
 	// check for non-printable characters in user name
-	for (const TEXT *p = user_data->user_name; *p; p++) {
+	for (const TEXT *p = io_user_data->user_name; *p; p++) {
 		if (! isprint(*p)) {
 			return GsecMsg75;  // Add special error message for this case ?
 		}
@@ -128,54 +128,54 @@ SSHORT SECURITY_exec_line(ISC_STATUS * isc_status,
 		return GsecMsg75;		/* gsec error */
 	END_ERROR;
 
-	switch (user_data->operation) {
+	switch (io_user_data->operation) {
 	case ADD_OPER:
 		/* this checks the "entered" flags for each parameter (except the name)
 		   and makes all non-entered parameters null valued */
 
 		STORE U IN USERS USING
-			strcpy(U.USER_NAME, user_data->user_name);
-			if (user_data->uid_entered) {
-				U.UID = user_data->uid;
+			strcpy(U.USER_NAME, io_user_data->user_name);
+			if (io_user_data->uid_entered) {
+				U.UID = io_user_data->uid;
 				U.UID.NULL = ISC_FALSE;
 			}
 			else
 				U.UID.NULL = ISC_TRUE;
-			if (user_data->gid_entered) {
-				U.GID = user_data->gid;
+			if (io_user_data->gid_entered) {
+				U.GID = io_user_data->gid;
 				U.GID.NULL = ISC_FALSE;
 			}
 			else
 				U.GID.NULL = ISC_TRUE;
-			if (user_data->group_name_entered) {
-				strcpy(U.GROUP_NAME, user_data->group_name);
+			if (io_user_data->group_name_entered) {
+				strcpy(U.GROUP_NAME, io_user_data->group_name);
 				U.GROUP_NAME.NULL = ISC_FALSE;
 			}
 			else
 				U.GROUP_NAME.NULL = ISC_TRUE;
-			if (user_data->password_entered) {
+			if (io_user_data->password_entered) {
 				strcpy(encrypted1,
-					   ENC_crypt(user_data->password, PASSWORD_SALT));
+					   ENC_crypt(io_user_data->password, PASSWORD_SALT));
 				strcpy(encrypted2, ENC_crypt(&encrypted1[2], PASSWORD_SALT));
 				strcpy(U.PASSWD, &encrypted2[2]);
 				U.PASSWD.NULL = ISC_FALSE;
 			}
 			else
 				U.PASSWD.NULL = ISC_TRUE;
-			if (user_data->first_name_entered) {
-				strcpy(U.FIRST_NAME, user_data->first_name);
+			if (io_user_data->first_name_entered) {
+				strcpy(U.FIRST_NAME, io_user_data->first_name);
 				U.FIRST_NAME.NULL = ISC_FALSE;
 			}
 			else
 				U.FIRST_NAME.NULL = ISC_TRUE;
-			if (user_data->middle_name_entered) {
-				strcpy(U.MIDDLE_NAME, user_data->middle_name);
+			if (io_user_data->middle_name_entered) {
+				strcpy(U.MIDDLE_NAME, io_user_data->middle_name);
 				U.MIDDLE_NAME.NULL = ISC_FALSE;
 			}
 			else
 				U.MIDDLE_NAME.NULL = ISC_TRUE;
-			if (user_data->last_name_entered) {
-				strcpy(U.LAST_NAME, user_data->last_name);
+			if (io_user_data->last_name_entered) {
+				strcpy(U.LAST_NAME, io_user_data->last_name);
 				U.LAST_NAME.NULL = ISC_FALSE;
 			}
 			else
@@ -192,54 +192,54 @@ SSHORT SECURITY_exec_line(ISC_STATUS * isc_status,
 		   changes the current value to the null value */
 
 		found = false;
-		FOR U IN USERS WITH U.USER_NAME EQ user_data->user_name
+		FOR U IN USERS WITH U.USER_NAME EQ io_user_data->user_name
 			found = true;
 			MODIFY U USING
-				if (user_data->uid_entered) {
-					U.UID = user_data->uid;
+				if (io_user_data->uid_entered) {
+					U.UID = io_user_data->uid;
 					U.UID.NULL = ISC_FALSE;
 				}
-				else if (user_data->uid_specified)
+				else if (io_user_data->uid_specified)
 					U.UID.NULL = ISC_TRUE;
-				if (user_data->gid_entered) {
-					U.GID = user_data->gid;
+				if (io_user_data->gid_entered) {
+					U.GID = io_user_data->gid;
 					U.GID.NULL = ISC_FALSE;
 				}
-				else if (user_data->gid_specified)
+				else if (io_user_data->gid_specified)
 					U.GID.NULL = ISC_TRUE;
-				if (user_data->group_name_entered) {
-					strcpy(U.GROUP_NAME, user_data->group_name);
+				if (io_user_data->group_name_entered) {
+					strcpy(U.GROUP_NAME, io_user_data->group_name);
 					U.GROUP_NAME.NULL = ISC_FALSE;
 				}
-				else if (user_data->group_name_specified)
+				else if (io_user_data->group_name_specified)
 					U.GROUP_NAME.NULL = ISC_TRUE;
-				if (user_data->password_entered) {
+				if (io_user_data->password_entered) {
 					strcpy(encrypted1,
-						   ENC_crypt(user_data->password, PASSWORD_SALT));
+						   ENC_crypt(io_user_data->password, PASSWORD_SALT));
 					strcpy(encrypted2,
 						   ENC_crypt(&encrypted1[2], PASSWORD_SALT));
 					strcpy(U.PASSWD, &encrypted2[2]);
 					U.PASSWD.NULL = ISC_FALSE;
 				}
-				else if (user_data->password_specified)
+				else if (io_user_data->password_specified)
 					U.PASSWD.NULL = ISC_TRUE;
-				if (user_data->first_name_entered) {
-					strcpy(U.FIRST_NAME, user_data->first_name);
+				if (io_user_data->first_name_entered) {
+					strcpy(U.FIRST_NAME, io_user_data->first_name);
 					U.FIRST_NAME.NULL = ISC_FALSE;
 				}
-				else if (user_data->first_name_specified)
+				else if (io_user_data->first_name_specified)
 					U.FIRST_NAME.NULL = ISC_TRUE;
-				if (user_data->middle_name_entered) {
-					strcpy(U.MIDDLE_NAME, user_data->middle_name);
+				if (io_user_data->middle_name_entered) {
+					strcpy(U.MIDDLE_NAME, io_user_data->middle_name);
 					U.MIDDLE_NAME.NULL = ISC_FALSE;
 				}
-				else if (user_data->middle_name_specified)
+				else if (io_user_data->middle_name_specified)
 					U.MIDDLE_NAME.NULL = ISC_TRUE;
-				if (user_data->last_name_entered) {
-					strcpy(U.LAST_NAME, user_data->last_name);
+				if (io_user_data->last_name_entered) {
+					strcpy(U.LAST_NAME, io_user_data->last_name);
 					U.LAST_NAME.NULL = ISC_FALSE;
 				}
-				else if (user_data->last_name_specified)
+				else if (io_user_data->last_name_specified)
 					U.LAST_NAME.NULL = ISC_TRUE;
 			END_MODIFY
 			ON_ERROR
@@ -259,17 +259,17 @@ SSHORT SECURITY_exec_line(ISC_STATUS * isc_status,
 		found = false;
 		/* Do not allow SYSDBA user to be deleted */
 #ifdef HAVE_STRCASECMP
-		if (!strcasecmp(user_data->user_name, SYSDBA_USER_NAME))
+		if (!strcasecmp(io_user_data->user_name, SYSDBA_USER_NAME))
 #else
 #ifdef HAVE_STRICMP
-		if (!stricmp(user_data->user_name, SYSDBA_USER_NAME))
+		if (!stricmp(io_user_data->user_name, SYSDBA_USER_NAME))
 #else
 #error dont know how to compare strings case insensitive on this system
 #endif /* HAVE_STRICMP */
 #endif /* HAVE_STRCASECMP */
 			ret = GsecMsg23;
 		else {
-			FOR U IN USERS WITH U.USER_NAME EQ user_data->user_name
+			FOR U IN USERS WITH U.USER_NAME EQ io_user_data->user_name
 				found = true;
 				ERASE U
 				ON_ERROR
@@ -289,18 +289,18 @@ SSHORT SECURITY_exec_line(ISC_STATUS * isc_status,
 		/* gets either the desired record, or all records, and displays them */
 
 		found = false;
-		if (!user_data->user_name_entered) {
+		if (!io_user_data->user_name_entered) {
 			FOR U IN USERS
-				user_data->uid = U.UID;
-				user_data->gid = U.GID;
-				*(user_data->sys_user_name) = '\0';
-				strcpy(user_data->user_name, U.USER_NAME);
-				strcpy(user_data->group_name, U.GROUP_NAME);
-				strcpy(user_data->password, U.PASSWD);
-				strcpy(user_data->first_name, U.FIRST_NAME);
-				strcpy(user_data->middle_name, U.MIDDLE_NAME);
-				strcpy(user_data->last_name, U.LAST_NAME);
-				display_func(callback_arg, user_data, !found);
+				io_user_data->uid = U.UID;
+				io_user_data->gid = U.GID;
+				*(io_user_data->sys_user_name) = '\0';
+				strcpy(io_user_data->user_name, U.USER_NAME);
+				strcpy(io_user_data->group_name, U.GROUP_NAME);
+				strcpy(io_user_data->password, U.PASSWD);
+				strcpy(io_user_data->first_name, U.FIRST_NAME);
+				strcpy(io_user_data->middle_name, U.MIDDLE_NAME);
+				strcpy(io_user_data->last_name, U.LAST_NAME);
+				display_func(callback_arg, io_user_data, !found);
 
 				found = true;
 			END_FOR
@@ -309,17 +309,17 @@ SSHORT SECURITY_exec_line(ISC_STATUS * isc_status,
 			END_ERROR;
 		}
 		else {
-			FOR U IN USERS WITH U.USER_NAME EQ user_data->user_name
-				user_data->uid = U.UID;
-				user_data->gid = U.GID;
-				*(user_data->sys_user_name) = '\0';
-				strcpy(user_data->user_name, U.USER_NAME);
-				strcpy(user_data->group_name, U.GROUP_NAME);
-				strcpy(user_data->password, U.PASSWD);
-				strcpy(user_data->first_name, U.FIRST_NAME);
-				strcpy(user_data->middle_name, U.MIDDLE_NAME);
-				strcpy(user_data->last_name, U.LAST_NAME);
-				display_func(callback_arg, user_data, !found);
+			FOR U IN USERS WITH U.USER_NAME EQ io_user_data->user_name
+				io_user_data->uid = U.UID;
+				io_user_data->gid = U.GID;
+				*(io_user_data->sys_user_name) = '\0';
+				strcpy(io_user_data->user_name, U.USER_NAME);
+				strcpy(io_user_data->group_name, U.GROUP_NAME);
+				strcpy(io_user_data->password, U.PASSWD);
+				strcpy(io_user_data->first_name, U.FIRST_NAME);
+				strcpy(io_user_data->middle_name, U.MIDDLE_NAME);
+				strcpy(io_user_data->last_name, U.LAST_NAME);
+				display_func(callback_arg, io_user_data, !found);
 
 				found = true;
 			END_FOR
@@ -349,7 +349,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS * isc_status,
 	return ret;
 }
 
-void SECURITY_get_db_path( TEXT * server, TEXT * buffer)
+void SECURITY_get_db_path(const TEXT* server, TEXT* buffer)
 {
 /**************************************
  *
@@ -415,7 +415,7 @@ void SECURITY_get_db_path( TEXT * server, TEXT * buffer)
 	isc_service_detach(status, &svc_handle);
 }
 
-void SECURITY_msg_get( USHORT number, TEXT * msg)
+void SECURITY_msg_get(USHORT number, TEXT* msg)
 {
 /**************************************
  *

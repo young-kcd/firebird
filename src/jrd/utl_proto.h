@@ -53,7 +53,7 @@ void	API_ROUTINE isc_set_debug(int);
 void	API_ROUTINE isc_set_login(const UCHAR**, SSHORT*);
 BOOLEAN	API_ROUTINE isc_set_path(TEXT*, USHORT, TEXT*);
 void	API_ROUTINE isc_set_single_user(const UCHAR**, SSHORT*, const TEXT*);
-int		API_ROUTINE isc_version(FRBRD **, FPTR_VOID, void *);
+int		API_ROUTINE isc_version(FRBRD**, FPTR_VERSION_CALLBACK, void*);
 void	API_ROUTINE isc_format_implementation(USHORT, USHORT, TEXT *,
 												  USHORT, USHORT, TEXT *);
 U_IPTR	API_ROUTINE isc_baddress(SCHAR*);

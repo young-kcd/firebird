@@ -155,7 +155,7 @@ typedef struct evt_req {
 	PTR req_process;			/* Parent process block */
 	PTR req_session;			/* Parent session block */
 	PTR req_interests;			/* First interest in request */
-	void (*req_ast) ();			/* Asynchronous routine */
+	FPTR_EVENT_CALLBACK req_ast;	/* Asynchronous routine */
 	void *req_ast_arg;			/* Argument for ast */
 	SLONG req_request_id;		/* Request id, dummy */
 } *EVT_REQ;

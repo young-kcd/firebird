@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		all.c
+ *	MODULE:		all.cpp
  *	DESCRIPTION:	Internal block allocator
  *
  * The contents of this file are subject to the Interbase Public
@@ -93,9 +93,6 @@ void ALL_check_memory()
  *	executed.
  *
  **************************************/
-
-	Firebird::vector<JrdMemoryPool*>::iterator itr;
-
 	DBB Dbb = GET_DBB;
 
 #ifdef V4_THREADING
@@ -103,6 +100,7 @@ void ALL_check_memory()
 #endif
 
 	// walk through all the pools in the database
+	Firebird::vector<JrdMemoryPool*>::iterator itr;
 	for (itr = Dbb->dbb_pools.begin(); itr < Dbb->dbb_pools.end(); ++itr)
 	{
 		JrdMemoryPool* pool = *itr;
@@ -121,7 +119,7 @@ void ALL_check_memory()
 
 JrdMemoryPool *JrdMemoryPool::createPool(int *cur_mem, int *max_mem) {
 	DBB dbb = GET_DBB;
-	JrdMemoryPool *result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool),
+	JrdMemoryPool* result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool),
 		cur_mem, max_mem);
 	result->plb_buckets = NULL;
 	result->plb_segments = NULL;
@@ -134,7 +132,7 @@ JrdMemoryPool *JrdMemoryPool::createPool(int *cur_mem, int *max_mem) {
 JrdMemoryPool *JrdMemoryPool::createPool() {
     DBB dbb = GET_DBB;
 #ifdef SUPERSERVER
-	JrdMemoryPool *result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool),
+	JrdMemoryPool* result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool),
 		(int*)&dbb->dbb_current_memory, (int*)&dbb->dbb_max_memory);
 #else
 	JrdMemoryPool *result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool));
@@ -161,7 +159,7 @@ void JrdMemoryPool::noDbbDeletePool(JrdMemoryPool* pool) {
 	MemoryPool::deletePool(pool);
 }
 
-TEXT* ALL_cstring(TEXT* in_string)
+TEXT* ALL_cstring(const TEXT* in_string)
 {
 /**************************************
  *
@@ -175,14 +173,10 @@ TEXT* ALL_cstring(TEXT* in_string)
  *	return to the user or where ever.
  *
  **************************************/
-	TDBB tdbb;
-	JrdMemoryPool *pool;
-	TEXT *p;
-	size_t length;
+	TDBB tdbb = GET_THREAD_DATA;
 
-	tdbb = GET_THREAD_DATA;
-
-	if (!(pool = tdbb->tdbb_default)) {
+	JrdMemoryPool* pool = tdbb->tdbb_default;
+	if (!pool) {
 		if (tdbb->tdbb_transaction)
 			pool = tdbb->tdbb_transaction->tra_pool;
 		else if (tdbb->tdbb_request)
@@ -194,9 +188,9 @@ TEXT* ALL_cstring(TEXT* in_string)
 			return NULL;
 	}
 
-	length = strlen(in_string);
-	p = FB_NEW(*pool) TEXT[length+1];
-	strcpy(p,in_string);	
+	const size_t length = strlen(in_string);
+	TEXT* p = FB_NEW(*pool) TEXT[length + 1];
+	strcpy(p, in_string);
 	return p;
 }
 
@@ -219,9 +213,7 @@ void ALL_fini(void)
  *	released at the top of this routine.
  *
  **************************************/
-	DBB dbb;
-
-	dbb = GET_DBB;
+	DBB dbb = GET_DBB;
 
 	/* Don't know if we even need to do this, so it is commented out */
 	//delete dbb;
@@ -243,21 +235,17 @@ void ALL_init(void)
  *	have been locked before entry.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	JrdMemoryPool* pool;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
-
-	pool = tdbb->tdbb_default = dbb->dbb_permanent;
+	JrdMemoryPool* pool = tdbb->tdbb_default = dbb->dbb_permanent;
 //	dbb->dbb_permanent->setExtendSize(PERM_EXTEND_SIZE);
 	dbb->dbb_pools[0] = pool;
 	dbb->dbb_bufferpool = JrdMemoryPool::createPool();
 //	FB_NEW(*pool) JrdMemoryPool(CACH_EXTEND_SIZE);
 }
 
-void JrdMemoryPool::ALL_push(BLK object, LLS * stack)
+void JrdMemoryPool::ALL_push(BLK object, LLS* stack)
 {
 /**************************************
  *
@@ -269,21 +257,17 @@ void JrdMemoryPool::ALL_push(BLK object, LLS * stack)
  *	Push an object on an LLS stack.
  *
  **************************************/
-	TDBB tdbb;
-	LLS node;
-	JrdMemoryPool* pool;
+	TDBB tdbb = GET_THREAD_DATA;
 
-	tdbb = GET_THREAD_DATA;
-
-	pool = tdbb->tdbb_default;
-	node = pool->lls_cache.newBlock();
+	JrdMemoryPool* pool = tdbb->tdbb_default;
+	lls* node = pool->lls_cache.newBlock();
 	node->lls_object = object;
 	node->lls_next = *stack;
 	*stack = node;
 }
 
 
-BLK JrdMemoryPool::ALL_pop(LLS *stack)
+BLK JrdMemoryPool::ALL_pop(LLS* stack)
 {
 /**************************************
  *
@@ -296,15 +280,11 @@ BLK JrdMemoryPool::ALL_pop(LLS *stack)
  *	further use.
  *
  **************************************/
-	LLS node;
-	JrdMemoryPool* pool;
-	BLK object;
-
-	node = *stack;
+	lls* node = *stack;
 	*stack = node->lls_next;
-	object = node->lls_object;
+	blk* object = node->lls_object;
 
-	pool = (JrdMemoryPool*)MemoryPool::blk_pool(node);
+	JrdMemoryPool* pool = (JrdMemoryPool*)MemoryPool::blk_pool(node);
 	pool->lls_cache.returnBlock(node);
 
 	return object;

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Security data base manager
  *	MODULE:		secur_proto.h
- *	DESCRIPTION:	Prototype header file for security.e
+ *	DESCRIPTION:	Prototype header file for security.epp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,9 +24,11 @@
 #ifndef UTILITIES_SECUR_PROTO_H
 #define UTILITIES_SECUR_PROTO_H
 
-SSHORT	SECURITY_exec_line (ISC_STATUS *, FRBRD *, struct user_data *,
-									void (*)(void *, USER_DATA, bool), void *);
-void	SECURITY_msg_get (USHORT, TEXT *);
-void	SECURITY_get_db_path (TEXT *, TEXT *);
+typedef void (*FPTR_SECURITY_CALLBACK)(void*, const internal_user_data*, bool);
+SSHORT	SECURITY_exec_line (ISC_STATUS*, FRBRD*, internal_user_data*,
+									FPTR_SECURITY_CALLBACK, void*);
+void	SECURITY_msg_get (USHORT, TEXT*);
+void	SECURITY_get_db_path (const TEXT*, TEXT*);
 
 #endif // UTILITIES_SECUR_PROTO_H
+

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cme.cpp,v 1.20 2003-11-28 06:48:11 robocop Exp $
+//	$Id: cme.cpp,v 1.21 2003-12-22 10:00:14 robocop Exp $
 //
 
 #include "firebird.h"
@@ -413,7 +413,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 		 * will be NULL - this is only for purposes of allocating
 		 * values in the message DESCRIBING
 		 * the statement.  
-		 * Other parts of gpre aren't too happy with a dtype_null datatype
+		 * Other parts of gpre aren't too happy with a dtype_unknown datatype
 		 */
 		f->fld_dtype = dtype_text;
 		f->fld_length = 1;
@@ -571,7 +571,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 		{
 			dtype_max =
 				DSC_multiply_result[field1.fld_dtype][field2.fld_dtype];
-			if (dtype_max == dtype_null)
+			if (dtype_max == dtype_unknown)
 			{
 				CPR_error("Invalid operand used in multiplication");
 			} else if (dtype_max == DTYPE_CANNOT)
@@ -670,7 +670,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 			else
 				dtype_max =
 					DSC_sub_result[field1.fld_dtype][field2.fld_dtype];
-			if (dtype_max == dtype_null)
+			if (dtype_max == dtype_unknown)
 				CPR_error("Illegal operands used in addition");
 			else if (dtype_max == DTYPE_CANNOT)
 				CPR_error("expression evaluation not supported");
@@ -766,7 +766,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 		{
 			dtype_max =
 				DSC_multiply_result[field1.fld_dtype][field2.fld_dtype];
-			if (dtype_max == dtype_null)
+			if (dtype_max == dtype_unknown)
 				CPR_error("Illegal operands used in division");
 			else if (dtype_max == DTYPE_CANNOT)
 				CPR_error("expression evaluation not supported");
