@@ -1,3 +1,188 @@
+2002-11-06 21:37  skidder
+
+	* firebird2/configure.in:
+	
+	Make new config stuff compile on POSIX
+
+2002-11-06 21:34  skidder
+
+	* firebird2/src/jrd/all.cpp:
+	
+	Fixed memory corruption problem that prevented restore of databases
+	with procedures using plan expressions with long index names
+
+2002-11-06 21:26  skidder
+
+	* firebird2/src/jrd/par.cpp:
+	
+	Fixed quoted identifiers problem in plan expressions
+
+2002-11-06 21:25  skidder
+
+	* firebird2/configure.in:
+	
+	Make new config stuff compile on POSIX
+
+2002-11-06 21:18  skidder
+
+	* firebird2/builds/posix/make.shared.variables:
+	
+	Make new config stuff compile on POSIX
+
+2002-11-06 21:10  skidder
+
+	* firebird2/builds/posix/make.shared.variables:
+	
+	Make new config stuff compile on POSIX
+
+2002-11-06 20:23  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	no message
+
+2002-11-06 16:19  kkuznetsov
+
+	* firebird2/src/jrd/jrn.cpp:
+	
+	[no log message]
+
+2002-11-06 16:13  dimitr
+
+	* firebird2/src/jrd/: db_alias.cpp, jrd.cpp, sort_mem.cpp:
+	
+	Force everybody to use new config manager.
+
+2002-11-06 16:10  dimitr
+
+	* firebird2/builds/win32/msvc6/: alice.dsp, alice_classic.dsp,
+	burp.dsp, burp_classic.dsp, common.dsp, dsql_server.dsp,
+	dsql_server_classic.dsp, engine.dsp, engine_classic.dsp,
+	Firebird2.dsw, fb_inet_server.dsp, fb_lock_print.dsp, fbclient.dsp,
+	fbembed.dsp, fbguard.dsp, fbserver.dsp, gbak.dsp, gdef.dsp,
+	gds32.dsp, gfix.dsp, gpre.dsp, gpre_boot.dsp, gsec.dsp, gstat.dsp,
+	ib_udf.dsp, ib_util.dsp, instreg.dsp, instsvc.dsp, intl.dsp,
+	ipserver.dsp, isql.dsp, lock.dsp, lock_classic.dsp, qli.dsp,
+	remote.dsp, remote_classic.dsp, utilities.dsp,
+	utilities_classic.dsp, wal.dsp, wal_classic.dsp:
+	
+	1. Reorganized project files.  2. Added fb_lock_print and qli.	3.
+	Implemented classic and embedded servers.  4. Used new
+	configuration manager.
+
+2002-11-06 15:50  dimitr
+
+	* firebird2/src/qli/: err.cpp, parse.cpp:
+	
+	Cleanup.
+
+2002-11-06 15:35  eku
+
+	* firebird2/src/intl/ld.c:
+	
+	Need to include "firebird.h" to get the autoconf values.
+
+2002-11-06 15:09  dimitr
+
+	* firebird2/src/: include/gen/autoconfig_msvc.h, remote/wnet.cpp:
+	
+	Autoconfigured pipe name for wnet protocol.
+
+2002-11-06 15:06  eku
+
+	* firebird2/src/make.new/config/config.h.in:
+	
+	Corrected service name.
+
+2002-11-06 14:38  dimitr
+
+	* firebird2/: configure.in, src/include/gen/autoconfig_msvc.h:
+	
+	Corrected service name.
+
+2002-11-06 14:03  dimitr
+
+	* firebird2/configure.in:
+	
+	no message
+
+2002-11-06 13:58  dimitr
+
+	* firebird2/: configure.in, builds/posix/prefix.mingw:
+	
+	We're going to support win32 builds made with mingw.
+
+2002-11-06 13:37  dimitr
+
+	* firebird2/src/jrd/ibinitdll.cpp:
+	
+	Fixed IBX-related and other explicit loading issues.
+
+2002-11-06 13:36  eku
+
+	* firebird2/: configure.in, src/include/gen/autoconfig_msvc.h,
+	src/install/arch-specific/sinixz/postinstall.in,
+	src/make.new/config/config.h.in, src/remote/inet.cpp,
+	src/remote/ipc.cpp, src/remote/ipc.h, src/remote/wnet.cpp,
+	src/remote/xnet.cpp:
+	
+	Now you can specify the service name and port of the DB server via
+	configure
+	
+	  --with-service-name	  specify inet service name
+	(default=gds_db)
+	  --with-service-port	  specify inet service port (default=3050)
+	
+	So it's possible to run FB1 and FB2 together on the same machine.
+
+2002-11-06 13:33  dimitr
+
+	* firebird2/src/: include/gen/autoconfig_msvc.h, intl/ld.c:
+	
+	Fixed MAXPATHLEN cleanup for win32.
+
+2002-11-06 08:23  eku
+
+	* firebird2/src/: jrd/intl.cpp, remote/server.cpp:
+	
+	Fixed compiler warnings.
+
+2002-11-06 08:20  eku
+
+	* firebird2/src/: include/gen/autoconfig_msvc.h,
+	make.new/config/config.h.in:
+	
+	Keep the order of the defines in sync with the tests in
+	configure.in.
+
+2002-11-06 08:19  eku
+
+	* firebird2/src/: intl/ld.h, jrd/isc_cray.cpp, jrd/isc_win32.cpp,
+	jrd/os2.cpp, jrd/windows.cpp, jrd/winnt.cpp:
+	
+	Do not redefine MAXPATHLEN. Always use the value supplied by the
+	operating system (header files).
+
+2002-11-06 08:08  eku
+
+	* firebird2/src/: alice/alice.h, alice/exe.cpp, intl/ld.c,
+	ipserver/ipclient.cpp, isql/isql_win.cpp, jrd/common.h,
+	jrd/gds.cpp, jrd/isc_file.cpp, jrd/qatest.cpp, jrd/svc.cpp,
+	jrd/unix.cpp, jrd/why.c, jrd/y-valve.cpp, lock/lock.cpp,
+	lock/print.cpp, lock/printv3.cpp, pipe/head.cpp, remote/inet.cpp,
+	remote/interface.cpp, remote/ipc.cpp, remote/wnet.cpp,
+	remote/xnet.cpp, utilities/util.cpp, wal/wal.h:
+	
+	Do not redefine MAXPATHLEN. Always use the value supplied by the
+	operating system (header files).
+
+2002-11-06 04:07  arnobrinkman
+
+	* firebird2/src/jrd/: opt.cpp, rse.h:
+	
+	New changes to the optimizer. Better backward compatibility with
+	forced PLAN's
+
 2002-11-05 17:48  skywalker
 
 	* firebird2/: configure.in, builds/posix/make.shared.variables,
