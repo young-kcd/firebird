@@ -3004,6 +3004,7 @@ static void THREAD_ROUTINE cache_reader(DBB dbb)
 	tdbb->tdbb_quantum = QUANTUM;
 	tdbb->tdbb_attachment = FB_NEW(*dbb->dbb_bufferpool) att();
 	tdbb->tdbb_attachment->att_database = dbb;
+	tdbb->tdbb_attachment->att_filename = dbb->dbb_filename;
 
 /* This try block is specifically to protect the LCK_init call: if
    LCK_init fails we won't be able to accomplish anything anyway, so
@@ -3172,6 +3173,7 @@ static void THREAD_ROUTINE cache_writer(DBB dbb)
 	tdbb->tdbb_quantum = QUANTUM;
 	tdbb->tdbb_attachment = FB_NEW(*dbb->dbb_bufferpool) att;
 	tdbb->tdbb_attachment->att_database = dbb;
+	tdbb->tdbb_attachment->att_filename = dbb->dbb_filename;
 
 /* This try block is specifically to protect the LCK_init call: if
    LCK_init fails we won't be able to accomplish anything anyway, so
