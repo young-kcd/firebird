@@ -1,3 +1,16 @@
+2004-12-25 10:43  robocop
+
+	* firebird2/: configure.in (1.212), src/common/classes/locks.h
+	(1.20), src/common/classes/rwlock.h (1.25),
+	src/common/classes/semaphore.h (1.18), src/isql/isql.epp (1.128),
+	src/jrd/btr.cpp (1.129), src/jrd/common.h (1.133), src/jrd/exe.h
+	(1.64), src/jrd/filters.cpp (1.43), src/jrd/nbak.cpp (1.45),
+	src/jrd/thd.h (1.41), src/remote/inet.cpp (1.132),
+	src/utilities/guard/util.cpp (1.7), src/utilities/ibmgr/srvrmgr.cpp
+	(1.23):
+	
+	Misc.
+
 2004-12-24 10:35  kkuznetsov
 
 	* firebird2/: configure.in (1.211), src/common/classes/fb_tls.h
