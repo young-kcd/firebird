@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.169 2003-10-30 07:26:27 eku Exp $
+dnl $Id: configure.in,v 1.170 2003-10-30 08:03:17 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -35,7 +35,7 @@ case "$target" in
   *-*-darwin*)
     MAKEFILE_PREFIX=darwin
     PLATFORM=DARWIN
-    AC_DEFINE(DARWIN, 1, [Define this if OS is  DARWIN])
+    AC_DEFINE(DARWIN, 1, [Define this if OS is DARWIN])
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=N
     SHRLIB_EXT=so
@@ -44,7 +44,7 @@ case "$target" in
   *-*-freebsd*)
     MAKEFILE_PREFIX=freebsd 
     PLATFORM=FREEBSD
-    AC_DEFINE(FREEBSD, 1, [Define this if OS is  FreeBSD])
+    AC_DEFINE(FREEBSD, 1, [Define this if OS is FreeBSD])
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=N
     SHRLIB_EXT=so
@@ -53,7 +53,7 @@ case "$target" in
   sparc*-*-linux-*)
     MAKEFILE_PREFIX=linux_sparc32
     PLATFORM=LINUX
-    AC_DEFINE(LINUX, 1, [Define this if OS is  Linux])
+    AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
@@ -71,7 +71,7 @@ case "$target" in
   *-*-netbsd*)
     MAKEFILE_PREFIX=netbsd
     PLATFORM=NETBSD
-    AC_DEFINE(NETBSD, 1, [Define this if OS is  NetBSD])
+    AC_DEFINE(NETBSD, 1, [Define this if OS is NetBSD])
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=N
     SHRLIB_EXT=so
@@ -80,7 +80,7 @@ case "$target" in
   *-*-hpux*)
     MAKEFILE_PREFIX=hpux
     PLATFORM=hpux
-    AC_DEFINE(hpux, 1, [Define this if OS is  HP-UX])
+    AC_DEFINE(hpux, 1, [Define this if OS is HP-UX])
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=N
     SHRLIB_EXT=so
@@ -89,7 +89,7 @@ case "$target" in
   i386-pc-solaris*)
     MAKEFILE_PREFIX=solx86
     PLATFORM=solx86
-    AC_DEFINE(solx86, 1, [Define this if OS is  Solarix x86])
+    AC_DEFINE(solx86, 1, [Define this if OS is Solarix x86])
     LOCK_MANAGER_FLG=N
     EDITLINE_FLG=N
     SHRLIB_EXT=so
@@ -98,7 +98,7 @@ case "$target" in
   sparc-sun-solaris*)
     MAKEFILE_PREFIX=solaris
     PLATFORM=SOLARIS
-    AC_DEFINE(SOLARIS, 1, [Define this if OS is  Solaris Sparc])
+    AC_DEFINE(SOLARIS, 1, [Define this if OS is Solaris Sparc])
     LOCK_MANAGER_FLG=N
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
@@ -107,7 +107,7 @@ case "$target" in
   i*-sni-sysv4)
     MAKEFILE_PREFIX=sinixz
     PLATFORM="SINIX-Z"
-    AC_DEFINE(SINIXZ, 1, [Define this if OS is  SINIX-Z])
+    AC_DEFINE(SINIXZ, 1, [Define this if OS is SINIX-Z])
     LOCK_MANAGER_FLG=N
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
@@ -116,7 +116,7 @@ case "$target" in
   *-*-mingw*)
     MAKEFILE_PREFIX=mingw
     PLATFORM=win32
-    AC_DEFINE(WIN_NT, 1, [Define this if OS is  Windows NT])
+    AC_DEFINE(WIN_NT, 1, [Define this if OS is Windows NT])
     LOCK_MANAGER_FLG=N
     EDITLINE_FLG=N
     SHRLIB_EXT=dll
@@ -129,10 +129,8 @@ esac
 
 AC_SUBST(MAKEFILE_PREFIX)
 AC_SUBST(PLATFORM)
+AC_DEFINE(CASE_SENSITIVITY, false, [Define this if paths are case sensitive])
 
-
-dnl possibly needed if we use install-sh program
-dnl AC_CONFIG_AUX_DIR(`pwd`)
 
 AC_PROG_AWK
 AC_PROG_CC  dnl EKU: C++ programs should not use CC, but at the moment all
@@ -508,7 +506,10 @@ case "$PLATFORM" in
     AC_ARG_WITH(pipe-name,
       [  --with-pipe-name        specify wnet pipe name (default=interbas)],
       [FB_PIPE_NAME=${withval}])
-    AC_DEFINE_UNQUOTED(FB_PIPE_NAME,"$FB_PIPE_NAME", [Wnet pipe name])
+    AH_VERBATIM(FB_PIPE_NAME,
+[/* Wnet pipe name */
+#define FB_PIPE_NAME "interbas"])
+    AC_DEFINE_UNQUOTED(FB_PIPE_NAME,"$FB_PIPE_NAME")
     AC_SUBST(FB_PIPE_NAME)
     XE_PREPEND(-lmpr -lversion -lws2_32 -lole32,LIBS)
     ;;
