@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.34 2003-02-21 09:25:17 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.34.2.1 2003-12-22 17:43:39 dimitr Exp $ 
  */
 
 /*
@@ -375,8 +375,8 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, JRD_NOD node)
 /* Handle and pre-processing possible for various nodes.  This includes
    evaluating argument and checking NULL flags */
 
-	JRD_REQ  request = tdbb->tdbb_request;
-	JRD_NOD* ptr     = node->nod_arg;
+	JRD_REQ request = tdbb->tdbb_request;
+	JRD_NOD* ptr = node->nod_arg;
 
 	switch (node->nod_type)
 	{
@@ -723,12 +723,14 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, JRD_NOD node)
 		return ((comparison <= 0) ? TRUE : FALSE);
 
 	case nod_between:
-		return (comparison >= 0 &&
-				MOV_compare(desc[0], EVL_expr(tdbb, node->nod_arg[2])) <= 0) ?
+		desc[1] = EVL_expr(tdbb, node->nod_arg[2]);
+		if (request->req_flags & req_null)
+			return FALSE;
+		return (comparison >= 0 && MOV_compare(desc[0], desc[1]) <= 0) ?
 			TRUE : FALSE;
 
 	default:
-		BUGCHECK(231);			/* msg 231 EVL_bitmap: invalid operation */
+		BUGCHECK(231);			/* msg 231 EVL_boolean: invalid operation */
 	}
 	return FALSE;
 }
