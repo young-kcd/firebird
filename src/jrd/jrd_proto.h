@@ -50,7 +50,7 @@ namespace Jrd {
 	class Attachment;
 	class jrd_tra;
 	class blb;
-	class bid;
+	struct bid;
 	class jrd_req;
 	class Service;
 	class BlockingThread;

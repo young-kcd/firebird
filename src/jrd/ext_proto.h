@@ -25,7 +25,7 @@
 #define JRD_EXT_PROTO_H
 
 namespace Jrd {
-	class bid;
+	struct bid;
 	class ExternalFile;
 }
 
