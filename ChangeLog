@@ -1,3 +1,33 @@
+2004-07-31 00:37  skidder
+
+	* firebird2/: builds/posix/make.rules (1.23),
+	builds/posix/prefix.linux (1.27), src/common/classes/alloc.cpp
+	(1.56), src/common/classes/alloc.h (1.45), src/dsql/all.h (1.12),
+	src/include/firebird.h (1.28), src/include/gen/autoconfig_msvc.h
+	(1.95), src/jrd/all.h (1.19):
+	
+	Valgrind support
+
+2004-07-30 07:56  robocop
+
+	* firebird2/src/jrd/jrd.cpp (1.175):
+	
+	Temporary fix for first problem reported by Adriano dos Santos
+	Fernandes.  Server should continue working normally if gbak tries
+	to restore a db in a forbidden path.  Now mutex is unlocked and
+	server can continue working. However, engine doesn't unload the db
+	so it still thinks there's an active connection.  The proper fix
+	should come from Alex, that probably involves throwing an exception
+	to activate the code inside the catch() section.
+
+2004-07-30 06:58  robocop
+
+	* firebird2/src/jrd/cmp.cpp (1.138):
+	
+	Nickolay says the local variable is different from the outer
+	variable.  Therefore, renamed the inner variable to avoid warning
+	found by D. Sibiryakov. Some integer types made const, too.
+
 2004-07-29 19:44  skidder
 
 	* firebird2/src/common/classes/tree.h (1.39):
