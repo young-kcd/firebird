@@ -1,3 +1,103 @@
+2002-10-28 17:59  skidder
+
+	* firebird2/builds/posix/Makefile.in.codes:
+	
+	Fixed little problem with code regeneration
+
+2002-10-28 16:34  alexpeshkoff
+
+	* firebird2/builds/win32/msvc6/fbserver.dsp:
+	
+	Threads' priority scheduling in Win32 Added thd_priority.cpp to
+	project file
+	
+	Inactive by default To bring to active state uncomment	   
+	//#define THREAD_PSCHED in thd_priority.h
+
+2002-10-28 11:16  dimitr
+
+	* firebird2/src/: remote/nt_server.cpp, utilities/services.cpp:
+	
+	Win32 classic changes.
+
+2002-10-28 07:47  dimitr
+
+	* firebird2/builds/win32/msvc6/Firebird2.dsw:
+	
+	Small correction.
+
+2002-10-28 06:39  seanleyne
+
+	* firebird2/src/jrd/license.h:
+	
+	Code Cleanup, removed obsolete "ALPHA_NT" port
+
+2002-10-28 06:24  seanleyne
+
+	* firebird2/src/intl/langdrv.h:
+	
+	Completed removal of "NeXT" port
+
+2002-10-28 06:19  seanleyne
+
+	* firebird2/src/: alice/tdr.cpp, burp/canonical.cpp, gpre/gpre.h,
+	include/gen/autoconfig_msvc.h, intl/langdrv.h, intl/ld.h,
+	jrd/common.h, jrd/isc_cray.cpp, jrd/isc_file.cpp, jrd/license.h,
+	jrd/pag.cpp, jrd/utl.cpp, lock/lock.h, lock/lockv3.h,
+	lock/print.cpp, remote/inet.cpp, remote/interface.cpp,
+	remote/protocol.cpp, remote/protocol.h, remote/remote_def.h,
+	v5_examples/align.h:
+	
+	Code Cleanup, removed obsolete "Ultrix" and "Ultrix/MIPS" ports
+
+2002-10-28 05:57  seanleyne
+
+	* firebird2/src/: burp/misc.cpp, gpre/cob.cpp, gpre/gpre.h,
+	include/gen/autoconfig_msvc.h, journal/console.cpp, jrd/common.h,
+	jrd/flu.cpp, jrd/isc_file.cpp, jrd/isc_ipc.cpp, jrd/license.h,
+	jrd/pag.cpp, jrd/utl.cpp, lock/lock.h, lock/lockv3.h,
+	makefiles/prefix.unixware, pipe/head.cpp, remote/inet.cpp,
+	remote/remote_def.h:
+	
+	Code Cleanup, removed obsolete "UNIXWARE" port
+
+2002-10-28 05:44  seanleyne
+
+	* firebird2/src/jrd/isc_sync.cpp:
+	
+	Completed removal of obsolete "M88K" port
+
+2002-10-28 05:42  seanleyne
+
+	* firebird2/src/: gpre/cob.cpp, jrd/common.h, jrd/isc_sync.cpp,
+	jrd/license.h, jrd/pag.cpp, jrd/utl.cpp, jrd/why.c,
+	jrd/y-valve.cpp, makefiles/prefix.dg_x86, remote/remote_def.h:
+	
+	Completed removal of obsolete "DG_X86" port
+
+2002-10-28 04:52  seanleyne
+
+	* firebird2/src/: jrd/svc.cpp, lock/lock.cpp, utilities/drop.cpp,
+	wal/wal.cpp:
+	
+	Completed removal of obsolete "IMP" port
+
+2002-10-28 04:47  seanleyne
+
+	* firebird2/src/: jrd/llio.cpp, jrd/svc.cpp, jrd/unix.cpp,
+	lock/lock.cpp, lock/print.cpp, pipe/head.cpp, utilities/drop.cpp,
+	wal/wal.cpp:
+	
+	Completed removal of obsolete "DELTA" port
+
+2002-10-28 04:40  seanleyne
+
+	* firebird2/src/makefiles/: prefix.ap, prefix.ax, prefix.cray,
+	prefix.delta, prefix.epson, prefix.hm300, prefix.imp, prefix.m88k,
+	prefix.nxt, prefix.os2:
+	
+	Deleted 'prefix.' files for old/deleted ports
+
 2002-10-27 16:36  skidder
 
 	* firebird2/builds/posix/Makefile.in.codes:
