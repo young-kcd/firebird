@@ -46,6 +46,7 @@
 #include "../common/classes/objects_array.h"
 #include "../common/classes/stack.h"
 #include "../common/classes/timestamp.h"
+#include "../common/classes/StringMap.h"
 #include "../jrd/sbm.h"
 
 #ifdef DEV_BUILD
@@ -431,7 +432,8 @@ public:
 		att_database(dbb), 
 		att_lc_messages(*dbb->dbb_permanent),
 		att_working_directory(*dbb->dbb_permanent), 
-		att_filename(*dbb->dbb_permanent) { }
+		att_filename(*dbb->dbb_permanent),
+		att_context_vars(*dbb->dbb_permanent) { }
 /*	Attachment()
 	:	att_database(0),
 		att_next(0),
@@ -491,7 +493,8 @@ public:
 	vcl*		att_val_errors;
 	Firebird::PathName	att_working_directory;	// Current working directory is cached
 	Firebird::PathName	att_filename;			// alias used to attach the database
-	Firebird::TimeStamp	att_timestamp;		// connection date and time
+	Firebird::TimeStamp	att_timestamp;	// connection date and time
+	Firebird::StringMap att_context_vars;  // Context variables for the connection
 };
 
 

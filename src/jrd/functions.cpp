@@ -26,13 +26,10 @@
 #include <stdio.h>
 #include <string.h>
 #include "../jrd/jrd.h"  /* For MAXPATHLEN Bug #126614 */
+#include "../jrd/tra.h"
 #include "../jrd/dsc_proto.h"
 
-/* defined in common.h, which is included by stdio.h: typedef int (*FPTR_INT)(); */
-
-
-extern "C" {
-
+using namespace Jrd;
 
 struct FN {
 	const char* fn_module;
@@ -41,13 +38,16 @@ struct FN {
 };
 
 
-// FPTR_INT FUNCTIONS_entrypoint(char*, char*);
 static int test(const long*, char*);
 static DSC* ni(DSC*, DSC*);
 static SLONG* byteLen(const dsc*);
+static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary* value_vary);
+static vary* get_context(const vary* ns_vary, const vary* name_vary);
 
-
-#pragma FB_COMPILER_MESSAGE("Fix! function pointer cast!")
+#define FUNCTION(ROUTINE, FUNCTION_NAME, MODULE_NAME, ENTRYPOINT, RET_ARG) \
+	{MODULE_NAME, ENTRYPOINT, (FPTR_INT) ROUTINE},
+#define END_FUNCTION
+#define FUNCTION_ARGUMENT(MECHANISM, TYPE, SCALE, LENGTH, SUB_TYPE, CHARSET, PRECISION, CHAR_LENGTH)
 
 static const FN isc_functions[] = {
 	{"test_module", "test_function", (FPTR_INT) test},
@@ -55,6 +55,9 @@ static const FN isc_functions[] = {
 	{"test_module", "ns", (FPTR_INT) ni},
 	{"test_module", "nn", (FPTR_INT) ni},
 	{"test_module", "byte_len", (FPTR_INT) byteLen},
+
+#include "../jrd/functions.h"
+
 	{0, 0, 0}
 };
 
@@ -99,6 +102,179 @@ FPTR_INT FUNCTIONS_entrypoint(const char* module, const char* entrypoint)
 	return 0;
 }
 
+vary* get_context(const vary* ns_vary, const vary* name_vary)
+{
+	// Complain if namespace or variable name is null
+	if (!ns_vary || !name_vary) {
+		ERR_post(isc_ctx_bad_argument, isc_arg_string, "RDB$SET_CONTEXT", 0);
+	}
+
+	thread_db* tdbb = JRD_get_thread_data();
+
+	if (!tdbb) {
+		fb_assert(false);
+		return NULL;
+	}
+
+	Firebird::string ns_str(ns_vary->vary_string, ns_vary->vary_length),
+		name_str(name_vary->vary_string, name_vary->vary_length);
+
+	// Handle system variables
+	if (ns_str == "SYS_SESSION") 
+	{
+		if (name_str == "DB_NAME") 
+		{
+			Database* dbb = tdbb->tdbb_database;
+
+			if (!dbb) {
+				fb_assert(false);
+				return NULL;
+			}
+
+			vary *result_vary = (vary*) malloc(dbb->dbb_database_name.length() + 2);
+			result_vary->vary_length = dbb->dbb_database_name.length();
+			memcpy(result_vary->vary_string, dbb->dbb_database_name.c_str(), result_vary->vary_length);
+			return result_vary;
+		}
+		// "Context variable %s is not found in namespace %s"
+		ERR_post(isc_ctx_var_not_found, 
+			isc_arg_string, ERR_cstring(name_str.c_str()),
+			isc_arg_string,	ERR_cstring(ns_str.c_str()), 0);
+	}
+
+	if (ns_str == "SYS_TRANSACTION") 
+	{
+		if (name_str == "ISOLATION") 
+		{
+			jrd_tra *transaction = tdbb->tdbb_transaction;
+
+			if (!transaction) {
+				fb_assert(false);
+				return NULL;
+			}
+
+			const char* isolation;
+
+			if (transaction->tra_flags & TRA_read_committed)
+				isolation = "READ COMMITTED";
+			else if (transaction->tra_flags & TRA_degree3)
+				isolation = "CONSISTENCY";
+			else
+				isolation = "SNAPSHOT";
+
+			vary *result_vary = (vary*) malloc(strlen(isolation) + 2);
+			result_vary->vary_length = strlen(isolation);
+			memcpy(result_vary->vary_string, isolation, result_vary->vary_length);
+			return result_vary;
+		}
+		// "Context variable %s is not found in namespace %s"
+		ERR_post(isc_ctx_var_not_found,
+			isc_arg_string, ERR_cstring(name_str.c_str()),
+			isc_arg_string, ERR_cstring(ns_str.c_str()), 0);
+	}
+
+	// Handle user-defined variables
+	Firebird::string result_str;
+
+	if (ns_str == "USER_SESSION") 
+	{
+		Attachment* att = tdbb->tdbb_attachment;
+
+		if (!att) {
+			fb_assert(false);
+			return NULL;
+		}
+
+		if (!att->att_context_vars.get(name_str, result_str))
+			return NULL;
+	} else if (ns_str == "USER_TRANSACTION") {
+		jrd_tra* tra = tdbb->tdbb_transaction;
+
+		if (!tra) {
+			fb_assert(false);
+			return NULL;
+		}
+
+		if (!tra->tra_context_vars.get(name_str, result_str))
+			return NULL;
+	} 
+	else
+	{
+		// "Invalid namespace name %s passed to %s"
+		ERR_post(isc_ctx_namespace_invalid,
+			isc_arg_string, ERR_cstring(ns_str.c_str()),
+			isc_arg_string, "RDB$GET_CONTEXT", 0);
+	}
+
+	vary *result_vary = (vary*) malloc(result_str.length() + 2);
+	result_vary->vary_length = result_str.length();
+	memcpy(result_vary->vary_string, result_str.c_str(), result_vary->vary_length);
+	return result_vary;
+}
+
+static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary* value_vary)
+{
+	// Complain if namespace or variable name is null
+	if (!ns_vary || !name_vary)
+	{
+		ERR_post(isc_ctx_bad_argument, isc_arg_string, "RDB$SET_CONTEXT", 0);
+	}
+
+	thread_db* tdbb = JRD_get_thread_data();
+
+	if (!tdbb) {
+		// Something is seriously wrong
+		fb_assert(false);
+		return 0;
+	}
+
+	Firebird::string ns_str(ns_vary->vary_string, ns_vary->vary_length),
+		name_str(name_vary->vary_string, name_vary->vary_length),
+		value_str(value_vary->vary_string, value_vary->vary_length);
+
+	if (ns_str == "USER_SESSION") 
+	{
+		Attachment* att = tdbb->tdbb_attachment;
+
+		if (!att) {
+			fb_assert(false);
+			return 0;
+		}
+
+		if (!value_vary)
+			return att->att_context_vars.remove(name_str);
+
+		if (att->att_context_vars.count() > MAX_CONTEXT_VARS) {
+			// "Too many context variables"
+			ERR_post(isc_ctx_too_big, 0);
+		}
+
+		return att->att_context_vars.put(name_str, value_str);
+	} else if (ns_str == "USER_TRANSACTION") {
+		jrd_tra* tra = tdbb->tdbb_transaction;
+
+		if (!tra) {
+			fb_assert(false);
+			return 0;
+		}
+
+		if (!value_vary)
+			return tra->tra_context_vars.remove(name_str);
+
+		if (tra->tra_context_vars.count() > MAX_CONTEXT_VARS) {
+			// "Too many context variables"
+			ERR_post(isc_ctx_too_big, 0);
+		}
+
+		return tra->tra_context_vars.put(name_str, value_str);
+	} else {
+		// "Invalid namespace name %s passed to %s"
+		ERR_post(isc_ctx_namespace_invalid,
+			isc_arg_string, ERR_cstring(ns_str.c_str()),
+			isc_arg_string, "RDB$SET_CONTEXT", 0);
+		return 0;
+	}
+}
 
 static int test(const long* n, char *result)
 {
@@ -190,7 +366,3 @@ static SLONG* byteLen(const dsc* v)
 		return &rc;
 	}
 }
-
-
-} // extern "C"
-

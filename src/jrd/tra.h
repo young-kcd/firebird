@@ -35,6 +35,7 @@
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 #include "../common/classes/tree.h"
+#include "../common/classes/StringMap.h"
 #include "../jrd/rpb_chain.h"
 #include "../jrd/exe.h"
 #include "../jrd/blb.h" // For bid structure
@@ -86,7 +87,7 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 		tra_wait
 	};
 
-	jrd_tra(MemoryPool& p) : tra_blobs(&p), tra_resources(p) {}
+	jrd_tra(MemoryPool& p) : tra_blobs(&p), tra_resources(p), tra_context_vars(p) {}
 	Attachment* tra_attachment;	/* database attachment */
 	SLONG tra_number;			/* transaction number */
 	SLONG tra_top;				/* highest transaction in snapshot */
@@ -109,6 +110,7 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 #endif
 	class DeferredWork*	tra_deferred_work;	/* work deferred to commit time */
 	ResourceList tra_resources;		/* resource existence list */
+	Firebird::StringMap tra_context_vars; // Context variables for the transaction
 	traRpbList* tra_rpblist;	/* active record_param's of given transaction */
 	UCHAR tra_use_count;		/* use count for safe AST delivery */
 	UCHAR tra_callback_count;	/* callback count for 'execute statement' */

@@ -178,6 +178,9 @@
 				RelativePath="..\..\..\src\jrd\os\win32\path_utils.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\common\classes\StringMap.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\common\classes\timestamp.cpp">
 			</File>
 			<File
@@ -213,6 +216,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\os\fbsyslog.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\StringMap.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\timestamp.h">

@@ -555,6 +555,10 @@ const
 	gds_no_update                        = 335544840;
 	gds_cursor_already_open              = 335544841;
 	gds_stack_trace                      = 335544842;
+	gds_ctx_var_not_found                = 335544843;
+	gds_ctx_namespace_invalid            = 335544844;
+	gds_ctx_too_big                      = 335544845;
+	gds_ctx_bad_argument                 = 335544846;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

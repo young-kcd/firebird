@@ -1096,6 +1096,14 @@ C --
       PARAMETER (GDS__cursor_already_open              = 335544841)
       INTEGER*4 GDS__stack_trace                     
       PARAMETER (GDS__stack_trace                      = 335544842)
+      INTEGER*4 GDS__ctx_var_not_found               
+      PARAMETER (GDS__ctx_var_not_found                = 335544843)
+      INTEGER*4 GDS__ctx_namespace_invalid           
+      PARAMETER (GDS__ctx_namespace_invalid            = 335544844)
+      INTEGER*4 GDS__ctx_too_big                     
+      PARAMETER (GDS__ctx_too_big                      = 335544845)
+      INTEGER*4 GDS__ctx_bad_argument                
+      PARAMETER (GDS__ctx_bad_argument                 = 335544846)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
