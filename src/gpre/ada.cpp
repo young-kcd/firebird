@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.32 2003-10-29 10:53:07 robocop Exp $
+//	$Id: ada.cpp,v 1.33 2003-10-30 09:00:15 robocop Exp $
 //
 
 #include "firebird.h"
@@ -3317,8 +3317,8 @@ static void make_array_declaration( REF reference, int column)
 			   field->fld_array_info->ary_ident);
 
 //   Print out the dimension part of the declaration  
-	int i = 1;
-	for (const dim* dimension = field->fld_array_info->ary_dimension;
+	const dim* dimension = field->fld_array_info->ary_dimension;
+	for (int i = 1;
 		 i < field->fld_array_info->ary_dimension_count;
 		 dimension = dimension->dim_next, ++i)
 	{
