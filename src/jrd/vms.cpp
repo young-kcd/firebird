@@ -199,16 +199,6 @@ int PIO_connection(TEXT * file_name, USHORT * file_length)
  **************************************/
 	int node;
 
-#ifdef PLSERVER
-
-/* Analyze the file name to see if a remote connection is required.  If not,
-   quietly (sic) return. */
-
-	if (node = analyze(file_name, *file_length))
-		return PLS_connection(node);
-
-#endif
-
 	return NULL;
 }
 
