@@ -106,10 +106,6 @@ SOURCE=..\..\..\src\gpre\cmp.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\gpre\cob.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\gpre\exp.cpp
 # End Source File
 # Begin Source File

@@ -106,6 +106,10 @@ SOURCE=..\..\..\generated\gpre\gpre_meta.cpp
 # End Group
 # Begin Source File
 
+SOURCE=..\..\..\src\gpre\ada.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\gpre\c_cxx.cpp
 # End Source File
 # Begin Source File
@@ -167,6 +171,10 @@ SOURCE=..\..\..\src\gpre\noform.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\gpre\par.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\gpre\pas.cpp
 # End Source File
 # Begin Source File
 
