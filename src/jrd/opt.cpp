@@ -95,6 +95,7 @@ static bool computable(CSB, JRD_NOD, SSHORT, bool);
 static void compute_dependencies(JRD_NOD, ULONG *);
 static void compute_dbkey_streams(CSB, JRD_NOD, UCHAR *);
 static void compute_rse_streams(CSB, RSE, UCHAR *);
+static bool check_for_nod_from(JRD_NOD);
 static SLONG decompose(TDBB, JRD_NOD, LLS *, CSB);
 static USHORT distribute_equalities(LLS *, CSB);
 static BOOLEAN dump_index(JRD_NOD, SCHAR **, SSHORT *);
