@@ -168,7 +168,7 @@ Source: builds\install\arch-specific\win32\msvcrt.dll; DestDir: {sys}\; Componen
 Source: builds\install\arch-specific\win32\msvcp{#msvc_version}0.dll; DestDir: {sys}\; Components: ClientComponent; Flags: uninsneveruninstall sharedfile onlyifdoesntexist;
 Source: src\extlib\fbudf\fbudf.sql; DestDir: {app}\examples; Components: ServerComponent;  Flags: ignoreversion;
 Source: src\extlib\fbudf\fbudf.txt; DestDir: {app}\doc; Components: ServerComponent;  Flags: ignoreversion;
-Source: src\extlib\ib_util.pas; DestDir: {app}\include; Components: DevAdminComponent;  Flags: ignoreversion;
+Source: lang_helpers\ib_util.pas; DestDir: {app}\include; Components: DevAdminComponent;  Flags: ignoreversion;
 ;Source: firebird\install\doc_all_platforms\Firebird_v1_ReleaseNotes.pdf; DestDir: {app}\doc; Components: DevAdminComponent;  Flags: ignoreversion;
 ;Source: firebird\install\doc_all_platforms\Firebird_v1_*.html; DestDir: {app}\doc; Components: DevAdminComponent;  Flags: ignoreversion;
 

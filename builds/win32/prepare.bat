@@ -29,11 +29,11 @@ if "%FIREBIRD%"=="" (goto :HELP & goto :EOF)
 
 @rmdir /s /q %ROOT_PATH%\gen 2>nul
 @mkdir %ROOT_PATH%\gen\dbs 2>nul
-@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\src\misc\metadata.gbak localhost:%DB_PATH%\gen\dbs\metadata.fdb
-@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\src\misc\security.gbak localhost:%DB_PATH%\gen\dbs\security.fdb
-@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\src\msgs\msg.gbak localhost:%DB_PATH%\gen\dbs\msg.fdb
-@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\src\misc\help.gbak localhost:%DB_PATH%\gen\dbs\help.fdb
-@copy %ROOT_PATH%\gen\dbs\metadata.fdb %ROOT_PATH%\gen\dbs\yachts.lnk
+@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\builds\misc\metadata.gbak localhost:%DB_PATH%\gen\dbs\metadata.fdb
+@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\builds\misc\security.gbak localhost:%DB_PATH%\gen\dbs\security.fdb
+@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\builds\misc\msg.gbak localhost:%DB_PATH%\gen\dbs\msg.fdb
+@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\builds\misc\help.gbak localhost:%DB_PATH%\gen\dbs\help.fdb
+@copy %ROOT_PATH%\gen\dbs\metadata.fdb %ROOT_PATH%\gen\dbs\yachts.lnk > nul
 
 @echo.
 @echo Completed Preparations for build

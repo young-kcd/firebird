@@ -76,7 +76,7 @@ if "%VS_VER%"=="msvc6" (
 @copy %ROOT_PATH%\gen\dbs\SECURITY.FDB %ROOT_PATH%\output\security.fdb >nul
 @copy %ROOT_PATH%\gen\dbs\HELP.fdb %ROOT_PATH%\output\help\help.fdb >nul
 @copy %ROOT_PATH%\gen\firebird.msg %ROOT_PATH%\output\firebird.msg >nul
-@copy %ROOT_PATH%\src\misc\security.gbak %ROOT_PATH%\output\security.fbk > nul
+@copy %ROOT_PATH%\builds\misc\security.gbak %ROOT_PATH%\output\security.fbk > nul
 :: LIB
 @copy %ROOT_PATH%\temp\%DBG_DIR%\gds32\gds32.lib %ROOT_PATH%\output\lib\gds32_ms.lib >nul
 @copy %ROOT_PATH%\temp\%DBG_DIR%\fbclient\fbclient.lib %ROOT_PATH%\output\lib\fbclient_ms.lib >nul
@@ -108,7 +108,7 @@ copy %ROOT_PATH%\src\jrd\perf.h %ROOT_PATH%\output\include >nul
 copy %ROOT_PATH%\src\jrd\blr.h %ROOT_PATH%\output\include > nul
 copy %ROOT_PATH%\src\include\gen\iberror.h %ROOT_PATH%\output\include > nul
 :: Examples
-@xcopy /E %ROOT_PATH%\src\v5_examples %ROOT_PATH%\output\examples > nul
+@xcopy /E %ROOT_PATH%\examples %ROOT_PATH%\output\examples > nul
 ::
 @copy install_super.bat %ROOT_PATH%\output\bin >nul
 @copy install_classic.bat %ROOT_PATH%\output\bin >nul
