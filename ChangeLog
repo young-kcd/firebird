@@ -1,3 +1,16 @@
+2003-03-22 20:04  seanleyne
+
+	* firebird2/src/install/misc/firebird.conf:
+	
+	Small correction of a mistake I made in previous committ.
+
+2003-03-22 07:18  dimitr
+
+	* firebird2/src/burp/: backup.epp, restore.epp:
+	
+	Rolled back part of my previous commit. In fact, only one line fix
+	was required.
+
 2003-03-21 17:19  dimitr
 
 	* firebird2/src/burp/: backup.epp, restore.epp:
