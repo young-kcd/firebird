@@ -198,7 +198,9 @@ typedef struct mnt {
 #define INET_FLAG	':'
 #endif
 
+#if (!defined NO_NFS || defined FREEBSD || defined NETBSD || defined SINIXZ)
 static int expand_filename2(TEXT *, USHORT, TEXT *);
+#endif
 
 #if defined(WIN_NT)
 static void expand_share_name(TEXT *);
@@ -211,7 +213,13 @@ static BOOLEAN get_mounts(MNT *, TEXT *, TEXT **, int *);
 #else
 static BOOLEAN get_mounts(MNT *, TEXT *, IB_FILE *);
 #endif
+
+#ifdef hpux
+/* RITTER - added HP11 to the pre-processor condition below */
+#if !(defined HP10 || defined HP11)
 static BOOLEAN get_server(TEXT *, TEXT *);
+#endif
+#endif
 
 #ifdef SHLIB_DEFS
 #define strlen		(*_libgds_strlen)

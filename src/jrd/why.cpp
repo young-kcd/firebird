@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.17 2003-02-27 13:55:50 brodsom Exp $
+$Id: why.cpp,v 1.18 2003-03-01 17:59:41 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -234,7 +234,9 @@ static void iterative_sql_info(STATUS *, WHY_STMT *, SSHORT, const SCHAR *, SSHO
 static STATUS no_entrypoint(STATUS * user_status, ...);
 static STATUS open_blob(STATUS *, WHY_ATT *, WHY_TRA *, WHY_BLB *, SLONG *, USHORT,
 						UCHAR *, SSHORT, SSHORT);
+#ifdef UNIX
 static STATUS open_marker_file(STATUS *, TEXT *, TEXT *);
+#endif
 static STATUS prepare(STATUS *, WHY_TRA);
 static void release_dsql_support(DASUP);
 static void release_handle(WHY_HNDL);

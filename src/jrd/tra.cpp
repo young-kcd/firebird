@@ -105,10 +105,14 @@ static TIP fetch_inventory_page(TDBB, WIN *, SLONG, USHORT);
 static SLONG inventory_page(TDBB, SLONG);
 static SSHORT limbo_transaction(TDBB, SLONG);
 static void restart_requests(TDBB, JRD_TRA);
+#ifdef SWEEP_THREAD
 static BOOLEAN start_sweeper(TDBB, DBB);
 static void THREAD_ROUTINE sweep_database(UCHAR *);
+#endif
 static void transaction_options(TDBB, JRD_TRA, UCHAR *, USHORT);
+#ifdef VMS
 static BOOLEAN vms_convert(LCK, SLONG *, SCHAR, BOOLEAN);
+#endif
 
 static const UCHAR sweep_tpb[] = { isc_tpb_version1, isc_tpb_read,
 	isc_tpb_read_committed, isc_tpb_rec_version

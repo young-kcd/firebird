@@ -34,7 +34,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.31 2003-02-15 00:55:10 brodsom Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.32 2003-03-01 18:04:20 brodsom Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -209,7 +209,9 @@ extern "C" {
 #endif
 
 static void cleanup(void *);
+#ifndef REQUESTER
 static void error(STATUS *, TEXT *, STATUS);
+#endif
 static void isc_signal2(int, SIG_FPTR, void *, ULONG);
 static SLONG overflow_handler(void *);
 static SIG que_signal(int, SIG_FPTR, void *, int);

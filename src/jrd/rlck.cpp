@@ -40,13 +40,19 @@
 #include "../jrd/thd_proto.h"
 #include "../jrd/vio_proto.h"
 
+#ifdef PC_ENGINE
 static LCK allocate_record_lock(JRD_TRA, RPB *);
+#endif
 static LCK allocate_relation_lock(MemoryPool*, JRD_REL);
 static LCK attachment_relation_lock(JRD_REL);
+#ifdef PC_ENGINE
 static void drop_record_lock(LCK);
 static LCK find_record_lock(RPB *);
+#endif
 static BOOLEAN obtain_lock(JRD_TRA, LCK, USHORT);
+#ifdef PC_ENGINE
 static void start_record_locking(JRD_REL);
+#endif
 
 
 #ifdef PC_ENGINE

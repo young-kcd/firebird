@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.26 2003-02-20 00:10:09 brodsom Exp $
+$Id: blb.cpp,v 1.27 2003-03-01 18:04:21 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -85,7 +85,9 @@ static void delete_blob_id(TDBB, BID, ULONG, JRD_REL);
 static ARR find_array(JRD_TRA, BID);
 static BLF find_filter(TDBB, SSHORT, SSHORT);
 static BLP get_next_page(TDBB, BLB, WIN *);
+#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 static void get_replay_blob(TDBB, BID);
+#endif
 static void insert_page(TDBB, BLB);
 static void release_blob(BLB, USHORT);
 static void slice_callback(SLICE, ULONG, DSC *);

@@ -371,11 +371,12 @@ static TEXT*	get_string_parameter(UCHAR **, TEXT **, ULONG *);
 static STATUS	handle_error(STATUS*, STATUS, TDBB);
 
 #if defined (WIN_NT)
+#ifdef SERVER_SHUTDOWN
 static void		ExtractDriveLetter(TEXT*, ULONG*);
-#if !defined(SERVER_SHUTDOWN)
+#else // SERVER_SHUTDOWN
 static void		setup_NT_handlers(void);
 static BOOLEAN	handler_NT(SSHORT);
-#endif	// !SERVER_SHUTDOWN
+#endif	// SERVER_SHUTDOWN
 #endif	// WIN_NT
 
 static DBB		init(TDBB, STATUS*, TEXT*, USHORT);

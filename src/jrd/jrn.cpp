@@ -93,7 +93,9 @@
 static int do_connect(JRN *, STATUS *, TEXT *, USHORT, LTJC *, USHORT,
 					  UCHAR *, USHORT, USHORT);
 static void error(STATUS *, JRN, int, TEXT *);
+#ifdef BSD_SOCKETS
 static int find_address(STATUS *, JRN, struct sockaddr_in *);
+#endif
 static int get_reply(STATUS *, JRN, JRNR *);
 static int journal_close(STATUS *, JRN);
 static int jrn_put(STATUS *, JRN, JRNH *, USHORT, UCHAR *, USHORT);
