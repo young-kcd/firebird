@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.61.2.2 2004-03-29 03:50:11 skidder Exp $
+$Id: met.epp,v 1.61.2.3 2004-03-31 05:56:34 skidder Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -180,6 +180,24 @@ void release_cached_triggers(TDBB tdbb, TRIG_VEC vector)
 			
 	for (ptr = vector->begin(), end = vector->end(); ptr < end; ptr++)
 		ptr->release(tdbb);
+}
+
+// Increment int_use_count for all procedures used by triggers
+void post_used_procedures(TDBB tdbb, TRIG_VEC vector) 
+{
+	trig_vec::iterator ptr, end;
+	
+	if (!vector) return;
+			
+	for (ptr = vector->begin(), end = vector->end(); ptr < end; ptr++)
+		if (ptr->request) {
+			for (RSC resource = ptr->request->req_resources; resource;
+				 resource = resource->rsc_next)
+			{
+				if (resource->rsc_type == rsc_procedure)
+					resource->rsc_prc->prc_int_use_count++;
+			}
+		}
 }
 
 void MET_update_partners(TDBB tdbb)
@@ -449,6 +467,92 @@ BOOLEAN MET_clear_cache(TDBB tdbb, JRD_PRC proc)
 			}
 		}
 		
+	}
+#ifdef DEV_BUILD
+	MET_verify_cache(tdbb);
+#endif
+	return result;
+}
+
+BOOLEAN MET_procedure_in_use(TDBB tdbb, JRD_PRC proc)
+{
+/**************************************
+ *
+ *      M E T _ p r o c e d u r e _ i n _ u s e
+ *
+ **************************************
+ *
+ * Functional description
+ *      Determine if procedure is used by any user requests or transactions. 
+ *      Return FALSE if procedure is used only inside cache or not used at all.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+#ifdef DEV_BUILD
+	MET_verify_cache(tdbb);
+#endif
+	DBB dbb = tdbb->tdbb_database;
+	
+	VEC procedures;
+	JRD_PRC procedure;
+
+	// This should not really happen
+	if ( !(procedures = dbb->dbb_procedures) ) 
+		return FALSE;
+
+	VEC relations = dbb->dbb_relations;	
+
+	vec::iterator	ptr, end;
+	for (ptr = relations->begin(), end = relations->end(); ptr < end; ptr++)
+	{
+		JRD_REL relation = JRD_REL(*ptr);
+		if (!relation) continue;
+		post_used_procedures(tdbb,relation->rel_pre_store);		
+		post_used_procedures(tdbb,relation->rel_post_store);
+		post_used_procedures(tdbb,relation->rel_pre_erase);		
+		post_used_procedures(tdbb,relation->rel_post_erase);		
+		post_used_procedures(tdbb,relation->rel_pre_modify);		
+		post_used_procedures(tdbb,relation->rel_post_modify);		
+	}
+ 
+	/* Walk procedures and calculate internal dependencies */
+	for (ptr = procedures->begin(), end = procedures->end();
+		ptr < end; ptr++) 
+	{
+		if ( (procedure = JRD_PRC(*ptr)) && procedure->prc_request &&
+			 !(procedure->prc_flags & PRC_obsolete) ) 
+		{
+			for (RSC resource = procedure->prc_request->req_resources; resource;
+				 resource = resource->rsc_next)
+			{
+				if (resource->rsc_type == rsc_procedure)
+					resource->rsc_prc->prc_int_use_count++;				
+			}
+		}
+	}
+		
+	/* Walk procedures again and adjust dependencies for procedures which will not be removed */
+	for (ptr = procedures->begin(), end = procedures->end();
+		ptr < end; ptr++) 
+	{
+		if ( (procedure = JRD_PRC(*ptr)) && procedure->prc_request &&
+			 !(procedure->prc_flags & PRC_obsolete) && 
+			 procedure->prc_use_count != procedure->prc_int_use_count && procedure != proc )
+		{
+			adjust_dependencies(procedure);
+		}
+	}
+		
+	BOOLEAN result = proc->prc_use_count != proc->prc_int_use_count;
+		
+	/* Fix back int_use_count */
+	for (ptr = procedures->begin(), end = procedures->end();
+			ptr < end; ptr++) 
+	{
+		if ( (procedure = JRD_PRC(*ptr)) )
+		{				
+			procedure->prc_int_use_count = 0;
+		}
 	}
 #ifdef DEV_BUILD
 	MET_verify_cache(tdbb);

@@ -80,6 +80,7 @@ void MET_release_triggers(TDBB, TRIG_VEC *);
 void MET_verify_cache(TDBB);
 #endif
 BOOLEAN MET_clear_cache(TDBB, JRD_PRC);
+BOOLEAN	MET_procedure_in_use(TDBB, JRD_PRC);
 void MET_remove_procedure(TDBB, int, JRD_PRC);
 void MET_revoke(TDBB, struct jrd_tra *, TEXT *, TEXT *, TEXT *);
 TEXT*MET_save_name(TDBB, const TEXT*);

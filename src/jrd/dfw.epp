@@ -2519,9 +2519,9 @@ static bool delete_procedure(	TDBB	tdbb,
 		// used by other compiled requests
 		if (procedure->prc_use_count && !MET_clear_cache(tdbb, procedure))
 		{
-#ifdef DEV_BUILD
-			gds__log("Deleting unfreed procedure %s", work->dfw_name);
-#endif
+			gds__log("Deleting unfreed procedure %s. "
+					 "Engine is likely to get unstable after this point", 
+					 work->dfw_name);
 			MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure);
 
 			if (procedure->prc_existence_lock) {
@@ -3871,12 +3871,15 @@ static bool modify_procedure(	TDBB	tdbb,
 		}
 		THREAD_ENTER;
 #endif /* SUPERSERVER */
-		if (procedure->prc_use_count && !MET_clear_cache(tdbb,procedure))
+		if (procedure->prc_use_count && MET_procedure_in_use(tdbb,procedure))
 		{
+			gds__log("Modifying procedure %s used by user requests. "
+					 "Engine may get unstable after this point.", work->dfw_name);
 #ifdef DEV_BUILD
-			gds__log("Modifying unfreed procedure %s", work->dfw_name);
+			MET_procedure_in_use(tdbb,procedure);
 			MET_clear_cache(tdbb,procedure);
 #endif
+
 			USHORT prc_alter_count = procedure->prc_alter_count;
 			if (prc_alter_count > MAX_PROC_ALTER)
 			{
@@ -3887,6 +3890,7 @@ static bool modify_procedure(	TDBB	tdbb,
 						 0);
 				/* Msg357: too many versions */
 			}
+
 			if (procedure->prc_existence_lock) {
 				LCK_release(tdbb, procedure->prc_existence_lock);
 			}
