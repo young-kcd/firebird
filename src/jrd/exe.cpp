@@ -908,19 +908,14 @@ void EXE_start(TDBB tdbb, JRD_REQ request, JRD_TRA transaction)
 		request->req_timestamp = time(NULL);
 	}
 
-	if (request->req_invariants)
+	// Set all invariants to not computed.
+	jrd_nod **ptr, **end;
+	for (ptr = request->req_invariants.begin(),
+		end = request->req_invariants.end(); ptr < end;
+		++ptr)
 	{
-		// Set all invariants to not computed.
-		vec::iterator ptr, end;
-		for (ptr = request->req_invariants->begin(),
-			end = request->req_invariants->end(); ptr < end;
-			++ptr)
-		{
-			if (*ptr) {
-				VLU impure = (VLU) ((SCHAR *) request + ((JRD_NOD)(*ptr))->nod_impure);
-				impure->vlu_flags = 0;
-			}
-		}
+		VLU impure = (VLU) ((SCHAR *) request + (*ptr)->nod_impure);
+		impure->vlu_flags = 0;
 	}
 
 	// Start a save point if not in middle of one

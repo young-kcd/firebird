@@ -107,6 +107,14 @@ public:
 	}
 	int getCount() const { return count; }
 	int getCapacity() const { return capacity; }
+	void push(const T& item) {
+		add(item);
+	}
+	T pop() {
+		fb_assert(count > 0);
+		count--;
+		return data[count];
+	}
 protected:
 	int count, capacity;
 	T* data;

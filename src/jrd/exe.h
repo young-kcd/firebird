@@ -120,6 +120,7 @@ public:
 #ifdef SCROLLABLE_CURSORS
 	jrd_nod*	rse_async_message;	/* asynchronous message to send for scrolling */
 #endif
+	Firebird::Array<jrd_nod*> *rse_variables; /* Variables and arguments this RSE depends on */
 	jrd_nod*	rse_relation[1];
 };
 typedef rse* RSE;
@@ -248,8 +249,9 @@ typedef struct iasb {
 
 #define	e_msg_number		0
 #define	e_msg_format		1
-#define	e_msg_next		2
-#define	e_msg_length		3
+#define e_msg_invariants	2
+#define	e_msg_next		3
+#define	e_msg_length		4
 
 #define	e_fld_stream		0
 #define	e_fld_id		1
@@ -391,8 +393,9 @@ typedef struct iasb {
 #define e_var_length		2
 
 #define e_dcl_id		0
-#define e_dcl_desc		1
-#define e_dcl_length		(1 + sizeof (DSC)/sizeof (JRD_NOD))	/* Room for descriptor */
+#define e_dcl_invariants	1
+#define e_dcl_desc		2
+#define e_dcl_length		(2 + sizeof (DSC)/sizeof (JRD_NOD))	/* Room for descriptor */
 
 #define e_dep_object		0	/* node for registering dependencies */
 #define e_dep_object_type	1
@@ -567,6 +570,9 @@ struct csb_repeat
 	Rsb** csb_rsb_ptr;	/* point to rsb for nod_stream */
 };
 
+typedef Firebird::SortedArray<SLONG> VarInvariantArray;
+typedef Firebird::Array<VarInvariantArray*> MsgInvariantArray;
+
 
 class Csb : public pool_alloc<type_csb>
 {
@@ -580,8 +586,6 @@ public:
 		csb_resources(0),
 		csb_dependencies(0),
 		csb_fors(0),
-		csb_invariants(0),
-		csb_current_rses(0),
 #ifdef SCROLLABLE_CURSORS
 		csb_current_rse(0),
 #endif
@@ -591,6 +595,8 @@ public:
 		csb_msg_number(0),
 		csb_impure(0),
 		csb_g_flags(0),*/
+		csb_invariants(&p),
+		csb_current_rses(&p),
 		csb_rpt(&p, len)
 	{}
 
@@ -605,8 +611,8 @@ public:
 	class Rsc*	csb_resources;	/* Resources (relations and indexes) */
 	struct lls*	csb_dependencies;	/* objects this request depends upon */
 	struct lls*	csb_fors;		/* stack of fors */
-	struct lls*	csb_invariants;	/* stack of invariant nodes */
-	struct lls*	csb_current_rses;	/* rse's within whose scope we are */
+	Firebird::Array<struct jrd_nod*> csb_invariants;	/* stack of invariant nodes */
+	Firebird::Array<RSE> csb_current_rses;	/* rse's within whose scope we are */
 #ifdef SCROLLABLE_CURSORS
 	struct rse*	csb_current_rse;	/* this holds the rse currently being processed; 
 									   unlike the current_rses stack, it references any expanded view rse */

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.49 2003-11-11 12:12:57 brodsom Exp $ 
+  * $Id: evl.cpp,v 1.50 2003-11-23 20:17:30 skidder Exp $ 
  */
 
 /*
@@ -237,11 +237,16 @@ DSC* EVL_assign_to(TDBB tdbb, JRD_NOD node)
 
 /* The only nodes that can be assigned to are: argument, field and variable. */
 
+	VarInvariantArray *var_invariants;
+	MsgInvariantArray *msg_invariants;
+	int arg_number;
+
 	switch (node->nod_type) {
 	case nod_argument:
 		message = node->nod_arg[e_arg_message];
 		format = (FMT) message->nod_arg[e_msg_format];
-		desc = &format->fmt_desc[(int) node->nod_arg[e_arg_number]];
+		arg_number = (int)(IPTR)node->nod_arg[e_arg_number];
+		desc = &format->fmt_desc[arg_number];
 		impure->vlu_desc.dsc_address =
 			(UCHAR *) request + message->nod_impure + (int) desc->dsc_address;
 		impure->vlu_desc.dsc_dtype = desc->dsc_dtype;
@@ -260,9 +265,28 @@ DSC* EVL_assign_to(TDBB tdbb, JRD_NOD node)
 			INTL_ASSIGN_DSC(&impure->vlu_desc,
 							tdbb->tdbb_attachment->att_charset, COLLATE_NONE);
 		}
+		// Clear out dependent invariants
+		msg_invariants = reinterpret_cast<MsgInvariantArray*>(
+			message->nod_arg[e_msg_invariants]);
+		if (msg_invariants && msg_invariants->getCount() > arg_number) {
+			var_invariants = (*msg_invariants)[arg_number];
+			if (var_invariants) {
+				SLONG *ptr, *end;
+				for (ptr = var_invariants->begin(), end = var_invariants->end();
+					ptr < end; ptr++)
+				{
+					reinterpret_cast<VLU>((SCHAR *) request + *ptr)->vlu_flags = 0;
+				}
+			}
+		}
 		return &impure->vlu_desc;
 
 	case nod_field:
+		// 23-Nov-2003, Nickolay Samofatov. In theory, we should track
+		// dependent invariants for fields too, but current engine
+		// doesn't seem to be able to produce statements where anomalies 
+		// may happen. I checked triggers and insert/update statements.
+		// All seem to work fine.
 		record =
 			request->req_rpb[(int)(SLONG) node->nod_arg[e_fld_stream]].rpb_record;
 		EVL_field(0, record, (USHORT)(ULONG) node->nod_arg[e_fld_id],
@@ -275,8 +299,20 @@ DSC* EVL_assign_to(TDBB tdbb, JRD_NOD node)
 		return NULL;
 
 	case nod_variable:
+		// Calculate descriptor
 		node = node->nod_arg[e_var_variable];
 		impure = (VLU) ((SCHAR *) request + node->nod_impure);
+		// Clear out dependent invariants
+		var_invariants = reinterpret_cast<VarInvariantArray*>(
+			node->nod_arg[e_dcl_invariants]);
+		if (var_invariants) {
+			SLONG *ptr, *end;
+			for (ptr = var_invariants->begin(), end = var_invariants->end();
+				ptr < end; ptr++)
+			{
+				reinterpret_cast<VLU>((SCHAR *) request + *ptr)->vlu_flags = 0;
+			}
+		}
 		return &impure->vlu_desc;
 
 	default:
