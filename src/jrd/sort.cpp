@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.42 2003-09-28 16:54:49 dimitr Exp $
+ * $Id: sort.cpp,v 1.43 2003-09-28 18:23:26 dimitr Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -140,7 +140,7 @@ static void error_memory(SCB);
 static ULONG find_file_space(SCB, ULONG, SFB *);
 static void free_file_space(SCB, SFB, ULONG, ULONG);
 static void init(SCB);
-static BOOLEAN local_fini(SCB, ATT);
+static bool local_fini(SCB, ATT);
 static void merge_runs(SCB, USHORT);
 static void quick(SLONG, SORTP **, USHORT);
 static ULONG order(SCB);
@@ -565,15 +565,8 @@ void SORT_fini(SCB scb, ATT att)
  *      Finish sort, and release all resources.
  *
  **************************************/
-	BOOLEAN rval;				/*  Return value from local_fini  */
 
-	rval = local_fini(scb, att);
-
-/* And the sort context block itself */
-/* *IF* local_fini didn't have a problem with the SCB.  */
-/* --  Morgan Schweers (mrs)  */
-
-	if (rval == TRUE)
+	if (scb && local_fini(scb, att))
 		gds__free(scb);
 }
 
@@ -724,7 +717,7 @@ SCB SORT_init(ISC_STATUS * status_vector,
 			  BOOLEAN(*call_back) (),
 			  void *user_arg,
 			  ATT att,
-			  ULONG max_records)
+			  UINT64 max_records)
 {
 /**************************************
  *
@@ -2191,7 +2184,7 @@ static void init(SCB scb)
 }
 
 
-static BOOLEAN local_fini(SCB scb, ATT att)
+static bool local_fini(SCB scb, ATT att)
 {
 /**************************************
  *

@@ -261,7 +261,7 @@ typedef struct scb
 	ULONG scb_keys;				/* Number of keys */
 	ULONG scb_key_length;		/* Key length */
 	ULONG scb_records;			/* Number of records */
-	ULONG scb_max_records;		/* Maximum number of records to store */
+	UINT64 scb_max_records;		/* Maximum number of records to store */
 	struct sfb *scb_sfb;		/* ALLOC: List of scratch files, if open */
 	struct run *scb_runs;		/* ALLOC: Run on scratch file, if any */
 	struct mrg *scb_merge;		/* Top level merge block */

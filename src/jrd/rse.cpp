@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.34 2003-09-17 23:24:03 arnobrinkman Exp $
+ * $Id: rse.cpp,v 1.35 2003-09-28 18:23:26 dimitr Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -115,7 +115,7 @@ static void join_to_nulls(TDBB, RSB, USHORT);
 static void map_sort_data(JRD_REQ, SMB, UCHAR *);
 static void open_merge(TDBB, RSB, IRSB_MRG);
 static void open_procedure(TDBB, RSB, IRSB_PROCEDURE);
-static void open_sort(TDBB, RSB, IRSB_SORT, ULONG);
+static void open_sort(TDBB, RSB, IRSB_SORT, UINT64);
 static void proc_assignment(DSC *, DSC *, UCHAR *, DSC *, SSHORT, REC);
 static void pop_rpbs(JRD_REQ, RSB);
 static void push_rpbs(TDBB, JRD_REQ, RSB);
@@ -204,10 +204,8 @@ void RSE_close(TDBB tdbb, RSB rsb)
 			return;
 
 		case rsb_sort:
-			if (impure->irsb_sort_handle) {
-				SORT_fini(impure->irsb_sort_handle, tdbb->tdbb_attachment);
-				impure->irsb_sort_handle = NULL;
-			}
+			SORT_fini(impure->irsb_sort_handle, tdbb->tdbb_attachment);
+			impure->irsb_sort_handle = NULL;
 			rsb = rsb->rsb_next;
 			break;
 
@@ -612,7 +610,7 @@ void RSE_open(TDBB tdbb, RSB rsb)
 	JRD_REQ request;
 	IRSB_INDEX impure;
 	RPB *rpb;
-	ULONG max_records = 0;
+	SINT64 first_records = -1, skip_records = 0;
 
 	SET_TDBB(tdbb);
 
@@ -688,7 +686,15 @@ void RSE_open(TDBB tdbb, RSB rsb)
 			impure->irsb_flags |= irsb_bof;
 			impure->irsb_flags &= ~irsb_eof;
 #endif
-			open_sort(tdbb, rsb, (IRSB_SORT) impure, max_records);
+			// dimitr:	we can avoid reading and sorting the entire
+			//			record set, if there's actually nothing to return
+			if (first_records) {
+				open_sort(tdbb, rsb, (IRSB_SORT) impure,
+						  (UINT64) first_records + skip_records);
+			}
+			else {
+				((IRSB_SORT) impure)->irsb_sort_handle = NULL;
+			}
 			return;
 
 		case rsb_procedure:
@@ -696,22 +702,22 @@ void RSE_open(TDBB tdbb, RSB rsb)
 			return;
 
         case rsb_first:
-            max_records += ((IRSB_FIRST)impure)->irsb_count =
-                MOV_get_int64 (EVL_expr (tdbb, (JRD_NOD) rsb->rsb_arg [0]), 0);
+            first_records = ((IRSB_FIRST) impure)->irsb_count =
+                MOV_get_int64(EVL_expr(tdbb, (JRD_NOD) rsb->rsb_arg[0]), 0);
 
-            if (((IRSB_FIRST)impure)->irsb_count < 0)
-                ERR_post (gds_bad_limit_param, 0);
+            if (((IRSB_FIRST) impure)->irsb_count < 0)
+                ERR_post(gds_bad_limit_param, 0);
 
             rsb = rsb->rsb_next;
             break;
 
         case rsb_skip:
-            max_records += ((IRSB_SKIP)impure)->irsb_count =
-                MOV_get_int64 (EVL_expr (tdbb, (JRD_NOD) rsb->rsb_arg [0]), 0);
+            skip_records = ((IRSB_SKIP) impure)->irsb_count =
+                MOV_get_int64(EVL_expr(tdbb, (JRD_NOD) rsb->rsb_arg[0]), 0);
 
-            if (((IRSB_SKIP)impure)->irsb_count < 0)
-                ERR_post (gds_bad_skip_param, 0);
-            ((IRSB_SKIP)impure)->irsb_count++;
+            if (((IRSB_SKIP) impure)->irsb_count < 0)
+                ERR_post(gds_bad_skip_param, 0);
+            ((IRSB_SKIP) impure)->irsb_count++;
 
             rsb = rsb->rsb_next;
             break;
@@ -2609,64 +2615,64 @@ static BOOLEAN get_record(TDBB			tdbb,
          *******/
         
 	case rsb_first:
-        switch(mode) {
-        case RSE_get_forward:
-	        if (((IRSB_FIRST) impure)->irsb_count <= 0)
-                return FALSE;
-	        ((IRSB_FIRST) impure)->irsb_count--;
-	        if (!get_record (tdbb, rsb->rsb_next, NULL, mode))
-	            return FALSE;
-            break;
-            
-        case RSE_get_current:
-	        if (((IRSB_FIRST) impure)->irsb_count <= 0)
-                return FALSE;
-	        if (!get_record (tdbb, rsb->rsb_next, NULL, mode))
-	            return FALSE;
-            break;
-            
-        case RSE_get_backward:
-	        ((IRSB_FIRST) impure)->irsb_count++;
-	        if (!get_record (tdbb, rsb->rsb_next, NULL, mode))
-	            return FALSE;
-            break;
-        }
+		switch(mode) {
+		case RSE_get_forward:
+			if (((IRSB_FIRST) impure)->irsb_count <= 0)
+				return FALSE;
+			((IRSB_FIRST) impure)->irsb_count--;
+			if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
+				return FALSE;
+			break;
+
+		case RSE_get_current:
+			if (((IRSB_FIRST) impure)->irsb_count <= 0)
+				return FALSE;
+			if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
+				return FALSE;
+			break;
+
+		case RSE_get_backward:
+			((IRSB_FIRST) impure)->irsb_count++;
+			if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
+				return FALSE;
+			break;
+		}
 		break;
 
-    case rsb_skip:
-        switch(mode) {
-        case RSE_get_backward:
-            if (((IRSB_SKIP) impure)->irsb_count > 0)
-                return FALSE;
-            if (((IRSB_SKIP) impure)->irsb_count == 0) {
-                ((IRSB_SKIP) impure)->irsb_count++;
-                get_record (tdbb, rsb->rsb_next, NULL, mode);
-                return FALSE;
-            }
-            ((IRSB_SKIP) impure)->irsb_count++;
-            if (!get_record (tdbb, rsb->rsb_next, NULL, mode))
-                return FALSE;
-            break;
-            
-        case RSE_get_forward:
-            while(((IRSB_SKIP) impure)->irsb_count > 1) {
-                ((IRSB_SKIP) impure)->irsb_count--;
-                if (!get_record (tdbb, rsb->rsb_next, NULL, mode))
-                    return FALSE;
-            }
-            ((IRSB_SKIP) impure)->irsb_count--;
-            if (!get_record (tdbb, rsb->rsb_next, NULL, mode))
-                return FALSE;
-            break;
-            
-        case RSE_get_current:
-            if (((IRSB_SKIP) impure)->irsb_count >= 1)
-                return FALSE;
-            else if (!get_record (tdbb, rsb->rsb_next, NULL, mode))
-                return FALSE;
-        }
-        break;
-        
+	case rsb_skip:
+		switch(mode) {
+		case RSE_get_backward:
+			if (((IRSB_SKIP) impure)->irsb_count > 0)
+				return FALSE;
+			if (((IRSB_SKIP) impure)->irsb_count == 0) {
+				((IRSB_SKIP) impure)->irsb_count++;
+				get_record(tdbb, rsb->rsb_next, NULL, mode);
+				return FALSE;
+			}
+			((IRSB_SKIP) impure)->irsb_count++;
+			if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
+				return FALSE;
+			break;
+
+		case RSE_get_forward:
+			while(((IRSB_SKIP) impure)->irsb_count > 1) {
+				((IRSB_SKIP) impure)->irsb_count--;
+				if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
+					return FALSE;
+			}
+			((IRSB_SKIP) impure)->irsb_count--;
+			if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
+				return FALSE;
+			break;
+
+		case RSE_get_current:
+			if (((IRSB_SKIP) impure)->irsb_count >= 1)
+				return FALSE;
+			else if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
+				return FALSE;
+		}
+		break;
+
 	case rsb_merge:
 		if (!get_merge_join(tdbb, rsb, (IRSB_MRG) impure
 #ifdef SCROLLABLE_CURSORS
@@ -3124,7 +3130,7 @@ static void open_procedure(TDBB tdbb, RSB rsb, IRSB_PROCEDURE impure)
 }
 
 
-static void open_sort(TDBB tdbb, RSB rsb, IRSB_SORT impure, ULONG max_records)
+static void open_sort(TDBB tdbb, RSB rsb, IRSB_SORT impure, UINT64 max_records)
 {
 /**************************************
  *
@@ -3137,64 +3143,56 @@ static void open_sort(TDBB tdbb, RSB rsb, IRSB_SORT impure, ULONG max_records)
  *	into sort, etc.  This gets things going.
  *
  **************************************/
-	SMB map;
 	UCHAR *data, flag;
 	DSC *from, to, temp;
-	JRD_REQ request;
 	RPB *rpb;
-	JRD_NOD node;
-	int records;
-	SSHORT stream;
-	SCB handle;
-	smb_repeat * item, *end_item;
+	smb_repeat *item, *end_item;
 
 	SET_TDBB(tdbb);
-	request = tdbb->tdbb_request;
+	JRD_REQ request = tdbb->tdbb_request;
 
 	RSE_open(tdbb, rsb->rsb_next);
-	map = (SMB) rsb->rsb_arg[0];
-	records = 0;
+	SMB map = (SMB) rsb->rsb_arg[0];
+	ULONG records = 0;
 
-/* get rid of the old sort areas if this request has been used already */
+	// Get rid of the old sort areas if this request has been used already
 
-	if (impure->irsb_sort_handle)
-		SORT_fini(impure->irsb_sort_handle, tdbb->tdbb_attachment);
+	SORT_fini(impure->irsb_sort_handle, tdbb->tdbb_attachment);
 
-/* Initialize for sort.  If this is really a project operation,
-   establish a callback routine to reject duplicate records. */
+	// Initialize for sort. If this is really a project operation,
+	// establish a callback routine to reject duplicate records.
 
-	handle = SORT_init(tdbb->tdbb_status_vector,
-					   map->smb_length,
-					   map->smb_keys,
-					   map->smb_key_desc,
-					   reinterpret_cast < BOOLEAN(*)() >
-					   ((map->smb_flags & SMB_project) ? reject : NULL), 0,
-					   tdbb->tdbb_attachment, max_records);
+	SCB handle = SORT_init(tdbb->tdbb_status_vector,
+						   map->smb_length,
+						   map->smb_keys,
+						   map->smb_key_desc,
+						   reinterpret_cast < BOOLEAN(*)() >
+						   ((map->smb_flags & SMB_project) ? reject : NULL), 0,
+						   tdbb->tdbb_attachment, max_records);
 
-	if (!(impure->irsb_sort_handle = (SCB) handle))
+	if (!(impure->irsb_sort_handle = handle))
 		ERR_punt();
 
-/* Pump the input stream dry while pushing records into sort.  For
-   each record, map all fields into the sort record.  The reverse
-   mapping is done in "get_sort". */
+	// Pump the input stream dry while pushing records into sort. For
+	// each record, map all fields into the sort record. The reverse
+	// mapping is done in get_sort().
 
 	while (get_record(tdbb, rsb->rsb_next, NULL, RSE_get_forward)) {
 		records++;
 
-		/* "Put" a record to sort.  Actually, get the address of a place
-		   to build a record. */
+		// "Put" a record to sort. Actually, get the address of a place
+		// to build a record.
 
 		if (SORT_put(tdbb->tdbb_status_vector, impure->irsb_sort_handle,
-					 (ULONG **) & data))
+					 (ULONG **) &data))
 			ERR_punt();
 
-		/* Zero out the sort key.  This solve a multitude of problems. */
+		// Zero out the sort key. This solve a multitude of problems.
 
 		MOVE_CLEAR(data, (SLONG) map->smb_length);
 
-		/* Loop thru all field (keys and hangers on) involved in the
-		   sort.  Be careful to null field all unused bytes in the sort
-		   key. */
+		// Loop thru all field (keys and hangers on) involved in the sort.
+		// Be careful to null field all unused bytes in the sort key.
 
 		end_item = map->smb_rpt + map->smb_count;
 		for (item = map->smb_rpt; item < end_item; item++) {
@@ -3222,8 +3220,8 @@ static void open_sort(TDBB tdbb, RSB rsb, IRSB_SORT impure, ULONG max_records)
 			}
 			*(data + item->smb_flag_offset) = flag;
 			if (!flag) {
-				/* if moving a TEXT item into the KEY portion of
-				   the sort record, then want to sort by language dependent order */
+				// If moving a TEXT item into the KEY portion of the sort record,
+				// then want to sort by language dependent order.
 
 				if (IS_INTL_DATA(&item->smb_desc) &&
 					(USHORT)(ULONG) item->smb_desc.dsc_address <
@@ -3240,16 +3238,17 @@ static void open_sort(TDBB tdbb, RSB rsb, IRSB_SORT impure, ULONG max_records)
 	if (SORT_sort(tdbb->tdbb_status_vector, impure->irsb_sort_handle))
 		ERR_punt();
 
-/* For the sake of prudence, set all record parameter blocks to contain
-   the most recent format.  This is will guarentee that all fields mapped
-   back to records by "get_sort" have homes in the target record. */
+	// For the sake of prudence, set all record parameter blocks to contain
+	// the most recent format. This is will guarentee that all fields mapped
+	// back to records by get_sort() have homes in the target record.
 
 	if (!records)
 		return;
-	stream = -1;
+
+	SSHORT stream = -1;
 
 	for (item = map->smb_rpt; item < end_item; item++) {
-		if ((node = item->smb_node) && node->nod_type != nod_field)
+		if (item->smb_node && item->smb_node->nod_type != nod_field)
 			continue;
 		if (item->smb_stream == stream)
 			continue;
