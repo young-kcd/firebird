@@ -91,21 +91,12 @@ namespace {
 }
 
 #ifdef WIN_NT
-#define FOPEN_TYPE	"a+b"
-#define FOPEN_READ_ONLY	"rb"
-#define	SYS_ERR		isc_arg_win32
+static const char* FOPEN_TYPE		= "a+b";
+static const char* FOPEN_READ_ONLY	= "rb";
+#else
+static const char* FOPEN_TYPE		= "a+";
+static const char* FOPEN_READ_ONLY	= "rb";
 #endif
-
-#ifndef FOPEN_TYPE
-#define FOPEN_TYPE	"a+"
-#define FOPEN_READ_ONLY	"rb"
-#endif
-
-#ifndef SYS_ERR
-#define SYS_ERR		isc_arg_unix
-#endif
-
-
 
 void EXT_close(RecordSource* rsb)
 {

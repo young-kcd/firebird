@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.92 2004-05-04 15:57:56 brodsom Exp $
+$Id: lock.cpp,v 1.93 2004-05-05 21:54:17 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -101,7 +101,6 @@ $Id: lock.cpp,v 1.92 2004-05-04 15:57:56 brodsom Exp $
 #ifdef WIN_NT
 #include <process.h>
 #define MUTEX		lock_manager_mutex
-#define ERRNO		GetLastError()
 #endif
 
 #ifdef MANAGER_PROCESS
@@ -177,16 +176,8 @@ SSHORT LOCK_debug_level = 0;
 #define DEBUG_DELAY				/* nothing */
 #endif
 
-#ifndef ERRNO
-#define ERRNO		errno
-#endif
-
 #ifndef MUTEX
 #define MUTEX		LOCK_header->lhb_mutex
-#endif
-
-#ifndef SV_INTERRUPT
-#define SV_INTERRUPT	0
 #endif
 
 #define DUMMY_OWNER_CREATE	((SRQ_PTR) -1)

@@ -141,8 +141,8 @@ void jrd_vtof(const char*, char*, SSHORT);
 
 #ifdef SERVER_SHUTDOWN
 /* Defines for paramater 3 of JRD_num_attachments */
-#define JRD_info_drivemask	1
-#define JRD_info_dbnames	2
+const USHORT JRD_info_drivemask	= 1;
+const USHORT JRD_info_dbnames	= 2;
 
 TEXT*	JRD_num_attachments(TEXT* const, USHORT, USHORT, USHORT*, USHORT*);
 ULONG	JRD_shutdown_all();

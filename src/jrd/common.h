@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.112 2004-05-04 19:16:43 brodsom Exp $
+$Id: common.h,v 1.113 2004-05-05 21:53:37 brodsom Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -505,6 +505,7 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 #define NO_CHECKSUM
 #define ISC_EXT_LIB_PATH_ENV	"interbase_ext_lib_path:"
 #define SYS_ARG		isc_arg_vms
+#define SYS_ERR		isc_arg_vms
 
 #if __ALPHA
 #define IMPLEMENTATION  isc_info_db_impl_alpha_vms /* 53 */
@@ -580,6 +581,7 @@ typedef unsigned int64 UATOM;
 #define MEMMOVE(from,to,length)         memmove ((void *)to, (void *)from, (size_t) length)
 
 #define SYS_ARG		isc_arg_win32
+#define SYS_ERR		isc_arg_win32
 /*#define SLONGFORMAT	"ld"
 #define ULONGFORMAT	"lu"
 #define XLONGFORMAT "lX"
@@ -632,6 +634,10 @@ typedef unsigned __int64 UINT64;
 #endif
 #endif
 
+#define ERRNO		GetLastError()
+#define INET_ERRNO	WSAGetLastError()
+#define H_ERRNO		WSAGetLastError()
+
 #endif /* WIN_NT */
 
 // 23 Sep 2002, skidder, ALLOC_LIB_MEMORY moved here,
@@ -676,8 +682,24 @@ typedef unsigned __int64 UINT64;
 #ifdef UNIX
 #define NO_CHECKSUM
 #define SYS_ARG		isc_arg_unix
+#define SYS_ERR		isc_arg_unix
 #endif /* UNIX */
 
+#ifndef SYS_ERR
+#define SYS_ERR		isc_arg_unix
+#endif
+
+#ifndef ERRNO
+#define ERRNO		errno
+#endif
+
+#ifndef INET_ERRNO
+#define INET_ERRNO	errno
+#endif
+
+#ifndef H_ERRNO
+#define H_ERRNO		h_errno
+#endif
 
 /* various declaration modifiers */
 

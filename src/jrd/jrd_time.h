@@ -49,12 +49,12 @@
 #endif
 
 /* This is the number of seconds in a day */
-#define ONE_DAY 86400
+//#define ONE_DAY 86400
 
 /* MIN_YEAR and MAX_YEAR delimit the range for valid years
  * when either inserting data or performing date arithmetic
  */
-#define MIN_YEAR 0001
-#define MAX_YEAR 9999
+const int MIN_YEAR = 0001;
+const int MAX_YEAR = 9999;
 
 #endif /* JRD_TIME_H */

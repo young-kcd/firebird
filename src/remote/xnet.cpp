@@ -46,18 +46,6 @@
 #include <windows.h>
 #endif /* WIN_NT */
 
-#ifdef WIN_NT
-#define ERRNO		GetLastError()
-#endif
-
-#ifdef UNIX
-#define ERRNO		errno
-#endif
-
-#ifndef SYS_ERR
-#define SYS_ERR		isc_arg_win32
-#endif
-
 #define MAX_SEQUENCE	256
 
 static int accept_connection(rem_port*, P_CNCT *);

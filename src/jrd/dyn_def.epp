@@ -85,10 +85,6 @@ using namespace Jrd;
 
 typedef Firebird::Array<TEXT*> TextStack;
 
-#ifdef SUPERSERVER
-#define V4_THREADING
-#endif
-
 const int FOR_KEY_UPD_CASCADE	= 0x01;
 const int FOR_KEY_UPD_NULL	= 0x02;
 const int FOR_KEY_UPD_DEFAULT	= 0x04;

@@ -283,16 +283,6 @@ void Jrd::Trigger::release(thread_db* tdbb)
 	return; // TRUE;
 }
 
-#ifdef WIN_NT
-#define	SYS_ERR		isc_arg_win32
-#endif
-
-
-#ifndef SYS_ERR
-#define SYS_ERR		isc_arg_unix
-#endif
-
-
 /* Option block for database parameter block */
 
 typedef struct dpb

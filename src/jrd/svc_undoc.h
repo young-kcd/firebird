@@ -25,24 +25,24 @@
 #define SVC_UNDOC_H
 
 /* Service Action Flags */
-#define isc_action_svc_lock_stats     13	/* Retrieves lock manager statistics */
-#define isc_action_svc_set_config     14	/* Sets configuration file values */
-#define isc_action_svc_default_config 15	/* Sets the configuration options to their default values */
-#define isc_action_svc_set_env        16	/* Sets the value for $INTERBASE */
-#define isc_action_svc_set_env_lock   17	/* Sets the value for $INTERBASE_LOCK */
-#define isc_action_svc_set_env_msg    18	/* Sets the value for $INTERBASE_MSG */
+const int isc_action_svc_lock_stats		= 13;	/* Retrieves lock manager statistics */
+const int isc_action_svc_set_config		= 14;	/* Sets configuration file values */
+const int isc_action_svc_default_config	= 15;	/* Sets the configuration options to their default values */
+const int isc_action_svc_set_env		= 16;	/* Sets the value for $INTERBASE */
+const int isc_action_svc_set_env_lock	= 17;	/* Sets the value for $INTERBASE_LOCK */
+const int isc_action_svc_set_env_msg	= 18;	/* Sets the value for $INTERBASE_MSG */
 
 
 /* Service Info Flags */
-#define isc_info_svc_total_length     69
-#define isc_info_svc_response         70
-#define isc_info_svc_response_more    71
-#define isc_info_svc_message          72
-#define isc_info_svc_svr_online       73
-#define isc_info_svc_svr_offline      74
-#define isc_info_svc_set_config	      75
-#define isc_info_svc_default_config   76
-#define isc_info_svc_dump_pool_info   77
+const int isc_info_svc_total_length		= 69;
+const int isc_info_svc_response			= 70;
+const int isc_info_svc_response_more	= 71;
+const int isc_info_svc_message			= 72;
+const int isc_info_svc_svr_online		= 73;
+const int isc_info_svc_svr_offline		= 74;
+const int isc_info_svc_set_config		= 75;
+const int isc_info_svc_default_config	= 76;
+const int isc_info_svc_dump_pool_info	= 77;
 
 // BRS: Is not strange the following parameters are undocumented
 // it are also unused in the code

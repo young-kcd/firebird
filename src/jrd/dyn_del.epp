@@ -64,10 +64,6 @@
 
 using namespace Jrd;
 
-#ifdef SUPERSERVER
-#define V4_THREADING
-#endif
-
 DATABASE DB = STATIC "ODS.RDB";
 
 static bool delete_constraint_records(Global*, const TEXT*, const TEXT*);

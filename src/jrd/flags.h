@@ -26,31 +26,31 @@
 
 /* flags for RDB$FILE_FLAGS */
 
-#define FILE_shadow	1
-#define FILE_inactive	2
-#define FILE_manual	4
-#define FILE_cache	8
-#define FILE_conditional 16
+const USHORT FILE_shadow	= 1;
+const USHORT FILE_inactive	= 2;
+const USHORT FILE_manual	= 4;
+const USHORT FILE_cache		= 8;
+const USHORT FILE_conditional = 16;
 /* Flags for backup difference files */
 // File is difference
-#define FILE_difference 32
+const USHORT FILE_difference = 32;
 // Actively used for backup purposes (ALTER DATABASE BEGIN BACKUP issued)
-#define FILE_backing_up 64
+const USHORT FILE_backing_up = 64;
 
 /* flags for RDB$LOG_FILES */
 
-#define LOG_serial      1
-#define LOG_default     2
-#define LOG_raw         4
-#define LOG_overflow    8
+const USHORT LOG_serial		= 1;
+const USHORT LOG_default	= 2;
+const USHORT LOG_raw		= 4;
+const USHORT LOG_overflow	= 8;
 
 /* flags for RDB$RELATIONS */
 
-#define REL_sql		1
+const USHORT REL_sql		= 1;
 
 /* flags for RDB$TRIGGERS */
 
-#define TRG_sql		0x1
-#define TRG_ignore_perm	0x2		/* trigger ignores permissions checks */
+const USHORT TRG_sql			= 0x1;
+const USHORT TRG_ignore_perm	= 0x2;		/* trigger ignores permissions checks */
 
 #endif /* JRD_FLAGS_H */

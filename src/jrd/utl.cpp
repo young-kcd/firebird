@@ -97,37 +97,26 @@
 
 #ifdef VMS
 #ifdef __ALPHA
-#define EDT_IMAGE	"TPUSHR"
-#define EDT_SYMBOL	"TPU$EDIT"
+static const char* EDT_IMAGE	= "TPUSHR";
+static const char* EDT_SYMBOL	= "TPU$EDIT";
 #else
-#define EDT_IMAGE	"EDTSHR"
-#define EDT_SYMBOL	"EDT$EDIT"
+static const char* EDT_IMAGE	= "EDTSHR";
+static const char* EDT_SYMBOL	= "EDT$EDIT";
 #endif
 #endif
 
 /* Bug 7119 - BLOB_load will open external file for read in BINARY mode. */
 
 #ifdef WIN_NT
-#define FOPEN_READ_TYPE		"rb"
-#define FOPEN_WRITE_TYPE	"wb"
-#define FOPEN_READ_TYPE_TEXT	"rt"
-#define FOPEN_WRITE_TYPE_TEXT	"wt"
-#endif
-
-#ifndef FOPEN_READ_TYPE
-#define FOPEN_READ_TYPE		"r"
-#endif
-
-#ifndef FOPEN_WRITE_TYPE
-#define FOPEN_WRITE_TYPE	"w"
-#endif
-
-#ifndef FOPEN_READ_TYPE_TEXT
-#define FOPEN_READ_TYPE_TEXT	FOPEN_READ_TYPE
-#endif
-
-#ifndef FOPEN_WRITE_TYPE_TEXT
-#define FOPEN_WRITE_TYPE_TEXT	FOPEN_WRITE_TYPE
+static const char* FOPEN_READ_TYPE		= "rb";
+static const char* FOPEN_WRITE_TYPE		= "wb";
+static const char* FOPEN_READ_TYPE_TEXT	= "rt";
+static const char* FOPEN_WRITE_TYPE_TEXT= "wt";
+#else
+static const char* FOPEN_READ_TYPE		= "r";
+static const char* FOPEN_WRITE_TYPE		= "w";
+static const char* FOPEN_READ_TYPE_TEXT	= FOPEN_READ_TYPE;
+static const char* FOPEN_WRITE_TYPE_TEXT= FOPEN_WRITE_TYPE;
 #endif
 
 #define LOWER7(c) ( (c >= 'A' && c<= 'Z') ? c + 'a' - 'A': c )

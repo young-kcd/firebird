@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.48 2004-05-02 23:05:00 skidder Exp $
+$Id: isc.cpp,v 1.49 2004-05-05 21:53:37 brodsom Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -155,16 +155,6 @@ static void poke_ast(POKE);
 static int wait_test(SSHORT *);
 #endif
 
-#ifndef MAXHOSTLEN
-#define MAXHOSTLEN      64
-#endif
-
-#ifndef FOPEN_READ_TYPE
-#define FOPEN_READ_TYPE "r"
-#define FOPEN_WRITE_TYPE "w"
-#endif
-
-
 #ifndef REQUESTER
 void ISC_ast_enter(void)
 {
@@ -220,20 +210,14 @@ bool ISC_check_process_existence(SLONG	pid,
  **************************************/
 
 #if defined(UNIX)
-#define CHECK_EXIST
 	return (kill((int) pid, 0) == -1 &&
 			(errno == ESRCH
 			 || (super_user && errno == EPERM)) ? false : true);
-#endif
-
-#ifdef VMS
-#define CHECK_EXIST
+#elif defined(VMS)
 	ULONG item = JPI$_PID;
 	return (lib$getjpi(&item, &pid, NULL, NULL, NULL, NULL) == SS$_NONEXPR) ?
 		false : true;
-#endif
-
-#ifdef WIN_NT
+#elif defined(WIN_NT)
 	HANDLE handle = OpenProcess(PROCESS_DUP_HANDLE, FALSE, (DWORD) pid);
 
 	if (!handle && GetLastError() != ERROR_ACCESS_DENIED)
@@ -242,12 +226,9 @@ bool ISC_check_process_existence(SLONG	pid,
 	}
 
 	CloseHandle(handle);
-#endif
-
-#ifndef CHECK_EXIST
 	return true;
 #else
-#undef CHECK_EXIST
+	return true;
 #endif
 }
 
@@ -301,7 +282,6 @@ int ISC_expand_logical_once(const TEXT* file_name,
 
 
 #if (defined SOLARIS || defined SCO_EV)
-#define GET_HOST
 TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT* string, USHORT length)
 {
 /**************************************
@@ -323,11 +303,9 @@ TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT* string, USHORT length)
 
 	return string;
 }
-#endif
 
+#elif defined (VMS)
 
-#ifdef VMS
-#define GET_HOST
 TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT* string, USHORT length)
 {
 /**************************************
@@ -356,11 +334,9 @@ TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT* string, USHORT length)
 
 	return string;
 }
-#endif
 
+#elif defined(WIN_NT)
 
-#ifdef WIN_NT
-#define GET_HOST
 TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT* string, USHORT length)
 {
 /**************************************
@@ -387,9 +363,9 @@ TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT* string, USHORT length)
 
 	return string;
 }
-#endif
 
-#ifndef GET_HOST
+#else
+
 TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT* string, USHORT length)
 {
 /**************************************

@@ -29,13 +29,13 @@
 /* The following definitions can be used to specify the context in
  * which a status code is used.
  */
-#define CLASS_ERROR		0L		/* Code represents an error */
-#define CLASS_WARNING		1L	/* Code represents a warning */
-#define CLASS_INFO		2L		/* Code represents an information msg */
+//#define CLASS_ERROR		0L		/* Code represents an error */
+//#define CLASS_WARNING		1L	/* Code represents a warning */
+//#define CLASS_INFO		2L		/* Code represents an information msg */
 
-#define MAKE_ERROR(code)	(code | (CLASS_ERROR & 0x3L) << 30)
-#define MAKE_WARNING(code)	(code | (CLASS_WARNING & 0x3L) << 30)
-#define MAKE_INFO(code)		(code | (CLASS_INFO & 0x3L) << 30)
+//#define MAKE_ERROR(code)	(code | (CLASS_ERROR & 0x3L) << 30)
+//#define MAKE_WARNING(code)	(code | (CLASS_WARNING & 0x3L) << 30)
+//#define MAKE_INFO(code)		(code | (CLASS_INFO & 0x3L) << 30)
 
 /* The procedure for encoding an error message is as follows:
  * Be sure to update gds.c::gds__decode if this calculation changes

@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: inet_server.cpp,v 1.37 2004-05-02 23:06:05 skidder Exp $
+$Id: inet_server.cpp,v 1.38 2004-05-05 21:54:55 brodsom Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -111,10 +111,6 @@ $Id: inet_server.cpp,v 1.37 2004-05-02 23:06:05 skidder Exp $
 
 #ifndef hpux
 #define sigvector	sigvec
-#endif
-
-#ifndef SV_INTERRUPT
-#define SV_INTERRUPT	0
 #endif
 
 #ifdef SUPERSERVER

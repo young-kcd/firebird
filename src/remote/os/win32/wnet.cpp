@@ -47,12 +47,6 @@
 
 #include <stdarg.h>
 
-#define ERRNO		GetLastError()
-
-#ifndef SYS_ERR
-#define SYS_ERR		isc_arg_win32
-#endif
-
 #ifndef MAX_DATA
 #define MAX_DATA	2048
 #endif

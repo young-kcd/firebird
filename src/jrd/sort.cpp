@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.62 2004-05-03 22:42:46 brodsom Exp $
+ * $Id: sort.cpp,v 1.63 2004-05-05 21:53:36 brodsom Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -156,15 +156,6 @@ FILE *trace_file = NULL;
 #else
 #define SCRATCH         "fb_sort_"
 #endif
-
-#ifdef WIN_NT
-#define	SYS_ERR		isc_arg_win32
-#endif
-
-#ifndef SYS_ERR
-#define SYS_ERR		isc_arg_unix
-#endif
-
 
 #ifdef SCROLLABLE_CURSORS
 #ifdef WORDS_BIGENDIAN

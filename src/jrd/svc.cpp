@@ -117,12 +117,6 @@ const int SVC_user_none			= 0;
 #  include <stdlib.h>
 #  include <fcntl.h>
 #  include <sys/stat.h>
-#  define SYS_ERR		isc_arg_win32
-#endif
-
-
-#ifndef SYS_ERR
-#define SYS_ERR		isc_arg_unix
 #endif
 
 #ifdef VMS

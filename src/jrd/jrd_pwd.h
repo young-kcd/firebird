@@ -31,8 +31,8 @@
 #include "../jrd/smp_impl.h"
 #include "../jrd/thd.h"
 
-#define MAX_PASSWORD_ENC_LENGTH 12
-#define PASSWORD_SALT  "9z"
+const int MAX_PASSWORD_ENC_LENGTH = 12;
+static const char* PASSWORD_SALT  = "9z";
 
 class SecurityDatabase
 {
@@ -78,9 +78,9 @@ private:
 };
 
 #ifdef VMS
-#define USER_INFO_NAME	"[sysmgr]security.fdb"
+static const char* USER_INFO_NAME	= "[sysmgr]security.fdb";
 #else
-#define USER_INFO_NAME	"security.fdb"
+static const char* USER_INFO_NAME	= "security.fdb";
 #endif
 
 #endif /* JRD_PWD_H */

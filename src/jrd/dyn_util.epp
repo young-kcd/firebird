@@ -60,10 +60,6 @@
 
 using namespace Jrd;
 
-#ifdef SUPERSERVER
-#define V4_THREADING
-#endif
-
 DATABASE DB = STATIC "ODS.RDB";
 
 static const SCHAR gen_id_blr1[] = {
