@@ -59,7 +59,7 @@ Here are the steps in detail:
   1. Install to a new directory.
   2. Make a file copy of the old security database.
      (Make sure your old Firebird is not running.)
-  3. Start firebird using it's new, native security.fdb.
+  3. Start firebird using it's new, native security2.fdb.
   4. Connect to your old security database as SYSDBA and
      run the script.
   5. Stop firebird.

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.59 2005-02-24 12:23:14 alexpeshkoff Exp $
+#  $Id: Makefile.in.firebird,v 1.60 2005-03-05 01:44:02 robocop Exp $
 #
 
 ROOT=..
@@ -148,7 +148,7 @@ firebird_super firebird_server: firebird_basic super_targets
 
 
 # In building embedded/server version some targets are common, mainly the 
-# boot kit, security.fdb database and messages files.  Boot builds a number of
+# boot kit, security2.fdb database and messages files.  Boot builds a number of
 # static programs gpre_static gbak_static isql_static though an involved 
 # process.  These are used to compile the rest of the source, as it saves
 # some complications particularly for super in needing to start the server
@@ -246,10 +246,10 @@ lock_mgr :
 #  (It's probably possible to directly build the dynamic library - but thats
 #  for another day). We still don't have the security database stuff.
 #
-# Phase2 is complete with the building of an security.fdb user store database
+# Phase2 is complete with the building of an security2.fdb user store database
 # in order to do that isql and gdef tools need to be built without security
 # to do that a special alt_boot.o is inserted into the shared library.
-# Again once security.fdb is built then were not too worried about the
+# Again once security2.fdb is built then were not too worried about the
 # components (in fact some of them have to be rebuilt again to incorperate
 # the security module)
 #
@@ -294,8 +294,8 @@ security2.fdb: gdef isql 		# build the security database
 #  for another day). We still don't have the security database stuff.
 #
 # Notes:
-# mainly we need gdef and isql to be able to build security.fdb.  I wonder
-# if we could reduce the tricky dependancy by restoring the security.fdb
+# mainly we need gdef and isql to be able to build security2.fdb.  I wonder
+# if we could reduce the tricky dependancy by restoring the security2.fdb
 # database earlier, then perhaps we could build the jrdlib in one step and
 # include the security bits and pieces.
 

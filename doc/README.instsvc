@@ -9,11 +9,11 @@ NOTE :: To solve any potential issues with long paths containing spaces
   RootDirectory as a command-line argument.  Both binaries must be installed 
   in (or copied to) the /bin directory beneath your Firebird root directory.  
 
-  (Root directory == directory root where firebird.conf and security.fdb are
+  (Root directory == directory root where firebird.conf and security2.fdb are
                      installed.)  
 
-  For example, if they are located in C:\FB15\bin, the root directory will 
-  be deduced as C:\FB15.
+  For example, if they are located in C:\FB20\bin, the root directory will
+  be deduced as C:\FB20.
 
 ============
 INSTREG.EXE

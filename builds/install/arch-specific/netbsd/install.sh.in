@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  	James K. Lowden <jklowden@schemamania.org>
 # 
-#   $Id: install.sh.in,v 1.1 2004-05-20 23:04:23 skidder Exp $
+#   $Id: install.sh.in,v 1.2 2005-03-05 01:43:50 robocop Exp $
 # 
 
 #  Install script for FirebirdSQL database engine
@@ -171,7 +171,7 @@ copyIfExists $BuiltFBDir/help/help.gbak $DestDir/help  || exit
 cp $BuiltFBDir/help/help.fdb $DestDir/help  || exit
 
 cp $BuiltFBDir/firebird.msg $DestDir/firebird.msg  || exit
-cp $BuiltFBDir/security.fdb $DestDir/security.fdb.sample || exit
+cp $BuiltFBDir/security2.fdb $DestDir/security2.fdb.sample || exit
 
 cp $BuiltFBDir/include/*.h $DestDir/include || exit 
 
@@ -288,7 +288,7 @@ chmod ug=rw,o= help/*.fdb || exit
 # install the samples if they don't exist
 [ -f aliases.conf ] || install -o firebird -g firebird -m 440 aliases.conf.sample aliases.conf
 [ -f firebird.conf ] || install -o firebird -g firebird -m 440 firebird.conf.sample firebird.conf
-[ -f security.fdb ] || install -o firebird -g firebird -m 660 security.fdb.sample security.fdb
+[ -f security2.fdb ] || install -o firebird -g firebird -m 660 security2.fdb.sample security2.fdb
 
 #
 # add the gds service, if need be, and restart inetd

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.refDatabases,v 1.25 2005-02-24 12:23:14 alexpeshkoff Exp $
+#  $Id: Makefile.in.refDatabases,v 1.26 2005-03-05 01:44:03 robocop Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -40,7 +40,7 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 # If we export the username/password we get an error because we can't connect
-# to security.fdb!  So we won't export them while we make the databases...
+# to security2.fdb!  So we won't export them while we make the databases...
 #
 unexport ISC_USER
 unexport ISC_PASSWORD

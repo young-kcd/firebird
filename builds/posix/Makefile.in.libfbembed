@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbembed,v 1.13 2004-04-30 23:02:06 brodsom Exp $
+#  $Id: Makefile.in.libfbembed,v 1.14 2005-03-05 01:44:03 robocop Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -42,7 +42,7 @@ include     $(ROOT)/gen/make.shared.variables
 
 
 # These are deliberatly unexported otherwise gbak and others will try and check
-# the userid against the security.fdb database, which doesn't exist at this stage 
+# the userid against the security2.fdb database, which doesn't exist at this stage
 # in the build. MOD 11-July-2002
 
 unexport ISC_USER

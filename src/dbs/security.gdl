@@ -16,7 +16,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-modify database "security.fdb" security_class database_access;
+modify database "security2.fdb" security_class database_access;
 
 /*
 

@@ -28,7 +28,7 @@ The steps to fix things manually are simple:
     with default rights
  
 2)  grant this user write access to all databases, including 
-    security.fdb (isc4.gdb in pre-1.5 versions), and the 
+    security2.fdb (isc4.gdb in pre-1.5 versions), and the
     firebird.log file
 
 3)  grant the user 'firebird' rights to "Login as service" 

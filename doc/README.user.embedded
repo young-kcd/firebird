@@ -1,5 +1,5 @@
 -----------------------------------------------------------
-Firebird 1.5 Embedded Server notes
+Firebird 2.0 Embedded Server notes
 -----------------------------------------------------------
 
 1. GENERIC INFORMATION
@@ -32,7 +32,7 @@ Firebird 1.5 Embedded Server notes
 
   2.3. Authentication and security
 
-    The security database (namely security.fdb) is not used
+    The security database (namely security2.fdb) is not used
     in the embedded server and hence is not required. Any
     user is able to attach to any database. Since both
     the server and the client run in the same address space,
