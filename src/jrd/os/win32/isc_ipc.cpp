@@ -36,7 +36,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.2 2003-09-08 21:44:43 skidder Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.3 2003-09-11 02:32:40 brodsom Exp $ */
 
 #include <windows.h>
 #include <process.h>
@@ -55,6 +55,12 @@
 
 #ifdef HAVE_STRING_H
 #include <string.h>
+#endif
+
+#ifdef MINGW
+// signals not defined in MINGW
+#define SIG_SGE (void (__cdecl *)(int))3           /* signal gets error */
+#define SIG_ACK (void (__cdecl *)(int))4           /* acknowledge */
 #endif
 
 #ifndef REQUESTER
