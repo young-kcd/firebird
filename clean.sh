@@ -69,3 +69,5 @@ rm src/qli/proc.cpp 2>/dev/null
 rm src/qli/show.cpp 2>/dev/null
 rm src/utilities/gstat/dba.cpp 2>/dev/null
 rm src/utilities/gsec/security.cpp 2>/dev/null
+
+exit 0
