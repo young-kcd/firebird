@@ -664,6 +664,23 @@ void INI_init2(void)
 						}
 					}
 				}
+				else if (fld[RFLD_F_NAME] == nam_statistics &&
+					 relfld[RFLD_R_NAME] == nam_i_segments)
+				{
+					if (major_version >= ODS_VERSION11)
+					{
+						if (!fld[RFLD_F_MINOR])
+						{
+							n++;
+							if (fld[RFLD_F_UPD_MINOR])
+								relation->rel_flags |= REL_force_scan;
+						}
+						else
+						{
+							relation->rel_flags |= REL_force_scan;
+						}
+					}
+				}
 				else
 				{
 					if (!fld[RFLD_F_MINOR])
@@ -939,7 +956,6 @@ static void add_index_set(DBB		dbb,
 	idx::idx_repeat* tail;
 	USHORT	position;
 	JRD_FLD		field;
-	float	selectivity;
 	BLK		handle1;
 	BLK		handle2;
 	USHORT	n;
@@ -998,8 +1014,9 @@ static void add_index_set(DBB		dbb,
 			}
 			idx.idx_count = index->ini_idx_segment_count;
 			idx.idx_flags = index->ini_idx_flags;
+			SelectivityList selectivity(tdbb->tdbb_default);
 			IDX_create_index(tdbb, relation, &idx, (UCHAR*)string, NULL, NULL,
-							 &selectivity);
+							 selectivity);
 			X.RDB$INDEX_ID = idx.idx_id + 1;
 		END_STORE;
 

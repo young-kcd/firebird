@@ -67,6 +67,7 @@ RELATION(nam_i_segments, rel_segments, ODS_8_0)
 	FIELD(f_seg_name, nam_i_name, fld_i_name, 1, 0, 0, 0)
 	FIELD(f_seg_field, nam_f_name, fld_f_name, 1, 0, 0, 0)
 	FIELD(f_seg_position, nam_f_position, fld_f_position, 1, 0, 0, 0)
+	FIELD(f_seg_statistics, nam_statistics, fld_statistics, 1, 0, 0, 0)
 END_RELATION 
 RELATION(nam_indices, rel_indices, ODS_8_0)
 	FIELD(f_idx_name, nam_i_name, fld_i_name, 1, 0, 0, 0)
@@ -253,7 +254,8 @@ END_RELATION
 RELATION(nam_chk_constr, rel_ccon, ODS_8_0)
 	FIELD(f_ccon_cname, nam_con_name, fld_con_name, 1, 0, 0, 0)
 	FIELD(f_ccon_tname, nam_trg_name, fld_trg_name, 1, 0, 0, 0)
-	END_RELATION RELATION(nam_log_files, rel_log, ODS_8_0)
+END_RELATION
+RELATION(nam_log_files, rel_log, ODS_8_0)
 	FIELD(f_log_name, nam_file_name, fld_file_name, 1, 0, 0, 0)
 	FIELD(f_log_seq, nam_file_seq, fld_file_seq, 1, 0, 0, 0)
 	FIELD(f_log_length, nam_file_length, fld_file_length, 1, 0, 0, 0)
