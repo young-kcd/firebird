@@ -2519,8 +2519,8 @@ static bool delete_procedure(	TDBB	tdbb,
 		// used by other compiled requests
 		if (procedure->prc_use_count && !MET_clear_cache(tdbb, procedure))
 		{
-			gds__log("Deleting unfreed procedure %s. "
-					 "Engine is likely to get unstable after this point", 
+			gds__log("Deleting procedure %s which is currently in use by active user requests. "
+					 "Try to avoid such practice on production servers as it may cause unexpected errors.",
 					 work->dfw_name);
 			MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure);
 
@@ -3873,8 +3873,9 @@ static bool modify_procedure(	TDBB	tdbb,
 #endif /* SUPERSERVER */
 		if (procedure->prc_use_count && MET_procedure_in_use(tdbb,procedure))
 		{
-			gds__log("Modifying procedure %s used by user requests. "
-					 "Engine may get unstable after this point.", work->dfw_name);
+			gds__log("Modifying procedure %s which is currently in use by active user requests. "
+					 "Try to avoid such practice on production servers as it may cause unexpected errors.", 
+					 work->dfw_name);
 #ifdef DEV_BUILD
 			MET_procedure_in_use(tdbb,procedure);
 			MET_clear_cache(tdbb,procedure);
