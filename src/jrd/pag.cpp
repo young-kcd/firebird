@@ -803,8 +803,7 @@ void PAG_format_header(void)
 	WIN window(HEADER_PAGE);
 	header_page* header = (header_page*) CCH_fake(tdbb, &window, 1);
 	header->hdr_header.pag_scn = 0;
-	MOV_time_stamp(reinterpret_cast <
-				   ISC_TIMESTAMP * >(header->hdr_creation_date));
+	MOV_time_stamp(reinterpret_cast<ISC_TIMESTAMP*>(header->hdr_creation_date));
 	header->hdr_header.pag_type = pag_header;
 	header->hdr_page_size = dbb->dbb_page_size;
 	header->hdr_ods_version = ODS_VERSION | ODS_TYPE_CURRENT;
