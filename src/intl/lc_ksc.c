@@ -28,19 +28,19 @@
 
 extern USHORT famasc_key_length();
 extern USHORT famasc_string_to_key();
-extern short famasc_compare();
+extern SSHORT famasc_compare();
 extern USHORT famasc_to_upper();
 extern USHORT famasc_to_lower();
-extern short famasc_str_to_upper();
+extern SSHORT famasc_str_to_upper();
 extern USHORT CVKSC_ksc_byte2short();
-extern short CVKSC_ksc_mbtowc();
+extern SSHORT CVKSC_ksc_mbtowc();
 
-STATIC USHORT LCKSC_string_to_key();
-STATIC USHORT LCKSC_key_length();
-STATIC short LCKSC_compare();
+STATIC USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHORT iOutLen, BYTE *pOutChar);
+STATIC USHORT LCKSC_key_length(TEXTTYPE obj, USHORT inLen);
+STATIC SSHORT LCKSC_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2);
 
-static int GetGenHanNdx();
-static int GetSpeHanNdx();
+static int GetGenHanNdx(unsigned char b1, unsigned char b2);
+static int GetSpeHanNdx(unsigned char b1, unsigned char b2);
 
 #define	FAMILY_MULTIBYTE(id_number, name, charset, country) \
 	cache->texttype_version =		IB_LANGDRV_VERSION; \
@@ -271,7 +271,7 @@ STATIC USHORT LCKSC_key_length(TEXTTYPE obj, USHORT inLen)
 *	function name	:	LCKSC_compare
 *	description	:	compare two string
 */
-STATIC short LCKSC_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2)
+STATIC SSHORT LCKSC_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2)
 {
 	BYTE key1[LANGKSC_MAX_KEY];
 	BYTE key2[LANGKSC_MAX_KEY];

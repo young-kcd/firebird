@@ -28,9 +28,9 @@
 extern USHORT LC_NARROW_key_length();
 extern USHORT LC_NARROW_string_to_key();
 extern SSHORT LC_NARROW_compare();
-STATIC USHORT fam2_to_upper();
-STATIC SSHORT fam2_str_to_upper();
-STATIC USHORT fam2_to_lower();
+STATIC USHORT fam2_to_upper(TEXTTYPE obj, BYTE ch);
+STATIC SSHORT fam2_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr);
+STATIC USHORT fam2_to_lower(TEXTTYPE obj, BYTE ch);
 extern SSHORT LC_DOS_nc_mbtowc();
 
 #define FAMILY2(id_number, name, charset, country) \

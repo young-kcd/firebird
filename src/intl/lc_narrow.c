@@ -25,9 +25,10 @@
 #include "firebird.h"
 #include "../intl/ldcommon.h"
 
-USHORT LC_NARROW_key_length();
-USHORT LC_NARROW_string_to_key();
-SSHORT LC_NARROW_compare();
+USHORT LC_NARROW_key_length(TEXTTYPE obj, USHORT inLen);
+USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHORT iOutLen, BYTE *pOutChar,
+							   USHORT partial);
+SSHORT LC_NARROW_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2);
 
 
 

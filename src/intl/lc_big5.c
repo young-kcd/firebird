@@ -33,9 +33,9 @@
 extern USHORT famasc_key_length();
 extern USHORT famasc_string_to_key();
 extern SSHORT famasc_compare();
-static USHORT big5_to_upper();
-static USHORT big5_to_lower();
-static SSHORT big5_str_to_upper();
+STATIC USHORT big5_to_upper(TEXTTYPE obj, UCS2_CHAR ch);
+STATIC USHORT big5_to_lower(TEXTTYPE obj, UCS2_CHAR ch);
+STATIC SSHORT big5_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr);
 extern USHORT CVBIG5_big5_byte2short();
 extern SSHORT CVBIG5_big5_mbtowc();
 

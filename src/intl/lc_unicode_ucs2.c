@@ -32,7 +32,7 @@ extern USHORT famasc_to_lower();
 extern SSHORT famasc_str_to_upper();
 extern USHORT CS_UTFFSS_fss_to_unicode();
 extern SSHORT CS_UTFFSS_fss_mbtowc();
-static SSHORT wc_mbtowc();
+STATIC SSHORT wc_mbtowc(TEXTTYPE *obj, UCS2_CHAR *wc, NCHAR *p, USHORT n);
 
 #define FAMILY_UNICODE_WIDE_BIN(id_number, name, charset, country) \
 	cache->texttype_version =		IB_LANGDRV_VERSION; \
@@ -103,7 +103,7 @@ TEXTTYPE_ENTRY(UNI201_init)
 #include "../intl/collations/undef.h"
 
 
-static SSHORT wc_mbtowc(TEXTTYPE *obj, UCS2_CHAR *wc, NCHAR *p, USHORT n)
+STATIC SSHORT wc_mbtowc(TEXTTYPE *obj, UCS2_CHAR *wc, NCHAR *p, USHORT n)
 {
 	assert(obj);
 	assert(wc);
