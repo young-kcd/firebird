@@ -33,7 +33,7 @@
 @copy msvc6\release\firebird\intl\* output\intl
 @copy msvc6\release\firebird\udf\* output\udf
 @copy gpre.exe output\bin
-@copy dbs\jrd\ISC.GDB output\isc4.gdb
+@copy dbs\jrd\SECURITY.FDB output\security.fdb
 @copy dbs\qli\HELP.GDB output\help\help.gdb
 @copy ..\..\ChangeLog output\doc\ChangeLog.txt
 @copy ..\..\doc\WhatsNew output\doc\WhatsNew.txt

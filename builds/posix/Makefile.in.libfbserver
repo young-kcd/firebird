@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbserver,v 1.3 2002-10-07 01:29:09 skywalker Exp $
+#  $Id: Makefile.in.libfbserver,v 1.4 2003-02-10 12:26:26 dimitr Exp $
 #
 ROOT=..
 ObjModuleName=libfbserver
@@ -43,7 +43,7 @@ include     $(ROOT)/gen/make.shared.variables
 
 
 # These are deliberatly unexported otherwise gbak and others will try and check
-# the userid against the isc4.gdb database, which doesn't exist at this stage 
+# the userid against the security.fdb database, which doesn't exist at this stage 
 # in the build. MOD 11-July-2002
 
 unexport ISC_USER
