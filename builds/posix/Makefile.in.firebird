@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.19 2002-11-18 13:22:45 eku Exp $
+#  $Id: Makefile.in.firebird,v 1.20 2002-12-09 01:43:21 nmcc Exp $
 #
 
 ROOT=..
@@ -552,6 +552,8 @@ install package packages dist:
 
 clean: clean_objects clean_dependancies clean_extern_objects clean_build
 
+clean_config: clean clean_makefiles
+	rm -f configure
 
 # Not sure if this one is still needed MOD 7-Oct-2002
 clean_dbs:
@@ -579,6 +581,12 @@ clean_dependancies:
 clean_build:
 	rm -f `find $(GEN_ROOT)/firebird -type f -print`
 #	rm -f $(GDSLIB_OBJECTS) $(GDSLIB_PHASE3_OBJECTS)
+
+# 
+clean_makefiles:
+	rm -f $(GEN_ROOT)/Makefile.*
+	
+
 
 #___________________________________________________________________________
 # 
