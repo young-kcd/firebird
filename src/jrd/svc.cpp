@@ -1262,7 +1262,7 @@ void SVC_putc(SVC service, UCHAR ch)
 
 		case isc_info_svc_response:
 			service->svc_resp_len = 0;
-			if (info + 4 > end) {
+			if (info + 4 >= end) {
 				*info++ = isc_info_truncated;
 				break;
 			}
@@ -1272,7 +1272,7 @@ void SVC_putc(SVC service, UCHAR ch)
 			l =
 				(USHORT) gds__vax_integer(reinterpret_cast <
 										  UCHAR * >(buffer), 2);
-			length = MIN(end - (info + 4), l);
+			length = MIN(end - (info + 5), l);
 			service_get(service, info + 3, length, GET_BINARY, 0, &length);
 			info = INF_put_item(item, length, info + 3, info, end);
 			if (length != l) {
@@ -1302,7 +1302,7 @@ void SVC_putc(SVC service, UCHAR ch)
 
 		case isc_info_svc_response_more:
 			if ( (l = length = service->svc_resp_len) )
-				length = MIN(end - (info + 4), l);
+				length = MIN(end - (info + 5), l);
 			if (!
 				(info =
 				 INF_put_item(item, length,
@@ -1335,7 +1335,7 @@ void SVC_putc(SVC service, UCHAR ch)
 		case isc_info_svc_to_eof:
 		case isc_info_svc_limbo_trans:
 		case isc_info_svc_get_users:
-			if (info + 4 > end) {
+			if (info + 4 >= end) {
 				*info++ = isc_info_truncated;
 				break;
 			}
@@ -1347,7 +1347,7 @@ void SVC_putc(SVC service, UCHAR ch)
 			else
 				get_flags = GET_BINARY;
 
-			service_get(service, info + 3, end - (info + 4), get_flags,
+			service_get(service, info + 3, end - (info + 5), get_flags,
 						timeout, &length);
 
 			/* If the read timed out, return the data, if any, & a timeout
