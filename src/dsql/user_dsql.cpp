@@ -61,7 +61,7 @@ extern "C" {
 #define NAME_statement	1
 #define NAME_cursor		2
 
-typedef SLONG* HNDL;
+typedef struct why_hndl* HNDL;
 
 /* declare a structure which enables us to associate a cursor with a 
    statement and vice versa */
@@ -90,12 +90,12 @@ typedef struct name
 
 
 static void		cleanup(void*);
-static void		cleanup_database(SLONG**, SLONG);
+static void		cleanup_database(struct why_hndl**, SLONG);
 static STATUS	error();
 static void		error_post(STATUS, ...);
 static NAME		lookup_name(SCHAR*, NAME);
 static STMT		lookup_stmt(SCHAR*, NAME, USHORT);
-static void		init(HNDL*);
+static void		init(struct why_hndl**);
 static NAME		insert_name(SCHAR*, NAME *, STMT);
 static USHORT	name_length(SCHAR *);
 static void		remove_name(NAME, NAME *);
@@ -142,7 +142,7 @@ STATUS API_ROUTINE isc_embed_dsql_close(STATUS* user_status, SCHAR* name)
 		STMT statement = lookup_stmt(name, cursor_names, NAME_cursor);
 
 		return isc_dsql_free_statement(	user_status,
-									reinterpret_cast<hndl**>(&statement->stmt_handle),
+									&statement->stmt_handle,
 									DSQL_close);
 	}
 	catch(...)
@@ -172,7 +172,7 @@ STATUS API_ROUTINE isc_embed_dsql_declare(	STATUS*	user_status,
 
 		STATUS s =
 			isc_dsql_set_cursor_name(user_status,
-								 reinterpret_cast<hndl**>(&statement->stmt_handle),
+								 &statement->stmt_handle,
 								 cursor,
 								 0);
 		if (s) {
@@ -209,7 +209,7 @@ STATUS API_ROUTINE isc_embed_dsql_describe(STATUS* user_status,
 		STMT statement = lookup_stmt(stmt_name, statement_names, NAME_statement);
 
 		return isc_dsql_describe(user_status,
-							 reinterpret_cast<hndl**>(&statement->stmt_handle),
+							 &statement->stmt_handle,
 							 dialect,
 							 sqlda);
 	}
@@ -255,7 +255,7 @@ STATUS API_ROUTINE isc_embed_dsql_describe_bind(STATUS*	user_status,
 		STMT statement = lookup_stmt(stmt_name, statement_names, NAME_statement);
 
 		return isc_dsql_describe_bind(user_status,
-								  reinterpret_cast<hndl**>(&statement->stmt_handle),
+								  &statement->stmt_handle,
 								  dialect,
 								  sqlda);
 	}
@@ -271,7 +271,7 @@ STATUS API_ROUTINE isc_embed_dsql_describe_bind(STATUS*	user_status,
 //	Execute a non-SELECT dynamic SQL statement.
 //
 STATUS API_ROUTINE isc_embed_dsql_execute(STATUS*	user_status,
-										  SLONG**	trans_handle,
+										  struct why_hndl**	trans_handle,
 										  SCHAR*	stmt_name,
 										  USHORT	dialect,
 										  XSQLDA*	sqlda)
@@ -290,7 +290,7 @@ STATUS API_ROUTINE isc_embed_dsql_execute(STATUS*	user_status,
 //	Execute a non-SELECT dynamic SQL statement.
 //
 STATUS API_ROUTINE isc_embed_dsql_execute2(STATUS*	user_status,
-										   SLONG**	trans_handle,
+										   struct why_hndl**	trans_handle,
 										   SCHAR*	stmt_name,
 										   USHORT	dialect,
 										   XSQLDA*	in_sqlda,
@@ -306,8 +306,8 @@ STATUS API_ROUTINE isc_embed_dsql_execute2(STATUS*	user_status,
 		STMT statement = lookup_stmt(stmt_name, statement_names, NAME_statement);
 
 		return isc_dsql_execute2(	user_status,
-								reinterpret_cast<hndl**>(trans_handle),
-								reinterpret_cast<hndl**>(&statement->stmt_handle),
+								trans_handle,
+								&statement->stmt_handle,
 								dialect,
 								in_sqlda,
 								out_sqlda);
@@ -324,8 +324,8 @@ STATUS API_ROUTINE isc_embed_dsql_execute2(STATUS*	user_status,
 //	isc_embed_dsql_exec_immed
 //
 STATUS API_ROUTINE isc_embed_dsql_exec_immed(STATUS*	user_status,
-											 SLONG**	db_handle,
-											 SLONG**	trans_handle,
+											 struct why_hndl**	db_handle,
+											 struct why_hndl**	trans_handle,
 											 USHORT		length,
 											 SCHAR*		string,
 											 USHORT		dialect,
@@ -346,8 +346,8 @@ STATUS API_ROUTINE isc_embed_dsql_exec_immed(STATUS*	user_status,
 //	Prepare a statement for execution.
 //
 STATUS API_ROUTINE isc_embed_dsql_execute_immed(STATUS*	user_status,
-												SLONG**	db_handle,
-												SLONG**	trans_handle,
+												struct why_hndl**	db_handle,
+												struct why_hndl**	trans_handle,
 												USHORT	length,
 												SCHAR*	string,
 												USHORT	dialect,
@@ -369,8 +369,8 @@ STATUS API_ROUTINE isc_embed_dsql_execute_immed(STATUS*	user_status,
 //	Prepare a statement for execution.
 //
 STATUS API_ROUTINE isc_embed_dsql_exec_immed2(	STATUS*	user_status,
-												SLONG**	db_handle,
-												SLONG**	trans_handle,
+												struct why_hndl**	db_handle,
+												struct why_hndl**	trans_handle,
 												USHORT	length,
 												SCHAR*	string,
 												USHORT	dialect,
@@ -378,8 +378,8 @@ STATUS API_ROUTINE isc_embed_dsql_exec_immed2(	STATUS*	user_status,
 												XSQLDA*	out_sqlda)
 {
 	return isc_dsql_exec_immed2(user_status,
-								reinterpret_cast<hndl**>(db_handle),
-								reinterpret_cast<hndl**>(trans_handle),
+								db_handle,
+								trans_handle,
 								length,
 								string,
 								dialect,
@@ -394,8 +394,8 @@ STATUS API_ROUTINE isc_embed_dsql_exec_immed2(	STATUS*	user_status,
 //	An execute immediate for COBOL to call
 //
 STATUS API_ROUTINE isc_embed_dsql_execute_immed_d(STATUS* user_status,
-												  SLONG** db_handle,
-												  SLONG** trans_handle,
+												  struct why_hndl** db_handle,
+												  struct why_hndl** trans_handle,
 												  struct dsc$descriptor_s *
 												  string, USHORT dialect,
 												  XSQLDA* sqlda)
@@ -413,8 +413,8 @@ STATUS API_ROUTINE isc_embed_dsql_execute_immed_d(STATUS* user_status,
 //	An execute immediate for COBOL to call
 //
 STATUS API_ROUTINE isc_embed_dsql_exec_immed2_d(STATUS* user_status,
-												SLONG** db_handle,
-												SLONG** trans_handle,
+												struct why_hndl** db_handle,
+												struct why_hndl** trans_handle,
 												struct dsc$descriptor_s *
 												string, USHORT dialect,
 												XSQLDA* in_sqlda,
@@ -446,7 +446,7 @@ STATUS API_ROUTINE isc_embed_dsql_fetch(STATUS* user_status,
 		STMT statement = lookup_stmt(cursor_name, cursor_names, NAME_cursor);
 
 		return isc_dsql_fetch(user_status,
-						  reinterpret_cast<hndl**>(&statement->stmt_handle),
+						  &statement->stmt_handle,
 						  dialect,
 						  sqlda);
 	}
@@ -572,7 +572,7 @@ STATUS API_ROUTINE isc_embed_dsql_insert(STATUS* user_status,
 		statement = lookup_stmt(cursor_name, cursor_names, NAME_cursor);
 
 		return isc_dsql_insert(user_status,
-						   reinterpret_cast<hndl**>(&statement->stmt_handle),
+						   &statement->stmt_handle,
 						   dialect,
 						   sqlda);
 	}
@@ -609,7 +609,7 @@ void API_ROUTINE isc_embed_dsql_length( UCHAR * string, USHORT * length)
 
 
 STATUS API_ROUTINE isc_embed_dsql_open(STATUS* user_status,
-									   SLONG** trans_handle,
+									   struct why_hndl** trans_handle,
 									   SCHAR* cursor_name,
 									   USHORT dialect, XSQLDA* sqlda)
 {
@@ -630,7 +630,7 @@ STATUS API_ROUTINE isc_embed_dsql_open(STATUS* user_status,
 
 
 STATUS API_ROUTINE isc_embed_dsql_open2(STATUS* user_status,
-										SLONG** trans_handle,
+										struct why_hndl** trans_handle,
 										SCHAR* cursor_name,
 										USHORT dialect,
 										XSQLDA* in_sqlda, XSQLDA* out_sqlda)
@@ -656,8 +656,8 @@ STATUS API_ROUTINE isc_embed_dsql_open2(STATUS* user_status,
 		stmt = lookup_stmt(cursor_name, cursor_names, NAME_cursor);
 
 		return isc_dsql_execute2(user_status,
-							 reinterpret_cast<hndl**>(trans_handle),
-							 reinterpret_cast<hndl**>(&stmt->stmt_handle),
+							 trans_handle,
+							 &stmt->stmt_handle,
 							 dialect, in_sqlda, out_sqlda);
 	}
 	catch(...)
@@ -668,8 +668,8 @@ STATUS API_ROUTINE isc_embed_dsql_open2(STATUS* user_status,
 
 
 STATUS API_ROUTINE isc_embed_dsql_prepare(STATUS*	user_status,
-										  SLONG**	db_handle,
-										  SLONG**	trans_handle,
+										  struct why_hndl**	db_handle,
+										  struct why_hndl**	trans_handle,
 										  SCHAR*	stmt_name,
 										  USHORT	length,
 										  SCHAR*	string,
@@ -716,8 +716,8 @@ STATUS API_ROUTINE isc_embed_dsql_prepare(STATUS*	user_status,
 		statement = NULL;
 		stmt_handle = NULL;
 		s = isc_dsql_allocate_statement(user_status,
-										reinterpret_cast<hndl**>(db_handle),
-										reinterpret_cast<hndl**>(&stmt_handle));
+										db_handle,
+										&stmt_handle);
 		if (s)
 		{
 			return s;
@@ -725,8 +725,8 @@ STATUS API_ROUTINE isc_embed_dsql_prepare(STATUS*	user_status,
 	}
 
 	s = isc_dsql_prepare(user_status,
-						 reinterpret_cast<hndl**>(trans_handle),
-						 reinterpret_cast<hndl**>(&stmt_handle),
+						 trans_handle,
+						 &stmt_handle,
 						 length, string, dialect, sqlda);
 
 	if (s) {
@@ -734,7 +734,7 @@ STATUS API_ROUTINE isc_embed_dsql_prepare(STATUS*	user_status,
 
 		if (!statement) {
 			isc_dsql_free_statement(local_status2,
-									reinterpret_cast<hndl**>(&stmt_handle),
+									&stmt_handle,
 									DSQL_drop);
 		}
 		return error();
@@ -780,8 +780,8 @@ STATUS API_ROUTINE isc_embed_dsql_prepare(STATUS*	user_status,
 
 #ifdef VMS
 STATUS API_ROUTINE isc_embed_dsql_prepare_d(STATUS* user_status,
-											SLONG** db_handle,
-											SLONG** trans_handle,
+											struct why_hndl** db_handle,
+											struct why_hndl** trans_handle,
 											SCHAR* stmt_name,
 											struct dsc$descriptor_s * string,
 											USHORT dialect, XSQLDA* sqlda)
@@ -832,7 +832,7 @@ STATUS API_ROUTINE isc_embed_dsql_release(STATUS* user_status,
 
 		STATUS s =
 			isc_dsql_free_statement(user_status,
-								reinterpret_cast<hndl**>(&statement->stmt_handle),
+								&statement->stmt_handle,
 								DSQL_drop);
 		if (s) {
 			return s;
@@ -913,7 +913,7 @@ STATUS API_ROUTINE isc_dsql_fetch_a(STATUS* user_status,
 	*sqlcode = 0;
 
 	s = isc_dsql_fetch(	user_status,
-						reinterpret_cast<hndl**>(stmt_handle),
+						reinterpret_cast<why_hndl**>(stmt_handle),
 						dialect,
 						reinterpret_cast<XSQLDA*>(sqlda));
 	if (s == 100)
@@ -1036,7 +1036,7 @@ STATUS API_ROUTINE isc_execute(STATUS* status_vector,
 							   SCHAR* statement_name, SQLDA* sqlda)
 {
 	return isc_embed_dsql_execute(status_vector,
-								  (SLONG**) tra_handle,
+								  (struct why_hndl**) tra_handle,
 								  statement_name,
 								  (USHORT) DIALECT_sqlda,
 								  reinterpret_cast<XSQLDA*>(sqlda));
@@ -1048,8 +1048,8 @@ STATUS API_ROUTINE isc_execute_immediate(STATUS* status_vector,
 										 SSHORT * sql_length, SCHAR* sql)
 {
 	return isc_embed_dsql_execute_immed(status_vector,
-										(SLONG**) db_handle,
-										(SLONG**) tra_handle,
+										(struct why_hndl**) db_handle,
+										(struct why_hndl**) tra_handle,
 										(USHORT) ((sql_length) ? *sql_length :
 												  0), sql,
 										(USHORT) DIALECT_sqlda, NULL);
@@ -1096,7 +1096,7 @@ STATUS API_ROUTINE isc_open(STATUS* status_vector,
 							SCHAR* cursor_name, SQLDA* sqlda)
 {
 	return isc_embed_dsql_open(status_vector,
-							   (SLONG**) tra_handle,
+							   (struct why_hndl**) tra_handle,
 							   cursor_name,
 							   (USHORT) DIALECT_sqlda,
 							   reinterpret_cast<XSQLDA*>(sqlda));
@@ -1111,8 +1111,8 @@ STATUS API_ROUTINE isc_prepare(	STATUS*	status_vector,
 								SQLDA*	sqlda)
 {
 	return isc_embed_dsql_prepare(	status_vector,
-									(SLONG**) db_handle,
-									(SLONG**) tra_handle,
+									(struct why_hndl**) db_handle,
+									(struct why_hndl**) tra_handle,
 									statement_name,
 									(USHORT) ((sql_length) ? *sql_length : 0),
 									sql,
@@ -1355,7 +1355,7 @@ static void cleanup(void* arg)
 //
 //		the cleanup handler called when a database is closed
 //
-static void cleanup_database(SLONG** db_handle, SLONG dummy)
+static void cleanup_database(struct why_hndl** db_handle, SLONG dummy)
 {
 	if (!db_handle || !databases) {
 		return;
@@ -1488,7 +1488,7 @@ static void error_post(STATUS status, ...)
 //
 //	Initialize dynamic SQL.  This is called only once.
 //
-static void init(HNDL* db_handle)
+static void init(struct why_hndl** db_handle)
 {
 	// If we haven't been initialized yet, do it now
 	if (!init_flag)
@@ -1526,8 +1526,8 @@ static void init(HNDL* db_handle)
 
 	STATUS local_status[ISC_STATUS_LENGTH];
 	gds__database_cleanup(local_status,
-						  reinterpret_cast<hndl**>(db_handle),
-						  reinterpret_cast<void(*)()>(cleanup_database),
+						  db_handle,
+						  cleanup_database,
 						  (SLONG) FALSE);
 }
 

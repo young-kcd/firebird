@@ -37,7 +37,8 @@
 #include "../jrd/constants.h"
 #include "../dsql/blob_proto.h"
 
-DATABASE DB = STATIC "yachts.lnk";
+//DATABASE DB = STATIC "yachts.lnk";
+DATABASE DB = STATIC "ok:C:\GDB\ODS.RDB";
 
 static void copy_exact_name (UCHAR *, UCHAR *, SSHORT);
 static STATUS copy_status(STATUS *, STATUS *);
@@ -126,8 +127,8 @@ USHORT bpb_buffer_length, UCHAR * bpb_buffer, USHORT * bpb_length)
 
 
 STATUS API_ROUTINE isc_blob_lookup_desc(STATUS * status,
-										void **db_handle,
-										void **trans_handle,
+										FRBRD **db_handle,
+										FRBRD **trans_handle,
 										UCHAR * relation_name,
 										UCHAR * field_name,
 										ISC_BLOB_DESC * desc, UCHAR * global)

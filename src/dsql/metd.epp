@@ -81,7 +81,8 @@ nested FOR loops are added.
     THREAD_ENTER;               // First statment after FOR loop 
 ***************************************************************/
 
-ASSERT_FILENAME DATABASE DB = STATIC "yachts.lnk";
+//ASSERT_FILENAME DATABASE DB = STATIC "ODS.RDB";
+ASSERT_FILENAME DATABASE DB = STATIC "ok:C:\GDB\ODS.RDB";
 
 static CONST UCHAR blr_bpb[] = { isc_bpb_version1,
 	isc_bpb_source_type, 1, BLOB_blr,
@@ -272,7 +273,7 @@ INTLSYM METD_get_collation(DSQL_REQ request, STR name)
  *	If it doesn't exist, return NULL.
  *
  **************************************/
-	SLONG *DB, *gds_trans;
+	FRBRD *DB, *gds_trans;
 	DBB dbb;
 	INTLSYM iname;
 	SYM symbol;
@@ -291,7 +292,7 @@ INTLSYM METD_get_collation(DSQL_REQ request, STR name)
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
-	gds_trans = (SLONG*) request->req_trans;
+	gds_trans = request->req_trans;
 	iname = NULL;
 
 	THREAD_EXIT;
@@ -362,7 +363,7 @@ TEXT * buffer, USHORT buff_length)
  *    Reads the system tables RDB$FIELDS and RDB$RELATION_FIELDS.
  *
  **************************************************************/
-	SLONG *DB, *gds_trans;
+	FRBRD *DB, *gds_trans;
 	DBB dbb;
 	STATUS status_vect[ISC_STATUS_LENGTH];
 
@@ -377,7 +378,7 @@ TEXT * buffer, USHORT buff_length)
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
-	gds_trans = (SLONG*) request->req_trans;
+	gds_trans = request->req_trans;
 
 /* V4.x multi threading requirements */
 	THREAD_EXIT;
@@ -405,8 +406,8 @@ TEXT * buffer, USHORT buff_length)
 	if (*has_default) {
 		/* open the blob */
 		THREAD_EXIT;
-		stat = isc_open_blob2(status_vect, (void**) &DB, (void**) &gds_trans,
-							  (void**) &blob_handle, blob_id, sizeof(blr_bpb),
+		stat = isc_open_blob2(status_vect, &DB, &gds_trans,
+							  &blob_handle, blob_id, sizeof(blr_bpb),
 							  (UCHAR*)blr_bpb);
 		THREAD_ENTER;
 		if (stat)
@@ -472,7 +473,7 @@ INTLSYM METD_get_charset(DSQL_REQ request, USHORT length, UCHAR * name)
  *	If it doesn't exist, return NULL.
  *
  **************************************/
-	SLONG *DB, *gds_trans;
+	FRBRD *DB, *gds_trans;
 	DBB dbb;
 	INTLSYM iname;
 	SYM symbol;
@@ -490,7 +491,7 @@ INTLSYM METD_get_charset(DSQL_REQ request, USHORT length, UCHAR * name)
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
-	gds_trans = (SLONG*) request->req_trans;
+	gds_trans = request->req_trans;
 	iname = NULL;
 
 	THREAD_EXIT;
@@ -561,14 +562,14 @@ USHORT METD_get_charset_bpc (DSQL_REQ request,
  *	charset' id, not by name.
  *
  **************************************/
-    SLONG	*DB, *gds__trans;
+    FRBRD *DB, *gds__trans;
     DBB	dbb;
     isc_req_handle handle;
     USHORT	bpc = 0;
     
     dbb = request->req_dbb;
     DB = dbb->dbb_database_handle;
-    gds__trans = reinterpret_cast<SLONG*>(request->req_trans);
+    gds__trans = request->req_trans;
     
     handle = 0;
     
@@ -614,7 +615,7 @@ STR METD_get_default_charset(DSQL_REQ request)
  *	Find the default character set for a database
  *
  **************************************/
-	SLONG *DB, *gds_trans;
+	FRBRD *DB, *gds_trans;
 	DBB dbb;
 	isc_req_handle handle;
 	UCHAR *p;
@@ -631,9 +632,9 @@ STR METD_get_default_charset(DSQL_REQ request)
 /* Now see if it is in the database */
 
 	DB = dbb->dbb_database_handle;
-	gds_trans = (SLONG*) request->req_trans;
+	gds_trans = request->req_trans;
 
-	handle = NULL_PTR;
+	handle = 0;
 
 	THREAD_EXIT;
 
@@ -690,13 +691,13 @@ USHORT METD_get_domain(DSQL_REQ request, DSQL_FLD field, UCHAR * name)
  *	Fetch domain information for field defined as 'name'
  *
  **************************************/
-	SLONG *DB, *gds_trans;
+	FRBRD *DB, *gds_trans;
 	DBB dbb;
 	USHORT found = FALSE;
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
-	gds_trans = (SLONG*) request->req_trans;
+	gds_trans = request->req_trans;
 
 	THREAD_EXIT;
 
@@ -756,7 +757,7 @@ void METD_get_domain_default(DSQL_REQ request,
  *    Gets the default value for a domain of an existing table.
  *
  **************************************************************/
-	SLONG *DB, *gds_trans;
+	FRBRD *DB, *gds_trans;
 	DBB dbb;
 	ISC_STATUS status_vect[ISC_STATUS_LENGTH];
 
@@ -771,7 +772,7 @@ void METD_get_domain_default(DSQL_REQ request,
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
-	gds_trans = (SLONG*) request->req_trans;
+	gds_trans = request->req_trans;
 
 /* V4.x multi threading requirements */
 	THREAD_EXIT;
@@ -789,8 +790,8 @@ void METD_get_domain_default(DSQL_REQ request,
         if (*has_default) {
             /* open the blob */
             THREAD_EXIT;
-            stat = isc_open_blob2(status_vect, (void**) &DB, (void**) &gds_trans,
-                                  (void**) &blob_handle, blob_id, sizeof(blr_bpb),
+            stat = isc_open_blob2(status_vect, &DB, &gds_trans,
+                                  &blob_handle, blob_id, sizeof(blr_bpb),
                                   (UCHAR*)blr_bpb);
             THREAD_ENTER;
             if (stat)
@@ -861,7 +862,7 @@ UDF METD_get_function(DSQL_REQ request, STR name)
  *	return NULL.
  *
  **************************************/
-	SLONG *DB, *gds_trans;
+	FRBRD *DB, *gds_trans;
 	DBB dbb;
 	UDF udf_, temp;
 	USHORT return_arg, arg_count;
@@ -895,7 +896,7 @@ UDF METD_get_function(DSQL_REQ request, STR name)
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
-	gds_trans = (SLONG*) request->req_trans;
+	gds_trans = request->req_trans;
 	udf_ = NULL;
     stack = 0;
 
@@ -1120,7 +1121,7 @@ DSQL_NOD METD_get_primary_key(DSQL_REQ request, STR relation_name)
  *	node of the fields.
  *
  **************************************/
-	SLONG *DB, *gds_trans;
+	FRBRD *DB, *gds_trans;
 	DBB dbb;
 	DSQL_NOD list, field_node;
 	STR field_name;
@@ -1128,7 +1129,7 @@ DSQL_NOD METD_get_primary_key(DSQL_REQ request, STR relation_name)
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
-	gds_trans = (SLONG*) request->req_trans;
+	gds_trans = request->req_trans;
 
 	list = NULL;
 	count = 0;
@@ -1181,7 +1182,7 @@ DSQL_PRC METD_get_procedure(DSQL_REQ request, STR name)
  *	If it is marked dropped, try to read from system tables
  *
  **************************************/
-	SLONG *DB, *gds_trans;
+	FRBRD *DB, *gds_trans;
 	DBB dbb;
 	DSQL_FLD parameter, *ptr;
 	DSQL_PRC procedure, temp;
@@ -1215,7 +1216,7 @@ DSQL_PRC METD_get_procedure(DSQL_REQ request, STR name)
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
-	gds_trans = (SLONG*) request->req_trans;
+	gds_trans = request->req_trans;
 	procedure = NULL;
 
 	THREAD_EXIT;
@@ -1373,7 +1374,7 @@ DSQL_REL METD_get_relation(DSQL_REQ request, STR name)
  *	If it does, fetch field information as well.
  *
  **************************************/
-	SLONG *DB, *gds_trans;
+	FRBRD *DB, *gds_trans;
 	DBB dbb;
 	DSQL_FLD field, *ptr;
 	DSQL_REL relation, temp;
@@ -1408,7 +1409,7 @@ DSQL_REL METD_get_relation(DSQL_REQ request, STR name)
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
-	gds_trans = (SLONG*) request->req_trans;
+	gds_trans = request->req_trans;
 	relation = NULL;
 
 	THREAD_EXIT;
@@ -1644,13 +1645,13 @@ STR METD_get_trigger_relation(DSQL_REQ request, STR name, USHORT * trig_type)
  *	Look up a trigger's relation and return it's current type
  *
  **************************************/
-	SLONG *DB, *gds_trans;
+	FRBRD *DB, *gds_trans;
 	DBB dbb;
 	STR relation;
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
-	gds_trans = (SLONG*) request->req_trans;
+	gds_trans = request->req_trans;
 
 	relation = NULL;
 
@@ -1689,13 +1690,13 @@ USHORT METD_get_type(DSQL_REQ request, STR name, UCHAR * field, SSHORT * value)
  *	Look up a symbolic name in RDB$TYPES
  *
  **************************************/
-	SLONG *DB, *gds_trans;
+	FRBRD *DB, *gds_trans;
 	DBB dbb;
 	USHORT found;
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
-	gds_trans = (SLONG*) request->req_trans;
+	gds_trans = request->req_trans;
 
 	found = FALSE;
 
@@ -1739,13 +1740,13 @@ DSQL_REL METD_get_view_relation(DSQL_REQ request,
  *
  **************************************/
 	DBB dbb;
-	SLONG *DB, *gds_trans;
+	FRBRD *DB, *gds_trans;
 	STR relation_name;
 	DSQL_REL relation;
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
-	gds_trans = (SLONG*) request->req_trans;
+	gds_trans = request->req_trans;
 
 	relation = NULL;
 
@@ -1799,12 +1800,12 @@ static void check_array( DSQL_REQ request, TEXT * field_name, DSQL_FLD field)
  *	so in the database block to avoid wasting further effort.
  *
  **************************************/
-	SLONG *DB, *gds_trans;
+	FRBRD *DB, *gds_trans;
 	DBB dbb;
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
-	gds_trans = (SLONG*) request->req_trans;
+	gds_trans = request->req_trans;
 
 	THREAD_EXIT;
 

@@ -40,7 +40,8 @@
 #include "../dsql/array_proto.h"
 #include "../jrd/gds_proto.h"
 
-DATABASE DB = STATIC "yachts.lnk";
+DATABASE DB = STATIC FILENAME "ok:C:\GDB\ODS.RDB";
+//DATABASE DB = STATIC FILENAME "yachts.lnk";
 
 #define ARRAY_DESC_COLUMN_MAJOR		1	/* Set for FORTRAN */
 
@@ -58,7 +59,7 @@ static STATUS copy_status(STATUS *, STATUS *);
 static STATUS error(STATUS *, SSHORT, ...);
 static STATUS gen_sdl(STATUS *, ISC_ARRAY_DESC *, SSHORT *, SCHAR **,
 					  SSHORT *, BOOLEAN);
-static STATUS lookup_desc(STATUS *, void **, void **, SCHAR *, SCHAR *,
+static STATUS lookup_desc(STATUS *, FRBRD **, FRBRD **, SCHAR *, SCHAR *,
 						  ISC_ARRAY_DESC *, SCHAR *);
 static STATUS stuff(GEN, SSHORT, ...);
 static STATUS stuff_literal(GEN, SLONG);
@@ -93,8 +94,8 @@ STATUS API_ROUTINE isc_array_gen_sdl(STATUS * status,
 
 
 STATUS API_ROUTINE isc_array_get_slice(STATUS * status,
-									   void **db_handle,
-									   void **trans_handle,
+									   FRBRD **db_handle,
+									   FRBRD **trans_handle,
 									   GDS_QUAD * array_id,
 									   ISC_ARRAY_DESC * desc,
 									   void *array, SLONG * slice_length)
@@ -129,8 +130,8 @@ STATUS API_ROUTINE isc_array_get_slice(STATUS * status,
 
 
 STATUS API_ROUTINE isc_array_lookup_bounds(STATUS * status,
-										   void **db_handle,
-										   void **trans_handle,
+										   FRBRD **db_handle,
+										   FRBRD **trans_handle,
 										   SCHAR * relation_name,
 										   SCHAR * field_name,
 										   ISC_ARRAY_DESC * desc)
@@ -167,8 +168,8 @@ STATUS API_ROUTINE isc_array_lookup_bounds(STATUS * status,
 
 
 STATUS API_ROUTINE isc_array_lookup_desc(STATUS * status,
-										 void **db_handle,
-										 void **trans_handle,
+										 FRBRD **db_handle,
+										 FRBRD **trans_handle,
 										 SCHAR * relation_name,
 										 SCHAR * field_name,
 										 ISC_ARRAY_DESC * desc)
@@ -189,8 +190,8 @@ STATUS API_ROUTINE isc_array_lookup_desc(STATUS * status,
 
 
 STATUS API_ROUTINE isc_array_put_slice(STATUS * status,
-									   void **db_handle,
-									   void **trans_handle,
+									   FRBRD **db_handle,
+									   FRBRD **trans_handle,
 									   GDS_QUAD * array_id,
 									   ISC_ARRAY_DESC * desc,
 									   void *array, SLONG * slice_length)
@@ -488,8 +489,8 @@ static STATUS gen_sdl(STATUS * status,
 
 
 static STATUS lookup_desc(STATUS * status,
-						  void **db_handle,
-						  void **trans_handle,
+						  FRBRD **db_handle,
+						  FRBRD **trans_handle,
 						  SCHAR * field_name,
 SCHAR * relation_name, ISC_ARRAY_DESC * desc, SCHAR * global)
 {

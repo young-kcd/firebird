@@ -32,7 +32,7 @@ STATUS API_ROUTINE gds__close(STATUS*, SCHAR*);
 STATUS API_ROUTINE gds__declare(STATUS*, SCHAR*, SCHAR*);
 STATUS API_ROUTINE gds__describe(STATUS*, SCHAR*, SQLDA*);
 STATUS API_ROUTINE gds__describe_bind(STATUS*, SCHAR*, SQLDA*);
-STATUS API_ROUTINE gds__dsql_finish(SLONG**);
+STATUS API_ROUTINE gds__dsql_finish(struct why_hndl**);
 STATUS API_ROUTINE gds__execute(STATUS*, SLONG*, SCHAR*, SQLDA*);
 STATUS API_ROUTINE gds__execute_immediate(STATUS*, SLONG*, SLONG*,
 											 SSHORT*, SCHAR*);
@@ -46,7 +46,7 @@ STATUS API_ROUTINE isc_close(STATUS*, SCHAR*);
 STATUS API_ROUTINE isc_declare(STATUS*, SCHAR*, SCHAR*);
 STATUS API_ROUTINE isc_describe(STATUS*, SCHAR*, SQLDA*);
 STATUS API_ROUTINE isc_describe_bind(STATUS*, SCHAR*, SQLDA*);
-STATUS API_ROUTINE isc_dsql_finish(SLONG**);
+STATUS API_ROUTINE isc_dsql_finish(struct why_hndl**);
 STATUS API_ROUTINE isc_dsql_release(STATUS*, SCHAR*);
 STATUS API_ROUTINE isc_dsql_fetch_a(STATUS*, int*, int*, USHORT, int*);
 #ifdef SCROLLABLE_CURSORS
@@ -58,11 +58,11 @@ STATUS API_ROUTINE isc_embed_dsql_declare(STATUS*, SCHAR*, SCHAR*);
 STATUS API_ROUTINE isc_embed_dsql_descr_bind(STATUS*, SCHAR*, USHORT, XSQLDA*);
 STATUS API_ROUTINE isc_embed_dsql_describe(STATUS*, SCHAR*, USHORT, XSQLDA*);
 STATUS API_ROUTINE isc_embed_dsql_describe_bind(STATUS*, SCHAR*, USHORT, XSQLDA*);
-STATUS API_ROUTINE isc_embed_dsql_exec_immed(STATUS*, SLONG**, SLONG**, USHORT, SCHAR*, USHORT, XSQLDA*);
-STATUS API_ROUTINE isc_embed_dsql_exec_immed2(STATUS*, SLONG**, SLONG**, USHORT, SCHAR*, USHORT, XSQLDA*, XSQLDA*);
-STATUS API_ROUTINE isc_embed_dsql_execute(STATUS*, SLONG**, SCHAR*, USHORT, XSQLDA*);
-STATUS API_ROUTINE isc_embed_dsql_execute2(STATUS*, SLONG**, SCHAR*, USHORT, XSQLDA*, XSQLDA*);
-STATUS API_ROUTINE isc_embed_dsql_execute_immed(STATUS*, SLONG**, SLONG**, USHORT, SCHAR*, USHORT, XSQLDA*);
+STATUS API_ROUTINE isc_embed_dsql_exec_immed(STATUS*, struct why_hndl**, struct why_hndl**, USHORT, SCHAR*, USHORT, XSQLDA*);
+STATUS API_ROUTINE isc_embed_dsql_exec_immed2(STATUS*, struct why_hndl**, struct why_hndl**, USHORT, SCHAR*, USHORT, XSQLDA*, XSQLDA*);
+STATUS API_ROUTINE isc_embed_dsql_execute(STATUS*, struct why_hndl**, SCHAR*, USHORT, XSQLDA*);
+STATUS API_ROUTINE isc_embed_dsql_execute2(STATUS*, struct why_hndl**, SCHAR*, USHORT, XSQLDA*, XSQLDA*);
+STATUS API_ROUTINE isc_embed_dsql_execute_immed(STATUS*, struct why_hndl**, struct why_hndl**, USHORT, SCHAR*, USHORT, XSQLDA*);
 STATUS API_ROUTINE isc_embed_dsql_fetch(STATUS*, SCHAR*, USHORT, XSQLDA*);
 
 #ifdef SCROLLABLE_CURSORS
@@ -77,9 +77,9 @@ STATUS API_ROUTINE isc_embed_dsql_fetch2_a(STATUS*, int*, SCHAR*, USHORT, XSQLDA
 
 STATUS API_ROUTINE isc_embed_dsql_insert(STATUS*, SCHAR*, USHORT, XSQLDA*);
 void   API_ROUTINE isc_embed_dsql_length(UCHAR*, USHORT*);
-STATUS API_ROUTINE isc_embed_dsql_open(STATUS*, SLONG**, SCHAR*, USHORT, XSQLDA*);
-STATUS API_ROUTINE isc_embed_dsql_open2(STATUS*, SLONG**, SCHAR*, USHORT, XSQLDA*, XSQLDA*);
-STATUS API_ROUTINE isc_embed_dsql_prepare(STATUS*, SLONG**, SLONG**, SCHAR*, USHORT, SCHAR*, USHORT, XSQLDA*);
+STATUS API_ROUTINE isc_embed_dsql_open(STATUS*, struct why_hndl**, SCHAR*, USHORT, XSQLDA*);
+STATUS API_ROUTINE isc_embed_dsql_open2(STATUS*, struct why_hndl**, SCHAR*, USHORT, XSQLDA*, XSQLDA*);
+STATUS API_ROUTINE isc_embed_dsql_prepare(STATUS*, struct why_hndl**, struct why_hndl**, SCHAR*, USHORT, SCHAR*, USHORT, XSQLDA*);
 STATUS API_ROUTINE isc_embed_dsql_release(STATUS*, SCHAR*);
 STATUS API_ROUTINE isc_execute(STATUS*, SLONG*, SCHAR*, SQLDA*);
 STATUS API_ROUTINE isc_execute_immediate(STATUS*, SLONG*, SLONG*, SSHORT*, SCHAR*);

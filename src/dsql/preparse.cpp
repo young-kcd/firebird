@@ -98,8 +98,8 @@ static CONST PP_TABLE pp_symbols[] = {
 
 int DLL_EXPORT PREPARSE_execute(
 								STATUS * user_status,
-								SLONG ** db_handle,
-								SLONG ** trans_handle,
+								struct why_hndl ** db_handle,
+								struct why_hndl ** trans_handle,
 USHORT stmt_length, SCHAR * stmt, BOOLEAN * stmt_eaten, USHORT dialect)
 {
 /**************************************
@@ -118,7 +118,7 @@ USHORT stmt_length, SCHAR * stmt, BOOLEAN * stmt_eaten, USHORT dialect)
 	SSHORT i, l, result;
 	BOOLEAN matched, get_out;
 	STATUS temp_status[ISC_STATUS_LENGTH];
-	void *temp_db_handle = NULL;
+	struct why_hndl *temp_db_handle = NULL;
 
 	token = (SCHAR *) gds__alloc((SLONG) MAX_TOKEN_SIZE + 1);
 /* FREE: by return(s) in this procedure */
@@ -318,7 +318,7 @@ USHORT stmt_length, SCHAR * stmt, BOOLEAN * stmt_eaten, USHORT dialect)
 	}
 
 	isc_create_database(user_status, 0, file_name,
-						reinterpret_cast < void **>(db_handle), dpb_len,
+						(db_handle), dpb_len,
 						dpb_array, 0);
 
 	if (dpb_array)

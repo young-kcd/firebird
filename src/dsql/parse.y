@@ -145,6 +145,9 @@ static TEXT	*beginning;
 static SSHORT	log_defined, cache_defined;
 static void	yyerror (TEXT *);
 
+#define YYPARSE_PARAM_TYPE
+#define YYPARSE_PARAM USHORT client_dialect, USHORT db_dialect, USHORT parser_version, BOOLEAN *stmt_ambiguous
+
 %}
 
 
@@ -416,6 +419,7 @@ static void	yyerror (TEXT *);
 %token ROWS_AFFECTED
 %token LOCK
 %token SAVEPOINT
+%token STATEMENT
 
 /* precedence declarations for expression evaluation */
 
@@ -1501,9 +1505,11 @@ exec_procedure	: EXECUTE PROCEDURE symbol_procedure_name proc_inputs proc_output
 					  $4, $5); }
 		;
 
-exec_sql	: EXECUTE VARCHAR value ';'
+exec_sql	: EXECUTE varstate value ';'
 			{ $$ = make_node (nod_exec_sql, e_exec_vc_count, $3); }
 		;
+
+varstate	: VARCHAR | STATEMENT ;
 
 for_select	: FOR select INTO variable_list cursor_def DO proc_block
 			{ $$ = make_node (nod_for_select, e_flp_count, $2,

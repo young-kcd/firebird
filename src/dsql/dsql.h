@@ -165,11 +165,11 @@ class dbb : public pool_alloc<dsql_type_dbb>
 public:
 	dbb*			dbb_next;
 	class dsql_rel* dbb_relations;		// known relations in database
-	class dsql_prc*		dbb_procedures;		// known procedures in database
+	class dsql_prc*	dbb_procedures;		// known procedures in database
 	class udf*		dbb_functions;		// known functions in database
-	DsqlMemoryPool*		dbb_pool;		// The current pool for the dbb
-	SLONG*			dbb_database_handle;
-	SLONG*			dbb_requests[irq_MAX];
+	DsqlMemoryPool*	dbb_pool;			// The current pool for the dbb
+	struct why_hndl*	dbb_database_handle;
+	struct why_hndl*	dbb_requests[irq_MAX];
 	str*			dbb_dfl_charset;
 	USHORT			dbb_base_level;		// indicates the version of the engine code itself
 	USHORT			dbb_flags;
@@ -419,11 +419,11 @@ public:
 	struct sym* req_name;		// Name of request
 	struct sym* req_cursor;		// Cursor symbol. if any
 	dbb*	req_dbb;		// Database handle
-	int*	req_trans;				// Database transaction handle
+	struct why_hndl*	req_trans;				// Database transaction handle
 	class opn* req_open_cursor;
 	struct dsql_nod* req_ddl_node;	// Store metadata request
 	class blb* req_blob;		// Blob info for blob requests
-	int*	req_handle;			// OSRI request handle
+	struct why_hndl *	req_handle;			// OSRI request handle
 	str*	req_blr_string;	// String block during BLR generation
 	class dsql_msg* req_send;		// Message to be sent to start request
 	class dsql_msg* req_receive;	// Per record message to be received
@@ -496,9 +496,9 @@ typedef blb* BLB;
 class opn : public pool_alloc<dsql_type_opn>
 {
 public:
-	opn*	opn_next;			// Next open cursor
+	opn*		opn_next;			// Next open cursor
 	dsql_req*	opn_request;		// Request owning the cursor
-	SLONG*	opn_transaction;	// Transaction executing request
+	why_hndl*	opn_transaction;	// Transaction executing request
 };
 typedef opn* OPN;
 

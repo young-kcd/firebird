@@ -24,6 +24,10 @@
 #ifndef _DSQL_METD_PROTO_H
 #define _DSQL_METD_PROTO_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void METD_drop_function(class dsql_req*, class str*);
 void METD_drop_procedure(class dsql_req*, class str*);
 void METD_drop_relation(class dsql_req*, class str*);
@@ -42,5 +46,8 @@ STR METD_get_trigger_relation(class dsql_req*, class str*, USHORT*);
 USHORT METD_get_type(class dsql_req*, class str*, UCHAR*, SSHORT*);
 DSQL_REL METD_get_view_relation(class dsql_req*, UCHAR*, UCHAR*, USHORT);
 
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif /*_DSQL_METD_PROTO_H */
