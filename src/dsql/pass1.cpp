@@ -4339,8 +4339,23 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 		rse->nod_arg[e_rse_plan] = PASS1_node(request, node, 0);
 	}
 
-	if (input->nod_arg[e_sel_distinct])
-		target_rse->nod_arg[e_rse_reduced] = target_rse->nod_arg[e_rse_items];
+	/* AB: Pass select-items for distinct operation again, because for 
+	   sub-selects a new contextnumber should be generated */
+	if (input->nod_arg[e_sel_distinct]) {
+		if (node = input->nod_arg[e_sel_list]) {
+			++request->req_in_select_list;
+			target_rse->nod_arg[e_rse_reduced] = pass1_sel_list(request, node);
+			--request->req_in_select_list;
+		}
+		else {
+			stack = NULL;
+			list = rse->nod_arg[e_rse_streams];
+			for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++) {
+				explode_asterisk(*ptr, aggregate, &stack);
+			}
+			target_rse->nod_arg[e_rse_reduced] = MAKE_list(stack);
+		}
+	}
 
 /* Unless there was a parent, we're done */
 
@@ -4375,10 +4390,11 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 		}
 	}
 
-
 /* And, of course, reduction clauses must also apply to the parent */
-	if (input->nod_arg[e_sel_distinct])
-		parent_rse->nod_arg[e_rse_reduced] = parent_rse->nod_arg[e_rse_items];
+	if (input->nod_arg[e_sel_distinct]) {
+		parent_rse->nod_arg[e_rse_reduced] =
+			remap_fields(request, parent_rse->nod_arg[e_rse_reduced], parent_context);
+	}
 
 /* Process HAVING clause, if any */
 
