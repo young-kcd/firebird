@@ -121,7 +121,7 @@
         Alexander Peshkoff <peshkoff@hotmail.ru>
 
     * Explicit record locking.
-        Added support for explicit locking.
+        Added support for explicit locking. Wait behavior in isc_tpb_wait transaction modes is not stable yet.
       Syntax:
         SELECT <...> [FOR UPDATE [OF col [, col ...]] [WITH LOCK]]      
       Contributor(s):
