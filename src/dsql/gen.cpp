@@ -29,7 +29,7 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 /*
-$Id: gen.cpp,v 1.22 2003-01-15 12:00:31 dimitr Exp $
+$Id: gen.cpp,v 1.23 2003-02-10 19:57:57 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -590,63 +590,24 @@ void GEN_port( DSQL_REQ request, DSQL_MSG message)
 		   access data types which did not exist in the older dialect */
 		if (request->req_client_dialect <= SQL_DIALECT_V5)
 			switch (parameter->par_desc.dsc_dtype) {
-#ifdef SQL_DIALECT_1_NEW_DATATYPES_CONVERT_TO_TEXT
-				/* An early design of how to handle access of new datatype
-				   fields by older clients determined that conversion of
-				   the new types to TEXT was the proper way.  A later design
-				   meeting decided that SQL Dialect 1 should forbid all
-				   access to the newer datatypes.
-				   Should this decision be revisited during v6.0 BETA,
-				   this is the code that converts select & insert
-				   references to the new datatypes to TEXT.
-				   1999-Mar-17 David Schnepper */
-
-			case dtype_sql_date:
-				parameter->par_desc.dsc_dtype = dtype_text;
-				parameter->par_desc.dsc_scale = 0;
-				parameter->par_desc.dsc_ttype = ttype_ascii;
-				parameter->par_desc.dsc_length =
-					DSC_convert_to_text_length(dtype_sql_date);
-				break;
-			case dtype_sql_time:
-				parameter->par_desc.dsc_dtype = dtype_text;
-				parameter->par_desc.dsc_scale = 0;
-				parameter->par_desc.dsc_ttype = ttype_ascii;
-				parameter->par_desc.dsc_length =
-					DSC_convert_to_text_length(dtype_sql_time);
-				break;
-			case dtype_int64:
-				if (parameter->par_desc.dsc_scale < 0)
-					length = 1;	/* For decimal point */
-				else
-					length = parameter->par_desc.dsc_scale;
-				length += DSC_convert_to_text_length(dtype_int64) - 1;
-				parameter->par_desc.dsc_dtype = dtype_text;
-				parameter->par_desc.dsc_scale = 0;
-				parameter->par_desc.dsc_ttype = ttype_ascii;
-				parameter->par_desc.dsc_length = length;
-				break;
-#else
 
 				/* In V6.0 - older clients, which we distinguish by
 				   their use of SQL DIALECT 0 or 1, are forbidden
 				   from selecting values of new datatypes */
-
-			case dtype_sql_date:
-			case dtype_sql_time:
-			case dtype_int64:
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 804,
-						  gds_arg_gds, gds_dsql_datatype_err,
-						  gds_arg_gds, isc_sql_dialect_datatype_unsupport,
-						  gds_arg_number, request->req_client_dialect,
-						  gds_arg_string,
-						  DSC_dtype_tostring(parameter->par_desc.dsc_dtype),
-						  0);
-				break;
-#endif /* SQL_DIALECT_1_NEW_DATATYPES_CONVERT_TO_TEXT */
-			default:
-				/* No special action for other data types */
-				break;
+				case dtype_sql_date:
+				case dtype_sql_time:
+				case dtype_int64:
+					ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 804,
+							  gds_arg_gds, gds_dsql_datatype_err,
+							  gds_arg_gds, isc_sql_dialect_datatype_unsupport,
+							  gds_arg_number, request->req_client_dialect,
+							  gds_arg_string,
+							  DSC_dtype_tostring(parameter->par_desc.dsc_dtype),
+							  0);
+					break;
+				default:
+					/* No special action for other data types */
+					break;
 			};
 		align = type_alignments[parameter->par_desc.dsc_dtype];
 		if (align)
