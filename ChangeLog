@@ -1,3 +1,9 @@
+2003-05-20 17:39  dimitr
+
+	* firebird2/src/include/gen/autoconfig_msvc.h:
+	
+	Fixed win32 build. VC6 doesn't have mkstemp().
+
 2003-05-19 08:57  alexpeshkoff
 
 	* firebird2/src/jrd/met.epp:
