@@ -613,11 +613,15 @@ double getRelationCardinality(thread_db* tdbb, jrd_rel* relation, const Format* 
 				window.win_page = (*vector)[0];
 				Ods::pointer_page* ppage = 
 					(Ods::pointer_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_pointer);
+				SLONG record_count = 0;
 				const SLONG* page = ppage->ppg_page;
-				Ods::data_page* dpage =
-					(Ods::data_page*) CCH_HANDOFF(tdbb, &window, *page, LCK_read, pag_data);
+				if (*page) {
+					Ods::data_page* dpage =
+						(Ods::data_page*) CCH_HANDOFF(tdbb, &window, *page, LCK_read, pag_data);
+					record_count = dpage->dpg_count;
+				}
 				CCH_RELEASE(tdbb, &window);
-				return dpage->dpg_count;
+				return record_count;
 			}
 		}
 
