@@ -2,6 +2,14 @@
   * v1.5.2
   **************
 
+    * Fixed v1.5.1 regression
+        Firebird server now doesn't cause Windows to pop up a message asking if you want to attach debugger or send report to Microsoft when critical error is encountered inside UDF or engine inself.
+        Trap handler for critical errors inside UDF routines was changed to avoid masking errors in 1.5.1 to ease debugging UDF problems
+        Firebird 1.5.2 disables JIT popup messages using appropriate SetErrorMode API call. If you want to use Windows JIT debugging facilities with engine or UDF routines please set BugcheckAbort parameter to 1
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
     * Fixed unregistered bug.
         Server leaks resources when an exception is thrown from the selectable stored procedure
       Contributor(s):
