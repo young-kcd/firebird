@@ -27,21 +27,6 @@ Package=<4>
 
 ###############################################################################
 
-Project: "build_msg"=.\build_msg.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name fbclient_static
-    End Project Dependency
-}}}
-
-###############################################################################
-
 Project: "burp"=.\burp.dsp - Package Owner=<4>
 
 Package=<5>
@@ -66,21 +51,6 @@ Package=<4>
 
 ###############################################################################
 
-Project: "codes"=.\codes.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name fbclient_static
-    End Project Dependency
-}}}
-
-###############################################################################
-
 Project: "common"=.\common.dsp - Package Owner=<4>
 
 Package=<5>
@@ -94,18 +64,6 @@ Package=<4>
 ###############################################################################
 
 Project: "common_classic"=.\common_classic.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-}}}
-
-###############################################################################
-
-Project: "common_static"=.\common_static.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -244,21 +202,6 @@ Package=<4>
 {{{
     Begin Project Dependency
     Project_Dep_Name common
-    End Project Dependency
-}}}
-
-###############################################################################
-
-Project: "fbclient_static"=.\fbclient_static.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name common_static
     End Project Dependency
 }}}
 
@@ -445,36 +388,6 @@ Package=<4>
 {{{
     Begin Project Dependency
     Project_Dep_Name fbclient
-    End Project Dependency
-}}}
-
-###############################################################################
-
-Project: "gpre_boot"=.\gpre_boot.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name common
-    End Project Dependency
-}}}
-
-###############################################################################
-
-Project: "gpre_static"=.\gpre_static.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name fbclient_static
     End Project Dependency
 }}}
 
