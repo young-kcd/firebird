@@ -824,12 +824,18 @@ return_mechanism :
 		;
 
 
-filter_decl_clause : symbol_filter_name INPUT_TYPE blob_subtype OUTPUT_TYPE blob_subtype 
+filter_decl_clause : symbol_filter_name INPUT_TYPE blob_filter_subtype OUTPUT_TYPE blob_filter_subtype
 			ENTRY_POINT sql_string MODULE_NAME sql_string
 				{ $$ = make_node (nod_def_filter, (int) e_filter_count, 
 						$1, $3, $5, $7, $9); }
 		;
 
+blob_filter_subtype :	symbol_blob_subtype_name
+				{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_STRING); }
+		|
+						signed_short_integer
+				{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_SLONG); }
+		;
 
 /* CREATE metadata operations */
 

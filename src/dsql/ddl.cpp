@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.112 2004-09-04 18:24:11 dimitr Exp $
+ * $Id: ddl.cpp,v 1.113 2004-09-08 12:01:28 alexpeshkoff Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -112,6 +112,7 @@ static void define_domain(dsql_req*);
 static void define_exception(dsql_req*, NOD_TYPE);
 static void define_field(dsql_req*, dsql_nod*, SSHORT, const dsql_str*);
 static void define_filter(dsql_req*);
+static SSHORT getBlobFilterSubType(dsql_req* request, const dsql_nod* node);
 static void define_generator(dsql_req*);
 static void define_role(dsql_req*);
 static void define_index(dsql_req*);
@@ -1998,6 +1999,45 @@ static void define_field(
 }
 
 
+static SSHORT getBlobFilterSubType(dsql_req* request, const dsql_nod* node)
+{
+/*******************************************
+ *
+ *	g e t B l o b F i l t e r S u b T y p e
+ *
+ *******************************************
+ *
+ * Function
+ *	get syb_type value from nod_constant.
+ *
+ **************************************/
+	fb_assert(node->nod_type == nod_constant);
+	switch(node->nod_desc.dsc_dtype)
+	{
+	case dtype_long:
+		return (SSHORT)(IPTR)node->nod_arg[0];
+	case dtype_text:
+		break;
+	default:
+		fb_assert(false);
+		return 0;
+	}
+
+	// fall thru for dtype_text
+	SSHORT blob_sub_type;
+	if (!METD_get_type(request,
+						(const dsql_str*)(node->nod_arg[0]),
+						"RDB$FIELD_SUB_TYPE",
+						&blob_sub_type))
+	{
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204, isc_arg_gds,
+					isc_dsql_datatype_err, isc_arg_gds, 
+					isc_dsql_blob_type_unknown, isc_arg_string,
+					((const dsql_str*)(node->nod_arg[0]))->str_data, 0);
+	}
+	return blob_sub_type;
+}
+
 static void define_filter( dsql_req* request)
 {
 /**************************************
@@ -2015,9 +2055,9 @@ static void define_filter( dsql_req* request)
 	request->append_cstring(isc_dyn_def_filter,
 				((dsql_str*) (ptr[e_filter_name]))->str_data);
 	request->append_number(isc_dyn_filter_in_subtype,
-			   (SSHORT)(IPTR) ((ptr[e_filter_in_type])->nod_arg[0]));
+			   getBlobFilterSubType(request, ptr[e_filter_in_type]));
 	request->append_number(isc_dyn_filter_out_subtype,
-			   (SSHORT)(IPTR) ((ptr[e_filter_out_type])->nod_arg[0]));
+			   getBlobFilterSubType(request, ptr[e_filter_out_type]));
 	request->append_cstring(isc_dyn_func_entry_point,
 				((dsql_str*) (ptr[e_filter_entry_pt]))->str_data);
 	request->append_cstring(isc_dyn_func_module_name,
