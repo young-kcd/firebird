@@ -125,6 +125,7 @@ static STUFF stuff[] = {
 		ITEM(blr_project, BLR, RSE)
 		ITEM(blr_sort, BLR, RSE)
 		ITEM(blr_boolean, BLR, RSE)
+		ITEM(blr_nullsfirst, BLR, RSE)
 		ITEM(blr_ascending, BLR, RSE)
 		ITEM(blr_descending, BLR, RSE)
 		ITEM(blr_relation, BLR, RSE)
