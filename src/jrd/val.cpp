@@ -570,7 +570,7 @@ VI. ADDITIONAL NOTES
 #include "../jrd/tra_proto.h"
 #include "../jrd/val_proto.h"
 
-#ifdef VAL_VERBOSE
+#ifdef DEBUG_VAL_VERBOSE
 #include "../jrd/dmp_proto.h"
 /* Control variable for verbose output during debug of
    validation.  
@@ -644,7 +644,7 @@ static CONST TEXT msg_table[][52] = {
 static RTN corrupt(TDBB, VDR, USHORT, JRD_REL, ...);
 static FETCH_CODE fetch_page(TDBB, VDR, SLONG, USHORT, WIN *, void *);
 static void garbage_collect(TDBB, VDR);
-#ifdef VAL_VERBOSE
+#ifdef DEBUG_VAL_VERBOSE
 static void print_rhd(USHORT, RHD);
 #endif
 static RTN walk_blob(TDBB, VDR, JRD_REL, BLH, USHORT, SLONG);
@@ -791,7 +791,7 @@ static RTN corrupt(TDBB tdbb, VDR control, USHORT err_code, JRD_REL relation, ..
 
 	gds__log(s);
 
-#ifdef VAL_VERBOSE
+#ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level >= 0)
 		ib_fprintf(ib_stdout, "LOG:\t%s\n", s);
 #endif
@@ -933,7 +933,7 @@ static void garbage_collect(TDBB tdbb, VDR control)
 			break;
 	}
 
-#ifdef VAL_VERBOSE
+#ifdef DEBUG_VAL_VERBOSE
 /* Dump verbose output of all the pages fetched */
 	if (VAL_debug_level >= 2) {
 		SLONG dmp_page_number;
@@ -946,7 +946,7 @@ static void garbage_collect(TDBB tdbb, VDR control)
 #endif
 }
 
-#ifdef VAL_VERBOSE
+#ifdef DEBUG_VAL_VERBOSE
 static void print_rhd(USHORT length, RHD header)
 {
 /**************************************
@@ -1012,7 +1012,7 @@ static RTN walk_blob(TDBB tdbb,
 
 	SET_TDBB(tdbb);
 
-#ifdef VAL_VERBOSE
+#ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level) {
 		ib_fprintf(ib_stdout,
 				   "walk_blob: level %d lead page %d max pages %d max segment %d\n",
@@ -1099,7 +1099,7 @@ static RTN walk_chain(TDBB tdbb,
 
 	while (page_number) {
 		delta_flag = (header->rhd_flags & rhd_delta) ? TRUE : FALSE;
-#ifdef VAL_VERBOSE
+#ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level)
 			ib_fprintf(ib_stdout, "  BV %02d: ", ++counter);
 #endif
@@ -1145,7 +1145,7 @@ static void walk_database(TDBB tdbb, VDR control)
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
 
-#ifdef VAL_VERBOSE
+#ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level)
 		ib_fprintf(ib_stdout,
 				   "walk_database: %s\nODS: %d.%d  (creation ods %d)\nPage size %d\n",
@@ -1166,7 +1166,7 @@ static void walk_database(TDBB tdbb, VDR control)
 	walk_generators(tdbb, control);
 
 	for (i = 0; (vector = dbb->dbb_relations) && i < vector->count(); i++) {
-#ifdef VAL_VERBOSE
+#ifdef DEBUG_VAL_VERBOSE
 		if (i >= 32 /* rel_MAX */ )
 			VAL_debug_level = 2;
 #endif
@@ -1206,7 +1206,7 @@ static RTN walk_data_page(TDBB tdbb,
 
 	fetch_page(tdbb, control, page_number, pag_data, &window, &page);
 
-#ifdef VAL_VERBOSE
+#ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level)
 		ib_fprintf(ib_stdout,
 				   "walk_data_page: page %d rel %d seq %d count %d\n",
@@ -1229,7 +1229,7 @@ static RTN walk_data_page(TDBB tdbb,
 	number = sequence * dbb->dbb_max_records;
 
 	for (line = page->dpg_rpt; line < end; line++, number++) {
-#ifdef VAL_VERBOSE
+#ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level)
 			ib_fprintf(ib_stdout, "Slot %02d (%d,%d): ",
 					   line - page->dpg_rpt,
@@ -1267,7 +1267,7 @@ static RTN walk_data_page(TDBB tdbb,
 				}
 			}
 
-#ifdef VAL_VERBOSE
+#ifdef DEBUG_VAL_VERBOSE
 			if (VAL_debug_level) {
 				if (header->rhd_flags & rhd_chain)
 					ib_fprintf(ib_stdout, "(backvers)");
@@ -1292,7 +1292,7 @@ static RTN walk_data_page(TDBB tdbb,
 				}
 			}
 		}
-#ifdef VAL_VERBOSE
+#ifdef DEBUG_VAL_VERBOSE
 		else if (VAL_debug_level)
 			ib_fprintf(ib_stdout, "(empty)\n");
 #endif
@@ -1300,7 +1300,7 @@ static RTN walk_data_page(TDBB tdbb,
 
 	CCH_RELEASE(tdbb, &window);
 
-#ifdef VAL_VERBOSE
+#ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level)
 		ib_fprintf(ib_stdout, "------------------------------------\n");
 #endif
@@ -1334,7 +1334,7 @@ static void walk_generators(TDBB tdbb, VDR control)
 		for (ptr = vector->begin(), end = vector->end(); ptr < end;
 			 ptr++)
 			if (*ptr) {
-#ifdef VAL_VERBOSE
+#ifdef DEBUG_VAL_VERBOSE
 				if (VAL_debug_level)
 					ib_fprintf(ib_stdout, "walk_generator: page %d\n", *ptr);
 #endif
@@ -1361,7 +1361,7 @@ static void walk_header(TDBB tdbb, VDR control, SLONG page_num)
 	SET_TDBB(tdbb);
 
 	while (page_num) {
-#ifdef VAL_VERBOSE
+#ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level)
 			ib_fprintf(ib_stdout, "walk_header: page %d\n", page_num);
 #endif
@@ -1622,7 +1622,7 @@ static void walk_pip(TDBB tdbb, VDR control)
 
 	for (sequence = 0;; sequence++) {
 		page_number = (sequence) ? sequence * pgc->pgc_ppp - 1 : pgc->pgc_pip;
-#ifdef VAL_VERBOSE
+#ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level)
 			ib_fprintf(ib_stdout, "walk_pip: page %d\n", page_number);
 #endif
@@ -1674,7 +1674,7 @@ static RTN walk_pointer_page(	TDBB	tdbb,
 				&window,
 				&page);
 
-#ifdef VAL_VERBOSE
+#ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level)
 		ib_fprintf(ib_stdout,
 				   "walk_pointer_page: page %d relation %d sequence %d\n",
@@ -1756,7 +1756,7 @@ static RTN walk_record(TDBB tdbb,
 
 	SET_TDBB(tdbb);
 
-#ifdef VAL_VERBOSE
+#ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level) {
 		ib_fprintf(ib_stdout, "record: number %ld (%d/%d) ",
 				   number,
@@ -1832,7 +1832,7 @@ static RTN walk_record(TDBB tdbb,
 			return rtn_corrupt;
 		}
 		fragment = (RHDF) ((UCHAR *) page + line->dpg_offset);
-#ifdef VAL_VERBOSE
+#ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level) {
 			ib_fprintf(ib_stdout, "fragment: pg %d/%d ",
 					   page_number, line_number);
@@ -1896,7 +1896,7 @@ static RTN walk_relation(TDBB tdbb, VDR control, JRD_REL relation)
 		(relation->rel_flags & REL_being_scanned))
 			MET_scan_relation(tdbb, relation);
 
-#ifdef VAL_VERBOSE
+#ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level)
 		ib_fprintf(ib_stdout, "walk_relation: id %d fmt %d %s %s\n",
 				   relation->rel_id, relation->rel_current_fmt,
@@ -1952,7 +1952,7 @@ static RTN walk_relation(TDBB tdbb, VDR control, JRD_REL relation)
 			(TEXT*)"bugcheck during scan of table %d";
 		sprintf(s, msg, relation->rel_id, relation->rel_name);
 		gds__log(s);
-#ifdef VAL_VERBOSE
+#ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level)
 			ib_fprintf(ib_stdout, "LOG:\t%s\n", s);
 #endif
@@ -2043,7 +2043,7 @@ static RTN walk_tip(TDBB tdbb, VDR control, SLONG transaction)
 					&window,
 					&page);
 
-#ifdef VAL_VERBOSE
+#ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level)
 			ib_fprintf(ib_stdout, "walk_tip: page %d next %d\n",
 					   (*vector)[sequence], page->tip_next);
