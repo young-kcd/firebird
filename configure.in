@@ -1,4 +1,4 @@
-# $Id: configure.in,v 1.37 2002-08-28 07:03:07 eku Exp $
+# $Id: configure.in,v 1.38 2002-08-28 07:51:18 eku Exp $
 
 ################################# INITIALISATION ###############################
 
@@ -150,7 +150,7 @@ fi
 AC_CHECK_FUNC(strcasecmp stricmp)
 if test "$ac_cv_func_strcasecmp" = "no"; then
   # EKU: On SINIX-Z strcasecmp is in libresolv.
-  AC_CHECK_LIB(gen, dirname,
+  AC_CHECK_LIB(resolv, strcasecmp,
     [XE_APPEND(-lresolv,LIBS)
      unset ac_cv_func_strcasecmp
      AC_CHECK_FUNCS(strcasecmp)],, $LIBS)
