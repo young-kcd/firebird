@@ -41,9 +41,7 @@
 
 #ifdef WIN_NT
 #define SYS_ERR			isc_arg_win32
-#endif
-
-#ifndef SYS_ERR
+#else
 #define SYS_ERR			isc_arg_unix
 #endif
 

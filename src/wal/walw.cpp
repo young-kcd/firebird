@@ -59,20 +59,15 @@
 #include <unistd.h>
 #endif
 
-#if !(defined WIN_NT)
-#ifndef VMS
-#include <sys/types.h>
-#include <sys/file.h>
-#else
+#if defined(VMS)
 #include <types.h>
 #include <file.h>
-#endif
+#elif defined(WIN_NT)
 #include <errno.h>
 #include <signal.h>
-#endif
-
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
+#else
+#include <sys/types.h>
+#include <sys/file.h>
 #endif
 
 #ifdef UNIX

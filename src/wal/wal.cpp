@@ -93,14 +93,7 @@ static SSHORT wait_for_writer(ISC_STATUS *, WAL);
 static SSHORT wal_put2(ISC_STATUS *, WAL, UCHAR *, USHORT, UCHAR *, USHORT,
 					   SLONG *, SLONG *, bool);
 
-#ifdef WIN_NT
 #define WAL_WRITER	"bin/walw"
-#endif
-
-#ifndef WAL_WRITER
-#define WAL_WRITER	"bin/walw"
-#endif
-
 #define WAIT_TIME	3000000
 #define MAX_WAITERS	20
 #define WALBLK_EFFECTIVE_OFFSET(wblk) (wblk->walblk_cur_offset?wblk->walblk_cur_offset:BLK_HDROVHD)
