@@ -29,15 +29,13 @@ extern "C" {
 #endif
 
 extern STATUS DLL_EXPORT dsql8_allocate_statement(	STATUS*,
-													struct why_hndl **,
+													FRBRD **,
 													struct dsql_req **);
-extern STATUS DLL_EXPORT dsql8_execute(STATUS *, why_hndl **, struct dsql_req**,
+extern STATUS DLL_EXPORT dsql8_execute(STATUS *, FRBRD **, struct dsql_req**,
 									   USHORT, SCHAR *, USHORT, USHORT,
 									   SCHAR *, USHORT, SCHAR *, USHORT,
 									   USHORT, SCHAR *);
-extern STATUS DLL_EXPORT dsql8_execute_immediate(STATUS *, 
-												 struct why_hndl **, 
-												 struct why_hndl **,
+extern STATUS DLL_EXPORT dsql8_execute_immediate(STATUS *, FRBRD **, FRBRD **,
 												 USHORT, TEXT *, USHORT,
 												 USHORT, SCHAR *, USHORT,
 												 USHORT, SCHAR *, USHORT,
@@ -54,7 +52,7 @@ extern STATUS DLL_EXPORT dsql8_free_statement(STATUS *, struct dsql_req**,
 											  USHORT);
 extern STATUS DLL_EXPORT dsql8_insert(STATUS *, struct dsql_req**, USHORT,
 									  SCHAR *, USHORT, USHORT, SCHAR *);
-extern STATUS DLL_EXPORT dsql8_prepare(STATUS *, struct why_hndl **, struct dsql_req**,
+extern STATUS DLL_EXPORT dsql8_prepare(STATUS *, FRBRD **, struct dsql_req**,
 									   USHORT, TEXT *, USHORT, USHORT,
 									   CONST SCHAR *, USHORT, SCHAR *);
 extern STATUS DLL_EXPORT dsql8_set_cursor(STATUS *, struct dsql_req**, TEXT *,

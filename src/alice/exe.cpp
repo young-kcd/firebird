@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.7 2002-12-16 15:16:00 alexpeshkoff Exp $
+//	$Id: exe.cpp,v 1.8 2003-01-12 18:16:49 alexpeshkoff Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -86,7 +86,7 @@ int EXE_action(TEXT * database, ULONG switches)
 {
 	UCHAR dpb[128];
 	USHORT dpb_length, error;
-	struct why_hndl *handle;
+	FRBRD *handle;
 	UCHAR error_string[128];
 	USHORT i;
 	TGBL tdgbl;
@@ -154,7 +154,7 @@ int EXE_two_phase(TEXT * database, ULONG switches)
 {
 	UCHAR dpb[128];
 	USHORT dpb_length, error;
-	struct why_hndl *handle;
+	FRBRD *handle;
 	USHORT i;
 	TGBL tdgbl;
 

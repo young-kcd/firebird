@@ -38,6 +38,7 @@
 
 #include "../jrd/common.h"
 #include "../dsql/all.h"
+#include "../jrd/y_ref.h"
 
 // Dynamic SQL Error Status Block
 
@@ -167,8 +168,8 @@ public:
 	class dsql_prc*	dbb_procedures;		// known procedures in database
 	class udf*		dbb_functions;		// known functions in database
 	DsqlMemoryPool*	dbb_pool;			// The current pool for the dbb
-	struct why_hndl*	dbb_database_handle;
-	struct why_hndl*	dbb_requests[irq_MAX];
+	FRBRD*			dbb_database_handle;
+	FRBRD*			dbb_requests[irq_MAX];
 	str*			dbb_dfl_charset;
 	USHORT			dbb_base_level;		// indicates the version of the engine code itself
 	USHORT			dbb_flags;
@@ -414,20 +415,20 @@ public:
 	dsql_req*	req_offspring;	// Cursor update requests
 	DsqlMemoryPool*	req_pool;
 	DLLS	req_context;
-    DLLS    req_union_context; // Save contexts for views of unions
+    DLLS    req_union_context;	// Save contexts for views of unions
 	struct sym* req_name;		// Name of request
 	struct sym* req_cursor;		// Cursor symbol. if any
-	dbb*	req_dbb;		// Database handle
-	struct why_hndl*	req_trans;				// Database transaction handle
+	dbb*	req_dbb;			// Database handle
+	FRBRD*	req_trans;			// Database transaction handle
 	class opn* req_open_cursor;
 	struct dsql_nod* req_ddl_node;	// Store metadata request
-	class blb* req_blob;		// Blob info for blob requests
-	struct why_hndl *	req_handle;			// OSRI request handle
-	str*	req_blr_string;	// String block during BLR generation
+	class blb* req_blob;			// Blob info for blob requests
+	FRBRD*	req_handle;				// OSRI request handle
+	str*	req_blr_string;			// String block during BLR generation
 	class dsql_msg* req_send;		// Message to be sent to start request
 	class dsql_msg* req_receive;	// Per record message to be received
 	class dsql_msg* req_async;		// Message for sending scrolling information
-	class par* req_eof;		// End of file parameter
+	class par* req_eof;			// End of file parameter
 	class par* req_dbkey;		// Database key for current of
 	class par* req_rec_version;	// Record Version for current of
 	class par* req_parent_rec_version;	// parent record version
@@ -497,7 +498,7 @@ class opn : public pool_alloc<dsql_type_opn>
 public:
 	opn*		opn_next;			// Next open cursor
 	dsql_req*	opn_request;		// Request owning the cursor
-	why_hndl*	opn_transaction;	// Transaction executing request
+	FRBRD*		opn_transaction;	// Transaction executing request
 };
 typedef opn* OPN;
 

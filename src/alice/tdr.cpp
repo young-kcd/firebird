@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.11 2002-12-16 15:16:09 alexpeshkoff Exp $
+//	$Id: tdr.cpp,v 1.12 2003-01-12 18:16:49 alexpeshkoff Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -55,7 +55,7 @@ static ULONG ask(void);
 static void print_description(TDR);
 static void reattach_database(TDR);
 static void reattach_databases(TDR);
-static BOOLEAN reconnect(struct why_hndl *, SLONG, TEXT *, ULONG);
+static BOOLEAN reconnect(FRBRD *, SLONG, TEXT *, ULONG);
 
 
 #ifdef GUI_TOOLS
@@ -305,7 +305,7 @@ void TDR_shutdown_databases(TDR trans)
 //		prompt for commit, rollback, or leave well enough alone.
 //
 
-void TDR_list_limbo(struct why_hndl *handle, TEXT * name, ULONG switches)
+void TDR_list_limbo(FRBRD *handle, TEXT * name, ULONG switches)
 {
 	UCHAR buffer[1024], *ptr;
 	STATUS status_vector[ISC_STATUS_LENGTH];
@@ -398,7 +398,7 @@ void TDR_list_limbo(struct why_hndl *handle, TEXT * name, ULONG switches)
 //		gfix user.
 //
 
-BOOLEAN TDR_reconnect_multiple(struct why_hndl *handle,
+BOOLEAN TDR_reconnect_multiple(FRBRD *handle,
 							   SLONG id, TEXT * name, ULONG switches)
 {
 	TDR trans, ptr;
@@ -959,10 +959,10 @@ static void reattach_databases(TDR trans)
 //		Commit or rollback a named transaction.
 //
 
-static BOOLEAN reconnect(struct why_hndl *handle,
+static BOOLEAN reconnect(FRBRD *handle,
 						 SLONG number, TEXT * name, ULONG switches)
 {
-	struct why_hndl *transaction;
+	FRBRD *transaction;
 	SLONG id;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 

@@ -128,14 +128,14 @@ extern "C" {
 #endif
 
 static void		cleanup(void*);
-static void		cleanup_database(struct why_hndl **, SLONG);
-static void		cleanup_transaction(struct why_hndl *, SLONG);
+static void		cleanup_database(FRBRD**, SLONG);
+static void		cleanup_transaction(FRBRD*, SLONG);
 static void		close_cursor(DSQL_REQ);
 static USHORT	convert(SLONG, UCHAR*);
 static STATUS	error();
 static void		execute_blob(DSQL_REQ, USHORT, UCHAR*, USHORT, UCHAR*,
 						 USHORT, UCHAR*, USHORT, UCHAR*);
-static STATUS	execute_request(DSQL_REQ, why_hndl**, USHORT, UCHAR*, USHORT, UCHAR*,
+static STATUS	execute_request(DSQL_REQ, FRBRD**, USHORT, UCHAR*, USHORT, UCHAR*,
 							  USHORT, UCHAR*, USHORT, UCHAR*, USHORT);
 static SSHORT	filter_sub_type(DSQL_REQ, DSQL_NOD);
 static BOOLEAN	get_indices(SSHORT*, SCHAR**, SSHORT*, SCHAR**);
@@ -143,7 +143,7 @@ static USHORT	get_plan_info(DSQL_REQ, SSHORT, SCHAR**);
 static USHORT	get_request_info(DSQL_REQ, SSHORT, SCHAR*);
 static BOOLEAN	get_rsb_item(SSHORT*, SCHAR**, SSHORT*, SCHAR**, USHORT*,
 							USHORT*);
-static DBB		init(struct why_hndl **);
+static DBB		init(FRBRD**);
 static void		map_in_out(DSQL_REQ, DSQL_MSG, USHORT, UCHAR*, USHORT, UCHAR*);
 static USHORT	name_length(TEXT*);
 static USHORT	parse_blr(USHORT, UCHAR*, USHORT, PAR);
@@ -192,12 +192,12 @@ static USHORT mutex_inited = 0;
 
 static
 STATUS GDS_DSQL_ALLOCATE_CPP(	STATUS*	user_status,
-								struct why_hndl**	db_handle,
+								FRBRD**	db_handle,
 								dsql_req**	req_handle);
 
 static
 STATUS GDS_DSQL_EXECUTE_CPP(   STATUS*			user_status,
-							   why_hndl**		trans_handle,
+							   FRBRD**			trans_handle,
 							   dsql_req**		req_handle,
 							   USHORT			in_blr_length,
 							   UCHAR*			in_blr,
@@ -287,7 +287,7 @@ extern "C" {
 
 STATUS DLL_EXPORT
 GDS_DSQL_ALLOCATE(	STATUS*				user_status,
-					struct why_hndl**	db_handle,
+					FRBRD**	db_handle,
 					struct dsql_req**	req_handle)
 {
 	return GDS_DSQL_ALLOCATE_CPP(user_status, db_handle, req_handle);
@@ -458,7 +458,7 @@ extern "C" {
 
 static STATUS
 GDS_DSQL_ALLOCATE_CPP(	STATUS*	user_status,
-						struct why_hndl ** db_handle,
+						FRBRD** db_handle,
 						dsql_req**	req_handle)
 {
 /**************************************
@@ -509,7 +509,7 @@ GDS_DSQL_ALLOCATE_CPP(	STATUS*	user_status,
 
 
 STATUS DLL_EXPORT GDS_DSQL_EXECUTE_CPP(STATUS*		user_status,
-									   why_hndl**	trans_handle,
+									   FRBRD**		trans_handle,
 									   dsql_req**	req_handle,
 									   USHORT		in_blr_length,
 									   UCHAR*		in_blr,
@@ -737,7 +737,7 @@ static STATUS dsql8_execute_immediate_common(STATUS*	user_status,
 					gds_arg_gds, gds_wish_list, 0);
 
 			execute_request(request,
-					reinterpret_cast<why_hndl**>(trans_handle),
+					trans_handle,
 					in_blr_length,
 					in_blr,
 					in_msg_length,
@@ -2407,7 +2407,7 @@ static void cleanup( void *arg)
 }
 
 
-static void cleanup_database(why_hndl ** db_handle, SLONG flag)
+static void cleanup_database(FRBRD ** db_handle, SLONG flag)
 {
 /**************************************
  *
@@ -2474,7 +2474,7 @@ static void cleanup_database(why_hndl ** db_handle, SLONG flag)
 }
 
 
-static void cleanup_transaction (why_hndl * tra_handle, SLONG arg)
+static void cleanup_transaction (FRBRD * tra_handle, SLONG arg)
 {
 /**************************************
  *
@@ -3619,7 +3619,7 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 }
 
 
-static DBB init(struct why_hndl ** db_handle)
+static DBB init(FRBRD** db_handle)
 {
 /**************************************
  *

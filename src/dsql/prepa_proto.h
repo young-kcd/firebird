@@ -29,7 +29,7 @@ extern "C" {
 #endif
 
 
-extern int DLL_EXPORT PREPARSE_execute(STATUS *, struct why_hndl **, struct why_hndl **,
+extern int DLL_EXPORT PREPARSE_execute(STATUS *, FRBRD **, FRBRD **,
 									   USHORT, SCHAR *, BOOLEAN *, USHORT);
 
 #ifdef __cplusplus

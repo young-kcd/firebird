@@ -28,8 +28,8 @@
 extern "C" {
 #endif
 
-void	TDR_list_limbo(struct why_hndl*, TEXT*, ULONG);
-BOOLEAN	TDR_reconnect_multiple(struct why_hndl*, SLONG, TEXT*, ULONG);
+void	TDR_list_limbo(FRBRD*, TEXT*, ULONG);
+BOOLEAN	TDR_reconnect_multiple(FRBRD*, SLONG, TEXT*, ULONG);
 void	TDR_shutdown_databases(TDR);
 USHORT	TDR_analyze(TDR);
 BOOLEAN	TDR_attach_database(STATUS*, TDR, TEXT*);
