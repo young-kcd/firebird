@@ -295,7 +295,7 @@ $(META_DB): $(SRC_ROOT)/misc/metadata.gbak
 	$(GBAK) -MODE read_only -R $(SRC_ROOT)/misc/metadata.gbak $@
 	ln -fs $(META_DB) $(GEN_ROOT)/qli/yachts.lnk
 
-isc4.gdb_: $(ISC_DB)
+isc4.gdb_: $(ISC_DB) sysdba_user
 $(ISC_DB) : $(SRC_ROOT)/utilities/isc4.sql $(SRC_ROOT)/utilities/isc4.gdl
 	( cd $(FIREBIRD); $(ISQL) -z -i $(SRC_ROOT)/utilities/isc4.sql)
 	( cd $(FIREBIRD); $(GDEF) -z $(SRC_ROOT)/utilities/isc4.gdl)
@@ -355,7 +355,7 @@ fw_files_:
 	cp build/gdsintl $(VAR)/intl
 	chmod a+x $(VAR)/intl/*
 	-cp build/local_user.bundle/Contents/MacOS/local_user $(LOCAL_USER_AUTH)
-	cp $(SRC_ROOT)/install/arch-specific/darwin/services.isc $(VAR)
+	-cp $(SRC_ROOT)/install/arch-specific/darwin/services.isc $(VAR)
 	ln -s ../../bin $(VAR)/bin
 
 headers_:
@@ -373,6 +373,6 @@ installer_:
 	rm -f build/firebird.tar.gz
 	rm -f $(VAR)/isc_init* $(VAR)/isc_lock* $(VAR)/isc_event* $(VAR)/interbase.log
 	tar -cf build/installer_tmp/firebird/firebird.tar -C build Firebird.framework
-	cp $(SRC_ROOT)/install/arch-specific/darwin/install build/installer_tmp/firebird
+	-cp $(SRC_ROOT)/install/arch-specific/darwin/install build/installer_tmp/firebird
 	tar -czf build/firebird.tar.gz -C build/installer_tmp firebird
 	rm -rf build/installer_tmp
