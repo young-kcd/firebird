@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: tree.h,v 1.25 2004-03-28 09:10:08 robocop Exp $
+ *  $Id: tree.h,v 1.26 2004-04-11 07:12:09 robocop Exp $
  *
  */
 
@@ -121,7 +121,7 @@ public:
 		
 		// Find first items page
 		void *temp = root;
-		for (int i=level;i>0;i--)
+		for (int i = level; i > 0; i--)
 			temp = (*(NodeList *)temp)[0];
 		ItemList *items = (ItemList *)temp;
 		
@@ -253,8 +253,8 @@ public:
 				}
 				else
 				if ( (temp = curr->prev) ) {
-					(*curr)[0] = (*temp)[temp->getCount()-1];
-					temp->shrink(temp->getCount()-1);
+					(*curr)[0] = (*temp)[temp->getCount() - 1];
+					temp->shrink(temp->getCount() - 1);
 				}
 				else
 				if ( (temp = curr->next) ) {
@@ -270,14 +270,14 @@ public:
 			else {
 				curr->remove(curPos);
 				ItemList *temp;
-				if ( (temp = curr->prev) && NEED_MERGE(temp->getCount()+curr->getCount(), LeafCount) ) {
+				if ( (temp = curr->prev) && NEED_MERGE(temp->getCount() + curr->getCount(), LeafCount) ) {
 					// After join upper levels of the tree remain stable because join doesn't change
 					// key of the page. The same applies to lower case too.
 					temp->join(*curr);
 					tree->_removePage(0, curr);
 				}
 				else
-				if ( (temp = curr->next) && NEED_MERGE(temp->getCount()+curr->getCount(), LeafCount) ) {
+				if ( (temp = curr->next) && NEED_MERGE(temp->getCount() + curr->getCount(), LeafCount) ) {
 					curr->join(*temp);
 					tree->_removePage(0, temp);
 				}
@@ -293,7 +293,7 @@ public:
 		bool locate(LocType lt, Key& key) {
 			void *list = tree->root;
 			if (!list) return false; // Uninitalized tree
-			for (int lev=tree->level; lev; lev--) {
+			for (int lev = tree->level; lev; lev--) {
 				int pos;
 				if (!((NodeList *)list)->find(key, pos))
 					if ( --pos < 0 ) pos = 0;
@@ -317,7 +317,7 @@ public:
 				if (curPos < 0) {
 					curr = curr->prev;
 					if (!curr) return false;
-					curPos = curr->getCount()-1;
+					curPos = curr->getCount() - 1;
 				}
 				return true;
 			case locGreat:
@@ -333,7 +333,7 @@ public:
 		bool getFirst() {
 			void *items = tree->root;
 			if (!items) return false; // Uninitalized tree
-			for (int i=tree->level;i>0;i--)
+			for (int i = tree->level; i > 0; i--)
 				items = (*(NodeList *)items)[0];
 			curr = (ItemList *)items;
 			curPos = 0;
@@ -342,10 +342,10 @@ public:
 		bool getLast() {
 			void *items = tree->root;
 			if (!items) return false; // Uninitalized tree
-			for (int i=tree->level;i>0;i--)
-				items = (*(NodeList *)items)[((NodeList *)items)->getCount()-1];
+			for (int i = tree->level; i > 0; i--)
+				items = (*(NodeList *)items)[((NodeList *)items)->getCount() - 1];
 			curr = (ItemList *)items;
-			curPos = ((ItemList *)items)->getCount()-1;
+			curPos = ((ItemList *)items)->getCount() - 1;
 			return curPos >= 0;
 		}
 		bool getNext() {
@@ -396,7 +396,7 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 	// Find leaf page for our item
 	void *vList = this->root;
 	const Key& key = KeyOfValue::generate(NULL, item);
-	for (int lev=this->level; lev > 0 ; lev--) {
+	for (int lev = this->level; lev > 0 ; lev--) {
 		int pos;
 		if (!((NodeList *)vList)->find(key, pos))
 			if ( --pos < 0 ) pos = 0;
@@ -429,8 +429,8 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 			// It should do it in case of random size items.
 			// It would make things slower in case of sequental items addition.
 			// Let's leave it as is now.
-			temp->insert(0, (*leaf)[LeafCount-1]);
-			leaf->shrink(LeafCount-1);
+			temp->insert(0, (*leaf)[LeafCount - 1]);
+			leaf->shrink(LeafCount - 1);
 			leaf->insert(pos, item);
 		}
 		return true;
@@ -444,7 +444,7 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 		else {
 			temp->insert(temp->getCount(), (*leaf)[0]);
 			leaf->remove(0);
-			leaf->insert(pos-1, item);
+			leaf->insert(pos - 1, item);
 		}
 		return true;
 	}
@@ -468,8 +468,8 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 		recovery_map[0] = -1;
 	}
 	else {
-		newLeaf->insert(0, (*leaf)[LeafCount-1]);
-		leaf->shrink(leaf->getCount()-1);
+		newLeaf->insert(0, (*leaf)[LeafCount - 1]);
+		leaf->shrink(leaf->getCount() - 1);
 		leaf->insert(pos, item);
 		recovery_map[0] = pos;
 	}
@@ -497,10 +497,10 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 					list->insert(0, newNode);
 				}
 				else {
-					void *t = (*nodeList)[NodeCount-1];
+					void *t = (*nodeList)[NodeCount - 1];
 					NodeList::setNodeParent(t, curLevel, list);
 					list->insert(0, t);
-					nodeList->shrink(NodeCount-1);
+					nodeList->shrink(NodeCount - 1);
 					NodeList::setNodeParentAndLevel(newNode, curLevel, nodeList);
 					nodeList->insert(pos, newNode);
 				}
@@ -519,7 +519,7 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 					list->insert(list->getCount(), t);
 					nodeList->remove(0);
 					NodeList::setNodeParentAndLevel(newNode, curLevel, nodeList);
-					nodeList->insert(pos-1, newNode);
+					nodeList->insert(pos - 1, newNode);
 				}
 				return true;
 			}
@@ -534,16 +534,16 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 			if (pos == NodeCount) {
 				NodeList::setNodeParentAndLevel(newNode, curLevel, newList);
 				newList->insert(0, newNode);
-				recovery_map[curLevel+1] = -1;
+				recovery_map[curLevel + 1] = -1;
 			}
 			else {
-				void *t = (*nodeList)[NodeCount-1];
+				void *t = (*nodeList)[NodeCount - 1];
 				NodeList::setNodeParent(t, curLevel, newList);
 				newList->insert(0, t);
-				nodeList->shrink(NodeCount-1);
+				nodeList->shrink(NodeCount - 1);
 				NodeList::setNodeParentAndLevel(newNode, curLevel, nodeList);
 				nodeList->insert(pos, newNode);
-				recovery_map[curLevel+1] = pos;
+				recovery_map[curLevel + 1] = pos;
 			}
 			newNode = newList;		
 			nodeList = nodeList->parent;
@@ -571,7 +571,7 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 				lower = (*item->prev)[recovery_map[curLevel]];
 				item->prev->remove(recovery_map[curLevel]);
 				item->prev->insert(item->prev->getCount(), (*item)[0]);
-				NodeList::setNodeParent((*item)[0], curLevel-1, item->prev);
+				NodeList::setNodeParent((*item)[0], curLevel - 1, item->prev);
 			}
 			item->~NodeList();
 			this->pool->deallocate(newNode);
@@ -617,17 +617,17 @@ void BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::_
 		// because is would invalidate our tree structure
 		NodeList *temp;
 		if ( (temp = list->prev) && NEED_MERGE(temp->getCount(), NodeCount) ) {
-			_removePage(nodeLevel+1, list);
+			_removePage(nodeLevel + 1, list);
 		}
 		else
 		if ( (temp = list->next) && NEED_MERGE(temp->getCount(), NodeCount) ) {
-			_removePage(nodeLevel+1, list);
+			_removePage(nodeLevel + 1, list);
 		}
 		else
 		if ( (temp = list->prev) ) {
 			NodeList::setNodeParent( 
-				((*list)[0] = (*temp)[temp->getCount()-1]), nodeLevel, list);
-			temp->shrink(temp->getCount()-1);
+				((*list)[0] = (*temp)[temp->getCount() - 1]), nodeLevel, list);
+			temp->shrink(temp->getCount() - 1);
 		}
 		else
 		if ( (temp = list->next) ) {
@@ -645,14 +645,14 @@ void BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::_
 	{
 		int pos;
 #ifndef DEV_BUILD
-		list->find(NodeList::generate(list,node),pos);
+		list->find(NodeList::generate(list, node), pos);
 #else
-		bool found = list->find(NodeList::generate(list,node),pos);
+		bool found = list->find(NodeList::generate(list, node), pos);
 		fb_assert(found);
 #endif
 		list->remove(pos);
 		
-		if (list == root && list->getCount()==1) {
+		if (list == root && list->getCount() == 1) {
 			// We reached the top of the tree and were asked to modify root
 			// page so only one node will be left in this case.
 			// Reduce the level of the tree
@@ -665,23 +665,23 @@ void BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::_
 		else {		
 			NodeList *temp;
 			if ( (temp = list->prev) && 
-				 NEED_MERGE(temp->getCount()+list->getCount(), NodeCount) ) 
+				 NEED_MERGE(temp->getCount() + list->getCount(), NodeCount) ) 
 			{
 				// After join upper levels of the tree remain stable because join doesn't change
 				// key of the page. The same applies to lower case too.
 				temp->join(*list);
-				for (int i=0; i < list->getCount(); i++)
+				for (int i = 0; i < list->getCount(); i++)
 					NodeList::setNodeParent((*list)[i], nodeLevel, temp);
-				_removePage(nodeLevel+1, list);
+				_removePage(nodeLevel + 1, list);
 			}
 			else
 			if ( (temp = list->next) && 
-				 NEED_MERGE(temp->getCount()+list->getCount(), NodeCount) ) 
+				 NEED_MERGE(temp->getCount() + list->getCount(), NodeCount) ) 
 			{
 				list->join(*temp);
-				for (int i=0; i < temp->getCount(); i++)
+				for (int i = 0; i < temp->getCount(); i++)
 					NodeList::setNodeParent((*temp)[i], nodeLevel, list);
-				_removePage(nodeLevel+1, temp);
+				_removePage(nodeLevel + 1, temp);
 			}
 		}
 	}
