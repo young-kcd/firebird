@@ -23,9 +23,6 @@
 #include <prsht.h>
 #include <dbt.h>
 
-#define BOOLEAN_DEFINED
-#define MSG_DEFINED
-
 #include "../jrd/common.h"
 #include "../jrd/license.h"
 #include "../jrd/isc.h"

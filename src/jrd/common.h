@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.78 2003-08-28 13:14:37 brodsom Exp $
+$Id: common.h,v 1.79 2003-08-28 22:52:19 brodsom Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -608,9 +608,6 @@ typedef unsigned __int64 UINT64;
 #define DLL_EXPORT
 #endif
 
-//#define BOOLEAN_DEFINED
-//typedef unsigned char BOOLEAN;
-
 #ifndef MAXPATHLEN
 #ifdef MAX_PATH
 #define MAXPATHLEN MAX_PATH
@@ -763,14 +760,6 @@ typedef unsigned long UATOM;
 #else
 #undef ATOM_DEFINED
 #endif
-
-/*
-#ifndef BOOLEAN_DEFINED
-typedef USHORT BOOLEAN;
-#else
-#undef BOOLEAN_DEFINED
-#endif
-*/
 
 #ifndef ISC_TIMESTAMP_DEFINED
 typedef SLONG ISC_DATE;

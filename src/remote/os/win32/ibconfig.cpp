@@ -27,9 +27,6 @@
 #include <prsht.h>
 #include <dbt.h>
 
-#define BOOLEAN_DEFINED
-#define MSG_DEFINED
-
 #include "../jrd/common.h"
 #include "../jrd/isc.h"
 #include "../jrd/file_params.h"

@@ -24,14 +24,8 @@
 #include "firebird.h"
 #include <windows.h>
 #include <string.h>
-#define MSG_DEFINED
 #include "../remote/remote.h"
 #include "../remote/serve_proto.h"
-/*
- *      We need to seperate modules that use windows.h from those that
- *      use remote.h since both header files define conflicting MSG types.
- *	The MSG_DEFINED flag is used to not define the MSG type in remote.h
- */
 #include "../jrd/common.h"
 #include <winsock2.h>
 

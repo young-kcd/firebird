@@ -39,9 +39,6 @@
 #error This is a Win32 only file.
 #endif
 
-#define BOOLEAN_DEFINED
-#define MSG_DEFINED
-
 #include "../jrd/common.h"
 #include "../jrd/license.h"
 #include "../jrd/isc.h"
