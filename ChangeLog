@@ -1,3 +1,15 @@
+2003-07-27 20:00  skidder
+
+	* firebird2/doc/sql.extensions/README.order_by_expressions_nulls:
+	
+	Some more docs
+
+2003-07-27 17:44  skidder
+
+	* firebird2/doc/sql.extensions/README.explicit_locks:
+	
+	Add docs for explicit locking
+
 2003-07-24 12:21  aafemt
 
 	* firebird2/src/: burp/backup.epp, burp/canon_proto.h,
