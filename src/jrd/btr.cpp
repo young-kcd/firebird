@@ -582,12 +582,25 @@ btree_page* BTR_find_page(thread_db* tdbb,
 	// isn't a starting descriptor, walk down the left side of the index (right
 	// side if we are going backwards).
 	SLONG number;
+	const bool ignoreNulls = ((idx->idx_count == 1) && 
+		!(idx->idx_flags & idx_descending) && 
+		(retrieval->irb_generic & irb_ignore_null_value_key));
+
 	if ((!backwards && retrieval->irb_lower_count) ||
+		(!backwards && ignoreNulls) ||
 		(backwards && retrieval->irb_upper_count))
 	{
+		// Make a temporary key with length 1 and zero byte, this will return
+		// the first data value after the NULLs for a ASC index.
+		temporary_key firstNotNullKey;
+		firstNotNullKey.key_flags = 0;
+		firstNotNullKey.key_data[0] = 0;
+		firstNotNullKey.key_length = 1;
+
 		while (page->btr_level > 0) {
 			while (true) {
-				number = find_page(page, backwards ? upper : lower, idx->idx_flags,
+				number = find_page(page, 
+					backwards ? upper : ignoreNulls ? &firstNotNullKey : lower, idx->idx_flags,
 					NO_VALUE, (retrieval->irb_generic & (irb_starting | irb_partial)));
 				if (number != END_BUCKET) {
 					page = (btree_page*) CCH_HANDOFF(tdbb, window, number,
