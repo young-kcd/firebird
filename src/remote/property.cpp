@@ -126,11 +126,7 @@ HWND DisplayProperties(HWND hParentWnd,
 	PSPages[0].dwSize = sizeof(PROPSHEETPAGE);
 	PSPages[0].dwFlags = PSP_USETITLE | PSP_HASHELP;
 	PSPages[0].hInstance = hInstance;
-#ifdef  __BORLANDC__			/* Anonymous unions not working in BC */
-	PSPages[0].DUMMYUNIONNAME.pszTemplate = MAKEINTRESOURCE(GENERAL_DLG);
-#else
 	PSPages[0].pszTemplate = MAKEINTRESOURCE(GENERAL_DLG);
-#endif
 	PSPages[0].pszTitle = "General";
 	PSPages[0].pfnDlgProc = (DLGPROC) GeneralPage;
 	PSPages[0].pfnCallback = NULL;
@@ -140,20 +136,11 @@ HWND DisplayProperties(HWND hParentWnd,
 		PSH_USEICONID | PSH_MODELESS;
 	PSHdr.hwndParent = hParentWnd;
 	PSHdr.hInstance = hInstance;
-#ifdef  __BORLANDC__			/* Anonymous unions not working in BC */
-	PSHdr.DUMMYUNIONNAME.pszIcon = MAKEINTRESOURCE(IDI_IBSVR);
-#else
 	PSHdr.pszIcon = MAKEINTRESOURCE(IDI_IBSVR);
-#endif
 	PSHdr.pszCaption = (LPSTR) APP_NAME;
 	PSHdr.nPages = sizeof(PSPages) / sizeof(PROPSHEETPAGE);
-#ifdef  __BORLANDC__			/* Anonymous unions not working in BC */
-	PSHdr.DUMMYUNIONNAME2.nStartPage = 0;
-	PSHdr.DUMMYUNIONNAME3.ppsp = (LPCPROPSHEETPAGE) & PSPages;
-#else
 	PSHdr.nStartPage = 0;
 	PSHdr.ppsp = (LPCPROPSHEETPAGE) & PSPages;
-#endif
 	PSHdr.pfnCallback = NULL;
 
 // Initialize the gray brush to paint the background

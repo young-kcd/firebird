@@ -139,11 +139,7 @@ void AddConfigPages(HWND hPropSheet, HINSTANCE hInst)
 	IBPage.dwSize = sizeof(PROPSHEETPAGE);
 	IBPage.dwFlags = PSP_USETITLE | PSP_HASHELP;
 	IBPage.hInstance = hInst;
-#ifdef  __BORLANDC__			// Anonymous unions not working in BC
-	IBPage.DUMMYUNIONNAME.pszTemplate = MAKEINTRESOURCE(CONFIG_DLG);
-#else
 	IBPage.pszTemplate = MAKEINTRESOURCE(CONFIG_DLG);
-#endif
 	IBPage.pszTitle = "IB Settings";
 	IBPage.pfnDlgProc = (DLGPROC) InterbasePage;
 	IBPage.pfnCallback = NULL;
@@ -583,9 +579,10 @@ BOOL ValidateUser(HWND hParentWnd)
  *
  *  Description: This method calls the Password dialog to check if the user
  *               is the system administrator. However, if under server manager
- *               it just returns a FALSE if not already connected. 
+ *               it just returns a FALSE if not already connected.
  *****************************************************************************/
 	BOOL CALLBACK PasswordDlgProc(HWND, UINT, WPARAM, LPARAM);
+
 
 	if (!bServerApp) {
 		PrintCfgStatus(NULL, IDS_CFGNOT_SYSDBA, hParentWnd);
@@ -596,7 +593,7 @@ BOOL ValidateUser(HWND hParentWnd)
 		return (DialogBox
 				((HINSTANCE) GetWindowLong(hParentWnd, GWL_HINSTANCE),
 				 MAKEINTRESOURCE(PASSWORD_DLG), hParentWnd,
-				 PasswordDlgProc) > 0);
+				 (DLGPROC) PasswordDlgProc) > 0);
 	}
 }
 
@@ -799,3 +796,5 @@ void HelpCmd( HWND hWnd, HINSTANCE hInst, WPARAM wId)
 
 	return;
 }
+
+

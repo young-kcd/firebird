@@ -3403,7 +3403,7 @@ static TEXT	*ptr, *end, *last_token, *line_start;
 static SSHORT	lines, att_charset;
 
 // TMN: Temp hack
-#if defined(_MSC_VER) && defined(CONST)
+#if (defined(_MSC_VER) || defined(__BORLANDC__)) && defined(CONST)
 #undef CONST
 #define CONST
 #endif
