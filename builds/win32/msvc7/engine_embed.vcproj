@@ -85,6 +85,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\engine_es/engine_embed.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\engine_es/"
 				ObjectFile="..\..\..\temp\debug\engine_es/"

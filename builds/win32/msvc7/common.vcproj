@@ -84,6 +84,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
+				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile="..\..\..\temp\debug\common_ss/common.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\common_ss/"

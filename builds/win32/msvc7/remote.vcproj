@@ -27,6 +27,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\remote_ss/remote.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\remote_ss/"
 				ObjectFile="..\..\..\temp\debug\remote_ss/"

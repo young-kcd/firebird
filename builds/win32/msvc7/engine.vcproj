@@ -27,6 +27,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\engine_ss/engine.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\engine_ss/"
 				ObjectFile="..\..\..\temp\debug\engine_ss/"

@@ -27,6 +27,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\qli/qli.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\qli/"
 				ObjectFile="..\..\..\temp\debug\qli/"

@@ -84,6 +84,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\lock_cs/lock_classic.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\lock_cs/"
 				ObjectFile="..\..\..\temp\debug\lock_cs/"

@@ -27,6 +27,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gdef/gdef.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gdef/"
 				ObjectFile="..\..\..\temp\debug\gdef/"

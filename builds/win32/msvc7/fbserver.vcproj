@@ -98,6 +98,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\fbserver/fbserver.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\fbserver/"
 				ObjectFile="..\..\..\temp\debug\fbserver/"

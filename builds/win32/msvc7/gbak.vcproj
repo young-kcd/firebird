@@ -27,6 +27,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gbak/gbak.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gbak/"
 				ObjectFile="..\..\..\temp\debug\gbak/"
@@ -150,9 +151,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\burp\canonical.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\fb_exception.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\burp\misc.cpp">

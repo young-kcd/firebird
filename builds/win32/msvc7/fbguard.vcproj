@@ -97,6 +97,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\fbguard/fbguard.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\fbguard/"
 				ObjectFile="..\..\..\temp\debug\fbguard/"

@@ -27,6 +27,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gsplit/gsplit.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gsplit/"
 				ObjectFile="..\..\..\temp\debug\gsplit/"
@@ -145,9 +146,6 @@
 		<Filter
 			Name="BURP files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
-			<File
-				RelativePath="..\..\..\src\common\fb_exception.cpp">
-			</File>
 			<File
 				RelativePath="..\..\..\src\burp\spit.cpp">
 			</File>

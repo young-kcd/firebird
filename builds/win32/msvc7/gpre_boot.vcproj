@@ -92,6 +92,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gpre_boot/gpre_boot.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gpre_boot/"
 				ObjectFile="..\..\..\temp\debug\gpre_boot/"

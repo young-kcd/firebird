@@ -27,6 +27,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\lock_ss/lock.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\lock_ss/"
 				ObjectFile="..\..\..\temp\debug\lock_ss/"
