@@ -254,7 +254,15 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	}
 	else if (!(server_flag & SRVR_non_service)) {
 		CNTL_init((FPTR_VOID) start_connections_thread, REMOTE_SERVICE);
+//
+// BRS There is a error in MinGW (3.1.0) headers 
+// the parameter of StartServiceCtrlDispatcher is declared const in msvc headers
+//
+#ifdef MINGW
 		if (!StartServiceCtrlDispatcher(const_cast<SERVICE_TABLE_ENTRY*>(service_table))) {
+#else
+		if (!StartServiceCtrlDispatcher(service_table)) {
+#endif
 			if (GetLastError() != ERROR_CALL_NOT_IMPLEMENTED) {
 				CNTL_shutdown_service("StartServiceCtrlDispatcher failed");
 			}
