@@ -2045,20 +2045,6 @@ SOURCE=..\..\..\src\jrd\mpexl.cpp
 # End Source File
 # Begin Source File
 
-!IF  "$(CFG)" == "fbserver - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "fbserver - Win32 Release"
-
-# PROP BASE Exclude_From_Build 1
-# PROP Exclude_From_Build 1
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\print.cpp
 
 !IF  "$(CFG)" == "fbserver - Win32 Debug"
