@@ -150,10 +150,15 @@ struct tdba {
 
 static tdba* gddba;
 
-#define DBA_get_thread_data	        (gddba)
-#define DBA_set_thread_data         gddba = tddba = &thd_context; \
-				tddba->tdba_thd_data.thdd_type = THDD_TYPE_TDBA
-#define DBA_restore_thread_data
+inline tdba* DBA_get_thread_data() {
+	return gddba;
+}
+inline void DBA_set_thread_data(tdba* &tddba, tdba* thd_context) {
+	tddba = thd_context;
+	gddba = tddba;
+	tddba->tdba_thd_data.thdd_type = THDD_TYPE_TDBA;
+}
+inline void DBA_restore_thread_data() {
 
 void inline dba_full_exit(int code, tdba* tddba)
 {
@@ -179,7 +184,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 	JMP_BUF env;
 	ISC_STATUS_ARRAY status_vector;
 
-	DBA_set_thread_data;
+	DBA_set_thread_data(tddba, &thd_context);
 	memset(tddba, 0, sizeof(*tddba));
 	memset(&status_vector, 0, sizeof(status_vector));
 	tddba->dba_env = (UCHAR*) env;
@@ -199,7 +204,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 		}
 
 		const int exit_code = tddba->exit_code;
-		DBA_restore_thread_data;
+		DBA_restore_thread_data();
 		exit(exit_code);
 	}
 	FILE* sw_outfile = tddba->sw_outfile = stderr;
@@ -617,7 +622,7 @@ static void analyze_data( dba_rel* relation)
  *	Analyze data pages associated with relation.
  *
  **************************************/
-	tdba* tddba = DBA_get_thread_data;
+	tdba* tddba = DBA_get_thread_data();
 
 	pointer_page* ptr_page = (pointer_page*) tddba->buffer1;
 
@@ -653,7 +658,7 @@ static bool analyze_data_page( dba_rel* relation, const data_page* page)
  *	Analyze space utilization for data page.
  *
  **************************************/
-	tdba* tddba = DBA_get_thread_data;
+	tdba* tddba = DBA_get_thread_data();
 
 	if (page->pag_type != pag_data)
 		return false;
@@ -695,7 +700,7 @@ static void analyze_index( dba_rel* relation, idx* index)
 	UCHAR key[256], *p, *q;
 	SLONG number, page, prior_page, node_count;
 
-	tdba* tddba = DBA_get_thread_data;
+	tdba* tddba = DBA_get_thread_data();
 
 	index_root_page* index_root = 
 		(const index_root_page*) db_read(relation->rel_index_root);
@@ -968,7 +973,7 @@ static void db_error( SLONG status)
  **************************************/
 	TEXT s[128];
 
-	tdba* tddba = DBA_get_thread_data;
+	tdba* tddba = DBA_get_thread_data();
 
 	if (!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
 					   NULL,
@@ -1001,7 +1006,7 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
  **************************************/
 	dba_fil* fil;
 
-	tdba* tddba = DBA_get_thread_data;
+	tdba* tddba = DBA_get_thread_data();
 
 	if (tddba->files) {
 		for (fil = tddba->files; fil->fil_next; fil = fil->fil_next);
@@ -1049,7 +1054,7 @@ static const pag* db_read( SLONG page_number)
  *	Read a database page.
  *
  **************************************/
-	tdba* tddba = DBA_get_thread_data;
+	tdba* tddba = DBA_get_thread_data();
 
 	dba_fil* fil;
 	for (fil = tddba->files;
@@ -1098,7 +1103,7 @@ static void db_error( int status)
  * Functional description
  *
  **************************************/
-	tdba* tddba = DBA_get_thread_data;
+	tdba* tddba = DBA_get_thread_data();
 
 	/* FIXME: The strerror() function returns the appropriate description
 	   string, or an unknown error message if the error code is unknown.
@@ -1137,7 +1142,7 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
  *
  **************************************/
 	dba_fil* fil;
-	tdba* tddba = DBA_get_thread_data;
+	tdba* tddba = DBA_get_thread_data();
 
 	if (tddba->files) {
 		for (fil = tddba->files; fil->fil_next; fil = fil->fil_next);
@@ -1178,7 +1183,7 @@ static const pag* db_read( SLONG page_number)
  *	Read a database page.
  *
  **************************************/
-	tdba* tddba = DBA_get_thread_data;
+	tdba* tddba = DBA_get_thread_data();
 
 	dba_fil* fil;
 	for (fil = tddba->files;
@@ -1273,7 +1278,7 @@ static void print_distribution( const SCHAR* prefix, const SLONG* vector)
  *	Print distribution as percentages.
  *
  **************************************/
-	tdba* tddba = DBA_get_thread_data;
+	tdba* tddba = DBA_get_thread_data();
 
 	for (SSHORT n = 0; n < BUCKETS; n++) {
 		FPRINTF(tddba->sw_outfile, "%s%2d - %2d%% = %ld\n",
@@ -1295,7 +1300,7 @@ static void print_header( const header_page* header)
  *	Print database header page.
  *
  **************************************/
-	tdba* tddba = DBA_get_thread_data;
+	tdba* tddba = DBA_get_thread_data();
 	FILE* sw_outfile = tddba->sw_outfile;
 
 	FPRINTF(sw_outfile, "Database header page information:\n");

@@ -118,17 +118,28 @@ typedef struct tsec {
 } *TSEC;
 
 #ifdef SUPERSERVER
-#define GSEC_get_thread_data	        ((TSEC) THD_get_specific())
-#define GSEC_set_thread_data         THD_put_specific ((THDD) tdsec); \
-				tdsec->tsec_thd_data.thdd_type = THDD_TYPE_TSEC
-#define GSEC_restore_thread_data     THD_restore_specific();
+inline tsec* GSEC_get_thread_data() {
+	return (tsec*) THD_get_specific();
+}
+inline void GSEC_set_thread_data(tsec* tdsec) {
+	THD_put_specific ((THDD) tdsec);
+	tdsec->tsec_thd_data.thdd_type = THDD_TYPE_TSEC;
+}
+inline void GSEC_restore_thread_data() {
+	THD_restore_specific();
+}
 #else
-extern struct tsec *gdsec;
+extern tsec* gdsec;
 
-#define GSEC_get_thread_data	        (gdsec)
-#define GSEC_set_thread_data         gdsec = tdsec; \
-				tdsec->tsec_thd_data.thdd_type = THDD_TYPE_TSEC
-#define GSEC_restore_thread_data     
+inline tsec* GSEC_get_thread_data() {
+	return gdsec;
+}
+inline void GSEC_set_thread_data(tsec* tdsec) {
+	gdsec = tdsec;
+	tdsec->tsec_thd_data.thdd_type = THDD_TYPE_TSEC;
+}
+inline void GSEC_restore_thread_data() {
+}
 #endif
 
 

@@ -172,7 +172,7 @@ int common_main(int argc,
 		gsec_exit(FINI_ERROR, tdsec);
 	}
 
-	GSEC_set_thread_data;
+	GSEC_set_thread_data(tdsec);
 	SVC_PUTSPECIFIC_DATA;
 	memset((void *) tdsec, 0, sizeof(*tdsec));
 
@@ -380,7 +380,7 @@ static void data_print(void* arg, const internal_user_data* data, bool first)
  *	if first is TRUE print the header then the data
  *
  **************************************/
-	tsec* tdsec = GSEC_get_thread_data;
+	tsec* tdsec = GSEC_get_thread_data();
 
 #ifdef SUPERSERVER
 #define STUFF_USER(item) SVC_putc(tdsec->tsec_service_blk, item)
@@ -1131,7 +1131,7 @@ void GSEC_print_status(const ISC_STATUS* status_vector)
 	if (status_vector) {
 		const ISC_STATUS* vector = status_vector;
 #ifdef SUPERSERVER
-		TSEC tdsec = GSEC_get_thread_data;
+		TSEC tdsec = GSEC_get_thread_data();
 		ISC_STATUS* status = tdsec->tsec_service_blk->svc_status;
 		if (status != status_vector) {
 		    int i = 0, j;
@@ -1168,7 +1168,7 @@ static void util_output( const SCHAR* format, ...)
  **************************************/
 	int exit_code;
 
-	tsec* tdsec = GSEC_get_thread_data;
+	tsec* tdsec = GSEC_get_thread_data();
 
 	if (format[0] == '\0') {
 		exit_code = tdsec->tsec_output_proc(tdsec->tsec_output_data,
@@ -1222,7 +1222,7 @@ void GSEC_error(
  *
  **************************************/
 #ifdef SUPERSERVER
-	tsec* tdsec = GSEC_get_thread_data;
+	tsec* tdsec = GSEC_get_thread_data();
 	ISC_STATUS* status = tdsec->tsec_service_blk->svc_status;
 
 	CMD_UTIL_put_svc_status(status, GSEC_MSG_FAC, errcode,
@@ -1232,7 +1232,7 @@ void GSEC_error(
 							isc_arg_string, arg4, isc_arg_string, arg5);
 	tdsec->tsec_service_blk->svc_started();
 #else
-	tsec* tdsec = GSEC_get_thread_data;
+	tsec* tdsec = GSEC_get_thread_data();
 #endif
 
 	GSEC_print(errcode, arg1, arg2, arg3, arg4, arg5);
