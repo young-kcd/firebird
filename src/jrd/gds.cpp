@@ -150,7 +150,7 @@ static const char * FB_PID_FILE = "fb_%d";
 
 #include "gen/sql_code.h"
 #include "../jrd/thd.h"
-#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/ibase.h"
 
 #include "../jrd/blr.h"
@@ -2194,7 +2194,7 @@ SLONG API_ROUTINE gds__sqlcode(const ISC_STATUS* status_vector)
 		if (*s == isc_arg_gds)
 		{
 			s++;
-			if (*s == gds_sqlerr)
+			if (*s == isc_sqlerr)
 			{
 				return *(s + 2);
 			}
