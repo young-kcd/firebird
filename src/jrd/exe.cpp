@@ -2406,10 +2406,12 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 			if (request->req_operation == jrd_req::req_evaluate)
 				if (EVL_boolean(tdbb, node->nod_arg[e_if_boolean])) {
 					node = node->nod_arg[e_if_true];
+					request->req_operation = jrd_req::req_evaluate;
 					break;
 				}
 				else if (node->nod_arg[e_if_false]) {
 					node = node->nod_arg[e_if_false];
+					request->req_operation = jrd_req::req_evaluate;
 					break;
 				}
 				else
