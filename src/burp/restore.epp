@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.49 2003-10-29 10:53:03 robocop Exp $
+$Id: restore.epp,v 1.50 2003-11-03 01:12:14 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -187,9 +187,6 @@ void	store_blr_gen_id (const TEXT*, SINT64);
 void	stuff_string(UCHAR **, const TEXT *);
 void	update_global_field (void);
 void	general_on_error (void);
-#ifdef NOT_USED_OR_REPLACED
-bool	bug_8183 (TGBL);
-#endif
 #ifdef DEBUG
 UCHAR	debug_on = 0;   // able to turn this on in the debugger 
 #endif
@@ -2438,13 +2435,9 @@ rec_type get_data (BURP_REL	relation)
 			break;
 
 		default:
-#ifdef SUPERSERVER
-			BURP_svc_error (26, isc_arg_number, (void*) (SLONG) field->fld_type,
+			BURP_error (26, true, isc_arg_number, (void*) (SLONG) field->fld_type,
 					0, NULL, 0, NULL, 0, NULL, 0, NULL);
-#else
-			BURP_error (26, (void*) (SLONG) field->fld_type, 0, 0, 0, 0);
 			// msg 26 datatype %ld not understood 
-#endif
 			break;
 		}
 		if (alignment)
@@ -2557,14 +2550,10 @@ rec_type get_data (BURP_REL	relation)
 				old_length = recompute_length (relation);
 			if (l != old_length)
 			{
-	#ifdef SUPERSERVER
-				BURP_svc_error(40, isc_arg_number, (void*)length,
+				BURP_error(40, true, isc_arg_number, (void*)length,
 							 isc_arg_number, (void*) (ULONG) l,
 							 0, NULL, 0, NULL, 0, NULL);
-	#else
-				BURP_error (40, (void*) length, (void*)(ULONG) l, 0, 0, 0);
 				// msg 40 wrong length record, expected %ld encountered %ld 
-	#endif
 			}
 		}
 		if (!buffer)
@@ -5028,14 +5017,10 @@ bool get_relation (void)
 			break;
 
 		default:
-#ifdef SUPERSERVER
-			BURP_svc_error (43, isc_arg_number, (void*) record,
-					0, NULL, 0, NULL, 0, NULL, 0, NULL);
-#else
-			BURP_error (43, (void*) record, 0, 0, 0, 0);
+			BURP_error(43, true, isc_arg_number, (void*) record,
+							0, NULL, 0, NULL, 0, NULL, 0, NULL);
 			// msg 43 don't recognize record type %ld 
-#endif
-				break;
+			break;
 		}
 	}
 
@@ -6563,13 +6548,9 @@ bool restore (const TEXT* file_name,
 
 	if (tdgbl->RESTORE_format < 1 || tdgbl->RESTORE_format > ATT_BACKUP_FORMAT)
 	{
-#ifdef SUPERSERVER
-		BURP_svc_error (44, isc_arg_number, (void*)(ULONG)tdgbl->RESTORE_format,
-				0, NULL, 0, NULL, 0, NULL, 0, NULL);
-#else
-		BURP_error (44, (void*)(ULONG) tdgbl->RESTORE_format, 0, 0, 0, 0);
+		BURP_error(44, true, isc_arg_number, (void*)(ULONG)tdgbl->RESTORE_format,
+					0, NULL, 0, NULL, 0, NULL, 0, NULL);
 		// msg 44 Expected backup version 1, 2, or 3.  Found %ld 
-#endif
 	}
 
 	create_database (database_name);
@@ -6588,13 +6569,9 @@ bool restore (const TEXT* file_name,
 	USHORT db_version = check_db_version();
 	if (db_version < DB_VERSION_CURRENT)
 	{
-#ifdef SUPERSERVER
-		BURP_svc_error (51, isc_arg_number, (void*) (ULONG) db_version,
-				0, NULL, 0, NULL, 0, NULL, 0, NULL);
-#else
-		BURP_error (51, (void*) (ULONG) db_version, 0, 0, 0, 0);
+		BURP_error(51, true, isc_arg_number, (void*) (ULONG) db_version,
+					0, NULL, 0, NULL, 0, NULL, 0, NULL);
 		// msg 51 database format %ld is too old to restore to 
-#endif
 	}
 
 	BURP_verbose (129, NULL, NULL, NULL, NULL, NULL);
@@ -6814,13 +6791,9 @@ bool restore (const TEXT* file_name,
 			break;
 
 		default:
-	#ifdef SUPERSERVER
-			BURP_svc_error (43, isc_arg_number, (void*) record,
-					0, NULL, 0, NULL, 0, NULL, 0, NULL);
-	#else
-			BURP_error (43, (void*) record, 0, 0, 0, 0);
+			BURP_error(43, true, isc_arg_number, (void*) record,
+						0, NULL, 0, NULL, 0, NULL, 0, NULL);
 			// msg 43 don't recognize record type %ld 
-	#endif
 			break;
 		}
 	}
@@ -7132,98 +7105,6 @@ void update_global_field (void)
 
 	tdgbl->gbl_global_fields = NULL;
 }
-
-#ifdef NOT_USED_OR_REPLACED
-bool bug_8183 (TGBL       tdgbl)
-{
-/**************************************
- *
- *      b u g _ 8 1 8 3
- *
- **************************************
- *
- * Name:	bug_8183
- *
- * Function:	Bug fix for bug_no 8183: It is a migration bug between IB3.3
- *		and IB4.0. Gbak v4.0 can't restore database v3.3 if
- *		database has an index definition with comment field.
- *		It happens because of att_index_description2 attribute
- *		(which indicates that index contains a comment field
- *		and is equal 8 under IB3.3) accidently got new value 9
- *		under IB4.0.
- *		At the same time, new attribute att_index_foreign_key
- *		has been added with value 8. Thus, when gbak v4.0 faces
- *		index attribute with value 8 during restore procedure of
- *		database v3.3, it will recognize this attribute as
- *		att_index_foreign_key instead of att_index_description2.
- *
- *		This function is trying to recognize the next
- *		data in tdgbl->io_ptr buffer as either name of foreign
- *		key or comment field. Function returns true in case of
- *		comment field, otherwise false.
- *
- * Usage:	result = bug_8183(tdgbl);
- *
- * Parameters:	tdgbl - pointer to the structure of global switches
- *		        and data
- *
- * Returns:	result [true/false]
- *
- * Pre:		gbak got an index attribute with value "8" from
- *		backup database.
- *
- * Post:	none
- *
- * Remarks:	For more information see bug_no 8183
- *
- **************************************/
-
-	UCHAR   tmp[sizeof(ULONG) + 1], *p;
-	USHORT  i;
-	ULONG   len1, len2;
-	bool result = false;
-
-
-	USHORT io_cnt = tdgbl->io_cnt;
-	UCHAR* io_ptr = tdgbl->io_ptr;
-
-	if ( io_cnt > 0 )
-	{
-		len1 = len2 = *io_ptr++;
-		--io_cnt;
-		/* len1 can be either length of att_index_foreign_key OR quantity of byte
-		   where seats length of att_index_description2. In case of
-		   att_index_description2, len1 should be as even and no bigger
-		   than sizeof(ULONG). Let's check it out */
-		if ( (len1 % 2) == 0 && (len1 <= sizeof(ULONG)) )
-		{
-			/* it still can be a foreign key; so
-			 try to read it. Note: if internal buffer is over, then
-			 we wan't read next block */
-
-			memset(tmp, '\0', sizeof(tmp));
-
-			p = tmp;
-			while (len1-- && io_cnt-- )
-				*p++ = *io_ptr++;
-
-			/* if read array is a foreign key then it should contain following chars
-			 only : ['A'..'Z', '0'..'9', '_', '$'] */
-			for ( p = tmp, i = 0;
-				*p && *p != ' ' && ((*p >= 'A' && *p <= 'Z') || (*p == '_') ||
-				(*p >= '0' && *p <= '9') || (*p == '$')) ;
-				p++ )
-			{
-				i++;
-			}
-		if ( (len2 - len1) != i )
-			result = true;
-		}
-	}
-
-	return result;
-}
-#endif
 
 } // namespace
 

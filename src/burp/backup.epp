@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.42 2003-10-29 10:53:03 robocop Exp $
+$Id: backup.epp,v 1.43 2003-11-03 01:12:14 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -109,9 +109,6 @@ void put_numeric(SCHAR, SLONG);
 void put_relation(BURP_REL);
 bool put_source_blob(SCHAR, SCHAR, ISC_QUAD *);
 int put_text(SCHAR, const TEXT *, SSHORT);
-#ifdef NOT_USED_OR_REPLACED
-void put_trigger(enum trig_t, GDS__QUAD *, GDS__QUAD *, GDS_NAME);
-#endif
 void set_capabilities(void);
 int symbol_length(const TEXT *, ULONG);
 void write_character_sets(void);
@@ -310,8 +307,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 			tdgbl->action->act_file = fil;
 			if (MVOL_split_hdr_write() == FALSE)
 			{
-				BURP_error(269, tdgbl->action->act_file->fil_name, 0, 0, 0,
-						   0);
+				BURP_error(269, true, tdgbl->action->act_file->fil_name, 0, 0, 0, 0);
 				// msg 269 can't write a header record to file %s 
 			}
 		}
@@ -2487,37 +2483,6 @@ int put_text( SCHAR attribute, const TEXT * text, SSHORT size_len)
 
 	return l;
 }
-
-
-#ifdef NOT_USED_OR_REPLACED
-void put_trigger(enum trig_t type,
-						GDS__QUAD * blob_ident,
-						GDS__QUAD * source_blob, GDS_NAME rel_name)
-{
-/**************************************
- *
- *	p u t _ t r i g g e r
- *
- **************************************
- *
- * Functional description
- *	Write a trigger to the output file.
- *	NOTE: This is used backup pre-V3 triggers only 
- *
- **************************************/
-	TGBL tdgbl = GET_THREAD_DATA;
-
-	if (!blob_ident->gds_quad_low)
-		return;
-
-	put(tdgbl, (UCHAR) (rec_trigger));
-	put_numeric(att_trig_type, type);
-	put_blr_blob(att_trig_blr, (ISC_QUAD *) blob_ident);
-	put_source_blob(att_trig_source2, att_trig_source,
-					(ISC_QUAD *) source_blob);
-	put(tdgbl, (UCHAR) (att_end));
-}
-#endif
 
 
 void set_capabilities(void)

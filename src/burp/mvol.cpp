@@ -262,7 +262,7 @@ void MVOL_init_write(const UCHAR*		database_name, // unused?
 	{
 		if (tdgbl->action->act_action == ACT_backup_split)
 		{
-			BURP_error(269, tdgbl->action->act_file->fil_name, 0, 0, 0, 0);
+			BURP_error(269, true, tdgbl->action->act_file->fil_name, 0, 0, 0, 0);
 			// msg 269 can't write a header record to file %s 
 		}
 		tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_WRITE, false);
@@ -634,7 +634,8 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 					}
 					else
 					{
-						BURP_error(270, 0, 0, 0, 0, 0);	// msg 270 free disk space exhausted 
+						BURP_error(270, true, 0, 0, 0, 0, 0);
+						// msg 270 free disk space exhausted 
 					}
 					cnt = 0;
 					continue;
@@ -1377,7 +1378,7 @@ bool MVOL_split_hdr_read(void)
 #else
 		cnt = read(tdgbl->action->act_file->fil_fd, buffer, HDR_SPLIT_SIZE);
 #endif
-		if ((cnt == HDR_SPLIT_SIZE) &&
+		if ((cnt >= 0) && ((ULONG) cnt == HDR_SPLIT_SIZE) &&
 			((strncmp(buffer, HDR_SPLIT_TAG, (sizeof(HDR_SPLIT_TAG) - 1)) == 0) ||
 			(strncmp(buffer, HDR_SPLIT_TAG5, (sizeof(HDR_SPLIT_TAG) - 1)) == 0)))
 		{

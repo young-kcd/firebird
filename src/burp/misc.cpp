@@ -60,7 +60,8 @@ UCHAR *MISC_alloc_burp(ULONG size)
 	if (!block)
 		/* NOMEM: message & abort FREE: all items freed at gbak exit */
 	{
-		BURP_error(238, NULL, NULL, NULL, NULL, NULL);	// msg 238: System memory exhaused 
+		BURP_error(238, true, NULL, NULL, NULL, NULL, NULL);
+		// msg 238: System memory exhaused 
 		return NULL;
 	}
 
@@ -110,7 +111,8 @@ void MISC_free_burp( void *free)
 		}
 
 		// We should always find the block in the list 
-		BURP_error(238, NULL, NULL, NULL, NULL, NULL);	// msg 238: System memory exhausted 
+		BURP_error(238, true, NULL, NULL, NULL, NULL, NULL);
+		// msg 238: System memory exhausted 
 		// (too lazy to add a better message)
 	}
 }

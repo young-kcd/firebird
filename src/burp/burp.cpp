@@ -102,10 +102,6 @@
 // defined in burp.cpp as well, and is not relevant for SUPERSERVER
 // MOD 23-July-2002
 
-#ifndef SUPERSERVER
-tgbl *gdgbl;
-#endif
-
 const char* fopen_write_type = "w";
 const char* fopen_read_type	 = "r";
 
@@ -137,13 +133,11 @@ static ULONG get_size(const SCHAR *, FIL);
 static gbak_action open_files(const TEXT *, const TEXT**, USHORT, USHORT, USHORT);
 static int common_main(int, char**, pfn_svc_output, svc*);
 #ifndef SUPERSERVER
+tgbl *gdgbl;
 static int output_main(svc*, const UCHAR*);
-#endif
-static void burp_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
-
-#ifndef	SUPERSERVER
 static int api_gbak(int, char**, USHORT, TEXT*, TEXT*, TEXT *, bool, bool);
 #endif
+static void burp_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
 
 // fil.fil_length is ULONG
 const ULONG KBYTE	= 1024;
@@ -195,42 +189,6 @@ int BURP_main(svc* service)
 	SVC_finish(service, SVC_finished);
 
 	return exit_code;
-}
-
-
-void BURP_svc_error(USHORT errcode,
-					USHORT arg1_t,
-					const void *arg1,
-					USHORT arg2_t,
-					const void *arg2,
-					USHORT arg3_t,
-					const void *arg3,
-					USHORT arg4_t,
-					const void *arg4,
-					USHORT arg5_t,
-					const void *arg5)
-{
-/**************************************
- *
- *      B U R P _ s v c _ e r r o r
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	TGBL tdgbl = GET_THREAD_DATA;
-
-	ISC_STATUS *status = tdgbl->service_blk->svc_status;
-
-	CMD_UTIL_put_svc_status(status, burp_msg_fac, errcode,
-							arg1_t, arg1, arg2_t, arg2, arg3_t, arg3,
-							arg4_t, arg4, arg5_t, arg5);
-
-	SVC_STARTED(tdgbl->service_blk);
-	BURP_msg_partial(256, 0, 0, 0, 0, 0);	// msg 256: gbak: ERROR: 
-	BURP_msg_put(errcode, arg1, arg2, arg3, arg4, arg5);
-	BURP_abort();
 }
 
 
@@ -327,7 +285,7 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 		}
 	}
 
-    int exit_code;
+	int exit_code;
 	if (sw_service && !err)
 	{
 		/* Backup/restore operations will be running as a service thread.
@@ -375,6 +333,218 @@ static int output_main(svc* output_data, const UCHAR* output_buf)
 	ib_fprintf(ib_stderr, "%s", output_buf);
 	return 0;
 }
+
+static int api_gbak(int argc,
+					char *argv[],
+					USHORT length,
+					TEXT * password,
+					TEXT * user,
+					TEXT * service,
+					bool restore,
+					bool verbose)
+{
+/**********************************************
+ *
+ *	a p i _ g b a k
+ *
+ **********************************************
+ *
+ * Functional description
+ *	Run gbak using services APIs
+ *
+ **********************************************/
+	ISC_STATUS_ARRAY status;
+ 	char sendbuf[] = { isc_info_svc_line };
+	char respbuf[1024];
+
+	tgbl ldgbl;
+	tgbl* tdgbl = &ldgbl;
+	SET_THREAD_DATA;
+	memset((void *) tdgbl, 0, sizeof(tgbl));
+	tdgbl->output_proc = output_main;
+
+    TEXT *usr, *pswd;
+	if (!user)
+		usr = getenv("ISC_USER");
+	else
+		usr = user;
+
+	if (!password)
+		pswd = getenv("ISC_PASSWORD");
+	else
+		pswd = password;
+
+	char *const spb = (char *) gds__alloc((SLONG) (2 + 2 + ((usr) ? strlen(usr) : 0) +
+									   2 + ((pswd) ? strlen(pswd) : 0)) +
+									   2 + length);
+	/* 'isc_spb_version'
+	   'isc_spb_current_version'
+	   'isc_spb_user_name'
+	   'length'
+	   "usr"
+	   'isc_spb_password'
+	   'length'
+	   "pswd"
+	   'isc_spb_options'
+	   'length'
+	   "options" */
+	if (spb == NULL) {
+		status[0] = isc_arg_gds;
+		status[1] = isc_virmemexh;
+		status[2] = isc_arg_end;
+		BURP_print_status(status);
+		BURP_print(83, 0, 0, 0, 0, 0);	// msg 83 Exiting before completion due to errors 
+		return FINI_ERROR;
+	}
+
+	char *spb_ptr = spb;
+	*spb_ptr++ = isc_spb_version;
+	*spb_ptr++ = isc_spb_current_version;
+
+	if (usr) {
+		*spb_ptr++ = isc_spb_user_name;
+		*spb_ptr++ = strlen(usr);
+		MEMMOVE(usr, spb_ptr, strlen(usr));
+		spb_ptr += strlen(usr);
+		if (user)
+			*user = '\0';
+	}
+
+	if (pswd) {
+		*spb_ptr++ = isc_spb_password;
+		*spb_ptr++ = strlen(pswd);
+		MEMMOVE(pswd, spb_ptr, strlen(pswd));
+		spb_ptr += strlen(pswd);
+		if (password)
+			*password = '\0';
+	}
+
+	char *const svc_name = (char *) gds__alloc((SLONG) (strlen(service) + 1));
+
+	if (svc_name == NULL) {
+		status[0] = isc_arg_gds;
+		status[1] = isc_virmemexh;
+		status[2] = isc_arg_end;
+		BURP_print_status(status);
+		gds__free(spb);
+		BURP_print(83, 0, 0, 0, 0, 0);	// msg 83 Exiting before completion due to errors 
+		return FINI_ERROR;
+	}
+
+	if (service) {
+		strcpy(svc_name, service);
+		*service = '\0';
+	}
+
+
+// Fill command line options 
+
+	*spb_ptr++ = isc_spb_command_line;
+	TEXT **begin = argv;
+	TEXT **end = argv + argc;
+	argv++;
+
+	*spb_ptr++ = length;
+	while (argv < end) {
+		if (**argv && argv > begin + 1)
+			*spb_ptr++ = ' ';
+		for (const TEXT *x = *argv++; *x;)
+			*spb_ptr++ = *x++;
+	}
+
+	USHORT spblen = spb_ptr - spb;
+
+	FRBRD *svc_handle = NULL;
+	if (isc_service_attach(status, 0, svc_name, (&svc_handle), spblen, spb))
+	{
+		BURP_print_status(status);
+		gds__free(spb);
+		gds__free(svc_name);
+		BURP_print(83, 0, 0, 0, 0, 0);
+		// msg 83 Exiting before completion due to errors 
+		return FINI_ERROR;
+	}
+
+	char *const thd = (char *) gds__alloc((SLONG) (2));
+	// 'isc_action_svc_restore/isc_action_svc_backup'
+	// 'isc_spb_verbose'
+
+	if (thd == NULL) {
+		status[0] = isc_arg_gds;
+		status[1] = isc_virmemexh;
+		status[2] = isc_arg_end;
+		BURP_print_status(status);
+		isc_service_detach(status, (&svc_handle));
+		gds__free(spb);
+		gds__free(svc_name);
+		BURP_print(83, 0, 0, 0, 0, 0);
+		// msg 83 Exiting before completion due to errors 
+		return FINI_ERROR;
+	}
+
+	char *thd_ptr = thd;
+	if (restore)
+		*thd_ptr++ = isc_action_svc_restore;
+	else
+		*thd_ptr++ = isc_action_svc_backup;
+
+	if (verbose)
+		*thd_ptr++ = isc_spb_verbose;
+
+	USHORT thdlen = thd_ptr - thd;
+
+	if (isc_service_start(status, (&svc_handle), NULL, thdlen, thd))
+	{
+		BURP_print_status(status);
+		gds__free(spb);
+		gds__free(svc_name);
+		gds__free(thd);
+		isc_service_detach(status, (&svc_handle));
+		BURP_print(83, 0, 0, 0, 0, 0);	// msg 83 Exiting before completion due to errors 
+		return FINI_ERROR;
+	}
+
+	const char *sl;
+	do {
+		if (isc_service_query(status, (&svc_handle), NULL, 0, NULL,
+								sizeof(sendbuf), sendbuf,
+								sizeof(respbuf), respbuf))
+		{
+			BURP_print_status(status);
+			gds__free(spb);
+			gds__free(svc_name);
+			gds__free(thd);
+			isc_service_detach(status, (&svc_handle));
+			BURP_print(83, 0, 0, 0, 0, 0);	// msg 83 Exiting before completion due to errors 
+			return FINI_ERROR;
+		}
+
+		char *p = respbuf;
+		sl = p;
+
+		if (*p++ == isc_info_svc_line)
+		{
+			ISC_USHORT len = (ISC_USHORT) isc_vax_integer(p, sizeof(ISC_USHORT));
+			p += sizeof(ISC_USHORT);
+			if (!len)
+			{
+				if (*p == isc_info_data_not_ready)
+					continue;
+				else if (*p == isc_info_end)
+					break;
+			}
+
+			p[len] = '\0';
+			burp_output("%s\n", p);
+
+			p += len;
+		}
+	} while (*sl == isc_info_svc_line);
+
+	isc_service_detach(status, (&svc_handle));
+	return FINI_OK;
+}
+
 
 #endif	// SUPERSERVER
 
@@ -589,42 +759,42 @@ int common_main(int		argc,
 
 				BURP_print(132, 0, 0, 0, 0, 0);
 				// msg 132 switches can be abbreviated to one character 
-				BURP_error(1, 0, 0, 0, 0, 0);
+				BURP_error(1, true, 0, 0, 0, 0, 0);
 				// msg 1: found unknown switch 
 			}
 			else if (in_sw_tab->in_sw == IN_SW_BURP_S) {
 				if (argv >= end)
-					BURP_error(200, 0, 0, 0, 0, 0);
+					BURP_error(200, true, 0, 0, 0, 0, 0);
 				// msg 200: missing parameter for the number of bytes to be skipped 
 				tdgbl->gbl_sw_skip_count = get_number(*argv);
 				if (!tdgbl->gbl_sw_skip_count)
-					BURP_error(201, *argv, 0, 0, 0, 0);
+					BURP_error(201, true, *argv, 0, 0, 0, 0);
 				// msg 201: expected number of bytes to be skipped, encountered "%s" 
 				argv++;
 			}
 			else if (in_sw_tab->in_sw == IN_SW_BURP_P) {
 				if (argv >= end)
-					BURP_error(2, 0, 0, 0, 0, 0);
+					BURP_error(2, true, 0, 0, 0, 0, 0);
 					// msg 2 page size parameter missing 
 				tdgbl->gbl_sw_page_size = (USHORT) get_number(*argv);
 				if (!tdgbl->gbl_sw_page_size)
-					BURP_error(12, *argv, 0, 0, 0, 0);
+					BURP_error(12, true, *argv, 0, 0, 0, 0);
 					// msg 12 expected page size, encountered "%s" 
 				argv++;
 			}
 			else if (in_sw_tab->in_sw == IN_SW_BURP_BU) {
 				if (argv >= end)
-					BURP_error(258, 0, 0, 0, 0, 0);
+					BURP_error(258, true, 0, 0, 0, 0, 0);
 					// msg 258 page buffers parameter missing 
 				tdgbl->gbl_sw_page_buffers = get_number(*argv);
 				if (!tdgbl->gbl_sw_page_buffers)
-					BURP_error(259, *argv, 0, 0, 0, 0);
+					BURP_error(259, true, *argv, 0, 0, 0, 0);
 					// msg 259 expected page buffers, encountered "%s" 
 				argv++;
 			}
 			else if (in_sw_tab->in_sw == IN_SW_BURP_MODE) {
 				if (argv >= end)
-					BURP_error(279, 0, 0, 0, 0, 0);
+					BURP_error(279, true, 0, 0, 0, 0, 0);
 					// msg 279: "read_only" or "read_write" required 
 				string = *argv++;
 				if (!strcmp(string, BURP_SW_MODE_RO))
@@ -632,42 +802,42 @@ int common_main(int		argc,
 				else if (!strcmp(string, BURP_SW_MODE_RW))
 					tdgbl->gbl_sw_mode_val = false;
 				else
-					BURP_error(279, 0, 0, 0, 0, 0);
+					BURP_error(279, true, 0, 0, 0, 0, 0);
 					// msg 279: "read_only" or "read_write" required 
 				tdgbl->gbl_sw_mode = true;
 			}
 			else if (in_sw_tab->in_sw == IN_SW_BURP_PASS) {
 				if (argv >= end)
-					BURP_error(189, 0, 0, 0, 0, 0);
+					BURP_error(189, true, 0, 0, 0, 0, 0);
 					// password parameter missing 
 				tdgbl->gbl_sw_password = *argv++;
 			}
 			else if (in_sw_tab->in_sw == IN_SW_BURP_USER) {
 				if (argv >= end)
-					BURP_error(188, 0, 0, 0, 0, 0);
+					BURP_error(188, true, 0, 0, 0, 0, 0);
 					// user name parameter missing 
 				tdgbl->gbl_sw_user = *argv++;
 			}
 			else if (in_sw_tab->in_sw == IN_SW_BURP_ROLE) {
 				if (argv >= end)
-					BURP_error(253, 0, 0, 0, 0, 0);
+					BURP_error(253, true, 0, 0, 0, 0, 0);
 					// SQL role parameter missing 
 				tdgbl->gbl_sw_sql_role = *argv++;
 			}
 			else if (in_sw_tab->in_sw == IN_SW_BURP_FA) {
 				if (argv >= end)
-					BURP_error(182, 0, 0, 0, 0, 0);
+					BURP_error(182, true, 0, 0, 0, 0, 0);
 					// msg 182 blocking factor parameter missing 
 				tdgbl->gbl_sw_blk_factor =
 					(volatile USHORT) get_number(*argv);
 				if (!tdgbl->gbl_sw_blk_factor)
-					BURP_error(183, *argv, 0, 0, 0, 0);	
+					BURP_error(183, true, *argv, 0, 0, 0, 0);	
 					// msg 183 expected blocking factor, encountered "%s"  
 				argv++;
 			}
 			else if (in_sw_tab->in_sw == IN_SW_BURP_SE) {
 				if (argv >= end) {
-					BURP_error(273, 0, 0, 0, 0, 0);
+					BURP_error(273, true, 0, 0, 0, 0, 0);
 					// msg 273: service name parameter missing 
 				}
 				in_sw_tab->in_sw_state = FALSE;
@@ -683,7 +853,7 @@ int common_main(int		argc,
 				else
 					++argv;
 				if (!redirect)
-					BURP_error(4, 0, 0, 0, 0, 0);
+					BURP_error(4, true, 0, 0, 0, 0, 0);
 				// msg 4 redirect location for output is not specified 
 
 				const TEXT *p = redirect;
@@ -741,7 +911,7 @@ int common_main(int		argc,
 			 file_list = file_list->fil_next)
 		{
 			if (!strcmp(file->fil_name, file_list->fil_name))
-				BURP_error(9, 0, 0, 0, 0, 0);
+				BURP_error(9, true, 0, 0, 0, 0, 0);
 			// msg 9 mutiple sources or destinations specified 
 		}
 
@@ -761,14 +931,14 @@ int common_main(int		argc,
 			switch (in_sw_tab->in_sw) {
 			case (IN_SW_BURP_B):
 				if (sw_replace)
-					BURP_error(5, 0, 0, 0, 0, 0);
+					BURP_error(5, true, 0, 0, 0, 0, 0);
 				// msg 5 conflicting switches for backup/restore 
 				sw_replace = IN_SW_BURP_B;
 				break;
 
 			case (IN_SW_BURP_C):
 				if (sw_replace == IN_SW_BURP_B)
-					BURP_error(5, 0, 0, 0, 0, 0);
+					BURP_error(5, true, 0, 0, 0, 0, 0);
 				// msg 5 conflicting switches for backup/restore 
 				if (sw_replace != IN_SW_BURP_R)
 					sw_replace = IN_SW_BURP_C;
@@ -850,7 +1020,7 @@ int common_main(int		argc,
 
 			case (IN_SW_BURP_R):
 				if (sw_replace == IN_SW_BURP_B)
-					BURP_error(5, 0, 0, 0, 0, 0);
+					BURP_error(5, true, 0, 0, 0, 0, 0);
 				// msg 5 conflicting switches for backup/restore 
 				sw_replace = IN_SW_BURP_R;
 				break;
@@ -860,7 +1030,7 @@ int common_main(int		argc,
 				break;
 
 			case (IN_SW_BURP_U):
-				BURP_error(7, 0, 0, 0, 0, 0);
+				BURP_error(7, true, 0, 0, 0, 0, 0);
 				// msg 7 protection isn't there yet 
 				break;
 
@@ -910,7 +1080,7 @@ int common_main(int		argc,
 	if (tdgbl->gbl_sw_page_size)
 	{
 		if (sw_replace == IN_SW_BURP_B)
-			BURP_error(8, 0, 0, 0, 0, 0);
+			BURP_error(8, true, 0, 0, 0, 0, 0);
 		// msg 8 page size is allowed only on restore or create 
 		int temp = tdgbl->gbl_sw_page_size;
 		{
@@ -925,16 +1095,11 @@ int common_main(int		argc,
 		}
 		if (temp > MAX_PAGE_SIZE)
 		{
-#ifdef SUPERSERVER
-			BURP_svc_error(	3,
-							isc_arg_number,
+			BURP_error(3, true, isc_arg_number,
 							reinterpret_cast<void*>(tdgbl->gbl_sw_page_size),
 							0, NULL, 0, NULL,
 							0, NULL, 0, NULL);
-#else
 			// msg 3 Page size specified (%ld) greater than limit (MAX_PAGE_SIZE bytes) 
-			BURP_error(3, (void*) (ULONG) tdgbl->gbl_sw_page_size, 0, 0, 0, 0);
-#endif
 		}
 		if (temp != tdgbl->gbl_sw_page_size) {
 			BURP_print(103, (void*)(ULONG) tdgbl->gbl_sw_page_size,
@@ -946,7 +1111,7 @@ int common_main(int		argc,
 
 	if (tdgbl->gbl_sw_page_buffers) {
 		if (sw_replace == IN_SW_BURP_B)
-			BURP_error(260, 0, 0, 0, 0, 0);
+			BURP_error(260, true, 0, 0, 0, 0, 0);
 		// msg 260 page buffers is allowed only on restore or create 
 	}
 
@@ -954,11 +1119,11 @@ int common_main(int		argc,
 		tdgbl->gbl_sw_blk_factor = 1;
 
 	if (!file2)
-		BURP_error(10, 0, 0, 0, 0, 0);
+		BURP_error(10, true, 0, 0, 0, 0, 0);
 	// msg 10 requires both input and output filenames 
 
 	if (!strcmp(file1, file2))
-		BURP_error(11, 0, 0, 0, 0, 0);
+		BURP_error(11, true, 0, 0, 0, 0, 0);
 	// msg 11 input and output have the same name.  Disallowed. 
 
 	time_t clock = time(NULL);
@@ -1082,15 +1247,51 @@ void BURP_abort(void)
 	BURP_print(83, 0, 0, 0, 0, 0);
 	// msg 83 Exiting before completion due to errors 
 
-#ifdef SUPERSERVER
 	SVC_STARTED(tdgbl->service_blk);
-#endif
 
 	exit_local(FINI_ERROR, tdgbl);
 }
 
+void BURP_error(USHORT errcode, bool abort,
+					USHORT arg1_t,
+					const void *arg1,
+					USHORT arg2_t,
+					const void *arg2,
+					USHORT arg3_t,
+					const void *arg3,
+					USHORT arg4_t,
+					const void *arg4,
+					USHORT arg5_t,
+					const void *arg5)
+{
+/**************************************
+ *
+ *      B U R P _ e r r o r
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+#ifdef SUPERSERVER
+	TGBL tdgbl = GET_THREAD_DATA;
 
-void BURP_error(USHORT errcode,
+	ISC_STATUS *status = tdgbl->service_blk->svc_status;
+
+	CMD_UTIL_put_svc_status(status, burp_msg_fac, errcode,
+							arg1_t, arg1, arg2_t, arg2, arg3_t, arg3,
+							arg4_t, arg4, arg5_t, arg5);
+
+	SVC_STARTED(tdgbl->service_blk);
+#endif
+	BURP_msg_partial(256, 0, 0, 0, 0, 0);	// msg 256: gbak: ERROR: 
+	BURP_msg_put(errcode, arg1, arg2, arg3, arg4, arg5);
+	if (abort)
+		BURP_abort();
+}
+
+
+void BURP_error(USHORT errcode, bool abort,
 				const void* arg1,
 				const void* arg2,
 				const void* arg3,
@@ -1107,22 +1308,9 @@ void BURP_error(USHORT errcode,
  *	Format and print an error message, then punt.
  *
  **************************************/
-#ifdef SUPERSERVER
-	TGBL tdgbl = GET_THREAD_DATA;
-	ISC_STATUS *status = tdgbl->service_blk->svc_status;
-
-	CMD_UTIL_put_svc_status(status, burp_msg_fac, errcode,
-							isc_arg_string, arg1,
-							isc_arg_string, arg2,
-							isc_arg_string, arg3,
-							isc_arg_string, arg4,
-							isc_arg_string, arg5);
-	SVC_STARTED(tdgbl->service_blk);
-#endif
-
-	BURP_msg_partial(256, 0, 0, 0, 0, 0);	// msg 256: gbak: ERROR: 
-	BURP_msg_put(errcode, arg1, arg2, arg3, arg4, arg5);
-	BURP_abort();
+	BURP_error(errcode, abort, isc_arg_string, arg1, isc_arg_string, arg2,
+				isc_arg_string, arg3, isc_arg_string, arg4,
+				isc_arg_string, arg5);
 }
 
 
@@ -1143,7 +1331,7 @@ void BURP_error_redirect(const ISC_STATUS* status_vector,
  **************************************/
 
 	BURP_print_status(status_vector);
-	BURP_error(errcode, arg1, arg2, NULL, NULL, NULL);
+	BURP_error(errcode, true, arg1, arg2, NULL, NULL, NULL);
 }
 
 
@@ -1492,7 +1680,7 @@ static gbak_action open_files(const TEXT* file1,
 		{
 			if (sw_replace != IN_SW_BURP_B) {
 				// msg 13 REPLACE specified, but the first file %s is a database 
-				BURP_error(13, file1, 0, 0, 0, 0);
+				BURP_error(13, true, file1, 0, 0, 0, 0);
 				if (isc_detach_database(status_vector, &tdgbl->db_handle)) {
 					BURP_print_status(status_vector);
 				}
@@ -1506,7 +1694,8 @@ static gbak_action open_files(const TEXT* file1,
 							(void*) "\t%s\n");
 			}
 			if (sw_verbose)
-				BURP_print(166, file1, 0, 0, 0, 0);	// msg 166: readied database %s for backup 
+				BURP_print(166, file1, 0, 0, 0, 0);
+				// msg 166: readied database %s for backup 
 		}
 		else if (sw_replace == IN_SW_BURP_B ||
 				 (status_vector[1] != gds_io_error
@@ -1542,7 +1731,7 @@ static gbak_action open_files(const TEXT* file1,
 				fil->fil_length *= GBYTE;
 				break;
 			case size_e:
-				BURP_error(262, fil->fil_name, 0, 0, 0, 0);
+				BURP_error(262, true, fil->fil_name, 0, 0, 0, 0);
 				// msg 262 size specification either missing or incorrect for file %s
 				break;
 			default:
@@ -1562,7 +1751,7 @@ static gbak_action open_files(const TEXT* file1,
 			{
 				if (tdgbl->action->act_total >= 2 || fil->fil_next)
 				{
-					BURP_error(266, 0, 0, 0, 0, 0);
+					BURP_error(266, true, 0, 0, 0, 0, 0);
 					// msg 266 standard output is not supported when using split operation
 					flag = QUIT;
 					break;
@@ -1588,11 +1777,8 @@ static gbak_action open_files(const TEXT* file1,
 
 				{
 
-#ifdef SUPERSERVER
-					BURP_svc_error(65, isc_arg_string, fil->fil_name,
+					BURP_error(65, false, isc_arg_string, fil->fil_name,
 								   0, NULL, 0, NULL, 0, NULL, 0, NULL);
-#endif
-					BURP_print(65, fil->fil_name, 0, 0, 0, 0);
 					// msg 65 can't open backup file %s
 					flag = QUIT;
 					break;
@@ -1603,7 +1789,7 @@ static gbak_action open_files(const TEXT* file1,
 			{
 				if (fil->fil_next)
 				{
-					BURP_error(262, fil->fil_name, 0, 0, 0, 0);
+					BURP_error(262, true, fil->fil_name, 0, 0, 0, 0);
 					// msg 262 size specification either missing or incorrect for file %s
 					flag = QUIT;
 					break;
@@ -1616,18 +1802,13 @@ static gbak_action open_files(const TEXT* file1,
 			}
 			if (fil->fil_length < MIN_SPLIT_SIZE)
 			{
-#ifdef SUPERSERVER
-				BURP_svc_error(	271,
+				BURP_error(271, true,
 								isc_arg_number,
 								reinterpret_cast<void*>(fil->fil_length),
 								isc_arg_number,
 								reinterpret_cast<void*>(MIN_SPLIT_SIZE),
 								0, NULL, 0, NULL, 0, NULL);
-#else
-				BURP_error(271, (void*) fil->fil_length,
-						   (void*) (SLONG) MIN_SPLIT_SIZE, 0, 0, 0);
 				// msg file size given (%d) is less than minimum allowed (%d) 
-#endif
 				flag = QUIT;
 				break;
 			}
@@ -1706,21 +1887,24 @@ static gbak_action open_files(const TEXT* file1,
 			INVALID_HANDLE_VALUE)
 #endif
 		{
-			BURP_error(65, fil->fil_name, 0, 0, 0, 0);	// msg 65 can't open backup file %s 
+			BURP_error(65, true, fil->fil_name, 0, 0, 0, 0);
+			// msg 65 can't open backup file %s 
 			return QUIT;
 		}
 
 		if (sw_verbose)
-			BURP_print(100, fil->fil_name, 0, 0, 0, 0);	/* msg 100 opened file
-														   %s */
+			BURP_print(100, fil->fil_name, 0, 0, 0, 0);
+			// msg 100 opened file %s
 		// read and check a header record 
 		tdgbl->action->act_file = fil;
 		int seq = 1;
 		if (MVOL_split_hdr_read() == TRUE) {
 			tdgbl->action->act_action = ACT_restore_join;
-			int total = tdgbl->action->act_total;	// number of files to be join 
+			// number of files to be join 
+			int total = tdgbl->action->act_total;
 			if (fil->fil_seq != seq || seq > total) {
-				BURP_error(263, fil->fil_name, 0, 0, 0, 0);	// msg 263 file %s out of sequence 
+				BURP_error(263, true, fil->fil_name, 0, 0, 0, 0);
+				// msg 263 file %s out of sequence 
 				return QUIT;
 			}
 
@@ -1728,11 +1912,13 @@ static gbak_action open_files(const TEXT* file1,
 				 fil = fil->fil_next, seq++)
 			{
 				if (!fil) {
-					BURP_error(264, 0, 0, 0, 0, 0);	// msg 264 can't join -- one of the files missing 
+					BURP_error(264, true, 0, 0, 0, 0, 0);
+					// msg 264 can't join -- one of the files missing 
 					return QUIT;
 				}
 				if (!strcmp(fil->fil_name, "stdin")) {
-					BURP_error(265, 0, 0, 0, 0, 0);	// msg 265 standard input is not supported when using join operation 
+					BURP_error(265, true, 0, 0, 0, 0, 0);
+					// msg 265 standard input is not supported when using join operation 
 					return QUIT;
 				}
 				tdgbl->action->act_file = fil;
@@ -1745,43 +1931,42 @@ static gbak_action open_files(const TEXT* file1,
 					== INVALID_HANDLE_VALUE)
 #endif
 				{
-#ifdef SUPERSERVER
-					BURP_svc_error(65, isc_arg_string, fil->fil_name,
+					BURP_error(65, false, isc_arg_string, fil->fil_name,
 								   0, NULL, 0, NULL, 0, NULL, 0, NULL);
-#endif
-					BURP_print(65, fil->fil_name, 0, 0, 0, 0);	/* msg 65 can't open
-																   backup file %s */
+					// msg 65 can't open backup file %s
 					return QUIT;
 				}
 
 				if (sw_verbose)
-					BURP_print(100, fil->fil_name, 0, 0, 0, 0);	/* msg 100
-																   opened file
-																   %s */
+					BURP_print(100, fil->fil_name, 0, 0, 0, 0);
+					// msg 100 opened file %s
 				if (MVOL_split_hdr_read() == TRUE) {
 					if ((total != tdgbl->action->act_total) ||
-						(seq != fil->fil_seq) || (seq > total)) {
-						BURP_error(263, fil->fil_name, 0, 0, 0, 0);	// msg 263 file %s out of sequence 
+						(seq != fil->fil_seq) || (seq > total))
+					{
+						BURP_error(263, true, fil->fil_name, 0, 0, 0, 0);
+						// msg 263 file %s out of sequence 
 						return QUIT;
 					}
 				}
 				else {
-					BURP_error(267, fil->fil_name, 0, 0, 0, 0);	// msg 267 backup file %s might be corrupt 
+					BURP_error(267, true, fil->fil_name, 0, 0, 0, 0);
+					// msg 267 backup file %s might be corrupt 
 					return QUIT;
 				}
 			}
 			tdgbl->action->act_file = tdgbl->gbl_sw_files;
 			tdgbl->file_desc = tdgbl->action->act_file->fil_fd;
 			if ((tdgbl->gbl_sw_files = fil) == NULL) {
-				BURP_error(268, 0, 0, 0, 0, 0);	// msg 268 database file specification missing 
+				BURP_error(268, true, 0, 0, 0, 0, 0);
+				// msg 268 database file specification missing 
 				return QUIT;
 			}
 		}
 		else {
-			/* Move pointer to the begining of the file. At this point we
-			   assume -- this is a single backup file because we were
-			   not able to read a split header record.
-			 */
+			// Move pointer to the begining of the file. At this point we
+			// assume -- this is a single backup file because we were
+			// not able to read a split header record.
 #ifdef WIN_NT
 			if (strnicmp(fil->fil_name, "\\\\.\\tape", 8))
 				SetFilePointer(fil->fil_fd, 0, NULL, FILE_BEGIN);
@@ -1796,12 +1981,13 @@ static gbak_action open_files(const TEXT* file1,
 	}
 
 
-/* If we got here, we've opened a backup file, and we're
-   thinking about creating or replacing a database. */
+// If we got here, we've opened a backup file, and we're
+// thinking about creating or replacing a database.
 
 	*file2 = tdgbl->gbl_sw_files->fil_name;
 	if (tdgbl->gbl_sw_files->fil_size_code != size_n)
-		BURP_error(262, *file2, 0, 0, 0, 0);	// msg 262 size specificati on either missing or incorrect for file %s  
+		BURP_error(262, true, *file2, 0, 0, 0, 0);
+	// msg 262 size specificati on either missing or incorrect for file %s  
 
 	if ((sw_replace == IN_SW_BURP_C || sw_replace == IN_SW_BURP_R) &&
 		!isc_attach_database(status_vector,
@@ -1815,7 +2001,7 @@ static gbak_action open_files(const TEXT* file1,
 			if (isc_detach_database(status_vector, &tdgbl->db_handle)) {
 				BURP_print_status(status_vector);
 			}
-			BURP_error(14, *file2, 0, 0, 0, 0);
+			BURP_error(14, true, *file2, 0, 0, 0, 0);
 			// msg 14 database %s already exists.  To replace it, use the -R switch 
 		}
 		else {
@@ -1830,7 +2016,7 @@ static gbak_action open_files(const TEXT* file1,
 				   If it isn't, the database will simply be overwritten. */
 
 				if (status_vector[1] != gds_unavailable)
-					BURP_error(233, *file2, 0, 0, 0, 0);
+					BURP_error(233, true, *file2, 0, 0, 0, 0);
 				// msg 233 Cannot drop database %s, might be in use 
 			}
 		}
@@ -1840,7 +2026,7 @@ static gbak_action open_files(const TEXT* file1,
 		 * then look for error from attach returned due to not owner, if we are
 		 * not owner then return the error status back up
 		 */
-		BURP_error(274, 0, 0, 0, 0, 0);
+		BURP_error(274, true, 0, 0, 0, 0, 0);
 		/* msg # 274 : Cannot restore over current database, must be sysdba
 		   * or owner of the existing database.
 		 */
@@ -1856,7 +2042,8 @@ static gbak_action open_files(const TEXT* file1,
 // check the file size specification 
 	for (fil = tdgbl->gbl_sw_files; fil; fil = fil->fil_next) {
 		if (fil->fil_size_code != size_n)
-			BURP_error(262, fil->fil_name, 0, 0, 0, 0);	// msg 262 size specification either missing or incorrect for file %s  
+			BURP_error(262, true, fil->fil_name, 0, 0, 0, 0);
+			// msg 262 size specification either missing or incorrect for file %s  
 	}
 
 	return RESTORE;
@@ -1964,219 +2151,4 @@ static ULONG get_size( const SCHAR* string, FIL file)
 	file->fil_length = size;
 	return (size);
 }
-
-
-#ifndef SUPERSERVER
-static int api_gbak(int argc,
-					char* argv[],
-					USHORT length,
-					TEXT* password,
-					TEXT* user,
-					TEXT* service,
-					bool restore,
-					bool verbose)
-{
-/**********************************************
- *
- *	a p i _ g b a k
- *
- **********************************************
- *
- * Functional description
- *	Run gbak using services APIs
- *
- **********************************************/
-	ISC_STATUS_ARRAY status;
- 	const char sendbuf[] = { isc_info_svc_line };
-	char respbuf[1024];
-
-	tgbl ldgbl;
-	tgbl* tdgbl = &ldgbl;
-	SET_THREAD_DATA;
-	memset((void *) tdgbl, 0, sizeof(tgbl));
-	tdgbl->output_proc = output_main;
-
-    TEXT *usr, *pswd;
-	if (!user)
-		usr = getenv("ISC_USER");
-	else
-		usr = user;
-
-	if (!password)
-		pswd = getenv("ISC_PASSWORD");
-	else
-		pswd = password;
-
-	char* const spb = (char*) gds__alloc((SLONG) (2 + 2 + ((usr) ? strlen(usr) : 0) +
-									   2 + ((pswd) ? strlen(pswd) : 0)) +
-									   2 + length);
-	/* 'isc_spb_version'
-	   'isc_spb_current_version'
-	   'isc_spb_user_name'
-	   'length'
-	   "usr"
-	   'isc_spb_password'
-	   'length'
-	   "pswd"
-	   'isc_spb_options'
-	   'length'
-	   "options" */
-	if (spb == NULL) {
-		status[0] = isc_arg_gds;
-		status[1] = isc_virmemexh;
-		status[2] = isc_arg_end;
-		BURP_print_status(status);
-		BURP_print(83, 0, 0, 0, 0, 0);	// msg 83 Exiting before completion due to errors 
-		return FINI_ERROR;
-	}
-
-	char* spb_ptr = spb;
-	*spb_ptr++ = isc_spb_version;
-	*spb_ptr++ = isc_spb_current_version;
-
-	if (usr) {
-		*spb_ptr++ = isc_spb_user_name;
-		*spb_ptr++ = strlen(usr);
-		MEMMOVE(usr, spb_ptr, strlen(usr));
-		spb_ptr += strlen(usr);
-		if (user)
-			*user = '\0';
-	}
-
-	if (pswd) {
-		*spb_ptr++ = isc_spb_password;
-		*spb_ptr++ = strlen(pswd);
-		MEMMOVE(pswd, spb_ptr, strlen(pswd));
-		spb_ptr += strlen(pswd);
-		if (password)
-			*password = '\0';
-	}
-
-	char *const svc_name = (char *) gds__alloc((SLONG) (strlen(service) + 1));
-
-	if (svc_name == NULL) {
-		status[0] = isc_arg_gds;
-		status[1] = isc_virmemexh;
-		status[2] = isc_arg_end;
-		BURP_print_status(status);
-		gds__free(spb);
-		BURP_print(83, 0, 0, 0, 0, 0);	// msg 83 Exiting before completion due to errors 
-		return FINI_ERROR;
-	}
-
-	if (service) {
-		strcpy(svc_name, service);
-		*service = '\0';
-	}
-
-
-// Fill command line options 
-
-	*spb_ptr++ = isc_spb_command_line;
-	TEXT **begin = argv;
-	TEXT **end = argv + argc;
-	argv++;
-
-	*spb_ptr++ = length;
-	while (argv < end) {
-		if (**argv && argv > begin + 1)
-			*spb_ptr++ = ' ';
-		for (const TEXT *x = *argv++; *x;)
-			*spb_ptr++ = *x++;
-	}
-
-	USHORT spblen = spb_ptr - spb;
-
-	FRBRD *svc_handle = NULL;
-	if (isc_service_attach(status, 0, svc_name, (&svc_handle), spblen, spb))
-	{
-		BURP_print_status(status);
-		gds__free(spb);
-		gds__free(svc_name);
-		BURP_print(83, 0, 0, 0, 0, 0);
-		// msg 83 Exiting before completion due to errors 
-		return FINI_ERROR;
-	}
-
-	char *const thd = (char *) gds__alloc((SLONG) (2));
-	// 'isc_action_svc_restore/isc_action_svc_backup'
-	// 'isc_spb_verbose'
-
-	if (thd == NULL) {
-		status[0] = isc_arg_gds;
-		status[1] = isc_virmemexh;
-		status[2] = isc_arg_end;
-		BURP_print_status(status);
-		isc_service_detach(status, (&svc_handle));
-		gds__free(spb);
-		gds__free(svc_name);
-		BURP_print(83, 0, 0, 0, 0, 0);
-		// msg 83 Exiting before completion due to errors 
-		return FINI_ERROR;
-	}
-
-	char *thd_ptr = thd;
-	if (restore)
-		*thd_ptr++ = isc_action_svc_restore;
-	else
-		*thd_ptr++ = isc_action_svc_backup;
-
-	if (verbose)
-		*thd_ptr++ = isc_spb_verbose;
-
-	USHORT thdlen = thd_ptr - thd;
-
-	if (isc_service_start(status, (&svc_handle), NULL, thdlen, thd))
-	{
-		BURP_print_status(status);
-		gds__free(spb);
-		gds__free(svc_name);
-		gds__free(thd);
-		isc_service_detach(status, (&svc_handle));
-		BURP_print(83, 0, 0, 0, 0, 0);	// msg 83 Exiting before completion due to errors 
-		return FINI_ERROR;
-	}
-
-	const char *sl;
-	do {
-		if (isc_service_query(status, (&svc_handle), NULL, 0, NULL,
-								sizeof(sendbuf), sendbuf,
-								sizeof(respbuf), respbuf))
-		{
-			BURP_print_status(status);
-			gds__free(spb);
-			gds__free(svc_name);
-			gds__free(thd);
-			isc_service_detach(status, (&svc_handle));
-			BURP_print(83, 0, 0, 0, 0, 0);	// msg 83 Exiting before completion due to errors 
-			return FINI_ERROR;
-		}
-
-		char *p = respbuf;
-		sl = p;
-
-		if (*p++ == isc_info_svc_line)
-		{
-			ISC_USHORT len = (ISC_USHORT) isc_vax_integer(p, sizeof(ISC_USHORT));
-			p += sizeof(ISC_USHORT);
-			if (!len)
-			{
-				if (*p == isc_info_data_not_ready)
-					continue;
-				else if (*p == isc_info_end)
-					break;
-			}
-
-			p[len] = '\0';
-			burp_output("%s\n", p);
-
-			p += len;
-		}
-	} while (*sl == isc_info_svc_line);
-
-	isc_service_detach(status, (&svc_handle));
-	return FINI_OK;
-}
-
-#endif	// !SUPERSERVER
 
