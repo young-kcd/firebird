@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.114 2003-02-11 05:13:34 aafemt Exp $
+dnl $Id: configure.in,v 1.115 2003-02-12 06:09:12 bellardo Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -341,6 +341,7 @@ if test "$ac_cv_func_strcasecmp" = "no" -a "$ac_cv_func_stricmp" = "no"; then
      AC_CHECK_FUNCS(strcasecmp)],, $LIBS)
 fi
 AC_SEARCH_LIBS(dirname,gen)
+AC_CHECK_FUNCS(dirname)
 AC_CHECK_FUNCS(sigaction setitimer)
 AC_CHECK_FUNCS(snprintf)
 AC_FUNC_MMAP 
@@ -371,9 +372,27 @@ AC_C_CONST dnl EKU: we should replace the CONST define in the source!!!
 AC_C_VOLATILE 
 AC_TYPE_SIGNAL
 AC_SYS_LARGEFILE
+if test "$ac_cv_sys_file_offset_bits" = "no"; then
+  AC_MSG_CHECKING(for native large file support)
+  AC_TRY_RUN([#include <unistd.h>
+    main () { 
+    exit(!(sizeof(off_t) == 8));
+  }], [ac_cv_sys_file_offset_bits=64 AC_DEFINE(_FILE_OFFSET_BITS,64) AC_MSG_RESULT(yes)],AC_MSG_RESULT(no))
+fi
+
 AC_CHECK_SIZEOF(void*)
 AC_CHECK_SIZEOF(long)
 AC_CHECK_TYPES([socklen_t,semun])
+if test "$ac_cv_type_semun" = "no"; then
+  AC_MSG_CHECKING(if sem.h defines semun)
+  AC_TRY_COMPILE([#include <sys/types.h>
+      #include <sys/ipc.h>
+      #include <sys/sem.h>],
+  [union semun s;],
+  [ac_cv_type_semun=yes AC_DEFINE(HAVE_SEMUN) AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)])
+fi
+
 AC_CHECK_TYPES([struct XDR::xdr_ops],,,[#include <rpc/rpc.h> 
 #include <rpc/xdr.h>])
 AC_CHECK_TYPES([struct xdr_ops],,,[#include <rpc/rpc.h> 
