@@ -39,15 +39,15 @@ link=${base#*[SK][0-9][0-9]}
 test $link = $base && START_FIREBIRD="yes"
 test "$START_FIREBIRD" = yes || exit 0
 
-INTERBASE=/usr/local/firebird
+FIREBIRD=@prefix@
 FBRunUser=firebird
 
-export INTERBASE
+export FIREBIRD
 
 # Check the file is there and is executable.
-[ -x $INTERBASE/bin/fbmgr ] || exit 5
-[ -x $INTERBASE/bin/fbguard ] || exit 5
-[ -x $INTERBASE/bin/fbserver ] || exit 5
+[ -x $FIREBIRD/bin/fbmgr ] || exit 5
+[ -x $FIREBIRD/bin/fbguard ] || exit 5
+[ -x $FIREBIRD/bin/fbserver ] || exit 5
 
 # Shell functions sourced from /etc/rc.status:
 #      rc_check         check and set local and overall rc status
@@ -86,7 +86,7 @@ case "$1" in
 
 	# NOTE: startproc return 0, even if service is
 	# already running to match LSB spec.
-	startproc -u $FBRunUser $INTERBASE/bin/fbguard -forever
+	startproc -u $FBRunUser $FIREBIRD/bin/fbguard -forever
 
 	# Remember status and be verbose
 	rc_status -v
@@ -104,7 +104,7 @@ case "$1" in
 
 	: ${ISC_USER:=SYSDBA}
 	: ${ISC_PASSWORD:=masterkey}
-        $INTERBASE/bin/fbmgr -shut -user $ISC_USER -password $ISC_PASSWORD  2>/dev/null
+        $FIREBIRD/bin/fbmgr -shut -user $ISC_USER -password $ISC_PASSWORD  2>/dev/null
 	unset ISC_USER
 	unset ISC_PASSWORD
 
@@ -145,7 +145,7 @@ case "$1" in
 	# 3 - service not running
 
 	# NOTE: checkproc returns LSB compliant status values.
-	checkproc $INTERBASE/bin/fbguard
+	checkproc $FIREBIRD/bin/fbguard
 	rc_status -v
 	;;
 
