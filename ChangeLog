@@ -1,3 +1,85 @@
+2003-07-19 08:20  bellardo
+
+	* firebird2/configure.in:
+	
+	Need to create the jrs/os/darwin directory in temp
+
+2003-07-19 08:19  bellardo
+
+	* firebird2/builds/posix/: make.rules, prefix.darwin:
+	
+	More changes to the darwin prefix file
+
+2003-07-19 08:12  bellardo
+
+	* firebird2/builds/posix/Makefile.in.extlib:
+	
+	Fix an error in previous commit where I forgot to include a
+	variable name
+
+2003-07-19 07:52  bellardo
+
+	* firebird2/builds/posix/: Makefile.in.extlib, Makefile.in.intl,
+	Makefile.in.libfbclient, Makefile.in.libfbembed, make.rules,
+	prefix.darwin:
+	
+	Darwin needs full control over some shared library link parameters,
+	so provide it in a way that should be backwards compatible.
+
+2003-07-19 07:02  bellardo
+
+	* firebird2/configure.in:
+	
+	Darwin need to link again CoreFoundation
+
+2003-07-19 06:57  bellardo
+
+	* firebird2/builds/posix/: Makefile.in.boot.gpre,
+	Makefile.in.codes, Makefile.in.embed.lockmgr, Makefile.in.fbserver,
+	Makefile.in.inet_server, Makefile.in.static.gbak,
+	Makefile.in.static.gpre, make.shared.targets, prefix.darwin:
+	
+	Darwin can't handle -L<space>lib_include_dir parameter to linker,
+	so all instances have been changed to -Llib_include_dir.  Also
+	update the darwin platform prefix file.
+
+2003-07-19 06:53  bellardo
+
+	* firebird2/src/jrd/os/darwin/fbsyslog.cpp:
+	
+	file fbsyslog.cpp was initially added on branch B1_5_Release.
+
+2003-07-19 06:53  bellardo
+
+	* firebird2/src/jrd/os/darwin/: config_root.cpp, fbsyslog.cpp,
+	mod_loader.cpp, path_utils.cpp:
+	
+	Update darwin specific OS files.
+
+2003-07-19 06:53  bellardo
+
+	* firebird2/src/jrd/os/darwin/path_utils.cpp:
+	
+	file path_utils.cpp was initially added on branch B1_5_Release.
+
+2003-07-19 06:53  bellardo
+
+	* firebird2/src/jrd/gds.cpp:
+	
+	Darwin specific includes no longer needed.
+
+2003-07-19 06:42  bellardo
+
+	* firebird2/src/jrd/gds.cpp:
+	
+	Add a header needed for DARWIN
+
+2003-07-19 06:23  bellardo
+
+	* firebird2/builds/posix/prefix.darwin:
+	
+	Fix debug build compile flags
+
 2003-07-18 23:41  skidder
 
 	* firebird2/src/lock/lock.cpp:
