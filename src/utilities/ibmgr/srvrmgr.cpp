@@ -20,7 +20,6 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: srvrmgr.cpp,v 1.20 2004-11-30 06:18:39 robocop Exp $
  */
 
 #include "firebird.h"

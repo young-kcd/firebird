@@ -421,7 +421,7 @@ USHORT SERVICES_grant_logon_right(TEXT* account,
 		// Grant the SeServiceLogonRight to users represented by pSid.
 		PrivilegeString.Buffer = L"SeServiceLogonRight";
 		PrivilegeString.Length = (USHORT) 19 * sizeof(WCHAR); // 19 : char len of Buffer
-		PrivilegeString.MaximumLength=(USHORT)(19 + 1) * sizeof(WCHAR);
+		PrivilegeString.MaximumLength = (USHORT)(19 + 1) * sizeof(WCHAR);
 		if ((lsaErr = LsaAddAccountRights(PolicyHandle, pSid, &PrivilegeString, 1))
 			!= (NTSTATUS)0)
 		{

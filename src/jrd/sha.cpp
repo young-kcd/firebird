@@ -70,7 +70,6 @@ void sha_final(unsigned char [SHA_DIGESTSIZE], SHA_INFO *);
  *
  * This code is in the public domain
  *
- * $Id: sha.cpp,v 1.4 2004-11-30 06:18:17 robocop Exp $
  */
 
 /* UNRAVEL should be fastest & biggest */
