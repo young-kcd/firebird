@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-extern void INI_format(const TEXT *);
+extern void INI_format(const TEXT *, TEXT *);
 extern USHORT INI_get_trig_flags(TEXT *);
 extern void INI_init(void);
 extern void INI_init2(void);

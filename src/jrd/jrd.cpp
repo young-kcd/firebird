@@ -359,6 +359,7 @@ typedef struct dpb
 	TEXT*	dpb_working_directory;
 	USHORT	dpb_sql_dialect;
 	USHORT	dpb_set_db_sql_dialect;
+	TEXT*	dpb_set_db_charset;
 } DPB;
 
 static BLB		check_blob(TDBB, STATUS*, BLB*);
@@ -1988,7 +1989,7 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 	if (options.dpb_set_no_reserve)
 		PAG_set_no_reserve(dbb, options.dpb_no_reserve);
 
-	INI_format(attachment->att_user->usr_user_name);
+	INI_format(attachment->att_user->usr_user_name, options.dpb_set_db_charset);
 
 	if (options.dpb_shutdown || options.dpb_online) {
 		/* By releasing the DBB_MUTX_init_fini mutex here, we would be allowing
@@ -4989,7 +4990,7 @@ static void find_intl_charset(TDBB tdbb, ATT attachment, DPB * options)
 
 	if (!options->dpb_lc_ctype || (len = strlen(options->dpb_lc_ctype)) == 0) {
 		/* No declaration of character set, act like 3.x Interbase */
-		attachment->att_charset = CS_NONE;
+		attachment->att_charset = DEFAULT_ATTACHMENT_CHARSET;
 		return;
 	}
 
@@ -5392,10 +5393,14 @@ static void get_options(UCHAR*	dpb,
 			options->dpb_set_db_sql_dialect = (USHORT) get_parameter(&p);
 			break;
 
-                case isc_dpb_set_db_readonly:
-                        options->dpb_set_db_readonly = TRUE;
-                        options->dpb_db_readonly = (SSHORT) get_parameter(&p);
-                        break;
+		case isc_dpb_set_db_readonly:
+			options->dpb_set_db_readonly = TRUE;
+			options->dpb_db_readonly = (SSHORT) get_parameter(&p);
+			break;
+
+		case isc_dpb_set_db_charset:
+			options->dpb_set_db_charset = get_string_parameter (&p, scratch, &buf_size);
+			break;
 
 		default:
 			l = *p++;

@@ -40,7 +40,7 @@
 #define DEFAULT_CHARACTER_SET_NAME	"ISO_8859_1"
 #define NATIONAL_CHARACTER_SET		DEFAULT_CHARACTER_SET_NAME
 
-
+#define DEFAULT_DB_CHARACTER_SET_NAME	"NONE"
 /*
  * Character Set used for system metadata information
  */

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.23 2003-01-19 14:30:23 dimitr Exp $
+$Id: ibase.h,v 1.24 2003-01-23 03:33:53 brodsom Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -1448,6 +1448,7 @@ ISC_STATUS ISC_EXPORT isc_suspend_window(ISC_STATUS ISC_FAR*,
 #define isc_dpb_set_db_sql_dialect        65
 #define isc_dpb_gfix_attach		  66
 #define isc_dpb_gstat_attach		  67
+#define isc_dpb_set_db_charset			68
 
 /*********************************/
 /* isc_dpb_verify specific flags */

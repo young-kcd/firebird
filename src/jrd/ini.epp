@@ -237,7 +237,7 @@ static CONST TRIGMSG FAR_VARIABLE trigger_messages[] =
 
 
 
-void INI_format(const TEXT* owner)
+void INI_format(const TEXT* owner, TEXT* charset)
 {
 /**************************************
  *
@@ -263,6 +263,8 @@ void INI_format(const TEXT* owner)
 	CONST GEN*		generator;
 	TEXT			string[32];
 	TEXT*			p;
+	TEXT			string2[32];
+	TEXT*			p2;
 	BLK				handle1;
 	BLK				handle2;
 
@@ -283,6 +285,18 @@ void INI_format(const TEXT* owner)
 		while ( (*p++ = UPPER7(*owner)) )
 		{
 			++owner;
+		}
+	}
+
+/* Uppercase owner name */
+
+	*string2 = 0;
+	if (charset && *charset)
+	{
+		p2 = string2;
+		while ( (*p++ = UPPER7(*charset)) )
+		{
+			++charset;
 		}
 	}
 
@@ -343,6 +357,15 @@ void INI_format(const TEXT* owner)
 
 	STORE(REQUEST_HANDLE handle1) X IN RDB$DATABASE
 		X.RDB$RELATION_ID = (int) USER_DEF_REL_INIT_ID;
+		X.RDB$CHARACTER_SET_NAME.NULL = TRUE;
+		if (*string2) {
+			PAD ( string2, X.RDB$CHARACTER_SET_NAME); 
+			X.RDB$CHARACTER_SET_NAME.NULL = FALSE;
+		}
+		else {
+			PAD (DEFAULT_DB_CHARACTER_SET_NAME, X.RDB$CHARACTER_SET_NAME);
+			X.RDB$CHARACTER_SET_NAME.NULL = FALSE;
+		}
 	END_STORE
 
 	CMP_release(tdbb, (JRD_REQ)handle1);
