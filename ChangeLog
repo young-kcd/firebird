@@ -1,3 +1,16 @@
+2003-01-10 22:37  skidder
+
+	* firebird2/src/common/classes/: alloc.cpp, alloc.h,
+	class_perf.cpp, class_test.cpp, locks.h, test.sh:
+	
+	Little fixes in MemoryPool implementation
+
+2003-01-10 13:27  dimitr
+
+	* firebird2/src/common/classes/: alloc.cpp, alloc.h:
+	
+	Fixed MemoryPool implementation.
+
 2003-01-09 20:47  skidder
 
 	* firebird2/src/common/classes/: alloc.cpp, alloc.h,
