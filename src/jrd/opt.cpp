@@ -2664,7 +2664,9 @@ static void find_best(TDBB tdbb,
 					  USHORT stream,
 					  USHORT position,
 					  UCHAR * streams,
-					  JRD_NOD plan_node, double cost, double cardinality)
+					  JRD_NOD plan_node,
+					  double cost,
+					  double cardinality)
 {
 /**************************************
  *
@@ -3927,13 +3929,9 @@ static RSB gen_retrieval(TDBB tdbb,
  **************************************/
 
 	IDX *idx;
-	static IDX *idx_walk[MAX_INDICES];
 	JRD_NOD node, opt_boolean;
 	SSHORT i, j, count, position;
-	static SSHORT conjunct_position[MAX_INDICES];
-	static SLONG idx_priority_level[MAX_INDICES];
 	Opt::opt_repeat *tail, *idx_tail, *idx_end;
-	static Opt::opt_repeat *matching_nodes[MAX_INDICES];
 	BOOLEAN full = FALSE;
 	SET_TDBB(tdbb);
 #ifdef DEV_BUILD
@@ -4015,6 +4013,9 @@ static RSB gen_retrieval(TDBB tdbb,
 		   could be calculated via the index; currently we won't detect that case
 		 */
 
+		IDX **idx_walk = FB_NEW(*tdbb->tdbb_default) IDX*[MAX_INDICES];
+		SLONG *idx_priority_level = FB_NEW(*tdbb->tdbb_default) SLONG[MAX_INDICES];
+	
 		for (i = 0, idx = csb_tail->csb_idx; i < csb_tail->csb_indices;
 			 i++, idx = NEXT_IDX(idx->idx_rpt, idx->idx_count)) {
 
@@ -4097,8 +4098,13 @@ static RSB gen_retrieval(TDBB tdbb,
 		SSHORT idx_walk_count =
 			sort_indices_by_priority(csb_tail, idx_walk, idx_priority_level);
 
+		delete[] idx_priority_level;
+
 		/* Walk through the indicies based on earlier calculated count and
 		   when necessary build the index */
+
+		SSHORT *conjunct_position = FB_NEW(*tdbb->tdbb_default) SSHORT[MAX_INDICES];
+		Opt::opt_repeat **matching_nodes = FB_NEW(*tdbb->tdbb_default) Opt::opt_repeat*[MAX_INDICES];
 
 		for (i = 0; i < idx_walk_count; i++) {
 
@@ -4176,6 +4182,11 @@ static RSB gen_retrieval(TDBB tdbb,
 				idx->idx_runtime_flags |= idx_used_with_and;
 			}
 		}
+
+		delete[] conjunct_position;
+		delete[] matching_nodes;
+
+		delete[] idx_walk;
 	}
 
 	if (outer_flag) {
@@ -5163,8 +5174,7 @@ static JRD_NOD make_inference_node(CSB csb, JRD_NOD boolean, JRD_NOD arg1, JRD_N
 }
 
 
-static JRD_NOD make_inversion(TDBB tdbb,
-						  OPT opt, JRD_NOD boolean, USHORT stream)
+static JRD_NOD make_inversion(TDBB tdbb, OPT opt, JRD_NOD boolean, USHORT stream)
 {
 /**************************************
  *
@@ -5181,8 +5191,6 @@ static JRD_NOD make_inversion(TDBB tdbb,
  **************************************/
 
 	IDX *idx;
-	static IDX *idx_walk[MAX_INDICES];
-	static SLONG idx_priority_level[MAX_INDICES];
 	JRD_NOD inversion, inversion2, node;
 	SSHORT i;
 	float compound_selectivity;
@@ -5233,8 +5241,13 @@ static JRD_NOD make_inversion(TDBB tdbb,
 	accept_missing = TRUE;
 	used_in_compound = FALSE;
 	compound_selectivity = 1; /* Real maximum selectivity possible is 1 */
+
+	IDX **idx_walk = FB_NEW(*tdbb->tdbb_default) IDX*[MAX_INDICES];
+	SLONG *idx_priority_level = FB_NEW(*tdbb->tdbb_default) SLONG[MAX_INDICES];
+
 	idx = csb_tail->csb_idx;
 	if (opt->opt_count) {
+
 		for (i = 0; i < csb_tail->csb_indices; i++) {
 
 			idx_walk[i] = idx;
@@ -5284,6 +5297,8 @@ static JRD_NOD make_inversion(TDBB tdbb,
 	SSHORT idx_walk_count =
 		sort_indices_by_priority(csb_tail, idx_walk, idx_priority_level);
 
+	delete[] idx_priority_level;
+
 	accept = TRUE;
 	idx = csb_tail->csb_idx;
 	if (opt->opt_count) {
@@ -5306,6 +5321,8 @@ static JRD_NOD make_inversion(TDBB tdbb,
 			}
 		}
 	}
+
+	delete[] idx_walk;
 
 	if (!inversion)
 		inversion = OPT_make_dbkey(opt, boolean, stream);
@@ -6293,7 +6310,7 @@ static SSHORT sort_indices_by_priority(csb_repeat * csb_tail,
 					   selectivity are always used, because we don't have a clue how useful
 					   they are in fact, so we should be optimistic in this case. Unique
 					   indices are also always used, because they are good by definition,
-					   regardless of their (probably old) selectivity value. */
+					   regardless of their (probably old) selectivity values. */
 			IDX *idx = idx_csb[last_idx];
 			bool should_be_used = true;
 			if (!(idx->idx_flags & idx_unique) && idx->idx_selectivity && !(csb_tail->csb_plan)) {
