@@ -57,6 +57,8 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/jrd_proto.h"
+#include "../common/config/config.h"
+#include "../common/config/dir_list.h"
 
 #include <sys/types.h>
 #ifdef HAVE_SYS_IPC_H
@@ -1734,3 +1736,16 @@ static void share_name_from_unc(
 	strcat(expanded_name, file_name + 2);
 }
 #endif /* WIN_NT */
+
+bool ISC_verify_databases_dirs(TEXT *name) {
+	static class DatabasesDirectoryList : public DirectoryList {
+		virtual const Firebird::string GetConfigString(void) {
+			return Firebird::string(Config::getDatabasesDirs());
+		}
+	} iDatabasesDirectoryList;
+
+	if (!iDatabasesDirectoryList.IsPathInList(name)) {
+		return false;
+	}
+	return true;
+}

@@ -1207,6 +1207,12 @@ static void check_filename( TEXT * name, USHORT l)
 	if (!valid || ISC_check_if_remote(file_name, FALSE))
 		ERR_post(gds_no_meta_update, gds_arg_gds, gds_node_name_err, 0);
 	/* Msg305: A node name is not permitted in a secondary, shadow, or log file name */
+
+	if (!ISC_verify_databases_dirs(name)) {
+		static TEXT *tempdiag = "DatabasesDirs - access denied";
+		ERR_post(gds_no_meta_update, gds_arg_gds, gds_io_error, 
+			gds_arg_string, tempdiag, gds_arg_string, tempdiag, 0);
+	}
 }
 
 

@@ -44,9 +44,9 @@ extern "C" {
 #endif
 
 
-extern STATUS DLL_EXPORT jrd8_attach_database(STATUS *, SSHORT, SCHAR *,
-											  struct att **, SSHORT, SCHAR *,
-											  SCHAR *);
+extern STATUS DLL_EXPORT jrd8_attach_database(STATUS *, SSHORT, TEXT *,
+											  struct att **, SSHORT, UCHAR *,
+											  TEXT *);
 extern STATUS DLL_EXPORT jrd8_blob_info(STATUS *, struct blb **, SSHORT,
 										SCHAR *, SSHORT, SCHAR *);
 extern STATUS DLL_EXPORT jrd8_cancel_blob(STATUS *, struct blb **);
@@ -63,9 +63,9 @@ extern STATUS DLL_EXPORT jrd8_compile_request(STATUS *, struct att **,
 extern STATUS DLL_EXPORT jrd8_create_blob2(STATUS *, struct att **,
 										   struct jrd_tra **, struct blb **,
 										   struct bid *, USHORT, UCHAR *);
-extern STATUS DLL_EXPORT jrd8_create_database(STATUS *, USHORT, UCHAR *,
+extern STATUS DLL_EXPORT jrd8_create_database(STATUS *, USHORT, TEXT *,
 											  struct att **, USHORT, UCHAR *,
-											  USHORT, UCHAR *);
+											  USHORT, TEXT *);
 extern STATUS DLL_EXPORT jrd8_database_info(STATUS *, struct att **, SSHORT,
 											SCHAR *, SSHORT, SCHAR *);
 extern STATUS DLL_EXPORT jrd8_ddl(STATUS *, struct att **, struct jrd_tra **,
