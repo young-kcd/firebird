@@ -2057,7 +2057,13 @@ void DLL_EXPORT CMP_decrement_prc_use_count(TDBB tdbb, JRD_PRC procedure)
 
 	DEV_BLKCHK(procedure, type_prc);
 
-	assert(procedure->prc_use_count > 0);
+	/* Actually, it's possible for procedures to have intermixed dependencies, so
+	   this routine can be called for the procedure which is being freed itself.
+	   Hence we should just silently ignore such a situation. */
+
+//	assert(procedure->prc_use_count > 0); -- commented out by dimitr, 2003.01.30
+	if (!procedure->prc_use_count)
+		return;
 
 	if (procedure->prc_int_use_count > 0) procedure->prc_int_use_count--;
 	
