@@ -862,7 +862,7 @@ USHORT CVT2_make_string2(DSC * desc,
 		varying = (VARY *) desc->dsc_address;
 		from_buf = reinterpret_cast<UCHAR*>(varying->vary_string);
 		from_len =
-			MIN(varying->vary_length, desc->dsc_length - sizeof(SSHORT));
+			MIN(varying->vary_length, (USHORT) (desc->dsc_length - sizeof(SSHORT)));
 		from_interp = INTL_TTYPE(desc);
 	}
 

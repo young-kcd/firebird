@@ -1161,7 +1161,7 @@ USHORT CVT_get_string_ptr(DSC * desc,
 			varying = (VARY *) desc->dsc_address;
 			*address = reinterpret_cast<UCHAR*>(varying->vary_string);
 			return MIN(varying->vary_length,
-					   desc->dsc_length - sizeof(USHORT));
+					   (USHORT) (desc->dsc_length - sizeof(USHORT)));
 		}
 	}
 
@@ -1298,7 +1298,7 @@ USHORT CVT_make_string(DSC*          desc,
 		if (desc->dsc_dtype == dtype_varying) {
 			varying = (VARY *) desc->dsc_address;
 			*address = varying->vary_string;
-			return MIN(varying->vary_length, from_len - sizeof(USHORT));
+			return MIN(varying->vary_length, (USHORT) (from_len - sizeof(USHORT)));
 		}
 	}
 
@@ -2147,7 +2147,7 @@ static void float_to_text(DSC * from, DSC * to, FPTR_VOID err)
 	char temp[] = "-1.234567890123456E-300";
 
 	to_len = DSC_string_length(to);
-	width = MIN(to_len, sizeof(temp) - 1);
+	width = MIN(to_len, (int) sizeof(temp) - 1);
 
 	if (dtype_double == from->dsc_dtype) {
 		precision = 16;			/* minimum significant digits in a double */

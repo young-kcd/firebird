@@ -1022,7 +1022,7 @@ static bool add_shadow( TDBB tdbb, SSHORT phase, DFW work, JRD_TRA transaction)
 				if (!shadow)
 					BUGCHECK(203);	/* msg 203 shadow block not found for extend file */
 
-				min_page = MAX((min_page + 1), Y.RDB$FILE_START);
+				min_page = MAX((min_page + 1), (ULONG) Y.RDB$FILE_START);
 				add_sequence =
 					SDW_add_file(Y.RDB$FILE_NAME,
 								 min_page,
@@ -4170,7 +4170,7 @@ static void put_summary_record(BLB		blob,
 	TDBB tdbb = GET_THREAD_DATA;
 	UCHAR temp[129];
 
-	UCHAR* buffer = (length + 1 > sizeof(temp)) ?
+	UCHAR* buffer = (length + 1 > (SSHORT) sizeof(temp)) ?
 		(UCHAR *) gds__alloc((SLONG) (length + 1)) : temp;
 
 	UCHAR* p = buffer;
