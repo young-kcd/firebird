@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin,v 1.8.2.1 2003-07-19 04:23:02 bellardo Exp $
+#$Id: prefix.darwin,v 1.8.2.2 2003-07-19 04:57:38 bellardo Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 OS_ServerFiles=inet_server.cpp
@@ -29,3 +29,4 @@ EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec
 CLIENT_UTIL_TARGETS=gds_drop gds_delay gstat gsec fbguard fbmgr_bin
 
 Physical_IO_Module=unix.cpp
+PLATFORM_PATH := jrd/os/darwin

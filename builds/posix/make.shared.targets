@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: make.shared.targets,v 1.13 2003-07-08 01:05:22 brodsom Exp $
+#  $Id: make.shared.targets,v 1.13.2.1 2003-07-19 04:57:38 bellardo Exp $
 #
 
 
@@ -88,7 +88,7 @@ $(SRC_ROOT)/include/gen/blrtable.h: $(BLRTABLE)
 	$(BLRTABLE) > $(SRC_ROOT)/include/gen/blrtable.h
 
 $(BLRTABLE): $(BLRTABLE_Objects)
-	$(CXX) $(LINK_OPTS) $(BLRTABLE_Objects) -o $@ -L $(LIB) -lfbcommon $(LINK_LIBS)
+	$(CXX) $(LINK_OPTS) $(BLRTABLE_Objects) -o $@ -L$(LIB) -lfbcommon $(LINK_LIBS)
 
 # Adding resources as prerequisite for some files
 

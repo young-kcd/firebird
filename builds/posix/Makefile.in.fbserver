@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.fbserver,v 1.11 2003-06-06 09:31:48 alexpeshkoff Exp $
+#  $Id: Makefile.in.fbserver,v 1.11.2.1 2003-07-19 04:57:38 bellardo Exp $
 #
 ROOT=..
 ObjModuleName=fbserver
@@ -60,7 +60,7 @@ Dependencies = $(AllObjects:.o=.d)
 fbserver : $(FB_SUPER_SERVER)
 
 $(FB_SUPER_SERVER):	$(SERVER_Objects) $(IPSERVER_Objects) -lfbserver
-	$(LD) $(LINK_OPTS) $^ -o $@ -L $(LIB) $(LIB_GUI) $(LINK_LIBS) 
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LIB_GUI) $(LINK_LIBS) 
 #	$(CHMOD_S7) $@
 
 #$(LIB)/libalice.a \
