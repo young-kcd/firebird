@@ -3321,7 +3321,7 @@ static void get_trigger_dependencies( DeferredWork* work)
 		}
 		else
 		{
-			JrdMemoryPool::deletePool(tdbb->getDefaultPool());
+			JrdMemoryPool::deletePool(new_pool);
 		}
 	}
 }
