@@ -1,3 +1,114 @@
+2003-10-15 18:16  alexpeshkoff
+
+	*
+	firebird2/src/install/arch-specific/linux/super/postinstall.sh.in:
+	
+	Fixed problem with overwritten hosts.equiv file during SS install
+
+2003-10-15 17:28  alexpeshkoff
+
+	* firebird2/src/: common/classes/array.h,
+	common/config/dir_list.cpp, common/config/dir_list.h,
+	jrd/ExecuteStatement.cpp, jrd/ExecuteStatement.h,
+	jrd/os/posix/fbsyslog.cpp, jrd/os/win32/fbsyslog.cpp,
+	jrd/os/win32/thd_priority.cpp, jrd/os/fbsyslog.h,
+	jrd/os/thd_priority.h, burp/std_desc.h:
+	
+	Applied IDPL instead of IPL to files, created by me
+
+2003-10-15 16:47  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.extlib,
+	Makefile.in.firebird:
+	
+	fixed bug with server hangs on some UDFs in fbudf
+
+2003-10-15 16:43  brodsom
+
+	* firebird2/src/gpre/sql.cpp:
+	
+	Style
+
+2003-10-15 14:47  brodsom
+
+	* firebird2/builds/win32/: make_all.bat, make_boot.bat,
+	run_all.bat:
+	
+	Exit from build process if msdev returns errorlevel 1
+
+2003-10-15 13:09  alexpeshkoff
+
+	* firebird2/configure.in:
+	
+	changes required for SS install scripts
+
+2003-10-15 11:26  alexpeshkoff
+
+	* firebird2/src/install/arch-specific/linux/super/:
+	makeInstallImage.sh.in, postinstall.sh.in, preinstall.sh.in,
+	preuninstall.sh.in, rpmfiles.txt.in:
+	
+	SS install scripts
+
+2003-10-15 11:19  alexpeshkoff
+
+	*
+	
+	Use common SYSDBA password change script for both CS & SS
+	firebird2/src/install/arch-specific/linux/super/SSchangePasswd.sh.i
+	n:
+
+2003-10-15 11:07  alexpeshkoff
+
+	*
+	
+	file firebird.init.d.gentoo.in was initially added on branch
+	B1_5_Release.
+	firebird2/src/install/arch-specific/linux/misc/firebird.init.d.gent
+	oo.in:
+
+2003-10-15 11:07  alexpeshkoff
+
+	* firebird2/src/install/arch-specific/linux/misc/:
+	changeDBAPassword.sh.in, firebird.init.d.debian.in,
+	firebird.init.d.generic.in, firebird.init.d.gentoo.in,
+	firebird.init.d.mandrake.in, firebird.init.d.suse.in:
+	
+	SS install scripts
+
+2003-10-15 11:07  alexpeshkoff
+
+	*
+	
+	file firebird.init.d.debian.in was initially added on branch
+	B1_5_Release.
+	firebird2/src/install/arch-specific/linux/misc/firebird.init.d.debi
+	an.in:
+
+2003-10-15 03:18  brodsom
+
+	* firebird2/src/gpre/: c_cxx.cpp, cmd.cpp, cme.cpp, cmp.cpp,
+	exp.cpp, ftn.cpp, gpre.cpp, gpre.h, gpre_meta.epp,
+	gpre_meta_boot.cpp, hsh.cpp, jrdmet.cpp, msc.cpp, par.cpp, sqe.cpp,
+	sql.cpp:
+	
+	Macro cleaning
+
+2003-10-15 00:21  brodsom
+
+	* firebird2/src/: gpre/ada.cpp, gpre/c_cxx.cpp, gpre/cmd.cpp,
+	gpre/cmd_proto.h, gpre/cme.cpp, gpre/cmp.cpp, gpre/cob.cpp,
+	gpre/dyntable.cpp, gpre/exp.cpp, gpre/ftn.cpp, gpre/gpre.cpp,
+	gpre/gpre.h, gpre/gpre_meta.epp, gpre/gpre_meta_boot.cpp,
+	gpre/hsh.cpp, gpre/int.cpp, gpre/int_cxx.cpp, gpre/jrdmet.cpp,
+	gpre/par.cpp, gpre/parse.h, gpre/pas.cpp, gpre/pat.cpp, gpre/pat.h,
+	gpre/sqe.cpp, gpre/sql.cpp, gpre/words.h, dsql/alld.cpp,
+	dsql/ddl.cpp, dsql/dsql.cpp, dsql/dsql.h, dsql/errd.cpp,
+	dsql/gen.cpp, dsql/hsh.cpp, dsql/make.cpp, dsql/metd.epp,
+	dsql/parse.cpp, dsql/parse.y, dsql/pass1.cpp:
+	
+	Macro cleaning
+
 2003-10-14 15:09  eku
 
 	* firebird2/: configure.in, builds/make.new/config/config.h.in,
