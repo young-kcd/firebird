@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbclient,v 1.26 2004-12-28 21:12:47 skidder Exp $
+#  $Id: Makefile.in.libfbclient,v 1.27 2005-01-13 07:28:32 aafemt Exp $
 #
 ROOT=..
 ObjModuleType=superclient
@@ -95,6 +95,7 @@ FBCLIENT_Objects =  $(JRD_ClientObjects) \
 					$(FBCLASSES_ClientObjects)\
 					$(OS_SPECIFIC_Objects)\
 					$(FBCONFIG_Objects) \
+					$(CLUMPLETS_Objects) \
 					$(SMD_Objects)
 
 
