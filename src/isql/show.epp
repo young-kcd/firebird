@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.26 2003-11-08 16:32:06 brodsom Exp $
+ * $Id: show.epp,v 1.27 2003-11-10 09:47:28 robocop Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -328,7 +328,8 @@ bool SHOW_dbb_parameters(FRBRD* db_handle,
 
 	ISC_STATUS_ARRAY status_vector;
 	if (isc_database_info(status_vector, &db_handle, item_length,
-						  db_items, sizeof(buffer), buffer)) {
+						  db_items, BUFFER_LENGTH128, buffer))
+	{
         ISQL_errmsg(status_vector);
         ISQL_FREE (buffer);
         ISQL_FREE (msg);
