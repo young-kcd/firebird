@@ -41,6 +41,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "../jrd/common.h"
+#include "../jrd/os/thd_priority.h"
 #include <stdarg.h>
 #ifndef	WIN_NT
 #ifdef HAVE_UNISTD_H
@@ -775,7 +776,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 	dbb->dbb_attachments = attachment;
 	dbb->dbb_flags &= ~DBB_being_opened;
 	dbb->dbb_sys_trans->tra_attachment = attachment;
-	tdbb->tdbb_quantum = QUANTUM;
+	tdbb->tdbb_quantum = (THPS_BOOSTDONE() ? 5 : 1) * QUANTUM;
 	tdbb->tdbb_request = NULL;
 	tdbb->tdbb_transaction = NULL;
 	tdbb->tdbb_inhibit = 0;
@@ -4448,7 +4449,7 @@ BOOLEAN JRD_reschedule(TDBB tdbb, SLONG quantum, BOOLEAN punt)
 	}
 
 	tdbb->tdbb_quantum = (tdbb->tdbb_quantum <= 0) ?
-		((quantum) ? quantum : QUANTUM) : tdbb->tdbb_quantum;
+		((quantum) ? quantum : (THPS_BOOSTDONE() ? 5 : 1) * QUANTUM) : tdbb->tdbb_quantum;
 
 	return FALSE;
 }
