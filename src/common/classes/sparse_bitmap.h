@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: sparse_bitmap.h,v 1.5 2004-10-04 08:14:44 robocop Exp $
+ *  $Id: sparse_bitmap.h,v 1.6 2004-10-05 07:03:26 hvlad Exp $
  *
  */
 
@@ -60,7 +60,7 @@ class SparseBitmap : public AutoStorage {
 public:
 	// Default constructor, stack placement
 	SparseBitmap() : 
-		singular(false), singular_value(0), tree(&getPool()) 
+		singular(false), singular_value(0), tree(&getPool()), defaultAccessor(this)
 	{ }
 
 	// Pooled constructor
@@ -764,4 +764,3 @@ SparseBitmap<T, InternalTypes>::bit_and(
 } // namespace Firebird
 
 #endif
-
