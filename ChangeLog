@@ -1,3 +1,22 @@
+2003-08-16 15:14  arnobrinkman
+
+	* firebird2/src/dsql/parse.y:
+	
+	added comment
+
+2003-08-16 02:37  arnobrinkman
+
+	* firebird2/src/dsql/parse.cpp:
+	
+	latest versions
+
+2003-08-16 02:36  arnobrinkman
+
+	* firebird2/src/dsql/: parse.y, pass1.cpp:
+	
+	Fixed ambiguous columnname problems with derived tables.  Added
+	support for unnamed derived tables.
+
 2003-08-15 16:39  arnobrinkman
 
 	* firebird2/src/dsql/parse.cpp:
