@@ -1,3 +1,22 @@
+2004-09-30 19:45  skidder
+
+	* firebird2/src/jrd/: blb.cpp (1.89), blb.h (1.19):
+	
+	Use slightly more hairy BID structure to work correctly on Sparc,
+	PPC and other RISC platforms
+
+2004-09-30 18:30  skidder
+
+	* firebird2/configure.in (1.204):
+	
+	Correctly build on non-x86 SuSE linux
+
+2004-09-30 16:35  hvlad
+
+	* firebird2/src/jrd/vio.cpp (1.112):
+	
+	Fix errors after RecordBitmap introduced
+
 2004-09-29 23:58  arnobrinkman
 
 	* firebird2/src/common/classes/sparse_bitmap.h (1.3):
