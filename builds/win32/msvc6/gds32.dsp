@@ -128,5 +128,9 @@ SOURCE=.\gds32_debug.def
 
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 # End Group
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\isc_version.rc
+# End Source File
 # End Target
 # End Project
