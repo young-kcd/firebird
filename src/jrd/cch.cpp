@@ -1256,9 +1256,9 @@ void CCH_fini(thread_db* tdbb)
 			/* Dispose off any associated latching semaphores */
 			while (QUE_NOT_EMPTY(bcb->bcb_free_lwt)) 
 			{
-				QUE que = bcb->bcb_free_lwt.que_forward;
-				QUE_DELETE((*que));
-				LatchWait* lwt = (LatchWait*) BLOCK(que, LatchWait*, lwt_waiters);
+				QUE que_inst = bcb->bcb_free_lwt.que_forward;
+				QUE_DELETE((*que_inst));
+				LatchWait* lwt = (LatchWait*) BLOCK(que_inst, LatchWait*, lwt_waiters);
 				ISC_event_fini(&lwt->lwt_event);
 			}
 #endif
@@ -3421,15 +3421,15 @@ static void check_precedence(thread_db* tdbb, WIN * window, SLONG page)
 	QUE mod_que = &bcb->bcb_rpt[page % bcb->bcb_count].bcb_page_mod;
 
 	BufferDesc* high = 0;
-	QUE que;
-	for (que = mod_que->que_forward; que != mod_que; que = que->que_forward) {
-		if ((high = BLOCK(que, BufferDesc*, bdb_que))->bdb_page == page) {
+	QUE que_inst;
+	for (que_inst = mod_que->que_forward; que_inst != mod_que; que_inst = que_inst->que_forward) {
+		if ((high = BLOCK(que_inst, BufferDesc*, bdb_que))->bdb_page == page) {
 			break;
 		}
 	}
 
 	BCB_MUTEX_RELEASE;
-	if (que == mod_que) {
+	if (que_inst == mod_que) {
 		PRE_MUTEX_RELEASE;
 		return;
 	}
@@ -3534,8 +3534,8 @@ static void clear_precedence(Database* dbb, BufferDesc* bdb)
    by all means down grade them. */
 
 	while (QUE_NOT_EMPTY(bdb->bdb_lower)) {
-		QUE que = bdb->bdb_lower.que_forward;
-		Precedence* precedence = BLOCK(que, Precedence*, pre_lower);
+		QUE que_inst = bdb->bdb_lower.que_forward;
+		Precedence* precedence = BLOCK(que_inst, Precedence*, pre_lower);
 		BufferDesc* low_bdb = precedence->pre_low;
 		QUE_DELETE(precedence->pre_higher);
 		QUE_DELETE(precedence->pre_lower);
@@ -3648,11 +3648,11 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 	}
 
 /* If there are higher precedence guys, see if they can be written. */
-	QUE que;
-	for (que = bdb->bdb_higher.que_forward; que != &bdb->bdb_higher;
-		 que = que->que_forward)
+	QUE que_inst;
+	for (que_inst = bdb->bdb_higher.que_forward; que_inst != &bdb->bdb_higher;
+		 que_inst = que_inst->que_forward)
 	{
-		Precedence* precedence = BLOCK(que, Precedence*, pre_higher);
+		Precedence* precedence = BLOCK(que_inst, Precedence*, pre_higher);
 		if (precedence->pre_flags & PRE_cleared)
 			continue;
 		if (invalid) {
@@ -3668,7 +3668,7 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 			if (blocking_bdb->bdb_flags & BDB_not_valid) {
 				invalid = true;
 				in_use = false;
-				que = bdb->bdb_higher.que_forward;
+				que_inst = bdb->bdb_higher.que_forward;
 			}
 		}
 	}
@@ -3709,10 +3709,10 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
    precedence links as cleared.  Somebody else will clean up the precedence
    blocks. */
 
-	for (que = bdb->bdb_lower.que_forward; que != &bdb->bdb_lower;
-		 que = que->que_forward)
+	for (que_inst = bdb->bdb_lower.que_forward; que_inst != &bdb->bdb_lower;
+		 que_inst = que_inst->que_forward)
 	{
-		Precedence* precedence = BLOCK(que, Precedence*, pre_lower);
+		Precedence* precedence = BLOCK(que_inst, Precedence*, pre_lower);
 		BufferDesc* blocking_bdb = precedence->pre_low;
 		if (bdb->bdb_flags & BDB_not_valid)
 			blocking_bdb->bdb_flags |= BDB_not_valid;
@@ -3818,12 +3818,12 @@ static void expand_buffers(thread_db* tdbb, ULONG number)
 	{
 		new_tail->bcb_bdb = old_tail->bcb_bdb;
 		while (QUE_NOT_EMPTY(old_tail->bcb_page_mod)) {
-			QUE que = old_tail->bcb_page_mod.que_forward;
-			BufferDesc* bdb = BLOCK(que, BufferDesc*, bdb_que);
-			QUE_DELETE((*que));
+			QUE que_inst = old_tail->bcb_page_mod.que_forward;
+			BufferDesc* bdb = BLOCK(que_inst, BufferDesc*, bdb_que);
+			QUE_DELETE((*que_inst));
 			QUE mod_que =
 				&new_block->bcb_rpt[bdb->bdb_page % new_block->bcb_count].bcb_page_mod;
-			QUE_INSERT((*mod_que), (*que));
+			QUE_INSERT((*mod_que), (*que_inst));
 		}
 	}
 
@@ -3892,7 +3892,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, SLONG page, LATCH latch, SSHORT l
  *
  **************************************/
 	// CVC: Those two vars are tricky or nonsense to put in minimal scope.
-	QUE que;
+	QUE que_inst;
 	BufferControl* bcb;
 
 	SET_TDBB(tdbb);
@@ -3909,10 +3909,10 @@ static BufferDesc* get_buffer(thread_db* tdbb, SLONG page, LATCH latch, SSHORT l
 			/* Check to see if buffer has already been assigned to page */
 
 			QUE mod_que = &bcb->bcb_rpt[page % bcb->bcb_count].bcb_page_mod;
-			for (que = mod_que->que_forward; que != mod_que;
-				 que = que->que_forward) 
+			for (que_inst = mod_que->que_forward; que_inst != mod_que;
+				 que_inst = que_inst->que_forward) 
 			{
-				BufferDesc* bdb = BLOCK(que, BufferDesc*, bdb_que);
+				BufferDesc* bdb = BLOCK(que_inst, BufferDesc*, bdb_que);
 				if (bdb->bdb_page == page) {
 #ifdef SUPERSERVER_V2
 					if (page != HEADER_PAGE)
@@ -3943,10 +3943,10 @@ static BufferDesc* get_buffer(thread_db* tdbb, SLONG page, LATCH latch, SSHORT l
 
 			THREAD_EXIT;
 
-			for (que = bcb->bcb_in_use.que_backward;
-				 que != &bcb->bcb_in_use; que = que->que_backward)
+			for (que_inst = bcb->bcb_in_use.que_backward;
+				 que_inst != &bcb->bcb_in_use; que_inst = que_inst->que_backward)
 			{
-				BufferDesc* bdb = BLOCK(que, BufferDesc*, bdb_in_use);
+				BufferDesc* bdb = BLOCK(que_inst, BufferDesc*, bdb_in_use);
 				if (page == FREE_PAGE) {
 					if (bdb->bdb_use_count ||
 						bdb->bdb_flags & BDB_free_pending)
@@ -3979,9 +3979,9 @@ static BufferDesc* get_buffer(thread_db* tdbb, SLONG page, LATCH latch, SSHORT l
 		}
 #endif
 
-		for (que = bcb->bcb_in_use.que_backward;
-			 que != &bcb->bcb_in_use || QUE_NOT_EMPTY(bcb->bcb_empty);
-			 que = que->que_backward)
+		for (que_inst = bcb->bcb_in_use.que_backward;
+			 que_inst != &bcb->bcb_in_use || QUE_NOT_EMPTY(bcb->bcb_empty);
+			 que_inst = que_inst->que_backward)
 		{
 			bcb = dbb->dbb_bcb;	/* Re-initialize in the loop */
 			QUE mod_que = &bcb->bcb_rpt[page % bcb->bcb_count].bcb_page_mod;
@@ -3989,11 +3989,11 @@ static BufferDesc* get_buffer(thread_db* tdbb, SLONG page, LATCH latch, SSHORT l
 			/* If there is an empty buffer sitting around, allocate it */
 
 			if (QUE_NOT_EMPTY(bcb->bcb_empty)) {
-				que = bcb->bcb_empty.que_forward;
-				QUE_DELETE((*que));
-				BufferDesc* bdb = BLOCK(que, BufferDesc*, bdb_que);
+				que_inst = bcb->bcb_empty.que_forward;
+				QUE_DELETE((*que_inst));
+				BufferDesc* bdb = BLOCK(que_inst, BufferDesc*, bdb_que);
 				if (page >= 0) {
-					QUE_INSERT((*mod_que), (*que));
+					QUE_INSERT((*mod_que), (*que_inst));
 #ifdef SUPERSERVER_V2
 					/* Reserve a buffer for header page with deferred header
 					   page write mechanism. Otherwise, a deadlock will occur
@@ -4011,7 +4011,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, SLONG page, LATCH latch, SSHORT l
 				   clear though how the bdb_use_count can get < 0 for a bdb
 				   in bcb_empty queue */
 				if (bdb->bdb_use_count < 0) {
-					cache_bugcheck(301);	/* msg 301 Non-zero use_count of a buffer in the empty que */
+					cache_bugcheck(301);	/* msg 301 Non-zero use_count of a buffer in the empty que_inst */
 				}
 
 				bdb->bdb_page = page;
@@ -4042,7 +4042,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, SLONG page, LATCH latch, SSHORT l
 				cache_bugcheck(213);	/* msg 213 insufficient cache size */
 			}
 
-			BufferDesc* oldest = BLOCK(que, BufferDesc*, bdb_in_use);
+			BufferDesc* oldest = BLOCK(que_inst, BufferDesc*, bdb_in_use);
 			LATCH_MUTEX_ACQUIRE;
 			if (oldest->bdb_use_count
 				|| (oldest->bdb_flags & BDB_free_pending)
@@ -4058,7 +4058,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, SLONG page, LATCH latch, SSHORT l
 
 			if (oldest->bdb_flags & BDB_prefetch) {
 				oldest->bdb_flags &= ~BDB_prefetch;
-				que = que->que_forward;
+				que_inst = que_inst->que_forward;
 				QUE_MOST_RECENTLY_USED(oldest->bdb_in_use);
 				LATCH_MUTEX_RELEASE;
 				continue;
@@ -4158,7 +4158,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, SLONG page, LATCH latch, SSHORT l
 			break;
 		}
 
-		if (que == &bcb->bcb_in_use) {
+		if (que_inst == &bcb->bcb_in_use) {
 #ifdef SUPERSERVER
 			expand_buffers(tdbb, bcb->bcb_count + 75);
 #else
@@ -4352,9 +4352,9 @@ static SSHORT latch_bdb(
 
 	LatchWait* lwt;
 	if (QUE_NOT_EMPTY(bcb->bcb_free_lwt)) {
-		QUE que = bcb->bcb_free_lwt.que_forward;
-		QUE_DELETE((*que));
-		lwt = (LatchWait*) BLOCK(que, LatchWait*, lwt_waiters);
+		QUE que_inst = bcb->bcb_free_lwt.que_forward;
+		QUE_DELETE((*que_inst));
+		lwt = (LatchWait*) BLOCK(que_inst, LatchWait*, lwt_waiters);
 	}
 	else {
 		lwt = FB_NEW(*dbb->dbb_bufferpool) LatchWait;
@@ -4996,12 +4996,12 @@ static SSHORT related(const BufferDesc* low, const BufferDesc* high, SSHORT limi
  **************************************/
 	const struct que* base = &low->bdb_higher;
 
-	for (const struct que* que = base->que_forward; que != base; que = que->que_forward)
+	for (const struct que* que_inst = base->que_forward; que_inst != base; que_inst = que_inst->que_forward)
 	{
 		if (!--limit) {
 			return PRE_UNKNOWN;
 		}
-		const Precedence* precedence = BLOCK(que, Precedence*, pre_higher);
+		const Precedence* precedence = BLOCK(que_inst, Precedence*, pre_higher);
 		if (!(precedence->pre_flags & PRE_cleared)) {
 			if (precedence->pre_hi == high) {
 				return PRE_EXISTS;
@@ -5123,11 +5123,11 @@ static void release_bdb(
 
 	bool granted = false;
 
-	for (QUE que = wait_que->que_forward; que != wait_que; que = que->que_forward)
+	for (QUE que_inst = wait_que->que_forward; que_inst != wait_que; que_inst = que_inst->que_forward)
 	{
 		/* Note that this loop assumes that requests for LATCH_io and LATCH_mark
 		   are queued before LATCH_shared and LATCH_exclusive. */
-		LatchWait* lwt = BLOCK(que, LatchWait*, lwt_waiters);
+		LatchWait* lwt = BLOCK(que_inst, LatchWait*, lwt_waiters);
 		if (lwt->lwt_flags & LWT_pending) {
 			switch (lwt->lwt_latch) {
 			case LATCH_exclusive:
@@ -5382,8 +5382,8 @@ static int write_buffer(
 
 	while (QUE_NOT_EMPTY(bdb->bdb_higher)) {
 		BufferControl* bcb = dbb->dbb_bcb;		/* Re-initialize in the loop */
-		QUE que = bdb->bdb_higher.que_forward;
-		Precedence* precedence = BLOCK(que, Precedence*, pre_higher);
+		QUE que_inst = bdb->bdb_higher.que_forward;
+		Precedence* precedence = BLOCK(que_inst, Precedence*, pre_higher);
 		if (precedence->pre_flags & PRE_cleared) {
 			QUE_DELETE(precedence->pre_higher);
 			QUE_DELETE(precedence->pre_lower);

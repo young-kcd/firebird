@@ -4907,7 +4907,7 @@ static rem_port* analyze_service(TEXT* service_name,
 
 static bool batch_dsql_fetch(trdb*	trdb,
 							 rem_port*	port,
-							 rmtque*	que,
+							 rmtque*	que_inst,
 							 ISC_STATUS*	user_status,
 							 USHORT		id)
 {
@@ -4935,13 +4935,13 @@ static bool batch_dsql_fetch(trdb*	trdb,
  **************************************/
 
 	fb_assert(port);
-	fb_assert(que);
+	fb_assert(que_inst);
 	fb_assert(user_status);
 
-	fb_assert(que->rmtque_function == batch_dsql_fetch);
+	fb_assert(que_inst->rmtque_function == batch_dsql_fetch);
 
-	RDB     rdb       = que->rmtque_rdb;
-	RSR     statement = static_cast<rsr*>(que->rmtque_parm);
+	RDB     rdb       = que_inst->rmtque_rdb;
+	RSR     statement = static_cast<rsr*>(que_inst->rmtque_parm);
 	PACKET* packet    = &rdb->rdb_packet;
 
 	fb_assert(port == rdb->rdb_port);
@@ -5066,7 +5066,7 @@ static bool batch_dsql_fetch(trdb*	trdb,
 
 static bool batch_gds_receive(trdb*		trdb,
 							  rem_port*		port,
-							  rmtque*	que,
+							  rmtque*	que_inst,
 							  ISC_STATUS*	user_status,
 							  USHORT		id)
 {
@@ -5094,13 +5094,13 @@ static bool batch_gds_receive(trdb*		trdb,
  **************************************/
 
 	fb_assert(port);
-	fb_assert(que);
+	fb_assert(que_inst);
 	fb_assert(user_status);
-	fb_assert(que->rmtque_function == batch_gds_receive);
+	fb_assert(que_inst->rmtque_function == batch_gds_receive);
 
-	RDB rdb = que->rmtque_rdb;
-	rrq* request = static_cast<rrq*>(que->rmtque_parm);
-	rrq::rrq_repeat* tail = que->rmtque_message;
+	RDB rdb = que_inst->rmtque_rdb;
+	rrq* request = static_cast<rrq*>(que_inst->rmtque_parm);
+	rrq::rrq_repeat* tail = que_inst->rmtque_message;
 	PACKET *packet = &rdb->rdb_packet;
 
 	fb_assert(port == rdb->rdb_port);
@@ -6361,11 +6361,11 @@ static bool receive_queued_packet(struct trdb*	trdb,
 
 /* Grab first queue entry */
 
-	RMTQUE que = port->port_receive_rmtque;
+	RMTQUE que_inst = port->port_receive_rmtque;
 
 /* Receive the data */
 
-	bool result = (que->rmtque_function) (trdb, port, que, user_status, id);
+	bool result = (que_inst->rmtque_function) (trdb, port, que_inst, user_status, id);
 
 /* Note: it is the rmtque_function's responsibility to dequeue the request */
 
@@ -6388,15 +6388,15 @@ static void enqueue_receive(rem_port* port,
  * Functional description
  *
  **************************************/
-	RMTQUE que = (RMTQUE) ALLOC(type_rmtque);
+	RMTQUE que_inst = (RMTQUE) ALLOC(type_rmtque);
 
 /* Prepare a queue entry */
 
-	que->rmtque_next = NULL;
-	que->rmtque_function = fn;
-	que->rmtque_parm = parm;
-	que->rmtque_message = parm1;
-	que->rmtque_rdb = rdb;
+	que_inst->rmtque_next = NULL;
+	que_inst->rmtque_function = fn;
+	que_inst->rmtque_parm = parm;
+	que_inst->rmtque_message = parm1;
+	que_inst->rmtque_rdb = rdb;
 
 /* Walk to the end of the current queue */
 	RMTQUE* queptr;
@@ -6406,7 +6406,7 @@ static void enqueue_receive(rem_port* port,
 
 /* Add the new entry to the end of the queue */
 
-	*queptr = que;
+	*queptr = que_inst;
 }
 
 
@@ -6424,13 +6424,13 @@ static void dequeue_receive( rem_port* port)
 
 /* Grab first queue entry & de-queue it*/
 
-	RMTQUE que = port->port_receive_rmtque;
-	port->port_receive_rmtque = que->rmtque_next;
-	que->rmtque_next = NULL;
+	RMTQUE que_inst = port->port_receive_rmtque;
+	port->port_receive_rmtque = que_inst->rmtque_next;
+	que_inst->rmtque_next = NULL;
 
 /* Add queue entry onto free queue */
 
-	ALLR_free(que);
+	ALLR_free(que_inst);
 }
 
 

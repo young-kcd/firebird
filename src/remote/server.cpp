@@ -687,7 +687,7 @@ static ISC_STATUS allocate_statement( rem_port* port, P_RLSE * allocate, PACKET*
 
 
 #ifdef MULTI_THREAD
-static SLONG append_request_chain( SERVER_REQ request, SERVER_REQ * que)
+static SLONG append_request_chain( SERVER_REQ request, SERVER_REQ * que_inst)
 {
 /**************************************
  *
@@ -703,15 +703,15 @@ static SLONG append_request_chain( SERVER_REQ request, SERVER_REQ * que)
  **************************************/
 	SLONG requests;
 
-	for (requests = 1; *que; que = &(*que)->req_chain)
+	for (requests = 1; *que_inst; que_inst = &(*que_inst)->req_chain)
 		++requests;
 
-	*que = request;
+	*que_inst = request;
 
 	return requests;
 }
 
-static SLONG append_request_next( SERVER_REQ request, SERVER_REQ * que)
+static SLONG append_request_next( SERVER_REQ request, SERVER_REQ * que_inst)
 {
 /**************************************
  *
@@ -727,10 +727,10 @@ static SLONG append_request_next( SERVER_REQ request, SERVER_REQ * que)
  **************************************/
 	SLONG requests;
 
-	for (requests = 1; *que; que = &(*que)->req_next)
+	for (requests = 1; *que_inst; que_inst = &(*que_inst)->req_next)
 		++requests;
 
-	*que = request;
+	*que_inst = request;
 
 	return requests;
 }

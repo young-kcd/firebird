@@ -328,7 +328,7 @@ int DBG_precedence(void)
  * Functional description
  *
  **************************************/
-	QUE que;
+	QUE que_inst;
 	Precedence* precedence;
 	BufferDesc* hi_bdb;
 	BufferDesc* lo_bdb;
@@ -369,10 +369,10 @@ int DBG_precedence(void)
 			fprintf(dbg_file, "\n");
 			if (QUE_NOT_EMPTY(bdb->bdb_higher)) {
 				fprintf(dbg_file, "\tdirect higher precedence pages:");
-				for (que = bdb->bdb_higher.que_forward;
-					 que != &bdb->bdb_higher; que = que->que_forward)
+				for (que_inst = bdb->bdb_higher.que_forward;
+					 que_inst != &bdb->bdb_higher; que_inst = que_inst->que_forward)
 				{
-					precedence = BLOCK(que, Precedence*, pre_higher);
+					precedence = BLOCK(que_inst, Precedence*, pre_higher);
 					hi_bdb = precedence->pre_hi;
 					fprintf(dbg_file, " %"SLONGFORMAT"", hi_bdb->bdb_page);
 					if (precedence->pre_flags & PRE_cleared)
@@ -382,10 +382,10 @@ int DBG_precedence(void)
 			}
 			if (QUE_NOT_EMPTY(bdb->bdb_lower)) {
 				fprintf(dbg_file, "\tdirect lower precedence pages:");
-				for (que = bdb->bdb_lower.que_forward; que != &bdb->bdb_lower;
-					 que = que->que_forward)
+				for (que_inst = bdb->bdb_lower.que_forward; que_inst != &bdb->bdb_lower;
+					 que_inst = que_inst->que_forward)
 				{
-					precedence = BLOCK(que, Precedence*, pre_lower);
+					precedence = BLOCK(que_inst, Precedence*, pre_lower);
 					lo_bdb = precedence->pre_low;
 					fprintf(dbg_file, " %"SLONGFORMAT"", lo_bdb->bdb_page);
 					if (precedence->pre_flags & PRE_cleared)
@@ -1156,7 +1156,7 @@ static int prt_fields(SCHAR * block, int *fields)
 }
 
 
-static int prt_que(SCHAR * string, QUE que)
+static int prt_que(SCHAR * string, QUE que_inst)
 {
 /**************************************
  *
@@ -1165,11 +1165,11 @@ static int prt_que(SCHAR * string, QUE que)
  **************************************
  *
  * Functional description
- *	Print a formatted que entry.
+ *	Print a formatted que_inst entry.
  *
  **************************************/
 	fprintf(dbg_file, "\t%X %s forward: %X, backward: %X\n",
-			   que, string, que->que_forward, que->que_backward);
+			   que_inst, string, que_inst->que_forward, que_inst->que_backward);
 	return TRUE;
 }
 
