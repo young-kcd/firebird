@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.60 2002-11-04 13:57:08 eku Exp $
+dnl $Id: configure.in,v 1.61 2002-11-05 01:39:05 nmcc Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -34,6 +34,7 @@ case "$target" in
 *-*-netbsd*)      MAKEFILE_PREFIX=netbsd  ; PLATFORM=NETBSD    ; AC_DEFINE(NETBSD) ;;
 *-*-hpux*)        MAKEFILE_PREFIX=hpux    ; PLATFORM=hpux      ; AC_DEFINE(hpux) ;;
 i386-pc-solaris*) MAKEFILE_PREFIX=solx86  ; PLATFORM=solx86    ; AC_DEFINE(solx86) ;;
+sparc-sun-solaris*) MAKEFILE_PREFIX=solaris  ; PLATFORM=SOLARIS    ; AC_DEFINE(SOLARIS) ;;
 i*-sni-sysv4)     MAKEFILE_PREFIX=sinixz  ; PLATFORM="SINIX-Z" ; AC_DEFINE(SINIXZ) ;;
 esac
 
