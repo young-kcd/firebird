@@ -41,7 +41,7 @@ const bool SecurityDatabase::is_cached = true;
 const bool SecurityDatabase::is_cached = false;
 #endif
 
-/* BLR to search database for user name record */
+// BLR to search database for user name record
 
 const UCHAR SecurityDatabase::PWD_REQUEST[256] = {
 	blr_version5,
@@ -89,7 +89,7 @@ const UCHAR SecurityDatabase::PWD_REQUEST[256] = {
 	blr_eoc
 };
 
-/* Transaction parameter buffer */
+// Transaction parameter buffer
 
 const UCHAR SecurityDatabase::TPB[4] = {
 	isc_tpb_version1,
@@ -98,41 +98,15 @@ const UCHAR SecurityDatabase::TPB[4] = {
 	isc_tpb_wait
 };
 
-/* Static instance of the database */
+// Static instance of the database
 
 SecurityDatabase SecurityDatabase::instance;
 
 
 /******************************************************************************
  *
- *	Constructor & destructor
- */
-
-SecurityDatabase::SecurityDatabase()
-	: lookup_db(0), lookup_req(0), counter(0) 
-{
-	THD_MUTEX_INIT(&mutex);
-}
-
-SecurityDatabase::~SecurityDatabase()
-{
-	THD_MUTEX_DESTROY(&mutex);
-}
-
-/******************************************************************************
- *
  *	Private interface
  */
-
-void SecurityDatabase::lock()
-{
-	THD_MUTEX_LOCK(&mutex);
-}
-
-void SecurityDatabase::unlock()
-{
-	THD_MUTEX_UNLOCK(&mutex);
-}
 
 void SecurityDatabase::fini()
 {
@@ -158,7 +132,7 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 	TEXT uname[129];		// user name buffer
 	user_record user;		// user record
 
-	/* Start by clearing the output data */
+	// Start by clearing the output data
 
 	if (uid)
 		*uid = 0;
@@ -169,7 +143,7 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 
 	strncpy(uname, user_name, 129);
 
-	/* Attach database and compile request */
+	// Attach database and compile request
 
 	if (!prepare())
 	{
@@ -181,7 +155,7 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 		ERR_post(gds_psw_attach, 0);
 	}
 
-	/* Lookup */
+	// Lookup
 
 	isc_tr_handle lookup_trans = 0;
 
@@ -227,16 +201,13 @@ bool SecurityDatabase::prepare()
 	SCHAR dpb_buffer[256];
 	SSHORT dpb_len;
 
-	/* dimitr: access to the class members in this routine should be synchronized
-			   when fine grained locking will be implemented for the SS architecture */
-
 	if (lookup_db)
 	{
 		THREAD_EXIT;
 		return true;
 	}
 
-	/* Register as internal database handle */
+	// Register as internal database handle
 
 	for (ihandle = internal_db_handles; ihandle; ihandle = ihandle->ihndl_next)
 	{
@@ -259,17 +230,18 @@ bool SecurityDatabase::prepare()
 
 	lookup_db = lookup_req = 0;
 
-	/* initialize the data base's name */
+	// Initialize the database name
 
 	getPath(user_info_name);
 
-	/* Perhaps build up a dpb */
+	// Perhaps build up a dpb
 
 	dpb = dpb_buffer;
 
 	*dpb++ = gds_dpb_version1;
 
-	// insert username
+	// Insert username
+
 	static const char szAuthenticator[] = "authenticator";
 	const size_t nAuthNameLen = strlen(szAuthenticator);
 	*dpb++ = gds_dpb_user_name;
@@ -277,7 +249,8 @@ bool SecurityDatabase::prepare()
 	memcpy(dpb, szAuthenticator, nAuthNameLen);
 	dpb += nAuthNameLen;
 
-	// insert password
+	// Insert password
+
 	static const char szPassword[] = "none";
 	const size_t nPswdLen = strlen(szPassword);
 	*dpb++ = gds_dpb_password;
@@ -295,8 +268,8 @@ bool SecurityDatabase::prepare()
 
 	if (status[1] == gds_login)
 	{
-		/* we may be going against a V3 database which does not
-		 * understand this combination */
+		// We may be going against a V3 database which does not
+		// understand this combination
 
 		isc_attach_database(status, 0, user_info_name, &lookup_db, 0, 0);
 	}
@@ -343,7 +316,6 @@ void SecurityDatabase::verifyUser(TEXT* name,
 								  int* gid,
 								  int* node_id)
 {
-	bool found;
 	TEXT *p, *q, pw1[33], pw2[33], pwt[33];
 
 	if (user_name)
@@ -355,24 +327,22 @@ void SecurityDatabase::verifyUser(TEXT* name,
 		*p = 0;
 	}
 
-	/* Look up the user name in the userinfo database and use the parameters
-	   found there.  This means that another database must be accessed, and
-	   that means the current context must be saved and restored. */
+#ifndef EMBEDDED
 
-#ifdef EMBEDDED
-	return;
-#else
+	// Look up the user name in the userinfo database and use the parameters
+	// found there. This means that another database must be accessed, and
+	// that means the current context must be saved and restored.
+
 	THREAD_EXIT;
-	instance.lock();
+	instance.mutex.aquire();
 	THREAD_ENTER;
-	found = instance.lookup_user(name, uid, gid, pw1);
-	instance.unlock();
-#endif
+	bool found = instance.lookup_user(name, uid, gid, pw1);
+	instance.mutex.release();
 
-	/* Punt if the user has specified neither a raw nor an encrypted password,
-	   or if the user has specified both a raw and an encrypted password, 
-	   or if the user name specified was not in the password database
-	   (or if there was no password database - it's still not found) */
+	// Punt if the user has specified neither a raw nor an encrypted password,
+	// or if the user has specified both a raw and an encrypted password, 
+	// or if the user name specified was not in the password database
+	// (or if there was no password database - it's still not found)
 
 	if ((!password && !password_enc) || (password && password_enc) || !found)
 	{
@@ -387,6 +357,8 @@ void SecurityDatabase::verifyUser(TEXT* name,
 	if (strncmp(pw1, pw2 + 2, 11)) {
 		ERR_post(gds_login, 0);
 	}
+
+#endif
 
 	*node_id = 0;
 }

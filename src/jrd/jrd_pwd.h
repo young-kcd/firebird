@@ -28,6 +28,7 @@
 #define JRD_PWD_H
 
 #include "../jrd/ibase.h"
+#include "../jrd/smp_impl.h"
 #include "../jrd/thd.h"
 
 #define MAX_PASSWORD_ENC_LENGTH 12
@@ -49,14 +50,12 @@ public:
 	static void shutdown();
 	static void verifyUser(TEXT*, TEXT*, TEXT*, TEXT*, int*, int*, int*);
 
-	~SecurityDatabase();
-
 private:
 
 	static const UCHAR PWD_REQUEST[256];
 	static const UCHAR TPB[4];
 
-	MUTX_T mutex;
+	V4Mutex mutex;
 
 	ISC_STATUS_ARRAY status;
 
@@ -67,9 +66,6 @@ private:
 
 	int counter;
 
-	void lock();
-	void unlock();
-
 	void fini();
 	void init();
 	bool lookup_user(TEXT*, int*, int*, TEXT*);
@@ -77,7 +73,7 @@ private:
 
 	static SecurityDatabase instance;
 
-	SecurityDatabase();
+	SecurityDatabase() {}
 };
 
 #ifdef VMS
