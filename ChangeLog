@@ -1,3 +1,98 @@
+2003-10-09 20:06  brodsom
+
+	* firebird2/builds/win32/run_all.bat:
+	
+	Correction
+
+2003-10-09 19:48  brodsom
+
+	* firebird2/builds/win32/run_all.bat:
+	
+	Test if firebird is set and ask for it if not
+
+2003-10-09 18:47  alexpeshkoff
+
+	*
+	
+	file firebird.init.d.generic.in was initially added on branch
+	B1_5_Release.
+	firebird2/src/install/arch-specific/linux/misc/firebird.init.d.gene
+	ric.in:
+
+2003-10-09 18:47  alexpeshkoff
+
+	*
+	
+	file rc.config.firebird.in was initially added on branch
+	B1_5_Release.
+	firebird2/src/install/arch-specific/linux/misc/rc.config.firebird.i
+	n:
+
+2003-10-09 18:47  alexpeshkoff
+
+	*
+	
+	file firebird.init.d.suse.in was initially added on branch
+	B1_5_Release.
+	firebird2/src/install/arch-specific/linux/misc/firebird.init.d.suse
+	.in:
+
+2003-10-09 18:47  alexpeshkoff
+
+	*
+	
+	file firebird.init.d.mandrake.in was initially added on branch
+	B1_5_Release.
+	firebird2/src/install/arch-specific/linux/misc/firebird.init.d.mand
+	rake.in:
+
+2003-10-09 18:45  alexpeshkoff
+
+	* firebird2/: configure.in,
+	src/install/arch-specific/linux/super/makeInstallImage.sh.in,
+	src/install/arch-specific/linux/super/postinstall.sh.in,
+	src/install/arch-specific/linux/super/postuninstall.sh.in,
+	src/install/arch-specific/linux/super/preuninstall.sh.in,
+	src/install/arch-specific/linux/super/tarinstall.sh.in,
+	src/install/arch-specific/linux/misc/firebird.init.d.generic.in,
+	src/install/arch-specific/linux/misc/firebird.init.d.mandrake.in,
+	src/install/arch-specific/linux/misc/firebird.init.d.suse.in,
+	src/install/arch-specific/linux/misc/firebird.initd.in,
+	src/install/arch-specific/linux/misc/rc.config.firebird.in:
+	
+	Next step to correct SS install
+
+2003-10-09 15:10  alexpeshkoff
+
+	* firebird2/src/utilities/: ibmgr.cpp, srvrmgr.cpp:
+	
+	renamed ibmgr => fbmgr
+
+2003-10-09 11:35  dimitr
+
+	* firebird2/src/extlib/fbudf/fbudf.sql:
+	
+	Backported Claudio's fix.
+
+2003-10-09 05:54  robocop
+
+	* firebird2/src/extlib/fbudf/fbudf.sql:
+	
+	Fix script for SF bug #819224 => Change the comment, too.
+
+2003-10-09 05:38  robocop
+
+	* firebird2/src/extlib/fbudf/fbudf.sql:
+	
+	Fix script for SF bug #819224
+
+2003-10-09 04:02  brodsom
+
+	* firebird2/src/: jrd/btr.cpp, jrd/btr.h, jrd/dmp.cpp, jrd/jrd.cpp,
+	jrd/nav.cpp, jrd/rec.cpp, jrd/val.cpp, journal/rebuild.epp:
+	
+	Macro cleaning
+
 2003-10-08 15:03  dimitr
 
 	* firebird2/src/jrd/pag.cpp:
