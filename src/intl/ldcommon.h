@@ -47,6 +47,7 @@ typedef USHORT UNICODE;
 #define ERR_assert				/* nothing */
 #define assert(ex)				/* nothing */
 #else
+#include <stdlib.h> /* prototype for abort() */
 #define ERR_assert	LD_assert
 #define assert(ex)	{if (!(ex)){(void) LD_assert (__FILE__, __LINE__); abort();}}
 extern void LD_assert(const SCHAR*, int);
