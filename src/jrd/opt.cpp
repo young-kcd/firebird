@@ -3827,8 +3827,9 @@ static RSB gen_retrieval(TDBB tdbb,
 			   any of them are computable using this index */
 			clear_bounds(opt, idx);
 			tail = opt->opt_rpt;
-			if (outer_flag)
+			if (outer_flag) {
 				tail += opt->opt_count;
+			}
 			for (; tail < opt_end; tail++) {
 				if (tail->opt_flags & opt_matched)
 					continue;
@@ -3937,7 +3938,11 @@ static RSB gen_retrieval(TDBB tdbb,
 
 			j = 0;
 			clear_bounds(opt, idx);
-			for (tail = opt->opt_rpt; tail < opt_end; tail++) {
+			tail = opt->opt_rpt;
+			if (outer_flag) {
+				tail += opt->opt_count;
+			}
+			for (; tail < opt_end; tail++) {
 			/* Test if this conjunction is available for this index. */
 				if (!(tail->opt_flags & opt_matched)) {
 					/* Setting opt_lower and/or opt_upper values */
