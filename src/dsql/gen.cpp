@@ -2694,8 +2694,17 @@ static void gen_sort( dsql_req* request, dsql_nod* list)
 	for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end;
 		ptr++)
 	{
-		if ((*ptr)->nod_arg[e_order_nulls])
-			stuff(request, blr_nullsfirst);
+		dsql_nod* nulls_placement = (*ptr)->nod_arg[e_order_nulls];
+		if (nulls_placement) {
+			switch ((SLONG)nulls_placement->nod_arg[0]) {
+				case NOD_NULLS_FIRST:
+					stuff(request, blr_nullsfirst);
+					break;
+				case NOD_NULLS_LAST:
+					stuff(request, blr_nullslast);
+					break;
+			}
+		}
 		if ((*ptr)->nod_arg[e_order_flag])
 			stuff(request, blr_descending);
 		else

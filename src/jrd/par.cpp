@@ -2192,8 +2192,11 @@ static JRD_NOD par_sort(TDBB tdbb, CSB csb, BOOLEAN flag)
 			if (code == blr_nullsfirst) {
 				*ptr3++ = (JRD_NOD) (SLONG) TRUE;
 				code = BLR_BYTE;
-			} else
+			} else {
+				if (code == blr_nullslast)
+					code = BLR_BYTE;
 				*ptr3++ = (JRD_NOD) (SLONG) FALSE;
+			}
 			  
 			*ptr2++ =
 				(JRD_NOD) (SLONG) ((code == blr_descending) ? TRUE : FALSE);

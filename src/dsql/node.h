@@ -375,6 +375,9 @@ enum nod_flags_vals {
 	NOD_READ				= 4,
 	NOD_WRITE				= 8,
 
+	NOD_NULLS_FIRST			= 1,
+	NOD_NULLS_LAST			= 2,
+
 	REF_ACTION_CASCADE		= 1,
 	REF_ACTION_SET_DEFAULT	= 2,
 	REF_ACTION_SET_NULL		= 4,

@@ -2886,9 +2886,9 @@ order_direction	: ASC
 		;
 
 nulls_placement : FIRST
-			{ $$ = make_node (nod_flag, 0, NULL); }
+			{ $$ = MAKE_constant((dsql_str*) NOD_NULLS_FIRST, CONSTANT_SLONG); }
 		| LAST
-			{ $$ = 0; }
+			{ $$ = MAKE_constant((dsql_str*) NOD_NULLS_LAST, CONSTANT_SLONG); }
 		;
 
 nulls_clause : NULLS begin_first nulls_placement end_first
