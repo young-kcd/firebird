@@ -50,7 +50,7 @@
 
 @echo.
 @echo Completed Preparations for build
-@echo    You may now run make_boot.bat
+@echo    You may now run make_boot.bat [DEBUG] [CLEAN]
 @echo.
 
 @goto :END
