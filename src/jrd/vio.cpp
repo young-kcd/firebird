@@ -481,7 +481,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 			("VIO_chase_record_version (record_param %"SLONGFORMAT", transaction %"
 			 SLONGFORMAT", pool %p)\n",
 			 rpb->rpb_number, transaction ? transaction->tra_number : 0,
-			 pool );
+			 (void*) pool);
 	}
 	if (debug_flag > DEBUG_TRACE_ALL_INFO) {
 		printf
@@ -1043,7 +1043,7 @@ void VIO_data(thread_db* tdbb, record_param* rpb, BLK pool)
 	{
 		printf("VIO_data (record_param %"SLONGFORMAT", pool %p)\n",
 					rpb->rpb_number,
-					pool);
+					(void*) pool);
 	}
 	if (debug_flag > DEBUG_READS_INFO)
 	{
@@ -1698,7 +1698,7 @@ bool VIO_get(thread_db* tdbb, record_param* rpb, RecordSource* rsb, jrd_tra* tra
 		printf("VIO_get (record_param %"SLONGFORMAT", transaction %"SLONGFORMAT
 				  ", pool %p)\n",
 				  rpb->rpb_number, transaction ? transaction->tra_number : 0,
-				  pool);
+				  (void*) pool);
 	}
 #endif
 
@@ -1770,7 +1770,7 @@ bool VIO_get_current(
 		printf("VIO_get_current (record_param %"SLONGFORMAT", transaction %"
 				  SLONGFORMAT", pool %p)\n",
 				  rpb->rpb_number, transaction ? transaction->tra_number : 0,
-				  pool );
+				  (void*) pool);
 	}
 #endif
 
@@ -2417,7 +2417,7 @@ bool VIO_next_record(thread_db* tdbb,
 		printf("VIO_next_record (record_param %"SLONGFORMAT", transaction %"
 				  SLONGFORMAT", pool %p)\n",
 				  rpb->rpb_number, transaction ? transaction->tra_number : 0,
-				  pool);
+				  (void*) pool);
 	}
 	if (debug_flag > DEBUG_TRACE_INFO) {
 		printf
@@ -2482,7 +2482,7 @@ Record* VIO_record(thread_db* tdbb, record_param* rpb, const Format* format,
 	if (debug_flag > DEBUG_TRACE) {
 		printf("VIO_record (record_param %"SLONGFORMAT", format %d, pool %p)\n",
 				  rpb->rpb_number, format ? format->fmt_version : 0,
-				  pool);
+				  (void*) pool);
 	}
 #endif
 
@@ -3224,7 +3224,7 @@ static void delete_record(thread_db* tdbb, record_param* rpb, SLONG prior_page, 
 	if (debug_flag > DEBUG_WRITES) {
 		printf("delete_record (record_param %"SLONGFORMAT", prior_page %ld, pool %p)\n",
 				  rpb->rpb_number, prior_page,
-				  pool);
+				  (void*) pool);
 	}
 	if (debug_flag > DEBUG_WRITES_INFO) {
 		printf
@@ -4033,7 +4033,7 @@ static int prepare_update(	thread_db*		tdbb,
 			 ":%d, prior %p\n",
 			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
-			 rpb->rpb_f_page, rpb->rpb_f_line, rpb->rpb_prior);
+			 rpb->rpb_f_page, rpb->rpb_f_line, (void*) rpb->rpb_prior);
 	}
 #endif
 
@@ -4522,7 +4522,7 @@ static void replace_record(thread_db*		tdbb,
 			 ":%d, prior %p\n",
 			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
-			 rpb->rpb_f_page, rpb->rpb_f_line, rpb->rpb_prior);
+			 rpb->rpb_f_page, rpb->rpb_f_line, (void*) rpb->rpb_prior);
 	}
 #endif
 

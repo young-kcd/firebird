@@ -1843,7 +1843,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	TEXT s[64];
 
 	TEXT* p = buffer;
-	p += sprintf(p, "%p ", node);
+	p += sprintf(p, "%p ", (void*) node);
 
 	if (column) {
 		USHORT l = column * 3;
