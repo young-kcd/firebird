@@ -63,6 +63,7 @@
  * 2003.01.15 Dmitry Yemanov: Added support for runtime trigger action checks.
  * 2003.02.10 Mike Nordell  : Undefined Microsoft introduced macros to get a clean compile.
  * 2003.05.24 Nickolay Samofatov: Make SKIP and FIRST non-reserved keywords
+ * 2003.06.13 Nickolay Samofatov: Make INSERTING/UPDATING/DELETING non-reserved keywords
  */
 
 #if defined(DEV_BUILD) && defined(WIN_NT) && defined(SUPERSERVER)
@@ -202,11 +203,13 @@ struct LexerState {
 	TEXT	*last_token_bk, *line_start_bk;
 	SSHORT	lines, att_charset;
 	SSHORT	lines_bk;
+	int  prev_keyword;
 	USHORT	param_number;
 	/* Fields to handle FIRST/SKIP as non-reserved keywords */
-	bool after_select; /* Check this to detect SKIP/FIRST occurence after SELECT */
 	bool limit_clause; /* We are inside of limit clause. Need to detect SKIP after FIRST */
 	bool first_detection; /* Detect FIRST unconditionally */
+	/* Fields to handle INSERTING/UPDATING/DELETING as non-reserved keywords */
+	bool brace_analysis; /* When this is true lexer is informed not to swallow braces around INSERTING/UPDATING/DELETING */
 	
 	int yylex (
 		USHORT	client_dialect,
@@ -495,6 +498,12 @@ static struct LexerState lex;
 %token INSERTING
 %token UPDATING
 %token DELETING
+%token RELEASE
+/* Special pseudo-tokens introduced to handle case 
+	when our grammar is not LARL(1) */
+%token KW_INSERTING
+%token KW_UPDATING
+%token KW_DELETING
 
 /* precedence declarations for expression evaluation */
 
@@ -2051,9 +2060,6 @@ keyword_or_column	: valid_symbol_name
 		| CURRENT_TRANSACTION
 		| ROW_COUNT
 		| SAVEPOINT
-		| INSERTING
-		| UPDATING
-		| DELETING
 		;
 
 col_opt		: ALTER
@@ -3278,16 +3284,39 @@ Update...set column = expr, without qualifier for the column. */
 
 /* boolean expressions */
 
-search_condition : predicate
+search_condition : trigger_action_predicate
+		| NOT trigger_action_predicate
+			{ $$ = make_node (nod_not, 1, $2); }
+		| simple_search_condition
 		| search_condition OR search_condition
 			{ $$ = make_node (nod_or, 2, $1, $3); }
 		| search_condition AND search_condition
 			{ $$ = make_node (nod_and, 2, $1, $3); }
-		| NOT search_condition
-			{ $$ = make_node (nod_not, 1, $2); }
 		;
 
-predicate	: comparison_predicate
+bracable_search_condition : simple_search_condition
+		| NOT trigger_action_predicate
+			{ $$ = make_node (nod_not, 1, $2); }
+		| bracable_search_condition OR search_condition
+			{ $$ = make_node (nod_or, 2, $1, $3); }
+		| bracable_search_condition AND search_condition
+			{ $$ = make_node (nod_and, 2, $1, $3); }
+		/* Special cases. Need help from lexer to parse the grammar */
+		/*| special_trigger_action_predicate -- handled by lexer */
+		| special_trigger_action_predicate OR search_condition
+			{ $$ = make_node (nod_or, 2, $1, $3); }
+		| special_trigger_action_predicate AND search_condition
+			{ $$ = make_node (nod_and, 2, $1, $3); }			
+		;
+
+simple_search_condition : predicate
+		| '(' bracable_search_condition ')'
+			{ $$ = $2; }
+		| NOT simple_search_condition
+			{ $$ = make_node (nod_not, 1, $2); }
+		;
+		
+predicate : comparison_predicate
 		| between_predicate
 		| like_predicate
 		| in_predicate
@@ -3296,11 +3325,7 @@ predicate	: comparison_predicate
 		| exists_predicate
 		| containing_predicate
 		| starting_predicate
-		| unique_predicate
-		| trigger_action_predicate
-		| '(' search_condition ')'
-			{ $$ = $2; }
-		;
+		| unique_predicate;
 
 
 /* comparisons */
@@ -3438,6 +3463,22 @@ trigger_action_predicate	: INSERTING
 						MAKE_constant ((STR) 3, CONSTANT_SLONG)); }
 	;
 
+special_trigger_action_predicate	: KW_INSERTING
+		{ $$ = make_node (nod_eql, 2,
+					make_node (nod_internal_info, e_internal_info_count,
+						MAKE_constant ((STR) internal_trigger_action, CONSTANT_SLONG)),
+						MAKE_constant ((STR) 1, CONSTANT_SLONG)); }
+	| KW_UPDATING
+		{ $$ = make_node (nod_eql, 2,
+					make_node (nod_internal_info, e_internal_info_count,
+						MAKE_constant ((STR) internal_trigger_action, CONSTANT_SLONG)),
+						MAKE_constant ((STR) 2, CONSTANT_SLONG)); }
+	| KW_DELETING
+		{ $$ = make_node (nod_eql, 2,
+					make_node (nod_internal_info, e_internal_info_count,
+						MAKE_constant ((STR) internal_trigger_action, CONSTANT_SLONG)),
+						MAKE_constant ((STR) 3, CONSTANT_SLONG)); }
+	;
 
 /* set values */
 
@@ -3997,6 +4038,10 @@ non_reserved_word :
 	| NULLS
 	| STATEMENT
 	| USING
+    | INSERTING
+    | UPDATING
+    | DELETING
+/*  | FIRST | SKIP -- this is handled by the lexer. */
 	;
 
 %%
@@ -4063,9 +4108,10 @@ void LEX_string (
     lex.line_start_bk = lex.line_start;
     lex.lines_bk = lex.lines;
 	lex.param_number = 1;
-	lex.after_select = false;
+	lex.prev_keyword = -1;
 	lex.limit_clause = false;	
 	lex.first_detection = false;
+	lex.brace_analysis = false;
 #ifdef DEV_BUILD
     if (DSQL_debug & 32)
         printf("%.*s\n", (int)length, string);
@@ -4540,7 +4586,9 @@ inline static int yylex (
     USHORT	parser_version,
     BOOLEAN	*stmt_ambiguous)
 {
-	return lex.yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
+	int temp = lex.yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
+	lex.prev_keyword = temp;
+	return temp;
 }
 
 int LexerState::yylex (
@@ -4569,8 +4617,6 @@ SSHORT	c;
 USHORT	buffer_len;
 
 STR	delimited_id_str;
-bool was_after_select = after_select;
-after_select = false;
 
 /* Find end of white space and skip comments */
 
@@ -4933,6 +4979,35 @@ if (tok_class & CHR_LETTER)
     CHECK_BOUND(p);
     *p = 0;
     sym = HSHD_lookup (NULL_PTR, (TEXT *) string, (SSHORT)(p - string), SYM_keyword, parser_version);
+    if (sym)
+	{
+	/* 13 June 2003. Nickolay Samofatov
+	 * Detect INSERTING/UPDATING/DELETING as non-reserved keywords.
+	 * We need to help parser from lexer because our grammar is not LARL(1) in this case
+	 */
+		if (prev_keyword == '(' && !brace_analysis &&
+			(sym->sym_keyword == INSERTING ||
+			 sym->sym_keyword == UPDATING ||
+			 sym->sym_keyword == DELETING
+			)) 
+		{			
+			LexerState savedState = lex;
+			int nextToken = yylex(client_dialect,db_dialect,parser_version,stmt_ambiguous);
+			lex = savedState;
+			if (nextToken==OR || nextToken==AND) {
+				switch(sym->sym_keyword) {
+				case INSERTING:
+					yylval = (DSQL_NOD) sym->sym_object;
+					return KW_INSERTING;
+				case UPDATING:
+					yylval = (DSQL_NOD) sym->sym_object;
+					return KW_UPDATING;
+				case DELETING:
+					yylval = (DSQL_NOD) sym->sym_object;
+					return KW_DELETING;
+				}
+			}
+		}
 	/* 23 May 2003. Nickolay Samofatov
 	 * Detect FIRST/SKIP as non-reserved keywords
 	 * 1. We detect FIRST or SKIP as keywords if they appear just after SELECT and
@@ -4941,10 +5016,8 @@ if (tok_class & CHR_LETTER)
 	 * 3. We detect FIRST if we are explicitly asked for (such as in NULLS FIRST/LAST clause)
 	 * 4. In all other cases we return them as SYMBOL
 	 */
-    if (sym)
-	{
 		if ((sym->sym_keyword == FIRST && !first_detection) || sym->sym_keyword == SKIP) {
-			if (was_after_select || limit_clause) {
+			if (prev_keyword == SELECT || limit_clause) {
 				LexerState savedState = lex;
 				int nextToken = yylex(client_dialect,db_dialect,parser_version,stmt_ambiguous);
 				lex = savedState;
@@ -4961,8 +5034,6 @@ if (tok_class & CHR_LETTER)
 			} /* else fall down and return token as SYMBOL */
 		} else {
 			yylval = (DSQL_NOD) sym->sym_object;
-			if (sym->sym_keyword == SELECT) 
-				after_select = true;
 			return sym->sym_keyword;
 		}
 	}
@@ -4984,6 +5055,60 @@ if (last_token + 1 < end)
 	return sym->sym_keyword;
 	}
     }
+	
+/* We need to swallow braces around INSERTING/UPDATING/DELETING keywords */
+/* This algorithm is not perfect, but it is ok for now. 
+  It should be dropped when BOOLEAN datatype is introduced in Firebird */
+if ( c == '(' && !brace_analysis ) {
+	LexerState savedState = lex;	
+	brace_analysis = true;
+	int openCount = 0;
+	int nextToken;
+	do {
+		openCount++;
+		nextToken = yylex(client_dialect,db_dialect,parser_version,stmt_ambiguous);
+	} while (nextToken == '(');
+	DSQL_NOD temp_val = yylval;
+	if (nextToken == INSERTING || nextToken == UPDATING || nextToken == DELETING)
+	{
+		/* Skip closing braces. */
+		while ( openCount &&
+				yylex(client_dialect,db_dialect,
+					  parser_version,stmt_ambiguous) == ')')
+		{
+			openCount--;
+		}
+		if (openCount) {
+			/* Not enough closing braces. Restore status quo. */
+			lex = savedState;
+		}
+		else {
+			/* Cool! We successfully swallowed braces ! */
+			brace_analysis = false;
+			yylval = temp_val;
+			/* Check if we need to handle LR(2) grammar case */
+			if (prev_keyword == '(') {			
+				savedState = lex;
+				int token = yylex(client_dialect,db_dialect,parser_version,stmt_ambiguous);
+				lex = savedState;
+				if (token==OR || token==AND) {
+					switch(nextToken) {
+					case INSERTING:
+						return KW_INSERTING;
+					case UPDATING:
+						return KW_UPDATING;
+					case DELETING:
+						return KW_DELETING;
+					}
+				}
+			}
+			return nextToken;
+		}
+	} else {
+		/* Restore status quo. */
+		lex = savedState;
+	}
+}
 
 /* Single character punctuation are simply passed on */
 
