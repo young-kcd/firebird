@@ -28,8 +28,6 @@
 #include "../utilities/gsec/gsec.h"
 #include "../utilities/gsec/secur_proto.h"
 
-bool isValidServer(ISC_STATUS* status, const TEXT* server);
-
 isc_svc_handle attachRemoteServiceManager(ISC_STATUS*, const TEXT*, const TEXT*, 
 							  int, const TEXT*);
 isc_svc_handle attachRemoteServiceManager(ISC_STATUS*, const TEXT*, const TEXT*, 

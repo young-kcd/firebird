@@ -34,7 +34,7 @@ const size_t SERVER_PART = 200;
 // is responsible for returning NULL to its invoker in turn.
 // It simply makes sure there's something in the string containing the
 // server's name; otherwise it fills the status vector with an error.
-bool isValidServer(ISC_STATUS* status, const TEXT* server)
+static bool isValidServer(ISC_STATUS* status, const TEXT* server)
 {
 	if (!server || !*server)
 	{
@@ -44,6 +44,23 @@ bool isValidServer(ISC_STATUS* status, const TEXT* server)
 	    return false;
 	}
 	return true;
+}
+
+
+static bool serverSizeValidate(ISC_STATUS* status, const TEXT* server)
+{
+	if (! server)
+	{
+		return true;
+	}
+	if (strlen(server) < SERVER_PART)
+	{
+		return true;
+	}
+    status[0] = isc_arg_gds;
+    status[1] = isc_gsec_inv_param;
+    status[2] = isc_arg_end;
+    return false;
 }
 
 static int typeBuffer(ISC_STATUS*, char*, int, internal_user_data&,
@@ -103,6 +120,11 @@ isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
  **************************************/
 	char service[SERVICE_SIZE];
 
+	if (! serverSizeValidate(status, server))
+	{
+		return 0;
+	}
+
 	switch (protocol) {
 	case sec_protocol_tcpip:
 		if (! isValidServer(status, server))
@@ -148,10 +170,15 @@ isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
  *
  * Functional description
  *	Opens connection with service manager 
- *	on server using protocol, login username/password
+ *	on server with protocol in it's name, login username/password
  *
  **************************************/
 	char service[SERVICE_SIZE];
+
+	if (! serverSizeValidate(status, server))
+	{
+		return 0;
+	}
 	strncpy(service, server, SERVER_PART);
 	strcat(service, "service_mgr");
 
@@ -350,8 +377,7 @@ void getSecurityDatabasePath(const TEXT* server, TEXT* buffer, size_t bufSize)
 	buffer[bufSize - 1] = 0;
 }
 
-
-static void parseString2(const char*& p, char* buffer, size_t bufSize, int& loop)
+static void parseString2(const char*& p, char* buffer, size_t bufSize, size_t& loop)
 {
 	const size_t len = static_cast<size_t>(isc_vax_integer(p, sizeof(USHORT)));
 
@@ -370,8 +396,7 @@ static void parseString2(const char*& p, char* buffer, size_t bufSize, int& loop
 	p += len;
 }
 
-
-static void parseLong(const char*& p, int& ul, int& loop)
+static void parseLong(const char*& p, int& ul, size_t& loop)
 {
 	ul = isc_vax_integer(p, sizeof(ULONG));
 	
@@ -410,7 +435,7 @@ static int typeBuffer(ISC_STATUS* status, char* buf, int offset,
 		status[2] = isc_arg_end;
 		return -1;
 	}
-	int loop = isc_vax_integer (p, sizeof (USHORT));
+	size_t loop = static_cast<size_t>(isc_vax_integer (p, sizeof (USHORT)));
 	p += sizeof (USHORT);
     if (p[loop] != isc_info_end)
 	{
@@ -436,45 +461,45 @@ static int typeBuffer(ISC_STATUS* status, char* buf, int offset,
 
 	while (*p != isc_info_end)
 	{
-	  try {
-		switch (*p++)
-		{
-		case isc_spb_sec_username:
-			if (uData.user_name[0]) 
+		try {
+			switch (*p++)
 			{
-				outputFunction(functionArg, &uData, !uData.user_name_entered);
-				memset(&uData, 0, sizeof uData);
-				uData.user_name_entered = true;
+			case isc_spb_sec_username:
+				if (uData.user_name[0]) 
+				{
+					outputFunction(functionArg, &uData, !uData.user_name_entered);
+					memset(&uData, 0, sizeof uData);
+					uData.user_name_entered = true;
+				}
+				parseString2(p, uData.user_name, sizeof(uData.user_name), loop);
+				break;
+			case isc_spb_sec_firstname:
+				parseString2(p, uData.first_name, sizeof(uData.first_name), loop);
+				break;
+			case isc_spb_sec_middlename:
+				parseString2(p, uData.middle_name, sizeof(uData.middle_name), loop);
+				break;
+			case isc_spb_sec_lastname:
+				parseString2(p, uData.last_name, sizeof(uData.last_name), loop);
+				break;
+			case isc_spb_sec_groupid:
+				parseLong(p, uData.gid, loop);
+				break;
+			case isc_spb_sec_userid:
+				parseLong(p, uData.uid, loop);
+				break;
+			default:
+				status[0] = isc_arg_gds;
+				status[1] = isc_gsec_params_not_allowed;
+				status[2] = isc_arg_end;
+				return true;
 			}
-			parseString2(p, uData.user_name, sizeof(uData.user_name), loop);
-			break;
-		case isc_spb_sec_firstname:
-			parseString2(p, uData.first_name, sizeof(uData.first_name), loop);
-			break;
-		case isc_spb_sec_middlename:
-			parseString2(p, uData.middle_name, sizeof(uData.middle_name), loop);
-			break;
-		case isc_spb_sec_lastname:
-			parseString2(p, uData.last_name, sizeof(uData.last_name), loop);
-			break;
-		case isc_spb_sec_groupid:
-			parseLong(p, uData.gid, loop);
-			break;
-		case isc_spb_sec_userid:
-			parseLong(p, uData.uid, loop);
-			break;
-		default:
-		    status[0] = isc_arg_gds;
-		    status[1] = isc_gsec_params_not_allowed;
-			status[2] = isc_arg_end;
-			return true;
 		}
-	  }
-	  catch(int newOffset)
-	  {
-		memmove(buf, --p, newOffset);
-		return newOffset;
-	  }
+		catch(size_t newOffset)
+		{
+			memmove(buf, --p, newOffset);
+			return newOffset;
+		}
 	}
 	fb_assert(loop == 0);
 	return 0;
