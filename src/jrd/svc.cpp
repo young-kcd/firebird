@@ -2210,7 +2210,7 @@ void SVC_read_ib_log(SVC service)
 	gds__prefix(name, LOGFILE);
 	if ((file = ib_fopen(name, "r")) != NULL) {
 #ifdef SUPERSERVER
-		*status++ = SUCCESS;
+		*status++ = FBOK;
 		*status++ = isc_arg_end;
 #endif
 		SVC_STARTED(service);

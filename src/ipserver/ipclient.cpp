@@ -89,7 +89,7 @@ static BOOL unpack_strings(ICC);
 				  }\
                                   return e; }
 
-#define RETURN_SUCCESS          RETURN_ERROR( SUCCESS)
+#define RETURN_FBOK          RETURN_ERROR( FBOK)
 
 #define CHECK_HANDLE(blk, type, error)\
 		if ( !blk || ((BLK)blk)->blk_type != (SCHAR) type) \
@@ -292,7 +292,7 @@ USHORT GDS_VAL(dpb_length), SCHAR * dpb, SCHAR * expanded_filename)
 	idb->idb_thread = icc;
 	icc->icc_databases = idb;
 	idb->idb_handle = (HANDLE) (ips->ips_handle);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -340,7 +340,7 @@ STATUS GDS_BLOB_INFO(STATUS * user_status,
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -376,9 +376,9 @@ STATUS GDS_CANCEL_BLOB(STATUS * user_status, IBL * blob_handle)
 	blob = *blob_handle;
 	if (!blob) {
 		*user_status++ = isc_arg_gds;
-		*user_status++ = SUCCESS;
+		*user_status++ = FBOK;
 		*user_status = isc_arg_end;
-		return SUCCESS;
+		return FBOK;
 	}
 
 	/* point to communications area */
@@ -394,7 +394,7 @@ STATUS GDS_CANCEL_BLOB(STATUS * user_status, IBL * blob_handle)
 		RETURN_ERROR(user_status[1]);
 	release_blob(blob);
 	*blob_handle = NULL;
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -448,7 +448,7 @@ STATUS GDS_CANCEL_EVENTS(STATUS * user_status, IDB * handle, SLONG * id)
 
 	if (result)
 		RETURN_ERROR(user_status[1]);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -500,7 +500,7 @@ STATUS GDS_CLOSE_BLOB(STATUS * user_status, IBL * blob_handle)
 		RETURN_ERROR(user_status[1]);
 	release_blob(blob);
 	*blob_handle = NULL;
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -545,7 +545,7 @@ STATUS GDS_COMMIT(STATUS * user_status, ITR * itr_handle)
 	clear_transaction_statements(transaction);
 	release_transaction(transaction);
 	*itr_handle = NULL;
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -588,7 +588,7 @@ STATUS GDS_COMMIT_RETAINING(STATUS * user_status, ITR * itr_handle)
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -642,7 +642,7 @@ STATUS GDS_COMPILE(STATUS * user_status,
 	request->irq_idb = idb;
 	request->irq_next = idb->idb_requests;
 	idb->idb_requests = request;
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -705,7 +705,7 @@ STATUS GDS_CREATE_BLOB(STATUS * user_status,
 	transaction->itr_blobs = blob;
 	blob_id->bid_relation_id = ips->ips_rel_id;
 	blob_id->bid_number = ips->ips_bid_number;
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -772,7 +772,7 @@ STATUS GDS_CREATE_BLOB2(STATUS * user_status,
 	transaction->itr_blobs = blob;
 	blob_id->bid_relation_id = ips->ips_rel_id;
 	blob_id->bid_number = ips->ips_bid_number;
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -851,7 +851,7 @@ STATUS GDS_CREATE_DATABASE(STATUS * user_status,
 	idb->idb_thread = icc;
 	icc->icc_databases = idb;
 	idb->idb_handle = (HANDLE) (ips->ips_handle);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -898,7 +898,7 @@ STATUS GDS_DATABASE_INFO(STATUS * user_status,
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -945,7 +945,7 @@ STATUS GDS_DDL(STATUS * user_status,
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -983,7 +983,7 @@ STATUS GDS_DETACH(STATUS * user_status, IDB * handle)
 		/* if server was shut down, set up vector */
 
 		user_status[0] = isc_arg_gds;
-		user_status[1] = SUCCESS;
+		user_status[1] = FBOK;
 		user_status[2] = isc_arg_end;
 	}
 	else {
@@ -1027,7 +1027,7 @@ STATUS GDS_DETACH(STATUS * user_status, IDB * handle)
 	icc = NULL;
 	if (user_status[1])
 		RETURN_ERROR(user_status[1]);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -1091,7 +1091,7 @@ STATUS GDS_DROP_DATABASE(STATUS * user_status, IDB * handle)
 	*handle = NULL;
 	if (code)
 		RETURN_ERROR(code);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -1148,7 +1148,7 @@ STATUS GDS_DSQL_ALLOCATE(STATUS * user_status,
 	statement->isr_eof_flag = FALSE;
 	statement->isr_packed = NULL;
 	idb->idb_sql_requests = statement;
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -1219,7 +1219,7 @@ STATUS GDS_DSQL_EXECUTE(STATUS * user_status,
 		*itr_handle = make_transaction(user_status, idb, handle);
 	if (user_status[1])
 		RETURN_ERROR(user_status[1]);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -1304,7 +1304,7 @@ STATUS GDS_DSQL_EXECUTE2(STATUS * user_status,
 	statement->isr_itr = *itr_handle;
 	if (user_status[1])
 		RETURN_ERROR(user_status[1]);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -1380,7 +1380,7 @@ STATUS GDS_DSQL_EXECUTE_IMMED(STATUS * user_status,
 		*itr_handle = make_transaction(user_status, idb, handle);
 	if (user_status[1])
 		RETURN_ERROR(user_status[1]);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -1471,7 +1471,7 @@ STATUS GDS_DSQL_EXECUTE_IMMED2(STATUS * user_status,
 		*itr_handle = make_transaction(user_status, idb, handle);
 	if (user_status[1])
 		RETURN_ERROR(user_status[1]);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -1541,14 +1541,14 @@ STATUS GDS_DSQL_FETCH(STATUS * user_status,
 	/* if there are any packed records, return the next one */
 
 	user_status[0] = isc_arg_gds;
-	user_status[1] = SUCCESS;
+	user_status[1] = FBOK;
 	user_status[2] = isc_arg_end;
 	if (statement->isr_max_recs > 1) {
 		if (statement->isr_rec_count) {
 			memcpy(msg, statement->isr_cursor, msg_length);
 			statement->isr_rec_count--;
 			statement->isr_cursor += msg_length;
-			RETURN_SUCCESS;
+			RETURN_FBOK;
 		}
 		else if (statement->isr_eof_flag) {
 			statement->isr_eof_flag = FALSE;
@@ -1611,7 +1611,7 @@ STATUS GDS_DSQL_FETCH(STATUS * user_status,
 
 		if (statement->isr_rec_count) {
 			user_status[0] = isc_arg_gds;
-			user_status[1] = SUCCESS;
+			user_status[1] = FBOK;
 			user_status[2] = isc_arg_end;
 		}
 		statement->isr_rec_count--;
@@ -1620,7 +1620,7 @@ STATUS GDS_DSQL_FETCH(STATUS * user_status,
 		RETURN_ERROR(100);
 	if (user_status[1])
 		RETURN_ERROR(user_status[1]);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -1676,7 +1676,7 @@ STATUS GDS_DSQL_FREE(STATUS * user_status,
 		statement->isr_itr = NULL;
 		clear_statement_cache(statement);
 	}
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -1727,7 +1727,7 @@ STATUS GDS_DSQL_INSERT(STATUS * user_status,
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -1799,7 +1799,7 @@ STATUS GDS_DSQL_PREPARE(STATUS * user_status,
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
 	statement->isr_batch_flag = (USHORT) ips->ips_parameter;
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -1848,7 +1848,7 @@ STATUS GDS_DSQL_SET_CURSOR(STATUS * user_status,
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -1897,7 +1897,7 @@ STATUS GDS_DSQL_SQL_INFO(STATUS * user_status,
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -2014,7 +2014,7 @@ STATUS GDS_GET_SLICE(STATUS * user_status,
 	length = ips->ips_length;
 	if (return_length)
 		*return_length = length;
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -2076,7 +2076,7 @@ STATUS GDS_OPEN_BLOB(STATUS * user_status,
 	blob->ibl_ptr = blob->ibl_buffer;
 	blob->ibl_next = transaction->itr_blobs;
 	transaction->itr_blobs = blob;
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -2142,7 +2142,7 @@ STATUS GDS_OPEN_BLOB2(STATUS * user_status,
 	blob->ibl_ptr = blob->ibl_buffer;
 	blob->ibl_next = transaction->itr_blobs;
 	transaction->itr_blobs = blob;
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -2233,7 +2233,7 @@ STATUS GDS_PUT_SEGMENT(STATUS * user_status,
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -2297,7 +2297,7 @@ STATUS GDS_PUT_SLICE(STATUS * user_status,
 
 	array_id->bid_relation_id = ips->ips_rel_id;
 	array_id->bid_number = ips->ips_number;
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -2412,7 +2412,7 @@ STATUS GDS_QUE_EVENTS(STATUS * user_status,
 		RETURN_ERROR(user_status[1]);
 	*id = ips->ips_event_id;
 	event->ivnt_handle = ips->ips_event_id;
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -2470,7 +2470,7 @@ STATUS GDS_RECEIVE(STATUS * user_status,
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -2518,7 +2518,7 @@ STATUS GDS_RECONNECT(STATUS * user_status,
 		RETURN_ERROR(user_status[1]);
 	*itr_handle =
 		make_transaction(user_status, idb, (HANDLE) ips->ips_tr_handle);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -2565,7 +2565,7 @@ STATUS GDS_RELEASE_REQUEST(STATUS * user_status, IRQ * req_handle)
 
 	release_request(request);
 	*req_handle = NULL;
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -2615,7 +2615,7 @@ STATUS GDS_REQUEST_INFO(STATUS * user_status,
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -2658,7 +2658,7 @@ STATUS GDS_ROLLBACK_RETAINING(STATUS * user_status, ITR * itr_handle)
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -2706,7 +2706,7 @@ STATUS GDS_ROLLBACK(STATUS * user_status, ITR * itr_handle)
 	clear_transaction_statements(transaction);
 	release_transaction(transaction);
 	*itr_handle = NULL;
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -2754,7 +2754,7 @@ STATUS GDS_SEEK_BLOB(STATUS * user_status,
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
 	*result = ips->ips_result;
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -2804,7 +2804,7 @@ STATUS GDS_SEND(STATUS * user_status,
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 STATUS GDS_SERVICE_ATTACH(STATUS * user_status,
@@ -2870,7 +2870,7 @@ STATUS GDS_SERVICE_ATTACH(STATUS * user_status,
 	idb->idb_thread = icc;
 	icc->icc_databases = idb;
 	idb->idb_handle = (HANDLE) (ips->ips_handle);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 STATUS GDS_SERVICE_DETACH(STATUS * user_status, IDB * handle)
@@ -2906,7 +2906,7 @@ STATUS GDS_SERVICE_DETACH(STATUS * user_status, IDB * handle)
 		/* if server was shut down, set up vector */
 
 		user_status[0] = isc_arg_gds;
-		user_status[1] = SUCCESS;
+		user_status[1] = FBOK;
 		user_status[2] = isc_arg_end;
 	}
 	else {
@@ -2930,7 +2930,7 @@ STATUS GDS_SERVICE_DETACH(STATUS * user_status, IDB * handle)
 	*handle = NULL;
 	if (user_status[1])
 		RETURN_ERROR(user_status[1]);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 STATUS GDS_SERVICE_QUERY(STATUS * user_status,
@@ -2983,7 +2983,7 @@ STATUS GDS_SERVICE_QUERY(STATUS * user_status,
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 STATUS GDS_SERVICE_START(STATUS * user_status,
@@ -3022,7 +3022,7 @@ STATUS GDS_SERVICE_START(STATUS * user_status,
 	/* send request and get answer */
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -3071,7 +3071,7 @@ STATUS GDS_START(STATUS * user_status,
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -3126,7 +3126,7 @@ STATUS GDS_START_AND_SEND(STATUS * user_status,
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -3205,7 +3205,7 @@ STATUS GDS_START_MULTIPLE(STATUS * user_status,
 		RETURN_ERROR(user_status[1]);
 	*itr_handle =
 		make_transaction(user_status, idb, (HANDLE) ips->ips_tr_handle);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -3283,7 +3283,7 @@ STATUS GDS_START_TRANSACTION(STATUS * user_status,
 		RETURN_ERROR(user_status[1]);
 	*itr_handle =
 		make_transaction(user_status, idb, (HANDLE) ips->ips_tr_handle);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -3331,7 +3331,7 @@ STATUS GDS_TRANSACTION_INFO(STATUS * user_status,
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -3387,7 +3387,7 @@ STATUS GDS_TRANSACT_REQUEST(STATUS * user_status,
 
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 

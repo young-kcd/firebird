@@ -408,7 +408,7 @@ int MAP_status_to_gds(STATUS * vms_status, STATUS * gds_status)
 	code = vms_status[1];
 
 	if (code == 1)
-		return (gds_status[1] = SUCCESS);
+		return (gds_status[1] = FBOK);
 
 	p = msgbuff;
 	length = 0;

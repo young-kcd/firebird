@@ -288,7 +288,7 @@ SSHORT WALC_check_writer(WAL WAL_handle)
  *
  * Functional description
  *	Find WAL writer process (thread).  If it is not there, return 
- *	FAILURE, else return SUCCESS.
+ *	FAILURE, else return FBOK.
  *
  **************************************/
 	WALS WAL_segment;
@@ -303,7 +303,7 @@ SSHORT WALC_check_writer(WAL WAL_handle)
 	if (!writer_pid)
 		return FAILURE;
 
-	return (ISC_check_process_existence(writer_pid, 0, FALSE) ? SUCCESS :
+	return (ISC_check_process_existence(writer_pid, 0, FALSE) ? FBOK :
 			FAILURE);
 }
 
@@ -382,7 +382,7 @@ SSHORT WALC_init(STATUS * status_vector,
  *	as the starting sequence number for the set of new log
  *	files.
  *
- *	Return SUCCESS if initialization succeeds else return FAILURE.
+ *	Return FBOK if initialization succeeds else return FAILURE.
  *
  **************************************/
 	TEXT wal_mapfile[MAXPATHLEN];
@@ -398,7 +398,7 @@ SSHORT WALC_init(STATUS * status_vector,
 		/* We are already initialized.  Just increment the use count. */
 
 		(*WAL_handle)->wal_count++;
-		return SUCCESS;
+		return FBOK;
 	}
 
 /* Construct a wal filename of the form  "<database_name>.walfile" */
@@ -417,7 +417,7 @@ SSHORT WALC_init(STATUS * status_vector,
 		/* Now parse WAL paramater block (wpb) */
 
 		if (setup_wal_params(status_vector, dbname, db_page_len, &wal_args,
-							 wpb_length, wpb) != SUCCESS) {
+							 wpb_length, wpb) != FBOK) {
 			WALC_save_status_strings(status_vector);
 			return FAILURE;
 		}
@@ -491,7 +491,7 @@ SSHORT WALC_init(STATUS * status_vector,
 
 	*WAL_handle = wal;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -626,7 +626,7 @@ static SSHORT check_base_name( STATUS * status_vector, TEXT * base_name)
  *
  * Functional description
  *	Try to create or open a file with the 
- *	given base name.  Return SUCCESS or FAILURE.
+ *	given base name.  Return FBOK or FAILURE.
  *
  **************************************/
 	TEXT dummy_fname[MAXPATHLEN];
@@ -639,19 +639,19 @@ static SSHORT check_base_name( STATUS * status_vector, TEXT * base_name)
 /* Try to create a new file.  Delete it if we're successful. */
 
 	if (LLIO_open(status_vector, dummy_fname, LLIO_OPEN_NEW_RW, TRUE, &fd) ==
-		SUCCESS) {
+		FBOK) {
 		LLIO_close(status_vector, fd);
 		unlink(dummy_fname);
-		return SUCCESS;
+		return FBOK;
 	}
 
 /* Try to open an existing file */
 
 	if (LLIO_open
 		(status_vector, dummy_fname, LLIO_OPEN_EXISTING_RW, TRUE,
-		 &fd) == SUCCESS) {
+		 &fd) == FBOK) {
 		LLIO_close(status_vector, fd);
-		return SUCCESS;
+		return FBOK;
 	}
 
 	return FAILURE;
@@ -857,7 +857,7 @@ static SSHORT setup_wal_params(
 		/* Make sure that base path name is valid */
 
 		if (wal_args->walc_first_time_log &&
-			(check_base_name(status_vector, log_file->lg_name) != SUCCESS)) {
+			(check_base_name(status_vector, log_file->lg_name) != FBOK)) {
 			WALC_save_status_strings(status_vector);
 			return FAILURE;
 		}
@@ -876,7 +876,7 @@ static SSHORT setup_wal_params(
 		/* Make sure that base path name is valid */
 
 		if (wal_args->walc_first_time_log &&
-			(check_base_name(status_vector, log_file->lg_name) != SUCCESS)) {
+			(check_base_name(status_vector, log_file->lg_name) != FBOK)) {
 			WALC_save_status_strings(status_vector);
 			return FAILURE;
 		}
@@ -913,7 +913,7 @@ static SSHORT setup_wal_params(
 					continue;
 				if (WALF_init_p_log(status_vector, dbname, log_file->lg_name,
 									log_file->lg_size,
-									log_file->lg_partitions) != SUCCESS) {
+									log_file->lg_partitions) != FBOK) {
 					WALC_save_status_strings(status_vector);
 
 					/* Remove the allocated files so far */
@@ -943,7 +943,7 @@ static SSHORT setup_wal_params(
 	wal_args->walc_segment_length = wal_args->walc_blks_offset +
 		wal_args->walc_maxbufs * wal_args->walc_blksize;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 

@@ -59,7 +59,7 @@ SSHORT WALR_close( STATUS * status_vector, WALRS * WALRS_handle)
 	gds__free((SLONG *) (*WALRS_handle));
 	*WALRS_handle = NULL;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -82,7 +82,7 @@ SSHORT WALR_fixup_log_header(STATUS * status_vector, WALRS WALRS_handle)
 
 	WALR_handle = WALRS_handle->walrs_walr;
 	if (!(WALR_handle->walr_log_header->walfh_flags & WALFH_OPEN))
-		return SUCCESS;			/* Everything should be fine anyway. */
+		return FBOK;			/* Everything should be fine anyway. */
 
 	WALR_handle->walr_log_header->walfh_length = WALR_handle->walr_offset +
 		BLKHDR->walblk_hdr_blklen;
@@ -115,7 +115,7 @@ SSHORT WALR_get(STATUS * status_vector,
  *        rolling over to next log file) and extracting the log 
  *        record from it.   
 
- *        Returns SUCCESS, if the next log record is found.  It sets the
+ *        Returns FBOK, if the next log record is found.  It sets the
  *        parameters log_seqno and log_offset which were returned by the
  *        WAL subsystem when this record was originally put in the WAL.
  *
@@ -136,7 +136,7 @@ SSHORT WALR_get(STATUS * status_vector,
 	if (remaining_block_bytes < REC_HDROVHD) {
 		/* Go to the next block */
 
-		if ((ret = read_next_block(status_vector, WALRS_handle)) != SUCCESS)
+		if ((ret = read_next_block(status_vector, WALRS_handle)) != FBOK)
 			return ret;
 		WALR_handle = WALRS_handle->walrs_walr;
 		remaining_block_bytes = BLKHDR->walblk_hdr_len - REC_OFFSET;
@@ -173,7 +173,7 @@ SSHORT WALR_get(STATUS * status_vector,
 		REC_OFFSET += REC_HDROVHD + reclen;
 	}
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -195,7 +195,7 @@ SSHORT WALR_get_blk_timestamp(WALRS WALRS_handle, SLONG * timestamp)
 	timestamp[0] = BLKHDR->walblk_hdr_timestamp[0];
 	timestamp[1] = BLKHDR->walblk_hdr_timestamp[1];
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -223,7 +223,7 @@ SSHORT WALR_open(STATUS * status_vector,
  *        Initialize and return the WALRS_handle.  Used for 
  *        full or incremental recovery.  
  *
- *        Returns SUCCESS or FAILURE.
+ *        Returns FBOK or FAILURE.
  *        Returns -1 if end-of-log encounterd.
  *
  **************************************/
@@ -250,7 +250,7 @@ SSHORT WALR_open(STATUS * status_vector,
 
 	ret = log_open(status_vector, &walrset, lognames[0],
 				   log_partitions_offsets[0], first_log_offset);
-	if (ret == SUCCESS) {
+	if (ret == FBOK) {
 		walrset.walrs_cur_log++;
 		*WALRS_handle = (WALRS) gds__alloc(sizeof(struct walrs));
 		/* NOMEM: error return, FREE: WALR_close() */
@@ -260,7 +260,7 @@ SSHORT WALR_open(STATUS * status_vector,
 			**WALRS_handle = walrset;
 	}
 	else
-	 if (ret != SUCCESS)
+	 if (ret != FBOK)
 		gds__free((SLONG *) walrset.walrs_dbname);
 
 	return ret;
@@ -303,7 +303,7 @@ static SSHORT get_next_logname(
  *        WALR_open() or from the next logically linked log file.
  *
  *        Returns FAILURE if no further logname can be found else
- *        returns SUCCESS.
+ *        returns FBOK.
  *
  **************************************/
 	WALR WALR_handle;
@@ -319,7 +319,7 @@ static SSHORT get_next_logname(
 			*logname = WALR_handle->walr_log_header->walfh_next_logname;
 			*log_partition_offset =
 				WALR_handle->walr_log_header->walfh_next_log_partition_offset;
-			return SUCCESS;
+			return FBOK;
 		}
 		else
 			return FAILURE;
@@ -331,7 +331,7 @@ static SSHORT get_next_logname(
 		*log_partition_offset = WALRS_handle->walrs_log_partitions_offsets
 			[WALRS_handle->walrs_cur_log];
 		WALRS_handle->walrs_cur_log++;	/* for the next time */
-		return SUCCESS;
+		return FBOK;
 	}
 }
 
@@ -353,7 +353,7 @@ static SSHORT log_close( WALR WALR_handle)
 	LLIO_close(0, WALR_handle->walr_fd);
 	dispose_walr_handle(WALR_handle);
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -374,7 +374,7 @@ static SSHORT log_open(
  *        Set the scan upto passed timestamp, if any.
  *        Initialize and return the WALR_handle.  Used for recovery.  
  *
- *        Returns SUCCESS or FAILURE.
+ *        Returns FBOK or FAILURE.
  *        Returns -1 if end-of-log encounterd.
  *
  **************************************/
@@ -405,7 +405,7 @@ static SSHORT log_open(
 	ret =
 		WALF_open_log_file(status_vector, WALRS_handle->walrs_dbname, logname,
 						   log_partition_offset, log_header, &log_fd);
-	if (ret != SUCCESS) {
+	if (ret != FBOK) {
 		gds__free((SLONG *) log_header);
 		return FAILURE;
 	}
@@ -529,7 +529,7 @@ static SSHORT log_open(
 	WALRS_handle->walrs_walr = walr;
 
 /* Read ahead the first block in anticipation of subsequent WALR_get() calls. */
-	if ((ret = read_next_block(status_vector, WALRS_handle)) != SUCCESS) {
+	if ((ret = read_next_block(status_vector, WALRS_handle)) != FBOK) {
 		/* log_close() free's all dangling allocations off of walr */
 		log_close(walr);
 		gds__free((SLONG *) walr);
@@ -541,7 +541,7 @@ static SSHORT log_open(
 		walr->walr_rec_offset = rec_offset;
 	}
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -580,15 +580,15 @@ static SSHORT read_next_block( STATUS * status_vector, WALRS WALRS_handle)
 		/* Try to rollover to the next log file, if any. */
 
 		if (get_next_logname(WALRS_handle, &next_logname,
-							 &next_log_partition_offset) != SUCCESS)
+							 &next_log_partition_offset) != FBOK)
 			return -1;			/* end of log records */
 
 		ret = log_open(status_vector, WALRS_handle, next_logname,
 					   next_log_partition_offset, 0L);
-		if (ret == SUCCESS) {
+		if (ret == FBOK) {
 			LLIO_close(0, WALR_handle->walr_fd);
 			dispose_walr_handle(WALR_handle);
-			return SUCCESS;
+			return FBOK;
 		}
 		else
 			return -1;			/* end of log records */
@@ -675,5 +675,5 @@ static SSHORT read_next_block( STATUS * status_vector, WALRS WALRS_handle)
 	WALR_handle->walr_offset += last_block_len;
 	REC_OFFSET = BLK_HDROVHD;
 
-	return SUCCESS;
+	return FBOK;
 }

@@ -39,7 +39,7 @@ static int caller (SHORT, ISC_BLOB_CTL, SHORT, CHAR*, SHORT*);
 #define	ACTION_put_segment 3
 #define	ACTION_create 4
 
-#define SUCCESS			0
+#define FBOK			0
 #define FAILURE			1
 
 #define BUFFER_LENGTH		512
@@ -115,7 +115,7 @@ switch (action)
 		return isc_uns_ext;
     }
 
-	return SUCCESS;
+	return FBOK;
 }
 
 static int caller (ARG(SHORT, action), ARG(ISC_BLOB_CTL, control),
@@ -226,7 +226,7 @@ ARGLIST(ISC_BLOB_CTL control)
 	if (status != isc_segstr_eof)
 		return status;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 static void set_statistics (ARG(char*, filename), ARG(ISC_BLOB_CTL, control))
@@ -329,7 +329,7 @@ for (;;)
 	{
 		control->ctl_segment_length = p - control->ctl_buffer; 
 		if (c == '\n')
-			return SUCCESS; 
+			return FBOK; 
 		else
 			return isc_segment;
 	}

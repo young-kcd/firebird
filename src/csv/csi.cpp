@@ -308,10 +308,10 @@ STATUS GDS_CANCEL_BLOB(STATUS * user_status, RBL * blob_handle)
 	if (!(blob = *blob_handle)) {
 		if (user_status) {
 			*user_status++ = gds_arg_gds;
-			*user_status++ = SUCCESS;
+			*user_status++ = FBOK;
 			*user_status = 0;
 		}
-		return SUCCESS;
+		return FBOK;
 	}
 
 	CHECK_HANDLE(blob, type_rbl, gds__bad_segstr_handle);
@@ -1528,7 +1528,7 @@ STATUS GDS_GET_SLICE(STATUS * user_status,
 		while (slice_length--)
 			*slice++ = 0;
 		*return_length = 0;
-		return SUCCESS;
+		return FBOK;
 	}
 
 /* Since arrays can be more than 64K bytes and we limit central

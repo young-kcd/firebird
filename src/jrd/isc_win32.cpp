@@ -24,7 +24,7 @@
  * Solaris x86 changes - Konstantin Kuznetsov, Neil McCalden
  */
 /*
-$Id: isc_win32.cpp,v 1.7 2002-11-10 14:04:54 dimitr Exp $
+$Id: isc_win32.cpp,v 1.8 2002-11-13 15:00:59 kkuznetsov Exp $
 */
 
 #include "firebird.h"
@@ -154,7 +154,7 @@ SSHORT ISC_get_registry_var(TEXT*	variable,
 		LPCTSTR szKey = REG_KEY_ROOT_CUR_VER;
 		const LONG ret =
 			RegOpenKeyEx(HKEY_LOCAL_MACHINE, szKey, 0, KEY_QUERY_VALUE, &hkey);
-		if (ret != ERROR_SUCCESS)
+		if (ret != ERROR_FBOK)
 		{
 			return -1;
 		}
@@ -171,7 +171,7 @@ SSHORT ISC_get_registry_var(TEXT*	variable,
 	const LONG ret =
 		RegQueryValueEx(hkey, variable, NULL, &type, (LPBYTE) buffer, &len);
 
-	if (ret != ERROR_SUCCESS)
+	if (ret != ERROR_FBOK)
 	{
 		len = 0;
 	}

@@ -118,7 +118,7 @@ int LLIO_allocate_file_space(
  *        time something is written to the file unless the file size grows
  *        beyond the given 'size'.  So 'write' performance should improve.
  *
- *        If there is any error, return FAILURE else return SUCCESS.
+ *        If there is any error, return FAILURE else return FBOK.
  *        In case of an error, status_vector would be updated.
  *
  **************************************/
@@ -150,7 +150,7 @@ int LLIO_allocate_file_space(
 
 	LLIO_close(0, fd);
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -169,7 +169,7 @@ int LLIO_close(STATUS * status_vector, SLONG file_desc)
  *
  **************************************/
 
-	return (CloseHandle((HANDLE) file_desc) ? SUCCESS : FAILURE);
+	return (CloseHandle((HANDLE) file_desc) ? FBOK : FAILURE);
 }
 
 
@@ -243,7 +243,7 @@ int LLIO_open(
 		return FAILURE;
 	}
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -282,7 +282,7 @@ UCHAR * buffer, SLONG length, SLONG * length_read)
 	if (length_read)
 		*length_read = len;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -322,7 +322,7 @@ int LLIO_seek(
 		}
 	}
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -339,7 +339,7 @@ int LLIO_sync(STATUS * status_vector, SLONG file_desc)
  *
  **************************************/
 
-	return (FlushFileBuffers((HANDLE) file_desc) ? SUCCESS : FAILURE);
+	return (FlushFileBuffers((HANDLE) file_desc) ? FBOK : FAILURE);
 }
 
 
@@ -377,7 +377,7 @@ USHORT whence, UCHAR * buffer, SLONG length, SLONG * length_written)
 	if (length_written)
 		*length_written = len;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -417,7 +417,7 @@ int LLIO_close(STATUS * status_vector, SLONG file_desc)
  *
  **************************************/
 
-	return ((close((int) file_desc) != -1) ? SUCCESS : FAILURE);
+	return ((close((int) file_desc) != -1) ? FBOK : FAILURE);
 }
 
 
@@ -473,7 +473,7 @@ int LLIO_open(
 		return FAILURE;
 	}
 
-	return SUCCESS;
+	return FBOK;
 }
 
 int LLIO_read(
@@ -520,7 +520,7 @@ UCHAR * buffer, SLONG length, SLONG * length_read)
 	if (length_read)
 		*length_read = p - buffer;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -562,7 +562,7 @@ int LLIO_seek(
 			return FAILURE;
 		}
 	}
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -579,7 +579,7 @@ int LLIO_sync(STATUS * status_vector, SLONG file_desc)
  *
  **************************************/
 
-	return (fsync((int) file_desc) != -1) ? SUCCESS : FAILURE;
+	return (fsync((int) file_desc) != -1) ? FBOK : FAILURE;
 }
 
 
@@ -626,7 +626,7 @@ USHORT whence, UCHAR * buffer, SLONG length, SLONG * length_written)
 	if (length_written)
 		*length_written = p - buffer;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 

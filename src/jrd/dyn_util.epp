@@ -516,7 +516,7 @@ BOOLEAN DYN_UTIL_get_prot(TDBB		tdbb,
 		DYN_rundown_request((BLK)request, drq_l_prot_mask);
 		return FAILURE;
 	}
-	return SUCCESS;
+	return FBOK;
 }
 
 

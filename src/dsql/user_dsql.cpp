@@ -510,7 +510,7 @@ STATUS API_ROUTINE isc_embed_dsql_fetch_a(	STATUS*	user_status,
 		*sqlcode = 100;
 	}
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -542,7 +542,7 @@ STATUS API_ROUTINE isc_embed_dsql_fetch2_a(STATUS* user_status,
 	if (s == 100)
 		*sqlcode = 100;
 
-	return SUCCESS;
+	return FBOK;
 }
 #endif
 
@@ -919,7 +919,7 @@ STATUS API_ROUTINE isc_dsql_fetch_a(STATUS* user_status,
 	if (s == 100)
 		*sqlcode = 100;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -951,7 +951,7 @@ STATUS API_ROUTINE isc_dsql_fetch2_a(STATUS* user_status,
 	if (s == 100)
 		*sqlcode = 100;
 
-	return SUCCESS;
+	return FBOK;
 }
 #endif
 

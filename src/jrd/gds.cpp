@@ -894,7 +894,7 @@ STATUS API_ROUTINE gds__decode(STATUS code, USHORT* fac, USHORT* class_)
 
 	if (!code)
 	{
-		return SUCCESS;
+		return FBOK;
 	}
 	else if ((code & ISC_MASK) != ISC_MASK)
 	{
@@ -1026,7 +1026,7 @@ STATUS API_ROUTINE gds__encode(STATUS code, USHORT facility)
  **************************************/
 
 	if (!code)
-		return SUCCESS;
+		return FBOK;
 
 	return ENCODE_ISC_MSG(code, facility);
 }
@@ -2634,7 +2634,7 @@ STATUS API_ROUTINE gds__print_status(STATUS * vec)
 	TEXT *s;
 
 	if (!vec || (!vec[1] && vec[2] == gds_arg_end))
-		return SUCCESS;
+		return FBOK;
 
 	s = (TEXT *) gds__alloc((SLONG) BUFFER_LARGE);
 /* FREE: at procedure return */

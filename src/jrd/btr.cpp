@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.10 2002-11-11 19:42:44 hippoman Exp $
+$Id: btr.cpp,v 1.11 2002-11-13 15:00:57 kkuznetsov Exp $
 */
 
 #include "firebird.h"
@@ -1279,7 +1279,7 @@ USHORT BTR_lookup(TDBB tdbb, REL relation, USHORT id, register IDX * buffer)
 		return FAILURE;
 	}
 	CCH_RELEASE(tdbb, &window);
-	return SUCCESS;
+	return FBOK;
 }
 
 

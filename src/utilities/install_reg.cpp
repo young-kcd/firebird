@@ -105,7 +105,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	switch (sw_command) {
 	case COMMAND_INSTALL:
 		ret = REGISTRY_install(hkey_node, directory, reg_error);
-		if (ret != SUCCESS)
+		if (ret != FBOK)
 		    ib_printf ("Firebird has not been installed in the registry.\n");
 		else
 			ib_printf
@@ -114,7 +114,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	case COMMAND_REMOVE:
 		ret = REGISTRY_remove(hkey_node, FALSE, reg_error);
-		if (ret != SUCCESS)
+		if (ret != FBOK)
 			ib_printf("Firebird has not been deleted from the registry.\n");
 		else
 			ib_printf
@@ -125,7 +125,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	if (hkey_node != HKEY_LOCAL_MACHINE)
 		RegCloseKey(hkey_node);
 
-	exit((ret == SUCCESS) ? FINI_OK : FINI_ERROR);
+	exit((ret == FBOK) ? FINI_OK : FINI_ERROR);
 }
 
 

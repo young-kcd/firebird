@@ -638,7 +638,7 @@ static delete_dir(header, id_space, name_string, name_length)
 	move(next, dir, header->jfh_id_space - l);
 	header->jfh_id_space -= (TEXT *) next - (TEXT *) dir;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 

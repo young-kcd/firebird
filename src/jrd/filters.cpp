@@ -194,7 +194,7 @@ STATUS filter_acl(USHORT action, CTL control)
 	if (temp != buffer)
 		gds__free(temp);
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -244,7 +244,7 @@ STATUS filter_blr(USHORT action, CTL control)
 	if (temp != buffer)
 		gds__free(temp);
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -269,7 +269,7 @@ STATUS filter_format(USHORT action, CTL control)
 /* Unless this is a get segment call, just return success */
 
 	if (action != ACTION_get_segment)
-		return SUCCESS;
+		return FBOK;
 
 /* Loop thru descriptors looking for one with a data type */
 
@@ -278,7 +278,7 @@ STATUS filter_format(USHORT action, CTL control)
 						control,
 						sizeof(desc),
 						reinterpret_cast < char *>(&desc), &length);
-		if (status != SUCCESS && status != gds_segment)
+		if (status != FBOK && status != gds_segment)
 			return status;
 		if (desc.dsc_dtype)
 			break;
@@ -312,7 +312,7 @@ STATUS filter_format(USHORT action, CTL control)
 	control->ctl_segment_length = length;
 	move(temp2, reinterpret_cast < char *>(control->ctl_buffer), length);
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -338,7 +338,7 @@ STATUS filter_runtime(USHORT action, CTL control)
 /* Unless this is a get segment call, just return success */
 
 	if (action != ACTION_get_segment)
-		return SUCCESS;
+		return FBOK;
 
 /* If there is a string filter active, use it first */
 
@@ -490,14 +490,14 @@ STATUS filter_text(USHORT action, CTL control)
 		control->ctl_number_segments = source->ctl_number_segments;
 		control->ctl_data[0] = control->ctl_data[1] = control->ctl_data[2] =
 			control->ctl_data[3] = 0;
-		return SUCCESS;
+		return FBOK;
 
 	case ACTION_close:
 		if (control->ctl_data[1]) {
 			gds__free((SLONG *) control->ctl_data[1]);
 			control->ctl_data[1] = (IPTR) NULL;
 		}
-		return SUCCESS;
+		return FBOK;
 
 	case ACTION_get_segment:
 		break;
@@ -509,7 +509,7 @@ STATUS filter_text(USHORT action, CTL control)
 
 	case ACTION_alloc:
 	case ACTION_free:
-		return SUCCESS;
+		return FBOK;
 
 	default:
 		BUGCHECK(289);			/* Unknown blob filter ACTION */
@@ -563,7 +563,7 @@ STATUS filter_text(USHORT action, CTL control)
 		else if (status)
 			return status;
 		else
-			control->ctl_data[2] = SUCCESS;
+			control->ctl_data[2] = FBOK;
 		buffer_used += l;
 	}
 
@@ -615,7 +615,7 @@ STATUS filter_text(USHORT action, CTL control)
 				MOVE_FAST(left_over, p, left_length);
 				control->ctl_data[0] += left_length;
 			}
-			return SUCCESS;
+			return FBOK;
 		}
 
 		/* replace unprintable characters */
@@ -712,7 +712,7 @@ STATUS filter_transliterate_text(USHORT action, CTL control)
 #endif
 		control->ctl_data[0] = (IPTR) aux;
 
-		aux->ctlaux_source_blob_status = SUCCESS;
+		aux->ctlaux_source_blob_status = FBOK;
 		aux->ctlaux_buffer1_unused = 0;
 		aux->ctlaux_expansion_factor = EXP_SCALE * 1;
 
@@ -833,7 +833,7 @@ STATUS filter_transliterate_text(USHORT action, CTL control)
 		gds_alloc_flag_unfreed(aux->ctlaux_buffer1);
 #endif
 
-		return SUCCESS;
+		return FBOK;
 
 	case ACTION_close:
 		if (aux && aux->ctlaux_buffer1) {
@@ -846,7 +846,7 @@ STATUS filter_transliterate_text(USHORT action, CTL control)
 			control->ctl_data[0] = (IPTR) NULL;
 			aux = NULL;
 		}
-		return SUCCESS;
+		return FBOK;
 
 	case ACTION_get_segment:
 		/* Fall through to handle get_segment below */
@@ -897,14 +897,14 @@ STATUS filter_transliterate_text(USHORT action, CTL control)
 		control->ctl_total_length += result_length;
 		control->ctl_number_segments++;
 
-		return SUCCESS;
+		return FBOK;
 
 	case ACTION_seek:
 		return gds_uns_ext;
 
 	case ACTION_alloc:
 	case ACTION_free:
-		return SUCCESS;
+		return FBOK;
 
 	default:
 		BUGCHECK(289);			/* Unknown blob filter ACTION */
@@ -955,12 +955,12 @@ STATUS filter_transliterate_text(USHORT action, CTL control)
 		else if (status == gds_segstr_eof) {	/* source blob is finished */
 			if (length == 0)	/* are we done too? */
 				return gds_segstr_eof;
-			aux->ctlaux_source_blob_status = SUCCESS;
+			aux->ctlaux_source_blob_status = FBOK;
 		}
 		else if (status)		/* general error */
 			return status;
 		else					/* complete segment in buffer */
-			aux->ctlaux_source_blob_status = SUCCESS;
+			aux->ctlaux_source_blob_status = FBOK;
 		length += bytes_read_from_source;
 	}
 
@@ -1009,7 +1009,7 @@ STATUS filter_transliterate_text(USHORT action, CTL control)
  */
 
 	return (aux->ctlaux_source_blob_status ==
-			gds_segment) ? gds_segment : SUCCESS;
+			gds_segment) ? gds_segment : FBOK;
 }
 
 
@@ -1089,7 +1089,7 @@ STATUS filter_trans(USHORT action, CTL control)
 	if (temp != buffer)
 		gds__free(temp);
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -1206,7 +1206,7 @@ static STATUS string_filter(USHORT action, CTL control)
 			control->ctl_data[0] = (IPTR) string->tmp_next;
 			gds__free(string);
 		}
-		return SUCCESS;
+		return FBOK;
 
 	case ACTION_get_segment:
 		if (!(string = (TMP) control->ctl_data[1]))
@@ -1222,7 +1222,7 @@ static STATUS string_filter(USHORT action, CTL control)
 			control->ctl_data[2] = 0;
 		}
 		control->ctl_segment_length = length;
-		return (length <= control->ctl_buffer_length) ? SUCCESS : gds_segment;
+		return (length <= control->ctl_buffer_length) ? FBOK : gds_segment;
 
 	case ACTION_put_segment:
 	case ACTION_create:
@@ -1232,7 +1232,7 @@ static STATUS string_filter(USHORT action, CTL control)
 
 	case ACTION_alloc:
 	case ACTION_free:
-		return SUCCESS;
+		return FBOK;
 
 	default:
 		BUGCHECK(289);			/* Unknown blob filter ACTION */

@@ -243,7 +243,7 @@ int CLIB_ROUTINE walw_classic_main( int argc, char **argv)
 
 	WAL_handle = NULL;
 	if (WALC_init(status_vector, &WAL_handle, dbname, 0,
-				  NULL, 0L, FALSE, 1L, 0, NULL, FALSE) != SUCCESS) {
+				  NULL, 0L, FALSE, 1L, 0, NULL, FALSE) != FBOK) {
 		gds__log_status(dbname, status_vector);
 		gds__print_status(status_vector);
 		exit(FINI_ERROR);
@@ -378,12 +378,12 @@ SSHORT WALW_writer(STATUS * status_vector, WAL WAL_handle)
 
 /* If there already is a WAL writer running, return quietly. */
 
-	if (WALC_check_writer(WAL_handle) == SUCCESS)
-		WALW_WRITER_RETURN(SUCCESS);
+	if (WALC_check_writer(WAL_handle) == FBOK)
+		WALW_WRITER_RETURN(FBOK);
 
 /* Now we are the WAL writer. */
 
-	ret = SUCCESS;
+	ret = FBOK;
 	WAL_TERMINATOR_SET(log_terminator_block);
 
 	WALC_acquire(WAL_handle, &WAL_segment);
@@ -414,7 +414,7 @@ SSHORT WALW_writer(STATUS * status_vector, WAL WAL_handle)
 		if (get_next_logname(status_vector, WAL_segment,
 							 WAL_segment->wals_logname,
 							 &WAL_segment->wals_log_partition_offset,
-							 &log_type) != SUCCESS)
+							 &log_type) != FBOK)
 				report_walw_bug_or_error(status_vector, WAL_handle, FAILURE,
 										 (STATUS) gds_wal_err_rollover2);
 	}
@@ -443,14 +443,14 @@ SSHORT WALW_writer(STATUS * status_vector, WAL WAL_handle)
 	ret = setup_log(status_vector, WAL_handle, WAL_segment->wals_logname,
 					WAL_segment->wals_log_partition_offset, log_type,
 					&(LOG_FD), log_header, first_logfile, "", 0L);
-	if (ret == SUCCESS) {
+	if (ret == FBOK) {
 		WAL_segment->wals_flags |= WALS_WRITER_INITIALIZED;
 		WAL_segment->wals_flags &= ~WALS_FIRST_TIME_LOG;
 	}
 	WALC_release(WAL_handle);
 	acquired = FALSE;
 
-	if (ret != SUCCESS) {
+	if (ret != FBOK) {
 		report_walw_bug_or_error(status_vector, WAL_handle, ret,
 								 (STATUS) gds_wal_err_setup);
 		if (JOURNAL_HANDLE)
@@ -517,7 +517,7 @@ SSHORT WALW_writer(STATUS * status_vector, WAL WAL_handle)
 			if ((ret = write_wal_block(status_vector, wblk,
 									   WAL_segment->wals_logname,
 									   LOG_FD)) !=
-				SUCCESS) report_walw_bug_or_error(status_vector, WAL_handle,
+				FBOK) report_walw_bug_or_error(status_vector, WAL_handle,
 												  ret,
 												  (STATUS)
 												  gds_wal_err_logwrite);
@@ -623,7 +623,7 @@ SSHORT WALW_writer(STATUS * status_vector, WAL WAL_handle)
 
 	ISC_event_clear(WAL_EVENTS + WAL_WRITER_WORK_DONE_SEM);
 
-	WALW_WRITER_RETURN(SUCCESS);
+	WALW_WRITER_RETURN(FBOK);
 
 	}	// try
 	catch (...) {
@@ -675,7 +675,7 @@ static void close_log(
 		gds__free((SLONG *) log_header->walfh_next_logname);
 
 	if ((ret = write_log_header_and_reposition(status_vector, logname, LOG_FD,
-											   log_header)) != SUCCESS)
+											   log_header)) != FBOK)
 		report_walw_bug_or_error(status_vector, WAL_handle, ret,
 								 (STATUS) gds_wal_err_logwrite);
 	LLIO_close(0, LOG_FD);
@@ -704,7 +704,7 @@ static void close_log(
 					   log_header->walfh_seqno, ret);
 		}
 
-		if (ret != SUCCESS)
+		if (ret != FBOK)
 			report_walw_bug_or_error(status_vector, WAL_handle, ret,
 									 (STATUS) gds_wal_err_jrn_comm);
 	}
@@ -729,7 +729,7 @@ SLONG starting_log_partition_offset, SSHORT delete_flag)
  *	recovery.  Delete those files if appropriate AND/OR if
  *	delete_flag is TRUE.
  *
- *	If there is any error, return FAILURE else return SUCCESS.
+ *	If there is any error, return FAILURE else return FBOK.
  *	In case of error, status_vector would be updated.
  *
  **************************************/
@@ -763,7 +763,7 @@ SLONG starting_log_partition_offset, SSHORT delete_flag)
 										  logs_names, log_partitions_offsets,
 										  logs_seqnos, logs_lengths,
 										  logs_flags, -1);
-		if (ret != SUCCESS)
+		if (ret != FBOK)
 			return ret;
 
 		if (log_count < MAXLOGS)
@@ -781,7 +781,7 @@ SLONG starting_log_partition_offset, SSHORT delete_flag)
 		for (; count < log_count; count++) {
 			new_seqno = logs_seqnos[count];
 			if (new_seqno <= old_seqno)
-				return SUCCESS;	/* We are done with the log list */
+				return FBOK;	/* We are done with the log list */
 			old_seqno = new_seqno;
 			log_name = logs_names[count];
 			log_partition_offset = log_partitions_offsets[count];
@@ -797,7 +797,7 @@ SLONG starting_log_partition_offset, SSHORT delete_flag)
 				/* We may delete this file. */
 				WALF_delink_log(status_vector, dbname, log_name,
 								log_partition_offset);
-				if (unlink(log_name) != SUCCESS) {
+				if (unlink(log_name) != FBOK) {
 					WAL_IO_ERROR(status_vector, "logfile unlink", log_name,
 								 isc_io_delete_err, ERRNO);
 					WALC_save_status_strings(status_vector);
@@ -817,7 +817,7 @@ SLONG starting_log_partition_offset, SSHORT delete_flag)
 			break;				/* No more previous log files to check */
 	}
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -896,7 +896,7 @@ static SSHORT flush_all_buffers( STATUS * status_vector, WAL WAL_handle)
 			prepare_wal_block(WAL_segment, wblk);
 			if ((ret = write_wal_block(status_vector, wblk,
 									   WAL_segment->wals_logname,
-									   LOG_FD)) != SUCCESS) {
+									   LOG_FD)) != FBOK) {
 				report_walw_bug_or_error(status_vector, WAL_handle, ret,
 										 gds_wal_err_logwrite);
 				return FAILURE;
@@ -912,7 +912,7 @@ static SSHORT flush_all_buffers( STATUS * status_vector, WAL WAL_handle)
 	WAL_segment->wals_last_flushed_buf = -1;
 	CUR_BUF = 0;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -978,7 +978,7 @@ static BOOLEAN get_log_usability(
 	log_flag = 0;
 	if (WALF_get_log_info
 		(status_vector, dbname, logname, log_partition_offset, &log_seqno,
-		 &log_length, &log_flag) == SUCCESS) {
+		 &log_length, &log_flag) == FBOK) {
 		/* Check the log flag */
 
 		if (!(log_flag & WALFH_KEEP_FOR_RECV))
@@ -1011,7 +1011,7 @@ SLONG * new_offset, SLONG * log_type)
  **************************************
  *
  * Functional description
- *	Returns SUCCESS if a usable log filename is found else
+ *	Returns FBOK if a usable log filename is found else
  *	returns FAILURE.
  *
  **************************************/
@@ -1044,7 +1044,7 @@ SLONG * new_offset, SLONG * log_type)
  *	the preallocated log files.  If preallocated files are not
  *	available, try an overflow log file.
  *
- *	Returns SUCCESS if a usable log filename is found else
+ *	Returns FBOK if a usable log filename is found else
  *	returns FAILURE.
  *
  **************************************/
@@ -1079,7 +1079,7 @@ SLONG * new_offset, SLONG * log_type)
 				*log_type = *log_type | WALFH_PARTITIONED;
 			if (logf->logf_flags & LOGF_RAW)
 				*log_type = *log_type | WALFH_RAW;
-			return SUCCESS;
+			return FBOK;
 		}
 
 		/* Check for the next one */
@@ -1108,7 +1108,7 @@ SLONG * new_offset, SLONG * log_type)
  **************************************
  *
  * Functional description
- *	Returns SUCCESS if a usable log filename is found else
+ *	Returns FBOK if a usable log filename is found else
  *	returns FAILURE.
  *
  **************************************/
@@ -1139,7 +1139,7 @@ SLONG * new_offset, SLONG * log_type)
 						   logf->logf_fname_seqno);
 		logf->logf_fname_seqno++;
 		if (LLIO_open(status_vector, new_logname, LLIO_OPEN_NEW_RW, TRUE, &fd)
-			== SUCCESS) {
+			== FBOK) {
 			/* Found one */
 
 			LLIO_close(status_vector, fd);
@@ -1187,7 +1187,7 @@ SLONG * new_offset, SLONG * log_type)
 
 	*log_type |= WALFH_SERIAL;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -1221,7 +1221,7 @@ SLONG * new_offset)
 		return FALSE;
 
 	if (WALF_open_partitioned_log_file(status_vector, dbname, master_logname,
-									   p_log_header, &p_log_fd) != SUCCESS) {
+									   p_log_header, &p_log_fd) != FBOK) {
 		gds__free((SLONG *) p_log_header);
 		return FALSE;
 	}
@@ -1271,7 +1271,7 @@ SLONG * new_offset, SLONG * log_type)
  *
  * Functional description
  *	Get the name of the next overflow log file, if base name specified.
- *	Returns SUCCESS if an overflow log file name can be created else
+ *	Returns FBOK if an overflow log file name can be created else
  *	returns FAILURE.
  *
  **************************************/
@@ -1291,7 +1291,7 @@ SLONG * new_offset, SLONG * log_type)
 			logf->logf_fname_seqno++;
 			if (LLIO_open
 				(status_vector, new_logname, LLIO_OPEN_NEW_RW, TRUE,
-				 &fd) == SUCCESS) {
+				 &fd) == FBOK) {
 				LLIO_close(status_vector, fd);
 				*new_offset = 0;
 				break;
@@ -1310,7 +1310,7 @@ SLONG * new_offset, SLONG * log_type)
 			return FAILURE;
 		}
 #endif
-		return SUCCESS;
+		return FBOK;
 	}
 
 	return FAILURE;
@@ -1365,7 +1365,7 @@ static SSHORT increase_buffers(
 
 /* First flush all the filled buffer blocks to the current log file */
 
-	if ((ret = flush_all_buffers(status_vector, WAL_handle)) != SUCCESS)
+	if ((ret = flush_all_buffers(status_vector, WAL_handle)) != FBOK)
 		return ret;
 
 	WAL_segment = WAL_handle->wal_segment;
@@ -1390,7 +1390,7 @@ static SSHORT increase_buffers(
 	if (status_vector[1] == gds_unavailable) {
 		WAL_segment = WAL_handle->wal_segment;
 		WAL_segment->wals_flags2 |= WALS2_CANT_EXPAND;
-		return SUCCESS;
+		return FBOK;
 	}
 	if (WAL_segment == (WALS) NULL) {
 		WAL_ERROR(status_vector, gds_wal_cant_expand, DBNAME);
@@ -1428,7 +1428,7 @@ static SSHORT increase_buffers(
 		ib_fflush(DEBUG_FD);
 	}
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -1459,13 +1459,13 @@ static SSHORT init_raw_partitions( STATUS * status_vector, WAL WAL_handle)
 																 logf->
 																 logf_max_size),
 									  logf->logf_partitions);
-			if (ret_val != SUCCESS)
+			if (ret_val != FBOK)
 				report_walw_bug_or_error(status_vector, WAL_handle, ret_val,
 										 (STATUS) gds_wal_err_logwrite);
 		}
 	}
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -1479,7 +1479,7 @@ static SSHORT journal_connect( STATUS * status_vector, WAL WAL_handle)
  *
  * Functional description
  *	Connects to the journal server.
- *	Returns SUCCESS or FAILURE.
+ *	Returns FBOK or FAILURE.
  *
  **************************************/
 	SSHORT ret;
@@ -1507,7 +1507,7 @@ static SSHORT journal_connect( STATUS * status_vector, WAL WAL_handle)
 		ib_fprintf(DEBUG_FD, "After calling JRN_init(), ret=%d\n", ret);
 	}
 
-	if (ret == SUCCESS)
+	if (ret == FBOK)
 		WAL_segment->wals_flags |= WALS_JOURNAL_ENABLED;
 	else
 		report_walw_bug_or_error(status_vector, WAL_handle, ret,
@@ -1561,7 +1561,7 @@ static SSHORT journal_enable( STATUS * status_vector, WAL WAL_handle)
  *
  * Functional description
  *	Connects to the journal server and sends it the current WAL file
- *	info.  Returns SUCCESS or FAILURE.
+ *	info.  Returns FBOK or FAILURE.
  *
  **************************************/
 	SSHORT ret;
@@ -1569,7 +1569,7 @@ static SSHORT journal_enable( STATUS * status_vector, WAL WAL_handle)
 
 	WAL_segment = WAL_handle->wal_segment;
 	ret = journal_connect(status_vector, WAL_handle);
-	if (ret == SUCCESS) {
+	if (ret == FBOK) {
 		if (PRINT_DEBUG_MSGS) {
 			PRINT_TIME(DEBUG_FD, LOCAL_TIME);
 			ib_fprintf(DEBUG_FD, "Enabling journaling for database %s\n",
@@ -1598,7 +1598,7 @@ static SSHORT journal_enable( STATUS * status_vector, WAL WAL_handle)
 		}
 
 	}
-	if (ret != SUCCESS) {
+	if (ret != FBOK) {
 		WAL_segment->wals_flags &= ~WALS_JOURNAL_ENABLED;
 		report_walw_bug_or_error(status_vector, WAL_handle, ret,
 								 (STATUS) gds_wal_err_jrn_comm);
@@ -1786,7 +1786,7 @@ static SSHORT rollover_log(
    because we have already given its log file sequence number for
    the records in those buffers. */
 
-	if ((ret = flush_all_buffers(status_vector, WAL_handle)) != SUCCESS)
+	if ((ret = flush_all_buffers(status_vector, WAL_handle)) != FBOK)
 		return ret;
 
 	WAL_segment = WAL_handle->wal_segment;
@@ -1800,7 +1800,7 @@ static SSHORT rollover_log(
 
 	log_type = 0L;
 	if (get_next_logname(status_vector, WAL_segment, new_logname,
-						 &new_log_partition_offset, &log_type) != SUCCESS) {
+						 &new_log_partition_offset, &log_type) != FBOK) {
 		WAL_ERROR_APPEND(status_vector, gds_wal_err_rollover, new_logname);
 		report_walw_bug_or_error(status_vector, WAL_handle, FAILURE,
 								 gds_wal_err_rollover2);
@@ -1812,7 +1812,7 @@ static SSHORT rollover_log(
 					&new_log_fd, new_log_header, TRUE,
 					WAL_segment->wals_logname,
 					WAL_segment->wals_log_partition_offset);
-	if (ret == SUCCESS) {
+	if (ret == FBOK) {
 		/* Update the current log file with the name of the next log file name
 		   and close it. */
 
@@ -1872,7 +1872,7 @@ static SSHORT rollover_log(
 						   new_log_header->walfh_seqno, ret);
 			}
 
-			if (ret != SUCCESS)
+			if (ret != FBOK)
 				report_walw_bug_or_error(status_vector, WAL_handle, ret,
 										 gds_wal_err_jrn_comm);
 		}
@@ -1884,7 +1884,7 @@ static SSHORT rollover_log(
 		LOG_FD = new_log_fd;
 		memcpy((SCHAR *) log_header, (SCHAR *) new_log_header, WALFH_LENGTH);
 
-		ROLLOVER_LOG_RETURN(SUCCESS);
+		ROLLOVER_LOG_RETURN(FBOK);
 	}
 	else {
 		report_walw_bug_or_error(status_vector, WAL_handle, ret,
@@ -1935,7 +1935,7 @@ SSHORT rollover, SCHAR * prev_logname, SLONG prev_log_partition_offset)
  * Functional description
  *	Initialize the log file header information and
  *	the corresponding WAL_segment information.
- *	Returns SUCCESS or an errno.
+ *	Returns FBOK or an errno.
  *
  **************************************/
 	SSHORT ret;
@@ -1949,7 +1949,7 @@ SSHORT rollover, SCHAR * prev_logname, SLONG prev_log_partition_offset)
 								log_partition_offset, log_type, logfile_fd,
 								log_header, rollover, prev_logname,
 								prev_log_partition_offset, &takeover);
-	if (ret == SUCCESS) {
+	if (ret == FBOK) {
 		/* Now updates the appropriate fields of WAL_segment from the given
 		   log_header.  */
 
@@ -2032,7 +2032,7 @@ SCHAR * prev_logname, SLONG prev_log_partition_offset, SSHORT * takeover)
  *	If we determine that this is a takeover situation, set the takeover
  *	parameter to TRUE.
  *
- *	Returns SUCCESS or FAILURE.
+ *	Returns FBOK or FAILURE.
  *
  **************************************/
 	WALS WAL_segment;
@@ -2207,7 +2207,7 @@ static SSHORT write_log_header_and_reposition(
  * Functional description
  *	Write the passed log_header at the beginning of the log file
  *	and then seek it to the end as per log_header->walfh_length value.
- *	Returns SUCCESS or FAILURE.
+ *	Returns FBOK or FAILURE.
  *
  **************************************/
 
@@ -2228,7 +2228,7 @@ static SSHORT write_log_header_and_reposition(
 	if (LLIO_seek(status_vector, log_fd, logname, -1 * WAL_TERMINATOR_BLKLEN,
 				  LLIO_SEEK_CURRENT)) return FAILURE;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -2251,7 +2251,7 @@ static SSHORT write_wal_block(
 				   wblk->walblk_buf, wblk->walblk_roundup_offset, 0))
 		return FAILURE;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 

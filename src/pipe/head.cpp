@@ -32,7 +32,7 @@
  *
  */
 
- /* $Id: head.cpp,v 1.15 2002-11-06 07:08:46 eku Exp $ */
+ /* $Id: head.cpp,v 1.16 2002-11-13 15:01:05 kkuznetsov Exp $ */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -273,7 +273,7 @@ static RDB	PSI_databases = NULL;
 	    } \
 	return c.element
 
-#define RETURN_SUCCESS return SUCCESS;
+#define RETURN_FBOK return FBOK;
 
 #define CHECK_HANDLE(blk, type, error) if (!blk || ((BLK) blk)->blk_type != (SCHAR) type) \
 	return handle_error (user_status, error)
@@ -428,7 +428,7 @@ if (!(rdb = init (user_status, op_attach,
 
 *handle = rdb;
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 #ifndef BRIDGE
@@ -460,7 +460,7 @@ if (!(rdb = init (user_status, op_attach_service,
 
 *handle = rdb;
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 #endif
 
@@ -501,7 +501,7 @@ if (check_response (user_status))
     return user_status [1];
 
 GET_STRING (GET_WORD, buffer);
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 STATUS GDS_CANCEL_BLOB (
@@ -526,8 +526,8 @@ UCHAR	*p;
 if (!(blob = *blob_handle))
     {
     *user_status++ = gds_arg_gds;
-    *user_status = SUCCESS;
-    return SUCCESS;
+    *user_status = FBOK;
+    return FBOK;
     }
 
 CHECK_HANDLE (blob, type_rbl, gds_bad_segstr_handle);
@@ -542,7 +542,7 @@ if (release_object (op_cancel_blob, blob->rbl_handle, user_status))
 release_blob (blob);
 *blob_handle = NULL;
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 STATUS GDS_CANCEL_EVENTS (
@@ -582,7 +582,7 @@ PUT_WORD (*id);
 if (check_response (user_status))
     return user_status [1];
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 #endif
 }
 
@@ -628,7 +628,7 @@ if (release_object (op_close_blob, blob->rbl_handle, user_status))
 release_blob (blob);
 *blob_handle = NULL;
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 STATUS GDS_COMMIT (
@@ -663,7 +663,7 @@ if (release_object (op_commit, transaction->rtr_handle, user_status))
 release_transaction (transaction);
 *rtr_handle = NULL;
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 STATUS GDS_COMMIT_RETAINING (
@@ -700,7 +700,7 @@ ESTABLISH_PIPES;
 if (release_object (op_commit_retaining, transaction->rtr_handle, user_status))
     return user_status [1];
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 #endif
 }
 
@@ -750,7 +750,7 @@ request->rrq_rdb = rdb;
 request->rrq_next = rdb->rdb_requests;
 rdb->rdb_requests = request;
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 STATUS GDS_CREATE_BLOB (
@@ -804,7 +804,7 @@ transaction->rtr_blobs = blob;
 blob_id->bid_relation_id = GET_WORD;
 blob_id->bid_number = GET_WORD;
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 STATUS GDS_CREATE_BLOB2 (
@@ -866,7 +866,7 @@ transaction->rtr_blobs = blob;
 blob_id->bid_relation_id = GET_WORD;
 blob_id->bid_number = GET_WORD;
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 #endif
 }
 
@@ -904,7 +904,7 @@ if (!(rdb = init (user_status, op_create, (UCHAR*)file_name, l,
 
 *handle = rdb;
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 STATUS GDS_DATABASE_INFO (
@@ -955,7 +955,7 @@ MERGE_database_info (temp_buffer, buffer, GDS_VAL (buffer_length),
 if (buffer_length > sizeof (temp))
     ALLP_free (temp_buffer);
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 STATUS GDS_DDL (
@@ -1000,7 +1000,7 @@ PUT_STRING (GDS_VAL (length), msg);
 if (check_response (user_status))
     return user_status [1];
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 #endif
 }
 
@@ -1048,7 +1048,7 @@ ALLP_release ((BLK) rdb);
 
 *handle = NULL;
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 #ifndef BRIDGE
@@ -1082,7 +1082,7 @@ ALLP_release ((BLK) rdb);
 
 *handle = NULL;
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 #endif
 
@@ -1136,7 +1136,7 @@ ALLP_release ((BLK) rdb);
 if (code)
     return code;
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 #endif
 
@@ -1181,7 +1181,7 @@ statement->rsr_rdb = rdb;
 statement->rsr_next = rdb->rdb_sql_requests;
 rdb->rdb_sql_requests = statement;
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 STATUS GDS_DSQL_EXECUTE (
@@ -1244,7 +1244,7 @@ else if (!transaction && handle)
 if (user_status [1])
     return user_status [1];
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 #ifndef BRIDGE
@@ -1319,7 +1319,7 @@ if (user_status [1])
 
 GET_STRING (GET_WORD, out_msg);
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 #endif
 
@@ -1389,7 +1389,7 @@ else if (!transaction && handle)
 if (user_status [1])
     return user_status [1];
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 #ifndef BRIDGE
@@ -1471,7 +1471,7 @@ if (user_status [1])
 
 GET_STRING (GET_WORD, out_msg);
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 #endif
 
@@ -1526,7 +1526,7 @@ else if (user_status [1])
 
 GET_STRING (GET_WORD, msg);
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 STATUS GDS_DSQL_FREE (
@@ -1570,7 +1570,7 @@ if (!statement->rsr_handle)
     *stmt_handle = NULL;
     }
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 #ifndef BRIDGE
@@ -1617,7 +1617,7 @@ PUT_STRING (msg_length, msg);
 if (check_response (user_status))
     return user_status [1];
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 #endif
 
@@ -1678,7 +1678,7 @@ if (check_response (user_status))
 
 GET_STRING (GET_WORD, buffer);
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 STATUS GDS_DSQL_SET_CURSOR (
@@ -1722,7 +1722,7 @@ PUT_WORD (type);
 if (check_response (user_status))
     return user_status [1];
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 STATUS GDS_DSQL_SQL_INFO (
@@ -1767,7 +1767,7 @@ if (check_response (user_status))
 
 GET_STRING (GET_WORD, buffer);
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 STATUS GDS_GET_SEGMENT (
@@ -1924,7 +1924,7 @@ while (TRUE)
     PUT_WORD (blob->rbl_buffer_length);
 
     /* Note that if gds__segment needs to be returned it will be
-     * sent via the STATE value - and the status vector will reflect SUCCESS
+     * sent via the STATE value - and the status vector will reflect FBOK
      */
     if (check_response (user_status))
 	return user_status [1];
@@ -2003,7 +2003,7 @@ GET_STRING (GDS_VAL (slice_length), slice);
 if (return_length)
     *return_length = length;
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 #endif
 }
 
@@ -2056,7 +2056,7 @@ blob->rbl_ptr = blob->rbl_buffer;
 blob->rbl_next = transaction->rtr_blobs;
 transaction->rtr_blobs = blob;
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 STATUS GDS_OPEN_BLOB2 (
@@ -2116,7 +2116,7 @@ blob->rbl_ptr = blob->rbl_buffer;
 blob->rbl_next = transaction->rtr_blobs;
 transaction->rtr_blobs = blob;
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 #endif
 }
 
@@ -2204,7 +2204,7 @@ if (!(blob->rbl_flags & RBL_create))
     if (check_response (user_status))
 	return user_status [1];
 
-    RETURN_SUCCESS;
+    RETURN_FBOK;
     }
 
 #ifndef V2_BRIDGE
@@ -2241,7 +2241,7 @@ if (buffer_length)
 
 blob->rbl_ptr = p;
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 #endif
 }
 
@@ -2301,7 +2301,7 @@ if (check_response (user_status))
 array_id->bid_relation_id = GET_WORD;
 array_id->bid_number = GET_WORD;
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 #endif
 }
 
@@ -2371,7 +2371,7 @@ if (check_response (user_status))
 
 *id = GET_WORD;
 
-return SUCCESS;
+return FBOK;
 #endif
 }
 
@@ -2417,7 +2417,7 @@ if (check_response (user_status))
 
 GET_STRING (GET_WORD, (UCHAR*)buffer);
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 #endif
 
@@ -2473,7 +2473,7 @@ if (check_response (user_status))
 
 GET_STRING (GDS_VAL (msg_length), msg);
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 STATUS GDS_RECONNECT (
@@ -2515,7 +2515,7 @@ if (check_response (user_status))
 
 *rtr_handle = make_transaction (rdb, (int*) GET_HANDLE);
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 STATUS GDS_RELEASE_REQUEST (
@@ -2550,7 +2550,7 @@ if (release_object (op_release, request->rrq_handle, user_status))
 release_request (request);
 *req_handle = NULL;
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 STATUS GDS_REQUEST_INFO (
@@ -2593,7 +2593,7 @@ if (check_response (user_status))
     return user_status [1];
 
 GET_STRING (GET_WORD, buffer);
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 STATUS GDS_ROLLBACK (
@@ -2628,7 +2628,7 @@ if (release_object (op_rollback, transaction->rtr_handle, user_status))
 release_transaction (transaction);
 *rtr_handle = NULL;
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 STATUS GDS_SEEK_BLOB (
@@ -2670,7 +2670,7 @@ if (check_response (user_status))
 
 *result = GET_WORD;
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 STATUS GDS_SEND (
@@ -2714,7 +2714,7 @@ PUT_WORD (GDS_VAL (level));
 if (check_response (user_status))
     return user_status [1];
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 STATUS GDS_START_AND_SEND (
@@ -2762,7 +2762,7 @@ PUT_WORD (GDS_VAL (level));
 if (check_response (user_status))
     return user_status [1];
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 STATUS GDS_START (
@@ -2804,7 +2804,7 @@ PUT_WORD (GDS_VAL (level));
 if (check_response (user_status))
     return user_status [1];
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 STATUS GDS_START_MULTIPLE (
@@ -2853,7 +2853,7 @@ if (check_response (user_status))
 
 *rtr_handle = make_transaction (rdb, (int*) GET_HANDLE);
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 STATUS GDS_START_TRANSACTION (
@@ -2902,7 +2902,7 @@ if (check_response (user_status))
 
 *rtr_handle = make_transaction (rdb, (int*) GET_HANDLE);
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 #ifndef BRIDGE
@@ -2954,7 +2954,7 @@ if (check_response (user_status))
 
 GET_STRING (out_msg_length, out_msg);
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 #endif
 
@@ -2995,7 +2995,7 @@ if (check_response (user_status))
     return user_status [1];
 
 GET_STRING (GET_WORD, buffer);
-RETURN_SUCCESS;
+RETURN_FBOK;
 }
 
 STATUS GDS_UNWIND (
@@ -3826,5 +3826,5 @@ PUT_STRING (buffer_length, buffer);
 if (check_response (user_status))
     return user_status [1];
 
-RETURN_SUCCESS;
+RETURN_FBOK;
 }

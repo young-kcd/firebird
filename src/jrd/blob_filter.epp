@@ -109,7 +109,7 @@ STATUS DLL_EXPORT BLF_close_blob(TDBB tdbb, CTL * filter_handle)
 		 next = next->ctl_source_handle);
 
 	callback = next->ctl_source;
-	status = SUCCESS;
+	status = FBOK;
 
 	START_CHECK_FOR_EXCEPTIONS( (TEXT*) next->ctl_exception_message)
 
@@ -193,7 +193,7 @@ STATUS DLL_EXPORT BLF_get_segment(TDBB tdbb,
 	START_CHECK_FOR_EXCEPTIONS((TEXT*) control->ctl_exception_message)
 
 		user_status[0] = gds_arg_gds;
-	user_status[1] = SUCCESS;
+	user_status[1] = FBOK;
 	user_status[2] = gds_arg_end;
 
 	status = (*control->ctl_source) (ACTION_get_segment, control);
@@ -305,7 +305,7 @@ STATUS DLL_EXPORT BLF_put_segment(TDBB tdbb,
 	START_CHECK_FOR_EXCEPTIONS( (TEXT*) control->ctl_exception_message)
 
 		user_status[0] = gds_arg_gds;
-	user_status[1] = SUCCESS;
+	user_status[1] = FBOK;
 	user_status[2] = gds_arg_end;
 
 	status = (*control->ctl_source) (ACTION_put_segment, control);
@@ -365,7 +365,7 @@ USHORT bpb_length, UCHAR * bpb, PTR callback, USHORT action, BLF filter)
 /* Allocate a filter control block and open blob */
 
 	user_status[0] = gds_arg_gds;
-	user_status[1] = SUCCESS;
+	user_status[1] = FBOK;
 	user_status[2] = gds_arg_end;
 
 /* utilize a temporary control block just to pass the three 

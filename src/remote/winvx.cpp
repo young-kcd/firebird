@@ -771,7 +771,7 @@ static int error_check( int status, SSHORT * iosb)
 	}
 
 	if (!iosb || (iosb[0] & 1))
-		return SUCCESS;
+		return FBOK;
 
 	errno = ERRNO(iosb[0]);
 

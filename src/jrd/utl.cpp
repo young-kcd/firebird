@@ -658,7 +658,7 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
 	*dpb_size = p - new_dpb;
 	*dpb = (SCHAR *) new_dpb;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -1334,7 +1334,7 @@ int API_ROUTINE gds__version(
 			ods_minor_version);
 	reinterpret_cast < void (*) (...) > (*routine) (user_arg, s);
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -2237,7 +2237,7 @@ static int get_ods_version(
 		}
 	}
 
-	return SUCCESS;
+	return FBOK;
 }
 
 

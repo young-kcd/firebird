@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.47 2002-11-13 12:27:46 eku Exp $
+$Id: common.h,v 1.48 2002-11-13 15:00:57 kkuznetsov Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -734,7 +734,7 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #ifndef FALSE
 #define FALSE           0
 #endif
-#define SUCCESS         0
+#define FBOK         0
 #define FAILURE         1
 
 

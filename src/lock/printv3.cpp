@@ -267,7 +267,7 @@ int V3_lock_print(USHORT argc, UCHAR **argv)
 	if (LOCK_header->lhb_secondary != LHB_PATTERN)
 		prt_history(shb->shb_history, "Event log");
 
-	return SUCCESS;
+	return FBOK;
 }
 
 

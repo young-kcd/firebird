@@ -4430,7 +4430,7 @@ static BOOLEAN get_who( TDBB tdbb, GBL gbl, SCHAR * name)
 		return FAILURE;
 	}
 
-	return SUCCESS;
+	return FBOK;
 }
 
 

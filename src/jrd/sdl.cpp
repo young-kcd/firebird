@@ -227,7 +227,7 @@ STATUS API_ROUTINE SDL_info(STATUS * status_vector,
 					|| (((SCHAR) * p) != gds_sdl_eoc))
 					info->sdl_info_dimensions = 0;
 			}
-			return SUCCESS;
+			return FBOK;
 		}
 }
 
@@ -377,7 +377,7 @@ ADS array_desc, SLONG * variables, void (*callback) (), SLICE argument)
 		}
     }
 
-	return SUCCESS;
+	return FBOK;
 }
 
 

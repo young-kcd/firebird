@@ -361,7 +361,7 @@ int MISC_time_convert( TEXT * string, USHORT length, SLONG date[2])
  **************************************
  *
  * Functional description
- *	Convert an arbitrary string to a date.  Return SUCCESS if successful,
+ *	Convert an arbitrary string to a date.  Return FBOK if successful,
  *	otherwise FAILURE.
  *
  **************************************/
@@ -422,19 +422,19 @@ int MISC_time_convert( TEXT * string, USHORT length, SLONG date[2])
 							return FAILURE;
 					if (strcmp(temp, NOW) == 0) {
 						now_to_date(&times2, date);
-						return SUCCESS;
+						return FBOK;
 					}
 					times2.tm_hour = times2.tm_min = times2.tm_sec = 0;
 					gds__encode_date(&times2, date);
 					if (strcmp(temp, TODAY) == 0)
-						return SUCCESS;
+						return FBOK;
 					if (strcmp(temp, TOMORROW) == 0) {
 						++date[0];
-						return SUCCESS;
+						return FBOK;
 					}
 					if (strcmp(temp, YESTERDAY) == 0) {
 						--date[0];
-						return SUCCESS;
+						return FBOK;
 					}
 					return FAILURE;
 				}
@@ -466,7 +466,7 @@ int MISC_time_convert( TEXT * string, USHORT length, SLONG date[2])
 
 	if (!components[0] && !components[1] && !components[2]) {
 		date[0] = date[1] = 0;
-		return SUCCESS;
+		return FBOK;
 	}
 
 	if (month_position) {
@@ -504,7 +504,7 @@ int MISC_time_convert( TEXT * string, USHORT length, SLONG date[2])
 		times.tm_mon != times2.tm_mon || times.tm_mday != times2.tm_mday)
 		return FAILURE;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 

@@ -2808,7 +2808,7 @@ static STATUS detach( STATUS * status_vector, DBB dbb)
 	STATUS *status, alt_vector[ISC_STATUS_LENGTH];
 
 	if (!dbb->dbb_handle)
-		return SUCCESS;
+		return FBOK;
 
 	status = status_vector;
 
@@ -2862,7 +2862,7 @@ static int execute_dynamic_ddl( DBB database, RLB rlb)
 
 	RELEASE_RLB;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -2986,7 +2986,7 @@ static void get_log_names(
 		loop++;
 		if (WALF_get_linked_logs_info
 			(gds_status, db_name, cur_log, part_offset, &log_count, next_log,
-			 &next_offset, &last_log_flag, &not_archived) != SUCCESS)
+			 &next_offset, &last_log_flag, &not_archived) != FBOK)
 			ERRQ_database_error(dbb, gds_status);
 
 		if ((!not_archived) || force)

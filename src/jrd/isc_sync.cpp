@@ -511,7 +511,7 @@ int ISC_event_wait(SSHORT	count,
  *	Wait on an event.  If timeout limit specified, return
  *	anyway after the timeout even if no event has
  *	happened.  If returning due to timeout, return
- *	FAILURE else return SUCCESS.
+ *	FAILURE else return FBOK.
  *
  **************************************/
 	timestruc_t timer;
@@ -525,7 +525,7 @@ int ISC_event_wait(SSHORT	count,
 /* If we're not blocked, the rest is a gross waste of time */
 
 	if (!ISC_event_blocked(count, events, values))
-		return SUCCESS;
+		return FBOK;
 
 /* Set up timers if a timeout period was specified. */
 
@@ -535,11 +535,11 @@ int ISC_event_wait(SSHORT	count,
 		timer.tv_nsec = 1000 * (micro_seconds % 1000000);
 	}
 
-	int ret = SUCCESS;
+	int ret = FBOK;
 	mutex_lock((*events)->event_mutex);
 	for (;;) {
 		if (!ISC_event_blocked(count, events, values)) {
-			ret = SUCCESS;
+			ret = FBOK;
 			break;
 		}
 
@@ -556,12 +556,12 @@ int ISC_event_wait(SSHORT	count,
 		if (micro_seconds > 0 && (ret == ETIME)) {
 
 			/* The timer expired - see if the event occured and return
-			   SUCCESS or FAILURE accordingly. */
+			   FBOK or FAILURE accordingly. */
 
 			if (ISC_event_blocked(count, events, values))
 				ret = FAILURE;
 			else
-				ret = SUCCESS;
+				ret = FBOK;
 			break;
 		}
 	}
@@ -788,7 +788,7 @@ int ISC_event_wait(
  *	Wait on an event.  If timeout limit specified, return
  *	anyway after the timeout even if no event has
  *	happened.  If returning due to timeout, return
- *	FAILURE else return SUCCESS.
+ *	FAILURE else return FBOK.
  *
  **************************************/
 	int ret;
@@ -803,7 +803,7 @@ int ISC_event_wait(
 /* If we're not blocked, the rest is a gross waste of time */
 
 	if (!ISC_event_blocked(count, events, values))
-		return SUCCESS;
+		return FBOK;
 
 /* Set up timers if a timeout period was specified. */
 
@@ -813,11 +813,11 @@ int ISC_event_wait(
 		timer.tv_nsec = 1000 * (micro_seconds % 1000000);
 	}
 
-	ret = SUCCESS;
+	ret = FBOK;
 	pthread_mutex_lock((*events)->event_mutex);
 	for (;;) {
 		if (!ISC_event_blocked(count, events, values)) {
-			ret = SUCCESS;
+			ret = FBOK;
 			break;
 		}
 
@@ -847,12 +847,12 @@ int ISC_event_wait(
 		{
 
 			/* The timer expired - see if the event occured and return
-			   SUCCESS or FAILURE accordingly. */
+			   FBOK or FAILURE accordingly. */
 
 			if (ISC_event_blocked(count, events, values))
 				ret = FAILURE;
 			else
-				ret = SUCCESS;
+				ret = FBOK;
 			break;
 		}
 	}
@@ -1052,7 +1052,7 @@ int ISC_event_wait(
  *	Wait on an event.  If timeout limit specified, return
  *	anyway after the timeout even if no event has
  *	happened.  If returning due to timeout, return
- *	FAILURE else return SUCCESS.
+ *	FAILURE else return FBOK.
  *
  **************************************/
 	int ret;
@@ -1078,7 +1078,7 @@ int ISC_event_wait(
 /* If we're not blocked, the rest is a gross waste of time */
 
 	if (!ISC_event_blocked(count, events, values))
-		return SUCCESS;
+		return FBOK;
 
 /* If this is a local semaphore, don't sweat the semaphore non-sense */
 
@@ -1094,7 +1094,7 @@ int ISC_event_wait(
 			if (!ISC_event_blocked(count, events, values)) {
 				--inhibit_restart;
 				sigprocmask(SIG_SETMASK, &oldmask, NULL);
-				return SUCCESS;
+				return FBOK;
 			}
 			sigsuspend(&oldmask);
 		}
@@ -1130,20 +1130,20 @@ int ISC_event_wait(
 	for (;;) {
 		if (!ISC_event_blocked(count, events, values)) {
 			if (micro_seconds <= 0)
-				return SUCCESS;
-			ret = SUCCESS;
+				return FBOK;
+			ret = FBOK;
 			break;
 		}
 		(void) semaphore_wait_isc_sync(count, semid, semnums);
 		if (micro_seconds > 0) {
-			/* semaphore_wait_isc_sync() routine may return SUCCESS if our timeout
+			/* semaphore_wait_isc_sync() routine may return FBOK if our timeout
 			   handler poked the semaphore.  So make sure that the event
 			   actually happened.  If it didn't, indicate failure. */
 
 			if (ISC_event_blocked(count, events, values))
 				ret = FAILURE;
 			else
-				ret = SUCCESS;
+				ret = FBOK;
 			break;
 		}
 	}
@@ -4304,7 +4304,7 @@ static BOOLEAN semaphore_wait_isc_sync(int count, int semid, int *semnums)
  * Functional description
  *	Wait on the given semaphores.  Return FAILURE if
  *	interrupted (including timeout) before any
- *	semaphore was poked else return SUCCESS.
+ *	semaphore was poked else return FBOK.
  *
  **************************************/
 	int i, ret;
@@ -4320,7 +4320,7 @@ static BOOLEAN semaphore_wait_isc_sync(int count, int semid, int *semnums)
 	if (ret == -1 && SYSCALL_INTERRUPTED(errno))
 		return FAILURE;
 	else
-		return SUCCESS;
+		return FBOK;
 }
 #endif
 

@@ -86,7 +86,7 @@ int CLIB_ROUTINE main( int argc,
 /* Attach with journal server */
 
 	if (JRN_archive_begin(status, &journal, db_id, file_id, j_dir, j_length)
-		!= SUCCESS)
+		!= FBOK)
 		error_exit(status, &journal, db_id, file_id, 235);	/* msg 235: Archive process unable to attach to journal server. */
 
 /* Check in with database */
@@ -147,7 +147,7 @@ static USHORT copy_file( SLONG s_fd, SLONG d_fd, SLONG size)
 			return FAILURE;
 	}
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -195,5 +195,5 @@ static USHORT open_file(
 			return FAILURE;
 	}
 
-	return SUCCESS;
+	return FBOK;
 }

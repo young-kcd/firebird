@@ -129,7 +129,7 @@ ULONG start_seqno, USHORT start_file, USHORT num_files, SCHAR ** files)
 							reinterpret_cast < UCHAR * >(journal_dir),
 							jd_len,
 							reinterpret_cast < UCHAR * >(data),
-							d_len)) != SUCCESS)
+							d_len)) != FBOK)
 			AIL_process_jrn_error(ret_val);
 
 	if (db_len) {
@@ -156,7 +156,7 @@ ULONG start_seqno, USHORT start_file, USHORT num_files, SCHAR ** files)
 
 		if ((ret_val = JRN_put_old_start(tdbb->tdbb_status_vector,
 										 dbb->dbb_journal, seqno, offset,
-										 p_offset, &dump_id)) != SUCCESS)
+										 p_offset, &dump_id)) != FBOK)
 			AIL_process_jrn_error(ret_val);
 	}
 
@@ -240,11 +240,11 @@ ULONG start_seqno, USHORT start_file, USHORT num_files, SCHAR ** files)
 	if ((ret_val = JRN_put_old_end(tdbb->tdbb_status_vector, dbb->dbb_journal,
 								   seqno, offset, p_offset,
 								   dump_id)) !=
-		SUCCESS) AIL_process_jrn_error(ret_val);
+		FBOK) AIL_process_jrn_error(ret_val);
 
 	old_fini(&OLD_handle, OLD_EOD);
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -258,7 +258,7 @@ static int close_cur_file(OLD old, USHORT code)
  *
  * Functional description
  *	Closes the current file with a code record at end
- *	returns SUCCESS - if things work
+ *	returns FBOK - if things work
  *		FAILURE - close fails
  *
  **************************************/
@@ -290,7 +290,7 @@ static int close_cur_file(OLD old, USHORT code)
 	old->old_fd = 0;
 	old->old_cur_size = 0;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -304,7 +304,7 @@ static int create_file(OLD old, SLONG * ret_fd)
  *
  * Functional description
  *	Open next file and write header & journal new name
- *	returns SUCCESS - if things work
+ *	returns FBOK - if things work
  *		FAILURE - open fails 
  *
  **************************************/
@@ -361,7 +361,7 @@ static int create_file(OLD old, SLONG * ret_fd)
 
 	*ret_fd = fd;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -630,7 +630,7 @@ static int old_put(OLD OLD_handle, SCHAR * logrec, USHORT len)
 		/* Not enough space */
 		/* backup to beginning of block and go on to next file */
 
-		if (ret == SUCCESS)
+		if (ret == FBOK)
 			LLIO_seek(0, OLD_handle->old_fd, 0, -l, LLIO_SEEK_CURRENT);
 
 		if ((open_next_file(OLD_handle)) == FAILURE)
@@ -642,7 +642,7 @@ static int old_put(OLD OLD_handle, SCHAR * logrec, USHORT len)
 	ob->ob_cur_seqno++;
 	OLD_handle->old_cur_size += OLD_handle->old_rec_size;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -747,7 +747,7 @@ static int open_next_file(OLD old)
  *
  * Functional description
  *	Opens the next OnLine Dump file and writes out the header.
- *	returns SUCCESS - if things work
+ *	returns FBOK - if things work
  *		FAILURE - open fails, no more file etc.
  *
  **************************************/
@@ -777,7 +777,7 @@ static int open_next_file(OLD old)
 		(ret_val =
 		 JRN_put_old_file(tdbb->tdbb_status_vector, dbb->dbb_journal, name,
 						  strlen(name), old->old_file_size,
-						  old->old_file_seqno, old->old_dump_id)) != SUCCESS) {
+						  old->old_file_seqno, old->old_dump_id)) != FBOK) {
 		LLIO_close(0, fd);
 		AIL_process_jrn_error(ret_val);
 	}
@@ -787,5 +787,5 @@ static int open_next_file(OLD old)
 
 	old->old_fd = fd;
 
-	return SUCCESS;
+	return FBOK;
 }

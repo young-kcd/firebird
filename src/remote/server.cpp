@@ -2490,7 +2490,7 @@ STATUS port::get_slice(P_SLC * stuff, PACKET* send)
 		response->p_slr_sdl_length = stuff->p_slc_sdl.cstr_length;
 		this->send(send);
 		response->p_slr_sdl = 0;
-		status = SUCCESS;
+		status = FBOK;
 	}
 
 	if (slice) {
@@ -4747,7 +4747,7 @@ static void success( STATUS * status_vector)
  **************************************/
 
 	status_vector[0] = gds_arg_gds;
-	status_vector[1] = SUCCESS;
+	status_vector[1] = FBOK;
 	status_vector[2] = gds_arg_end;
 }
 
@@ -4975,7 +4975,7 @@ STATUS port::transact_request(P_TRRQ * trrq, PACKET* send)
 	data->p_data_messages = 1;
 	this->send(send);
 
-	return SUCCESS;
+	return FBOK;
 }
 
 

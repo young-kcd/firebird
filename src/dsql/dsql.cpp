@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: dsql.cpp,v 1.29 2002-11-12 16:04:01 alexpeshkoff Exp $
+$Id: dsql.cpp,v 1.30 2002-11-13 15:00:49 kkuznetsov Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -2772,7 +2772,7 @@ static STATUS execute_request(REQ				request,
 	tdsql = GET_THREAD_DATA;
 
 	request->req_trans = (int *) *trans_handle;
-	return_status = SUCCESS;
+	return_status = FBOK;
 
 	switch (request->req_type) {
 	case REQ_START_TRANS:
@@ -2787,7 +2787,7 @@ static STATUS execute_request(REQ				request,
 		if (s)
 			punt();
 		*trans_handle = request->req_trans;
-		return SUCCESS;
+		return FBOK;
 
 	case REQ_COMMIT:
 		THREAD_EXIT;
@@ -2797,7 +2797,7 @@ static STATUS execute_request(REQ				request,
 		if (s)
 			punt();
 		*trans_handle = NULL;
-		return SUCCESS;
+		return FBOK;
 
 	case REQ_COMMIT_RETAIN:
 		THREAD_EXIT;
@@ -2806,7 +2806,7 @@ static STATUS execute_request(REQ				request,
 		THREAD_ENTER;
 		if (s)
 			punt();
-		return SUCCESS;
+		return FBOK;
 
 	case REQ_ROLLBACK:
 		THREAD_EXIT;
@@ -2816,11 +2816,11 @@ static STATUS execute_request(REQ				request,
 		if (s)
 			punt();
 		*trans_handle = NULL;
-		return SUCCESS;
+		return FBOK;
 
 	case REQ_DDL:
 		DDL_execute(request);
-		return SUCCESS;
+		return FBOK;
 
 	case REQ_GET_SEGMENT:
 		execute_blob(	request,
@@ -2832,7 +2832,7 @@ static STATUS execute_request(REQ				request,
 						out_blr,
 						out_msg_length,
 						out_msg);
-		return SUCCESS;
+		return FBOK;
 
 	case REQ_PUT_SEGMENT:
 		execute_blob(	request,
@@ -2844,7 +2844,7 @@ static STATUS execute_request(REQ				request,
 						out_blr,
 						out_msg_length,
 						out_msg);
-		return SUCCESS;
+		return FBOK;
 
 	case REQ_EXEC_PROCEDURE:
 		if (message = (MSG) request->req_send) {
@@ -2890,7 +2890,7 @@ static STATUS execute_request(REQ				request,
 			punt();
 		if (out_msg_length && message)
 			map_in_out(NULL, message, 0, out_blr, out_msg_length, out_msg);
-		return SUCCESS;
+		return FBOK;
 
 	default:
 		/* Catch invalid request types */
@@ -3160,7 +3160,7 @@ static BOOLEAN get_indices(
 	*plan_length_ptr = plan_length;
 	*plan_ptr = plan;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -3631,7 +3631,7 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 	*plan_length_ptr = plan_length;
 	*plan_ptr = plan;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -4464,7 +4464,7 @@ static STATUS return_success(void)
 
 	STATUS*p = tdsql->tsql_status;
 	*p++ = gds_arg_gds;
-	*p++ = SUCCESS;
+	*p++ = FBOK;
 
 	// do not overwrite warnings
 	if (*p != isc_arg_warning) {
@@ -4473,7 +4473,7 @@ static STATUS return_success(void)
 
 	RESTORE_THREAD_DATA;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 

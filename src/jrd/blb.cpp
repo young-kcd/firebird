@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.15 2002-11-11 19:42:43 hippoman Exp $
+$Id: blb.cpp,v 1.16 2002-11-13 15:00:55 kkuznetsov Exp $
 */
 
 #include "firebird.h"
@@ -1711,7 +1711,7 @@ static STATUS blob_filter(	USHORT	action,
 		control->ctl_total_length = blob->blb_length;
 		control->ctl_max_segment = blob->blb_max_segment;
 		control->ctl_number_segments = blob->blb_count;
-		return SUCCESS;
+		return FBOK;
 
 	case ACTION_get_segment:
 		blob = (BLB) control->ctl_source_handle;
@@ -1724,39 +1724,39 @@ static STATUS blob_filter(	USHORT	action,
 		if (blob->blb_fragment_size) {
 			return gds_segment;
 		}
-		return SUCCESS;
+		return FBOK;
 
 	case ACTION_create:
 		control->ctl_source_handle =
 			(CTL) BLB_create2(tdbb, transaction,
 							  reinterpret_cast<bid*>(blob_id), 0,
 							  (UCHAR *) 0);
-		return SUCCESS;
+		return FBOK;
 
 	case ACTION_put_segment:
 		blob = (BLB) control->ctl_source_handle;
 		BLB_put_segment(tdbb, blob, control->ctl_buffer,
 						control->ctl_buffer_length);
-		return SUCCESS;
+		return FBOK;
 
 	case ACTION_close:
 		BLB_close(tdbb,
 				  reinterpret_cast<blb*>(control->ctl_source_handle));
-		return SUCCESS;
+		return FBOK;
 
 	case ACTION_alloc:
 		return (STATUS) FB_NEW(*transaction->tra_pool) ctl();
 
 	case ACTION_free:
 		delete control;
-		return SUCCESS;
+		return FBOK;
 
 	case ACTION_seek:
 		return BLB_lseek((BLB) control->ctl_source_handle, mode, offset);
 
 	default:
 		ERR_post(gds_uns_ext, 0);
-		return SUCCESS;
+		return FBOK;
 	}
 }
 

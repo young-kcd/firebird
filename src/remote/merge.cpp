@@ -192,5 +192,5 @@ static STATUS merge_setup(
 			*(*out)++ = *(*in)++;
 		while (--length);
 
-	return SUCCESS;
+	return FBOK;
 }

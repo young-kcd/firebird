@@ -175,7 +175,7 @@ static void mov_faster(SLONG *, SLONG *, USHORT);
 static ULONG remote_event_id = 0;
 
 #define ALLR_RELEASE(x)		ALLR_release ((struct blk *) (x))
-#define RETURN_SUCCESS		return return_success (rdb)
+#define RETURN_FBOK		return return_success (rdb)
 
 #define CHECK_HANDLE(blk,type,error) if (!blk || ((BLK) blk)->blk_type != (UCHAR) type) \
 				return handle_error (user_status, (STATUS) error)
@@ -379,7 +379,7 @@ STATUS GDS_ATTACH_DATABASE(STATUS*	user_status,
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -449,10 +449,10 @@ STATUS GDS_CANCEL_BLOB(STATUS * user_status, RBL * blob_handle)
 	if (!(blob = *blob_handle)) {
 		if (user_status) {
 			*user_status++ = gds_arg_gds;
-			*user_status++ = SUCCESS;
+			*user_status++ = FBOK;
 			*user_status = gds_arg_end;
 		}
-		return SUCCESS;
+		return FBOK;
 	}
 
 	SET_THREAD_DATA;
@@ -478,7 +478,7 @@ STATUS GDS_CANCEL_BLOB(STATUS * user_status, RBL * blob_handle)
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -529,7 +529,7 @@ STATUS GDS_CANCEL_EVENTS(STATUS * user_status, RDB * handle, SLONG * id)
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -583,7 +583,7 @@ STATUS GDS_CLOSE_BLOB(STATUS * user_status, RBL * blob_handle)
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -629,7 +629,7 @@ STATUS GDS_COMMIT(STATUS * user_status, RTR * rtr_handle)
 		return error(user_status);
 	}
 	
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -676,7 +676,7 @@ STATUS GDS_COMMIT_RETAINING(STATUS * user_status, RTR * rtr_handle)
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -789,7 +789,7 @@ STATUS GDS_COMPILE(STATUS * user_status,
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -865,7 +865,7 @@ STATUS GDS_CREATE_BLOB2(STATUS * user_status,
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -983,7 +983,7 @@ STATUS GDS_CREATE_DATABASE(STATUS * user_status,
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -1199,7 +1199,7 @@ STATUS GDS_DETACH(STATUS* user_status, RDB* handle)
 		disconnect(port);
 		*handle = NULL;
 
-		/* Can't RETURN_SUCCESS here as we've already torn down memory */
+		/* Can't RETURN_FBOK here as we've already torn down memory */
 	}
 	catch (const Firebird::status_exception& /*e*/)
 	{
@@ -1209,10 +1209,10 @@ STATUS GDS_DETACH(STATUS* user_status, RDB* handle)
 	RESTORE_THREAD_DATA;
 
 	*user_status++ = gds_arg_gds;
-	*user_status++ = SUCCESS;
+	*user_status++ = FBOK;
 	*user_status = gds_arg_end;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -1346,7 +1346,7 @@ STATUS GDS_DSQL_ALLOCATE(STATUS*	user_status,
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -1551,7 +1551,7 @@ STATUS GDS_DSQL_EXECUTE2(STATUS*	user_status,
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -1772,7 +1772,7 @@ STATUS GDS_DSQL_EXECUTE_IMMED2(STATUS * user_status,
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -2040,7 +2040,7 @@ STATUS GDS_DSQL_FETCH(STATUS * user_status,
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -2112,7 +2112,7 @@ STATUS GDS_DSQL_FREE(STATUS * user_status, RSR * stmt_handle, USHORT option)
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -2213,7 +2213,7 @@ STATUS GDS_DSQL_INSERT(STATUS * user_status,
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -2316,7 +2316,7 @@ STATUS GDS_DSQL_PREPARE(STATUS * user_status, RTR * rtr_handle, RSR * stmt_handl
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -2399,7 +2399,7 @@ STATUS GDS_DSQL_SET_CURSOR(STATUS * user_status,
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -2541,7 +2541,7 @@ STATUS GDS_GET_SEGMENT(STATUS * user_status,
 
 		v = user_status;
 		*v++ = gds_arg_gds;
-		v[0] = SUCCESS;
+		v[0] = FBOK;
 		v[1] = gds_arg_end;
 		*length = 0;
 
@@ -2795,7 +2795,7 @@ STATUS GDS_GET_SLICE(STATUS * user_status,
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -2866,7 +2866,7 @@ STATUS GDS_OPEN_BLOB2(STATUS * user_status,
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -2910,7 +2910,7 @@ STATUS GDS_PREPARE(STATUS * user_status,
 			if (!release_object(rdb, op_prepare, transaction->rtr_id)) {
 				return error(user_status);
 			}
-			RETURN_SUCCESS;
+			RETURN_FBOK;
 		}
 
 		packet = &rdb->rdb_packet;
@@ -2930,7 +2930,7 @@ STATUS GDS_PREPARE(STATUS * user_status,
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -3025,7 +3025,7 @@ STATUS GDS_PUT_SEGMENT(STATUS * user_status,
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -3118,7 +3118,7 @@ STATUS GDS_PUT_SLICE(STATUS * user_status,
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -3232,7 +3232,7 @@ STATUS GDS_QUE_EVENTS(STATUS * user_status,
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -3482,7 +3482,7 @@ STATUS GDS_RECEIVE(STATUS * user_status,
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -3533,7 +3533,7 @@ STATUS GDS_RECONNECT(STATUS * user_status,
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -3577,7 +3577,7 @@ STATUS GDS_RELEASE_REQUEST(STATUS * user_status, RRQ * req_handle)
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -3666,7 +3666,7 @@ STATUS GDS_REQUEST_INFO(STATUS * user_status,
 				*out++ = data >> 8;
 			}
 
-			RETURN_SUCCESS;
+			RETURN_FBOK;
 		}
 
 		/* No message pending, request status from other end */
@@ -3731,7 +3731,7 @@ STATUS GDS_ROLLBACK_RETAINING(STATUS * user_status, RTR * rtr_handle)
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -3776,7 +3776,7 @@ STATUS GDS_ROLLBACK(STATUS * user_status, RTR * rtr_handle)
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -3842,7 +3842,7 @@ STATUS GDS_SEEK_BLOB(STATUS * user_status,
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -3911,7 +3911,7 @@ STATUS GDS_SEND(STATUS * user_status,
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -4030,7 +4030,7 @@ STATUS GDS_SERVICE_ATTACH(STATUS * user_status,
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -4081,15 +4081,15 @@ STATUS GDS_SERVICE_DETACH(STATUS * user_status, RDB * handle)
 		return error(user_status);
 	}
 
-	/* Note: Can't RETURN_SUCCESS here as we've torn down memory already */
+	/* Note: Can't RETURN_FBOK here as we've torn down memory already */
 
 	RESTORE_THREAD_DATA;
 
 	*user_status++ = gds_arg_gds;
-	*user_status++ = SUCCESS;
+	*user_status++ = FBOK;
 	*user_status = gds_arg_end;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -4301,7 +4301,7 @@ STATUS GDS_START_AND_SEND(STATUS * user_status,
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -4379,7 +4379,7 @@ STATUS GDS_START(STATUS * user_status,
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -4432,7 +4432,7 @@ STATUS GDS_START_TRANSACTION(STATUS * user_status,
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -4576,7 +4576,7 @@ STATUS GDS_TRANSACT_REQUEST(STATUS * user_status,
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -4663,7 +4663,7 @@ STATUS GDS_UNWIND(STATUS * user_status, RRQ * req_handle, USHORT level)
 		return error(user_status);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -6057,7 +6057,7 @@ SCHAR * recv_items, USHORT buffer_length, SCHAR * buffer)
 
 	assert(user_status == rdb->rdb_status_vector);
 	user_status[0] = gds_arg_gds;
-	user_status[1] = SUCCESS;
+	user_status[1] = FBOK;
 	user_status[2] = gds_arg_end;
 
 	if (!send_packet(rdb->rdb_port, packet, user_status))
@@ -6205,7 +6205,7 @@ static STATUS mov_dsql_message(	UCHAR*	from_msg,
 		return FAILURE;
 	}
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -6814,15 +6814,15 @@ static STATUS return_success( RDB rdb)
    initilalize the status vector to indicate success.  
    Else pass the status vector along at it stands.  */
 
-	if (p[0] != gds_arg_gds || p[1] != SUCCESS
+	if (p[0] != gds_arg_gds || p[1] != FBOK
 		|| (p[2] != gds_arg_end && p[2] != gds_arg_gds
 			&& p[2] != isc_arg_warning)) {
 		*p++ = gds_arg_gds;
-		*p++ = SUCCESS;
+		*p++ = FBOK;
 		*p = gds_arg_end;
 	}
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -7032,7 +7032,7 @@ static STATUS send_and_receive(RDB rdb, PACKET* packet, STATUS* user_status)
 		return user_status[1];
 	}
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -7092,7 +7092,7 @@ static STATUS send_blob(STATUS*	user_status,
 		return user_status[1];
 	}
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -7165,7 +7165,7 @@ static BOOLEAN send_packet(PORT port, PACKET* packet, STATUS* user_status)
  *	will set up a status vector when errors
  *	occur, but other ones won't.
  *	So this routine sets up an error result
- *	for the vector and resets it to SUCCESS
+ *	for the vector and resets it to FBOK
  *	if the packet send occured.
  *
  *	See also cousin routine: receive_packet
@@ -7198,7 +7198,7 @@ static BOOLEAN send_partial_packet(PORT		port,
  *	will set up a status vector when errors
  *	occur, but other ones won't.
  *	So this routine sets up an error result
- *	for the vector and resets it to SUCCESS
+ *	for the vector and resets it to FBOK
  *	if the packet send occured.
  *
  *	See also cousin routine: receive_packet, send_packet
@@ -7315,7 +7315,7 @@ static STATUS svcstart(STATUS*	user_status,
 
 	assert(user_status == rdb->rdb_status_vector);
 	user_status[0] = gds_arg_gds;
-	user_status[1] = SUCCESS;
+	user_status[1] = FBOK;
 	user_status[2] = gds_arg_end;
 
 	if (!send_packet(rdb->rdb_port, packet, user_status))

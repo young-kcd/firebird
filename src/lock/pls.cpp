@@ -255,7 +255,7 @@ UCHAR * data, USHORT send_len, USHORT receive_len)
 		/* If this is something other than an acknowlegement, be patient */
 
 		if (reply->phd_type != PL_ACK)
-			return SUCCESS;
+			return FBOK;
 
 		/* If we got an acknowlegement, the other guy has at least received the packet.  
 		   We should be more patient, but still probe looking for death */
@@ -326,7 +326,7 @@ static int connect( int node, ipc_$socket_handle_t * handle)
 		if (status.all)
 			return error("ipc_$open", socket_name, status);
 		unlink(socket_name);
-		return SUCCESS;
+		return FBOK;
 	}
 
 /* File is open by another node.  Sigh.  Make up a nice filename */
@@ -361,7 +361,7 @@ static int connect( int node, ipc_$socket_handle_t * handle)
 	if (status.all)
 		return error("ipc_$resolve", socket_name, status);
 
-	return SUCCESS;
+	return FBOK;
 }
 
 

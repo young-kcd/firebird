@@ -341,7 +341,7 @@ int main( int argc, char *argv[])
 */
 
 	ret_cd = free_file_list(file_list);
-	return SUCCESS;
+	return FBOK;
 
 }								/* end of man() */
 
@@ -384,7 +384,7 @@ static int get_function_option(SCHAR* prog_name,
 		if (!c) {
 			if (*sw_replace == FALSE) {
 				*sw_replace = in_sw_tab->in_sw;
-				return SUCCESS;
+				return FBOK;
 			}
 			else {
 				if (*sw_replace != in_sw_tab->in_sw) {
@@ -406,7 +406,7 @@ static int get_function_option(SCHAR* prog_name,
 		return FAILURE;
 	}
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -478,7 +478,7 @@ static int get_file_size(SCHAR * prog_name, SCHAR * string, double *file_size)
 		return FAILURE;
 	}
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -508,7 +508,7 @@ static int get_file_name( SCHAR * string, double file_size, B_FIL * file_ptr)
 	temp_ptr->b_fil_number = 0;
 	temp_ptr->b_fil_size = file_size;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -668,7 +668,7 @@ static int gen_multy_bakup_files(B_FIL file_list,
 
 				if (end_of_input == TRUE) {
 					free(io_buffer);
-					return SUCCESS;
+					return FBOK;
 				}
 			}
 		}
@@ -771,7 +771,7 @@ static int gen_multy_bakup_files(B_FIL file_list,
 
 				if (end_of_input == TRUE) {
 					free(io_buffer);
-					return SUCCESS;
+					return FBOK;
 				}
 			}
 		}
@@ -827,7 +827,7 @@ static int read_and_write(FILE_DESC input_file_desc,
 		close(output_fl_desc);
 		*end_of_input = TRUE;
 		*byte_read = *byte_read + read_cnt;
-		return SUCCESS;
+		return FBOK;
 		break;
 
 	case (-1):					/* read failed */
@@ -852,7 +852,7 @@ static int read_and_write(FILE_DESC input_file_desc,
 
 	default:
 		if (write_cnt == read_cnt)	/* write ok */
-			return SUCCESS;
+			return FBOK;
 		else {					/* write less data then it reads in */
 
 			close(output_fl_desc);
@@ -894,7 +894,7 @@ static int final_read_and_write(FILE_DESC input_file_desc,
 	case (0):					/* no more data to be read */
 		close(output_fl_desc);
 		*end_of_input = TRUE;
-		return SUCCESS;
+		return FBOK;
 		break;
 
 	case (-1):					/* read failed */
@@ -918,7 +918,7 @@ static int final_read_and_write(FILE_DESC input_file_desc,
 
 	default:
 		if (write_cnt == read_cnt)	/* write ok */
-			return SUCCESS;
+			return FBOK;
 		else {					/* write less data then it reads in */
 
 			ib_fprintf(ib_stderr,
@@ -984,7 +984,7 @@ static int join_multy_bakup_files( B_FIL file_list)
 	}							/* end of for loop */
 
 	free(io_buffer);
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -1077,7 +1077,7 @@ SLONG cnt, SLONG * total_int)
 		switch (read_cnt) {
 		case (0):				/* no more data to be read */
 			close(input_fl_desc);
-			return SUCCESS;
+			return FBOK;
 			break;
 
 		case (-1):				/* read failed */
@@ -1180,7 +1180,7 @@ static int conv_ntoc( SLONG numeric_in, TEXT char_out[])
 	for (; indx >= 0; indx--) {
 		char_out[indx] = ' ';
 	}
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -1238,7 +1238,7 @@ static int write_header(B_FIL		fl_ptr,
 		end = pos + strlen(file_name);
 		for (indx = pos; indx < end; indx++)
 			header_str[indx] = BLANK;
-		return SUCCESS;
+		return FBOK;
 		break;
 	}
 }
@@ -1304,7 +1304,7 @@ static int flush_io_buff(UCHAR*		remaining_io,
 			*flush_done = FALSE;
 		}
 		*byte_write = write_cnt;
-		return SUCCESS;
+		return FBOK;
 		break;
 	}
 }
@@ -1339,7 +1339,7 @@ static int final_flush_io_buff(UCHAR * remaining_io,
 
 	default:
 		if (write_cnt == remaining_io_len)	/* write ok */
-			return SUCCESS;
+			return FBOK;
 		else {					/* could not write out all remaining data */
 
 			close(output_fl_desc);
@@ -1375,7 +1375,7 @@ static int print_clo(TEXT* prog_name)
 	ib_fprintf(ib_stderr,
 			   "%s: Exiting before completion due to errors\n", prog_name);
 
-	return SUCCESS;
+	return FBOK;
 
 }
 
@@ -1415,7 +1415,7 @@ static int set_hdr_str(TEXT header_str[], TEXT * in_str, SLONG pos, SLONG len)
 		}
 		*t_str++;
 	}
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -1442,5 +1442,5 @@ static int free_file_list( B_FIL file_list)
 		free(file_ptr);
 	}
 
-	return SUCCESS;
+	return FBOK;
 }

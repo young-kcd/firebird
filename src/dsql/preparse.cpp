@@ -582,11 +582,11 @@ SCHAR * stmt_end, SCHAR * token, USHORT * token_length)
 
 	if (result == token_type) {
 		*stmt = temp_stmt;
-		return SUCCESS;
+		return FBOK;
 	}
 
 	if (optional)
-		return SUCCESS;
+		return FBOK;
 
 /* generate error here and return failure; */
 

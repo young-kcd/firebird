@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: y-valve.cpp,v 1.16 2002-11-12 07:59:19 eku Exp $
+$Id: y-valve.cpp,v 1.17 2002-11-13 15:01:00 kkuznetsov Exp $
 */
 
 #include "firebird.h"
@@ -127,17 +127,17 @@ extern int access();
 #define IO_RETRY	20
 
 #ifdef DEV_BUILD
-#define CHECK_STATUS(v)		check_status_vector(v, !SUCCESS)
-#define CHECK_STATUS_SUCCESS(v)	check_status_vector(v, SUCCESS)
+#define CHECK_STATUS(v)		check_status_vector(v, !FBOK)
+#define CHECK_STATUS_FBOK(v)	check_status_vector(v, FBOK)
 #endif
 
 #ifndef CHECK_STATUS
 #define CHECK_STATUS(v)			/* nothing */
-#define CHECK_STATUS_SUCCESS(v)	/* nothing */
+#define CHECK_STATUS_FBOK(v)	/* nothing */
 #endif
 
 #define INIT_STATUS(vector)		vector [0] = gds_arg_gds;\
-					vector [1] = SUCCESS;\
+					vector [1] = FBOK;\
 					vector [2] = gds_arg_end
 
 #define IS_NETWORK_ERROR(vector) \
@@ -150,7 +150,7 @@ extern int access();
 
 #define NULL_CHECK(ptr, code, type)	if (*ptr) return bad_handle (user_status, code)
 #define GET_STATUS			{ if (!(status = user_status)) status = local; INIT_STATUS(status); }
-#define RETURN_SUCCESS			{ subsystem_exit(); CHECK_STATUS_SUCCESS (status); return SUCCESS; }
+#define RETURN_FBOK			{ subsystem_exit(); CHECK_STATUS_FBOK (status); return FBOK; }
 
 #ifdef REQUESTER
 #define NO_LOCAL_DSQL
@@ -959,7 +959,7 @@ STATUS API_ROUTINE GDS_ATTACH_DATABASE(STATUS*	user_status,
 			}
 
 			subsystem_exit();
-			CHECK_STATUS_SUCCESS(status);
+			CHECK_STATUS_FBOK(status);
 			return status[1];
 		}
 		if (ptr[1] != isc_unavailable) {
@@ -1016,7 +1016,7 @@ STATUS API_ROUTINE GDS_BLOB_INFO(STATUS*	user_status,
 	if (status[1])
 		return error(status, local);
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -1041,9 +1041,9 @@ STATUS API_ROUTINE GDS_CANCEL_BLOB(STATUS * user_status, BLB * blob_handle)
 			user_status[0] = gds_arg_gds;
 			user_status[1] = 0;
 			user_status[2] = gds_arg_end;
-			CHECK_STATUS_SUCCESS(user_status);
+			CHECK_STATUS_FBOK(user_status);
 		}
-		return SUCCESS;
+		return FBOK;
 	}
 
 	GET_STATUS;
@@ -1067,7 +1067,7 @@ STATUS API_ROUTINE GDS_CANCEL_BLOB(STATUS * user_status, BLB * blob_handle)
 	release_handle(blob);
 	*blob_handle = NULL;
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -1097,7 +1097,7 @@ STATUS API_ROUTINE GDS_CANCEL_EVENTS(STATUS * user_status,
 															id))
 			return error(status, local);
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -1129,7 +1129,7 @@ STATUS API_ROUTINE GDS_CANCEL_OPERATION(STATUS * user_status,
 															   option)) return
 			error(status, local);
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 #endif
 
@@ -1173,7 +1173,7 @@ STATUS API_ROUTINE GDS_CLOSE_BLOB(STATUS * user_status, BLB * blob_handle)
 	release_handle(blob);
 	*blob_handle = NULL;
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -1238,8 +1238,8 @@ STATUS API_ROUTINE GDS_COMMIT(STATUS * user_status, TRA * tra_handle)
 	}
 	*tra_handle = NULL;
 
-	CHECK_STATUS_SUCCESS(status);
-	return SUCCESS;
+	CHECK_STATUS_FBOK(status);
+	return FBOK;
 }
 
 
@@ -1276,7 +1276,7 @@ STATUS API_ROUTINE GDS_COMMIT_RETAINING(STATUS * user_status,
 
 	transaction->flags |= HANDLE_TRANSACTION_limbo;
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -1328,7 +1328,7 @@ STATUS API_ROUTINE GDS_COMPILE(STATUS * user_status,
 	request->next = dbb->requests;
 	dbb->requests = request;
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -1353,7 +1353,7 @@ STATUS API_ROUTINE GDS_COMPILE2(STATUS * user_status,
 
 	(*req_handle)->user_handle = req_handle;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -1600,7 +1600,7 @@ STATUS API_ROUTINE GDS_CREATE_DATABASE(STATUS * user_status,
 			if (status[2] != isc_arg_warning)
 				status[2] = isc_arg_end;
 			subsystem_exit();
-			CHECK_STATUS_SUCCESS(status);
+			CHECK_STATUS_FBOK(status);
 			return status[1];
 		}
 		if (ptr[1] != isc_unavailable)
@@ -1656,8 +1656,8 @@ STATUS API_ROUTINE gds__database_cleanup(STATUS * user_status,
 	status[0] = gds_arg_gds;
 	status[1] = 0;
 	status[2] = gds_arg_end;
-	CHECK_STATUS_SUCCESS(status);
-	return SUCCESS;
+	CHECK_STATUS_FBOK(status);
+	return FBOK;
 }
 
 
@@ -1696,7 +1696,7 @@ STATUS API_ROUTINE GDS_DATABASE_INFO(STATUS * user_status,
 															buffer)) return
 			error(status, local);
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -1739,7 +1739,7 @@ STATUS API_ROUTINE GDS_DDL(STATUS * user_status,
 													   GDS_VAL(length),
 													   ddl))
 		{
-			RETURN_SUCCESS;
+			RETURN_FBOK;
 		}
 		if (status[1] != isc_unavailable)
 		{
@@ -1760,8 +1760,8 @@ STATUS API_ROUTINE GDS_DDL(STATUS * user_status,
 		 NULL ||
 		 FALSE) &&
 		!((*entrypoint) (status, db_handle, tra_handle, length, ddl))) {
-		CHECK_STATUS_SUCCESS(status);
-		return SUCCESS;
+		CHECK_STATUS_FBOK(status);
+		return FBOK;
 	}
 #endif
 #endif
@@ -1868,8 +1868,8 @@ STATUS API_ROUTINE GDS_DETACH(STATUS * user_status, ATT * handle)
 	release_handle(dbb);
 	*handle = NULL;
 
-	CHECK_STATUS_SUCCESS(status);
-	return SUCCESS;
+	CHECK_STATUS_FBOK(status);
+	return FBOK;
 }
 
 
@@ -1992,8 +1992,8 @@ STATUS API_ROUTINE GDS_DROP_DATABASE(STATUS * user_status, ATT * handle)
 	if (status[1])
 		return error2(status, local);
 
-	CHECK_STATUS_SUCCESS(status);
-	return SUCCESS;
+	CHECK_STATUS_FBOK(status);
+	return FBOK;
 }
 
 
@@ -2029,7 +2029,7 @@ STATUS API_ROUTINE GDS_DSQL_ALLOC2(STATUS * user_status,
 
 	(*stmt_handle)->user_handle = stmt_handle;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -2121,8 +2121,8 @@ STATUS API_ROUTINE GDS_DSQL_ALLOCATE(STATUS * user_status,
 	dbb->statements = statement;
 	statement->flags = flag;
 
-	CHECK_STATUS_SUCCESS(status);
-	return SUCCESS;
+	CHECK_STATUS_FBOK(status);
+	return FBOK;
 }
 
 
@@ -2184,8 +2184,8 @@ STATUS API_ROUTINE isc_dsql_describe(STATUS * user_status,
 		return error2(status, local);
 	}
 
-	CHECK_STATUS_SUCCESS(status);
-	return SUCCESS;
+	CHECK_STATUS_FBOK(status);
+	return FBOK;
 }
 
 
@@ -2247,8 +2247,8 @@ STATUS API_ROUTINE isc_dsql_describe_bind(STATUS * user_status,
 		return error2(status, local);
 	}
 
-	CHECK_STATUS_SUCCESS(status);
-	return SUCCESS;
+	CHECK_STATUS_FBOK(status);
+	return FBOK;
 }
 
 
@@ -2327,8 +2327,8 @@ STATUS API_ROUTINE GDS_DSQL_EXECUTE2(STATUS * user_status,
 						 dialect, out_sqlda, DASUP_CLAUSE_select))
 			return error2(status, local);
 
-	CHECK_STATUS_SUCCESS(status);
-	return SUCCESS;
+	CHECK_STATUS_FBOK(status);
+	return FBOK;
 }
 
 
@@ -2472,8 +2472,8 @@ STATUS API_ROUTINE GDS_DSQL_EXECUTE2_M(STATUS * user_status,
 		return error2(status, local);
 	}
 
-	CHECK_STATUS_SUCCESS(status);
-	return SUCCESS;
+	CHECK_STATUS_FBOK(status);
+	return FBOK;
 }
 
 
@@ -2752,8 +2752,8 @@ STATUS API_ROUTINE GDS_DSQL_EXEC_IMM2_M(STATUS * user_status,
 			*s = isc_arg_end;
 			return error2(status, local);
 		}
-		CHECK_STATUS_SUCCESS(status);
-		return SUCCESS;
+		CHECK_STATUS_FBOK(status);
+		return FBOK;
 	}
 	else
 		return GDS_DSQL_EXEC_IMM3_M(user_status, db_handle, tra_handle,
@@ -2899,8 +2899,8 @@ STATUS API_ROUTINE GDS_DSQL_EXEC_IMM3_M(STATUS * user_status,
 	if (status[1])
 		return error2(status, local);
 
-	CHECK_STATUS_SUCCESS(status);
-	return SUCCESS;
+	CHECK_STATUS_FBOK(status);
+	return FBOK;
 }
 
 
@@ -3071,7 +3071,7 @@ STATUS API_ROUTINE GDS_DSQL_FETCH_M(STATUS * user_status,
 	else if (s)
 		return error2(status, local);
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -3128,7 +3128,7 @@ STATUS API_ROUTINE GDS_DSQL_FETCH2_M(STATUS * user_status,
 	else if (s)
 		return error2(status, local);
 
-	return SUCCESS;
+	return FBOK;
 }
 #endif
 
@@ -3187,8 +3187,8 @@ STATUS API_ROUTINE GDS_DSQL_FREE(STATUS * user_status,
 		*stmt_handle = NULL;
 	}
 
-	CHECK_STATUS_SUCCESS(status);
-	return SUCCESS;
+	CHECK_STATUS_FBOK(status);
+	return FBOK;
 }
 
 
@@ -3276,8 +3276,8 @@ STATUS API_ROUTINE GDS_DSQL_INSERT_M(STATUS * user_status,
 	if (s)
 		return error2(status, local);
 
-	CHECK_STATUS_SUCCESS(status);
-	return SUCCESS;
+	CHECK_STATUS_FBOK(status);
+	return FBOK;
 }
 
 
@@ -3355,8 +3355,8 @@ STATUS API_ROUTINE GDS_DSQL_PREPARE(STATUS * user_status,
 	if (status[1])
 		return error2(status, local);
 
-	CHECK_STATUS_SUCCESS(status);
-	return SUCCESS;
+	CHECK_STATUS_FBOK(status);
+	return FBOK;
 }
 
 
@@ -3422,8 +3422,8 @@ STATUS API_ROUTINE GDS_DSQL_PREPARE_M(STATUS * user_status,
 	if (status[1])
 		return error2(status, local);
 
-	CHECK_STATUS_SUCCESS(status);
-	return SUCCESS;
+	CHECK_STATUS_FBOK(status);
+	return FBOK;
 }
 
 
@@ -3465,8 +3465,8 @@ STATUS API_ROUTINE GDS_DSQL_SET_CURSOR(STATUS * user_status,
 	if (status[1])
 		return error2(status, local);
 
-	CHECK_STATUS_SUCCESS(status);
-	return SUCCESS;
+	CHECK_STATUS_FBOK(status);
+	return FBOK;
 }
 
 
@@ -3515,8 +3515,8 @@ STATUS API_ROUTINE GDS_DSQL_SQL_INFO(STATUS * user_status,
 	if (status[1])
 		return error2(status, local);
 
-	CHECK_STATUS_SUCCESS(status);
-	return SUCCESS;
+	CHECK_STATUS_FBOK(status);
+	return FBOK;
 }
 
 
@@ -3584,8 +3584,8 @@ STATUS API_ROUTINE GDS_EVENT_WAIT(STATUS * user_status,
 	event_ptr = why_event;
 	ISC_event_wait(1, &event_ptr, &value, -1, (FPTR_VOID) NULL_PTR, NULL_PTR);
 
-	CHECK_STATUS_SUCCESS(status);
-	return SUCCESS;
+	CHECK_STATUS_FBOK(status);
+	return FBOK;
 }
 #endif
 
@@ -3630,7 +3630,7 @@ STATUS API_ROUTINE GDS_GET_SEGMENT(STATUS * user_status,
 		return error(status, local);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -3679,7 +3679,7 @@ STATUS API_ROUTINE GDS_GET_SLICE(STATUS * user_status,
 												   return_length))
 			return error(status, local);
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -3733,8 +3733,8 @@ STATUS gds__handle_cleanup(STATUS * user_status, HNDL * user_handle)
 		return error2(status, local);
 	}
 
-	CHECK_STATUS_SUCCESS(status);
-	return SUCCESS;
+	CHECK_STATUS_FBOK(status);
+	return FBOK;
 }
 
 
@@ -3833,7 +3833,7 @@ STATUS API_ROUTINE GDS_PREPARE2(STATUS * user_status,
 
 	transaction->flags |= HANDLE_TRANSACTION_limbo;
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -3866,7 +3866,7 @@ STATUS API_ROUTINE GDS_PUT_SEGMENT(STATUS * user_status,
 													  buffer))
 			return error(status, local);
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -3913,7 +3913,7 @@ STATUS API_ROUTINE GDS_PUT_SLICE(STATUS * user_status,
 												   slice))
 			return error(status, local);
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -3951,7 +3951,7 @@ STATUS API_ROUTINE GDS_QUE_EVENTS(STATUS * user_status,
 														 arg))
 			return error(status, local);
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -3993,7 +3993,7 @@ STATUS API_ROUTINE GDS_RECEIVE(STATUS * user_status,
 													 GDS_VAL(level)))
 			return error(status, local);
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 #endif
 }
 
@@ -4036,7 +4036,7 @@ STATUS API_ROUTINE GDS_RECEIVE2(STATUS * user_status,
 													 offset))
 			return error(status, local);
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 #endif
 
@@ -4084,7 +4084,7 @@ STATUS API_ROUTINE GDS_RECONNECT(STATUS * user_status,
 		return error(status, local);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -4127,7 +4127,7 @@ STATUS API_ROUTINE GDS_RELEASE_REQUEST(STATUS * user_status, REQ * req_handle)
 	release_handle(request);
 	*req_handle = NULL;
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -4168,7 +4168,7 @@ STATUS API_ROUTINE GDS_REQUEST_INFO(STATUS * user_status,
 														  buffer)) return
 			error(status, local);
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -4241,7 +4241,7 @@ STATUS API_ROUTINE GDS_ROLLBACK_RETAINING(STATUS * user_status,
 
 	transaction->flags |= HANDLE_TRANSACTION_limbo;
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -4292,8 +4292,8 @@ STATUS API_ROUTINE GDS_ROLLBACK(STATUS * user_status, TRA * tra_handle)
 	}
 	*tra_handle = NULL;
 
-	CHECK_STATUS_SUCCESS(status);
-	return SUCCESS;
+	CHECK_STATUS_FBOK(status);
+	return FBOK;
 }
 
 
@@ -4337,7 +4337,7 @@ else
 	if (status[1])
 		return error(status, local);
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -4373,7 +4373,7 @@ STATUS API_ROUTINE GDS_SEND(STATUS * user_status,
 												  GDS_VAL(level)))
 			return error(status, local);
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -4469,7 +4469,7 @@ STATUS API_ROUTINE GDS_SERVICE_ATTACH(STATUS * user_status,
 			if (status[2] != isc_arg_warning)
 				status[2] = isc_arg_end;
 			subsystem_exit();
-			CHECK_STATUS_SUCCESS(status);
+			CHECK_STATUS_FBOK(status);
 			return status[1];
 		}
 		if (ptr[1] != isc_unavailable)
@@ -4522,8 +4522,8 @@ STATUS API_ROUTINE GDS_SERVICE_DETACH(STATUS * user_status, SVC * handle)
 	release_handle(service);
 	*handle = NULL;
 
-	CHECK_STATUS_SUCCESS(status);
-	return SUCCESS;
+	CHECK_STATUS_FBOK(status);
+	return FBOK;
 }
 
 
@@ -4568,7 +4568,7 @@ STATUS API_ROUTINE GDS_SERVICE_QUERY(STATUS * user_status,
 														   buffer))
 			return error(status, local);
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -4607,7 +4607,7 @@ STATUS API_ROUTINE GDS_SERVICE_START(STATUS * user_status,
 		return error(status, local);
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -4649,7 +4649,7 @@ STATUS API_ROUTINE GDS_START_AND_SEND(STATUS * user_status,
 															GDS_VAL(level)))
 			return error(status, local);
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -4684,7 +4684,7 @@ STATUS API_ROUTINE GDS_START(STATUS * user_status,
 												   GDS_VAL(level)))
 			return error(status, local);
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -4788,7 +4788,7 @@ STATUS API_ROUTINE GDS_START_MULTIPLE(STATUS * user_status,
 	else
 		*tra_handle = transaction;
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -4883,7 +4883,7 @@ STATUS API_ROUTINE GDS_TRANSACT_REQUEST(STATUS * user_status,
 														  out_msg)) return
 			error(status, local);
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -4950,10 +4950,10 @@ STATUS API_ROUTINE gds__transaction_cleanup(STATUS * user_status,
 	}
 
 	status[0] = gds_arg_gds;
-	status[1] = SUCCESS;
+	status[1] = FBOK;
 	status[2] = gds_arg_end;
-	CHECK_STATUS_SUCCESS(status);
-	return SUCCESS;
+	CHECK_STATUS_FBOK(status);
+	return FBOK;
 }
 
 
@@ -5015,7 +5015,7 @@ STATUS API_ROUTINE GDS_TRANSACTION_INFO(STATUS * user_status,
 				ptr += 3 + gds__vax_integer((UCHAR*)(ptr + 1), 2);
 
 			if (ptr >= end || *ptr != gds__info_end) {
-				RETURN_SUCCESS;
+				RETURN_FBOK;
 			}
 
 			buffer_len = end - ptr;
@@ -5023,7 +5023,7 @@ STATUS API_ROUTINE GDS_TRANSACTION_INFO(STATUS * user_status,
 		}
 	}
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -5054,7 +5054,7 @@ STATUS API_ROUTINE GDS_UNWIND(STATUS * user_status,
 													GDS_VAL(level)))
 			return error(status, local);
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -5170,8 +5170,8 @@ static void check_status_vector(STATUS * status, STATUS expected)
 
 /* Vector [2] could either end the vector, or start a warning 
    in either case the status vector is a success */
-	if ((expected == SUCCESS)
-		&& (s[1] != SUCCESS
+	if ((expected == FBOK)
+		&& (s[1] != FBOK
 			|| (s[2] != gds_arg_end && s[2] != gds_arg_gds
 				&& s[2] !=
 				isc_arg_warning))) SV_MSG("Success vector expected");
@@ -5313,7 +5313,7 @@ static STATUS error2(STATUS * user_status, STATUS * local)
 	gds__print_status(user_status);
 	exit((int) user_status[1]);
 
-	return SUCCESS;
+	return FBOK;
 #endif
 }
 
@@ -5435,7 +5435,7 @@ static int get_database_info(STATUS * status, TRA transaction, UCHAR ** ptr)
 
 	*ptr = p;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -5589,8 +5589,8 @@ static STATUS get_transaction_info(STATUS * status,
 
 	*ptr = p;
 
-	CHECK_STATUS_SUCCESS(status);
-	return SUCCESS;
+	CHECK_STATUS_FBOK(status);
+	return FBOK;
 }
 
 
@@ -5757,7 +5757,7 @@ static STATUS open_blob(STATUS * user_status,
 	blob->next = dbb->blobs;
 	dbb->blobs = blob;
 
-	RETURN_SUCCESS;
+	RETURN_FBOK;
 }
 
 
@@ -5781,7 +5781,7 @@ static STATUS open_marker_file(STATUS * status,
  *	that the file can be closed in
  *	close_marker_file located in unix.c.
  *	Return FAILURE if a marker file exists
- *	but something goes wrong.  Return SUCCESS
+ *	but something goes wrong.  Return FBOK
  *	otherwise.
  *
  *************************************/
@@ -5797,7 +5797,7 @@ static STATUS open_marker_file(STATUS * status,
 	strcpy(marker_filename, expanded_filename);
 	strcat(marker_filename, "_m");
 	if (access(marker_filename, F_OK))	/* Marker file doesn't exist. */
-		return SUCCESS;
+		return FBOK;
 
 /* Ensure that writes are ok on the marker file for lockf(). */
 
@@ -5884,7 +5884,7 @@ static STATUS open_marker_file(STATUS * status,
 	}
 
 	if (fd != -1)
-		return SUCCESS;
+		return FBOK;
 
 /* The following code saves the name of the offending marker
    file in a (sort of) permanent location.  It is totally specific
@@ -6007,8 +6007,8 @@ static STATUS prepare(STATUS * status, TRA transaction)
 	if (description != tdr_buffer)
 		free_block(description);
 
-	CHECK_STATUS_SUCCESS(status);
-	return SUCCESS;
+	CHECK_STATUS_FBOK(status);
+	return FBOK;
 }
 
 

@@ -141,7 +141,7 @@ int initWNP(void)
 	WNPSetBlockingHook(blocking_stub);
 	SetLastError(NO_ERROR);
 
-	return SUCCESS;
+	return FBOK;
 }
 
 

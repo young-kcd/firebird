@@ -71,7 +71,7 @@ int OLDR_close( OLD * OLD_handle)
 
 	*OLD_handle = NULL;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -184,7 +184,7 @@ int OLDR_open(
 	if (open_next_file(old) == FAILURE)
 		return FAILURE;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -197,7 +197,7 @@ static int close_cur_file( OLD old)
  **************************************
  *
  * Functional description
- *	returns SUCCESS - if things work
+ *	returns FBOK - if things work
  *		FAILURE - close fails
  *
  **************************************/
@@ -208,7 +208,7 @@ static int close_cur_file( OLD old)
 	old->old_fd = 0;
 	old->old_cur_size = 0;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -223,7 +223,7 @@ static int open_next_file( OLD old)
  * Functional description
  *	Opens the next OnLine Dump file and writes out the header.
  *
- *	returns SUCCESS - if things work
+ *	returns FBOK - if things work
  *		FAILURE - open fails, no more file etc.
  *
  **************************************/
@@ -245,7 +245,7 @@ static int open_next_file( OLD old)
 
 	old->old_fd = fd;
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
@@ -260,7 +260,7 @@ static SLONG oldr_open_file( OLD old)
  * Functional description
  *	Open next file and read header 
  *
- *	returns SUCCESS - if things work
+ *	returns FBOK - if things work
  *		FAILURE - open fails/out of sequence etc.
  *
  **************************************/

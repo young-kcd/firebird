@@ -286,7 +286,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		ret = WAL_init(status_vector, &WAL_handle, dbname, page_size,
 					   logname, log_partition_offset, first_time_log,
 					   new_log_seqno, wpb_len, wpb);
-		if (ret == SUCCESS) {
+		if (ret == FBOK) {
 			ret =
 				WAL_checkpoint_force(status_vector, WAL_handle, &log_seqno,
 									 buff, &log_partition_offset,
@@ -298,7 +298,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		}
 	}
 
-	if (ret != SUCCESS) {
+	if (ret != FBOK) {
 		gds__print_status(status_vector);
 		exit(FINI_ERROR);
 	}
@@ -663,7 +663,7 @@ static void partitioned_logfile_create(
 	ib_scanf("%c", &ret);		/* get rid of the trailing '\n' character */
 	ret =
 		WALF_init_p_log(status_vector, dbname, master_logname, logsize, nump);
-	if (ret != SUCCESS)
+	if (ret != FBOK)
 		gds__print_status(status_vector);
 }
 
@@ -694,7 +694,7 @@ static void partitioned_logfile_info( STATUS * status_vector, SCHAR * dbname)
 	ib_scanf("%s", master_logname);
 	ib_scanf("%c", &ret);		/* get rid of the trailing '\n' character */
 	if (WALF_open_partitioned_log_file(status_vector, dbname, master_logname,
-									   p_log_header, &p_log_fd) != SUCCESS) {
+									   p_log_header, &p_log_fd) != FBOK) {
 		gds__free(p_log_header);
 		gds__print_status(status_vector);
 		return;
@@ -751,10 +751,10 @@ log_count = 3;
 	WALRS_handle = NULL;
 	if ((ret = WALR_open(status_vector, &WALRS_handle, dbname,
 						 log_count, lognames, log_p_offsets,
-						 0L, NULL, FALSE)) != SUCCESS) {
+						 0L, NULL, FALSE)) != FBOK) {
 		if (ret == -1) {
 			ib_printf("End of log...\n");
-			return SUCCESS;
+			return FBOK;
 		}
 		ib_printf("Error = %d from WALR_open\n", ret);
 		gds__print_status(status_vector);
@@ -769,7 +769,7 @@ log_count = 3;
 			ib_printf("End of log...\n");
 			break;
 		}
-		else if (ret != SUCCESS) {
+		else if (ret != FBOK) {
 			ib_printf("Log read error %d\n", ret);
 			gds__print_status(status_vector);
 			break;
@@ -788,7 +788,7 @@ log_count = 3;
 	ib_scanf("%c", &fixup);		/* get rid of the trailing '\n' character */
 	WALR_close(status_vector, &WALRS_handle);
 
-	return SUCCESS;
+	return FBOK;
 }
 
 
