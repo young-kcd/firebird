@@ -49,8 +49,10 @@ goto :EOF
 @set GPRE=%ROOT_PATH%\gen\gpre_boot -lang_internal
 @for %%i in (array, blob, metd) do @call :PREPROCESS dsql %%i
 @for %%i in (gpre_meta) do @call :PREPROCESS gpre %%i
-::CVC - Uncomment this line if you can't compile when new fields are added. See below.
-::@for %%i in (backup, restore) do @call :PREPROCESS burp %%i
+::CVC - Uncomment this lines if you can't compile when new fields are added. See below.
+@for %%i in (backup, restore) do @call :PREPROCESS burp %%i
+@for %%i in (extract, isql, show) do @call :PREPROCESS isql %%i
+::END
 @goto :EOF
 
 ::===========
@@ -58,12 +60,13 @@ goto :EOF
 @echo.
 @set GPRE=%ROOT_PATH%\gen\gpre_static
 @for %%i in (alice_meta) do @call :PREPROCESS alice %%i
-::CVC - Comment this line if you can't compile when new fields are added. See above.
-@for %%i in (backup, restore) do @call :PREPROCESS burp %%i
+::CVC - Comment this lines if you can't compile when new fields are added. See above.
+::@for %%i in (backup, restore) do @call :PREPROCESS burp %%i
+::@for %%i in (extract, isql, show) do @call :PREPROCESS isql %%i
+::END
 @for %%i in (array, blob, metd) do @call :PREPROCESS dsql %%i
 @for %%i in (exe, extract) do @call :PREPROCESS dudley %%i
 @for %%i in (gpre_meta) do @call :PREPROCESS gpre %%i
-@for %%i in (extract, isql, show) do @call :PREPROCESS isql %%i
 @for %%i in (dfw, dpm, dyn, dyn_def, dyn_del, dyn_mod, dyn_util, fun, grant, ini, met, pcmet, scl) do @call :PREPROCESS jrd %%i GDS
 @for %%i in (codes) do @call :PREPROCESS misc %%i
 @for %%i in (build_file) do @call :PREPROCESS msgs %%i
