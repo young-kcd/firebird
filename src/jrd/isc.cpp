@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.30 2003-03-23 16:50:52 alexpeshkoff Exp $
+$Id: isc.cpp,v 1.31 2003-04-02 11:20:09 brodsom Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -1041,7 +1041,7 @@ int INTERNAL_API_ROUTINE ISC_get_user(TEXT*	name,
 static BOOLEAN check_user_privilege(void)
 {
 	HANDLE tkhandle;
-	SID_IDENTIFIER_AUTHORITY system_sid_authority = SECURITY_NT_AUTHORITY;
+	SID_IDENTIFIER_AUTHORITY system_sid_authority = {SECURITY_NT_AUTHORITY};
 
 	// First we must open a handle to the access token for this thread.
 
