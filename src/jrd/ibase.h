@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.34 2003-04-08 10:20:44 aafemt Exp $
+$Id: ibase.h,v 1.35 2003-04-10 06:03:26 aafemt Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -52,19 +52,18 @@ $Id: ibase.h,v 1.34 2003-04-08 10:20:44 aafemt Exp $
 #endif
 
 #if SIZEOF_LONG == 8
-#define  ISC_LONG	int
-#define  ISC_ULONG	unsigned int
+typedef	int		ISC_LONG;
+typedef	unsigned int	ISC_ULONG;
 #else
-#define  ISC_LONG	signed long
-#define  ISC_ULONG	unsigned long
+typedef	signed long	ISC_LONG;
+typedef	unsigned long	ISC_ULONG;
 #endif
 
-#define  ISC_SHORT	signed short
-#define  ISC_USHORT	unsigned short
-#define  ISC_STATUS	long
+typedef	signed short	ISC_SHORT;
+typedef	unsigned short	ISC_USHORT;
 #define  ISC_STATUS_LENGTH	20
 
-#define ISC_UCHAR	unsigned char
+typedef	unsigned char	ISC_UCHAR;
 
 #define  DSQL_close     1
 #define  DSQL_drop      2
