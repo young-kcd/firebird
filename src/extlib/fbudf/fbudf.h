@@ -63,6 +63,7 @@ FBUDF_API void SDOW(const ISC_TIMESTAMP* v, char* rc);
 FBUDF_API void right(const paramdsc* v, const short& rl, paramdsc* rc);
 
 FBUDF_API ISC_TIMESTAMP* addDay(ISC_TIMESTAMP* v, const int& ndays);
+FBUDF_API void addDay2(const ISC_TIMESTAMP* v0, const int& ndays, ISC_TIMESTAMP* v);
 FBUDF_API ISC_TIMESTAMP* addWeek(ISC_TIMESTAMP* v, const int& nweeks);
 FBUDF_API ISC_TIMESTAMP* addMonth(ISC_TIMESTAMP* v, const int& nmonths);
 FBUDF_API ISC_TIMESTAMP* addYear(ISC_TIMESTAMP* v, const int& nyears);

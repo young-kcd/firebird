@@ -451,6 +451,13 @@ FBUDF_API ISC_TIMESTAMP* addDay(ISC_TIMESTAMP* v, const int& ndays)
 	return v;
 }
 
+FBUDF_API void addDay2(const ISC_TIMESTAMP* v0, const int& ndays,
+	ISC_TIMESTAMP* v)
+{
+	*v = *v0;
+	v->timestamp_date += ndays;
+}
+
 FBUDF_API ISC_TIMESTAMP* addWeek(ISC_TIMESTAMP* v, const int& nweeks)
 {
 	v->timestamp_date += nweeks * 7;
