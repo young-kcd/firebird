@@ -101,6 +101,10 @@ SOURCE=..\..\..\src\jrd\os\win32\config_root.cpp
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\ibinitdll.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\perf.cpp
 # End Source File
 # Begin Source File
