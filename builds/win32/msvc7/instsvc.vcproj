@@ -126,17 +126,17 @@
 			Name="UTILITIES files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
-				RelativePath="..\..\..\src\utilities\install_svc.cpp">
+				RelativePath="..\..\..\src\utilities\install\install_svc.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\services.cpp">
+				RelativePath="..\..\..\src\utilities\install\services.cpp">
 			</File>
 		</Filter>
 		<Filter
 			Name="Header files"
 			Filter="h;hpp;hxx;hm;inl">
 			<File
-				RelativePath="..\..\..\src\utilities\servi_proto.h">
+				RelativePath="..\..\..\src\utilities\install\servi_proto.h">
 			</File>
 		</Filter>
 		<Filter

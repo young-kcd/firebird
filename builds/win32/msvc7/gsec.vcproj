@@ -129,10 +129,10 @@
 				RelativePath="..\..\..\src\common\fb_exception.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\gsec.cpp">
+				RelativePath="..\..\..\src\utilities\gsec\gsec.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\gen\utilities\security.cpp">
+				RelativePath="..\..\..\gen\utilities\gsec\security.cpp">
 			</File>
 		</Filter>
 		<Filter
@@ -149,10 +149,10 @@
 			Name="Header files"
 			Filter="h;hpp;hxx;hm;inl">
 			<File
-				RelativePath="..\..\..\src\utilities\gsec.h">
+				RelativePath="..\..\..\src\utilities\gsec\gsec.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\secur_proto.h">
+				RelativePath="..\..\..\src\utilities\gsec\secur_proto.h">
 			</File>
 		</Filter>
 		<Filter

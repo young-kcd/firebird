@@ -275,7 +275,7 @@
 			Name="UTILITIES files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\gen\utilities\security.cpp">
+				RelativePath="..\..\..\gen\utilities\gsec\security.cpp">
 			</File>
 		</Filter>
 		<Filter

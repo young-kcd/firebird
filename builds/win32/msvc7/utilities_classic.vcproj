@@ -109,10 +109,10 @@
 			Name="UTILITIES files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
-				RelativePath="..\..\..\src\utilities\cmd_util.cpp">
+				RelativePath="..\..\..\src\utilities\common\cmd_util.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\gsec.cpp">
+				RelativePath="..\..\..\src\utilities\gsec\gsec.cpp">
 			</File>
 			<Filter
 				Name="epp files"
@@ -134,7 +134,7 @@
 				Name="Generated files"
 				Filter="">
 				<File
-					RelativePath="..\..\..\gen\utilities\security.cpp">
+					RelativePath="..\..\..\gen\utilities\gsec\security.cpp">
 				</File>
 			</Filter>
 		</Filter>
@@ -142,13 +142,13 @@
 			Name="Header files"
 			Filter="h;hpp;hxx;hm;inl">
 			<File
-				RelativePath="..\..\..\src\utilities\cmd_util_proto.h">
+				RelativePath="..\..\..\src\utilities\common\cmd_util_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\gsec.h">
+				RelativePath="..\..\..\src\utilities\gsec\gsec.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\registry.h">
+				RelativePath="..\..\..\src\utilities\install\registry.h">
 			</File>
 		</Filter>
 	</Files>

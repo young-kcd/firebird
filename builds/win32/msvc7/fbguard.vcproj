@@ -146,7 +146,7 @@
 			Name="REMOTE files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\src\remote\chop.cpp">
+				RelativePath="..\..\..\src\remote\os\win32\chop.cpp">
 			</File>
 		</Filter>
 		<Filter
