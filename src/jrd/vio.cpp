@@ -4751,6 +4751,7 @@ static void verb_post(
  *				false in all other cases.
  *
  **************************************/
+#pragma FB_COMPILER_MESSAGE("Out-of-memory condition in this function corrupts database. And it is likely due to huge amounts of allocations")
 	SET_TDBB(tdbb);
 
 	JrdMemoryPool* old_pool = tdbb->tdbb_default;
