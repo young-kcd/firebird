@@ -36,6 +36,6 @@ extern int PRETTY_print_mblr(SCHAR *, PRETTY_print_cb_pfn, SCHAR *, SSHORT);
 #ifdef PYXIS
 extern int PRETTY_print_menu(SCHAR *, PRETTY_print_cb_pfn, SCHAR *, SSHORT);
 #endif
-extern int PRETTY_print_sdl(SCHAR *, PRETTY_print_cb_pfn, SCHAR *, SSHORT);
+extern int PRETTY_print_sdl(char *, PRETTY_print_cb_pfn, SCHAR *, SSHORT);
 
 #endif /* _GPRE_PRETT_PROTO_H_ */

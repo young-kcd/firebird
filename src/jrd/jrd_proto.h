@@ -76,7 +76,7 @@ extern ISC_STATUS DLL_EXPORT jrd8_get_segment(ISC_STATUS *, struct blb **, USHOR
 										  USHORT, UCHAR *);
 extern ISC_STATUS DLL_EXPORT jrd8_get_slice(ISC_STATUS *, struct att **,
 										struct jrd_tra **, SLONG *, USHORT,
-										UCHAR *, USHORT, UCHAR *, SLONG,
+										char *, USHORT, UCHAR *, SLONG,
 										UCHAR *, SLONG *);
 extern ISC_STATUS DLL_EXPORT jrd8_open_blob2(ISC_STATUS *, struct att **,
 										 struct jrd_tra **, struct blb **,
@@ -87,7 +87,7 @@ extern ISC_STATUS DLL_EXPORT jrd8_put_segment(ISC_STATUS *, struct blb **, USHOR
 										  UCHAR *);
 extern ISC_STATUS DLL_EXPORT jrd8_put_slice(ISC_STATUS *, struct att **,
 										struct jrd_tra **, SLONG *, USHORT,
-										UCHAR *, USHORT, UCHAR *, SLONG,
+										char *, USHORT, UCHAR *, SLONG,
 										UCHAR *);
 extern ISC_STATUS DLL_EXPORT jrd8_que_events(ISC_STATUS *, struct att **, SLONG *,
 										 SSHORT, UCHAR *, FPTR_VOID, void *);

@@ -2699,7 +2699,7 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS * user_status,
 					 RTR * tra_handle,
 					 BID array_id,
 					 USHORT sdl_length,
-					 UCHAR * sdl,
+					 char * sdl,
 					 USHORT param_length,
 					 UCHAR * param,
 					 SLONG slice_length, UCHAR * slice, SLONG * return_length)
@@ -2716,7 +2716,7 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS * user_status,
  **************************************/
 	RDB rdb;
 	RTR transaction;
-	UCHAR *new_sdl;
+	char *new_sdl;
 	PACKET *packet;
 	P_SLC *data;
 	P_SLR *response;
@@ -2757,7 +2757,7 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS * user_status,
 		data->p_slc_id = *array_id;
 		data->p_slc_length = slice_length;
 		data->p_slc_sdl.cstr_length = sdl_length;
-		data->p_slc_sdl.cstr_address = new_sdl;
+		data->p_slc_sdl.cstr_address = (UCHAR*) new_sdl;
 		data->p_slc_parameters.cstr_length = param_length;
 		data->p_slc_parameters.cstr_address = param;
 
@@ -3035,7 +3035,7 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS * user_status,
 					 RTR * tra_handle,
 					 BID array_id,
 					 USHORT sdl_length,
-					 UCHAR * sdl,
+					 char * sdl,
 					 USHORT param_length,
 					 UCHAR * param, SLONG slice_length, UCHAR * slice)
 {
@@ -3051,7 +3051,7 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS * user_status,
  **************************************/
 	RDB rdb;
 	RTR transaction;
-	UCHAR *new_sdl;
+	char *new_sdl;
 	PACKET *packet;
 	P_SLC *data;
 	P_SLR *response;
@@ -3092,7 +3092,7 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS * user_status,
 		data->p_slc_id = *array_id;
 		data->p_slc_length = slice_length;
 		data->p_slc_sdl.cstr_length = sdl_length;
-		data->p_slc_sdl.cstr_address = new_sdl;
+		data->p_slc_sdl.cstr_address = (UCHAR *) new_sdl;
 		data->p_slc_parameters.cstr_length = param_length;
 		data->p_slc_parameters.cstr_address = param;
 		data->p_slc_slice.lstr_length = slice_length;

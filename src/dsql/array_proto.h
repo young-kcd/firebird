@@ -25,7 +25,7 @@
 #define _DSQL_ARRAY_PROTO_H_
 
 extern ISC_STATUS API_ROUTINE isc_array_gen_sdl(ISC_STATUS *, ISC_ARRAY_DESC *,
-											SSHORT *, SCHAR *, SSHORT *);
+											SSHORT *, char *, SSHORT *);
 extern ISC_STATUS API_ROUTINE isc_array_get_slice(ISC_STATUS *, void **, void **,
 											  GDS_QUAD *, ISC_ARRAY_DESC *,
 											  void *, SLONG *);

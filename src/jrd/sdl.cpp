@@ -63,10 +63,10 @@
 typedef struct sdl_arg {
 	USHORT sdl_arg_mode;
 	ADS sdl_arg_desc;
-	UCHAR *sdl_arg_sdl;
+	char *sdl_arg_sdl;
 	UCHAR *sdl_arg_array;
 	SLONG *sdl_arg_variables;
-	void (*sdl_arg_callback) ();
+	SDL_walk_callback sdl_arg_callback;
 	SLICE sdl_arg_argument;
 	ISC_STATUS *sdl_arg_status_vector;
 	IPTR sdl_arg_compiled[COMPILE_SIZE];
@@ -82,12 +82,12 @@ typedef struct rng {
 	SDL_INFO rng_info;
 } *RNG;
 
-static UCHAR *compile(UCHAR *, SDL_ARG);
+static char *compile(char *, SDL_ARG);
 static ISC_STATUS error(ISC_STATUS *, ...);
 static BOOLEAN execute(SDL_ARG);
-static UCHAR *get_range(UCHAR *, RNG, SLONG *, SLONG *);
-static SSHORT get_word(UCHAR **);
-static UCHAR *sdl_desc(UCHAR *, DSC *);
+static char *get_range(char *, RNG, SLONG *, SLONG *);
+static SSHORT get_word(char **);
+static char *sdl_desc(char *, DSC *);
 static IPTR *stuff(IPTR, SDL_ARG);
 
 
@@ -159,7 +159,7 @@ SLONG DLL_EXPORT SDL_compute_subscript(
 
 
 ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS * status_vector,
-							UCHAR * sdl, SDL_INFO info, SLONG * vector)
+							char * sdl, SDL_INFO info, SLONG * vector)
 {
 /**************************************
  *
@@ -172,7 +172,7 @@ ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS * status_vector,
  *	element descriptor.
  *
  **************************************/
-	UCHAR *p;
+	char *p;
 	TEXT *q;
 	USHORT n, offset;
 	SLONG min, max;
@@ -210,13 +210,13 @@ ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS * status_vector,
 
 		case gds_sdl_field:
 			for (n = *p++, q = info->sdl_info_field; n; --n)
-				*q++ = (TEXT) * p++;
+				*q++ = *p++;
 			*q = 0;
 			break;
 
 		case gds_sdl_relation:
 			for (n = *p++, q = info->sdl_info_relation; n; --n)
-				*q++ = (TEXT) * p++;
+				*q++ = *p++;
 			*q = 0;
 			break;
 
@@ -228,7 +228,7 @@ ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS * status_vector,
 				range.rng_info = info;
 				min = max = -1;
 				if (!(p = get_range(p - 1, &range, &min, &max))
-					|| (((UCHAR) * p) != gds_sdl_eoc))
+					|| (*p != gds_sdl_eoc))
 					info->sdl_info_dimensions = 0;
 			}
 			return FB_SUCCESS;
@@ -236,7 +236,7 @@ ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS * status_vector,
 }
 
 
-UCHAR *DLL_EXPORT SDL_prepare_slice(UCHAR * sdl, USHORT sdl_length)
+char *DLL_EXPORT SDL_prepare_slice(char * sdl, USHORT sdl_length)
 {
 /**************************************
  *
@@ -249,9 +249,8 @@ UCHAR *DLL_EXPORT SDL_prepare_slice(UCHAR * sdl, USHORT sdl_length)
  *	blr_d_float to blr_double.
  *
  **************************************/
-	UCHAR*	new_sdl;
-	UCHAR*	old_sdl;
-	DSC		junk;
+	char *	new_sdl, * old_sdl;
+	DSC	junk;
 	USHORT	n;
 
 	new_sdl = old_sdl = sdl;
@@ -259,7 +258,7 @@ UCHAR *DLL_EXPORT SDL_prepare_slice(UCHAR * sdl, USHORT sdl_length)
 	if (*sdl++ != gds_sdl_version1)
 		return old_sdl;
 
-	while ((UCHAR) * sdl != gds_sdl_eoc)
+	while (*sdl != gds_sdl_eoc)
 	{
 		switch (*sdl++)
 		{
@@ -270,7 +269,7 @@ UCHAR *DLL_EXPORT SDL_prepare_slice(UCHAR * sdl, USHORT sdl_length)
 				{
 					if (new_sdl == old_sdl)
 					{
-						new_sdl = (UCHAR*)gds__alloc((SLONG) sdl_length);
+						new_sdl = (char*)gds__alloc((SLONG) sdl_length);
 						/* FREE: apparently never freed */
 						if (!new_sdl)
 						{	/* NOMEM: ignore operation */
@@ -310,10 +309,10 @@ UCHAR *DLL_EXPORT SDL_prepare_slice(UCHAR * sdl, USHORT sdl_length)
 
 int DLL_EXPORT SDL_walk(
 						ISC_STATUS * status_vector,
-						UCHAR * sdl,
+						char * sdl,
 						USHORT mode,
 						UCHAR * array,
-ADS array_desc, SLONG * variables, void (*callback) (), SLICE argument)
+ADS array_desc, SLONG * variables, SDL_walk_callback callback, SLICE argument)
 {
 /**************************************
  *
@@ -325,7 +324,7 @@ ADS array_desc, SLONG * variables, void (*callback) (), SLICE argument)
  *	Walk a slice.  
  *
  **************************************/
-	UCHAR *p;
+	char *p;
 	DSC junk;
 	USHORT n, offset;
 	struct sdl_arg arg;
@@ -340,7 +339,7 @@ ADS array_desc, SLONG * variables, void (*callback) (), SLICE argument)
 	arg.sdl_arg_status_vector = status_vector;
 	p = sdl + 1;
 
-	while ((UCHAR) * p != gds_sdl_eoc) {
+	while (*p != gds_sdl_eoc) {
 		switch (*p++) {
 		case gds_sdl_struct:
 			for (n = *p++; n; --n) {
@@ -368,9 +367,7 @@ ADS array_desc, SLONG * variables, void (*callback) (), SLICE argument)
 				   && *(p - 1) <= gds_sdl_element);
 
 			arg.sdl_arg_next = arg.sdl_arg_compiled;
-			arg.sdl_arg_end =
-				(IPTR *) ((SCHAR *) arg.sdl_arg_compiled +
-						  sizeof(arg.sdl_arg_compiled));
+			arg.sdl_arg_end = arg.sdl_arg_compiled+COMPILE_SIZE;
 			if (!(p = compile(p - 1, &arg)))
 				return FB_FAILURE;
 			if (!stuff((IPTR) op_exit, &arg))
@@ -385,7 +382,7 @@ ADS array_desc, SLONG * variables, void (*callback) (), SLICE argument)
 }
 
 
-static UCHAR *compile(UCHAR * sdl, SDL_ARG arg)
+static char *compile(char * sdl, SDL_ARG arg)
 {
 /**************************************
  *
@@ -398,9 +395,9 @@ static UCHAR *compile(UCHAR * sdl, SDL_ARG arg)
  *	is null, parse, but do not generate anything.
  *
  **************************************/
-	SLONG n, count, variable, value, op, operator_;
+	SLONG n, count, variable, value, operator_;
 	IPTR *label;
-	UCHAR *p, *ptr1, *expressions[16], **expr;
+	char op, *p, *ptr1, *expressions[16], **expr;
 
 #define STUFF(word, arg)	if (!stuff ((IPTR) word, arg)) return NULL
 #define COMPILE(p, arg)		if (!(p = compile (p, arg))) return NULL
@@ -716,11 +713,9 @@ static BOOLEAN execute(SDL_ARG arg)
 			if (arg->sdl_arg_argument->slice_direction) {
 				/* Storing INTO array */
 
-#pragma FB_COMPILER_MESSAGE("Fix. Bad function pointer cast.")
-
-				((void (*)(...)) (*arg->sdl_arg_callback)) (arg->sdl_arg_argument,
-															count,
-															&element_desc);
+				 (*arg->sdl_arg_callback) (arg->sdl_arg_argument,
+										count,
+										&element_desc);
 			}
 			else {
 				/* Fetching FROM array */
@@ -728,11 +723,9 @@ static BOOLEAN execute(SDL_ARG arg)
 				if ((BLOB_PTR *) element_desc.dsc_address <
 					(BLOB_PTR *) arg->sdl_arg_argument->slice_high_water) {
 
-#pragma FB_COMPILER_MESSAGE("Fix. Bad function pointer cast.")
-
-					((void (*)(...)) (*arg->sdl_arg_callback)) (arg->sdl_arg_argument,
-																count,
-																&element_desc);
+					(*arg->sdl_arg_callback) (arg->sdl_arg_argument,
+										count,
+										&element_desc);
 				}
 				else {
 					slice_desc = &arg->sdl_arg_argument->slice_desc;
@@ -753,7 +746,7 @@ static BOOLEAN execute(SDL_ARG arg)
 }
 
 
-static UCHAR *get_range(UCHAR * sdl, RNG arg, SLONG * min, SLONG * max)
+static char *get_range(char * sdl, RNG arg, SLONG * min, SLONG * max)
 {
 /**************************************
  *
@@ -767,7 +760,7 @@ static UCHAR *get_range(UCHAR * sdl, RNG arg, SLONG * min, SLONG * max)
  *
  **************************************/
 	SLONG n, variable, value, min1, max1, min2, max2, junk1, junk2;
-	UCHAR *p, op;
+	char *p, op;
 	SDL_INFO info;
 
 	p = sdl;
@@ -867,7 +860,7 @@ static UCHAR *get_range(UCHAR * sdl, RNG arg, SLONG * min, SLONG * max)
 }
 
 
-static SSHORT get_word(UCHAR ** ptr)
+static SSHORT get_word(char ** ptr)
 {
 /**************************************
  *
@@ -878,7 +871,7 @@ static SSHORT get_word(UCHAR ** ptr)
  * Functional description
  *
  **************************************/
-	UCHAR *p;
+	char *p;
 	SSHORT n;
 
 	p = *ptr;
@@ -889,7 +882,7 @@ static SSHORT get_word(UCHAR ** ptr)
 }
 
 
-static UCHAR *sdl_desc(UCHAR * ptr, DSC * desc)
+static char *sdl_desc(char * ptr, DSC * desc)
 {
 /**************************************
  *
@@ -902,7 +895,7 @@ static UCHAR *sdl_desc(UCHAR * ptr, DSC * desc)
  *	Return updated pointer is successful, otherwise NULL.
  *
  **************************************/
-	UCHAR *sdl;
+	char *sdl;
 
 	sdl = ptr;
 	desc->dsc_scale = 0;
@@ -1011,8 +1004,7 @@ static UCHAR *sdl_desc(UCHAR * ptr, DSC * desc)
 	case dtype_long:
 	case dtype_quad:
 	case dtype_int64:
-		desc->dsc_scale = *((SCHAR *) sdl);
-		++sdl;
+		desc->dsc_scale = *sdl++;
 		break;
 
 	case dtype_text:

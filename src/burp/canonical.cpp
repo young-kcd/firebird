@@ -28,7 +28,7 @@
  *
  */
 /*
-$Id: canonical.cpp,v 1.20 2003-04-16 10:16:39 aafemt Exp $
+$Id: canonical.cpp,v 1.21 2003-07-24 10:21:38 aafemt Exp $
 */
 
 #include "firebird.h"
@@ -66,7 +66,7 @@ static bool_t expand_buffer(XDR*);
 static bool_t xdr_datum(XDR*, DSC*, UCHAR*);
 static bool_t xdr_quad(XDR*, SLONG*);
 static int xdr_init(XDR*, LSTRING*, enum xdr_op);
-static bool_t xdr_slice(XDR*, LSTRING*, USHORT, UCHAR*);
+static bool_t xdr_slice(XDR*, LSTRING*, USHORT, char*);
 
 static xdr_t::xdr_ops burp_ops =
 {
@@ -231,7 +231,7 @@ ULONG CAN_slice(LSTRING * buffer,
 				LSTRING * slice,
 				bool_t direction,
 				USHORT sdl_length,
-				UCHAR * sdl)
+				char * sdl)
 {
 /**************************************
  *
@@ -655,7 +655,7 @@ static int xdr_init( XDR * xdrs, LSTRING * buffer, enum xdr_op x_op)
 static bool_t xdr_slice(XDR* xdrs,
 						LSTRING* slice,
 						USHORT sdl_length,
-						UCHAR* sdl)
+						char* sdl)
 {
 /**************************************
  *

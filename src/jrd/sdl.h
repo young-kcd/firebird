@@ -45,4 +45,5 @@ typedef struct slice {
 	SLONG slice_count;
 } *SLICE;
 
+typedef void (*SDL_walk_callback)(SLICE,ULONG,DSC *);
 #endif /* JRD_SDL_H */

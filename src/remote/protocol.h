@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: protocol.h,v 1.12 2003-06-08 18:12:13 dimitr Exp $
+$Id: protocol.h,v 1.13 2003-07-24 10:21:42 aafemt Exp $
 */
 #ifndef _REMOTE_PROTOCOL_H_
 #define _REMOTE_PROTOCOL_H_
@@ -512,7 +512,7 @@ typedef struct p_slc {
 typedef struct p_slr {
     LSTRING	p_slr_slice;		/* Slice proper */
     ULONG	p_slr_length;		/* Total length of slice */
-    UCHAR	*p_slr_sdl;		/* *** not transfered *** */
+    char	*p_slr_sdl;		/* *** not transfered *** */
     USHORT	p_slr_sdl_length;	/* *** not transfered *** */
 } P_SLR;
  

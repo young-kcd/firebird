@@ -36,7 +36,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.25 2003-07-17 11:49:04 eku Exp $
+$Id: backup.epp,v 1.26 2003-07-24 10:21:38 aafemt Exp $
 */
 
 #include "firebird.h"
@@ -1120,8 +1120,9 @@ static void put_array( BURP_FLD field, BURP_REL relation, ISC_QUAD * blob_id)
 	ULONG return_length, slice_length;
 	SLONG *returned_range, range_buffer[16];	/* enough for 16 dimensions */
 	LSTRING xdr_buffer, xdr_slice;
-	UCHAR blr_buffer[200];		/* enough for a sdl with 16 dimensions */
-	UCHAR *blr, *slice, *p;
+	char blr_buffer[200];		/* enough for a sdl with 16 dimensions */
+	char *blr;
+	UCHAR *slice, *p;
 	USHORT blr_length, count, field_length;
 	TGBL tdgbl;
 
@@ -1194,7 +1195,7 @@ static void put_array( BURP_FLD field, BURP_REL relation, ISC_QUAD * blob_id)
 
 #ifdef DEBUG
 	if (debug_on)
-		PRETTY_print_sdl((SCHAR*) blr_buffer, NULL, NULL, 0);
+		PRETTY_print_sdl(blr_buffer, NULL, NULL, 0);
 #endif
 
 	blr_length = blr - blr_buffer;
@@ -1227,7 +1228,7 @@ static void put_array( BURP_FLD field, BURP_REL relation, ISC_QUAD * blob_id)
 		/* msg 81 error accessing blob field %s -- continuing */
 		BURP_print_status(status_vector);
 #ifdef DEBUG
-		PRETTY_print_sdl((SCHAR*) blr_buffer, NULL, NULL, 0);
+		PRETTY_print_sdl(blr_buffer, NULL, NULL, 0);
 #endif
 		return;
 	}

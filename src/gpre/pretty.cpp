@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pretty.cpp,v 1.10 2003-04-02 11:49:35 brodsom Exp $
+//	$Id: pretty.cpp,v 1.11 2003-07-24 10:21:40 aafemt Exp $
 //
 
 #include "firebird.h"
@@ -419,7 +419,7 @@ PRETTY_print_menu(SCHAR * blr,
 #endif
 
 int
-PRETTY_print_sdl(SCHAR * blr,
+PRETTY_print_sdl(char * blr,
 //____________________________________________________________
 //  
 //		Pretty print slice description language.

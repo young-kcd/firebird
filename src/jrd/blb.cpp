@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.30 2003-04-10 06:49:10 aafemt Exp $
+$Id: blb.cpp,v 1.31 2003-07-24 10:21:41 aafemt Exp $
 */
 
 #include "firebird.h"
@@ -628,7 +628,7 @@ USHORT BLB_get_segment(TDBB tdbb,
 SLONG BLB_get_slice(TDBB tdbb,
 					JRD_TRA transaction,
 					BID blob_id,
-					UCHAR * sdl,
+					char * sdl,
 					USHORT param_length,
 					SLONG * param, SLONG slice_length, UCHAR * slice)
 {
@@ -725,7 +725,7 @@ SLONG BLB_get_slice(TDBB tdbb,
 					  data,
 					  desc,
 					  variables,
-					  reinterpret_cast < void (*)() > (slice_callback),
+					  slice_callback,
 					  reinterpret_cast < struct slice *>(&arg));
 
 	dbb->dbb_permanent->deallocate(data);
@@ -1330,7 +1330,7 @@ void BLB_put_segment(TDBB tdbb, BLB blob, UCHAR* seg, USHORT segment_length)
 void BLB_put_slice(	TDBB	tdbb,
 					JRD_TRA		transaction,
 					BID		blob_id,
-					UCHAR*	sdl,
+					char*	sdl,
 					USHORT	param_length,
 					SLONG*	param,
 					SLONG	slice_length,
@@ -1469,7 +1469,7 @@ void BLB_put_slice(	TDBB	tdbb,
 				 array->arr_data,
 				 &array_desc->arr_desc,
 				 variables,
-				 reinterpret_cast<void (*)()>(slice_callback),
+				 slice_callback,
 				 &arg))
 	{
 		ERR_punt();

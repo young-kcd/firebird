@@ -1869,46 +1869,43 @@ const unsigned char gds_dyn_last_dyn_value = 210;
 
 #else /* c++ definitions */
 
-const unsigned char gds_sdl_version1 = 1;
-/* Opps, can't set an unsigned value to -1.  Used to be:
- * const unsigned char gds_sdl_eoc = -1;
- */
-const unsigned char gds_sdl_eoc = 0xFF;
-const unsigned char gds_sdl_relation = 2;
-const unsigned char gds_sdl_rid = 3;
-const unsigned char gds_sdl_field = 4;
-const unsigned char gds_sdl_fid = 5;
-const unsigned char gds_sdl_struct = 6;
-const unsigned char gds_sdl_variable = 7;
-const unsigned char gds_sdl_scalar = 8;
-const unsigned char gds_sdl_tiny_integer = 9;
-const unsigned char gds_sdl_short_integer = 10;
-const unsigned char gds_sdl_long_integer = 11;
-const unsigned char gds_sdl_literal = 12;
-const unsigned char gds_sdl_add = 13;
-const unsigned char gds_sdl_subtract = 14;
-const unsigned char gds_sdl_multiply = 15;
-const unsigned char gds_sdl_divide = 16;
-const unsigned char gds_sdl_negate = 17;
-const unsigned char gds_sdl_eql = 18;
-const unsigned char gds_sdl_neq = 19;
-const unsigned char gds_sdl_gtr = 20;
-const unsigned char gds_sdl_geq = 21;
-const unsigned char gds_sdl_lss = 22;
-const unsigned char gds_sdl_leq = 23;
-const unsigned char gds_sdl_and = 24;
-const unsigned char gds_sdl_or = 25;
-const unsigned char gds_sdl_not = 26;
-const unsigned char gds_sdl_while = 27;
-const unsigned char gds_sdl_assignment = 28;
-const unsigned char gds_sdl_label = 29;
-const unsigned char gds_sdl_leave = 30;
-const unsigned char gds_sdl_begin = 31;
-const unsigned char gds_sdl_end = 32;
-const unsigned char gds_sdl_do3 = 33;
-const unsigned char gds_sdl_do2 = 34;
-const unsigned char gds_sdl_do1 = 35;
-const unsigned char gds_sdl_element = 36;
+const char gds_sdl_version1 = 1;
+const char gds_sdl_eoc = -1;
+const char gds_sdl_relation = 2;
+const char gds_sdl_rid = 3;
+const char gds_sdl_field = 4;
+const char gds_sdl_fid = 5;
+const char gds_sdl_struct = 6;
+const char gds_sdl_variable = 7;
+const char gds_sdl_scalar = 8;
+const char gds_sdl_tiny_integer = 9;
+const char gds_sdl_short_integer = 10;
+const char gds_sdl_long_integer = 11;
+const char gds_sdl_literal = 12;
+const char gds_sdl_add = 13;
+const char gds_sdl_subtract = 14;
+const char gds_sdl_multiply = 15;
+const char gds_sdl_divide = 16;
+const char gds_sdl_negate = 17;
+const char gds_sdl_eql = 18;
+const char gds_sdl_neq = 19;
+const char gds_sdl_gtr = 20;
+const char gds_sdl_geq = 21;
+const char gds_sdl_lss = 22;
+const char gds_sdl_leq = 23;
+const char gds_sdl_and = 24;
+const char gds_sdl_or = 25;
+const char gds_sdl_not = 26;
+const char gds_sdl_while = 27;
+const char gds_sdl_assignment = 28;
+const char gds_sdl_label = 29;
+const char gds_sdl_leave = 30;
+const char gds_sdl_begin = 31;
+const char gds_sdl_end = 32;
+const char gds_sdl_do3 = 33;
+const char gds_sdl_do2 = 34;
+const char gds_sdl_do1 = 35;
+const char gds_sdl_element = 36;
 
 #endif
 

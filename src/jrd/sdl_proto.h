@@ -30,11 +30,11 @@ extern "C" {
 
 extern SLONG DLL_EXPORT SDL_compute_subscript(ISC_STATUS *, struct ads *, USHORT,
 											  SLONG *);
-extern ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS *, UCHAR *, struct sdl_info *,
+extern ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS *, char *, struct sdl_info *,
 								   SLONG *);
-extern UCHAR *DLL_EXPORT SDL_prepare_slice(UCHAR *, USHORT);
-extern int DLL_EXPORT SDL_walk(ISC_STATUS *, UCHAR *, USHORT, UCHAR *,
-							   struct ads *, SLONG *, FPTR_VOID,
+extern char *DLL_EXPORT SDL_prepare_slice(char *, USHORT);
+extern int DLL_EXPORT SDL_walk(ISC_STATUS *, char *, USHORT, UCHAR *,
+							   struct ads *, SLONG *, SDL_walk_callback,
 							   struct slice *);
 
 #ifdef __cplusplus

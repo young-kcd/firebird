@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: restore.epp,v 1.31 2003-06-30 10:42:49 brodsom Exp $
+$Id: restore.epp,v 1.32 2003-07-24 10:21:38 aafemt Exp $
 */
 
 #include "firebird.h"
@@ -1405,7 +1405,7 @@ SLONG		*blob_id, return_length, slice_length, *range, *end_ranges,
 		lcount;
 USHORT		blr_length, count, field_number, field_length;
 UCHAR		*buffer, *p;
-SCHAR		*blr, blr_buffer [200]; /* enough for a sdl with 16 dimensions */
+char		*blr, blr_buffer [200]; /* enough for a sdl with 16 dimensions */
 LSTRING		xdr_buffer, xdr_slice;
 UCHAR	    scan_next_attr;
 TGBL	    tdgbl;
@@ -1726,7 +1726,7 @@ if (return_length != slice_length)
 	        (void) GET_BLOCK (p, lcount);
 
 	    if (tdgbl->gbl_sw_transportable)
-	        CAN_slice (&xdr_buffer, &xdr_slice, FALSE, blr_length, (UCHAR*) blr_buffer);
+	        CAN_slice (&xdr_buffer, &xdr_slice, FALSE, blr_length, blr_buffer);
 	    }
 
 	if (isc_put_slice (status_vector,
@@ -1849,7 +1849,7 @@ else
         (void) GET_BLOCK (p, lcount);
 
     if (tdgbl->gbl_sw_transportable)
-        CAN_slice (&xdr_buffer, &xdr_slice, FALSE, blr_length, (UCHAR*) blr_buffer);
+        CAN_slice (&xdr_buffer, &xdr_slice, FALSE, blr_length, blr_buffer);
 
 
     if (isc_put_slice (status_vector,
