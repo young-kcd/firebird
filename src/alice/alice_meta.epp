@@ -27,7 +27,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: alice_meta.epp,v 1.12 2003-08-27 10:15:11 aafemt Exp $
+ *	$Id: alice_meta.epp,v 1.13 2003-08-30 02:02:36 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -144,7 +144,7 @@ void MET_get_state(ISC_STATUS * user_status, TDR trans)
 		trans->tdr_state = TRA.RDB$TRANSACTION_STATE;
 	END_FOR ON_ERROR RETURN_ERROR(user_status) END_ERROR;
 
-	gds__release_request(gds_status, GDS_REF(request));
+	gds__release_request(gds_status, &request);
 	if (gds_status[1]) {
 		RETURN_ERROR(user_status)
 	}
@@ -184,7 +184,7 @@ TDR MET_get_transaction(ISC_STATUS * user_status, isc_db_handle handle, SLONG id
 			trans = get_description((SLONG*)&TRA.RDB$TRANSACTION_DESCRIPTION);
 		END_FOR ON_ERROR RETURN_ERROR(user_status) END_ERROR;
 
-		gds__release_request(gds_status, GDS_REF(request));
+		gds__release_request(gds_status, &request);
 		if (gds_status[1]) {
 			RETURN_ERROR(user_status)
 		}
@@ -281,7 +281,7 @@ static USHORT get_capabilities(ISC_STATUS * user_status)
 		END_FOR ON_ERROR RETURN_ERROR(user_status) END_ERROR;
 	}
 
-	gds__release_request(gds_status, GDS_REF(req));
+	gds__release_request(gds_status, &req);
 	if (gds_status[1]) {
 		RETURN_ERROR(user_status)
 	}
@@ -459,9 +459,7 @@ static USHORT snarf_blob(SLONG blob_id[2],
 		buffer[1] = 0;
 
 	blob = NULL;
-	if (gds__open_blob(gds_status,
-					   GDS_REF(DB),
-					   GDS_REF(gds_trans), GDS_REF(blob), (GDS_QUAD*) GDS_VAL(blob_id))) {
+	if (gds__open_blob(gds_status, &DB, &gds_trans, &blob, (GDS_QUAD*) blob_id)) {
 		ALICE_print_status(gds_status);
 		return 0;
 	}
@@ -475,10 +473,8 @@ static USHORT snarf_blob(SLONG blob_id[2],
 			break;
 		if (!(buffer_length = end - ptr))
 			break;
-		status = gds__get_segment(gds_status,
-							GDS_REF(blob),
-								  GDS_REF(returned_length),
-								  buffer_length, GDS_VAL(ptr));
+		status = gds__get_segment(gds_status, &blob, &returned_length,
+								  buffer_length, ptr);
 		if (status && status != gds_segment)
 			break;
 		ptr += returned_length;
@@ -488,9 +484,7 @@ static USHORT snarf_blob(SLONG blob_id[2],
 
 	if (!buffer_length)
 		for (;;) {
-			status = gds__get_segment(gds_status,
-									  GDS_REF(blob),
-									  GDS_REF(returned_length),
+			status = gds__get_segment(gds_status, &blob, &returned_length,
 									  buffer_length, buffer);
 			if (status && status != gds_segment)
 				break;
@@ -499,7 +493,7 @@ static USHORT snarf_blob(SLONG blob_id[2],
 	else
 		buffer_length = 0;
 
-	gds__close_blob(gds_status, GDS_REF(blob));
+	gds__close_blob(gds_status, &blob);
 
 	*ptr = 0;
 

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.12 2003-03-13 16:54:03 skidder Exp $
+//	$Id: exe.cpp,v 1.13 2003-08-30 02:02:36 brodsom Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -100,12 +100,8 @@ int EXE_action(TEXT * database, ULONG switches)
 
 	error = FALSE;
 	handle = NULL;
-	gds__attach_database(tdgbl->status,
-						 0,
-						 GDS_VAL(database),
-						 (GDS_REF(handle)),
-						 dpb_length,
-						 reinterpret_cast <SCHAR *>(GDS_VAL(dpb)));
+	gds__attach_database(tdgbl->status, 0, database, &handle, dpb_length,
+						 reinterpret_cast <SCHAR *>(dpb));
 
 	SVC_STARTED(tdgbl->service_blk);
 
@@ -117,11 +113,8 @@ int EXE_action(TEXT * database, ULONG switches)
 
 	if (handle != NULL) {
 		if ((switches & sw_validate) && (tdgbl->status[1] != isc_bug_check)) {
-			gds__database_info(tdgbl->status,
-							   (GDS_REF(handle)),
-							   sizeof(val_errors),
-							   val_errors,
-							   sizeof(error_string),
+			gds__database_info(tdgbl->status, &handle, sizeof(val_errors),
+							   val_errors, sizeof(error_string),
 							   reinterpret_cast < char *>(error_string));
 
 			extract_db_info(error_string);
@@ -130,8 +123,7 @@ int EXE_action(TEXT * database, ULONG switches)
 		if (switches & sw_disable)
 			MET_disable_wal(tdgbl->status, handle);
 
-		gds__detach_database(tdgbl->status,
-							 (GDS_REF(handle)));
+		gds__detach_database(tdgbl->status, &handle);
 	}
 
 	ALLA_fini();
@@ -166,12 +158,8 @@ int EXE_two_phase(TEXT * database, ULONG switches)
 
 	error = FALSE;
 	handle = NULL;
-	gds__attach_database(tdgbl->status,
-						 0,
-						 GDS_VAL(database),
-						 (GDS_REF(handle)),
-						 dpb_length,
-						 reinterpret_cast < char *>(GDS_VAL(dpb)));
+	gds__attach_database(tdgbl->status, 0, database, &handle,
+						 dpb_length,  reinterpret_cast < char *>(dpb));
 
 	SVC_STARTED(tdgbl->service_blk);
 
@@ -186,8 +174,7 @@ int EXE_two_phase(TEXT * database, ULONG switches)
 								   switches);
 
 	if (handle)
-		gds__detach_database(tdgbl->status,
-							 (GDS_REF(handle)));
+		gds__detach_database(tdgbl->status, &handle);
 
 	ALLA_fini();
 

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.17 2003-04-16 10:16:30 aafemt Exp $
+//	$Id: tdr.cpp,v 1.18 2003-08-30 02:02:36 brodsom Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -222,11 +222,9 @@ BOOLEAN TDR_attach_database(ISC_STATUS * status_vector,
 
 	trans->tdr_db_handle = NULL;
 
-	gds__attach_database(status_vector,
-						 0,
-						 GDS_VAL(pathname),
-						 (GDS_REF(trans->tdr_db_handle)), dpb_length,
-						 reinterpret_cast < char *>(GDS_VAL(dpb)));
+	gds__attach_database(status_vector, 0, pathname,
+						 &trans->tdr_db_handle, dpb_length,
+						 reinterpret_cast < char *>(dpb));
 
 	if (status_vector[1]) {
 		if (tdgbl->ALICE_data.ua_debug) {
@@ -275,8 +273,7 @@ void TDR_shutdown_databases(TDR trans)
 	ISC_STATUS_ARRAY status_vector;
 
 	for (ptr = trans; ptr; ptr = ptr->tdr_next)
-		gds__detach_database(status_vector,
-							 (GDS_REF(ptr->tdr_db_handle)));
+		gds__detach_database(status_vector, &ptr->tdr_db_handle);
 }
 
 
@@ -304,9 +301,7 @@ void TDR_list_limbo(FRBRD *handle, TEXT * name, ULONG switches)
 
 	tdgbl = GET_THREAD_DATA;
 
-	if (gds__database_info(status_vector,
-						   (GDS_REF(handle)),
-						   sizeof(limbo_info),
+	if (gds__database_info(status_vector, &handle, sizeof(limbo_info),
 						   reinterpret_cast < char *>(limbo_info),
 						   sizeof(buffer),
 						   reinterpret_cast < char *>(buffer))) {
@@ -882,11 +877,8 @@ static BOOLEAN reconnect(FRBRD *handle,
 
 	id = gds__vax_integer((UCHAR *) & number, 4);
 	transaction = NULL;
-	if (gds__reconnect_transaction(status_vector,
-								   (GDS_REF(handle)),
-								   (GDS_REF(transaction)),
-    							   sizeof(id),
-								   reinterpret_cast <char *>(GDS_REF(id)))) {
+	if (gds__reconnect_transaction(status_vector, &handle, &transaction,
+    							   sizeof(id), reinterpret_cast <char *>(&id))) {
 		ALICE_print(90, name, 0, 0, 0, 0);	/* msg 90: failed to reconnect to a transaction in database %s */
 		ALICE_print_status(status_vector);
 		return TRUE;
@@ -902,11 +894,9 @@ static BOOLEAN reconnect(FRBRD *handle,
 	}
 
 	if (switches & sw_commit)
-		gds__commit_transaction(status_vector,
-								(GDS_REF(transaction)));
+		gds__commit_transaction(status_vector, &transaction);
 	else if (switches & sw_rollback)
-		gds__rollback_transaction(status_vector,
-								(GDS_REF(transaction)));
+		gds__rollback_transaction(status_vector, &transaction);
 	else
 		return FALSE;
 

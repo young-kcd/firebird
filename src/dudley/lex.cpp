@@ -212,7 +212,8 @@ void LEX_get_text( SCHAR * buffer, TXT text)
 
 	if (ib_fseek(trace_file, start, 0)) {
 		ib_fseek(trace_file, (SLONG) 0, 2);
-		DDL_err(275, NULL, NULL, NULL, NULL, NULL);	/* msg 275: ib_fseek failed */
+		DDL_err(275, NULL, NULL, NULL, NULL, NULL);
+		/* msg 275: ib_fseek failed */
 	}
 
 	p = buffer;
@@ -243,7 +244,8 @@ void LEX_init( void *file)
 	trace_file = (IB_FILE *) gds__temp_file(TRUE, SCRATCH, trace_file_name);
 #endif
 	if (trace_file == (IB_FILE *) - 1)
-		DDL_err(276, NULL, NULL, NULL, NULL, NULL);	/* msg 276: couldn't open scratch file */
+		DDL_err(276, NULL, NULL, NULL, NULL, NULL);
+		/* msg 276: couldn't open scratch file */
 
 	input_file = (IB_FILE *) file;
 	DDL_char = DDL_buffer;
@@ -276,7 +278,8 @@ void LEX_put_text (FRBRD *blob, TXT text)
 
 	if (ib_fseek(trace_file, start, 0)) {
 		ib_fseek(trace_file, (SLONG) 0, 2);
-		DDL_err(275, NULL, NULL, NULL, NULL, NULL);	/* msg 275: ib_fseek failed */
+		DDL_err(275, NULL, NULL, NULL, NULL, NULL);	
+		/* msg 275: ib_fseek failed */
 	}
 
 	while (length) {
@@ -288,8 +291,9 @@ void LEX_put_text (FRBRD *blob, TXT text)
 				break;
 		}
 		if (l = p - buffer)
-			if (gds__put_segment(status_vector, GDS_REF(blob), l, buffer))
-				DDL_err(277, NULL, NULL, NULL, NULL, NULL);	/* msg 277: gds__put_segment failed */
+			if (gds__put_segment(status_vector, &blob, l, buffer))
+				DDL_err(277, NULL, NULL, NULL, NULL, NULL);	
+		/* msg 277: gds__put_segment failed */
 	}
 
 	ib_fseek(trace_file, (SLONG) 0, 2);
@@ -377,7 +381,8 @@ TOK LEX_token(void)
 		token->tok_type = tok_quoted;
 		do {
 			if (!(next = nextchar()) || next == '\n') {
-				DDL_err(278, NULL, NULL, NULL, NULL, NULL);	/* msg 278: unterminated quoted string */
+				DDL_err(278, NULL, NULL, NULL, NULL, NULL);
+				/* msg 278: unterminated quoted string */
 				break;
 			}
 			*p++ = next;
@@ -448,7 +453,8 @@ static int nextchar(void)
 			if (DDL_char < end)
 				*DDL_char++ = c;
 			else
-				DDL_err(279, NULL, NULL, NULL, NULL, NULL);	/* msg 279: line too SLONG */
+				DDL_err(279, NULL, NULL, NULL, NULL, NULL);
+				/* msg 279: line too SLONG */
 			if (c == '\n')
 				break;
 		}

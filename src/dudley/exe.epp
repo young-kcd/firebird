@@ -217,14 +217,15 @@ void EXE_create_database( DBB dbb)
 
 	file_name = dbb->dbb_name->sym_string;
 
-	result = gds__attach_database(gds_status, 0, GDS_VAL(file_name),
-								  GDS_REF(DB), dpb_length, dpb);
+	result = gds__attach_database(gds_status, 0, file_name, &DB, dpb_length, dpb);
 	if (!DDL_replace) {
 		if (!result) {
-			gds__detach_database(gds_status, GDS_REF(DB));
-			DDL_msg_put(18, file_name, NULL, NULL, NULL, NULL);	/* msg 18: Database \"%s\" already exists */
+			gds__detach_database(gds_status, &DB);
+			DDL_msg_put(18, file_name, NULL, NULL, NULL, NULL);
+			/* msg 18: Database \"%s\" already exists */
 			if (DDL_interactive) {
-				DDL_msg_partial(19, NULL, NULL, NULL, NULL, NULL);	/* msg 19: Do you want to replace it? */
+				DDL_msg_partial(19, NULL, NULL, NULL, NULL, NULL);
+				/* msg 19: Do you want to replace it? */
 				if (!DDL_yes_no(286))
 					DDL_exit(FINI_ERROR);
 			}
@@ -232,7 +233,8 @@ void EXE_create_database( DBB dbb)
 				DDL_exit(FINI_ERROR);
 		}
 		else if (gds_status[1] != gds_io_error)
-			DDL_error_abort(gds_status, 20, file_name, NULL, NULL, NULL, NULL);	/* msg 20: Database \"%s\" exists but can't be opened */
+			DDL_error_abort(gds_status, 20, file_name, NULL, NULL, NULL, NULL);
+			/* msg 20: Database \"%s\" exists but can't be opened */
 	}
 	else {
 		/* replacing the database so try to drop it first. */
@@ -287,17 +289,13 @@ void EXE_create_database( DBB dbb)
 	if (dpb_length == 1)
 		dpb_length = 0;
 
-	if (gds__create_database(gds_status,
-							 0,
-							 GDS_VAL(file_name),
-							 GDS_REF(DB),
-							 dpb_length,
-							 dpb,
-							 0))
-			DDL_error_abort(gds_status, 21, file_name, NULL, NULL, NULL, NULL);	/* msg 21: Couldn't create database \"%s\" */
+	if (gds__create_database(gds_status, 0, file_name, &DB, dpb_length, dpb, 0))
+			DDL_error_abort(gds_status, 21, file_name, NULL, NULL, NULL, NULL);
+			/* msg 21: Couldn't create database \"%s\" */
 
 	if (DDL_version) {
-		DDL_msg_put(23, file_name, NULL, NULL, NULL, NULL);	/* msg 23: Version(s) for database \"%s\" */
+		DDL_msg_put(23, file_name, NULL, NULL, NULL, NULL);
+		/* msg 23: Version(s) for database \"%s\" */
 		gds__version(&DB, NULL, NULL);
 	}
 
@@ -354,13 +352,10 @@ void EXE_create_database( DBB dbb)
 	if ((dbb->dbb_flags & DBB_log_default) || (dbb->dbb_logfiles)) {
 		/* setup enough information to drop log files created */
 
-		if (gds__database_info(gds_status,
-							   GDS_REF(DB),
-							   sizeof(db_info),
-							   db_info,
-							   sizeof(db_info_buffer),
-							   db_info_buffer))
-				DDL_error_abort(gds_status, 327, NULL, NULL, NULL, NULL, NULL);	/* msg 327: error in getting write ahead log information */
+		if (gds__database_info(gds_status, &DB, sizeof(db_info), db_info,
+							   sizeof(db_info_buffer), db_info_buffer))
+				DDL_error_abort(gds_status, 327, NULL, NULL, NULL, NULL, NULL);
+				/* msg 327: error in getting write ahead log information */
 
 		log = 0;
 
@@ -419,13 +414,10 @@ void EXE_drop_database( DBB dbb)
 	if (dpb_length == 1)
 		dpb_length = 0;
 
-	if (gds__attach_database(gds_status,
-							 0,
-							 GDS_VAL(dbb->dbb_name->sym_string),
-							 GDS_REF(DB),
-							 dpb_length,
-							 dpb))
-			DDL_error_abort(gds_status, 25, NULL, NULL, NULL, NULL, NULL);	/* msg 25: Couldn't locate database */
+	if (gds__attach_database(gds_status, 0, dbb->dbb_name->sym_string, &DB,
+							 dpb_length, dpb))
+			DDL_error_abort(gds_status, 25, NULL, NULL, NULL, NULL, NULL);
+			/* msg 25: Couldn't locate database */
 
 	START_TRANSACTION;
 
@@ -433,25 +425,24 @@ void EXE_drop_database( DBB dbb)
 		alloc_file_name(&dbb->dbb_files, (UCHAR*) F.RDB$FILE_NAME);
 	END_FOR;
 
-	COMMIT ON_ERROR DDL_db_error(gds_status, 26, NULL, NULL, NULL, NULL, NULL);	/* msg 26: error commiting metadata changes */
+	COMMIT ON_ERROR DDL_db_error(gds_status, 26, NULL, NULL, NULL, NULL, NULL);
+	/* msg 26: error commiting metadata changes */
 	ROLLBACK;
 	END_ERROR;
 
-	if (gds__database_info(gds_status,
-						   GDS_REF(DB),
-						   sizeof(db_info),
-						   db_info,
-						   sizeof(db_info_buffer),
-						   db_info_buffer))
-			DDL_error_abort(gds_status, 327, NULL, NULL, NULL, NULL, NULL);	/* msg 327: error in getting write ahead log information */
+	if (gds__database_info(gds_status, &DB, sizeof(db_info), db_info,
+						   sizeof(db_info_buffer), db_info_buffer))
+			DDL_error_abort(gds_status, 327, NULL, NULL, NULL, NULL, NULL);
+			/* msg 327: error in getting write ahead log information */
 
 	wal_info((UCHAR*) db_info_buffer, &log, cur_log, &part_offset);
 
 	if (log)
 		get_log_names_serial(&dbb->dbb_files);
 
-	if (gds__detach_database(gds_status, GDS_REF(DB)))
-		DDL_error_abort(gds_status, 27, NULL, NULL, NULL, NULL, NULL);	/* msg 27: Couldn't release database */
+	if (gds__detach_database(gds_status, &DB))
+		DDL_error_abort(gds_status, 27, NULL, NULL, NULL, NULL, NULL);
+		/* msg 27: Couldn't release database */
 
 	if (log) {
 		get_log_names(dbb->dbb_name->sym_string, &dbb->dbb_files, cur_log,
@@ -641,7 +632,8 @@ void EXE_execute(void)
 				break;
 
 			default:
-				DDL_err(34, NULL, NULL, NULL, NULL, NULL);	/* msg 34: action not implemented yet */
+				DDL_err(34, NULL, NULL, NULL, NULL, NULL);
+				/* msg 34: action not implemented yet */
 			}
 		}
 }
@@ -671,11 +663,13 @@ void EXE_fini( DBB dbb)
 			}
 
 			ROLLBACK
-				ON_ERROR DDL_db_error(gds_status, 35, NULL, NULL, NULL, NULL, NULL);	/* msg 35: error rolling back metadata changes */
+				ON_ERROR DDL_db_error(gds_status, 35, NULL, NULL, NULL, NULL, NULL);
+				/* msg 35: error rolling back metadata changes */
 		END_ERROR}
 		else {
 			COMMIT
-				ON_ERROR DDL_db_error(gds_status, 36, NULL, NULL, NULL, NULL, NULL);	/* msg 36: error commiting metadata changes */
+				ON_ERROR DDL_db_error(gds_status, 36, NULL, NULL, NULL, NULL, NULL);
+				/* msg 36: error commiting metadata changes */
 			ROLLBACK;
 		END_ERROR}
 		FINISH;
@@ -768,16 +762,14 @@ void EXE_modify_database( DBB dbb)
 	if (dpb_length == 1)
 		dpb_length = 0;
 
-	if (gds__attach_database(gds_status, 0,
-							 GDS_VAL(dbb->dbb_name->sym_string),
-							 GDS_REF(DB),
-							 dpb_length,
-							 dpb))
+	if (gds__attach_database(gds_status, 0, dbb->dbb_name->sym_string, &DB,
+							 dpb_length, dpb))
 			DDL_error_abort(gds_status, 29, dbb->dbb_name->sym_string, NULL,
 							NULL, NULL, NULL);	/* msg 29: Couldn't attach database */
 
 	if (DDL_version) {
-		DDL_msg_put(30, dbb->dbb_name->sym_string, NULL, NULL, NULL, NULL);	/* msg 30:    Version(s) for database \"%s\" */
+		DDL_msg_put(30, dbb->dbb_name->sym_string, NULL, NULL, NULL, NULL);
+		/* msg 30:    Version(s) for database \"%s\" */
 		gds__version(&DB, NULL, NULL);
 	}
 
@@ -806,13 +798,10 @@ void EXE_modify_database( DBB dbb)
 /* erase log files and commit transaction */
 
 	if (dbb->dbb_flags & DBB_drop_log) {
-		if (gds__database_info(gds_status,
-							   GDS_REF(DB),
-							   sizeof(db_info),
-							   db_info,
-							   sizeof(db_info_buffer),
-							   db_info_buffer))
-				DDL_error_abort(gds_status, 327, NULL, NULL, NULL, NULL, NULL);	/* msg 327: error in getting write ahead log information */
+		if (gds__database_info(gds_status, &DB, sizeof(db_info), db_info,
+							   sizeof(db_info_buffer), db_info_buffer))
+				DDL_error_abort(gds_status, 327, NULL, NULL, NULL, NULL, NULL);
+				/* msg 327: error in getting write ahead log information */
 
 		log_files = NULL;
 		log = 0;
@@ -824,7 +813,8 @@ void EXE_modify_database( DBB dbb)
 
 		FOR X IN RDB$LOG_FILES ERASE X;
 		END_FOR;
-		COMMIT ON_ERROR DDL_db_error(gds_status, 321, NULL, NULL, NULL, NULL, NULL);	/* msg 321: error commiting new write ahead log declarations */
+		COMMIT ON_ERROR DDL_db_error(gds_status, 321, NULL, NULL, NULL, NULL, NULL);
+		/* msg 321: error commiting new write ahead log declarations */
 		ROLLBACK;
 		END_ERROR;
 		START_TRANSACTION;
@@ -866,7 +856,8 @@ void EXE_modify_database( DBB dbb)
 
 		/* commit log file changes */
 
-		COMMIT ON_ERROR DDL_db_error(gds_status, 321, NULL, NULL, NULL, NULL, NULL);	/* msg 321: error commiting new write ahead log declarations */
+		COMMIT ON_ERROR DDL_db_error(gds_status, 321, NULL, NULL, NULL, NULL, NULL);
+		/* msg 321: error commiting new write ahead log declarations */
 		ROLLBACK;
 		END_ERROR;
 		START_TRANSACTION;
@@ -950,7 +941,8 @@ static void add_cache( DBB dbb)
 
 	FOR FIL IN RDB$FILES WITH FIL.RDB$FILE_FLAGS EQ FILE_cache 
         result = TRUE;
-	    DDL_err(323, FIL.RDB$FILE_NAME, NULL, NULL, NULL, NULL);	/* msg 323: a shared cache file %s already exists */
+	    DDL_err(323, FIL.RDB$FILE_NAME, NULL, NULL, NULL, NULL);
+		/* msg 323: a shared cache file %s already exists */
 	END_FOR;
 
 	if (result)
@@ -968,7 +960,8 @@ static void add_cache( DBB dbb)
 /* Unless there are errors, commit the new shared cache immediately! */
 
 	if (!DDL_errors) {
-		COMMIT ON_ERROR DDL_db_error(gds_status, 324, NULL, NULL, NULL, NULL, NULL);	/* msg 324: error commiting new shared cache declaration */
+		COMMIT ON_ERROR DDL_db_error(gds_status, 324, NULL, NULL, NULL, NULL, NULL);
+		/* msg 324: error commiting new shared cache declaration */
 		ROLLBACK;
 		END_ERROR;
 		START_TRANSACTION;
@@ -1076,13 +1069,10 @@ static void add_files( DBB dbb, FIL files)
    against the user given maximum length (if given). */
 
 	if (dbb) {
-		if (gds__database_info(gds_status,
-							   GDS_REF(DB),
-							   sizeof(alloc_info),
-							   alloc_info,
-							   sizeof(s),
-							   s) ||
-			s[0] != gds_info_allocation) DDL_err(38, NULL, NULL, NULL, NULL, NULL);	/* msg 38: gds__database_info failed */
+		if (gds__database_info(gds_status, &DB, sizeof(alloc_info), alloc_info,
+							   sizeof(s), s) || s[0] != gds_info_allocation) 
+			DDL_err(38, NULL, NULL, NULL, NULL, NULL);
+			/* msg 38: gds__database_info failed */
 
 		length = gds__vax_integer((UCHAR*) s + 1, 2);
 		start = gds__vax_integer((UCHAR*) s + 3, length);
@@ -1119,7 +1109,8 @@ static void add_files( DBB dbb, FIL files)
 /* Unless there are errors floating around, commit the new file immediately! */
 
 	if (!DDL_errors) {
-		COMMIT ON_ERROR DDL_db_error(gds_status, 40, NULL, NULL, NULL, NULL, NULL);	/* msg 40: error commiting new file declarations */
+		COMMIT ON_ERROR DDL_db_error(gds_status, 40, NULL, NULL, NULL, NULL, NULL);
+		/* msg 40: error commiting new file declarations */
 		ROLLBACK;
 		END_ERROR;
 		START_TRANSACTION;
@@ -1173,7 +1164,8 @@ static void add_function( FUNC function)
  **************************************/
 
 	if (check_function(function->func_name)) {
-		DDL_err(41, function->func_name->sym_string, NULL, NULL, NULL, NULL);	/* msg 41: function %s already exists */
+		DDL_err(41, function->func_name->sym_string, NULL, NULL, NULL, NULL);
+		/* msg 41: function %s already exists */
 		return;
 	}
 
@@ -1375,7 +1367,8 @@ static void add_index( DUDLEY_IDX index)
 	FOR X IN RDB$RELATIONS WITH
 		X.RDB$RELATION_NAME = index->idx_relation->sym_string
 		if (!X.RDB$VIEW_BLR.NULL) {
-            DDL_err(42, index->idx_relation->sym_string, NULL, NULL, NULL, NULL);	/* msg 42: %s is a view and can not be indexed */
+            DDL_err(42, index->idx_relation->sym_string, NULL, NULL, NULL, NULL);
+			/* msg 42: %s is a view and can not be indexed */
             error = TRUE;
         } 
         if_any = TRUE;
@@ -1385,7 +1378,8 @@ static void add_index( DUDLEY_IDX index)
 		return;
 
 	if (!if_any) {
-		DDL_err(43, index->idx_relation->sym_string, NULL, NULL, NULL, NULL);	/* msg 43: relation %s doesn't exist  */
+		DDL_err(43, index->idx_relation->sym_string, NULL, NULL, NULL, NULL);
+		/* msg 43: relation %s doesn't exist  */
 		return;
 	}
 
@@ -1441,7 +1435,8 @@ static void add_index( DUDLEY_IDX index)
 	else
 		X.RDB$DESCRIPTION.NULL = TRUE;
 	END_STORE ON_ERROR if (gds_status[1] == gds_no_dup) {
-		DDL_err(47, index->idx_name->sym_string, NULL, NULL, NULL, NULL);	/* msg 47: index %s already exists */
+		DDL_err(47, index->idx_name->sym_string, NULL, NULL, NULL, NULL);
+		/* msg 47: index %s already exists */
 		return;
 	}
 
@@ -1532,7 +1527,8 @@ static void add_log_files( DBB dbb)
 /* Unless there were errors , commit immediately! */
 
 	if (!DDL_errors) {
-		COMMIT ON_ERROR DDL_db_error(gds_status, 321, NULL, NULL, NULL, NULL, NULL);	/* msg 321: error commiting new write ahead log declarations */
+		COMMIT ON_ERROR DDL_db_error(gds_status, 321, NULL, NULL, NULL, NULL, NULL);
+		/* msg 321: error commiting new write ahead log declarations */
 		ROLLBACK;
 		END_ERROR;
 		START_TRANSACTION;
@@ -1559,7 +1555,8 @@ static void add_relation( DUDLEY_REL relation)
 	}
 
 	if (check_relation(relation->rel_name)) {
-		DDL_err(49, relation->rel_name->sym_string, NULL, NULL, NULL, NULL);	/* msg 49: relation %s already exists */
+		DDL_err(49, relation->rel_name->sym_string, NULL, NULL, NULL, NULL);
+		/* msg 49: relation %s already exists */
 		return;
 	}
 
@@ -1609,7 +1606,8 @@ static void add_security_class( SCL sec_class)
 
 	FOR X IN RDB$SECURITY_CLASSES WITH X.RDB$SECURITY_CLASS EQ name->sym_string 
         if_any = TRUE;
-	    DDL_err(50, name->sym_string, NULL, NULL, NULL, NULL);	/* msg 50: security class %s already exists */
+	    DDL_err(50, name->sym_string, NULL, NULL, NULL, NULL);
+		/* msg 50: security class %s already exists */
 	END_FOR;
 
 	if (if_any)
@@ -1831,7 +1829,8 @@ static void add_view( DUDLEY_REL relation)
 	USHORT i;
 
 	if (check_relation(relation->rel_name)) {
-		DDL_err(55, relation->rel_name->sym_string, NULL, NULL, NULL, NULL);	/* msg 55: relation %s already exists */
+		DDL_err(55, relation->rel_name->sym_string, NULL, NULL, NULL, NULL);
+		/* msg 55: relation %s already exists */
 		return;
 	}
 
@@ -2130,8 +2129,9 @@ static void close_blob(FRBRD *blob)
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
     
-	if (gds__close_blob(status_vector, GDS_REF(blob)))
-		DDL_db_error(status_vector, 58, NULL, NULL, NULL, NULL, NULL);	/* msg 58: gds__close_blob failed */
+	if (gds__close_blob(status_vector, &blob))
+		DDL_db_error(status_vector, 58, NULL, NULL, NULL, NULL, NULL);
+		/* msg 58: gds__close_blob failed */
 }
 
 
@@ -2152,11 +2152,10 @@ static FRBRD *create_blob( SLONG * blob_id, USHORT bpb_length, UCHAR * bpb)
     
 	blob = NULL;
     
-	if (gds__create_blob2(status_vector,
-						  GDS_REF(DB),
-						  GDS_REF(gds_trans),
-						  GDS_REF(blob), (GDS__QUAD*) GDS_VAL(blob_id), bpb_length, (SCHAR*) bpb)) {
-		DDL_db_error(status_vector, 59, NULL, NULL, NULL, NULL, NULL);	/* msg 59: gds__create_blob failed */
+	if (gds__create_blob2(status_vector, &DB, &gds_trans, &blob,
+						 (GDS__QUAD*) blob_id, bpb_length, (SCHAR*) bpb)) {
+		DDL_db_error(status_vector, 59, NULL, NULL, NULL, NULL, NULL);
+		/* msg 59: gds__create_blob failed */
 		return NULL;
 	}
 
@@ -2186,12 +2185,14 @@ static void drop_cache( DBB dbb)
 	END_FOR;
 
 	if (!found)
-		DDL_err(325, NULL, NULL, NULL, NULL, NULL);	/* msg 325: no shared cache file exists to drop */
+		DDL_err(325, NULL, NULL, NULL, NULL, NULL);
+		/* msg 325: no shared cache file exists to drop */
 
 	if (!DDL_errors) {
 		COMMIT 
         ON_ERROR 
-            DDL_db_error(gds_status, 326, NULL, NULL, NULL, NULL, NULL);	/* msg 326: error commiting deletion of shared cache file */
+            DDL_db_error(gds_status, 326, NULL, NULL, NULL, NULL, NULL);
+			/* msg 326: error commiting deletion of shared cache file */
 		    ROLLBACK;
 		END_ERROR;
 		START_TRANSACTION;
@@ -2292,7 +2293,8 @@ static void drop_filter( FILTER filter)
 	END_FOR;
 
 	if (!if_any)
-		DDL_err(62, filter->filter_name->sym_string, NULL, NULL, NULL, NULL);	/* msg 62: filter %s doesn't exist */
+		DDL_err(62, filter->filter_name->sym_string, NULL, NULL, NULL, NULL);
+		/* msg 62: filter %s doesn't exist */
 }
 
 
@@ -2326,7 +2328,8 @@ static void drop_function( FUNC function)
 	END_FOR;
 
 	if (!if_any)
-		DDL_err(63, name, NULL, NULL, NULL, NULL);	/* msg 63: function %s doesn't exist */
+		DDL_err(63, name, NULL, NULL, NULL, NULL);
+		/* msg 63: function %s doesn't exist */
 }
 
 
@@ -2384,7 +2387,8 @@ static void drop_global_field( DUDLEY_FLD field)
         ERASE X;
 	if_any = TRUE;
 	END_FOR if (!if_any)
-		DDL_err(65, field->fld_name->sym_string, NULL, NULL, NULL, NULL);	/* msg 65: field %s doesn't exist */
+		DDL_err(65, field->fld_name->sym_string, NULL, NULL, NULL, NULL);
+		/* msg 65: field %s doesn't exist */
 }
 
 
@@ -2418,7 +2422,8 @@ static void drop_index( DUDLEY_IDX index)
 	END_FOR;
 
 	if (!if_any)
-		DDL_err(66, name, NULL, NULL, NULL, NULL);	/* msg 66: index %s doesn't exist  */
+		DDL_err(66, name, NULL, NULL, NULL, NULL);
+		/* msg 66: index %s doesn't exist  */
 }
 
 
@@ -2441,7 +2446,8 @@ static void drop_relation( DUDLEY_REL relation)
 	if_any = FALSE;
 
 	FOR X IN RDB$VIEW_RELATIONS WITH X.RDB$RELATION_NAME EQ name
-		DDL_err(67, name, X.RDB$VIEW_NAME, NULL, NULL, NULL);	/* msg 67: %s referenced by view %s */
+		DDL_err(67, name, X.RDB$VIEW_NAME, NULL, NULL, NULL);
+		/* msg 67: %s referenced by view %s */
 	return;
 	END_FOR;
 
@@ -2449,14 +2455,16 @@ static void drop_relation( DUDLEY_REL relation)
 
 	FOR X IN RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ name
 		if (X.RDB$SYSTEM_FLAG == 1) {
-            DDL_err(68, name, NULL, NULL, NULL, NULL);	/* msg 68: can't drop system relation %s */
+            DDL_err(68, name, NULL, NULL, NULL, NULL);
+			/* msg 68: can't drop system relation %s */
             return;
         } 
         if_any = TRUE;
 	END_FOR;
 
 	if (!if_any) {
-		DDL_err(69, name, NULL, NULL, NULL, NULL);	/* msg 69: relation %s doesn't exist */
+		DDL_err(69, name, NULL, NULL, NULL, NULL);
+		/* msg 69: relation %s doesn't exist */
 		return;
 	}
 
@@ -2519,7 +2527,8 @@ static void drop_security_class( SCL scl_class)
 	END_FOR;
 
 	if (!if_any)
-		DDL_err(70, name->sym_string, NULL, NULL, NULL, NULL);	/* msg 70: security class %s doesn't exist */
+		DDL_err(70, name->sym_string, NULL, NULL, NULL, NULL);
+		/* msg 70: security class %s doesn't exist */
 }
 
 
@@ -2552,12 +2561,14 @@ static void drop_shadow( SLONG shadow_number)
     END_FOR;
 
 	if (!files)
-		DDL_err(71, (TEXT *) shadow_number, NULL, NULL, NULL, NULL);	/* msg 71: shadow %ld doesn't exist */
+		DDL_err(71, (TEXT *) shadow_number, NULL, NULL, NULL, NULL);
+		/* msg 71: shadow %ld doesn't exist */
 
 	if (!DDL_errors) {
 		COMMIT 
         ON_ERROR 
-            DDL_db_error(gds_status, 72, NULL, NULL, NULL, NULL, NULL);	/* msg 72: error commiting deletion of shadow */
+            DDL_db_error(gds_status, 72, NULL, NULL, NULL, NULL, NULL);
+			/* msg 72: error commiting deletion of shadow */
 		    ROLLBACK;
 		END_ERROR;
 		START_TRANSACTION;
@@ -2947,15 +2958,14 @@ static void get_log_names(SCHAR * db_name,
 	part_offset = next_offset;
 
 	while (log_count) {
-		ret_val = WALF_get_next_log_info(gds_status,
-										 expanded_name,
-										 cl, part_offset,
-										 nl, &next_offset,
+		ret_val = WALF_get_next_log_info(gds_status, expanded_name, cl,
+										 part_offset, nl, &next_offset,
 										 &log_seqno, &log_length,
 										 &last_log_flag, 1);
 
 		if (ret_val == FB_FAILURE)
-			DDL_error_abort(gds_status, 328, NULL, NULL, NULL, NULL, NULL);	/* msg 328: error in reading list of log files */
+			DDL_error_abort(gds_status, 328, NULL, NULL, NULL, NULL, NULL);
+			/* msg 328: error in reading list of log files */
 		if (ret_val < 0)
 			break;
 
@@ -3263,7 +3273,8 @@ static void make_desc( DUDLEY_NOD node, DSC * desc)
 		case dtype_timestamp:
 		case dtype_sql_date:
 		case dtype_sql_time:
-			DDL_msg_put(80, NULL, NULL, NULL, NULL, NULL);	/* msg 80: TOTAL of date not supported */
+			DDL_msg_put(80, NULL, NULL, NULL, NULL, NULL);
+			/* msg 80: TOTAL of date not supported */
 			return;
 
 		default:
@@ -3461,10 +3472,12 @@ static void make_desc( DUDLEY_NOD node, DSC * desc)
 		return;
 
 	case nod_fid:
-		DDL_err(287, NULL, NULL, NULL, NULL, NULL);	/* msg 287: Inappropriate self reference */
+		DDL_err(287, NULL, NULL, NULL, NULL, NULL);
+		/* msg 287: Inappropriate self reference */
 		return;
 	default:
-		DDL_err(81, NULL, NULL, NULL, NULL, NULL);	/* msg 81: (EXE) make_desc: don't understand node type */
+		DDL_err(81, NULL, NULL, NULL, NULL, NULL);
+		/* msg 81: (EXE) make_desc: don't understand node type */
 		return;
 	}
 }
@@ -3592,7 +3605,8 @@ static void modify_field( DUDLEY_FLD field)
             if_any = TRUE;
 	END_FOR 
     if (!if_any)
-		DDL_err(82, name->sym_string, NULL, NULL, NULL, NULL);	/* msg 82: field %s doesn't exist */
+		DDL_err(82, name->sym_string, NULL, NULL, NULL, NULL);
+		/* msg 82: field %s doesn't exist */
 }
 
 
@@ -3692,7 +3706,8 @@ static void modify_global_field( DUDLEY_FLD field)
 	END_FOR 
     
     if (!if_any)
-		DDL_err(84, name->sym_string, NULL, NULL, NULL, NULL);	/* msg 84: field %s doesn't exist */
+		DDL_err(84, name->sym_string, NULL, NULL, NULL, NULL);
+		/* msg 84: field %s doesn't exist */
 
 }
 
@@ -3737,7 +3752,8 @@ static void modify_index( DUDLEY_IDX index)
     END_FOR;
 
 	if (!if_any)
-		DDL_err(85, index->idx_name->sym_string, NULL, NULL, NULL, NULL);	/* msg 85: index %s does not exist */
+		DDL_err(85, index->idx_name->sym_string, NULL, NULL, NULL, NULL);
+		/* msg 85: index %s does not exist */
 }
 
 
@@ -3782,7 +3798,8 @@ static void modify_relation( DUDLEY_REL relation)
                 X.RDB$SYSTEM_FLAG = relation->rel_system;
             if (relation->rel_filename) {
                 if (X.RDB$EXTERNAL_FILE.NULL)
-                    DDL_err(86, name->sym_string, NULL, NULL, NULL, NULL);	/* msg 86: relation %s is not external */
+                    DDL_err(86, name->sym_string, NULL, NULL, NULL, NULL);
+					/* msg 86: relation %s is not external */
                 MOVE_SYMBOL(relation->rel_filename, X.RDB$EXTERNAL_FILE);
             }
 	   END_MODIFY 
@@ -3790,7 +3807,8 @@ static void modify_relation( DUDLEY_REL relation)
 	END_FOR 
 
     if (!if_any)
-		DDL_err(87, name->sym_string, NULL, NULL, NULL, NULL);	/* msg 87: relation %s doesn't exist */
+		DDL_err(87, name->sym_string, NULL, NULL, NULL, NULL);
+		/* msg 87: relation %s doesn't exist */
 }
 
 
@@ -3850,7 +3868,8 @@ static void modify_trigger( DUDLEY_TRG trigger)
 	END_FOR;
 
 	if (!if_any)
-		DDL_err(89, trigger->trg_name->sym_string, NULL, NULL, NULL, NULL);	/* msg 89: Trigger %s doesn't exist */
+		DDL_err(89, trigger->trg_name->sym_string, NULL, NULL, NULL, NULL);
+		/* msg 89: Trigger %s doesn't exist */
 }
 
 
@@ -3981,7 +4000,8 @@ static void set_generator( DUDLEY_NOD node)
 
 	prot_mask = get_prot_mask("RDB$GENERATORS", NULL);
 	if (!(prot_mask & SCL_write)) {
-		DDL_err(311, NULL, NULL, NULL, NULL, NULL);	/* msg 311: Set generator requires write privilege for RDB$GENERATORS. */
+		DDL_err(311, NULL, NULL, NULL, NULL, NULL);
+		/* msg 311: Set generator requires write privilege for RDB$GENERATORS. */
 		return;
 	}
 
@@ -4032,8 +4052,7 @@ static void set_generator( DUDLEY_NOD node)
 	blr = (SCHAR *) new_blr.str_start;
 	isc_compile_request2((SLONG *) 0, &DB, &req_handle2, l, blr);
 	isc_start_request((SLONG *) 0, &req_handle2, &gds_trans, 0);
-	isc_receive((SLONG *) 0, &req_handle2, 0, sizeof(gen_value), &gen_value,
-				0);
+	isc_receive((SLONG *) 0, &req_handle2, 0, sizeof(gen_value), &gen_value, 0);
 	isc_release_request((SLONG *) 0, &req_handle2);
 
 	for (i = 5; (gen_value != new_val) && --i;) {
@@ -4080,8 +4099,9 @@ static void store_acl( SCL scl_class, SLONG * blob_id)
 
 	blob = create_blob(blob_id, 0, NULL);
 
-	if (gds__put_segment(status_vector, GDS_REF(blob), length, buffer)) {
-		DDL_db_error(status_vector, 92, NULL, NULL, NULL, NULL, NULL);	/* msg 92: gds__put_segment failed */
+	if (gds__put_segment(status_vector, &blob, length, buffer)) {
+		DDL_db_error(status_vector, 92, NULL, NULL, NULL, NULL, NULL);
+		/* msg 92: gds__put_segment failed */
 		return;
 	}
 
@@ -4122,9 +4142,9 @@ static void store_blr( DUDLEY_NOD node, SLONG * blob_id, DUDLEY_REL relation)
 	handle = create_blob(blob_id, 0, NULL);
 	length = blr.str_current - blr.str_start;
 
-	if (gds__put_segment(status_vector,
-						 GDS_REF(handle), length, GDS_VAL(blr.str_start))) {
-		DDL_db_error(status_vector, 93, NULL, NULL, NULL, NULL, NULL);	/* msg 93: gds__put_segment failed */
+	if (gds__put_segment(status_vector, &handle, length, blr.str_start)) {
+		DDL_db_error(status_vector, 93, NULL, NULL, NULL, NULL, NULL);
+		/* msg 93: gds__put_segment failed */
 		return;
 	}
 
@@ -4157,11 +4177,10 @@ static void store_query_header( DUDLEY_NOD node, SLONG * blob_id)
 
 	for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end; ptr++) {
 		symbol = (SYM) * ptr;
-		if (gds__put_segment(status_vector,
-							 GDS_REF(blob),
-							 symbol->sym_length,
-							 GDS_VAL(symbol->sym_string))) {
-			DDL_db_error(status_vector, 93, NULL, NULL, NULL, NULL, NULL);	/* msg 93: gds__put_segment failed */
+		if (gds__put_segment(status_vector, &blob, symbol->sym_length,
+							 symbol->sym_string)) {
+			DDL_db_error(status_vector, 93, NULL, NULL, NULL, NULL, NULL);
+			/* msg 93: gds__put_segment failed */
 			return;
 		}
 	}
@@ -4292,13 +4311,15 @@ static int string_length( SCHAR dtype)
 	case dtype_double:
 		return 19;
 	case dtype_timestamp:
-		return 10;				/* really 24, kept at 10 for old apps */
+		return 10;
+		/* really 24, kept at 10 for old apps */
 	case dtype_sql_date:
 	case dtype_sql_time:
 	case dtype_int64:
 	case dtype_blob:
 	default:
-		DDL_msg_put(94, NULL, NULL, NULL, NULL, NULL);	/* msg 94: (EXE) string_length: No defined length for blobs */
+		DDL_msg_put(94, NULL, NULL, NULL, NULL, NULL);
+		/* msg 94: (EXE) string_length: No defined length for blobs */
 		return 0;
 	}
 }
