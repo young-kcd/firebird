@@ -330,8 +330,8 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 		END_STORE;
 	}
 
-	CMP_release(tdbb, (jrd_req*)handle1);
-	CMP_release(tdbb, (jrd_req*)handle2);
+	CMP_release(tdbb, handle1);
+	CMP_release(tdbb, handle2);
 	handle1 = handle2 = NULL;
 
 /* Store global FIELDS */
@@ -341,7 +341,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 		store_global_field(tdbb, gfield, &handle1);
 	}
 
-	CMP_release(tdbb, (jrd_req*)handle1);
+	CMP_release(tdbb, handle1);
 	handle1 = NULL;
 
 	STORE(REQUEST_HANDLE handle1) X IN RDB$DATABASE
@@ -357,7 +357,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 		}
 	END_STORE
 
-	CMP_release(tdbb, (jrd_req*)handle1);
+	CMP_release(tdbb, handle1);
 	handle1 = NULL;
 
 /* Create indices for system relations */
@@ -377,7 +377,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 		END_STORE;
 	}
 
-	CMP_release(tdbb, (jrd_req*)handle1);
+	CMP_release(tdbb, handle1);
 
 /* Store symbols for international character sets & collations */
 
@@ -390,7 +390,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	{
 		store_generator(tdbb, generator, &handle1);
 	}
-	CMP_release(tdbb, (jrd_req*)handle1);
+	CMP_release(tdbb, handle1);
 
 /* store system-defined triggers */
 
@@ -399,7 +399,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	{
 		store_trigger(tdbb, trigger, &handle1);
 	}
-	CMP_release(tdbb, (jrd_req*)handle1);
+	CMP_release(tdbb, handle1);
 
 /* store trigger messages to go with triggers */
 
@@ -409,7 +409,61 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	{
 		store_message(tdbb, message, &handle1);
 	}
-	CMP_release(tdbb, (jrd_req*)handle1);
+	CMP_release(tdbb, handle1);
+
+	// CVC: Starting demonstration code to register IUDF automatically.
+	// Consider moving it to a new function.
+	/*
+	handle1 = NULL;
+	STORE(REQUEST_HANDLE handle1) F IN RDB$FUNCTIONS
+		PAD("SYS_BYTE_LEN", F.RDB$FUNCTION_NAME);
+		F.RDB$FUNCTION_NAME.NULL          = FALSE;
+		//F.RDB$FUNCTION_TYPE               <null>
+		//F.RDB$QUERY_NAME                  <null>
+		//F.RDB$DESCRIPTION                 <null>
+		//gds__vtov("test_module", F.RDB$MODULE_NAME, sizeof(RDB$MODULE_NAME) - 1);
+		strcpy(F.RDB$MODULE_NAME, "test_module");
+		F.RDB$MODULE_NAME.NULL            = FALSE;
+		PAD("byte_len", F.RDB$ENTRYPOINT);
+		F.RDB$ENTRYPOINT.NULL             = FALSE;
+		F.RDB$RETURN_ARGUMENT             = 0;
+		F.RDB$SYSTEM_FLAG                 = RDB_system;
+	END_STORE;
+	CMP_release(tdbb, handle1);
+	
+	handle1 = NULL;
+	
+	STORE(REQUEST_HANDLE handle1) FA IN RDB$FUNCTION_ARGUMENTS
+		PAD("SYS_BYTE_LEN", FA.RDB$FUNCTION_NAME);
+		FA.RDB$FUNCTION_NAME.NULL          = FALSE;
+		FA.RDB$ARGUMENT_POSITION           = 0;
+		FA.RDB$MECHANISM                   = - (int) FUN_reference; // FREE_IT
+		FA.RDB$FIELD_TYPE                  = (int) blr_long;
+		FA.RDB$FIELD_SCALE                 = 0;
+		FA.RDB$FIELD_LENGTH                = 4;
+		//FA.RDB$FIELD_SUB_TYPE              <null>
+		//FA.RDB$CHARACTER_SET_ID            <null>
+		FA.RDB$FIELD_PRECISION             = 0;
+		//FA.RDB$CHARACTER_LENGTH            <null>
+	END_STORE;
+	
+	STORE(REQUEST_HANDLE handle1) FA IN RDB$FUNCTION_ARGUMENTS
+		PAD("SYS_BYTE_LEN", FA.RDB$FUNCTION_NAME);
+		FA.RDB$FUNCTION_NAME.NULL          = FALSE;
+		FA.RDB$ARGUMENT_POSITION           = 1;
+		FA.RDB$MECHANISM                   = (int) FUN_descriptor;
+		FA.RDB$FIELD_TYPE                  = (int) blr_long;
+		FA.RDB$FIELD_SCALE                 = 0;
+		FA.RDB$FIELD_LENGTH                = 4;
+		//FA.RDB$FIELD_SUB_TYPE              <null>
+		//FA.RDB$CHARACTER_SET_ID            <null>
+		FA.RDB$FIELD_PRECISION             = 0;
+		//FA.RDB$CHARACTER_LENGTH            <null>
+	END_STORE;
+
+	CMP_release(tdbb, handle1);
+	*/
+	// CVC: Finishing demonstration code to register IUDF automatically.
 
 	DFW_perform_system_work();
 
@@ -875,7 +929,7 @@ static void add_global_fields( USHORT minor_version)
 	}
 
 	if (handle) {
-		CMP_release(tdbb, (jrd_req*)handle);
+		CMP_release(tdbb, handle);
 	}
 
 	DFW_perform_system_work();
@@ -969,10 +1023,10 @@ static void add_index_set(Database*	dbb,
 
 	}
 	if (handle1) {
-		CMP_release(tdbb, (jrd_req*)handle1);
+		CMP_release(tdbb, handle1);
 	}
 	if (handle2) {
-		CMP_release(tdbb, (jrd_req*)handle2);
+		CMP_release(tdbb, handle2);
 	}
 }
 
@@ -1018,10 +1072,10 @@ static void add_new_triggers(USHORT major_version, USHORT minor_version)
 	}
 
 	if (handle1) {
-		CMP_release(tdbb, (jrd_req*)handle1);
+		CMP_release(tdbb, handle1);
 	}
 	if (handle2) {
-		CMP_release(tdbb, (jrd_req*)handle2);
+		CMP_release(tdbb, handle2);
 	}
 }
 
@@ -1078,10 +1132,10 @@ static void add_relation_fields( USHORT minor_version)
 	}
 
 	if (s_handle) {
-		CMP_release(tdbb, (jrd_req*)s_handle);
+		CMP_release(tdbb, s_handle);
 	}
 	if (m_handle) {
-		CMP_release(tdbb, (jrd_req*)m_handle);
+		CMP_release(tdbb, m_handle);
 	}
 
 	DFW_perform_system_work();
@@ -1141,8 +1195,8 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 		handle1 = NULL;
 
 		STORE(REQUEST_HANDLE handle1) PRIV IN RDB$USER_PRIVILEGES
-		switch (cnt)
-		{
+			switch (cnt)
+			{
 			case 0:
 				strcpy(PRIV.RDB$USER, user_name);
 				PRIV.RDB$PRIVILEGE[0] = 'S';
@@ -1182,7 +1236,7 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 			PRIV.RDB$OBJECT_TYPE = obj_relation;
 		END_STORE;
 
-		CMP_release(tdbb, (jrd_req*)handle1);
+		CMP_release(tdbb, handle1);
 	}
 
 	handle1 = NULL;
@@ -1194,7 +1248,7 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 		CLS.RDB$ACL = blob_id_1;
 	END_STORE;
 
-	CMP_release(tdbb, (jrd_req*)handle1);
+	CMP_release(tdbb, handle1);
 
 	handle1 = NULL;
 
@@ -1205,7 +1259,7 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 		CLS.RDB$ACL = blob_id_2;
 	END_STORE;
 
-	CMP_release(tdbb, (jrd_req*)handle1);
+	CMP_release(tdbb, handle1);
 
 	handle1 = NULL;
 
@@ -1219,7 +1273,7 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 
 	END_FOR;
 
-	CMP_release(tdbb, (jrd_req*)handle1);
+	CMP_release(tdbb, handle1);
 
 }
 
@@ -1483,7 +1537,7 @@ static void store_intlnames(thread_db* tdbb, Database* dbb)
 		END_STORE;
 	}
 
-	CMP_release(tdbb, (jrd_req*)handle);
+	CMP_release(tdbb, handle);
 	handle = NULL;
 
 	for (const COLL_TYPE* collptr = coll_types; collptr->init_collation_name; collptr++)
@@ -1496,7 +1550,7 @@ static void store_intlnames(thread_db* tdbb, Database* dbb)
 		END_STORE;
 	}
 
-	CMP_release(tdbb, (jrd_req*)handle);
+	CMP_release(tdbb, handle);
 	handle = NULL;
 }
 
