@@ -1,3 +1,60 @@
+2004-01-12 19:56  arnobrinkman
+
+	* firebird2/src/burp/restore.epp:
+	
+	Don't forget that a system_flag also can be NULL what also meant no
+	system relation.  Thanks to Claudio for attention.
+
+2004-01-12 07:58  skidder
+
+	* firebird2/: builds/posix/prefix.linux_amd64,
+	src/include/memory_routines.h, src/jrd/common.h, src/jrd/ibase.h,
+	src/jrd/intlobj.h, src/jrd/jrd.cpp, src/jrd/pag.cpp,
+	src/jrd/utl.cpp, src/remote/xdr.cpp:
+	
+	Do more AMD64 fixes. libfbstatic builds and can do some basic stuff
+	now
+
+2004-01-12 07:24  stryqx
+
+	* firebird2/: builds/install/arch-specific/freebsd/install.sh.in,
+	src/install/arch-specific/freebsd/install.sh.in:
+	
+	Cope with upgrades more gracefully.
+
+2004-01-12 06:57  stryqx
+
+	* firebird2/: src/install/arch-specific/freebsd/install.sh.in,
+	builds/install/arch-specific/freebsd/install.sh.in:
+	
+	libgds links to libfbembed for ClassicServer.
+
+2004-01-12 06:40  skidder
+
+	* firebird2/src/include/fb_types.h:
+	
+	Disable NATIVE_QUAD on true 64-bit platforms. dtype_quad (enabled
+	by this define) duplicates dtype_int64 and doesn't work. Thus
+	NATIVE_QUAD along with quad* are candidates for cleanup
+
+2004-01-12 06:08  skidder
+
+	* firebird2/src/jrd/: gds_proto.h, gdsold.h:
+	
+	64-bit port fixes
+
+2004-01-12 05:57  skidder
+
+	* firebird2/: builds/posix/prefix.linux_amd64, configure.in:
+	
+	Add prefix for my machine
+
+2004-01-12 01:56  stryqx
+
+	* firebird2/src/common/utils.cpp:
+	
+	Fix build on FreeBSD.
+
 2004-01-11 13:28  dimitr
 
 	* firebird2/src/jrd/opt.cpp:
