@@ -50,7 +50,7 @@ typedef struct {
 	SLONG lval;
 } Tab;
 
-static CONST Tab tab[] = {
+static const Tab tab[] = {
 	{ 0x80, 0x00, 0 * 6, 0x7F, 0 },	/* 1 byte sequence */
 	{ 0xE0, 0xC0, 1 * 6, 0x7FF, 0x80 },	/* 2 byte sequence */
 	{ 0xF0, 0xE0, 2 * 6, 0xFFFF, 0x800 },	/* 3 byte sequence */
@@ -122,7 +122,7 @@ static fss_size_t fss_wctomb(UCHAR * s, fss_wchar_t wc)
 }
 
 static SSHORT internal_fss_mbtowc(TEXTTYPE * obj,
-						   WCHAR * wc, NCHAR * p, USHORT n)
+						   UCS2_CHAR * wc, NCHAR * p, USHORT n)
 {
 /**************************************
  *
@@ -408,7 +408,7 @@ static USHORT internal_ch_to_lower(TEXTTYPE obj, UCHAR ch)
 }
 
 SSHORT INTL_builtin_nc_mbtowc(TEXTTYPE obj,
-							  WCHAR * wc, UCHAR * ptr, USHORT count)
+							  UCS2_CHAR * wc, UCHAR * ptr, USHORT count)
 {
 /**************************************
  *
@@ -439,7 +439,7 @@ SSHORT INTL_builtin_nc_mbtowc(TEXTTYPE obj,
 }
 
 SSHORT INTL_builtin_mb_mbtowc(TEXTTYPE obj,
-							  WCHAR * wc, UCHAR * ptr, USHORT count)
+							  UCS2_CHAR * wc, UCHAR * ptr, USHORT count)
 {
 /**************************************
  *
@@ -461,7 +461,7 @@ SSHORT INTL_builtin_mb_mbtowc(TEXTTYPE obj,
 
 	if (count >= 2) {
 		if (wc)
-			*wc = *(WCHAR *) ptr;
+			*wc = *(UCS2_CHAR *) ptr;
 		return 2;
 	}
 	if (wc)
@@ -471,7 +471,7 @@ SSHORT INTL_builtin_mb_mbtowc(TEXTTYPE obj,
 
 
 SSHORT INTL_builtin_wc_mbtowc(TEXTTYPE obj,
-							  WCHAR * wc, UCHAR * ptr, USHORT count)
+							  UCS2_CHAR * wc, UCHAR * ptr, USHORT count)
 {
 /**************************************
  *
@@ -493,7 +493,7 @@ SSHORT INTL_builtin_wc_mbtowc(TEXTTYPE obj,
 
 	if (count >= 2) {
 		if (wc)
-			*wc = *(WCHAR *) ptr;
+			*wc = *(UCS2_CHAR *) ptr;
 		return 2;
 	}
 	if (wc)
@@ -542,7 +542,7 @@ static USHORT internal_ch_copy(TEXTTYPE obj, UCHAR ch)
 }
 
 static USHORT wc_to_nc(CSCONVERT obj, NCHAR * pDest, USHORT nDest,	/* byte count */
-					   WCHAR * pSrc, USHORT nSrc,	/* byte count */
+					   UCS2_CHAR * pSrc, USHORT nSrc,	/* byte count */
 					   SSHORT * err_code, USHORT * err_position)
 {
 /**************************************
@@ -555,7 +555,7 @@ static USHORT wc_to_nc(CSCONVERT obj, NCHAR * pDest, USHORT nDest,	/* byte count
  *
  **************************************/
 	NCHAR *pStart;
-	WCHAR *pStart_src;
+	UCS2_CHAR *pStart_src;
 
 	assert(obj != NULL);
 	assert((pSrc != NULL) || (pDest == NULL));
@@ -585,7 +585,7 @@ static USHORT wc_to_nc(CSCONVERT obj, NCHAR * pDest, USHORT nDest,	/* byte count
 }
 
 
-static USHORT mb_to_wc(CSCONVERT obj, WCHAR * pDest, USHORT nDest,	/* byte count */
+static USHORT mb_to_wc(CSCONVERT obj, UCS2_CHAR * pDest, USHORT nDest,	/* byte count */
 					   MBCHAR * pSrc, USHORT nSrc,	/* byte count */
 					   SSHORT * err_code, USHORT * err_position)
 {
@@ -600,7 +600,7 @@ static USHORT mb_to_wc(CSCONVERT obj, WCHAR * pDest, USHORT nDest,	/* byte count
  *      byte stream.
  *
  *************************************/
-	WCHAR *pStart;
+	UCS2_CHAR *pStart;
 	MBCHAR *pStart_src;
 
 	assert(obj != NULL);
@@ -629,7 +629,7 @@ static USHORT mb_to_wc(CSCONVERT obj, WCHAR * pDest, USHORT nDest,	/* byte count
 
 
 static USHORT wc_to_mb(CSCONVERT obj, MBCHAR * pDest, USHORT nDest,	/* byte count */
-					   WCHAR * pSrc, USHORT nSrc,	/* byte count */
+					   UCS2_CHAR * pSrc, USHORT nSrc,	/* byte count */
 					   SSHORT * err_code, USHORT * err_position)
 {
 /**************************************
@@ -644,7 +644,7 @@ static USHORT wc_to_mb(CSCONVERT obj, MBCHAR * pDest, USHORT nDest,	/* byte coun
  *
  *************************************/
 	MBCHAR *pStart;
-	WCHAR *pStart_src;
+	UCS2_CHAR *pStart_src;
 
 	assert(obj != NULL);
 	assert((pSrc != NULL) || (pDest == NULL));
@@ -818,7 +818,7 @@ BYTE * datatable, BYTE * datatable2)
 	csptr->csconvert_misc = datatable2;
 }
 
-static USHORT cvt_ascii_to_unicode(CSCONVERT obj, WCHAR * pDest, USHORT nDest,	/* byte count */
+static USHORT cvt_ascii_to_unicode(CSCONVERT obj, UCS2_CHAR * pDest, USHORT nDest,	/* byte count */
 								   UCHAR * pSrc, USHORT nSrc,	/* byte count */
 								   SSHORT * err_code, USHORT * err_position)
 {
@@ -834,7 +834,7 @@ static USHORT cvt_ascii_to_unicode(CSCONVERT obj, WCHAR * pDest, USHORT nDest,	/
  *      Byte values >= 128 create BAD_INPUT
  *
  *************************************/
-	WCHAR *pStart;
+	UCS2_CHAR *pStart;
 	UCHAR *pStart_src;
 
 	assert(obj != NULL);
@@ -864,7 +864,7 @@ static USHORT cvt_ascii_to_unicode(CSCONVERT obj, WCHAR * pDest, USHORT nDest,	/
 }
 
 static USHORT cvt_unicode_to_ascii(CSCONVERT obj, NCHAR * pDest, USHORT nDest,	/* byte count */
-								   WCHAR * pSrc, USHORT nSrc,	/* byte count */
+								   UCS2_CHAR * pSrc, USHORT nSrc,	/* byte count */
 								   SSHORT * err_code, USHORT * err_position)
 {
 /**************************************
@@ -880,7 +880,7 @@ static USHORT cvt_unicode_to_ascii(CSCONVERT obj, NCHAR * pDest, USHORT nDest,	/
  *
  *************************************/
 	NCHAR *pStart;
-	WCHAR *pStart_src;
+	UCS2_CHAR *pStart_src;
 
 	assert(obj != NULL);
 	assert((pSrc != NULL) || (pDest == NULL));
@@ -908,7 +908,7 @@ static USHORT cvt_unicode_to_ascii(CSCONVERT obj, NCHAR * pDest, USHORT nDest,	/
 	return ((pDest - pStart) * sizeof(*pDest));
 }
 
-static USHORT cvt_none_to_unicode(CSCONVERT obj, WCHAR * pDest, USHORT nDest,	/* byte count */
+static USHORT cvt_none_to_unicode(CSCONVERT obj, UCS2_CHAR * pDest, USHORT nDest,	/* byte count */
 								  UCHAR * pSrc, USHORT nSrc,	/* byte count */
 								  SSHORT * err_code, USHORT * err_position)
 {
@@ -924,7 +924,7 @@ static USHORT cvt_none_to_unicode(CSCONVERT obj, WCHAR * pDest, USHORT nDest,	/*
  *      Byte values >= 128 create CONVERT ERROR
  *
  *************************************/
-	WCHAR *pStart;
+	UCS2_CHAR *pStart;
 	UCHAR *pStart_src;
 
 	assert(obj != NULL);

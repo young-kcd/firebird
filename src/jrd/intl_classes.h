@@ -35,7 +35,7 @@ public:
 	TextType(struct texttype *_tt) : tt(_tt) {}
 
 	// copy constructor
-	TextType(TextType& obj) : tt(obj.tt) {}
+	TextType(const TextType& obj) : tt(obj.tt) {}
 
 	USHORT key_length(USHORT a) {
 		assert(tt);
@@ -215,26 +215,26 @@ public:
 		assert(tt);
 		return tt->texttype_bytes_per_char; 
 	}
-	friend bool operator ==(const TextType& tt1, const TextType& tt2);
-	friend bool operator !=(const TextType& tt1, const TextType& tt2);
+
+	struct texttype *getStruct() const { return tt; }
 
 private:
 	struct texttype *tt;
 };
 
 static inline bool operator ==(const TextType& tt1, const TextType& tt2) {
-	return tt1.tt == tt2.tt;
+	return tt1.getStruct() == tt2.getStruct();
 }
 
 static inline bool operator !=(const TextType& tt1, const TextType& tt2) {
-	return tt1.tt != tt2.tt;
+	return tt1.getStruct() != tt2.getStruct();
 }
 
 class CsConvert
 { 
 public:
 	CsConvert(struct csconvert *_cnvt) : cnvt(_cnvt) {}
-	CsConvert(CsConvert& obj) : cnvt(obj.cnvt) {}
+	CsConvert(const CsConvert& obj) : cnvt(obj.cnvt) {}
 
 	USHORT convert(UCHAR *a,
 				   USHORT b,
@@ -253,25 +253,25 @@ public:
 	const char *getName() const { assert(cnvt); return cnvt->csconvert_name; }
 	CHARSET_ID getFromCS() const { assert(cnvt); return cnvt->csconvert_from; }
 	CHARSET_ID getToCS() const { assert(cnvt); return cnvt->csconvert_to; }
-	friend bool operator ==(const CsConvert& cv1, const CsConvert& cv2);
-	friend bool operator !=(const CsConvert& cv1, const CsConvert& cv2);
+
+	struct csconvert *getStruct() const { return cnvt; }
 private:
 	struct csconvert *cnvt;
 };
 
 static inline bool operator ==(const CsConvert& cv1, const CsConvert& cv2) {
-	return cv1.cnvt == cv2.cnvt;
+	return cv1.getStruct() == cv2.getStruct();
 }
 
 static inline bool operator !=(const CsConvert& cv1, const CsConvert& cv2) {
-	return cv1.cnvt != cv2.cnvt;
+	return cv1.getStruct() != cv2.getStruct();
 }
 
 class CharSet
 {
 public:
 	CharSet(struct charset *_cs) : cs(_cs) {}
-	CharSet(CharSet &obj) : cs(obj.cs) {};
+	CharSet(const CharSet &obj) : cs(obj.cs) {};
 
 	CHARSET_ID getId() const { assert(cs); return cs->charset_id; }
 	const char *getName() const { assert(cs); return cs->charset_name; }
@@ -281,20 +281,20 @@ public:
 	const UCHAR *getSpace() const { assert(cs); return cs->charset_space_character; }
 
 	CsConvert getConvToUnicode() { assert(cs); return &cs->charset_to_unicode; }
+
 	CsConvert getConvFromUnicode() { assert(cs); return &cs->charset_from_unicode; }
-	
-	friend bool operator ==(const CharSet& cs1, const CharSet& cs2);
-	friend bool operator !=(const CharSet& cs1, const CharSet& cs2);
+
+	struct charset *getStruct() const { return cs; }
 private:
 	struct charset *cs;
 };
 
 static inline bool operator ==(const CharSet& cs1, const CharSet& cs2) {
-	return cs1.cs == cs2.cs;
+	return cs1.getStruct() == cs2.getStruct();
 }
 
 static inline bool operator !=(const CharSet& cs1, const CharSet& cs2) {
-	return cs1.cs != cs2.cs;
+	return cs1.getStruct() != cs2.getStruct();
 }
 
 #endif /* JRD_INTL_CLASSES_H */

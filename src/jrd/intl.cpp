@@ -147,11 +147,11 @@ typedef unsigned char FILECHAR;
 
 static bool all_spaces(TDBB, CHARSET_ID, const BYTE*, USHORT, USHORT);
 static void pad_spaces(TDBB, CHARSET_ID, BYTE *, USHORT);
-static void* lookup_init_function(USHORT, SSHORT, SSHORT);
+static FPTR_SHORT lookup_init_function(USHORT, SSHORT, SSHORT);
 static void finish_texttype_init(TEXTTYPE);
-static USHORT nc_to_wc(CSCONVERT, WCHAR *, USHORT, UCHAR *, USHORT, SSHORT *,
+static USHORT nc_to_wc(CSCONVERT, UCS2_CHAR *, USHORT, UCHAR *, USHORT, SSHORT *,
 					   USHORT *);
-static USHORT wc_to_wc(CSCONVERT, WCHAR *, USHORT, WCHAR *, USHORT, SSHORT *,
+static USHORT wc_to_wc(CSCONVERT, UCS2_CHAR *, USHORT, UCS2_CHAR *, USHORT, SSHORT *,
 					   USHORT *);
 
 /* Name of module that implements text-type (n) */
@@ -424,7 +424,7 @@ static void finish_texttype_init(TEXTTYPE txtobj)
 	txtobj->texttype_flags |= TEXTTYPE_init;
 }
 
-static void* lookup_init_function(
+static FPTR_SHORT lookup_init_function(
 						USHORT type,
 						SSHORT parm1,
 						SSHORT parm2)
@@ -451,7 +451,7 @@ static void* lookup_init_function(
  *
  *
  ***************************************/
-	USHORT (*function)();
+	FPTR_SHORT function;
 
 	if (!bcLoaded)
 	{
@@ -559,7 +559,7 @@ static void* lookup_init_function(
 			&& (function_block->fun_rpt[argcount].fun_desc.dsc_dtype ==
 				dtype_text))
 		{
-			return function_block->fun_entrypoint;
+			return (FPTR_SHORT)function_block->fun_entrypoint;
 		}
 	}
 	return NULL;
@@ -1520,8 +1520,8 @@ static USHORT nc_to_wc(CSCONVERT obj, UCS2_CHAR * pWide, USHORT nWide,	/* byte c
 	return ((pWide - pStart) * sizeof(*pWide));
 }
 
-static USHORT wc_to_wc(CSCONVERT obj, WCHAR * pDest, USHORT nDest,	/* byte count */
-					   WCHAR * pSrc, USHORT nSrc,	/* byte count */
+static USHORT wc_to_wc(CSCONVERT obj, UCS2_CHAR * pDest, USHORT nDest,	/* byte count */
+					   UCS2_CHAR * pSrc, USHORT nSrc,	/* byte count */
 					   SSHORT * err_code, USHORT * err_position)
 {
 /**************************************
@@ -1533,8 +1533,8 @@ static USHORT wc_to_wc(CSCONVERT obj, WCHAR * pDest, USHORT nDest,	/* byte count
  * Functional description
  *
  *************************************/
-	WCHAR *pStart;
-	WCHAR *pStart_src;
+	UCS2_CHAR *pStart;
+	UCS2_CHAR *pStart_src;
 
 	assert(obj != NULL);
 	assert((pSrc != NULL) || (pDest == NULL));

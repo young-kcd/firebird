@@ -50,11 +50,11 @@ UCHAR		INTL_upper(TDBB, USHORT, UCHAR);
 // Built-in charsets interface
 FPTR_SHORT INTL_builtin_lookup(USHORT, SSHORT, SSHORT);
 SSHORT INTL_builtin_nc_mbtowc(TEXTTYPE obj,
-							  WCHAR * wc, UCHAR * ptr, USHORT count);
+							  UCS2_CHAR * wc, UCHAR * ptr, USHORT count);
 SSHORT INTL_builtin_mb_mbtowc(TEXTTYPE obj,
-							  WCHAR * wc, UCHAR * ptr, USHORT count);
+							  UCS2_CHAR * wc, UCHAR * ptr, USHORT count);
 SSHORT INTL_builtin_wc_mbtowc(TEXTTYPE obj,
-							  WCHAR * wc, UCHAR * ptr, USHORT count);
+							  UCS2_CHAR * wc, UCHAR * ptr, USHORT count);
 
 #endif // JRD_INTL_PROTO_H
 
