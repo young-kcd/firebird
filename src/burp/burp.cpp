@@ -1564,7 +1564,7 @@ void BURP_verbose(USHORT number,
 }
 
 
-static void close_out_transaction(volatile gbak_action action,
+static void close_out_transaction(gbak_action action,
 								  isc_tr_handle* handle)
 {
 /**************************************
