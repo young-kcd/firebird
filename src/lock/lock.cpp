@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.78 2003-11-11 12:14:39 brodsom Exp $
+$Id: lock.cpp,v 1.79 2003-11-21 19:45:49 kkuznetsov Exp $
 */
 
 #include "firebird.h"
@@ -4184,7 +4184,7 @@ static void shutdown_blocking_thread( ISC_STATUS * status_vector)
 
 		/* Wait for the AST thread to finish cleanup or for 10 seconds */
 		ISC_event_wait(1, &event_ptr, &value, 10 * 1000000,
-					  (void(*)()) lock_alarm_handler, event_ptr);
+					 lock_alarm_handler, event_ptr);
 
 		/* Either AST thread terminated, or our timeout expired */
 

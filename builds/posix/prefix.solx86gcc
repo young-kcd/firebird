@@ -18,7 +18,7 @@
 #
 # Use SOLX86 to identify x86 version of Solaris.  Neil McCalden
 #  
-# $Id: prefix.solx86gcc,v 1.5 2003-10-27 09:29:33 robocop Exp $
+# $Id: prefix.solx86gcc,v 1.6 2003-11-21 19:45:48 kkuznetsov Exp $
 #
 # Start of file prefix.solaris X 86 :	$(VERSION)	$(PLATFORM)
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
@@ -41,7 +41,7 @@ SFIO=@SFIO_DIR@
 SFIO_FLAGS=@SFIO_FLAGS@
 SFIO_LDFLAGS=@SFIO_LDFLAGS@
 
-STLPort=/export/home/kostik/STL/STLport-4.5.3/stlport	
+#STLPort=/export/home/kostik/STL/STLport-4.5.3/stlport	
 
 
 ifdef SFIO
@@ -50,7 +50,7 @@ endif
 
 COMM_SOLX_FLAGS:= $(COMM_SOLX_FLAGS) -I$(STLPort)
 
-PROD_FLAGS=-DNDEBUG -w $(COMM_SOLX_FLAGS) -O2  -m486  -MMD -p -fPIC
+PROD_FLAGS=-DNDEBUG -w $(COMM_SOLX_FLAGS) -O2  -mcpu=pentium  -MMD -p -fPIC
 DEV_FLAGS=$(COMM_SOLX_FLAGS) -ggdb  $(WARNINGS)  -MMD -p -fPIC
 
 OS_ServerFiles=inet_server.cpp
