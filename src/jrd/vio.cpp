@@ -1305,9 +1305,9 @@ void VIO_erase(TDBB tdbb, RPB * rpb, TRA transaction)
 		if (MOV_get_long(&desc2, 0))
 		{
 			EVL_field(0, rpb->rpb_record, f_prv_user, &desc2);
-			MOV_get_metadata_str(&desc, revokee, sizeof(revokee));
+			MOV_get_metadata_str(&desc2, revokee, sizeof(revokee));
 			EVL_field(0, rpb->rpb_record, f_prv_priv, &desc2);
-			MOV_get_metadata_str(&desc, privilege, sizeof(privilege));
+			MOV_get_metadata_str(&desc2, privilege, sizeof(privilege));
 			MET_revoke(tdbb, transaction, relation_name, revokee, privilege);
 		}
 	}
