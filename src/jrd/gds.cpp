@@ -2312,7 +2312,13 @@ void * API_ROUTINE gds__temp_file(
 	strcat(file_name, string);
 	strcat(file_name, TEMP_PATTERN);
 	
+#ifdef HAVE_MKSTEMP
 	void *result = (void *)mkstemp(file_name);
+#else
+	if (mktemp(file_name) == (char *)0)
+		return (void *)-1;
+	void *result = (void *)open(file_name, O_RDWR | O_CREAT);
+#endif
 	if (result == (void *)-1)
 		return result;
 

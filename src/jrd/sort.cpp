@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.35 2003-05-09 16:18:32 skidder Exp $
+ * $Id: sort.cpp,v 1.36 2003-05-14 05:39:59 eku Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -3033,7 +3033,7 @@ static void write_trace(
 #else
 		strcpy(file_name, "/interbase/DEBUG_SORT_TRACE_XXXXXX");
 #endif
-#if defined FREEBSD || defined NETBSD
+#ifdef HAVE_MKSTEMP
 		fd = mkstemp(file_name);
 		trace_file = fdopen(fd, "w");
 #else

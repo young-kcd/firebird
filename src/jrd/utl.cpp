@@ -2186,14 +2186,15 @@ static int edit(
 */
 	sprintf(file_name, "%sXXXXXX", buffer);
 
-#if defined FREEBSD || defined NETBSD
+#ifdef HAVE_MKSTEMP
 	fd = mkstemp(file_name);
 	if (!(file = fdopen(fd, "w+"))) {
 		close(fd);
 		return FALSE;
 	}
 #else
-	MKTEMP(file_name, "XXXXXXX");
+	if (mktemp(file_name) == (char *)0)
+		return FALSE;
 	if (!(file = ib_fopen(file_name, FOPEN_WRITE_TYPE)))
 		return FALSE;
 	ib_fclose(file);

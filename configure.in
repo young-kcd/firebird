@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.133 2003-04-17 18:42:12 bellardo Exp $
+dnl $Id: configure.in,v 1.134 2003-05-14 05:39:55 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -380,6 +380,7 @@ if test "$ac_cv_func_getmntent" = "yes"; then
   [AC_MSG_RESULT(no)])
 fi
 AC_CHECK_FUNCS(tcgetattr strdup)
+AC_CHECK_FUNCS(mkstemp)
 
 
 dnl Check for other things
