@@ -733,7 +733,6 @@ void SCL_init(bool create,
         }
         /* CVC: Role is an identifier, it may have embedded blanks. */
         MET_exact_name(role_name);
-		strcpy(role_name, sql_role);
 	}
 	else {
 		strcpy(role_name, "NONE");
