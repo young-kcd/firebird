@@ -981,7 +981,7 @@ int ISC_expand_share(const TEXT* file_name, TEXT* expanded_name)
 
 	LPNETRESOURCE res = resources;
 	DWORD i = 0;
-	while (i < nument && *device != *(res->lpLocalName)) {
+	while (i < nument && (!res->lpLocalName || (*device != *(res->lpLocalName)))) {
 		i++;
 		res++;
 	}
