@@ -2758,7 +2758,9 @@ static void do_isql()
 			 */
 			if (global_Stmt)
 				isc_dsql_free_statement(isc_status, &global_Stmt, DSQL_drop);
-			isc_detach_database(isc_status, &DB);
+			if (DB) {
+				isc_detach_database(isc_status, &DB);
+			}
 			done = true;
 			break;
 
@@ -2775,7 +2777,9 @@ static void do_isql()
 			 */
 			if (global_Stmt)
 				isc_dsql_free_statement(isc_status, &global_Stmt, DSQL_drop);
-			isc_detach_database(isc_status, &DB);
+			if (DB) {
+				isc_detach_database(isc_status, &DB);
+			}
 			done = true;
 			break;
 
