@@ -1,3 +1,15 @@
+2003-06-24 12:33  dimitr
+
+	* firebird2/src/isql/isql.epp:
+	
+	Applied the patch by Tomas Skoda.
+
+2003-06-24 11:28  dimitr
+
+	* firebird2/src/dsql/: parse.cpp, parse.y:
+	
+	Fixed one more limitation in the parser.
+
 2003-06-22 14:37  alexpeshkoff
 
 	* firebird2/doc/: README.NTSecurity, README.instsvc:
