@@ -289,7 +289,7 @@ class acc : public pool_alloc<type_acc>
     public:
 	struct acc*	acc_next;
 	TEXT*		acc_security_name;	/* WRITTEN into by SCL_get_class() */
-	struct jrd_rel*	acc_view;
+	SLONG	acc_view_id;
 	const TEXT*	acc_trg_name;
 	const TEXT*	acc_prc_name;
 	const TEXT*	acc_name;

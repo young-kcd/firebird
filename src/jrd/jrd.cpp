@@ -3907,7 +3907,7 @@ ISC_STATUS DLL_EXPORT GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 	for (access = request->req_access; access; access = access->acc_next)
 	{
 		class_ = SCL_get_class(access->acc_security_name);
-		SCL_check_access(class_, access->acc_view, access->acc_trg_name,
+		SCL_check_access(class_, access->acc_view_id, access->acc_trg_name,
 						 access->acc_prc_name, access->acc_mask,
 						 access->acc_type, access->acc_name);
 	}

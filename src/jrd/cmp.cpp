@@ -163,6 +163,16 @@ static SSHORT strcmp_space(TEXT *, TEXT *);
 static USHORT base_stream(CSB, JRD_NOD *, BOOLEAN);
 #endif
 
+inline static int strcmp_null(const char* s1, const char* s2) {
+	return s1 == NULL ? s2 != NULL : s2 == NULL ? -1 : strcmp(s1, s2);
+}
+
+inline static char* clone_cstring(JrdMemoryPool* pool, const char* source) {
+	if (!source) return NULL;
+	char *result = FB_NEW(*pool) char[strlen(source)+1];
+    strcpy(result, source);
+    return result;
+}
 
 int DLL_EXPORT CMP_clone_active(JRD_REQ request)
 {
@@ -275,7 +285,7 @@ JRD_REQ DLL_EXPORT CMP_clone_request(TDBB tdbb,
 		}
 		for (access = request->req_access; access; access = access->acc_next) {
 			class_ = SCL_get_class(access->acc_security_name);
-			SCL_check_access(class_, access->acc_view, access->acc_trg_name,
+			SCL_check_access(class_, access->acc_view_id, access->acc_trg_name,
 							 access->acc_prc_name, access->acc_mask,
 							 access->acc_type, access->acc_name);
 		}
@@ -375,7 +385,7 @@ JRD_REQ DLL_EXPORT CMP_compile2(TDBB tdbb, UCHAR* blr, USHORT internal_flag)
 		for (access = request->req_access; access; access = access->acc_next)
 		{
 			SCL class_ = SCL_get_class(access->acc_security_name);
-			SCL_check_access(class_, access->acc_view, access->acc_trg_name,
+			SCL_check_access(class_, access->acc_view_id, access->acc_trg_name,
 							 access->acc_prc_name, access->acc_mask,
 							 access->acc_type, access->acc_name);
 		}
@@ -1862,7 +1872,7 @@ JRD_REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
 int DLL_EXPORT CMP_post_access(TDBB			tdbb,
 							   CSB			csb,
 							   TEXT*		security_name,
-							   JRD_REL			view,
+							   SLONG		view_id,
 							   const TEXT*	trig,
 							   const TEXT*	proc,
 							   USHORT		mask,
@@ -1897,10 +1907,10 @@ int DLL_EXPORT CMP_post_access(TDBB			tdbb,
 
 	for (access = csb->csb_access; access; access = access->acc_next)
 	{
-		if (access->acc_security_name == security_name &&
-			access->acc_view == view &&
-			access->acc_trg_name == trig &&
-			access->acc_prc_name == proc &&
+		if (!strcmp_null(access->acc_security_name, security_name) &&
+			access->acc_view_id == view_id &&
+			!strcmp_null(access->acc_trg_name, trig) &&
+			!strcmp_null(access->acc_prc_name, proc) &&
 			access->acc_mask == mask &&
 			!strcmp(access->acc_type, type_name) &&
 			!strcmp(access->acc_name, name))
@@ -1928,19 +1938,19 @@ int DLL_EXPORT CMP_post_access(TDBB			tdbb,
 		csb->csb_access = access;
 	}
 
-	access->acc_security_name	= security_name;
-	access->acc_view			= view;
-	access->acc_trg_name		= trig;
-	access->acc_prc_name		= proc;
+	access->acc_security_name	= clone_cstring(tdbb->tdbb_default, security_name);
+	access->acc_view_id			= view_id;
+	access->acc_trg_name		= clone_cstring(tdbb->tdbb_default, trig);
+	access->acc_prc_name		= clone_cstring(tdbb->tdbb_default, proc);
 	access->acc_mask			= mask;
-	access->acc_type			= type_name;
-	access->acc_name			= name;
+	access->acc_type			= type_name; // No need to clone, should be static
+	access->acc_name			= clone_cstring(tdbb->tdbb_default, name);
 
 #ifdef DEBUG_TRACE
-	ib_printf("%x: require %05X access to %s %s (sec %s view %s trg %s prc %s)\n",
+	ib_printf("%x: require %05X access to %s %s (sec %s view %ld trg %s prc %s)\n",
 		 csb, access->acc_mask, access->acc_type, access->acc_name,
 		 access->acc_security_name ? access->acc_security_name : "NULL",
-		 access->acc_view ? access->acc_view->rel_name : "NULL",
+		 access->acc_view_id,
 		 access->acc_trg_name ? access->acc_trg_name : "NULL",
 		 access->acc_prc_name ? access->acc_prc_name : "NULL");
 #endif
@@ -2809,7 +2819,8 @@ static void ignore_dbkey(TDBB tdbb, CSB csb, RSE rse, JRD_REL view)
 			tail = &csb->csb_rpt[stream];
 			if ( (relation = tail->csb_relation) )
 				CMP_post_access(tdbb, csb, relation->rel_security_name,
-								(tail->csb_view) ? tail->csb_view : view,
+								(tail->csb_view) ? tail->csb_view->rel_id : 
+									(view ? view->rel_id : 0),
 								0, 0, SCL_read, object_table,
 								relation->rel_name);
 		}
@@ -3061,36 +3072,43 @@ static JRD_NOD pass1(
 			if (tail->csb_flags & csb_modify) {
 				if (!validate_expr) {
 					CMP_post_access(tdbb, *csb, relation->rel_security_name,
-									(tail->csb_view) ? tail->csb_view : view,
+									(tail->csb_view) ? tail->csb_view->rel_id : 
+										(view ? view->rel_id : 0),
 									0, 0, SCL_sql_update, object_table,
 									relation->rel_name);
 					CMP_post_access(tdbb, *csb, field->fld_security_name,
-									(tail->csb_view) ? tail->csb_view : view,
+									(tail->csb_view) ? tail->csb_view->rel_id : 
+										(view ? view->rel_id : 0),
 									0, 0, SCL_sql_update, object_column,
 									field->fld_name);
 				}
 			}
 			else if (tail->csb_flags & csb_erase) {
 				CMP_post_access(tdbb, *csb, relation->rel_security_name,
-								(tail->csb_view) ? tail->csb_view : view,
+								(tail->csb_view) ? tail->csb_view->rel_id :
+									(view ? view->rel_id : 0),
 								0, 0, SCL_sql_delete, object_table,
 								relation->rel_name);
 			}
 			else if (tail->csb_flags & csb_store) {
 				CMP_post_access(tdbb, *csb, relation->rel_security_name,
-								(tail->csb_view) ? tail->csb_view : view,
+								(tail->csb_view) ? tail->csb_view->rel_id : 
+									(view ? view->rel_id : 0),
 								0, 0, SCL_sql_insert, object_table,
 								relation->rel_name);
 				CMP_post_access(tdbb, *csb, field->fld_security_name,
-								(tail->csb_view) ? tail->csb_view : view, 0,
+								(tail->csb_view) ? tail->csb_view->rel_id : 
+									(view ? view->rel_id : 0), 0,
 								0, SCL_sql_insert, object_column, field->fld_name);
 			}
 			else {
 				CMP_post_access(tdbb, *csb, relation->rel_security_name,
-								(tail->csb_view) ? tail->csb_view : view,
+								(tail->csb_view) ? tail->csb_view->rel_id : 
+									(view ? view->rel_id : 0),
 								0, 0, SCL_read, object_table, relation->rel_name);
 				CMP_post_access(tdbb, *csb, field->fld_security_name,
-								(tail->csb_view) ? tail->csb_view : view,
+								(tail->csb_view) ? tail->csb_view->rel_id : 
+									(view ? view->rel_id : 0),
 								0, 0, SCL_read, object_column, field->fld_name);
 			}
 
@@ -4153,8 +4171,9 @@ USHORT update_stream, USHORT priv, JRD_REL view, USHORT view_stream)
 
 /* Unless this is an internal request, check access permission */
 
-	CMP_post_access(tdbb, *csb, relation->rel_security_name, view,
-					0, 0, priv, object_table, relation->rel_name);
+	CMP_post_access(tdbb, *csb, relation->rel_security_name, 
+					(view ? view->rel_id : 0), 0, 0, 
+					priv, object_table, relation->rel_name);
 
 /* ensure that the view is set for the input streams,
    so that access to views can be checked at the field level */
@@ -5135,11 +5154,11 @@ static void post_procedure_access(TDBB tdbb, CSB csb, JRD_PRC procedure)
 		for (access = procedure->prc_request->req_access; access;
 			 access = access->acc_next) {
 			if (access->acc_trg_name ||
-				access->acc_prc_name || access->acc_view)
+				access->acc_prc_name || access->acc_view_id)
 				/* Inherited access needs from the trigger, view or SP
 				   that this SP fires off */
 				CMP_post_access(tdbb, csb, access->acc_security_name,
-								access->acc_view, access->acc_trg_name,
+								access->acc_view_id, access->acc_trg_name,
 								access->acc_prc_name, access->acc_mask,
 								access->acc_type, access->acc_name);
 			else
@@ -5285,7 +5304,7 @@ static void post_trigger_access(TDBB tdbb, CSB csb, JRD_REL owner_relation, TRIG
 				}
 				*/
 				if (access->acc_trg_name ||
-					access->acc_prc_name || access->acc_view)
+					access->acc_prc_name || access->acc_view_id)
 				{
 					/* If this is not a system relation, we don't post access check if:
 					- The table being checked is the owner of the trigger that's accessing it.
@@ -5314,7 +5333,7 @@ static void post_trigger_access(TDBB tdbb, CSB csb, JRD_REL owner_relation, TRIG
 					}
 					/* Inherited access needs from "object" to acc_security_name */
 					CMP_post_access(tdbb, csb, access->acc_security_name,
-									access->acc_view,
+									access->acc_view_id,
 									access->acc_trg_name,
 									access->acc_prc_name, access->acc_mask,
 									access->acc_type, access->acc_name);
@@ -5341,8 +5360,8 @@ static void post_trigger_access(TDBB tdbb, CSB csb, JRD_REL owner_relation, TRIG
 					}
 					/* A direct access to an object from this trigger */
 					CMP_post_access(tdbb, csb, access->acc_security_name,
-									(access->
-									 acc_view) ? access->acc_view : view,
+									(access->acc_view_id) ? access->acc_view_id : 
+										(view ? view->rel_id : 0),
 									ptr->request->req_trg_name, 0, access->acc_mask,
 									access->acc_type, access->acc_name);
 				}

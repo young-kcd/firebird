@@ -47,7 +47,7 @@ struct jrd_req* DLL_EXPORT CMP_make_request(TDBB, struct Csb**);
 int DLL_EXPORT CMP_post_access(TDBB,
 								  struct Csb*,
 								  /* INOUT */ TEXT*,
-								  struct jrd_rel*,
+								  SLONG,
 								  const TEXT*,
 								  const TEXT*,
 								  USHORT,

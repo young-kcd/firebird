@@ -116,7 +116,7 @@ static const P_NAMES p_names[] =
 
 
 void SCL_check_access(SCL			s_class,
-					  JRD_REL			view,
+					  SLONG			view_id,
 					  const TEXT*	trg_name,
 					  const TEXT*	prc_name,
 					  USHORT		mask,
@@ -160,10 +160,14 @@ void SCL_check_access(SCL			s_class,
 	}
 	else
 	{
-		if (!s_class ||
-			(mask & s_class->scl_flags) ||
-			((view || trg_name || prc_name) &&
-			 (compute_access(tdbb, s_class, view, trg_name, prc_name) & mask)))
+		if (!s_class ||	(mask & s_class->scl_flags)) {
+			return;
+		}
+		JRD_REL view = NULL;
+		if (view_id)
+			view = MET_lookup_relation_id(tdbb, view_id, false);
+		if ((view || trg_name || prc_name) &&
+			 (compute_access(tdbb, s_class, view, trg_name, prc_name) & mask))
 		{
 			return;
 		}
@@ -277,7 +281,7 @@ void SCL_check_index( TDBB tdbb, TEXT * index_name, UCHAR index_id, USHORT mask)
 	if (!reln_name || !*reln_name)
 		return;
 
-	SCL_check_access(s_class, NULL, NULL, NULL, mask, object_table, reln_name);
+	SCL_check_access(s_class, 0, NULL, NULL, mask, object_table, reln_name);
 
 	request = NULL;
 
@@ -302,11 +306,11 @@ void SCL_check_index( TDBB tdbb, TEXT * index_name, UCHAR index_id, USHORT mask)
 
         if (!RF.RDB$SECURITY_CLASS.NULL) {
 			s_class = SCL_get_class(RF.RDB$SECURITY_CLASS);
-			SCL_check_access(s_class, NULL, NULL, NULL, mask,
+			SCL_check_access(s_class, 0, NULL, NULL, mask,
 							 object_column, RF.RDB$FIELD_NAME);
 		}
 		else
-			  SCL_check_access(default_s_class, NULL, NULL, NULL, mask,
+			  SCL_check_access(default_s_class, 0, NULL, NULL, mask,
 							   object_column, RF.RDB$FIELD_NAME);
 
 	END_FOR;
@@ -374,7 +378,7 @@ void SCL_check_procedure( DSC * dsc_name, USHORT mask)
 	if (!REQUEST(irq_p_security))
 		REQUEST(irq_p_security) = request;
 
-	SCL_check_access(s_class, NULL, NULL, name, mask, object_procedure, name);
+	SCL_check_access(s_class, 0, NULL, name, mask, object_procedure, name);
 }
 
 
@@ -430,7 +434,7 @@ void SCL_check_relation( DSC * dsc_name, USHORT mask)
 	if (!REQUEST(irq_v_security))
 		REQUEST(irq_v_security) = request;
 
-	SCL_check_access(s_class, NULL, NULL, NULL, mask, object_table, name);
+	SCL_check_access(s_class, 0, NULL, NULL, mask, object_table, name);
 }
 
 
@@ -1111,7 +1115,7 @@ static BOOLEAN check_string(const TEXT* acl, const TEXT* string)
 
 static SLONG compute_access(TDBB		tdbb,
 							SCL			s_class,
-							JRD_REL			view,
+							JRD_REL		view,
 							const TEXT*	trg_name,
 							const TEXT*	prc_name)
 {
