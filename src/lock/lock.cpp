@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.49 2003-04-29 18:42:55 skidder Exp $
+$Id: lock.cpp,v 1.50 2003-05-07 13:48:41 skidder Exp $
 */
 
 #include "firebird.h"
@@ -4603,7 +4603,7 @@ static void validate_owner( PTR own_ptr, USHORT freed)
 	CHECK(!
 		  (owner->
 		   own_flags & ~(OWN_blocking | OWN_scanned | OWN_manager | OWN_signal
-						 | OWN_wakeup | OWN_starved)));
+						 | OWN_wakeup | OWN_starved | OWN_asts_processed)));
 
 /* Check that no invalid flag bit is set */
 	CHECK(!(owner->own_ast_flags & ~(OWN_signaled)));
