@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.46 2003-03-03 09:22:32 brodsom Exp $
+$Id: exe.cpp,v 1.47 2003-03-05 12:50:43 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -1987,12 +1987,12 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 			switch (request->req_operation) {
 			case jrd_req::req_evaluate:
 				{
-				XCP xcp_node = reinterpret_cast<XCP>(node->nod_arg[0]);
+				XCP xcp_node = reinterpret_cast<XCP>(node->nod_arg[e_xcp_desc]);
 				if (xcp_node)
 				{
 					/* XCP is defined,
 					   so throw an exception */
-					set_error(tdbb, xcp_node, node->nod_arg[1]);
+					set_error(tdbb, xcp_node, node->nod_arg[e_xcp_msg]);
 				}
 				else if (request->req_last_xcp.xcp_type != 0)
 				{
@@ -2005,7 +2005,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 					last_error.xcp_rpt[0].xcp_msg = request->req_last_xcp.xcp_msg;
 					request->req_last_xcp.xcp_type = 0;
 					request->req_last_xcp.xcp_msg = 0;
-					set_error(tdbb, &last_error, node->nod_arg[1]);
+					set_error(tdbb, &last_error, node->nod_arg[e_xcp_msg]);
 				}
 				else
 				{

@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.39 2003-03-01 19:19:21 alexpeshkoff Exp $
+$Id: par.cpp,v 1.40 2003-03-05 12:50:44 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -2698,10 +2698,10 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected)
 	case blr_abort:
 		{
 		bool flag = (BLR_PEEK == blr_exception_msg);
-		node->nod_arg[0] = (JRD_NOD) par_condition(tdbb, csb);
+		node->nod_arg[e_xcp_desc] = (JRD_NOD) par_condition(tdbb, csb);
 		if (flag)
 		{
-			node->nod_arg[1] = parse(tdbb, csb, sub_type);
+			node->nod_arg[e_xcp_msg] = parse(tdbb, csb, sub_type);
 		}
 		break;
 		}

@@ -370,7 +370,13 @@ typedef struct iasb {
 #define e_pro_relation		1
 #define e_pro_length		2
 
-/* Variable declaraction */
+/* Exception */
+
+#define e_xcp_desc	0
+#define e_xcp_msg	1
+#define e_xcp_length	2
+
+/* Variable declaration */
 
 #define e_var_id		0
 #define e_var_variable		1

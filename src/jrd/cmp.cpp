@@ -3263,6 +3263,11 @@ static JRD_NOD pass1(
 			  validate_expr);
 		break;
 
+	case nod_abort:
+		pass1(tdbb, csb, node->nod_arg[e_xcp_msg], view, view_stream,
+			  validate_expr);
+		break;
+
 	case nod_ansi_all:
 	case nod_ansi_any:
 	case nod_any:
@@ -4455,21 +4460,11 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 
 	switch (node->nod_type) {
 	case nod_abort:
-		{
-			JRD_NOD value;
-
-			if ( (value = node->nod_arg[1]) )
-				pass2(tdbb, csb, value, node);
-		}
+		pass2(tdbb, csb, node->nod_arg[e_xcp_msg], node);
 		break;
 
 	case nod_assignment:
-		{
-			JRD_NOD value;
-
-			if ( (value = node->nod_arg[e_asgn_missing2]) )
-				pass2(tdbb, csb, value, node);
-		}
+		pass2(tdbb, csb, node->nod_arg[e_asgn_missing2], node);
 		break;
 
 	case nod_average:
