@@ -44,6 +44,14 @@
       Contributor(s):
         Nickolay Samofatov <skidder@bssys.com>
 
+    * Maximum number of indices per table increased
+        Backported appropriate changes from 1.0.3 tree
+      Notes:
+        1) Old maximum number of indices was 64, new max value is (DB_PAGE_SIZE/16)-2
+        2) When actual number of indices for a particular table exceeds 256 engine behavior may be unstable
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
   **************
   * v1.5 RC 5
   **************
