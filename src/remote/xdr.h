@@ -32,9 +32,7 @@
 #include "../jrd/common.h"
 
 #ifdef VMS
-#include "../remote/types.h"
-#include "../remote/in.h"
-#define TYPES_DEFINED
+#error "VMS remote must be completed"
 #endif
 
 #ifdef WIN_NT

@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.51 2003-02-14 14:26:05 eku Exp $
+$Id: inet.cpp,v 1.52 2003-02-17 19:33:53 brodsom Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -129,13 +129,12 @@ extern int h_errno;
 #endif
 
 #ifdef VMS
-#include "../remote/tcptypes.h"
 #include <ib_perror.h>
 #include <socket.h>
 #define NO_FORK
 #define MAX_PTYPE	ptype_batch_send
 #define PROXY_FILE	"[sysmgr]gds_proxy.dat"
-#define ERRNO		ISC_tcp_geterrno()
+#error "vms implementation must be completed"
 #endif
 
 #ifdef WIN_NT
@@ -317,13 +316,7 @@ static ULONG inet_debug_timer(void)
 #endif
 
 #ifdef VMS
-#define ERRNOCODE(symbol, code, text)	text,
-
-static const TEXT *const win_errlist[] = {
-	NULL,
-#include "../remote/winerr.h"
-};
-#undef ERRNOCODE
+#error "vms implementation must be completed"
 #endif
 
 extern "C" {
@@ -538,42 +531,7 @@ extern int errno;
 
 
 #ifdef VMS
-#define accept		ISC_tcp_accept
-#define bind		ISC_tcp_bind
-#define connect		ISC_tcp_connect
-#define getaddr 	ISC_tcp_getaddr
-#define gethostbyname	ISC_tcp_gethostbyname
-#define gethostname	ISC_tcp_gethostname
-#define gethosts	ISC_tcp_gethosts
-#define getnamebyaddr	ISC_tcp_getnamebyaddr
-#define getpeername	ISC_tcp_getpeername
-#define getservbyname	ISC_tcp_getservbyname
-#define getservport	ISC_tcp_getservport
-#define getsockname	ISC_tcp_getsockname
-#define listen		ISC_tcp_listen
-#define recv		ISC_tcp_recv
-#define select		ISC_tcp_select
-#define send		ISC_tcp_send
-#define setsockopt	ISC_tcp_setsockopt
-
-#define socket		ISC_tcp_socket
-extern ISC_wait();
-extern gds__completion_ast();
-
-extern ISC_tcp_accept();
-extern ISC_tcp_bind();
-extern ISC_tcp_connect();
-extern ISC_tcp_getnamebyaddr();
-extern ISC_tcp_getpeername();
-extern ISC_tcp_getservbyname();
-extern ISC_tcp_getservport();
-extern ISC_tcp_getsockname();
-extern ISC_tcp_listen();
-extern ISC_tcp_recv();
-extern ISC_tcp_select();
-extern ISC_tcp_send();
-extern ISC_tcp_setsockopt();
-extern ISC_tcp_socket();
+#error "vms implementation must be completed"
 #endif /* VMS */
 
 #ifdef	WIN_NT
