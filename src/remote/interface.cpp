@@ -4873,7 +4873,7 @@ static PORT analyze(TEXT*	file_name,
 		}
 	}	// if (!port)
 
-#ifdef SUPERCLIENT
+#if defined(SUPERCLIENT) && !defined(EMBEDDED)
 /* Coerce host connections to loopback to SUPERSERVER. */
 
 #ifdef WIN_NT

@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.21 2003-04-16 10:17:51 aafemt Exp $
+$Id: why.cpp,v 1.22 2003-06-05 19:39:01 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -534,10 +534,8 @@ static const IMAGE images[] =
 static const ENTRY entrypoints[PROC_count * SUBSYSTEMS] =
 {
 
-#ifndef EMBEDDED
 #define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, rem},
 #include "../jrd/entry.h"
-#endif
 
 #ifndef REQUESTER
 #ifndef SUPERCLIENT

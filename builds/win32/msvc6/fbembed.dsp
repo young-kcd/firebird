@@ -118,10 +118,162 @@ SOURCE=..\..\..\src\jrd\perf.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\remote\allr.cpp
+
+!IF  "$(CFG)" == "fbembed - Win32 Release"
+
+# ADD CPP /D "SUPERCLIENT"
+# SUBTRACT CPP /D "SUPERSERVER"
+
+!ELSEIF  "$(CFG)" == "fbembed - Win32 Debug"
+
+# ADD CPP /D "SUPERCLIENT"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\remote\inet.cpp
+
+!IF  "$(CFG)" == "fbembed - Win32 Release"
+
+# ADD CPP /D "SUPERCLIENT"
+# SUBTRACT CPP /D "SUPERSERVER"
+
+!ELSEIF  "$(CFG)" == "fbembed - Win32 Debug"
+
+# ADD CPP /D "SUPERCLIENT"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\remote\interface.cpp
+
+!IF  "$(CFG)" == "fbembed - Win32 Release"
+
+# ADD CPP /D "SUPERCLIENT"
+# SUBTRACT CPP /D "SUPERSERVER"
+
+!ELSEIF  "$(CFG)" == "fbembed - Win32 Debug"
+
+# ADD CPP /D "SUPERCLIENT"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\remote\merge.cpp
+
+!IF  "$(CFG)" == "fbembed - Win32 Release"
+
+# ADD CPP /D "SUPERCLIENT"
+# SUBTRACT CPP /D "SUPERSERVER"
+
+!ELSEIF  "$(CFG)" == "fbembed - Win32 Debug"
+
+# ADD CPP /D "SUPERCLIENT"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\remote\parser.cpp
+
+!IF  "$(CFG)" == "fbembed - Win32 Release"
+
+# ADD CPP /D "SUPERCLIENT"
+# SUBTRACT CPP /D "SUPERSERVER"
+
+!ELSEIF  "$(CFG)" == "fbembed - Win32 Debug"
+
+# ADD CPP /D "SUPERCLIENT"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\remote\protocol.cpp
+
+!IF  "$(CFG)" == "fbembed - Win32 Release"
+
+# ADD CPP /D "SUPERCLIENT"
+# SUBTRACT CPP /D "SUPERSERVER"
+
+!ELSEIF  "$(CFG)" == "fbembed - Win32 Debug"
+
+# ADD CPP /D "SUPERCLIENT"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\remote\remote.cpp
+
+!IF  "$(CFG)" == "fbembed - Win32 Release"
+
+# ADD CPP /D "SUPERCLIENT"
+# SUBTRACT CPP /D "SUPERSERVER"
+
+!ELSEIF  "$(CFG)" == "fbembed - Win32 Debug"
+
+# ADD CPP /D "SUPERCLIENT"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\remote\wnet.cpp
+
+!IF  "$(CFG)" == "fbembed - Win32 Release"
+
+# ADD CPP /D "SUPERCLIENT"
+# SUBTRACT CPP /D "SUPERSERVER"
+
+!ELSEIF  "$(CFG)" == "fbembed - Win32 Debug"
+
+# ADD CPP /D "SUPERCLIENT"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\remote\xdr.cpp
+
+!IF  "$(CFG)" == "fbembed - Win32 Release"
+
+# ADD CPP /D "SUPERCLIENT"
+# SUBTRACT CPP /D "SUPERSERVER"
+
+!ELSEIF  "$(CFG)" == "fbembed - Win32 Debug"
+
+# ADD CPP /D "SUPERCLIENT"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\remote\xnet.cpp
+
+!IF  "$(CFG)" == "fbembed - Win32 Release"
+
+# ADD CPP /D "SUPERCLIENT"
+# SUBTRACT CPP /D "SUPERSERVER"
+
+!ELSEIF  "$(CFG)" == "fbembed - Win32 Debug"
+
+# ADD CPP /D "SUPERCLIENT"
+
+!ENDIF 
+
 # End Source File
 # End Group
 # Begin Group "UTILITIES files"
