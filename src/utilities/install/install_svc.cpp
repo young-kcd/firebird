@@ -74,7 +74,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	TEXT keyb_password[64];
 	USHORT sw_command, sw_startup, sw_mode, sw_guardian, sw_arch;
 	bool sw_version;
-	USHORT i, status, len;
+	USHORT i, status, status2, len;
 	SC_HANDLE manager, service;
 
 	sw_command = COMMAND_NONE;
@@ -255,7 +255,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			{
 				status = SERVICES_install(manager, ISCGUARD_SERVICE,
 					ISCGUARD_DISPLAY_NAME, ISCGUARD_EXECUTABLE, directory,
-						NULL, sw_startup, 0, 0, svc_error);
+						NULL, sw_startup, username, password, svc_error);
 				if (status == FB_SUCCESS)
 					ib_printf("Service \"%s\" successfully created.\n", ISCGUARD_DISPLAY_NAME);
 
@@ -267,7 +267,13 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			status = SERVICES_install(manager, REMOTE_SERVICE,
 					REMOTE_DISPLAY_NAME, const_cast<char*>REMOTE_EXECUTABLE,
 						directory, NULL, sw_startup, username, password, svc_error);
-			if (status == FB_SUCCESS)
+			status2 = FB_SUCCESS;
+			if (username != 0)
+			{
+				status2 = SERVICES_grant_access_rights(REMOTE_SERVICE,
+					username, svc_error);
+			}
+			if (status == FB_SUCCESS && status2 == FB_SUCCESS)
 				ib_printf("Service \"%s\" successfully created.\n", REMOTE_DISPLAY_NAME);
 			break;
 

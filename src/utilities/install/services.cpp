@@ -28,6 +28,7 @@
 #include "../jrd/ib_stdio.h"
 #include <windows.h>
 #include <ntsecapi.h>
+#include <aclapi.h>
 #include "../jrd/common.h"
 #include "../jrd/license.h"
 #include "../utilities/install/install_nt.h"
@@ -268,6 +269,7 @@ USHORT SERVICES_stop(SC_HANDLE manager,
 	return FB_SUCCESS;
 }
 
+
 USHORT SERVICES_grant_logon_right(TEXT* account,
 							USHORT(*err_handler)(SLONG, TEXT *, SC_HANDLE))
 {
@@ -288,7 +290,8 @@ USHORT SERVICES_grant_logon_right(TEXT* account,
  *  to the user.
  *  Returns FB_FAILURE on any error.
  *
- *  OM - August 2003
+ *  OM - AUG 2003 - Initial implementation
+ *  OM - SEP 2003 - Control flow revision, no functional change
  *
  ***************************************************/
 
@@ -300,6 +303,10 @@ USHORT SERVICES_grant_logon_right(TEXT* account,
 	DWORD cchDomain;
 	SID_NAME_USE peUse;
 	LSA_UNICODE_STRING PrivilegeString;
+	PLSA_UNICODE_STRING UserRights;
+	ULONG CountOfRights = 0;
+	ULONG i;
+
 	NTSTATUS lsaErr;
 	
 	// Open the policy on the local machine.
@@ -311,7 +318,8 @@ USHORT SERVICES_grant_logon_right(TEXT* account,
 		return (*err_handler)(LsaNtStatusToWinError(lsaErr), "LsaOpenPolicy", NULL);
 	}
 
-	// Obtain the SID of the user/group. First get required buffer sizes.
+	// Obtain the SID of the user/group.
+	// First, dummy call to LookupAccountName to get the required buffer sizes.
 	cbSid = cchDomain = 0;
 	LookupAccountName(NULL, account, NULL, &cbSid, NULL, &cchDomain, &peUse);
 	pSid = (PSID)LocalAlloc(LMEM_ZEROINIT, cbSid);
@@ -331,44 +339,7 @@ USHORT SERVICES_grant_logon_right(TEXT* account,
 	}
 	// Now, really obtain the SID of the user/group.
 	if (LookupAccountName(NULL, account, pSid, &cbSid,
-			pDomain, &cchDomain, &peUse) != 0)
-	{
-		PLSA_UNICODE_STRING UserRights;
-		ULONG CountOfRights = 0;
-		ULONG i;
-
-		LsaEnumerateAccountRights(PolicyHandle, pSid, &UserRights, &CountOfRights);
-		// Check if the seServiceLogonRight is already granted
-		for (i = 0; i < CountOfRights; i++)
-		{
-			if (wcscmp(UserRights[i].Buffer, L"SeServiceLogonRight") == 0)
-				break;
-		}
-		LsaFreeMemory(UserRights); // Don't leak
-		if (CountOfRights == 0 || i == CountOfRights)
-		{
-			// Grant the SeServiceLogonRight to users represented by pSid.
-			PrivilegeString.Buffer = L"SeServiceLogonRight";
-			PrivilegeString.Length = (USHORT) 19 * sizeof(WCHAR); // 19 : char len of Buffer
-			PrivilegeString.MaximumLength=(USHORT)(19 + 1) * sizeof(WCHAR);
-			if ((lsaErr = LsaAddAccountRights(PolicyHandle, pSid, &PrivilegeString, 1))
-				!= (NTSTATUS)0)
-			{
-				LsaClose(PolicyHandle);
-				LocalFree(pSid);
-				LocalFree(pDomain);
-				return (*err_handler)(LsaNtStatusToWinError(lsaErr), "LsaAddAccountRights", NULL);
-			}
-		}
-		else
-		{
-			LsaClose(PolicyHandle);
-			LocalFree(pSid);
-			LocalFree(pDomain);
-			return FB_LOGON_SRVC_RIGHT_ALREADY_DEFINED;
-		}
-	}
-	else
+			pDomain, &cchDomain, &peUse) == 0)
 	{
 		DWORD err = GetLastError();
 		LsaClose(PolicyHandle);
@@ -377,9 +348,113 @@ USHORT SERVICES_grant_logon_right(TEXT* account,
 		return (*err_handler)(err, "LookupAccountName", NULL);
 	}
 	
+	LsaEnumerateAccountRights(PolicyHandle, pSid, &UserRights, &CountOfRights);
+	// Check if the seServiceLogonRight is already granted
+	for (i = 0; i < CountOfRights; i++)
+	{
+		if (wcscmp(UserRights[i].Buffer, L"SeServiceLogonRight") == 0)
+			break;
+	}
+	LsaFreeMemory(UserRights); // Don't leak
+	if (CountOfRights == 0 || i == CountOfRights)
+	{
+		// Grant the SeServiceLogonRight to users represented by pSid.
+		PrivilegeString.Buffer = L"SeServiceLogonRight";
+		PrivilegeString.Length = (USHORT) 19 * sizeof(WCHAR); // 19 : char len of Buffer
+		PrivilegeString.MaximumLength=(USHORT)(19 + 1) * sizeof(WCHAR);
+		if ((lsaErr = LsaAddAccountRights(PolicyHandle, pSid, &PrivilegeString, 1))
+			!= (NTSTATUS)0)
+		{
+			LsaClose(PolicyHandle);
+			LocalFree(pSid);
+			LocalFree(pDomain);
+			return (*err_handler)(LsaNtStatusToWinError(lsaErr), "LsaAddAccountRights", NULL);
+		}
+	}
+	else
+	{
+		LsaClose(PolicyHandle);
+		LocalFree(pSid);
+		LocalFree(pDomain);
+		return FB_LOGON_SRVC_RIGHT_ALREADY_DEFINED;
+	}
+	
 	LsaClose(PolicyHandle);
 	LocalFree(pSid);
 	LocalFree(pDomain);
+
+	return FB_SUCCESS;
+}
+
+
+USHORT SERVICES_grant_access_rights(TEXT* service_name, TEXT* account,
+	USHORT(*err_handler)(SLONG, TEXT *, SC_HANDLE))
+{
+/*********************************************************
+ *
+ * S E R V I C E S _ g r a n t _ a c c e s s _ r i g h t s
+ *
+ *********************************************************
+ *
+ * Functional description
+ *
+ * Grant access rights to service 'service_name' so that user 'account'
+ * can control it (start, stop, query).
+ * Intended to be called after SERVICES_install().
+ * By doing so to the Firebird server service object, we can set the Guardian
+ * to run as the same specific user, yet still be able to start the Firebird
+ * server from the Guardian.
+ * 'account' is of format : DOMAIN\User or SERVER\User.
+ * Returns FB_SUCCESS or FB_FAILURE.
+ *
+ * OM - SEP 2003 - Initial implementation
+ *
+ *********************************************************/
+
+	PACL pOldDACL = NULL;
+	PACL pNewDACL = NULL;
+	PSECURITY_DESCRIPTOR pSD = NULL;
+	EXPLICIT_ACCESS ea;
+
+	// Get Security Information on the service. Will of course fail if we're
+	// not allowed to do this. Administrators should be allowed, by default.
+	if (GetNamedSecurityInfo(service_name, SE_SERVICE,
+		DACL_SECURITY_INFORMATION,
+		NULL /*Owner Sid*/, NULL /*Group Sid*/,
+		&pOldDACL, NULL /*Sacl*/, &pSD) != ERROR_SUCCESS)
+	{
+		return (*err_handler)(GetLastError(), "GetNamedSecurityInfo", NULL);
+	}
+
+	// Initialize an EXPLICIT_ACCESS structure.
+	ZeroMemory(&ea, sizeof(ea));
+	ea.grfAccessPermissions = GENERIC_READ|GENERIC_EXECUTE;
+	ea.grfAccessMode = SET_ACCESS;
+	ea.grfInheritance = NO_INHERITANCE;
+	ea.Trustee.MultipleTrusteeOperation = NO_MULTIPLE_TRUSTEE;
+	ea.Trustee.TrusteeForm = TRUSTEE_IS_NAME;
+	ea.Trustee.TrusteeType = TRUSTEE_IS_USER;
+	ea.Trustee.ptstrName = account;
+
+	// Create a new DACL, adding this right to whatever exists.
+	if (SetEntriesInAcl(1, &ea, pOldDACL, &pNewDACL) != ERROR_SUCCESS)
+	{
+		DWORD err = GetLastError();
+		LocalFree(pSD);
+		return (*err_handler)(err, "SetEntriesInAcl", NULL);
+	}
+
+	// Updates the new rights in the object
+	if (SetNamedSecurityInfo(service_name, SE_SERVICE,
+		DACL_SECURITY_INFORMATION,
+		NULL /*Owner Sid*/, NULL /*Group Sid*/,
+		pNewDACL, NULL /*Sacl*/) != ERROR_SUCCESS)
+	{
+		DWORD err = GetLastError();
+		LocalFree(pSD);
+		LocalFree(pNewDACL);
+		return (*err_handler)(err, "SetNamedSecurityInfo", NULL);
+	}
 
 	return FB_SUCCESS;
 }
