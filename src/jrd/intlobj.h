@@ -74,7 +74,7 @@ typedef struct texttype {
 	USHORT texttype_version;	/* version ID of object */
 	USHORT texttype_flags;		/* miscellanous flags */
 	TTYPE_ID texttype_type;		/* Interpretation ID */
-	ASCII *texttype_name;
+	const ASCII *texttype_name;
 	CHARSET_ID texttype_character_set;	/* ID of base character set */
 	SSHORT texttype_country;	/* ID of base country values */
 	BYTE texttype_bytes_per_char;	/* max bytes per character */
@@ -155,7 +155,7 @@ typedef struct charset
 	USHORT charset_version;
 	USHORT charset_flags;
 	CHARSET_ID charset_id;
-	ASCII *charset_name;
+	const ASCII *charset_name;
 	BYTE charset_min_bytes_per_char;
 	BYTE charset_max_bytes_per_char;
 	BYTE charset_space_length;
