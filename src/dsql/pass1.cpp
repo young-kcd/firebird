@@ -762,10 +762,15 @@ DSQL_NOD PASS1_node(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
 					  gds_arg_gds, gds_dsql_agg_ref_err, 0);
 		}
-		node = MAKE_node(input->nod_type, input->nod_count);
+		node = MAKE_node(input->nod_type, 2);
+		node->nod_count = input->nod_count; // Copy count !!
 		node->nod_flags = input->nod_flags;
 		if (input->nod_count) {
 			node->nod_arg[0] = PASS1_node(request, input->nod_arg[0], proc_flag);
+		}
+		else {
+			// Scope level is needed to determine to which context COUNT(*) belongs.
+			node->nod_arg[1] = (DSQL_NOD) (ULONG) request->req_scope_level;
 		}
 		return node;
 
@@ -1559,7 +1564,7 @@ static BOOLEAN aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT * curren
 				}
 				else {
 					// we have Count(*)
-					if (*current_level == request->req_scope_level) {
+					if (request->req_scope_level == (ULONG) node->nod_arg[1]) {
 						aggregate = TRUE;
 					}
 				}
