@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.45 2004-08-26 21:44:11 brodsom Exp $
+ *	$Id: gpre_meta.epp,v 1.46 2004-09-26 07:42:52 robocop Exp $
  */
 
 #include "firebird.h"
@@ -41,6 +41,7 @@
 #include "../gpre/gpre_meta.h"
 #include "../gpre/msc_proto.h"
 #include "../gpre/par_proto.h"
+#include "../common/utils_proto.h"
 
 
 const int MAX_USER_LENGTH	= 33;
@@ -62,7 +63,6 @@ static SLONG array_size(gpre_fld*);
 static void get_array(dbb*, const TEXT*, gpre_fld*);
 static bool get_intl_char_subtype(SSHORT*, const UCHAR*, USHORT, dbb*);
 static bool resolve_charset_and_collation(SSHORT*, const UCHAR*, const UCHAR*);
-static int symbol_length(const TEXT*);
 #ifdef NOT_USED_OR_REPLACED
 static int upcase(const TEXT*, TEXT*);
 #endif
@@ -794,7 +794,7 @@ gpre_fld* MET_field(gpre_rel* relation, const char* string)
 			HSH_insert(symbol);
 			field->fld_global = symbol =
 				MSC_symbol(SYM_field, RFR.RDB$FIELD_SOURCE,
-						   symbol_length(RFR.RDB$FIELD_SOURCE), (gpre_ctx*) field);
+						   fb_utils::name_length(RFR.RDB$FIELD_SOURCE), (gpre_ctx*) field);
 		END_FOR;
 	}
 	else {
@@ -839,7 +839,7 @@ gpre_fld* MET_field(gpre_rel* relation, const char* string)
 			HSH_insert(symbol);
 			field->fld_global = symbol =
 				MSC_symbol(SYM_field, RFR.RDB$FIELD_SOURCE,
-						   symbol_length(RFR.RDB$FIELD_SOURCE), (gpre_ctx*) field);
+						   fb_utils::name_length(RFR.RDB$FIELD_SOURCE), (gpre_ctx*) field);
 		END_FOR;
 	}
 
@@ -1170,7 +1170,7 @@ gpre_prc* MET_get_procedure(dbb* database, const TEXT* string, const TEXT* owner
 				}
 				field->fld_symbol = MSC_symbol(SYM_field,
 											   Y.RDB$PARAMETER_NAME,
-											   symbol_length(Y.RDB$PARAMETER_NAME),
+											   fb_utils::name_length(Y.RDB$PARAMETER_NAME),
 											   (gpre_ctx*) field);
 				/* If output parameter, insert in symbol table as a
 				   field. */
@@ -1502,7 +1502,7 @@ void MET_load_hash_table(dbb* database)
 			relation->rel_id = X.RDB$RELATION_ID;
 			relation->rel_symbol = symbol =
 				MSC_symbol(SYM_relation, X.RDB$RELATION_NAME,
-						   symbol_length(X.RDB$RELATION_NAME), (gpre_ctx*) relation);
+						   fb_utils::name_length(X.RDB$RELATION_NAME), (gpre_ctx*) relation);
 			HSH_insert(symbol);
 			const USHORT dbk_len = (X.RDB$DBKEY_LENGTH) ? X.RDB$DBKEY_LENGTH : 8;
 			gpre_fld* dbkey = MET_make_field("rdb$db_key", dtype_text,
@@ -1523,7 +1523,7 @@ void MET_load_hash_table(dbb* database)
 			relation->rel_id = X.RDB$RELATION_ID;
 			relation->rel_symbol = symbol =
 				MSC_symbol(SYM_relation, X.RDB$RELATION_NAME,
-						   symbol_length(X.RDB$RELATION_NAME), (gpre_ctx*) relation);
+						   fb_utils::name_length(X.RDB$RELATION_NAME), (gpre_ctx*) relation);
 			HSH_insert(symbol);
 			const USHORT dbk_len = (X.RDB$DBKEY_LENGTH) ? X.RDB$DBKEY_LENGTH : 8;
 			gpre_fld* dbkey = MET_make_field("rdb$db_key", dtype_text,
@@ -1533,7 +1533,7 @@ void MET_load_hash_table(dbb* database)
 			dbkey->fld_ttype = ttype_binary;
 
 			if (!X.RDB$OWNER_NAME.NULL
-				&& (length = symbol_length(X.RDB$OWNER_NAME)))
+				&& (length = fb_utils::name_length(X.RDB$OWNER_NAME)))
 			{
 				relation->rel_owner =
 					MSC_symbol(SYM_username, X.RDB$OWNER_NAME, length, NULL);
@@ -1555,9 +1555,9 @@ void MET_load_hash_table(dbb* database)
 		procedure->prc_id = X.RDB$PROCEDURE_ID;
 		procedure->prc_symbol = symbol =
 			MSC_symbol(SYM_procedure, X.RDB$PROCEDURE_NAME,
-					   symbol_length(X.RDB$PROCEDURE_NAME), (gpre_ctx*) procedure);
+					   fb_utils::name_length(X.RDB$PROCEDURE_NAME), (gpre_ctx*) procedure);
 		HSH_insert(symbol);
-		if (!X.RDB$OWNER_NAME.NULL && (length = symbol_length(X.RDB$OWNER_NAME)))
+		if (!X.RDB$OWNER_NAME.NULL && (length = fb_utils::name_length(X.RDB$OWNER_NAME)))
 			procedure->prc_owner =
 				MSC_symbol(SYM_username, X.RDB$OWNER_NAME, length, NULL);
 	END_FOR
@@ -1580,7 +1580,7 @@ void MET_load_hash_table(dbb* database)
 		FUN.RDB$FUNCTION_NAME EQ ARG.RDB$FUNCTION_NAME AND
 		FUN.RDB$RETURN_ARGUMENT EQ ARG.RDB$ARGUMENT_POSITION
 		p = FUN.RDB$FUNCTION_NAME;
-		length = symbol_length(p);
+		length = fb_utils::name_length(p);
 		p[length] = 0;
 
 		udf* an_udf = (udf*) MSC_alloc(UDF_LEN + length);
@@ -1588,7 +1588,7 @@ void MET_load_hash_table(dbb* database)
 		an_udf->udf_database = database;
 		an_udf->udf_type = FUN.RDB$FUNCTION_TYPE;
 
-		if (length = symbol_length(FUN.RDB$QUERY_NAME)) {
+		if (length = fb_utils::name_length(FUN.RDB$QUERY_NAME)) {
 			p = FUN.RDB$QUERY_NAME;
 			p[length] = 0;
 		}
@@ -1639,7 +1639,7 @@ void MET_load_hash_table(dbb* database)
 		RDB$CHARACTER_SET_ID;
 
 		p = COLL.RDB$COLLATION_NAME;
-		length = symbol_length(p);
+		length = fb_utils::name_length(p);
 		p[length] = 0;
 		INTLSYM iname = (INTLSYM) MSC_alloc(INTLSYM_LEN + length);
 		strcpy(iname->intlsym_name, p);
@@ -1667,7 +1667,7 @@ void MET_load_hash_table(dbb* database)
 			AND TYPE.RDB$TYPE_NAME != COLL.RDB$COLLATION_NAME;
 
 			p = TYPE.RDB$TYPE_NAME;
-			length = symbol_length(p);
+			length = fb_utils::name_length(p);
 			p[length] = 0;
 			symbol = MSC_symbol(SYM_collate, p, length, (gpre_ctx*) iname);
 			HSH_insert(symbol);
@@ -1693,7 +1693,7 @@ void MET_load_hash_table(dbb* database)
 		WITH CHARSET.RDB$DEFAULT_COLLATE_NAME EQ COLL.RDB$COLLATION_NAME;
 
 		p = CHARSET.RDB$CHARACTER_SET_NAME;
-		length = symbol_length(p);
+		length = fb_utils::name_length(p);
 		p[length] = 0;
 		INTLSYM iname = (INTLSYM) MSC_alloc(INTLSYM_LEN + length);
 		strcpy(iname->intlsym_name, p);
@@ -1719,7 +1719,7 @@ void MET_load_hash_table(dbb* database)
 			AND TYPE.RDB$TYPE_NAME != CHARSET.RDB$CHARACTER_SET_NAME;
 
 			p = TYPE.RDB$TYPE_NAME;
-			length = symbol_length(p);
+			length = fb_utils::name_length(p);
 			p[length] = 0;
 			symbol = MSC_symbol(SYM_charset, p, length, (gpre_ctx*) iname);
 			HSH_insert(symbol);
@@ -1743,7 +1743,7 @@ void MET_load_hash_table(dbb* database)
 		FIRST 1 DBB IN RDB$DATABASE
 		WITH DBB.RDB$CHARACTER_SET_NAME NOT MISSING
 		p = DBB.RDB$CHARACTER_SET_NAME;
-		length = symbol_length(p);
+		length = fb_utils::name_length(p);
 		p[length] = 0;
 		database->dbb_def_charset = (TEXT*) MSC_alloc(length + 1);
 		strcpy(database->dbb_def_charset, p);
@@ -1761,7 +1761,7 @@ void MET_load_hash_table(dbb* database)
 	FOR(REQUEST_HANDLE handle)
 	X IN RDB$GENERATORS
 		symbol = MSC_symbol(SYM_generator, X.RDB$GENERATOR_NAME,
-							symbol_length(X.RDB$GENERATOR_NAME), (gpre_ctx*) database);
+							fb_utils::name_length(X.RDB$GENERATOR_NAME), (gpre_ctx*) database);
 		HSH_insert(symbol);
 
 	END_FOR 
@@ -2212,25 +2212,6 @@ static bool resolve_charset_and_collation(
 	return found;
 }
 
-
-/*____________________________________________________________
- *  
- *		Compute significant length of symbol.
- */  
-
-static int symbol_length(const TEXT* string)
-{
-	const int len = strlen(string);
-
-	const TEXT* p = string + (len - 1);
-
-	while (p >= string && *p == ' ')
-		--p;
-	if (p < string)
-		return 0;
-	++p;
-	return p - string;
-}
 
 #ifdef NOT_USED_OR_REPLACED
 /*____________________________________________________________

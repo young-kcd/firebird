@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.43 2004-08-26 21:44:11 brodsom Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.44 2004-09-26 07:42:53 robocop Exp $
  */
 
 #include "firebird.h"
@@ -46,7 +46,8 @@
 //const int MAX_USER_LENGTH		= 33;
 //const int MAX_PASSWORD_LENGTH	= 33;
 
-static const UCHAR blr_bpb[] = { isc_bpb_version1,
+static const UCHAR blr_bpb[] = {
+	isc_bpb_version1,
 	isc_bpb_source_type, 1, isc_blob_blr,
 	isc_bpb_target_type, 1, isc_blob_blr
 };
@@ -59,7 +60,6 @@ static SLONG array_size(gpre_fld*);
 static void get_array(DBB, const TEXT*, gpre_fld*);
 static bool get_intl_char_subtype(SSHORT*, const UCHAR*, USHORT, DBB);
 static bool resolve_charset_and_collation(SSHORT*, const UCHAR*, const UCHAR*);
-static int symbol_length(const TEXT*);
 static int upcase(const TEXT*, TEXT*);
 #endif
 
@@ -825,25 +825,6 @@ static bool resolve_charset_and_collation(
 
 	fb_assert(0);
 	return (false);
-}
-
-
-/*____________________________________________________________
- *  
- *		Compute significant length of symbol.
- */  
-
-static int symbol_length(const TEXT* string)
-{
-	const size_t len = strlen(string);
-
-	const TEXT* p = string + (len - 1);
-
-	for (; p >= string && *p == ' '; p--);
-	if (p < string)
-		return 0;
-	++p;
-	return p - string;
 }
 
 
