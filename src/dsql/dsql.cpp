@@ -3615,7 +3615,7 @@ static USHORT get_plan_info(
 							 BUFFER_XLARGE, explain_ptr);
 		THREAD_ENTER();
 
-		if (s) {
+		if (s || *explain_ptr == isc_info_truncated) {
 			// CVC: Before returning, deallocate the buffer!
 			gds__free(explain_ptr);
 			return 0;
@@ -3855,7 +3855,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 
 			USHORT union_level = *level_ptr;
 			USHORT union_join_count = 0;
-			while (true) {
+			while (explain_length > 0 && plan_length > 0) {
 				if (!get_rsb_item(&explain_length, &explain, &plan_length, &plan,
 								  &union_join_count, &union_level)) 
 				{
@@ -3871,7 +3871,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			while (union_count) {
 				union_join_count = 0;
 				union_level = 0;
-				while (true) {
+				while (explain_length > 0 && plan_length > 0) {
 					if (!get_rsb_item(&explain_length, &explain, &plan_length,
 									  &plan, &union_join_count, &union_level)) 
 					{
@@ -3921,7 +3921,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			explain_length--;
 			{ // scope to have join_count local.
 			USHORT join_count = (USHORT) * explain++;
-			while (join_count) {
+			while (join_count && explain_length > 0 && plan_length > 0) {
 				if (!get_rsb_item(&explain_length, &explain, &plan_length,
 								  &plan, &join_count, level_ptr))
 				{
