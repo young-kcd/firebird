@@ -1958,7 +1958,7 @@ void API_ROUTINE gds__log(TEXT * text, ...)
 	if ((file = ib_fopen(name, FOPEN_APPEND_TYPE)) != NULL)
 	{
 		ib_fprintf(file, "%s%s\t%.25s\t", ISC_get_host(name, MAXPATHLEN),
-				   gdslogid, ctime(now));
+				   gdslogid, ctime(&now));
 		VA_START(ptr, text);
 		ib_vfprintf(file, text, ptr);
 		ib_fprintf(file, "\n\n");
