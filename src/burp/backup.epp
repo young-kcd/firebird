@@ -36,7 +36,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.24.2.5 2004-12-10 05:30:38 skidder Exp $
+$Id: backup.epp,v 1.24.2.6 2005-01-20 11:27:03 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -3219,7 +3219,6 @@ static void write_generators(void)
  *	Write any defined generators.
  *
  **************************************/
-    SINT64 value;
     isc_req_handle req_handle1 = NULL;
     ISC_STATUS_ARRAY req_status;
     TGBL tdgbl;
@@ -3232,6 +3231,7 @@ static void write_generators(void)
 	    X IN RDB$GENERATORS WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
 	    PUT (rec_generator);
         l = PUT_TEXT (att_gen_generator, X.RDB$GENERATOR_NAME);
+	    SINT64 value = 0;
 		if (!tdgbl->gbl_sw_meta)
 		{
 			value = get_gen_id (X.RDB$GENERATOR_NAME, l);

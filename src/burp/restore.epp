@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: restore.epp,v 1.31.2.3 2004-04-04 10:15:32 dimitr Exp $
+$Id: restore.epp,v 1.31.2.4 2005-01-20 11:27:03 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -3581,7 +3581,7 @@ static BOOLEAN get_generator (void)
  *	nicely.
  *
  **************************************/
-SINT64		value;
+SINT64		value = 0;
 BASED_ON RDB$GENERATORS.RDB$GENERATOR_NAME name;
 ATT_TYPE	attribute;
 UCHAR	    scan_next_attr;
@@ -3612,6 +3612,11 @@ while (SKIP_SCAN, GET_ATTRIBUTE (attribute) != att_end)
 	    /* msg 93 index */
 	    break;
 	}
+
+if (tdgbl->gbl_sw_meta)
+{
+	value = 0;
+}
 
 store_blr_gen_id (name, value);
 
