@@ -1888,7 +1888,8 @@ static int show_indices_detail( qli_rel* relation)
 			ERRQ_msg_put(450, X.RDB$INDEX_NAME,
 						 (X.RDB$UNIQUE_FLAG) ? " (unique)" : "",
 						 (type == 1) ? " (descending)" : "",
-						 (X.RDB$INDEX_INACTIVE) ? " (inactive)" : "", NULL);	// Msg450 Index %s%s%s%s
+						 (X.RDB$INDEX_INACTIVE) ? " (inactive)" : "",
+						 NULL);	// Msg450 Index %s%s%s%s
 
 			FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_index])
 				Y IN RDB$INDEX_SEGMENTS WITH
@@ -1922,7 +1923,8 @@ static int show_indices_detail( qli_rel* relation)
 			++count;
 			fb_utils::exact_name(X.RDB$INDEX_NAME);
 			ERRQ_msg_put(290, X.RDB$INDEX_NAME,
-						 (X.RDB$UNIQUE_FLAG) ? " (unique)" : "", NULL, NULL, NULL);	// Msg290 Index %s%s
+						 (X.RDB$UNIQUE_FLAG) ? " (unique)" : "",
+						 NULL, NULL, NULL);	// Msg290 Index %s%s
 			FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_index])
 				Y IN RDB$INDEX_SEGMENTS WITH
 					Y.RDB$INDEX_NAME EQ X.RDB$INDEX_NAME
@@ -2779,8 +2781,9 @@ static void show_view( qli_rel* relation)
 	MET_meta_transaction(database, false);
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_view])
-		X IN RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ relation->rel_symbol->
-			sym_string AND X.RDB$VIEW_BLR NOT MISSING
+		X IN RDB$RELATIONS
+			WITH X.RDB$RELATION_NAME EQ relation->rel_symbol->sym_string
+			AND X.RDB$VIEW_BLR NOT MISSING
 
 		if (X.RDB$VIEW_SOURCE.NULL) {
 			ERRQ_msg_put(312, relation->rel_symbol->sym_string, NULL, NULL,

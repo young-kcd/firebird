@@ -66,13 +66,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
  *	Install or remove a Firebird service.
  *
  **************************************/
-	TEXT directory[MAXPATHLEN];
-	TEXT full_username[128];
-	TEXT oem_username[128];
-	TEXT keyb_password[64];
-	USHORT i, status, status2;
-	SC_HANDLE service;
-
 	USHORT sw_command = COMMAND_NONE;
 	bool sw_version = false;
 	USHORT sw_startup = STARTUP_AUTO;
@@ -86,6 +79,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	// Let's get the root directory from the instance path of this program.
 	// argv[0] is only _mostly_ guaranteed to give this info,
 	// so we GetModuleFileName()
+	TEXT directory[MAXPATHLEN];
 	const USHORT len = GetModuleFileName(NULL, directory, sizeof(directory));
 	if (len == 0)
 		return svc_error(GetLastError(), "GetModuleFileName", NULL);
@@ -100,11 +94,16 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	do {--p;} while (*p != '\\' && *p != ':');
 	*p = '\0';
 
+	TEXT full_username[128];
+	TEXT oem_username[128];
+	TEXT keyb_password[64];
+
 	const TEXT* const* const end = argv + argc;
 	while (++argv < end)
 	{
 		if (**argv != '-')
 		{
+			USHORT i;
 			const TEXT* cmd;
 			for (i = 0; cmd = commands[i].name; i++)
 			{
@@ -199,7 +198,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		}
 		else
 			strncpy(full_username, username, sizeof(full_username));
-		full_username[sizeof(full_username) -1] = '\0';
+		full_username[sizeof(full_username) - 1] = '\0';
 		CharToOem(full_username, oem_username);
 		username = full_username;
 		
@@ -245,6 +244,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		svc_error(GetLastError(), "OpenSCManager", NULL);
 		exit(FINI_ERROR);
 	}
+
+	USHORT status, status2;
+	SC_HANDLE service;
 
 	switch (sw_command)
 	{
@@ -394,17 +396,14 @@ static void svc_query(const char* name, const char* display_name, SC_HANDLE mana
  *	Report (print) the status and configuration of a service.
  *
  **************************************/
-	SC_HANDLE service;
-	SERVICE_STATUS service_status;
-	QUERY_SERVICE_CONFIG* qsc;
-	ULONG uSize;
+	if (manager == NULL)
+		return;
 
-	if (manager == NULL) return;
-
-	service = OpenService(manager, name, SERVICE_ALL_ACCESS);
+	SC_HANDLE service = OpenService(manager, name, SERVICE_ALL_ACCESS);
 	if (service)
 	{
 		printf("\n%s IS installed.\n", display_name);
+		SERVICE_STATUS service_status;
 		if (QueryServiceStatus(service, &service_status))
 		{
 			printf("  Status  : ");
@@ -420,8 +419,9 @@ static void svc_query(const char* name, const char* display_name, SC_HANDLE mana
 		else
 			svc_error(GetLastError(), "QueryServiceStatus", NULL);
 
+		ULONG uSize;
 		QueryServiceConfig(service, NULL, 0, &uSize);
-		qsc = (QUERY_SERVICE_CONFIG*) new UCHAR[uSize];
+		QUERY_SERVICE_CONFIG* qsc = (QUERY_SERVICE_CONFIG*) new UCHAR[uSize];
 		if (qsc && QueryServiceConfig(service, qsc, uSize, &uSize))
 		{
 			CharToOem(qsc->lpBinaryPathName, qsc->lpBinaryPathName);

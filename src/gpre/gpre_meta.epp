@@ -1642,9 +1642,8 @@ void MET_load_hash_table(dbb* database)
 		iname->intlsym_ttype =
 			INTL_CS_COLL_TO_TTYPE(iname->intlsym_charset_id,
 								  iname->intlsym_collate_id);
-		iname->intlsym_bytes_per_char =
-			(CHARSET.RDB$BYTES_PER_CHARACTER.NULL) ? 1 : (CHARSET.
-														  RDB$BYTES_PER_CHARACTER);
+		iname->intlsym_bytes_per_char = (CHARSET.RDB$BYTES_PER_CHARACTER.NULL) ?
+				1 : (CHARSET.RDB$BYTES_PER_CHARACTER);
 		iname->intlsym_next = gpreGlob.text_subtypes;
 		gpreGlob.text_subtypes = iname;
 
@@ -1696,9 +1695,8 @@ void MET_load_hash_table(dbb* database)
 		iname->intlsym_ttype =
 			INTL_CS_COLL_TO_TTYPE(iname->intlsym_charset_id,
 								  iname->intlsym_collate_id);
-		iname->intlsym_bytes_per_char =
-			(CHARSET.RDB$BYTES_PER_CHARACTER.NULL) ? 1 : (CHARSET.
-														  RDB$BYTES_PER_CHARACTER);
+		iname->intlsym_bytes_per_char = (CHARSET.RDB$BYTES_PER_CHARACTER.NULL) ?
+			1 : (CHARSET.RDB$BYTES_PER_CHARACTER);
 
 		FOR(REQUEST_HANDLE handle2)
 		TYPE IN RDB$TYPES

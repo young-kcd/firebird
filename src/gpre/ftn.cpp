@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.52 2004-11-08 03:09:20 robocop Exp $
+//	$Id: ftn.cpp,v 1.53 2004-12-16 03:02:33 robocop Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -870,9 +870,10 @@ static void gen_based(const act* action)
 
 	case dtype_text:
 		fprintf(gpreGlob.out_file, "%sCHARACTER*%ld%s", COLUMN,
-				   (based_on->bas_flags & BAS_segment) ? length :
-				   ((field->fld_array_info) ? field->fld_array->
-					fld_length : field->fld_length), COLUMN);
+				   (based_on->bas_flags & BAS_segment) ?
+				   		length : ((field->fld_array_info) ?
+						   field->fld_array->fld_length : field->fld_length),
+					COLUMN);
 		break;
 
 	case dtype_real:
@@ -3558,16 +3559,16 @@ static void gen_trans(const act* action)
 	if (action->act_type == ACT_commit_retain_context)
 		printa(COLUMN, "CALL ISC_COMMIT_RETAINING (%s, %s)",
 			   status_vector(action),
-			   (action->act_object) ? (const TEXT*) (action->
-												act_object) : "GDS__TRANS");
+			   (action->act_object) ?
+			   		(const TEXT*) (action->act_object) : "GDS__TRANS");
 	else
 		printa(COLUMN, "CALL ISC_%s_TRANSACTION (%s, %s)",
-			   (action->act_type ==
-				ACT_commit) ? "COMMIT" : (action->act_type ==
-										  ACT_rollback) ? "ROLLBACK" :
-			   "PREPARE", status_vector(action),
-			   (action->act_object) ? (const TEXT*) (action->
-												act_object) : "GDS__TRANS");
+			   (action->act_type == ACT_commit) ?
+			   		"COMMIT" : (action->act_type == ACT_rollback) ?
+					   "ROLLBACK" : "PREPARE",
+				status_vector(action),
+			   (action->act_object) ?
+			   		(const TEXT*) (action->act_object) : "GDS__TRANS");
 	status_and_stop(action);
 
 }

@@ -1280,9 +1280,8 @@ static void numeric_to_text(const dsc* from, dsc* to)
 	}
 
 	// Hopefully a cstring never reached this point.
-	TEXT* q =
-		(TEXT *) ((to->dsc_dtype == dtype_text) ? to->dsc_address : to->
-				  dsc_address + sizeof(SSHORT));
+	TEXT* q = (TEXT*) ((to->dsc_dtype == dtype_text) ?
+		to->dsc_address : to->dsc_address + sizeof(SSHORT));
 
 // If negative, put in minus sign
 

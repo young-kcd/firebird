@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.50 2004-11-10 04:18:58 robocop Exp $
+//	$Id: sql.cpp,v 1.51 2004-12-16 03:02:33 robocop Exp $
 //
 
 #include "firebird.h"
@@ -3663,9 +3663,9 @@ static act* act_openclose( enum act_t type)
 	action->act_whenever = gen_whenever();
 
 	if (request->req_flags & (REQ_sql_blob_open | REQ_sql_blob_create))
-		action->act_type = (type == ACT_close) ? ACT_blob_close :
-			(request->
-			 req_flags & REQ_sql_blob_open) ? ACT_blob_open : ACT_blob_create;
+		action->act_type = (type == ACT_close) ?
+			ACT_blob_close : (request->req_flags & REQ_sql_blob_open) ?
+				ACT_blob_open : ACT_blob_create;
 
 	return action;
 }

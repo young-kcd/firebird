@@ -1166,8 +1166,7 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 					is_column = true;
 				}
 				else {
-					if (tdbb->
-						tdbb_attachment->att_flags & ATT_gbak_attachment)
+					if (tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment)
 							warning(csb, isc_fldnotdef, isc_arg_string,
 									ERR_cstring(name), isc_arg_string,
 									relation->rel_name, 0);

@@ -727,8 +727,7 @@ void DYN_modify_global_field(
 					DOM IN RDB$RELATION_FIELDS 
                     WITH DOM.RDB$FIELD_SOURCE EQ orig_dom->dyn_fld_name 
                     modify_lfield_index(tdbb, dbb, gbl,
-                                        DOM.
-                                        RDB$RELATION_NAME,
+                                        DOM.RDB$RELATION_NAME,
                                         DOM.RDB$FIELD_NAME,
                                         DOM.RDB$FIELD_NAME);
 				END_FOR;

@@ -3281,15 +3281,15 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 				case blr_forward:
 					tail->rrq_flags &= ~RRQ_backward;
 					tail->rrq_absolute +=
-						(tail->
-						 rrq_flags & RRQ_absolute_backward) ? -offset : offset;
+						(tail->rrq_flags & RRQ_absolute_backward) ?
+							-offset : offset;
 					break;
 
 				case blr_backward:
 					tail->rrq_flags |= RRQ_backward;
 					tail->rrq_absolute +=
-						(tail->
-						 rrq_flags & RRQ_absolute_backward) ? offset : -offset;
+						(tail->rrq_flags & RRQ_absolute_backward) ?
+							offset : -offset;
 					break;
 
 				case blr_bof_forward:
@@ -6731,8 +6731,7 @@ static REM_MSG scroll_cache(
 		(*direction == blr_bof_forward
 		 && (tail->rrq_flags & RRQ_absolute_backward))
 		|| (*direction == blr_eof_backward
-			&& !(tail->
-				 rrq_flags & RRQ_absolute_backward)))
+			&& !(tail->rrq_flags & RRQ_absolute_backward)))
 	{
 		return dump_cache(port, user_status, tail);
 	}

@@ -143,10 +143,11 @@ static ULONG xdr_save_size = 0;
 inline void DEBUG_PRINTSIZE(XDR* xdrs, P_OP p) {
 	fprintf (stderr, "xdr_protocol: %s op %d size %lu\n",
 		((xdrs->x_op == XDR_FREE)   ? "free" :
-		 (xdrs->x_op == XDR_ENCODE) ? "enc " :
-		 (xdrs->x_op == XDR_DECODE) ? "dec " : "othr"), p,
-		((xdrs->x_op == XDR_ENCODE) ? (xdrs->x_handy - xdr_save_size)
-		 : (xdr_save_size - xdrs->x_handy)));
+		 	(xdrs->x_op == XDR_ENCODE) ? "enc " :
+		 		(xdrs->x_op == XDR_DECODE) ? "dec " : "othr"),
+		p,
+		((xdrs->x_op == XDR_ENCODE) ?
+			(xdrs->x_handy - xdr_save_size) : (xdr_save_size - xdrs->x_handy)));
 }
 #else
 inline void DEBUG_PRINTSIZE(XDR* xdrs, P_OP p) {
@@ -743,8 +744,8 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 			reinterpret_cast<SSHORT&>(sqldata->p_sqldata_messages));
 		if (sqldata->p_sqldata_messages)
 			return xdr_sql_message(xdrs,
-								   (SLONG) sqldata->
-								   p_sqldata_statement) ? P_TRUE(xdrs, p) : P_FALSE(xdrs, p);
+								   (SLONG) sqldata->p_sqldata_statement) ?
+								   P_TRUE(xdrs, p) : P_FALSE(xdrs, p);
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 

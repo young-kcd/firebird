@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pretty.cpp,v 1.29 2004-10-03 04:48:49 robocop Exp $
+//	$Id: pretty.cpp,v 1.30 2004-12-16 03:02:33 robocop Exp $
 //
 
 #include "firebird.h"
@@ -747,9 +747,9 @@ static SLONG print_long( CTL control, SSHORT offset)
 	const UCHAR v3 = BLR_BYTE;
 	const UCHAR v4 = BLR_BYTE;
 	sprintf(control->ctl_ptr,
-			(control->
-			 ctl_language) ? "chr(%d),chr(%d),chr(%d),chr(%d) " :
-			"%d,%d,%d,%d, ", v1, v2, v3, v4);
+			(control->ctl_language) ?
+			"chr(%d),chr(%d),chr(%d),chr(%d) " : "%d,%d,%d,%d, ",
+			v1, v2, v3, v4);
 	ADVANCE_PTR(control->ctl_ptr);
 
 	return v1 | (v2 << 8) | (v3 << 16) | (v4 << 24);

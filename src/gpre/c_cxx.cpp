@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.58 2004-11-10 04:18:57 robocop Exp $
+//	$Id: c_cxx.cpp,v 1.59 2004-12-16 03:02:31 robocop Exp $
 //
 
 #include "firebird.h"
@@ -3449,18 +3449,16 @@ static void gen_trans( const act* action, int column)
 	if (action->act_type == ACT_commit_retain_context)
 		printa(column, "isc_commit_retaining (%s, (FB_API_HANDLE*) &%s);",
 			   status_vector(action),
-			   (action->act_object) ? (TEXT* ) (action->
-												act_object) :
-			   gpreGlob.transaction_name);
+			   (action->act_object) ?
+			   		(const TEXT*) (action->act_object) : gpreGlob.transaction_name);
 	else
 		printa(column, "isc_%s_transaction (%s, (FB_API_HANDLE*) &%s);",
-			   (action->act_type ==
-				ACT_commit) ? "commit" : (action->act_type ==
-										  ACT_rollback) ? "rollback" :
-			   "prepare", status_vector(action),
-			   (action->act_object) ? (TEXT* ) (action->
-												act_object) :
-			   gpreGlob.transaction_name);
+			   (action->act_type == ACT_commit) ?
+			   		"commit" : (action->act_type == ACT_rollback) ?
+					   "rollback" : "prepare",
+				status_vector(action),
+			   (action->act_object) ?
+			   		(const TEXT*) (action->act_object) : gpreGlob.transaction_name);
 
 	set_sqlcode(action, column);
 }
@@ -3812,8 +3810,7 @@ static void make_ready(
 				   s2, s1, db->dbb_r_user ? db->dbb_r_user : "(char*) 0",
 				   db->dbb_r_password ? db->dbb_r_password : "(char*) 0",
 				   db->dbb_r_sql_role ? db->dbb_r_sql_role : "(char*) 0",
-				   db->dbb_r_lc_messages ? db->
-				   dbb_r_lc_messages : "(char*) 0",
+				   db->dbb_r_lc_messages ? db->dbb_r_lc_messages : "(char*) 0",
 				   db->dbb_r_lc_ctype ? db->dbb_r_lc_ctype : "(char*) 0");
 		}
 	}

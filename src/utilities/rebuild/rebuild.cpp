@@ -1151,9 +1151,8 @@ static void write_headers(
 					   "\tfirst slot with space %d, last slot with space %d\n",
 					   pointer->ppg_min_space, pointer->ppg_max_space);
 			fprintf(file, "\t%s\n",
-					   (pointer->
-						pag_flags & ppg_eof) ? "last pointer for relation\n" :
-					   "");
+					   (pointer->pag_flags & ppg_eof) ?
+							"last pointer for relation\n" : "");
 			break;
 			}
 
@@ -1166,12 +1165,11 @@ static void write_headers(
 					   data->dpg_relation, data->dpg_sequence,
 					   data->dpg_count);
 			fprintf(file, "\t%s%s%s%s\n",
-					   (data->
-						pag_flags & dpg_orphan) ? "orphan " : "",
+					   (data->pag_flags & dpg_orphan) ? "orphan " : "",
 					   (data->pag_flags & dpg_full) ? "full " : "",
-					   (data->
-						pag_flags & dpg_large) ? "contains a large object" :
-					   "", (data->pag_flags) ? "\n" : "");
+					   (data->pag_flags & dpg_large) ?
+					   		"contains a large object" : "",
+					   (data->pag_flags) ? "\n" : "");
 			break;
 			}
 
@@ -1195,12 +1193,11 @@ static void write_headers(
 			fprintf(file, "\tdata length %d, index id %d, level %d\n",
 					   bucket->btr_length, bucket->btr_id, bucket->btr_level);
 			fprintf(file, "\t%s%s%s\n",
-					   (bucket->
-						pag_flags & btr_leftmost) ? "leftmost " : "",
-					   (bucket->
-						pag_flags & btr_not_prop) ? "all duplicates " : "",
-					   (bucket->
-						pag_flags & btr_marked) ? "marked for delete" : "");
+					   (bucket->pag_flags & btr_leftmost) ? "leftmost " : "",
+					   (bucket->pag_flags & btr_not_prop) ?
+					   		"all duplicates " : "",
+					   (bucket->Pag_flags & btr_marked) ?
+					   		"marked for delete" : "");
 			break;
 			}
 
@@ -1212,8 +1209,7 @@ static void write_headers(
 					   blob->blp_lead_page, blob->blp_sequence,
 					   blob->blp_length);
 			fprintf(file, "\tcontains %s\n",
-					   (blob->
-						pag_flags & blp_pointers) ? "pointers" : "data");
+					   (blob->pag_flags & blp_pointers) ? "pointers" : "data");
 			break;
 			}
 			

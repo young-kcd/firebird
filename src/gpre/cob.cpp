@@ -1657,8 +1657,8 @@ static void gen_database( const act* action)
 		const TEXT* name = db->dbb_name->sym_string;
 		printa(names[COLUMN_0], false, "01  %s%s PIC S9(9) USAGE COMP%s.",
 			   name,
-			   (all_static) ? "" : (all_extern) ? " IS EXTERNAL" :
-			   " IS GLOBAL", (all_extern) ? "" : " VALUE IS 0");
+			   (all_static) ? "" : (all_extern) ? " IS EXTERNAL" : " IS GLOBAL",
+			   (all_extern) ? "" : " VALUE IS 0");
 
 		// generate variables to hold database name strings for attach call 
 
@@ -2111,7 +2111,8 @@ static void gen_dyn_immediate( const act* action)
 				ISC_EXECUTE_IMMEDIATE2 : ISC_EXECUTE_IMMEDIATE,
 		   status_vector(action), BY_REF, database->dbb_name->sym_string,
 		   BY_REF, transaction, s, BY_DESC, statement->dyn_string, BY_VALUE,
-		   gpreGlob.sw_sql_dialect, END_VALUE, (statement->dyn_sqlda) ? BY_REF : "",
+		   gpreGlob.sw_sql_dialect, END_VALUE,
+		   (statement->dyn_sqlda) ? BY_REF : "",
 		   (statement->dyn_sqlda) ? statement->dyn_sqlda : OMITTED,
 		   (statement->dyn_sqlda2) ? BY_REF : "",
 		   (statement->dyn_sqlda2) ? statement->dyn_sqlda2 : OMITTED);
@@ -3342,9 +3343,8 @@ static void gen_request( gpre_req* request)
 			   request->req_ident);
 		printa(names[COLUMN], false,
 			   "    03 %s%dv_3 PIC S9(9) USAGE COMP OCCURS %d TIMES.",
-			   names[isc_b_pos], request->req_ident, MAX(1,
-													request->req_slice->
-													slc_parameters));
+			   names[isc_b_pos], request->req_ident,
+			   MAX(1, request->req_slice->slc_parameters));
 		printa(names[COLUMN_0], false, "01  %s%ds PIC S9(9) USAGE COMP.",
 			   names[isc_b_pos], request->req_ident);
 	}
@@ -3798,19 +3798,16 @@ static void gen_trans( const act* action)
 			   ISC_COMMIT_RETAINING,
 			   status_vector(action),
 			   BY_REF,
-			   (action->act_object) ? (TEXT *) (action->
-												act_object) :
-			   names[isc_trans_pos]);
+			   (action->act_object) ?
+			   		(const TEXT*) (action->act_object) : names[isc_trans_pos]);
 	else
 		printa(names[COLUMN], true, "CALL \"%s\" USING %s, %s%s",
-			   (action->act_type ==
-				ACT_commit) ? ISC_COMMIT_TRANSACTION : (action->act_type ==
-														ACT_rollback) ?
-			   ISC_ROLLBACK_TRANSACTION : ISC_PREPARE_TRANSACTION,
+			   (action->act_type == ACT_commit) ?
+			   	ISC_COMMIT_TRANSACTION : (action->act_type == ACT_rollback) ?
+			   		ISC_ROLLBACK_TRANSACTION : ISC_PREPARE_TRANSACTION,
 			   status_vector(action), BY_REF,
-			   (action->act_object) ? (TEXT *) (action->
-												act_object) :
-			   names[isc_trans_pos]);
+			   (action->act_object) ?
+			   		(const TEXT*) (action->act_object) : names[isc_trans_pos]);
 	set_sqlcode(action);
 }
 

@@ -3621,15 +3621,15 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 			case blr_forward:
 				tail->rrq_flags &= ~RRQ_backward;
 				tail->rrq_absolute +=
-					(tail->
-					 rrq_flags & RRQ_absolute_backward) ? -offset : offset;
+					(tail->rrq_flags & RRQ_absolute_backward) ?
+						-offset : offset;
 				break;
 
 			case blr_backward:
 				tail->rrq_flags |= RRQ_backward;
 				tail->rrq_absolute +=
-					(tail->
-					 rrq_flags & RRQ_absolute_backward) ? offset : -offset;
+					(tail->rrq_flags & RRQ_absolute_backward) ?
+						offset : -offset;
 				break;
 
 			case blr_bof_forward:
@@ -3998,8 +3998,7 @@ static REM_MSG scroll_cache(
 		(*direction == blr_bof_forward
 		 && (tail->rrq_flags & RRQ_absolute_backward))
 		|| (*direction == blr_eof_backward
-			&& !(tail->
-				 rrq_flags & RRQ_absolute_backward)))
+			&& !(tail->rrq_flags & RRQ_absolute_backward)))
 	{
 		return dump_cache(tail);
 	}
@@ -4905,8 +4904,7 @@ ISC_STATUS rem_port::transact_request(P_TRRQ* trrq, PACKET* sendL)
 	UCHAR* out_msg =
 		(procedure->rpr_out_msg) ? procedure->rpr_out_msg->msg_address : NULL;
 	const USHORT out_msg_length =
-		(procedure->rpr_out_format) ? procedure->rpr_out_format->
-		fmt_length : 0;
+		(procedure->rpr_out_format) ? procedure->rpr_out_format->fmt_length : 0;
 
 	THREAD_EXIT();
 	isc_transact_request(status_vector,

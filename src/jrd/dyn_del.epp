@@ -755,7 +755,9 @@ void DYN_delete_local_field(
 
 		if (!RFR.RDB$SECURITY_CLASS.NULL
 			&& !strncmp(RFR.RDB$SECURITY_CLASS, SQL_SECCLASS_PREFIX, SQL_SECCLASS_PREFIX_LEN))
+		{
 			delete_security_class2(gbl, RFR.RDB$SECURITY_CLASS);
+		}
 
 		found = true;
 		delete_gfield_for_lfield(gbl, RFR.RDB$FIELD_SOURCE);
@@ -2024,8 +2026,8 @@ static bool delete_security_class2( Global* gbl, const TEXT* security_class)
 	try {
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		SC IN RDB$SECURITY_CLASSES WITH SC.
-			RDB$SECURITY_CLASS EQ security_class 
+		SC IN RDB$SECURITY_CLASSES
+			WITH SC.RDB$SECURITY_CLASS EQ security_class
 
         if (!DYN_REQUEST(drq_e_class))
             DYN_REQUEST(drq_e_class) = request;

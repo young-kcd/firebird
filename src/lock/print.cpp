@@ -509,8 +509,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 /* Print lock ordering option */
 
 	FPRINTF(outfile, "\tLock Ordering: %s\n",
-			(LOCK_header->
-			 lhb_flags & LHB_lock_ordering) ? "Enabled" : "Disabled");
+			(LOCK_header->lhb_flags & LHB_lock_ordering) ?
+				"Enabled" : "Disabled");
 	FPRINTF(outfile, "\n");
 
 /* Print known owners */

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.45 2004-10-30 05:30:07 robocop Exp $
+//	$Id: ada.cpp,v 1.46 2004-12-16 03:02:30 robocop Exp $
 //
 
 #include "firebird.h"
@@ -635,7 +635,7 @@ static void gen_at_end( const act* action, int column)
 
 static void gen_based( const act* action, int column)
 {
-	SSHORT datatype, i;
+	SSHORT datatype;
 	SCHAR s[512], s2[128];
 
 	bas* based_on = (bas*) action->act_object;
@@ -650,7 +650,7 @@ static void gen_based( const act* action, int column)
 
 		//  Print out the dimension part of the declaration  
 		const dim* dimension = field->fld_array_info->ary_dimension;
-		for (i = 1; i < field->fld_array_info->ary_dimension_count;
+		for (SSHORT i = 1; i < field->fld_array_info->ary_dimension_count;
 			 dimension = dimension->dim_next, i++) 
 		{
 			sprintf(s2, "%s range %"SLONGFORMAT"..%"SLONGFORMAT
@@ -686,9 +686,8 @@ static void gen_based( const act* action, int column)
 		break;
 
 	case dtype_text:
-		length =
-			(field->fld_array_info) ? field->fld_array->fld_length : field->
-			fld_length;
+		length = (field->fld_array_info) ?
+			field->fld_array->fld_length : field->fld_length;
 		if (field->fld_sub_type == 1) {
 			if (length == 1)
 				sprintf(s2, "%s", BYTE_DCL);
@@ -713,6 +712,7 @@ static void gen_based( const act* action, int column)
 		sprintf(s2, "datatype %d unknown\n", field->fld_dtype);
 		return ;
 	}
+	
 	for (p = s2; *p; p++, q++)
 		*q = *p;
 	if (!strcmp(based_on->bas_terminator, ";"))
@@ -738,8 +738,8 @@ static void gen_blob_close( const act* action, USHORT column)
 	else
 		blob = (blb*) action->act_object;
 
-	const TEXT* command = (action->act_type == ACT_blob_cancel) ? "CANCEL" :
-                                                                  "CLOSE";
+	const TEXT* command = (action->act_type == ACT_blob_cancel) ?
+		"CANCEL" : "CLOSE";
 	printa(column, "interbase.%s_BLOB (%s isc_%d);",
 		   command, status_vector(action), blob->blb_ident);
 
@@ -1392,7 +1392,6 @@ static void gen_dyn_describe(const act* action,
 
 static void gen_dyn_execute( const act* action, int column)
 {
-	TEXT s[64];
 	gpre_req* request;
 	gpre_req req_const;
 
@@ -1414,27 +1413,27 @@ static void gen_dyn_execute( const act* action, int column)
 		column += INDENT;
 	}
 
+	TEXT s[64];
 	if (statement->dyn_sqlda2)
 		printa(column,
 			   "interbase.embed_dsql_execute2 (isc_status, %s%s, %s, %d, %s'address);",
 			   gpreGlob.ada_package, transaction,
 			   make_name(s, statement->dyn_statement_name),
 			   gpreGlob.sw_sql_dialect,
-			   (statement->dyn_sqlda) ? gpreGlob.ada_null_address : statement->
-			   dyn_sqlda, statement->dyn_sqlda2);
+			   (statement->dyn_sqlda) ?
+					gpreGlob.ada_null_address : statement->dyn_sqlda,
+			   statement->dyn_sqlda2);
 	else if (statement->dyn_sqlda)
 		printa(column,
 			   "interbase.embed_dsql_execute (isc_status, %s%s, %s, %d, %s'address);",
-			   gpreGlob.ada_package, transaction, make_name(s,
-												   statement->
-												   dyn_statement_name),
+			   gpreGlob.ada_package, transaction,
+			   make_name(s, statement->dyn_statement_name),
 			   gpreGlob.sw_sql_dialect, statement->dyn_sqlda);
 	else
 		printa(column,
 			   "interbase.embed_dsql_execute (isc_status, %s%s, %s, %d);",
-			   gpreGlob.ada_package, transaction, make_name(s,
-												   statement->
-												   dyn_statement_name),
+			   gpreGlob.ada_package, transaction,
+			   make_name(s, statement->dyn_statement_name),
 			   gpreGlob.sw_sql_dialect);
 
 	if (gpreGlob.sw_auto) {
@@ -1548,7 +1547,6 @@ static void gen_dyn_insert( const act* action, int column)
 
 static void gen_dyn_open( const act* action, int column)
 {
-	TEXT s[64];
 	gpre_req* request;
 	gpre_req req_const;
 
@@ -1564,6 +1562,7 @@ static void gen_dyn_open( const act* action, int column)
 		request = NULL;
 	}
 
+	TEXT s[64];
 	make_name(s, statement->dyn_cursor_name);
 
 	if (gpreGlob.sw_auto) {
@@ -1598,7 +1597,6 @@ static void gen_dyn_open( const act* action, int column)
 
 static void gen_dyn_prepare( const act* action, int column)
 {
-	TEXT s[64];
 	gpre_req* request;
 	gpre_req req_const;
 
@@ -1622,6 +1620,7 @@ static void gen_dyn_prepare( const act* action, int column)
 		column += INDENT;
 	}
 
+	TEXT s[64];
 	if (statement->dyn_sqlda)
 		printa(column,
 			   "interbase.embed_dsql_prepare (isc_status, %s%s, %s%s, %s, %s'length(1), %s, %d, %s'address);",
@@ -1847,7 +1846,8 @@ static void gen_event_wait( const act* action, int column)
 
 	int ident = -1;
 	DBB database;
-	for (gpre_lls* stack_ptr = gpreGlob.events; stack_ptr; stack_ptr = stack_ptr->lls_next) {
+	for (gpre_lls* stack_ptr = gpreGlob.events; stack_ptr; stack_ptr = stack_ptr->lls_next)
+	{
 		const act* event_action = (const act*) stack_ptr->lls_object;
 		GPRE_NOD event_init = (GPRE_NOD) event_action->act_object;
 		gpre_sym* stack_name = (gpre_sym*) event_init->nod_arg[0];
@@ -2021,10 +2021,13 @@ static void gen_finish( const act* action, int column)
 			printa(column, "if %sgds_trans = 0 then", gpreGlob.ada_package);
 		for (db = gpreGlob.isc_databases; db; db = db->dbb_next) {
 			if ((action->act_error || (action->act_flags & ACT_sql))
-				&& (db != gpreGlob.isc_databases)) printa(column,
-												 "if %s%s /= 0 and isc_status(1) = 0 then",
-												 gpreGlob.ada_package,
-												 db->dbb_name->sym_string);
+				&& (db != gpreGlob.isc_databases))
+			{
+				printa(column,
+						 "if %s%s /= 0 and isc_status(1) = 0 then",
+						 gpreGlob.ada_package,
+						 db->dbb_name->sym_string);
+			}
 			else
 				printa(column, "if %s%s /= 0 then", gpreGlob.ada_package,
 					   db->dbb_name->sym_string);
@@ -3072,15 +3075,13 @@ static void gen_start( const act* action, gpre_port* port, int column)
 
 static void gen_store( const act* action, int column)
 {
-	TEXT name[64];
-
 	gpre_req* request = action->act_request;
 	gen_compile(action, column);
 	if (action->act_error || (action->act_flags & ACT_sql))
 		make_ok_test(action, request, column);
 
 //  Initialize any blob fields 
-
+	TEXT name[64];
 	const gpre_port* port = request->req_primary;
 	for (const ref* reference = port->por_references; reference;
 		 reference = reference->ref_next) 
@@ -3142,7 +3143,7 @@ static void gen_t_start( const act* action, int column)
 	printa(column, "interbase.start_multiple (%s %s%s, %d, isc_teb'address);",
 		   status_vector(action),
 		   gpreGlob.ada_package,
-		   (trans->tra_handle) ? (SCHAR *) trans->tra_handle : "gds_trans",
+		   (trans->tra_handle) ? (const char*) trans->tra_handle : "gds_trans",
 		   trans->tra_db_count);
 
 	set_sqlcode(action, column);
@@ -3197,16 +3198,16 @@ static void gen_trans( const act* action, int column)
 		printa(column, "interbase.COMMIT_RETAINING (%s %s%s);",
 			   status_vector(action),
 			   gpreGlob.ada_package,
-			   (action->act_object) ? (const TEXT*) action->
-			   act_object : "gds_trans");
+			   (action->act_object) ?
+			   		(const TEXT*) action->act_object : "gds_trans");
 	else
 		printa(column, "interbase.%s_TRANSACTION (%s %s%s);",
-			   (action->act_type ==
-				ACT_commit) ? "COMMIT" : (action->act_type ==
-										  ACT_rollback) ? "ROLLBACK" :
-			   "PREPARE", status_vector(action), gpreGlob.ada_package,
-			   (action->act_object) ? (const TEXT*) action->
-			   act_object : "gds_trans");
+			   (action->act_type == ACT_commit) ?
+			   		"COMMIT" : (action->act_type == ACT_rollback) ?
+					   "ROLLBACK" : "PREPARE",
+			   status_vector(action), gpreGlob.ada_package,
+			   (action->act_object) ?
+			   		(const TEXT*) action->act_object : "gds_trans");
 
 	set_sqlcode(action, column);
 }

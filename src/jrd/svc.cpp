@@ -2284,9 +2284,9 @@ static void service_fork(TEXT* service_path, Service* service)
 			CloseHandle(my_output);
 			CloseHandle(pipe_input);
 			ERR_post(isc_sys_request, isc_arg_string,
-					 (my_output !=
-					  INVALID_HANDLE_VALUE) ? "CreatePipe" :
-					 "DuplicateHandle", SYS_ERR, status, 0);
+					 (my_output != INVALID_HANDLE_VALUE) ?
+					 	"CreatePipe" : "DuplicateHandle",
+					 SYS_ERR, status, 0);
 		}
 	}
 	else {

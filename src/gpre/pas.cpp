@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.45 2004-11-10 04:18:58 robocop Exp $
+//	$Id: pas.cpp,v 1.46 2004-12-16 03:02:33 robocop Exp $
 //
 
 #include "firebird.h"
@@ -797,8 +797,8 @@ static void gen_blob_close( const act* action, USHORT column)
 	else
 		blob = (blb*) action->act_object;
 
-	const TEXT* command = (action->act_type == ACT_blob_cancel) ? "CANCEL" :
-	                                                          "CLOSE";
+	const TEXT* command = (action->act_type == ACT_blob_cancel) ?
+		"CANCEL" : "CLOSE";
 	printa(column, "GDS__%s_BLOB (%s, gds__%d);",
 		   command, status_vector(action), blob->blb_ident);
 
@@ -1113,12 +1113,10 @@ static void gen_cursor_init( const act* action, int column)
 //  point, the handles are the user's responsibility 
 
 	if (action->act_request->
-		req_flags & (REQ_sql_blob_open | REQ_sql_blob_create)) printa(column,
-																	  "gds__%d := nil;",
-																	  action->
-																	  act_request->
-																	  req_blobs->
-																	  blb_ident);
+		req_flags & (REQ_sql_blob_open | REQ_sql_blob_create))
+			printa(column,
+					"gds__%d := nil;",
+					action->act_request->req_blobs->blb_ident);
 }
 
 
@@ -1525,10 +1523,9 @@ static void gen_dyn_describe(const act* action,
 							 int column,
 							 bool bind_flag)
 {
-	DYN statement;
 	TEXT s[64];
 
-	statement = (DYN) action->act_object;
+	dyn* statement = (DYN) action->act_object;
 	printa(column,
 		   "isc_embed_dsql_describe%s (gds__status, %s, %d, %s %s);",
 		   bind_flag ? "_bind" : "",
@@ -1545,10 +1542,8 @@ static void gen_dyn_describe(const act* action,
 
 static void gen_dyn_execute( const act* action, int column)
 {
-	TEXT s[64];
 	gpre_req* request;
 	gpre_req req_const;
-	GPRE_NOD var_list;
 	int i;
 
 	DYN statement = (DYN) action->act_object;
@@ -1570,8 +1565,10 @@ static void gen_dyn_execute( const act* action, int column)
 		column -= INDENT;
 	}
 
+	TEXT s[64];
 	make_name(s, statement->dyn_cursor_name);
 
+	GPRE_NOD var_list;
 	if (var_list = statement->dyn_using) {
 		printa(column, "gds__sqlda.sqln = %s;", gpreGlob.sw_dyn_using);
 		printa(column, "gds__sqlda.sqld = %s;", gpreGlob.sw_dyn_using);
@@ -1772,9 +1769,8 @@ static void gen_dyn_prepare( const act* action, int column)
 
 	printa(column,
 		   "isc_embed_dsql_prepare (gds__status, %s, transaction, %s, %s(%s), %s, %d, %s %s);",
-		   database->dbb_name->sym_string, transaction, make_name(s,
-																  statement->
-																  dyn_statement_name),
+		   database->dbb_name->sym_string, transaction,
+		   make_name(s, statement->dyn_statement_name),
 		   SIZEOF, statement->dyn_string, statement->dyn_string,
 		   gpreGlob.sw_sql_dialect, REF_PAR,
 		   (statement->dyn_sqlda) ? statement->dyn_sqlda : "gds__null^");
@@ -3272,16 +3268,16 @@ static void gen_trans( const act* action, int column)
 	if (action->act_type == ACT_commit_retain_context)
 		fprintf(gpreGlob.out_file, "GDS__COMMIT_RETAINING (%s, %s);",
 				   status_vector(action),
-				   (action->act_object) ? (const TEXT*) action->
-				   act_object : "gds__trans");
+				   (action->act_object) ?
+				   		(const TEXT*) action->act_object : "gds__trans");
 	else
 		fprintf(gpreGlob.out_file, "GDS__%s_TRANSACTION (%s, %s);",
-				   (action->act_type ==
-					ACT_commit) ? "COMMIT" : (action->act_type ==
-											  ACT_rollback) ? "ROLLBACK" :
-				   "PREPARE", status_vector(action),
-				   (action->act_object) ? (const TEXT*) action->
-				   act_object : "gds__trans");
+				(action->act_type == ACT_commit) ?
+					"COMMIT" : (action->act_type == ACT_rollback) ?
+						"ROLLBACK" : "PREPARE",
+				status_vector(action),
+				(action->act_object) ?
+				   		(const TEXT*) action->act_object : "gds__trans");
 
 	set_sqlcode(action, column);
 }
