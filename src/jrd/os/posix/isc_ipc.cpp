@@ -36,7 +36,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.7 2003-11-11 12:17:35 brodsom Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.8 2004-03-08 02:06:30 skidder Exp $ */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -91,7 +91,7 @@ typedef struct sig {
 	int sig_signal;
 	union {
 		FPTR_VOID_PTR user;
-		void (*client) (int, siginfo_t*, void*);
+		void (*client) (int);
 		FPTR_INT_VOID_PTR informs;
 		FPTR_VOID untyped;
 	} sig_routine;
@@ -130,9 +130,7 @@ static void isc_signal2(int signal, FPTR_VOID handler, void* arg, ULONG);
 static SLONG overflow_handler(void* arg);
 static SIG que_signal(int signal, FPTR_VOID handler, void* arg, int flags);
 
-static void CLIB_ROUTINE signal_handler(int number,
-										siginfo_t* info,
-										void* pointer);
+static void CLIB_ROUTINE signal_handler(int number);
 
 #ifndef SIG_HOLD
 #define SIG_HOLD	SIG_DFL
@@ -233,7 +231,6 @@ void ISC_exit(void)
 }
 
 
-#ifdef UNIX
 int ISC_kill(SLONG pid, SLONG signal_number)
 {
 /**************************************
@@ -296,7 +293,6 @@ int ISC_kill(SLONG pid, SLONG signal_number)
 
 	return 0;
 }
-#endif
 
 
 void API_ROUTINE ISC_signal(int signal_number, FPTR_VOID_PTR handler, void* arg)
@@ -353,24 +349,26 @@ static void isc_signal2(
 	if (!sig) {
 		struct sigaction act, oact;
 
-		act.sa_sigaction = signal_handler;
-		act.sa_flags = SA_RESTART | SA_SIGINFO;
+		act.sa_handler = signal_handler;
+		act.sa_flags = SA_RESTART;
 		sigemptyset(&act.sa_mask);
 		sigaddset(&act.sa_mask, signal_number);
 		sigaction(signal_number, &act, &oact);
 
-		if ((oact.sa_flags & SA_SIGINFO &&
-			 oact.sa_sigaction != signal_handler) ||
+		if (oact.sa_handler != signal_handler ||
 			(!(oact.sa_flags & SA_SIGINFO) &&
 			 oact.sa_handler != SIG_DFL &&
 			 oact.sa_handler != SIG_HOLD &&
 			 oact.sa_handler != SIG_IGN ) 
 		   )
 		{
-			que_signal(signal_number, 
-				(oact.sa_flags & SA_SIGINFO) ? 
-					reinterpret_cast<FPTR_VOID>(oact.sa_sigaction) : 
-					reinterpret_cast<FPTR_VOID>(oact.sa_handler), 
+#ifdef SA_SIGINFO
+			// Do not queue user handlers requesting information.
+			// There is no easy and portable way to support them.
+			// Either Firebird or application should be adjusted to use another signal
+			if (!(oact.sa_flags & SA_SIGINFO))
+#endif
+			que_signal(signal_number, reinterpret_cast<FPTR_VOID>(oact.sa_handler), 
 				NULL, SIG_client);
 		}
 	}
@@ -553,9 +551,7 @@ static SIG que_signal(
 }
 
 
-static void CLIB_ROUTINE signal_handler(int number,
-										siginfo_t *info,
-										void *pointer)
+static void CLIB_ROUTINE signal_handler(int number)
 {
 /**************************************
  *
@@ -572,7 +568,7 @@ static void CLIB_ROUTINE signal_handler(int number,
 	for (SIG sig = signals; sig; sig = sig->sig_next)
 		if (sig->sig_signal == number)
 			if (sig->sig_flags & SIG_client)
-				(*sig->sig_routine.client)(number, info, pointer);
+				(*sig->sig_routine.client)(number);
 			else if (sig->sig_flags & SIG_informs) {
 				/* Routine will tell us whether to chain the signal to other handlers */
 				if ((*sig->sig_routine.informs)(sig->sig_arg) == SIG_informs_stop)
