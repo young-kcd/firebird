@@ -3984,7 +3984,6 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 				}
 			}
 
-
 			// put out the final parenthesis for the join 
 
 			if (--plan_length < 0)
@@ -4031,7 +4030,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 				*explain == isc_info_rsb_indexed)
 			{
 				if (!get_rsb_item(&explain_length, &explain, &plan_length,
-								  &plan, &join_count, level_ptr))
+								  &plan, parent_join_count, level_ptr))
 				{
 					return false;
 				}
