@@ -1955,7 +1955,7 @@ STATUS GDS_DSQL_FETCH(STATUS * user_status,
 			enqueue_receive(port, batch_dsql_fetch, rdb, (void *) statement,
 							NULL);
 
-			assert(statement->rsr_rows_pending > 0
+			fb_assert(statement->rsr_rows_pending > 0
 				   || (!statement->rsr_select_format));
 		}
 
@@ -1964,7 +1964,7 @@ STATUS GDS_DSQL_FETCH(STATUS * user_status,
 
 		/* We've either got data, or some is on the way, or we have an error, or we have EOF */
 
-		assert(statement->rsr_msgs_waiting || (statement->rsr_rows_pending > 0)
+		fb_assert(statement->rsr_msgs_waiting || (statement->rsr_rows_pending > 0)
 			   || statement->rsr_status_vector[1]
 			   || statement->rsr_flags & (RSR_eof));
 
@@ -3428,7 +3428,7 @@ STATUS GDS_RECEIVE(STATUS * user_status,
 
 		/* We've either got data, or some is on the way, or we have an error */
 
-		assert(message->msg_address || (tail->rrq_rows_pending > 0)
+		fb_assert(message->msg_address || (tail->rrq_rows_pending > 0)
 			   || request->rrq_status_vector[1]);
 
 		while (!message->msg_address && !request->rrq_status_vector[1])
@@ -4713,8 +4713,8 @@ static void add_other_params( PORT port, UCHAR * dpb_or_spb, USHORT * length)
  *	the passed in dpb or spb.
  *
  **************************************/
-	assert(isc_dpb_dummy_packet_interval == isc_spb_dummy_packet_interval);
-	assert(isc_dpb_version1 == isc_spb_version1);
+	fb_assert(isc_dpb_dummy_packet_interval == isc_spb_dummy_packet_interval);
+	fb_assert(isc_dpb_version1 == isc_spb_version1);
 
 	if (port->port_flags & PORT_dummy_pckt_set) {
 		if (*length == 0)
@@ -5065,17 +5065,17 @@ static BOOLEAN batch_dsql_fetch(trdb*	trdb,
  *
  **************************************/
 
-	assert(port);
-	assert(que);
-	assert(user_status);
+	fb_assert(port);
+	fb_assert(que);
+	fb_assert(user_status);
 
-	assert(que->rmtque_function == batch_dsql_fetch);
+	fb_assert(que->rmtque_function == batch_dsql_fetch);
 
 	RDB     rdb       = que->rmtque_rdb;
 	RSR     statement = (RSR) que->rmtque_parm;
 	PACKET* packet    = &rdb->rdb_packet;
 
-	assert(port == rdb->rdb_port);
+	fb_assert(port == rdb->rdb_port);
 
 /* Queue errors within the batched request */
 
@@ -5224,10 +5224,10 @@ static BOOLEAN batch_gds_receive(trdb*		trdb,
  *
  **************************************/
 
-	assert(port);
-	assert(que);
-	assert(user_status);
-	assert(que->rmtque_function == batch_gds_receive);
+	fb_assert(port);
+	fb_assert(que);
+	fb_assert(user_status);
+	fb_assert(que->rmtque_function == batch_gds_receive);
 
 	RDB rdb = que->rmtque_rdb;
 	RRQ request = reinterpret_cast<RRQ>(que->rmtque_parm);
@@ -5235,7 +5235,7 @@ static BOOLEAN batch_gds_receive(trdb*		trdb,
 		reinterpret_cast<rrq::rrq_repeat*>(que->rmtque_message);
 	PACKET *packet = &rdb->rdb_packet;
 
-	assert(port == rdb->rdb_port);
+	fb_assert(port == rdb->rdb_port);
 	
 	// Queue errors within the batched request
 
@@ -5402,7 +5402,7 @@ static BOOLEAN check_response( RDB rdb, PACKET * packet)
 		case isc_arg_warning:
 		case gds_arg_gds:
 			if (port->port_protocol < PROTOCOL_VERSION10) {
-				assert(vec == gds_arg_gds);
+				fb_assert(vec == gds_arg_gds);
 				*vector = gds__encode(*vector, 0);
 			}
 			else
@@ -6060,7 +6060,7 @@ SCHAR * recv_items, USHORT buffer_length, SCHAR * buffer)
 
 /* Assume the result will be successful */
 
-	assert(user_status == rdb->rdb_status_vector);
+	fb_assert(user_status == rdb->rdb_status_vector);
 	user_status[0] = gds_arg_gds;
 	user_status[1] = FB_SUCCESS;
 	user_status[2] = gds_arg_end;
@@ -7318,7 +7318,7 @@ static STATUS svcstart(STATUS*	user_status,
 
 /* Assume the result will be successful */
 
-	assert(user_status == rdb->rdb_status_vector);
+	fb_assert(user_status == rdb->rdb_status_vector);
 	user_status[0] = gds_arg_gds;
 	user_status[1] = FB_SUCCESS;
 	user_status[2] = gds_arg_end;
