@@ -21,9 +21,13 @@
  * Contributor(s): ______________________________________.
  * Added TCP_NO_DELAY option for superserver on Linux
  * FSG 16.03.2001 
+ *
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
+ *
  */
 /*
-$Id: inet_server.cpp,v 1.12 2002-10-24 09:01:31 eku Exp $
+$Id: inet_server.cpp,v 1.13 2002-10-29 03:17:45 seanleyne Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -131,7 +135,7 @@ $Id: inet_server.cpp,v 1.12 2002-10-24 09:01:31 eku Exp $
 #ifndef NFDBITS
 #define NFDBITS		(sizeof(SLONG) * NBBY)
 
-#if !(defined NETWARE_386 || defined DECOSF || defined DARWIN)
+#if !(defined NETWARE_386 || defined DARWIN)
 #define	FD_SET(n, p)	((p)->fds_bits[(n)/NFDBITS] |= (1 << ((n) % NFDBITS)))
 #define	FD_CLR(n, p)	((p)->fds_bits[(n)/NFDBITS] &= ~(1 << ((n) % NFDBITS)))
 #define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1 << ((n) % NFDBITS)))

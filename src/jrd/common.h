@@ -40,10 +40,11 @@
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
  *
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
  *
  */
 /*
-$Id: common.h,v 1.40 2002-10-29 02:45:09 seanleyne Exp $
+$Id: common.h,v 1.41 2002-10-29 03:17:44 seanleyne Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -719,7 +720,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 
 #if (defined(__osf__) && defined(__alpha))
 #include <stddef.h>
-#define DECOSF
 #define NO_PYXIS
 #define KILLER_SIGNALS
 #define UNIX            1

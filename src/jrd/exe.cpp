@@ -32,9 +32,13 @@
  * 2002.09.28 Dmitry Yemanov: Reworked internal_info stuff, enhanced
  *                            exception handling in SPs/triggers,
  *                            implemented ROWS_AFFECTED system variable
+ *
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
+ *
  */
 /*
-$Id: exe.cpp,v 1.21 2002-10-19 09:05:37 dimitr Exp $
+$Id: exe.cpp,v 1.22 2002-10-29 03:17:44 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -169,10 +173,6 @@ static SLONG memory_count = 0;
 
 #if defined (HP10) && defined (SUPERSERVER)
 #define MAX_CLONES	110
-#endif
-
-#ifdef DECOSF
-#define MAX_CLONES	200
 #endif
 
 #ifndef MAX_CLONES

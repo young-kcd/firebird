@@ -27,10 +27,11 @@
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
  *
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
  *
  */
 /*
-$Id: flu.cpp,v 1.13 2002-10-29 02:45:09 seanleyne Exp $
+$Id: flu.cpp,v 1.14 2002-10-29 03:17:44 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -85,9 +86,9 @@ static int condition_handler(int *, int *, int *);
 #endif
 
 
-/* SGI, DECOSF specific stuff */
+/* SGI specific stuff */
 
-#if (defined SOLARIS || defined sgi || defined DECOSF || defined SCO_EV || defined linux || defined AIX_PPC || defined SINIXZ || defined FREEBSD)
+#if (defined SOLARIS || defined sgi || defined SCO_EV || defined linux || defined AIX_PPC || defined SINIXZ || defined FREEBSD)
 #include <dlfcn.h>
 #define DYNAMIC_SHARED_LIBRARIES
 #include <unistd.h>

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: license.h,v 1.21 2002-10-29 02:45:09 seanleyne Exp $
+ * $Id: license.h,v 1.22 2002-10-29 03:17:44 seanleyne Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -50,6 +50,7 @@
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "ALPHA_NT" port
  *
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
  *
  */
 
@@ -135,10 +136,6 @@
 #else
 #define FB_PLATFORM	"NP"
 #endif /* i386 */
-#endif
-
-#ifdef DECOSF
-#define	FB_PLATFORM	"AO"		/* Alpha OSF-1 */
 #endif
 
 #ifdef LINUX

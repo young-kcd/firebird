@@ -27,9 +27,12 @@
  *
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix/MIPS" port
  *
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
+ *
  */
 /*
-$Id: protocol.h,v 1.7 2002-10-28 05:19:49 seanleyne Exp $
+$Id: protocol.h,v 1.8 2002-10-29 03:17:45 seanleyne Exp $
 */
 #ifndef _REMOTE_PROTOCOL_H_
 #define _REMOTE_PROTOCOL_H_
@@ -131,10 +134,6 @@ typedef enum
 
 	arch_max		= 40	/* Keep this at the end */
 } P_ARCH;
-
-#ifdef DECOSF
-#define xdr_long		xdr_int
-#endif
 
 /* Protocol Types */
 

@@ -22,10 +22,12 @@
 //  Contributor(s): ______________________________________.
 //  TMN (Mike Nordell) 11.APR.2001 - Reduce compiler warnings
 //  
+// 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
+//
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.6 2002-09-24 12:57:07 eku Exp $
+//	$Id: c_cxx.cpp,v 1.7 2002-10-29 03:17:41 seanleyne Exp $
 //
 
 #include "firebird.h"
@@ -183,11 +185,6 @@ static TEXT *status_name;
 
 #ifndef GDS_INCLUDE
 #define GDS_INCLUDE	"<ibase.h>"
-#endif
-
-#ifdef DECOSF
-#define DCL_LONG	"int "
-#define DCL_QUAD	"long"
 #endif
 
 #ifndef DCL_LONG

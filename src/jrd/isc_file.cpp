@@ -31,6 +31,7 @@
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
  *
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
  *
  */
 
@@ -472,9 +473,7 @@ int ISC_analyze_nfs(TEXT * expanded_filename, TEXT * node_name)
 
 #ifndef ultrix
 #if (!defined AIX && !defined AIX_PPC)
-#ifndef DECOSF
 	MTAB_CLOSE(mtab);
-#endif
 #endif
 #endif
 
@@ -486,7 +485,7 @@ int ISC_analyze_nfs(TEXT * expanded_filename, TEXT * node_name)
 #endif
 #endif
 
-#if (defined AIX || defined AIX_PPC || defined DECOSF)
+#if (defined AIX || defined AIX_PPC)
 	if (temp)
 		gds__free(temp);
 #endif
@@ -1845,68 +1844,6 @@ static BOOLEAN get_mounts(
 		mount->mnt_node = mount->mnt_path;
 		mount->mnt_path = p;
 	}
-
-	return TRUE;
-}
-#endif
-
-
-#ifdef DECOSF
-#define GET_MOUNTS
-static BOOLEAN get_mounts(
-						  MNT * mount,
-						  TEXT * mnt_buffer, TEXT ** buffer, int *count)
-{
-/**************************************
- *
- *	g e t _ m o u n t s	( D E C O S F )
- *
- **************************************
- *
- * Functional description
- *	Get ALL mount points.
- *
- **************************************/
-	long bufsize;
-	TEXT *q;
-	struct statfs *fs;
-
-	if (!*buffer) {
-		/* The first time through, get the mount info from the system.
-		   First find out how much information there is, then allocate
-		   a buffer for it, and finally get it. */
-
-		bufsize = 0;
-		*count = getfsstat(0, bufsize, MNT_NOWAIT);
-		if (*count <= 0)
-			return FALSE;
-
-		bufsize = sizeof(struct statfs) * (SLONG) * count;
-		/* FREE: in get_mounts() */
-		if (!(*buffer = gds__alloc((SLONG) bufsize)) ||
-			(*count = getfsstat(*buffer, bufsize, MNT_NOWAIT)) <= 0)
-			return FALSE;		/* NOMEM: */
-	}
-
-	if (!(*count)--)
-		return FALSE;
-
-/* Include non-NFS (local) mounts - some may be longer than
-   NFS mount points */
-
-	fs = &((struct statfs *) *buffer)[*count];
-	mount->mnt_node = mnt_buffer;
-	q = fs->f_mntfromname;
-	while (*q && *q != ':')
-		*mnt_buffer++ = *q++;
-	*mnt_buffer++ = 0;
-	if (*q != ':')
-		mount->mnt_node = NULL;
-	if (*q)
-		q++;
-	mount->mnt_path = mnt_buffer;
-	while (*mnt_buffer++ = *q++);
-	mount->mnt_mount = fs->f_mntonname;
 
 	return TRUE;
 }

@@ -30,6 +30,8 @@
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
  *
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
  *
  */
 
@@ -91,10 +93,6 @@
 
 #ifdef SINIXZ
 #define SEMAPHORES      25
-#endif
-
-#ifdef DECOSF
-#define SEMAPHORES      16
 #endif
 
 #ifndef SEMAPHORES

@@ -19,9 +19,12 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
+ *
  */
 /*
-$Id: btr.h,v 1.2 2001-12-24 02:50:50 tamlin Exp $
+$Id: btr.h,v 1.3 2002-10-29 03:17:43 seanleyne Exp $
 */
 
 #ifndef _JRD_BTR_H_
@@ -104,11 +107,7 @@ typedef struct idx {
 
 /* Macro to locate the next IDX block */
 
-#ifndef DECOSF
 #define NEXT_IDX(buffer,count)	(IDX*) (buffer + count)
-#else
-#define NEXT_IDX(buffer,count)	(IDX*) FB_ALIGN((U_IPTR) (buffer + count), ALIGNMENT)
-#endif
 
 
 /* Index insertion block -- parameter block for index insertions */

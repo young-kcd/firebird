@@ -19,6 +19,10 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
+ *
  */
 
 #ifndef _JRD_ALIGN_H_
@@ -94,13 +98,8 @@ static CONST USHORT type_alignments[DTYPE_TYPE_MAX] = {
 	sizeof(GDS_DATE),			/* dtype_sql_date */
 	sizeof(GDS_TIME),			/* dtype_sql_time */
 	sizeof(GDS_DATE),			/* dtype_timestamp */
-#ifndef DECOSF
 	sizeof(SLONG),				/* dtype_blob */
 	sizeof(SLONG),				/* dtype_array */
-#else
-	sizeof(IPTR),				/* dtype_blob */
-	sizeof(IPTR),				/* dtype_array */
-#endif
 	sizeof(SINT64)				/* dtype_int64 */
 };
 

@@ -26,10 +26,11 @@
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
  *
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
  *
  */
 /*
-$Id: y-valve.cpp,v 1.10 2002-10-29 02:59:56 seanleyne Exp $
+$Id: y-valve.cpp,v 1.11 2002-10-29 03:17:44 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -506,7 +507,7 @@ static CONST_IMAGE IMAGE images[] =
 #endif
 
 #if (defined UNIX) && \
-    !(defined SUPERCLIENT || defined SUPERSERVER || defined DECOSF || defined linux || defined FREEBSD || defined NETBSD || defined AIX_PPC || defined DARWIN /* platforms without a V3 bridge */)
+    !(defined SUPERCLIENT || defined SUPERSERVER || defined linux || defined FREEBSD || defined NETBSD || defined AIX_PPC || defined DARWIN /* platforms without a V3 bridge */)
 #ifndef PIPE_SERVER_YVALUE
 #define PIPE_BRIDGE_TO_V3
 #endif

@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
+ *
  */
 
 #ifndef JRD_BLB_H
@@ -33,20 +36,11 @@
    reliably distinguished by a zero or non-zero relation id. */
 
 typedef struct bid {
-#ifndef DECOSF
 	ULONG bid_relation_id;		/* Relation id (or null) */
 	union {
 		class blb *bid_blob;	/* Pointer to blob block */
 		ULONG bid_number;		/* Record number */
 	} bid_stuff;
-#else
-	union {
-		ULONG bid_blob;			/* Low end of pointer to blob block */
-		ULONG bid_number;		/* Record number */
-	} bid_stuff;
-	USHORT bid_blob2;			/* High end of pointer to blob block */
-	USHORT bid_relation_id;		/* Relation id (or null) */
-#endif
 } *BID;
 
 /* Your basic blob block. */

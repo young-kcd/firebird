@@ -20,7 +20,7 @@
  *
  */
 /*
-$Id: align.h,v 1.2 2002-10-28 05:19:49 seanleyne Exp $
+$Id: align.h,v 1.3 2002-10-29 03:17:45 seanleyne Exp $
 */
 
 #ifdef VMS
@@ -45,15 +45,7 @@ $Id: align.h,v 1.2 2002-10-28 05:19:49 seanleyne Exp $
 #define FB_ALIGN(n,b)          ((n + b - 1) & ~(b - 1))
 #endif
  
-#ifdef __m88k__
-#define FB_ALIGN(n,b)          ((n + b - 1) & ~(b - 1))
-#endif
- 
 #if (defined __osf__ && defined __alpha)
-#define FB_ALIGN(n,b)          ((n + b - 1) & ~(b - 1))
-#endif
-
-#ifdef mpexl
 #define FB_ALIGN(n,b)          ((n + b - 1) & ~(b - 1))
 #endif
 

@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
+ *
  */
 
 #ifndef JRD_JRD_H
@@ -936,8 +939,7 @@ typedef struct ihndl
 
 /* RITTER - changed HP10 to HPUX in the expression below */
 #ifdef MULTI_THREAD
-#if (defined DECOSF || defined NETWARE_386 || \
-	defined SOLARIS_MT || defined WIN_NT || \
+#if (defined NETWARE_386 || defined SOLARIS_MT || defined WIN_NT || \
 	defined HPUX || defined LINUX || defined DARWIN || defined FREEBSD )
 #define PLATFORM_GET_THREAD_DATA ((TDBB) THD_get_specific())
 #endif

@@ -22,6 +22,9 @@
  *
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
  *
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
+ *
  */
 
 #include "firebird.h"
@@ -73,10 +76,6 @@
 #include "../remote/xnet_proto.h"
 #endif
 #include "../remote/spxnet32_proto.h"
-#endif
-
-#if (defined DECOSF)
-#include "../remote/dnet_proto.h"
 #endif
 
 #ifdef VMS
@@ -4823,10 +4822,6 @@ static PORT analyze(TEXT*	file_name,
 /* Analyze the file name to see if a remote connection is required.  If not,
    quietly (sic) return. */
 
-#if (defined DECOSF)
-	port = DNET_analyze(file_name, file_length, status_vector, uv_flag);
-#endif
-
 #ifdef VMS
 	port = DECNET_analyze(file_name, file_length, status_vector, uv_flag);
 #endif
@@ -5009,10 +5004,6 @@ TEXT * user_string, USHORT uv_flag, SCHAR * dpb, SSHORT dpb_length)
 
 /* Analyze the service name to see if a remote connection is required.  If not,
    quietly (sic) return. */
-
-#if (defined DECOSF)
-	port = DNET_analyze(service_name, service_length, status_vector, uv_flag);
-#endif
 
 #ifdef VMS
 	port =

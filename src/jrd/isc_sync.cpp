@@ -30,6 +30,7 @@
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "M88K" port
  *
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
  *
  */
 
@@ -200,8 +201,7 @@ union semun {
 };
 #endif
 
-#if !(defined hpux || defined DECOSF || defined SOLARIS || \
-      defined linux || defined FREEBSD || defined NETBSD || defined SINIXZ)
+#if !(defined hpux || defined SOLARIS || defined linux || defined FREEBSD || defined NETBSD || defined SINIXZ)
 extern SLONG ftok();
 #endif
 #endif
@@ -2322,24 +2322,11 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 	}
 
 
-#ifdef DECOSF
-/* Try to get an exclusive lock on the lock file.  If we succeed,
-   then try to set the length of the file.  Otherwise the mmap call
-   that follows will fail. */
-
-	excl_flag = flock(fd, LOCK_EX | LOCK_NB);
-	if (!excl_flag && init_routine && trunc_flag)
-		ftruncate(fd, length);
-#endif
-
 	address =
 		(UCHAR *) mmap(0, length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
 	if ((U_IPTR) address == -1) {
 		error(status_vector, "mmap", errno);
-#ifdef DECOSF
-		flock(fd, LOCK_UN);
-#endif
 		close(fd);
 #ifdef HAVE_FLOCK
 		/* unlock init file */
@@ -2363,9 +2350,6 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 		(semid =
 		 init_semaphores(status_vector, key,
 						 shmem_data->sh_mem_semaphores)) < 0) {
-#ifdef DECOSF
-		flock(fd, LOCK_UN);
-#endif
 		close(fd);
 #ifdef HAVE_FLOCK
 		/* unlock init file */
@@ -2397,11 +2381,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
    fail if somebody else has the exclusive lock */
 
 #ifdef HAVE_FLOCK
-#ifndef DECOSF
 	if (!flock(fd, LOCK_EX | LOCK_NB))
-#else
-	if (!excl_flag)
-#endif
 	{
 		if (!init_routine) {
 			/* unlock both files */

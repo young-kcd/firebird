@@ -31,6 +31,7 @@
  *
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
  *
  */
 
@@ -167,10 +168,6 @@ static BOOLEAN find_type(SLONG, WIN *, PAG *, USHORT, USHORT, UCHAR **,
 
 #ifdef NETWARE_386
 #define CLASS		8
-#endif
-
-#ifdef DECOSF
-#define CLASS		15
 #endif
 
 #ifdef SINIXZ

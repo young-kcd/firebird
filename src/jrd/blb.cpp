@@ -27,12 +27,13 @@
  * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
  *                         conditionals, as the engine now fully supports
  *                         readonly databases.
- * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
- *                         conditionals, as the engine now fully supports
- *                         readonly databases.
+ *
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
+ *
  */
 /*
-$Id: blb.cpp,v 1.11 2002-09-26 09:26:39 eku Exp $
+$Id: blb.cpp,v 1.12 2002-10-29 03:17:43 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -259,11 +260,7 @@ BLB BLB_create2(TDBB tdbb,
 
 /* Format blob id and return blob handle */
 
-#ifndef DECOSF
 	blob_id->bid_stuff.bid_blob = blob;
-#else
-	*((BLB *) blob_id) = blob;
-#endif
 	blob_id->bid_relation_id = 0;
 
 	return blob;
@@ -877,15 +874,9 @@ void BLB_move(TDBB tdbb, DSC * from_desc, DSC * to_desc, NOD field)
    zeros, then the blob is null. */
 
 	if ((request->req_flags & req_null) || (!source->bid_relation_id &&
-#ifdef DECOSF
-											!source->bid_blob2 &&
-#endif
 											!source->bid_stuff.bid_blob)) {
 		SET_NULL(record, id);
 		destination->bid_relation_id = 0;
-#ifdef DECOSF
-		destination->bid_blob2 = 0;
-#endif
 		destination->bid_stuff.bid_number = 0;
 		return;
 	}
@@ -922,11 +913,7 @@ void BLB_move(TDBB tdbb, DSC * from_desc, DSC * to_desc, NOD field)
 			materialized_blob = TRUE;
 		else
 			for (blob = transaction->tra_blobs; blob; blob = blob->blb_next)
-#ifndef DECOSF
 				if (blob == source->bid_stuff.bid_blob)
-#else
-				if (blob == *((BLB *) source))
-#endif
 				{
 					materialized_blob = TRUE;
 					break;
@@ -947,9 +934,6 @@ void BLB_move(TDBB tdbb, DSC * from_desc, DSC * to_desc, NOD field)
 
 	blob->blb_relation = relation;
 	destination->bid_relation_id = relation->rel_id;
-#ifdef DECOSF
-	destination->bid_blob2 = 0;
-#endif
 	destination->bid_stuff.bid_number = DPM_store_blob(tdbb, blob, record);
 	if (materialized_blob) {
 		blob->blb_flags &= ~BLB_temporary;
@@ -1116,11 +1100,7 @@ BLB BLB_open2(TDBB tdbb,
 	}
 
 	if (!blob_id->bid_relation_id)
-#ifndef DECOSF
 		if (!blob_id->bid_stuff.bid_number)
-#else
-		if (!blob_id->bid_stuff.bid_number && !blob_id->bid_blob2)
-#endif
 		{
 			blob->blb_flags |= BLB_eof;
 			return blob;
@@ -1136,11 +1116,7 @@ BLB BLB_open2(TDBB tdbb,
 
 			/* Search the list of transaction blobs for a match */
 			for (new_ = transaction->tra_blobs; new_; new_ = new_->blb_next)
-#ifndef DECOSF
 				if (new_ == blob_id->bid_stuff.bid_blob)
-#else
-				if (new_ == *((BLB *) blob_id))
-#endif
 					break;
 
 			check_BID_validity(new_, tdbb);
@@ -1460,11 +1436,7 @@ void BLB_put_slice(	TDBB	tdbb,
 			(array->arr_blob)->blb_blob_id = *blob_id;
 		}
 	}
-#ifndef DECOSF
 	else if (blob_id->bid_stuff.bid_blob)
-#else
-	else if (*((BLB *) blob_id))
-#endif
 	{
 		array = find_array(transaction, blob_id);
 		if (!array) {
@@ -1508,11 +1480,7 @@ void BLB_put_slice(	TDBB	tdbb,
 		array->arr_effective_length = length;
 	}
 
-#ifndef DECOSF
 	blob_id->bid_stuff.bid_blob = (BLB) array;
-#else
-	*((BLB*) blob_id) = (BLB) array;
-#endif
 	blob_id->bid_relation_id = 0;
 }
 
@@ -1996,12 +1964,7 @@ static void delete_blob_id(
 
 /* If the blob is null, don't both to delete it.  Reasonable? */
 
-#ifndef DECOSF
 	if (!blob_id->bid_stuff.bid_number && !blob_id->bid_relation_id)
-#else
-	if (!blob_id->bid_stuff.bid_number && !blob_id->bid_relation_id
-		&& !blob_id->bid_blob2)
-#endif
 		return;
 
 	if (blob_id->bid_relation_id != relation->rel_id)
@@ -2037,11 +2000,7 @@ static ARR find_array(TRA transaction, BID blob_id)
 	ARR array;
 
 	for (array = transaction->tra_arrays; array; array = array->arr_next)
-#ifndef DECOSF
 		if (array == (ARR) blob_id->bid_stuff.bid_blob)
-#else
-		if (array == *((ARR *) blob_id))
-#endif
 			break;
 
 	return array;
@@ -2201,17 +2160,9 @@ static void get_replay_blob(TDBB tdbb, BID blob_id)
 /* search the linked list for the old blob id */
 
 	for (map_ptr = dbb->dbb_blob_map; map_ptr; map_ptr = map_ptr->map_next) {
-#ifndef DECOSF
 		if (blob_id->bid_stuff.bid_blob == map_ptr->map_old_blob)
-#else
-		if (*((BLB *) blob_id) == map_ptr->map_old_blob)
-#endif
 		{
-#ifndef DECOSF
 			blob_id->bid_stuff.bid_blob = map_ptr->map_new_blob;
-#else
-			*((BLB *) blob_id) = map_ptr->map_new_blob;
-#endif
 			break;
 		}
 	}
