@@ -498,7 +498,7 @@ TEXTTYPE_ENTRY(NEXT_c0_init)
 #define CP1251_UPPER_EX4 0xB2	// ²
 #define CP1251_LOWER_EX4 0xB3	// ³
 
-static inline UCHAR CP1251_UPPER(UCHAR ch)
+static __inline UCHAR CP1251_UPPER(UCHAR ch)
 {
 	UCHAR res;
 
@@ -537,7 +537,7 @@ static inline UCHAR CP1251_UPPER(UCHAR ch)
 	return res;
 }
 
-static inline UCHAR CP1251_LOWER(UCHAR ch)
+static __inline UCHAR CP1251_LOWER(UCHAR ch)
 {
 	UCHAR res;
 
