@@ -259,4 +259,3 @@
 #define IIF 515
 #define SCALAR_ARRAY 516
 #define CROSS 517
-#define EQUIV 518

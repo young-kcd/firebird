@@ -507,14 +507,13 @@ static LexerState lex;
 %token IIF
 %token SCALAR_ARRAY
 %token CROSS
-%token EQUIV
 
 /* precedence declarations for expression evaluation */
 
 %left	OR
 %left	AND
 %left	NOT
-%left	'=' '<' '>' LIKE EQL NEQ GTR LSS GEQ LEQ NOT_GTR NOT_LSS EQUIV
+%left	'=' '<' '>' LIKE EQL NEQ GTR LSS GEQ LEQ NOT_GTR NOT_LSS
 %left	'+' '-'
 %left	'*' '/'
 %left	CONCATENATE
@@ -3443,8 +3442,9 @@ simple_search_condition : predicate
 		| NOT simple_search_condition
 			{ $$ = make_node (nod_not, 1, $2); }
 		;
-		
+
 predicate : comparison_predicate
+		| distinct_predicate
 		| between_predicate
 		| like_predicate
 		| in_predicate
@@ -3474,10 +3474,7 @@ comparison_predicate : value '=' value
 			{ $$ = make_node (nod_geq, 2, $1, $3); }
 		| value NEQ value
 			{ $$ = make_node (nod_neq, 2, $1, $3); }
-		| value EQUIV value
-			{ $$ = make_node (nod_equiv, 2, $1, $3); }
 		;
-
 
 /* quantified comparisons */
 
@@ -3521,6 +3518,12 @@ some	: SOME
 
 
 /* other predicates */
+
+distinct_predicate : value IS DISTINCT FROM value
+		{ $$ = make_node (nod_not, 1, make_node (nod_equiv, 2, $1, $5)); }
+	| value IS NOT DISTINCT FROM value
+		{ $$ = make_node (nod_equiv, 2, $1, $6); }
+	;
 
 between_predicate : value BETWEEN value AND value
 		{ $$ = make_node (nod_between, 3, $1, $3, $5); }
