@@ -112,6 +112,8 @@ static void notify_garbage_collector(thread_db*, record_param*);
 const int PREPARE_OK		= 0;
 const int PREPARE_CONFLICT	= 1;
 const int PREPARE_DELETE	= 2;
+const int PREPARE_LOCKERR	= 3;
+
 static int prepare_update(thread_db*, jrd_tra*, SLONG, record_param*, 
 						  record_param*, record_param*, PageStack&, bool);
 
@@ -2376,11 +2378,12 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, RecordSource* rsb,
 					org_rpb, &temp, 0, stack, true))
 		{
 			case PREPARE_CONFLICT:
-				// Do not spin wait if we have nowait transaction
-				if (transaction->tra_flags & TRA_nowait)
-					ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
 				org_rpb->rpb_stream_flags |= RPB_s_refetch;
 				continue;
+			case PREPARE_LOCKERR:
+				// We got some kind of locking error (deadlock, timeout or lock_conflict)
+				// Error details should be stuffed into status vector at this point
+				ERR_punt();
 			case PREPARE_DELETE:
 				return false;
 		}
@@ -4347,7 +4350,7 @@ static int prepare_update(	thread_db*		tdbb,
 					ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
 				}
 			case tra_active:
-				return PREPARE_CONFLICT;
+				return PREPARE_LOCKERR;
 
 			case tra_limbo:
 				ERR_post(isc_deadlock, isc_arg_gds, isc_trainlim, 0);
