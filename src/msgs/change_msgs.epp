@@ -67,10 +67,10 @@ int main( int argc, char **argv)
  *	Top level routine.  
  *
  **************************************/
-	SCHAR facility[20], text[256], module[32], routine[32];
+	char facility[20], text[256], module[32], routine[32];
 	UCHAR sql_class[32], sql_sub_class[32];
 	SCHAR input[200], yesno[100];
-	SCHAR symbol[30];
+	char symbol[30];
 	SCHAR nstring[32];
 	SSHORT count;
 	SSHORT sql_number;
@@ -162,9 +162,9 @@ int main( int argc, char **argv)
 						Y.FAC_CODE EQ X.FAC_CODE AND Y.NUMBER EQ msg_number;
 						MODIFY Y USING
 							if (module[0])
-								strcpy(Y.MODULE, (char*) module);
+								strcpy(Y.MODULE, module);
 							if (routine[0])
-								strcpy(Y.ROUTINE, (char*) routine);
+								strcpy(Y.ROUTINE, routine);
 							if (text[0])
 								while (!translate
 									   (text, Y.TEXT, sizeof(Y.TEXT))) {
@@ -174,7 +174,7 @@ int main( int argc, char **argv)
 									mustget(text);
 								}
 							if (symbol[0])
-								strcpy(Y.SYMBOL, (char*) symbol);
+								strcpy(Y.SYMBOL, symbol);
 						END_MODIFY;
 					END_FOR;
 
@@ -182,7 +182,7 @@ int main( int argc, char **argv)
 						Z.FAC_CODE EQ X.FAC_CODE AND Z.NUMBER EQ msg_number;
 						MODIFY Z USING
 							if (symbol[0])
-								strcpy(Z.GDS_SYMBOL, (char*) symbol);
+								strcpy(Z.GDS_SYMBOL, symbol);
 							if (sql_number != 0)
 								Z.SQL_CODE = sql_number;
 							if (sql_class[0])

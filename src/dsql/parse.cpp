@@ -5537,7 +5537,7 @@ static dsql_fld* make_field (dsql_nod* field_name)
 	{
 		dsql_fld* field =
 			FB_NEW_RPT(*tdsql->getDefaultPool(), sizeof (INTERNAL_FIELD_NAME)) dsql_fld;
-		strcpy (field->fld_name, (TEXT*) INTERNAL_FIELD_NAME);
+		strcpy (field->fld_name, INTERNAL_FIELD_NAME);
 		return field;
 	}
 	const dsql_str* string = (dsql_str*) field_name->nod_arg[1];

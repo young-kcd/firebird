@@ -494,7 +494,7 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
 
 // Start by seeing if symbol is already defined 
 
-	symbol = HSHD_lookup(request->req_dbb, (TEXT*) name, length, SYM_intlsym, 0);
+	symbol = HSHD_lookup(request->req_dbb, name, length, SYM_intlsym, 0);
 	for (; symbol; symbol = symbol->sym_homonym)
 		if ((symbol->sym_type == SYM_intlsym) &&
 			(((dsql_intlsym*) (symbol->sym_object))->intlsym_type ==
@@ -522,7 +522,7 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
 	    THREAD_ENTER();
 
         iname = FB_NEW_RPT(*dbb->dbb_pool, length) dsql_intlsym;
-        strcpy(iname->intlsym_name, (char*) name);
+        strcpy(iname->intlsym_name, name);
         iname->intlsym_type = DSQL_INTLSYM_charset;
         iname->intlsym_flags = 0;
         iname->intlsym_charset_id = X.RDB$CHARACTER_SET_ID;
@@ -925,7 +925,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
         dbb->dbb_functions = userFunc;
         */
 
-        strcpy((char*) userFunc->udf_name, (char*) name->str_data);
+        strcpy(userFunc->udf_name, (char*) name->str_data);
         return_arg = X.RDB$RETURN_ARGUMENT;
         userFunc->udf_arguments = 0;
 
@@ -1248,7 +1248,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
         procedure->prc_name = procedure->prc_data;
         procedure->prc_owner = procedure->prc_data + name->str_length + 1;
         strcpy(procedure->prc_name, (TEXT *) name->str_data);
-        strcpy(procedure->prc_owner, (TEXT *) X.RDB$OWNER_NAME);
+        strcpy(procedure->prc_owner, X.RDB$OWNER_NAME);
 
         THREAD_EXIT();
 
@@ -1295,7 +1295,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
             
             // get parameter information 
             
-            strcpy(parameter->fld_name, (char*) PR.RDB$PARAMETER_NAME);
+            strcpy(parameter->fld_name, PR.RDB$PARAMETER_NAME);
             parameter->fld_id = PR.RDB$PARAMETER_NUMBER;
             parameter->fld_length = RFR.RDB$FIELD_LENGTH;
             parameter->fld_scale = RFR.RDB$FIELD_SCALE;
@@ -1461,7 +1461,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
             relation->rel_name = relation->rel_data;
             relation->rel_owner = relation->rel_data + name->str_length + 1;
             strcpy(relation->rel_name, (TEXT *) name->str_data);
-            strcpy(relation->rel_owner, (TEXT *) X.RDB$OWNER_NAME);
+            strcpy(relation->rel_owner, X.RDB$OWNER_NAME);
             if (!(relation->rel_dbkey_length = X.RDB$DBKEY_LENGTH))
                 relation->rel_dbkey_length = 8;
             // CVC: let's see if this is a table or a view. 
@@ -1518,7 +1518,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
             
             // get field information 
             
-            strcpy(field->fld_name, (char*) RFR.RDB$FIELD_NAME);
+            strcpy(field->fld_name, RFR.RDB$FIELD_NAME);
             field->fld_id = RFR.RDB$FIELD_ID;
             field->fld_length = FLX.RDB$FIELD_LENGTH;
             field->fld_scale = FLX.RDB$FIELD_SCALE;
@@ -1573,7 +1573,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
             
             // get field information 
             
-            strcpy(field->fld_name, (char*) RFR.RDB$FIELD_NAME);
+            strcpy(field->fld_name, RFR.RDB$FIELD_NAME);
             field->fld_id = RFR.RDB$FIELD_ID;
             field->fld_length = FLX.RDB$FIELD_LENGTH;
             field->fld_scale = FLX.RDB$FIELD_SCALE;

@@ -67,7 +67,7 @@ static void add_trigger_msg(TRGMSG);
 static void add_type(TYP);
 static void add_user_privilege(USERPRIV);
 static void add_view(DUDLEY_REL);
-static void alloc_file_name(FIL *, UCHAR *);
+static void alloc_file_name(FIL*, const char*);
 static DUDLEY_FLD check_field(SYM, SYM);
 static bool check_function(SYM);
 static bool check_range(DUDLEY_FLD);
@@ -403,7 +403,7 @@ void EXE_drop_database( DBB dbb)
 	START_TRANSACTION;
 
 	FOR F IN RDB$FILES SORTED BY F.RDB$FILE_START
-		alloc_file_name(&dbb->dbb_files, (UCHAR*) F.RDB$FILE_NAME);
+		alloc_file_name(&dbb->dbb_files, F.RDB$FILE_NAME);
 	END_FOR;
 
 	COMMIT ON_ERROR DDL_db_error(gds_status, 26, NULL, NULL, NULL, NULL, NULL);
@@ -635,7 +635,7 @@ void EXE_fini( DBB dbb)
 		if (dudleyGlob.DDL_errors) {
 			if (dbb && (dbb->dbb_flags & DBB_create_database)) {
 				FOR F IN RDB$FILES WITH F.RDB$SHADOW_NUMBER NE 0
-					alloc_file_name(&dbb->dbb_files, (UCHAR*)F.RDB$FILE_NAME);
+					alloc_file_name(&dbb->dbb_files, F.RDB$FILE_NAME);
 				END_FOR;
 			}
 
@@ -1927,7 +1927,7 @@ static void add_view( DUDLEY_REL relation)
 }
 
 
-static void alloc_file_name( FIL * start_file, UCHAR * file_name)
+static void alloc_file_name( FIL* start_file, const char* file_name)
 {
 /**************************************
  *
@@ -1940,14 +1940,14 @@ static void alloc_file_name( FIL * start_file, UCHAR * file_name)
  *
  **************************************/
 	for (FIL temp = *start_file; temp; temp = temp->fil_next)
-		if (!strcmp(temp->fil_name->sym_name, (char*) file_name))
+		if (!strcmp(temp->fil_name->sym_name, file_name))
 			return;
 
 	FIL file = (FIL) DDL_alloc(sizeof(fil));
 	file->fil_next = *start_file;
 	*start_file = file;
-	SYM string = (SYM) DDL_alloc(SYM_LEN + strlen((char*) file_name));
-	strcpy(string->sym_name, (char*) file_name);
+	SYM string = (SYM) DDL_alloc(SYM_LEN + strlen(file_name));
+	strcpy(string->sym_name, file_name);
 	file->fil_name = string;
 }
 

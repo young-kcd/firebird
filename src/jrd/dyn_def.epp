@@ -1976,7 +1976,7 @@ void DYN_define_index(Global*		gbl,
 			while (seg_list.getCount() > 0) {
 				STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 					X IN RDB$INDEX_SEGMENTS
-                    strcpy((char*)X.RDB$INDEX_NAME, (char*)IDX.RDB$INDEX_NAME);
+                    strcpy(X.RDB$INDEX_NAME, IDX.RDB$INDEX_NAME);
 					TEXT *str = seg_list.pop();
 					strcpy(X.RDB$FIELD_NAME, str);
 					X.RDB$FIELD_POSITION = --fld_count;
@@ -2032,7 +2032,7 @@ void DYN_define_index(Global*		gbl,
 				   to handle a new index, assuming it is the right one */
 
 				fb_utils::exact_name_limit(Y.RDB$INDEX_NAME, sizeof(Y.RDB$INDEX_NAME));
-				if (strcmp((char*)index_name, (char*)Y.RDB$INDEX_NAME)) {
+				if (strcmp(index_name, Y.RDB$INDEX_NAME)) {
 					if (list_index >= 0)
 						found = false;
 					if (found) {
@@ -2040,7 +2040,7 @@ void DYN_define_index(Global*		gbl,
 						break;
 					}
 					list_index = field_list.getCount() - 1;
-					strcpy((char*)index_name, (char*)Y.RDB$INDEX_NAME);
+					strcpy(index_name, Y.RDB$INDEX_NAME);
 					found = true;
 				}
 
@@ -2067,10 +2067,10 @@ void DYN_define_index(Global*		gbl,
 				found = false;
 
 			if (found) {
-				strcpy((char*)IDX.RDB$FOREIGN_KEY, (char*)index_name);
+				strcpy(IDX.RDB$FOREIGN_KEY, index_name);
 				IDX.RDB$FOREIGN_KEY.NULL = FALSE;
 				if (referred_index_name != NULL)
-					strcpy(referred_index_name, (char*)index_name);
+					strcpy(referred_index_name, index_name);
 			}
 			else
 				DYN_error_punt(false, 18, NULL, NULL, NULL, NULL, NULL);

@@ -7047,8 +7047,8 @@ static dsql_fld* resolve_context( dsql_req* request, const dsql_str* qualifier,
 	if (isCheckConstraint && table_name) {
 		// If a qualifier is present and it's equal to the alias then we've already the right table-name
 		if (!(qualifier && !strcmp(reinterpret_cast<const char*>(qualifier->str_data), table_name))) {
-			if ((!strcmp(reinterpret_cast<const char*>(table_name), OLD_CONTEXT)) || 
-				(!strcmp(reinterpret_cast<const char*>(table_name), NEW_CONTEXT))) 
+			if ((!strcmp(table_name, OLD_CONTEXT)) ||
+				(!strcmp(table_name, NEW_CONTEXT)))
 			{
 				table_name = NULL;
 			}
