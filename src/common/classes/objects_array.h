@@ -44,7 +44,7 @@ namespace Firebird
 		private:
 			ObjectsArray *lst;
 			int pos;
-			iterator(ObjectsArray *l, int p) : pos(p), lst(l) {}
+			iterator(ObjectsArray *l, int p) : lst(l), pos(p){}
 		public:
 			iterator& operator++() {++pos; return (*this);}
 			iterator operator++(int) {iterator tmp = *this; ++pos; 
@@ -60,7 +60,7 @@ namespace Firebird
 				T* pointer = lst->getPointer(pos);
 				return *pointer;
 			}
-			operator!=(const iterator& v) const {return pos != v.pos;}
+			bool operator!=(const iterator& v) const {return pos != v.pos;}
 		};
 	public:
 		void insert(int index, const T& item) {

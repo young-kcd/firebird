@@ -34,7 +34,7 @@
  *    compatibility with Kylix
  * 
  *
- *  $Id: config_root.cpp,v 1.9 2004-02-08 18:47:47 skidder Exp $
+ *  $Id: config_root.cpp,v 1.10 2004-02-29 05:41:45 skidder Exp $
  */
 
 #include "firebird.h"
@@ -50,8 +50,6 @@
 #include "../jrd/os/path_utils.h"
 
 typedef Firebird::PathName string;
-
-static const char *CONFIG_FILE = "firebird.conf";
 
 /******************************************************************************
  *
@@ -111,23 +109,7 @@ static string getRootPathFromExePath()
 }
 #endif
 
-static string getRootPathFromEnvVar()
-{
-    const char* varPtr = getenv("FIREBIRD");
-
-    string rootpath;
-
-    if (varPtr != NULL) {
-        rootpath = varPtr;
-		if (rootpath[rootpath.length()-1] != PathUtils::dir_sep)
-			rootpath += PathUtils::dir_sep;
-    }
-
-    return rootpath;
-}
-
-
-ConfigRoot::ConfigRoot()
+void ConfigRoot::osConfigRoot()
 {
 #if defined SUPERSERVER || defined EMBEDDED
 	// Try getting the root path from the executable
@@ -137,23 +119,6 @@ ConfigRoot::ConfigRoot()
     }
 #endif
 
-    // Try getting the root path from environment variable
-    root_dir = getRootPathFromEnvVar();
-    if (root_dir.length() != 0) {
-        return;
-    }
-
     // As a last resort get it from the default install directory
     root_dir = string(FB_PREFIX) + PathUtils::dir_sep;    
-}
-
-const char *ConfigRoot::getRootDirectory() const
-{
-	return root_dir.c_str();
-}
-
-const char *ConfigRoot::getConfigFile() const
-{
-	static string file = root_dir + string(CONFIG_FILE);
-	return file.c_str();
 }

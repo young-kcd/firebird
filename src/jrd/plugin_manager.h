@@ -108,7 +108,7 @@ public:
 	friend class Plugin;
 	friend class iterator;
 	
-	explicit PluginManager(MemoryPool *p) : moduleList(0), pool(p), 
+	explicit PluginManager(MemoryPool *p) : pool(p), moduleList(0),
 		searchPaths(pool), ignoreModules(pool) {}
 	~PluginManager();
 

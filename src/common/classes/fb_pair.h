@@ -51,40 +51,41 @@ template<class parLeft, class parRight>
 	};
 
 template<class parLeft, class parRight>
-	inline bool __cdecl operator==(const LeftPair<parLeft, parRight>& v1,
+	inline bool operator==(const LeftPair<parLeft, parRight>& v1,
 		const LeftPair<parLeft, parRight>& v2)
 	{return (v1.first == v2.first && v1.second == v2.second); }
 
 template<class parLeft, class parRight>
-	inline bool __cdecl operator!=(const LeftPair<parLeft, parRight>& v1,
+	inline bool operator!=(const LeftPair<parLeft, parRight>& v1,
 		const LeftPair<parLeft, parRight>& v2)
 	{return (!(v1 == v2)); }
 
 template<class parLeft, class parRight>
-	inline bool __cdecl operator<(const LeftPair<parLeft, parRight>& v1,
+	inline bool operator<(const LeftPair<parLeft, parRight>& v1,
 		const LeftPair<parLeft, parRight>& v2)
 	{return (v1.first < v2.first ||
 		!(v2.first < v1.first) && v1.second < v2.second); }
 
 template<class parLeft, class parRight>
-	inline bool __cdecl operator>(const LeftPair<parLeft, parRight>& v1,
+	inline bool operator>(const LeftPair<parLeft, parRight>& v1,
 		const LeftPair<parLeft, parRight>& v2)
 	{return (v2 < v1); }
 
 template<class parLeft, class parRight>
-	inline bool __cdecl operator<=(const LeftPair<parLeft, parRight>& v1,
+	inline bool operator<=(const LeftPair<parLeft, parRight>& v1,
 		const LeftPair<parLeft, parRight>& v2)
 	{return (!(v2 < v1)); }
 
 template<class parLeft, class parRight>
-	inline bool __cdecl operator>=(const LeftPair<parLeft, parRight>& v1,
+	inline bool operator>=(const LeftPair<parLeft, parRight>& v1,
 		const LeftPair<parLeft, parRight>& v2)
 	{return (!(v1 < v2)); }
 
 template <typename Pair>
 	class FirstKey {
 	public:
-		static const Pair::first_type& 
+		typedef typename Pair::first_type Pair_first_type;
+		static const Pair_first_type& 
 			generate(void* sender, const Pair& Item) { return Item.first; }
 	};
 };
