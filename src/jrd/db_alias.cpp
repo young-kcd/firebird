@@ -27,6 +27,7 @@
 #include "../common/config/config.h"
 #include "../common/config/config_file.h"
 #include "../jrd/os/path_utils.h"
+#include "../jrd/gds_proto.h"
 
 typedef Firebird::PathName string;
 
