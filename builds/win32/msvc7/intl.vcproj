@@ -91,9 +91,11 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;WINDOWS_ONLY;SUPERCLIENT;WIN32;_X86_"
+				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile="..\..\..\temp\debug\intl/intl.pch"
@@ -205,6 +207,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\lc_iso8859_1.c">
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\lc_iso8859_13.c">
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\lc_iso8859_2.c">

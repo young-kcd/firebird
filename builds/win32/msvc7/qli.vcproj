@@ -20,9 +20,11 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32,_DEBUG,_CONSOLE,DEV_BUILD,SUPERCLIENT"
+				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile="..\..\..\temp\debug\qli/qli.pch"

@@ -77,9 +77,11 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="DEBUG,_DEBUG,_LIB,_WINDOWS,WIN32,DEV_BUILD,_X86_"
+				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile="..\..\..\temp\debug\dsql_server_cs/dsql_server_classic.pch"

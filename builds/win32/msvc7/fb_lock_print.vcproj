@@ -86,9 +86,11 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="_DEBUG,DEV_BUILD,_WINDOWS,CLIENT,SUPERCLIENT,WIN32,_X86_"
+				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile="..\..\..\temp\debug\fb_lock_print/fb_lock_print.pch"

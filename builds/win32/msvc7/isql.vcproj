@@ -20,9 +20,11 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="_DEBUG,_CONSOLE,SUPERCLIENT,DEV_BUILD,WIN32,_X86_"
+				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="5"
 				PrecompiledHeaderFile="..\..\..\temp\debug\isql/isql.pch"

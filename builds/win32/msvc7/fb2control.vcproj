@@ -93,9 +93,11 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="_DEBUG;_WINDOWS;WIN32;DEV_BUILD;_USRDLL;CPL_APPLET;WINVER=0x400"
+				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile=".\..\..\..\temp\debug\fb2control/fb2control.pch"
