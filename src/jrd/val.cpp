@@ -779,7 +779,7 @@ static RTN corrupt(TDBB tdbb, VDR control, USHORT err_code, REL relation, ...)
 	string = msg_table[err_code];
 
 	sprintf(s, "Database: %s\n\t",
-			tdbb->tdbb_database->dbb_filename->str_data);
+			tdbb->tdbb_attachment->att_filename->str_data);
 	for (p = s; *p; p++)
 		/* nothing */ ;
 	vsprintf(p, string, ptr);
@@ -1151,7 +1151,7 @@ static void walk_database(TDBB tdbb, VDR control)
 	if (VAL_debug_level)
 		ib_fprintf(ib_stdout,
 				   "walk_database: %s\nODS: %d.%d  (creation ods %d)\nPage size %d\n",
-				   dbb->dbb_filename->str_data, dbb->dbb_ods_version,
+				   dbb->dbb_attachment->att_filename->str_data, dbb->dbb_ods_version,
 				   dbb->dbb_minor_version, dbb->dbb_minor_original,
 				   dbb->dbb_page_size);
 #endif

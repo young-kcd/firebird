@@ -507,16 +507,17 @@ void DLL_EXPORT ERR_punt(void)
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 
-	TEXT* dbname;
+	UCHAR* dbname;
 
 	if (dbb && (dbb->dbb_flags & DBB_bugcheck))
 	{
 #ifndef GATEWAY
-		dbname = ((dbb->dbb_file) ? dbb->dbb_file->fil_string : NULL);
+		dbname = ((tdbb->tdbb_attachment->att_filename) ?
+			tdbb->tdbb_attachment->att_filename->str_data : NULL);
 #else
 		dbname = tdbb->tdbb_attachment->att_filename->str_data;
 #endif
-		gds__log_status(dbname, tdbb->tdbb_status_vector);
+		gds__log_status(reinterpret_cast<char*>(dbname), tdbb->tdbb_status_vector);
 	}
 
 #pragma FB_COMPILER_MESSAGE("FIXME! C functions can not throw! FIXME!")
