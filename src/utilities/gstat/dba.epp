@@ -530,22 +530,16 @@ int CLIB_ROUTINE main(int argc, char** argv)
 	service->svc_started();
 #endif
 
-/* ODS7 was not released as a shipping ODS and was replaced
- * by ODS 8 in version 4.0 of InterBase.  There will not be any
- * customer databases which have an ODS of 7 */
-
-	if (header->hdr_ods_version > ODS_VERSION ||
-		(header->hdr_ods_version < ODS_VERSION8 &&
-		 header->hdr_ods_version != ODS_VERSION6))
+	if (!ODS_SUPPORTED(header->hdr_ods_version))
 	{
 #ifdef SUPERSERVER
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
 								GSTAT_MSG_FAC, 3,
-								isc_arg_number, (void*)(IPTR)ODS_VERSION,
+								isc_arg_number, (void*)(IPTR)(ODS_VERSION | ODS_TYPE_CURRENT),
 								isc_arg_number, (void*)(IPTR)header->hdr_ods_version,
 								0, NULL, 0, NULL, 0, NULL);
 #endif
-		dba_error(3, (TEXT *)(IPTR) ODS_VERSION, (TEXT *)(IPTR) header->hdr_ods_version,
+		dba_error(3, (TEXT *)(IPTR) (ODS_VERSION | ODS_TYPE_CURRENT), (TEXT *)(IPTR) header->hdr_ods_version,
 				  0, 0, 0);		/* msg 3: Wrong ODS version, expected %d, encountered %d? */
 	}
 

@@ -660,10 +660,11 @@ static void dmp_header(const header_page* page)
 	const USHORT minor_version = page->hdr_ods_minor;
 
 	fprintf(dbg_file,
-			   "HEADER PAGE\t checksum %d\t generation %ld\n\tPage size: %d, version: %d.%d(%d), pages: %ld\n",
+			   "HEADER PAGE\t checksum %d\t generation %ld\n\tPage size: %d, version: %d.%d(%d) type %04x, pages: %ld\n",
 			   ((PAG) page)->pag_checksum, ((PAG) page)->pag_generation,
-			   page->hdr_page_size, page->hdr_ods_version, minor_version,
-			   page->hdr_ods_minor_original, page->hdr_PAGES);
+			   page->hdr_page_size, page->hdr_ods_version & ~ODS_TYPE_MASK, 
+			   minor_version, page->hdr_ods_minor_original, 
+			   page->hdr_ods_version & ODS_TYPE_MASK, page->hdr_PAGES);
 
 	struct tm time;
 	isc_decode_timestamp((GDS_TIMESTAMP *) page->hdr_creation_date, &time);

@@ -1301,15 +1301,7 @@ static bool raw_devices_validate_database (
 	if (hp->hdr_header.pag_type != pag_header /*|| hp->hdr_sequence*/)
 		goto quit;
 
-#ifdef ODS_8_TO_CURRENT
-	/* This Server understands ODS greater than 8 *ONLY* upto current major
-	 * ODS_VERSION defined in ods.h, Refuse connections to older or newer ODS's.
-	 */
-	if ((hp->hdr_ods_version < ODS_VERSION8)
-		|| (hp->hdr_ods_version > ODS_VERSION))
-#else
-	if (hp->hdr_ods_version != ODS_VERSION)
-#endif
+	if (!ODS_SUPPORTED(hp->hdr_ods_version))
 		goto quit;
 
 	if (hp->hdr_page_size < MIN_PAGE_SIZE || hp->hdr_page_size > MAX_PAGE_SIZE)

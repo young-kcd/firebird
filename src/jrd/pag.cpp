@@ -102,12 +102,6 @@ static bool find_type(SLONG, WIN*, pag**, USHORT, USHORT, UCHAR**,
 
 #define ERR_POST_IF_DATABASE_IS_READONLY(dbb)	{if (dbb->dbb_flags & DBB_read_only) ERR_post (isc_read_only_database, 0);}
 
-/*  This macro enables the ability of the engine to connect to databases
- *  from ODS 8 up to the latest.  If this macro is undefined, the engine
- *  only opens a database of the current ODS major version.
- */
-#define ODS_8_TO_CURRENT
-
 /* Class definitions
 
 	1		Apollo 68K, Dn 10K
@@ -391,7 +385,7 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
 /* The following lines (taken from PAG_format_header) are needed to identify
    this file in raw_devices_validate_database as a valid database attachment. */
 	MOV_time_stamp(reinterpret_cast<ISC_TIMESTAMP*>(header->hdr_creation_date));
-	header->hdr_ods_version        = ODS_VERSION;
+	header->hdr_ods_version        = ODS_VERSION | ODS_TYPE_CURRENT;
 	header->hdr_implementation     = CLASS;
 	header->hdr_ods_minor          = ODS_CURRENT;
 	header->hdr_ods_minor_original = ODS_CURRENT;
@@ -813,7 +807,7 @@ void PAG_format_header(void)
 				   ISC_TIMESTAMP * >(header->hdr_creation_date));
 	header->hdr_header.pag_type = pag_header;
 	header->hdr_page_size = dbb->dbb_page_size;
-	header->hdr_ods_version = ODS_VERSION;
+	header->hdr_ods_version = ODS_VERSION | ODS_TYPE_CURRENT;
 	header->hdr_implementation = CLASS;
 	header->hdr_ods_minor = ODS_CURRENT;
 	header->hdr_ods_minor_original = ODS_CURRENT;
@@ -829,7 +823,7 @@ void PAG_format_header(void)
 		header->hdr_flags |= hdr_SQL_dialect_3;
 	}
 
-	dbb->dbb_ods_version = header->hdr_ods_version;
+	dbb->dbb_ods_version = header->hdr_ods_version & ~ODS_TYPE_MASK;
 	dbb->dbb_minor_version = header->hdr_ods_minor;
 	dbb->dbb_minor_original = header->hdr_ods_minor_original;
 
@@ -993,20 +987,13 @@ void PAG_header(const TEXT* file_name, USHORT file_length)
 														  file_length), 0);
 	}
 
-#ifdef ODS_8_TO_CURRENT
-/* This Server understands ODS greater than 8 *ONLY* upto current major
-   ODS_VERSION defined in ods.h, Refuse connections to older or newer ODS's */
-	if ((header->hdr_ods_version < ODS_VERSION8)
-		|| (header->hdr_ods_version > ODS_VERSION))
-#else
-	if (header->hdr_ods_version != ODS_VERSION)
-#endif
+	if (!ODS_SUPPORTED(header->hdr_ods_version))
 	{
 		ERR_post(isc_wrong_ods,
 				 isc_arg_cstring, file_length, ERR_string(file_name,
 														  file_length),
 				 isc_arg_number, (SLONG) header->hdr_ods_version,
-				 isc_arg_number, (SLONG) ODS_VERSION, 0);
+				 isc_arg_number, (SLONG) ODS_VERSION | ODS_TYPE_CURRENT, 0);
 	}
 
 /****
@@ -1043,7 +1030,7 @@ if (header->hdr_implementation && header->hdr_implementation != CLASS)
 			BUGCHECK(267);		/* next transaction older than oldest transaction */
 	}
 
-	dbb->dbb_ods_version = header->hdr_ods_version;
+	dbb->dbb_ods_version = header->hdr_ods_version & ~ODS_TYPE_MASK;
 	dbb->dbb_minor_version = header->hdr_ods_minor;
 	dbb->dbb_minor_original = header->hdr_ods_minor_original;
 

@@ -33,6 +33,12 @@
 #ifndef JRD_ODS_H
 #define JRD_ODS_H
 
+/*  This macro enables the ability of the engine to connect to databases
+ *  from ODS 8 up to the latest.  If this macro is undefined, the engine
+ *  only opens a database of the current ODS major version.
+ */
+#define ODS_8_TO_CURRENT
+
 /**********************************************************************
 **
 ** NOTE:
@@ -127,11 +133,44 @@ const USHORT ODS_CURRENT	= ODS_CURRENT11;	/* the highest defined minor version
 											number for this ODS_VERSION!! */
 const USHORT ODS_CURRENT_VERSION	= ODS_11_0;		/* Current ODS version in use which includes 
 												both Major and Minor ODS versions! */
+// ODS types.
+const USHORT ODS_TYPE_MASK		= 0xFF00;
+const USHORT ODS_TYPE_INTERBASE	= 0x0000; // Interbase ODS (we support it up to ODS10)
+const USHORT ODS_TYPE_FIREBIRD	= 0x0100; // Official Firebird ODS (used since ODS11)
+const USHORT ODS_TYPE_TRANSIENT	= 0x0200; // Firebird ODS with some unfinished changes
 
+// ODS types in range 0x80-0xFF are reserved for private builds and forks
+const USHORT ODS_TYPE_PRIVATE_0	= 0x8000; // ODS used for private versions, such as BroadView builds
+
+const USHORT ODS_TYPE_CURRENT	= ODS_TYPE_TRANSIENT;
+//const USHORT ODS_TYPE_CURRENT	= ODS_TYPE_PRIVATE_0;
 
 const USHORT USER_REL_INIT_ID_ODS8		= 31;	/* ODS <= 8 */
 const USHORT USER_DEF_REL_INIT_ID		= 128;	/* ODS >= 9 */
 
+
+static inline bool ODS_SUPPORTED(USHORT hdr_version) {
+	USHORT ods_version = hdr_version & ~ODS_TYPE_MASK;
+	USHORT ods_type = hdr_version & ODS_TYPE_MASK;
+
+#ifdef ODS_8_TO_CURRENT
+	// Support Interbase ODS from 8 to 10;
+	if (ods_type == ODS_TYPE_INTERBASE)
+		return ods_version >= ODS_VERSION8 && ods_version <= ODS_VERSION10;
+
+	// This is for future ODS versions
+	if (ods_type == ODS_TYPE_FIREBIRD &&
+		ods_version > ODS_VERSION10 && ods_version <= ODS_VERSION - 1)
+		return true;
+#endif
+
+	// Support current ODS of the engine
+	if (ods_type == ODS_TYPE_CURRENT && ods_version == ODS_VERSION)
+		return true;
+
+	// Do not support anything else
+	return false;
+}
 
 /* Page types */
 

@@ -615,7 +615,7 @@ static void format_header(
 	memset(page, 0, page_size);
 	page->hdr_page_size = page_size;
 	page->pag_type = pag_header;
-	page->hdr_ods_version = ODS_VERSION;
+	page->hdr_ods_version = ODS_VERSION | ODS_TYPE_CURRENT;
 	page->hdr_PAGES = 2;
 	page->hdr_oldest_transaction = oldest;
 	page->hdr_oldest_active = active;
@@ -919,9 +919,12 @@ static header_page* open_database( RBDB rbdb, ULONG pg_size)
 		rbdb->rbdb_valid = FALSE;
 	}
 
-	if (header->hdr_ods_version != ODS_VERSION) {
-		printf("Wrong ODS version, expected %d, encountered %d.\n",
-				  ODS_VERSION, header->hdr_ods_version);
+	if (header->hdr_ods_version != ODS_VERSION | ODS_TYPE_CURRENT) {
+		printf("Wrong ODS version, expected %d type %04x, encountered %d type %04x.\n",
+				  ODS_VERSION, ODS_TYPE_CURRENT, 
+				  header->hdr_ods_version & ~ODS_TYPE_MASK, 
+				  header->hdr_ods_version & ODS_TYPE_MASK
+			  );
 		rbdb->rbdb_valid = FALSE;
 	}
 
@@ -962,7 +965,9 @@ static void print_db_header( FILE* file, const header_page* header)
  **************************************/
 	fprintf(file, "Database header page information:\n");
 	fprintf(file, "    Page size\t\t\t%d\n", header->hdr_page_size);
-	fprintf(file, "    ODS version\t\t\t%d\n", header->hdr_ods_version);
+	fprintf(file, "    ODS version\t\t\t%d type %04x\n", 
+		header->hdr_ods_version & ~ODS_TYPE_MASK, 
+		header->hdr_ods_version & ODS_TYPE_MASK);
 	fprintf(file, "    PAGES\t\t\t%d\n", header->hdr_PAGES);
 	fprintf(file, "    next page\t\t\t%d\n", header->hdr_next_page);
 	fprintf(file, "    Oldest transaction\t\t%ld\n",
