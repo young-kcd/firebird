@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.17 2002-11-16 17:41:12 dimitr Exp $
+ * $Id: sort.cpp,v 1.18 2002-11-17 15:51:25 dimitr Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -28,8 +28,6 @@
  * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
  *
  */
-
-#define SORT_MEM
 
 #include "firebird.h"
 #include <errno.h>
@@ -46,6 +44,7 @@
 #include "../jrd/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/sort.h"
+#include "../jrd/sort_mem.h"
 #include "gen/codes.h"
 #include "../jrd/intl.h"
 #include "../jrd/gdsassert.h"
@@ -57,10 +56,6 @@
 #include "../jrd/sort_proto.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/sch_proto.h"
-
-#ifdef SORT_MEM
-#include "../jrd/sort_mem.h"
-#endif
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -920,8 +915,8 @@ int SORT_put(STATUS * status_vector, SCB scb, ULONG ** record_address)
 	scb->scb_last_record = record;
 	record->sr_bckptr = scb->scb_next_pointer;
 
-/* move key_id into *scb->scb_next_pointer and then
-  increment scb->scb_next_pointer */
+/* Move key_id into *scb->scb_next_pointer and then
+   increment scb->scb_next_pointer */
 	*scb->scb_next_pointer++ =
 		reinterpret_cast <
 		sort_record * >(record->sr_sort_record.sort_record_key);
@@ -930,7 +925,7 @@ int SORT_put(STATUS * status_vector, SCB scb, ULONG ** record_address)
 #endif
 	*record_address = (ULONG *) record->sr_sort_record.sort_record_key;
 
-	return 0;
+	return FB_SUCCESS;
 }
 
 
@@ -1830,10 +1825,7 @@ static ULONG find_file_space(SCB scb, ULONG size, SFB * ret_sfb)
 				SORT_error(scb->scb_status_vector, sfb, "open",
 						   isc_io_open_err, errno);
 
-			// dimitr: allocate sort memory 
-#ifdef SORT_MEM
 			sfb->sfb_mem = FB_NEW (*getDefaultMemoryPool()) SortMem(sfb, size);
-#endif
 		}
 
 		*ret_sfb = sfb;
@@ -2018,17 +2010,10 @@ static SORT_RECORD *get_merge(MRG merge, SCB scb
 				n = run->run_records * scb->scb_longs * sizeof(ULONG);
 				l = MIN(l, n);
 				run->run_seek =
-				// dimitr: use new sort space management
-#ifdef SORT_MEM
 					run->run_sfb->sfb_mem->read(scb->scb_status_vector,
 												run->run_seek,
 												reinterpret_cast<char*>(run->run_buffer),
 												l);
-#else
-					SORT_read_block(scb->scb_status_vector, run->run_sfb,
-									run->run_seek, (UCHAR *) run->run_buffer,
-									l);
-#endif
 #else
 			}
 			else {
@@ -2063,13 +2048,7 @@ static SORT_RECORD *get_merge(MRG merge, SCB scb
 			else
 				run->run_seek -= l;
 
-			// dimitr: use new sort space management
-#ifdef SORT_MEM
 			run->run_sfb->sfb_mem->read(run->run_seek, run->run_buffer, l);
-#else
-			(void) SORT_read_block(scb->scb_status_vector, run->run_sfb,
-								   run->run_seek, run->run_buffer, l);
-#endif
 			run->run_cached = l;
 
 			if (mode == RSE_get_forward) {
@@ -2279,10 +2258,7 @@ static BOOLEAN local_fini(SCB scb, ATT att)
 		scb->scb_sfb = sfb->sfb_next;
 		DLS_put_temp_space(sfb);
 
-		// dimitr: free sort memory
-#ifdef SORT_MEM
 		delete sfb->sfb_mem;
-#endif
 
 		close(sfb->sfb_file);
 
@@ -2477,16 +2453,9 @@ static void merge_runs(SCB scb, USHORT n)
 	{
 		if (q >= (SORT_RECORD *) temp_run.run_end_buffer) {
 			size = (BLOB_PTR *) q - (BLOB_PTR *) temp_run.run_buffer;
-			// dimitr: use new sort space management
-#ifdef SORT_MEM
 			seek = temp_run.run_sfb->sfb_mem->write(scb->scb_status_vector, seek,
 													reinterpret_cast<char*>(temp_run.run_buffer),
 													size);
-#else
-			seek = SORT_write_block(scb->scb_status_vector, temp_run.run_sfb,
-									seek, (UCHAR *) temp_run.run_buffer,
-									size);
-#endif
 			q = reinterpret_cast < sort_record * >(temp_run.run_buffer);
 		}
 		count = scb->scb_longs;
@@ -2502,15 +2471,9 @@ static void merge_runs(SCB scb, USHORT n)
 /* Write the tail of the new run and return any unused space. */
 
 	if ( (size = (BLOB_PTR *) q - (BLOB_PTR *) temp_run.run_buffer) )
-		// dimitr: use new sort space management
-#ifdef SORT_MEM
 		seek = temp_run.run_sfb->sfb_mem->write(scb->scb_status_vector, seek,
 												reinterpret_cast<char*>(temp_run.run_buffer),
 												size);
-#else
-		seek = SORT_write_block(scb->scb_status_vector, temp_run.run_sfb,
-								seek, (UCHAR *) temp_run.run_buffer, size);
-#endif
 
 /* if the records did not fill the allocated run (such as when duplicates are 
    rejected), then free the remainder and diminish the size of the run accordingly */
@@ -2907,16 +2870,9 @@ static void put_run(SCB scb)
 		run->run_records * (scb->scb_longs -
 							SIZEOF_SR_BCKPTR_IN_LONGS) * sizeof(ULONG);
 	run->run_seek = find_file_space(scb, run->run_size, &run->run_sfb);
-	// dimitr: use new sort space management
-#ifdef SORT_MEM
 	run->run_sfb->sfb_mem->write(scb->scb_status_vector, run->run_seek,
 								 reinterpret_cast<char*>(scb->scb_last_record),
 								 run->run_size);
-#else
-	(void) SORT_write_block(scb->scb_status_vector, run->run_sfb,
-							run->run_seek, (UCHAR *) scb->scb_last_record,
-							run->run_size);
-#endif
 }
 
 
