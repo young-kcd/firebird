@@ -1,3 +1,5 @@
+SQL Language Extension: COALESCE
+
 Function:
     Allow a column value to be calculated by a number of expressions, 
     the first expression returning a non NULL value is returned as the 
@@ -19,6 +21,8 @@ Syntax Rules:
          <case specification>:
          CASE WHEN V1 IS NOT NULL THEN V1 ELSE COALESCE (V2,...,Vn) END
 
+Notes:
+    See also README.data_type_results_of_aggregations.txt
 
 Examples:
 A)

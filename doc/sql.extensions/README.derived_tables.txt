@@ -38,9 +38,8 @@ Notes:
     The optimizer can handle a derived table very efficiently, but if the 
     derived table contains a sub-select then no join order can be made (if the 
     derived table is included in an inner join).
-    
 
-Example(s):
+Examples:
 
 a) Simple derived table:
 
