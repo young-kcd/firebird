@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.24 2002-11-30 17:43:18 hippoman Exp $ 
+  * $Id: evl.cpp,v 1.25 2003-01-15 12:08:59 dimitr Exp $ 
  */
 
 /*
@@ -234,7 +234,7 @@ DSC *DLL_EXPORT EVL_assign_to(TDBB tdbb, register JRD_NOD node)
 	request = tdbb->tdbb_request;
 	impure = (VLU) ((SCHAR *) request + node->nod_impure);
 
-/* The only nodes that can be assigned to are:  argument, field, and variable. */
+/* The only nodes that can be assigned to are: argument, field and variable. */
 
 	switch (node->nod_type) {
 	case nod_argument:
@@ -5052,6 +5052,9 @@ static DSC *internal_info(TDBB tdbb, DSC * value, VLU impure)
 		break;
 	case internal_rows_affected:
 		impure->vlu_misc.vlu_long = tdbb->tdbb_request->req_records_affected;
+		break;
+	case internal_trigger_action:
+		impure->vlu_misc.vlu_long = tdbb->tdbb_request->req_trigger_action;
 		break;
 	default:
 		BUGCHECK(232);	/* msg 232 EVL_expr: invalid operation */

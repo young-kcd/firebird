@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.37 2002-12-11 09:39:41 dimitr Exp $
+$Id: exe.cpp,v 1.38 2003-01-15 12:08:59 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -129,7 +129,7 @@ static JRD_NOD erase(TDBB, JRD_NOD, SSHORT);
 static void execute_looper(TDBB, JRD_REQ, JRD_TRA, ENUM jrd_req::req_s);
 static void exec_sql(TDBB, JRD_REQ, DSC *);
 static void execute_procedure(TDBB, JRD_NOD);
-static JRD_REQ execute_triggers(TDBB, TRIG_VEC *, REC, REC);
+static JRD_REQ execute_triggers(TDBB, TRIG_VEC *, REC, REC, ENUM jrd_req::req_ta);
 static JRD_NOD looper(TDBB, JRD_REQ, JRD_NOD);
 static JRD_NOD modify(TDBB, register JRD_NOD, SSHORT);
 static JRD_NOD receive_msg(TDBB, register JRD_NOD);
@@ -240,14 +240,14 @@ void EXE_assignment(TDBB tdbb, JRD_NOD node)
 	JRD_REQ request = tdbb->tdbb_request;
 	BLKCHK(node, type_nod);
 
-/* Get descriptors of receiving and sending fields/parmaters, variables, etc. */
+/* Get descriptors of receiving and sending fields/parameters, variables, etc. */
 
 	DSC* missing = NULL;
 	if (node->nod_arg[e_asgn_missing]) {
 		missing = EVL_expr(tdbb, node->nod_arg[e_asgn_missing]);
 	}
 
-	JRD_NOD  to      = node->nod_arg[e_asgn_to];
+	JRD_NOD to = node->nod_arg[e_asgn_to];
 	DSC* to_desc = EVL_assign_to(tdbb, to);
 
 	request->req_flags &= ~req_null;
@@ -1212,22 +1212,25 @@ static JRD_NOD erase(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 
 	if (relation->rel_pre_erase &&
 		which_trig != POST_TRIG &&
-		(trigger =
-		 execute_triggers(tdbb, &relation->rel_pre_erase, rpb->rpb_record,
-						  0))) trigger_failure(tdbb, trigger);
+		(trigger = execute_triggers(tdbb, &relation->rel_pre_erase,
+									rpb->rpb_record, 0,
+									jrd_req::req_trigger_delete)))
+	{
+		trigger_failure(tdbb, trigger);
+	}
 
 	if (relation->rel_file)
 		EXT_erase(rpb, reinterpret_cast < int *>(transaction));
 	else if (!relation->rel_view_rse)
 		VIO_erase(tdbb, rpb, transaction);
 		
-
 /* Handle post operation trigger */
 
 	if (relation->rel_post_erase &&
 		which_trig != PRE_TRIG &&
 		(trigger = execute_triggers(tdbb, &relation->rel_post_erase,
-									rpb->rpb_record, 0)))
+									rpb->rpb_record, 0,
+									jrd_req::req_trigger_delete)))
 	{
 		trigger_failure(tdbb, trigger);
 	}
@@ -1528,10 +1531,11 @@ static void execute_procedure(TDBB tdbb, JRD_NOD node)
 }
 
 
-static JRD_REQ execute_triggers(TDBB		tdbb,
-							TRIG_VEC*	triggers,
-							REC			old_rec,
-							REC			new_rec)
+static JRD_REQ execute_triggers(TDBB tdbb,
+								TRIG_VEC* triggers,
+								REC old_rec,
+								REC new_rec,
+								ENUM jrd_req::req_ta trigger_action)
 {
 /**************************************
  *
@@ -1570,6 +1574,7 @@ static JRD_REQ execute_triggers(TDBB		tdbb,
 			trigger->req_rpb[0].rpb_record = old_rec;
 			trigger->req_rpb[1].rpb_record = new_rec;
 			trigger->req_timestamp = tdbb->tdbb_request->req_timestamp;
+			trigger->req_trigger_action = trigger_action;
 			EXE_start(tdbb, trigger, transaction);
 			trigger->req_attachment = NULL;
 			trigger->req_flags &= ~req_in_use;
@@ -2384,8 +2389,13 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 			break;
 
 		case nod_post:
-			DFW_post_work(transaction, dfw_post_event,
-						  EVL_expr(tdbb, node->nod_arg[0]), 0);
+			{
+			DFW work = DFW_post_work(transaction, dfw_post_event,
+									 EVL_expr(tdbb, node->nod_arg[0]), 0);
+			if (node->nod_arg[1])
+				DFW_post_work_arg(transaction, work,
+								  EVL_expr(tdbb, node->nod_arg[1]), 0);
+			}
 
 			/* for an autocommit transaction, events can be posted
 			 * without any updates */
@@ -2808,7 +2818,8 @@ static JRD_NOD modify(TDBB tdbb, register JRD_NOD node, SSHORT which_trig)
 			which_trig != POST_TRIG &&
 			(trigger = execute_triggers(tdbb, &relation->rel_pre_modify,
 										org_rpb->rpb_record,
-										new_rpb->rpb_record)))
+										new_rpb->rpb_record,
+										jrd_req::req_trigger_update)))
 		{
 			trigger_failure(tdbb, trigger);
 		}
@@ -2845,7 +2856,8 @@ static JRD_NOD modify(TDBB tdbb, register JRD_NOD node, SSHORT which_trig)
 			which_trig != PRE_TRIG &&
 			(trigger = execute_triggers(tdbb, &relation->rel_post_modify,
 										org_rpb->rpb_record,
-										new_rpb->rpb_record)))
+										new_rpb->rpb_record,
+										jrd_req::req_trigger_update)))
 		{
 			trigger_failure(tdbb, trigger);
 		}
@@ -3729,7 +3741,7 @@ static JRD_NOD store(TDBB tdbb, register JRD_NOD node, SSHORT which_trig)
 		if (relation->rel_pre_store &&
 			(which_trig != POST_TRIG) &&
 			(trigger = execute_triggers(tdbb, &relation->rel_pre_store,
-										0, record)))
+										0, record, jrd_req::req_trigger_insert)))
 		{
 			trigger_failure(tdbb, trigger);
 		}
@@ -3769,7 +3781,7 @@ static JRD_NOD store(TDBB tdbb, register JRD_NOD node, SSHORT which_trig)
 		if (relation->rel_post_store &&
 			(which_trig != PRE_TRIG) &&
 			(trigger = execute_triggers(tdbb, &relation->rel_post_store,
-										0, record)))
+										0, record, jrd_req::req_trigger_insert)))
 		{
 			trigger_failure(tdbb, trigger);
 		}

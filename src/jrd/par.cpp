@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.30 2002-12-23 11:23:07 dimitr Exp $
+$Id: par.cpp,v 1.31 2003-01-15 12:08:59 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -2348,6 +2348,11 @@ static JRD_NOD parse(TDBB tdbb, register CSB * csb, USHORT expected)
 	case blr_post:
 	case blr_exec_sql:
 	case blr_internal_info:
+		*arg++ = parse(tdbb, csb, sub_type);
+		break;
+
+	case blr_post_arg:
+		*arg++ = parse(tdbb, csb, sub_type);
 		*arg++ = parse(tdbb, csb, sub_type);
 		break;
 
