@@ -157,5 +157,14 @@ GDSLIB_Objects = $(JRD_Objects) \
                 $(SECURITY_Objects) \
                 $(FBUTIL_Objects)
 
-GDSLIB_SharedObjects = $(GDSLIB_Objects:.o=.lo)
+# Notice that $(SECURITY_Objects) are missing, because that file can't be
+# compiled until later in the build process.
 
+BOOT_GDSLIB_Objects = $(JRD_Objects) \
+                $(DSQL_Objects) \
+                $(LOCK_Objects) \
+                $(INTERFACE_Objects) \
+                $(PIPE_Objects) \
+                $(WAL_Objects) \
+                $(GPRELIB_Objects) \
+                $(FBUTIL_Objects)

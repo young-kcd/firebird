@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.jrd,v 1.5 2001-08-06 15:08:18 skywalker Exp $
+#   $Id: Makefile.in.jrd,v 1.6 2001-08-07 02:15:26 bellardo Exp $
 # 
 
 ROOT=../..
@@ -53,7 +53,7 @@ GPRE_FLAGS = -n -z -gds_cxx -raw -ids
 
 
 
-.PHONY: jrd_boot jrd_static
+.PHONY: jrd_boot
 
 
 # This is the very first library built it contains just enough methods
@@ -68,24 +68,20 @@ jrd_boot : $(LIB)/jrd_boot.a
 $(LIB)/jrd_boot.a:	$(BOOT_Objects)
 	-$(RM) $@
 	$(AR) $@ $^
-	-ranlib $@
+	-$(RANLIB) $@
 	$(CHMOD_6) $@
 
 
 # Add all the jrd objects to the jrd static library.
 
-jrd_static : $(LIB)/jrd_static.a($(JRD_Objects))
-	$(RANLIB) $(LIB)/jrd_static.a
-
-$(LIB)/jrd_static.a(%.o) : %.o
-	ar crv $@  $%
-
+$(LIBGDS_A) : $(GDSLIB_Objects)
+	ar -q $@ $^
+	-$(RANLIB) $@
 
 
 # This is the first dynamic link library that we build in phase2 it still
-# does not contain security objects.
-
-
+# does not contain security objects.  Also used to produce the object files
+# that the *_static programs link against.
 jrdlib_dependencies: $(JRD_Objects)
 
 
@@ -660,9 +656,9 @@ rebuild_codes: codes
 	./codes $(ROOT)/src/include/gen
 
 
-codes:		codes.o $(STDIO) $(LIBGDS_LA)
+codes:		codes.o $(STDIO) $(LIBGDS_DEP)
 	-$(RM) codes
-	$(EXE_LINK) $(LINK_OPTIONS) $(CXX_INCLUDE_DIRS) -o codes $^
+	$(EXE_LINK) $(LINK_OPTIONS) $(LIBGDS_LINK) $(CXX_INCLUDE_DIRS) -o codes $^
 	$(CHMOD_7) codes
 
 

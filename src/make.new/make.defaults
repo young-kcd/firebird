@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.5 2001-08-04 22:48:18 bellardo Exp $
+#   $Id: make.defaults,v 1.6 2001-08-07 02:15:26 bellardo Exp $
 # 
 
 
@@ -86,8 +86,12 @@ LIBGDS_A = $(LIB)/libgds.a
 
 ifdef UseSharedLibraries   
     LIBGDS_LA = $(LIBGDS_SO)
+    LIBGDS_DEP =
+    LIBGDS_LINK = $(LIBGDS_SO)
 else
     LIBGDS_LA = $(LIBGDS_A)
+    LIBGDS_DEP = $(LIBGDS_LA)
+    LIBGDS_LINK =
 endif
 
 

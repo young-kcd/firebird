@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.example5,v 1.1 2001-07-29 23:43:23 skywalker Exp $
+#   $Id: Makefile.in.example5,v 1.2 2001-08-07 02:15:26 bellardo Exp $
 # 
 
 ROOT=../..
@@ -146,9 +146,9 @@ employee.gdb:	empbuild$(EXEC_EXT) $(INPUT_FILES)
 	./empbuild employee.gdb
 	-$(CHMOD_6) employee.gdb
 
-empbuild: $(EMPBLD_OBJ) $(LIBGDS_LA)
+empbuild: $(EMPBLD_OBJ) $(LIBGDS_DEP)
 	-$(RM) $@
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(LINK_LIBS)
+	$(EXE_LINK) $(LINK_OPTS) $(LIBGDS_LINK) $^ -o $@ $(LINK_LIBS)
 	$(CHMOD_7) $@
 
 empbuild.exe:	$(EMPBLD_OBJ)
@@ -180,9 +180,9 @@ intlbuild.gdb : intlddl.sql intlbld.sql
 	-$(RM) intlbuild.gdb
 	$(ISQL) -i intlbld.sql
 
-intlbld: $(INTLBLD_OBJ) $(LIBGDS_LA)
+intlbld: $(INTLBLD_OBJ) $(LIBGDS_DEP)
 	-$(RM) $@
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(LINK_LIBS)
+	$(EXE_LINK) $(LINK_OPTS) $(LIBGDS_LINK) $^ -o $@ $(LINK_LIBS)
 	$(CHMOD_7) $@
 
 intlbld.exe:	$(INTLBLD_OBJ)

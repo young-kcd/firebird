@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.gpre,v 1.4 2001-08-04 22:48:18 bellardo Exp $
+#   $Id: Makefile.in.gpre,v 1.5 2001-08-07 02:15:26 bellardo Exp $
 # 
 
 ROOT=../..
@@ -81,15 +81,15 @@ $(GPRE_BOOT):	$(GPRECommon_Objects) $(GPREBoot_Objects) $(LIB)/jrd_boot.a
 	$(LN) $(@F) $(GPRE_CURRENT)
 
 
-$(GPRE_STATIC):$(GPRECommon_Objects) $(GPRE_Objects) $(LIB)/jrd_static.a
+$(GPRE_STATIC):$(GPRECommon_Objects) $(GPRE_Objects) $(BOOT_GDSLIB_Objects)
 	$(STATICEXE_LINK) $(LINK_OPTS) $^ -o $@ $(STATICLINK_LIBS)
 	$(CHMOD_7) $@
 	-$(RM) $(GPRE_CURRENT)
 	$(LN) $(@F) $(GPRE_CURRENT)
 
 
-$(GPRE):$(GPRECommon_Objects) $(GPRE_Objects) $(LIBGDS_LA)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(LINK_LIBS) 
+$(GPRE):$(GPRECommon_Objects) $(GPRE_Objects) $(LIBGDS_DEP)
+	$(EXE_LINK) $(LINK_OPTS) $(LIBGDS_LINK) $^ -o $@ $(LINK_LIBS) 
 	$(CHMOD_7) $@
 	-$(RM) $(GPRE_CURRENT)
 	$(LN) $(@F) $(GPRE_CURRENT)

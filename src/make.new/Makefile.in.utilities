@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.utilities,v 1.5 2001-08-06 15:08:18 skywalker Exp $
+#   $Id: Makefile.in.utilities,v 1.6 2001-08-07 02:15:26 bellardo Exp $
 # 
 
 ROOT=../..
@@ -45,7 +45,8 @@ CREATEDB_Objects = $(CREATEDB_Sources:%.cpp=$(OBJ)/%.o)
 DROP_Sources = drop.cpp dropv3.cpp
 DROP_Objects = $(DROP_Sources:%.cpp=$(OBJ)/%.o)
 
-GSEC_Sources =  gsec.cpp security.cpp
+#GSEC_Sources =  gsec.cpp security.cpp
+GSEC_Sources =  gsec.cpp
 GSEC_Objects = $(GSEC_Sources:%.cpp=$(OBJ)/%.o)
 
 GSTAT_Sources =  dba.cpp ppg.cpp
@@ -103,12 +104,12 @@ ibguard     : $(IBGUARD)
 
 
 
-$(CREATE_DB):	$(CREATEDB_Objects) $(LIB)/jrd_static.a 
+$(CREATE_DB):	$(CREATEDB_Objects) $(BOOT_GDSLIB_Objects)
 	$(STATICEXE_LINK) $(STATICLINK_OPTS) $^   -o $@ $(STATICLINK_LIBS)
 	$(CHMOD_7) $@
 
 
-$(GDS_DROP):		$(DROP_Objects) $(LIB)/jrd_static.a
+$(GDS_DROP):		$(DROP_Objects) $(BOOT_GDSLIB_Objects)
 	$(STATICEXE_LINK) $(STATICLINK_OPTS) $^ -o $@ $(STATICLINK_LIBS)
 	$(CHMOD_S7) $@
 
@@ -185,8 +186,8 @@ have_added_sysdba_user.flg : $(ISC_GDB)  $(GSEC)
 # no it aint MOD 13-7-2001
 
 
-$(GSEC):	$(GSEC_Objects)	 $(LIBGDS_LA)
-	$(EXE_LINK) $(LINK_OPTS) $^  -o $@ $(LINK_LIBS)
+$(GSEC):	$(GSEC_Objects)	 $(LIBGDS_DEP)
+	$(EXE_LINK) $(LINK_OPTS) $(LIBGDS_LINK) $^  -o $@ $(LINK_LIBS)
 	$(CHMOD_7) $@
 
 
@@ -195,32 +196,32 @@ $(GSEC):	$(GSEC_Objects)	 $(LIBGDS_LA)
 # dba/gstat
 
 
-$(GSTAT):	$(GSTAT_Objects)	 $(LIBGDS_LA)
-	$(EXE_LINK) $(LINK_OPTS) $^  -o $@ $(LINK_LIBS)
+$(GSTAT):	$(GSTAT_Objects)	 $(LIBGDS_DEP)
+	$(EXE_LINK) $(LINK_OPTS) $(LIBGDS_LINK) $^  -o $@ $(LINK_LIBS)
 	$(CHMOD_7) $@
 
 
 # ibguard
 
 
-$(IBGUARD):	$(IBGUARD_Objects)	 $(LIBGDS_LA)
-	$(EXE_LINK) $(LINK_OPTS) $^  -o $@ $(LINK_LIBS)
+$(IBGUARD):	$(IBGUARD_Objects)	 $(LIBGDS_DEP)
+	$(EXE_LINK) $(LINK_OPTS) $(LIBGDS_LINK) $^  -o $@ $(LINK_LIBS)
 	$(CHMOD_7) $@
 
 
 # ibmgr
 
 
-$(IBMGR_BIN):	$(IBMGR_Objects)	 $(LIBGDS_LA)
-	$(EXE_LINK) $(LINK_OPTS) $^  -o $@ $(LINK_LIBS)
+$(IBMGR_BIN):	$(IBMGR_Objects)	 $(LIBGDS_DEP)
+	$(EXE_LINK) $(LINK_OPTS) $(LIBGDS_LINK) $^  -o $@ $(LINK_LIBS)
 	$(CHMOD_7) $@
 
 
 # rebuild 
 
 
-$(GDS_REBUILD):	$(REBUILD_Objects)	 $(LIBGDS_LA)
-	$(EXE_LINK) $(LINK_OPTS) $^  -o $@ $(LINK_LIBS)
+$(GDS_REBUILD):	$(REBUILD_Objects)	 $(LIBGDS_DEP)
+	$(EXE_LINK) $(LINK_OPTS) $(LIBGDS_LINK) $^  -o $@ $(LINK_LIBS)
 	$(CHMOD_7) $@
 
 
@@ -228,8 +229,8 @@ $(GDS_REBUILD):	$(REBUILD_Objects)	 $(LIBGDS_LA)
 
 
 
-$(GDS_RELAY):	$(RELAY_Objects)	 $(LIBGDS_LA)
-	$(EXE_LINK) $(LINK_OPTS) $^  -o $@ $(LINK_LIBS)
+$(GDS_RELAY):	$(RELAY_Objects)	 $(LIBGDS_DEP)
+	$(EXE_LINK) $(LINK_OPTS) $(LIBGDS_LINK) $^  -o $@ $(LINK_LIBS)
 	$(CHMOD_7) $@
 
 
