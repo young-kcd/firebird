@@ -1,3 +1,9 @@
+2005-02-19 11:37  dimitr
+
+	* firebird2/src/common/classes/timestamp.cpp (1.7):
+	
+	Fixed bug with WEEKDAY.
+
 2005-02-17 16:04  paul_reeves
 
 	* firebird2/builds/install/arch-specific/win32/:
