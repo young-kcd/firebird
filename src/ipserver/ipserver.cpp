@@ -377,7 +377,7 @@ USHORT IPS_init(HWND	hwnd,
 		return (USHORT) 1;
 	}
 
-	return (USHORT) ipm;
+	return (USHORT)(ULONG) ipm;
 }
 
 
@@ -823,7 +823,7 @@ static void ipi_server( ICC icc)
 
 		default:
 			gds__log("Interprocess Server op code %d unknown\n",
-					 (int *) comm->ips_operation);
+					 (int *)(ULONG) comm->ips_operation);
 			icc->icc_flags |= ICCF_SHUTDOWN;
 			break;
 		}
