@@ -1,3 +1,24 @@
+2002-11-09 14:23  skywalker
+
+	* firebird2/: configure.in, builds/posix/Makefile.in.boot.gpre,
+	builds/posix/Makefile.in.libfbcommon,
+	builds/posix/make.shared.variables:
+	
+	Slight changes for linux compile to work with new ConfigRoot class
+
+2002-11-09 09:05  dimitr
+
+	* firebird2/src/dsql/dsql.cpp:
+	
+	Committed Ignacio's fix for DSQL_pretty (affects debug builds
+	only).
+
+2002-11-09 02:42  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Update for explicit PLAN support and little cosmetic changes.
+
 2002-11-08 17:23  dimitr
 
 	* firebird2/src/jrd/opt.cpp:
