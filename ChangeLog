@@ -1,3 +1,38 @@
+2004-10-15 00:11  skidder
+
+	* firebird2/src/jrd/isc_sync.cpp (1.93):
+	
+	Vlad pointed at a problem with my change. Correct it
+
+2004-10-14 21:08  dimitr
+
+	* firebird2/src/: jrd/blr.h (1.16), jrd/cmp.cpp (1.154),
+	jrd/evl.cpp (1.114), jrd/exe.cpp (1.127), jrd/nav.cpp (1.46),
+	jrd/nod.h (1.12), jrd/opt.cpp (1.197), jrd/par.cpp (1.105),
+	misc/blrtable.cpp (1.15):
+	
+	Added the equivalence operator. The major index optimizations are
+	done.  Notes: 1) Some optimizations will follow after more deep
+	analysis.  2) The syntax "==" is not yet agreed on. I'd prefer it
+	to be changed.
+
+2004-10-14 20:54  dimitr
+
+	* firebird2/src/dsql/: dsql.cpp (1.128), dsql.tab.h (1.44), gen.cpp
+	(1.73), keywords.cpp (1.35), node.h (1.48), parse.cpp (1.130),
+	parse.y (1.153), pass1.cpp (1.165):
+	
+	Added the equivalence operator. The major index optimizations are
+	done.  Notes: 1) Some optimizations will follow after more deep
+	analysis.  2) The syntax "==" is not yet agreed on. I'd prefer it
+	to be changed.
+
+2004-10-14 18:35  dimitr
+
+	* firebird2/src/dsql/pass1.cpp (1.164):
+	
+	Restored the old code layout, as suggested by Claudio.
+
 2004-10-13 20:45  dimitr
 
 	* firebird2/src/lock/lock.h (1.32):
