@@ -33,9 +33,12 @@ Targets we are going to support under Firebird 2 architecture
 - built-in INTL
 - internal UDF handler
 3. Clustered server
-Run multi-threaded engine on each cluster node. Direct page latches and
-other locks to a distributed lock manager. This target should be kept in mind,
-but may not be finalized in 2.0 release.
+Run multi-process engine on each cluster node. Direct page latches and
+other locks to a distributed lock manager. Processes may share the same
+buffer and metadata cache via shared memory. This target should be kept 
+in mind, but may not be finalized in 2.0 release. Making Firebird run
+in such configuration is quite an easy thing (at least without shared 
+cache), but it requires expensive equipment and time for testing.
 
 Another important thing. Engine AS IS already _is_ already suited for parallel 
 operation by initial design. Versioning is a great thing !
@@ -66,9 +69,12 @@ TODO:
 7. Make DSQL compilation thread-safe (via porting it to BISON correctly)
 8. Make DSQL requests use new metadata cache
 9. Implement cache of compiled requests (should be easy at this point)
-10. Review all tdbb/dbb usage in TLS. In general, all functions should derive
-its context only from its parameters. TLS usage should be eliminated
-or at least minimized
+10. Thread context should be converted to a class and removed from
+parameters from all functions (and SET_TDBB should be eliminated too).
+tdbb_default memory pool usage should be eradicated. Functions should 
+normally derive their context from parameters, not from thread context.
+Final goal is to minimize or even eliminate TLS usage at all (because
+its usage is simular to local variables usage in terms of maintainability).
 11. Warp dbb/att access with thread-safe accessor methods using dbb-level mutex.
   Review all places where it is used.
 12. Kill manual thread shcheduling (sch.cpp, THREAD_ENTER/THREAD_EXIT 
