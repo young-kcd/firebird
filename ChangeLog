@@ -1,3 +1,58 @@
+2004-05-10 10:16  brodsom
+
+	* firebird2/src/: include/gen/files.txt (1.2), misc/headers.sed
+	(1.3):
+	
+	Removing codes.h
+
+2004-05-10 10:04  brodsom
+
+	* firebird2/src/: misc/codes.epp (1.15), include/gen/codes.h
+	(1.16):
+	
+	Removing codes.h
+
+2004-05-10 09:41  brodsom
+
+	* firebird2/src/jrd/: llio.cpp (1.22), llio.h (1.4), llio_proto.h
+	(1.6):
+	
+	Removing llio*
+
+2004-05-10 09:20  brodsom
+
+	* firebird2/builds/win32/msvc7/: qli.vcproj (1.19), engine.vcproj
+	(1.39), engine_classic.vcproj (1.38), engine_embed.vcproj (1.26),
+	gdef.vcproj (1.19):
+	
+	Removing llio* and codes.h
+
+2004-05-10 09:17  brodsom
+
+	* firebird2/builds/: mac_os_x/CS/Helpers.make (1.8),
+	mac_os_x/CS/CS.pbproj/project.pbxproj (1.8),
+	posix/Makefile.in.codes (1.17), posix/Makefile.in.firebird (1.56),
+	win32/msvc6/qli.dsp (1.17), win32/msvc6/engine_embed.dsp (1.23),
+	win32/msvc6/gdef.dsp (1.18), win32/msvc6/engine.dsp (1.49),
+	win32/msvc6/engine_classic.dsp (1.44):
+	
+	Removing llio* and codes.h
+
+2004-05-10 02:18  brodsom
+
+	* firebird2/src/isql/: extract.epp (1.37), show.epp (1.48):
+	
+	Replace macro with inline-comments (Claudio found gpre have some
+	issues with the ifdefs)
+
+2004-05-10 00:52  brodsom
+
+	* firebird2/builds/win32/blrtable.bat (1.9):
+	
+	Solve a duplicated macro definition which are not detected
+	previously, when the definition was #define GOVERNOR 1 instead of
+	#define GOVERNOR.  Detected by Claudio.
+
 2004-05-09 07:47  robocop
 
 	* firebird2/src/: burp/backup.epp (1.57), common/classes/fb_tls.h
