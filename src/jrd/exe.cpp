@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.68.2.1 2003-07-17 08:26:19 dimitr Exp $
+$Id: exe.cpp,v 1.68.2.2 2003-08-04 07:15:31 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -4047,8 +4047,16 @@ static BOOLEAN test_and_fixup_error(TDBB tdbb, XCP conditions, JRD_REQ request)
 		case xcp_gds_code:
 			if (status_vector[1] == conditions->xcp_rpt[i].xcp_code)
 			{
-				request->req_last_xcp.xcp_type = xcp_gds_code;
-				request->req_last_xcp.xcp_code = status_vector[1];
+				if ((sqlcode != XCP_SQLCODE) || (status_vector[1] != gds_except))
+				{
+					request->req_last_xcp.xcp_type = xcp_gds_code;
+					request->req_last_xcp.xcp_code = status_vector[1];
+				}
+				else
+				{
+					request->req_last_xcp.xcp_type = xcp_xcp_code;
+					request->req_last_xcp.xcp_code = status_vector[3];
+				}              
 				status_vector[0] = 0;
 				status_vector[1] = 0;
 				return TRUE;
@@ -4075,20 +4083,17 @@ static BOOLEAN test_and_fixup_error(TDBB tdbb, XCP conditions, JRD_REQ request)
 				request->req_last_xcp.xcp_type = xcp_sql_code;
 				request->req_last_xcp.xcp_code = sqlcode;
 			}
+			else if (status_vector[1] != gds_except) 
+			{
+				request->req_last_xcp.xcp_type = xcp_gds_code;
+				request->req_last_xcp.xcp_code = status_vector[1];
+			}
 			else
 			{
-				if (status_vector[1] != gds_except) 
-				{
-					request->req_last_xcp.xcp_type = xcp_gds_code;
-					request->req_last_xcp.xcp_code = status_vector[1];
-				}
-				else
-				{
-					request->req_last_xcp.xcp_type = xcp_xcp_code;
-					request->req_last_xcp.xcp_code = status_vector[3];
-					TEXT *msg = reinterpret_cast<TEXT*>(status_vector[7]);
-					assign_xcp_message(tdbb, &request->req_last_xcp.xcp_msg, msg);
-				}
+				request->req_last_xcp.xcp_type = xcp_xcp_code;
+				request->req_last_xcp.xcp_code = status_vector[3];
+				TEXT *msg = reinterpret_cast<TEXT*>(status_vector[7]);
+				assign_xcp_message(tdbb, &request->req_last_xcp.xcp_msg, msg);
 			}
 			status_vector[0] = 0;
 			status_vector[1] = 0;
