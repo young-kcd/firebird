@@ -128,13 +128,14 @@ struct tgbl *gdgbl;
 #define BURP_MSG_FAC    12
 
 static void close_out_transaction(volatile SSHORT, isc_tr_handle *);
-static void enable_signals(void);
-static void excp_handler(void);
+//static void enable_signals(void);
+//static void excp_handler(void);
 static SLONG get_number(SCHAR *);
 static ULONG get_size(SCHAR *, FIL);
 static SSHORT open_files(SCHAR *, SCHAR **, USHORT, USHORT, USHORT);
+#ifdef SUPERSERVER
 static int output_netware(SLONG, UCHAR *);
-#ifndef SUPERSERVER
+#else
 static int output_main(SLONG, UCHAR *);
 #endif
 static int output_svc(SLONG, UCHAR *);
