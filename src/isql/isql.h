@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.9 2003-07-06 07:04:01 dimitr Exp $
+ * $Id: isql.h,v 1.9.2.1 2005-04-01 07:48:24 robocop Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -99,7 +99,7 @@
 
 /* Error codes */
 
-#define MSG_LENGTH	256
+#define MSG_LENGTH	1024
 #define ISQL_MSG_FAC	17
 
 #define GEN_ERR 	0			/* General non-zero SQLCODE error */
@@ -243,8 +243,8 @@ EXTERN isc_tr_handle D__trans;
 EXTERN isc_stmt_handle Stmt;
 EXTERN IB_FILE *Ofp, *Out, *Ifp, *Errfp;
 EXTERN SCHAR Term[MAXTERM_LENGTH];
-EXTERN SCHAR Db_name[128];
-EXTERN SCHAR Target_db[128];
+EXTERN SCHAR Db_name[MAXPATHLEN];
+EXTERN SCHAR Target_db[MAXPATHLEN];
 EXTERN SCHAR User[128], Password[128], Role[128];
 EXTERN SCHAR Numbufs[16];		/* # of cache buffers on connect */
 EXTERN SSHORT Merge_stderr;

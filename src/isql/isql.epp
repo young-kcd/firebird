@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Interactive SQL utility
- *	MODULE:		isql.e
+ *	MODULE:		isql.epp
  *	DESCRIPTION:	Main line routine
  *
  * The contents of this file are subject to the Interbase Public
@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.32.2.12 2005-03-28 09:02:24 robocop Exp $
+  $Id: isql.epp,v 1.32.2.13 2005-04-01 07:48:23 robocop Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -138,7 +138,15 @@ DATABASE DB = COMPILETIME "yachts.lnk";
 
 #define MAX_TERMS	10			/* max # of terms in an interactive cmd */
 
-#define COMMIT_TRANS(x)	{if (isc_commit_transaction (isc_status, x)) { ISQL_errmsg (isc_status); isc_rollback_transaction (isc_status, x); }}
+static inline bool commit_trans(isc_tr_handle* x)
+{
+	if (isc_commit_transaction (isc_status, x)) {
+		ISQL_errmsg (isc_status);
+		isc_rollback_transaction (isc_status, x);
+		return false;
+	}
+	return true;
+}
 
 typedef struct indev {
 	struct indev *indev_next;
@@ -213,8 +221,8 @@ BOOL fAnsiCP;
 static COLLIST *Cols = NULL;
 static SCHAR statistics[256];
 static INDEV Filelist;
-static TEXT Tmpfile[128];
-static int Abort_flag = 0;
+static TEXT Tmpfile[MAXPATHLEN];
+static bool Abort_flag = false;
 static SSHORT Echo = FALSE;
 static SSHORT Time_display = FALSE;
 static SSHORT Sqlda_display = FALSE;
@@ -375,13 +383,11 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 	}
 #endif
 
-	Exit_value = ISQL_main(argc, argv);
-
-	return Exit_value;
+	return ISQL_main(argc, argv);
 }
 
 
-SSHORT ISQL_main(int argc, char *argv[])
+int ISQL_main(int argc, char *argv[])
 {
 /**************************************
  *
@@ -666,7 +672,7 @@ static void readNextInputLine(const char* prompt) {
     }
 
 #ifdef HAVE_EDITLINE_H
-    lastInputLine = readline(const_cast<char*>(prompt));
+    lastInputLine = readline(prompt);
 
     if (lastInputLine != NULL && strlen(lastInputLine) != 0) {
         add_history(lastInputLine);
@@ -1780,6 +1786,7 @@ static SSHORT add_row(TEXT * tabname)
 			/* On blank line or EOF, break the loop without doing an insert */
 
             readNextInputLine(msg);
+			getColumn = -1; // We are bypassing getNextInputChar().
             //            ISQL_prompt(msg);
             //            if (!ib_fgets(buffer, BUFFER_LENGTH512, ib_stdin)
             //                || !strlen(buffer)) {
@@ -2242,11 +2249,17 @@ static SSHORT copy_table( TEXT * source, TEXT * destination, TEXT * otherdb)
  *  
  **************************************/
 	IB_FILE *holdout;
-	TEXT ftmp[128];
+	TEXT ftmp[MAXPATHLEN];
 	TEXT errbuf[MSG_LENGTH];
 	TEXT cmd[512];
 	TEXT *altdb;
 	SSHORT domain_flag = FALSE;
+
+	if (!source[0] || !destination[0])
+	{
+		STDERROUT("Either source or destination tables are missing", 1);
+		return SKIP;
+	}
 
 /* Call list_table with a temporary file, then hand that file to a
    new version of isql */
@@ -2546,7 +2559,7 @@ static SSHORT create_db( TEXT * statement, TEXT * d_name)
 				(isc_status, &M__trans, 1, &DB, 0, (SCHAR *) 0))
 				ISQL_errmsg(isc_status);
 			if (D__trans)
-				COMMIT_TRANS(&D__trans);
+				commit_trans(&D__trans);
 			if (isc_start_transaction(isc_status, &D__trans, 1, &DB,
 									  (V4) ? 5 : 0,
 									  (V4) ? default_tpb : NULL))
@@ -2585,14 +2598,11 @@ static void do_isql(void)
  **************************************/
 
 	TEXT *statement = NULL;
-	TEXT *errbuf;
 	USHORT bufsize = 0;
 	SSHORT ret;
 	BOOLEAN done = FALSE;
 
-	errbuf = (TEXT *) ISQL_ALLOC((SLONG) MSG_LENGTH);
-	if (!errbuf)
-		return;
+	TEXT errbuf[MSG_LENGTH];
 
 /* Initialized user transactions */
 
@@ -2716,11 +2726,11 @@ static void do_isql(void)
 			}
 			else {
 				if (D__trans)
-					COMMIT_TRANS(&D__trans);
+					commit_trans(&D__trans);
 				if (M__trans)
-					COMMIT_TRANS(&M__trans);
+					commit_trans(&M__trans);
 				if (gds_trans)
-					COMMIT_TRANS(&gds_trans);
+					commit_trans(&gds_trans);
 			}
 			/* 
 			 * If there is  current user statement, free it
@@ -2756,6 +2766,11 @@ static void do_isql(void)
 			/* fb_assert (FALSE);  -- removed as finds too many problems */
 		case ERR:
 		case FAIL:
+			Exit_value = FINI_ERROR;
+			if (!Interactive && BailOnError)
+				Abort_flag = true;
+			break;
+
 		case SKIP:
 			break;
 		}
@@ -2773,22 +2788,31 @@ static void do_isql(void)
 	ib_fclose(Ofp);
 	unlink(Tmpfile);
 
-	if (errbuf)
-		ISQL_FREE(errbuf);
 	if (sqlda)
 		ISQL_FREE(sqlda);
 	if (statement)
 		ISQL_FREE(statement);
-	if (Filelist)
+	// CVC: If we were halt by an error and Bail, we have pending cleanup.
+	while (Filelist)
+	{
+		indev* const flist = Filelist->indev_next;
+		FILE* const p = Filelist->indev_fpointer;
+		if (p != stdin && p != Ofp)
+			fclose(p);
 		ISQL_FREE(Filelist);
+		Filelist = flist;
+	}
+	if (Ifp != stdin && Ifp != Ofp)
+		fclose(Ifp);
+	if (lastInputLine)
+		free(lastInputLine);
+
 	while (Cols) {
 		COLLIST *p;
 		p = Cols;
 		Cols = Cols->collist_next;
 		ISQL_FREE(p);
 	}
-	if (Exit_value == FINI_ERROR)
-		exit(Exit_value);
 }
 
 
@@ -2951,11 +2975,8 @@ static int end_trans(void)
  *
  **************************************/
 
-	// TEXT buffer[BUFFER_LENGTH80];
 	TEXT infobuf[BUFFER_LENGTH60];
-	int ret;
-
-	ret = CONT;
+	int ret = CONT;
 /* Give option of committing or rolling back before proceding unless
 **  the last command was a commit or rollback 
 */
@@ -2966,9 +2987,10 @@ static int end_trans(void)
 							sizeof(infobuf), infobuf, (TEXT*) NULL_PTR, (TEXT*) NULL_PTR,
 							(TEXT*) NULL_PTR, (TEXT*) NULL_PTR, (TEXT*) NULL_PTR);
             readNextInputLine(infobuf);
+			getColumn = -1; // We are bypassing getNextInputChar().
             //			ISQL_prompt(infobuf);
             //			(void) ib_fgets(buffer, BUFFER_LENGTH80, ib_stdin);
-			if (isyesno(lastInputLine)) {	/* check for Yes answer */
+			if (lastInputLine && isyesno(lastInputLine)) {	/* check for Yes answer */
 				gds__msg_format(NULL_PTR, ISQL_MSG_FAC, COMMIT_MSG,
 								sizeof(infobuf), infobuf, (TEXT*) NULL_PTR, (TEXT*) NULL_PTR,
 								(TEXT*) NULL_PTR, (TEXT*) NULL_PTR, (TEXT*) NULL_PTR);
@@ -2993,7 +3015,6 @@ static int end_trans(void)
 					}
 				}
 			}
-			getColumn = -1;
 		}
 		else {					/* No answer, just roll back by default */
 
@@ -3259,7 +3280,7 @@ static SSHORT frontend( TEXT * statement)
 			}
 		ret = SHOW_metadata(parms, lparms);
 		if (gds_trans)
-			COMMIT_TRANS(&gds_trans);
+			commit_trans(&gds_trans);
 	}
 	else if (!strcmp(parms[0], "ADD")) {
 		if (DB && !gds_trans)
@@ -3280,7 +3301,7 @@ static SSHORT frontend( TEXT * statement)
 			}
 		ret = add_row(parms[1]);
 		if (gds_trans)
-			COMMIT_TRANS(&gds_trans);
+			commit_trans(&gds_trans);
 	}
 	else if (!strcmp(parms[0], "COPY")) {
 		if (DB && !gds_trans)
@@ -3301,7 +3322,7 @@ static SSHORT frontend( TEXT * statement)
 			}
 		ret = copy_table(parms[1], parms[2], lparms[3]);
 		if (gds_trans)
-			COMMIT_TRANS(&gds_trans);
+			commit_trans(&gds_trans);
 	}
 #ifdef MU_ISQL
 /*
@@ -3623,7 +3644,8 @@ static SSHORT frontend( TEXT * statement)
 	else if (!strcmp(parms[0], "EDIT"))
 		ret = edit(lparms);
 	else if ((!strcmp(parms[0], "INPUT")) || (!strcmp(parms[0], "IN"))) {
-		Input_file = TRUE;
+		// CVC: Set by input() above only if successful.
+		//Input_file = TRUE;
 		ret = input(lparms[1]);
 	}
 	else if (!strcmp(parms[0], "QUIT"))
@@ -3637,7 +3659,7 @@ static SSHORT frontend( TEXT * statement)
 
 /* In case any default transaction was started - commit it here */
 	if (gds_trans)
-		COMMIT_TRANS(&gds_trans);
+		commit_trans(&gds_trans);
 
 /* Free the frontend command */
 
@@ -3711,7 +3733,7 @@ static SSHORT get_statement(TEXT ** statement_ref,
  * Functional description
  *	Get an SQL statement, or QUIT/EXIT command to process
  *
- *	Arguments:  POinter to statement, and size of statement_buffer
+ *	Arguments:  Pointer to statement, size of statement_buffer and prompt msg.
  *
  **************************************/
 	TEXT *p, *q;
@@ -3752,8 +3774,6 @@ static SSHORT get_statement(TEXT ** statement_ref,
 
 	if (Ifp == ib_stdin) {
         ISQL_prompt(statement_prompt);
-        //		ib_fprintf(ib_stdout, statement_prompt);
-        //		ib_fflush(ib_stdout);
 	}
 
 /* Clear out statement buffer */
@@ -3808,6 +3828,17 @@ static SSHORT get_statement(TEXT ** statement_ref,
 
 			if (Interactive && (Ifp == ib_stdin))
 				ISQL_prompt(statement_prompt);
+				
+			// CVC: Let's detect if we went back to the first level.
+			if (Ifp == stdin)
+			{
+				Interactive = TRUE;
+				Input_file = FALSE;
+			}
+
+			// Try to convince the new routines to go back to previous file(s)
+			// This should fix the INPUT bug introduced with editline.
+			getColumn = -1;
 			break;
 
 		case '\n':
@@ -4772,14 +4803,9 @@ static SSHORT input( TEXT * infile)
 
 	flist = Filelist;
 
-/* Set up editing command for shell */
-
-	file = infile;
-
-
 /* If there is no file name specified, return error */
 
-	if (!file || !*file) {
+	if (!infile || !*infile) {
 		if (errbuf)
 			ISQL_FREE(errbuf);
 		return (ERR);
@@ -5185,7 +5211,7 @@ static SSHORT newdb(TEXT * dbname, TEXT * usr, TEXT * psw, TEXT * numbufs,
                 (isc_status, &M__trans, 1, &DB, 0,
                  (SCHAR *) 0)) ISQL_errmsg(isc_status);
             if (D__trans)
-                COMMIT_TRANS(&D__trans);
+                commit_trans(&D__trans);
             if (isc_start_transaction(isc_status, &D__trans, 1, &DB,
                                       (V4) ? 5 : 0, (V4) ? default_tpb : NULL))
                 ISQL_errmsg(isc_status);
@@ -5200,7 +5226,7 @@ static SSHORT newdb(TEXT * dbname, TEXT * usr, TEXT * psw, TEXT * numbufs,
             if (M__trans)
                 end_trans();
             if (D__trans)
-                COMMIT_TRANS(&D__trans);
+                commit_trans(&D__trans);
             isc_detach_database(isc_status, &DB);
             DB = 0;
             Db_name[0] = '\0';
@@ -5320,7 +5346,7 @@ static SSHORT newtrans( TEXT * statement)
 	if (!ISQL_dbcheck())
 		return FAIL;
 
-	if (end_trans())
+	if (end_trans() == FAIL)
 		return FAIL;
 
 	M__trans = NULL;
@@ -5460,11 +5486,12 @@ static SSHORT parse_arg(
 			else if (c == 'I') {
 				/* Alternate input file */
 
-				if ((s = argv[++i]) && (input(s) != FAIL));
+				if ((s = argv[++i]) && (input(s) == SKIP))
+					Interactive = FALSE;
 				else
 					ret = ERR;
-				Interactive = FALSE;
-				Input_file = TRUE;
+				// CVC: Set by input() above only if successful.
+				//Input_file = TRUE;
 			}
 			else if (c == 'T') {
 				/* The next string is the proposed terminator */
@@ -6441,7 +6468,13 @@ static int process_statement( TEXT * string, XSQLDA ** sqldap)
 				ISQL_errmsg(isc_status);
 				ret = ERR;
 			}
-			COMMIT_TRANS(&D__trans);
+			// CVC: DDL statements that aren't syntax errors are caught by DFW
+			// only at commit time, so we need to check here.
+			if (!commit_trans(&D__trans))
+			{
+				ISQL_errmsg(isc_status);
+				ret = ERR;
+			}
 
 			/* check for warnings */
 			if (isc_status[2] == isc_arg_warning)
@@ -6452,8 +6485,14 @@ static int process_statement( TEXT * string, XSQLDA ** sqldap)
 
 		/* Check to see if this is a SET TRANSACTION statement */
 
-		if (statement_type == isc_info_sql_stmt_start_trans) {
-			newtrans(string);
+		if (statement_type == isc_info_sql_stmt_start_trans)
+		{
+			// CVC: Starting a txn can fail, too. Let's check it, although I
+			// suspect isql will catch it in frontend() through get_statement(),
+			// so this place has little chance to be reached.
+			if (newtrans(string) == FAIL)
+				return ERR;
+
 			return ret;
 		}
 
@@ -6475,7 +6514,14 @@ static int process_statement( TEXT * string, XSQLDA ** sqldap)
 
 		if ((statement_type == isc_info_sql_stmt_commit) ||
 			(statement_type == isc_info_sql_stmt_rollback))
-				COMMIT_TRANS(&D__trans);
+		{
+			// CVC: Commit may fail with AUTO-DDL off and DDL changes rejected by DFW.
+			if (!commit_trans(&D__trans))
+			{
+				ISQL_errmsg(isc_status);
+				ret = ERR;
+			}
+		}
 
 		/* Print statistics report */
 
@@ -6961,7 +7007,7 @@ static int process_statement( TEXT * string, XSQLDA ** sqldap)
 		perf_format(&perf_before, &perf_after, report_1, statistics,
 					(SSHORT*) NULL_PTR);
 		sprintf(Print_buffer, "%s%s", statistics, NEWLINE);
-		ISQL_printf(Out, Print_buffer);
+		ISQL_printf(Diag, Print_buffer);
 	}
 
 	if (pad)
@@ -6994,7 +7040,7 @@ static void CLIB_ROUTINE query_abort(void)
  *
  **************************************/
 
-	Abort_flag = 1;
+	Abort_flag = true;
 }
 
 

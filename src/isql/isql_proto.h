@@ -51,7 +51,7 @@ extern BOOLEAN ISQL_get_null_flag(TEXT *, TEXT *);
 extern void ISQL_get_version(BOOLEAN);
 extern SSHORT ISQL_init(IB_FILE *, IB_FILE *);
 extern BOOLEAN ISQL_is_domain(TEXT *);
-extern SSHORT ISQL_main(int, char **);
+extern int ISQL_main(int, char **);
 extern void ISQL_make_upper(UCHAR *);
 extern void ISQL_msg_get(USHORT,
 						 TEXT *, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
