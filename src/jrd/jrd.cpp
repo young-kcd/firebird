@@ -735,10 +735,10 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 		/* Check to see if the database is truly local or if it just looks
 		   that way */
       
-      int checkRemoteFiles = 0;
-        if (FirebirdConfig::getSysBoolean("DoRemoteOpenForNFSFiles")) {
-            checkRemoteFiles=1;
-        }
+		int checkRemoteFiles = 0;
+		if (FirebirdConfig::getSysBoolean("DoRemoteOpenForNFSFiles")) {
+			checkRemoteFiles=1;
+		}
 		if (ISC_check_if_remote(expanded_filename, checkRemoteFiles))
 			ERR_post(gds_unavailable, 0);
 	}
@@ -2374,6 +2374,10 @@ STATUS DLL_EXPORT GDS_DETACH(STATUS * user_status, ATT * handle)
 
 	}	// try
 	catch (...) {
+		V4_JRD_MUTEX_LOCK(databases_mutex);
+		dbb->dbb_flags &= ~DBB_not_in_use;
+		V4_JRD_MUTEX_UNLOCK(databases_mutex);
+
 		JRD_SS_MUTEX_UNLOCK;
 		return error(user_status);
 	}
