@@ -68,6 +68,9 @@
 #include <signal.h>
 #endif
 
+#ifdef WIN_NT
+#include <io.h> // mktemp
+#endif
 
 #ifdef HAVE_EDITLINE_H
 // This is a local file included in our distribution - but not always

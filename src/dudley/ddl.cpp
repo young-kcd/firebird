@@ -49,7 +49,7 @@
 #endif
 
 #if defined(WIN_NT)
-#include <io.h>
+#include <io.h> // isatty
 #endif
 
 const TEXT* DDL_prompt;

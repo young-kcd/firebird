@@ -46,7 +46,7 @@
 #endif
 
 #ifdef WIN_NT
-#include <io.h>
+#include <io.h> // unlink
 #endif
 
 #define C_NUMERIC_SCALE(desc)	((DTYPE_IS_TEXT(make_dtype((desc).dsc_dtype))) ? 0 : (desc).dsc_scale)

@@ -42,10 +42,6 @@
 #include "../journal/serve_proto.h"
 #include "../jrd/gds_proto.h"
 
-#if defined(WIN_NT)
-#include <io.h>
-#endif
-
 bool sw_service_gjrn;
 FILE* msg_file;
 
