@@ -67,7 +67,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	TEXT **end, *p, *q, *cmd, *directory;
 	USHORT sw_command, sw_version, sw_startup, sw_mode, sw_guardian, sw_arch;
 	USHORT i, status;
-	SC_HANDLE manager;
+	SC_HANDLE manager, service;
 
 	directory = NULL;
 	sw_command = COMMAND_NONE;
@@ -172,7 +172,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	case COMMAND_INSTALL:
 		/* First, lets do the guardian, if it has been specified */
-#if (defined SUPERCLIENT || defined SUPERSERVER)
 		if (sw_guardian) {
 			status =
 				SERVICES_install(manager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME,
@@ -189,7 +188,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			/* Set sw_startup to manual in preparation for install the service */
 			sw_startup = STARTUP_DEMAND;
 		}
-#endif
 
 		/* do the install of the server */
 		status =
@@ -206,11 +204,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		break;
 
 	case COMMAND_REMOVE:
-#if (defined SUPERCLIENT || defined SUPERSERVER)
 		if (sw_guardian) {
 			status = SERVICES_remove(manager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME,
 									 svc_error);
-
 			if (status == FB_SUCCESS) {
 				ib_printf("Service \"%s\" successfully deleted.\n", ISCGUARD_DISPLAY_NAME);
 				status = SERVICES_delete(manager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME,
@@ -230,11 +226,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			else	      
 		    	ib_printf ("Service \"%s\" not deleted.\n", ISCGUARD_DISPLAY_NAME);
 		}
-#endif
 
 		status = SERVICES_remove(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
 								 svc_error);
-
 		if (status == FB_SUCCESS) {
 		    ib_printf("Service \"%s\" successfully deleted.\n", REMOTE_DISPLAY_NAME);
 		    status = SERVICES_delete(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
@@ -258,8 +252,11 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	case COMMAND_START:
 		/* Test for use of the guardian. If so, start the guardian else start the server */
-		if (Config::getGuardianOption() == 1) {
-#if (defined SUPERCLIENT || defined SUPERSERVER)
+// dimitr: this line says nothing about whether the guardian is installed or not
+//		if (Config::getGuardianOption() == 1) {
+		service = OpenService(manager, ISCGUARD_SERVICE, SERVICE_ALL_ACCESS);
+		if (service) {
+			CloseServiceHandle(service);
 			status = SERVICES_start(manager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME,
 									sw_mode, svc_error);
 			if (status == FB_SUCCESS)
@@ -267,7 +264,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			    		  ISCGUARD_DISPLAY_NAME);
 			else
 		    	ib_printf("Service \"%s\" not started.\n", ISCGUARD_DISPLAY_NAME);
-#endif
 		}
 		else {
 			status = SERVICES_start(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
@@ -282,17 +278,18 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	case COMMAND_STOP:
 		/* Test for use of the guardian. If so, stop the guardian else stop the server */
-		if (Config::getGuardianOption() == 1) {
-#if (defined SUPERCLIENT || defined SUPERSERVER)
+// dimitr: this line says nothing about whether the guardian is installed or not
+//		if (Config::getGuardianOption() == 1) {
+		service = OpenService(manager, ISCGUARD_SERVICE, SERVICE_ALL_ACCESS);
+		if (service) {
+			CloseServiceHandle(service);
 			status = SERVICES_stop(manager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME,
 								   svc_error);
-
 			if (status == FB_SUCCESS)
 			    ib_printf("Service \"%s\" successfully stopped.\n",
 			    		  ISCGUARD_DISPLAY_NAME);
 			else
 				ib_printf("Service \"%s\" not stopped.\n", ISCGUARD_DISPLAY_NAME);
-#endif
 		}
 		else {
 			status = SERVICES_stop(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
