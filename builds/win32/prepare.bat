@@ -15,13 +15,13 @@ if "%2" NEQ "" (set FIREBIRD="%2")
 @cd dbs
 
 
-@%FIREBIRD%\bin\gbak -r %1\src\misc\metadata.gbak localhost:%DB_PATH\builds\win32\dbs\metadata.fdb
+@%FIREBIRD%\bin\gbak -r %1\src\misc\metadata.gbak localhost:%DB_PATH%\builds\win32\dbs\metadata.fdb
 @md jrd
-@%FIREBIRD%\bin\gbak -r %1\src\misc\security.gbak localhost:%DB_PATH\builds\win32\dbs\jrd\security.fdb
+@%FIREBIRD%\bin\gbak -r %1\src\misc\security.gbak localhost:%DB_PATH%\builds\win32\dbs\jrd\security.fdb
 @md msgs
-@%FIREBIRD%\bin\gbak -r %1\src\msgs\msg.gbak localhost:%DB_PATH\builds\win32\dbs\msgs\msg.fdb
+@%FIREBIRD%\bin\gbak -r %1\src\msgs\msg.gbak localhost:%DB_PATH%\builds\win32\dbs\msgs\msg.fdb
 @md qli
-@%FIREBIRD%\bin\gbak -r %1\src\misc\help.gbak localhost:%DB_PATH\builds\win32\dbs\qli\help.fdb
+@%FIREBIRD%\bin\gbak -r %1\src\misc\help.gbak localhost:%DB_PATH%\builds\win32\dbs\qli\help.fdb
 @cd ..
 @del expand.sed
 @call :SED yachts.lnk %1 metadata.fdb
