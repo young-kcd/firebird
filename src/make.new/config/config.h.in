@@ -1,4 +1,4 @@
-#ident "$Id: config.h.in,v 1.35 2002-09-19 10:51:31 eku Exp $"
+#ident "$Id: config.h.in,v 1.36 2002-09-20 08:28:51 eku Exp $"
 
  /*
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
@@ -125,5 +125,7 @@
 #undef mpexl
 #undef UNIXWARE
 #undef SINIXZ
+
+#define ISC_PREFIX /usr/local/firebird
 
 #endif
