@@ -31,18 +31,11 @@
 #ifndef JRD_PERF_H
 #define JRD_PERF_H
 
-#ifdef VMS
-#define NOTIME
-#endif
-#if (defined (_MSC_VER) && defined (WIN32)) || (defined (__BORLANDC__) && defined (__WIN32__))
-#define NOTIME
-#endif
-
 #ifdef LINUX
 #include <libio.h>
 #endif
 
-#ifndef NOTIME
+#ifdef HAVE_TIMES
 #include <sys/types.h>
 #include <sys/times.h>
 #else
@@ -66,6 +59,14 @@ struct tms {
 	time_t tms_cstime;			/* system time, children */
 };
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#endif /* !HAVE_TIMES */
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 typedef struct perf {
@@ -99,7 +100,7 @@ typedef struct perf {
 
 */
 
-#if defined(__cplusplus) && defined(NOTIME)
+#ifdef __cplusplus
 } /* extern "C" */
 #endif
 
