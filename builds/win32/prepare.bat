@@ -19,7 +19,7 @@
 @if /I "%1"=="-?" (goto :HELP & goto :EOF)
 @if /I "%1"=="/?" (goto :HELP & goto :EOF)
 
-if "%1" NEQ "" (set FIREBIRD="%1")
+if "%1" NEQ "" (set FIREBIRD=%1)
 if "%FIREBIRD%"=="" (goto :HELP & goto :EOF)
 @goto :MAIN
 
@@ -42,13 +42,13 @@ for /f "tokens=*" %%a in ('@echo %ROOT_PATH:\=/%') do (set DB_PATH=%%a)
 @cd dbs
 @echo Creating databases
 
-@%FIREBIRD%\bin\gbak -r %ROOT_PATH%\src\misc\metadata.gbak localhost:%DB_PATH%\builds\win32\dbs\metadata.fdb
+@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\src\misc\metadata.gbak localhost:%DB_PATH%\builds\win32\dbs\metadata.fdb
 @md jrd 2>nul
-@%FIREBIRD%\bin\gbak -r %ROOT_PATH%\src\misc\security.gbak localhost:%DB_PATH%\builds\win32\dbs\jrd\security.fdb
+@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\src\misc\security.gbak localhost:%DB_PATH%\builds\win32\dbs\jrd\security.fdb
 @md msgs  2>nul
-@%FIREBIRD%\bin\gbak -r %ROOT_PATH%\src\msgs\msg.gbak localhost:%DB_PATH%\builds\win32\dbs\msgs\msg.fdb
+@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\src\msgs\msg.gbak localhost:%DB_PATH%\builds\win32\dbs\msgs\msg.fdb
 @md qli 2>nul
-@%FIREBIRD%\bin\gbak -r %ROOT_PATH%\src\misc\help.gbak localhost:%DB_PATH%\builds\win32\dbs\qli\help.fdb
+@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\src\misc\help.gbak localhost:%DB_PATH%\builds\win32\dbs\qli\help.fdb
 @cd ..
 
 @echo.
