@@ -32,12 +32,15 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.cpp,v 1.39 2004-03-01 03:18:42 skidder Exp $
+ *  $Id: alloc.cpp,v 1.40 2004-03-02 08:43:33 eku Exp $
  *
  */
 
 #include "../../include/firebird.h"
 #include "alloc.h"
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #ifdef HAVE_MMAP
 #include <sys/mman.h>
 #endif
@@ -166,7 +169,7 @@ void* MemoryPool::external_alloc(size_t size) {
 	// This code is needed for Solaris 2.6, AFAIK
 	if (dev_zero_fd < 0) dev_zero_fd = open("/dev/zero", O_RDWR);
 	return mmap(NULL, size, PROT_READ | PROT_WRITE, 
-		MAP_PRIVATE | MAP_ANONYMOUS, dev_zero_fd, 0);
+		MAP_PRIVATE, dev_zero_fd, 0);
 # endif
 #else
 	return malloc(size);
