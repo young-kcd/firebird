@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.23 2004-07-01 16:03:52 kkuznetsov Exp $
+dnl $Id: configure.in,v 1.141.2.24 2004-08-03 16:21:57 kkuznetsov Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -793,6 +793,16 @@ case "$PLATFORM" in
                      gen/install/postremove:src/install/arch-specific/sinixz/postremove.in
       ],[chmod a+x gen/install/pre* gen/install/post* 2>/dev/null])
     ;;
+
+  solx86)
+    AC_CONFIG_FILES([gen/install/Pkginfo:src/install/arch-specific/solx86gcc/CS/pkginfo.in
+                     gen/install/Prototype:src/install/arch-specific/solx86gcc/CS/prototype.in
+                     gen/install/Preinstall:src/install/arch-specific/solx86gcc/CS/preinstall.in
+                     gen/install/Postinstall:src/install/arch-specific/solx86gcc/CS/postinstall.in
+                     gen/install/Postremove:src/install/arch-specific/solx86gcc/CS/postremove.in
+      ],[chmod a+x gen/install/Pre* gen/install/Post* 2>/dev/null])
+    ;;
+  
 
   DARWIN)
   	;;
