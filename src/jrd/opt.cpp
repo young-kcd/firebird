@@ -3101,10 +3101,9 @@ static void find_used_streams(RSB rsb, UCHAR * streams)
 			break;
 
 		case rsb_merge:
-			/*for (ptr = rsb->rsb_arg, end = ptr + rsb->rsb_count * 2; ptr < end;	ptr += 2) {
+			for (ptr = rsb->rsb_arg, end = ptr + rsb->rsb_count * 2; ptr < end;	ptr += 2) {
 				find_used_streams(*ptr, streams);
-			}*/
-			// Nothing
+			}
 			break;
 
 		case rsb_left_cross:
@@ -4910,24 +4909,41 @@ static BOOLEAN gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 	LLS_PUSH(river1, &stack1);
 
 /* Pick up any boolean that may apply */
-
-	set_active(opt, river1);
-	node = NULL;
-	for (tail = opt->opt_rpt; tail < end; tail++)
 	{
-		node1 = tail->opt_conjunct;
-		if (!(tail->opt_flags & opt_used)
-			&& computable(opt->opt_csb, node1, -1, false))
+		USHORT flag_vector[MAX_STREAMS+1], *fv;
+		UCHAR stream_nr;
+		// AB: Inactivate currently all streams from every river, because we
+		// need to know which nodes are computable between the rivers used
+		// for the merge.
+		for (stream_nr = 0, fv = flag_vector; stream_nr < opt->opt_csb->csb_n_stream; stream_nr++) {
+			*fv++ = opt->opt_csb->csb_rpt[stream_nr].csb_flags & csb_active;
+			opt->opt_csb->csb_rpt[stream_nr].csb_flags &= ~csb_active;
+		}
+
+		set_active(opt, river1);
+		node = NULL;
+		for (tail = opt->opt_rpt; tail < end; tail++)
 		{
-			compose(&node, node1, nod_and);
-			tail->opt_flags |= opt_used;
+			node1 = tail->opt_conjunct;
+			if (!(tail->opt_flags & opt_used)
+				&& computable(opt->opt_csb, node1, -1, false))
+			{
+				compose(&node, node1, nod_and);
+				tail->opt_flags |= opt_used;
+			}
+		}
+
+		if (node) {
+			river1->riv_rsb = gen_boolean(tdbb, opt, river1->riv_rsb, node);
+		}
+		set_inactive(opt, river1);
+		*org_rivers = stack1;
+
+		for (stream_nr = 0, fv = flag_vector; stream_nr < opt->opt_csb->csb_n_stream; stream_nr++) {
+			opt->opt_csb->csb_rpt[stream_nr].csb_flags &= *fv++;
 		}
 	}
 
-	if (node)
-		river1->riv_rsb = gen_boolean(tdbb, opt, river1->riv_rsb, node);
-	set_inactive(opt, river1);
-	*org_rivers = stack1;
 	delete scratch;
 	return TRUE;
 }
