@@ -101,7 +101,7 @@ class Config
 		KEY_COMPLETE_BOOLEAN_EVALUATION,			// 34
 		KEY_REMOTE_AUX_PORT,						// 35
 		KEY_REMOTE_BIND_ADDRESS,					// 36
-		KEY_EXTERNAL_FILES_DIRECTORY				// 37
+		KEY_EXTERNAL_TABLES_DIRS					// 37
 	};
 
 public:
@@ -294,7 +294,7 @@ public:
 	/*
 		Directory list for external tables
 	*/
-	static const char *getExternalTablesDirectory();
+	static const char *getExternalTablesDirs();
 };
 
 #endif // CONFIG_H
