@@ -26,6 +26,7 @@
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include "../jrd/common.h"
 #include "../jrd/gds.h"
 #include "../jrd/jrd_pwd.h"
