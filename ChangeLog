@@ -1,9 +1,108 @@
+2004-05-07 16:09  brodsom
+
+	* firebird2/src/jrd/gds.cpp (1.136):
+	
+	Replace codes.h with iberror.h
+
+2004-05-07 13:26  brodsom
+
+	* firebird2/builds/mac_os_x/CS/Helpers.make (1.7):
+	
+	Correction
+
+2004-05-07 13:20  brodsom
+
+	* firebird2/builds/win32/: make_all.bat (1.25),
+	msvc6/gpre_static.dsp (1.8), msvc6/gpre_boot.dsp (1.23),
+	msvc6/engine.dsp (1.48), msvc6/engine_classic.dsp (1.43),
+	msvc6/engine_embed.dsp (1.22), msvc6/fbclient.dsp (1.46),
+	msvc6/fbclient_static.dsp (1.14), msvc6/gpre.dsp (1.23),
+	msvc7/engine.vcproj (1.38), msvc7/engine_classic.vcproj (1.37),
+	msvc7/engine_embed.vcproj (1.25), msvc7/fbclient.vcproj (1.34),
+	msvc7/fbclient_static.vcproj (1.15), msvc7/gpre.vcproj (1.22),
+	msvc7/gpre_boot.vcproj (1.23), msvc7/gpre_static.vcproj (1.6):
+	
+	-To solve the dsc.h and ibase.h duplicated definitions Create new
+	dsc_pub.h and include it into ibase.h and dsc.h
+
+2004-05-07 13:17  brodsom
+
+	* firebird2/: src/misc/headers.sed (1.2),
+	builds/mac_os_x/CS/Helpers.make (1.6),
+	builds/mac_os_x/CS/CS.pbproj/project.pbxproj (1.7),
+	builds/posix/Makefile.in.firebird (1.54):
+	
+	-To solve the dsc.h and ibase.h duplicated definitions Create new
+	dsc_pub.h and include it into ibase.h and dsc.h
+
+2004-05-07 13:07  brodsom
+
+	* firebird2/src/jrd/: dsc_pub.h (1.1), dsc.h (1.15), ibase.h
+	(1.76):
+	
+	-To solve the dsc.h and ibase.h duplicated definitions Create new
+	dsc_pub.h and include it into ibase.h and dsc.h
+
+2004-05-07 12:48  brodsom
+
+	* firebird2/src/ipserver/ipclient.cpp (1.43):
+	
+	-To solve the inf.h and ibase.h duplicated definitions 1.-Create
+	new inf_pub.h and include it into ibase.h 2.-Replace inf.h with
+	inf_pub.h where included
+
+2004-05-07 12:48  brodsom
+
+	* firebird2/src/jrd/: inf.h (1.6), inf_pub.h (1.1), why.cpp (1.66),
+	dsc.h (1.14), grant.epp (1.37), ibase.h (1.75), idx.h (1.13), scl.h
+	(1.10):
+	
+	-To solve the inf.h and ibase.h duplicated definitions 1.-Create
+	new inf_pub.h and include it into ibase.h 2.-Replace inf.h with
+	inf_pub.h where included -Replace defines with consts
+
+2004-05-07 09:57  brodsom
+
+	* firebird2/src/: jrd/evl.cpp (1.84), jrd/evl_like.cpp (1.16),
+	jrd/fields.h (1.6), jrd/fil.h (1.11), jrd/ini.h (1.16), jrd/opt.cpp
+	(1.164), jrd/rse.cpp (1.70), jrd/sort.cpp (1.66), jrd/utl.cpp
+	(1.66), qli/lex.cpp (1.29):
+	
+	Replace defines with consts
+
+2004-05-07 09:52  brodsom
+
+	* firebird2/src/isql/isql.h (1.28):
+	
+	Replace define with const
+
+2004-05-07 09:45  brodsom
+
+	* firebird2/: src/jrd/pag.cpp (1.74), src/utilities/sbc_print.cpp
+	(1.23), builds/posix/make.shared.variables (1.39):
+	
+	llio is not used actually
+
+2004-05-07 09:19  brodsom
+
+	* firebird2/src/: msgs/build_file.epp (1.22), jrd/os/posix/unix.cpp
+	(1.27), jrd/gds.cpp (1.135):
+	
+	Rollback until I found a better solution.
+
+2004-05-07 08:36  eku
+
+	* firebird2/src/jrd/common.h (1.115):
+	
+	SINIX-Z: Added O_BINARY define after Blas' removal
+
 2004-05-07 00:09  brodsom
 
-	* firebird2/src/jrd/: pag.cpp (1.73), shut.cpp (1.25), sort.cpp
-	(1.65), utl_proto.h (1.15), jrd.cpp (1.159), llio.cpp (1.21),
-	common.h (1.114), gds.cpp (1.134), gds_proto.h (1.33),
-	os/posix/unix.cpp (1.26):
+	* firebird2/src/: jrd/pag.cpp (1.73), jrd/shut.cpp (1.25),
+	jrd/sort.cpp (1.65), jrd/utl_proto.h (1.15), jrd/jrd.cpp (1.159),
+	jrd/llio.cpp (1.21), jrd/common.h (1.114), jrd/gds.cpp (1.134),
+	jrd/gds_proto.h (1.33), jrd/os/posix/unix.cpp (1.26),
+	msgs/build_file.epp (1.21):
 	
 	-Macro cleaning
 
