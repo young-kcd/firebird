@@ -2,6 +2,11 @@
   * v1.5.2
   **************
 
+    * Fixed unregistered bug.
+        Fix bug distribution of conjunctions to components of outer joins. The visible result of the bug were sub-optimal plans generated for some kinds of outer joins
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
     * Fixed 1.5.1 optimiser bug.
         Fix bug with unneeded fetches in joined relations when "OR" is used on base relation.
       Contributor(s):
