@@ -40,6 +40,10 @@
 #include "gds_proto.h"
 #include "os/guid.h"
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 void BackupManager::generate_filename() {
 	strncpy(diff_name, (char*)database->dbb_filename->str_data, sizeof(diff_name));
 	strncat(diff_name, ".delta", sizeof(diff_name)-strlen(diff_name)-1);
