@@ -22,7 +22,7 @@
  * FSG 16.03.2001
  */
 /*
-$Id: ibase.h,v 1.9 2002-02-16 05:06:17 seanleyne Exp $
+$Id: ibase.h,v 1.10 2002-03-11 16:34:01 skywalker Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
  *                          - EPSON, XENIX, MAC (MAC_AUX), Cray and OS/2
@@ -2309,3 +2309,4 @@ ISC_STATUS ISC_EXPORT isc_suspend_window(ISC_STATUS ISC_FAR*,
 #include "gen/iberror.h"
 
 #endif /* JRD_IBASE_H */
+

@@ -107,3 +107,4 @@ static USHORT protocols_supported[] =
 };
 
 #endif /* ALICE_INFO_H */
+

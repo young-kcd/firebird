@@ -2334,3 +2334,4 @@ static void write_wal_statistics( WAL WAL_handle)
 
 
 } // extern "C"
+

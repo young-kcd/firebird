@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: common.h,v 1.15 2002-02-16 05:06:17 seanleyne Exp $
+$Id: common.h,v 1.16 2002-03-11 16:34:01 skywalker Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -1270,3 +1270,4 @@ typedef struct in_sw_tab_t {
 #define READONLY_DATABASE 1
 
 #endif /* JRD_COMMON_H */
+

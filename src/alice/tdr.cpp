@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.6 2002-02-19 01:17:23 seanleyne Exp $
+//	$Id: tdr.cpp,v 1.7 2002-03-11 16:34:00 skywalker Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -1008,3 +1008,4 @@ static BOOLEAN reconnect(int *handle,
 	return FALSE;
 }
 #endif /* GUI_TOOLS */
+

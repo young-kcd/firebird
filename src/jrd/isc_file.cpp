@@ -2422,3 +2422,4 @@ static void convert_slashes(char oldslash, char newslash, char *string)
 }
 
 #endif /* PC_PLATFORM */
+

@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.4 2002-02-16 04:16:08 seanleyne Exp $
+ *  $Id: fb_types.h,v 1.5 2002-03-11 16:34:01 skywalker Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -172,3 +172,4 @@ typedef USHORT FLD_LENGTH;
 #define GDS_STATUS	long
 
 #endif /* INCLUDE_FB_TYPES_H */
+

@@ -128,3 +128,4 @@
 #define SRVR_thread_per_port	2048	/* 0x0800 Bind thread to a port */
 #define SRVR_no_icon		4096	/* 0x1000 Tell the server not to show the icon */
 #endif /* _REMOTE_REMOTE_DEF_H_ */
+

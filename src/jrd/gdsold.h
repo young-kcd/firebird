@@ -2200,3 +2200,4 @@ const unsigned char PYXIS_MENU_END = 0xFF;
 #endif
 
 #endif /* _JRD_GDSOLD_H_ */
+

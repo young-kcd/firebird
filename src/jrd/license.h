@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: license.h,v 1.13 2002-02-25 10:45:23 dimitr Exp $
+ * $Id: license.h,v 1.14 2002-03-11 16:34:01 skywalker Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -185,3 +185,4 @@
 #endif
 
 #endif /* _JRD_LICENSE_H_ */
+

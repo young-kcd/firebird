@@ -2108,3 +2108,4 @@ else
 	assert(!statement || (statement->rsr_header.blk_type == type_rsr));
 	return statement;
 }
+

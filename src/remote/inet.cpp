@@ -31,7 +31,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.10 2002-02-23 22:15:24 seanleyne Exp $
+$Id: inet.cpp,v 1.11 2002-03-11 16:34:02 skywalker Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -4163,3 +4163,4 @@ static void unhook_disconnected_ports(PORT main_port)
 #endif
 
 } // extern "C"
+

@@ -1713,3 +1713,4 @@ USHORT len2, SLONG * log_seqno, SLONG * log_offset, SSHORT ckpt)
 
 
 } // extern "C"
+
