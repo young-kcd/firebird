@@ -1,3 +1,146 @@
+2003-05-05 18:11  skidder
+
+	* firebird2/builds/win32/common_boot.mak:
+	
+	Make Win32 build compile
+
+2003-05-05 16:25  dimitr
+
+	* firebird2/src/jrd/btr.cpp:
+	
+	no message
+
+2003-05-05 14:26  alexpeshkoff
+
+	* firebird2/src/common/config/: dir_list.cpp, dir_list.h:
+	
+	Enable spaces & tabs in directory list
+
+2003-05-05 14:11  dimitr
+
+	* firebird2/src/remote/window.cpp:
+	
+	Disabled XNET in the server window.
+
+2003-05-05 14:09  dimitr
+
+	* firebird2/src/remote/srvr_w32.cpp:
+	
+	If a port cannot be reconnected, exit child process instead of
+	crashing with SEGV.
+
+2003-05-05 13:55  skidder
+
+	* firebird2/src/common/classes/array.h:
+	
+	Fix compiler warnings
+
+2003-05-05 13:48  alexpeshkoff
+
+	* firebird2/src/jrd/rpb_chain.cpp:
+	
+	Don't build rpb chains for external files
+
+2003-05-05 13:47  alexpeshkoff
+
+	* firebird2/src/jrd/exe.cpp:
+	
+	Moved pre-(modify,erase)triggers code to single inline function
+
+2003-05-05 13:44  dimitr
+
+	* firebird2/src/remote/server.cpp:
+	
+	Small fixes for WNET and XNET: 1. Wake up event thread on
+	disconnect.  2. Shutdown broken port properly.
+
+2003-05-05 13:14  dimitr
+
+	* firebird2/src/remote/interface.cpp:
+	
+	Fixed possible client crashes on disconnect (when events are
+	registered).
+
+2003-05-05 12:46  alexpeshkoff
+
+	* firebird2/src/jrd/tra.h:
+	
+	Comment added
+
+2003-05-05 12:45  alexpeshkoff
+
+	* firebird2/src/common/config/config_file.cpp:
+	
+	Preprocessor cleanup
+
+2003-05-05 12:39  dimitr
+
+	* firebird2/src/remote/cntl.cpp:
+	
+	Synchronized command-line arguments with srvr_w32.cpp.
+
+2003-05-05 12:36  dimitr
+
+	* firebird2/builds/win32/msvc6/fbembed.dsp:
+	
+	Updated project files
+
+2003-05-05 12:32  dimitr
+
+	* firebird2/doc/README.user.embedded:
+	
+	Added notes for the embedded server
+
+2003-05-05 12:27  dimitr
+
+	* firebird2/src/install/misc/firebird.conf:
+	
+	Updated documentation
+
+2003-05-05 11:18  dimitr
+
+	* firebird2/src/: jrd/isc_file.cpp, remote/interface.cpp:
+	
+	Removed XNET temporary stubs from ISC and REMOTE.  It will be
+	available as native local protocol in v1.6.
+
+2003-05-05 10:48  dimitr
+
+	* firebird2/src/jrd/svc.cpp:
+	
+	Correction.
+
+2003-05-05 10:40  dimitr
+
+	* firebird2/src/jrd/svc.cpp:
+	
+	1. Disabled not working services in win32 CS (until v1.6) 2. Fixed
+	SEGV in the service manager
+
+2003-05-05 09:55  alexpeshkoff
+
+	* firebird2/src/jrd/cmp.cpp:
+	
+	Comment added
+
+2003-05-05 09:38  alexpeshkoff
+
+	* firebird2/builds/posix/make.shared.variables:
+	
+	Dropped second entry for rpb_chain
+
+2003-05-05 09:06  dimitr
+
+	* firebird2/src/jrd/svc.cpp:
+	
+	Cleanup
+
+2003-05-05 00:02  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	fixed a typo and changed some comments
+
 2003-05-04 17:39  dimitr
 
 	* firebird2/src/jrd/: exe.cpp, vio.cpp, vio_proto.h:
