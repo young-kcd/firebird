@@ -4225,6 +4225,7 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 	TSQL tdsql;
 	ULONG position;
 	BOOLEAN field;
+	DSQL_REL relation;
 
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
@@ -4239,8 +4240,13 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 	if (input->nod_type == nod_list) {
 		if (input->nod_count == 1)
 			return PASS1_rse(request, input->nod_arg[0], order, update_lock);
-		else
+		else {
+			if (update_lock)
+				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, gds_arg_gds, 
+						  gds_token_err, /* Token unknown */
+						  gds_arg_gds, gds_random, gds_arg_string, "WITH LOCK", 0);
 			return pass1_union(request, input, order);
+		}
 	}
 
 /* Save the original base of the context stack and process relations */
@@ -4249,8 +4255,16 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 	parent_rse = NULL;
 	rse = target_rse = MAKE_node(nod_rse, e_rse_count);
 	rse->nod_arg[e_rse_lock] = update_lock;
-	rse->nod_arg[e_rse_streams] = PASS1_node(request, input->nod_arg[e_sel_from], 0);
+	list = rse->nod_arg[e_rse_streams] = PASS1_node(request, input->nod_arg[e_sel_from], 0);
 
+	if (update_lock && (list->nod_count != 1 || list->nod_arg[0]->nod_type != nod_relation ||
+	  !(relation=((DSQL_CTX)list->nod_arg[0]->nod_arg[e_rel_context])->ctx_relation) || 
+	  (relation->rel_flags & REL_view) || (relation->rel_flags & REL_external) )) 
+	{
+		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, gds_arg_gds, gds_token_err,	/* Token unknown */
+				  gds_arg_gds, gds_random, gds_arg_string, "WITH LOCK", 0);
+	}
+	
 /* Process LIMIT, if any */
 
     if (node = input->nod_arg[e_sel_limit]) {

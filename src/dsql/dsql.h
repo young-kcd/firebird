@@ -199,6 +199,7 @@ typedef dsql_rel* DSQL_REL;
 #define REL_new_relation	1	//!< relation is newly defined, not committed yet
 #define REL_dropped			2	//!< relation has been dropped
 #define REL_view            4   //!< relation is a view 
+#define REL_external        8   //!< relation is an external table
 
 
 class dsql_fld : public pool_alloc_rpt<SCHAR, dsql_type_fld>

@@ -1449,7 +1449,9 @@ DSQL_REL METD_get_relation(DSQL_REQ request, STR name)
             if (!X.RDB$VIEW_BLR.NULL) {
                 relation->rel_flags |= REL_view;
             }
-
+			if (!X.RDB$EXTERNAL_FILE.NULL) {
+				relation->rel_flags |= REL_external;
+			}
         }
 
         THREAD_EXIT;
