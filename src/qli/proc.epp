@@ -416,7 +416,7 @@ void PRO_invoke( DBB database, TEXT * name)
 		for (database = QLI_databases; database;
 			 database = database->dbb_next)
 		{
-			if (blob =PRO_fetch_procedure(database,name))
+			if (blob = PRO_fetch_procedure(database,name))
 				break;
 		}
 

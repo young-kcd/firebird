@@ -957,9 +957,8 @@ int BURP_gbak(int		argc,
 #endif
 		}
 		if (temp != tdgbl->gbl_sw_page_size) {
-			BURP_print(103, (void*)(ULONG) tdgbl->gbl_sw_page_size
-					   , (void*)(SLONG) temp,
-					   0, 0, 0);
+			BURP_print(103, (void*)(ULONG) tdgbl->gbl_sw_page_size,
+					   (void*)(SLONG) temp, 0, 0, 0);
 			// msg 103 page size specified (%ld bytes) rounded up to %ld bytes 
 			tdgbl->gbl_sw_page_size = temp;
 		}
