@@ -1,3 +1,56 @@
+2004-03-21 10:47  dimitr
+
+	* firebird2/src/jrd/: cvt.cpp, evl.cpp, mov.cpp:
+	
+	Fixed server crash when too big/small system year is set up.
+
+2004-03-21 10:35  dimitr
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Correction.
+
+2004-03-21 10:34  dimitr
+
+	* firebird2/src/jrd/: jrd.cpp, jrd.h, req.h:
+	
+	Minor cleanup.
+
+2004-03-21 10:32  dimitr
+
+	* firebird2/src/jrd/: intlobj.h, sdl_proto.h:
+	
+	Fixed warnings in VC71.
+
+2004-03-21 03:10  arnobrinkman
+
+	* firebird2/src/dsql/dsql.h:
+	
+	Improved derived table support.    When using derived tables inside
+	sub-selects it should be able to reference to higher contexts.
+
+2004-03-21 03:07  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	1) Fix bug with LEFT JOIN ViewX and where clause with ViewX.FieldX
+	IS NULL 2) When FIRST / SKIP is used in a sub-query it may not be
+	affected by conjunctions in higher contexts.	Example (should
+	return 1 row instead of 5):  SELECT * FROM   (SELECT FIRST 5 SKIP 2
+	cs.* FROM RDB$CHARACTER_SETS cs) WHERE	 RDB$CHARACTER_SET_NAME
+	starting with 'D'
+
+2004-03-21 02:48  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	1) Field with alias was also seraching for match in higher context
+	then the first matching context found. Noted by Nickolay   Example
+	(this does fail now with column o.ID unknown): SELECT * FROM Orders
+	o WHERE   EXISTS(SELECT * FROM RDB$DATABASE o WHERE o.ID = 1) 2)
+	Improved derived table support.    When using derived tables inside
+	sub-selects it should be able to reference to higher contexts.
+
 2004-03-20 16:45  alexpeshkoff
 
 	* firebird2/src/: common/classes/auto.h,
