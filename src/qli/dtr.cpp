@@ -98,9 +98,9 @@ typedef struct answer_t {
 
 static int yes_no_loaded = 0;
 static struct answer_t answer_table[] = {
-	"", FALSE,					/* NO   */
-	"", TRUE,					/* YES  */
-	NULL, 0,
+	{ "", FALSE },					/* NO   */
+	{ "", TRUE },					/* YES  */
+	{ NULL, 0 }
 };
 
 

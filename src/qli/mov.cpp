@@ -78,23 +78,23 @@ typedef struct dtypes_t {
 } *DTYPES;
 
 static struct dtypes_t dtypes_table[] = {
-	dtype_null, "NULL",
-	dtype_text, "character string",
-	dtype_cstring, "character string",
-	dtype_varying, "varying string",
-	dtype_packed, "packed decimal",
-	dtype_byte, "byte integer",
-	dtype_short, "short integer",
-	dtype_long, "long integer",
-	dtype_quad, "quadword integer",
-	dtype_real, "single precision floating",
-	dtype_double, "double precision floating",
-	dtype_d_float, "double precision floating",
-	dtype_timestamp, "date",
-	dtype_sql_date, "SQL date",
-	dtype_sql_time, "SQL time",
-	dtype_blob, "blob",
-	0, 0
+	{ dtype_null, "NULL", }
+	{ dtype_text, "character string" },
+	{ dtype_cstring, "character string" },
+	{ dtype_varying, "varying string" },
+	{ dtype_packed, "packed decimal" },
+	{ dtype_byte, "byte integer" },
+	{ dtype_short, "short integer" },
+	{ dtype_long, "long integer" },
+	{ dtype_quad, "quadword integer" },
+	{ dtype_real, "single precision floating" },
+	{ dtype_double, "double precision floating" },
+	{ dtype_d_float, "double precision floating" },
+	{ dtype_timestamp, "date" },
+	{ dtype_sql_date, "SQL date" },
+	{ dtype_sql_time, "SQL time" },
+	{ dtype_blob, "blob" },
+	{ 0, 0 }
 };
 
 
