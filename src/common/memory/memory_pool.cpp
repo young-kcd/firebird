@@ -66,7 +66,7 @@ static const bool ENABLE_FREQUENT_VERIFICATION = false;
 
 
 // These next variables control the Red Zone debugging offered by the memory pool
-static const bool ENABLE_RED_ZONES     = false;	// set to false to disable the red zones
+static const bool ENABLE_RED_ZONES     = true;	// set to false to disable the red zones
 static const int  RED_ZONE_FILL        = 0xFD;
 static const int  BEFORE_RED_ZONE_SIZE = 3;		// The size of the red zone BEFORE the memory,
 												//  in ALLOCATION UNITS! Does NOT need to be set to

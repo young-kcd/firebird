@@ -94,11 +94,14 @@ void* API_ROUTINE gds__alloc(SLONG size_request)
 
 ULONG API_ROUTINE gds__free(void* blk)
 {
-	try
+	if (blk)
 	{
-		poolLoader.loadPool();
-		return FB_MemoryPool->deallocate(blk);
-	} catch(...) {}
+		try
+		{
+			poolLoader.loadPool();
+			return FB_MemoryPool->deallocate(blk);
+		} catch(...) {}
+	}
 	
 	return 0;
 }

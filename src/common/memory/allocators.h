@@ -100,6 +100,10 @@ namespace Firebird
 		allocator(MemoryPool& p, SSHORT t = 0) : pool(&p), type(t) {}
 		allocator(MemoryPool *p = getDefaultMemoryPool(), SSHORT t = 0) : pool(p), type(t) {}
 	
+		template <class DST>
+		allocator(const allocator<DST> &alloc)
+		: pool(alloc.getPool()), type(alloc.getType()) { }
+
 		pointer allocate(size_type s, const void * = 0)
 			{ return (pointer) (pool ? pool->allocate(sizeof(T) * s) : gds__alloc(sizeof(T)*s)); }
 		void deallocate(pointer p, size_type s)
@@ -122,7 +126,8 @@ namespace Firebird
 			return pool == rhs.pool && type == rhs.type;
 		}
 
-
+		MemoryPool *getPool() const { return pool; }
+		SSHORT getType() const { return type; }
 	
 	private:
 		MemoryPool *pool;
@@ -130,6 +135,5 @@ namespace Firebird
 	};
 
 };
-
 
 #endif	// COMMON_ALLOCATORS_H
