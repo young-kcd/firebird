@@ -1380,8 +1380,8 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 #ifdef SUPERSERVER
 			if (bdb->bdb_flags & BDB_db_dirty) {
 				if (all_flag
-					|| (sweep_flag))
-						&& (!bdb->bdb_parent && bdb != bcb->bcb_btree)))
+					|| (sweep_flag)
+						&& (!bdb->bdb_parent && bdb != bcb->bcb_btree))
 				{
 					if (!write_buffer
 						(tdbb, bdb, bdb->bdb_page, write_thru, status, true))
