@@ -1,3 +1,17 @@
+2004-01-15 15:07  alexpeshkoff
+
+	* firebird2/src/install/arch-specific/linux/super/preinstall.sh.in:
+	
+	Changed check for 'ed' presence to 'ex'.
+
+2004-01-15 14:48  alexpeshkoff
+
+	*
+	
+	Fixed typo in script
+	firebird2/src/install/arch-specific/linux/misc/firebird.init.d.debi
+	an.in:
+
 2004-01-14 10:57  stryqx
 
 	* firebird2/src/install/arch-specific/freebsd/install.sh.in:
