@@ -45,7 +45,7 @@ BLKDEF (type_par, par, 0)				/* Parameter block */
 BLKDEF (type_line, line, 1)				/* Input line block */
 BLKDEF (type_brk, brk, 0)
 BLKDEF (type_rpt, rpt, 0)
-BLKDEF (type_pic, pic, 0)
+BLKDEF (type_pic, pics, 0)
 BLKDEF (type_prt, prt, 0)
 BLKDEF (type_map, map, 0)
 BLKDEF (type_qpr, qpr, 0)

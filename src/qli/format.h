@@ -69,14 +69,6 @@ typedef struct col {
     :		literal insertion
 */
 
-/* Unfortunately libtool defines a macro -DPIC which mucks up the defintion 
-   of the following struct, fortunately we do not use the PIC macro
-*/
-
-#ifdef PIC
-#undef PIC
-#endif
-
 typedef ENUM pic_t {
     pic_alpha = 1,
     pic_numeric,
@@ -87,7 +79,7 @@ typedef ENUM pic_t {
 
 /* Picture string handling block */
 
-typedef struct pic {
+typedef struct pics {
     struct blk	pic_header;
     USHORT	pic_print_length;	/* Print length of picture string */
     TEXT	*pic_string;		/* Address of string */
@@ -117,8 +109,8 @@ typedef struct pic {
     USHORT	pic_minutes;		/* minutes */
     USHORT	pic_seconds;		/* seconds */
     USHORT	pic_meridian;		/* AM/PM indicator */
-    struct pic	*pic_missing;		/* missing value edit string */
-} *PIC;
+    struct pics	*pic_missing;		/* missing value edit string */
+} *PICS;
 
 #define PIC_suppress_blanks	1	/* Suppress leading blanks */
 #define PIC_literal		2	/* We're in a quoted string */

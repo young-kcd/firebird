@@ -91,7 +91,7 @@ int FMT_expression( QLI_NOD node)
  *	length.
  *
  **************************************/
-	PIC picture;
+	PICS picture;
 	QLI_NOD sub;
 	QLI_FLD field;
 
@@ -1029,7 +1029,7 @@ static void format_value( ITM item, int flags)
  **************************************/
 	QLI_NOD node;
 	DSC *desc;
-	PIC picture;
+	PICS picture;
 	QLI_FLD field;
 
 	node = item->itm_value;

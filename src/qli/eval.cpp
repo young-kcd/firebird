@@ -533,7 +533,7 @@ DSC *EVAL_value(QLI_NOD node)
 
 	case nod_format:
 		p = desc->dsc_address;
-		PIC_edit(values[0], (pic*) node->nod_arg[e_fmt_picture], (TEXT**) &p,
+		PIC_edit(values[0], (pics*) node->nod_arg[e_fmt_picture], (TEXT**) &p,
 				 desc->dsc_length);
 		desc->dsc_length = p - desc->dsc_address;
 		return desc;

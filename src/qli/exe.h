@@ -152,7 +152,7 @@ typedef struct itm {
     struct blk	itm_header;
     struct qli_nod	*itm_value;
     TEXT	*itm_edit_string;
-    struct pic	*itm_picture;			/* picture string block */
+    struct pics	*itm_picture;			/* picture string block */
     TEXT	*itm_query_header;
     ITM_T	itm_type;
     USHORT	itm_flags;			/* Misc flags and crud */

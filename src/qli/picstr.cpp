@@ -37,12 +37,12 @@
 
 static TEXT *cvt_to_ascii(SLONG, TEXT *, int);
 static TEXT *default_edit_string(DSC *, TEXT *);
-static void edit_alpha(DSC *, PIC, TEXT **, USHORT);
-static void edit_date(DSC *, PIC, TEXT **);
-static void edit_float(DSC *, PIC, TEXT **);
-static void edit_numeric(DSC *, PIC, TEXT **);
-static int generate(PIC);
-static void literal(PIC, TEXT, TEXT **);
+static void edit_alpha(DSC *, PICS, TEXT **, USHORT);
+static void edit_date(DSC *, PICS, TEXT **);
+static void edit_float(DSC *, PICS, TEXT **);
+static void edit_numeric(DSC *, PICS, TEXT **);
+static int generate(PICS);
+static void literal(PICS, TEXT, TEXT **);
 
 static TEXT *alpha_weekdays[] = {
 	"Sunday",
@@ -63,7 +63,7 @@ static TEXT *alpha_weekdays[] = {
 		"July", "August", "September", "October", "November", "December"};
 
 
-PIC PIC_analyze( TEXT * string, DSC * desc)
+PICS PIC_analyze( TEXT * string, DSC * desc)
 {
 /**************************************
  *
@@ -75,7 +75,7 @@ PIC PIC_analyze( TEXT * string, DSC * desc)
  *	Analyze a picture in preparation for formatting.
  *
  **************************************/
-	PIC picture;
+	PICS picture;
 	TEXT c, d, debit;
 
 	if (!string)
@@ -86,7 +86,7 @@ PIC PIC_analyze( TEXT * string, DSC * desc)
 
 	debit = 0;
 
-	picture = (PIC) ALLOCD(type_pic);
+	picture = (PICS) ALLOCD(type_pic);
 	picture->pic_string = picture->pic_pointer = string;
 
 /* Make a first pass just counting characters */
@@ -284,7 +284,7 @@ PIC PIC_analyze( TEXT * string, DSC * desc)
 }
 
 
-void PIC_edit( DSC * desc, PIC picture, TEXT ** output, USHORT max_length)
+void PIC_edit( DSC * desc, PICS picture, TEXT ** output, USHORT max_length)
 {
 /**************************************
  *
@@ -318,7 +318,7 @@ void PIC_edit( DSC * desc, PIC picture, TEXT ** output, USHORT max_length)
 }
 
 
-void PIC_missing( CON constant, PIC picture)
+void PIC_missing( CON constant, PICS picture)
 {
 /**************************************
  *
@@ -335,7 +335,7 @@ void PIC_missing( CON constant, PIC picture)
 	STR scratch;
 	int l;
 	TEXT *p;
-	PIC missing_picture;
+	PICS missing_picture;
 	DSC *desc;
 
 	desc = &constant->con_desc;
@@ -472,7 +472,7 @@ static TEXT *default_edit_string(
 
 static void edit_alpha(
 					   DSC * desc,
-					   PIC picture, TEXT ** output, USHORT max_length)
+					   PICS picture, TEXT ** output, USHORT max_length)
 {
 /**************************************
  *
@@ -535,7 +535,7 @@ static void edit_alpha(
 }
 
 
-static void edit_date( DSC * desc, PIC picture, TEXT ** output)
+static void edit_date( DSC * desc, PICS picture, TEXT ** output)
 {
 /**************************************
  *
@@ -682,7 +682,7 @@ static void edit_date( DSC * desc, PIC picture, TEXT ** output)
 }
 
 
-static void edit_float( DSC * desc, PIC picture, TEXT ** output)
+static void edit_float( DSC * desc, PICS picture, TEXT ** output)
 {
 /**************************************
  *
@@ -900,7 +900,7 @@ static void edit_float( DSC * desc, PIC picture, TEXT ** output)
 }
 
 
-static void edit_numeric( DSC * desc, PIC picture, TEXT ** output)
+static void edit_numeric( DSC * desc, PICS picture, TEXT ** output)
 {
 /**************************************
  *
@@ -1090,7 +1090,7 @@ static void edit_numeric( DSC * desc, PIC picture, TEXT ** output)
 }
 
 
-static int generate( PIC picture)
+static int generate( PICS picture)
 {
 /**************************************
  *
@@ -1162,7 +1162,7 @@ static int generate( PIC picture)
 }
 
 
-static void literal( PIC picture, TEXT c, TEXT ** ptr)
+static void literal( PICS picture, TEXT c, TEXT ** ptr)
 {
 /**************************************
  *
