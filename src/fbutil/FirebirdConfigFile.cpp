@@ -16,13 +16,29 @@
 #include <iostream>
 
 
+void FirebirdConfigFile::key_compare::uppercase(string& x) const
+{
+	for (int pos = 0; pos < x.length(); pos++)
+		x[pos] = toupper(x[pos]);
+}
 
+bool FirebirdConfigFile::key_compare::operator()(const string& x, const string& y) const
+{
+	string s1 = x, s2 = y;
+
+	if (!isCaseSensitive) {
+		uppercase(s1), uppercase(s2);
+	}
+
+	return (s1 < s2);
+}
 
 //-----------------------------------------------------------------------------
 //
 //
 //
-FirebirdConfigFile::FirebirdConfigFile() 
+
+FirebirdConfigFile::FirebirdConfigFile()
 {
     isLoadedFlg = false;
 #pragma FB_COMPILER_MESSAGE("Error! This is a *nix only thing!")
@@ -125,7 +141,7 @@ FirebirdConfig::string FirebirdConfigFile::getString(const FirebirdConfig::strin
 //
 //
 
-int    FirebirdConfigFile::getInt(const FirebirdConfig::string& key) {
+int FirebirdConfigFile::getInt(const FirebirdConfig::string& key) {
 
     checkLoadConfig();
 
@@ -233,7 +249,7 @@ void FirebirdConfigFile::loadConfig() {
         return;
     }
     string inputLine;
-    
+
     while (!configFile.eof() ) {
 		std::getline(configFile, inputLine);
 
