@@ -78,23 +78,26 @@ namespace Firebird {
 	const AbstractString::size_type AbstractString::npos = ~0;
 
 	AbstractString::AbstractString(const AbstractString& v) {
-		memcpy(createStorage(v.length()), v.c_str(), v.length());
+		initialize(v.length());
+		memcpy(stringBuffer, v.c_str(), v.length());
 	}
 
 	AbstractString::AbstractString(size_type sizeL, const_pointer dataL) {
-		memcpy(createStorage(sizeL), dataL, sizeL);
+		initialize(sizeL);
+		memcpy(stringBuffer, dataL, sizeL);
 	}
 
 	AbstractString::AbstractString(const_pointer p1, size_type n1, 
 				 const_pointer p2, size_type n2)
 	{
-		char *s = createStorage(n1 + n2);
-		memcpy(s, p1, n1);
-		memcpy(&s[n1], p2, n2);
+		initialize(n1 + n2);
+		memcpy(stringBuffer, p1, n1);
+		memcpy(stringBuffer + n1, p2, n2);
 	}
 
 	AbstractString::AbstractString(size_type sizeL, char_type c) {
-		memset(createStorage(sizeL), c, sizeL);
+		initialize(sizeL);
+		memset(stringBuffer, c, sizeL);
 	}
 
 	void AbstractString::AdjustRange(size_type length, size_type& pos, size_type& n) {
@@ -104,7 +107,6 @@ namespace Firebird {
 		if (pos >= length) {
 			pos = length;
 			n = 0;
-			return;
 		}
 		else if (pos + n > length || n == npos) {
 			n = length - pos;
@@ -112,116 +114,54 @@ namespace Firebird {
 	}
 
 	AbstractString::pointer AbstractString::baseAssign(size_type n) {
-		StoragePair x;
-		openStorage(x, n
-#ifdef DEV_BUILD
-				, __FILE__, __LINE__
-#endif
-			);
-		bigStorage[n] = 0;
-		return bigStorage;
+		reserveBuffer(n + 1);
+		stringLength = n;
+		stringBuffer[stringLength] = 0;
+		shrinkBuffer(); // Shrink buffer if it is unneeded anymore
+		return stringBuffer;
 	}
 
 	AbstractString::pointer AbstractString::baseAppend(size_type n) {
-		StoragePair x;
-		openStorage(x, length() + n
-#ifdef DEV_BUILD
-				, __FILE__, __LINE__
-#endif
-			);
-		if (x.oldStorage) {
-			memcpy(bigStorage, x.oldStorage, x.oldSize);
-		}
-		bigStorage[length()] = 0;
-		return &bigStorage[x.oldSize];
+		reserveBuffer(stringLength + n + 1);
+		stringLength += n;
+		stringBuffer[stringLength] = 0; // Set null terminator inside the new buffer
+		return stringBuffer + stringLength - n;
 	}
 
 	AbstractString::pointer AbstractString::baseInsert(size_type p0, size_type n) {
 		if (p0 >= length()) {
 			return baseAppend(n);
 		}
-		StoragePair x;
-		openStorage(x, length() + n
-#ifdef DEV_BUILD
-				, __FILE__, __LINE__
-#endif
-			);
-		if (x.oldStorage) {
-			memcpy(bigStorage, x.oldStorage, p0);
-			memcpy(&bigStorage[p0 + n], 
-					&x.oldStorage[p0], x.oldSize - p0);
-		}
-		else {
-			memmove(&bigStorage[p0 + n], &bigStorage[p0], 
-				x.oldSize - p0);
-		}
-		bigStorage[length()] = 0;
-		return &bigStorage[p0];
+		reserveBuffer(stringLength + n + 1);
+		memmove(stringBuffer + p0 + n, stringBuffer + p0, 
+				stringLength - p0 + 1); // Do not forget to move null terminator too
+		stringLength += n;
+		return stringBuffer + p0;
 	}
 
 	void AbstractString::baseErase(size_type p0, size_type n) {
 		AdjustRange(length(), p0, n);
-		StoragePair x;
-		openStorage(x, length() - n
-#ifdef DEV_BUILD
-				, __FILE__, __LINE__
-#endif
-			);
-		if (x.oldStorage) {
-			memcpy(bigStorage, x.oldStorage, p0);
-			memcpy(&bigStorage[p0], &x.oldStorage[p0 + n], 
-				x.oldSize - (p0 + n));
-		}
-		else {
-			memmove(&bigStorage[p0], 
-				&bigStorage[p0 + n], x.oldSize - (p0 + n));
-		}
-		bigStorage[length()] = 0;
+		memmove(stringBuffer + p0, 
+				stringBuffer + p0 + n, stringLength - (p0 + n) + 1);
+		stringLength -= n;
+		shrinkBuffer();
 	}
 
-/*	
-	*** Firebird::string uses algorithm of freeing memory used by 
-	*** very long strings, when length of string becomes MUCH smaller.
-	*** Obviously, it conflicts with reserve() STL-like method.
-	*** Therefore - no implementation for a while.
 	void AbstractString::reserve(size_type n) {
-		if (n <= actualSize) {
-			return;
-		}
-		const unsigned short l = userSize;
-		StoragePair x;
-		openStorage(x, n
-#ifdef DEV_BUILD
-				, __FILE__, __LINE__
-#endif
-		);
-		userSize = l;
-		if (actualSize > smallStorageSize) {
-			forced = n;
-		}
-		if (x.oldStorage) {
-			memcpy(bigStorage, x.oldStorage, l);
-		}
-		bigStorage[l] = 0;
-	}*/
+		reserveBuffer(n + 1);
+	}
 
 	void AbstractString::resize(size_type n, char_type c) {
 		if (n == length()) {
 			return;
 		}
-		StoragePair x;
-		openStorage(x, n
-#ifdef DEV_BUILD
-				, __FILE__, __LINE__
-#endif
-			);
-		if (x.oldStorage) {
-			memcpy(bigStorage, x.oldStorage, n < x.oldSize ? n : x.oldSize);
+		reserveBuffer(n + 1);
+		if (n > stringLength) {
+			memset(stringBuffer + stringLength, c, n - stringLength);
 		}
-		if (n > x.oldSize) {
-			memset(&bigStorage[x.oldSize], c, n - x.oldSize);
-		}
-		bigStorage[n] = 0;
+		stringLength = n;
+		stringBuffer[n] = 0;
+		shrinkBuffer();
 	}
 
 	AbstractString::size_type AbstractString::rfind(const_pointer s, size_type pos) const {
@@ -389,19 +329,10 @@ extern "C" {
 
 		if (NewLength == length())
 			return;
-		StoragePair x;
-		openStorage(x, NewLength
-#ifdef DEV_BUILD
-				, __FILE__, __LINE__
-#endif
-			);
-		if (x.oldStorage) {
-			memcpy(bigStorage, b, NewLength);
-		}
-		else if (b != bigStorage) {
-			memmove(bigStorage, b, NewLength);
-		}
-		bigStorage[NewLength] = 0;
+
+		stringLength = NewLength;
+		stringBuffer[NewLength] = 0;
+		shrinkBuffer();
 	}
 
 	void AbstractString::printf(const char* format,...) {

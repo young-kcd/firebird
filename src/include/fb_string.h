@@ -52,170 +52,130 @@ namespace Firebird
 		typedef pointer iterator;
 		typedef const_pointer const_iterator;
 		static const size_type npos;
-		enum {smallStorageSize = 32, reserveSize = 16, keepSize = 512};
+		enum {INLINE_BUFFER_SIZE = 32, INIT_RESERVE = 16/*, KEEP_SIZE = 512*/};
 	protected:
-		char_type smallStorage[smallStorageSize];
-		char_type* bigStorage;
-		unsigned short userSize, actualSize;
+		char_type inlineBuffer[INLINE_BUFFER_SIZE];
+		char_type* stringBuffer;
+		unsigned short stringLength, bufferSize;
 	private:
 		inline void checkPos(size_type pos) const {
 			if (pos >= length()) {
 				fatal_exception::raise("Firebird::string - pos out of range");
 			}
 		}
-		static inline void checkSize(size_type sizeL) {
-			if (sizeL > max_size()) {
-				fatal_exception::raise("Firebird::string - size exceeds predefined limit");
+		static inline void checkLength(size_type len) {
+			if (len > max_length()) {
+				fatal_exception::raise("Firebird::string - length exceeds predefined limit");
 			}
 		}
-		// Returns bigStorage for string sized <uSize>,
-		// not taking care about ability to place it
-		// in smallStorage. Changes actualSize of string.
-		inline void allocateStorage(size_type uSize
-#ifdef DEV_BUILD
-			, const char *file, int line
-#endif
-		) {
-			fb_assert(uSize >= smallStorageSize);
-			size_type aSize = uSize + reserveSize + 1;
-			actualSize = aSize;
-			bigStorage = new (getPool()
-#ifdef DEV_BUILD
-				, file, 0
-#endif
-						) char[aSize];
-		}
-		// Returns valid pointer to new storage 
-		// and sets all size related information of this string.
-		// Usage - constructors.
-		inline pointer createStorage(size_type uSize) {
-			checkSize(uSize);
-			userSize = uSize;
-			if (uSize < smallStorageSize) 
-			{
-				actualSize = smallStorageSize;
-				bigStorage = smallStorage;
+
+		// Make sure we can store at least newSize characters in our buffer 
+		// (including null terminator). Existing contents of our string are preserved.
+		void reserveBuffer(size_type newSize) {
+			if (newSize > bufferSize) {
+				// Order of assignments below is important in case of low memory conditions
+
+				// Grow buffer exponentially to prevent memory fragmentation
+				if (newSize < bufferSize * 2)
+					newSize = bufferSize * 2;
+				char_type *newBuffer = FB_NEW(getPool()) char_type[newSize];
+				// Carefully copy string data including null terminator
+				memcpy(newBuffer, stringBuffer, sizeof(char_type) * (stringLength + 1));
+				stringBuffer = newBuffer;
+				bufferSize = newSize;
 			}
-			else 
-			{
-				allocateStorage(uSize
-#ifdef DEV_BUILD
-					, __FILE__, __LINE__
-#endif
-					);
-			}	
-			bigStorage[uSize] = 0;
-			return bigStorage;
 		}
 
-		// Temporary structure returned by openStorage()
-		struct StoragePair {
-			pointer oldStorage;
-			size_type oldSize;
-			~StoragePair() {
-				if (oldSize >= AbstractString::smallStorageSize)
-					delete[] oldStorage;
+		// Make sure our buffer is large enough to store at least <length> characters in it
+		// (not including null terminator). Resulting buffer is not initialized. 
+		// Use in constructors only when stringBuffer is not assigned yet.
+		void initialize(size_type len) {
+			size_type newSize = len + 1;
+			if (newSize <= INLINE_BUFFER_SIZE) {
+				stringBuffer = inlineBuffer;
+				bufferSize = INLINE_BUFFER_SIZE;
+			} else {
+				stringBuffer = FB_NEW(getPool()) char_type[newSize];
+				bufferSize = newSize;
 			}
-		};
-		friend struct StoragePair;
-		// Creates (possibly reallocated) bigStorage for new string.
-		// Sets values for oldStorage
-		// (if string is not updated inplace) and oldSize.
-		// oldStorage will be released in StoragePair's destructor.
-		inline void openStorage(StoragePair& rc, size_type newSize
-#ifdef DEV_BUILD
-			, const char *file, int line
-#endif
-		) {
-			checkSize(newSize);
-			rc.oldStorage = 0;
-			rc.oldSize = userSize;
-			userSize = newSize;
-
-			// new string fits into smallStorage
-			if (newSize < smallStorageSize) 
-			{
-				// old bigStorage should be deallocated
-				if (actualSize > smallStorageSize) 
-				{
-					rc.oldStorage = bigStorage;
-				}
-				bigStorage = smallStorage;
-				actualSize = smallStorageSize;
-				return;
-			}
-
-			// size change was small enough not to reallocate memory
-			if (newSize < actualSize && newSize + keepSize > actualSize) {
-				return;
-			}
-
-			// do memory reallocation
-			rc.oldStorage = bigStorage;
-			allocateStorage(newSize
-#ifdef DEV_BUILD
-				, file, line
-#endif
-				);
+			stringLength = len;
+			stringBuffer[stringLength] = 0;
 		}
 
-		// Returns pointer to current storage.
-		inline pointer getStorage() {
-			return bigStorage;
+		void shrinkBuffer() {
+			// Shrink buffer if we decide it is beneficial
 		}
+
 	protected:
 		AbstractString(size_type sizeL, const_pointer datap);
+
 		AbstractString(const_pointer p1, size_type n1, 
 					 const_pointer p2, size_type n2);
+
 		AbstractString(const AbstractString& v);
-		inline AbstractString() {
-			bigStorage = smallStorage;
-			actualSize = smallStorageSize;
-			userSize = 0;
-			smallStorage[0] = 0;
+
+		inline AbstractString() : 
+			stringBuffer(inlineBuffer), stringLength(0), bufferSize(INLINE_BUFFER_SIZE)
+		{
+			stringBuffer[0] = 0;
 		}
+
 		AbstractString(size_type sizeL, char_type c);
-		inline explicit AbstractString(MemoryPool& p) : AutoStorage(p) {
-			bigStorage = smallStorage;
-			actualSize = smallStorageSize;
-			userSize = 0;
-			smallStorage[0] = 0;
+
+		inline explicit AbstractString(MemoryPool& p) : AutoStorage(p),
+			stringBuffer(inlineBuffer), stringLength(0), bufferSize(INLINE_BUFFER_SIZE)
+		{
+			stringBuffer[0] = 0;
 		}
+
 		inline AbstractString(MemoryPool& p, const AbstractString& v) 
 			: AutoStorage(p)
 		{
-			memcpy(createStorage(v.length()), v.c_str(), v.length());
+			initialize(v.length());
+			memcpy(stringBuffer, v.c_str(), stringLength);
 		}
+
 		inline AbstractString(MemoryPool& p, const char_type* s, size_type l) 
 			: AutoStorage(p)
 		{
-			memcpy(createStorage(l), s, l);
+			initialize(l);
+			memcpy(stringBuffer, s, l);
 		}
 
 		pointer Modify(void) {
-			return getStorage();
+			return stringBuffer;
 		}
+
+		// Trim the range making sure that it fits inside specified length
 		static void AdjustRange(size_type length, size_type& pos, size_type& n);
+
 		pointer baseAssign(size_type n);
+
 		pointer baseAppend(size_type n);
+
 		pointer baseInsert(size_type p0, size_type n);
+
 		void baseErase(size_type p0, size_type n);
+
 		enum TrimType {TrimLeft, TrimRight, TrimBoth};
+
 		void baseTrim(TrimType WhereTrim, const_pointer ToTrim);
 	public:
 		inline const_pointer c_str() const {
-			return bigStorage;
+			return stringBuffer;
 		}
 		inline size_type length() const {
-			return userSize;
+			return stringLength;
 		}
-		//void reserve(size_type n = 0);
+		void reserve(size_type n = 0);
 		void resize(size_type n, char_type c = ' ');
+
 		inline size_type copy(pointer s, size_type n, size_type pos = 0) const {
 			AdjustRange(length(), pos, n);
-			memcpy(s, &c_str()[pos], n);
+			memcpy(s, c_str() + pos, n);
 			return n;
 		}
+
 /*		inline void swap(AbstractString& str) {
 			Storage *tmp = StringData;
 			StringData = str.StringData;
@@ -226,11 +186,11 @@ namespace Firebird
 			return find(str.c_str(), pos);
 		}
 		inline size_type find(const_pointer s, size_type pos = 0) const {
-			const_pointer p = strstr(&c_str()[pos], s);
+			const_pointer p = strstr(c_str() + pos, s);
 			return p ? p - c_str() : npos;
 		}
 		inline size_type find(char_type c, size_type pos = 0) const {
-			const_pointer p = strchr(&c_str()[pos], c);
+			const_pointer p = strchr(c_str() + pos, c);
 			return p ? p - c_str() : npos;
 		}
 		inline size_type rfind(const AbstractString& str, size_type pos = npos) const {
@@ -292,10 +252,10 @@ namespace Firebird
 			return c_str();
 		}
 		inline iterator end() {
-			return &Modify()[length()];
+			return Modify() + length();
 		}
 		inline const_iterator end() const {
-			return &c_str()[length()];
+			return c_str() + length();
 		}
 		inline const_reference at(size_type pos) const {
 			checkPos(pos);
@@ -317,11 +277,11 @@ namespace Firebird
 		inline size_type size() const {
 			return length();
 		}
-		static inline size_type max_size() {
-			return 0xfffe;
+		static inline size_type max_length() {
+			return 0xffff; // Max length of character field in Firebird
 		}
 		inline size_type capacity() const {
-			return actualSize - 1;
+			return bufferSize - 1;
 		}
 		inline bool empty() const {
 			return length() == 0;
@@ -351,8 +311,8 @@ namespace Firebird
 		bool LoadFromFile(FILE *file);
 		void printf(const char* Format, ...);
 		inline ~AbstractString() {
-			if (actualSize > smallStorageSize)
-				delete[] bigStorage;
+			if (stringBuffer != inlineBuffer)
+				delete[] stringBuffer;
 		}
 	};
 
@@ -391,7 +351,6 @@ namespace Firebird
 		inline StringBase<Comparator>(MemoryPool& p, const AbstractString& v) : AbstractString(p, v) {}
 		inline StringBase<Comparator>(MemoryPool& p, const char_type* s, size_type l) : AbstractString(p, s, l) {}
 
-
 		inline StringType& append(const StringType& str) {
 			fb_assert(&str != this);
 			return append(str.c_str(), str.length());
@@ -399,7 +358,7 @@ namespace Firebird
 		inline StringType& append(const StringType& str, size_type pos, size_type n) {
 			fb_assert(&str != this);
 			AdjustRange(str.length(), pos, n);
-			return append(&str.c_str()[pos], n);
+			return append(str.c_str() + pos, n);
 		}
 		inline StringType& append(const_pointer s, size_type n) {
 			memcpy(baseAppend(n), s, n);
