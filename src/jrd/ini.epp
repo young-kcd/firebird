@@ -413,7 +413,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	}
 	CMP_release(tdbb, handle1);
 
-/* Store symbols for international character sets & collations */
+// Store IUDFs declared automatically as system functions.
 
 	store_functions(tdbb, dbb);
 
