@@ -42,12 +42,12 @@ static int GetSpeHanNdx(unsigned char b1, unsigned char b2);
 	cache->texttype_country =		(country); \
 	cache->texttype_bytes_per_char =	2; \
 	cache->texttype_fn_init = 		(FPTR_SHORT) (name); \
-	cache->texttype_fn_key_length = 	famasc_key_length; \
-	cache->texttype_fn_string_to_key =	famasc_string_to_key; \
-	cache->texttype_fn_compare = 		famasc_compare; \
-	cache->texttype_fn_to_upper = 		famasc_to_upper; \
-	cache->texttype_fn_to_lower = 		famasc_to_lower; \
-	cache->texttype_fn_str_to_upper = 	famasc_str_to_upper; \
+	cache->texttype_fn_key_length = 	(FPTR_SHORT) famasc_key_length; \
+	cache->texttype_fn_string_to_key =	(FPTR_SHORT) famasc_string_to_key; \
+	cache->texttype_fn_compare = 		(FPTR_short) famasc_compare; \
+	cache->texttype_fn_to_upper = 		(FPTR_SHORT) famasc_to_upper; \
+	cache->texttype_fn_to_lower = 		(FPTR_SHORT) famasc_to_lower; \
+	cache->texttype_fn_str_to_upper = 	(FPTR_short) famasc_str_to_upper; \
 	cache->texttype_collation_table = 	(BYTE *) NULL; \
 	cache->texttype_toupper_table = 	(BYTE *) NULL; \
 	cache->texttype_tolower_table = 	(BYTE *) NULL; \
@@ -61,8 +61,8 @@ TEXTTYPE_ENTRY(KSC_5601_init)
 
 	FAMILY_MULTIBYTE(5601, KSC_5601_init, CS_KSC5601, CC_C);
 
-	cache->texttype_fn_to_wc = CVKSC_ksc_byte2short;
-	cache->texttype_fn_mbtowc = CVKSC_ksc_mbtowc;
+	cache->texttype_fn_to_wc = (FPTR_SHORT) CVKSC_ksc_byte2short;
+	cache->texttype_fn_mbtowc = (FPTR_short) CVKSC_ksc_mbtowc;
 
 	TEXTTYPE_RETURN;
 }
@@ -76,11 +76,11 @@ TEXTTYPE_ENTRY(ksc_5601_dict_init)
 
 	FAMILY_MULTIBYTE(5602, ksc_5601_dict_init, CS_KSC5601, CC_KOREA);
 
-	cache->texttype_fn_to_wc = CVKSC_ksc_byte2short;
-	cache->texttype_fn_mbtowc = CVKSC_ksc_mbtowc;
-	cache->texttype_fn_key_length = LCKSC_key_length;
-	cache->texttype_fn_string_to_key = LCKSC_string_to_key;
-	cache->texttype_fn_compare = LCKSC_compare;
+	cache->texttype_fn_to_wc = (FPTR_SHORT) CVKSC_ksc_byte2short;
+	cache->texttype_fn_mbtowc = (FPTR_short) CVKSC_ksc_mbtowc;
+	cache->texttype_fn_key_length = (FPTR_SHORT) LCKSC_key_length;
+	cache->texttype_fn_string_to_key = (FPTR_SHORT) LCKSC_string_to_key;
+	cache->texttype_fn_compare = (FPTR_short) LCKSC_compare;
 
 	TEXTTYPE_RETURN;
 }
@@ -131,14 +131,6 @@ unsigned char gen_han[18][2] = {
 };
 
 /* These macros have a duplicate in cv_ksc.c */
-#define	KSC1(uc)	((uc) & 0x80)
-#define	KSC2(uc)	((uc) & 0x80)
-
-#define	GEN_HAN(b1, b2)	((0xb0 <= (b1) && (b1) <= 0xc8) && (0xa1 <= (b2) && (b2) <= 0xfe))
-
-#define	SPE_HAN(b1, b2)	(((b1) == 0xa4) && (((b2) == 0xa2) || ((b2) == 0xa4) || ((b2) == 0xa7) || ((b2) == 0xa8) || ((b2) == 0xa9) || ((b2) == 0xb1) || ((b2) == 0xb2) || ((b2) == 0xb3) || ((b2) == 0xb5) || ((b2) == 0xb6) || ((b2) == 0xb7) || ((b2) == 0xb8) || ((b2) == 0xb9) || ((b2) == 0xba) || ((b2) == 0xbb) || ((b2) == 0xbc) || ((b2) == 0xbd) || ((b2) == 0xbe)))
-
-#define	LANGKSC_MAX_KEY	256
 
 
 

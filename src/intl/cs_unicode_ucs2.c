@@ -39,8 +39,8 @@ CHARSET_ENTRY(CS_unicode_ucs2)
 	csptr->charset_space_character = (BYTE *) & space;	/* 0x0020 */
 	csptr->charset_well_formed = (FPTR_SHORT) NULL;
 	CV_convert_init(&csptr->charset_to_unicode, CS_UNICODE_UCS2, CS_UNICODE_UCS2,
-					CV_wc_copy, NULL, NULL);
-	CV_convert_init(&csptr->charset_from_unicode, CS_UNICODE_UCS2,
-					CS_UNICODE_UCS2, CV_wc_copy, NULL, NULL);
+					(FPTR_SHORT) CV_wc_copy, NULL, NULL);
+	CV_convert_init(&csptr->charset_from_unicode, CS_UNICODE_UCS2, CS_UNICODE_UCS2,
+					(FPTR_SHORT) CV_wc_copy, NULL, NULL);
 	CHARSET_RETURN;
 }

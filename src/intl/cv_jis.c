@@ -600,8 +600,8 @@ static USHORT CVJIS_check_sjis(UCHAR *sjis_str, USHORT sjis_len)
 #endif
 
 
-static USHORT CVJIS_euc2sjis(CSCONVERT obj, UCHAR *sjis_str, USHORT sjis_len, UCHAR *euc_str, USHORT euc_len,
-							 SSHORT *err_code, USHORT *err_position)
+static USHORT CVJIS_euc2sjis(CSCONVERT obj, UCHAR *sjis_str, USHORT sjis_len, UCHAR *euc_str
+							, USHORT euc_len, SSHORT *err_code, USHORT *err_position)
 {
 /**************************************
  *
@@ -780,8 +780,8 @@ SSHORT CVJIS_euc_mbtowc(CSCONVERT obj, UCS2_CHAR *wc, UCHAR *src, USHORT src_len
 	};
 }
 
-static USHORT CVJIS_sjis2euc(CSCONVERT obj, UCHAR *euc_str, USHORT euc_len, UCHAR *sjis_str, USHORT sjis_len,
-							 SSHORT *err_code, USHORT *err_position)
+static USHORT CVJIS_sjis2euc(CSCONVERT obj, UCHAR *euc_str, USHORT euc_len, UCHAR *sjis_str
+							, USHORT sjis_len, SSHORT *err_code, USHORT *err_position)
 {
 /**************************************
  *
@@ -958,10 +958,10 @@ SSHORT CVJIS_sjis_mbtowc(CSCONVERT obj, UCS2_CHAR *wc, UCHAR *src, USHORT src_le
 CONVERT_ENTRY(CS_SJIS, CS_EUCJ, CVJIS_sjis_x_eucj)
 {
 	if (dest_cs == CS_EUCJ)
-		CV_convert_init(csptr, dest_cs, source_cs, CVJIS_sjis2euc,
+		CV_convert_init(csptr, dest_cs, source_cs, (FPTR_SHORT) CVJIS_sjis2euc,
 						NULL, NULL);
 	else
-		CV_convert_init(csptr, dest_cs, source_cs, CVJIS_euc2sjis,
+		CV_convert_init(csptr, dest_cs, source_cs, (FPTR_SHORT) CVJIS_euc2sjis,
 						NULL, NULL);
 
 	CONVERT_RETURN;

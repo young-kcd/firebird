@@ -39,9 +39,9 @@ STATIC SSHORT sjis_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iO
 	cache->texttype_country =		(country); \
 	cache->texttype_bytes_per_char =	2; \
 	cache->texttype_fn_init =		(FPTR_SHORT) (name); \
-	cache->texttype_fn_key_length =		famasc_key_length; \
-	cache->texttype_fn_string_to_key =	famasc_string_to_key; \
-	cache->texttype_fn_compare =		famasc_compare; \
+	cache->texttype_fn_key_length =		(FPTR_SHORT) famasc_key_length; \
+	cache->texttype_fn_string_to_key =	(FPTR_SHORT) famasc_string_to_key; \
+	cache->texttype_fn_compare =		(FPTR_short) famasc_compare; \
 	cache->texttype_collation_table =	(BYTE *) NULL; \
 	cache->texttype_toupper_table =		(BYTE *) NULL; \
 	cache->texttype_tolower_table =		(BYTE *) NULL; \
@@ -56,12 +56,12 @@ TEXTTYPE_ENTRY(JIS220_init)
 	static const ASCII POSIX[] = "C.SJIS";
 
 	FAMILY_MULTIBYTE(220, JIS220_init, CS_SJIS, CC_C);
-	cache->texttype_fn_to_wc = CVJIS_sjis_byte2short;
-	cache->texttype_fn_mbtowc = CVJIS_sjis_mbtowc;
+	cache->texttype_fn_to_wc = (FPTR_SHORT) CVJIS_sjis_byte2short;
+	cache->texttype_fn_mbtowc = (FPTR_short) CVJIS_sjis_mbtowc;
 
-	cache->texttype_fn_to_upper = sjis_to_upper;
-	cache->texttype_fn_to_lower = sjis_to_lower;
-	cache->texttype_fn_str_to_upper = sjis_str_to_upper;
+	cache->texttype_fn_to_upper = (FPTR_SHORT) sjis_to_upper;
+	cache->texttype_fn_to_lower = (FPTR_SHORT) sjis_to_lower;
+	cache->texttype_fn_str_to_upper = (FPTR_short) sjis_str_to_upper;
 
 	TEXTTYPE_RETURN;
 }
@@ -74,12 +74,12 @@ TEXTTYPE_ENTRY(JIS230_init)
 	static const ASCII POSIX[] = "C.EUC_J";
 
 	FAMILY_MULTIBYTE(230, JIS230_init, CS_EUCJ, CC_C);
-	cache->texttype_fn_to_wc = CVJIS_euc_byte2short;
-	cache->texttype_fn_mbtowc = CVJIS_euc_mbtowc;
+	cache->texttype_fn_to_wc = (FPTR_SHORT) CVJIS_euc_byte2short;
+	cache->texttype_fn_mbtowc = (FPTR_short) CVJIS_euc_mbtowc;
 
-	cache->texttype_fn_to_upper = famasc_to_upper;
-	cache->texttype_fn_to_lower = famasc_to_lower;
-	cache->texttype_fn_str_to_upper = famasc_str_to_upper;
+	cache->texttype_fn_to_upper = (FPTR_SHORT) famasc_to_upper;
+	cache->texttype_fn_to_lower = (FPTR_SHORT) famasc_to_lower;
+	cache->texttype_fn_str_to_upper = (FPTR_short) famasc_str_to_upper;
 
 	TEXTTYPE_RETURN;
 }

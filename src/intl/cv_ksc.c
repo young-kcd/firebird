@@ -25,6 +25,12 @@
 #include "../intl/ldcommon.h"
 #include "cv_ksc.h"
 
+/*
+*	KSC-5601 -> unicode
+*	% KSC-5601 is same to EUC cs1(codeset 1). Then converting 
+*	KSC-5601 to EUC is not needed.
+*/
+
 USHORT CVKSC_ksc_to_unicode(CSCONVERT obj, UCS2_CHAR *dest_ptr, USHORT dest_len, UCHAR *ksc_str
 							, USHORT ksc_len, SSHORT *err_code, USHORT *err_position)
 {

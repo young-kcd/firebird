@@ -216,8 +216,8 @@ USHORT CV_wc_copy(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len, BYTE *src_ptr,
 }
 
 
-static USHORT eight_bit_convert(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len, BYTE *src_ptr, USHORT src_len,
-								SSHORT *err_code, USHORT *err_position)
+static USHORT eight_bit_convert(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len, BYTE *src_ptr
+								, USHORT src_len, SSHORT *err_code, USHORT *err_position)
 {
 	BYTE *start;
 	UCHAR ch;
@@ -261,10 +261,10 @@ CONVERT_ENTRY(CS_ISO8859_1, CS_DOS_865, CV_dos_865_x_iso8859_1)
 {
 #include "../intl/conversions/tx865_lat1.h"
 	if (dest_cs == CS_ISO8859_1)
-		CV_convert_init(csptr, dest_cs, source_cs, eight_bit_convert,
+		CV_convert_init(csptr, dest_cs, source_cs, (FPTR_SHORT) eight_bit_convert,
 						cvt_865_to_iso88591, NULL);
 	else
-		CV_convert_init(csptr, dest_cs, source_cs, eight_bit_convert,
+		CV_convert_init(csptr, dest_cs, source_cs, (FPTR_SHORT) eight_bit_convert,
 						cvt_iso88591_to_865, NULL);
 	CONVERT_RETURN;
 }
@@ -275,10 +275,10 @@ CONVERT_ENTRY(CS_ISO8859_1, CS_DOS_437, CV_dos_437_x_dos_865)
 {
 #include "../intl/conversions/tx437_865.h"
 	if (dest_cs == CS_DOS_865)
-		CV_convert_init(csptr, dest_cs, source_cs, eight_bit_convert,
+		CV_convert_init(csptr, dest_cs, source_cs, (FPTR_SHORT) eight_bit_convert,
 						cvt_437_to_865, NULL);
 	else
-		CV_convert_init(csptr, dest_cs, source_cs, eight_bit_convert,
+		CV_convert_init(csptr, dest_cs, source_cs, (FPTR_SHORT) eight_bit_convert,
 						cvt_865_to_437, NULL);
 
 	CONVERT_RETURN;
@@ -290,10 +290,10 @@ CONVERT_ENTRY(CS_ISO8859_1, CS_DOS_437, CV_dos_437_x_iso8859_1)
 {
 #include "../intl/conversions/tx437_lat1.h"
 	if (dest_cs == CS_ISO8859_1)
-		CV_convert_init(csptr, dest_cs, source_cs, eight_bit_convert,
+		CV_convert_init(csptr, dest_cs, source_cs, (FPTR_SHORT) eight_bit_convert,
 						cvt_437_to_iso88591, NULL);
 	else
-		CV_convert_init(csptr, dest_cs, source_cs, eight_bit_convert,
+		CV_convert_init(csptr, dest_cs, source_cs, (FPTR_SHORT) eight_bit_convert,
 						cvt_iso88591_to_437, NULL);
 
 	CONVERT_RETURN;

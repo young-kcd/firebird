@@ -42,10 +42,10 @@ CHARSET_ENTRY(CS_gb_2312)
 	csptr->charset_well_formed = (FPTR_SHORT) CVGB_check_gb2312;
 
 	CV_convert_init(&csptr->charset_to_unicode, CS_UNICODE_UCS2, CS_GB2312,
-					CVGB_gb2312_to_unicode, to_unicode_mapping_array,
+					(FPTR_SHORT) CVGB_gb2312_to_unicode, to_unicode_mapping_array,
 					to_unicode_map);
 	CV_convert_init(&csptr->charset_from_unicode, CS_GB2312, CS_UNICODE_UCS2,
-					CVGB_unicode_to_gb2312, from_unicode_mapping_array,
+					(FPTR_SHORT) CVGB_unicode_to_gb2312, from_unicode_mapping_array,
 					from_unicode_map);
 
 	CHARSET_RETURN;

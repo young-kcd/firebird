@@ -35,12 +35,12 @@ STATIC SSHORT wc_mbtowc(TEXTTYPE *obj, UCS2_CHAR *wc, NCHAR *p, USHORT n);
 	cache->texttype_country =		(country); \
 	cache->texttype_bytes_per_char =	2; \
 	cache->texttype_fn_init =		(FPTR_SHORT) (name); \
-	cache->texttype_fn_key_length =		famasc_key_length; \
-	cache->texttype_fn_string_to_key =	famasc_string_to_key; \
-	cache->texttype_fn_compare =		famasc_compare; \
-	cache->texttype_fn_to_upper =		famasc_to_upper; \
-	cache->texttype_fn_to_lower =		famasc_to_lower; \
-	cache->texttype_fn_str_to_upper =	famasc_str_to_upper; \
+	cache->texttype_fn_key_length =		(FPTR_SHORT) famasc_key_length; \
+	cache->texttype_fn_string_to_key =	(FPTR_SHORT) famasc_string_to_key; \
+	cache->texttype_fn_compare =		(FPTR_short) famasc_compare; \
+	cache->texttype_fn_to_upper =		(FPTR_SHORT) famasc_to_upper; \
+	cache->texttype_fn_to_lower =		(FPTR_SHORT) famasc_to_lower; \
+	cache->texttype_fn_str_to_upper =	(FPTR_short) famasc_str_to_upper; \
 	cache->texttype_collation_table =	(BYTE *) NULL; \
 	cache->texttype_toupper_table =		(BYTE *) NULL; \
 	cache->texttype_tolower_table =		(BYTE *) NULL; \
@@ -55,12 +55,12 @@ STATIC SSHORT wc_mbtowc(TEXTTYPE *obj, UCS2_CHAR *wc, NCHAR *p, USHORT n);
 	cache->texttype_country =		(country); \
 	cache->texttype_bytes_per_char =	3; \
 	cache->texttype_fn_init =		(FPTR_SHORT) (name); \
-	cache->texttype_fn_key_length =		famasc_key_length; \
-	cache->texttype_fn_string_to_key =	famasc_string_to_key; \
-	cache->texttype_fn_compare =		famasc_compare; \
-	cache->texttype_fn_to_upper =		famasc_to_upper; \
-	cache->texttype_fn_to_lower =		famasc_to_lower; \
-	cache->texttype_fn_str_to_upper =	famasc_str_to_upper; \
+	cache->texttype_fn_key_length =		(FPTR_SHORT) famasc_key_length; \
+	cache->texttype_fn_string_to_key =	(FPTR_SHORT) famasc_string_to_key; \
+	cache->texttype_fn_compare =		(FPTR_short) famasc_compare; \
+	cache->texttype_fn_to_upper =		(FPTR_SHORT) famasc_to_upper; \
+	cache->texttype_fn_to_lower =		(FPTR_SHORT) famasc_to_lower; \
+	cache->texttype_fn_str_to_upper =	(FPTR_short) famasc_str_to_upper; \
 	cache->texttype_collation_table =	(BYTE *) NULL; \
 	cache->texttype_toupper_table =		(BYTE *) NULL; \
 	cache->texttype_tolower_table =		(BYTE *) NULL; \
@@ -75,7 +75,7 @@ TEXTTYPE_ENTRY(UNI200_init)
 	static ASCII POSIX[] = "C.UNICODE";
 
 	FAMILY_UNICODE_WIDE_BIN(200, UNI200_init, CS_UNICODE_UCS2, CC_C);
-	cache->texttype_fn_mbtowc = wc_mbtowc;
+	cache->texttype_fn_mbtowc = (FPTR_short) wc_mbtowc;
 
 	TEXTTYPE_RETURN;
 }
@@ -88,8 +88,8 @@ TEXTTYPE_ENTRY(UNI201_init)
 	static ASCII POSIX[] = "C.UNICODE_FSS";
 
 	FAMILY_UNICODE_MB_BIN(201, UNI201_init, CS_UNICODE_FSS, CC_C);
-	cache->texttype_fn_to_wc = CS_UTFFSS_fss_to_unicode;
-	cache->texttype_fn_mbtowc = CS_UTFFSS_fss_mbtowc;
+	cache->texttype_fn_to_wc = (FPTR_SHORT) CS_UTFFSS_fss_to_unicode;
+	cache->texttype_fn_mbtowc = (FPTR_short) CS_UTFFSS_fss_mbtowc;
 
 	TEXTTYPE_RETURN;
 }

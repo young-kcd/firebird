@@ -42,10 +42,10 @@ CHARSET_ENTRY(CS_big_5)
 	csptr->charset_well_formed = (FPTR_SHORT) CVBIG5_check_big5;
 
 	CV_convert_init(&csptr->charset_to_unicode, CS_UNICODE_UCS2, CS_BIG5,
-					CVBIG5_big5_to_unicode, to_unicode_mapping_array,
+					(FPTR_SHORT) CVBIG5_big5_to_unicode, to_unicode_mapping_array,
 					to_unicode_map);
 	CV_convert_init(&csptr->charset_from_unicode, CS_BIG5, CS_UNICODE_UCS2,
-					CVBIG5_unicode_to_big5, from_unicode_mapping_array,
+					(FPTR_SHORT) CVBIG5_unicode_to_big5, from_unicode_mapping_array,
 					from_unicode_map);
 
 	CHARSET_RETURN;
