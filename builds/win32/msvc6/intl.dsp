@@ -187,10 +187,6 @@ SOURCE=..\..\..\src\intl\lc_unicode_ucs2.c
 
 SOURCE=..\..\..\src\intl\ld.c
 # End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\intl\ld2.c
-# End Source File
 # End Group
 # Begin Group "Header files"
 

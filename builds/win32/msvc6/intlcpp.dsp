@@ -187,10 +187,6 @@ SOURCE=..\..\..\src\intlcpp\lc_unicode_ucs2.cpp
 
 SOURCE=..\..\..\src\intlcpp\ld.cpp
 # End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\intlcpp\ld2.cpp
-# End Source File
 # End Group
 # Begin Group "Header files"
 
