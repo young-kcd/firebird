@@ -37,10 +37,11 @@
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
  * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ * 2002.10.30 Sean Leyne - Code Cleanup, removed obsolete "SUN3_3" port
  *
  */
 /*
-$Id: inet.cpp,v 1.31 2002-10-31 05:05:59 seanleyne Exp $
+$Id: inet.cpp,v 1.32 2002-10-31 05:33:35 seanleyne Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -1734,14 +1735,10 @@ static PORT aux_connect(PORT port, PACKET* packet, XDR_INT (*ast)(void))
 	if (ast)
 	{
 
-#ifdef SUN3_3
-		arg = -getpid();
-#else
 #ifdef SOLARIS
 		arg = getpgrp();
 #else
 		arg = getpid();
-#endif
 #endif
 		if (ioctl(n, SIOCSPGRP, &arg) < 0) {
 			inet_error(port, "ioctl/SIOCSPGRP", isc_net_event_connect_err,

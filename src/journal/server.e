@@ -24,6 +24,8 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Code Cleanup, removed obsolete "SUN3_3" port
+ *
  */
 
 #include <stdio.h>
@@ -78,9 +80,6 @@
 #include <sys/stat.h>
 #define UNIX_JOURNALLING
 #define BSD_SOCKETS
-#ifdef SUN3_3
-typedef SLONG fd_mask;
-#endif
 #endif
 
 #ifndef MAX_PATH_LENGTH

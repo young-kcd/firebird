@@ -32,10 +32,11 @@
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
  * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ * 2002.10.30 Sean Leyne - Code Cleanup, removed obsolete "SUN3_3" port
  *
  */
 /*
-$Id: isc.cpp,v 1.18 2002-10-31 05:05:57 seanleyne Exp $
+$Id: isc.cpp,v 1.19 2002-10-31 05:33:35 seanleyne Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -115,10 +116,6 @@ static BOOLEAN edls_flag = FALSE;
 
 #ifdef SCO_EV
 #include <sys/utsname.h>
-#endif
-
-#ifdef SUN3_3
-typedef unsigned short uid_t;
 #endif
 
 static TEXT user_name[256];

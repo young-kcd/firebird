@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: license.h,v 1.26 2002-10-31 05:05:57 seanleyne Exp $
+ * $Id: license.h,v 1.27 2002-10-31 05:33:35 seanleyne Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -57,6 +57,7 @@
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
  * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ * 2002.10.30 Sean Leyne - Code Cleanup, removed obsolete "SUN3_3" port
  *
  */
 
@@ -85,9 +86,6 @@
 #ifdef i386
 #define FB_PLATFORM     "SI"
 #endif /* i386 */
-#ifdef SUN3_3
-#define FB_PLATFORM	"SU"
-#endif /* SUN3_3 */
 #ifndef FB_PLATFORM
 #define FB_PLATFORM	"S3"
 #endif

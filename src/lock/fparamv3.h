@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.30 Sean Leyne - Code Cleanup, removed obsolete "SUN3_3" port
+ *
  */
 
 #ifdef NOHOSTNAME
@@ -57,13 +60,11 @@
 #endif
 
 #ifdef sun
-#ifndef SUN3_3
 #include <sys/types.h>
 #include <sys/ipc.h>
 #define SUNOS4
 #ifndef i386
 #define CSV
-#endif
 #endif
 #endif
 
