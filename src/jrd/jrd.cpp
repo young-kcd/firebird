@@ -406,7 +406,7 @@ static void		purge_attachment(TDBB, STATUS *, ATT, BOOLEAN);
 
 static int		initialized = 0;
 static DBB		databases = NULL;
-#ifdef V4_THREADING
+#if defined(V4_THREADING) && !defined(SUPERSERVER)
 static MUTX_T	databases_mutex[1];
 #endif
 static ULONG	JRD_cache_default;
@@ -4766,7 +4766,7 @@ static void cleanup(void *arg)
  *	Exit handler for image exit.
  *
  **************************************/
-#ifdef V4_THREADING
+#if defined(V4_THREADING) && !defined(SUPERSERVER)
 	V4_MUTEX_DESTROY(databases_mutex);
 #endif
 	JRD_SS_DESTROY_MUTEX;
@@ -5387,8 +5387,7 @@ static void get_options(UCHAR*	dpb,
 
 		case isc_dpb_sql_dialect:
 			options->dpb_sql_dialect = (USHORT) get_parameter(&p);
-			if (options->dpb_sql_dialect < 0 ||
-				options->dpb_sql_dialect > SQL_DIALECT_V6)
+			if (options->dpb_sql_dialect > SQL_DIALECT_V6)
 					invalid_client_SQL_dialect = TRUE;
 			break;
 
@@ -5580,7 +5579,7 @@ static DBB init(TDBB	tdbb,
 		THREAD_ENTER;
 		PluginManager::load_engine_plugins();
 		if (!initialized) {
-#ifdef V4_THREADING
+#if defined(V4_THREADING) && !defined(SUPERSERVER)
 			V4_MUTEX_INIT(databases_mutex);
 #endif
 			JRD_SS_INIT_MUTEX;
