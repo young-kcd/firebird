@@ -112,16 +112,18 @@ static bool expression_equal(thread_db*, OptimizerBlk*, const index_desc*,
 static bool expression_equal2(thread_db*, OptimizerBlk*, jrd_nod*,
 							  jrd_nod*, USHORT);
 #endif
-static void find_best(thread_db*, OptimizerBlk*, USHORT, USHORT, UCHAR*, const jrd_nod*,
-					  double, double);
-static void find_index_relationship_streams(thread_db*, OptimizerBlk*, UCHAR*, UCHAR*, UCHAR*);
+static void find_best(thread_db*, OptimizerBlk*, USHORT, USHORT, const UCHAR*,
+					const jrd_nod*, double, double);
+static void find_index_relationship_streams(thread_db*, OptimizerBlk*, const UCHAR*,
+		UCHAR*, UCHAR*);
 static jrd_nod* find_dbkey(jrd_nod*, USHORT, SLONG*);
-static USHORT find_order(thread_db*, OptimizerBlk*, UCHAR*, const jrd_nod*);
+static USHORT find_order(thread_db*, OptimizerBlk*, const UCHAR*, const jrd_nod*);
 static void find_rsbs(RecordSource*, StreamStack*, RsbStack*);
 static void find_used_streams(const RecordSource*, UCHAR*);
-static void form_rivers(thread_db*, OptimizerBlk*, UCHAR*, RiverStack&, jrd_nod**, jrd_nod**, jrd_nod*);
-static bool form_river(thread_db*, OptimizerBlk*, USHORT, UCHAR *, UCHAR *, RiverStack&, jrd_nod**,
-						  jrd_nod**, jrd_nod*);
+static void form_rivers(thread_db*, OptimizerBlk*, const UCHAR*, RiverStack&,
+		jrd_nod**, jrd_nod**, jrd_nod*);
+static bool form_river(thread_db*, OptimizerBlk*, USHORT, const UCHAR*, UCHAR*,
+		RiverStack&, jrd_nod**, jrd_nod**, jrd_nod*);
 static RecordSource* gen_aggregate(thread_db*, OptimizerBlk*, jrd_nod*, NodeStack*, UCHAR);
 static RecordSource* gen_boolean(thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*);
 static void gen_deliver_unmapped(thread_db*, NodeStack*, jrd_nod*, NodeStack*, UCHAR);
@@ -136,11 +138,12 @@ static RecordSource* gen_nav_rsb(thread_db*, OptimizerBlk*, USHORT, jrd_rel*, st
 static RecordSource* gen_outer(thread_db*, OptimizerBlk*, RecordSelExpr*, RiverStack&, jrd_nod**, jrd_nod**);
 static RecordSource* gen_procedure(thread_db*, OptimizerBlk*, jrd_nod*);
 static RecordSource* gen_residual_boolean(thread_db*, OptimizerBlk*, RecordSource*);
-static RecordSource* gen_retrieval(thread_db*, OptimizerBlk*, SSHORT, jrd_nod**, jrd_nod**, bool, bool,
-						 jrd_nod**);
+static RecordSource* gen_retrieval(thread_db*, OptimizerBlk*, SSHORT, jrd_nod**,
+					jrd_nod**, bool, bool, jrd_nod**);
 static RecordSource* gen_rsb(thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*, SSHORT, jrd_rel*, str*, jrd_nod*, float);
 static RecordSource*	gen_skip (thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*);
-static RecordSource* gen_sort(thread_db*, OptimizerBlk*, UCHAR *, UCHAR *, RecordSource*, jrd_nod*, bool);
+static RecordSource* gen_sort(thread_db*, OptimizerBlk*, const UCHAR*, const UCHAR*,
+							RecordSource*, jrd_nod*, bool);
 static bool gen_sort_merge(thread_db*, OptimizerBlk*, RiverStack&);
 static RecordSource* gen_union(thread_db*, OptimizerBlk*, jrd_nod*, UCHAR *, USHORT, NodeStack*, UCHAR);
 static void get_inactivities(const CompilerScratch*, ULONG*);
@@ -148,20 +151,20 @@ static IndexedRelationship* indexed_relationship(thread_db*, OptimizerBlk*, USHO
 static str* make_alias(thread_db*, CompilerScratch*, CompilerScratch::csb_repeat*);
 static jrd_nod* make_binary_node(NOD_T, jrd_nod*, jrd_nod*, bool);
 static RecordSource* make_cross(thread_db*, OptimizerBlk*, RiverStack&);
-static jrd_nod* make_index_node(thread_db*, jrd_rel*, CompilerScratch*, index_desc*);
+static jrd_nod* make_index_node(thread_db*, jrd_rel*, CompilerScratch*, const index_desc*);
 static jrd_nod* make_inference_node(CompilerScratch*, jrd_nod*, jrd_nod*, jrd_nod*);
 static jrd_nod* make_inversion(thread_db*, OptimizerBlk*, jrd_nod*, USHORT);
 static jrd_nod* make_missing(thread_db*, OptimizerBlk*, jrd_rel*, jrd_nod*, USHORT, index_desc*);
 static jrd_nod* make_starts(thread_db*, OptimizerBlk*, jrd_rel*, jrd_nod*, USHORT, index_desc*);
 static bool map_equal(const jrd_nod*, const jrd_nod*, const jrd_nod*);
 static void mark_indices(CompilerScratch::csb_repeat*, SSHORT);
-static SSHORT match_index(thread_db*, OptimizerBlk*, SSHORT, jrd_nod*, index_desc*);
-static bool match_indices(thread_db*, OptimizerBlk*, SSHORT, jrd_nod*, index_desc*);
+static SSHORT match_index(thread_db*, OptimizerBlk*, SSHORT, jrd_nod*, const index_desc*);
+static bool match_indices(thread_db*, OptimizerBlk*, SSHORT, jrd_nod*, const index_desc*);
 static USHORT nav_rsb_size(RecordSource*, USHORT, USHORT);
 static bool node_equality(const jrd_nod*, const jrd_nod*);
 static jrd_nod* optimize_like(thread_db*, jrd_nod*);
 #ifdef OPT_DEBUG
-static void print_order(OptimizerBlk*, USHORT, double, double);
+static void print_order(const OptimizerBlk*, USHORT, double, double);
 #endif
 static USHORT river_count(USHORT, jrd_nod**);
 static bool river_reference(const River*, const jrd_nod*, bool* field_found = NULL);
@@ -343,8 +346,6 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 /* Do not allocate the index_desc struct. Let BTR_all do the job. The allocated
    memory will then be in csb->csb_rpt[stream].csb_idx_allocation, which
    gets cleaned up before this function exits. */
-
-	index_desc* idx = NULL;
 
 	OptimizerBlk* opt = FB_NEW(*tdbb->getDefaultPool()) OptimizerBlk(tdbb->getDefaultPool());
 	opt->opt_streams.grow(csb->csb_n_stream);
@@ -596,8 +597,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 			if (relation && !relation->rel_file)
 			{
 				csb->csb_rpt[stream].csb_indices =
-					BTR_all(tdbb, relation, 
-						&csb->csb_rpt[stream].csb_idx);
+					BTR_all(tdbb, relation, &csb->csb_rpt[stream].csb_idx);
 				sort_indices_by_selectivity(&csb->csb_rpt[stream]);
 				mark_indices(&csb->csb_rpt[stream], relation->rel_id);
 			}
@@ -772,7 +772,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 
 		fb_assert(streams[0] != 1 || csb->csb_rpt[streams[1]].csb_relation != 0);
 
-		// AB: Determine which streams have a index relationship
+		// AB: Determine which streams have an index relationship
 		// with the currently active rivers. This is needed so that
 		// no merge is made between a new cross river and the
 		// currently active rivers. Where in the new cross river 
@@ -1032,7 +1032,7 @@ jrd_nod* OPT_make_index(thread_db* tdbb, OptimizerBlk* opt, jrd_rel* relation,
 	jrd_nod** lower = retrieval->irb_value;
 	jrd_nod** upper = retrieval->irb_value + idx->idx_count;
 	const OptimizerBlk::opt_segment* const end = opt->opt_segments + idx->idx_count;
-	OptimizerBlk::opt_segment* tail;
+	const OptimizerBlk::opt_segment* tail;
 
 	if (idx->idx_flags & idx_descending) {
 		for (tail = opt->opt_segments; tail->opt_lower && tail < end; tail++)
@@ -2032,7 +2032,8 @@ static void compute_dependencies(const jrd_nod* node, ULONG* dependencies)
 }
 
 
-static void compute_dbkey_streams(const CompilerScratch* csb, const jrd_nod* node, UCHAR* streams)
+static void compute_dbkey_streams(const CompilerScratch* csb, const jrd_nod* node,
+	UCHAR* streams)
 {
 /**************************************
  *
@@ -2075,7 +2076,8 @@ static void compute_dbkey_streams(const CompilerScratch* csb, const jrd_nod* nod
 }
 
 
-static void compute_rse_streams(const CompilerScratch* csb, const RecordSelExpr* rse, UCHAR* streams)
+static void compute_rse_streams(const CompilerScratch* csb, const RecordSelExpr* rse,
+	UCHAR* streams)
 {
 /**************************************
  *
@@ -2743,7 +2745,7 @@ static bool estimate_cost(thread_db* tdbb,
 	// to be utilized and making a crude guess of selectivities.
 
 	if (opt->opt_conjuncts.getCount()) {
-		index_desc* idx = csb_tail->csb_idx->items;
+		const index_desc* idx = csb_tail->csb_idx->items;
 		for (USHORT i = 0; i < csb_tail->csb_indices; i++) {
 			SSHORT n = 0;
 			clear_bounds(opt, idx);
@@ -3447,7 +3449,7 @@ static void find_best(thread_db* tdbb,
 					  OptimizerBlk* opt,
 					  USHORT stream,
 					  USHORT position,
-					  UCHAR* streams,
+					  const UCHAR* streams,
 					  const jrd_nod* plan_node,
 					  double cost,
 					  double cardinality)
@@ -3506,7 +3508,7 @@ static void find_best(thread_db* tdbb,
 	const UCHAR* stream_end = &streams[1] + streams[0];
 	opt->opt_streams[position].opt_stream_number = stream;
 	++position;
-	OptimizerBlk::opt_stream* order_end = opt->opt_streams.begin() + position;
+	const OptimizerBlk::opt_stream* order_end = opt->opt_streams.begin() + position;
 	OptimizerBlk::opt_stream* stream_data = opt->opt_streams.begin() + stream;
 
 	// Save the various flag bits from the optimizer block to reset its
@@ -3656,7 +3658,7 @@ static void find_best(thread_db* tdbb,
 
 static void find_index_relationship_streams(thread_db* tdbb, 
 											OptimizerBlk* opt, 
-											UCHAR* streams, 
+											const UCHAR* streams,
 											UCHAR* dependent_streams, 
 											UCHAR* free_streams)
 {
@@ -3677,7 +3679,7 @@ static void find_index_relationship_streams(thread_db* tdbb,
 
 	CompilerScratch* csb = opt->opt_csb;
 	const UCHAR* end_stream = streams + 1 + streams[0];
-	for (UCHAR* stream = streams + 1; stream < end_stream; stream++) {
+	for (const UCHAR* stream = streams + 1; stream < end_stream; stream++) {
 
 		CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[*stream];
 		// Set temporary active flag for this stream
@@ -3685,7 +3687,7 @@ static void find_index_relationship_streams(thread_db* tdbb,
 
 		bool indexed_relationship = false;
 		if (opt->opt_conjuncts.getCount()) {
-			index_desc* idx = csb_tail->csb_idx->items;
+			const index_desc* idx = csb_tail->csb_idx->items;
 
 			// Walk through all indexes from this relation
 			for (USHORT i = 0; i < csb_tail->csb_indices; i++) {
@@ -3765,7 +3767,8 @@ static jrd_nod* find_dbkey(jrd_nod* dbkey, USHORT stream, SLONG* position)
 
 
 static USHORT find_order(thread_db* tdbb,
-						 OptimizerBlk* opt, UCHAR* streams, const jrd_nod* plan_node)
+						 OptimizerBlk* opt,
+						 const UCHAR* streams, const jrd_nod* plan_node)
 {
 /**************************************
  *
@@ -3974,7 +3977,7 @@ static void find_used_streams(const RecordSource* rsb, UCHAR* streams)
 
 static void form_rivers(thread_db*		tdbb,
 						OptimizerBlk*	opt,
-						UCHAR*			streams,
+						const UCHAR*	streams,
 						RiverStack&		river_stack,
 						jrd_nod**		sort_clause,
 						jrd_nod**		project_clause,
@@ -4046,7 +4049,7 @@ static void form_rivers(thread_db*		tdbb,
 static bool form_river(thread_db*		tdbb,
 					   OptimizerBlk*	opt,
 					   USHORT			count,
-					   UCHAR*			streams,
+					   const UCHAR*		streams,
 					   UCHAR*			temp,
 					   RiverStack&		river_stack,
 					   jrd_nod**		sort_clause,
@@ -4596,7 +4599,7 @@ static void gen_join(thread_db*		tdbb,
 		} while (form_river
 			   (tdbb, opt, count, streams, temp, river_stack, 
 				sort_clause, project_clause, 0));
-				
+
 	}
 }
 
@@ -4604,7 +4607,8 @@ static void gen_join(thread_db*		tdbb,
 static RecordSource* gen_navigation(thread_db* tdbb,
 						  OptimizerBlk* opt,
 						  USHORT stream,
-						  jrd_rel* relation, str* alias, index_desc* idx, jrd_nod** sort_ptr)
+						  jrd_rel* relation, str* alias, index_desc* idx,
+						  jrd_nod** sort_ptr)
 {
 /**************************************
  *
@@ -4997,9 +5001,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
  *	set of record source blocks (rsb's).
  *
  **************************************/
-	SSHORT i, position;
 	OptimizerBlk::opt_conjunct* tail;
-	OptimizerBlk::opt_segment* idx_tail;
 	bool full = false;
 
 	SET_TDBB(tdbb);
@@ -5096,7 +5098,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		idx_priority_level_vector.grow(csb_tail->csb_indices);
 		UINT64* idx_priority_level = idx_priority_level_vector.begin();
 
-		i = 0;
+		SSHORT i = 0;
 		for (index_desc* idx = csb_tail->csb_idx->items; i < csb_tail->csb_indices;
 			 ++i, ++idx)
 		{
@@ -5218,8 +5220,8 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 									false))
 					{
 						if (match_index(tdbb, opt, stream, node, idx)) {
-							position = 0;
-							idx_tail = opt->opt_segments;
+							SSHORT position = 0;
+							const OptimizerBlk::opt_segment* idx_tail = opt->opt_segments;
 							const OptimizerBlk::opt_segment* const idx_end = 
 								idx_tail + idx->idx_count;
 							for (; idx_tail < idx_end; idx_tail++, position++) {
@@ -5250,7 +5252,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 				// for backwards compatibility.  Juck...
 				if (csb_tail->csb_plan) {
 					// Mark only used conjuncts in this index as used
-					idx_tail = opt->opt_segments;
+					const OptimizerBlk::opt_segment* idx_tail = opt->opt_segments;
 					const OptimizerBlk::opt_segment* const idx_end = 
 						idx_tail + idx->idx_count;
 					for (; idx_tail < idx_end && 
@@ -5269,8 +5271,8 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 					// index as used. For example if you have :
 					// (node1 >= constant) and (node1 <= constant) be sure both
 					// conjuncts will be marked as opt_conjunct_matched
-					position = 0;
-					idx_tail = opt->opt_segments;
+					SSHORT position = 0;
+					const OptimizerBlk::opt_segment* idx_tail = opt->opt_segments;
 					const OptimizerBlk::opt_segment* const idx_end =
 						idx_tail + idx->idx_count;
 					for (; idx_tail < idx_end && 
@@ -5482,8 +5484,8 @@ static RecordSource* gen_skip(thread_db* tdbb, OptimizerBlk* opt,
 
 static RecordSource* gen_sort(thread_db* tdbb,
 					OptimizerBlk* opt,
-					UCHAR * streams,
-					UCHAR * dbkey_streams,
+					const UCHAR* streams,
+					const UCHAR* dbkey_streams,
 					RecordSource* prior_rsb, jrd_nod* sort, bool project_flag)
 {
 /**************************************
@@ -6097,7 +6099,7 @@ static IndexedRelationship* indexed_relationship(thread_db* tdbb, OptimizerBlk* 
 	IndexedRelationship* relationship = NULL;
 
 /* Loop thru indexes looking for a match */
-	index_desc* idx = csb_tail->csb_idx->items;
+	const index_desc* idx = csb_tail->csb_idx->items;
 	for (USHORT i = 0; i < csb_tail->csb_indices;
 		 ++i, ++idx)
 	{
@@ -6276,7 +6278,7 @@ static RecordSource* make_cross(thread_db* tdbb, OptimizerBlk* opt, RiverStack& 
 
 
 static jrd_nod* make_index_node(thread_db* tdbb, jrd_rel* relation,
-								CompilerScratch* csb, index_desc* idx)
+								CompilerScratch* csb, const index_desc* idx)
 {
 /**************************************
  *
@@ -6879,7 +6881,7 @@ static void mark_indices(CompilerScratch::csb_repeat* csb_tail, SSHORT relation_
 static SSHORT match_index(thread_db* tdbb,
 						  OptimizerBlk* opt,
 						  SSHORT stream, jrd_nod* boolean, 
-						  index_desc* idx)
+						  const index_desc* idx)
 {
 /**************************************
  *
@@ -7028,7 +7030,7 @@ static SSHORT match_index(thread_db* tdbb,
 static bool match_indices(thread_db* tdbb,
 							OptimizerBlk* opt,
 							SSHORT stream, jrd_nod* boolean, 
-							index_desc* idx)
+							const index_desc* idx)
 {
 /**************************************
  *
@@ -7292,7 +7294,7 @@ static jrd_nod* optimize_like(thread_db* tdbb, jrd_nod* like_node)
 
 
 #ifdef OPT_DEBUG
-static void print_order(OptimizerBlk* opt,
+static void print_order(const OptimizerBlk* opt,
 						USHORT position, double cardinality, double cost)
 {
 /**************************************

@@ -1981,7 +1981,7 @@ static processing_state show_domains(const SCHAR* domain_name)
 			if (FLD.RDB$FIELD_TYPE == BLOB) {
 				sprintf (Print_buffer, " segment %u, subtype ", (USHORT) FLD.RDB$SEGMENT_LENGTH);
 				ISQL_printf (isqlGlob.Out, Print_buffer);
-				const SSHORT subtype  = FLD.RDB$FIELD_SUB_TYPE;
+				const int subtype  = FLD.RDB$FIELD_SUB_TYPE;
 				if (subtype >= 0 && subtype <= MAX_BLOBSUBTYPES) {
 					sprintf (Print_buffer, "%s", Sub_types[subtype]);
 					ISQL_printf (isqlGlob.Out, Print_buffer);
@@ -3129,7 +3129,7 @@ static processing_state show_table(
 		if (FLD.RDB$FIELD_TYPE == BLOB) {
 			sprintf (Print_buffer, " segment %u, subtype ", (USHORT) FLD.RDB$SEGMENT_LENGTH);
 			ISQL_printf (isqlGlob.Out, Print_buffer);
-			const SSHORT subtype  = FLD.RDB$FIELD_SUB_TYPE;
+			const int subtype  = FLD.RDB$FIELD_SUB_TYPE;
 			if (subtype >= 0 && subtype <= MAX_BLOBSUBTYPES)
 			{
 				sprintf (Print_buffer, "%s", Sub_types[subtype]);

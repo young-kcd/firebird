@@ -311,7 +311,6 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 
 	bool first = true;
 	SCHAR char_sets[86];
-	SSHORT subtype;
 	//bool intchar = false;
 	// CVC: shouldn't this var be initialized inside the FOR statement instead?
 	// CVC: 2004.12.03: I discovered someone made this variable obsolete;
@@ -511,10 +510,10 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 
 			if (FLD.RDB$FIELD_TYPE == BLOB)
 			{
-				subtype = FLD.RDB$FIELD_SUB_TYPE;
+				const int subtype = FLD.RDB$FIELD_SUB_TYPE;
 				ISQL_printf (isqlGlob.Out, " SUB_TYPE ");
 				if ((subtype > 0) && (subtype <= MAX_BLOBSUBTYPES))
-					ISQL_printf (isqlGlob.Out, const_cast<char*>(Sub_types[subtype]));
+					ISQL_printf (isqlGlob.Out, Sub_types[subtype]);
 				else
 				{
 					sprintf (Print_buffer, "%d", subtype);
