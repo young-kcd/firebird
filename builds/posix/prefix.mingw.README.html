@@ -1,0 +1,112 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+<TITLE> New Document </TITLE>
+<META NAME="Generator" CONTENT="EditPlus">
+<META NAME="Author" CONTENT="">
+<META NAME="Keywords" CONTENT="">
+<META NAME="Description" CONTENT="">
+</HEAD>
+
+<BODY>
+<H2>MINGW Notes</H2>
+<hr/>
+Date: March 06 2003<br>
+Author: Blas Rodriguez Somoza<br>
+
+
+<h3>0.-Introduction</h3>
+<p>This is the first available MSYS/MINGW and there are still some thinks to be solved,
+some in mingw libraries some in the FB sources and some in the building process.<p>
+<p>The only difference between the msvc build and the mingw build, is that the later one does not support the ms SEH exception handling. This is an important difference because some exceptions will not be catched and thus FB will abort, the sources using this exception handling are jrd/blob_filter.cpp, jrd/exe.cpp and jrd/fun.epp.</p>
+
+<h3>1.-TODO</h3>
+<ul>
+<li>Add rc files to the build of fbserver, fb_inet_server and ibguard (with windres).</li>
+<li>Solve create_db and gbak_static breaks.</li>
+<li>Support for ms SEH, now _try is a no-op.</li>
+</ul>
+
+<h3>2.-INSTALLING MSYS and MINGW</h3>
+
+<p>The following packages from http://www.mingw.org are needed</p>
+<p>MSYS
+<ul>
+<li>MSYS-1.0.9-2003.02.17-1.exe</li>
+<li>msysDTK-1.0.1.exe</li>
+</ul>
+</p>
+<p>MinGW
+<ul>
+<li>MinGW-2.0.0-3.exe</li>
+<li>gcc-3.2.2-20030208-1.tar.gz (3.2.2 relase candidate)</li>
+<li>MinGW_win32api-2.2.tar.gz</li>
+<li>mingw-runtime-2.4.tar.gz</li>
+<li>binutils-2.13.90-20030111.tar.gz</li>
+</ul>
+</p>
+<p>STEPS
+<ol>
+<li>Install minGW with the exe package</li>
+<li>Uncompress the four minGW tar.gz files into the mingw directory</li>
+<li>Install MSYS</li>
+<li>Install msysDTK</li>
+</ol>
+</p>
+
+<h3>PATCHES TO BUILD FILES AND MINGW HEADERS</h3>
+
+<ul>
+<li>The MSYS environment can't process yacc files as delivered, it is necessary to comment out yacc 
+in 'make.shared.targets'</li>
+<li>The example target in Make.in.firebird is not valid remove it.</li>
+<li>The fb_util target in Make.in.extlib is not valid remove it.</li>
+<li>In the Makefile.in.libfbclient two lines should be changed because it don't work as expected in msys<br>
+Change <br>
+&nbsp;&nbsp;&nbsp;-$(LN) $(@F) $(LIBFBCLIENT_SOBASENAME)<br>
+&nbsp;&nbsp;&nbsp;-$(LN) $(notdir $(LIBFBCLIENT_SOBASENAME)) $(LIBFBCLIENT_SONAME)<br>
+to<br>
+&nbsp;&nbsp;&nbsp;-$(LN) $(LIBFBCLIENT_SO) $(LIBFBCLIENT_SOBASENAME)<br>
+&nbsp;&nbsp;&nbsp;-$(LN) $(LIBFBCLIENT_SOBASENAME) $(LIBFBCLIENT_SONAME)<br>
+</li>
+<li>In the Makefile.in.libfbembed two lines should be changed because it don't work as expected in msys<br>
+Change <br>
+&nbsp;&nbsp;&nbsp;-$(LN) $(@F) $(LIBFBEMBED_SOBASENAME)<br>
+&nbsp;&nbsp;&nbsp;-$(LN) $(notdir $(LIBFBEMBED_SOBASENAME)) $(LIBFBEMBED_SONAME)<br>
+to<br>
+&nbsp;&nbsp;&nbsp;-$(LN) $(LIBFBEMBED_SO) $(LIBFBEMBED_SOBASENAME)<br>
+&nbsp;&nbsp;&nbsp;-$(LN) $(LIBFBEMBED_SOBASENAME) $(LIBFBEMBED_SONAME)<br>
+</li>
+<li>The source Mingw/include/c++/3.2.2/bits/basic_string.tcc must be patched.<br>
+    replace 'std::min' with 'min'</li>
+<li>The source Mingw/include/c++/3.2.2/limits must be patched, before the first use of min() and max() the two must be undefined.<br>
+Add <br>
+&nbsp;&nbsp;&nbsp;#undef min<br>
+&nbsp;&nbsp;&nbsp;#undef max<br>
+before<br> 
+&nbsp;&nbsp;&nbsp;template&lt;typename _Tp&gt; <br>
+&nbsp;&nbsp;&nbsp;struct numeric_limits : public __numeric_limits_base</li>
+</ul>
+
+<h3>BUILD PROCESS</h3>
+
+<ol>
+<li>Start msys with the icon.</li>
+<li>Go to the firebird2 root directory. For instance, if your root is d:\cvs\firebird you must do cd /d/cvs/firebird2.</li>
+<li>Start configure<br>autogen.sh --enable-superserver</li>
+<li>Make the build. For instance<br> make > make.log 2>&1</li>
+<li>There are some problems in the build and the make process stop five times with errors
+before the process is complete, but it can be more if there are some stackdump. 
+Also there are sometimes when the g++ hang and then g++ and make must be killed in the 
+windows task manager.<br>
+Known failures when building in their order
+<ul>
+<li>A.- failure create_db</li>
+<li>B.- failure gbak_static</li>
+<li>C.- failure gbak_static</li>
+<li>D.- failure gbak_static</li>
+<li>E.- failure gbak_static</li>
+</li>
+</ol>
+</BODY>
+</HTML>
