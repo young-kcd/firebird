@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.32.2.7 2004-11-04 05:31:30 robocop Exp $
+  $Id: isql.epp,v 1.32.2.8 2004-11-04 06:16:02 robocop Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -1852,7 +1852,11 @@ static SSHORT add_row(TEXT * tabname)
 
 				case SQL_TYPE_TIME:
 					if (3 != sscanf(lastInputLine, "%d:%d:%d", &times.tm_hour,
-									&times.tm_min, &times.tm_sec)) {
+									&times.tm_min, &times.tm_sec)
+						|| times.tm_hour > 23 || times.tm_hour < 0
+						|| times.tm_min > 59 || times.tm_min < 0
+						|| times.tm_sec > 59 || times.tm_sec < 0)
+					{
 						ISQL_msg_get(TIME_ERR, msg, lastInputLine, NULL, NULL, NULL,
 									 NULL);
 						STDERROUT(msg, 1);	/* Bad date %s\n */
@@ -1870,8 +1874,28 @@ static SSHORT add_row(TEXT * tabname)
 
 				case SQL_TIMESTAMP:
 				case SQL_TYPE_DATE:
+					{ // scope
+					BOOLEAN failure = FALSE;
 					if (3 != sscanf(lastInputLine, "%d/%d/%d", &times.tm_mon,
-									&times.tm_mday, &times.tm_year)) {
+									&times.tm_mday, &times.tm_year)
+						|| times.tm_mon > 12 || times.tm_mon < 1
+						|| times.tm_mday > 31 || times.tm_mday < 1
+						|| times.tm_year < 1)
+					{
+						failure = TRUE;
+					}
+					else
+					{
+						/* Verifications taken from fbudf. */
+						int md[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+						int ly = times.tm_year;
+						if (ly % 4 == 0 && ly % 100 != 0 || ly % 400 == 0)
+							md[1]++;
+						if (times.tm_mday > md[times.tm_mon - 1])
+							failure = TRUE;
+					}
+					if (failure)
+					{
 						ISQL_msg_get(DATE_ERR, msg, lastInputLine, NULL, NULL, NULL,
 									 NULL);
 						STDERROUT(msg, 1);	/* Bad date %s\n */
@@ -1879,6 +1903,7 @@ static SSHORT add_row(TEXT * tabname)
 					}
 					else {
 						ULONG date[2];
+						times.tm_year -= 1900;
 						times.tm_mon--;
 						stringvalue =
 							(SCHAR *) ISQL_ALLOC((SLONG) (ivar->sqllen + 1));
@@ -1888,6 +1913,7 @@ static SSHORT add_row(TEXT * tabname)
 						if (type == SQL_TIMESTAMP)
 							((ULONG *) stringvalue)[1] = date[1];
 					}
+					} // scope
 					break;
 
 				case SQL_TEXT:
