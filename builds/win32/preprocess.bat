@@ -20,8 +20,6 @@
 @if "%BOOTBUILD%"=="1" (call :BOOT_PROCESS) else (call :MASTER_PROCESS)
 @set BOOTBUILD=
 @set GPRE=
-@del ..\..\src\include\gen\autoconfig.h
-@copy ..\..\src\include\gen\autoconfig_msvc.h ..\..\src\include\gen\autoconfig.h
 @goto :END
 
 ::===========
