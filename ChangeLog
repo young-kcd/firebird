@@ -1,3 +1,44 @@
+2004-08-03 18:18  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/CS/postinstall.in
+	(1.1):
+	
+	file postinstall.in was initially added on branch B1_5_Release.
+
+2004-08-03 18:18  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/CS/pkginfo.in
+	(1.1):
+	
+	file pkginfo.in was initially added on branch B1_5_Release.
+
+2004-08-03 18:18  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/CS/preinstall.in
+	(1.1):
+	
+	file preinstall.in was initially added on branch B1_5_Release.
+
+2004-08-03 18:18  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/CS/prototype.in
+	(1.1):
+	
+	file prototype.in was initially added on branch B1_5_Release.
+
+2004-08-03 18:18  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/CS/postremove.in
+	(1.1):
+	
+	file postremove.in was initially added on branch B1_5_Release.
+
+2004-08-03 18:04  skidder
+
+	* firebird2/src/jrd/blb.cpp (1.84):
+	
+	Fix for regression in DEV_BUILD I caused recently
+
 2004-08-02 23:17  dimitr
 
 	* firebird2/builds/misc/msg.gbak (1.8):
