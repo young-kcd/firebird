@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.33 2004-05-24 17:16:02 brodsom Exp $
+ * $Id: isql.h,v 1.34 2004-08-27 05:01:56 robocop Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -273,7 +273,7 @@ static const SCHAR* Integral_subtypes[] = {
 const int MAX_BLOBSUBTYPES	= 8;
 
 static const SCHAR* Sub_types[] = {
-	"UNKNOWN",					// NTX: keyword
+	"BINARY",					// NTX: keyword
 	"TEXT",						// NTX: keyword
 	"BLR",						// NTX: keyword
 	"ACL",						// NTX: keyword
@@ -286,18 +286,23 @@ static const SCHAR* Sub_types[] = {
 
 /* CVC: Notice that
 BY REFERENCE is the default for scalars and can't be specified explicitly;
+BY VMS_DESCRIPTOR is known simply as BY DESCRIPTOR and works for FB1;
 BY ISC_DESCRIPTOR is the default for BLOBs and can't be used explicitly;
-BY SCALAR_ARRAY_DESCRIPTOR should be supported in DSQL in the future, since
-the server has already the capability to deliver arrays to UDFs. */
+BY SCALAR_ARRAY_DESCRIPTOR is supported in FB2 as BY SCALAR_ARRAY, since
+the server has already the capability to deliver arrays to UDFs;
+BY REFERENCE_WITH_NULL his supported in FB2 to be able to signal SQL NULL
+in input parameters.
+The names mentioned here are documented in jrd/types.h. */
 
 const int MAX_UDFPARAM_TYPES = 4;
 
 static const SCHAR* UDF_param_types[] = {
 	" BY VALUE",			// NTX: keyword
 	"",						// BY REFERENCE
-	" BY DESCRIPTOR",		// NTX: keyword in FB
-	"",						/* BY ISC_DESCRIPTOR => BLOB */
-	" BY SCALAR ARRAY DESCRIPTOR"	// Should be NTX: keyword
+	" BY DESCRIPTOR",		// keyword in FB, internally VMS descriptor
+	"",						// BY ISC_DESCRIPTOR => BLOB
+	" BY SCALAR_ARRAY",		// keyword in FB v2
+	" NULL",                 // BY REFERENCE WITH NULL, but only appends NULL to the type
 	" ERROR-type-unknown"
 };
 
