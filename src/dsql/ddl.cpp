@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.59 2003-09-12 09:19:21 robocop Exp $
+ * $Id: ddl.cpp,v 1.60 2003-09-13 10:26:47 robocop Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -102,7 +102,7 @@ extern "C" {
 static void assign_field_length(DSQL_FLD, USHORT);
 static bool check_array_or_blob(DSQL_NOD);
 static void check_constraint(DSQL_REQ, DSQL_NOD, bool);
-static void check_one_call(USHORT *, SSHORT, TEXT *);
+static void check_one_call(USHORT*, SSHORT, const TEXT*);
 static void create_view_triggers(DSQL_REQ, DSQL_NOD, DSQL_NOD);
 static void define_computed(DSQL_REQ, DSQL_NOD, DSQL_FLD, DSQL_NOD);
 static void define_constraint_trigger(DSQL_REQ, DSQL_NOD);
@@ -887,9 +887,9 @@ static void check_constraint(	DSQL_REQ		request,
 }
 
 
-static void check_one_call (USHORT *repetition_count,
+static void check_one_call (USHORT* repetition_count,
 							SSHORT pos,
-							TEXT *error_msg)
+							const TEXT* error_msg)
 {
 /**************************************
  *
@@ -902,10 +902,11 @@ static void check_one_call (USHORT *repetition_count,
  *  This restriction cannot be enforced by the DSQL parser.
  *
  **************************************/
-	if (++repetition_count [pos] > 1) {
+	if (++repetition_count[pos] > 1) {
 		ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -637,
 				   gds_arg_gds, gds_dsql_duplicate_spec,
-				   gds_arg_string, error_msg,0);
+                   gds_arg_string, error_msg,
+                   0);
 	}
 }
 
