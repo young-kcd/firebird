@@ -247,19 +247,11 @@ STR temp_collation_name = NULL;
     @param relation_node
 
  **/
-DSQL_CTX PASS1_make_context( DSQL_REQ request, DSQL_NOD relation_node)
+DSQL_CTX PASS1_make_context(DSQL_REQ request, DSQL_NOD relation_node)
 {
-	DSQL_CTX context, conflict;
-	STR relation_name, string;
 	DSQL_REL relation;
 	DSQL_PRC procedure;
-	DSQL_FLD field;
-	DSQL_NOD *input;
-	DLLS stack;
-	TEXT *conflict_name;
-	ISC_STATUS error_code;
 	TSQL tdsql;
-	USHORT count;
 
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(relation_node, dsql_type_nod);
@@ -272,6 +264,7 @@ DSQL_CTX PASS1_make_context( DSQL_REQ request, DSQL_NOD relation_node)
 /* figure out whether this is a relation or a procedure
    and give an error if it is neither */
 
+	STR relation_name;
 	if (relation_node->nod_type == nod_rel_proc_name) {
 		relation_name = (STR) relation_node->nod_arg[e_rpn_name];
 	}
@@ -282,14 +275,15 @@ DSQL_CTX PASS1_make_context( DSQL_REQ request, DSQL_NOD relation_node)
 		relation_name = (STR) relation_node->nod_arg[e_rln_name];
 	}
 
-    /* CVC: Let's skim the context, too. */
-    if (relation_name && relation_name->str_data)
+    // CVC: Let's skim the context, too.
+    if (relation_name && relation_name->str_data) {
         pass_exact_name ( (TEXT*) relation_name->str_data);
+	}
 
 	DEV_BLKCHK(relation_name, dsql_type_str);
 
 	if (relation_node->nod_type == nod_derived_table) {
-		//
+		// No processing needed here for derived tables.
 	}
 	else if ((relation_node->nod_type == nod_rel_proc_name) &&
 		relation_node->nod_arg[e_rpn_inputs])
@@ -351,20 +345,21 @@ DSQL_CTX PASS1_make_context( DSQL_REQ request, DSQL_NOD relation_node)
                   gds_arg_string, linecol,
                   0);
     }
-/* Set up context block */
 
-	context = FB_NEW(*tdsql->tsql_default) dsql_ctx;
+	// Set up context block.
+	DSQL_CTX context = FB_NEW(*tdsql->tsql_default) dsql_ctx;
 	context->ctx_relation = relation;
 	context->ctx_procedure = procedure;
 	context->ctx_request = request;
 	context->ctx_context = request->req_context_number++;
 	context->ctx_scope_level = request->req_scope_level;
+	// When we're in a outer-join part mark context for it.
 	if (request->req_in_outer_join) {
 		context->ctx_flags |= CTX_outer_join;
 	}
 
-/* find the context alias name, if it exists */
-
+	// find the context alias name, if it exists.
+	STR string;
 	if (relation_node->nod_type == nod_rel_proc_name) {
 		string = (STR) relation_node->nod_arg[e_rpn_alias];
 	}
@@ -379,34 +374,40 @@ DSQL_CTX PASS1_make_context( DSQL_REQ request, DSQL_NOD relation_node)
 	DEV_BLKCHK(string, dsql_type_str);
 
 	if (string) {
+		DLLS stack;
+		TEXT *conflict_name;
+		ISC_STATUS error_code;
+
 		context->ctx_alias = (TEXT *) string->str_data;
 
-		/* check to make sure the context is not already used at this same  
-		   query level (if there are no subqueries, this checks that the
-		   alias is not used twice in the request) */
-
+		// check to make sure the context is not already used at this same  
+		// query level (if there are no subqueries, this checks that the
+		// alias is not used twice in the request).
 		for (stack = request->req_context; stack; stack = stack->lls_next) {
-			conflict = (DSQL_CTX) stack->lls_object;
-			if (conflict->ctx_scope_level != context->ctx_scope_level)
+			DSQL_CTX conflict = (DSQL_CTX) stack->lls_object;
+
+			if (conflict->ctx_scope_level != context->ctx_scope_level) {
 				continue;
+			}
 
 			if (conflict->ctx_alias) {
 				conflict_name = conflict->ctx_alias;
 				error_code = gds_alias_conflict_err;
-				/* alias %s conflicts with an alias in the same statement */
+				// alias %s conflicts with an alias in the same statement.
 			}
 			else if (conflict->ctx_procedure) {
 				conflict_name = conflict->ctx_procedure->prc_name;
 				error_code = gds_procedure_conflict_error;
-				/* alias %s conflicts with a procedure in the same statement */
+				// alias %s conflicts with a procedure in the same statement.
 			}
 			else if (conflict->ctx_relation) {
 				conflict_name = conflict->ctx_relation->rel_name;
 				error_code = gds_relation_conflict_err;
-				/* alias %s conflicts with a relation in the same statement */
+				// alias %s conflicts with a relation in the same statement.
 			}
-			else
+			else {
 				continue;
+			}
 
 			if (!strcmp(conflict_name, context->ctx_alias))
 				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 204,
@@ -415,8 +416,9 @@ DSQL_CTX PASS1_make_context( DSQL_REQ request, DSQL_NOD relation_node)
 		}
 	}
 
-	if (procedure)
-	{
+	if (procedure) {
+		USHORT count;
+
 		if (request->req_scope_level == 1) {
 			request->req_flags |= REQ_no_batch;
 		}
@@ -442,6 +444,8 @@ DSQL_CTX PASS1_make_context( DSQL_REQ request, DSQL_NOD relation_node)
 
 			if (count)
 			{
+				DSQL_FLD field;
+				DSQL_NOD *input;
 				// Initialize this stack variable, and make it look like a node
                 std::auto_ptr<dsql_nod> desc_node(FB_NEW_RPT(*tdsql->tsql_default, 0) dsql_nod);
 
@@ -466,8 +470,7 @@ DSQL_CTX PASS1_make_context( DSQL_REQ request, DSQL_NOD relation_node)
 	LLS_PUSH(context, &request->req_context);
     
 	return context;
-}   
-    
+}       
 
 
 /**
@@ -828,51 +831,6 @@ DSQL_NOD PASS1_node(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 
 	case nod_join:
 		return pass1_join(request, input, proc_flag);
-/*
-		// Make up join node and mark relations as "possibly NULL" 
-		// if they are in outer joins (req_in_outer_join).
-		node = MAKE_node(input->nod_type, input->nod_count);
-		// First process type, boolean.
-		node->nod_arg[e_join_type] = PASS1_node(request, input->nod_arg[e_join_type], proc_flag);
-		// Process relations.
-		switch (node->nod_arg[e_join_type]->nod_type) {
-			case nod_join_inner: 
-				node->nod_arg[e_join_left_rel] = 
-					PASS1_node(request, input->nod_arg[e_join_left_rel], proc_flag);
-				node->nod_arg[e_join_rght_rel] = 
-					PASS1_node(request, input->nod_arg[e_join_rght_rel], proc_flag);
-			break;
-			case nod_join_left:
-				node->nod_arg[e_join_left_rel] = 
-					PASS1_node(request, input->nod_arg[e_join_left_rel], proc_flag);
-				request->req_in_outer_join++;
-				node->nod_arg[e_join_rght_rel] = 
-					PASS1_node(request, input->nod_arg[e_join_rght_rel], proc_flag);
-				request->req_in_outer_join--;
-			break;
-			case nod_join_right:
-				request->req_in_outer_join++;
-				node->nod_arg[e_join_left_rel] = 
-					PASS1_node(request, input->nod_arg[e_join_left_rel], proc_flag);
-				request->req_in_outer_join--;
-				node->nod_arg[e_join_rght_rel] = 
-					PASS1_node(request, input->nod_arg[e_join_rght_rel], proc_flag);
-			break;
-			case nod_join_full:
-				request->req_in_outer_join++;
-				node->nod_arg[e_join_left_rel] = 
-					PASS1_node(request, input->nod_arg[e_join_left_rel], proc_flag);
-				node->nod_arg[e_join_rght_rel] = 
-					PASS1_node(request, input->nod_arg[e_join_rght_rel], proc_flag);
-				request->req_in_outer_join--;
-			break;
-		default:
-			ASSERT_FAIL;	// join type expected.
-			break;
-		}
-		node->nod_arg[e_join_boolean] = PASS1_node(request, input->nod_arg[e_join_boolean], proc_flag);
-		return node;
-*/
 
 	default:
 		break;
@@ -1761,7 +1719,7 @@ static BOOLEAN aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT * curren
  	ambiguity
   
     @brief	Check for ambiguity in a field
-   reference. The list with contexts were the
+   reference. The list with contexts where the
    field was found is checked and the necessary
    message is build from it.
  
@@ -5339,16 +5297,9 @@ static void pass1_udf_args(DSQL_REQ request, DSQL_NOD input, UDF udf, USHORT arg
  **/
 static DSQL_NOD pass1_union( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order_list)
 {
-	DSQL_NOD map_node, *ptr, *end, items, union_node, *uptr, nod1;
-	DSQL_NOD union_rse, union_items, order1, order2, sort, position, tmp_list;
-	DSQL_CTX union_context;
-	MAP map_;
-	SSHORT count = 0;
-	SLONG number;
-	SSHORT i, j;				/* for-loop counters */
+	DSQL_NOD *uptr, *ptr, *end;
+	SSHORT i, j;	// for-loop counters.
 	TSQL tdsql;
-	DLLS base;
-	DSC desc;
 
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
@@ -5356,14 +5307,13 @@ static DSQL_NOD pass1_union( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order_li
 
 	tdsql = GET_THREAD_DATA;
 
-/* set up the rse node for the union */
-
-	union_rse = MAKE_node(nod_rse, e_rse_count);
-	union_rse->nod_arg[e_rse_streams] = union_node =
+	// set up the rse node for the union.
+	DSQL_NOD union_rse = MAKE_node(nod_rse, e_rse_count);
+	DSQL_NOD union_node = union_rse->nod_arg[e_rse_streams] = 
 		MAKE_node(nod_union, input->nod_count);
 
-/* process all the sub-rse's */
-
+	// process all the sub-rse's.
+	DLLS base;
 	uptr = union_node->nod_arg;
 	base = request->req_context;
 	for (ptr = input->nod_arg, end = ptr + input->nod_count; ptr < end;
@@ -5375,17 +5325,16 @@ static DSQL_NOD pass1_union( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order_li
         }
 	}
 
-/* generate a context for the union itself */
-
-	union_context = FB_NEW(*tdsql->tsql_default) dsql_ctx;
+	// generate a context for the union itself.
+	DSQL_CTX union_context = FB_NEW(*tdsql->tsql_default) dsql_ctx;
 	union_context->ctx_context = request->req_context_number++;
 
-/* generate the list of fields to select */
-
-	items = union_node->nod_arg[0]->nod_arg[e_rse_items];
+	// generate the list of fields to select.
+	DSQL_NOD items = union_node->nod_arg[0]->nod_arg[e_rse_items];
 
 	// loop through the list nodes, checking to be sure that they have the 
 	// same number of items
+	DSQL_NOD nod1;
 	for (i = 1; i < union_node->nod_count; i++) {
 		nod1 = union_node->nod_arg[i]->nod_arg[e_rse_items];
 		if (items->nod_count != nod1->nod_count) {
@@ -5395,13 +5344,33 @@ static DSQL_NOD pass1_union( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order_li
 		}
 	}
 
+	// Comment below is belongs to the old code (way a union was handled).
+
+		/* SQL II, section 9.3, pg 195 governs which data types
+		 * are considered equivilant for a UNION
+		 * The following restriction is in some ways more restrictive
+		 *  (cannot UNION CHAR with VARCHAR for instance)
+		 *  (or cannot union CHAR of different lengths)
+		 * and in someways less restrictive
+		 *  (SCALE is not looked at)
+		 * Workaround: use a direct CAST() statement in the SQL
+		 * statement to force desired datatype.
+		 */
+
 	// loop through the list nodes and cast whenever possible.
-	tmp_list = MAKE_node(nod_list, union_node->nod_count);
+	DSC desc;
+	DSQL_NOD tmp_list = MAKE_node(nod_list, union_node->nod_count);
 	for (j = 0; j < items->nod_count; j++) {
 		for (i = 0; i < union_node->nod_count; i++) {
 			nod1 = union_node->nod_arg[i]->nod_arg[e_rse_items];
 			MAKE_desc(&nod1->nod_arg[j]->nod_desc, nod1->nod_arg[j]);
 			tmp_list->nod_arg[i] = nod1->nod_arg[j];
+
+			// We look only at the items->nod_arg[] when creating the
+			// output descriptors. Make sure that the sub-rses
+			// descriptor flags are copied onto items->nod_arg[]->nod_desc.
+			// Bug 65584.
+			// -Sudesh 07/28/1999.
 			if (nod1->nod_arg[j]->nod_desc.dsc_flags & DSC_nullable) {
 				items->nod_arg[j]->nod_desc.dsc_flags |= DSC_nullable;
 			}
@@ -5413,8 +5382,11 @@ static DSQL_NOD pass1_union( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order_li
 	}
 	items = union_node->nod_arg[0]->nod_arg[e_rse_items];
 
-	union_items = MAKE_node(nod_list, items->nod_count);
-
+	// Create mappings for union.
+	MAP map_;
+	SSHORT count = 0;
+	DSQL_NOD map_node;
+	DSQL_NOD union_items = MAKE_node(nod_list, items->nod_count);
 	uptr = items->nod_arg;
 	for (ptr = union_items->nod_arg, end = ptr + union_items->nod_count;
 		 ptr < end; ptr++) {
@@ -5423,26 +5395,24 @@ static DSQL_NOD pass1_union( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order_li
 		map_ = FB_NEW(*tdsql->tsql_default) map;
 		map_node->nod_arg[e_map_map] = (DSQL_NOD) map_;
 
-		/* set up the MAP between the sub-rses and the union context */
-
+		// set up the MAP between the sub-rses and the union context.
 		map_->map_position = count++;
 		map_->map_node = *uptr++;
 		map_->map_next = union_context->ctx_map;
 		union_context->ctx_map = map_;
 	}
-
 	union_rse->nod_arg[e_rse_items] = union_items;
 
-/* Process ORDER clause, if any */
-
+	// Process ORDER clause, if any.
 	if (order_list) {
-		sort = MAKE_node(nod_list, order_list->nod_count);
+		SLONG number;
+		DSQL_NOD position, order1, order2;
+		DSQL_NOD sort = MAKE_node(nod_list, order_list->nod_count);
 		uptr = sort->nod_arg;
 		for (ptr = order_list->nod_arg, end = ptr + order_list->nod_count;
 			 ptr < end; ptr++, uptr++) {
 			
 			order1 = *ptr;
-
 			STR collate = 0;
 			position = order1->nod_arg[e_order_field];
 
@@ -5451,18 +5421,19 @@ static DSQL_NOD pass1_union( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order_li
 				position = position->nod_arg[e_coll_source];
 			}
 
-			if (position->nod_type != nod_constant || position->nod_desc.dsc_dtype != dtype_long)
+			if (position->nod_type != nod_constant || position->nod_desc.dsc_dtype != dtype_long) {
 				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-						  gds_arg_gds, gds_dsql_command_err, gds_arg_gds, gds_order_by_err,	/* invalid ORDER BY clause */
+						  gds_arg_gds, gds_dsql_command_err, gds_arg_gds, gds_order_by_err,	// invalid ORDER BY clause.
 						  0);
+			}
 			number = (SLONG) position->nod_arg[0];
-			if (number < 1 || number > union_items->nod_count)
+			if (number < 1 || number > union_items->nod_count) {
 				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-						  gds_arg_gds, gds_dsql_command_err, gds_arg_gds, gds_order_by_err,	/* invalid ORDER BY clause */
+						  gds_arg_gds, gds_dsql_command_err, gds_arg_gds, gds_order_by_err,	// invalid ORDER BY clause.
 						  0);
+			}
 
-			/* make a new order node pointing at the Nth item in the select list */
-
+			// make a new order node pointing at the Nth item in the select list.
 			*uptr = order2 = MAKE_node(nod_order, e_order_count);
 			order2->nod_arg[e_order_field] = union_items->nod_arg[number - 1];
 			order2->nod_arg[e_order_flag] = order1->nod_arg[e_order_flag];
@@ -5475,10 +5446,10 @@ static DSQL_NOD pass1_union( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order_li
 		union_rse->nod_arg[e_rse_sort] = sort;
 	}
 
-/* PROJECT on all the select items unless UNION ALL was specified */
-
-	if (!(input->nod_flags & NOD_UNION_ALL))
+	// PROJECT on all the select items unless UNION ALL was specified.
+	if (!(input->nod_flags & NOD_UNION_ALL)) {
 		union_rse->nod_arg[e_rse_reduced] = union_items;
+	}
 
 	return union_rse;
 }
