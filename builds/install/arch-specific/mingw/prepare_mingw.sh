@@ -9,7 +9,6 @@ EXADIR="../../../../examples"
 #
 #
 rm -Rf $OUTDIR
-rmdir -p $OUTDIR
 mkdir $OUTDIR
 #
 # Copying root
@@ -17,7 +16,7 @@ mkdir $OUTDIR
 echo Copying root...
 cp $GENDIR/misc/firebird.conf	$OUTDIR
 cp $GENDIR/security.fdb			$OUTDIR
-gbak $GENDIR/security.fdb		$OUTDIR/security.fbk
+$GENDIR/bin/gbak_static	$GENDIR/security.fdb		$OUTDIR/security.fbk
 cp $GENDIR/firebird.msg			$OUTDIR/firebird.msg
 #
 # Copying bin
