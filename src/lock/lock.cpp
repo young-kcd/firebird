@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.54 2003-06-01 15:49:48 skidder Exp $
+$Id: lock.cpp,v 1.55 2003-06-30 11:02:52 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -436,7 +436,7 @@ int LOCK_deq( PTR request_offset)
 	PTR owner_offset;
 	LBL lock;
 
-	LOCK_TRACE(("LOCK_deq (%d)\n", request_offset));
+	LOCK_TRACE(("LOCK_deq (%ld)\n", request_offset));
 
 	request = get_request(request_offset);
 	owner_offset = request->lrq_owner;
@@ -480,7 +480,7 @@ UCHAR LOCK_downgrade(PTR request_offset, ISC_STATUS * status_vector)
 	OWN owner;
 	PTR owner_offset;
 
-	LOCK_TRACE(("LOCK_downgrade (%d)\n", request_offset));
+	LOCK_TRACE(("LOCK_downgrade (%ld)\n", request_offset));
 
 	request = get_request(request_offset);
 	owner_offset = request->lrq_owner;
@@ -560,7 +560,7 @@ SLONG LOCK_enq(	PTR		prior_request,
 	SSHORT l;
 
 
-	LOCK_TRACE(("LOCK_enq (%d)\n", parent_request));
+	LOCK_TRACE(("LOCK_enq (%ld)\n", parent_request));
 
 	owner = (OWN) ABS_PTR(owner_offset);
 	if (!owner_offset || !owner->own_count)
@@ -2629,13 +2629,14 @@ static void debug_delay( ULONG lineno)
 /* Occasionally post a signal to ourselves, provided we aren't
  * in the signal handler already and we've gotten past the initialization code.
  */
+#if !defined WIN_NT
 	if (LOCK_asts < 1)
 		if (((delay_count++ % 20) == 0) && LOCK_block_signal
 			&& LOCK_owner_offset) {
 			last_signal_line = lineno;
 			kill(getpid(), LOCK_block_signal);
 		}
-
+#endif
 
 /* Occasionally crash for robustness testing */
 /*
