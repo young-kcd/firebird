@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.42 2003-11-11 12:14:07 brodsom Exp $
+ * $Id: rse.cpp,v 1.43 2003-11-16 12:23:07 brodsom Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -79,7 +79,7 @@
 #endif
 
 #if defined(WIN_NT)
-#include <io.h>
+#include <io.h> // close
 #endif
 
 static void close_merge(TDBB, RSB, IRSB_MRG);

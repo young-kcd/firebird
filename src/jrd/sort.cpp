@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.48 2003-11-11 12:14:06 brodsom Exp $
+ * $Id: sort.cpp,v 1.49 2003-11-16 12:23:07 brodsom Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -72,9 +72,7 @@
 
 #ifdef WIN_NT
 /* for SEEK_SET */
-#include <stdio.h>
-#include <windows.h>
-#include <io.h>
+#include <io.h> // lseek, read, write, close
 #endif
 
 #define IO_RETRY			20

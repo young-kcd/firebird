@@ -58,7 +58,7 @@
 #endif
 
 #ifdef WIN_NT
-#include <io.h>
+#include <io.h> // close
 #endif
 
 #ifdef HAVE_SYS_IOCTL_H

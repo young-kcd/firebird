@@ -68,7 +68,7 @@
 #include "../jrd/misc.h"
 
 #if defined(WIN_NT)
-#include <io.h>
+#include <io.h> // umask, close, lseek, read, open, _sopen
 #include <process.h>
 #include <sys/types.h>
 #include <sys/timeb.h>

@@ -78,7 +78,7 @@
 #include <sys/stat.h>
 
 #if defined(WIN_NT)
-#include <io.h>
+#include <io.h> // mktemp, unlink ..
 #include <process.h>
 #else
 #include <sys/file.h>

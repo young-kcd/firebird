@@ -43,7 +43,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.39 2003-11-11 12:12:56 brodsom Exp $
+$Id: flu.cpp,v 1.40 2003-11-16 12:23:07 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -133,9 +133,6 @@ static void terminate_at_space(char* psz)
 #define NOMSG
 #endif
 #define NOSERVICE
-#include <windows.h>
-#include <stdlib.h>
-#include <io.h>
 #endif
 
 

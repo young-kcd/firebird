@@ -27,9 +27,6 @@
 #include <string.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
-#ifdef WIN_NT
-#include <io.h>
-#endif
 #include "../jrd/jrd.h"
 #include "../jrd/log.h"
 #include "../jrd/ods.h"

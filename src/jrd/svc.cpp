@@ -116,11 +116,9 @@
 #    include <stat.h>
 #  endif
 #  include <errno.h>
-#endif
-
-#ifdef WIN_NT
+#else
 #  include <windows.h>
-#  include <io.h>
+#  include <io.h> // _open, _get_osfhandle
 #  include <stdlib.h>
 #  include <fcntl.h>
 #  include <sys/stat.h>

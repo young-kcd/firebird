@@ -79,9 +79,6 @@ IB_FILE *ext_fopen(const char *filename, const char *mode) {
 };
 
 #ifdef WIN_NT
-#include <windows.h>
-#include <stdlib.h>
-#include <io.h>
 #define FOPEN_TYPE	"a+b"
 #define FOPEN_READ_ONLY	"rb"
 #define	SYS_ERR		isc_arg_win32

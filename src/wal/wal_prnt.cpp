@@ -33,10 +33,6 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_f_proto.h"
 
-#if (defined WIN_NT)
-#include <io.h>
-#endif
-
 #ifndef FPRINTF
 #define FPRINTF 	ib_fprintf
 #endif
