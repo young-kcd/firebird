@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.10 2003-02-13 09:42:16 dimitr Exp $
+ * $Id: extract.epp,v 1.10.2.1 2004-03-25 07:38:11 aafemt Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -1145,17 +1145,16 @@ static void list_all_procs()
             sprintf (Print_buffer, create_procedure_str1, 
                      SQL_identifier);
 	        ISQL_printf (Out, Print_buffer);
-	        get_procedure_args (SQL_identifier);
-            sprintf (Print_buffer, create_procedure_str2, Procterm, NEWLINE);
         }
 	    else
 		{
             sprintf (Print_buffer, create_procedure_str1, 
                      PRC.RDB$PROCEDURE_NAME);
 	        ISQL_printf (Out, Print_buffer);
-	        get_procedure_args (PRC.RDB$PROCEDURE_NAME);
-            sprintf (Print_buffer, create_procedure_str2, Procterm, NEWLINE);
         }
+
+        get_procedure_args (PRC.RDB$PROCEDURE_NAME);
+        sprintf (Print_buffer, create_procedure_str2, Procterm, NEWLINE);
         
 	    ISQL_printf (Out, Print_buffer);
     END_FOR
