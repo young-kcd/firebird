@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.57 2004-05-12 19:34:43 brodsom Exp $
+//  $Id: gpre.cpp,v 1.58 2004-05-13 06:48:41 eku Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -1975,7 +1975,7 @@ static TOK get_token()
 	if (sw_language == lang_cobol && !sw_ansi)
 		while (line_position == 1) {
 			c = skip_white();
-			start_line = line;
+			start_line = line_global;
 		}
 #endif
 
@@ -1985,9 +1985,9 @@ static TOK get_token()
 	if (sw_language == lang_fortran) {
 		while (line_position == 6) {
 			c = skip_white();
-			start_line = line;
+			start_line = line_global;
 		}
-		if (sw_sql && line != start_line) {
+		if (sw_sql && line_global != start_line) {
 			return_char(c);
 			token_global.tok_string[0] = ';';
 			token_global.tok_string[1] = 0;
@@ -1997,7 +1997,7 @@ static TOK get_token()
 			token_global.tok_position = start_position + 1;
 			token_global.tok_symbol = HSH_lookup(token_global.tok_string);
 			token_global.tok_keyword = (KWWORDS) token_global.tok_symbol->sym_keyword;
-			return &token;
+			return &token_global;
 		}
 	}
 #endif
