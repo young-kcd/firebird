@@ -43,6 +43,7 @@ case "$1" in
 	daemon --user $FBRunUser $INTERBASE/bin/fbmgr -start -forever
 #    echo '$INTERBASE/bin/ibmgr -start -forever' | su $FBRunUser
 	RETVAL=$?
+	echo
 	;;
   stop)
 	echo -n "Stopping Firebird server: "
