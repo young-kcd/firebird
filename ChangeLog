@@ -1,3 +1,106 @@
+2003-12-15 22:10  dimitr
+
+	* firebird2/src/jrd/btr.cpp:
+	
+	Fixed my yesterday's bug.
+
+2003-12-15 18:12  epocman
+
+	* firebird2/doc/README.Win32LibraryInstallation.txt:
+	
+	Updated documentation.
+
+2003-12-15 17:23  epocman
+
+	* firebird2/builds/win32/msvc7/instclient.vcproj:
+	
+	file instclient.vcproj was initially added on branch B1_5_Release.
+
+2003-12-15 17:23  epocman
+
+	* firebird2/src/utilities/install_client.cpp:
+	
+	file install_client.cpp was initially added on branch B1_5_Release.
+
+2003-12-15 17:23  epocman
+
+	* firebird2/src/utilities/install.cpp:
+	
+	file install.cpp was initially added on branch B1_5_Release.
+
+2003-12-15 17:23  epocman
+
+	* firebird2/src/utilities/install_proto.h:
+	
+	file install_proto.h was initially added on branch B1_5_Release.
+
+2003-12-15 17:23  epocman
+
+	* firebird2/builds/win32/msvc6/instclient.dsp:
+	
+	file instclient.dsp was initially added on branch B1_5_Release.
+
+2003-12-15 17:23  epocman
+
+	* firebird2/: builds/win32/make_all.bat,
+	builds/win32/msvc6/Firebird2.dsw,
+	builds/win32/msvc6/instclient.dsp, builds/win32/msvc6/instgds.dsp,
+	src/utilities/gdsclient.cpp, src/utilities/gdsclient_proto.h,
+	src/utilities/install.cpp, src/utilities/install_client.cpp,
+	src/utilities/install_gds.cpp, src/utilities/install_nt.h,
+	src/utilities/install_proto.h,
+	builds/win32/msvc7/instclient.vcproj,
+	builds/win32/msvc7/instgds.vcproj:
+	
+	Win32 - new instclient.exe tool (replaces instgds.exe).
+	Documentation to follow shortly from me and/or Paul R.
+
+2003-12-15 05:32  skywalker
+
+	* firebird2/src/install/misc/fb_config.in:
+	
+	file fb_config.in was initially added on branch B1_5_Release.
+
+2003-12-15 05:32  skywalker
+
+	* firebird2/: configure.in, builds/posix/Makefile.in.client.util,
+	builds/posix/Makefile.in.firebird, doc/README.user.troubleshooting,
+	src/install/arch-specific/linux/classic/makeInstallImage.sh.in,
+	src/install/arch-specific/linux/misc/firebird.xinetd.in,
+	src/install/arch-specific/linux/super/makeInstallImage.sh.in,
+	src/install/arch-specific/linux/super/postinstall.sh.in,
+	src/install/arch-specific/linux/super/postuninstall.sh.in,
+	src/install/arch-specific/linux/super/preinstall.sh.in,
+	src/install/arch-specific/linux/super/preuninstall.sh.in,
+	src/install/misc/fb_config.in:
+	
+	Update makefile for gstat add -lfbstatic to allow build to find
+	db_alias.o
+	
+	Rollback xinetd flags - remove KEEPALIVE as Nickolay has this
+	option hardcoded and it is not required.
+	
+	Update make clean to remove links as well
+	
+	Change troubleshooting doco to use /opt/firebird rather than
+	/usr/local/firebird
+	
+	Add fb_lock_print to super install package
+	
+	Fix (my) syntax error in super uninstall
+	
+	Change super install scripts to use FBXXXX rather than IBXXX, I
+	kept getting into trouble copying stuff from classic to super - now
+	they are both the same
+	
+	also add a fb_config utility (undocumented currently)
+
+2003-12-15 00:40  skidder
+
+	* firebird2/src/: common/config/config.cpp, jrd/sch.cpp:
+	
+	Backport fixes for race conditions to Firebird 1.5
+
 2003-12-14 23:29  skidder
 
 	* firebird2/src/: journal/gjrn.cpp, jrd/sch.cpp,
