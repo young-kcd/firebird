@@ -166,7 +166,7 @@ static BOOLEAN aggregate_found2(DSQL_REQ, DSQL_NOD, USHORT *, USHORT *, BOOLEAN)
 static DSQL_NOD ambiguity_check(DSQL_REQ, DSQL_NOD, STR, DLLS);
 static void assign_fld_dtype_from_dsc(DSQL_FLD, DSC *);
 static DSQL_NOD compose(DSQL_NOD, DSQL_NOD, NOD_TYPE);
-static void explode_asterisk(DSQL_NOD, DSQL_NOD, DLLS *);
+static void explode_asterisk(DSQL_REQ, DSQL_NOD, DSQL_NOD, DLLS *);
 static DSQL_NOD explode_outputs(DSQL_REQ, DSQL_PRC);
 static void field_error(TEXT *, TEXT *, DSQL_NOD);
 static PAR find_dbkey(DSQL_REQ, DSQL_NOD);
@@ -193,6 +193,7 @@ static BOOLEAN pass1_found_field(DSQL_NOD, USHORT, USHORT, BOOLEAN *);
 static DSQL_NOD pass1_group_by_list(DSQL_REQ, DSQL_NOD, DSQL_NOD);
 static DSQL_NOD pass1_insert(DSQL_REQ, DSQL_NOD);
 static DSQL_NOD pass1_join(DSQL_REQ, DSQL_NOD, USHORT);
+static DSQL_NOD pass1_make_alias_from_field(TSQL, DSQL_FLD);
 static void	pass1_put_args_on_stack(DSQL_REQ, DSQL_NOD, DLLS *, USHORT);
 static DSQL_NOD pass1_relation(DSQL_REQ, DSQL_NOD);
 static DSQL_NOD pass1_rse(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD);
@@ -1583,10 +1584,16 @@ static BOOLEAN aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT * curren
 
 		case nod_alias:
 			if (node->nod_flags & NOD_DERIVED_TABLE) {
-				// This is an alias from a derived table don't look further.
-				return aggregate;
+				// This is an alias from a derived table don't look further,
+				// but don't forget to check for deepest scope_level.
+				USHORT lscope_level = (node->nod_flags >> 1);
+				if (*deepest_level < lscope_level) {
+					*deepest_level = lscope_level;
+				}
 			}
-			aggregate = aggregate_found2(request, node->nod_arg[e_alias_value], current_level, deepest_level, ignore_sub_selects);
+			else {
+				aggregate = aggregate_found2(request, node->nod_arg[e_alias_value], current_level, deepest_level, ignore_sub_selects);
+			}
 			return aggregate;
 
 		case nod_map:
@@ -1900,12 +1907,13 @@ static DSQL_NOD compose( DSQL_NOD expr1, DSQL_NOD expr2, NOD_TYPE operator_)
     @brief	Expand an '*' in a field list to the corresponding fields.
  
 
+    @param request
     @param node
     @param aggregate
     @param stack
 
  **/
-static void explode_asterisk( DSQL_NOD node, DSQL_NOD aggregate, DLLS * stack)
+static void explode_asterisk(DSQL_REQ request, DSQL_NOD node, DSQL_NOD aggregate, DLLS * stack)
 {
 	DSQL_CTX context;
 	DSQL_REL relation;
@@ -1916,8 +1924,8 @@ static void explode_asterisk( DSQL_NOD node, DSQL_NOD aggregate, DLLS * stack)
 	DEV_BLKCHK(aggregate, dsql_type_nod);
 
 	if (node->nod_type == nod_join) {
-		explode_asterisk(node->nod_arg[e_join_left_rel], aggregate, stack);
-		explode_asterisk(node->nod_arg[e_join_rght_rel], aggregate, stack);
+		explode_asterisk(request, node->nod_arg[e_join_left_rel], aggregate, stack);
+		explode_asterisk(request, node->nod_arg[e_join_rght_rel], aggregate, stack);
 	}
 	else if (node->nod_type == nod_derived_table) {
 		// AB: Derived table support
@@ -1940,7 +1948,7 @@ static void explode_asterisk( DSQL_NOD node, DSQL_NOD aggregate, DLLS * stack)
 			node_alias->nod_arg[e_alias_value] = node_select_item->nod_arg[e_alias_value];
 			node_alias->nod_arg[e_alias_alias] = node_select_item->nod_arg[e_alias_alias];
 			node_alias->nod_desc = node_select_item->nod_desc;
-			node_alias->nod_flags |= NOD_DERIVED_TABLE;
+			node_alias->nod_flags = (request->req_scope_level << 1) | NOD_DERIVED_TABLE;
 			LLS_PUSH(node_alias, stack);
 		}
 	}
@@ -2368,8 +2376,19 @@ static BOOLEAN invalid_reference(DSQL_CTX context, DSQL_NOD node, DSQL_NOD list,
 			break;
 
 		case nod_alias:
-			invalid |=
-				invalid_reference(context, node->nod_arg[e_alias_value], list, inside_own_map, inside_higher_map);
+			// If this is a derived table "virtual" field then it's a
+			// invalid mapping, because it should already be seen by
+			// checking group by list or as aggregate function.
+			if (node->nod_flags & NOD_DERIVED_TABLE) {
+				USHORT lscope_level = (node->nod_flags >> 1);
+				if (lscope_level == context->ctx_scope_level) {
+					invalid |= TRUE;
+				}
+			}
+			else {
+				invalid |=
+					invalid_reference(context, node->nod_arg[e_alias_value], list, inside_own_map, inside_higher_map);
+			}
 			break;
 
 		case nod_aggregate:
@@ -2400,6 +2419,7 @@ static BOOLEAN invalid_reference(DSQL_CTX context, DSQL_NOD node, DSQL_NOD list,
 		case nod_current_role:
 		case nod_internal_info:
 		case nod_dbkey:
+		case nod_derived_table:
 			return FALSE;
 		}
 
@@ -3259,12 +3279,11 @@ static DSQL_NOD pass1_derived_table(DSQL_REQ request, DSQL_NOD input)
 {
 	DSQL_NOD *ptr, *end;
 	int count;
-	TSQL tdsql;
 
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
-	tdsql = GET_THREAD_DATA;
+	TSQL tdsql = GET_THREAD_DATA;
 	
 	DSQL_NOD node = MAKE_node (nod_derived_table, e_derived_table_count);
 	STR alias = (STR) input->nod_arg[e_derived_table_alias];
@@ -3375,7 +3394,7 @@ static DSQL_NOD pass1_derived_table(DSQL_REQ request, DSQL_NOD input)
 				rse->nod_arg[e_rse_items]->nod_arg[count] = node_alias;
 			}
 			node_alias->nod_arg[e_alias_alias] = (DSQL_NOD) alias;
-			node_alias->nod_flags |= NOD_DERIVED_TABLE;
+			node_alias->nod_flags = (request->req_scope_level << 1) | NOD_DERIVED_TABLE;
 		}
 	}
 
@@ -3387,35 +3406,37 @@ static DSQL_NOD pass1_derived_table(DSQL_REQ request, DSQL_NOD input)
 	for (; ptr < end; ptr++) {
 		DSQL_NOD node_select_item = (*ptr);
 		if (node_select_item->nod_type == nod_field) {
-			STR alias;
-			TEXT *src, *dest;
-			DSQL_NOD node_alias;
 			DSQL_FLD field = (DSQL_FLD) node_select_item->nod_arg[e_fld_field];
-			int alias_length = strlen(field->fld_name);
+			DSQL_NOD node_alias = pass1_make_alias_from_field(tdsql, field);
 
-			// Copy fieldname to a new string.
-			alias = FB_NEW_RPT(*tdsql->tsql_default, alias_length) str;
-			alias->str_length = alias_length;
-			src = field->fld_name;
-			dest = alias->str_data;
-			for (; alias_length; alias_length--) {
-				*dest++ = *src++;
-			}
-			
-           	// Create a alias and hook in.
-			node_alias = MAKE_node(nod_alias, e_alias_count);
 			node_alias->nod_arg[e_alias_value] = node_select_item;
-			node_alias->nod_arg[e_alias_alias] = (DSQL_NOD) alias;
 			node_alias->nod_desc = node_select_item->nod_desc;
-			node_alias->nod_flags |= NOD_DERIVED_TABLE;
+			node_alias->nod_flags = (request->req_scope_level << 1) | NOD_DERIVED_TABLE;
 
 			rse->nod_arg[e_rse_items]->nod_arg[count] = node_alias;
+		}
+		else if (node_select_item->nod_type == nod_map) {
+			// Don't forget aggregate's that have map on top.
+			MAP map_ = (MAP) node_select_item->nod_arg[e_map_map];
+			if (map_->map_node && (map_->map_node->nod_type == nod_field)) {
+				DSQL_FLD field = (DSQL_FLD) map_->map_node->nod_arg[e_fld_field];
+				DSQL_NOD node_alias = pass1_make_alias_from_field(tdsql, field);
+
+				node_alias->nod_arg[e_alias_value] = node_select_item;
+				node_alias->nod_desc = node_select_item->nod_desc;
+				node_alias->nod_flags = (request->req_scope_level << 1) | NOD_DERIVED_TABLE;
+
+				rse->nod_arg[e_rse_items]->nod_arg[count] = node_alias;
+			}
+		}
+		else if (node_select_item->nod_type == nod_alias) {
+			node_select_item->nod_flags = (request->req_scope_level << 1) | NOD_DERIVED_TABLE;
 		}
 		count++;
 	}
 
 	// Check if all select-items have an alias else show a message.
-	count = 0;
+	count = 1;
 	ptr = rse->nod_arg[e_rse_items]->nod_arg;
 	end = ptr + rse->nod_arg[e_rse_items]->nod_count;
 	for (; ptr < end; ptr++) {
@@ -3547,7 +3568,7 @@ static DSQL_NOD pass1_field( DSQL_REQ request, DSQL_NOD input, USHORT list)
 		
         DSQL_CTX context = reinterpret_cast<DSQL_CTX>(stack->lls_object);
 
-		if (request->req_alias_relation_prefix) {
+		if (request->req_alias_relation_prefix && qualifier) {
 			STR req_qualifier = pass1_alias_concat(request->req_alias_relation_prefix, qualifier);
 			field = resolve_context(request, name, req_qualifier, context);
 			delete req_qualifier;
@@ -3849,8 +3870,11 @@ static BOOLEAN pass1_found_aggregate(DSQL_NOD node, USHORT check_scope_level,
 			break;
 
 		case nod_alias:
-			found |= pass1_found_aggregate(node->nod_arg[e_alias_value],
-				check_scope_level, match_type, current_scope_level_equal);
+			// If this is a derived table alias don't look deeper.
+			if (!(node->nod_flags & NOD_DERIVED_TABLE)) {
+				found |= pass1_found_aggregate(node->nod_arg[e_alias_value],
+					check_scope_level, match_type, current_scope_level_equal);
+			}
 			break;
 
 		case nod_aggregate:
@@ -4062,8 +4086,15 @@ static BOOLEAN pass1_found_field(DSQL_NOD node, USHORT check_scope_level,
 			break;
 
 		case nod_alias:
-			found |= pass1_found_field(node->nod_arg[e_alias_value], 
-				check_scope_level, match_type, field);
+			// This is an alias from a derived table don't check it.
+			if (node->nod_flags & NOD_DERIVED_TABLE) {
+				// This is a "virtual" field
+				*field = TRUE;
+			}
+			else {
+				found |= pass1_found_field(node->nod_arg[e_alias_value], 
+					check_scope_level, match_type, field);
+			}
 			break;
 
 		case nod_aggregate:
@@ -4153,7 +4184,7 @@ static DSQL_NOD pass1_group_by_list(DSQL_REQ request, DSQL_NOD input, DSQL_NOD s
 				LLS_PUSH(frnode, &stack);
 			}
 			else {
-				explode_asterisk(frnode, NULL, &stack);
+				explode_asterisk(request, frnode, NULL, &stack);
 			}
 		}
 		else if ((sub->nod_type == nod_constant) && (sub->nod_desc.dsc_dtype == dtype_long)) {
@@ -4352,6 +4383,34 @@ static DSQL_NOD pass1_join(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 	node->nod_arg[e_join_boolean] = 
 		PASS1_node(request, input->nod_arg[e_join_boolean], proc_flag);
 	return node;
+}
+
+
+/**
+  
+ 	pass1_make_alias_from_field
+  
+    @brief	Create a alias based on field name
+ 
+
+    @param tdsql
+    @param request
+    @param field
+
+ **/
+static DSQL_NOD pass1_make_alias_from_field(TSQL tdsql, DSQL_FLD field)
+{
+	DEV_BLKCHK(field, dsql_type_fld);
+
+	// Copy fieldname to a new string.
+	STR alias = FB_NEW_RPT(*tdsql->tsql_default, strlen(field->fld_name)) str;
+	strcpy(alias->str_data, field->fld_name);
+	alias->str_length = strlen(field->fld_name);
+			
+	// Create a alias and hook in.
+	DSQL_NOD node_alias = MAKE_node(nod_alias, e_alias_count);
+	node_alias->nod_arg[e_alias_alias] = (DSQL_NOD) alias;
+	return node_alias;
 }
 
 
@@ -4811,7 +4870,7 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 		stack = NULL;
 		list = rse->nod_arg[e_rse_streams];
 		for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++) {
-			explode_asterisk(*ptr, aggregate, &stack);
+			explode_asterisk(request, *ptr, aggregate, &stack);
 		}
 		list = rse->nod_arg[e_rse_items] = MAKE_list(stack);
 		/* dimitr: the below code reconstructs the select list after creation
@@ -4938,7 +4997,7 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 			stack = NULL;
 			list = rse->nod_arg[e_rse_streams];
 			for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++) {
-				explode_asterisk(*ptr, aggregate, &stack);
+				explode_asterisk(request, *ptr, aggregate, &stack);
 			}
 			target_rse->nod_arg[e_rse_reduced] = MAKE_list(stack);
 		}		
@@ -5122,7 +5181,7 @@ static DSQL_NOD pass1_sel_list( DSQL_REQ request, DSQL_NOD input)
 				LLS_PUSH(frnode, &stack);
 			}
 			else {
-				explode_asterisk(frnode, NULL, &stack);
+				explode_asterisk(request, frnode, NULL, &stack);
 			}
 		}
 		else
@@ -5942,14 +6001,25 @@ static DSQL_NOD remap_field(DSQL_REQ request, DSQL_NOD field, DSQL_CTX context, 
 	switch (field->nod_type) {
 
 		case nod_alias:
-			field->nod_arg[e_alias_value] = 
-				remap_field(request, field->nod_arg[e_alias_value], context, current_level); 
+			// If we got a alias from a derived table we should not remap anything
+			// deeper in the alias, but this "virtual" field should be mapped to
+			// the give context (ofcourse only if we're in the same scope-level).
+			if (field->nod_flags & NOD_DERIVED_TABLE) {
+				USHORT lscope_level = (field->nod_flags >> 1);
+				if (lscope_level == context->ctx_scope_level) {
+					return post_map(field, context);
+				}
+			}
+			else {
+				field->nod_arg[e_alias_value] = 
+					remap_field(request, field->nod_arg[e_alias_value], context, current_level); 
+			}
 			return field;
 
 		case nod_field:
 			lcontext = reinterpret_cast<DSQL_CTX>(field->nod_arg[e_fld_context]);
 			if (lcontext->ctx_scope_level == context->ctx_scope_level) {
-				return post_map(field, context);			
+				return post_map(field, context);
 			}
 			else {
 				return field;
