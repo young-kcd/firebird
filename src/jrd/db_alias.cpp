@@ -21,9 +21,7 @@
  */
 
 #include "firebird.h"
-
 #include <algorithm>
-
 #include "../common/config/config.h"
 #include "../common/config/config_file.h"
 #include "../jrd/os/path_utils.h"

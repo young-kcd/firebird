@@ -116,7 +116,7 @@
 				OutputFile="debug/firebird/bin/gds32.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ModuleDefinitionFile="..\defs\gds32_debug.def"
+				ModuleDefinitionFile="..\defs\gds32.def"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="..\..\..\temp\debug\gds32/gds32.pdb"
 				ImportLibrary="..\..\..\temp\debug\gds32/gds32.lib"/>
@@ -182,7 +182,7 @@
 			RelativePath="..\defs\gds32.def">
 		</File>
 		<File
-			RelativePath="..\defs\gds32_debug.def">
+			RelativePath="..\defs\gds32.def">
 		</File>
 	</Files>
 	<Globals>

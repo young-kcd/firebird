@@ -27,6 +27,8 @@
 #ifndef JRD_GDS_PROTO_H
 #define JRD_GDS_PROTO_H
 
+#include "../jrd/common.h"
+
 #ifndef IB_PREFIX_TYPE
 #define IB_PREFIX_TYPE 0
 #define IB_PREFIX_LOCK_TYPE 1
@@ -44,9 +46,6 @@ extern "C" {
 #endif
 
 
-#ifdef DEBUG_GDS_ALLOC
-
-#define gds__alloc(s)		gds__alloc_debug ((s),(TEXT*)__FILE__,(ULONG)__LINE__)
 void*	API_ROUTINE gds__alloc_debug(SLONG, const TEXT*, ULONG);
 void	API_ROUTINE gds_alloc_flag_unfreed(void*);
 void	API_ROUTINE gds_alloc_report(ULONG, const char*, int);
@@ -58,11 +57,12 @@ void	API_ROUTINE gds_alloc_report(ULONG, const char*, int);
 #define ALLOC_check_each_call	(1L << 4)	/* Check memory integrity on each alloc/free call */
 #define ALLOC_dont_check	(1L << 5)	/* Stop checking integrity on each call */
 
-#else /* DEBUG_GDS_ALLOC */
-
 void*	API_ROUTINE gds__alloc(SLONG);
 
+#ifdef DEBUG_GDS_ALLOC
+#define gds__alloc(s)		gds__alloc_debug ((s),(TEXT*)__FILE__,(ULONG)__LINE__)
 #endif /* DEBUG_GDS_ALLOC */
+
 
 ISC_STATUS	API_ROUTINE gds__decode(ISC_STATUS, USHORT*, USHORT*);
 void	API_ROUTINE isc_decode_date(const ISC_QUAD*, void*);

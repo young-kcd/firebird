@@ -30,6 +30,7 @@
 
 #include "firebird.h"
 
+#include "../../common/classes/alloc.h"
 #include "../../common/classes/auto.h"
 #include "../../common/config/config_file.h"
 #include "../jrd/os/fbsyslog.h"

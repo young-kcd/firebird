@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: inet_server.cpp,v 1.34 2004-03-12 07:00:52 skidder Exp $
+$Id: inet_server.cpp,v 1.35 2004-03-25 23:12:50 skidder Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -78,10 +78,6 @@ $Id: inet_server.cpp,v 1.34 2004-03-12 07:00:52 skidder Exp $
 #include <string.h>
 #endif
 
-
-#ifdef WINDOWS_ROUTER
-#define MAX_ARGS	6
-#endif /* WINDOWS_ROUTER */
 
 #ifdef VMS
 #include <descrip.h>
@@ -143,21 +139,13 @@ static void signal_sigpipe_handler(int);
 #endif
 static void set_signal(int, void (*)(int));
 
-#ifdef WINDOWS_ROUTER
-static int atov(UCHAR *, UCHAR **, SSHORT);
-#endif /* WINDOWS_ROUTER */
-
 static TEXT protocol[128];
 static int INET_SERVER_start = 0;
 static USHORT INET_SERVER_flag = 0;
 
-#ifdef WINDOWS_ROUTER
-int PASCAL WinMain(
-				   HINSTANCE hInstance,
-				   HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
-#else /* WINDOWS_ROUTER */
-int CLIB_ROUTINE main( int argc, char** argv)
-#endif							/* WINDOWS_ROUTER */
+extern "C" {
+
+int CLIB_ROUTINE server_main( int argc, char** argv)
 {
 /**************************************
  *
@@ -184,19 +172,6 @@ int CLIB_ROUTINE main( int argc, char** argv)
 #if __GNUC__ == 3 && __GNUC_MINOR__ >= 1 && __GNUC_MINOR__ < 4
     std::set_terminate (__gnu_cxx::__verbose_terminate_handler);
 #endif
-
-#ifdef WINDOWS_ROUTER
-/*
- *	Construct an argc, argv so we can use the old parse code.
- */
-	char* argv2[MAX_ARGS];
-
-	char** argv = argv2;
-	argv[0] = "IB_server";
-	int argc = 1 + atov(lpszCmdLine, argv + 1, MAX_ARGS - 1);
-
-#endif /* WINDOWS_ROUTER */
-
 
 #ifdef VMS
 	argc = VMS_parse(&argv, argc);
@@ -438,12 +413,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 	if (multi_threaded)
 		SRVR_multi_thread(port, INET_SERVER_flag);
 	else
-#ifdef WINDOWS_ROUTER
-		SRVR_WinMain(port, INET_SERVER_flag, hInstance, hPrevInstance,
-					 nCmdShow);
-#else
 		SRVR_main(port, INET_SERVER_flag);
-#endif
 
 #ifdef DEBUG_GDS_ALLOC
 /* In Debug mode - this will report all server-side memory leaks
@@ -463,59 +433,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 	exit(FINI_OK);
 }
 
-
-#ifdef WINDOWS_ROUTER
-static int atov( UCHAR * str, UCHAR ** vec, SSHORT len)
-{
-/**************************************
- *
- *	a t o v
- *
- **************************************
- *
- * Functional description
- *	Take a string and convert it to a vector.
- *	White space delineates, but things in quotes are
- *	kept together.
- *
- **************************************/
-	int i = 0, qt = 0, qq;
-	char *p1, *p2;
-
-	vec[0] = str;
-	for (p1 = p2 = str; i < len; i++) {
-		while (*p1 == ' ' || *p1 == '\t')
-			p1++;
-		while (qt || (*p1 != ' ' && *p1 != '\t')) {
-			qq = qt;
-			if (*p1 == '\'')
-				if (!qt)
-					qt = -1;
-				else if (qt == -1)
-					qt = 0;
-			if (*p1 == '"')
-				if (!qt)
-					qt = 1;
-				else if (qt == 1)
-					qt = 0;
-			if (*p1 == '\0' || *p1 == '\n') {
-				*p2++ = '\0';
-				vec[++i] = 0;
-				return i;
-			}
-			if (qq == qt)
-				*p2++ = *p1;
-			p1++;
-		}
-		p1++;
-		*p2++ = '\0';
-		vec[i + 1] = p2;
-	}
-	*p2 = '\0';
-	vec[i] = 0;
-	return i - 1;
 }
-#endif /* WINDOWS_ROUTER */
 
 
 #ifdef VMS

@@ -5501,12 +5501,12 @@ static Database* init(thread_db*	tdbb,
 
 	try {
 #ifdef SUPERSERVER
-	int cur_perm = 0, max_perm = 0;
-	JrdMemoryPool* perm = JrdMemoryPool::createPool(&cur_perm, &max_perm);
+	Firebird::MemoryStats temp_stats;
+	JrdMemoryPool* perm = JrdMemoryPool::createDbPool(temp_stats);
 	dbb = Database::newDbb(*perm);
-	perm->moveStats((int*)&dbb->dbb_current_memory, (int*)&dbb->dbb_max_memory);
+	perm->setStatsGroup(dbb->dbb_memory_stats);
 #else
-	JrdMemoryPool* perm = JrdMemoryPool::createPool();
+	JrdMemoryPool* perm = JrdMemoryPool::createDbPool(MemoryPool::default_stats_group);
 	dbb = Database::newDbb(*perm);
 #endif
 	//temp.blk_type = type_dbb;

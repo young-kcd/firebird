@@ -34,7 +34,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.h,v 1.37 2004-03-20 14:29:05 alexpeshkoff Exp $
+ *  $Id: alloc.h,v 1.38 2004-03-25 23:12:39 skidder Exp $
  *
  */
 
@@ -45,64 +45,122 @@
 
 #include "../../include/fb_types.h"
 #include "../../include/firebird.h"
-#include "../jrd/common.h"
 #include "../jrd/ib_stdio.h"
-#include "tree.h"
-#include "locks.h"
+#include "../jrd/common.h"
+#include "../common/classes/fb_atomic.h"
+#include "../common/classes/tree.h"
+#include "../common/classes/locks.h"
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h> /* XPG: prototypes for malloc/free have to be in
 					   stdlib.h (EKU) */
 #endif
+
 #ifdef _MSC_VER
 #define THROW_BAD_ALLOC
 #else
 #define THROW_BAD_ALLOC throw (std::bad_alloc)
 #endif
 
-#define MAX_TREE_DEPTH 4
-// Must be a power of 2
-#define ALLOC_ALIGNMENT ALIGNMENT
-
-#define MEM_ALIGN(X) FB_ALIGN(X,ALLOC_ALIGNMENT)
 
 namespace Firebird {
 
-struct MemoryBlock /* 16 bytes of block header is not too much I think */ {
-	class MemoryPool* pool;
-	bool used;
-	bool last;
-	SSHORT type;
-	size_t length; /* Includes only actual block size, header not included */
-	MemoryBlock *prev;
+// Maximum number of B+ tree pages kept spare for tree allocation
+// Tree pages are allocated only from this pool thus if level of tree gets higher
+// it will cause bad (but not fatal, I hope) consequences. 100^4 free blocks in free list is a lot
+const int MAX_TREE_DEPTH = 4;
+
+// Alignment for all memory blocks. Sizes of memory blocks in headers are measured in this units
+const size_t ALLOC_ALIGNMENT = ALIGNMENT;
+
+static inline size_t MEM_ALIGN(size_t value) {
+	return FB_ALIGN(value, ALLOC_ALIGNMENT);
+}
+
+// Flags for memory block
+const USHORT MBK_LARGE = 1; // Block is large, allocated from OS directly
+const USHORT MBK_PARENT = 2; // Block is allocated from parent pool
+const USHORT MBK_USED = 4; // Block is used
+const USHORT MBK_LAST = 8; // Block is last in the extent
+
+// Block header.
+// Has size of 12 bytes for 32-bit targets and 16 bytes on 64-bit ones
+struct MemoryBlock {
+	class MemoryPool* mbk_pool;
+	USHORT mbk_flags;
+	SSHORT mbk_type;
+	union {
+		struct {
+		  // Length and offset are measured in bytes thus memory extent size is limited to 64k
+		  // Larger extents are not needed now, but this may be icreased later via using allocation units 
+		  USHORT mbk_length; // Actual block size: header not included, redirection list is included if applicable
+		  USHORT mbk_prev_length;
+		} small;
+		// Measured in bytes
+		ULONG mbk_large_length;
+	};
 #ifdef DEBUG_GDS_ALLOC
-	const char* file;
-	int line;
+	const char* mbk_file;
+	int mbk_line;
 #endif
 };
 
-#define TYPE_POOL     -1
-#define TYPE_EXTENT   -2
-#define TYPE_LEAFPAGE -3
-#define TYPE_TREEPAGE -4
+// This structure is appended to the end of block redirected to parent pool or operating system
+// It is a doubly-linked list which we are going to use when our pool is going to be deleted
+struct MemoryRedirectList {
+	MemoryBlock* mrl_prev;
+	MemoryBlock* mrl_next;
+};
+
+const SSHORT TYPE_POOL = -1;
+const SSHORT TYPE_EXTENT = -2;
+const SSHORT TYPE_LEAFPAGE = -3;
+const SSHORT TYPE_TREEPAGE = -4;
 
 // We store BlkInfo structures instead of BlkHeader pointers to get benefits from 
 // processor cache-hit optimizations
 struct BlockInfo {
 	MemoryBlock* block;
 	size_t length;
-	static bool greaterThan(const BlockInfo& i1, const BlockInfo& i2) {
+	inline static bool greaterThan(const BlockInfo& i1, const BlockInfo& i2) {
 		return (i1.length > i2.length) || 
 			(i1.length == i2.length && i1.block > i2.block);
 	}
 };
 
 struct MemoryExtent {
-	MemoryExtent *next;
-	size_t extent_size; // Includes extent header size
+	MemoryExtent *mxt_next;
+	MemoryExtent *mxt_prev;
 };
 
 struct PendingFreeBlock {
 	PendingFreeBlock *next;
+};
+
+class MemoryStats {
+public:
+	MemoryStats() : mst_usage(0), mst_mapped(0), mst_max_usage(0), mst_max_mapped(0) {}
+	~MemoryStats() {}
+	size_t get_current_usage() const { return mst_usage.value(); }
+	size_t get_maximum_usage() const { return mst_max_usage; }
+	size_t get_current_mapping() const { return mst_mapped.value(); }
+	size_t get_maximum_mapping() const { return mst_max_mapped; }
+private:
+	// Forbid copy constructor
+	MemoryStats(const MemoryStats& object) {}
+
+	// Currently allocated memory (without allocator overhead)
+	// Useful for monitoring engine memory leaks
+	AtomicCounter mst_usage;
+	// Amount of memory mapped (including all overheads)
+	// Useful for monitoring OS memory consumption
+	AtomicCounter mst_mapped;
+	
+	// We don't particularily care about extreme precision of these max values,
+	// this is why we don't synchronize them on Windows
+	size_t mst_max_usage;
+	size_t mst_max_mapped;
+	
+	friend class MemoryPool;	
 };
 
 // Memory pool based on B+ tree of free memory blocks
@@ -127,21 +185,44 @@ private:
 	};
 	typedef BePlusTree<BlockInfo, BlockInfo, InternalAllocator, 
 		DefaultKeyValue<BlockInfo>, BlockInfo> FreeBlocksTree;
-	FreeBlocksTree freeBlocks; // B+ tree ordered by (length,address)
+	
+	// We keep most of our structures uninitialized as long we redirect 
+	// our allocations to parent pool
+	bool parent_redirect;
+
+	// B+ tree ordered by (length,address). 
+	FreeBlocksTree freeBlocks;
+
 	MemoryExtent *extents; // Linked list of all memory extents
 
 	Vector<void*, 2> spareLeafs;
 	Vector<void*, MAX_TREE_DEPTH + 1> spareNodes;
 	bool needSpare;
 	PendingFreeBlock *pendingFree;
+
+    // Synchronization of this object is a little bit tricky. Allocations 
+	// redirected to parent pool are not protected with our mutex and not 
+	// accounted locally, i.e. redirect_amount and parent_redirected linked list
+	// are synchronized with parent pool mutex only. All other pool members are 
+	// synchronized with this mutex.
 	Mutex lock;
-	int extents_memory; // Sum of memory in allocated extents minus size of extents headers
-	int used_memory; // Size of used memory blocks including block headers
+	
+	// Current usage counters for pool. Used to move pool to different statistics group
+	// Note that both counters are used only for blocks not redirected to parent.
+	size_t mapped_memory;
+	size_t used_memory;
+	
+	MemoryPool *parent; // Parent pool. Used to redirect small allocations there
+	MemoryBlock *parent_redirected, *os_redirected;
+	size_t redirect_amount; // Amount of memory redirected to parent
+							// It is protected by parent pool mutex along with redirect list
+	// Statistics group for the pool
+	MemoryStats *stats;
 
 	/* Returns NULL in case it cannot allocate requested chunk */
-	static void* external_alloc(size_t size);
+	static void* external_alloc(size_t &size);
 
-	static void external_free(void* blk, size_t size);
+	static void external_free(void* blk, size_t &size);
 	
 	void* tree_alloc(size_t size);
 
@@ -149,70 +230,98 @@ private:
 
 	void updateSpare();
 	
-	void addFreeBlock(MemoryBlock* blk);
+	inline void addFreeBlock(MemoryBlock* blk);
 		
 	void removeFreeBlock(MemoryBlock* blk);
 	
 	void free_blk_extent(MemoryBlock* blk);
 	
-	// does all the stuff except locking and exceptions
+	// Allocates small block from this pool. Pool must be locked during call
 	void* internal_alloc(size_t size, SSHORT type = 0
 #ifdef DEBUG_GDS_ALLOC
 		, const char* file = NULL, int line = 0
 #endif
 	);
+
+	// Deallocates small block from this pool. Pool must be locked during this call
+	void internal_deallocate(void* block);
+	
+	// Forbid copy constructor, should never be called
+	MemoryPool(const MemoryPool& pool) : freeBlocks((InternalAllocator*)this) { }
+	
+	// Used by pools to track memory usage
+	inline void increment_usage(size_t size);
+	inline void decrement_usage(size_t size);
+	inline void increment_mapping(size_t size);
+	inline void decrement_mapping(size_t size);
+	
 protected:
-	int* cur_memory;
-	int* max_memory;
 	// Do not allow to create and destroy pool directly from outside
-	MemoryPool(void* first_extent, void* root_page, int* cur_mem = NULL, int* max_mem = NULL);
+	MemoryPool(MemoryPool* _parent, MemoryStats &_stats, void* first_extent, void* root_page);
 
 	// This should never be called
 	~MemoryPool() {
 	}
 	
+	// Used to create MemoryPool descendants
 	static MemoryPool* internal_create(size_t instance_size, 
-		int* cur_mem = NULL, int* max_mem = NULL);
+		MemoryPool* parent = NULL, MemoryStats &stats = default_stats_group);
+	
 public:
-	static int process_max_memory;
-	static int process_current_memory;
+	// Default statistics group for process
+	static MemoryStats default_stats_group;
 
-	// Move usage stats to another location
-	void moveStats(int *cur_mem, int *max_mem) {
-		*cur_mem = *cur_memory;
-		*max_mem = *max_memory;
-		cur_memory = cur_mem;
-		max_memory = max_mem;
+	// Pool created for process
+	static MemoryPool* processMemoryPool;
+	
+	// Create memory pool instance
+	static MemoryPool* createPool(MemoryPool* parent = NULL, MemoryStats &stats = default_stats_group) {
+		return internal_create(sizeof(MemoryPool), parent, stats);
 	}
-	static MemoryPool* createPool() {
-		return internal_create(sizeof(MemoryPool));
-	}
+	
+	// Set context pool for current thread of execution
+	static MemoryPool* setContextPool(MemoryPool *newPool);
+	
+	// Get context pool for current thread of execution
+	static MemoryPool* getContextPool();
+	
+	// Set statistics group for pool. Usage counters will be decremented from 
+	// previously set group and added to new
+	void setStatsGroup(MemoryStats &stats);
 
+	// Deallocate pool and all its contents
 	static void deletePool(MemoryPool* pool);
 
+	// Allocate memory block. Result is not zero-initialized.
+	// It case of problems this method throws std::bad_alloc
 	void* allocate(size_t size, SSHORT type = 0
 #ifdef DEBUG_GDS_ALLOC
 		, const char* file = NULL, int line = 0
 #endif
 	);
 
+	// Allocate memory block. In case of problems this method returns NULL
 	void* allocate_nothrow(size_t size, SSHORT type = 0
 #ifdef DEBUG_GDS_ALLOC
 		, const char* file = NULL, int line = 0
 #endif
 	);
-
+	
 	void deallocate(void* block);
 	
+	// Check pool for internal consistent. When enabled, call is very expensive
 	bool verify_pool();
 
+	// Print out pool contents. This is debugging routine
 	void print_contents(IB_FILE*, bool = false);
 	
+	// Deallocate memory block. Pool is derived from block header
 	static void globalFree(void* block) {
 	    if (block)
-		  ((MemoryBlock*)((char*)block - MEM_ALIGN(sizeof(MemoryBlock))))->pool->deallocate(block);
+		  ((MemoryBlock*)((char*)block - MEM_ALIGN(sizeof(MemoryBlock))))->mbk_pool->deallocate(block);
 	}
 	
+	// Allocate zero-initialized block of memory
 	void* calloc(size_t size, SSHORT type = 0
 #ifdef DEBUG_GDS_ALLOC
 		, const char* file = NULL, int line = 0
@@ -229,114 +338,70 @@ public:
 
 	/// Returns the type associated with the allocated memory.
 	static SSHORT blk_type(const void* mem) {
-		return ((MemoryBlock*)((char *)mem - MEM_ALIGN(sizeof(MemoryBlock))))->type;
+		return ((MemoryBlock*)((char *)mem - MEM_ALIGN(sizeof(MemoryBlock))))->mbk_type;
 	}
 	
 	/// Returns the pool the memory was allocated from.
 	static MemoryPool* blk_pool(const void* mem) {
-		return ((MemoryBlock*)((char *)mem - MEM_ALIGN(sizeof(MemoryBlock))))->pool;
+		return ((MemoryBlock*)((char *)mem - MEM_ALIGN(sizeof(MemoryBlock))))->mbk_pool;
 	}
 	
 	friend class InternalAllocator;
 };
 
-}; // namespace Firebird
+// Class intended to manage execution context pool stack
+// Declare instance of this class when you need to set new context pool and it 
+// will be restored automatically as soon holder variable gets out of scope
+class ContextPoolHolder {
+public:
+	ContextPoolHolder(MemoryPool* newPool) {
+		savedPool = MemoryPool::setContextPool(newPool);
+	}
+	~ContextPoolHolder() {
+		MemoryPool::setContextPool(savedPool);
+	}
+private:
+	MemoryPool* savedPool;	
+};
 
-#ifndef TESTING_ONLY
+}; // namespace Firebird
 
 using Firebird::MemoryPool;
 
-MemoryPool* getDefaultMemoryPool();
+inline static MemoryPool* getDefaultMemoryPool() { return Firebird::MemoryPool::processMemoryPool; }
 
-#if defined(__GNUC__) && !defined(MINGW)
-// All this crappy code below under __GNUC__ conditional is to avoid replacing 
-// STL operator new as this replacement causes crashes if client library is 
-// loaded by host application using STL
+MemoryPool* getContextMemoryPool();
 
-// This is to prevent inclusion of <new> header
-#ifdef __NEW__
-#error "alloc.h must be included before <new>"
-#endif
-#define __NEW__
-namespace std {
-	class bad_alloc : public exception {};
-}
-// Define operators as static inline to prevent replacement of STL versions
-static inline void* operator new(size_t s) {
-#if defined(DEV_BUILD)
-// Do not complain here. It causes client tools to crash on Red Hat 8.0
-//	fprintf(stderr, "You MUST allocate all memory from a pool.  Don't use the default global new().\n");
-#endif	// DEV_BUILD
-//	return getDefaultMemoryPool()->calloc(s, 0
-	return getDefaultMemoryPool()->allocate(s, 0
-#ifdef DEBUG_GDS_ALLOC
-	  ,__FILE__,__LINE__
-#endif
-	);
-}
-
-static inline void* operator new[](size_t s) {
-#if defined(DEV_BUILD)
-// Do not complain here. It causes client tools to crash on Red Hat 8.0
-//	fprintf(stderr, "You MUST allocate all memory from a pool.  Don't use the default global new[]().\n");
-#endif	// DEV_BUILD
-//	return getDefaultMemoryPool()->calloc(s, 0
-	return getDefaultMemoryPool()->allocate(s, 0
-#ifdef DEBUG_GDS_ALLOC
-	  ,__FILE__,__LINE__
-#endif
-	);
-}
-
-static inline void operator delete(void* mem) throw() {
-	Firebird::MemoryPool::globalFree(mem);
-}
-
-static inline void operator delete[](void* mem) throw() {
-	Firebird::MemoryPool::globalFree(mem);
-}
-
-// Default placement versions of operator new.
-static inline void* operator new(size_t, void* __p) throw() { return __p; }
-static inline void* operator new[](size_t, void* __p) throw() { return __p; }
-
-#else
-// Global versions of operator new() for compatibility with crappy libraries
+// Global versions of operator new()
+// Implemented in alloc.cpp
 void* operator new(size_t) THROW_BAD_ALLOC;
 void* operator new[](size_t) THROW_BAD_ALLOC;
 
 // We cannot use inline versions because we have to replace STL delete defined in <new> header
-// One more performance pain we have to take because of STL usage :((
 void operator delete(void* mem) throw();
-
 void operator delete[](void* mem) throw();
-#endif
 
 #ifdef DEBUG_GDS_ALLOC
 static inline void* operator new(size_t s, Firebird::MemoryPool& pool, const char* file, int line) {
 	return pool.allocate(s, 0, file, line);
-//	return pool.calloc(s, 0, file, line);
 }
 static inline void* operator new[](size_t s, Firebird::MemoryPool& pool, const char* file, int line) {
 	return pool.allocate(s, 0, file, line);
-//	return pool.calloc(s, 0, file, line);
 }
 #define FB_NEW(pool) new(pool,__FILE__,__LINE__)
 #define FB_NEW_RPT(pool,count) new(pool,count,__FILE__,__LINE__)
 #else
 static inline void* operator new(size_t s, Firebird::MemoryPool& pool) {
 	return pool.allocate(s);
-//	return pool.calloc(s);
 }
 static inline void* operator new[](size_t s, Firebird::MemoryPool& pool) {
 	return pool.allocate(s);
-//	return pool.calloc(s);
 }
 #define FB_NEW(pool) new(pool)
 #define FB_NEW_RPT(pool,count) new(pool,count)
 #endif
 
-
+#ifndef TESTING_ONLY
 
 /**
 	This is the allocator template provided to be used with the STL.
@@ -397,17 +462,6 @@ namespace Firebird
 		char* _Charalloc(size_type n)
 			{ return (char*) pool->allocate(n, 0); }
 #endif
-/*#ifdef DEBUG_GDS_ALLOC
-		pointer allocate(size_type s, const void * = 0)
-			{ return (pointer) pool->calloc(sizeof(T) * s, 0, __FILE__, __LINE__); }
-		char *_Charalloc(size_type n)
-			{ return (char*) pool->calloc(n, 0, __FILE__, __LINE__); }
-#else
-		pointer allocate(size_type s, const void * = 0)
-			{ return (pointer) pool->calloc(sizeof(T) * s, 0); }
-		char *_Charalloc(size_type n)
-			{ return (char*) pool->calloc(n, 0); }
-#endif*/
 			
 		void deallocate(pointer p, size_type s)	{ pool->deallocate(p); }
 		void deallocate(void* p, size_type s) { pool->deallocate(p); }
@@ -463,6 +517,7 @@ namespace Firebird
 			if (distance < 0) {
 				distance = -distance;
 			}
+			// Cannot use fb_assert in this header
 			fb_assert(distance < 64 * 1024);
 #endif
 		}

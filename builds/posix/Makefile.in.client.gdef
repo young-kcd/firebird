@@ -27,11 +27,10 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.gdef,v 1.7 2004-01-07 00:31:18 brodsom Exp $
+#  $Id: Makefile.in.client.gdef,v 1.8 2004-03-25 23:12:31 skidder Exp $
 #
 ROOT=..
 ObjModuleName=client.gdef
-CFLAGS := -DSUPERCLIENT
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -44,22 +43,18 @@ unexport ISC_USER
 unexport ISC_PASSWORD
 
 
+GDEF_Other_Sources = common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp \
+gpre/pretty.cpp jrd/isc_file.cpp common/config/config.cpp common/config/dir_list.cpp \
+common/config/config_file.cpp $(OS_SPECIFIC_Sources)
+
 GDEF_Files=	exe.epp extract.epp \
 			ddl.cpp expand.cpp expr.cpp generate.cpp \
 			hsh.cpp lex.cpp parse.cpp trn.cpp
 
-GDEF_Sources = $(addprefix dudley/, $(GDEF_Files))
+GDEF_Sources = $(addprefix dudley/, $(GDEF_Files)) $(GDEF_Other_Sources)
 GDEF_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GDEF_Sources))))
 
-JRD_Files= iberr.cpp isc.cpp isc_file.cpp llio.cpp misc.cpp status.cpp
-JRD_Sources = $(addprefix jrd/, $(JRD_Files))
-JRD_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(JRD_Sources))))
-
-GPRE_Files= pretty.cpp
-GPRE_Sources = $(addprefix gpre/, $(GPRE_Files))
-GPRE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GPRE_Sources))))
-
-AllObjects = $(GDEF_Objects) $(JRD_Objects) $(GPRE_Objects)
+AllObjects = $(GDEF_Objects)
 Dependencies = $(AllObjects:.o=.d)
 
 
@@ -69,8 +64,8 @@ all:	gdef
 
 gdef:   $(BIN)/gdef
 
-$(BIN)/gdef: $(GDEF_Objects) $(JRD_Objects) $(GPRE_Objects) $(LIBFBCLIENT_SO)  
-	$(LD) $(LINK_OPTS) $(GDEF_Objects) $(JRD_Objects) $(GPRE_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+$(BIN)/gdef: $(GDEF_Objects) $(LIBFBCLIENT_SO)
+	$(LD) $(LINK_OPTS) $(GDEF_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
 
 
 

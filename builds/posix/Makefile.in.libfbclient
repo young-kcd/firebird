@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbclient,v 1.20 2004-01-07 00:31:18 brodsom Exp $
+#  $Id: Makefile.in.libfbclient,v 1.21 2004-03-25 23:12:31 skidder Exp $
 #
 ROOT=..
 ObjModuleName=libfbclient
@@ -111,8 +111,8 @@ $(LIBFBCLIENT_SONAME):	$(LIBFBCLIENT_SOBASENAME)
 endif
 
 $(LIBFBCLIENT_SO):	$(FBCLIENT_Objects)
-#	$(LIB_LINK) -Wl,-soname,libfbclient.$(SHRLIB_EXT).1 -Wl,-rpath,/usr/lib -o $@ $^
-	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_IMPLIB) $(LIB_LINK_SONAME)$(ClientLibraryNameMajor) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ $(SO_LINK_LIBS)
+	$(LIB_LINK) $(LINK_FIREBIRD_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_IMPLIB) \
+$(LIB_LINK_SONAME)$(ClientLibraryNameMajor) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ $(SO_LINK_LIBS)
 
 
 AllObjects = $(FBCLIENT_Objects)

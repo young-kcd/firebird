@@ -119,33 +119,31 @@ void ALL_check_memory()
 #endif /* DEV_BUILD */
 
 
-JrdMemoryPool *JrdMemoryPool::createPool(int *cur_mem, int *max_mem) {
-	Database* dbb = GET_DBB;
-	JrdMemoryPool* result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool),
-		cur_mem, max_mem);
+JrdMemoryPool *JrdMemoryPool::createDbPool(Firebird::MemoryStats &stats) {
+	JrdMemoryPool* result = (JrdMemoryPool *)internal_create(
+		sizeof(JrdMemoryPool), NULL, stats);
 	result->plb_buckets = NULL;
 	result->plb_segments = NULL;
 	result->plb_dccs = NULL;
 	new (&result->lls_cache) BlockCache<lls> (*result);
-	if (dbb)
-		dbb->dbb_pools.push_back(result);
 	return result;
 }
 
 JrdMemoryPool *JrdMemoryPool::createPool() {
     Database* dbb = GET_DBB;
+	fb_assert(dbb);
+		
 #ifdef SUPERSERVER
 	JrdMemoryPool* result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool),
-		(int*)&dbb->dbb_current_memory, (int*)&dbb->dbb_max_memory);
+		dbb->dbb_permanent,	dbb->dbb_memory_stats);
 #else
-	JrdMemoryPool *result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool));
+	JrdMemoryPool *result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool), dbb->dbb_permanent);
 #endif
 	result->plb_buckets = NULL;
 	result->plb_segments = NULL;
 	result->plb_dccs = NULL;
 	new (&result->lls_cache) BlockCache<lls> (*result);
-	if (dbb)
-		dbb->dbb_pools.push_back(result);
+	dbb->dbb_pools.push_back(result);
 	return result;
 }
 

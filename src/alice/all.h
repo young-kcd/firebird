@@ -33,7 +33,7 @@ class AliceMemoryPool : public MemoryPool
 {
 protected:
 	// Dummy constructor and destructor. Should never be called
-	AliceMemoryPool() : MemoryPool(NULL, NULL), lls_cache(*this) {}
+	AliceMemoryPool() : MemoryPool(NULL, default_stats_group, NULL, NULL), lls_cache(*this) {}
 	~AliceMemoryPool() {}	
 public:
 	static AliceMemoryPool *createPool() {

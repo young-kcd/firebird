@@ -45,7 +45,7 @@
 				OutputFile="debug/firebird/bin/fbembed.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ModuleDefinitionFile="..\defs\fbclient_debug.def"
+				ModuleDefinitionFile="..\defs\fbclient.def"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="..\..\..\temp\debug\fbembed/fbembed.pdb"
 				ImportLibrary="..\..\..\temp\debug\fbembed/fbembed.lib"/>
@@ -360,7 +360,7 @@
 			RelativePath="..\defs\fbclient.def">
 		</File>
 		<File
-			RelativePath="..\defs\fbclient_debug.def">
+			RelativePath="..\defs\fbclient.def">
 		</File>
 	</Files>
 	<Globals>

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.qli,v 1.12 2003-09-11 02:53:27 brodsom Exp $
+#  $Id: Makefile.in.embed.qli,v 1.13 2004-03-25 23:12:31 skidder Exp $
 #
 ROOT=..
 ObjModuleName=embed.qli
@@ -40,11 +40,15 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
+QLI_Other_Sources = common/utils.cpp \
+common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp \
+jrd/dsc.cpp gpre/pretty.cpp
+
 QLI_Files=	all.cpp command.cpp compile.cpp dtr.cpp err.cpp eval.cpp \
 		expand.cpp exe.cpp format.cpp gener.cpp help.cpp \
 		hsh.cpp lex.cpp meta.cpp mov.cpp parse.cpp picstr.cpp proc.cpp \
 		report.cpp show.cpp
-QLI_Sources = $(addprefix qli/, $(QLI_Files))
+QLI_Sources = $(addprefix qli/, $(QLI_Files)) $(QLI_Other_Sources)
 QLI_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(QLI_Sources))))
 
 AllObjects = $(QLI_Objects) 
@@ -68,13 +72,6 @@ $(QLI): $(QLI_Objects)
 create_yachts:
 	-$(RM) yachts.lnk
 	-$(LN) -f metadata.fdb yachts.lnk
-
-
-# qli_help
-#
-# qli_help is now directly build in the refDatabase directory, and doesn't 
-# need to be rebuilt here.
-
 
 
 include $(ROOT)/gen/make.shared.targets

@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: class_test.cpp,v 1.12 2004-02-02 11:00:57 robocop Exp $
+ *  $Id: class_test.cpp,v 1.13 2004-03-25 23:12:39 skidder Exp $
  *
  */
 
@@ -270,24 +270,36 @@ void testBePlusTree() {
 #define BIG_ITEMS (ALLOC_ITEMS/10)
 #define BIG_SIZE (MAX_ITEM_SIZE*5)
 
+#define LARGE_ITEMS 10
+#define LARGE_ITEM_SIZE 300000
+
 struct AllocItem {
 	int order;
 	void *item;
-	static int compare(const AllocItem &i1, const AllocItem &i2) {
+	static bool greaterThan(const AllocItem &i1, const AllocItem &i2) {
 		return i1.order > i2.order || (i1.order == i2.order && i1.item > i2.item);
 	}
 };
 
 void testAllocator() {
 	printf("Test Firebird::MemoryPool\n");
-	MemoryPool* pool = MemoryPool::createPool();
+	MemoryPool* parent = getDefaultMemoryPool();
+	MemoryPool* pool = MemoryPool::createPool(parent);
 	
 	MallocAllocator allocator;
 	BePlusTree<AllocItem, AllocItem, MallocAllocator, DefaultKeyValue<AllocItem>, AllocItem> items(&allocator),
 		bigItems(&allocator);
+		
+	Vector<void*, LARGE_ITEMS> la;
+	printf("Allocate %d large items: ", LARGE_ITEMS);
+	int i;
+	for (i = 0; i<LARGE_ITEMS; i++)
+		la.add(pool->allocate(LARGE_ITEM_SIZE));		
+	pool->verify_pool();
+	printf(" DONE\n");
+	
 	printf("Allocate %d items: ", ALLOC_ITEMS);
 	int n = 0;
-	int i;
 	pool->verify_pool();
 	for (i = 0; i < ALLOC_ITEMS; i++) {
 		n = n * 47163 - 57412;
@@ -296,6 +308,7 @@ void testAllocator() {
 	}
 	printf(" DONE\n");
 	pool->verify_pool();
+	parent->verify_pool();
 	
 	printf("Deallocate half of items in quasi-random order: ");
 	n = 0;
@@ -305,6 +318,7 @@ void testAllocator() {
 	} while (n < ALLOC_ITEMS / 2 && items.getNext());
 	printf(" DONE\n");
 	pool->verify_pool();
+	parent->verify_pool();
 	
 	printf("Allocate %d big items: ", BIG_ITEMS);
 	n = 0;
@@ -316,6 +330,7 @@ void testAllocator() {
 	}
 	printf(" DONE\n");
 	pool->verify_pool();
+	parent->verify_pool();
 	
 	printf("Deallocate the rest of small items in quasi-random order: ");
 	while (items.getNext()) {
@@ -323,17 +338,30 @@ void testAllocator() {
 	}
 	printf(" DONE\n");
 	pool->verify_pool();
+	parent->verify_pool();
 	
 	printf("Deallocate big items in quasi-random order: ");
 	if (bigItems.getFirst()) do {
 		pool->deallocate(bigItems.current().item);
 	} while (bigItems.getNext());
 	printf(" DONE\n");
+	
+	printf("Deallocate %d large items: ", LARGE_ITEMS/2);
+	for (i = 0; i<LARGE_ITEMS/2; i++)
+		pool->deallocate(la[i]);
 	pool->verify_pool();
-	pool->print_contents(stdout, true);
+	printf(" DONE\n");
+
+	
+	pool->verify_pool();
+	parent->verify_pool();
+	pool->print_contents(stdout, false);
+	parent->print_contents(stdout, false);
 	MemoryPool::deletePool(pool);
+	parent->verify_pool();	
 //  TODO:
 //	Test critically low memory conditions
+//  Test that tree correctly recovers in low-memory conditions
 }
 
 int main() {

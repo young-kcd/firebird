@@ -269,5 +269,8 @@ EXPORTS
     _isc_start_transaction=fbclient._isc_start_transaction
     _isc_expand_dpb=fbclient._isc_expand_dpb
     _isc_event_block=fbclient._isc_event_block
+    gds__alloc_debug=fbclient.gds__alloc_debug
+    gds_alloc_flag_unfreed=fbclient.gds_alloc_flag_unfreed
+    gds_alloc_report=fbclient.gds_alloc_report
     KEYWORD_stringIsAToken=fbclient.KEYWORD_stringIsAToken
     KEYWORD_getTokens=fbclient.KEYWORD_getTokens

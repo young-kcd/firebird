@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.inet_server,v 1.12 2003-11-08 07:39:06 bellardo Exp $
+#  $Id: Makefile.in.inet_server,v 1.13 2004-03-25 23:12:31 skidder Exp $
 #
 ROOT=..
 ObjModuleName=inet_server
@@ -39,17 +39,12 @@ include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@
 
-IPSERVER_Files = $(WIN_IPSERVER_Files)
-IPSERVER_Sources =  $(addprefix ipserver/, $(IPSERVER_Files))
-IPSERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(IPSERVER_Sources))))
-
-SERVER_Files = $(OS_ServerFiles) server.cpp 
+SERVER_Files = server_stub.cpp 
 SERVER_Sources = $(addprefix remote/, $(SERVER_Files))
 SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Sources))))
 
 AllObjects = $(SERVER_Objects)
 Dependencies = $(AllObjects:.o=.d) 
-
 
 .PHONY: fb_inet_server
 
@@ -57,10 +52,8 @@ Dependencies = $(AllObjects:.o=.d)
 #     but we must ensure it's existance
 fb_inet_server : $(LIBFBEMBED_SO) $(FB_CLASSIC_SERVER)
 
-$(FB_CLASSIC_SERVER):	$(SERVER_Objects) $(IPSERVER_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LIB_GUI) $(LINK_LIBS) 
-#	$(CHMOD_S7) $@
-
+$(FB_CLASSIC_SERVER):	$(SERVER_Objects)
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LIB_GUI) $(LINK_LIBS)
 
 include $(ROOT)/gen/make.shared.targets
 

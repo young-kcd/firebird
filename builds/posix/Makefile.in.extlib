@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.extlib,v 1.14 2003-09-27 23:29:07 brodsom Exp $
+#  $Id: Makefile.in.extlib,v 1.15 2004-03-25 23:12:31 skidder Exp $
 #
 ROOT=..
 ObjModuleName=extlib
@@ -76,15 +76,8 @@ all: lib_ib_udf lib_ib_util
 
 lib_ib_udf: $(UDF)/ib_udf.$(SHRLIB_EXT)
 
-#$(UDF)/ib_udf.$(SHRLIB_EXT)(%.o) : %.o
-#	ar crv $@  $%
-
 $(UDF)/ib_udf.$(SHRLIB_EXT):	$(UDF_Objects) $(UTIL_Objects)
-#	$(LIB_LINK) $(LIB_LINK_SONAME)ib_udf.$(SHRLIB_EXT) $(LIB_LINK_RPATH)/usr/lib -o $@ $^
 	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)ib_udf.$(SHRLIB_EXT) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^
-#	-$(LN) $(@F) $(LIBFBINTL_SOBASENAME) 
-#	-$(LN) $(notdir $(LIBFBINTL_SOBASENAME)) $(LIBFBINTL_SONAME)
-
 
 # ib_util
 
@@ -92,11 +85,6 @@ lib_ib_util: $(LIBIBUTIL_SO)
 
 $(LIBIBUTIL_SO):	$(UTIL_Objects)
 	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)$(IbUtilLibraryName) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^
-#	-$(LN) $(@F) $(LIBFBINTL_SOBASENAME) 
-#	-$(LN) $(notdir $(LIBFBINTL_SOBASENAME)) $(LIBFBINTL_SONAME)
-
-#$(LIB)/ib_util.$(SHRLIB_EXT)(%.o) : %.o
-#	ar crv $@  $%
 
 
 include $(ROOT)/gen/make.shared.targets

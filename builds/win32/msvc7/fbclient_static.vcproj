@@ -319,7 +319,7 @@
 			RelativePath="..\defs\fbclient.def">
 		</File>
 		<File
-			RelativePath="..\defs\fbclient_debug.def">
+			RelativePath="..\defs\fbclient.def">
 		</File>
 	</Files>
 	<Globals>

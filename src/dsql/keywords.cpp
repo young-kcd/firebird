@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.28 2004-03-07 07:58:27 robocop Exp $
+ *  $Id: keywords.cpp,v 1.29 2004-03-25 23:12:43 skidder Exp $
  *
  */
 
@@ -320,6 +320,8 @@ static const TOK tokens[] = {
    MOD 29-June-2002
 */
 
+extern "C" {
+
 bool KEYWORD_stringIsAToken(const char* in_str)
 {
     const TOK* tok_ptr = tokens;
@@ -337,3 +339,4 @@ const TOK* KEYWORD_getTokens()
     return tokens;
 }
 
+}

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.util,v 1.11 2003-09-08 20:23:31 skidder Exp $
+#  $Id: Makefile.in.embed.util,v 1.12 2004-03-25 23:12:31 skidder Exp $
 #
 ROOT=..
 ObjModuleName=embed.util
@@ -41,13 +41,18 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
+LOCKPRINT_Other_Sources = common/utils.cpp lock/lock.cpp jrd/isc_sync.cpp jrd/isc.cpp \
+common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp \
+common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
+
 LOCKPRINT_Files= print.cpp
-LOCKPRINT_Sources = $(addprefix lock/, $(LOCKPRINT_Files))
+LOCKPRINT_Sources = $(addprefix lock/, $(LOCKPRINT_Files)) $(LOCKPRINT_Other_Sources)
 LOCKPRINT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(LOCKPRINT_Sources))))
 
-
+NBACKUP_Other_Sources = jrd/db_alias.cpp common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp \
+common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
 NBACKUP_Files= nbackup.cpp
-NBACKUP_Sources = $(addprefix utilities/, $(NBACKUP_Files))
+NBACKUP_Sources = $(addprefix utilities/, $(NBACKUP_Files)) $(NBACKUP_Other_Sources)
 NBACKUP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(NBACKUP_Sources))))
 
 
@@ -56,16 +61,26 @@ CREATEDB_Sources = $(addprefix utilities/, $(CREATEDB_Files))
 CREATEDB_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CREATEDB_Sources))))
 
 
+DROP_Other_Sources = common/utils.cpp lock/lock.cpp jrd/isc_sync.cpp jrd/isc.cpp \
+common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp \
+common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
+
 DROP_Files= drop.cpp
-DROP_Sources = $(addprefix utilities/, $(DROP_Files))
+DROP_Sources = $(addprefix utilities/, $(DROP_Files)) $(DROP_Other_Sources)
 DROP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DROP_Sources))))
 
-GSEC_Files =  gsec.cpp
-GSEC_Sources = $(addprefix utilities/gsec/, $(GSEC_Files))
+GSEC_Other_Sources = jrd/enc.cpp
+
+GSEC_Files =  gsec.cpp security.cpp
+GSEC_Sources = $(addprefix utilities/gsec/, $(GSEC_Files)) $(GSEC_Other_Sources)
 GSEC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSEC_Sources))))
 
+GSTAT_Other_Sources = jrd/btn.cpp jrd/db_alias.cpp common/utils.cpp \
+common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp \
+common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
+
 GSTAT_Files =  dba.epp ppg.cpp
-GSTAT_Sources = $(addprefix utilities/gstat/, $(GSTAT_Files))
+GSTAT_Sources = $(addprefix utilities/gstat/, $(GSTAT_Files)) $(GSTAT_Other_Sources)
 GSTAT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSTAT_Sources))))
 
 

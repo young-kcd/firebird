@@ -35,8 +35,6 @@ OS_SPECIFIC_Files=thd_priority.cpp
 OS_ServerFiles= os/win32/srvr_w32 os/win32/window.cpp os/win32/chop.cpp os/win32/property.cpp os/win32/ibconfig.cpp os/win32/cntl.cpp 
 
 LIB_LINK_OPTIONS:=-shared -Wl,--add-stdcall-alias
-LIB_LINK_RPATH:=-Wl,-rpath,
-LIB_LINK_SONAME:=-Wl,-soname,
 # Generation of fbclient_ms.lib
 LIB_LINK_IMPLIB:=-Wl,--out-implib,firebird/lib/fbclient_ms.lib
 LIB_GUI:= -mwindows -lcomctl32 -lgdi32

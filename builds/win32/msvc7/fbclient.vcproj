@@ -46,7 +46,7 @@
 				OutputFile="debug/firebird/bin/fbclient.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ModuleDefinitionFile="..\defs\fbclient_debug.def"
+				ModuleDefinitionFile="..\defs\fbclient.def"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="..\..\..\temp\debug\fbclient/fbclient.pdb"
 				ImportLibrary="..\..\..\temp\debug\fbclient/fbclient.lib"/>
@@ -372,7 +372,7 @@
 			RelativePath="..\defs\fbclient.def">
 		</File>
 		<File
-			RelativePath="..\defs\fbclient_debug.def">
+			RelativePath="..\defs\fbclient.def">
 		</File>
 	</Files>
 	<Globals>

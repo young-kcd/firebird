@@ -29,7 +29,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.codes,v 1.14 2003-11-08 07:39:06 bellardo Exp $
+#  $Id: Makefile.in.codes,v 1.15 2004-03-25 23:12:31 skidder Exp $
 #
 ROOT=..
 ObjModuleName=codes
@@ -48,7 +48,6 @@ include     $(ROOT)/gen/make.shared.variables
 # different to the newly generated entries.
 #
 # There are also blrtable.h and ids.h which are generated as well.
-# Regeneration is a manual thing, and you will need to
 
 .PHONY: generated_headers
 

@@ -210,6 +210,9 @@
 /* Support databases on Raw Devices (UNIX only) */
 #undef SUPPORT_RAW_DEVICES
 
+/* Support for ISO syntax for thread-local data */
+#undef HAVE___THREAD
+
 /* Inet service name and port */
 #define FB_SERVICE_NAME "gds_db"
 #define FB_SERVICE_PORT 3050

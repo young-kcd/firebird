@@ -121,6 +121,11 @@ EXPORTS
 	gds__vtov	@86
 	gds__default_printer @87
 
+    gds__alloc_debug
+
+    gds_alloc_flag_unfreed
+    gds_alloc_report
+
 	perf_format	@100
 	perf_get_info	@101
 	perf_report	@102

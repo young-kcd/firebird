@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbembed,v 1.10 2003-03-27 11:21:45 aafemt Exp $
+#  $Id: Makefile.in.libfbembed,v 1.11 2004-03-25 23:12:31 skidder Exp $
 #
 ROOT=..
 ObjModuleName=libfbembed
@@ -49,7 +49,11 @@ unexport ISC_USER
 unexport ISC_PASSWORD
 
 
-AllObjects = $(LIBFBEMBED_Objects)
+SERVER_Files = $(OS_ServerFiles) server.cpp 
+SERVER_Sources = $(addprefix remote/, $(SERVER_Files))
+SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Sources))))
+
+AllObjects = $(LIBFBEMBED_Objects) $(SERVER_Objects)
 Dependencies = $(AllObjects:.o=.d)
 
 
@@ -57,9 +61,9 @@ Dependencies = $(AllObjects:.o=.d)
 
 libfbembed : $(LIBFBEMBED_SONAME)
 
-$(LIBFBEMBED_SO):	$(LIBFBEMBED_Objects)
-#	$(LIB_LINK) -Wl,-soname,libfbembed.$(SHRLIB_EXT).1 -Wl,-rpath,/usr/lib -o $@ $^
-	$(LIB_LINK)  $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)$(SharedLibrarySoName) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ $(SO_LINK_LIBS)
+$(LIBFBEMBED_SO):	$(LIBFBEMBED_Objects) $(SERVER_Objects)
+	$(LIB_LINK) $(LINK_FIREBIRD_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)$(SharedLibrarySoName) \
+$(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ $(SO_LINK_LIBS)
 
 $(LIBFBEMBED_SOBASENAME):	$(LIBFBEMBED_SO)
 	(cd $(LIB) && $(LN) -f $(SharedLibraryName) $(SharedLibrarySoName) )

@@ -351,7 +351,7 @@ SOURCE=..\defs\fbclient.def
 # End Source File
 # Begin Source File
 
-SOURCE=..\defs\fbclient_debug.def
+SOURCE=..\defs\fbclient.def
 # End Source File
 # End Target
 # End Project

@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.33 2004-01-07 00:31:18 brodsom Exp $
+#   $Id: make.defaults,v 1.34 2004-03-25 23:12:31 skidder Exp $
 # 
 
 
@@ -72,7 +72,6 @@ GEN_SRC=$(OBJ)
   # This one is not so widely used at the momement.
   # but I would like it to become so.
 
-#RealFirebirdPath = $(shell cd $(FIREBIRD); pwd)
 RealFirebirdPath = @NEW_FIREBIRD_DIR@
 
 
@@ -154,8 +153,6 @@ LIBFBEMBED_SO = $(LIB)/$(SharedLibraryName)
 LIBFBEMBED_SOBASENAME = $(LIB)/$(SharedLibrarySoName)
 LIBFBEMBED_SONAME = $(LIB)/$(SharedLibraryBaseName)
 
-LIBGDS_A = $(LIB)/libgds.a
-
 # Shared library names for client side of fbserver (or super) version
 # used to link all the utilities to enable them to connect over the wire
 # to the fbserver. MOD 28-July-2002
@@ -173,42 +170,27 @@ LIBFBCLIENT_SONAME=$(LIB)/$(ClientLibraryName)
 # MOD 28-July-2002
 
 LIBFBINTL_SO = $(FIREBIRD)/intl/libfbintl.$(SHRLIB_EXT)
-#LIBFBINTL_SOBASENAME=$(FIREBIRD)/intl/libfbintl.$(SHRLIB_EXT).1
-#LIBFBINTL_SONAME=$(FIREBIRD)/intl/libfbintl.$(SHRLIB_EXT)
 
 LIBFBCOMMON_A = $(LIB)/libfbcommon.a
 LIBFBSTATIC_A = $(LIB)/libfbstatic.a
-LIBFBSERVER_A = $(LIB)/libfbserver.a
 LIBEDITLINE_A = $(LIB)/libeditline.a
 
 # Shared library name for usage inside of the UDF
 IbUtilLibraryName = libib_util.$(SHRLIB_EXT)
 LIBIBUTIL_SO = $(LIB)/$(IbUtilLibraryName)
 
-ifdef UseSharedLibraries   
-    LIBGDS_LA = $(LIBGDS_SO)
-    LIBGDS_DEP =
-#    LIBGDS_LINK = $(LIBGDS_SO)
-    LIBGDS_LINK =
-#    LINK_LIBS := -L$(LIB) -lgdssuper  $(LINK_LIBS)
-#    LINK_LIBS := -L$(LIB) -lgds $(LINK_LIBS)
+# LINKER OPTIONS
+#
 
-#    LIBGDS_LINK_OPTIONS = -soname libgds.$(SHRLIB_EXT) -rpath /usr/lib 
-    LIBGDS_LINK_OPTIONS = $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)$(SharedLibrarySoName) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib 
-    LINK_OPTS:= $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/intl  
-#    LIBGDS_LINK_OPTIONS = -Wl,-soname,$(SharedLibrarySoName) -Wl,-rpath,/usr/lib 
-else
-    LIBGDS_LA = $(LIBGDS_A)
-    LIBGDS_DEP = $(LIBGDS_LA)
-    LIBGDS_LINK =
-    LIBGDS_LINK_OPTIONS =
-endif
+LINK_OPTS = $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/intl  
+LIB_LINK_OPTIONS = -shared
+LIB_LINK_RPATH = -Wl,-rpath,
+LIB_LINK_SONAME = -Wl,-soname,
+LINK_FIREBIRD_SYMBOLS = -Wl,--version-script,$(ROOT)/builds/posix/firebird.vers
+LINK_FBINTL_SYMBOLS = -Wl,--version-script,$(ROOT)/builds/posix/fbintl.vers
 
 FB_SUPER_SERVER	= $(BIN)/fbserver$(EXEC_EXT)
 FB_CLASSIC_SERVER = $(BIN)/fb_inet_server$(EXEC_EXT)
-
-# From lock
-GDS_LOCK_MGR    = $(BIN)/fb_lock_mgr
 
 # From utilities 
 CREATE_DB       = $(BIN)/create_db$(EXEC_EXT)

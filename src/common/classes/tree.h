@@ -32,13 +32,14 @@
  *  Contributor(s):
  * 
  *
- *  $Id: tree.h,v 1.23 2004-01-28 07:50:18 robocop Exp $
+ *  $Id: tree.h,v 1.24 2004-03-25 23:12:39 skidder Exp $
  *
  */
 
 #ifndef TREE_H
 #define TREE_H
 
+#include <exception>
 #include "../jrd/gdsassert.h"
 #include <string.h>
 #ifdef HAVE_STDLIB_H
@@ -46,24 +47,27 @@
 					   stdlib.h (EKU) */
 #endif
 #include "vector.h"
-#if !defined(__GNUC__) || defined(MINGW)
 #include <new>
-#endif
+
+namespace Firebird {
 
 // This macro controls merging of nodes of all B+ trees
 // Now it merges pages only when resulting page will be 3/4 filled or less
 // Be careful while changing this expression. N=2 must always cause merge
-#define NEED_MERGE(N,COUNT) ((N)*4/3<=(COUNT))
+static inline bool NEED_MERGE(int current_count, int page_count) {
+	return current_count*4/3 <= page_count;
+}
 
 // Note: small values will cause wasting of memory because overhead for
 // each page is 28-32 bytes (on 32-bit platforms)
 // 100 is an optimal value for range 10^5 - 10^7 items and it generates 
 // total tree overhead of ~10%
-#define LEAF_PAGE_SIZE 100
-#define NODE_PAGE_SIZE 100
+const int LEAF_PAGE_SIZE = 100;
+const int NODE_PAGE_SIZE = 100;
 
-
-namespace Firebird {
+// This is maximum level of tree nesting. 10^9 elements for binary tree case
+// should be more than enough. No checks are performed in code against overflow of this value
+const int MAX_TREE_LEVEL = 30;
 
 class MallocAllocator {
 public:
@@ -109,11 +113,12 @@ template <typename Value, typename Key = Value, typename Allocator = MallocAlloc
 	int NodeCount = NODE_PAGE_SIZE >
 class BePlusTree {
 public:
-	BePlusTree(Allocator *_pool) : pool(_pool), level(0), defaultAccessor(this)
-	{
-		root = new (_pool->allocate(sizeof(ItemList))) ItemList();
-	};
+	BePlusTree(Allocator *_pool) : pool(_pool), level(0), root(NULL), defaultAccessor(this)	{ };
+
     ~BePlusTree() {
+		// We delete tree which was not fully created
+		if (!root) return;
+		
 		// Find first items page
 		void *temp = root;
 		for (int i=level;i>0;i--)
@@ -142,7 +147,7 @@ public:
 		}
 	}
 	
-	bool add(const Value& item) { return defaultAccessor.add(item); }	
+	bool add(const Value& item);
 	
 	/* Remove item as quickly as possible. Current position is undefined after this call */
     void fastRemove() { defaultAccessor.fastRemove(); }
@@ -160,8 +165,6 @@ public:
 	bool getPrev() { return defaultAccessor.getPrev(); }
 	
     Value& current() const { return defaultAccessor.current(); }
-	
-	Value& getAddErrorValue() { return defaultAccessor.getAddErrorValue(); }
 	
 private:
 	BePlusTree(Allocator *_pool, void *rootPage) : 	pool(_pool), level(0), 
@@ -228,186 +231,7 @@ private:
 public:
 	class Accessor {
 	public:
-		Accessor(BePlusTree* _tree) : tree(_tree), curr(NULL), curPos(0) {}
-		
-		bool add(const Value& item) {
-			// Find leaf page for our item
-			void *vList = tree->root;
-			const Key& key = KeyOfValue::generate(NULL, item);
-			for (int lev=tree->level; lev > 0 ; lev--) {
-				int pos;
-				if (!((NodeList *)vList)->find(key, pos))
-					if ( --pos < 0 ) pos = 0;
-				vList = (*(NodeList *)vList)[pos];
-			}
-
-			ItemList *leaf = (ItemList *)vList;
-			
-			int pos;
-			if (leaf->find(key, pos)) return false;
-			
-			if (leaf->getCount() < LeafCount) {
-				leaf->insert(pos, item);
-				return true;
-			}
-			
-			// Page is full. Look up nearby pages for space if possible
-			ItemList *temp;
-			// Adding items to the next page is cheaper in most cases that
-			// is why it is checked first
-			if ((temp = leaf->next) && temp->getCount() < LeafCount) {
-				// Found space on the next page
-				if (pos == LeafCount) {
-					// This would be ok if items were unique: temp->insert(0, item);
-					// The same applies to all simular cases below
-					temp->insert(0,item);
-				}
-				else {
-					// Maybe splitting array by half would make things faster ?
-					// It should do it in case of random size items.
-					// It would make things slower in case of sequental items addition.
-					// Let's leave it as is now.
-					temp->insert(0, (*leaf)[LeafCount-1]);
-					leaf->shrink(LeafCount-1);
-					leaf->insert(pos, item);
-				}
-				return true;
-			}
-			
-			if ((temp = leaf->prev) && temp->getCount() < LeafCount) {
-				// Found space on the previous page
-				if (pos == 0) {
-					temp->insert(temp->getCount(), item);
-				}
-				else {
-					temp->insert(temp->getCount(), (*leaf)[0]);
-					leaf->remove(0);
-					leaf->insert(pos-1, item);
-				}
-				return true;
-			}
-			
-			// Nearby pages are also full. We need to add one more leaf page to the list
-			// This shouldn't happen very often. Traverse tree up trying to add node
-			ItemList *newLeaf;
-			try {	
-				// No re-enterance allowed !!!
-				// Exception here doesn't 
-				// invalidate tree structure
-				newLeaf = new(tree->pool->allocate(sizeof(ItemList))) ItemList(leaf); 
-			} catch(const std::exception&) {
-				addErrorValue = item;
-				throw;
-			}
-			
-			if (pos == LeafCount) {
-				newLeaf->insert(0,item);
-			}
-			else {
-				newLeaf->insert(0, (*leaf)[LeafCount-1]);
-				leaf->shrink(leaf->getCount()-1);
-				leaf->insert(pos, item);
-			}
-			
-			void *newNode = newLeaf;
-			NodeList *nodeList = leaf->parent;
-			int curLevel = 0;
-			try {
-				while (nodeList) {
-					// Easy case. We've got some space on the node page
-					if (nodeList->getCount() < NodeCount) {
-						NodeList::setNodeParentAndLevel(newNode, curLevel, nodeList);
-						nodeList->add(newNode);
-						return true;
-					}
-			
-					// Page is full. Look up nearby pages for space if possible
-					nodeList->find(NodeList::generate(nodeList, newNode), pos);
-					NodeList *list;
-
-					if ((list = nodeList->next) && list->getCount() < NodeCount) {
-						// Found space on the next page
-						if (pos == NodeCount) {
-							NodeList::setNodeParentAndLevel(newNode, curLevel, list);
-							list->insert(0, newNode);
-						}
-						else {
-							void *t = (*nodeList)[NodeCount-1];
-							NodeList::setNodeParent(t, curLevel, list);
-							list->insert(0, t);
-							nodeList->shrink(NodeCount-1);
-							NodeList::setNodeParentAndLevel(newNode, curLevel, nodeList);
-							nodeList->insert(pos, newNode);
-						}
-						return true;
-					}
-			
-					if ((list = nodeList->prev) && list->getCount() < NodeCount) {
-						// Found space on the previous page
-						if (pos == 0) {
-							NodeList::setNodeParentAndLevel(newNode, curLevel, list);
-							list->insert(list->getCount(), newNode);
-						}
-						else {
-							void *t = (*nodeList)[0];
-							NodeList::setNodeParent(t, curLevel, list);
-							list->insert(list->getCount(), t);
-							nodeList->remove(0);
-							NodeList::setNodeParentAndLevel(newNode, curLevel, nodeList);
-							nodeList->insert(pos-1, newNode);
-						}
-						return true;
-					}
-				
-					// No space found. Allocate NodeList page and climb up the tree
-				
-					// No re-enterance allowed !!!
-					// Exceptions from this point
-					// are cleaned up lower
-					NodeList *newList = new(tree->pool->allocate(sizeof(NodeList))) NodeList(nodeList); 
-				
-					if (pos == NodeCount) {
-						NodeList::setNodeParentAndLevel(newNode, curLevel, newList);
-						newList->insert(0, newNode);
-					}
-					else {
-						void *t = (*nodeList)[NodeCount-1];
-						NodeList::setNodeParent(t, curLevel, newList);
-						newList->insert(0, t);
-						nodeList->shrink(NodeCount-1);
-						NodeList::setNodeParentAndLevel(newNode, curLevel, nodeList);
-						nodeList->insert(pos, newNode);
-					}
-					newNode = newList;		
-					nodeList = nodeList->parent;
-					curLevel++;
-				}
-			
-				// This is a worst case. We reached the top of tree but were not able to insert node
-				// Allocate new root page and increase level of our tree
-				nodeList = new(tree->pool->allocate(sizeof(NodeList))) NodeList();
-				nodeList->level = tree->level;
-				nodeList->insert(0,tree->root);
-				NodeList::setNodeParentAndLevel(newNode, tree->level, nodeList);
-				NodeList::setNodeParent(tree->root, tree->level, nodeList);
-				nodeList->add(newNode);
-				tree->root = nodeList;
-				tree->level++;
-			} catch(const std::exception&) {
-				while (curLevel) {
-					void *lower = (*(NodeList *)newNode)[0];
-					((NodeList *)newNode)->~NodeList();
-					tree->pool->deallocate(newNode);
-					newNode = lower;
-					curLevel--;
-				}
-				addErrorValue = (*(ItemList*)newNode)[0];
-				((ItemList *)newNode)->~ItemList();
-				tree->pool->deallocate(newNode);
-				throw;
-			}
-			return true;
-		}
+		Accessor(BePlusTree* _tree) : tree(_tree), curr(NULL), curPos(0) {}		
 	
 		/* Remove item as quickly as possible. Current position is undefined after this call */
 		void fastRemove() {
@@ -468,6 +292,7 @@ public:
 		// and compiler will be able to eliminate most of code
 		bool locate(LocType lt, Key& key) {
 			void *list = tree->root;
+			if (!list) return false; // Uninitalized tree
 			for (int lev=tree->level; lev; lev--) {
 				int pos;
 				if (!((NodeList *)list)->find(key, pos))
@@ -507,6 +332,7 @@ public:
 		}
 		bool getFirst() {
 			void *items = tree->root;
+			if (!items) return false; // Uninitalized tree
 			for (int i=tree->level;i>0;i--)
 				items = (*(NodeList *)items)[0];
 			curr = (ItemList *)items;
@@ -515,6 +341,7 @@ public:
 		}
 		bool getLast() {
 			void *items = tree->root;
+			if (!items) return false; // Uninitalized tree
 			for (int i=tree->level;i>0;i--)
 				items = (*(NodeList *)items)[((NodeList *)items)->getCount()-1];
 			curr = (ItemList *)items;
@@ -539,12 +366,10 @@ public:
 			return true;
 		}
 	    Value& current() const { return (*curr)[curPos]; }
-		Value& getAddErrorValue() { return addErrorValue; }
 	private:
 		BePlusTree* tree;
 		ItemList *curr;
   		int curPos;
-		Value addErrorValue;
 	};
 
 private:
@@ -561,6 +386,209 @@ private:
 };
 
 /************************ BePlusTree implementation ******************/
+
+template <typename Value, typename Key, typename Allocator, typename KeyOfValue, typename Cmp, int LeafCount, int NodeCount>
+bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::add(const Value& item)
+{
+	// Finish initialization of the tree if necessary
+	if (!root) root = new (pool->allocate(sizeof(ItemList))) ItemList();
+
+	// Find leaf page for our item
+	void *vList = this->root;
+	const Key& key = KeyOfValue::generate(NULL, item);
+	for (int lev=this->level; lev > 0 ; lev--) {
+		int pos;
+		if (!((NodeList *)vList)->find(key, pos))
+			if ( --pos < 0 ) pos = 0;
+		vList = (*(NodeList *)vList)[pos];
+	}
+	
+	ItemList *leaf = (ItemList *)vList;
+			
+	int pos;
+	if (leaf->find(key, pos)) return false;
+		
+	if (leaf->getCount() < LeafCount) {
+		leaf->insert(pos, item);
+		return true;
+	}
+			
+	// Page is full. Look up nearby pages for space if possible
+	ItemList *temp;
+	// Adding items to the next page is cheaper in most cases that
+	// is why it is checked first
+	if ((temp = leaf->next) && temp->getCount() < LeafCount) {
+		// Found space on the next page
+		if (pos == LeafCount) {
+			// This would be ok if items were unique: temp->insert(0, item);
+			// The same applies to all simular cases below
+			temp->insert(0,item);
+		}
+		else {
+			// Maybe splitting array by half would make things faster ?
+			// It should do it in case of random size items.
+			// It would make things slower in case of sequental items addition.
+			// Let's leave it as is now.
+			temp->insert(0, (*leaf)[LeafCount-1]);
+			leaf->shrink(LeafCount-1);
+			leaf->insert(pos, item);
+		}
+		return true;
+	}
+			
+	if ((temp = leaf->prev) && temp->getCount() < LeafCount) {
+		// Found space on the previous page
+		if (pos == 0) {
+			temp->insert(temp->getCount(), item);
+		}
+		else {
+			temp->insert(temp->getCount(), (*leaf)[0]);
+			leaf->remove(0);
+			leaf->insert(pos-1, item);
+		}
+		return true;
+	}
+			
+	// Nearby pages are also full. We need to add one more leaf page to the list
+	// This shouldn't happen very often. Traverse tree up trying to add node
+
+	// No re-enterance allowed !!!
+	// Since we haven't done anything with tree yet, thus we don't need to recover 
+	// anything in case of error thrown at this allocation here
+	ItemList *newLeaf = new(this->pool->allocate(sizeof(ItemList))) ItemList(leaf); 
+			
+	// Start building recovery map.
+	// This array contains index of the element we try to add on page of each level
+	// -1 means that element is on new page
+	// In case of low memory condition we use this data to recover to innocent state
+	int recovery_map[MAX_TREE_LEVEL];
+			
+	if (pos == LeafCount) {
+		newLeaf->insert(0,item);
+		recovery_map[0] = -1;
+	}
+	else {
+		newLeaf->insert(0, (*leaf)[LeafCount-1]);
+		leaf->shrink(leaf->getCount()-1);
+		leaf->insert(pos, item);
+		recovery_map[0] = pos;
+	}
+			
+	void *newNode = newLeaf;
+	NodeList *nodeList = leaf->parent;
+	int curLevel = 0;
+	try {
+		while (nodeList) {
+			// Easy case. We've got some space on the node page
+			if (nodeList->getCount() < NodeCount) {
+				NodeList::setNodeParentAndLevel(newNode, curLevel, nodeList);
+				nodeList->add(newNode);
+				return true;
+			}
+			
+			// Page is full. Look up nearby pages for space if possible
+			nodeList->find(NodeList::generate(nodeList, newNode), pos);
+			NodeList *list;
+
+			if ((list = nodeList->next) && list->getCount() < NodeCount) {
+				// Found space on the next page
+				if (pos == NodeCount) {
+					NodeList::setNodeParentAndLevel(newNode, curLevel, list);
+					list->insert(0, newNode);
+				}
+				else {
+					void *t = (*nodeList)[NodeCount-1];
+					NodeList::setNodeParent(t, curLevel, list);
+					list->insert(0, t);
+					nodeList->shrink(NodeCount-1);
+					NodeList::setNodeParentAndLevel(newNode, curLevel, nodeList);
+					nodeList->insert(pos, newNode);
+				}
+				return true;
+			}
+		
+			if ((list = nodeList->prev) && list->getCount() < NodeCount) {
+				// Found space on the previous page
+				if (pos == 0) {
+					NodeList::setNodeParentAndLevel(newNode, curLevel, list);
+					list->insert(list->getCount(), newNode);
+				}
+				else {
+					void *t = (*nodeList)[0];
+					NodeList::setNodeParent(t, curLevel, list);
+					list->insert(list->getCount(), t);
+					nodeList->remove(0);
+					NodeList::setNodeParentAndLevel(newNode, curLevel, nodeList);
+					nodeList->insert(pos-1, newNode);
+				}
+				return true;
+			}
+				
+			// No space found. Allocate NodeList page and climb up the tree
+				
+			// No re-enterance allowed !!!
+			// Exceptions from this point
+			// are cleaned up lower
+			NodeList *newList = new(this->pool->allocate(sizeof(NodeList))) NodeList(nodeList); 
+				
+			if (pos == NodeCount) {
+				NodeList::setNodeParentAndLevel(newNode, curLevel, newList);
+				newList->insert(0, newNode);
+				recovery_map[curLevel+1] = -1;
+			}
+			else {
+				void *t = (*nodeList)[NodeCount-1];
+				NodeList::setNodeParent(t, curLevel, newList);
+				newList->insert(0, t);
+				nodeList->shrink(NodeCount-1);
+				NodeList::setNodeParentAndLevel(newNode, curLevel, nodeList);
+				nodeList->insert(pos, newNode);
+				recovery_map[curLevel+1] = pos;
+			}
+			newNode = newList;		
+			nodeList = nodeList->parent;
+			curLevel++;
+		}
+			
+		// This is the worst case. We reached the top of tree but were not able to insert node
+		// Allocate new root page and increase level of our tree
+		nodeList = new(this->pool->allocate(sizeof(NodeList))) NodeList();
+		nodeList->level = this->level;
+		nodeList->insert(0, this->root);
+		NodeList::setNodeParentAndLevel(newNode, this->level, nodeList);
+		NodeList::setNodeParent(this->root, this->level, nodeList);
+		nodeList->add(newNode);
+		this->root = nodeList;
+		this->level++;
+	} catch(const std::exception&) {
+		// Recover tree to innocent state
+		while (curLevel) {
+			NodeList *item = reinterpret_cast<NodeList*>(newNode);
+			void *lower;
+		    if (recovery_map[curLevel] < 0) {
+				lower = (*item)[0];
+			} else {
+				lower = (*item->prev)[recovery_map[curLevel]];
+				item->prev->remove(recovery_map[curLevel]);
+				item->prev->insert(item->prev->getCount(), (*item)[0]);
+				NodeList::setNodeParent((*item)[0], curLevel-1, item->prev);
+			}
+			item->~NodeList();
+			this->pool->deallocate(newNode);
+			newNode = lower;
+			curLevel--;
+		}
+		ItemList *item = reinterpret_cast<ItemList*>(newNode);
+		if (recovery_map[0] >= 0) {
+			item->prev->remove(recovery_map[0]);
+			item->prev->insert(item->prev->getCount(), (*item)[0]);
+		}
+		item->~ItemList();
+		this->pool->deallocate(newNode);
+		throw;
+	}
+	return true;
+}
 
 template <typename Value, typename Key, typename Allocator, typename KeyOfValue, typename Cmp, int LeafCount, int NodeCount>
 void BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::_removePage(int nodeLevel, void *node)
@@ -616,7 +644,7 @@ void BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::_
 	else
 	{
 		int pos;
-#ifdef NDEBUG
+#ifndef DEV_BUILD
 		list->find(NodeList::generate(list,node),pos);
 #else
 		bool found = list->find(NodeList::generate(list,node),pos);

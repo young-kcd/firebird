@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: class_perf.cpp,v 1.8 2003-09-08 20:23:32 skidder Exp $
+ *  $Id: class_perf.cpp,v 1.9 2004-03-25 23:12:39 skidder Exp $
  *
  */
 
@@ -49,7 +49,7 @@ void start() {
 	t = clock();
 }
 
-#define TEST_ITEMS 1000000
+#define TEST_ITEMS 10000000
 
 void report(int scale) {
 	clock_t d = clock();
@@ -166,7 +166,7 @@ void report() {
 	printf("Operation took %d milliseconds.\n", (int)(d-t)*1000/CLOCKS_PER_SEC);
 }
 
-#define ALLOC_ITEMS 1000000
+#define ALLOC_ITEMS 10000000
 #define MAX_ITEM_SIZE 50
 #define BIG_ITEMS (ALLOC_ITEMS/10)
 #define BIG_SIZE (MAX_ITEM_SIZE*5)
@@ -174,7 +174,7 @@ void report() {
 struct AllocItem {
 	int order;
 	void *item;
-	static int compare(const AllocItem &i1, const AllocItem &i2) {
+	static bool greaterThan(const AllocItem &i1, const AllocItem &i2) {
 		return i1.order > i2.order || (i1.order==i2.order && i1.item > i2.item);
 	}
 };
@@ -190,7 +190,7 @@ static void testAllocatorOverhead() {
 	int i;
 	for (i=0;i<ALLOC_ITEMS;i++) {
 		n = n * 47163 - 57412;
-		AllocItem temp = {n, (void*)i};
+		AllocItem temp = {n, (void*)(long)i};
 		items.add(temp);
 	}
 	// Deallocate half of small items
@@ -202,7 +202,7 @@ static void testAllocatorOverhead() {
 	// Allocate big items
 	for (i=0;i<BIG_ITEMS;i++) {
 		n = n * 47163 - 57412;
-		AllocItem temp = {n, (void*)i};
+		AllocItem temp = {n, (void*)(long)i};
 		bigItems.add(temp);
 	}
 	// Deallocate the rest of small items

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.gdef,v 1.5 2003-03-27 11:21:44 aafemt Exp $
+#  $Id: Makefile.in.embed.gdef,v 1.6 2004-03-25 23:12:31 skidder Exp $
 #
 ROOT=..
 ObjModuleName=embed.gdef
@@ -43,11 +43,15 @@ unexport ISC_USER
 unexport ISC_PASSWORD
 
 
+GDEF_Other_Sources = common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp \
+gpre/pretty.cpp jrd/isc_file.cpp common/config/config.cpp common/config/dir_list.cpp \
+common/config/config_file.cpp $(OS_SPECIFIC_Sources)
+
 GDEF_Files=	exe.epp extract.epp \
 			ddl.cpp expand.cpp expr.cpp generate.cpp \
 			hsh.cpp lex.cpp parse.cpp trn.cpp
 
-GDEF_Sources = $(addprefix dudley/, $(GDEF_Files))
+GDEF_Sources = $(addprefix dudley/, $(GDEF_Files)) $(GDEF_Other_Sources)
 GDEF_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GDEF_Sources))))
 
 AllObjects = $(GDEF_Objects)

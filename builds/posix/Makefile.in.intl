@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.intl,v 1.16 2003-11-04 06:25:11 eku Exp $
+#  $Id: Makefile.in.intl,v 1.17 2004-03-25 23:12:31 skidder Exp $
 #
 ROOT=..
 ObjModuleName=intl
@@ -77,11 +77,8 @@ all : libfbintl
 libfbintl : $(LIBFBINTL_SO)
 
 $(LIBFBINTL_SO):	$(INTL_Objects)
-#	$(LIB_LINK) -Wl,-soname,libintl.$(SHRLIB_EXT).1 -Wl,-rpath,/usr/lib -o $@ $^
-	$(LIB_LINK) $(LIB_LINK_OPTIONS)  $(LIB_LINK_SONAME)libintl.$(SHRLIB_EXT).1 $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ $(SO_LINK_LIBS)
-#	-$(LN) $(@F) $(LIBFBINTL_SOBASENAME) 
-#	-$(LN) $(notdir $(LIBFBINTL_SOBASENAME)) $(LIBFBINTL_SONAME)
-
+	$(LIB_LINK) $(LINK_FBINTL_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)libintl.$(SHRLIB_EXT).1 \
+$(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ $(SO_LINK_LIBS)
 
 
 include $(ROOT)/gen/make.shared.targets

@@ -26,22 +26,10 @@
 #   Contributor(s):
 #
 #
-#   $Id: make.rules,v 1.21 2004-03-22 15:16:11 alexpeshkoff Exp $
+#   $Id: make.rules,v 1.22 2004-03-25 23:12:31 skidder Exp $
 #
 
 #____________________________________________________________________________
-
-# Currently I set these manually but they should be set automatically
-# from the ./configure installation time
-
-UseSharedLibraries = Yes   # If empty then we build static linked exe's
-                           # which are useful for debugging.
-                           # This variable is used to determined flags for
-                           # libtool/ar/ld we define the gds.a/so library name
-                           # in LIBGDS_LA and in Makefile.in.jrd where we do the
-                           # creation of the libgds.a/so library.
-
-#UseLibToolForLink = Yes   # Currently we do not use it - but may in the future
 
 IsProdTypeBuild = @PROD_BUILD_FLG@
                            # If this is defined then we are building a production
@@ -62,15 +50,13 @@ endif
 
 CXXFLAGS:= $(CXXFLAGS) $(CFLAGS)
 
-#CC =		 libtool @CC@
-#CXX =	 libtool @CXX@
-
 CC =	@CC@
 CXX =	@CXX@
 LD =	@CXX@
 
-
-
+#
+# LIBTOOL ISSUES
+#
 # Most of the libraries and programs are linked using the dynamic linker
 # We default to using the dynamic linker and have a special link macros for
 # using the static linker.
@@ -85,65 +71,19 @@ LD =	@CXX@
 # nice it conflicts with a struct in the file qli/format.h
 # MOD 26-July-2001.
 
+# LINKER COMMANDS
+# they are candidates to go to make.defaults and make this file make.defaults.in
+# if we decide to support different linkers directly in our build process. 
+# Alternatively we may use libtool here.
 
-
-
-ifdef UseLibToolForLink
-
-
-    LIB_LINK= libtool @CC@
-    STATICLIB_LINK = libtool @CC@ -all-static
-#    LIB_LINK_OPTIONS = -version-info 0:0:0 -release 1.5.0.0 -rpath /usr/lib
-    LIB_LINK_OPTIONS += -version-info 0:0:0 -release 1.5.0.0 $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib
-
-    EXE_LINK = libtool @CC@
-    STATICEXE_LINK = libtool @CC@ -all-static
-else
-
-    LIB_LINK= @CC@
-    STATICLIB_LINK= ar cruvs
-#    LIB_LINK_OPTIONS = -soname libgds.$(SHRLIB_EXT) -rpath /usr/lib
-#    LIB_LINK_OPTIONS = -soname libgds.$(SHRLIB_EXT).2 -rpath /usr/lib
-#    LIB_LINK_OPTIONS :=  $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib
-
-#    EXE_LINK = g++
-#    STATICEXE_LINK = g++
-    EXE_LINK = @CXX@
-    STATICEXE_LINK = @CXX@
-endif
-
-
-
-
-LINK_OPTIONS=
-#  ReadlineLibs - choose one of the following depending upon your
-#  OS and distribution. SuSE is happy with just -lreadline
-#  This is something that we should pick up with autoconf.
-#  This should be all automatically set from autoconf stript now
-#  And should be removed if noone has trouble a few months after
-#  I added this comment - MOD 11-July-2002
-#ReadlineLibs = -lreadline -ltermcap
-#ReadlineLibs = -lreadline -lncurses
-#ReadlineLibs:= -lreadline
-#LINK_LIBS:= -lm -lstdc++ $(ReadlineLibs) @LIBS@ -lc -ldl -lcrypt
-#STATICLINK_LIBS := -lm -lstdc++ $(ReadlineLibs) -lc -ldl -lcrypt
+LIB_LINK= @CC@
+STATICLIB_LINK= ar cruvs
+EXE_LINK = @CXX@
+STATICEXE_LINK = @CXX@
 
 LINK_LIBS = @LIBS@ @EDITLINE_A@
 STATICLINK_LIBS = @LIBS@ @EDITLINE_A@
 SO_LINK_LIBS = @LIBS@
-
-#LINK_LIBS= -L$(LIB)  -lgds -lm -lc -ldl -lcrypt
-# -lgcc
-
-
-# These should no longer be required but I've left here
-# in case someone needs to know what they were
-
-#STATICLIBTOOL=  libtool gcc -static
-#STATIC_LINK_OPTIONS= -static
-#STATIC_LINK_LIBS= -lm -lc -mieee-fp -ldl -lcrypt
-#SHLIB_LINK_OPTIONS = -shared
-
 
 # Here we have definitions for using the preprocessor.
 
@@ -193,14 +133,6 @@ $(SRC_ROOT)/dsql/%.cpp:: $(SRC_ROOT)/dsql/%.epp
 .cpp.o:
 	$(CXX) -c $(CXXFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $<
 
-#.c.lo:
-#	$(CC) -c $(PIC_FLAGS) $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) -o $*.lo $<
-#
-#.cpp.lo:
-#	$(CXX) -c $(PIC_FLAGS) $(CXXFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) -o $*.lo $<
-#
-
-
 $(OBJ)/%.o:: $(SRC_ROOT)/%.c 
 	$(CC) $(CXXFLAGS) -c $(firstword $<) -o $@
 	@$(move-dep)
@@ -216,10 +148,6 @@ $(TMP_ROOT)/%.o: $(SRC_ROOT)/%.cpp
 $(OBJ)/%.lo: $(SRC_ROOT)/%.cpp 
 	@$(move-dep)
 
-#$(OBJ)/%
-#.epp.cpp:
-#	$(GPRE_STATIC) $(GPRE_FLAGS) $<
-
 $(OBJ)/%.o: $(OBJ)/%.d
 
 .SUFFIXES: .epp .e
@@ -231,17 +159,14 @@ $(OBJ)/%.o: $(OBJ)/%.d
 $(OBJ)/%.d:: $(SRC_ROOT)/%.c
 	@$(ECHO) "need to rebuild $^"
 	$(ECHO) $(OBJ)/$(*).o " : FORCE" > $@
-#	$(TOUCH) $^
 
 $(OBJ)/%.d:: $(SRC_ROOT)/%.epp
 	@$(ECHO) "need to rebuild $^"
 	$(ECHO) $(OBJ)/$(*).o " : FORCE" > $@
-#	$(TOUCH) $^
 
 $(OBJ)/%.d:: $(SRC_ROOT)/%.cpp
 	@$(ECHO) "need to rebuild $^"
 	$(ECHO) $(OBJ)/$(*).o " : FORCE" > $@
-#	$(TOUCH) $^
 
 # Rules for making resource files
 

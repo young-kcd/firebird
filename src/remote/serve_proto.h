@@ -33,11 +33,7 @@ extern "C" {
 #endif
 
 
-#ifdef WINDOWS_ROUTER
-void SRVR_WinMain(rem_port*, USHORT, HINSTANCE, HINSTANCE, int);
-#else	/* WINDOWS_ROUTER */
 void SRVR_main(rem_port*, USHORT);
-#endif	/* WINDOWS_ROUTER */
 
 void SRVR_multi_thread(rem_port*, USHORT);
 bool process_packet(rem_port*, PACKET *, PACKET *, rem_port**);

@@ -31,6 +31,9 @@ typedef struct tok {
     USHORT tok_version;
 } TOK;
 
+// These symbols are exported
+extern "C" {
 bool KEYWORD_stringIsAToken(const char*);
 const TOK* KEYWORD_getTokens();
+}
 

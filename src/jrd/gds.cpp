@@ -269,19 +269,16 @@ static CLEAN	cleanup_handlers = NULL;
 static gds_msg* global_default_msg = NULL;
 static bool initialized = false;
 
-#ifdef DEBUG_GDS_ALLOC
 void* API_ROUTINE gds__alloc_debug(SLONG size_request,
                                    const TEXT* filename,
                                    ULONG lineno)
 {
-	return getDefaultMemoryPool()->allocate_nothrow(size_request, 0, filename, lineno);
-}
-#else
-void* API_ROUTINE gds__alloc(SLONG size_request)
-{
-	return getDefaultMemoryPool()->allocate_nothrow(size_request);
-}
+	return getDefaultMemoryPool()->allocate_nothrow(size_request, 0
+#ifdef DEBUG_GDS_ALLOC
+		, filename, lineno
 #endif
+	);
+}
 
 ULONG API_ROUTINE gds__free(void* blk) {
 	getDefaultMemoryPool()->deallocate(blk);
@@ -726,8 +723,6 @@ SINT64 API_ROUTINE isc_portable_integer(const UCHAR* ptr, SSHORT length)
 	return value;
 }
 
-#ifdef DEBUG_GDS_ALLOC
-
 void API_ROUTINE gds_alloc_flag_unfreed(void *blk)
 {
 /**************************************
@@ -745,10 +740,7 @@ void API_ROUTINE gds_alloc_flag_unfreed(void *blk)
 // Skidder: Not sure we need to rework this routine. 
 // What we really need is to fix all memory leaks including very old.
 }
-#endif // DEBUG_GDS_ALLOC
 
-
-#ifdef DEBUG_GDS_ALLOC
 
 void API_ROUTINE gds_alloc_report(ULONG flags, const char* filename, int lineno)
 {
@@ -765,8 +757,6 @@ void API_ROUTINE gds_alloc_report(ULONG flags, const char* filename, int lineno)
  **************************************/
 // Skidder: Calls to this function must be replaced with MemoryPool::print_contents
 }
-#endif // DEBUG_GDS_ALLOC
-
 
 /* CVC: See comment below. Basically, it provides the needed const correctness,
 but throws away the const to make the callee happy, knowing that the callee
@@ -3647,27 +3637,13 @@ void gds__trace_printer(void* arg, SSHORT offset, const TEXT* line)
 	gds__trace_raw(buffer);
 }
 
-#ifdef DEBUG_GDS_ALLOC
 #undef gds__alloc
 
-void* API_ROUTINE gds__alloc(SLONG size)
+void* API_ROUTINE gds__alloc(SLONG size_request)
 {
-/**************************************
- *
- *	g d s _ $ a l l o c     (alternate debug entrypoint)
- *
- **************************************
- *
- * Functional description
- *
- *	NOTE: This function should be the last in the file due to
- *	the undef of gds__alloc above.
- *
- *	For modules not recompiled with DEBUG_GDS_ALLOC, this provides
- *	an entry point to malloc again.
- *
- **************************************/
-	return gds__alloc_debug(size, "-- Unknown --", 0);
-}
+	return getDefaultMemoryPool()->allocate_nothrow(size_request, 0
+#ifdef DEBUG_GDS_ALLOC
+		, __FILE__, __LINE__
 #endif
-
+	);
+}

@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: rwlock.h,v 1.13 2004-03-18 05:54:22 robocop Exp $
+ *  $Id: rwlock.h,v 1.14 2004-03-25 23:12:39 skidder Exp $
  *
  */
 
@@ -44,54 +44,25 @@
 #include <windows.h>
 #include <limits.h>
 
-#define LOCK_WRITER_OFFSET 50000
+#include "../common/classes/fb_atomic.h"
+
 
 namespace Firebird
 {
 
-// This class works on Windows 98/NT4 or later. Win95 is not supported
-// Should work pretty fast.
+const int LOCK_WRITER_OFFSET = 50000;
+
+// Should work pretty fast if atomic operations are native.
+// This is not the case for Win95
 class RWLock {
 private:
-	volatile LONG lock; // This is the actual lock
+	AtomicCounter lock; // This is the actual lock
 	           // -50000 - writer is active
 			   // 0 - noone owns the lock
 			   // positive value - number of concurrent readers
-	volatile LONG blockedReaders;
-	volatile LONG blockedWriters;
+	AtomicCounter blockedReaders;
+	AtomicCounter blockedWriters;
 	HANDLE writers_event, readers_semaphore;
-
-	//
-	// Those inlines are needed due to the different argument taken by msvc6 and msvc7
-	// funcions
-	//
-#if (defined(_MSC_VER) && (_MSC_VER <= 1200)) || defined(MINGW)
-	inline LONG InterlockedIncrement_uni(volatile LONG* lock_p)
-	{
-		return InterlockedIncrement(const_cast<LONG*>(lock_p));
-	}
-	inline LONG InterlockedDecrement_uni(volatile LONG* lock_p)
-	{
-		return InterlockedDecrement(const_cast<LONG*>(lock_p));
-	}
-	inline LONG InterlockedExchangeAdd_uni(volatile LONG* lock_p, LONG value)
-	{
-		return InterlockedExchangeAdd(const_cast<LONG*>(lock_p), value);
-	}
-#else
-	inline LONG InterlockedIncrement_uni(volatile LONG* lock_p)
-	{
-		return InterlockedIncrement(lock_p);
-	}
-	inline LONG InterlockedDecrement_uni(volatile LONG* lock_p)
-	{
-		return InterlockedDecrement(lock_p);
-	}
-	inline LONG InterlockedExchangeAdd_uni(volatile LONG* lock_p, LONG value)
-	{
-		return InterlockedExchangeAdd(lock_p, value);
-	}
-#endif
 
 public:
 	RWLock() : lock(0), blockedReaders(0), blockedWriters(0)
@@ -115,7 +86,7 @@ public:
 	// Otherwise returns a number of readers
 	LONG getState() const
 	{
-		return lock;
+		return lock.value();
 	}
 	void unblockWaiting()
 	{
@@ -131,19 +102,19 @@ public:
 	}
 	bool tryBeginRead()
 	{
-		if (lock < 0) return false;
-		if (InterlockedIncrement_uni(&lock) > 0) return true;
+		if (lock.value() < 0) return false;
+		if (++lock > 0) return true;
 		// We stepped on writer's toes. Fix our mistake 
-		if (InterlockedDecrement_uni(&lock) == 0)
+		if (--lock == 0)
 			unblockWaiting();
 		return false;
 	}
 	bool tryBeginWrite()
 	{
-		if (lock) return false;
-		if (InterlockedExchangeAdd_uni(&lock, -LOCK_WRITER_OFFSET) == 0) return true;
+		if (lock.value()) return false;
+		if (lock.exchangeAdd(-LOCK_WRITER_OFFSET) == 0) return true;
 		// We stepped on somebody's toes. Fix our mistake
-		if (InterlockedExchangeAdd_uni(&lock, LOCK_WRITER_OFFSET) == -LOCK_WRITER_OFFSET)
+		if (lock.exchangeAdd(LOCK_WRITER_OFFSET) == -LOCK_WRITER_OFFSET)
 			unblockWaiting();
 		return false;
 	}
@@ -169,12 +140,12 @@ public:
 	}
 	void endRead()
 	{
-		if (InterlockedDecrement_uni(&lock) == 0)
+		if (--lock == 0)
 			unblockWaiting();
 	}
 	void endWrite()
 	{
-		if (InterlockedExchangeAdd_uni(&lock, LOCK_WRITER_OFFSET) == -LOCK_WRITER_OFFSET)
+		if (lock.exchangeAdd(LOCK_WRITER_OFFSET) == -LOCK_WRITER_OFFSET)
 			unblockWaiting();
 	}
 };

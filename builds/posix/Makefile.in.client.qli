@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.qli,v 1.2 2004-01-07 00:31:18 brodsom Exp $
+#  $Id: Makefile.in.client.qli,v 1.3 2004-03-25 23:12:31 skidder Exp $
 #
 ROOT=..
 ObjModuleName=client.qli
@@ -40,22 +40,18 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
+QLI_Other_Sources = common/utils.cpp \
+common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp \
+jrd/dsc.cpp gpre/pretty.cpp
+
 QLI_Files=	all.cpp command.cpp compile.cpp dtr.cpp err.cpp eval.cpp \
 		expand.cpp exe.cpp format.cpp gener.cpp help.cpp \
 		hsh.cpp lex.cpp meta.cpp mov.cpp parse.cpp picstr.cpp proc.cpp \
 		report.cpp show.cpp
-QLI_Sources = $(addprefix qli/, $(QLI_Files))
+QLI_Sources = $(addprefix qli/, $(QLI_Files)) $(QLI_Other_Sources)
 QLI_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(QLI_Sources))))
 
-JRD_Files= iberr.cpp isc.cpp isc_file.cpp llio.cpp misc.cpp status.cpp
-JRD_Sources = $(addprefix jrd/, $(JRD_Files))
-JRD_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(JRD_Sources))))
-
-GPRE_Files= pretty.cpp
-GPRE_Sources = $(addprefix gpre/, $(GPRE_Files))
-GPRE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GPRE_Sources))))
-
-AllObjects = $(QLI_Objects) $(JRD_Objects) $(GPRE_Objects)
+AllObjects = $(QLI_Objects)
 Dependencies = $(AllObjects:.o=.d)
 
 
@@ -67,7 +63,7 @@ all:	qli
 
 qli : create_yachts $(LIBFBCLIENT_SO) $(QLI)
 
-$(QLI): $(QLI_Objects) $(JRD_Objects) $(GPRE_Objects)
+$(QLI): $(QLI_Objects)
 	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
 	$(CHMOD_S7) $@
 
@@ -76,13 +72,6 @@ $(QLI): $(QLI_Objects) $(JRD_Objects) $(GPRE_Objects)
 create_yachts:
 	-$(RM) yachts.lnk
 	-$(LN) -f metadata.fdb yachts.lnk
-
-
-# qli_help
-#
-# qli_help is now directly build in the refDatabase directory, and doesn't 
-# need to be rebuilt here.
-
 
 
 include $(ROOT)/gen/make.shared.targets

@@ -30,7 +30,7 @@
  *       John Bellardo  <bellardo@cs.ucsd.edu>
  *
  *
- *  $Id: firebird.h,v 1.17 2003-12-31 05:35:43 robocop Exp $
+ *  $Id: firebird.h,v 1.18 2004-03-25 23:12:44 skidder Exp $
  *
  */
 
@@ -73,10 +73,6 @@
 
 #ifndef NULL
 #define NULL            0L
-#endif
-
-#if defined __cplusplus && (defined __GNUC__ && !defined(MINGW))
-#include "../common/classes/alloc.h"
 #endif
 
 #endif /* INCLUDE_Firebird */

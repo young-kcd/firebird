@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.191 2004-01-29 06:31:49 skidder Exp $
+dnl $Id: configure.in,v 1.192 2004-03-25 23:12:30 skidder Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -591,7 +591,26 @@ case "$PLATFORM" in
     ;;
 esac
 
+dnl Detect support for ISO syntax for thread-locals
+AC_CACHE_CHECK([for __thread], firebird_cv_gcc___thread,
+  [cat > conftest.c <<\EOF
+__thread int a = 42;
+main() {
+	a = a + 1;
+	return 0;
+}
+EOF
+if AC_TRY_COMMAND([gcc -fPIC -o conftest conftest.c >&AS_MESSAGE_LOG_FD && ./conftest]); then
+  firebird_cv_gcc___thread=yes
+else
+  firebird_cv_gcc___thread=no
+fi
+rm -f conftest*])
 
+if test "$firebird_cv_gcc___thread" = yes; then
+  AC_DEFINE(HAVE___THREAD, 1, [Define it if compiler supports ISO syntax for thread-local storage])
+fi
+				  
 dnl ##################### DO NOT ADD ANY TESTS BELOW ###########################
 
 AC_SUBST(SFIO_DIR)
@@ -654,25 +673,23 @@ mkdir -p gen/firebird/help
 dnl #### TEMP ######### directories for .o and .d
 dnl # by module name
 
-mkdir -p temp/libfbserver/jrd
-mkdir -p temp/libfbserver/dsql
-mkdir -p temp/libfbserver/lock
-mkdir -p temp/libfbserver/misc
-mkdir -p temp/libfbserver/remote/os/win32
-mkdir -p temp/libfbserver/pipe
-mkdir -p temp/libfbserver/gpre
-mkdir -p temp/libfbserver/alice
-mkdir -p temp/libfbserver/burp
-mkdir -p temp/libfbserver/utilities/common
-mkdir -p temp/libfbserver/utilities/gstat
-mkdir -p temp/libfbserver/utilities/gsec
-mkdir -p temp/libfbserver/fbutil
-mkdir -p temp/libfbserver/common/classes
-mkdir -p temp/libfbserver/common/config
-mkdir -p temp/libfbserver/jrd/os/posix
-mkdir -p temp/libfbserver/jrd/os/win32
+mkdir -p temp/fbserver/jrd
+mkdir -p temp/fbserver/dsql
+mkdir -p temp/fbserver/lock
+mkdir -p temp/fbserver/misc
+mkdir -p temp/fbserver/pipe
+mkdir -p temp/fbserver/gpre
+mkdir -p temp/fbserver/alice
+mkdir -p temp/fbserver/burp
+mkdir -p temp/fbserver/utilities/common
+mkdir -p temp/fbserver/utilities/gstat
+mkdir -p temp/fbserver/utilities/gsec
+mkdir -p temp/fbserver/fbutil
+mkdir -p temp/fbserver/common/classes
+mkdir -p temp/fbserver/common/config
+mkdir -p temp/fbserver/jrd/os/posix
+mkdir -p temp/fbserver/jrd/os/win32
 mkdir -p temp/fbserver/remote/os/win32
-mkdir -p temp/fbserver/ipserver
 mkdir -p temp/libfbclient/jrd
 mkdir -p temp/libfbclient/dsql
 mkdir -p temp/libfbclient/gpre
@@ -684,15 +701,25 @@ mkdir -p temp/libfbclient/jrd/os/posix
 mkdir -p temp/libfbclient/jrd/os/win32
 mkdir -p temp/client.fbudf/fbudf
 mkdir -p temp/client.gbak/burp
+mkdir -p temp/client.gbak/remote
+mkdir -p temp/client.gbak/jrd
 mkdir -p temp/client.gfix/alice
+mkdir -p temp/client.gfix/jrd
+mkdir -p temp/client.gfix/common/classes
 mkdir -p temp/client.gpre/gpre
+mkdir -p temp/client.gpre/jrd
 mkdir -p temp/client.gdef/dudley
 mkdir -p temp/client.gdef/gpre
 mkdir -p temp/client.gdef/jrd
+mkdir -p temp/client.gdef/jrd/os/posix
+mkdir -p temp/client.gdef/common/classes
+mkdir -p temp/client.gdef/common/config
 mkdir -p temp/client.qli/qli
 mkdir -p temp/client.qli/jrd
 mkdir -p temp/client.qli/gpre
+mkdir -p temp/client.qli/common/classes
 mkdir -p temp/client.isql/isql
+mkdir -p temp/client.isql/common
 mkdir -p temp/client.util/utilities/rebuild
 mkdir -p temp/client.util/utilities/ibmgr
 mkdir -p temp/client.util/utilities/guard
@@ -703,6 +730,9 @@ mkdir -p temp/client.util/lock
 mkdir -p temp/client.util/iscguard
 mkdir -p temp/client.util/remote/os/win32
 mkdir -p temp/client.util/jrd/os/win32
+mkdir -p temp/client.util/jrd/os/posix
+mkdir -p temp/client.util/common/classes
+mkdir -p temp/client.util/common/config
 mkdir -p temp/intl
 
 mkdir -p temp/libfbcommon/common/classes
@@ -730,13 +760,30 @@ mkdir -p temp/embed.lockmgr/lock
 mkdir -p temp/embed.util/utilities/gstat
 mkdir -p temp/embed.util/utilities/gsec
 mkdir -p temp/embed.util/lock
+mkdir -p temp/embed.util/jrd/os/posix
+mkdir -p temp/embed.util/common/classes
+mkdir -p temp/embed.util/common/config
 mkdir -p temp/embed.gbak/burp
+mkdir -p temp/embed.gbak/remote
+mkdir -p temp/embed.gbak/jrd
 mkdir -p temp/embed.gfix/alice
+mkdir -p temp/embed.gfix/common/classes
+mkdir -p temp/embed.gfix/jrd
 mkdir -p temp/embed.isql/isql
+mkdir -p temp/embed.isql/common
 mkdir -p temp/embed.gdef/dudley
+mkdir -p temp/embed.gdef/jrd
+mkdir -p temp/embed.gdef/jrd/os/posix
+mkdir -p temp/embed.gdef/gpre
+mkdir -p temp/embed.gdef/common/classes
+mkdir -p temp/embed.gdef/common/config
 mkdir -p temp/embed.qli/qli
+mkdir -p temp/embed.qli/jrd
+mkdir -p temp/embed.qli/gpre
+mkdir -p temp/embed.qli/common/classes
 mkdir -p temp/embed.fbudf/fbudf
 mkdir -p temp/embed.gpre/gpre
+mkdir -p temp/embed.gpre/jrd
 mkdir -p temp/inet_server/remote/os/win32
 mkdir -p temp/inet_server/ipserver
 mkdir -p temp/msgs/msgs
@@ -833,7 +880,6 @@ gen/Makefile.static.gpre:${MAKE_SRC_DIR}/Makefile.in.static.gpre
 gen/Makefile.static.gbak:${MAKE_SRC_DIR}/Makefile.in.static.gbak
 gen/Makefile.static.isql:${MAKE_SRC_DIR}/Makefile.in.static.isql
 gen/Makefile.refDatabases:${MAKE_SRC_DIR}/Makefile.in.refDatabases
-gen/Makefile.libfbserver:${MAKE_SRC_DIR}/Makefile.in.libfbserver
 gen/Makefile.fbserver:${MAKE_SRC_DIR}/Makefile.in.fbserver
 gen/Makefile.libfbclient:${MAKE_SRC_DIR}/Makefile.in.libfbclient
 gen/Makefile.client.fbudf:${MAKE_SRC_DIR}/Makefile.in.client.fbudf

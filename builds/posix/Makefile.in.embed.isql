@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.isql,v 1.6 2003-03-28 11:29:18 aafemt Exp $
+#  $Id: Makefile.in.embed.isql,v 1.7 2004-03-25 23:12:31 skidder Exp $
 #
 ROOT=..
 ObjModuleName=embed.isql
@@ -42,9 +42,9 @@ include     $(ROOT)/gen/make.shared.variables
 unexport ISC_USER
 unexport ISC_PASSWORD
 
-
+ISQL_Other_Sources = common/utils.cpp
 ISQL_Files = extract.epp isql.epp show.epp
-ISQL_Sources = $(addprefix isql/, $(ISQL_Files))
+ISQL_Sources = $(addprefix isql/, $(ISQL_Files)) $(ISQL_Other_Sources)
 ISQL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(ISQL_Sources))))
 
 AllObjects = $(ISQL_Objects)
