@@ -271,6 +271,14 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 
 	dsc* from_desc = EVL_expr(tdbb, node->nod_arg[e_asgn_from]);
 
+	// NS: If we are assigning to NULL, we finished.
+	// This functionality is currently used to allow calling UDF routines
+	// without assigning resulting value anywhere.
+	if (!to_desc) {
+		request->req_operation = jrd_req::req_return;
+		return;
+	}
+
 	SSHORT null = (request->req_flags & req_null) ? -1 : 0;
 
 	if (!null && missing && MOV_compare(missing, from_desc) == 0) {

@@ -3664,7 +3664,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 	{
 		sub = node->nod_arg[e_asgn_to];
 		if (sub->nod_type != nod_field &&
-			sub->nod_type != nod_argument && sub->nod_type != nod_variable)
+			sub->nod_type != nod_argument && sub->nod_type != nod_variable && sub->nod_type != nod_null)
 		{
 			ERR_post(isc_read_only_field, 0);
 		}

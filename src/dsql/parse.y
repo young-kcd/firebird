@@ -1619,6 +1619,7 @@ proc_statement	: assignment ';'
 			{ $$ = make_node (nod_exit, 0, NULL); }
 		| breakleave
 		| cursor_statement ';'
+		| exec_udf ';'
 		;
 
 excp_statement	: EXCEPTION symbol_exception_name ';'
@@ -3313,6 +3314,10 @@ assignments	: assignment
 
 assignment	: update_column_name '=' value
 			{ $$ = make_node (nod_assign, 2, $3, $1); }
+		;
+
+exec_udf	: udf
+			{ $$ = make_node (nod_assign, 2, $1, make_node (nod_null, 0, NULL)); }
 		;
 
 
