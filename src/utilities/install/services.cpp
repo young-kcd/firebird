@@ -269,7 +269,6 @@ USHORT SERVICES_stop(SC_HANDLE manager,
 	return FB_SUCCESS;
 }
 
-
 USHORT SERVICES_grant_logon_right(TEXT* account,
 							USHORT(*err_handler)(SLONG, TEXT *, SC_HANDLE))
 {
