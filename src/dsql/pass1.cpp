@@ -3419,9 +3419,9 @@ static DSQL_NOD pass1_derived_table(DSQL_REQ request, DSQL_NOD input)
 		}
 		else if (node_select_item->nod_type == nod_map) {
 			// Don't forget aggregate's that have map on top.
-			DSQL_MAP map_ = (DSQL_MAP) node_select_item->nod_arg[e_map_map];
-			if (map_->map_node && (map_->map_node->nod_type == nod_field)) {
-				DSQL_FLD field = (DSQL_FLD) map_->map_node->nod_arg[e_fld_field];
+			DSQL_MAP map = (DSQL_MAP) node_select_item->nod_arg[e_map_map];
+			if (map->map_node && (map->map_node->nod_type == nod_field)) {
+				DSQL_FLD field = (DSQL_FLD) map->map_node->nod_arg[e_fld_field];
 				DSQL_NOD node_alias = pass1_make_alias_from_field(tdsql, field);
 
 				node_alias->nod_arg[e_alias_value] = node_select_item;
@@ -3430,10 +3430,10 @@ static DSQL_NOD pass1_derived_table(DSQL_REQ request, DSQL_NOD input)
 
 				rse->nod_arg[e_rse_items]->nod_arg[count] = node_alias;
 			} 
-			else if (map_->map_node && (map_->map_node->nod_type == nod_alias)) {
+			else if (map->map_node && (map->map_node->nod_type == nod_alias)) {
 				// Switch nod_map <=> nod_alias
-				DSQL_NOD node_alias = map_->map_node;
-				map_->map_node = node_alias->nod_arg[e_alias_value];
+				DSQL_NOD node_alias = map->map_node;
+				map->map_node = node_alias->nod_arg[e_alias_value];
 				node_alias->nod_arg[e_alias_value] = node_select_item;
 				rse->nod_arg[e_rse_items]->nod_arg[count] = node_alias;
 				node_alias->nod_flags = (request->req_scope_level << 1) | NOD_DERIVED_TABLE;
@@ -3786,7 +3786,7 @@ static BOOLEAN pass1_found_aggregate(DSQL_NOD node, USHORT check_scope_level,
 {
 	DSQL_NOD *ptr, *end;
 	BOOLEAN found, field;
-	DSQL_MAP map_;
+	DSQL_MAP map;
 
 	DEV_BLKCHK(node, dsql_type_nod);
 
@@ -3934,8 +3934,8 @@ static BOOLEAN pass1_found_aggregate(DSQL_NOD node, USHORT check_scope_level,
 			break;
 
 		case nod_map:
-			map_ =  reinterpret_cast <DSQL_MAP>(node->nod_arg[e_map_map]);
-			found |= pass1_found_aggregate(map_->map_node,
+			map =  reinterpret_cast <DSQL_MAP>(node->nod_arg[e_map_map]);
+			found |= pass1_found_aggregate(map->map_node,
 				check_scope_level, match_type, current_scope_level_equal);
 			break;
 
@@ -3982,7 +3982,7 @@ static BOOLEAN pass1_found_field(DSQL_NOD node, USHORT check_scope_level,
 	DSQL_NOD *ptr, *end;
 	BOOLEAN found;
 	DSQL_CTX field_context;
-	DSQL_MAP map_;
+	DSQL_MAP map;
 
 	DEV_BLKCHK(node, dsql_type_nod);
 
@@ -4127,8 +4127,8 @@ static BOOLEAN pass1_found_field(DSQL_NOD node, USHORT check_scope_level,
 			break;
 
 		case nod_map:
-			map_ =  reinterpret_cast <DSQL_MAP>(node->nod_arg[e_map_map]);
-			found |= pass1_found_field(map_->map_node, check_scope_level, 
+			map =  reinterpret_cast <DSQL_MAP>(node->nod_arg[e_map_map]);
+			found |= pass1_found_field(map->map_node, check_scope_level, 
 					match_type, field);
 			break;
 
@@ -5656,7 +5656,7 @@ static DSQL_NOD pass1_union( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order_li
 	items = union_node->nod_arg[0]->nod_arg[e_rse_items];
 
 	// Create mappings for union.
-	DSQL_MAP map_;
+	DSQL_MAP map;
 	SSHORT count = 0;
 	DSQL_NOD map_node;
 	DSQL_NOD union_items = MAKE_node(nod_list, items->nod_count);
@@ -5665,14 +5665,14 @@ static DSQL_NOD pass1_union( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order_li
 		 ptr < end; ptr++) {
 		*ptr = map_node = MAKE_node(nod_map, e_map_count);
 		map_node->nod_arg[e_map_context] = (DSQL_NOD) union_context;
-		map_ = FB_NEW(*tdsql->tsql_default) dsql_map;
-		map_node->nod_arg[e_map_map] = (DSQL_NOD) map_;
+		map = FB_NEW(*tdsql->tsql_default) dsql_map;
+		map_node->nod_arg[e_map_map] = (DSQL_NOD) map;
 
 		// set up the DSQL_MAP between the sub-rses and the union context.
-		map_->map_position = count++;
-		map_->map_node = *uptr++;
-		map_->map_next = union_context->ctx_map;
-		union_context->ctx_map = map_;
+		map->map_position = count++;
+		map->map_node = *uptr++;
+		map->map_next = union_context->ctx_map;
+		union_context->ctx_map = map;
 	}
 	union_rse->nod_arg[e_rse_items] = union_items;
 
@@ -5850,8 +5850,8 @@ static void pass1_union_auto_cast(DSQL_NOD input, DSC desc, SSHORT position, boo
 					// Only replace the node where the map points to, because they could be changed.
 					DSQL_NOD union_items = input->nod_arg[e_rse_items];
 					DSQL_NOD sub_rse_items = streams->nod_arg[0]->nod_arg[e_rse_items];
-					DSQL_MAP map_ = (DSQL_MAP) union_items->nod_arg[position]->nod_arg[e_map_map];
-					map_->map_node = sub_rse_items->nod_arg[position];
+					DSQL_MAP map = (DSQL_MAP) union_items->nod_arg[position]->nod_arg[e_map_map];
+					map->map_node = sub_rse_items->nod_arg[position];
 					union_items->nod_arg[position]->nod_desc = desc;
 				}
 				else {
@@ -6042,7 +6042,7 @@ static DSQL_NOD pass1_variable( DSQL_REQ request, DSQL_NOD input)
 static DSQL_NOD post_map( DSQL_NOD node, DSQL_CTX context)
 {
 	DSQL_NOD new_node;
-	DSQL_MAP map_;
+	DSQL_MAP map;
 	USHORT count;
 	TSQL tdsql;
 
@@ -6053,22 +6053,22 @@ static DSQL_NOD post_map( DSQL_NOD node, DSQL_CTX context)
 
 /* Check to see if the item has already been posted */
 
-	for (map_ = context->ctx_map, count = 0; map_; map_ = map_->map_next, count++)
-		if (node_match(node, map_->map_node, FALSE))
+	for (map = context->ctx_map, count = 0; map; map = map->map_next, count++)
+		if (node_match(node, map->map_node, FALSE))
 			break;
 
-	if (!map_) {
-		map_ = FB_NEW(*tdsql->tsql_default) dsql_map;
-		map_->map_position = count;
-		map_->map_next = context->ctx_map;
-		context->ctx_map = map_;
-		map_->map_node = node;
+	if (!map) {
+		map = FB_NEW(*tdsql->tsql_default) dsql_map;
+		map->map_position = count;
+		map->map_next = context->ctx_map;
+		context->ctx_map = map;
+		map->map_node = node;
 	}
 
 	new_node = MAKE_node(nod_map, e_map_count);
 	new_node->nod_count = 0;
 	new_node->nod_arg[e_map_context] = (DSQL_NOD) context;
-	new_node->nod_arg[e_map_map] = (DSQL_NOD) map_;
+	new_node->nod_arg[e_map_map] = (DSQL_NOD) map;
 	new_node->nod_desc = node->nod_desc;
 
 	return new_node;
