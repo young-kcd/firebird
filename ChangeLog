@@ -1,3 +1,77 @@
+2002-11-05 17:48  skywalker
+
+	* firebird2/: configure.in, builds/posix/make.shared.variables,
+	src/install/classic/postinstall.sh.in,
+	src/install/classic/postuninstall.sh.in,
+	src/install/classic/preinstall.sh.in,
+	src/install/classic/preuninstall.sh.in,
+	src/jrd/os/posix/config_root.cpp, src/make.new/config/config.h.in:
+	
+	Added config_root.cpp file for posix.
+
+2002-11-05 15:24  kkuznetsov
+
+	* firebird2/src/jrd/event.cpp:
+	
+	Fix compile error
+
+2002-11-05 14:48  kkuznetsov
+
+	* firebird2/src/: include/gen/autoconfig_msvc.h,
+	make.new/config/config.h.in:
+	
+	Add check for crypt.h
+
+2002-11-05 14:46  kkuznetsov
+
+	* firebird2/src/jrd/enc.cpp:
+	
+	[no log message]
+
+2002-11-05 14:15  kkuznetsov
+
+	* firebird2/configure.in:
+	
+	Add check for crypt.h
+
+2002-11-05 14:14  kkuznetsov
+
+	* firebird2/builds/posix/prefix.solx86:
+	
+	My 'as' do not eat pipes
+
+2002-11-05 02:51  nmcc
+
+	* firebird2/builds/posix/Makefile.in.firebird:
+	
+	Add extern sub directory to make clean target.
+
+2002-11-05 02:49  nmcc
+
+	* firebird2/builds/posix/: make.rules, prefix.darwin,
+	prefix.freebsd, prefix.linux, prefix.sinixz, prefix.solx86:
+	
+	Move compiler/platform specific cflags from make.rules to
+	individual platform prefix files.
+
+2002-11-05 02:42  nmcc
+
+	* firebird2/builds/posix/make.defaults:
+	
+	Use readline/editline setting from configure in makefiles.
+
+2002-11-05 02:39  nmcc
+
+	* firebird2/configure.in:
+	
+	Add Solaris Sparc as valid target.
+
+2002-11-05 02:36  nmcc
+
+	* firebird2/autogen.sh:
+	
+	Do not issue warning when already been told not to run configure.
+
 2002-11-04 22:57  arnobrinkman
 
 	* firebird2/src/jrd/opt.cpp:
