@@ -1034,6 +1034,10 @@ SOURCE=..\..\..\src\jrd\opt_proto.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\Optimizer.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\pag.h
 # End Source File
 # Begin Source File
