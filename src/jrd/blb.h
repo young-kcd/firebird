@@ -41,8 +41,7 @@ class BlobControl;
 class jrd_req;
 class jrd_tra;
 
-class bid {
-public:
+struct bid {
 	ULONG bid_relation_id;		/* Relation id (or null) */
 	union union_bid_stuff {
 		ULONG bid_temp_id;	/* Temporary ID of blob or array. Used for newly created objects (bid_relation_id==0) */

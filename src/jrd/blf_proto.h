@@ -25,7 +25,7 @@
 #define JRD_BLF_PROTO_H
 
 namespace Jrd {
-	class bid;
+	struct bid;
 }
 
 // Does this file really need the extern C for external blob filters?
