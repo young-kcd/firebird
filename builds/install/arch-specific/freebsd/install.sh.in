@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: install.sh.in,v 1.5 2004-01-12 05:59:55 stryqx Exp $
+#   $Id: install.sh.in,v 1.6 2004-01-12 06:24:36 stryqx Exp $
 # 
 
 #  Install script for FirebirdSQL database engine
@@ -59,7 +59,7 @@ if [ -d $InstallFirebirdPrefix ]; then
 	if [ -d $InstallPrefix/firebird.old ]; then
 		rm -rf $InstallPrefix/firebird.old
 	fi
-	mv $InstallFirebirdPrefix $InstallPrefix/firebird.old
+	cp -Rp $InstallFirebirdPrefix $InstallPrefix/firebird.old
 fi
 
 if [ `id -u` -ne 0 ]; then
@@ -162,7 +162,7 @@ cp $BuiltFBDir/help/help.fdb $DestDir/help
 #cp -r $BuiltFBDir/doc $DestDir 
 
 cp $BuiltFBDir/firebird.msg $DestDir/firebird.msg 
-cp $BuiltFBDir/security.fdb $DestDir/security.fdb 
+cp $BuiltFBDir/security.fdb $DestDir/security.fdb.sample
 
 
 #cp $BuiltFBDir/include/gds.f $DestDir/include 
@@ -190,16 +190,16 @@ cp $BuildRootDir/doc/sql.extensions/* $DestDir/doc/sql.extensions
 cp $BuildRootDir/doc/WhatsNew $DestDir/WhatsNew
 cp $BuildRootDir/doc/README.user $DestDir/README
 
-cp $BuiltFBDir/misc/firebird.conf $DestDir/firebird.conf
+cp $BuiltFBDir/misc/firebird.conf $DestDir/firebird.conf.sample
 
-echo "#" >> $DestDir/aliases.conf
-echo "# List of known database aliases" >> $DestDir/aliases.conf
-echo "# ------------------------------" >> $DestDir/aliases.conf
-echo "#" >> $DestDir/aliases.conf
-echo "# Examples:" >> $DestDir/aliases.conf
-echo "#" >> $DestDir/aliases.conf
-echo "# employee = /$FBRootDir/examples/employee.fdb" >> $DestDir/aliases.conf
-echo "#" >> $DestDir/aliases.conf
+echo "#" >> $DestDir/aliases.conf.sample
+echo "# List of known database aliases" >> $DestDir/aliases.conf.sample
+echo "# ------------------------------" >> $DestDir/aliases.conf.sample
+echo "#" >> $DestDir/aliases.conf.sample
+echo "# Examples:" >> $DestDir/aliases.conf.sample
+echo "#" >> $DestDir/aliases.conf.sample
+echo "# employee = /$DestDir/examples/employee.fdb" >> $DestDir/aliases.conf.sample
+echo "#" >> $DestDir/aliases.conf.sample
     
 
 chown -R firebird:firebird $InstallFirebirdPrefix
@@ -268,16 +268,22 @@ do
 	chown firebird:firebird $FileName
 done
 
-touch firebird.log aliases.conf firebird.conf
+touch firebird.log
 chown firebird:firebird firebird.log
 chmod ug=rw,o= firebird.log
-chmod a=r firebird.msg aliases.conf firebird.conf README
+chmod a=r firebird.msg README
+chown root:wheel *.sample
+chmod ug=r,o= *.sample
 
 # make databases writable by firebird only
 # local database connections are not a good idea
 chmod ug=rw,o= examples/*.fdb
 chmod ug=rw,o= help/*.fdb
-chmod ug=rw,o= security.fdb
+
+# install the samples if they don't exist
+[ -f aliases.conf ] || install -o firebird -g firebird -m 440 aliases.conf.sample aliases.conf
+[ -f firebird.conf ] || install -o firebird -g firebird -m 440 firebird.conf.sample firebird.conf
+[ -f security.fdb ] || install -o firebird -g firebird -m 660 security.fdb.sample security.fdb
 
 # remove any existing gds service
 cp /etc/services /etc/services.old
