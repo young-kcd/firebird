@@ -55,7 +55,7 @@
 
 #endif /* UNIX */
 
-#ifdef WIN_NT
+#if defined(WIN_NT) && !defined(MINGW)
 #ifdef SUPERSERVER
 #include <excpt.h>
 #define START_CHECK_FOR_EXCEPTIONS(err)	__try {
