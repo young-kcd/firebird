@@ -16,7 +16,6 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-#include "firebird.h"
 #include "../intl/ldcommon.h"
 
 USHORT *from_unicode_mapping_array;

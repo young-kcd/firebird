@@ -22,9 +22,7 @@
  */
 
 
-#include "firebird.h"
 #include "../intl/ldcommon.h"
-#include "../jrd/license.h"
 
 /* These macros have a duplicate in cv_big5.c */
 #define	BIG51(uc)	((UCHAR)((uc)&0xff)>=0xa1 && \
@@ -48,7 +46,7 @@ extern SSHORT CVBIG5_big5_mbtowc();
 	cache->texttype_character_set =		(charset); \
 	cache->texttype_country =		(country); \
 	cache->texttype_bytes_per_char =	2; \
-	cache->texttype_fn_init =		(name); \
+	cache->texttype_fn_init =		(FPTR_SHORT) (name); \
 	cache->texttype_fn_key_length =		famasc_key_length; \
 	cache->texttype_fn_string_to_key =	famasc_string_to_key; \
 	cache->texttype_fn_compare =		famasc_compare; \

@@ -22,26 +22,20 @@
  */
 
 
-#include "firebird.h"
 #include "../intl/ldcommon.h"
 
 
 
-void CV_convert_init(csptr, to_cs, from_cs, cvt_fn, datatable, datatable2)
-	 CSCONVERT csptr;
-	 SSHORT to_cs;
-	 SSHORT from_cs;
-	 FPTR_SHORT cvt_fn;
-	 BYTE *datatable;
-	 BYTE *datatable2;
+void CV_convert_init(CSCONVERT csptr, SSHORT to_cs, SSHORT from_cs,
+		FPTR_SHORT cvt_fn, const void *datatable, const void *datatable2)
 {
 	csptr->csconvert_version = 40;
 	csptr->csconvert_name = (ASCII *) "DIRECT";
 	csptr->csconvert_from = from_cs;
 	csptr->csconvert_to = to_cs;
 	csptr->csconvert_convert = cvt_fn;
-	csptr->csconvert_datatable = datatable;
-	csptr->csconvert_misc = datatable2;
+	csptr->csconvert_datatable = (BYTE*) datatable;
+	csptr->csconvert_misc = (BYTE*) datatable2;
 }
 
 

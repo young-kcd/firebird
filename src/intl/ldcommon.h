@@ -28,20 +28,15 @@
 #include <stdio.h>
 #include <assert.h>
 #else
-#include "../jrd/gdsassert.h"
+/* #include "../jrd/gdsassert.h" */
+// Put the assert in here
 #endif
 
-#include "../jrd/common.h"
-#include "../jrd/jrd.h"
-#include "../jrd/intl.h"
 #include "../jrd/intlobj.h"
 #include "../intl/langdrv.h"
 #include "../intl/charsets.h"
 #include "../intl/country_codes.h"
 #include "../intl/ld.h"
-#include "../jrd/kanji.h"
-#include "../jrd/ods.h"
-#include "../jrd/btr.h"
 
 #undef DEBUG
 
@@ -59,36 +54,32 @@ typedef USHORT UNICODE;
 #else
 #define ERR_assert	LD_assert
 #define assert(ex)	{if (!(ex)){(void) LD_assert (__FILE__, __LINE__); abort();}}
+extern void LD_assert(CONST SCHAR*, int);
 #endif
 
+#define MIN(x,y) ((x)<(y)?(x):(y))
+#define MAX(x,y) ((x)>(y)?(x):(y))
 
 
 
-#define	TEXTTYPE_ENTRY(name)	USHORT name (cache, parm1, dummy) \
-TEXTTYPE	cache; \
-SSHORT		parm1; \
-SSHORT		dummy;
+#define	TEXTTYPE_ENTRY(name)	USHORT name (TEXTTYPE cache, SSHORT parm1, SSHORT dummy)
 
 #define	TEXTTYPE_RETURN	return (0)
 
 
 
 
-#define CONVERT_ENTRY(cs1, cs2, name)	USHORT	name (csptr, dest_cs, source_cs)\
-CSCONVERT	csptr; \
-SSHORT		dest_cs; \
-SSHORT		source_cs;
+#define CONVERT_ENTRY(cs1, cs2, name)	USHORT	name (CSCONVERT csptr, SSHORT dest_cs, SSHORT source_cs)
 
 #define	CONVERT_RETURN	return (0)
 
 
 
 
-#define CHARSET_ENTRY(name)	USHORT	name (csptr, cs_id, dummy) \
-CHARSET	csptr;\
-SSHORT	cs_id;\
-SSHORT	dummy;
+#define CHARSET_ENTRY(name)	USHORT	name (CHARSET csptr, SSHORT cs_id, SSHORT dummy)
 
 #define CHARSET_RETURN	return (0)
+
+extern void CV_convert_init(CSCONVERT, SSHORT, SSHORT, FPTR_SHORT, const void*, const void*);
 
 #endif /* _INTL_LDCOMMON_H_ */

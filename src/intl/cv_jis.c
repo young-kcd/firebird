@@ -21,10 +21,9 @@
  * Contributor(s): ______________________________________.
  */
 
-#include "firebird.h"
 #include "../intl/ldcommon.h"
 #include "../intl/cs_sjis.h"
-
+#include "../intl/kanji.h"
 
 
 USHORT CVJIS_eucj_to_unicode(obj, dest_ptr, dest_len, src_ptr, src_len,

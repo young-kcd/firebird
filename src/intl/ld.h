@@ -46,7 +46,7 @@
 #undef CHAR
 #endif
 #define CHAR	SCHAR
-#define BYTE	UCHAR
+/* #define BYTE	UCHAR */
 #define INT8	SCHAR
 #define UINT8	UCHAR
 #define INT16	SSHORT
@@ -55,6 +55,20 @@
 #define UINT32	ULONG
 
 #define BOOL	UINT16
+
+#ifdef __cplusplus
+#define CONST	const
+#else
+#define CONST
+#endif
+
+#ifdef WIN32
+#define FAR_VARIABLE	__far
+#define DLL_EXPORT	dll_export
+#else
+#define FAR_VARIABLE
+#define DLL_EXPORT
+#endif
 
 
 /* Following this line is LD.H from Borland Language Driver Kit */
@@ -1021,9 +1035,12 @@ pVOID CALLTYPE LdCalloc(UINT16 NumberItems, UINT16 SizeItem);
 // VCS AREA
 //-----------------------------------------------------------------
 
-//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.5 2002-02-16 05:06:17 seanleyne Exp $
+//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.6 2002-04-09 23:25:13 bellardo Exp $
 
 //	$Log: not supported by cvs2svn $
+//	Revision 1.5  2002/02/16 05:06:17  seanleyne
+//	Clean up of change notes in headers
+//	
 //	Revision 1.4  2002/02/16 04:16:08  seanleyne
 //	Code cleanup of obsolete OS/2 port
 //	

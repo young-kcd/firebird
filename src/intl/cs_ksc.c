@@ -21,7 +21,6 @@
  * Contributor(s): ______________________________________.
  */
 
-#include "firebird.h"
 #include "../intl/ldcommon.h"
 
 extern USHORT CVKSC_ksc_to_unicode();

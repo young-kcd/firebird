@@ -22,13 +22,11 @@
  */
 
 
-#include "firebird.h"
 #include "../intl/ldcommon.h"
 
 extern USHORT CVBIG5_big5_to_unicode();
 extern USHORT CVBIG5_unicode_to_big5();
 extern USHORT CVBIG5_check_big5();
-extern void CV_convert_init();
 
 
 CHARSET_ENTRY(CS_big_5)

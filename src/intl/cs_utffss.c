@@ -24,7 +24,6 @@
  /* Note: all routines have cousins in jrd/intl.c */
 
 
-#include "firebird.h"
 #include "../intl/ldcommon.h"
 
 
@@ -222,13 +221,13 @@ typedef struct {
 } Tab;
 
 static CONST Tab tab[] = {
-	0x80, 0x00, 0 * 6, 0x7F, 0,	/* 1 byte sequence */
-	0xE0, 0xC0, 1 * 6, 0x7FF, 0x80,	/* 2 byte sequence */
-	0xF0, 0xE0, 2 * 6, 0xFFFF, 0x800,	/* 3 byte sequence */
-	0xF8, 0xF0, 3 * 6, 0x1FFFFF, 0x10000,	/* 4 byte sequence */
-	0xFC, 0xF8, 4 * 6, 0x3FFFFFF, 0x200000,	/* 5 byte sequence */
-	0xFE, 0xFC, 5 * 6, 0x7FFFFFFF, 0x4000000,	/* 6 byte sequence */
-	0,							/* end of table    */
+	{ 0x80, 0x00, 0 * 6, 0x7F, 0 },	/* 1 byte sequence */
+	{ 0xE0, 0xC0, 1 * 6, 0x7FF, 0x80 },	/* 2 byte sequence */
+	{ 0xF0, 0xE0, 2 * 6, 0xFFFF, 0x800 },	/* 3 byte sequence */
+	{ 0xF8, 0xF0, 3 * 6, 0x1FFFFF, 0x10000 },	/* 4 byte sequence */
+	{ 0xFC, 0xF8, 4 * 6, 0x3FFFFFF, 0x200000 },	/* 5 byte sequence */
+	{ 0xFE, 0xFC, 5 * 6, 0x7FFFFFFF, 0x4000000 },	/* 6 byte sequence */
+	{ 0, 0, 0, 0, 0}						/* end of table    */
 };
 
 

@@ -22,10 +22,8 @@
  */
 
 
-#include "firebird.h"
 #include "../intl/ldcommon.h"
-#include "../jrd/license.h"
-
+#include "../intl/kanji.h"
 
 extern USHORT famasc_key_length();
 extern USHORT famasc_string_to_key();
@@ -48,7 +46,7 @@ extern SSHORT CVJIS_euc_mbtowc();
 	cache->texttype_character_set =		(charset); \
 	cache->texttype_country =		(country); \
 	cache->texttype_bytes_per_char =	2; \
-	cache->texttype_fn_init =		(name); \
+	cache->texttype_fn_init =		(FPTR_SHORT) (name); \
 	cache->texttype_fn_key_length =		famasc_key_length; \
 	cache->texttype_fn_string_to_key =	famasc_string_to_key; \
 	cache->texttype_fn_compare =		famasc_compare; \

@@ -21,11 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 
-#include "firebird.h"
-#include "../jrd/ib_stdio.h"
-#include "../jrd/gds_proto.h" 
+//#include "../jrd/ib_stdio.h"
+//#include "../jrd/gds_proto.h" 
 #include "../intl/ldcommon.h"
 #include "../intl/ld_proto.h"
+
+extern void gds__log(UCHAR*, ...);
 
 #define	EXTERN_texttype(name)	extern USHORT name (TEXTTYPE, SSHORT, SSHORT)
 #define EXTERN_convert(name)	extern USHORT name (CSCONVERT, SSHORT, SSHORT)
@@ -197,7 +198,7 @@ void LD_assert(CONST SCHAR* filename, int lineno)
  *	a shared module entry point on all platforms, whereas gds__log is.
  *
  **************************************/
-	TEXT buffer[MAXPATHLEN];
+	char buffer[MAXPATHLEN];
 
 	sprintf(buffer,
 			"Assertion failed: component intl, file \"%s\", line %d\n",
@@ -205,7 +206,8 @@ void LD_assert(CONST SCHAR* filename, int lineno)
 #if !(defined VMS || defined WIN_NT)
 	gds__log(buffer);
 #endif
-	ib_printf(buffer);
+	//ib_printf(buffer);
+	printf(buffer);
 }
 #endif
 
