@@ -15,9 +15,9 @@ inline void THREAD_ENTER(){
 inline void THREAD_EXIT(){
 	SCH_exit();
 }
-inline bool THREAD_VALIDATE(){
-	return SCH_validate();
-}
+//inline bool THREAD_VALIDATE(){
+//	return SCH_validate();
+//}
 #define SWEEP_THREAD
 //#define GARBAGE_THREAD
 #else // SUPERSERVER
@@ -27,9 +27,9 @@ inline void THREAD_ENTER(){
 inline void THREAD_EXIT(){
 	gds__thread_exit();
 }
-inline bool THREAD_VALIDATE(){
-	return false;
-}
+//inline bool THREAD_VALIDATE(){
+//	return true;
+//}
 #define AST_THREAD
 #endif // SUPERSERVER
 inline void THREAD_SLEEP(ULONG msecs){
@@ -43,9 +43,9 @@ inline void THREAD_ENTER(){
 }
 inline void THREAD_EXIT(){
 }
-inline bool THREAD_VALIDATE(){
-	return false;
-}
+//inline bool THREAD_VALIDATE(){
+//	return true;
+//}
 inline void THREAD_SLEEP(ULONG msecs){
 	THD_sleep(msecs);
 }
