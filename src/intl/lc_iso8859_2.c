@@ -18,7 +18,7 @@
  * Contributor(s): Michal Bukovjan_________________.
  */
 
-
+#include "firebird.h"
 #include "../intl/ldcommon.h"
 
 extern	USHORT	LC_NARROW_key_length();

@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../intl/ldcommon.h"
 
 /* These macros have a duplicate in lc_big5.c */

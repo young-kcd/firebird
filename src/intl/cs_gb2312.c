@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
-
+#include "firebird.h"
 #include "../intl/ldcommon.h"
 
 extern USHORT CVGB_gb2312_to_unicode();

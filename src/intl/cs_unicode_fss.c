@@ -23,7 +23,7 @@
 
  /* Note: all routines have cousins in jrd/intl.c */
 
-
+#include "firebird.h"
 #include "../intl/ldcommon.h"
 
 

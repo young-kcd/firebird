@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../intl/ldcommon.h"
 
 #define		ASCII_SPACE	32

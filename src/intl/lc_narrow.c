@@ -22,7 +22,7 @@
  * Contributor(s): ______________________________________.
  */
 
-
+#include "firebird.h"
 #include "../intl/ldcommon.h"
 
 USHORT LC_NARROW_key_length();

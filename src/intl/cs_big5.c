@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
-
+#include "firebird.h"
 #include "../intl/ldcommon.h"
 
 extern USHORT CVBIG5_big5_to_unicode();
