@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: drop.cpp,v 1.13 2002-10-30 06:40:51 seanleyne Exp $
+ * $Id: drop.cpp,v 1.14 2002-12-07 13:32:34 dimitr Exp $
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
@@ -43,6 +43,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../utilities/drpv3_proto.h"
+#include "../common/config/config.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -77,24 +78,8 @@ static int shm_exclusive(SLONG, SLONG);
 static void shut_manager(TEXT *);
 #endif
 
-static SLONG LOCK_shm_size, LOCK_sem_count;
-static SLONG EVENT_default_size;
 static int orig_argc;
 static SCHAR **orig_argv;
-
-static struct ipccfg config_table[] = {
-#ifndef HAVE_MMAP
-	{"V4_LOCK_MEM_SIZE", -1, &LOCK_shm_size, 0, 0},
-	{"ANY_LOCK_MEM_SIZE", -1, &LOCK_shm_size, -1, 0},
-	{"V4_EVENT_MEM_SIZE", -1, &EVENT_default_size, 0, 0},
-	{"ANY_EVENT_MEM_SIZE", -1, &EVENT_default_size, -1, 0},
-#endif
-#ifndef NO_SEMAPHORES
-	{"V4_LOCK_SEM_COUNT", -1, &LOCK_sem_count, 0, 0},
-	{"ANY_LOCK_SEM_COUNT", -1, &LOCK_sem_count, -1, 0},
-#endif
-     {NULL, -1, NULL, 0, 0}
-};
 
 
 int CLIB_ROUTINE main( int argc, char *argv[])
@@ -161,17 +146,12 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	if (sw_version)
 		ib_printf("gds_drop version %s\n", GDS_VERSION);
 
-	LOCK_shm_size = DEFAULT_SIZE;
-	LOCK_sem_count = SEMAPHORES;
-	EVENT_default_size = EVENT_DEFAULT_SIZE;
-	ISC_get_config(LOCK_HEADER, config_table);
-
 	if (sw_events)
-		remove_resource(EVENT_FILE, EVENT_default_size, EVENT_SEMAPHORES,
+		remove_resource(EVENT_FILE, Config::getEventMemSize(), EVENT_SEMAPHORES,
 						"events");
 
 	if (sw_lockmngr)
-		remove_resource(LOCK_FILE, LOCK_shm_size, LOCK_sem_count,
+		remove_resource(LOCK_FILE, Config::getLockMemSize(), Config::getLockSemCount(),
 						"lock manager");
 
 #ifdef CSV
