@@ -23,7 +23,7 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *
- *  $Id: alloc.cpp,v 1.62 2004-08-24 05:16:01 robocop Exp $
+ *  $Id: alloc.cpp,v 1.63 2004-08-24 23:11:02 brodsom Exp $
  *
  */
 
@@ -1355,7 +1355,8 @@ void MemoryPool::removeFreeBlock(MemoryBlock *blk)
 	// mbk_prev_fragment to ZERO.
 
 	FreeMemoryBlock *fragmentToRemove = blockToPtr<FreeMemoryBlock*>(blk);
-	FreeMemoryBlock *prev = blk->mbk_prev_fragment, *next = fragmentToRemove->fbk_next_fragment;
+	FreeMemoryBlock *prev = blk->mbk_prev_fragment;
+	FreeMemoryBlock *next = fragmentToRemove->fbk_next_fragment;
 	if (prev) {
 		// Cheapest case. There is no need to touch B+ tree at all.
 		// Simply remove item from a middle or end of doubly linked list		
@@ -1391,12 +1392,12 @@ void MemoryPool::removeFreeBlock(MemoryBlock *blk)
 		else
 		{
 			while ( itr ) {
-				PendingFreeBlock *next = itr->next;
-				if (next==temp) {
+				PendingFreeBlock *next2 = itr->next;
+				if (next2==temp) {
 					itr->next = temp->next;
 					break;
 				}
-				itr = next;
+				itr = next2;
 			}
 			fb_assert(itr); // We had to find it somewhere
 		}
