@@ -31,12 +31,14 @@ COPYRIGHT: All rights retained by authors.
 	- Solaris Os version >=2.6 on 32bit Intel (like!) Pentium CPU 
 	  if it's 2.6 recommended patches required	  
 	- GNU C/C+ runtime for gcc 3.3.3 at least libgcc_s.so.1 libstdc++.so.5
-	  on http://sunfreeware.com/ it's called  libgcc-3.3-XXX probably
-	  in a future I'll create package of it from my machine.
+	  on http://sunfreeware.com/ it's called  libgcc-3.3-XXX.
+	  If dont have this files on your machine your can download and install
+	  LibGCC-3.x.FB-runtime-Solx86.pkg package placing them into installed FB
+	  directory /usr/local/firebird/lib.
 
 3. INSTALLATION SCENARIO
 3.1 MAIN PROCESS   
-	1) Extract package using uncompress and tar -xvf 
+	1) Extract package using uncompress and (un) tar -xvf 
 	2) Use pkgadd -d  	Firebird-@ARCH_TYPE_SUFFIX@-$(FirebirdVersion).$(BuildNum)-$(PackageVersion)-SolX86.pkg
            to install it running as root
 	3) Verify it working 
@@ -62,9 +64,11 @@ export INTERBASE
 3.3 WHAT YOUR CAN IMPROVE
 	I advise some more to do
 
-	Your can add /usr/local/firebird to LD_LIBRARY_PATH of running from user
+	Your can add /usr/local/firebird to LD_LIBRARY_PATH of running FB user
 	or probably inetd start script.
 	Your can add localhost and hostname to /etc/hosts.equiv
+	Your can check /etc/system parameters for max processes and open files
+	under high load.
 	
 4. SECURITY ISSUES
 	I strongly advise run al type of server (Classic or Super) from non root
