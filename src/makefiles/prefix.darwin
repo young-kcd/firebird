@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin,v 1.1 2001-07-12 06:32:04 bellardo Exp $
+#$Id: prefix.darwin,v 1.2 2001-07-12 20:07:45 bellardo Exp $
 
 .SUFFIXES: .bin .o .cpp .c
 .cpp.o:
@@ -189,5 +189,6 @@ V3PRINTER=		$(OBJS)/lock/printv3.o
 MSG_INSTALL_CMD=	$(CP) $(OBJS)/firebird/interbase.msg $(FB_FRAMEWORK)/Resources/English.lproj
 CARBONCORE_DIR_FLAG=	-F/System/Library/Frameworks/CoreServices.framework/Frameworks
 COREFOUNDATION_LINK=	-framework CoreFoundation
+FOUNDATION_LINK=	-framework Foundation
 
 #   End of file prefix.darwin:	$(VERSION)	$(PLATFORM)
