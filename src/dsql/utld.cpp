@@ -30,7 +30,7 @@
  */
 
 /*
-$Id: utld.cpp,v 1.12 2003-04-10 06:14:59 aafemt Exp $
+$Id: utld.cpp,v 1.13 2003-08-13 11:08:50 robocop Exp $
 */
 
 #include "firebird.h"
@@ -94,20 +94,19 @@ static TEXT *DSQL_failures, *DSQL_failures_ptr;
 
  **/
 ISC_STATUS DLL_EXPORT UTLD_parse_sql_info(
-									  ISC_STATUS * status,
-									  USHORT dialect,
-									  SCHAR * info,
-XSQLDA * xsqlda, USHORT * return_index)
+				ISC_STATUS * status,
+				USHORT dialect,
+				SCHAR * info,
+				XSQLDA * xsqlda,
+				USHORT * return_index)
 {
-	SCHAR item;
-	SSHORT n;
 	XSQLVAR *xvar, xsqlvar;
 	SQLDA *sqlda;
 	SQLVAR *var;
-	USHORT index, last_index;
+	USHORT last_index = 0;
 
 	if (return_index)
-		*return_index = last_index = 0;
+		*return_index = 0;
 
 	if (!xsqlda)
 		return 0;
@@ -118,7 +117,7 @@ XSQLDA * xsqlda, USHORT * return_index)
 
 	info += 2;
 
-	n = static_cast<SSHORT> (get_numeric_info(&info));
+	SSHORT n = static_cast<SSHORT> (get_numeric_info(&info));
 	if (dialect >= DIALECT_xsqlda)
 	{
 		if (xsqlda->version != SQLDA_VERSION1)
@@ -142,11 +141,13 @@ XSQLDA * xsqlda, USHORT * return_index)
 		xvar = &xsqlvar;
 	}
 
-/* Loop over the variables being described. */
+// Loop over the variables being described.
 
+	USHORT index = 0;
 	while (*info != gds_info_end)
 	{
-		while ((item = *info++) != gds_info_sql_describe_end)
+		SCHAR item = *info++;
+		while (item != gds_info_sql_describe_end)
 			switch (item)
 			{
 			case gds_info_sql_sqlda_seq:
@@ -253,14 +254,12 @@ ISC_STATUS DLL_EXPORT UTLD_parse_sqlda(ISC_STATUS * status,
 								   XSQLDA * xsqlda,
 								   USHORT clause)
 {
-	USHORT i, n, blr_len, par_count, dtype, same_flag, msg_len, len, align, offset,
+	USHORT i, n, blr_len, par_count, dtype, msg_len, len, align,
 		null_offset;
-	SSHORT *null_ind;
 	XSQLVAR *xvar, xsqlvar;
 	SQLDA *sqlda;
 	SQLVAR *var;
-	BLOB_PTR *p;				/* one huge pointer per line for LIBS */
-	BLOB_PTR *msg_buf;			/* one huge pointer per line for LIBS */
+	//BLOB_PTR *p;				/* one huge pointer per line for LIBS */
 
 	if (!xsqlda)
 		n = 0;
@@ -350,20 +349,20 @@ ISC_STATUS DLL_EXPORT UTLD_parse_sqlda(ISC_STATUS * status,
 			}
 			dasup->dasup_clauses[clause].dasup_blr =
 				reinterpret_cast<char*>(gds__alloc((SLONG) blr_len));
-			/* FREE: unknown */
-			if (!dasup->dasup_clauses[clause].dasup_blr)	/* NOMEM: */
+			// FREE: unknown
+			if (!dasup->dasup_clauses[clause].dasup_blr)	// NOMEM:
 				return error_dsql_804(status, gds_virmemexh);
 			memset(dasup->dasup_clauses[clause].dasup_blr, 0, blr_len);
 			dasup->dasup_clauses[clause].dasup_blr_buf_len = blr_len;
 			dasup->dasup_clauses[clause].dasup_blr_length = 0;
 		}
 
-		same_flag = (blr_len == dasup->dasup_clauses[clause].dasup_blr_length);
+		bool same_flag = (blr_len == dasup->dasup_clauses[clause].dasup_blr_length);
 
         /* turn off same_flag because it breaks execute & execute2 when
            more than one statement is prepared */
 
-        same_flag = FALSE;
+        same_flag = false;
 
 		dasup->dasup_clauses[clause].dasup_blr_length = blr_len;
 
@@ -371,7 +370,9 @@ ISC_STATUS DLL_EXPORT UTLD_parse_sqlda(ISC_STATUS * status,
 		   the size of the message buffer.  Allow for a null indicator with
 		   each variable in the SQLDA. */
 
-		p = reinterpret_cast <UCHAR*>(dasup->dasup_clauses[clause].dasup_blr);
+		// one huge pointer per line for LIBS
+		BLOB_PTR *p = reinterpret_cast <UCHAR*>(dasup->dasup_clauses[clause].dasup_blr);
+
 	/** The define SQL_DIALECT_V5 is not available here, Hence using
 	constant 1.
     **/
@@ -502,29 +503,30 @@ ISC_STATUS DLL_EXPORT UTLD_parse_sqlda(ISC_STATUS * status,
 				gds__free(dasup->dasup_clauses[clause].dasup_msg);
 			dasup->dasup_clauses[clause].dasup_msg =
 				reinterpret_cast<char*>(gds__alloc((SLONG) msg_len));
-			/* FREE: unknown */
-			if (!dasup->dasup_clauses[clause].dasup_msg)	/* NOMEM: */
+			// FREE: unknown
+			if (!dasup->dasup_clauses[clause].dasup_msg)	// NOMEM:
 				return error_dsql_804(status, gds_virmemexh);
 			memset(dasup->dasup_clauses[clause].dasup_msg, 0, msg_len);
 			dasup->dasup_clauses[clause].dasup_msg_buf_len = msg_len;
 		}
 
-		/* Fill in the return values to the caller. */
+		// Fill in the return values to the caller.
 
 		*blr_length = (same_flag) ? 0 : blr_len;
 		*msg_length = msg_len;
 		*msg_type = 0;
 
-		/* If this is the first call from fetch, we're done. */
+		// If this is the first call from fetch, we're done.
 
 		if (clause == DASUP_CLAUSE_select)
 			return 0;
 	}
 
-/* Move the data between the SQLDA and the message buffer. */
+// Move the data between the SQLDA and the message buffer.
 
-	offset = 0;
-	msg_buf =
+	USHORT offset = 0;
+	// one huge pointer per line for LIBS
+	BLOB_PTR *msg_buf =
 		reinterpret_cast<UCHAR*>(dasup->dasup_clauses[clause].dasup_msg);
 	if (xsqlda)
 		xvar = xsqlda->sqlvar - 1;
@@ -596,7 +598,7 @@ ISC_STATUS DLL_EXPORT UTLD_parse_sqlda(ISC_STATUS * status,
 		if (align)
 			null_offset = FB_ALIGN(null_offset, align);
 
-		null_ind = (SSHORT *) (msg_buf + null_offset);
+		SSHORT *null_ind = (SSHORT *) (msg_buf + null_offset);
 		if (clause == DASUP_CLAUSE_select)
 		{
 			/* Move data from the message into the SQLDA. */
@@ -664,7 +666,6 @@ ISC_STATUS DLL_EXPORT UTLD_parse_sqlda(ISC_STATUS * status,
 void DLL_EXPORT UTLD_save_status_strings( ISC_STATUS * vector)
 {
 	TEXT *p;
-	ISC_STATUS status;
 	USHORT l;
 
 /* allocate space for failure strings if it hasn't already been allocated */
@@ -685,7 +686,7 @@ void DLL_EXPORT UTLD_save_status_strings( ISC_STATUS * vector)
 
 	while (*vector)
 	{
-		status = *vector;
+		ISC_STATUS status = *vector;
 		vector++;
 		switch (status)
 		{
@@ -754,9 +755,8 @@ static void cleanup( void *arg)
  **/
 static ISC_STATUS error_dsql_804( ISC_STATUS * status, ISC_STATUS err)
 {
-	ISC_STATUS *p;
+	ISC_STATUS *p = status;
 
-	p = status;
 	*p++ = gds_arg_gds;
 	*p++ = gds_dsql_error;
 	*p++ = gds_arg_gds;
@@ -784,12 +784,9 @@ static ISC_STATUS error_dsql_804( ISC_STATUS * status, ISC_STATUS err)
  **/
 static SLONG get_numeric_info( SCHAR ** ptr)
 {
-	int item;
-	SSHORT l;
-
-	l = static_cast<SSHORT>(gds__vax_integer(reinterpret_cast<UCHAR*>(*ptr), 2));
+	SSHORT l = static_cast<SSHORT>(gds__vax_integer(reinterpret_cast<UCHAR*>(*ptr), 2));
 	*ptr += 2;
-	item = gds__vax_integer(reinterpret_cast<UCHAR*>(*ptr), l);
+	int item = gds__vax_integer(reinterpret_cast<UCHAR*>(*ptr), l);
 	*ptr += l;
 
 	return item;
@@ -812,20 +809,16 @@ static SLONG get_numeric_info( SCHAR ** ptr)
  **/
 static SLONG get_string_info( SCHAR ** ptr, SCHAR * buffer, int buffer_len)
 {
-	SSHORT l, len;
-	SCHAR *p;
-
-	p = *ptr;
-	l =
-		static_cast<SSHORT>
-		(gds__vax_integer(reinterpret_cast<UCHAR*>(p), 2));
+	SCHAR *p = *ptr;
+	SSHORT l = static_cast<SSHORT>(gds__vax_integer(reinterpret_cast<UCHAR*>(p), 2));
 	*ptr += l + 2;
 	p += 2;
 
 	if (l >= buffer_len)
 		l = buffer_len - 1;
 
-	if (len = l)
+	SSHORT len = l;
+	if (len)
 		do
 			*buffer++ = *p++;
 		while (--l);
