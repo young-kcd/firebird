@@ -123,16 +123,16 @@ const int type_own		= 8;
 
 const int type_MAX		= type_own;
 
-#define CLASSIC_LHB_VERSION	15 // Firebird 1.5
-#define SS_LHB_VERSION		(CLASSIC_LHB_VERSION + 100)
+const int CLASSIC_LHB_VERSION	= 15; // Firebird 1.5
+const int SS_LHB_VERSION		= CLASSIC_LHB_VERSION + 100;
 
 #ifdef SUPERSERVER
-#define LHB_VERSION	SS_LHB_VERSION
+const int LHB_VERSION			= SS_LHB_VERSION;
 #else
-#define LHB_VERSION	CLASSIC_LHB_VERSION
+const int LHB_VERSION			= CLASSIC_LHB_VERSION;
 #endif
 
-#define LHB_PATTERN     123454321
+const SLONG LHB_PATTERN			= 123454321;
 
 //
 // Define methods that lock manager uses to handle events
@@ -209,8 +209,9 @@ typedef struct lhb {
 	srq lhb_hash[1];			/* Hash table */
 } *LHB;
 
-#define LHB_lock_ordering       1	/* Lock ordering is enabled */
-#define LHB_shut_manager	2	/* Lock manager shutdown flag */
+// lhb_flags
+const USHORT LHB_lock_ordering		= 1;	/* Lock ordering is enabled */
+const USHORT LHB_shut_manager		= 2;	/* Lock manager shutdown flag */
 
 /* Secondary header block -- exists only in V3.3 and later lock
    managers.  It is pointed to by the word in the lhb that used to contain

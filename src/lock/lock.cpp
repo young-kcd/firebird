@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.98 2004-05-17 10:17:25 brodsom Exp $
+$Id: lock.cpp,v 1.99 2004-05-17 15:14:09 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -95,6 +95,8 @@ $Id: lock.cpp,v 1.98 2004-05-17 10:17:25 brodsom Exp $
 #ifdef WIN_NT
 #include <process.h>
 #define MUTEX		lock_manager_mutex
+#else
+#define MUTEX		LOCK_header->lhb_mutex
 #endif
 
 #ifdef MANAGER_PROCESS
@@ -110,31 +112,16 @@ static bool LOCK_post_manager;
 #define VALIDATE_LOCK_TABLE
 #if ((defined HAVE_MMAP) && !(defined SUPERSERVER))
 #define LOCK_DEBUG_ACQUIRE
-#endif
-//#define DEBUG_TRACE
-#endif
-
-#ifdef LOCK_DEBUG_ACQUIRE
 #define DEBUG_ACQUIRE_INTERVAL 5000
 static ULONG debug_acquire_count = 0;
 #endif
-
-#ifndef ASSERT_ACQUIRED
-#define	ASSERT_ACQUIRED			/* nothing */
-#endif
-
-#ifndef ASSERT_RELEASED
-#define	ASSERT_RELEASED			/* nothing */
-#endif
-
-
-#ifdef DEV_BUILD
 #define CHECK(x)	{ if (!(x)) bug_assert ("consistency check", __LINE__); }
-#endif
-
-#ifndef CHECK
+//#define DEBUG_TRACE
+#else // DEV_BUILD
+#define	ASSERT_ACQUIRED			/* nothing */
+#define	ASSERT_RELEASED			/* nothing */
 #define CHECK(x)				/* nothing */
-#endif
+#endif // DEV_BUILD
 
 #ifdef DEBUG
 #define DEBUG_MANAGER "manager"
@@ -143,19 +130,15 @@ static ULONG debug_acquire_count = 0;
 
 #ifdef DEBUG_TRACE
 #define LOCK_TRACE(x)	{ time_t t; time(&t); printf("%s", ctime(&t) ); printf x; fflush (stdout); gds__log x;}
+#else
+#define LOCK_TRACE(x)			/* nothing */
 #endif
 
 #ifdef DEBUG
 SSHORT LOCK_debug_level = 0;
 #define DEBUG_MSG(l,x)	if ((l) <= LOCK_debug_level) { time_t t; time(&t); printf("%s", ctime(&t) ); printf x; fflush (stdout); gds__log x; }
-#endif
-
-#ifndef DEBUG_MSG
+#else
 #define DEBUG_MSG(l,x)			/* nothing */
-#endif
-
-#ifndef LOCK_TRACE
-#define LOCK_TRACE(x)			/* nothing */
 #endif
 
 /* Debug delay is used to create nice big windows for signals or other
@@ -164,19 +147,13 @@ SSHORT LOCK_debug_level = 0;
  */
 #ifdef DEBUG
 #define	DEBUG_DELAY	debug_delay (__LINE__)
-#endif
-
-#ifndef DEBUG_DELAY
+#else
 #define DEBUG_DELAY				/* nothing */
 #endif
 
-#ifndef MUTEX
-#define MUTEX		LOCK_header->lhb_mutex
-#endif
-
-#define DUMMY_OWNER_CREATE	((SRQ_PTR) -1)
-#define DUMMY_OWNER_DELETE	((SRQ_PTR) -2)
-#define DUMMY_OWNER_SHUTDOWN	((SRQ_PTR) -3)
+const SRQ_PTR DUMMY_OWNER_CREATE	= -1;
+const SRQ_PTR DUMMY_OWNER_DELETE	= -2;
+const SRQ_PTR DUMMY_OWNER_SHUTDOWN	= -3;
 
 static void acquire(SRQ_PTR);
 static UCHAR *alloc(SSHORT, ISC_STATUS *);
@@ -299,26 +276,23 @@ static HANDLE	wakeup_event[1];
 
 #define GET_TIME	time (NULL)
 
-#define HASH_MIN_SLOTS	101
-#define HASH_MAX_SLOTS	2048
-#define HISTORY_BLOCKS	256
-#define LOCKMANTIMEOUT	300
+const SLONG HASH_MIN_SLOTS	= 101;
+const SLONG HASH_MAX_SLOTS	= 2048;
+const USHORT HISTORY_BLOCKS	= 256;
+const int LOCKMANTIMEOUT	= 300;
 
 #if (defined SOLARIS_MT && !defined SUPERSERVER)
-#define STARVATION_THRESHHOLD	500	/* acquires of lock table */
-#define SOLARIS_MIN_STALL       0
-#define SOLARIS_MAX_STALL       200
-#define SOLARIS_MAX_STALL       200	/* Seconds */
+const int STARVATION_THRESHHOLD	= 500;	/* acquires of lock table */
+const SLONG SOLARIS_MIN_STALL	= 0;
+const SLONG SOLARIS_MAX_STALL	= 200;
+const SLONG SOLARIS_MAX_STALL	= 200;	/* Seconds */
 #endif
 
-#define OWN_BLOCK_new		1
-#define OWN_BLOCK_reused	2
-#define OWN_BLOCK_dummy		3
+const USHORT OWN_BLOCK_new		= 1;
+const USHORT OWN_BLOCK_reused	= 2;
+const USHORT OWN_BLOCK_dummy	= 3;
 
-#ifndef LOCK_MANAGER
-#define LOCK_MANAGER	"bin/fb_lock_mgr"
-#endif
-
+const char* LOCK_MANAGER	= "bin/fb_lock_mgr";
 
 #if defined WIN_NT && defined USE_BLOCKING_THREAD
 static HANDLE blocking_action_thread_handle;
@@ -4250,11 +4224,11 @@ static int signal_owner( OWN blocking_owner, SRQ_PTR blocked_owner_offset)
 #ifdef VALIDATE_LOCK_TABLE
 
 
-#define	EXPECT_inuse	0
-#define	EXPECT_freed	1
+const USHORT EXPECT_inuse	= 0;
+const USHORT EXPECT_freed	= 1;
 
-#define	RECURSE_yes	0
-#define	RECURSE_not	1
+const USHORT RECURSE_yes	= 0;
+const USHORT RECURSE_not	= 1;
 
 static void validate_history( SRQ_PTR history_header)
 {

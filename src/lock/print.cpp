@@ -65,10 +65,10 @@
 
 typedef FILE* OUTFILE;
 
-#define SW_I_ACQUIRE	1
-#define SW_I_OPERATION	2
-#define SW_I_TYPE	4
-#define SW_I_WAIT	8
+const USHORT SW_I_ACQUIRE	= 1;
+const USHORT SW_I_OPERATION	= 2;
+const USHORT SW_I_TYPE		= 4;
+const USHORT SW_I_WAIT		= 8;
 
 #define SRQ_BASE                    ((UCHAR*) LOCK_header)
 
@@ -1115,9 +1115,9 @@ static void prt_owner_wait_cycle(
 				if (owner_request == lock_request)
 					break;
 
-				if (COMPATIBLE(owner_request->lrq_requested,
-							   MAX(lock_request->lrq_state,
-								   lock_request->lrq_requested))) continue;
+				if (COMPATIBLE(owner_request->lrq_requested, MAX(lock_request->lrq_state,
+								   lock_request->lrq_requested)))
+					continue;
 			}
 			else {
 
@@ -1125,9 +1125,8 @@ static void prt_owner_wait_cycle(
 				if (lock_request == owner_request)
 					continue;
 
-				if (COMPATIBLE
-					(owner_request->lrq_requested,
-					 lock_request->lrq_state)) continue;
+				if (COMPATIBLE(owner_request->lrq_requested, lock_request->lrq_state)) 
+					continue;
 			};
 			const own* lock_owner = (OWN) SRQ_ABS_PTR(lock_request->lrq_owner);
 			prt_owner_wait_cycle(outfile, LOCK_header, lock_owner, indent + 4,
