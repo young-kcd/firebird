@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.187 2003-11-23 16:27:09 skidder Exp $
+dnl $Id: configure.in,v 1.188 2003-11-23 16:37:40 skidder Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -159,7 +159,7 @@ AC_ARG_ENABLE(debug,
 AC_SUBST(PROD_BUILD_FLG)
 
 AC_ARG_ENABLE(raw-devices,
-  [  --enable-raw-devices    enable databases on raw devices (default=no)],
+  [  --enable-raw-devices    enable databases on raw devices (default on POSIX)],
   [case "$enableval" in
      yes) RAW_DEVICES_FLG=Y;;
      no)  RAW_DEVICES_FLG=N;;
