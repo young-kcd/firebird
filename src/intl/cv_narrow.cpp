@@ -25,8 +25,12 @@
 #include "../intl/ldcommon.h"
 #include "cv_narrow.h"
 
-void CV_convert_init(CSCONVERT csptr, SSHORT to_cs, SSHORT from_cs,
-		FPTR_SHORT cvt_fn, const void *datatable, const void *datatable2)
+void CV_convert_init(CSCONVERT csptr,
+					 SSHORT to_cs,
+					 SSHORT from_cs,
+					 FPTR_SHORT cvt_fn,
+					 const void *datatable,
+					 const void *datatable2)
 {
 	csptr->csconvert_version = 40;
 	csptr->csconvert_name = (ASCII *) "DIRECT";
@@ -39,8 +43,13 @@ void CV_convert_init(CSCONVERT csptr, SSHORT to_cs, SSHORT from_cs,
 
 
 
-USHORT CV_unicode_to_nc(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len, BYTE *src_ptr, USHORT src_len,
-						 SSHORT *err_code, USHORT *err_position)
+USHORT CV_unicode_to_nc(CSCONVERT obj,
+						BYTE *dest_ptr,
+						USHORT dest_len,
+						BYTE *src_ptr,
+						USHORT src_len,
+						SSHORT *err_code,
+						USHORT *err_position)
 {
 	BYTE *start;
 	USHORT src_start = src_len;
@@ -88,8 +97,13 @@ USHORT CV_unicode_to_nc(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len, BYTE *sr
 }
 
 
-USHORT CV_wc_to_wc(CSCONVERT obj, USHORT *dest_ptr, USHORT dest_len, USHORT *src_ptr, USHORT src_len,
-				 SSHORT *err_code, USHORT *err_position)
+USHORT CV_wc_to_wc(CSCONVERT obj,
+				   USHORT *dest_ptr,
+				   USHORT dest_len,
+				   USHORT *src_ptr,
+				   USHORT src_len,
+				   SSHORT *err_code,
+				   USHORT *err_position)
 {
 	USHORT *start;
 	USHORT ch;
@@ -138,8 +152,13 @@ USHORT CV_wc_to_wc(CSCONVERT obj, USHORT *dest_ptr, USHORT dest_len, USHORT *src
 }
 
 
-USHORT CV_nc_to_unicode(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len, BYTE *src_ptr, USHORT src_len,
-						 SSHORT *err_code,	USHORT *err_position)
+USHORT CV_nc_to_unicode(CSCONVERT obj,
+						BYTE *dest_ptr,
+						USHORT dest_len,
+						BYTE *src_ptr,
+						USHORT src_len,
+						SSHORT *err_code,
+						USHORT *err_position)
 {
 	BYTE *start;
 	UNICODE ch;
@@ -180,8 +199,13 @@ USHORT CV_nc_to_unicode(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len, BYTE *sr
 }
 
 
-USHORT CV_wc_copy(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len, BYTE *src_ptr, USHORT src_len,
-				 SSHORT *err_code, USHORT *err_position)
+USHORT CV_wc_copy(CSCONVERT obj,
+				  BYTE *dest_ptr,
+				  USHORT dest_len,
+				  BYTE *src_ptr,
+				  USHORT src_len,
+				  SSHORT *err_code,
+				  USHORT *err_position)
 {
 	BYTE *start;
 	USHORT src_start = src_len;
@@ -216,8 +240,13 @@ USHORT CV_wc_copy(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len, BYTE *src_ptr,
 }
 
 
-USHORT eight_bit_convert(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len, BYTE *src_ptr,
-								 USHORT src_len, SSHORT *err_code, USHORT *err_position)
+USHORT eight_bit_convert(CSCONVERT obj,
+						 BYTE *dest_ptr,
+						 USHORT dest_len,
+						 BYTE *src_ptr,
+						 USHORT src_len,
+						 SSHORT *err_code,
+						 USHORT *err_position)
 {
 	BYTE *start;
 	UCHAR ch;

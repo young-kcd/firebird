@@ -25,8 +25,13 @@
 #include "../intl/ldcommon.h"
 #include "../intl/cv_gb2312.h"
 
-USHORT CVGB_gb2312_to_unicode(CSCONVERT obj, UCS2_CHAR *dest_ptr, USHORT dest_len, UCHAR *src_ptr,
-							 USHORT src_len, SSHORT *err_code, USHORT *err_position)
+USHORT CVGB_gb2312_to_unicode(CSCONVERT obj,
+							  UCS2_CHAR *dest_ptr,
+							  USHORT dest_len,
+							  UCHAR *src_ptr,
+							  USHORT src_len,
+							  SSHORT *err_code,
+							  USHORT *err_position)
 {
 	UCS2_CHAR *start;
 	UCS2_CHAR ch;
@@ -100,8 +105,13 @@ USHORT CVGB_gb2312_to_unicode(CSCONVERT obj, UCS2_CHAR *dest_ptr, USHORT dest_le
 }
 
 
-USHORT CVGB_unicode_to_gb2312(CSCONVERT obj, UCHAR *gb_str, USHORT gb_len, UCS2_CHAR *unicode_str,
-							 USHORT unicode_len, SSHORT *err_code, USHORT *err_position)
+USHORT CVGB_unicode_to_gb2312(CSCONVERT obj,
+							  UCHAR *gb_str,
+							  USHORT gb_len,
+							  UCS2_CHAR *unicode_str,
+							  USHORT unicode_len,
+							  SSHORT *err_code, 
+							  USHORT *err_position)
 {
 	UCHAR *start;
 	UCS2_CHAR gb_ch;
@@ -166,7 +176,8 @@ USHORT CVGB_unicode_to_gb2312(CSCONVERT obj, UCHAR *gb_str, USHORT gb_len, UCS2_
 }
 
 
-USHORT CVGB_check_gb2312(UCHAR *gb_str, USHORT gb_len)
+USHORT CVGB_check_gb2312(UCHAR *gb_str,
+						 USHORT gb_len)
 {
 /**************************************
  * Functional description
@@ -197,8 +208,13 @@ USHORT CVGB_check_gb2312(UCHAR *gb_str, USHORT gb_len)
 }
 
 
-USHORT CVGB_gb2312_byte2short(CSCONVERT obj, UCHAR *dst, USHORT dst_len, UCHAR *src, USHORT src_len,
-							 SSHORT *err_code, USHORT *err_position)
+USHORT CVGB_gb2312_byte2short(CSCONVERT obj,
+							  UCHAR *dst,
+							  USHORT dst_len,
+							  UCHAR *src,
+							  USHORT src_len,
+							  SSHORT *err_code,
+							  USHORT *err_position)
 {
 /**************************************
  * Functional description
@@ -249,7 +265,10 @@ USHORT CVGB_gb2312_byte2short(CSCONVERT obj, UCHAR *dst, USHORT dst_len, UCHAR *
 }
 
 
-SSHORT CVGB_gb2312_mbtowc(CSCONVERT obj, UCS2_CHAR *wc, UCHAR *src, USHORT src_len)
+SSHORT CVGB_gb2312_mbtowc(CSCONVERT obj,
+						  UCS2_CHAR *wc,
+						  UCHAR *src,
+						  USHORT src_len)
 {
 /**************************************
  * Functional description

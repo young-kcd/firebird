@@ -25,8 +25,13 @@
 #include "../intl/ldcommon.h"
 #include "../intl/cv_big5.h"
 
-USHORT CVBIG5_big5_to_unicode(CSCONVERT obj, UCS2_CHAR *dest_ptr, USHORT dest_len, UCHAR *src_ptr
-							, USHORT src_len, SSHORT *err_code, USHORT *err_position)
+USHORT CVBIG5_big5_to_unicode(CSCONVERT obj,
+							  UCS2_CHAR *dest_ptr,
+							  USHORT dest_len,
+							  UCHAR *src_ptr,
+							  USHORT src_len,
+							  SSHORT *err_code,
+							  USHORT *err_position)
 {
 	UCS2_CHAR *start;
 	UCS2_CHAR ch;
@@ -100,8 +105,13 @@ USHORT CVBIG5_big5_to_unicode(CSCONVERT obj, UCS2_CHAR *dest_ptr, USHORT dest_le
 }
 
 
-USHORT CVBIG5_unicode_to_big5(CSCONVERT obj, UCHAR *big5_str, USHORT big5_len, UCS2_CHAR *unicode_str,
-							  USHORT unicode_len, SSHORT *err_code, USHORT *err_position)
+USHORT CVBIG5_unicode_to_big5(CSCONVERT obj,
+							  UCHAR *big5_str,
+							  USHORT big5_len,
+							  UCS2_CHAR *unicode_str,
+							  USHORT unicode_len,
+							  SSHORT *err_code,
+							  USHORT *err_position)
 {
 	UCHAR *start;
 	UCS2_CHAR big5_ch;
@@ -166,7 +176,8 @@ USHORT CVBIG5_unicode_to_big5(CSCONVERT obj, UCHAR *big5_str, USHORT big5_len, U
 }
 
 
-USHORT CVBIG5_check_big5(UCHAR *big5_str, USHORT big5_len)
+USHORT CVBIG5_check_big5(UCHAR *big5_str,
+						 USHORT big5_len)
 {
 /**************************************
  * Functional description
@@ -197,8 +208,13 @@ USHORT CVBIG5_check_big5(UCHAR *big5_str, USHORT big5_len)
 }
 
 
-USHORT CVBIG5_big5_byte2short(CSCONVERT obj, UCHAR *dst, USHORT dst_len, UCHAR *src, USHORT src_len
-							, SSHORT *err_code,  USHORT *err_position)
+USHORT CVBIG5_big5_byte2short(CSCONVERT obj,
+							  UCHAR *dst, 
+							  USHORT dst_len,
+							  UCHAR *src,
+							  USHORT src_len,
+							  SSHORT *err_code,
+							  USHORT *err_position)
 {
 /**************************************
  * Functional description
@@ -249,7 +265,10 @@ USHORT CVBIG5_big5_byte2short(CSCONVERT obj, UCHAR *dst, USHORT dst_len, UCHAR *
 }
 
 
-SSHORT CVBIG5_big5_mbtowc(CSCONVERT obj, UCS2_CHAR *wc, UCHAR *src, USHORT src_len)
+SSHORT CVBIG5_big5_mbtowc(CSCONVERT obj,
+						  UCS2_CHAR *wc,
+						  UCHAR *src,
+						  USHORT src_len)
 {
 /**************************************
  * Functional description

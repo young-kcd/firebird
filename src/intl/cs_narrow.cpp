@@ -25,8 +25,12 @@
 #include "../intl/ldcommon.h"
 #include "cv_narrow.h"
 
-static void common_8bit_init(CHARSET csptr, SSHORT id, const ASCII *name, const USHORT *to_unicode_tbl,
-							 const UCHAR *from_unicode_tbl1, const USHORT *from_unicode_tbl2)
+static void common_8bit_init(CHARSET csptr,
+							 SSHORT id,
+							 const ASCII *name,
+							 const USHORT *to_unicode_tbl,
+							 const UCHAR *from_unicode_tbl1,
+							 const USHORT *from_unicode_tbl2)
 {
 	csptr->charset_version = 40;
 	csptr->charset_id = id;

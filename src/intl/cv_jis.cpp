@@ -28,8 +28,13 @@
 #include "cv_jis.h"
 #include "cv_narrow.h"
 
-USHORT CVJIS_eucj_to_unicode(CSCONVERT obj, UCS2_CHAR *dest_ptr, USHORT dest_len, UCHAR *src_ptr,
-							 USHORT src_len, SSHORT *err_code, USHORT *err_position)
+USHORT CVJIS_eucj_to_unicode(CSCONVERT obj,
+							 UCS2_CHAR *dest_ptr,
+							 USHORT dest_len,
+							 UCHAR *src_ptr,
+							 USHORT src_len,
+							 SSHORT *err_code,
+							 USHORT *err_position)
 {
 	UCS2_CHAR *start;
 	UCS2_CHAR ch;
@@ -114,8 +119,13 @@ USHORT CVJIS_eucj_to_unicode(CSCONVERT obj, UCS2_CHAR *dest_ptr, USHORT dest_len
 }
 
 
-USHORT CVJIS_sjis_to_unicode(CSCONVERT obj, UCS2_CHAR *dest_ptr, USHORT dest_len, UCHAR *sjis_str,
-							 USHORT sjis_len, SSHORT *err_code, USHORT *err_position)
+USHORT CVJIS_sjis_to_unicode(CSCONVERT obj,
+							 UCS2_CHAR *dest_ptr,
+							 USHORT dest_len,
+							 UCHAR *sjis_str,
+							 USHORT sjis_len,
+							 SSHORT *err_code,
+							 USHORT *err_position)
 {
 	UCS2_CHAR *start;
 	UCS2_CHAR ch;
@@ -367,8 +377,13 @@ I hope this helps in the discussion.
 */
 
 
-USHORT CVJIS_unicode_to_sjis(CSCONVERT obj, UCHAR *sjis_str, USHORT sjis_len, UCS2_CHAR *unicode_str,
-							 USHORT unicode_len, SSHORT *err_code, USHORT *err_position)
+USHORT CVJIS_unicode_to_sjis(CSCONVERT obj,
+							 UCHAR *sjis_str,
+							 USHORT sjis_len,
+							 UCS2_CHAR *unicode_str,
+							 USHORT unicode_len,
+							 SSHORT *err_code,
+							 USHORT *err_position)
 {
 	UCHAR *start;
 	UCS2_CHAR jis_ch;

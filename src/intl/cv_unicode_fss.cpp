@@ -250,8 +250,13 @@ static fss_size_t fss_wctomb(MBCHAR *s, fss_wchar_t wc)
 }
 
 
-USHORT CS_UTFFSS_fss_to_unicode(CSCONVERT obj, UNICODE *dest_ptr, USHORT dest_len, NCHAR *src_ptr
-								, USHORT src_len, SSHORT *err_code, USHORT *err_position)
+USHORT CS_UTFFSS_fss_to_unicode(CSCONVERT obj,
+								UNICODE *dest_ptr,
+								USHORT dest_len,
+								NCHAR *src_ptr,
+								USHORT src_len,
+								SSHORT *err_code,
+								USHORT *err_position)
 {
 	UNICODE *start;
 	USHORT src_start = src_len;
@@ -292,8 +297,13 @@ USHORT CS_UTFFSS_fss_to_unicode(CSCONVERT obj, UNICODE *dest_ptr, USHORT dest_le
 }
 
 
-USHORT CS_UTFFSS_unicode_to_fss(CSCONVERT obj, MBCHAR *fss_str, USHORT fss_len, UNICODE *unicode_str,
-								USHORT unicode_len, SSHORT *err_code, USHORT *err_position)
+USHORT CS_UTFFSS_unicode_to_fss(CSCONVERT obj,
+								MBCHAR *fss_str,
+								USHORT fss_len,
+								UNICODE *unicode_str,
+								USHORT unicode_len,
+								SSHORT *err_code,
+								USHORT *err_position)
 {
 	MBCHAR *start;
 	USHORT src_start = unicode_len;
