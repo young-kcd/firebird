@@ -48,15 +48,15 @@ static DSC* ni(DSC*, DSC*);
 #pragma FB_COMPILER_MESSAGE("Fix! function pointer cast!")
 
 static const FN isc_functions[] = {
-	{"test_module", "test_function", (int (*)()) test},
-	{"test_module", "ni", (int (*)()) ni},
-	{"test_module", "ns", (int (*)()) ni},
-	{"test_module", "nn", (int (*)()) ni},
+	{"test_module", "test_function", (FPTR_INT) test},
+	{"test_module", "ni", (FPTR_INT) ni},
+	{"test_module", "ns", (FPTR_INT) ni},
+	{"test_module", "nn", (FPTR_INT) ni},
 	{0, 0, 0}
 };
 
 
-FPTR_INT FUNCTIONS_entrypoint(char* module, char* entrypoint)
+FPTR_INT FUNCTIONS_entrypoint(const char* module, const char* entrypoint)
 {
 /**************************************
  *
@@ -108,9 +108,15 @@ static int test(long n, char *result)
  * Functional description
  *	Sample extern function.  Defined in database by:
  *
+ *	QLI:
  *	define function test module_name "test_module" entry_point "test_function"
  *	    long by value,
  *	    char [20] by reference return_argument;
+ *	ISQL:
+ *	declare external function test
+ * 	int by value, -> There's no way to do that, DSQL doesn't support input params by value.
+ *	char(20) returns parameter 2
+ *	entry_point 'test_function' module_name 'test_module';
  *
  **************************************/
 

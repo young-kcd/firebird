@@ -35,7 +35,7 @@ void	FLU_unregister_module(mod*);
 // int (*FUNCTIONS_entrypoint(TEXT*, TEXT*)) (void);
 // int (*BUILTIN_entrypoint(TEXT*, TEXT*)) (void);
 FPTR_INT ISC_lookup_entrypoint(TEXT*, TEXT*, const TEXT*, bool);
-FPTR_INT FUNCTIONS_entrypoint(char*, char*);
+FPTR_INT FUNCTIONS_entrypoint(const char*, const char*);
 FPTR_INT BUILTIN_entrypoint(const TEXT*, const TEXT*);
 
 /*
