@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: vector.h,v 1.8 2004-05-03 04:24:49 skidder Exp $
+ *  $Id: vector.h,v 1.9 2004-06-13 03:09:14 brodsom Exp $
  *
  */
  
@@ -133,7 +133,7 @@ public:
 	}
 };
 
-};
+} // namespace Firebird
 
 #endif
 

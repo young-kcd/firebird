@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: tree.h,v 1.29 2004-05-12 19:17:09 brodsom Exp $
+ *  $Id: tree.h,v 1.30 2004-06-13 03:09:14 brodsom Exp $
  *
  */
 
@@ -697,6 +697,6 @@ void BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::_
 	pool->deallocate(node);
 }
 
-}; /* namespace Firebird */
+}  // namespace Firebird
 
 #endif

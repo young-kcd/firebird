@@ -29,7 +29,7 @@ namespace Firebird
 			: std::vector<T, Firebird::allocator<T> >(
 					Firebird::allocator<T>(p, type) ) {}
 	};
-};
+}  // namespace Firebird
 
 #endif	// INCLUDE_FB_VECTOR_H
 

@@ -130,6 +130,6 @@ template <typename P>
 			return Item->first; 
 		}
 	};
-};
+} // namespace Firebird
 
 #endif	// CLASSES_FB_PAIR_H
