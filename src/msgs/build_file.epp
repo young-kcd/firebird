@@ -231,10 +231,11 @@ int CLIB_ROUTINE main( int argc, char** argv)
 					printf("\t%s\n", LO.LOCALE);
 				END_FOR;
 				printf("\tall\n");
+
+				COMMIT;
+				FINISH DB;
+				exit(FINI_ERROR);
 			}
-			COMMIT;
-			FINISH DB;
-			exit(FINI_ERROR);
 		}
 	}
 
