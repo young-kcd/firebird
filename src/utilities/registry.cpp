@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Windows NT registry installation program
- *	MODULE:		registry.c
+ *	MODULE:		registry.cpp
  *	DESCRIPTION:	Registry update routines
  *
  * The contents of this file are subject to the Interbase Public

@@ -38,7 +38,7 @@
 
 static void svc_query(TEXT*, TEXT*, SC_HANDLE manager);
 static USHORT svc_error(SLONG, TEXT *, SC_HANDLE);
-static void usage(void);
+static void usage_exit(void);
 
 static struct
 {
@@ -118,7 +118,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			if (!cmd)
 			{
 				ib_printf("Unknown command \"%s\"\n", *argv);
-				usage();
+				usage_exit();
 			}
 			sw_command = commands[i].code;
 			/*
@@ -188,7 +188,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 				default:
 					ib_printf("Unknown switch \"%s\"\n", p);
-					usage();
+					usage_exit();
 			}
 		}
 	}
@@ -203,7 +203,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		*/
 		(username != 0 && sw_command != COMMAND_INSTALL))
 	{
-		usage();
+		usage_exit();
 	}
 
 	if (sw_command == COMMAND_INSTALL && username != 0)
@@ -556,11 +556,11 @@ static USHORT svc_error( SLONG status, TEXT * string, SC_HANDLE service)
 	return FB_FAILURE;
 }
 
-static void usage(void)
+static void usage_exit(void)
 {
 /**************************************
  *
- *	u s a g e
+ *	u s a g e _ e x i t
  *
  **************************************
  *
@@ -585,3 +585,18 @@ static void usage(void)
 
 	exit(FINI_ERROR);
 }
+
+//
+// Until the fb_assert could be converted to a function/object linked with each module
+// we need this ugly workaround.
+//
+extern "C" void API_ROUTINE gds__log(const TEXT* text, ...)
+{
+	va_list ptr;
+
+	va_start(ptr, text);
+	vprintf(text, ptr);
+	va_end(ptr);
+	printf("\n\n");
+}
+

@@ -269,7 +269,7 @@ static USHORT inst_error(ULONG status, const TEXT * string)
 {
 /**************************************
  *
- *	g d s _ e r r o r
+ *	i n s t _ e r r o r
  *
  **************************************
  *
@@ -312,7 +312,7 @@ static void usage_exit(void)
 {
 /**************************************
  *
- *	u s a g e
+ *	u s a g e _ e x i t
  *
  **************************************
  *
@@ -349,3 +349,18 @@ static void usage_exit(void)
 
 	exit(FINI_ERROR);
 }
+
+//
+// Until the fb_assert could be converted to a function/object linked with each module
+// we need this ugly workaround.
+//
+extern "C" void API_ROUTINE gds__log(const TEXT* text, ...)
+{
+	va_list ptr;
+
+	va_start(ptr, text);
+	vprintf(text, ptr);
+	va_end(ptr);
+	printf("\n\n");
+}
+
