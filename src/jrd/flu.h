@@ -86,7 +86,7 @@ namespace Jrd
 				return useCount > 0;
 			}
 
-			void aquire()
+			void acquire()
 			{
 				fb_assert(handle);
 				++useCount;
@@ -105,7 +105,7 @@ namespace Jrd
 		{
 			if (interMod)
 			{
-				interMod->aquire();
+				interMod->acquire();
 			}
 		}
 
@@ -124,7 +124,7 @@ namespace Jrd
 		{
 			if (interMod)
 			{
-				interMod->aquire();
+				interMod->acquire();
 			}
 		}
 
@@ -132,7 +132,7 @@ namespace Jrd
 		{
 			if (interMod)
 			{
-				interMod->aquire();
+				interMod->acquire();
 			}
 		}
 

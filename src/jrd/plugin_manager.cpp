@@ -50,7 +50,7 @@ PluginManager::Plugin PluginManager::findPlugin(const Firebird::PathName &name)
 	}
 	
 	// Link the new module into the module list
-	result->aquire();
+	result->acquire();
 	if (moduleList)
 	{
 		moduleList->prev = &(result->next);
@@ -243,7 +243,7 @@ const PluginManager::Plugin& PluginManager::Plugin::operator=(const Plugin& othe
 			module->release();
 		module = other.module;
 		if (module != 0)
-			module->aquire();
+			module->acquire();
 	}
 	return *this;
 }

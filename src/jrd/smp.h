@@ -7,7 +7,7 @@ class SmpLock
         SmpLock() {}
         virtual ~SmpLock() {}
 
-        virtual void aquire(void) = 0;
+        virtual void acquire(void) = 0;
         virtual void release(void) = 0;
 };
 

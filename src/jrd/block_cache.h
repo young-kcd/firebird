@@ -27,7 +27,7 @@ private:
 template <class T>
 inline T* BlockCache<T>::newBlock()
 {
-	lock.aquire();
+	lock.acquire();
     if (head)
     {
         T* result = reinterpret_cast<T*>(head);
@@ -43,7 +43,7 @@ template<class T>
 inline void BlockCache<T>::returnBlock(T* back)
 {
 	Node* returned = reinterpret_cast<Node*>(back);
-	lock.aquire();
+	lock.acquire();
 	returned->next = head;
 	head = returned;
 	lock.release();

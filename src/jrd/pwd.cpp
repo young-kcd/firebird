@@ -270,7 +270,7 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 	uname[sizeof uname - 1] = 0;
 
 	THREAD_EXIT();
-	mutex.aquire();
+	mutex.acquire();
 	THREAD_ENTER();
 
 	// Attach database and compile request

@@ -94,11 +94,11 @@ private:
 			: refCnt(1), module_name(p, nameL), prev(0), next(0) {}
 		/// The destructor is responsible for removing the module from the array.
 		virtual ~Module();
-		/// aquire indicates the interest of a particular piece of engine code in
+		/// acquire indicates the interest of a particular piece of engine code in
 		///  the loadable module.  Currently that interest is tracked via a reference
 		///  counter.
-		void aquire() { refCnt++; }
-		/// release indicates the end of interest in a modules.  Each call to aquire
+		void acquire() { refCnt++; }
+		/// release indicates the end of interest in a modules.  Each call to acquire
 		///  must be balanced with a call to release.
 		void release() { refCnt--; }
 		/// Accessor function that returns the name of the module
@@ -147,7 +147,7 @@ public:
 		Plugin(const Plugin& src) : module(src.module)
 		{
 			if (module)
-				module->aquire();
+				module->acquire();
 		}
 		~Plugin()
 		{
@@ -171,7 +171,7 @@ public:
 		Plugin(Module *mod) : module(mod)
 		{
 			if (module)
-				module->aquire();
+				module->acquire();
 		}
 		
 		Module *module;

@@ -300,7 +300,7 @@ namespace Jrd
 						InternalModule(*getDefaultMemoryPool(), mlm,
 							initialModule, fixedModule);
 					loadedModules().add(im);
-					im->aquire();	// make permanent
+					im->acquire();	// make permanent
 					return Module(im);
 				}
 			}
