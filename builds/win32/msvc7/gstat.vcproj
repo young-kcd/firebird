@@ -42,15 +42,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="debug/firebird/bin/gstat.exe"
+				OutputFile="..\..\..\temp\debug\firebird\bin\gstat.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\gstat/gstat.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\gstat\gstat.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\debug\gstat/gstat.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\gstat\gstat.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -109,14 +109,14 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="release/firebird/bin/gstat.exe"
+				OutputFile="..\..\..\temp\release\firebird\bin\gstat.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\release\gstat/gstat.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\gstat\gstat.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

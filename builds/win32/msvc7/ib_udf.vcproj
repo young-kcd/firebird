@@ -42,20 +42,20 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="debug/firebird/udf/ib_udf.dll"
+				OutputFile="..\..\..\temp\debug\firebird\udf\ib_udf.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\ib_udf.def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\ib_udf/ib_udf.pdb"
-				ImportLibrary="..\..\..\temp\debug\ib_udf/ib_udf.lib"/>
+				ProgramDatabaseFile="..\..\..\temp\debug\ib_udf\ib_udf.pdb"
+				ImportLibrary="..\..\..\temp\debug\ib_udf\ib_udf.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\debug\ib_udf/ib_udf.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\ib_udf\ib_udf.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -114,19 +114,19 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="release/firebird/udf/ib_udf.dll"
+				OutputFile="..\..\..\temp\release\firebird\udf\ib_udf.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\ib_udf.def"
 				GenerateDebugInformation="TRUE"
-				ImportLibrary="..\..\..\temp\release\ib_udf/ib_udf.lib"/>
+				ImportLibrary="..\..\..\temp\release\ib_udf\ib_udf.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\release\ib_udf/ib_udf.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\ib_udf\ib_udf.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

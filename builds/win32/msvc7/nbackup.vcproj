@@ -43,15 +43,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="debug/firebird/bin/nbackup.exe"
+				OutputFile="..\..\..\temp\debug\firebird\bin\nbackup.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\nbackup/nbackup.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\nbackup\nbackup.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\debug\nbackup/nbackup.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\nbackup\nbackup.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -110,14 +110,14 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="release/firebird/bin/nbackup.exe"
+				OutputFile="..\..\..\temp\release\firebird\bin\nbackup.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\release\nbackup/nbackup.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\nbackup\nbackup.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

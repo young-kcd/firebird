@@ -42,20 +42,20 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="debug/firebird/bin/fbembed.dll"
+				OutputFile="..\..\..\temp\debug\firebird\bin\fbembed.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\fbclient.def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\fbembed/fbembed.pdb"
-				ImportLibrary="..\..\..\temp\debug\fbembed/fbembed.lib"/>
+				ProgramDatabaseFile="..\..\..\temp\debug\fbembed\fbembed.pdb"
+				ImportLibrary="..\..\..\temp\debug\fbembed\fbembed.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\debug\fbembed/fbembed.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\fbembed\fbembed.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -115,19 +115,19 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="mpr.lib ws2_32.lib version.lib"
-				OutputFile="release/firebird/bin/fbembed.dll"
+				OutputFile="..\..\..\temp\release\firebird/bin/fbembed.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\fbclient.def"
 				GenerateDebugInformation="TRUE"
-				ImportLibrary="..\..\..\temp\release\fbembed/fbembed.lib"/>
+				ImportLibrary="..\..\..\temp\release\fbembed\fbembed.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="NDEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\release\fbembed/fbembed.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\fbembed\fbembed.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

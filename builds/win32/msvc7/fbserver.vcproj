@@ -48,7 +48,7 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="release/firebird/bin/fbserver.exe"
+				OutputFile="..\..\..\temp\release\firebird\bin\fbserver.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
@@ -60,7 +60,7 @@
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\release\fbserver/fbserver.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\fbserver\fbserver.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -115,11 +115,11 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="debug/firebird/bin/fbserver.exe"
+				OutputFile="..\..\..\temp\debug\firebird\bin\fbserver.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\fbserver/fbserver.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\fbserver\fbserver.pdb"
 				SubSystem="2"
 				StackReserveSize="2097152"/>
 			<Tool
@@ -128,7 +128,7 @@
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\debug\fbserver/fbserver.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\fbserver\fbserver.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

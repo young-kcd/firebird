@@ -47,14 +47,14 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="release/firebird/bin/gpre.exe"
+				OutputFile="..\..\..\temp\release\firebird\bin\gpre.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\release\gpre/gpre.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\gpre\gpre.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -109,15 +109,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="debug/firebird/bin/gpre.exe"
+				OutputFile="..\..\..\temp\debug\firebird\bin\gpre.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\gpre/gpre.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\gpre\gpre.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\debug\gpre/gpre.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\gpre\gpre.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

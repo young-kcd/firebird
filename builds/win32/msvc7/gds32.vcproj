@@ -47,19 +47,19 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="msvcrt.lib"
-				OutputFile="release/firebird/bin/gds32.dll"
+				OutputFile="..\..\..\temp\release\firebird\bin\gds32.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\gds32.def"
 				GenerateDebugInformation="TRUE"
-				ImportLibrary="..\..\..\temp\release\gds32/gds32.lib"/>
+				ImportLibrary="..\..\..\temp\release\gds32\gds32.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\release\gds32/gds32.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\gds32\gds32.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -113,20 +113,20 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="msvcrt.lib"
-				OutputFile="debug/firebird/bin/gds32.dll"
+				OutputFile="..\..\..\temp\debug\firebird\bin\gds32.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\gds32.def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\gds32/gds32.pdb"
-				ImportLibrary="..\..\..\temp\debug\gds32/gds32.lib"/>
+				ProgramDatabaseFile="..\..\..\temp\debug\gds32\gds32.pdb"
+				ImportLibrary="..\..\..\temp\debug\gds32\gds32.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\debug\gds32/gds32.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\gds32\gds32.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

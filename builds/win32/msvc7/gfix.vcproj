@@ -42,15 +42,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="debug/firebird/bin/gfix.exe"
+				OutputFile="..\..\..\temp\debug\firebird\bin\gfix.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\gfix/gfix.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\gfix\gfix.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\debug\gfix/gfix.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\gfix\gfix.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -109,14 +109,14 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="release/firebird/bin/gfix.exe"
+				OutputFile="..\..\..\temp\release\firebird\bin\gfix.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\release\gfix/gfix.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\gfix\gfix.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

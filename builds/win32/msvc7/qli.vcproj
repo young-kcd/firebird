@@ -42,15 +42,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="debug/firebird/bin/qli.exe"
+				OutputFile="..\..\..\temp\debug\firebird\bin\qli.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\qli/qli.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\qli\qli.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\debug\qli/qli.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\qli\qli.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -109,14 +109,14 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="release/firebird/bin/qli.exe"
+				OutputFile="..\..\..\temp\release\firebird\bin\qli.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\release\qli/qli.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\qli\qli.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

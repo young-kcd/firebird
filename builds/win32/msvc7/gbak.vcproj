@@ -43,15 +43,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="debug/firebird/bin/gbak.exe"
+				OutputFile="..\..\..\temp\debug\firebird\bin\gbak.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\gbak/gbak.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\gbak\gbak.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\debug\gbak/gbak.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\gbak\gbak.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -96,7 +96,7 @@
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
 				RuntimeTypeInfo="TRUE"
-				PrecompiledHeaderFile="..\..\..\temp\release\gbak/gbak.pch"
+				PrecompiledHeaderFile="..\..\..\temp\release\gbak\gbak.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gbak/"
 				ObjectFile="..\..\..\temp\release\gbak/"
 				ProgramDataBaseFileName="..\..\..\temp\release\gbak/"
@@ -111,14 +111,14 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="release/firebird/bin/gbak.exe"
+				OutputFile="..\..\..\temp\release\firebird\bin\gbak.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\release\gbak/gbak.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\gbak\gbak.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

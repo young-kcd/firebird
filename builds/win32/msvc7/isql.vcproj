@@ -43,15 +43,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="debug/firebird/bin/isql.exe"
+				OutputFile="..\..\..\temp\debug/firebird/bin/isql.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\isql/isql.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\isql\isql.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\debug\isql/isql.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\isql\isql.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -111,14 +111,14 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="release/firebird/bin/isql.exe"
+				OutputFile="..\..\..\temp\release/firebird/bin/isql.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\release\isql/isql.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\isql\isql.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

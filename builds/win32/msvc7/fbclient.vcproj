@@ -43,20 +43,20 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="debug/firebird/bin/fbclient.dll"
+				OutputFile="..\..\..\temp\debug\firebird\bin\fbclient.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\fbclient.def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\fbclient/fbclient.pdb"
-				ImportLibrary="..\..\..\temp\debug\fbclient/fbclient.lib"/>
+				ProgramDatabaseFile="..\..\..\temp\debug\fbclient\fbclient.pdb"
+				ImportLibrary="..\..\..\temp\debug\fbclient\fbclient.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\debug\fbclient/fbclient.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\fbclient\fbclient.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -101,7 +101,7 @@
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
 				RuntimeTypeInfo="TRUE"
-				PrecompiledHeaderFile="..\..\..\temp\release\fbclient/fbclient.pch"
+				PrecompiledHeaderFile="..\..\..\temp\release\fbclient\fbclient.pch"
 				AssemblerListingLocation="..\..\..\temp\release\fbclient/"
 				ObjectFile="..\..\..\temp\release\fbclient/"
 				ProgramDataBaseFileName="..\..\..\temp\release\fbclient/"
@@ -116,19 +116,19 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="release/firebird/bin/fbclient.dll"
+				OutputFile="..\..\..\temp\release\firebird\bin\fbclient.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\fbclient.def"
 				GenerateDebugInformation="TRUE"
-				ImportLibrary="..\..\..\temp\release\fbclient/fbclient.lib"/>
+				ImportLibrary="..\..\..\temp\release\fbclient\fbclient.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\release\fbclient/fbclient.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\fbclient\fbclient.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

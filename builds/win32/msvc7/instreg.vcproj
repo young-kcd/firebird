@@ -42,15 +42,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="debug/firebird/bin/instreg.exe"
+				OutputFile="..\..\..\temp\debug\firebird\bin\instreg.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\instreg/instreg.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\instreg\instreg.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\debug\instreg/instreg.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\instreg\instreg.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -109,14 +109,14 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="release/firebird/bin/instreg.exe"
+				OutputFile="..\..\..\temp\release\firebird\bin\instreg.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\release\instreg/instreg.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\instreg\instreg.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

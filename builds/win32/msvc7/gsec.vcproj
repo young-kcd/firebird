@@ -47,14 +47,14 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="release/firebird/bin/gsec.exe"
+				OutputFile="..\..\..\temp\release\firebird\bin\gsec.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\release\gsec/gsec.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\gsec\gsec.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -94,7 +94,7 @@
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				RuntimeTypeInfo="TRUE"
-				PrecompiledHeaderFile="..\..\..\temp\debug\gsec/gsec.pch"
+				PrecompiledHeaderFile="..\..\..\temp\debug\gsec\gsec.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gsec/"
 				ObjectFile="..\..\..\temp\debug\gsec/"
 				ProgramDataBaseFileName="..\..\..\temp\debug\gsec/"
@@ -108,15 +108,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="debug/firebird/bin/gsec.exe"
+				OutputFile="..\..\..\temp\debug\firebird\bin\gsec.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\gsec/gsec.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\gsec\gsec.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\debug\gsec/gsec.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\gsec\gsec.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

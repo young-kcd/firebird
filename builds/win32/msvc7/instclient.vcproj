@@ -44,14 +44,14 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="release/firebird/bin/instclient.exe"
+				OutputFile="..\..\..\temp\release\firebird\bin\instclient.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\release\instclient/instclient.pdb"
+				ProgramDatabaseFile="..\..\..\temp\release\instclient\instclient.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\release\instclient/instclient.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\instclient\instclient.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -96,15 +96,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="debug/firebird/bin/instclient.exe"
+				OutputFile="..\..\..\temp\debug\firebird\bin\instclient.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\instclient/instclient.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\instclient\instclient.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\debug\instclient/instclient.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\instclient\instclient.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

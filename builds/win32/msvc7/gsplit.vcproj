@@ -43,15 +43,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="debug/firebird/bin/gsplit.exe"
+				OutputFile="..\..\..\temp\debug\firebird\bin\gsplit.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\gsplit/gsplit.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\gsplit\gsplit.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\debug\gsplit/gsplit.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\gsplit\gsplit.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -111,14 +111,14 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="release/firebird/bin/gsplit.exe"
+				OutputFile="..\..\..\temp\release\firebird\bin\gsplit.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\release\gsplit/gsplit.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\gsplit\gsplit.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

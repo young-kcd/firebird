@@ -42,15 +42,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="debug/firebird/bin/gdef.exe"
+				OutputFile="..\..\..\temp\debug\firebird\bin\gdef.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\gdef/gdef.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\gdef\gdef.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\debug\gdef/gdef.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\gdef\gdef.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -95,7 +95,7 @@
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
 				RuntimeTypeInfo="TRUE"
-				PrecompiledHeaderFile="..\..\..\temp\release\gdef/gdef.pch"
+				PrecompiledHeaderFile="..\..\..\temp\release\gdef\gdef.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gdef/"
 				ObjectFile="..\..\..\temp\release\gdef/"
 				ProgramDataBaseFileName="..\..\..\temp\release\gdef/"
@@ -109,14 +109,14 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="release/firebird/bin/gdef.exe"
+				OutputFile="..\..\..\temp\release\firebird\bin\gdef.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\release\gdef/gdef.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\gdef\gdef.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

@@ -48,18 +48,18 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="release/firebird/intl/fbintl.dll"
+				OutputFile="..\..\..\temp\release\firebird\intl\fbintl.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\release\intl/fbintl.pdb"
-				ImportLibrary="..\..\..\temp\release\intl/fbintl.lib"/>
+				ProgramDatabaseFile="..\..\..\temp\release\intl\fbintl.pdb"
+				ImportLibrary="..\..\..\temp\release\intl\fbintl.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\release\intl/intl.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\intl\intl.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -114,19 +114,19 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="debug/firebird/intl/fbintl.dll"
+				OutputFile="..\..\..\temp\debug\firebird\intl\fbintl.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\intl/fbintl.pdb"
-				ImportLibrary="..\..\..\temp\debug\intl/fbintl.lib"/>
+				ProgramDatabaseFile="..\..\..\temp\debug\intl\fbintl.pdb"
+				ImportLibrary="..\..\..\temp\debug\intl\fbintl.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\debug\intl/intl.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\intl\intl.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
