@@ -2930,7 +2930,7 @@ static jrd_nod* copy(thread_db* tdbb,
 		return node;
 
 	case nod_sort:
-		args += 2 * args;
+		args *= 3;
 		break;
 
 	default:
