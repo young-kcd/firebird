@@ -1,3 +1,9 @@
+2004-10-23 20:08  skidder
+
+	* firebird2/doc/WhatsNew (1.36.2.30):
+	
+	Slightly more verbose descriptions of POSIX packaging changes
+
 2004-10-22 12:40  paul_reeves
 
 	* firebird2/src/jrd/isc_version.h (1.1.2.22):
