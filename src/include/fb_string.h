@@ -95,6 +95,8 @@ namespace Firebird
 				stringBuffer = inlineBuffer;
 				bufferSize = INLINE_BUFFER_SIZE;
 			} else {
+				stringBuffer = NULL; // Be safe in case of exception
+				checkLength(len);
 				stringBuffer = FB_NEW(getPool()) char_type[newSize];
 				bufferSize = newSize;
 			}
