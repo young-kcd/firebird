@@ -29,7 +29,7 @@
  * the length of string types containing binary data (char. set octets).
  */
 /*
-$Id: fun.epp,v 1.22.2.5 2004-10-17 17:41:51 hvlad Exp $
+$Id: fun.epp,v 1.22.2.6 2004-10-20 18:17:36 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -185,6 +185,9 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 		DSC* input;
 		if (tail == return_ptr) {
 			input = &value->vlu_desc; /*(DSC*) value;*/
+			// CVC: The return param we build for the UDF is not null!!!
+			// This closes SF Bug #544132.
+			request->req_flags &= ~req_null;
 		} else {
 			input = EVL_expr(tdbb, *ptr++);
 		}
@@ -193,7 +196,20 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 		// nothing left to be done
 
 		if (tail->fun_mechanism == FUN_descriptor) {
-			*arg_ptr++ = input;
+			// CVC: We have to protect the UDF from Borland's ill null signaling
+			// See EVL_expr(...), case nod_field for reference: the request may be
+			// signaling NULL, but the placeholder field created by EVL_field(...)
+			// doesn't carry the null flag in the descriptor. Why Borland didn't
+			// set on such flag is maybe because it only has local meaning.
+			// This closes SF Bug #728839.
+			if ((request->req_flags & req_null) && !(input && (input->dsc_flags & DSC_null)))
+			{
+			    *arg_ptr++ = NULL;
+			}
+			else
+			{
+			    *arg_ptr++ = input;
+			}
 			continue;
 		}
 
