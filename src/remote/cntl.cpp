@@ -249,9 +249,9 @@ void CNTL_shutdown_service( TEXT * message)
 	char *strings[2];
 	HANDLE event_source;
 
-	sprintf(buffer, "%s error: %d", service_name, GetLastError());
+	sprintf(buffer, "%s error: %d", "Firebird Server", GetLastError());
 
-	event_source = RegisterEventSource(NULL, service_name);
+	event_source = RegisterEventSource(NULL, "Firebird Server");
 	if (event_source) {
 		strings[0] = buffer;
 		strings[1] = message;
@@ -345,7 +345,7 @@ static void cleanup_thread()
 		USHORT num_databases, database_name_length;
 
 		sprintf(print_buffer,
-				"Shutting down the InterBase service with %d active connection(s) to %d database(s)",
+				"Shutting down the Firebird service with %d active connection(s) to %d database(s)",
 				attach_count, database_count);
 		gds__log(print_buffer);
 

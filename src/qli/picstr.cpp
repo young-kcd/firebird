@@ -330,7 +330,7 @@ PIC PIC_analyze( TEXT * string, DSC * desc)
 }
 
 
-int PIC_edit( DSC * desc, PIC picture, TEXT ** output, USHORT max_length)
+void PIC_edit( DSC * desc, PIC picture, TEXT ** output, USHORT max_length)
 {
 /**************************************
  *

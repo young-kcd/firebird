@@ -106,19 +106,19 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	case COMMAND_INSTALL:
 		ret = REGISTRY_install(hkey_node, directory, reg_error);
 		if (ret != SUCCESS)
-			ib_printf("InterBase has not been installed in the registry.\n");
+		    ib_printf ("Firebird has not been installed in the registry.\n");
 		else
 			ib_printf
-				("InterBase has been successfully installed in the registry.\n");
+				("Firebird has been successfully installed in the registry.\n");
 		break;
 
 	case COMMAND_REMOVE:
 		ret = REGISTRY_remove(hkey_node, FALSE, reg_error);
 		if (ret != SUCCESS)
-			ib_printf("InterBase has not been deleted from the registry.\n");
+			ib_printf("Firebird has not been deleted from the registry.\n");
 		else
 			ib_printf
-				("InterBase has been successfully deleted from the registry.\n");
+				("Firebird has been successfully deleted from the registry.\n");
 		break;
 	}
 
@@ -177,7 +177,7 @@ static void usage(void)
  **************************************/
 
 	ib_printf("Usage:\n");
-	ib_printf("  instreg {install InterBase_directory} [-z]\n");
+	ib_printf("  instreg {install Firebird_directory} [-z]\n");
 	ib_printf("          {remove                     }\n");
 
 	exit(FINI_OK);

@@ -33,7 +33,7 @@
  *	The MSG_DEFINED flag is used to not define the MSG type in remote.h
  */
 #include "../jrd/common.h"
-#include <winsock.h>
+#include <winsock2.h>
 
 /* Windows control ids */
 #define IDM_START       1

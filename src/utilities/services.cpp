@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 01-Feb-2002 Paul Reeves: Removed hard-coded registry path
+ *
  */
 
 #include "firebird.h"
@@ -28,6 +31,7 @@
 #include "../jrd/license.h"
 #include "../utilities/install_nt.h"
 #include "../utilities/servi_proto.h"
+#include "../utilities/registry.h"
 
 /* Defines */
 #define RUNAS_SERVICE " -s"
@@ -54,7 +58,7 @@ USHORT SERVICES_config(SC_HANDLE manager,
 	TEXT *mode;
 
 	if ((status = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-							   "SOFTWARE\\Borland\\InterBase\\CurrentVersion",
+							   REG_KEY_ROOT_CUR_VER,
 							   0, KEY_WRITE, &hkey)) != ERROR_SUCCESS) {
 		return (*err_handler) (status, "RegOpenKeyEx", NULL);
 	}
@@ -106,7 +110,7 @@ USHORT SERVICES_delete(SC_HANDLE manager,
 	mode = "";
 
 	if ((status = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-							   "SOFTWARE\\Borland\\InterBase\\CurrentVersion",
+							   REG_KEY_ROOT_CUR_VER,
 							   0, KEY_WRITE, &hkey)) != ERROR_SUCCESS) {
 		return (*err_handler) (status, "RegOpenKeyEx", NULL);
 	}

@@ -29,9 +29,13 @@
 #include "../jrd/license.h"
 #include "../utilities/install_nt.h"
 #include "../utilities/servi_proto.h"
+#include "../utilities/registry.h"
+#include "../iscguard/iscguard_utils.c"
 
 extern USHORT svc_error(SLONG, TEXT *, SC_HANDLE);
 static void usage(void);
+static USHORT using_guardian (USHORT (*err_handler)());
+static USHORT guardian_setup (USHORT (*err_handler)());
 
 static struct {
 	TEXT *name;
@@ -57,7 +61,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
  *
  **************************************/
 	TEXT **end, *p, *q, *cmd, *directory;
-	USHORT sw_command, sw_version, sw_startup, sw_mode;
+	USHORT sw_command, sw_version, sw_startup, sw_mode, sw_guardian;
 	USHORT i, status;
 	SC_HANDLE manager;
 
@@ -66,6 +70,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	sw_version = FALSE;
 	sw_startup = STARTUP_DEMAND;
 	sw_mode = DEFAULT_CLIENT;
+	sw_guardian = NO_GUARDIAN;
 
 	end = argv + argc;
 	while (++argv < end)
@@ -116,6 +121,10 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				sw_version = TRUE;
 				break;
 
+			case 'G':
+				sw_guardian = USE_GUARDIAN;
+				break;
+
 			default:
 				ib_printf("Unknown switch \"%s\"\n", p);
 				usage();
@@ -149,6 +158,29 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		break;
 
 	case COMMAND_INSTALL:
+		/* First, lets do the Guardian, if it has been specified. */
+		if (sw_guardian) {
+			status =
+				SERVICES_install(manager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME,
+								 ISCGUARD_EXECUTABLE, directory, NULL, sw_startup,
+								 svc_error);
+			if (status == SUCCESS)
+				ib_printf("Service \"%s\" successfully created.\n",
+						  ISCGUARD_DISPLAY_NAME);
+			else if (status == IB_SERVICE_ALREADY_DEFINED)
+				svc_error(GetLastError(), "CreateService", NULL);
+			else
+				ib_printf("Service \"%s\" not created.\n", ISCGUARD_DISPLAY_NAME);
+
+			/* Set sw_startup to manual in preparation for install the ib_server service*/
+			sw_startup = STARTUP_DEMAND;
+
+			/*	Finally, update the GuardianOptions to 1 so that Guardian 
+				knows it is configured correctly. */	
+			guardian_setup(svc_error);
+		}
+
+		/* do the install of IBServer */
 		status =
 			SERVICES_install(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
 							 REMOTE_EXECUTABLE, directory, NULL, sw_startup,
@@ -163,27 +195,48 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		break;
 
 	case COMMAND_REMOVE:
+		if (sw_guardian) {
+			status = SERVICES_remove(manager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME,
+									 svc_error);
+
+			if (status == SUCCESS) {
+				ib_printf("Service \"%s\" successfully deleted.\n", ISCGUARD_DISPLAY_NAME);
+				status = SERVICES_delete(manager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME,
+										 svc_error);
+				if (status == SUCCESS)
+					ib_printf("Service configuration for \"%s\" successfully re-initialized.\n",
+							  ISCGUARD_DISPLAY_NAME);
+				else
+					ib_printf("Service configuration for \"%s\" not re-initialized.\n",
+							  ISCGUARD_DISPLAY_NAME);
+		    }
+			else if (status == IB_SERVICE_RUNNING) {
+ 				ib_printf("Service \"%s\" not deleted.  You must stop it before\n",
+ 						  ISCGUARD_DISPLAY_NAME);
+			    ib_printf("attempting to delete it.\n");
+		    }
+			else	      
+		    	ib_printf ("Service \"%s\" not deleted.\n", ISCGUARD_DISPLAY_NAME);
+		}
+
 		status = SERVICES_remove(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
 								 svc_error);
 
 		if (status == SUCCESS) {
-			ib_printf("Service \"%s\" successfully deleted.\n",
-					  REMOTE_DISPLAY_NAME);
-			status = SERVICES_delete(manager, REMOTE_SERVICE,
-									 REMOTE_DISPLAY_NAME, svc_error);
+		    ib_printf("Service \"%s\" successfully deleted.\n", REMOTE_DISPLAY_NAME);
+		    status = SERVICES_delete(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
+		    						 svc_error);
+
 			if (status == SUCCESS)
-				ib_printf
-					("Service configuration for \"%s\" successfully re-initialized.\n",
-					 REMOTE_DISPLAY_NAME);
+				ib_printf("Service configuration for \"%s\" successfully re-initialized.\n",
+						  REMOTE_DISPLAY_NAME);
 			else
-				ib_printf
-					("Service configuration for \"%s\" not re-initialized.\n",
-					 REMOTE_DISPLAY_NAME);
+				ib_printf("Service configuration for \"%s\" not re-initialized.\n",
+					 	  REMOTE_DISPLAY_NAME);
 		}
 		else if (status == IB_SERVICE_RUNNING) {
-			ib_printf
-				("Service \"%s\" not deleted.  You must stop it before\n",
-				 REMOTE_DISPLAY_NAME);
+			ib_printf("Service \"%s\" not deleted.  You must stop it before\n",
+				 	  REMOTE_DISPLAY_NAME);
 			ib_printf("attempting to delete it.\n");
 		}
 		else
@@ -191,23 +244,49 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		break;
 
 	case COMMAND_START:
-		status = SERVICES_start(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
-								sw_mode, svc_error);
-		if (status == SUCCESS)
-			ib_printf("Service \"%s\" successfully started.\n",
-					  REMOTE_DISPLAY_NAME);
-		else
-			ib_printf("Service \"%s\" not started.\n", REMOTE_DISPLAY_NAME);
+		/* Test for use of Guardian. If so, start the guardian else start ib-server */
+		if (using_guardian(svc_error) == 1) {
+			status = SERVICES_start(manager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME,
+									sw_mode, svc_error);
+			if (status == SUCCESS)
+			    ib_printf("Service \"%s\" successfully started.\n",
+			    		  ISCGUARD_DISPLAY_NAME);
+			else
+		    	ib_printf("Service \"%s\" not started.\n", ISCGUARD_DISPLAY_NAME);
+		}
+		else {
+			status = SERVICES_start(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
+									sw_mode, svc_error);
+			if (status == SUCCESS)
+				ib_printf("Service \"%s\" successfully started.\n",
+						  REMOTE_DISPLAY_NAME);
+			else
+				ib_printf("Service \"%s\" not started.\n", REMOTE_DISPLAY_NAME);
+		}
 		break;
 
 	case COMMAND_STOP:
-		status = SERVICES_stop(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
-							   svc_error);
-		if (status == SUCCESS)
-			ib_printf("Service \"%s\" successfully stopped.\n",
-					  REMOTE_DISPLAY_NAME);
-		else
-			ib_printf("Service \"%s\" not stopped.\n", REMOTE_DISPLAY_NAME);
+		/* Test for use of Guardian. If so, stop the guardian else stop ib-server */
+		if (using_guardian(svc_error) == 1) {
+			status = SERVICES_stop(manager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME,
+								   svc_error);
+
+			if (status == SUCCESS)
+			    ib_printf("Service \"%s\" successfully stopped.\n",
+			    		  ISCGUARD_DISPLAY_NAME);
+			else
+				ib_printf("Service \"%s\" not stopped.\n", ISCGUARD_DISPLAY_NAME);
+		}
+		else {
+			status = SERVICES_stop(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
+								   svc_error);
+
+			if (status == SUCCESS)
+				ib_printf("Service \"%s\" successfully stopped.\n",
+						  REMOTE_DISPLAY_NAME);
+			else
+				ib_printf("Service \"%s\" not stopped.\n", REMOTE_DISPLAY_NAME);
+		}
 		break;
 	}
 
@@ -266,9 +345,9 @@ static void usage(void)
 
 	ib_printf("Usage:\n");
 	ib_printf
-		("    instsvc {install InterBase_directory [-auto | -demand] } [-z]\n");
+		("    instsvc {install InterBase_directory [-auto | -demand] } [-g] [-z]\n");
 	ib_printf
-		("            {remove                                        }\n");
+		("            {remove                                        } [-g] \n");
 	ib_printf
 		("            {configure [-boostpriority | -regularpriority] }\n");
 	ib_printf
@@ -278,3 +357,88 @@ static void usage(void)
 
 	exit(FINI_OK);
 }
+
+
+static USHORT using_guardian(USHORT	(*err_handler)())
+{
+/**************************************
+ *
+
+  *	u s i n g _ g u a r d i a n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Are we using the guardian?
+ *
+ **************************************/
+	HKEY hkey;
+	SLONG status;
+	TEXT *mode;
+	DWORD buffSize;
+
+	mode = "0";
+	buffSize = 2;
+
+	if ((status = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+							   REG_KEY_ROOT_CUR_VER,
+							   0,
+							   KEY_READ,
+							   &hkey)) != ERROR_SUCCESS) {
+	    return (*err_handler)(status, "RegOpenKeyEx", NULL);
+    }
+
+	if ((status = RegQueryValueEx(hkey,
+								  "GuardianOptions",
+								  NULL,
+								  NULL,
+								  mode,
+								  &buffSize)) != ERROR_SUCCESS) {
+    	RegCloseKey(hkey);
+    	return (*err_handler)(status, "RegQueryValueEx", NULL);
+    }
+
+	RegCloseKey(hkey);
+
+	return atoi(mode);
+};
+
+
+USHORT guardian_setup(USHORT (*err_handler)())
+{
+/*************************************************
+ *
+ *	g u a r d i a n _ s e t u p 
+ *
+ *************************************************
+ *
+ * Functional description
+ *	Set up the Guardian's registry details
+ *
+ *************************************************/
+	HKEY hkey;
+	USHORT len;
+	SLONG status;
+
+	if ((status = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+							   REG_KEY_ROOT_CUR_VER,
+							   0,
+							   KEY_WRITE,
+							   &hkey)) != ERROR_SUCCESS) {
+	    return (*err_handler)(status, "RegOpenKeyEx", NULL);
+    }
+
+	if (status = RegSetValueEx(hkey,
+							   "GuardianOptions",
+							   0,
+							   REG_SZ,
+							   "1",
+							   2) != ERROR_SUCCESS) {
+	    return (*err_handler)(status, "RegSetValueEx", hkey);
+    }
+
+	RegCloseKey (hkey);
+
+	return SUCCESS;
+}
+

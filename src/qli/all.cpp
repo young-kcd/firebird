@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: all.cpp,v 1.5 2002-04-04 05:41:45 bellardo Exp $
+$Id: all.cpp,v 1.6 2002-06-29 08:46:59 dimitr Exp $
 */
 
 /***************************************************
@@ -280,6 +280,7 @@ SCHAR *ALLQ_malloc(SLONG size)
 	}
 
 	IBERROR(5);					/* Msg5 "memory gonzo" */
+	return 0;
 }
 
 

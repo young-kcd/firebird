@@ -19,7 +19,13 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2001.08.07 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
+ *                         conditionals, as the engine now fully supports
+ *                         readonly databases.
  */
+
+#include "../jrd/common.h"
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -27,7 +33,6 @@
 #include <string.h>
 #include <fcntl.h>
 #include "../jrd/ibsetjmp.h"
-#include "../jrd/common.h"
 #include "../jrd/time.h"
 #include "../jrd/gds.h"
 #include "../jrd/ods.h"
@@ -1389,6 +1394,7 @@ static PAG db_read( SLONG page_number)
 	SSHORT length, l;
 	DBA_FIL fil;
 	TDBA tddba;
+	UINT64 offset;
 
 	tddba = GET_THREAD_DATA;
 
@@ -1402,7 +1408,8 @@ static PAG db_read( SLONG page_number)
 		 && fil->fil_next;) fil = fil->fil_next;
 
 	page_number -= fil->fil_min_page - fil->fil_fudge;
-	if (lseek(fil->fil_desc, page_number * tddba->page_size, 0) == -1) {
+	offset = ((UINT64)page_number) * ((UINT64)tddba->page_size);
+	if (lseek (fil->fil_desc, offset, 0) == -1)
 #ifdef SUPERSERVER
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
 								GSTAT_MSG_FAC, 30,
@@ -1760,6 +1767,7 @@ static PAG db_read( SLONG page_number)
 	SSHORT length, l;
 	DBA_FIL fil;
 	TDBA tddba;
+	UINT64 offset;
 
 	tddba = GET_THREAD_DATA;
 
@@ -1773,7 +1781,8 @@ static PAG db_read( SLONG page_number)
 		 && fil->fil_next;) fil = fil->fil_next;
 
 	page_number -= fil->fil_min_page - fil->fil_fudge;
-	if (lseek(fil->fil_desc, page_number * tddba->page_size, 0) == -1) {
+	offset = ((UINT64)page_number) * ((UINT64)tddba->page_size);
+	if (lseek (fil->fil_desc, offset, 0) == -1)
 #ifdef SUPERSERVER
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
 								GSTAT_MSG_FAC, 30,
@@ -1949,12 +1958,14 @@ static void truncate_name( SCHAR * string)
  *
  * Functional description
  *	Zap trailing blanks.
+ * CVC: But only "trailing", not embedded blanks.
  *
  **************************************/
 
-	for (; *string; ++string)
-		if (*string == ' ') {
-			*string = 0;
-			return;
-		}
+	SCHAR* tail;
+
+	for (tail = string - 1; *string; ++string)
+    	if (*string != ' ')
+			tail = string;
+	*++tail = 0;
 }

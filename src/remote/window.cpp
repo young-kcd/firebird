@@ -138,8 +138,8 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 				LoadString(hInstance, IDS_ALREADYSTARTED, szMsgString,
 						   TMP_STRINGLEN);
 				if (usServerFlagMask & SRVR_non_service) {
-					MessageBox(NULL, szMsgString, APP_NAME,
-							   MB_OK | MB_ICONHAND);
+				   	MessageBox(NULL, szMsgString, APP_LABEL,
+				   			   MB_OK | MB_ICONHAND);
 				}
 				gds__log(szMsgString);
 			}
@@ -147,8 +147,8 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 				LoadString(hInstance, IDS_MAPERROR, szMsgString,
 						   TMP_STRINGLEN);
 				if (usServerFlagMask & SRVR_non_service) {
-					MessageBox(NULL, szMsgString, APP_NAME,
-							   MB_OK | MB_ICONHAND);
+				   	MessageBox(NULL, szMsgString, APP_LABEL,
+				   			   MB_OK | MB_ICONHAND);
 				}
 				gds__log(szMsgString);
 			}
@@ -164,8 +164,8 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 				LoadString(hInstance, IDS_ALREADYSTARTED, szMsgString,
 						   TMP_STRINGLEN);
 				if (usServerFlagMask & SRVR_non_service) {
-					MessageBox(NULL, szMsgString, APP_NAME,
-							   MB_OK | MB_ICONHAND);
+				   	MessageBox(NULL, szMsgString, APP_LABEL,
+				   			   MB_OK | MB_ICONHAND);
 				}
 				gds__log(szMsgString);
 			}
@@ -173,8 +173,8 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 				LoadString(hInstance, IDS_MAPERROR, szMsgString,
 						   TMP_STRINGLEN);
 				if (usServerFlagMask & SRVR_non_service) {
-					MessageBox(NULL, szMsgString, APP_NAME,
-							   MB_OK | MB_ICONHAND);
+				   	MessageBox(NULL, szMsgString, APP_LABEL,
+				   			   MB_OK | MB_ICONHAND);
 				}
 				gds__log(szMsgString);
 			}
@@ -209,7 +209,7 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 		char szMsgString[MSG_STRINGLEN];
 		LoadString(hInstance, IDS_REGERROR, szMsgString, MSG_STRINGLEN);
 		if (usServerFlagMask & SRVR_non_service) {
-			MessageBox(NULL, szMsgString, APP_NAME, MB_OK);
+		   	MessageBox(NULL, szMsgString, APP_LABEL, MB_OK);
 		}
 		gds__log(szMsgString);
 		return 0;
@@ -441,7 +441,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 			nid.uCallbackMessage = ON_NOTIFYICON;
 			nid.hIcon = hIcon;
 
-			lstrcpy(nid.szTip, APP_NAME);
+	    	lstrcpy(nid.szTip, APP_LABEL);
 			lstrcat(nid.szTip, "-");
 			lstrcat(nid.szTip, GDS_VERSION);
 
@@ -724,7 +724,7 @@ BOOL CanEndServer(HWND hWnd, BOOL bSysExit)
 
 	LoadString(hInstance, IDS_QUIT, szMsgString + strlen(szMsgString),
 			   MSG_STRINGLEN - strlen(szMsgString));
-	return (MessageBox(hWnd, szMsgString, APP_NAME,
+	return (MessageBox(hWnd, szMsgString, APP_LABEL,
 					   MB_ICONQUESTION | MB_OKCANCEL) == IDOK);
 }
 

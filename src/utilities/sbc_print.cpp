@@ -21,13 +21,14 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "../jrd/common.h"
+
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <stdlib.h>
-#include "../jrd/common.h"
 
 #ifndef INCLUDE_FB_BLK
 #include "../include/old_fb_blk.h"
@@ -538,7 +539,9 @@ static PAG db_read( SLONG page_number)
 	SCHAR *p;
 	SSHORT length, l;
 
-	if (lseek(file, page_number * page_size, 0) == -1)
+	UINT64 offset;
+	offset = ((UINT64)page_number) * ((UINT64)page_size);
+	if (lseek (file, offset, 0) == -1)
 		db_error(errno);
 
 	for (p = (SCHAR *) global_buffer, length = page_size; length > 0;) {

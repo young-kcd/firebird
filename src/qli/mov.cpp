@@ -376,6 +376,7 @@ int MOVQ_compare( DSC * arg1, DSC * arg2)
 		mover_error(410, arg1->dsc_dtype, arg2->dsc_dtype);
 
 	}
+	return -1;
 }
 #endif
 
@@ -1172,7 +1173,7 @@ static void sql_date_to_text( SLONG date[1], DSC * to)
 	struct tm times;
 	SLONG date2[2];
 
-	date2[0] = (SLONG) date;
+	date2[0] = date[0];
 	date2[1] = 0;
 	isc_decode_date((GDS_QUAD*) date2, &times);
 	sprintf(temp, "%2d-%.3s-%04d", times.tm_mday,
@@ -1208,7 +1209,7 @@ static void sql_time_to_text( ULONG date[1], DSC * to)
 	SLONG date2[2];
 
 	date2[0] = 0;
-	date2[1] = (SLONG) date;
+	date2[1] = date[0];
 
 	isc_decode_date((GDS_QUAD*) date2, &times);
 

@@ -24,7 +24,7 @@
 #include "firebird.h"
 #include "../jrd/common.h"
 #include <windows.h>
-#include <winsock.h>
+#include <winsock2.h>
 #include <signal.h>
 #include "../jrd/gds_proto.h"
 

@@ -518,7 +518,7 @@ static PORT alloc_port( PORT parent)
 	if (!SPXNET32_initialized) {
 		WORD version;
 
-		version = MAKEWORD(1, 1);
+		version = MAKEWORD(2, 0);
 		if (WSAStartup(version, &SPXNET32_wsadata)) {
 			if (parent)
 				spxnet32_error(parent, "WSAStartup", isc_net_init_error,

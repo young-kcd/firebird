@@ -20,7 +20,7 @@
 
 CONFIG_DLG DIALOG 6, 15, 204, 183
 STYLE DS_MODALFRAME | 0x4L | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX
-CAPTION "IB Server Config"
+CAPTION "FB Server Config"
 FONT 8, "MS Sans Serif"
 {
  LTEXT "&Database Cache (pages):", IDC_CACHETEXT, 22, 84, 90, 12
@@ -29,8 +29,8 @@ FONT 8, "MS Sans Serif"
  COMBOBOX IDC_MAPSIZE, 126, 106, 58, 40, CBS_DROPDOWNLIST | CBS_DISABLENOSCROLL | WS_VSCROLL | WS_TABSTOP
  PUSHBUTTON "&Modify...", IDC_MODRES, 133, 132, 51, 13
  ICON IDI_CAUTION, IDC_CAUTION_ICON, 9, 17, 18, 20
- LTEXT "The following represent the InterBase Server settings. Changes to these settings can adversely affect server performance and can be adjusted by System Database Administrators only.", IDC_DEFAULT_TEXT, 35, 14, 164, 32
- GROUPBOX "InterBase Settings", IDC_GROUPBOX1, 9, 63, 195, 100, BS_GROUPBOX
+ LTEXT "The following represent the Firebird Server settings. Changes to these settings can adversely affect server performance and can be adjusted by System Database Administrators only.", IDC_DEFAULT_TEXT, 35, 14, 164, 32
+ GROUPBOX "Firebird Settings", IDC_GROUPBOX1, 9, 63, 195, 100, BS_GROUPBOX
 }
 
 ADVANCED_DLG DIALOG 6, 15, 204, 196
@@ -47,7 +47,7 @@ FONT 8, "MS Sans Serif"
  CONTROL "&High", IDC_PRIORITYHIGH, "BUTTON", BS_AUTORADIOBUTTON | WS_TABSTOP, 75, 133, 37, 11
  PUSHBUTTON "&Modify...", IDC_MODRES, 136, 137, 51, 13
  ICON IDI_CAUTION, IDC_CAUTION_ICON, 9, 17, 18, 20
- GROUPBOX "Advanced InterBase Settings", IDC_GROUPBOX1, 9, 63, 195, 100, BS_GROUPBOX
+ GROUPBOX "Advanced Firebird Settings", IDC_GROUPBOX1, 9, 63, 195, 100, BS_GROUPBOX
  LTEXT "The following represent the Advanced Server settings. Changes to these settings can adversely affect system performance and can be adjusted by System Database Administrators only.", IDC_DEFAULT_TEXT, 35, 14, 164, 32
 }
 
@@ -65,9 +65,9 @@ FONT 8, "MS Sans Serif"
 
 STRINGTABLE LOADONCALL MOVEABLE DISCARDABLE
 {
- IDS_CFGATTACH_FAILED, "An attempt to attach to the InterBase Configuration Service failed.\r\nPlease verify that InterBase is installed correctly."
- IDS_CFGREAD_FAILED, "Internal InterBase Service error: Get Config Service failed"
- IDS_CFGWRITE_FAILED, "Internal InterBase Service error: Set Config Service failed"
+ IDS_CFGATTACH_FAILED, "An attempt to attach to the Firebird Configuration Service failed.\r\nPlease verify that InterBase is installed correctly."
+ IDS_CFGREAD_FAILED, "Internal Firebird Service error: Get Config Service failed"
+ IDS_CFGWRITE_FAILED, "Internal Firebird Service error: Set Config Service failed"
  IDS_CFGNOT_SYSDBA, "You must be the System Database Administrator to modify the\r\nserver configuration parameters"
  IDS_CFGBAD_PASSWD, "Invalid administrator password"
  IDS_CFGSETOSERR, "The working set must be a positive number with\r\nthe maximum not less than the minimum, or zero\r\nto use the operating system defaults."

@@ -25,7 +25,7 @@
 #define _QLI_PICST_PROTO_H_
 
 extern struct pic	*PIC_analyze (TEXT *, struct dsc *);
-extern int		PIC_edit (struct dsc *, struct pic *, TEXT **, USHORT);
+extern void		PIC_edit (struct dsc *, struct pic *, TEXT **, USHORT);
 extern void		PIC_missing (struct con *, struct pic *);
 
 #endif /* _QLI_PICST_PROTO_H_ */

@@ -65,7 +65,7 @@
 
 #define WIN_TEXTLEN                     128
 #define MSG_STRINGLEN           64
-#define APP_NAME "InterBase Server"
+#define APP_NAME "Firebird Server"
 
 static HINSTANCE hInstance = NULL;	// Handle to the current app. instance
 static HWND hPSDlg = NULL;		// Handle to the parent prop. sheet window
@@ -137,7 +137,7 @@ HWND DisplayProperties(HWND hParentWnd,
 	PSHdr.hwndParent = hParentWnd;
 	PSHdr.hInstance = hInstance;
 	PSHdr.pszIcon = MAKEINTRESOURCE(IDI_IBSVR);
-	PSHdr.pszCaption = (LPSTR) APP_NAME;
+	PSHdr.pszCaption = (LPSTR) APP_LABEL;
 	PSHdr.nPages = sizeof(PSPages) / sizeof(PROPSHEETPAGE);
 	PSHdr.nStartPage = 0;
 	PSHdr.ppsp = (LPCPROPSHEETPAGE) & PSPages;

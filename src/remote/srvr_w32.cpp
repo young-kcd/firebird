@@ -66,6 +66,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2001.11.20: Claudio Valderrama: Honor -b in SS for high priority.
+ *
 */
 
 
@@ -104,6 +107,8 @@
 #include "../jrd/thd_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/isc_i_proto.h"
+#include "../jrd/isc.h"
+#include "../jrd/file_params.h"
 
 static void THREAD_ROUTINE process_connection_thread(PORT);
 static void THREAD_ROUTINE inet_connect_wait_thread(void *);
@@ -123,6 +128,16 @@ static SERVICE_TABLE_ENTRY service_table[] = {
 	REMOTE_SERVICE, (LPSERVICE_MAIN_FUNCTION) CNTL_main_thread,
 	NULL, NULL
 };
+
+/* CPU affinity setting - default is first CPU only */
+static SLONG g_CPU_affinity_mask = ISCCFG_CPU_AFFINITY_DEF;
+
+static struct ipccfg CPU_affinity_setting[] =
+{
+	{ ISCCFG_CPU_AFFINITY_TAG, 0, &g_CPU_affinity_mask, 0, 0 },
+	{ NULL, 0, NULL, 0, 0 }
+};
+
 
 #ifdef XNET
 /* put into ensure that we have a parent port for the XNET connections */
@@ -152,8 +167,21 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 
 	hInst = hThisInst;
 
-	if (ISC_is_WinNT())		/* True - NT, False - Win95 */
+	if (ISC_is_WinNT()) {	/* True - NT, False - Win95 */
+		
+		/* CVC: This operating system call doesn't exist for W9x. */
+		BOOL (*SetProcessAffinityMask)(HANDLE, DWORD);
+
 		server_flag = (SRVR_multi_client);
+		(FARPROC)SetProcessAffinityMask =
+			GetProcAddress(GetModuleHandle("KERNEL32.DLL"), "SetProcessAffinityMask");
+		if (SetProcessAffinityMask) {
+			/* Mike Nordell - 11 Jun 2001: CPU affinity. */
+			ISC_get_config (LOCK_HEADER, CPU_affinity_setting);
+			(*SetProcessAffinityMask)(GetCurrentProcess(),
+				reinterpret_cast<DWORD>(g_CPU_affinity_mask));
+		}
+	}
 	else
 		server_flag = (SRVR_multi_client | SRVR_non_service);
 
@@ -170,6 +198,12 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 		server_flag |= SRVR_inet;
 
 	server_flag |= SRVR_ipc;
+
+/* CVC: Honor -b for SS on Win32. */
+#ifdef SUPERSERVER
+	if (server_flag & SRVR_high_priority)
+		SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+#endif
 
 /* Initialize the service and
    Setup sig_mutex for the process

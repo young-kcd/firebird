@@ -23,7 +23,7 @@
  * FSG 16.03.2001 
  */
 /*
-$Id: inet_server.cpp,v 1.4 2001-12-24 02:50:53 tamlin Exp $
+$Id: inet_server.cpp,v 1.5 2002-06-29 08:48:31 dimitr Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -143,7 +143,7 @@ static void signal_handler(void);
 #ifdef SUPERSERVER
 static void signal_sigpipe_handler(void);
 #endif
-static int set_signal(int, FPTR_VOID);
+static void set_signal(int, FPTR_VOID);
 
 #ifdef WINDOWS_ROUTER
 static int atov(UCHAR *, UCHAR **, SSHORT);
@@ -284,7 +284,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 					break;
 
 				case 'Z':
-					ib_printf("InterBase TCP/IP server version %s\n",
+					ib_printf("Firebird TCP/IP server version %s\n",
 							  GDS_VERSION);
 					exit(FINI_OK);
 				}
@@ -524,7 +524,7 @@ static int assign( SCHAR * string)
 
 
 #if !(defined VMS || defined NETWARE_386 || defined PC_PLATFORM)
-static int set_signal( int signal_number, void (*handler) (void))
+static void set_signal( int signal_number, void (*handler) (void))
 {
 /**************************************
  *

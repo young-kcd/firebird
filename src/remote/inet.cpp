@@ -31,7 +31,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.12 2002-06-24 13:59:58 paul_reeves Exp $
+$Id: inet.cpp,v 1.13 2002-06-29 08:48:31 dimitr Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -1630,7 +1630,7 @@ static PORT alloc_port( PORT parent)
 	if (!INET_initialized) {
 		WORD version;
 
-		version = MAKEWORD(1, 1);
+	    version = MAKEWORD(2, 0);
 		if (WSAStartup(version, &INET_wsadata)) {
 			if (parent)
 				inet_error(parent, "WSAStartup", isc_net_init_error, ERRNO);
@@ -1790,7 +1790,8 @@ static PORT aux_connect(PORT port, PACKET* packet, XDR_INT (*ast)(void))
 		return NULL;
 	}
 
-#if !(defined VMS || defined NETWARE_386 || defined PC_PLATFORM || defined WIN_NT)
+#if !(defined VMS || defined NETWARE_386 || defined PC_PLATFORM || \
+	defined WIN_NT || defined SINIXZ)
 	if (ast)
 	{
 
@@ -2495,7 +2496,7 @@ static int parse_line(
 
 	if (strcmp(entry1, host_name))
 #ifdef UNIX
-#ifndef UNIXWARE
+#if !(defined UNIXWARE || defined SINIXZ)
 		if (entry1[1] == '@') {
 			if (!innetgr(&entry1[2], host_name, 0, 0))
 				return -1;
@@ -2524,7 +2525,7 @@ static int parse_line(
 /* if they're in the user group: + they're in, - they're out */
 
 #ifdef UNIX
-#ifndef UNIXWARE
+#if !(defined UNIXWARE || defined SINIXZ)
 	if (entry2[1] == '@') {
 		if (innetgr(&entry2[2], 0, user_name, 0)) {
 			if (entry2[0] == '+')

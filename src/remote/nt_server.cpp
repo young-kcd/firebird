@@ -125,7 +125,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 					break;
 
 				case 'Z':
-					ib_printf("Interbase remote server version %s\n",
+					ib_printf("Firebird remote server version %s\n",
 							  GDS_VERSION);
 					exit(FINI_OK);
 				}

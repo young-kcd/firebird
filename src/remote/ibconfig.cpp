@@ -140,7 +140,7 @@ void AddConfigPages(HWND hPropSheet, HINSTANCE hInst)
 	IBPage.dwFlags = PSP_USETITLE | PSP_HASHELP;
 	IBPage.hInstance = hInst;
 	IBPage.pszTemplate = MAKEINTRESOURCE(CONFIG_DLG);
-	IBPage.pszTitle = "IB Settings";
+	IBPage.pszTitle = "FB Settings";
 	IBPage.pfnDlgProc = (DLGPROC) InterbasePage;
 	IBPage.pfnCallback = NULL;
 

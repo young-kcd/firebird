@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.27 Claudio Valderrama: Fix SF Bug #509995.
+ *
  */
 
 #include "firebird.h"
@@ -2527,8 +2530,8 @@ STATUS port::info(P_OP op, P_INFO * stuff, PACKET* send)
 	RTR transaction;
 	RRQ request;
 	RSR statement;
-	UCHAR *buffer, temp[1024];
-	TEXT version[64];
+	UCHAR *buffer, temp [1024], *temp_buffer;
+	TEXT version [256];
 	STATUS status, status_vector[20];
 
 	rdb = this->port_context;
@@ -2540,6 +2543,15 @@ STATUS port::info(P_OP op, P_INFO * stuff, PACKET* send)
 #ifdef REMOTE_DEBUG_MEMORY
 	ib_printf("info(server)              allocate buffer  %x\n", buffer);
 #endif
+
+	if (op == op_info_database && stuff->p_info_buffer_length > sizeof(temp)) {
+	    temp_buffer = ALLR_alloc((SLONG) stuff->p_info_buffer_length);
+#ifdef REMOTE_DEBUG_MEMORY
+	    ib_printf("info(server)              allocate buffer  %x\n", temp_buffer);
+#endif
+	}
+	else
+    	temp_buffer = temp;
 
 	switch (op) {
 	case op_info_blob:
@@ -2564,12 +2576,12 @@ STATUS port::info(P_OP op, P_INFO * stuff, PACKET* send)
 						  reinterpret_cast<void**>(GDS_REF(rdb->rdb_handle)),
 						  stuff->p_info_items.cstr_length,
 						  reinterpret_cast<char*>(GDS_VAL(stuff->p_info_items.cstr_address)),
-						  sizeof(temp),
-						  reinterpret_cast<char*>(temp));
+						  stuff->p_info_buffer_length /*sizeof (temp)*/,
+						  reinterpret_cast<char*>(temp_buffer) /*temp*/);
 		if (!status_vector[1]) {
 			sprintf(version, "%s/%s", GDS_VERSION,
 					this->port_version->str_data);
-			MERGE_database_info(temp, buffer, stuff->p_info_buffer_length,
+		    MERGE_database_info(temp_buffer /*temp*/, buffer, stuff->p_info_buffer_length,
 								IMPLEMENTATION, 4, 1,
 								reinterpret_cast<UCHAR*>(version),
 								reinterpret_cast<UCHAR*>(this->port_host->str_data),
@@ -2648,6 +2660,13 @@ STATUS port::info(P_OP op, P_INFO * stuff, PACKET* send)
 						  reinterpret_cast < char *>(buffer));
 		THREAD_ENTER;
 		break;
+	}
+
+	if (temp_buffer != temp) {
+#ifdef REMOTE_DEBUG_MEMORY
+    	ib_printf ("info(server)              free buffer      %x\n", temp_buffer);
+#endif
+    	ALLR_free(temp_buffer);
 	}
 
 /* Send a response that includes the segment. */

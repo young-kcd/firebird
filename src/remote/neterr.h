@@ -33,7 +33,7 @@
 
 #ifndef REMOTE_REMOTE_H
 
-#include <winsock.h>
+#include <winsock2.h>
 #include <nxtw.h>
 #include <nwerror.h>
 #define INCL_ERRORS

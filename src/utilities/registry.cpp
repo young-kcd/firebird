@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 01-Feb-2002 Paul Reeves: Removed hard-coded registry path
+ *
  */
 
 #include "firebird.h"
@@ -30,6 +33,7 @@
 #include "../jrd/license.h"
 #include "../utilities/install_nt.h"
 #include "../utilities/regis_proto.h"
+#include "../utilities/registry.h"
 
 static USHORT remove_subkeys(HKEY, USHORT, USHORT(*)());
 
@@ -54,7 +58,7 @@ USHORT REGISTRY_install(HKEY hkey_node,
 	SLONG status;
 
 	if ((status = RegCreateKeyEx(hkey_node,
-                                 WIN32_REG_KEY_PATH_CURRENT_VERSION,
+                                 REG_KEY_ROOT_CUR_VER,
 								 0,
 								 "",
 								 REG_OPTION_NON_VOLATILE,
@@ -81,6 +85,23 @@ USHORT REGISTRY_install(HKEY hkey_node,
 		return FAILURE;
 	}
 
+	/* We might as well add ServerDirectory here */
+	strcat(path_name, "\\bin");
+	len = GetFullPathName(path_name, sizeof(path_name), path_name, &p);
+	if (len && path_name[len - 1] != '/' && path_name[len - 1] != '\\') {
+    	path_name[len++] = '\\';
+    	path_name[len] = 0;
+    }
+
+	if ((status = RegSetValueEx(hkey_kit, "ServerDirectory", 0,
+								REG_SZ, path_name,
+								(DWORD)(len + 1))) != ERROR_SUCCESS) {
+	    (*err_handler) (status, "RegSetValueEx", hkey_kit);
+    	if (disp == REG_CREATED_NEW_KEY)
+			REGISTRY_remove(hkey_node, TRUE, err_handler);
+    	return FAILURE;
+    }
+
 	RegCloseKey(hkey_kit);
 
 	return SUCCESS;
@@ -105,7 +126,7 @@ USHORT REGISTRY_remove(HKEY hkey_node,
 	SLONG status;
 
 	if ((status = RegOpenKeyEx(hkey_node,
-                               WIN32_REG_KEY_PATH,
+                               REG_KEY_ROOT,
 							   0,
 							   KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE |
 							   KEY_WRITE, &hkey_kit)) != ERROR_SUCCESS) {
@@ -121,7 +142,7 @@ USHORT REGISTRY_remove(HKEY hkey_node,
 	if (ret == FAILURE)
 		return FAILURE;
 
-	if (status = RegDeleteKey(hkey_node, WIN32_REG_KEY_PATH)) {
+	if (status = RegDeleteKey(hkey_node, REG_KEY_ROOT)) {
 		if (silent_flag)
 			return FAILURE;
 		return (*err_handler) (status, "RegDeleteKey", NULL);
