@@ -1803,7 +1803,7 @@ static void par_procedure_parms(
  **************************************/
 	SET_TDBB(tdbb);
 	bool mismatch = false;
-	USHORT count = BLR_WORD;
+	SLONG count = BLR_WORD;
 
 /** Check to see if the parameter count matches **/
 	if (input_flag ? 
