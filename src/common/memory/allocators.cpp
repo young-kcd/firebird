@@ -23,6 +23,7 @@
  * 2001.11.29 John Bellardo: Reworked all routines to create the MemoryPool
  *   class as part of the C++ conversion.  Additionally the class now handles 
  *   generic memory allocations instead of typed-only allocations.
+ * 2002.09.23 Nickolay Samofatov: gds__alloc_debug saves line info in the pool
  */
 
 #include "../../common/memory/allocators.h"
@@ -77,10 +78,19 @@ extern "C" {
 void* API_ROUTINE gds__alloc_debug(SLONG size_request,
                                    TEXT* filename,
                                    ULONG lineno)
+{
+	try
+	{
+		poolLoader.loadPool();
+		return FB_MemoryPool->allocate(size_request,0,filename,lineno);
+	} catch(...) {}
+	
+	return 0;
+}
+
 #else
 
 void* API_ROUTINE gds__alloc(SLONG size_request)
-#endif
 {
 	try
 	{
@@ -90,6 +100,8 @@ void* API_ROUTINE gds__alloc(SLONG size_request)
 	
 	return 0;
 }
+
+#endif
 
 
 ULONG API_ROUTINE gds__free(void* blk)
