@@ -3609,7 +3609,7 @@ void API_ROUTINE gds__vtof(
 }
 
 
-void API_ROUTINE gds__vtov(CONST SCHAR* string, SCHAR* field, SSHORT length)
+void API_ROUTINE gds__vtov(const char* string, char* field, SSHORT length)
 {
 /**************************************
  *
@@ -3627,7 +3627,7 @@ void API_ROUTINE gds__vtov(CONST SCHAR* string, SCHAR* field, SSHORT length)
 
 	--length;
 
-	while ((*field++ = *string++) != (SCHAR)0)
+	while ((*field++ = *string++) != 0)
 		if (--length <= 0) {
 			*field = 0;
 			return;
@@ -4929,15 +4929,13 @@ static void sanitize(TEXT * locale)
  *
  * Functional description
  *	Clean up a locale to make it acceptable for use in file names
- *      for Windows NT, PC, and mpexl: remove any '.' or '_' for mpexl,
+ *      for Windows NT, PC.
  *	replace any period with '_' for NT or PC.
  *
  **************************************/
-	TEXT ch;
 
 	while (*locale) {
-		ch = *locale;
-		if (ch == '.')
+		if (*locale == '.')
 			*locale = '_';
 		locale++;
 	}

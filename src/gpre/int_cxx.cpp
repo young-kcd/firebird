@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int_cxx.cpp,v 1.3 2001-12-24 02:50:49 tamlin Exp $
+//	$Id: int_cxx.cpp,v 1.4 2002-11-03 22:26:52 tamlin Exp $
 //
 
 #include "firebird.h"
@@ -50,7 +50,7 @@ static void gen_estore(ACT, int);
 static void gen_endfor(ACT, int);
 static void gen_erase(ACT, int);
 static void gen_for(ACT, int);
-static TEXT *gen_name(TEXT *, REF);
+static char* gen_name(char*, const REF);
 static void gen_raw(REQ);
 static void gen_receive(REQ, POR);
 static void gen_request(REQ);
@@ -74,7 +74,7 @@ static int first_flag = 0;
 #if !(defined JPN_SJIS || defined JPN_EUC)
 #define GDS_VTOV	"gds__vtov"
 #define JRD_VTOF	"jrd_vtof"
-#define VTO_CALL	"%s ((SCHAR*)%s, (SCHAR*)%s, %d);"
+#define VTO_CALL	"%s ((const char*)%s, (char*)%s, %d);"
 #else
 #define GDS_VTOV	"gds__vtov2"
 #define JRD_VTOF	"jrd_vtof2"
@@ -186,17 +186,20 @@ static void align( int column)
 
 static void asgn_from( REF reference, int column)
 {
-	FLD field;
-	TEXT *value, variable[20], temp[20];
+	TEXT* value;
+	TEXT variable[20];
+	TEXT temp[20];
 
-	for (; reference; reference = reference->ref_next) {
-		field = reference->ref_field;
+	for (; reference; reference = reference->ref_next)
+	{
+		const FLD field = reference->ref_field;
 		align(column);
 		gen_name(variable, reference);
-		if (reference->ref_source)
+		if (reference->ref_source) {
 			value = gen_name(temp, reference->ref_source);
-		else
+		} else {
 			value = reference->ref_value;
+		}
 
 		/* To avoid chopping off a double byte kanji character in between
 		   the two bytes, generate calls to gds__ftof2 gds$_vtof2,
@@ -235,13 +238,17 @@ static void asgn_to( REF reference)
 
 #if (! (defined JPN_SJIS || defined JPN_EUC) )
 
+#pragma FB_COMPILER_MESSAGE("BUG: Checking for zero pointer - then using it!")
+	// Repeated later down in function gen_emodify, but then
+	// emitting jrd_ftof call.
+
 	if (!field || field->fld_dtype == dtype_text)
 		ib_fprintf(out_file, "gds__ftov (%s, %d, %s, sizeof (%s));",
 				   s,
 				   field->fld_length,
 				   reference->ref_value, reference->ref_value);
 	else if (!field || field->fld_dtype == dtype_cstring)
-		ib_fprintf(out_file, "gds__vtov ((SCHAR*)%s, (SCHAR*)%s, sizeof (%s));",
+		ib_fprintf(out_file, "gds__vtov((const char*)%s, (char*)%s, sizeof (%s));",
 				   s, reference->ref_value, reference->ref_value);
 
 #else
@@ -341,16 +348,19 @@ static void gen_database( ACT action, int column)
 static void gen_emodify( ACT action, int column)
 {
 	UPD modify;
-	REF reference, source;
+	REF reference;
 	FLD field;
 	TEXT s1[20], s2[20];
 
 	modify = (UPD) action->act_object;
 
 	for (reference = modify->upd_port->por_references; reference;
-		 reference = reference->ref_next) {
-		if (!(source = reference->ref_source))
+		 reference = reference->ref_next)
+	{
+		const REF source = reference->ref_source;
+		if (!source) {
 			continue;
+		}
 		field = reference->ref_field;
 		align(column);
 
@@ -362,7 +372,7 @@ static void gen_emodify( ACT action, int column)
 					   field->fld_length,
 					   gen_name(s2, reference), field->fld_length);
 		else if (field->fld_dtype == dtype_cstring)
-			ib_fprintf(out_file, "gds__vtov ((SCHAR*)%s, (SCHAR*)%s, %d);",
+			ib_fprintf(out_file, "gds__vtov((const char*)%s, (char*)%s, %d);",
 					   gen_name(s1, source),
 					   gen_name(s2, reference), field->fld_length);
 
@@ -472,7 +482,7 @@ static void gen_for( ACT action, int column)
 //		port and parameter idents.
 //  
 
-static TEXT *gen_name( TEXT * string, REF reference)
+static char* gen_name(char* string, const REF reference)
 {
 
 	sprintf(string, "jrd_%d.jrd_%d",
@@ -678,7 +688,7 @@ static void gen_type( ACT action, int column)
 
 static void gen_variable( ACT action, int column)
 {
-	TEXT s[20];
+	char s[20];
 
 	align(column);
 	ib_fprintf(out_file, gen_name(s, action->act_object));

@@ -270,9 +270,7 @@ GDS_LONG GDS_EXPORT gds__ftof(char GDS_FAR *,
 							  char GDS_FAR *,
 							  unsigned short);
 
-void GDS_EXPORT gds__vtov(CONST SCHAR GDS_FAR*,
-						  SCHAR GDS_FAR *,
-						  SSHORT);
+void GDS_EXPORT gds__vtov(const char*, char*, SSHORT);
 
 int GDS_EXPORT gds__version(void GDS_FAR * GDS_FAR *,
 							FPTR_VOID,

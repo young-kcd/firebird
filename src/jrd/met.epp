@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.28 2002-10-30 06:40:48 seanleyne Exp $
+$Id: met.epp,v 1.29 2002-11-03 22:25:53 tamlin Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -171,12 +171,6 @@ extern IB_FILE _iob[];
 extern int ib_fprintf();
 #endif
 
-
-#pragma FB_COMPILER_MESSAGE("Remove once we updated gpre")
-static inline void gds__vtov(CONST UCHAR* s1, SCHAR* s2, SSHORT val)
-{
-	gds__vtov(reinterpret_cast<CONST SCHAR*>(s1), s2, val);
-}
 
 // Decompile all triggers from vector
 void release_cached_triggers(TDBB tdbb, TRIG_VEC vector) 

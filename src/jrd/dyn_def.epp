@@ -121,13 +121,6 @@ static BOOLEAN get_who(TDBB, GBL, SCHAR *);
 static BOOLEAN is_it_user_name(GBL, TEXT *, TDBB);
 
 
-#pragma FB_COMPILER_MESSAGE("Remove once we updated gpre")
-static inline void gds__vtov(CONST UCHAR* s1, SCHAR* s2, SSHORT val)
-{
-	gds__vtov(reinterpret_cast<CONST SCHAR*>(s1), s2, val);
-}
-
-
 
 static int private_getODS()
 {
