@@ -47,9 +47,10 @@ struct MemoryBlock /* 16 bytes of block header is not too much I think */ {
 #endif*/
 };
 
-#define TYPE_EXTENT   -1
-#define TYPE_LEAFPAGE -2
-#define TYPE_TREEPAGE -3
+#define TYPE_POOL     -1
+#define TYPE_EXTENT   -2
+#define TYPE_LEAFPAGE -3
+#define TYPE_TREEPAGE -4
 
 // We store BlkInfo structures instead of BlkHeader pointers to get benefits from 
 // processor cache-hit optimizations
@@ -111,6 +112,8 @@ public:
 	void* alloc(size_t size, SSHORT type = 0);
 
 	void free(void *block);
+	
+	void verify_pool();
 
 /*	void* calloc(size_t size) {
 		void* result = malloc(size);

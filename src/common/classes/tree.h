@@ -341,8 +341,12 @@ void BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::_
 	else
 	{
 		int pos;
+#ifdef NDEBUG
+		list->find(NodeList::generate(list,node),pos);
+#else
 		bool found = list->find(NodeList::generate(list,node),pos);
 		assert(found);
+#endif
 		list->remove(pos);
 		
 		if (list == root && list->getCount()==1) {
@@ -498,10 +502,15 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 	
 	// Nearby pages are also full. We need to add one more leaf page to the list
 	// This shouldn't happen very often. Traverse tree up trying to add node
-	
-	ItemList *newLeaf = new(pool->alloc(sizeof(ItemList))) ItemList(leaf); // No re-enterance allowed !!!
-																		   // Exception here doesn't 
-																		   // invalidate tree structure
+	ItemList *newLeaf;
+	try {	
+		newLeaf = new(pool->alloc(sizeof(ItemList))) ItemList(leaf); // No re-enterance allowed !!!
+																     // Exception here doesn't 
+																	 // invalidate tree structure
+	} catch(...) {
+		addErrorValue = item;
+		throw;
+	}
 	
 	if (pos == LeafCount) {
 		newLeaf->insert(0,item);

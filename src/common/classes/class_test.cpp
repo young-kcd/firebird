@@ -244,7 +244,7 @@ void testBePlusTree() {
 
 }
 
-#define ALLOC_ITEMS 100000
+#define ALLOC_ITEMS 10
 #define MAX_ITEM_SIZE 100
 
 struct AllocItem {
@@ -263,16 +263,19 @@ void testAllocator() {
 	BePlusTree<AllocItem,AllocItem,MallocAllocator,DefaultKeyValue<AllocItem>,AllocItem> items(&allocator);
 	printf("Allocate %d items: ", ALLOC_ITEMS);
 	int n = 0;
+	pool->verify_pool();
 	for (int i=0;i<ALLOC_ITEMS;i++) {
 		n = n * 47163 - 57412;
 		AllocItem temp = {n, pool->alloc((n % MAX_ITEM_SIZE + MAX_ITEM_SIZE)/2+1)};
 		items.add(temp);
+		pool->verify_pool();
 	}
 	printf(" DONE\n");
 	
 	printf("Deallocate items in quasi-random order: ");
 	if (items.getFirst()) do {
-		pool->free(items.current().item);				
+		pool->free(items.current().item);
+		pool->verify_pool();
 	} while (items.getNext());
 	printf(" DONE\n");
 //  TODO:

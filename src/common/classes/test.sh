@@ -1,8 +1,7 @@
 # Test for library integrity
 # this should be compiled with optimization turned off and with NDEBUG undefined
 ulimit -s unlimited
-#g++ -ggdb -Wall class_test.cpp alloc.cpp
-g++ -ggdb -Wall class_test.cpp
+g++ -ggdb -Wall class_test.cpp alloc.cpp 2> aa
 ./a.out
 
 # Chose the best algorithm parameters for the target architecture
