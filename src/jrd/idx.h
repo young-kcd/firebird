@@ -268,7 +268,7 @@ static CONST struct ini_idx_t indices[] = {
 		SEGMENT(f_rcon_rname, idx_metadata),	/* relation name */
 		SEGMENT(f_rcon_ctype, idx_metadata)     /* constraint type */
 	}},
-
+/*	define index RDB$INDEX_43 for RDB$RELATION_CONSTRAINTS RDB$INDEX_NAME; */
 	INDEX(43, ODS_10_1, rel_rcon, 0, 1)
 		SEGMENT(f_rcon_iname, idx_metadata),	/* index name */
 	}}
