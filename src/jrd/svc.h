@@ -132,7 +132,7 @@ const int SVC_detached		= 8;
 const int SVC_finished		= 16;
 const int SVC_thd_running	= 32;
 const int SVC_evnt_fired	= 64;
-
+const int SVC_cmd_line		= 128;
 
 // Method used to signify that the service started has done basic
 // initialization and can be considered a successful startup.

@@ -563,7 +563,8 @@ Service* SVC_attach(USHORT	service_length,
 	service->svc_service = serv;
 	service->svc_resp_ptr = service->svc_resp_buf = NULL;
 	service->svc_resp_buf_len = service->svc_resp_len = 0;
-	service->svc_flags = serv->serv_executable ? SVC_forked : 0;
+	service->svc_flags =
+		(serv->serv_executable ? SVC_forked : 0) | (switches ? SVC_cmd_line : 0);
 	service->svc_switches = switches;
 	service->svc_handle = 0;
 	service->svc_user_flag = user_flag;
@@ -1753,13 +1754,13 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb)
 		/* Another service may have been started with this service block.  If so,
 		 * we must reset the service flags.
 		 */
-		if (!(service->svc_flags & SVC_detached))
-			service->svc_flags = 0;
-		service->svc_flags |= SVC_thd_running;
-		if (service->svc_switches) {
+		if (service->svc_switches && !(service->svc_flags & SVC_cmd_line)) {
 			gds__free(service->svc_switches);
 			service->svc_switches = NULL;
 		}
+		if (!(service->svc_flags & SVC_detached))
+			service->svc_flags = 0;
+		service->svc_flags |= SVC_thd_running;
 	}
 	THD_MUTEX_UNLOCK(thd_mutex);
 
