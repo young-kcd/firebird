@@ -534,6 +534,8 @@ static const SSHORT gds__sql_code [] = {
 -904 /* 513 wal_backup_err                   */,
 -902 /* 514 invalid_cursor_state             */,
 -901 /* 515 bad_shutdown_mode                */,
+-802 /* 516 concat_overflow                  */,
+-204 /* 517 bad_substring_param              */,
 -901 /*   1 gfix_db_name                     */,
 -901 /*   2 gfix_invalid_sw                  */,
 -901 /*   4 gfix_incmp_sw                    */,
