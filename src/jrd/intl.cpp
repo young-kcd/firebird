@@ -224,14 +224,14 @@ public:
 	
 	CharSet *getCharSet() { return cs; }
 	
-	void setCollation(TextType *cs, short id)
+	void setCollation(TextType *cs, unsigned short id)
 	{
 		if (id >= charset_collations.size())
 			charset_collations.resize(id + 10);
 		charset_collations[id] = cs;
 	}
 	
-	TextType *collation(short id)
+	TextType *collation(unsigned short id)
 	{
 		if (id >= charset_collations.size())
 			return NULL;

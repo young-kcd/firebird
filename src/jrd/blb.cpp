@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.28 2003-03-24 14:41:38 skidder Exp $
+$Id: blb.cpp,v 1.29 2003-04-03 13:52:42 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -769,7 +769,7 @@ SLONG BLB_lseek(BLB blob, USHORT mode, SLONG offset)
 	if (offset < 0)
 		offset = 0;
 
-	if (offset > blob->blb_length)
+	if (offset > (SLONG) blob->blb_length)
 		offset = blob->blb_length;
 
 	blob->blb_seek = offset;
@@ -2109,7 +2109,7 @@ static BLP get_next_page(TDBB tdbb, BLB blob, WIN * window)
 								 pag_blob);
 	}
 
-	if (page->blp_sequence != blob->blb_sequence)
+	if (page->blp_sequence != (SLONG) blob->blb_sequence)
 		CORRUPT(201);			/* msg 201 cannot find blob page */
 
 	blob->blb_sequence++;

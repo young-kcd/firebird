@@ -1407,7 +1407,7 @@ int DLL_EXPORT ISC_event_wait(
 		const DWORD status =
 			WaitForMultipleObjects((DWORD) count, handles, TRUE, timeout);
 
-		if (!((status >= WAIT_OBJECT_0) && (status < WAIT_OBJECT_0 + count))) {
+		if (!((status >= WAIT_OBJECT_0) && (status < WAIT_OBJECT_0 + (DWORD) count))) {
 			return status;
 		}
 	}

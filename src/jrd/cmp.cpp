@@ -1537,7 +1537,7 @@ void DLL_EXPORT CMP_get_desc(
 				SLONG sl1 = MOV_get_long(&desc1, 0);
 				SLONG sl2 = MOV_get_long(&desc2, 0);
 				/* error() is a local routine in par.c, so we use plain ERR_post. */
-				if (sl1 < 0 || sl2 < 0 || sl2 > MAX_COLUMN_SIZE - sizeof(USHORT))
+				if (sl1 < 0 || sl2 < 0 || sl2 > MAX_COLUMN_SIZE - (SLONG) sizeof(USHORT))
 					ERR_post(gds_imp_exc, gds_arg_gds, gds_blktoobig, 0);
 				rc_len = sl2;
 			}

@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.25 2003-03-24 14:41:42 skidder Exp $
+ * $Id: rse.cpp,v 1.26 2003-04-03 13:52:35 brodsom Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -661,7 +661,7 @@ void RSE_open(TDBB tdbb, RSB rsb)
 
 					if (attachment->att_flags & ATT_gbak_attachment ||
 						DPM_data_pages(tdbb,
-									   rpb->rpb_relation) > bcb->bcb_count)
+									   rpb->rpb_relation) > (SLONG) bcb->bcb_count)
 					{
 						rpb->rpb_window.win_flags = WIN_large_scan;
 						rpb->rpb_org_scans =

@@ -520,7 +520,7 @@ static void apply_pip(PIP page, JRND * record)
 			page->pip_bits[byte] &= ~bit;
 		else {
 			page->pip_bits[byte] |= bit;
-			page->pip_min = MIN(page->pip_min, temp.jrna_slot);
+			page->pip_min = MIN(page->pip_min, (SLONG) temp.jrna_slot);
 		}
 	}
 }
@@ -810,8 +810,8 @@ static void process_page(
 
 /* If there is no need to apply record, just return */
 
-	if ((page->pag_seqno > seqno) ||
-		((page->pag_seqno == seqno) && (page->pag_offset >= offset))) {
+	if (((SLONG) page->pag_seqno > seqno) ||
+		(((SLONG) page->pag_seqno == seqno) && ((SLONG) page->pag_offset >= offset))) {
 		if (!rec_page)
 			CCH_RELEASE(tdbb, &window);
 		return;
@@ -827,8 +827,8 @@ static void process_page(
 		  (rec.jrnd_header.jrnh_prev_offset == 0) &&
 		  ((clump->jrnp_type <= pag_max) ||
 		   (clump->jrnp_type == JRNP_BTREE_SEGMENT)))) {
-		if ((page->pag_seqno != rec.jrnd_header.jrnh_prev_seqno) ||
-			(page->pag_offset != rec.jrnd_header.jrnh_prev_offset)) {
+		if (((SLONG) page->pag_seqno != rec.jrnd_header.jrnh_prev_seqno) ||
+			((SLONG) page->pag_offset != rec.jrnd_header.jrnh_prev_offset)) {
 			if (!rec_page)
 				CCH_RELEASE(tdbb, &window);
 			BUGCHECK(279);		/* msg 279 error in recovery! out of sequence log record encountered */
@@ -1080,7 +1080,7 @@ USHORT activate_shadow, SLONG * timestamp, SLONG page_no, PAG page)
 		rec1.jrnd_header.jrnh_series = 0;
 		MOVE_FAST((SCHAR *) & rec1, (SCHAR *) wal_buff, JRND_SIZE);
 
-		if (checksum != MISC_checksum_log_rec(wal_buff, len, 0, 0))
+		if (checksum != (SLONG) MISC_checksum_log_rec(wal_buff, len, 0, 0))
 			BUGCHECK(283);
 
 		rec1.jrnd_header.jrnh_series = checksum;

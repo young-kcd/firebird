@@ -144,7 +144,7 @@ STATUS filter_acl(USHORT action, CTL control)
 
 	l = control->ctl_source_handle->ctl_total_length;
 	p = temp =
-		(l <= sizeof(buffer)) ? buffer : (SCHAR *) gds__alloc((SLONG) l);
+		(l <= (SLONG) sizeof(buffer)) ? buffer : (SCHAR *) gds__alloc((SLONG) l);
 /* FREE: at procedure exit */
 	if (!p)						/* NOMEM: */
 		return gds_virmemexh;
@@ -224,7 +224,7 @@ STATUS filter_blr(USHORT action, CTL control)
 /* Initialize for retrieval */
 
 	l = 1 + control->ctl_source_handle->ctl_total_length;
-	temp = (l <= sizeof(buffer)) ? buffer : (SCHAR *) gds__alloc((SLONG) l);
+	temp = (l <=(SLONG) sizeof(buffer)) ? buffer : (SCHAR *) gds__alloc((SLONG) l);
 /* FREE: at procedure exit */
 	if (!temp)					/* NOMEM: */
 		return gds_virmemexh;
@@ -1036,7 +1036,7 @@ STATUS filter_trans(USHORT action, CTL control)
 
 	l = control->ctl_source_handle->ctl_total_length;
 	p = temp =
-		(l <= sizeof(buffer)) ? buffer : (SCHAR *) gds__alloc((SLONG) l);
+		(l <= (SLONG) sizeof(buffer)) ? buffer : (SCHAR *) gds__alloc((SLONG) l);
 /* FREE: at procedure exit */
 	if (!p)						/* NOMEM: */
 		return gds_virmemexh;
@@ -1142,7 +1142,7 @@ static void dump_blr(CTL control, USHORT offset, TEXT * line)
 	TEXT *p, *end, *temp, buffer[256];
 
 	l = (USHORT) control->ctl_data[3] + strlen(line);
-	temp = (l < sizeof(buffer)) ? buffer : (TEXT *) gds__alloc((SLONG) l);
+	temp = (l < (SLONG) sizeof(buffer)) ? buffer : (TEXT *) gds__alloc((SLONG) l);
 /* FREE: at procedure exit */
 	if (!temp) {				/* NOMEM: */
 		/* No memory left - ignore the padding spaces and put the data */

@@ -35,7 +35,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.29 2003-03-02 17:47:21 fsg Exp $
+$Id: flu.cpp,v 1.30 2003-04-03 13:52:38 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -141,7 +141,7 @@ dirname(const char* fname)
 		if (last != 0)
 		{
 			/* Found dir seperator */
-			assert(last < sizeof(result));
+			assert(last < (int) sizeof(result));
 			strncpy(result, fname, last);
 			result[last] = '\0';
 		}

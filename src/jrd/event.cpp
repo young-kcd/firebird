@@ -713,7 +713,7 @@ static FRB alloc_global(UCHAR type, ULONG length, BOOLEAN recurse)
 
 	free = (FRB) ABS_PTR(*best);
 
-	if (best_tail < sizeof(struct frb))
+	if (best_tail < (SLONG) sizeof(struct frb))
 		*best = free->frb_next;
 	else {
 		free->frb_header.hdr_length -= length;
@@ -866,7 +866,7 @@ static void delete_process(SLONG process_offset)
 			timeout = ISC_event_wait(1, &events, &value, 5 * 1000000, 0, 0);
 			ACQUIRE;
 		}
-		EVENT_process_offset = NULL;
+		EVENT_process_offset = 0;
 #endif
 	}
 }
