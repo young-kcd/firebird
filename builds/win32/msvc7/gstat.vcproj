@@ -148,6 +148,9 @@
 				RelativePath="..\..\..\src\jrd\enc_proto.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\os\guid.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\utilities\ppg_proto.h">
 			</File>
 		</Filter>
@@ -168,6 +171,13 @@
 						Name="VCResourceCompilerTool"
 						AdditionalIncludeDirectories="..\..\..\src\jrd;$(NoInherit)"/>
 				</FileConfiguration>
+			</File>
+		</Filter>
+		<Filter
+			Name="JRD files"
+			Filter="">
+			<File
+				RelativePath="..\..\..\src\jrd\os\win32\guid.cpp">
 			</File>
 		</Filter>
 	</Files>

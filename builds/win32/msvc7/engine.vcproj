@@ -262,7 +262,7 @@
 				RelativePath="..\..\..\src\jrd\isc_file.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\isc_ipc.cpp">
+				RelativePath="..\..\..\src\jrd\os\win32\isc_ipc.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc_sync.cpp">
@@ -714,7 +714,7 @@
 				RelativePath="..\..\..\src\jrd\isc_f_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\isc_i_proto.h">
+				RelativePath="..\..\..\src\jrd\os\isc_i_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc_proto.h">

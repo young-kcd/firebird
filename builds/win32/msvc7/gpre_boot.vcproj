@@ -218,7 +218,7 @@
 				RelativePath="..\..\..\src\jrd\isc.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\isc_ipc.cpp">
+				RelativePath="..\..\..\src\jrd\os\win32\isc_ipc.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc_sync.cpp">
