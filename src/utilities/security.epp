@@ -109,11 +109,17 @@ SSHORT SECURITY_exec_line(ISC_STATUS * isc_status,
 	SCHAR encrypted1[MAX_PASSWORD_LENGTH + 2];
 	SCHAR encrypted2[MAX_PASSWORD_LENGTH + 2];
 	ISC_STATUS_ARRAY tmp_status;
-	FRBRD *gds_trans;
+	FRBRD *gds_trans = NULL;
 	BOOLEAN found;
 	SSHORT ret = 0;
 
-	gds_trans = NULL;
+	// check for non-printable characters in user name
+	for (TEXT *p = user_data->user_name; *p; p++) {
+		if (! isprint(*p)) {
+			return GsecMsg75;
+		}
+	}
+
 	START_TRANSACTION
 	ON_ERROR
 		return GsecMsg75;		/* gsec error */
