@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.84 2003-10-02 10:17:39 aafemt Exp $
+$Id: common.h,v 1.85 2003-10-07 07:24:25 eku Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -892,6 +892,12 @@ typedef struct
 // and generic macro if MSVC would support C99-style __VA_ARGS__
 #define DEFINE_TRACE_ROUTINE(routine) void routine(const char* message, ...)
 
+#ifdef HAVE_VSNPRINTF
+#define VSNPRINTF(a,b,c,d) vsnprintf(a,b,c,d)
+#else
+#define VSNPRINTF(a,b,c,d) vsprintf(a,c,d)
+#endif
+
 #define IMPLEMENT_TRACE_ROUTINE(routine, subsystem) \
 void routine(const char* message, ...) { \
 	static const char name_facility[] = subsystem ","; \
@@ -900,7 +906,7 @@ void routine(const char* message, ...) { \
 	char *ptr = buffer + sizeof(name_facility)-1; \
 	va_list params; \
 	va_start(params, message); \
-	vsnprintf(ptr, sizeof(buffer)-sizeof(name_facility), message, params); \
+	VSNPRINTF(ptr, sizeof(buffer)-sizeof(name_facility), message, params); \
 	va_end(params); \
 	gds__trace(buffer); \
 }
