@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.58 2003-09-12 01:41:03 brodsom Exp $
+ * $Id: ddl.cpp,v 1.59 2003-09-12 09:19:21 robocop Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -4781,7 +4781,8 @@ static void modify_domain( DSQL_REQ request)
 			break;
 
 		case nod_del_default:
-			check_one_call (repetition_count, 5, "DOMAIN DROP DEFAULT");         			request->append_uchar(gds_dyn_del_default);
+			check_one_call (repetition_count, 5, "DOMAIN DROP DEFAULT");
+			request->append_uchar(gds_dyn_del_default);
 			break;
 
 		default:
