@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.19 2003-08-06 16:30:38 skidder Exp $
+ *  $Id: keywords.cpp,v 1.20 2003-08-06 20:21:38 skidder Exp $
  *
  */
 
@@ -121,7 +121,7 @@ static const TOK tokens [] = {
 	{DESC, "DESC", 1},	/* Alias of DESCENDING */
 	{DESC, "DESCENDING", 1},
 	{KW_DESCRIPTOR,	"DESCRIPTOR", 2},
-	{DIFFERENCE, "DIFFERENCE", 2},
+	{KW_DIFFERENCE, "DIFFERENCE", 2},
 	{DISTINCT, "DISTINCT", 1},
 	{DO, "DO", 1},
 	{DOMAIN, "DOMAIN", 1},

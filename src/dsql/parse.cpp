@@ -263,7 +263,7 @@
 # define	KW_UPDATING	514
 # define	KW_DELETING	515
 # define	BACKUP	516
-# define	DIFFERENCE	517
+# define	KW_DIFFERENCE	517
 
 
 /* 
@@ -1137,7 +1137,7 @@ static const char *const yytname[] =
   "CURRENT_TRANSACTION", "BIGINT", "CASE", "NULLIF", "COALESCE", "USING", 
   "NULLS", "LAST", "ROW_COUNT", "LOCK", "SAVEPOINT", "RELEASE", 
   "STATEMENT", "LEAVE", "INSERTING", "UPDATING", "DELETING", 
-  "KW_INSERTING", "KW_UPDATING", "KW_DELETING", "BACKUP", "DIFFERENCE", 
+  "KW_INSERTING", "KW_UPDATING", "KW_DELETING", "BACKUP", "KW_DIFFERENCE", 
   "'='", "'<'", "'>'", "'+'", "'-'", "'*'", "'/'", "';'", "','", "'('", 
   "')'", "':'", "'['", "']'", "'.'", "'?'", "top", "statement", "grant", 
   "prot_table_name", "privileges", "privilege_list", "proc_privileges", 

@@ -265,7 +265,7 @@
 # define	KW_UPDATING	514
 # define	KW_DELETING	515
 # define	BACKUP	516
-# define	DIFFERENCE	517
+# define	KW_DIFFERENCE	517
 
 
 extern YYSTYPE yylval;
