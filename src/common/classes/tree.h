@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: tree.h,v 1.36 2004-07-16 23:06:04 skidder Exp $
+ *  $Id: tree.h,v 1.37 2004-07-17 00:13:07 skidder Exp $
  *
  */
 
@@ -316,7 +316,7 @@ public:
 			for (int lev = tree->level; lev; lev--) {
 				size_t pos;
 				if (!((NodeList *)list)->find(key, pos))
-					if ( --pos < 0 ) pos = 0;
+					if ( pos > 0 ) pos--;
 				list = (*(NodeList *)list)[pos];
 			}
 
@@ -438,7 +438,7 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 	for (int lev = this->level; lev > 0 ; lev--) {
 		size_t pos;
 		if (!((NodeList *)vList)->find(key, pos))
-			if ( --pos < 0 ) pos = 0;
+			if ( pos > 0 ) pos--;
 		vList = (*(NodeList *)vList)[pos];
 	}
 	

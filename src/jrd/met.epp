@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.131 2004-07-06 05:59:40 robocop Exp $
+$Id: met.epp,v 1.132 2004-07-17 00:13:34 skidder Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -157,7 +157,7 @@ static void inc_int_use_count(jrd_req* req)
 {
 	// Increment int_use_count for all procedures in resource list of request
 	ResourceList& list = req->req_resources;
-	int i;
+	size_t i;
 	for (list.find(Resource(Resource::rsc_procedure, 0, NULL, NULL), i);
 	    i < list.getCount(); i++) 
 	{
@@ -230,7 +230,7 @@ void adjust_dependencies(jrd_prc* procedure)
 	if (procedure->prc_request) {
 		// Loop over procedures from resource list of prc_request
 		ResourceList& list = procedure->prc_request->req_resources;
-		int i;
+		size_t i;
 		for (list.find(Resource(Resource::rsc_procedure, 0, NULL, NULL), i);
 			 i < list.getCount(); i++) 
 		{
@@ -310,7 +310,7 @@ void MET_verify_cache(thread_db* tdbb)
 					{
 						// Loop over procedures from resource list of prc_request
 						const ResourceList& list = prc->prc_request->req_resources;
-						int i;
+						size_t i;
 						for (list.find(Resource(Resource::rsc_procedure, 0, NULL, NULL), i);
 						     i < list.getCount(); i++) 
 						{
