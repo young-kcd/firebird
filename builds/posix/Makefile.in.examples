@@ -27,15 +27,15 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.examples,v 1.1 2003-07-17 02:15:46 brodsom Exp $
+#  $Id: Makefile.in.examples,v 1.2 2003-08-03 23:18:57 brodsom Exp $
 #
-ROOT=..
+ROOT=../..
 ObjModuleName=examples
 
 # Add the install include directory to the search path since the
 # examples need to build using those headers values.
 
-CFLAGS := $(CFLAGS) -I firebird/include
+CFLAGS := $(CFLAGS) -I$(ROOT)/gen/firebird/include
 
 
 include     $(ROOT)/gen/make.defaults
@@ -51,8 +51,8 @@ export PATH
 
 GPRE_FLAGS=	-r -m -z -n
 
-EXAMPLES_DEST=	$(GEN_ROOT)/
-EXAMPLES_SRC=	$(ROOT)/examples/
+EXAMPLES_DEST=	$(GEN_ROOT)/examples
+EXAMPLES_SRC=	$(ROOT)/examples
 
 
 EMPBLD_Objects=	$(EXAMPLES_DEST)/empbuild.o
@@ -74,7 +74,8 @@ INTLEMP_DB=	$(EXAMPLES_DEST)/intlemp.fdb
 
 all: examples
 
-examples: $(EMPLOYEE_DB) $(INTLEMP_DB) $(FIREBIRD)/examples/README
+# examples: $(EMPLOYEE_DB) $(INTLEMP_DB) $(FIREBIRD)/examples/README
+examples: $(EMPLOYEE_DB) $(FIREBIRD)/examples/README
 
 $(FIREBIRD)/examples/README:
 	$(CP) $(ROOT)/examples/readme $(FIREBIRD)/examples/README
@@ -87,8 +88,8 @@ $(FIREBIRD)/examples/README:
 	$(CP) $(ROOT)/examples/include/*.* $(FIREBIRD)/examples/include/
 	$(CP) $(ROOT)/examples/stat/*.* $(FIREBIRD)/examples/stat/
 	$(CP) $(ROOT)/examples/udf/*.* $(FIREBIRD)/examples/udf/
-	$(CP) EMPLOYEE.FDB $(FIREBIRD)/examples/empbuild/
-	$(CP) INTLEMP.FDB $(FIREBIRD)/examples/empbuild/
+	$(CP) employee.fdb $(FIREBIRD)/examples/empbuild/
+#	$(CP) intlemp.fdb $(FIREBIRD)/examples/empbuild/
 	$(CP) $(ROOT)/examples/empbuild/employe2.sql $(FIREBIRD)/examples/empbuild/
 
 $(EXAMPLES_DEST)% : $(EXAMPLES_SRC)%
@@ -124,7 +125,7 @@ $(EXAMPLES_DEST)/empbuild.c:	$(EXAMPLES_DEST)/empbuild.fdb $(EXAMPLES_DEST)/empb
 
 $(EXAMPLES_DEST)/empbuild.fdb : $(EXAMPLES_DEST)/empddl.sql $(EXAMPLES_DEST)/empbld.sql $(EXAMPLES_DEST)/isql$(EXEC_EXT)
 	-$(RM) $(EXAMPLES_DEST)/empbuild.fdb
-	./isql$(EXEC_EXT) -i empbld.sql
+	$(EXAMPLES_DEST)/isql$(EXEC_EXT) -i empbld.sql
 
 # The chain for intlemp.fdb is the same a script file to create an empty database
 # to allow a .e program to be compiled, to then create and populate with data
@@ -142,7 +143,7 @@ $(EXAMPLES_DEST)/intlbld.c:	$(EXAMPLES_DEST)/intlbuild.fdb $(EXAMPLES_DEST)/intl
 
 $(EXAMPLES_DEST)/intlbuild.fdb : $(EXAMPLES_DEST)/intlddl.sql $(EXAMPLES_DEST)/intlbld.sql $(EXAMPLES_DEST)/isql$(EXEC_EXT)
 	-$(RM) intlbuild.fdb
-	./isql$(EXEC_EXT) -i intlbld.sql
+	$(EXAMPLES_DEST)/isql$(EXEC_EXT) -i intlbld.sql
 
 
 $(EXAMPLES_DEST)/%.sql: $(EXAMPLES_SRC)/empbuild/%.sql

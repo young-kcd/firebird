@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.150 2003-07-17 02:15:00 brodsom Exp $
+dnl $Id: configure.in,v 1.151 2003-08-03 23:17:48 brodsom Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -742,7 +742,7 @@ gen/Makefile.client.util:${MAKE_SRC_DIR}/Makefile.in.client.util
 gen/Makefile.intl:${MAKE_SRC_DIR}/Makefile.in.intl
 gen/Makefile.msgs:${MAKE_SRC_DIR}/Makefile.in.msgs
 gen/Makefile.extlib:${MAKE_SRC_DIR}/Makefile.in.extlib
-gen/Makefile.examples:${MAKE_SRC_DIR}/Makefile.in.examples
+gen/examples/Makefile.examples:${MAKE_SRC_DIR}/Makefile.in.examples
 gen/Makefile.libfbembed:${MAKE_SRC_DIR}/Makefile.in.libfbembed
 gen/Makefile.inet_server:${MAKE_SRC_DIR}/Makefile.in.inet_server
 gen/Makefile.embed.lockmgr:${MAKE_SRC_DIR}/Makefile.in.embed.lockmgr
