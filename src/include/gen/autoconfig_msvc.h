@@ -34,6 +34,7 @@
 #pragma warning(disable:4018)  // signed/unsigned mismatch
 #pragma warning(disable:4100)  // unreferenced formal parameter
 #pragma warning(disable:4127)  // conditional expression is constant
+#pragma warning(disable:4131)  // uses old-style declarator
 #pragma warning(disable:4146)  // unary minus operator applied to unsigned type, result still unsigned
 #pragma warning(disable:4189)  // local variable is initialized but not referenced
 #pragma warning(disable:4211)  // nonstandard extension used : redefined extern to static
