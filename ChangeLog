@@ -1,3 +1,38 @@
+2003-02-08 16:39  brodsom
+
+	* firebird2/src/intl/cv_jis.c:
+	
+	Remove NOT_NEEDED define
+
+2003-02-08 16:28  brodsom
+
+	* firebird2/src/jrd/ib_stdio.h:
+	
+	Correct wrong ifndef
+
+2003-02-08 01:58  brodsom
+
+	* firebird2/src/qli/: command.cpp, dtr.cpp, eval.cpp, exe.cpp,
+	expand.cpp, format.cpp, gener.cpp, hsh.cpp, lex.cpp, meta.epp,
+	mov.cpp, parse.cpp, picstr.cpp, proc.epp, show.epp:
+	
+	Remove JPN_ defines
+
+2003-02-08 01:36  brodsom
+
+	* firebird2/src/gpre/: sqe.cpp, sql.cpp, gpre.cpp, gpre_meta.epp,
+	gpre_meta_boot.cpp, hsh.cpp, int.cpp, int_cxx.cpp, par.cpp,
+	pretty.cpp, c_cxx.cpp:
+	
+	Remove JPN_ defines
+
+2003-02-08 01:31  brodsom
+
+	* firebird2/src/jrd/: dyn_mod.epp, jrd.cpp, jrd_proto.h,
+	dfloat_stub.cpp, dyn.epp, dyn_def.epp:
+	
+	Remove JPN_ defines
+
 2003-02-07 19:54  brodsom
 
 	* firebird2/src/dudley/: ddl.cpp, ddl.h, exe.epp, extract.epp,
