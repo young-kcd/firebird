@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin,v 1.5 2001-10-17 22:48:01 bellardo Exp $
+#$Id: prefix.darwin,v 1.6 2001-10-18 21:31:45 bellardo Exp $
 
 
 #_____________________________________________________________________________
@@ -244,7 +244,6 @@ darwin_pseudo_fw:
 		$(FB_FRAMEWORK)/Versions/A/Resources/English.lproj/var/isc4.gdb
 	ln -s ../../../../../../help \
 		$(FB_FRAMEWORK)/Versions/A/Resources/English.lproj/var/help
-
 
 
 #   End of file prefix.darwin:	$(VERSION)	$(PLATFORM)
