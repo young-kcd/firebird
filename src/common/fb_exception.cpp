@@ -144,8 +144,8 @@ void status_exception::raise(ISC_STATUS status, ...) {
 
 /********************************* system_call_failed ****************************/
 
-system_call_failed::system_call_failed(const char* _syscall, int _error_code) : 
-	status_exception(isc_sys_request, isc_arg_string, _syscall, SYS_ARG, _error_code, isc_arg_end)
+system_call_failed::system_call_failed(const char* v_syscall, int v_error_code) : 
+	status_exception(isc_sys_request, isc_arg_string, v_syscall, SYS_ARG, v_error_code, isc_arg_end)
 {	
 }
 

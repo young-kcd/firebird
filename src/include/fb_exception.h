@@ -99,7 +99,7 @@ private:
 class system_call_failed : public status_exception
 {
 public:
-	system_call_failed(const char* _syscall, int _error_code);
+	system_call_failed(const char* v_syscall, int v_error_code);
 
 	static void raise(const char* syscall, int error_code);
 	static void raise(const char* syscall);
