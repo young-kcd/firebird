@@ -1,3 +1,10 @@
+2003-03-26 12:08  brodsom
+
+	* firebird2/builds/posix/: Makefile.in.static.isql,
+	Makefile.in.v5_examples, Makefile.in.static.gbak:
+	
+	Correct typing errors
+
 2003-03-25 14:24  brodsom
 
 	* firebird2/builds/posix/prefix.mingw.README.html:
