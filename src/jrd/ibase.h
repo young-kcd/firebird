@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.90 2004-10-25 03:52:29 skidder Exp $
+$Id: ibase.h,v 1.91 2004-10-27 00:20:59 skidder Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -566,7 +566,7 @@ ISC_STATUS ISC_EXPORT isc_get_slice(ISC_STATUS*,
 									ISC_LONG*);
 
 /* CVC: This non-const signature is needed for compatibility, see gds.cpp. */
-ISC_LONG ISC_EXPORT FB_API_DEPRECATED isc_interprete(ISC_SCHAR*,
+ISC_LONG FB_API_DEPRECATED ISC_EXPORT isc_interprete(ISC_SCHAR*,
 									 ISC_STATUS**);
 									 
 /* This const params version used in the engine and other places. */
