@@ -44,6 +44,7 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
+#include "../jrd/isc_f_proto.h"
 
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"

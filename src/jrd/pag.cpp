@@ -93,6 +93,7 @@
 #include "../jrd/os/pio_proto.h"
 #include "../jrd/thd_proto.h"
 #include "../jrd/ail.h"
+#include "../jrd/isc_f_proto.h"
 
 extern "C" {
 
