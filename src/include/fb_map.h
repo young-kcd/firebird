@@ -1,14 +1,32 @@
 /*
- *  fb_vector.h
- *  firebird_test
+ *	PROGRAM:		Utility classes
+ *	MODULE:			fb_map.h
+ *	DESCRIPTION:	Wrapper around STL's map (deprecated)
  *
- *  Created by john on Fri Dec 14 2001.
- *  Copyright (c) 2001 __MyCompanyName__. All rights reserved.
+ *  The contents of this file are subject to the Initial
+ *  Developer's Public License Version 1.0 (the "License");
+ *  you may not use this file except in compliance with the
+ *  License. You may obtain a copy of the License at
+ *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
+ *
+ *  Software distributed under the License is distributed AS IS,
+ *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing rights
+ *  and limitations under the License.
+ *
+ *  The Original Code was created by John Bellardo
+ *  for the Firebird Open Source RDBMS project on Fri Dec 14 2001.
+ *
+ *  Copyright (c) 2001 John Bellardo <bellardo at cs.ucsd.edu>
+ *  and all contributors signed below.
+ *
+ *  All Rights Reserved.
+ *  Contributor(s): ______________________________________.
  *
  */
 
-#ifndef FB_MAP_H
-#define FB_MAP_H
+#ifndef INCLUDE_FB_MAP_H
+#define INCLUDE_FB_MAP_H
  
 #include "../common/classes/alloc.h"
 
@@ -23,4 +41,4 @@ namespace Firebird
 	};
 } // namespace
 
-#endif	// FB_MAP_H
+#endif	// INCLUDE_FB_MAP_H
