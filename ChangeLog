@@ -1,3 +1,9 @@
+2004-10-30 10:10  skidder
+
+	* firebird2/configure.in (1.141.2.30):
+	
+	Add workaround for GCC 3.2 build problem
+
 2004-10-30 02:16  skidder
 
 	* firebird2/doc/WhatsNew (1.36.2.32):
