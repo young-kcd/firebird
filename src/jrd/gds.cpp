@@ -99,9 +99,10 @@
 #endif
 
 #ifdef UNIX
-#ifdef SUPERSERVER
+#if (defined SUPERSERVER) || (defined SOLARIS)
 #include <sys/mman.h>
 #include <sys/resource.h>
+#include "../jrd/err_proto.h"
 #endif
 #endif
 
@@ -399,9 +400,11 @@ static void		cleanup_malloced_memory(void *);
 static ULONG	free_memory(void *);
 static void		init(void);
 static int		yday(struct tm *);
-#if (defined SOLARIS && defined SUPERSERVER)
-static UCHAR*	mmap_anon(SLONG);
+
+/*#if (defined SOLARIS )
+//static UCHAR*	mmap_anon(SLONG);
 #endif
+*/
 static void		ndate(SLONG, struct tm *);
 static GDS_DATE	nday(struct tm *);
 static void		sanitize(TEXT *);
@@ -4719,7 +4722,7 @@ static int yday(struct tm *times)
 }
 
 
-#if (defined SOLARIS && defined SUPERSERVER)
+#if (defined SOLARIS )
 static UCHAR *mmap_anon(SLONG size)
 {
 /**************************************
@@ -4734,9 +4737,9 @@ static UCHAR *mmap_anon(SLONG size)
  *	for file mapping.
  *
  **************************************/
-	UCHAR *memory, *va, *va_end, *va1;
+	char *memory, *va, *va_end, *va1;
 	ULONG chunk, errno1;
-
+	int     anon_fd, page_size;
 /* Choose SYS_ALLOC_CHUNK such that it is always valid for the
    underlying mapped file and is a multiple of any conceivable
    memory page size that a hardware platform might support. */
@@ -4767,7 +4770,7 @@ static UCHAR *mmap_anon(SLONG size)
 /* Generate a virtually contiguous address space for size requested.
    MAP_PRIVATE is critical here, otherwise the mapped file turns to jelly. */
 
-	memory = mmap(0, size, (PROT_READ | PROT_WRITE), MAP_PRIVATE, anon_fd, 0);
+	memory = mmap(NULL, size, (PROT_READ | PROT_WRITE), MAP_PRIVATE, anon_fd, 0);
 	if (memory == MAP_FAILED) {
 		/* If no swap space or memory available maybe caller can ask for less.
 		   Punt on unexpected errors. */
@@ -4825,7 +4828,7 @@ static UCHAR *mmap_anon(SLONG size)
 		assert(*(ULONG *) va == (ULONG) va);
 #endif
 
-	return memory;
+	return (UCHAR *) memory;
 }
 #endif
 

@@ -136,6 +136,13 @@ void*	gds__tmp_file2(BOOLEAN, TEXT*, TEXT*, TEXT*);
 SINT64	API_ROUTINE isc_portable_integer(UCHAR*, SSHORT);
 void	gds__cleanup(void);
 
+
+#if (defined SOLARIS )
+UCHAR*   mmap_anon(SLONG);
+#endif
+
+
+
 #ifdef VMS
 int		unlink(SCHAR*);
 #endif
