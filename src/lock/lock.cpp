@@ -36,7 +36,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.47 2003-04-16 10:18:05 aafemt Exp $
+$Id: lock.cpp,v 1.48 2003-04-17 10:15:48 aafemt Exp $
 */
 
 #include "firebird.h"
@@ -909,7 +909,7 @@ void LOCK_manager( PTR manager_owner_offset)
 	OWN manager_owner, owner;
 	SRQ que;
 	int ret = FB_FAILURE;
-	local_status;
+	ISC_STATUS_ARRAY local_status;
 	SLONG value;
 	USHORT semaphore;
 	EVENT event_ptr;
