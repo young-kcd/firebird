@@ -23,9 +23,11 @@ FB_VER_SUFFIX_M:=$(shell cpp -DDARWIN -I.  install/arch-specific/darwin/buildsuf
 FB_MAJOR_VERS:=$(shell cpp -DDARWIN -I.  install/arch-specific/darwin/majorvers.c | tail -1 | sed -e 's/" "//g' -e 's/"//g')
 FB_MINOR_VERS:=$(shell cpp -DDARWIN -I.  install/arch-specific/darwin/minorvers.c | tail -1 | sed -e 's/" "//g' -e 's/"//g')
 
-package packages dist: INST_NM=Firebird-CS-$(FB_INST_VERS)
-package packages dist: BLOCKSIZE=1048576
-package packages dist:
+package packages dist: package_@FIREBIRD_ARCH_TYPE@
+
+package_classic package_embedded: INST_NM=Firebird-CS-$(FB_INST_VERS)
+package_classic package_embedded: BLOCKSIZE=1048576
+package_classic package_embedded:
 	mkdir -p $(DIR)/t
 	mv $(ROOT)/gen/firebird/frameworks/FirebirdCS.framework \
 			$(DIR)/t/Firebird.framework
@@ -81,9 +83,74 @@ package packages dist:
 
 # cpp -DDARWIN -I. install/arch-specific/darwin/fullvers.c | tail -1 | sed -e 's/" "//g' -e 's/"//g'
 	
+package_super package_server: INST_NM=Firebird-SS-$(FB_INST_VERS)
+package_super package_server: BLOCKSIZE=1048576
+package_super package_server:
+	mkdir -p $(DIR)/t
+	mv $(ROOT)/gen/firebird/frameworks/FirebirdSS.framework \
+			$(DIR)/t/Firebird.framework
+	sh -c 'cd $(DIR)/t; pax -w -f ../Archive.pax .; mkbom . ../Archive.bom'
+	gzip $(DIR)/Archive.pax
+	mv $(DIR)/t/Firebird.framework \
+		$(ROOT)/gen/firebird/frameworks/FirebirdSS.framework
+	mkdir -p $(DIR)/$(INST_NM).pkg/Contents/Resources
+	mv $(DIR)/Archive.* $(DIR)/$(INST_NM).pkg/Contents
+	cp install/arch-specific/darwin/PkgInfo $(DIR)/$(INST_NM).pkg/Contents
+	sed -e 's/_FB_BUILD_SUFFIX_/$(FB_VER_SUFFIX)/g' \
+			-e 's/_SMFB_BUILD_SUFFIX_/$(FB_VER_SUFFIX_SM)/g' \
+			-e 's/_MFB_BUILD_SUFFIX_/$(FB_VER_SUFFIX_M)/g' \
+			-e 's/_MAJOR_VERS_/$(FB_MAJOR_VERS)/g' \
+			-e 's/_MINOR_VERS_/$(FB_MINOR_VERS)/g' \
+			install/arch-specific/darwin/Info.plist \
+			> $(DIR)/$(INST_NM).pkg/Contents/Info.plist
+	sed -e 's/_FB_BUILD_SUFFIX_/$(FB_VER_SUFFIX)/g' \
+			-e 's/_SMFB_BUILD_SUFFIX_/$(FB_VER_SUFFIX_SM)/g' \
+			-e 's/_MFB_BUILD_SUFFIX_/$(FB_VER_SUFFIX_M)/g' \
+			-e 's/_MAJOR_VERS_/$(FB_MAJOR_VERS)/g' \
+			-e 's/_MINOR_VERS_/$(FB_MINOR_VERS)/g' \
+			install/arch-specific/darwin/Description.plist \
+			> $(DIR)/$(INST_NM).pkg/Contents/Resources/Description.plist
+	cp install/arch-specific/darwin/installer_background.pdf \
+			$(DIR)/$(INST_NM).pkg/Contents/Resources/background.pdf
+	cp install/arch-specific/darwin/install-script \
+			$(DIR)/$(INST_NM).pkg/Contents/Resources/postinstall
+	cp install/arch-specific/darwin/install-script \
+			$(DIR)/$(INST_NM).pkg/Contents/Resources/postupgrade
+	cp install/arch-specific/darwin/preinstall-script \
+			$(DIR)/$(INST_NM).pkg/Contents/Resources/preinstall
+	cp install/arch-specific/darwin/preupgrade-script \
+			$(DIR)/$(INST_NM).pkg/Contents/Resources/preupgrade
+	chmod a+rx $(DIR)/$(INST_NM).pkg/Contents/Resources/pre*
+	chmod a+rx $(DIR)/$(INST_NM).pkg/Contents/Resources/post*
+	cp install/arch-specific/darwin/*.txt \
+			$(DIR)/$(INST_NM).pkg/Contents/Resources
+	ln -s ../Archive.bom $(DIR)/$(INST_NM).pkg/Contents/Resources/$(INST_NM).bom
+	ln -s ../Archive.pax.gz \
+				$(DIR)/$(INST_NM).pkg/Contents/Resources/$(INST_NM).pax.gz
+	echo "NumFiles 0" > \
+			$(DIR)/$(INST_NM).pkg/Contents/Resources/$(INST_NM).sizes
+	echo -n "InstalledSize " >> \
+			$(DIR)/$(INST_NM).pkg/Contents/Resources/$(INST_NM).sizes
+	du -c $(ROOT)/gen/firebird/frameworks/FirebirdSS.framework \
+			| tail -1 | sed -e 's/[\t ]*total//' \
+			>> $(DIR)/$(INST_NM).pkg/Contents/Resources/$(INST_NM).sizes
+	echo "CompressedSize 0" >> \
+			$(DIR)/$(INST_NM).pkg/Contents/Resources/$(INST_NM).sizes
+	mv $(DIR)/$(INST_NM).pkg $(ROOT)/gen/firebird
+	rm -rf $(DIR)
 
-install: package
+# cpp -DDARWIN -I. install/arch-specific/darwin/fullvers.c | tail -1 | sed -e 's/" "//g' -e 's/"//g'
 	
+
+install: install_@FIREBIRD_ARCH_TYPE@
+	
+install_super install_server:
+	installer -pkg `pwd`/$(ROOT)/gen/firebird/Firebird-SS-$(FB_INST_VERS) \
+			-target /
+
+install_embedded install_classic:
+	installer -pkg `pwd`/$(ROOT)/gen/firebird/Firebird-CS-$(FB_INST_VERS) \
+			-target /
 
 
 
