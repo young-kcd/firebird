@@ -127,9 +127,6 @@ static void RefetchRecord(thread_db* tdbb, record_param* rpb, jrd_tra*);
 
 /* Pick up relation ids */
 
-#ifndef DEV_BUILD
-#define FUDGE	1
-#endif
 #define RELATION(name, id, ods)	id,
 #define FIELD(symbol, name, id, update, ods, new_id, new_ods)
 #define END_RELATION
