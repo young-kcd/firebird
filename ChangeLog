@@ -1,3 +1,85 @@
+2003-09-19 15:56  dimitr
+
+	* firebird2/src/jrd/ini.epp:
+	
+	Small metadata fix
+
+2003-09-19 12:26  aafemt
+
+	* firebird2/src/qli/: all.cpp, all_proto.h, blk.h, comma_proto.h,
+	compi_proto.h, compile.h, dtr.cpp, dtr.h, err_proto.h, exe.h,
+	format.h, parse.h, report.h:
+	
+	Partial 'struct' cleanup
+
+2003-09-19 05:37  brodsom
+
+	* firebird2/src/jrd/svc.cpp:
+	
+	Correction
+
+2003-09-19 02:36  brodsom
+
+	* firebird2/src/jrd/svc.cpp:
+	
+	Correction
+
+2003-09-19 00:12  brodsom
+
+	* firebird2/src/intl/collations/: bl88591sv0.h, bl88591uk0.h,
+	bl88591us0.h, blNEXTde0.h, blNEXTes0.h, blNEXTfr0.h, blNEXTit0.h,
+	blNEXTus0.h, db437de0.h, db437es1.h, db437fi0.h, db437fr0.h,
+	db437it0.h, db437nl0.h, db437sv0.h, db437uk0.h, db437us0.h,
+	db850cf0.h, db850de0.h, db850es0.h, db850fr0.h, db850it1.h,
+	db850nl0.h, db850pt0.h, db850sv1.h, db850uk0.h, db850us0.h,
+	db852cz0.h, db852po0.h, db852sl0.h, db857tr0.h, db860pt0.h,
+	db863cf1.h, db865da0.h, db865no0.h, db866ru0.h, pd437intl.h,
+	pd437swedfin.h, pd852czech.h, pd852hundc.h, pd852polish.h,
+	pd852slovene.h, pd861iceland.h, pd865nordan40.h, pd866cyrr.h,
+	pw1250czech.h, pw1250hun.h, pw1250hundc.h, pw1250polish.h,
+	pw1250slov.h, pw1251cyrr.h, pw1252i850.h, pw1252intl.h,
+	pw1252nor4.h, pw1252span.h, pw1252swfn.h, pw1253greek1.h,
+	pw1254turk.h, undef.h, xx1251_ua.h, xx88592czech.h, bl88591ca0.h,
+	bl88591da0.h, bl88591de0.h, bl88591es0.h, bl88591fi0.h,
+	bl88591fr0.h, bl88591is0.h, bl88591it0.h, bl88591nl0.h,
+	bl88591no0.h, bl88591pt0.h:
+	
+	Macro cleaning (intl)
+
+2003-09-19 00:05  brodsom
+
+	* firebird2/src/: intl/lc_ascii.cpp, intl/lc_big5.cpp,
+	intl/lc_dos.cpp, intl/lc_gb2312.cpp, intl/lc_iso8859_1.cpp,
+	intl/lc_iso8859_2.cpp, intl/lc_jis.cpp, intl/lc_ksc.cpp,
+	intl/lc_unicode_ucs2.cpp, jrd/intlobj.h, intl/charsets/cs_863.h,
+	intl/charsets/cs_864.h, intl/charsets/cs_865.h,
+	intl/charsets/cs_866.h, intl/charsets/cs_869.h,
+	intl/charsets/cs_cyrl.h, intl/charsets/cs_iso8859_1.h,
+	intl/charsets/cs_iso8859_13.h, intl/charsets/cs_iso8859_2.h,
+	intl/charsets/cs_iso8859_3.h, intl/charsets/cs_iso8859_4.h,
+	intl/charsets/cs_iso8859_5.h, intl/charsets/cs_iso8859_6.h,
+	intl/charsets/cs_iso8859_7.h, intl/charsets/cs_iso8859_8.h,
+	intl/charsets/cs_iso8859_9.h, intl/charsets/cs_next.h,
+	intl/charsets/cs_sjis.h, intl/charsets/cs_w1250.h,
+	intl/charsets/cs_w1251.h, intl/charsets/cs_w1252.h,
+	intl/charsets/cs_w1253.h, intl/charsets/cs_w1254.h,
+	intl/charsets/cs_w1255.h, intl/charsets/cs_w1256.h,
+	intl/charsets/cs_w1257.h, intl/charsets/cs_437.h,
+	intl/charsets/cs_737.h, intl/charsets/cs_775.h,
+	intl/charsets/cs_850.h, intl/charsets/cs_852.h,
+	intl/charsets/cs_857.h, intl/charsets/cs_858.h,
+	intl/charsets/cs_860.h, intl/charsets/cs_861.h,
+	intl/charsets/cs_862.h:
+	
+	Macro cleaning (intl)
+
+2003-09-19 00:04  brodsom
+
+	* firebird2/src/intl/: cs_narrow.cpp, cv_big5.cpp, cv_gb2312.cpp,
+	cv_jis.cpp, cv_ksc.cpp, cv_narrow.cpp, cv_unicode_fss.cpp:
+	
+	Style
+
 2003-09-18 23:58  brodsom
 
 	* firebird2/src/jrd/svc.cpp:
