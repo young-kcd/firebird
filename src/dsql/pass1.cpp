@@ -5774,61 +5774,80 @@ static dsql_nod* pass1_simple_case( dsql_req* request, dsql_nod* input, bool pro
 
 	// build when_operand list
 	{ // scope block
-	DsqlNodStack stack;
-	dsql_nod** ptr = list->nod_arg;
-	for (const dsql_nod* const* const end = ptr + list->nod_count;
-		ptr < end; ptr += 2)
-	{
-		pass1_put_args_on_stack(request, *ptr, stack, proc_flag);
-	}
-	node->nod_arg[e_simple_case_when_operands] = MAKE_list(stack);
+		DsqlNodStack stack;
+		dsql_nod** ptr = list->nod_arg;
+		for (const dsql_nod* const* const end = ptr + list->nod_count;
+			ptr < end; ptr += 2)
+		{
+			pass1_put_args_on_stack(request, *ptr, stack, proc_flag);
+		}
+		node->nod_arg[e_simple_case_when_operands] = MAKE_list(stack);
 	} // end scope block
 
 	// build when_result list including else_result at the end
 	// else_result is included for easy handling in MAKE_desc()
 	{ // scope block
-	DsqlNodStack stack;
-	dsql_nod** ptr = list->nod_arg;
-	const dsql_nod* const* const end = ptr + list->nod_count;
-	for (++ptr; ptr < end; ptr += 2) {
-		pass1_put_args_on_stack(request, *ptr, stack, proc_flag);
-	}
-	pass1_put_args_on_stack(request, input->nod_arg[2], stack, proc_flag);
-	node->nod_arg[e_simple_case_results] = MAKE_list(stack);
+		DsqlNodStack stack;
+		dsql_nod** ptr = list->nod_arg;
+		const dsql_nod* const* const end = ptr + list->nod_count;
+		for (++ptr; ptr < end; ptr += 2) {
+			pass1_put_args_on_stack(request, *ptr, stack, proc_flag);
+		}
+		pass1_put_args_on_stack(request, input->nod_arg[2], stack, proc_flag);
+		node->nod_arg[e_simple_case_results] = MAKE_list(stack);
 	} // end scope block
 
+	// Check if there is a parameter in the case/when operand list
+	bool setParameters = (node->nod_arg[e_simple_case_case_operand]->nod_type == nod_parameter);
+	if (!setParameters) 
+	{
+		list = node->nod_arg[e_simple_case_when_operands];
+		dsql_nod** ptr = list->nod_arg;
+		for (const dsql_nod* const* const end = ptr + list->nod_count;
+			ptr < end; ++ptr)
+		{
+			if ((*ptr)->nod_type == nod_parameter) 
+			{
+				setParameters = true;
+				break;
+			}
+		}
+	}
 	// build list for making describe information from 
 	// case_operand and when_operands this is used for
-	// setting parameter describers if used in this case
-	list = node->nod_arg[e_simple_case_when_operands];
-	dsql_nod* node1 = MAKE_node(nod_list, list->nod_count + 1);
-	
-	{ // scope block
-	int i = 0;
-	node1->nod_arg[i++] = node->nod_arg[e_simple_case_case_operand];
-	dsql_nod** ptr = list->nod_arg;
-	for (const dsql_nod* const* const end = ptr + list->nod_count;
-		ptr < end; ++ptr, ++i)
+	// setting parameter describers if used in this case.
+	if (setParameters) 
 	{
-		node1->nod_arg[i] = *ptr;
-	}
-	MAKE_desc_from_list(&node1->nod_desc, node1, "CASE");
-	// Set parameter describe information
-	set_parameter_type(node->nod_arg[e_simple_case_case_operand], node1, false);
-	} // end scope block
+		list = node->nod_arg[e_simple_case_when_operands];
+		dsql_nod* node1 = MAKE_node(nod_list, list->nod_count + 1);
 
-	{ // scope block
-	dsql_nod* simple_when = node->nod_arg[e_simple_case_when_operands];
-	dsql_nod** ptr = simple_when->nod_arg;
-	for (const dsql_nod* const* const end = ptr + simple_when->nod_count;
-		 ptr < end; ptr++) 
-	{
-		set_parameter_type(*ptr, node1, false);
-	}
-	} // end scope block
+		{ // scope block
+			int i = 0;
+			node1->nod_arg[i++] = node->nod_arg[e_simple_case_case_operand];
+			dsql_nod** ptr = list->nod_arg;
+			for (const dsql_nod* const* const end = ptr + list->nod_count;
+				ptr < end; ++ptr, ++i)
+			{
+				node1->nod_arg[i] = *ptr;
+			}
+			MAKE_desc_from_list(&node1->nod_desc, node1, "CASE");
+			// Set parameter describe information
+			set_parameter_type(node->nod_arg[e_simple_case_case_operand], node1, false);
+		} // end scope block
+
+		{ // scope block
+			dsql_nod* simple_when = node->nod_arg[e_simple_case_when_operands];
+			dsql_nod** ptr = simple_when->nod_arg;
+			for (const dsql_nod* const* const end = ptr + simple_when->nod_count;
+				ptr < end; ptr++) 
+			{
+				set_parameter_type(*ptr, node1, false);
+			}
+		} // end scope block
 	
-	// Clean up temporary used node
-	delete node1;
+		// Clean up temporary used node
+		delete node1;
+	}
 
 	// Set describer for output node
 	MAKE_desc(&node->nod_desc, node);
