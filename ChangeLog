@@ -1,3 +1,196 @@
+2003-11-11 15:47  eku
+
+	* firebird2/src/dsql/parse.y:
+	
+	Yacc doesn't like C++ comments in the language section.
+
+2003-11-11 13:50  paul_reeves
+
+	* firebird2/: builds/win32/make_all.bat,
+	builds/win32/make_examples.bat,
+	src/install/arch-specific/win32/BuildExecutableInstall.bat,
+	
+	Improve diagnostic output from make_all.log. Include Win32 examples
+	in install script.
+	src/install/arch-specific/win32/FirebirdInstallSupportFunctions.inc
+	, src/install/arch-specific/win32/FirebirdInstall_15.iss:
+
+2003-11-11 13:19  brodsom
+
+	* firebird2/src/journal/: server.epp, journal_vms.e, miscj.cpp,
+	rebuild.epp:
+	
+	-Replace gds__ constants with isc_ contants -Replace codes.h with
+	iberror.h (or remove) -Move gds__vax_integer and gds__event_block*
+	to alt.cpp and isc_ to gds.cpp -Use ISC_QUAD internally -Use
+	isc_vax_integer internally
+
+2003-11-11 13:15  brodsom
+
+	* firebird2/src/: wal/wal.cpp, wal/walc.cpp, wal/walr.cpp,
+	wal/walw.cpp, utilities/rebuild/rstore.epp,
+	utilities/gstat/ppg.cpp, utilities/run_service.cpp,
+	utilities/stats.epp, remote/os/win32/wnet.cpp,
+	remote/os/win32/srvr_w32.cpp, remote/inet.cpp, remote/merge.cpp,
+	remote/protocol.cpp, remote/remote.cpp, remote/server.cpp,
+	remote/allr.cpp, jrd/os/win32/isc_ipc.cpp, jrd/os/win32/winnt.cpp,
+	jrd/os/vms/dfloat_stub.cpp, jrd/os/vms/extvms.cpp,
+	jrd/os/vms/jio.cpp, jrd/os/vms/rdb.cpp, jrd/os/vms/rdbint.cpp,
+	jrd/os/vms/vms.cpp, jrd/os/vms/vmsevent.cpp,
+	jrd/os/posix/isc_ipc.cpp, jrd/os/posix/unix.cpp:
+	
+	-Replace gds__ constants with isc_ contants -Replace codes.h with
+	iberror.h (or remove) -Move gds__vax_integer and gds__event_block*
+	to alt.cpp and isc_ to gds.cpp -Use ISC_QUAD internally -Use
+	isc_vax_integer internally
+
+2003-11-11 13:12  brodsom
+
+	* firebird2/src/: jrd/ail.cpp, jrd/align.h, jrd/all.cpp,
+	jrd/alt.cpp, jrd/alt_proto.h, jrd/blb.cpp, jrd/blob_filter.cpp,
+	jrd/bookmark.cpp, jrd/btr.cpp, jrd/cch.cpp, jrd/cvt.cpp,
+	jrd/cvt2.cpp, jrd/dfw.epp, jrd/dyn.epp, jrd/dyn.h, jrd/dyn_mod.epp,
+	jrd/ExecuteStatement.cpp, jrd/exe.cpp, jrd/ext.cpp,
+	jrd/filters.cpp, jrd/flu.cpp, jrd/gds.cpp, jrd/gds_proto.h,
+	jrd/grant.epp, jrd/event.cpp, jrd/evl.cpp, jrd/evl_like.cpp,
+	jrd/err.cpp, jrd/ibase.h, jrd/iberr.cpp, jrd/iberr.h, jrd/idx.cpp,
+	jrd/ini.epp, jrd/intl.cpp, jrd/isc.cpp, jrd/isc_file.cpp,
+	jrd/isc_sync.cpp, jrd/jrd.cpp, jrd/lck.cpp, jrd/llio.cpp,
+	jrd/log.cpp, jrd/nav.cpp, jrd/nbak.cpp, jrd/old.cpp, jrd/par.cpp,
+	jrd/qatest.cpp, jrd/sdl.cpp, jrd/sdw.cpp, jrd/sort.cpp,
+	jrd/status.cpp, jrd/svc.cpp, jrd/tpc.cpp, jrd/tra.cpp, jrd/utl.cpp,
+	jrd/utl_proto.h, jrd/why.cpp, jrd/quad.cpp, jrd/rlck.cpp,
+	jrd/rng.cpp, jrd/rse.cpp, lock/lock.cpp, msgs/check_msgs.epp,
+	qli/show.epp, qli/exe.cpp, qli/meta.epp, qli/mov.cpp,
+	qli/picstr.cpp, qli/proc.epp, qli/eval.cpp:
+	
+	-Replace gds__ constants with isc_ contants -Replace codes.h with
+	iberror.h (or remove) -Move gds__vax_integer and gds__event_block*
+	to alt.cpp and isc_ to gds.cpp -Use ISC_QUAD internally -Use
+	isc_vax_integer internally
+
+2003-11-11 13:08  brodsom
+
+	* firebird2/src/: include/fb_types.h, ipserver/ipserver.cpp,
+	ipserver/ipclient.cpp, isql/isql.epp, isql/isql_proto.h,
+	isql/show_proto.h:
+	
+	-Replace gds__ constants with isc_ contants -Replace codes.h with
+	iberror.h (or remove) -Move gds__vax_integer and gds__event_block*
+	to alt.cpp and isc_ to gds.cpp -Use ISC_QUAD internally -Use
+	isc_vax_integer internally
+
+2003-11-11 13:05  brodsom
+
+	* firebird2/src/: alice/tdr.cpp, alice/alice_meta.epp,
+	alice/exe.cpp, burp/burp.h, burp/mvol.cpp, burp/restore.epp,
+	dsql/metd.epp, dsql/movd.cpp, dsql/pass1.cpp, dsql/user_dsql.cpp,
+	dsql/utld.cpp, dsql/alld.cpp, dsql/array.epp, dsql/array_proto.h,
+	dsql/ddl.cpp, dsql/dsql.cpp, dsql/errd.cpp, dsql/make.cpp,
+	dudley/exe.epp, dudley/extract.epp, dudley/parse.cpp, gpre/cme.cpp,
+	gpre/gpre_meta.epp, gpre/gpre_meta_boot.cpp, gpre/int.cpp,
+	gpre/int_cxx.cpp, gpre/movg.cpp, gpre/pas.cpp, gpre/sql.cpp:
+	
+	-Replace gds__ constants with isc_ contants -Replace codes.h with
+	iberror.h (or remove) -Move gds__vax_integer and gds__event_block*
+	to alt.cpp and isc_ to gds.cpp -Use ISC_QUAD internally -Use
+	isc_vax_integer internally
+
+2003-11-11 09:24  tmcsys
+
+	* firebird2/autogen.sh:
+	
+	
+	1) User can specify tool path in ENV for systems with multiple
+	versions of tools installed.  For example:
+	
+	/bin/sh AUTOCONF=[path_to_autoconf]/autoconf; export AUTOCONF
+	LIBTOOL=[path_to_libtool]/libtool; export LIBTOOL
+	LIBTOOLIZE=[path_to_libtooliize]/libtoolize; export LIBTOOLIZE
+	./autogen.sh
+	
+	2) Autoconf version check.  Obsolete versions were caught by
+	AC_PREREQ in configure.in and not by this script.
+	
+	Libtool version check may also pass obsolete versions.
+
+2003-11-11 09:05  bellardo
+
+	* firebird2/: configure.in, builds/posix/prefix.darwin:
+	
+	Darwin users need not shun editline.
+
+2003-11-11 08:49  bellardo
+
+	* firebird2/builds/posix/postfix.darwin:
+	
+	Make sure the intl library has the correct name.
+
+2003-11-11 07:52  eku
+
+	* firebird2/src/journal/server.epp:
+	
+	Fixed call setpgrp().
+
+2003-11-11 06:44  bellardo
+
+	* firebird2/builds/posix/prefix.darwin:
+	
+	Enable prebinding with the firebird library
+
+2003-11-11 03:34  bellardo
+
+	* firebird2/builds/posix/postfix.darwin:
+	
+	Make sure some critical installation files are added to the
+	framework
+
+2003-11-11 03:31  bellardo
+
+	* firebird2/src/jrd/os/darwin/config_root.cpp:
+	
+	root path needs a trailing path separator.  Style
+
+2003-11-11 02:01  bellardo
+
+	* firebird2/builds/posix/: Makefile.in.libfbembed, make.defaults,
+	postfix.darwin, prefix.darwin:
+	
+	Add the ability to pass extra options when linking libfbembed
+
+2003-11-11 01:27  bellardo
+
+	* firebird2/builds/posix/: postfix.darwin, prefix.darwin:
+	
+	add the darwin postfix file and update the prefix file accordingly
+
+2003-11-11 01:27  bellardo
+
+	* firebird2/builds/posix/postfix.darwin:
+	
+	file postfix.darwin was initially added on branch B1_5_Release.
+
+2003-11-11 01:26  bellardo
+
+	* firebird2/: configure.in, builds/posix/Makefile.in.firebird:
+	
+	Add support for a "postfix" makefile.  Basically it is a platform
+	dependent makefile that gets included at the end of src/Makefile. 
+	configure.in checks for a postfix file before including it, so
+	everything should "just work".	To add a postfix file for a
+	platform, simply create "builds/posix/postfix.<PLATFORM>".
+
+2003-11-11 00:28  bellardo
+
+	* firebird2/builds/posix/: Makefile.in.embed.gbak,
+	Makefile.in.embed.gdef, Makefile.in.embed.gfix,
+	Makefile.in.embed.gpre, Makefile.in.embed.isql,
+	Makefile.in.embed.qli, Makefile.in.embed.util,
+	Makefile.in.inet_server, make.defaults:
+	
+	Abstract away the embeded client link command, to support a custom
+	one for darwin
+
 2003-11-10 23:57  bellardo
 
 	* firebird2/builds/posix/: Makefile.in.firebird, prefix.darwin:
