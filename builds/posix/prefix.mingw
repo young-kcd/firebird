@@ -37,7 +37,10 @@ OS_ServerFiles= os/win32/srvr_w32 os/win32/window.cpp os/win32/chop.cpp os/win32
 LIB_LINK_OPTIONS:=-shared -Wl,--add-stdcall-alias
 LIB_LINK_RPATH:=-Wl,-rpath,
 LIB_LINK_SONAME:=-Wl,-soname,
+# Generation of fbclient_ms.lib
+LIB_LINK_IMPLIB:=-Wl,--out-implib,firebird/lib/fbclient_ms.lib
 LIB_GUI:= -mwindows -lcomctl32 -lgdi32
+
 EMBED_UTIL_TARGETS:=gstat gsec nbackup fb_lock_print
 CLIENT_UTIL_TARGETS:=gstat gsec ibguard instsvc instreg nbackup fb_lock_print
 # To build with ipserver uncomment the following line
@@ -50,6 +53,7 @@ FilesToAddVersionInfo=$(LIBFBEMBED_SO) $(LIBFBCLIENT_SO) $(LIBFBINTL_SO) \
  $(GSTAT) $(GSEC) $(GFIX) $(QLI) $(ISQL) $(GBAK) $(GPRE)
 # TODO: guardians also must be here
 FilesToAddDialog=$(FB_SUPER_SERVER) $(FB_CLASSIC_SERVER)
+FilesToAddDialog2=$(IBGUARD)
 
 # Override library names to suppress 'lib'-prefix
 LIBFBINTL_SO := $(patsubst %libfbintl.dll,%fbintl.dll,$(LIBFBINTL_SO))
@@ -58,3 +62,4 @@ ClientLibraryName := $(patsubst lib%,%,$(ClientLibraryName))
 # Override library names to suppress version suffix
 ClientLibraryNameFull := $(ClientLibraryName)
 ClientLibraryNameMajor := $(ClientLibraryName)
+
