@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.71 2003-04-16 10:17:36 aafemt Exp $
+$Id: common.h,v 1.72 2003-04-23 06:40:57 eku Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -161,6 +161,7 @@ int getsockname(int s, struct sockaddr *name, int *namelen);
 int setsockname(int s, struct sockaddr *name, int *namelen);
 int getpeername(int s, struct sockaddr *name, int *namelen);
 int shutdown(int s, int how);
+int syslog(int pri, char *fmt, ...);
 
 #ifdef __cplusplus
     }
