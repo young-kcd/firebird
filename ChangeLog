@@ -1,3 +1,9 @@
+2003-06-07 14:39  dimitr
+
+	* firebird2/src/jrd/: isc_version.h, isc_version.rc, license.h:
+	
+	Fixed broken version compatibility with IB.
+
 2003-06-06 16:13  alexpeshkoff
 
 	* firebird2/src/jrd/dyn.epp:
