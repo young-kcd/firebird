@@ -1829,7 +1829,7 @@ static BTN nav_open(
 		while (!(node = BTR_find_leaf(page, limit_ptr, impure->irsb_nav_data,
 									  0, idx->idx_flags & idx_descending,
 									  TRUE))
-			   || (static_cast<long>(get_long(BTN_NUMBER(node))) == END_BUCKET))
+			   || (get_long(BTN_NUMBER(node)) == END_BUCKET))
 			  page =
 				(BTR) CCH_HANDOFF(tdbb, window, page->btr_sibling, LCK_read,
 								  pag_index);

@@ -104,7 +104,7 @@ union {
 #endif	// endianness
 }
 
-inline ULONG get_long(const UCHAR* p)
+inline SLONG get_long(const UCHAR* p)
 {
 /**************************************
  *
@@ -122,7 +122,7 @@ inline ULONG get_long(const UCHAR* p)
 
 #if defined(i386) || defined(I386) || defined(_M_IX86) || defined(VMS)
 	// For IA32 (little-endian) this optimization is a _very_ large speed-up!
-	return *reinterpret_cast<const ULONG*>(p);
+	return *reinterpret_cast<const SLONG*>(p);
 #else
 	// Non-IA32 a bit slower implementation but faster than using union
 #ifndef WORDS_BIGENDIAN
