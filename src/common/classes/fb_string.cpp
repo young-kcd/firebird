@@ -371,7 +371,7 @@ extern "C" {
 
 	void AbstractString::vprintf(const char* format, va_list params) {
 #ifndef HAVE_VSNPRINTF
-#error NS: I'm lazy to implement version of this routine based on plain vsprintf.
+#error NS: I am lazy to implement version of this routine based on plain vsprintf.
 #error Please find an implementation of vsnprintf function for your platform.
 #error For example, consider importing library from http://www.ijs.si/software/snprintf/
 #error to Firebird src\extern repository
