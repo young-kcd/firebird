@@ -4459,7 +4459,7 @@ static processing_state print_sets()
 	ISQL_printf(isqlGlob.Out, Heading ? "ON" : "OFF");
 	ISQL_printf(isqlGlob.Out, NEWLINE);
 	if (global_Cols) {
-		collist* p = global_Cols;
+		const collist* p = global_Cols;
 		sprintf(Print_buffer, "Column print widths:%s", NEWLINE);
 		ISQL_printf(isqlGlob.Out, Print_buffer);
 		while (p) {
