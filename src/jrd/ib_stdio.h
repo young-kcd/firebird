@@ -104,9 +104,12 @@
  * for stdio.
  */
 
+#ifdef SOLX86
+#error SUN
+#endif
 
-#include "source/jrd/cdefs.h"
-#include "source/jrd/ansi.h"
+#include "../jrd/cdefs.h"
+#include "../jrd/ansi.h"
 
 #ifdef	_BSD_SIZE_T_
 typedef _BSD_SIZE_T_ size_t;

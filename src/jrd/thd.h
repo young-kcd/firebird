@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: thd.h,v 1.6 2002-08-22 08:20:27 dimitr Exp $
+$Id: thd.h,v 1.7 2002-09-25 06:22:42 kkuznetsov Exp $
 */
 
 #ifndef _JRD_THD_H_
@@ -241,12 +241,13 @@ typedef struct rec_mutx_t {
 } REC_MUTX_T, *REC_MUTX;
 
 /* Combined mutex and condition variable structure */
-
+#ifndef SOLARIS
 typedef struct cond_t {
 	THD_MUTEX_STRUCT cond_mutex;
 	THD_COND_STRUCT cond_cond;
 } COND_T, *COND;
 
+#endif
 /* Read/write lock structure */
 
 typedef struct wlck_t {

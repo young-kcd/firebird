@@ -35,7 +35,7 @@
  * 2002.04.16  Paul Beach - HP10 and unistd.h
  */
 /*
-$Id: common.h,v 1.32 2002-09-23 10:41:07 dimitr Exp $
+$Id: common.h,v 1.33 2002-09-25 06:22:42 kkuznetsov Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -307,8 +307,14 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
  *  Hey, we're not running on PDP-11's any more: would it kill you
  *  to use a short instead of a char to hold the fileno?  :-(
  */
+ 
+/* Why we (solarises) need to rewrite old BSD stdio
+   so many times I suggest stdIO from 
+   http://www.research.att.com/sw/tools/sfio/ 
+*/       
+#ifndef SFIO
 #define NEED_IB_STDIO
-
+#endif
 /* Define the following macro only on platforms which supply the library
    routine xdr_hyper.  For other platforms, omit the definition of this
    macro, and we will supply that function where we need it. */
