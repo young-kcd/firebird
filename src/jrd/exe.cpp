@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.67 2003-06-26 10:43:44 dimitr Exp $
+$Id: exe.cpp,v 1.68 2003-06-28 09:32:46 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -1864,7 +1864,8 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 
 	// Catch errors so we can unwind cleanly
 
-	SSHORT error_pending = FALSE;
+	bool error_pending = false;
+	bool catch_disabled = false;
 
 	// Execute stuff until we drop
 
@@ -2245,7 +2246,8 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 							{
 								request->req_operation = jrd_req::req_evaluate;
 								node = (*ptr)->nod_arg[e_err_action];
-								error_pending = FALSE;
+								error_pending = false;
+								catch_disabled = true;
 
 								/* On entering looper old_request etc. are saved.
 								   On recursive calling we will loose the actual old
@@ -2279,6 +2281,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 								   engine out of looper there by abruptly
 								   terminating the processing. */
 
+								catch_disabled = false;
 								tdbb->tdbb_default = request->req_pool;
 								tdbb->tdbb_request = request;
 
@@ -2699,9 +2702,9 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 //#endif
 	}	// try
 	catch (const std::exception&) {
-		// If we already have a pending error, and took another, simply
+		// If we already have a handled error, and took another, simply
 		// pass the buck.
-		if (error_pending == TRUE) {
+		if (catch_disabled) {
 			Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);
 		}
 
@@ -2716,7 +2719,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 			VERB_CLEANUP;
 		}
 
-		error_pending = TRUE;
+		error_pending = true;
 		request->req_operation = jrd_req::req_unwind;
 		request->req_label = 0;
 	}
@@ -2755,7 +2758,6 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 															 <= save_point->
 															 sav_number));
 				 save_point = transaction->tra_save_point) {
-				//if (error_pending)				
 				++transaction->tra_save_point->sav_verb_count;
 				VERB_CLEANUP;
 			}
