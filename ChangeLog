@@ -1,3 +1,13 @@
+2004-04-24 01:12  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp (1.73.2.19):
+	
+	Fix bug introduced in first prerelease of 1.5.1 which caused a slow
+	MERGE of some specific query.
+	
+	Fix bug with FULL JOIN and IS NULL in where clause.    SELECT *
+	FROM TableX FULL OUTER JOIN TableY ON (...) WHERE TableY IS NULL
+
 2004-04-21 12:01  paul_reeves
 
 	* firebird2/src/utilities/install.cpp (1.1.2.6):
