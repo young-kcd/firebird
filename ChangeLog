@@ -1,3 +1,40 @@
+2005-04-02 09:07  robocop
+
+	* firebird2/src/isql/isql.epp (1.137):
+	
+	- Temporary fix for Pavel's  firebird-Field-test-1173948.  - Some
+	little tweaks.
+
+2005-04-02 05:51  robocop
+
+	* firebird2/src/isql/: extra_proto.h (1.9), extract.epp (1.55),
+	isql.epp (1.136):
+	
+	I find hard to work with functions that span 800 or more lines.
+	Therefore, I modularized process_statement. I took the opportunity
+	to get rid of some local variables and fix performance info
+	printing.
+
+2005-04-02 05:10  robocop
+
+	* firebird2/src/jrd/: block_cache.h (1.8), flu.cpp (1.50), flu.h
+	(1.11), plugin_manager.cpp (1.22), plugin_manager.h (1.19), pwd.cpp
+	(1.41), smp.h (1.4), smp_impl.h (1.5):
+	
+	I hope nobody will take offense because I decided to do the right
+	spelling.
+
+2005-04-02 04:57  robocop
+
+	* firebird2/: src/utilities/install/install_client.cpp (1.7),
+	src/utilities/install/install_nt.h (1.11),
+	src/utilities/install/install_reg.cpp (1.13),
+	src/utilities/install/install_svc.cpp (1.20),
+	src/utilities/install/services.cpp (1.17),
+	builds/win32/msvc6/instclient.dsp (1.4):
+	
+	Misc.
+
 2005-04-01 12:26  dimitr
 
 	* firebird2/src/jrd/pwd.cpp (1.40):
