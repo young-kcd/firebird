@@ -117,6 +117,7 @@ const int INET_RETRY_CALL	= 5;
 
 #include "../jrd/thread_proto.h"
 #include "../common/config/config.h"
+#include "../common/classes/ClumpletWriter.h"
 
 #if (defined hpux || defined SCO_UNIX)
 extern int h_errno;
@@ -453,33 +454,24 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 	PACKET* packet = &rdb->rdb_packet;
 
 /* Pick up some user identification information */
-	UCHAR user_id[BUFFER_SMALL];
-	user_id[0] = CNCT_user;
-	UCHAR* p = user_id + 2;
-	// CVC: Warning: p2 is a reference. It avoids several casts below.
-	char*& p2 = reinterpret_cast<char*&>(p);
+	Firebird::ClumpletWriter user_id(false, MAX_DPB_SIZE);
+	char buffer[BUFFER_SMALL];
+
 	int eff_gid;
 	int eff_uid;
-	ISC_get_user(p2, &eff_uid, &eff_gid, 0, 0, 0, user_string);
-	user_id[1] = (UCHAR) strlen(p2);
-	p = p + user_id[1];
-	fb_assert(user_id[1] < BUFFER_SMALL);
+	ISC_get_user(buffer, &eff_uid, &eff_gid, 0, 0, 0, user_string);
+	user_id.insertString(CNCT_user, buffer, strlen(buffer));
 
-	*p++ = CNCT_host;
-	p++;
-	fb_assert(MAXHOSTLEN <= BUFFER_SMALL - (p - user_id));
-	ISC_get_host(p2, MAXHOSTLEN);
-	p[-1] = (UCHAR) strlen(p2);
-
-	for (; *p; p++) {
+	ISC_get_host(buffer, sizeof(buffer));
+	for (char* p = buffer; *p; p++) {
 		if (*p >= 'A' && *p <= 'Z') {
 			*p = *p - 'A' + 'a';
 		}
 	}
+	user_id.insertString(CNCT_host, buffer, strlen(buffer));
 
 	if ((eff_uid == -1) || uv_flag) {
-		*p++ = CNCT_user_verification;
-		*p++ = 0;
+		user_id.insertTag(CNCT_user_verification);
 	}
 #if !(defined VMS)
 	else
@@ -487,16 +479,11 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 		/* Communicate group id info to server, as user maybe running under group
 		   id other than default specified in /etc/passwd. */
 
-		*p++ = CNCT_group;
-		*p++ = sizeof(SLONG);
 		eff_gid = htonl(eff_gid);
-		memcpy(p, AOF32L(eff_gid), sizeof(SLONG));
-		p += sizeof(SLONG);
+		user_id.insertBytes(CNCT_group, 
+			reinterpret_cast<UCHAR*>(AOF32L(eff_gid)), sizeof(SLONG));
 	}
 #endif
-
-	const USHORT user_length = (USHORT) (p - user_id);
-	fb_assert(user_length <= sizeof(user_id));
 
 /* Establish connection to server */
 
@@ -507,8 +494,8 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 
 	P_CNCT*	cnct = &packet->p_cnct;
 
-	cnct->p_cnct_user_id.cstr_length = user_length;
-	cnct->p_cnct_user_id.cstr_address = user_id;
+	cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
+	cnct->p_cnct_user_id.cstr_address = const_cast<UCHAR*>(user_id.getBuffer());
 
 	static const p_cnct::p_cnct_repeat protocols_to_try1[] =
 	{
@@ -540,8 +527,8 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 
 		/* try again with next set of known protocols */
 
-		cnct->p_cnct_user_id.cstr_length = user_length;
-		cnct->p_cnct_user_id.cstr_address = user_id;
+		cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
+		cnct->p_cnct_user_id.cstr_address = const_cast<UCHAR*>(user_id.getBuffer());
 
 		static const p_cnct::p_cnct_repeat protocols_to_try2[] =
 		{
@@ -567,8 +554,8 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 
 		/* try again with next set of known protocols */
 
-		cnct->p_cnct_user_id.cstr_length = user_length;
-		cnct->p_cnct_user_id.cstr_address = user_id;
+		cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
+		cnct->p_cnct_user_id.cstr_address = const_cast<UCHAR*>(user_id.getBuffer());
 
 		static const p_cnct::p_cnct_repeat protocols_to_try3[] =
 		{
@@ -1082,55 +1069,44 @@ static int accept_connection(rem_port* port,
  *	response for protocol selection.
  *
  **************************************/
-	TEXT name[BUFFER_SMALL], password[BUFFER_TINY];
-
 /* Default account to "guest" (in theory all packets contain a name) */
 
-	strcpy(name, "guest");
-	password[0] = 0;
+	Firebird::string name("guest"), password;
 
 /* Pick up account and password, if given */
 
-	const TEXT* id = (TEXT *) cnct->p_cnct_user_id.cstr_address;
-	const TEXT* const end = id + cnct->p_cnct_user_id.cstr_length;
-
-	SLONG eff_gid, eff_uid;
-	eff_uid = eff_gid = -1;
+	Firebird::ClumpletReader id(false, cnct->p_cnct_user_id.cstr_address,
+									   cnct->p_cnct_user_id.cstr_length);
+	SLONG eff_gid = -1, eff_uid = -1;
 	bool user_verification = false;
-	while (id < end)
+	for (id.rewind(); !id.isEof(); id.moveNext())
 	{
-		switch (*id++)
+		switch (id.getClumpTag())
 		{
 		case CNCT_user:
 			{
-				const int length = *id++;
-				const int l = MIN(length, FB_NELEM(name) - 1);
-				strncpy(name, id, l);
-				name[l] = 0;
-				id += length;
+				id.getString(name);
 				break;
 			}
 
 		case CNCT_passwd:
 			{
-				const int length = *id++;
-				const int l = MIN(length, FB_NELEM(password) - 1);
-				strncpy(password, id, l);
-				password[l] = 0;
-				id += length;
+				id.getString(password);
 				break;
 			}
 
 		case CNCT_group:
 			{
-				TEXT* p = (TEXT *) &eff_gid;
-				int length  = *id++;
+				int length = id.getClumpLength();
+				const UCHAR* q = id.getBytes();
+				UCHAR* p = reinterpret_cast<UCHAR *>(&eff_gid);
 				if (length != 0) {
+					eff_gid = 0;
 					do {
-						*p++ = *id++;
+						*p++ = *q++;
 					} while (--length);
+					eff_gid = ntohl(eff_gid);
 				}
-				eff_gid = ntohl(eff_gid);
 				break;
 			}
 
@@ -1140,11 +1116,7 @@ static int accept_connection(rem_port* port,
 
 		case CNCT_user_verification:
 			user_verification = true;
-			id++;
 			break;
-
-		default:
-			id += *id + 1;
 		}
 	}
 

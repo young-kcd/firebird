@@ -41,6 +41,7 @@
 #include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../common/classes/fb_string.h"
+#include "../common/classes/ClumpletWriter.h"
 #include <time.h>
 
 #ifdef WIN_NT
@@ -216,33 +217,29 @@ rem_port* XNET_analyze(
 
 /* Pick up some user identification information */
 
-	TEXT user_id[128];
-	user_id[0] = CNCT_user;
-	TEXT* p = user_id + 2;
-	ISC_get_user(p, 0, 0, 0, 0, 0, 0);
-	user_id[1] = strlen(p);
+	TEXT buffer[128];
+	TEXT *p;
+	Firebird::ClumpletWriter user_id(false, MAX_DPB_SIZE);
 
-	for (; *p; p++) {
-		if (*p >= 'A' && *p <= 'Z')
+	ISC_get_user(buffer, 0, 0, 0, 0, 0, 0);
+	for (p = buffer; *p; p++) {
+		if (*p >= 'A' && *p <= 'Z') {
 			*p = *p - 'A' + 'a';
+		}
 	}
+	user_id.insertString(CNCT_user, buffer, strlen(buffer));
 
-	*p++ = CNCT_host;
-	p++;
-	ISC_get_host(p, (USHORT) (user_id + sizeof(user_id) - p));
-	p[-1] = strlen(p);
-
-	for (; *p; p++) {
-		if (*p >= 'A' && *p <= 'Z')
+	ISC_get_host(buffer, sizeof(buffer));
+	for (p = buffer; *p; p++) {
+		if (*p >= 'A' && *p <= 'Z') {
 			*p = *p - 'A' + 'a';
+		}
 	}
+	user_id.insertString(CNCT_host, buffer, strlen(buffer));
 
 	if (uv_flag) {
-		*p++ = CNCT_user_verification;
-		*p++ = 0;
+		user_id.insertTag(CNCT_user_verification);
 	}
-
-	const SSHORT user_length = p - user_id;
 
 /* Establish connection to server */
 
@@ -259,8 +256,8 @@ rem_port* XNET_analyze(
    then 5 protocol descriptions; however, the interprocess server 
    was created in 4.0 so this does not apply */
 
-	cnct->p_cnct_user_id.cstr_length = user_length;
-	cnct->p_cnct_user_id.cstr_address = (UCHAR*) user_id;
+	cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
+	cnct->p_cnct_user_id.cstr_address = const_cast<UCHAR*>(user_id.getBuffer());
 
 	static const p_cnct::p_cnct_repeat protocols_to_try1[] =
 	{
@@ -304,8 +301,8 @@ rem_port* XNET_analyze(
 
 		/* try again with next set of known protocols */
 
-		cnct->p_cnct_user_id.cstr_length = user_length;
-		cnct->p_cnct_user_id.cstr_address = (UCHAR*) user_id;
+		cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
+		cnct->p_cnct_user_id.cstr_address = const_cast<UCHAR*>(user_id.getBuffer());
 
 		static const p_cnct::p_cnct_repeat protocols_to_try2[] =
 		{
@@ -341,8 +338,8 @@ rem_port* XNET_analyze(
 
 		/* try again with next set of known protocols */
 
-		cnct->p_cnct_user_id.cstr_length = user_length;
-		cnct->p_cnct_user_id.cstr_address = (UCHAR*) user_id;
+		cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
+		cnct->p_cnct_user_id.cstr_address = const_cast<UCHAR*>(user_id.getBuffer());
 
 		static const p_cnct::p_cnct_repeat protocols_to_try3[] =
 		{
@@ -379,7 +376,6 @@ rem_port* XNET_analyze(
 /* once we've decided on a protocol, concatenate the version 
    string to reflect it...  */
 
-	TEXT buffer[64];
 	sprintf(buffer, "%s/P%d", port->port_version->str_data,
 			port->port_protocol);
 	ALLR_free((UCHAR *) port->port_version);

@@ -45,6 +45,7 @@
 #include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../common/config/config.h"
+#include "../common/classes/ClumpletWriter.h"
 
 #include <stdarg.h>
 
@@ -134,31 +135,29 @@ rem_port* WNET_analyze(Firebird::PathName& file_name,
 	PACKET* packet = &rdb->rdb_packet;
 
 /* Pick up some user identification information */
-	UCHAR user_id[200];
-	user_id[0] = CNCT_user;
-	UCHAR* p = user_id + 2;
-	ISC_get_user(reinterpret_cast<SCHAR*>(p), 0, 0, 0, 0, 0, user_string);
-	user_id[1] = (UCHAR) strlen((SCHAR *) p);
+	TEXT buffer[128];
+	TEXT *p;
+	Firebird::ClumpletWriter user_id(false, MAX_DPB_SIZE);
 
-	for (; *p; p++)
-		if (*p >= 'A' && *p <= 'Z')
+	ISC_get_user(buffer, 0, 0, 0, 0, 0, 0);
+	for (p = buffer; *p; p++) {
+		if (*p >= 'A' && *p <= 'Z') {
 			*p = *p - 'A' + 'a';
+		}
+	}
+	user_id.insertString(CNCT_user, buffer, strlen(buffer));
 
-	*p++ = CNCT_host;
-	p++;
-	ISC_get_host(reinterpret_cast<SCHAR*>(p), 64);
-	p[-1] = (UCHAR) strlen((const char*) p);
-
-	for (; *p; p++)
-		if (*p >= 'A' && *p <= 'Z')
+	ISC_get_host(buffer, sizeof(buffer));
+	for (p = buffer; *p; p++) {
+		if (*p >= 'A' && *p <= 'Z') {
 			*p = *p - 'A' + 'a';
+		}
+	}
+	user_id.insertString(CNCT_host, buffer, strlen(buffer));
 
 	if (uv_flag) {
-		*p++ = CNCT_user_verification;
-		*p++ = 0;
+		user_id.insertTag(CNCT_user_verification);
 	}
-
-	const SSHORT user_length = p - user_id;
 
 /* Establish connection to server */
 
@@ -177,8 +176,8 @@ rem_port* WNET_analyze(Firebird::PathName& file_name,
 
 /* If we want user verification, we can't speak anything less than version 7 */
 
-	cnct->p_cnct_user_id.cstr_length = user_length;
-	cnct->p_cnct_user_id.cstr_address = user_id;
+	cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
+	cnct->p_cnct_user_id.cstr_address = const_cast<UCHAR*>(user_id.getBuffer());
 
 	static const p_cnct::p_cnct_repeat protocols_to_try1[] =
 	{
@@ -221,8 +220,8 @@ rem_port* WNET_analyze(Firebird::PathName& file_name,
 
 		/* try again with next set of known protocols */
 
-		cnct->p_cnct_user_id.cstr_length = user_length;
-		cnct->p_cnct_user_id.cstr_address = user_id;
+	cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
+	cnct->p_cnct_user_id.cstr_address = const_cast<UCHAR*>(user_id.getBuffer());
 
 		static const p_cnct::p_cnct_repeat protocols_to_try2[] =
 		{
@@ -259,8 +258,8 @@ rem_port* WNET_analyze(Firebird::PathName& file_name,
 
 		/* try again with next set of known protocols */
 
-		cnct->p_cnct_user_id.cstr_length = user_length;
-		cnct->p_cnct_user_id.cstr_address = user_id;
+		cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
+		cnct->p_cnct_user_id.cstr_address = const_cast<UCHAR*>(user_id.getBuffer());
 
 		static const p_cnct::p_cnct_repeat protocols_to_try3[] =
 		{
@@ -298,7 +297,6 @@ rem_port* WNET_analyze(Firebird::PathName& file_name,
 /* once we've decided on a protocol, concatenate the version 
    string to reflect it...  */
 
-	TEXT buffer[BUFFER_TINY];
 	sprintf(buffer, "%s/P%d", port->port_version->str_data,
 			port->port_protocol);
 	ALLR_free(port->port_version);
@@ -568,58 +566,36 @@ static int accept_connection( rem_port* port, P_CNCT * cnct)
  *	response for protocol selection.
  *
  **************************************/
-	TEXT name[BUFFER_TINY], password[BUFFER_TINY];
-
 /* Default account to "guest" (in theory all packets contain a name) */
 
-	strcpy(name, "guest");
-	password[0] = 0;
+	Firebird::string name("guest"), password;
 
 /* Pick up account and password, if given */
 
-	const TEXT* id = (TEXT *) cnct->p_cnct_user_id.cstr_address;
-	const TEXT* const end = id + cnct->p_cnct_user_id.cstr_length;
+	Firebird::ClumpletReader id(false, cnct->p_cnct_user_id.cstr_address,
+									   cnct->p_cnct_user_id.cstr_length);
 
-	while (id < end)
-		switch (*id++) {
+	for (id.rewind(); !id.isEof(); id.moveNext())
+	{
+		switch (id.getClumpTag())
+		{
 		case CNCT_user:
 			{
-				const int length = *id++;
-				rem_str* string= (rem_str*) ALLR_block(type_str, length);
+				id.getString(name);
+				rem_str* string= (rem_str*) ALLR_block(type_str, name.length());
 				port->port_user_name = string;
-				string->str_length = length;
-				if (length) {
-					TEXT* p = (TEXT *) string->str_data;
-					int l = length;
-					do {
-						*p++ = *id++;
-					} while (--l);
-				}
-				strncpy(name, string->str_data, length);
-				name[length] = (TEXT) 0;
+				string->str_length = name.length();
+				strcpy(string->str_data, name.c_str());
 				break;
 			}
 
 		case CNCT_passwd:
 			{
-				TEXT* p = password;
-				int length = *id++;
-				if (length != 0) {
-					do {
-						*p++ = *id++;
-					} while (--length);
-				}
-				*p = 0;
+				id.getString(password);
 				break;
 			}
-
-		case CNCT_user_verification:
-			id++;
-			break;
-
-		default:
-			id += *id + 1;
 		}
+	}
 
 	// NS: Put in connection address. I have no good idea where to get an
 	// address of the remote end of named pipe so let's live without it for now
