@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.64 2003-02-28 23:53:38 brodsom Exp $
+$Id: common.h,v 1.65 2003-03-18 02:57:02 brodsom Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -440,7 +440,7 @@ typedef RETSIGTYPE (*SIG_FPTR) (int);
 #define IMPLEMENTATION  isc_info_db_impl_isc_hp_ux /* 31 */
 
 #define                 IEEE
-#include "../jrd/pragma.h"
+#pragma OPT_LEVEL 1
 // 16-Apr-2002 HP10 in unistd.h Paul Beach
 //#define setreuid(ruid,euid)     setresuid (ruid, euid, -1)
 //#define setregid(rgid,egid)     setresgid (rgid, egid, -1)
