@@ -1,3 +1,58 @@
+2003-05-10 17:37  hippoman
+
+	*
+	
+	* now it's nod needed a FB 1.0 install to make the install package,
+	everything is took from the source tree, or built..
+	firebird2/src/install/arch-specific/win32/BuildExecutableInstall.ba
+	t:
+
+2003-05-10 17:13  dimitr
+
+	* firebird2/doc/WhatsNew:
+	
+	Update.
+
+2003-05-10 16:36  hippoman
+
+	* firebird2/builds/win32/: make7_debug.bat, make7_release.bat:
+	
+	* moved intlcpp also to output dir
+
+2003-05-10 16:36  hippoman
+
+	* firebird2/builds/win32/build_all.bat:
+	
+	* called build_msgs from build_all
+
+2003-05-10 15:05  dimitr
+
+	* firebird2/src/jrd/vio.cpp:
+	
+	Fixed GC code to avoid [quite frequent] index corruptions.
+
+2003-05-10 15:01  dimitr
+
+	* firebird2/src/jrd/gds.cpp:
+	
+	Restore compatibility with VC6.
+
+2003-05-10 03:10  hippoman
+
+	* firebird2/src/install/arch-specific/win32/:
+	BuildExecutableInstall.bat, FirebirdInstall_15.iss:
+	
+	* install gds32 and fbclient into system32 * add cs and ss
+	executables to both installs * Different Names for CS and SS
+	install packages.  * echo off
+
+2003-05-10 02:06  hippoman
+
+	* firebird2/src/install/arch-specific/win32/:
+	BuildExecutableInstall.bat, FirebirdInstall_15.iss:
+	
+	* Support for msvc7 runtime and build
+
 2003-05-09 18:18  skidder
 
 	* firebird2/src/jrd/: gds.cpp, gds_proto.h, sort.cpp:
