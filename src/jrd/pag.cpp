@@ -118,33 +118,33 @@ static BOOLEAN find_type(SLONG, WIN *, PAG *, USHORT, USHORT, UCHAR **,
 // For 64-bit ports first created after or as a part of Firebird 2.0
 // release CPU architecture may be the same for both variants.
 
-static const CLASS_UNKNOWN = 0;
+static const int CLASS_UNKNOWN = 0;
 //static const CLASS_APOLLO_68K = 1;  // Apollo 68K, Dn 10K
-static const CLASS_SOLARIS_SPARC = 2; // Sun 68k, Sun Sparc, HP 9000/300, MAC AUX, IMP, DELTA, NeXT, UNIXWARE, DG_X86
-static const CLASS_SOLARIS_I386 = 3;  // Sun 386i
+static const int CLASS_SOLARIS_SPARC = 2; // Sun 68k, Sun Sparc, HP 9000/300, MAC AUX, IMP, DELTA, NeXT, UNIXWARE, DG_X86
+static const int CLASS_SOLARIS_I386 = 3;  // Sun 386i
 //static const CLASS_VMS_VAX = 4;     // VMS/VAX
 //static const CLASS_ULTRIX_VAX = 5;  // Ultrix/VAX
 //static const CLASS_ULTRIX_MIPS = 6; // Ultrix/MIPS
-static const CLASS_HPUX_PA = 7;		  // HP-UX on PA-RISC (was: HP 900/800 (precision))
-static const CLASS_NETWARE_I386 = 8;  // NetWare
+static const int CLASS_HPUX_PA = 7;		  // HP-UX on PA-RISC (was: HP 900/800 (precision))
+static const int CLASS_NETWARE_I386 = 8;  // NetWare
 //static const CLASS_MAC_OS = 9;	  // MAC-OS
-static const CLASS_AIX_PPC = 10;	  // AIX on PowerPC platform (was: IBM RS/6000)
+static const int CLASS_AIX_PPC = 10;	  // AIX on PowerPC platform (was: IBM RS/6000)
 //static const CLASS_DG_AVIION = 11;  // DG AViiON
 //static const CLASS_MPE_XL = 12;	  // MPE/XL
-static const CLASS_IRIX_MIPS = 13;	  // Silicon Grpahics/IRIS
-static const CLASS_CRAY = 14;		  // Cray
-static const CLASS_TRU64_ALPHA = 15;  // Tru64 Unix running on Alpha (was: Dec OSF/1)
-static const CLASS_WINDOWS_I386 = 16; // NT -- post 4.0 (delivered 4.0 as class 8)
+static const int CLASS_IRIX_MIPS = 13;	  // Silicon Grpahics/IRIS
+static const int CLASS_CRAY = 14;		  // Cray
+static const int CLASS_TRU64_ALPHA = 15;  // Tru64 Unix running on Alpha (was: Dec OSF/1)
+static const int CLASS_WINDOWS_I386 = 16; // NT -- post 4.0 (delivered 4.0 as class 8)
 //static const CLASS_OS2 = 17;		  // OS/2
 //static const CLASS_WIN16 = 18;	  // Windows 16 bit
-static const CLASS_LINUX_I386 = 19;   // LINUX on Intel series
-static const CLASS_LINUX_SPARC = 20;  // LINUX on sparc systems
-static const CLASS_FREEBSD_I386 = 21; // FreeBSD/i386
-static const CLASS_NETBSD_I386 = 22;  // NetBSD/i386
-static const CLASS_DARWIN_PPC = 23;   // Darwin/PowerPC
-static const CLASS_LINUX_AMD64 = 24;  // LINUX on AMD64 systems
+static const int CLASS_LINUX_I386 = 19;   // LINUX on Intel series
+static const int CLASS_LINUX_SPARC = 20;  // LINUX on sparc systems
+static const int CLASS_FREEBSD_I386 = 21; // FreeBSD/i386
+static const int CLASS_NETBSD_I386 = 22;  // NetBSD/i386
+static const int CLASS_DARWIN_PPC = 23;   // Darwin/PowerPC
+static const int CLASS_LINUX_AMD64 = 24;  // LINUX on AMD64 systems
 
-static const CLASS_MAX10 = CLASS_LINUX_AMD64;
+static const int CLASS_MAX10 = CLASS_LINUX_AMD64;
 
 // ARCHITECTURE COMPATIBILITY CLASSES
 
