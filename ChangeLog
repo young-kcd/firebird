@@ -1,3 +1,61 @@
+2003-10-31 17:42  skidder
+
+	* firebird2/builds/install/:
+	arch-specific/linux/classic/postinstall.sh.in,
+	misc/CSchangeRunUser.sh.in:
+	
+	Do not create home directory for firebird user
+
+2003-10-31 17:39  skidder
+
+	* firebird2/src/install/: misc/CSchangeRunUser.sh.in,
+	arch-specific/linux/classic/postinstall.sh.in:
+	
+	Do not create home directory for firebird user
+
+2003-10-31 13:41  eku
+
+	* firebird2/: configure.in, builds/posix/Makefile.in.intl,
+	builds/posix/Makefile.in.libfbclient:
+	
+	Let autoconf control whether -DSUPERCLIENT is used or not.
+
+2003-10-31 13:25  skidder
+
+	*
+	
+	We are known as Firebird now
+	firebird2/builds/install/arch-specific/linux/classic/postinstall.sh
+	.in:
+
+2003-10-31 13:21  skidder
+
+	* firebird2/:
+	builds/install/arch-specific/linux/classic/postinstall.sh.in,
+	src/install/arch-specific/linux/classic/postinstall.sh.in:
+	
+	Fix SuSE 9.0 install problem
+
+2003-10-31 12:33  eku
+
+	* firebird2/: configure.in, src/extlib/fbudf/fbudf.cpp,
+	src/journal/miscj.cpp, src/jrd/gds.cpp, src/jrd/perf.cpp,
+	src/jrd/svc.cpp, src/remote/inet.cpp, src/wal/driver.cpp:
+	
+	Cleanup usage of gettimeofday.
+
+2003-10-31 12:31  eku
+
+	* firebird2/builds/posix/Makefile.in.libfbclient:
+	
+	Removed '-DSUPERCLIENT' as it breaks CS build.
+
+2003-10-31 09:30  eku
+
+	* firebird2/src/gpre/ftn.cpp:
+	
+	Added missing ;
+
 2003-10-30 23:25  skidder
 
 	* firebird2/src/: common/classes/alloc.cpp, common/classes/alloc.h,
