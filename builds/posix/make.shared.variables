@@ -217,6 +217,18 @@ FBMEMORY_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBMEMORY_So
 
 #________________________________________________________________________
 #
+# common/config
+
+FBCONFIG_ClientFiles=config.cpp config_file.cpp
+FBCONFIG_ServerFiles=
+
+FBCONFIG_Files= $(FBCONFIG_ClientFiles) $(FBCONFIG_ServerFiles)
+
+FBCONFIG_Sources = $(addprefix common/memory/, $(FBCONFIG_Files))
+FBCONFIG_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCONFIG_Sources))))
+
+#________________________________________________________________________
+#
 # common
 
 FBCOMMON_ClientFiles = fb_exception.cpp
@@ -256,6 +268,7 @@ LIBFBEMBED_Objects =$(OS_SPECIFIC_Objects) \
                 $(FBUTIL_Objects) \
 				$(FBMEMORY_Objects) \
                 $(FBCOMMON_Objects) \
+                $(FBCONFIG_Objects) \
                 $(BURP_Objects) \
                 $(ALICE_Objects)
 
