@@ -196,7 +196,9 @@ bool ExecuteStatement::Fetch(TDBB tdbb, JRD_NOD * JrdVar) {
 	XSQLVAR *var=Sqlda->sqlvar;
     for (int i=0; i < Sqlda->sqld; i++, var++, JrdVar++) {
         DSC * d = EVL_assign_to(tdbb, *JrdVar);
-		if (d->dsc_dtype < 0 || d->dsc_dtype >= 
+// UCHAR dsc_dtype is never < 0 
+//		if (d->dsc_dtype < 0 || ............
+		if (d->dsc_dtype >= 
 			  sizeof(DscType2SqlType) / sizeof(DscType2SqlType[0])) {
 rec_err:
 			tdbb->tdbb_status_vector[0] = gds_arg_gds;

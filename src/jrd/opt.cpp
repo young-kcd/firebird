@@ -3379,8 +3379,9 @@ static RSB gen_aggregate(TDBB tdbb, OPT opt, JRD_NOD node)
 
 			SKD* sort_key = asb->asb_key_desc = (SKD*) asb->asb_key_data;
 			sort_key->skd_offset = 0;
-			assert(desc->dsc_dtype >= 0 &&
-				   desc->dsc_dtype < FB_NELEM(sort_dtypes));
+// UCHAR desc->dsc_dtype is always >=0
+//			assert(desc->dsc_dtype >= 0)
+			assert(desc->dsc_dtype < FB_NELEM(sort_dtypes));
 			sort_key->skd_dtype = sort_dtypes[desc->dsc_dtype];
 			/* as it is legal to have skd_dtype = 0
 			   I have removed these asserts, to avoid
@@ -4593,8 +4594,9 @@ static RSB gen_sort(TDBB tdbb,
 		sort_key->skd_flags = SKD_ascending;
 		if (*(node_ptr + sort->nod_count))
 			sort_key->skd_flags |= SKD_descending;
-		assert(desc->dsc_dtype >= 0 &&
-			   desc->dsc_dtype < FB_NELEM(sort_dtypes));
+// UCHAR desc->dsc_dtype is always >=0
+//			assert(desc->dsc_dtype >= 0);
+		assert(desc->dsc_dtype < FB_NELEM(sort_dtypes));
 		sort_key->skd_dtype = sort_dtypes[desc->dsc_dtype];
 		/*assert (sort_key->skd_dtype != 0); */
 		if (sort_key->skd_dtype == SKD_varying ||
