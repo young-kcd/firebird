@@ -4894,7 +4894,17 @@ static dsql_nod* pass1_make_derived_field(dsql_req* request, tsql* tdsql,
 	DEV_BLKCHK(select_item, dsql_type_nod);
 
 	switch (select_item->nod_type) {
-		case nod_field :
+		case nod_derived_field: 
+			{
+				// Create a derived field that points to a derived field
+				dsql_nod* derived_field = MAKE_node(nod_derived_field, e_derived_field_count);
+				derived_field->nod_arg[e_derived_field_value] = select_item;
+				derived_field->nod_arg[e_derived_field_name] = select_item->nod_arg[e_derived_field_name];
+				derived_field->nod_arg[e_derived_field_scope] = (dsql_nod*)(IPTR) request->req_scope_level;
+				derived_field->nod_desc = select_item->nod_desc;
+				return derived_field;
+			}
+		case nod_field:
 			{
 				const dsql_fld* field = (dsql_fld*) select_item->nod_arg[e_fld_field];
 				DEV_BLKCHK(field, dsql_type_fld);
