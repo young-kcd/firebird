@@ -519,11 +519,14 @@ USHORT PatchVersion(const TEXT* filename, DWORD verMS,
 		return (*err_handler) (werr, "MapViewOfFile()");
 	}
 
-	BYTE* p = mem;
-	BYTE* end = p + fsize;
+	// This is a "magic value" that will allow locating the version info.
+	// Windows itself does something equivalent internally.
 	BYTE lookup[] = {'V', 0, 'S', 0, '_', 0,
 		'V', 0, 'E', 0, 'R', 0, 'S', 0, 'I', 0, 'O', 0, 'N', 0, '_', 0,
 		'I', 0, 'N', 0, 'F', 0, 'O', 0, 0, 0, 0, 0, 0xbd, 0x04, 0xef, 0xfe};
+	BYTE* p = mem;				// First byte of mapped file
+	BYTE* end = mem + fsize;	// Last byte + 1 of mapped file
+
 	int i = 0;
 	while (p < end)
 	{
@@ -539,11 +542,12 @@ USHORT PatchVersion(const TEXT* filename, DWORD verMS,
 		UnmapViewOfFile(mem);
 		CloseHandle(hmap);
 		CloseHandle(hfile);
-		return (*err_handler) (0, "Could not patch the version info resource.");
+		return (*err_handler) (0, "Could not locate the version info resource.");
 	}
 
-	// The VS_FIXEDFILEINFO structure starts with the 4 bytes signature
-	// (which are the last 4 bytes of the 'lookup' buffer above).
+	// The VS_FIXEDFILEINFO structure itself is located 4 bytes before the end
+	// of the above "lookup" value (said differently : the first 4 bytes of
+	// FIXEDFILEINFO are the last 4 bytes of the "lookup" value).
 	VS_FIXEDFILEINFO* ffi = (VS_FIXEDFILEINFO*)(p - 4);
 	ffi->dwFileVersionMS = verMS;
 	ffi->dwProductVersionMS = verMS;
@@ -555,7 +559,80 @@ USHORT PatchVersion(const TEXT* filename, DWORD verMS,
 	ib_printf("ProductVersionMS : %8.8x\n", ffi->dwProductVersionMS);
 	ib_printf("ProductVersionLS : %8.8x\n", ffi->dwProductVersionLS);
 	*/
-		
+	
+	/*
+	// The start of the full VS_VERSIONINFO pseudo structure is located 6 bytes
+	// before the above "lookup" value. This "vi" (versioninfo) pointer points
+	// to the same block of bytes that would have been returned by the
+	// GetFileVersionInfo API.
+	BYTE* vi = p - sizeof(lookup) - 6;
+	
+	// The first WORD of this pseudo structure is its byte length
+	WORD viLength = *(WORD*)vi;
+
+	// Let's patch the FileVersion strings (unicode strings).
+	// This patch assumes the original version string has a major version and
+	// a minor version made of a single digit, like 1.5.x.y. It would need
+	// to be updated if we want to use versions like 1.51.x.y.
+	BYTE flookup[] = {'F', 0, 'i', 0, 'l', 0, 'e', 0,
+		'V', 0, 'e', 0, 'r', 0, 's', 0, 'i', 0, 'o', 0, 'n', 0, 0, 0};
+	p = vi;
+	end = vi + viLength;
+	i = 0;
+	while (p < end)
+	{
+		if (*p++ == flookup[i])
+		{
+			if (++i == sizeof(flookup))
+			{
+				// The unicode string is aligned on the next 32 bit value
+				// (See PSDK Version Info "String" pseudo structure.)
+				p = p + ((unsigned int)p % 4);
+				//ib_printf("FileVersion : %ls\n", p);
+				while (! isdigit(*p)) ++p;	// Get to first digit
+				*p = (verMS >> 16) + '0';	// Patch major digit
+				while (*p != '.') ++p;		// Get to dot
+				while (! isdigit(*p)) ++p;	// Get to first digit after dot
+				*p = (verMS & 0xffff) + '0';// Patch minor digit
+				i = 0; // To resume scanning from here (p)
+			}
+		}
+		else i = 0;
+	}
+	*/
+	
+	/*
+	// Let's patch the ProductVersion strings.
+	// This patch assumes the original version string has a major version and
+	// a minor version made of a single digit, like 1.5.x.y. It would need
+	// to be updated if we want to use versions like 1.51.x.y.
+	BYTE plookup[] = {'P', 0, 'r', 0, 'o', 0, 'd', 0, 'u', 0, 'c', 0, 't', 0,
+		'V', 0, 'e', 0, 'r', 0, 's', 0, 'i', 0, 'o', 0, 'n', 0, 0, 0};
+	p = vi;
+	end = vi + viLength;
+	i = 0;
+	while (p < end)
+	{
+		if (*p++ == plookup[i])
+		{
+			if (++i == sizeof(plookup))
+			{
+				// The unicode string is aligned on the next 32 bit value
+				// (See PSDK Version Info "String" pseudo structure.)
+				p = p + ((unsigned int)p % 4);
+				//ib_printf("ProductVersion : %ls\n", p);
+				while (! isdigit(*p)) ++p;	// Get to first digit
+				*p = (verMS >> 16) + '0';	// Patch major digit
+				while (*p != '.') ++p;		// Get to dot
+				while (! isdigit(*p)) ++p;	// Get to first digit after dot
+				*p = (verMS & 0xffff) + '0';// Patch minor digit
+				i = 0; // To resume scanning from here (p)
+			}
+		}
+		else i = 0;
+	}
+	*/
+	
 	UnmapViewOfFile(mem);
 	CloseHandle(hmap);
 	CloseHandle(hfile);
