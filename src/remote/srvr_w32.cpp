@@ -105,6 +105,7 @@
 #include "../jrd/thd_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/isc_i_proto.h"
+#include "../jrd/isc_s_proto.h"
 #include "../jrd/file_params.h"
 #include "../common/config/config.h"
 
@@ -126,6 +127,9 @@ static SERVICE_TABLE_ENTRY service_table[] = {
 	REMOTE_SERVICE, (LPSERVICE_MAIN_FUNCTION) CNTL_main_thread,
 	NULL, NULL
 };
+
+static const int SIGSHUT = 666;
+static int shutdown_pid = 0;
 
 /* put into ensure that we have a parent port for the XNET connections */
 static int xnet_server_set = FALSE;
@@ -189,6 +193,11 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 
 	connection_handle = parse_args(lpszArgs, &server_flag);
 
+	if (shutdown_pid) {
+		ISC_kill(shutdown_pid, SIGSHUT, 0);
+		return 0;
+	}
+
 	if ((server_flag & SRVR_multi_client) ||
 		!(server_flag & (SRVR_inet | SRVR_wnet | SRVR_ipc | SRVR_xnet))) {
 
@@ -201,10 +210,21 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 #endif
 	}
 
-/* CVC: Honor -b for SS on Win32. */
 #ifdef SUPERSERVER
+	// get priority class from the config file
+	int priority = Config::getProcessPriorityLevel();
+
+	// override it, if necessary
 	if (server_flag & SRVR_high_priority) {
+		priority = 1;
+	}
+
+	// set priority class
+	if (priority > 0) {
 		SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+	}
+	else if (priority < 0) {
+		SetPriorityClass(GetCurrentProcess(), IDLE_PRIORITY_CLASS);
 	}
 #endif
 
@@ -246,9 +266,18 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 							  0);
 		}
 		/* No need to waste a thread if we are running as a window.  Just start
-		 * the ipc communication
+		 * the IPC communication
 		 */
-		nReturnValue = WINDOW_main(hThisInst, nWndMode, server_flag);
+		if (Config::getCreateInternalWindow()) {
+			nReturnValue = WINDOW_main(hThisInst, nWndMode, server_flag);
+		}
+		else {
+			HANDLE hEvent =
+				ISC_make_signal(TRUE, TRUE, GetCurrentProcessId(), SIGSHUT);
+			WaitForSingleObject(hEvent, INFINITE);
+			THREAD_ENTER;
+			JRD_shutdown_all();
+		}
 	}
 
 	return nReturnValue;
@@ -411,7 +440,9 @@ static void THREAD_ROUTINE ipc_connect_wait_thread( void *dummy)
 	if (!(server_flag & SRVR_non_service))
 		thread = CNTL_insert_thread();
 
-	WINDOW_main(hInst, SW_NORMAL, server_flag);
+	if (Config::getCreateInternalWindow()) {
+		WINDOW_main(hInst, SW_NORMAL, server_flag);
+	}
 
 	if (!(server_flag & SRVR_non_service))
 		CNTL_remove_thread(thread);
@@ -498,9 +529,7 @@ static HANDLE parse_args( LPSTR lpszArgs, USHORT * pserver_flag)
  *
  **************************************/
 	TEXT *p, c;
-#ifndef SUPERSERVER
-	TEXT port[32];
-#endif
+	TEXT buffer[32];
 	HANDLE connection_handle;
 
 	connection_handle = INVALID_HANDLE_VALUE;
@@ -527,18 +556,31 @@ static HANDLE parse_args( LPSTR lpszArgs, USHORT * pserver_flag)
 					while (*p && *p == ' ')
 						p++;
 					if (*p) {
-						char *pp = port;
+						char *pp = buffer;
 						while (*p && *p != ' ') {
 							*pp++ = *p++;
 						}
 						*pp++ = '\0';
-						connection_handle = (HANDLE) atol(port);
+						connection_handle = (HANDLE) atol(buffer);
 					}
 					break;
 #endif
 
 				case 'I':
 					*pserver_flag |= SRVR_inet;
+					break;
+
+				case 'K':
+					while (*p && *p == ' ')
+						p++;
+					if (*p) {
+						char *pp = buffer;
+						while (*p && *p != ' ') {
+							*pp++ = *p++;
+						}
+						*pp++ = '\0';
+						shutdown_pid = atoi(buffer);
+					}
 					break;
 
 				case 'N':
