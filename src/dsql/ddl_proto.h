@@ -28,7 +28,7 @@ void DDL_execute(class dsql_req*);
 void DDL_generate(class dsql_req*, struct dsql_nod*);
 int	DDL_ids(class dsql_req*);
 void DDL_put_field_dtype(class dsql_req*, class dsql_fld*, USHORT);
-extern "C" void DDL_resolve_intl_type(class dsql_req*, class dsql_fld*, class str*);
+void DDL_resolve_intl_type(class dsql_req*, class dsql_fld*, class str*);
 void DDL_resolve_intl_type2 (struct dsql_req *, struct dsql_fld *, struct str *, BOOLEAN);
 
 #endif /* _DSQL_DDL_PROTO_H_ */

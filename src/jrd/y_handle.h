@@ -37,7 +37,7 @@
 
 union any_handle {
 	struct why_hndl* h_why;
-	struct dsql_req* h_dsql;
+	class dsql_req* h_dsql;
 	class att* h_dbb;
 	class jrd_tra* h_tra;
 };
