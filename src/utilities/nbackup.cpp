@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbackup.cpp,v 1.18 2004-03-16 05:54:15 skidder Exp $
+ *  $Id: nbackup.cpp,v 1.19 2004-03-16 06:11:56 skidder Exp $
  *
  */
  
@@ -524,10 +524,11 @@ void nbackup::backup_database(int level, const char* fname) {
 			// Let's generate nice new filename
 			Firebird::PathName begin, fil;
 			PathUtils::splitLastComponent(begin, fil, database);
-			char temp[100];
-			sprintf(temp, "%s-%d-%04d%02d%02d-%02d%02d", fil.c_str(), level,
+			char temp[MAXPATHLEN];
+			SNPRINTF(temp, sizeof(temp), "%s-%d-%04d%02d%02d-%02d%02d", fil.c_str(), level,
 				today->tm_year + 1900, today->tm_mon+1, today->tm_mday,
 				today->tm_hour, today->tm_min);
+			temp[sizeof(temp)-1] = 0;
 			bakname = temp;
 			printf("%s", bakname.c_str()); // Print out generated filename for script processing
 		}
