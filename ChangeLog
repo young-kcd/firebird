@@ -1,3 +1,64 @@
+2003-10-16 23:27  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	  Backport
+	bugfix: Missing initialization of position vector. Thanks for
+	Nickolay who notice this.
+
+2003-10-16 23:02  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	bugfix: Missing initialization of position vector. Thanks for
+	Nickolay who notice this.
+
+2003-10-16 15:12  alexpeshkoff
+
+	* firebird2/src/alice/tdr.cpp:
+	
+	Backported Claudio's fix to 1_5
+
+2003-10-16 10:50  robocop
+
+	* firebird2/src/: alice/alice.cpp, alice/alice.h,
+	alice/alice_meta.epp, alice/exe.cpp, alice/tdr.cpp,
+	alice/tdr_proto.h, dsql/array.epp, dsql/blob.epp,
+	dsql/blob_proto.h, dsql/ddl.cpp, dsql/ddl_proto.h, dsql/dsql.cpp,
+	dsql/hsh.cpp, dsql/hsh_proto.h, dsql/metd.epp, dsql/metd_proto.h,
+	dsql/parse.y, dudley/lex.cpp, gpre/ada.cpp, gpre/c_cxx.cpp,
+	gpre/cob.cpp, gpre/ftn.cpp, gpre/gpre.cpp, gpre/gpre.h,
+	gpre/gpre_meta_boot.cpp, gpre/int.cpp, gpre/int_cxx.cpp,
+	gpre/msc.cpp, gpre/par.cpp, gpre/parse.h, gpre/pas.cpp,
+	gpre/sql.cpp, isql/isql.epp, isql/isql_proto.h, jrd/cvt.cpp,
+	jrd/cvt_proto.h, jrd/exe.h, jrd/gds.cpp, jrd/gds_proto.h,
+	jrd/ibase.h, jrd/opt.cpp, jrd/par.cpp, jrd/os/posix/isc_ipc.cpp,
+	qli/command.cpp, qli/compi_proto.h, qli/compile.cpp, qli/exe.h,
+	qli/expand.cpp, qli/format.cpp, qli/gener.cpp, qli/picst_proto.h,
+	qli/picstr.cpp, qli/report.cpp, remote/xdr.cpp:
+	
+	const correctness and other tasks
+
+2003-10-16 07:05  paul_reeves
+
+	* firebird2/src/install/arch-specific/win32/strip_comments.sed:
+	
+	file strip_comments.sed was initially added on branch B1_5_Release.
+
+2003-10-16 07:05  paul_reeves
+
+	* firebird2/: builds/win32/msvc6/fb2control.dsp,
+	src/install/arch-specific/win32/BuildExecutableInstall.bat,
+	src/install/arch-specific/win32/FirebirdInstall_15.iss,
+	src/install/arch-specific/win32/installation_readme.txt,
+	src/install/arch-specific/win32/strip_comments.sed,
+	src/utilities/fbcpl/FBControl.rc, src/utilities/fbcpl/fbdialog.cpp,
+	src/utilities/fbcpl/fbdialog.h, src/utilities/fbcpl/fbpanel.cpp,
+	src/utilities/fbcpl/fbpanel.h:
+	
+	Concatenate ibase.h for the binary installer. Tweak the InnoSetup
+	install script a little more.
+
 2003-10-15 18:16  alexpeshkoff
 
 	*
