@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pat.cpp,v 1.17 2003-10-06 09:48:44 robocop Exp $
+//	$Id: pat.cpp,v 1.18 2003-10-07 06:20:50 eku Exp $
 //
 
 #include "firebird.h"
@@ -173,7 +173,7 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 			if (sw_gen) {
 				*p++ = c;
 				if ((c == '\n') && (*pattern))
-					for (n = column; n; --n)
+					for (USHORT n = column; n; --n)
 						*p++ = ' ';
 			}
 			continue;
