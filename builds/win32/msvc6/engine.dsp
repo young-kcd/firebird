@@ -1249,10 +1249,6 @@ SOURCE=..\..\..\src\jrd\os\thd_priority.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\thd_proto.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\tpc.h
 # End Source File
 # Begin Source File
