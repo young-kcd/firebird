@@ -115,7 +115,7 @@ namespace Firebird {
 		StoragePair x;
 		openStorage(x, n
 #ifdef DEV_BUILD
-				, "baseAssign"
+				, __FILE__, __LINE__
 #endif
 			);
 		x.newStorage[n] = 0;
@@ -126,7 +126,7 @@ namespace Firebird {
 		StoragePair x;
 		openStorage(x, length() + n
 #ifdef DEV_BUILD
-				, "baseAppend"
+				, __FILE__, __LINE__
 #endif
 			);
 		if (x.oldStorage) {
@@ -143,7 +143,7 @@ namespace Firebird {
 		StoragePair x;
 		openStorage(x, length() + n
 #ifdef DEV_BUILD
-				, "baseInsert"
+				, __FILE__, __LINE__
 #endif
 			);
 		if (x.oldStorage) {
@@ -164,7 +164,7 @@ namespace Firebird {
 		StoragePair x;
 		openStorage(x, length() - n
 #ifdef DEV_BUILD
-				, "baseErase"
+				, __FILE__, __LINE__
 #endif
 			);
 		if (x.oldStorage) {
@@ -187,7 +187,7 @@ namespace Firebird {
 		StoragePair x;
 		openStorage(x, n
 #ifdef DEV_BUILD
-				, "reserve"
+				, __FILE__, __LINE__
 #endif
 		);
 		userSize = l;
@@ -207,7 +207,7 @@ namespace Firebird {
 		StoragePair x;
 		openStorage(x, n
 #ifdef DEV_BUILD
-				, "resize"
+				, __FILE__, __LINE__
 #endif
 			);
 		if (x.oldStorage) {
@@ -369,7 +369,7 @@ namespace Firebird {
 		StoragePair x;
 		openStorage(x, NewLength
 #ifdef DEV_BUILD
-				, "baseTrim"
+				, __FILE__, __LINE__
 #endif
 			);
 		if (x.oldStorage) {

@@ -29,7 +29,7 @@
 #ifndef FB_STRING_H
 #define FB_STRING_H
 
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 #include <string.h>
  
 #include "../include/fb_types.h"
@@ -39,33 +39,7 @@
 
 namespace Firebird
 {
-	class StringAllocator {
-	private:
-		MemoryPool* pool;
-	protected:
-		inline StringAllocator() {
-			pool = getDefaultMemoryPool();
-		}
-		inline StringAllocator(MemoryPool* p) {
-			pool = p;
-		}
-		inline char* getMemory(unsigned int n
-#ifdef DEV_BUILD
-			, const char *fun
-#endif
-		) {
-			char *rc = new(*pool
-#ifdef DEV_BUILD
-			, fun, 0
-#endif
-								) char[n];
-			if (! rc) {
-				fatal_exception::raise("Firebird::string - out of memory");
-			}
-			return rc;
-		}
-	};
-	class AbstractString : private StringAllocator {
+	class AbstractString : private AutoStorage {
 	public:
 		typedef char char_type;
 		typedef unsigned int size_type;
@@ -103,21 +77,21 @@ namespace Firebird
 		// in smallStorage. Changes actualSize of string.
 		inline void allocateStorage(size_type uSize
 #ifdef DEV_BUILD
-			, const char *fun
+			, const char *file, int line
 #endif
 		) {
 			fb_assert(uSize >= smallStorageSize);
 			size_type aSize = uSize + reserveSize + 1;
 			actualSize = aSize;
-			bigStorage = getMemory(aSize
+			bigStorage = new (getPool()
 #ifdef DEV_BUILD
-				, fun
+				, file, 0
 #endif
-				);
+						) char[aSize];
 		}
 		// Returns valid pointer to new storage 
 		// and sets all size related information of this string.
-		// Primary usage - constructors
+		// Usage - constructors.
 		inline pointer createStorage(size_type uSize) {
 			checkSize(uSize);
 			userSize = uSize;
@@ -128,7 +102,7 @@ namespace Firebird
 			}
 			allocateStorage(uSize
 #ifdef DEV_BUILD
-				, "createStorage"
+				, __FILE__, __LINE__
 #endif
 				);
 			bigStorage[uSize] = 0;
@@ -150,7 +124,7 @@ namespace Firebird
 		friend struct StoragePair;
 		inline void openStorage(StoragePair& rc, size_type newSize
 #ifdef DEV_BUILD
-			, const char *fun
+			, const char *file, int line
 #endif
 		) {
 			checkSize(newSize);
@@ -178,7 +152,7 @@ namespace Firebird
 			}
 			allocateStorage(newSize
 #ifdef DEV_BUILD
-				, fun
+				, file, line
 #endif
 				);
 			rc.newStorage = bigStorage;
@@ -199,13 +173,13 @@ namespace Firebird
 			smallStorage[0] = 0;
 		}
 		AbstractString(size_type size, char_type c);
-		inline AbstractString(MemoryPool* p) : StringAllocator(p) {
+		inline explicit AbstractString(MemoryPool& p) : AutoStorage(p) {
 			actualSize = smallStorageSize;
 			userSize = 0;
 			smallStorage[0] = 0;
 		}
-		AbstractString(MemoryPool* p, const AbstractString& v) 
-			: StringAllocator(p)
+		inline explicit AbstractString(MemoryPool& p, const AbstractString& v) 
+			: AutoStorage(p)
 		{
 			memcpy(createStorage(v.length()), v.c_str(), v.length());
 		}
@@ -360,7 +334,7 @@ namespace Firebird
 		inline void alltrim(const_pointer ToTrim = " ") {
 			baseTrim(TrimBoth, ToTrim);
 		}
-		bool LoadFromFile(FILE *file);
+		bool LoadFromFile(IB_FILE *file);
 		inline ~AbstractString() {
 			if (actualSize > smallStorageSize)
 				delete bigStorage;
@@ -397,8 +371,8 @@ namespace Firebird
 		inline StringBase<Comparator>(size_type n, char_type c) : AbstractString(n, c) {}
 		inline StringBase<Comparator>(char_type c) : AbstractString(1, c) {}
 		inline StringBase<Comparator>(const_iterator first, const_iterator last) : AbstractString(last - first, first) {}
-		inline StringBase<Comparator>(MemoryPool* p) : AbstractString(p) {}
-		inline StringBase<Comparator>(MemoryPool* p, const AbstractString& v) : AbstractString(p, v) {}
+		inline explicit StringBase<Comparator>(MemoryPool& p) : AbstractString(p) {}
+		inline explicit StringBase<Comparator>(MemoryPool& p, const AbstractString& v) : AbstractString(p, v) {}
 
 		inline StringType& append(const StringType& str) {
 			fb_assert(&str != this);
@@ -600,6 +574,8 @@ namespace Firebird
 		inline bool operator>=(const StringType& str) const {return compare(str) >= 0;}
 		inline bool operator> (const StringType& str) const {return compare(str) >  0;}
 		inline bool operator!=(const StringType& str) const {return compare(str) != 0;}
+
+		inline operator bool() {return length() > 0;}
     };
 
 	typedef StringBase<StringComparator> string;
