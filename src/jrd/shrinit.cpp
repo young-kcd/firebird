@@ -249,7 +249,7 @@ int		DSQL_yychar = 0;
 int*	DSQL_hash_table = 0;
 void*	gdbb = 0;
 int*	internal_db_handles = 0;
-#if defined(DEV_BUILD) && defined(WIN32) && defined(SUPERSERVER)
+#if defined(DEV_BUILD) && defined(WIN_NT) && defined(SUPERSERVER)
 FILE	*redirected_output = 0;
 #endif
 
