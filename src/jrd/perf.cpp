@@ -46,7 +46,6 @@
 #if (defined WIN_NT || defined PC_PLATFORM)
 #include <sys/timeb.h>
 #define NO_TIMES
-#define NO_GETTIMEOFDAY
 #endif
 #endif /* NETWARE_386 */
 
@@ -69,7 +68,6 @@ static SCHAR *report =
 	"elapsed = !e cpu = !u reads = !r writes = !w fetches = !f marks = !m$";
 
 #ifdef VMS
-#define NO_GETTIMEOFDAY
 #define TICK	100
 extern void ftime();
 #endif
@@ -242,11 +240,11 @@ void API_ROUTINE perf_get_info(int **handle, PERF * perf)
 	SCHAR *p, buffer[256];
 	SSHORT l, buffer_length, item_length;
 	STATUS jrd_status[20];
-#ifdef NO_GETTIMEOFDAY
+#ifdef HAVE_GETTIMEOFDAY
+	struct timeval tp;
+#else
 	struct timeb time_buffer;
 #define LARGE_NUMBER 696600000	/* to avoid overflow, get rid of decades) */
-#else
-	struct timeval tp;
 #endif
 
 /* If there isn't a database, zero everything out */
@@ -263,21 +261,18 @@ void API_ROUTINE perf_get_info(int **handle, PERF * perf)
 
 	times(&perf->perf_times);
 
-#ifdef NO_GETTIMEOFDAY
+#ifdef HAVE_GETTIMEOFDAY
+#ifdef GETTIMEOFDAY_RETURNS_TIMEZONE
+	(void)gettimeofday(&tp, (struct timezone *)0);
+#else
+	(void)gettimeofday(&tp);
+#endif
+	perf->perf_elapsed = tp.tv_sec * 100 + tp.tv_usec / 10000;
+#else
 	ftime(&time_buffer);
 	perf->perf_elapsed =
 		(time_buffer.time - LARGE_NUMBER) * 100 + (time_buffer.millitm / 10);
-
-#else
-#ifdef	M88K
-	gettimeofday(&tp);
-#else
-	gettimeofday(&tp, 0L);
-#endif /* M88K */
-
-	perf->perf_elapsed = tp.tv_sec * 100 + tp.tv_usec / 10000;
-
-#endif /* NO_GETTIMEOFDAY */
+#endif
 
 	if (!*handle)
 		return;

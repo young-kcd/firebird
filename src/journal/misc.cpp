@@ -59,20 +59,6 @@
 #define TOMORROW	"TOMORROW"
 #define YESTERDAY	"YESTERDAY"
 
-#ifndef WIN_NT
-#ifdef NETWARE_386
-#define GETTIMEOFDAY(time,tz)	gettimeofday (time)
-#endif
-
-#ifndef GETTIMEOFDAY
-#define GETTIMEOFDAY(time,tz)	gettimeofday (time, tz)
-#define TIMEOFDAY_TZ
-#endif
-#endif
-
-#if !defined(WIN_NT)
-extern struct tm *localtime();
-#endif
 
 static void now_to_date(struct tm *, SLONG[2]);
 
@@ -247,12 +233,12 @@ void MISC_get_time( struct timeval *current)
  *      Get the current time of day.
  *
  **************************************/
-#ifdef GETTIMEOFDAY
-#ifdef TIMEOFDAY_TZ
-	struct timezone tzp;
+#ifdef HAVE_GETTIMEOFDAY
+#ifdef GETTIMEOFDAY_RETURNS_TIMEZONE
+	(void)gettimeofday(current, (struct timezone *)0);
+#else
+	(void)gettimeofday(current);
 #endif
-
-	GETTIMEOFDAY(current, &tzp);
 #else
 	struct timeb buffer;
 

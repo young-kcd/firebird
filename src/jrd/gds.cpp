@@ -45,6 +45,10 @@
 #include "../jrd/iberr.h"
 #include "../jrd/gds_proto.h"
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #ifndef WIN_NT
 #include <sys/param.h>
 #endif
@@ -92,7 +96,6 @@
 #endif
 
 #ifdef UNIX
-#include <unistd.h>
 #ifdef SUPERSERVER
 #include <sys/mman.h>
 #include <sys/resource.h>
@@ -210,11 +213,6 @@ static CONST SCHAR *FAR_VARIABLE CONST messages[] = {
 #include "gen/msgs.h"
 	0							/* Null entry to terminate list */
 };
-
-#ifndef GETTIMEOFDAY
-#define GETTIMEOFDAY(time,tz)	gettimeofday ((struct timeval*)time, (struct timezone*)tz)
-#define TIMEOFDAY_TZ
-#endif
 
 #ifdef NETWARE_386
 extern int regular_malloc;
@@ -1931,26 +1929,26 @@ void API_ROUTINE gds__log(TEXT * text, ...)
  **************************************/
 	va_list ptr;
 	IB_FILE *file;
-	SLONG t[2];
-#if !(defined VMS || defined PC_PLATFORM || defined WIN_NT)
-	SLONG z[2];
-#endif
 	int oldmask;
+	time_t now;
 #if defined(STACK_EFFICIENT) && !defined(DEV_BUILD) && !defined(DEBUG_GDS_ALLOC)
 	TEXT *name = (TEXT *) gds__alloc((SLONG) (sizeof(TEXT) * MAXPATHLEN));
 #else /* STACK_EFFICIENT */
 	TEXT name[MAXPATHLEN];
 #endif /* STACK_EFFICIENT */
 
-#if !(defined VMS || defined PC_PLATFORM || defined WIN_NT)
-	GETTIMEOFDAY(t, z);
-#define LOG_TIME_OBTAINED
-#endif
-
-#ifdef LOG_TIME_OBTAINED
-#undef LOG_TIME_OBTAINED
+#ifdef HAVE_GETTIMEOFDAY
+	{
+	    struct timeval tv;
+#ifdef GETTIMEOFDAY_RETURNS_TIMEZONE
+	    (void)gettimeofday(&tv, (struct timezone *)0);
 #else
-	time(t);
+	    (void)gettimeofday(&tv);
+#endif
+	    now = tv.tv_sec;
+	}
+#else
+	now = time((time_t *)0);
 #endif
 
 	gds__prefix(name, LOGFILE);
@@ -1960,7 +1958,7 @@ void API_ROUTINE gds__log(TEXT * text, ...)
 	if ((file = ib_fopen(name, FOPEN_APPEND_TYPE)) != NULL)
 	{
 		ib_fprintf(file, "%s%s\t%.25s\t", ISC_get_host(name, MAXPATHLEN),
-				   gdslogid, ctime(t));
+				   gdslogid, ctime(now));
 		VA_START(ptr, text);
 		ib_vfprintf(file, text, ptr);
 		ib_fprintf(file, "\n\n");

@@ -52,10 +52,6 @@
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/misc_proto.h"
 
-#ifndef GETTIMEOFDAY
-#define GETTIMEOFDAY(tp,tzp)	gettimeofday (tp, tzp)
-#endif
-
 static void do_mem_benchmark(void);
 static void do_sem_benchmark(WAL);
 static SLONG get_tod(void);
@@ -573,10 +569,14 @@ static SLONG get_tod(void)
  * Functional description
  *
  **************************************/
-#if !(defined WIN_NT)
+#ifdef HAVE_GETTIMEOFDAY
+#ifdef GETTIMEOFDAY_RETURNS_TIMEZONE
 	struct timeval tp1;
 
-	GETTIMEOFDAY(&tp1, NULL);
+	(void)gettimeofday(&tp1, (struct timezone *)0);
+#else
+	(void)gettimeofday(&tp1);
+#endif
 	if (!base_seconds)
 		base_seconds = tp1.tv_sec;
 	return (tp1.tv_sec - base_seconds) * 1000000 + tp1.tv_usec;

@@ -528,8 +528,11 @@ FBUDF_API ISC_TIMESTAMP* getExactTimestamp(ISC_TIMESTAMP* rc)
 #endif
 
 	timeval tv;
-	gettimeofday(&tv, NULL);
-
+#ifdef GETTIMEOFDAY_RETURNS_TIMEZONE
+	(void)gettimeofday(&tv, (struct timezone *)0);
+#else
+	(void)gettimeofday(&tv);
+#endif
 
 	tm times = *localtime(&tv.tv_sec);
 

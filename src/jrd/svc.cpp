@@ -2982,21 +2982,25 @@ static void service_get(SVC		service,
 	ULONG end_time;
 	ULONG elapsed_seconds;
 	ULONG elapsed_tenths;
-#endif
-#ifdef WIN_NT
-	time_t start_time, end_time;
 #else
+#ifdef HAVE_GETTIMEOFDAY
 	struct timeval start_time, end_time;
+#else
+	time_t start_time, end_time;
 #endif
+#endif /* NETWARE */
 
 #ifdef NETWARE_386
 	start_time = GetCurrentTicks();
 #else
-#ifdef WIN_NT
-	time(&start_time);
+#ifdef HAVE_GETTIMEOFDAY
+#ifdef GETTIMEOFDAY_RETURNS_TIMEZONE
+	(void)gettimeofday(&start_time, (struct timezone *)0);
 #else
-	gettimeofday(&start_time, NULL);
+	(void)gettimeofday(&start_time);
 #endif
+#else
+	time(&start_time);
 #endif /* NETWARE */
 	*return_length = 0;
 	service->svc_flags &= ~SVC_timeout;
@@ -3009,12 +3013,16 @@ static void service_get(SVC		service,
 		elapsed_time = end_time - start_time;
 		TicksToSeconds(elapsed_time, &elapsed_seconds, &elapsed_tenths);
 #else
-#ifdef WIN_NT
+#ifdef HAVE_GETTIMEOFDAY
+#ifdef GETTIMEOFDAY_RETURNS_TIMEZONE
+		(void)gettimeofday(&end_time, (struct timezone *)0);
+#else
+		(void)gettimeofday(&end_time);
+#endif
+		elapsed_time = end_time.tv_sec - start_time.tv_sec;
+#else
 		time(&end_time);
 		elapsed_time = end_time - start_time;
-#else
-		gettimeofday(&end_time, NULL);
-		elapsed_time = end_time.tv_sec - start_time.tv_sec;
 #endif
 #endif /* NETWARE */
 

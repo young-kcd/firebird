@@ -28,7 +28,7 @@
  * 01-Feb-2002 Paul Reeves: Removed hard-coded registry path
  */
 /*
-$Id: isc.cpp,v 1.12 2002-07-29 15:37:54 skywalker Exp $
+$Id: isc.cpp,v 1.13 2002-08-14 11:13:58 eku Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -151,7 +151,9 @@ static LKSB wake_lock;
 #include <sys/stat.h>
 #include <sys/file.h>
 #include <pwd.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <signal.h>
 #include <ctype.h>
 

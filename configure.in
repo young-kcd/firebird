@@ -66,6 +66,13 @@ AC_TRY_COMPILE([#include <stdlib.h>
 [AC_MSG_RESULT(yes)],
 [AC_DEFINE(socklen_t, int) AC_MSG_RESULT(no)])
 
+AC_MSG_CHECKING(Checking if gettimeofday accepts second (timezone) argument)
+AC_TRY_COMPILE([#include <sys/time.h>
+],
+[struct timeval tp; gettimeofday(&tp, (struct timezone *)0);],
+[AC_DEFINE(GETTIMEOFDAY_RETURNS_TIMEZONE) AC_MSG_RESULT(yes)],
+[AC_MSG_RESULT(no)])
+
 AC_CHECK_LIB(dl, main)
 AC_CHECK_LIB(c,main)
 AC_CHECK_LIB(m, main)
@@ -80,7 +87,7 @@ AC_CHECK_LIB(curses, main)
 AC_CHECK_LIB(readline, main,,,$LIBS)
 AC_CHECK_LIB(stdc++, main,,, $LIBS)
 
-AC_CHECK_FUNCS(strlcpy strlcat)
+AC_CHECK_FUNCS(strlcpy strlcat gettimeofday time)
 
 AC_C_BIGENDIAN
 AC_C_CONST

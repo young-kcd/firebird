@@ -24,30 +24,49 @@
 
 /* Headers */
 #define HAVE_ASSERT_H
+#define HAVE_CTYPE_H
 #undef HAVE_UNISTD_H
 #define HAVE_FCNTL_H
+#undef HAVE_GRP_H
+#undef HAVE_PWD_H
+#undef HAVE_LIBIO_H
+#undef HAVE_LOCALE_H
+#undef HAVE_MATH_H
+#undef HAVE_PTHREAD_H
 #undef HAVE_SYS_TYPES_H
+#define HAVE_SYS_STAT_H
+#undef HAVE_SYS_UIO_H
+#undef HAVE_SYS_WAIT_H
 #define HAVE_TIME_H
 #undef HAVE_SYS_TIME_H
-#define HAVE_SYS_STAT_H
-#define HAVE_CTYPE_H
-#undef HAVE_SYS_UIO_H
-#undef HAVE_LIB_IO_H
-#undef HAVE_WAIT_H
-#undef HAVE_SYS_WAIT_H
+#undef HAVE_SYS_TIMEB_H
 #undef HAVE_SYS_PARAM_H
-#undef HAVE_VARARGS_H
+#undef HAVE_SYS_IOCTL_H
+#define HAVE_SETJMP_H
 #define HAVE_STDARG_H
 #define HAVE_STDLIB_H
 #define HAVE_STRING_H
 #define HAVE_SIGNAL_H
 #undef HAVE_READLINE_READLINE_H
-#define HAVE_SETJMP_H
+#undef HAVE_UNISTD_H
+#undef HAVE_VARARGS_H
 
-/* types */
+/* Functions */
+#undef HAVE_STRLCPY
+#undef HAVE_STRLCAT
+#define HAVE_GETTIMEOFDAY
+#undef HAVE_TIME
+
+/* Types */
 #undef socklen_t
 
-/* functions */
+/* gettimeofday accepts second (timezone) argument */
+#undef GETTIMEOFDAY_RETURNS_TIMEZONE
+
+/* Are we doing 64bit IO on unix */
+#undef UNIX_64_BIT_IO 
+
+/* Functions */
 #define snprintf _snprintf
 
 /* Is the platform big endian? */
@@ -83,5 +102,6 @@
 #undef sgi
 #undef mpexl
 #undef UNIXWARE
+#undef SINIXZ
 
 #endif
