@@ -1,24 +1,24 @@
-# Microsoft Developer Studio Project File - Name="lock" - Package Owner=<4>
+# Microsoft Developer Studio Project File - Name="lock_classic" - Package Owner=<4>
 # Microsoft Developer Studio Generated Build File, Format Version 6.00
 # ** DO NOT EDIT **
 
 # TARGTYPE "Win32 (x86) Static Library" 0x0104
 
-CFG=lock - Win32 Release
+CFG=lock_classic - Win32 Release
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
 !MESSAGE 
-!MESSAGE NMAKE /f "lock.mak".
+!MESSAGE NMAKE /f "lock_classic.mak".
 !MESSAGE 
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "lock.mak" CFG="lock - Win32 Release"
+!MESSAGE NMAKE /f "lock_classic.mak" CFG="lock_classic - Win32 Release"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "lock - Win32 Debug" (based on "Win32 (x86) Static Library")
-!MESSAGE "lock - Win32 Release" (based on "Win32 (x86) Static Library")
+!MESSAGE "lock_classic - Win32 Debug" (based on "Win32 (x86) Static Library")
+!MESSAGE "lock_classic - Win32 Release" (based on "Win32 (x86) Static Library")
 !MESSAGE 
 
 # Begin Project
@@ -28,7 +28,7 @@ CFG=lock - Win32 Release
 CPP=cl.exe
 RSC=rc.exe
 
-!IF  "$(CFG)" == "lock - Win32 Debug"
+!IF  "$(CFG)" == "lock_classic - Win32 Debug"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -37,11 +37,11 @@ RSC=rc.exe
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir "debug\lock_ss"
-# PROP Intermediate_Dir "debug\lock_ss"
+# PROP Output_Dir "debug\lock_cs"
+# PROP Intermediate_Dir "debug\lock_cs"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /D "SUPERSERVER" /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /FD /GZ /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -49,9 +49,9 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LIB32=link.exe -lib
 # ADD BASE LIB32 /nologo
-# ADD LIB32 /nologo
+# ADD LIB32 /nologo /out:"debug\lock_cs\lock.lib"
 
-!ELSEIF  "$(CFG)" == "lock - Win32 Release"
+!ELSEIF  "$(CFG)" == "lock_classic - Win32 Release"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -60,12 +60,12 @@ LIB32=link.exe -lib
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir "release\lock_ss"
-# PROP Intermediate_Dir "release\lock_ss"
+# PROP Output_Dir "release\lock_cs"
+# PROP Intermediate_Dir "release\lock_cs"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /FD /GZ /c
 # SUBTRACT BASE CPP /Os /YX
-# ADD CPP /nologo /MD /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "NDEBUG" /D "_LIB" /D "SUPERSERVER" /D "WIN32" /D "_MBCS" /D "_X86_" /FD /GZ /c
+# ADD CPP /nologo /MD /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "NDEBUG" /D "_LIB" /D "WIN32" /D "_MBCS" /D "_X86_" /FD /GZ /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -73,27 +73,20 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LIB32=link.exe -lib
 # ADD BASE LIB32 /nologo
-# ADD LIB32 /nologo
+# ADD LIB32 /nologo /out:"release\lock_cs\lock.lib"
 
 !ENDIF 
 
 # Begin Target
 
-# Name "lock - Win32 Debug"
-# Name "lock - Win32 Release"
+# Name "lock_classic - Win32 Debug"
+# Name "lock_classic - Win32 Release"
 # Begin Group "LOCK files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
 SOURCE=..\..\..\src\lock\lock.cpp
-
-!IF  "$(CFG)" == "lock - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "lock - Win32 Release"
-
-!ENDIF 
-
 # End Source File
 # End Group
 # Begin Group "Header files"

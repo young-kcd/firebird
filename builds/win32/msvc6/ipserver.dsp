@@ -81,7 +81,7 @@ LIB32=link.exe -lib
 
 # Name "ipserver - Win32 Debug"
 # Name "ipserver - Win32 Release"
-# Begin Group "Source Files"
+# Begin Group "IPSERVER files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
@@ -101,7 +101,7 @@ SOURCE=..\..\..\src\ipserver\ipclient.cpp
 SOURCE=..\..\..\src\ipserver\ipserver.cpp
 # End Source File
 # End Group
-# Begin Group "Header Files"
+# Begin Group "Header files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File

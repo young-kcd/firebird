@@ -37,8 +37,8 @@ RSC=rc.exe
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir "debug\burp"
-# PROP Intermediate_Dir "debug\burp"
+# PROP Output_Dir "debug\burp_ss"
+# PROP Intermediate_Dir "debug\burp_ss"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
 # ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /D "_DEBUG" /D "_LIB" /D "SUPERSERVER" /D "NOMSG" /D "WIN32_LEAN_AND_MEAN" /D "WIN32" /D "_MBCS" /D "_X86_" /FD /GZ /c
@@ -60,8 +60,8 @@ LIB32=link.exe -lib
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir "release\burp"
-# PROP Intermediate_Dir "release\burp"
+# PROP Output_Dir "release\burp_ss"
+# PROP Intermediate_Dir "release\burp_ss"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "NDEBUG" /D "_LIB" /D "SUPERSERVER" /D "NOMSG" /D "WIN32_LEAN_AND_MEAN" /D "WIN32" /D "_MBCS" /D "_X86_" /FD /GZ /c
 # ADD CPP /nologo /MD /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "NDEBUG" /D "_LIB" /D "SUPERSERVER" /D "NOMSG" /D "WIN32_LEAN_AND_MEAN" /D "WIN32" /D "_MBCS" /D "_X86_" /FD /GZ /c
@@ -80,10 +80,10 @@ LIB32=link.exe -lib
 
 # Name "burp - Win32 Debug"
 # Name "burp - Win32 Release"
-# Begin Group "Source Files"
+# Begin Group "BURP files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
-# Begin Group "epp Source Files"
+# Begin Group "epp files"
 
 # PROP Default_Filter "epp"
 # Begin Source File
@@ -95,7 +95,7 @@ SOURCE=..\..\..\src\burp\backup.epp
 SOURCE=..\..\..\src\burp\restore.epp
 # End Source File
 # End Group
-# Begin Group "generated from epp"
+# Begin Group "Generated files"
 
 # PROP Default_Filter ""
 # Begin Source File
@@ -128,7 +128,7 @@ SOURCE=..\..\..\src\burp\mvol.cpp
 SOURCE=..\..\..\src\burp\spit.cpp
 # End Source File
 # End Group
-# Begin Group "Header Files"
+# Begin Group "Header files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File

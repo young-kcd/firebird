@@ -4,7 +4,7 @@
 
 # TARGTYPE "Win32 (x86) Console Application" 0x0103
 
-CFG=gdef - Win32 Debug
+CFG=gdef - Win32 Release
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
 !MESSAGE 
@@ -13,7 +13,7 @@ CFG=gdef - Win32 Debug
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "gdef.mak" CFG="gdef - Win32 Debug"
+!MESSAGE NMAKE /f "gdef.mak" CFG="gdef - Win32 Release"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
@@ -50,7 +50,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib advapi32.lib shell32.lib mpr.lib /nologo /subsystem:console /incremental:no /debug /machine:I386 /out:"debug\firebird\bin/gdef.exe" /pdbtype:sept
+# ADD LINK32 kernel32.lib advapi32.lib shell32.lib mpr.lib /nologo /subsystem:console /incremental:no /debug /machine:I386 /out:"debug/firebird/bin/gdef.exe" /pdbtype:sept
 
 !ELSEIF  "$(CFG)" == "gdef - Win32 Release"
 
@@ -67,7 +67,7 @@ LINK32=link.exe
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /FD /GZ /c
 # SUBTRACT BASE CPP /YX
-# ADD CPP /nologo /MD /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /FD /GZ /c
+# ADD CPP /nologo /MD /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /D "SUPERCLIENT" /FD /GZ /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -75,7 +75,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib advapi32.lib shell32.lib mpr.lib /nologo /subsystem:console /incremental:no /machine:I386 /out:"release\firebird\bin/gdef.exe" /pdbtype:sept
+# ADD LINK32 kernel32.lib advapi32.lib shell32.lib mpr.lib /nologo /subsystem:console /incremental:no /machine:I386 /out:"release/firebird/bin/gdef.exe" /pdbtype:sept
 # SUBTRACT LINK32 /debug
 
 !ENDIF 
@@ -84,7 +84,7 @@ LINK32=link.exe
 
 # Name "gdef - Win32 Debug"
 # Name "gdef - Win32 Release"
-# Begin Group "Source Files"
+# Begin Group "DUDLEY files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
@@ -132,7 +132,55 @@ SOURCE=..\..\..\src\dudley\parse.cpp
 SOURCE=..\..\..\src\dudley\trn.cpp
 # End Source File
 # End Group
-# Begin Group "Header Files"
+# Begin Group "JRD files"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\iberr.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\isc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\isc_file.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\isc_win32.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\llio.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\misc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\status.cpp
+# End Source File
+# End Group
+# Begin Group "GPRE files"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\src\gpre\pretty.cpp
+# End Source File
+# End Group
+# Begin Group "WAL files"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\src\wal\walf.cpp
+# End Source File
+# End Group
+# Begin Group "Header files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
@@ -184,119 +232,12 @@ SOURCE=..\..\..\src\dudley\parse_proto.h
 SOURCE=..\..\..\src\dudley\trn_proto.h
 # End Source File
 # End Group
-# Begin Group "Resource Files"
-
-# PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
-# End Group
-# Begin Group "FromJrd"
+# Begin Group "Resource files"
 
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\iberr.cpp
-
-!IF  "$(CFG)" == "gdef - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "gdef - Win32 Release"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\isc.cpp
-
-!IF  "$(CFG)" == "gdef - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "gdef - Win32 Release"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\isc_file.cpp
-
-!IF  "$(CFG)" == "gdef - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "gdef - Win32 Release"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\isc_win32.cpp
-
-!IF  "$(CFG)" == "gdef - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "gdef - Win32 Release"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\llio.cpp
-
-!IF  "$(CFG)" == "gdef - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "gdef - Win32 Release"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\misc.cpp
-
-!IF  "$(CFG)" == "gdef - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "gdef - Win32 Release"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\status.cpp
-
-!IF  "$(CFG)" == "gdef - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "gdef - Win32 Release"
-
-!ENDIF 
-
-# End Source File
-# End Group
-# Begin Group "FromGpre"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\src\gpre\pretty.cpp
-
-!IF  "$(CFG)" == "gdef - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "gdef - Win32 Release"
-
-!ENDIF 
-
-# End Source File
-# End Group
-# Begin Group "FromWal"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\src\wal\walf.cpp
-
-!IF  "$(CFG)" == "gdef - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "gdef - Win32 Release"
-
-!ENDIF 
-
+SOURCE=..\..\..\src\jrd\version.rc
 # End Source File
 # End Group
 # End Target

@@ -4,7 +4,7 @@
 
 # TARGTYPE "Win32 (x86) Console Application" 0x0103
 
-CFG=gfix - Win32 Release
+CFG=gfix - Win32 Debug
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
 !MESSAGE 
@@ -13,7 +13,7 @@ CFG=gfix - Win32 Release
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "gfix.mak" CFG="gfix - Win32 Release"
+!MESSAGE NMAKE /f "gfix.mak" CFG="gfix - Win32 Debug"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
@@ -42,7 +42,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /D "DEV_BUILD" /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /D "DEV_BUILD" /D "SUPERCLIENT" /FD /GZ /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -50,7 +50,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /incremental:no /debug /machine:I386 /out:"debug\firebird\bin/gfix.exe" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /incremental:no /debug /machine:I386 /out:"debug/firebird/bin/gfix.exe" /pdbtype:sept
 
 !ELSEIF  "$(CFG)" == "gfix - Win32 Release"
 
@@ -67,7 +67,7 @@ LINK32=link.exe
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /FD /GZ /c
 # SUBTRACT BASE CPP /YX
-# ADD CPP /nologo /MD /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /FD /GZ /c
+# ADD CPP /nologo /MD /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /D "SUPERCLIENT" /FD /GZ /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -75,7 +75,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /incremental:no /machine:I386 /out:"release\firebird\bin/gfix.exe" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /incremental:no /machine:I386 /out:"release/firebird/bin/gfix.exe" /pdbtype:sept
 # SUBTRACT LINK32 /debug
 
 !ENDIF 
@@ -84,7 +84,7 @@ LINK32=link.exe
 
 # Name "gfix - Win32 Debug"
 # Name "gfix - Win32 Release"
-# Begin Group "Source Files"
+# Begin Group "ALICE files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
@@ -112,7 +112,19 @@ SOURCE=..\..\..\src\common\fb_exception.cpp
 SOURCE=..\..\..\src\alice\tdr.cpp
 # End Source File
 # End Group
-# Begin Group "Header Files"
+# Begin Group "JRD files"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\isc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\isc_win32.cpp
+# End Source File
+# End Group
+# Begin Group "Header files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
@@ -148,20 +160,12 @@ SOURCE=..\..\..\src\alice\met_proto.h
 SOURCE=..\..\..\src\alice\tdr_proto.h
 # End Source File
 # End Group
-# Begin Group "Resource Files"
-
-# PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
-# End Group
-# Begin Group "FromJrd"
+# Begin Group "Resource files"
 
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\isc.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\isc_win32.cpp
+SOURCE=..\..\..\src\jrd\version.rc
 # End Source File
 # End Group
 # End Target

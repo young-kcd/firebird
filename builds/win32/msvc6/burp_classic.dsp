@@ -1,24 +1,24 @@
-# Microsoft Developer Studio Project File - Name="gbak" - Package Owner=<4>
+# Microsoft Developer Studio Project File - Name="burp_classic" - Package Owner=<4>
 # Microsoft Developer Studio Generated Build File, Format Version 6.00
 # ** DO NOT EDIT **
 
-# TARGTYPE "Win32 (x86) Console Application" 0x0103
+# TARGTYPE "Win32 (x86) Static Library" 0x0104
 
-CFG=gbak - Win32 Release
+CFG=burp_classic - Win32 Release
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
 !MESSAGE 
-!MESSAGE NMAKE /f "gbak.mak".
+!MESSAGE NMAKE /f "burp_classic.mak".
 !MESSAGE 
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "gbak.mak" CFG="gbak - Win32 Release"
+!MESSAGE NMAKE /f "burp_classic.mak" CFG="burp_classic - Win32 Release"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "gbak - Win32 Debug" (based on "Win32 (x86) Console Application")
-!MESSAGE "gbak - Win32 Release" (based on "Win32 (x86) Console Application")
+!MESSAGE "burp_classic - Win32 Debug" (based on "Win32 (x86) Static Library")
+!MESSAGE "burp_classic - Win32 Release" (based on "Win32 (x86) Static Library")
 !MESSAGE 
 
 # Begin Project
@@ -28,7 +28,7 @@ CFG=gbak - Win32 Release
 CPP=cl.exe
 RSC=rc.exe
 
-!IF  "$(CFG)" == "gbak - Win32 Debug"
+!IF  "$(CFG)" == "burp_classic - Win32 Debug"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -37,54 +37,49 @@ RSC=rc.exe
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir "debug\gbak"
-# PROP Intermediate_Dir "debug\gbak"
-# PROP Ignore_Export_Lib 0
+# PROP Output_Dir "debug\burp_cs"
+# PROP Intermediate_Dir "debug\burp_cs"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /D "_DEBUG" /D "DEV_BUILD" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "_X86_" /D "NOMSG" /D "WIN32_LEAN_AND_MEAN" /FR /FD /GZ /c
+# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /D "_DEBUG" /D "_LIB" /D "NOMSG" /D "WIN32_LEAN_AND_MEAN" /D "WIN32" /D "_MBCS" /D "_X86_" /FD /GZ /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
-LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib advapi32.lib shell32.lib wsock32.lib /nologo /subsystem:console /incremental:no /debug /machine:I386 /out:"debug/firebird/bin/gbak.exe" /pdbtype:sept
+LIB32=link.exe -lib
+# ADD BASE LIB32 /nologo
+# ADD LIB32 /nologo /out:"debug\burp_cs\burp.lib"
 
-!ELSEIF  "$(CFG)" == "gbak - Win32 Release"
+!ELSEIF  "$(CFG)" == "burp_classic - Win32 Release"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
 # PROP BASE Output_Dir ""
 # PROP BASE Intermediate_Dir ""
-# PROP BASE Ignore_Export_Lib 0
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir "release\gbak"
-# PROP Intermediate_Dir "release\gbak"
-# PROP Ignore_Export_Lib 0
+# PROP Output_Dir "release\burp_cs"
+# PROP Intermediate_Dir "release\burp_cs"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /D "_DEBUG" /D "DEV_BUILD" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "_X86_" /D "NOMSG" /D "WIN32_LEAN_AND_MEAN" /FR /FD /GZ /c
-# SUBTRACT BASE CPP /YX
-# ADD CPP /nologo /MD /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "_X86_" /D "NOMSG" /D "WIN32_LEAN_AND_MEAN" /D "SUPERCLIENT" /FR /FD /GZ /c
+# ADD BASE CPP /nologo /MDd /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "NDEBUG" /D "_LIB" /D "SUPERSERVER" /D "NOMSG" /D "WIN32_LEAN_AND_MEAN" /D "WIN32" /D "_MBCS" /D "_X86_" /FD /GZ /c
+# ADD CPP /nologo /MD /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "NDEBUG" /D "_LIB" /D "NOMSG" /D "WIN32_LEAN_AND_MEAN" /D "WIN32" /D "_MBCS" /D "_X86_" /FD /GZ /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
-LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib advapi32.lib shell32.lib wsock32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib advapi32.lib shell32.lib wsock32.lib /nologo /subsystem:console /incremental:no /machine:I386 /out:"release/firebird/bin/gbak.exe" /pdbtype:sept
-# SUBTRACT LINK32 /debug
+LIB32=link.exe -lib
+# ADD BASE LIB32 /nologo
+# ADD LIB32 /nologo /out:"release\burp_cs\burp.lib"
 
 !ENDIF 
 
 # Begin Target
 
-# Name "gbak - Win32 Debug"
-# Name "gbak - Win32 Release"
+# Name "burp_classic - Win32 Debug"
+# Name "burp_classic - Win32 Release"
 # Begin Group "BURP files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
@@ -122,39 +117,15 @@ SOURCE=..\..\..\src\burp\canonical.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\common\fb_exception.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\burp\misc.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\burp\mvol.cpp
 # End Source File
-# End Group
-# Begin Group "JRD files"
-
-# PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\sdl.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\sdl.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\sdl_proto.h
-# End Source File
-# End Group
-# Begin Group "REMOTE files"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\src\remote\xdr.cpp
+SOURCE=..\..\..\src\burp\spit.cpp
 # End Source File
 # End Group
 # Begin Group "Header files"
@@ -192,13 +163,9 @@ SOURCE=..\..\..\src\burp\mvol_proto.h
 
 SOURCE=..\..\..\src\burp\resto_proto.h
 # End Source File
-# End Group
-# Begin Group "Resource files"
-
-# PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\version.rc
+SOURCE=..\..\..\src\burp\spit.h
 # End Source File
 # End Group
 # End Target

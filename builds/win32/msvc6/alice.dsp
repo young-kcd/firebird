@@ -37,8 +37,8 @@ RSC=rc.exe
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir "debug\alice"
-# PROP Intermediate_Dir "debug\alice"
+# PROP Output_Dir "debug\alice_ss"
+# PROP Intermediate_Dir "debug\alice_ss"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
 # ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /D "_DEBUG" /D "_LIB" /D "SUPERSERVER" /D "WIN32" /D "_MBCS" /D "_X86_" /D "DEV_BUILD" /FD /GZ /c
@@ -60,8 +60,8 @@ LIB32=link.exe -lib
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir "release\alice"
-# PROP Intermediate_Dir "release\alice"
+# PROP Output_Dir "release\alice_ss"
+# PROP Intermediate_Dir "release\alice_ss"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "NDEBUG" /D "_LIB" /D "SUPERSERVER" /D "WIN32" /D "_MBCS" /D "_X86_" /FD /GZ /c
 # SUBTRACT BASE CPP /Ox /Og /YX
@@ -81,23 +81,23 @@ LIB32=link.exe -lib
 
 # Name "alice - Win32 Debug"
 # Name "alice - Win32 Release"
-# Begin Group "Source Files"
+# Begin Group "ALICE files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
-# Begin Group "generated Source Files"
-
-# PROP Default_Filter "c"
-# Begin Source File
-
-SOURCE=..\..\..\generated\alice\alice_meta.cpp
-# End Source File
-# End Group
-# Begin Group "epp Source Files"
+# Begin Group "epp files"
 
 # PROP Default_Filter "epp"
 # Begin Source File
 
 SOURCE=..\..\..\src\alice\alice_meta.epp
+# End Source File
+# End Group
+# Begin Group "Generated files"
+
+# PROP Default_Filter "c"
+# Begin Source File
+
+SOURCE=..\..\..\generated\alice\alice_meta.cpp
 # End Source File
 # End Group
 # Begin Source File
@@ -117,7 +117,7 @@ SOURCE=..\..\..\src\alice\exe.cpp
 SOURCE=..\..\..\src\alice\tdr.cpp
 # End Source File
 # End Group
-# Begin Group "Header Files"
+# Begin Group "Header files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File

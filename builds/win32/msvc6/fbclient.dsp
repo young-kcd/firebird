@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "GDS32_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /I "../../../src" /D "_DEBUG" /D "DEV_BUILD" /D "_WINDOWS" /D "_USRDLL" /D "GDS32_EXPORTS" /D "CLIENT" /D "SUPERCLIENT" /D "NOMSG" /D "WIN32_LEAN_AND_MEAN" /D "SERVER_SHUTDOWN" /D "IPSERV" /D "GOVERNOR" /D "EXACT_NUMERICS" /D "I386" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /I "../../../src" /D "_DEBUG" /D "DEV_BUILD" /D "_WINDOWS" /D "_USRDLL" /D "GDS32_EXPORTS" /D "CLIENT" /D "SUPERCLIENT" /D "NOMSG" /D "WIN32_LEAN_AND_MEAN" /D "SERVER_SHUTDOWN" /D "IPSERV" /D "GOVERNOR" /D "EXACT_NUMERICS" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib mpr.lib wsock32.lib /nologo /dll /incremental:no /debug /machine:I386 /out:"debug\firebird\bin/fbclient.dll" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib mpr.lib wsock32.lib /nologo /dll /incremental:no /debug /machine:I386 /out:"debug/firebird/bin/fbclient.dll" /pdbtype:sept
 
 !ELSEIF  "$(CFG)" == "fbclient - Win32 Release"
 
@@ -80,7 +80,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib mpr.lib wsock32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib mpr.lib wsock32.lib /nologo /dll /incremental:no /machine:I386 /out:"release\firebird\bin/fbclient.dll" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib mpr.lib wsock32.lib /nologo /dll /incremental:no /machine:I386 /out:"release/firebird/bin/fbclient.dll" /pdbtype:sept
 # SUBTRACT LINK32 /debug
 
 !ENDIF 
@@ -89,7 +89,7 @@ LINK32=link.exe
 
 # Name "fbclient - Win32 Debug"
 # Name "fbclient - Win32 Release"
-# Begin Group "Source Files"
+# Begin Group "JRD files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
@@ -201,7 +201,105 @@ SOURCE=..\..\..\src\jrd\utl.cpp
 SOURCE=..\..\..\src\jrd\why.c
 # End Source File
 # End Group
-# Begin Group "Header Files"
+# Begin Group "DSQL files"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\generated\dsql\array.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\generated\dsql\blob.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\dsql\keywords.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\dsql\preparse.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\dsql\user_dsql.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\dsql\utld.cpp
+# End Source File
+# End Group
+# Begin Group "IPSERVER files"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\src\ipserver\alli.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\ipserver\ipcevent.cpp
+# SUBTRACT CPP /D "NOMSG"
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\ipserver\ipclient.cpp
+# End Source File
+# End Group
+# Begin Group "REMOTE files"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\src\remote\allr.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\remote\inet.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\remote\interface.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\remote\merge.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\remote\parser.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\remote\protocol.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\remote\remote.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\remote\wnet.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\remote\xdr.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\remote\xnet.cpp
+# PROP Exclude_From_Build 1
+# End Source File
+# End Group
+# Begin Group "UTILITIES files"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\generated\utilities\security.cpp
+# End Source File
+# End Group
+# Begin Group "Header files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
@@ -285,101 +383,21 @@ SOURCE=..\..\..\src\jrd\utl_proto.h
 SOURCE=..\..\..\src\jrd\why_proto.h
 # End Source File
 # End Group
-# Begin Group "Utilities files"
+# Begin Group "Resource files"
 
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\generated\utilities\security.cpp
-# End Source File
-# End Group
-# Begin Group "Remote Source Files"
+SOURCE=..\..\..\src\jrd\version.rc
 
-# PROP Default_Filter ""
-# Begin Source File
+!IF  "$(CFG)" == "fbclient - Win32 Debug"
 
-SOURCE=..\..\..\src\remote\allr.cpp
-# End Source File
-# Begin Source File
+!ELSEIF  "$(CFG)" == "fbclient - Win32 Release"
 
-SOURCE=..\..\..\src\remote\inet.cpp
-# End Source File
-# Begin Source File
+# PROP BASE Exclude_From_Build 1
 
-SOURCE=..\..\..\src\remote\interface.cpp
-# End Source File
-# Begin Source File
+!ENDIF 
 
-SOURCE=..\..\..\src\remote\merge.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\remote\parser.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\remote\protocol.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\remote\remote.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\remote\wnet.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\remote\xdr.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\remote\xnet.cpp
-# End Source File
-# End Group
-# Begin Group "dsql Source Files"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\generated\dsql\array.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\generated\dsql\blob.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\dsql\keywords.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\dsql\preparse.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\dsql\user_dsql.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\dsql\utld.cpp
-# End Source File
-# End Group
-# Begin Group "ipserver Source Files"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\src\ipserver\alli.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\ipserver\ipcevent.cpp
-# SUBTRACT CPP /D "NOMSG"
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\ipserver\ipclient.cpp
 # End Source File
 # End Group
 # Begin Source File
@@ -406,19 +424,6 @@ SOURCE=.\fbclient_debug.def
 !ELSEIF  "$(CFG)" == "fbclient - Win32 Release"
 
 # PROP Exclude_From_Build 1
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\version.rc
-
-!IF  "$(CFG)" == "fbclient - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "fbclient - Win32 Release"
-
-# PROP BASE Exclude_From_Build 1
 
 !ENDIF 
 

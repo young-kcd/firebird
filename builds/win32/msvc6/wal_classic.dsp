@@ -1,24 +1,24 @@
-# Microsoft Developer Studio Project File - Name="common" - Package Owner=<4>
+# Microsoft Developer Studio Project File - Name="wal_classic" - Package Owner=<4>
 # Microsoft Developer Studio Generated Build File, Format Version 6.00
 # ** DO NOT EDIT **
 
 # TARGTYPE "Win32 (x86) Static Library" 0x0104
 
-CFG=common - Win32 Release
+CFG=wal_classic - Win32 Debug
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
 !MESSAGE 
-!MESSAGE NMAKE /f "common.mak".
+!MESSAGE NMAKE /f "wal_classic.mak".
 !MESSAGE 
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "common.mak" CFG="common - Win32 Release"
+!MESSAGE NMAKE /f "wal_classic.mak" CFG="wal_classic - Win32 Debug"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "common - Win32 Debug" (based on "Win32 (x86) Static Library")
-!MESSAGE "common - Win32 Release" (based on "Win32 (x86) Static Library")
+!MESSAGE "wal_classic - Win32 Debug" (based on "Win32 (x86) Static Library")
+!MESSAGE "wal_classic - Win32 Release" (based on "Win32 (x86) Static Library")
 !MESSAGE 
 
 # Begin Project
@@ -28,7 +28,7 @@ CFG=common - Win32 Release
 CPP=cl.exe
 RSC=rc.exe
 
-!IF  "$(CFG)" == "common - Win32 Debug"
+!IF  "$(CFG)" == "wal_classic - Win32 Debug"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -37,11 +37,11 @@ RSC=rc.exe
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir "debug\common"
-# PROP Intermediate_Dir "debug\common"
+# PROP Output_Dir "debug\wal_cs"
+# PROP Intermediate_Dir "debug\wal_cs"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /D "DEV_BUILD" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /D "_DEBUG" /D "_LIB" /D "WIN32" /D "_MBCS" /D "_X86_" /FD /GZ /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -49,9 +49,9 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LIB32=link.exe -lib
 # ADD BASE LIB32 /nologo
-# ADD LIB32 /nologo
+# ADD LIB32 /nologo /out:"debug\wal_cs\wal.lib"
 
-!ELSEIF  "$(CFG)" == "common - Win32 Release"
+!ELSEIF  "$(CFG)" == "wal_classic - Win32 Release"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -60,12 +60,12 @@ LIB32=link.exe -lib
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir "release\common"
-# PROP Intermediate_Dir "release\common"
+# PROP Output_Dir "release\wal_cs"
+# PROP Intermediate_Dir "release\wal_cs"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MDd /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MD /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /FD /GZ /c
-# SUBTRACT CPP /YX
+# ADD BASE CPP /nologo /MDd /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "NDEBUG" /D "_LIB" /D "SUPERSERVER" /D "WIN32" /D "_MBCS" /D "_X86_" /FD /GZ /c
+# SUBTRACT BASE CPP /YX
+# ADD CPP /nologo /MD /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "NDEBUG" /D "_LIB" /D "WIN32" /D "_MBCS" /D "_X86_" /FD /GZ /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -73,76 +73,76 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LIB32=link.exe -lib
 # ADD BASE LIB32 /nologo
-# ADD LIB32 /nologo
+# ADD LIB32 /nologo /out:"release\wal_cs\wal.lib"
 
 !ENDIF 
 
 # Begin Target
 
-# Name "common - Win32 Debug"
-# Name "common - Win32 Release"
-# Begin Group "MEMORY files"
+# Name "wal_classic - Win32 Debug"
+# Name "wal_classic - Win32 Release"
+# Begin Group "WAL files"
 
-# PROP Default_Filter ""
+# PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=..\..\..\src\common\memory\allocators.cpp
+SOURCE=..\..\..\src\wal\wal.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\common\memory\memory_pool.cpp
-# End Source File
-# End Group
-# Begin Group "EXCEPTION files"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\src\common\fb_exception.cpp
-# End Source File
-# End Group
-# Begin Group "CONFIG files"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\src\common\config\config.cpp
+SOURCE=..\..\..\src\wal\wal_prnt.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\common\config\config_file.cpp
+SOURCE=..\..\..\src\wal\walc.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\os\win32\config_root.cpp
+SOURCE=..\..\..\src\wal\walf.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\wal\walr.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\wal\walw.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\wal\wstatus.cpp
 # End Source File
 # End Group
 # Begin Group "Header files"
 
-# PROP Default_Filter "h"
+# PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
-SOURCE=..\..\..\src\common\memory\allocators.h
+SOURCE=..\..\..\src\wal\wal.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\common\config\config.h
+SOURCE=..\..\..\src\wal\wal_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\common\config\config_file.h
+SOURCE=..\..\..\src\wal\walc_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\common\config\config_impl.h
+SOURCE=..\..\..\src\wal\walf_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\os\config_root.h
+SOURCE=..\..\..\src\wal\walr_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\common\memory\memory_pool.h
+SOURCE=..\..\..\src\wal\walw_proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\wal\wstat_proto.h
 # End Source File
 # End Group
 # End Target

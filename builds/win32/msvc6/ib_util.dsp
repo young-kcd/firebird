@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "IB_UTIL_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "IB_UTIL_EXPORTS" /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /incremental:no /debug /machine:I386 /out:"debug\firebird\bin/ib_util.dll" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /incremental:no /debug /machine:I386 /out:"debug/firebird/bin/ib_util.dll" /pdbtype:sept
 
 !ELSEIF  "$(CFG)" == "ib_util - Win32 Release"
 
@@ -80,7 +80,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /incremental:no /machine:I386 /out:"release\firebird\bin/ib_util.dll" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /incremental:no /machine:I386 /out:"release/firebird/bin/ib_util.dll" /pdbtype:sept
 # SUBTRACT LINK32 /debug
 
 !ENDIF 
@@ -89,19 +89,15 @@ LINK32=link.exe
 
 # Name "ib_util - Win32 Debug"
 # Name "ib_util - Win32 Release"
-# Begin Group "Source Files"
+# Begin Group "EXTLIB files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
 SOURCE=..\..\..\src\extlib\ib_util.c
 # End Source File
-# Begin Source File
-
-SOURCE=.\ib_util.def
-# End Source File
 # End Group
-# Begin Group "Header Files"
+# Begin Group "Header files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
@@ -109,9 +105,17 @@ SOURCE=.\ib_util.def
 SOURCE=..\..\..\src\extlib\ib_util.h
 # End Source File
 # End Group
-# Begin Group "Resource Files"
+# Begin Group "Resource files"
 
-# PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\version.rc
+# End Source File
 # End Group
+# Begin Source File
+
+SOURCE=.\ib_util.def
+# End Source File
 # End Target
 # End Project

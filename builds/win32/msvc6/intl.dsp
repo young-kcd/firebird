@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "INTL_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /D "_DEBUG" /D "_WINDOWS" /D "_USRDLL" /D "INTL_EXPORTS" /D "WINDOWS_ONLY" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /D "_DEBUG" /D "_WINDOWS" /D "_USRDLL" /D "WINDOWS_ONLY" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /incremental:no /debug /machine:I386 /out:"debug\firebird\intl/fbintl.dll" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /incremental:no /debug /machine:I386 /out:"debug/firebird/intl/fbintl.dll" /pdbtype:sept
 
 !ELSEIF  "$(CFG)" == "intl - Win32 Release"
 
@@ -79,7 +79,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /incremental:no /machine:I386 /out:"release\firebird\intl/fbintl.dll" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /incremental:no /machine:I386 /out:"release/firebird/intl/fbintl.dll" /pdbtype:sept
 # SUBTRACT LINK32 /debug
 
 !ENDIF 
@@ -88,7 +88,7 @@ LINK32=link.exe
 
 # Name "intl - Win32 Debug"
 # Name "intl - Win32 Release"
-# Begin Group "Source Files"
+# Begin Group "INTL files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
@@ -191,18 +191,474 @@ SOURCE=..\..\..\src\intl\ld.c
 
 SOURCE=..\..\..\src\intl\ld2.c
 # End Source File
+# End Group
+# Begin Group "Header files"
+
+# PROP Default_Filter "h;hpp;hxx;hm;inl"
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\ancyrr.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\anczech.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\angreek1.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\anhun.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\anhundc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\anpolish.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\ansii850.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\ansiintl.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\ansinor4.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\ansislov.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\ansispan.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\ansiswfn.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\anturk.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\ascii.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\ascii2.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\bllt1ca0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\bllt1da0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\bllt1de0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\bllt1es0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\bllt1fi0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\bllt1fr0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\bllt1is0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\bllt1it0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\bllt1nl0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\bllt1no0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\bllt1pt0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\bllt1sv0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\bllt1uk0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\bllt1us0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\blnxtde0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\blnxtes0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\blnxtfr0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\blnxtit0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\blnxtus0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\charsets.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\countries.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\country_codes.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\cs_437.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\cs_850.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\cs_852.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\cs_857.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\cs_860.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\cs_861.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\cs_863.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\cs_865.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\cs_big5.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\cs_cyrl.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\cs_gb2312.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\cs_jis_0208_1990.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\cs_ksc5601.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\cs_latin1.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\cs_latin2.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\cs_next.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\cs_sjis.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\cs_w1250.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\cs_w1251.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\cs_w1252.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\cs_w1253.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\cs_w1254.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\csjis2_p.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\cyrr.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\czech.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\db437de0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\db437es1.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\db437fi0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\db437fr0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\db437it0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\db437nl0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\db437sv0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\db437uk0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\db437us0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\db850cf0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\db850de0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\db850es0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\db850fr0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\db850it1.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\db850nl0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\db850pt0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\db850sv1.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\db850uk0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\db850us0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\db852cz0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\db852hdc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\db852po0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\db852sl0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\db857tr0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\db860pt0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\db863cf1.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\db865da0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\db865no0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\db866ru0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\hun852dc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\iceland.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\intl.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\kanji.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\kanji_proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\langdrv.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\ld.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\ld_proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\ldcommon.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\lt2czech.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\mac_437.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\mac_865.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\mac_lat1.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\nordan40.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\polish.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\slovene.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\swedfin.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\turk.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\tx437_865.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\tx437_lat1.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\tx865_lat1.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\undef.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\win1251_ua.h
+# End Source File
+# End Group
+# Begin Group "Resource files"
+
+# PROP Default_Filter ""
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\version.rc
 # End Source File
-# End Group
-# Begin Group "Header Files"
-
-# PROP Default_Filter "h;hpp;hxx;hm;inl"
-# End Group
-# Begin Group "Resource Files"
-
-# PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 # End Group
 # Begin Source File
 

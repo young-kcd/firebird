@@ -50,7 +50,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /incremental:no /debug /machine:I386 /out:"debug\firebird\bin/isql.exe" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /incremental:no /debug /machine:I386 /out:"debug/firebird/bin/isql.exe" /pdbtype:sept
 
 !ELSEIF  "$(CFG)" == "isql - Win32 Release"
 
@@ -75,7 +75,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /incremental:no /machine:I386 /out:"release\firebird\bin/isql.exe" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /incremental:no /machine:I386 /out:"release/firebird/bin/isql.exe" /pdbtype:sept
 # SUBTRACT LINK32 /pdb:none /debug
 
 !ENDIF 
@@ -84,7 +84,7 @@ LINK32=link.exe
 
 # Name "isql - Win32 Debug"
 # Name "isql - Win32 Release"
-# Begin Group "Source Files"
+# Begin Group "ISQL files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Group "epp Source Files"
@@ -136,7 +136,7 @@ SOURCE=..\..\..\src\isql\isql_win.cpp
 SOURCE=..\..\..\generated\isql\show.cpp
 # End Source File
 # End Group
-# Begin Group "Header Files"
+# Begin Group "Header files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
@@ -168,25 +168,13 @@ SOURCE=..\..\..\src\isql\isqlw_proto.h
 SOURCE=..\..\..\src\isql\show_proto.h
 # End Source File
 # End Group
-# Begin Group "Resource Files"
+# Begin Group "Resource files"
 
-# PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
-# End Group
+# PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\src\isql\isql.rc
-
-!IF  "$(CFG)" == "isql - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "isql - Win32 Release"
-
-# PROP BASE Exclude_From_Build 1
-# PROP Exclude_From_Build 1
-
-!ENDIF 
-
+SOURCE=..\..\..\src\jrd\version.rc
 # End Source File
+# End Group
 # End Target
 # End Project
