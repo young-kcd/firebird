@@ -44,11 +44,8 @@ void    MVOL_skip_block(TGBL, ULONG);
 UCHAR   MVOL_write(UCHAR, int*, UCHAR**);
 UCHAR*  MVOL_write_block(TGBL, UCHAR*, ULONG);
 
-#if defined WIN_NT && defined _WINNT_
-/* the _WINNT_ symbol is defined if winnt.h has been included */
-/* it contains the definition of a HANDLE */
-/* those files that don't include winnt.h don't need MVOL_open either */
-extern HANDLE   MVOL_open (TEXT*,DWORD,DWORD);
+#if defined WIN_NT
+extern DESC MVOL_open (char *,ULONG,ULONG);
 #endif
 
 

@@ -477,7 +477,7 @@ void MVOL_skip_block( TGBL tdgbl, ULONG count)
 // detect if it's a tape, rewind if so
 // and set the buffer size
 //
-HANDLE MVOL_open(TEXT * name, DWORD mode, DWORD create)
+DESC MVOL_open(char * name, ULONG mode, ULONG create)
 {
 	TGBL tdgbl;
 	HANDLE handle;
