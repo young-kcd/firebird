@@ -24,7 +24,7 @@
  *                         readonly databases.
  */
 /*
-$Id: dsql.cpp,v 1.4 2001-07-12 05:46:04 bellardo Exp $
+$Id: dsql.cpp,v 1.5 2001-07-14 00:44:14 skywalker Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -160,9 +160,7 @@ static CONST SCHAR db_hdr_info_items[] = {
 	isc_info_db_sql_dialect,
 	gds_info_ods_version,
 	gds_info_base_level,
-#ifde_DATABASE
 	isc_info_db_read_only,
-#endif							/* READONLY_DATABASE */
 	frb_info_att_charset,
 	gds_info_end
 };
@@ -291,7 +289,6 @@ STATUS DLL_EXPORT GDS_DSQL_EXECUTE(STATUS * user_status,
 		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 901,
 				  gds_arg_gds, gds_bad_trans_handle, 0);
 
-/* If the request is a SELECT or blob statement then this is an open.
 /* If the request is a SELECT or blob statement then this is an open.
    Make sure the cursor is not already open. */
 
