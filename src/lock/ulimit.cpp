@@ -31,7 +31,7 @@ int ulimit( int cmd, int new_limit)
  * Functional description
  *
  **************************************/
-	struct rlimit rlp;
+	rlimit rlp;
 
 	getrlimit(RLIMIT_DATA, &rlp);
 	return rlp.rlim_max + 4000000;

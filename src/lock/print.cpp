@@ -81,7 +81,7 @@ static void prt_lock_init(void);
 static void prt_history(OUTFILE, const lhb*, PTR, const SCHAR*);
 static void prt_lock(OUTFILE, const lhb*, LBL, USHORT);
 static void prt_owner(OUTFILE, const lhb*, OWN, bool, bool);
-static void prt_owner_wait_cycle(OUTFILE, const lhb*, OWN, USHORT, struct waitque*);
+static void prt_owner_wait_cycle(OUTFILE, const lhb*, OWN, USHORT, waitque*);
 static void prt_request(OUTFILE, const lhb*, LRQ);
 static void prt_que(OUTFILE, const lhb*, const SCHAR*, const srq*, USHORT);
 static void prt_que2(OUTFILE, const lhb*, const SCHAR*, const srq*, USHORT);
@@ -355,7 +355,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
  * off the end of the mapped region.
  */
 
-	if (LOCK_header && shmem_data.sh_mem_length_mapped < (SLONG) sizeof(struct lhb)) {
+	if (LOCK_header && shmem_data.sh_mem_length_mapped < (SLONG) sizeof(lhb)) {
 		/* Mapped file is obviously too small to really be a lock file */
 		FPRINTF(outfile,
 				"Unable to access lock table - file too small.\n%s\n",
@@ -606,7 +606,7 @@ static void prt_lock_activity(
  *	Print a time-series lock activity report 
  *
  **************************************/
-	struct tm d;
+	tm d;
 	ULONG i;
 
 	time_t clock = time(NULL);
@@ -1034,7 +1034,7 @@ static void prt_owner(OUTFILE outfile,
 			OFFSET(LRQ, lrq_own_blocks));
 
 	if (sw_waitlist) {
-		struct waitque owner_list;
+		waitque owner_list;
 		owner_list.waitque_depth = 0;
 		prt_owner_wait_cycle(outfile, LOCK_header, owner, 8, &owner_list);
 	}
@@ -1053,7 +1053,7 @@ static void prt_owner_wait_cycle(
 								 OUTFILE outfile,
 								 const lhb* LOCK_header,
 								 OWN owner,
-								 USHORT indent, struct waitque *waiters)
+								 USHORT indent, waitque *waiters)
 {
 /**************************************
  *

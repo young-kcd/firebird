@@ -276,9 +276,8 @@ static lookup_agg( UCHAR * string)
  * Functional description
  *
  **************************************/
-	struct tagg *ptr;
 
-	for (ptr = aggs; ptr->tagg_string; ptr++)
+	for (tagg* ptr = aggs; ptr->tagg_string; ptr++)
 		if (strcmp(ptr->tagg_string, string) == 0)
 			return ptr->tagg_code;
 
@@ -297,9 +296,8 @@ static lookup_lock( UCHAR * string)
  * Functional description
  *
  **************************************/
-	struct tbl *ptr;
 
-	for (ptr = types; ptr->tbl_string; ptr++)
+	for (tbl* ptr = types; ptr->tbl_string; ptr++)
 		if (strcmp(ptr->tbl_string, string) == 0)
 			return ptr->tbl_code;
 

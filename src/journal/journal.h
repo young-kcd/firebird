@@ -74,12 +74,12 @@ enum cmd_t {
 	cmd_archive					/* restart archive for a database */
 };
 
-typedef struct cmds {
+struct cmds {
 	TEXT *cmds_string;
 	enum cmd_t cmds_command;
 	int cmds_msg;
 	TEXT *cmds_help;
-} CMDS;
+};
 
 /* Message codes */
 

@@ -131,7 +131,7 @@ DATABASE
 
 // List of console commands
 
-CMDS commands[] = {
+cmds commands[] = {
 	"DISABLE <db name>	", cmd_disable, 163, "\tdisable database",
 	"DROP <db name>		", cmd_drop, 164, "\tdrop all files for a database",
 	"ERASE <db id>		", cmd_erase, 165,
@@ -149,25 +149,28 @@ CMDS commands[] = {
 	"QUIT			", cmd_exit, 0, NULL,
 	NULL, cmd_none, 0
 };
-typedef struct backup_info {
+
+struct backup_info {
 	SLONG bi_pid;
 	SLONG bi_fid;
-} BINFO;
+};
 
 #define MAX_ARCHIVE	16
 #define MAX_RETRY	16
 
+struct cnct; // Forward declaration
+
 // Active database block
 
 typedef struct djb {
-	struct djb *djb_next;			// Next block
-	struct cnct *djb_connections;	// List of connections
+	djb* djb_next;					// Next block
+	cnct* djb_connections;			// List of connections
 	USHORT djb_flags;				// flags - see values below
 	USHORT djb_id;					// Id of database
 	USHORT djb_use_count;			// Number of connections
 	SSHORT djb_retry;				// number of retries
 	SSHORT djb_bfi_count;
-	BINFO djb_bfi[MAX_ARCHIVE + 1];	// backup file info
+	backup_info djb_bfi[MAX_ARCHIVE + 1];	// backup file info
 	UCHAR *djb_dir_name;			// backup directory name
 	UCHAR djb_db_name[1];			// Database filename
 } *DJB;
@@ -179,16 +182,16 @@ typedef struct djb {
 // Individual journal connections
 
 typedef struct cnct {
-	struct cnct *cnct_next;		// Next connection for system
-	struct cnct *cnct_db_next;	// Next connection for database
-	struct djb *cnct_database;	// Active database block
+	cnct* cnct_next;			// Next connection for system
+	cnct* cnct_db_next;			// Next connection for database
+	djb* cnct_database;			// Active database block
 	HANDLE cnct_handle;			// Parent mailbox
 	SLONG cnct_channel;			// Channel for communication
 	USHORT cnct_flags;
 	USHORT cnct_version;		// Protocol version
 #ifdef WIN_NT
 	OVERLAPPED cnct_overlapped;
-	UCHAR cnct_data[sizeof(struct jrnh)];
+	UCHAR cnct_data[sizeof(jrnh)];
 	USHORT cnct_read_length;
 #endif
 } *CNCT;
@@ -230,7 +233,7 @@ static DJB make_database(CNCT, SCHAR *, SCHAR *);
 static void open_mailbox(SCHAR *, USHORT);
 
 #ifdef BSD_SOCKETS
-static void post_address(USHORT, struct sockaddr_in);
+static void post_address(USHORT, sockaddr_in);
 #endif
 
 static void process_command(CNCT, TEXT *);
@@ -273,7 +276,7 @@ static FILE *log;
 static HANDLE handles[2];
 
 #ifdef WIN_NT
-static struct cnct pending_connections[2];
+static cnct pending_connections[2];
 static HANDLE *wait_vec;
 static USHORT wait_vec_length;
 #endif
@@ -402,7 +405,7 @@ static CNCT alloc_connect(HANDLE handle,
  **************************************/
 	CNCT connection;
 
-	connection = (CNCT) MISC_alloc_jrnl(sizeof(struct cnct));
+	connection = (CNCT) MISC_alloc_jrnl(sizeof(cnct));
 	connection->cnct_next = connections;
 	connection->cnct_channel = channel;
 	connection->cnct_handle = handle;
@@ -437,9 +440,6 @@ static void backup_wal(DJB database,
 	SCHAR db_id[10], f_id[10], csize[10], cp_offset[10];
 	SLONG *lts_tr;
 	SCHAR name[MAX_PATH_LENGTH], dname[MAX_PATH_LENGTH];
-#if (defined UNIX)
-	struct stat stat_buf;
-#endif
 
 	if (test_dup_entry(database, file_id))
 		return;
@@ -456,6 +456,7 @@ static void backup_wal(DJB database,
 	proc_id = spawnl(P_NOWAITO, name, ARCHIVE, db_id, f_id, cp_offset, csize,
 					 file_name, dname, journal_directory, NULL);
 #else
+	struct stat stat_buf;
 	if (stat(name, &stat_buf) == -1)
 		proc_id = -1;
 	else if (!(proc_id = vfork())) {
@@ -1502,7 +1503,7 @@ static DJB make_database(CNCT connection,
 	ldb = strlen(db_name);
 	ldir = strlen(dir_name);
 
-	database = (DJB) MISC_alloc_jrnl(sizeof(struct djb) + ldb);
+	database = (DJB) MISC_alloc_jrnl(sizeof(djb) + ldb);
 
 	if (ldb)
 		strcpy((char*) database->djb_db_name, (const char*) db_name);
@@ -1545,9 +1546,9 @@ static void open_mailbox(SCHAR * filename,
  *	Open multiplexed connection.
  *
  **************************************/
-	struct sockaddr_in address;
+	sockaddr_in address;
 	HANDLE handle;
-	struct hostent *host;
+	hostent* host;
 	TEXT name[MAXHOSTNAMELEN];
 	int length, namelen;
 
@@ -1580,10 +1581,10 @@ static void open_mailbox(SCHAR * filename,
 	address.sin_port = 0;		// let system choose an unused port no.
 	length = sizeof(address);
 
-	if (bind((int) handle, (struct sockaddr *) &address, length) < 0)
+	if (bind((int) handle, (sockaddr*) &address, length) < 0)
 		error_exit((ISC_STATUS) errno, "bind");
 
-	if (getsockname((int) handle, (struct sockaddr *) &address, &length) < 0)
+	if (getsockname((int) handle, (sockaddr*) &address, &length) < 0)
 		error_exit((ISC_STATUS) errno, "getsockname");
 
 // now that we've settled on the socket, go advertize the address
@@ -1616,8 +1617,6 @@ static void open_mailbox(SCHAR * filename,
  **************************************/
 	TEXT name[MAX_PATH_LENGTH], *p, c, full_name[MAX_PATH_LENGTH];
 	HANDLE phandle, ehandle;
-	USHORT n;
-	CNCT cnct;
 
 	strcpy(full_name, (const char*) journal_directory);
 	strcat(full_name, filename);
@@ -1634,7 +1633,7 @@ static void open_mailbox(SCHAR * filename,
 		*p++ = ((c = *filename++) == ':') ? '_' : ((c == '/') ? '\\' : c);
 	*p = 0;
 
-	memset(&pending_connections[slot], 0, sizeof(struct cnct));
+	memset(&pending_connections[slot], 0, sizeof(cnct));
 	phandle = CreateNamedPipe(name,
 							  PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
 							  PIPE_WAIT | PIPE_TYPE_BYTE | PIPE_READMODE_BYTE,
@@ -1662,7 +1661,9 @@ static void open_mailbox(SCHAR * filename,
 	else
 		error_exit(GetLastError(), "ConnectNamedPipe");
 
-	for (n = 2, cnct = connections; cnct; cnct = cnct->cnct_next)
+	USHORT n = 2;
+
+	for (CNCT connection = connections; connection; connection = connection->cnct_next)
 		n++;
 
 	if (n > wait_vec_length) {
@@ -1678,7 +1679,7 @@ static void open_mailbox(SCHAR * filename,
 
 #ifdef BSD_SOCKETS
 static void post_address(USHORT slot,
-						 struct sockaddr_in address)
+						 sockaddr_in address)
 {
 /**************************************
  *
@@ -1722,7 +1723,7 @@ static void process_command(CNCT connection,
  *	Process an operator command.
  *
  **************************************/
-	CMDS *command;
+	cmds* command;
 	TEXT operand1[JOURNAL_PATH_LENGTH], operand2[JOURNAL_PATH_LENGTH];
 	TEXT cmd[32], *p, *q;
 	USHORT n;
@@ -2793,7 +2794,7 @@ static void put_message(SSHORT msg_num,
  *
  **************************************/
 	SLONG clock;
-	struct tm times;
+	tm times;
 	UCHAR message[MSG_LENGTH];
 
 	if (!log)
@@ -3581,7 +3582,7 @@ static void time_stamp(GDS__QUAD * date)
  *
  **************************************/
 	SLONG clock;
-	struct tm times;
+	tm times;
 
 	clock = time(NULL);
 	times = *localtime(&clock);

@@ -60,12 +60,12 @@ static jmp_buf gjrn_env;
 static UCHAR
 	disable_dpb[] = { gds_dpb_version1, gds_dpb_disable_journal, 0 };
 
-typedef struct func_tab {
+struct func_tab {
 	SCHAR *name;
 	bool (*func_routine) (int, char **);
-} FUNC_TABLE;
+};
 
-static FUNC_TABLE option_table[] = {
+static func_tab option_table[] = {
 #ifndef VMS
 	"console", CONSOLE_start_console,
 #endif

@@ -59,7 +59,7 @@
 #define YESTERDAY	"YESTERDAY"
 
 
-static void now_to_date(struct tm *, SLONG[2]);
+static void now_to_date(tm*, SLONG[2]);
 
 static TEXT *months[] = {
 	"JANUARY",
@@ -224,7 +224,7 @@ void MISC_get_new_value(SCHAR * string1,
 }
 
 
-void MISC_get_time( struct timeval *current)
+void MISC_get_time(timeval* current)
 {
 /**************************************
  *
@@ -238,12 +238,12 @@ void MISC_get_time( struct timeval *current)
  **************************************/
 #ifdef HAVE_GETTIMEOFDAY
 #ifdef GETTIMEOFDAY_RETURNS_TIMEZONE
-	(void)gettimeofday(current, (struct timezone *)0);
+	(void)gettimeofday(current, (timezone*)0);
 #else
 	(void)gettimeofday(current);
 #endif
 #else
-	struct timeb buffer;
+	timeb buffer;
 
 	ftime(&buffer);
 	current->tv_sec = buffer.time;
@@ -374,7 +374,7 @@ int MISC_time_convert(TEXT * string,
 	TEXT c, *p, temp[15], *t, *end, **month_ptr, *m;
 	USHORT n, month_position, i, components[7];
 	SLONG xclock;
-	struct tm times, times2;
+	tm times, times2;
 
 	p = string;
 	end = p + length;
@@ -514,7 +514,7 @@ int MISC_time_convert(TEXT * string,
 }
 
 
-static void now_to_date(struct tm *xtime,
+static void now_to_date(tm* xtime,
 						SLONG date[2])
 {
 /**************************************

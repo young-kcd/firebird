@@ -29,8 +29,8 @@ extern void MISC_down_case(UCHAR *, UCHAR *);
 extern void MISC_free_jrnl(int *);
 extern bool MISC_get_line(TEXT *, TEXT *, SSHORT);
 extern void MISC_get_new_value(SCHAR *, SCHAR *, int);
-extern void MISC_get_time(struct timeval *);
-extern void MISC_get_wal_info(struct ltjc *, SCHAR *, SCHAR *);
+extern void MISC_get_time(timeval*);
+extern void MISC_get_wal_info(ltjc*, SCHAR*, SCHAR*);
 extern void MISC_print_journal_syntax(void);
 extern int MISC_time_convert(TEXT *, USHORT, SLONG[2]);
 

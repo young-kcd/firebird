@@ -199,10 +199,10 @@ typedef struct lhb {
 	UCHAR lhb_version;			/* Version of lock table */
 	PTR lhb_secondary;			/* Secondary lock header block */
 	PTR lhb_active_owner;		/* Active owner, if any */
-	struct srq lhb_owners;		/* Que of active owners */
-	struct srq lhb_free_owners;	/* Free owners blocks */
-	struct srq lhb_free_locks;	/* Free lock blocks */
-	struct srq lhb_free_requests;	/* Free lock requests */
+	srq lhb_owners;				/* Que of active owners */
+	srq lhb_free_owners;		/* Free owners blocks */
+	srq lhb_free_locks;			/* Free lock blocks */
+	srq lhb_free_requests;		/* Free lock requests */
 	SLONG lhb_length;			/* Size of lock table */
 	SLONG lhb_used;				/* Bytes of lock table in use */
 	USHORT lhb_hash_slots;		/* Number of hash slots allocated */
@@ -237,8 +237,8 @@ typedef struct lhb {
 	ULONG lhb_deadlocks;
 	ULONG lhb_wait_time;
 	ULONG lhb_reserved[2];		/* For future use */
-	struct srq lhb_data[LCK_MAX_SERIES];
-	struct srq lhb_hash[1];		/* Hash table */
+	srq lhb_data[LCK_MAX_SERIES];
+	srq lhb_hash[1];			/* Hash table */
 } *LHB;
 
 #define LHB_lock_ordering       1	/* Lock ordering is enabled */
@@ -267,9 +267,9 @@ typedef struct lbl
 	UCHAR lbl_state;			/* High state granted */
 	UCHAR lbl_size;				/* Key bytes allocated */
 	UCHAR lbl_length;			/* Key bytes used */
-	struct srq lbl_requests;	/* Requests granted */
-	struct srq lbl_lhb_hash;	/* Collision que for hash table */
-	struct srq lbl_lhb_data;	/* Lock data que by series */
+	srq lbl_requests;			/* Requests granted */
+	srq lbl_lhb_hash;			/* Collision que for hash table */
+	srq lbl_lhb_data;			/* Lock data que by series */
 	SLONG lbl_data;				/* user data */
 	PTR lbl_parent;				/* Parent */
 	UCHAR lbl_series;			/* Lock series */
@@ -291,9 +291,9 @@ typedef struct lrq {
 	PTR lrq_owner;				/* Owner making request */
 	PTR lrq_lock;				/* Lock requested */
 	SLONG lrq_data;				/* Lock data requested */
-	struct srq lrq_own_requests;	/* Locks granted for owner */
-	struct srq lrq_lbl_requests;	/* Que of requests (active, pending) */
-	struct srq lrq_own_blocks;	/* Owner block que */
+	srq lrq_own_requests;		/* Locks granted for owner */
+	srq lrq_lbl_requests;		/* Que of requests (active, pending) */
+	srq lrq_own_blocks;			/* Owner block que */
 	lock_ast_t lrq_ast_routine;	/* Block ast routine */
 	void *lrq_ast_argument;		/* Ast argument */
 } *LRQ;
@@ -318,9 +318,9 @@ typedef struct own
 	ULONG own_owner_id;			/* Owner ID */
 	UATOM own_ast_flags;		/* flags shared by main and ast codes */
 	UATOM own_ast_hung_flags;	/* unprotected - OWN_hung flag */
-	struct srq own_lhb_owners;	/* Owner que */
-	struct srq own_requests;	/* Lock requests granted */
-	struct srq own_blocks;		/* Lock requests blocking */
+	srq own_lhb_owners;			/* Owner que */
+	srq own_requests;			/* Lock requests granted */
+	srq own_blocks;				/* Lock requests blocking */
 	PTR own_pending_request;	/* Request we're waiting on */
 	int own_process_id;			/* Owner's process ID */
 	int own_process_uid;		/* Owner's process UID */

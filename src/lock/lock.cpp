@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.72 2003-09-11 21:30:09 skidder Exp $
+$Id: lock.cpp,v 1.73 2003-09-18 10:24:03 aafemt Exp $
 */
 
 #include "firebird.h"
@@ -274,7 +274,7 @@ static void validate_request(PTR, USHORT, USHORT);
 static USHORT wait_for_request(LRQ, SSHORT, ISC_STATUS *);
 //static void wakeup_action(PTR *);
 
-static struct own LOCK_process_owner;	/* Place holder */
+static own LOCK_process_owner;	/* Place holder */
 static SSHORT LOCK_bugcheck = 0;
 static LHB volatile LOCK_header = NULL;
 static PTR LOCK_owner_offset = 0;
@@ -605,7 +605,7 @@ SLONG LOCK_enq(	PTR		prior_request,
 
 	ASSERT_ACQUIRED;
 	if (QUE_EMPTY(LOCK_header->lhb_free_requests)) {
-		if (!(request = (LRQ) alloc(sizeof(struct lrq), status_vector))) {
+		if (!(request = (LRQ) alloc(sizeof(lrq), status_vector))) {
 			release(owner_offset);
 			return 0;
 		}
@@ -746,7 +746,7 @@ void LOCK_fini( ISC_STATUS * status_vector, PTR * owner_offset)
 #if !defined SUPERSERVER && defined HAVE_MMAP
 	if (LOCK_owner) {
 		ISC_unmap_object(status_vector, &LOCK_data,(UCHAR**)&LOCK_owner,
-						 sizeof(struct own));
+						 sizeof(own));
 		LOCK_owner_offset = 0;
 	}
 #endif
@@ -869,7 +869,7 @@ int LOCK_init(
 	if (LOCK_owner_offset &&
 		!(LOCK_owner = (OWN) ISC_map_object(status_vector, &LOCK_data,
 											LOCK_owner_offset,
-											sizeof(struct own)))) 
+											sizeof(own)))) 
 		return FB_FAILURE;
 #endif
 
@@ -1266,7 +1266,7 @@ void LOCK_re_post( lock_ast_t ast, void *arg, PTR owner_offset)
 
 	ASSERT_ACQUIRED;
 	if (QUE_EMPTY(LOCK_header->lhb_free_requests)) {
-		if (!(request = (LRQ) alloc(sizeof(struct lrq), NULL))) {
+		if (!(request = (LRQ) alloc(sizeof(lrq), NULL))) {
 			release(owner_offset);
 			return;
 		}
@@ -1696,7 +1696,7 @@ static LBL alloc_lock( USHORT length, ISC_STATUS * status_vector)
 		}
 	}
 
-	if (lock = (LBL) alloc(sizeof(struct lbl) + length, status_vector))
+	if (lock = (LBL) alloc(sizeof(lbl) + length, status_vector))
 	{
 		lock->lbl_size = length;
 		lock->lbl_type = type_lbl;
@@ -2006,7 +2006,7 @@ static void bug_assert( const TEXT * string, ULONG line)
  *
  **************************************/
 	TEXT buffer[100];
-	struct lhb LOCK_header_copy;
+	lhb LOCK_header_copy;
 
 	sprintf((char *) buffer, "%s %ld: lock assertion failure: %s\n",
 			__FILE__, line, string);
@@ -2251,7 +2251,7 @@ static USHORT create_owner(ISC_STATUS*	status_vector,
 
 	if (QUE_EMPTY(LOCK_header->lhb_free_owners))
 	{
-		if (!(owner = (OWN) alloc(sizeof(struct own), status_vector)))
+		if (!(owner = (OWN) alloc(sizeof(own), status_vector)))
 		{
 			release_mutex();
 			return FB_FAILURE;
@@ -2355,7 +2355,7 @@ static void current_is_active_owner(bool expect_acquired, ULONG line)
 
 #ifndef SUPERSERVER
 
-	struct own owner_copy;
+	own owner_copy;
 
 	if (owner->own_process_id == LOCK_pid) {
 		if (expect_acquired)
@@ -2710,7 +2710,7 @@ static void exit_handler( void *arg)
 #ifdef HAVE_MMAP
 		if (LOCK_owner)
 			ISC_unmap_object(local_status, &LOCK_data,
-				(UCHAR**)&LOCK_owner, sizeof(struct own));
+				(UCHAR**)&LOCK_owner, sizeof(own));
 #endif
 #endif
 		if (owner_offset != LOCK_header->lhb_active_owner)
@@ -3249,7 +3249,6 @@ static void lock_initialize( void *arg, SH_MEM shmem_data, int initialize)
 	SSHORT length;
 	USHORT i, j;
 	SRQ que;
-	SHB shb;
 	HIS history;
 	PTR *prior;
 
@@ -3273,7 +3272,7 @@ static void lock_initialize( void *arg, SH_MEM shmem_data, int initialize)
 
 	start_manager = true;
 
-	memset(LOCK_header, 0, sizeof(struct lhb));
+	memset(LOCK_header, 0, sizeof(lhb));
 	LOCK_header->lhb_type = type_lhb;
 	LOCK_header->lhb_version = LHB_VERSION;
 
@@ -3313,38 +3312,40 @@ static void lock_initialize( void *arg, SH_MEM shmem_data, int initialize)
 		LOCK_header->lhb_flags |= LHB_lock_ordering;
 
 	length =
-		sizeof(struct lhb) +
+		sizeof(lhb) +
 		(LOCK_header->lhb_hash_slots * sizeof(LOCK_header->lhb_hash[0]));
 	LOCK_header->lhb_length = shmem_data->sh_mem_length_mapped;
 	LOCK_header->lhb_used = FB_ALIGN(length, sizeof(IPTR));
 
-	if (!(shb = (SHB) alloc(sizeof(struct shb), NULL)))
+	SHB secondary_header;
+
+	if (!(secondary_header = (SHB) alloc(sizeof(shb), NULL)))
 	{
 		gds__log("Fatal lock manager error: lock manager out of room");
 		exit(STARTUP_ERROR);
 	}
 	
-	LOCK_header->lhb_secondary = REL_PTR(shb);
-	shb->shb_type = type_shb;
-	shb->shb_flags = 0;
-	shb->shb_remove_node = 0;
-	shb->shb_insert_que = 0;
-	shb->shb_insert_prior = 0;
+	LOCK_header->lhb_secondary = REL_PTR(secondary_header);
+	secondary_header->shb_type = type_shb;
+	secondary_header->shb_flags = 0;
+	secondary_header->shb_remove_node = 0;
+	secondary_header->shb_insert_que = 0;
+	secondary_header->shb_insert_prior = 0;
 	
-	for (i = FB_NELEM(shb->shb_misc); i--;)
+	for (i = FB_NELEM(secondary_header->shb_misc); i--;)
 	{
-		shb->shb_misc[i] = 0;
+		secondary_header->shb_misc[i] = 0;
 	}
 
 /* Allocate a sufficiency of history blocks */
 
 	for (j = 0; j < 2; j++)
 	{
-		prior = (j == 0) ? &LOCK_header->lhb_history : &shb->shb_history;
+		prior = (j == 0) ? &LOCK_header->lhb_history : &secondary_header->shb_history;
 
 		for (i = 0; i < HISTORY_BLOCKS; i++)
 		{
-			if (!(history = (HIS) alloc(sizeof(struct his), NULL)))
+			if (!(history = (HIS) alloc(sizeof(his), NULL)))
 			{
 				gds__log("Fatal lock manager error: lock manager out of room");
 				exit(STARTUP_ERROR);
@@ -3356,13 +3357,13 @@ static void lock_initialize( void *arg, SH_MEM shmem_data, int initialize)
 		}
 
 		history->his_next =
-			(j == 0) ? LOCK_header->lhb_history : shb->shb_history;
+			(j == 0) ? LOCK_header->lhb_history : secondary_header->shb_history;
 	}
 
 #ifdef USE_STATIC_SEMAPHORES
 /* Initialize the semaphores. Allocate semaphore block. */
 
-	SMB semaphores = (SMB) alloc(sizeof(struct smb) +
+	SMB semaphores = (SMB) alloc(sizeof(smb) +
 								   (LOCK_sem_count / BITS_PER_LONG) *
 								   sizeof(ULONG), NULL);
 	if (!semaphores)
@@ -4204,7 +4205,7 @@ static void shutdown_blocking_thread( ISC_STATUS * status_vector)
 
 		/* Finish our cleanup */
 		ISC_unmap_object(status_vector,  &LOCK_data, (UCHAR**) &LOCK_owner,
-						 sizeof(struct own));
+						 sizeof(own));
 	}
 #endif
 }
@@ -4477,7 +4478,7 @@ static void validate_lock( PTR lock_ptr, USHORT freed, PTR lrq_ptr)
 	USHORT found_pending;
 	USHORT i;
 	USHORT direct_counts[LCK_max];
-	struct lbl lock_copy;
+	lbl lock_copy;
 
 	LOCK_TRACE(("validate_lock: %ld\n", lock_ptr));
 
@@ -4603,7 +4604,7 @@ static void validate_owner( PTR own_ptr, USHORT freed)
 	LRQ request2;
 	USHORT found;
 	PTR owner_own_pending_request;
-	struct own owner_copy;
+	own owner_copy;
 
 	LOCK_TRACE(("validate_owner: %ld\n", own_ptr));
 
@@ -4796,7 +4797,7 @@ static void validate_request( PTR lrq_ptr, USHORT freed, USHORT recurse)
  *
  **************************************/
 	LRQ request;
-	struct lrq request_copy;
+	lrq request_copy;
 
 	LOCK_TRACE(("validate_request: %ld\n", lrq_ptr));
 
@@ -4859,19 +4860,19 @@ static void validate_shb( PTR shb_ptr)
  *	1995-April-13 David Schnepper 
  *
  **************************************/
-	SHB shb;
+	SHB secondary_header;
 	USHORT i;
 
 	LOCK_TRACE(("validate_shb: %ld\n", shb_ptr));
 
-	shb = (SHB) ABS_PTR(shb_ptr);
+	secondary_header = (SHB) ABS_PTR(shb_ptr);
 
-	CHECK(shb->shb_type == type_shb);
+	CHECK(secondary_header->shb_type == type_shb);
 
-	validate_history(shb->shb_history);
+	validate_history(secondary_header->shb_history);
 
-	for (i = 0; i < FB_NELEM(shb->shb_misc); i++)
-		CHECK(shb->shb_misc[i] == 0);
+	for (i = 0; i < FB_NELEM(secondary_header->shb_misc); i++)
+		CHECK(secondary_header->shb_misc[i] == 0);
 }
 #endif
 

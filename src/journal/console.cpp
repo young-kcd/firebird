@@ -74,14 +74,14 @@ static void error(ISC_STATUS, UCHAR *);
 static void expand_dbname(TEXT *);
 
 #ifdef BSD_SOCKETS
-static SSHORT find_address(TEXT *, struct sockaddr_in *, bool);
+static SSHORT find_address(TEXT*, sockaddr_in*, bool);
 #endif
 
 static enum jrnr_t get_reply(SLONG);
 static SLONG open_connection(SCHAR *, bool);
 static void put_command(SLONG, UCHAR *, USHORT, UCHAR *, USHORT);
 
-extern CMDS commands[];
+extern cmds commands[];
 
 
 bool CONSOLE_start_console(int argc,
@@ -376,7 +376,7 @@ static void expand_dbname(TEXT * in)
  *	modified.
  *
  **************************************/
-	CMDS *command;
+	cmds* command;
 	TEXT cmd[32], operand1[JOURNAL_PATH_LENGTH],
 		operand2[JOURNAL_PATH_LENGTH], *p, *q;
 	TEXT exp_op[JOURNAL_PATH_LENGTH];
@@ -439,7 +439,7 @@ static void expand_dbname(TEXT * in)
 
 #ifdef BSD_SOCKETS
 static SSHORT find_address(TEXT * filename,
-						   struct sockaddr_in *address,
+						   sockaddr_in* address,
 						   bool test_only)
 {
 /**************************************
@@ -602,7 +602,7 @@ static SLONG open_connection(SCHAR * filename,
  *	see if journal server is running.
  *
  **************************************/
-	struct sockaddr_in address;
+	sockaddr_in address;
 	HANDLE channel;
 	TEXT name[MAXPATHLEN];
 

@@ -270,7 +270,7 @@ static SLONG oldr_open_file( OLD old)
 	SLONG fd;
 	SLONG len;
 	SCHAR buf[MAXPATHLEN];
-	struct hdr_page header;
+	hdr_page header;
 
 	ob = old->old_block;
 	hdr = ob->ob_hdr;
@@ -283,7 +283,7 @@ static SLONG oldr_open_file( OLD old)
 		len != OLD_HEADER_SIZE) return FB_FAILURE;
 
 	hp = (OLD_HDR_PAGE) hdr->oh_buf;
-	memcpy((SCHAR *) & header, (SCHAR *) hp, sizeof(struct hdr_page));
+	memcpy((SCHAR *) & header, (SCHAR *) hp, sizeof(hdr_page));
 
 	old->old_file_size = header.hp_file_size;
 
