@@ -1415,9 +1415,9 @@ static PAG db_read( SLONG page_number)
 
 	tddba->page_number = page_number;
 
-	for (fil = tddba->files;
-		 page_number > (SLONG) fil->fil_max_page
-		 && fil->fil_next;) fil = fil->fil_next;
+	for (fil = tddba->files; page_number > (SLONG) fil->fil_max_page
+							 && fil->fil_next;) 
+		 fil = fil->fil_next;
 
 	page_number -= fil->fil_min_page - fil->fil_fudge;
 	liOffset.QuadPart =
@@ -1605,9 +1605,9 @@ static PAG db_read( SLONG page_number)
 
 	tddba->page_number = page_number;
 
-	for (fil = tddba->files;
-		 page_number > fil->fil_max_page
-		 && fil->fil_next;) fil = fil->fil_next;
+	for (fil = tddba->files; page_number > (SLONG) fil->fil_max_page
+							 && fil->fil_next;) 
+		fil = fil->fil_next;
 
 	page_number -= fil->fil_min_page - fil->fil_fudge;
 	offset = ((UINT64)page_number) * ((UINT64)tddba->page_size);
