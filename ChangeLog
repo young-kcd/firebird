@@ -1,3 +1,10 @@
+2004-07-11 12:04  robocop
+
+	* firebird2/src/utilities/ibmgr/srvrmgr.cpp (1.17):
+	
+	Try to fix problem reported by Treeve Jelbert in a file I don't
+	compile.
+
 2004-07-10 11:26  robocop
 
 	* firebird2/src/jrd/os/posix/unix.cpp (1.32):
