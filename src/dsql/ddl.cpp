@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.51 2003-08-06 16:30:38 skidder Exp $
+ * $Id: ddl.cpp,v 1.52 2003-08-14 23:31:13 arnobrinkman Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -3394,11 +3394,15 @@ static void define_view( DSQL_REQ request, NOD_TYPE op)
 
 /* define the view source relations from the request contexts & union contexts*/
 
+    while (request->req_dt_context) {
+        context = reinterpret_cast<DSQL_CTX>(LLS_POP(&request->req_dt_context));
+        LLS_PUSH(context, &request->req_context);
+    }
+
     while (request->req_union_context) {
         context = reinterpret_cast<DSQL_CTX>(LLS_POP(&request->req_union_context));
         LLS_PUSH(context, &request->req_context);
     }
-
 
 	for (temp = request->req_context; temp; temp = temp->lls_next)
 	{

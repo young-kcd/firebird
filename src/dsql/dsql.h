@@ -403,6 +403,7 @@ public:
 	DsqlMemoryPool*	req_pool;
 	DLLS	req_context;
     DLLS    req_union_context;	//!< Save contexts for views of unions
+    DLLS    req_dt_context;		//!< Save contexts for views of derived tables
 	struct sym* req_name;		//!< Name of request
 	struct sym* req_cursor;		//!< Cursor symbol, if any
 	dbb*	req_dbb;			//!< Database handle
@@ -443,6 +444,7 @@ public:
 	USHORT	req_error_handlers;	//!< count of active error handlers
 	USHORT	req_flags;			//!< generic flag
 	USHORT	req_client_dialect;	//!< dialect passed into the API call
+	USHORT	req_in_outer_join;	//!< processing inside outer-join part
 };
 typedef dsql_req* DSQL_REQ;
 

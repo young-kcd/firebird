@@ -333,7 +333,8 @@ typedef ENUM nod_t
 	nod_difference_file,
 	nod_drop_difference,
 	nod_begin_backup,
-	nod_end_backup
+	nod_end_backup,
+	nod_derived_table // Derived table support
 } NOD_TYPE;
 
 
@@ -381,6 +382,8 @@ typedef dsql_nod* DSQL_NOD;
 #define NOD_PROTECTED	2
 #define NOD_READ	4
 #define NOD_WRITE	8
+
+#define NOD_DERIVED_TABLE	1 // flag used by nod_alias
 
 #define REF_ACTION_CASCADE 1
 #define REF_ACTION_SET_DEFAULT 2
@@ -866,5 +869,10 @@ typedef dsql_nod* DSQL_NOD;
 
 #define e_searched_case_search_conditions	0	/* list boolean expressions */
 #define e_searched_case_results				1	/* list including else_result */
+
+#define e_derived_table_rse				0  // Contains select_expr
+#define e_derived_table_alias			1  // Alias name for derived table
+#define e_derived_table_column_alias	2  // List with alias names from derived table columns
+#define e_derived_table_count			3  
 
 #endif /* _DSQL_NODE_H_ */
