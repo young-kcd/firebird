@@ -123,10 +123,6 @@ SOURCE=..\..\..\src\burp\misc.cpp
 
 SOURCE=..\..\..\src\burp\mvol.cpp
 # End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\burp\spit.cpp
-# End Source File
 # End Group
 # Begin Group "Header files"
 
@@ -162,10 +158,6 @@ SOURCE=..\..\..\src\burp\mvol_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\burp\resto_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\burp\spit.h
 # End Source File
 # End Group
 # End Target
