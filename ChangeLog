@@ -1,3 +1,22 @@
+2005-01-13 11:29  kkuznetsov
+
+	* firebird2/src/install/misc/firebird.init.d.Solaris.in (1.1):
+	
+	file firebird.init.d.Solaris.in was initially added on branch
+	B1_5_Release.
+
+2005-01-13 08:31  aafemt
+
+	* firebird2/src/remote/inet.cpp (1.136):
+	
+	Fix fearful warning
+
+2005-01-13 08:28  aafemt
+
+	* firebird2/builds/posix/Makefile.in.libfbclient (1.27):
+	
+	Missed objects
+
 2005-01-12 13:19  alexpeshkoff
 
 	* firebird2/src/jrd/os/win32/thd_priority.cpp (1.27):
