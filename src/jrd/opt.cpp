@@ -2410,25 +2410,25 @@ static bool dump_rsb(const jrd_req* request,
 		*buffer++ = gds_info_rsb_left_cross;
 		break;
 
-	case rsb_select:
-		*buffer++ = gds_info_rsb_select;
-		break;
+//	case rsb_select:
+//		*buffer++ = gds_info_rsb_select;
+//		break;
 
-	case rsb_sql_join:
-		*buffer++ = gds_info_rsb_sql_join;
-		break;
+//	case rsb_sql_join:
+//		*buffer++ = gds_info_rsb_sql_join;
+//		break;
 
-	case rsb_simulate:
-		*buffer++ = gds_info_rsb_simulate;
-		break;
+//	case rsb_simulate:
+//		*buffer++ = gds_info_rsb_simulate;
+//		break;
 
-	case rsb_sim_cross:
-		*buffer++ = gds_info_rsb_sim_cross;
-		break;
+//	case rsb_sim_cross:
+//		*buffer++ = gds_info_rsb_sim_cross;
+//		break;
 
-	case rsb_once:
-		*buffer++ = gds_info_rsb_once;
-		break;
+//	case rsb_once:
+//		*buffer++ = gds_info_rsb_once;
+//		break;
 
 	default:
 		*buffer++ = gds_info_rsb_unknown;
