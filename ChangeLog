@@ -1,3 +1,312 @@
+2002-09-13 09:15  eku
+
+	* firebird2/src/journal/journal.h (1.3):
+	
+	Changed indent.
+
+2002-09-13 09:15  eku
+
+	* firebird2/src/install/arch-specific/sinixz/Makefile.in (1.2):
+	
+	SINIX-Z: changed location of the produced package
+
+2002-09-13 09:14  eku
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.703), writeBuildNum.sh
+	(1.704), writeBuildNum.sh (1.705):
+	
+	increment build number
+
+2002-09-13 09:14  eku
+
+	* firebird2/builds/posix/prefix.sinixz (1.3):
+	
+	SINIX-Z: turn on compiler warnings only in debug builds
+
+2002-09-12 21:51  skidder
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.701), writeBuildNum.sh
+	(1.702):
+	
+	increment build number
+
+2002-09-12 21:51  skidder
+
+	* firebird2/src/dsql/: ddl.cpp (1.17), ddl.cpp (1.18):
+	
+	Fixed cached metadata error which caused many DDL/DML statements to
+	fail
+
+2002-09-12 18:17  skidder
+
+	* firebird2/src/misc/writeBuildNum.sh (1.700):
+	
+	increment build number
+
+2002-09-12 18:17  skidder
+
+	* firebird2/src/jrd/dyn_def.epp (1.13):
+	
+	Fixed my own bug with index creation
+
+2002-09-12 15:14  eku
+
+	* firebird2/src/misc/writeBuildNum.sh (1.699):
+	
+	increment build number
+
+2002-09-12 15:14  eku
+
+	* firebird2/src/journal/journal.h (1.2):
+	
+	Fixed unterminated comment.
+
+2002-09-11 21:34  skidder
+
+	* firebird2/src/: common/memory/memory_pool.cpp (1.7), jrd/common.h
+	(1.27), jrd/gds.cpp (1.19), jrd/gdsassert.h (1.4), jrd/intl.cpp
+	(1.13), jrd/jrd.h (1.11), jrd/lck.cpp (1.8):
+	
+	resoled some linux build issues, warnings
+
+2002-09-11 21:34  skidder
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.697), writeBuildNum.sh
+	(1.698):
+	
+	increment build number
+
+2002-09-11 21:31  skidder
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.695), writeBuildNum.sh
+	(1.696):
+	
+	increment build number
+
+2002-09-11 21:31  skidder
+
+	* firebird2/src/jrd/: dyn.epp (1.12), dyn_def.epp (1.12),
+	dyn_del.epp (1.9), dyn_df_proto.h (1.3):
+	
+	DDL GDML query optimization
+
+2002-09-11 13:30  eku
+
+	* firebird2/: autogen.sh (1.4), configure.in (1.43),
+	src/alice/alice.cpp (1.15), src/burp/burp.cpp (1.9),
+	src/include/fb_types.h (1.8), src/include/gen/autoconfig_msvc.h
+	(1.27), src/jrd/common.h (1.26), src/jrd/divorce.cpp (1.6),
+	src/jrd/dyn.epp (1.11), src/jrd/dyn_def.epp (1.11),
+	src/jrd/dyn_del.epp (1.8), src/jrd/dyn_mod.epp (1.9),
+	src/jrd/dyn_util.epp (1.8), src/jrd/exe.cpp (1.14), src/jrd/gds.cpp
+	(1.18), src/jrd/isc_ipc.cpp (1.17), src/jrd/isc_sync.cpp (1.16),
+	src/jrd/jrd.cpp (1.16), src/jrd/met.epp (1.15), src/jrd/scl.epp
+	(1.10), src/jrd/sdw.cpp (1.6), src/jrd/svc.cpp (1.16),
+	src/jrd/unix.cpp (1.9), src/lock/lock.cpp (1.11),
+	src/make.new/config/config.h.in (1.32), src/pipe/foot.cpp (1.4),
+	src/pipe/head.cpp (1.11), src/qli/exe.cpp (1.6),
+	src/remote/divorce.cpp (1.3), src/remote/server.cpp (1.8),
+	src/utilities/cache.cpp (1.3), src/utilities/relay.cpp (1.4),
+	src/utilities/util.cpp (1.6):
+	
+	Autoconf enhancements:	o autoconf v2.53 and later is now required
+	to generate configure	 (sorry, but it makes many tasks easier)  o
+	improved tests for mmap, socklen_t and offt_64	o added tests for
+	atexit, on_exit, (v)fork, set(p)grp, setpgid and flock	o added
+	test for the keyword 'volatile'  o fixed errors in configure.in  o
+	updated config.h.in and autoconfig_msvc.h (the latter may be
+	incorrect)  o replaced VOLATILE by volatile  o removed SETPGRP and
+	ATEXIT	o replaced NO_FLOCK by HAVE_FLOCK  o SIG_FPTR cleanup  o
+	vfork cleanup
+
+2002-09-11 13:30  eku
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.684), writeBuildNum.sh
+	(1.683), writeBuildNum.sh (1.689), writeBuildNum.sh (1.688),
+	writeBuildNum.sh (1.687), writeBuildNum.sh (1.686),
+	writeBuildNum.sh (1.685), writeBuildNum.sh (1.694),
+	writeBuildNum.sh (1.693), writeBuildNum.sh (1.692),
+	writeBuildNum.sh (1.691), writeBuildNum.sh (1.690):
+	
+	increment build number
+
+2002-09-11 09:49  eku
+
+	* firebird2/src/misc/writeBuildNum.sh (1.682):
+	
+	increment build number
+
+2002-09-11 09:49  eku
+
+	* firebird2/builds/posix/prefix.sinixz (1.2):
+	
+	New version.
+
+2002-09-10 20:38  skidder
+
+	* firebird2/src/misc/writeBuildNum.sh (1.681):
+	
+	increment build number
+
+2002-09-10 20:38  skidder
+
+	* firebird2/src/fbutil/FirebirdConfigFile.cpp (1.7):
+	
+	Fix compiler warning
+
+2002-09-10 20:34  skidder
+
+	* firebird2/src/msgs/load.epp (1.6):
+	
+	Added nulls first/last support load.epp
+
+2002-09-10 20:34  skidder
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.678), writeBuildNum.sh
+	(1.679), writeBuildNum.sh (1.680):
+	
+	increment build number
+
+2002-09-10 20:33  skidder
+
+	* firebird2/src/jrd/: blr.h (1.5), build_no.h (1.9), opt.cpp
+	(1.11), par.cpp (1.11):
+	
+	Added nulls first/last support
+
+2002-09-10 20:33  skidder
+
+	* firebird2/: src/intl/ld.c (1.5), builds/posix/Makefile.in.intl
+	(1.2):
+	
+	Make INTL work on Linux
+
+2002-09-10 20:31  skidder
+
+	* firebird2/src/install/: classic/install.sh.in (1.2),
+	misc/firebird.xinetd (1.3), misc/firebird.xinetd.in (1.2):
+	
+	Make make install work
+
+2002-09-10 20:30  skidder
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.674), writeBuildNum.sh
+	(1.676), writeBuildNum.sh (1.675), writeBuildNum.sh (1.677):
+	
+	increment build number
+
+2002-09-10 20:30  skidder
+
+	* firebird2/src/gpre/gpre_meta.epp (1.6):
+	
+	Optimize it a little
+
+2002-09-10 20:28  skidder
+
+	* firebird2/src/dsql/: dsql.tab.h (1.5), gen.cpp (1.10),
+	keywords.cpp (1.7), node.h (1.12), parse.cpp (1.25), parse.y
+	(1.25), pass1.cpp (1.18):
+	
+	added nulls first/last syntax support
+
+2002-09-10 20:27  skidder
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.672), writeBuildNum.sh
+	(1.673):
+	
+	increment build number
+
+2002-09-10 20:26  skidder
+
+	* firebird2/src/dsql/metd.epp (1.10):
+	
+	Optimize it a little
+
+2002-09-10 20:24  skidder
+
+	* firebird2/src/common/memory/memory_pool.cpp (1.6):
+	
+	Fix compiler warning
+
+2002-09-10 20:22  skidder
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.670), writeBuildNum.sh
+	(1.671):
+	
+	increment build number
+
+2002-09-10 20:22  skidder
+
+	* firebird2/builds/posix/: Makefile.in.firebird (1.6),
+	Makefile.in.v5_examples (1.2):
+	
+	Makefile for examples is broken. Do not compile it
+
+2002-09-10 15:40  dimitr
+
+	* firebird2/src/jrd/: cch.cpp (1.10), sdw.cpp (1.5), tra.cpp
+	(1.16):
+	
+	Fixed wrong initialization of the stack variables.
+
+2002-09-10 15:38  dimitr
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.668), writeBuildNum.sh
+	(1.669):
+	
+	increment build number
+
+2002-09-10 15:38  dimitr
+
+	* firebird2/src/utilities/dba.epp (1.9):
+	
+	Fixed wrong size of the local variable.  Thanks to Dmitry Kuzmenko.
+
+2002-09-10 10:07  dimitr
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.666), writeBuildNum.sh
+	(1.667):
+	
+	increment build number
+
+2002-09-10 10:07  dimitr
+
+	* firebird2/src/: dsql/metd.epp (1.9), gpre/gpre_meta.epp (1.5):
+	
+	Fixed error in GDML statement.
+
+2002-09-10 09:56  eku
+
+	* firebird2/src/misc/writeBuildNum.sh (1.665):
+	
+	increment build number
+
+2002-09-10 09:56  eku
+
+	* firebird2/configure.in (1.42):
+	
+	Fixed problems with '--with-lock-manager'.
+
+2002-09-10 08:08  eku
+
+	* firebird2/src/misc/writeBuildNum.sh (1.664):
+	
+	increment build number
+
+2002-09-10 08:08  eku
+
+	* firebird2/builds/posix/: make.rules (1.4), prefix.darwin (1.2),
+	prefix.linux (1.2), prefix.solx86 (1.2):
+	
+	Control build type (production/development) by configure
+	(--enable-debug).
+
+2002-09-09 15:24  fsg
+
+	* firebird2/src/misc/writeBuildNum.sh (1.663):
+	
+	increment build number
+
 2002-09-09 13:40  dimitr
 
 	* firebird2/src/misc/writeBuildNum.sh (1.662):
