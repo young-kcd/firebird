@@ -831,6 +831,9 @@ public:
 
 	iterator begin() { return vector.begin(); }
 	iterator end() { return vector.end(); }
+
+	const_iterator begin() const { return vector.begin(); }
+	const_iterator end() const { return vector.end(); }
 	
 	void clear() { vector.clear(); }
 	void prepend(int n) { vector.insert(vector.begin(), n); }

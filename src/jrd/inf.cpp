@@ -1024,7 +1024,7 @@ static USHORT get_counts(USHORT count_id, SCHAR* buffer, USHORT length)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	vcl* vector = tdbb->tdbb_attachment->att_counts[count_id];
+	const vcl* vector = tdbb->tdbb_attachment->att_counts[count_id];
 	if (!vector)
 		return 0;
 
@@ -1035,7 +1035,7 @@ static USHORT get_counts(USHORT count_id, SCHAR* buffer, USHORT length)
 	const UCHAR* const end = p + length - 6;
 
 	USHORT relation_id = 0;
-	for (vcl::iterator ptr = vector->begin();
+	for (vcl::const_iterator ptr = vector->begin();
 		 relation_id < vector->count() && p < end; ++relation_id)
 	{
 		const SLONG n = *ptr++;
