@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.50.2.1 2004-03-29 03:49:33 skidder Exp $
+ * $Id: ddl.cpp,v 1.50.2.2 2004-09-24 15:38:57 hvlad Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -3908,7 +3908,14 @@ void dsql_req::end_blr()
 	// go back and stuff in the proper length
 
 	char* blr_base = req_blr_string->str_data + req_base_offset;
-	USHORT length   = (SSHORT) (reinterpret_cast<char*>(req_blr) - blr_base) - 2;
+	ULONG length   = (ULONG) (reinterpret_cast<char*>(req_blr) - blr_base) - 2;
+
+	if (length > 0xFFFF) {
+		// TODO : need appropriate error message, like "too long BLR"
+		ERRD_post(isc_invalid_blr, isc_arg_number, (SLONG) length,
+				  0);
+	}
+
 	*blr_base++ = (UCHAR) length;
 	*blr_base = (UCHAR) (length >> 8);
 }
