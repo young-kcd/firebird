@@ -43,7 +43,20 @@
 #include "../jrd/iberr.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/utld_proto.h"
+
+// This is the only one place in dsql code, where we need both
+// dsql.h and err_proto.h. 
+// To avoid warnings, undefine some macro's here
+#undef BUGCHECK
+#undef IBERROR
+
 #include "../jrd/err_proto.h"
+
+// To ensure that suspicious macro's not used in this file,
+// undefine them once more.
+#undef BUGCHECK
+#undef IBERROR
+
 #include "../jrd/gds_proto.h"
 #include "../jrd/thd_proto.h"
 
