@@ -37,7 +37,7 @@
 #include "../ipserver/ipc.h"
 #include "gen/iberror.h"
 #include "../jrd/license.h"
-#include "../jrd/inf.h"
+#include "../jrd/inf_pub.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/db_alias.h"
