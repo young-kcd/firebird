@@ -20,8 +20,8 @@
 # 
 
 # -Wno-unused-variable is used due to unused gpre generated variables
-PROD_FLAGS=-O2  -march=i586 -mcpu=i686 -DMINGW -mno-cygwin -Wall -Wshadow -Wundef -pedantic -Wno-long-long -Wno-unused-variable -Wno-unknown-pragmas -Wno-parentheses -Wno-switch -fmessage-length=0 -Dlint -DWIN32_LEAN_AND_MEAN -MMD
-DEV_FLAGS=-ggdb -march=i586 -mcpu=i686 -DMINGW -mno-cygwin -Wall -Wshadow -Wundef -pedantic -Wno-long-long -Wno-unused-variable -Wno-unknown-pragmas -Wno-parentheses -Wno-switch -fmessage-length=0 -Dlint -DWIN32_LEAN_AND_MEAN -MMD 
+PROD_FLAGS=-O2  -march=i586 -mcpu=i686 -DMINGW -mno-cygwin -Wall -Wshadow -Wundef -pedantic -Wno-long-long -Wno-unused-variable -Wno-unknown-pragmas -Wno-parentheses -Wno-switch -fmessage-length=0 -Dlint -DWIN32_LEAN_AND_MEAN -MMD -mthreads
+DEV_FLAGS=-ggdb -march=i586 -mcpu=i686 -DMINGW -mno-cygwin -Wall -Wshadow -Wundef -pedantic -Wno-long-long -Wno-unused-variable -Wno-unknown-pragmas -Wno-parentheses -Wno-switch -fmessage-length=0 -Dlint -DWIN32_LEAN_AND_MEAN -MMD -mthreads
 
 PLATFORM_PATH=jrd/os/win32
 
