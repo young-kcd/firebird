@@ -111,6 +111,8 @@
  * 2002.10.25 Dmitry Yemanov: Re-allowed plans in triggers
  *
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
+ *
+ * 2002.12.03 Dmitry Yemanov: Implemented ORDER BY clause in subqueries
  */
 
 #include "firebird.h"
@@ -556,7 +558,8 @@ DSQL_NOD PASS1_node(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 
 		base = request->req_context;
 		node = MAKE_node(nod_via, e_via_count);
-		node->nod_arg[e_via_rse] = rse = PASS1_rse(request, input, NULL, NULL);
+		node->nod_arg[e_via_rse] = rse =
+			PASS1_rse(request, input, input->nod_arg[e_sel_order], NULL);
 		node->nod_arg[e_via_value_1] = rse->nod_arg[e_rse_items]->nod_arg[0];
 		node->nod_arg[e_via_value_2] = MAKE_node(nod_null, (int) 0);
 
@@ -570,7 +573,8 @@ DSQL_NOD PASS1_node(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 	case nod_singular:
 		base = request->req_context;
 		node = MAKE_node(input->nod_type, 1);
-		node->nod_arg[0] = PASS1_rse(request, input->nod_arg[0], NULL, NULL);
+		input = input->nod_arg[0];
+		node->nod_arg[0] = PASS1_rse(request, input, input->nod_arg[e_sel_order], NULL);
 
 		/* Finish off by cleaning up contexts */
 
@@ -679,7 +683,7 @@ DSQL_NOD PASS1_node(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 				node->nod_arg[0] = PASS1_node(request, input->nod_arg[0], 0);
 				node->nod_arg[1] = temp = MAKE_node(nod_via, e_via_count);
 				temp->nod_arg[e_via_rse] = rse =
-					PASS1_rse(request, sub2, NULL, NULL);
+					PASS1_rse(request, sub2, sub2->nod_arg[e_sel_order], NULL);
 				temp->nod_arg[e_via_value_1] =
 					rse->nod_arg[e_rse_items]->nod_arg[0];
 				temp->nod_arg[e_via_value_2] = MAKE_node(nod_null, (int) 0);
@@ -2643,7 +2647,8 @@ static DSQL_NOD pass1_any( DSQL_REQ request, DSQL_NOD input, NOD_TYPE ntype)
 	temp->nod_arg[0] = PASS1_node(request, input->nod_arg[0], 0);
 
 	node = MAKE_node(ntype, 1);
-	node->nod_arg[0] = rse = PASS1_rse(request, select, NULL, NULL);
+	node->nod_arg[0] = rse =
+		PASS1_rse(request, select, select->nod_arg[e_sel_order], NULL);
 
 /* adjust the scope level back to the sub-rse, so that 
    the fields in the select list will be properly recognized */
@@ -3804,7 +3809,8 @@ static DSQL_NOD pass1_insert( DSQL_REQ request, DSQL_NOD input)
 /* Process SELECT expression, if present */
 
 	if (rse = input->nod_arg[e_ins_select]) {
-		node->nod_arg[e_sto_rse] = rse = PASS1_rse(request, rse, 0, NULL);
+		node->nod_arg[e_sto_rse] = rse =
+			PASS1_rse(request, rse, rse->nod_arg[e_sel_order], NULL);
 		values = rse->nod_arg[e_rse_items];
 	}
 	else

@@ -534,8 +534,9 @@ typedef dsql_nod *DSQL_NOD;
 #define e_sel_group	5
 #define e_sel_having	6
 #define e_sel_plan	7
-#define e_sel_singleton	8
-#define e_sel_count	9
+#define e_sel_order	8
+#define e_sel_singleton	9
+#define e_sel_count	10
 
 #define e_ins_relation	0		/* nod_insert */
 #define e_ins_fields	1

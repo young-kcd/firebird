@@ -56,6 +56,7 @@
  *                            implemented ROWS_AFFECTED system variable
  * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
+ * 2002.12.03 Dmitry Yemanov: Implemented ORDER BY clause in subqueries.
  */
 
 #if defined(DEV_BUILD) && defined(WIN32) && defined(SUPERSERVER)
@@ -1652,7 +1653,7 @@ union_view_expr	: select_view_expr
                         { $$ = make_flag_node (nod_list, NOD_UNION_ALL, 2, $1, $4); }
 		;
 
-select_view_expr: SELECT limit_clause
+select_view_expr: SELECT
              distinct_clause
 			 select_list 
 			 from_view_clause 
@@ -1661,7 +1662,7 @@ select_view_expr: SELECT limit_clause
 			 having_clause
 			 plan_clause
 			{ $$ = make_node (nod_select_expr, e_sel_count, 
-					$2, $3, $4, $5, $6, $7, $8, $9, NULL); }
+					NULL, $3, $4, $5, $6, $7, $8, NULL, NULL); }
 		;                                               
 
 from_view_clause : FROM from_view_list
@@ -2659,8 +2660,8 @@ union_expr	: select_expr
 			{ $$ = make_node (nod_list, 1, $1); }
 		| union_expr UNION select_expr
 			{ $$ = make_node (nod_list, 2, $1, $3); }
-                | union_expr UNION ALL select_expr
-                        { $$ = make_flag_node (nod_list, NOD_UNION_ALL, 2, $1, $4); }
+		| union_expr UNION ALL select_expr
+			{ $$ = make_flag_node (nod_list, NOD_UNION_ALL, 2, $1, $4); }
 		;
 
 order_clause	: ORDER BY order_list
@@ -2726,7 +2727,20 @@ select_expr	: SELECT limit_clause
 			 having_clause
 			 plan_clause
 			{ $$ = make_node (nod_select_expr, e_sel_count, 
-					$2, $3, $4, $5, $6, $7, $8, $9, NULL); }
+					$2, $3, $4, $5, $6, $7, $8, $9, NULL, NULL); }
+		;                                               
+
+ordered_select_expr	: SELECT limit_clause
+             distinct_clause
+			 select_list 
+			 from_clause 
+			 where_clause 
+			 group_clause 
+			 having_clause
+			 plan_clause
+			 order_clause
+			{ $$ = make_node (nod_select_expr, e_sel_count, 
+					$2, $3, $4, $5, $6, $7, $8, $9, $10, NULL); }
 		;                                               
 
 limit_clause	: first_clause skip_clause
@@ -2785,8 +2799,7 @@ select_item	: rhs
 from_clause	: FROM from_list
 		 	{ $$ = make_list ($2); }
 /*		| FROM '(' select_expr ')'
-			/*{ $$ = make_list ($3); }*./
-			{ $$ = make_node (nod_list, 1, $3); }*/
+			{ $$ = make_list ($3); }*/
 		;
 
 from_list	: table_reference
@@ -2968,7 +2981,7 @@ index_list	: symbol_index_name
 insert		: INSERT INTO simple_table_name ins_column_parens_opt VALUES '(' insert_value_list ')'
 			{ $$ = make_node (nod_insert, e_ins_count, 
 			  $3, make_list ($4), make_list ($7), NULL); }
-		| INSERT INTO simple_table_name ins_column_parens_opt select_expr
+		| INSERT INTO simple_table_name ins_column_parens_opt ordered_select_expr
 			{ $$ = make_node (nod_insert, e_ins_count, $3, $4, NULL, $5); }
 		;
 
@@ -3245,11 +3258,11 @@ starting_predicate	: value STARTING value
 		{ $$ = make_node (nod_not, 1, make_node (nod_starting, 2, $1, $5)); }
 		;
 
-exists_predicate : EXISTS '(' select_expr ')'
+exists_predicate : EXISTS '(' ordered_select_expr ')'
 		{ $$ = make_node (nod_exists, 1, $3); }
 		;
 
-unique_predicate : SINGULAR '(' select_expr ')'
+unique_predicate : SINGULAR '(' ordered_select_expr ')'
 		{ $$ = make_node (nod_singular, 1, $3); }
 		;
 
@@ -3279,8 +3292,9 @@ column_select	: SELECT limit_clause
 			group_clause
 			having_clause
 			plan_clause
+			order_clause
 		    { $$ = make_node (nod_select_expr, e_sel_count, 
-				$2, $3, make_list ($4), $5, $6, $7, $8, $9, NULL); }
+				$2, $3, make_list ($4), $5, $6, $7, $8, $9, $10, NULL); }
 		;
 
 column_singleton : SELECT limit_clause
@@ -3291,8 +3305,9 @@ column_singleton : SELECT limit_clause
 			group_clause
 			having_clause
 			plan_clause
+			order_clause
 		    { $$ = make_node (nod_select_expr, e_sel_count, 
-                              $2, $3, make_list ($4), $5, $6, $7, $8, $9, 
+				$2, $3, make_list ($4), $5, $6, $7, $8, $9, $10,
 				MAKE_constant ((STR) 1, CONSTANT_SLONG)); }
 		;
 

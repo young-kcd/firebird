@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.16 2002-11-20 23:16:38 hippoman Exp $
+ * $Id: rse.cpp,v 1.17 2002-12-03 18:04:36 dimitr Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -690,21 +690,21 @@ void RSE_open(TDBB tdbb, RSB rsb)
         case rsb_first:
             max_records += ((IRSB_FIRST)impure)->irsb_count =
                 MOV_get_int64 (EVL_expr (tdbb, (JRD_NOD) rsb->rsb_arg [0]), 0);
-            
-            if (((IRSB_FIRST)impure)->irsb_count < 1)
+
+            if (((IRSB_FIRST)impure)->irsb_count < 0)
                 ERR_post (gds_bad_limit_param, 0);
-            
+
             rsb = rsb->rsb_next;
             break;
 
         case rsb_skip:
             max_records += ((IRSB_SKIP)impure)->irsb_count =
                 MOV_get_int64 (EVL_expr (tdbb, (JRD_NOD) rsb->rsb_arg [0]), 0);
-            
+
             if (((IRSB_SKIP)impure)->irsb_count < 0)
                 ERR_post (gds_bad_skip_param, 0);
             ((IRSB_SKIP)impure)->irsb_count++;
-            
+
             rsb = rsb->rsb_next;
             break;
 	
