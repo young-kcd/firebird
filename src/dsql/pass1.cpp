@@ -156,7 +156,7 @@
 #include "../jrd/thd_proto.h"
 
 #ifdef DEV_BUILD
-extern void DSQL_pretty(const dsql_nod*, int);
+void DSQL_pretty(const dsql_nod*, int);
 #endif
 
 static bool aggregate_found(const dsql_req*, const dsql_nod*);

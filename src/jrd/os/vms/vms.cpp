@@ -54,7 +54,7 @@
 
 
 
-extern gds__completion_ast();
+gds__completion_ast();
 
 static bool extend_file(FIL, ISC_STATUS *);
 static FIL seek_file(FIL, BDB, int *);

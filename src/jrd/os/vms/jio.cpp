@@ -76,8 +76,8 @@ extern int errno;
 
 #define BLOCKS(length)	((length + BLOCK_SIZE - 1) / BLOCK_SIZE)
 
-extern SLONG LOCK_enq();
-extern SLONG LOCK_read_data();
+SLONG LOCK_enq();
+SLONG LOCK_read_data();
 DIR JIO_next_dir();
 SLONG JIO_rewind();
 static SLONG add_database();

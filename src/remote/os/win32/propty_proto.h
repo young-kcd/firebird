@@ -16,11 +16,11 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-
+
 #ifndef PROPERTY_PROTO_H
 #define PROPERTY_PROTO_H
 
 // Property Sheet specific function prototypes
-extern HWND DisplayProperties (HWND, HINSTANCE, USHORT);
+HWND DisplayProperties (HWND, HINSTANCE, USHORT);
 
 #endif // PROPERTY_PROTO_H

@@ -74,7 +74,7 @@
 #define SERVER_PIPE_SUFFIX "server"
 #define EVENT_PIPE_SUFFIX "event"
 
-extern int xdrmem_create();
+int xdrmem_create();
 
 static int		accept_connection(PORT, P_CNCT *);
 static PORT		alloc_port(PORT);

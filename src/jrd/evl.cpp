@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.47 2003-11-04 11:35:50 aafemt Exp $ 
+  * $Id: evl.cpp,v 1.48 2003-11-07 13:24:15 brodsom Exp $ 
  */
 
 /*
@@ -121,7 +121,7 @@
 #define MIN_INT64_LIMIT	(MIN_SINT64 / 10)
 
 #ifdef VMS
-extern double MTH$CVT_D_G(), MTH$CVT_G_D();
+double MTH$CVT_D_G(), MTH$CVT_G_D();
 #endif
 
 /*  *** DANGER DANGER WILL ROBINSON ***

@@ -52,7 +52,7 @@ typedef struct map_msg {
 
 #include "../jrd/map_proto.h"
 
-extern double MTH$CVT_D_G(), MTH$CVT_G_D();
+double MTH$CVT_D_G(), MTH$CVT_G_D();
 
 static void bugcheck(int);
 static bool check_message(UCHAR **);

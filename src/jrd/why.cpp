@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.35 2003-11-07 08:06:18 robocop Exp $
+$Id: why.cpp,v 1.36 2003-11-07 13:24:15 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -484,21 +484,21 @@ static ISC_STATUS no_entrypoint(ISC_STATUS * user_status, ...);
 #endif
 
 #ifdef SUPERCLIENT
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	extern ISC_STATUS	rem(ISC_STATUS * user_status, ...);
+#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	ISC_STATUS rem(ISC_STATUS * user_status, ...);
 #else
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	extern ISC_STATUS	rem(ISC_STATUS * user_status, ...), cur(ISC_STATUS * user_status, ...);
+#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	ISC_STATUS rem(ISC_STATUS * user_status, ...), cur(ISC_STATUS * user_status, ...);
 #endif
 
 #include "../jrd/entry.h"
 
 #ifdef RDB
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	extern ISC_STATUS	rdb(ISC_STATUS * user_status, ...);
+#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	ISC_STATUS rdb(ISC_STATUS * user_status, ...);
 #include "../jrd/entry.h"
 #endif
 
 #ifdef IPSERV
 #ifndef XNET
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	extern ISC_STATUS	winipi(ISC_STATUS * user_status, ...);
+#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	ISC_STATUS winipi(ISC_STATUS * user_status, ...);
 #include "../jrd/entry.h"
 #endif
 #endif

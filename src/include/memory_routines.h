@@ -29,10 +29,10 @@
 /* SD: I didn't find a way to make external functions inline
        except including their bodies into header. FIX ME, please */
 /*
-extern inline short get_short(const char*);
-extern inline long get_long(const char*);
-extern inline short gather_short(char* &);
-extern inline long gather_long(char* &);
+inline short get_short(const char*);
+inline long get_long(const char*);
+inline short gather_short(char* &);
+inline long gather_long(char* &);
 */
 
 inline SSHORT get_short(const SCHAR* p)
