@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.8 2002-10-29 03:31:17 seanleyne Exp $
+//	$Id: ftn.cpp,v 1.9 2002-11-13 12:07:13 kkuznetsov Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -2271,13 +2271,13 @@ static void gen_erase( ACT action)
 
 static SSHORT gen_event_block( ACT action)
 {
-	NOD init, list;
+	GPRE_NOD init, list;
 	int ident;
 
-	init = (NOD) action->act_object;
+	init = (GPRE_NOD) action->act_object;
 
 	ident = CMP_next_ident();
-	init->nod_arg[2] = (NOD) ident;
+	init->nod_arg[2] = (GPRE_NOD) ident;
 
 	printa(COLUMN, "INTEGER*4      isc_%dA", ident);
 	printa(COLUMN, "INTEGER*4      isc_%dB", ident);
@@ -2296,7 +2296,7 @@ static SSHORT gen_event_block( ACT action)
 
 static void gen_event_init( ACT action)
 {
-	NOD init, event_list, *ptr, *end, node;
+	GPRE_NOD init, event_list, *ptr, *end, node;
 	REF reference;
 	PAT args;
 	SSHORT column = 6, count;
@@ -2313,7 +2313,7 @@ static void gen_event_init( ACT action)
 	TEXT *pattern3 =
 		"CALL %S2 (ISC_EVENTS, %VFISC_%N1L%VE, %VFISC_%N1A%VE, %VFISC_%N1B%VE)";
 
-	init = (NOD) action->act_object;
+	init = (GPRE_NOD) action->act_object;
 	event_list = init->nod_arg[1];
 
 	args.pat_database = (DBB) init->nod_arg[3];
@@ -2372,7 +2372,7 @@ static void gen_event_init( ACT action)
 static void gen_event_wait( ACT action)
 {
 	PAT args;
-	NOD event_init;
+	GPRE_NOD event_init;
 	SYM event_name, stack_name;
 	DBB database;
 	LLS stack_ptr;
@@ -2393,7 +2393,7 @@ static void gen_event_wait( ACT action)
 	ident = -1;
 	for (stack_ptr = events; stack_ptr; stack_ptr = stack_ptr->lls_next) {
 		event_action = (ACT) stack_ptr->lls_object;
-		event_init = (NOD) event_action->act_object;
+		event_init = (GPRE_NOD) event_action->act_object;
 		stack_name = (SYM) event_init->nod_arg[0];
 		if (!strcmp(event_name->sym_string, stack_name->sym_string)) {
 			ident = (int) event_init->nod_arg[2];
@@ -2431,7 +2431,7 @@ static void gen_event_wait( ACT action)
 static void gen_fetch( ACT action)
 {
 	REQ request;
-	NOD var_list;
+	GPRE_NOD var_list;
 	int i;
 	SCHAR s[20];
 
@@ -2445,7 +2445,7 @@ static void gen_fetch( ACT action)
 	printa(COLUMN, "IF (%s .NE. 0) THEN",
 		   gen_name(s, request->req_eof, TRUE));
 	printa(COLUMN, "SQLCODE = 0");
-	if (var_list = (NOD) action->act_object)
+	if (var_list = (GPRE_NOD) action->act_object)
 		for (i = 0; i < var_list->nod_count; i++) {
 			asgn_to(action, (REF) var_list->nod_arg[i]);
 		}
@@ -3919,7 +3919,7 @@ static void gen_select( ACT action)
 {
 	REQ request;
 	POR port;
-	NOD var_list;
+	GPRE_NOD var_list;
 	int i;
 	SCHAR name[20];
 
@@ -3931,7 +3931,7 @@ static void gen_select( ACT action)
 	printa(COLUMN, "IF (SQLCODE .EQ. 0) THEN");
 	gen_receive(action, port);
 	printa(COLUMN, "IF (%s .NE. 0) THEN", name);
-	if (var_list = (NOD) action->act_object)
+	if (var_list = (GPRE_NOD) action->act_object)
 		for (i = 0; i < var_list->nod_count; i++)
 			asgn_to(action, (REF) var_list->nod_arg[i]);
 

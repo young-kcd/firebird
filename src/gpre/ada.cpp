@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.6 2002-07-06 05:31:56 skywalker Exp $
+//	$Id: ada.cpp,v 1.7 2002-11-13 12:07:13 kkuznetsov Exp $
 //
 
 #include "firebird.h"
@@ -1887,16 +1887,16 @@ static void gen_erase( ACT action, int column)
 
 static SSHORT gen_event_block( ACT action)
 {
-	NOD init, list;
+	GPRE_NOD init, list;
 	SYM event_name;
 	PAT args;
 	int ident;
 
-	init = (NOD) action->act_object;
+	init = (GPRE_NOD) action->act_object;
 	event_name = (SYM) init->nod_arg[0];
 
 	ident = CMP_next_ident();
-	init->nod_arg[2] = (NOD) ident;
+	init->nod_arg[2] = (GPRE_NOD) ident;
 	list = init->nod_arg[1];
 
 	printa(0, "isc_%da\t\t: system.address;\t\t-- event parameter block --\n",
@@ -1923,7 +1923,7 @@ static SSHORT gen_event_block( ACT action)
 
 static void gen_event_init( ACT action, int column)
 {
-	NOD init, event_list, *ptr, *end, node;
+	GPRE_NOD init, event_list, *ptr, *end, node;
 	REF reference;
 	PAT args;
 	TEXT variable[32];
@@ -1940,7 +1940,7 @@ static void gen_event_init( ACT action, int column)
 		BEGIN;
 	BEGIN;
 
-	init = (NOD) action->act_object;
+	init = (GPRE_NOD) action->act_object;
 	event_list = init->nod_arg[1];
 
 	args.pat_database = (DBB) init->nod_arg[3];
@@ -1989,7 +1989,7 @@ static void gen_event_init( ACT action, int column)
 static void gen_event_wait( ACT action, int column)
 {
 	PAT args;
-	NOD event_init;
+	GPRE_NOD event_init;
 	SYM event_name, stack_name;
 	DBB database;
 	LLS stack_ptr;
@@ -2014,7 +2014,7 @@ static void gen_event_wait( ACT action, int column)
 	ident = -1;
 	for (stack_ptr = events; stack_ptr; stack_ptr = stack_ptr->lls_next) {
 		event_action = (ACT) stack_ptr->lls_object;
-		event_init = (NOD) event_action->act_object;
+		event_init = (GPRE_NOD) event_action->act_object;
 		stack_name = (SYM) event_init->nod_arg[0];
 		if (!strcmp(event_name->sym_string, stack_name->sym_string)) {
 			ident = (int) event_init->nod_arg[2];
@@ -2053,7 +2053,7 @@ static void gen_event_wait( ACT action, int column)
 static void gen_fetch( ACT action, int column)
 {
 	REQ request;
-	NOD var_list;
+	GPRE_NOD var_list;
 	POR port;
 	REF reference;
 	VAL value;
@@ -2118,7 +2118,7 @@ static void gen_fetch( ACT action, int column)
 	printa(column, "if %s /= 0 then", gen_name(s, request->req_eof, TRUE));
 	column += INDENT;
 
-	if (var_list = (NOD) action->act_object) {
+	if (var_list = (GPRE_NOD) action->act_object) {
 		for (i = 0; i < var_list->nod_count; i++)
 			asgn_to(action, (REF) var_list->nod_arg[i], column);
 	}
@@ -3617,7 +3617,7 @@ static void gen_select( ACT action, int column)
 {
 	REQ request;
 	POR port;
-	NOD var_list;
+	GPRE_NOD var_list;
 	int i;
 	TEXT name[20];
 
@@ -3632,7 +3632,7 @@ static void gen_select( ACT action, int column)
 	printa(column, "if %s /= 0 then", name);
 	column += INDENT;
 
-	if (var_list = (NOD) action->act_object)
+	if (var_list = (GPRE_NOD) action->act_object)
 		for (i = 0; i < var_list->nod_count; i++)
 			asgn_to(action, (REF) var_list->nod_arg[i], column);
 	if (request->req_database->dbb_flags & DBB_v3) {
