@@ -192,7 +192,7 @@ SLONG EVENT_create_session(ISC_STATUS * status_vector)
 		create_process();
 
 	ACQUIRE;
-	session = (SES) alloc_global(type_ses, (SLONG) sizeof(struct ses), FALSE);
+	session = (SES) alloc_global(type_ses, (SLONG) sizeof(ses), FALSE);
 	process = (PRB) ABS_PTR(EVENT_process_offset);
 	session->ses_process = EVENT_process_offset;
 
@@ -331,8 +331,7 @@ EVH EVENT_init(ISC_STATUS * status_vector, USHORT server_flag)
 
 	if (!(EVENT_header = (EVH) ISC_map_file(status_vector,
 											event_file,
-											reinterpret_cast < void (*)(void *, struct sh_mem*, int) >
-											(init), 0, EVENT_default_size,
+											init, 0, EVENT_default_size,
 											&EVENT_data))) {
 #ifdef SERVER
 		gds__free(EVENT_data.sh_mem_address);
@@ -434,7 +433,7 @@ SLONG EVENT_que(ISC_STATUS * status_vector,
 /* Allocate request block */
 
 	ACQUIRE;
-	request = (EVT_REQ) alloc_global(type_req, sizeof(struct evt_req), FALSE);
+	request = (EVT_REQ) alloc_global(type_req, sizeof(evt_req), FALSE);
 	session = (SES) ABS_PTR(session_id);
 	insert_tail(&session->ses_requests, &request->req_requests);
 	request->req_session = session_id;
@@ -495,8 +494,7 @@ SLONG EVENT_que(ISC_STATUS * status_vector,
 		}
 		else {
 			interest =
-				(RINT) alloc_global(type_rint, (SLONG) sizeof(struct rint),
-									FALSE);
+				(RINT) alloc_global(type_rint, (SLONG) sizeof(rint), FALSE);
 			event = (EVNT) ABS_PTR(event_offset);
 			insert_tail(&event->evnt_interests, &interest->rint_interests);
 			interest->rint_event = event_offset;
@@ -711,7 +709,7 @@ static FRB alloc_global(UCHAR type, ULONG length, BOOLEAN recurse)
 
 	free = (FRB) ABS_PTR(*best);
 
-	if (best_tail < (SLONG) sizeof(struct frb))
+	if (best_tail < (SLONG) sizeof(frb))
 		*best = free->frb_next;
 	else {
 		free->frb_header.hdr_length -= length;
@@ -719,8 +717,8 @@ static FRB alloc_global(UCHAR type, ULONG length, BOOLEAN recurse)
 		free->frb_header.hdr_length = length;
 	}
 
-	memset((UCHAR *) free + sizeof(struct hdr), 0,
-		   free->frb_header.hdr_length - sizeof(struct hdr));
+	memset((UCHAR*) free + sizeof(hdr), 0,
+		   free->frb_header.hdr_length - sizeof(hdr));
 	free->frb_header.hdr_type = type;
 
 	return free;
@@ -745,7 +743,7 @@ static SLONG create_process(void)
 		return EVENT_process_offset;
 
 	ACQUIRE;
-	process = (PRB) alloc_global(type_prb, (SLONG) sizeof(struct prb), FALSE);
+	process = (PRB) alloc_global(type_prb, (SLONG) sizeof(prb), FALSE);
 	insert_tail(&EVENT_header->evh_processes, &process->prb_processes);
 	QUE_INIT(process->prb_sessions);
 	EVENT_process_offset = REL_PTR(process);
@@ -757,7 +755,7 @@ static SLONG create_process(void)
 	ISC_event_init(process->prb_event, 0, EVENT_SIGNAL);
 	EVENT_process = (PRB) ISC_map_object(local_status, &EVENT_data,
 										 EVENT_process_offset,
-										 sizeof(struct prb));
+										 sizeof(prb));
 #endif
 
 #if !(defined SOLARIS_MT)
@@ -1138,7 +1136,7 @@ static void exit_handler(void *arg)
 #ifndef SERVER
 #ifdef SOLARIS_MT
 	ISC_unmap_object(local_status, &EVENT_data, (UCHAR**)&EVENT_process,
-					 sizeof(struct prb));
+					 sizeof(prb));
 #endif
 	ISC_unmap_file(local_status, &EVENT_data, 0);
 #endif
@@ -1294,9 +1292,9 @@ static void init(void *arg, SH_MEM shmem_data, int initialize)
 #endif
 #endif
 
-	free = (FRB) ((UCHAR *) EVENT_header + sizeof(struct evh));
+	free = (FRB) ((UCHAR*) EVENT_header + sizeof(evh));
 	free->frb_header.hdr_length =
-		EVENT_data.sh_mem_length_mapped - sizeof(struct evh);
+		EVENT_data.sh_mem_length_mapped - sizeof(evh);
 	free->frb_header.hdr_type = type_frb;
 	free->frb_next = 0;
 
@@ -1342,8 +1340,7 @@ static EVNT make_event(USHORT length, TEXT * string, SLONG parent_offset)
 	EVNT event, parent;
 
 	event =
-		(EVNT) alloc_global(type_evnt, (SLONG) (sizeof(struct evnt) + length),
-							FALSE);
+		(EVNT) alloc_global(type_evnt, (SLONG) (sizeof(evnt) + length), FALSE);
 	insert_tail(&EVENT_header->evh_events, &event->evnt_events);
 	QUE_INIT(event->evnt_interests);
 
@@ -1598,7 +1595,7 @@ static int validate(void)
 
 	next_free = 0;
 
-	for (offset = sizeof(struct evh); offset < EVENT_header->evh_length;
+	for (offset = sizeof(evh); offset < EVENT_header->evh_length;
 		 offset += block->hdr_length) {
 		block = (HDR *) ABS_PTR(offset);
 		if (!block->hdr_length || !block->hdr_type
