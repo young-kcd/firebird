@@ -68,7 +68,7 @@ LINK32=link.exe
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /D "_DEBUG" /D "DEV_BUILD" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "_X86_" /D "NOMSG" /FR /FD /GZ /c
 # SUBTRACT BASE CPP /YX
-# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "_X86_" /D "SUPERCLIENT" /FR /FD /EHc- /c
+# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "_X86_" /D "SUPERCLIENT" /FR /FD /EHc- /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -90,11 +90,11 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=..\..\..\src\burp\spit.cpp
+SOURCE=..\..\..\src\common\fb_exception.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\common\fb_exception.cpp
+SOURCE=..\..\..\src\burp\spit.cpp
 # End Source File
 # End Group
 # Begin Group "Header files"
@@ -102,11 +102,11 @@ SOURCE=..\..\..\src\common\fb_exception.cpp
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
-SOURCE=..\..\..\src\burp\spit.h
+SOURCE=..\..\..\src\burp\burpswi.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\burp\burpswi.h
+SOURCE=..\..\..\src\burp\spit.h
 # End Source File
 # End Group
 # Begin Group "Resource files"
