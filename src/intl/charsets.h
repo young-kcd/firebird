@@ -24,10 +24,6 @@ CS_737, CS_775, CS_858, CS_862, CS_864, CS_866, CS_869
 
 #define DEFAULT_ATTACHMENT_CHARSET	CS_NONE
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define   CS_NONE                0	/* No Character Set */
 #define   CS_BINARY              1	/* BINARY BYTES     */
 #define   CS_ASCII               2	/* ASCII            */
@@ -91,9 +87,5 @@ extern "C" {
 #define   CS_dynamic           127	/* Pseudo number for runtime charset */
 
 #define   CS_MAX_CS_NUMBER	60
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif /* INTL_CHARSETS_H */
