@@ -28,6 +28,7 @@
 #include "../../common/classes/locks.h"
 
 namespace Firebird {
+
 #ifdef WIN_NT
 
 #define MISS_SPIN_COUNT ((tSetCriticalSectionSpinCount *)(-1))
@@ -56,5 +57,7 @@ Spinlock::Spinlock() {
 	}
 	SetCriticalSectionSpinCount(&spinlock, 4000);
 }
+
 #endif  // WIN_NT
+
 }		// namespace Firebird
