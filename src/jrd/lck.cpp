@@ -93,33 +93,57 @@ static SLONG process_lck_owner_handle = 0;
 
 #ifdef SUPERSERVER
 
-#define LCK_OWNER_ID_PROCESS		(SLONG) getpid()
-#define LCK_OWNER_ID_DBB		(SLONG) dbb
-#define LCK_OWNER_ID_ATT		(SLONG) attachment
+inline SLONG LCK_OWNER_ID_PROCESS(){
+	return (SLONG) getpid();
+}
+inline SLONG LCK_OWNER_ID_DBB(Database* dbb){
+	return (SLONG) dbb;
+}
+inline SLONG LCK_OWNER_ID_ATT(Attachment* attachment){
+	return (SLONG) attachment;
+}
 
-#define LCK_OWNER_TYPE_PROCESS		LCK_OWNER_process
-#define LCK_OWNER_TYPE_DBB		LCK_OWNER_dbb
-#define LCK_OWNER_TYPE_ATT		LCK_OWNER_attachment
+const lck_owner_t LCK_OWNER_TYPE_PROCESS	= LCK_OWNER_process;
+const lck_owner_t LCK_OWNER_TYPE_DBB		= LCK_OWNER_database;
+const lck_owner_t LCK_OWNER_TYPE_ATT		= LCK_OWNER_attachment;
 
-#define	LCK_OWNER_HANDLE_PROCESS	process_lck_owner_handle
-#define	LCK_OWNER_HANDLE_DBB		dbb->dbb_lock_owner_handle
-#define	LCK_OWNER_HANDLE_ATT		attachment->att_lock_owner_handle
+inline SLONG* LCK_OWNER_HANDLE_PROCESS(){
+	return &process_lck_owner_handle;
+}
+inline SLONG* LCK_OWNER_HANDLE_DBB(Database* dbb){
+	return &dbb->dbb_lock_owner_handle;
+}
+inline SLONG* LCK_OWNER_HANDLE_ATT(Attachment* attachment){
+	return &attachment->att_lock_owner_handle;
+}
 
 #else	/* SUPERSERVER */
 
 /* This is not a SUPERSERVER build */
 
-#define LCK_OWNER_ID_PROCESS		(SLONG) getpid()
-#define LCK_OWNER_ID_DBB		(SLONG) getpid()
-#define LCK_OWNER_ID_ATT		(SLONG) getpid()
+inline SLONG LCK_OWNER_ID_PROCESS(){
+	return (SLONG) getpid();
+}
+inline SLONG LCK_OWNER_ID_DBB(Database* dbb){
+	return (SLONG) getpid();
+}
+inline SLONG LCK_OWNER_ID_ATT(Attachment* attachment){
+	return (SLONG) getpid();
+}
 
-#define LCK_OWNER_TYPE_PROCESS		LCK_OWNER_process
-#define LCK_OWNER_TYPE_DBB		LCK_OWNER_process
-#define LCK_OWNER_TYPE_ATT		LCK_OWNER_process
+const lck_owner_t LCK_OWNER_TYPE_PROCESS	= LCK_OWNER_process;
+const lck_owner_t LCK_OWNER_TYPE_DBB		= LCK_OWNER_process;
+const lck_owner_t LCK_OWNER_TYPE_ATT		= LCK_OWNER_process;
 
-#define	LCK_OWNER_HANDLE_PROCESS	process_lck_owner_handle
-#define	LCK_OWNER_HANDLE_DBB		process_lck_owner_handle
-#define LCK_OWNER_HANDLE_ATT		process_lck_owner_handle
+inline SLONG* LCK_OWNER_HANDLE_PROCESS(){
+	return &process_lck_owner_handle;
+}
+inline SLONG* LCK_OWNER_HANDLE_DBB(Database* dbb){
+	return &process_lck_owner_handle;
+}
+inline SLONG* LCK_OWNER_HANDLE_ATT(Attachment* attachment){
+	return &process_lck_owner_handle;
+}
 
 #endif	/* SUPERSERVER */
 
@@ -466,15 +490,15 @@ void LCK_fini(thread_db* tdbb, enum lck_owner_t owner_type)
 
 	switch (owner_type) {
 	case LCK_OWNER_process:
-		owner_handle_ptr = &(LCK_OWNER_HANDLE_PROCESS);
+		owner_handle_ptr = LCK_OWNER_HANDLE_PROCESS();
 		break;
 
 	case LCK_OWNER_database:
-		owner_handle_ptr = &(LCK_OWNER_HANDLE_DBB);
+		owner_handle_ptr = LCK_OWNER_HANDLE_DBB(dbb);
 		break;
 
 	case LCK_OWNER_attachment:
-		owner_handle_ptr = &(LCK_OWNER_HANDLE_ATT);
+		owner_handle_ptr = LCK_OWNER_HANDLE_ATT(attachment);
 		break;
 
 	default:
@@ -503,6 +527,9 @@ SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 #ifdef SUPERSERVER
 	Database* dbb = tdbb->tdbb_database;
 	Attachment* attachment = tdbb->tdbb_attachment;
+#else
+	Database* dbb = NULL;
+	Attachment* attachment = NULL;
 #endif
 	switch (lock_type) {
 	case LCK_database:
@@ -518,7 +545,7 @@ SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 	case LCK_backup_state:
 	case LCK_backup_alloc:
 	case LCK_backup_database:
-		return LCK_OWNER_HANDLE_DBB;
+		return *LCK_OWNER_HANDLE_DBB(dbb);
 	case LCK_attachment:
 	case LCK_relation:
 	case LCK_file_extend:
@@ -526,7 +553,7 @@ SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 	case LCK_sweep:
 	case LCK_record:
 	case LCK_update_shadow:
-		return LCK_OWNER_HANDLE_ATT;
+		return *LCK_OWNER_HANDLE_ATT(attachment);
 	default:
 		bug_lck("Invalid lock type in LCK_get_owner_handle ()");
 		/* Not Reached - bug_lck calls ERR_post */
@@ -556,18 +583,18 @@ void LCK_init(thread_db* tdbb, enum lck_owner_t owner_type)
 
 	switch (owner_type) {
 	case LCK_OWNER_process:
-		owner_id = LCK_OWNER_ID_PROCESS;
-		owner_handle_ptr = &(LCK_OWNER_HANDLE_PROCESS);
+		owner_id = LCK_OWNER_ID_PROCESS();
+		owner_handle_ptr = LCK_OWNER_HANDLE_PROCESS();
 		break;
 
 	case LCK_OWNER_database:
-		owner_id = LCK_OWNER_ID_DBB;
-		owner_handle_ptr = &(LCK_OWNER_HANDLE_DBB);
+		owner_id = LCK_OWNER_ID_DBB(dbb);
+		owner_handle_ptr = LCK_OWNER_HANDLE_DBB(dbb);
 		break;
 
 	case LCK_OWNER_attachment:
-		owner_id = LCK_OWNER_ID_ATT;
-		owner_handle_ptr = &(LCK_OWNER_HANDLE_ATT);
+		owner_id = LCK_OWNER_ID_ATT(attachment);
+		owner_handle_ptr = LCK_OWNER_HANDLE_ATT(attachment);
 		break;
 
 	default:
