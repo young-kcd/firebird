@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sqe.cpp,v 1.34 2004-10-30 05:30:08 robocop Exp $
+//	$Id: sqe.cpp,v 1.35 2005-01-03 08:07:41 robocop Exp $
 //
 #include "firebird.h"
 #include <stdio.h>
@@ -55,8 +55,6 @@
 #include "../gpre/sqe_proto.h"
 #include "../gpre/sql_proto.h"
 
-
-const int ERROR_LENGTH	= 256;
 
 struct scope {
 	gpre_ctx* req_contexts;

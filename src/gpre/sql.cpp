@@ -44,9 +44,9 @@
 #include "../gpre/par_proto.h"
 #include "../gpre/sqe_proto.h"
 #include "../gpre/sql_proto.h"
+#include "../common/utils_proto.h"
 
 
-const int ERROR_LENGTH		= 128;
 #ifdef FLINT_CACHE
 const int MIN_CACHE_BUFFERS	= 250;
 const int DEF_CACHE_BUFFERS	= 1000;
@@ -114,7 +114,7 @@ static TEXT*	extract_string(bool);
 static swe*		gen_whenever(void);
 static void		into(gpre_req*, GPRE_NOD, GPRE_NOD);
 static gpre_fld*	make_field(gpre_rel*);
-static IND		make_index(gpre_req*, TEXT *);
+static IND		make_index(gpre_req*, const TEXT*);
 static gpre_rel* make_relation(gpre_req*, const TEXT *);
 static void		pair(GPRE_NOD, GPRE_NOD);
 static void		par_array(gpre_fld*);
@@ -971,8 +971,7 @@ void SQL_relation_name(TEXT* r_name,
 	db_name[0] = 0;
 	owner_name[0] = 0;
 
-	// Why not TEXT t_str[NAME_SIZE + 1]; instead and avoid deallocation problem?
-	TEXT* t_str = (TEXT*) MSC_alloc(NAME_SIZE + 1);
+	TEXT t_str[NAME_SIZE + 1];
 	SQL_resolve_identifier("<Table name>", t_str);
 
 	gpre_sym* symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_database);
@@ -1000,7 +999,6 @@ void SQL_relation_name(TEXT* r_name,
 		strcpy(r_name, gpreGlob.token_global.tok_string);
 		PAR_get_token();
 	}
-#pragma FB_COMPILER_MESSAGE("Apparently, no safe way to deallocate t_str here.")
 }
 
 
@@ -1269,15 +1267,14 @@ static act* act_alter_domain(void)
 
 static act* act_alter_index(void)
 {
-	SCHAR i_name[NAME_SIZE + 1];
-
-//  create request block 
+//  create request block
 
 	gpre_req* request = MSC_request(REQ_ddl);
 
 	if (gpreGlob.token_global.tok_length > NAME_SIZE)
 		PAR_error("Index name too long");
 
+	SCHAR i_name[NAME_SIZE + 1];
 	SQL_resolve_identifier("<column name>", i_name);
 
 	PAR_get_token();
@@ -2206,8 +2203,8 @@ static act* act_declare(void)
 			(symb->sym_type == SYM_cursor ||
 			 symb->sym_type == SYM_delimited_cursor))
 		{
-			char s[64];
-			sprintf(s, "symbol %s is already in use", t_str);
+			char s[ERROR_LENGTH];
+			fb_utils::snprintf(s, sizeof(s), "symbol %s is already in use", t_str);
 			PAR_error(s);
 		}
 	}
@@ -2740,7 +2737,7 @@ static act* act_drop(void)
 	dbb* db = NULL;
 	gpre_req* request = NULL;
 	gpre_rel* relation = NULL;
-	TEXT* identifier_name; // it's not deallocated.
+	TEXT* identifier_name;
 
 	switch (gpreGlob.token_global.tok_keyword) {
 	case KW_DATABASE:
@@ -2820,8 +2817,11 @@ static act* act_drop(void)
 		{
 		request = MSC_request(REQ_ddl);
 		PAR_get_token();
-		identifier_name = (TEXT*) MSC_alloc(NAME_SIZE + 1);
-		SQL_resolve_identifier("<identifier>", identifier_name);
+		TEXT identifier_name_tmp[NAME_SIZE + 1]; // unused
+		SQL_resolve_identifier("<identifier>", identifier_name_tmp);
+		// CVC: Why this line isn't like the commented one that matches other
+		// places before make_index()?
+		//IND index = make_index(request, identifier_name_tmp);
 		IND index = make_index(request, gpreGlob.token_global.tok_string);
 		action = MSC_action(request, ACT_drop_index);
 		action->act_whenever = gen_whenever();
@@ -4771,7 +4771,7 @@ static FIL define_cache(void)
 	if (MSC_match(KW_LENGTH)) {
 		file->fil_length = EXP_ULONG_ordinal(true);
 		if (file->fil_length < MIN_CACHE_BUFFERS) {
-			TEXT err_string[256];
+			TEXT err_string[ERROR_LENGTH];
 			sprintf(err_string, "Minimum of %d cache pages required",
 					MIN_CACHE_BUFFERS);
 			PAR_error(err_string);
@@ -4888,11 +4888,11 @@ static dbb* dup_dbb(const dbb* db)
 //       Report an error with parameter
 //  
 
-static void error(const TEXT * format, const TEXT * string2)
+static void error(const TEXT* format, const TEXT* string2)
 {
-	TEXT buffer[256];
+	TEXT buffer[ERROR_LENGTH];
 
-	sprintf(buffer, format, string2);
+	fb_utils::snprintf(buffer, sizeof(buffer), format, string2);
 	PAR_error(buffer);
 }
 
@@ -5050,13 +5050,16 @@ static gpre_fld* make_field( gpre_rel* relation)
 //		Create index for metadata request.
 //  
 
-static IND make_index( gpre_req* request, TEXT * string)
+static IND make_index( gpre_req* request, const TEXT* string)
 {
 	IND index = NULL;
-	TEXT s[ERROR_LENGTH];
 
 	if ((gpreGlob.isc_databases) && (!(gpreGlob.isc_databases->dbb_next))) {
-		strcpy(s, string);
+		// CVC: I've kept this silly code. What's the idea of the copy here?
+		// If we are trying to limit the index name, the correct length is NAME_SIZE.
+		TEXT s[ERROR_LENGTH];
+		strncpy(s, string, sizeof(s));
+		s[sizeof(s) - 1] = 0;
 		index = MET_make_index(s);
 		if (request)
 			request->req_database = gpreGlob.isc_databases;
@@ -5965,7 +5968,7 @@ static bool par_using( DYN statement)
 static USHORT resolve_dtypes(KWWORDS typ,
 							 bool sql_date)
 {
-	TEXT err_mesg[128];
+	TEXT err_mesg[ERROR_LENGTH];
 
 	switch (typ) {
 	case KW_DATE:
@@ -6246,7 +6249,7 @@ static void to_upcase(const TEXT * p, TEXT * q)
 
 void SQL_resolve_identifier( const TEXT* err_mesg, TEXT* str)
 {
-
+	// Ripe for B.O.
 	switch (gpreGlob.sw_sql_dialect) {
 	case 2:
 		if (gpreGlob.token_global.tok_type == tok_dblquoted)

@@ -25,7 +25,6 @@
 //
 //____________________________________________________________
 //
-//	$Id: int_cxx.cpp,v 1.38 2004-10-03 20:18:09 skidder Exp $
 //
 
 #include "firebird.h"
@@ -37,6 +36,7 @@
 #include "../gpre/gpre_proto.h"
 #include "../gpre/lang_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../common/utils_proto.h"
 
 static void align(const int);
 static void asgn_from(REF, int);
@@ -192,8 +192,8 @@ static void align(const int column)
 
 static void asgn_from( REF reference, int column)
 {
-	TEXT variable[20];
-	TEXT temp[20];
+	TEXT variable[MAX_REF_SIZE];
+	TEXT temp[MAX_REF_SIZE];
 
 	for (; reference; reference = reference->ref_next)
 	{
@@ -236,7 +236,7 @@ static void asgn_from( REF reference, int column)
 #ifdef NOT_USED_OR_REPLACED
 static void asgn_to( REF reference)
 {
-	TEXT s[20];
+	TEXT s[MAX_REF_SIZE];
 
 	REF source = reference->ref_friend;
 	gpre_fld* field = source->ref_field;
@@ -265,7 +265,7 @@ static void asgn_to( REF reference)
 
 static void gen_at_end( const act* action, int column)
 {
-	TEXT s[20];
+	TEXT s[MAX_REF_SIZE];
 
 	const gpre_req* request = action->act_request;
 	printa(column, "if (!%s) ", gen_name(s, request->req_eof));
@@ -325,7 +325,7 @@ static void gen_database( const act* action, int column)
 
 static void gen_emodify( const act* action, int column)
 {
-	TEXT s1[20], s2[20];
+	TEXT s1[MAX_REF_SIZE], s2[MAX_REF_SIZE];
 
 	const upd* modify = (upd*) action->act_object;
 
@@ -407,7 +407,7 @@ static void gen_erase( const act* action, int column)
 
 static void gen_for( const act* action, int column)
 {
-	TEXT s[20];
+	TEXT s[MAX_REF_SIZE];
 
 	gen_s_start(action, column);
 
@@ -432,7 +432,7 @@ static void gen_for( const act* action, int column)
 static char* gen_name(char* string, const ref* reference)
 {
 
-	sprintf(string, "jrd_%d.jrd_%d",
+	fb_utils::snprintf(string, MAX_REF_SIZE, "jrd_%d.jrd_%d",
 			reference->ref_port->por_ident, reference->ref_ident);
 
 	return string;
@@ -635,7 +635,7 @@ static void gen_type( const act* action, int column)
 
 static void gen_variable( const act* action, int column)
 {
-	char s[20];
+	char s[MAX_REF_SIZE];
 
 	align(column);
 	fprintf(gpreGlob.out_file, gen_name(s, action->act_object));
@@ -721,8 +721,9 @@ static void make_port( gpre_port* port, int column)
 
 		default:
 			{
-				TEXT s[80];
-				sprintf(s, "datatype %d unknown for field %s, msg %d",
+				TEXT s[ERROR_LENGTH];
+				fb_utils::snprintf(s, sizeof(s),
+						"datatype %d unknown for field %s, msg %d",
 						field->fld_dtype, name, port->por_msg_number);
 				CPR_error(s);
 				return;

@@ -40,6 +40,7 @@
 #include "../gpre/gpre_proto.h"
 #include "../gpre/prett_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../common/utils_proto.h"
 
 #pragma FB_COMPILER_MESSAGE("This file is not fit for public consumption")
 // #error compiler halted, 'rogue' not found...
@@ -90,7 +91,7 @@ static void gen_for(const act*, int);
 static void gen_get_or_put_slice(const act*, const ref*, bool, int);
 static void gen_get_segment(const act*, int);
 static void gen_loop(const act*, int);
-static TEXT *gen_name(TEXT *, const ref*, bool);
+static TEXT*	gen_name(TEXT*, const ref*, bool);
 static void gen_on_error(const act*, USHORT);
 static void gen_procedure(const act*, int);
 static void gen_put_segment(const act*, int);
@@ -546,7 +547,7 @@ static void align(const int column)
 
 static void asgn_from( const act* action, const ref* reference, int column)
 {
-	TEXT name[64], variable[20], temp[20];
+	TEXT name[MAX_REF_SIZE], variable[MAX_REF_SIZE], temp[MAX_REF_SIZE];
 
 	for (; reference; reference = reference->ref_next) {
 		const gpre_fld* field = reference->ref_field;
@@ -596,7 +597,7 @@ static void asgn_from( const act* action, const ref* reference, int column)
 
 static void asgn_sqlda_from( const ref* reference, int number, TEXT* string, int column)
 {
-	TEXT temp[20];
+	TEXT temp[MAX_REF_SIZE];
 
 	for (; reference; reference = reference->ref_next) {
 		align(column);
@@ -620,7 +621,7 @@ static void asgn_sqlda_from( const ref* reference, int number, TEXT* string, int
 
 static void asgn_to(const act* action, const ref* reference, int column)
 {
-	TEXT s[128];
+	TEXT s[MAX_REF_SIZE];
 
 	ref* source = reference->ref_friend;
 	const gpre_fld* field = source->ref_field;
@@ -657,7 +658,7 @@ static void asgn_to(const act* action, const ref* reference, int column)
 
 static void asgn_to_proc(const ref* reference, int column)
 {
-	TEXT s[64];
+	TEXT s[MAX_REF_SIZE];
 
 	for (; reference; reference = reference->ref_next) {
 		if (!reference->ref_value)
@@ -686,7 +687,7 @@ static void asgn_to_proc(const ref* reference, int column)
 
 static void gen_at_end( const act* action, int column)
 {
-	TEXT s[20];
+	TEXT s[MAX_REF_SIZE];
 
 	const gpre_req* request = action->act_request;
 	printa(column, "if %s = 0 then begin",
@@ -871,7 +872,6 @@ static void gen_blob_for( const act* action, USHORT column)
 
 static void gen_blob_open( const act* action, USHORT column)
 {
-	TEXT s[20];
 	const TEXT* pattern1 =
 		"GDS__%IFCREATE%ELOPEN%EN_BLOB2 (%V1, %RF%DH, %RF%RT, %RF%BH, %RF%FR, %N1, %RF%I1);";
 	const TEXT* pattern2 =
@@ -889,6 +889,7 @@ static void gen_blob_open( const act* action, USHORT column)
 		action->act_flags & ACT_sql)
 		begin(column);
 
+	TEXT s[MAX_REF_SIZE];
 	const blb* blob;
 	const ref* reference;
 	if (action->act_flags & ACT_sql) {
@@ -1128,7 +1129,7 @@ static void gen_cursor_init( const act* action, int column)
 static int gen_cursor_open( const act* action, const gpre_req* request, int column)
 {
 	PAT args;
-	TEXT s[64];
+	TEXT s[MAX_CURSOR_SIZE];
 	const TEXT *pattern1 =
 		"if (%RIs = nil) and (%RH <> nil)%IF and (%DH <> nil)%EN then",
 		*pattern2 = "if (%RIs = nil)%IF and (%DH <> nil)%EN then",
@@ -1485,7 +1486,7 @@ static void gen_drop_database( const act* action, int column)
 static void gen_dyn_close( const act* action, int column)
 {
 	DYN statement;
-	TEXT s[64];
+	TEXT s[MAX_CURSOR_SIZE];
 
 	statement = (DYN) action->act_object;
 	printa(column,
@@ -1503,7 +1504,7 @@ static void gen_dyn_close( const act* action, int column)
 static void gen_dyn_declare( const act* action, int column)
 {
 	DYN statement;
-	TEXT s1[64], s2[64];
+	TEXT s1[MAX_CURSOR_SIZE], s2[MAX_CURSOR_SIZE];
 
 	statement = (DYN) action->act_object;
 	printa(column,
@@ -1523,7 +1524,7 @@ static void gen_dyn_describe(const act* action,
 							 int column,
 							 bool bind_flag)
 {
-	TEXT s[64];
+	TEXT s[MAX_CURSOR_SIZE];
 
 	dyn* statement = (DYN) action->act_object;
 	printa(column,
@@ -1565,7 +1566,7 @@ static void gen_dyn_execute( const act* action, int column)
 		column -= INDENT;
 	}
 
-	TEXT s[64];
+	TEXT s[MAX_CURSOR_SIZE];
 	make_name(s, statement->dyn_cursor_name);
 
 	GPRE_NOD var_list;
@@ -1597,7 +1598,7 @@ static void gen_dyn_execute( const act* action, int column)
 static void gen_dyn_fetch( const act* action, int column)
 {
 	DYN statement;
-	TEXT s[64];
+	TEXT s[MAX_CURSOR_SIZE];
 
 	statement = (DYN) action->act_object;
 	printa(column,
@@ -1665,7 +1666,7 @@ static void gen_dyn_immediate( const act* action, int column)
 static void gen_dyn_insert( const act* action, int column)
 {
 	DYN statement;
-	TEXT s[64];
+	TEXT s[MAX_CURSOR_SIZE];
 
 	statement = (DYN) action->act_object;
 	printa(column,
@@ -1686,7 +1687,7 @@ static void gen_dyn_insert( const act* action, int column)
 
 static void gen_dyn_open( const act* action, int column)
 {
-	TEXT s[64];
+	TEXT s[MAX_CURSOR_SIZE];
 	gpre_req* request;
 	gpre_req req_const;
 	GPRE_NOD var_list;
@@ -1742,7 +1743,7 @@ static void gen_dyn_open( const act* action, int column)
 
 static void gen_dyn_prepare( const act* action, int column)
 {
-	TEXT s[64];
+	TEXT s[MAX_CURSOR_SIZE];
 	gpre_req* request;
 	gpre_req req_const;
 
@@ -1786,7 +1787,7 @@ static void gen_dyn_prepare( const act* action, int column)
 static void gen_emodify( const act* action, int column)
 {
 	gpre_fld* field;
-	TEXT s1[20], s2[20];
+	TEXT s1[MAX_REF_SIZE], s2[MAX_REF_SIZE];
 
 	upd* modify = (upd*) action->act_object;
 
@@ -1916,7 +1917,6 @@ static void gen_event_init( const act* action, int column)
 	const ref* reference;
 	PAT args;
 	SSHORT count;
-	TEXT variable[20];
 	const TEXT* pattern1 =
 		"gds__%N1l := GDS__EVENT_BLOCK_A (%RFgds__%N1a, %RFgds__%N1b, %N2, %RFgds__event_names%RE);";
 	const TEXT* pattern2 = "%S1 (%V1, %RF%DH, gds__%N1l, gds__%N1a, gds__%N1b);";
@@ -1938,6 +1938,7 @@ static void gen_event_init( const act* action, int column)
 
 //  generate call to dynamically generate event blocks 
 
+	TEXT variable[MAX_REF_SIZE];
 	for (ptr = event_list->nod_arg, count = 0, end =
 		 ptr + event_list->nod_count; ptr < end; ptr++)
 	{
@@ -2046,7 +2047,6 @@ static void gen_fetch( const act* action, int column)
 	const gpre_req*		request;
 	GPRE_NOD		var_list;
 	int		i;
-	TEXT	s[20];
 
 	request = action->act_request;
 
@@ -2110,6 +2110,7 @@ static void gen_fetch( const act* action, int column)
 		begin(column);
 	}
 
+	TEXT s[MAX_REF_SIZE];
 	gen_receive(action, column, request->req_primary);
 	printa(column, "if SQLCODE = 0 then");
 	column += INDENT;
@@ -2193,7 +2194,6 @@ static void gen_for( const act* action, int column)
 {
 	gpre_port* port;
 	const gpre_req* request;
-	TEXT s[20];
 	const ref* reference;
 
 	gen_s_start(action, column);
@@ -2202,6 +2202,7 @@ static void gen_for( const act* action, int column)
 	if (action->act_error || (action->act_flags & ACT_sql))
 		printa(column, "if gds__status[2] = 0 then begin");
 
+	TEXT s[MAX_REF_SIZE];
 	gen_receive(action, column, request->req_primary);
 	if (action->act_error || (action->act_flags & ACT_sql))
 		printa(column, "while (%s <> 0) and (gds__status[2] = 0) do",
@@ -2234,7 +2235,6 @@ static void gen_get_or_put_slice(const act* action,
 								 int column)
 {
 	PAT args;
-	TEXT s1[25], s2[10], s3[10], s4[10];
 	const TEXT *pattern1 =
 		"GDS__GET_SLICE (%V1, %RF%DH%RE, %RF%S1%RE, %S2, %N1, %S3, %N2, %S4, %L1, %S5, %S6);\n";
 	const TEXT *pattern2 =
@@ -2247,6 +2247,7 @@ static void gen_get_or_put_slice(const act* action,
 	args.pat_database = action->act_request->req_database;	//  database handle      
 	args.pat_string1 = action->act_request->req_trans;	//  transaction handle   
 
+	TEXT s1[MAX_REF_SIZE], s2[MAX_REF_SIZE], s3[MAX_REF_SIZE], s4[MAX_REF_SIZE];
 	gen_name(s1, reference, true);	//  blob handle
 	args.pat_string2 = s1;
 
@@ -2341,7 +2342,7 @@ static void gen_loop( const act* action, int column)
 {
 	const gpre_req* request;
 	gpre_port* port;
-	TEXT name[20];
+	TEXT name[MAX_REF_SIZE];
 
 	gen_s_start(action, column);
 	request = action->act_request;
@@ -2370,10 +2371,10 @@ static TEXT *gen_name(TEXT * string,
 {
 
 	if (reference->ref_field->fld_array_info && !as_blob)
-		sprintf(string, "gds__%d",
+		fb_utils::snprintf(string, MAX_REF_SIZE, "gds__%d",
 				reference->ref_field->fld_array_info->ary_ident);
 	else
-		sprintf(string, "gds__%d.gds__%d",
+		fb_utils::snprintf(string, MAX_REF_SIZE, "gds__%d.gds__%d",
 				reference->ref_port->por_ident, reference->ref_ident);
 
 	return string;
@@ -2931,7 +2932,7 @@ static void gen_segment( const act* action, int column)
 
 static void gen_select( const act* action, int column)
 {
-	TEXT name[20];
+	TEXT name[MAX_REF_SIZE];
 
 	const gpre_req* request = action->act_request;
 	const gpre_port* port = request->req_primary;
@@ -3107,7 +3108,6 @@ static void gen_store( const act* action, int column)
 	const ref* reference;
 	gpre_fld* field;
 	gpre_port* port;
-	TEXT name[64];
 
 	request = action->act_request;
 	gen_compile(action, column);
@@ -3120,6 +3120,7 @@ static void gen_store( const act* action, int column)
 
 //  Initialize any blob fields 
 
+	TEXT name[MAX_REF_SIZE];
 	port = request->req_primary;
 	for (reference = port->por_references; reference;
 		 reference = reference->ref_next)
@@ -3310,7 +3311,7 @@ static void gen_update( const act* action, int column)
 
 static void gen_variable( const act* action, int column)
 {
-	TEXT s[20];
+	TEXT s[MAX_REF_SIZE];
 
 	printa(column, gen_name(s, action->act_object, false));
 }
@@ -3358,7 +3359,6 @@ static void gen_whenever( const swe* label, int column)
 static void make_array_declaration( const ref* reference)
 {
 	gpre_fld* field;
-	TEXT s[64];
 	dim* dimension;
 
 	field = reference->ref_field;
@@ -3422,10 +3422,14 @@ static void make_array_declaration( const ref* reference)
 		break;
 
 	default:
-		sprintf(s, "datatype %d unknown for field %s",
-				field->fld_array_info->ary_dtype, name);
-		CPR_error(s);
-		return;
+		{
+			TEXT s[ERROR_LENGTH];
+			fb_utils::snprintf(s, sizeof(s),
+					"datatype %d unknown for field %s",
+					field->fld_array_info->ary_dtype, name);
+			CPR_error(s);
+			return;
+		}
 	}
 
 //   Print out the database field  
@@ -3442,7 +3446,7 @@ static void make_array_declaration( const ref* reference)
 static TEXT* make_name( TEXT* string, const gpre_sym* symbol)
 {
 
-	sprintf(string, "'%s '", symbol->sym_string);
+	fb_utils::snprintf(string, MAX_CURSOR_SIZE, "'%s '", symbol->sym_string);
 
 	return string;
 }
@@ -3529,8 +3533,9 @@ static void make_port( const gpre_port* port, int column)
 
 		default:
 			{
-				TEXT s[80];
-				sprintf(s, "datatype %d unknown for field %s, msg %d",
+				TEXT s[ERROR_LENGTH];
+				fb_utils::snprintf(s, sizeof(s),
+						"datatype %d unknown for field %s, msg %d",
 						field->fld_dtype, name, port->por_msg_number);
 				CPR_error(s);
 				return;

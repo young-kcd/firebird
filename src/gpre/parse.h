@@ -52,6 +52,7 @@ typedef struct tok {
 
 const size_t TOK_LEN = sizeof(tok);
 
+// CVC: This function doesn't unescape embedded quotes.
 inline void strip_quotes(tok& tkn)
 {
 	int ij;
