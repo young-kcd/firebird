@@ -1,3 +1,30 @@
+2005-02-17 01:19  arnobrinkman
+
+	* firebird2/doc/README.Optimizer.txt (1.1):
+	
+	First draft optimizer enhancements doc
+
+2005-02-17 01:17  arnobrinkman
+
+	* firebird2/src/jrd/: Optimizer.cpp (1.8), Optimizer.h (1.4):
+	
+	cosmetic changes
+
+2005-02-16 11:29  kkuznetsov
+
+	* firebird2/configure.in (1.214):
+	
+	FW fixes from 1.5.2
+
+2005-02-16 09:45  dimitr
+
+	* firebird2/: src/common/classes/alloc.cpp (1.77),
+	src/common/classes/alloc.h (1.60),
+	builds/win32/msvc7/fbclient.vcproj (1.38):
+	
+	Fixed the default memory management in fbclient.  Avoid crashing
+	the server when fbclient is used in its address space.
+
 2005-02-15 13:17  arnobrinkman
 
 	* firebird2/src/jrd/opt.cpp (1.224):
