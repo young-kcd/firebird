@@ -66,15 +66,12 @@ SortMem::MemoryBlock::MemoryBlock(Block* tail, size_t length)
 	: Block(tail, length)
 {
 	// Allocate virtual memory block
-	address = reinterpret_cast<char*>(gds__alloc(size)/*MemoryPool::virtual_alloc_from_system(size)*/);
-//	address = reinterpret_cast<char*>(MemoryPool::malloc_from_system(size));
+	address = reinterpret_cast<char*>(gds__alloc(size));
 }
 
 SortMem::MemoryBlock::~MemoryBlock()
 {
 	// Free virtual memory block
-//	MemoryPool::virtual_free_from_system(address);
-//	MemoryPool::free_from_system(address);
 	gds__free(address);
 }
 
