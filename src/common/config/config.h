@@ -97,7 +97,8 @@ class Config
 		KEY_MAX_UNFLUSHED_WRITES,					// 30
 		KEY_MAX_UNFLUSHED_WRITE_TIME,				// 31
 		KEY_PROCESS_PRIORITY_LEVEL,					// 32
-		KEY_CREATE_INTERNAL_WINDOW					// 33
+		KEY_CREATE_INTERNAL_WINDOW,					// 33
+		KEY_COMPLETE_BOOLEAN_EVALUATION				// 34
 	};
 
 public:
@@ -271,6 +272,11 @@ public:
 		Create window for IPC stuff
 	*/
 	static bool getCreateInternalWindow();
+
+	/*
+		Complete boolean evaluation
+	*/
+	static bool getCompleteBooleanEvaluation();
 };
 
 #endif // CONFIG_H

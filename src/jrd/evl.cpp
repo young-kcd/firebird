@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.32 2003-02-18 05:24:34 aafemt Exp $ 
+  * $Id: evl.cpp,v 1.33 2003-02-21 09:14:52 dimitr Exp $ 
  */
 
 /*
@@ -110,6 +110,7 @@
 #include "../jrd/cvt_proto.h"
 #include "../jrd/misc_func_ids.h"
 //#include "../jrd/authenticate.h"
+#include "../common/config/config.h"
 
 #define TEMP_LENGTH     128
 
@@ -462,6 +463,12 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, JRD_NOD node)
 
 /* Evaluate node */
 
+	// TODO: Verify and remove this flag once FB1.5beta3 is out.
+	// Default to not eval complete expression (i.e. do short-circuit
+	// optimizied evaluation). Both to get possible early warnings from
+	// users, and to default to the faster of the two options.
+	static bool bEvalCompleteExpression = Config::getCompleteBooleanEvaluation();
+
 	switch (node->nod_type)
 	{
 	case nod_and:
@@ -489,6 +496,14 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, JRD_NOD node)
 
 			const USHORT firstnull = request->req_flags & req_null;
 			request->req_flags &= ~req_null;
+
+			if (!bEvalCompleteExpression && !value && !firstnull)
+			{
+				// First term is FALSE, why the whole expression is false.
+				// NULL flag is already turned off a few lines above.
+				return FALSE;
+			}
+
 			const USHORT value2 = EVL_boolean(tdbb, *ptr);
 			const USHORT secondnull = request->req_flags & req_null;
 			request->req_flags &= ~req_null;
@@ -625,6 +640,14 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, JRD_NOD node)
 
 			const ULONG flags = request->req_flags;
 			request->req_flags &= ~req_null;
+
+			if (!bEvalCompleteExpression && value)
+			{
+				// First term is TRUE, why the whole expression is true.
+				// NULL flag is already turned off a few lines above.
+				return FALSE;
+			}
+			
 			const USHORT value2 = EVL_boolean(tdbb, *ptr);
 			if (value || value2) {
 				request->req_flags &= ~req_null;
