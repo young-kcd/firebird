@@ -1091,9 +1091,12 @@ void OPT_set_index(TDBB tdbb,
 	if (old_rsb->rsb_type == rsb_navigate) {
 		retrieval = (IRB) index_node->nod_arg[e_idx_retrieval];
 		index_id = retrieval->irb_index;
-		index = CMP_get_index_lock(tdbb, relation, index_id);
-		if (!--index->idl_count) {
-			LCK_release(tdbb, index->idl_lock);
+		if ( (index = CMP_get_index_lock(tdbb, relation, index_id)) ) {
+			if (index->idl_count)
+				--index->idl_count;
+			if (!index->idl_count) {
+				LCK_release(tdbb, index->idl_lock);
+			}
 		}
 		CMP_release_resource(&request->req_resources, rsc_index, index_id);
 	}
@@ -1101,11 +1104,12 @@ void OPT_set_index(TDBB tdbb,
 /* get lock on new index */
 
 	if (idx) {
-		index = CMP_get_index_lock(tdbb, relation, idx->idx_id);
-		if (!index->idl_count) {
-			LCK_lock_non_blocking(tdbb, index->idl_lock, LCK_SR, TRUE);
+		if ( (index = CMP_get_index_lock(tdbb, relation, idx->idx_id)) ) {
+			if (!index->idl_count) {
+				LCK_lock_non_blocking(tdbb, index->idl_lock, LCK_SR, TRUE);
+			}
+			++index->idl_count;
 		}
-		++index->idl_count;
 	}
 
 /* go out to the vector which stores all rsbs for the 
@@ -4905,7 +4909,8 @@ static BOOLEAN gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 			*ptr++ = (*selected_class)[river1->riv_number];
 		rsb =
 			gen_sort(tdbb, opt, &river1->riv_count, NULL, river1->riv_rsb,
-					 sort, FALSE); *rsb_tail++ = rsb;
+					 sort, FALSE);
+		*rsb_tail++ = rsb;
 		*rsb_tail++ = (RSB) sort;
 	}
 
