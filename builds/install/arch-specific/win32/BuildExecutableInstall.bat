@@ -75,25 +75,8 @@ copy %SystemRoot%\System32\msvcp%msvc_version%0.dll . >nul
 
 :: grab some missing bits'n'pieces  from different parts of the source tree
 ::=========================================================================
-copy %ROOT_PATH%\builds\install\misc\firebird.conf %ROOT_PATH%\output\ > nul
-@if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY of firebird.conf failed ) & (goto :EOF))
-
-mkdir %ROOT_PATH%\output\examples 2>nul 
-@if %ERRORLEVEL% GEQ 2 ( (call :ERROR MKDIR for examples dir failed ) & (goto :EOF))
-
-copy %ROOT_PATH%\src\v5_examples\*.* %ROOT_PATH%\output\examples\ > nul
-@if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY examples failed  ) & (goto :EOF))
-
-copy %ROOT_PATH%\temp\%BUILDTYPE%\fbclient\fbclient.lib %ROOT_PATH%\output\lib\fbclient_ms.lib > nul
-@if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY *.lib failed ) & (goto :EOF))
-
-copy %ROOT_PATH%\temp\%BUILDTYPE%\gds32\gds32.lib %ROOT_PATH%\output\lib\gds32_ms.lib > nul
-@if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY *.lib failed ) & (goto :EOF))
-
 copy %ROOT_PATH%\doc\*.* %ROOT_PATH%\output\doc\ > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY doc failed  ) & (goto :EOF))
-
-copy %ROOT_PATH%\ChangeLog %ROOT_PATH%\output\doc\ChangeLog.txt > nul
 
 copy %ROOT_PATH%\output\doc\install_win32.txt %ROOT_PATH%\output\doc\InstallNotes.txt > nul
 del %ROOT_PATH%\output\doc\install_win32.txt
@@ -104,9 +87,6 @@ del %ROOT_PATH%\output\doc\install_win32.txt
 @for %%v in (  README.makefiles README.user README.user.embedded README.user.troubleshooting fb2-todo.txt ) do (
   (@del %ROOT_PATH%\output\doc\%%v 2>nul)
 )
-
-copy %ROOT_PATH%\output\doc\WhatsNew %ROOT_PATH%\output\doc\WhatsNew.txt > nul
-del %ROOT_PATH%\output\doc\WhatsNew
 
 mkdir %ROOT_PATH%\output\doc\sql.extensions 2>nul
 @if %ERRORLEVEL% GEQ 2 ( (call :ERROR MKDIR for doc\sql.extensions dir failed ) & (goto :EOF))
@@ -130,35 +110,10 @@ copy %ROOT_PATH%\doc\sql.extensions\*.* %ROOT_PATH%\output\doc\sql.extensions\  
 @echo #  >> %ROOT_PATH%\output\aliases.conf
 @goto :EOF
 
-
-:GBAK_SEC_DB
-:: let's make sure that we have a backup of the security database handy.
-::======================================================================
-copy %ROOT_PATH%\src\misc\security.gbak %ROOT_PATH%\output\security.fbk > nul
-@if %ERRORLEVEL% GEQ 1 ( (call :ERROR copy security.fbk failed ) & (goto :EOF))
-
-:: Make sure that qli's help.gdb is available
-:: For now it has the .gdb. file extension
-:: Next time it will have the .fdb file extension
-::===============================================
-if not exist %ROOT_PATH%\output\help\help.fdb (
-	copy %ROOT_PATH%\gen\dbs\help.fdb %ROOT_PATH%\output\help\help.fdb > nul
-)
-@if %ERRORLEVEL% GEQ 1 ( (call :ERROR Could not copy qli help database ) & (goto :EOF))
-@goto :EOF
-
-:FB_MSG
 ::=================================================================
-:: firebird.msg is generated as part of the build process
-:: in builds\win32 by build_msg.bat copying from there to output dir
 ::	To Do !!!
 ::						copy %INTERBASE%\udf\fbudf.dll %ROOT_PATH%\output\udf
 ::=================================================================
-@if not exist %ROOT_PATH%\output\firebird.msg ( 
-	copy %ROOT_PATH%\gen\firebird.msg %ROOT_PATH%\output\firebird.msg > nul
-)
-@if %ERRORLEVEL% GEQ 1 ( (call :ERROR Could not copy firebird.msg ) & (goto :EOF))
-@goto :EOF
 
 :TOUCH_ALL
 ::========
@@ -220,12 +175,6 @@ start FirebirdInstall_%PRODUCT_VER_STRING%_%PACKAGE_DESC%.iss
 @Echo.
 @Echo alias conf
 @(@call :ALIAS_CONF ) || (@goto :EOF)
-@Echo.
-@Echo gbak_sec_db
-@(@call :GBAK_SEC_DB ) || (@goto :EOF)
-@Echo.
-@Echo fb_msg
-@(@call :FB_MSG ) || (@goto :EOF)
 ::@(@call :TOUCH_ALL ) || (@goto :EOF)
 @Echo.
 @Echo run isx

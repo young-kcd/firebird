@@ -76,6 +76,7 @@ if "%VS_VER%"=="msvc6" (
 @copy %ROOT_PATH%\gen\dbs\SECURITY.FDB %ROOT_PATH%\output\security.fdb >nul
 @copy %ROOT_PATH%\gen\dbs\HELP.fdb %ROOT_PATH%\output\help\help.fdb >nul
 @copy %ROOT_PATH%\gen\firebird.msg %ROOT_PATH%\output\firebird.msg >nul
+@copy %ROOT_PATH%\src\misc\security.gbak %ROOT_PATH%\output\security.fbk > nul
 :: LIB
 @copy %ROOT_PATH%\temp\%DBG_DIR%\gds32\gds32.lib %ROOT_PATH%\output\lib\gds32_ms.lib >nul
 @copy %ROOT_PATH%\temp\%DBG_DIR%\fbclient\fbclient.lib %ROOT_PATH%\output\lib\fbclient_ms.lib >nul
