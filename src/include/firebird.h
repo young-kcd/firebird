@@ -30,7 +30,7 @@
  *       John Bellardo  <bellardo@cs.ucsd.edu>
  *
  *
- *  $Id: firebird.h,v 1.8 2003-02-07 14:38:49 kkuznetsov Exp $
+ *  $Id: firebird.h,v 1.9 2003-02-27 21:34:40 brodsom Exp $
  *
  */
 
@@ -45,6 +45,15 @@
 #if defined(SOLX86)
 #define __PRAGMA_REDEFINE_EXTNAME 
 #define __EXTENSIONS__
+#endif
+
+//
+// Macro for function attribute definition
+//
+#if defined(_GNUC_)
+#define ATTRIBUTE_FORMAT(a,b) __attribute__ ((format(printf,a,b)))
+#else
+#define ATTRIBUTE_FORMAT(a,b)
 #endif
 
 #ifdef __cplusplus

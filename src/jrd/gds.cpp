@@ -366,13 +366,8 @@ void GDS_breakpoint(int);
 #endif
 
 
-#ifdef __GNUC__
-static void		blr_error(CTL, TEXT *, ...) __attribute__ ((format(printf,2,3)));
-static void		blr_format(CTL, const char *, ...) __attribute__ ((format(printf,2,3)));
-#else
-static void		blr_error(CTL, TEXT *, ...);
-static void		blr_format(CTL, const char *, ...);
-#endif
+static void		blr_error(CTL, TEXT *, ...) ATTRIBUTE_FORMAT(2,3);
+static void		blr_format(CTL, const char *, ...) ATTRIBUTE_FORMAT(2,3);
 static void		blr_indent(CTL, SSHORT);
 static void		blr_print_blr(CTL, UCHAR);
 static SCHAR	blr_print_byte(CTL);
