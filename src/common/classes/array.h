@@ -39,7 +39,7 @@ class Array {
 public:
 	Array(MemoryPool*p, int InitialSize) : 
 	  pool(p), data(0), count(0), capacity(0) {grow(InitialSize);}
-	~Array() {delete data;}
+	~Array() {pool->deallocate(data);}
 	void clear() { count = 0; };
 	T& operator[](int index) {
   		assert(index >= 0 && index < count);
@@ -83,11 +83,14 @@ protected:
 			if (newcapacity < capacity * 2) {
 				newcapacity = capacity * 2;
 			}
-			T* newdata = FB_NEW(*pool) T[newcapacity];
-			if (data) {
-				memcpy(newdata, data, sizeof(T) * count);
-				delete data;
-			}
+			T* newdata = reinterpret_cast<T*>
+				(pool->allocate(sizeof(T) * newcapacity
+#ifdef DEBUG_GDS_ALLOC
+		, 1, __FILE__, __LINE__
+#endif
+						));
+			memcpy(newdata, data, sizeof(T) * count);
+			pool->deallocate(data);
 			data = newdata;
 			capacity = newcapacity;
 		}
