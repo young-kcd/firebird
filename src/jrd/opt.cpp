@@ -912,8 +912,9 @@ int OPT_match_index(OPT opt, USHORT stream, IDX * idx)
 
 /* If there are not conjunctions, don't waste our time */
 
-	if (!opt->opt_count)
+	if (!opt->opt_count) {
 		return 0;
+	}
 
 	csb = opt->opt_csb;
 	opt_end = opt->opt_rpt + opt->opt_count;
@@ -976,10 +977,12 @@ void OPT_set_index(TDBB tdbb,
 /* check if there is an existing inversion for
    a boolean expression mapped to an index */
 
-	if (old_rsb->rsb_type == rsb_indexed)
+	if (old_rsb->rsb_type == rsb_indexed) {
 		inversion = (JRD_NOD) old_rsb->rsb_arg[0];
-	else if (old_rsb->rsb_type == rsb_navigate)
+	}
+	else if (old_rsb->rsb_type == rsb_navigate) {
 		inversion = (JRD_NOD) old_rsb->rsb_arg[RSB_NAV_inversion];
+	}
 
 /* set up a dummy optimizer block just for the purposes 
    of the set index, to pass information to subroutines */
@@ -1002,9 +1005,10 @@ void OPT_set_index(TDBB tdbb,
 		new_rsb->rsb_arg[RSB_NAV_inversion] = (RSB) inversion;
 		new_rsb->rsb_cardinality = old_rsb->rsb_cardinality;
 	}
-	else
+	else {
 		new_rsb = gen_rsb(tdbb, opt, 0, inversion, old_rsb->rsb_stream,
 						  relation, 0, 0, (float) old_rsb->rsb_cardinality);
+	}
 
 /* point the impure area of the new rsb to the impure area of the
    old; since impure area is pre-allocated it would be difficult 
@@ -1016,10 +1020,12 @@ void OPT_set_index(TDBB tdbb,
 
 /* find index node if the old rsb was navigational */
 
-	if (old_rsb->rsb_type == rsb_navigate)
+	if (old_rsb->rsb_type == rsb_navigate) {
 		index_node = (JRD_NOD) old_rsb->rsb_arg[RSB_NAV_index];
-	else
+	}
+	else {
 		index_node = NULL;
+	}
 
 /* if the new rsb is navigational, set up impure space in request 
    for new index node; to convert from non-navigational to navigational,
@@ -1035,8 +1041,9 @@ void OPT_set_index(TDBB tdbb,
 			new_rsb->rsb_impure += sizeof(struct inv);
 		}
 	}
-	else if (old_rsb->rsb_type == rsb_navigate)
+	else if (old_rsb->rsb_type == rsb_navigate) {
 		new_rsb->rsb_impure -= sizeof(struct inv);
+	}
 
 /* if there was a previous index, release its lock 
    and remove its resource from the request */
@@ -1045,8 +1052,9 @@ void OPT_set_index(TDBB tdbb,
 		retrieval = (IRB) index_node->nod_arg[e_idx_retrieval];
 		index_id = retrieval->irb_index;
 		index = CMP_get_index_lock(tdbb, relation, index_id);
-		if (!--index->idl_count)
+		if (!--index->idl_count) {
 			LCK_release(tdbb, index->idl_lock);
+		}
 		CMP_release_resource(&request->req_resources, rsc_index, index_id);
 	}
 
@@ -1054,8 +1062,9 @@ void OPT_set_index(TDBB tdbb,
 
 	if (idx) {
 		index = CMP_get_index_lock(tdbb, relation, idx->idx_id);
-		if (!index->idl_count)
+		if (!index->idl_count) {
 			LCK_lock_non_blocking(tdbb, index->idl_lock, LCK_SR, TRUE);
+		}
 		++index->idl_count;
 	}
 
@@ -1063,17 +1072,19 @@ void OPT_set_index(TDBB tdbb,
    request, and replace the old with the new */
 
 	vector = request->req_fors;
-	for (i = 0; i < vector->count(); i++)
+	for (i = 0; i < vector->count(); i++) {
 		if ((*vector)[i] == (BLK) old_rsb) {
 			(*vector)[i] = (BLK) new_rsb;
 			break;
 		}
+	}
 
 /* release unneeded blocks */
 
 	delete opt;
-	if (index_node)
+	if (index_node) {
 		delete index_node;
+	}
 	delete old_rsb;
 
 	*rsb_ptr = new_rsb;
@@ -1097,9 +1108,11 @@ static BOOLEAN augment_stack(JRD_NOD node, LLS * stack)
 	DEV_BLKCHK(node, type_nod);
 	DEV_BLKCHK(*stack, type_lls);
 
-	for (temp = *stack; temp; temp = temp->lls_next)
-		if (node_equality(node, (JRD_NOD) temp->lls_object))
+	for (temp = *stack; temp; temp = temp->lls_next) {
+		if (node_equality(node, (JRD_NOD) temp->lls_object)) {
 			return FALSE;
+		}
+	}
 
 	LLS_PUSH(node, stack);
 
@@ -1185,11 +1198,13 @@ static void check_indices(csb_repeat * csb_tail)
 
 	tdbb = GET_THREAD_DATA;
 
-	if (!(plan = csb_tail->csb_plan))
+	if (!(plan = csb_tail->csb_plan)) {
 		return;
+	}
 
-	if (plan->nod_type != nod_retrieve)
+	if (plan->nod_type != nod_retrieve) {
 		return;
+	}
 
 	relation = csb_tail->csb_relation;
 
@@ -1215,11 +1230,13 @@ static void check_indices(csb_repeat * csb_tail)
 			if (!
 				(idx->idx_runtime_flags &
 				 (idx_plan_missing | idx_plan_starts))) {
-				if (relation)
+				if (relation) {
 					MET_lookup_index(tdbb, index_name, relation->rel_name,
 									 (USHORT) (idx->idx_id + 1));
-				else
+				}
+				else {
 					index_name[0] = 0;
+				}
 
 				/* index %s cannot be used in the specified plan */
 				ERR_post(gds_index_unused, gds_arg_string,
@@ -1252,9 +1269,11 @@ static BOOLEAN check_relationship(OPT opt, USHORT position, USHORT stream)
 	for (tail = opt->opt_rpt, end = tail + position; tail < end; tail++) {
 		n = tail->opt_stream;
 		for (relationship = opt->opt_rpt[n].opt_relationships; relationship;
-			 relationship = relationship->irl_next)
-			if (stream == relationship->irl_stream)
+			 relationship = relationship->irl_next) {
+			if (stream == relationship->irl_stream) {
 				return TRUE;
+			}
+		}
 	}
 
 	return FALSE;
@@ -1409,14 +1428,16 @@ static void class_mask(USHORT count, JRD_NOD * class_, ULONG * mask)
 		/* Msg442: size of optimizer block exceeded */
 	}
 
-	for (i = 0; i < OPT_BITS; i++)
+	for (i = 0; i < OPT_BITS; i++) {
 		mask[i] = 0;
+	}
 
-	for (i = 0; i < count; i++, class_++)
+	for (i = 0; i < count; i++, class_++) {
 		if (*class_) {
 			SET_DEP_BIT(mask, i);
 			DEV_BLKCHK(*class_, type_nod);
 		}
+	}
 }
 
 
@@ -1463,11 +1484,13 @@ static JRD_NOD compose(JRD_NOD * node1, JRD_NOD node2, NOD_T node_type)
 	DEV_BLKCHK(*node1, type_nod);
 	DEV_BLKCHK(node2, type_nod);
 
-	if (!node2)
+	if (!node2) {
 		return *node1;
+	}
 
-	if (!*node1)
+	if (!*node1) {
 		return (*node1 = node2);
+	}
 
 	return *node1 = make_binary_node(node_type, *node1, node2, FALSE);
 }
@@ -1516,12 +1539,26 @@ static BOOLEAN computable(CSB csb,
 
 	ptr = node->nod_arg;
 
-	if (node->nod_type == nod_procedure)
+	if (node->nod_type == nod_procedure) {
 		return FALSE;
+	}
 
-	for (end = ptr + node->nod_count; ptr < end; ptr++)
-		if (!computable(csb, *ptr, stream, idx_use))
-			return FALSE;
+	if (node->nod_type == nod_union) {
+		JRD_NOD clauses;
+		clauses = node->nod_arg[e_uni_clauses];
+		for (ptr = clauses->nod_arg, end = ptr + clauses->nod_count; ptr < end; ptr += 2) {
+			if (!computable(csb, *ptr, stream, idx_use)) {
+				return FALSE;
+			}
+		}
+	} 
+	else {
+		for (end = ptr + node->nod_count; ptr < end; ptr++) {
+			if (!computable(csb, *ptr, stream, idx_use)) {
+				return FALSE;
+			}
+		}
+	}
 
 	switch (node->nod_type) {
 	case nod_field:
@@ -1576,34 +1613,40 @@ static BOOLEAN computable(CSB csb,
 
 	result = TRUE;
 
-	if ((sub = rse->rse_first) && !computable(csb, sub, stream, idx_use))
+	if ((sub = rse->rse_first) && !computable(csb, sub, stream, idx_use)) {
 		return FALSE;
+	}
 
-    if ((sub = rse->rse_skip) && !computable (csb, sub, stream, idx_use))
+    if ((sub = rse->rse_skip) && !computable (csb, sub, stream, idx_use)) {
         return FALSE;
+	}
     
 /* Set sub-streams of rse active */
 
-	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end;
-		 ptr++) if ((*ptr)->nod_type != nod_rse) {
+	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end; ptr++) {
+		if ((*ptr)->nod_type != nod_rse) {
 			n = (USHORT) (*ptr)->nod_arg[STREAM_INDEX((*ptr))];
 			csb->csb_rpt[n].csb_flags |= csb_active;
 		}
+	}
 
 /* Check sub-stream */
 
 	if (((sub = rse->rse_boolean) && !computable(csb, sub, stream, idx_use))
 		|| ((sub = rse->rse_sorted) && !computable(csb, sub, stream, idx_use))
 		|| ((sub = rse->rse_projection)
-			&& !computable(csb, sub, stream, idx_use)))
+		&& !computable(csb, sub, stream, idx_use))) {
 		result = FALSE;
+	}
 
 	for (ptr = rse->rse_relation, end = ptr + rse->rse_count;
-		 ((ptr < end) && (result)); ptr++)
+		((ptr < end) && (result)); ptr++) {
 		if ((*ptr)->nod_type != nod_rse) {
-			if (!computable(csb, (*ptr), stream, idx_use))
+			if (!computable(csb, (*ptr), stream, idx_use)) {
 				result = FALSE;
+			}
 		}
+	}
 
 /* Check value expression, if any */
 
@@ -1644,11 +1687,13 @@ static void compute_dependencies(JRD_NOD node, ULONG * dependencies)
 
 	ptr = node->nod_arg;
 
-	if (node->nod_type == nod_procedure)
+	if (node->nod_type == nod_procedure) {
 		return;
+	}
 
-	for (end = ptr + node->nod_count; ptr < end; ptr++)
+	for (end = ptr + node->nod_count; ptr < end; ptr++) {
 		compute_dependencies(*ptr, dependencies);
+	}
 
 	switch (node->nod_type) {
 	case nod_field:
@@ -1667,8 +1712,9 @@ static void compute_dependencies(JRD_NOD node, ULONG * dependencies)
 	case nod_total:
 	case nod_count:
 	case nod_from:
-		if ( (sub = node->nod_arg[e_stat_default]) )
+		if ( (sub = node->nod_arg[e_stat_default]) ) {
 			compute_dependencies(sub, dependencies);
+		}
 		rse = (RSE) node->nod_arg[e_stat_rse];
 		value = node->nod_arg[e_stat_value];
 		break;
@@ -1684,32 +1730,38 @@ static void compute_dependencies(JRD_NOD node, ULONG * dependencies)
 
 /* Node is a record selection expression.  Groan.  Ugh.  Yuck. */
 
-	if ( (sub = rse->rse_first) )
+	if ( (sub = rse->rse_first) ) {
 		compute_dependencies(sub, dependencies);
+	}
 
 /* Check sub-expressions */
 
-	if ( (sub = rse->rse_boolean) )
+	if ( (sub = rse->rse_boolean) ) {
 		compute_dependencies(sub, dependencies);
+	}
 
-	if ( (sub = rse->rse_sorted) )
+	if ( (sub = rse->rse_sorted) ) {
 		compute_dependencies(sub, dependencies);
+	}
 
-	if ( (sub = rse->rse_projection) )
+	if ( (sub = rse->rse_projection) ) {
 		compute_dependencies(sub, dependencies);
+	}
 
 /* Check value expression, if any */
 
-	if (value)
+	if (value) {
 		compute_dependencies(value, dependencies);
+	}
 
 /* Reset streams inactive */
 
-	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end;
-		 ptr++) if ((*ptr)->nod_type != nod_rse) {
+	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end; ptr++) {
+		if ((*ptr)->nod_type != nod_rse) {
 			n = (USHORT) (*ptr)->nod_arg[STREAM_INDEX((*ptr))];
 			CLEAR_DEP_BIT(dependencies, n);
 		}
+	}
 }
 
 
@@ -1732,20 +1784,22 @@ static void compute_dbkey_streams(CSB csb, JRD_NOD node, UCHAR * streams)
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(node, type_nod);
 
-	if (node->nod_type == nod_relation)
+	if (node->nod_type == nod_relation) {
 		streams[++streams[0]] = (UCHAR) node->nod_arg[e_rel_stream];
+	}
 	else if (node->nod_type == nod_union) {
 		clauses = node->nod_arg[e_uni_clauses];
-		if (clauses->nod_type != nod_procedure)
-			for (ptr = clauses->nod_arg, end = ptr + clauses->nod_count;
-				 ptr < end; ptr += 2)
+		if (clauses->nod_type != nod_procedure) {
+			for (ptr = clauses->nod_arg, end = ptr + clauses->nod_count; ptr < end; ptr += 2) {
 				compute_dbkey_streams(csb, *ptr, streams);
+			}
+		}
 	}
 	else if (node->nod_type == nod_rse) {
 		rse = (RSE) node;
-		for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end;
-			 ptr++)
+		for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end; ptr++) {
 			compute_dbkey_streams(csb, *ptr, streams);
+		}
 	}
 }
 
@@ -1767,13 +1821,14 @@ static void compute_rse_streams(CSB csb, RSE rse, UCHAR * streams)
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(rse, type_nod);
 
-	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end;
-		 ptr++) {
+	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end; ptr++) {
 		node = *ptr;
-		if (node->nod_type != nod_rse)
+		if (node->nod_type != nod_rse) {
 			streams[++streams[0]] = (UCHAR) node->nod_arg[STREAM_INDEX(node)];
-		else
+		}
+		else {
 			compute_rse_streams(csb, (RSE) node, streams);
+		}
 	}
 }
 
@@ -1798,9 +1853,10 @@ static SLONG decompose(TDBB tdbb,
 	DEV_BLKCHK(csb, type_csb);
 
 
-	if (boolean_node->nod_type == nod_and)
+	if (boolean_node->nod_type == nod_and) {
 		return decompose(tdbb, boolean_node->nod_arg[0], stack, csb) +
 			decompose(tdbb, boolean_node->nod_arg[1], stack, csb);
+	}
 
 /* turn a between into (a greater than or equal) AND (a less than  or equal) */
 
