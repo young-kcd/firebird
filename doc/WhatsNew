@@ -335,7 +335,7 @@
       Notes:
         1. Available in PSQL only.
         2. Currently cannot return values, so SELECT statements are not allowed.
-        3. Recursion level is limited to 500 (hardcoded).
+        3. Recursion level is limited to 50 (hardcoded).
       Example:
         EXECUTE VARCHAR my_var;
       Contributor(s):
