@@ -30,7 +30,7 @@
  * 2003.08.10 Claudio Valderrama: Fix SF Bugs #544132 and #728839.
  */
 /*
-$Id: fun.epp,v 1.64 2004-08-21 09:36:53 robocop Exp $
+$Id: fun.epp,v 1.65 2004-08-27 04:58:10 robocop Exp $
 */
 
 #include "firebird.h"
@@ -258,15 +258,23 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 				arg_ptr = reinterpret_cast<UDF_ARG*>(p);
 				continue;
 			}
+			else if (tail->fun_mechanism != FUN_ref_with_null)
+				MOVE_CLEAR(temp_ptr, (SLONG) length);
 			else
 			{
-				MOVE_CLEAR(temp_ptr, (SLONG) length);
-				// CVC: Replace the previous line by these two and you'll have
-				// an engine that sends the null pointer for NULL input values.
 				// Probably for arrays and blobs it's better to preserve the
 				// current behavior that sends a zeroed memory chunk.
-				//*arg_ptr++ = 0;
-				//continue;
+				switch (tail->fun_desc.dsc_dtype)
+				{
+				case dtype_quad:
+				case dtype_array:
+				case dtype_blob:
+					MOVE_CLEAR(temp_ptr, (SLONG) length);
+					break;
+				default: // FUN_ref_with_null, non-blob, non-array: we send null pointer.
+					*arg_ptr++ = 0;
+					continue;
+				}
 			}
 		}
 		else if ((SSHORT) abs(tail->fun_mechanism) == FUN_scalar_array)
@@ -527,8 +535,8 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
     // Udfs work in the assumption that they ignore that the handle is the real
     // internal blob and this has been always the tale.
 	if (temp_ptr == NULL || function->fun_return_arg &&
-		(return_ptr->fun_mechanism == FUN_descriptor &&	(value->vlu_desc.dsc_flags & DSC_null)
-        || return_ptr->fun_mechanism == FUN_blob_struct && return_blob_struct &&
+		(abs(return_ptr->fun_mechanism) == FUN_descriptor && (value->vlu_desc.dsc_flags & DSC_null)
+        || abs(return_ptr->fun_mechanism) == FUN_blob_struct && return_blob_struct &&
             !return_blob_struct->blob_handle))
 	{
 		request->req_flags |= req_null;
@@ -1042,15 +1050,21 @@ static void invoke(UserFunction* function,
 			//		The assumption is that the user didn't modify the return type,
 			//		that has no sense after all, because it is carved in stone.
 			dsc* return_dsc = 0;
-			if (return_ptr->fun_mechanism == FUN_descriptor)
+			bool null_signaled = false;
+			if (abs(return_ptr->fun_mechanism) == FUN_descriptor)
 			{
 			    // The formal param's type is contained in value->vlu_desc.dsc_dtype
 			    // but I want to know if the UDF changed it to a compatible type
 			    // from its returned descriptor, that will be return_dsc.
                 return_dsc = reinterpret_cast<DSC*>(temp_ptr);
 				temp_ptr = return_dsc->dsc_address;
+				if (!temp_ptr || (return_dsc->dsc_flags & DSC_null))
+				{
+					null_signaled = true;
+					value->vlu_desc.dsc_flags |= DSC_null;
+				}
 			}
-			if (temp_ptr)
+			if (!null_signaled)
 			{
 				switch (value->vlu_desc.dsc_dtype)
 				{
@@ -1157,12 +1171,13 @@ static void invoke(UserFunction* function,
 					unsup_datatype = true;
 					break;
 				}
-				// check if this is function has the FREE_IT set, if set and
-				// return_value is not null, then free the return value
-				if (((SLONG) return_ptr->fun_mechanism < 0) && temp_ptr)
-				{
-					free(temp_ptr);
-				}
+			}
+			
+			// check if this is function has the FREE_IT set, if set and
+			// return_value is not null, then free the return value
+			if ((SLONG) return_ptr->fun_mechanism < 0 && temp_ptr)
+			{
+				free(temp_ptr);
 			}
 			// CVC: Let's free the descriptor, too.
 			if (return_dsc)
