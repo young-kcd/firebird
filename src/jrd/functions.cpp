@@ -28,6 +28,8 @@
 #include "../jrd/jrd.h"  /* For MAXPATHLEN Bug #126614 */
 #include "../jrd/tra.h"
 #include "../jrd/dsc_proto.h"
+#include "../jrd/pag_proto.h"
+#include "../jrd/thread_proto.h"
 
 using namespace Jrd;
 
@@ -43,6 +45,33 @@ static DSC* ni(DSC*, DSC*);
 static SLONG* byteLen(const dsc*);
 static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary* value_vary);
 static vary* get_context(const vary* ns_vary, const vary* name_vary);
+
+// Context variable function names. Do not forget to change functions.h too if changing
+static const char
+	RDB_GET_CONTEXT[] = "RDB$GET_CONTEXT",
+	RDB_SET_CONTEXT[] = "RDB$SET_CONTEXT";
+
+// Namespace names
+static const char
+	SYSTEM_NAMESPACE[] = "SYSTEM",
+	USER_SESSION_NAMESPACE[] = "USER_SESSION",
+	USER_TRANSACTION_NAMESPACE[] = "USER_TRANSACTION";
+
+// System variables names
+static const char
+	DATABASE_NAME[] = "DB_NAME",
+	ISOLATION_LEVEL_NAME[] = "ISOLATION_LEVEL",
+	TRANSACTION_ID_NAME[] = "TRANSACTION_ID",
+	SESSION_ID_NAME[] = "SESSION_ID",
+	CURRENT_USER_NAME[] = "CURRENT_USER",
+	CURRENT_ROLE_NAME[] = "CURRENT_ROLE";
+
+// Isolation values modes
+static const char
+	READ_COMMITTED_VALUE[] = "READ COMMITTED",
+	CONSISTENCY_VALUE[] = "CONSISTENCY",
+	SNAPSHOT_VALUE[] = "SNAPSHOT";
+
 
 #define FUNCTION(ROUTINE, FUNCTION_NAME, MODULE_NAME, ENTRYPOINT, RET_ARG) \
 	{MODULE_NAME, ENTRYPOINT, (FPTR_INT) ROUTINE},
@@ -102,16 +131,36 @@ FPTR_INT FUNCTIONS_entrypoint(const char* module, const char* entrypoint)
 	return 0;
 }
 
+static vary* make_result_str(const char* str, size_t str_len) {
+	vary *result_vary = (vary*) malloc(str_len + 2);
+	result_vary->vary_length = str_len;
+	memcpy(result_vary->vary_string, str, result_vary->vary_length);
+	return result_vary;
+}
+
+static vary* make_result_str(const Firebird::string& str) {
+	return make_result_str(str.c_str(), str.length());
+}
+
 vary* get_context(const vary* ns_vary, const vary* name_vary)
 {
 	// Complain if namespace or variable name is null
 	if (!ns_vary || !name_vary) {
-		ERR_post(isc_ctx_bad_argument, isc_arg_string, "RDB$SET_CONTEXT", 0);
+		ERR_post(isc_ctx_bad_argument, isc_arg_string, RDB_GET_CONTEXT, 0);
 	}
 
 	thread_db* tdbb = JRD_get_thread_data();
 
-	if (!tdbb) {
+	Database* dbb;
+	Attachment *att;
+	jrd_tra* transaction;
+
+	// See if JRD thread data structure looks sane for occasion
+	if (!tdbb || 
+		!(dbb = tdbb->tdbb_database) || 
+		!(transaction = tdbb->tdbb_transaction) || 
+		!(att = tdbb->tdbb_attachment)) 
+	{
 		fb_assert(false);
 		return NULL;
 	}
@@ -120,53 +169,65 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 		name_str(name_vary->vary_string, name_vary->vary_length);
 
 	// Handle system variables
-	if (ns_str == "SYS_SESSION") 
+	if (ns_str == SYSTEM_NAMESPACE) 
 	{
-		if (name_str == "DB_NAME") 
+		if (name_str == DATABASE_NAME) 
 		{
-			Database* dbb = tdbb->tdbb_database;
-
-			if (!dbb) {
-				fb_assert(false);
-				return NULL;
-			}
-
-			vary *result_vary = (vary*) malloc(dbb->dbb_database_name.length() + 2);
-			result_vary->vary_length = dbb->dbb_database_name.length();
-			memcpy(result_vary->vary_string, dbb->dbb_database_name.c_str(), result_vary->vary_length);
-			return result_vary;
+			return make_result_str(dbb->dbb_database_name.c_str(),
+				dbb->dbb_database_name.length());
 		}
-		// "Context variable %s is not found in namespace %s"
-		ERR_post(isc_ctx_var_not_found, 
-			isc_arg_string, ERR_cstring(name_str.c_str()),
-			isc_arg_string,	ERR_cstring(ns_str.c_str()), 0);
-	}
 
-	if (ns_str == "SYS_TRANSACTION") 
-	{
-		if (name_str == "ISOLATION") 
+		if (name_str == CURRENT_USER_NAME) 
 		{
-			jrd_tra *transaction = tdbb->tdbb_transaction;
-
-			if (!transaction) {
-				fb_assert(false);
+			if (!att->att_user || !att->att_user->usr_user_name)
 				return NULL;
-			}
 
-			const char* isolation;
+			return make_result_str(att->att_user->usr_user_name);
+		}
+
+		if (name_str == CURRENT_ROLE_NAME) 
+		{
+			if (!att->att_user || !att->att_user->usr_sql_role_name)
+				return NULL;
+
+			return make_result_str(att->att_user->usr_sql_role_name);
+		}
+
+		if (name_str == SESSION_ID_NAME) 
+		{
+			Firebird::string session_id;
+
+			// This synchronization is necessary to keep SuperServer happy.
+			// PAG_attachment_id() may modify database header, call lock manager, etc
+			THREAD_ENTER();
+			SLONG att_id = PAG_attachment_id();
+			THREAD_EXIT();
+
+			session_id.printf("%d", att_id);
+			return make_result_str(session_id);
+		}
+
+		if (name_str == TRANSACTION_ID_NAME)
+		{
+			Firebird::string transaction_id;
+			transaction_id.printf("%d", transaction->tra_number);
+			return make_result_str(transaction_id);
+		}
+
+		if (name_str == ISOLATION_LEVEL_NAME) 
+		{
+			Firebird::string isolation;
 
 			if (transaction->tra_flags & TRA_read_committed)
-				isolation = "READ COMMITTED";
+				isolation = READ_COMMITTED_VALUE;
 			else if (transaction->tra_flags & TRA_degree3)
-				isolation = "CONSISTENCY";
+				isolation = CONSISTENCY_VALUE;
 			else
-				isolation = "SNAPSHOT";
+				isolation = SNAPSHOT_VALUE;
 
-			vary *result_vary = (vary*) malloc(strlen(isolation) + 2);
-			result_vary->vary_length = strlen(isolation);
-			memcpy(result_vary->vary_string, isolation, result_vary->vary_length);
-			return result_vary;
+			return make_result_str(isolation);
 		}
+
 		// "Context variable %s is not found in namespace %s"
 		ERR_post(isc_ctx_var_not_found,
 			isc_arg_string, ERR_cstring(name_str.c_str()),
@@ -174,42 +235,30 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 	}
 
 	// Handle user-defined variables
-	Firebird::string result_str;
-
-	if (ns_str == "USER_SESSION") 
+	if (ns_str == USER_SESSION_NAMESPACE) 
 	{
-		Attachment* att = tdbb->tdbb_attachment;
-
-		if (!att) {
-			fb_assert(false);
-			return NULL;
-		}
+		Firebird::string result_str;
 
 		if (!att->att_context_vars.get(name_str, result_str))
 			return NULL;
-	} else if (ns_str == "USER_TRANSACTION") {
-		jrd_tra* tra = tdbb->tdbb_transaction;
 
-		if (!tra) {
-			fb_assert(false);
-			return NULL;
-		}
-
-		if (!tra->tra_context_vars.get(name_str, result_str))
-			return NULL;
+		return make_result_str(result_str);
 	} 
-	else
-	{
-		// "Invalid namespace name %s passed to %s"
-		ERR_post(isc_ctx_namespace_invalid,
-			isc_arg_string, ERR_cstring(ns_str.c_str()),
-			isc_arg_string, "RDB$GET_CONTEXT", 0);
-	}
+	
+	if (ns_str == USER_TRANSACTION_NAMESPACE) {
+		Firebird::string result_str;
 
-	vary *result_vary = (vary*) malloc(result_str.length() + 2);
-	result_vary->vary_length = result_str.length();
-	memcpy(result_vary->vary_string, result_str.c_str(), result_vary->vary_length);
-	return result_vary;
+		if (!transaction->tra_context_vars.get(name_str, result_str))
+			return NULL;
+
+		return make_result_str(result_str);
+	} 
+
+	// "Invalid namespace name %s passed to %s"
+	ERR_post(isc_ctx_namespace_invalid,
+		isc_arg_string, ERR_cstring(ns_str.c_str()),
+		isc_arg_string, RDB_GET_CONTEXT, 0);
+	return NULL;
 }
 
 static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary* value_vary)
@@ -217,7 +266,7 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 	// Complain if namespace or variable name is null
 	if (!ns_vary || !name_vary)
 	{
-		ERR_post(isc_ctx_bad_argument, isc_arg_string, "RDB$SET_CONTEXT", 0);
+		ERR_post(isc_ctx_bad_argument, isc_arg_string, RDB_SET_CONTEXT, 0);
 	}
 
 	thread_db* tdbb = JRD_get_thread_data();
@@ -231,7 +280,7 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 	Firebird::string ns_str(ns_vary->vary_string, ns_vary->vary_length),
 		name_str(name_vary->vary_string, name_vary->vary_length);
 
-	if (ns_str == "USER_SESSION") 
+	if (ns_str == USER_SESSION_NAMESPACE) 
 	{
 		Attachment* att = tdbb->tdbb_attachment;
 
@@ -250,7 +299,7 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 
 		return att->att_context_vars.put(name_str,
 			Firebird::string(value_vary->vary_string, value_vary->vary_length));
-	} else if (ns_str == "USER_TRANSACTION") {
+	} else if (ns_str == USER_TRANSACTION_NAMESPACE) {
 		jrd_tra* tra = tdbb->tdbb_transaction;
 
 		if (!tra) {
@@ -272,7 +321,7 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 		// "Invalid namespace name %s passed to %s"
 		ERR_post(isc_ctx_namespace_invalid,
 			isc_arg_string, ERR_cstring(ns_str.c_str()),
-			isc_arg_string, "RDB$SET_CONTEXT", 0);
+			isc_arg_string, RDB_SET_CONTEXT, 0);
 		return 0;
 	}
 }
