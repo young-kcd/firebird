@@ -161,6 +161,8 @@ static void update_write_direction(thread_db*, BufferDesc*);
 #define btc_remove btc_remove_unbalanced
 #endif
 
+const int BTREE_STACK_SIZE = 40;
+
 const SLONG MIN_BUFFER_SEGMENT = 65536;
 
 /* Given pointer a field in the block, find the block */
@@ -2908,8 +2910,9 @@ static void btc_insert_balanced(Database* dbb, BufferDesc* bdb)
  *
  **************************************/
 
-	BalancedTreeNode stack[40];	// avoid recursion when rebalancing tree
-								// (40 - enough to hold 2^32 nodes)
+	// avoid recursion when rebalancing tree
+	// (40 - enough to hold 2^32 nodes)
+	BalancedTreeNode stack[BTREE_STACK_SIZE];
 
 /* if the page is already in the tree (as in when it is
    written out as a dependency while walking the tree),
@@ -2966,6 +2969,7 @@ static void btc_insert_balanced(Database* dbb, BufferDesc* bdb)
 		} // already in the tree
 
 		stackp++;
+		fb_assert(stackp >= 0 && stackp < BTREE_STACK_SIZE);
 		stack[stackp].bdb_node = p;
 		stack[stackp].comp = comp;
 
@@ -2974,6 +2978,7 @@ static void btc_insert_balanced(Database* dbb, BufferDesc* bdb)
 
 /* insert new node */
 
+	fb_assert(stackp >= 0 && stackp < BTREE_STACK_SIZE);
 	if (comp > 0)
 	{
 		stack[stackp].bdb_node->bdb_right = bdb;
@@ -2993,6 +2998,7 @@ static void btc_insert_balanced(Database* dbb, BufferDesc* bdb)
 
 	while (stackp >= 0 && subtree)
 	{
+		fb_assert(stackp >= 0 && stackp < BTREE_STACK_SIZE);
 		if (stackp == 0)
 		{
 			subtree = btc_insert_balance(&dbb->dbb_bcb->bcb_btree,
@@ -3258,8 +3264,9 @@ static void btc_remove_balanced(BufferDesc* bdb)
  *
  **************************************/
 
-	BalancedTreeNode stack[40];	// avoid recursion when rebalancing tree
-								// (40 - enough to hold 2^32 nodes)
+	// avoid recursion when rebalancing tree
+	// (40 - enough to hold 2^32 nodes)
+	BalancedTreeNode stack[BTREE_STACK_SIZE];
 
 	Database* dbb = bdb->bdb_dbb;
 
@@ -3309,6 +3316,7 @@ static void btc_remove_balanced(BufferDesc* bdb)
 		}
 	
 		stackp++;
+		fb_assert(stackp >= 0 && stackp < BTREE_STACK_SIZE);
 
 		if (comp == 0)
 		{
@@ -3355,6 +3363,7 @@ static void btc_remove_balanced(BufferDesc* bdb)
 		}
 		else
 		{
+			fb_assert(stackp >= 0 && stackp < BTREE_STACK_SIZE);
 			if (stack[stackp].comp > 0)
 			{
                 stack[stackp].bdb_node->bdb_right = p;
@@ -3413,6 +3422,7 @@ static void btc_remove_balanced(BufferDesc* bdb)
 			while (p->bdb_right)
 			{
 				stackp++;
+				fb_assert(stackp >= 0 && stackp < BTREE_STACK_SIZE);
 				stack[stackp].bdb_node = p;
 				stack[stackp].comp = 1;
 				p = p->bdb_right;
@@ -3458,8 +3468,9 @@ static void btc_remove_balanced(BufferDesc* bdb)
 
 	bool subtree = true;
 
-	while (stackp >=0 && subtree)
+	while (stackp >= 0 && subtree)
 	{
+		fb_assert(stackp >= 0 && stackp < BTREE_STACK_SIZE);
 		if (stackp == 0)
 		{
 			subtree = btc_remove_balance(&bcb->bcb_btree,
