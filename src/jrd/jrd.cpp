@@ -30,16 +30,16 @@
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
-#include "../jrd/ibsetjmp.h"
 #include <string.h>
 #include <stdlib.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
 #ifndef	WIN_NT
 #include <unistd.h>
-#include <pwd.h>
 #ifdef DARWIN
 #include </usr/include/pwd.h>
+#else
+#include <pwd.h>
 #endif
 #endif
 #include <errno.h>
@@ -117,7 +117,6 @@
 #include "../jrd/ail.h"
 #include "../jrd/event_proto.h"
 #include "../jrd/old_proto.h"
-
 
 #include "../fbutil/FirebirdConfig.h"
 
@@ -448,11 +447,6 @@ static void SET_TDBB(TDBB& tdbb)
 }
 
 
-#define ERROR_INIT(env)								\
-	tdbb->tdbb_setjmp = (UCHAR*) env;				\
-	tdbb->tdbb_status_vector = user_status;			\
-	if (SETJMP (env)) return error (user_status);
-
 #define CHECK_HANDLE(blk,type,error)					\
 	if (!blk || MemoryPool::blk_type(blk) != type)	\
 		return handle_error (user_status, error, tdbb)
@@ -564,7 +558,6 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 	DPB options;
 	ATT attachment;
 	USHORT d_len, jd_len;
-	JMP_BUF env;
 
 	struct tdbb thd_context;
 
@@ -605,7 +598,6 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 
 /* Initialize special error handling */
 
-	tdbb->tdbb_setjmp = env;
 	tdbb->tdbb_status_vector = status = user_status;
 	tdbb->tdbb_attachment = attachment = NULL;
 	tdbb->tdbb_request = NULL;
@@ -1313,7 +1305,6 @@ STATUS DLL_EXPORT GDS_BLOB_INFO(STATUS*	user_status,
  *	Provide information on blob object.
  *
  **************************************/
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -1329,9 +1320,15 @@ STATUS DLL_EXPORT GDS_BLOB_INFO(STATUS*	user_status,
 	LOG_call(log_blob_info2, *blob_handle, item_length, items, buffer_length);
 #endif
 
-	ERROR_INIT(env);
+	try {
+		tdbb->tdbb_status_vector = user_status;
 
-	INF_blob_info(blob, items, item_length, buffer, buffer_length);
+		INF_blob_info(blob, items, item_length, buffer, buffer_length);
+	}
+	catch (...)
+	{
+		return error(user_status);
+	}
 
 	return return_success(tdbb);
 }
@@ -1350,7 +1347,6 @@ STATUS DLL_EXPORT GDS_CANCEL_BLOB(STATUS * user_status, BLB * blob_handle)
  *
  **************************************/
 	BLB blob;
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -1365,9 +1361,16 @@ STATUS DLL_EXPORT GDS_CANCEL_BLOB(STATUS * user_status, BLB * blob_handle)
 		LOG_call(log_cancel_blob, *blob_handle);
 #endif
 
-		ERROR_INIT(env);
-		BLB_cancel(tdbb, blob);
-		*blob_handle = NULL;
+		try {
+			tdbb->tdbb_status_vector = user_status;
+
+			BLB_cancel(tdbb, blob);
+			*blob_handle = NULL;
+		}
+		catch (...)
+		{
+			return error(user_status);
+		}
 	}
 
 	return return_success(tdbb);
@@ -1388,7 +1391,6 @@ STATUS DLL_EXPORT GDS_CANCEL_EVENTS(STATUS*	user_status,
  *	Cancel an outstanding event.
  *
  **************************************/
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -1403,8 +1405,16 @@ STATUS DLL_EXPORT GDS_CANCEL_EVENTS(STATUS*	user_status,
 	LOG_call(log_cancel_events, *handle, *id);
 #endif
 
-	ERROR_INIT(env);
-	EVENT_cancel(*id);
+	try
+	{
+		tdbb->tdbb_status_vector = user_status;
+
+		EVENT_cancel(*id);
+	}
+	catch (...)
+	{
+		return error(user_status);
+	}
 
 	return return_success(tdbb);
 }
@@ -1484,7 +1494,6 @@ STATUS DLL_EXPORT GDS_CLOSE_BLOB(STATUS * user_status, BLB * blob_handle)
  *
  **************************************/
 	BLB blob;
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -1498,9 +1507,18 @@ STATUS DLL_EXPORT GDS_CLOSE_BLOB(STATUS * user_status, BLB * blob_handle)
 	LOG_call(log_close_blob, *blob_handle);
 #endif
 
-	ERROR_INIT(env);
-	BLB_close(tdbb, blob);
-	*blob_handle = NULL;
+	try
+	{
+		tdbb->tdbb_status_vector = user_status;
+
+		BLB_close(tdbb, blob);
+		*blob_handle = NULL;
+	}
+	catch (...)
+	{
+		return error(user_status);
+	}
+
 
 	return return_success(tdbb);
 }
@@ -1565,7 +1583,6 @@ STATUS DLL_EXPORT GDS_COMPILE(STATUS * user_status,
  **************************************/
 	REQ request;
 	ATT attachment;
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -1582,17 +1599,25 @@ STATUS DLL_EXPORT GDS_COMPILE(STATUS * user_status,
 	LOG_call(log_compile, *db_handle, *req_handle, blr_length, blr);
 #endif
 
-	ERROR_INIT(env);
-	request = CMP_compile2(tdbb, reinterpret_cast < UCHAR * >(blr), FALSE);
-	request->req_attachment = attachment;
-	request->req_request = attachment->att_requests;
-	attachment->att_requests = request;
+	try
+	{
+		tdbb->tdbb_status_vector = user_status;
 
-	DEBUG;
-	*req_handle = request;
-#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-	LOG_call(log_handle_returned, *req_handle);
-#endif
+		request = CMP_compile2(tdbb, reinterpret_cast < UCHAR * >(blr), FALSE);
+		request->req_attachment = attachment;
+		request->req_request = attachment->att_requests;
+		attachment->att_requests = request;
+	
+		DEBUG;
+		*req_handle = request;
+	#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
+		LOG_call(log_handle_returned, *req_handle);
+	#endif
+	}
+	catch (...)
+	{
+		return error(user_status);
+	}
 
 	return return_success(tdbb);
 }
@@ -1617,7 +1642,6 @@ STATUS DLL_EXPORT GDS_CREATE_BLOB2(STATUS * user_status,
  **************************************/
 	TRA transaction;
 	BLB blob;
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -1634,15 +1658,24 @@ STATUS DLL_EXPORT GDS_CREATE_BLOB2(STATUS * user_status,
 			 bpb_length, bpb);
 #endif
 
-	ERROR_INIT(env);
-	transaction = find_transaction(tdbb, *tra_handle, gds_segstr_wrong_db);
-	blob = BLB_create2(tdbb, transaction, blob_id, bpb_length, bpb);
-	*blob_handle = blob;
+	try
+	{
+		tdbb->tdbb_status_vector = user_status;
 
-#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-	LOG_call(log_handle_returned, *blob_handle);
-	LOG_call(log_handle_returned, blob_id->bid_stuff.bid_blob);
-#endif
+		transaction = find_transaction(tdbb, *tra_handle, gds_segstr_wrong_db);
+		blob = BLB_create2(tdbb, transaction, blob_id, bpb_length, bpb);
+		*blob_handle = blob;
+	
+	#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
+		LOG_call(log_handle_returned, *blob_handle);
+		LOG_call(log_handle_returned, blob_id->bid_stuff.bid_blob);
+	#endif
+	}
+	catch (...)
+	{
+		return error(user_status);
+	}
+
 
 	return return_success(tdbb);
 }
@@ -1679,7 +1712,6 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 	ATT attachment;
 	STATUS temp_status[ISC_STATUS_LENGTH], *status;
 	DPB options;
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -1722,7 +1754,6 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 
 /* Initialize error handling */
 
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 	tdbb->tdbb_status_vector = status = user_status;
 	tdbb->tdbb_attachment = attachment = NULL;
 	tdbb->tdbb_request = NULL;
@@ -2035,7 +2066,6 @@ STATUS DLL_EXPORT GDS_DATABASE_INFO(STATUS * user_status,
  *	Provide information on database object.
  *
  **************************************/
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -2049,8 +2079,16 @@ STATUS DLL_EXPORT GDS_DATABASE_INFO(STATUS * user_status,
 	LOG_call(log_database_info2, *handle, item_length, items, buffer_length);
 #endif
 
-	ERROR_INIT(env);
-	INF_database_info(items, item_length, buffer, buffer_length);
+	try
+	{
+		tdbb->tdbb_status_vector = user_status;
+
+		INF_database_info(items, item_length, buffer, buffer_length);
+	}
+	catch (...)
+	{
+		return error(user_status);
+	}
 
 	return return_success(tdbb);
 }
@@ -2071,7 +2109,6 @@ STATUS DLL_EXPORT GDS_DDL(STATUS * user_status,
  **************************************/
 	ATT attachment;
 	TRA transaction;
-	JMP_BUF rollback_env, env;
 	struct tdbb thd_context;
 	STATUS temp_status[ISC_STATUS_LENGTH];
 
@@ -2087,7 +2124,6 @@ STATUS DLL_EXPORT GDS_DDL(STATUS * user_status,
 	LOG_call(log_ddl, *db_handle, *tra_handle, ddl_length, ddl);
 #endif
 
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 	tdbb->tdbb_status_vector = user_status;
 
 	try {
@@ -2120,18 +2156,14 @@ STATUS DLL_EXPORT GDS_DDL(STATUS * user_status,
 	if (transaction->tra_flags & TRA_perform_autocommit)
 	{
 		transaction->tra_flags &= ~TRA_perform_autocommit;
-		tdbb->tdbb_setjmp = (UCHAR *) rollback_env;
 
 		try {
 			TRA_commit(tdbb, transaction, TRUE);
-			tdbb->tdbb_setjmp = (UCHAR *) env;
 		}
 		catch (...)  {
-			tdbb->tdbb_setjmp = (UCHAR *) env;
 			tdbb->tdbb_status_vector = temp_status;
 			TRA_rollback(tdbb, transaction, TRUE);
 			tdbb->tdbb_status_vector = user_status;
-			tdbb->tdbb_setjmp = (UCHAR *) env;
 
 			return error(user_status);
 		}
@@ -2155,7 +2187,6 @@ STATUS DLL_EXPORT GDS_DETACH(STATUS * user_status, ATT * handle)
  **************************************/
 	DBB dbb;
 	ATT attachment, attach;
-	JMP_BUF env;
 	struct tdbb thd_context;
 #ifdef GOVERNOR
 	USHORT attachment_flags;
@@ -2212,7 +2243,6 @@ STATUS DLL_EXPORT GDS_DETACH(STATUS * user_status, ATT * handle)
 
 /* purge_attachment below can do an ERR_post */
 
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 	tdbb->tdbb_status_vector = user_status;
 
 	try {
@@ -2274,7 +2304,6 @@ STATUS DLL_EXPORT GDS_DROP_DATABASE(STATUS * user_status, ATT * handle)
 	HDR header;
 	SDW shadow;
 	BOOLEAN err;
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -2317,26 +2346,32 @@ STATUS DLL_EXPORT GDS_DROP_DATABASE(STATUS * user_status, ATT * handle)
 			 dbb->dbb_max_memory);
 #endif
 
-	ERROR_INIT(env);
-
-	if (!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner)))
-		ERR_post(gds_no_priv,
-				 gds_arg_string, "drop",
-				 gds_arg_string, "database",
-				 gds_arg_string, ERR_cstring(dbb->dbb_file->fil_string), 0);
-
-	if (attachment->att_flags & ATT_shutdown)
-		ERR_post(gds_shutdown, gds_arg_string,
-				 ERR_cstring(dbb->dbb_file->fil_string), 0);
-
-	if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD))
-		ERR_post(gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
-				 gds_arg_string, ERR_cstring(dbb->dbb_file->fil_string), 0);
-
-	JRD_SS_MUTEX_LOCK;
-	V4_JRD_MUTEX_LOCK(databases_mutex);
-	V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
-
+	tdbb->tdbb_status_vector = user_status;
+	try
+	{
+		if (!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner)))
+			ERR_post(gds_no_priv,
+					gds_arg_string, "drop",
+					gds_arg_string, "database",
+					gds_arg_string, ERR_cstring(dbb->dbb_file->fil_string), 0);
+	
+		if (attachment->att_flags & ATT_shutdown)
+			ERR_post(gds_shutdown, gds_arg_string,
+					ERR_cstring(dbb->dbb_file->fil_string), 0);
+	
+		if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD))
+			ERR_post(gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
+					gds_arg_string, ERR_cstring(dbb->dbb_file->fil_string), 0);
+	
+		JRD_SS_MUTEX_LOCK;
+		V4_JRD_MUTEX_LOCK(databases_mutex);
+		V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
+	}
+	catch(...)
+	{
+		return error(user_status);
+	}
+	
 	try {
 
 /* Check if same process has more attachments */
@@ -2364,10 +2399,6 @@ STATUS DLL_EXPORT GDS_DROP_DATABASE(STATUS * user_status, ATT * handle)
 
 	}	// try
 	catch (...) {
-		// TMN: It might be that this catch should be moved
-		// to the very end of this function. Plese verify its
-		// behaviour and remove this comment - the original code
-		// using setjmp is in Firebird1 (InterBase "Open" Edition)
 		V4_JRD_MUTEX_UNLOCK(databases_mutex);
 		V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 		JRD_SS_MUTEX_UNLOCK;
@@ -2417,6 +2448,11 @@ STATUS DLL_EXPORT GDS_DROP_DATABASE(STATUS * user_status, ATT * handle)
 	}
 
 	V4_JRD_MUTEX_UNLOCK(databases_mutex);
+	}	// try
+	catch (...) {
+		JRD_SS_MUTEX_UNLOCK;
+		return error(user_status);
+	}
 	JRD_SS_MUTEX_UNLOCK;
 
 	ALL_fini();
@@ -2430,11 +2466,6 @@ STATUS DLL_EXPORT GDS_DROP_DATABASE(STATUS * user_status, ATT * handle)
 
 	return return_success(tdbb);
 
-	}	// try
-	catch (...) {
-		JRD_SS_MUTEX_UNLOCK;
-		return error(user_status);
-	}
 }
 
 
@@ -2455,7 +2486,6 @@ STATUS DLL_EXPORT GDS_GET_SEGMENT(STATUS * user_status,
  **************************************/
 	BLB blob;
 	DBB dbb;
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -2469,21 +2499,29 @@ STATUS DLL_EXPORT GDS_GET_SEGMENT(STATUS * user_status,
 	LOG_call(log_get_segment2, *blob_handle, length, buffer_length);
 #endif
 
-	ERROR_INIT(env);
-	*length = BLB_get_segment(tdbb, blob, buffer, buffer_length);
-	tdbb->tdbb_status_vector[0] = gds_arg_gds;
-	tdbb->tdbb_status_vector[2] = gds_arg_end;
-	dbb = tdbb->tdbb_database;
+	try
+	{
+		tdbb->tdbb_status_vector = user_status;
 
-	if (blob->blb_flags & BLB_eof) {
-		JRD_restore_context();
-		--dbb->dbb_use_count;
-		return (user_status[1] = gds_segstr_eof);
+		*length = BLB_get_segment(tdbb, blob, buffer, buffer_length);
+		tdbb->tdbb_status_vector[0] = gds_arg_gds;
+		tdbb->tdbb_status_vector[2] = gds_arg_end;
+		dbb = tdbb->tdbb_database;
+	
+		if (blob->blb_flags & BLB_eof) {
+			JRD_restore_context();
+			--dbb->dbb_use_count;
+			return (user_status[1] = gds_segstr_eof);
+		}
+		else if (blob->blb_fragment_size) {
+			JRD_restore_context();
+			--dbb->dbb_use_count;
+			return (user_status[1] = gds_segment);
+		}
 	}
-	else if (blob->blb_fragment_size) {
-		JRD_restore_context();
-		--dbb->dbb_use_count;
-		return (user_status[1] = gds_segment);
+	catch (...)
+	{
+		return error(user_status);
 	}
 
 	return return_success(tdbb);
@@ -2512,7 +2550,6 @@ STATUS DLL_EXPORT GDS_GET_SLICE(STATUS * user_status,
  *
  **************************************/
 	TRA transaction;
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -2527,21 +2564,29 @@ STATUS DLL_EXPORT GDS_GET_SLICE(STATUS * user_status,
 			 sdl, param_length, param, slice_length);
 #endif
 
-	ERROR_INIT(env);
-	transaction = find_transaction(tdbb, *tra_handle, gds_segstr_wrong_db);
+	try
+	{
+		tdbb->tdbb_status_vector = user_status;
 
-	if (!array_id[0] && !array_id[1]) {
-		MOVE_CLEAR(slice, slice_length);
-		*return_length = 0;
-	}
-	else
-		*return_length = BLB_get_slice(tdbb,
+		transaction = find_transaction(tdbb, *tra_handle, gds_segstr_wrong_db);
+	
+		if (!array_id[0] && !array_id[1]) {
+			MOVE_CLEAR(slice, slice_length);
+			*return_length = 0;
+		}
+		else
+			*return_length = BLB_get_slice(tdbb,
 									   transaction,
 									   reinterpret_cast < BID > (array_id),
 									   sdl,
 									   param_length,
 									   reinterpret_cast < long *>(param),
 									   slice_length, slice);
+	}
+	catch (...)
+	{
+		return error(user_status);
+	}
 
 	return return_success(tdbb);
 }
@@ -2565,7 +2610,6 @@ STATUS DLL_EXPORT GDS_OPEN_BLOB2(STATUS * user_status,
  **************************************/
 	BLB blob;
 	TRA transaction;
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -2582,14 +2626,22 @@ STATUS DLL_EXPORT GDS_OPEN_BLOB2(STATUS * user_status,
 			 bpb_length, bpb);
 #endif
 
-	ERROR_INIT(env);
-	transaction = find_transaction(tdbb, *tra_handle, gds_segstr_wrong_db);
-	blob = BLB_open2(tdbb, transaction, blob_id, bpb_length, bpb);
-	*blob_handle = blob;
+	try
+	{
+		tdbb->tdbb_status_vector = user_status;
 
-#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-	LOG_call(log_handle_returned, *blob_handle);
-#endif
+		transaction = find_transaction(tdbb, *tra_handle, gds_segstr_wrong_db);
+		blob = BLB_open2(tdbb, transaction, blob_id, bpb_length, bpb);
+		*blob_handle = blob;
+	
+	#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
+		LOG_call(log_handle_returned, *blob_handle);
+	#endif
+	}
+	catch (...)
+	{
+		return error(user_status);
+	}
 
 	return return_success(tdbb);
 }
@@ -2648,7 +2700,6 @@ STATUS DLL_EXPORT GDS_PUT_SEGMENT(STATUS * user_status,
  *
  **************************************/
 	BLB blob;
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -2662,8 +2713,15 @@ STATUS DLL_EXPORT GDS_PUT_SEGMENT(STATUS * user_status,
 	LOG_call(log_put_segment, *blob_handle, buffer_length, buffer);
 #endif
 
-	ERROR_INIT(env);
-	BLB_put_segment(tdbb, blob, buffer, buffer_length);
+	tdbb->tdbb_status_vector = user_status;
+	try
+	{
+		BLB_put_segment(tdbb, blob, buffer, buffer_length);
+	}
+	catch (...)
+	{
+		return error(user_status);
+	}
 
 	return return_success(tdbb);
 }
@@ -2691,7 +2749,6 @@ STATUS DLL_EXPORT GDS_PUT_SLICE(STATUS * user_status,
  **************************************/
 
 	TRA transaction;
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -2706,14 +2763,21 @@ STATUS DLL_EXPORT GDS_PUT_SLICE(STATUS * user_status,
 			 sdl, param_length, param, slice_length, slice);
 #endif
 
-	ERROR_INIT(env);
-	transaction = find_transaction(tdbb, *tra_handle, gds_segstr_wrong_db);
-	BLB_put_slice(tdbb,
+	tdbb->tdbb_status_vector = user_status;
+	try
+	{
+		transaction = find_transaction(tdbb, *tra_handle, gds_segstr_wrong_db);
+		BLB_put_slice(tdbb,
 				  transaction,
 				  reinterpret_cast < BID > (array_id),
 				  sdl,
 				  param_length,
 				  reinterpret_cast < long *>(param), slice_length, slice);
+	}
+	catch (...)
+	{
+		return error(user_status);
+	}
 
 	return return_success(tdbb);
 }
@@ -2738,7 +2802,6 @@ STATUS DLL_EXPORT GDS_QUE_EVENTS(STATUS * user_status,
 	DBB dbb;
 	ATT attachment;
 	LCK lock;
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -2752,23 +2815,30 @@ STATUS DLL_EXPORT GDS_QUE_EVENTS(STATUS * user_status,
 	LOG_call(log_que_events, *handle, length, items);
 #endif
 
-	ERROR_INIT(env);
-	dbb = tdbb->tdbb_database;
-	lock = dbb->dbb_lock;
-	attachment = tdbb->tdbb_attachment;
-
-	if (!attachment->att_event_session &&
-		!(attachment->att_event_session = EVENT_create_session(user_status)))
+	tdbb->tdbb_status_vector = user_status;
+	try
+	{
+		dbb = tdbb->tdbb_database;
+		lock = dbb->dbb_lock;
+		attachment = tdbb->tdbb_attachment;
+	
+		if (!attachment->att_event_session &&
+			!(attachment->att_event_session = EVENT_create_session(user_status)))
+			return error(user_status);
+	
+		*id = EVENT_que(user_status,
+						attachment->att_event_session,
+						lock->lck_length,
+						(TEXT *) & lock->lck_key, length, items, ast, arg);
+	
+	#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
+		LOG_call(log_handle_returned, *id);
+	#endif
+	}
+	catch (...)
+	{
 		return error(user_status);
-
-	*id = EVENT_que(user_status,
-					attachment->att_event_session,
-					lock->lck_length,
-					(TEXT *) & lock->lck_key, length, items, ast, arg);
-
-#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-	LOG_call(log_handle_returned, *id);
-#endif
+	}
 
 	return return_success(tdbb);
 }
@@ -2796,7 +2866,6 @@ STATUS DLL_EXPORT GDS_RECEIVE(STATUS * user_status,
 	REQ request;
 	VEC vector;
 	USHORT lev;
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -2813,26 +2882,32 @@ STATUS DLL_EXPORT GDS_RECEIVE(STATUS * user_status,
 	LOG_call(log_receive2, *req_handle, msg_type, msg_length, level);
 #endif
 
-	ERROR_INIT(env);
-
-	if ( (lev = level) )
-		if (!(vector = request->req_sub_requests) ||
-			lev >= vector->count() ||
-			!(request = (REQ) (*vector)[lev]))
-				ERR_post(gds_req_sync, 0);
-
-#ifdef SCROLLABLE_CURSORS
-	if (direction)
-		EXE_seek(tdbb, request, direction, offset);
-#endif
-
-	EXE_receive(tdbb, request, msg_type, msg_length,
-				reinterpret_cast < UCHAR * >(msg));
-
-	check_autocommit(request, tdbb);
-
-	if (request->req_flags & req_warning) {
-		request->req_flags &= ~req_warning;
+	tdbb->tdbb_status_vector = user_status;
+	try
+	{
+		if ( (lev = level) )
+			if (!(vector = request->req_sub_requests) ||
+				lev >= vector->count() ||
+				!(request = (REQ) (*vector)[lev]))
+					ERR_post(gds_req_sync, 0);
+	
+	#ifdef SCROLLABLE_CURSORS
+		if (direction)
+			EXE_seek(tdbb, request, direction, offset);
+	#endif
+	
+		EXE_receive(tdbb, request, msg_type, msg_length,
+					reinterpret_cast < UCHAR * >(msg));
+	
+		check_autocommit(request, tdbb);
+	
+		if (request->req_flags & req_warning) {
+			request->req_flags &= ~req_warning;
+			return error(user_status);
+		}
+	}
+	catch (...)
+	{
 		return error(user_status);
 	}
 
@@ -2856,7 +2931,6 @@ STATUS DLL_EXPORT GDS_RECONNECT(STATUS * user_status,
  **************************************/
 	TRA transaction;
 	ATT attachment;
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -2873,13 +2947,20 @@ STATUS DLL_EXPORT GDS_RECONNECT(STATUS * user_status,
 	LOG_call(log_reconnect, *db_handle, *tra_handle, length, id);
 #endif
 
-	ERROR_INIT(env);
-	transaction = TRA_reconnect(tdbb, id, length);
-	*tra_handle = transaction;
-
-#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-	LOG_call(log_handle_returned, *tra_handle);
-#endif
+	tdbb->tdbb_status_vector = user_status;
+	try
+	{
+		transaction = TRA_reconnect(tdbb, id, length);
+		*tra_handle = transaction;
+	
+	#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
+		LOG_call(log_handle_returned, *tra_handle);
+	#endif
+	}
+	catch (...)
+	{
+		return error(user_status);
+	}
 
 	return return_success(tdbb);
 }
@@ -2899,7 +2980,6 @@ STATUS DLL_EXPORT GDS_RELEASE_REQUEST(STATUS * user_status, REQ * req_handle)
  **************************************/
 	REQ request;
 	ATT attachment;
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -2917,9 +2997,16 @@ STATUS DLL_EXPORT GDS_RELEASE_REQUEST(STATUS * user_status, REQ * req_handle)
 	LOG_call(log_release_request, *req_handle);
 #endif
 
-	ERROR_INIT(env);
-	CMP_release(tdbb, request);
-	*req_handle = NULL;
+	tdbb->tdbb_status_vector = user_status;
+	try
+	{
+		CMP_release(tdbb, request);
+		*req_handle = NULL;
+	}
+	catch (...)
+	{
+		return error(user_status);
+	}
 
 	return return_success(tdbb);
 }
@@ -2945,7 +3032,6 @@ STATUS DLL_EXPORT GDS_REQUEST_INFO(STATUS * user_status,
 	USHORT lev;
 	REQ request;
 	VEC vector;
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -2963,15 +3049,21 @@ STATUS DLL_EXPORT GDS_REQUEST_INFO(STATUS * user_status,
 			 buffer_length);
 #endif
 
-	ERROR_INIT(env);
+	tdbb->tdbb_status_vector = user_status;
+	try
+	{
+		if ( (lev = level) )
+			if (!(vector = request->req_sub_requests) ||
+				lev >= vector->count() ||
+				!(request = (REQ) (*vector)[lev]))
+					ERR_post(gds_req_sync, 0);
 
-	if ( (lev = level) )
-		if (!(vector = request->req_sub_requests) ||
-			lev >= vector->count() ||
-			!(request = (REQ) (*vector)[lev]))
-				ERR_post(gds_req_sync, 0);
-
-	INF_request_info(request, items, item_length, buffer, buffer_length);
+		INF_request_info(request, items, item_length, buffer, buffer_length);
+	}
+	catch (...)
+	{
+		return error(user_status);
+	}
 
 	return return_success(tdbb);
 }
@@ -3066,7 +3158,6 @@ STATUS DLL_EXPORT GDS_SEEK_BLOB(STATUS * user_status,
  *
  **************************************/
 	BLB blob;
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -3080,8 +3171,15 @@ STATUS DLL_EXPORT GDS_SEEK_BLOB(STATUS * user_status,
 	LOG_call(log_blob_seek, *blob_handle, mode, offset);
 #endif
 
-	ERROR_INIT(env);
-	*result = BLB_lseek(blob, mode, offset);
+	tdbb->tdbb_status_vector = user_status;
+	try
+	{
+		*result = BLB_lseek(blob, mode, offset);
+	}
+	catch (...)
+	{
+		return error(user_status);
+	}
 
 	return return_success(tdbb);
 }
@@ -3105,7 +3203,6 @@ STATUS DLL_EXPORT GDS_SEND(STATUS * user_status,
 	REQ request;
 	VEC vector;
 	USHORT lev;
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -3122,21 +3219,27 @@ STATUS DLL_EXPORT GDS_SEND(STATUS * user_status,
 	LOG_call(log_send, *req_handle, msg_type, msg_length, msg, level);
 #endif
 
-	ERROR_INIT(env);
-
-	if ( (lev = level) )
-		if (!(vector = request->req_sub_requests) ||
-			lev >= vector->count() ||
-			!(request = (REQ) (*vector)[lev]))
-				ERR_post(gds_req_sync, 0);
-
-	EXE_send(tdbb, request, msg_type, msg_length,
-			 reinterpret_cast < UCHAR * >(msg));
-
-	check_autocommit(request, tdbb);
-
-	if (request->req_flags & req_warning) {
-		request->req_flags &= ~req_warning;
+	tdbb->tdbb_status_vector = user_status;
+	try
+	{
+		if ( (lev = level) )
+			if (!(vector = request->req_sub_requests) ||
+				lev >= vector->count() ||
+				!(request = (REQ) (*vector)[lev]))
+					ERR_post(gds_req_sync, 0);
+	
+		EXE_send(tdbb, request, msg_type, msg_length,
+				reinterpret_cast < UCHAR * >(msg));
+	
+		check_autocommit(request, tdbb);
+	
+		if (request->req_flags & req_warning) {
+			request->req_flags &= ~req_warning;
+			return error(user_status);
+		}
+	}
+	catch (...)
+	{
 		return error(user_status);
 	}
 
@@ -3160,7 +3263,6 @@ STATUS DLL_EXPORT GDS_SERVICE_ATTACH(STATUS * user_status,
  *	Connect to an Interbase service.
  *
  **************************************/
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -3170,10 +3272,17 @@ STATUS DLL_EXPORT GDS_SERVICE_ATTACH(STATUS * user_status,
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	ERROR_INIT(env);
-	tdbb->tdbb_database = NULL;
-
-	*svc_handle = SVC_attach(service_length, service_name, spb_length, spb);
+	tdbb->tdbb_status_vector = user_status;
+	try
+	{
+		tdbb->tdbb_database = NULL;
+	
+		*svc_handle = SVC_attach(service_length, service_name, spb_length, spb);
+	}
+	catch (...)
+	{
+		return error(user_status);
+	}
 
 	return return_success(tdbb);
 }
@@ -3192,7 +3301,6 @@ STATUS DLL_EXPORT GDS_SERVICE_DETACH(STATUS * user_status, SVC * svc_handle)
  *
  **************************************/
 	SVC service;
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -3202,12 +3310,19 @@ STATUS DLL_EXPORT GDS_SERVICE_DETACH(STATUS * user_status, SVC * svc_handle)
 	service = *svc_handle;
 	CHECK_HANDLE(service, type_svc, gds_bad_svc_handle);
 
-	ERROR_INIT(env);
-	tdbb->tdbb_database = NULL;
-
-	SVC_detach(service);
-
-	*svc_handle = NULL;
+	tdbb->tdbb_status_vector = user_status;
+	try
+	{
+		tdbb->tdbb_database = NULL;
+	
+		SVC_detach(service);
+	
+		*svc_handle = NULL;
+	}
+	catch (...)
+	{
+		return error(user_status);
+	}
 
 	return return_success(tdbb);
 }
@@ -3240,7 +3355,6 @@ STATUS DLL_EXPORT GDS_SERVICE_QUERY(STATUS*	user_status,
  *
  **************************************/
 	SVC service;
-	JMP_BUF env;
 	struct tdbb thd_context;
 	int len, warning;
 
@@ -3251,34 +3365,41 @@ STATUS DLL_EXPORT GDS_SERVICE_QUERY(STATUS*	user_status,
 	service = *svc_handle;
 	CHECK_HANDLE(service, type_svc, gds_bad_svc_handle);
 
-	ERROR_INIT(env);
+	tdbb->tdbb_status_vector = user_status;
 	tdbb->tdbb_database = NULL;
 
-	if (service->svc_spb_version == isc_spb_version1)
-		SVC_query(service, send_item_length, send_items, recv_item_length,
-				  recv_items, buffer_length, buffer);
-	else {
-		/* For SVC_query2, we are going to completly dismantle user_status (since at this point it is
-		 * meaningless anyway).  The status vector returned by this function can hold information about
-		 * the call to query the service manager and/or a service thread that may have been running.
-		 */
-
-		SVC_query2(service, tdbb, send_item_length, send_items,
-				   recv_item_length, recv_items, buffer_length, buffer);
-
-		/* if there is a status vector from a service thread, copy it into the thread status */
-		PARSE_STATUS(service->svc_status, len, warning);
-		if (len) {
-			MOVE_FASTER(service->svc_status, tdbb->tdbb_status_vector,
-						sizeof(STATUS) * len);
-
-			/* Empty out the service status vector */
-			memset(service->svc_status, 0,
-				   ISC_STATUS_LENGTH * sizeof(STATUS));
+	try
+	{
+		if (service->svc_spb_version == isc_spb_version1)
+			SVC_query(service, send_item_length, send_items, recv_item_length,
+					recv_items, buffer_length, buffer);
+		else {
+			/* For SVC_query2, we are going to completly dismantle user_status (since at this point it is
+			* meaningless anyway).  The status vector returned by this function can hold information about
+			* the call to query the service manager and/or a service thread that may have been running.
+			*/
+	
+			SVC_query2(service, tdbb, send_item_length, send_items,
+					recv_item_length, recv_items, buffer_length, buffer);
+	
+			/* if there is a status vector from a service thread, copy it into the thread status */
+			PARSE_STATUS(service->svc_status, len, warning);
+			if (len) {
+				MOVE_FASTER(service->svc_status, tdbb->tdbb_status_vector,
+							sizeof(STATUS) * len);
+	
+				/* Empty out the service status vector */
+				memset(service->svc_status, 0,
+					ISC_STATUS_LENGTH * sizeof(STATUS));
+			}
+	
+			if (user_status[1])
+				return error(user_status);
 		}
-
-		if (user_status[1])
-			return error(user_status);
+	}
+	catch (...)
+	{
+		return error(user_status);
 	}
 	return return_success(tdbb);
 }
@@ -3306,7 +3427,6 @@ STATUS DLL_EXPORT GDS_SERVICE_START(STATUS*	user_status,
  * 	a later date.
  **************************************/
 	SVC service;
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -3316,22 +3436,29 @@ STATUS DLL_EXPORT GDS_SERVICE_START(STATUS*	user_status,
 	service = *svc_handle;
 	CHECK_HANDLE(service, type_svc, isc_bad_svc_handle);
 
-	ERROR_INIT(env);
+	tdbb->tdbb_status_vector = user_status;
 	tdbb->tdbb_database = NULL;
 
-	SVC_start(service, spb_length, spb);
-
-	if (service->svc_status[1]) {
-		STATUS* svc_status = service->svc_status;
-		STATUS* tdbb_status = tdbb->tdbb_status_vector;
-
-		while (*svc_status) {
-			*tdbb_status++ = *svc_status++;
+	try
+	{
+		SVC_start(service, spb_length, spb);
+	
+		if (service->svc_status[1]) {
+			STATUS* svc_status = service->svc_status;
+			STATUS* tdbb_status = tdbb->tdbb_status_vector;
+	
+			while (*svc_status) {
+				*tdbb_status++ = *svc_status++;
+			}
+			*tdbb_status = isc_arg_end;
 		}
-		*tdbb_status = isc_arg_end;
+	
+		if (user_status[1]) {
+			return error(user_status);
+		}
 	}
-
-	if (user_status[1]) {
+	catch (...)
+	{
 		return error(user_status);
 	}
 
@@ -3356,7 +3483,6 @@ STATUS DLL_EXPORT GDS_START_AND_SEND(STATUS * user_status,
  *	Get a record from the host program.
  *
  **************************************/
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -3374,21 +3500,28 @@ STATUS DLL_EXPORT GDS_START_AND_SEND(STATUS * user_status,
 			 msg_length, msg, level);
 #endif
 
-	ERROR_INIT(env);
-	TRA transaction = find_transaction(tdbb, *tra_handle, gds_req_wrong_db);
-
-	if (level)
-		request = CMP_clone_request(tdbb, request, level, FALSE);
-
-	EXE_unwind(tdbb, request);
-	EXE_start(tdbb, request, transaction);
-	EXE_send(tdbb, request, msg_type, msg_length,
-			 reinterpret_cast < UCHAR * >(msg));
-
-	check_autocommit(request, tdbb);
-
-	if (request->req_flags & req_warning) {
-		request->req_flags &= ~req_warning;
+	tdbb->tdbb_status_vector = user_status;
+	try
+	{
+		TRA transaction = find_transaction(tdbb, *tra_handle, gds_req_wrong_db);
+	
+		if (level)
+			request = CMP_clone_request(tdbb, request, level, FALSE);
+	
+		EXE_unwind(tdbb, request);
+		EXE_start(tdbb, request, transaction);
+		EXE_send(tdbb, request, msg_type, msg_length,
+				reinterpret_cast < UCHAR * >(msg));
+	
+		check_autocommit(request, tdbb);
+	
+		if (request->req_flags & req_warning) {
+			request->req_flags &= ~req_warning;
+			return error(user_status);
+		}
+	}
+	catch (...)
+	{
 		return error(user_status);
 	}
 
@@ -3412,7 +3545,6 @@ STATUS DLL_EXPORT GDS_START(STATUS * user_status,
  **************************************/
 	TRA transaction;
 	REQ request;
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -3429,22 +3561,28 @@ STATUS DLL_EXPORT GDS_START(STATUS * user_status,
 	LOG_call(log_start, *req_handle, *tra_handle, level);
 #endif
 
-	ERROR_INIT(env);
-	transaction = find_transaction(tdbb, *tra_handle, gds_req_wrong_db);
-
-	if (level)
-		request = CMP_clone_request(tdbb, request, level, FALSE);
-
-	EXE_unwind(tdbb, request);
-	EXE_start(tdbb, request, transaction);
-
-	check_autocommit(request, tdbb);
-
-	if (request->req_flags & req_warning) {
-		request->req_flags &= ~req_warning;
+	tdbb->tdbb_status_vector = user_status;
+	try
+	{
+		transaction = find_transaction(tdbb, *tra_handle, gds_req_wrong_db);
+	
+		if (level)
+			request = CMP_clone_request(tdbb, request, level, FALSE);
+	
+		EXE_unwind(tdbb, request);
+		EXE_start(tdbb, request, transaction);
+	
+		check_autocommit(request, tdbb);
+	
+		if (request->req_flags & req_warning) {
+			request->req_flags &= ~req_warning;
+			return error(user_status);
+		}
+	}
+	catch (...)
+	{
 		return error(user_status);
 	}
-
 
 	return return_success(tdbb);
 }
@@ -3468,7 +3606,6 @@ STATUS DLL_EXPORT GDS_START_MULTIPLE(STATUS * user_status,
 	STATUS temp_status[ISC_STATUS_LENGTH];
 	TEB *v, *end;
 	ATT attachment;
-	JMP_BUF env;
 	struct tdbb thd_context;
 	DBB dbb;
 
@@ -3502,7 +3639,6 @@ STATUS DLL_EXPORT GDS_START_MULTIPLE(STATUS * user_status,
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 		LOG_call(log_start_multiple, *tra_handle, count, vector);
 #endif
-		tdbb->tdbb_setjmp = (UCHAR *) env;
 		tdbb->tdbb_status_vector = user_status;
 		transaction =
 			TRA_start(tdbb, v->teb_tpb_length,
@@ -3592,7 +3728,6 @@ STATUS DLL_EXPORT GDS_TRANSACT_REQUEST(STATUS*	user_status,
 	FMT format;
 	JrdMemoryPool *old_pool, *new_pool;
 	USHORT i, len;
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -3611,7 +3746,6 @@ STATUS DLL_EXPORT GDS_TRANSACT_REQUEST(STATUS*	user_status,
 	new_pool = old_pool = NULL;
 	request = NULL;
 
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 	tdbb->tdbb_status_vector = user_status;
 
 	try {
@@ -3748,7 +3882,6 @@ STATUS DLL_EXPORT GDS_TRANSACTION_INFO(STATUS * user_status,
  *
  **************************************/
 	TRA transaction;
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -3766,10 +3899,16 @@ STATUS DLL_EXPORT GDS_TRANSACTION_INFO(STATUS * user_status,
 			 buffer_length);
 #endif
 
-	ERROR_INIT(env);
-
-	INF_transaction_info(transaction, items, item_length, buffer,
+	tdbb->tdbb_status_vector = user_status;
+	try
+	{
+		INF_transaction_info(transaction, items, item_length, buffer,
 						 buffer_length);
+	}
+	catch (...)
+	{
+		return error(user_status);
+	}
 
 	return return_success(tdbb);
 }
@@ -3794,7 +3933,6 @@ STATUS DLL_EXPORT GDS_UNWIND(STATUS * user_status,
 	REQ request;
 	VEC vector;
 	USHORT lev;
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -3835,7 +3973,6 @@ STATUS DLL_EXPORT GDS_UNWIND(STATUS * user_status,
 
 /* Set up error handling to restore old state */
 
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 	tdbb->tdbb_status_vector = user_status;
 	tdbb->tdbb_attachment = attachment;
 
@@ -4565,7 +4702,6 @@ static STATUS commit(
 	TRA transaction, next;
 	STATUS *ptr;
 	DBB dbb;
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
@@ -4595,7 +4731,6 @@ static STATUS commit(
 	while ( (transaction = next) ) {
 		next = transaction->tra_sibling;
 		check_database(tdbb, transaction->tra_attachment, user_status);
-		tdbb->tdbb_setjmp = (UCHAR *) env;
 		tdbb->tdbb_status_vector = ptr;
 		TRA_commit(tdbb, transaction, retaining_flag);
 		dbb = tdbb->tdbb_database;
@@ -5310,7 +5445,6 @@ static DBB init(TDBB	tdbb,
 	VEC vector;
 	MUTX_T temp_mutx[DBB_MUTX_max];
 	WLCK_T temp_wlck[DBB_WLCK_max];
-	JMP_BUF env;
 
 	SET_TDBB(tdbb);
 
@@ -5359,7 +5493,7 @@ static DBB init(TDBB	tdbb,
 		}
 	}
 
-/* Clean up temporary DBB and initialize a SETJMP for error reporting */
+/* Clean up temporary DBB */
 
 	/* MOVE_CLEAR(&temp, (SLONG) sizeof(struct dbb)); */
 	THD_MUTEX_INIT_N(temp_mutx, DBB_MUTX_max);
@@ -5368,7 +5502,6 @@ static DBB init(TDBB	tdbb,
 /* set up the temporary database block with fields that are
    required for doing the ALL_init() */
 
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 	tdbb->tdbb_status_vector = user_status;
 	tdbb->tdbb_database = 0;
 
@@ -5490,7 +5623,6 @@ static STATUS prepare(TDBB		tdbb,
  *
  **************************************/
 	DBB dbb;
-	JMP_BUF env;
 
 	SET_TDBB(tdbb);
 
@@ -5498,7 +5630,6 @@ static STATUS prepare(TDBB		tdbb,
 
 	for (; transaction; transaction = transaction->tra_sibling) {
 		check_database(tdbb, transaction->tra_attachment, status_vector);
-		tdbb->tdbb_setjmp = (UCHAR *) env;
 		tdbb->tdbb_status_vector = status_vector;
 		TRA_prepare(tdbb, transaction, length, msg);
 		dbb = tdbb->tdbb_database;
@@ -5708,7 +5839,6 @@ static BOOLEAN rollback(TDBB	tdbb,
 	DBB dbb;
 	TRA transaction;
 	STATUS local_status[ISC_STATUS_LENGTH];
-	JMP_BUF env;
 
 	SET_TDBB(tdbb);
 
@@ -5718,7 +5848,6 @@ static BOOLEAN rollback(TDBB	tdbb,
 		check_database(tdbb, transaction->tra_attachment, status_vector);
 
 		try {
-		tdbb->tdbb_setjmp = (UCHAR *) env;
 		tdbb->tdbb_status_vector = status_vector;
 		TRA_rollback(tdbb, transaction, retaining_flag);
 		dbb = tdbb->tdbb_database;
@@ -6153,7 +6282,6 @@ ULONG JRD_shutdown_all()
 	STATUS user_status[ISC_STATUS_LENGTH];
 	ATT att, att_next;
 	DBB dbb, dbb_next;
-	JMP_BUF env;
 	struct tdbb thd_context;
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
@@ -6181,7 +6309,6 @@ ULONG JRD_shutdown_all()
 
 				/* purge_attachment below can do an ERR_post */
 
-				tdbb->tdbb_setjmp = (UCHAR *) env;
 				tdbb->tdbb_status_vector = user_status;
 
 				try {

@@ -204,13 +204,13 @@ void DYN_define_cache( GBL gbl, UCHAR ** ptr)
 	catch (...) {
 		if (id == drq_s_cache)
 		{
-			DYN_rundown_request(0, request, drq_s_cache);
+			DYN_rundown_request(request, drq_s_cache);
 			DYN_error_punt(TRUE, 150, NULL, NULL, NULL, NULL, NULL);
 			/* msg 150: STORE RDB$FILES failed */
 		}
 		else
 		{
-			DYN_rundown_request(0, request, drq_l_cache);
+			DYN_rundown_request(request, drq_l_cache);
 			DYN_error_punt(TRUE, 156, NULL, NULL, NULL, NULL, NULL);
 			/* msg 156: Shared cache lookup failed */
 		}
@@ -342,7 +342,7 @@ void DYN_define_constraint(GBL		gbl,
 			default:			number = 125;					break;
 		}
 
-		DYN_rundown_request(0, request, local_id);
+		DYN_rundown_request(request, local_id);
 		
 		DYN_error_punt(TRUE,
 						number,
@@ -589,7 +589,7 @@ void DYN_define_constraint(GBL		gbl,
 			default:			number = 125;					break;
 		}
 
-		DYN_rundown_request(0, request, local_id);
+		DYN_rundown_request(request, local_id);
 		
 		DYN_error_punt(TRUE,
 						number,
@@ -683,7 +683,7 @@ void DYN_define_dimension(GBL		gbl,
 	}
 	catch (std::exception&) {
 		if (b_ending_store) {
-			DYN_rundown_request(0, request, drq_s_dims);
+			DYN_rundown_request(request, drq_s_dims);
 			DYN_error_punt(TRUE, 3, NULL, NULL, NULL, NULL, NULL);
 			/* msg 3: "STORE RDB$FIELD_DIMENSIONS failed" */
 		}
@@ -756,7 +756,7 @@ void DYN_define_exception( GBL gbl, UCHAR ** ptr)
 	}
 	catch (std::exception&) {
 		if (b_ending_store) {
-			DYN_rundown_request(0, request, drq_s_trg_msgs);
+			DYN_rundown_request(request, drq_s_trg_msgs);
 			DYN_error_punt(TRUE, 142, NULL, NULL, NULL, NULL, NULL);
 			/* msg 142: "DEFINE EXCEPTION failed" */
 		}
@@ -865,12 +865,12 @@ void DYN_define_file(GBL		gbl,
 	catch (...) {
 		if (id == drq_l_files)
 		{
-			DYN_rundown_request(0, request, drq_l_files);
+			DYN_rundown_request(request, drq_l_files);
 			DYN_error_punt(FALSE, 166, NULL, NULL, NULL, NULL, NULL);
 		}
 		else
 		{
-			DYN_rundown_request(0, request, drq_s_files);
+			DYN_rundown_request(request, drq_s_files);
 			DYN_error_punt(TRUE, msg, NULL, NULL, NULL, NULL, NULL);
 		}
 	}
@@ -960,7 +960,7 @@ void DYN_define_filter( GBL gbl, UCHAR ** ptr)
 	}
 	catch (std::exception&) {
 		if (b_ending_store) {
-			DYN_rundown_request(0, request, drq_s_filters);
+			DYN_rundown_request(request, drq_s_filters);
 			DYN_error_punt(TRUE, 7, NULL, NULL, NULL, NULL, NULL);
 			/* msg 7: "DEFINE BLOB FILTER failed" */
 		}
@@ -1057,7 +1057,7 @@ void DYN_define_function( GBL gbl, UCHAR ** ptr)
 	}
 	catch (std::exception&) {
 		if (b_ending_store) {
-			DYN_rundown_request(0, request, drq_s_funcs);
+			DYN_rundown_request(request, drq_s_funcs);
 			DYN_error_punt(TRUE, 10, NULL, NULL, NULL, NULL, NULL);
 			/* msg 10: "DEFINE FUNCTION failed" */
 		}
@@ -1183,7 +1183,7 @@ void DYN_define_function_arg(GBL gbl, UCHAR** ptr, TEXT* function_name)
 	}
 	catch (...) {
 		if (request) {
-			DYN_rundown_request(0, request, drq_s_func_args);
+			DYN_rundown_request(request, drq_s_func_args);
 		}
 		DYN_error_punt(TRUE, 12, NULL, NULL, NULL, NULL, NULL);
 		/* msg 12: "DEFINE FUNCTION ARGUMENT failed" */
@@ -1229,7 +1229,7 @@ void DYN_define_generator( GBL gbl, UCHAR ** ptr)
 	}
 	catch (std::exception&) {
 		if (b_ending_store) {
-			DYN_rundown_request(0, request, drq_s_gens);
+			DYN_rundown_request(request, drq_s_gens);
 			DYN_error_punt(TRUE, 8, NULL, NULL, NULL, NULL, NULL);
 			/* msg 8: "DEFINE GENERATOR failed" */
 		}
@@ -1341,7 +1341,7 @@ void DYN_define_role( GBL gbl, UCHAR ** ptr)
 	}
 	catch (...) {
 		if (request) {
-			DYN_rundown_request(0, request, drq_role_gens);
+			DYN_rundown_request(request, drq_role_gens);
 		}
 		DYN_error_punt(TRUE, 8, NULL, NULL, NULL, NULL, NULL);
 		/* msg 8: "DEFINE ROLE failed" */
@@ -1620,7 +1620,7 @@ void DYN_define_global_field(GBL		gbl,
 	}
 	catch (std::exception&) {
 		if (b_ending_store) {
-			DYN_rundown_request(0, request, drq_s_gfields);
+			DYN_rundown_request(request, drq_s_gfields);
 			DYN_error_punt(TRUE, 13, NULL, NULL, NULL, NULL, NULL);
 			/* msg 13: "STORE RDB$FIELDS failed" */
 		}
@@ -2151,17 +2151,17 @@ void DYN_define_index(GBL		gbl,
 	}	// try
 	catch (...) {
 		if (id == drq_s_indices) {
-			DYN_rundown_request(0, request, id);
+			DYN_rundown_request(request, id);
 			DYN_error_punt(TRUE, 21, NULL, NULL, NULL, NULL, NULL);
 			/* msg 21: "STORE RDB$INDICES failed" */
 		}
 		else if (id == drq_s_idx_segs) {
-			DYN_rundown_request(0, request, id);
+			DYN_rundown_request(request, id);
 			DYN_error_punt(TRUE, 15, NULL, NULL, NULL, NULL, NULL);
 			/* msg 15: "STORE RDB$INDICES failed" */
 		}
 
-		DYN_rundown_request(0, request, -1);
+		DYN_rundown_request(request, -1);
 		if (id == drq_l_lfield)
 			DYN_error_punt(TRUE, 15, NULL, NULL, NULL, NULL, NULL);
 		/* msg 15: "STORE RDB$INDICES failed" */
@@ -2511,12 +2511,12 @@ void DYN_define_local_field(GBL		gbl,
 	}	// try
 	catch (...) {
 		if (id == drq_s_lfields) {
-			DYN_rundown_request(0, request, id);
+			DYN_rundown_request(request, id);
 			DYN_error_punt(TRUE, 23, NULL, NULL, NULL, NULL, NULL);
 			/* msg 23: "STORE RDB$RELATION_FIELDS failed" */
 		}
 		else {
-			DYN_rundown_request(0, request, id);
+			DYN_rundown_request(request, id);
 			DYN_error_punt(TRUE, 22, NULL, NULL, NULL, NULL, NULL);
 			/* msg 22: "STORE RDB$FIELDS failed" */
 		}
@@ -2647,12 +2647,12 @@ void DYN_define_log_file(
 	}
 	catch (...) {
 		if (id == drq_s_log_files) {
-			DYN_rundown_request(0, request, drq_s_log_files);
+			DYN_rundown_request(request, drq_s_log_files);
 			DYN_error_punt(TRUE, 154, NULL, NULL, NULL, NULL, NULL);
 			/* msg 154: STORE RDB$LOG_FILES failed */
 		}
 		else {
-			DYN_rundown_request(0, request, drq_l_log_files);
+			DYN_rundown_request(request, drq_l_log_files);
 			DYN_error_punt(TRUE, 155, NULL, NULL, NULL, NULL, NULL);
 			/* msg 155: Write ahead log lookup failed */
 		}
@@ -2875,16 +2875,16 @@ void DYN_define_parameter( GBL gbl, UCHAR ** ptr, TEXT * procedure_name)
 	}
 	catch (...) {
 		if (id == drq_s_prms) {
-			DYN_rundown_request(0, request, drq_s_prms);
+			DYN_rundown_request(request, drq_s_prms);
 			DYN_error_punt(TRUE, 136, NULL, NULL, NULL, NULL, NULL);
 			/* msg 163: "STORE RDB$PROCEDURE_PARAMETERS failed" */
 		}
 		else if (id == drq_s_prm_src) {
-			DYN_rundown_request(0, request, drq_s_prm_src);
+			DYN_rundown_request(request, drq_s_prm_src);
 			DYN_error_punt(TRUE, 136, NULL, NULL, NULL, NULL, NULL);
 			/* msg 136: "STORE RDB$PROCEDURE_PARAMETERS failed" */
 		}
-		DYN_rundown_request(0, request, -1);
+		DYN_rundown_request(request, -1);
 
 		/* Control should never reach this point,
 		   because id should always have one of the values tested above.  */
@@ -3033,17 +3033,17 @@ void DYN_define_procedure( GBL gbl, UCHAR ** ptr)
 	}
 	catch (...) {
 		if (id == drq_s_prcs) {
-			DYN_rundown_request(0, request, id);
+			DYN_rundown_request(request, id);
 			DYN_error_punt(TRUE, 134, NULL, NULL, NULL, NULL, NULL);
 			/* msg 134: "STORE RDB$PROCEDURES failed" */
 		}
 		else if (id == drq_s_prc_usr_prvs) {
-			DYN_rundown_request(0, request, id);
+			DYN_rundown_request(request, id);
 			DYN_error_punt(TRUE, 25, NULL, NULL, NULL, NULL, NULL);
 			/* msg 25: "STORE RDB$USER_PRIVILEGES failed defining a relation" */
 		}
 
-		DYN_rundown_request(0, request, -1);
+		DYN_rundown_request(request, -1);
 		if (id == drq_l_prc_name) {
 			DYN_error_punt(TRUE, 134, NULL, NULL, NULL, NULL, NULL);
 			/* msg 134: "STORE RDB$PROCEDURES failed" */
@@ -3256,17 +3256,17 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
 	}
 	catch (...) {
 		if (id == drq_s_rels) {
-			DYN_rundown_request(0, request, id);
+			DYN_rundown_request(request, id);
 			DYN_error_punt(TRUE, 24, NULL, NULL, NULL, NULL, NULL);
 			/* msg 24: "STORE RDB$RELATIONS failed" */
 		}
 		else if (id == drq_s_usr_prvs) {
-			DYN_rundown_request(0, request, id);
+			DYN_rundown_request(request, id);
 			DYN_error_punt(TRUE, 25, NULL, NULL, NULL, NULL, NULL);
 			/* msg 25: "STORE RDB$USER_PRIVILEGES failed defining a relation" */
 		}
 
-		DYN_rundown_request(0, request, -1);
+		DYN_rundown_request(request, -1);
 		if (id == drq_l_rel_name)
 			DYN_error_punt(TRUE, 24, NULL, NULL, NULL, NULL, NULL);
 		/* msg 24: "STORE RDB$RELATIONS failed" */
@@ -3348,7 +3348,7 @@ void DYN_define_security_class( GBL gbl, UCHAR ** ptr)
 	}
 	catch (std::exception&) {
 		if (b_ending_store) {
-			DYN_rundown_request(0, request, drq_s_classes);
+			DYN_rundown_request(request, drq_s_classes);
 			DYN_error_punt(TRUE, 27, NULL, NULL, NULL, NULL, NULL);
 			/* msg 27: "STORE RDB$RELATIONS failed" */
 		}
@@ -3639,12 +3639,12 @@ void DYN_define_sql_field(GBL		gbl,
 	}
 	catch (...) {
 		if (id == drq_s_sql_lfld) {
-			DYN_rundown_request(0, request, id);
+			DYN_rundown_request(request, id);
 			DYN_error_punt(TRUE, 29, NULL, NULL, NULL, NULL, NULL);
 			/* msg 29: "STORE RDB$RELATION_FIELDS failed" */
 		}
 		else {
-			DYN_rundown_request(0, request, id);
+			DYN_rundown_request(request, id);
 			DYN_error_punt(TRUE, 28, NULL, NULL, NULL, NULL, NULL);
 			/* msg 28: "STORE RDB$FIELDS failed" */
 		}
@@ -3691,7 +3691,7 @@ void DYN_define_shadow( GBL gbl, UCHAR ** ptr)
 		}
 	}
 	catch (...) {
-		DYN_rundown_request(0, request, drq_l_shadow);
+		DYN_rundown_request(request, drq_l_shadow);
 		DYN_error_punt(TRUE, 164, NULL, NULL, NULL, NULL, NULL);
 		/* msg 164: "Shadow lookup failed" */
 	}
@@ -3884,7 +3884,7 @@ void DYN_define_trigger(GBL		gbl,
 	}
 	catch (std::exception&) {
 		if (b_ending_store) {
-			DYN_rundown_request(0, request, drq_s_triggers);
+			DYN_rundown_request(request, drq_s_triggers);
 			DYN_error_punt(TRUE, 31, NULL, NULL, NULL, NULL, NULL);
 			/* msg 31: "DEFINE TRIGGER failed" */
 		}
@@ -3966,7 +3966,7 @@ void DYN_define_trigger_msg(GBL gbl, UCHAR** ptr, TEXT* trigger_name)
 	}
 	catch (std::exception&) {
 		if (b_ending_store) {
-			DYN_rundown_request(0, request, drq_s_trg_msgs);
+			DYN_rundown_request(request, drq_s_trg_msgs);
 			DYN_error_punt(TRUE, 33, NULL, NULL, NULL, NULL, NULL);
 			/* msg 33: "DEFINE TRIGGER MESSAGE failed" */
 		}
@@ -4036,7 +4036,7 @@ void DYN_define_view_relation( GBL gbl, UCHAR ** ptr, TEXT * view)
 	}
 	catch (std::exception&) {
 		if (b_ending_store) {
-			DYN_rundown_request(0, request, drq_s_view_rels);
+			DYN_rundown_request(request, drq_s_view_rels);
 			DYN_error_punt(TRUE, 34, NULL, NULL, NULL, NULL, NULL);
 			/* msg 34: "STORE RDB$VIEW_RELATIONS failed" */
 		}
@@ -4105,7 +4105,7 @@ static void check_unique_name(	TDBB	tdbb,
 		}
 	}
 	catch (...) {
-		DYN_rundown_request(0, request, -1);
+		DYN_rundown_request(request, -1);
 		if (!proc_flag)
 			DYN_error_punt(TRUE, 24, NULL, NULL, NULL, NULL, NULL);
 		/* msg 24: "STORE RDB$RELATIONS failed" */
@@ -4171,7 +4171,7 @@ static BOOLEAN find_field_source(TDBB	tdbb,
 		}
 	}
 	catch (...) {
-		DYN_rundown_request(0, request, -1);
+		DYN_rundown_request(request, -1);
 		DYN_error_punt(TRUE, 80, NULL, NULL, NULL, NULL, NULL);
 		/* msg 80: "Specified domain or source field does not exist" */
 	}
@@ -4206,10 +4206,10 @@ static BOOLEAN get_who( TDBB tdbb, GBL gbl, SCHAR * name)
 		EXE_start(tdbb, (REQ) request, gbl->gbl_transaction);
 		EXE_receive(tdbb, (REQ) request, 0, 32, (UCHAR*)name);
 
-		DYN_rundown_request(0, request, drq_l_user_name);
+		DYN_rundown_request(request, drq_l_user_name);
 	}
 	catch (...) {
-		DYN_rundown_request(0, request, drq_l_user_name);
+		DYN_rundown_request(request, drq_l_user_name);
 		return FAILURE;
 	}
 
@@ -4282,7 +4282,7 @@ BOOLEAN is_it_user_name(GBL gbl, TEXT* role_name, TDBB tdbb)
 	}
 	catch (...) {
 		if (request) {
-			DYN_rundown_request(0, request, request_id);
+			DYN_rundown_request(request, request_id);
 		}
 		ERR_punt();
 	}

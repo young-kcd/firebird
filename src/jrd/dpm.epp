@@ -31,7 +31,6 @@
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
-#include "../jrd/ibsetjmp.h"
 #include <string.h>
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
@@ -425,7 +424,6 @@ int DPM_compress( TDBB tdbb, DPG page)
 	UCHAR temp_page[MAX_PAGE_SIZE];
 #endif
 	dpg::dpg_repeat *index, *end;
-	//JMP_BUF env, *old_env;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -444,8 +442,6 @@ int DPM_compress( TDBB tdbb, DPG page)
 	temp_page = (UCHAR *) ALL_malloc((SLONG) dbb->dbb_page_size, ERR_jmp);
 
 	try {
-		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-		tdbb->tdbb_setjmp = (UCHAR *) env;
 
 #else
 	if (dbb->dbb_page_size > sizeof(temp_page)) {
@@ -478,11 +474,9 @@ int DPM_compress( TDBB tdbb, DPG page)
 	if (temp_page) {
 		ALL_free(temp_page);
 	}
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 	
 	}	// try
 	catch (...) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		if (temp_page) {
 			ALL_free(temp_page);
 		}

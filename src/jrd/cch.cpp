@@ -24,7 +24,6 @@
  *                         readonly databases.
  */
 #include "firebird.h"
-#include "../jrd/ibsetjmp.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include <stdlib.h>
@@ -988,7 +987,6 @@ void CCH_fini(TDBB tdbb)
 	BCB bcb;
 	BDB bdb;
 	BOOLEAN flush_error;
-	JMP_BUF env, *old_env;
 	bcb_repeat *tail, *end;
 #ifdef CACHE_WRITER
 	EVENT event;
@@ -1000,8 +998,6 @@ void CCH_fini(TDBB tdbb)
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
 	flush_error = FALSE;
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	try {
 
@@ -1027,7 +1023,6 @@ void CCH_fini(TDBB tdbb)
 		else
 			CCH_flush(tdbb, (USHORT) FLUSH_FINI, (SLONG) 0);
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 
 /* If this is the last user, cleanup the log page. */
 
@@ -1095,7 +1090,6 @@ void CCH_fini(TDBB tdbb)
 		if (!flush_error) {
 			flush_error = TRUE;
 		} else {
-			tdbb->tdbb_setjmp = (UCHAR *) old_env;
 			ERR_punt();
 		}
 	}
@@ -2441,11 +2435,9 @@ BOOLEAN CCH_write_all_shadows(TDBB tdbb,
 	DBB dbb;
 	UCHAR *q;
 	SDW sdw;
-	JMP_BUF env, *old_env;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
 
 	sdw = shadow ? shadow : dbb->dbb_shadow;
 
@@ -2461,7 +2453,6 @@ BOOLEAN CCH_write_all_shadows(TDBB tdbb,
 
 		spare_buffer =
 			(SLONG *) dbb->dbb_bufferpool->allocate((SLONG) dbb->dbb_page_size);
-		tdbb->tdbb_setjmp = (UCHAR *) env;
 
 		page = (PAG) spare_buffer;
 		MOVE_FAST((UCHAR *) bdb->bdb_buffer, (UCHAR *) page, HDR_SIZE);
@@ -2553,11 +2544,9 @@ BOOLEAN CCH_write_all_shadows(TDBB tdbb,
 
 	if (spare_buffer)
 		MemoryPool::deallocate(spare_buffer);
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 
 	}	// try
 	catch (...) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		if (spare_buffer) {
 			MemoryPool::deallocate(spare_buffer);
 		}
@@ -2985,7 +2974,6 @@ static void THREAD_ROUTINE cache_reader(DBB dbb)
 	STATUS status_vector[20];
 	EVENT reader_event;
 	BOOLEAN found;
-	JMP_BUF env;
 	struct prf prefetch1, prefetch2;
 	PRF post_prefetch, next_prefetch;
 
@@ -3006,11 +2994,10 @@ static void THREAD_ROUTINE cache_reader(DBB dbb)
 	tdbb->tdbb_quantum = QUANTUM;
 	tdbb->tdbb_attachment = new(*dbb->dbb_bufferpool) att();
 	tdbb->tdbb_attachment->att_database = dbb;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
-/* This SETJMP is specifically to protect the LCK_init call: if
+/* This try block is specifically to protect the LCK_init call: if
    LCK_init fails we won't be able to accomplish anything anyway, so
-   return, unlike the other SETJMP clause further down the page. */
+   return, unlike the other try blocks further down the page. */
 
 	try {
 
@@ -3157,7 +3144,6 @@ static void THREAD_ROUTINE cache_writer(DBB dbb)
 	STATUS status_vector[20];
 	SCHAR walname[256];
 	EVENT writer_event;
-	JMP_BUF env;
 
 	THREAD_ENTER;
 
@@ -3176,11 +3162,10 @@ static void THREAD_ROUTINE cache_writer(DBB dbb)
 	tdbb->tdbb_quantum = QUANTUM;
 	tdbb->tdbb_attachment = new(*dbb->dbb_bufferpool) att;
 	tdbb->tdbb_attachment->att_database = dbb;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
-/* This SETJMP is specifically to protect the LCK_init call: if
+/* This try block is specifically to protect the LCK_init call: if
    LCK_init fails we won't be able to accomplish anything anyway, so
-   return, unlike the other SETJMP clause further down the page. */
+   return, unlike the other try blocks further down the page. */
 
 	try {
 		LCK_init(tdbb, LCK_OWNER_attachment);

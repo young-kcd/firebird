@@ -25,7 +25,6 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ibsetjmp.h"
 #include <string.h>
 #include "../jrd/jrd.h"
 #include "../jrd/tra.h"
@@ -1154,8 +1153,6 @@ void TRA_rollback(TDBB tdbb, TRA transaction, USHORT retaining_flag)
  *	Rollback a transaction.
  *
  **************************************/
-	JMP_BUF env, *old_env;
-
 	SET_TDBB(tdbb);
 
 	tdbb->tdbb_default = transaction->tra_pool;
@@ -1184,8 +1181,6 @@ void TRA_rollback(TDBB tdbb, TRA transaction, USHORT retaining_flag)
 		/* Make sure that any error during savepoint undo is handled by marking
 		   the transaction as dead. */
 
-		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-		tdbb->tdbb_setjmp = (UCHAR *) env;
 		try {
 
 			/* In an attempt to avoid deadlocks, clear the precedence by writing
@@ -1209,12 +1204,9 @@ void TRA_rollback(TDBB tdbb, TRA transaction, USHORT retaining_flag)
 			if (!retaining_flag)
 				TRA_set_state(tdbb, transaction, transaction->tra_number,
 							  tra_committed);
-
-			tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		}
 		catch (...) {
 			/* Prevent a bugcheck in TRA_set_state to cause a loop */
-			tdbb->tdbb_setjmp = (UCHAR *) old_env;
 			/* Clear the error because the rollback will succeed. */
 			tdbb->tdbb_status_vector[0] = gds_arg_gds;
 			tdbb->tdbb_status_vector[1] = 0;
@@ -1838,7 +1830,6 @@ int TRA_sweep(TDBB tdbb, TRA trans)
 	USHORT shift;
 	ULONG byte, active, base;
 	SLONG transaction_oldest_active;
-	JMP_BUF env, *old_env;
 	struct lck temp_lock;
 	JRNDH journal;
 
@@ -1879,9 +1870,6 @@ int TRA_sweep(TDBB tdbb, TRA trans)
 	transaction = *(&transaction);
 
 /* Clean up the temporary locks we've gotten in case anything goes wrong */
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	try {
 
@@ -1977,7 +1965,6 @@ int TRA_sweep(TDBB tdbb, TRA trans)
 	LCK_release(tdbb, &temp_lock);
 	dbb->dbb_flags &= ~DBB_sweep_in_progress;
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 	tdbb->tdbb_flags &= ~TDBB_sweeper;
 	}	// try
 	catch (...) {
@@ -1990,7 +1977,6 @@ int TRA_sweep(TDBB tdbb, TRA trans)
 		catch (...) {
 			LCK_release(tdbb, &temp_lock);
 			dbb->dbb_flags &= ~DBB_sweep_in_progress;
-			tdbb->tdbb_setjmp = (UCHAR *) old_env;
 			tdbb->tdbb_flags &= ~TDBB_sweeper;
 			return FALSE;
 		}

@@ -21,13 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: opt.cpp,v 1.4 2002-01-04 11:34:16 skywalker Exp $
+$Id: opt.cpp,v 1.5 2002-04-04 07:10:40 bellardo Exp $
 */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
-#include "../jrd/ibsetjmp.h"
 #include "../jrd/gds.h"
 #include "../jrd/jrd.h"
 #include "../jrd/align.h"
@@ -284,7 +283,6 @@ RSB OPT_compile(TDBB tdbb,
 	UCHAR *local_streams;
 	UCHAR *p, *q, *streams, *beds, *k, *b_end, *k_end, *key_streams;
 #endif
-	JMP_BUF env, *old_env;
 
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(rse, type_nod);
@@ -355,9 +353,6 @@ RSB OPT_compile(TDBB tdbb,
 	opt_ = new(*dbb->dbb_permanent) Opt();
 
 #endif
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	try {
 
@@ -636,11 +631,8 @@ RSB OPT_compile(TDBB tdbb,
 	}
 #endif
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}	// try
 	catch (...) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		for (i = 0; i < streams[0]; i++) {
 			stream = streams[i + 1];
 			if (csb->csb_rpt[stream].csb_idx_allocation)

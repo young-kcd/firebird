@@ -30,7 +30,6 @@
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 
-#include "../jrd/ibsetjmp.h"
 #include "../jrd/common.h"
 #include <stdarg.h>
 #include "../jrd/jrd.h"
@@ -111,7 +110,6 @@ void DYN_modify_database( GBL gbl, UCHAR ** ptr)
 	SSHORT length;
 	SLONG start;
 	UCHAR verb, s[128];
-	JMP_BUF env, *old_env;
 	SSHORT num_log_buffers = 0;
 	USHORT log_buffer_size = 0;
 	SLONG check_point_len = 0, group_commit_wait = -1;
@@ -127,13 +125,9 @@ void DYN_modify_database( GBL gbl, UCHAR ** ptr)
 
 	try {
 
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
-
 	INF_database_info((SCHAR*)alloc_info, sizeof(alloc_info), (SCHAR*)s, sizeof(s));
 
 	if (s[0] != gds_info_allocation) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		goto dyn_punt_84;
 	}
 
@@ -243,11 +237,9 @@ void DYN_modify_database( GBL gbl, UCHAR ** ptr)
 	if (!DYN_REQUEST(drq_m_database))
 		DYN_REQUEST(drq_m_database) = request;
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}
 	catch (...) {
-		DYN_rundown_request(old_env, request, -1);
+		DYN_rundown_request(request, -1);
 		DYN_error_punt(TRUE, 84, NULL, NULL, NULL, NULL, NULL);
 		/* msg 84: "MODIFY DATABASE failed" */
 	}
@@ -278,7 +270,6 @@ void DYN_modify_exception( GBL gbl, UCHAR ** ptr)
 	USHORT found;
 	UCHAR verb;
 	TEXT t[32];
-	JMP_BUF env, *old_env;
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
@@ -286,9 +277,6 @@ void DYN_modify_exception( GBL gbl, UCHAR ** ptr)
 	request = (BLK) CMP_find_request(tdbb, drq_m_xcp, DYN_REQUESTS);
 
 	try {
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	GET_STRING(ptr, t);
 
@@ -325,11 +313,9 @@ void DYN_modify_exception( GBL gbl, UCHAR ** ptr)
 	if (!DYN_REQUEST(drq_m_xcp))
 		DYN_REQUEST(drq_m_xcp) = request;
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}
 	catch (...) {
-		DYN_rundown_request(old_env, request, -1);
+		DYN_rundown_request(request, -1);
 		DYN_error_punt(TRUE, 145, NULL, NULL, NULL, NULL, NULL);
 		/* msg 145: "MODIFY EXCEPTION failed" */
 	}
@@ -363,7 +349,6 @@ void DYN_modify_global_field(
 	BLK request, old_request;
 	USHORT found, single_validate = FALSE;
 	UCHAR verb;
-	JMP_BUF env, *old_env;
 	DYN_FLD orig_dom, new_dom;
 	BOOLEAN dtype, scale, prec, subtype, charlen, collation, fldlen, nullflg,
 		charset;
@@ -397,9 +382,6 @@ void DYN_modify_global_field(
 	request = (BLK) CMP_find_request(tdbb, drq_m_gfield, DYN_REQUESTS);
 
 	try {
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 /* Allocate the field structures */
 	orig_dom = (DYN_FLD) gds__alloc(sizeof(struct dyn_fld));
@@ -909,8 +891,6 @@ void DYN_modify_global_field(
 	if (new_dom)
 		gds__free((SLONG *) new_dom);
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}
 	catch (...) {
 		if (orig_dom) {
@@ -921,7 +901,7 @@ void DYN_modify_global_field(
 			gds__free((SLONG *) new_dom);
 		}
 
-		DYN_rundown_request(old_env, request, -1);
+		DYN_rundown_request(request, -1);
 		DYN_error_punt(TRUE, 87, NULL, NULL, NULL, NULL, NULL);
 		/* msg 87: "MODIFY RDB$FIELDS failed" */
 	}
@@ -952,7 +932,6 @@ void DYN_modify_index( GBL gbl, UCHAR ** ptr)
 	USHORT found;
 	UCHAR verb;
 	TEXT name[32];
-	JMP_BUF env, *old_env;
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
@@ -960,9 +939,6 @@ void DYN_modify_index( GBL gbl, UCHAR ** ptr)
 	request = (BLK) CMP_find_request(tdbb, drq_m_index, DYN_REQUESTS);
 
 	try {
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	GET_STRING(ptr, name);
 
@@ -1018,11 +994,9 @@ void DYN_modify_index( GBL gbl, UCHAR ** ptr)
 	if (!DYN_REQUEST(drq_m_index))
 		DYN_REQUEST(drq_m_index) = request;
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}
 	catch (...) {
-		DYN_rundown_request(old_env, request, -1);
+		DYN_rundown_request(request, -1);
 		DYN_error_punt(TRUE, 91, NULL, NULL, NULL, NULL, NULL);
 		/* msg 91: "MODIFY RDB$INDICES failed" */
 	}
@@ -1059,7 +1033,6 @@ void DYN_modify_local_field(
 	UCHAR verb;
 	TEXT f[32], r[32], *query_name, *query_header, *edit_string, *description,
 		*security_class, *new_name;
-	JMP_BUF env, *old_env;
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
@@ -1153,9 +1126,6 @@ void DYN_modify_local_field(
 	request = (BLK) CMP_find_request(tdbb, drq_m_lfield, DYN_REQUESTS);
 
 	try {
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	found = FALSE;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -1252,11 +1222,9 @@ void DYN_modify_local_field(
 							   existing_position);
 
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}
 	catch (...) {
-		DYN_rundown_request(old_env, request, -1);
+		DYN_rundown_request(request, -1);
 		DYN_error_punt(TRUE, 95, NULL, NULL, NULL, NULL, NULL);
 		/* msg 95: "MODIFY RDB$RELATION_FIELDS failed" */
 	}
@@ -1287,7 +1255,6 @@ void DYN_modify_procedure( GBL gbl, UCHAR ** ptr)
 	UCHAR verb;
 	USHORT found;
 	TEXT procedure_name[PROC_NAME_SIZE];
-	JMP_BUF env, *old_env;
 
 	GET_STRING(ptr, procedure_name);
 
@@ -1297,9 +1264,6 @@ void DYN_modify_procedure( GBL gbl, UCHAR ** ptr)
 	request = NULL;
 
 	try {
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	request = (BLK) CMP_find_request(tdbb, drq_m_prcs, DYN_REQUESTS);
 
@@ -1370,11 +1334,9 @@ void DYN_modify_procedure( GBL gbl, UCHAR ** ptr)
 	if (!DYN_REQUEST(drq_m_prcs))
 		DYN_REQUEST(drq_m_prcs) = request;
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}
 	catch (...) {
-		DYN_rundown_request(old_env, request, -1);
+		DYN_rundown_request(request, -1);
 		DYN_error_punt(TRUE, 141, NULL, NULL, NULL, NULL, NULL);
 		/* msg 141: "MODIFY RDB$PROCEDURES failed" */
 	}
@@ -1404,7 +1366,6 @@ void DYN_modify_relation( GBL gbl, UCHAR ** ptr)
 	USHORT found;
 	UCHAR verb;
 	TEXT name[32], field_name[32];
-	JMP_BUF env, *old_env;
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
@@ -1415,9 +1376,6 @@ void DYN_modify_relation( GBL gbl, UCHAR ** ptr)
 	request = (BLK) CMP_find_request(tdbb, drq_m_relation, DYN_REQUESTS);
 
 	try {
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	found = FALSE;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -1446,13 +1404,13 @@ void DYN_modify_relation( GBL gbl, UCHAR ** ptr)
 
 				case gds_dyn_rel_ext_file:
 					if (REL.RDB$EXTERNAL_FILE.NULL) {
-						DYN_rundown_request(old_env, request, -1);
+						DYN_rundown_request(request, -1);
 						DYN_error_punt(FALSE, 97, NULL, NULL, NULL, NULL,
 									   NULL);
 						/* msg 97: "add EXTERNAL FILE not allowed" */
 					}
 					if (!GET_STRING(ptr, REL.RDB$EXTERNAL_FILE)) {
-						DYN_rundown_request(old_env, request, -1);
+						DYN_rundown_request(request, -1);
 						DYN_error_punt(FALSE, 98, NULL, NULL, NULL, NULL,
 									   NULL);
 						/* msg 98: "drop EXTERNAL FILE not allowed" */
@@ -1485,11 +1443,9 @@ void DYN_modify_relation( GBL gbl, UCHAR ** ptr)
 	if (!DYN_REQUEST(drq_m_relation))
 		DYN_REQUEST(drq_m_relation) = request;
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}
 	catch (...) {
-		DYN_rundown_request(old_env, request, -1);
+		DYN_rundown_request(request, -1);
 		DYN_error_punt(TRUE, 99, NULL, NULL, NULL, NULL, NULL);
 		/* msg 99: "MODIFY RDB$RELATIONS failed" */
 	}
@@ -1520,7 +1476,6 @@ void DYN_modify_trigger( GBL gbl, UCHAR ** ptr)
 	USHORT found;
 	UCHAR verb, *blr;
 	TEXT trigger_name[32], *source;
-	JMP_BUF env, *old_env;
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
@@ -1528,9 +1483,6 @@ void DYN_modify_trigger( GBL gbl, UCHAR ** ptr)
 	request = (BLK) CMP_find_request(tdbb, drq_m_trigger, DYN_REQUESTS);
 
 	try {
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	GET_STRING(ptr, trigger_name);
 	source = NULL;
@@ -1618,11 +1570,9 @@ void DYN_modify_trigger( GBL gbl, UCHAR ** ptr)
 	if (!DYN_REQUEST(drq_m_trigger))
 		DYN_REQUEST(drq_m_trigger) = request;
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}
 	catch (...) {
-		DYN_rundown_request(old_env, request, -1);
+		DYN_rundown_request(request, -1);
 		DYN_error_punt(TRUE, 102, NULL, NULL, NULL, NULL, NULL);
 		/* msg 102: "MODIFY TRIGGER failed" */
 	}
@@ -1652,7 +1602,6 @@ void DYN_modify_trigger_msg( GBL gbl, UCHAR ** ptr, TEXT * trigger_name)
 	int number;
 	UCHAR verb;
 	TEXT t[32];
-	JMP_BUF env, *old_env;
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
@@ -1660,9 +1609,6 @@ void DYN_modify_trigger_msg( GBL gbl, UCHAR ** ptr, TEXT * trigger_name)
 	request = (BLK) CMP_find_request(tdbb, drq_m_trg_msg, DYN_REQUESTS);
 
 	try {
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	number = DYN_get_number(ptr);
 	if (trigger_name)
@@ -1710,11 +1656,9 @@ void DYN_modify_trigger_msg( GBL gbl, UCHAR ** ptr, TEXT * trigger_name)
 	if (!DYN_REQUEST(drq_m_trg_msg))
 		DYN_REQUEST(drq_m_trg_msg) = request;
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}
 	catch (...) {
-		DYN_rundown_request(old_env, request, -1);
+		DYN_rundown_request(request, -1);
 		DYN_error_punt(TRUE, 105, NULL, NULL, NULL, NULL, NULL);
 		/* msg 105: "MODIFY TRIGGER MESSAGE failed" */
 	}
@@ -1736,7 +1680,6 @@ static void drop_cache( GBL gbl)
 	TDBB tdbb;
 	DBB dbb;
 	BLK request;
-	JMP_BUF env, *old_env;
 	USHORT found = FALSE;
 
 	tdbb = GET_THREAD_DATA;
@@ -1745,9 +1688,6 @@ static void drop_cache( GBL gbl)
 	request = (BLK) CMP_find_request(tdbb, drq_d_cache, DYN_REQUESTS);
 
 	try {
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$FILES WITH X.RDB$FILE_FLAGS EQ FILE_cache 
@@ -1761,11 +1701,9 @@ static void drop_cache( GBL gbl)
 		DYN_REQUEST(drq_d_cache) = request;
 	}
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}
 	catch (...) {
-		DYN_rundown_request(old_env, request, drq_s_cache);
+		DYN_rundown_request(request, drq_s_cache);
 		DYN_error_punt(TRUE, 63, NULL, NULL, NULL, NULL, NULL);
 		/* msg 63: ERASE RDB$FILE failed */
 	}
@@ -1793,7 +1731,6 @@ static void drop_log( GBL gbl)
 	TDBB tdbb;
 	DBB dbb;
 	BLK request;
-	JMP_BUF env, *old_env;
 	USHORT found = FALSE;
 
 	tdbb = GET_THREAD_DATA;
@@ -1802,9 +1739,6 @@ static void drop_log( GBL gbl)
 	request = (BLK) CMP_find_request(tdbb, drq_d_log, DYN_REQUESTS);
 
 	try {
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$LOG_FILES 
@@ -1816,11 +1750,9 @@ static void drop_log( GBL gbl)
 	if (!DYN_REQUEST(drq_d_log))
 		DYN_REQUEST(drq_d_log) = request;
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}
 	catch (...) {
-		DYN_rundown_request(old_env, request, drq_d_log);
+		DYN_rundown_request(request, drq_d_log);
 		DYN_error_punt(TRUE, 153, NULL, NULL, NULL, NULL, NULL);
 		/* msg 153: ERASE RDB$LOG_FILE failed */
 	}
@@ -1869,13 +1801,9 @@ static void modify_lfield_position(TDBB tdbb,
 	VOLATILE BLK request = NULL;
 	USHORT new_pos = 0;
 	SLONG max_position = -1;
-	JMP_BUF env, *old_env;
 	BOOLEAN move_down = FALSE;
 
 	try {
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 /* Find the position of the last field in the relation */
 	DYN_UTIL_generate_field_position(tdbb, gbl, relation_name, &max_position);
@@ -1942,8 +1870,6 @@ static void modify_lfield_position(TDBB tdbb,
 	END_FOR;
 
 	CMP_release(tdbb, (REQ)request);
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}
 	catch (...) {
 		DYN_error_punt(TRUE, 95, NULL, NULL, NULL, NULL, NULL);
@@ -2172,7 +2098,6 @@ void DYN_modify_sql_field(GBL		gbl,
 	DBB dbb;
 	BLK request = NULL, first_request;
 	UCHAR verb;
-	JMP_BUF env, *old_env;
 	BOOLEAN found = FALSE, update_domain = FALSE;
 	BOOLEAN dtype, scale, prec, subtype, charlen, collation, fldlen, nullflg,
 		charset;
@@ -2182,9 +2107,6 @@ void DYN_modify_sql_field(GBL		gbl,
 	dbb = tdbb->tdbb_database;
 
 	try {
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	dtype = scale = prec = subtype = charlen = collation = fldlen = nullflg =
 		charset = FALSE;
@@ -2546,8 +2468,6 @@ void DYN_modify_sql_field(GBL		gbl,
 	if (orig_fld)
 		gds__free((SLONG *) orig_fld);
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}
 	catch (...) {
 		if (new_fld) {
@@ -2562,7 +2482,6 @@ void DYN_modify_sql_field(GBL		gbl,
 			gds__free((SLONG *) orig_fld);
 		}
 
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		DYN_error_punt(TRUE, 95, NULL, NULL, NULL, NULL, NULL);
 		/* msg 95: "MODIFY RDB$RELATION_FIELDS failed" */
 	}

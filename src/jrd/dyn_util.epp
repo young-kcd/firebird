@@ -28,7 +28,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../jrd/ibsetjmp.h"
 #include "../jrd/common.h"
 #include <stdarg.h>
 #include "../jrd/jrd.h"
@@ -184,17 +183,12 @@ void DYN_UTIL_generate_constraint_name( TDBB tdbb, GBL gbl, TEXT * buffer)
 	VOLATILE BLK request;
 	USHORT found;
 	VOLATILE SSHORT id;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
 
 	request = NULL;
 	id = -1;
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	try {
 
@@ -225,11 +219,9 @@ void DYN_UTIL_generate_constraint_name( TDBB tdbb, GBL gbl, TEXT * buffer)
 		request = NULL;
 	} while (found);
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}	// try
 	catch (...) {
-		DYN_rundown_request(old_env, request, id);
+		DYN_rundown_request(request, id);
 		DYN_error_punt(TRUE, 131, NULL, NULL, NULL, NULL, NULL);
 		/* msg 131: "Generation of constraint name failed" */
 	}
@@ -252,8 +244,6 @@ void DYN_UTIL_generate_field_name( TDBB tdbb, GBL gbl, TEXT * buffer)
 	VOLATILE BLK request;
 	USHORT found;
 	VOLATILE SSHORT id;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -262,9 +252,6 @@ void DYN_UTIL_generate_field_name( TDBB tdbb, GBL gbl, TEXT * buffer)
 	id = -1;
 
 	try {
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	do {
 		id = drq_g_nxt_fld;
@@ -292,11 +279,9 @@ void DYN_UTIL_generate_field_name( TDBB tdbb, GBL gbl, TEXT * buffer)
 		request = NULL;
 	} while (found);
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}	// try
 	catch (...) {
-		DYN_rundown_request(old_env, request, id);
+		DYN_rundown_request(request, id);
 		DYN_error_punt(TRUE, 81, NULL, NULL, NULL, NULL, NULL);
 		/* msg 81: "Generation of field name failed" */
 	}
@@ -320,8 +305,6 @@ void DYN_UTIL_generate_field_position(
  **************************************/
 	DBB dbb;
 	VOLATILE BLK request;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
 	SLONG field_position = -1;
 
 	if (!relation_name)
@@ -333,9 +316,6 @@ void DYN_UTIL_generate_field_position(
 	request = NULL;
 
 	try {
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	request = (BLK) CMP_find_request(tdbb, drq_l_fld_pos, DYN_REQUESTS);
 
@@ -352,12 +332,11 @@ void DYN_UTIL_generate_field_position(
 		field_position = MAX(X.RDB$FIELD_POSITION, field_position);
 	END_FOR;
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 	*field_pos = field_position;
 
 	}	// try
 	catch (...) {
-		DYN_rundown_request(old_env, request, -1);
+		DYN_rundown_request(request, -1);
 		DYN_error_punt(TRUE, 162, NULL, NULL, NULL, NULL, NULL);
 		/* msg 162: "Looking up field position failed" */
 	}
@@ -382,8 +361,6 @@ void DYN_UTIL_generate_index_name(TDBB tdbb,
 	USHORT found;
 	VOLATILE SSHORT id;
 	SCHAR *format;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -392,9 +369,6 @@ void DYN_UTIL_generate_index_name(TDBB tdbb,
 	id = -1;
 
 	try {
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	do {
 		if (verb == gds_dyn_def_primary_key)
@@ -427,12 +401,9 @@ void DYN_UTIL_generate_index_name(TDBB tdbb,
 			DYN_REQUEST(drq_f_nxt_idx) = request;
 		request = NULL;
 	} while (found);
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}	// try
 	catch (...) {
-		DYN_rundown_request(old_env, request, id);
+		DYN_rundown_request(request, id);
 		DYN_error_punt(TRUE, 82, NULL, NULL, NULL, NULL, NULL);
 		/* msg 82: "Generation of index name failed" */
 	}
@@ -455,8 +426,6 @@ void DYN_UTIL_generate_trigger_name( TDBB tdbb, GBL gbl, TEXT * buffer)
 	VOLATILE BLK request;
 	USHORT found;
 	VOLATILE SSHORT id;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -465,9 +434,6 @@ void DYN_UTIL_generate_trigger_name( TDBB tdbb, GBL gbl, TEXT * buffer)
 	id = -1;
 
 	try {
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	do {
 		id = drq_g_nxt_trg;
@@ -494,12 +460,9 @@ void DYN_UTIL_generate_trigger_name( TDBB tdbb, GBL gbl, TEXT * buffer)
 			DYN_REQUEST(drq_f_nxt_trg) = request;
 		request = NULL;
 	} while (found);
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}	// try
 	catch (...) {
-		DYN_rundown_request(old_env, request, id);
+		DYN_rundown_request(request, id);
 		DYN_error_punt(TRUE, 83, NULL, NULL, NULL, NULL, NULL);
 		/* msg 83: "Generation of trigger name failed" */
 	}
@@ -529,17 +492,11 @@ BOOLEAN DYN_UTIL_get_prot(TDBB		tdbb,
 		SCHAR field_name[32];
 	} in_msg;
 
-	JMP_BUF		env;
-	JMP_BUF*	VOLATILE old_env;
-
 	SET_TDBB(tdbb);
 
 	request = CMP_find_request(tdbb, drq_l_prot_mask, DYN_REQUESTS);
 
 	try {
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	if (!request)
 	{
@@ -557,15 +514,14 @@ BOOLEAN DYN_UTIL_get_prot(TDBB		tdbb,
 	 * The "(BLK)" cast, casts away volatile AND changes
 	 * type at the same time - bad
 	 */
-	DYN_rundown_request(old_env,
-						(BLK)request,
+	DYN_rundown_request( (BLK)request,
 						drq_l_prot_mask);
 
 	}	// try
 	catch (...) {
 		// Note that the following cast to BLK not only changes
 		// the type, it also casts away volatile!
-		DYN_rundown_request(old_env, (BLK)request, drq_l_prot_mask);
+		DYN_rundown_request((BLK)request, drq_l_prot_mask);
 		return FAILURE;
 	}
 	return SUCCESS;
@@ -588,8 +544,6 @@ void DYN_UTIL_store_check_constraints(TDBB	tdbb,
  **************************************/
 	DBB dbb;
 	VOLATILE BLK request;
-	JMP_BUF env;
-	JMP_BUF *VOLATILE old_env;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -603,19 +557,14 @@ void DYN_UTIL_store_check_constraints(TDBB	tdbb,
         strcpy(CHK.RDB$CONSTRAINT_NAME, constraint_name);
 		strcpy(CHK.RDB$TRIGGER_NAME, trigger_name);
 
-		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-		tdbb->tdbb_setjmp = (UCHAR *) env;
 	END_STORE;
 
 	if (!DYN_REQUEST(drq_s_chk_con)) {
 		DYN_REQUEST(drq_s_chk_con) = request;
 	}
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}	// try
 	catch (...) {
-		DYN_rundown_request(old_env, request, drq_s_chk_con);
+		DYN_rundown_request(request, drq_s_chk_con);
 		DYN_error_punt(TRUE, 122, NULL, NULL, NULL, NULL, NULL);
 		/* msg 122: "STORE RDB$CHECK_CONSTRAINTS failed" */
 	}

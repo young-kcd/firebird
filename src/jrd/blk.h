@@ -62,7 +62,7 @@ BLKDEF(type_fld, fld, 1)
 BLKDEF(type_ext, ext, 1)	/* External file */
 BLKDEF(type_mfb, mfb, 0)	/* merge (equivalence) file block */
 BLKDEF(type_riv, riv, 1)	/* River block -- used in optimizer */
-BLKDEF(type_usr, usr, 1)	/* User identification block */
+BLKDEF(type_usr, User, 0)	/* User identification block */
 BLKDEF(type_att, att, 0)	/* Database attachment */
 BLKDEF(type_sym, sym, 0)
 BLKDEF(type_fun, fun, sizeof(((FUN) 0)->fun_rpt[0]))	/* Done Function definition */

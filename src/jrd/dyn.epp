@@ -195,7 +195,6 @@ void DYN_delete_role( GBL gbl, UCHAR ** ptr)
 	TEXT role_name[32], role_owner[32], user[32];
         //TEXT security_class[32];
 	TEXT *ptr1, *ptr2;
-	JMP_BUF env, *old_env;
 	BOOLEAN del_role_ok = TRUE;
 	USHORT major_version, minor_original;
 
@@ -211,9 +210,6 @@ void DYN_delete_role( GBL gbl, UCHAR ** ptr)
 		return;	// never reached
 	}
 
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	try {
 
@@ -240,7 +236,7 @@ void DYN_delete_role( GBL gbl, UCHAR ** ptr)
 
 #pragma FB_COMPILER_MESSAGE("TMN: LOCKSMITH!")
 
-			if ((tdbb->tdbb_attachment->att_user->usr_flags & USR_locksmith) ||
+			if ((tdbb->tdbb_attachment->att_user->hasFlag(USR_locksmith)) ||
 				(strcmp(role_owner, user) == 0))
 			{
 				ERASE XX;
@@ -293,15 +289,12 @@ void DYN_delete_role( GBL gbl, UCHAR ** ptr)
     **
     *****************************************************/
 			DYN_error(FALSE, 191, user, role_name, NULL, NULL, NULL);
-			tdbb->tdbb_setjmp = (UCHAR *) old_env;
 			goto do_punt;
 		}
 
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}	// try
 	catch (...) {
-		DYN_rundown_request(old_env, request, -1);
+		DYN_rundown_request(request, -1);
 		const USHORT number = (id == drq_drop_role ? 191 : 62);
 		// msg 191: "ERASE RDB$ROLES failed"
 		// msg  62: "ERASE RDB$USER_PRIVILEGES failed"
@@ -856,8 +849,6 @@ USHORT DYN_put_blr_blob(GBL gbl, UCHAR** ptr, GDS__QUAD* blob_id)
 	BLB		blob;
 	USHORT	length;
 	UCHAR*	p;
-	JMP_BUF	env;
-	JMP_BUF* old_env;
 
 	tdbb = GET_THREAD_DATA;
 
@@ -871,17 +862,11 @@ USHORT DYN_put_blr_blob(GBL gbl, UCHAR** ptr, GDS__QUAD* blob_id)
 	}
 
 	try {
-		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-		tdbb->tdbb_setjmp = (UCHAR *) env;
-
 		blob = BLB_create(tdbb, gbl->gbl_transaction, (BID)blob_id);
 		BLB_put_segment(tdbb, blob, p, length);
 		BLB_close(tdbb, blob);
-
-		tdbb->tdbb_setjmp = (UCHAR*) old_env;
 	}
 	catch (...) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		DYN_error_punt(TRUE, 106, NULL, NULL, NULL, NULL, NULL);
 		/* msg 106: "Create metadata blob failed" */
 	}
@@ -915,7 +900,6 @@ USHORT DYN_put_blr_blob2(GBL gbl, UCHAR ** ptr, GDS__QUAD * blob_id)
 	UCHAR *p;
 	USHORT bpb_length, from_interp;
 	UCHAR bpb[20], *p2;
-	JMP_BUF env, *old_env;
 
 	tdbb = GET_THREAD_DATA;
 
@@ -943,9 +927,6 @@ USHORT DYN_put_blr_blob2(GBL gbl, UCHAR ** ptr, GDS__QUAD * blob_id)
 	bpb_length = p2 - bpb;
 
 	try {
-		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-		tdbb->tdbb_setjmp = (UCHAR *) env;
-
 		blob =(BLK)BLB_create2(	tdbb,
 								gbl->gbl_transaction,
 								blob_id,
@@ -953,11 +934,8 @@ USHORT DYN_put_blr_blob2(GBL gbl, UCHAR ** ptr, GDS__QUAD * blob_id)
 								bpb);
 		BLB_put_segment(tdbb, blob, p, length);
 		BLB_close(tdbb, blob);
-
-		tdbb->tdbb_setjmp = (UCHAR*) old_env;
 	}
 	catch (...) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		DYN_error_punt(TRUE, 106, NULL, NULL, NULL, NULL, NULL);
 		/* msg 106: "Create metadata blob failed" */
 	}
@@ -985,7 +963,6 @@ USHORT DYN_put_text_blob(GBL gbl, UCHAR ** ptr, GDS__QUAD * blob_id)
 	USHORT length;
 	UCHAR *p, *end;
 	BLB blob;
-	JMP_BUF env, *old_env;
 
 	tdbb = GET_THREAD_DATA;
 
@@ -999,9 +976,6 @@ USHORT DYN_put_text_blob(GBL gbl, UCHAR ** ptr, GDS__QUAD * blob_id)
 	}
 
 	try {
-		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-		tdbb->tdbb_setjmp = (UCHAR *) env;
-
 		blob = BLB_create(tdbb, gbl->gbl_transaction, (BID)blob_id);
 
 		for (end = p + length; p < end; p += TEXT_BLOB_LENGTH)
@@ -1010,11 +984,8 @@ USHORT DYN_put_text_blob(GBL gbl, UCHAR ** ptr, GDS__QUAD * blob_id)
 			BLB_put_segment(tdbb, blob, p, length);
 		}
 		BLB_close(tdbb, blob);
-
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 	}
 	catch (...) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		DYN_error_punt(TRUE, 106, NULL, NULL, NULL, NULL, NULL);
 		/* msg 106: "Create metadata blob failed" */
 	}
@@ -1046,7 +1017,6 @@ USHORT DYN_put_text_blob2(GBL gbl, UCHAR ** ptr, GDS__QUAD * blob_id)
 	BLK blob;
 	USHORT bpb_length, from_interp;
 	UCHAR bpb[20], *p2;
-	JMP_BUF env, *old_env;
 
 	tdbb = GET_THREAD_DATA;
 
@@ -1072,9 +1042,6 @@ USHORT DYN_put_text_blob2(GBL gbl, UCHAR ** ptr, GDS__QUAD * blob_id)
 	bpb_length = p2 - bpb;
 
 	try {
-		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-		tdbb->tdbb_setjmp = (UCHAR *) env;
-
 		blob = (BLK)BLB_create2(tdbb,
 								gbl->gbl_transaction,
 								blob_id,
@@ -1087,11 +1054,8 @@ USHORT DYN_put_text_blob2(GBL gbl, UCHAR ** ptr, GDS__QUAD * blob_id)
 			BLB_put_segment(tdbb, blob, p, length);
 		}
 		BLB_close(tdbb, blob);
-
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 	}
 	catch (...) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		DYN_error_punt(TRUE, 106, NULL, NULL, NULL, NULL, NULL);
 		/* msg 106: "Create metadata blob failed" */
 	}
@@ -1103,7 +1067,7 @@ USHORT DYN_put_text_blob2(GBL gbl, UCHAR ** ptr, GDS__QUAD * blob_id)
 #endif /* (defined JPN_SJIS || defined JPN_EUC) */
 
 
-void DYN_rundown_request(JMP_BUF* old_env, BLK handle, SSHORT id)
+void DYN_rundown_request(BLK handle, SSHORT id)
 {
 /**************************************
  *
@@ -1121,10 +1085,6 @@ void DYN_rundown_request(JMP_BUF* old_env, BLK handle, SSHORT id)
 	DBB  dbb  = tdbb->tdbb_database;
 
 #pragma FB_COMPILER_MESSAGE("TMN: FIXME! We do not have a jmp_buf anymore!")
-
-	if (old_env) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-	}
 
 	if (!handle) {
 		return;
@@ -1493,7 +1453,7 @@ static void grant( GBL gbl, UCHAR ** ptr)
 		   But in case the error is from store_priveledge we have already
 		   unwound the request so passing that as null */
 		BLK req1 = (id == drq_s_grant || id == drq_gcg1) ? NULL : request;
-		DYN_rundown_request(0, req1, -1);
+		DYN_rundown_request(req1, -1);
 		if (id == drq_l_grant1)
 		{
 			DYN_error_punt(TRUE, 77, NULL, NULL, NULL, NULL, NULL);
@@ -1544,7 +1504,6 @@ static bool grantor_can_grant(	GBL		gbl,
  *
  **************************************/
 
-	JMP_BUF env, *old_env;
 	TDBB tdbb;
 	DBB dbb;
 /* Remember the grant option for non field-specific user-privileges, and the
@@ -1570,9 +1529,6 @@ static bool grantor_can_grant(	GBL		gbl,
 
 
 	try {
-		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-		tdbb->tdbb_setjmp = (UCHAR *) env;
-
 
 	err_num = 182;				/* for the longjump */
 /* SELECT RDB$RELATIONS failed in grant */
@@ -1589,7 +1545,6 @@ static bool grantor_can_grant(	GBL		gbl,
 	if (!relation_exists) {
 		DYN_error(FALSE, 175, relation_name, NULL, NULL, NULL, NULL);
 		/* table/view .. does not exist */
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		return false;
 	}
 
@@ -1613,7 +1568,6 @@ static bool grantor_can_grant(	GBL		gbl,
 			DYN_error(FALSE, 176, field_name, relation_name, NULL, NULL,
 					  NULL);
 			/* column .. does not exist in table/view .. */
-			tdbb->tdbb_setjmp = (UCHAR *) old_env;
 			return false;
 		}
 	}
@@ -1621,7 +1575,6 @@ static bool grantor_can_grant(	GBL		gbl,
 /* If the current user is locksmith - allow all grants to occur */
 
 	if (tdbb->tdbb_attachment->att_user->usr_flags & USR_locksmith) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		return true;
 	}
 
@@ -1643,7 +1596,6 @@ static bool grantor_can_grant(	GBL		gbl,
 	if (!DYN_REQUEST(drq_gcg2))
 		DYN_REQUEST(drq_gcg2) = request;
 	if (!sql_relation && grantor_is_owner) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		return true;
 	}
 
@@ -1700,7 +1652,6 @@ static bool grantor_can_grant(	GBL		gbl,
 					NULL,
 					NULL);
 			/* no grant option for privilege .. on column .. of [base] table/view .. */
-			tdbb->tdbb_setjmp = (UCHAR *) old_env;
 			return false;
 		}
 		else if (go_fld == -1)
@@ -1715,7 +1666,6 @@ static bool grantor_can_grant(	GBL		gbl,
 						NULL,
 						NULL);
 				/* no grant option for privilege .. on [base] table/view .. (for column ..) */
-				tdbb->tdbb_setjmp = (UCHAR *) old_env;
 				return false;
 			}
 			else if (go_rel == -1)
@@ -1728,7 +1678,6 @@ static bool grantor_can_grant(	GBL		gbl,
 						NULL,
 						NULL);
 				/* no .. privilege with grant option on [base] table/view .. (for column ..) */
-				tdbb->tdbb_setjmp = (UCHAR *) old_env;
 				return false;
 			}
 		}
@@ -1739,14 +1688,12 @@ static bool grantor_can_grant(	GBL		gbl,
 		{
 			DYN_error(FALSE, 173, privilege, relation_name, NULL, NULL, NULL);
 			/* no grant option for privilege .. on table/view ..  */
-			tdbb->tdbb_setjmp = (UCHAR *) old_env;
 			return false;
 		}
 		else if (go_rel == -1)
 		{
 			DYN_error(FALSE, 174, privilege, relation_name, NULL, NULL, NULL);
 			/* no .. privilege with grant option on table/view .. */
-			tdbb->tdbb_setjmp = (UCHAR *) old_env;
 			return false;
 		}
 	}
@@ -1756,7 +1703,6 @@ static bool grantor_can_grant(	GBL		gbl,
    the grantor was given its privileges. */
 
 	if (!grantor_is_owner) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		return true;
 	}
 
@@ -1788,7 +1734,6 @@ static bool grantor_can_grant(	GBL		gbl,
 				if (!grantor_can_grant
 					(gbl, grantor, privilege, G_VIEW.RDB$RELATION_NAME,
 					 G_FLD.RDB$BASE_FIELD, FALSE)) {
-					tdbb->tdbb_setjmp = (UCHAR *) old_env;
 					return false;
 				}
 		}
@@ -1800,7 +1745,6 @@ static bool grantor_can_grant(	GBL		gbl,
 									G_FLD.RDB$BASE_FIELD,
 									false))
 			{
-				tdbb->tdbb_setjmp = (UCHAR *) old_env;
 				return false;
 			}
 		}
@@ -1812,14 +1756,13 @@ static bool grantor_can_grant(	GBL		gbl,
 
 	}	// try
 	catch (...) {
-		DYN_rundown_request(old_env, request, -1);
+		DYN_rundown_request(request, -1);
 		DYN_error_punt(TRUE, err_num, NULL, NULL, NULL, NULL, NULL);
 		/* msg 77: "SELECT RDB$USER_PRIVILEGES failed in grant" */
 
 		return false;
 	}
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 	return true;
 }
 
@@ -1951,7 +1894,6 @@ static void revoke( GBL gbl, UCHAR ** ptr)
 	USHORT all_privs = FALSE;
 	int options;
 	USHORT grant_erased;
-	JMP_BUF env, *old_env;
 	USR revoking_user;
 	TEXT revoking_user_name[32], dummy_name[32];
 	//TEXT grantor[32], *ptr2;
@@ -2057,8 +1999,6 @@ static void revoke( GBL gbl, UCHAR ** ptr)
 	id = field[0] ? drq_e_grant1 : drq_e_grant2;
 
 	try {
-		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-		tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	temp[1] = 0;
 	for (p = privileges; (temp[0] = *p); p++)
@@ -2138,14 +2078,12 @@ static void revoke( GBL gbl, UCHAR ** ptr)
 		}
 	}
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}
 	catch (...) {
 		/* we need to rundown as we have to set the env.
 		   But in case the error is from store_priveledge we have already 
 		   unwound the request so passing that as null */
-		DYN_rundown_request(old_env, ((id == drq_s_grant) ? NULL : request),
+		DYN_rundown_request(((id == drq_s_grant) ? NULL : request),
 							-1);
 		if (id == drq_e_grant1)
 		{
@@ -2190,8 +2128,6 @@ static void store_privilege(GBL		gbl,
 	DBB dbb;
 	BLK request;
 
-	JMP_BUF env, *old_env;
-
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
 
@@ -2200,9 +2136,6 @@ static void store_privilege(GBL		gbl,
 /* need to unwind our own request here!! SM 27-Sep-96 */
 
 	try {
-		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-		tdbb->tdbb_setjmp = (UCHAR *) env;
-
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			PRIV IN RDB$USER_PRIVILEGES PRIV.RDB$FIELD_NAME.NULL = TRUE;
 			strcpy(PRIV.RDB$RELATION_NAME, object);
@@ -2222,10 +2155,9 @@ static void store_privilege(GBL		gbl,
 		if (!DYN_REQUEST(drq_s_grant)) {
 			DYN_REQUEST(drq_s_grant) = request;
 		}
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 	}
 	catch (...) {
-		DYN_rundown_request(old_env, request, -1);
+		DYN_rundown_request(request, -1);
 		DYN_error_punt(TRUE, 79, NULL, NULL, NULL, NULL, NULL);
 		/* msg 79: "STORE RDB$USER_PRIVILEGES failed in grant" */
 	}

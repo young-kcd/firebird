@@ -543,7 +543,6 @@ VI. ADDITIONAL NOTES
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
-#include "../jrd/ibsetjmp.h"
 #include "../jrd/common.h"
 #include <stdarg.h>
 #include "../jrd/jrd.h"
@@ -693,14 +692,10 @@ BOOLEAN VAL_validate(TDBB tdbb, USHORT switches)
 	ATT att;
 	USHORT i;
 	DBB dbb;
-	JMP_BUF env, *old_env;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
 	att = tdbb->tdbb_attachment;
-
-	DEBUG old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	try {
 
@@ -746,14 +741,11 @@ BOOLEAN VAL_validate(TDBB tdbb, USHORT switches)
 	delete val_pool;
 	tdbb->tdbb_default = old_pool;
 	tdbb->tdbb_flags &= ~TDBB_sweeper;
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}	// try
 	catch (...) {
 		delete val_pool;
 		tdbb->tdbb_default = old_pool;
 		tdbb->tdbb_flags &= ~TDBB_sweeper;
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		return FALSE;
 	}
 

@@ -31,7 +31,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include "../jrd/ibsetjmp.h"
 #include "../jrd/gds.h"
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
@@ -53,7 +52,6 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/met_proto.h"
-#include "../jrd/pwd_proto.h"
 #include "../jrd/grant_proto.h"
 #include "../jrd/scl_proto.h"
 #include "../jrd/thd_proto.h"
@@ -205,7 +203,6 @@ void SCL_check_index( TDBB tdbb, TEXT * index_name, USHORT mask)
 	SCL s_class, default_s_class;
 	TEXT reln_name[32];
 	DBB dbb;
-	JMP_BUF env, *old_env;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -245,13 +242,10 @@ void SCL_check_index( TDBB tdbb, TEXT * index_name, USHORT mask)
 
 	request = NULL;
 
-/* set up the setjmp mechanism, so that we can release the request
+/* set up the exception mechanism, so that we can release the request
    in case of error in SCL_check_access */
 
 	try {
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 /* check if the field used in the index has the appropriate
    permission. If the field in question does not have a security class
@@ -279,12 +273,8 @@ void SCL_check_index( TDBB tdbb, TEXT * index_name, USHORT mask)
 	END_FOR;
 
 	CMP_release(tdbb, (REQ) request);
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}
 	catch (...) {
-		tdbb->tdbb_setjmp = (UCHAR*) old_env;
 		if (request) {
 			CMP_release(tdbb, (REQ) request);
 		}
@@ -580,13 +570,13 @@ void SCL_init(BOOLEAN	create,
 	node_id = 0;
 	if (!user_name)
 	{
-		wheel = ISC_get_user(name,
-							&id,
-							&group,
-							project,
-							organization,
-							&node_id,
-							sys_user_name);
+       wheel = ISC_get_user(name,
+                           &id,
+                           &group,
+                           project,
+                           organization,
+                           &node_id,
+                           sys_user_name);
 	}
 	else
 	{
@@ -595,34 +585,34 @@ void SCL_init(BOOLEAN	create,
 
 	if (user_name || (id == -1))
 	{
-		if (!user_name || (!password_enc && !password))
-		{
-			ERR_post(gds_login, 0);
-		}
+    	if (!user_name || (!password_enc && !password))
+    	{
+        	ERR_post(gds_login, 0);
+    	}
 
-		if (!internal)
-		{
-			PWD_verify_user(name,
-							user_name,
-							password,
-							password_enc,
-							&id,
-							&group,
-							&node_id);
-		}
+    	if (!internal)
+    	{
+        	PWD_verify_user(name,
+                           user_name,
+                           password,
+                           password_enc,
+                           &id,
+                           &group,
+                           &node_id);
+       }
 
-		/* if the name from the user database is defined as SYSDBA,
-		   we define that user id as having system privileges */
+       /* if the name from the user database is defined as SYSDBA,
+          we define that user id as having system privileges */
 
-		if (!strcmp(name, SYSDBA_USER_NAME))
-		{
-			wheel = 1;
-		}
-	}
+       if (!strcmp(name, SYSDBA_USER_NAME))
+       {
+           wheel = 1;
+       }
+   }
 
-/* In case we became WHEEL on an OS that didn't require name SYSDBA,
- * (Like Unix) force the effective Database User name to be SYSDBA.
- */
+ /* In case we became WHEEL on an OS that didn't require name SYSDBA,
+  * (Like Unix) force the effective Database User name to be SYSDBA.
+  */
 	if (wheel)
 	{
 		strcpy(name, SYSDBA_USER_NAME);
@@ -675,7 +665,7 @@ void SCL_init(BOOLEAN	create,
 	}
 
 	length = strlen(name) + strlen(role_name) + strlen(project) +
-		strlen(organization) + 4;	/* for the terminating nulls */
+		strlen(organization) + 4;   /* for the terminating nulls */
 	tdbb->tdbb_attachment->att_user = user = new(*dbb->dbb_permanent, length) usr();
 	p = user->usr_data;
 	user->usr_user_name = save_string(name, &p);
@@ -704,7 +694,7 @@ void SCL_init(BOOLEAN	create,
 				RDB$RELATION_NAME EQ "RDB$DATABASE" 
 
             if (!REL.RDB$OWNER_NAME.NULL && 
-                (p = user->usr_user_name) && *p)
+				(p = user->usr_user_name) && *p)
 			{
 				*name = strlen(p);
 				strcpy(name + 1, p);
@@ -930,16 +920,11 @@ static BOOLEAN check_user_group(CONST TEXT*	acl,
 	STR buffer;
 	TDBB tdbb;
 	DBB dbb;
-	JMP_BUF env, *old_env;
-
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
 
 	try {
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	buffer = new(*dbb->dbb_permanent, *length_ptr) str();
 
@@ -970,11 +955,8 @@ static BOOLEAN check_user_group(CONST TEXT*	acl,
 	}
 
 	delete buffer;
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}
 	catch (...) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		delete buffer;
 		Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);
 	}
@@ -1050,7 +1032,6 @@ static SLONG compute_access(TDBB		tdbb,
 	TEXT *acl;
 	TEXT *buffer;
 	VOLATILE STR str_buffer = NULL;
-	JMP_BUF env, *old_env;
 	SLONG length = BLOB_BUFFER_SIZE, *length_ptr = &length;
 
 	SET_TDBB(tdbb);
@@ -1059,9 +1040,6 @@ static SLONG compute_access(TDBB		tdbb,
 	privileges = SCL_scanned;
 
 	try {
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 /* Get some space that's not off the stack */
 	str_buffer = new(*dbb->dbb_permanent, BLOB_BUFFER_SIZE) str();
@@ -1120,12 +1098,8 @@ static SLONG compute_access(TDBB		tdbb,
 
 
 	delete str_buffer;
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}
 	catch (...) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		delete str_buffer;
 		Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);
 	}
@@ -1187,10 +1161,10 @@ static SLONG walk_acl(TDBB			tdbb,
 	USHORT		hit;
 	TEXT		c;
 	TEXT*		p;
-	TEXT*		role_name;
 	//BOOLEAN		is_member = FALSE;
 	VOLATILE BLK request;
 	DBB			dbb;
+	TEXT* 	role_name;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -1199,7 +1173,7 @@ static SLONG walk_acl(TDBB			tdbb,
 
 	user = *tdbb->tdbb_attachment->att_user;
 	role_name = user.usr_sql_role_name;
-
+	
 	if (view && (view->rel_flags & REL_sql_relation))
 	{
 		/* Use the owner of the view to perform the sql security

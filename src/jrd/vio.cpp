@@ -74,7 +74,6 @@
 #include "../jrd/tra_proto.h"
 #include "../jrd/vio_proto.h"
 
-
 extern "C" {
 
 

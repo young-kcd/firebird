@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: fun.epp,v 1.3 2001-12-24 02:50:51 tamlin Exp $
+$Id: fun.epp,v 1.4 2002-04-04 07:10:40 bellardo Exp $
 */
 
 #include "firebird.h"
@@ -111,8 +111,6 @@ void DLL_EXPORT FUN_evaluate(FUN function, NOD node, VLU value)
 	STR		temp_string;
 	SSHORT	unsup_datatype = 0;
 
-	JMP_BUF *old_env, env;
-
 	TDBB tdbb = GET_THREAD_DATA;
 
 	// Start by constructing argument list
@@ -155,9 +153,6 @@ void DLL_EXPORT FUN_evaluate(FUN function, NOD node, VLU value)
 #if !defined(SUPERSERVER) && !defined(WINNT)
 	try {
 #endif
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	START_CHECK_FOR_EXCEPTIONS(function->fun_exception_message);
 
@@ -560,12 +555,9 @@ void DLL_EXPORT FUN_evaluate(FUN function, NOD node, VLU value)
 		IBERROR(169);			/* msg 169 return data type not supported */
 	}
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 #if !defined(SUPERSERVER) && !defined(WINNT)
 	}
 	catch (...) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		delete temp_string;
 		while (array_stack) {
 			delete LLS_POP(&array_stack);
@@ -659,9 +651,6 @@ FUN DLL_EXPORT FUN_lookup_function(TEXT * name)
 	USHORT count, args, l;
 	ULONG length;
 	fun_repeat *tail, temp[MAX_UDF_ARGUMENTS + 1];
-#ifdef GATEWAY
-	JMP_BUF *old_env, env;
-#endif
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
@@ -682,8 +671,6 @@ FUN DLL_EXPORT FUN_lookup_function(TEXT * name)
 /* Trap any potential errors */
 
 	try {
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 #endif
 
@@ -813,12 +800,8 @@ FUN DLL_EXPORT FUN_lookup_function(TEXT * name)
 	V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_udf);
 
 #ifdef GATEWAY
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}	// try
 	catch (...) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		return prior;
 	}
 

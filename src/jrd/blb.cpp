@@ -24,12 +24,11 @@
  *                         readonly databases.
  */
 /*
-$Id: blb.cpp,v 1.6 2002-01-05 16:28:59 tamlin Exp $
+$Id: blb.cpp,v 1.7 2002-04-04 07:10:40 bellardo Exp $
 */
 
 #include "firebird.h"
 #include <string.h>
-#include "../jrd/ibsetjmp.h"
 #include "../jrd/jrd.h"
 #include "../jrd/tra.h"
 #include "../jrd/val.h"
@@ -643,7 +642,6 @@ SLONG BLB_get_slice(TDBB tdbb,
 	SLONG offset, length, variables[64], stuff[ADS_LEN(16) / 4], from, to;
 	struct sdl_info info;
 	struct slice arg;
-	JMP_BUF env, *old_env;
         DBB dbb;
 
 	SET_TDBB(tdbb);
@@ -673,9 +671,6 @@ SLONG BLB_get_slice(TDBB tdbb,
 	offset = 0;
 
 /* Trap any potential errors */
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	try {
 
@@ -722,7 +717,6 @@ SLONG BLB_get_slice(TDBB tdbb,
 					  reinterpret_cast < void (*)() > (slice_callback),
 					  reinterpret_cast < struct slice *>(&arg));
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 	MemoryPool::deallocate(data);
 
 	if (status) {
@@ -731,7 +725,6 @@ SLONG BLB_get_slice(TDBB tdbb,
 
 	}	// try
 	catch (...) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		MemoryPool::deallocate(data);
 		ERR_punt();
 	}

@@ -128,7 +128,7 @@
 #define ISC_PREFIX		"/all/files/are/in/framework/resources"
 /* #define ISC_PREFIX		"/tmp" */
 #define DARWIN_GEN_DIR		"var"
-#define DARWIN_FRAMEWORK_ID	"com.firebird.Firebird2"
+#define DARWIN_FRAMEWORK_ID	"com.firebirdsql.Firebird"
 #else
 #define ISC_PREFIX	"/usr/local/firebird/"
 #endif

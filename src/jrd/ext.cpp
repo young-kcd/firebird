@@ -207,7 +207,7 @@ int EXT_get(RSB rsb)
 	REC record;
 	FMT format;
 	LIT literal;
-	FLD field, *field_ptr;
+	FLD field;
 	DSC desc;
 	SSHORT c, l, offset, i;
 	UCHAR *p;
@@ -252,10 +252,10 @@ int EXT_get(RSB rsb)
 	fmt::fmt_desc_iterator desc_ptr = format->fmt_desc.begin();
 
 	for (i = 0, itr = relation->rel_fields->begin();
-			i < format->fmt_count; i++, itr++, desc_ptr++) {
-	    field_ptr = (FLD *) (*itr);
+			i < format->fmt_count; ++i, ++itr, ++desc_ptr) {
+	    field = (FLD) (*itr);
 		SET_NULL(record, i);
-		if (!desc_ptr->dsc_length || !(field = *field_ptr))
+		if (!desc_ptr->dsc_length || !field)
 			continue;
 		if ( (literal = (LIT) field->fld_missing_value) ) {
 			desc = *desc_ptr;

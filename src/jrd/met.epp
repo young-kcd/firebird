@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.8 2002-04-01 00:03:51 bellardo Exp $
+$Id: met.epp,v 1.9 2002-04-04 07:10:40 bellardo Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -39,7 +39,6 @@ $Id: met.epp,v 1.8 2002-04-01 00:03:51 bellardo Exp $
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
-#include "../jrd/ibsetjmp.h"
 #include "../jrd/common.h"
 #include <stdarg.h>
 
@@ -143,7 +142,6 @@ static BOOLEAN verify_TRG_ignore_perm(TDBB, TEXT*);
 #define strcmp          (*_libgds_strcmp)
 #define strcpy          (*_libgds_strcpy)
 #define vsprintf        (*_libgds_vsprintf)
-#define SETJMP          (*_libgds_setjmp)
 #define memcmp          (*_libgds_memcmp)
 #define strncmp         (*_libgds_strncmp)
 #define memset          (*_libgds_memset)
@@ -2307,8 +2305,6 @@ PRC MET_procedure(TDBB tdbb, int id, USHORT flags)
 	fmt::fmt_desc_iterator desc;
 	SSHORT i;
 	USHORT length;
-	JMP_BUF env, *old_env;
-
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -2387,9 +2383,6 @@ PRC MET_procedure(TDBB tdbb, int id, USHORT flags)
 	}
 
 	try {
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	procedure->prc_flags |= (PRC_being_scanned | flags);
 	procedure->prc_id = id;
@@ -2555,7 +2548,6 @@ PRC MET_procedure(TDBB tdbb, int id, USHORT flags)
 #ifdef SUPERSERVER
 	THD_rec_mutex_unlock(&dbb->dbb_sp_rec_mutex);
 #endif
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 
 	}	// try
 	catch (...) {
@@ -2567,7 +2559,6 @@ PRC MET_procedure(TDBB tdbb, int id, USHORT flags)
 		{
 			LCK_release(tdbb, procedure->prc_existence_lock);
 		}
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		ERR_punt();
 	}
 
@@ -2873,7 +2864,6 @@ void MET_scan_relation( TDBB tdbb, REL relation)
 	STR name, string;
 	JrdMemoryPool* old_pool;
 	VOLATILE BOOLEAN dependencies, sys_triggers;
-	JMP_BUF env, *old_env;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -2919,9 +2909,6 @@ void MET_scan_relation( TDBB tdbb, REL relation)
    again. */
 
 	try {
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 /* Since this can be called recursively, find an inactive clone of the request */
 
@@ -3193,7 +3180,6 @@ void MET_scan_relation( TDBB tdbb, REL relation)
 #endif
 	relation->rel_current_format = NULL;
 	tdbb->tdbb_default = old_pool;
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 
 	}	// try
 	catch (...) {
@@ -3207,7 +3193,6 @@ void MET_scan_relation( TDBB tdbb, REL relation)
 #ifdef SUPERSERVER
 		THD_rec_mutex_unlock(&dbb->dbb_sp_rec_mutex);
 #endif
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		tdbb->tdbb_default = old_pool;
 		ERR_punt();
 	}

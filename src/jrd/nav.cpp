@@ -36,7 +36,6 @@
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
 #include "../jrd/blr.h"
-#include "../jrd/ibsetjmp.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/btr_proto.h"
 #include "../jrd/cch_proto.h"
@@ -1084,7 +1083,6 @@ static BOOLEAN find_dbkey(RSB rsb, ULONG record_number)
 	BTN node;
 	BTX expanded_node = NULL;
 	KEY key;
-	JMP_BUF env, *old_env;
 
 	tdbb = GET_THREAD_DATA;
 	request = tdbb->tdbb_request;
@@ -1113,9 +1111,6 @@ static BOOLEAN find_dbkey(RSB rsb, ULONG record_number)
  * during the parse.  See HACKs for bug 7041
  */
 
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
-
 	try {
 
 /* loop through the equivalent values of the given key, looking for a
@@ -1131,12 +1126,10 @@ static BOOLEAN find_dbkey(RSB rsb, ULONG record_number)
 				set_position(impure, rpb, &window, node, expanded_node,
 							 key.key_data, key.key_length);
 				CCH_RELEASE(tdbb, &window);
-				tdbb->tdbb_setjmp = (UCHAR *) old_env;
 				return TRUE;
 			}
 
 			CCH_RELEASE(tdbb, &window);
-			tdbb->tdbb_setjmp = (UCHAR *) old_env;
 			return FALSE;
 		}
 
@@ -1145,7 +1138,6 @@ static BOOLEAN find_dbkey(RSB rsb, ULONG record_number)
 		node = BTR_next_node(node, &expanded_node);
 		if (BTN_LENGTH(node)) {
 			CCH_RELEASE(tdbb, &window);
-			tdbb->tdbb_setjmp = (UCHAR *) old_env;
 			return FALSE;
 		}
 	}
@@ -1153,7 +1145,6 @@ static BOOLEAN find_dbkey(RSB rsb, ULONG record_number)
 	}	// try
 	catch (...) {
 		CCH_RELEASE(tdbb, &window);
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		Firebird::status_exception::raise(-1);
 	}
 }
@@ -1198,7 +1189,6 @@ static BOOLEAN find_record(
 	BOOLEAN result = FALSE, position_set = FALSE;
 	UCHAR *p, *q;
 	USHORT l;
-	JMP_BUF env, *old_env;
 
 	tdbb = GET_THREAD_DATA;
 	request = tdbb->tdbb_request;
@@ -1252,9 +1242,6 @@ static BOOLEAN find_record(
  * during the parse.  See HACKs for bug 7041
  */
 
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
-
 	try {
 
 /* loop through the equivalent values of the given key, finding
@@ -1275,7 +1262,6 @@ static BOOLEAN find_record(
 		if (rpb->rpb_number == END_LEVEL) {
 			CCH_RELEASE(tdbb, &window);
 			RSE_MARK_CRACK(tdbb, rsb, irsb_eof);
-			tdbb->tdbb_setjmp = (UCHAR *) old_env;
 			return FALSE;
 		}
 
@@ -1321,7 +1307,6 @@ static BOOLEAN find_record(
 			}
 
 			CCH_RELEASE(tdbb, &window);
-			tdbb->tdbb_setjmp = (UCHAR *) old_env;
 			return result;
 		}
 
@@ -1339,7 +1324,6 @@ static BOOLEAN find_record(
 
 		if (result && mode == RSE_get_first) {
 			CCH_RELEASE(tdbb, &window);
-			tdbb->tdbb_setjmp = (UCHAR *) old_env;
 			return result;
 		}
 
@@ -1349,7 +1333,6 @@ static BOOLEAN find_record(
 	}	// try
 	catch (...) {
 		CCH_RELEASE(tdbb, &window);
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		Firebird::status_exception::raise(-1);
 	}
 }
@@ -1631,7 +1614,6 @@ static BOOLEAN get_record(
 	REQ request;
 	IDX *idx;
 	KEY value;
-	JMP_BUF env, *old_env;
 	USHORT old_att_flags;
 
 	tdbb = GET_THREAD_DATA;
@@ -1652,9 +1634,6 @@ static BOOLEAN get_record(
 
 		old_att_flags =
 			static_cast<USHORT>(tdbb->tdbb_attachment->att_flags & ATT_no_cleanup);
-		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-		tdbb->tdbb_setjmp = (UCHAR *) env;
-
 		tdbb->tdbb_attachment->att_flags |= ATT_no_cleanup;	/* HACK */
 	}
 
@@ -1700,7 +1679,6 @@ static BOOLEAN get_record(
 	if (inhibit_cleanup) {
 		tdbb->tdbb_attachment->att_flags &= ~ATT_no_cleanup;
 		tdbb->tdbb_attachment->att_flags |= (old_att_flags & ATT_no_cleanup);
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 	}
 
 	}	// try
@@ -1709,7 +1687,6 @@ static BOOLEAN get_record(
 		tdbb->tdbb_attachment->att_flags &= ~ATT_no_cleanup;
 		tdbb->tdbb_attachment->att_flags |=
 			(old_att_flags & ATT_no_cleanup);
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		Firebird::status_exception::raise(-1);
 	}
 

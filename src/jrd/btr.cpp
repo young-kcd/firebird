@@ -21,11 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: btr.cpp,v 1.3 2001-12-24 02:50:50 tamlin Exp $
+$Id: btr.cpp,v 1.4 2002-04-04 07:10:40 bellardo Exp $
 */
 
 #include "firebird.h"
-#include "../jrd/ibsetjmp.h"
 #include <string.h>
 #include <stdlib.h>
 #include "../jrd/ib_stdio.h"
@@ -933,14 +932,11 @@ IDX_E BTR_key(TDBB tdbb,
 	USHORT n, l;
 	UCHAR *p, *q;
 	IDX_E result;
-	JMP_BUF env, *old_env;
 	idx::idx_repeat * tail;
 	int not_missing;
 
 	result = idx_e_ok;
 	tail = idx->idx_rpt;
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	try {
 
@@ -1036,13 +1032,10 @@ IDX_E BTR_key(TDBB tdbb,
 	if (idx->idx_flags & idx_descending)
 		complement_key(key);
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	return result;
 
 	}	// try
 	catch(...) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		key->key_length = 0;
 		return idx_e_conversion;
 	}
@@ -2600,7 +2593,6 @@ static SLONG fast_load(TDBB tdbb,
 	BOOLEAN processed_first_null_idx_key = FALSE;
 	BOOLEAN first_null_idx_key = FALSE;
 #endif /* IGNORE_NULL_IDX_KEY */
-	JMP_BUF env, *old_env;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -2632,8 +2624,6 @@ static SLONG fast_load(TDBB tdbb,
 	nodes[0] = bucket->btr_nodes;
 	error = duplicate = FALSE;
 
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 	tdbb->tdbb_flags |= TDBB_no_cache_unwind;
 
 	try {
@@ -2982,7 +2972,6 @@ static SLONG fast_load(TDBB tdbb,
 
 	if (error) {
 		delete_tree(tdbb, relation->rel_id, idx->idx_id, window->win_page, 0);
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		ERR_punt();
 	}
 
@@ -2991,7 +2980,6 @@ static SLONG fast_load(TDBB tdbb,
 							? (1. / (double) (count - duplicates))
 							: 0);
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 	return window->win_page;
 
 	}	// try
@@ -2999,7 +2987,6 @@ static SLONG fast_load(TDBB tdbb,
 		if (!error)
 			error = TRUE;
 		else {
-			tdbb->tdbb_setjmp = (UCHAR *) old_env;
 			ERR_punt();
 		}
 	}
@@ -3633,9 +3620,6 @@ static SLONG insert_node(TDBB tdbb,
 	UCHAR *midpoint;
 	SLONG prefix_total;
 	JRNB journal;
-#if (defined PC_PLATFORM && !defined NETWARE_386)
-	JMP_BUF env, *old_env;
-#endif
 	BOOLEAN end_of_page;
 #ifdef IGNORE_NULL_IDX_KEY
 	BOOLEAN midpoint_is_end_non_null = FALSE;
@@ -3644,10 +3628,6 @@ static SLONG insert_node(TDBB tdbb,
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
-
-#if (defined PC_PLATFORM && !defined NETWARE_386)
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-#endif
 
 	DEBUG;
 /* find the insertion point for the specified key */
@@ -3750,8 +3730,6 @@ static SLONG insert_node(TDBB tdbb,
 
 		overflow_page = (SLONG *) plb::ALL_malloc((SLONG)
 											 OVERSIZE);
-		tdbb->tdbb_setjmp = (UCHAR *) env;
-
 		try {
 
 #endif
@@ -3851,11 +3829,9 @@ static SLONG insert_node(TDBB tdbb,
 #if (defined PC_PLATFORM && !defined NETWARE_386)
 		if (overflow_page)
 			plb::ALL_free(overflow_page);
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 
 	}	// try
 	catch (...) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		if (overflow_page) {
 			plb::ALL_free(overflow_page);
 		}
@@ -4032,7 +4008,6 @@ midpoint = (UCHAR *) new_node;
 #if (defined PC_PLATFORM && !defined NETWARE_386)
 	if (overflow_page)
 		plb::ALL_free(overflow_page);
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 #endif
 
 /* return the page number of the right sibling page */

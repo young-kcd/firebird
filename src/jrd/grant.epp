@@ -52,7 +52,6 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/scl_proto.h"
 #include "../jrd/thd_proto.h"
-#include "../jrd/ibsetjmp.h"
 
 /* privileges given to the owner of a relation */
 
@@ -156,7 +155,6 @@ int GRANT_privileges( TDBB tdbb, SSHORT phase, DFW work)
 			ULONG default_length = ACL_BUFFER_SIZE, *default_length_ptr =
 				&default_length;
 
-			JMP_BUF env, *old_env;
 			DBB dbb;
 
 			SET_TDBB(tdbb);
@@ -176,9 +174,6 @@ int GRANT_privileges( TDBB tdbb, SSHORT phase, DFW work)
 			/* start the acl off by giving the owner all privileges */
 
 			try {
-
-			old_env = (JMP_BUF*)tdbb->tdbb_setjmp;
-			tdbb->tdbb_setjmp = (UCHAR *) env;
 
 			str_buffer = new(*dbb->dbb_permanent, ACL_BUFFER_SIZE) str;
 			str_default_buffer = new(*dbb->dbb_permanent, ACL_BUFFER_SIZE) str;
@@ -265,12 +260,8 @@ int GRANT_privileges( TDBB tdbb, SSHORT phase, DFW work)
 				save_security_class(tdbb, s_class, str_buffer->str_data,
 									(USHORT)(acl - str_buffer->str_data));
 			}
-
-			tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 			}	// try
 			catch (...) {
-				tdbb->tdbb_setjmp = (UCHAR *) old_env;
 				delete str_buffer;
 				delete str_default_buffer;
 				ERR_punt();
@@ -798,7 +789,6 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 
 	STR relation_buffer = *str_relation_buffer;
 
-	JMP_BUF env, *old_env;
 	STR str_field_buffer = NULL, str_field_buffer_start = NULL;
 
 	ULONG field_length, start_length;
@@ -811,9 +801,6 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 	dbb = tdbb->tdbb_database;
 
 	try {
-
-	old_env = (JMP_BUF*)tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	/* initialize the field-level acl buffer to include all relation-level privs */
 
@@ -1048,12 +1035,8 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 	}
 
 	*acl_ptr = relation_acl;
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}
 	catch (...) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		delete str_field_buffer;
 		delete str_field_buffer_start;
 		ERR_punt();

@@ -22,7 +22,6 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ibsetjmp.h"
 #include "../jrd/jrd.h"
 #include "../jrd/scl.h"
 #include "../jrd/gds.h"
@@ -121,7 +120,6 @@ BOOLEAN SHUT_database(DBB dbb, SSHORT flag, SSHORT delay)
 	WIN window;
 	HDR header;
 	SSHORT timeout, exclusive;
-	JMP_BUF env, *old_env;
 
 	tdbb = GET_THREAD_DATA;
 	attachment = tdbb->tdbb_attachment;
@@ -135,9 +133,6 @@ BOOLEAN SHUT_database(DBB dbb, SSHORT flag, SSHORT delay)
 	if (!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner))) {
 		return FALSE;
 	}
-
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	try {
 
@@ -164,7 +159,6 @@ BOOLEAN SHUT_database(DBB dbb, SSHORT flag, SSHORT delay)
 
 		SHUT_blocking_ast(dbb);
 
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		return TRUE;
 	}
 
@@ -231,11 +225,8 @@ BOOLEAN SHUT_database(DBB dbb, SSHORT flag, SSHORT delay)
 	CCH_RELEASE(tdbb, &window);
 	CCH_release_exclusive(tdbb);
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}	// try
 	catch (...) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		return FALSE;
 	}
 

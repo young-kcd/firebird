@@ -51,7 +51,6 @@
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 
-#include "../jrd/ibsetjmp.h"
 #include "../jrd/jrd.h"
 #include "../jrd/pag.h"
 #include "../jrd/ods.h"
@@ -991,7 +990,6 @@ void PAG_header(TEXT * file_name, USHORT file_length)
 	register VCL vector;
 	register REL relation;
 	SCHAR *temp_buffer, *temp_page;
-	JMP_BUF env, *old_env;
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
@@ -1009,8 +1007,6 @@ void PAG_header(TEXT * file_name, USHORT file_length)
 	temp_page =
 		(SCHAR *) (((U_IPTR) temp_buffer + MIN_PAGE_SIZE - 1) &
 				   ~((U_IPTR) MIN_PAGE_SIZE - 1));
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	try {
 
@@ -1122,11 +1118,8 @@ if (header->hdr_implementation && header->hdr_implementation != CLASS)
 
 	if (temp_buffer)
 		MemoryPool::free_from_system(temp_buffer);
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}	// try
 	catch (...) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		if (temp_buffer) {
 			MemoryPool::free_from_system(temp_buffer);
 		}
@@ -1220,7 +1213,6 @@ void PAG_init2(USHORT shadow_number)
 	SLONG next_page;
 	UCHAR buf[MAX_PATH_LENGTH];
 	STATUS *status;
-	JMP_BUF env, *old_env;
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
@@ -1235,8 +1227,6 @@ void PAG_init2(USHORT shadow_number)
 	temp_page =
 		(SCHAR *) (((U_IPTR) temp_buffer + MIN_PAGE_SIZE - 1) &
 				   ~((U_IPTR) MIN_PAGE_SIZE - 1));
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
 
 	try {
 
@@ -1341,11 +1331,8 @@ void PAG_init2(USHORT shadow_number)
 	if (temp_buffer) {
 		MemoryPool::free_from_system(temp_buffer);
 	}
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
 	}	// try
 	catch (...) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		if (temp_buffer) {
 			MemoryPool::free_from_system(temp_buffer);
 		}

@@ -555,12 +555,12 @@ SVC SVC_attach(USHORT	service_length,
 		if (options.spb_user_name || id == -1)
 		{
 			PWD_verify_user(name,
-							options.spb_user_name,
-							options.spb_password,
-							options.spb_password_enc,
-							&id,
-							&group,
-							&node_id);
+                    options.spb_user_name,
+                    options.spb_password,
+                    options.spb_password_enc,
+                    &id,
+                    &group,
+                    &node_id);
 		}
 
 /* Check that the validated user has the authority to access this service */
@@ -582,7 +582,7 @@ SVC SVC_attach(USHORT	service_length,
 	{
 		if ((switches = (TEXT *) gds__alloc((SLONG) len)) == NULL)
 		{
-			/* FREE: by SETJMP handler */
+			/* FREE: by exception handler */
 			ERR_post(isc_virmemexh, 0);
 		}
 	}
@@ -601,7 +601,7 @@ SVC SVC_attach(USHORT	service_length,
 
 //	service = (SVC) gds__alloc((SLONG) (sizeof(struct svc)));
 	service = new(*getDefaultMemoryPool()) svc;
-/* FREE: by SETJMP handler */
+/* FREE: by exception handler */
 	if (!service)
 		ERR_post(isc_virmemexh, 0);
 
@@ -609,7 +609,7 @@ SVC SVC_attach(USHORT	service_length,
 
 	service->svc_status =
 		(STATUS *) gds__alloc(ISC_STATUS_LENGTH * sizeof(STATUS));
-/* FREE: by setjmp handler */
+/* FREE: by exception handler */
 	if (!service->svc_status)
 		ERR_post(isc_virmemexh, 0);
 

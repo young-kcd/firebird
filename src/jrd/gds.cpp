@@ -38,7 +38,6 @@
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <string.h>
-#include "../jrd/ibsetjmp.h"
 #include "../jrd/common.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/file_params.h"
@@ -533,12 +532,6 @@ extern int ib_vfprintf();
 
 
 /* BLR Pretty print stuff */
-
-#ifndef JMP_BUF
-error JMP_BUF not defined !
-#else /* JMP_BUF */
-static JMP_BUF env;				/* Error return environment */
-#endif /* JMP_BUF */
 
 #define PRINT_VERB 	blr_print_verb (control, level)
 #define PRINT_LINE	blr_print_line (control, (SSHORT) offset)
