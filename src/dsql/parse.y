@@ -84,11 +84,9 @@
 #include "../dsql/dsql.h"
 #include "../jrd/ibase.h"
 #include "../jrd/flags.h"
-#include "../dsql/alld_proto.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/hsh_proto.h"
 #include "../dsql/make_proto.h"
-#include "../dsql/parse_proto.h"
 #include "../dsql/keywords.h"
 #include "../dsql/misc_func.h"
 #include "../jrd/gds_proto.h"
@@ -4390,22 +4388,25 @@ static dsql_nod* make_list (dsql_nod* node)
  **************************************/
 	tsql* tdsql = DSQL_get_thread_data();
 
-	if (!node)
-		return node;
+	if (node)
+	{
+		DsqlNodStack stack;
+		stack_nodes(node, stack);
+		USHORT l = stack.getCount();
 
-	DsqlNodStack stack;
-	stack_nodes (node, stack);
-	USHORT l = stack.getCount();
+		dsql_nod* old = node;
+		node = FB_NEW_RPT(*tdsql->getDefaultPool(), l) dsql_nod;
+		node->nod_count = l;
+		node->nod_type = nod_list;
+		if (MemoryPool::blk_type(old) == dsql_type_nod)
+		{
+			node->nod_flags = old->nod_flags;
+		}
+		dsql_nod** ptr = node->nod_arg + node->nod_count;
 
-	dsql_nod* old  = node;
-	node = FB_NEW_RPT(*tdsql->getDefaultPool(), l) dsql_nod;
-	node->nod_count = l;
-	node->nod_type  = nod_list;
-	node->nod_flags = old->nod_flags;
-	dsql_nod** ptr = node->nod_arg + node->nod_count;
-
-	while (stack.hasData())
-		*--ptr = stack.pop();
+		while (stack.hasData())
+			*--ptr = stack.pop();
+	}
 
 	return node;
 }
