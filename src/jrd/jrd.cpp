@@ -603,7 +603,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		return user_status[1];
 	} 
 	else 
-	  user_status[0] = 0; // Clear status vector
+		user_status[0] = 0; // Clear status vector
 
 /* Unless we're already attached, do some initialization */
 
@@ -773,7 +773,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		LCK_init(tdbb, LCK_OWNER_database);
 		dbb->dbb_flags |= DBB_lck_init_done;
 		INI_init();
-		// FUN_init();
 		dbb->dbb_file =
 			PIO_open(dbb, expanded_name.c_str(), expanded_name.length(),
 					 options.dpb_trace != 0, NULL, file_name, file_length);
@@ -1739,6 +1738,16 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	thread_db thd_context;
 	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
+/* Check database against conf file. */
+	const vdnResult vdn = verify_database_name(expanded_name, user_status);
+	if (!is_alias && vdn == vdnFail)
+	{
+		JRD_restore_context();
+		return user_status[1];
+	} 
+	else 
+		user_status[0] = 0; // Clear status vector
+
 	Database* dbb = init(tdbb, user_status, expanded_name, false);
 	if (!dbb) {
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
@@ -1799,16 +1808,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 			ERR_post(isc_unavailable, 0);
 		}
 	}
-
-	// Check for DatabaseAccess
-	const vdnResult vdn = verify_database_name(expanded_name, user_status);
-	
-	if (!is_alias && vdn == vdnFail) 
-	{
-		ERR_punt();
-	} 
-	else 
-		user_status[0] = 0; // Clear status vector.
 
 	if (options.dpb_key.hasData()) 
 	{
@@ -1882,7 +1881,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	LCK_init(tdbb, LCK_OWNER_database);
 	dbb->dbb_flags |= DBB_lck_init_done;
 	INI_init();
-	// FUN_init();
 	PAG_init();
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
