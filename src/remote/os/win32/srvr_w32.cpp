@@ -254,7 +254,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	}
 	else if (!(server_flag & SRVR_non_service)) {
 		CNTL_init((FPTR_VOID) start_connections_thread, REMOTE_SERVICE);
-		if (!StartServiceCtrlDispatcher(service_table)) {
+		if (!StartServiceCtrlDispatcher(const_cast<SERVICE_TABLE_ENTRY*>(service_table))) {
 			if (GetLastError() != ERROR_CALL_NOT_IMPLEMENTED) {
 				CNTL_shutdown_service("StartServiceCtrlDispatcher failed");
 			}
