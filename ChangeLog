@@ -1,3 +1,22 @@
+2005-01-30 12:44  alexpeshkoff
+
+	* firebird2/src/common/classes/: string_test.cmd (1.2),
+	string_test.cpp (1.3):
+	
+	license + misc
+
+2005-01-30 03:14  robocop
+
+	* firebird2/src/dsql/parse.cpp (1.142):
+	
+	Regenerate parse.cpp after Nickolay's changes.
+
+2005-01-30 03:13  robocop
+
+	* firebird2/src/dsql/pass1.cpp (1.190):
+	
+	Misc.
+
 2005-01-29 10:22  robocop
 
 	* firebird2/src/remote/inet.cpp (1.139):
