@@ -1,3 +1,32 @@
+2003-11-15 21:16  skidder
+
+	* firebird2/src/remote/inet.cpp:
+	
+	Forcedly set SO_KEEPALIVE flag for POSIX CS connections
+	independently of what was given by xinetd/inetd to us
+
+2003-11-15 21:12  skidder
+
+	* firebird2/src/remote/inet.cpp:
+	
+	Forcedly set SO_KEEPALIVE flag for POSIX CS connections
+	independently of what was given by xinetd/inetd to us
+
+2003-11-15 13:07  alexpeshkoff
+
+	*
+	
+	fixed install problems
+	firebird2/builds/install/arch-specific/linux/super/postinstall.sh.i
+	n:
+
+2003-11-15 13:03  alexpeshkoff
+
+	*
+	firebird2/src/install/arch-specific/linux/super/postinstall.sh.in:
+	
+	fixed install problems
+
 2003-11-14 14:48  paul_reeves
 
 	* firebird2/src/:
