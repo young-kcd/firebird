@@ -406,6 +406,8 @@ static USHORT do_msgs( TEXT * filename, TEXT * locale, USHORT sw_warning)
 	if (warning_counter)
 		ib_printf("build_file: %d messages lack translations in locale %s\n",
 				  warning_counter, locale);
+
+	return FINI_OK;
 }
 
 
