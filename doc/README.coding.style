@@ -34,3 +34,6 @@ exceed one line.
 scratch (on all available platforms).
 - Always end source files, including headers, with a newline.
 - Prefer C++ style for comments
+- Use abstract datatypes (UCHAR, SSHORT, ULONG etc) instead of generic
+ones (unsigned char, short, unsigned long resp) because generic types
+can be changed unexpectedly (long int become 64 bits for example).
