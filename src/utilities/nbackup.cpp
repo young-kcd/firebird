@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbackup.cpp,v 1.19 2004-03-16 06:11:56 skidder Exp $
+ *  $Id: nbackup.cpp,v 1.20 2004-03-16 06:16:48 skidder Exp $
  *
  */
  
@@ -108,6 +108,7 @@ public:
 		va_list params;
 		va_start(params, message);
 		VSNPRINTF(temp, sizeof(temp), message, params);
+		temp[sizeof(temp)-1] = 0;
 		fprintf(stderr, "Failure: %s\n", temp);
 		va_end(params);
 		throw b_error(temp);
