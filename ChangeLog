@@ -1,3 +1,33 @@
+2003-04-19 19:01  alexpeshkoff
+
+	* firebird2/builds/win32/msvc6/common_classic.dsp:
+	
+	Exit on missing / wrong firebird.conf with error report in system
+	log
+
+2003-04-19 18:44  alexpeshkoff
+
+	* firebird2/: src/common/config/config.cpp,
+	src/common/config/config_file.cpp, src/common/config/config_file.h,
+	src/jrd/db_alias.cpp, src/jrd/os/posix/fbsyslog.cpp,
+	src/jrd/os/win32/fbsyslog.cpp, src/jrd/os/fbsyslog.h,
+	builds/win32/msvc6/common.dsp, builds/posix/make.shared.variables:
+	
+	Exit on missing / wrong firebird.conf with error report in system
+	log
+
+2003-04-19 18:39  alexpeshkoff
+
+	* firebird2/src/jrd/: gds.cpp, gds_proto.h:
+	
+	Changed gds__log parameter to be const
+
+2003-04-19 16:08  stryqx
+
+	* firebird2/src/install/arch-specific/freebsd/Makefile.in:
+	
+	FreeBSD-specific Makefile.in.  Empty for the moment.
+
 2003-04-18 12:30  paul_reeves
 
 	* firebird2/builds/win32/preprocess.bat:
