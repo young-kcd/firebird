@@ -84,7 +84,7 @@
 #endif
 
 static BOOLEAN augment_stack(JRD_NOD, LLS *);
-static SLONG calculate_priority_level(OPT, IDX *);
+static UINT64 calculate_priority_level(OPT, IDX *);
 static void check_indices(csb_repeat *);
 static BOOLEAN check_relationship(OPT, USHORT, USHORT);
 static void check_sorts(RSE);
@@ -163,7 +163,7 @@ static void set_made_river(OPT, RIV);
 static void set_position(JRD_NOD, JRD_NOD, JRD_NOD);
 static void set_rse_inactive(CSB, RSE);
 static void sort_indices_by_selectivity(csb_repeat *);
-static SSHORT sort_indices_by_priority(csb_repeat *, IDX **, SLONG *);
+static SSHORT sort_indices_by_priority(csb_repeat *, IDX **, UINT64 *);
 
 
 /* macro definitions */
@@ -1160,7 +1160,7 @@ static BOOLEAN augment_stack(JRD_NOD node, LLS * stack)
 }
 
 
-static SLONG calculate_priority_level(OPT opt, IDX * idx)
+static UINT64 calculate_priority_level(OPT opt, IDX * idx)
 {
 /**************************************
  *
@@ -1181,36 +1181,30 @@ static SLONG calculate_priority_level(OPT opt, IDX * idx)
 
 	if (opt->opt_rpt[0].opt_lower || opt->opt_rpt[0].opt_upper) {
 
-		/* Count how many fields matches */
+		// Count how many fields can be used in this index and
+		// count the maximum equals that matches at the begin.
+		idx_eql_count = 0;
 		idx_field_count = 0;
 		idx_tail = opt->opt_rpt;
 		idx_end = idx_tail + idx->idx_count;
 		for (;idx_tail < idx_end && 
 			 (idx_tail->opt_lower || idx_tail->opt_upper); idx_tail++) {
 			idx_field_count++;
-		}
-
-		/* Count the maximum equals that matches at the begin */
-		idx_eql_count = 0;
-		idx_tail = opt->opt_rpt;
-		idx_end = idx_tail + idx->idx_count;
-		for (;idx_tail < idx_end && 
-			 (idx_tail->opt_lower || idx_tail->opt_upper); idx_tail++) {
 			node = idx_tail->opt_match;
-			if (node->nod_type == nod_eql) {
-				idx_eql_count++;
-			}
-			else {
+			if (node->nod_type != nod_eql) {
 				break;
 			}
+			else {
+				idx_eql_count++;
+			}
 		}
-
+		
 		/* Calculate our priority level */
 		// Note: dbb->dbb_max_idx = 1022 for the largest supported page of 16K and
 		//						    62 for the smallest page of 1K
-		SLONG max_idx = GET_THREAD_DATA->tdbb_database->dbb_max_idx;
+		UINT64 max_idx = GET_THREAD_DATA->tdbb_database->dbb_max_idx + 1;
 		return ((idx_eql_count * max_idx * max_idx) + 
-			(idx_field_count * max_idx) + (idx->idx_count));
+			(idx_field_count * max_idx) + (max_idx - idx->idx_count));
 
 	}
 	else {
@@ -4116,8 +4110,8 @@ static RSB gen_retrieval(TDBB     tdbb,
 
 		Firebird::vector<IDX*> idx_walk_vector(MAX_INDICES);
 		IDX** idx_walk = &idx_walk_vector[0];
-		Firebird::vector<SLONG> idx_priority_level_vector(MAX_INDICES);
-		SLONG* idx_priority_level = &idx_priority_level_vector[0];
+		Firebird::vector<UINT64> idx_priority_level_vector(MAX_INDICES);
+		UINT64* idx_priority_level = &idx_priority_level_vector[0];
 
 		for (i = 0, idx = csb_tail->csb_idx; i < csb_tail->csb_indices;
 			 i++, idx = NEXT_IDX(idx->idx_rpt, idx->idx_count))
@@ -5406,8 +5400,8 @@ static JRD_NOD make_inversion(TDBB tdbb, OPT opt, JRD_NOD boolean, USHORT stream
 	// TMN: Shouldn't this be allocated from the tdbb->tdbb_default pool?
 	Firebird::vector<IDX*> idx_walk_vector(MAX_INDICES);
 	IDX** idx_walk = &idx_walk_vector[0];
-	Firebird::vector<SLONG> idx_priority_level_vector(MAX_INDICES);
-	SLONG* idx_priority_level = &idx_priority_level_vector[0];
+	Firebird::vector<UINT64> idx_priority_level_vector(MAX_INDICES);
+	UINT64* idx_priority_level = &idx_priority_level_vector[0];
 
 	idx = csb_tail->csb_idx;
 	if (opt->opt_count) {
@@ -6452,7 +6446,7 @@ static void sort_indices_by_selectivity(csb_repeat * csb_tail)
 
 static SSHORT sort_indices_by_priority(csb_repeat * csb_tail,
 									   IDX ** idx_walk,
-									   SLONG * idx_priority_level)
+									   UINT64 * idx_priority_level)
 {
 /***************************************************
  *
@@ -6473,7 +6467,7 @@ static SSHORT sort_indices_by_priority(csb_repeat * csb_tail,
 	for (SSHORT i = 0; i < csb_tail->csb_indices; i++)
 	{
 		SSHORT last_idx = -1;
-		SLONG last_priority_level = 0;
+		UINT64 last_priority_level = 0;
 
 		for (SSHORT j = csb_tail->csb_indices - 1; j >= 0; j--)
 		{
