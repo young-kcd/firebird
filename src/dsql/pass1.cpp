@@ -1206,22 +1206,19 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		if (!proc_flag) {
 			name = (dsql_str*) input->nod_arg[e_exe_procedure];
 			DEV_BLKCHK(name, dsql_type_str);
-			if (!(request->req_procedure = METD_get_procedure(request, name)))
+			if (!(request->req_procedure = METD_get_procedure(request, name))) {
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 204,
 						  isc_arg_gds, isc_dsql_procedure_err,
 						  isc_arg_gds, isc_random,
 						  isc_arg_string, name->str_data, 0);
+			}
 			request->req_type = REQ_EXEC_PROCEDURE;
 		}
 		node = MAKE_node(input->nod_type, input->nod_count);
 		node->nod_arg[e_exe_procedure] = input->nod_arg[e_exe_procedure];
+		// handle input parameters
 		node->nod_arg[e_exe_inputs] = 
 			PASS1_node(request, input->nod_arg[e_exe_inputs], proc_flag);
-		dsql_nod* temp = input->nod_arg[e_exe_outputs];
-		if (temp)
-			node->nod_arg[e_exe_outputs] = (temp->nod_type == nod_all) ? 
-				explode_outputs(request, request->req_procedure) :
-				PASS1_node(request, temp, proc_flag);
 		if (!proc_flag) {
 			USHORT count = 0;
 			if (node->nod_arg[e_exe_inputs])
@@ -1249,6 +1246,21 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 					set_parameter_type(*ptr, desc_node.get(), false);
 				}
 			}
+		}
+		// handle output parameters
+		dsql_nod* temp = input->nod_arg[e_exe_outputs];
+		if (!proc_flag) {
+			if (temp) {
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, isc_arg_gds, 
+						  isc_token_err, // Token unknown 
+						  isc_arg_gds, isc_random, isc_arg_string, "RETURNING_VALUES", 0);
+			}
+			node->nod_arg[e_exe_outputs] =
+				explode_outputs(request, request->req_procedure);
+		}
+		else {
+			node->nod_arg[e_exe_outputs] =
+				PASS1_node(request, temp, proc_flag);
 		}
 		break;
 		}

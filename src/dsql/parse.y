@@ -554,8 +554,8 @@ statement	: alter
 		| drop
 		| grant
 		| insert
-		| invoke_procedure
-		| invoke_block
+		| exec_procedure
+		| exec_block
 		| recreate
 		| replace
 		| revoke
@@ -1582,45 +1582,40 @@ proc_statements	: proc_block
 		;
 
 proc_statement	: assignment ';'
-		| delete ';'
-		| excp_statement
-		| raise_statement
-		| exec_procedure
-		| exec_sql
-		| for_select
-		| if_then_else
 		| insert ';'
-		| post_event
-		| singleton_select
 		| update ';'
-		| while
-		| for_exec_into
-		| exec_into
+		| delete ';'
+		| singleton_select ';'
+		| exec_procedure ';'
+		| exec_sql ';'
+		| exec_into ';'
+		| exec_udf ';'
+		| excp_statement ';'
+		| raise_statement ';'
+		| post_event ';'
+		| cursor_statement ';'
+		| breakleave ';'
 		| SUSPEND ';'
 			{ $$ = make_node (nod_return, (int) e_rtn_count, NULL); }
 		| EXIT ';'
 			{ $$ = make_node (nod_exit, 0, NULL); }
-		| breakleave
-		| cursor_statement ';'
-		| exec_udf ';'
+		| if_then_else
+		| while
+		| for_select
+		| for_exec_into
 		;
 
-excp_statement	: EXCEPTION symbol_exception_name ';'
+excp_statement	: EXCEPTION symbol_exception_name
 			{ $$ = make_node (nod_exception_stmt, (int) e_xcp_count, $2, NULL); }
-		| EXCEPTION symbol_exception_name value ';'
+		| EXCEPTION symbol_exception_name value
 			{ $$ = make_node (nod_exception_stmt, (int) e_xcp_count, $2, $3); }
 		;
 
-raise_statement	: EXCEPTION ';'
+raise_statement	: EXCEPTION
 			{ $$ = make_node (nod_exception_stmt, (int) e_xcp_count, NULL, NULL); }
 		;
 
-exec_procedure	: EXECUTE PROCEDURE symbol_procedure_name proc_inputs proc_outputs ';'
-			{ $$ = make_node (nod_exec_procedure, (int) e_exe_count, $3,
-					  $4, $5); }
-		;
-
-exec_sql	: EXECUTE STATEMENT value ';'
+exec_sql	: EXECUTE STATEMENT value
 			{ $$ = make_node (nod_exec_sql, (int) e_exec_sql_count, $3); }
 		;
 
@@ -1633,7 +1628,7 @@ for_exec_into	: label_opt FOR EXECUTE STATEMENT value INTO variable_list DO proc
 			{ $$ = make_node (nod_exec_into, (int) e_exec_into_count, $5, $9, make_list ($7), $1); }
 		;
 
-exec_into	: EXECUTE STATEMENT value INTO variable_list ';'
+exec_into	: EXECUTE STATEMENT value INTO variable_list
 			{ $$ = make_node (nod_exec_into, (int) e_exec_into_count, $3, 0, make_list ($5)); }
 		;
 
@@ -1643,7 +1638,7 @@ if_then_else	: IF '(' search_condition ')' THEN proc_block ELSE proc_block
 			{ $$ = make_node (nod_if, (int) e_if_count, $3, $6, NULL); }
 		;
 
-post_event	: POST_EVENT value event_argument_opt ';'
+post_event	: POST_EVENT value event_argument_opt
 			{ $$ = make_node (nod_post, (int) e_pst_count, $2, $3); }
 		;
 
@@ -1653,7 +1648,7 @@ event_argument_opt	: /*',' value
 			{ $$ = NULL; }
 		;
 
-singleton_select	: select INTO variable_list ';'
+singleton_select	: select INTO variable_list
 			{ $$ = make_node (nod_for_select, (int) e_flp_count, $1,
 					  make_list ($3), NULL, NULL); }
 		;
@@ -1661,22 +1656,6 @@ singleton_select	: select INTO variable_list ';'
 variable	: ':' symbol_variable_name
 			{ $$ = make_node (nod_var_name, (int) e_vrn_count, 
 							$2); }
-		;
-
-proc_inputs	: value_list
-			{ $$ = make_list ($1); }
-		| '(' value_list ')'
-			{ $$ = make_list ($2); }
-		|
-			{ $$ = NULL; }
-		;
-
-proc_outputs	: RETURNING_VALUES variable_list
-			{ $$ = make_list ($2); }
-		| RETURNING_VALUES '(' variable_list  ')'
-			{ $$ = make_list ($3); }
-		|
-			{ $$ = NULL; }
 		;
 
 variable_list	: variable
@@ -1697,11 +1676,11 @@ label_opt	: symbol_label_name ':'
 			{ $$ = NULL; }
 		;
 
-breakleave	: KW_BREAK ';'
+breakleave	: KW_BREAK
 			{ $$ = make_node (nod_breakleave, (int) e_breakleave_count, NULL); }
-		| LEAVE ';'
+		| LEAVE
 			{ $$ = make_node (nod_breakleave, (int) e_breakleave_count, NULL); }
-		| LEAVE symbol_label_name ';'
+		| LEAVE symbol_label_name
 			{ $$ = make_node (nod_breakleave, (int) e_breakleave_count,
 				make_node (nod_label, (int) e_label_count, $2, NULL)); }
 		;
@@ -1795,16 +1774,33 @@ fetch_seek_opt	:
 				$2); }
 	;
 */
-/* Direct EXECUTE PROCEDURE */
 
-invoke_procedure : EXECUTE PROCEDURE symbol_procedure_name proc_inputs
-			{ $$ = make_node (nod_exec_procedure, (int) e_exe_count, $3,
-				  $4, make_node (nod_all, (int) 0, NULL)); }
+/* EXECUTE PROCEDURE */
+
+exec_procedure	: EXECUTE PROCEDURE symbol_procedure_name proc_inputs proc_outputs_opt
+			{ $$ = make_node (nod_exec_procedure, (int) e_exe_count,
+					$3, $4, $5); }
+		;
+
+proc_inputs	: value_list
+			{ $$ = make_list ($1); }
+		| '(' value_list ')'
+			{ $$ = make_list ($2); }
+		|
+			{ $$ = NULL; }
+		;
+
+proc_outputs_opt	: RETURNING_VALUES variable_list
+			{ $$ = make_list ($2); }
+		| RETURNING_VALUES '(' variable_list  ')'
+			{ $$ = make_list ($3); }
+		|
+			{ $$ = NULL; }
 		;
 
 /* EXECUTE BLOCK */
 
-invoke_block : EXECUTE BLOCK block_input_params output_parameters AS 
+exec_block : EXECUTE BLOCK block_input_params output_parameters AS 
 			local_declaration_list
 			full_proc_block
 				{ $$ = make_node (nod_exec_block,
@@ -3284,10 +3280,6 @@ delete_positioned : KW_DELETE FROM table_name cursor_clause
 			{ $$ = make_node (nod_delete, (int) e_del_count, $3, NULL, NULL, NULL, NULL, $4); }
 		;
 
-cursor_clause	: WHERE CURRENT OF symbol_cursor_name
-			{ $$ = make_node (nod_cursor, (int) e_cur_count, $4, NULL, NULL, NULL); }
-		;
-
 
 /* UPDATE statement */
 
@@ -3304,6 +3296,14 @@ update_positioned : UPDATE table_name SET assignments cursor_clause
 			{ $$ = make_node (nod_update, (int) e_upd_count,
 				$2, make_list ($4), NULL, NULL, NULL, NULL, $5); }
 		;
+
+
+cursor_clause	: WHERE CURRENT OF symbol_cursor_name
+			{ $$ = make_node (nod_cursor, (int) e_cur_count, $4, NULL, NULL, NULL); }
+		;
+
+
+/* Assignments */
 
 assignments	: assignment
 		| assignments ',' assignment
