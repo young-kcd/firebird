@@ -2239,6 +2239,7 @@ void CMP_shutdown_database(TDBB tdbb)
 		if (relation) {
 			if (relation->rel_existence_lock) {
 				LCK_release(tdbb, relation->rel_existence_lock);
+				relation->rel_flags |= REL_check_existence;
 				relation->rel_use_count = 0;
 			}
 			for (idl* index = relation->rel_index_locks; index;
@@ -2263,6 +2264,7 @@ void CMP_shutdown_database(TDBB tdbb)
 		if (procedure) {
 			if (procedure->prc_existence_lock) {
 				LCK_release(tdbb, procedure->prc_existence_lock);
+				procedure->prc_flags |= PRC_check_existence;
 				procedure->prc_use_count = 0;
 			}
 		}

@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.76 2003-11-08 16:40:17 brodsom Exp $
+$Id: met.epp,v 1.77 2003-11-27 11:39:10 dimitr Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -2065,6 +2065,7 @@ JRD_PRC MET_lookup_procedure(TDBB tdbb, SCHAR * name, BOOLEAN noscan)
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
+	JRD_PRC check_procedure = NULL;
 
 /* See if we already know the procedure by name */
 
@@ -2081,9 +2082,20 @@ JRD_PRC MET_lookup_procedure(TDBB tdbb, SCHAR * name, BOOLEAN noscan)
 				p = (SCHAR*)procedure->prc_name->str_data;
 				for (q = name; *p == *q; p++, q++)
 				{
-					if (*p == 0)
-						return procedure;
+					if (*p == 0) {
+						if (procedure->prc_flags & PRC_check_existence) {
+							check_procedure = procedure;
+							LCK_lock(tdbb, check_procedure->prc_existence_lock, LCK_SR, TRUE);
+							break;
+						}
+						else {
+							return procedure;
+						}
+					}
   				}
+			}
+			if (check_procedure) {
+				break;
 			}
 		}
 
@@ -2105,6 +2117,14 @@ JRD_PRC MET_lookup_procedure(TDBB tdbb, SCHAR * name, BOOLEAN noscan)
 
 	if (!REQUEST(irq_l_procedure))
 		REQUEST(irq_l_procedure) = request;
+
+	if (check_procedure) {
+		check_procedure->prc_flags &= ~PRC_check_existence;
+		if (check_procedure != procedure) {
+			LCK_release(tdbb, check_procedure->prc_existence_lock);
+			check_procedure->prc_flags |= PRC_obsolete;
+		}
+	}
 
 	return procedure;
 }
@@ -2130,6 +2150,7 @@ JRD_PRC MET_lookup_procedure_id(TDBB tdbb, SSHORT id,
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
+	JRD_PRC check_procedure = NULL;
 
 	if ((procedures = dbb->dbb_procedures)
 		&& id < (SSHORT) procedures->count()
@@ -2140,7 +2161,13 @@ JRD_PRC MET_lookup_procedure_id(TDBB tdbb, SSHORT id,
 		&& !(procedure->prc_flags & PRC_being_altered)
 		&& (!(procedure->prc_flags & PRC_obsolete) || return_deleted))
 	{
-		return procedure;
+		if (procedure->prc_flags & PRC_check_existence) {
+			check_procedure = procedure;
+			LCK_lock(tdbb, check_procedure->prc_existence_lock, LCK_SR, TRUE);
+		}
+		else {
+			return procedure;
+		}
 	}
 
 /* We need to look up the procedure name in RDB$PROCEDURES */
@@ -2161,6 +2188,14 @@ JRD_PRC MET_lookup_procedure_id(TDBB tdbb, SSHORT id,
 
 	if (!REQUEST(irq_l_proc_id))
 		REQUEST(irq_l_proc_id) = request;
+
+	if (check_procedure) {
+		check_procedure->prc_flags &= ~PRC_check_existence;
+		if (check_procedure != procedure) {
+			LCK_release(tdbb, check_procedure->prc_existence_lock);
+			check_procedure->prc_flags |= PRC_obsolete;
+		}
+	}
 
 	return procedure;
 }
