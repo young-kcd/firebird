@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.42 2003-10-08 08:42:43 robocop Exp $ 
+  * $Id: evl.cpp,v 1.43 2003-10-20 22:41:11 brodsom Exp $ 
  */
 
 /*
@@ -248,7 +248,7 @@ DSC* EVL_assign_to(TDBB tdbb, JRD_NOD node)
 		impure->vlu_desc.dsc_length = desc->dsc_length;
 		impure->vlu_desc.dsc_scale = desc->dsc_scale;
 		impure->vlu_desc.dsc_sub_type = desc->dsc_sub_type;
-		if (IS_DTYPE_ANY_TEXT(desc->dsc_dtype) &&
+		if (DTYPE_IS_TEXT(desc->dsc_dtype) &&
 			((INTL_TTYPE(desc) == ttype_dynamic) ||
 			 (INTL_GET_CHARSET(desc) == CS_dynamic))) {
 			/* Value is a text value, we're assigning it back to the user
@@ -2557,8 +2557,8 @@ static DSC *add_datetime(DSC * desc, JRD_NOD node, VLU value)
 
 		/* Handle historical <timestamp> = <string> - <value> case */
 		if (!DTYPE_IS_DATE(dtype) &&
-			(IS_DTYPE_ANY_TEXT(value->vlu_desc.dsc_dtype) ||
-			 IS_DTYPE_ANY_TEXT(desc->dsc_dtype))) dtype = dtype_timestamp;
+			(DTYPE_IS_TEXT(value->vlu_desc.dsc_dtype) ||
+			 DTYPE_IS_TEXT(desc->dsc_dtype))) dtype = dtype_timestamp;
 	}
 
 	switch (dtype) {

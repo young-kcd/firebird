@@ -184,6 +184,8 @@ typedef struct alt_dsc {
 				  ((d) <= dtype_d_float)) || \
 				 ((d)  == dtype_int64))
 
+#define NUMERIC_SCALE(desc)	((DTYPE_IS_TEXT((desc).dsc_dtype)) ? 0 : (desc).dsc_scale)
+
 /* Macros defining what operations are legal on data types */
 #define DTYPE_CAN_NEGATE(d)	DTYPE_IS_NUMERIC(d)
 #define DTYPE_CAN_AVERAGE(d)	DTYPE_IS_NUMERIC(d)

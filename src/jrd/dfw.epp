@@ -4606,7 +4606,7 @@ static bool validate_text_type(TDBB tdbb, ISC_STATUS * status, TFB tfb)
  *
  **************************************/
 
-	if ((IS_DTYPE_ANY_TEXT (tfb->tfb_desc.dsc_dtype) &&
+	if ((DTYPE_IS_TEXT (tfb->tfb_desc.dsc_dtype) &&
 		!INTL_defined_type(tdbb, status, tfb->tfb_desc.dsc_ttype))
 		||
 		(tfb->tfb_desc.dsc_dtype == dtype_blob && 

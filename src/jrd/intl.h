@@ -82,8 +82,6 @@
 #define INTL_GET_COLLATE(dsc)	((SCHAR)((dsc)->dsc_sub_type >> 8))
 
 
-#define	IS_DTYPE_ANY_TEXT(x)		((x) <= dtype_any_text)
-
 /* Define tests for international data */
 
 #define	INTL_TTYPE(desc)		((desc)->dsc_ttype)
@@ -94,9 +92,7 @@
 #define IS_INTL_DATA(d)		((d)->dsc_dtype <= dtype_any_text &&    \
 				 (((USHORT)((d)->dsc_ttype)) > ttype_last_internal))
 
-#define NUMERIC_SCALE(desc)	((IS_DTYPE_ANY_TEXT((desc).dsc_dtype)) ? 0 : (desc).dsc_scale)
-
-#define INTL_TEXT_TYPE(desc)    ((IS_DTYPE_ANY_TEXT((desc).dsc_dtype)) ? INTL_TTYPE (&(desc)) : ttype_ascii)
+#define INTL_TEXT_TYPE(desc)    ((DTYPE_IS_TEXT((desc).dsc_dtype)) ? INTL_TTYPE (&(desc)) : ttype_ascii)
 
 #define INTL_DYNAMIC_CHARSET(desc)	(INTL_GET_CHARSET(desc) == CS_dynamic)
 

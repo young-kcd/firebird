@@ -916,8 +916,8 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 			case dtype_short:
 				desc->dsc_dtype = dtype_long;
 				desc->dsc_length = sizeof(SLONG);
-				if (IS_DTYPE_ANY_TEXT(desc1.dsc_dtype) ||
-					IS_DTYPE_ANY_TEXT(desc2.dsc_dtype)) desc->dsc_scale = 0;
+				if (DTYPE_IS_TEXT(desc1.dsc_dtype) ||
+					DTYPE_IS_TEXT(desc2.dsc_dtype)) desc->dsc_scale = 0;
 				else
 					desc->dsc_scale = MIN(desc1.dsc_scale, desc2.dsc_scale);
 				node->nod_scale = desc->dsc_scale;
@@ -927,8 +927,8 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 
 			case dtype_sql_date:
 			case dtype_sql_time:
-				if (IS_DTYPE_ANY_TEXT(desc1.dsc_dtype) ||
-					IS_DTYPE_ANY_TEXT(desc2.dsc_dtype))
+				if (DTYPE_IS_TEXT(desc1.dsc_dtype) ||
+					DTYPE_IS_TEXT(desc2.dsc_dtype))
 						ERR_post(gds_expression_eval_err, 0);
 				/* FALL INTO */
 			case dtype_timestamp:
@@ -951,9 +951,9 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 						   <string> - <timestamp> 
 						   <string> - <string>   */
 
-						if (IS_DTYPE_ANY_TEXT(dtype1))
+						if (DTYPE_IS_TEXT(dtype1))
 							dtype = dtype_timestamp;
-						else if (IS_DTYPE_ANY_TEXT(dtype2))
+						else if (DTYPE_IS_TEXT(dtype2))
 							dtype = dtype_timestamp;
 						else if (dtype1 == dtype2)
 							dtype = dtype1;
@@ -1051,8 +1051,8 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 				node->nod_flags |= nod_quad;
 				desc->dsc_dtype = dtype_quad;
 				desc->dsc_length = sizeof(SQUAD);
-				if (IS_DTYPE_ANY_TEXT(desc1.dsc_dtype) ||
-					IS_DTYPE_ANY_TEXT(desc2.dsc_dtype)) desc->dsc_scale = 0;
+				if (DTYPE_IS_TEXT(desc1.dsc_dtype) ||
+					DTYPE_IS_TEXT(desc2.dsc_dtype)) desc->dsc_scale = 0;
 				else
 					desc->dsc_scale = MIN(desc1.dsc_scale, desc2.dsc_scale);
 				node->nod_scale = desc->dsc_scale;
@@ -1226,8 +1226,8 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 			case dtype_int64:
 				desc->dsc_dtype = dtype_int64;
 				desc->dsc_length = sizeof(SINT64);
-				if (IS_DTYPE_ANY_TEXT(desc1.dsc_dtype) ||
-					IS_DTYPE_ANY_TEXT(desc2.dsc_dtype)) desc->dsc_scale = 0;
+				if (DTYPE_IS_TEXT(desc1.dsc_dtype) ||
+					DTYPE_IS_TEXT(desc2.dsc_dtype)) desc->dsc_scale = 0;
 				else
 					desc->dsc_scale = MIN(desc1.dsc_scale, desc2.dsc_scale);
 				node->nod_scale = desc->dsc_scale;
@@ -1248,8 +1248,8 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 				node->nod_flags |= nod_quad;
 				desc->dsc_dtype = dtype_quad;
 				desc->dsc_length = sizeof(SQUAD);
-				if (IS_DTYPE_ANY_TEXT(desc1.dsc_dtype) ||
-					IS_DTYPE_ANY_TEXT(desc2.dsc_dtype)) desc->dsc_scale = 0;
+				if (DTYPE_IS_TEXT(desc1.dsc_dtype) ||
+					DTYPE_IS_TEXT(desc2.dsc_dtype)) desc->dsc_scale = 0;
 				else
 					desc->dsc_scale = MIN(desc1.dsc_scale, desc2.dsc_scale);
 				node->nod_scale = desc->dsc_scale;

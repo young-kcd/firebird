@@ -488,9 +488,11 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		case dtype_sql_time:
 		case dtype_sql_date:
 			/* Forbid <date/time> +- <string> */
-			if (IS_DTYPE_ANY_TEXT(desc1.dsc_dtype) ||
-				IS_DTYPE_ANY_TEXT(desc2.dsc_dtype))
+			if (DTYPE_IS_TEXT(desc1.dsc_dtype) ||
+				DTYPE_IS_TEXT(desc2.dsc_dtype))
+			{
 					ERRD_post(gds_expression_eval_err, 0);
+			}
 
 		case dtype_timestamp:
 
@@ -509,9 +511,9 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 					   <string> - <timestamp> 
 					   <string> - <string>   */
 
-					if (IS_DTYPE_ANY_TEXT(dtype1))
+					if (DTYPE_IS_TEXT(dtype1))
 						dtype = dtype_timestamp;
-					else if (IS_DTYPE_ANY_TEXT(dtype2))
+					else if (DTYPE_IS_TEXT(dtype2))
 						dtype = dtype_timestamp;
 					else if (dtype1 == dtype2)
 						dtype = dtype1;
@@ -605,9 +607,11 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 
 		/* In Dialect 2 or 3, strings can never partipate in addition / sub 
 		   (Use a specific cast instead) */
-		if (IS_DTYPE_ANY_TEXT(desc1.dsc_dtype) ||
-			IS_DTYPE_ANY_TEXT(desc2.dsc_dtype))
+		if (DTYPE_IS_TEXT(desc1.dsc_dtype) ||
+			DTYPE_IS_TEXT(desc2.dsc_dtype))
+		{
 				ERRD_post(gds_expression_eval_err, 0);
+		}
 
 		/* Determine the TYPE of arithmetic to perform, store it
 		   in dtype.  Note:  this is different from the result of
