@@ -155,13 +155,13 @@
 					Name="Debug|Win32">
 					<Tool
 						Name="VCResourceCompilerTool"
-						AdditionalIncludeDirectories="\firebird\firebird2\src\jrd;$(NoInherit)"/>
+						AdditionalIncludeDirectories="..\..\..\src\jrd;$(NoInherit)"/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool
 						Name="VCResourceCompilerTool"
-						AdditionalIncludeDirectories="\firebird\firebird2\src\jrd;$(NoInherit)"/>
+						AdditionalIncludeDirectories="..\..\..\src\jrd;$(NoInherit)"/>
 				</FileConfiguration>
 			</File>
 		</Filter>
