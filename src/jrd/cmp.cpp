@@ -2096,7 +2096,9 @@ void CMP_release(TDBB tdbb, JRD_REQ request)
 					if ( (index = CMP_get_index_lock(tdbb, relation,
 													 resource->rsc_id)) )
 					{
-						if (!--index->idl_count)
+						if (index->idl_count)
+							--index->idl_count;
+						if (!index->idl_count)
 							LCK_release(tdbb, index->idl_lock);
 					}
 					break;
