@@ -35,7 +35,7 @@
 
 #ifndef REMOTE_REMOTE_H
 
-#include <winsock.h>
+#include <winsock2.h>
 #include <nwerror.h>
 #undef SOCKET_NOT_OPEN			/* Defined in nwerror.h, redefined by nxtw.h */
 #undef SOCKET_ALREADY_OPEN		/* Defined in nwerror.h, redefined by nxtw.h */

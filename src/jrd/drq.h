@@ -174,6 +174,9 @@
 								   the user who was granted the privileges */
 #define drq_g_rel_constr_nm 125	/* get relation constraint name */
 #define drq_e_rel_const     126	/* erase relation constraints */
-#define drq_MAX             127
+#define drq_e_gens	    127		/* erase generators */
+#define drq_s_f_class	    128 /* set the security class name for a field */
+#define drq_s_u_class	    129 /* find a unique security class name for a field */
+#define drq_MAX             130
 
 #endif /* _JRD_DRQ_H_ */

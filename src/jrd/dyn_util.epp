@@ -69,11 +69,7 @@ static CONST SCHAR gen_id_blr1[] = {
 	blr_version5,
 	blr_begin,
 	blr_message, 0, 1, 0,
-#ifndef EXACT_NUMERICS
-	blr_long, 0,
-#else
 	blr_int64, 0,
-#endif
 	blr_begin,
 	blr_send, 0,
 	blr_begin,

@@ -20,6 +20,15 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
+ * 23-May-2001 Claudio Valderrama - Forbid zero length identifiers,
+ *                                   they are not ANSI SQL compliant.
+ * 2001.10.08 Claudio Valderrama: Add case isc_dyn_system_flag to
+ *	DYN_define_trigger() in order to receive values for special triggers
+ *	as defined in constants.h.
+ * 2001.10.08 Ann Harrison: Changed dyn_create_index so it doesn't consider
+ *	simple unique indexes when finding a "referred index", but only
+ * 	indexes that support unique constraints or primary keys.
+ * 26-Sep-2001 Paul Beach - External File Directory Config. Parameter                                    
  * 2002-02-24 Sean Leyne - Code Cleanup of old Win 3.1 port (WINDOWS_ONLY)
  *
  */
@@ -258,8 +267,17 @@ void DYN_define_constraint(GBL		gbl,
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
 
-	if (!GET_STRING(ptr, constraint_name))
+	constraint_name[0] = 0;
+	GET_STRING(ptr, constraint_name);
+	MET_exact_name(constraint_name);
+	if (!constraint_name[0])
+	{
 		DYN_UTIL_generate_constraint_name(tdbb, gbl, constraint_name);
+		MET_exact_name(constraint_name);
+	}
+	if (!constraint_name[0])
+		DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+	/* msg 212: "Zero length identifiers not allowed" */
 
 	request = NULL;
 	id = -1;
@@ -316,7 +334,7 @@ void DYN_define_constraint(GBL		gbl,
 			/* check that we have references permissions on the table and
 			   fields that the index:referred_index_name is on. */
 
-			SCL_check_index(tdbb, referred_index_name, SCL_sql_references);
+			SCL_check_index(tdbb, referred_index_name, 0, SCL_sql_references);
 		}
 	END_STORE;
 
@@ -711,9 +729,18 @@ void DYN_define_exception( GBL gbl, UCHAR ** ptr)
 
 	VOLATILE BLK request;
 	UCHAR verb;
+	TEXT exception_name[32];
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB  dbb  = tdbb->tdbb_database;
+
+	exception_name[0] = 0;
+	GET_STRING(ptr, exception_name);
+
+	MET_exact_name(exception_name);
+	if (!exception_name[0])
+		DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+	/* msg 212: "Zero length identifiers not allowed" */
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_xcp, DYN_REQUESTS);
 
@@ -723,7 +750,8 @@ void DYN_define_exception( GBL gbl, UCHAR ** ptr)
 
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			X IN RDB$EXCEPTIONS 
-			GET_STRING(ptr, X.RDB$EXCEPTION_NAME);
+		    /* GET_STRING(ptr, X.RDB$EXCEPTION_NAME); */
+			strcpy(X.RDB$EXCEPTION_NAME, exception_name);
 			X.RDB$MESSAGE.NULL = TRUE;
 			while ((verb = *(*ptr)++) != gds_dyn_end)
 			{
@@ -892,10 +920,19 @@ void DYN_define_filter( GBL gbl, UCHAR ** ptr)
  **************************************/
 
 	UCHAR verb;
+	TEXT filter_name[32];
 	VOLATILE BLK request;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB  dbb  = tdbb->tdbb_database;
+
+	filter_name[0] = 0;
+	GET_STRING(ptr, filter_name);
+
+	MET_exact_name(filter_name);
+	if (!filter_name[0])
+		DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+	/* msg 212: "Zero length identifiers not allowed" */
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_filters, DYN_REQUESTS);
 
@@ -905,7 +942,8 @@ void DYN_define_filter( GBL gbl, UCHAR ** ptr)
 
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			X IN RDB$FILTERS USING 
-			GET_STRING(ptr, X.RDB$FUNCTION_NAME);
+		    /* GET_STRING(ptr, X.RDB$FUNCTION_NAME); */
+			strcpy(X.RDB$FUNCTION_NAME, filter_name);
 			X.RDB$OUTPUT_SUB_TYPE.NULL = TRUE;
 			X.RDB$INPUT_SUB_TYPE.NULL = TRUE;
 			X.RDB$MODULE_NAME.NULL = TRUE;
@@ -983,10 +1021,19 @@ void DYN_define_function( GBL gbl, UCHAR ** ptr)
  **************************************/
 
 	UCHAR verb;
+	TEXT function_name[32];
 	VOLATILE BLK request;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB  dbb  = tdbb->tdbb_database;
+
+	function_name[0] = 0;
+	GET_STRING(ptr, function_name);
+
+	MET_exact_name(function_name);
+	if (!function_name[0])
+		DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+	/* msg 212: "Zero length identifiers not allowed" */
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_funcs, DYN_REQUESTS);
 
@@ -996,7 +1043,8 @@ void DYN_define_function( GBL gbl, UCHAR ** ptr)
 
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			X IN RDB$FUNCTIONS USING 
-			GET_STRING(ptr, X.RDB$FUNCTION_NAME);
+		    /* GET_STRING(ptr, X.RDB$FUNCTION_NAME); */
+			strcpy(X.RDB$FUNCTION_NAME, function_name);
 			X.RDB$RETURN_ARGUMENT.NULL = TRUE;
 			X.RDB$QUERY_NAME.NULL = TRUE;
 			X.RDB$MODULE_NAME.NULL = TRUE;
@@ -1208,6 +1256,15 @@ void DYN_define_generator( GBL gbl, UCHAR ** ptr)
 	DBB  dbb  = tdbb->tdbb_database;
 
 	VOLATILE BLK request;
+	TEXT generator_name[32];
+
+	generator_name[0] = 0;
+	GET_STRING(ptr, generator_name);
+	MET_exact_name(generator_name);
+
+	if (!generator_name[0])
+		DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+	/* msg 212: "Zero length identifiers not allowed" */
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_gens, DYN_REQUESTS);
 
@@ -1217,7 +1274,8 @@ void DYN_define_generator( GBL gbl, UCHAR ** ptr)
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			X IN RDB$GENERATORS 
 
-			GET_STRING(ptr, X.RDB$GENERATOR_NAME);
+		    /* GET_STRING(ptr, X.RDB$GENERATOR_NAME); */
+			strcpy(X.RDB$GENERATOR_NAME, generator_name);
 
 			b_ending_store = true;
 
@@ -1244,121 +1302,6 @@ void DYN_define_generator( GBL gbl, UCHAR ** ptr)
 }
 
 
-void DYN_define_role( GBL gbl, UCHAR ** ptr)
-{
-/**************************************
- *
- *	D Y N _ d e f i n e _ r o l e
- *
- **************************************
- *
- * Functional description
- *
- *     Define a SQL role.
- *     ROLES cannot be named the same as any existing user name 
- *
- **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	VOLATILE BLK request = NULL;
-	TEXT dummy_name[32], owner_name[32], role_name[32], *p;
-
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
-
-	if (private_getODS() < ODS_9_0)
-	{
-		DYN_error(FALSE, 196, NULL, NULL, NULL, NULL, NULL);
-		ERR_punt();
-	}
-
-	strcpy(owner_name, tdbb->tdbb_attachment->att_user->usr_user_name);
-
-	for (p = owner_name; *p; p++)
-		*p = UPPER7(*p);
-	*p = '\0';
-
-	GET_STRING(ptr, role_name);
-
-	if (strcmp(role_name, owner_name) == 0) {
-		/************************************************
-		**
-		** user name could not be used for SQL role
-		**
-		*************************************************/
-		DYN_error(FALSE, 193, owner_name, NULL, NULL, NULL, NULL);
-		ERR_punt();
-	}
-
-	if (strcmp(role_name, "NONE") == 0) {
-		/************************************************
-		**
-		** keyword NONE could not be used as SQL role name
-		**
-		*************************************************/
-		DYN_error(FALSE, 195, role_name, NULL, NULL, NULL, NULL);
-		ERR_punt();
-	}
-
-	try {
-
-		if (is_it_user_name(gbl, role_name, tdbb)) {
-			/************************************************
-			**
-			** user name could not be used for SQL role
-			**
-			*************************************************/
-			DYN_error(FALSE, 193, role_name, NULL, NULL, NULL, NULL);
-			goto do_err_punt;
-		}
-
-		if (DYN_is_it_sql_role(gbl, role_name, dummy_name, tdbb)) {
-			/************************************************
-			**
-			** SQL role already exist
-			**
-			*************************************************/
-			DYN_error(FALSE, 194, role_name, NULL, NULL, NULL, NULL);
-			goto do_err_punt;
-		}
-
-		request = (BLK) CMP_find_request(tdbb, drq_role_gens, DYN_REQUESTS);
-
-		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			X IN RDB$ROLES 
-			strcpy(X.RDB$ROLE_NAME, role_name);
-			strcpy(X.RDB$OWNER_NAME, owner_name);
-
-		END_STORE;
-
-		if (!DYN_REQUEST(drq_role_gens)) {
-			DYN_REQUEST(drq_role_gens) = request;
-		}
-
-		if (*(*ptr)++ != gds_dyn_end) {
-			goto do_error_punt_9;
-		}
-	}
-	catch (...) {
-		if (request) {
-			DYN_rundown_request(request, drq_role_gens);
-		}
-		DYN_error_punt(TRUE, 8, NULL, NULL, NULL, NULL, NULL);
-		/* msg 8: "DEFINE ROLE failed" */
-	}
-
-	return;
-
-do_err_punt:
-	ERR_punt();
-	return;
-
-do_error_punt_9:
-	DYN_error_punt(TRUE, 9, NULL, NULL, NULL, NULL, NULL);
-	/* msg 9: "DEFINE ROLE unexpected dyn verb" */
-}
-
-
 void DYN_define_global_field(GBL		gbl,
 							 UCHAR**	ptr,
 							 TEXT*		relation_name,
@@ -1379,8 +1322,22 @@ void DYN_define_global_field(GBL		gbl,
 	DBB  dbb  = tdbb->tdbb_database;
 
 	UCHAR verb;
+	TEXT global_field_name[32];
 	VOLATILE BLK request;
 	USHORT dtype;
+
+	global_field_name[0] = 0;
+	GET_STRING(ptr, global_field_name);
+
+	MET_exact_name(global_field_name);
+	if (!global_field_name[0])
+	{
+		DYN_UTIL_generate_field_name(tdbb, gbl, global_field_name);
+		MET_exact_name(global_field_name);
+	}
+	if (!global_field_name[0])
+		DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+	/* msg 212: "Zero length identifiers not allowed" */
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_gfields, DYN_REQUESTS);
 
@@ -1391,9 +1348,9 @@ void DYN_define_global_field(GBL		gbl,
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FLD IN RDB$FIELDS USING 
 
-        if (!GET_STRING(ptr, FLD.RDB$FIELD_NAME)) {
-            DYN_UTIL_generate_field_name(tdbb, gbl, FLD.RDB$FIELD_NAME);
-		}
+	    /* if (!GET_STRING (ptr, FLD.RDB$FIELD_NAME))
+			DYN_UTIL_generate_field_name(tdbb, gbl, FLD.RDB$FIELD_NAME); */
+		strcpy(FLD.RDB$FIELD_NAME, global_field_name);
 
 		FLD.RDB$SYSTEM_FLAG.NULL = TRUE;
 		FLD.RDB$FIELD_SCALE.NULL = TRUE;
@@ -1673,6 +1630,19 @@ void DYN_define_index(GBL		gbl,
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB  dbb  = tdbb->tdbb_database;
 
+	index_name[0] = 0;
+	GET_STRING(ptr, index_name);
+
+	MET_exact_name(index_name);
+	if (!index_name[0])
+	{
+		DYN_UTIL_generate_index_name(tdbb, gbl, index_name, index_type);
+		MET_exact_name(index_name);
+	}
+	if (!index_name[0])
+		DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+	/* msg 212: "Zero length identifiers not allowed" */
+
 	request = NULL;
 	id = -1;
 
@@ -1693,9 +1663,9 @@ void DYN_define_index(GBL		gbl,
 		IDX.RDB$EXPRESSION_SOURCE.NULL = TRUE;
 		IDX.RDB$EXPRESSION_BLR.NULL = TRUE;
 		fld_count = seg_count = 0;
-		if (!GET_STRING(ptr, IDX.RDB$INDEX_NAME))
-			DYN_UTIL_generate_index_name(tdbb, gbl, IDX.RDB$INDEX_NAME,
-										 index_type);
+	    /* if (!GET_STRING(ptr, IDX.RDB$INDEX_NAME))
+			DYN_UTIL_generate_index_name(tdbb, gbl, IDX.RDB$INDEX_NAME, index_type); */
+		strcpy(IDX.RDB$INDEX_NAME, index_name);
 		if (new_index_name != NULL)
 			strcpy(new_index_name, IDX.RDB$INDEX_NAME);
 		if (relation_name)
@@ -1858,6 +1828,10 @@ void DYN_define_index(GBL		gbl,
 
 			case gds_dyn_idx_foreign_key:
 				GET_STRING(ptr, referenced_relation);
+				MET_exact_name(referenced_relation);
+				if (!referenced_relation[0])
+					DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+				/* msg 212: "Zero length identifiers not allowed" */
 				break;
 
 			case gds_dyn_idx_ref_column:
@@ -2042,10 +2016,13 @@ void DYN_define_index(GBL		gbl,
 			list_ptr = NULL;
 			found = FALSE;
 			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-				Y IN RDB$INDICES CROSS
+			    X IN RDB$RELATION_CONSTRAINTS CROSS
+				Y IN RDB$INDICES OVER RDB$INDEX_NAME CROSS
 					Z IN RDB$INDEX_SEGMENTS OVER RDB$INDEX_NAME WITH
 					Y.RDB$RELATION_NAME EQ referenced_relation AND
-					Y.RDB$UNIQUE_FLAG NOT MISSING
+				    Y.RDB$UNIQUE_FLAG NOT MISSING AND
+					(X.RDB$CONSTRAINT_TYPE = PRIMARY_KEY OR
+					X.RDB$CONSTRAINT_TYPE = UNIQUE_CNSTRT)
 					SORTED BY Y.RDB$INDEX_NAME,
 					DESCENDING Z.RDB$FIELD_POSITION 
 
@@ -2199,6 +2176,7 @@ void DYN_define_local_field(GBL		gbl,
 	BLK old_request;
 	VOLATILE SSHORT id, old_id;
 	UCHAR verb, *blr;
+	TEXT local_field_name[32];
 	USHORT dtype, length,
 		lflag, sflag, slflag, scflag, clflag, clength, prflag, precision;
 	SSHORT stype, scale;
@@ -2209,6 +2187,14 @@ void DYN_define_local_field(GBL		gbl,
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
+
+	local_field_name[0] = 0;
+	GET_STRING(ptr, local_field_name);
+
+	MET_exact_name(local_field_name);
+	if (!local_field_name[0])
+		DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+	/* msg 212: "Zero length identifiers not allowed" */
 
 	request = NULL;
 	id = -1;
@@ -2224,7 +2210,8 @@ void DYN_define_local_field(GBL		gbl,
 	source = NULL;
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		RFR IN RDB$RELATION_FIELDS 
-        GET_STRING(ptr, RFR.RDB$FIELD_NAME);
+	    /* GET_STRING(ptr, RFR.RDB$FIELD_NAME); */
+		strcpy(RFR.RDB$FIELD_NAME, local_field_name);
 		strcpy(RFR.RDB$FIELD_SOURCE, RFR.RDB$FIELD_NAME);
 		if (field_name != NULL)
 			strcpy(field_name, RFR.RDB$FIELD_NAME);
@@ -2681,6 +2668,7 @@ void DYN_define_parameter( GBL gbl, UCHAR ** ptr, TEXT * procedure_name)
 	TDBB tdbb;
 	DBB dbb;
 	UCHAR verb;
+	TEXT parameter_name[32];
 	VOLATILE BLK request;
 	BLK request2;
 	USHORT f_length, f_type, f_charlength, f_seg_length,
@@ -2692,6 +2680,14 @@ void DYN_define_parameter( GBL gbl, UCHAR ** ptr, TEXT * procedure_name)
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
+
+	parameter_name[0] = 0;
+	GET_STRING(ptr, parameter_name);
+
+	MET_exact_name(parameter_name);
+	if (!parameter_name[0])
+		DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+	/* msg 212: "Zero length identifiers not allowed" */
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_prms, DYN_REQUESTS);
 
@@ -2707,7 +2703,8 @@ void DYN_define_parameter( GBL gbl, UCHAR ** ptr, TEXT * procedure_name)
 	id = drq_s_prms;
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		P IN RDB$PROCEDURE_PARAMETERS USING
-        GET_STRING(ptr, P.RDB$PARAMETER_NAME);
+	    /* GET_STRING(ptr, P.RDB$PARAMETER_NAME); */
+		strcpy(P.RDB$PARAMETER_NAME, parameter_name);
 		if (procedure_name) {
 			P.RDB$PROCEDURE_NAME.NULL = FALSE;
 			strcpy(P.RDB$PROCEDURE_NAME, procedure_name);
@@ -2914,10 +2911,16 @@ void DYN_define_procedure( GBL gbl, UCHAR ** ptr)
 	VOLATILE SSHORT id;
 	TEXT procedure_name[PROC_NAME_SIZE], owner_name[32], *p;
 
-	GET_STRING(ptr, procedure_name);
-
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
+
+	procedure_name[0] = 0;
+	GET_STRING(ptr, procedure_name);
+
+	MET_exact_name(procedure_name);
+	if (!procedure_name[0])
+		DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+	/* msg 212: "Zero length identifiers not allowed" */
 
 	sql_prot = FALSE;
 	request = NULL;
@@ -3069,6 +3072,8 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
  *	Execute a dynamic ddl statement.
  *
  **************************************/
+	EDLS *dir_list; /* external file directory list */
+	BOOLEAN	found_dir;
 	TDBB tdbb;
 	DBB dbb;
 	VOLATILE BLK request;
@@ -3083,7 +3088,14 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
 	dbb = tdbb->tdbb_database;
 
 	sql_prot = is_a_view = FALSE;
+
+	relation_name[0] = 0;
 	GET_STRING(ptr, relation_name);
+
+	MET_exact_name(relation_name);
+	if (!relation_name[0])
+		DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+	/* msg 212: "Zero length identifiers not allowed" */
 
 	request = NULL;
 	id = -1;
@@ -3158,10 +3170,29 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
 				GET_STRING(ptr, REL.RDB$EXTERNAL_FILE);
 				if (ISC_check_if_remote(REL.RDB$EXTERNAL_FILE, FALSE))
 					DYN_error_punt(TRUE, 163, NULL, NULL, NULL, NULL, NULL);
-				ISC_expand_filename(REL.RDB$EXTERNAL_FILE,
-									strlen(REL.RDB$EXTERNAL_FILE),
-									REL.RDB$EXTERNAL_FILE);
-				REL.RDB$EXTERNAL_FILE.NULL = FALSE;
+
+				/*	If external file directory exists, do not expand the
+					external file name */
+
+				found_dir = FALSE;
+				dir_list = DLS_get_file_dirs();
+				while (dir_list && !found_dir)
+				{
+					dir_list->edls_directory;
+					if (dir_list)
+					{
+						found_dir = TRUE;
+						REL.RDB$EXTERNAL_FILE.NULL = FALSE;
+					}
+					dir_list = dir_list->edls_next;
+				}
+				if (!dir_list)
+				{
+					ISC_expand_filename(REL.RDB$EXTERNAL_FILE,
+										strlen(REL.RDB$EXTERNAL_FILE),
+										REL.RDB$EXTERNAL_FILE);
+					REL.RDB$EXTERNAL_FILE.NULL = FALSE;
+				}
 				break;
 
 			case gds_dyn_rel_sql_protection:
@@ -3195,6 +3226,9 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
                     if (!DYN_REQUEST(drq_l_view_rels))
                         DYN_REQUEST(drq_l_view_rels) = request;
 
+					/* CVC: This never matches so it causes unnecessary calls to verify,
+							so I included a call to strip trailing blanks. */
+					DYN_terminate(PREL.RDB$OWNER_NAME, sizeof(PREL.RDB$OWNER_NAME));
 					if (strcmp(PREL.RDB$OWNER_NAME, owner_name)) {
 						if (DYN_UTIL_get_prot
 							(tdbb, gbl, PREL.RDB$RELATION_NAME, "", &priv))
@@ -3279,6 +3313,121 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
 		assert(0);
 		DYN_error_punt(TRUE, 0, NULL, NULL, NULL, NULL, NULL);
 	}
+}
+
+
+void DYN_define_role( GBL gbl, UCHAR ** ptr)
+{
+/**************************************
+ *
+ *	D Y N _ d e f i n e _ r o l e
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ *     Define a SQL role.
+ *     ROLES cannot be named the same as any existing user name 
+ *
+ **************************************/
+	TDBB tdbb;
+	DBB dbb;
+	VOLATILE BLK request = NULL;
+	TEXT dummy_name[32], owner_name[32], role_name[32], *p;
+
+	tdbb = GET_THREAD_DATA;
+	dbb = tdbb->tdbb_database;
+
+	if (private_getODS() < ODS_9_0)
+	{
+		DYN_error(FALSE, 196, NULL, NULL, NULL, NULL, NULL);
+		ERR_punt();
+	}
+
+	strcpy(owner_name, tdbb->tdbb_attachment->att_user->usr_user_name);
+
+	for (p = owner_name; *p; p++)
+		*p = UPPER7(*p);
+	*p = '\0';
+
+	GET_STRING(ptr, role_name);
+
+	if (strcmp(role_name, owner_name) == 0) {
+		/************************************************
+		**
+		** user name could not be used for SQL role
+		**
+		*************************************************/
+		DYN_error(FALSE, 193, owner_name, NULL, NULL, NULL, NULL);
+		ERR_punt();
+	}
+
+	if (strcmp(role_name, "NONE") == 0) {
+		/************************************************
+		**
+		** keyword NONE could not be used as SQL role name
+		**
+		*************************************************/
+		DYN_error(FALSE, 195, role_name, NULL, NULL, NULL, NULL);
+		ERR_punt();
+	}
+
+	try {
+
+		if (is_it_user_name(gbl, role_name, tdbb)) {
+			/************************************************
+			**
+			** user name could not be used for SQL role
+			**
+			*************************************************/
+			DYN_error(FALSE, 193, role_name, NULL, NULL, NULL, NULL);
+			goto do_err_punt;
+		}
+
+		if (DYN_is_it_sql_role(gbl, role_name, dummy_name, tdbb)) {
+			/************************************************
+			**
+			** SQL role already exist
+			**
+			*************************************************/
+			DYN_error(FALSE, 194, role_name, NULL, NULL, NULL, NULL);
+			goto do_err_punt;
+		}
+
+		request = (BLK) CMP_find_request(tdbb, drq_role_gens, DYN_REQUESTS);
+
+		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			X IN RDB$ROLES 
+			strcpy(X.RDB$ROLE_NAME, role_name);
+			strcpy(X.RDB$OWNER_NAME, owner_name);
+
+		END_STORE;
+
+		if (!DYN_REQUEST(drq_role_gens)) {
+			DYN_REQUEST(drq_role_gens) = request;
+		}
+
+		if (*(*ptr)++ != gds_dyn_end) {
+			goto do_error_punt_9;
+		}
+	}
+	catch (...) {
+		if (request) {
+			DYN_rundown_request(request, drq_role_gens);
+		}
+		DYN_error_punt(TRUE, 8, NULL, NULL, NULL, NULL, NULL);
+		/* msg 8: "DEFINE ROLE failed" */
+	}
+
+	return;
+
+do_err_punt:
+	ERR_punt();
+	return;
+
+do_error_punt_9:
+	DYN_error_punt(TRUE, 9, NULL, NULL, NULL, NULL, NULL);
+	/* msg 9: "DEFINE ROLE unexpected dyn verb" */
 }
 
 
@@ -3379,11 +3528,20 @@ void DYN_define_sql_field(GBL		gbl,
 	BLK old_request;
 	VOLATILE SSHORT id, old_id;
 	UCHAR verb;
+	TEXT sql_field_name[32];
 	USHORT dtype;
 	SLONG fld_pos;
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
+
+	sql_field_name[0] = 0;
+	GET_STRING(ptr, sql_field_name);
+
+	MET_exact_name(sql_field_name);
+	if (!sql_field_name[0])
+		DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+	/* msg 212: "Zero length identifiers not allowed" */
 
 	request = NULL;
 	id = -1;
@@ -3395,7 +3553,8 @@ void DYN_define_sql_field(GBL		gbl,
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		RFR IN RDB$RELATION_FIELDS 
-        GET_STRING(ptr, RFR.RDB$FIELD_NAME);
+	    /* GET_STRING(ptr, RFR.RDB$FIELD_NAME); */
+		strcpy(RFR.RDB$FIELD_NAME, sql_field_name);
 		if (field_name != NULL)
 			strcpy(field_name, RFR.RDB$FIELD_NAME);
 		if (relation_name)
@@ -3749,9 +3908,17 @@ void DYN_define_trigger(GBL		gbl,
 	UCHAR	verb;
 	TEXT	t[32];
 
-	if (!GET_STRING(ptr, t)) {
+	GET_STRING(ptr, t);
+	MET_exact_name(t);
+	if (!t[0])
+	{
 		DYN_UTIL_generate_trigger_name(tdbb, gbl, t);
+		MET_exact_name(t);
 	}
+
+	if (!t[0])
+		DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+	/* msg 212: "Zero length identifiers not allowed" */
 
 	if (trigger_name) {
 		strcpy(trigger_name, t);
@@ -3773,6 +3940,7 @@ void DYN_define_trigger(GBL		gbl,
 		X.RDB$TRIGGER_SEQUENCE.NULL = FALSE;
 		X.RDB$TRIGGER_INACTIVE = 0;
 		X.RDB$TRIGGER_INACTIVE.NULL = FALSE;
+		X.RDB$SYSTEM_FLAG.NULL = TRUE;
 
 		/* currently, we make no difference between ignoring permissions in
 		   order to define this trigger and ignoring permissions checks when the
@@ -3804,14 +3972,17 @@ void DYN_define_trigger(GBL		gbl,
 
 			case gds_dyn_sql_object:
 				X.RDB$FLAGS |= TRG_sql;
+				X.RDB$FLAGS.NULL = FALSE;
 				break;
 
 			case gds_dyn_trg_sequence:
 				X.RDB$TRIGGER_SEQUENCE = DYN_get_number(ptr);
+				X.RDB$TRIGGER_SEQUENCE.NULL = FALSE;
 				break;
 
 			case gds_dyn_trg_inactive:
 				X.RDB$TRIGGER_INACTIVE = DYN_get_number(ptr);
+				X.RDB$TRIGGER_INACTIVE.NULL = FALSE;
 				break;
 
 			case gds_dyn_rel_name:
@@ -3853,6 +4024,13 @@ void DYN_define_trigger(GBL		gbl,
 				X.RDB$DESCRIPTION.NULL = FALSE;
 				break;
 #endif
+
+		    case isc_dyn_system_flag:
+				X.RDB$SYSTEM_FLAG = DYN_get_number(ptr);
+				X.RDB$SYSTEM_FLAG.NULL = FALSE;
+				/* assert(!ignore_perm || ignore_perm 
+					&& X.RDB$SYSTEM_FLAG == frb_sysflag_referential_constraint); */
+				break;
 
 			default:
 				--(*ptr);
@@ -3993,6 +4171,11 @@ void DYN_define_view_relation( GBL gbl, UCHAR ** ptr, TEXT * view)
 
 	VOLATILE BLK request;
 	UCHAR verb;
+
+	MET_exact_name(view);
+	if (!view[0])
+		DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+	/* msg 212: "Zero length identifiers not allowed" */
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_view_rels, DYN_REQUESTS);
 
@@ -4148,6 +4331,13 @@ static BOOLEAN find_field_source(TDBB	tdbb,
 	DBB dbb = tdbb->tdbb_database;
 
 	request = (BLK) CMP_find_request(tdbb, drq_l_fld_src2, DYN_REQUESTS);
+
+/* CVC: It seems the logic of this function was changed over time. It's unlikely
+it will cause a failure that leads to call DYN_error_punt(), unless the request finds
+problems due to database corruption or unexpected ODS changes. Under normal
+circumstances, it will return either TRUE or FALSE. When TRUE, we found a field source
+for the view's name/context/field and are loading this value in the last parameter,
+that can be used against rdb$fields' rdb$field_name. */
 
 	try {
 		found = FALSE;

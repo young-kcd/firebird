@@ -65,6 +65,7 @@ typedef struct dyn_fld {
 	TEXT dyn_fld_source[FLD_SRC_LEN];
 	TEXT dyn_rel_name[REL_NAME_LEN];
 	TEXT dyn_fld_name[FLD_NAME_LEN];
+    USHORT dyn_charbytelen; /* Used to check modify operations on string types. */
 
 } *DYN_FLD;
 
@@ -84,7 +85,6 @@ extern USHORT DYN_put_text_blob2(GBL, UCHAR **, GDS__QUAD *);
 extern void DYN_rundown_request(BLK, SSHORT);
 extern USHORT DYN_skip_attribute(UCHAR **);
 extern USHORT DYN_skip_attribute2(UCHAR **);
-extern void DYN_terminate(TEXT *, int);
 extern void DYN_unsupported_verb(void);
 
 #endif /* _JRD_DYN_H_ */

@@ -20,8 +20,18 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  * 2001.5.20: Claudio Valderrama: when changing a domain's name,
- * if it has dimensions, rdb$field_dimensions should be updated, too.
- *
+ *	if it has dimensions, rdb$field_dimensions should be updated, too.
+ * 2001.5.23: Claudio Valderrama: Forbid zero length identifiers,
+ *	they are not ANSI SQL compliant.
+ * 2001.5.27 Claudio Valderrama: Prevent rdb$field_length from going
+ *	out of sync when toggling between char and varchar data types.
+ *	This caused check_update_fld_type() to lose ability to detect potentially
+ *	dangerous changes. For example, you could alter a field or a domain and
+ *	be able to change char(10) to varchar(8).
+ *	Unfortunately, Borland chose to have DYN_modify_global_field() and add to the
+ *	party DYN_modify_sql_field(); therefore bug fixes should be done twice.
+ * 2001.10.08 Claudio Valderrama: put a comment with suggested code to hide
+ *	special non-system triggers from user manipulation.
  * 2002-02-24 Sean Leyne - Code Cleanup of old Win 3.1 port (WINDOWS_ONLY)
  *
  */
@@ -367,6 +377,8 @@ void DYN_modify_global_field(
 		bsingvald, bfldvald, bfldvaldsrc, bfldvaldsrc2, bdesc, bdesc2,
 		bdelvald, bdeldflt, bflddftval, bflddfltsrc;
 	BOOLEAN has_dimensions = FALSE;
+	SSHORT field_adjusted_count = 0;
+	TEXT *err_one_type_change_only = "Only one data type change to the domain allowed at a time";
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
@@ -416,6 +428,7 @@ void DYN_modify_global_field(
 							FLD.RDB$FIELD_SUB_TYPE,
 							FLD.RDB$CHARACTER_SET_ID, FLD.RDB$COLLATION_ID);
 
+		orig_dom->dyn_charbytelen = FLD.RDB$FIELD_LENGTH;
 		orig_dom->dyn_dtype = FLD.RDB$FIELD_TYPE;
 		orig_dom->dyn_precision = FLD.RDB$FIELD_PRECISION;
 		orig_dom->dyn_charlen = FLD.RDB$CHARACTER_LENGTH;
@@ -485,6 +498,11 @@ void DYN_modify_global_field(
 							/* msg 204: Cannot rename domain %s to %s.  A domain with that name already exists. */
 						}
 					}
+					else
+					{
+						DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+						/* msg 212: "Zero length identifiers not allowed" */
+					}
 					break;
 				}
 
@@ -492,14 +510,42 @@ void DYN_modify_global_field(
 				GET_STRING(ptr, new_dom->dyn_rel_name);
 				break;
 
+			/* CVC: The syntax for DDL alter domain was accepting multiple
+					changes in one command even to the same features, IE two length alterations.
+					This repetitive type change will cause havoc so it should be stopped in the future. */
+
 			case gds_dyn_fld_length:
 				fldlen = TRUE;
 				new_dom->dyn_dsc.dsc_length = DYN_get_number(ptr);
+				if (++field_adjusted_count > 2)
+				{
+					EXE_unwind(tdbb, request);
+					DYN_error_punt(FALSE, 5, err_one_type_change_only, NULL, NULL, NULL, NULL);
+				}
+				switch (new_dom->dyn_dtype) {
+				
+				case blr_text:
+				case blr_text2:
+				case blr_varying:
+				case blr_varying2:
+				case blr_cstring:
+				case blr_cstring2:
+					new_dom->dyn_charbytelen = new_dom->dyn_dsc.dsc_length;
+					break;
+				default:
+					new_dom->dyn_charbytelen = 0; /* It won't be used, anyway. */
+					break;
+				}
 				break;
 
 			case gds_dyn_fld_type:
 				dtype = TRUE;
 				new_dom->dyn_dtype = DYN_get_number(ptr);
+				if (++field_adjusted_count > 2)
+				{
+					EXE_unwind(tdbb, request);
+					DYN_error_punt(FALSE, 5, err_one_type_change_only, NULL, NULL, NULL, NULL);
+				}
 
 				switch (new_dom->dyn_dtype) {
 
@@ -509,8 +555,9 @@ void DYN_modify_global_field(
 				case blr_varying2:
 				case blr_cstring:
 				case blr_cstring2:
-					new_dom->dyn_dsc.dsc_length =
-						DSC_string_length(&new_dom->dyn_dsc);
+					if (new_dom->dyn_dsc.dsc_length && !new_dom->dyn_charbytelen)
+						new_dom->dyn_charbytelen = new_dom->dyn_dsc.dsc_length;
+					new_dom->dyn_dsc.dsc_length = DSC_string_length(&new_dom->dyn_dsc);
 					break;
 				case blr_short:
 					new_dom->dyn_dsc.dsc_length = 2;
@@ -702,8 +749,8 @@ void DYN_modify_global_field(
 		}
 
 
-		/* Now that we have all of the information needed, let's check to see if the field type can be modifed.  Only
-		 * do this, however, if we are actually modifying the datatype of the domain.
+	    /* Now that we have all of the information needed, let's check to see if the field type can be modifed.
+		 * Only do this, however, if we are actually modifying the datatype of the domain.
 		 */
 
 		if (dtype) {
@@ -763,7 +810,11 @@ void DYN_modify_global_field(
 			}
 
 			if (fldlen) {
-				FLD.RDB$FIELD_LENGTH = new_dom->dyn_dsc.dsc_length;
+				/* CVC: Rescue from the wrong field_length with a helper. */
+				if (new_dom->dyn_dsc.dsc_dtype <= dtype_varying && new_dom->dyn_charbytelen)
+					FLD.RDB$FIELD_LENGTH = new_dom->dyn_charbytelen;
+				else
+					FLD.RDB$FIELD_LENGTH = new_dom->dyn_dsc.dsc_length;
 				FLD.RDB$FIELD_LENGTH.NULL = FALSE;
 			}
 
@@ -1154,7 +1205,12 @@ void DYN_modify_local_field(
 
 			if (nnflag) {
 				TEXT new_fld[FLD_NAME_LEN];
+				new_fld[0] = 0;
 				GET_STRING(&new_name, new_fld);
+				MET_exact_name(new_fld);
+				if (!new_fld[0])
+					DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+					/* msg 212: "Zero length identifiers not allowed" */
 
 				check_view_dependency(tdbb, dbb, gbl, r, f);
 				check_sptrig_dependency(tdbb, dbb, gbl, r, f);
@@ -1217,7 +1273,7 @@ void DYN_modify_local_field(
 	if (!DYN_REQUEST(drq_m_lfield))
 		DYN_REQUEST(drq_m_lfield) = request;
 
-	if (npflag && found)
+	if (npflag && found && position != existing_position)
 		modify_lfield_position(tdbb, dbb, gbl, r, f, position,
 							   existing_position);
 
@@ -1370,7 +1426,7 @@ void DYN_modify_relation( GBL gbl, UCHAR ** ptr)
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
 
-	field_name[0] = '\0';
+	field_name[0] = 0;
 	GET_STRING(ptr, name);
 
 	request = (BLK) CMP_find_request(tdbb, drq_m_relation, DYN_REQUESTS);
@@ -1496,12 +1552,38 @@ void DYN_modify_trigger( GBL gbl, UCHAR ** ptr)
             DYN_REQUEST(drq_m_trigger) = request;
 		}
 
+/* CVC: I think that we'll do well by hiding our automatic triggers from this function.
+		Why would a user want to fiddle with triggers that were generated automatically?
+
+		if (!X.RDB$SYSTEM_FLAG.NULL)
+		{
+			switch (X.RDB$SYSTEM_FLAG)
+			{
+			case frb_sysflag_check_constraint:
+			case frb_sysflag_referential_constraint:
+			case frb_sysflag_view_check:
+				continue;
+			default:
+				break;
+			}
+		}
+*/
 		found = TRUE;
 		MODIFY X
 			while ((verb = *(*ptr)++) != gds_dyn_end)
 				switch (verb) {
 				case gds_dyn_trg_name:
-					GET_STRING(ptr, X.RDB$TRIGGER_NAME);
+					{
+					TEXT new_trigger_name[32];
+					new_trigger_name[0] = 0;
+					/* GET_STRING(ptr, X.RDB$TRIGGER_NAME); */
+					GET_STRING(ptr, new_trigger_name);
+					MET_exact_name(new_trigger_name);
+					if (!new_trigger_name[0])
+						DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+						/* msg 212: "Zero length identifiers not allowed" */
+				    strcpy (X.RDB$TRIGGER_NAME, new_trigger_name);
+					}
 					break;
 
 				case gds_dyn_trg_type:
@@ -2056,7 +2138,7 @@ void DYN_modify_sql_field(GBL		gbl,
 {
 /**************************************
  *
- *	D Y N _ m o d i f y _ sql _ f i e l d
+ *	D Y N _ m o d i f y _ s q l _ f i e l d
  *
  **************************************
  *
@@ -2093,6 +2175,9 @@ void DYN_modify_sql_field(GBL		gbl,
  *  The following operations return a warning
  *        Decreasing the length of a char (varchar) field
  *
+ *	CVC: This is a misleading comment. There's no code that
+ *	produces a warning. This condition raises an error, too.
+ *
  **************************************/
 	TDBB tdbb;
 	DBB dbb;
@@ -2102,6 +2187,9 @@ void DYN_modify_sql_field(GBL		gbl,
 	BOOLEAN dtype, scale, prec, subtype, charlen, collation, fldlen, nullflg,
 		charset;
 	DYN_FLD orig_fld, new_fld, dom_fld;
+	BOOLEAN has_dimensions = FALSE;
+	SSHORT field_adjusted_count = 0;
+	TEXT *err_one_type_change_only = "Only one data type change to the field allowed at a time";
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
@@ -2158,6 +2246,7 @@ void DYN_modify_sql_field(GBL		gbl,
 									FLD.RDB$CHARACTER_SET_ID,
 									FLD.RDB$COLLATION_ID);
 
+	        orig_fld->dyn_charbytelen = FLD.RDB$FIELD_LENGTH; 
 			orig_fld->dyn_dtype = FLD.RDB$FIELD_TYPE;
 			orig_fld->dyn_precision = FLD.RDB$FIELD_PRECISION;
 			orig_fld->dyn_charlen = FLD.RDB$CHARACTER_LENGTH;
@@ -2168,7 +2257,10 @@ void DYN_modify_sql_field(GBL		gbl,
 
 			/* If the original field type is an array, force its blr type to blr_blob */
 			if (FLD.RDB$DIMENSIONS != 0)
+			{
 				orig_fld->dyn_dtype = blr_blob;
+				has_dimensions = TRUE;
+			}
 
 			while ((verb = *(*ptr)++) != gds_dyn_end) {
 				switch (verb) {
@@ -2185,11 +2277,29 @@ void DYN_modify_sql_field(GBL		gbl,
 				case gds_dyn_fld_length:
 					fldlen = TRUE;
 					new_fld->dyn_dsc.dsc_length = DYN_get_number(ptr);
+					if (++field_adjusted_count > 2)
+						DYN_error_punt(FALSE, 5, err_one_type_change_only, NULL, NULL, NULL, NULL);
+					switch (new_fld->dyn_dtype)
+					{
+					case blr_text:
+					case blr_text2:
+					case blr_varying:
+					case blr_varying2:
+					case blr_cstring:
+					case blr_cstring2:
+						new_fld->dyn_charbytelen = new_fld->dyn_dsc.dsc_length;
+						break;
+					default:
+						new_fld->dyn_charbytelen = 0; /* It won't be used, anyway. */
+						break;
+					}
 					break;
 
 				case gds_dyn_fld_type:
 					dtype = TRUE;
 					new_fld->dyn_dtype = DYN_get_number(ptr);
+					if (++field_adjusted_count > 2)
+						DYN_error_punt(FALSE, 5, err_one_type_change_only, NULL, NULL, NULL, NULL);
 
 					switch (new_fld->dyn_dtype) {
 					case blr_text:
@@ -2198,8 +2308,9 @@ void DYN_modify_sql_field(GBL		gbl,
 					case blr_varying2:
 					case blr_cstring:
 					case blr_cstring2:
-						new_fld->dyn_dsc.dsc_length =
-							DSC_string_length(&new_fld->dyn_dsc);
+						if (new_fld->dyn_dsc.dsc_length && !new_fld->dyn_charbytelen)
+							new_fld->dyn_charbytelen = new_fld->dyn_dsc.dsc_length;
+						new_fld->dyn_dsc.dsc_length = DSC_string_length (&new_fld->dyn_dsc);
 						break;
 
 					case blr_short:
@@ -2288,12 +2399,16 @@ void DYN_modify_sql_field(GBL		gbl,
 		if (update_domain) {
 			ULONG retval;
 
+			/* CVC: Since get_domain_type() called above already called DSC_make_descriptor,
+					there's no point in calling it again, since it will increment AGAIN the length
+					of varchar fields! This bug detected thanks to new check field dyn_charbytelen.
 			DSC_make_descriptor(&dom_fld->dyn_dsc,
 								dom_fld->dyn_dtype,
 								dom_fld->dyn_dsc.dsc_scale,
 								dom_fld->dyn_dsc.dsc_length,
 								dom_fld->dyn_dsc.dsc_sub_type,
 								dom_fld->dyn_charset, dom_fld->dyn_collation);
+			*/
 
 			if ((retval = check_update_fld_type(orig_fld, dom_fld)) !=
 				SUCCESS) modify_err_punt(tdbb, retval, orig_fld, dom_fld);
@@ -2391,7 +2506,11 @@ void DYN_modify_sql_field(GBL		gbl,
 					}
 
 					if (fldlen) {
-						FLD.RDB$FIELD_LENGTH = new_fld->dyn_dsc.dsc_length;
+						/* CVC: Rescue from the wrong field_length with a helper. */
+						if (new_fld->dyn_dsc.dsc_dtype <= dtype_varying && new_fld->dyn_charbytelen)
+							FLD.RDB$FIELD_LENGTH = new_fld->dyn_charbytelen;
+						else
+							FLD.RDB$FIELD_LENGTH = new_fld->dyn_dsc.dsc_length;
 						FLD.RDB$FIELD_LENGTH.NULL = FALSE;
 					}
 
@@ -2435,8 +2554,11 @@ void DYN_modify_sql_field(GBL		gbl,
 						}
 
 						if (fldlen) {
-							FLD.RDB$FIELD_LENGTH =
-								new_fld->dyn_dsc.dsc_length;
+							/* CVC: Rescue from the wrong field_length with a helper. */
+							if (new_fld->dyn_dsc.dsc_dtype <= dtype_varying && new_fld->dyn_charbytelen)
+								FLD.RDB$FIELD_LENGTH = new_fld->dyn_charbytelen;
+							else
+								FLD.RDB$FIELD_LENGTH = new_fld->dyn_dsc.dsc_length;
 							FLD.RDB$FIELD_LENGTH.NULL = FALSE;
 						}
 
@@ -2513,6 +2635,7 @@ void get_domain_type(TDBB tdbb, DBB dbb, GBL gbl, DYN_FLD dom_fld)
 							FLD.RDB$FIELD_SUB_TYPE,
 							FLD.RDB$CHARACTER_SET_ID, FLD.RDB$COLLATION_ID);
 
+		dom_fld->dyn_charbytelen = FLD.RDB$FIELD_LENGTH;
 		dom_fld->dyn_dtype = FLD.RDB$FIELD_TYPE;
 		dom_fld->dyn_precision = FLD.RDB$FIELD_PRECISION;
 		dom_fld->dyn_charlen = FLD.RDB$CHARACTER_LENGTH;
@@ -2583,10 +2706,17 @@ static ULONG check_update_fld_type(DYN_FLD orig_fld, DYN_FLD new_fld)
 		case blr_cstring:
 			{
 				USHORT maxflen = 0;
+				/* CVC: Because our caller invoked DSC_make_descriptor() on new_fld previously,
+						we should have the added bytes for varchar. For cstring, we are used, since
+						DSC_make_descriptor(DSC_string_length) != DSC_string_length(DSC_make_descriptor). */
 
 				maxflen = DSC_string_length(&orig_fld->dyn_dsc);
 
-				if (new_fld->dyn_dsc.dsc_length < maxflen)
+				/* We can have this assertion since this case is for both string fields. */
+				assert(DSC_string_length(&new_fld->dyn_dsc) - maxflen
+					== new_fld->dyn_charbytelen - orig_fld->dyn_charbytelen);
+				/* if (new_fld->dyn_dsc.dsc_length < maxflen) */
+				if (DSC_string_length(&new_fld->dyn_dsc) < maxflen)
 					return isc_dyn_char_fld_too_small;
 				/* New size specified for column %s must be greater than %d characters. */
 			}

@@ -19,8 +19,18 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- *    20-Apr-2001 Claudio Valderrama  - Fix bug in grant/revolk by making user
+ *
+ *    2001.04.20 Claudio Valderrama: Fix bug in grant/revoke by making user
  *                                      case insensitive.
+ *    2001.05.24 Claudio Valderrama: Move DYN_delete_role to dyn_del.e.
+ *    2001.06.05 John Bellardo: Renamed the revoke static function to
+ *                                revoke_permission, because there is already
+ *                                a revoke(2) function in *nix.
+ *    2001.06.20 Claudio Valderrama: Enable calls to DYN_delete_generator.
+ *    2001.10.01 Claudio Valderrama: Enable explicit GRANT...to ROLE role_name.
+ *			and complain if the grantee ROLE doesn't exist.
+ *    2001.10.06 Claudio Valderrama: Forbid "NONE" from role-related operations.
+ *				Honor explicit USER keyword in GRANTs and REVOKEs.
  */
 
 #include "firebird.h"
@@ -47,6 +57,7 @@
 #include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
+#include "../jrd/dpm_proto.h"
 #include "../jrd/dyn_proto.h"
 #include "../jrd/dyn_df_proto.h"
 #include "../jrd/dyn_dl_proto.h"
@@ -57,6 +68,7 @@
 #include "../jrd/inf_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/isc_f_proto.h"
+#include "../jrd/met_proto.h"
 #include "../jrd/thd_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/sch_proto.h"
@@ -75,9 +87,10 @@ DATABASE DB = STATIC "yachts.gdb";
 static void grant(GBL, UCHAR **);
 static bool grantor_can_grant_role(TDBB, GBL, TEXT *, TEXT *);
 static bool grantor_can_grant(GBL, TEXT *, TEXT *, TEXT *, TEXT *, bool);
-static void revoke(GBL, UCHAR **);
+static void	revoke_permission(GBL, UCHAR **);
 static void store_privilege(GBL, TEXT *, TEXT *, TEXT *, TEXT *, SSHORT,
 							SSHORT, int);
+static void	set_field_class_name(GBL, TEXT *, TEXT *);
 
 
 void DYN_ddl(ATT attachment, TRA transaction, USHORT length, UCHAR * ddl)
@@ -170,141 +183,6 @@ void DYN_ddl(ATT attachment, TRA transaction, USHORT length, UCHAR * ddl)
 	}
 
 	tdbb->tdbb_default = old_pool;
-}
-
-
-void DYN_delete_role( GBL gbl, UCHAR ** ptr)
-{
-/**************************************
- *
- *	D Y N _ d e l e t e _ r o l e
- *
- **************************************
- *
- * Functional description
- *
- *	Execute a dynamic ddl statement that deletes a role with all its 
- *      members of the role.
- *
- **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
-	VOLATILE USHORT id;
-	//VOLATILE USHORT err_num;
-	TEXT role_name[32], role_owner[32], user[32];
-        //TEXT security_class[32];
-	TEXT *ptr1, *ptr2;
-	BOOLEAN del_role_ok = TRUE;
-	USHORT major_version, minor_original;
-
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
-
-	major_version = (SSHORT) dbb->dbb_ods_version;
-	minor_original = (SSHORT) dbb->dbb_minor_original;
-
-	if (ENCODE_ODS(major_version, minor_original) < ODS_9_0) {
-		DYN_error(FALSE, 196, NULL, NULL, NULL, NULL, NULL);
-		ERR_punt();
-		return;	// never reached
-	}
-
-
-	try {
-
-		for (ptr1 = tdbb->tdbb_attachment->att_user->usr_user_name, ptr2 =
-			 user; *ptr1; ptr1++, ptr2++)
-		{
-			*ptr2 = UPPER7(*ptr1);
-		}
-
-		*ptr2 = '\0';
-
-		GET_STRING(ptr, role_name);
-
-		request = (BLK) CMP_find_request(tdbb, drq_drop_role, DYN_REQUESTS);
-		id = drq_drop_role;
-
-		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			XX IN RDB$ROLES WITH
-				XX.RDB$ROLE_NAME EQ role_name if (!DYN_REQUEST(drq_drop_role))
-				  DYN_REQUEST(drq_drop_role) = request;
-
-			DYN_terminate(XX.RDB$OWNER_NAME, sizeof(XX.RDB$OWNER_NAME));
-			strcpy(role_owner, XX.RDB$OWNER_NAME);
-
-#pragma FB_COMPILER_MESSAGE("TMN: LOCKSMITH!")
-
-			if ((tdbb->tdbb_attachment->att_user->usr_flags & USR_locksmith) ||
-				(strcmp(role_owner, user) == 0))
-			{
-				ERASE XX;
-			}
-			else
-			{
-				del_role_ok = FALSE;
-			}
-
-		END_FOR;
-
-		if (!DYN_REQUEST(drq_drop_role)) {
-			DYN_REQUEST(drq_drop_role) = request;
-		}
-
-		if (del_role_ok)
-		{
-			request =
-				(BLK) CMP_find_request(tdbb, drq_del_role_1, DYN_REQUESTS);
-			id = drq_del_role_1;
-
-
-			/* The first OR clause Finds all members of the role
-			   The 2nd OR clause  Finds all privileges granted to the role */
-			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-				PRIV IN RDB$USER_PRIVILEGES WITH
-					(PRIV.RDB$RELATION_NAME EQ role_name AND
-					 PRIV.RDB$OBJECT_TYPE = obj_sql_role)
-					OR(PRIV.RDB$USER EQ role_name AND
-					   PRIV.RDB$USER_TYPE = obj_sql_role)
-
-					if (!DYN_REQUEST(drq_del_role_1)) {
-						DYN_REQUEST(drq_del_role_1) = request;
-					}
-
-				ERASE PRIV;
-
-			END_FOR;
-
-			if (!DYN_REQUEST(drq_del_role_1)) {
-				DYN_REQUEST(drq_del_role_1) = request;
-			}
-
-		}
-		else
-		{
-	/****************************************************
-    **
-    **  only owner of SQL role or USR_locksmith could drop SQL role
-    **
-    *****************************************************/
-			DYN_error(FALSE, 191, user, role_name, NULL, NULL, NULL);
-			goto do_punt;
-		}
-
-	}	// try
-	catch (...) {
-		DYN_rundown_request(request, -1);
-		const USHORT number = (id == drq_drop_role ? 191 : 62);
-		// msg 191: "ERASE RDB$ROLES failed"
-		// msg  62: "ERASE RDB$USER_PRIVILEGES failed"
-		DYN_error_punt(TRUE, number, NULL, NULL, NULL, NULL, NULL);
-	}
-
-	return;
-
-do_punt:	// ugly, rethink logic of this function
-	ERR_punt();
 }
 
 
@@ -508,7 +386,7 @@ TEXT * function_name, TEXT * procedure_name)
 		break;
 
 	case gds_dyn_revoke:
-		revoke(gbl, ptr);
+		revoke_permission(gbl, ptr);
 		break;
 
 /***
@@ -704,6 +582,10 @@ TEXT * function_name, TEXT * procedure_name)
 
 		case gds_dyn_delete_dimensions:
 			DYN_delete_dimensions(gbl, ptr, relation_name, field_name);
+			break;
+
+		case gds__dyn_delete_generator:
+			DYN_delete_generator(gbl, ptr);
 			break;
 
 		default:
@@ -1249,9 +1131,15 @@ static void grant( GBL gbl, UCHAR ** ptr)
 		case gds_dyn_grant_user:
 			{
 				GET_STRING(ptr, user);
+				DYN_terminate(user, sizeof(user));
+				/* This test may become obsolete as we now allow explicit ROLE keyword. */
 				TEXT dummy_name[32];
 				if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
 					user_type = obj_sql_role;
+					if (!strcmp(user, "NONE")) {
+						DYN_error_punt(FALSE, 195, user, NULL, NULL, NULL, NULL);
+					/* msg 195: keyword NONE could not be used as SQL role name. */
+					}
 				}
 				else {
 					user_type = obj_user;
@@ -1262,15 +1150,42 @@ static void grant( GBL gbl, UCHAR ** ptr)
 			}
 			break;
 
+		case isc_dyn_grant_user_explicit:
+		    GET_STRING(ptr, user);
+			DYN_terminate(user, sizeof(user));
+			user_type = obj_user;
+			for (ptr1 = user; *ptr1; ptr1++) {
+				*ptr1 = UPPER7(*ptr1);
+			}
+		    break;
+
+		case isc_dyn_grant_role:
+		    user_type = obj_sql_role;
+		    GET_STRING(ptr, user);
+			DYN_terminate(user, sizeof(user));
+			if (!DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
+				DYN_error_punt(FALSE, 188, user, NULL, NULL, NULL, NULL);
+			/* msg 188: Role doesn't exist. */
+			}
+			if (!strcmp(user, "NONE")) {
+				DYN_error_punt(FALSE, 195, user, NULL, NULL, NULL, NULL);
+			/* msg 195: keyword NONE could not be used as SQL role name. */
+			}
+			break;
+
 		case isc_dyn_sql_role_name:	/* role name in role_name_list */
 			if (ENCODE_ODS(major_version, minor_original) < ODS_9_0) {
-				DYN_error(FALSE, 196, NULL, NULL, NULL, NULL, NULL);
-				ERR_punt();
+                DYN_error_punt(FALSE, 196, NULL, NULL, NULL, NULL, NULL);
 			}
 			else {
 				obj_type = obj_sql_role;
 				GET_STRING(ptr, object);
 				grant_role_stmt = true;
+				DYN_terminate(object, sizeof(object));
+				if (!strcmp (object, "NONE")) {
+					DYN_error_punt(FALSE, 195, object, NULL, NULL, NULL, NULL);
+				/* msg 195: keyword NONE could not be used as SQL role name. */
+				}
 			}
 			break;
 
@@ -1382,9 +1297,7 @@ static void grant( GBL gbl, UCHAR ** ptr)
 		{
 			if (ENCODE_ODS(major_version, minor_original) < ODS_9_0)
 			{
-				DYN_error(FALSE, 196, NULL, NULL, NULL, NULL, NULL);
-				// ERR_punt();
-				goto do_punt;
+	            DYN_error_punt(FALSE, 196, NULL, NULL, NULL, NULL, NULL);
 			}
 			id = drq_get_role_nm;
 
@@ -1408,9 +1321,7 @@ static void grant( GBL gbl, UCHAR ** ptr)
             ** could be reused for blocking cycles of role grants
             **
             *****************************************************/
-				DYN_error(FALSE, 192, user, NULL, NULL, NULL, NULL);
-				// ERR_punt();
-				goto do_punt;
+	            DYN_error_punt(FALSE, 192, user, NULL, NULL, NULL, NULL);
 			}
 		}
 		else
@@ -1861,11 +1772,11 @@ static bool grantor_can_grant_role(	TDBB	tdbb,
 }
 
 
-static void revoke( GBL gbl, UCHAR ** ptr)
+static void revoke_permission(GBL gbl, UCHAR ** ptr)
 {
 /**************************************
  *
- *	r e v o k e
+ *	r e v o k e _ p e r m i s s i o n
  *
  **************************************
  *
@@ -1948,8 +1859,14 @@ static void revoke( GBL gbl, UCHAR ** ptr)
 
 		case gds_dyn_grant_user:
 			GET_STRING(ptr, user);
+			DYN_terminate(user, sizeof(user));
+			/* This test may become obsolete as we now allow explicit ROLE keyword. */
 			if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
 				user_type = obj_sql_role;
+				if (!strcmp(user, "NONE")) {
+					DYN_error_punt(FALSE, 195, user, NULL, NULL, NULL, NULL);
+				/* msg 195: keyword NONE could not be used as SQL role name. */
+				}
 			}
 			else {
 				user_type = obj_user;
@@ -1959,14 +1876,42 @@ static void revoke( GBL gbl, UCHAR ** ptr)
 			}
 			break;
 
+		case isc_dyn_grant_user_explicit:
+		    GET_STRING(ptr, user);
+			DYN_terminate(user, sizeof(user));
+	        user_type = obj_user;
+			for (ptr1 = user; *ptr1; ptr1++) {
+				*ptr1 = UPPER7(*ptr1);
+			}
+			break;
+
+		case isc_dyn_grant_role:
+			user_type = obj_sql_role;
+			GET_STRING(ptr, user);
+			DYN_terminate(user, sizeof(user));
+			if (!DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
+				DYN_error_punt(FALSE, 188, user, NULL, NULL, NULL, NULL);
+			/* msg 188: Role doesn't exist. */
+			}
+			if (!strcmp(user, "NONE")) {
+				DYN_error_punt(FALSE, 195, user, NULL, NULL, NULL, NULL);
+			/* msg 195: keyword NONE could not be used as SQL role name. */
+			}
+		    break;
+
 		case isc_dyn_sql_role_name:	/* role name in role_name_list */
 			if (ENCODE_ODS(major_version, minor_original) < ODS_9_0) {
-				DYN_error(FALSE, 196, NULL, NULL, NULL, NULL, NULL);
-				ERR_punt();
+                DYN_error_punt(FALSE, 196, NULL, NULL, NULL, NULL, NULL);
 			}
 			else {
 				obj_type = obj_sql_role;
 				GET_STRING(ptr, object);
+				DYN_terminate(object, sizeof(object));
+/* CVC: Make this a warning in the future.
+				if (!strcmp(object, "NONE"))
+					DYN_error_punt(FALSE, 195, object, NULL, NULL, NULL, NULL);
+*/
+				/* msg 195: keyword NONE could not be used as SQL role name. */
 			}
 			break;
 
@@ -2104,6 +2049,67 @@ static void revoke( GBL gbl, UCHAR ** ptr)
 }
 
 
+static void set_field_class_name(GBL gbl, TEXT * relation, TEXT	* field)
+{
+/**************************************
+ *
+ *	s e t _ f i e l d _ c l a s s _ n a m e
+ *
+ **************************************
+ *
+ * Functional description
+ *	For field level grants, be sure the
+ *      field has a unique class name.
+ *
+ **************************************/
+	BLK	request, request2 = NULL;
+	BOOLEAN	unique = FALSE;
+	TDBB tdbb;
+	DBB	dbb;
+
+
+	tdbb = GET_THREAD_DATA;
+	dbb = tdbb->tdbb_database;
+
+
+	request = (BLK) CMP_find_request(tdbb, drq_s_f_class, DYN_REQUESTS);
+
+	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+		RFR IN RDB$RELATION_FIELDS 
+		WITH RFR.RDB$FIELD_NAME = field AND
+			RFR.RDB$RELATION_NAME = relation AND
+		RFR.RDB$SECURITY_CLASS MISSING
+
+		MODIFY RFR
+		while (!unique)
+	    {
+			sprintf(RFR.RDB$SECURITY_CLASS, "%s%" QUADFORMAT "d\0", "SQL$GRANT", 
+			DPM_gen_id(tdbb, 
+				MET_lookup_generator(tdbb, "RDB$SECURITY_CLASS"), 0, (SINT64) 1));
+
+			unique = TRUE;
+			request2 = (BLK) CMP_find_request(tdbb, drq_s_u_class, DYN_REQUESTS);
+			FOR (REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
+				RFR1 IN RDB$RELATION_FIELDS 
+				WITH RFR1.RDB$SECURITY_CLASS = RFR.RDB$SECURITY_CLASS
+				unique = FALSE;
+			END_FOR;
+	    }
+
+		RFR.RDB$SECURITY_CLASS.NULL = FALSE;
+		END_MODIFY;
+    
+	END_FOR;
+
+	if (!DYN_REQUEST(drq_s_f_class))
+		DYN_REQUEST(drq_s_f_class) = request;
+
+
+	if (request2 && !DYN_REQUEST(drq_s_u_class))
+		DYN_REQUEST(drq_s_u_class) = request2;
+}
+
+
 static void store_privilege(GBL		gbl,
 							TEXT*	object,
 							TEXT*	user,
@@ -2145,6 +2151,7 @@ static void store_privilege(GBL		gbl,
 			if (field && field[0]) {
 				strcpy(PRIV.RDB$FIELD_NAME, field);
 				PRIV.RDB$FIELD_NAME.NULL = FALSE;
+				set_field_class_name(gbl, object, field);
 			}
 			PRIV.RDB$PRIVILEGE[0] = privilege[0];
 			PRIV.RDB$PRIVILEGE[1] = 0;

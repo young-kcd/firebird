@@ -21,6 +21,8 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 26-Sept-2001 Paul Beach - External File Directory Config. Parameter
  */
 
 #include "firebird.h"
@@ -46,9 +48,17 @@ static MDLS DLS_cfg_tmpdir = { NULL, FALSE };	/* directory list object */
  *  the list is at all times terminated by a NULL pointer.
  */
 
+/* external function directory list */
+
 static FDLS first_fdls = { 0, 0 };
 static BOOLEAN fdls_mutex_init = FALSE;
 static MUTX_T fdls_mutex[1];
+
+/* external file directory list */
+
+static EDLS     first_edls      = {0, 0};
+static BOOLEAN  edls_mutex_init = FALSE;
+static MUTX_T   edls_mutex[1];
 
 BOOLEAN DLS_get_temp_space(ULONG size, SFB sfb)
 {
@@ -271,4 +281,75 @@ FDLS *DLS_get_func_dirs(void)
  **************************************/
 
 	return first_fdls.fdls_next;
+}
+
+
+BOOLEAN DLS_add_file_dir(TEXT *directory_name)
+{
+/**************************************
+ *
+ *      D L S _ a d d _ f i l e _ d i r
+ *
+ **************************************
+ *
+ * Functional description
+ *      Add an external file directory name to the list
+ *      Return TRUE if successful, FALSE if no memory available.
+ *
+ **************************************/
+	EDLS *current_edls, *new_edls;
+	size_t name_length;
+
+	name_length = strlen(directory_name);
+  
+	new_edls = (EDLS *) gds__alloc((SLONG) (sizeof(EDLS) + name_length));
+	if (!new_edls)
+		return FALSE;
+  
+	new_edls->edls_next = 0;
+	strcpy(new_edls->edls_directory, directory_name);
+
+	/* Lock the mutex for the directory list, initializing it if
+	this is the first access. */
+
+	if (!edls_mutex_init)
+	{
+		V4_MUTEX_INIT(edls_mutex);
+		edls_mutex_init = TRUE;
+	}
+  
+	/* Note that when the distinction is implemented, the
+	following should be a write lock. */
+
+	V4_MUTEX_LOCK(edls_mutex);
+
+	/* Append the new edls to the list, then release the mutex */
+  
+	current_edls = &first_edls;
+	while (current_edls->edls_next)
+		current_edls = current_edls->edls_next;
+	current_edls->edls_next = new_edls;
+
+	/* Release the (write) lock for the fdls linked list. */
+  
+	V4_MUTEX_UNLOCK(edls_mutex);
+
+	return TRUE;
+}
+
+
+EDLS *DLS_get_file_dirs(void)
+{
+/**************************************
+ *
+ *      D L S _ g e t _ f i l e _ d i r s
+ *
+ **************************************
+ *
+ * Functional description
+ * Return pointer to the first external file directory entry
+ *
+ **************************************/
+
+	return first_edls.edls_next;
 }

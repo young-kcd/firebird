@@ -29,6 +29,7 @@ extern void DYN_delete_dimensions(GBL, UCHAR **, TEXT *, TEXT *);
 extern void DYN_delete_exception(GBL, UCHAR **);
 extern void DYN_delete_filter(GBL, UCHAR **);
 extern void DYN_delete_function(GBL, UCHAR **);
+extern void	DYN_delete_generator(GBL, UCHAR **);
 extern void DYN_delete_global_field(GBL, UCHAR **);
 extern void DYN_delete_index(GBL, UCHAR **);
 extern void DYN_delete_local_field(GBL, UCHAR **, TEXT *, TEXT *);

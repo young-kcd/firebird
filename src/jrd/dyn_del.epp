@@ -19,6 +19,11 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 24-May-2001 Claudio Valderrama - Forbid zero length identifiers,
+ *                                  they are not ANSI SQL compliant.
+ * 23-May-2001 Claudio Valderrama - Move here DYN_delete_role.
+ * 20-Jun-2001 Claudio Valderrama - Make available DYN_delete_generator.
  */
 
 #include "firebird.h"
@@ -28,6 +33,7 @@
 #include "../jrd/common.h"
 #include <stdarg.h>
 #include "../jrd/jrd.h"
+#include "../jrd/ods.h"
 #include "../jrd/tra.h"
 #include "../jrd/scl.h"
 #include "../jrd/drq.h"
@@ -325,6 +331,62 @@ void DYN_delete_function( GBL gbl, UCHAR ** ptr)
 
 	if (*(*ptr)++ != gds_dyn_end) {
 		DYN_unsupported_verb();
+	}
+}
+
+
+void DYN_delete_generator(GBL gbl, UCHAR **ptr)
+{
+/**************************************
+ *
+ *	D Y N _ d e l e t e _ g e n e r a t o r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Execute a dynamic ddl statement that
+ *	deletes a generator from rdb$generator but the
+ *  space allocated in the page won't be released.
+ *
+ **************************************/
+	TDBB tdbb;
+	DBB	dbb;
+	BLK	request;
+	USHORT found;
+	TEXT t[32];
+
+	tdbb = GET_THREAD_DATA;
+	dbb = tdbb->tdbb_database;
+
+	try {
+	GET_STRING(ptr, t);
+
+	request = (BLK) CMP_find_request(tdbb, drq_e_gens, DYN_REQUESTS);
+
+
+	found = FALSE;
+	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+		X IN RDB$GENERATORS
+		WITH X.RDB$GENERATOR_NAME EQ t
+		if (!DYN_REQUEST(drq_e_gens))
+			DYN_REQUEST(drq_e_gens) = request;
+
+		found = TRUE;
+		ERASE X;
+	END_FOR;
+
+	if (!DYN_REQUEST(drq_e_gens))
+		DYN_REQUEST(drq_e_gens) = request;
+
+	catch (...) {
+	    DYN_rundown_request(request, -1);
+		DYN_error_punt(TRUE, 213, NULL, NULL, NULL, NULL, NULL);
+		/* msg 213: "ERASE GENERATOR failed" */
+    }
+
+	if (!found) {
+		DYN_error_punt(FALSE, 214, NULL, NULL, NULL, NULL, NULL);
+	    /* msg 214: "Generator not found" */
 	}
 }
 
@@ -1226,6 +1288,141 @@ void DYN_delete_relation( GBL gbl, UCHAR ** ptr, TEXT * relation)
 dyn_punt_61:
 	DYN_error_punt(FALSE, 61, NULL, NULL, NULL, NULL, NULL);
 	/* msg 61: "Relation not found" */
+}
+
+
+void DYN_delete_role( GBL gbl, UCHAR ** ptr)
+{
+/**************************************
+ *
+ *	D Y N _ d e l e t e _ r o l e
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ *	Execute a dynamic ddl statement that deletes a role with all its 
+ *      members of the role.
+ *
+ **************************************/
+	TDBB tdbb;
+	DBB dbb;
+	BLK request;
+	VOLATILE USHORT id;
+	//VOLATILE USHORT err_num;
+	TEXT role_name[32], role_owner[32], user[32];
+        //TEXT security_class[32];
+	TEXT *ptr1, *ptr2;
+	BOOLEAN del_role_ok = TRUE;
+	USHORT major_version, minor_original;
+
+	tdbb = GET_THREAD_DATA;
+	dbb = tdbb->tdbb_database;
+
+	major_version = (SSHORT) dbb->dbb_ods_version;
+	minor_original = (SSHORT) dbb->dbb_minor_original;
+
+	if (ENCODE_ODS(major_version, minor_original) < ODS_9_0) {
+		DYN_error(FALSE, 196, NULL, NULL, NULL, NULL, NULL);
+		ERR_punt();
+		return;	// never reached
+	}
+
+
+	try {
+
+		for (ptr1 = tdbb->tdbb_attachment->att_user->usr_user_name, ptr2 =
+			 user; *ptr1; ptr1++, ptr2++)
+		{
+			*ptr2 = UPPER7(*ptr1);
+		}
+
+		*ptr2 = '\0';
+
+		GET_STRING(ptr, role_name);
+
+		request = (BLK) CMP_find_request(tdbb, drq_drop_role, DYN_REQUESTS);
+		id = drq_drop_role;
+
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			XX IN RDB$ROLES WITH
+				XX.RDB$ROLE_NAME EQ role_name if (!DYN_REQUEST(drq_drop_role))
+				  DYN_REQUEST(drq_drop_role) = request;
+
+			DYN_terminate(XX.RDB$OWNER_NAME, sizeof(XX.RDB$OWNER_NAME));
+			strcpy(role_owner, XX.RDB$OWNER_NAME);
+
+#pragma FB_COMPILER_MESSAGE("TMN: LOCKSMITH!")
+
+			if ((tdbb->tdbb_attachment->att_user->usr_flags & USR_locksmith) ||
+				(strcmp(role_owner, user) == 0))
+			{
+				ERASE XX;
+			}
+			else
+			{
+				del_role_ok = FALSE;
+			}
+
+		END_FOR;
+
+		if (!DYN_REQUEST(drq_drop_role)) {
+			DYN_REQUEST(drq_drop_role) = request;
+		}
+
+		if (del_role_ok)
+		{
+			request =
+				(BLK) CMP_find_request(tdbb, drq_del_role_1, DYN_REQUESTS);
+			id = drq_del_role_1;
+
+
+			/* The first OR clause Finds all members of the role
+			   The 2nd OR clause  Finds all privileges granted to the role */
+			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+				PRIV IN RDB$USER_PRIVILEGES WITH
+					(PRIV.RDB$RELATION_NAME EQ role_name AND
+					 PRIV.RDB$OBJECT_TYPE = obj_sql_role)
+					OR(PRIV.RDB$USER EQ role_name AND
+					   PRIV.RDB$USER_TYPE = obj_sql_role)
+
+					if (!DYN_REQUEST(drq_del_role_1)) {
+						DYN_REQUEST(drq_del_role_1) = request;
+					}
+
+				ERASE PRIV;
+
+			END_FOR;
+
+			if (!DYN_REQUEST(drq_del_role_1)) {
+				DYN_REQUEST(drq_del_role_1) = request;
+			}
+
+		}
+		else
+		{
+	/****************************************************
+    **
+    **  only owner of SQL role or USR_locksmith could drop SQL role
+    **
+    *****************************************************/
+			DYN_error(FALSE, 191, user, role_name, NULL, NULL, NULL);
+			goto do_punt;
+		}
+
+	}	// try
+	catch (...) {
+		DYN_rundown_request(request, -1);
+		const USHORT number = (id == drq_drop_role ? 191 : 62);
+		// msg 191: "ERASE RDB$ROLES failed"
+		// msg  62: "ERASE RDB$USER_PRIVILEGES failed"
+		DYN_error_punt(TRUE, number, NULL, NULL, NULL, NULL, NULL);
+	}
+
+	return;
+
+do_punt:	// ugly, rethink logic of this function
+	ERR_punt();
 }
 
 
