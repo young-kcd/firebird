@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.1.2.6 2003-12-15 04:32:49 skywalker Exp $
+#   $Id: makeInstallImage.sh.in,v 1.1.2.7 2003-12-23 23:22:40 skywalker Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -68,6 +68,26 @@ copyIfExists() {
 
 }
 
+
+#------------------------------------------------------------------------
+# patchAccess
+# This routine alters the firebird.conf file to restrict usage to those
+# entries in the aliases.conf file.  It would be better if this was the 
+# default, or if not then done as part of a configure.in firebird.conf.in
+# processing - but that's not the current setup.
+#
+
+patchAccess() {
+
+    ed -s $1 <<EOF
+/^#DatabaseAccess/
+a
+DatabaseAccess = None
+.
+wq
+EOF
+
+}
 
 #------------------------------------------------------------------------
 #  copyFiles
@@ -121,6 +141,7 @@ copyFiles() {
     cp $BuildRootDir/gen/install/bin/SSchangeRunUser.sh $DestDir/bin
     cp $BuildRootDir/gen/install/bin/SSrestoreRootRunUser.sh $DestDir/bin
     cp $BuildRootDir/gen/install/bin/changeDBAPassword.sh $DestDir/bin
+    cp $BuildRootDir/gen/install/bin/createAliasDB.sh $DestDir/bin
     cp $BuildRootDir/gen/install/bin/fb_config $DestDir/bin
 
     # Copy examples only if we have them
@@ -164,17 +185,9 @@ copyFiles() {
     cp $BuildRootDir/gen/install/misc/firebird.init.d.debian $DestDir/misc
     cp $BuildRootDir/gen/install/misc/firebird.init.d.gentoo $DestDir/misc
     cp $BuildRootDir/gen/install/misc/rc.config.firebird $DestDir/misc
+    cp $BuildRootDir/gen/install/misc/aliases.conf $DestDir/
 
-#   Sample of aliases.conf
-    echo "#" >> $DestDir/aliases.conf
-    echo "# List of known database aliases" >> $DestDir/aliases.conf
-    echo "# ------------------------------" >> $DestDir/aliases.conf
-    echo "#" >> $DestDir/aliases.conf
-    echo "# Examples:" >> $DestDir/aliases.conf
-    echo "#" >> $DestDir/aliases.conf
-    echo "# employee = /$FBRootDir/examples/employee.fdb" >> $DestDir/aliases.conf
-    echo "#" >> $DestDir/aliases.conf
-    
+    patchAccess $DestDir/firebird.conf
 
 # Create links from /usr/lib to install area.
     origDir=`pwd`

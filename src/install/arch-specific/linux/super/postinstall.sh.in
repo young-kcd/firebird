@@ -117,6 +117,9 @@ changeInitPassword() {
 
     if [ -f $InitFile ]
       then
+        echo ""
+        echo Running ed to modify /etc/init.d/firebird
+
         ed $InitFile <<EOF
 /ISC_PASSWORD/s/ISC_PASSWORD=.*/ISC_PASSWORD=$NewPasswd/g
 w
@@ -129,34 +132,48 @@ EOF
 
 
 #------------------------------------------------------------------------
-#  Unable to generate the password for the rpm, so put out a message
-#  instead
+# Write new password to the @prefix@/SYSDBA.password file
 
+writeNewPassword() {
 
-keepOrigDBAPassword() {
+    NewPasswd=$1
 
-    NewPasswd='masterkey'
-    echo "Firebird initial install password " > $DBAPasswordFile
-    echo "for user SYSDBA is : $NewPasswd" >> $DBAPasswordFile
-
-    echo "for install on `hostname` at time `date`" >> $DBAPasswordFile
-    echo "You should change this password at the earliest oportunity" >> $DBAPasswordFile
-    echo ""
-
-    echo "(For superserver you will also want to check the password in the" >> $DBAPasswordFile
-    echo "daemon init routine in the file /etc/rc.d/init.d/firebird)" >> $DBAPasswordFile
+    echo "# Firebird generated password for user SYSDBA is: " > $DBAPasswordFile
     echo "" >> $DBAPasswordFile
-    echo "Your should password can be changed to a more suitable one using the" >> $DBAPasswordFile
-    echo "@prefix@/bin/gsec program as show below:" >> $DBAPasswordFile
-    echo "" >> $DBAPasswordFile
-    echo ">cd @prefix@" >> $DBAPasswordFile
-    echo ">bin/gsec -user sysdba -password <password>" >> $DBAPasswordFile
-    echo "GSEC>modify sysdba -pw <newpassword>" >> $DBAPasswordFile
-    echo "GSEC>quit" >> $DBAPasswordFile
 
+    echo "ISC_USER=sysdba" >> $DBAPasswordFile
+    echo "ISC_PASSWD=$NewPasswd" >> $DBAPasswordFile
+    echo "" >> $DBAPasswordFile
+
+    if [ $NewPasswd = "masterkey" ]
+      then
+        echo "# for install on `hostname` at time `date`" >> $DBAPasswordFile
+        echo "# You should change this password at the earliest oportunity" >> $DBAPasswordFile
+      else 
+        echo "# generated on `hostname` at time `date`" >> $DBAPasswordFile
+    fi
+    echo "" >> $DBAPasswordFile
+    echo "# Your password can be changed to a more suitable one using the" >> $DBAPasswordFile
+    echo "# @prefix@/bin/changeDBAPassword.sh script" >> $DBAPasswordFile
+
+    # Additional instructions for super server
+    echo "" >> $DBAPasswordFile
+    echo "# For superserver you will also want to check the password in the" >> $DBAPasswordFile
+    echo "# daemon init routine in the file /etc/rc.d/init.d/firebird" >> $DBAPasswordFile
+
+    echo "" >> $DBAPasswordFile
     chmod u=r,go= $DBAPasswordFile
 
 
+    # Only if we have changed the password from the default do we need
+    # to update the entry in the database
+
+    if [ $NewPasswd != "masterkey" ]
+      then
+        $FBBin/gsec -user sysdba -password masterkey <<EOF
+modify sysdba -pw $NewPasswd
+EOF
+    fi
 }
 
 
@@ -167,10 +184,13 @@ keepOrigDBAPassword() {
 
 generateNewDBAPassword() {
 
+    DBAPasswordFile=$FBRootDir/SYSDBA.password
+
     # openssl generates random data.
     if [ -f /usr/bin/openssl ]
       then
-        NewPasswd=`openssl rand -base64 10 | cut -c1-8`
+        # We generate 20 random chars, strip any '/''s and get the first 8
+        NewPasswd=`openssl rand -base64 20 | tr -d '/' | cut -c1-8`
     fi
 
     # mkpasswd is a bit of a hassle, but check to see if it's there
@@ -182,35 +202,22 @@ generateNewDBAPassword() {
         fi
     fi
 
+
+    # So we failed to generate a new password, so keep the original 
+    # installed one.
+
     if [ -z "$NewPasswd" ]
       then
-        keepOrigDBAPassword
-        return
+        NewPasswd="masterkey"
     fi
-    
-    NewPasswd=`echo $NewPasswd | awk '{ for(i=1; i<=8; i++) {x = substr($1, i, 1); if (x == "/") x = "_"; printf "%c", x }; print ""}'`
 
-    echo "Firebird generated password " > $DBAPasswordFile
-    echo "for user SYSDBA is : $NewPasswd" >> $DBAPasswordFile
-    echo "generated on `hostname` at time `date`" >> $DBAPasswordFile
-    echo "(For superserver you will also want to check the password in the" >> $DBAPasswordFile
-    echo "daemon init routine in the file /etc/rc.d/init.d/firebird)" >> $DBAPasswordFile
-    echo "" >> $DBAPasswordFile
-    echo "Your password can be changed to a more suitable one using the" >> $DBAPasswordFile
-    echo "@prefix@/bin/changeDBAPassword.sh script" >> $DBAPasswordFile
-    echo "" >> $DBAPasswordFile
-    chmod u=r,go= $DBAPasswordFile
-
-    echo ""
-    echo Running gsec to modify SYSDBA password
-    $FBBin/gsec -user sysdba -password masterkey <<EOF
-modify sysdba -pw $NewPasswd
-EOF
-    echo ""
-    echo Running ed to modify /etc/init.d/firebird
-
+    writeNewPassword $NewPasswd
     changeInitPassword "$NewPasswd"
+
 }
+
+
+
 
 #------------------------------------------------------------------------
 #  Change sysdba password - this routine is interactive and is only 
@@ -228,10 +235,12 @@ askUserForNewDBAPassword() {
           NewPasswd=$Answer
           if [ ! -z "$NewPasswd" ]
             then
+
              $FBBin/gsec -user sysdba -password masterkey <<EOF
 modify sysdba -pw $NewPasswd
 EOF
               echo ""
+              writeNewPassword $NewPasswd
               changeInitPassword "$NewPasswd"
           fi
           
@@ -442,13 +451,22 @@ createLinksForBackCompatibility() {
     # to ensure it loads the fb equivalent.  Eventually these should be 
     # optional and in a seperate rpm install.  MOD 7-Nov-2002.
 
+
+    # Althhough classic has two options for  libgds.so super server has only 
+    # one:
+    #  1) The multithreaded client only libfbclient.so 
+    #  MOD 23-Dec-2003
+
+    newLibrary=$FBRootDir/lib/libfbclient.so
+    #newLibrary=$FBRootDir/lib/libfbembed.so
+
     if [ ! -e /usr/lib/libgds.so ]
       then
         if [ -L /usr/lib/libgds.so ]
           then
             rm -f /usr/lib/libgds.so
         fi
-        ln -s $FBRootDir/lib/libfbclient.so /usr/lib/libgds.so
+        ln -s $newLibrary /usr/lib/libgds.so
     fi
 
     if [ ! -e /usr/lib/libgds.so.0 ]
@@ -457,9 +475,8 @@ createLinksForBackCompatibility() {
           then
             rm -f /usr/lib/libgds.so.0
         fi
-        ln -s $FBRootDir/lib/libfbclient.so /usr/lib/libgds.so.0
+        ln -s $newLibrary /usr/lib/libgds.so.0
     fi
-
 
 }
 
