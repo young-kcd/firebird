@@ -1074,6 +1074,10 @@ C --
       PARAMETER (GDS__exec_sql_max_call_exceeded       = 335544830)
       INTEGER*4 GDS__conf_access_denied              
       PARAMETER (GDS__conf_access_denied               = 335544831)
+      INTEGER*4 GDS__wrong_backup_state              
+      PARAMETER (GDS__wrong_backup_state               = 335544832)
+      INTEGER*4 GDS__wal_backup_err                  
+      PARAMETER (GDS__wal_backup_err                   = 335544833)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

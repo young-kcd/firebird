@@ -531,206 +531,208 @@ static const SCHAR * const messages[] = {
 "Variable type (position %d) in EXECUTE STATEMENT '%s' INTO does not match returned column type",		/*509, exec_sql_invalid_var            */
 "Too many recursion levels of EXECUTE STATEMENT",		/*510, exec_sql_max_call_exceeded      */
 "Access to %s \"%s\" is denied by server administrator",		/*511, conf_access_denied              */
-"data base file name (%s) already given",		/*512, gfix_db_name                    */
-"invalid switch %s",		/*513, gfix_invalid_sw                 */
-"incompatible switch combination",		/*514, gfix_incmp_sw                   */
-"replay log pathname required",		/*515, gfix_replay_req                 */
-"number of page buffers for cache required",		/*516, gfix_pgbuf_req                  */
-"numeric value required",		/*517, gfix_val_req                    */
-"positive numeric value required",		/*518, gfix_pval_req                   */
-"number of transactions per sweep required",		/*519, gfix_trn_req                    */
-"\"full\" or \"reserve\" required",		/*520, gfix_full_req                   */
-"user name required",		/*521, gfix_usrname_req                */
-"password required",		/*522, gfix_pass_req                   */
-"subsystem name",		/*523, gfix_subs_name                  */
-"\"wal\" required",		/*524, gfix_wal_req                    */
-"number of seconds required",		/*525, gfix_sec_req                    */
-"numeric value between 0 and 32767 inclusive required",		/*526, gfix_nval_req                   */
-"must specify type of shutdown",		/*527, gfix_type_shut                  */
-"please retry, specifying an option",		/*528, gfix_retry                      */
-"please retry, giving a database name",		/*529, gfix_retry_db                   */
-"internal block exceeds maximum size",		/*530, gfix_exceed_max                 */
-"corrupt pool",		/*531, gfix_corrupt_pool               */
-"virtual memory exhausted",		/*532, gfix_mem_exhausted              */
-"bad pool id",		/*533, gfix_bad_pool                   */
-"Transaction state %d not in valid range.",		/*534, gfix_trn_not_valid              */
-"unexpected end of input",		/*535, gfix_unexp_eoi                  */
-"failed to reconnect to a transaction in database %s",		/*536, gfix_recon_fail                 */
-"Transaction description item unknown",		/*537, gfix_trn_unknown                */
-"\"read_only\" or \"read_write\" required",		/*538, gfix_mode_req                   */
-"	-sql_dialect	set database dialect n",		/*539, gfix_opt_SQL_dialect            */
-"Cannot SELECT RDB$DB_KEY from a stored procedure.",		/*540, dsql_dbkey_from_non_table       */
-"Precision 10 to 18 changed from DOUBLE PRECISION in SQL dialect 1 to 64-bit scaled integer in SQL dialect 3",		/*541, dsql_transitional_numeric       */
-"Use of %s expression that returns different results in dialect 1 and dialect 3",		/*542, dsql_dialect_warning_expr       */
-"Database SQL dialect %d does not support reference to %s datatype",		/*543, sql_db_dialect_dtype_unsupport  */
-"DB dialect %d and client dialect %d conflict with respect to numeric precision %d.",		/*544, isc_sql_dialect_conflict_num    */
-"WARNING: Numeric literal %s is interpreted as a floating-point",		/*545, dsql_warning_number_ambiguous   */
-"value in SQL dialect 1, but as an exact numeric value in SQL dialect 3.",		/*546, dsql_warning_number_ambiguous1  */
-"WARNING: NUMERIC and DECIMAL fields with precision 10 or greater are stored",		/*547, dsql_warn_precision_ambiguous   */
-"as approximate floating-point values in SQL dialect 1, but as 64-bit",		/*548, dsql_warn_precision_ambiguous1  */
-"integers in SQL dialect 3.",		/*549, dsql_warn_precision_ambiguous2  */
-"Ambiguous field name between %s and %s",		/*550, dsql_ambiguous_field_name       */
-"External function should have return position between 1 and %d",		/*551, dsql_udf_return_pos_err         */
-"Label %s %s in the current scope",		/*552, dsql_invalid_label              */
-"SQL role %s does not exist",		/*553, dyn_role_does_not_exist         */
-"user %s has no grant admin option on SQL role %s",		/*554, dyn_no_grant_admin_opt          */
-"user %s is not a member of SQL role %s",		/*555, dyn_user_not_role_member        */
-"%s is not the owner of SQL role %s",		/*556, dyn_delete_role_failed          */
-"%s is a SQL role and not a user",		/*557, dyn_grant_role_to_user          */
-"user name %s could not be used for SQL role",		/*558, dyn_inv_sql_role_name           */
-"SQL role %s already exists",		/*559, dyn_dup_sql_role                */
-"keyword %s can not be used as a SQL role name",		/*560, dyn_kywd_spec_for_role          */
-"SQL roles are not supported in on older versions of the database.  A backup and restore of the database is required.",		/*561, dyn_roles_not_supported         */
-"Cannot rename domain %s to %s.  A domain with that name already exists.",		/*562, dyn_domain_name_exists          */
-"Cannot rename column %s to %s.  A column with that name already exists in table %s.",		/*563, dyn_field_name_exists           */
-"Column %s from table %s is referenced in %s",		/*564, dyn_dependency_exists           */
-"Cannot change datatype for column %s.  Changing datatype is not supported for BLOB or ARRAY columns.",		/*565, dyn_dtype_invalid               */
-"New size specified for column %s must be at least %d characters.",		/*566, dyn_char_fld_too_small          */
-"Cannot change datatype for %s.  Conversion from base type %s to %s is not supported.",		/*567, dyn_invalid_dtype_conversion    */
-"Cannot change datatype for column %s from a character type to a non-character type.",		/*568, dyn_dtype_conv_invalid          */
-"Zero length identifiers are not allowed",		/*569, dyn_zero_len_id                 */
-"found unknown switch",		/*570, gbak_unknown_switch             */
-"page size parameter missing",		/*571, gbak_page_size_missing          */
-"Page size specified (%ld) greater than limit (8192 bytes)",		/*572, gbak_page_size_toobig           */
-"redirect location for output is not specified",		/*573, gbak_redir_ouput_missing        */
-"conflicting switches for backup/restore",		/*574, gbak_switches_conflict          */
-"device type %s not known",		/*575, gbak_unknown_device             */
-"protection is not there yet",		/*576, gbak_no_protection              */
-"page size is allowed only on restore or create",		/*577, gbak_page_size_not_allowed      */
-"multiple sources or destinations specified",		/*578, gbak_multi_source_dest          */
-"requires both input and output filenames",		/*579, gbak_filename_missing           */
-"input and output have the same name.  Disallowed.",		/*580, gbak_dup_inout_names            */
-"expected page size, encountered \"%s\"",		/*581, gbak_inv_page_size              */
-"REPLACE specified, but the first file %s is a database",		/*582, gbak_db_specified               */
-"database %s already exists.  To replace it, use the -R switch",		/*583, gbak_db_exists                  */
-"device type not specified",		/*584, gbak_unk_device                 */
-"gds_$blob_info failed",		/*585, gbak_blob_info_failed           */
-"do not understand BLOB INFO item %ld",		/*586, gbak_unk_blob_item              */
-"gds_$get_segment failed",		/*587, gbak_get_seg_failed             */
-"gds_$close_blob failed",		/*588, gbak_close_blob_failed          */
-"gds_$open_blob failed",		/*589, gbak_open_blob_failed           */
-"Failed in put_blr_gen_id",		/*590, gbak_put_blr_gen_id_failed      */
-"data type %ld not understood",		/*591, gbak_unk_type                   */
-"gds_$compile_request failed",		/*592, gbak_comp_req_failed            */
-"gds_$start_request failed",		/*593, gbak_start_req_failed           */
-" gds_$receive failed",		/*594, gbak_rec_failed                 */
-"gds_$release_request failed",		/*595, gbak_rel_req_failed             */
-" gds_$database_info failed",		/*596, gbak_db_info_failed             */
-"Expected database description record",		/*597, gbak_no_db_desc                 */
-"failed to create database %s",		/*598, gbak_db_create_failed           */
-"RESTORE: decompression length error",		/*599, gbak_decomp_len_error           */
-"cannot find table %s",		/*600, gbak_tbl_missing                */
-"Cannot find column for BLOB",		/*601, gbak_blob_col_missing           */
-"gds_$create_blob failed",		/*602, gbak_create_blob_failed         */
-"gds_$put_segment failed",		/*603, gbak_put_seg_failed             */
-"expected record length",		/*604, gbak_rec_len_exp                */
-"wrong length record, expected %ld encountered %ld",		/*605, gbak_inv_rec_len                */
-"expected data attribute",		/*606, gbak_exp_data_type              */
-"Failed in store_blr_gen_id",		/*607, gbak_gen_id_failed              */
-"do not recognize record type %ld",		/*608, gbak_unk_rec_type               */
-"Expected backup version 1, 2, or 3.  Found %ld",		/*609, gbak_inv_bkup_ver               */
-"expected backup description record",		/*610, gbak_missing_bkup_desc          */
-"string truncated",		/*611, gbak_string_trunc               */
-" warning -- record could not be restored",		/*612, gbak_cant_rest_record           */
-"gds_$send failed",		/*613, gbak_send_failed                */
-"no table name for data",		/*614, gbak_no_tbl_name                */
-"unexpected end of file on backup file",		/*615, gbak_unexp_eof                  */
-"database format %ld is too old to restore to",		/*616, gbak_db_format_too_old          */
-"array dimension for column %s is invalid",		/*617, gbak_inv_array_dim              */
-"Expected XDR record length",		/*618, gbak_xdr_len_expected           */
-"cannot open backup file %s",		/*619, gbak_open_bkup_error            */
-"cannot open status and error output file %s",		/*620, gbak_open_error                 */
-"blocking factor parameter missing",		/*621, gbak_missing_block_fac          */
-"expected blocking factor, encountered \"%s\"",		/*622, gbak_inv_block_fac              */
-"a blocking factor may not be used in conjunction with device CT",		/*623, gbak_block_fac_specified        */
-"user name parameter missing",		/*624, gbak_missing_username           */
-"password parameter missing",		/*625, gbak_missing_password           */
-" missing parameter for the number of bytes to be skipped",		/*626, gbak_missing_skipped_bytes      */
-"expected number of bytes to be skipped, encountered \"%s\"",		/*627, gbak_inv_skipped_bytes          */
-"Bad attribute for RDB$CHARACTER_SETS",		/*628, gbak_err_restore_charset        */
-"Bad attribute for RDB$COLLATIONS",		/*629, gbak_err_restore_collation      */
-"Unexpected I/O error while reading from backup file",		/*630, gbak_read_error                 */
-"Unexpected I/O error while writing to backup file",		/*631, gbak_write_error                */
-"could not drop database %s (database might be in use)",		/*632, gbak_db_in_use                  */
-"System memory exhausted",		/*633, gbak_sysmemex                   */
-"Bad attributes for restoring SQL role",		/*634, gbak_restore_role_failed        */
-"SQL role parameter missing",		/*635, gbak_role_op_missing            */
-"page buffers parameter missing",		/*636, gbak_page_buffers_missing       */
-"expected page buffers, encountered \"%s\"",		/*637, gbak_page_buffers_wrong_param   */
-"page buffers is allowed only on restore or create",		/*638, gbak_page_buffers_restore       */
-"size specification either missing or incorrect for file %s",		/*639, gbak_inv_size                   */
-"file %s out of sequence",		/*640, gbak_file_outof_sequence        */
-"can't join -- one of the files missing",		/*641, gbak_join_file_missing          */
-" standard input is not supported when using join operation",		/*642, gbak_stdin_not_supptd           */
-"standard output is not supported when using split operation",		/*643, gbak_stdout_not_supptd          */
-"backup file %s might be corrupt",		/*644, gbak_bkup_corrupt               */
-"database file specification missing",		/*645, gbak_unk_db_file_spec           */
-"can't write a header record to file %s",		/*646, gbak_hdr_write_failed           */
-"free disk space exhausted",		/*647, gbak_disk_space_ex              */
-"file size given (%d) is less than minimum allowed (%d)",		/*648, gbak_size_lt_min                */
-"service name parameter missing",		/*649, gbak_svc_name_missing           */
-"Cannot restore over current database, must be SYSDBA or owner of the existing database.",		/*650, gbak_not_ownr                   */
-"\"read_only\" or \"read_write\" required",		/*651, gbak_mode_req                   */
-"just data ignore all constraints etc.",		/*652, gbak_just_data                  */
-"restoring data only ignoring foreign key, unique, not null & other constraints",		/*653, gbak_data_only                  */
-"unable to open database",		/*654, gsec_cant_open_db               */
-"error in switch specifications",		/*655, gsec_switches_error             */
-"no operation specified",		/*656, gsec_no_op_spec                 */
-"no user name specified",		/*657, gsec_no_usr_name                */
-"add record error",		/*658, gsec_err_add                    */
-"modify record error",		/*659, gsec_err_modify                 */
-"find/modify record error",		/*660, gsec_err_find_mod               */
-"record not found for user: %s",		/*661, gsec_err_rec_not_found          */
-"delete record error",		/*662, gsec_err_delete                 */
-"find/delete record error",		/*663, gsec_err_find_del               */
-"find/display record error",		/*664, gsec_err_find_disp              */
-"invalid parameter, no switch defined",		/*665, gsec_inv_param                  */
-"operation already specified",		/*666, gsec_op_specified               */
-"password already specified",		/*667, gsec_pw_specified               */
-"uid already specified",		/*668, gsec_uid_specified              */
-"gid already specified",		/*669, gsec_gid_specified              */
-"project already specified",		/*670, gsec_proj_specified             */
-"organization already specified",		/*671, gsec_org_specified              */
-"first name already specified",		/*672, gsec_fname_specified            */
-"middle name already specified",		/*673, gsec_mname_specified            */
-"last name already specified",		/*674, gsec_lname_specified            */
-"invalid switch specified",		/*675, gsec_inv_switch                 */
-"ambiguous switch specified",		/*676, gsec_amb_switch                 */
-"no operation specified for parameters",		/*677, gsec_no_op_specified            */
-"no parameters allowed for this operation",		/*678, gsec_params_not_allowed         */
-"incompatible switches specified",		/*679, gsec_incompat_switch            */
-"Invalid user name (maximum 31 bytes allowed)",		/*680, gsec_inv_username               */
-"Warning - maximum 8 significant bytes of password used",		/*681, gsec_inv_pw_length              */
-"database already specified",		/*682, gsec_db_specified               */
-"database administrator name already specified",		/*683, gsec_db_admin_specified         */
-"database administrator password already specified",		/*684, gsec_db_admin_pw_specified      */
-"SQL role name already specified",		/*685, gsec_sql_role_specified         */
-"The license file does not exist or could not be opened for read",		/*686, license_no_file                 */
-"operation already specified",		/*687, license_op_specified            */
-"no operation specified",		/*688, license_op_missing              */
-"invalid switch",		/*689, license_inv_switch              */
-"invalid switch combination",		/*690, license_inv_switch_combo        */
-"illegal operation/switch combination",		/*691, license_inv_op_combo            */
-"ambiguous switch",		/*692, license_amb_switch              */
-"invalid parameter, no switch specified",		/*693, license_inv_parameter           */
-"switch does not take any parameter",		/*694, license_param_specified         */
-"switch requires a parameter",		/*695, license_param_req               */
-"syntax error in command line",		/*696, license_syntx_error             */
-"The certificate was not added.  A duplicate ID exists in the license file.",		/*697, license_dup_id                  */
-"The certificate was not added.  Invalid certificate ID / Key combination.",		/*698, license_inv_id_key              */
-"The certificate was not removed.  The key does not exist or corresponds to a temporary evaluation license.",		/*699, license_err_remove              */
-"An error occurred updating the license file.  Operation cancelled.",		/*700, license_err_update              */
-"The certificate could not be validated based on the information given.  Please recheck the ID and key information.",		/*701, license_err_convert             */
-"Operation failed.  An unknown error occurred.",		/*702, license_err_unk                 */
-"Add license operation failed, KEY: %s ID: %s",		/*703, license_svc_err_add             */
-"Remove license operation failed, KEY: %s",		/*704, license_svc_err_remove          */
-"The evaluation license has already been used on this server.  You need to purchase a non-evaluation license.",		/*705, license_eval_exists             */
-"found unknown switch",		/*706, gstat_unknown_switch            */
-"please retry, giving a database name",		/*707, gstat_retry                     */
-"Wrong ODS version, expected %d, encountered %d",		/*708, gstat_wrong_ods                 */
-"Unexpected end of database file.",		/*709, gstat_unexpected_eof            */
-"Can't open database file %s",		/*710, gstat_open_err                  */
-"Can't read a database page",		/*711, gstat_read_err                  */
-"System memory exhausted",		/*712, gstat_sysmemex                  */
+"Cannot change difference file name while database is in backup mode",		/*512, wrong_backup_state              */
+"Physical backup is not allowed while Write-Ahead Log is in use",		/*513, wal_backup_err                  */
+"data base file name (%s) already given",		/*514, gfix_db_name                    */
+"invalid switch %s",		/*515, gfix_invalid_sw                 */
+"incompatible switch combination",		/*516, gfix_incmp_sw                   */
+"replay log pathname required",		/*517, gfix_replay_req                 */
+"number of page buffers for cache required",		/*518, gfix_pgbuf_req                  */
+"numeric value required",		/*519, gfix_val_req                    */
+"positive numeric value required",		/*520, gfix_pval_req                   */
+"number of transactions per sweep required",		/*521, gfix_trn_req                    */
+"\"full\" or \"reserve\" required",		/*522, gfix_full_req                   */
+"user name required",		/*523, gfix_usrname_req                */
+"password required",		/*524, gfix_pass_req                   */
+"subsystem name",		/*525, gfix_subs_name                  */
+"\"wal\" required",		/*526, gfix_wal_req                    */
+"number of seconds required",		/*527, gfix_sec_req                    */
+"numeric value between 0 and 32767 inclusive required",		/*528, gfix_nval_req                   */
+"must specify type of shutdown",		/*529, gfix_type_shut                  */
+"please retry, specifying an option",		/*530, gfix_retry                      */
+"please retry, giving a database name",		/*531, gfix_retry_db                   */
+"internal block exceeds maximum size",		/*532, gfix_exceed_max                 */
+"corrupt pool",		/*533, gfix_corrupt_pool               */
+"virtual memory exhausted",		/*534, gfix_mem_exhausted              */
+"bad pool id",		/*535, gfix_bad_pool                   */
+"Transaction state %d not in valid range.",		/*536, gfix_trn_not_valid              */
+"unexpected end of input",		/*537, gfix_unexp_eoi                  */
+"failed to reconnect to a transaction in database %s",		/*538, gfix_recon_fail                 */
+"Transaction description item unknown",		/*539, gfix_trn_unknown                */
+"\"read_only\" or \"read_write\" required",		/*540, gfix_mode_req                   */
+"	-sql_dialect	set database dialect n",		/*541, gfix_opt_SQL_dialect            */
+"Cannot SELECT RDB$DB_KEY from a stored procedure.",		/*542, dsql_dbkey_from_non_table       */
+"Precision 10 to 18 changed from DOUBLE PRECISION in SQL dialect 1 to 64-bit scaled integer in SQL dialect 3",		/*543, dsql_transitional_numeric       */
+"Use of %s expression that returns different results in dialect 1 and dialect 3",		/*544, dsql_dialect_warning_expr       */
+"Database SQL dialect %d does not support reference to %s datatype",		/*545, sql_db_dialect_dtype_unsupport  */
+"DB dialect %d and client dialect %d conflict with respect to numeric precision %d.",		/*546, isc_sql_dialect_conflict_num    */
+"WARNING: Numeric literal %s is interpreted as a floating-point",		/*547, dsql_warning_number_ambiguous   */
+"value in SQL dialect 1, but as an exact numeric value in SQL dialect 3.",		/*548, dsql_warning_number_ambiguous1  */
+"WARNING: NUMERIC and DECIMAL fields with precision 10 or greater are stored",		/*549, dsql_warn_precision_ambiguous   */
+"as approximate floating-point values in SQL dialect 1, but as 64-bit",		/*550, dsql_warn_precision_ambiguous1  */
+"integers in SQL dialect 3.",		/*551, dsql_warn_precision_ambiguous2  */
+"Ambiguous field name between %s and %s",		/*552, dsql_ambiguous_field_name       */
+"External function should have return position between 1 and %d",		/*553, dsql_udf_return_pos_err         */
+"Label %s %s in the current scope",		/*554, dsql_invalid_label              */
+"SQL role %s does not exist",		/*555, dyn_role_does_not_exist         */
+"user %s has no grant admin option on SQL role %s",		/*556, dyn_no_grant_admin_opt          */
+"user %s is not a member of SQL role %s",		/*557, dyn_user_not_role_member        */
+"%s is not the owner of SQL role %s",		/*558, dyn_delete_role_failed          */
+"%s is a SQL role and not a user",		/*559, dyn_grant_role_to_user          */
+"user name %s could not be used for SQL role",		/*560, dyn_inv_sql_role_name           */
+"SQL role %s already exists",		/*561, dyn_dup_sql_role                */
+"keyword %s can not be used as a SQL role name",		/*562, dyn_kywd_spec_for_role          */
+"SQL roles are not supported in on older versions of the database.  A backup and restore of the database is required.",		/*563, dyn_roles_not_supported         */
+"Cannot rename domain %s to %s.  A domain with that name already exists.",		/*564, dyn_domain_name_exists          */
+"Cannot rename column %s to %s.  A column with that name already exists in table %s.",		/*565, dyn_field_name_exists           */
+"Column %s from table %s is referenced in %s",		/*566, dyn_dependency_exists           */
+"Cannot change datatype for column %s.  Changing datatype is not supported for BLOB or ARRAY columns.",		/*567, dyn_dtype_invalid               */
+"New size specified for column %s must be at least %d characters.",		/*568, dyn_char_fld_too_small          */
+"Cannot change datatype for %s.  Conversion from base type %s to %s is not supported.",		/*569, dyn_invalid_dtype_conversion    */
+"Cannot change datatype for column %s from a character type to a non-character type.",		/*570, dyn_dtype_conv_invalid          */
+"Zero length identifiers are not allowed",		/*571, dyn_zero_len_id                 */
+"found unknown switch",		/*572, gbak_unknown_switch             */
+"page size parameter missing",		/*573, gbak_page_size_missing          */
+"Page size specified (%ld) greater than limit (8192 bytes)",		/*574, gbak_page_size_toobig           */
+"redirect location for output is not specified",		/*575, gbak_redir_ouput_missing        */
+"conflicting switches for backup/restore",		/*576, gbak_switches_conflict          */
+"device type %s not known",		/*577, gbak_unknown_device             */
+"protection is not there yet",		/*578, gbak_no_protection              */
+"page size is allowed only on restore or create",		/*579, gbak_page_size_not_allowed      */
+"multiple sources or destinations specified",		/*580, gbak_multi_source_dest          */
+"requires both input and output filenames",		/*581, gbak_filename_missing           */
+"input and output have the same name.  Disallowed.",		/*582, gbak_dup_inout_names            */
+"expected page size, encountered \"%s\"",		/*583, gbak_inv_page_size              */
+"REPLACE specified, but the first file %s is a database",		/*584, gbak_db_specified               */
+"database %s already exists.  To replace it, use the -R switch",		/*585, gbak_db_exists                  */
+"device type not specified",		/*586, gbak_unk_device                 */
+"gds_$blob_info failed",		/*587, gbak_blob_info_failed           */
+"do not understand BLOB INFO item %ld",		/*588, gbak_unk_blob_item              */
+"gds_$get_segment failed",		/*589, gbak_get_seg_failed             */
+"gds_$close_blob failed",		/*590, gbak_close_blob_failed          */
+"gds_$open_blob failed",		/*591, gbak_open_blob_failed           */
+"Failed in put_blr_gen_id",		/*592, gbak_put_blr_gen_id_failed      */
+"data type %ld not understood",		/*593, gbak_unk_type                   */
+"gds_$compile_request failed",		/*594, gbak_comp_req_failed            */
+"gds_$start_request failed",		/*595, gbak_start_req_failed           */
+" gds_$receive failed",		/*596, gbak_rec_failed                 */
+"gds_$release_request failed",		/*597, gbak_rel_req_failed             */
+" gds_$database_info failed",		/*598, gbak_db_info_failed             */
+"Expected database description record",		/*599, gbak_no_db_desc                 */
+"failed to create database %s",		/*600, gbak_db_create_failed           */
+"RESTORE: decompression length error",		/*601, gbak_decomp_len_error           */
+"cannot find table %s",		/*602, gbak_tbl_missing                */
+"Cannot find column for BLOB",		/*603, gbak_blob_col_missing           */
+"gds_$create_blob failed",		/*604, gbak_create_blob_failed         */
+"gds_$put_segment failed",		/*605, gbak_put_seg_failed             */
+"expected record length",		/*606, gbak_rec_len_exp                */
+"wrong length record, expected %ld encountered %ld",		/*607, gbak_inv_rec_len                */
+"expected data attribute",		/*608, gbak_exp_data_type              */
+"Failed in store_blr_gen_id",		/*609, gbak_gen_id_failed              */
+"do not recognize record type %ld",		/*610, gbak_unk_rec_type               */
+"Expected backup version 1, 2, or 3.  Found %ld",		/*611, gbak_inv_bkup_ver               */
+"expected backup description record",		/*612, gbak_missing_bkup_desc          */
+"string truncated",		/*613, gbak_string_trunc               */
+" warning -- record could not be restored",		/*614, gbak_cant_rest_record           */
+"gds_$send failed",		/*615, gbak_send_failed                */
+"no table name for data",		/*616, gbak_no_tbl_name                */
+"unexpected end of file on backup file",		/*617, gbak_unexp_eof                  */
+"database format %ld is too old to restore to",		/*618, gbak_db_format_too_old          */
+"array dimension for column %s is invalid",		/*619, gbak_inv_array_dim              */
+"Expected XDR record length",		/*620, gbak_xdr_len_expected           */
+"cannot open backup file %s",		/*621, gbak_open_bkup_error            */
+"cannot open status and error output file %s",		/*622, gbak_open_error                 */
+"blocking factor parameter missing",		/*623, gbak_missing_block_fac          */
+"expected blocking factor, encountered \"%s\"",		/*624, gbak_inv_block_fac              */
+"a blocking factor may not be used in conjunction with device CT",		/*625, gbak_block_fac_specified        */
+"user name parameter missing",		/*626, gbak_missing_username           */
+"password parameter missing",		/*627, gbak_missing_password           */
+" missing parameter for the number of bytes to be skipped",		/*628, gbak_missing_skipped_bytes      */
+"expected number of bytes to be skipped, encountered \"%s\"",		/*629, gbak_inv_skipped_bytes          */
+"Bad attribute for RDB$CHARACTER_SETS",		/*630, gbak_err_restore_charset        */
+"Bad attribute for RDB$COLLATIONS",		/*631, gbak_err_restore_collation      */
+"Unexpected I/O error while reading from backup file",		/*632, gbak_read_error                 */
+"Unexpected I/O error while writing to backup file",		/*633, gbak_write_error                */
+"could not drop database %s (database might be in use)",		/*634, gbak_db_in_use                  */
+"System memory exhausted",		/*635, gbak_sysmemex                   */
+"Bad attributes for restoring SQL role",		/*636, gbak_restore_role_failed        */
+"SQL role parameter missing",		/*637, gbak_role_op_missing            */
+"page buffers parameter missing",		/*638, gbak_page_buffers_missing       */
+"expected page buffers, encountered \"%s\"",		/*639, gbak_page_buffers_wrong_param   */
+"page buffers is allowed only on restore or create",		/*640, gbak_page_buffers_restore       */
+"size specification either missing or incorrect for file %s",		/*641, gbak_inv_size                   */
+"file %s out of sequence",		/*642, gbak_file_outof_sequence        */
+"can't join -- one of the files missing",		/*643, gbak_join_file_missing          */
+" standard input is not supported when using join operation",		/*644, gbak_stdin_not_supptd           */
+"standard output is not supported when using split operation",		/*645, gbak_stdout_not_supptd          */
+"backup file %s might be corrupt",		/*646, gbak_bkup_corrupt               */
+"database file specification missing",		/*647, gbak_unk_db_file_spec           */
+"can't write a header record to file %s",		/*648, gbak_hdr_write_failed           */
+"free disk space exhausted",		/*649, gbak_disk_space_ex              */
+"file size given (%d) is less than minimum allowed (%d)",		/*650, gbak_size_lt_min                */
+"service name parameter missing",		/*651, gbak_svc_name_missing           */
+"Cannot restore over current database, must be SYSDBA or owner of the existing database.",		/*652, gbak_not_ownr                   */
+"\"read_only\" or \"read_write\" required",		/*653, gbak_mode_req                   */
+"just data ignore all constraints etc.",		/*654, gbak_just_data                  */
+"restoring data only ignoring foreign key, unique, not null & other constraints",		/*655, gbak_data_only                  */
+"unable to open database",		/*656, gsec_cant_open_db               */
+"error in switch specifications",		/*657, gsec_switches_error             */
+"no operation specified",		/*658, gsec_no_op_spec                 */
+"no user name specified",		/*659, gsec_no_usr_name                */
+"add record error",		/*660, gsec_err_add                    */
+"modify record error",		/*661, gsec_err_modify                 */
+"find/modify record error",		/*662, gsec_err_find_mod               */
+"record not found for user: %s",		/*663, gsec_err_rec_not_found          */
+"delete record error",		/*664, gsec_err_delete                 */
+"find/delete record error",		/*665, gsec_err_find_del               */
+"find/display record error",		/*666, gsec_err_find_disp              */
+"invalid parameter, no switch defined",		/*667, gsec_inv_param                  */
+"operation already specified",		/*668, gsec_op_specified               */
+"password already specified",		/*669, gsec_pw_specified               */
+"uid already specified",		/*670, gsec_uid_specified              */
+"gid already specified",		/*671, gsec_gid_specified              */
+"project already specified",		/*672, gsec_proj_specified             */
+"organization already specified",		/*673, gsec_org_specified              */
+"first name already specified",		/*674, gsec_fname_specified            */
+"middle name already specified",		/*675, gsec_mname_specified            */
+"last name already specified",		/*676, gsec_lname_specified            */
+"invalid switch specified",		/*677, gsec_inv_switch                 */
+"ambiguous switch specified",		/*678, gsec_amb_switch                 */
+"no operation specified for parameters",		/*679, gsec_no_op_specified            */
+"no parameters allowed for this operation",		/*680, gsec_params_not_allowed         */
+"incompatible switches specified",		/*681, gsec_incompat_switch            */
+"Invalid user name (maximum 31 bytes allowed)",		/*682, gsec_inv_username               */
+"Warning - maximum 8 significant bytes of password used",		/*683, gsec_inv_pw_length              */
+"database already specified",		/*684, gsec_db_specified               */
+"database administrator name already specified",		/*685, gsec_db_admin_specified         */
+"database administrator password already specified",		/*686, gsec_db_admin_pw_specified      */
+"SQL role name already specified",		/*687, gsec_sql_role_specified         */
+"The license file does not exist or could not be opened for read",		/*688, license_no_file                 */
+"operation already specified",		/*689, license_op_specified            */
+"no operation specified",		/*690, license_op_missing              */
+"invalid switch",		/*691, license_inv_switch              */
+"invalid switch combination",		/*692, license_inv_switch_combo        */
+"illegal operation/switch combination",		/*693, license_inv_op_combo            */
+"ambiguous switch",		/*694, license_amb_switch              */
+"invalid parameter, no switch specified",		/*695, license_inv_parameter           */
+"switch does not take any parameter",		/*696, license_param_specified         */
+"switch requires a parameter",		/*697, license_param_req               */
+"syntax error in command line",		/*698, license_syntx_error             */
+"The certificate was not added.  A duplicate ID exists in the license file.",		/*699, license_dup_id                  */
+"The certificate was not added.  Invalid certificate ID / Key combination.",		/*700, license_inv_id_key              */
+"The certificate was not removed.  The key does not exist or corresponds to a temporary evaluation license.",		/*701, license_err_remove              */
+"An error occurred updating the license file.  Operation cancelled.",		/*702, license_err_update              */
+"The certificate could not be validated based on the information given.  Please recheck the ID and key information.",		/*703, license_err_convert             */
+"Operation failed.  An unknown error occurred.",		/*704, license_err_unk                 */
+"Add license operation failed, KEY: %s ID: %s",		/*705, license_svc_err_add             */
+"Remove license operation failed, KEY: %s",		/*706, license_svc_err_remove          */
+"The evaluation license has already been used on this server.  You need to purchase a non-evaluation license.",		/*707, license_eval_exists             */
+"found unknown switch",		/*708, gstat_unknown_switch            */
+"please retry, giving a database name",		/*709, gstat_retry                     */
+"Wrong ODS version, expected %d, encountered %d",		/*710, gstat_wrong_ods                 */
+"Unexpected end of database file.",		/*711, gstat_unexpected_eof            */
+"Can't open database file %s",		/*712, gstat_open_err                  */
+"Can't read a database page",		/*713, gstat_read_err                  */
+"System memory exhausted",		/*714, gstat_sysmemex                  */
 	0						/* Null entry to terminate list */
 };

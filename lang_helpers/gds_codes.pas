@@ -543,6 +543,8 @@ const
 	gds_exec_sql_invalid_var             = 335544829;
 	gds_exec_sql_max_call_exceeded       = 335544830;
 	gds_conf_access_denied               = 335544831;
+	gds_wrong_backup_state               = 335544832;
+	gds_wal_backup_err                   = 335544833;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

@@ -554,6 +554,8 @@ const SLONG gds_exec_sql_invalid_req             = 335544828L;
 const SLONG gds_exec_sql_invalid_var             = 335544829L;
 const SLONG gds_exec_sql_max_call_exceeded       = 335544830L;
 const SLONG gds_conf_access_denied               = 335544831L;
+const SLONG gds_wrong_backup_state               = 335544832L;
+const SLONG gds_wal_backup_err                   = 335544833L;
 const SLONG gds_gfix_db_name                     = 335740929L;
 const SLONG gds_gfix_invalid_sw                  = 335740930L;
 const SLONG gds_gfix_incmp_sw                    = 335740932L;
@@ -755,7 +757,7 @@ const SLONG gds_gstat_unexpected_eof             = 336920580L;
 const SLONG gds_gstat_open_err                   = 336920605L;
 const SLONG gds_gstat_read_err                   = 336920606L;
 const SLONG gds_gstat_sysmemex                   = 336920607L;
-const SLONG gds_err_max                          = 712L;
+const SLONG gds_err_max                          = 714L;
 
 #else /* c definitions */
 
@@ -1290,6 +1292,8 @@ const SLONG gds_err_max                          = 712L;
 #define gds__exec_sql_invalid_var             335544829L
 #define gds__exec_sql_max_call_exceeded       335544830L
 #define gds__conf_access_denied               335544831L
+#define gds__wrong_backup_state               335544832L
+#define gds__wal_backup_err                   335544833L
 #define gds__gfix_db_name                     335740929L
 #define gds__gfix_invalid_sw                  335740930L
 #define gds__gfix_incmp_sw                    335740932L
@@ -1491,7 +1495,7 @@ const SLONG gds_err_max                          = 712L;
 #define gds__gstat_open_err                   336920605L
 #define gds__gstat_read_err                   336920606L
 #define gds__gstat_sysmemex                   336920607L
-#define gds_err_max                          712
+#define gds_err_max                          714
 
 #endif
 

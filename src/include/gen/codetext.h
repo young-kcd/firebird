@@ -532,6 +532,8 @@ static const struct {
 {"exec_sql_invalid_var", 335544829},
 {"exec_sql_max_call_exceeded", 335544830},
 {"conf_access_denied", 335544831},
+{"wrong_backup_state", 335544832},
+{"wal_backup_err", 335544833},
 {"gfix_db_name", 335740929},
 {"gfix_invalid_sw", 335740930},
 {"gfix_incmp_sw", 335740932},

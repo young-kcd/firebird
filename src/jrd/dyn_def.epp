@@ -940,7 +940,7 @@ void DYN_define_difference(GBL		gbl,
 	}
 
 	if (found) {
-		goto dyn_punt_148_fixme;
+		goto dyn_punt_216;
 	}
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_difference, DYN_REQUESTS);
@@ -979,9 +979,9 @@ void DYN_define_difference(GBL		gbl,
 
 	return;
 
-dyn_punt_148_fixme:
-	DYN_error_punt(FALSE, 148 /*!!!FIXME*/, NULL, NULL, NULL, NULL, NULL);
-	/* msg 148: "Shared cache file already exists" */
+dyn_punt_216:
+	DYN_error_punt(FALSE, 216, NULL, NULL, NULL, NULL, NULL);
+	/* msg 216: "Difference file is already defined" */
 }
 
 

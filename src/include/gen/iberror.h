@@ -564,6 +564,8 @@
 #define isc_exec_sql_invalid_var             335544829L
 #define isc_exec_sql_max_call_exceeded       335544830L
 #define isc_conf_access_denied               335544831L
+#define isc_wrong_backup_state               335544832L
+#define isc_wal_backup_err                   335544833L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -765,6 +767,6 @@
 #define isc_gstat_open_err                   336920605L
 #define isc_gstat_read_err                   336920606L
 #define isc_gstat_sysmemex                   336920607L
-#define isc_err_max                          712
+#define isc_err_max                          714
 
 #endif /* JRD_GEN_IBERROR_H */

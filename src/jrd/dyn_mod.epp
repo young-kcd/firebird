@@ -1806,7 +1806,7 @@ static void change_backup_mode( GBL gbl, UCHAR verb)
 	}
 	catch (const std::exception&) {
 		DYN_rundown_request(request, drq_d_difference); 
-		DYN_error_punt(TRUE, 63, NULL, NULL, NULL, NULL, NULL); /*!!!FIXME!!!*/
+		DYN_error_punt(TRUE, 63, NULL, NULL, NULL, NULL, NULL);
 		/* msg 63: ERASE RDB$FILE failed */
 	}
 	
@@ -1837,14 +1837,18 @@ static void change_backup_mode( GBL gbl, UCHAR verb)
 	}
 	
 	if (invalid_state) {
-		DYN_error_punt(FALSE, 149, NULL, NULL, NULL, NULL, NULL); /*!!!FIXME!!!*/
-		/* msg 149: "Shared cache file not found" */
+		DYN_error_punt(FALSE, verb == gds_dyn_begin_backup ? 217 : 218, 
+					   NULL, NULL, NULL, NULL, NULL);
+		/* msg 217: "Database is already in the physical backup mode" */
+		/* msg 218: "Database is not in the physical backup mode" */
 	}
 
 	if (!found)
 	{
-		DYN_error_punt(FALSE, 149, NULL, NULL, NULL, NULL, NULL); /*!!!FIXME!!!*/
-		/* msg 149: "Shared cache file not found" */
+		DYN_error_punt(FALSE, verb == gds_dyn_end_backup ? 218 : 215, 
+					   NULL, NULL, NULL, NULL, NULL);
+		/* msg 218: "Database is not in the physical backup mode" */
+		/* msg 215: "Difference file is not defined" */
 	}
 }
 

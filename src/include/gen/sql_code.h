@@ -530,6 +530,8 @@ static const SSHORT gds__sql_code [] = {
 -904 /* 509 exec_sql_invalid_var             */,
 -904 /* 510 exec_sql_max_call_exceeded       */,
 -902 /* 511 conf_access_denied               */,
+-904 /* 512 wrong_backup_state               */,
+-904 /* 513 wal_backup_err                   */,
 -901 /*   1 gfix_db_name                     */,
 -901 /*   2 gfix_invalid_sw                  */,
 -901 /*   4 gfix_incmp_sw                    */,
