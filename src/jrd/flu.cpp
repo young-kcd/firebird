@@ -35,7 +35,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.27 2003-02-17 08:41:58 eku Exp $
+$Id: flu.cpp,v 1.28 2003-02-25 12:43:52 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -167,9 +167,6 @@ static void terminate_at_space(char* psz)
 /* Windows NT stuff */
 
 #ifdef WIN_NT
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
 #define NOUSER
 #define NOGDI
 #define NOCRYPT

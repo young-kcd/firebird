@@ -33,16 +33,6 @@
  * 21-Nov-2001 Ann Harrison: Allow read sharing so gstat works 
  */
 
-#ifdef _MSC_VER
-/* TMN: 27 Jul 2000 - Added define to make it compile on Win32 */
-#ifndef _tagBLOB_DEFINED
-#define _tagBLOB_DEFINED
-#endif
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#endif /* _MSC_VER */
-
 #include "firebird.h"
 #include <string.h>
 #include "../jrd/jrd.h"
