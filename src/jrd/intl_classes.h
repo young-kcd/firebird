@@ -39,7 +39,7 @@ public:
 	virtual void reset() = 0;
 	virtual bool process(thread_db*, TextType, const UCHAR*, SSHORT) = 0;
 	virtual bool result() = 0;
-	virtual ~LikeObject() {};
+	virtual ~LikeObject() {}
 };
 
 class ContainsObject {
@@ -47,7 +47,7 @@ public:
 	virtual void reset() = 0;
 	virtual bool process(Jrd::thread_db*, Jrd::TextType, const UCHAR*, SSHORT) = 0;
 	virtual bool result() = 0;
-	virtual ~ContainsObject() {};
+	virtual ~ContainsObject() {}
 };
 
 class TextType
@@ -278,7 +278,7 @@ class CharSet
 {
 public:
 	CharSet(charset* _cs) : cs(_cs) {}
-	CharSet(const CharSet &obj) : cs(obj.cs) {};
+	CharSet(const CharSet &obj) : cs(obj.cs) {}
 
 	CHARSET_ID getId() const { fb_assert(cs); return cs->charset_id; }
 	const char* getName() const { fb_assert(cs); return cs->charset_name; }

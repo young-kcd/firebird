@@ -644,13 +644,13 @@ private:
 		SLONG tran;
 		PageBitmap *bm;
 
-		TranGarbage(PageBitmap *aBm, SLONG aTran) : tran(aTran), bm(aBm) {};
+		TranGarbage(PageBitmap *aBm, SLONG aTran) : tran(aTran), bm(aBm) {}
 
 		static inline const SLONG generate(void const*, const TranGarbage& Item) 
-		{ return Item.tran; };
+		{ return Item.tran; }
 
 		static inline const bool greaterThan(const TranGarbage& i1, const TranGarbage& i2) 
-		{ return i1.tran > i2.tran; };
+		{ return i1.tran > i2.tran; }
 	};
 
 	typedef	Firebird::SortedArray<
@@ -662,8 +662,8 @@ private:
 	TranGarbageArray array;
 
 public:
-	RelationGarbage(MemoryPool& p) : array(p) {};
-	~RelationGarbage() { clear(); };
+	RelationGarbage(MemoryPool& p) : array(p) {}
+	~RelationGarbage() { clear(); }
 
 	void addPage(MemoryPool* pool, const SLONG pageno, const SLONG tranid);
 	void clear();
@@ -671,7 +671,7 @@ public:
 	void getGarbage(const SLONG oldest_snapshot, PageBitmap **sbm);
 	
 	SLONG minTranID() 
-	{ return (array.getCount() > 0) ? array[0].tran : MAX_SLONG; };
+	{ return (array.getCount() > 0) ? array[0].tran : MAX_SLONG; }
 };
 
 #endif //GARBAGE_THREAD

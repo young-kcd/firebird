@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: tree.h,v 1.42 2004-10-02 09:33:06 robocop Exp $
+ *  $Id: tree.h,v 1.43 2004-11-06 07:20:44 robocop Exp $
  *
  */
 
@@ -108,7 +108,7 @@ template <typename Value, typename Key = Value, typename Allocator = MallocAlloc
 	int NodeCount = NODE_PAGE_SIZE / sizeof(void*)>
 class BePlusTree {
 public:
-	BePlusTree(Allocator *_pool) : pool(_pool), level(0), root(NULL), defaultAccessor(this)	{ };
+	BePlusTree(Allocator *_pool) : pool(_pool), level(0), root(NULL), defaultAccessor(this)	{ }
 
 	void clear() {
 		// We delete tree which was not fully created
@@ -235,7 +235,7 @@ private:
 		
 	class NodeList;
 		
-    class ItemList : public SortedVector<Value,LeafCount,Key,KeyOfValue,Cmp> {
+    class ItemList : public SortedVector<Value, LeafCount, Key, KeyOfValue, Cmp> {
 	public:
 		NodeList *parent;
 		ItemList *next, *prev;
@@ -247,7 +247,7 @@ private:
 			items->next = this;
 		}
 		// Create first item in the linked list
-		ItemList() : parent(NULL), next(NULL), prev(NULL) {};
+		ItemList() : parent(NULL), next(NULL), prev(NULL) {}
 
 		friend class BePlusTree;
 #ifndef _MSC_VER
@@ -255,7 +255,7 @@ private:
 #endif
 	};
 	
-    class NodeList : public SortedVector<void*,NodeCount,Key,NodeList,Cmp> {
+    class NodeList : public SortedVector<void*, NodeCount, Key, NodeList, Cmp> {
 	public:
 		// Adds newly created item to the doubly-linked list
 		NodeList(NodeList *items) : parent(NULL) { 

@@ -909,7 +909,8 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 			if (cannotGC) {
 #if defined(GARBAGE_THREAD) && defined(GC_NOTIFY_ON_WRITE)
 				if (attachment->att_flags & (ATT_notify_gc | ATT_garbage_collector) &&
-					(rpb->rpb_b_page != 0 && !(rpb->rpb_flags & rpb_chained)) ) {
+					(rpb->rpb_b_page != 0 && !(rpb->rpb_flags & rpb_chained)) )
+				{
 					// VIO_chase_record_version
 					notify_garbage_collector(tdbb, rpb);
 				}
@@ -3800,7 +3801,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 					rpb.rpb_relation = relation;
 
 					if (relation->rel_gc_bitmap)
-						while(relation->rel_gc_bitmap->getFirst())
+						while (relation->rel_gc_bitmap->getFirst())
 					{
 						dp_sequence = relation->rel_gc_bitmap->current();
 						
@@ -3837,7 +3838,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 						while (VIO_next_record(tdbb, &rpb, NULL, transaction,
 							NULL, false, true))
 						{
-							if(rpb.rpb_window.win_bdb)
+							if (rpb.rpb_window.win_bdb)
 								CCH_RELEASE(tdbb, &rpb.rpb_window);
 
 							if (!(dbb->dbb_flags & DBB_garbage_collector)) {
@@ -3859,7 +3860,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 rel_exit:
 					dp_sequence = -1;
 
-					if(relation->rel_gc_bitmap) {
+					if (relation->rel_gc_bitmap) {
 						if (!relation->rel_gc_bitmap->getFirst())
 						{
 							/* If the bitmap is empty then release it */
@@ -4996,21 +4997,21 @@ void RelationGarbage::clear()
 {
 	TranGarbage *item = array.begin(), *const last = array.end();
 
-	for(; item < last; item++)
+	for (; item < last; item++)
 	{
 		delete item->bm;
 		item->bm = NULL;
 	}
 
 	array.clear(); 
-};
+}
 
 void RelationGarbage::addPage(MemoryPool* pool, const SLONG pageno, const SLONG tranid)
 {
 	bool found = false;
 	TranGarbage const *item = array.begin(), *const last = array.end();
 
-	for(; item < last; item++) {
+	for (; item < last; item++) {
 		if (item->tran <= tranid) {
 			if (PageBitmap::test(item->bm, pageno)) {
 				found = true;
@@ -5023,7 +5024,7 @@ void RelationGarbage::addPage(MemoryPool* pool, const SLONG pageno, const SLONG 
 		}
 	}
 
-	if(!found) {
+	if (!found) {
 		PageBitmap *bm = NULL;
 		size_t pos = 0;
 
@@ -5037,11 +5038,11 @@ void RelationGarbage::addPage(MemoryPool* pool, const SLONG pageno, const SLONG 
 			array.add(TranGarbage(bm, tranid));
 		}
 	}
-};
+}
 
 void RelationGarbage::getGarbage(const SLONG oldest_snapshot, PageBitmap **sbm)
 {
-	while(array.getCount() > 0)
+	while (array.getCount() > 0)
 	{
 		TranGarbage &garbage = array[0];
 
@@ -5059,6 +5060,7 @@ void RelationGarbage::getGarbage(const SLONG oldest_snapshot, PageBitmap **sbm)
 
 		array.remove(0U);
 	}
-};
+}
 
 #endif //GARBAGE_THREAD
+

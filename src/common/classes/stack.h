@@ -102,7 +102,7 @@ namespace Firebird {
 				if ((size_t) value <= inherited::getCount())
 					return true;
 
-				for(const Entry* stk = this; stk && value > 0; stk = stk->next)
+				for (const Entry* stk = this; stk && value > 0; stk = stk->next)
 					value -= stk->getCount();
 
 				return (value <= 0);
@@ -517,7 +517,7 @@ namespace Firebird {
 			return !(i == *this);
 		}
 
-		void assign(Stack<Object,Capacity>& v) {
+		void assign(Stack<Object, Capacity>& v) {
 			delete stk;
 			stk = v.stk ? v.stk->dup(getPool()) : 0;
 		}

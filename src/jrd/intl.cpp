@@ -429,7 +429,7 @@ public:
 			reinterpret_cast<const CharType*>(str), length / sizeof(CharType));
 	}
 
-	~ContainsObjectImpl() {};
+	~ContainsObjectImpl() {}
 
 	static ContainsObject* create(thread_db* tdbb, TextType ttype, const UCHAR* str, SSHORT length) {
 		StrConverter cvt(tdbb, ttype, str, length);
@@ -477,7 +477,7 @@ public:
 			reinterpret_cast<const CharType*>(str), length / sizeof(CharType));
 	}
 
-	~LikeObjectImpl() {};
+	~LikeObjectImpl() {}
 
 	static LikeObject* create(thread_db* tdbb, TextType ttype, const UCHAR* str, SSHORT length,
 		UCS2_CHAR escape)
