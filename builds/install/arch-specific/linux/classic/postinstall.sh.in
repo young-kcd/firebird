@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: postinstall.sh.in,v 1.9 2005-03-13 16:04:33 alexpeshkoff Exp $
+#   $Id: postinstall.sh.in,v 1.10 2005-03-16 01:04:05 robocop Exp $
 # 
 
 # The post install script for Firebird Classic
@@ -291,7 +291,7 @@ generateNewDBAPassword() {
     fi
 
 
-    # So we failed to generate a new password, so keep the original 
+    # We failed to generate a new password, so keep the original 
     # installed one.
 
     if [ -z "$NewPasswd" ]

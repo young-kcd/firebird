@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: changeGdsLibraryCompatibleLink.sh.in,v 1.1 2005-03-13 16:04:59 alexpeshkoff Exp $
+#   $Id: changeGdsLibraryCompatibleLink.sh.in,v 1.2 2005-03-16 01:04:50 robocop Exp $
 # 
 
 
@@ -77,7 +77,7 @@ removeLink() {
 
 #------------------------------------------------------------------------
 #  quitIfRealFile
-# Remove the backward comparibility links for libgds.so
+# Remove the backward compatibility links for libgds.so
 
 quitIfRealFile() {
 
@@ -103,7 +103,7 @@ quitIfRealFile() {
 
 #------------------------------------------------------------------------
 #  removeLinks
-# Remove the backward comparibility links for libgds.so
+# Remove the backward compatibility links for libgds.so
 
 removeLinks() {
     removeLink @libdir@/libgds.so
