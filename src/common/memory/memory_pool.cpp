@@ -817,6 +817,7 @@ void* FBMemoryPool::operator new(size_t		s,
 
 	/* Keep minimum allocation roundup for blocks larger than pool
 		extend size. */
+	extInc = (extInc + ALLOC_ALIGNMENT - 1) >> ALLOC_ALIGN_SHIFT;
 	if (size < extInc) {
 		size = extInc;
 	}
