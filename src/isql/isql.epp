@@ -527,31 +527,35 @@ int ISQL_main(int argc,
 	ISQL_make_upper(tabname);
 	switch (ret) {
 	case EXTRACT:
-		// This is a call to do extractions 
 		if (*isqlGlob.global_Db_name) {
-			/* Let's use user and password if provided.
-			   This should solve bug #112263 FSG 28.Jan.2001 */
-			newdb(isqlGlob.global_Db_name, isqlGlob.User, Password, global_Numbufs, isqlGlob.Role, false);
-
-			Exit_value = EXTRACT_ddl(SQL_objects, tabname);
-
-			ISQL_disconnect_database(true);
-			// isc_detach_database(isc_status, &DB);
+			// Let's use user and password if provided.
+			// This should solve bug #112263 FSG 28.Jan.2001
+			if (newdb(isqlGlob.global_Db_name, isqlGlob.User, Password, global_Numbufs,
+				isqlGlob.Role, false) == SKIP)
+			{
+				Exit_value = EXTRACT_ddl(SQL_objects, tabname);
+				ISQL_disconnect_database(true);
+				// isc_detach_database(isc_status, &DB);
+			}
+			else
+				Exit_value = FINI_ERROR;
 		}
 		break;
 
 	case EXTRACTALL:
-
 		if (*isqlGlob.global_Db_name) {
 			Interactive = false;
-			/* Let's use user and password if provided.
-			   This should solve bug #112263 FSG 28.Jan.2001 */
-			newdb(isqlGlob.global_Db_name, isqlGlob.User, Password, global_Numbufs, isqlGlob.Role, false);
-
-			Exit_value = EXTRACT_ddl(ALL_objects, tabname);
-
-			ISQL_disconnect_database (true);
-			//isc_detach_database(isc_status, &DB);
+			// Let's use user and password if provided.
+			// This should solve bug #112263 FSG 28.Jan.2001
+			if (newdb(isqlGlob.global_Db_name, isqlGlob.User, Password, global_Numbufs,
+				isqlGlob.Role, false) == SKIP)
+			{
+				Exit_value = EXTRACT_ddl(ALL_objects, tabname);
+				ISQL_disconnect_database (true);
+				//isc_detach_database(isc_status, &DB);
+			}
+			else
+				Exit_value = FINI_ERROR;
 		}
 		break;
 
@@ -2960,7 +2964,7 @@ static void do_isql()
 		ISQL_msg_get(FILE_OPEN_ERR, errbuf, Tmpfile);
 		STDERROUT(errbuf);
 		Exit_value = FINI_ERROR;
-		exit(Exit_value);
+		return;
 	}
 
 // Open database and start tansaction 
@@ -4973,7 +4977,7 @@ static processing_state newdb(TEXT* dbname,
 	const size_t len = chop_at(dbname, MAXPATHLEN);
 	SCHAR* save_database = (SCHAR*) ISQL_ALLOC(len + 1);
 	if (!save_database)
-		return (ERR);
+		return ERR;
 
 	strcpy(save_database, dbname);
 	ISQL_disconnect_database(false);
