@@ -1255,7 +1255,9 @@ void CCH_flush(TDBB tdbb, USHORT flush_flag, SLONG tra_number)
 					 TRUE)) CCH_unwind(tdbb, TRUE);
 #endif
 			if (release_flag)
+			{
 				PAGE_LOCK_RELEASE(bdb->bdb_lock);
+			}
 			if (latch == LATCH_exclusive)
 				release_bdb(tdbb, bdb, FALSE, FALSE, FALSE);
 		}
@@ -2265,7 +2267,9 @@ void CCH_release(TDBB tdbb, WIN * window, BOOLEAN release_tail)
 		BUGCHECK(209);			/* msg 209 attempt to release page not acquired */
 
 	if (!use_count && (bdb->bdb_ast_flags & BDB_blocking))
+	{
 		PAGE_LOCK_RE_POST(bdb->bdb_lock);
+	}
 
 	window->win_bdb = NULL;
 }
@@ -2916,7 +2920,9 @@ static void btc_flush(
 		/* re-post the lock only if it was really written */
 
 		if ((bdb->bdb_ast_flags & BDB_blocking) &&
-			!(bdb->bdb_flags & BDB_dirty)) PAGE_LOCK_RE_POST(bdb->bdb_lock);
+			!(bdb->bdb_flags & BDB_dirty)) {
+			PAGE_LOCK_RE_POST(bdb->bdb_lock);
+		}
 		BTC_MUTEX_ACQUIRE;
 	}
 
@@ -3618,7 +3624,9 @@ static void clear_precedence(DBB dbb, BDB bdb)
 		bcb->bcb_free = precedence;
 		if (!(precedence->pre_flags & PRE_cleared)) {
 			if (low_bdb->bdb_ast_flags & BDB_blocking)
+			{
 				PAGE_LOCK_RE_POST(low_bdb->bdb_lock);
+			}
 		}
 	}
 
@@ -5289,7 +5297,9 @@ static void release_bdb(
 	LATCH_MUTEX_RELEASE;
 
 	if (bdb->bdb_ast_flags & BDB_blocking)
+	{
 		PAGE_LOCK_RE_POST(bdb->bdb_lock);
+	}
 }
 
 
