@@ -1,3 +1,33 @@
+2004-11-16 10:39  alexpeshkoff
+
+	* firebird2/src/install/arch-specific/linux/super/preinstall.sh.in
+	(1.2.2.7):
+	
+	applied patch, submitted by Hamatoma Jones
+
+2004-11-13 10:25  kkuznetsov
+
+	* firebird2/builds/posix/firebird.vers (1.3.2.2):
+	
+	Fixed Solaris Classic X86 port link errors commenting absent in
+	libfbembed functions gds__alloc_debug gds__default_printer
+	gds_alloc_flag_unfreed gds_alloc_report gds_interprete_cpp
+	isc_interprete_cpp
+
+2004-11-13 09:20  paul_reeves
+
+	* firebird2/doc/README.user.embedded (1.1.2.4):
+	
+	Update version number
+
+2004-11-13 09:14  paul_reeves
+
+	* firebird2/src/install/arch-specific/win32/:
+	BuildExecutableInstall.bat (1.10.2.18), hu/custom_messages_hu.inc
+	(1.1.2.4):
+	
+	[no log message]
+
 2004-11-12 15:48  paul_reeves
 
 	*
