@@ -27,7 +27,7 @@
  *
  */
 /*
-$Id: fun.epp,v 1.21 2003-06-16 15:42:58 alexpeshkoff Exp $
+$Id: fun.epp,v 1.22 2003-06-30 12:48:09 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -644,7 +644,7 @@ void DLL_EXPORT FUN_init(void)
 }
 
 
-FUN DLL_EXPORT FUN_lookup_function(TEXT * name)
+FUN DLL_EXPORT FUN_lookup_function(TEXT * name, bool ShowAccessError)
 {
 /**************************************
  *
@@ -752,7 +752,7 @@ FUN DLL_EXPORT FUN_lookup_function(TEXT * name)
 
 		function->fun_entrypoint =
 			ISC_lookup_entrypoint(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT,
-								  ISC_EXT_LIB_PATH_ENV, true);
+								  ISC_EXT_LIB_PATH_ENV, ShowAccessError);
 
 		if ( (module = FLU_lookup_module(X.RDB$MODULE_NAME)) ) {
 			/* Register interest in the module by database. */

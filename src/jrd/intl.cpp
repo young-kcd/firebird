@@ -2253,7 +2253,7 @@ static void* intl_back_compat_obj_init_lookup(
 			break;
 	}
 	INTL_TRACE(("INTL: trying user fn %s\n", entry));
-	if ( (function_block = FUN_lookup_function((TEXT*)entry)) ) {
+	if ( (function_block = FUN_lookup_function((TEXT*)entry, false)) ) {
 		INTL_TRACE(("INTL: found a user fn, validating\n"));
 		if ((function_block->fun_count == argcount) &&
 			(function_block->fun_args == argcount) &&

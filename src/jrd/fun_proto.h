@@ -31,7 +31,7 @@ extern "C" {
 extern void DLL_EXPORT FUN_evaluate(struct fun *, struct jrd_nod *, struct vlu *);
 extern void DLL_EXPORT FUN_fini(struct tdbb *);
 extern void DLL_EXPORT FUN_init(void);
-extern struct fun *DLL_EXPORT FUN_lookup_function(TEXT *);
+extern struct fun *DLL_EXPORT FUN_lookup_function(TEXT *, bool ShowAccessError);
 extern struct fun *DLL_EXPORT FUN_resolve(class Csb *, struct fun *,
 										  struct jrd_nod *);
 
