@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.17 2002-09-12 19:51:50 skidder Exp $
+ * $Id: ddl.cpp,v 1.18 2002-09-12 19:53:44 skidder Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -63,6 +63,7 @@
  * 2002.08.04 Dmitry Yemanov: ALTER VIEW
  * 2002.08.31 Dmitry Yemanov: allowed user-defined index names for PK/FK/UK constraints
  * 2002.09.01 Dmitry Yemanov: RECREATE VIEW
+ * 2002.09.12 Nickolay Samofatov: fixed cached metadata errors
  */
 
 #include "firebird.h"
