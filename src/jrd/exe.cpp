@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.61 2003-05-22 16:59:49 alexpeshkoff Exp $
+$Id: exe.cpp,v 1.62 2003-05-26 15:45:29 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -3570,6 +3570,8 @@ static void set_error(TDBB tdbb, XCP condition, JRD_NOD node)
 	
 	SET_TDBB(tdbb);
 
+	request = tdbb->tdbb_request;
+
 	if (condition->xcp_rpt[0].xcp_msg)
 	{
 		/* pick up message from already initiated exception */
@@ -3583,7 +3585,7 @@ static void set_error(TDBB tdbb, XCP condition, JRD_NOD node)
 		const char* string = 0;
 		/* evaluate exception message and convert it to string */
 		DSC *desc = EVL_expr(tdbb, node);
-		if (desc)
+		if (desc && !(request->req_flags & req_null))
 		{
 			length = MOV_make_string(desc,
 									 ttype_none,
@@ -3607,8 +3609,6 @@ static void set_error(TDBB tdbb, XCP condition, JRD_NOD node)
 		}
 	}
 	message[length] = 0;
-
-	request = tdbb->tdbb_request;
 
 	switch (condition->xcp_rpt[0].xcp_type) {
 	case xcp_sql_code:
