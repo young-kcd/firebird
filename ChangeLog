@@ -1,3 +1,198 @@
+2002-07-15  eku
+	* configure 1.19:
+	* configure.in 1.21:
+		The good old Bourne Shell does not implement the command '
+		source'.
+
+	* src/misc/writeBuildNum.sh 1.467:
+		increment build number
+
+2002-07-12  dimitr
+	* src/utilities/registry.h 1.1:
+		Oops, I forgot to add this file during the FB1->FB2 porting. 
+		Sorry.
+
+	* src/misc/writeBuildNum.sh 1.466:
+		increment build number
+
+2002-07-11  dimitr
+	* src/isql/isql.epp 1.10:
+		Fixed a few more porting errors.
+
+	* src/misc/writeBuildNum.sh 1.465:
+		increment build number
+
+2002-07-10  dimitr
+	* src/dsql/gen.cpp 1.8:
+	* src/jrd/evl.cpp 1.12:
+		Minor additions to my previous changes.
+
+	* src/misc/writeBuildNum.sh 1.463:
+	* src/misc/writeBuildNum.sh 1.464:
+		increment build number
+
+2002-07-09  dimitr
+	* src/isql/extract.epp 1.6:
+	* src/jrd/isc.cpp 1.11:
+	* src/remote/srvr_w32.cpp 1.6:
+		Fixed a few more porting errors.
+
+	* src/misc/writeBuildNum.sh 1.460:
+	* src/misc/writeBuildNum.sh 1.461:
+	* src/misc/writeBuildNum.sh 1.462:
+		increment build number
+
+2002-07-06  skywalker
+	* configure.in 1.20:
+	* src/burp/mvol.cpp 1.5:
+	* src/dsql/dsql.cpp 1.18:
+	* src/dsql/make.cpp 1.7:
+	* src/dsql/metd.epp 1.6:
+	* src/dsql/parse.cpp 1.17:
+	* src/dsql/parse.y 1.16:
+	* src/dsql/pass1.cpp 1.12:
+	* src/dudley/expr.cpp 1.5:
+	* src/dudley/parse.cpp 1.8:
+	* src/gpre/ada.cpp 1.6:
+	* src/gpre/cob.cpp 1.5:
+	* src/gpre/ftn.cpp 1.6:
+	* src/gpre/gpre.cpp 1.11:
+	* src/gpre/gpre_proto.h 1.2:
+	* src/jrd/alt_use_sec.h 1.9:
+	* src/jrd/divorce.cpp 1.5:
+	* src/jrd/dsc.h 1.4:
+	* src/jrd/event.cpp 1.8:
+	* src/jrd/event_proto.h 1.3:
+	* src/jrd/intl.cpp 1.9:
+	* src/jrd/isc_file.cpp 1.10:
+	* src/jrd/isc_ipc.cpp 1.14:
+	* src/jrd/isc_sync.cpp 1.11:
+	* src/jrd/jrn.cpp 1.5:
+	* src/jrd/misc.cpp 1.4:
+	* src/jrd/pag.cpp 1.19:
+	* src/jrd/pwd.cpp 1.5:
+	* src/jrd/pwd.h 1.4:
+	* src/jrd/rec.cpp 1.4:
+	* src/jrd/rec_proto.h 1.2:
+	* src/jrd/sort.cpp 1.10:
+	* src/jrd/thd.h 1.5:
+	* src/jrd/unix.cpp 1.8:
+	* src/jrd/utl.cpp 1.10:
+	* src/jrd/vmsevent.cpp 1.3:
+	* src/jrd/why.c 1.11:
+	* src/lock/lock.cpp 1.9:
+	* src/lock/printv3.cpp 1.5:
+	* src/lock/printv3s4.cpp 1.3:
+	* src/make.new/config/config.h.in 1.22:
+	* src/remote/protocol.cpp 1.6:
+	* src/utilities/dropv3.cpp 1.6:
+	* src/utilities/drpv3_proto.h 1.2:
+		Merge final changes from fb1 tree.
+
+	* src/misc/writeBuildNum.sh 1.450:
+	* src/misc/writeBuildNum.sh 1.451:
+	* src/misc/writeBuildNum.sh 1.452:
+	* src/misc/writeBuildNum.sh 1.453:
+	* src/misc/writeBuildNum.sh 1.454:
+	* src/misc/writeBuildNum.sh 1.455:
+	* src/misc/writeBuildNum.sh 1.456:
+	* src/misc/writeBuildNum.sh 1.457:
+	* src/misc/writeBuildNum.sh 1.458:
+	* src/misc/writeBuildNum.sh 1.459:
+		increment build number
+
+2002-07-05  pcisar
+	* src/misc/writeBuildNum.sh 1.419:
+		increment build number
+
+2002-07-05  skywalker
+	* src/misc/writeBuildNum.sh 1.426:
+	* src/misc/writeBuildNum.sh 1.428:
+	* src/misc/writeBuildNum.sh 1.430:
+	* src/misc/writeBuildNum.sh 1.432:
+	* src/misc/writeBuildNum.sh 1.434:
+		syncmail for fb2 - testing
+
+	* configure 1.18:
+	* configure.in 1.19:
+	* src/dsql/dsql.cpp 1.17:
+	* src/dsql/keywords.h 1.7:
+	* src/dsql/parse.cpp 1.15:
+	* src/dsql/parse.sed 1.4:
+	* src/dsql/parse.y 1.14:
+	* src/include/fb_string.h 1.2:
+	* src/isql/isql.epp 1.9:
+	* src/jrd/alt_use_sec.h 1.7:
+	* src/jrd/build_no.h 1.7:
+	* src/jrd/common.h 1.19:
+	* src/jrd/dfw.epp 1.10:
+	* src/jrd/dyn.epp 1.7:
+	* src/jrd/dyn_def.epp 1.8:
+	* src/jrd/dyn_del.epp 1.7:
+	* src/jrd/dyn_mod.epp 1.7:
+	* src/jrd/evl.cpp 1.11:
+	* src/jrd/gds.cpp 1.14:
+	* src/jrd/grant.epp 1.6:
+	* src/jrd/inf.cpp 1.8:
+	* src/jrd/met.epp 1.13:
+	* src/jrd/scl.epp 1.9:
+	* src/jrd/sort.cpp 1.9:
+	* src/make.defaults 1.6:
+	* src/make.new/Makefile.in.dsql 1.6:
+	* src/make.new/Makefile.in.firebird 1.16:
+	* src/make.new/config/config.h.in 1.21:
+	* src/make.new/make.defaults 1.12:
+	* src/make.new/make.shared.variables 1.8:
+	* src/make.platform 1.6:
+	* src/make.rules 1.6:
+	* src/make.shared.variables 1.4:
+	* src/pipe/head.cpp 1.8:
+	* src/qli/all.cpp 1.7:
+	* src/qli/picstr.cpp 1.6:
+	* src/utilities/dba.epp 1.6:
+	* src/v5_examples/empbuild.c 1.6:
+		Changes to get compiling on linux (post fb1 changes).
+
+	* src/misc/writeBuildNum.sh 1.421:
+	* src/misc/writeBuildNum.sh 1.423:
+	* src/misc/writeBuildNum.sh 1.425:
+	* src/misc/writeBuildNum.sh 1.427:
+	* src/misc/writeBuildNum.sh 1.429:
+	* src/misc/writeBuildNum.sh 1.431:
+	* src/misc/writeBuildNum.sh 1.433:
+	* src/misc/writeBuildNum.sh 1.435:
+	* src/misc/writeBuildNum.sh 1.436:
+	* src/misc/writeBuildNum.sh 1.437:
+	* src/misc/writeBuildNum.sh 1.438:
+	* src/misc/writeBuildNum.sh 1.439:
+	* src/misc/writeBuildNum.sh 1.440:
+	* src/misc/writeBuildNum.sh 1.441:
+	* src/misc/writeBuildNum.sh 1.442:
+	* src/misc/writeBuildNum.sh 1.443:
+	* src/misc/writeBuildNum.sh 1.444:
+	* src/misc/writeBuildNum.sh 1.445:
+	* src/misc/writeBuildNum.sh 1.446:
+	* src/misc/writeBuildNum.sh 1.447:
+	* src/misc/writeBuildNum.sh 1.448:
+	* src/misc/writeBuildNum.sh 1.449:
+		increment build number
+
+	* src/misc/writeBuildNum.sh 1.424:
+		testing syncmail
+
+	* src/dsql/keywords.h 1.8:
+	* src/dsql/parse.cpp 1.16:
+	* src/dsql/parse.y 1.15:
+	* src/jrd/alt_use_sec.h 1.8:
+		Change DEBUG_KEYWORD to KW_DEBUG,
+		few more changes in parse.y (mostly post fb1 changes)
+
+	* src/misc/writeBuildNum.sh 1.420:
+		Change to have print build num option
+
+	* src/misc/writeBuildNum.sh 1.422:
+		Slight change in print version
+
 2002-07-04  skywalker
 	* configure 1.17:
 	* configure.in 1.18:
