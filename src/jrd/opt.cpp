@@ -298,7 +298,6 @@ RSB OPT_compile(TDBB tdbb,
 	JRD_NOD node, *ptr, *end, sort, project, aggregate;
 	LLS conjunct_stack, rivers_stack, *stack_end;
 	RSB rsb;
-	JRD_REL relation;
 	SLONG idx_size, conjunct_count;
 	SSHORT i, stream;
 	UCHAR *p, *q, streams[MAX_STREAMS], beds[MAX_STREAMS],
@@ -470,6 +469,11 @@ RSB OPT_compile(TDBB tdbb,
 		   number in the streams array as a candidate for 
 		   merging into a river */
 
+		// TMN: Is the intention really to allow streams[0] to overflow?
+		// I must assume that is indeed not the intention (not to mention
+		// it would make code later on fail), so I added the following assert.
+		assert(streams[0] < MAX_UCHAR);
+
 		++streams[0];
 		*p++ = (UCHAR) stream;
 
@@ -483,9 +487,11 @@ RSB OPT_compile(TDBB tdbb,
 		   parent_stack below. SF BUG # [ 508594 ] */
 
 		csb->csb_rpt[stream].csb_idx_allocation = 0;
-		if (conjunct_count || sort || project || aggregate || parent_stack) {
-			if ((relation = (JRD_REL) node->nod_arg[e_rel_relation])
-				&& !relation->rel_file) {
+		if (conjunct_count || sort || project || aggregate || parent_stack)
+		{
+			JRD_REL relation = (JRD_REL) node->nod_arg[e_rel_relation];
+			if (relation && !relation->rel_file)
+			{
 				csb->csb_rpt[stream].csb_indices =
 					BTR_all(tdbb, relation, &idx,
 							&csb->csb_rpt[stream].csb_idx,
@@ -605,7 +611,7 @@ RSB OPT_compile(TDBB tdbb,
 		}
 
 		/* attempt to form joins in decreasing order of desirability */
-		
+		assert(streams[0] != 1 || csb->csb_rpt[streams[1]].csb_relation != 0);
 		gen_join(tdbb, opt_, streams, &rivers_stack, &sort, &project,
 				 rse->rse_plan);
 
@@ -3247,8 +3253,9 @@ static RSB gen_aggregate(TDBB tdbb, OPT opt, JRD_NOD node)
 	if ((map->nod_count == 1) &&
 		(ptr = map->nod_arg) &&
 		(operator_ = (*ptr)->nod_arg[e_asgn_from]) &&
-		(operator_->nod_type == nod_agg_min
-		 || operator_->nod_type == nod_agg_max)) {
+		(operator_->nod_type == nod_agg_min ||
+		 operator_->nod_type == nod_agg_max))
+	{
 		/* generate a sort block which the optimizer will try to map to an index */
 
 		aggregate = PAR_make_node(tdbb, 2);
@@ -3398,11 +3405,13 @@ static RSB gen_first(TDBB tdbb, OPT opt, RSB prior_rsb, JRD_NOD node)
 }
 
 
-static void gen_join(TDBB tdbb,
-					 OPT opt,
-					 UCHAR * streams,
-					 LLS * river_stack,
-					 JRD_NOD * sort_clause, JRD_NOD * project_clause, JRD_NOD plan_clause)
+static void gen_join(TDBB     tdbb,
+					 OPT      opt,
+					 UCHAR*   streams,
+					 LLS*     river_stack,
+					 JRD_NOD* sort_clause,
+					 JRD_NOD* project_clause,
+					 JRD_NOD  plan_clause)
 {
 /**************************************
  *
@@ -3416,43 +3425,47 @@ static void gen_join(TDBB tdbb,
  * 	streams).    
  *
  **************************************/
-	DBB dbb;
-	FMT format;
-	JRD_REL relation;
-	CSB csb;
-	RIV river;
-	UCHAR temp[MAX_STREAMS], *stream, *end_stream, *t2;
-	IRL relationship;
-	Opt::opt_repeat * tail;
-	csb_repeat *csb_tail, *csb_tail2;
-	USHORT count;
+
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(*river_stack, type_lls);
 	DEV_BLKCHK(*sort_clause, type_nod);
 	DEV_BLKCHK(*project_clause, type_nod);
 	DEV_BLKCHK(plan_clause, type_nod);
+
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
-	csb = opt->opt_csb;
-	if (!streams[0])
+
+	DBB dbb = tdbb->tdbb_database;
+	CSB csb = opt->opt_csb;
+
+	if (!streams[0]) {
 		return;
+	}
+
 /* If there is only a single stream, don't bother with a join */
-	if (streams[0] == 1) {
+	if (streams[0] == 1)
+	{
 		/* if a nod_cardinality references this stream,
 		   compute the cardinality even though we don't
 		   need it to optimize retrieval */
 
-		csb_tail = &csb->csb_rpt[streams[1]];
-		if (csb_tail->csb_flags & csb_compute) {
-			relation = csb_tail->csb_relation;
-			format = CMP_format(tdbb, csb, streams[1]);
+		csb_repeat* csb_tail = &csb->csb_rpt[streams[1]];
+		assert(csb_tail);
+		if (csb_tail->csb_flags & csb_compute)
+		{
+			JRD_REL relation = csb_tail->csb_relation;
+			assert(relation);
+			FMT format = CMP_format(tdbb, csb, streams[1]);
+			assert(format);
 			csb_tail->csb_cardinality =
-				(float) DPM_data_pages(tdbb,
-									   relation) * dbb->dbb_page_size /
-				format->fmt_length;}
+				(float) DPM_data_pages(tdbb, relation) *
+				        dbb->dbb_page_size / format->fmt_length;
+		}
 
-		river = FB_NEW_RPT(*tdbb->tdbb_default, 1) riv();
+		RIV river = FB_NEW_RPT(*tdbb->tdbb_default, 1) riv();
 		river->riv_count = 1;
+
+		assert(csb->csb_rpt[streams[1]].csb_relation);
+
 		river->riv_rsb =
 			gen_retrieval(tdbb, opt, streams[1], sort_clause, project_clause,
 						  FALSE, FALSE, NULL);
@@ -3463,11 +3476,14 @@ static void gen_join(TDBB tdbb,
 
 /* Compute cardinality and indexed relationships for all streams */
 
-	end_stream = streams + 1 + streams[0];
-	for (stream = streams + 1; stream < end_stream; stream++) {
-		csb_tail = &csb->csb_rpt[*stream];
-		relation = csb_tail->csb_relation;
-		format = CMP_format(tdbb, csb, *stream);
+	const UCHAR* end_stream = streams + 1 + streams[0];
+	for (UCHAR* stream = streams + 1; stream < end_stream; stream++)
+	{
+		csb_repeat* csb_tail = &csb->csb_rpt[*stream];
+		assert(csb_tail);
+		JRD_REL     relation = csb_tail->csb_relation;
+		assert(relation);
+		FMT         format   = CMP_format(tdbb, csb, *stream);
 		/* if this is an external file, set an arbitrary cardinality; 
 		   if a plan was specified, don't bother computing cardinality;
 		   otherwise give a rough estimate based on the number of data
@@ -3479,36 +3495,46 @@ static void gen_join(TDBB tdbb,
 		else if (plan_clause)
 			csb_tail->csb_cardinality = (float) 0;
 		else
+		{
+			assert(format);
 			csb_tail->csb_cardinality =
-				(float) DPM_data_pages(tdbb,
-									   relation) * dbb->dbb_page_size /
-				format->fmt_length;
+				(float) DPM_data_pages(tdbb, relation) *
+				        dbb->dbb_page_size / format->fmt_length;
+		}
 		/* find indexed relationships from this stream to every other stream */
-		tail = opt->opt_rpt + *stream;
+		Opt::opt_repeat* tail = opt->opt_rpt + *stream;
 		csb_tail->csb_flags |= csb_active;
-		for (t2 = streams + 1; t2 < end_stream; t2++)
-			if (*t2 != *stream) {
-				csb_tail2 = &csb->csb_rpt[*t2];
+		for (UCHAR* t2 = streams + 1; t2 < end_stream; t2++)
+		{
+			if (*t2 != *stream)
+			{
+				csb_repeat* csb_tail2 = &csb->csb_rpt[*t2];
 				csb_tail2->csb_flags |= csb_active;
-				if ( (relationship = indexed_relationship(tdbb, opt, *t2)) ) {
+				IRL relationship = indexed_relationship(tdbb, opt, *t2);
+				if (relationship)
+				{
 					relationship->irl_next = tail->opt_relationships;
 					tail->opt_relationships = relationship;
 					relationship->irl_stream = *t2;
 				}
 				csb_tail2->csb_flags &= ~csb_active;
 			}
+		}
 		csb_tail->csb_flags &= ~csb_active;
 #ifdef OPT_DEBUG
-		if (opt_debug_flag >= DEBUG_RELATIONSHIPS) {
+		if (opt_debug_flag >= DEBUG_RELATIONSHIPS)
+		{
 			ib_fprintf(opt_debug_file,
 					   "gen_join () -- relationships from stream %2.2d: ",
-					   *stream); for (relationship = tail->opt_relationships;
-									  relationship;
-									  relationship =
-									  relationship->irl_next)
+					   *stream);
+			for (IRL relationship = tail->opt_relationships;
+			     relationship;
+			     relationship = relationship->irl_next)
+			{
 					ib_fprintf(opt_debug_file, "%2.2d %s ",
 							   relationship->irl_stream,
 							   (relationship->irl_unique) ? "(unique)" : "");
+			}
 			ib_fprintf(opt_debug_file, "\n");
 		}
 #endif
@@ -3518,18 +3544,24 @@ static void gen_join(TDBB tdbb,
    otherwise try to find one */
 
 	if (plan_clause)
+	{
 		form_rivers(tdbb, opt, streams, river_stack, sort_clause,
 					project_clause, plan_clause);
-	else {
+	}
+	else
+	{
 		/* copy the streams vector to a temporary space to be used
 		   to form rivers out of streams */
-
+		USHORT count;
+		UCHAR temp[MAX_STREAMS];
 		MOVE_FAST(streams, temp, streams[0] + 1);
+
 		do
 			count = find_order(tdbb, opt, temp, 0);
 		while (form_river
 			   (tdbb, opt, count, streams, temp, river_stack, sort_clause,
-				project_clause, 0));}
+				project_clause, 0));
+	}
 }
 
 
@@ -3891,20 +3923,15 @@ static RSB gen_retrieval(TDBB tdbb,
  *	set of record source blocks (rsb's).
  *
  **************************************/
-	CSB csb;
-	JRD_REL relation;
-	STR alias;
-	RSB rsb;
+
 	IDX *idx;
 	static IDX *idx_walk[MAX_INDICES], *idx_csb[MAX_INDICES];
-	JRD_NOD node, opt_boolean, inversion;
+	JRD_NOD node, opt_boolean;
 	SSHORT i, j, count, last_idx, idx_walk_count, position;
 	static SSHORT conjunct_position[MAX_INDICES];
-	SLONG last_priority_level;
 	static SLONG idx_priority_level[MAX_INDICES];
-	Opt::opt_repeat *tail, *opt_end, *idx_tail, *idx_end;
+	Opt::opt_repeat *tail, *idx_tail, *idx_end;
 	static Opt::opt_repeat *matching_nodes[MAX_INDICES];
-	csb_repeat *csb_tail;
 	BOOLEAN full = FALSE;
 	SET_TDBB(tdbb);
 #ifdef DEV_BUILD
@@ -3931,10 +3958,13 @@ static RSB gen_retrieval(TDBB tdbb,
 		full = TRUE;
 	}
 
-	csb = opt->opt_csb;
-	csb_tail = &csb->csb_rpt[stream];
-	relation = csb_tail->csb_relation;
-	alias = make_alias(tdbb, csb, csb_tail);
+	CSB         csb      = opt->opt_csb;
+	csb_repeat* csb_tail = &csb->csb_rpt[stream];
+	JRD_REL     relation = csb_tail->csb_relation;
+
+	assert(relation);
+
+	STR alias = make_alias(tdbb, csb, csb_tail);
 	csb_tail->csb_flags |= csb_active;
 /* bug #8180 reported by Bill Karwin: when a DISTINCT and an ORDER BY 
    are done on different fields, and the ORDER BY can be mapped to an 
@@ -3964,9 +3994,10 @@ static RSB gen_retrieval(TDBB tdbb,
    information for an index retrieval.  If so, build up an
    inversion component of the boolean. */
 
-	inversion = NULL;
-	opt_end = opt->opt_rpt + (inner_flag ? opt->opt_count : opt->opt_parent_count);
-	rsb = NULL;
+	JRD_NOD inversion = NULL;
+	Opt::opt_repeat* opt_end =
+		opt->opt_rpt + (inner_flag ? opt->opt_count : opt->opt_parent_count);
+	RSB rsb = NULL;
 	if (relation->rel_file) {
 		rsb = EXT_optimize(opt, stream, sort_ptr ? sort_ptr : project_ptr);
 	}
@@ -4062,12 +4093,15 @@ static RSB gen_retrieval(TDBB tdbb,
 		/* Sort indices based on the priority level into idx_walk */
 		idx_walk_count = 0;
 		float selectivity = 1; /* Real maximum selectivity possible is 1 */
-		for (i = 0; i < csb_tail->csb_indices; i++) {
+		for (i = 0; i < csb_tail->csb_indices; i++)
+		{
 			last_idx = -1;
-			last_priority_level = 0;
-			for (j = csb_tail->csb_indices - 1; j >= 0; j--) {
+			SLONG last_priority_level = 0;
+			for (j = csb_tail->csb_indices - 1; j >= 0; j--)
+			{
 				if (!(idx_priority_level[j] == 0) && 
-					(idx_priority_level[j] >= last_priority_level)) {
+					(idx_priority_level[j] >= last_priority_level))
+				{
 					last_priority_level = idx_priority_level[j];
 					last_idx = j;
 				}
@@ -5178,32 +5212,35 @@ static JRD_NOD make_inversion(TDBB tdbb,
  *	recursively for almost anything.
  *
  **************************************/
-	JRD_REL relation;
+
 	IDX *idx;
 	static IDX *idx_walk[MAX_INDICES], *idx_csb[MAX_INDICES];
-	SLONG last_priority_level;
 	static SLONG idx_priority_level[MAX_INDICES];
 	JRD_NOD inversion, inversion2, node;
 	SSHORT i, j, last_idx, idx_walk_count;
-	csb_repeat *csb_tail;
 	float compound_selectivity;
 	BOOLEAN accept, used_in_compound, accept_starts, accept_missing;
 
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(boolean, type_nod);
-	csb_tail = &opt->opt_csb->csb_rpt[stream];
-	relation = csb_tail->csb_relation;
-	if ((!relation) || (relation->rel_file))
+
+	csb_repeat* csb_tail = &opt->opt_csb->csb_rpt[stream];
+	JRD_REL     relation = csb_tail->csb_relation;
+
+	if ((!relation) || (relation->rel_file)) {
 		return NULL;
-/* Handle the "OR" case up front */
-	if (boolean->nod_type == nod_or) {
-		if (! (inversion = make_inversion(tdbb, opt, boolean->nod_arg[0], 
-			stream))) {
+	}
+
+	/* Handle the "OR" case up front */
+	if (boolean->nod_type == nod_or)
+	{
+		inversion = make_inversion(tdbb, opt, boolean->nod_arg[0], stream);
+		if (!inversion) {
 			return NULL;
 		}
-		if ( (inversion2 = make_inversion(tdbb, opt, boolean->nod_arg[1],
-			stream)) ) {
+		inversion2 = make_inversion(tdbb, opt, boolean->nod_arg[1], stream);
+		if (inversion2) {
 			return compose(&inversion, inversion2, nod_bit_or);
 		}
 		if (inversion->nod_type == nod_index) {
@@ -5280,10 +5317,12 @@ static JRD_NOD make_inversion(TDBB tdbb,
 	float selectivity = 1; /* Real maximum selectivity possible is 1 */
 	for (i = 0; i < csb_tail->csb_indices; i++) {
 		last_idx = -1;
-		last_priority_level = 0;
-		for (j = csb_tail->csb_indices - 1; j >= 0; j--) {
+		SLONG last_priority_level = 0;
+		for (j = csb_tail->csb_indices - 1; j >= 0; j--)
+		{
 			if (!(idx_priority_level[j] == 0) && 
-				(idx_priority_level[j] >= last_priority_level)) {
+				(idx_priority_level[j] >= last_priority_level))
+			{
 				last_priority_level = idx_priority_level[j];
 				last_idx = j;
 			}
