@@ -24,6 +24,10 @@
 #ifndef _JRD_JRN_PROTO_H_
 #define _JRD_JRN_PROTO_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern int JRN_archive_begin(ISC_STATUS *, struct jrn **, SLONG, SLONG, TEXT *,
 							 USHORT);
 extern int JRN_archive_end(ISC_STATUS *, struct jrn **, SLONG, SLONG);
@@ -49,5 +53,9 @@ extern int JRN_put_old_end(ISC_STATUS *, struct jrn *, SLONG, SLONG, SLONG,
 extern int JRN_put_old_file(ISC_STATUS *, struct jrn *, SCHAR *, USHORT, SLONG,
 							USHORT, USHORT);
 extern void JRN_sync(void);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /* _JRD_JRN_PROTO_H_ */

@@ -40,7 +40,7 @@
 #include "../journal/journal.h"
 #include "../journal/conso_proto.h"
 #include "../journal/gjrn_proto.h"
-#include "../journal/misc_proto.h"
+#include "../journal/miscj_proto.h"
 #include "../jrd/isc_f_proto.h"
 
 #ifdef UNIX
@@ -64,6 +64,7 @@
 
 #ifdef WIN_NT
 #include <windows.h>
+#undef TEXT
 #define TEXT		SCHAR
 #endif
 
@@ -74,17 +75,18 @@ static void error(ISC_STATUS, UCHAR *);
 static void expand_dbname(TEXT *);
 
 #ifdef BSD_SOCKETS
-static SSHORT find_address(TEXT *, struct sockaddr_in *, SSHORT);
+static SSHORT find_address(TEXT *, struct sockaddr_in *, bool);
 #endif
 
 static enum jrnr_t get_reply(SLONG);
-static SLONG open_connection(SCHAR *, SSHORT);
+static SLONG open_connection(SCHAR *, bool);
 static void put_command(SLONG, UCHAR *, USHORT, UCHAR *, USHORT);
 
 extern CMDS commands[];
 
 
-int CONSOLE_start_console( int argc, SCHAR ** argv)
+bool CONSOLE_start_console(int argc, 
+						   char * argv[])
 {
 /**************************************
  *
@@ -101,31 +103,33 @@ int CONSOLE_start_console( int argc, SCHAR ** argv)
 	SLONG channel;
 	USHORT cycle, len, length;
 	enum jrnr_t reply;
-	SSHORT single_msg = FALSE;
+	bool single_msg = false;
 	SCHAR *msg, *dir;
-	USHORT sw_d, sw_v, sw_i;
+	bool sw_d;
+	bool sw_v;
+	bool sw_i;
 	TEXT mssg[128];
 
 	dir = ".";
 	msg = NULL;
-	sw_i = sw_d = sw_v = FALSE;
+	sw_i = sw_d = sw_v = false;
 
 	for (end = argv + argc, argv++; argv < end;) {
 		if ((*argv)[0] != '-')
 			argv++;
 		else {
-			MISC_down_case(*argv++, buffer);
+			MISC_down_case((UCHAR*) *argv++, (UCHAR*) buffer);
 			switch (buffer[1]) {
 			case 'i':
-				sw_i = TRUE;
+				sw_i = true;
 				break;
 
 			case 'd':
-				sw_d = TRUE;
+				sw_d = true;
 				break;
 
 			case 'v':
-				sw_v = TRUE;
+				sw_v = true;
 				break;
 
 			case 'j':
@@ -137,7 +141,7 @@ int CONSOLE_start_console( int argc, SCHAR ** argv)
 				break;
 
 			case 's':
-				single_msg = TRUE;
+				single_msg = true;
 				if (!(msg = *argv++))
 					MISC_print_journal_syntax();
 				break;
@@ -158,19 +162,20 @@ int CONSOLE_start_console( int argc, SCHAR ** argv)
 	directory[len++] = '/';
 	directory[len] = 0;
 
-	GJRN_get_msg(CONSOLE_PROG, mssg, NULL, NULL, NULL);	/* Msg 215 Journal server console program */
+	GJRN_get_msg(CONSOLE_PROG, mssg, NULL, NULL, NULL);
+	// Msg 215 Journal server console program
 	printf("%s\n", mssg);
-	channel = open_connection(directory, FALSE);
+	channel = open_connection(directory, false);
 
 	header.jrnh_type = JRN_CONSOLE;
 	header.jrnh_version = JOURNAL_VERSION;
 
-	put_command(channel, &header, sizeof(header), START_COMMAND,
+	put_command(channel, (UCHAR*) &header, sizeof(header), (UCHAR*) START_COMMAND,
 				sizeof(START_COMMAND) - 1);
 	get_reply(channel);
 
-	if (single_msg == TRUE) {
-		MISC_down_case(msg, buffer);
+	if (single_msg == true) {
+		MISC_down_case((UCHAR*) msg, (UCHAR*) buffer);
 		length = strlen(msg);
 
 		if (length > strlen(START_COMMAND))
@@ -184,12 +189,12 @@ int CONSOLE_start_console( int argc, SCHAR ** argv)
 			expand_dbname(msg);
 
 			if (length = strlen(msg)) {
-				put_command(channel, &header, sizeof(header), msg, length);
+				put_command(channel, (UCHAR*) &header, sizeof(header), (UCHAR*) msg, length);
 				reply = get_reply(channel);
 			}
 		}
 		close_connection(channel);
-		return 0;
+		return false;
 	}
 
 	for (cycle = TRUE; cycle;) {
@@ -205,7 +210,7 @@ int CONSOLE_start_console( int argc, SCHAR ** argv)
 		expand_dbname(buffer);
 
 		if (length = strlen(buffer)) {
-			put_command(channel, &header, sizeof(header), buffer, length);
+			put_command(channel, (UCHAR*) &header, sizeof(header), (UCHAR*) buffer, length);
 			switch (reply = get_reply(channel)) {
 			case jrnr_shutdown:
 			case jrnr_exit:
@@ -217,11 +222,11 @@ int CONSOLE_start_console( int argc, SCHAR ** argv)
 
 	close_connection(channel);
 
-	return 0;
+	return false;
 }
 
 
-int CONSOLE_test_server( SCHAR * journal_dir)
+bool CONSOLE_test_server(SCHAR * journal_dir)
 {
 /**************************************
  *
@@ -248,17 +253,17 @@ int CONSOLE_test_server( SCHAR * journal_dir)
 	directory[len++] = '/';
 	directory[len] = 0;
 
-	if ((channel = open_connection(directory, TRUE)) < 0)
-		return FALSE;
+	if ((channel = open_connection(directory, true)) < 0)
+		return false;
 
 	close_connection(channel);
 
-	return TRUE;
+	return true;
 }
 
 
 #ifdef BSD_SOCKETS
-static void close_connection( SLONG channel)
+static void close_connection(SLONG channel)
 {
 /**************************************
  *
@@ -272,13 +277,13 @@ static void close_connection( SLONG channel)
  **************************************/
 
 	if (close(channel) < 0)
-		error((ISC_STATUS) errno, "close socket");
+		error((ISC_STATUS) errno, (UCHAR*) "close socket");
 }
 #endif
 
 
 #ifdef WIN_NT
-static void close_connection( SLONG channel)
+static void close_connection(SLONG channel)
 {
 /**************************************
  *
@@ -292,13 +297,14 @@ static void close_connection( SLONG channel)
  **************************************/
 
 	if (!CloseHandle((HANDLE) channel))
-		error(GetLastError(), "CloseHandle (pipe)");
+		error(GetLastError(), (UCHAR*) "CloseHandle (pipe)");
 }
 #endif
 
 
 #ifdef BSD_SOCKETS
-static void error( ISC_STATUS status, UCHAR * string)
+static void error(ISC_STATUS status,
+				  UCHAR * string)
 {
 /**************************************
  *
@@ -312,7 +318,8 @@ static void error( ISC_STATUS status, UCHAR * string)
  **************************************/
 	TEXT msg[128];
 
-	GJRN_get_msg(GEN_ERR, msg, string, NULL, NULL);	/* Msg 111 Error occurred during \"%s\" */
+	GJRN_get_msg(GEN_ERR, msg, string, NULL, NULL);
+	// Msg 111 Error occurred during \"%s\" 
 	fprintf(stderr, "%s\n", msg);
 	perror(string);
 	exit(FINI_ERROR);
@@ -321,7 +328,8 @@ static void error( ISC_STATUS status, UCHAR * string)
 
 
 #ifdef WIN_NT
-static void error( ISC_STATUS status, UCHAR * string)
+static void error(ISC_STATUS status,
+				  UCHAR * string)
 {
 /**************************************
  *
@@ -336,7 +344,8 @@ static void error( ISC_STATUS status, UCHAR * string)
 	TEXT msg[512];
 	SSHORT l;
 
-	GJRN_get_msg(GEN_ERR, msg, string, NULL, NULL);	/* Msg 111 Error occurred during \"%s\" */
+	GJRN_get_msg(GEN_ERR, msg, (SCHAR*) string, NULL, NULL);
+	// Msg 111 Error occurred during \"%s\"
 	fprintf(stderr, "%s\n", msg);
 
 	if (!(l = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
@@ -344,7 +353,8 @@ static void error( ISC_STATUS status, UCHAR * string)
 							status,
 							GetUserDefaultLangID(),
 							msg, sizeof(msg), NULL))) {
-		GJRN_get_msg(NT_ERR, msg, string, NULL, NULL);	/* Msg 211 Windows NT error %d */
+		GJRN_get_msg(NT_ERR, msg, (SCHAR*) string, NULL, NULL);
+		// Msg 211 Windows NT error %d
 		fprintf(stderr, msg, status);
 		fprintf(stderr, "\n");
 	}
@@ -356,7 +366,7 @@ static void error( ISC_STATUS status, UCHAR * string)
 #endif
 
 
-static void expand_dbname( TEXT * in)
+static void expand_dbname(TEXT * in)
 {
 /**************************************
  *
@@ -431,9 +441,9 @@ static void expand_dbname( TEXT * in)
 
 
 #ifdef BSD_SOCKETS
-static SSHORT find_address(
-						   TEXT * filename,
-						   struct sockaddr_in *address, SSHORT test_only)
+static SSHORT find_address(TEXT * filename,
+						   struct sockaddr_in *address, 
+						   bool test_only)
 {
 /**************************************
  *
@@ -453,14 +463,14 @@ static SSHORT find_address(
 		if (test_only)
 			return (-1);
 
-		error(errno, "journal socket file open");
+		error(errno, (UCHAR*) "journal socket file open");
 	}
 
 	if (fscanf(file, "%ld %ld %ld %ld", &version, &addr, &family, &port) != 4) {
 		if (test_only)
 			return (-1);
 
-		error(0, "journal socket file format");
+		error(0, (UCHAR*) "journal socket file format");
 	}
 	fclose(file);
 
@@ -468,20 +478,20 @@ static SSHORT find_address(
 		if (test_only)
 			return (-1);
 
-		error(0, " address version");
+		error(0, (UCHAR*) " address version");
 	}
 
 	address->sin_addr.s_addr = addr;
 	address->sin_family = family;
 	address->sin_port = port;
 
-	return TRUE;
+	return 0;
 }
 #endif
 
 
 #ifdef BSD_SOCKETS
-static enum jrnr_t get_reply( SLONG channel)
+static enum jrnr_t get_reply(SLONG channel)
 {
 /**************************************
  *
@@ -508,14 +518,14 @@ static enum jrnr_t get_reply( SLONG channel)
 		length = sizeof(reply->jrnr_header);
 
 		if ((len = read(channel, buffer, length)) != length)
-			error(errno, "socket read");
+			error(errno, (UCHAR*) "socket read");
 
 		/* read the rest of the response */
 
 		length = reply->jrnr_header.jrnh_length - length;
 
 		if ((len = read(channel, &buffer[len], length)) != length)
-			error(errno, "socket read");
+			error(errno, (UCHAR*) "socket read");
 
 		if (reply->jrnr_response != jrnr_msg)
 			return reply->jrnr_response;
@@ -528,7 +538,7 @@ static enum jrnr_t get_reply( SLONG channel)
 
 
 #ifdef WIN_NT
-static enum jrnr_t get_reply( SLONG channel)
+static enum jrnr_t get_reply(SLONG channel)
 {
 /**************************************
  *
@@ -554,7 +564,7 @@ static enum jrnr_t get_reply( SLONG channel)
 		length = sizeof(reply->jrnr_header);
 
 		if (!ReadFile((HANDLE) channel, buffer, length, &len, NULL) ||
-			len != length) error(GetLastError(), "ReadFile (pipe)");
+			len != length) error(GetLastError(), (UCHAR*) "ReadFile (pipe)");
 
 		/* read the rest of the response */
 
@@ -562,7 +572,7 @@ static enum jrnr_t get_reply( SLONG channel)
 
 		if (!ReadFile((HANDLE) channel, &buffer[len], length, &len, NULL) ||
 			len != length)
-			error(GetLastError(), "ReadFile (pipe)");
+			error(GetLastError(), (UCHAR*) "ReadFile (pipe)");
 
 		if (reply->jrnr_response != jrnr_msg)
 			return reply->jrnr_response;
@@ -575,7 +585,8 @@ static enum jrnr_t get_reply( SLONG channel)
 
 
 #ifdef BSD_SOCKETS
-static SLONG open_connection( SCHAR * filename, SSHORT test_only)
+static SLONG open_connection(SCHAR * filename,
+							 bool test_only)
 {
 /**************************************
  *
@@ -599,7 +610,7 @@ static SLONG open_connection( SCHAR * filename, SSHORT test_only)
 /* Allocate a port block and initialize a socket for communications */
 
 	if ((channel = (SLONG) socket(AF_INET, SOCK_STREAM, 0)) < 0)
-		error(errno, "socket");
+		error(errno, (UCHAR*) "socket");
 
 	memset((SCHAR *) & address, 0, sizeof(address));
 
@@ -612,7 +623,7 @@ static SLONG open_connection( SCHAR * filename, SSHORT test_only)
 		if (test_only)
 			return (-1);
 
-		error(errno, "connect console");
+		error(errno, (UCHAR*) "connect console");
 	}
 
 	return channel;
@@ -621,7 +632,8 @@ static SLONG open_connection( SCHAR * filename, SSHORT test_only)
 
 
 #ifdef WIN_NT
-static SLONG open_connection( SCHAR * filename, SSHORT test_only)
+static SLONG open_connection(SCHAR * filename,
+							 bool test_only)
 {
 /**************************************
  *
@@ -636,7 +648,7 @@ static SLONG open_connection( SCHAR * filename, SSHORT test_only)
  *
  **************************************/
 	HANDLE channel;
-	TEXT name[MAXPATHLEN], *p, *q, c;
+	TEXT name[MAXPATHLEN], *p, c;
 
 	p = name;
 	strcpy(p, "\\\\.\\pipe");
@@ -650,7 +662,7 @@ static SLONG open_connection( SCHAR * filename, SSHORT test_only)
 
 	strcpy(p, CONSOLE_FILE);
 
-	while (TRUE) {
+	while (true) {
 		channel = CreateFile(name,
 							 GENERIC_READ | GENERIC_WRITE,
 							 0, NULL, OPEN_EXISTING, 0, NULL);
@@ -661,23 +673,23 @@ static SLONG open_connection( SCHAR * filename, SSHORT test_only)
 			if (test_only)
 				return (-1);
 
-			error(GetLastError(), "CreateFile (pipe)");
+			error(GetLastError(), (UCHAR*) "CreateFile (pipe)");
 		}
 
 		WaitNamedPipe(name, 2000L);
 	}
 
-	return channel;
+	return (SLONG) channel;
 }
 #endif
 
 
 #ifdef BSD_SOCKETS
-static void put_command(
-						SLONG channel,
+static void put_command(SLONG channel,
 						UCHAR * header,
 						USHORT header_length,
-						UCHAR * data, USHORT data_length)
+						UCHAR * data,
+						USHORT data_length)
 {
 /**************************************
  *
@@ -710,17 +722,17 @@ static void put_command(
 		while (--data_length);
 
 	if (write(channel, buffer, l) < 0)
-		error(errno, "write socket");
+		error(errno, (UCHAR*) "write socket");
 }
 #endif
 
 
 #ifdef WIN_NT
-static void put_command(
-						SLONG channel,
+static void put_command(SLONG channel,
 						UCHAR * header,
 						USHORT header_length,
-						UCHAR * data, USHORT data_length)
+						UCHAR * data,
+						USHORT data_length)
 {
 /**************************************
  *
@@ -753,6 +765,6 @@ static void put_command(
 		while (--data_length);
 
 	if (!WriteFile((HANDLE) channel, buffer, l, &len, NULL) || l != len)
-		error(GetLastError(), "WriteFile (pipe)");
+		error(GetLastError(), (UCHAR*) "WriteFile (pipe)");
 }
 #endif

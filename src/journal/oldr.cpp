@@ -32,7 +32,7 @@
 #endif
 #include "../jrd/old.h"
 #include "../jrd/llio.h"
-#include "../journal/misc_proto.h"
+#include "../journal/miscj_proto.h"
 #include "../journal/oldr_proto.h"
 #include "../jrd/llio_proto.h"
 
@@ -100,7 +100,7 @@ int OLDR_get( OLD OLD_handle, SCHAR * logrec, SSHORT * len)
 	hdr = ob->ob_hdr;
 
 	if (LLIO_read(0, OLD_handle->old_fd, 0, 0L, LLIO_SEEK_NONE,
-				  (SCHAR *) hdr, OLD_handle->old_rec_size, &read_len))
+				  (UCHAR *) hdr, OLD_handle->old_rec_size, &read_len))
 		return (OLD_ERR);
 
 	if (hdr->oh_type == OLD_EOD)
@@ -279,7 +279,7 @@ static SLONG oldr_open_file( OLD old)
 				  TRUE, &fd)) return FB_FAILURE;
 
 	if (LLIO_read(0, fd, 0, 0L, LLIO_SEEK_NONE,
-				  (SCHAR *) hdr, OLD_HEADER_SIZE, &len) ||
+				  (UCHAR *) hdr, OLD_HEADER_SIZE, &len) ||
 		len != OLD_HEADER_SIZE) return FB_FAILURE;
 
 	hp = (OLD_HDR_PAGE) hdr->oh_buf;

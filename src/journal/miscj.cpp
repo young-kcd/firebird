@@ -35,6 +35,7 @@
 # include <sys/timeb.h>
 #endif
 #include <winsock2.h>
+#undef TEXT
 #define TEXT	SCHAR
 #endif
 
@@ -43,13 +44,9 @@
 #include "../jrd/license.h"
 #include "../journal/journal.h"
 
-#ifndef INCLUDE_FB_BLK
-#include "../include/old_fb_blk.h"
-#endif
-
 #include "../jrd/jrn.h"
 #include "../journal/gjrn_proto.h"
-#include "../journal/misc_proto.h"
+#include "../journal/miscj_proto.h"
 #include "../jrd/gds_proto.h"
 
 #define LETTER(c)	(c >= 'A' && c <= 'Z')
@@ -81,8 +78,7 @@ static TEXT *months[] = {
 };
 
 
-UCHAR *MISC_alloc_jrnl(size)
-	 SLONG size;
+UCHAR *MISC_alloc_jrnl(SLONG size)
 {
 /**************************************
  *
@@ -111,7 +107,8 @@ UCHAR *MISC_alloc_jrnl(size)
 }
 
 
-void MISC_down_case( UCHAR * in, UCHAR * out)
+void MISC_down_case(UCHAR * in,
+					UCHAR * out)
 {
 /**************************************
  *
@@ -149,7 +146,9 @@ void MISC_free_jrnl( int *block)
 }
 
 
-int MISC_get_line( TEXT * prompt, TEXT * buffer, SSHORT size)
+bool MISC_get_line(TEXT * prompt,
+				   TEXT * buffer,
+				   SSHORT size)
 {
 /**************************************
  *
@@ -179,7 +178,7 @@ int MISC_get_line( TEXT * prompt, TEXT * buffer, SSHORT size)
 		if (c == EOF) {
 			*buffer = 0;
 			GJRN_output("%s", "\n");
-			return FALSE;
+			return false;
 		}
 		if (buffer < end)
 			*buffer++ = c;
@@ -188,13 +187,15 @@ int MISC_get_line( TEXT * prompt, TEXT * buffer, SSHORT size)
 	*buffer = 0;
 
 	if (!count)
-		return FALSE;
+		return false;
 
-	return TRUE;
+	return true;
 }
 
 
-void MISC_get_new_value( SCHAR * string1, SCHAR * buffer, int size)
+void MISC_get_new_value(SCHAR * string1,
+						SCHAR * buffer,
+						int size)
 {
 /**************************************
  *
@@ -213,7 +214,7 @@ void MISC_get_new_value( SCHAR * string1, SCHAR * buffer, int size)
 	GJRN_get_msg(84, buff, NULL, NULL, NULL);
 	MISC_get_line(buff, temp, sizeof(temp));
 
-	MISC_down_case(temp, temp);
+	MISC_down_case((UCHAR*) temp, (UCHAR*) temp);
 
 	if (temp[0] != 'y')
 		return;
@@ -251,7 +252,9 @@ void MISC_get_time( struct timeval *current)
 }
 
 
-void MISC_get_wal_info( LTJC * msg, SCHAR * db_name, SCHAR * dir_name)
+void MISC_get_wal_info(LTJC * msg,
+					   SCHAR * db_name,
+					   SCHAR * dir_name)
 {
 /**************************************
  *
@@ -271,7 +274,7 @@ void MISC_get_wal_info( LTJC * msg, SCHAR * db_name, SCHAR * dir_name)
 
 	for (p = msg->ltjc_data; p[0] != JRNW_END; p += 2 + p[1]) {
 		switch (*p) {
-		case gds__dpb_wal_backup_dir:
+		case gds_dpb_wal_backup_dir:
 			b = dir_name;
 			q = &p[2];
 			l = p[1];
@@ -352,7 +355,9 @@ void MISC_print_journal_syntax(void)
 }
 
 
-int MISC_time_convert( TEXT * string, USHORT length, SLONG date[2])
+int MISC_time_convert(TEXT * string,
+					  USHORT length,
+					  SLONG date[2])
 {
 /**************************************
  *
@@ -411,7 +416,7 @@ int MISC_time_convert( TEXT * string, USHORT length, SLONG date[2])
 			}
 			*t = 0;
 			month_ptr = months;
-			while (TRUE) {
+			while (true) {
 				if (!*month_ptr) {
 
 					/* it's not a month name, so it's either a magic word or
@@ -425,7 +430,7 @@ int MISC_time_convert( TEXT * string, USHORT length, SLONG date[2])
 						return FB_SUCCESS;
 					}
 					times2.tm_hour = times2.tm_min = times2.tm_sec = 0;
-					gds__encode_date(&times2, date);
+					gds__encode_date(&times2, (GDS_QUAD_t*) date);
 					if (strcmp(temp, TODAY) == 0)
 						return FB_SUCCESS;
 					if (strcmp(temp, TOMORROW) == 0) {
@@ -497,8 +502,8 @@ int MISC_time_convert( TEXT * string, USHORT length, SLONG date[2])
 
 /* convert day/month/year to Julian and validate result */
 
-	gds__encode_date(&times, date);
-	gds__decode_date(date, &times2);
+	gds__encode_date(&times, (GDS_QUAD_t*) date);
+	gds__decode_date((GDS_QUAD_t*)date, &times2);
 
 	if (times.tm_year != times2.tm_year ||
 		times.tm_mon != times2.tm_mon || times.tm_mday != times2.tm_mday)
@@ -508,7 +513,8 @@ int MISC_time_convert( TEXT * string, USHORT length, SLONG date[2])
 }
 
 
-static void now_to_date( struct tm *xtime, SLONG date[2])
+static void now_to_date(struct tm *xtime,
+						SLONG date[2])
 {
 /**************************************
  *
@@ -525,5 +531,5 @@ static void now_to_date( struct tm *xtime, SLONG date[2])
  *
  **************************************/
 
-	gds__encode_date(xtime, date);
+	gds__encode_date(xtime, (GDS_QUAD_t*) date);
 }

@@ -45,11 +45,6 @@
 #endif
 #include "../jrd/common.h"
 
-/* Block types */
-
-#ifndef INCLUDE_FB_BLK
-#include "../include/old_fb_blk.h"
-#endif
 
 #include "../jrd/jrn.h"
 #include "../jrd/license.h"
@@ -62,7 +57,7 @@
 #include "../wal/wal.h"
 #include "../journal/conso_proto.h"
 #include "../journal/gjrn_proto.h"
-#include "../journal/misc_proto.h"
+#include "../journal/miscj_proto.h"
 #include "../journal/serve_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
@@ -105,6 +100,7 @@
 #ifdef WIN_NT
 #include <process.h>
 #include <windows.h>
+#undef TEXT
 #define TEXT		SCHAR
 #endif
 
@@ -266,8 +262,8 @@ static void sign_on(CNCT, LTJC *);
 static void signal_child(void);
 static void CLIB_ROUTINE signal_quit(void);
 static DJB start_database(CNCT, SCHAR *, SCHAR *, SSHORT, SLONG, ULONG);
-static int start_server(UCHAR *, USHORT, USHORT, USHORT);
-static BOOLEAN test_dup_entry(DJB, SLONG);
+static bool start_server(UCHAR *, bool, bool, bool);
+static bool test_dup_entry(DJB, SLONG);
 static void time_stamp(GDS__QUAD *);
 
 static TEXT journal_directory[MAX_PATH_LENGTH];
@@ -297,7 +293,8 @@ static SLONG max_retry = MAX_RETRY;
 #define state_status		32	/* Report status */
 
 
-int SERVER_start_server(int argc, SCHAR ** argv)
+bool SERVER_start_server(int argc, 
+						 SCHAR ** argv)
 {
 /**************************************
  *
@@ -309,13 +306,14 @@ int SERVER_start_server(int argc, SCHAR ** argv)
  *	Parse switches and do work.
  *
  **************************************/
-	UCHAR string[MAX_PATH_LENGTH], *journal;
-	USHORT sw_i, sw_d, sw_v;
-
-	sw_i = sw_v = sw_d = FALSE;
+	UCHAR string[MAX_PATH_LENGTH];
+	UCHAR *journal;
+	bool sw_i = false;
+	bool sw_d = false;
+	bool sw_v = false;
 
 	if (argc <= 0)
-		sw_i = TRUE;
+		sw_i = true;
 
 /* Start by parsing switches */
 
@@ -327,18 +325,18 @@ int SERVER_start_server(int argc, SCHAR ** argv)
 			continue;
 		}
 
-		MISC_down_case(*argv++, string);
+		MISC_down_case((UCHAR*) *argv++, (UCHAR*) string);
 		switch (string[1]) {
 		case 'v':
-			sw_v = TRUE;
+			sw_v = true;
 			break;
 
 		case 'd':
-			sw_d = TRUE;
+			sw_d = true;
 			break;
 
 		case 'i':
-			sw_i = TRUE;
+			sw_i = true;
 			break;
 
 		case 's':
@@ -346,7 +344,7 @@ int SERVER_start_server(int argc, SCHAR ** argv)
 
 		case 'j':
 			if (--argc > 0)
-				journal = *argv++;
+				journal = (UCHAR*) *argv++;
 			else
 				MISC_print_journal_syntax();
 			break;
@@ -361,7 +359,9 @@ int SERVER_start_server(int argc, SCHAR ** argv)
 }
 
 
-static void add_backup_entry(DJB dbb, SLONG pid, SLONG fid)
+static void add_backup_entry(DJB dbb, 
+							 SLONG pid, 
+							 SLONG fid)
 {
 /**************************************
  *
@@ -388,7 +388,8 @@ static void add_backup_entry(DJB dbb, SLONG pid, SLONG fid)
 }
 
 
-static CNCT alloc_connect(HANDLE handle, USHORT channel)
+static CNCT alloc_connect(HANDLE handle, 
+						  USHORT channel)
 {
 /**************************************
  *
@@ -413,11 +414,12 @@ static CNCT alloc_connect(HANDLE handle, USHORT channel)
 }
 
 
-static void backup_wal(
-					   DJB database,
+static void backup_wal(DJB database,
 					   SCHAR * file_name,
 					   SLONG file_id,
-					   SLONG file_seq, SLONG file_size, SLONG p_offset)
+					   SLONG file_seq, 
+					   SLONG file_size, 
+					   SLONG p_offset)
 {
 /**************************************
  *
@@ -436,7 +438,6 @@ static void backup_wal(
 	SCHAR db_id[10], f_id[10], csize[10], cp_offset[10];
 	SLONG *lts_tr;
 	SCHAR name[MAX_PATH_LENGTH], dname[MAX_PATH_LENGTH];
-	TEXT *argv[10];
 #if (defined UNIX)
 	struct stat stat_buf;
 #endif
@@ -448,7 +449,7 @@ static void backup_wal(
 	sprintf(db_id, "%d", database->djb_id);
 	sprintf(csize, "%d", file_size);
 	sprintf(cp_offset, "%d", p_offset);
-	build_indexed_name(dname, database->djb_dir_name, file_seq);
+	build_indexed_name(dname, (char*) database->djb_dir_name, file_seq);
 
 	gds__prefix(name, ARCHIVE);
 
@@ -538,7 +539,8 @@ static void build_backup_array(DJB dbb)
 
 
 static void build_indexed_name(SCHAR * filename,
-							   SCHAR * basename, SLONG seqno)
+							   SCHAR * basename, 
+							   SLONG seqno)
 {
 /**************************************
  *
@@ -630,7 +632,8 @@ static void commit(void)
 }
 
 
-static void delete_backup_entry(DJB dbb, SLONG fid)
+static void delete_backup_entry(DJB dbb, 
+								SLONG fid)
 {
 /**************************************
  *
@@ -706,7 +709,7 @@ static void delete_connection(CNCT connection)
 			break;
 		}
 
-	MISC_free_jrnl(connection);
+	MISC_free_jrnl((int*)connection);
 
 	if ((database) &&
 		(database->djb_flags & DJB_disabled) &&
@@ -752,9 +755,10 @@ static void delete_database(DJB database)
 }
 
 
-static void delete_history_files(
-								 CNCT connection,
-								 SCHAR * dbname, SLONG db_id, SLONG last_dump)
+static void delete_history_files(CNCT connection,
+								 SCHAR * dbname, 
+								 SLONG db_id, 
+								 SLONG last_dump)
 {
 /**************************************
  *
@@ -901,7 +905,7 @@ static void delete_wal(void)
             AND J.DELETE_STATUS EQ LOG_NOT_DELETED
             AND J.ARCHIVE_STATUS EQ ARCHIVED
 
-            WALF_set_log_header_flag(status, database->djb_db_name,
+            WALF_set_log_header_flag(status, (char*) database->djb_db_name,
                                      J.LOG_NAME, J.PARTITION_OFFSET,
                                      WALFH_KEEP_FOR_LONG_TERM_RECV, 0);
             MODIFY J USING 
@@ -920,7 +924,8 @@ static void delete_wal(void)
 }
 
 
-static void disable(CNCT connection, LTJC * msg)
+static void disable(CNCT connection, 
+					LTJC * msg)
 {
 /**************************************
  *
@@ -1052,7 +1057,8 @@ static void divorce_terminal(fd_set * mask)
 #endif
 
 
-static void enable(CNCT connection, LTJC * msg)
+static void enable(CNCT connection, 
+				   LTJC * msg)
 {
 /**************************************
  *
@@ -1108,7 +1114,8 @@ static void enable(CNCT connection, LTJC * msg)
 
 
 #ifdef BSD_SOCKETS
-static void error(ISC_STATUS status, TEXT * string)
+static void error(ISC_STATUS status, 
+				  TEXT * string)
 {
 /**************************************
  *
@@ -1128,7 +1135,8 @@ static void error(ISC_STATUS status, TEXT * string)
 
 
 #ifdef WIN_NT
-static void error(ISC_STATUS status, TEXT * string)
+static void error(ISC_STATUS status, 
+				  TEXT * string)
 {
 /**************************************
  *
@@ -1159,7 +1167,8 @@ static void error(ISC_STATUS status, TEXT * string)
 #endif
 
 
-static void error_exit(ISC_STATUS status, TEXT * string)
+static void error_exit(ISC_STATUS status, 
+					   TEXT * string)
 {
 /**************************************
  *
@@ -1200,13 +1209,14 @@ static void free_database_entry(DJB database)
 		}
 
 	if (database->djb_dir_name)
-		MISC_free_jrnl(database->djb_dir_name);
-	MISC_free_jrnl(database);
+		MISC_free_jrnl((int*)database->djb_dir_name);
+	MISC_free_jrnl((int*)database);
 }
 
 
 #ifdef BSD_SOCKETS
-static void get_message(JRNH * buffer, int length)
+static void get_message(JRNH * buffer, 
+						int length)
 {
 /**************************************
  *
@@ -1300,7 +1310,8 @@ static void get_message(JRNH * buffer, int length)
 
 
 #ifdef WIN_NT
-static void get_message(JRNH * buffer, int length)
+static void get_message(JRNH * buffer, 
+						int length)
 {
 /**************************************
  *
@@ -1337,7 +1348,7 @@ static void get_message(JRNH * buffer, int length)
 
 	if (connection->cnct_flags & CNCT_pending_io) {
 		if (!GetOverlappedResult(connection->cnct_handle,
-								 &connection->cnct_overlapped, &len, TRUE) &&
+								 &connection->cnct_overlapped, (ULONG*) &len, TRUE) &&
 			GetLastError() != ERROR_BROKEN_PIPE)
 			error(GetLastError(), "GetOverlappedResult");
 		connection->cnct_read_length = len;
@@ -1369,12 +1380,12 @@ static void get_message(JRNH * buffer, int length)
 	memcpy(buffer, connection->cnct_data, (int) connection->cnct_read_length);
 	p = (UCHAR *) buffer + connection->cnct_read_length;
 	length = buffer->jrnh_length - connection->cnct_read_length;
-	if (!ReadFile(connection->cnct_handle, p, length, &len,
+	if (!ReadFile(connection->cnct_handle, p, length, (ULONG*) &len,
 				  &connection->cnct_overlapped)) {
 		if (GetLastError() != ERROR_IO_PENDING)
 			error(GetLastError(), "ReadFile");
 		else if (!GetOverlappedResult(connection->cnct_handle,
-									  &connection->cnct_overlapped, &len,
+									  &connection->cnct_overlapped, (ULONG*) &len,
 									  TRUE)) error(GetLastError(),
 												   "GetOverlappedResult");
 	}
@@ -1419,7 +1430,9 @@ static void init_handles(fd_set * mask_ptr)
 #endif
 
 
-static DJB lookup_database(SCHAR * string, USHORT id, SSHORT find_disabled)
+static DJB lookup_database(SCHAR * string, 
+						   USHORT id, 
+						   SSHORT find_disabled)
 {
 /**************************************
  *
@@ -1441,7 +1454,7 @@ static DJB lookup_database(SCHAR * string, USHORT id, SSHORT find_disabled)
 				continue;
 
 			q = database->djb_db_name;
-			if (!strcmp(q, string))
+			if (!strcmp((const char*)q, string))
 				return database;
 		}
 
@@ -1458,7 +1471,9 @@ static DJB lookup_database(SCHAR * string, USHORT id, SSHORT find_disabled)
 }
 
 
-static DJB make_database(CNCT connection, SCHAR * db_name, SCHAR * dir_name)
+static DJB make_database(CNCT connection, 
+						 SCHAR * db_name, 
+						 SCHAR * dir_name)
 {
 /**************************************
  *
@@ -1479,11 +1494,11 @@ static DJB make_database(CNCT connection, SCHAR * db_name, SCHAR * dir_name)
 	database = (DJB) MISC_alloc_jrnl(sizeof(struct djb) + ldb);
 
 	if (ldb)
-		strcpy(database->djb_db_name, db_name);
+		strcpy((char*) database->djb_db_name, (const char*) db_name);
 
 	if (ldir) {
 		database->djb_dir_name = MISC_alloc_jrnl(ldir + 1);
-		strcpy(database->djb_dir_name, dir_name);
+		strcpy((char*) database->djb_dir_name, (const char*) dir_name);
 	}
 
 	database->djb_next = databases;
@@ -1506,7 +1521,8 @@ static DJB make_database(CNCT connection, SCHAR * db_name, SCHAR * dir_name)
 
 
 #ifdef BSD_SOCKETS
-static void open_mailbox(SCHAR * filename, USHORT slot)
+static void open_mailbox(SCHAR * filename, 
+						 USHORT slot)
 {
 /**************************************
  *
@@ -1574,7 +1590,8 @@ static void open_mailbox(SCHAR * filename, USHORT slot)
 
 
 #ifdef WIN_NT
-static void open_mailbox(SCHAR * filename, USHORT slot)
+static void open_mailbox(SCHAR * filename, 
+						 USHORT slot)
 {
 /**************************************
  *
@@ -1586,12 +1603,12 @@ static void open_mailbox(SCHAR * filename, USHORT slot)
  *	Open multiplexed connection.
  *
  **************************************/
-	TEXT name[MAX_PATH_LENGTH], *p, *q, c, full_name[MAX_PATH_LENGTH];
+	TEXT name[MAX_PATH_LENGTH], *p, c, full_name[MAX_PATH_LENGTH];
 	HANDLE phandle, ehandle;
 	USHORT n;
 	CNCT cnct;
 
-	strcpy(full_name, journal_directory);
+	strcpy(full_name, (const char*) journal_directory);
 	strcat(full_name, filename);
 	filename = full_name;
 
@@ -1637,7 +1654,7 @@ static void open_mailbox(SCHAR * filename, USHORT slot)
 
 	if (n > wait_vec_length) {
 		if (wait_vec)
-			MISC_free_jrnl(wait_vec);
+			MISC_free_jrnl((int*) wait_vec);
 		wait_vec_length += 10;
 		wait_vec = (HANDLE *)
 			MISC_alloc_jrnl((SLONG) (wait_vec_length * sizeof(HANDLE)));
@@ -1647,7 +1664,8 @@ static void open_mailbox(SCHAR * filename, USHORT slot)
 
 
 #ifdef BSD_SOCKETS
-static void post_address(USHORT slot, struct sockaddr_in address)
+static void post_address(USHORT slot, 
+						 struct sockaddr_in address)
 {
 /**************************************
  *
@@ -1663,7 +1681,7 @@ static void post_address(USHORT slot, struct sockaddr_in address)
 	FILE *file;
 	SCHAR full_name[MAX_PATH_LENGTH];
 
-	strcpy(full_name, journal_directory);
+	strcpy(full_name, (const char*) journal_directory);
 	strcat(full_name, address_files[slot]);
 
 	if (!(file = fopen(full_name, "w")))
@@ -1678,7 +1696,8 @@ static void post_address(USHORT slot, struct sockaddr_in address)
 #endif
 
 
-static void process_command(CNCT connection, TEXT * string)
+static void process_command(CNCT connection, 
+							TEXT * string)
 {
 /**************************************
  *
@@ -1782,7 +1801,8 @@ static void process_command(CNCT connection, TEXT * string)
 }
 
 
-static void process_archive_begin(CNCT connection, LTJA * msg)
+static void process_archive_begin(CNCT connection, 
+								  LTJA * msg)
 {
 /**************************************
  *
@@ -1822,7 +1842,7 @@ static void process_archive_begin(CNCT connection, LTJA * msg)
     FOR D IN DATABASES WITH D.DB_ID EQ db_id AND D.STATUS EQ DB_DISABLED
         reply.jrnr_response = jrnr_accepted;
 	    send_reply(connection, (JRNH *) & reply, sizeof(reply));
-        connection->cnct_database = NULL;
+        connection->cnct_database = (DJB) NULL;
         return;
     END_FOR;
 
@@ -1833,7 +1853,8 @@ static void process_archive_begin(CNCT connection, LTJA * msg)
 }
 
 
-static void process_archive_end(CNCT connection, LTJA * msg)
+static void process_archive_end(CNCT connection, 
+								LTJA * msg)
 {
 /**************************************
  *
@@ -1861,8 +1882,8 @@ static void process_archive_end(CNCT connection, LTJA * msg)
 /* Handle situation where the database is already disabled */
 
 	if (database) {
-		strcpy(db, database->djb_db_name);
-		strcpy(arch, database->djb_dir_name);
+		strcpy(db, (const char*) database->djb_db_name);
+		strcpy(arch, (const char*) database->djb_dir_name);
 		database->djb_retry = 0;	/* archive is working */
 	}
 	else {
@@ -1913,7 +1934,8 @@ static void process_archive_end(CNCT connection, LTJA * msg)
 }
 
 
-static void process_archive_error(CNCT connection, LTJA * msg)
+static void process_archive_error(CNCT connection, 
+								  LTJA * msg)
 {
 /**************************************
  *
@@ -1974,7 +1996,8 @@ static void process_archive_error(CNCT connection, LTJA * msg)
 }
 
 
-static void process_control_point(CNCT connection, LTJW * msg)
+static void process_control_point(CNCT connection, 
+								  LTJW * msg)
 {
 /**************************************
  *
@@ -2015,7 +2038,8 @@ static void process_control_point(CNCT connection, LTJW * msg)
 }
 
 
-static void process_disable_database(CNCT connection, TEXT * dbname)
+static void process_disable_database(CNCT connection,
+									 TEXT * dbname)
 {
 /**************************************
  *
@@ -2071,7 +2095,8 @@ static void process_disable_database(CNCT connection, TEXT * dbname)
 }
 
 
-static void process_drop_database(CNCT connection, SCHAR * dbname)
+static void process_drop_database(CNCT connection, 
+								  SCHAR * dbname)
 {
 /**************************************
  *
@@ -2105,7 +2130,8 @@ static void process_drop_database(CNCT connection, SCHAR * dbname)
 }
 
 
-static void process_dump_file(CNCT connection, LTJW * msg)
+static void process_dump_file(CNCT connection, 
+							  LTJW * msg)
 {
 /**************************************
  *
@@ -2128,7 +2154,7 @@ static void process_dump_file(CNCT connection, LTJW * msg)
 	    X.FILE_SEQNO = msg->ltjw_count;
         X.DUMP_ID = msg->ltjw_mode;
         X.FILE_SIZE = msg->ltjw_offset;
-        time_stamp(&X.CREATION_DATE);
+        time_stamp((GDS_QUAD_t*) &X.CREATION_DATE);
 	END_STORE 
     ON_ERROR 
         put_line(NULL, 119, 0, 0, 0);
@@ -2146,7 +2172,8 @@ static void process_dump_file(CNCT connection, LTJW * msg)
 }
 
 
-static void process_end_dump(CNCT connection, LTJW * msg)
+static void process_end_dump(CNCT connection, 
+							 LTJW * msg)
 {
 /**************************************
  *
@@ -2169,7 +2196,7 @@ static void process_end_dump(CNCT connection, LTJW * msg)
             X.END_SEQNO = msg->ltjw_seqno;
             X.END_OFFSET = msg->ltjw_offset;
             X.END_PARTITION_OFFSET = msg->ltjw_p_offset;
-            time_stamp(&X.DUMP_DATE);
+            time_stamp((GDS_QUAD_t*) &X.DUMP_DATE);
 	    END_MODIFY 
         ON_ERROR 
             put_line(NULL, 121, 0, 0, 0);
@@ -2188,7 +2215,8 @@ static void process_end_dump(CNCT connection, LTJW * msg)
 }
 
 
-static void process_erase_database(CNCT connection, USHORT db_id)
+static void process_erase_database(CNCT connection,
+								   USHORT db_id)
 {
 /**************************************
  *
@@ -2221,7 +2249,7 @@ static void process_erase_database(CNCT connection, USHORT db_id)
 		}
 	}
 	else {
-		strcpy(dbname, database->djb_db_name);
+		strcpy(dbname, (const char*)database->djb_db_name);
 
 		if (database->djb_use_count) {
 			put_line(connection, 161, (TEXT *) db_id, 0, 0);
@@ -2300,7 +2328,9 @@ static void process_erase_database(CNCT connection, USHORT db_id)
 }
 
 
-static void process_message(CNCT connection, JRNH * msg, USHORT length)
+static void process_message(CNCT connection,
+							JRNH * msg,
+							USHORT length)
 {
 /**************************************
  *
@@ -2375,7 +2405,8 @@ static void process_message(CNCT connection, JRNH * msg, USHORT length)
 }
 
 
-static void process_reset_database(CNCT connection, SCHAR * dbname)
+static void process_reset_database(CNCT connection,
+								   SCHAR * dbname)
 {
 /**************************************
  *
@@ -2419,7 +2450,8 @@ static void process_reset_database(CNCT connection, SCHAR * dbname)
 }
 
 
-static void process_restart_archive(CNCT connection, SCHAR * dbname)
+static void process_restart_archive(CNCT connection,
+									SCHAR * dbname)
 {
 /**************************************
  *
@@ -2454,7 +2486,8 @@ static void process_restart_archive(CNCT connection, SCHAR * dbname)
 }
 
 
-static void process_set_database(CNCT connection, SCHAR * dbname)
+static void process_set_database(CNCT connection,
+								 SCHAR * dbname)
 {
 /**************************************
  *
@@ -2502,7 +2535,8 @@ static void process_set_database(CNCT connection, SCHAR * dbname)
 }
 
 
-static void process_start_dump(CNCT connection, LTJW * msg)
+static void process_start_dump(CNCT connection,
+							   LTJW * msg)
 {
 /**************************************
  *
@@ -2558,7 +2592,8 @@ static void process_start_dump(CNCT connection, LTJW * msg)
 }
 
 
-static void process_wal_file(CNCT connection, LTJW * msg)
+static void process_wal_file(CNCT connection,
+							 LTJW * msg)
 {
 /**************************************
  *
@@ -2572,7 +2607,7 @@ static void process_wal_file(CNCT connection, LTJW * msg)
  **************************************/
 	DJB database;
 	JRNR reply;
-	int repeat;
+	bool repeat;
 	SLONG file_id;
 	SLONG last_dump;
 	SLONG file_seq, file_size, p_offset;
@@ -2582,18 +2617,18 @@ static void process_wal_file(CNCT connection, LTJW * msg)
 
 	FOR D IN DATABASES WITH D.DB_ID EQ connection->cnct_database->djb_id
         last_dump = D.LAST_DUMP_ID;
-        repeat = FALSE;
+        repeat = false;
 	
         FOR X IN JOURNAL_FILES WITH X.DB_ID EQ D.DB_ID AND
             X.FILE_SEQUENCE EQ msg->ltjw_seqno 
 
-            repeat = TRUE;
+            repeat = true;
 	    END_FOR;
 
 	
 	   /* Handle close file record for files without open */
 	
-        if (repeat == FALSE) {
+        if (repeat == false) {
             STORE X IN JOURNAL_FILES X.DB_ID = D.DB_ID;
                 X.PARTITION_OFFSET = msg->ltjw_p_offset;
                 strcpy(X.FILE_STATUS, LOG_OPENED);
@@ -2602,7 +2637,7 @@ static void process_wal_file(CNCT connection, LTJW * msg)
                 X.FILE_SEQUENCE = msg->ltjw_seqno;
                 strcpy(X.LOG_NAME, msg->ltjw_data);
                 MOVE_CLEAR(X.ARCHIVE_NAME, sizeof(X.ARCHIVE_NAME));
-                time_stamp(&X.ARCHIVE_DATE);
+                time_stamp((GDS_QUAD_t*) &X.ARCHIVE_DATE);
                 X.PARTITION_OFFSET = msg->ltjw_p_offset;
                 X.FILE_SIZE = msg->ltjw_offset;
 	        END_STORE 
@@ -2684,14 +2719,16 @@ static void process_wal_file(CNCT connection, LTJW * msg)
 /* if database is configured for deletion of 'older' files, do so now */
 
 	if (database->djb_flags & DJB_set_delete)
-		delete_history_files(NULL, database->djb_db_name,
+		delete_history_files(NULL, (char*) database->djb_db_name,
 							 database->djb_id, last_dump);
 }
 
 
-static void put_line(
-					 CNCT connection,
-					 SSHORT msg, TEXT * arg1, TEXT * arg2, TEXT * arg3)
+static void put_line(CNCT connection,
+					 SSHORT msg,
+					 TEXT * arg1,
+					 TEXT * arg2,
+					 TEXT * arg3)
 {
 /**************************************
  *
@@ -2730,7 +2767,8 @@ static void put_line(
 }
 
 
-static void put_message(SSHORT msg_num, DJB database)
+static void put_message(SSHORT msg_num,
+						DJB database)
 {
 /**************************************
  *
@@ -2749,7 +2787,7 @@ static void put_message(SSHORT msg_num, DJB database)
 	if (!log)
 		return;
 
-	GJRN_get_msg(msg_num, message, NULL, NULL, NULL);
+	GJRN_get_msg(msg_num, (char*) message, NULL, NULL, NULL);
 
 	clock = time(NULL);
 	times = *localtime(&clock);
@@ -2786,7 +2824,7 @@ static void read_asynchronous(CNCT connection)
 	SLONG len;
 
 	if (ReadFile(connection->cnct_handle, connection->cnct_data,
-				 sizeof(connection->cnct_data), &len,
+				 sizeof(connection->cnct_data), (ULONG*) &len,
 				 &connection->cnct_overlapped)) {
 		connection->cnct_read_length = len;
 		SetEvent(connection->cnct_overlapped.hEvent);
@@ -2843,7 +2881,7 @@ static void report_status(CNCT connection)
 			continue;
 
 		put_line(connection, 132,
-				 database->djb_db_name, (TEXT *) database->djb_id,
+				 (char*) database->djb_db_name, (TEXT *) database->djb_id,
 				 (TEXT *) database->djb_use_count);
 	}
 }
@@ -2883,7 +2921,8 @@ static void restart_all_backups(int count)
 }
 
 
-static void restart_backup(DJB database, int count)
+static void restart_backup(DJB database,
+						   int count)
 {
 /**************************************
  *
@@ -2895,7 +2934,6 @@ static void restart_backup(DJB database, int count)
  *	Restart backup processes for a database.
  *
  **************************************/
-	int ret;
 	SSHORT i;
 	SLONG fid;
 
@@ -2939,7 +2977,9 @@ static void restart_backup(DJB database, int count)
 
 
 #ifdef BSD_SOCKETS
-static void send_reply(CNCT connection, JRNH * msg, USHORT length)
+static void send_reply(CNCT connection,
+					   JRNH * msg,
+					   USHORT length)
 {
 /**************************************
  *
@@ -2967,7 +3007,9 @@ static void send_reply(CNCT connection, JRNH * msg, USHORT length)
 
 
 #ifdef WIN_NT
-static void send_reply(CNCT connection, JRNH * msg, USHORT length)
+static void send_reply(CNCT connection,
+					   JRNH * msg,
+					   USHORT length)
 {
 /**************************************
  *
@@ -2989,7 +3031,7 @@ static void send_reply(CNCT connection, JRNH * msg, USHORT length)
 
 	msg->jrnh_length = length;
 
-	if (!WriteFile((HANDLE) connection->cnct_handle, msg, length, &l, NULL) ||
+	if (!WriteFile((HANDLE) connection->cnct_handle, msg, length, (ULONG*) &l, NULL) ||
 		length != l)
 		error(GetLastError(), "WriteFile");
 }
@@ -3021,7 +3063,8 @@ static void set_use_count(DJB database)
 }
 
 
-static void sign_off(CNCT connection, LTJC * msg)
+static void sign_off(CNCT connection,
+					 LTJC * msg)
 {
 /**************************************
  *
@@ -3042,7 +3085,8 @@ static void sign_off(CNCT connection, LTJC * msg)
 }
 
 
-static void sign_on(CNCT connection, LTJC * msg)
+static void sign_on(CNCT connection,
+					LTJC * msg)
 {
 /**************************************
  *
@@ -3129,11 +3173,12 @@ static void CLIB_ROUTINE signal_quit(void)
 }
 
 
-static DJB start_database(
-						  CNCT connection,
+static DJB start_database(CNCT connection,
 						  SCHAR * db_name,
 						  SCHAR * dir_name,
-						  SSHORT page_size, SLONG seqno, ULONG offset)
+						  SSHORT page_size,
+						  SLONG seqno,
+						  ULONG offset)
 {
 /**************************************
  *
@@ -3166,12 +3211,12 @@ static DJB start_database(
 /* Store new database record */
 
 	STORE X IN DATABASES 
-        strcpy(X.DB_NAME, database->djb_db_name);
+        strcpy(X.DB_NAME, (const char*) database->djb_db_name);
 	    if (database->djb_dir_name)
-            strcpy(X.ARCHIVE_BASE_NAME, database->djb_dir_name);
+            strcpy(X.ARCHIVE_BASE_NAME, (const char*) database->djb_dir_name);
         else
             MOVE_CLEAR(X.ARCHIVE_BASE_NAME, sizeof(X.ARCHIVE_BASE_NAME));
-        time_stamp(&X.DATE_ENABLED);
+        time_stamp((GDS_QUAD_t*) &X.DATE_ENABLED);
         strcpy(X.STATUS, DB_ACTIVE);
 
         strcpy(X.DEVICE_TYPE, MEDIA_DISK);
@@ -3210,8 +3255,10 @@ static DJB start_database(
 }
 
 
-static int start_server(UCHAR * journal_dir,
-						USHORT sw_d, USHORT sw_v, USHORT sw_i)
+static bool start_server(UCHAR * journal_dir,
+						 bool sw_d,
+						 bool sw_v,
+						 bool sw_i)
 {
 /**************************************
  *
@@ -3224,18 +3271,18 @@ static int start_server(UCHAR * journal_dir,
  *	to happen.
  *
  **************************************/
+	typedef void (*new_handler) (int);
 	DJB database;
-	USHORT sw_debug, len;
+	bool sw_debug;
+	USHORT len;
 	TEXT logfile[MAX_PATH_LENGTH], journal_db[MAX_PATH_LENGTH];
-	SLONG message_buffer[(MAX_RECORD + 6 + sizeof(SLONG) - 1) /
-						 sizeof(SLONG)];
-	ISC_STATUS_ARRAY status;
+	SLONG message_buffer[(MAX_RECORD + 6 + sizeof(SLONG) - 1) / sizeof(SLONG)];
 	SSHORT msg_count;
 
 #ifdef SIGQUIT
-	signal(SIGQUIT, signal_quit);
+	signal(SIGQUIT, (void (*)(int)) signal_quit);
 #endif
-	signal(SIGINT, signal_quit);
+	signal(SIGINT, (void (*)(int)) signal_quit);
 
 	state = state_status;
 	connections = NULL;
@@ -3244,8 +3291,8 @@ static int start_server(UCHAR * journal_dir,
 /* Expand the journal directory name and insure that it ends with a slash. */
 
 	if (!journal_dir)
-		journal_dir = ".";
-	len = ISC_expand_filename(journal_dir, 0, journal_directory);
+		journal_dir = (UCHAR*) ".";
+	len = ISC_expand_filename((char*) journal_dir, 0, journal_directory);
 #ifndef WIN_NT
 	if (journal_directory[len - 1] != '/')
 #else
@@ -3330,7 +3377,7 @@ static int start_server(UCHAR * journal_dir,
 		STORE X IN JOURNAL 
             strcpy(X.STATUS, DB_ACTIVE);
 	        X.USE_COUNT = 1;
-            time_stamp(&X.DATE_INIT);
+            time_stamp((GDS_QUAD_t*) &X.DATE_INIT);
 	    END_STORE;
 
 /* Initialize list of valid databases */
@@ -3479,11 +3526,12 @@ static int start_server(UCHAR * journal_dir,
 	COMMIT;
 	FINISH;
 
-	return 0;
+	return true;
 }
 
 
-static BOOLEAN test_dup_entry(DJB dbb, SLONG file_id)
+static bool test_dup_entry(DJB dbb,
+						   SLONG file_id)
 {
 /**************************************
  *
@@ -3502,9 +3550,9 @@ static BOOLEAN test_dup_entry(DJB dbb, SLONG file_id)
 
 	for (i = 0; i < MAX_ARCHIVE; i++)
 		if (dbb->djb_bfi[i].bi_fid == file_id)
-			return TRUE;
+			return true;
 
-	return FALSE;
+	return false;
 }
 
 

@@ -27,7 +27,7 @@
 extern UCHAR *MISC_alloc_jrnl(SLONG);
 extern void MISC_down_case(UCHAR *, UCHAR *);
 extern void MISC_free_jrnl(int *);
-extern int MISC_get_line(TEXT *, TEXT *, SSHORT);
+extern bool MISC_get_line(TEXT *, TEXT *, SSHORT);
 extern void MISC_get_new_value(SCHAR *, SCHAR *, int);
 extern void MISC_get_time(struct timeval *);
 extern void MISC_get_wal_info(struct ltjc *, SCHAR *, SCHAR *);

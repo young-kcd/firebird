@@ -67,6 +67,7 @@ goto :EOF
 @for %%i in (help, meta, proc, show) do @call :PREPROCESS qli %%i
 @for %%i in (dba) do @call :PREPROCESS utilities/gstat %%i
 @for %%i in (security) do @call :PREPROCESS utilities/gsec %%i
+@for %%i in (server, rebuild) do @call :PREPROCESS journal %%i
 
 @goto :EOF
 

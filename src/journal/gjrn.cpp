@@ -36,7 +36,7 @@
 #include "../journal/journal.h"
 #include "../journal/conso_proto.h"
 #include "../journal/gjrn_proto.h"
-#include "../journal/misc_proto.h"
+#include "../journal/miscj_proto.h"
 #include "../journal/rebui_proto.h"
 #include "../journal/serve_proto.h"
 #include "../jrd/gds_proto.h"
@@ -45,24 +45,24 @@
 #include <io.h>
 #endif
 
-USHORT sw_service_gjrn;
+bool sw_service_gjrn;
 FILE *msg_file;
 
 static void gjrn_msg_partial(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
 static void gjrn_msg_put(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
 static USHORT get_new_files(SCHAR **, SLONG *);
-static int start_disable(int, SCHAR **);
-static int start_dump(int, SCHAR **);
-static int start_enable(int, SCHAR **);
+static bool start_disable(int, SCHAR **);
+static bool start_dump(int, SCHAR **);
+static bool start_enable(int, SCHAR **);
 
 static jmp_buf gjrn_env;
 
 static UCHAR
-	disable_dpb[] = { gds_dpb_version1, gds__dpb_disable_journal, 0 };
+	disable_dpb[] = { gds_dpb_version1, gds_dpb_disable_journal, 0 };
 
 typedef struct func_tab {
 	SCHAR *name;
-	int (*func_routine) ();
+	bool (*func_routine) (int, SCHAR **);
 } FUNC_TABLE;
 
 static FUNC_TABLE option_table[] = {
@@ -78,7 +78,7 @@ static FUNC_TABLE option_table[] = {
 };
 
 
-int CLIB_ROUTINE main( int argc,
+int CLIB_ROUTINE main(int argc,
 					  char *argv[])
 {
 /**************************************
@@ -94,10 +94,9 @@ int CLIB_ROUTINE main( int argc,
  **************************************/
 	SSHORT i, s_argc;
 	SCHAR *p, **s_argv, string[512];
-	USHORT found;
-	USHORT sw_interactive = FALSE;
+	bool found;
+	bool sw_interactive = false;
 	SCHAR option_name[32];
-	SLONG exit_code;
 	SLONG redir_in, redir_out, redir_err;
 	TEXT msg[128];
 #ifdef VMS
@@ -108,15 +107,15 @@ int CLIB_ROUTINE main( int argc,
    first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
    by 3 file descriptors to use in re-directing stdin, stdout, and stderr. */
 
-	sw_service_gjrn = FALSE;
+	sw_service_gjrn = false;
 
 	if (argc > 1 && !strcmp(argv[1], "-svc")) {
-		sw_service_gjrn = TRUE;
+		sw_service_gjrn = true;
 		argv++;
 		argc--;
 	}
 	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
-		sw_service_gjrn = TRUE;
+		sw_service_gjrn = true;
 		redir_in = atol(argv[2]);
 		redir_out = atol(argv[3]);
 		redir_err = atol(argv[4]);
@@ -147,7 +146,7 @@ int CLIB_ROUTINE main( int argc,
 	if (s_argc > 1) {
 		s_argv++;
 		s_argc--;
-		MISC_down_case(s_argv[0], string);
+		MISC_down_case((UCHAR*) s_argv[0], (UCHAR*) string);
 
 		if (string[1] == 'z') {
 			s_argc--;
@@ -158,7 +157,7 @@ int CLIB_ROUTINE main( int argc,
 		}
 	}
 	else
-		sw_interactive = TRUE;
+		sw_interactive = true;
 
 	p = s_argv[0];
 
@@ -174,12 +173,12 @@ int CLIB_ROUTINE main( int argc,
 			MISC_print_journal_syntax();
 	}
 
-	found = FALSE;
+	found = false;
 
 	for (i = 0; option_table[i].name; i++) {
 		if ((!strcmp(option_table[i].name, p)) ||
 			((strlen(p) == 1) && (p[0] == option_table[i].name[0]))) {
-			found = TRUE;
+			found = true;
 			break;
 		}
 	}
@@ -196,10 +195,12 @@ int CLIB_ROUTINE main( int argc,
 	catch (const Firebird::status_exception& e) {
 		exit(e.value());
 	}
+	// make compiler happy
+	return 0;
 }
 
 
-void GJRN_abort( int number)
+void GJRN_abort(int number)
 {
 /**************************************
  *
@@ -224,9 +225,11 @@ void GJRN_abort( int number)
 }
 
 
-void GJRN_get_msg(
-				  USHORT number,
-				  TEXT * msg, TEXT * arg1, TEXT * arg2, TEXT * arg3)
+void GJRN_get_msg(USHORT number,
+				  TEXT * msg,
+				  TEXT * arg1,
+				  TEXT * arg2,
+				  TEXT * arg3)
 {
 /**************************************
  *
@@ -244,7 +247,7 @@ void GJRN_get_msg(
 }
 
 
-void GJRN_output( TEXT * format, ...)
+void GJRN_output(TEXT * format, ...)
 {
 /**************************************
  *
@@ -265,9 +268,11 @@ void GJRN_output( TEXT * format, ...)
 }
 
 
-void GJRN_printf(
-				 USHORT number,
-				 TEXT * arg1, TEXT * arg2, TEXT * arg3, TEXT * arg4)
+void GJRN_printf(USHORT number,
+				 TEXT * arg1,
+				 TEXT * arg2,
+				 TEXT * arg3,
+				 TEXT * arg4)
 {
 /**************************************
  *
@@ -302,11 +307,12 @@ void GJRN_print_syntax(void)
 }
 
 
-static void gjrn_msg_partial(
-							 USHORT number,
+static void gjrn_msg_partial(USHORT number,
 							 TEXT * arg1,
 							 TEXT * arg2,
-							 TEXT * arg3, TEXT * arg4, TEXT * arg5)
+							 TEXT * arg3,
+							 TEXT * arg4,
+							 TEXT * arg5)
 {
 /**************************************
  *
@@ -329,10 +335,12 @@ static void gjrn_msg_partial(
 }
 
 
-static void gjrn_msg_put(
-						 USHORT number,
+static void gjrn_msg_put(USHORT number,
 						 TEXT * arg1,
-						 TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
+						 TEXT * arg2,
+						 TEXT * arg3,
+						 TEXT * arg4,
+						 TEXT * arg5)
 {
 /**************************************
  *
@@ -352,7 +360,8 @@ static void gjrn_msg_put(
 }
 
 
-static USHORT get_new_files( SCHAR ** old_files, SLONG * old_fs)
+static USHORT get_new_files(SCHAR ** old_files,
+							SLONG * old_fs)
 {
 /**************************************
  *
@@ -378,7 +387,7 @@ static USHORT get_new_files( SCHAR ** old_files, SLONG * old_fs)
 	if (fs = atoi(buff))
 		*old_fs = fs;
 
-	while (TRUE) {
+	while (true) {
 		GJRN_get_msg(6, msg, 0, 0, 0);	/* msg 6: enter file name or <Ctrl-D> to end input */
 		buff[0] = 0;
 		MISC_get_line(msg, buff, MAXPATHLEN);
@@ -396,7 +405,8 @@ static USHORT get_new_files( SCHAR ** old_files, SLONG * old_fs)
 }
 
 
-static int start_disable( int argc, SCHAR ** argv)
+static bool start_disable(int argc,
+						  SCHAR ** argv)
 {
 /**************************************
  *
@@ -408,40 +418,43 @@ static int start_disable( int argc, SCHAR ** argv)
  *	Parse switches and do work.
  *
  **************************************/
-	SLONG *handle;
-	USHORT dpb_length, error;
+	why_hndl *handle;
+	USHORT dpb_length;
+	bool error;
 	UCHAR *database, string[512], *dpb;
 	ISC_STATUS_ARRAY status_vector;
 	SCHAR db_name[MAXPATHLEN];
-	USHORT sw_v, sw_i;
+	bool sw_v;
+	bool sw_i;
 	TEXT msg[128];
 
 /* Start by parsing switches */
 
-	sw_i = sw_v = FALSE;
+	sw_i = sw_v = false;
 
-	error = FALSE;
+	error = false;
 	database = NULL;
 	argv++;
 
 	while (--argc > 0) {
 		if ((*argv)[0] != '-') {
 			if (database) {
-				GJRN_printf(12, database, NULL, NULL, NULL);	/* msg 12: database file name (%s) already specified */
+				GJRN_printf(12, (SCHAR*) database, NULL, NULL, NULL);
+				// msg 12: database file name (%s) already specified
 				Firebird::status_exception::raise(FINI_ERROR);
 			}
-			database = *argv++;
+			database = (UCHAR*) *argv++;
 			continue;
 		}
 
-		MISC_down_case(*argv++, string);
+		MISC_down_case((UCHAR*) *argv++, (UCHAR*) string);
 		switch (string[1]) {
 		case 'v':
-			sw_v = TRUE;
+			sw_v = true;
 			break;
 
 		case 'i':
-			sw_i = TRUE;
+			sw_i = true;
 			break;
 
 		case 'd':
@@ -456,7 +469,7 @@ static int start_disable( int argc, SCHAR ** argv)
 	if ((sw_i) && (!database)) {
 		GJRN_get_msg(219, msg, NULL, NULL, NULL);	/* enter database name: */
 		if (MISC_get_line(msg, db_name, sizeof(db_name))) {
-			database = db_name;
+			database = (UCHAR*) db_name;
 		}
 	}
 
@@ -469,10 +482,11 @@ static int start_disable( int argc, SCHAR ** argv)
 	dpb_length = sizeof(disable_dpb);
 
 	handle = NULL;
-	gds__attach_database(status_vector, 0, database, &handle, dpb_length, dpb);
+	gds__attach_database(status_vector, 0, (SCHAR*) database, &handle, 
+						 dpb_length, (SCHAR*) dpb);
 
 	if (status_vector[1]) {
-		error = TRUE;
+		error = true;
 		gds__print_status(status_vector);
 	}
 
@@ -483,7 +497,8 @@ static int start_disable( int argc, SCHAR ** argv)
 }
 
 
-static int start_dump( int argc, SCHAR ** argv)
+static bool start_dump(int argc,
+					   SCHAR ** argv)
 {
 /**************************************
  *
@@ -495,8 +510,10 @@ static int start_dump( int argc, SCHAR ** argv)
  *	Parse switches and do work.
  *
  **************************************/
-	SLONG *handle;
-	USHORT dpb_length, error, i;
+	why_hndl *handle;
+	USHORT dpb_length;
+	bool error;
+	USHORT i;
 	UCHAR *database, string[512], *p, *q, *dpb;
 	SCHAR db_name[MAXPATHLEN];
 	ISC_STATUS_ARRAY status_vector;
@@ -507,41 +524,44 @@ static int start_dump( int argc, SCHAR ** argv)
 	USHORT start_file;
 	SLONG fs;
 	SSHORT dump_id;
-	USHORT sw_d, sw_v, sw_i;
+	bool sw_d;
+	bool sw_v;
+	bool sw_i;
 	TEXT msg[128];
 
 /* Start by parsing switches */
 
-	sw_i = sw_d = sw_v = FALSE;
+	sw_i = sw_d = sw_v = false;
 
 	old_num_files = 0;
 	old_file_size = 0;
-	error = FALSE;
+	error = false;
 	database = NULL;
 	argv++;
 
 	while (--argc > 0) {
 		if ((*argv)[0] != '-') {
 			if (database) {
-				GJRN_printf(12, database, NULL, NULL, NULL);	/* msg 12: database file name (%s) already specified */
+				GJRN_printf(12, (SCHAR*) database, NULL, NULL, NULL);
+				// msg 12: database file name (%s) already specified 
 				Firebird::status_exception::raise(FINI_ERROR);
 			}
-			database = *argv++;
+			database = (UCHAR*) *argv++;
 			continue;
 		}
 
-		MISC_down_case(*argv++, string);
+		MISC_down_case((UCHAR*) *argv++, (UCHAR*) string);
 		switch (string[1]) {
 		case 'd':
-			sw_d = TRUE;
+			sw_d = true;
 			break;
 
 		case 'v':
-			sw_v = TRUE;
+			sw_v = true;
 			break;
 
 		case 'i':
-			sw_i = TRUE;
+			sw_i = true;
 			break;
 
 		case 'o':
@@ -549,7 +569,7 @@ static int start_dump( int argc, SCHAR ** argv)
 
 		case 'f':
 			if (--argc > 0)
-				old_files[old_num_files++] = *argv++;
+				old_files[old_num_files++] = (UCHAR*) *argv++;
 			else
 				MISC_print_journal_syntax();
 			break;
@@ -558,7 +578,8 @@ static int start_dump( int argc, SCHAR ** argv)
 			if (--argc > 0) {
 				old_file_size = atoi(*argv++);
 				if (old_file_size <= 0) {
-					GJRN_printf(16, NULL, NULL, NULL, NULL);	/* msg 16: online dump file size must be greater than zero */
+					GJRN_printf(16, NULL, NULL, NULL, NULL);
+					// msg 16: online dump file size must be greater than zero
 					Firebird::status_exception::raise(FINI_ERROR);
 				}
 			}
@@ -574,7 +595,7 @@ static int start_dump( int argc, SCHAR ** argv)
 
 	if (sw_i) {
 		if (!old_num_files)
-			old_num_files = get_new_files(old_files, &fs);
+			old_num_files = get_new_files((SCHAR**)old_files, &fs);
 
 		if (!old_file_size)
 			old_file_size = fs;
@@ -582,16 +603,16 @@ static int start_dump( int argc, SCHAR ** argv)
 		if (!database) {
 			GJRN_get_msg(219, msg, NULL, NULL, NULL);	/* enter database name: */
 			if (MISC_get_line(msg, db_name, sizeof(db_name))) {
-				database = db_name;
+				database = (UCHAR*) db_name;
 			}
 		}
 	}
 
 	if (!old_num_files)
-		error = TRUE;
+		error = true;
 
 	if ((old_num_files > 1) && (!old_file_size))
-		error = TRUE;
+		error = true;
 
 	if (error)
 		MISC_print_journal_syntax();
@@ -602,58 +623,58 @@ static int start_dump( int argc, SCHAR ** argv)
 	dump_id = 0;
 	fs = old_file_size;
 
-	while (TRUE) {
+	while (true) {
 		dpb = NULL;
 		dpb_length = 0;
 
 		p = dpb = string;
 		*p++ = gds_dpb_version1;
-		*p++ = gds__dpb_online_dump;
+		*p++ = gds_dpb_online_dump;
 		*p++ = 1;
 		*p++ = 1;
 
 		if (dump_id) {
-			*p++ = gds__dpb_old_dump_id;
+			*p++ = gds_dpb_old_dump_id;
 			*p++ = 2;
 			*p++ = dump_id % 256;
 			*p++ = dump_id / 256;
 		}
 
 		if (old_file_size) {
-			*p++ = gds__dpb_old_file_size;
+			*p++ = gds_dpb_old_file_size;
 			*p++ = 4;
 			for (i = 0; i < 4; i++, old_file_size = old_file_size >> 8)
 				*p++ = old_file_size;
 		}
 
 		if (start_page) {
-			*p++ = gds__dpb_old_start_page;
+			*p++ = gds_dpb_old_start_page;
 			*p++ = 4;
 			for (i = 0; i < 4; i++, start_page = start_page >> 8)
 				*p++ = start_page;
 		}
 
 		if (start_seqno) {
-			*p++ = gds__dpb_old_start_seqno;
+			*p++ = gds_dpb_old_start_seqno;
 			*p++ = 4;
 			for (i = 0; i < 4; i++, start_seqno = start_seqno >> 8)
 				*p++ = start_seqno;
 		}
 
-		*p++ = gds__dpb_old_num_files;
+		*p++ = gds_dpb_old_num_files;
 		*p++ = 1;
 		*p++ = old_num_files;
 
 
-		*p++ = gds__dpb_old_start_file;
+		*p++ = gds_dpb_old_start_file;
 		*p++ = 1;
 		*p++ = start_file;
 
 		for (i = 0; i < old_num_files; i++) {
 			q = old_files[i];
 
-			*p++ = gds__dpb_old_file;
-			*p++ = strlen(q);
+			*p++ = gds_dpb_old_file;
+			*p++ = strlen((const char*) q);
 			for (; *q;)
 				*p++ = *q++;
 		}
@@ -661,8 +682,8 @@ static int start_dump( int argc, SCHAR ** argv)
 		dpb_length = p - dpb;
 
 		handle = NULL;
-		gds__attach_database(status_vector, 0, database, &handle, dpb_length, 
-							 dpb);
+		gds__attach_database(status_vector, 0, (SCHAR*) database, &handle, 
+							 dpb_length, (SCHAR*) dpb);
 
 		dump_id = (USHORT) status_vector[3];
 		start_page = status_vector[5];
@@ -674,8 +695,8 @@ static int start_dump( int argc, SCHAR ** argv)
 		 * fatal.  Can continue only in case of no_space on disk error
 		 */
 
-		if ((error = status_vector[1])
-			&& (status_vector[1] != gds__old_no_space)) {
+		if (status_vector[1] && (status_vector[1] != gds_old_no_space)) {
+			error = true;
 			gds__print_status(status_vector);
 
 			if (handle)
@@ -690,9 +711,9 @@ static int start_dump( int argc, SCHAR ** argv)
 		/* Check if error && no space */
 
 		if (sw_i && error) {
-			if (old_num_files = get_new_files(old_files, &fs)) {
+			if (old_num_files = get_new_files((SCHAR**)old_files, &fs)) {
 				old_file_size = fs;
-				error = FALSE;
+				error = false;
 
 				/* read more file names and continue */
 
@@ -705,7 +726,8 @@ static int start_dump( int argc, SCHAR ** argv)
 }
 
 
-static int start_enable( int argc, SCHAR ** argv)
+static bool start_enable(int argc,
+						 SCHAR ** argv)
 {
 /**************************************
  *
@@ -717,57 +739,62 @@ static int start_enable( int argc, SCHAR ** argv)
  *	Parse switches and do work.
  *
  **************************************/
-	SLONG *handle;
-	USHORT dpb_length, error;
+	why_hndl *handle;
+	USHORT dpb_length;
+	bool error;
 	UCHAR *database, string[3 * MAXPATHLEN + 512], *p, *q, *dpb;
 	UCHAR journal[JOURNAL_PATH_LENGTH + 1];
 	UCHAR db_name[JOURNAL_PATH_LENGTH + 1];
 	UCHAR backup[MAXPATHLEN];
 	ISC_STATUS_ARRAY status_vector;
-	USHORT sw_d, sw_v, sw_i;
-	USHORT a_flag, j_flag;
+	bool sw_d;
+	bool sw_v;
+	bool sw_i;
+	bool a_flag;
+	bool j_flag;
 	TEXT msg[128];
 
 /* Start by parsing switches */
 
-	sw_i = sw_d = sw_v = a_flag = j_flag = FALSE;
+	sw_i = sw_d = sw_v = a_flag = j_flag = false;
 
-	error = FALSE;
+	error = false;
 	database = NULL;
-	strcpy(journal, ".");
+	strcpy((char*)journal, ".");
 	argv++;
 
 	while (--argc > 0) {
 		if ((*argv)[0] != '-') {
 			if (database) {
-				GJRN_printf(12, database, NULL, NULL, NULL);	/* msg 12: database file name (%s) already specified */
+				GJRN_printf(12, (SCHAR*) database, NULL, NULL, NULL);
+				// msg 12: database file name (%s) already specified
 				Firebird::status_exception::raise(FINI_ERROR);
 			}
-			database = *argv++;
+			database = (UCHAR*) *argv++;
 			continue;
 		}
 
-		MISC_down_case(*argv++, string);
+		MISC_down_case((UCHAR*) *argv++, (UCHAR*) string);
 		switch (string[1]) {
 		case 'a':
 			if (--argc > 0) {
-				a_flag = TRUE;
-				strcpy(backup, *argv++);
+				a_flag = true;
+				strcpy((char*) backup, *argv++);
 			}
 			else
 				MISC_print_journal_syntax();
 			break;
 
 		case 'v':
-			sw_v = TRUE;
+			sw_v = true;
 			break;
 
 		case 'i':
-			sw_i = TRUE;
+			sw_i = true;
 			break;
 
 		case 'd':
-			sw_d = TRUE;
+			sw_d = true;
 			break;
 
 		case 'e':
@@ -775,8 +802,8 @@ static int start_enable( int argc, SCHAR ** argv)
 
 		case 'j':
 			if (--argc > 0) {
-				strcpy(journal, *argv++);
-				j_flag = TRUE;
+				strcpy((char*) journal, *argv++);
+				j_flag = true;
 			}
 			else
 				MISC_print_journal_syntax();
@@ -791,26 +818,27 @@ static int start_enable( int argc, SCHAR ** argv)
 	if (sw_i) {
 		if (!database) {
 			GJRN_get_msg(DB_PROMPT, msg, NULL, NULL, NULL);	/* Msg 219 enter database name: */
-			if (MISC_get_line(msg, db_name, sizeof(db_name))) {
+			if (MISC_get_line(msg, (SCHAR*) db_name, sizeof(db_name))) {
 				database = db_name;
 			}
 		}
 		if (!a_flag) {
 			GJRN_get_msg(BAK_DIR_PROMPT, msg, NULL, NULL, NULL);	/* Msg 220 enter backup directory name: */
-			if (MISC_get_line(msg, backup, sizeof(backup))) {
-				a_flag = TRUE;
+			if (MISC_get_line(msg, (SCHAR*) backup, sizeof(backup))) {
+				a_flag = true;
 			}
 		}
 		if (!j_flag) {
 			GJRN_get_msg(JRN_DIR_PROMPT, msg, NULL, NULL, NULL);	/* Msg 91 enter journal directory name: */
-			if (MISC_get_line(msg, journal, sizeof(journal))) {
-				j_flag = TRUE;
+			if (MISC_get_line(msg, (SCHAR*) journal, sizeof(journal))) {
+				j_flag = true;
 			}
 		}
 	}
 
 	if (!database) {
-		GJRN_printf(13, NULL, NULL, NULL, NULL);	/* msg 13: please retry, giving a database name */
+		GJRN_printf(13, NULL, NULL, NULL, NULL);
+		// msg 13: please retry, giving a database name
 		MISC_print_journal_syntax();
 	}
 
@@ -819,24 +847,25 @@ static int start_enable( int argc, SCHAR ** argv)
 
 	p = dpb = string;
 	*p++ = gds_dpb_version1;
-	*p++ = gds__dpb_enable_journal;
-	*p++ = strlen(journal);
+	*p++ = gds_dpb_enable_journal;
+	*p++ = strlen((const char*) journal);
 	for (q = journal; *q;)
 		*p++ = *q++;
 
 	if (a_flag) {
-		*p++ = gds__dpb_wal_backup_dir;
-		*p++ = strlen(backup);
+		*p++ = gds_dpb_wal_backup_dir;
+		*p++ = strlen((const char*) backup);
 		for (q = backup; *q;)
 			*p++ = *q++;
 	}
 	dpb_length = p - dpb;
 
 	handle = NULL;
-	gds__attach_database(status_vector, 0, database, &handle, dpb_length, dpb);
+	gds__attach_database(status_vector, 0, (SCHAR*) database, &handle, 
+						 dpb_length, (SCHAR*) dpb);
 
 	if (status_vector[1]) {
-		error = TRUE;
+		error = true;
 		gds__print_status(status_vector);
 	}
 

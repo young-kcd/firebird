@@ -53,7 +53,7 @@
 
 /* Define global switches */
 
-extern USHORT sw_service_gjrn;
+extern bool sw_service_gjrn;
 
 /* Define global console messages */
 

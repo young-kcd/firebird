@@ -45,6 +45,7 @@
 @"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\builds\misc\security.gbak localhost:%DB_PATH%\gen\dbs\security.fdb
 @"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\builds\misc\msg.gbak localhost:%DB_PATH%\gen\dbs\msg.fdb
 @"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\builds\misc\help.gbak localhost:%DB_PATH%\gen\dbs\help.fdb
+@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\builds\misc\journal.gbak localhost:%DB_PATH%\gen\dbs\journal.fdb
 @copy %ROOT_PATH%\gen\dbs\metadata.fdb %ROOT_PATH%\gen\dbs\yachts.lnk > nul
 
 @echo.

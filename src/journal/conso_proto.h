@@ -24,7 +24,7 @@
 #ifndef _JOURNAL_CONSO_PROTO_H_
 #define _JOURNAL_CONSO_PROTO_H_
 
-extern int CONSOLE_start_console(int, SCHAR **);
-extern int CONSOLE_test_server(SCHAR *);
+extern bool CONSOLE_start_console(int, SCHAR **);
+extern bool CONSOLE_test_server(SCHAR *);
 
 #endif /* _JOURNAL_CONSO_PROTO_H_ */

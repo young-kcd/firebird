@@ -30,10 +30,6 @@
 #include <string.h>
 #include "../jrd/common.h"
 
-#ifndef INCLUDE_FB_BLK
-#include "../include/old_fb_blk.h"
-#endif
-
 #include "../wal/wal.h"
 #include "../jrd/jrn.h"
 #include "../jrd/llio.h"
@@ -45,7 +41,7 @@ static void error_exit(ISC_STATUS *, JRN *, SLONG, SLONG, SLONG);
 static USHORT open_file(TEXT *, SLONG, USHORT, SLONG *);
 
 
-int CLIB_ROUTINE main( int argc,
+int CLIB_ROUTINE main(int argc,
 					  char *argv[])
 {
 /**************************************
@@ -68,7 +64,7 @@ int CLIB_ROUTINE main( int argc,
 	USHORT ret_val;
 	SLONG size;
 	SLONG db_id;
-	ISC_STATUS_ARRAY status;
+	ISC_STATUS *status;
 	JRN journal = NULL;
 
 	argv++;
@@ -111,10 +107,14 @@ int CLIB_ROUTINE main( int argc,
 	JRN_archive_end(status, &journal, db_id, file_id);
 
 	exit(FINI_OK);
+	// make compiler happy
+	return 0;
 }
 
 
-static USHORT copy_file( SLONG s_fd, SLONG d_fd, SLONG size)
+static USHORT copy_file(SLONG s_fd,
+						SLONG d_fd,
+						SLONG size)
 {
 /**************************************
  *
@@ -126,7 +126,7 @@ static USHORT copy_file( SLONG s_fd, SLONG d_fd, SLONG size)
  *	copy source file to destination file 
  *
  **************************************/
-	SCHAR buff[1024];
+	UCHAR buff[1024];
 	SLONG l, len, read, written;
 
 	len = size;
@@ -150,10 +150,11 @@ static USHORT copy_file( SLONG s_fd, SLONG d_fd, SLONG size)
 }
 
 
-static void error_exit(
-					   ISC_STATUS * status_vector,
+static void error_exit(ISC_STATUS * status_vector,
 					   JRN * ret_journal,
-					   SLONG db_id, SLONG file_id, SLONG error_code)
+					   SLONG db_id,
+					   SLONG file_id,
+					   SLONG error_code)
 {
 /**************************************
  *
@@ -170,9 +171,10 @@ static void error_exit(
 }
 
 
-static USHORT open_file(
-						TEXT * full_name,
-						SLONG p_offset, USHORT mode, SLONG * fd)
+static USHORT open_file(TEXT * full_name,
+						SLONG p_offset,
+						USHORT mode,
+						SLONG * fd)
 {
 /**************************************
  *

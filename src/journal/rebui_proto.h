@@ -24,6 +24,6 @@
 #ifndef _JOURNAL_REBUI_PROTO_H_
 #define _JOURNAL_REBUI_PROTO_H_
 
-extern int REBUILD_start_restore(int, SCHAR **);
+extern bool REBUILD_start_restore(int, SCHAR **);
 
 #endif /* _JOURNAL_REBUI_PROTO_H_ */
