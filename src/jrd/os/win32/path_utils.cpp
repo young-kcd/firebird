@@ -10,7 +10,16 @@ const char* PathUtils::up_dir_link = "..";
 class Win32DirItr : public PathUtils::dir_iterator
 {
 public:
-	Win32DirItr(const Firebird::PathName&);
+	Win32DirItr(MemoryPool& p, const Firebird::PathName& path)
+		: dir_iterator(p, path), dir(0), file(getPool()), done(false)
+	{
+		Win32DirInit(path);
+	}
+	Win32DirItr(const Firebird::PathName& path)
+		: dir_iterator(path), dir(0), file(getPool()), done(false)
+	{
+		Win32DirInit(path);
+	}
 	~Win32DirItr();
 	const PathUtils::dir_iterator& operator++();
 	const Firebird::PathName& operator*() { return file; }
@@ -21,10 +30,11 @@ private:
 	WIN32_FIND_DATA fd;
 	Firebird::PathName file;
 	bool done;
+
+	void Win32DirInit(const Firebird::PathName& path);
 };
 
-Win32DirItr::Win32DirItr(const Firebird::PathName& path)
-	: dir_iterator(path), dir(0), done(false)
+void Win32DirItr::Win32DirInit(const Firebird::PathName& path)
 {
 	Firebird::PathName dirPrefix2 = dirPrefix;
 
@@ -63,7 +73,7 @@ const PathUtils::dir_iterator& Win32DirItr::operator++()
 
 PathUtils::dir_iterator *PathUtils::newDirItr(MemoryPool& p, const Firebird::PathName& path)
 {
-	return FB_NEW(p) Win32DirItr(path);
+	return FB_NEW(p) Win32DirItr(p, path);
 }
 
 void PathUtils::splitLastComponent(Firebird::PathName& path, Firebird::PathName& file,
@@ -142,11 +152,6 @@ bool PathUtils::isRelative(const Firebird::PathName& path)
 bool PathUtils::isSymLink(const Firebird::PathName& path)
 {
 	return false;
-}
-
-bool PathUtils::comparePaths(const Firebird::PathName& path1, 
-							 const Firebird::PathName& path2) {
-	return stricmp(path1.c_str(), path2.c_str()) == 0;
 }
 
 bool PathUtils::canAccess(const Firebird::PathName& path, int mode) {

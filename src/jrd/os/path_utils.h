@@ -27,12 +27,16 @@ public:
 		subclass dir_iterator to create dir_iterator objects that function
 		correctly on the platform.
 	**/
-	class dir_iterator
+	class dir_iterator : protected Firebird::AutoStorage
 	{
 	public:
 		/// The constructor requires a string that is the path of the
 		///	directory being iterater.
-		dir_iterator(const Firebird::PathName& p) : dirPrefix(p) {}
+		/// dir_iterator may be located on stack, therefore use AutoStorage
+		dir_iterator(MemoryPool& p, const Firebird::PathName& dir) 
+			: AutoStorage(p), dirPrefix(getPool(), dir) {}
+		dir_iterator(const Firebird::PathName& dir) 
+			: AutoStorage(), dirPrefix(getPool(), dir) {}
 		
 		/// destructor provided for memory cleanup.
 		virtual ~dir_iterator() {}
@@ -84,12 +88,6 @@ public:
 		by this process. mode - like in ACCESS(2).
 	**/
 	static bool canAccess(const Firebird::PathName& path, int mode);
-	
-	/** comparePaths returns true if two given paths
-		point to the same place in FileSystem.
-	**/
-	static bool comparePaths(const Firebird::PathName& path1, 
-									const Firebird::PathName& path2);
 	
 	/** Concatenates the two paths given in the second and third parameters,
 		and writes the resulting path into the first parameter.  The
