@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.23 2003-09-12 16:35:38 brodsom Exp $
+//	$Id: sql.cpp,v 1.24 2003-09-13 12:23:31 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -2984,7 +2984,7 @@ static ACT act_fetch(void)
 			if (MATCH(KW_DESCRIPTOR))
 				statement->dyn_sqlda = PAR_native_value(false, false);
 			else
-				statement->dyn_using = (GPRE_NOD) SQE_list(SQE_variable, 0, false);
+				statement->dyn_using = (GPRE_NOD) SQE_list(SQE_variable, NULL, false);
 			if (statement->dyn_using)
 				PAR_error("Using host-variable list not supported.");
 		}
@@ -5962,7 +5962,7 @@ static bool par_using( DYN statement)
 	if (MATCH(KW_DESCRIPTOR))
 		statement->dyn_sqlda = PAR_native_value(false, false);
 	else
-		statement->dyn_using = (GPRE_NOD) SQE_list(SQE_variable, 0, false);
+		statement->dyn_using = (GPRE_NOD) SQE_list(SQE_variable, NULL, false);
 
 	return true;
 }

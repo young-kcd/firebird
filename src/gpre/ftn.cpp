@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.25 2003-09-11 02:13:45 brodsom Exp $
+//	$Id: ftn.cpp,v 1.26 2003-09-13 12:23:31 brodsom Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -863,11 +863,10 @@ static void gen_based( ACT action)
 {
 	BAS based_on;
 	GPRE_FLD field;
-	TEXT s[64], *variable, first_flag;
+	TEXT s[64], *variable;
 	USHORT datatype;
 	SLONG length;
 	DIM dimension;
-	bool last;
 
 	based_on = (BAS) action->act_object;
 	field = based_on->bas_field;
@@ -920,17 +919,16 @@ static void gen_based( ACT action)
 
 //  print the first variable, then precede the rest with commas 
 
-	first_flag = TRUE;
+	bool first_flag_l = true;
 
 	while (based_on->bas_variables) {
 		variable = (TEXT *) POP(&based_on->bas_variables);
-		if (!first_flag)
+		if (!first_flag_l)
 			ib_fprintf(out_file, ",\n%s", CONTINUE);
 		ib_fprintf(out_file, "%s", variable);
-		first_flag = FALSE;
+		first_flag_l = false;
 		if (field->fld_array_info && !(based_on->bas_flags & BAS_segment)) {
 			/*  Print out the dimension part of the declaration  */
-			last = false;
 			ib_fprintf(out_file, "(");
 
 			for (dimension = field->fld_array_info->ary_dimension; dimension;
@@ -3118,14 +3116,17 @@ static void gen_request_decls( GPRE_REQ request)
 
 	for (port = request->req_ports; port; port = port->por_next)
 		for (reference = port->por_references; reference;
-			 reference = reference->ref_next) if (reference->ref_sdl)
+			 reference = reference->ref_next)
 		{
-			length = (reference->ref_sdl_length +
-					 (sizeof(SLONG) - 1)) / sizeof(SLONG);
-			ib_fprintf(out_file,
-					   "%sINTEGER*4      isc_%d(%d)     %s{ request SDL }\n",
-					   COLUMN, reference->ref_sdl_ident, length,
-					   INLINE_COMMENT);
+			if (reference->ref_sdl)
+			{
+				length = (reference->ref_sdl_length +
+						 (sizeof(SLONG) - 1)) / sizeof(SLONG);
+				ib_fprintf(out_file,
+						   "%sINTEGER*4      isc_%d(%d)     %s{ request SDL }\n",
+						   COLUMN, reference->ref_sdl_ident, length,
+						   INLINE_COMMENT);
+			}
 		}
 
 //  Print out any blob parameter block variable declarations required 

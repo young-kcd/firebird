@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: msc.cpp,v 1.11 2003-09-11 02:13:45 brodsom Exp $
+//	$Id: msc.cpp,v 1.12 2003-09-13 12:23:31 brodsom Exp $
 //
 //  
 //  
@@ -348,9 +348,9 @@ bool MSC_member(GPRE_NOD object, LLS stack)
 
 	for (; stack; stack = stack->lls_next)
 		if (stack->lls_object == object)
-			return TRUE;
+			return true;
 
-	return FALSE;
+	return false;
 }
 #endif
 

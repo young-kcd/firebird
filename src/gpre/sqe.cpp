@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sqe.cpp,v 1.21 2003-09-12 16:35:39 brodsom Exp $
+//	$Id: sqe.cpp,v 1.22 2003-09-13 12:23:31 brodsom Exp $
 //
 #include "firebird.h"
 #include <stdio.h>
@@ -276,20 +276,18 @@ PAR_error("count of input values doesn't match count of parameters");
 //  at the same scoping level in this query 
 
 	for (conflict = request->req_contexts; conflict;
-		 conflict = conflict->ctx_next) if ((symbol = conflict->ctx_symbol)
-											&& (symbol->sym_type ==
-												SYM_relation
-												|| symbol->sym_type ==
-												SYM_context
-												|| symbol->sym_type ==
-												SYM_procedure)
-											&&
-											(!strcmp
-											 (symbol->sym_string,
-											  token.tok_string))
-											&& (conflict->ctx_scope_level ==
-												request->
-												req_scope_level)) break;
+		 conflict = conflict->ctx_next)
+	{
+		if ((symbol = conflict->ctx_symbol) 
+			&& (symbol->sym_type == SYM_relation
+				|| symbol->sym_type == SYM_context
+				|| symbol->sym_type == SYM_procedure)
+			&& (!strcmp(symbol->sym_string, token.tok_string))
+			&& (conflict->ctx_scope_level == request-> req_scope_level))
+		{
+			break;
+		}
+	}
 
 	if (conflict) {
 		SCHAR *error_type;
@@ -616,10 +614,11 @@ GPRE_NOD SQE_field(GPRE_REQ request,
 
 	SQL_resolve_identifier("<Column Name>", s);
 	for (context = request->req_contexts; context;
-		 context = context->ctx_next) if (reference->ref_field =
-										  MET_context_field(context,
-															token.
-															tok_string)) {
+		 context = context->ctx_next)
+	{
+		if (reference->ref_field = MET_context_field(context,
+													 token.tok_string))
+		{
 			if (SQL_DIALECT_V5 == sw_sql_dialect) {
 				USHORT field_dtype;
 				field_dtype = reference->ref_field->fld_dtype;
@@ -649,6 +648,7 @@ GPRE_NOD SQE_field(GPRE_REQ request,
 				return post_map(node, request->req_map);
 			return node;
 		}
+	}
 
 	SYNTAX_ERROR("<column name>");
 	return NULL;				/* silence compiler */
@@ -676,7 +676,7 @@ GPRE_NOD SQE_list(pfn_SQE_list_cb routine,
 
 	do {
 		count++;
-		PUSH((*routine) (request, aster_ok, 0, 0), &stack);
+		PUSH((*routine) (request, aster_ok, NULL, NULL), &stack);
 	}
 	while (MATCH(KW_COMMA));
 
@@ -1061,10 +1061,9 @@ GPRE_RSE SQE_select(GPRE_REQ request,
 
 //  "Look for ... the UNION label ... " 
 	while (MATCH(KW_UNION)) {
-		bool union_all = false;
 
 		have_union = true;
-		union_all = MATCH(KW_ALL);
+		bool union_all = MATCH(KW_ALL);
 		if (!MATCH(KW_SELECT))
 			SYNTAX_ERROR("SELECT");
 
