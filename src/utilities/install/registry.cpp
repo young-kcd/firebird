@@ -35,7 +35,7 @@
 #include "../utilities/install/regis_proto.h"
 #include "../utilities/install/registry.h"
 
-static USHORT remove_subkeys(HKEY, USHORT, USHORT(*)(SLONG, TEXT *, HKEY));
+static USHORT remove_subkeys(HKEY, bool, USHORT(*)(SLONG, TEXT *, HKEY));
 
 USHORT REGISTRY_install(HKEY hkey_node,
 						TEXT * directory, USHORT(*err_handler)(SLONG, TEXT *, HKEY))
@@ -81,7 +81,7 @@ USHORT REGISTRY_install(HKEY hkey_node,
 						  (DWORD) sizeof(GDS_VERSION))) != ERROR_SUCCESS) {
 		(*err_handler) (status, "RegSetValueEx", hkey_kit);
 		if (disp == REG_CREATED_NEW_KEY)
-			REGISTRY_remove(hkey_node, TRUE, err_handler);
+			REGISTRY_remove(hkey_node, true, err_handler);
 		return FB_FAILURE;
 	}
 
@@ -99,7 +99,7 @@ USHORT REGISTRY_install(HKEY hkey_node,
 								(DWORD)(len + 1))) != ERROR_SUCCESS) {
 	    (*err_handler) (status, "RegSetValueEx", hkey_kit);
     	if (disp == REG_CREATED_NEW_KEY)
-			REGISTRY_remove(hkey_node, TRUE, err_handler);
+			REGISTRY_remove(hkey_node, true, err_handler);
     	return FB_FAILURE;
     }
 
@@ -108,7 +108,7 @@ USHORT REGISTRY_install(HKEY hkey_node,
 								1)) != ERROR_SUCCESS) {
 	    (*err_handler) (status, "RegSetValueEx", hkey_kit);
     	if (disp == REG_CREATED_NEW_KEY)
-			REGISTRY_remove(hkey_node, TRUE, err_handler);
+			REGISTRY_remove(hkey_node, true, err_handler);
     	return FB_FAILURE;
     }
 */
@@ -119,7 +119,7 @@ USHORT REGISTRY_install(HKEY hkey_node,
 
 
 USHORT REGISTRY_remove(HKEY hkey_node,
-					   USHORT silent_flag, USHORT(*err_handler)(SLONG, TEXT *, HKEY))
+					   bool silent_flag, USHORT(*err_handler)(SLONG, TEXT *, HKEY))
 {
 /**************************************
  *
@@ -164,7 +164,7 @@ USHORT REGISTRY_remove(HKEY hkey_node,
 
 static USHORT remove_subkeys(
 							 HKEY hkey,
-							 USHORT silent_flag, USHORT(*err_handler)(SLONG, TEXT *, HKEY))
+							 bool silent_flag, USHORT(*err_handler)(SLONG, TEXT *, HKEY))
 {
 /**************************************
  *

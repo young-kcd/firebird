@@ -57,13 +57,14 @@ int CLIB_ROUTINE main( int argc, char **argv)
  *
  **************************************/
 	TEXT **end, *p, *q, *cmd, *directory;
-	USHORT sw_command, sw_version;
+	USHORT sw_command;
+	bool sw_version;
 	USHORT i, ret;
 	HKEY hkey_node;
 
 	directory = NULL;
 	sw_command = COMMAND_NONE;
-	sw_version = FALSE;
+	sw_version = false;
 
 	end = argv + argc;
 	while (++argv < end)
@@ -85,7 +86,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			p = *argv + 1;
 			switch (UPPER(*p)) {
 			case 'Z':
-				sw_version = TRUE;
+				sw_version = true;
 				break;
 
 			default:
@@ -115,7 +116,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		break;
 
 	case COMMAND_REMOVE:
-		ret = REGISTRY_remove(hkey_node, FALSE, reg_error);
+		ret = REGISTRY_remove(hkey_node, false, reg_error);
 		if (ret != FB_SUCCESS)
 			ib_printf("Firebird has not been deleted from the registry.\n");
 		else

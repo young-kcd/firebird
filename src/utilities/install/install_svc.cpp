@@ -65,13 +65,14 @@ int CLIB_ROUTINE main( int argc, char **argv)
  *
  **************************************/
 	TEXT **end, *p, *q, *cmd, *directory;
-	USHORT sw_command, sw_version, sw_startup, sw_mode, sw_guardian, sw_arch;
+	USHORT sw_command, sw_startup, sw_mode, sw_guardian, sw_arch;
+	bool sw_version;
 	USHORT i, status;
 	SC_HANDLE manager, service;
 
 	directory = NULL;
 	sw_command = COMMAND_NONE;
-	sw_version = FALSE;
+	sw_version = false;
 	sw_startup = STARTUP_DEMAND;
 	sw_mode = DEFAULT_CLIENT;
 	sw_guardian = NO_GUARDIAN;
@@ -126,7 +127,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				break;
 
 			case 'Z':
-				sw_version = TRUE;
+				sw_version = true;
 				break;
 
 			case 'G':
