@@ -124,7 +124,7 @@ DATABASE DB = COMPILETIME "yachts.lnk";
 
 //  Print lengths of numeric values 
 
-const int MAXCHARSET_LENGTH	= 32;	// CHARSET names
+const size_t MAXCHARSET_LENGTH	= 32;	// CHARSET names
 const int SHORT_LEN		= 7;	// NUMERIC (4,2) = -327.68
 const int LONG_LEN		= 12;	// NUMERIC (9,2) = -21474836.48
 const int INT64_LEN		= 21;	// NUMERIC(18,2) = -92233720368547758.08
