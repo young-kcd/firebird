@@ -680,7 +680,7 @@ typedef struct act {
 
 #define ACT_LEN         sizeof (struct act)
 
-#define MAX_LENGTH	-1
+#define MAX_LENGTH	-1UL
 
 /* This structure has been cloned from spit.c */
 

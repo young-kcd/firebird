@@ -30,7 +30,7 @@
 
 DATABASE DB = "msg.gdb";
 
-static int explicit_print(TEXT *);
+static void explicit_print(TEXT *);
 
 
 int main( int argc, char **argv)
@@ -137,7 +137,7 @@ int main( int argc, char **argv)
 }
 
 
-static int explicit_print( TEXT * string)
+static void explicit_print( TEXT * string)
 {
 /**************************************
  *
