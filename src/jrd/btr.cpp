@@ -459,11 +459,11 @@ void BTR_evaluate(TDBB tdbb, IRB retrieval, SBM * bitmap)
 		pointer = BTreeNode::readNode(&node, pointer, flags, true);
 		while (true) {
 
-			if (BTreeNode::isEndLevel(&node, true)) {
+			if (node.isEndLevel) {
 				break;
 			}
 
-			if (!BTreeNode::isEndBucket(&node, true)) {
+			if (!node.isEndBucket) {
 				SBM_set(tdbb, bitmap, node.recordNumber);
 				pointer = BTreeNode::readNode(&node, pointer, flags, true);
 				continue;
@@ -997,8 +997,7 @@ UCHAR *BTR_last_node(btree_page* page, jrd_exp* expanded_page, BTX * expanded_no
 	IndexNode node;
 	while (true) {
 		pointer = BTR_previousNode(&node, pointer, flags, &enode);
-		if (node.recordNumber != END_BUCKET && 
-			node.recordNumber != END_LEVEL) {
+		if (!node.isEndBucket && !node.isEndLevel) {
 			if (expanded_node) {
 				*expanded_node = enode;
 			}
@@ -1347,9 +1346,7 @@ void BTR_remove(TDBB tdbb, WIN * root_window, IIB * insertion)
 
 		const SLONG number = pageNode.pageNumber;
 		pointer = BTreeNode::readNode(&pageNode, pointer, flags, false);
-		if (!(BTreeNode::isEndBucket(&pageNode, false) ||
-			BTreeNode::isEndLevel(&pageNode, false))) 
-		{
+		if (!(pageNode.isEndBucket || pageNode.isEndLevel)) {
 			CCH_RELEASE(tdbb, &window);
 			CCH_RELEASE(tdbb, root_window);
 			return;
@@ -1558,9 +1555,7 @@ void BTR_selectivity(TDBB tdbb, jrd_rel* relation, USHORT id, SelectivityList& s
 	while (page) {
 		pointer = BTreeNode::readNode(&node, pointer, flags, true);
 		while (true) {
-			if (BTreeNode::isEndBucket(&node, true) ||
-				BTreeNode::isEndLevel(&node, true) ) 
-			{
+			if (node.isEndBucket || node.isEndLevel) {
 				break;
 			}
 			++nodes;
@@ -1654,7 +1649,7 @@ void BTR_selectivity(TDBB tdbb, jrd_rel* relation, USHORT id, SelectivityList& s
 			pointer = BTreeNode::readNode(&node, pointer, flags, true);
 		}
 
-		if (node.recordNumber == END_LEVEL || !(page = bucket->btr_sibling))
+		if (node.isEndLevel || !(page = bucket->btr_sibling))
 		{
 			break;
 		}
@@ -2387,17 +2382,13 @@ static CONTENTS delete_node(TDBB tdbb, WIN *window, UCHAR *pointer)
 	//bool leafPage = (page->btr_level == 0);
 	//SCHAR flags = page->btr_header.pag_flags;
 	pointer = BTreeNode::readNode(&node, pointer, flags, leafPage);
-	if (BTreeNode::isEndBucket(&node, leafPage) ||
-		BTreeNode::isEndLevel(&node, leafPage)) 
-	{
+	if (node.isEndBucket || node.isEndLevel) {
 		return contents_empty;
 	}
 
 	// check to see if there is just one node
 	pointer = BTreeNode::readNode(&node, pointer, flags, leafPage);
-	if (BTreeNode::isEndBucket(&node, leafPage) ||
-		BTreeNode::isEndLevel(&node, leafPage)) 
-	{
+	if (node.isEndBucket ||	node.isEndLevel) {
 		return contents_single;
 	}
 
@@ -3410,7 +3401,7 @@ static UCHAR *find_node_start_point(btree_page* bucket, KEY * key, UCHAR * value
 			// prefix of the current node is less than the running prefix, the 
 			// node must have a value greater than the key, so it is the insertion
 			// point.
-			if (BTreeNode::isEndLevel(&node, leafPage) || node.prefix < prefix) {
+			if (node.isEndLevel || node.prefix < prefix) {
 				if (return_value) {
 					*return_value = prefix;
 				}
@@ -3453,7 +3444,7 @@ static UCHAR *find_node_start_point(btree_page* bucket, KEY * key, UCHAR * value
 				prefix = (USHORT)(p - key->key_data);
 			}
 
-			if (BTreeNode::isEndBucket(&node, leafPage)) {
+			if (node.isEndBucket) {
 				if (pointer_by_marker) {
 					goto done1;
 				}
@@ -3675,8 +3666,8 @@ static UCHAR* find_area_start_point(btree_page* bucket, const KEY* key, UCHAR * 
 								if (node.length != 0 ||
 									node.prefix != prevJumpNode.prefix + prevJumpNode.length ||
 									jumpNode.prefix != prevJumpNode.prefix + prevJumpNode.length ||
-									BTreeNode::isEndBucket(&node, leafPage) ||
-									BTreeNode::isEndLevel(&node, leafPage))
+									node.isEndBucket ||
+									node.isEndLevel)
 								{
 									break;
 								}
@@ -3734,8 +3725,8 @@ static UCHAR* find_area_start_point(btree_page* bucket, const KEY* key, UCHAR * 
 								if (node.length != 0 ||
 									node.prefix != prevJumpNode.prefix + prevJumpNode.length ||
 									jumpNode.prefix != prevJumpNode.prefix + prevJumpNode.length ||
-									BTreeNode::isEndBucket(&node, leafPage) ||
-									BTreeNode::isEndLevel(&node, leafPage))
+									node.isEndBucket ||
+									node.isEndLevel)
 								{
 									break;
 								}
@@ -3830,14 +3821,12 @@ static SLONG find_page(btree_page* bucket, const KEY* key, UCHAR idx_flags, SLON
 		IndexNode node;
 		pointer = BTreeNode::readNode(&node, pointer, flags, leafPage);
 
-		if (BTreeNode::isEndBucket(&node, leafPage) ||
-			BTreeNode::isEndLevel(&node, leafPage))
-		{
+		if (node.isEndBucket || node.isEndLevel) {
 			pointer = BTreeNode::getPointerFirstNode(bucket);
 			pointer = BTreeNode::readNode(&node, pointer, flags, leafPage);
 		}
 
-		if (BTreeNode::isEndLevel(&node, leafPage)) {
+		if (node.isEndLevel) {
 			BUGCHECK(206);	// msg 206 exceeded index level
 		}
 
@@ -3862,7 +3851,7 @@ static SLONG find_page(btree_page* bucket, const KEY* key, UCHAR idx_flags, SLON
 			// prefix of the current node is less than the running prefix, its
 			// node must have a value greater than the key, which is the fb_insertion
 			// point.
-			if (BTreeNode::isEndLevel(&node, leafPage) || node.prefix < prefix) {
+			if (node.isEndLevel || node.prefix < prefix) {
 				return previousNumber;
 			}
 
@@ -3926,7 +3915,7 @@ static SLONG find_page(btree_page* bucket, const KEY* key, UCHAR idx_flags, SLON
 
 			// If this is the end of bucket, return node.  Somebody else can
 			// deal with this
-			if (BTreeNode::isEndBucket(&node, leafPage)) {
+			if (node.isEndBucket) {
 				return node.pageNumber;
 			}
 
@@ -4214,7 +4203,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 	IndexNode parentNode;
 	while (true) {
 		parentPointer = BTreeNode::readNode(&parentNode, parentPointer, flags, false);
-		if (BTreeNode::isEndBucket(&parentNode, false)) {
+		if (parentNode.isEndBucket) {
 			parent_page = (btree_page*) CCH_HANDOFF(tdbb, &parent_window,
 				parent_page->btr_sibling, LCK_write, pag_index);
 			parentPointer = BTreeNode::getPointerFirstNode(parent_page);
@@ -4222,7 +4211,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 		}
 
 		if (parentNode.pageNumber == window->win_page || 
-			BTreeNode::isEndLevel(&parentNode, false)) 
+			parentNode.isEndLevel) 
 		{
 			break;
 		}
@@ -4230,7 +4219,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 	}
 
 	// we should always find the node, but just in case we don't, bow out gracefully
-	if (BTreeNode::isEndLevel(&parentNode, false)) {
+	if (parentNode.isEndLevel) {
 		CCH_RELEASE(tdbb, &left_window);
 		if (right_page) {
 			CCH_RELEASE(tdbb, &right_window);
@@ -4296,9 +4285,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 			BTreeNode::readNode(&leftNode, 
 				(UCHAR*)left_page + jumpNode.offset, flags, leafPage);
 
-			if (!(BTreeNode::isEndBucket(&leftNode, leafPage) ||
-				BTreeNode::isEndLevel(&leftNode, leafPage))) 
-			{
+			if (!(leftNode.isEndBucket || leftNode.isEndLevel)) {
 				if (jumpNode.length) {
 					memcpy(lastKey.key_data + jumpNode.prefix, jumpNode.data,
 						jumpNode.length);
@@ -4315,9 +4302,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 	while (true) {
 		leftPointer = BTreeNode::readNode(&leftNode, leftPointer, flags, leafPage);
 		// If it isn't a recordnumber were done
-		if (BTreeNode::isEndBucket(&leftNode, leafPage) ||
-			BTreeNode::isEndLevel(&leftNode, leafPage)) 
-		{
+		if (leftNode.isEndBucket || leftNode.isEndLevel) {
 			break;
 		}
 		// Save data
@@ -4614,17 +4599,13 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 		parentPointer = BTreeNode::getPointerFirstNode(parent_page);
 		IndexNode parentNode;
 		parentPointer = BTreeNode::readNode(&parentNode, parentPointer, flags, false);
-		if (BTreeNode::isEndBucket(&parentNode, false) ||
-			BTreeNode::isEndLevel(&parentNode, false)) 
-		{
+		if (parentNode.isEndBucket || parentNode.isEndLevel) {
 			return contents_empty;
 		}
 
 		// check whether there is just one node
 		parentPointer = BTreeNode::readNode(&parentNode, parentPointer, flags, false);
-		if (BTreeNode::isEndBucket(&parentNode, false) ||
-			BTreeNode::isEndLevel(&parentNode, false)) 
-		{
+		if (parentNode.isEndBucket || parentNode.isEndLevel) {
 			return contents_single;
 		}
 
@@ -4693,9 +4674,7 @@ static void generate_jump_nodes(TDBB tdbb, btree_page* page, jumpNodeList* jumpN
 		IndexNode node;
 		while (pointer < endpoint) {
 			pointer = BTreeNode::readNode(&node, pointer, flags, leafPage);
-			if (BTreeNode::isEndBucket(&node, leafPage) ||
-				BTreeNode::isEndLevel(&node, leafPage))
-			{
+			if (node.isEndBucket || node.isEndLevel) {
 				break;
 			}
 			if (node.length) {
@@ -4883,7 +4862,7 @@ static SLONG insert_node(TDBB tdbb,
 		}
 		else {
 			// We have a equal node, so find the correct insertion point.
-			if (BTreeNode::isEndBucket(&beforeInsertNode, leafPage)) {
+			if (beforeInsertNode.isEndBucket) {
 				if (allRecordNumber) {
 					break;
 				}
@@ -4891,7 +4870,7 @@ static SLONG insert_node(TDBB tdbb,
 					return NO_VALUE;
 				}
 			}
-			if (BTreeNode::isEndLevel(&beforeInsertNode, leafPage)) {
+			if (beforeInsertNode.isEndLevel) {
 				break;
 			}
 			if (leafPage && unique) {
@@ -4983,8 +4962,7 @@ static SLONG insert_node(TDBB tdbb,
 	newBucket->btr_length += delta;
 
 	// figure out whether this node was inserted at the end of the page
-	bool endOfPage = BTreeNode::isEndBucket(&beforeInsertNode, leafPage) ||
-		BTreeNode::isEndLevel(&beforeInsertNode, leafPage);
+	bool endOfPage = (beforeInsertNode.isEndBucket || beforeInsertNode.isEndLevel);
 
 	// Initialize variables needed for generating jump information
 	bool useJumpInfo = (flags & btr_jump_info);
@@ -5623,7 +5601,7 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 			break;
 		}
 
-		if (BTreeNode::isEndLevel(&node, true)) {
+		if (node.isEndLevel) {
 #ifdef DEBUG_BTR
 			CCH_RELEASE(tdbb, window);
 			CORRUPT(204);	// msg 204 index inconsistent
@@ -5632,7 +5610,7 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 		}
 
 		// go to the next node and check that it is a duplicate
-		if (!BTreeNode::isEndBucket(&node, true)) {
+		if (!node.isEndBucket) {
 			pointer = BTreeNode::readNode(&node, pointer, flags, true);
 			if (node.length != 0 || node.prefix != key->key_length)
 			{
@@ -5749,7 +5727,7 @@ static bool scan(TDBB tdbb, UCHAR *pointer, SBM *bitmap, USHORT to_segment,
 		pointer = BTreeNode::readNode(&node, pointer, page_flags, true);
 		while (true) {
 
-			if (BTreeNode::isEndLevel(&node, true)) {
+			if (node.isEndLevel) {
 				return false;
 			}
 
@@ -5811,7 +5789,7 @@ static bool scan(TDBB tdbb, UCHAR *pointer, SBM *bitmap, USHORT to_segment,
 				}
 			}
 
-			if (BTreeNode::isEndBucket(&node, true)) {
+			if (node.isEndBucket) {
 				// Our caller will fetch the next page
 				return true;
 			}

@@ -216,6 +216,8 @@ struct IndexNode
 	SLONG pageNumber;	// page number
 	UCHAR* data;		// Data can be read from here
 	SLONG recordNumber;	// record number
+	bool isEndBucket;
+	bool isEndLevel;
 };
 
 struct IndexJumpNode

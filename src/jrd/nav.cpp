@@ -623,11 +623,11 @@ bool NAV_get_record(TDBB tdbb,
 			// it, do a simple handoff to the right sibling page.
 #endif
 		{
-			if (number == END_LEVEL) {
+			if (node.isEndLevel) {
 				impure->irsb_flags |= irsb_eof;
 				break;
 			}
-			if (number == END_BUCKET) {
+			if (node.isEndBucket) {
 				page = (btree_page*) window.win_buffer;
 				page = (btree_page*) CCH_HANDOFF(tdbb, &window, page->btr_sibling,
 					LCK_read, pag_index);
@@ -1409,11 +1409,11 @@ static bool find_saved_node(Rsb* rsb, IRSB_NAV impure,
 
 			pointer = BTreeNode::readNode(&node, pointer, flags, true);
 
-			if (node.recordNumber == END_LEVEL) {
+			if (node.isEndLevel) {
 				*return_pointer = node.nodePointer;
 				return false;
 			}
-			if (node.recordNumber == END_BUCKET) {
+			if (node.isEndBucket) {
 				page = (btree_page*) CCH_HANDOFF(tdbb, window, page->btr_sibling,
 					LCK_read, pag_index);
 				break;

@@ -1495,7 +1495,7 @@ static RTN walk_index(TDBB tdbb,
 			}
 
 			if (useAllRecordNumbers && (node.recordNumber >= 0) &&
-				!firstNode && !BTreeNode::isEndLevel(&node, leafPage))
+				!firstNode && !node.isEndLevel)
 			{
 				// If this node is equal to the previous one and it's
 				// not a MARKER, record number should be same or higher.
@@ -1522,9 +1522,7 @@ static RTN walk_index(TDBB tdbb,
 			}
 			key.key_length = p - key.key_data;
 
-			if (BTreeNode::isEndBucket(&node, leafPage) ||
-				BTreeNode::isEndLevel(&node, leafPage)) 
-			{
+			if (node.isEndBucket ||	node.isEndLevel) {
 				break;
 			}
 
@@ -1569,8 +1567,7 @@ static RTN walk_index(TDBB tdbb,
 				// Only check record-number if this isn't the first page in 
 				// the level and it isn't a MARKER.
 				if (useAllRecordNumbers && down_page->btr_left_sibling &&
-					!(BTreeNode::isEndBucket(&downNode, downLeafPage) ||
-					  BTreeNode::isEndLevel(&downNode, downLeafPage))) 
+					!(downNode.isEndBucket || downNode.isEndLevel)) 
 				{
 					// Check record number if key is equal with node on
 					// pointer page. In that case record number on page 
@@ -1592,17 +1589,14 @@ static RTN walk_index(TDBB tdbb,
 				BTreeNode::readNode(&downNode, pointer, flags, leafPage);
 				next_number = downNode.pageNumber;
 
-				if (!(BTreeNode::isEndBucket(&downNode, leafPage) ||
-					  BTreeNode::isEndLevel(&downNode, leafPage)) && 
+				if (!(downNode.isEndBucket || downNode.isEndLevel) && 
 					(next_number != down_page->btr_sibling)) 
 				{
 					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
 							id + 1, next);
 				}
 
-				if (BTreeNode::isEndLevel(&downNode, leafPage) && 
-					down_page->btr_sibling) 
-				{
+				if (downNode.isEndLevel && down_page->btr_sibling) {
 					corrupt(tdbb, control, VAL_INDEX_ORPHAN_CHILD, relation,
 							id + 1, next);
 				}

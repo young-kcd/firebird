@@ -79,9 +79,6 @@ namespace BTreeNode {
 	USHORT getNodeSize(const IndexNode* indexNode, SCHAR flags, bool leafNode = true);
 	UCHAR* getPointerFirstNode(btree_page* page, IndexJumpInfo* jumpInfo = NULL);
 
-	bool isEndBucket(const IndexNode* indexNode, bool leafNode = true);
-	bool isEndLevel(const IndexNode* indexNode, bool leafNode = true);
-
 	bool keyEquality(USHORT length, const UCHAR* data, const IndexNode* indexNode);
 
 #ifdef SCROLLABLE_CURSORS

@@ -1180,9 +1180,7 @@ static void analyze_index( dba_rel* relation, dba_idx* index)
 			pointer = BTreeNode::readNode(&node, pointer, 
 				bucket->btr_header.pag_flags, true);
 
-			if (BTreeNode::isEndBucket(&node, true) || 
-				BTreeNode::isEndLevel(&node, true)) 
-			{
+			if (node.isEndBucket || node.isEndLevel) {
 				break;
 			}
 
@@ -1235,7 +1233,7 @@ static void analyze_index( dba_rel* relation, dba_idx* index)
 		}
 		++index->idx_fill_distribution[n];
 
-		if (BTreeNode::isEndLevel(&node, true)) {
+		if (node.isEndLevel) {
 			break;
 		}
 		number = page;

@@ -90,7 +90,7 @@ SLONG findPageInDuplicates(const btree_page* page, UCHAR* pointer,
 		// correct node is found.
 		// If this is an end bucket marker then return
 		// the previous passed page number.
-		if (BTreeNode::isEndBucket(&node, leafPage)) {
+		if (node.isEndBucket) {
 			return previousNumber;
 		}
 		if (findRecordNumber < node.recordNumber) {
@@ -111,7 +111,7 @@ SLONG findPageInDuplicates(const btree_page* page, UCHAR* pointer,
 		pointer = BTreeNode::readNode(&node, pointer, flags, leafPage);
 		// We're done if end level marker is reached or this 
 		// isn't a equal node anymore.
-		if (BTreeNode::isEndLevel(&node, leafPage) || 
+		if ((node.isEndLevel) || 
 			(node.length != 0) || 
 			(node.prefix != (previousNode.length + previousNode.prefix)))
 		{
@@ -139,17 +139,26 @@ USHORT getJumpNodeSize(const IndexJumpNode* jumpNode, SCHAR flags)
 	if (flags & btr_large_keys) {
 		// Size needed for prefix
 		USHORT number = jumpNode->prefix;
-		result++;
-		number >>= 7;
-		if (number > 0) {
-			result++;
+		if (number & 0xC000) {
+			result += 3;
 		}
+		else if (number & 0xFF80) {
+			result += 2;
+		}
+		else {
+			result += 1;
+		}
+
 		// Size needed for length
 		number = jumpNode->length;
-		result++;
-		number >>= 7;
-		if (number > 0) {
-			result++;
+		if (number & 0xC000) {
+			result += 3;
+		}
+		else if (number & 0xFF80) {
+			result += 2;
+		}
+		else {
+			result += 1;
 		}
 	}
 	else {
@@ -257,36 +266,26 @@ USHORT getNodeSize(const IndexNode* indexNode, SCHAR flags, bool leafNode)
 		if (internalFlags != 3) {
 			// Size needed for prefix  
 			number = indexNode->prefix;
-			UCHAR tmp = (number & 0x7F);
-			number >>= 7;
-			if (number > 0) {
-				tmp |= 0x80;
+			if (number & 0xFFFFC000) {
+				result += 3;
 			}
-			result++; // 7
-			if (tmp & 0x80) {
-				tmp = (number & 0x7F);
-				number >>= 7;
-				if (number > 0) {
-					tmp |= 0x80;
-				}
-				result++; // 14
+			else if (number & 0xFFFFFF80) {
+				result += 2;
+			}
+			else {
+				result += 1;
 			}
 
 			// Size needed for length 
 			number = indexNode->length;
-			tmp = (number & 0x7F);
-			number >>= 7;
-			if (number > 0) {
-				tmp |= 0x80;
+			if (number & 0xFFFFC000) {
+				result += 3;
 			}
-			result++; // 7
-			if (tmp & 0x80) {
-				tmp = (number & 0x7F);
-				number >>= 7;
-				if (number > 0) {
-					tmp |= 0x80;
-				}
-				result++; // 14
+			else if (number & 0xFFFFFF80) {
+				result += 2;
+			}
+			else {
+				result += 1;
 			}
 		}
 
@@ -307,7 +306,6 @@ USHORT getNodeSize(const IndexNode* indexNode, SCHAR flags, bool leafNode)
 			result += sizeof(SLONG);
 		}
 	}
-
 
 	return result;
 }
@@ -342,50 +340,6 @@ UCHAR* getPointerFirstNode(btree_page* page, IndexJumpInfo* jumpInfo)
 	}
 	else {
 		return reinterpret_cast<UCHAR*>(page->btr_nodes);
-	}
-}
-
-
-bool isEndBucket(const IndexNode* indexNode, bool leafNode)
-{
-/**************************************
- *
- *	i s E n d B u c k e t
- *
- **************************************
- *
- * Functional description
- *	Check if this is a END_BUCKET
- *  marker node.
- *
- **************************************/
-	if (leafNode) {
-		return (indexNode->recordNumber == END_BUCKET);
-	}
-	else {
-		return (indexNode->pageNumber == END_BUCKET);
-	}
-}
-
-
-bool isEndLevel(const IndexNode* indexNode, bool leafNode)
-{
-/**************************************
- *
- *	i s E n d L e v e l
- *
- **************************************
- *
- * Functional description
- *	Check if this is a END_LEVEL
- *  marker node.
- *
- **************************************/
-	if (leafNode) {
-		return (indexNode->recordNumber == END_LEVEL);
-	}
-	else {
-		return (indexNode->pageNumber == END_LEVEL);
 	}
 }
 
@@ -452,8 +406,8 @@ UCHAR* lastNode(btree_page* page, jrd_exp* expanded_page, BTX* expanded_node)
 	IndexNode node;
 	while (true) {
 		pointer = previousNode(&node, pointer, flags, &enode);
-		if (!isEndBucket(&node, false) && 
-			!isEndLevel(&node, false)) 
+		if (!node.isEndBucket && 
+			!node.isEndLevel) 
 		{
 			if (expanded_node) {
 				*expanded_node = enode;
@@ -796,6 +750,9 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 		// Get pointer where data starts
 		indexNode->data = pagePointer;
 		pagePointer += indexNode->length;
+
+		indexNode->isEndBucket = (internalFlags == BTN_END_BUCKET_FLAG);
+		indexNode->isEndLevel = (internalFlags == BTN_END_LEVEL_FLAG);
 	}
 	else {
 		indexNode->prefix = (*pagePointer);
@@ -804,9 +761,13 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 		pagePointer++;
 		if (leafNode) {
 			indexNode->recordNumber = get_long(pagePointer);
+			indexNode->isEndBucket = (indexNode->recordNumber == END_BUCKET);
+			indexNode->isEndLevel = (indexNode->recordNumber == END_LEVEL);
 		} 
 		else {
 			indexNode->pageNumber = get_long(pagePointer);
+			indexNode->isEndBucket = (indexNode->pageNumber == END_BUCKET);
+			indexNode->isEndLevel = (indexNode->pageNumber == END_LEVEL);
 		}
 		pagePointer += 4;
 
@@ -1236,6 +1197,8 @@ void setEndBucket(IndexNode* indexNode, bool leafNode)
  * Functional description
  *
  **************************************/
+	indexNode->isEndBucket = true;
+	indexNode->isEndLevel = false;
 	if (leafNode) {
 		indexNode->recordNumber = END_BUCKET;
 	}
@@ -1256,6 +1219,8 @@ void setEndLevel(IndexNode* indexNode, bool leafNode)
  * Functional description
  *
  **************************************/
+	indexNode->isEndBucket = false;
+	indexNode->isEndLevel = true;
 	indexNode->prefix = 0;
 	indexNode->length = 0;
 	if (leafNode) {
