@@ -2794,7 +2794,7 @@ static void service_fork(ThreadEntryPoint* service_executable, Service* service)
 
 	THREAD_EXIT();
 	gds__thread_start(service_executable,
-						service, 0, 0, (void*)&service->svc_handle);
+						service, THREAD_medium, 0, (void*)&service->svc_handle);
 	THREAD_ENTER();
 }
 
