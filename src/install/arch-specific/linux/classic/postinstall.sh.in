@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: postinstall.sh.in,v 1.4 2003-02-10 18:23:18 skidder Exp $
+#   $Id: postinstall.sh.in,v 1.5 2003-02-26 16:52:50 skidder Exp $
 # 
 
 # The post install script for Firebird Classic
@@ -367,6 +367,9 @@ fixFilePermissions() {
     chmod a=rx isql 
     chmod a=rx qli
     
+    # fix up permissions for fbintl
+    chmod a=rx intl/fbintl
+    
     # SUID is still needed for group direct access.  General users
     # cannot run though.
     for i in fb_lock_mgr gds_drop fb_inet_server
@@ -511,6 +514,8 @@ fixFilePermissionsRoot() {
     chmod a=rw help/help.gdb
     chmod a=rw security.fdb
 
+    # fix up permissions for fbintl
+    chmod a=rx intl/fbintl
 
     # Set a default of read all files in examples
 
