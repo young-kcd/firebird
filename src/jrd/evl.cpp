@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.37 2003-08-26 07:15:52 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.38 2003-08-30 16:45:05 dimitr Exp $ 
  */
 
 /*
@@ -4823,7 +4823,9 @@ static DSC *substring(
 	desc.dsc_dtype = dtype_text;
 	desc.dsc_scale = 0;
 
-	if (offset_arg < 0 || length_arg < 0) {
+	if (offset_arg < 0 || offset_arg > MAX_USHORT ||
+		length_arg < 0 || length_arg > MAX_USHORT)
+	{
 		ERR_post(gds_arith_except, 0);
 	}
 	USHORT offset = (USHORT) offset_arg;
