@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.29 2003-09-29 12:43:03 robocop Exp $
+//	$Id: ftn.cpp,v 1.30 2003-09-30 09:41:42 fsg Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -152,7 +152,7 @@ static void	make_ok_test (ACT, GPRE_REQ);
 static void	make_port (POR);
 static void	make_ready (DBB, TEXT *, TEXT *, GPRE_REQ);
 static USHORT	next_label (void);
-static void	printa (SCHAR *, SCHAR *, ...);
+static void	printa (TEXT *, TEXT *, ...);
 #ifdef NOT_USED_OR_REPLACED
 static void	printb (SCHAR *,  ...);
 #endif
@@ -1823,8 +1823,8 @@ static void gen_dyn_execute( ACT action)
 
 	printa(COLUMN,
 		   (sqlda2) ?
-		   "CALL %s (isc_status, %s, %s, %s%d%s, %s, %s)" :
-		   "CALL %s (isc_status, %s, %s, %s%d%s, %s)",
+		   (TEXT*) "CALL %s (isc_status, %s, %s, %s%d%s, %s, %s)" :
+		   (TEXT*) "CALL %s (isc_status, %s, %s, %s%d%s, %s)",
 		   (sqlda2) ? ISC_EMBED_DSQL_EXECUTE2 : ISC_EMBED_DSQL_EXECUTE,
 		   transaction,
 		   make_name(s1, statement->dyn_statement_name),
@@ -1922,8 +1922,8 @@ static void gen_dyn_immediate( ACT action)
 
 	printa(COLUMN,
 		   (sqlda2) ?
-		   "CALL %s (isc_status, %s, %s, %sLEN(%s)%s, %s%s%s, %s%d%s, %s, %s)"
-		   : "CALL %s (isc_status, %s, %s, %sLEN(%s)%s, %s%s%s, %s%d%s, %s)",
+		   (TEXT*) "CALL %s (isc_status, %s, %s, %sLEN(%s)%s, %s%s%s, %s%d%s, %s, %s)" :
+		   (TEXT*) "CALL %s (isc_status, %s, %s, %sLEN(%s)%s, %s%s%s, %s%d%s, %s)",
 		   (sqlda2) ? ISC_EMBED_DSQL_EXECUTE_IMMEDIATE2 :
 		   ISC_EMBED_DSQL_EXECUTE_IMMEDIATE, transaction,
 		   database->dbb_name->sym_string, DSQL_I2CONST_1,
@@ -2019,8 +2019,8 @@ static void gen_dyn_open( ACT action)
 
 	printa(COLUMN,
 		   (sqlda2) ?
-		   "CALL %s (isc_status, %s, %s, %s%d%s, %s, %s)" :
-		   "CALL %s (isc_status, %s, %s, %s%d%s, %s)",
+		   (TEXT*) "CALL %s (isc_status, %s, %s, %s%d%s, %s, %s)" :
+		   (TEXT*) "CALL %s (isc_status, %s, %s, %s%d%s, %s)",
 		   (sqlda2) ? ISC_EMBED_DSQL_OPEN2 : ISC_EMBED_DSQL_OPEN,
 		   transaction,
 		   make_name(s1, statement->dyn_cursor_name),
