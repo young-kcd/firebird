@@ -345,7 +345,6 @@ typedef struct dpb
 	TEXT*	dpb_set_db_charset;
 } DPB;
 
-static void Unused(thread_db*);
 static blb*		check_blob(thread_db*, ISC_STATUS*, blb**);
 static ISC_STATUS	check_database(thread_db*, Attachment*, ISC_STATUS*);
 static void		cleanup(void*);
