@@ -395,9 +395,9 @@ const char *Config::getRemoteServiceName()
 	return (const char*) sysConfig.values[KEY_REMOTE_SERVICE_NAME];
 }
 
-int Config::getRemoteServicePort()
+unsigned short Config::getRemoteServicePort()
 {
-	return (int) sysConfig.values[KEY_REMOTE_SERVICE_PORT];
+	return (unsigned short) sysConfig.values[KEY_REMOTE_SERVICE_PORT];
 }
 
 const char *Config::getRemotePipeName()

@@ -245,7 +245,7 @@ public:
 	/*
 		Service port for INET
 	*/
-	static int getRemoteServicePort();
+	static unsigned short getRemoteServicePort();
 
 	/*
 		Pipe name for WNET
