@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-extern ACT SQL_action(void);
+extern ACT SQL_action(TEXT*);
 extern void SQL_adjust_field_dtype(GPRE_FLD);
 extern void SQL_init(void);
 extern void SQL_par_field_collate(GPRE_REQ, GPRE_FLD);

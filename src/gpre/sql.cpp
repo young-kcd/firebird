@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.12 2003-07-03 23:02:45 brodsom Exp $
+//	$Id: sql.cpp,v 1.13 2003-07-04 16:19:37 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -161,7 +161,7 @@ static SWE whenever[SWE_max], whenever_list;
 //		Parse and return a sequel action.
 //  
 
-ACT SQL_action(void)
+ACT SQL_action(TEXT * base_directory)
 {
 	ACT action;
 	enum kwwords keyword;
@@ -235,7 +235,7 @@ ACT SQL_action(void)
 		break;
 
 	case KW_DATABASE:
-		action = PAR_database((USHORT) TRUE, NULL);
+		action = PAR_database((USHORT) TRUE, base_directory);
 		break;
 
 	case KW_DROP:
@@ -3326,7 +3326,7 @@ static ACT act_grant_revoke( enum act_t type)
 			if (!MET_get_view_relation
 				(request, r_name, (char *) relation_name, 0)) {
 				sprintf(s, "VIEW %s not defined on table %s", r_name,
-						relation_name);
+						relation_name->str_string);
 				PAR_error(s);
 			}
 			user_dyn = gds_dyn_grant_view;

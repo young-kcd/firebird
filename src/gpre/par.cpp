@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.20 2003-07-02 18:58:41 brodsom Exp $
+//  $Id: par.cpp,v 1.21 2003-07-04 16:19:37 brodsom Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: par.cpp,v 1.20 2003-07-02 18:58:41 brodsom Exp $
+//	$Id: par.cpp,v 1.21 2003-07-04 16:19:37 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -400,7 +400,7 @@ ACT PAR_action(TEXT* base_dir)
 			if (!MATCH(KW_SQL))
 				break;
 			sw_sql = TRUE;
-			action = SQL_action();
+			action = SQL_action(base_dir);
 			sw_sql = FALSE;
 			return action;
 		default:
