@@ -176,6 +176,40 @@ ISC_DATE TimeStamp::encode_date(const struct tm* times)
 					   (153 * month + 2) / 5 + day + 1721119 - 2400001);
 }
 
+void TimeStamp::decode_time(
+	ISC_TIME ntime, int* hours, int* minutes, int* seconds, int* fractions)
+{
+	*hours = ntime / (3600 * ISC_TIME_SECONDS_PRECISION);
+	ntime %= 3600 * ISC_TIME_SECONDS_PRECISION;
+	*minutes = ntime / (60 * ISC_TIME_SECONDS_PRECISION);
+	ntime %= 60 * ISC_TIME_SECONDS_PRECISION;
+	*seconds = ntime / ISC_TIME_SECONDS_PRECISION;
+	*fractions = ntime % ISC_TIME_SECONDS_PRECISION;
+}
+
+ISC_TIME TimeStamp::round_time(ISC_TIME ntime, int precision)
+{
+    int scale = -ISC_TIME_SECONDS_PRECISION_SCALE - precision;
+
+    // for the moment, if greater precision was requested than we can 
+    // provide return what we have.
+    if (scale < 0) return ntime;
+
+    static ISC_TIME pow10table[] = 
+      {1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000};
+
+    fb_assert(scale < FB_NELEM(pow10table));
+
+    ISC_TIME period = pow10table[scale];
+
+	return ntime - (ntime % period);
+}
+
+ISC_TIME TimeStamp::encode_time(int hours, int minutes, int seconds, int fractions)
+{
+	return ((hours * 60 + minutes) * 60 + seconds) * ISC_TIME_SECONDS_PRECISION;
+}
+
 // Encode timestamp from UNIX datetime structure
 void TimeStamp::encode(const struct tm* times) {
 	mValue.timestamp_date = encode_date(times);

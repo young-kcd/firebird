@@ -98,9 +98,12 @@ public:
 	// Read access to timestamp structure we wrap
 	const ISC_TIMESTAMP& value() const { return mValue; }
 
-	// ISC date/time helper routines. Both functions are signal-safe.
+	// ISC date/time helper routines. These functions are signal-safe.
 	static void decode_date(ISC_DATE nday, struct tm* times);
 	static ISC_DATE encode_date(const struct tm* times);
+	static void decode_time(ISC_TIME ntime, int* hours, int* minutes, int* seconds, int* fractions);
+	static ISC_TIME encode_time(int hours, int minutes, int seconds, int fractions);
+	static ISC_TIME round_time(ISC_TIME ntime, int precision);
 private:
 	ISC_TIMESTAMP mValue;
 
