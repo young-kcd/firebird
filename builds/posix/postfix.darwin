@@ -1,0 +1,75 @@
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+#
+# Copyright (C) 2000 Inprise Corporation
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+# Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
+#$Id: postfix.darwin,v 1.1.2.1 2003-11-11 00:27:27 bellardo Exp $
+# 2 Oct 2002, Nickolay Samofatov - Major Cleanup
+
+
+darwin_setup_framework: ../gen/firebird/Firebird.framework
+
+../gen/firebird/Firebird.framework: FB_FW = ../gen/firebird/Firebird.framework
+../gen/firebird/Firebird.framework:
+	-$(RM) -rf $(FB_FW) ../gen/firebird/Firebird.framework
+	mkdir -p $(FB_FW)/Versions/A/Resources/English.lproj/var
+	ln -s Versions/Current/Firebird $(FB_FW)/Firebird
+	ln -s Versions/Current/Headers $(FB_FW)/Headers
+	ln -s Versions/Current/Resources $(FB_FW)/Resources
+	ln -s A $(FB_FW)/Versions/Current
+	ln -s ../../../include $(FB_FW)/Versions/A/Headers
+	ln -s ../../../lib/libfbembbed.dylib $(FB_FW)/Versions/A/Firebird
+	ln -s ../../../../../../firebird.msg \
+			$(FB_FW)/Resources/English.lproj/var/firebird.msg
+	ln -s ../../../../../../bin $(FB_FW)/Resources/English.lproj/var/bin
+	ln -s ../../../../../../UDF $(FB_FW)/Resources/English.lproj/var/UDF
+	ln -s ../../../../../../intl $(FB_FW)/Resources/English.lproj/var/intl
+	ln -s ../../../../../../security.fdb \
+				$(FB_FW)/Resources/English.lproj/var/security.fdb
+	ln -s ../../../../../../help $(FB_FW)/Resources/English.lproj/var/help
+	#sed "s/__VERSION__/`$(VERS_UTIL)`/g" source/firebird/bellardo/darwin/FrameworkInfo.plist > source/interbase/Firebird.framework/Resources/Info.plist
+
+darwin_finish_cs_framework: FB_FW = ../gen/firebird/frameworks/FirebirdCS.framework
+darwin_finish_cs_framework:
+	-$(RM) -rf $(FB_FW)
+	mkdir -p $(FB_FW)/Versions/A/Resources/English.lproj/var
+	ln -s Versions/Current/Firebird $(FB_FW)/Firebird
+	ln -s Versions/Current/Headers $(FB_FW)/Headers
+	ln -s Versions/Current/Resources $(FB_FW)/Resources
+	ln -s A $(FB_FW)/Versions/Current
+	-cp -r ../gen/firebird/include $(FB_FW)/Versions/A/Headers
+	-cp ../gen/firebird/lib/libfbembed.dylib $(FB_FW)/Versions/A/Firebird
+	-cp ../gen/firebird/firebird.msg \
+			$(FB_FW)/Resources/English.lproj/var/firebird.msg
+	-cp -r ../gen/firebird/UDF $(FB_FW)/Resources/English.lproj/var/UDF
+	-cp -r ../gen/firebird/intl $(FB_FW)/Resources/English.lproj/var/intl
+	-cp -r ../gen/firebird/help $(FB_FW)/Resources/English.lproj/var/help
+	-cp ../gen/firebird/security.fdb $(FB_FW)/Resources/English.lproj/var
+	mkdir -p $(FB_FW)/Resources/bin
+	ln -s ../../bin $(FB_FW)/Resources/English.lproj/var/bin
+	-cp ../gen/firebird/bin/fb_inet_server $(FB_FW)/Resources/bin
+	-cp ../gen/firebird/bin/gfix $(FB_FW)/Resources/bin
+	-cp ../gen/firebird/bin/gbak $(FB_FW)/Resources/bin
+	-cp ../gen/firebird/bin/isql $(FB_FW)/Resources/bin
+	-cp ../gen/firebird/bin/gpre $(FB_FW)/Resources/bin
+	-cp ../gen/firebird/bin/gdef $(FB_FW)/Resources/bin
+	-cp ../gen/firebird/bin/qli $(FB_FW)/Resources/bin
+	-cp ../gen/firebird/bin/fb_lock_mgr $(FB_FW)/Resources/bin
+	-cp ../gen/firebird/bin/fb_lock_print $(FB_FW)/Resources/bin
+	-cp ../gen/firebird/bin/gds_drop $(FB_FW)/Resources/bin
+	-cp ../gen/firebird/bin/gds_relay $(FB_FW)/Resources/bin
+	-cp ../gen/firebird/bin/gsec $(FB_FW)/Resources/bin
+	-cp ../gen/firebird/bin/gstat $(FB_FW)/Resources/bin
+	#sed "s/__VERSION__/`$(VERS_UTIL)`/g" source/firebird/bellardo/darwin/FrameworkInfo.plist > source/interbase/Firebird.framework/Resources/Info.plist
