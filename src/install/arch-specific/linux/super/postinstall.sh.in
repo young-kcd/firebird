@@ -328,13 +328,11 @@ installInitdScript() {
     if [ -x /sbin/chkconfig ]
       then
         /sbin/chkconfig --add firebird
-    fi
 
     # Suse (& Debian ?) specific 
     elif [ -x /sbin/insserv ]
       then
         /sbin/insserv /etc/init.d/firebird
-    fi
 	
 	# One more way to register service - used in Knoppix (& Debian ?)
     elif [ -x /usr/sbin/update-rc.d ]
