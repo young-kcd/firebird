@@ -28,6 +28,8 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2002.10.30 Sean Leyne - Removed support for obsolete "MS_DOS" define
+ *
  */
 
 /* ------------NOTE NOTE NOTE -----------
@@ -135,11 +137,7 @@
 //For pointers
 */
 #ifndef NULL
-#ifdef MS_DOS
-#define           NULL (0)
-#else
 #define           NULL 0
-#endif
 #endif
 
 #ifndef NULLP
@@ -1036,9 +1034,12 @@ pVOID CALLTYPE LdCalloc(UINT16 NumberItems, UINT16 SizeItem);
 // VCS AREA
 //-----------------------------------------------------------------
 
-//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.10 2002-10-30 06:40:46 seanleyne Exp $
+//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.11 2002-10-31 05:09:27 seanleyne Exp $
 
 //	$Log: not supported by cvs2svn $
+//	Revision 1.10  2002/10/30 06:40:46  seanleyne
+//	Removed obsolete "Netware" port
+//	
 //	Revision 1.9  2002/10/28 05:19:47  seanleyne
 //	Code Cleanup, removed obsolete "Ultrix" and "Ultrix/MIPS" ports
 //	
