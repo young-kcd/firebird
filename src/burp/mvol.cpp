@@ -65,8 +65,6 @@
 #endif
 
 
-extern "C" {
-
 
 #define	OPEN_MASK	((int) 0666)
 
@@ -96,22 +94,22 @@ extern "C" {
 #define PUT_NUMERIC(attribute, value)	put_numeric ((attribute), (value))
 #define PUT_ASCIZ(attribute, string)	put_asciz ((attribute), (string))
 
-static void		bad_attribute(USHORT, USHORT);
-static void		file_not_empty(void);
-static SLONG	get_numeric(void);
-static int		get_text(UCHAR*, SSHORT);
-static void		prompt_for_name(SCHAR*, int);
-static void		put_asciz(SCHAR, SCHAR*);
-static void		put_numeric(SCHAR, int);
-static BOOLEAN	read_header(DESC, ULONG*, USHORT*, USHORT);
-static BOOLEAN	write_header(DESC, ULONG, USHORT);
+static void  bad_attribute(USHORT, USHORT);
+static void  file_not_empty(void);
+static SLONG get_numeric(void);
+static int   get_text(UCHAR*, SSHORT);
+static void  prompt_for_name(SCHAR*, int);
+static void  put_asciz(SCHAR, SCHAR*);
+static void  put_numeric(SCHAR, int);
+static bool  read_header(DESC, ULONG*, USHORT*, USHORT);
+static bool  write_header(DESC, ULONG, USHORT);
 static DESC	 next_volume(DESC, int, USHORT);
 
 
 //____________________________________________________________
 //
 //
-void MVOL_fini_read(int* count_kb)
+UINT64 MVOL_fini_read()
 {
 	TGBL tdgbl = GET_THREAD_DATA;
 
@@ -129,18 +127,18 @@ void MVOL_fini_read(int* count_kb)
 	}
 
 	tdgbl->file_desc = INVALID_HANDLE_VALUE;
-	*count_kb = tdgbl->mvol_cumul_count_kb;
 	BURP_FREE(tdgbl->mvol_io_buffer);
 	tdgbl->mvol_io_buffer = NULL;
 	tdgbl->io_cnt = 0;
 	tdgbl->io_ptr = NULL;
+	return tdgbl->mvol_cumul_count;
 }
 
 
 //____________________________________________________________
 //
 //
-void MVOL_fini_write(int* io_cnt, UCHAR** io_ptr, int* count_kb)
+UINT64 MVOL_fini_write(int* io_cnt, UCHAR** io_ptr)
 {
 	TGBL tdgbl;
 	FIL	file;
@@ -159,12 +157,12 @@ void MVOL_fini_write(int* io_cnt, UCHAR** io_ptr, int* count_kb)
 		}
 	}
 	tdgbl->file_desc = INVALID_HANDLE_VALUE;
-	*count_kb = tdgbl->mvol_cumul_count_kb;
 	BURP_FREE(tdgbl->mvol_io_header);
 	tdgbl->mvol_io_header = NULL;
 	tdgbl->mvol_io_buffer = NULL;
 	tdgbl->io_cnt = 0;
 	tdgbl->io_ptr = NULL;
+	return tdgbl->mvol_cumul_count;
 }
 
 
@@ -334,7 +332,7 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 		}
 	}
 
-	tdgbl->mvol_cumul_count_kb += tdgbl->mvol_io_cnt / 1024;
+	tdgbl->mvol_cumul_count += tdgbl->mvol_io_cnt;
 	file_not_empty();
 
 	*ptr = tdgbl->mvol_io_ptr + 1;
@@ -385,7 +383,7 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 		}
 	}
 
-	tdgbl->mvol_cumul_count_kb += tdgbl->mvol_io_cnt / 1024;
+	tdgbl->mvol_cumul_count += tdgbl->mvol_io_cnt;
 	file_not_empty();
 
 	*ptr = tdgbl->mvol_io_ptr + 1;
@@ -489,9 +487,11 @@ HANDLE MVOL_open(TEXT * name, DWORD mode, DWORD create)
 	tdgbl = GET_THREAD_DATA;
 
 	if (strnicmp(name, "\\\\.\\tape", 8))
+	{
 		handle = CreateFile(name, mode,
 							mode == MODE_WRITE ? 0 : FILE_SHARE_READ,
 							NULL, create, FILE_ATTRIBUTE_NORMAL, NULL);
+	}
 	else
 	{
 		/* it's a tape device */
@@ -612,7 +612,7 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 		tdgbl->mvol_io_buffer = tdgbl->mvol_io_data;
 		if (cnt > 0)
 		{
-			tdgbl->mvol_cumul_count_kb += cnt / 1024;
+			tdgbl->mvol_cumul_count += cnt;
 			file_not_empty();
 			if (tdgbl->action->act_action == ACT_backup_split)
 			{
@@ -695,8 +695,8 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 					memcpy(tdgbl->mvol_io_data,
 						   tdgbl->mvol_io_header + tdgbl->mvol_io_buffer_size,
 						   left);
-					tdgbl->mvol_cumul_count_kb +=
-						tdgbl->mvol_io_buffer_size / 1024;
+					tdgbl->mvol_cumul_count +=
+						tdgbl->mvol_io_buffer_size;
 					tdgbl->mvol_io_buffer = tdgbl->mvol_io_data;
 				}
 				else
@@ -894,7 +894,8 @@ static DESC next_volume( DESC handle, int mode, USHORT full_buffer)
 		CLOSE(handle);
 	}
 
-	if (tdgbl->action->act_action == ACT_restore_join) {
+	if (tdgbl->action->act_action == ACT_restore_join)
+	{
 		tdgbl->action->act_file->fil_fd = INVALID_HANDLE_VALUE;
 		if ((tdgbl->action->act_total > tdgbl->action->act_file->fil_seq) &&
 			(tdgbl->action->act_file = tdgbl->action->act_file->fil_next) &&
@@ -916,7 +917,8 @@ static DESC next_volume( DESC handle, int mode, USHORT full_buffer)
 
 /* Loop until we have opened a file successfully */
 
-	for (new_desc = INVALID_HANDLE_VALUE;;) {
+	for (new_desc = INVALID_HANDLE_VALUE;;)
+	{
 		/* We aim to keep our descriptors clean */
 
 		if (new_desc != INVALID_HANDLE_VALUE) {
@@ -929,10 +931,11 @@ static DESC next_volume( DESC handle, int mode, USHORT full_buffer)
 		prompt_for_name(new_file, sizeof(new_file));
 
 #ifdef WIN_NT
-		if ((new_desc = MVOL_open(new_file, mode, OPEN_ALWAYS))
-			== INVALID_HANDLE_VALUE)
+		new_desc = MVOL_open(new_file, mode, OPEN_ALWAYS);
+		if (new_desc == INVALID_HANDLE_VALUE)
 #else
-		if ((new_desc = open(new_file, mode, OPEN_MASK)) < 0)
+		new_desc = open(new_file, mode, OPEN_MASK);
+		if (new_desc < 0)
 #endif /* WIN_NT */
 		{
 			BURP_print(222, new_file, 0, 0, 0, 0);
@@ -1144,10 +1147,10 @@ static void put_numeric( SCHAR attribute, int value)
 //
 // Functional description
 //
-static BOOLEAN read_header(DESC		handle,
-						   ULONG*	buffer_size,
-						   USHORT*	format,
-						   USHORT	init_flag)
+static bool read_header(DESC    handle,
+						ULONG*  buffer_size,
+						USHORT* format,
+						USHORT  init_flag)
 {
 	int attribute, temp;
 	SSHORT l;
@@ -1164,7 +1167,7 @@ static BOOLEAN read_header(DESC		handle,
 		read(handle, tdgbl->mvol_io_buffer, tdgbl->mvol_actual_buffer_size);
 #else
 	ReadFile(handle, tdgbl->mvol_io_buffer, tdgbl->mvol_actual_buffer_size,
-			 reinterpret_cast < DWORD * >(&tdgbl->mvol_io_cnt), NULL);
+			 reinterpret_cast<DWORD*>(&tdgbl->mvol_io_cnt), NULL);
 #endif
 	tdgbl->mvol_io_ptr = tdgbl->mvol_io_buffer;
 
@@ -1204,7 +1207,7 @@ static BOOLEAN read_header(DESC		handle,
 							 tdgbl->gbl_backup_start_time, buffer, 0, 0, 0);
 				/* Expected backup start time %s, found %s\n */
 				ib_printf(msg);
-				return FALSE;
+				return false;
 			}
 			break;
 
@@ -1231,7 +1234,7 @@ static BOOLEAN read_header(DESC		handle,
 							 tdgbl->gbl_database_file_name, buffer, 0, 0, 0);
 				/* Expected backup database %s, found %s\n */
 				ib_printf(msg);
-				return FALSE;
+				return false;
 			}
 			if (init_flag)
 			{
@@ -1262,7 +1265,7 @@ static BOOLEAN read_header(DESC		handle,
 							 (TEXT*) temp, 0, 0, 0);
 				/* Expected volume number %d, found volume %d\n */
 				ib_printf(msg);
-				return FALSE;
+				return false;
 			}
 			break;
 
@@ -1273,16 +1276,16 @@ static BOOLEAN read_header(DESC		handle,
 		}
 	}
 
-	return TRUE;
+	return true;
 }
 
 
 //____________________________________________________________
 //
 //
-static BOOLEAN write_header(DESC handle,
-							ULONG backup_buffer_size,
-							USHORT full_buffer)
+static bool write_header(DESC   handle,
+						 ULONG  backup_buffer_size,
+						 USHORT full_buffer)
 {
 	ULONG vax_value;
 	USHORT i;
@@ -1346,7 +1349,7 @@ static BOOLEAN write_header(DESC handle,
 
 		if (bytes_written != tdgbl->mvol_io_buffer_size)
 		{
-			return FALSE;
+			return false;
 		}
 
 		if (tdgbl->action->act_action == ACT_backup_split)
@@ -1363,7 +1366,7 @@ static BOOLEAN write_header(DESC handle,
 		tdgbl->mvol_empty_file = FALSE;
 	}
 
-	return TRUE;
+	return true;
 }
 
 
@@ -1371,7 +1374,7 @@ static BOOLEAN write_header(DESC handle,
 //
 // Write a header record for split operation
 //
-BOOLEAN MVOL_split_hdr_write(void)
+bool MVOL_split_hdr_write(void)
 {
 	TGBL tdgbl;
 	TEXT buffer[HDR_SPLIT_SIZE + 1];
@@ -1389,7 +1392,7 @@ BOOLEAN MVOL_split_hdr_write(void)
 	assert(tdgbl->action->act_file->fil_fd != INVALID_HANDLE_VALUE);
 
 	if (tdgbl->action->act_file->fil_length < HDR_SPLIT_SIZE) {
-		return FALSE;
+		return false;
 	}
 
 	seconds = time((time_t *) NULL);
@@ -1413,11 +1416,11 @@ BOOLEAN MVOL_split_hdr_write(void)
 #endif /* WIN_NT */
 
 	if (bytes_written != HDR_SPLIT_SIZE) {
-		return FALSE;
+		return false;
 	}
 
 	tdgbl->action->act_file->fil_length -= bytes_written;
-	return TRUE;
+	return true;
 }
 
 
@@ -1425,7 +1428,7 @@ BOOLEAN MVOL_split_hdr_write(void)
 //
 // Read a header record for join operation
 //
-BOOLEAN MVOL_split_hdr_read(void)
+bool MVOL_split_hdr_read(void)
 {
 	TGBL tdgbl = GET_THREAD_DATA;
 
@@ -1455,13 +1458,11 @@ BOOLEAN MVOL_split_hdr_read(void)
 				(tdgbl->action->act_total = atoi(hdr->hdr_split_total)) > 0 &&
 				(tdgbl->action->act_file->fil_seq <= tdgbl->action->act_total))
 			{
-				return TRUE;
+				return true;
 			}
 		}
 	}
 
-	return FALSE;
+	return false;
 }
 
-
-} // extern "C"

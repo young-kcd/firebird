@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: restore.epp,v 1.9 2002-10-24 09:01:25 eku Exp $
+$Id: restore.epp,v 1.10 2002-10-29 16:31:01 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -239,7 +239,7 @@ int RESTORE_restore (
  *	Recreate a database from a backup.
  *
  **************************************/
-int		cumul_count_kb;
+UINT64	cumul_count;
 REL		relation;
 PRC		procedure;
 isc_req_handle  req_handle1 = NULL, req_handle2 = NULL, req_handle4 = NULL;
@@ -527,7 +527,7 @@ if (gds_status [0] == gds_arg_gds && gds_status [1] == 0 && gds_status [2] != gd
 BURP_verbose (88, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR);
 /* msg 88 finishing, closing, and going home */
 
-MVOL_fini_read (&cumul_count_kb);
+cumul_count = MVOL_fini_read();
 
 /* attach database again to put it online */
 

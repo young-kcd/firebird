@@ -706,7 +706,8 @@ typedef struct hdr_split {
 
 /* Global switches and data */
 
-typedef struct tgbl {
+typedef struct tgbl
+{
     struct thdd tgbl_thd_data;
     TEXT	*gbl_database_file_name;
     TEXT	gbl_backup_start_time [30];
@@ -752,7 +753,7 @@ typedef struct tgbl {
     USHORT	RESTORE_format;
     ULONG	mvol_io_buffer_size;
     ULONG	mvol_actual_buffer_size;
-    ULONG   	mvol_cumul_count_kb;
+    UINT64 	mvol_cumul_count;
     UCHAR	*mvol_io_ptr;
     int	   	mvol_io_cnt;
     UCHAR   	*mvol_io_buffer;

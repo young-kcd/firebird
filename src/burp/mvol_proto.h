@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Backup and Restore Program
  *	MODULE:		mvol_proto.h		
- *	DESCRIPTION:	Prototype Header file for mvol.c
+ *	DESCRIPTION:	Prototype Header file for mvol.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,22 +24,26 @@
 #ifndef _BURP_MVOL_PROTO_H_
 #define _BURP_MVOL_PROTO_H_
 
-#ifdef __cplusplus
-extern "C" {
+#ifndef __cplusplus
+#error This is a C++ only header file
 #endif
 
-extern void	MVOL_fini_read (int *);
-extern void	MVOL_fini_write (int *, UCHAR * *, int *);
-extern void	MVOL_init (ULONG);
-extern void	MVOL_init_read (UCHAR *, UCHAR *, USHORT *, int *, UCHAR * *);
-extern void	MVOL_init_write (UCHAR *, UCHAR *, int *, UCHAR * *);
-extern BOOLEAN	MVOL_split_hdr_write (void);
-extern BOOLEAN	MVOL_split_hdr_read (void);
-extern int	MVOL_read (int *, UCHAR * *);
-extern UCHAR *	MVOL_read_block (TGBL, UCHAR *, ULONG);
-extern void	MVOL_skip_block (TGBL, ULONG);
-extern UCHAR	MVOL_write (UCHAR, int *, UCHAR * *);
-extern UCHAR *	MVOL_write_block (TGBL, UCHAR *, ULONG);
+#include "../burp/burp.h"
+
+
+UINT64  MVOL_fini_read();
+UINT64  MVOL_fini_write(int*, UCHAR**);
+void    MVOL_init(ULONG);
+void    MVOL_init_read(UCHAR*, UCHAR*, USHORT*, int*, UCHAR**);
+void    MVOL_init_write(UCHAR*, UCHAR*, int*, UCHAR**);
+bool    MVOL_split_hdr_write();
+bool    MVOL_split_hdr_read();
+int     MVOL_read(int*, UCHAR**);
+UCHAR*  MVOL_read_block(TGBL, UCHAR*, ULONG);
+void    MVOL_skip_block(TGBL, ULONG);
+UCHAR   MVOL_write(UCHAR, int*, UCHAR**);
+UCHAR*  MVOL_write_block(TGBL, UCHAR*, ULONG);
+
 #if defined WIN_NT && defined _WINNT_
 /* the _WINNT_ symbol is defined if winnt.h has been included */
 /* it contains the definition of a HANDLE */
@@ -47,8 +51,5 @@ extern UCHAR *	MVOL_write_block (TGBL, UCHAR *, ULONG);
 extern HANDLE   MVOL_open (TEXT*,DWORD,DWORD);
 #endif
 
-#ifdef __cplusplus
-}	/* extern "C" */
-#endif
 
 #endif	/* _BURP_MVOL_PROTO_H_ */

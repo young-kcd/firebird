@@ -32,16 +32,18 @@
  * and symbol_length (if used directly) should use sizeof. Changed all callers
  * and sizeof() works because the strings are local to the functions. This
  * eliminates the problem with harcoded limits in each call.
+ * 2002.10.29 Mike Nordell: UINT64 backup message.
  */
 
 /*
-$Id: backup.epp,v 1.7 2002-10-24 09:01:25 eku Exp $
+$Id: backup.epp,v 1.8 2002-10-29 16:31:02 tamlin Exp $
 */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <memory.h>
 #include <string.h>
+#include <sstream>
 #include "../burp/burp.h"
 #include "../jrd/ods.h"
 #include "../jrd/align.h"
@@ -218,6 +220,22 @@ static CONST SCHAR limbo_nau_tpb[] =
 };
 
 
+#if defined(_MSC_VER) && (_MSC_VER <= 1200)
+
+// TMN: Microsoft provide __int64, but for MSVC6 provide no ostream
+// operator<< for it. :-/
+// For now, we assume that MSVC7 provides this operator.
+
+std::ostream& operator<<(std::ostream& os, UINT64 i)
+{
+	char sz[32];
+	sprintf(sz, "%I64u", i);
+	os << sz;
+	return os;
+}
+
+#endif	// _MSC_VER
+
 
 int BACKUP_backup(TEXT* dbb_file, TEXT* file_name)
 {
@@ -235,7 +253,7 @@ int BACKUP_backup(TEXT* dbb_file, TEXT* file_name)
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	ULONG l;
 	TEXT temp[GDS_NAME_LEN];
-	ULONG cumul_count_kb;
+	UINT64 cumul_count = 0;
 	isc_req_handle req_handle1 = NULL;
 	STATUS req_status[ISC_STATUS_LENGTH];
 	TGBL tdgbl;
@@ -248,7 +266,7 @@ int BACKUP_backup(TEXT* dbb_file, TEXT* file_name)
 	tdgbl->io_ptr = (UCHAR *) NULL;
 	tdgbl->io_cnt = 0;
 	tdgbl->relations = (REL) NULL;
-	cumul_count_kb = tdgbl->BCK_capabilities = 0;
+	tdgbl->BCK_capabilities = 0;
 
 	isc_trans = NULL;
 
@@ -466,9 +484,29 @@ int BACKUP_backup(TEXT* dbb_file, TEXT* file_name)
 /* Finish up */
 
 	PUT(rec_end);
-	MVOL_fini_write(&tdgbl->io_cnt, &tdgbl->io_ptr, (int*) &cumul_count_kb);
-	BURP_verbose(176, (TEXT *) cumul_count_kb, NULL, NULL, NULL, NULL);
+	cumul_count = MVOL_fini_write(&tdgbl->io_cnt, &tdgbl->io_ptr);
+#ifdef TMN_THINKS_NS_SHOULD_FIX_THIS
+	if (cumul_count <= MAX_SLONG) {
+		SLONG tempcount = cumul_count;
+		BURP_verbose(176, (TEXT *) tempcount, NULL, NULL, NULL, NULL);
+		/* msg 176 closing file, committing, and finishing.  %ld bytes written */
+	} else {
+		// To localize the damage (no common 64-bit integer printf format
+		// string between compilers), we here convert the > MAX_SLONG
+		// value to a string using standard C++.
+		std::ostringstream foo;
+		foo << cumul_count << std::ends;
+		const char* psz = foo.str().c_str();
+		BURP_verbose(WHAT?, psz, 0, 0, 0, 0);
+		/* msg N closing file, committing, and finishing.  %s bytes written */
+	}
+#else
+	// TMN: Temoprarily added / 1024 to get the same behaviour
+	// (however wrong) as previous version.
+	SLONG tempcount = cumul_count / 1024;
+	BURP_verbose(176, (TEXT *) tempcount, NULL, NULL, NULL, NULL);
 	/* msg 176 closing file, committing, and finishing.  %ld bytes written */
+#endif
 	COMMIT;
 	ON_ERROR
 	    general_on_error ();
@@ -561,10 +599,8 @@ static int copy( TEXT * from, TEXT * to, ULONG size_len)
  *	string.
  *
  **************************************/
-	TEXT *p;
-	ULONG l = 0;
 
-    l = (ULONG) symbol_length (from, size_len);
+	ULONG l = (ULONG) symbol_length (from, size_len);
 
 	MOVE_FAST(from, to, l);
 	*(to + l) = '\0';

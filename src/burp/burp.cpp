@@ -1146,11 +1146,11 @@ void BURP_abort(void)
 
 
 void BURP_error(USHORT errcode,
-				void* arg1,
-				void* arg2,
-				void* arg3,
-				void* arg4,
-				void* arg5)
+				const void* arg1,
+				const void* arg2,
+				const void* arg3,
+				const void* arg4,
+				const void* arg5)
 {
 /**************************************
  *
@@ -1289,11 +1289,11 @@ void BURP_error_redirect(	STATUS* status_vector,
 
 
 void BURP_msg_partial(	USHORT number,
-						void* arg1,
-						void* arg2,
-						void* arg3,
-						void* arg4,
-						void* arg5)
+						const void* arg1,
+						const void* arg2,
+						const void* arg3,
+						const void* arg4,
+						const void* arg5)
 {
 /**************************************
  *
@@ -1313,21 +1313,21 @@ void BURP_msg_partial(	USHORT number,
 					number,
 					sizeof(buffer),
 					buffer,
-					reinterpret_cast<char*>(arg1),
-					reinterpret_cast<char*>(arg2),
-					reinterpret_cast<char*>(arg3),
-					reinterpret_cast<char*>(arg4),
-					reinterpret_cast<char*>(arg5));
+					static_cast<const char*>(arg1),
+					static_cast<const char*>(arg2),
+					static_cast<const char*>(arg3),
+					static_cast<const char*>(arg4),
+					static_cast<const char*>(arg5));
 	burp_output("%s", buffer);
 }
 
 
 void BURP_msg_put(	USHORT number,
-					void* arg1,
-					void* arg2,
-					void* arg3,
-					void* arg4,
-					void* arg5)
+					const void* arg1,
+					const void* arg2,
+					const void* arg3,
+					const void* arg4,
+					const void* arg5)
 {
 /**************************************
  *
@@ -1346,11 +1346,11 @@ void BURP_msg_put(	USHORT number,
 					number,
 					sizeof(buffer),
 					buffer,
-					reinterpret_cast<char*>(arg1),
-					reinterpret_cast<char*>(arg2),
-					reinterpret_cast<char*>(arg3),
-					reinterpret_cast<char*>(arg4),
-					reinterpret_cast<char*>(arg5));
+					static_cast<const char*>(arg1),
+					static_cast<const char*>(arg2),
+					static_cast<const char*>(arg3),
+					static_cast<const char*>(arg4),
+					static_cast<const char*>(arg5));
 	TRANSLATE_CP(buffer);
 	burp_output("%s\n", buffer);
 }
@@ -1410,7 +1410,11 @@ void BURP_output_version( TEXT * arg1, TEXT * arg2)
 
 
 void BURP_print(USHORT number,
-				void* arg1, void* arg2, void* arg3, void* arg4, void* arg5)
+				const void* arg1,
+				const void* arg2,
+				const void* arg3,
+				const void* arg4,
+				const void* arg5)
 {
 /**************************************
  *
@@ -1431,7 +1435,11 @@ void BURP_print(USHORT number,
 
 
 void BURP_verbose(USHORT number,
-				  void* arg1, void* arg2, void* arg3, void* arg4, void* arg5)
+				  const void* arg1,
+				  const void* arg2,
+				  const void* arg3,
+				  const void* arg4,
+				  const void* arg5)
 {
 /**************************************
  *
@@ -1445,9 +1453,8 @@ void BURP_verbose(USHORT number,
  *	user defined yieding function.
  *
  **************************************/
-	TGBL tdgbl;
 
-	tdgbl = GET_THREAD_DATA;
+	TGBL tdgbl = GET_THREAD_DATA;
 
 	if (tdgbl->gbl_sw_verbose)
 		BURP_print(number, arg1, arg2, arg3, arg4, arg5);
