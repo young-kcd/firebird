@@ -23,7 +23,8 @@
 
 #include "firebird.h"
 #include <string.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../remote/remote.h"
 #include "../remote/merge_proto.h"
 #include "../jrd/gds_proto.h"
@@ -107,7 +108,7 @@ USHORT MERGE_database_info(const UCHAR* in,
 			length = (SSHORT) gds__vax_integer(in, 2);
 			in += 2;
 			if (out + length + 2 >= end) {
-				out[-1] = gds_info_truncated;
+				out[-1] = isc_info_truncated;
 				return 0;
 			}
 			PUT_WORD(out, (UCHAR) length);
@@ -180,7 +181,7 @@ static ISC_STATUS merge_setup(
 	const USHORT new_length = length + delta_length;
 
 	if (*out + new_length + 2 >= end) {
-		(*out)[-1] = gds_info_truncated;
+		(*out)[-1] = isc_info_truncated;
 		return FB_FAILURE;
 	}
 

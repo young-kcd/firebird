@@ -27,7 +27,8 @@
 #include <string.h>
 #include <signal.h>
 #include "../jrd/common.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/license.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/why_proto.h"
@@ -36,7 +37,7 @@
 #include <io.h>
 #endif
 
-static UCHAR cache_dpb[] = { gds_dpb_version1, gds__dpb_cache_manager };
+static UCHAR cache_dpb[] = { isc_dpb_version1, isc_dpb_cache_manager };
 
 
 int CLIB_ROUTINE main( int argc, char **argv)
@@ -148,18 +149,18 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	do {
 		db_handle = NULL;
-		status = gds__attach_database(status_vector, 0, sw_database, &db_handle,
+		status = isc_attach_database(status_vector, 0, sw_database, &db_handle,
 									  sizeof(cache_dpb), cache_dpb);
 
-		if (status && status != gds__cache_restart) {
-			gds__print_status(status_vector);
+		if (status && status != isc_cache_restart) {
+			isc_print_status(status_vector);
 			gds__log_status(sw_database, status_vector);
 		}
 
 		if (db_handle)
-			gds__detach_database(status_vector, &db_handle);
+			isc_detach_database(status_vector, &db_handle);
 
-	} while (status == gds__cache_restart);
+	} while (status == isc_cache_restart);
 
 	exit(status ? FINI_ERROR : FINI_OK);
 }

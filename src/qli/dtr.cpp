@@ -38,7 +38,8 @@
 #include "../qli/compile.h"
 #include "../jrd/perf.h"
 #include "../jrd/license.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../qli/exe.h"
 #include "../qli/all_proto.h"
 #include "../qli/compi_proto.h"
@@ -237,7 +238,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 
 			case 'X':
 				debug_value = 1;
-				gds__set_debug(debug_value);
+				isc_set_debug(debug_value);
 				break;
 
 				/* This switch's name is arbitrary; since it is an internal 

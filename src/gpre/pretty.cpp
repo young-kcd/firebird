@@ -25,14 +25,15 @@
 //
 //____________________________________________________________
 //
-//	$Id: pretty.cpp,v 1.18 2003-09-30 23:01:07 brodsom Exp $
+//	$Id: pretty.cpp,v 1.19 2003-11-08 16:31:39 brodsom Exp $
 //
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
 #include <stdarg.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/constants.h"
 #include "../gpre/prett_proto.h"
 #include "../jrd/gds_proto.h"
@@ -201,7 +202,7 @@ int PRETTY_print_dyn(
 
 	version = BLR_BYTE;
 
-	if (version != gds_dyn_version_1)
+	if (version != isc_dyn_version_1)
 		return error(control, offset,
 					 "*** dyn version %d is not supported ***\n",
 					 version);
@@ -211,7 +212,7 @@ int PRETTY_print_dyn(
 	level++;
 	PRINT_DYN_VERB;
 
-	if (BLR_BYTE != gds_dyn_eoc)
+	if (BLR_BYTE != isc_dyn_eoc)
 		return error(control, offset,
 					 "*** expected dyn end-of-command  ***\n", 0);
 
@@ -252,7 +253,7 @@ PRETTY_print_sdl(UCHAR* blr,
 
 	version = BLR_BYTE;
 
-	if (version != gds_sdl_version1)
+	if (version != isc_sdl_version1)
 		return error(control, offset,
 					 "*** sdl version %d is not supported ***\n",
 					 version);
@@ -261,7 +262,7 @@ PRETTY_print_sdl(UCHAR* blr,
 	PRINT_LINE;
 	level++;
 
-	while (NEXT_BYTE != gds_sdl_eoc)
+	while (NEXT_BYTE != isc_sdl_eoc)
 		PRINT_SDL_VERB;
 
 	offset = control->ctl_blr - control->ctl_blr_start;
@@ -584,21 +585,21 @@ static int print_dyn_verb( CTL control, SSHORT level)
 	case isc_dyn_begin_backup:
 	case isc_dyn_end_backup:
 		return 0;
-	case gds_dyn_begin:
-	case gds_dyn_mod_database:
+	case isc_dyn_begin:
+	case isc_dyn_mod_database:
 		PRINT_LINE;
-		while (NEXT_BYTE != gds_dyn_end)
+		while (NEXT_BYTE != isc_dyn_end)
 			PRINT_DYN_VERB;
 		PRINT_DYN_VERB;
 		return 0;
 
-	case gds_dyn_view_blr:
-	case gds_dyn_fld_validation_blr:
-	case gds_dyn_fld_computed_blr:
-	case gds_dyn_trg_blr:
-	case gds_dyn_fld_missing_value:
-	case gds_dyn_prc_blr:
-	case gds_dyn_fld_default_value:
+	case isc_dyn_view_blr:
+	case isc_dyn_fld_validation_blr:
+	case isc_dyn_fld_computed_blr:
+	case isc_dyn_trg_blr:
+	case isc_dyn_fld_missing_value:
+	case isc_dyn_prc_blr:
+	case isc_dyn_fld_default_value:
 		length = PRINT_WORD;
 		PRINT_LINE;
 		if (length) {
@@ -610,60 +611,60 @@ static int print_dyn_verb( CTL control, SSHORT level)
 		}
 		return 0;
 
-	case gds_dyn_scl_acl:
-	case gds_dyn_log_check_point_length:
-	case gds_dyn_log_num_of_buffers:
-	case gds_dyn_log_buffer_size:
-	case gds_dyn_log_group_commit_wait:
-	case gds_dyn_idx_inactive:
+	case isc_dyn_scl_acl:
+	case isc_dyn_log_check_point_length:
+	case isc_dyn_log_num_of_buffers:
+	case isc_dyn_log_buffer_size:
+	case isc_dyn_log_group_commit_wait:
+	case isc_dyn_idx_inactive:
 		length = PRINT_WORD;
 		while (length--)
 			PRINT_BYTE;
 		PRINT_LINE;
 		return 0;
 
-	case gds_dyn_view_source:
-	case gds_dyn_fld_validation_source:
-	case gds_dyn_fld_computed_source:
-	case gds_dyn_description:
-	case gds_dyn_prc_source:
-	case gds_dyn_fld_default_source:
+	case isc_dyn_view_source:
+	case isc_dyn_fld_validation_source:
+	case isc_dyn_fld_computed_source:
+	case isc_dyn_description:
+	case isc_dyn_prc_source:
+	case isc_dyn_fld_default_source:
 		length = PRINT_WORD;
 		while (length--)
 			PRINT_CHAR;
 		PRINT_LINE;
 		return 0;
 
-	case gds_dyn_del_exception:
+	case isc_dyn_del_exception:
 		if (length = PRINT_WORD)
 			do
 				PRINT_CHAR;
 			while (--length);
 		return 0;
 
-	case gds_dyn_fld_not_null:
-	case gds_dyn_sql_object:
-	case gds_dyn_drop_log:
-	case gds_dyn_drop_cache:
-	case gds_dyn_def_default_log:
-	case gds_dyn_log_file_serial:
-	case gds_dyn_log_file_raw:
-	case gds_dyn_log_file_overflow:
-	case gds_dyn_single_validation:
-	case gds_dyn_del_default:
-	case gds_dyn_del_validation:
-	case gds_dyn_idx_statistic:
-	case gds_dyn_foreign_key_delete:
-	case gds_dyn_foreign_key_update:
-	case gds_dyn_foreign_key_cascade:
-	case gds_dyn_foreign_key_default:
-	case gds_dyn_foreign_key_null:
-	case gds_dyn_foreign_key_none:
+	case isc_dyn_fld_not_null:
+	case isc_dyn_sql_object:
+	case isc_dyn_drop_log:
+	case isc_dyn_drop_cache:
+	case isc_dyn_def_default_log:
+	case isc_dyn_log_file_serial:
+	case isc_dyn_log_file_raw:
+	case isc_dyn_log_file_overflow:
+	case isc_dyn_single_validation:
+	case isc_dyn_del_default:
+	case isc_dyn_del_validation:
+	case isc_dyn_idx_statistic:
+	case isc_dyn_foreign_key_delete:
+	case isc_dyn_foreign_key_update:
+	case isc_dyn_foreign_key_cascade:
+	case isc_dyn_foreign_key_default:
+	case isc_dyn_foreign_key_null:
+	case isc_dyn_foreign_key_none:
 
 		PRINT_LINE;
 		return 0;
 
-	case gds_dyn_end:
+	case isc_dyn_end:
 		PRINT_LINE;
 		return 0;
 	}
@@ -676,58 +677,58 @@ static int print_dyn_verb( CTL control, SSHORT level)
 	PRINT_LINE;
 
 	switch (operator_) {
-	case gds_dyn_def_database:
-	case gds_dyn_def_dimension:
-	case gds_dyn_def_exception:
-	case gds_dyn_def_file:
-	case gds_dyn_def_log_file:
-	case gds_dyn_def_cache_file:
-	case gds_dyn_def_filter:
-	case gds_dyn_def_function:
-	case gds_dyn_def_function_arg:
-	case gds_dyn_def_generator:
-	case gds_dyn_def_global_fld:
-	case gds_dyn_def_idx:
-	case gds_dyn_def_local_fld:
-	case gds_dyn_def_rel:
-	case gds_dyn_def_procedure:
-	case gds_dyn_def_parameter:
-	case gds_dyn_def_security_class:
-	case gds_dyn_def_shadow:
-	case gds_dyn_def_sql_fld:
-	case gds_dyn_def_trigger:
-	case gds_dyn_def_trigger_msg:
-	case gds_dyn_def_view:
-	case gds_dyn_delete_database:
-	case gds_dyn_delete_dimensions:
-	case gds_dyn_delete_filter:
-	case gds_dyn_delete_function:
-	case gds_dyn_delete_global_fld:
-	case gds_dyn_delete_idx:
-	case gds_dyn_delete_local_fld:
-	case gds_dyn_delete_rel:
-	case gds_dyn_delete_procedure:
-	case gds_dyn_delete_parameter:
-	case gds_dyn_delete_security_class:
-	case gds_dyn_delete_trigger:
-	case gds_dyn_delete_trigger_msg:
-	case gds_dyn_delete_shadow:
-	case gds_dyn_mod_exception:
-	case gds_dyn_mod_global_fld:
-	case gds_dyn_mod_idx:
-	case gds_dyn_mod_local_fld:
-	case gds_dyn_mod_procedure:
-	case gds_dyn_mod_rel:
-	case gds_dyn_mod_security_class:
-	case gds_dyn_mod_trigger:
-	case gds_dyn_mod_trigger_msg:
-	case gds_dyn_rel_constraint:
-	case gds_dyn_mod_view:
-	case gds_dyn_grant:
-	case gds_dyn_revoke:
-	case gds_dyn_view_relation:
+	case isc_dyn_def_database:
+	case isc_dyn_def_dimension:
+	case isc_dyn_def_exception:
+	case isc_dyn_def_file:
+	case isc_dyn_def_log_file:
+	case isc_dyn_def_cache_file:
+	case isc_dyn_def_filter:
+	case isc_dyn_def_function:
+	case isc_dyn_def_function_arg:
+	case isc_dyn_def_generator:
+	case isc_dyn_def_global_fld:
+	case isc_dyn_def_idx:
+	case isc_dyn_def_local_fld:
+	case isc_dyn_def_rel:
+	case isc_dyn_def_procedure:
+	case isc_dyn_def_parameter:
+	case isc_dyn_def_security_class:
+	case isc_dyn_def_shadow:
+	case isc_dyn_def_sql_fld:
+	case isc_dyn_def_trigger:
+	case isc_dyn_def_trigger_msg:
+	case isc_dyn_def_view:
+	case isc_dyn_delete_database:
+	case isc_dyn_delete_dimensions:
+	case isc_dyn_delete_filter:
+	case isc_dyn_delete_function:
+	case isc_dyn_delete_global_fld:
+	case isc_dyn_delete_idx:
+	case isc_dyn_delete_local_fld:
+	case isc_dyn_delete_rel:
+	case isc_dyn_delete_procedure:
+	case isc_dyn_delete_parameter:
+	case isc_dyn_delete_security_class:
+	case isc_dyn_delete_trigger:
+	case isc_dyn_delete_trigger_msg:
+	case isc_dyn_delete_shadow:
+	case isc_dyn_mod_exception:
+	case isc_dyn_mod_global_fld:
+	case isc_dyn_mod_idx:
+	case isc_dyn_mod_local_fld:
+	case isc_dyn_mod_procedure:
+	case isc_dyn_mod_rel:
+	case isc_dyn_mod_security_class:
+	case isc_dyn_mod_trigger:
+	case isc_dyn_mod_trigger_msg:
+	case isc_dyn_rel_constraint:
+	case isc_dyn_mod_view:
+	case isc_dyn_grant:
+	case isc_dyn_revoke:
+	case isc_dyn_view_relation:
 	case isc_dyn_def_sql_role:
-		while (NEXT_BYTE != gds_dyn_end)
+		while (NEXT_BYTE != isc_dyn_end)
 			PRINT_DYN_VERB;
 		PRINT_DYN_VERB;
 		return 0;
@@ -803,14 +804,14 @@ static int print_sdl_verb( CTL control, SSHORT level)
 	n = 0;
 
 	switch (operator_) {
-	case gds_sdl_begin:
+	case isc_sdl_begin:
 		PRINT_LINE;
-		while (NEXT_BYTE != gds_sdl_end)
+		while (NEXT_BYTE != isc_sdl_end)
 			PRINT_SDL_VERB;
 		PRINT_SDL_VERB;
 		return 0;
 
-	case gds_sdl_struct:
+	case isc_sdl_struct:
 		n = PRINT_BYTE;
 		while (n--) {
 			PRINT_LINE;
@@ -820,55 +821,55 @@ static int print_sdl_verb( CTL control, SSHORT level)
 		}
 		break;
 
-	case gds_sdl_scalar:
+	case isc_sdl_scalar:
 		PRINT_BYTE;
 
-	case gds_sdl_element:
+	case isc_sdl_element:
 		n = PRINT_BYTE;
 		PRINT_LINE;
 		while (n--)
 			PRINT_SDL_VERB;
 		return 0;
 
-	case gds_sdl_field:
-	case gds_sdl_relation:
+	case isc_sdl_field:
+	case isc_sdl_relation:
 		PRINT_STRING;
 		break;
 
-	case gds_sdl_fid:
-	case gds_sdl_rid:
-	case gds_sdl_short_integer:
+	case isc_sdl_fid:
+	case isc_sdl_rid:
+	case isc_sdl_short_integer:
 		PRINT_WORD;
 		break;
 
-	case gds_sdl_variable:
-	case gds_sdl_tiny_integer:
+	case isc_sdl_variable:
+	case isc_sdl_tiny_integer:
 		PRINT_BYTE;
 		break;
 
-	case gds_sdl_long_integer:
+	case isc_sdl_long_integer:
 		PRINT_LONG;
 		break;
 
-	case gds_sdl_add:
-	case gds_sdl_subtract:
-	case gds_sdl_multiply:
-	case gds_sdl_divide:
+	case isc_sdl_add:
+	case isc_sdl_subtract:
+	case isc_sdl_multiply:
+	case isc_sdl_divide:
 		PRINT_LINE;
 		PRINT_SDL_VERB;
 		PRINT_SDL_VERB;
 		return 0;
 
-	case gds_sdl_negate:
+	case isc_sdl_negate:
 		PRINT_LINE;
 		PRINT_SDL_VERB;
 		return 0;
 
-	case gds_sdl_do3:
+	case isc_sdl_do3:
 		n++;
-	case gds_sdl_do2:
+	case isc_sdl_do2:
 		n++;
-	case gds_sdl_do1:
+	case isc_sdl_do1:
 		n += 2;
 		PRINT_BYTE;
 		PRINT_LINE;

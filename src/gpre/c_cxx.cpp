@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.37 2003-10-29 10:53:07 robocop Exp $
+//	$Id: c_cxx.cpp,v 1.38 2003-11-08 16:31:40 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -35,8 +35,9 @@
 #include <string.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
-#include "../jrd/gds.h"
-#include "gpre.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
+#include "../gpre/gpre.h"
 #include "../gpre/pat.h"
 #include "../gpre/msc_proto.h"
 #include "../gpre/cmp_proto.h"
@@ -143,7 +144,7 @@ static const char* const NULL_STATUS	= "(long*) 0L";
 static const char* const NULL_SQLDA	= "(XSQLDA*) 0L";
 
 #ifdef VMS
-static const char* const GDS_INCLUDE	= "\"interbase:[syslib]gds.h\"";
+static const char* const GDS_INCLUDE	= "\"interbase:[syslib]ibase.h\"";
 #elif DARWIN
 static const char* const GDS_INCLUDE	= "<Firebird/ibase.h>";
 #else

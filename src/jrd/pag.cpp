@@ -67,7 +67,8 @@
 #include "../jrd/pag.h"
 #include "../jrd/ods.h"
 #include "../jrd/os/pio.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/license.h"
 #include "../jrd/jrn.h"
@@ -369,10 +370,10 @@ USHORT PAG_add_file(TEXT * file_name, SLONG start)
 
 // Verify database file path against DatabaseAccess entry of firebird.conf
 	if (!ISC_verify_database_access(file_name)) {
-		ERR_post(gds_conf_access_denied,
-			gds_arg_string, "additional database file",
-			gds_arg_string, ERR_cstring(file_name),
-			gds_arg_end);
+		ERR_post(isc_conf_access_denied,
+			isc_arg_string, "additional database file",
+			isc_arg_string, ERR_cstring(file_name),
+			isc_arg_end);
 	}
 
 /* Create the file.  If the sequence number comes back zero, it didn't
@@ -1073,8 +1074,8 @@ void PAG_header(const TEXT* file_name, USHORT file_length)
 	PIO_header(dbb, temp_page, MIN_PAGE_SIZE);
 
 	if (header->hdr_header.pag_type != pag_header || header->hdr_sequence)
-		ERR_post(gds_bad_db_format,
-				 gds_arg_cstring, file_length, ERR_string(file_name,
+		ERR_post(isc_bad_db_format,
+				 isc_arg_cstring, file_length, ERR_string(file_name,
 														  file_length), 0);
 
 #ifdef ODS_8_TO_CURRENT
@@ -1085,11 +1086,11 @@ void PAG_header(const TEXT* file_name, USHORT file_length)
 #else
 	if (header->hdr_ods_version != ODS_VERSION)
 #endif
-		ERR_post(gds_wrong_ods,
-				 gds_arg_cstring, file_length, ERR_string(file_name,
+		ERR_post(isc_wrong_ods,
+				 isc_arg_cstring, file_length, ERR_string(file_name,
 														  file_length),
-				 gds_arg_number, (SLONG) header->hdr_ods_version,
-				 gds_arg_number, (SLONG) ODS_VERSION, 0);
+				 isc_arg_number, (SLONG) header->hdr_ods_version,
+				 isc_arg_number, (SLONG) ODS_VERSION, 0);
 
 /****
 Note that if this check is turned on, it should be recoded in order that
@@ -1104,14 +1105,14 @@ are sharable between all platforms, it would be useful to identify where they
 were created for debugging purposes.  - Deej 2/6/95
 
 if (header->hdr_implementation && header->hdr_implementation != CLASS)
-    ERR_post (gds__bad_db_format,
-	gds_arg_cstring, file_length,  ERR_string(file_name, file_length), 0);
+    ERR_post (isc_bad_db_format,
+	isc_arg_cstring, file_length,  ERR_string(file_name, file_length), 0);
 ****/
 
 	if (header->hdr_page_size < MIN_PAGE_SIZE ||
 		header->hdr_page_size > MAX_PAGE_SIZE)
-			ERR_post(gds_bad_db_format,
-					 gds_arg_cstring, file_length, ERR_string(file_name,
+			ERR_post(isc_bad_db_format,
+					 isc_arg_cstring, file_length, ERR_string(file_name,
 															  file_length),
 					 0);
 
@@ -1154,12 +1155,12 @@ if (header->hdr_implementation && header->hdr_implementation != CLASS)
 		&& (dbb->dbb_flags & DBB_being_opened_read_only)) {
 		/* Looks like the Header page says, it is NOT ReadOnly!! But the database
 		 * file system permission gives only ReadOnly access. Punt out with
-		 * gds__no_priv error (no privileges)
+		 * isc_no_priv error (no privileges)
 		 */
-		ERR_post(gds_no_priv,
-				 gds_arg_string, "read-write",
-				 gds_arg_string, "database",
-				 gds_arg_cstring, file_length, ERR_string(file_name,
+		ERR_post(isc_no_priv,
+				 isc_arg_string, "read-write",
+				 isc_arg_string, "database",
+				 isc_arg_cstring, file_length, ERR_string(file_name,
 														  file_length), 0);
 	}
 
@@ -1388,10 +1389,10 @@ void PAG_init2(USHORT shadow_number)
 // Verify database file path against DatabaseAccess entry of firebird.conf
 		file_name[file_length] = 0;
 		if (!ISC_verify_database_access(file_name)) {
-			ERR_post(gds_conf_access_denied,
-				gds_arg_string, "additional database file",
-				gds_arg_string, ERR_cstring(file_name),
-				gds_arg_end);
+			ERR_post(isc_conf_access_denied,
+				isc_arg_string, "additional database file",
+				isc_arg_string, ERR_cstring(file_name),
+				isc_arg_end);
 		}
 
 		file->fil_next = PIO_open(dbb,

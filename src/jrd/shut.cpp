@@ -24,7 +24,8 @@
 #include "firebird.h"
 #include "../jrd/jrd.h"
 #include "../jrd/scl.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/ods.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/cmp_proto.h"
@@ -88,14 +89,14 @@ BOOLEAN SHUT_blocking_ast(DBB dbb)
 		return FALSE;
 	}
 
-	if (flag & gds_dpb_shut_force && !delay)
+	if (flag & isc_dpb_shut_force && !delay)
 		return shutdown_locks(dbb);
 	else {
-		if (flag & gds_dpb_shut_attachment)
+		if (flag & isc_dpb_shut_attachment)
 			dbb->dbb_ast_flags |= DBB_shut_attach;
-		if (flag & gds_dpb_shut_force)
+		if (flag & isc_dpb_shut_force)
 			dbb->dbb_ast_flags |= DBB_shut_force;
-		if (flag & gds_dpb_shut_transaction)
+		if (flag & isc_dpb_shut_transaction)
 			dbb->dbb_ast_flags |= DBB_shut_tran;
 		dbb->dbb_shutdown_delay = delay;
 		return FALSE;
@@ -187,27 +188,27 @@ BOOLEAN SHUT_database(DBB dbb, SSHORT flag, SSHORT delay)
 	}
 
 	if (!exclusive && (timeout > 0 ||
-					   flag & (gds_dpb_shut_attachment |
-							   gds_dpb_shut_transaction)))
+					   flag & (isc_dpb_shut_attachment |
+							   isc_dpb_shut_transaction)))
 	{
 		notify_shutdown(dbb, 0, 0);	/* Tell everyone we're giving up */
 		SHUT_blocking_ast(dbb);
 		attachment->att_flags &= ~ATT_shutdown_manager;
 		++dbb->dbb_use_count;
-		ERR_post(gds_shutfail, 0);
+		ERR_post(isc_shutfail, 0);
 	}
 
 /* Once there are no more transactions active, force all remaining
    attachments to shutdown. */
 
-	if (flag & gds_dpb_shut_transaction) {
+	if (flag & isc_dpb_shut_transaction) {
 		exclusive = FALSE;
-		flag = gds_dpb_shut_force;
+		flag = isc_dpb_shut_force;
 	}
 
 	dbb->dbb_ast_flags |= DBB_shutdown;
 
-	if (!exclusive && flag & gds_dpb_shut_force) {
+	if (!exclusive && flag & isc_dpb_shut_force) {
 		// TMN: Ugly counting!
 		while (!notify_shutdown(dbb, flag, 0));
 	}
@@ -278,10 +279,10 @@ static BOOLEAN notify_shutdown(DBB dbb, SSHORT flag, SSHORT delay)
 	if (CCH_exclusive(tdbb, LCK_PW, ((SSHORT) - SHUT_WAIT_TIME)) && flag) {
 		return shutdown_locks(dbb);
 	}
-	if ((flag & gds_dpb_shut_force) && !delay) {
+	if ((flag & isc_dpb_shut_force) && !delay) {
 		return shutdown_locks(dbb);
 	}
-	if ((flag & gds_dpb_shut_transaction) &&
+	if ((flag & isc_dpb_shut_transaction) &&
 		!(TRA_active_transactions(tdbb, dbb)))
 	{
 		return TRUE;

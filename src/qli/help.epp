@@ -27,7 +27,8 @@
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../qli/dtr.h"
 #include "../qli/compile.h"
 #include "../qli/parse.h"

@@ -35,7 +35,8 @@
 #include "../jrd/scl.h"
 #include "../jrd/drq.h"
 #include "../jrd/flags.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/lls.h"
 #include "../jrd/all.h"
 #include "../jrd/met.h"
@@ -367,9 +368,9 @@ void DYN_UTIL_generate_index_name(TDBB tdbb,
 
 	do {
 		const SCHAR* format;
-		if (verb == gds_dyn_def_primary_key)
+		if (verb == isc_dyn_def_primary_key)
 			format = "RDB$PRIMARY%" QUADFORMAT "d";
-		else if (verb == gds_dyn_def_foreign_key)
+		else if (verb == isc_dyn_def_foreign_key)
 			format = "RDB$FOREIGN%" QUADFORMAT "d";
 		else
 			format = "RDB$%" QUADFORMAT "d";

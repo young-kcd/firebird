@@ -38,7 +38,8 @@
 #include <fcntl.h>
 #include "../jrd/ibsetjmp.h"
 #include "../jrd/jrd_time.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/ods.h"
 #include "../jrd/license.h"
 #include "../jrd/msg_encode.h"
@@ -622,12 +623,12 @@ int CLIB_ROUTINE main(int argc, char **argv)
 /* Check to make sure that the user accessing the database is either
  * SYSDBA or owner of the database */
 	dpb = dpb_string;
-	*dpb++ = gds_dpb_version1;
+	*dpb++ = isc_dpb_version1;
 	*dpb++ = isc_dpb_gstat_attach;
 	*dpb++ = 0;
 
 	if (*username) {
-		*dpb++ = gds_dpb_user_name;
+		*dpb++ = isc_dpb_user_name;
 		*dpb++ = strlen((char*) username);
 		strcpy((char*) dpb, (char*) username);
 		dpb += strlen((char*) username);
@@ -635,9 +636,9 @@ int CLIB_ROUTINE main(int argc, char **argv)
 
 	if (*password) {
 #ifdef SUPERSERVER
-		*dpb++ = gds_dpb_password_enc;
+		*dpb++ = isc_dpb_password_enc;
 #else
-		*dpb++ = gds_dpb_password;
+		*dpb++ = isc_dpb_password;
 #endif
 		*dpb++ = strlen((char*) password);
 		strcpy((char*) dpb, (char*) password);
@@ -652,7 +653,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
 		dba_exit(FINI_ERROR, tddba);
 
 	if (sw_version)
-		gds__version(&DB, NULL, NULL);
+		isc_version(&DB, NULL, NULL);
 
 	transact1 = 0;
 	START_TRANSACTION transact1 READ_ONLY;

@@ -30,7 +30,7 @@
  * 2003.08.10 Claudio Valderrama: Fix SF Bugs #544132 and #728839.
  */
 /*
-$Id: fun.epp,v 1.27 2003-11-03 23:53:50 brodsom Exp $
+$Id: fun.epp,v 1.28 2003-11-08 16:36:07 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -40,7 +40,8 @@ $Id: fun.epp,v 1.27 2003-11-03 23:53:50 brodsom Exp $
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/exe.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/req.h"
 #include "../jrd/lls.h"
 #include "../jrd/blb.h"
@@ -440,9 +441,9 @@ void FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 						if (input->dsc_dtype != dtype_quad &&
 							input->dsc_dtype != dtype_blob)
 						{
-							ERR_post(gds_wish_list,
-									 gds_arg_gds, gds_blobnotsup,
-									 gds_arg_string, "conversion", 0);
+							ERR_post(isc_wish_list,
+									 isc_arg_gds, isc_blobnotsup,
+									 isc_arg_string, "conversion", 0);
 						}
 						blob_id = (SLONG *) input->dsc_address;
 					}

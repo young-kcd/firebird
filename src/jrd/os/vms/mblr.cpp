@@ -24,7 +24,9 @@
 
 #include "firebird.h"
 #include "../jrd/common.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
+#include "../jrd/gdsold.h"
 #include "../jrd/mblr.h"
 #include "../jrd/mblr_proto.h"
 

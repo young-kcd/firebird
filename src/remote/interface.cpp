@@ -44,7 +44,8 @@
 #endif
 #endif
 
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/thd.h"
 #include "../jrd/license.h"
 #include "../jrd/fil.h"
@@ -280,21 +281,21 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	ISC_STATUS* v = user_status;
 
-	*v++ = gds_arg_gds;
-	*v++ = gds_unavailable;
-	*v = gds_arg_end;
+	*v++ = isc_arg_gds;
+	*v++ = isc_unavailable;
+	*v = isc_arg_end;
 
 #ifdef UNIX
 	// If single user, return
 	if (get_single_user(dpb_length, dpb))
 	{
-		return gds_unavailable;
+		return isc_unavailable;
 	}
 #endif
 
 	SET_THREAD_DATA;
 
-	NULL_CHECK(handle, gds_bad_db_handle);
+	NULL_CHECK(handle, isc_bad_db_handle);
 
 	strcpy((char*) expanded_name, reinterpret_cast<const char*>(expanded_filename));
 	length = strlen((char *) expanded_name);
@@ -312,7 +313,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 		if (!new_dpb_ptr)
 		{		/* NOMEM: return error to client */
-			user_status[1] = gds_virmemexh;
+			user_status[1] = isc_virmemexh;
 			return error(user_status);
 		}
 	}
@@ -392,9 +393,9 @@ ISC_STATUS GDS_BLOB_INFO(ISC_STATUS*	user_status,
 	SET_THREAD_DATA;
 
 	blob = *blob_handle;
-	CHECK_HANDLE(blob, type_rbl, gds_bad_segstr_handle);
+	CHECK_HANDLE(blob, type_rbl, isc_bad_segstr_handle);
 	rdb = blob->rbl_rdb;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
@@ -432,18 +433,18 @@ ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS * user_status, RBL * blob_handle)
 
 	if (!(blob = *blob_handle)) {
 		if (user_status) {
-			*user_status++ = gds_arg_gds;
+			*user_status++ = isc_arg_gds;
 			*user_status++ = FB_SUCCESS;
-			*user_status = gds_arg_end;
+			*user_status = isc_arg_end;
 		}
 		return FB_SUCCESS;
 	}
 
 	SET_THREAD_DATA;
 
-	CHECK_HANDLE(blob, type_rbl, gds_bad_segstr_handle);
+	CHECK_HANDLE(blob, type_rbl, isc_bad_segstr_handle);
 	rdb = blob->rbl_rdb;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
@@ -486,7 +487,7 @@ ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS * user_status, RDB * handle, SLONG * id)
 	SET_THREAD_DATA;
 
 	rdb = *handle;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
@@ -537,9 +538,9 @@ ISC_STATUS GDS_CLOSE_BLOB(ISC_STATUS * user_status, RBL * blob_handle)
 	SET_THREAD_DATA;
 
 	blob = *blob_handle;
-	CHECK_HANDLE(blob, type_rbl, gds_bad_segstr_handle);
+	CHECK_HANDLE(blob, type_rbl, isc_bad_segstr_handle);
 	rdb = blob->rbl_rdb;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
 	trdb->trdb_database = rdb;
@@ -590,9 +591,9 @@ ISC_STATUS GDS_COMMIT(ISC_STATUS * user_status, RTR * rtr_handle)
 	SET_THREAD_DATA;
 
 	transaction = *rtr_handle;
-	CHECK_HANDLE(transaction, type_rtr, gds_bad_trans_handle);
+	CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
 	rdb = (*rtr_handle)->rtr_rdb;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
@@ -635,9 +636,9 @@ ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS * user_status, RTR * rtr_handle)
 	SET_THREAD_DATA;
 
 	transaction = *rtr_handle;
-	CHECK_HANDLE(transaction, type_rtr, gds_bad_trans_handle);
+	CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
 	rdb = (*rtr_handle)->rtr_rdb;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
@@ -689,9 +690,9 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 
 /* Check and validate handles, etc. */
 
-	NULL_CHECK(req_handle, gds_bad_req_handle);
+	NULL_CHECK(req_handle, isc_bad_req_handle);
 	rdb = *db_handle;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
@@ -803,10 +804,10 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 
 	SET_THREAD_DATA;
 
-	NULL_CHECK(blob_handle, gds_bad_segstr_handle);
+	NULL_CHECK(blob_handle, isc_bad_segstr_handle);
 	rdb = *db_handle;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	CHECK_HANDLE((*rtr_handle), type_rtr, gds_bad_trans_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	CHECK_HANDLE((*rtr_handle), type_rtr, isc_bad_trans_handle);
 	transaction = *rtr_handle;
 
 	rdb->rdb_status_vector = user_status;
@@ -890,20 +891,20 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	memset((void *) node_name, 0, (size_t) MAXPATHLEN);
 
 	ISC_STATUS* v = user_status;
-	*v++ = gds_arg_gds;
-	*v++ = gds_unavailable;
-	*v = gds_arg_end;
+	*v++ = isc_arg_gds;
+	*v++ = isc_unavailable;
+	*v = isc_arg_end;
 
 #ifdef UNIX
 /* If single user, return */
 
 	if (get_single_user(dpb_length, dpb))
-		return gds_unavailable;
+		return isc_unavailable;
 #endif
 
 	SET_THREAD_DATA;
 
-	NULL_CHECK(handle, gds_bad_db_handle);
+	NULL_CHECK(handle, isc_bad_db_handle);
 
 	strcpy((char *) expanded_name, (char *) expanded_filename);
 	length = strlen((char *) expanded_name);
@@ -921,7 +922,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 		if (!new_dpb_ptr)
 		{		/* NOMEM: return error to client */
-			user_status[1] = gds_virmemexh;
+			user_status[1] = isc_virmemexh;
 			return error(user_status);
 		}
 	}
@@ -1002,7 +1003,7 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS*	user_status,
 	SET_THREAD_DATA;
 
 	rdb = *handle;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
@@ -1081,8 +1082,8 @@ ISC_STATUS GDS_DDL(ISC_STATUS*	user_status,
 /* Check and validate handles, etc. */
 
 	rdb = *db_handle;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	CHECK_HANDLE((*rtr_handle), type_rtr, gds_bad_trans_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	CHECK_HANDLE((*rtr_handle), type_rtr, isc_bad_trans_handle);
 	transaction = *rtr_handle;
 
 	rdb->rdb_status_vector = user_status;
@@ -1137,7 +1138,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, RDB* handle)
 	SET_THREAD_DATA;
 
 	rdb = *handle;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 
 	port = rdb->rdb_port;
 	rdb->rdb_status_vector = user_status;
@@ -1196,9 +1197,9 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, RDB* handle)
 
 	RESTORE_THREAD_DATA;
 
-	*user_status++ = gds_arg_gds;
+	*user_status++ = isc_arg_gds;
 	*user_status++ = FB_SUCCESS;
-	*user_status = gds_arg_end;
+	*user_status = isc_arg_end;
 
 	return FB_SUCCESS;
 }
@@ -1224,7 +1225,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, RDB* handle)
 	SET_THREAD_DATA;
 
 	rdb = *handle;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
@@ -1239,7 +1240,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, RDB* handle)
 			return unsupported(user_status);
 
 		if (!release_object(rdb, op_drop_database, rdb->rdb_id))
-			if (user_status[1] != gds_drdb_completed_with_errs)
+			if (user_status[1] != isc_drdb_completed_with_errs)
 				return error(user_status);
 
 		while (rdb->rdb_events)
@@ -1294,9 +1295,9 @@ ISC_STATUS GDS_DSQL_ALLOCATE(ISC_STATUS*	user_status,
 
 	SET_THREAD_DATA;
 
-	NULL_CHECK(stmt_handle, gds_bad_req_handle);
+	NULL_CHECK(stmt_handle, isc_bad_req_handle);
 	rdb = *db_handle;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
@@ -1402,10 +1403,10 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
 /* Check and validate handles, etc. */
 
 	statement = *stmt_handle;
-	CHECK_HANDLE(statement, type_rsr, gds_bad_req_handle);
+	CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
 	rdb = statement->rsr_rdb;
 	if (transaction = *rtr_handle) {
-		CHECK_HANDLE(transaction, type_rtr, gds_bad_trans_handle);
+		CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
 	}
 
 	port = rdb->rdb_port;
@@ -1611,9 +1612,9 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS * user_status,
 /* Check and validate handles, etc. */
 
 	rdb = *db_handle;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	if (transaction = *rtr_handle) {
-		CHECK_HANDLE(transaction, type_rtr, gds_bad_trans_handle);
+		CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
 	}
 
 	port = rdb->rdb_port;
@@ -1794,7 +1795,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS * user_status,
 /* Check and validate handles, etc. */
 
 	statement = *stmt_handle;
-	CHECK_HANDLE(statement, type_rsr, gds_bad_req_handle);
+	CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
 	rdb = statement->rsr_rdb;
 	port = rdb->rdb_port;
 	rdb->rdb_status_vector = user_status;
@@ -2055,7 +2056,7 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS * user_status, RSR * stmt_handle, USHORT opt
 /* Check and validate handles, etc. */
 
 	statement = *stmt_handle;
-	CHECK_HANDLE(statement, type_rsr, gds_bad_req_handle);
+	CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
 	rdb = statement->rsr_rdb;
 
 	rdb->rdb_status_vector = user_status;
@@ -2132,7 +2133,7 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS * user_status,
 	/* Check and validate handles, etc. */
 
 	statement = *stmt_handle;
-	CHECK_HANDLE(statement, type_rsr, gds_bad_req_handle);
+	CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
 	rdb = statement->rsr_rdb;
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
@@ -2236,11 +2237,11 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status, RTR * rtr_handle, RSR * st
 /* Check and validate handles, etc. */
 
 	statement = *stmt_handle;
-	CHECK_HANDLE(statement, type_rsr, gds_bad_req_handle);
+	CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
 	rdb = statement->rsr_rdb;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	if (transaction = *rtr_handle) {
-		CHECK_HANDLE(transaction, type_rtr, gds_bad_trans_handle);
+		CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
 	}
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
@@ -2344,7 +2345,7 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS * user_status,
 	/* Check and validate handles, etc. */
 
 	statement = *stmt_handle;
-	CHECK_HANDLE(statement, type_rsr, gds_bad_req_handle);
+	CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
 	rdb = statement->rsr_rdb;
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
@@ -2416,7 +2417,7 @@ ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
 /* Check and validate handles, etc. */
 
 	statement = *stmt_handle;
-	CHECK_HANDLE(statement, type_rsr, gds_bad_req_handle);
+	CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
 	rdb = statement->rsr_rdb;
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
@@ -2475,10 +2476,10 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 
 /* Sniff out handles, etc, and find the various blocks. */
 
-	CHECK_HANDLE((*blob_handle), type_rbl, gds_bad_segstr_handle);
+	CHECK_HANDLE((*blob_handle), type_rbl, isc_bad_segstr_handle);
 	blob = *blob_handle;
 	rdb = blob->rbl_rdb;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
 	trdb->trdb_database = rdb;
@@ -2528,15 +2529,15 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 		/* set up the status vector for the calls we're going to fake */
 
 		v = user_status;
-		*v++ = gds_arg_gds;
+		*v++ = isc_arg_gds;
 		v[0] = FB_SUCCESS;
-		v[1] = gds_arg_end;
+		v[1] = isc_arg_end;
 		*length = 0;
 
 		/* if we're already done, stop now */
 
 		if (blob->rbl_flags & RBL_eof) {
-			*v++ = gds_segstr_eof;
+			*v++ = isc_segstr_eof;
 			RESTORE_THREAD_DATA;
 			return user_status[1];
 		}
@@ -2572,7 +2573,7 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 				if (l > buffer_length) {
 					blob->rbl_fragment_length = l - buffer_length;
 					l = buffer_length;
-					*v = gds_segment;
+					*v = isc_segment;
 				}
 
 				/* and, just for yucks, see if we're exactly using up the fragment
@@ -2581,7 +2582,7 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 
 				if (l == buffer_length &&
 					l == blob->rbl_length && (blob->rbl_flags & RBL_segment))
-					*v = gds_segment;
+					*v = isc_segment;
 
 				/* finally set up the return length, decrement the current length,
 				   copy the data, and indicate where to start next time. */
@@ -2614,7 +2615,7 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 
 			if (blob->rbl_flags & RBL_eof_pending) {
 				blob->rbl_flags |= RBL_eof;
-				*v = gds_segstr_eof;
+				*v = isc_segstr_eof;
 				break;
 			}
 
@@ -2712,8 +2713,8 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS * user_status,
 	SET_THREAD_DATA;
 
 	rdb = *db_handle;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	CHECK_HANDLE((*tra_handle), type_rtr, gds_bad_trans_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	CHECK_HANDLE((*tra_handle), type_rtr, isc_bad_trans_handle);
 	transaction = *tra_handle;
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
@@ -2811,10 +2812,10 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 
 	SET_THREAD_DATA;
 
-	NULL_CHECK(blob_handle, gds_bad_segstr_handle);
+	NULL_CHECK(blob_handle, isc_bad_segstr_handle);
 	rdb = *db_handle;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	CHECK_HANDLE((*rtr_handle), type_rtr, gds_bad_trans_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	CHECK_HANDLE((*rtr_handle), type_rtr, isc_bad_trans_handle);
 	transaction = *rtr_handle;
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
@@ -2890,9 +2891,9 @@ ISC_STATUS GDS_PREPARE(ISC_STATUS * user_status,
 	SET_THREAD_DATA;
 
 	transaction = *rtr_handle;
-	CHECK_HANDLE(transaction, type_rtr, gds_bad_trans_handle);
+	CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
 	rdb = (*rtr_handle)->rtr_rdb;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
 	trdb->trdb_database = rdb;
@@ -2959,10 +2960,10 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
 
 	/* Sniff out handles, etc, and find the various blocks. */
 
-	CHECK_HANDLE((*blob_handle), type_rbl, gds_bad_segstr_handle);
+	CHECK_HANDLE((*blob_handle), type_rbl, isc_bad_segstr_handle);
 	blob = *blob_handle;
 	rdb = blob->rbl_rdb;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
 	trdb->trdb_database = rdb;
@@ -3061,8 +3062,8 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS * user_status,
 	SET_THREAD_DATA;
 
 	rdb = *db_handle;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	CHECK_HANDLE((*tra_handle), type_rtr, gds_bad_trans_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	CHECK_HANDLE((*tra_handle), type_rtr, isc_bad_trans_handle);
 	transaction = *tra_handle;
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
@@ -3152,7 +3153,7 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS * user_status,
 	SET_THREAD_DATA;
 
 	rdb = *handle;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
 	trdb->trdb_database = rdb;
@@ -3267,10 +3268,10 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 
 /* Check handles and environment, then set up error handling */
 
-	CHECK_HANDLE((*req_handle), type_rrq, gds_bad_req_handle);
+	CHECK_HANDLE((*req_handle), type_rrq, isc_bad_req_handle);
 	request = REMOTE_find_request(*req_handle, level);
 	rdb = request->rrq_rdb;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
 	trdb->trdb_database = rdb;
@@ -3505,9 +3506,9 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
 
 	SET_THREAD_DATA;
 
-	NULL_CHECK(rtr_handle, gds_bad_trans_handle);
+	NULL_CHECK(rtr_handle, isc_bad_trans_handle);
 	RDB rdb = *db_handle;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
 	trdb->trdb_database = rdb;
@@ -3555,9 +3556,9 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, RRQ * req_handle)
 	SET_THREAD_DATA;
 
 	request = *req_handle;
-	CHECK_HANDLE(request, type_rrq, gds_bad_req_handle);
+	CHECK_HANDLE(request, type_rrq, isc_bad_req_handle);
 	rdb = request->rrq_rdb;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
 	trdb->trdb_database = rdb;
@@ -3607,9 +3608,9 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 	SET_THREAD_DATA;
 
 	request = REMOTE_find_request(*req_handle, level);
-	CHECK_HANDLE(request, type_rrq, gds_bad_req_handle);
+	CHECK_HANDLE(request, type_rrq, isc_bad_req_handle);
 	rdb = request->rrq_rdb;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
 	trdb->trdb_database = rdb;
@@ -3634,18 +3635,18 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 			while (info_items < end_items) {
 				const UCHAR item = *info_items++;
 				switch (item) {
-				case gds_info_end:
+				case isc_info_end:
 					break;
 
-				case gds_info_state:
-					data = gds_info_req_send;
+				case isc_info_state:
+					data = isc_info_req_send;
 					break;
 
-				case gds_info_message_number:
+				case isc_info_message_number:
 					data = msg->msg_number;
 					break;
 
-				case gds_info_message_size:
+				case isc_info_message_size:
 					data = format->fmt_length;
 					break;
 
@@ -3654,7 +3655,7 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 				}
 
 				*out++ = item;
-				if (item == gds_info_end)
+				if (item == isc_info_end)
 					break;
 
 				*out++ = 2;
@@ -3704,9 +3705,9 @@ ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS * user_status, RTR * rtr_handle)
 	SET_THREAD_DATA;
 
 	transaction = *rtr_handle;
-	CHECK_HANDLE(transaction, type_rtr, gds_bad_trans_handle);
+	CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
 	rdb = (*rtr_handle)->rtr_rdb;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
 	trdb->trdb_database = rdb;
@@ -3751,9 +3752,9 @@ ISC_STATUS GDS_ROLLBACK(ISC_STATUS * user_status, RTR * rtr_handle)
 	SET_THREAD_DATA;
 
 	transaction = *rtr_handle;
-	CHECK_HANDLE(transaction, type_rtr, gds_bad_trans_handle);
+	CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
 	rdb = (*rtr_handle)->rtr_rdb;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
 	trdb->trdb_database = rdb;
@@ -3800,9 +3801,9 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS * user_status,
 	SET_THREAD_DATA;
 
 	blob = *blob_handle;
-	CHECK_HANDLE(blob, type_rbl, gds_bad_segstr_handle);
+	CHECK_HANDLE(blob, type_rbl, isc_bad_segstr_handle);
 	rdb = blob->rbl_rdb;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
 	trdb->trdb_database = rdb;
@@ -3866,12 +3867,12 @@ ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
 
 	SET_THREAD_DATA;
 
-	CHECK_HANDLE((*req_handle), type_rrq, gds_bad_req_handle);
+	CHECK_HANDLE((*req_handle), type_rrq, isc_bad_req_handle);
 	request = REMOTE_find_request(*req_handle, level);
 	rdb = request->rrq_rdb;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	if (msg_type > request->rrq_max_msg)
-		return handle_error(user_status, gds_badmsgnum);
+		return handle_error(user_status, isc_badmsgnum);
 
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
@@ -3949,9 +3950,9 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS * user_status,
 	length = strlen((char *) expanded_name);
 
 	v = user_status;
-	*v++ = gds_arg_gds;
-	*v++ = gds_unavailable;
-	*v = gds_arg_end;
+	*v++ = isc_arg_gds;
+	*v++ = isc_unavailable;
+	*v = isc_arg_end;
 
 	new_spb_ptr = new_spb;
 	if ((spb_length + MAX_USER_LENGTH + MAX_PASSWORD_ENC_LENGTH +
@@ -3965,7 +3966,7 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS * user_status,
 
 		if (!new_spb_ptr)
 		{		/* NOMEM: return error to client */
-			user_status[1] = gds_virmemexh;
+			user_status[1] = isc_virmemexh;
 			return error(user_status);
 		}
 	}
@@ -4080,9 +4081,9 @@ ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS * user_status, RDB * handle)
 
 	RESTORE_THREAD_DATA;
 
-	*user_status++ = gds_arg_gds;
+	*user_status++ = isc_arg_gds;
 	*user_status++ = FB_SUCCESS;
-	*user_status = gds_arg_end;
+	*user_status = isc_arg_end;
 
 	return FB_SUCCESS;
 }
@@ -4231,14 +4232,14 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS * user_status,
 
 	SET_THREAD_DATA;
 
-	CHECK_HANDLE((*req_handle), type_rrq, gds_bad_req_handle);
-	CHECK_HANDLE((*rtr_handle), type_rtr, gds_bad_trans_handle);
+	CHECK_HANDLE((*req_handle), type_rrq, isc_bad_req_handle);
+	CHECK_HANDLE((*rtr_handle), type_rtr, isc_bad_trans_handle);
 	request = REMOTE_find_request(*req_handle, level);
 	transaction = *rtr_handle;
 	rdb = request->rrq_rdb;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	if (msg_type > request->rrq_max_msg)
-		return handle_error(user_status, gds_badmsgnum);
+		return handle_error(user_status, isc_badmsgnum);
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
 	trdb->trdb_database = rdb;
@@ -4246,9 +4247,9 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS * user_status,
 	try
 	{
 		if ((*rtr_handle)->rtr_rdb != rdb) {
-			user_status[0] = gds_arg_gds;
-			user_status[1] = gds_trareqmis;
-			user_status[2] = gds_arg_end;
+			user_status[0] = isc_arg_gds;
+			user_status[1] = isc_trareqmis;
+			user_status[2] = isc_arg_end;
 			return error(user_status);
 		}
 
@@ -4323,12 +4324,12 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
 
 	SET_THREAD_DATA;
 
-	CHECK_HANDLE((*req_handle), type_rrq, gds_bad_req_handle);
-	CHECK_HANDLE((*rtr_handle), type_rtr, gds_bad_trans_handle);
+	CHECK_HANDLE((*req_handle), type_rrq, isc_bad_req_handle);
+	CHECK_HANDLE((*rtr_handle), type_rtr, isc_bad_trans_handle);
 	request = REMOTE_find_request(*req_handle, level);
 	transaction = *rtr_handle;
 	rdb = request->rrq_rdb;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
 	trdb->trdb_database = rdb;
@@ -4336,9 +4337,9 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
 	try
 	{
 		if ((*rtr_handle)->rtr_rdb != rdb) {
-			user_status[0] = gds_arg_gds;
-			user_status[1] = gds_trareqmis;
-			user_status[2] = gds_arg_end;
+			user_status[0] = isc_arg_gds;
+			user_status[1] = isc_trareqmis;
+			user_status[2] = isc_arg_end;
 			return error(user_status);
 		}
 
@@ -4400,9 +4401,9 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
 
 	SET_THREAD_DATA;
 
-	NULL_CHECK(rtr_handle, gds_bad_trans_handle);
+	NULL_CHECK(rtr_handle, isc_bad_trans_handle);
 	rdb = *db_handle;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
 	trdb->trdb_database = rdb;
@@ -4462,9 +4463,9 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS * user_status,
 	SET_THREAD_DATA;
 
 	rdb = *db_handle;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	transaction = *rtr_handle;
-	CHECK_HANDLE(transaction, type_rtr, gds_bad_trans_handle);
+	CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
 	trdb->trdb_database = rdb;
@@ -4483,9 +4484,9 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS * user_status,
 		}
 
 		if ((*rtr_handle)->rtr_rdb != rdb) {
-			user_status[0] = gds_arg_gds;
-			user_status[1] = gds_trareqmis;
-			user_status[2] = gds_arg_end;
+			user_status[0] = isc_arg_gds;
+			user_status[1] = isc_trareqmis;
+			user_status[2] = isc_arg_end;
 			return error(user_status);
 		}
 
@@ -4598,9 +4599,9 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 	SET_THREAD_DATA;
 
 	transaction = *tra_handle;
-	CHECK_HANDLE(transaction, type_rtr, gds_bad_trans_handle);
+	CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
 	rdb = transaction->rtr_rdb;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
 	trdb->trdb_database = rdb;
@@ -4642,9 +4643,9 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status, RRQ * req_handle, USHORT level)
 	SET_THREAD_DATA;
 
 	request = REMOTE_find_request(*req_handle, level);
-	CHECK_HANDLE(request, type_rrq, gds_bad_req_handle);
+	CHECK_HANDLE(request, type_rrq, isc_bad_req_handle);
 	rdb = request->rrq_rdb;
-	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
 	trdb->trdb_status_vector = user_status;
 	trdb->trdb_database = rdb;
@@ -5395,13 +5396,13 @@ static bool check_response(RDB rdb,
 
 /* Translate any gds codes into local operating specific codes */
 
-	while (*vector != gds_arg_end) {
+	while (*vector != isc_arg_end) {
 		vec = *vector++;
 		switch ((USHORT) vec) {
 		case isc_arg_warning:
-		case gds_arg_gds:
+		case isc_arg_gds:
 			if (port->port_protocol < PROTOCOL_VERSION10) {
-				fb_assert(vec == gds_arg_gds);
+				fb_assert(vec == isc_arg_gds);
 				*vector = gds__encode(*vector, 0);
 			}
 			else
@@ -5409,7 +5410,7 @@ static bool check_response(RDB rdb,
 			vector++;
 			break;
 
-		case gds_arg_cstring:
+		case isc_arg_cstring:
 			vector += 2;
 			break;
 
@@ -5814,11 +5815,11 @@ static USHORT get_new_dpb(const UCHAR*	dpb,
 
 	if (dpb_vs_spb)
 	{
-		pb_version = gds_dpb_version1;
-		pb_sys_user_name = gds_dpb_sys_user_name;
-		pb_password = gds_dpb_password;
-		pb_user_name = gds_dpb_user_name;
-		pb_password_enc = gds_dpb_password_enc;
+		pb_version = isc_dpb_version1;
+		pb_sys_user_name = isc_dpb_sys_user_name;
+		pb_password = isc_dpb_password;
+		pb_user_name = isc_dpb_user_name;
+		pb_password_enc = isc_dpb_password_enc;
 	}
 	else
 	{
@@ -5968,7 +5969,7 @@ static bool get_single_user(USHORT dpb_length,
 
 	const SCHAR* const end_dpb = dpb + dpb_length;
 
-	if (dpb < end_dpb && *dpb++ != gds_dpb_version1)
+	if (dpb < end_dpb && *dpb++ != isc_dpb_version1)
 		return false;
 
 	USHORT l;
@@ -6006,9 +6007,9 @@ static ISC_STATUS handle_error( ISC_STATUS * user_status, ISC_STATUS code)
 
 	RESTORE_THREAD_DATA;
 
-	*user_status++ = gds_arg_gds;
+	*user_status++ = isc_arg_gds;
 	*user_status++ = code;
-	*user_status = gds_arg_end;
+	*user_status = isc_arg_end;
 
 	return code;
 }
@@ -6060,9 +6061,9 @@ static ISC_STATUS info(
 /* Assume the result will be successful */
 
 	fb_assert(user_status == rdb->rdb_status_vector);
-	user_status[0] = gds_arg_gds;
+	user_status[0] = isc_arg_gds;
 	user_status[1] = FB_SUCCESS;
-	user_status[2] = gds_arg_end;
+	user_status[2] = isc_arg_end;
 
 	if (!send_packet(rdb->rdb_port, packet, user_status))
 		return user_status[1];
@@ -6190,7 +6191,7 @@ static ISC_STATUS mov_dsql_message(	UCHAR*	from_msg,
 	try {
 
 		if (!from_fmt || !to_fmt || from_fmt->fmt_count != to_fmt->fmt_count) {
-			move_error(gds_dsql_sqlda_err, gds_arg_end);
+			move_error(isc_dsql_sqlda_err, isc_arg_end);
 			/* Msg 263 SQLDA missing or wrong number of variables */
 		}
 
@@ -6275,7 +6276,7 @@ static void move_error( ISC_STATUS status, ...)
 
 /* copy into an array any other arguments which may 
    have been handed to us, then post the error.
-   N.B., one of the supplied errors should be a 'gds_arg_end' */
+   N.B., one of the supplied errors should be a 'isc_arg_end' */
 
 	VA_START(ap, status);
 
@@ -6283,22 +6284,22 @@ static void move_error( ISC_STATUS status, ...)
 	p_args = trdb->trdb_status_vector;
 	end_args = p_args + ISC_STATUS_LENGTH;
 
-	*p_args++ = gds_arg_gds;
-	*p_args++ = gds_random;
-	*p_args++ = gds_arg_string;
+	*p_args++ = isc_arg_gds;
+	*p_args++ = isc_random;
+	*p_args++ = isc_arg_string;
 	*p_args++ = (ISC_STATUS) "Dynamic SQL Error";
-	*p_args++ = gds_arg_gds;
-	*p_args++ = gds_sqlerr;
-	*p_args++ = gds_arg_number;
+	*p_args++ = isc_arg_gds;
+	*p_args++ = isc_sqlerr;
+	*p_args++ = isc_arg_number;
 	*p_args++ = -303;
-	*p_args++ = gds_arg_gds;
+	*p_args++ = isc_arg_gds;
 	*p_args++ = status;
 
 /* NOTE: This loop could potentially set up a bad status vector */
 
 	while ((*p_args++ = (ISC_STATUS) va_arg(ap, ISC_STATUS)) && p_args < end_args);
 	if (p_args >= end_args)
-		end_args[-1] = gds_arg_end;
+		end_args[-1] = isc_arg_end;
 
 	Firebird::status_exception::raise(trdb->trdb_status_vector[1]);
 }
@@ -6469,9 +6470,9 @@ static bool receive_packet_noqueue(PORT port,
  *
  **************************************/
 
-	user_status[0] = gds_arg_gds;
+	user_status[0] = isc_arg_gds;
 	user_status[1] = isc_net_read_err;
-	user_status[2] = gds_arg_end;
+	user_status[2] = isc_arg_end;
 
 	return (port->receive(packet));
 }
@@ -6820,12 +6821,12 @@ static ISC_STATUS return_success( RDB rdb)
    initilalize the status vector to indicate success.  
    Else pass the status vector along at it stands.  */
 
-	if (p[0] != gds_arg_gds || p[1] != FB_SUCCESS
-		|| (p[2] != gds_arg_end && p[2] != gds_arg_gds
+	if (p[0] != isc_arg_gds || p[1] != FB_SUCCESS
+		|| (p[2] != isc_arg_end && p[2] != isc_arg_gds
 			&& p[2] != isc_arg_warning)) {
-		*p++ = gds_arg_gds;
+		*p++ = isc_arg_gds;
 		*p++ = FB_SUCCESS;
-		*p = gds_arg_end;
+		*p = isc_arg_end;
 	}
 
 	return FB_SUCCESS;
@@ -7182,9 +7183,9 @@ static bool send_packet(PORT port,
  *
  **************************************/
 
-	user_status[0] = gds_arg_gds;
+	user_status[0] = isc_arg_gds;
 	user_status[1] = isc_net_write_err;
-	user_status[2] = gds_arg_end;
+	user_status[2] = isc_arg_end;
 
 	return (port->send(packet));
 }
@@ -7215,9 +7216,9 @@ static bool send_partial_packet(PORT		port,
  *
  **************************************/
 
-	user_status[0] = gds_arg_gds;
+	user_status[0] = isc_arg_gds;
 	user_status[1] = isc_net_write_err;
-	user_status[2] = gds_arg_end;
+	user_status[2] = isc_arg_end;
 
 	if (!port->send_partial(packet)) {
 		return false;
@@ -7324,9 +7325,9 @@ static ISC_STATUS svcstart(ISC_STATUS*	user_status,
 /* Assume the result will be successful */
 
 	fb_assert(user_status == rdb->rdb_status_vector);
-	user_status[0] = gds_arg_gds;
+	user_status[0] = isc_arg_gds;
 	user_status[1] = FB_SUCCESS;
-	user_status[2] = gds_arg_end;
+	user_status[2] = isc_arg_end;
 
 	if (!send_packet(rdb->rdb_port, packet, user_status))
 		return user_status[1];
@@ -7362,11 +7363,11 @@ static ISC_STATUS unsupported(ISC_STATUS* user_status)
 
 	RESTORE_THREAD_DATA;
 
-	*user_status++ = gds_arg_gds;
+	*user_status++ = isc_arg_gds;
 	*user_status++ = isc_wish_list;
-	*user_status = gds_arg_end;
+	*user_status = isc_arg_end;
 
-	return gds_unavailable;
+	return isc_unavailable;
 }
 
 

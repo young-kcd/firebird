@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.75 2003-11-03 23:53:50 brodsom Exp $
+$Id: met.epp,v 1.76 2003-11-08 16:40:17 brodsom Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -52,7 +52,8 @@ $Id: met.epp,v 1.75 2003-11-03 23:53:50 brodsom Exp $
 #include <stdarg.h>
 
 #include "../jrd/constants.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/irq.h"
@@ -709,7 +710,7 @@ void MET_error( TEXT * string, ...)
 	VA_START(ptr, string);
 	vsprintf(s, string, ptr);
 
-	ERR_post(gds_no_meta_update, gds_arg_gds, gds_random, gds_arg_string,
+	ERR_post(isc_no_meta_update, isc_arg_gds, isc_random, isc_arg_string,
 			 ERR_cstring(s), 0);
 }
 

@@ -38,7 +38,8 @@
 #include "firebird.h"
 #include <string.h>
 #include "../jrd/jrd.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/tra.h"
 #include "../jrd/blb.h"
 #include "../jrd/req.h"
@@ -105,40 +106,40 @@ int INF_blob_info(const blb* blob,
 	const SCHAR* const end_items = items + item_length;
 	const SCHAR* const end = info + output_length;
 
-	while (items < end_items && *items != gds_info_end) {
+	while (items < end_items && *items != isc_info_end) {
 		SCHAR item = *items++;
 		switch (item) {
-		case gds_info_end:
+		case isc_info_end:
 			break;
 
-		case gds_info_blob_num_segments:
+		case isc_info_blob_num_segments:
 			length = INF_convert(blob->blb_count, buffer);
 			break;
 
-		case gds_info_blob_max_segment:
+		case isc_info_blob_max_segment:
 			length = INF_convert(blob->blb_max_segment, buffer);
 			break;
 
-		case gds_info_blob_total_length:
+		case isc_info_blob_total_length:
 			length = INF_convert(blob->blb_length, buffer);
 			break;
 
-		case gds_info_blob_type:
+		case isc_info_blob_type:
 			buffer[0] = (blob->blb_flags & BLB_stream) ? 1 : 0;
 			length = 1;
 			break;
 
 		default:
 			buffer[0] = item;
-			item = gds_info_error;
-			length = 1 + INF_convert(gds_infunk, buffer + 1);
+			item = isc_info_error;
+			length = 1 + INF_convert(isc_infunk, buffer + 1);
 			break;
 		}
 		if (!(info = INF_put_item(item, length, buffer, info, end)))
 			return FALSE;
 	}
 
-	*info++ = gds_info_end;
+	*info++ = isc_info_end;
 
 	return TRUE;
 }
@@ -226,7 +227,7 @@ int INF_database_info(const SCHAR* items,
 	err_att = att = NULL;
 	const SCHAR* q;
 
-	while (items < end_items && *items != gds_info_end) {
+	while (items < end_items && *items != isc_info_end) {
 		p = buffer;
 		switch ((item = *items++)) {
 		case isc_info_end:
@@ -822,8 +823,8 @@ int INF_database_info(const SCHAR* items,
 
 		default:
 			buffer[0] = item;
-			item = gds_info_error;
-			length = 1 + INF_convert(gds_infunk, buffer + 1);
+			item = isc_info_error;
+			length = 1 + INF_convert(isc_infunk, buffer + 1);
 			break;
 		}
 		if (!(info = INF_put_item(item, length, buffer, info, end))) {
@@ -836,7 +837,7 @@ int INF_database_info(const SCHAR* items,
 	if (transaction)
 		TRA_commit(tdbb, transaction, false);
 
-	*info++ = gds_info_end;
+	*info++ = isc_info_end;
 
 	return TRUE;
 }
@@ -860,7 +861,7 @@ SCHAR* INF_put_item(SCHAR item,
  **************************************/
 
 	if (ptr + length + 4 >= end) {
-		*ptr = gds_info_truncated;
+		*ptr = isc_info_truncated;
 		return NULL;
 	}
 
@@ -904,44 +905,44 @@ int INF_request_info(const jrd_req* request,
 	memset(buffer, 0, sizeof(buffer));
 	SCHAR* buffer_ptr = buffer;
 
-	while (items < end_items && *items != gds_info_end) {
+	while (items < end_items && *items != isc_info_end) {
 		switch ((item = *items++)) {
-		case gds_info_end:
+		case isc_info_end:
 			break;
 
-		case gds_info_number_messages:
+		case isc_info_number_messages:
 			length = INF_convert(request->req_nmsgs, buffer_ptr);
 			break;
 
-		case gds_info_max_message:
+		case isc_info_max_message:
 			length = INF_convert(request->req_mmsg, buffer_ptr);
 			break;
 
-		case gds_info_max_send:
+		case isc_info_max_send:
 			length = INF_convert(request->req_msend, buffer_ptr);
 			break;
 
-		case gds_info_max_receive:
+		case isc_info_max_receive:
 			length = INF_convert(request->req_mreceive, buffer_ptr);
 			break;
 
-		case gds_info_req_select_count:
+		case isc_info_req_select_count:
 			length = INF_convert(request->req_records_selected, buffer_ptr);
 			break;
 
-		case gds_info_req_insert_count:
+		case isc_info_req_insert_count:
 			length = INF_convert(request->req_records_inserted, buffer_ptr);
 			break;
 
-		case gds_info_req_update_count:
+		case isc_info_req_update_count:
 			length = INF_convert(request->req_records_updated, buffer_ptr);
 			break;
 
-		case gds_info_req_delete_count:
+		case isc_info_req_delete_count:
 			length = INF_convert(request->req_records_deleted, buffer_ptr);
 			break;
 
-		case gds_info_access_path:
+		case isc_info_access_path:
 
 			/* the access path has the potential to be large, so if the default
 			   buffer is not big enough, allocate a really large one--don't
@@ -955,38 +956,38 @@ int INF_request_info(const jrd_req* request,
 			}
 			break;
 
-		case gds_info_state:
-			state = gds_info_req_active;
+		case isc_info_state:
+			state = isc_info_req_active;
 			if (request->req_operation == jrd_req::req_send)
-				state = gds_info_req_send;
+				state = isc_info_req_send;
 			else if (request->req_operation == jrd_req::req_receive) {
 				node = request->req_next;
 				if (node->nod_type == nod_select)
-					state = gds_info_req_select;
+					state = isc_info_req_select;
 				else
-					state = gds_info_req_receive;
+					state = isc_info_req_receive;
 			}
 			else if ((request->req_operation == jrd_req::req_return) &&
 					 (request->req_flags & req_stall))
 				state = isc_info_req_sql_stall;
 			if (!(request->req_flags & req_active))
-				state = gds_info_req_inactive;
+				state = isc_info_req_inactive;
 			length = INF_convert(state, buffer_ptr);
 			break;
 
-		case gds_info_message_number:
-		case gds_info_message_size:
+		case isc_info_message_number:
+		case isc_info_message_size:
 			if (!(request->req_flags & req_active) ||
 				(request->req_operation != jrd_req::req_receive &&
 				request->req_operation != jrd_req::req_send))
 			{
 				buffer_ptr[0] = item;
-				item = gds_info_error;
-				length = 1 + INF_convert(gds_infinap, buffer_ptr + 1);
+				item = isc_info_error;
+				length = 1 + INF_convert(isc_infinap, buffer_ptr + 1);
 				break;
 			}
 			node = request->req_message;
-			if (item == gds_info_message_number)
+			if (item == isc_info_message_number)
 				length =
 					INF_convert((SLONG) node->nod_arg[e_msg_number],
 								buffer_ptr);
@@ -996,11 +997,11 @@ int INF_request_info(const jrd_req* request,
 			}
 			break;
 
-		case gds_info_request_cost:
+		case isc_info_request_cost:
 		default:
 			buffer_ptr[0] = item;
-			item = gds_info_error;
-			length = 1 + INF_convert(gds_infunk, buffer_ptr + 1);
+			item = isc_info_error;
+			length = 1 + INF_convert(isc_infunk, buffer_ptr + 1);
 			break;
 		}
 
@@ -1015,7 +1016,7 @@ int INF_request_info(const jrd_req* request,
 			return FALSE;
 	}
 
-	*info++ = gds_info_end;
+	*info++ = isc_info_end;
 
 	return TRUE;
 }
@@ -1042,26 +1043,26 @@ int INF_transaction_info(const jrd_tra* transaction,
 	const SCHAR* const end_items = items + item_length;
 	const SCHAR* const end = info + output_length;
 
-	while (items < end_items && *items != gds_info_end) {
+	while (items < end_items && *items != isc_info_end) {
 		switch ((item = *items++)) {
-		case gds_info_end:
+		case isc_info_end:
 			break;
 
-		case gds_info_tra_id:
+		case isc_info_tra_id:
 			length = INF_convert(transaction->tra_number, buffer);
 			break;
 
 		default:
 			buffer[0] = item;
-			item = gds_info_error;
-			length = 1 + INF_convert(gds_infunk, buffer + 1);
+			item = isc_info_error;
+			length = 1 + INF_convert(isc_infunk, buffer + 1);
 			break;
 		}
 		if (!(info = INF_put_item(item, length, buffer, info, end)))
 			return FALSE;
 	}
 
-	*info++ = gds_info_end;
+	*info++ = isc_info_end;
 
 	return TRUE;
 }

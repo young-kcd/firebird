@@ -24,7 +24,9 @@
 #include "firebird.h"
 #include descrip
 #include ssdef
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
+#include "../jrd/gdsold.h"
 #include "../jrd/rdb.h"
 #include "../jrd/common.h"
 #include "../jrd/mblr.h"
@@ -369,7 +371,7 @@ int rdb$create_segmented_string(
 								int *user_status,
 								HANDLE * db_handle,
 								HANDLE * tra_handle,
-HANDLE * blob_handle, GDS__QUAD * blob_id)
+HANDLE * blob_handle, GDS_QUAD * blob_id)
 {
 /**************************************
  *
@@ -440,7 +442,7 @@ int rdb$database_info(
 		const SCHAR* const end = item_ptr + item_length;
 		while (item_ptr < end) {
 			*tmp_ptr = item = *item_ptr++;
-			if (item > gds__info_limbo)
+			if (item > isc_info_limbo)
 				*tmp_ptr += 200;
 			tmp_ptr++;
 		}
@@ -456,9 +458,9 @@ int rdb$database_info(
 			item = *item_ptr++;
 			SSHORT len = *item_ptr++;
 			len |= (*item_ptr++) << 8;
-			if (item == gds__info_error && *item_ptr > 200)
+			if (item == isc_info_error && *item_ptr > 200)
 				*item_ptr -= 200;
-			else if (item == gds__info_end || item == gds__info_truncated)
+			else if (item == isc_info_end || item == isc_info_truncated)
 				break;
 			item_ptr += len;
 		}
@@ -643,7 +645,7 @@ int rdb$open_segmented_string(
 							  int *user_status,
 							  HANDLE * db_handle,
 							  HANDLE * tra_handle,
-							  HANDLE * blob_handle, GDS__QUAD * blob_id)
+							  HANDLE * blob_handle, GDS_QUAD * blob_id)
 {
 /**************************************
  *

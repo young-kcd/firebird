@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.35 2003-11-07 08:05:56 robocop Exp $
+//	$Id: cob.cpp,v 1.36 2003-11-08 16:31:40 brodsom Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -41,7 +41,8 @@
 #include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
 #include <stdarg.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/gds_proto.h"
 #include "../gpre/gpre.h"
 #include "../gpre/pat.h"
@@ -403,7 +404,6 @@ enum {
 	isc_tpb_pos,
 	isc_trans_pos,
 	isc_status_vector_pos,
-/* replace definition of ISC_STATUS from gds.h */
 	isc_status_pos,
 	isc_status_vector2_pos,
 	ISC_STATUS2,

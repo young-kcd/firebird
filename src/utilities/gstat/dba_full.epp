@@ -32,7 +32,8 @@
 #include <string.h>
 #include "../jrd/ibsetjmp.h"
 #include "../jrd/jrd_time.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/ods.h"
 #include "../jrd/license.h"
 #include "../utilities/gstat/ppg_proto.h"
@@ -462,14 +463,14 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 #if (defined WIN_NT)
 	dpb = dpb_string;
-	*dpb++ = gds__dpb_version1;
-	*dpb++ = gds__dpb_user_name;
+	*dpb++ = isc_dpb_version1;
+	*dpb++ = isc_dpb_user_name;
 	*dpb++ = strlen(LOCKSMITH_USER);
 	q = LOCKSMITH_USER;
 	while (*q)
 		*dpb++ = *q++;
 
-	*dpb++ = gds__dpb_password_enc;
+	*dpb++ = isc_dpb_password_enc;
 	strcpy(password_enc,
 		   (char *) ENC_crypt(LOCKSMITH_PASSWORD, PASSWORD_SALT));
 	q = password_enc + 2;
@@ -491,7 +492,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 #endif
 
 	if (sw_version)
-		gds__version(&DB, NULL, NULL);
+		isc_version(&DB, NULL, NULL);
 	transact1 = 0;
 	START_TRANSACTION transact1 READ_ONLY;
 	ON_ERROR
@@ -1376,7 +1377,7 @@ FPRINTF (sw_outfile, "    Creation date    \n", header->hdr_creation_date);
 			header->hdr_implementation);
 	FPRINTF(sw_outfile, "    Shadow count\t%ld\n", header->hdr_shadow_count);
 
-	gds__decode_date(header->hdr_creation_date, &time);
+	isc_decode_date(header->hdr_creation_date, &time);
 	FPRINTF(sw_outfile, "    Creation date\t%s %d, %d %d:%02d:%02d\n",
 			months[time.tm_mon], time.tm_mday, time.tm_year + 1900,
 			time.tm_hour, time.tm_min, time.tm_sec);

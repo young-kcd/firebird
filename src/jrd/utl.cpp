@@ -51,7 +51,8 @@
 #include "../jrd/misc.h"
 #include "../jrd/gdsassert.h"
 
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/msg.h"
 #include "../jrd/event.h"
 #include "../jrd/gds_proto.h"
@@ -153,8 +154,8 @@ static int display(GDS_QUAD *, int *, int *);
 /* Blob info stuff */
 
 static const char blob_items[] = {
-	gds_info_blob_max_segment, gds_info_blob_num_segments,
-	gds_info_blob_total_length
+	isc_info_blob_max_segment, isc_info_blob_num_segments,
+	isc_info_blob_total_length
 };
 
 
@@ -303,16 +304,16 @@ int API_ROUTINE gds__blob_size(
 
 #pragma FB_COMPILER_MESSAGE("Fix! Bad casts.")
 
-	if (gds__blob_info(status_vector, b, sizeof(blob_items),
+	if (isc_blob_info(status_vector, b, sizeof(blob_items),
 					   blob_items,
 					   sizeof(buffer), buffer)) {
-		gds__print_status(status_vector);
+		isc_print_status(status_vector);
 		return FALSE;
 	}
 
 	p = buffer;
 
-	while ((item = *p++) != gds_info_end) {
+	while ((item = *p++) != isc_info_end) {
 		l =
 			static_cast<SSHORT>
 			(gds__vax_integer(reinterpret_cast<UCHAR*>(p), 2));
@@ -320,17 +321,17 @@ int API_ROUTINE gds__blob_size(
 		n = gds__vax_integer(reinterpret_cast<UCHAR*>(p), l);
 		p += l;
 		switch (item) {
-		case gds_info_blob_max_segment:
+		case isc_info_blob_max_segment:
 			if (max_seg)
 				*max_seg = n;
 			break;
 
-		case gds_info_blob_num_segments:
+		case isc_info_blob_num_segments:
 			if (seg_count)
 				*seg_count = n;
 			break;
 
-		case gds_info_blob_total_length:
+		case isc_info_blob_total_length:
 			if (size)
 				*size = n;
 			break;
@@ -392,11 +393,11 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR** dpb, SSHORT* dpb_size, ...)
 	{
 		switch (type)
 		{
-		case gds_dpb_user_name:
-		case gds_dpb_password:
+		case isc_dpb_user_name:
+		case isc_dpb_password:
 		case isc_dpb_sql_role_name:
-		case gds_dpb_lc_messages:
-		case gds_dpb_lc_ctype:
+		case isc_dpb_lc_messages:
+		case isc_dpb_lc_ctype:
 		case isc_dpb_reserved:
 			q = va_arg(args, char*);
 			if (q)
@@ -451,7 +452,7 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR** dpb, SSHORT* dpb_size, ...)
 	}
 
 	if (!*dpb_size)
-		*p++ = gds_dpb_version1;
+		*p++ = isc_dpb_version1;
 
 /* copy in the new runtime items */
 
@@ -461,11 +462,11 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR** dpb, SSHORT* dpb_size, ...)
 	{
 		switch (type)
 		{
-		case gds_dpb_user_name:
-		case gds_dpb_password:
+		case isc_dpb_user_name:
+		case isc_dpb_password:
 		case isc_dpb_sql_role_name:
-		case gds_dpb_lc_messages:
-		case gds_dpb_lc_ctype:
+		case isc_dpb_lc_messages:
+		case isc_dpb_lc_ctype:
 		case isc_dpb_reserved:
 			q = va_arg(args, char*);
 			if (q)
@@ -541,11 +542,11 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
 
 	switch (type)
 	{
-	case gds_dpb_user_name:
-	case gds_dpb_password:
+	case isc_dpb_user_name:
+	case isc_dpb_password:
 	case isc_dpb_sql_role_name:
-	case gds_dpb_lc_messages:
-	case gds_dpb_lc_ctype:
+	case isc_dpb_lc_messages:
+	case isc_dpb_lc_ctype:
 	case isc_dpb_reserved:
 		new_dpb_length += 2 + str_len;
 		break;
@@ -588,18 +589,18 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
 
 	if (!*dpb_size)
 	{
-		*p++ = gds_dpb_version1;
+		*p++ = isc_dpb_version1;
 	}
 
 /* copy in the new runtime items */
 
 	switch (type)
 	{
-	case gds_dpb_user_name:
-	case gds_dpb_password:
+	case isc_dpb_user_name:
+	case isc_dpb_password:
 	case isc_dpb_sql_role_name:
-	case gds_dpb_lc_messages:
-	case gds_dpb_lc_ctype:
+	case isc_dpb_lc_messages:
+	case isc_dpb_lc_ctype:
 	case isc_dpb_reserved:
 		{
 		    const UCHAR* q = reinterpret_cast<const UCHAR*>(str);
@@ -1086,17 +1087,17 @@ void API_ROUTINE isc_set_login(const UCHAR** dpb, SSHORT* dpb_size)
 		for (const UCHAR* const end_dpb = p + *dpb_size; p < end_dpb;) {
 			const int item = *p++;
 
-			if (item == gds_dpb_version1)
+			if (item == isc_dpb_version1)
 				continue;
 
 			switch (item) {
-			case gds_dpb_sys_user_name:
-			case gds_dpb_user_name:
+			case isc_dpb_sys_user_name:
+			case isc_dpb_user_name:
 				user_seen = true;
 				break;
 
-			case gds_dpb_password:
-			case gds_dpb_password_enc:
+			case isc_dpb_password:
+			case isc_dpb_password_enc:
 				password_seen = true;
 				break;
 			}
@@ -1110,15 +1111,15 @@ void API_ROUTINE isc_set_login(const UCHAR** dpb, SSHORT* dpb_size)
 	if (username && !user_seen) {
 		if (password && !password_seen)
 			isc_expand_dpb_internal(dpb, dpb_size,
-						   gds_dpb_user_name, username, gds_dpb_password,
+						   isc_dpb_user_name, username, isc_dpb_password,
 						   password, 0);
 		else
 			isc_expand_dpb_internal(dpb, dpb_size,
-						   gds_dpb_user_name, username, 0);
+						   isc_dpb_user_name, username, 0);
 	}
 	else if (password && !password_seen)
 		isc_expand_dpb_internal(dpb, dpb_size,
-					   gds_dpb_password, password, 0);
+					   isc_dpb_password, password, 0);
 #endif
 }
 
@@ -1197,7 +1198,7 @@ void API_ROUTINE isc_set_single_user(const UCHAR** dpb,
 
 			const int item = *p++;
 
-			if (item == gds_dpb_version1)
+			if (item == isc_dpb_version1)
 				continue;
 
 			switch (item) {
@@ -1464,14 +1465,14 @@ int API_ROUTINE BLOB_close(BSTREAM * bstream)
 	if (bstream->bstr_mode & BSTR_output) {
 		l = (bstream->bstr_ptr - bstream->bstr_buffer);
 		if (l > 0)
-			if (gds__put_segment(status_vector, &bstream->bstr_blob, l,
+			if (isc_put_segment(status_vector, &bstream->bstr_blob, l,
 								 bstream->bstr_buffer)) 
 			{
 				return FALSE;
 			}
 	}
 
-	gds__close_blob(status_vector, &bstream->bstr_blob);
+	isc_close_blob(status_vector, &bstream->bstr_blob);
 
 	if (bstream->bstr_mode & BSTR_alloc)
 		gds__free(bstream->bstr_buffer);
@@ -1715,14 +1716,14 @@ int API_ROUTINE BLOB_get(BSTREAM * bstream)
 		if (--bstream->bstr_cnt >= 0)
 			return *bstream->bstr_ptr++ & 0377;
 
-		gds__get_segment(status_vector, &bstream->bstr_blob,
+		isc_get_segment(status_vector, &bstream->bstr_blob,
 						 reinterpret_cast<USHORT*>(&bstream->bstr_cnt),
 						 bstream->bstr_length, bstream->bstr_buffer);
-		if (status_vector[1] && status_vector[1] != gds_segment) {
+		if (status_vector[1] && status_vector[1] != isc_segment) {
 			bstream->bstr_ptr = 0;
 			bstream->bstr_cnt = 0;
-			if (status_vector[1] != gds_segstr_eof)
-				gds__print_status(status_vector);
+			if (status_vector[1] != isc_segstr_eof)
+				isc_print_status(status_vector);
 			return EOF;
 		}
 		bstream->bstr_ptr = bstream->bstr_buffer;
@@ -1850,7 +1851,7 @@ BSTREAM* API_ROUTINE Bopen(GDS_QUAD* blob_id,
 	blob = NULL;
 
 	if (*mode == 'w' || *mode == 'W') {
-		if (gds__create_blob2(status_vector, &database, &transaction, &blob,
+		if (isc_create_blob2(status_vector, &database, &transaction, &blob,
 							  blob_id, bpb_length,
 							  reinterpret_cast<const char*>(bpb)))
 		{
@@ -1858,9 +1859,9 @@ BSTREAM* API_ROUTINE Bopen(GDS_QUAD* blob_id,
 		}
 	}
 	else if (*mode == 'r' || *mode == 'R') {
-		if (gds__open_blob2(status_vector, &database, &transaction, &blob,
+		if (isc_open_blob2(status_vector, &database, &transaction, &blob,
 							blob_id, bpb_length,
-							reinterpret_cast<const char*>(bpb)))
+							reinterpret_cast<const UCHAR*>(bpb)))
 		{
 			return NULL;
 		}
@@ -1965,7 +1966,7 @@ int API_ROUTINE BLOB_put(SCHAR x, BSTREAM * bstream)
 
 	*bstream->bstr_ptr++ = (x & 0377);
 	l = (bstream->bstr_ptr - bstream->bstr_buffer);
-	if (gds__put_segment(status_vector, &bstream->bstr_blob,
+	if (isc_put_segment(status_vector, &bstream->bstr_blob,
 						 l, bstream->bstr_buffer)) {
 		return FALSE;
 	}
@@ -1997,8 +1998,8 @@ static display(GDS_QUAD * blob_id, void *database, void *transaction)
 /* Open the blob.  If it failed, what the hell -- just return failure */
 
 	blob = NULL;
-	if (gds__open_blob(status_vector, &database, &transaction, &blob, blob_id)) {
-		gds__print_status(status_vector);
+	if (isc_open_blob(status_vector, &database, &transaction, &blob, blob_id)) {
+		isc_print_status(status_vector);
 		return FALSE;
 	}
 
@@ -2007,10 +2008,10 @@ static display(GDS_QUAD * blob_id, void *database, void *transaction)
 	short_length = sizeof(buffer);
 
 	for (;;) {
-		gds__get_segment(status_vector, &blob, &l, short_length, buffer);
-		if (status_vector[1] && status_vector[1] != gds_segment) {
-			if (status_vector[1] != gds_segstr_eof)
-				gds__print_status(status_vector);
+		isc_get_segment(status_vector, &blob, &l, short_length, buffer);
+		if (status_vector[1] && status_vector[1] != isc_segment) {
+			if (status_vector[1] != isc_segstr_eof)
+				isc_print_status(status_vector);
 			break;
 		}
 		buffer[l] = 0;
@@ -2020,7 +2021,7 @@ static display(GDS_QUAD * blob_id, void *database, void *transaction)
 
 /* Close the blob */
 
-	gds__close_blob(status_vector, &blob);
+	isc_close_blob(status_vector, &blob);
 
 	return TRUE;
 }
@@ -2055,9 +2056,9 @@ static int dump(
 /* Open the blob.  If it failed, what the hell -- just return failure */
 
 	blob = NULL;
-	if (gds__open_blob2(status_vector, &database, &transaction, &blob, blob_id,
-						bpb_length, reinterpret_cast<char*>(bpb))) {
-		gds__print_status(status_vector);
+	if (isc_open_blob2(status_vector, &database, &transaction, &blob, blob_id,
+						bpb_length, reinterpret_cast<const UCHAR*>(bpb))) {
+		isc_print_status(status_vector);
 		return FALSE;
 	}
 
@@ -2066,12 +2067,12 @@ static int dump(
 	short_length = sizeof(buffer);
 
 	for (;;) {
-		gds__get_segment(status_vector, &blob,
+		isc_get_segment(status_vector, &blob,
 						 reinterpret_cast<USHORT*>(&l),
 						 short_length, buffer);
-		if (status_vector[1] && status_vector[1] != gds_segment) {
-			if (status_vector[1] != gds_segstr_eof)
-				gds__print_status(status_vector);
+		if (status_vector[1] && status_vector[1] != isc_segment) {
+			if (status_vector[1] != isc_segstr_eof)
+				isc_print_status(status_vector);
 			break;
 		}
 		p = buffer;
@@ -2083,7 +2084,7 @@ static int dump(
 
 /* Close the blob */
 
-	gds__close_blob(status_vector, &blob);
+	isc_close_blob(status_vector, &blob);
 
 	return TRUE;
 }
@@ -2210,17 +2211,17 @@ static int get_ods_version(
 
 	p = buffer;
 
-	while ((item = *p++) != gds_info_end) {
+	while ((item = *p++) != isc_info_end) {
 		l = static_cast<USHORT>(gds__vax_integer(p, 2));
 		p += 2;
 		n = static_cast<USHORT>(gds__vax_integer(p, l));
 		p += l;
 		switch (item) {
-		case gds_info_ods_version:
+		case isc_info_ods_version:
 			*ods_version = n;
 			break;
 
-		case gds_info_ods_minor_version:
+		case isc_info_ods_minor_version:
 			*ods_minor_version = n;
 			break;
 
@@ -2290,11 +2291,11 @@ static void isc_expand_dpb_internal(const UCHAR** dpb, SSHORT* dpb_size, ...)
 	{
 		switch (type)
 		{
-		case gds_dpb_user_name:
-		case gds_dpb_password:
+		case isc_dpb_user_name:
+		case isc_dpb_password:
 		case isc_dpb_sql_role_name:
-		case gds_dpb_lc_messages:
-		case gds_dpb_lc_ctype:
+		case isc_dpb_lc_messages:
+		case isc_dpb_lc_ctype:
 		case isc_dpb_reserved:
 			q = va_arg(args, char*);
 			if (q)
@@ -2349,7 +2350,7 @@ static void isc_expand_dpb_internal(const UCHAR** dpb, SSHORT* dpb_size, ...)
 	}
 
 	if (!*dpb_size)
-		*p++ = gds_dpb_version1;
+		*p++ = isc_dpb_version1;
 
 /* copy in the new runtime items */
 
@@ -2359,11 +2360,11 @@ static void isc_expand_dpb_internal(const UCHAR** dpb, SSHORT* dpb_size, ...)
 	{
 		switch (type)
 		{
-		case gds_dpb_user_name:
-		case gds_dpb_password:
+		case isc_dpb_user_name:
+		case isc_dpb_password:
 		case isc_dpb_sql_role_name:
-		case gds_dpb_lc_messages:
-		case gds_dpb_lc_ctype:
+		case isc_dpb_lc_messages:
+		case isc_dpb_lc_ctype:
 		case isc_dpb_reserved:
 		    q = va_arg(args, char*);
 			if (q)
@@ -2412,9 +2413,9 @@ static int load(
 /* Open the blob.  If it failed, what the hell -- just return failure */
 
 	blob = NULL;
-	if (gds__create_blob(status_vector, &database, &transaction, &blob,
+	if (isc_create_blob(status_vector, &database, &transaction, &blob,
 						 blob_id)) {
-		gds__print_status(status_vector);
+		isc_print_status(status_vector);
 		return FALSE;
 	}
 
@@ -2431,22 +2432,22 @@ static int load(
 		if ((c != '\n') && p < buffer_end)
 			continue;
 		l = p - buffer;
-		if (gds__put_segment(status_vector, &blob, l, buffer)) {
-			gds__print_status(status_vector);
-			gds__close_blob(status_vector, &blob);
+		if (isc_put_segment(status_vector, &blob, l, buffer)) {
+			isc_print_status(status_vector);
+			isc_close_blob(status_vector, &blob);
 			return FALSE;
 		}
 		p = buffer;
 	}
 
 	if ((l = p - buffer) != 0)
-		if (gds__put_segment(status_vector, &blob, l, buffer)) {
-			gds__print_status(status_vector);
-			gds__close_blob(status_vector, &blob);
+		if (isc_put_segment(status_vector, &blob, l, buffer)) {
+			isc_print_status(status_vector);
+			isc_close_blob(status_vector, &blob);
 			return FALSE;
 		}
 
-	gds__close_blob(status_vector, &blob);
+	isc_close_blob(status_vector, &blob);
 
 	return TRUE;
 }

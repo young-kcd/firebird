@@ -29,7 +29,8 @@
 #include <unistd.h>
 #endif
 #include "../jrd/common.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/msg_encode.h"
 
 /* The MSG.GDB database is found under the /msgs component subdirectory.
@@ -284,7 +285,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	READY
 	ON_ERROR
 		ib_printf("Attach failed.\n");
-		gds__print_status(gds_status);
+		isc_print_status(gds_status);
 		exit(FINI_ERROR);
 	END_ERROR;
 

@@ -35,7 +35,8 @@
 #include <stdio.h>
 
 #include "../jrd/jrd.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/blob_filter.h"
 #include "../jrd/tra.h"
 #include "../jrd/constants.h"
@@ -186,9 +187,9 @@ ISC_STATUS BLF_get_segment(TDBB tdbb,
 
 	START_CHECK_FOR_EXCEPTIONS((TEXT*) control->ctl_exception_message)
 
-	user_status[0] = gds_arg_gds;
+	user_status[0] = isc_arg_gds;
 	user_status[1] = FB_SUCCESS;
-	user_status[2] = gds_arg_end;
+	user_status[2] = isc_arg_end;
 
 	status = (*control->ctl_source) (ACTION_get_segment, control);
 
@@ -199,7 +200,7 @@ ISC_STATUS BLF_get_segment(TDBB tdbb,
 
 	if (status != user_status[1]) {
 		user_status[1] = status;
-		user_status[2] = gds_arg_end;
+		user_status[2] = isc_arg_end;
 	}
 
 	END_CHECK_FOR_EXCEPTIONS((TEXT*)control->ctl_exception_message)
@@ -305,15 +306,15 @@ ISC_STATUS BLF_put_segment(TDBB tdbb,
 
 	START_CHECK_FOR_EXCEPTIONS( (TEXT*) control->ctl_exception_message)
 
-	user_status[0] = gds_arg_gds;
+	user_status[0] = isc_arg_gds;
 	user_status[1] = FB_SUCCESS;
-	user_status[2] = gds_arg_end;
+	user_status[2] = isc_arg_end;
 
 	status = (*control->ctl_source) (ACTION_put_segment, control);
 
 	if (status != user_status[1]) {
 		user_status[1] = status;
-		user_status[2] = gds_arg_end;
+		user_status[2] = isc_arg_end;
 	}
 
 	END_CHECK_FOR_EXCEPTIONS((TEXT*)control->ctl_exception_message)
@@ -356,21 +357,21 @@ static ISC_STATUS open_blob(
 	gds__parse_bpb2(bpb_length, bpb, &from, &to, &from_charset, &to_charset);
 
 	if ((!filter) || (!filter->blf_filter)) {
-		*user_status++ = gds_arg_gds;
+		*user_status++ = isc_arg_gds;
 		*user_status++ = gds_nofilter;
-		*user_status++ = gds_arg_number;
+		*user_status++ = isc_arg_number;
 		*user_status++ = (ISC_STATUS) from;
-		*user_status++ = gds_arg_number;
+		*user_status++ = isc_arg_number;
 		*user_status++ = (ISC_STATUS) to;
-		*user_status = gds_arg_end;
+		*user_status = isc_arg_end;
 		return gds_nofilter;
 	}
 
 /* Allocate a filter control block and open blob */
 
-	user_status[0] = gds_arg_gds;
+	user_status[0] = isc_arg_gds;
 	user_status[1] = FB_SUCCESS;
-	user_status[2] = gds_arg_end;
+	user_status[2] = isc_arg_end;
 
 /* utilize a temporary control block just to pass the three 
    necessary internal parameters to the filter */
@@ -443,7 +444,7 @@ static ISC_STATUS open_blob(
 
 	if (status != user_status[1]) {
 		user_status[1] = status;
-		user_status[2] = gds_arg_end;
+		user_status[2] = isc_arg_end;
 	}
 
 	return status;

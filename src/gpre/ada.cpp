@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.33 2003-10-30 09:00:15 robocop Exp $
+//	$Id: ada.cpp,v 1.34 2003-11-08 16:31:40 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -36,7 +36,8 @@
 #include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
 #include <stdarg.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../gpre/gpre.h"
 #include "../gpre/pat.h"
 #include "../gpre/cmp_proto.h"

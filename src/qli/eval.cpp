@@ -24,7 +24,8 @@
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/common.h"
 #include "../qli/dtr.h"
 #include "../qli/exe.h"
@@ -957,7 +958,7 @@ static int sleuth( QLI_NOD node, const dsc* desc1, const dsc* desc2, const dsc* 
 		buffer = fixed_buffer;
 
 	ISC_STATUS_ARRAY status_vector;
-	while (!gds__get_segment(status_vector, &blob, (USHORT*) &l1, buffer_length, buffer))
+	while (!isc_get_segment(status_vector, &blob, (USHORT*) &l1, buffer_length, buffer))
 		if (sleuth_check(0, (UCHAR*) buffer, (UCHAR*) (buffer + l1),
 			(UCHAR*) control, (UCHAR*) (control + l2)))
 		{
@@ -968,7 +969,7 @@ static int sleuth( QLI_NOD node, const dsc* desc1, const dsc* desc2, const dsc* 
 	if (buffer != fixed_buffer)
 		gds__free(buffer);
 
-	if (gds__close_blob(status_vector, &blob)) {
+	if (isc_close_blob(status_vector, &blob)) {
 		QLI_CTX context = (QLI_CTX) node->nod_arg[e_fld_context];
 		QLI_REQ request = context->ctx_request;
 		DBB dbb = request->req_database;
@@ -1272,7 +1273,7 @@ static int string_boolean( QLI_NOD node)
 
 	ISC_STATUS_ARRAY status_vector;
 	SSHORT l3 = 0;
-	while (!gds__get_segment(status_vector, &blob, (USHORT*) &l3,
+	while (!isc_get_segment(status_vector, &blob, (USHORT*) &l3,
 							 buffer_length, buffer))
 	{
 		if (string_function(node, l3, buffer, l2, p2)) {
@@ -1284,7 +1285,7 @@ static int string_boolean( QLI_NOD node)
 	if (buffer != fixed_buffer)
 		gds__free(buffer);
 
-	if (gds__close_blob(status_vector, &blob)) {
+	if (isc_close_blob(status_vector, &blob)) {
 		qli_ctx* context = (QLI_CTX) node->nod_arg[e_fld_context];
 		qli_req* request = context->ctx_request;
 		dbb* database = request->req_database;

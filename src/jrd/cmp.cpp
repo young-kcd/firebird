@@ -43,7 +43,8 @@
 #include <string.h>
 #include <stdlib.h>				/* abort */
 #include "../jrd/common.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
 #include "../jrd/req.h"
 #include "../jrd/val.h"
@@ -501,9 +502,9 @@ JRD_REQ CMP_find_request(TDBB tdbb, USHORT id, USHORT which)
 	for (n = 1;; n++) {
 		if (n > MAX_RECURSION) {
 			THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_cmp_clone);
-			ERR_post(gds_no_meta_update,
-					 gds_arg_gds, gds_req_depth_exceeded,
-					 gds_arg_number, (SLONG) MAX_RECURSION, 0);
+			ERR_post(isc_no_meta_update,
+					 isc_arg_gds, isc_req_depth_exceeded,
+					 isc_arg_number, (SLONG) MAX_RECURSION, 0);
 			/* Msg363 "request depth exceeded. (Recursive definition?)" */
 		}
 		clone = CMP_clone_request(tdbb, request, n, FALSE);
@@ -917,7 +918,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 			case dtype_sql_time:
 				if (DTYPE_IS_TEXT(desc1.dsc_dtype) ||
 					DTYPE_IS_TEXT(desc2.dsc_dtype))
-						ERR_post(gds_expression_eval_err, 0);
+						ERR_post(isc_expression_eval_err, 0);
 				/* FALL INTO */
 			case dtype_timestamp:
 				node->nod_flags |= nod_date;
@@ -952,7 +953,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 								 (dtype1 == dtype_sql_date))
 								dtype = dtype_timestamp;
 						else
-							ERR_post(gds_expression_eval_err, 0);
+							ERR_post(isc_expression_eval_err, 0);
 
 						if (dtype == dtype_sql_date) {
 							desc->dsc_dtype = dtype_long;
@@ -989,7 +990,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 					}
 					else
 						/* <date> + <date> */
-						ERR_post(gds_expression_eval_err, 0);
+						ERR_post(isc_expression_eval_err, 0);
 				}
 				else if (DTYPE_IS_DATE(desc1.dsc_dtype) ||
 						 /* <date> +/- <non-date> */
@@ -1007,7 +1008,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 				}
 				else
 					/* <non-date> - <date> */
-					ERR_post(gds_expression_eval_err, 0);
+					ERR_post(isc_expression_eval_err, 0);
 				return;
 
 			case dtype_text:
@@ -1137,7 +1138,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 								 (dtype1 == dtype_sql_date))
 								dtype = dtype_timestamp;
 						else
-							ERR_post(gds_expression_eval_err, 0);
+							ERR_post(isc_expression_eval_err, 0);
 
 						if (dtype == dtype_sql_date) {
 							desc->dsc_dtype = dtype_long;
@@ -1175,7 +1176,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 					}
 					else
 						/* <date> + <date> */
-						ERR_post(gds_expression_eval_err, 0);
+						ERR_post(isc_expression_eval_err, 0);
 				}
 				else if (DTYPE_IS_DATE(desc1.dsc_dtype) ||
 						 /* <date> +/- <non-date> */
@@ -1193,7 +1194,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 				}
 				else
 					/* <non-date> - <date> */
-					ERR_post(gds_expression_eval_err, 0);
+					ERR_post(isc_expression_eval_err, 0);
 				return;
 
 			case dtype_text:
@@ -1374,7 +1375,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 				rc_len += DSC_convert_to_text_length(desc2.dsc_dtype);
 			/* error() is a local routine in par.c, so we use plain ERR_post. */
 			if (rc_len > MAX_FORMAT_SIZE)
-				ERR_post(gds_imp_exc, gds_arg_gds, gds_blktoobig, 0);
+				ERR_post(isc_imp_exc, isc_arg_gds, isc_blktoobig, 0);
 			desc->dsc_length = static_cast<USHORT>(rc_len);
 			desc->dsc_scale = 0;
 			desc->dsc_flags = 0;
@@ -1527,7 +1528,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 				const SLONG sl2 = MOV_get_long(&desc2, 0);
 				/* error() is a local routine in par.c, so we use plain ERR_post. */
 				if (sl1 < 0 || sl2 < 0 || sl2 > MAX_COLUMN_SIZE - (SLONG) sizeof(USHORT))
-					ERR_post(gds_imp_exc, gds_arg_gds, gds_blktoobig, 0);
+					ERR_post(isc_imp_exc, isc_arg_gds, isc_blktoobig, 0);
 				rc_len = sl2;
 			}
 			desc->dsc_dtype = dtype_varying;
@@ -2266,7 +2267,7 @@ static USHORT base_stream(CSB csb, JRD_NOD * stream_number, BOOLEAN nav_stream)
 		if (map[2]) {
 			if (nav_stream)
 				/* navigational stream %ld references a view with more than one base table */
-				ERR_post(isc_complex_view, gds_arg_number, (SLONG) stream, 0);
+				ERR_post(isc_complex_view, isc_arg_number, (SLONG) stream, 0);
 		}
 		else {
 			map++;
@@ -3071,9 +3072,9 @@ static JRD_NOD pass1(
 				if (!relation->rel_view_rse)
 					break;
 
-				ERR_post(gds_no_field_access,
-						 gds_arg_string, ERR_cstring(field->fld_name),
-						 gds_arg_string, ERR_cstring(relation->rel_name), 0);
+				ERR_post(isc_no_field_access,
+						 isc_arg_string, ERR_cstring(field->fld_name),
+						 isc_arg_string, ERR_cstring(relation->rel_name), 0);
 				/* Msg 364 "cannot access column %s in view %s" */
 			}
 
@@ -3285,7 +3286,7 @@ static JRD_NOD pass1(
 		sub = node->nod_arg[e_asgn_to];
 		if (sub->nod_type != nod_field &&
 			sub->nod_type != nod_argument && sub->nod_type != nod_variable)
-			ERR_post(gds_read_only_field, 0);
+			ERR_post(isc_read_only_field, 0);
 	}
 
 	return node;
@@ -4159,8 +4160,8 @@ USHORT update_stream, USHORT priv, JRD_REL view, USHORT view_stream)
 			return NULL;
 		}
 		else {
-			ERR_post(gds_read_only_view,
-					 gds_arg_string, relation->rel_name, 0);
+			ERR_post(isc_read_only_view,
+					 isc_arg_string, relation->rel_name, 0);
 			return NULL;	/* Added to remove compiler warnings */
 		}
 	}
@@ -4255,7 +4256,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 	case nod_from:
 		rse_node = node->nod_arg[e_stat_rse];
 		if (! rse_node) {
-			ERR_post(gds_wish_list, 0);
+			ERR_post(isc_wish_list, 0);
 		}
 		if (!(rse_node->nod_flags & rse_variant)) {
 			node->nod_flags |= nod_invariant;
@@ -4300,7 +4301,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 				node->nod_arg[e_fun_function] =
 					(JRD_NOD) FUN_resolve(csb, function, value);
 				if (!node->nod_arg[e_fun_function])
-					ERR_post(gds_funmismat, gds_arg_string,
+					ERR_post(isc_funmismat, isc_arg_string,
 							 function->fun_symbol->sym_string, 0);
 			}
 		}
@@ -4334,7 +4335,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 		if (!(node->nod_arg[e_find_rsb] =
 			(JRD_NOD) csb->csb_rpt[stream].csb_rsb_ptr))
 		{
-			ERR_post(gds__stream_not_defined, 0);
+			ERR_post(isc_stream_not_defined, 0);
 		}
 		break;
 
@@ -4344,7 +4345,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 		if (!(node->nod_arg[e_find_dbkey_rsb] =
 			 (JRD_NOD) csb->csb_rpt[stream].csb_rsb_ptr))
 		{
-			ERR_post(gds__stream_not_defined, 0);
+			ERR_post(isc_stream_not_defined, 0);
 		}
 		break;
 
@@ -4353,7 +4354,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 		if (!(node->nod_arg[e_index_rsb] =
 			 (JRD_NOD) csb->csb_rpt[stream].csb_rsb_ptr))
 		{
-			ERR_post(gds__stream_not_defined, 0);
+			ERR_post(isc_stream_not_defined, 0);
 		}
 		break;
 
@@ -4362,7 +4363,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 		if (!(node->nod_arg[e_getmark_rsb] =
 			 (JRD_NOD) csb->csb_rpt[stream].csb_rsb_ptr))
 		{
-			ERR_post(gds__stream_not_defined, 0);
+			ERR_post(isc_stream_not_defined, 0);
 		}
 		break;
 
@@ -4371,7 +4372,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 		if (!(node->nod_arg[e_setmark_rsb] =
 			 (JRD_NOD) csb->csb_rpt[stream].csb_rsb_ptr))
 		{
-			ERR_post(gds__stream_not_defined, 0);
+			ERR_post(isc_stream_not_defined, 0);
 		}
 		break;
 
@@ -4380,7 +4381,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 		if (!(node->nod_arg[e_lockrec_rsb] =
 			 (JRD_NOD) csb->csb_rpt[stream].csb_rsb_ptr))
 		{
-			ERR_post(gds__stream_not_defined, 0);
+			ERR_post(isc_stream_not_defined, 0);
 		}
 		break;
 
@@ -4388,7 +4389,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 	case nod_force_crack:
 		stream = base_stream(csb, &node->nod_arg[0], TRUE);
 		if (!(node->nod_arg[1] = (JRD_NOD) csb->csb_rpt[stream].csb_rsb_ptr))
-			ERR_post(gds__stream_not_defined, 0);
+			ERR_post(isc_stream_not_defined, 0);
 		break;
 
 	case nod_reset_stream:
@@ -4396,7 +4397,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 		if (!(node->nod_arg[e_reset_from_rsb] =
 			 (JRD_NOD) csb->csb_rpt[stream].csb_rsb_ptr))
 		{
-			ERR_post(gds__stream_not_defined, 0);
+			ERR_post(isc_stream_not_defined, 0);
 		}
 		break;
 
@@ -4405,7 +4406,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 		if (!(node->nod_arg[e_card_rsb] =
 			 (JRD_NOD) csb->csb_rpt[stream].csb_rsb_ptr))
 		{
-			ERR_post(gds__stream_not_defined, 0);
+			ERR_post(isc_stream_not_defined, 0);
 		}
 		break;
 
@@ -4670,7 +4671,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 			DSC descriptor_c;
 
 			if (node->nod_arg[2]->nod_flags & nod_agg_dbkey)
-				ERR_post(gds_bad_dbkey, 0);
+				ERR_post(isc_bad_dbkey, 0);
 			CMP_get_desc(tdbb, csb, node->nod_arg[0], &descriptor_c);
 			if (DTYPE_IS_DATE(descriptor_c.dsc_dtype)) {
 				node->nod_arg[0]->nod_flags |= nod_date;
@@ -4694,7 +4695,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 
 			if ((node->nod_arg[0]->nod_flags & nod_agg_dbkey) ||
 				(node->nod_arg[1]->nod_flags & nod_agg_dbkey))
-				ERR_post(gds_bad_dbkey, 0);
+				ERR_post(isc_bad_dbkey, 0);
 			CMP_get_desc(tdbb, csb, node->nod_arg[0], &descriptor_a);
 			CMP_get_desc(tdbb, csb, node->nod_arg[1], &descriptor_b);
 			if (DTYPE_IS_DATE(descriptor_a.dsc_dtype))
@@ -4710,7 +4711,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 			DSC descriptor_a;
 
 			if (node->nod_arg[0]->nod_flags & nod_agg_dbkey)
-				ERR_post(gds_bad_dbkey, 0);
+				ERR_post(isc_bad_dbkey, 0);
 
 			/* Check for syntax errors in the calculation */
 			CMP_get_desc(tdbb, csb, node->nod_arg[0], &descriptor_a);
@@ -4877,7 +4878,7 @@ static void plan_check(CSB csb, RSE rse)
 		if ((*ptr)->nod_type == nod_relation) {
 			stream = (USHORT)(ULONG) (*ptr)->nod_arg[e_rel_stream];
 			if (!(csb->csb_rpt[stream].csb_plan))
-				ERR_post(gds_no_stream_plan, gds_arg_string,
+				ERR_post(isc_no_stream_plan, isc_arg_string,
 						 csb->csb_rpt[stream].csb_relation->rel_name, 0);
 		}
 }
@@ -4973,7 +4974,7 @@ static void plan_set(CSB csb, RSE rse, JRD_NOD plan)
 				}
 				else
 					/* view %s has more than one base relation; use aliases to distinguish */
-					ERR_post(gds_view_alias, gds_arg_string,
+					ERR_post(isc_view_alias, isc_arg_string,
 							 plan_relation->rel_name, 0);
 
 				break;
@@ -4995,8 +4996,8 @@ static void plan_set(CSB csb, RSE rse, JRD_NOD plan)
 					if (relation && relation->rel_id == plan_relation->rel_id) {
 						if (duplicate_relation)
 							/* table %s is referenced twice in view; use an alias to distinguish */
-							ERR_post(gds_duplicate_base_table,
-									 gds_arg_string,
+							ERR_post(isc_duplicate_base_table,
+									 isc_arg_string,
 									 duplicate_relation->rel_name, 0);
 						else {
 							duplicate_relation = relation;
@@ -5043,7 +5044,7 @@ static void plan_set(CSB csb, RSE rse, JRD_NOD plan)
 
 			if (!*map)
 				/* table %s is referenced in the plan but not the from list */
-				ERR_post(gds_stream_not_found, gds_arg_string,
+				ERR_post(isc_stream_not_found, isc_arg_string,
 						 plan_relation->rel_name, 0);
 		}
 
@@ -5051,7 +5052,7 @@ static void plan_set(CSB csb, RSE rse, JRD_NOD plan)
 
 		if (!map || !*map)
 			/* table %s is referenced in the plan but not the from list */
-			ERR_post(gds_stream_not_found, gds_arg_string,
+			ERR_post(isc_stream_not_found, isc_arg_string,
 					 plan_relation->rel_name, 0);
 
 		plan_relation_node->nod_arg[e_rel_stream] = (JRD_NOD) (SLONG) * map;
@@ -5061,20 +5062,20 @@ static void plan_set(CSB csb, RSE rse, JRD_NOD plan)
 
 	if (!tail->csb_relation)
 		/* table %s is referenced in the plan but not the from list */
-		ERR_post(gds_stream_not_found, gds_arg_string,
+		ERR_post(isc_stream_not_found, isc_arg_string,
 				 plan_relation->rel_name, 0);
 
 	if ((tail->csb_relation->rel_id != plan_relation->rel_id)
 		&& !view_relation)
 		/* table %s is referenced in the plan but not the from list */
-		ERR_post(gds_stream_not_found, gds_arg_string,
+		ERR_post(isc_stream_not_found, isc_arg_string,
 				 plan_relation->rel_name, 0);
 
 /* check if we already have a plan for this stream */
 
 	if (tail->csb_plan)
 		/* table %s is referenced more than once in plan; use aliases to distinguish */
-		ERR_post(gds_stream_twice, gds_arg_string,
+		ERR_post(isc_stream_twice, isc_arg_string,
 				 tail->csb_relation->rel_name, 0);
 
 	tail->csb_plan = plan;

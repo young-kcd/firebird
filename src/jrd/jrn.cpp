@@ -49,7 +49,7 @@
 #ifdef UNIX
 #define UNIX_JOURNALLING
 #define BSD_SOCKETS
-#define SYS_ERROR	gds_arg_unix
+#define SYS_ERROR	isc_arg_unix
 #endif
 
 #ifndef status_t
@@ -57,7 +57,7 @@
 #endif
 
 #ifdef VMS
-#define SYS_ERROR	gds_arg_vms
+#define SYS_ERROR	isc_arg_vms
 #endif
 
 #ifdef WIN_NT
@@ -66,7 +66,7 @@
 #undef TEXT
 #endif
 #define TEXT		SCHAR
-#define SYS_ERROR	gds_arg_win32
+#define SYS_ERROR	isc_arg_win32
 #endif
 
 #ifdef BSD_SOCKETS
@@ -78,7 +78,8 @@
 #include <errno.h>
 #endif
 
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/jrn.h"
@@ -456,7 +457,7 @@ void JRN_make_init_data(
 	t = data;
 
 	if (len = b_length) {
-		*t++ = gds_dpb_wal_backup_dir;
+		*t++ = isc_dpb_wal_backup_dir;
 		fb_assert(b_length <= MAX_UCHAR);
 		*t++ = (UCHAR) b_length;
 		q = backup_dir;
@@ -941,14 +942,14 @@ static void error(
  **************************************/
 
 	IBERR_build_status(status_vector,
-					   gds_sys_request,
-					   gds_arg_string,
+					   isc_sys_request,
+					   isc_arg_string,
 					   string,
 					   SYS_ERROR,
 					   status,
-					   gds_arg_gds,
-					   gds_journerr,
-					   gds_arg_string,
+					   isc_arg_gds,
+					   isc_journerr,
+					   isc_arg_string,
 					   (journal) ? journal->jrn_server : "", 0);
 }
 

@@ -36,7 +36,8 @@
 #include "../jrd/common.h"
 
 #include <stdarg.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/jrd_pwd.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"
@@ -264,9 +265,9 @@ struct teb_t {
 	/* FREE: later in this module */
 
 	if (!teb) {					/* NOMEM: */
-		status_vector[0] = gds_arg_gds;
-		status_vector[1] = gds_virmemexh;
-		status_vector[2] = gds_arg_end;
+		status_vector[0] = isc_arg_gds;
+		status_vector[1] = isc_virmemexh;
+		status_vector[2] = isc_arg_end;
 		return status_vector[1];
 	}
 
@@ -713,7 +714,7 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS * status_vector,
 									  SCHAR * events, SCHAR * events_update)
 {
 	return gds__event_wait(status_vector, db_handle, events_length,
-						   events, events_update);
+						   (UCHAR*) events, (UCHAR*) events_update);
 }
 #endif
 

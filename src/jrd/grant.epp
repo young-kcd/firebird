@@ -27,7 +27,8 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <string.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
 #include "../jrd/scl.h"
 #include "../jrd/acl.h"
@@ -1066,7 +1067,7 @@ static void save_security_class(TDBB	tdbb,
 	DBB dbb;
 	BLK request;
 	USHORT found;
-	GDS__QUAD blob_id;
+	GDS_QUAD blob_id;
 	BLB blob;
 
 	SET_TDBB(tdbb);

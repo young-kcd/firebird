@@ -35,7 +35,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/scl.h"
@@ -139,9 +140,9 @@ void SCL_check_access(const scl* s_class,
 
 	if (s_class && (s_class->scl_flags & SCL_corrupt))
 	{
-		ERR_post(gds_no_priv, gds_arg_string, "(ACL unrecognized)",
-				 gds_arg_string, "security_class",
-				 gds_arg_string, s_class->scl_name,
+		ERR_post(isc_no_priv, isc_arg_string, "(ACL unrecognized)",
+				 isc_arg_string, "security_class",
+				 isc_arg_string, s_class->scl_name,
 				 0);
 	}
 
@@ -185,10 +186,10 @@ void SCL_check_access(const scl* s_class,
 		}
 	}
 
-	ERR_post(gds_no_priv,
-			 gds_arg_string, names->p_names_string,
-			 gds_arg_string, type,
-			 gds_arg_string, ERR_cstring(name),
+	ERR_post(isc_no_priv,
+			 isc_arg_string, names->p_names_string,
+			 isc_arg_string, type,
+			 isc_arg_string, ERR_cstring(name),
 			 0);
 }
 
@@ -601,7 +602,7 @@ void SCL_init(bool create,
 	{
 		if (!user_name || (!password_enc && !password))
 		{
-			ERR_post(gds_login, 0);
+			ERR_post(isc_login, 0);
 		}
 
 		if (!internal)
@@ -661,7 +662,7 @@ void SCL_init(bool create,
 
 					EXE_unwind(tdbb, (JRD_REQ) request);
 					ERR_post(isc_login_same_as_role_name,
-							 gds_arg_string, ERR_cstring(login_name), 0);
+							 isc_arg_string, ERR_cstring(login_name), 0);
 
 				END_FOR;
 

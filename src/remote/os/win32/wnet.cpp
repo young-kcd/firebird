@@ -30,7 +30,8 @@
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../remote/remote.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/thd.h"
 #include "../jrd/iberr.h"
 
@@ -56,7 +57,7 @@
 #define ERRNO		GetLastError()
 
 #ifndef SYS_ERR
-#define SYS_ERR		gds_arg_win32
+#define SYS_ERR		isc_arg_win32
 #endif
 
 #ifndef MAX_DATA
@@ -313,8 +314,8 @@ PORT WNET_analyze(	TEXT*	file_name,
 	}
 
 	if (packet->p_operation != op_accept) {
-		*status_vector++ = gds_arg_gds;
-		*status_vector++ = gds_connect_reject;
+		*status_vector++ = isc_arg_gds;
+		*status_vector++ = isc_connect_reject;
 		*status_vector++ = 0;
 		disconnect(port);
 		return NULL;
@@ -367,9 +368,9 @@ PORT WNET_connect(const TEXT*		name,
 
 	PORT port = alloc_port(0);
 	port->port_status_vector = status_vector;
-	status_vector[0] = gds_arg_gds;
+	status_vector[0] = isc_arg_gds;
 	status_vector[1] = 0;
-	status_vector[2] = gds_arg_end;
+	status_vector[2] = isc_arg_end;
 
 	if (port->port_connection) {
 		ALLR_free(port->port_connection);
@@ -546,9 +547,9 @@ PORT WNET_reconnect(HANDLE handle, ISC_STATUS* status_vector)
  **************************************/
 	PORT port = alloc_port(0);
 	port->port_status_vector = status_vector;
-	status_vector[0] = gds_arg_gds;
+	status_vector[0] = isc_arg_gds;
 	status_vector[1] = 0;
-	status_vector[2] = gds_arg_end;
+	status_vector[2] = isc_arg_end;
 
 	if (port->port_connection)
 		ALLR_free(port->port_connection);
@@ -1218,7 +1219,7 @@ static int wnet_error(
 
 	if (status) {
 		wnet_gen_error(port, isc_network_error,
-					   gds_arg_string, (ISC_STATUS) node_name,
+					   isc_arg_string, (ISC_STATUS) node_name,
 					   isc_arg_gds, operation,
 					   SYS_ERR, status,
 					   0);
@@ -1229,7 +1230,7 @@ static int wnet_error(
 	}
 	else {
 		wnet_gen_error(port, isc_network_error,
-					   gds_arg_string, (ISC_STATUS) node_name,
+					   isc_arg_string, (ISC_STATUS) node_name,
 					   isc_arg_gds, operation, 0);
 	}
 

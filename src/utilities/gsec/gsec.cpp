@@ -29,7 +29,8 @@
 #include <errno.h>
 #include <stdarg.h>
 #include "../jrd/common.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/msg_encode.h"
 #include "../utilities/gsec/gsec.h"

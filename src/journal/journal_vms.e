@@ -26,7 +26,8 @@
 
 #include <stdio.h>
 #include "../jrd/common.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 
 #ifdef VMS
 #include <time.h>

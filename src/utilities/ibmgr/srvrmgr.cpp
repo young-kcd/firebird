@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: srvrmgr.cpp,v 1.7 2003-11-03 23:56:49 brodsom Exp $
+ * $Id: srvrmgr.cpp,v 1.8 2003-11-08 16:33:47 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -44,7 +44,8 @@
 
 
 #include "../jrd/common.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/svc_undoc.h"

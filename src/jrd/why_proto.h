@@ -157,11 +157,6 @@ ISC_STATUS API_ROUTINE isc_detach_database(ISC_STATUS*, FRBRD**);
 
 ISC_STATUS API_ROUTINE isc_drop_database(ISC_STATUS*, FRBRD**);
 
-#ifndef REQUESTER
-ISC_STATUS API_ROUTINE gds__event_wait(ISC_STATUS*, FRBRD**, USHORT, UCHAR*,
-										UCHAR*);
-#endif
-
 ISC_STATUS API_ROUTINE isc_get_segment(ISC_STATUS*, FRBRD**, USHORT*, USHORT,
 										UCHAR*);
 
@@ -248,13 +243,24 @@ ISC_STATUS API_ROUTINE isc_unwind_request(ISC_STATUS*, FRBRD**, SSHORT);
 #endif
 
 typedef void DatabaseCleanupRoutine(FRBRD**, SLONG);
+
 #ifdef CANCEL_OPERATION
+#define CANCEL_disable	1
+#define CANCEL_enable	2
+#define CANCEL_raise	3
 ISC_STATUS API_ROUTINE gds__cancel_operation(ISC_STATUS*, FRBRD**, USHORT);
 #endif
+
 ISC_STATUS API_ROUTINE gds__database_cleanup(ISC_STATUS*, FRBRD**,
 												DatabaseCleanupRoutine*, SLONG);
 int API_ROUTINE gds__disable_subsystem(TEXT*);
 int API_ROUTINE gds__enable_subsystem(TEXT*);
+
+#ifndef REQUESTER
+ISC_STATUS API_ROUTINE gds__event_wait(ISC_STATUS*, FRBRD**, USHORT, UCHAR*,
+										UCHAR*);
+#endif
+
 ISC_STATUS gds__handle_cleanup(ISC_STATUS*, FRBRD**);
 typedef void TransactionCleanupRoutine(FRBRD*, SLONG);
 ISC_STATUS API_ROUTINE gds__transaction_cleanup(ISC_STATUS*, FRBRD**,

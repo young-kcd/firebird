@@ -76,14 +76,14 @@ USHORT	DYN_get_string(const TEXT**, TEXT*, USHORT, bool);
 
 // This function doesn't need to be exported currently.
 bool	DYN_is_it_sql_role(GBL, const TEXT*, TEXT*, TDBB);
-USHORT	DYN_put_blr_blob(GBL, const UCHAR**, GDS__QUAD *);
+USHORT	DYN_put_blr_blob(GBL, const UCHAR**, GDS_QUAD *);
 
 // This function is not defined anywhere.
-//USHORT	DYN_put_blr_blob2(GBL, const UCHAR**, GDS__QUAD *);
+//USHORT	DYN_put_blr_blob2(GBL, const UCHAR**, GDS_QUAD *);
 
-USHORT	DYN_put_text_blob(GBL, const UCHAR**, GDS__QUAD *);
+USHORT	DYN_put_text_blob(GBL, const UCHAR**, GDS_QUAD *);
 // This function is not defined anywhere.
-//USHORT	DYN_put_text_blob2(GBL, const UCHAR**, GDS__QUAD *);
+//USHORT	DYN_put_text_blob2(GBL, const UCHAR**, GDS_QUAD *);
 
 void	DYN_rundown_request(BLK, SSHORT);
 USHORT	DYN_skip_attribute(const UCHAR**);

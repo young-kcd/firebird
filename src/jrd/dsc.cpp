@@ -28,7 +28,8 @@
 #include <stdlib.h>
 #include "../jrd/common.h"
 #include "../jrd/dsc.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/constants.h"
 #include "../jrd/intl.h"
 #include "../jrd/gds_proto.h"

@@ -24,7 +24,8 @@
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../qli/dtr.h"
 #include "../qli/parse.h"
 #include "../qli/compile.h"
@@ -102,16 +103,16 @@ static int truncate_string(TEXT *);
 static void view_info(DBB, const TEXT *, const TEXT *, SSHORT, SSHORT);
 
 static const SCHAR db_items[] =
-	{ gds_info_page_size, isc_info_db_size_in_pages, gds_info_end };
+	{ isc_info_page_size, isc_info_db_size_in_pages, isc_info_end };
 static const UCHAR acl_bpb[] =
 {
-	gds_bpb_version1, gds_bpb_source_type, 1, 3,
-	gds_bpb_target_type, 1, 1
+	isc_bpb_version1, isc_bpb_source_type, 1, 3,
+	isc_bpb_target_type, 1, 1
 };
 static const UCHAR blr_bpb[] =
 {
-	gds_bpb_version1, gds_bpb_source_type, 1, 2,
-	gds_bpb_target_type, 1, 1
+	isc_bpb_version1, isc_bpb_source_type, 1, 2,
+	isc_bpb_target_type, 1, 1
 };
 
 // It's not the exact definition of blob_id, but since show_blob_info uses
@@ -451,7 +452,8 @@ static void display_blob(
 						 DBB dbb,
 						 SLONG blob_id[2],
 						 const TEXT* prefix,
-						 USHORT bpb_length, const UCHAR* bpb,
+						 USHORT bpb_length,
+						 const UCHAR* bpb,
 						 bool strip_line)
 {
 /**************************************
@@ -469,9 +471,9 @@ static void display_blob(
 
 	FRBRD* blob = NULL;
 
-	if (gds__open_blob2(status_vector, &dbb->dbb_handle, &dbb->dbb_meta_trans,
-						&blob, (GDS__QUAD*) blob_id, bpb_length,
-						reinterpret_cast<const char*>(bpb)))
+	if (isc_open_blob2(status_vector, &dbb->dbb_handle, &dbb->dbb_meta_trans,
+						&blob, (GDS_QUAD*) blob_id, bpb_length,
+						bpb))
 	{
 			ERRQ_database_error(dbb, status_vector);
 	}
@@ -479,9 +481,9 @@ static void display_blob(
 	const USHORT buffer_length = sizeof(buffer) - 1;
 	for (;;) {
 		USHORT length;
-		ISC_STATUS status = gds__get_segment(status_vector, &blob,
+		ISC_STATUS status = isc_get_segment(status_vector, &blob,
 								  &length, buffer_length, buffer);
-		if (status && status != gds_segment)
+		if (status && status != isc_segment)
 			break;
 		buffer[length--] = 0;
 		if (strip_line) {
@@ -500,7 +502,7 @@ static void display_blob(
 			ib_printf("%s%s\n", prefix, buffer);
 	}
 
-	gds__close_blob(status_vector, &blob);
+	isc_close_blob(status_vector, &blob);
 }
 
 
@@ -809,14 +811,14 @@ static void show_dbb_parameters( DBB database)
 	if (!database)
 		return;
 
-	if (gds__database_info(status_vector, &database->dbb_handle,
+	if (isc_database_info(status_vector, &database->dbb_handle,
 						   sizeof(db_items), db_items,
 						   sizeof(buffer), (char*) buffer))
 			ERRQ_database_error(database, status_vector);
 
 	SLONG page_size = 0, allocation = 0;
 
-	for (UCHAR *d = buffer; *d != gds_info_end;) {
+	for (UCHAR *d = buffer; *d != isc_info_end;) {
 		UCHAR item = *d++;
 		int length = gds__vax_integer(d, 2);
 		d += 2;
@@ -825,11 +827,11 @@ static void show_dbb_parameters( DBB database)
 			allocation = gds__vax_integer(d, length);
 			break;
 
-		case (gds_info_page_size):
+		case (isc_info_page_size):
 			page_size = gds__vax_integer(d, length);
 			break;
 
-		case (gds_info_error):
+		case (isc_info_error):
 			break;
 		}
 		d += length;
@@ -2640,7 +2642,7 @@ static void show_versions(void)
 
 	for (DBB dbb = QLI_databases; dbb; dbb = dbb->dbb_next) {
 		ERRQ_msg_put(134, dbb->dbb_filename, NULL, NULL, NULL, NULL);	/* Msg134 Version(s) for database %s */
-		gds__version(&dbb->dbb_handle, NULL, NULL);
+		isc_version(&dbb->dbb_handle, NULL, NULL);
 	}
 }
 

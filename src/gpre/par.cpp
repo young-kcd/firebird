@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.38 2003-11-03 23:51:47 brodsom Exp $
+//  $Id: par.cpp,v 1.39 2003-11-08 16:31:39 brodsom Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -43,7 +43,8 @@
 #include <setjmp.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../gpre/gpre.h"
 #include "../gpre/parse.h"
 #include "../gpre/cmp_proto.h"
@@ -987,20 +988,20 @@ void PAR_reserving( USHORT flags, bool parse_sql)
 		 */
 
 		MSC_match(KW_FOR);
-		lock_level = (flags & TRA_con) ? gds_tpb_protected : gds_tpb_shared;
-		lock_mode = gds_tpb_lock_read;
+		lock_level = (flags & TRA_con) ? isc_tpb_protected : isc_tpb_shared;
+		lock_mode = isc_tpb_lock_read;
 
 		if (MSC_match(KW_PROTECTED))
-			lock_level = gds_tpb_protected;
+			lock_level = isc_tpb_protected;
 		else if (MSC_match(KW_EXCLUSIVE))
-			lock_level = gds_tpb_exclusive;
+			lock_level = isc_tpb_exclusive;
 		else if (MSC_match(KW_SHARED))
-			lock_level = gds_tpb_shared;
+			lock_level = isc_tpb_shared;
 
 		if (MSC_match(KW_WRITE)) {
 			if (flags & TRA_ro)
 				CPR_error("write lock requested for a read_only transaction");
-			lock_mode = gds_tpb_lock_write;
+			lock_mode = isc_tpb_lock_write;
 		}
 		else
 			MSC_match(KW_READ);
@@ -2340,7 +2341,7 @@ static ACT par_open_blob( ACT_T act_op, SYM symbol)
 			filter_is_defined = true;
 		}
 		else if (MSC_match(KW_STREAM))
-			blob->blb_type = gds_bpb_type_stream;
+			blob->blb_type = isc_bpb_type_stream;
 		else
 			break;
 

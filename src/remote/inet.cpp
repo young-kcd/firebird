@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.84 2003-11-07 08:06:29 robocop Exp $
+$Id: inet.cpp,v 1.85 2003-11-08 16:30:20 brodsom Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -104,7 +104,8 @@ extern "C" int innetgr(const char *, const char *, const char *, const char *);
 #define INET_RETRY_CALL		5
 
 #include "../remote/remote.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/iberr.h"
 #include "../jrd/thd.h"
 #include "../remote/inet_proto.h"
@@ -141,7 +142,7 @@ extern int h_errno;
 #define ERRNO		WSAGetLastError()
 #define H_ERRNO		WSAGetLastError()
 #define SOCLOSE		closesocket
-#define SYS_ERR		gds_arg_win32
+#define SYS_ERR		isc_arg_win32
 #define INET_RETRY_ERRNO	WSAEINPROGRESS
 #define INET_ADDR_IN_USE	WSAEADDRINUSE
 #define sleep(seconds)  Sleep ((seconds) * 1000)
@@ -168,7 +169,7 @@ typedef int socklen_t;
 #endif
 
 #ifndef SYS_ERR
-#define SYS_ERR		gds_arg_unix
+#define SYS_ERR		isc_arg_unix
 #endif
 
 #ifndef SV_INTERRUPT
@@ -676,8 +677,8 @@ PORT INET_analyze(	TEXT*	file_name,
 
 	if (packet->p_operation != op_accept)
 	{
-		*status_vector++ = gds_arg_gds;
-		*status_vector++ = gds_connect_reject;
+		*status_vector++ = isc_arg_gds;
+		*status_vector++ = isc_connect_reject;
 		*status_vector++ = 0;
 		disconnect(port);
 		return NULL;
@@ -753,9 +754,9 @@ PORT INET_connect(const TEXT* name,
 	port->port_status_vector = status_vector;
 	REMOTE_get_timeout_params(port, reinterpret_cast<const UCHAR*>(dpb),
 							  dpb_length);
-	status_vector[0] = gds_arg_gds;
+	status_vector[0] = isc_arg_gds;
 	status_vector[1] = 0;
-	status_vector[2] = gds_arg_end;
+	status_vector[2] = isc_arg_end;
 	const TEXT* protocol = Config::getRemoteServiceName();
 #ifdef VMS
 	ISC_tcp_setup(ISC_wait, gds__completion_ast);
@@ -1095,9 +1096,9 @@ PORT INET_reconnect(HANDLE handle, ISC_STATUS* status_vector)
 
 	PORT port = alloc_port(0);
 	port->port_status_vector = status_vector;
-	status_vector[0] = gds_arg_gds;
+	status_vector[0] = isc_arg_gds;
 	status_vector[1] = 0;
-	status_vector[2] = gds_arg_end;
+	status_vector[2] = isc_arg_end;
 
 	port->port_handle = handle;
 	port->port_server_flags |= SRVR_server;
@@ -3071,14 +3072,14 @@ static int inet_error(
 		if ((status >= sys_nerr || !sys_errlist[status]) &&
 			status < WIN_NERR && win_errlist[status])
 			inet_gen_error(port, isc_network_error,
-						   gds_arg_string,
+						   isc_arg_string,
 						   (ISC_STATUS) port->port_connection->str_data,
-						   isc_arg_gds, operation, gds_arg_string,
+						   isc_arg_gds, operation, isc_arg_string,
 						   (ISC_STATUS) win_errlist[status], 0);
 		else
 #endif
 			inet_gen_error(port, isc_network_error,
-						   gds_arg_string,
+						   isc_arg_string,
 						   (ISC_STATUS) port->port_connection->str_data,
 						   isc_arg_gds, operation, SYS_ERR, status, 0);
 
@@ -3089,7 +3090,7 @@ static int inet_error(
 		/* No status value, just format the basic arguments. */
 
 		inet_gen_error(port, isc_network_error,
-					   gds_arg_string,
+					   isc_arg_string,
 					   (ISC_STATUS) port->port_connection->str_data, isc_arg_gds,
 					   operation, 0);
 	}

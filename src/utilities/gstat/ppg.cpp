@@ -29,7 +29,8 @@
 #include <string.h>
 #include "../jrd/common.h"
 #include "../jrd/jrd_time.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/ods.h"
 #include "../jrd/os/guid.h"
 #include "../jrd/nbak.h"
@@ -141,7 +142,7 @@ void PPG_print_header( HDR header, SLONG page,
 			FPRINTF(outfile, "\tDatabase dialect\t1\n");
 
 
-		gds__decode_date(reinterpret_cast <
+		isc_decode_date(reinterpret_cast <
 						 GDS_QUAD * >(header->hdr_creation_date), &time);
 		FPRINTF(outfile, "\tCreation date\t\t%s %d, %d %d:%02d:%02d\n",
 				months[time.tm_mon], time.tm_mday, time.tm_year + 1900,
@@ -319,7 +320,7 @@ void PPG_print_log( LIP logp, SLONG page,
 		}
 		else
 		{
-			gds__decode_date(reinterpret_cast<GDS_QUAD*>(logp->log_creation_date),
+			isc_decode_date(reinterpret_cast<GDS_QUAD*>(logp->log_creation_date),
 								&time);
 			FPRINTF(outfile,
 					"\tCreation date\t%s %d, %d %d:%02d:%02d\n",

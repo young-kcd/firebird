@@ -27,7 +27,8 @@
 #include "../jrd/flags.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/ods.h"
 #include "../jrd/btr.h"
 #include "gen/ids.h"
@@ -1158,7 +1159,7 @@ static void add_security_to_sys_rel(TDBB	tdbb,
  **************************************/
 
 	DBB dbb;
-	GDS__QUAD blob_id_1, blob_id_2;
+	GDS_QUAD blob_id_1, blob_id_2;
 	BLB blob;
 	BLK handle1;
 	TEXT sec_class_name[100];

@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.36 2003-11-07 13:24:15 brodsom Exp $
+$Id: why.cpp,v 1.37 2003-11-08 16:40:16 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -573,60 +573,60 @@ static const TEXT *generic[] = {
 
 static const UCHAR prepare_tr_info[] =
 {
-	gds__info_tra_id,
-	gds__info_end
+	isc_info_tra_id,
+	isc_info_end
 };
 
 /* Information items for DSQL prepare */
 
 static const SCHAR sql_prepare_info[] =
 {
-	gds__info_sql_select,
-	gds__info_sql_describe_vars,
-	gds__info_sql_sqlda_seq,
-	gds__info_sql_type,
-	gds__info_sql_sub_type,
-	gds__info_sql_scale,
-	gds__info_sql_length,
-	gds__info_sql_field,
-	gds__info_sql_relation,
-	gds__info_sql_owner,
-	gds__info_sql_alias,
-	gds__info_sql_describe_end
+	isc_info_sql_select,
+	isc_info_sql_describe_vars,
+	isc_info_sql_sqlda_seq,
+	isc_info_sql_type,
+	isc_info_sql_sub_type,
+	isc_info_sql_scale,
+	isc_info_sql_length,
+	isc_info_sql_field,
+	isc_info_sql_relation,
+	isc_info_sql_owner,
+	isc_info_sql_alias,
+	isc_info_sql_describe_end
 };
 
 /* Information items for SQL info */
 
 static const SCHAR describe_select_info[] =
 {
-	gds__info_sql_select,
-	gds__info_sql_describe_vars,
-	gds__info_sql_sqlda_seq,
-	gds__info_sql_type,
-	gds__info_sql_sub_type,
-	gds__info_sql_scale,
-	gds__info_sql_length,
-	gds__info_sql_field,
-	gds__info_sql_relation,
-	gds__info_sql_owner,
-	gds__info_sql_alias,
-	gds__info_sql_describe_end
+	isc_info_sql_select,
+	isc_info_sql_describe_vars,
+	isc_info_sql_sqlda_seq,
+	isc_info_sql_type,
+	isc_info_sql_sub_type,
+	isc_info_sql_scale,
+	isc_info_sql_length,
+	isc_info_sql_field,
+	isc_info_sql_relation,
+	isc_info_sql_owner,
+	isc_info_sql_alias,
+	isc_info_sql_describe_end
 };
 
 static const SCHAR describe_bind_info[] =
 {
-	gds__info_sql_bind,
-	gds__info_sql_describe_vars,
-	gds__info_sql_sqlda_seq,
-	gds__info_sql_type,
-	gds__info_sql_sub_type,
-	gds__info_sql_scale,
-	gds__info_sql_length,
-	gds__info_sql_field,
-	gds__info_sql_relation,
-	gds__info_sql_owner,
-	gds__info_sql_alias,
-	gds__info_sql_describe_end
+	isc_info_sql_bind,
+	isc_info_sql_describe_vars,
+	isc_info_sql_sqlda_seq,
+	isc_info_sql_type,
+	isc_info_sql_sub_type,
+	isc_info_sql_scale,
+	isc_info_sql_length,
+	isc_info_sql_field,
+	isc_info_sql_relation,
+	isc_info_sql_owner,
+	isc_info_sql_alias,
+	isc_info_sql_describe_end
 };
 
 
@@ -2592,11 +2592,11 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM2_M(ISC_STATUS * user_status,
 		if (!stmt_eaten) {
 			/* Check if against < 4.0 database */
 
-			const SCHAR ch = gds__info_base_level;
+			const SCHAR ch = isc_info_base_level;
 			if (!GDS_DATABASE_INFO(status, db_handle, 1, &ch, sizeof(buffer),
 								   buffer))
 			{
-				if ((buffer[0] != gds__info_base_level) || (buffer[4] > 3))
+				if ((buffer[0] != isc_info_base_level) || (buffer[4] > 3))
 					GDS_DSQL_EXEC_IMM3_M(status, db_handle,
 										 &crdb_trans_handle, length, string,
 										 dialect, in_blr_length, in_blr,
@@ -4959,10 +4959,10 @@ ISC_STATUS API_ROUTINE GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 
 			ptr = buffer;
 			end = buffer + buffer_len;
-			while (ptr < end && *ptr == gds__info_tra_id)
+			while (ptr < end && *ptr == isc_info_tra_id)
 				ptr += 3 + gds__vax_integer(ptr + 1, 2);
 
-			if (ptr >= end || *ptr != gds__info_end) {
+			if (ptr >= end || *ptr != isc_info_end) {
 				RETURN_SUCCESS;
 			}
 
@@ -5559,7 +5559,7 @@ static void iterative_sql_info(ISC_STATUS * user_status,
 								&last_index) && last_index)
 	{
 		p = new_items;
-		*p++ = gds__info_sql_sqlda_start;
+		*p++ = isc_info_sql_sqlda_start;
 		*p++ = 2;
 		*p++ = last_index;
 		*p++ = last_index >> 8;

@@ -25,7 +25,8 @@
 #include "../jrd/ib_stdio.h"
 
 #include "../jrd/common.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/isc.h"
 #include "../lock/lock.h"
 
@@ -87,7 +88,7 @@ void main( int argc, char **argv)
 	if (LOCK_init(status_vector, TRUE,
 				  (SLONG) getpid(), 1, &lck_owner_handle)) {
 		ib_printf("LOCK_init failed\n");
-		gds__print_status(status_vector);
+		isc_print_status(status_vector);
 		exit(0);
 	}
 
@@ -178,12 +179,12 @@ void main( int argc, char **argv)
 			if (!LOCK_convert(lock, type, wait, NULL, 0, status_vector)) {
 				ib_printf("*** CONVERSION FAILED: status_vector[1] = %d",
 						  status_vector[1]);
-				if (status_vector[1] == gds__lock_timeout)
-					ib_printf(" (gds__lock_timeout)\n");
-				else if (status_vector[1] == gds__lock_conflict)
-					ib_printf(" (gds__lock_conflict)\n");
-				else if (status_vector[1] == gds__deadlock)
-					ib_printf(" (gds__deadlock)\n");
+				if (status_vector[1] == isc_lock_timeout)
+					ib_printf(" (isc_lock_timeout)\n");
+				else if (status_vector[1] == isc_lock_conflict)
+					ib_printf(" (isc_lock_conflict)\n");
+				else if (status_vector[1] == isc_deadlock)
+					ib_printf(" (isc_deadlock)\n");
 				else
 					ib_printf("\n");
 			}
@@ -206,12 +207,12 @@ void main( int argc, char **argv)
 			else {
 				ib_printf("*** LOCK REJECTED: status_vector[1] = %d",
 						  status_vector[1]);
-				if (status_vector[1] == gds__lock_timeout)
-					ib_printf(" (gds__lock_timeout)\n");
-				else if (status_vector[1] == gds__lock_conflict)
-					ib_printf(" (gds__lock_conflict)\n");
-				else if (status_vector[1] == gds__deadlock)
-					ib_printf(" (gds__deadlock)\n");
+				if (status_vector[1] == isc_lock_timeout)
+					ib_printf(" (isc_lock_timeout)\n");
+				else if (status_vector[1] == isc_lock_conflict)
+					ib_printf(" (isc_lock_conflict)\n");
+				else if (status_vector[1] == isc_deadlock)
+					ib_printf(" (isc_deadlock)\n");
 				else
 					ib_printf("\n");
 			}

@@ -31,7 +31,8 @@
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/gdsassert.h"
 #include "../remote/remote.h"
 #include "../jrd/thd.h"
@@ -181,14 +182,14 @@ static Firebird::Semaphore requests_semaphore;
 
 static const UCHAR request_info[] =
 {
-	gds_info_state,
-	gds_info_message_number,
-	gds_info_end
+	isc_info_state,
+	isc_info_message_number,
+	isc_info_end
 };
 
 static const UCHAR sql_info[] =
 {
-	gds_info_sql_stmt_type,
+	isc_info_sql_stmt_type,
 	isc_info_sql_batch_fetch
 };
 
@@ -775,8 +776,8 @@ static ISC_STATUS attach_database(
 				*p++ = *dpb++;
 		}
 		else
-			*p++ = gds_dpb_version1;
-		*p++ = gds_dpb_sys_user_name;
+			*p++ = isc_dpb_version1;
+		*p++ = isc_dpb_sys_user_name;
 		*p++ = (UCHAR) string->str_length;
 		dpb = (UCHAR *) string->str_data;
 		for (const UCHAR* const end = dpb + string->str_length; dpb < end;)
@@ -1035,15 +1036,15 @@ static USHORT check_statement_type( RSR statement)
 						   sizeof(sql_info), (SCHAR *) sql_info, // const_cast
 						   sizeof(buffer), reinterpret_cast<char*>(buffer)))
 	{
-		for (info = buffer; (*info != gds_info_end) && !done;)
+		for (info = buffer; (*info != isc_info_end) && !done;)
 		{
 			l = (USHORT) gds__vax_integer(info + 1, 2);
 			type = (USHORT) gds__vax_integer(info + 3, l);
 			switch (*info)
 			{
-			case gds_info_sql_stmt_type:
-				if (type == gds_info_sql_stmt_get_segment ||
-					type == gds_info_sql_stmt_put_segment)
+			case isc_info_sql_stmt_type:
+				if (type == isc_info_sql_stmt_get_segment ||
+					type == isc_info_sql_stmt_put_segment)
 				{
 					ret = STMT_BLOB;
 					done = true;
@@ -1371,7 +1372,7 @@ void port::drop_database(P_RLSE* release, PACKET* send)
 	THREAD_ENTER;
 
 	if (status_vector[1]
-		&& (status_vector[1] != gds_drdb_completed_with_errs)) {
+		&& (status_vector[1] != isc_drdb_completed_with_errs)) {
 		this->send_response(send, 0, 0, status_vector);
 		return;
 	};
@@ -2160,11 +2161,11 @@ ISC_STATUS port::fetch_blob(P_SQLDATA * sqldata, PACKET* send)
 	THREAD_ENTER;
 
 	if (!status_vector[1] ||
-		status_vector[1] != gds_segment || status_vector[1] != gds_segstr_eof) {
+		status_vector[1] != isc_segment || status_vector[1] != isc_segstr_eof) {
 		message->msg_address = message->msg_buffer;
 		response->p_sqldata_status = s;
 		response->p_sqldata_messages =
-			(status_vector[1] == gds_segstr_eof) ? 0 : 1;
+			(status_vector[1] == isc_segstr_eof) ? 0 : 1;
 		this->send_partial(send);
 		message->msg_address = NULL;
 	}
@@ -2249,16 +2250,16 @@ static bool get_next_msg_no(RRQ request,
 		return false;
 
 	bool result = false;
-	for (info = info_buffer; *info != gds_info_end;) {
+	for (info = info_buffer; *info != isc_info_end;) {
 		l = (USHORT) gds__vax_integer(info + 1, 2);
 		n = (USHORT) gds__vax_integer(info + 3, l);
 		switch (*info) {
-		case gds_info_state:
-			if (n != gds_info_req_send)
+		case isc_info_state:
+			if (n != isc_info_req_send)
 				return false;
 			break;
 
-		case gds_info_message_number:
+		case isc_info_message_number:
 			*msg_number = n;
 			result = true;
 			break;
@@ -2335,7 +2336,7 @@ ISC_STATUS port::get_segment(P_SGMT* segment, PACKET* send)
 #ifdef DEBUG_REMOTE_MEMORY
 		ib_printf("get_segment(server)       free buffer      %x\n", buffer);
 #endif
-		if (status_vector[1] == gds_segstr_eof)
+		if (status_vector[1] == isc_segstr_eof)
 			if (blob->rbl_buffer != blob->rbl_data) {
 				ALLR_free(blob->rbl_buffer);
 				blob->rbl_buffer = blob->rbl_data;
@@ -2357,14 +2358,14 @@ ISC_STATUS port::get_segment(P_SGMT* segment, PACKET* send)
 		isc_get_segment(status_vector, &blob->rbl_handle, &length,
 						buffer_length, reinterpret_cast<char*>(p));
 		THREAD_ENTER;
-		if (status_vector[1] == gds_segstr_eof)
+		if (status_vector[1] == isc_segstr_eof)
 		{
 			state = 2;
 			success(status_vector);
 			p -= 2;
 			break;
 		}
-		if (status_vector[1] && (status_vector[1] != gds_segment))
+		if (status_vector[1] && (status_vector[1] != isc_segment))
 		{
 			p -= 2;
 			break;
@@ -2373,7 +2374,7 @@ ISC_STATUS port::get_segment(P_SGMT* segment, PACKET* send)
 		p[-1] = (UCHAR) (length >> 8);
 		p += length;
 		buffer_length -= length;
-		if (status_vector[1] == gds_segment) {
+		if (status_vector[1] == isc_segment) {
 			state = 1;
 			success(status_vector);
 			break;
@@ -2389,7 +2390,7 @@ ISC_STATUS port::get_segment(P_SGMT* segment, PACKET* send)
 	ib_printf("get_segment(server)       free buffer      %x\n", buffer);
 #endif
 
-	if (status_vector[1] == gds_segstr_eof)
+	if (status_vector[1] == isc_segstr_eof)
 		if (blob->rbl_buffer != blob->rbl_data) {
 			ALLR_free(blob->rbl_buffer);
 			blob->rbl_buffer = blob->rbl_data;
@@ -4137,7 +4138,7 @@ ISC_STATUS port::send_response(	PACKET*	send,
 		switch ((USHORT) * status_vector)
 		{
 		case isc_arg_warning:
-		case gds_arg_gds:
+		case isc_arg_gds:
 			{
 				USHORT fac = 0, class_ = 0;
 
@@ -4170,14 +4171,14 @@ ISC_STATUS port::send_response(	PACKET*	send,
 					*v++ = code = *status_vector++;
 				for (;;) {
 					switch (*status_vector) {
-					case gds_arg_string:
-					case gds_arg_number:
+					case isc_arg_string:
+					case isc_arg_number:
 						*v++ = *status_vector++;
 						*v++ = *status_vector++;
 						continue;
 
-					case gds_arg_cstring:
-						*v++ = gds_arg_string;
+					case isc_arg_cstring:
+						*v++ = isc_arg_string;
 						sp = (TEXT **) v;
 						*sp++ = p;
 						v = (ISC_STATUS *) sp;
@@ -4196,7 +4197,7 @@ ISC_STATUS port::send_response(	PACKET*	send,
 			}
 			continue;
 
-		case gds_arg_interpreted:
+		case isc_arg_interpreted:
 			*v++ = *status_vector++;
 			*v++ = *status_vector++;
 			continue;
@@ -4204,7 +4205,7 @@ ISC_STATUS port::send_response(	PACKET*	send,
 		l = (USHORT) isc_interprete_cpp(p, &status_vector);
 		if (l == 0)
 			break;
-		*v++ = gds_arg_interpreted;
+		*v++ = isc_arg_interpreted;
 		sp = (TEXT **) v;
 		*sp++ = p;
 		v = (ISC_STATUS *) sp;
@@ -4212,7 +4213,7 @@ ISC_STATUS port::send_response(	PACKET*	send,
 		sw = FALSE;
 	}
 
-	*v = gds_arg_end;
+	*v = isc_arg_end;
 
 /* Format and send response.  Note: the blob_id and data address fields
    of the response packet may contain valid data.  Don't trash them. */
@@ -4661,9 +4662,9 @@ static void success( ISC_STATUS * status_vector)
  *
  **************************************/
 
-	status_vector[0] = gds_arg_gds;
+	status_vector[0] = isc_arg_gds;
 	status_vector[1] = FB_SUCCESS;
-	status_vector[2] = gds_arg_end;
+	status_vector[2] = isc_arg_end;
 }
 
 #ifdef MULTI_THREAD

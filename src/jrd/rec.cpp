@@ -23,7 +23,8 @@
 
 #include "firebird.h"
 #include <string.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/btr.h"
@@ -1050,7 +1051,7 @@ static void scan_and_apply_logs(
 	else if (ret_val != FB_SUCCESS)
 		ERR_punt();
 	else if (!WALRS_handle)
-		ERR_post(gds_wal_failure, 0);
+		ERR_post(isc_wal_failure, 0);
 
 	string = FB_NEW_RPT(*dbb->dbb_permanent, MAX_WALBUFLEN) str();
 	wal_buff = (UCHAR *) string->str_data;

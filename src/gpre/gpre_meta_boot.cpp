@@ -26,12 +26,13 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.32 2003-11-03 23:51:47 brodsom Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.33 2003-11-08 16:31:40 brodsom Exp $
  */
 
 #include "firebird.h"
 #include <string.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../gpre/gpre.h"
 #include "../jrd/license.h"
 #include "../gpre/parse.h"
@@ -58,7 +59,7 @@ static const UCHAR blr_bpb[] = { isc_bpb_version1,
 };
 
 #ifdef SCROLLABLE_CURSORS
-static SCHAR db_version_info[] = { gds__info_base_level };
+static SCHAR db_version_info[] = { isc_info_base_level };
 #endif
 #ifdef NOT_USED_OR_REPLACED
 static SLONG array_size(GPRE_FLD);
@@ -408,7 +409,7 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT* length)
 
 	case blr_quad:
 		dtype = dtype_quad;
-		l = sizeof(GDS__QUAD);
+		l = sizeof(GDS_QUAD);
 		break;
 
 	case blr_float:
@@ -423,7 +424,7 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT* length)
 
 	case blr_blob:
 		dtype = dtype_blob;
-		l = sizeof(GDS__QUAD);
+		l = sizeof(GDS_QUAD);
 		break;
 
 /** Begin sql date/time/timestamp **/

@@ -27,7 +27,8 @@
 #include "../jrd/jrd_time.h"
 #include "../qli/dtr.h"
 #include "../qli/exe.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../qli/compile.h"
 #include "../qli/report.h"
 #include "../qli/format.h"
@@ -552,7 +553,7 @@ void FMT_print( QLI_NOD list, PRT print)
 	for (ptr = list->nod_arg; ptr < end; ptr++) {
 		ITM item = (ITM) *ptr;
 		if (item->itm_dtype == dtype_blob && item->itm_stream)
-			gds__close_blob(status_vector, &item->itm_stream);
+			isc_close_blob(status_vector, &item->itm_stream);
 	}
 }
 
@@ -1280,12 +1281,12 @@ static int print_line( itm* item, TEXT** ptr)
 
 	USHORT length;
 	ISC_STATUS_ARRAY status_vector;
-	const ISC_STATUS status = gds__get_segment(status_vector, &item->itm_stream,
+	const ISC_STATUS status = isc_get_segment(status_vector, &item->itm_stream,
 						&length, l, p);
-	if (status && status != gds_segment) {
+	if (status && status != isc_segment) {
 		ISC_STATUS* null_status = 0;
-		gds__close_blob(null_status, &item->itm_stream);
-		if (status != gds_segstr_eof)
+		isc_close_blob(null_status, &item->itm_stream);
+		if (status != isc_segstr_eof)
 			ERRQ_database_error(0, status_vector);
 		return EOF;
 	}

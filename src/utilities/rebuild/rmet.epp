@@ -22,7 +22,8 @@
  */
 
 #include "firebird.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
 #include "../jrd/tra.h"
 #include "../jrd/pag.h"
@@ -51,13 +52,13 @@ ULONG *RMET_tips(TEXT * db_in)
 
 	READY db_in AS DB
 	ON_ERROR
-		gds__print_status(gds__status);
+		isc_print_status(gds__status);
 		ib_printf("can't open the databse so skip the tip list\n");
 		return NULL;
 	END_ERROR;
 	START_TRANSACTION
 	ON_ERROR
-		gds__print_status(gds__status);
+		isc_print_status(gds__status);
 		ib_printf("can't start a transaction so skip the tip list\n");
 		FINISH DB;
 		return NULL;
@@ -68,7 +69,7 @@ ULONG *RMET_tips(TEXT * db_in)
 		last++;
 	END_FOR
 	ON_ERROR
-		gds__print_status(gds__status);
+		isc_print_status(gds__status);
 		ib_printf("can't read RDB$PAGES, so skip the tip list\n");
 		FINISH DB;
 		return NULL;
@@ -83,7 +84,7 @@ ULONG *RMET_tips(TEXT * db_in)
 		}
 	END_FOR
 	ON_ERROR
-		gds__print_status(gds__status);
+		isc_print_status(gds__status);
 		ib_printf("can't re-read RDB$PAGES, so skip the tip list\n");
 		FINISH DB;
 		return NULL;

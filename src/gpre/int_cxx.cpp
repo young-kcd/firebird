@@ -25,14 +25,15 @@
 //
 //____________________________________________________________
 //
-//	$Id: int_cxx.cpp,v 1.22 2003-10-29 10:53:07 robocop Exp $
+//	$Id: int_cxx.cpp,v 1.23 2003-11-08 16:31:40 brodsom Exp $
 //
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
 #include <stdarg.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../gpre/gpre.h"
 #include "../gpre/gpre_proto.h"
 #include "../gpre/lang_proto.h"
@@ -693,7 +694,7 @@ static void make_port( POR port, int column)
 
 		case dtype_quad:
 		case dtype_blob:
-			ib_fprintf(out_file, "    GDS__QUAD  jrd_%d;\t/* %s */",
+			ib_fprintf(out_file, "    GDS_QUAD  jrd_%d;\t/* %s */",
 					   reference->ref_ident, name);
 			break;
 

@@ -28,7 +28,8 @@
 #include <errno.h>
 #include <string.h>
 
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
 #include "../jrd/jrd_time.h"
 #include "../jrd/pag.h"
@@ -1037,7 +1038,7 @@ ib_fprintf ("    Creation date    \n", header->hdr_creation_date);
 			   header->hdr_implementation);
 	ib_fprintf(file, "    Shadow count\t\t%ld\n", header->hdr_shadow_count);
 
-	gds__decode_date(header->hdr_creation_date, &time);
+	isc_decode_date(header->hdr_creation_date, &time);
 
 	ib_fprintf(file, "    Creation date:\t\t%s %d, %d %d:%02d:%02d\n",
 			   months[time.tm_mon], time.tm_mday, time.tm_year + 1900,

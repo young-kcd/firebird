@@ -25,7 +25,8 @@
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/common.h"
 
 #define NODE(type, name, keyword) type,

@@ -48,7 +48,8 @@
 #include "../jrd/scl.h"
 #include "../jrd/drq.h"
 #include "../jrd/flags.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/lls.h"
 #include "../jrd/all.h"
 #include "../jrd/met.h"
@@ -113,14 +114,14 @@ void DYN_ddl(att* attachment, jrd_tra* transaction, USHORT length,
 
 	const UCHAR* ptr = ddl;
 
-	if (*ptr++ != gds_dyn_version_1) {
-		ERR_post(gds_wrodynver, 0);
+	if (*ptr++ != isc_dyn_version_1) {
+		ERR_post(isc_wrodynver, 0);
 	}
 
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
-	*status++ = gds_arg_gds;
+	*status++ = isc_arg_gds;
 	*status++ = 0;
-	*status = gds_arg_end;
+	*status = isc_arg_end;
 
 	struct gbl gbl;
 	gbl.gbl_transaction = transaction;
@@ -213,7 +214,7 @@ void DYN_error(bool	status_flag,
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
 
-	if (tdbb->tdbb_status_vector[1] == gds_no_meta_update)
+	if (tdbb->tdbb_status_vector[1] == isc_no_meta_update)
 		return;
 
 	TEXT error_buffer[BUFFER_MEDIUM];
@@ -226,12 +227,12 @@ void DYN_error(bool	status_flag,
 	ISC_STATUS_ARRAY local_status;
 	ISC_STATUS* v1 = local_status;
 
-	*v1++ = gds_arg_gds;
-	*v1++ = gds_no_meta_update;
+	*v1++ = isc_arg_gds;
+	*v1++ = isc_no_meta_update;
 	if (number) {
-		*v1++ = gds_arg_gds;
-		*v1++ = gds_random;
-		*v1++ = gds_arg_string;
+		*v1++ = isc_arg_gds;
+		*v1++ = isc_random;
+		*v1++ = isc_arg_string;
 		*v1++ = (ISC_STATUS) ERR_cstring(error_buffer);
 	}
 	if (status_flag) {
@@ -242,14 +243,14 @@ void DYN_error(bool	status_flag,
 		ISC_STATUS arg;
 		ISC_STATUS* const end = local_status + sizeof(local_status) - 1;
 		while (v1 < end &&
-			   ((arg = *v2++) != gds_arg_cstring || v1 + 1 < end) &&
+			   ((arg = *v2++) != isc_arg_cstring || v1 + 1 < end) &&
 			   (*v1++ = arg)) {
 			*v1++ = *v2++;
-			if (arg == gds_arg_cstring)
+			if (arg == isc_arg_cstring)
 				*v1++ = *v2++;
 		}
 	}
-	*v1 = gds_arg_end;
+	*v1 = isc_arg_end;
 	ISC_STATUS* const end = v1 + 1;
 
 	v1 = local_status;
@@ -368,8 +369,8 @@ void DYN_execute(
 	UCHAR verb;
 
 	switch (verb = *(*ptr)++) {
-	case gds_dyn_begin:
-		while (**ptr != gds_dyn_end)
+	case isc_dyn_begin:
+		while (**ptr != isc_dyn_end)
 			DYN_execute(gbl, ptr, relation_name, field_name,
 						trigger_name, function_name, procedure_name);
 		++(*ptr);
@@ -378,16 +379,16 @@ void DYN_execute(
 		/* Runtime security-related dynamic DDL should not require licensing.
 		   A placeholder case statement for SQL 3 Roles is reserved below. */
 
-	case gds_dyn_grant:
+	case isc_dyn_grant:
 		grant(gbl, ptr);
 		break;
 
-	case gds_dyn_revoke:
+	case isc_dyn_revoke:
 		revoke_permission(gbl, ptr);
 		break;
 
 /***
-    case gds_dyn_def_role:
+    case isc_dyn_def_role:
         create_role (gbl, ptr);
 	break;
 ***/
@@ -395,68 +396,68 @@ void DYN_execute(
 		/* make sure that the license allows metadata operations */
 
 		switch (verb) {
-		case gds_dyn_mod_database:
+		case isc_dyn_mod_database:
 			DYN_modify_database(gbl, ptr);
 			break;
 
-		case gds_dyn_def_rel:
-		case gds_dyn_def_view:
+		case isc_dyn_def_rel:
+		case isc_dyn_def_view:
 			DYN_define_relation(gbl, ptr);
 			break;
 
-		case gds_dyn_mod_rel:
+		case isc_dyn_mod_rel:
 			DYN_modify_relation(gbl, ptr);
 			break;
 
-		case gds_dyn_mod_view:
+		case isc_dyn_mod_view:
 			DYN_modify_view(gbl, ptr);
 			break;
 
-		case gds_dyn_delete_rel:
+		case isc_dyn_delete_rel:
 			DYN_delete_relation(gbl, ptr, relation_name);
 			break;
 
-		case gds_dyn_def_security_class:
+		case isc_dyn_def_security_class:
 			DYN_define_security_class(gbl, ptr);
 			break;
 
-		case gds_dyn_delete_security_class:
+		case isc_dyn_delete_security_class:
 			DYN_delete_security_class(gbl, ptr);
 			break;
 
-		case gds_dyn_def_exception:
+		case isc_dyn_def_exception:
 			DYN_define_exception(gbl, ptr);
 			break;
 
-		case gds_dyn_mod_exception:
+		case isc_dyn_mod_exception:
 			DYN_modify_exception(gbl, ptr);
 			break;
 
-		case gds_dyn_del_exception:
+		case isc_dyn_del_exception:
 			DYN_delete_exception(gbl, ptr);
 			break;
 
-		case gds_dyn_def_filter:
+		case isc_dyn_def_filter:
 			DYN_define_filter(gbl, ptr);
 			break;
 
-		case gds_dyn_delete_filter:
+		case isc_dyn_delete_filter:
 			DYN_delete_filter(gbl, ptr);
 			break;
 
-		case gds_dyn_def_function:
+		case isc_dyn_def_function:
 			DYN_define_function(gbl, ptr);
 			break;
 
-		case gds_dyn_def_function_arg:
+		case isc_dyn_def_function_arg:
 			DYN_define_function_arg(gbl, ptr, function_name);
 			break;
 
-		case gds_dyn_delete_function:
+		case isc_dyn_delete_function:
 			DYN_delete_function(gbl, ptr);
 			break;
 
-		case gds_dyn_def_generator:
+		case isc_dyn_def_generator:
 			DYN_define_generator(gbl, ptr);
 			break;
 
@@ -468,79 +469,79 @@ void DYN_execute(
 			DYN_delete_role(gbl, ptr);
 			break;
 
-		case gds_dyn_def_procedure:
+		case isc_dyn_def_procedure:
 			DYN_define_procedure(gbl, ptr);
 			break;
 
-		case gds_dyn_mod_procedure:
+		case isc_dyn_mod_procedure:
 			DYN_modify_procedure(gbl, ptr);
 			break;
 
-		case gds_dyn_delete_procedure:
+		case isc_dyn_delete_procedure:
 			DYN_delete_procedure(gbl, ptr);
 			break;
 
-		case gds_dyn_def_parameter:
+		case isc_dyn_def_parameter:
 			DYN_define_parameter(gbl, ptr, procedure_name);
 			break;
 
-		case gds_dyn_delete_parameter:
+		case isc_dyn_delete_parameter:
 			DYN_delete_parameter(gbl, ptr, procedure_name);
 			break;
 
-		case gds_dyn_def_shadow:
+		case isc_dyn_def_shadow:
 			DYN_define_shadow(gbl, ptr);
 			break;
 
-		case gds_dyn_delete_shadow:
+		case isc_dyn_delete_shadow:
 			DYN_delete_shadow(gbl, ptr);
 			break;
 
-		case gds_dyn_def_trigger:
+		case isc_dyn_def_trigger:
 			DYN_define_trigger(gbl, ptr, relation_name, NULL, false);
 			break;
 
-		case gds_dyn_mod_trigger:
+		case isc_dyn_mod_trigger:
 			DYN_modify_trigger(gbl, ptr);
 			break;
 
-		case gds_dyn_delete_trigger:
+		case isc_dyn_delete_trigger:
 			DYN_delete_trigger(gbl, ptr);
 			break;
 
-		case gds_dyn_def_trigger_msg:
+		case isc_dyn_def_trigger_msg:
 			DYN_define_trigger_msg(gbl, ptr, trigger_name);
 			break;
 
-		case gds_dyn_mod_trigger_msg:
+		case isc_dyn_mod_trigger_msg:
 			DYN_modify_trigger_msg(gbl, ptr, trigger_name);
 			break;
 
-		case gds_dyn_delete_trigger_msg:
+		case isc_dyn_delete_trigger_msg:
 			DYN_delete_trigger_msg(gbl, ptr, trigger_name);
 			break;
 
-		case gds_dyn_def_global_fld:
+		case isc_dyn_def_global_fld:
 			DYN_define_global_field(gbl, ptr, relation_name, field_name);
 			break;
 
-		case gds_dyn_mod_global_fld:
+		case isc_dyn_mod_global_fld:
 			DYN_modify_global_field(gbl, ptr, relation_name, field_name);
 			break;
 
-		case gds_dyn_delete_global_fld:
+		case isc_dyn_delete_global_fld:
 			DYN_delete_global_field(gbl, ptr);
 			break;
 
-		case gds_dyn_def_local_fld:
+		case isc_dyn_def_local_fld:
 			DYN_define_local_field(gbl, ptr, relation_name, field_name);
 			break;
 
-		case gds_dyn_mod_local_fld:
+		case isc_dyn_mod_local_fld:
 			DYN_modify_local_field(gbl, ptr, relation_name, NULL);
 			break;
 
-		case gds_dyn_delete_local_fld:
+		case isc_dyn_delete_local_fld:
 			DYN_delete_local_field(gbl, ptr, relation_name, field_name);
 			break;
 
@@ -548,40 +549,40 @@ void DYN_execute(
 			DYN_modify_sql_field(gbl, ptr, relation_name, NULL);
 			break;
 
-		case gds_dyn_def_sql_fld:
+		case isc_dyn_def_sql_fld:
 			DYN_define_sql_field(gbl, ptr, relation_name, field_name);
 			break;
 
-		case gds_dyn_def_idx:
+		case isc_dyn_def_idx:
 			DYN_define_index(gbl, ptr, relation_name, verb, NULL, NULL, NULL,
 							 NULL);
 			break;
 
-		case gds_dyn_rel_constraint:
+		case isc_dyn_rel_constraint:
 			DYN_define_constraint(gbl, ptr, relation_name, field_name);
 			break;
 
-		case gds_dyn_delete_rel_constraint:
+		case isc_dyn_delete_rel_constraint:
 			DYN_delete_constraint(gbl, ptr, relation_name);
 			break;
 
-		case gds_dyn_mod_idx:
+		case isc_dyn_mod_idx:
 			DYN_modify_index(gbl, ptr);
 			break;
 
-		case gds_dyn_delete_idx:
+		case isc_dyn_delete_idx:
 			DYN_delete_index(gbl, ptr);
 			break;
 
-		case gds_dyn_view_relation:
+		case isc_dyn_view_relation:
 			DYN_define_view_relation(gbl, ptr, relation_name);
 			break;
 
-		case gds_dyn_def_dimension:
+		case isc_dyn_def_dimension:
 			DYN_define_dimension(gbl, ptr, relation_name, field_name);
 			break;
 
-		case gds_dyn_delete_dimensions:
+		case isc_dyn_delete_dimensions:
 			DYN_delete_dimensions(gbl, ptr, relation_name, field_name);
 			break;
 
@@ -664,7 +665,7 @@ USHORT DYN_get_string(const TEXT** ptr, TEXT* field, USHORT size, bool err_flag)
 	return length;
 }
 
-USHORT DYN_put_blr_blob(GBL gbl, const UCHAR** ptr, GDS__QUAD* blob_id)
+USHORT DYN_put_blr_blob(GBL gbl, const UCHAR** ptr, GDS_QUAD* blob_id)
 {
 /**************************************
  *
@@ -702,7 +703,7 @@ USHORT DYN_put_blr_blob(GBL gbl, const UCHAR** ptr, GDS__QUAD* blob_id)
 	return length;
 }
 
-USHORT DYN_put_text_blob(GBL gbl, const UCHAR** ptr, GDS__QUAD* blob_id)
+USHORT DYN_put_text_blob(GBL gbl, const UCHAR** ptr, GDS_QUAD* blob_id)
 {
 /**************************************
  *
@@ -865,20 +866,20 @@ static void grant( GBL gbl, const UCHAR** ptr)
     SqlIdentifier dummy_name;
 
 	UCHAR verb;
-	while ((verb = *(*ptr)++) != gds_dyn_end)
+	while ((verb = *(*ptr)++) != isc_dyn_end)
 	{
 		switch (verb) {
-		case gds_dyn_rel_name:
+		case isc_dyn_rel_name:
 			obj_type = obj_relation;
 			GET_STRING(ptr, object);
 			break;
 
-		case gds_dyn_prc_name:
+		case isc_dyn_prc_name:
 			obj_type = obj_procedure;
 			GET_STRING(ptr, object);
 			break;
 
-		case gds_dyn_fld_name:
+		case isc_dyn_fld_name:
 			GET_STRING(ptr, field);
 			break;
 
@@ -887,7 +888,7 @@ static void grant( GBL gbl, const UCHAR** ptr)
 			GET_STRING(ptr, user);
 			break;
 
-		case gds_dyn_grant_user:
+		case isc_dyn_grant_user:
 			{
 				GET_STRING(ptr, user);
 				DYN_terminate(user, sizeof(user));
@@ -947,22 +948,22 @@ static void grant( GBL gbl, const UCHAR** ptr)
 			}
 			break;
 
-		case gds_dyn_grant_proc:
+		case isc_dyn_grant_proc:
 			user_type = obj_procedure;
 			GET_STRING(ptr, user);
 			break;
 
-		case gds_dyn_grant_trig:
+		case isc_dyn_grant_trig:
 			user_type = obj_trigger;
 			GET_STRING(ptr, user);
 			break;
 
-		case gds_dyn_grant_view:
+		case isc_dyn_grant_view:
 			user_type = obj_view;
 			GET_STRING(ptr, user);
 			break;
 
-		case gds_dyn_grant_options:
+		case isc_dyn_grant_options:
 		case isc_dyn_grant_admin_options:
 			options = DYN_get_number(ptr);
 			break;
@@ -1586,19 +1587,19 @@ static void revoke_permission(GBL gbl, const UCHAR** ptr)
 	SSHORT user_type = -1;
 	SSHORT obj_type = -1;
 
-	while ((verb = *(*ptr)++) != gds_dyn_end)
+	while ((verb = *(*ptr)++) != isc_dyn_end)
 		switch (verb) {
-		case gds_dyn_rel_name:
+		case isc_dyn_rel_name:
 			obj_type = obj_relation;
 			GET_STRING(ptr, object);
 			break;
 
-		case gds_dyn_prc_name:
+		case isc_dyn_prc_name:
 			obj_type = obj_procedure;
 			GET_STRING(ptr, object);
 			break;
 
-		case gds_dyn_fld_name:
+		case isc_dyn_fld_name:
 			GET_STRING(ptr, field);
 			break;
 
@@ -1607,7 +1608,7 @@ static void revoke_permission(GBL gbl, const UCHAR** ptr)
 			GET_STRING(ptr, user);
 			break;
 
-		case gds_dyn_grant_user:
+		case isc_dyn_grant_user:
 			GET_STRING(ptr, user);
 			DYN_terminate(user, sizeof(user));
 			/* This test may become obsolete as we now allow explicit ROLE keyword. */
@@ -1665,22 +1666,22 @@ static void revoke_permission(GBL gbl, const UCHAR** ptr)
 			}
 			break;
 
-		case gds_dyn_grant_proc:
+		case isc_dyn_grant_proc:
 			user_type = obj_procedure;
 			GET_STRING(ptr, user);
 			break;
 
-		case gds_dyn_grant_trig:
+		case isc_dyn_grant_trig:
 			user_type = obj_trigger;
 			GET_STRING(ptr, user);
 			break;
 
-		case gds_dyn_grant_view:
+		case isc_dyn_grant_view:
 			user_type = obj_view;
 			GET_STRING(ptr, user);
 			break;
 
-		case gds_dyn_grant_options:
+		case isc_dyn_grant_options:
 			options = DYN_get_number(ptr);
 			break;
 

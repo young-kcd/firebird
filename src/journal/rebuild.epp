@@ -43,7 +43,8 @@
 #include "../jrd/common.h"
 
 #include "../jrd/ods.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/license.h"
 #include "../jrd/jrn.h"
 #include "../journal/journal.h"
@@ -72,7 +73,7 @@
 #ifdef UNIX
 #define UNIX_JOURNALLING
 #define LIBRARY_IO
-#define SYS_ERROR	gds_arg_unix
+#define SYS_ERROR	isc_arg_unix
 #define ERRNO		errno
 #include <sys/types.h>
 extern int errno;
@@ -89,7 +90,7 @@ extern int errno;
 #include <iodef.h>
 #include <descrip.h>
 #include <ssdef.h>
-#define SYS_ERROR	gds_arg_vms
+#define SYS_ERROR	isc_arg_vms
 #endif
 
 // Windows NT Stuff
@@ -101,7 +102,7 @@ extern int errno;
 #include <windows.h>
 #undef TEXT
 #define TEXT		SCHAR
-#define SYS_ERROR	gds_arg_win32
+#define SYS_ERROR	isc_arg_win32
 #define ERRNO		GetLastError()
 #endif
 
@@ -1344,9 +1345,9 @@ static int error(const TEXT* filename,
 	ISC_STATUS_ARRAY status_vector;
 	ISC_STATUS* s = status_vector;
 	*s++ = isc_arg_gds;
-	*s++ = isc_io_error, *s++ = gds_arg_string;
+	*s++ = isc_io_error, *s++ = isc_arg_string;
 	*s++ = (ISC_STATUS) string;
-	*s++ = gds_arg_string;
+	*s++ = isc_arg_string;
 	*s++ = (ISC_STATUS) filename;
 	*s++ = isc_arg_gds;
 	*s++ = operation;
@@ -1518,7 +1519,7 @@ static void format_time(SLONG date[2],
  **************************************/
 	tm times;
 
-	gds__decode_date((GDS_QUAD_t*) date, &times);
+	isc_decode_date((GDS_QUAD_t*) date, &times);
 
 	sprintf(string, "%.2d:%.2d:%.2d %.2d/%.2d/%.2d",
 			times.tm_hour, times.tm_min, times.tm_sec,

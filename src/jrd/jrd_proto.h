@@ -52,6 +52,9 @@ ISC_STATUS jrd8_blob_info(ISC_STATUS*, struct blb**, SSHORT,
 ISC_STATUS jrd8_cancel_blob(ISC_STATUS *, struct blb **);
 ISC_STATUS jrd8_cancel_events(ISC_STATUS *, struct att **, SLONG *);
 #ifdef CANCEL_OPERATION
+#define CANCEL_disable	1
+#define CANCEL_enable	2
+#define CANCEL_raise	3
 ISC_STATUS jrd8_cancel_operation(ISC_STATUS *, struct att **,
 											   USHORT);
 #endif

@@ -25,7 +25,8 @@
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <string.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../qli/dtr.h"
 #include "../qli/parse.h"
 #include "../qli/compile.h"

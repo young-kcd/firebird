@@ -25,14 +25,15 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmp.cpp,v 1.23 2003-11-03 23:51:47 brodsom Exp $
+//	$Id: cmp.cpp,v 1.24 2003-11-08 16:31:40 brodsom Exp $
 //
 
 #include "firebird.h"
 #include <stdlib.h>
 #include <string.h>
-#include "../jrd/gds.h"
-#include "gpre.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
+#include "../gpre/gpre.h"
 #include "../jrd/align.h"
 #include "../gpre/cmd_proto.h"
 #include "../gpre/cme_proto.h"
@@ -410,26 +411,26 @@ void CMP_t_start( GPRE_TRA trans)
 //  how large it is 
 
 	text = tpb_buffer;
-	*text++ = gds_tpb_version1;
-	*text++ = (trans->tra_flags & TRA_ro) ? gds_tpb_read : gds_tpb_write;
+	*text++ = isc_tpb_version1;
+	*text++ = (trans->tra_flags & TRA_ro) ? isc_tpb_read : isc_tpb_write;
 	if (trans->tra_flags & TRA_con)
-		*text++ = gds_tpb_consistency;
+		*text++ = isc_tpb_consistency;
 	else if (trans->tra_flags & TRA_read_committed)
-		*text++ = gds_tpb_read_committed;
+		*text++ = isc_tpb_read_committed;
 	else
-		*text++ = gds_tpb_concurrency;
-	*text++ = (trans->tra_flags & TRA_nw) ? gds_tpb_nowait : gds_tpb_wait;
+		*text++ = isc_tpb_concurrency;
+	*text++ = (trans->tra_flags & TRA_nw) ? isc_tpb_nowait : isc_tpb_wait;
 
 	if (trans->tra_flags & TRA_read_committed)
 		*text++ =
 			(trans->
-			 tra_flags & TRA_rec_version) ? gds_tpb_rec_version :
-			gds_tpb_no_rec_version;
+			 tra_flags & TRA_rec_version) ? isc_tpb_rec_version :
+			isc_tpb_no_rec_version;
 
 	if (trans->tra_flags & TRA_autocommit)
-		*text++ = gds_tpb_autocommit;
+		*text++ = isc_tpb_autocommit;
 	if (trans->tra_flags & TRA_no_auto_undo)
-		*text++ = gds_tpb_no_auto_undo;
+		*text++ = isc_tpb_no_auto_undo;
 	*text = 0;
 	tpb_len = text - tpb_buffer;
 
@@ -576,24 +577,24 @@ static void cmp_blob(BLB blob,
 
 	blob->blb_bpb_ident = CMP_next_ident();
 	p = blob->blb_bpb;
-	*p++ = gds_bpb_version1;
+	*p++ = isc_bpb_version1;
 
 	if (blob->blb_const_to_type) {
-		*p++ = gds_bpb_target_type;
+		*p++ = isc_bpb_target_type;
 		*p++ = 2;
 		*p++ = (UCHAR) blob->blb_const_to_type;
 		*p++ = blob->blb_const_to_type >> 8;
 	}
 
 	if (blob->blb_const_from_type) {
-		*p++ = gds_bpb_source_type;
+		*p++ = isc_bpb_source_type;
 		*p++ = 2;
 		*p++ = (UCHAR) blob->blb_const_from_type;
 		*p++ = blob->blb_const_from_type >> 8;
 	}
 
 	if (blob->blb_type) {
-		*p++ = gds_bpb_type;
+		*p++ = isc_bpb_type;
 		*p++ = 1;
 		*p++ = (UCHAR) blob->blb_type;
 	}
@@ -601,7 +602,7 @@ static void cmp_blob(BLB blob,
 	if (blob->blb_from_charset) {
 		/* create bpb instruction for source character set */
 
-		*p++ = gds_bpb_source_interp;
+		*p++ = isc_bpb_source_interp;
 		*p++ = 2;
 		*p++ = (UCHAR) blob->blb_from_charset;
 		*p++ = blob->blb_from_charset >> 8;
@@ -611,7 +612,7 @@ static void cmp_blob(BLB blob,
 
 		/* create bpb instruction for target character set */
 
-		*p++ = gds_bpb_target_interp;
+		*p++ = isc_bpb_target_interp;
 		*p++ = 2;
 		*p++ = (UCHAR) blob->blb_to_charset;
 		*p++ = blob->blb_to_charset >> 8;
@@ -1220,40 +1221,40 @@ static void cmp_ready( GPRE_REQ request)
 	request->req_length = 250;
 	request->req_flags |= REQ_exp_hand;
 
-	STUFF(gds_dpb_version1);
+	STUFF(isc_dpb_version1);
 
 	if (db->dbb_allocation) {
-		STUFF(gds_dpb_allocation);
+		STUFF(isc_dpb_allocation);
 		STUFF(4);
 		STUFF_INT(db->dbb_allocation);
 	}
 
 	if (db->dbb_pagesize) {
-		STUFF(gds_dpb_page_size);
+		STUFF(isc_dpb_page_size);
 		STUFF(4);
 		STUFF_INT(db->dbb_pagesize);
 	}
 
 	if (db->dbb_buffercount) {
-		STUFF(gds_dpb_num_buffers);
+		STUFF(isc_dpb_num_buffers);
 		STUFF(4);
 		STUFF_INT(db->dbb_buffercount);
 	}
 
 	if (db->dbb_buffersize) {
-		STUFF(gds_dpb_buffer_length);
+		STUFF(isc_dpb_buffer_length);
 		STUFF(4);
 		STUFF_INT(db->dbb_buffersize);
 	}
 
 	if (db->dbb_users) {
-		STUFF(gds_dpb_number_of_users);
+		STUFF(isc_dpb_number_of_users);
 		STUFF(4);
 		STUFF_INT(db->dbb_users);
 	}
 
 	if (db->dbb_c_user && !db->dbb_r_user) {
-		STUFF(gds_dpb_user_name);
+		STUFF(isc_dpb_user_name);
 		l = strlen(db->dbb_c_user);
 		STUFF(l);
 		p = db->dbb_c_user;
@@ -1262,7 +1263,7 @@ static void cmp_ready( GPRE_REQ request)
 	}
 
 	if (db->dbb_c_password && !db->dbb_r_password) {
-		STUFF(gds_dpb_password);
+		STUFF(isc_dpb_password);
 		l = strlen(db->dbb_c_password);
 		STUFF(l);
 		p = db->dbb_c_password;
@@ -1281,7 +1282,7 @@ static void cmp_ready( GPRE_REQ request)
 
 	if (db->dbb_c_lc_messages && !db->dbb_r_lc_messages) {
 		/* Language must be an ASCII string */
-		STUFF(gds_dpb_lc_messages);
+		STUFF(isc_dpb_lc_messages);
 		l = strlen(db->dbb_c_lc_messages);
 		STUFF(l);
 		p = db->dbb_c_lc_messages;
@@ -1291,7 +1292,7 @@ static void cmp_ready( GPRE_REQ request)
 
 	if (db->dbb_c_lc_ctype && !db->dbb_r_lc_ctype) {
 		/* Character Format must be an ASCII string */
-		STUFF(gds_dpb_lc_ctype);
+		STUFF(isc_dpb_lc_ctype);
 		l = strlen(db->dbb_c_lc_ctype);
 		STUFF(l);
 		p = db->dbb_c_lc_ctype;
@@ -1322,14 +1323,14 @@ static void cmp_sdl_fudge( GPRE_REQ request, SLONG lower_bound)
     case lang_internal:
 		if (!lower_bound)
 			break;
-		STUFF(gds_sdl_add);
+		STUFF(isc_sdl_add);
 		cmp_sdl_number(request, lower_bound);
 		break;
 
 	case lang_fortran:
 		if (lower_bound == 1)
 			break;
-		STUFF(gds_sdl_add);
+		STUFF(isc_sdl_add);
 		cmp_sdl_number(request, lower_bound - 1);
 		break;
 	}
@@ -1356,7 +1357,7 @@ static bool cmp_sdl_loop(GPRE_REQ request,
 
 	ary::ary_repeat * bounds = array->ary_rpt + index;
 
-	STUFF(gds_sdl_do2);
+	STUFF(isc_sdl_do2);
 	STUFF(slice->slc_parameters + index);
 	cmp_sdl_fudge(request, bounds->ary_lower);
 	cmp_sdl_value(request, ranges->slc_lower);
@@ -1377,15 +1378,15 @@ static void cmp_sdl_number( GPRE_REQ request, SLONG number)
 {
 
 	if ((number > -16) && (number < 15)) {
-		STUFF(gds_sdl_tiny_integer);
+		STUFF(isc_sdl_tiny_integer);
 		STUFF(number);
 	}
 	else if ((number > -32768) && (number < 32767)) {
-		STUFF(gds_sdl_short_integer);
+		STUFF(isc_sdl_short_integer);
 		STUFF_WORD(number);
 	}
 	else {
-		STUFF(gds_sdl_long_integer);
+		STUFF(isc_sdl_long_integer);
 		STUFF_LONG(number);
 	}
 }
@@ -1408,7 +1409,7 @@ static void cmp_sdl_subscript(
 		return;
 	}
 
-	STUFF(gds_sdl_variable);
+	STUFF(isc_sdl_variable);
 	STUFF(slice->slc_parameters + index);
 }
 
@@ -1430,7 +1431,7 @@ static void cmp_sdl_value( GPRE_REQ request, GPRE_NOD node)
 		return;
 
 	case nod_value:
-		STUFF(gds_sdl_variable);
+		STUFF(isc_sdl_variable);
 		STUFF(reference->ref_id);
 		return;
 
@@ -1509,23 +1510,23 @@ static void cmp_slice( GPRE_REQ request)
 	request->req_blr = request->req_base = (UCHAR *) MSC_alloc(500);
 	request->req_length = 500;
 
-	STUFF(gds_sdl_version1);
-	STUFF(gds_sdl_struct);
+	STUFF(isc_sdl_version1);
+	STUFF(isc_sdl_struct);
 	STUFF(1);
 	cmp_field(request, element, 0);
 
-	STUFF(gds_sdl_relation);
+	STUFF(isc_sdl_relation);
 	CMP_stuff_symbol(request, field->fld_relation->rel_symbol);
 
-	STUFF(gds_sdl_field);
+	STUFF(isc_sdl_field);
 	CMP_stuff_symbol(request, field->fld_symbol);
 
 	for (n = 0, p = loop_flags; n < slice->slc_dimensions; n++, p++)
 		*p = cmp_sdl_loop(request, n, slice, array);
 
-	STUFF(gds_sdl_element);
+	STUFF(isc_sdl_element);
 	STUFF(1);
-	STUFF(gds_sdl_scalar);
+	STUFF(isc_sdl_scalar);
 	STUFF(0);
 	STUFF(slice->slc_dimensions);
 
@@ -1535,7 +1536,7 @@ static void cmp_slice( GPRE_REQ request)
 		cmp_sdl_subscript(request, n, slice, array);
 	}
 
-	STUFF(gds_sdl_eoc);
+	STUFF(isc_sdl_eoc);
 	request->req_length = request->req_blr - request->req_base;
 	request->req_blr = request->req_base;
 }

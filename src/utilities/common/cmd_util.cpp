@@ -24,7 +24,8 @@
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/msg_encode.h"
 #include "../jrd/iberr.h"
@@ -107,8 +108,8 @@ void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 
 	*status++ = isc_arg_end;
 
-	if (svc_status[0] != gds_arg_gds ||
-		(svc_status[0] == gds_arg_gds && svc_status[1] == 0 &&
+	if (svc_status[0] != isc_arg_gds ||
+		(svc_status[0] == isc_arg_gds && svc_status[1] == 0 &&
 		 svc_status[2] != isc_arg_warning)) {
 		MOVE_FASTER(tmp_status, svc_status, sizeof(ISC_STATUS) * tmp_status_len);
 	}
@@ -119,7 +120,7 @@ void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 
 		/* check for duplicated error code */
 		for (i = 0; i < ISC_STATUS_LENGTH; i++) {
-			if (svc_status[i] == gds_arg_end && i == status_len)
+			if (svc_status[i] == isc_arg_end && i == status_len)
 				break;			/* end of argument list */
 
 			if (i && i == warning_indx)

@@ -29,7 +29,8 @@
 #include "../qli/exe.h"
 #include "../jrd/license.h"
 #include "../jrd/flags.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../qli/reqs.h"
 #include "../qli/all_proto.h"
 #include "../qli/err_proto.h"
@@ -86,17 +87,17 @@ static void stuff_priv(RLB, USHORT, const TEXT*, USHORT, const TEXT*, const TEXT
 static int truncate_string(TEXT *);
 static void wal_info(UCHAR *, SLONG *, SCHAR *, SLONG *);
 
-static const UCHAR tpb[] = { gds_tpb_version1, gds_tpb_write };
-static const UCHAR db_info[] = { gds_info_implementation, gds_info_end };
+static const UCHAR tpb[] = { isc_tpb_version1, isc_tpb_write };
+static const UCHAR db_info[] = { isc_info_implementation, isc_info_end };
 static UCHAR global_parm_buffer[256];
 
 static const UCHAR db_log_info[] =
-	{ gds_info_logfile, gds_info_cur_logfile_name,
-		gds_info_cur_log_part_offset };
+	{ isc_info_logfile, isc_info_cur_logfile_name,
+		isc_info_cur_log_part_offset };
 
 /*
-static const UCHAR	dpb_trace [] =	{ gds_dpb_version1, gds_dpb_trace, 1, 1 };
-static const UCHAR	dpb_num_buffers [ ] = { gds_dpb_version1, gds_dpb_num_buffers, 1, 1 };
+static const UCHAR	dpb_trace [] =	{ isc_dpb_version1, isc_dpb_trace, 1, 1 };
+static const UCHAR	dpb_num_buffers [ ] = { isc_dpb_version1, isc_dpb_num_buffers, 1, 1 };
 */
 
 #define STUFF_STRING(str)	put_dyn_string (rlb, str)
@@ -425,11 +426,11 @@ void MET_define_sql_relation( QLI_REL relation)
 	RLB rlb = NULL;
 	rlb = CHECK_RLB(rlb);
 
-	STUFF(gds_dyn_version_1);
-	STUFF(gds_dyn_begin);
-	STUFF(gds_dyn_def_rel);
+	STUFF(isc_dyn_version_1);
+	STUFF(isc_dyn_begin);
+	STUFF(isc_dyn_def_rel);
 	STUFF_STRING(symbol->sym_string);
-	STUFF(gds_dyn_rel_sql_protection);
+	STUFF(isc_dyn_rel_sql_protection);
 	STUFF_WORD(2);
 	STUFF_WORD(1);
 
@@ -440,9 +441,9 @@ void MET_define_sql_relation( QLI_REL relation)
 		add_sql_field(relation, field, position, rlb);
 	}
 
-	STUFF(gds_dyn_end);
-	STUFF(gds_dyn_end);
-	STUFF(gds_dyn_eoc);
+	STUFF(isc_dyn_end);
+	STUFF(isc_dyn_end);
+	STUFF(isc_dyn_eoc);
 
 	execute_dynamic_ddl(database, rlb);
 	MET_meta_commit(database);
@@ -516,17 +517,17 @@ void MET_delete_database( DBB dbb)
 
 	UCHAR* p = global_parm_buffer;
 	UCHAR* const dpb = p;
-	*p++ = gds_dpb_version1;
+	*p++ = isc_dpb_version1;
 
 	if (user_length) {
-		*p++ = gds_dpb_user_name;
+		*p++ = isc_dpb_user_name;
 		*p++ = user_length;
 		while (user_length--)
 			*p++ = *user++;
 	}
 
 	if (password_length) {
-		*p++ = gds_dpb_password;
+		*p++ = isc_dpb_password;
 		*p++ = password_length;
 		while (password_length--)
 			*p++ = *password++;
@@ -538,7 +539,7 @@ void MET_delete_database( DBB dbb)
 		dpb_length = 0;
 
 	ISC_STATUS_ARRAY status_vector;
-	if (gds__attach_database(status_vector, 0, dbb->dbb_filename,
+	if (isc_attach_database(status_vector, 0, dbb->dbb_filename,
 							 &dbb->dbb_handle, dpb_length, (char*) dpb))
 			ERRQ_database_error(dbb, status_vector);
 
@@ -559,7 +560,7 @@ void MET_delete_database( DBB dbb)
 // Get write ahead log information
 
 	TEXT db_info_buffer[512];
-	if (gds__database_info(status_vector, &DB, sizeof(db_log_info),
+	if (isc_database_info(status_vector, &DB, sizeof(db_log_info),
 						   reinterpret_cast<const char*>(db_log_info),
 						   sizeof(db_info_buffer),
 						   db_info_buffer))
@@ -576,8 +577,8 @@ void MET_delete_database( DBB dbb)
 
 	MET_transaction(nod_commit, dbb);
 
-	if (gds__detach_database(gds_status, &dbb->dbb_handle))
-		gds__print_status(gds_status);
+	if (isc_detach_database(gds_status, &dbb->dbb_handle))
+		isc_print_status(gds_status);
 
 	DBB next = NULL;
 	for (DBB database = QLI_databases; database; database = next) {
@@ -647,11 +648,11 @@ void MET_delete_field( DBB database, NAM name)
 
 		RLB rlb = NULL;
 		rlb = CHECK_RLB(rlb);
-		STUFF(gds_dyn_version_1);
-		STUFF(gds_dyn_delete_dimensions);
+		STUFF(isc_dyn_version_1);
+		STUFF(isc_dyn_delete_dimensions);
 		STUFF_STRING(FLD.RDB$FIELD_NAME);
-		STUFF(gds_dyn_end);
-		STUFF(gds_dyn_eoc);
+		STUFF(isc_dyn_end);
+		STUFF(isc_dyn_eoc);
 		execute_dynamic_ddl(database, rlb);
 		ERASE FLD
 		ON_ERROR
@@ -740,11 +741,11 @@ void MET_delete_relation( QLI_REL relation)
 	SYM symbol = relation->rel_symbol;
 	RLB rlb = NULL;
 	rlb = CHECK_RLB(rlb);
-	STUFF(gds_dyn_version_1);
-	STUFF(gds_dyn_delete_rel);
+	STUFF(isc_dyn_version_1);
+	STUFF(isc_dyn_delete_rel);
 	STUFF_STRING(symbol->sym_string);
-	STUFF(gds_dyn_end);
-	STUFF(gds_dyn_eoc);
+	STUFF(isc_dyn_end);
+	STUFF(isc_dyn_eoc);
 	setup_update(relation->rel_database);
 
 	execute_dynamic_ddl(relation->rel_database, rlb);
@@ -1057,7 +1058,7 @@ void MET_index_info(const SCHAR* relation_name,
 	END_ERROR;
 
 	if (request_handle)
-		if (gds__release_request(gds_status, &request_handle))
+		if (isc_release_request(gds_status, &request_handle))
 			ERRQ_database_error(NULL, gds_status);
 
 // back up over the last space and finish off
@@ -1085,7 +1086,7 @@ void MET_meta_commit( DBB database)
 	if (database->dbb_capabilities & DBB_cap_multi_trans)
 	{
 		ISC_STATUS_ARRAY status_vector;
-		if (gds__commit_transaction(status_vector, &database->dbb_meta_trans)) {
+		if (isc_commit_transaction(status_vector, &database->dbb_meta_trans)) {
 			rollback_update(database);
 			ERRQ_database_error(database, status_vector);
 		}
@@ -1152,7 +1153,7 @@ FRBRD *MET_meta_transaction(DBB database, int update_flag)
 		((database->dbb_capabilities & DBB_cap_multi_trans) ||
 		 !(database->dbb_capabilities & DBB_cap_single_trans)))
 	{
-		if (gds__start_transaction(status_vector, &transaction, 1,
+		if (isc_start_transaction(status_vector, &transaction, 1,
 								   &database->dbb_handle, sizeof(tpb), tpb))
 		{
 			database->dbb_capabilities |= DBB_cap_single_trans;
@@ -1423,32 +1424,32 @@ void MET_ready( SYN node, USHORT create_flag)
 /* Only a SQL CREATE DATABASE will have a pagesize parameter,
    so only looking at the first pointer is justified.	*/
 
-	*p++ = gds_dpb_version1;
+	*p++ = isc_dpb_version1;
 
 	SSHORT length;
 	const TEXT* lc_ctype = QLI_charset;
 	if (lc_ctype && (length = strlen(lc_ctype))) {
-		*p++ = gds_dpb_lc_ctype;
+		*p++ = isc_dpb_lc_ctype;
 		*p++ = length;
 		while (*lc_ctype)
 			*p++ = *lc_ctype++;
 	}
 
 	if (QLI_trace) {
-		*p++ = gds_dpb_trace;
+		*p++ = isc_dpb_trace;
 		*p++ = 1;
 		*p++ = 1;
 	}
 
 	if (sw_buffers) {
-		*p++ = gds_dpb_num_buffers;
+		*p++ = isc_dpb_num_buffers;
 		*p++ = 2;
 		*p++ = sw_buffers % 256;
 		*p++ = sw_buffers / 256;
 	}
 
 	if (temp->dbb_pagesize) {
-		*p++ = gds_dpb_page_size;
+		*p++ = isc_dpb_page_size;
 		*p++ = 2;
 		*p++ = temp->dbb_pagesize % 256;
 		*p++ = temp->dbb_pagesize / 256;
@@ -1467,7 +1468,7 @@ void MET_ready( SYN node, USHORT create_flag)
 		length = strlen(QLI_default_user);
 	}
 	if (length) {
-		*p++ = gds_dpb_user_name;
+		*p++ = isc_dpb_user_name;
 		*p++ = length;
 		while (length--)
 			*p++ = *q++;
@@ -1484,7 +1485,7 @@ void MET_ready( SYN node, USHORT create_flag)
 		length = strlen(QLI_default_password);
 	}
 	if (length) {
-		*p++ = gds_dpb_password;
+		*p++ = isc_dpb_password;
 		*p++ = length;
 		while (length--)
 			*p++ = *q++;
@@ -1509,10 +1510,10 @@ void MET_ready( SYN node, USHORT create_flag)
 	for (ptr = node->syn_arg; ptr < end; ptr++) {
 		dbb = (DBB) *ptr;
 		if (create_flag)
-			gds__create_database(status_vector, 0, dbb->dbb_filename,
+			isc_create_database(status_vector, 0, dbb->dbb_filename,
 								 &dbb->dbb_handle, dpb_length, (char*) dpb, 0);
 		else
-			gds__attach_database(status_vector, 0, dbb->dbb_filename,
+			isc_attach_database(status_vector, 0, dbb->dbb_filename,
 								 &dbb->dbb_handle, dpb_length, (char*) dpb);
 		if (status_vector[1])
 			break;
@@ -1550,7 +1551,7 @@ void MET_shutdown(void)
 
 	for (DBB dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
 		if (detach(status_vector, dbb))
-			gds__print_status(status_vector);
+			isc_print_status(status_vector);
 }
 
 
@@ -1585,24 +1586,24 @@ void MET_sql_alter_table( QLI_REL relation, QLI_FLD fields)
 	RLB rlb = NULL;
 	rlb = CHECK_RLB(rlb);
 
-	STUFF(gds_dyn_version_1);
-	STUFF(gds_dyn_begin);
-	STUFF(gds_dyn_mod_rel);
+	STUFF(isc_dyn_version_1);
+	STUFF(isc_dyn_begin);
+	STUFF(isc_dyn_mod_rel);
 	STUFF_STRING(symbol->sym_string);
 
 	for (QLI_FLD field = fields; field; field = field->fld_next) {
 		if (field->fld_flags & FLD_add)
 			add_sql_field(relation, field, 0, rlb);
 		else if (field->fld_flags & FLD_drop) {
-			STUFF(gds_dyn_delete_local_fld);
+			STUFF(isc_dyn_delete_local_fld);
 			STUFF_STRING(field->fld_name->sym_string);
-			STUFF(gds_dyn_end);
+			STUFF(isc_dyn_end);
 		}
 	}
 
-	STUFF(gds_dyn_end);
-	STUFF(gds_dyn_end);
-	STUFF(gds_dyn_eoc);
+	STUFF(isc_dyn_end);
+	STUFF(isc_dyn_end);
+	STUFF(isc_dyn_eoc);
 
 	execute_dynamic_ddl(database, rlb);
 	MET_meta_commit(database);
@@ -1632,16 +1633,16 @@ void MET_sql_cr_view( SYN node)
 
 	RLB rlb = NULL;
 	rlb = CHECK_RLB(rlb);
-	STUFF(gds_dyn_version_1);
-	STUFF(gds_dyn_begin);
+	STUFF(isc_dyn_version_1);
+	STUFF(isc_dyn_begin);
 
-	STUFF(gds_dyn_def_view);
+	STUFF(isc_dyn_def_view);
 	STUFF_STRING(symbol->sym_string);
 
 // The meat of the blr generation will go here
 
-	STUFF(gds_dyn_end);
-	STUFF(gds_dyn_eoc);
+	STUFF(isc_dyn_end);
+	STUFF(isc_dyn_eoc);
 
 	execute_dynamic_ddl(database, rlb);
 	MET_meta_commit(database);
@@ -1661,7 +1662,7 @@ void MET_sql_grant( SYN node)
  *
  **************************************/
 
-	sql_grant_revoke(node, gds_dyn_grant);
+	sql_grant_revoke(node, isc_dyn_grant);
 }
 
 
@@ -1678,7 +1679,7 @@ void MET_sql_revoke( SYN node)
  *
  **************************************/
 
-	sql_grant_revoke(node, gds_dyn_revoke);
+	sql_grant_revoke(node, isc_dyn_revoke);
 }
 
 
@@ -1703,19 +1704,19 @@ FRBRD *MET_transaction( NOD_T node_type, DBB database)
 
 	switch (node_type) {
 	case nod_commit:
-		gds__commit_transaction(status_vector, &database->dbb_transaction);
+		isc_commit_transaction(status_vector, &database->dbb_transaction);
 		break;
 
 	case nod_rollback:
-		gds__rollback_transaction(status_vector, &database->dbb_transaction);
+		isc_rollback_transaction(status_vector, &database->dbb_transaction);
 		break;
 
 	case nod_prepare:
-		gds__prepare_transaction(status_vector, &database->dbb_transaction);
+		isc_prepare_transaction(status_vector, &database->dbb_transaction);
 		break;
 
 	case nod_start_trans:
-		gds__start_transaction(status_vector, &database->dbb_transaction, 1,
+		isc_start_transaction(status_vector, &database->dbb_transaction, 1,
 							   &database->dbb_handle, sizeof(tpb), tpb);
 		database->dbb_flags &= ~DBB_updates & ~DBB_prepared;
 		break;
@@ -1839,25 +1840,25 @@ static void add_sql_field( QLI_REL relation, QLI_FLD field, USHORT position, RLB
 	END_ERROR;
 
 
-	STUFF(gds_dyn_def_sql_fld);
+	STUFF(isc_dyn_def_sql_fld);
 	STUFF_STRING(field->fld_name->sym_string);
 
-	STUFF(gds_dyn_fld_type);
+	STUFF(isc_dyn_fld_type);
 	STUFF_WORD(2);
 	STUFF_WORD(blr_dtypes[field->fld_dtype]);
 
-	STUFF(gds_dyn_fld_length);
+	STUFF(isc_dyn_fld_length);
 	STUFF_WORD(2);
 	const USHORT l = (field->fld_dtype == dtype_varying)
 					? field->fld_length - sizeof(SSHORT) : field->fld_length;
 	STUFF_WORD(l);
 
-	STUFF(gds_dyn_fld_scale);
+	STUFF(isc_dyn_fld_scale);
 	STUFF_WORD(2);
 	STUFF_WORD(field->fld_scale);
 
 	if (position) {
-		STUFF(gds_dyn_fld_position);
+		STUFF(isc_dyn_fld_position);
 		STUFF_WORD(2);
 		STUFF_WORD(position);
 	}
@@ -1865,7 +1866,7 @@ static void add_sql_field( QLI_REL relation, QLI_FLD field, USHORT position, RLB
 	rlb = CHECK_RLB(rlb);
 
 	if (field->fld_flags & FLD_not_null) {
-		STUFF(gds_dyn_fld_validation_blr);
+		STUFF(isc_dyn_fld_validation_blr);
 		STUFF_WORD(8);
 		STUFF(blr_version4);
 		STUFF(blr_not);
@@ -1877,7 +1878,7 @@ static void add_sql_field( QLI_REL relation, QLI_FLD field, USHORT position, RLB
 		STUFF(blr_eoc);
 	}
 
-	STUFF(gds_dyn_end);
+	STUFF(isc_dyn_end);
 }
 
 
@@ -1901,8 +1902,8 @@ static int blob_copy( RLB rlb, QLI_REL source, SLONG * source_blob_id)
 	DB = source_dbb->dbb_handle;
 	FRBRD* source_blob = NULL;
 
-	if (gds__open_blob(status_vector, &DB, &source_dbb->dbb_meta_trans,
-					   &source_blob, (GDS__QUAD*) source_blob_id)) {
+	if (isc_open_blob(status_vector, &DB, &source_dbb->dbb_meta_trans,
+					   &source_blob, (GDS_QUAD*) source_blob_id)) {
 		rollback_update((DBB) DB);
 		ERRQ_database_error(source_dbb, status_vector);
 	}
@@ -1925,7 +1926,7 @@ static int blob_copy( RLB rlb, QLI_REL source, SLONG * source_blob_id)
 	STUFF_WORD((USHORT) size);
 
 	USHORT length;
-	while (!gds__get_segment(status_vector, &source_blob, &length,
+	while (!isc_get_segment(status_vector, &source_blob, &length,
 							 buffer_length, buffer))
 	{
 		while (rlb->rlb_limit - rlb->rlb_data < length)
@@ -1935,7 +1936,7 @@ static int blob_copy( RLB rlb, QLI_REL source, SLONG * source_blob_id)
 			STUFF(*p++);
 	}
 
-	if (status_vector[1] != gds_segstr_eof) {
+	if (status_vector[1] != isc_segstr_eof) {
 		rollback_update((DBB) DB);
 		if (buffer != fixed_buffer)
 			gds__free(buffer);
@@ -1945,7 +1946,7 @@ static int blob_copy( RLB rlb, QLI_REL source, SLONG * source_blob_id)
 	if (buffer != fixed_buffer)
 		gds__free(buffer);
 
-	if (gds__close_blob(status_vector, &source_blob)) {
+	if (isc_close_blob(status_vector, &source_blob)) {
 		rollback_update((DBB) DB);
 		ERRQ_database_error(source_dbb, status_vector);
 	}
@@ -2164,8 +2165,8 @@ static int clone_fields( QLI_REL target, QLI_REL source)
 	RLB rlb = NULL;
 	rlb = CHECK_RLB(rlb);
 
-	STUFF(gds_dyn_version_1);
-	STUFF(gds_dyn_begin);
+	STUFF(isc_dyn_version_1);
+	STUFF(isc_dyn_begin);
 
 	FOR(REQUEST_HANDLE req1
 		TRANSACTION_HANDLE s_trans)
@@ -2178,70 +2179,70 @@ static int clone_fields( QLI_REL target, QLI_REL source)
 			(strncmp("RDB$", Y.RDB$FIELD_NAME, 4)) &&
 			(!(strncmp("RDB$", F.RDB$FIELD_NAME, 4))))
 		{
-				STUFF(gds_dyn_def_sql_fld);
+				STUFF(isc_dyn_def_sql_fld);
 				STUFF_STRING(Y.RDB$FIELD_NAME);
-				STUFF(gds_dyn_fld_type);
+				STUFF(isc_dyn_fld_type);
 				STUFF_WORD(2);
 				STUFF_WORD(F.RDB$FIELD_TYPE);
 
-				STUFF(gds_dyn_fld_length);
+				STUFF(isc_dyn_fld_length);
 				STUFF_WORD(2);
 				STUFF_WORD(F.RDB$FIELD_LENGTH);
 
-				STUFF(gds_dyn_fld_scale);
+				STUFF(isc_dyn_fld_scale);
 				STUFF_WORD(2);
 				STUFF_WORD(F.RDB$FIELD_SCALE);
 
 				if (!F.RDB$VALIDATION_BLR.NULL) {
-					STUFF(gds_dyn_fld_validation_blr);
+					STUFF(isc_dyn_fld_validation_blr);
 					blob_copy(rlb, source, (SLONG*) &F.RDB$VALIDATION_BLR);
 				}
 		}
 		else
 		{
-			STUFF(gds_dyn_def_local_fld);
+			STUFF(isc_dyn_def_local_fld);
 			STUFF_STRING(Y.RDB$FIELD_NAME);
-			STUFF(gds_dyn_fld_source);
+			STUFF(isc_dyn_fld_source);
 			STUFF_STRING(Y.RDB$FIELD_SOURCE);
 		}
 
-		STUFF(gds_dyn_rel_name);
+		STUFF(isc_dyn_rel_name);
 		STUFF_STRING(target->rel_symbol->sym_string);
 
 		if (!Y.RDB$FIELD_POSITION.NULL) {
-			STUFF(gds_dyn_fld_position);
+			STUFF(isc_dyn_fld_position);
 			STUFF_WORD(2);
 			STUFF_WORD(Y.RDB$FIELD_POSITION);
 		}
 
 		if (!Y.RDB$QUERY_NAME.NULL) {
-			STUFF(gds_dyn_fld_query_name);
+			STUFF(isc_dyn_fld_query_name);
 			STUFF_STRING(Y.RDB$QUERY_NAME);
 		}
 
 		if (!Y.RDB$EDIT_STRING.NULL) {
 
-			STUFF(gds_dyn_fld_edit_string);
+			STUFF(isc_dyn_fld_edit_string);
 			STUFF_STRING(Y.RDB$EDIT_STRING);
 		}
 		if (!Y.RDB$UPDATE_FLAG.NULL) {
-			STUFF(gds_dyn_update_flag);
+			STUFF(isc_dyn_update_flag);
 			STUFF_WORD(2);
 			STUFF_WORD(Y.RDB$UPDATE_FLAG);
 		}
 
 		if (!Y.RDB$QUERY_HEADER.NULL) {
-			STUFF(gds_dyn_fld_query_header);
+			STUFF(isc_dyn_fld_query_header);
 			blob_copy(rlb, source, (SLONG*) &Y.RDB$QUERY_HEADER);
 		}
 
 		if (!Y.RDB$DESCRIPTION.NULL) {
-			STUFF(gds_dyn_description);
+			STUFF(isc_dyn_description);
 			blob_copy(rlb, source, (SLONG*) &Y.RDB$DESCRIPTION);
 		}
 
 		if (!Y.RDB$DEFAULT_VALUE.NULL) {
-			STUFF(gds_dyn_fld_default_value);
+			STUFF(isc_dyn_fld_default_value);
 			blob_copy(rlb, source, (SLONG*) &Y.RDB$DEFAULT_VALUE);
 		}
 
@@ -2253,7 +2254,7 @@ static int clone_fields( QLI_REL target, QLI_REL source)
 					S_RFR.RDB$FIELD_NAME = Y.RDB$FIELD_NAME AND
 					S_RFR.RDB$RELATION_NAME = Y.RDB$RELATION_NAME
             if (!S_RFR.RDB$SYSTEM_FLAG.NULL) {
-                STUFF(gds_dyn_system_flag);
+                STUFF(isc_dyn_system_flag);
                 STUFF_WORD(2);
                 STUFF_WORD(S_RFR.RDB$SYSTEM_FLAG);
             }
@@ -2265,48 +2266,48 @@ static int clone_fields( QLI_REL target, QLI_REL source)
 
 		if (!F.RDB$COMPUTED_BLR.NULL)
 		{
-			STUFF(gds_dyn_fld_computed_blr);
+			STUFF(isc_dyn_fld_computed_blr);
 			blob_copy(rlb, source, (SLONG*) &F.RDB$COMPUTED_BLR);
-			STUFF(gds_dyn_fld_computed_source);
+			STUFF(isc_dyn_fld_computed_source);
 			blob_copy(rlb, source, (SLONG*) &F.RDB$COMPUTED_SOURCE);
 
-			STUFF(gds_dyn_fld_type);
+			STUFF(isc_dyn_fld_type);
 			STUFF_WORD(2);
 			STUFF_WORD(F.RDB$FIELD_TYPE);
 
-			STUFF(gds_dyn_fld_length);
+			STUFF(isc_dyn_fld_length);
 			STUFF_WORD(2);
 			STUFF_WORD(F.RDB$FIELD_LENGTH);
 
 			if (!F.RDB$FIELD_SCALE.NULL) {
-				STUFF(gds_dyn_fld_scale);
+				STUFF(isc_dyn_fld_scale);
 				STUFF_WORD(2);
 				STUFF_WORD(F.RDB$FIELD_SCALE);
 			}
 
 			if (!F.RDB$FIELD_SUB_TYPE.NULL) {
-				STUFF(gds_dyn_fld_sub_type);
+				STUFF(isc_dyn_fld_sub_type);
 				STUFF_WORD(2);
 				STUFF_WORD(F.RDB$FIELD_SUB_TYPE);
 			}
 		}
-		STUFF(gds_dyn_end);
+		STUFF(isc_dyn_end);
 	END_FOR
 	ON_ERROR
 		rollback_update(source->rel_database);
 		ERRQ_database_error(source->rel_database, gds_status);
 	END_ERROR;
 
-	STUFF(gds_dyn_end);
-	STUFF(gds_dyn_eoc);
+	STUFF(isc_dyn_end);
+	STUFF(isc_dyn_eoc);
 
 	execute_dynamic_ddl(target->rel_database, rlb);
 
 	if (req1)
-		if (gds__release_request(gds_status, &req1))
+		if (isc_release_request(gds_status, &req1))
 			ERRQ_database_error(source->rel_database, gds_status);
 	if (req2)
-		if (gds__release_request(gds_status, &req2))
+		if (isc_release_request(gds_status, &req2))
 			ERRQ_database_error(source->rel_database, gds_status);
 	return TRUE;
 }
@@ -2393,82 +2394,82 @@ static int clone_global_fields( QLI_REL target, QLI_REL source)
 
 		if (first_field) {
 			rlb = CHECK_RLB(rlb);
-			STUFF(gds_dyn_version_1);
-			STUFF(gds_dyn_begin);
+			STUFF(isc_dyn_version_1);
+			STUFF(isc_dyn_begin);
 			first_field = false;
 		}
-		STUFF(gds_dyn_def_global_fld);
+		STUFF(isc_dyn_def_global_fld);
 		STUFF_STRING(Y.RDB$FIELD_NAME);
 
-		STUFF(gds_dyn_fld_type);
+		STUFF(isc_dyn_fld_type);
 		STUFF_WORD(2);
 		STUFF_WORD(Y.RDB$FIELD_TYPE);
 
-		STUFF(gds_dyn_fld_length);
+		STUFF(isc_dyn_fld_length);
 		STUFF_WORD(2);
 		STUFF_WORD(Y.RDB$FIELD_LENGTH);
 
 		if (!Y.RDB$FIELD_SCALE.NULL) {
-			STUFF(gds_dyn_fld_scale);
+			STUFF(isc_dyn_fld_scale);
 			STUFF_WORD(2);
 			STUFF_WORD(Y.RDB$FIELD_SCALE);
 		}
 
 		if (!Y.RDB$FIELD_SUB_TYPE.NULL) {
-			STUFF(gds_dyn_fld_sub_type);
+			STUFF(isc_dyn_fld_sub_type);
 			STUFF_WORD(2);
 			STUFF_WORD(Y.RDB$FIELD_SUB_TYPE);
 		}
 
 		if (!Y.RDB$SEGMENT_LENGTH.NULL) {
-			STUFF(gds_dyn_fld_segment_length);
+			STUFF(isc_dyn_fld_segment_length);
 			STUFF_WORD(2);
 			STUFF_WORD(Y.RDB$SEGMENT_LENGTH);
 		}
 
 		if (!Y.RDB$SYSTEM_FLAG.NULL) {
-			STUFF(gds_dyn_system_flag);
+			STUFF(isc_dyn_system_flag);
 			STUFF_WORD(2);
 			STUFF_WORD(Y.RDB$SYSTEM_FLAG);
 		}
 
 		if (!Y.RDB$QUERY_NAME.NULL) {
-			STUFF(gds_dyn_fld_query_name);
+			STUFF(isc_dyn_fld_query_name);
 			STUFF_STRING(Y.RDB$QUERY_NAME);
 		}
 
 		if (!Y.RDB$EDIT_STRING.NULL) {
-			STUFF(gds_dyn_fld_edit_string);
+			STUFF(isc_dyn_fld_edit_string);
 			STUFF_STRING(Y.RDB$EDIT_STRING);
 		}
 
 		if (!Y.RDB$MISSING_VALUE.NULL) {
-			STUFF(gds_dyn_fld_missing_value);
+			STUFF(isc_dyn_fld_missing_value);
 			blob_copy(rlb, source, (SLONG*) &Y.RDB$MISSING_VALUE);
 		}
 
 		if (!Y.RDB$DEFAULT_VALUE.NULL) {
-			STUFF(gds_dyn_fld_default_value);
+			STUFF(isc_dyn_fld_default_value);
 			blob_copy(rlb, source, (SLONG*) &Y.RDB$DEFAULT_VALUE);
 		}
 
 		if (!Y.RDB$QUERY_HEADER.NULL) {
-			STUFF(gds_dyn_fld_query_header);
+			STUFF(isc_dyn_fld_query_header);
 			blob_copy(rlb, source, (SLONG*) &Y.RDB$QUERY_HEADER);
 		}
 
 		if (!Y.RDB$DESCRIPTION.NULL) {
-			STUFF(gds_dyn_description);
+			STUFF(isc_dyn_description);
 			blob_copy(rlb, source, (SLONG*) &Y.RDB$DESCRIPTION);
 		}
 
 		if (!Y.RDB$VALIDATION_BLR.NULL) {
-			STUFF(gds_dyn_fld_validation_blr);
+			STUFF(isc_dyn_fld_validation_blr);
 			blob_copy(rlb, source, (SLONG*) &Y.RDB$VALIDATION_BLR);
 		}
 
 		if (!Y.RDB$VALIDATION_SOURCE.NULL) {
-			STUFF(gds_dyn_fld_validation_source);
+			STUFF(isc_dyn_fld_validation_source);
 			blob_copy(rlb, source, (SLONG*) &Y.RDB$VALIDATION_SOURCE);
 		}
 
@@ -2483,27 +2484,27 @@ static int clone_global_fields( QLI_REL target, QLI_REL source)
 
                 if (first_dimension) {
 					first_dimension = false;
-					STUFF(gds_dyn_fld_dimensions);
+					STUFF(isc_dyn_fld_dimensions);
 					STUFF_WORD(2);
 					STUFF_WORD(F.RDB$DIMENSIONS);
 				}
 
-                STUFF(gds_dyn_def_dimension);
+                STUFF(isc_dyn_def_dimension);
 				STUFF_WORD(2);
 				STUFF_WORD(D.RDB$DIMENSION);
 
 				if (!D.RDB$LOWER_BOUND.NULL) {
-					STUFF(gds_dyn_dim_lower);
+					STUFF(isc_dyn_dim_lower);
 					STUFF_WORD(2);
 					STUFF_WORD(D.RDB$LOWER_BOUND);
 				}
 
 				if (!D.RDB$UPPER_BOUND.NULL) {
-					STUFF(gds_dyn_dim_upper);
+					STUFF(isc_dyn_dim_upper);
 					STUFF_WORD(2);
 					STUFF_WORD(D.RDB$UPPER_BOUND);
 				}
-				STUFF(gds_dyn_end);
+				STUFF(isc_dyn_end);
 			END_FOR
 			ON_ERROR
 				if (target->rel_database->dbb_meta_trans)
@@ -2512,7 +2513,7 @@ static int clone_global_fields( QLI_REL target, QLI_REL source)
 				ERRQ_database_error(source->rel_database, gds_status);
 			END_ERROR;
 		}
-		STUFF(gds_dyn_end);
+		STUFF(isc_dyn_end);
 	END_FOR
 	ON_ERROR
 		rollback_update(source->rel_database);
@@ -2522,19 +2523,19 @@ static int clone_global_fields( QLI_REL target, QLI_REL source)
 	END_ERROR;
 
 	if (rlb) {
-		STUFF(gds_dyn_end);
-		STUFF(gds_dyn_eoc);
+		STUFF(isc_dyn_end);
+		STUFF(isc_dyn_eoc);
 		execute_dynamic_ddl(target->rel_database, rlb);
 	}
 
 	if (req1)
-		if (gds__release_request(gds_status, &req1))
+		if (isc_release_request(gds_status, &req1))
 			ERRQ_database_error(source->rel_database, gds_status);
 	if (req2)
-		if (gds__release_request(gds_status, &req2))
+		if (isc_release_request(gds_status, &req2))
 			ERRQ_database_error(target->rel_database, gds_status);
 	if (req3)
-		if (gds__release_request(gds_status, &req3))
+		if (isc_release_request(gds_status, &req3))
 			ERRQ_database_error(source->rel_database, gds_status);
 	return TRUE;
 }
@@ -2638,18 +2639,18 @@ static ISC_STATUS detach(ISC_STATUS * status_vector,
 	ISC_STATUS* status = status_vector;
 
 	if (dbb->dbb_transaction)
-		if (gds__commit_transaction(status, &dbb->dbb_transaction))
+		if (isc_commit_transaction(status, &dbb->dbb_transaction))
 				status = alt_vector;
 
 	if (dbb->dbb_proc_trans && (dbb->dbb_capabilities & DBB_cap_multi_trans))
-		if (gds__commit_transaction(status, &dbb->dbb_proc_trans))
+		if (isc_commit_transaction(status, &dbb->dbb_proc_trans))
 				status = alt_vector;
 
 	if (dbb->dbb_meta_trans && (dbb->dbb_capabilities & DBB_cap_multi_trans))
-		if (gds__commit_transaction(status, &dbb->dbb_meta_trans))
+		if (isc_commit_transaction(status, &dbb->dbb_meta_trans))
 				status = alt_vector;
 
-	gds__detach_database(status, &dbb->dbb_handle);
+	isc_detach_database(status, &dbb->dbb_handle);
 
 	return status_vector[1];
 }
@@ -2672,7 +2673,7 @@ static void execute_dynamic_ddl( DBB database, RLB rlb)
 	if (QLI_blr)
 		PRETTY_print_dyn(rlb->rlb_base, NULL, NULL, 0);
 
-	if (gds__ddl(gds_status, &database->dbb_handle, &database->dbb_meta_trans,
+	if (isc_ddl(gds_status, &database->dbb_handle, &database->dbb_meta_trans,
 				 length, (const char*) rlb->rlb_base)) {
 		rollback_update(database);
 		ERRQ_database_error(database, gds_status);
@@ -2713,7 +2714,7 @@ static int field_length( USHORT dtype, USHORT length)
 	case dtype_timestamp:
 	case dtype_blob:
 	case dtype_quad:
-		return sizeof(GDS__QUAD);
+		return sizeof(GDS_QUAD);
 	}
 
 	return length;
@@ -2735,7 +2736,7 @@ static void get_database_type( DBB new_dbb)
 	ISC_STATUS_ARRAY status_vector;
 	UCHAR buffer[1024];
 
-	gds__database_info(status_vector, &new_dbb->dbb_handle, sizeof(db_info),
+	isc_database_info(status_vector, &new_dbb->dbb_handle, sizeof(db_info),
 					   reinterpret_cast<const char*>(db_info),
 					   sizeof(buffer), (char*) buffer);
 
@@ -2744,18 +2745,18 @@ static void get_database_type( DBB new_dbb)
 
 	UCHAR* p = buffer;
 
-	while (*p != gds_info_end && p < buffer + sizeof(buffer)) {
+	while (*p != isc_info_end && p < buffer + sizeof(buffer)) {
 		UCHAR item = *p++;
 		USHORT l = gds__vax_integer(p, 2);
 		p += 2;
 		switch (item) {
-		case gds_info_implementation:
+		case isc_info_implementation:
 		{
 			const UCHAR* q = p;
 			int count = *q++;
 			while (count--) {
 				new_dbb->dbb_type = *q++;
-				if (*q++ == gds_info_db_class_access)
+				if (*q++ == isc_info_db_class_access)
 					break;
 			}
 			break;
@@ -2914,8 +2915,8 @@ static TEXT *get_query_header( DBB database, SLONG blob_id[2])
 	TEXT header[1024], buffer[1024];
 	FRBRD* blob = NULL;
 
-	if (gds__open_blob(status_vector, &database->dbb_handle,
-					   &gds_trans, &blob, (GDS__QUAD*) blob_id))
+	if (isc_open_blob(status_vector, &database->dbb_handle,
+					   &gds_trans, &blob, (GDS_QUAD*) blob_id))
 	{
 		ERRQ_database_error(database, status_vector);
 	}
@@ -2926,9 +2927,9 @@ static TEXT *get_query_header( DBB database, SLONG blob_id[2])
 	// might overflow "header" eventually.
 	for (;;) {
 		USHORT length;
-		ISC_STATUS status = gds__get_segment(status_vector, &blob, &length,
+		ISC_STATUS status = isc_get_segment(status_vector, &blob, &length,
 								  sizeof(buffer), buffer);
-		if (status && status != gds_segment)
+		if (status && status != isc_segment)
 			break;
 		if (length && buffer[length - 1] == '\n')
 			--length;
@@ -2946,7 +2947,7 @@ static TEXT *get_query_header( DBB database, SLONG blob_id[2])
 		}
 	}
 
-	if (gds__close_blob(status_vector, &blob))
+	if (isc_close_blob(status_vector, &blob))
 		ERRQ_database_error(database, gds_status);
 
 	*p = 0;
@@ -3046,7 +3047,7 @@ static void install( DBB old_dbb)
 	END_ERROR;
 
 	if (request)
-		if (gds__release_request(gds_status, &request))
+		if (isc_release_request(gds_status, &request))
 			ERRQ_database_error(new_dbb, gds_status);
 
 // Pick up functions, if appropriate
@@ -3096,10 +3097,10 @@ static void install( DBB old_dbb)
 			ERRQ_database_error(new_dbb, gds_status);
 		END_ERROR;
 		if (request)
-			if (gds__release_request(gds_status, &request))
+			if (isc_release_request(gds_status, &request))
 				ERRQ_database_error(new_dbb, gds_status);
 		if (request2)
-			if (gds__release_request(gds_status, &request2))
+			if (isc_release_request(gds_status, &request2))
 				ERRQ_database_error(new_dbb, gds_status);
 	}
 }
@@ -3397,7 +3398,7 @@ static SYN parse_blr( UCHAR ** ptr, SYM symbol)
 		case blr_quad:
 			dtype = dtype_quad;
 			l = 8;
-			length = sizeof(GDS__QUAD);
+			length = sizeof(GDS_QUAD);
 			scale = (int) BLR_BYTE;
 			break;
 
@@ -3411,7 +3412,7 @@ static SYN parse_blr( UCHAR ** ptr, SYM symbol)
 		case blr_timestamp:
 			dtype = dtype_timestamp;
 			l = 8;
-			length = sizeof(GDS__QUAD);
+			length = sizeof(GDS_QUAD);
 			break;
 
 		case blr_sql_date:
@@ -3484,8 +3485,8 @@ static SYN parse_blr_blob( SLONG * blob_id, SYM symbol)
 
 	FRBRD* handle = NULL;
 
-	if (gds__open_blob(status_vector, &DB, &gds_trans, &handle,
-					   (GDS__QUAD*) blob_id))
+	if (isc_open_blob(status_vector, &DB, &gds_trans, &handle,
+					   (GDS_QUAD*) blob_id))
 		return NULL;
 
 	UCHAR buffer[1024];
@@ -3495,13 +3496,13 @@ static SYN parse_blr_blob( SLONG * blob_id, SYM symbol)
 	    USHORT length = buffer + sizeof(buffer) - ptr;
 		if (!length)
 			break;
-		if (gds__get_segment(status_vector, &handle, &length, length,
+		if (isc_get_segment(status_vector, &handle, &length, length,
 							 (char*) ptr))
 			break;
 		ptr += length;
 	}
 
-	if (gds__close_blob(status_vector, &handle))
+	if (isc_close_blob(status_vector, &handle))
 		return NULL;
 
 	if (ptr == buffer)
@@ -3603,7 +3604,7 @@ static void rollback_update( DBB database)
 		(database->dbb_capabilities & DBB_cap_multi_trans))
 	{
 	    ISC_STATUS_ARRAY alt_vector;
-		gds__rollback_transaction(alt_vector, &database->dbb_meta_trans);
+		isc_rollback_transaction(alt_vector, &database->dbb_meta_trans);
 		// Note: No message given if rollback fails
 	}
 
@@ -3647,7 +3648,7 @@ static void set_capabilities( DBB database)
 	}
 
 	if (req)
-		if (gds__release_request(gds_status, &req))
+		if (isc_release_request(gds_status, &req))
 			ERRQ_database_error(database, gds_status);
 
 }
@@ -3697,8 +3698,8 @@ static void sql_grant_revoke( SYN node, USHORT type)
 	RLB rlb = NULL;
 	rlb = CHECK_RLB(rlb);
 
-	STUFF(gds_dyn_version_1);
-	STUFF(gds_dyn_begin);
+	STUFF(isc_dyn_version_1);
+	STUFF(isc_dyn_begin);
 
 // For each user create a separate grant string
 //      For each specified field create a separate grant string
@@ -3724,8 +3725,8 @@ static void sql_grant_revoke( SYN node, USHORT type)
 					   (*name)->nam_string, NULL);
 	}
 
-	STUFF(gds_dyn_end);
-	STUFF(gds_dyn_eoc);
+	STUFF(isc_dyn_end);
+	STUFF(isc_dyn_eoc);
 
 	execute_dynamic_ddl(database, rlb);
 	MET_meta_commit(database);
@@ -3808,24 +3809,24 @@ static void stuff_priv(
 	if (privileges & PRV_update)
 		STUFF('U');
 
-	STUFF(gds_dyn_rel_name);
+	STUFF(isc_dyn_rel_name);
 	STUFF_STRING(relation);
 
-	STUFF(gds_dyn_grant_user);
+	STUFF(isc_dyn_grant_user);
 	STUFF_STRING(user);
 
 	if (field) {
-		STUFF(gds_dyn_fld_name);
+		STUFF(isc_dyn_fld_name);
 		STUFF_STRING(field);
 	}
 
 	if (privileges & PRV_grant_option) {
-		STUFF(gds_dyn_grant_options);
+		STUFF(isc_dyn_grant_options);
 		STUFF_WORD(2);
 		STUFF_WORD(TRUE);
 	}
 
-	STUFF(gds_dyn_end);
+	STUFF(isc_dyn_end);
 }
 
 
@@ -3850,16 +3851,16 @@ static void wal_info(
 	UCHAR* p = db_info_buffer;
 	UCHAR item;
 	UCHAR* d;
-	while ((item = *p++) != gds_info_end) {
+	while ((item = *p++) != isc_info_end) {
 		SLONG length = gds__vax_integer(p, 2);
 		p += 2;
 		switch (item) {
-		case gds_info_logfile:
+		case isc_info_logfile:
 			*log = gds__vax_integer(p, length);
 			p += length;
 			break;
 
-		case gds_info_cur_logfile_name:
+		case isc_info_cur_logfile_name:
 			d = p;
 			p += length;
 			length = *d++;
@@ -3867,7 +3868,7 @@ static void wal_info(
 			cur_log[length] = 0;
 			break;
 
-		case gds_info_cur_log_part_offset:
+		case isc_info_cur_log_part_offset:
 			*part_offset = gds__vax_integer(p, length);
 			p += length;
 			break;

@@ -28,10 +28,12 @@
 #include <string.h>
 #include <ctype.h>
 #include "../jrd/common.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/jrd_pwd.h"
 #include "../jrd/enc_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../jrd/isc_proto.h"
 #include "../utilities/gsec/gsec.h"
 #include "../utilities/gsec/secur_proto.h"
 

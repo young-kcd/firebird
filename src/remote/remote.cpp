@@ -24,7 +24,8 @@
 #include "firebird.h"
 #include <string.h>
 #include <stdlib.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../remote/remote.h"
 #include "../jrd/file_params.h"
 #include "../jrd/gdsassert.h"
@@ -347,10 +348,10 @@ void REMOTE_get_timeout_params(
 		const UCHAR* p = dpb;
 		const UCHAR* const end = p + dpb_length;
 
-		if (*p++ == gds_dpb_version1) {
+		if (*p++ == isc_dpb_version1) {
 			while (p < end)
 				switch (*p++) {
-				case gds_dpb_connect_timeout:
+				case isc_dpb_connect_timeout:
 					port->port_connect_timeout = get_parameter(&p);
 					got_dpb_connect_timeout = true;
 					break;
@@ -358,7 +359,7 @@ void REMOTE_get_timeout_params(
 // 22 Aug 2003. Do not receive this parameter from the client as dummy packets
 //   either kill idle client process or cause unexpected disconnections. 
 //   This applies to all IB/FB versions.
-//				case gds_dpb_dummy_packet_interval:
+//				case isc_dpb_dummy_packet_interval:
 //					port->port_dummy_packet_interval = get_parameter(&p);
 //					got_dpb_dummy_packet_interval = true;
 //					port->port_flags |= PORT_dummy_pckt_set;
@@ -670,13 +671,13 @@ void REMOTE_save_status_strings( ISC_STATUS* vector)
 		const ISC_STATUS status = *vector++;
 		switch (status)
 		{
-		case gds_arg_cstring:
+		case isc_arg_cstring:
 			l = (USHORT) *vector++;
 
-		case gds_arg_interpreted:
-		case gds_arg_string:
+		case isc_arg_interpreted:
+		case isc_arg_string:
 			p = (TEXT*) *vector;
-			if (status != gds_arg_cstring)
+			if (status != isc_arg_cstring)
 				l = strlen(p) + 1;
 
 			/* If there isn't any more room in the buffer,

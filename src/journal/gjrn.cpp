@@ -32,7 +32,8 @@
 #include "../jrd/common.h"
 #include <stdarg.h>
 #include "../jrd/license.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../journal/journal.h"
 #include "../journal/conso_proto.h"
 #include "../journal/gjrn_proto.h"
@@ -60,7 +61,7 @@ static bool start_enable(int, char **);
 static jmp_buf gjrn_env;
 
 static const char
-	disable_dpb[] = { gds_dpb_version1, gds_dpb_disable_journal, 0 };
+	disable_dpb[] = { isc_dpb_version1, isc_dpb_disable_journal, 0 };
 
 struct func_tab {
 	const SCHAR* name;
@@ -504,16 +505,16 @@ static bool start_disable(int argc,
 	dpb_length = sizeof(disable_dpb);
 
 	handle = NULL;
-	gds__attach_database(status_vector, 0, database, &handle,
+	isc_attach_database(status_vector, 0, database, &handle,
 						 dpb_length, disable_dpb);
 
 	if (status_vector[1]) {
 		error = true;
-		gds__print_status(status_vector);
+		isc_print_status(status_vector);
 	}
 
 	if (handle)
-		gds__detach_database(status_vector, &handle);
+		isc_detach_database(status_vector, &handle);
 
 	return error;
 }
@@ -651,52 +652,52 @@ static bool start_dump(int argc,
 		dpb_length = 0;
 
 		p = dpb = string;
-		*p++ = gds_dpb_version1;
-		*p++ = gds_dpb_online_dump;
+		*p++ = isc_dpb_version1;
+		*p++ = isc_dpb_online_dump;
 		*p++ = 1;
 		*p++ = 1;
 
 		if (dump_id) {
-			*p++ = gds_dpb_old_dump_id;
+			*p++ = isc_dpb_old_dump_id;
 			*p++ = 2;
 			*p++ = dump_id % 256;
 			*p++ = dump_id / 256;
 		}
 
 		if (old_file_size) {
-			*p++ = gds_dpb_old_file_size;
+			*p++ = isc_dpb_old_file_size;
 			*p++ = 4;
 			for (i = 0; i < 4; i++, old_file_size = old_file_size >> 8)
 				*p++ = old_file_size;
 		}
 
 		if (start_page) {
-			*p++ = gds_dpb_old_start_page;
+			*p++ = isc_dpb_old_start_page;
 			*p++ = 4;
 			for (i = 0; i < 4; i++, start_page = start_page >> 8)
 				*p++ = start_page;
 		}
 
 		if (start_seqno) {
-			*p++ = gds_dpb_old_start_seqno;
+			*p++ = isc_dpb_old_start_seqno;
 			*p++ = 4;
 			for (i = 0; i < 4; i++, start_seqno = start_seqno >> 8)
 				*p++ = start_seqno;
 		}
 
-		*p++ = gds_dpb_old_num_files;
+		*p++ = isc_dpb_old_num_files;
 		*p++ = 1;
 		*p++ = old_num_files;
 
 
-		*p++ = gds_dpb_old_start_file;
+		*p++ = isc_dpb_old_start_file;
 		*p++ = 1;
 		*p++ = start_file;
 
 		for (i = 0; i < old_num_files; i++) {
 			q = old_files[i];
 
-			*p++ = gds_dpb_old_file;
+			*p++ = isc_dpb_old_file;
 			*p++ = strlen((const char*) q);
 			for (; *q;)
 				*p++ = *q++;
@@ -705,7 +706,7 @@ static bool start_dump(int argc,
 		dpb_length = p - dpb;
 
 		handle = NULL;
-		gds__attach_database(status_vector, 0, (SCHAR*) database, &handle,
+		isc_attach_database(status_vector, 0, (SCHAR*) database, &handle,
 							 dpb_length, (SCHAR*) dpb);
 
 		dump_id = (USHORT) status_vector[3];
@@ -718,18 +719,18 @@ static bool start_dump(int argc,
 		// fatal.  Can continue only in case of no_space on disk error
 		//
 
-		if (status_vector[1] && (status_vector[1] != gds_old_no_space)) {
+		if (status_vector[1] && (status_vector[1] != isc_old_no_space)) {
 			error = true;
-			gds__print_status(status_vector);
+			isc_print_status(status_vector);
 
 			if (handle)
-				gds__detach_database(status_vector, &handle);
+				isc_detach_database(status_vector, &handle);
 
 			Firebird::status_exception::raise(FINI_ERROR);
 		}
 
 		if (handle)
-			gds__detach_database(status_vector, &handle);
+			isc_detach_database(status_vector, &handle);
 
 		// Check if error && no space
 
@@ -872,14 +873,14 @@ static bool start_enable(int argc,
 	dpb_length = 0;
 
 	p = dpb = string;
-	*p++ = gds_dpb_version1;
-	*p++ = gds_dpb_enable_journal;
+	*p++ = isc_dpb_version1;
+	*p++ = isc_dpb_enable_journal;
 	*p++ = strlen((const char*) journal);
 	for (q = journal; *q;)
 		*p++ = *q++;
 
 	if (a_flag) {
-		*p++ = gds_dpb_wal_backup_dir;
+		*p++ = isc_dpb_wal_backup_dir;
 		*p++ = strlen((const char*) backup);
 		for (q = backup; *q;)
 			*p++ = *q++;
@@ -887,16 +888,16 @@ static bool start_enable(int argc,
 	dpb_length = p - dpb;
 
 	handle = NULL;
-	gds__attach_database(status_vector, 0, (SCHAR*) database, &handle,
+	isc_attach_database(status_vector, 0, (SCHAR*) database, &handle,
 						 dpb_length, (SCHAR*) dpb);
 
 	if (status_vector[1]) {
 		error = true;
-		gds__print_status(status_vector);
+		isc_print_status(status_vector);
 	}
 
 	if (handle)
-		gds__detach_database(status_vector, &handle);
+		isc_detach_database(status_vector, &handle);
 
 	return error;
 }

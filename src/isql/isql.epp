@@ -102,9 +102,8 @@ enum literal_string_type
 #if defined(WIN_NT)
 #include <windows.h>
 #endif
-// jrd/gds.h already pulls in the error codes, so remove codes.h
-// #include "../jrd/codes.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../isql/isql.h"
 #include "../jrd/perf.h"
 #include "../jrd/license.h"
@@ -892,11 +891,11 @@ void ISQL_errmsg(const ISC_STATUS* status)
 	if (Quiet)
 		Exit_value = FINI_ERROR;
 	else {
-		if (vec[0] != gds_arg_gds ||
-			(vec[0] == gds_arg_gds && vec[1] == 0
-			 && vec[2] != gds_arg_warning) || (vec[0] == gds_arg_gds
+		if (vec[0] != isc_arg_gds ||
+			(vec[0] == isc_arg_gds && vec[1] == 0
+			 && vec[2] != isc_arg_warning) || (vec[0] == isc_arg_gds
 											   && vec[1] == 0
-											   && vec[2] == gds_arg_warning
+											   && vec[2] == isc_arg_warning
 											   && !Warnings))
 		{
 			return;
@@ -942,9 +941,9 @@ void ISQL_warning(ISC_STATUS* status)
 	fb_assert(vec[1] == 0);		/* shouldn't be any errors */
 
 	if (!Quiet) {
-		if (vec[0] != gds_arg_gds ||
-			vec[2] != gds_arg_warning ||
-			(vec[2] == gds_arg_warning && !Warnings))
+		if (vec[0] != isc_arg_gds ||
+			vec[2] != isc_arg_warning ||
+			(vec[2] == isc_arg_warning && !Warnings))
 		{
 			return;
 		}
@@ -961,7 +960,7 @@ void ISQL_warning(ISC_STATUS* status)
 		}
 	}
 
-	status[2] = gds_arg_end;
+	status[2] = isc_arg_end;
 
 }
 
@@ -5014,10 +5013,10 @@ static SSHORT newdb(TEXT* dbname,
 /* Build up a dpb */
 
 	dpb = dpb_buffer;
-	*dpb++ = gds_dpb_version1;
+	*dpb++ = isc_dpb_version1;
 
 	if (*ISQL_charset && strcmp(ISQL_charset, DEFCHARSET)) {
-		*dpb++ = gds_dpb_lc_ctype;
+		*dpb++ = isc_dpb_lc_ctype;
 		p = (UCHAR*) ISQL_charset;
 		*dpb++ = strlen((char*)p);
 		while (*p)
@@ -5025,7 +5024,7 @@ static SSHORT newdb(TEXT* dbname,
 	}
 
 	if (l = strlen(local_usr)) {
-		*dpb++ = gds_dpb_user_name;
+		*dpb++ = isc_dpb_user_name;
 		*dpb++ = l;
 		p = (UCHAR*) local_usr;
 		while (*p)
@@ -5033,7 +5032,7 @@ static SSHORT newdb(TEXT* dbname,
 	}
 
 	if (l = strlen(local_psw)) {
-		*dpb++ = gds_dpb_password;
+		*dpb++ = isc_dpb_password;
 		*dpb++ = l;
 		p = (UCHAR*) local_psw;
 		while (*p)

@@ -26,7 +26,8 @@
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include "../remote/remote.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/thd.h"
 #include "../jrd/iberr.h"
 #include "../remote/xnet.h"
@@ -55,7 +56,7 @@
 #endif
 
 #ifndef SYS_ERR
-#define SYS_ERR		gds_arg_win32
+#define SYS_ERR		isc_arg_win32
 #endif
 
 #define MAX_SEQUENCE	256
@@ -381,9 +382,9 @@ PORT XNET_analyze(
 	}
 
 	if (packet->p_operation != op_accept) {
-		*status_vector++ = gds_arg_gds;
-		*status_vector++ = gds_connect_reject;
-		*status_vector++ = gds_arg_end;
+		*status_vector++ = isc_arg_gds;
+		*status_vector++ = isc_connect_reject;
+		*status_vector++ = isc_arg_end;
 		disconnect(port);
 		return NULL;
 	}
@@ -449,9 +450,9 @@ PORT XNET_connect(const TEXT* name, PACKET* packet,
 		return NULL;
 
 	// set up for unavailable server
-	status_vector[0] = gds_arg_gds;
-	status_vector[1] = gds_unavailable;
-	status_vector[2] = gds_arg_end;
+	status_vector[0] = isc_arg_gds;
+	status_vector[1] = isc_unavailable;
+	status_vector[2] = isc_arg_end;
 
 #ifndef SUPERCLIENT
 	// We'll come here on handling op_service_attach packet on server.
@@ -2474,9 +2475,9 @@ static PORT xnet_get_srv_port(ULONG client_pid, XPM xpm,
 			port->port_xcc = (void *) xcc;
 			port->port_server_flags |= SRVR_server;
 
-			status_vector[0] = gds_arg_gds;
+			status_vector[0] = isc_arg_gds;
 			status_vector[1] = FB_SUCCESS;
-			status_vector[2] = gds_arg_end;
+			status_vector[2] = isc_arg_end;
 			port->port_status_vector = status_vector;
 		}
 		else {

@@ -33,12 +33,11 @@
  *
  */
 /*
-$Id: ibase.h,v 1.55 2003-11-07 08:06:11 robocop Exp $
+$Id: ibase.h,v 1.56 2003-11-08 16:36:07 brodsom Exp $
  */
 
 #ifndef JRD_IBASE_H
 #define JRD_IBASE_H
-
 
 #include "fb_types.h"
 
@@ -1633,53 +1632,54 @@ enum info_db_provider
 /* Access path items */
 /*********************/
 
-#define isc_info_rsb_end		   0
-#define isc_info_rsb_begin		   1
-#define isc_info_rsb_type		   2
-#define isc_info_rsb_relation		   3
-#define isc_info_rsb_plan                  4
+#define isc_info_rsb_end			0
+#define isc_info_rsb_begin			1
+#define isc_info_rsb_type			2
+#define isc_info_rsb_relation		3
+#define isc_info_rsb_plan			4
 
 /*************/
 /* Rsb types */
 /*************/
 
-#define isc_info_rsb_unknown		   1
-#define isc_info_rsb_indexed		   2
-#define isc_info_rsb_navigate		   3
-#define isc_info_rsb_sequential	 	   4
-#define isc_info_rsb_cross		   5
-#define isc_info_rsb_sort		   6
-#define isc_info_rsb_first		   7
-#define isc_info_rsb_boolean		   8
-#define isc_info_rsb_union		   9
-#define isc_info_rsb_aggregate		  10
-#define isc_info_rsb_merge		  11
-#define isc_info_rsb_ext_sequential	  12
-#define isc_info_rsb_ext_indexed	  13
-#define isc_info_rsb_ext_dbkey		  14
-#define isc_info_rsb_left_cross	 	  15
-#define isc_info_rsb_select		  16
-#define isc_info_rsb_sql_join		  17
-#define isc_info_rsb_simulate		  18
-#define isc_info_rsb_sim_cross		  19
-#define isc_info_rsb_once		  20
-#define isc_info_rsb_procedure		  21
+#define isc_info_rsb_unknown		1
+#define isc_info_rsb_indexed		2
+#define isc_info_rsb_navigate		3
+#define isc_info_rsb_sequential	 	4
+#define isc_info_rsb_cross			5
+#define isc_info_rsb_sort			6
+#define isc_info_rsb_first			7
+#define isc_info_rsb_boolean		8
+#define isc_info_rsb_union			9
+#define isc_info_rsb_aggregate		10
+#define isc_info_rsb_merge			11
+#define isc_info_rsb_ext_sequential	12
+#define isc_info_rsb_ext_indexed	13
+#define isc_info_rsb_ext_dbkey		14
+#define isc_info_rsb_left_cross		15
+#define isc_info_rsb_select			16
+#define isc_info_rsb_sql_join		17
+#define isc_info_rsb_simulate		18
+#define isc_info_rsb_sim_cross		19
+#define isc_info_rsb_once			20
+#define isc_info_rsb_procedure		21
+#define isc_info_rsb_skip			22
 
 /**********************/
 /* Bitmap expressions */
 /**********************/
 
-#define isc_info_rsb_and		1
-#define isc_info_rsb_or			2
-#define isc_info_rsb_dbkey		3
-#define isc_info_rsb_index		4
+#define isc_info_rsb_and			1
+#define isc_info_rsb_or				2
+#define isc_info_rsb_dbkey			3
+#define isc_info_rsb_index			4
 
-#define isc_info_req_active               2
-#define isc_info_req_inactive             3
-#define isc_info_req_send                 4
-#define isc_info_req_receive              5
-#define isc_info_req_select               6
-#define isc_info_req_sql_stall		  7
+#define isc_info_req_active			2
+#define isc_info_req_inactive		3
+#define isc_info_req_send			4
+#define isc_info_req_receive		5
+#define isc_info_req_select			6
+#define isc_info_req_sql_stall		7
 
 /**************************/
 /* Blob information items */

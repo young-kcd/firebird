@@ -52,7 +52,8 @@
 #include "../jrd/drq.h"
 #include "../jrd/req.h"
 #include "../jrd/flags.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/lls.h"
 #include "../jrd/all.h"
 #include "../jrd/met.h"
@@ -183,11 +184,11 @@ void DYN_define_cache( GBL gbl, const UCHAR** ptr)
 		X.RDB$FILE_START.NULL = FALSE;
 		X.RDB$FILE_LENGTH.NULL = TRUE;
 
-		while ((verb = *(*ptr)++) != gds_dyn_end)
+		while ((verb = *(*ptr)++) != isc_dyn_end)
 		{
 			switch (verb)
 			{
-			case gds_dyn_file_length:
+			case isc_dyn_file_length:
 				X.RDB$FILE_LENGTH = DYN_get_number(ptr);
 				X.RDB$FILE_LENGTH.NULL = FALSE;
 				break;
@@ -286,28 +287,28 @@ void DYN_define_constraint(GBL		gbl,
 
 		switch (verb = *(*ptr)++)
 		{
-		case gds_dyn_def_primary_key:
+		case isc_dyn_def_primary_key:
 			primary_flag = TRUE;
 			strcpy(CRT.RDB$CONSTRAINT_TYPE, PRIMARY_KEY);
 			break;
 
-		case gds_dyn_def_foreign_key:
+		case isc_dyn_def_foreign_key:
 			foreign_flag = TRUE;
 			strcpy(CRT.RDB$CONSTRAINT_TYPE, FOREIGN_KEY);
 			DYN_terminate(CRT.RDB$CONSTRAINT_NAME,
 						  sizeof(CRT.RDB$CONSTRAINT_NAME));
 			break;
 
-		case gds_dyn_def_unique:
+		case isc_dyn_def_unique:
 			strcpy(CRT.RDB$CONSTRAINT_TYPE, UNIQUE_CNSTRT);
 			break;
 
-		case gds_dyn_def_trigger:
+		case isc_dyn_def_trigger:
 			strcpy(CRT.RDB$CONSTRAINT_TYPE, CHECK_CNSTRT);
 			CRT.RDB$INDEX_NAME.NULL = TRUE;
 			break;
 
-		case gds_dyn_fld_not_null:
+		case isc_dyn_fld_not_null:
 			strcpy(CRT.RDB$CONSTRAINT_TYPE, NOT_NULL_CNSTRT);
 			CRT.RDB$INDEX_NAME.NULL = TRUE;
 			break;
@@ -316,7 +317,7 @@ void DYN_define_constraint(GBL		gbl,
 			DYN_unsupported_verb();
 		}
 
-		if (verb != gds_dyn_def_trigger && verb != gds_dyn_fld_not_null) {
+		if (verb != isc_dyn_def_trigger && verb != isc_dyn_fld_not_null) {
 			referred_index_name[0] = 0;
 			DYN_define_index(gbl, ptr, relation_name, verb, index_name,
 							 referred_index_name, constraint_name,
@@ -364,26 +365,26 @@ void DYN_define_constraint(GBL		gbl,
 						NULL);
 	}
 
-	if (verb == gds_dyn_def_trigger)
+	if (verb == isc_dyn_def_trigger)
 	{
 		do {
 			DYN_define_trigger(gbl, ptr, relation_name, trigger_name, false);
 			DYN_UTIL_store_check_constraints(tdbb, gbl, constraint_name,
 											 trigger_name);
-		} while ((verb = *(*ptr)++) == gds_dyn_def_trigger);
+		} while ((verb = *(*ptr)++) == isc_dyn_def_trigger);
 
-		if (verb != gds_dyn_end) {
+		if (verb != isc_dyn_end) {
 			DYN_unsupported_verb();
 		}
 		return;
 	}
 
-	if (verb == gds_dyn_fld_not_null)
+	if (verb == isc_dyn_fld_not_null)
 	{
 		DYN_UTIL_store_check_constraints(tdbb, gbl, constraint_name,
 										 field_name);
 
-		if (*(*ptr)++ != gds_dyn_end) {
+		if (*(*ptr)++ != isc_dyn_end) {
 			DYN_unsupported_verb();
 		}
 		return;
@@ -665,20 +666,20 @@ void DYN_define_dimension(GBL		gbl,
 			strcpy(DIM.RDB$FIELD_NAME, field_name);
 		}
 
-		while ((verb = *(*ptr)++) != gds_dyn_end)
+		while ((verb = *(*ptr)++) != isc_dyn_end)
 		{
 			switch (verb)
 			{
-			case gds_dyn_fld_name:
+			case isc_dyn_fld_name:
 				GET_STRING(ptr, DIM.RDB$FIELD_NAME);
 				break;
 
-			case gds_dyn_dim_upper:
+			case isc_dyn_dim_upper:
 				DIM.RDB$UPPER_BOUND = DYN_get_number(ptr);
 				DIM.RDB$UPPER_BOUND.NULL = FALSE;
 				break;
 
-			case gds_dyn_dim_lower:
+			case isc_dyn_dim_lower:
 				DIM.RDB$LOWER_BOUND = DYN_get_number(ptr);
 				DIM.RDB$LOWER_BOUND.NULL = FALSE;
 				break;
@@ -749,11 +750,11 @@ void DYN_define_exception( GBL gbl, const UCHAR** ptr)
 		    /* GET_STRING(ptr, X.RDB$EXCEPTION_NAME); */
 			strcpy(X.RDB$EXCEPTION_NAME, exception_name);
 			X.RDB$MESSAGE.NULL = TRUE;
-			while ((verb = *(*ptr)++) != gds_dyn_end)
+			while ((verb = *(*ptr)++) != isc_dyn_end)
 			{
 				switch (verb)
 				{
-				case gds_dyn_xcp_msg:
+				case isc_dyn_xcp_msg:
 					GET_STRING_2(ptr, X.RDB$MESSAGE);
 					X.RDB$MESSAGE.NULL = FALSE;
 					break;
@@ -837,29 +838,29 @@ void DYN_define_file(GBL		gbl,
 		X.RDB$FILE_FLAGS.NULL = FALSE;
 		X.RDB$FILE_START.NULL = TRUE;
 		X.RDB$FILE_LENGTH.NULL = TRUE;
-		while ((verb = *(*ptr)++) != gds_dyn_end)
+		while ((verb = *(*ptr)++) != isc_dyn_end)
 		{
 			switch (verb)
 			{
-			case gds_dyn_file_start:
+			case isc_dyn_file_start:
 				temp = DYN_get_number(ptr);
 				*start = MAX(*start, temp);
 				X.RDB$FILE_START = *start;
 				X.RDB$FILE_START.NULL = FALSE;
 				break;
 
-			case gds_dyn_file_length:
+			case isc_dyn_file_length:
 				X.RDB$FILE_LENGTH = DYN_get_number(ptr);
 				X.RDB$FILE_LENGTH.NULL = FALSE;
 				break;
 
-			case gds_dyn_shadow_man_auto:
+			case isc_dyn_shadow_man_auto:
 				man_auto = (USHORT)DYN_get_number(ptr);
 				if (man_auto)
 					X.RDB$FILE_FLAGS |= FILE_manual;
 				break;
 
-			case gds_dyn_shadow_conditional:
+			case isc_dyn_shadow_conditional:
 				if (DYN_get_number(ptr))
 					X.RDB$FILE_FLAGS |= FILE_conditional;
 				break;
@@ -1017,31 +1018,31 @@ void DYN_define_filter( GBL gbl, const UCHAR** ptr)
 			X.RDB$MODULE_NAME.NULL = TRUE;
 			X.RDB$ENTRYPOINT.NULL = TRUE;
 			X.RDB$DESCRIPTION.NULL = TRUE;
-			while ((verb = *(*ptr)++) != gds_dyn_end)
+			while ((verb = *(*ptr)++) != isc_dyn_end)
 			{
 				switch (verb)
 				{
-				case gds_dyn_filter_in_subtype:
+				case isc_dyn_filter_in_subtype:
 					X.RDB$INPUT_SUB_TYPE = (SSHORT)DYN_get_number(ptr);
 					X.RDB$INPUT_SUB_TYPE.NULL = FALSE;
 					break;
 
-				case gds_dyn_filter_out_subtype:
+				case isc_dyn_filter_out_subtype:
 					X.RDB$OUTPUT_SUB_TYPE = (SSHORT)DYN_get_number(ptr);
 					X.RDB$OUTPUT_SUB_TYPE.NULL = FALSE;
 					break;
 
-				case gds_dyn_func_module_name:
+				case isc_dyn_func_module_name:
 					GET_STRING(ptr, X.RDB$MODULE_NAME);
 					X.RDB$MODULE_NAME.NULL = FALSE;
 					break;
 
-				case gds_dyn_func_entry_point:
+				case isc_dyn_func_entry_point:
 					GET_STRING(ptr, X.RDB$ENTRYPOINT);
 					X.RDB$ENTRYPOINT.NULL = FALSE;
 					break;
 
-				case gds_dyn_description:
+				case isc_dyn_description:
 					DYN_put_text_blob(gbl, ptr, &X.RDB$DESCRIPTION);
 					X.RDB$DESCRIPTION.NULL = FALSE;
 					break;
@@ -1111,11 +1112,11 @@ void DYN_define_function( GBL gbl, const UCHAR** ptr)
 			X.RDB$MODULE_NAME.NULL = TRUE;
 			X.RDB$ENTRYPOINT.NULL = TRUE;
 			X.RDB$DESCRIPTION.NULL = TRUE;
-			while ((verb = *(*ptr)++) != gds_dyn_end)
+			while ((verb = *(*ptr)++) != isc_dyn_end)
 			{
 				switch (verb)
 				{
-				case gds_dyn_func_return_argument:
+				case isc_dyn_func_return_argument:
 					X.RDB$RETURN_ARGUMENT = (SSHORT)DYN_get_number(ptr);
 					X.RDB$RETURN_ARGUMENT.NULL = FALSE;
 					if (X.RDB$RETURN_ARGUMENT > MAX_UDF_ARGUMENTS)
@@ -1123,22 +1124,22 @@ void DYN_define_function( GBL gbl, const UCHAR** ptr)
 					/* msg 10: "DEFINE FUNCTION failed" */
 					break;
 
-				case gds_dyn_func_module_name:
+				case isc_dyn_func_module_name:
 					GET_STRING(ptr, X.RDB$MODULE_NAME);
 					X.RDB$MODULE_NAME.NULL = FALSE;
 					break;
 
-				case gds_dyn_fld_query_name:
+				case isc_dyn_fld_query_name:
 					GET_STRING(ptr, X.RDB$QUERY_NAME);
 					X.RDB$QUERY_NAME.NULL = FALSE;
 					break;
 
-				case gds_dyn_func_entry_point:
+				case isc_dyn_func_entry_point:
 					GET_STRING(ptr, X.RDB$ENTRYPOINT);
 					X.RDB$ENTRYPOINT.NULL = FALSE;
 					break;
 
-				case gds_dyn_description:
+				case isc_dyn_description:
 					DYN_put_text_blob(gbl, ptr, &X.RDB$DESCRIPTION);
 					X.RDB$DESCRIPTION.NULL = FALSE;
 					break;
@@ -1211,40 +1212,40 @@ void DYN_define_function_arg(GBL gbl, const UCHAR** ptr, TEXT* function_name)
 		X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
 		X.RDB$CHARACTER_SET_ID.NULL = TRUE;
 		X.RDB$FIELD_PRECISION.NULL = TRUE;
-		while ((verb = *(*ptr)++) != gds_dyn_end)
+		while ((verb = *(*ptr)++) != isc_dyn_end)
 			switch (verb)
 			{
-			case gds_dyn_function_name:
+			case isc_dyn_function_name:
 				GET_STRING(ptr, X.RDB$FUNCTION_NAME);
 				X.RDB$FUNCTION_NAME.NULL = FALSE;
 				break;
 
-			case gds_dyn_func_mechanism:
+			case isc_dyn_func_mechanism:
 				X.RDB$MECHANISM = (SSHORT)DYN_get_number(ptr);
 				X.RDB$MECHANISM.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_type:
+			case isc_dyn_fld_type:
 				X.RDB$FIELD_TYPE = (SSHORT)DYN_get_number(ptr);
 				X.RDB$FIELD_TYPE.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_sub_type:
+			case isc_dyn_fld_sub_type:
 				X.RDB$FIELD_SUB_TYPE = (SSHORT)DYN_get_number(ptr);
 				X.RDB$FIELD_SUB_TYPE.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_scale:
+			case isc_dyn_fld_scale:
 				X.RDB$FIELD_SCALE = (SSHORT)DYN_get_number(ptr);
 				X.RDB$FIELD_SCALE.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_length:
+			case isc_dyn_fld_length:
 				X.RDB$FIELD_LENGTH = (SSHORT)DYN_get_number(ptr);
 				X.RDB$FIELD_LENGTH.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_character_set:
+			case isc_dyn_fld_character_set:
 				X.RDB$CHARACTER_SET_ID = (SSHORT)DYN_get_number(ptr);
 				X.RDB$CHARACTER_SET_ID.NULL = FALSE;
 				break;
@@ -1258,7 +1259,7 @@ void DYN_define_function_arg(GBL gbl, const UCHAR** ptr, TEXT* function_name)
 				 * table has no place to store the information
 				 * But IB6/FB has the place for this information. CVC 2001.
 				 */
-			case gds_dyn_fld_char_length:
+			case isc_dyn_fld_char_length:
 				if (private_getODS() < ODS_10_0)
 				{
 					DYN_get_number(ptr);
@@ -1346,7 +1347,7 @@ void DYN_define_generator( GBL gbl, const UCHAR** ptr)
 		throw;
 	}
 
-	if (*(*ptr)++ != gds_dyn_end)
+	if (*(*ptr)++ != isc_dyn_end)
 	{
 		DYN_error_punt(true, 9, NULL, NULL, NULL, NULL, NULL);
 		/* msg 9: "DEFINE GENERATOR unexpected dyn verb" */
@@ -1426,21 +1427,21 @@ void DYN_define_global_field(GBL		gbl,
 		FLD.RDB$COLLATION_ID.NULL = TRUE;
 		FLD.RDB$FIELD_PRECISION.NULL = TRUE;
 
-		while ((verb = *(*ptr)++) != gds_dyn_end)
+		while ((verb = *(*ptr)++) != isc_dyn_end)
 		{
 			switch (verb)
 			{
-			case gds_dyn_system_flag:
+			case isc_dyn_system_flag:
 				FLD.RDB$SYSTEM_FLAG = (SSHORT)DYN_get_number(ptr);
 				FLD.RDB$SYSTEM_FLAG.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_length:
+			case isc_dyn_fld_length:
 				FLD.RDB$FIELD_LENGTH = (SSHORT)DYN_get_number(ptr);
 				FLD.RDB$FIELD_LENGTH.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_type:
+			case isc_dyn_fld_type:
 				dtype = (USHORT)DYN_get_number(ptr);
 				FLD.RDB$FIELD_TYPE = (SSHORT)dtype;
 				switch (dtype)
@@ -1473,7 +1474,7 @@ void DYN_define_global_field(GBL		gbl,
 				}
 				break;
 
-			case gds_dyn_fld_scale:
+			case isc_dyn_fld_scale:
 				FLD.RDB$FIELD_SCALE = (SSHORT)DYN_get_number(ptr);
 				FLD.RDB$FIELD_SCALE.NULL = FALSE;
 				break;
@@ -1483,92 +1484,92 @@ void DYN_define_global_field(GBL		gbl,
 				FLD.RDB$FIELD_PRECISION.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_sub_type:
+			case isc_dyn_fld_sub_type:
 				FLD.RDB$FIELD_SUB_TYPE = (SSHORT)DYN_get_number(ptr);
 				FLD.RDB$FIELD_SUB_TYPE.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_char_length:
+			case isc_dyn_fld_char_length:
 				FLD.RDB$CHARACTER_LENGTH = (SSHORT)DYN_get_number(ptr);
 				FLD.RDB$CHARACTER_LENGTH.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_character_set:
+			case isc_dyn_fld_character_set:
 				FLD.RDB$CHARACTER_SET_ID = (SSHORT)DYN_get_number(ptr);
 				FLD.RDB$CHARACTER_SET_ID.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_collation:
+			case isc_dyn_fld_collation:
 				FLD.RDB$COLLATION_ID = (SSHORT)DYN_get_number(ptr);
 				FLD.RDB$COLLATION_ID.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_segment_length:
+			case isc_dyn_fld_segment_length:
 				FLD.RDB$SEGMENT_LENGTH = (SSHORT)DYN_get_number(ptr);
 				FLD.RDB$SEGMENT_LENGTH.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_query_name:
+			case isc_dyn_fld_query_name:
 				GET_STRING(ptr, FLD.RDB$QUERY_NAME);
 				FLD.RDB$QUERY_NAME.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_query_header:
+			case isc_dyn_fld_query_header:
 				DYN_put_blr_blob(gbl, ptr, &FLD.RDB$QUERY_HEADER);
 				FLD.RDB$QUERY_HEADER.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_not_null:
+			case isc_dyn_fld_not_null:
 				FLD.RDB$NULL_FLAG.NULL = FALSE;
 				FLD.RDB$NULL_FLAG = TRUE;
 				break;
 
-			case gds_dyn_fld_missing_value:
+			case isc_dyn_fld_missing_value:
 				DYN_put_blr_blob(gbl, ptr, &FLD.RDB$MISSING_VALUE);
 				FLD.RDB$MISSING_VALUE.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_computed_blr:
+			case isc_dyn_fld_computed_blr:
 				DYN_put_blr_blob(gbl, ptr, &FLD.RDB$COMPUTED_BLR);
 				FLD.RDB$COMPUTED_BLR.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_computed_source:
+			case isc_dyn_fld_computed_source:
 				DYN_put_text_blob(gbl, ptr, &FLD.RDB$COMPUTED_SOURCE);
 				FLD.RDB$COMPUTED_SOURCE.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_default_value:
+			case isc_dyn_fld_default_value:
 				FLD.RDB$DEFAULT_VALUE.NULL = FALSE;
 				DYN_put_blr_blob(gbl, ptr, &FLD.RDB$DEFAULT_VALUE);
 				break;
 
-			case gds_dyn_fld_default_source:
+			case isc_dyn_fld_default_source:
 				FLD.RDB$DEFAULT_SOURCE.NULL = FALSE;
 				DYN_put_text_blob(gbl, ptr, &FLD.RDB$DEFAULT_SOURCE);
 				break;
 
-			case gds_dyn_fld_validation_blr:
+			case isc_dyn_fld_validation_blr:
 				DYN_put_blr_blob(gbl, ptr, &FLD.RDB$VALIDATION_BLR);
 				FLD.RDB$VALIDATION_BLR.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_validation_source:
+			case isc_dyn_fld_validation_source:
 				DYN_put_text_blob(gbl, ptr, &FLD.RDB$VALIDATION_SOURCE);
 				FLD.RDB$VALIDATION_SOURCE.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_edit_string:
+			case isc_dyn_fld_edit_string:
 				GET_STRING(ptr, FLD.RDB$EDIT_STRING);
 				FLD.RDB$EDIT_STRING.NULL = FALSE;
 				break;
 
-			case gds_dyn_description:
+			case isc_dyn_description:
 				DYN_put_text_blob(gbl, ptr, &FLD.RDB$DESCRIPTION);
 				FLD.RDB$DESCRIPTION.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_dimensions:
+			case isc_dyn_fld_dimensions:
 				FLD.RDB$DIMENSIONS = (SSHORT)DYN_get_number(ptr);
 				FLD.RDB$DIMENSIONS.NULL = FALSE;
 				break;
@@ -1686,7 +1687,7 @@ void DYN_define_index(GBL		gbl,
 			strcpy(new_index_name, IDX.RDB$INDEX_NAME);
 		if (relation_name)
 			strcpy(IDX.RDB$RELATION_NAME, relation_name);
-		else if (*(*ptr)++ == gds_dyn_rel_name)
+		else if (*(*ptr)++ == isc_dyn_rel_name)
 			GET_STRING(ptr, IDX.RDB$RELATION_NAME);
 		else
 			DYN_error_punt(false, 14, NULL, NULL, NULL, NULL, NULL);
@@ -1724,25 +1725,25 @@ void DYN_define_index(GBL		gbl,
 		request = (BLK) CMP_find_request(tdbb, drq_l_lfield, DYN_REQUESTS);
 		id = drq_l_lfield;
 
-		while ((verb = *(*ptr)++) != gds_dyn_end)
+		while ((verb = *(*ptr)++) != isc_dyn_end)
 			switch (verb)
 			{
-			case gds_dyn_idx_unique:
+			case isc_dyn_idx_unique:
 				IDX.RDB$UNIQUE_FLAG = (SSHORT)DYN_get_number(ptr);
 				IDX.RDB$UNIQUE_FLAG.NULL = FALSE;
 				break;
 
-			case gds_dyn_idx_inactive:
+			case isc_dyn_idx_inactive:
 				IDX.RDB$INDEX_INACTIVE = (SSHORT)DYN_get_number(ptr);
 				IDX.RDB$INDEX_INACTIVE.NULL = FALSE;
 				break;
 
-			case gds_dyn_idx_type:
+			case isc_dyn_idx_type:
 				IDX.RDB$INDEX_TYPE = (SSHORT)DYN_get_number(ptr);
 				IDX.RDB$INDEX_TYPE.NULL = FALSE;
 				break;
 				
-			case gds_dyn_fld_name:
+			case isc_dyn_fld_name:
 				str_ = FB_NEW_RPT(*tdbb->tdbb_default, MAX_SQL_IDENTIFIER_LEN) str();
 				DYN_get_string(reinterpret_cast<const TEXT**>(ptr),
 					(TEXT*)str_->str_data, MAX_SQL_IDENTIFIER_SIZE, true);
@@ -1830,12 +1831,12 @@ void DYN_define_index(GBL		gbl,
 #ifdef EXPRESSION_INDICES
 				/* for expression indices, store the BLR and the source string */
 
-			case gds_dyn_fld_computed_blr:
+			case isc_dyn_fld_computed_blr:
 				DYN_put_blr_blob(gbl, ptr, &IDX.RDB$EXPRESSION_BLR);
 				IDX.RDB$EXPRESSION_BLR.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_computed_source:
+			case isc_dyn_fld_computed_source:
 				DYN_put_text_blob(gbl, ptr, &IDX.RDB$EXPRESSION_SOURCE);
 				IDX.RDB$EXPRESSION_SOURCE.NULL = FALSE;
 				break;
@@ -1843,7 +1844,7 @@ void DYN_define_index(GBL		gbl,
 
 				/* for foreign keys, point to the corresponding relation */
 
-			case gds_dyn_idx_foreign_key:
+			case isc_dyn_idx_foreign_key:
 				GET_STRING(ptr, referenced_relation);
 				MET_exact_name(referenced_relation);
 				if (!referenced_relation[0])
@@ -1851,7 +1852,7 @@ void DYN_define_index(GBL		gbl,
 				/* msg 212: "Zero length identifiers not allowed" */
 				break;
 
-			case gds_dyn_idx_ref_column:
+			case isc_dyn_idx_ref_column:
 				str_ = FB_NEW_RPT(*tdbb->tdbb_default, MAX_SQL_IDENTIFIER_LEN) str();
 				DYN_get_string(reinterpret_cast<const TEXT**>(ptr),
 					(TEXT*)str_->str_data, MAX_SQL_IDENTIFIER_SIZE, true);
@@ -1859,18 +1860,18 @@ void DYN_define_index(GBL		gbl,
 				referred_cols++;
 				break;
 
-			case gds_dyn_description:
+			case isc_dyn_description:
 				DYN_put_text_blob(gbl, ptr, &IDX.RDB$DESCRIPTION);
 				IDX.RDB$DESCRIPTION.NULL = FALSE;
 				break;
 
-			case gds_dyn_foreign_key_delete:
+			case isc_dyn_foreign_key_delete:
 				fb_assert(ri_actionP != NULL);
 				switch (verb = *(*ptr)++)
 				{
-				case gds_dyn_foreign_key_cascade:
+				case isc_dyn_foreign_key_cascade:
 					(*ri_actionP) |= FOR_KEY_DEL_CASCADE;
-					if ((verb = *(*ptr)++) == gds_dyn_def_trigger)
+					if ((verb = *(*ptr)++) == isc_dyn_def_trigger)
 					{
 						DYN_define_trigger(gbl, ptr, relation_name,
 										   trigger_name, true);
@@ -1880,9 +1881,9 @@ void DYN_define_index(GBL		gbl,
 					else
 						DYN_unsupported_verb();
 					break;
-				case gds_dyn_foreign_key_null:
+				case isc_dyn_foreign_key_null:
 					(*ri_actionP) |= FOR_KEY_DEL_NULL;
-					if ((verb = *(*ptr)++) == gds_dyn_def_trigger)
+					if ((verb = *(*ptr)++) == isc_dyn_def_trigger)
 					{
 						DYN_define_trigger(gbl, ptr, relation_name,
 										   trigger_name, true);
@@ -1892,9 +1893,9 @@ void DYN_define_index(GBL		gbl,
 					else
 						DYN_unsupported_verb();
 					break;
-				case gds_dyn_foreign_key_default:
+				case isc_dyn_foreign_key_default:
 					(*ri_actionP) |= FOR_KEY_DEL_DEFAULT;
-					if ((verb = *(*ptr)++) == gds_dyn_def_trigger)
+					if ((verb = *(*ptr)++) == isc_dyn_def_trigger)
 					{
 						DYN_define_trigger(gbl, ptr, relation_name,
 										   trigger_name, true);
@@ -1904,7 +1905,7 @@ void DYN_define_index(GBL		gbl,
 					else
 						DYN_unsupported_verb();
 					break;
-				case gds_dyn_foreign_key_none:
+				case isc_dyn_foreign_key_none:
 					(*ri_actionP) |= FOR_KEY_DEL_NONE;
 					break;
 				default:
@@ -1913,13 +1914,13 @@ void DYN_define_index(GBL		gbl,
 				}
 				break;
 
-			case gds_dyn_foreign_key_update:
+			case isc_dyn_foreign_key_update:
 				fb_assert(ri_actionP != NULL);
 				switch (verb = *(*ptr)++)
 				{
-				case gds_dyn_foreign_key_cascade:
+				case isc_dyn_foreign_key_cascade:
 					(*ri_actionP) |= FOR_KEY_UPD_CASCADE;
-					if ((verb = *(*ptr)++) == gds_dyn_def_trigger)
+					if ((verb = *(*ptr)++) == isc_dyn_def_trigger)
 					{
 						DYN_define_trigger(gbl, ptr, relation_name,
 										   trigger_name, true);
@@ -1929,9 +1930,9 @@ void DYN_define_index(GBL		gbl,
 					else
 						DYN_unsupported_verb();
 					break;
-				case gds_dyn_foreign_key_null:
+				case isc_dyn_foreign_key_null:
 					(*ri_actionP) |= FOR_KEY_UPD_NULL;
-					if ((verb = *(*ptr)++) == gds_dyn_def_trigger)
+					if ((verb = *(*ptr)++) == isc_dyn_def_trigger)
 					{
 						DYN_define_trigger(gbl, ptr, relation_name,
 										   trigger_name, true);
@@ -1941,9 +1942,9 @@ void DYN_define_index(GBL		gbl,
 					else
 						DYN_unsupported_verb();
 					break;
-				case gds_dyn_foreign_key_default:
+				case isc_dyn_foreign_key_default:
 					(*ri_actionP) |= FOR_KEY_UPD_DEFAULT;
-					if ((verb = *(*ptr)++) == gds_dyn_def_trigger)
+					if ((verb = *(*ptr)++) == isc_dyn_def_trigger)
 					{
 						DYN_define_trigger(gbl, ptr, relation_name,
 										   trigger_name, true);
@@ -1953,7 +1954,7 @@ void DYN_define_index(GBL		gbl,
 					else
 						DYN_unsupported_verb();
 					break;
-				case gds_dyn_foreign_key_none:
+				case isc_dyn_foreign_key_none:
 					(*ri_actionP) |= FOR_KEY_UPD_NONE;
 					break;
 				default:
@@ -2246,122 +2247,122 @@ void DYN_define_local_field(GBL		gbl,
 		RFR.RDB$DEFAULT_SOURCE.NULL = TRUE;
 		RFR.RDB$EDIT_STRING.NULL = TRUE;
 		RFR.RDB$COLLATION_ID.NULL = TRUE;
-		while ((verb = *(*ptr)++) != gds_dyn_end)
+		while ((verb = *(*ptr)++) != isc_dyn_end)
 			switch (verb)
 			{
-			case gds_dyn_rel_name:
+			case isc_dyn_rel_name:
 				GET_STRING(ptr, RFR.RDB$RELATION_NAME);
 				relation_name = RFR.RDB$RELATION_NAME;
 				RFR.RDB$RELATION_NAME.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_source:
+			case isc_dyn_fld_source:
 				GET_STRING(ptr, RFR.RDB$FIELD_SOURCE);
 				break;
 
-			case gds_dyn_fld_base_fld:
+			case isc_dyn_fld_base_fld:
 				GET_STRING(ptr, RFR.RDB$BASE_FIELD);
 				RFR.RDB$BASE_FIELD.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_query_name:
+			case isc_dyn_fld_query_name:
 				GET_STRING(ptr, RFR.RDB$QUERY_NAME);
 				RFR.RDB$QUERY_NAME.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_query_header:
+			case isc_dyn_fld_query_header:
 				DYN_put_blr_blob(gbl, ptr, &RFR.RDB$QUERY_HEADER);
 				RFR.RDB$QUERY_HEADER.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_edit_string:
+			case isc_dyn_fld_edit_string:
 				GET_STRING(ptr, RFR.RDB$EDIT_STRING);
 				RFR.RDB$EDIT_STRING.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_position:
+			case isc_dyn_fld_position:
 				RFR.RDB$FIELD_POSITION = (SSHORT)DYN_get_number(ptr);
 				RFR.RDB$FIELD_POSITION.NULL = FALSE;
 				break;
 
-			case gds_dyn_system_flag:
+			case isc_dyn_system_flag:
 				RFR.RDB$SYSTEM_FLAG = (SSHORT)DYN_get_number(ptr);
 				RFR.RDB$SYSTEM_FLAG.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_update_flag:
-			case gds_dyn_update_flag:
+			case isc_dyn_fld_update_flag:
+			case isc_dyn_update_flag:
 				RFR.RDB$UPDATE_FLAG = (SSHORT)DYN_get_number(ptr);
 				RFR.RDB$UPDATE_FLAG.NULL = FALSE;
 				break;
 
-			case gds_dyn_view_context:
+			case isc_dyn_view_context:
 				RFR.RDB$VIEW_CONTEXT = (SSHORT)DYN_get_number(ptr);
 				RFR.RDB$VIEW_CONTEXT.NULL = FALSE;
 				break;
 
-			case gds_dyn_security_class:
+			case isc_dyn_security_class:
 				GET_STRING(ptr, RFR.RDB$SECURITY_CLASS);
 				RFR.RDB$SECURITY_CLASS.NULL = FALSE;
 				break;
 
-			case gds_dyn_description:
+			case isc_dyn_description:
 				DYN_put_text_blob(gbl, ptr, &RFR.RDB$DESCRIPTION);
 				RFR.RDB$DESCRIPTION.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_computed_blr:
+			case isc_dyn_fld_computed_blr:
 				DYN_UTIL_generate_field_name(tdbb, gbl, RFR.RDB$FIELD_SOURCE);
 				blr = *ptr;
 				DYN_skip_attribute(ptr);
 				break;
 
-			case gds_dyn_fld_computed_source:
+			case isc_dyn_fld_computed_source:
 				source = *ptr;
 				DYN_skip_attribute(ptr);
 				break;
 
-			case gds_dyn_fld_default_value:
+			case isc_dyn_fld_default_value:
 				RFR.RDB$DEFAULT_VALUE.NULL = FALSE;
 				DYN_put_blr_blob(gbl, ptr, &RFR.RDB$DEFAULT_VALUE);
 				break;
 
 
-			case gds_dyn_fld_default_source:
+			case isc_dyn_fld_default_source:
 				RFR.RDB$DEFAULT_SOURCE.NULL = FALSE;
 				DYN_put_text_blob(gbl, ptr, &RFR.RDB$DEFAULT_SOURCE);
 				break;
 
-			case gds_dyn_fld_not_null:
+			case isc_dyn_fld_not_null:
 				RFR.RDB$NULL_FLAG.NULL = FALSE;
 				RFR.RDB$NULL_FLAG = TRUE;
 				break;
 
-			case gds_dyn_fld_type:
+			case isc_dyn_fld_type:
 				dtype = (USHORT)DYN_get_number(ptr);
 				break;
 
-			case gds_dyn_fld_length:
+			case isc_dyn_fld_length:
 				length = (USHORT)DYN_get_number(ptr);
 				lflag = TRUE;
 				break;
 
-			case gds_dyn_fld_sub_type:
+			case isc_dyn_fld_sub_type:
 				stype = (SSHORT)DYN_get_number(ptr);
 				sflag = TRUE;
 				break;
 
-			case gds_dyn_fld_char_length:
+			case isc_dyn_fld_char_length:
 				clength = (USHORT)DYN_get_number(ptr);
 				clflag = TRUE;
 				break;
 
-			case gds_dyn_fld_segment_length:
+			case isc_dyn_fld_segment_length:
 				stype = (SSHORT)DYN_get_number(ptr);
 				slflag = TRUE;
 				break;
 
-			case gds_dyn_fld_scale:
+			case isc_dyn_fld_scale:
 				scale = (SSHORT)DYN_get_number(ptr);
 				scflag = TRUE;
 				break;
@@ -2371,12 +2372,12 @@ void DYN_define_local_field(GBL		gbl,
 				prflag = TRUE;
 				break;
 
-			case gds_dyn_fld_character_set:
+			case isc_dyn_fld_character_set:
 				charset_id = (SSHORT)DYN_get_number(ptr);
 				charset_id_flag = TRUE;
 				break;
 
-			case gds_dyn_fld_collation:
+			case isc_dyn_fld_collation:
 				RFR.RDB$COLLATION_ID.NULL = FALSE;
 				RFR.RDB$COLLATION_ID = (SSHORT)DYN_get_number(ptr);
 				break;
@@ -2558,33 +2559,33 @@ void DYN_define_log_file(
 			X.RDB$FILE_FLAGS.NULL = FALSE;
 			X.RDB$FILE_FLAGS = 0;
 			GET_STRING(ptr, X.RDB$FILE_NAME);
-			while ((verb = *(*ptr)++) != gds_dyn_end)
+			while ((verb = *(*ptr)++) != isc_dyn_end)
 				switch (verb)
 				{
-				case gds_dyn_file_length:
+				case isc_dyn_file_length:
 					X.RDB$FILE_LENGTH = DYN_get_number(ptr);
 					X.RDB$FILE_LENGTH.NULL = FALSE;
 					break;
 
-				case gds_dyn_log_file_sequence:
+				case isc_dyn_log_file_sequence:
 					X.RDB$FILE_SEQUENCE.NULL = FALSE;
 					X.RDB$FILE_SEQUENCE = (SSHORT)DYN_get_number(ptr);
 					break;
 
-				case gds_dyn_log_file_partitions:
+				case isc_dyn_log_file_partitions:
 					X.RDB$FILE_PARTITIONS.NULL = FALSE;
 					X.RDB$FILE_PARTITIONS = (SSHORT)DYN_get_number(ptr);
 					break;
 
-				case gds_dyn_log_file_raw:
+				case isc_dyn_log_file_raw:
 					X.RDB$FILE_FLAGS |= LOG_raw;
 					break;
 
-				case gds_dyn_log_file_serial:
+				case isc_dyn_log_file_serial:
 					X.RDB$FILE_FLAGS |= LOG_serial;
 					break;
 
-				case gds_dyn_log_file_overflow:
+				case isc_dyn_log_file_overflow:
 					X.RDB$FILE_FLAGS |= LOG_overflow;
 					break;
 
@@ -2683,39 +2684,39 @@ void DYN_define_parameter( GBL gbl, const UCHAR** ptr, TEXT* procedure_name)
 		P.RDB$SYSTEM_FLAG.NULL = TRUE;
 		P.RDB$DESCRIPTION.NULL = TRUE;
 
-		while ((verb = *(*ptr)++) != gds_dyn_end)
+		while ((verb = *(*ptr)++) != isc_dyn_end)
 			switch (verb)
 			{
-			case gds_dyn_system_flag:
+			case isc_dyn_system_flag:
 				P.RDB$SYSTEM_FLAG = (SSHORT)DYN_get_number(ptr);
 				P.RDB$SYSTEM_FLAG.NULL = FALSE;
 				break;
 
-			case gds_dyn_prm_number:
+			case isc_dyn_prm_number:
 				P.RDB$PARAMETER_NUMBER = (SSHORT)DYN_get_number(ptr);
 				P.RDB$PARAMETER_NUMBER.NULL = FALSE;
 				break;
 
-			case gds_dyn_prm_type:
+			case isc_dyn_prm_type:
 				P.RDB$PARAMETER_TYPE = (SSHORT)DYN_get_number(ptr);
 				P.RDB$PARAMETER_TYPE.NULL = FALSE;
 				break;
 
-			case gds_dyn_prc_name:
+			case isc_dyn_prc_name:
 				GET_STRING(ptr, P.RDB$PROCEDURE_NAME);
 				P.RDB$PROCEDURE_NAME.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_source:
+			case isc_dyn_fld_source:
 				GET_STRING(ptr, P.RDB$FIELD_SOURCE);
 				P.RDB$FIELD_SOURCE.NULL = FALSE;
 				break;
 
-			case gds_dyn_fld_length:
+			case isc_dyn_fld_length:
 				f_length = (USHORT)DYN_get_number(ptr);
 				break;
 
-			case gds_dyn_fld_type:
+			case isc_dyn_fld_type:
 				f_type = (USHORT)DYN_get_number(ptr);
 				switch (f_type)
 				{
@@ -2745,7 +2746,7 @@ void DYN_define_parameter( GBL gbl, const UCHAR** ptr, TEXT* procedure_name)
 				}
 				break;
 
-			case gds_dyn_fld_scale:
+			case isc_dyn_fld_scale:
 				f_scale = (SSHORT)DYN_get_number(ptr);
 				f_scale_null = FALSE;
 				break;
@@ -2755,32 +2756,32 @@ void DYN_define_parameter( GBL gbl, const UCHAR** ptr, TEXT* procedure_name)
 				f_precision_null = FALSE;
 				break;
 
-			case gds_dyn_fld_sub_type:
+			case isc_dyn_fld_sub_type:
 				f_subtype = (SSHORT)DYN_get_number(ptr);
 				f_subtype_null = FALSE;
 				break;
 
-			case gds_dyn_fld_char_length:
+			case isc_dyn_fld_char_length:
 				f_charlength = (USHORT)DYN_get_number(ptr);
 				f_charlength_null = FALSE;
 				break;
 
-			case gds_dyn_fld_character_set:
+			case isc_dyn_fld_character_set:
 				f_charset = (SSHORT)DYN_get_number(ptr);
 				f_charset_null = FALSE;
 				break;
 
-			case gds_dyn_fld_collation:
+			case isc_dyn_fld_collation:
 				f_collation = (SSHORT)DYN_get_number(ptr);
 				f_collation_null = FALSE;
 				break;
 
-			case gds_dyn_fld_segment_length:
+			case isc_dyn_fld_segment_length:
 				f_seg_length = (USHORT)DYN_get_number(ptr);
 				f_seg_length_null = FALSE;
 				break;
 
-			case gds_dyn_description:
+			case isc_dyn_description:
 				DYN_put_text_blob(gbl, ptr, &P.RDB$DESCRIPTION);
 				P.RDB$DESCRIPTION.NULL = FALSE;
 				break;
@@ -2903,45 +2904,45 @@ void DYN_define_procedure( GBL gbl, const UCHAR** ptr)
 		P.RDB$PROCEDURE_INPUTS.NULL = TRUE;
 		P.RDB$PROCEDURE_OUTPUTS.NULL = TRUE;
 
-		while ((verb = *(*ptr)++) != gds_dyn_end)
+		while ((verb = *(*ptr)++) != isc_dyn_end)
 			switch (verb)
 			{
-			case gds_dyn_system_flag:
+			case isc_dyn_system_flag:
 				P.RDB$SYSTEM_FLAG = (SSHORT)DYN_get_number(ptr);
 				P.RDB$SYSTEM_FLAG.NULL = FALSE;
 				break;
 
-			case gds_dyn_prc_blr:
+			case isc_dyn_prc_blr:
 				P.RDB$PROCEDURE_BLR.NULL = FALSE;
 				DYN_put_blr_blob(gbl, ptr, &P.RDB$PROCEDURE_BLR);
 				break;
 
-			case gds_dyn_description:
+			case isc_dyn_description:
 				DYN_put_text_blob(gbl, ptr, &P.RDB$DESCRIPTION);
 				P.RDB$DESCRIPTION.NULL = FALSE;
 				break;
 
-			case gds_dyn_prc_source:
+			case isc_dyn_prc_source:
 				DYN_put_text_blob(gbl, ptr, &P.RDB$PROCEDURE_SOURCE);
 				P.RDB$PROCEDURE_SOURCE.NULL = FALSE;
 				break;
 
-			case gds_dyn_prc_inputs:
+			case isc_dyn_prc_inputs:
 				P.RDB$PROCEDURE_INPUTS = (SSHORT)DYN_get_number(ptr);
 				P.RDB$PROCEDURE_INPUTS.NULL = FALSE;
 				break;
 
-			case gds_dyn_prc_outputs:
+			case isc_dyn_prc_outputs:
 				P.RDB$PROCEDURE_OUTPUTS = (SSHORT)DYN_get_number(ptr);
 				P.RDB$PROCEDURE_OUTPUTS.NULL = FALSE;
 				break;
 
-			case gds_dyn_security_class:
+			case isc_dyn_security_class:
 				GET_STRING(ptr, P.RDB$SECURITY_CLASS);
 				P.RDB$SECURITY_CLASS.NULL = FALSE;
 				break;
 
-			case gds_dyn_rel_sql_protection:
+			case isc_dyn_rel_sql_protection:
 				sql_prot = (USHORT)DYN_get_number(ptr);
 				break;
 
@@ -3064,40 +3065,40 @@ void DYN_define_relation( GBL gbl, const UCHAR** ptr)
 		REL.RDB$FLAGS = 0;
 		REL.RDB$FLAGS.NULL = FALSE;
 
-		while ((verb = *(*ptr)++) != gds_dyn_end)
+		while ((verb = *(*ptr)++) != isc_dyn_end)
 			switch (verb)
 			{
-			case gds_dyn_system_flag:
+			case isc_dyn_system_flag:
 				REL.RDB$SYSTEM_FLAG = DYN_get_number(ptr);
 				REL.RDB$SYSTEM_FLAG.NULL = FALSE;
 				break;
 
-			case gds_dyn_sql_object:
+			case isc_dyn_sql_object:
 				REL.RDB$FLAGS |= REL_sql;
 				break;
 
-			case gds_dyn_view_blr:
+			case isc_dyn_view_blr:
 				REL.RDB$VIEW_BLR.NULL = FALSE;
 				is_a_view = TRUE;
 				DYN_put_blr_blob(gbl, ptr, &REL.RDB$VIEW_BLR);
 				break;
 
-			case gds_dyn_description:
+			case isc_dyn_description:
 				DYN_put_text_blob(gbl, ptr, &REL.RDB$DESCRIPTION);
 				REL.RDB$DESCRIPTION.NULL = FALSE;
 				break;
 
-			case gds_dyn_view_source:
+			case isc_dyn_view_source:
 				DYN_put_text_blob(gbl, ptr, &REL.RDB$VIEW_SOURCE);
 				REL.RDB$VIEW_SOURCE.NULL = FALSE;
 				break;
 
-			case gds_dyn_security_class:
+			case isc_dyn_security_class:
 				GET_STRING(ptr, REL.RDB$SECURITY_CLASS);
 				REL.RDB$SECURITY_CLASS.NULL = FALSE;
 				break;
 
-			case gds_dyn_rel_ext_file:
+			case isc_dyn_rel_ext_file:
 				GET_STRING(ptr, REL.RDB$EXTERNAL_FILE);
 				if (ISC_check_if_remote(REL.RDB$EXTERNAL_FILE, false))
 					DYN_error_punt(true, 163, NULL, NULL, NULL, NULL, NULL);
@@ -3114,7 +3115,7 @@ void DYN_define_relation( GBL gbl, const UCHAR** ptr)
 				REL.RDB$EXTERNAL_FILE.NULL = FALSE;
 				break;
 
-			case gds_dyn_rel_sql_protection:
+			case isc_dyn_rel_sql_protection:
 				REL.RDB$FLAGS |= REL_sql;
 				sql_prot = DYN_get_number(ptr);
 				break;
@@ -3157,13 +3158,13 @@ void DYN_define_relation( GBL gbl, const UCHAR** ptr)
 
 						if (!(priv & SCL_read)) {
 							s = tdbb->tdbb_status_vector;
-							*s++ = gds_arg_gds;
-							*s++ = gds_no_priv;
-							*s++ = gds_arg_string;
+							*s++ = isc_arg_gds;
+							*s++ = isc_no_priv;
+							*s++ = isc_arg_string;
 							*s++ = (ISC_STATUS) "SELECT";	/* Non-Translatable */
-							*s++ = gds_arg_string;
+							*s++ = isc_arg_string;
 							*s++ = (ISC_STATUS) "TABLE";	/* Non-Translatable */
-							*s++ = gds_arg_string;
+							*s++ = isc_arg_string;
 							*s++ =
 								(ISC_STATUS) ERR_cstring(REL.RDB$RELATION_NAME);
 							*s = 0;
@@ -3327,7 +3328,7 @@ void DYN_define_role( GBL gbl, const UCHAR** ptr)
 			DYN_REQUEST(drq_role_gens) = request;
 		}
 
-		if (*(*ptr)++ != gds_dyn_end) {
+		if (*(*ptr)++ != isc_dyn_end) {
 			goto do_error_punt_9;
 		}
 	}
@@ -3381,16 +3382,16 @@ void DYN_define_security_class( GBL gbl, const UCHAR** ptr)
 			GET_STRING(ptr, SC.RDB$SECURITY_CLASS);
 			SC.RDB$ACL.NULL = TRUE;
 			SC.RDB$DESCRIPTION.NULL = TRUE;
-			while ((verb = *(*ptr)++) != gds_dyn_end)
+			while ((verb = *(*ptr)++) != isc_dyn_end)
 			{
 				switch (verb)
 				{
-				case gds_dyn_scl_acl:
+				case isc_dyn_scl_acl:
 					DYN_put_blr_blob(gbl, ptr, &SC.RDB$ACL);
 					SC.RDB$ACL.NULL = FALSE;
 					break;
 
-				case gds_dyn_description:
+				case isc_dyn_description:
 					DYN_put_text_blob(gbl, ptr, &SC.RDB$DESCRIPTION);
 					SC.RDB$DESCRIPTION.NULL = FALSE;
 					break;
@@ -3510,85 +3511,85 @@ void DYN_define_sql_field(GBL		gbl,
 
 			DYN_UTIL_generate_field_name(tdbb, gbl, RFR.RDB$FIELD_SOURCE);
 			strcpy(FLD.RDB$FIELD_NAME, RFR.RDB$FIELD_SOURCE);
-			while ((verb = *(*ptr)++) != gds_dyn_end)
+			while ((verb = *(*ptr)++) != isc_dyn_end)
 				switch (verb)
 				{
-				case gds_dyn_rel_name:
+				case isc_dyn_rel_name:
 					GET_STRING(ptr, RFR.RDB$RELATION_NAME);
 					break;
 
-				case gds_dyn_fld_query_name:
+				case isc_dyn_fld_query_name:
 					GET_STRING(ptr, RFR.RDB$QUERY_NAME);
 					RFR.RDB$QUERY_NAME.NULL = FALSE;
 					break;
 
-				case gds_dyn_fld_edit_string:
+				case isc_dyn_fld_edit_string:
 					GET_STRING(ptr, RFR.RDB$EDIT_STRING);
 					RFR.RDB$EDIT_STRING.NULL = FALSE;
 					break;
 
-				case gds_dyn_fld_position:
+				case isc_dyn_fld_position:
 					RFR.RDB$FIELD_POSITION = DYN_get_number(ptr);
 					RFR.RDB$FIELD_POSITION.NULL = FALSE;
 					break;
 
-				case gds_dyn_view_context:
+				case isc_dyn_view_context:
 					RFR.RDB$VIEW_CONTEXT = DYN_get_number(ptr);
 					RFR.RDB$VIEW_CONTEXT.NULL = FALSE;
 					break;
 
-				case gds_dyn_system_flag:
+				case isc_dyn_system_flag:
 					RFR.RDB$SYSTEM_FLAG = FLD.RDB$SYSTEM_FLAG =
 						DYN_get_number(ptr);
 					RFR.RDB$SYSTEM_FLAG.NULL = FLD.RDB$SYSTEM_FLAG.NULL =
 						FALSE;
 					break;
 
-				case gds_dyn_update_flag:
+				case isc_dyn_update_flag:
 					RFR.RDB$UPDATE_FLAG = DYN_get_number(ptr);
 					RFR.RDB$UPDATE_FLAG.NULL = FALSE;
 					break;
 
-				case gds_dyn_fld_length:
+				case isc_dyn_fld_length:
 					FLD.RDB$FIELD_LENGTH = DYN_get_number(ptr);
 					break;
 
-				case gds_dyn_fld_computed_blr:
+				case isc_dyn_fld_computed_blr:
 					FLD.RDB$COMPUTED_BLR.NULL = FALSE;
 					DYN_put_blr_blob(gbl, ptr, &FLD.RDB$COMPUTED_BLR);
 					break;
 
-				case gds_dyn_fld_computed_source:
+				case isc_dyn_fld_computed_source:
 					FLD.RDB$COMPUTED_SOURCE.NULL = FALSE;
 					DYN_put_text_blob(gbl, ptr, &FLD.RDB$COMPUTED_SOURCE);
 					break;
 
-				case gds_dyn_fld_default_value:
+				case isc_dyn_fld_default_value:
 					RFR.RDB$DEFAULT_VALUE.NULL = FALSE;
 					DYN_put_blr_blob(gbl, ptr, &RFR.RDB$DEFAULT_VALUE);
 					break;
 
-				case gds_dyn_fld_default_source:
+				case isc_dyn_fld_default_source:
 					RFR.RDB$DEFAULT_SOURCE.NULL = FALSE;
 					DYN_put_text_blob(gbl, ptr, &RFR.RDB$DEFAULT_SOURCE);
 					break;
 
-				case gds_dyn_fld_validation_blr:
+				case isc_dyn_fld_validation_blr:
 					FLD.RDB$VALIDATION_BLR.NULL = FALSE;
 					DYN_put_blr_blob(gbl, ptr, &FLD.RDB$VALIDATION_BLR);
 					break;
 
-				case gds_dyn_fld_not_null:
+				case isc_dyn_fld_not_null:
 					RFR.RDB$NULL_FLAG.NULL = FALSE;
 					RFR.RDB$NULL_FLAG = TRUE;
 					break;
 
-				case gds_dyn_fld_query_header:
+				case isc_dyn_fld_query_header:
 					DYN_put_blr_blob(gbl, ptr, &RFR.RDB$QUERY_HEADER);
 					RFR.RDB$QUERY_HEADER.NULL = FALSE;
 					break;
 
-				case gds_dyn_fld_type:
+				case isc_dyn_fld_type:
 					FLD.RDB$FIELD_TYPE = dtype = DYN_get_number(ptr);
 					switch (dtype)
 					{
@@ -3618,7 +3619,7 @@ void DYN_define_sql_field(GBL		gbl,
 					}
 					break;
 
-				case gds_dyn_fld_scale:
+				case isc_dyn_fld_scale:
 					FLD.RDB$FIELD_SCALE = DYN_get_number(ptr);
 					FLD.RDB$FIELD_SCALE.NULL = FALSE;
 					break;
@@ -3628,22 +3629,22 @@ void DYN_define_sql_field(GBL		gbl,
 					FLD.RDB$FIELD_PRECISION.NULL = FALSE;
 					break;
 
-				case gds_dyn_fld_sub_type:
+				case isc_dyn_fld_sub_type:
 					FLD.RDB$FIELD_SUB_TYPE = DYN_get_number(ptr);
 					FLD.RDB$FIELD_SUB_TYPE.NULL = FALSE;
 					break;
 
-				case gds_dyn_fld_char_length:
+				case isc_dyn_fld_char_length:
 					FLD.RDB$CHARACTER_LENGTH = DYN_get_number(ptr);
 					FLD.RDB$CHARACTER_LENGTH.NULL = FALSE;
 					break;
 
-				case gds_dyn_fld_character_set:
+				case isc_dyn_fld_character_set:
 					FLD.RDB$CHARACTER_SET_ID = DYN_get_number(ptr);
 					FLD.RDB$CHARACTER_SET_ID.NULL = FALSE;
 					break;
 
-				case gds_dyn_fld_collation:
+				case isc_dyn_fld_collation:
 					/* Note: the global field's collation is not set, just 
 					 *       the local field.  There is no full "domain" 
 					 *       created for the local field.
@@ -3653,12 +3654,12 @@ void DYN_define_sql_field(GBL		gbl,
 					RFR.RDB$COLLATION_ID.NULL = FALSE;
 					break;
 
-				case gds_dyn_fld_dimensions:
+				case isc_dyn_fld_dimensions:
 					FLD.RDB$DIMENSIONS = DYN_get_number(ptr);
 					FLD.RDB$DIMENSIONS.NULL = FALSE;
 					break;
 
-				case gds_dyn_fld_segment_length:
+				case isc_dyn_fld_segment_length:
 					FLD.RDB$SEGMENT_LENGTH = DYN_get_number(ptr);
 					FLD.RDB$SEGMENT_LENGTH.NULL = FALSE;
 					break;
@@ -3758,11 +3759,11 @@ void DYN_define_shadow( GBL gbl, const UCHAR** ptr)
 	}
 
 	SLONG start = 0;
-	while ((verb = *(*ptr)++) != gds_dyn_end)
+	while ((verb = *(*ptr)++) != isc_dyn_end)
 	{
 		switch (verb)
 		{
-		case gds_dyn_def_file:
+		case isc_dyn_def_file:
 			DYN_define_file(gbl, ptr, shadow_number, &start, 157);
 			break;
 
@@ -3854,36 +3855,36 @@ void DYN_define_trigger(GBL		gbl,
 		X.RDB$TRIGGER_SOURCE.NULL = TRUE;
 		X.RDB$DESCRIPTION.NULL = TRUE;
 		strcpy(X.RDB$TRIGGER_NAME, t);
-		while ((verb = *(*ptr)++) != gds_dyn_end)
+		while ((verb = *(*ptr)++) != isc_dyn_end)
 		{
 			switch (verb)
 			{
-			case gds_dyn_trg_type:
+			case isc_dyn_trg_type:
 				X.RDB$TRIGGER_TYPE = DYN_get_number(ptr);
 				X.RDB$TRIGGER_TYPE.NULL = FALSE;
 				break;
 
-			case gds_dyn_sql_object:
+			case isc_dyn_sql_object:
 				X.RDB$FLAGS |= TRG_sql;
 				X.RDB$FLAGS.NULL = FALSE;
 				break;
 
-			case gds_dyn_trg_sequence:
+			case isc_dyn_trg_sequence:
 				X.RDB$TRIGGER_SEQUENCE = DYN_get_number(ptr);
 				X.RDB$TRIGGER_SEQUENCE.NULL = FALSE;
 				break;
 
-			case gds_dyn_trg_inactive:
+			case isc_dyn_trg_inactive:
 				X.RDB$TRIGGER_INACTIVE = DYN_get_number(ptr);
 				X.RDB$TRIGGER_INACTIVE.NULL = FALSE;
 				break;
 
-			case gds_dyn_rel_name:
+			case isc_dyn_rel_name:
 				GET_STRING(ptr, X.RDB$RELATION_NAME);
 				X.RDB$RELATION_NAME.NULL = FALSE;
 				break;
 
-			case gds_dyn_trg_blr:
+			case isc_dyn_trg_blr:
 				{
 					const UCHAR* blr = *ptr;
 					DYN_skip_attribute(ptr);
@@ -3892,7 +3893,7 @@ void DYN_define_trigger(GBL		gbl,
 					break;
 				}
 
-			case gds_dyn_trg_source:
+			case isc_dyn_trg_source:
 				{
 					const UCHAR* source = *ptr;
 					DYN_skip_attribute(ptr);
@@ -3901,7 +3902,7 @@ void DYN_define_trigger(GBL		gbl,
 					break;
 				}
 
-			case gds_dyn_description:
+			case isc_dyn_description:
 				DYN_put_text_blob(gbl, ptr, &X.RDB$DESCRIPTION);
 				X.RDB$DESCRIPTION.NULL = FALSE;
 				break;
@@ -3987,16 +3988,16 @@ void DYN_define_trigger_msg(GBL gbl, const UCHAR** ptr, const TEXT* trigger_name
 				X.RDB$TRIGGER_NAME.NULL = TRUE;
 			}
 
-			while ((verb = *(*ptr)++) != gds_dyn_end)
+			while ((verb = *(*ptr)++) != isc_dyn_end)
 			{
 				switch (verb)
 				{
-				case gds_dyn_trg_name:
+				case isc_dyn_trg_name:
 					GET_STRING(ptr, X.RDB$TRIGGER_NAME);
 					X.RDB$TRIGGER_NAME.NULL = FALSE;
 					break;
 
-				case gds_dyn_trg_msg:
+				case isc_dyn_trg_msg:
 					GET_STRING(ptr, X.RDB$MESSAGE);
 					X.RDB$MESSAGE.NULL = FALSE;
 					break;
@@ -4090,16 +4091,16 @@ void DYN_define_view_relation( GBL gbl, const UCHAR** ptr, const TEXT* view)
 			GET_STRING(ptr, VRL.RDB$RELATION_NAME);
 			VRL.RDB$CONTEXT_NAME.NULL = TRUE;
 			VRL.RDB$VIEW_CONTEXT.NULL = TRUE;
-			while ((verb = *(*ptr)++) != gds_dyn_end)
+			while ((verb = *(*ptr)++) != isc_dyn_end)
 			{
 				switch (verb)
 				{
-				case gds_dyn_view_context:
+				case isc_dyn_view_context:
 					VRL.RDB$VIEW_CONTEXT = DYN_get_number(ptr);
 					VRL.RDB$VIEW_CONTEXT.NULL = FALSE;
 					break;
 
-				case gds_dyn_view_context_name:
+				case isc_dyn_view_context_name:
 					GET_STRING(ptr, VRL.RDB$CONTEXT_NAME);
 					VRL.RDB$CONTEXT_NAME.NULL = FALSE;
 					break;

@@ -22,7 +22,8 @@
  */
 
 #include "firebird.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 
 DATABASE DB = "yachts.lnk";
 
@@ -49,15 +50,15 @@ static STATS expand_stats();
 static int print_line();
 
 static const SCHAR info_request[] = {
-	gds_info_read_seq_count,
-	gds_info_read_idx_count,
-	gds_info_insert_count,
-	gds_info_update_count,
-	gds_info_delete_count,
-	gds_info_backout_count,
-	gds_info_purge_count,
-	gds_info_expunge_count,
-	gds_info_end
+	isc_info_read_seq_count,
+	isc_info_read_idx_count,
+	isc_info_insert_count,
+	isc_info_update_count,
+	isc_info_delete_count,
+	isc_info_backout_count,
+	isc_info_purge_count,
+	isc_info_expunge_count,
+	isc_info_end
 };
 
 static const SCHAR* headers[] = {
@@ -131,7 +132,7 @@ int stats_fetch(SLONG *status_vector, int **db_handle, STATS *stats_ptr)
 	STATS stats;
 	SSHORT length, item;
 
-	if (gds__database_info(status_vector, db_handle, sizeof(info_request),
+	if (isc_database_info(status_vector, db_handle, sizeof(info_request),
 						   info_request, sizeof(info_buffer),
 						   info_buffer)) 
 	{
@@ -144,39 +145,39 @@ int stats_fetch(SLONG *status_vector, int **db_handle, STATS *stats_ptr)
 		stats = expand_stats(stats_ptr, 64);
 
 	if (!stats) {
-		status_vector[0] = gds_arg_gds;
-		status_vector[1] = gds__virmemexh;
-		status_vector[2] = gds_arg_end;
+		status_vector[0] = isc_arg_gds;
+		status_vector[1] = isc_virmemexh;
+		status_vector[2] = isc_arg_end;
 		return status_vector[1];
 	}
 
 	for (p = info_buffer;
-		 p < info_buffer + sizeof(info_buffer) && *p != gds__info_end;) {
+		 p < info_buffer + sizeof(info_buffer) && *p != isc_info_end;) {
 		length = gds__vax_integer(p + 1, 2);
 		item = -1;
 		switch (*p) {
-		case gds__info_read_seq_count:
+		case isc_info_read_seq_count:
 			item = ITEM_seq_reads;
 			break;
-		case gds__info_read_idx_count:
+		case isc_info_read_idx_count:
 			item = ITEM_idx_reads;
 			break;
-		case gds__info_insert_count:
+		case isc_info_insert_count:
 			item = ITEM_inserts;
 			break;
-		case gds__info_update_count:
+		case isc_info_update_count:
 			item = ITEM_updates;
 			break;
-		case gds__info_delete_count:
+		case isc_info_delete_count:
 			item = ITEM_deletes;
 			break;
-		case gds__info_backout_count:
+		case isc_info_backout_count:
 			item = ITEM_backouts;
 			break;
-		case gds__info_purge_count:
+		case isc_info_purge_count:
 			item = ITEM_purges;
 			break;
-		case gds__info_expunge_count:
+		case isc_info_expunge_count:
 			item = ITEM_expunges;
 			break;
 		}
@@ -208,7 +209,7 @@ int stats_print(int **db_handle, int **tr_handle, STATS before, STATS after)
 	SLONG init;
 
 	if (request_handle && database_handle != *db_handle)
-		gds__release_request(gds__status, &request_handle);
+		isc_release_request(gds__status, &request_handle);
 
 	db = database_handle = *db_handle;
 	gds__trans = *tr_handle;
@@ -284,9 +285,9 @@ static int get_counts(ISC_STATUS *status_vector, SCHAR *info, SSHORT length,
 		relation_id = gds__vax_integer(p, 2);
 		if (relation_id >= stats->stats_count)
 			if (!expand_stats(&stats, relation_id)) {
-				status_vector[0] = gds_arg_gds;
-				status_vector[1] = gds__virmemexh;
-				status_vector[2] = gds_arg_end;
+				status_vector[0] = isc_arg_gds;
+				status_vector[1] = isc_virmemexh;
+				status_vector[2] = isc_arg_end;
 				return status_vector[1];
 			}
 		stats->stats_counts[relation_id * ITEM_count + item] =

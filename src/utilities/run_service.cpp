@@ -25,11 +25,12 @@
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../jrd/common.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/gds_proto.h"
 
-static const SCHAR recv_items[] = { gds__info_svc_to_eof };
-static const SCHAR send_timeout[] = { gds__info_svc_timeout, 1, 0, 30 };
+static const SCHAR recv_items[] = { isc_info_svc_to_eof };
+static const SCHAR send_timeout[] = { isc_info_svc_timeout, 1, 0, 30 };
 
 
 int CLIB_ROUTINE main( int argc, char *argv[])
@@ -59,8 +60,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	spb = spb_buffer;
 	if (argc > 2) {
-		*spb++ = gds__spb_version1;
-		*spb++ = gds__spb_command_line;
+		*spb++ = isc_spb_version1;
+		*spb++ = isc_spb_command_line;
 		spb++;
 		for (argv += 2, argc -= 2; argc--;) {
 			for (p = *argv++; *spb = *p++; spb++);
@@ -89,7 +90,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		ib_printf
 			("It will take about 30 seconds to confirm that the cache manager\nis running.  Please wait...\n");
 
-	item = gds__info_end;
+	item = isc_info_end;
 	do {
 		isc_service_query(NULL, &handle, send_item_length, send_items,
 						  sizeof(recv_items), recv_items, sizeof(buffer),
@@ -98,8 +99,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			send_item_length = 0;
 		p = buffer;
 		while (p < buffer + sizeof(buffer) &&
-			   (item = *p) != gds__info_end &&
-			   item != gds__info_truncated && item != gds__info_svc_timeout) {
+			   (item = *p) != isc_info_end &&
+			   item != isc_info_truncated && item != isc_info_svc_timeout) {
 			len = gds__vax_integer(p + 1, 2);
 			p += 2;
 			while (len--) {
@@ -108,7 +109,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 					ib_putchar(*p);
 			}
 			if (*p++ == '\001') {
-				send_buffer[0] = gds__info_svc_line;
+				send_buffer[0] = isc_info_svc_line;
 				ib_fgets(send_buffer + 3, sizeof(send_buffer) - 3, ib_stdin);
 				len = strlen(send_buffer + 3);
 				send_buffer[1] = len;
@@ -116,7 +117,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 				send_item_length = len + 3;
 			}
 		}
-	} while (item == gds__info_truncated
+	} while (item == isc_info_truncated
 			 || (send_items == send_buffer && send_item_length));
 
 	isc_service_detach(NULL, &handle);

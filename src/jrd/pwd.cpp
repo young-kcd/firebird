@@ -26,7 +26,8 @@
 #include "firebird.h"
 #include <string.h>
 #include <stdlib.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
 #include "../jrd/jrd_pwd.h"
 #include "../jrd/enc_proto.h"
@@ -152,7 +153,7 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 			isc_detach_database(status, &lookup_db);
 		}
 		THREAD_ENTER;
-		ERR_post(gds_psw_attach, 0);
+		ERR_post(isc_psw_attach, 0);
 	}
 
 	// Lookup
@@ -162,7 +163,7 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 	if (isc_start_transaction(status, &lookup_trans, 1, &lookup_db, sizeof(TPB), TPB))
 	{
 		THREAD_ENTER;
-		ERR_post(gds_psw_start_trans, 0);
+		ERR_post(isc_psw_start_trans, 0);
 	}
 
 	if (!isc_start_and_send(status, &lookup_req, &lookup_trans, 0, sizeof(uname), uname, 0))
@@ -238,13 +239,13 @@ bool SecurityDatabase::prepare()
 
 	dpb = dpb_buffer;
 
-	*dpb++ = gds_dpb_version1;
+	*dpb++ = isc_dpb_version1;
 
 	// Insert username
 
 	static const char szAuthenticator[] = "authenticator";
 	const size_t nAuthNameLen = strlen(szAuthenticator);
-	*dpb++ = gds_dpb_user_name;
+	*dpb++ = isc_dpb_user_name;
 	*dpb++ = nAuthNameLen;
 	memcpy(dpb, szAuthenticator, nAuthNameLen);
 	dpb += nAuthNameLen;
@@ -253,7 +254,7 @@ bool SecurityDatabase::prepare()
 
 	static const char szPassword[] = "none";
 	const size_t nPswdLen = strlen(szPassword);
-	*dpb++ = gds_dpb_password;
+	*dpb++ = isc_dpb_password;
 	*dpb++ = nPswdLen;
 	memcpy(dpb, szPassword, nPswdLen);
 	dpb += nPswdLen;
@@ -266,7 +267,7 @@ bool SecurityDatabase::prepare()
 
 	isc_attach_database(status, 0, user_info_name, &lookup_db, dpb_len, dpb_buffer);
 
-	if (status[1] == gds_login)
+	if (status[1] == isc_login)
 	{
 		// We may be going against a V3 database which does not
 		// understand this combination
@@ -346,7 +347,7 @@ void SecurityDatabase::verifyUser(TEXT* name,
 
 	if ((!password && !password_enc) || (password && password_enc) || !found)
 	{
-		ERR_post(gds_login, 0);
+		ERR_post(isc_login, 0);
 	}
 
 	TEXT pwt[33];
@@ -357,7 +358,7 @@ void SecurityDatabase::verifyUser(TEXT* name,
 	TEXT pw2[33];
 	strcpy(pw2, ENC_crypt(password_enc, PASSWORD_SALT));
 	if (strncmp(pw1, pw2 + 2, 11)) {
-		ERR_post(gds_login, 0);
+		ERR_post(isc_login, 0);
 	}
 
 #endif

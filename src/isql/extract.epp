@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.18 2003-10-29 10:53:11 robocop Exp $
+ * $Id: extract.epp,v 1.19 2003-11-08 16:32:06 brodsom Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -47,7 +47,8 @@
 #include <math.h>
 #include <ctype.h>				/* isdigit */
 #include "../jrd/common.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../dsql/dsql.h"
 #include "../isql/isql.h"
 #include "../jrd/constants.h"
@@ -1718,10 +1719,10 @@ static void list_create_db(void)
 
 	ISQL_printf(Out, NEWLINE);
 /*************************************************************
-** gds__info_num_wal_buffers         for NUM_LOG_BUFFERS
-** gds__info_wal_buffer_size         for LOG_BUFFER_SIZE
-** gds__info_wal_grpc_wait_usecs     for GROUP_COMMIT_WAIT_TIME
-** gds__info_wal_ckpt_length         for CHECK_POINT_LENGTH
+** isc_info_num_wal_buffers         for NUM_LOG_BUFFERS
+** isc_info_wal_buffer_size         for LOG_BUFFER_SIZE
+** isc_info_wal_grpc_wait_usecs     for GROUP_COMMIT_WAIT_TIME
+** isc_info_wal_ckpt_length         for CHECK_POINT_LENGTH
 **
 **************************************************************/
 

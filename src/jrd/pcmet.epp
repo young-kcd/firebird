@@ -23,7 +23,8 @@
 
 #include "firebird.h"
 #include <string.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
 #include "../jrd/irq.h"
 #include "../jrd/tra.h"
@@ -124,8 +125,8 @@ int PCMET_expression_index(
 
 				if (IDX.RDB$SEGMENT_COUNT)
 					ERR_post(gds__no_meta_update,
-							 gds_arg_gds, gds__no_segments_err,
-							 gds_arg_string, ERR_cstring(work->dfw_name), 0);
+							 isc_arg_gds, gds__no_segments_err,
+							 isc_arg_string, ERR_cstring(work->dfw_name), 0);
 				/* Msg359: segments not allowed in expression index %s */
 				if (IDX.RDB$UNIQUE_FLAG)
 					idx.idx_flags |= idx_unique;
@@ -167,8 +168,8 @@ int PCMET_expression_index(
 
 		if (!relation)
 			ERR_post(gds__no_meta_update,
-					 gds_arg_gds, gds__idx_create_err,
-					 gds_arg_string, ERR_cstring(work->dfw_name), 0);
+					 isc_arg_gds, gds__idx_create_err,
+					 isc_arg_string, ERR_cstring(work->dfw_name), 0);
 		/* Msg308: can't create index %s */
 
 		/* Actually create the index */

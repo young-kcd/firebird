@@ -54,7 +54,8 @@
 #include "../jrd/thd.h"
 #include "../jrd/isc.h"
 #include "../jrd/os/pio.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/llio.h"
 #include "../journal/journal.h"
 #include "../wal/wal.h"
@@ -274,7 +275,7 @@ static void CLIB_ROUTINE signal_quit(void);
 static DJB start_database(CNCT, SCHAR *, SCHAR *, SSHORT, SLONG, ULONG);
 static bool start_server(UCHAR *, bool, bool, bool);
 static bool test_dup_entry(DJB, SLONG);
-static void time_stamp(GDS__QUAD *);
+static void time_stamp(GDS_QUAD *);
 
 static TEXT journal_directory[MAX_PATH_LENGTH];
 static DJB databases;
@@ -3578,7 +3579,7 @@ static bool test_dup_entry(DJB dbb,
 }
 
 
-static void time_stamp(GDS__QUAD* date)
+static void time_stamp(GDS_QUAD* date)
 {
 /**************************************
  *
@@ -3592,6 +3593,6 @@ static void time_stamp(GDS__QUAD* date)
  **************************************/
 	const time_t clock = time(NULL);
 	const tm times = *localtime(&clock);
-	gds__encode_date(&times, date);
+	isc_encode_date(&times, date);
 }
 

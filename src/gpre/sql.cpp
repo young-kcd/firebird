@@ -25,14 +25,15 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.33 2003-11-03 23:51:47 brodsom Exp $
+//	$Id: sql.cpp,v 1.34 2003-11-08 16:31:39 brodsom Exp $
 //
 
 #include "firebird.h"
 #include <stdlib.h>
 #include <string.h>
 #include "../gpre/gpre.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../gpre/parse.h"
 #include "../jrd/intl.h"
 #include "../wal/wal.h"
@@ -3206,7 +3207,7 @@ static ACT act_grant_revoke( enum act_t type)
 		GPRE_PRC procedure = SQL_procedure(request, r_name, db_name, owner_name, true);
 		relation_name = (STR) MSC_string(r_name);
 		priv_block->prv_relation = relation_name;
-		priv_block->prv_object_dyn = gds_dyn_prc_name;
+		priv_block->prv_object_dyn = isc_dyn_prc_name;
 	}
 	else {
 		MSC_match(KW_TABLE);		// filler word 
@@ -3214,7 +3215,7 @@ static ACT act_grant_revoke( enum act_t type)
 		GPRE_REL relation = SQL_relation(request, r_name, db_name, owner_name, true);
 		relation_name = (STR) MSC_string(r_name);
 		priv_block->prv_relation = relation_name;
-		priv_block->prv_object_dyn = gds_dyn_rel_name;
+		priv_block->prv_object_dyn = isc_dyn_rel_name;
 	}
 
 	if (type == ACT_dyn_grant) {
@@ -3238,7 +3239,7 @@ static ACT act_grant_revoke( enum act_t type)
 			SQL_relation_name(r_name, db_name, owner_name);
 			GPRE_PRC procedure =
 				SQL_procedure(request, r_name, db_name, owner_name, true);
-			user_dyn = gds_dyn_grant_proc;
+			user_dyn = isc_dyn_grant_proc;
 			grant_option_legal = false;
 		}
 		else if (MSC_match(KW_TRIGGER)) {
@@ -3247,7 +3248,7 @@ static ACT act_grant_revoke( enum act_t type)
 				sprintf(s, "TRIGGER %s not defined", r_name);
 				PAR_error(s);
 			}
-			user_dyn = gds_dyn_grant_trig;
+			user_dyn = isc_dyn_grant_trig;
 			grant_option_legal = false;
 		}
 		else if (MSC_match(KW_VIEW)) {
@@ -3258,12 +3259,12 @@ static ACT act_grant_revoke( enum act_t type)
 						relation_name->str_string);
 				PAR_error(s);
 			}
-			user_dyn = gds_dyn_grant_view;
+			user_dyn = isc_dyn_grant_view;
 			grant_option_legal = false;
 		}
 		else if (MSC_match(KW_PUBLIC)) {
 			strcpy(r_name, "PUBLIC");
-			user_dyn = gds_dyn_grant_user;
+			user_dyn = isc_dyn_grant_user;
 		}
 		else {
 			MSC_match(KW_USER);
@@ -3271,7 +3272,7 @@ static ACT act_grant_revoke( enum act_t type)
 				CPR_s_error("<user name identifier>");
 			else
 				to_upcase(token.tok_string, r_name);
-			user_dyn = gds_dyn_grant_user;
+			user_dyn = isc_dyn_grant_user;
 			CPR_token();
 		}
 

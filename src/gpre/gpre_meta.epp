@@ -26,12 +26,13 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.32 2003-11-03 23:51:47 brodsom Exp $
+ *	$Id: gpre_meta.epp,v 1.33 2003-11-08 16:31:40 brodsom Exp $
  */
 
 #include "firebird.h"
 #include <string.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../gpre/gpre.h"
 #include "../jrd/license.h"
 #include "../gpre/parse.h"
@@ -61,7 +62,7 @@ static const UCHAR blr_bpb[] = {
 };
 
 #ifdef SCROLLABLE_CURSORS
-static const SCHAR db_version_info[] = { gds__info_base_level };
+static const SCHAR db_version_info[] = { isc_info_base_level };
 #endif
 
 static SLONG array_size(GPRE_FLD);
@@ -159,35 +160,35 @@ bool MET_database(dbb* database, bool print_version)
  	SCHAR dpb[MAX_PASSWORD_LENGTH + MAX_USER_LENGTH + 5];
 	SCHAR* d = dpb;
 	if (database->dbb_c_user || database->dbb_c_password) {
-		*d++ = gds_dpb_version1;
+		*d++ = isc_dpb_version1;
 		const SCHAR* p = database->dbb_c_user;
 		if (p) {
-			*d++ = gds_dpb_user_name;
+			*d++ = isc_dpb_user_name;
 			*d++ = strlen(p);
 			while (*p)
 				*d++ = *p++;
 		}
 		p = database->dbb_c_password;
 		if (p) {
-			*d++ = gds_dpb_password;
+			*d++ = isc_dpb_password;
 			*d++ = strlen(p);
 			while (*p)
 				*d++ = *p++;
 		}
 	}
 
-	if (gds__attach_database
+	if (isc_attach_database
 		(gds_status, 0, database->dbb_filename, &DB, d - &dpb[0], dpb)) {
 		/* We failed to attach, try in read only mode just in case 
 		if (d == dpb)
-			*d++ = gds_dpb_version1;
+			*d++ = isc_dpb_version1;
 		*d++ = isc_dpb_set_db_readonly;
 		*d++ = 1;
 		*d++ = TRUE;
-		if (gds__attach_database
+		if (isc_attach_database
 			(gds_status, 0, database->dbb_filename, &DB, d - &dpb[0], dpb)) {
 		*/
-				gds__print_status(gds_status);
+				isc_print_status(gds_status);
 				return false;
 		//}
 	}
@@ -196,7 +197,7 @@ bool MET_database(dbb* database, bool print_version)
 
 	if (sw_version && print_version) {
 		ib_printf("    Version(s) for database \"%s\"\n", database->dbb_filename);
-		gds__version(&DB, NULL, NULL);
+		isc_version(&DB, NULL, NULL);
 	}
 
 	sw_ods_version = 0;
@@ -205,7 +206,7 @@ bool MET_database(dbb* database, bool print_version)
 		reinterpret_cast<const char*>(sql_version_info), sizeof(sql_buffer),
 		reinterpret_cast<char*>(sql_buffer)))
 	{
-		gds__print_status(isc_status);
+		isc_print_status(isc_status);
 		return false;
 	}
 
@@ -283,9 +284,9 @@ bool MET_database(dbb* database, bool print_version)
 
 /*  get the base level of the engine  */
 
-	if (gds__database_info(gds_status, &DB, sizeof(db_version_info),
+	if (isc_database_info(gds_status, &DB, sizeof(db_version_info),
 						   db_version_info, sizeof(buffer), buffer)) {
-		gds__print_status(gds_status);
+		isc_print_status(gds_status);
 		return false;
 	}
 
@@ -295,7 +296,7 @@ bool MET_database(dbb* database, bool print_version)
  */
 
 	const SCHAR* data = buffer;
-	while (*data != gds__info_end) {
+	while (*data != isc_info_end) {
 	    const SCHAR item = *data++;
 		const USHORT l = isc_vax_integer(data, sizeof(USHORT));
 		data += sizeof(USHORT);
@@ -317,7 +318,7 @@ bool MET_database(dbb* database, bool print_version)
 			   archaic format, not a standard vax integer format.
 			 */
 
-		case gds__info_base_level:
+		case isc_info_base_level:
 			database->dbb_base_level = (USHORT) data[1];
 			break;
 
@@ -488,7 +489,7 @@ bool MET_get_domain_default(dbb* database,
 									&blob_handle, blob_id, sizeof(blr_bpb),
 									blr_bpb);
 			if (stat) {
-				gds__print_status(status_vect);
+				isc_print_status(status_vect);
 				CPR_exit(FINI_ERROR);
 			}
 			/* fetch segments. Assume buffer is big enough.  */
@@ -502,7 +503,7 @@ bool MET_get_domain_default(dbb* database,
 
 				if (!stat)
 					continue;
-				else if (stat == gds_segstr_eof) {
+				else if (stat == isc_segstr_eof) {
 					/* null terminate the buffer */
 					*ptr_in_buffer = 0;
 					break;
@@ -596,7 +597,7 @@ bool MET_get_column_default(const gpre_rel* relation,
 								  &blob_handle, blob_id, sizeof(blr_bpb),
 								  blr_bpb);
 			if (stat) {
-				gds__print_status(status_vect);
+				isc_print_status(status_vect);
 				CPR_exit(FINI_ERROR);
 			}
 
@@ -610,7 +611,7 @@ bool MET_get_column_default(const gpre_rel* relation,
 				buff_length = buff_length - length;
 				if (!stat)
 					continue;
-				else if (stat == gds_segstr_eof) {
+				else if (stat == isc_segstr_eof) {
 					/* null terminate the buffer */
 					*ptr_in_buffer = 0;
 					break;
@@ -1034,7 +1035,7 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT* length)
 
 	case blr_quad:
 		dtype = dtype_quad;
-		l = sizeof(GDS__QUAD);
+		l = sizeof(GDS_QUAD);
 		break;
 
 	case blr_float:
@@ -1049,7 +1050,7 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT* length)
 
 	case blr_blob:
 		dtype = dtype_blob;
-		l = sizeof(GDS__QUAD);
+		l = sizeof(GDS_QUAD);
 		break;
 
 /** Begin sql date/time/timestamp **/
@@ -1482,7 +1483,7 @@ void MET_load_hash_table(dbb* database)
 		post_v3_flag = true;
 
 	END_FOR;
-	gds__release_request(gds_status, &handle);
+	isc_release_request(gds_status, &handle);
 
 	if (!post_v3_flag)
 		database->dbb_flags |= DBB_v3;
@@ -1543,7 +1544,7 @@ void MET_load_hash_table(dbb* database)
 		END_FOR;
 	}
 
-	gds__release_request(gds_status, &handle);
+	isc_release_request(gds_status, &handle);
 
 /*  Pick up all procedures (necessary to parse parts of the GDML grammar) */
 
@@ -1567,7 +1568,7 @@ void MET_load_hash_table(dbb* database)
 	END_ERROR;
 
 	if (handle)
-		gds__release_request(gds_status, &handle);
+		isc_release_request(gds_status, &handle);
 
 /*  Pickup any user defined functions.  If the database does not support UDF's,
  *  this may fail
@@ -1625,9 +1626,9 @@ void MET_load_hash_table(dbb* database)
 		// Nothing
 	END_ERROR;
 
-	gds__release_request(gds_status, &handle);
+	isc_release_request(gds_status, &handle);
 	if (handle2)
-		gds__release_request(gds_status, &handle2);
+		isc_release_request(gds_status, &handle2);
 
 /*  Pick up all Collation names, might have several collations
  *  for a given character set.
@@ -1681,9 +1682,9 @@ void MET_load_hash_table(dbb* database)
 		/* assume pre V4 database, no collations */
 	END_ERROR;
 
-	gds__release_request(gds_status, &handle);
+	isc_release_request(gds_status, &handle);
 	if (handle2)
-		gds__release_request(gds_status, &handle2);
+		isc_release_request(gds_status, &handle2);
 
 /*  Now pick up all character set names - with the subtype set to
  *  the type of the default collation for the character set.
@@ -1733,9 +1734,9 @@ void MET_load_hash_table(dbb* database)
 		/* assume pre V4 database, no character sets */
 	END_ERROR;
 
-	gds__release_request(gds_status, &handle);
+	isc_release_request(gds_status, &handle);
 	if (handle2)
-		gds__release_request(gds_status, &handle2);
+		isc_release_request(gds_status, &handle2);
 
 /*  Pick up name of database default character set for SQL  */
 
@@ -1754,7 +1755,7 @@ void MET_load_hash_table(dbb* database)
 		/* Assume V3 Db, no default charset */
 	END_ERROR;
 
-	gds__release_request(gds_status, &handle);
+	isc_release_request(gds_status, &handle);
 
 /*  Pick up all generators for the database  */
 
@@ -1769,7 +1770,7 @@ void MET_load_hash_table(dbb* database)
 		// Nothing
 	END_ERROR;
 
-	gds__release_request(gds_status, &handle);
+	isc_release_request(gds_status, &handle);
 
 /*  now that we have attached to the database, resolve the character set
  *  request (if any) (and if we can)
@@ -2144,7 +2145,7 @@ static bool resolve_charset_and_collation(
 				/* Assume V3 DB, without default character set */
 			END_ERROR;
 
-			gds__release_request(gds_status, &request);
+			isc_release_request(gds_status, &request);
 
 			if (charset == NULL)
 				charset = (UCHAR*) DEFAULT_CHARACTER_SET_NAME;
@@ -2168,7 +2169,7 @@ static bool resolve_charset_and_collation(
 			// Nothing
 		END_ERROR;
 
-		gds__release_request(gds_status, &request);
+		isc_release_request(gds_status, &request);
 
 		return found;
 	}
@@ -2186,7 +2187,7 @@ static bool resolve_charset_and_collation(
 			// Nothing
 		END_ERROR;
 
-		gds__release_request(gds_status, &request);
+		isc_release_request(gds_status, &request);
 
 		return found;
 	}
@@ -2207,7 +2208,7 @@ static bool resolve_charset_and_collation(
 		// Nothing
 	END_ERROR;
 
-	gds__release_request(gds_status, &request);
+	isc_release_request(gds_status, &request);
 
 	return found;
 }

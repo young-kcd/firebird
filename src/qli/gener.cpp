@@ -21,13 +21,14 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gener.cpp,v 1.26 2003-11-07 08:06:25 robocop Exp $
+$Id: gener.cpp,v 1.27 2003-11-08 16:31:07 brodsom Exp $
 */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../qli/dtr.h"
 #include "../jrd/align.h"
 #include "../qli/exe.h"
@@ -73,7 +74,7 @@ static void gen_statistical(QLI_NOD, QLI_REQ);
 static void gen_store(QLI_NOD, QLI_REQ);
 
 #ifdef DEV_BUILD
-static const SCHAR explain_info[] = { gds_info_access_path };
+static const SCHAR explain_info[] = { isc_info_access_path };
 #endif
 
 
@@ -113,7 +114,7 @@ void GEN_release(void)
 		if (QLI_requests->req_handle)
 		{
 			ISC_STATUS_ARRAY status_vector;
-			gds__release_request(status_vector, &QLI_requests->req_handle);
+			isc_release_request(status_vector, &QLI_requests->req_handle);
 		}
 
 		RLB rlb = QLI_requests->req_blr;
@@ -203,7 +204,7 @@ static void explain(const UCHAR* explain_buffer)
 	// CVC: This function may have the same bugs than the internal function
 	// used in the engine, that received fixes in FB1 & FB1.5.
 
-	if (*explain_buffer++ != gds_info_access_path)
+	if (*explain_buffer++ != isc_info_access_path)
 		return;
 
 	SSHORT buffer_length = *explain_buffer++;
@@ -212,18 +213,18 @@ static void explain(const UCHAR* explain_buffer)
 	while (buffer_length > 0) {
 		buffer_length--;
 		switch (*explain_buffer++) {
-		case gds_info_rsb_begin:
-			explain_printf(level, "gds_info_rsb_begin,\n", 0);
+		case isc_info_rsb_begin:
+			explain_printf(level, "isc_info_rsb_begin,\n", 0);
 			level++;
 			break;
 
-		case gds_info_rsb_end:
-			explain_printf(level, "gds_info_rsb_end,\n", 0);
+		case isc_info_rsb_end:
+			explain_printf(level, "isc_info_rsb_end,\n", 0);
 			level--;
 			break;
 
-		case gds_info_rsb_relation:
-			explain_printf(level, "gds_info_rsb_relation, ", 0);
+		case isc_info_rsb_relation:
+			explain_printf(level, "isc_info_rsb_relation, ", 0);
 
 			buffer_length--;
 			buffer_length -= (length = *explain_buffer++);
@@ -237,16 +238,16 @@ static void explain(const UCHAR* explain_buffer)
 			*r++ = 0;
 			break;
 
-		case gds_info_rsb_type:
+		case isc_info_rsb_type:
 			buffer_length--;
-			explain_printf(level, "gds_info_rsb_type, ", 0);
+			explain_printf(level, "isc_info_rsb_type, ", 0);
 			switch (*explain_buffer++) {
-			case gds_info_rsb_unknown:
+			case isc_info_rsb_unknown:
 				ib_printf("unknown type\n");
 				break;
 
-			case gds_info_rsb_indexed:
-				ib_printf("gds_info_rsb_indexed,\n");
+			case isc_info_rsb_indexed:
+				ib_printf("isc_info_rsb_indexed,\n");
 				level++;
 				explain_index_tree(level, relation_name,
 					reinterpret_cast<const SCHAR**>(&explain_buffer),
@@ -257,18 +258,18 @@ static void explain(const UCHAR* explain_buffer)
 				/* for join types, advance past the count byte
 				   of substreams; we don't need it */
 
-			case gds_info_rsb_merge:
+			case isc_info_rsb_merge:
 				buffer_length--;
-				ib_printf("gds_info_rsb_merge, %d,\n", *explain_buffer++);
+				ib_printf("isc_info_rsb_merge, %d,\n", *explain_buffer++);
 				break;
 
-			case gds_info_rsb_cross:
+			case isc_info_rsb_cross:
 				buffer_length--;
-				ib_printf("gds_info_rsb_cross, %d,\n", *explain_buffer++);
+				ib_printf("isc_info_rsb_cross, %d,\n", *explain_buffer++);
 				break;
 
-			case gds_info_rsb_navigate:
-				ib_printf("gds_info_rsb_navigate,\n");
+			case isc_info_rsb_navigate:
+				ib_printf("isc_info_rsb_navigate,\n");
 				level++;
 				explain_index_tree(level, relation_name,
 					reinterpret_cast<const SCHAR**>(&explain_buffer),
@@ -276,68 +277,68 @@ static void explain(const UCHAR* explain_buffer)
 				level--;
 				break;
 
-			case gds_info_rsb_sequential:
-				ib_printf("gds_info_rsb_sequential,\n");
+			case isc_info_rsb_sequential:
+				ib_printf("isc_info_rsb_sequential,\n");
 				break;
 
-			case gds_info_rsb_sort:
-				ib_printf("gds_info_rsb_sort,\n");
+			case isc_info_rsb_sort:
+				ib_printf("isc_info_rsb_sort,\n");
 				break;
 
-			case gds_info_rsb_first:
-				ib_printf("gds_info_rsb_first,\n");
+			case isc_info_rsb_first:
+				ib_printf("isc_info_rsb_first,\n");
 				break;
 
-			case gds_info_rsb_boolean:
-				ib_printf("gds_info_rsb_boolean,\n");
+			case isc_info_rsb_boolean:
+				ib_printf("isc_info_rsb_boolean,\n");
 				break;
 
-			case gds_info_rsb_union:
-				ib_printf("gds_info_rsb_union,\n");
+			case isc_info_rsb_union:
+				ib_printf("isc_info_rsb_union,\n");
 				break;
 
-			case gds_info_rsb_aggregate:
-				ib_printf("gds_info_rsb_aggregate,\n");
+			case isc_info_rsb_aggregate:
+				ib_printf("isc_info_rsb_aggregate,\n");
 				break;
 
-			case gds_info_rsb_ext_sequential:
-				ib_printf("gds_info_rsb_ext_sequential,\n");
+			case isc_info_rsb_ext_sequential:
+				ib_printf("isc_info_rsb_ext_sequential,\n");
 				break;
 
-			case gds_info_rsb_ext_indexed:
-				ib_printf("gds_info_rsb_ext_indexed,\n");
+			case isc_info_rsb_ext_indexed:
+				ib_printf("isc_info_rsb_ext_indexed,\n");
 				break;
 
-			case gds_info_rsb_ext_dbkey:
-				ib_printf("gds_info_rsb_ext_dbkey,\n");
+			case isc_info_rsb_ext_dbkey:
+				ib_printf("isc_info_rsb_ext_dbkey,\n");
 				break;
 
-			case gds_info_rsb_left_cross:
-				ib_printf("gds_info_rsb_left_cross,\n");
+			case isc_info_rsb_left_cross:
+				ib_printf("isc_info_rsb_left_cross,\n");
 				break;
 
-			case gds_info_rsb_select:
-				ib_printf("gds_info_rsb_select,\n");
+			case isc_info_rsb_select:
+				ib_printf("isc_info_rsb_select,\n");
 				break;
 
-			case gds_info_rsb_sql_join:
-				ib_printf("gds_info_rsb_sql_join,\n");
+			case isc_info_rsb_sql_join:
+				ib_printf("isc_info_rsb_sql_join,\n");
 				break;
 
-			case gds_info_rsb_simulate:
-				ib_printf("gds_info_rsb_simulate,\n");
+			case isc_info_rsb_simulate:
+				ib_printf("isc_info_rsb_simulate,\n");
 				break;
 
-			case gds_info_rsb_sim_cross:
-				ib_printf("gds_info_rsb_sim_cross,\n");
+			case isc_info_rsb_sim_cross:
+				ib_printf("isc_info_rsb_sim_cross,\n");
 				break;
 
-			case gds_info_rsb_once:
-				ib_printf("gds_info_rsb_once,\n");
+			case isc_info_rsb_once:
+				ib_printf("isc_info_rsb_once,\n");
 				break;
 
-			case gds_info_rsb_procedure:
-				ib_printf("gds_info_rsb_procedure,\n");
+			case isc_info_rsb_procedure:
+				ib_printf("isc_info_rsb_procedure,\n");
 				break;
 
 			}
@@ -378,8 +379,8 @@ static void explain_index_tree(
 	(*buffer_length)--;
 
 	switch (*explain_buffer++) {
-	case gds_info_rsb_and:
-		explain_printf(level, "gds_info_rsb_and,\n", 0);
+	case isc_info_rsb_and:
+		explain_printf(level, "isc_info_rsb_and,\n", 0);
 		level++;
 		explain_index_tree(level, relation_name, &explain_buffer,
 						   buffer_length);
@@ -388,8 +389,8 @@ static void explain_index_tree(
 		level--;
 		break;
 
-	case gds_info_rsb_or:
-		explain_printf(level, "gds_info_rsb_or,\n", 0);
+	case isc_info_rsb_or:
+		explain_printf(level, "isc_info_rsb_or,\n", 0);
 		level++;
 		explain_index_tree(level, relation_name, &explain_buffer,
 						   buffer_length);
@@ -398,12 +399,12 @@ static void explain_index_tree(
 		level--;
 		break;
 
-	case gds_info_rsb_dbkey:
-		explain_printf(level, "gds_info_rsb_dbkey,\n", 0);
+	case isc_info_rsb_dbkey:
+		explain_printf(level, "isc_info_rsb_dbkey,\n", 0);
 		break;
 
-	case gds_info_rsb_index:
-		explain_printf(level, "gds_info_rsb_index, ", 0);
+	case isc_info_rsb_index:
+		explain_printf(level, "isc_info_rsb_index, ", 0);
 		(*buffer_length)--;
 
 		length = (SSHORT) *explain_buffer++;
@@ -418,7 +419,7 @@ static void explain_index_tree(
 		break;
 	}
 
-	if (*explain_buffer == gds_info_rsb_end) {
+	if (*explain_buffer == isc_info_rsb_end) {
 		explain_buffer++;
 		(*buffer_length)--;
 	}
@@ -607,7 +608,7 @@ static void gen_compile( QLI_REQ request)
 
 	DBB dbb = request->req_database;
 
-	if (gds__compile_request(status_vector, &dbb->dbb_handle,
+	if (isc_compile_request(status_vector, &dbb->dbb_handle,
 							 &request->req_handle, length,
 							 (const char*) rlb->rlb_base)) {
 		RELEASE_RLB;
@@ -617,7 +618,7 @@ static void gen_compile( QLI_REQ request)
 #ifdef DEV_BUILD
 	SCHAR explain_buffer[512];
 	if (QLI_explain &&
-		!gds__request_info(status_vector, &request->req_handle, 0,
+		!isc_request_info(status_vector, &request->req_handle, 0,
 						   sizeof(explain_info), explain_info,
 						   sizeof(explain_buffer), explain_buffer))
 	{

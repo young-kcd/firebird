@@ -25,13 +25,14 @@
 //
 //____________________________________________________________
 //
-//	$Id: cme.cpp,v 1.17 2003-11-03 23:51:47 brodsom Exp $
+//	$Id: cme.cpp,v 1.18 2003-11-08 16:31:40 brodsom Exp $
 //
 
 #include "firebird.h"
 #include <stdlib.h>
 #include <string.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../gpre/gpre.h"
 #include "../jrd/intl.h"
 #include "../intl/charsets.h"
@@ -686,7 +687,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 		{
 			f->fld_dtype = dtype_quad;
 			f->fld_scale = MIN(field1.fld_scale, field2.fld_scale);
-			f->fld_length = sizeof(GDS__QUAD);
+			f->fld_length = sizeof(GDS_QUAD);
 		}
 #endif
 // ** Begin date/time/timestamp support *
@@ -1238,8 +1239,8 @@ static GPRE_NOD cmp_array( GPRE_NOD node, GPRE_REQ request)
 			reinterpret_cast<UCHAR*>(MSC_alloc(500));
 		reference->ref_sdl_length = 500;
 		reference->ref_sdl_ident = CMP_next_ident();
-		STUFF_SDL(gds_sdl_version1);
-		STUFF_SDL(gds_sdl_struct);
+		STUFF_SDL(isc_sdl_version1);
+		STUFF_SDL(isc_sdl_struct);
 		STUFF_SDL(1);
 
 		/*  The datatype of the array elements  */
@@ -1250,19 +1251,19 @@ static GPRE_NOD cmp_array( GPRE_NOD node, GPRE_REQ request)
 
 		if (sw_ids)
 		{
-			STUFF_SDL(gds_sdl_rid);
+			STUFF_SDL(isc_sdl_rid);
 			STUFF_SDL(reference->ref_id);
-			STUFF_SDL(gds_sdl_fid);
+			STUFF_SDL(isc_sdl_fid);
 			STUFF_SDL(field->fld_id);
 		}
 		else
 		{
-			STUFF_SDL(gds_sdl_relation);
+			STUFF_SDL(isc_sdl_relation);
 			STUFF_SDL(strlen(field->fld_relation->rel_symbol->sym_string));
 			const TEXT* p;
 			for (p = field->fld_relation->rel_symbol->sym_string; *p; p++)
 				STUFF_SDL(*p);
-			STUFF_SDL(gds_sdl_field);
+			STUFF_SDL(isc_sdl_field);
 			STUFF_SDL(strlen(field->fld_symbol->sym_string));
 			for (p = field->fld_symbol->sym_string; *p; p++)
 				STUFF_SDL(*p);
@@ -1276,7 +1277,7 @@ static GPRE_NOD cmp_array( GPRE_NOD node, GPRE_REQ request)
 
 		stuff_sdl_element(reference, field);
 
-		STUFF_SDL(gds_sdl_eoc);
+		STUFF_SDL(isc_sdl_eoc);
 	}
 
 	reference->ref_sdl_length = reference->ref_sdl - reference->ref_sdl_base;
@@ -1894,13 +1895,13 @@ static void stuff_sdl_dimension(const dim* dimension,
 
 	if (dimension->dim_lower == 1)
 	{
-		STUFF_SDL(gds_sdl_do1);
+		STUFF_SDL(isc_sdl_do1);
 		STUFF_SDL(dimension_count);
 		stuff_sdl_number(dimension->dim_upper, reference);
 	}
 	else
 	{
-		STUFF_SDL(gds_sdl_do2);
+		STUFF_SDL(isc_sdl_do2);
 		STUFF_SDL(dimension_count);
 		stuff_sdl_number(dimension->dim_lower, reference);
 		stuff_sdl_number(dimension->dim_upper, reference);
@@ -1919,9 +1920,9 @@ static void stuff_sdl_element(ref* reference, const gpre_fld* field)
 {
 	SSHORT i;
 
-	STUFF_SDL(gds_sdl_element);
+	STUFF_SDL(isc_sdl_element);
 	STUFF_SDL(1);
-	STUFF_SDL(gds_sdl_scalar);
+	STUFF_SDL(isc_sdl_scalar);
 	STUFF_SDL(0);
 
 	STUFF_SDL(field->fld_array_info->ary_dimension_count);
@@ -1932,7 +1933,7 @@ static void stuff_sdl_element(ref* reference, const gpre_fld* field)
 	{
 		for (i = field->fld_array_info->ary_dimension_count - 1; i >= 0; i--)
 		{
-			STUFF_SDL(gds_sdl_variable);
+			STUFF_SDL(isc_sdl_variable);
 			STUFF_SDL(i);
 		}
 	}
@@ -1940,7 +1941,7 @@ static void stuff_sdl_element(ref* reference, const gpre_fld* field)
 	{
 		for (i = 0; i < field->fld_array_info->ary_dimension_count; i++)
 		{
-			STUFF_SDL(gds_sdl_variable);
+			STUFF_SDL(isc_sdl_variable);
 			STUFF_SDL(i);
 		}
 	}
@@ -1991,17 +1992,17 @@ static void stuff_sdl_number(const SLONG number, REF reference)
 
 	if ((number > -16) && (number < 15))
 	{
-		STUFF_SDL(gds_sdl_tiny_integer);
+		STUFF_SDL(isc_sdl_tiny_integer);
 		STUFF_SDL(number);
 	}
 	else if ((number > -32768) && (number < 32767))
 	{
-		STUFF_SDL(gds_sdl_short_integer);
+		STUFF_SDL(isc_sdl_short_integer);
 		STUFF_SDL_WORD(number);
 	}
 	else
 	{
-		STUFF_SDL(gds_sdl_long_integer);
+		STUFF_SDL(isc_sdl_long_integer);
 		STUFF_SDL_LONG(number);
 	}
 }

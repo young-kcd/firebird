@@ -28,7 +28,9 @@
 #include lckdef
 
 #include "../jrd/common.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
+#include "../jrd/gdsold.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/vmslo_proto.h"

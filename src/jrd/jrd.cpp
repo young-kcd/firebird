@@ -48,7 +48,8 @@
 #include <errno.h>
 
 #define JRD_MAIN
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
 #include "../jrd/irq.h"
 #include "../jrd/isc.h"
@@ -273,12 +274,12 @@ BOOLEAN trig::release(tdbb* _tdbb)
 }
 
 #ifdef WIN_NT
-#define	SYS_ERR		gds_arg_win32
+#define	SYS_ERR		isc_arg_win32
 #endif
 
 
 #ifndef SYS_ERR
-#define SYS_ERR		gds_arg_unix
+#define SYS_ERR		isc_arg_unix
 #endif
 
 
@@ -431,9 +432,9 @@ static void check_autocommit(JRD_REQ request, struct tdbb* tdbb)
 
 inline static void api_entry_point_init(ISC_STATUS* user_status)
 {
-	user_status[0] = gds_arg_gds;
+	user_status[0] = isc_arg_gds;
 	user_status[1] = FB_SUCCESS;
-	user_status[2] = gds_arg_end;
+	user_status[2] = isc_arg_end;
 }
 
 inline static struct tdbb* set_thread_data(struct tdbb& thd_context)
@@ -610,7 +611,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	api_entry_point_init(user_status);
 
 	if (*handle) {
-		return handle_error(user_status, gds_bad_db_handle, 0);
+		return handle_error(user_status, isc_bad_db_handle, 0);
 	}
 
 /* Resolve given alias name */
@@ -703,7 +704,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		   that way */
       
 		if (ISC_check_if_remote(expanded_name, true)) {
-			ERR_post(gds_unavailable, 0);
+			ERR_post(isc_unavailable, 0);
 		}
 	}
 
@@ -715,10 +716,10 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 				(!dbb->dbb_encrypt_key && options.dpb_key) ||
 				strcmp(options.dpb_key, reinterpret_cast<char*>(dbb->dbb_encrypt_key->str_data)))
 			{
-				ERR_post(gds_no_priv,
-						 gds_arg_string, "encryption",
-						 gds_arg_string, "database",
-						 gds_arg_string, 
+				ERR_post(isc_no_priv,
+						 isc_arg_string, "encryption",
+						 isc_arg_string, "database",
+						 isc_arg_string, 
                          ERR_string(file_name, file_length), 
                          0);
 			}
@@ -855,8 +856,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	}
 
     if (options.dpb_disable_wal) {
-		ERR_post(gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
-				 gds_arg_string, 
+		ERR_post(isc_lock_timeout, isc_arg_gds, isc_obj_in_use,
+				 isc_arg_string, 
                  ERR_string(file_name, file_length), 
                  0);
 	}
@@ -1050,10 +1051,10 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 			if (user_status[1] != FB_SUCCESS)
 				ERR_punt();
 			else
-				ERR_post(gds_no_priv,
-						 gds_arg_string, "shutdown or online",
-						 gds_arg_string, "database",
-						 gds_arg_string, 
+				ERR_post(isc_no_priv,
+						 isc_arg_string, "shutdown or online",
+						 isc_arg_string, "database",
+						 isc_arg_string, 
                          ERR_string(file_name, file_length), 
                          0);
 		}
@@ -1080,7 +1081,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 #endif
 		if (attachment->att_flags & ATT_shutdown)
-			ERR_post(gds_shutdown, gds_arg_string, 
+			ERR_post(isc_shutdown, isc_arg_string, 
 					ERR_string(file_name, file_length), 0);
 	}
 #endif
@@ -1089,14 +1090,14 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	if (dbb->dbb_ast_flags & (DBB_shut_attach | DBB_shut_tran))
 	{
-		ERR_post(gds_shutinprog, gds_arg_string, 
+		ERR_post(isc_shutinprog, isc_arg_string, 
 				ERR_string(file_name, file_length), 0);
 	}
 
 	if (dbb->dbb_ast_flags & DBB_shutdown &&
 		!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner)))
 	{
-		ERR_post(gds_shutdown, gds_arg_string, 
+		ERR_post(isc_shutdown, isc_arg_string, 
 				ERR_string(file_name, file_length), 0);
 	}
 
@@ -1117,7 +1118,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	if (options.dpb_verify)
 	{
 		if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD)) {
-			ERR_post(gds_bad_dpb_content, gds_arg_gds, gds_cant_validate, 0);
+			ERR_post(isc_bad_dpb_content, isc_arg_gds, isc_cant_validate, 0);
 		}
 
 #ifdef GARBAGE_THREAD
@@ -1160,8 +1161,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 					   data, d_len, (SSHORT) strlen(archive_name));
 		}
 		else {
-			ERR_post(gds_bad_dpb_content,
-					 gds_arg_gds, gds_cant_start_journal,
+			ERR_post(isc_bad_dpb_content,
+					 isc_arg_gds, isc_cant_start_journal,
 					 0);
 		}
 	}
@@ -1171,11 +1172,11 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		/* Make sure WAL enabled before taking any WAL action. */
 
 		if (!dbb->dbb_wal) {
-			ERR_post(gds_no_wal, 0);
+			ERR_post(isc_no_wal, 0);
 		}
 		if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD)) {
-			ERR_post(gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
-					 gds_arg_string, 
+			ERR_post(isc_lock_timeout, isc_arg_gds, isc_obj_in_use,
+					 isc_arg_string, 
                      ERR_string(file_name, file_length), 0);
 		}
 
@@ -1220,15 +1221,15 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	if (options.dpb_log) {
 		if (first) {
 			if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD))
-				ERR_post(gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
-						 gds_arg_string, 
+				ERR_post(isc_lock_timeout, isc_arg_gds, isc_obj_in_use,
+						 isc_arg_string, 
                          ERR_string(file_name, file_length),
                          0);
 			LOG_enable(options.dpb_log, strlen(options.dpb_log));
 		}
 		else {
-			ERR_post(gds_bad_dpb_content, gds_arg_gds,
-					 gds__cant_start_logging, 0);
+			ERR_post(isc_bad_dpb_content, isc_arg_gds,
+					 isc_cant_start_logging, 0);
 		}
 	}
 #endif
@@ -1256,8 +1257,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	if (options.dpb_set_db_readonly) {
 		if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD)) {
-			ERR_post(gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
-					 gds_arg_string,
+			ERR_post(isc_lock_timeout, isc_arg_gds, isc_obj_in_use,
+					 isc_arg_string,
 					 ERR_string(file_name, file_length), 
 					 0); 
 		}
@@ -1298,7 +1299,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 #endif
 /* if there was an error, the status vector is all set */
 
-	if (options.dpb_sweep & gds_dpb_records)
+	if (options.dpb_sweep & isc_dpb_records)
 	{
 		JRD_SS_MUTEX_UNLOCK;
 		if (!(TRA_sweep(tdbb, 0)))
@@ -1527,7 +1528,7 @@ ISC_STATUS GDS_CANCEL_OPERATION(ISC_STATUS * user_status,
 		!(dbb = attachment->att_database) ||
 		MemoryPool::blk_type(dbb) != type_dbb)
 	{
-		return handle_error(user_status, gds_bad_db_handle, 0);
+		return handle_error(user_status, isc_bad_db_handle, 0);
 	}
 
 /* Make sure this is a valid attachment */
@@ -1538,7 +1539,7 @@ ISC_STATUS GDS_CANCEL_OPERATION(ISC_STATUS * user_status,
 			break;
 
 	if (!attach)
-		return handle_error(user_status, gds_bad_db_handle, 0);
+		return handle_error(user_status, isc_bad_db_handle, 0);
 
 	switch (option) {
 	case CANCEL_disable:
@@ -1669,7 +1670,7 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	NULL_CHECK(req_handle, gds_bad_req_handle);
+	NULL_CHECK(req_handle, isc_bad_req_handle);
 	att* attachment = *db_handle;
 
 	if (check_database(tdbb, attachment, user_status))
@@ -1730,7 +1731,7 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	NULL_CHECK(blob_handle, gds_bad_segstr_handle);
+	NULL_CHECK(blob_handle, isc_bad_segstr_handle);
 
 	if (check_database(tdbb, *db_handle, user_status))
 		return user_status[1];
@@ -1744,7 +1745,7 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 	{
 		tdbb->tdbb_status_vector = user_status;
 
-		transaction = find_transaction(tdbb, *tra_handle, gds_segstr_wrong_db);
+		transaction = find_transaction(tdbb, *tra_handle, isc_segstr_wrong_db);
 		blob = BLB_create2(tdbb, transaction, blob_id, bpb_length, bpb);
 		*blob_handle = blob;
 	
@@ -1796,7 +1797,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	api_entry_point_init(user_status);
 
 	if (*handle)
-		return handle_error(user_status, gds_bad_db_handle, 0);
+		return handle_error(user_status, isc_bad_db_handle, 0);
 
 /* Get length of database file name, if not already known */
 	if (!file_length) 
@@ -1864,7 +1865,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 		   that way */
 
 		if (ISC_check_if_remote(expanded_name, true)) {
-			ERR_post(gds_unavailable, 0);
+			ERR_post(isc_unavailable, 0);
 		}
 	}
 
@@ -2017,10 +2018,10 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
 			V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 #endif
-			ERR_post(gds_no_priv,
-					 gds_arg_string, "shutdown or online",
-					 gds_arg_string, "database",
-					 gds_arg_string,
+			ERR_post(isc_no_priv,
+					 isc_arg_string, "shutdown or online",
+					 isc_arg_string, "database",
+					 isc_arg_string,
 					 ERR_string(file_name, file_length), 0);
 		}
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
@@ -2052,8 +2053,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 
     if (options.dpb_set_db_readonly) {
         if (!CCH_exclusive (tdbb, LCK_EX, WAIT_PERIOD))
-            ERR_post (gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
-                      gds_arg_string, 
+            ERR_post (isc_lock_timeout, isc_arg_gds, isc_obj_in_use,
+                      isc_arg_string, 
                       ERR_string (file_name, file_length), 
                       0);
         
@@ -2217,7 +2218,7 @@ ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
 
 	try {
 
-		transaction = find_transaction(tdbb, *tra_handle, gds_segstr_wrong_db);
+		transaction = find_transaction(tdbb, *tra_handle, isc_segstr_wrong_db);
 
 		DYN_ddl(attachment, transaction, ddl_length,
 				reinterpret_cast<const UCHAR*>(ddl));
@@ -2299,7 +2300,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS * user_status, ATT * handle)
 		!(dbb = attachment->att_database) ||
 		MemoryPool::blk_type(dbb) != type_dbb)
 	{
-		return handle_error(user_status, gds_bad_db_handle, tdbb);
+		return handle_error(user_status, isc_bad_db_handle, tdbb);
 	}
 
 /* Make sure this is a valid attachment */
@@ -2310,7 +2311,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS * user_status, ATT * handle)
 			break;
 
 	if (!attach)
-		return handle_error(user_status, gds_bad_db_handle, tdbb);
+		return handle_error(user_status, isc_bad_db_handle, tdbb);
 
 /* if this is the last attachment, mark dbb as not in use */
 
@@ -2426,7 +2427,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS * user_status, ATT * handle)
 		!(dbb = attachment->att_database) ||
 		MemoryPool::blk_type(dbb) != type_dbb)
 	{
-		return handle_error(user_status, gds_bad_db_handle, tdbb);
+		return handle_error(user_status, isc_bad_db_handle, tdbb);
 	}
 
 /* Make sure this is a valid attachment */
@@ -2437,7 +2438,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS * user_status, ATT * handle)
 			break;
 
 	if (!attach)
-		return handle_error(user_status, gds_bad_db_handle, tdbb);
+		return handle_error(user_status, isc_bad_db_handle, tdbb);
 
 	tdbb->tdbb_database = dbb;
 	tdbb->tdbb_attachment = attachment;
@@ -2459,19 +2460,19 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS * user_status, ATT * handle)
 	try
 	{
 		if (!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner)))
-			ERR_post(gds_no_priv,
-					gds_arg_string, "drop",
-					gds_arg_string, "database",
-					gds_arg_string,
+			ERR_post(isc_no_priv,
+					isc_arg_string, "drop",
+					isc_arg_string, "database",
+					isc_arg_string,
 					ERR_cstring((SCHAR*) tdbb->tdbb_attachment->att_filename->str_data), 0);
 
 		if (attachment->att_flags & ATT_shutdown)
-			ERR_post(gds_shutdown, gds_arg_string,
+			ERR_post(isc_shutdown, isc_arg_string,
 					ERR_cstring((SCHAR*) tdbb->tdbb_attachment->att_filename->str_data), 0);
 
 		if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD))
-			ERR_post(gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
-					gds_arg_string,
+			ERR_post(isc_lock_timeout, isc_arg_gds, isc_obj_in_use,
+					isc_arg_string,
 					ERR_cstring((SCHAR*) tdbb->tdbb_attachment->att_filename->str_data), 0);
 
 		JRD_SS_MUTEX_LOCK;
@@ -2490,8 +2491,8 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS * user_status, ATT * handle)
 /* Check if same process has more attachments */
 
 	if ((attach = dbb->dbb_attachments) && (attach->att_next)) {
-		ERR_post(gds_no_meta_update, gds_arg_gds, gds_obj_in_use,
-				 gds_arg_string, "DATABASE", 0);
+		ERR_post(isc_no_meta_update, isc_arg_gds, isc_obj_in_use,
+				 isc_arg_string, "DATABASE", 0);
 	}
 
 #ifdef CANCEL_OPERATION
@@ -2580,9 +2581,9 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS * user_status, ATT * handle)
 	dbb::deleteDbb(dbb);
 	tdbb->tdbb_database = NULL;
 	if (err) {
-		user_status[0] = gds_arg_gds;
-		user_status[1] = gds_drdb_completed_with_errs;
-		user_status[2] = gds_arg_end;
+		user_status[0] = isc_arg_gds;
+		user_status[1] = isc_drdb_completed_with_errs;
+		user_status[2] = isc_arg_end;
 		return user_status[1];
 	}
 
@@ -2626,19 +2627,19 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 		tdbb->tdbb_status_vector = user_status;
 
 		*length = BLB_get_segment(tdbb, blob, buffer, buffer_length);
-		tdbb->tdbb_status_vector[0] = gds_arg_gds;
-		tdbb->tdbb_status_vector[2] = gds_arg_end;
+		tdbb->tdbb_status_vector[0] = isc_arg_gds;
+		tdbb->tdbb_status_vector[2] = isc_arg_end;
 		DBB dbb = tdbb->tdbb_database;
 	
 		if (blob->blb_flags & BLB_eof) {
 			JRD_restore_context();
 			--dbb->dbb_use_count;
-			return (user_status[1] = gds_segstr_eof);
+			return (user_status[1] = isc_segstr_eof);
 		}
 		else if (blob->blb_fragment_size) {
 			JRD_restore_context();
 			--dbb->dbb_use_count;
-			return (user_status[1] = gds_segment);
+			return (user_status[1] = isc_segment);
 		}
 	}
 	catch (const std::exception&)
@@ -2691,7 +2692,7 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS * user_status,
 		tdbb->tdbb_status_vector = user_status;
 
 		jrd_tra* transaction =
-			find_transaction(tdbb, *tra_handle, gds_segstr_wrong_db);
+			find_transaction(tdbb, *tra_handle, isc_segstr_wrong_db);
 	
 		if (!array_id[0] && !array_id[1]) {
 			MOVE_CLEAR(slice, slice_length);
@@ -2739,7 +2740,7 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	NULL_CHECK(blob_handle, gds_bad_segstr_handle);
+	NULL_CHECK(blob_handle, isc_bad_segstr_handle);
 
 	if (check_database(tdbb, *db_handle, user_status))
 		return user_status[1];
@@ -2754,7 +2755,7 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 		tdbb->tdbb_status_vector = user_status;
 
 		jrd_tra* transaction =
-			find_transaction(tdbb, *tra_handle, gds_segstr_wrong_db);
+			find_transaction(tdbb, *tra_handle, isc_segstr_wrong_db);
 		blb* blob = BLB_open2(tdbb, transaction, blob_id, bpb_length, bpb);
 		*blob_handle = blob;
 	
@@ -2793,7 +2794,7 @@ ISC_STATUS GDS_PREPARE(ISC_STATUS * user_status,
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	CHECK_HANDLE((*tra_handle), type_tra, gds_bad_trans_handle);
+	CHECK_HANDLE((*tra_handle), type_tra, isc_bad_trans_handle);
 	jrd_tra* transaction = *tra_handle;
 
 	if (check_database(tdbb, transaction->tra_attachment, user_status))
@@ -2892,7 +2893,7 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS * user_status,
 	try
 	{
 		jrd_tra* transaction =
-			find_transaction(tdbb, *tra_handle, gds_segstr_wrong_db);
+			find_transaction(tdbb, *tra_handle, isc_segstr_wrong_db);
 		BLB_put_slice(tdbb,
 				  transaction,
 				  reinterpret_cast<BID>(array_id),
@@ -2999,7 +3000,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	CHECK_HANDLE((*req_handle), type_req, gds_bad_req_handle);
+	CHECK_HANDLE((*req_handle), type_req, isc_bad_req_handle);
 	jrd_req* request = *req_handle;
 
 	if (check_database(tdbb, request->req_attachment, user_status))
@@ -3060,7 +3061,7 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	NULL_CHECK(tra_handle, gds_bad_trans_handle);
+	NULL_CHECK(tra_handle, isc_bad_trans_handle);
 	att* attachment = *db_handle;
 
 	if (check_database(tdbb, attachment, user_status))
@@ -3107,7 +3108,7 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, JRD_REQ * req_handle)
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	CHECK_HANDLE((*req_handle), type_req, gds_bad_req_handle);
+	CHECK_HANDLE((*req_handle), type_req, isc_bad_req_handle);
 	jrd_req* request = *req_handle;
 	att* attachment = request->req_attachment;
 
@@ -3158,7 +3159,7 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
 	jrd_req* request = *req_handle;
-	CHECK_HANDLE(request, type_req, gds_bad_req_handle);
+	CHECK_HANDLE(request, type_req, isc_bad_req_handle);
 
 	if (check_database(tdbb, request->req_attachment, user_status))
 		return user_status[1];
@@ -3204,7 +3205,7 @@ ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS * user_status,
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
 	jrd_tra* transaction = *tra_handle;
-	CHECK_HANDLE(transaction, type_tra, gds_bad_trans_handle);
+	CHECK_HANDLE(transaction, type_tra, isc_bad_trans_handle);
 
 	if (check_database(tdbb, transaction->tra_attachment, user_status))
 		return user_status[1];
@@ -3239,7 +3240,7 @@ ISC_STATUS GDS_ROLLBACK(ISC_STATUS * user_status, JRD_TRA * tra_handle)
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
 	jrd_tra* transaction = *tra_handle;
-	CHECK_HANDLE(transaction, type_tra, gds_bad_trans_handle);
+	CHECK_HANDLE(transaction, type_tra, isc_bad_trans_handle);
 
 	if (check_database(tdbb, transaction->tra_attachment, user_status))
 		return user_status[1];
@@ -3323,7 +3324,7 @@ ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	CHECK_HANDLE((*req_handle), type_req, gds_bad_req_handle);
+	CHECK_HANDLE((*req_handle), type_req, isc_bad_req_handle);
 	jrd_req* request = *req_handle;
 
 	if (check_database(tdbb, request->req_attachment, user_status))
@@ -3379,7 +3380,7 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS * user_status,
 	api_entry_point_init(user_status);
 
 	if (*svc_handle)
-		return handle_error(user_status, gds_bad_svc_handle, 0);
+		return handle_error(user_status, isc_bad_svc_handle, 0);
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
@@ -3418,7 +3419,7 @@ ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS * user_status, SVC * svc_handle)
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
 	svc* service = *svc_handle;
-	CHECK_HANDLE(service, type_svc, gds_bad_svc_handle);
+	CHECK_HANDLE(service, type_svc, isc_bad_svc_handle);
 
 	tdbb->tdbb_status_vector = user_status;
 	try
@@ -3471,7 +3472,7 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
 	svc* service = *svc_handle;
-	CHECK_HANDLE(service, type_svc, gds_bad_svc_handle);
+	CHECK_HANDLE(service, type_svc, isc_bad_svc_handle);
 
 	tdbb->tdbb_status_vector = user_status;
 	tdbb->tdbb_database = NULL;
@@ -3599,7 +3600,7 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS * user_status,
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
 	jrd_req* request = *req_handle;
-	CHECK_HANDLE(request, type_req, gds_bad_req_handle);
+	CHECK_HANDLE(request, type_req, isc_bad_req_handle);
 
 	if (check_database(tdbb, request->req_attachment, user_status))
 		return user_status[1];
@@ -3612,7 +3613,7 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS * user_status,
 	tdbb->tdbb_status_vector = user_status;
 	try
 	{
-		JRD_TRA transaction = find_transaction(tdbb, *tra_handle, gds_req_wrong_db);
+		JRD_TRA transaction = find_transaction(tdbb, *tra_handle, isc_req_wrong_db);
 	
 		if (level)
 			request = CMP_clone_request(tdbb, request, level, FALSE);
@@ -3660,7 +3661,7 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
 	jrd_req* request = *req_handle;
-	CHECK_HANDLE(request, type_req, gds_bad_req_handle);
+	CHECK_HANDLE(request, type_req, isc_bad_req_handle);
 
 	if (check_database(tdbb, request->req_attachment, user_status))
 		return user_status[1];
@@ -3673,7 +3674,7 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
 	try
 	{
 		jrd_tra* transaction =
-			find_transaction(tdbb, *tra_handle, gds_req_wrong_db);
+			find_transaction(tdbb, *tra_handle, isc_req_wrong_db);
 	
 		if (level)
 			request = CMP_clone_request(tdbb, request, level, FALSE);
@@ -3720,7 +3721,7 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	NULL_CHECK(tra_handle, gds_bad_trans_handle);
+	NULL_CHECK(tra_handle, isc_bad_trans_handle);
 	const TEB* const end = vector + count;
 
 	for (v = vector; v < end; v++) {
@@ -3852,7 +3853,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 
 	try {
 
-	jrd_tra* transaction = find_transaction(tdbb, *tra_handle, gds_req_wrong_db);
+	jrd_tra* transaction = find_transaction(tdbb, *tra_handle, isc_req_wrong_db);
 
 	old_pool = tdbb->tdbb_default;
 	tdbb->tdbb_default = new_pool = JrdMemoryPool::createPool();
@@ -3901,9 +3902,9 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 		}
 		if (in_msg_length != len)
 		{
-			ERR_post(gds_port_len,
-					 gds_arg_number, (SLONG) in_msg_length,
-					 gds_arg_number, (SLONG) len, 0);
+			ERR_post(isc_port_len,
+					 isc_arg_number, (SLONG) in_msg_length,
+					 isc_arg_number, (SLONG) len, 0);
 		}
 		if ((U_IPTR) in_msg & (ALIGNMENT - 1)) {
 			MOVE_FAST(in_msg, (SCHAR *) request + in_message->nod_impure,
@@ -3925,9 +3926,9 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 		len = 0;
 	}
 	if (out_msg_length != len) {
-		ERR_post(gds_port_len,
-				 gds_arg_number, (SLONG) out_msg_length,
-				 gds_arg_number, (SLONG) len, 0);
+		ERR_post(isc_port_len,
+				 isc_arg_number, (SLONG) out_msg_length,
+				 isc_arg_number, (SLONG) len, 0);
 	}
 
 	if (out_msg_length) {
@@ -3994,7 +3995,7 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
 	jrd_tra* transaction = *tra_handle;
-	CHECK_HANDLE(transaction, type_tra, gds_bad_trans_handle);
+	CHECK_HANDLE(transaction, type_tra, isc_bad_trans_handle);
 
 	if (check_database(tdbb, transaction->tra_attachment, user_status))
 		return user_status[1];
@@ -4040,7 +4041,7 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status,
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	CHECK_HANDLE((*req_handle), type_req, gds_bad_req_handle);
+	CHECK_HANDLE((*req_handle), type_req, isc_bad_req_handle);
 	jrd_req* request = *req_handle;
 
 /* Make sure blocks look and feel kosher */
@@ -4052,7 +4053,7 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status,
 		!(dbb = attachment->att_database) ||
 		MemoryPool::blk_type(dbb) != type_dbb)
 	{
-		return handle_error(user_status, gds_bad_db_handle, tdbb);
+		return handle_error(user_status, isc_bad_db_handle, tdbb);
 	}
 
 /* Make sure this is a valid attachment */
@@ -4066,7 +4067,7 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status,
 	}
 
 	if (!attach) {
-		return handle_error(user_status, gds_bad_db_handle, tdbb);
+		return handle_error(user_status, isc_bad_db_handle, tdbb);
 	}
 
 	tdbb->tdbb_database = dbb;
@@ -4096,8 +4097,8 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status,
 
 		JRD_restore_context();
 
-		user_status[0] = gds_arg_gds;
-		user_status[2] = gds_arg_end;
+		user_status[0] = isc_arg_gds;
+		user_status[2] = isc_arg_end;
 
 		return (user_status[1] = FB_SUCCESS);
 
@@ -4135,7 +4136,7 @@ void JRD_blocked(ATT blocking, BTB * que)
 		 attachment = attachment->att_blocking)
 	{
 		if (attachment == tdbb->tdbb_attachment) {
-			ERR_post(gds_deadlock, 0);
+			ERR_post(isc_deadlock, 0);
 		}
 	}
 
@@ -4606,7 +4607,7 @@ static BLB check_blob(TDBB tdbb, ISC_STATUS* user_status, BLB* blob_handle)
 		!(transaction = blob->blb_transaction) ||
 		MemoryPool::blk_type(transaction) != type_tra)
 	{
-		handle_error(user_status, gds_bad_segstr_handle, tdbb);
+		handle_error(user_status, isc_bad_segstr_handle, tdbb);
 		return NULL;
 	}
 
@@ -4638,7 +4639,7 @@ static ISC_STATUS check_database(TDBB tdbb, ATT attachment, ISC_STATUS * user_st
 		!(dbb = attachment->att_database) ||
 		MemoryPool::blk_type(dbb)!= type_dbb)
 	{
-		return handle_error(user_status, gds_bad_db_handle, tdbb);
+		return handle_error(user_status, isc_bad_db_handle, tdbb);
 	}
 
 /* Make sure this is a valid attachment */
@@ -4650,7 +4651,7 @@ static ISC_STATUS check_database(TDBB tdbb, ATT attachment, ISC_STATUS * user_st
 			break;
 
 	if (!attach)
-		return handle_error(user_status, gds_bad_db_handle, tdbb);
+		return handle_error(user_status, isc_bad_db_handle, tdbb);
 #endif
 
 	tdbb->tdbb_database = dbb;
@@ -4671,12 +4672,12 @@ static ISC_STATUS check_database(TDBB tdbb, ATT attachment, ISC_STATUS * user_st
     
 	if (dbb->dbb_flags & DBB_bugcheck) {
 		tdbb->tdbb_status_vector = ptr = user_status;
-		*ptr++ = gds_arg_gds;
-		*ptr++ = gds_bug_check;
-		*ptr++ = gds_arg_string;
+		*ptr++ = isc_arg_gds;
+		*ptr++ = isc_bug_check;
+		*ptr++ = isc_arg_string;
 		string = "can't continue after bugcheck";
 		*ptr++ = (ISC_STATUS) string;
-		*ptr = gds_arg_end;
+		*ptr = isc_arg_end;
 		return error(user_status);
 	}
 
@@ -4685,13 +4686,13 @@ static ISC_STATUS check_database(TDBB tdbb, ATT attachment, ISC_STATUS * user_st
 		 !(attachment->att_user->usr_flags & (USR_locksmith | USR_owner))))
 	{
 		tdbb->tdbb_status_vector = ptr = user_status;
-		*ptr++ = gds_arg_gds;
-		*ptr++ = gds_shutdown;
-		*ptr++ = gds_arg_cstring;
+		*ptr++ = isc_arg_gds;
+		*ptr++ = isc_shutdown;
+		*ptr++ = isc_arg_cstring;
 		*ptr++ = attachment->att_filename->str_length;
 		string = reinterpret_cast<char*>(attachment->att_filename->str_data);
 		*ptr++ = (ISC_STATUS) string;
-		*ptr = gds_arg_end;
+		*ptr = isc_arg_end;
 		return error(user_status);
 	}
 
@@ -4751,7 +4752,7 @@ static ISC_STATUS commit(
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	CHECK_HANDLE((*tra_handle), type_tra, gds_bad_trans_handle);
+	CHECK_HANDLE((*tra_handle), type_tra, isc_bad_trans_handle);
 	jrd_tra* transaction = *tra_handle;
 	jrd_tra* next = transaction;
 
@@ -4839,8 +4840,8 @@ static bool drop_files(const fil* file)
 		if (unlink(file->fil_string))
 		{
 			IBERR_build_status(status, isc_io_error,
-							   gds_arg_string, "unlink",
-							   gds_arg_string,
+							   isc_arg_string, "unlink",
+							   isc_arg_string,
 							   ERR_cstring(file->fil_string),
 							   isc_arg_gds, isc_io_delete_err,
 							   SYS_ERR, errno,
@@ -4871,7 +4872,7 @@ static JRD_TRA find_transaction(TDBB tdbb, JRD_TRA transaction, ISC_STATUS error
 	SET_TDBB(tdbb);
 
 	if (!transaction || MemoryPool::blk_type(transaction) != type_tra)
-		ERR_post(gds_bad_trans_handle, 0);
+		ERR_post(isc_bad_trans_handle, 0);
 
 	for (; transaction; transaction = transaction->tra_sibling)
 		if (transaction->tra_attachment == tdbb->tdbb_attachment) {
@@ -4917,11 +4918,11 @@ static ISC_STATUS error(ISC_STATUS* user_status)
 
 		dbb->dbb_use_count = 0;
 		p = user_status;
-		*p++ = gds_arg_gds;
-		*p++ = gds_random;
-		*p++ = gds_arg_string;
+		*p++ = isc_arg_gds;
+		*p++ = isc_random;
+		*p++ = isc_arg_string;
 		*p++ = (ISC_STATUS) "database use count set on error return";
-		*p = gds_arg_end;
+		*p = isc_arg_end;
 	}
 #endif
 
@@ -4968,9 +4969,9 @@ static void find_intl_charset(TDBB tdbb, ATT attachment, DPB * options)
 	else
 	{
 		/* Report an error - we can't do what user has requested */
-		ERR_post(gds_bad_dpb_content,
-				gds_arg_gds, gds_charset_not_found,
-				gds_arg_string, ERR_cstring(options->dpb_lc_ctype),
+		ERR_post(isc_bad_dpb_content,
+				isc_arg_gds, isc_charset_not_found,
+				isc_arg_string, ERR_cstring(options->dpb_lc_ctype),
 				0);
 	}
 }
@@ -5009,10 +5010,10 @@ static void get_options(const UCHAR*	dpb,
 	const UCHAR* const end_dpb = p + dpb_length;
 
 	if ((dpb == NULL) && (dpb_length > 0))
-		ERR_post(gds_bad_dpb_form, 0);
+		ERR_post(isc_bad_dpb_form, 0);
 
-	if (p < end_dpb && *p++ != gds_dpb_version1)
-		ERR_post(gds_bad_dpb_form, gds_arg_gds, gds_wrodpbver, 0);
+	if (p < end_dpb && *p++ != isc_dpb_version1)
+		ERR_post(isc_bad_dpb_form, isc_arg_gds, isc_wrodpbver, 0);
 
 	while (p < end_dpb && buf_size)
 	{
@@ -5080,118 +5081,118 @@ static void get_options(const UCHAR*	dpb,
 				(options->dpb_page_buffers < MIN_PAGE_BUFFERS ||
 				 options->dpb_page_buffers > MAX_PAGE_BUFFERS))
 			{
-				ERR_post(gds_bad_dpb_content, 0);
+				ERR_post(isc_bad_dpb_content, 0);
 			}
 			options->dpb_set_page_buffers = TRUE;
 			break;
 
-		case gds_dpb_num_buffers:
+		case isc_dpb_num_buffers:
 			options->dpb_buffers = get_parameter(&p);
 			if (options->dpb_buffers < 10)
-				ERR_post(gds_bad_dpb_content, 0);
+				ERR_post(isc_bad_dpb_content, 0);
 			break;
 
-		case gds_dpb_page_size:
+		case isc_dpb_page_size:
 			options->dpb_page_size = (USHORT) get_parameter(&p);
 			break;
 
-		case gds_dpb_debug:
+		case isc_dpb_debug:
 			options->dpb_debug = (USHORT) get_parameter(&p);
 			break;
 
-		case gds_dpb_sweep:
+		case isc_dpb_sweep:
 			options->dpb_sweep = (USHORT) get_parameter(&p);
 			break;
 
-		case gds_dpb_sweep_interval:
+		case isc_dpb_sweep_interval:
 			options->dpb_sweep_interval = get_parameter(&p);
 			break;
 
-		case gds_dpb_verify:
+		case isc_dpb_verify:
 			options->dpb_verify = (USHORT) get_parameter(&p);
-			if (options->dpb_verify & gds_dpb_ignore)
+			if (options->dpb_verify & isc_dpb_ignore)
 				dbb->dbb_flags |= DBB_damaged;
 			break;
 
-		case gds_dpb_trace:
+		case isc_dpb_trace:
 			options->dpb_trace = (USHORT) get_parameter(&p);
 			break;
 
-		case gds_dpb_damaged:
+		case isc_dpb_damaged:
 			if (get_parameter(&p) & 1)
 				dbb->dbb_flags |= DBB_damaged;
 			break;
 
-		case gds_dpb_enable_journal:
+		case isc_dpb_enable_journal:
 		    options->dpb_journal = get_string_parameter(&p, scratch, &buf_size);
 			break;
 
-		case gds_dpb_wal_backup_dir:
+		case isc_dpb_wal_backup_dir:
 		    options->dpb_wal_backup_dir = get_string_parameter(&p, scratch, &buf_size);
 			break;
 
-		case gds_dpb_drop_walfile:
+		case isc_dpb_drop_walfile:
 			options->dpb_wal_action = (USHORT) get_parameter(&p);
 			break;
 
-		case gds_dpb_old_dump_id:
+		case isc_dpb_old_dump_id:
 			options->dpb_old_dump_id = (USHORT) get_parameter(&p);
 			break;
 
-		case gds_dpb_online_dump:
+		case isc_dpb_online_dump:
 			options->dpb_online_dump = (USHORT) get_parameter(&p);
 			break;
 
-		case gds_dpb_old_file_size:
+		case isc_dpb_old_file_size:
 			options->dpb_old_file_size = get_parameter(&p);
 			break;
 
-		case gds_dpb_old_num_files:
+		case isc_dpb_old_num_files:
 			options->dpb_old_num_files = (USHORT) get_parameter(&p);
 			break;
 
-		case gds_dpb_old_start_page:
+		case isc_dpb_old_start_page:
 			options->dpb_old_start_page = get_parameter(&p);
 			break;
 
-		case gds_dpb_old_start_seqno:
+		case isc_dpb_old_start_seqno:
 			options->dpb_old_start_seqno = get_parameter(&p);
 			break;
 
-		case gds_dpb_old_start_file:
+		case isc_dpb_old_start_file:
 			options->dpb_old_start_file = (USHORT) get_parameter(&p);
 			break;
 
-		case gds_dpb_old_file:
+		case isc_dpb_old_file:
 			if (num_old_files >= MAX_OLD_FILES)
-				ERR_post(gds_num_old_files, 0);
+				ERR_post(isc_num_old_files, 0);
 
 		    options->dpb_old_file [num_old_files] =
 				get_string_parameter(&p, scratch, &buf_size);
 			num_old_files++;
 			break;
 
-		case gds_dpb_wal_chkptlen:
+		case isc_dpb_wal_chkptlen:
 			options->dpb_wal_chkpt_len = get_parameter(&p);
 			break;
 
-		case gds_dpb_wal_numbufs:
+		case isc_dpb_wal_numbufs:
 			options->dpb_wal_num_bufs = (SSHORT) get_parameter(&p);
 			break;
 
-		case gds_dpb_wal_bufsize:
+		case isc_dpb_wal_bufsize:
 			options->dpb_wal_bufsize = (USHORT) get_parameter(&p);
 			break;
 
-		case gds_dpb_wal_grp_cmt_wait:
+		case isc_dpb_wal_grp_cmt_wait:
 			options->dpb_wal_grp_cmt_wait = get_parameter(&p);
 			break;
 
-		case gds_dpb_dbkey_scope:
+		case isc_dpb_dbkey_scope:
 			options->dpb_dbkey_scope = (USHORT) get_parameter(&p);
 			break;
 
-		case gds_dpb_sys_user_name:
+		case isc_dpb_sys_user_name:
 		    options->dpb_sys_user_name = get_string_parameter(&p, scratch, &buf_size);
 			break;
 
@@ -5199,95 +5200,95 @@ static void get_options(const UCHAR*	dpb,
 		    options->dpb_role_name = get_string_parameter(&p, scratch, &buf_size);
 			break;
 
-		case gds_dpb_user_name:
+		case isc_dpb_user_name:
 		    options->dpb_user_name = get_string_parameter(&p, scratch, &buf_size);
 			break;
 
-		case gds_dpb_password:
+		case isc_dpb_password:
 		    options->dpb_password = get_string_parameter(&p, scratch, &buf_size);
 			break;
 
-		case gds_dpb_password_enc:
+		case isc_dpb_password_enc:
 		    options->dpb_password_enc = get_string_parameter(&p, scratch, &buf_size);
 			break;
 
-		case gds_dpb_encrypt_key:
+		case isc_dpb_encrypt_key:
 #ifdef ISC_DATABASE_ENCRYPTION
 		    options->dpb_key = get_string_parameter(&p, scratch, &buf_size);
 #else
 			/* Just in case there WAS a customer using this unsupported
 			 * feature - post an error when they try to access it in 4.0
 			 */
-			ERR_post(gds_uns_ext, gds_arg_gds, gds_random,
-					 gds_arg_string, "Encryption not supported", 0);
+			ERR_post(isc_uns_ext, isc_arg_gds, isc_random,
+					 isc_arg_string, "Encryption not supported", 0);
 #endif
 			break;
 
-		case gds_dpb_no_garbage_collect:
+		case isc_dpb_no_garbage_collect:
 			options->dpb_no_garbage = TRUE;
 			l = *p++;
 			p += l;
 			break;
 
-		case gds_dpb_disable_journal:
+		case isc_dpb_disable_journal:
 			options->dpb_disable = TRUE;
 			l = *p++;
 			p += l;
 			break;
 
-		case gds_dpb_activate_shadow:
+		case isc_dpb_activate_shadow:
 			options->dpb_activate_shadow = TRUE;
 			l = *p++;
 			p += l;
 			break;
 
-		case gds_dpb_delete_shadow:
+		case isc_dpb_delete_shadow:
 			options->dpb_delete_shadow = TRUE;
 			l = *p++;
 			p += l;
 			break;
 
-		case gds_dpb_force_write:
+		case isc_dpb_force_write:
 			options->dpb_set_force_write = TRUE;
 			options->dpb_force_write = (SSHORT) get_parameter(&p);
 			break;
 
-		case gds_dpb_begin_log:
+		case isc_dpb_begin_log:
 		    options->dpb_log = get_string_parameter(&p, scratch, &buf_size);
 			break;
 
-		case gds_dpb_quit_log:
+		case isc_dpb_quit_log:
 			options->dpb_quit_log = TRUE;
 			l = *p++;
 			p += l;
 			break;
 
-		case gds_dpb_no_reserve:
+		case isc_dpb_no_reserve:
 			options->dpb_set_no_reserve = TRUE;
 			options->dpb_no_reserve = (UCHAR) get_parameter(&p);
 			break;
 
-		case gds_dpb_interp:
+		case isc_dpb_interp:
 			options->dpb_interp = (SSHORT) get_parameter(&p);
 			break;
 
-		case gds_dpb_lc_messages:
+		case isc_dpb_lc_messages:
 		    options->dpb_lc_messages = get_string_parameter(&p, scratch, &buf_size);
 			break;
 
-		case gds_dpb_lc_ctype:
+		case isc_dpb_lc_ctype:
 		    options->dpb_lc_ctype = get_string_parameter(&p, scratch, &buf_size);
 			break;
 
-		case gds_dpb_shutdown:
+		case isc_dpb_shutdown:
 			options->dpb_shutdown = (USHORT) get_parameter(&p);
 			break;
 
-		case gds_dpb_shutdown_delay:
+		case isc_dpb_shutdown_delay:
 			options->dpb_shutdown_delay = (SSHORT) get_parameter(&p);
 			break;
 
-		case gds_dpb_online:
+		case isc_dpb_online:
 			options->dpb_online = TRUE;
 			l = *p++;
 			p += l;
@@ -5333,11 +5334,11 @@ static void get_options(const UCHAR*	dpb,
 			p += l;
 			break;
 
-		case gds_dpb_connect_timeout:
+		case isc_dpb_connect_timeout:
 			options->dpb_connect_timeout = get_parameter(&p);
 			break;
 
-		case gds_dpb_dummy_packet_interval:
+		case isc_dpb_dummy_packet_interval:
 			options->dpb_dummy_packet_interval = get_parameter(&p);
 			break;
 
@@ -5367,7 +5368,7 @@ static void get_options(const UCHAR*	dpb,
 	}
 
 	if (p != end_dpb)
-		ERR_post(gds_bad_dpb_form, 0);
+		ERR_post(isc_bad_dpb_form, 0);
 
 }
 
@@ -5456,9 +5457,9 @@ static ISC_STATUS handle_error(ISC_STATUS* user_status, ISC_STATUS code, TDBB td
 		JRD_restore_context();
 
 	ISC_STATUS* vector = user_status;
-	*vector++ = gds_arg_gds;
+	*vector++ = isc_arg_gds;
 	*vector++ = code;
-	*vector = gds_arg_end;
+	*vector = isc_arg_end;
 
 	return code;
 }
@@ -5677,7 +5678,7 @@ static void make_jrn_data(UCHAR*	data,
 	UCHAR*	t   = data;
 
 	if (len) {
-		*t++ = gds_dpb_wal_backup_dir;
+		*t++ = isc_dpb_wal_backup_dir;
 		*t++ = (UCHAR) b_length;
 		const UCHAR* q = reinterpret_cast<const UCHAR*>(backup_dir);
 		do {
@@ -5886,14 +5887,14 @@ static ISC_STATUS return_success(TDBB tdbb)
 /* If the status vector has not been initialized, then
    initilalize the status vector to indicate success.
    Else pass the status vector along at it stands.  */
-	if (p[0] != gds_arg_gds ||
+	if (p[0] != isc_arg_gds ||
 		p[1] != FB_SUCCESS ||
-		(p[2] != gds_arg_end && p[2] != gds_arg_gds &&
+		(p[2] != isc_arg_end && p[2] != isc_arg_gds &&
 		 p[2] != isc_arg_warning))
 	{
-		*p++ = gds_arg_gds;
+		*p++ = isc_arg_gds;
 		*p++ = FB_SUCCESS;
-		*p = gds_arg_end;
+		*p = isc_arg_end;
 	}
 
 	JRD_restore_context();
@@ -5907,11 +5908,11 @@ static ISC_STATUS return_success(TDBB tdbb)
 	if (dbb && dbb->dbb_use_count && !(dbb->dbb_flags & DBB_security_db)) {
 		dbb->dbb_use_count = 0;
 		p = user_status;
-		*p++ = gds_arg_gds;
-		*p++ = gds_random;
-		*p++ = gds_arg_string;
+		*p++ = isc_arg_gds;
+		*p++ = isc_random;
+		*p++ = isc_arg_string;
 		*p++ = (ISC_STATUS) "database use count set on success return";
-		*p = gds_arg_end;
+		*p = isc_arg_end;
 	}
 #endif
 
@@ -6503,7 +6504,7 @@ static void purge_attachment(TDBB		tdbb,
 		}
 
 		if (count)
-			ERR_post(gds_open_trans, gds_arg_number, (SLONG) count, 0);
+			ERR_post(isc_open_trans, isc_arg_number, (SLONG) count, 0);
 
 		/* If there's a side transaction for db-key scope, get rid of it */
 
@@ -6597,7 +6598,7 @@ static void verify_request_synchronization(jrd_req*& request, SSHORT level)
 		if (!vector || lev >= vector->count() ||
 			!(request = reinterpret_cast<jrd_req*>((*vector)[lev])))
 		{
-			ERR_post(gds_req_sync, 0);
+			ERR_post(isc_req_sync, 0);
 		}
 	}
 }
@@ -6630,14 +6631,14 @@ static bool verify_database_name(const TEXT* name, ISC_STATUS* status)
 	
 	// Check for .conf
 	if (!ISC_verify_database_access(name)) {
-		status[0] = gds_arg_gds;
-		status[1] = gds_conf_access_denied;
-		status[2] = gds_arg_string;
+		status[0] = isc_arg_gds;
+		status[1] = isc_conf_access_denied;
+		status[2] = isc_arg_string;
 		// CVC: Using STATUS to hold pointer to literal string!
 		status[3] = reinterpret_cast<ISC_STATUS>("database");
-		status[4] = gds_arg_string;
+		status[4] = isc_arg_string;
 		status[5] = reinterpret_cast<ISC_STATUS>(ERR_cstring(name));
-		status[6] = gds_arg_end;
+		status[6] = isc_arg_end;
 		return false;
 	}
 	return true;

@@ -547,7 +547,8 @@ VI. ADDITIONAL NOTES
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/pag.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/val.h"
 #include "../jrd/btr.h"
 #include "../jrd/all.h"
@@ -697,13 +698,13 @@ BOOLEAN VAL_validate(TDBB tdbb, USHORT switches)
 	control.vdr_flags = 0;
 	control.vdr_errors = 0;
 
-	if (switches & gds_dpb_records)
+	if (switches & isc_dpb_records)
 		control.vdr_flags |= vdr_records;
 
-	if (switches & gds_dpb_repair)
+	if (switches & isc_dpb_repair)
 		control.vdr_flags |= vdr_repair;
 
-	if (!(switches & gds_dpb_no_update))
+	if (!(switches & isc_dpb_no_update))
 		control.vdr_flags |= vdr_update;
 
 	control.vdr_max_page = 0;

@@ -26,7 +26,8 @@
 #include <setjmp.h>
 
 #define REQUESTS_MAIN
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../qli/dtr.h"
 #include "../qli/exe.h"
 #include "../qli/all_proto.h"
@@ -82,10 +83,10 @@ static void transaction_state(QLI_NOD, DBB);
 #define COUNT_ITEMS	4
 
 static const SCHAR count_info[] = {
-	gds_info_req_select_count,
-	gds_info_req_insert_count,
-	gds_info_req_update_count,
-	gds_info_req_delete_count
+	isc_info_req_select_count,
+	isc_info_req_insert_count,
+	isc_info_req_update_count,
+	isc_info_req_delete_count
 };
 
 
@@ -106,7 +107,7 @@ void EXEC_abort(void)
 
 	for (QLI_REQ request = QLI_requests; request; request = request->req_next)
 		if (request->req_handle)
-			gds__unwind_request(status_vector, &request->req_handle, 0);
+			isc_unwind_request(status_vector, &request->req_handle, 0);
 
 	QLI_abort = TRUE;
 }
@@ -231,21 +232,21 @@ FRBRD *EXEC_open_blob( QLI_NOD node)
 // Format blob parameter block
 	UCHAR bpb[20];
 	UCHAR* p = bpb;
-	*p++ = gds_bpb_version1;
-	*p++ = gds_bpb_source_type;
+	*p++ = isc_bpb_version1;
+	*p++ = isc_bpb_source_type;
 	*p++ = 2;
 	*p++ = desc->dsc_sub_type;
 	*p++ = desc->dsc_sub_type >> 8;
-	*p++ = gds_bpb_target_type;
+	*p++ = isc_bpb_target_type;
 	*p++ = 1;
 	*p++ = 1;
 
 	const USHORT bpb_length = p - bpb;
 
 	ISC_STATUS_ARRAY status_vector;
-	if (gds__open_blob2(status_vector, &dbb->dbb_handle, &dbb->dbb_transaction,
+	if (isc_open_blob2(status_vector, &dbb->dbb_handle, &dbb->dbb_transaction,
 						&blob, (GDS_QUAD*) desc->dsc_address, bpb_length,
-						reinterpret_cast<const char*>(bpb)))
+						reinterpret_cast<const UCHAR*>(bpb)))
 	{
 		ERRQ_database_error(dbb, status_vector);
 	}
@@ -382,7 +383,7 @@ DSC *EXEC_receive(QLI_MSG message, PAR parameter)
 
 	QLI_REQ request = message->msg_request;
 
-	if (gds__receive(status_vector, &request->req_handle, message->msg_number,
+	if (isc_receive(status_vector, &request->req_handle, message->msg_number,
 					 message->msg_length, message->msg_buffer, 0))
 		db_error(request, status_vector);
 
@@ -411,7 +412,7 @@ void EXEC_send( QLI_MSG message)
 	QLI_REQ request = message->msg_request;
 
 	map_data(message);
-	if (gds__send(status_vector, &request->req_handle, message->msg_number,
+	if (isc_send(status_vector, &request->req_handle, message->msg_number,
 				  message->msg_length, message->msg_buffer, 0))
 		db_error(request, status_vector);
 }
@@ -434,14 +435,14 @@ void EXEC_start_request( QLI_REQ request, QLI_MSG message)
 
 	if (message) {
 		map_data(message);
-		if (!gds__start_and_send(status_vector, &request->req_handle,
+		if (!isc_start_and_send(status_vector, &request->req_handle,
 								 &request->req_database-> dbb_transaction,
 								 message->msg_number, message->msg_length,
 								 message->msg_buffer, 0))
 			return;
 	}
 	else
-		if (!gds__start_request(status_vector, &request->req_handle,
+		if (!isc_start_request(status_vector, &request->req_handle,
 								&request->req_database-> dbb_transaction, 0))
 			return;
 
@@ -673,29 +674,29 @@ static bool copy_blob( QLI_NOD value, PAR parameter)
 
 	UCHAR bpb[20];
 	UCHAR* p = bpb;
-	*p++ = gds_bpb_version1;
-	*p++ = gds_bpb_source_type;
+	*p++ = isc_bpb_version1;
+	*p++ = isc_bpb_source_type;
 	*p++ = 2;
 	*p++ = from_desc->dsc_sub_type;
 	*p++ = from_desc->dsc_sub_type >> 8;
-	*p++ = gds_bpb_target_type;
+	*p++ = isc_bpb_target_type;
 	*p++ = 2;
 	*p++ = to_desc->dsc_sub_type;
 	*p++ = to_desc->dsc_sub_type >> 8;
 	const USHORT bpb_length = p - bpb;
 
 	ISC_STATUS_ARRAY status_vector;
-	if (gds__create_blob(status_vector, &to_dbb->dbb_handle,
+	if (isc_create_blob(status_vector, &to_dbb->dbb_handle,
 						 &to_dbb->dbb_transaction, &to_blob,
-						 (GDS__QUAD*) to_desc->dsc_address))
+						 (GDS_QUAD*) to_desc->dsc_address))
 	{
 		ERRQ_database_error(to_dbb, status_vector);
 	}
 
-	if (gds__open_blob2(status_vector, &from_dbb->dbb_handle,
+	if (isc_open_blob2(status_vector, &from_dbb->dbb_handle,
 						&from_dbb->dbb_transaction, &from_blob,
-						(GDS__QUAD*) from_desc->dsc_address, bpb_length,
-						reinterpret_cast<const char*>(bpb)))
+						(GDS_QUAD*) from_desc->dsc_address, bpb_length,
+						reinterpret_cast<const UCHAR*>(bpb)))
 	{
 		ERRQ_database_error(from_dbb, status_vector);
 	}
@@ -721,10 +722,10 @@ static bool copy_blob( QLI_NOD value, PAR parameter)
 	}
 
 	USHORT length;
-	while (!gds__get_segment(status_vector, &from_blob, &length, buffer_length,
+	while (!isc_get_segment(status_vector, &from_blob, &length, buffer_length,
 							 (char*) buffer))
 	{
-		if (gds__put_segment(status_vector, &to_blob, length,
+		if (isc_put_segment(status_vector, &to_blob, length,
 			reinterpret_cast<const char*>(buffer)))
 		{
 			ERRQ_database_error(to_dbb, status_vector);
@@ -734,10 +735,10 @@ static bool copy_blob( QLI_NOD value, PAR parameter)
 	if (buffer != fixed_buffer)
 		gds__free(buffer);
 
-	if (gds__close_blob(status_vector, &from_blob))
+	if (isc_close_blob(status_vector, &from_blob))
 		ERRQ_database_error(from_dbb, status_vector);
 
-	if (gds__close_blob(status_vector, &to_blob))
+	if (isc_close_blob(status_vector, &to_blob))
 		ERRQ_database_error(to_dbb, status_vector);
 
 	return true;
@@ -1091,7 +1092,7 @@ static void print_counts( QLI_REQ request)
 	ISC_STATUS_ARRAY status_vector;
 
 	SCHAR count_buffer[COUNT_ITEMS * 7 + 1];
-	if (gds__request_info(status_vector, &request->req_handle, 0,
+	if (isc_request_info(status_vector, &request->req_handle, 0,
 						  sizeof(count_info), count_info,
 						  sizeof(count_buffer), count_buffer))
 	{
@@ -1101,7 +1102,7 @@ static void print_counts( QLI_REQ request)
 // print out the counts of any records affected
 
 	int length = 0;
-	for (SCHAR* c = count_buffer; *c != gds_info_end; c += length) {
+	for (SCHAR* c = count_buffer; *c != isc_info_end; c += length) {
 		UCHAR item = *c++;
 		length = gds__vax_integer((UCHAR*) c, 2);
 		c += 2;
@@ -1109,19 +1110,19 @@ static void print_counts( QLI_REQ request)
 
 		if (number)
 			switch (item) {
-			case gds_info_req_select_count:
+			case isc_info_req_select_count:
 				ib_printf("\nrecords selected: %ld\n", number);
 				break;
 
-			case gds_info_req_insert_count:
+			case isc_info_req_insert_count:
 				ib_printf("records inserted: %ld\n", number);
 				break;
 
-			case gds_info_req_update_count:
+			case isc_info_req_update_count:
 				ib_printf("records updated: %ld\n", number);
 				break;
 
-			case gds_info_req_delete_count:
+			case isc_info_req_delete_count:
 				ib_printf("records deleted: %ld\n", number);
 				break;
 
@@ -1181,11 +1182,11 @@ static void transaction_state( QLI_NOD node, DBB database)
 
 	if (database->dbb_transaction) {
 		if (node->nod_type == nod_commit_retaining) {
-			if (gds__commit_retaining(status, &database->dbb_transaction))
+			if (isc_commit_retaining(status, &database->dbb_transaction))
 					ERRQ_database_error(database, status);
 		}
 		else if (node->nod_type == nod_prepare) {
-			if (gds__prepare_transaction(status, &database->dbb_transaction))
+			if (isc_prepare_transaction(status, &database->dbb_transaction))
 					ERRQ_database_error(database, status);
 		}
 	}

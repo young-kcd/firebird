@@ -22,7 +22,8 @@
  */
 
 #include "firebird.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../utilities/rebuild/rebuild.h"
 #include "../utilities/rebuild/rebui_proto.h"
 #include "../utilities/rebuild/rstor_proto.h"
@@ -49,14 +50,14 @@ void RSTORE( RBDB rbdb)
 
 	READY
 	ON_ERROR
-		gds__print_status(gds__status);
+		isc_print_status(gds__status);
 		ib_printf("can't open the documentaton database\n");
 		FINISH;
 		return;
 	END_ERROR;
 	START_TRANSACTION
 	ON_ERROR
-		gds__print_status(gds__status);
+		isc_print_status(gds__status);
 		ib_printf("can't start a transaction on the documentaton database\n");
 		FINISH;
 		return;
@@ -89,7 +90,7 @@ static void store_headers( RBDB rbdb)
 	IRT index_root;
 	PIP pip;
 	PPG pointer;
-	GDS__QUAD temp;
+	GDS_QUAD temp;
 
 	page_number = 0;
 
@@ -237,7 +238,7 @@ static void store_headers( RBDB rbdb)
 			}
 		END_STORE
 		ON_ERROR
-			gds__print_status(gds__status);
+			isc_print_status(gds__status);
 			ib_printf("can't store into the documentaton database\n");
 			FINISH;
 			return;

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.29 2003-10-29 10:53:07 robocop Exp $
+//	$Id: pas.cpp,v 1.30 2003-11-08 16:31:39 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -32,7 +32,8 @@
 #include "../jrd/common.h"
 #include <stdarg.h>
 #include <string.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../gpre/gpre.h"
 #include "../gpre/pat.h"
 #include "../gpre/cmp_proto.h"
@@ -3412,7 +3413,7 @@ static void make_array_declaration( const ref* reference)
 
 	case dtype_date:
 	case dtype_quad:
-		ib_fprintf(out_file, "GDS__QUAD");
+		ib_fprintf(out_file, "GDS_QUAD");
 		break;
 
 	case dtype_real:

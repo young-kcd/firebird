@@ -45,7 +45,8 @@
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
 #include "../jrd/align.h"
 #include "../jrd/val.h"
@@ -1264,7 +1265,7 @@ static void check_indices(csb_repeat * csb_tail)
 		(access_type = plan->nod_arg[e_retrieve_access_type]))
 
 		/* index %s cannot be used in the specified plan */
-		ERR_post(gds_index_unused, gds_arg_string, access_type->nod_arg[2],
+		ERR_post(isc_index_unused, isc_arg_string, access_type->nod_arg[2],
 				 0);
 
 /* check to make sure that all indices are either used or marked not to be used,
@@ -1287,7 +1288,7 @@ static void check_indices(csb_repeat * csb_tail)
 				}
 
 				/* index %s cannot be used in the specified plan */
-				ERR_post(gds_index_unused, gds_arg_string,
+				ERR_post(isc_index_unused, isc_arg_string,
 						 ERR_cstring(index_name), 0);
 			}
 
@@ -2169,16 +2170,16 @@ static bool dump_index(const jrd_nod* node,
 
 	// spit out the node type
 	if (node->nod_type == nod_bit_and) {
-		*buffer++ = gds_info_rsb_and;
+		*buffer++ = isc_info_rsb_and;
 	}
 	else if (node->nod_type == nod_bit_or) {
-		*buffer++ = gds_info_rsb_or;
+		*buffer++ = isc_info_rsb_or;
 	}
 	else if (node->nod_type == nod_bit_dbkey) {
-		*buffer++ = gds_info_rsb_dbkey;
+		*buffer++ = isc_info_rsb_dbkey;
 	}
 	else if (node->nod_type == nod_index) {
-		*buffer++ = gds_info_rsb_index;
+		*buffer++ = isc_info_rsb_index;
 	}
 
 	// dump sub-nodes or the actual index info
@@ -2244,7 +2245,7 @@ static bool dump_rsb(const jrd_req* request,
 	if (*buffer_length < 0) {
 		return false;
 	}
-	*buffer++ = gds_info_rsb_begin;
+	*buffer++ = isc_info_rsb_begin;
 
 	// dump out the alias or relation name if it exists.
 	name = NULL;
@@ -2264,7 +2265,7 @@ static bool dump_rsb(const jrd_req* request,
 		if (*buffer_length < 0) {
 			return false;
 		}
-		*buffer++ = gds_info_rsb_relation;
+		*buffer++ = isc_info_rsb_relation;
 		*buffer++ = (SCHAR) length;
 		while (length--) {
 			*buffer++ = *name++;
@@ -2274,17 +2275,17 @@ static bool dump_rsb(const jrd_req* request,
 /* print out the type followed immediately by any
    type-specific data */
 
-	*buffer++ = gds_info_rsb_type;
+	*buffer++ = isc_info_rsb_type;
 	switch (rsb->rsb_type) {
 	case rsb_indexed:
-		*buffer++ = gds_info_rsb_indexed;
+		*buffer++ = isc_info_rsb_indexed;
 		if (!dump_index((JRD_NOD) rsb->rsb_arg[0], &buffer, buffer_length)) {
 			return false;
 		}
 		break;
 
 	case rsb_navigate:
-		*buffer++ = gds_info_rsb_navigate;
+		*buffer++ = isc_info_rsb_navigate;
 		if (!dump_index((JRD_NOD) rsb->rsb_arg[RSB_NAV_index], 
 						&buffer, buffer_length)) 
 		{
@@ -2297,8 +2298,8 @@ static bool dump_rsb(const jrd_req* request,
 			if (*buffer_length < 0) {
 				return false;
 			}
-			*buffer++ = gds_info_rsb_type;
-			*buffer++ = gds_info_rsb_indexed;
+			*buffer++ = isc_info_rsb_type;
+			*buffer++ = isc_info_rsb_indexed;
 			if (!dump_index((JRD_NOD) rsb->rsb_arg[RSB_NAV_inversion],
 							&buffer, buffer_length))
 			{
@@ -2308,19 +2309,19 @@ static bool dump_rsb(const jrd_req* request,
 		break;
 
 	case rsb_sequential:
-		*buffer++ = gds_info_rsb_sequential;
+		*buffer++ = isc_info_rsb_sequential;
 		break;
 
 	case rsb_cross:
-		*buffer++ = gds_info_rsb_cross;
+		*buffer++ = isc_info_rsb_cross;
 		break;
 
 	case rsb_sort:
-		*buffer++ = gds_info_rsb_sort;
+		*buffer++ = isc_info_rsb_sort;
 		break;
 
 	case rsb_procedure:
-		*buffer++ = gds_info_rsb_procedure;
+		*buffer++ = isc_info_rsb_procedure;
 
 		// don't try to print out plans of procedures called by procedures, since 
 		// we could get into a recursive situation; if the customer wants to know 
@@ -2345,16 +2346,16 @@ static bool dump_rsb(const jrd_req* request,
             if (*buffer_length < 0) {
                 return false;
 			}
-            *buffer++ = gds_info_rsb_begin;
-            *buffer++ = gds_info_rsb_relation;
+            *buffer++ = isc_info_rsb_begin;
+            *buffer++ = isc_info_rsb_relation;
             *buffer++ = (SCHAR) length;
             name = (SCHAR*) n->str_data;
             while (length--) {
                 *buffer++ = *name++;
 			}
-            *buffer++ = gds_info_rsb_type;
-            *buffer++ = gds_info_rsb_sequential;
-            *buffer++ = gds_info_rsb_end;
+            *buffer++ = isc_info_rsb_type;
+            *buffer++ = isc_info_rsb_sequential;
+            *buffer++ = isc_info_rsb_end;
             break;
         }
 
@@ -2371,47 +2372,47 @@ static bool dump_rsb(const jrd_req* request,
 		break;
 
 	case rsb_first:
-		*buffer++ = gds_info_rsb_first;
+		*buffer++ = isc_info_rsb_first;
 		break;
 
     case rsb_skip:
-        *buffer++ = gds_info_rsb_skip;
+        *buffer++ = isc_info_rsb_skip;
         break;
         
 	case rsb_boolean:
-		*buffer++ = gds_info_rsb_boolean;
+		*buffer++ = isc_info_rsb_boolean;
 		break;
 
 	case rsb_union:
-		*buffer++ = gds_info_rsb_union;
+		*buffer++ = isc_info_rsb_union;
 		break;
 
 	case rsb_aggregate:
-		*buffer++ = gds_info_rsb_aggregate;
+		*buffer++ = isc_info_rsb_aggregate;
 		break;
 
 	case rsb_merge:
-		*buffer++ = gds_info_rsb_merge;
+		*buffer++ = isc_info_rsb_merge;
 		break;
 
 	case rsb_ext_sequential:
-		*buffer++ = gds_info_rsb_ext_sequential;
+		*buffer++ = isc_info_rsb_ext_sequential;
 		break;
 
 	case rsb_ext_indexed:
-		*buffer++ = gds_info_rsb_ext_indexed;
+		*buffer++ = isc_info_rsb_ext_indexed;
 		break;
 
 	case rsb_ext_dbkey:
-		*buffer++ = gds_info_rsb_ext_dbkey;
+		*buffer++ = isc_info_rsb_ext_dbkey;
 		break;
 
 	case rsb_left_cross:
-		*buffer++ = gds_info_rsb_left_cross;
+		*buffer++ = isc_info_rsb_left_cross;
 		break;
 
 	default:
-		*buffer++ = gds_info_rsb_unknown;
+		*buffer++ = isc_info_rsb_unknown;
 		break;
 	}
 
@@ -2479,7 +2480,7 @@ static bool dump_rsb(const jrd_req* request,
 		}
 	}
 
-	*buffer++ = gds_info_rsb_end;
+	*buffer++ = isc_info_rsb_end;
 
 	*buffer_ptr = buffer;
 
@@ -2822,7 +2823,7 @@ static void find_best(TDBB tdbb,
 #ifdef OPT_DEBUG
 	// this is used only in development so is not in the message file.
 	if (opt_debug_flag >= DEBUG_PUNT) {
-		ERR_post(gds_random, gds_arg_string, "punt", 0);
+		ERR_post(isc_random, isc_arg_string, "punt", 0);
 	}
 #endif
 	// if a plan was specified, check that this order matches the order
@@ -5832,7 +5833,7 @@ static void mark_indices(csb_repeat * csb_tail, SSHORT relation_id)
 				 arg < end; arg += 3) {
 				if (relation_id != (SSHORT)(SLONG) * arg) {
 					/* index %s cannot be used in the specified plan */
-					ERR_post(gds_index_unused, gds_arg_string, *(arg + 2), 0);
+					ERR_post(isc_index_unused, isc_arg_string, *(arg + 2), 0);
 				}
 				if (idx->idx_id == (USHORT)(ULONG) * (arg + 1)) {
 					if (access_type->nod_type == nod_navigational &&

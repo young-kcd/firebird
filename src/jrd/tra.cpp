@@ -32,7 +32,8 @@
 #include "../jrd/ods.h"
 #include "../jrd/pag.h"
 #include "../jrd/lck.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/jrn.h"
 #include "../jrd/lls.h"
 #include "../jrd/all.h"
@@ -369,7 +370,7 @@ void TRA_commit(TDBB tdbb, JRD_TRA transaction, const bool retaining_flag)
 	}
 
 	if (transaction->tra_flags & TRA_invalidated)
-		ERR_post(gds_trans_invalid, 0);
+		ERR_post(isc_trans_invalid, 0);
 
 	tdbb->tdbb_default = transaction->tra_pool;
 
@@ -931,7 +932,7 @@ void TRA_prepare(TDBB tdbb, JRD_TRA transaction, USHORT length,
 		return;
 
 	if (transaction->tra_flags & TRA_invalidated)
-		ERR_post(gds_trans_invalid, 0);
+		ERR_post(isc_trans_invalid, 0);
 
 /* If there's a transaction description message, log it to RDB$TRANSACTION
    We should only log a message to RDB$TRANSACTION if there is a message
@@ -1036,10 +1037,10 @@ jrd_tra* TRA_reconnect(TDBB tdbb, const UCHAR* id, USHORT length)
 		USHORT flags;
 		gds__msg_lookup(0, JRD_BUGCHK, message, sizeof(text), text, &flags);
 
-		ERR_post(gds_no_recon,
-				 gds_arg_gds, gds_tra_state,
-				 gds_arg_number, number,
-				 gds_arg_string, ERR_cstring(text), 0);
+		ERR_post(isc_no_recon,
+				 isc_arg_gds, isc_tra_state,
+				 isc_arg_number, number,
+				 isc_arg_string, ERR_cstring(text), 0);
 	}
 
 	TRA_link_transaction(tdbb, trans);
@@ -1238,9 +1239,9 @@ void TRA_rollback(TDBB tdbb, JRD_TRA transaction, const bool retaining_flag)
 		catch (const std::exception&) {
 			/* Prevent a bugcheck in TRA_set_state to cause a loop */
 			/* Clear the error because the rollback will succeed. */
-			tdbb->tdbb_status_vector[0] = gds_arg_gds;
+			tdbb->tdbb_status_vector[0] = isc_arg_gds;
 			tdbb->tdbb_status_vector[1] = 0;
-			tdbb->tdbb_status_vector[2] = gds_arg_end;
+			tdbb->tdbb_status_vector[2] = isc_arg_end;
 			TRA_set_state(tdbb, transaction, transaction->tra_number,
 						  tra_dead);
 		}
@@ -1488,7 +1489,7 @@ jrd_tra* TRA_start(TDBB tdbb, int tpb_length, const SCHAR* tpb)
 	window.win_flags = 0;
 
 	if (dbb->dbb_ast_flags & DBB_shut_tran)
-		ERR_post(gds_shutinprog, gds_arg_cstring,
+		ERR_post(isc_shutinprog, isc_arg_cstring,
 				 tdbb->tdbb_attachment->att_filename->str_length,
 				 tdbb->tdbb_attachment->att_filename->str_data,
 				 0);
@@ -1580,7 +1581,7 @@ jrd_tra* TRA_start(TDBB tdbb, int tpb_length, const SCHAR* tpb)
 			CCH_RELEASE(tdbb, &window);
 #endif
 		delete trans;
-		ERR_post(gds_lock_conflict, 0);
+		ERR_post(isc_lock_conflict, 0);
 	}
 
 /* Link the transaction to the attachment block before releasing
@@ -2447,10 +2448,10 @@ static void expand_view_lock(JRD_TRA transaction, JRD_REL relation, SCHAR lock_t
 								reinterpret_cast<const char*>(ctx->vcx_relation_name->str_data));
 		if (!rel)
 		{
-			ERR_post(gds_bad_tpb_content,	/* should be a BUGCHECK */
-					gds_arg_gds,
-					gds_relnotdef,
-					gds_arg_string,
+			ERR_post(isc_bad_tpb_content,	/* should be a BUGCHECK */
+					isc_arg_gds,
+					isc_relnotdef,
+					isc_arg_string,
 					ERR_cstring(reinterpret_cast<char*>(ctx->vcx_relation_name->str_data)),
 					0);
 		}
@@ -2695,7 +2696,7 @@ static void retain_context(TDBB tdbb, JRD_TRA transaction, const bool commit)
 			if (!(dbb->dbb_flags & DBB_read_only))
 				CCH_RELEASE(tdbb, &window);
 #endif
-			ERR_post(gds_lock_conflict, 0);
+			ERR_post(isc_lock_conflict, 0);
 		}
 	}
 
@@ -2862,8 +2863,8 @@ static void THREAD_ROUTINE sweep_database(char* database)
 
 	UCHAR* dpb = sweep_dpb;
 
-	*dpb++ = gds_dpb_version1;
-	*dpb++ = gds_dpb_user_name;
+	*dpb++ = isc_dpb_version1;
+	*dpb++ = isc_dpb_user_name;
 	const char* q = "sweeper";
 	*dpb++ = strlen (q);
 	while (*q)
@@ -2871,7 +2872,7 @@ static void THREAD_ROUTINE sweep_database(char* database)
 		*dpb++ = *q++;
 	}
 
-	*dpb++ = gds_dpb_password;
+	*dpb++ = isc_dpb_password;
 	q = "none";
 	*dpb++ = strlen(q);
 	while (*q)
@@ -2879,9 +2880,9 @@ static void THREAD_ROUTINE sweep_database(char* database)
 		*dpb++ = *q++;
 	}
 
-	*dpb++ = gds_dpb_sweep;
+	*dpb++ = isc_dpb_sweep;
 	*dpb++ = 1;
-	*dpb++ = gds_dpb_records;
+	*dpb++ = isc_dpb_records;
 
 	const SSHORT dpb_length = dpb - sweep_dpb;
 
@@ -2907,7 +2908,7 @@ static void THREAD_ROUTINE sweep_database(char* database)
 	}
 	THREAD_EXIT;
 
-	gds__attach_database(status_vector, 0, database,
+	isc_attach_database(status_vector, 0, database,
 						 &db_handle, dpb_length,
 						 reinterpret_cast<char*>(sweep_dpb));
 
@@ -2916,7 +2917,7 @@ static void THREAD_ROUTINE sweep_database(char* database)
 
 	if (db_handle)
 	{
-		gds__detach_database(status_vector, &db_handle);
+		isc_detach_database(status_vector, &db_handle);
 	}
 
 	gds__free(database);
@@ -2954,67 +2955,67 @@ static void transaction_options(
 	wait = 1;
 	const UCHAR* const end = tpb + tpb_length;
 
-	if (*tpb != gds_tpb_version3 && *tpb != gds_tpb_version1)
-		ERR_post(gds_bad_tpb_form, gds_arg_gds, gds_wrotpbver, 0);
+	if (*tpb != isc_tpb_version3 && *tpb != isc_tpb_version1)
+		ERR_post(isc_bad_tpb_form, isc_arg_gds, isc_wrotpbver, 0);
 
 	++tpb;
 
 	while (tpb < end) {
 		switch (op = *tpb++) {
-		case gds_tpb_consistency:
+		case isc_tpb_consistency:
 			transaction->tra_flags |= TRA_degree3;
 			transaction->tra_flags &= ~TRA_read_committed;
 			break;
 
-		case gds_tpb_concurrency:
+		case isc_tpb_concurrency:
 			transaction->tra_flags &= ~TRA_degree3;
 			transaction->tra_flags &= ~TRA_read_committed;
 			break;
 
-		case gds_tpb_read_committed:
+		case isc_tpb_read_committed:
 			transaction->tra_flags &= ~TRA_degree3;
 			transaction->tra_flags |= TRA_read_committed;
 			break;
 
-		case gds_tpb_shared:
-		case gds_tpb_protected:
-		case gds_tpb_exclusive:
+		case isc_tpb_shared:
+		case isc_tpb_protected:
+		case isc_tpb_exclusive:
 			break;
 
-		case gds_tpb_wait:
+		case isc_tpb_wait:
 			break;
 
-		case gds_tpb_rec_version:
+		case isc_tpb_rec_version:
 			transaction->tra_flags |= TRA_rec_version;
 			break;
 
-		case gds_tpb_no_rec_version:
+		case isc_tpb_no_rec_version:
 			transaction->tra_flags &= ~TRA_rec_version;
 			break;
 
-		case gds_tpb_nowait:
+		case isc_tpb_nowait:
 			wait = 0;
 			transaction->tra_flags |= TRA_nowait;
 			break;
 
-		case gds_tpb_read:
+		case isc_tpb_read:
 			transaction->tra_flags |= TRA_readonly;
 			break;
 
-		case gds_tpb_write:
+		case isc_tpb_write:
 			transaction->tra_flags &= ~TRA_readonly;
 			break;
 
-		case gds_tpb_ignore_limbo:
+		case isc_tpb_ignore_limbo:
 			transaction->tra_flags |= TRA_ignore_limbo;
 			break;
 
-		case gds_tpb_no_auto_undo:
+		case isc_tpb_no_auto_undo:
 			transaction->tra_flags |= TRA_no_auto_undo;
 			break;
 
-		case gds_tpb_lock_write:
-		case gds_tpb_lock_read:
+		case isc_tpb_lock_write:
+		case isc_tpb_lock_read:
 			p = reinterpret_cast < UCHAR * >(name);
 			if ( (l = *tpb++) ) {
 				if (l >= sizeof(name)) {
@@ -3022,8 +3023,8 @@ static void transaction_options(
 					gds__msg_lookup(0, DYN_MSG_FAC, 159, sizeof(text),
 									text, &flags);
 					/* msg 159: Name longer than database column size */
-					ERR_post(gds_bad_tpb_content, gds_arg_gds, gds_random,
-							 gds_arg_string, ERR_cstring(text), 0);
+					ERR_post(isc_bad_tpb_content, isc_arg_gds, isc_random,
+							 isc_arg_string, ERR_cstring(text), 0);
 				}
 				do {
 					*p++ = *tpb++;
@@ -3031,19 +3032,19 @@ static void transaction_options(
 			}
 			*p = 0;
 			if (!(relation = MET_lookup_relation(tdbb, name)))
-				ERR_post(gds_bad_tpb_content,
-						 gds_arg_gds, gds_relnotdef, gds_arg_string,
+				ERR_post(isc_bad_tpb_content,
+						 isc_arg_gds, isc_relnotdef, isc_arg_string,
 						 ERR_cstring(name), 0);
 
 			/* force a scan to read view information */
 			MET_scan_relation(tdbb, relation);
 
-			lock_type = (op == gds_tpb_lock_read) ? LCK_none : LCK_SW;
+			lock_type = (op == isc_tpb_lock_read) ? LCK_none : LCK_SW;
 			if (tpb < end) {
-				if (*tpb == gds_tpb_shared)
+				if (*tpb == isc_tpb_shared)
 					tpb++;
-				else if (*tpb == gds_tpb_protected
-						 || *tpb == gds_tpb_exclusive) {
+				else if (*tpb == isc_tpb_protected
+						 || *tpb == isc_tpb_exclusive) {
 					tpb++;
 					lock_type = (lock_type == LCK_SW) ? LCK_EX : LCK_PR;
 				}
@@ -3052,22 +3053,22 @@ static void transaction_options(
 			expand_view_lock(transaction, relation, lock_type);
 			break;
 
-		case gds_tpb_verb_time:
-		case gds_tpb_commit_time:
+		case isc_tpb_verb_time:
+		case isc_tpb_commit_time:
 			l = *tpb++;
 			tpb += l;
 			break;
 
-		case gds_tpb_autocommit:
+		case isc_tpb_autocommit:
 			transaction->tra_flags |= TRA_autocommit;
 			break;
 
-		case gds_tpb_restart_requests:
+		case isc_tpb_restart_requests:
 			transaction->tra_flags |= TRA_restart_requests;
 			break;
 
 		default:
-			ERR_post(gds_bad_tpb_form, 0);
+			ERR_post(isc_bad_tpb_form, 0);
 		}
 	}
 
@@ -3097,9 +3098,9 @@ static void transaction_options(
 			}
 		id = 0;
 		if (!wait)
-			ERR_post(gds_lock_conflict, 0);
+			ERR_post(isc_lock_conflict, 0);
 		else
-			ERR_post(gds_deadlock, 0);
+			ERR_post(isc_deadlock, 0);
 	}
 }
 
@@ -3142,8 +3143,8 @@ static BOOLEAN vms_convert(LCK lock, SLONG * data, SCHAR type, BOOLEAN wait)
 		return FALSE;
 
 	if (!(status & 1) || !((status = lksb.lksb_status) & 1))
-		ERR_post(gds__sys_request, gds_arg_string,
-				 "sys$enqw (commit retaining lock)", gds_arg_vms, status, 0);
+		ERR_post(isc_sys_request, isc_arg_string,
+				 "sys$enqw (commit retaining lock)", isc_arg_vms, status, 0);
 
 	if (data && type >= lock->lck_physical)
 		*data = lksb.lksb_value[0];

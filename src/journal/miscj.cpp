@@ -40,7 +40,8 @@
 #endif
 
 #include "../jrd/ods.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/license.h"
 #include "../journal/journal.h"
 
@@ -270,7 +271,7 @@ void MISC_get_wal_info(LTJC * msg,
 
 	for (p = msg->ltjc_data; p[0] != JRNW_END; p += 2 + p[1]) {
 		switch (*p) {
-		case gds_dpb_wal_backup_dir:
+		case isc_dpb_wal_backup_dir:
 			b = dir_name;
 			q = &p[2];
 			l = p[1];
@@ -425,7 +426,7 @@ int MISC_time_convert(const TEXT* string,
 						return FB_SUCCESS;
 					}
 					times2.tm_hour = times2.tm_min = times2.tm_sec = 0;
-					gds__encode_date(&times2, (GDS_QUAD_t*) date);
+					isc_encode_date(&times2, (GDS_QUAD_t*) date);
 					if (strcmp(temp, TODAY) == 0)
 						return FB_SUCCESS;
 					if (strcmp(temp, TOMORROW) == 0) {
@@ -499,8 +500,8 @@ int MISC_time_convert(const TEXT* string,
 
 // convert day/month/year to Julian and validate result
 
-	gds__encode_date(&times, (GDS_QUAD_t*) date);
-	gds__decode_date((GDS_QUAD_t*)date, &times2);
+	isc_encode_date(&times, (GDS_QUAD_t*) date);
+	isc_decode_date((GDS_QUAD_t*)date, &times2);
 
 	if (times.tm_year != times2.tm_year ||
 		times.tm_mon != times2.tm_mon || times.tm_mday != times2.tm_mday)
@@ -528,5 +529,5 @@ static void now_to_date(const tm* xtime,
  *
  **************************************/
 
-	gds__encode_date(xtime, (GDS_QUAD_t*) date);
+	isc_encode_date(xtime, (GDS_QUAD_t*) date);
 }

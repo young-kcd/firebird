@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.25 2003-10-29 10:53:11 robocop Exp $
+ * $Id: show.epp,v 1.26 2003-11-08 16:32:06 brodsom Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -42,7 +42,8 @@
 #include <string.h>
 
 #include "../jrd/common.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../dsql/dsql.h"
 #include "../isql/isql.h"
 #include "../jrd/license.h"

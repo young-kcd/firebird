@@ -38,7 +38,8 @@
 #include "../jrd/scl.h"
 #include "../jrd/drq.h"
 #include "../jrd/flags.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/lls.h"
 #include "../jrd/all.h"
 #include "../jrd/met.h"
@@ -96,7 +97,7 @@ void DYN_delete_constraint( GBL gbl, const UCHAR** ptr, const TEXT* relation)
 
 	if (relation)
 		strcpy(rel_name, relation);
-	else if (*(*ptr)++ != gds_dyn_rel_name) {
+	else if (*(*ptr)++ != isc_dyn_rel_name) {
 		DYN_error_punt(false, 128, NULL, NULL, NULL, NULL, NULL);
 		/* msg 128: "No relation specified in delete_constraint" */
 	}
@@ -136,7 +137,7 @@ void DYN_delete_dimensions(
 
 	delete_dimension_records(gbl, f);
 
-	while (*(*ptr)++ != gds_dyn_end) {
+	while (*(*ptr)++ != isc_dyn_end) {
 		--(*ptr);
 		DYN_execute(gbl, ptr, NULL, f, NULL, NULL, NULL);
 	}
@@ -245,7 +246,7 @@ void DYN_delete_filter( GBL gbl, const UCHAR** ptr)
 		/* msg 37: "Blob Filter not found" */
 	}
 
-	if (*(*ptr)++ != gds_dyn_end) {
+	if (*(*ptr)++ != isc_dyn_end) {
 		DYN_unsupported_verb();
 	}
 }
@@ -323,7 +324,7 @@ void DYN_delete_function( GBL gbl, const UCHAR** ptr)
 		/* msg 41: "Function not found" */
 	}
 
-	if (*(*ptr)++ != gds_dyn_end) {
+	if (*(*ptr)++ != isc_dyn_end) {
 		DYN_unsupported_verb();
 	}
 }
@@ -465,7 +466,7 @@ void DYN_delete_global_field( GBL gbl, const UCHAR** ptr)
 		/* msg 46: "Field not found" */
 	}
 
-	while (*(*ptr)++ != gds_dyn_end) {
+	while (*(*ptr)++ != isc_dyn_end) {
 		--(*ptr);
 		DYN_execute(gbl, ptr, NULL, f, NULL, NULL, NULL);
 	}
@@ -529,7 +530,7 @@ void DYN_delete_index( GBL gbl, const UCHAR** ptr)
 		/* msg 50: "No segments found for index" */
 	}
 
-	while (*(*ptr)++ != gds_dyn_end) {
+	while (*(*ptr)++ != isc_dyn_end) {
 		--(*ptr);
 		DYN_execute(gbl, ptr, rel_name, NULL, NULL, NULL, NULL);
 	}
@@ -586,7 +587,7 @@ void DYN_delete_local_field(
 
 	if (relation_name)
 		strcpy(tbl_nm, relation_name);
-	else if (*(*ptr)++ != gds_dyn_rel_name) {
+	else if (*(*ptr)++ != isc_dyn_rel_name) {
 		DYN_error_punt(false, 51, NULL, NULL, NULL, NULL, NULL);
 		/* msg 51: "No relation specified in ERASE RFR" */
 	}
@@ -748,7 +749,7 @@ void DYN_delete_local_field(
 		ERASE RFR;
 		found = true;
 		delete_gfield_for_lfield(gbl, RFR.RDB$FIELD_SOURCE);
-		while (*(*ptr)++ != gds_dyn_end) {
+		while (*(*ptr)++ != isc_dyn_end) {
 			--(*ptr);
 			DYN_execute(gbl, ptr, RFR.RDB$RELATION_NAME,
 						RFR.RDB$FIELD_SOURCE, NULL, NULL, NULL);
@@ -796,7 +797,7 @@ void DYN_delete_parameter( GBL gbl, const UCHAR** ptr, TEXT* proc_name)
 	SqlIdentifier name;
 
 	GET_STRING(ptr, name);
-	if (**ptr == gds_dyn_prc_name) {
+	if (**ptr == isc_dyn_prc_name) {
 		DYN_get_string(reinterpret_cast<const TEXT**>(++ptr), proc_name,
 			MAX_SQL_IDENTIFIER_SIZE, true);
 	}
@@ -868,7 +869,7 @@ void DYN_delete_parameter( GBL gbl, const UCHAR** ptr, TEXT* proc_name)
 		/* msg 146: "Parameter %s in procedure %s not found" */
 	}
 
-	if (*(*ptr)++ != gds_dyn_end) {
+	if (*(*ptr)++ != isc_dyn_end) {
 		DYN_unsupported_verb();
 	}
 }
@@ -1020,7 +1021,7 @@ void DYN_delete_procedure( GBL gbl, const UCHAR** ptr)
 		}
 	}
 
-	if (*(*ptr)++ != gds_dyn_end) {
+	if (*(*ptr)++ != isc_dyn_end) {
 		DYN_unsupported_verb();
 	}
 
@@ -1258,7 +1259,7 @@ void DYN_delete_relation( GBL gbl, const UCHAR** ptr, const TEXT* relation)
 		DYN_error_punt(true, number, NULL, NULL, NULL, NULL, NULL);
 	}
 
-	while (*(*ptr)++ != gds_dyn_end)
+	while (*(*ptr)++ != isc_dyn_end)
 	{
 		--(*ptr);
 		DYN_execute(gbl, ptr, relation_name, NULL, NULL, NULL, NULL);
@@ -1422,7 +1423,7 @@ void DYN_delete_security_class( GBL gbl, const UCHAR** ptr)
 		DYN_error_punt(false, 75, NULL, NULL, NULL, NULL, NULL);
 	/* msg 75: "Security class not found" */
 
-	while (*(*ptr)++ != gds_dyn_end) {
+	while (*(*ptr)++ != isc_dyn_end) {
 		--(*ptr);
 		DYN_execute(gbl, ptr, NULL, NULL, NULL, NULL, NULL);
 	}
@@ -1495,7 +1496,7 @@ while (files)
     }
 ****/
 
-	if (*(*ptr)++ != gds_dyn_end) {
+	if (*(*ptr)++ != isc_dyn_end) {
 		DYN_unsupported_verb();
 	}
 }
@@ -1625,7 +1626,7 @@ void DYN_delete_trigger( GBL gbl, const UCHAR** ptr)
 		}
 	}
 
-	if (*(*ptr)++ != gds_dyn_end) {
+	if (*(*ptr)++ != isc_dyn_end) {
 		DYN_unsupported_verb();
 	}
 
@@ -1659,7 +1660,7 @@ void DYN_delete_trigger_msg( GBL gbl, const UCHAR** ptr, TEXT* trigger_name)
 	number = DYN_get_number(ptr);
 	if (trigger_name)
 		strcpy(t, trigger_name);
-	else if (*(*ptr)++ == gds_dyn_trg_name)
+	else if (*(*ptr)++ == isc_dyn_trg_name)
 		GET_STRING(ptr, t);
 	else
 		DYN_error_punt(false, 70, NULL, NULL, NULL, NULL, NULL);
@@ -1699,7 +1700,7 @@ void DYN_delete_trigger_msg( GBL gbl, const UCHAR** ptr, TEXT* trigger_name)
 		/* msg 72: "Trigger Message not found" */
 	}
 
-	if (*(*ptr)++ != gds_dyn_end) {
+	if (*(*ptr)++ != isc_dyn_end) {
 		DYN_unsupported_verb();
 	}
 }

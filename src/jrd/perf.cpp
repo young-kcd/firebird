@@ -32,7 +32,8 @@
 #include <limits.h>
 #include "../jrd/jrd_time.h"
 #include "../jrd/common.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/perf.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/perf_proto.h"

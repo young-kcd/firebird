@@ -31,7 +31,8 @@
 #include <stdlib.h>
 #include "../qli/dtr.h"
 #include "../qli/parse.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../qli/all_proto.h"
 #include "../qli/err_proto.h"
 #include "../qli/hsh_proto.h"
@@ -764,8 +765,8 @@ void LEX_put_procedure( FRBRD *blob, SLONG start, SLONG stop)
 		}
 		const SSHORT l = p - buffer;
 		if (l)
-			if (gds__put_segment(status_vector, &blob, l, buffer))
-				BUGCHECK(58);	// Msg 58 gds__put_segment failed
+			if (isc_put_segment(status_vector, &blob, l, buffer))
+				BUGCHECK(58);	// Msg 58 isc_put_segment failed
 	}
 
 	ib_fseek(trace_file, (SLONG) 0, 2);

@@ -31,7 +31,8 @@
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <string.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/common.h"
 #include "../jrd/msg.h"
 #include "../jrd/gds_proto.h"

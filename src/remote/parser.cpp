@@ -21,14 +21,15 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: parser.cpp,v 1.12 2003-11-07 08:06:31 robocop Exp $
+$Id: parser.cpp,v 1.13 2003-11-08 16:30:20 brodsom Exp $
 */
 
 #include "firebird.h"
 #include <string.h>
 #include <stdlib.h>
 #include "../jrd/ib_stdio.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../remote/remote.h"
 #include "../jrd/align.h"
 #include "../jrd/gdsassert.h"
