@@ -39,7 +39,7 @@
 // The simpliest way to check it is to issue
 // "select abs(2.0/3.0) from rdb$database" from correct client
 // It will return big strange value in case of invalid define
-#if defined(i386) || defined(I386) || defined(_M_IX86)
+#if defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64)
 #define		SWAP_DOUBLE
 #elif defined(sparc) || defined(PowerPC)
 #undef		SWAP_DOUBLE
@@ -753,10 +753,10 @@ bool_t xdr_u_long(XDR * xdrs, u_long * ip)
 	switch (xdrs->x_op)
 	{
 	case XDR_ENCODE:
-		return PUTLONG(xdrs, reinterpret_cast < long *>(ip));
+		return PUTLONG(xdrs, reinterpret_cast<SLONG*>(ip));
 
 	case XDR_DECODE:
-		if (!GETLONG(xdrs, reinterpret_cast < long *>(ip)))
+		if (!GETLONG(xdrs, reinterpret_cast<SLONG*>(ip)))
 			  return FALSE;
 		return TRUE;
 

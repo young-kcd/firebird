@@ -132,6 +132,7 @@ static bool find_type(SLONG, WIN*, PAG*, USHORT, USHORT, UCHAR**,
 	   21             FreeBSD/i386
 	   22             NetBSD/i386
        23		Darwin/PowerPC
+       24		LINUX on AMD64 systems
 
 */
 
@@ -189,6 +190,10 @@ static bool find_type(SLONG, WIN*, PAG*, USHORT, USHORT, UCHAR**,
 
 #ifdef DARWIN
 #define CLASS		23
+#endif
+
+#if defined LINUX && defined AMD64
+#define CLASS 		24
 #endif
 
 

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.63 2003-12-27 22:03:27 skidder Exp $
+$Id: ibase.h,v 1.64 2004-01-12 06:58:26 skidder Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -1576,6 +1576,7 @@ enum  info_db_implementations
 	isc_info_db_impl_sinixz = 64,
 
 	isc_info_db_impl_linux_sparc = 65,
+	isc_info_db_impl_linux_amd64 = 66,
 
 	isc_info_db_impl_last_value   /* Leave this LAST! */
     };

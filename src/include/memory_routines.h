@@ -42,7 +42,7 @@ inline SSHORT get_short(const SCHAR* p)
  *
  **************************************/
 
-#if defined(i386) || defined(I386) || defined(_M_IX86) || defined(VMS)
+#if defined(i386) || defined(I386) || defined(_M_IX86) || defined(VMS) || defined(AMD64)
 	// For IA32 (little-endian) this optimization is a _very_ large speed-up!
 	// According to CTO32L definition in common.h this trick works for VAX/VMS
 	return *reinterpret_cast<const SSHORT*>(p);
@@ -76,7 +76,7 @@ inline SLONG get_long(const SCHAR* p)
  *
  **************************************/
 
-#if defined(i386) || defined(I386) || defined(_M_IX86) || defined(VMS)
+#if defined(i386) || defined(I386) || defined(_M_IX86) || defined(VMS) || defined(AMD64)
 	// For IA32 (little-endian) this optimization is a _very_ large speed-up!
 	return *reinterpret_cast<const SLONG*>(p);
 #else
@@ -112,7 +112,7 @@ inline SLONG get_long(const UCHAR* p)
  *
  **************************************/
 
-#if defined(i386) || defined(I386) || defined(_M_IX86) || defined(VMS)
+#if defined(i386) || defined(I386) || defined(_M_IX86) || defined(VMS) || defined(AMD64)
 	// For IA32 (little-endian) this optimization is a _very_ large speed-up!
 	return *reinterpret_cast<const SLONG*>(p);
 #else
@@ -141,7 +141,7 @@ inline SSHORT gather_short(const SCHAR*& p)
  *
  **************************************/
 
-#if defined(i386) || defined(I386) || defined(_M_IX86) || defined(VMS)
+#if defined(i386) || defined(I386) || defined(_M_IX86) || defined(VMS) || defined(AMD64)
 	// For IA32 (little-endian) this optimization is a _very_ large speed-up!
 	const SSHORT value = *reinterpret_cast<const SSHORT*>(p);
 	p += 2;
@@ -177,7 +177,7 @@ inline SLONG gather_long(const SCHAR*& p)
  *
  **************************************/
 
-#if defined(i386) || defined(I386) || defined(_M_IX86) || defined(VMS)
+#if defined(i386) || defined(I386) || defined(_M_IX86) || defined(VMS) || defined(AMD64)
 	// For IA32 (little-endian) this optimization is a _very_ large speed-up!
 	const SLONG value = *reinterpret_cast<const SLONG*>(p);
 	p += 4;

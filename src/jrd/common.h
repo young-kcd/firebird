@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.96 2004-01-06 10:27:52 robocop Exp $
+$Id: common.h,v 1.97 2004-01-12 06:58:26 skidder Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -116,6 +116,10 @@ $Id: common.h,v 1.96 2004-01-06 10:27:52 robocop Exp $
 #define VA_START(list,parmN)    va_start (list, parmN)
 #define UNIX    1
 #define IEEE    1
+
+#ifdef AMD64
+#define IMPLEMENTATION  isc_info_db_impl_linux_amd64 /* 66  next higher unique number, See you later  */
+#endif
 
 #ifdef i386
 #define I386    1

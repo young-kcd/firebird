@@ -2607,7 +2607,7 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 									   reinterpret_cast<BID>(array_id),
 									   sdl,
 									   param_length,
-									   reinterpret_cast<const long*>(param),
+									   reinterpret_cast<const SLONG*>(param),
 									   slice_length, slice);
 	}
 	catch (const std::exception&)
@@ -2802,7 +2802,7 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS* user_status,
 				  reinterpret_cast<BID>(array_id),
 				  sdl,
 				  param_length,
-				  reinterpret_cast<const long*>(param), slice_length, slice);
+				  reinterpret_cast<const SLONG*>(param), slice_length, slice);
 	}
 	catch (const std::exception&)
 	{

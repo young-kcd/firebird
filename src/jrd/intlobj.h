@@ -35,10 +35,9 @@ typedef char CHAR;
 typedef char SCHAR;
 typedef unsigned char BYTE;
 
-#pragma FB_COMPILER_MESSAGE("64-bit readiness problem!")
-typedef unsigned long ULONG;
-typedef long LONG;
-typedef signed long SLONG;
+typedef unsigned int ULONG;
+typedef int LONG;
+typedef signed int SLONG;
 #endif
 
 typedef SSHORT(*FPTR_short) ();
