@@ -2,6 +2,52 @@
   * v1.5 RC 6
   **************
 
+    * Fixed unregistered bug.
+        Fixed minor inconsistencies in charsets naming.
+      Contributor(s):
+        Peter Jacobi <pj at walter-graphtek.com>
+
+    * Fixed unregistered bug.
+        GSTAT crash in some switch combinations.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Fixed broken savepoint handling in BREAK/LEAVE/EXIT.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed optimizer.
+        1) Prefer single indices instead of composite ones.
+        2) Prefer full-match unique indices.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixes and enhancements to win32 instreg / instsvc install tools.
+        See their help output for details.
+      Contributor(s):
+        Oliver Mascia <om at tipgroup.com>
+
+    * Fixed unregistered bug.
+        Improved OCTETS output in ISQL.
+      Contributor(s):
+        Peter Jacobi <pj at walter-graphtek.com>
+
+    * Fixed RC5 bug.
+        Fixed BREAK/LEAVE incompatibility with FOR EXECUTE STATEMENT loops.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC5 bug.
+        Bug with expressions without fields inside aggregate-functions.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed RC5 bug.
+        EXECUTE STATEMENT returning BLOB datatype.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
     * Fixed RC5 bug.
         Various issues with server-side database aliases. In particular, restore support for relative paths in local connection strings
       Contributor(s):
@@ -13,7 +59,7 @@
         Arno Brinkman <firebird at abvisie.nl>
 
     * Fixed RC5 bug.
-        CASE/COALESCE expressions have invalid datatype when used with integer arguments
+        Make COALESCE/CASE output descriptor more SQL-standard.
       Contributor(s):
         Arno Brinkman <firebird at abvisie.nl>
 
