@@ -40,11 +40,10 @@
 
 const int ERROR_BUFFER_LENGTH	= 1024;
 
-struct thread {
+typedef struct thread {
 	struct thread *thread_next;
 	HANDLE thread_handle;
-};
-typedef thread* THREAD;
+} *THREAD;
 
 static void WINAPI control_thread(DWORD);
 static THREAD_ENTRY_DECLARE cleanup_thread(THREAD_ENTRY_PARAM);
