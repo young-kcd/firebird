@@ -36,7 +36,6 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.16 2004-12-07 00:43:36 robocop Exp $ */
 
 #include "firebird.h"
 #include "../jrd/common.h"
