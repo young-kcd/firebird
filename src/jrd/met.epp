@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.36 2002-11-16 20:20:44 skidder Exp $
+$Id: met.epp,v 1.37 2002-11-16 20:59:41 skidder Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -2018,8 +2018,9 @@ PRC MET_lookup_procedure(TDBB tdbb, SCHAR * name, BOOLEAN noscan)
 				&& ((procedure->prc_flags & PRC_scanned) || noscan)
 				&& !(procedure->prc_flags & PRC_being_scanned)
 				&& !(procedure->prc_flags & PRC_being_altered)
-			    && (p = (SCHAR*)procedure->prc_name->str_data))
+				&& procedure->prc_name
 			{
+				p = (SCHAR*)procedure->prc_name->str_data;
 				for (q = name; *p == *q; p++, q++)
 				{
 					if (*p == 0)
