@@ -133,7 +133,7 @@ static bool_t xnet_mutex_ready = FALSE;
 
 #ifdef SUPERCLIENT
 static bool_t xnet_connect_init();
-#endif
+#endif // SUPERCLIENT
 static void xnet_connect_fini();
 static void xnet_release_all(void);
 
@@ -777,7 +777,7 @@ static bool_t xnet_connect_init()
 	}
 
 }
-#endif
+#endif // SUPERCLIENT
 
 static void xnet_connect_fini()
 {
@@ -1400,7 +1400,7 @@ static void exit_handler(rem_port* main_port)
 	}
 }
 
-
+#ifndef SUPERCLIENT
 static bool_t xnet_make_map(ULONG map_number, time_t timestamp,
 							FILE_ID* map_handle, CADDR_T* map_address)
 {
@@ -1435,7 +1435,6 @@ static bool_t xnet_make_map(ULONG map_number, time_t timestamp,
 
 	return TRUE;
 }
-
 
 static XPM xnet_make_xpm(ULONG map_number, time_t timestamp)
 {
@@ -1476,7 +1475,7 @@ static XPM xnet_make_xpm(ULONG map_number, time_t timestamp)
 
 	return xpm;
 }
-
+#endif
 
 static rem_port* receive( rem_port* main_port, PACKET * packet)
 {
