@@ -1029,7 +1029,7 @@ inline void CHECK_DBB(const Jrd::Database* dbb) {
 inline Jrd::thread_db* JRD_get_thread_data() {
 	return (Jrd::thread_db*) THD_get_specific();
 }
-inline void CHECK_DBB(const Database* dbb) {
+inline void CHECK_DBB(const Jrd::Database* dbb) {
 }
 inline void CHECK_TDBB(const Jrd::thread_db* tdbb) {
 }
@@ -1103,7 +1103,7 @@ inline static void JRD_set_thread_data(Jrd::thread_db* &tdbb, Jrd::thread_db& th
 	tdbb->tdbb_thd_data.thdd_type = THDD_TYPE_TDBB;
 }
 
-inline void JRD_restore_thread_data(){
+inline void JRD_restore_thread_data() {
 	THD_restore_specific();
 }
 
