@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.43 2003-03-03 19:10:23 dimitr Exp $
+ * $Id: ddl.cpp,v 1.44 2003-03-15 08:14:54 dimitr Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -374,6 +374,7 @@ bool DDL_ids(const dsql_req* request)
 	switch (ddl_node->nod_type)
 	{
 		case nod_def_view:
+		case nod_redef_view:
 		case nod_mod_view:
 		case nod_replace_view:
 		case nod_def_constraint:
@@ -2153,7 +2154,7 @@ static DSQL_NOD define_insert_action( DSQL_REQ request)
 
 /* check whether this is an updatable view definition */
 
-	if (ddl_node->nod_type != nod_def_view ||
+	if ((ddl_node->nod_type != nod_def_view && ddl_node->nod_type != nod_redef_view) ||
 		!(select_node = ddl_node->nod_arg[e_view_select]) ||
 		/*
 		   Handle VIEWS with UNION : nod_select now points to nod_list
@@ -3098,7 +3099,7 @@ static void define_update_action(
 
 /* check whether this is an updatable view definition */
 
-	if (ddl_node->nod_type != nod_def_view ||
+	if ((ddl_node->nod_type != nod_def_view && ddl_node->nod_type != nod_redef_view) ||
 		!(select_node = ddl_node->nod_arg[e_view_select]) ||
 		/*
 		   Handle VIEWS with UNION : nod_select now points to nod_list
@@ -3551,7 +3552,6 @@ static void define_view( DSQL_REQ request, NOD_TYPE op)
 					  /* No where clause for VIEW WITH CHECK OPTION */
 					  0);
 		}
-
 
 		if (select_expr->nod_arg[e_sel_distinct] ||
 			select_expr->nod_arg[e_sel_group] ||
