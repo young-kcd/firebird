@@ -232,8 +232,7 @@ Name: {group}\Firebird 1.5 Release Notes; Filename: {app}\doc\Firebird_v1.5.Rele
 Name: {group}\Firebird 1.5 Quick Start Guide; Filename: {app}\doc\Firebird-1.5-QuickStart.pdf; MinVersion: 4.0,4.0; Components: DevAdminComponent; Comment: {#App_Name} Quick Start Guide (in English)
 ;Always install the original english version of the readme
 Name: {group}\Firebird 1.5.2 Readme; Filename: {app}\readme.txt; MinVersion: 4.0,4.0; Components: DevAdminComponent;
-
-;Translated files
+;And install translated readme.txt if non-default language is chosen.
 Name: {group}\{cm:IconReadme}; Filename: {app}\{cm:ReadMeFile}; MinVersion: 4.0,4.0; Components: DevAdminComponent; Check: NonDefaultLanguage;
 Name: {group}\{cm:IconUninstall}; Filename: {uninstallexe}; Comment: Uninstall Firebird
 
