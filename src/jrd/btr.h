@@ -142,7 +142,8 @@ struct index_insertion {
 
 /* these flags are for the key_flags */
 
-const int key_empty	= 1;	/* Key contains empty data / empty string */
+const int key_empty		= 1;	/* Key contains empty data / empty string */
+const int key_all_nulls	= 2;	/* All key fields are nulls */
 
 /* Temporary key block */
 

@@ -861,7 +861,7 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 
 	IDX_E result = idx_e_ok;
 	index_desc::idx_repeat* tail = idx->idx_rpt;
-	key->key_flags = 0;
+	key->key_flags = key_all_nulls;
 
 	try {
 
@@ -919,6 +919,9 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 			}
 
 			key->key_flags |= key_empty;
+			if (!isNull) {
+				key->key_flags &= ~key_all_nulls;
+			}
 			compress(tdbb, desc_ptr, key, tail->idx_itype, isNull,
 				(idx->idx_flags & idx_descending), false);
 		}
@@ -939,6 +942,10 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 					!EVL_field(relation, record, tail->idx_field, desc_ptr);
 				if (isNull && (idx->idx_flags & idx_unique)) {
 					missing_unique_segments++;
+				}
+
+				if (!isNull) {
+					key->key_flags &= ~key_all_nulls;
 				}
 
 				compress(tdbb, desc_ptr, &temp, tail->idx_itype, isNull,
@@ -1250,7 +1257,7 @@ void BTR_make_key(thread_db* tdbb,
 	fb_assert(exprs != NULL);
 	fb_assert(key != NULL);
 
-	key->key_flags = 0;
+	key->key_flags = key_all_nulls;
 
 	index_desc::idx_repeat* tail = idx->idx_rpt;
 
@@ -1260,6 +1267,9 @@ void BTR_make_key(thread_db* tdbb,
 		bool isNull;
 		const dsc* desc = eval(tdbb, *exprs, &temp_desc, &isNull);
 		key->key_flags |= key_empty;
+		if (!isNull) {
+			key->key_flags &= ~key_all_nulls;
+		}
 		compress(tdbb, desc, key, tail->idx_itype, isNull,
 			(idx->idx_flags & idx_descending), fuzzy);
 		if (fuzzy & (key->key_flags & key_empty)) {
@@ -1277,6 +1287,9 @@ void BTR_make_key(thread_db* tdbb,
 			}
 			bool isNull;
 			const dsc* desc = eval(tdbb, *exprs++, &temp_desc, &isNull);
+			if (!isNull) {
+				key->key_flags &= ~key_all_nulls;
+			}
 			compress(tdbb, desc, &temp, tail->idx_itype, isNull,
 				(idx->idx_flags & idx_descending),
 				((n == count - 1) ? fuzzy : false));
@@ -5084,6 +5097,7 @@ static SLONG insert_node(thread_db* tdbb,
 	temporary_key* key = insertion->iib_key;
 
 	const bool unique = (insertion->iib_descriptor->idx_flags & idx_unique);
+	const bool primary = (insertion->iib_descriptor->idx_flags & idx_primary);
 	const bool leafPage = (bucket->btr_level == 0);
 	const bool allRecordNumber = (flags & btr_all_record_number);
 	USHORT prefix = 0;
@@ -5151,8 +5165,10 @@ static SLONG insert_node(thread_db* tdbb,
 			if (beforeInsertNode.isEndLevel) {
 				break;
 			}
-			if (leafPage && unique) {
+			if (leafPage && unique && 
+				(!(key->key_flags & key_all_nulls) || primary)) {
 				// Save the duplicate so the main caller can validate them.
+				// hvlad: don't check unique index if key has only null values
 				RBM_SET(tdbb->getDefaultPool(), &insertion->iib_duplicates, 
 					beforeInsertNode.recordNumber.getValue());
 			}
