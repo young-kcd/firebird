@@ -121,7 +121,7 @@ static void find_used_streams(const RecordSource*, UCHAR*);
 static void form_rivers(thread_db*, OptimizerBlk*, UCHAR*, RiverStack&, jrd_nod**, jrd_nod**, jrd_nod*);
 static bool form_river(thread_db*, OptimizerBlk*, USHORT, UCHAR *, UCHAR *, RiverStack&, jrd_nod**,
 						  jrd_nod**, jrd_nod*);
-static RecordSource* gen_aggregate(thread_db*, OptimizerBlk*, jrd_nod*);
+static RecordSource* gen_aggregate(thread_db*, OptimizerBlk*, jrd_nod*, NodeStack*, UCHAR);
 static RecordSource* gen_boolean(thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*);
 static RecordSource* gen_first(thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*);
 static void gen_join(thread_db*, OptimizerBlk*, UCHAR*, RiverStack&, jrd_nod**, jrd_nod**, jrd_nod*);
@@ -435,7 +435,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		case nod_aggregate:
 			fb_assert((int) (IPTR)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
 			fb_assert((int) (IPTR)node->nod_arg[e_agg_stream] <= MAX_UCHAR);
-			rsb = gen_aggregate(tdbb, opt, node);
+			rsb = gen_aggregate(tdbb, opt, node, &conjunct_stack, stream);
 			fb_assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
 			local_streams[++local_streams[0]] =
 				(UCHAR)(IPTR) node->nod_arg[e_agg_stream];
@@ -4021,7 +4021,8 @@ static bool form_river(thread_db*		tdbb,
 
 
 
-static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* node)
+static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* node, 
+									NodeStack* parent_stack, UCHAR shellStream)
 {
 /**************************************
  *
@@ -4040,6 +4041,92 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 	CompilerScratch* csb = opt->opt_csb;
 	RecordSelExpr* rse = (RecordSelExpr*) node->nod_arg[e_agg_rse];
 	rse->rse_sorted = node->nod_arg[e_agg_group];
+	jrd_nod* map = node->nod_arg[e_agg_map];
+
+	/* 
+	AB: Try to distribute items from the HAVING CLAUSE to the WHERE CLAUSE.
+	Zip thru stack of booleans looking for fields that belong to shellStream.
+	Those fields are mappings. Mappings that hold a plain field may be used 
+	to distribute. Handle the simple cases only.
+	*/
+	NodeStack deliverStack;
+	for (NodeStack::iterator stack1(*parent_stack); stack1.hasData(); ++stack1) {
+		jrd_nod* boolean = stack1.object();
+
+		// Reduce to simple comparisons
+		if (!((boolean->nod_type == nod_eql) ||
+			(boolean->nod_type == nod_gtr) ||
+			(boolean->nod_type == nod_geq) ||
+			(boolean->nod_type == nod_leq) ||
+			(boolean->nod_type == nod_lss) ||
+			(boolean->nod_type == nod_starts) ||
+			(boolean->nod_type == nod_missing))) 
+		{
+			continue;
+		}
+
+		// At least 1 mapping should be used in the arguments
+		int indexArg;
+		bool mappingFound = false;
+		for (indexArg = 0; (indexArg < boolean->nod_count) && !mappingFound; indexArg++) {
+			jrd_nod* booleanNode = boolean->nod_arg[indexArg];
+			if ((booleanNode->nod_type == nod_field) && 
+				((USHORT)(IPTR) booleanNode->nod_arg[e_fld_stream] == shellStream)) 
+			{
+				mappingFound = true;
+			}
+		}
+		if (!mappingFound) {
+			continue;
+		}
+
+		// Create new node and assign the correct existing arguments
+		jrd_nod* deliverNode = PAR_make_node(tdbb, boolean->nod_count);
+		deliverNode->nod_count = boolean->nod_count;
+		deliverNode->nod_type = boolean->nod_type;
+		deliverNode->nod_flags = boolean->nod_flags;
+		bool wrongNode = false;
+		for (indexArg = 0; (indexArg < boolean->nod_count) && (!wrongNode); indexArg++) {
+			jrd_nod* booleanNode = boolean->nod_arg[indexArg];
+			// Check if node is a mapping and if so unmap it.
+			if ((booleanNode->nod_type == nod_field) && 
+				((USHORT)(IPTR) booleanNode->nod_arg[e_fld_stream] == shellStream)) 
+			{
+				USHORT fieldId = (USHORT)(IPTR) booleanNode->nod_arg[e_fld_id];
+				if (fieldId >= map->nod_count) {
+					wrongNode = true;
+				}
+				booleanNode = map->nod_arg[fieldId]->nod_arg[e_asgn_from];
+			}
+			// Only allow simple expressions. This can be expanded by checking
+			// complete expression if it doesn't hide any aggregate-function.
+			switch (booleanNode->nod_type) {
+				case nod_argument:
+				case nod_current_date:
+				case nod_current_role:
+				case nod_current_time:
+				case nod_current_timestamp:
+				case nod_field:
+				case nod_gen_id:
+				case nod_gen_id2:
+				case nod_internal_info:
+				case nod_literal:
+				case nod_null:
+				case nod_user_name:
+				case nod_variable:
+					deliverNode->nod_arg[indexArg] = booleanNode;
+					break;
+				default:
+					wrongNode = true;
+			}
+		}
+		if (wrongNode) {
+			delete deliverNode;
+		}
+		else {			
+			deliverStack.push(deliverNode);
+		}
+	}
 
 	// try to optimize MAX and MIN to use an index; for now, optimize
 	// only the simplest case, although it is probably possible
@@ -4047,7 +4134,6 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 
 	jrd_nod** ptr;
 	jrd_nod* agg_operator;
-	jrd_nod* map = node->nod_arg[e_agg_map];
 	if ((map->nod_count == 1) &&
 		(ptr = map->nod_arg) &&
 		(agg_operator = (*ptr)->nod_arg[e_asgn_from]) &&
@@ -4078,7 +4164,7 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 	fb_assert((int) (IPTR)node->nod_arg[e_agg_stream] <= MAX_UCHAR);
 	rsb->rsb_stream = (UCHAR) (IPTR) node->nod_arg[e_agg_stream];
 	rsb->rsb_format = csb->csb_rpt[rsb->rsb_stream].csb_format;
-	rsb->rsb_next = OPT_compile(tdbb, csb, rse, NULL);
+	rsb->rsb_next = OPT_compile(tdbb, csb, rse, &deliverStack);
 	rsb->rsb_arg[0] = (RecordSource*) node;
 	rsb->rsb_impure = CMP_impure(csb, sizeof(struct irsb));
 
