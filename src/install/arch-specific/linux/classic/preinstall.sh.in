@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: preinstall.sh.in,v 1.4 2003-04-28 19:48:23 skidder Exp $
+#   $Id: preinstall.sh.in,v 1.4.2.1 2003-10-28 18:21:46 skidder Exp $
 # 
 
 
@@ -236,7 +236,7 @@ archivePriorInstallSystemFilesX() {
         fi
       done
 
-    for i in gds_pyxis.a gds.a libfbembed.so.@FIREBIRD_VERSION@ libib_util.so libgds.a
+    for i in gds_pyxis.a gds.a libfbembed.so.@FIREBIRD_VERSION@ libfbclient.so.@FIREBIRD_VERSION@ libib_util.so libgds.a
       do
         DestFile=usr/lib/$i
         if [ -e $DestFile ]
