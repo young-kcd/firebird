@@ -1,3 +1,27 @@
+2004-06-12 03:06  skidder
+
+	* firebird2/src/jrd/: cch.cpp (1.98), jrd.cpp (1.174):
+	
+	Correct problems with single-user maintenance mode (note it is used
+	for GBAK restore process now)
+
+2004-06-11 16:23  kkuznetsov
+
+	* firebird2/src/: common/classes/locks.h (1.16), jrd/thd.cpp
+	(1.33), jrd/thd.h (1.31):
+	
+	hCVS:
+	
+	Solaris portion of thd.cpp
+	-------------------------------------------------------------------
+	---
+
+2004-06-11 05:09  brodsom
+
+	* firebird2/src/gpre/: c_cxx.cpp (1.52), ada.cpp (1.43):
+	
+	-Correction
+
 2004-06-10 16:09  brodsom
 
 	* firebird2/src/remote/os/win32/cntl.cpp (1.13):
