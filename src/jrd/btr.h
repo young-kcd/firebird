@@ -23,9 +23,6 @@
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
  *
  */
-/*
-$Id: btr.h,v 1.3 2002-10-29 03:17:43 seanleyne Exp $
-*/
 
 #ifndef _JRD_BTR_H_
 #define _JRD_BTR_H_
@@ -104,6 +101,8 @@ typedef struct idx {
 #define idx_navigate		8	/* index was in fact selected for navigation */
 #define	idx_plan_missing	16	/* index mentioned in missing clause */
 #define	idx_plan_starts		32	/* index mentioned in starts clause */
+#define	idx_used_with_and	64	/* marker used in procedure sort_indices */
+#define	idx_marker			128	/* marker used in procedure sort_indices */
 
 /* Macro to locate the next IDX block */
 

@@ -27,13 +27,17 @@
  *            returned to the free pool.
  * 2001.02.15: Claudio Valderrama: Don't obfuscate the plan output if a selectable
  *             stored procedure doesn't access tables, views or other procedures directly.
- *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ * 2002.10.30: Arno Brinkman: Changes made to gen_retrieval, OPT_compile and make_inversion.
+ *             Procedure sort_indices added. The changes in gen_retrieval are that now
+ *             an index with high field-count has priority to build an index from. 
+ *             Procedure make_inversion is changed so that it not pick every index
+ *             that comes away, this was slow performance with bad selectivity indices
+ *             which most are foreign_keys with a reference to a few records.
+ * 2002.11.01: Arno Brinkman: Added match_indices for better support of OR handling
+ *             in INNER JOIN (gen_join) statements.
  *
  */
-/*
-$Id: opt.cpp,v 1.19 2002-10-30 06:40:48 seanleyne Exp $
-*/
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -132,6 +136,7 @@ static NOD make_starts(TDBB, register OPT, REL, NOD, USHORT, IDX *);
 static BOOLEAN map_equal(NOD, NOD, NOD);
 static void mark_indices(csb_repeat *, SSHORT);
 static SSHORT match_index(TDBB, register OPT, SSHORT, register NOD, IDX *);
+static BOOLEAN match_indices(TDBB, register OPT, SSHORT, register NOD, IDX *);
 static USHORT nav_rsb_size(RSB, USHORT, USHORT);
 static BOOLEAN node_equality(NOD, NOD);
 static NOD optimize_like(TDBB, NOD);
@@ -145,6 +150,7 @@ static void set_inactive(OPT, RIV);
 static void set_made_river(OPT, RIV);
 static void set_position(NOD, NOD, NOD);
 static void set_rse_inactive(CSB, RSE);
+static void sort_indices(csb_repeat *);
 
 
 /* macro definitions */
@@ -491,7 +497,7 @@ RSB OPT_compile(TDBB tdbb,
 							&csb->csb_rpt[stream].csb_idx,
 							&csb->csb_rpt[stream].csb_idx_allocation,
 							&idx_size);
-
+				sort_indices(&csb->csb_rpt[stream]);
 				mark_indices(&csb->csb_rpt[stream], relation->rel_id);
 			}
 			else
@@ -2878,7 +2884,8 @@ static void form_rivers(TDBB tdbb,
 		count = find_order(tdbb, opt, temp, plan_node);
 	while (form_river
 		   (tdbb, opt, count, streams, temp, river_stack, sort_clause,
-			project_clause, 0));}
+			project_clause, 0));
+}
 
 
 static BOOLEAN form_river(TDBB tdbb,
@@ -3647,16 +3654,18 @@ static RSB gen_retrieval(TDBB tdbb,
  *
  **************************************/
 	register CSB csb;
+	IRL relationship;
 	REL relation;
 	STR alias;
 	RSB rsb;
 	IDX *idx;
 	NOD node, opt_boolean, inversion;
-	USHORT segments;
-	SSHORT i;
-	register Opt::opt_repeat * tail, *opt_end, *idx_tail, *idx_end;
+	SSHORT i, j, count;
+	USHORT idx_field_count[MAX_INDICES];
+	USHORT max_field_count = 0;
+	register Opt::opt_repeat * tail, *opt_end, *idx_tail, *idx_end, *matching_nodes[MAX_INDICES];
 	csb_repeat *csb_tail;
-	BOOLEAN full = FALSE;
+	BOOLEAN full = FALSE, accept_index, idx_begin_equal[MAX_INDICES];
 	SET_TDBB(tdbb);
 #ifdef DEV_BUILD
 	DEV_BLKCHK(opt, type_opt);
@@ -3702,20 +3711,22 @@ static RSB gen_retrieval(TDBB tdbb,
    to be made that it is a deoptimization and more testing needs to be done 
    to determine that; see more comments in the bug description
  */
-	if (sort_ptr && *sort_ptr && project_ptr && *project_ptr)
+	if (sort_ptr && *sort_ptr && project_ptr && *project_ptr) {
 		sort_ptr = NULL;
+	}
 /* Time to find inversions.  For each index on the relation
    match all unused booleans against the index looking for upper
    and lower bounds that can be computed by the index.  When
    all unused conjunctions are exhausted, see if there is enough
    information for an index retrieval.  If so, build up an
    inversion component of the boolean. */
+
 	inversion = NULL;
-	opt_end =
-		opt->opt_rpt +
-		(inner_flag ? opt->opt_count : opt->opt_parent_count); rsb = NULL;
-	if (relation->rel_file)
+	opt_end = opt->opt_rpt + (inner_flag ? opt->opt_count : opt->opt_parent_count);
+	rsb = NULL;
+	if (relation->rel_file) {
 		rsb = EXT_optimize(opt, stream, sort_ptr ? sort_ptr : project_ptr);
+	}
 	else if (opt->opt_parent_count || (sort_ptr && *sort_ptr)
 	 /***|| (project_ptr && *project_ptr)***/
 		) {
@@ -3728,96 +3739,148 @@ static RSB gen_retrieval(TDBB tdbb,
 		   could be calculated via the index; currently we won't detect that case
 		 */
 
-		segments = 0;
 		for (i = 0, idx = csb_tail->csb_idx; i < csb_tail->csb_indices;
-			 i++, idx = NEXT_IDX(idx->idx_rpt, idx->idx_count))
-			segments = MAX(segments, idx->idx_count);
-		for (; segments; segments--)
-			for (i = 0, idx = csb_tail->csb_idx; i < csb_tail->csb_indices;
-				 i++, idx = NEXT_IDX(idx->idx_rpt, idx->idx_count)) {
-				/* skip this index if it doesn't have the right number of segments */
+			 i++, idx = NEXT_IDX(idx->idx_rpt, idx->idx_count)) {
 
-				if (idx->idx_count != segments)
+			idx_field_count[i] = 0;
+			idx_begin_equal[i] = FALSE;
+			/* skip this part if the index wasn't specified for indexed 
+			   retrieval (still need to look for navigational retrieval) */
+			if ((idx->idx_runtime_flags & idx_plan_dont_use) &&
+				!(idx->idx_runtime_flags & idx_plan_navigate))
+				continue;
+
+			/* go through all the unused conjuncts and see if 
+			   any of them are computable using this index */
+			clear_bounds(opt, idx);
+			tail = opt->opt_rpt;
+			if (outer_flag)
+				tail += opt->opt_count;
+			for (; tail < opt_end; tail++) {
+				CLEAR_DEP_BIT(tail->opt_can_use_idx, i);
+				if (tail->opt_flags & opt_matched)
 					continue;
-				/* skip this part if the index wasn't specified for indexed 
-				   retrieval (still need to look for navigational retrieval) */
-				if ((idx->idx_runtime_flags & idx_plan_dont_use) &&
-					!(idx->idx_runtime_flags & idx_plan_navigate))
-					continue;
-				/* go through all the unused conjuncts and see if 
-				   any of them are computable using this index */
-				clear_bounds(opt, idx);
-				tail = opt->opt_rpt;
-				if (outer_flag)
-					tail += opt->opt_count;
-				for (; tail < opt_end; tail++) {
-					if (tail->opt_flags & opt_matched)
-						continue;
-					node = tail->opt_conjunct;
-					if (!(tail->opt_flags & opt_used)
-						&& computable(csb, node, -1,
-									  (BOOLEAN) (inner_flag
-												 || outer_flag) ? TRUE :
-									  FALSE)) match_index(tdbb, opt, stream,
-														  node, idx);
-					if (node->nod_type == nod_starts)
-						compose(&inversion,
-								make_starts(tdbb, opt, relation, node, stream,
-											idx), nod_bit_and);
-					if (node->nod_type == nod_missing)
-						compose(&inversion,
-								make_missing(tdbb, opt, relation, node,
-											 stream, idx), nod_bit_and);
-				}
-
-				/* look for a navigational retrieval (unless one was already found or
-				   there is no sort block); if no navigational retrieval on this index,
-				   add an indexed retrieval to the inversion tree */
-
-				if (!rsb) {
-					if (sort_ptr && *sort_ptr) {
-						if ( (rsb =
-							gen_navigation(tdbb, opt, stream, relation, alias,
-										   idx, sort_ptr)) ) continue;
+				node = tail->opt_conjunct;
+				if (!(tail->opt_flags & opt_used)
+					&& computable(csb, node, -1, 
+					(BOOLEAN) (inner_flag || outer_flag) ? TRUE : FALSE)) {
+					if (count = match_index(tdbb, opt, stream, node, idx)) {
+						/* mark the index in the bitmap and if this conjunct
+						   has a own index mark this also */
+						SET_DEP_BIT(tail->opt_can_use_idx, i);
+						if (idx->idx_count == count) {
+							tail->opt_idx_full_match = TRUE;
+						}	
 					}
+				}
+				if (node->nod_type == nod_starts)
+					compose(&inversion,
+							make_starts(tdbb, opt, relation, node, stream,
+										idx), nod_bit_and);
+				if (node->nod_type == nod_missing)
+					compose(&inversion,
+							make_missing(tdbb, opt, relation, node,
+										 stream, idx), nod_bit_and);
+			}
 
-					/* for now, make sure that we only map a DISTINCT to an index if they contain 
-					   the same number of fields; it should be possible to map a DISTINCT to an 
-					   index which has extra fields to the right, but we need to add some code 
-					   in NAV_get_record() to check when the relevant fields change, rather than 
-					   the whole index key */
-
-		/***if (project_ptr && *project_ptr)
-     
-	        if ((idx->idx_count == (*project_ptr)->nod_count) &&
-	            (rsb = gen_navigation (tdbb, opt, stream, relation, alias, idx, project_ptr)))
-		    {
-	            rsb->rsb_flags |= rsb_project;
-	            continue;
-	            }***/
+			/* look for a navigational retrieval (unless one was already found or
+			   there is no sort block); if no navigational retrieval on this index,
+			   add an indexed retrieval to the inversion tree */
+			if (!rsb) {
+				if (sort_ptr && *sort_ptr) {
+					if ( (rsb =
+						gen_navigation(tdbb, opt, stream, relation, alias,
+									   idx, sort_ptr)) ) continue;
 				}
 
-				if (opt->opt_rpt[0].opt_lower || opt->opt_rpt[0].opt_upper) {
-					compose(&inversion,
-							OPT_make_index(tdbb, opt, relation, idx),
-							nod_bit_and); if (!outer_flag) {
-						/* Mark conjuncts as matched if they actually participate in
-						   the indexed retrieval. A conjunct matches against an index
-						   segment only if all more major index segment positions have
-						   been matched by conjuncts. */
+				/* for now, make sure that we only map a DISTINCT to an index if they contain 
+				   the same number of fields; it should be possible to map a DISTINCT to an 
+				   index which has extra fields to the right, but we need to add some code 
+				   in NAV_get_record() to check when the relevant fields change, rather than 
+				   the whole index key */
 
-						idx_tail = opt->opt_rpt;
-						idx_end = idx_tail + idx->idx_count;
-						for (;
-							 idx_tail < idx_end && (idx_tail->opt_lower
-													|| idx_tail->opt_upper);
-							 idx_tail++)
-							for (tail = opt->opt_rpt; tail < opt_end; tail++)
-								if (idx_tail->opt_match == tail->opt_conjunct)
-									tail->opt_flags |= opt_matched;
+			/***if (project_ptr && *project_ptr)
+     
+		        if ((idx->idx_count == (*project_ptr)->nod_count) &&
+		            (rsb = gen_navigation (tdbb, opt, stream, relation, alias, idx, project_ptr)))
+			    {
+				    rsb->rsb_flags |= rsb_project;
+					continue;
+	            }***/
+			}
+
+			/* Count the real number of fields that could be matched */
+			if (opt->opt_rpt[0].opt_lower || opt->opt_rpt[0].opt_upper) {
+				idx_tail = opt->opt_rpt;
+				idx_end = idx_tail + idx->idx_count;
+				node = idx_tail->opt_match;
+				if (node->nod_type == nod_eql) {
+					idx_begin_equal[i] = TRUE;
+				}					
+				for (;idx_tail < idx_end && (idx_tail->opt_lower || 
+					idx_tail->opt_upper); idx_tail++) {
+					idx_field_count[i]++;
+					max_field_count = MAX(max_field_count, idx_field_count[i]);
+				}
+			}
+
+		}
+
+		/* Walk through the indicies based on earlier calculated count and
+		   when necessary build the index */
+		for (; max_field_count; max_field_count--) {
+			for (i = 0, idx = csb_tail->csb_idx; i < csb_tail->csb_indices; i++,
+				idx = NEXT_IDX(idx->idx_rpt, idx->idx_count)) {
+				if (idx->idx_runtime_flags & idx_plan_dont_use) {
+					continue;
+				}
+				if (idx_field_count[i] == max_field_count) {
+					j = 0;
+					clear_bounds(opt, idx);
+					for (tail = opt->opt_rpt; tail < opt_end; tail++) {
+					/* Test if this conjunction is available for this index. */
+						if (TEST_DEP_BIT(tail->opt_can_use_idx, i) &&
+							!(tail->opt_flags & opt_matched)) {
+							/* Setting opt_lower and/or opt_upper values */
+							node = tail->opt_conjunct;
+							match_index(tdbb, opt, stream, node, idx);
+							matching_nodes[j++] = tail;
+							count = j;
+						}
+					}
+					if (opt->opt_rpt[0].opt_lower || opt->opt_rpt[0].opt_upper) {
+						accept_index = TRUE;
+						/* If all fields in this index can also use a own index
+						   and the first field isn't compared as equality
+						   than don't accept create this index */
+						if (!idx_begin_equal[i]) {
+							if (idx->idx_count > 1) {
+								accept_index = FALSE;
+								for (j = 0; j < count; j++) {
+									if (!matching_nodes[j]->opt_idx_full_match) {
+										accept_index = TRUE;
+									}
+								}
+							}
+						}
+						if (accept_index) {
+							/* Mark all nodes that could be matched in this index as
+							   used, so that no unnecessary duplicated indicies are build. */
+							for (j = 0; j < count; j++) {
+								if (idx_begin_equal[i] || 
+									idx->idx_count == 1 ||
+									!matching_nodes[j]->opt_idx_full_match) {
+									matching_nodes[j]->opt_flags |= opt_matched;
+								}
+							}
+							compose(&inversion, OPT_make_index(tdbb, opt, relation, idx),
+								nod_bit_and);
+							idx->idx_runtime_flags |= idx_used_with_and;
+						}
 					}
 				}
 			}
+		}
 	}
 
 	if (outer_flag) {
@@ -3843,23 +3906,27 @@ static RSB gen_retrieval(TDBB tdbb,
    mark the stream to denote unmatched booleans. */
 
 	opt_boolean = NULL;
-	opt_end =
-		opt->opt_rpt + (inner_flag ? opt->opt_count : opt->opt_parent_count);
+	opt_end = opt->opt_rpt + (inner_flag ? opt->opt_count : opt->opt_parent_count);
 	tail = opt->opt_rpt;
-	if (outer_flag)
+	if (outer_flag) {
 		tail += opt->opt_count;
+	}
 	for (; tail < opt_end; tail++) {
 		node = tail->opt_conjunct;
-		if (!relation->rel_file)
-			compose(&inversion, OPT_make_dbkey(opt, node, stream),
-					nod_bit_and); if (!(tail->opt_flags & opt_used)
-									  && computable(csb, node, -1, FALSE)) {
-			if (node->nod_type == nod_or)
+		if (!relation->rel_file) {
+			compose(&inversion, OPT_make_dbkey(opt, node, stream), nod_bit_and);
+		}
+		if (!(tail->opt_flags & opt_used)
+			&& computable(csb, node, -1, FALSE)) {
+			if (node->nod_type == nod_or) {
 				compose(&inversion, make_inversion(tdbb, opt, node, stream),
-						nod_bit_and); compose(&opt_boolean, node, nod_and);
+					nod_bit_and); 
+			}
+			compose(&opt_boolean, node, nod_and);
 			tail->opt_flags |= opt_used;
-			if (!outer_flag && !(tail->opt_flags & opt_matched))
+			if (!outer_flag && !(tail->opt_flags & opt_matched)) {
 				csb_tail->csb_flags |= csb_unmatched;
+			}
 		}
 	}
 
@@ -4532,7 +4599,11 @@ static IRL indexed_relationship(TDBB tdbb, OPT opt, USHORT stream)
 			node = tail->opt_conjunct;
 			if (!(tail->opt_flags & opt_used)
 				&& computable(csb, node, -1, FALSE))
-				match_index(tdbb, opt, stream, node, idx);
+				/* AB: Why only check for and-structures ? 
+				   Added match_indices for support of "OR" with INNER JOINs */
+
+				/* match_index(tdbb, opt, stream, node, idx); */
+				match_indices(tdbb, opt, stream, node, idx);
 		}
 
 		tail = opt->opt_rpt;
@@ -4811,9 +4882,12 @@ static NOD make_inversion(TDBB tdbb,
  **************************************/
 	REL relation;
 	IDX *idx;
-	NOD inversion, inversion2;
+	NOD inversion, inversion2, node;
 	SSHORT i;
 	csb_repeat *csb_tail;
+	float selectivity;
+	BOOLEAN accept, used_in_compound;
+
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(boolean, type_nod);
@@ -4823,16 +4897,17 @@ static NOD make_inversion(TDBB tdbb,
 		return NULL;
 /* Handle the "OR" case up front */
 	if (boolean->nod_type == nod_or) {
-		if (!
-			(inversion =
-			 make_inversion(tdbb, opt, boolean->nod_arg[0],
-							stream))) return NULL;
-		if ( (inversion2 =
-			make_inversion(tdbb, opt, boolean->nod_arg[1],
-						   stream)) ) return compose(&inversion, inversion2,
-												   nod_bit_or);
-		if (inversion->nod_type == nod_index)
+		if (! (inversion = make_inversion(tdbb, opt, boolean->nod_arg[0], 
+			stream))) {
+			return NULL;
+		}
+		if ( (inversion2 = make_inversion(tdbb, opt, boolean->nod_arg[1],
+			stream)) ) {
+			return compose(&inversion, inversion2, nod_bit_or);
+		}
+		if (inversion->nod_type == nod_index) {
 			delete inversion->nod_arg[e_idx_retrieval];
+		}
 		delete inversion;
 		return NULL;
 	}
@@ -4844,28 +4919,83 @@ static NOD make_inversion(TDBB tdbb,
    information for an index retrieval.  If so, build up and
    inversion component of the boolean. */
 
+	
+	/* AB: If the boolean is a part of an earlier created index 
+	   retrieval don't think about to use a own index. */
+	accept = TRUE;
+	used_in_compound = FALSE;
+	selectivity = 1; /* Real maximum selectivity possible is 1 */
+	idx = csb_tail->csb_idx;
+	if (opt->opt_count) {
+		for (i = 0; i < csb_tail->csb_indices; i++) {
+			if (idx->idx_runtime_flags & idx_used_with_and) {
+				clear_bounds(opt, idx);
+				if ((match_index(tdbb, opt, stream, boolean, idx)) &&
+					(idx->idx_selectivity < selectivity)) {
+					selectivity = idx->idx_selectivity;
+					used_in_compound = TRUE;
+				}
+			}
+			idx = NEXT_IDX(idx->idx_rpt, idx->idx_count);
+		}
+	}
+
 	idx = csb_tail->csb_idx;
 	inversion = NULL;
-	if (opt->opt_count)
+	if (opt->opt_count) {
 		for (i = 0; i < csb_tail->csb_indices; i++) {
+
+			/* AB: If we are not using a PLAN or could make an index don't 
+			   walk further through the indices */
+			if (!accept && !csb_tail->csb_plan) {
+				break;
+			}
+
 			clear_bounds(opt, idx);
 			/* skip this part if the index wasn't specified for indexed 
 			   retrieval (still need to look for navigational retrieval) */
-			if (idx->idx_runtime_flags & idx_plan_dont_use)
+			if (idx->idx_runtime_flags & idx_plan_dont_use) {
 				continue;
-			match_index(tdbb, opt, stream, boolean, idx);
-			if (opt->opt_rpt[0].opt_lower || opt->opt_rpt[0].opt_upper)
-				compose(&inversion, OPT_make_index(tdbb, opt, relation, idx),
-						nod_bit_and); if (boolean->nod_type == nod_starts)
+			}
+
+			/* AB: We accept only 1 index for a boolean. This must be enough
+			   because the indices are sort based on selectivity.
+			   We based our factor 2000 on little experience, when our boolean 
+			   is used in a compound index (that is an AND boolean). It's only 
+			   interesting to use it if it's better as the compound index
+			   selectivity * factor */
+			if (((accept || used_in_compound) && 
+				 (idx->idx_selectivity < selectivity * 2000)) ||
+				(csb_tail->csb_plan)) {
+				match_index(tdbb, opt, stream, boolean, idx);
+				if (opt->opt_rpt[0].opt_lower || opt->opt_rpt[0].opt_upper) {
+					compose(&inversion, OPT_make_index(tdbb, opt, relation, idx),
+							nod_bit_and);
+					accept = FALSE;
+				}				
+			}
+
+			if (boolean->nod_type == nod_starts) {
 				compose(&inversion,
-						make_starts(tdbb, opt, relation, boolean, stream,
-									idx), nod_bit_and);
-				if (boolean->nod_type == nod_missing)
+					node = make_starts(tdbb, opt, relation, boolean, stream, idx),
+					nod_bit_and);
+				if (node) {
+					accept = FALSE;
+				}
+			}
+
+			if (boolean->nod_type == nod_missing) {
 				compose(&inversion,
-						make_missing(tdbb, opt, relation, boolean, stream,
-									 idx), nod_bit_and);
+					node = make_missing(tdbb, opt, relation, boolean, stream, idx),
+					nod_bit_and);
+				if (node) {
+					accept = FALSE;
+				}
+			}
+
 			idx = NEXT_IDX(idx->idx_rpt, idx->idx_count);
 		}
+	}
 
 	if (!inversion)
 		inversion = OPT_make_dbkey(opt, boolean, stream);
@@ -5196,6 +5326,52 @@ static SSHORT match_index(TDBB tdbb,
 		}
 
 	return count;
+}
+
+
+static BOOLEAN match_indices(TDBB tdbb,
+							register OPT opt,
+							SSHORT stream, register NOD boolean, IDX * idx)
+{
+/**************************************
+ *
+ *	m a t c h _ i n d i c e s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Match a boolean against an index location lower and upper
+ *	bounds.  Return the number of relational nodes that were
+ *	matched.  In ODS versions prior to 7, descending indexes
+ *	were not reliable and will not be used.
+ *
+ **************************************/
+	DEV_BLKCHK(opt, type_opt);
+	DEV_BLKCHK(boolean, type_nod);
+	SET_TDBB(tdbb);
+
+	if (boolean->nod_count < 2) {
+		return FALSE;
+	}
+
+	if (boolean->nod_type == nod_or) {
+		if (match_indices(tdbb, opt, stream, boolean->nod_arg[0], idx) &&
+			match_indices(tdbb, opt, stream, boolean->nod_arg[1], idx)) {
+			opt->opt_rpt->opt_match = NULL;
+			return TRUE;
+		}
+	}
+	else {
+		if (match_index(tdbb, opt, stream, boolean, idx)) {
+			opt->opt_rpt->opt_match = NULL;
+			return TRUE;
+		}
+	}
+	opt->opt_rpt->opt_match = NULL;
+	opt->opt_rpt->opt_upper = NULL;
+	opt->opt_rpt->opt_lower = NULL;
+	return FALSE;
+
 }
 
 
@@ -5676,3 +5852,67 @@ static void set_rse_inactive(CSB csb, RSE rse)
 			set_rse_inactive(csb, (RSE) node);
 	}
 }
+
+static void sort_indices(csb_repeat * csb_tail)
+{
+/***************************************************
+ *
+ *  s o r t _ i n d i c e s
+ *
+ ***************************************************
+ *
+ * Functional Description:
+ *    Sort indices based on there selectivity.
+ *    Lowest selectivy as first, higest as last.
+ *
+ ***************************************************/
+	IDX *idx, *selected_idx;
+	USHORT i, j;
+	IDX idx_sort[MAX_IDX];
+	float selectivity;
+
+	if (csb_tail->csb_plan) {
+		return;
+	}
+
+	/* Walk through the indices and sort them into into idx_sort
+	   where idx_sort[0] contains the lowest selectivity and
+	   idx_sort[csb_tail->csb_indices - 1] the highest */
+
+	if (csb_tail->csb_idx && (csb_tail->csb_indices > 1)) {
+		for (j = 0; j < csb_tail->csb_indices; j++) {
+			selectivity = 1000; /* Maximum selectivity is 1 (when all keys are the same) */
+			idx = csb_tail->csb_idx;
+			for (i = 0; i < csb_tail->csb_indices; i++) {
+				if (!(idx->idx_runtime_flags & idx_marker) && 
+					 (idx->idx_selectivity <= selectivity)) {
+					selectivity = idx->idx_selectivity;
+					selected_idx = idx;
+				}
+				idx = NEXT_IDX(idx->idx_rpt, idx->idx_count);
+			}
+			if (!selected_idx) {
+				idx = csb_tail->csb_idx;
+				for (i = 0; i < csb_tail->csb_indices; i++) {
+					if (!(idx->idx_runtime_flags & idx_marker)) {
+						selected_idx = idx;
+						break;
+					}	
+					idx = NEXT_IDX(idx->idx_rpt, idx->idx_count);
+				}
+			}
+			selected_idx->idx_runtime_flags |= idx_marker;
+			MOVE_FAST(selected_idx, &idx_sort[j], sizeof(IDX));
+		}
+
+		/* Finally store the right order in cbs_tail->csb_idx */
+		idx = csb_tail->csb_idx;
+		for (j = 0; j < csb_tail->csb_indices; j++) {
+			idx->idx_runtime_flags &= ~idx_marker;
+			MOVE_FAST(&idx_sort[j], idx, sizeof(IDX));
+			idx = NEXT_IDX(idx->idx_rpt, idx->idx_count);
+		}
+	}
+
+}
+
