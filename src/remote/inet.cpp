@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.68 2003-04-10 10:31:27 aafemt Exp $
+$Id: inet.cpp,v 1.69 2003-06-25 07:39:04 dimitr Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -950,6 +950,11 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 #endif /* WIN_NT */
 	THREAD_ENTER;
 
+	int port_num = Config::getRemoteServicePort();
+
+	if (port_num) {
+		address.sin_port = htons(port_num);
+	}
 /* Modification by luz (slightly modified by FSG)
     instead of failing here, try applying hard-wired
     translation of "gds_db" into "3050"
@@ -958,10 +963,10 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
     entry in "services" file, which is important
     for zero-installation clients.
     */
-	if (!service) {
-		if (strcmp(protocol, Config::getRemoteServiceName()) == 0) {
+	else if (!service) {
+		if (strcmp(protocol, FB_SERVICE_NAME) == 0) {
 			/* apply hardwired translation */
-			address.sin_port = htons(Config::getRemoteServicePort());
+			address.sin_port = htons(FB_SERVICE_PORT);
 		}
 
 		/* modification by FSG 23.MAR.2001 */
