@@ -225,10 +225,8 @@ static REC_MUTX_T databases_rec_mutex;
 #endif
 
 #ifdef  WIN_NT
-/* these should stop a most annoying warning */
-#undef TEXT
-
 #include <windows.h>
+/* these should stop a most annoying warning */
 #undef TEXT
 #define TEXT    SCHAR
 #endif	// WIN_NT
