@@ -30,7 +30,7 @@
  */
 
 /*
- * This definitions placed into separate file 
+ * These definitions placed into separate file
  * to avoid multiple definition of struct why_hndl in why.cpp
  * and dsql.cpp
  *

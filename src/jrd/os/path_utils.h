@@ -119,9 +119,9 @@ public:
 	/** Concatenates the two paths given in the second and third parameters,
 		and writes the resulting path into the first parameter.  The
 		two path input arguments (arg 2 and 3) are concatinated in the order
-		arg2 arg3.  The concatination is done is such a way as to remove
+		arg2 arg3.  The concatenation is done is such a way as to remove
 		any duplicate directory separators that may have resulted from
-		a simple string concatination of the arguments with the directory
+		a simple string concatenation of the arguments with the directory
 		separator character.
 	**/
 	static void concatPath(Firebird::PathName&, const Firebird::PathName&,

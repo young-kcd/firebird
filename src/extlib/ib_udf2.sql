@@ -591,8 +591,6 @@ DECLARE EXTERNAL FUNCTION sqrt
 	ENTRY_POINT 'IB_UDF_sqrt' MODULE_NAME 'ib_udf';
 
 
-
-
 /*****************************************
  *
  *	s r a n d
