@@ -1,4 +1,140 @@
   **************
+  * v1.5 RC 2
+  **************
+
+    * Fixed RC1 bug.
+        Various server crashes in the remote protocol code.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Event manager change.
+        Disabled usage of definite aux port in CS builds due to known issues.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed unregistered bug.
+	    Enabled aggregate functions from different parent context to be used inside another aggregate function.
+	  Example:
+	    SELECT MAX((SELECT COUNT(*) FROM RDB$RELATIONS)) FROM RDB$RELATIONS
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Fixed RC1 bug.
+		Aggregates from a different parent context were not allowed in the HAVING clause.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Fixed unregistered bug.
+        Possible crashes on disconnect when event notification is used.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Service manager changes.
+        Features of GSTAT/GSEC are not available via Services API in win32 CS (until v1.6 release).
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed unregistered bug.
+        Wrong record statistics is reported when operation fails due to some reason.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed RC1 bug.
+        Problems with the service manager being attached from different clients simultaneously.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed RC1 bug.
+        Various server crashes when any remote protocol is used.
+      Note:
+        IMPORTANT!!! - Don't forget to update the client library, because this bug existed in both server and client.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed unregistered bug.
+        stdin/stdout cannot be used to redirect console I/O in win32 build of GBAK.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff@hotmail.ru>
+
+    * Fixed RC1 bug.
+        Server crash in EXECUTE STATEMENT combined with exception handling block.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff@hotmail.ru>
+
+    * Fixed RC1 bug.
+        Broken lock table resizing in CS. No more "lock manager out of room" errors.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * INTL improvement.
+        Make UPPER function work for WIN1251 charset without explicit collations.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed RC1 bug.
+        Cannot connect to the service manager with non-default password.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed RC1 bug.
+        Fixed problem with CREATE OR ALTER TRIGGER.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed RC1 bug.
+        Server crashes in some cases of error handling.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff@hotmail.ru>
+
+    * Fixed unregistered bug.
+        Wrong rpb contents after pre-triggers execution that may cause database corruption.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff@hotmail.ru>
+
+    * Fixed RC1 bug.
+        Incorrect values returned by ROW_COUNT.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed unregistered bug.
+        Buffer overrun in isc_database_info() call.
+      Contributor(s):
+        Oleg LOA <loa@mail.ru>
+
+    * IMPORTANT!!! - Configuration manager change.
+        Now the server exits on missing / wrong firebird.conf with error report in system log.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff@hotmail.ru>
+
+    * Fixed RC1 bug.
+        SP with input parameters and aggregate tracking/validating methods failed.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Fixed RC1 bug.
+        Crash on disconnect in the embedded server.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed RC1 bug.
+        Parameters from SPs in a sub-select were not remaped to the proper context in a aggregate query.
+      Example:
+        SELECT (SELECT SP.X FROM SP_TEST(T1.ID) SP) FROM TABLE1 T1 GROUP BY T1.ID
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Fixed RC1 bug.
+        Problem with start/stop commands of instsvc.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed Services API.
+        Enabled statistics Services API for POSIX CS builds.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+  **************
   * v1.5 RC 1
   **************
 
