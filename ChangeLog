@@ -1,3 +1,23 @@
+2004-07-21 00:56  skidder
+
+	* firebird2/src/jrd/evl.cpp (1.97):
+	
+	Fix another problem with my LIKE evaluator
+
+2004-07-20 20:57  arnobrinkman
+
+	* firebird2/src/jrd/btr.cpp (1.100):
+	
+	fix bug in ignore_nulls part
+
+2004-07-20 20:55  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp (1.177):
+	
+	Bugfix: optimizer didn't add boolean-node when it was a OR operator
+	and no index could be used.  This caused unnecessary evaluation of
+	joined rse's to that rse.
+
 2004-07-17 02:13  skidder
 
 	* firebird2/src/: common/classes/tree.h (1.37), jrd/met.epp
