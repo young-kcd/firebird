@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.28.2.4 2004-09-25 19:38:38 dimitr Exp $
+ * $Id: rse.cpp,v 1.28.2.5 2004-10-09 14:14:53 dimitr Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -2142,7 +2142,13 @@ static BOOLEAN get_procedure(TDBB				tdbb,
 	else
 		record = rpb->rpb_record;
 
-	EXE_receive(tdbb, proc_request, 1, oml, om);
+	try {
+		EXE_receive(tdbb, proc_request, 1, oml, om);
+	}
+	catch (const std::exception&) {
+		close_procedure(tdbb, rsb);
+		throw;
+	}
 
 	desc = msg_format->fmt_desc[msg_format->fmt_count - 1];
 	desc.dsc_address = (UCHAR *) (om + (int) desc.dsc_address);
@@ -3108,9 +3114,18 @@ static void open_procedure(TDBB tdbb, RSB rsb, IRSB_PROCEDURE impure)
    is set at end of open_procedure (). */
 
 	proc_request->req_flags &= ~req_proc_fetch;
-	EXE_start(tdbb, proc_request, request->req_transaction);
-	if (iml)
-		EXE_send(tdbb, proc_request, 0, iml, im);
+
+	try {
+		EXE_start(tdbb, proc_request, request->req_transaction);
+		if (iml) {
+			EXE_send(tdbb, proc_request, 0, iml, im);
+		}
+	}
+	catch (const std::exception&) {
+		close_procedure(tdbb, rsb);
+		throw;
+	}
+
 	proc_request->req_flags |= req_proc_fetch;
 }
 
