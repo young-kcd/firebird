@@ -29,9 +29,11 @@
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
  *
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
+ *
  */
 /*
-$Id: why.c,v 1.16 2002-10-28 04:42:54 seanleyne Exp $
+$Id: why.c,v 1.17 2002-10-29 02:59:56 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -5302,10 +5304,6 @@ static void check_status_vector(STATUS * status, STATUS expected)
 		case gds_arg_number:
 		case gds_arg_vms:
 		case gds_arg_unix:
-		case gds_arg_dos:
-		case gds_arg_mpexl:
-		case gds_arg_mpexl_ipc:
-		case gds_arg_next_mach:
 		case gds_arg_netware:
 		case gds_arg_win32:
 			s++;
@@ -6250,11 +6248,6 @@ static void save_error_string(STATUS * status)
 		case isc_arg_number:
 		case isc_arg_vms:
 		case isc_arg_unix:
-		case isc_arg_domain:
-		case isc_arg_dos:
-		case isc_arg_mpexl:
-		case isc_arg_mpexl_ipc:
-		case isc_arg_next_mach:
 		case isc_arg_netware:
 		case isc_arg_win32:
 			status++;			/* Skip parameter */

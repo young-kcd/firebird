@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
+ *
  */
 
 #include <stdio.h>
@@ -435,11 +438,6 @@ ERR_post(stuff)
 		case gds_arg_number:
 		case gds_arg_vms:
 		case gds_arg_unix:
-		case gds_arg_domain:
-		case gds_arg_mpexl:
-			*p++ = *((int *) q)++;
-			break;
-
 		case gds_arg_string:
 		case gds_arg_interpreted:
 			*p++ = *q++;

@@ -6,6 +6,8 @@
 // is only allowed to be used within that engine, where it may
 // be used freely. Any other use is prohibited.
 //
+// 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
+//
 
 #include "firebird.h"
 #include <stdlib.h>
@@ -69,9 +71,6 @@ void STUFF_STATUS_function(STATUS* status_vector, STATUS status, va_list args)
 
 			case gds_arg_vms:
 			case gds_arg_unix:
-			case gds_arg_dos:
-			case gds_arg_mpexl:
-			case gds_arg_next_mach:
 			case gds_arg_netware:
 			case gds_arg_win32:
 			default:
@@ -108,9 +107,6 @@ void PARSE_STATUS(STATUS * status_vector, int &length, int &warning)
 		case gds_arg_number:
 		case gds_arg_vms:
 		case gds_arg_unix:
-		case gds_arg_dos:
-		case gds_arg_mpexl:
-		case gds_arg_next_mach:
 		case gds_arg_netware:
 		case gds_arg_win32:
 			i++;

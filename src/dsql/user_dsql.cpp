@@ -26,6 +26,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
+ *
  */
 
 #include "firebird.h"
@@ -1455,9 +1458,6 @@ static void error_post(STATUS status, ...)
 
 		case gds_arg_vms:
 		case gds_arg_unix:
-		case gds_arg_dos:
-		case gds_arg_mpexl:
-		case gds_arg_mpexl_ipc:
 		case gds_arg_netware:
 		case gds_arg_win32:
 			*p++ = va_arg(args, int);

@@ -31,6 +31,8 @@
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix/MIPS" port
  *
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
+ *
  */
 
 #ifdef SHLIB_DEFS
@@ -242,8 +244,8 @@ static const TEXT *const impl_implementation[] = {
     "Firebird/ibm/aix",	/* 35 */
     NULL, // "Firebird/mips/ultrix",	/* 36 */
     NULL, // "Firebird/xenix",      /* 37 */
-    "Firebird/AViiON",		/* 38 */
-    "Firebird/hp/mpexl",	/* 39 */
+    NULL, // "Firebird/AViiON",		/* 38 */
+    NULL, // "Firebird/hp/mpexl",	/* 39 */
     "Firebird/hp/ux300",	/* 40 */
     "Firebird/sgi",		/* 41 */
     "Firebird/sco/unix",	/* 42 */

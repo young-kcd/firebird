@@ -26,9 +26,12 @@
  * 2002.09.28 Dmitry Yemanov: Reworked internal_info stuff, enhanced
  *                            exception handling in SPs/triggers,
  *                            implemented ROWS_AFFECTED system variable
+ *
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
+ *
  */
 /*
-$Id: par.cpp,v 1.13 2002-09-28 14:04:35 dimitr Exp $
+$Id: par.cpp,v 1.14 2002-10-29 02:59:55 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -655,11 +658,7 @@ static void error(CSB csb, ...)
 		case gds_arg_vms:
 		case gds_arg_unix:
 		case gds_arg_win32:
-		case gds_arg_dos:
 		case gds_arg_netware:
-		case gds_arg_mpexl:
-			*p++ = va_arg(args, int);
-			break;
 		}
 
 /* Give up whatever we were doing and return to the user. */
@@ -2960,11 +2959,7 @@ static void warning(CSB csb, ...)
 		case gds_arg_vms:
 		case gds_arg_unix:
 		case gds_arg_win32:
-		case gds_arg_dos:
 		case gds_arg_netware:
-		case gds_arg_mpexl:
-			*p++ = va_arg(args, int);
-			break;
 		}
 }
 

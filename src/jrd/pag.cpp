@@ -30,6 +30,7 @@
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix/MIPS" port
  *
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
  *
  */
 
@@ -155,12 +156,6 @@ static BOOLEAN find_type(SLONG, WIN *, PAG *, USHORT, USHORT, UCHAR **,
 #ifdef AIX_PPC
 #define CLASS		10
 #endif
-
-//
-//#ifdef mpexl
-//#define CLASS		12
-//#endif
-//
 
 #ifdef sgi
 #define CLASS		13

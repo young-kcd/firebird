@@ -10,6 +10,7 @@
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
  *
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
  *
  */
 
@@ -145,7 +146,6 @@
 #undef SCO_EV
 #undef DECOSF
 #undef sgi
-#undef mpexl
 #undef SINIXZ
 
 #endif
