@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: nbackup.cpp,v 1.33 2004-09-25 10:28:03 robocop Exp $
+ *  $Id: nbackup.cpp,v 1.34 2004-10-04 08:15:00 robocop Exp $
  *
  */
  
@@ -618,7 +618,7 @@ void nbackup::backup_database(int level, const char* fname)
 		bool guid_found = false;
 		const UCHAR* p = reinterpret_cast<Ods::header_page*>(page_buff)->hdr_data;
 		while (true) {
-			switch(*p) {
+			switch (*p) {
 			case Ods::HDR_backup_guid:
 				if (p[1] != sizeof(FB_GUID))
 					break;
@@ -869,7 +869,7 @@ void nbackup::restore_database(int filecount, const char* const* files)
 				bool guid_found = false;
 				const UCHAR* p = reinterpret_cast<Ods::header_page*>(page_buffer)->hdr_data;
 				while (true) {
-					switch(*p) {
+					switch (*p) {
 					case Ods::HDR_backup_guid:
 						if (p[1] != sizeof(FB_GUID))
 							break;

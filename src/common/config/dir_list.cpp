@@ -192,7 +192,7 @@ bool DirectoryList::isPathInList(const PathName& path) const
 	fb_assert(mode != NotInitialized);
 
 	// Handle special cases
-	switch(mode) {
+	switch (mode) {
 	case None:
 		return false;
 	case Full:

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.38 2004-09-01 14:51:33 alexpeshkoff Exp $
+//	$Id: exe.cpp,v 1.39 2004-10-04 08:14:34 robocop Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -298,7 +298,7 @@ static USHORT build_dpb(UCHAR* dpb, const ULONG switches)
 			*dpb2 |= isc_dpb_shut_force;
 		else if (switches & sw_tran)
 			*dpb2 |= isc_dpb_shut_transaction;
-		switch(tdgbl->ALICE_data.ua_shutdown_mode) {
+		switch (tdgbl->ALICE_data.ua_shutdown_mode) {
 		case SHUT_NORMAL:
 			*dpb2 |= isc_dpb_shut_normal;
 			break;
@@ -327,7 +327,7 @@ static USHORT build_dpb(UCHAR* dpb, const ULONG switches)
 		*dpb2++ = isc_dpb_online;
 		*dpb2++ = 1;
 		*dpb2 = 0;
-		switch(tdgbl->ALICE_data.ua_shutdown_mode) {
+		switch (tdgbl->ALICE_data.ua_shutdown_mode) {
 		case SHUT_NORMAL:
 			*dpb2 |= isc_dpb_shut_normal;
 			break;

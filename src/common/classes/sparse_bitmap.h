@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: sparse_bitmap.h,v 1.4 2004-10-01 06:27:57 hvlad Exp $
+ *  $Id: sparse_bitmap.h,v 1.5 2004-10-04 08:14:44 robocop Exp $
  *
  */
 
@@ -272,7 +272,7 @@ public:
 			}
 
 			// Transform locLess and locGreat to locLessEqual and locGreatEqual
-			switch(lt) {
+			switch (lt) {
 				case locLess:
 					if (key == 0)
 						return false;
@@ -294,7 +294,7 @@ public:
 				return false;
 			}
 
-			switch(lt) {
+			switch (lt) {
 				case locEqual:
 					current_value = key;
 					bit_mask = BUNCH_ONE << (key - key_aligned);
@@ -316,7 +316,7 @@ public:
 							return true;
 						bit_mask <<= 1;
 						current_value++;
-					} while(bit_mask);
+					} while (bit_mask);
 
 					// We scanned bucket, but found no match.
 					// No problem, scan the next bucket (there should be at least one bit set for a bucket)
@@ -331,7 +331,7 @@ public:
 							return true;
 						bit_mask <<= 1;
 						current_value++;
-					} while(bit_mask);
+					} while (bit_mask);
 
 					// Bucket must contain one bit at least
 					fb_assert(false);
@@ -353,7 +353,7 @@ public:
 							return true;
 						bit_mask >>= 1;
 						current_value--;
-					} while(bit_mask);
+					} while (bit_mask);
 
 					// We scanned bucket, but found no match.
 					// No problem, scan the next bucket (there should be at least one bit set for a bucket)
@@ -368,7 +368,7 @@ public:
 							return true;
 						bit_mask >>= 1;
 						current_value--;
-					} while(bit_mask);
+					} while (bit_mask);
 
 					// Bucket must contain one bit at least
 					fb_assert(false);
@@ -399,7 +399,7 @@ public:
 					return true;
 				bit_mask <<= 1;
 				current_value++;
-			} while(bit_mask);
+			} while (bit_mask);
 
 			// Bucket must contain one bit at least
 			fb_assert(false);
@@ -429,7 +429,7 @@ public:
 					return true;
 				bit_mask >>= 1;
 				current_value--;
-			} while(bit_mask);
+			} while (bit_mask);
 
 			// Bucket must contain one bit at least
 			fb_assert(false);
@@ -477,7 +477,7 @@ public:
 				}
 				try_mask <<= 1;
 				try_value++;
-			} while(try_mask);
+			} while (try_mask);
 
 			// Bucket must contain one bit at least
 			fb_assert(false); 
@@ -500,7 +500,7 @@ public:
 
 			// Scan bucket backwards looking for a match
 			BUNCH_T tree_bits = treeAccessor.current().bits;
-			while(try_mask) {
+			while (try_mask) {
 				if (tree_bits & try_mask) {
 					bit_mask = try_mask;
 					current_value = try_value;
@@ -526,7 +526,7 @@ public:
 				}
 				try_mask >>= 1;
 				try_value--;
-			} while(bit_mask);
+			} while (bit_mask);
 
 			// Bucket must contain one bit at least
 			fb_assert(false);

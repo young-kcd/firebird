@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.80 2004-09-26 07:45:19 robocop Exp $
+$Id: why.cpp,v 1.81 2004-10-04 08:14:57 robocop Exp $
 */
 
 #include "firebird.h"
@@ -254,7 +254,7 @@ why_hndl* WHY_alloc_handle(int implementation, int handle_type)
 				if (!temp)
 					temp = ++handle_sequence_number;
 				handle->public_handle = reinterpret_cast<FB_API_HANDLE>(temp);
-			} while(!handleMapping->add(handle));
+			} while (!handleMapping->add(handle));
 
 			handleMappingLock.endWrite();
 		} catch(const std::exception&) {

@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.115 2004-10-03 04:48:37 robocop Exp $
+ * $Id: ddl.cpp,v 1.116 2004-10-04 08:14:49 robocop Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -2014,7 +2014,7 @@ static SSHORT getBlobFilterSubType(dsql_req* request, const dsql_nod* node)
  *
  **************************************/
 	fb_assert(node->nod_type == nod_constant);
-	switch(node->nod_desc.dsc_dtype)
+	switch (node->nod_desc.dsc_dtype)
 	{
 	case dtype_long:
 		return (SSHORT)(IPTR)node->nod_arg[0];
@@ -2679,7 +2679,7 @@ static void define_rel_constraint( dsql_req* request, dsql_nod* element)
 
 	dsql_nod* node = element->nod_arg[e_rct_type];
 
-	switch(node->nod_type) {
+	switch (node->nod_type) {
 	case nod_unique:
 	case nod_primary:
 		make_index(request, node, node->nod_arg[0], 0, 0, constraint_name);

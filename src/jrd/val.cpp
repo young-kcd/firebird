@@ -1644,7 +1644,7 @@ static RTN walk_index(thread_db* tdbb,
 				return corrupt(tdbb, control, VAL_INDEX_MISSING_ROWS,
 							   relation, id + 1);
 			}
-		} while(accessor.getNext());
+		} while (accessor.getNext());
 		THREAD_ENTER();
 	}
 

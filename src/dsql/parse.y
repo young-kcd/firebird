@@ -5088,7 +5088,7 @@ int LexerState::yylex (
 				int nextToken = yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
 				lex = savedState;
 				if (nextToken == OR || nextToken == AND) {
-					switch(sym->sym_keyword) {
+					switch (sym->sym_keyword) {
 					case INSERTING:
 						yylval = (dsql_nod*) sym->sym_object;
 						return KW_INSERTING;
@@ -5210,7 +5210,7 @@ int LexerState::yylex (
 					int token = yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
 					lex = savedState;
 					if (token == OR || token == AND) {
-						switch(nextToken) {
+						switch (nextToken) {
 						case INSERTING:
 							return KW_INSERTING;
 						case UPDATING:

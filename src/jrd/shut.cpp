@@ -153,7 +153,7 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
 	// This is required to ensure backward compatible behavior (gbak relies on that, 
 	// user-written scripts may rely on this behaviour too)
 	int shut_mode = flag & isc_dpb_shut_mode_mask;
-	switch(shut_mode) {
+	switch (shut_mode) {
 	case isc_dpb_shut_full:
 		if (dbb->dbb_ast_flags & DBB_shutdown_full) 
 			return bad_mode(IGNORE_SAME_MODE);
@@ -250,7 +250,7 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	// Set appropriate shutdown mode in database header
 	header->hdr_flags &= ~Ods::hdr_shutdown_mask;
-	switch(flag & isc_dpb_shut_mode_mask) {
+	switch (flag & isc_dpb_shut_mode_mask) {
 	case isc_dpb_shut_normal:
 		break;
 	case isc_dpb_shut_multi:
@@ -319,7 +319,7 @@ bool SHUT_online(Database* dbb, SSHORT flag)
 	
 	// Check if requested shutdown mode is valid
 	int shut_mode = flag & isc_dpb_shut_mode_mask;
-	switch(shut_mode) {
+	switch (shut_mode) {
 	case isc_dpb_shut_normal:
 		if (!(dbb->dbb_ast_flags & DBB_shutdown)) 
 			return bad_mode(IGNORE_SAME_MODE); // normal -> normal
@@ -359,7 +359,7 @@ bool SHUT_online(Database* dbb, SSHORT flag)
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	// Set appropriate shutdown mode in database header
 	header->hdr_flags &= ~Ods::hdr_shutdown_mask;
-	switch(shut_mode) {
+	switch (shut_mode) {
 	case isc_dpb_shut_normal:
 		break;
 	case isc_dpb_shut_multi:

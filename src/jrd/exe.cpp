@@ -1757,7 +1757,7 @@ static void stuff_stack_trace(const jrd_req* request)
 	Firebird::string sTrace;
 	bool isEmpty = true;
 
-	for(const jrd_req* req = request; req; req = req->req_caller)
+	for (const jrd_req* req = request; req; req = req->req_caller)
 	{
 		Firebird::string name;
 		
@@ -1774,7 +1774,7 @@ static void stuff_stack_trace(const jrd_req* request)
 		{
 			name.trim();
 
-			if(sTrace.length() + name.length() > MAX_STACK_TRACE)
+			if (sTrace.length() + name.length() > MAX_STACK_TRACE)
 				break;
 
 			if (isEmpty) {
@@ -3257,7 +3257,7 @@ static void release_blobs(thread_db* tdbb, jrd_req* request)
 			}
 			if (!request->req_blobs.getNext())
 				break;
-		} while(true);
+		} while (true);
 
 		request->req_blobs.clear();
 

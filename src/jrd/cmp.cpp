@@ -276,7 +276,7 @@ static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd
 			if (!relation) continue;
 
 			trig_vec *vec1, *vec2;
-			switch(item->exa_action) {
+			switch (item->exa_action) {
 			case ExternalAccess::exa_insert:
 				vec1 = relation->rel_pre_store;
 				vec2 = relation->rel_post_store;
@@ -398,7 +398,7 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 
 			if (!relation) continue;
 
-			switch(item->exa_action) {
+			switch (item->exa_action) {
 			case ExternalAccess::exa_insert:
 				verify_trigger_access(tdbb, relation, relation->rel_pre_store, view);
 				verify_trigger_access(tdbb, relation, relation->rel_post_store, view);

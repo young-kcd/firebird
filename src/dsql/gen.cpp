@@ -2266,7 +2266,7 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 		MAKE_desc(&parameter->par_desc, item, NULL);
 		const char* name_alias = NULL;
 
-		switch(item->nod_type) {
+		switch (item->nod_type) {
 		case nod_field: {
 			field = (dsql_fld*) item->nod_arg[e_fld_field];
 			name_alias = field->fld_name;
@@ -2352,7 +2352,7 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 				map = (dsql_map*) map_node->nod_arg[e_map_map];
 				map_node = map->map_node;
 			}
-			switch(map_node->nod_type) {
+			switch (map_node->nod_type) {
 			case nod_field: {
 				field = (dsql_fld*) map_node->nod_arg[e_fld_field];
 				name_alias = field->fld_name;

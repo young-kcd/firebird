@@ -252,7 +252,7 @@ int THD_wlck_lock(WLCK_T* wlock, WLCK_type type)
  *
  **************************************/
 
-	switch(type)
+	switch (type)
 	{
 	case WLCK_read:
 #ifdef DEBUG_THREAD
@@ -296,7 +296,7 @@ int THD_wlck_unlock(WLCK_T* wlock)
 	fprintf(stderr, "calling rwlock_unlock %x\n", wlock);
 #endif
 
-	switch(wlock->type)
+	switch (wlock->type)
 	{
 	case WLCK_read:
 		wlock->rwLock.endRead();

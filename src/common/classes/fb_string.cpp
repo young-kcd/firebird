@@ -298,7 +298,7 @@ extern "C" {
 #ifdef WIN_NT
 			CharUpperBuffA(Modify(), length());
 #else  // WIN_NT
-		for(pointer p = Modify(); *p; p++) {
+		for (pointer p = Modify(); *p; p++) {
 			*p = toupper(*p);
 		}
 #endif // WIN_NT
@@ -308,7 +308,7 @@ extern "C" {
 #ifdef WIN_NT
 			CharLowerBuffA(Modify(), length());
 #else  // WIN_NT
-		for(pointer p = Modify(); *p; p++) {
+		for (pointer p = Modify(); *p; p++) {
 			*p = tolower(*p);
 		}
 #endif // WIN_NT

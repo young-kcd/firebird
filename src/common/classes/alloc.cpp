@@ -23,7 +23,7 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *
- *  $Id: alloc.cpp,v 1.69 2004-09-28 06:27:16 skidder Exp $
+ *  $Id: alloc.cpp,v 1.70 2004-10-04 08:14:43 robocop Exp $
  *
  */
 
@@ -721,7 +721,7 @@ bool MemoryPool::verify_pool(bool fast_checks_only) {
 			// Check block length
 			mem_assert(blk->small.mbk_length == current->bli_length);
 		}
-	} while(freeBlocks.getNext());
+	} while (freeBlocks.getNext());
 
 	// check each block in each segment for consistency with free blocks structure
 	for (MemoryExtent *extent = extents; extent; extent = extent->mxt_next) {

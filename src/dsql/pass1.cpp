@@ -2055,7 +2055,7 @@ static void check_unique_fields_names(StrArray& names, const dsql_nod* fields)
 	const char* name = NULL;
 
 	for (; ptr < end; ptr++) {
-		switch((*ptr)->nod_type) {
+		switch ((*ptr)->nod_type) {
 			case nod_def_field:
 				field = (dsql_fld*) (*ptr)->nod_arg[e_dfl_field];
 				DEV_BLKCHK(field, dsql_type_fld);

@@ -271,7 +271,7 @@ ISC_STATUS API_ROUTINE isc_array_set_desc(ISC_STATUS* status,
 
 	const SSHORT dtype = *sql_dtype & ~1;
 
-	switch(dtype) {
+	switch (dtype) {
 	case SQL_VARYING:
 		desc->array_desc_dtype = blr_varying;
 		break;

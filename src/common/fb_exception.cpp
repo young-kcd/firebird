@@ -53,7 +53,7 @@ status_exception::status_exception(const ISC_STATUS *status_vector) throw() :
 			if (type == isc_arg_cstring)
 				*ptr++ = *status_vector++;
 			*ptr++ = *status_vector++;
-		} while(true);
+		} while (true);
 	}
 }
 	
@@ -70,7 +70,7 @@ void status_exception::fill_status(ISC_STATUS status, va_list status_args)
 		if (type == isc_arg_end) 
 			break;
 
-		switch(type) {
+		switch (type) {
 		case isc_arg_cstring: 
 			{				
 				const UCHAR len = *ptr++ = va_arg(status_args, ISC_STATUS);
@@ -121,7 +121,7 @@ status_exception::~status_exception() throw() {
 		if (type == isc_arg_end)
 			break;
 
-		switch(type) {
+		switch (type) {
 		case isc_arg_cstring:
 			ptr++;
 			delete[] reinterpret_cast<char*>(*ptr++);
@@ -134,7 +134,7 @@ status_exception::~status_exception() throw() {
 			ptr++;
 			break;
 		}		
-	} while(true);
+	} while (true);
 }
 
 void status_exception::raise() 
@@ -225,7 +225,7 @@ ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const std::exception& ex, 
 					if (type == isc_arg_cstring)
 						*status_vector++ = *ptr++;
 					*status_vector++ = *ptr++;
-				} while(true);
+				} while (true);
 			}
 			else {
 				// Move in status and clone transient strings
@@ -234,7 +234,7 @@ ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const std::exception& ex, 
 					if (type == isc_arg_end)
 						break;
 
-					switch(type) {
+					switch (type) {
 					case isc_arg_cstring: 
 						{				
 							const UCHAR len = *status_vector++ = *ptr++;

@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  * 
  *
- *  $Id: class_test.cpp,v 1.23 2004-09-28 06:27:16 skidder Exp $
+ *  $Id: class_test.cpp,v 1.24 2004-10-04 08:14:44 robocop Exp $
  *
  */
 
@@ -314,7 +314,7 @@ void testBePlusTree() {
 	
 	printf("Check that tree(13) contains test data: ");
 	for (i = 0; i < v.getCount(); i++) {
-		if(!tree2.locate(locEqual, v[i]))
+		if (!tree2.locate(locEqual, v[i]))
 			passed = false;
 	}
 	printf(passed ? "PASSED\n" : "FAILED\n");
@@ -393,7 +393,7 @@ void testBePlusTree() {
 
 	printf("Check that tree(2) contains test data: ");
 	for (i = 0; i < v.getCount(); i++) {
-		if(!tree1.locate(locEqual, v[i]))
+		if (!tree1.locate(locEqual, v[i]))
 			passed = false;
 	}	
 	printf(passed ? "PASSED\n" : "FAILED\n");
@@ -401,7 +401,7 @@ void testBePlusTree() {
 	
 	printf("Check that tree(13) contains test data: ");
 	for (i = 0; i < v.getCount(); i++) {
-		if(!tree2.locate(locEqual, v[i]))
+		if (!tree2.locate(locEqual, v[i]))
 			passed = false;
 	}	
 	printf(passed ? "PASSED\n" : "FAILED\n");

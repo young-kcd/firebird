@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.68 2004-05-17 22:27:56 brodsom Exp $
+ * $Id: sort.cpp,v 1.69 2004-10-04 08:14:57 robocop Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -1066,7 +1066,7 @@ bool SORT_sort(ISC_STATUS * status_vector, sort_context* scb)
 			(merge_control*) gds__alloc((SLONG) (count - 1) * sizeof(merge_control));
 		// FREE: smb_merge_pool freed in local_fini() when the scb is released
 		merge_pool = scb->scb_merge_pool;
-		if(!merge_pool) {
+		if (!merge_pool) {
 			gds__free(streams);
 			*status_vector++ = isc_arg_gds;
 			*status_vector++ = isc_sort_mem_err;

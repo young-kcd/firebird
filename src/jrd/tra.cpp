@@ -1014,7 +1014,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 			if (!transaction->tra_blobs.locate(Firebird::locGreat, temp_id))
 				break;
 		}
-	} while(true);
+	} while (true);
 
 	while (transaction->tra_arrays)
 		BLB_release_array(transaction->tra_arrays);
