@@ -113,6 +113,8 @@ extern "C" {
 			   	      ISC_event_post (evnt_ptr);}}}
 
 
+#endif /* SUPERSERVER */
+
 #ifdef __cplusplus
 
 inline void SVC_STATUS_ARG(STATUS*& status, USHORT type, void* value)
@@ -154,9 +156,6 @@ inline void SVC_STATUS_ARG(STATUS*& status, USHORT type, void* value)
 					  }}}
 
 #endif /* __cplusplus */
-
-#endif /* SUPERSERVER */
-
 
 #define CK_SPACE_FOR_NUMERIC 	{{if ((info + 1 + sizeof (ULONG)) > end) \
     				      { \
