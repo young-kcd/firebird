@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.34.2.7 2004-09-18 05:32:06 skidder Exp $ 
+  * $Id: evl.cpp,v 1.34.2.8 2004-10-12 15:34:39 hvlad Exp $ 
  */
 
 /*
@@ -141,6 +141,7 @@ static SSHORT compute_agg_distinct(TDBB, JRD_NOD);
 static DSC *concatenate(TDBB, JRD_NOD, VLU);
 static DSC *dbkey(TDBB, JRD_NOD, VLU);
 static DSC *eval_statistical(TDBB, JRD_NOD, VLU);
+static void fini_agg_distinct(TDBB, JRD_NOD);
 static SINT64 get_day_fraction(DSC * d);
 static DSC *get_mask(TDBB, JRD_NOD, VLU);
 static SINT64 get_timestamp_to_isc_ticks(DSC * d);
@@ -1552,6 +1553,7 @@ USHORT DLL_EXPORT EVL_group(TDBB tdbb, BLK rsb, JRD_NOD node, USHORT state)
 		if (!RSE_get_record(tdbb, reinterpret_cast<struct Rsb*>(rsb), g_RSE_get_mode))
 		{
 			if (group) {
+				fini_agg_distinct(tdbb, node);
 				return 0;
 			}
 			state = 2;
@@ -1816,25 +1818,7 @@ USHORT DLL_EXPORT EVL_group(TDBB tdbb, BLK rsb, JRD_NOD node, USHORT state)
 
 	}
 	catch (const std::exception&) {
-		for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++)
-		{
-			const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
-			switch (from->nod_type)
-			{
-			case nod_agg_count_distinct:
-			case nod_agg_total_distinct:
-			case nod_agg_average_distinct:
-			case nod_agg_average_distinct2:
-			case nod_agg_total_distinct2:
-				{
-				const ASB asb = (ASB) from->nod_arg[1];
-				iasb* asb_impure = (iasb*) ((SCHAR *) request + asb->nod_impure);
-				SORT_fini(reinterpret_cast<scb*>(asb_impure->iasb_sort_handle),
-						  tdbb->tdbb_attachment);
-				asb_impure->iasb_sort_handle = NULL;
-				}
-			}
-		}
+		fini_agg_distinct(tdbb, node);
 		ERR_punt();
 	}
 	return state;
@@ -3657,6 +3641,48 @@ static DSC *eval_statistical(TDBB tdbb, JRD_NOD node, VLU impure)
 	return desc;
 }
 
+
+static void fini_agg_distinct(TDBB tdbb, JRD_NOD node)
+{
+/**************************************
+ *
+ *      f i n i _ a g g _ d i s t i n c t
+ *
+ **************************************
+ *
+ * Functional description
+ *      Finalize a sort for distinct aggregate.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	DEV_BLKCHK(node, type_nod);
+
+	JRD_REQ request = tdbb->tdbb_request;
+	JRD_NOD map = node->nod_arg[e_agg_map];
+
+	JRD_NOD *ptr, *end;
+
+	for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++)
+	{
+		const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
+		switch (from->nod_type)
+		{
+		case nod_agg_count_distinct:
+		case nod_agg_total_distinct:
+		case nod_agg_average_distinct:
+		case nod_agg_average_distinct2:
+		case nod_agg_total_distinct2:
+			{
+			const ASB asb = (ASB) from->nod_arg[1];
+			iasb* asb_impure = (iasb*) ((SCHAR *) request + asb->nod_impure);
+			SORT_fini(reinterpret_cast<scb*>(asb_impure->iasb_sort_handle),
+					  tdbb->tdbb_attachment);
+			asb_impure->iasb_sort_handle = NULL;
+			}
+		}
+	}
+}
 
 static SINT64 get_day_fraction(DSC * d)
 {
