@@ -144,6 +144,15 @@ SOURCE=..\..\..\src\jrd\db_alias.cpp
 # Begin Source File
 
 SOURCE=..\..\..\gen\jrd\dfw.cpp
+
+!IF  "$(CFG)" == "engine_embed - Win32 Release"
+
+# SUBTRACT CPP /Og
+
+!ELSEIF  "$(CFG)" == "engine_embed - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
