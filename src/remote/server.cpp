@@ -39,7 +39,6 @@
 #include "../jrd/isc.h"
 #include "../jrd/license.h"
 #include "../jrd/jrd_time.h"
-#include "../common/classes/semaphore.h"
 #include "../remote/merge_proto.h"
 #include "../remote/parse_proto.h"
 #include "../remote/remot_proto.h"
@@ -54,6 +53,7 @@
 #include "../jrd/sch_proto.h"
 #include "../jrd/thd_proto.h"
 #include "../jrd/why_proto.h"
+#include "../common/classes/semaphore.h"
 #ifdef DEBUG
 #include "gen/iberror.h"
 #endif
