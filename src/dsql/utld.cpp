@@ -355,10 +355,10 @@ ISC_STATUS	UTLD_parse_sqlda(
 			// FREE: unknown
 			if (!pClause->dasup_blr)	// NOMEM:
 				return error_dsql_804(status, isc_virmemexh);
-			memset(pClause->dasup_blr, 0, blr_len);
 			pClause->dasup_blr_buf_len = blr_len;
 			pClause->dasup_blr_length = 0;
 		}
+		memset(pClause->dasup_blr, 0, blr_len);
 
 		bool same_flag = (blr_len == pClause->dasup_blr_length);
 
@@ -392,7 +392,7 @@ ISC_STATUS	UTLD_parse_sqlda(
 		//	*(p)++ = (blr_version4); 
 		//	same_flag = false;
 		//}
-		
+
 		ch_stuff(p, blr_begin, same_flag);
 		ch_stuff(p, blr_message, same_flag);
 		ch_stuff(p, 0, same_flag);
@@ -512,9 +512,9 @@ ISC_STATUS	UTLD_parse_sqlda(
 			// FREE: unknown
 			if (!pClause->dasup_msg)	// NOMEM:
 				return error_dsql_804(status, isc_virmemexh);
-			memset(pClause->dasup_msg, 0, msg_len);
 			pClause->dasup_msg_buf_len = msg_len;
 		}
+		memset(pClause->dasup_msg, 0, msg_len);
 
 		// Fill in the return values to the caller.
 
