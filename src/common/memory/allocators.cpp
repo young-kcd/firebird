@@ -190,6 +190,7 @@ void operator delete(void* mem)
 void* operator new[](size_t s, MemoryPool* p)
 {
 	assert(0);
+	return 0;
 }
 
 /**	This operator new traps the standard libraries placement new.  It simply
@@ -199,6 +200,7 @@ void* operator new[](size_t s, MemoryPool* p)
 void* operator new(size_t s, MemoryPool* p)
 {
 	assert(0);
+	return 0;
 }
 #endif
 
