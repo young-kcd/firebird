@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: GenericMap.h,v 1.1 2004-11-24 20:38:31 skidder Exp $
+ *  $Id: GenericMap.h,v 1.2 2004-11-25 02:28:17 skidder Exp $
  *
  */
 
@@ -52,7 +52,7 @@ namespace Firebird {
 //   non-POD key (string), non-POD value (string):
 //     GenericMap<Pair<Full<string, string> > >
 //
-template <typename KeyValuePair, typename KeyComparator = DefaultComparator<KeyValuePair::first_type> >
+template <typename KeyValuePair, typename KeyComparator = DefaultComparator<typename KeyValuePair::first_type> >
 class GenericMap : public AutoStorage {
 public:
 	typedef typename KeyValuePair::first_type KeyType;
