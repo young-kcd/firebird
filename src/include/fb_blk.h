@@ -43,11 +43,11 @@ private:
     void* operator new[](size_t s) { return 0; }
 };
 
-template<class RPT, SSHORT BLOCK_TYPE = 0>
+template<typename RPT, SSHORT BLOCK_TYPE = 0>
 class pool_alloc_rpt : public blk
 {
     public:
-		typedef typename RPT blk_repeat_type;
+		typedef RPT blk_repeat_type;
 #ifdef DEBUG_GDS_ALLOC
         void* operator new(size_t s, MemoryPool& p, int rpt, char* file, int line)
             { return p.calloc(s + sizeof(RPT) * rpt, BLOCK_TYPE, file, line); }
