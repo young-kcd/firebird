@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.86 2004-05-12 00:02:06 brodsom Exp $ 
+  * $Id: evl.cpp,v 1.87 2004-05-13 00:57:19 brodsom Exp $ 
  */
 
 /*
@@ -164,6 +164,7 @@ static dsc* record_version(thread_db*, const jrd_nod*, impure_value*);
 static bool reject_duplicate(const UCHAR*, const UCHAR*, void*);
 static dsc* scalar(thread_db*, jrd_nod*, impure_value*);
 static bool sleuth(thread_db*, jrd_nod*, const dsc*, const dsc*);
+/* BRS 13/05/04 NOT USED 
 static bool nc_sleuth_check(TextType, USHORT, const UCHAR*, const UCHAR*,
 	const UCHAR*, const UCHAR*);
 static bool nc_sleuth_class(TextType, USHORT, const UCHAR*, const UCHAR*, UCHAR);
@@ -171,6 +172,7 @@ static bool wc_sleuth_check(TextType, USHORT, const UCS2_CHAR*, const UCS2_CHAR*
 						const UCS2_CHAR*, const UCS2_CHAR*);
 static bool wc_sleuth_class(TextType, USHORT, const UCS2_CHAR*, const UCS2_CHAR*,
 						UCS2_CHAR);
+*/
 static bool string_boolean(thread_db*, jrd_nod*, dsc*, dsc*, bool);
 static bool string_function(thread_db*, jrd_nod*, SSHORT, const UCHAR*, SSHORT, const UCHAR*, USHORT, bool);
 static dsc* substring(thread_db*, impure_value*, dsc*, SLONG, SLONG);
@@ -2204,7 +2206,7 @@ USHORT EVL_nc_sleuth_merge(
 {
 	return SLEUTH_MERGE_NAME(tdbb_dummy, obj, match, match_bytes, control, control_bytes, combined, combined_bytes);
 }
-
+/* BRS 13/05/04 NOT USED 
 bool nc_sleuth_check(
 	TextType obj,
 	USHORT flags,
@@ -2216,7 +2218,7 @@ bool nc_sleuth_check(
 	return SLEUTH_AUX(obj, flags, search, end_search, match, end_match);
 }
 
-static bool nc_sleuth_class(
+bool nc_sleuth_class(
 	TextType obj,
 	USHORT flags,
 	const SLEUTHTYPE1* char_class,
@@ -2225,7 +2227,7 @@ static bool nc_sleuth_class(
 {
 	return SLEUTH_CLASS_NAME(obj, flags, char_class, end_class, character);
 }
-
+*/
 
 /**************************************
  *
@@ -2303,6 +2305,7 @@ USHORT EVL_wc_sleuth_merge(
 	return SLEUTH_MERGE_NAME(tdbb_dummy, obj, match, match_bytes, control, control_bytes, combined, combined_bytes);
 }
 
+/* BRS 13/05/04 NOT USED 
 bool wc_sleuth_check(
 	TextType obj,
 	USHORT flags,
@@ -2323,7 +2326,7 @@ bool wc_sleuth_class(
 {
 	return SLEUTH_CLASS_NAME(obj, flags, char_class, end_class, character);
 }
-
+*/
 
 static dsc* add(const dsc* desc, const jrd_nod* node, impure_value* value)
 {
