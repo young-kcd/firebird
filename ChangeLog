@@ -1,3 +1,56 @@
+2005-02-11 00:05  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp (1.219):
+	
+	Remove unneeded comment-blocks
+
+2005-02-10 23:52  arnobrinkman
+
+	* firebird2/: src/jrd/opt.cpp (1.218), src/jrd/Optimizer.cpp (1.1),
+	src/jrd/Optimizer.h (1.1), builds/win32/msvc6/engine.dsp (1.56),
+	builds/win32/msvc6/engine_classic.dsp (1.51),
+	builds/win32/msvc6/engine_embed.dsp (1.30),
+	builds/win32/msvc7/engine.vcproj (1.45),
+	builds/win32/msvc7/engine_classic.vcproj (1.45),
+	builds/win32/msvc7/engine_embed.vcproj (1.33):
+	
+	Add new optimizer logic for handling : ODS11: - segment-selectivity
+	- better support for IS NULL - better support for STARTING WITH -
+	matching both OR and AND nodes to indexes - pick better JOIN order
+	based on cost rules
+	
+	ODSx: - Indexed order on OUTER JOIN queries
+
+2005-02-10 22:14  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp (1.192):
+	
+	1) Make ordinal working on select list which contain an asterisk
+	
+	Examples: SELECT * FROM RDB$RELATIONS ORDER BY 9 SELECT R.* FROM
+	RDB$RELATIONS R ORDER BY 9
+	
+	2) Add ORDER BY <alias> and GROUP BY <alias>
+	
+	Examples: SELECT RDB$RELATION_ID AS ID FROM RDB$RELATIONS ORDER BY
+	ID
+	
+	SELECT	 RDB$RELATION_NAME AS ID,   Count(*) FROM  
+	RDB$RELATION_FIELDS GROUP BY   ID
+
+2005-02-10 14:37  hvlad
+
+	* firebird2/src/jrd/btr.cpp (1.137):
+	
+	Fix AV when expression index is created
+
+2005-02-10 11:21  kkuznetsov
+
+	* firebird2/src/gpre/gpre.h (1.79):
+	
+	Fix including FTN_fini refences into gpre_boot while configured
+	with fortran
+
 2005-02-10 00:48  skidder
 
 	* firebird2/doc/WhatsNew (1.57):
