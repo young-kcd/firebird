@@ -225,7 +225,7 @@ void AIL_commit(SLONG number)
 	THREAD_EXIT;
 	if (WAL_commit
 		(tdbb->tdbb_status_vector, dbb->dbb_wal, (UCHAR *) & commit_rec,
-		 /* LTJC_SIZE */ 0, &seqno, &offset) != FBOK) {
+		 /* LTJC_SIZE */ 0, &seqno, &offset) != FB_SUCCESS) {
 		THREAD_ENTER;
 		ERR_punt();
 	}
@@ -273,7 +273,7 @@ void AIL_disable(void)
 	if ((ret_val = JRN_init(tdbb->tdbb_status_vector, &dbb->dbb_journal,
 							dbb->dbb_page_size,
 							reinterpret_cast < UCHAR * >(journal_dir), jd_len,
-							data, d_len)) != FBOK)
+							data, d_len)) != FB_SUCCESS)
 		AIL_process_jrn_error(ret_val);
 
 	PAG_delete_clump_entry(HEADER_PAGE, HDR_journal_server);
@@ -301,12 +301,12 @@ void AIL_disable(void)
  */
 
 	if (WAL_journal_disable(tdbb->tdbb_status_vector, dbb->dbb_wal) !=
-		FBOK) ERR_punt();
+		FB_SUCCESS) ERR_punt();
 
 	if (dbb->dbb_journal) {
 		if ((ret_val = JRN_disable(tdbb->tdbb_status_vector, dbb->dbb_journal,
 								   reinterpret_cast < jrnh * >(&record), data,
-								   d_len)) != FBOK)
+								   d_len)) != FB_SUCCESS)
 			AIL_process_jrn_error(ret_val);
 	}
 }
@@ -531,14 +531,14 @@ void AIL_enable(
 
 	if ((ret_val = JRN_enable(tdbb->tdbb_status_vector, &dbb->dbb_journal,
 							  journal_name, j_length, data, d_len,
-							  &jrecord)) != FBOK)
+							  &jrecord)) != FB_SUCCESS)
 		AIL_process_jrn_error(ret_val);
 
 /* Inform wal subsystem about enable */
 
 	if (WAL_journal_enable(tdbb->tdbb_status_vector, dbb->dbb_wal,
 						   journal_name, d_len,
-						   reinterpret_cast < char *>(data)) != FBOK)
+						   reinterpret_cast < char *>(data)) != FB_SUCCESS)
 		  ERR_punt();
 
 /* Add journal entries to header page */
@@ -582,7 +582,7 @@ void AIL_fini(void)
 		return;
 
 	if ((ret_val = JRN_fini(tdbb->tdbb_status_vector, &dbb->dbb_journal)) !=
-		FBOK) AIL_process_jrn_error(ret_val);
+		FB_SUCCESS) AIL_process_jrn_error(ret_val);
 
 	dbb->dbb_journal = 0;
 }
@@ -672,7 +672,7 @@ void AIL_get_file_list(LLS * stack)
 
 	if (WALF_get_log_info(status_vector, dbb->dbb_file->fil_string, curr_name,
 						  curr_log_partition_offset, &log_seqno, &log_length,
-						  &log_flags) != FBOK) {
+						  &log_flags) != FB_SUCCESS) {
 		gds__free((SLONG *) log_name1);
 		gds__free((SLONG *) log_name2);
 		return;
@@ -690,7 +690,7 @@ void AIL_get_file_list(LLS * stack)
 								   curr_name, curr_log_partition_offset,
 								   prev_name, &prev_log_partition_offset,
 								   &log_seqno, &log_length, &log_flags,
-								   -1) != FBOK) break;
+								   -1) != FB_SUCCESS) break;
 
 		temp_name = prev_name;
 		prev_name = curr_name;
@@ -799,7 +799,7 @@ void AIL_init(
 /* If not the first user, call WAL_attach () */
 
 	if (WAL_attach(tdbb->tdbb_status_vector, &dbb->dbb_wal, dbname) !=
-		FBOK) ERR_punt();
+		FB_SUCCESS) ERR_punt();
 }
 
 
@@ -928,7 +928,7 @@ void AIL_process_jrn_error(SLONG ret_val)
  *
  **************************************/
 
-	if (ret_val == FAILURE)
+	if (ret_val == FB_FAILURE)
 		ERR_punt();
 	else if (ret_val < 0)
 		BUGCHECK(-1 * ret_val);

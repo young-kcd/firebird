@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: srvrmgr.cpp,v 1.10 2002-11-13 15:01:12 kkuznetsov Exp $
+ * $Id: srvrmgr.cpp,v 1.11 2002-11-14 08:32:08 dimitr Exp $
  */
 
 #include "firebird.h"
@@ -180,7 +180,7 @@ USHORT SRVRMGR_exec_line(IBMGR_DATA * data)
 		;
 	}
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 

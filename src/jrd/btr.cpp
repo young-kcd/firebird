@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.11 2002-11-13 15:00:57 kkuznetsov Exp $
+$Id: btr.cpp,v 1.12 2002-11-14 08:23:53 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -1271,15 +1271,15 @@ USHORT BTR_lookup(TDBB tdbb, REL relation, USHORT id, register IDX * buffer)
 	window.win_flags = 0;
 
 	if (!(root = fetch_root(tdbb, &window, relation)))
-		return FAILURE;
+		return FB_FAILURE;
 
 	if ((id >= root->irt_count)
 		|| !BTR_description(relation, root, buffer, id)) {
 		CCH_RELEASE(tdbb, &window);
-		return FAILURE;
+		return FB_FAILURE;
 	}
 	CCH_RELEASE(tdbb, &window);
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 

@@ -147,7 +147,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	case COMMAND_CONFIG:
 		status = SERVICES_config(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
 								 sw_mode, svc_error);
-		if (status == FBOK)
+		if (status == FB_SUCCESS)
 			ib_printf("Service \"%s\" successfully configured.\n",
 					  REMOTE_DISPLAY_NAME);
 		else
@@ -163,7 +163,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				SERVICES_install(manager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME,
 								 ISCGUARD_EXECUTABLE, directory, NULL, sw_startup,
 								 svc_error);
-			if (status == FBOK)
+			if (status == FB_SUCCESS)
 				ib_printf("Service \"%s\" successfully created.\n",
 						  ISCGUARD_DISPLAY_NAME);
 			else if (status == IB_SERVICE_ALREADY_DEFINED)
@@ -181,7 +181,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			SERVICES_install(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
 							 REMOTE_EXECUTABLE, directory, NULL, sw_startup,
 							 svc_error);
-		if (status == FBOK)
+		if (status == FB_SUCCESS)
 			ib_printf("Service \"%s\" successfully created.\n",
 					  REMOTE_DISPLAY_NAME);
 		else if (status == IB_SERVICE_ALREADY_DEFINED)
@@ -196,11 +196,11 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			status = SERVICES_remove(manager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME,
 									 svc_error);
 
-			if (status == FBOK) {
+			if (status == FB_SUCCESS) {
 				ib_printf("Service \"%s\" successfully deleted.\n", ISCGUARD_DISPLAY_NAME);
 				status = SERVICES_delete(manager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME,
 										 svc_error);
-				if (status == FBOK)
+				if (status == FB_SUCCESS)
 					ib_printf("Service configuration for \"%s\" successfully re-initialized.\n",
 							  ISCGUARD_DISPLAY_NAME);
 				else
@@ -220,12 +220,12 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		status = SERVICES_remove(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
 								 svc_error);
 
-		if (status == FBOK) {
+		if (status == FB_SUCCESS) {
 		    ib_printf("Service \"%s\" successfully deleted.\n", REMOTE_DISPLAY_NAME);
 		    status = SERVICES_delete(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
 		    						 svc_error);
 
-			if (status == FBOK)
+			if (status == FB_SUCCESS)
 				ib_printf("Service configuration for \"%s\" successfully re-initialized.\n",
 						  REMOTE_DISPLAY_NAME);
 			else
@@ -247,7 +247,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 #if (defined SUPERCLIENT || defined SUPERSERVER)
 			status = SERVICES_start(manager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME,
 									sw_mode, svc_error);
-			if (status == FBOK)
+			if (status == FB_SUCCESS)
 			    ib_printf("Service \"%s\" successfully started.\n",
 			    		  ISCGUARD_DISPLAY_NAME);
 			else
@@ -257,7 +257,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		else {
 			status = SERVICES_start(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
 									sw_mode, svc_error);
-			if (status == FBOK)
+			if (status == FB_SUCCESS)
 				ib_printf("Service \"%s\" successfully started.\n",
 						  REMOTE_DISPLAY_NAME);
 			else
@@ -272,7 +272,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			status = SERVICES_stop(manager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME,
 								   svc_error);
 
-			if (status == FBOK)
+			if (status == FB_SUCCESS)
 			    ib_printf("Service \"%s\" successfully stopped.\n",
 			    		  ISCGUARD_DISPLAY_NAME);
 			else
@@ -283,7 +283,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			status = SERVICES_stop(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
 								   svc_error);
 
-			if (status == FBOK)
+			if (status == FB_SUCCESS)
 				ib_printf("Service \"%s\" successfully stopped.\n",
 						  REMOTE_DISPLAY_NAME);
 			else
@@ -294,7 +294,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	CloseServiceHandle(manager);
 
-	exit((status == FBOK) ? FINI_OK : FINI_ERROR);
+	exit((status == FB_SUCCESS) ? FINI_OK : FINI_ERROR);
 }
 
 
@@ -329,7 +329,7 @@ static USHORT svc_error( SLONG status, TEXT * string, SC_HANDLE service)
 	else
 		ib_printf("%s\n", buffer);
 
-	return FAILURE;
+	return FB_FAILURE;
 }
 
 

@@ -121,7 +121,7 @@ USHORT bpb_buffer_length, UCHAR * bpb_buffer, USHORT * bpb_length)
 
 	*bpb_length = p - bpb_buffer;
 
-	return error(status, 1, (STATUS) FBOK);
+	return error(status, 1, (STATUS) FB_SUCCESS);
 }
 
 
@@ -187,7 +187,7 @@ STATUS API_ROUTINE isc_blob_lookup_desc(STATUS * status,
 					 (STATUS) gds_arg_string,
 					 (STATUS) desc->blob_desc_relation_name);
 
-	return error(status, 1, (STATUS) FBOK);
+	return error(status, 1, (STATUS) FB_SUCCESS);
 }
 
 
@@ -223,7 +223,7 @@ STATUS API_ROUTINE isc_blob_set_desc(STATUS * status,
 	desc->blob_desc_charset = charset;
 	desc->blob_desc_segment_size = segment_size;
 
-	return error(status, 1, (STATUS) FBOK);
+	return error(status, 1, (STATUS) FB_SUCCESS);
 }
 
 

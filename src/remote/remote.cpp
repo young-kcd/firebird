@@ -600,7 +600,7 @@ void DLL_EXPORT REMOTE_reset_request( RRQ request, MSG active_message)
 			}
 		}
 
-/* Initialize the request status to FBOK */
+/* Initialize the request status to FB_SUCCESS */
 
 	request->rrq_status_vector[1] = 0;
 }

@@ -445,7 +445,7 @@ static void check_autocommit(REQ request, struct tdbb* tdbb)
 inline static void api_entry_point_init(STATUS* user_status)
 {
 	user_status[0] = gds_arg_gds;
-	user_status[1] = FBOK;
+	user_status[1] = FB_SUCCESS;
 	user_status[2] = gds_arg_end;
 }
 
@@ -1064,7 +1064,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 			(dbb, options.dpb_shutdown, options.dpb_shutdown_delay)) {
 			JRD_SS_MUTEX_LOCK;
 			V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
-			if (user_status[1] != FBOK)
+			if (user_status[1] != FB_SUCCESS)
 				ERR_punt();
 			else
 				ERR_post(gds_no_priv,
@@ -1565,7 +1565,7 @@ STATUS DLL_EXPORT GDS_CANCEL_OPERATION(STATUS * user_status,
 		assert(FALSE);
 	}
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 #endif
 
@@ -1633,7 +1633,7 @@ STATUS DLL_EXPORT GDS_COMMIT(STATUS * user_status, TRA * tra_handle)
 
 	*tra_handle = NULL;
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -4094,7 +4094,7 @@ STATUS DLL_EXPORT GDS_UNWIND(STATUS * user_status,
 	user_status[0] = gds_arg_gds;
 	user_status[2] = gds_arg_end;
 
-	return (user_status[1] = FBOK);
+	return (user_status[1] = FB_SUCCESS);
 
 	}	// try
 	catch (...) {
@@ -4752,7 +4752,7 @@ static STATUS check_database(TDBB tdbb, ATT attachment, STATUS * user_status)
 	}
 #endif
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -4876,7 +4876,7 @@ static BOOLEAN drop_files(FIL file)
 	DBB dbb;
 	STATUS status[ISC_STATUS_LENGTH];
 
-	status[1] = FBOK;
+	status[1] = FB_SUCCESS;
 
 	for (; file; file = file->fil_next)
 	{
@@ -5758,7 +5758,7 @@ static STATUS prepare(TDBB		tdbb,
 		return status_vector[1];
 	}
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -5904,12 +5904,12 @@ static STATUS return_success(TDBB tdbb)
    initilalize the status vector to indicate success.
    Else pass the status vector along at it stands.  */
 	if (p[0] != gds_arg_gds ||
-		p[1] != FBOK ||
+		p[1] != FB_SUCCESS ||
 		(p[2] != gds_arg_end && p[2] != gds_arg_gds &&
 		 p[2] != isc_arg_warning))
 	{
 		*p++ = gds_arg_gds;
-		*p++ = FBOK;
+		*p++ = FB_SUCCESS;
 		*p = gds_arg_end;
 	}
 
@@ -6448,7 +6448,7 @@ ULONG JRD_shutdown_all()
 
 	JRD_restore_context();
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 #endif /* SERVER_SHUTDOWN */
 

@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.48 2002-11-13 15:00:57 kkuznetsov Exp $
+$Id: common.h,v 1.49 2002-11-14 08:23:53 dimitr Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -734,8 +734,8 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #ifndef FALSE
 #define FALSE           0
 #endif
-#define FBOK         0
-#define FAILURE         1
+#define FB_SUCCESS         0
+#define FB_FAILURE         1
 
 
 /* data type definitions */

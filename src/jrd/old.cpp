@@ -129,7 +129,7 @@ ULONG start_seqno, USHORT start_file, USHORT num_files, SCHAR ** files)
 							reinterpret_cast < UCHAR * >(journal_dir),
 							jd_len,
 							reinterpret_cast < UCHAR * >(data),
-							d_len)) != FBOK)
+							d_len)) != FB_SUCCESS)
 			AIL_process_jrn_error(ret_val);
 
 	if (db_len) {
@@ -156,7 +156,7 @@ ULONG start_seqno, USHORT start_file, USHORT num_files, SCHAR ** files)
 
 		if ((ret_val = JRN_put_old_start(tdbb->tdbb_status_vector,
 										 dbb->dbb_journal, seqno, offset,
-										 p_offset, &dump_id)) != FBOK)
+										 p_offset, &dump_id)) != FB_SUCCESS)
 			AIL_process_jrn_error(ret_val);
 	}
 
@@ -240,11 +240,11 @@ ULONG start_seqno, USHORT start_file, USHORT num_files, SCHAR ** files)
 	if ((ret_val = JRN_put_old_end(tdbb->tdbb_status_vector, dbb->dbb_journal,
 								   seqno, offset, p_offset,
 								   dump_id)) !=
-		FBOK) AIL_process_jrn_error(ret_val);
+		FB_SUCCESS) AIL_process_jrn_error(ret_val);
 
 	old_fini(&OLD_handle, OLD_EOD);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -258,8 +258,8 @@ static int close_cur_file(OLD old, USHORT code)
  *
  * Functional description
  *	Closes the current file with a code record at end
- *	returns FBOK - if things work
- *		FAILURE - close fails
+ *	returns FB_SUCCESS - if things work
+ *		FB_FAILURE - close fails
  *
  **************************************/
 	TDBB tdbb;
@@ -276,21 +276,21 @@ static int close_cur_file(OLD old, USHORT code)
 	hdr->oh_seqno = 0;
 
 	if (LLIO_write(0, old->old_fd, 0, 0L, LLIO_SEEK_NONE,
-				   (UCHAR *) hdr, old->old_rec_size, &len) == FAILURE ||
+				   (UCHAR *) hdr, old->old_rec_size, &len) == FB_FAILURE ||
 		len != old->old_rec_size)
-		return FAILURE;
+		return FB_FAILURE;
 
 /* flush writes to disk and close file */
 
 	LLIO_sync(0, old->old_fd);
 
-	if (LLIO_close(tdbb->tdbb_status_vector, old->old_fd) == FAILURE)
+	if (LLIO_close(tdbb->tdbb_status_vector, old->old_fd) == FB_FAILURE)
 		ERR_punt();
 
 	old->old_fd = 0;
 	old->old_cur_size = 0;
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -304,8 +304,8 @@ static int create_file(OLD old, SLONG * ret_fd)
  *
  * Functional description
  *	Open next file and write header & journal new name
- *	returns FBOK - if things work
- *		FAILURE - open fails 
+ *	returns FB_SUCCESS - if things work
+ *		FB_FAILURE - open fails 
  *
  **************************************/
 	TDBB tdbb;
@@ -325,7 +325,7 @@ static int create_file(OLD old, SLONG * ret_fd)
 	hdr = ob->ob_hdr;
 
 	if (LLIO_open(tdbb->tdbb_status_vector, old->old_files[old->old_cur_file],
-				  LLIO_OPEN_NEW_RW, TRUE, &fd) == FAILURE)
+				  LLIO_OPEN_NEW_RW, TRUE, &fd) == FB_FAILURE)
 		ERR_punt();
 
 	MOVE_CLEAR((SCHAR *) hdr, OLD_HEADER_SIZE);
@@ -350,18 +350,18 @@ static int create_file(OLD old, SLONG * ret_fd)
 	MOVE_FAST(old->old_db, hp->hp_db, hp->hp_length);
 
 	if (LLIO_write(0, fd, 0, 0L, LLIO_SEEK_NONE,
-				   (UCHAR *) hdr, OLD_HEADER_SIZE, &len) == FAILURE ||
+				   (UCHAR *) hdr, OLD_HEADER_SIZE, &len) == FB_FAILURE ||
 		len != OLD_HEADER_SIZE) {
 		LLIO_close(0, fd);
 		unlink(old->old_files[old->old_cur_file]);
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 	old->old_cur_size = OLD_HEADER_SIZE;
 
 	*ret_fd = fd;
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -508,7 +508,7 @@ static void old_fini(OLD * OLD_handle, USHORT code)
 
 	if ( (old = *OLD_handle) ) {
 		if (old->old_fd > 0) {
-			if (close_cur_file(old, code) == FAILURE)
+			if (close_cur_file(old, code) == FB_FAILURE)
 				return;
 		}
 
@@ -546,7 +546,7 @@ SSHORT rec_size, ULONG log_seqno, ULONG log_offset, ULONG log_p_offset)
 	OLD old;
 
 	if (*OLD_handle != NULL)
-		return FAILURE;
+		return FB_FAILURE;
 
 	*OLD_handle = old = (OLD) MemoryPool::malloc_from_system(sizeof(struct old));
 	MOVE_CLEAR(old, sizeof(struct old));
@@ -607,8 +607,8 @@ static int old_put(OLD OLD_handle, SCHAR * logrec, USHORT len)
 		OLD_handle->old_file_size) {
 		/* Rollover to next file */
 
-		if ((open_next_file(OLD_handle)) == FAILURE)
-			return FAILURE;
+		if ((open_next_file(OLD_handle)) == FB_FAILURE)
+			return FB_FAILURE;
 
 		return old_put(OLD_handle, logrec, len);
 	}
@@ -626,15 +626,15 @@ static int old_put(OLD OLD_handle, SCHAR * logrec, USHORT len)
 
 	ret = LLIO_write(0, OLD_handle->old_fd, 0, 0L, LLIO_SEEK_NONE,
 					 (UCHAR *) hdr, OLD_handle->old_rec_size, &l);
-	if (ret == FAILURE || l != OLD_handle->old_rec_size) {
+	if (ret == FB_FAILURE || l != OLD_handle->old_rec_size) {
 		/* Not enough space */
 		/* backup to beginning of block and go on to next file */
 
-		if (ret == FBOK)
+		if (ret == FB_SUCCESS)
 			LLIO_seek(0, OLD_handle->old_fd, 0, -l, LLIO_SEEK_CURRENT);
 
-		if ((open_next_file(OLD_handle)) == FAILURE)
-			return FAILURE;
+		if ((open_next_file(OLD_handle)) == FB_FAILURE)
+			return FB_FAILURE;
 
 		return old_put(OLD_handle, logrec, len);
 	}
@@ -642,7 +642,7 @@ static int old_put(OLD OLD_handle, SCHAR * logrec, USHORT len)
 	ob->ob_cur_seqno++;
 	OLD_handle->old_cur_size += OLD_handle->old_rec_size;
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -747,8 +747,8 @@ static int open_next_file(OLD old)
  *
  * Functional description
  *	Opens the next OnLine Dump file and writes out the header.
- *	returns FBOK - if things work
- *		FAILURE - open fails, no more file etc.
+ *	returns FB_SUCCESS - if things work
+ *		FB_FAILURE - open fails, no more file etc.
  *
  **************************************/
 	TDBB tdbb;
@@ -761,15 +761,15 @@ static int open_next_file(OLD old)
 	dbb = tdbb->tdbb_database;
 
 	if (old->old_fd > 0) {
-		if (close_cur_file(old, OLD_EOF) == FAILURE)
-			return FAILURE;
+		if (close_cur_file(old, OLD_EOF) == FB_FAILURE)
+			return FB_FAILURE;
 	}
 
 	if (old->old_cur_file >= old->old_num_files)
-		return FAILURE;
+		return FB_FAILURE;
 
-	if (create_file(old, &fd) == FAILURE)
-		return FAILURE;
+	if (create_file(old, &fd) == FB_FAILURE)
+		return FB_FAILURE;
 
 	ISC_expand_filename(old->old_files[old->old_cur_file], 0, name);
 
@@ -777,7 +777,7 @@ static int open_next_file(OLD old)
 		(ret_val =
 		 JRN_put_old_file(tdbb->tdbb_status_vector, dbb->dbb_journal, name,
 						  strlen(name), old->old_file_size,
-						  old->old_file_seqno, old->old_dump_id)) != FBOK) {
+						  old->old_file_seqno, old->old_dump_id)) != FB_SUCCESS) {
 		LLIO_close(0, fd);
 		AIL_process_jrn_error(ret_val);
 	}
@@ -787,5 +787,5 @@ static int open_next_file(OLD old)
 
 	old->old_fd = fd;
 
-	return FBOK;
+	return FB_SUCCESS;
 }

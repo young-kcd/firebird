@@ -1979,7 +1979,7 @@ void CCH_recover_shadow(TDBB tdbb, SBM sbm_rec)
 
 		if (WAL_checkpoint_force
 			(tdbb->tdbb_status_vector, dbb->dbb_wal, &seqno, walname,
-			 &p_offset, &offset) != FBOK)
+			 &p_offset, &offset) != FB_SUCCESS)
 			ERR_punt();
 
 		/* Update the log page */
@@ -1996,7 +1996,7 @@ void CCH_recover_shadow(TDBB tdbb, SBM sbm_rec)
 		/* Inform wal writer that older log files are no longer required */
 
 		if (WAL_checkpoint_recorded(tdbb->tdbb_status_vector, dbb->dbb_wal)
-			!= FBOK)
+			!= FB_SUCCESS)
 			ERR_punt();
 	}
 	else
@@ -3251,7 +3251,7 @@ static void THREAD_ROUTINE cache_writer(DBB dbb)
 				if (WAL_checkpoint_start(status_vector,
 										 dbb->dbb_wal,
 										 &start_chkpt) !=
-					FBOK) gds__log_status(dbb->dbb_file->fil_string,
+					FB_SUCCESS) gds__log_status(dbb->dbb_file->fil_string,
 											 status_vector);
 				else if (start_chkpt)
 					bcb->bcb_flags |= BCB_checkpoint_db;
@@ -3260,7 +3260,7 @@ static void THREAD_ROUTINE cache_writer(DBB dbb)
 				if (WAL_checkpoint_finish(status_vector, dbb->dbb_wal,
 										  &seq, walname, &p_off,
 										  &off) !=
-					FBOK) gds__log_status(dbb->dbb_file->fil_string,
+					FB_SUCCESS) gds__log_status(dbb->dbb_file->fil_string,
 											 status_vector);
 				else {
 					AIL_checkpoint_finish(status_vector, dbb, seq, walname,

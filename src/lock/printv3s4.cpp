@@ -145,7 +145,7 @@ V3_lock_print(argc, argv)
 
 	if (gethostname(host_name, sizeof(host_name))) {
 		ib_printf("gethostname failed\n");
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 	sprintf(lock_file, LOCK_FILE, host_name);
@@ -153,18 +153,18 @@ V3_lock_print(argc, argv)
 	LOCK_fd = open(lock_file, O_RDWR, 0660);
 	if (LOCK_fd == -1) {
 		/* Silently return - there doesn't have to be a bridge lock file */
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 	if (stat(lock_file, &stat_buf)) {
 		ib_printf("stat failed for bridge lock table %s\n", lock_file);
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 	if (stat_buf.st_size < sizeof(struct lhb)) {
 		/* File is obviously too small to really be a lock file */
 		ib_printf("Bridge lock file too small: %s\n", lock_file);
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 	LOCK_size_mapped = DEFAULT_SIZE;
@@ -174,7 +174,7 @@ V3_lock_print(argc, argv)
 
 	if ((int) LOCK_header == -1) {
 		ib_printf("mmap failed\n");
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 /* If the table is larger than usual, remap it */
@@ -234,7 +234,7 @@ V3_lock_print(argc, argv)
 	if (LOCK_header->lhb_secondary != LHB_PATTERN)
 		prt_history(shb->shb_history, "Event log");
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 

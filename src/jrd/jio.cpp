@@ -631,14 +631,14 @@ static delete_dir(header, id_space, name_string, name_length)
 	USHORT l;
 
 	if (!(dir = locate_dir(header, id_space, name_string, name_length)))
-		return FAILURE;
+		return FB_FAILURE;
 
 	next = JIO_next_dir(dir);
 	l = (TEXT *) next - id_space;
 	move(next, dir, header->jfh_id_space - l);
 	header->jfh_id_space -= (TEXT *) next - (TEXT *) dir;
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 

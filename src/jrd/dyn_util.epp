@@ -514,9 +514,9 @@ BOOLEAN DYN_UTIL_get_prot(TDBB		tdbb,
 		// Note that the following cast to BLK not only changes
 		// the type, it also casts away volatile!
 		DYN_rundown_request((BLK)request, drq_l_prot_mask);
-		return FAILURE;
+		return FB_FAILURE;
 	}
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 

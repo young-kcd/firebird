@@ -177,7 +177,7 @@ static STATUS merge_setup(
 
 	if (*out + new_length + 2 >= end) {
 		(*out)[-1] = gds_info_truncated;
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 	*in += 2;
@@ -192,5 +192,5 @@ static STATUS merge_setup(
 			*(*out)++ = *(*in)++;
 		while (--length);
 
-	return FBOK;
+	return FB_SUCCESS;
 }

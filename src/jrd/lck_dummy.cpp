@@ -151,7 +151,7 @@ int LOCK_init(
  *
  **************************************/
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 

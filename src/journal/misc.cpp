@@ -361,8 +361,8 @@ int MISC_time_convert( TEXT * string, USHORT length, SLONG date[2])
  **************************************
  *
  * Functional description
- *	Convert an arbitrary string to a date.  Return FBOK if successful,
- *	otherwise FAILURE.
+ *	Convert an arbitrary string to a date.  Return FB_SUCCESS if successful,
+ *	otherwise FB_FAILURE.
  *
  **************************************/
 	TEXT c, *p, temp[15], *t, *end, **month_ptr, *m;
@@ -419,24 +419,24 @@ int MISC_time_convert( TEXT * string, USHORT length, SLONG date[2])
 
 					while (++p < end)
 						if (*p != ' ' && *p != '\t' && *p != 0)
-							return FAILURE;
+							return FB_FAILURE;
 					if (strcmp(temp, NOW) == 0) {
 						now_to_date(&times2, date);
-						return FBOK;
+						return FB_SUCCESS;
 					}
 					times2.tm_hour = times2.tm_min = times2.tm_sec = 0;
 					gds__encode_date(&times2, date);
 					if (strcmp(temp, TODAY) == 0)
-						return FBOK;
+						return FB_SUCCESS;
 					if (strcmp(temp, TOMORROW) == 0) {
 						++date[0];
-						return FBOK;
+						return FB_SUCCESS;
 					}
 					if (strcmp(temp, YESTERDAY) == 0) {
 						--date[0];
-						return FBOK;
+						return FB_SUCCESS;
 					}
-					return FAILURE;
+					return FB_FAILURE;
 				}
 				for (t = temp, m = *month_ptr++; *t && *t == *m; t++, m++);
 				if (!*t)
@@ -446,7 +446,7 @@ int MISC_time_convert( TEXT * string, USHORT length, SLONG date[2])
 			month_position = i;
 		}
 		else
-			return FAILURE;
+			return FB_FAILURE;
 		components[i] = n;
 		while (p < end && (*p == ' ' || *p == '\t'))
 			p++;
@@ -466,7 +466,7 @@ int MISC_time_convert( TEXT * string, USHORT length, SLONG date[2])
 
 	if (!components[0] && !components[1] && !components[2]) {
 		date[0] = date[1] = 0;
-		return FBOK;
+		return FB_SUCCESS;
 	}
 
 	if (month_position) {
@@ -502,9 +502,9 @@ int MISC_time_convert( TEXT * string, USHORT length, SLONG date[2])
 
 	if (times.tm_year != times2.tm_year ||
 		times.tm_mon != times2.tm_mon || times.tm_mday != times2.tm_mday)
-		return FAILURE;
+		return FB_FAILURE;
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 

@@ -39,8 +39,8 @@ static int caller (SHORT, ISC_BLOB_CTL, SHORT, CHAR*, SHORT*);
 #define	ACTION_put_segment 3
 #define	ACTION_create 4
 
-#define FBOK			0
-#define FAILURE			1
+#define FB_SUCCESS			0
+#define FB_FAILURE			1
 
 #define BUFFER_LENGTH		512
 
@@ -115,7 +115,7 @@ switch (action)
 		return isc_uns_ext;
     }
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 static int caller (ARG(SHORT, action), ARG(ISC_BLOB_CTL, control),
@@ -180,7 +180,7 @@ ARGLIST(ISC_BLOB_CTL control)
 
  
 	if (!(text_file = fopen ("desc.txt", "w")))
-		return FAILURE;
+		return FB_FAILURE;
 
 	while (!(status = caller (ACTION_get_segment, control, sizeof(buffer) - 1,
 		buffer, &length)))
@@ -226,7 +226,7 @@ ARGLIST(ISC_BLOB_CTL control)
 	if (status != isc_segstr_eof)
 		return status;
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 static void set_statistics (ARG(char*, filename), ARG(ISC_BLOB_CTL, control))
@@ -329,7 +329,7 @@ for (;;)
 	{
 		control->ctl_segment_length = p - control->ctl_buffer; 
 		if (c == '\n')
-			return FBOK; 
+			return FB_SUCCESS; 
 		else
 			return isc_segment;
 	}

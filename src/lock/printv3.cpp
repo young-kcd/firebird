@@ -172,7 +172,7 @@ int V3_lock_print(USHORT argc, UCHAR **argv)
 #endif
 	if (stat(expanded_filename, &stat_buf)) {
 		/* Silently return - there doesn't have to be a bridge file */
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 	get_lock_header();
@@ -191,7 +191,7 @@ int V3_lock_print(USHORT argc, UCHAR **argv)
 	if (LOCK_header && shmem_data.sh_mem_length_mapped < sizeof(struct lhb)) {
 		/* File is obviously too small to really be a lock file */
 		ib_printf("Bridge lock file too small.\n%s\n", expanded_filename);
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 	if (LOCK_header && LOCK_header->lhb_length > LOCK_shm_size) {
@@ -204,7 +204,7 @@ int V3_lock_print(USHORT argc, UCHAR **argv)
 	if (!LOCK_header) {
 		ib_printf("Unable to access bridge lock table\n");
 		gds__print_status(status_vector);
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 	LOCK_shm_size = shmem_data.sh_mem_length_mapped;
@@ -214,7 +214,7 @@ int V3_lock_print(USHORT argc, UCHAR **argv)
 	if (!LOCK_header->lhb_version) {
 		ib_printf("LOCK_HEADER BLOCK\n");
 		ib_printf("\tNo bridge lock table present.\n");
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 /* Print lock header block */
@@ -267,7 +267,7 @@ int V3_lock_print(USHORT argc, UCHAR **argv)
 	if (LOCK_header->lhb_secondary != LHB_PATTERN)
 		prt_history(shb->shb_history, "Event log");
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 

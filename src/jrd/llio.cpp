@@ -108,7 +108,7 @@ int LLIO_allocate_file_space(
  *        Open (create if necessary) the given file and write 'size'
  *        number of bytes to it.  Each byte is initialized to
  *        the passed fill_char.  If 'overwrite' is FALSE and the file
- *        already exists, return FAILURE.
+ *        already exists, return FB_FAILURE.
  *
  *        This routine may be used to make sure that the file already
  *        has enough space allocated to it.
@@ -118,7 +118,7 @@ int LLIO_allocate_file_space(
  *        time something is written to the file unless the file size grows
  *        beyond the given 'size'.  So 'write' performance should improve.
  *
- *        If there is any error, return FAILURE else return FBOK.
+ *        If there is any error, return FB_FAILURE else return FB_SUCCESS.
  *        In case of an error, status_vector would be updated.
  *
  **************************************/
@@ -134,7 +134,7 @@ int LLIO_allocate_file_space(
 		open_mode = LLIO_OPEN_NEW_RW;
 
 	if (LLIO_open(status_vector, filename, open_mode, TRUE, &fd))
-		return FAILURE;
+		return FB_FAILURE;
 
 	memset(buffer, (int) fill_char, BUFSIZE);
 	times = size / BUFSIZE + 1;	/* For the while loop below */
@@ -144,13 +144,13 @@ int LLIO_allocate_file_space(
 		if (LLIO_write(status_vector, fd, filename, 0L, LLIO_SEEK_NONE,
 					   reinterpret_cast < UCHAR * >(buffer), length, 0)) {
 			LLIO_close(0, fd);
-			return FAILURE;
+			return FB_FAILURE;
 		}
 	}
 
 	LLIO_close(0, fd);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -169,7 +169,7 @@ int LLIO_close(STATUS * status_vector, SLONG file_desc)
  *
  **************************************/
 
-	return (CloseHandle((HANDLE) file_desc) ? FBOK : FAILURE);
+	return (CloseHandle((HANDLE) file_desc) ? FB_SUCCESS : FB_FAILURE);
 }
 
 
@@ -240,10 +240,10 @@ int LLIO_open(
 	if ((HANDLE) * file_desc == INVALID_HANDLE_VALUE) {
 		if (status_vector)
 			io_error(status_vector, "CreateFile", filename, isc_io_open_err);
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -269,20 +269,20 @@ UCHAR * buffer, SLONG length, SLONG * length_read)
 
 	if ((whence != LLIO_SEEK_NONE) &&
 		(LLIO_seek(status_vector, file_desc, filename, offset, whence) ==
-		 FAILURE)) return FAILURE;
+		 FB_FAILURE)) return FB_FAILURE;
 
 	if (buffer)
 		if (!ReadFile((HANDLE) file_desc, buffer, length, &len, NULL)) {
 			if (status_vector)
 				io_error(status_vector, "ReadFile", filename,
 						 isc_io_read_err);
-			return FAILURE;
+			return FB_FAILURE;
 		}
 
 	if (length_read)
 		*length_read = len;
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -318,11 +318,11 @@ int LLIO_seek(
 			if (status_vector)
 				io_error(status_vector, "SetFilePointer", filename,
 						 isc_io_access_err);
-			return FAILURE;
+			return FB_FAILURE;
 		}
 	}
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -339,7 +339,7 @@ int LLIO_sync(STATUS * status_vector, SLONG file_desc)
  *
  **************************************/
 
-	return (FlushFileBuffers((HANDLE) file_desc) ? FBOK : FAILURE);
+	return (FlushFileBuffers((HANDLE) file_desc) ? FB_SUCCESS : FB_FAILURE);
 }
 
 
@@ -364,20 +364,20 @@ USHORT whence, UCHAR * buffer, SLONG length, SLONG * length_written)
 
 	if ((whence != LLIO_SEEK_NONE) &&
 		(LLIO_seek(status_vector, file_desc, filename, offset, whence) ==
-		 FAILURE)) return FAILURE;
+		 FB_FAILURE)) return FB_FAILURE;
 
 	if (buffer)
 		if (!WriteFile((HANDLE) file_desc, buffer, length, &len, NULL)) {
 			if (status_vector)
 				io_error(status_vector, "WriteFile", filename,
 						 isc_io_write_err);
-			return FAILURE;
+			return FB_FAILURE;
 		}
 
 	if (length_written)
 		*length_written = len;
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -417,7 +417,7 @@ int LLIO_close(STATUS * status_vector, SLONG file_desc)
  *
  **************************************/
 
-	return ((close((int) file_desc) != -1) ? FBOK : FAILURE);
+	return ((close((int) file_desc) != -1) ? FB_SUCCESS : FB_FAILURE);
 }
 
 
@@ -470,10 +470,10 @@ int LLIO_open(
 	if (*file_desc == -1) {
 		if (status_vector)
 			io_error(status_vector, "open", filename, isc_io_open_err);
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 int LLIO_read(
@@ -499,7 +499,7 @@ UCHAR * buffer, SLONG length, SLONG * length_read)
 
 	if ((whence != LLIO_SEEK_NONE) &&
 		(LLIO_seek(status_vector, file_desc, filename, offset, whence) ==
-		 FAILURE)) return FAILURE;
+		 FB_FAILURE)) return FB_FAILURE;
 
 	if (p = buffer)
 		for (i = 0; length && i++ < IO_RETRY;) {
@@ -509,7 +509,7 @@ UCHAR * buffer, SLONG length, SLONG * length_read)
 				if (status_vector)
 					io_error(status_vector, "read", filename,
 							 isc_io_read_err);
-				return FAILURE;
+				return FB_FAILURE;
 			}
 			if (!len)
 				break;
@@ -520,7 +520,7 @@ UCHAR * buffer, SLONG length, SLONG * length_read)
 	if (length_read)
 		*length_read = p - buffer;
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -559,10 +559,10 @@ int LLIO_seek(
 		if (lseek((int) file_desc, LSEEK_OFFSET_CAST offset, (int) whence) == -1) {
 			if (status_vector)
 				io_error(status_vector, "lseek", filename, isc_io_access_err);
-			return FAILURE;
+			return FB_FAILURE;
 		}
 	}
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -579,7 +579,7 @@ int LLIO_sync(STATUS * status_vector, SLONG file_desc)
  *
  **************************************/
 
-	return (fsync((int) file_desc) != -1) ? FBOK : FAILURE;
+	return (fsync((int) file_desc) != -1) ? FB_SUCCESS : FB_FAILURE;
 }
 
 
@@ -605,7 +605,7 @@ USHORT whence, UCHAR * buffer, SLONG length, SLONG * length_written)
 
 	if ((whence != LLIO_SEEK_NONE) &&
 		(LLIO_seek(status_vector, file_desc, filename, offset, whence) ==
-		 FAILURE)) return FAILURE;
+		 FB_FAILURE)) return FB_FAILURE;
 
 	if (p = buffer)
 		for (i = 0; length && i++ < IO_RETRY;) {
@@ -615,7 +615,7 @@ USHORT whence, UCHAR * buffer, SLONG length, SLONG * length_written)
 				if (status_vector)
 					io_error(status_vector, "write", filename,
 							 isc_io_write_err);
-				return FAILURE;
+				return FB_FAILURE;
 			}
 			if (!len)
 				break;
@@ -626,7 +626,7 @@ USHORT whence, UCHAR * buffer, SLONG length, SLONG * length_written)
 	if (length_written)
 		*length_written = p - buffer;
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 

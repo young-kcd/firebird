@@ -4427,10 +4427,10 @@ static BOOLEAN get_who( TDBB tdbb, GBL gbl, SCHAR * name)
 	}
 	catch (...) {
 		DYN_rundown_request(request, drq_l_user_name);
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 

@@ -743,21 +743,21 @@ static int error_check( int status, SSHORT * iosb)
  *
  * Functional description
  *	Check both a return status and IOSB (if present) for errors.  If
- *	an error occured, set up "errno" and return FAILURE.
+ *	an error occured, set up "errno" and return FB_FAILURE.
  *
  **************************************/
 
 	if (!(status & 1)) {
 		errno = 5;
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 	if (!iosb || (iosb[0] & 1))
-		return FBOK;
+		return FB_SUCCESS;
 
 	errno = ERRNO(iosb[0]);
 
-	return FAILURE;
+	return FB_FAILURE;
 }
 
 

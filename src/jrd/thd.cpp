@@ -1396,7 +1396,7 @@ int THD_rec_mutex_unlock(REC_MUTX_T * rec_mutex)
 	int ret;
 
 	if (rec_mutex->rec_mutx_id != THD_get_thread_id())
-		return FAILURE;
+		return FB_FAILURE;
 
 	rec_mutex->rec_mutx_count--;
 

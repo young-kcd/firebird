@@ -2808,7 +2808,7 @@ static STATUS detach( STATUS * status_vector, DBB dbb)
 	STATUS *status, alt_vector[ISC_STATUS_LENGTH];
 
 	if (!dbb->dbb_handle)
-		return FBOK;
+		return FB_SUCCESS;
 
 	status = status_vector;
 
@@ -2862,7 +2862,7 @@ static int execute_dynamic_ddl( DBB database, RLB rlb)
 
 	RELEASE_RLB;
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -2986,7 +2986,7 @@ static void get_log_names(
 		loop++;
 		if (WALF_get_linked_logs_info
 			(gds_status, db_name, cur_log, part_offset, &log_count, next_log,
-			 &next_offset, &last_log_flag, &not_archived) != FBOK)
+			 &next_offset, &last_log_flag, &not_archived) != FB_SUCCESS)
 			ERRQ_database_error(dbb, gds_status);
 
 		if ((!not_archived) || force)
@@ -3024,7 +3024,7 @@ static void get_log_names(
 										 &log_seqno, &log_length,
 										 &last_log_flag, 1);
 
-		if (ret_val == FAILURE)
+		if (ret_val == FB_FAILURE)
 			ERRQ_database_error(dbb, gds_status);
 
 		if (ret_val < 0)

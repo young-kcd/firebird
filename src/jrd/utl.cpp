@@ -589,7 +589,7 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
 		break;
 
 	default:
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 /* if items have been added, allocate space
@@ -605,7 +605,7 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
 		if (!new_dpb)
 		{			/* NOMEM: don't trash existing dpb */
 			DEV_REPORT("isc_extend_dpb: out of memory");
-			return FAILURE;		/* NOMEM: not really handled */
+			return FB_FAILURE;		/* NOMEM: not really handled */
 		}
 
 		p = new_dpb;
@@ -652,13 +652,13 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
 		break;
 
 	default:
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 	*dpb_size = p - new_dpb;
 	*dpb = (SCHAR *) new_dpb;
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -1255,7 +1255,7 @@ int API_ROUTINE gds__version(
 							  buf_len, reinterpret_cast < char *>(buf))) {
 			if (buf != buffer)
 				gds__free((SLONG *) buf);
-			return FAILURE;
+			return FB_FAILURE;
 		}
 
 		p = buf;
@@ -1281,7 +1281,7 @@ int API_ROUTINE gds__version(
 			default:
 				if (buf != buffer)
 					gds__free((SLONG *) buf);
-				return FAILURE;
+				return FB_FAILURE;
 			}
 			p += len;
 		}
@@ -1296,7 +1296,7 @@ int API_ROUTINE gds__version(
 			buf = (UCHAR *) gds__alloc((SLONG) (sizeof(UCHAR) * buf_len));
 			/* FREE: freed within this module */
 			if (!buf)			/* NOMEM: */
-				return FAILURE;
+				return FB_FAILURE;
 		}
 	} while (redo);
 
@@ -1327,14 +1327,14 @@ int API_ROUTINE gds__version(
 	if (buf != buffer)
 		gds__free((SLONG *) buf);
 
-	if (get_ods_version(handle, &ods_version, &ods_minor_version) == FAILURE)
-		return FAILURE;
+	if (get_ods_version(handle, &ods_version, &ods_minor_version) == FB_FAILURE)
+		return FB_FAILURE;
 
 	sprintf(s, "on disk structure version %d.%d", ods_version,
 			ods_minor_version);
 	reinterpret_cast < void (*) (...) > (*routine) (user_arg, s);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -2214,7 +2214,7 @@ static int get_ods_version(
 					  sizeof(buffer), reinterpret_cast < char *>(buffer));
 
 	if (status_vector[1])
-		return FAILURE;
+		return FB_FAILURE;
 
 	p = buffer;
 
@@ -2233,11 +2233,11 @@ static int get_ods_version(
 			break;
 
 		default:
-			return FAILURE;
+			return FB_FAILURE;
 		}
 	}
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 

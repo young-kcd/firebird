@@ -59,7 +59,7 @@ USHORT SERVICES_config(SC_HANDLE manager,
 
 	if ((status = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
 							   REG_KEY_ROOT_CUR_VER,
-							   0, KEY_WRITE, &hkey)) != ERROR_FBOK) {
+							   0, KEY_WRITE, &hkey)) != ERROR_SUCCESS) {
 		return (*err_handler) (status, "RegOpenKeyEx", NULL);
 	}
 
@@ -78,14 +78,14 @@ USHORT SERVICES_config(SC_HANDLE manager,
 	if ((status = RegSetValueEx(hkey, "DefaultClientMode", 0,
 								REG_SZ, reinterpret_cast<UCHAR*>(mode),
 								(DWORD) (strlen(mode) + 1))) !=
-		ERROR_FBOK) {
+		ERROR_SUCCESS) {
 		RegCloseKey(hkey);
 		return (*err_handler) (status, "RegSetValueEx", NULL);
 	}
 
 	RegCloseKey(hkey);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -112,21 +112,21 @@ USHORT SERVICES_delete(SC_HANDLE manager,
 
 	if ((status = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
 							   REG_KEY_ROOT_CUR_VER,
-							   0, KEY_WRITE, &hkey)) != ERROR_FBOK) {
+							   0, KEY_WRITE, &hkey)) != ERROR_SUCCESS) {
 		return (*err_handler) (status, "RegOpenKeyEx", NULL);
 	}
 
 	if ((status = RegSetValueEx(hkey, "DefaultClientMode", 0,
 								REG_SZ, reinterpret_cast<UCHAR*>(mode),
 								(DWORD) (strlen(mode) + 1))) !=
-		ERROR_FBOK) {
+		ERROR_SUCCESS) {
 		RegCloseKey(hkey);
 		return (*err_handler) (status, "RegSetValueEx", NULL);
 	}
 
 	RegCloseKey(hkey);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -184,7 +184,7 @@ USHORT SERVICES_install(SC_HANDLE manager,
 
 	CloseServiceHandle(service);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -227,7 +227,7 @@ USHORT SERVICES_remove(SC_HANDLE manager,
 
 	CloseServiceHandle(service);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -272,7 +272,7 @@ USHORT SERVICES_start(SC_HANDLE manager,
 
 	CloseServiceHandle(service);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -303,7 +303,7 @@ USHORT SERVICES_stop(SC_HANDLE manager,
 		CloseServiceHandle(service);
 		errnum = GetLastError();
 		if (errnum == ERROR_SERVICE_NOT_ACTIVE)
-			return FBOK;
+			return FB_SUCCESS;
 		else
 			return (*err_handler) (errnum, "ControlService", service);
 	}
@@ -321,5 +321,5 @@ USHORT SERVICES_stop(SC_HANDLE manager,
 
 	CloseServiceHandle(service);
 
-	return FBOK;
+	return FB_SUCCESS;
 }

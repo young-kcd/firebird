@@ -23,7 +23,7 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
- * $Id: ibmgr.cpp,v 1.6 2002-11-13 15:01:11 kkuznetsov Exp $
+ * $Id: ibmgr.cpp,v 1.7 2002-11-14 08:32:08 dimitr Exp $
  */
 
 #include "firebird.h"
@@ -55,14 +55,14 @@
 
 
 /* Codes returned by get_switchesi()
-   FBOK is defined in common.h
+   FB_SUCCESS is defined in common.h
 */
 #define ERR_SYNTAX	(-1)
 #define ERR_OTHER	(-2)
 
 
 /* Codes returned by parse_cmd_line()
-   FBOK is defined in common.h
+   FB_SUCCESS is defined in common.h
 */
 #define ACT_NONE	(-1)
 #define ACT_QUIT	1
@@ -175,7 +175,7 @@ host = getenv ("ISC_HOST");
 
 	if (argc > 1) {
 		ret = parse_cmd_line(argc, argv);
-		if (ret == FBOK) {
+		if (ret == FB_SUCCESS) {
 			ret = SRVRMGR_exec_line(&ibmgr_data);
 			if (ret) {
 				SRVRMGR_msg_get(ret, msg);
@@ -200,7 +200,7 @@ host = getenv ("ISC_HOST");
 			ret = parse_cmd_line(local_argc, local_argv);
 			if (ret == ACT_QUIT)
 				break;
-			if (ret == FBOK) {
+			if (ret == FB_SUCCESS) {
 				ret = SRVRMGR_exec_line(&ibmgr_data);
 				if (ret) {
 					SRVRMGR_msg_get(ret, msg);
@@ -302,7 +302,7 @@ static SSHORT get_switches(
  *
  * Functional description
  *	Parse the input line arguments.
- *	Returns: FBOK  if success
+ *	Returns: FB_SUCCESS  if success
  *		 ERR_SYNTAX  in case of syntax error.
  *		 ERR_OTHER  non-syntax error.
  *
@@ -712,7 +712,7 @@ static SSHORT get_switches(
 				   __FILE__, __LINE__);
 #endif
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -801,7 +801,7 @@ static SSHORT parse_cmd_line( int argc, TEXT ** argv)
  *
  *	returns:
  *
- *	    FBOK   on normal completion, 
+ *	    FB_SUCCESS   on normal completion, 
  *	    ACT_QUIT  if user chooses to quit
  *	    ACT_PROMT used by main() to switch into
  *	              the prompt mode
@@ -820,7 +820,7 @@ static SSHORT parse_cmd_line( int argc, TEXT ** argv)
 
 	ret =
 		get_switches(argc, argv, (IN_SW_TAB ) &ibmgr_in_sw_table, &ibmgr_data, &quitflag);
-	if (ret != FBOK) {
+	if (ret != FB_SUCCESS) {
 		if (ret == ERR_SYNTAX) {
 			SRVRMGR_msg_get(MSG_SYNTAX, msg);
 			ib_fprintf(OUTFILE, "%s\n", msg);

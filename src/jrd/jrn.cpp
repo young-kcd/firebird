@@ -140,8 +140,8 @@ Error Handling:
 *	In case of jrd -
 *
 * Return values:
-*	FBOK	- everything is fine.
-*	FAILURE - typically some kind of OS error.
+*	FB_SUCCESS	- everything is fine.
+*	FB_FAILURE - typically some kind of OS error.
 *	< 0	- BUGCHECK errors, unexpected values.
 *	> 1	- ERROR conditions.
 *************************************************************************
@@ -164,7 +164,7 @@ int JRN_archive_begin(
  *	Sign on with the journal server for starting archive
  * Returns:
  *	journal descriptor in ret_journal.
- *	FBOK/FAILURE/BUGCHECK/ERROR.
+ *	FB_SUCCESS/FB_FAILURE/BUGCHECK/ERROR.
  *
  **************************************/
 	LTJA record;
@@ -197,7 +197,7 @@ int JRN_archive_end(
  * Functional description
  *	Sign off with the journal server after archive
  * Returns:
- *	FBOK/FAILURE/BUGCHECK/ERROR.
+ *	FB_SUCCESS/FB_FAILURE/BUGCHECK/ERROR.
  *
  **************************************/
 	LTJA record;
@@ -212,11 +212,11 @@ int JRN_archive_end(
    server */
 
 	if (!(journal))
-		return FBOK;
+		return FB_SUCCESS;
 
 	if (!journal->jrn_channel) {
 		gds__free(journal);
-		return FBOK;
+		return FB_SUCCESS;
 	}
 
 	record.ltja_header.jrnh_type = JRN_ARCHIVE_END;
@@ -228,17 +228,17 @@ int JRN_archive_end(
 	if (
 		(ret_val =
 		 jrn_put(status_vector, journal, (JRNH *) & record, LTJA_SIZE,
-				 (UCHAR *) 0, 0)) != FBOK)
+				 (UCHAR *) 0, 0)) != FB_SUCCESS)
 		return ret_val;
 
-	if ((ret_val = journal_close(status_vector, journal)) != FBOK)
+	if ((ret_val = journal_close(status_vector, journal)) != FB_SUCCESS)
 		return ret_val;
 
 /* Free up the space */
 
 	gds__free(journal);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -256,7 +256,7 @@ int JRN_archive_error(
  * Functional description
  *	Sign off with the journal server after an error during archive
  * Returns:
- *	FBOK/FAILURE/BUGCHECK/ERROR.
+ *	FB_SUCCESS/FB_FAILURE/BUGCHECK/ERROR.
  *
  **************************************/
 	LTJA record;
@@ -267,11 +267,11 @@ int JRN_archive_error(
 	*ret_journal = (JRN) NULL;
 
 	if (!(journal))
-		return FBOK;
+		return FB_SUCCESS;
 
 	if (!journal->jrn_channel) {
 		gds__free(journal);
-		return FBOK;
+		return FB_SUCCESS;
 	}
 
 	record.ltja_header.jrnh_type = JRN_ARCHIVE_ERROR;
@@ -283,17 +283,17 @@ int JRN_archive_error(
 	if (
 		(ret_val =
 		 jrn_put(status_vector, journal, (JRNH *) & record, LTJA_SIZE,
-				 (UCHAR *) 0, 0)) != FBOK)
+				 (UCHAR *) 0, 0)) != FB_SUCCESS)
 		return ret_val;
 
-	if ((ret_val = journal_close(status_vector, journal)) != FBOK)
+	if ((ret_val = journal_close(status_vector, journal)) != FB_SUCCESS)
 		return ret_val;
 
 /* Free up the space */
 
 	gds__free(journal);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -317,7 +317,7 @@ int JRN_disable(
 		return jrn_put(status_vector, journal, header, LTJC_SIZE, data,
 					   d_len);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -354,7 +354,7 @@ int JRN_enable(
  *	Enable journalling for the database.
  * Returns	
  *	journal descriptor in ret_journal.
- *	FBOK/FAILURE/BUGCHECK/ERROR.
+ *	FB_SUCCESS/FB_FAILURE/BUGCHECK/ERROR.
  *
  **************************************/
 
@@ -387,11 +387,11 @@ int JRN_fini(STATUS * status_vector, JRN * jrn)
    server */
 
 	if (!(journal))
-		return FBOK;
+		return FB_SUCCESS;
 
 	if (!journal->jrn_channel) {
 		gds__free(journal);
-		return FBOK;
+		return FB_SUCCESS;
 	}
 
 /* Send a signoff record */
@@ -402,20 +402,20 @@ int JRN_fini(STATUS * status_vector, JRN * jrn)
 	if (
 		(ret_val =
 		 jrn_put(status_vector, journal, (JRNH *) & record, LTJC_SIZE,
-				 (UCHAR *) 0, 0)) != FBOK)
+				 (UCHAR *) 0, 0)) != FB_SUCCESS)
 		return ret_val;
 
 /* Read reply.  This will fail since the server will break the connection.
    Don't worry about it. */
 
-	if ((ret_val = journal_close(status_vector, journal)) != FBOK)
+	if ((ret_val = journal_close(status_vector, journal)) != FB_SUCCESS)
 		return ret_val;
 
 /* Free up the space */
 
 	gds__free(journal);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -437,7 +437,7 @@ int JRN_init(
  *	journal server.
  * Returns:
  *	journal descriptor in ret_journal.
- *	FBOK/FAILURE/BUGCHECK/ERROR.
+ *	FB_SUCCESS/FB_FAILURE/BUGCHECK/ERROR.
  *
  **************************************/
 	TEXT server_name[MAXPATHLEN];
@@ -445,7 +445,7 @@ int JRN_init(
 
 	if (!journal_dir) {
 		*ret_journal = (JRN) NULL;
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 	memcpy(server_name, journal_dir, jd_len);
@@ -536,7 +536,7 @@ SLONG seqno, SLONG offset, SLONG p_offset, USHORT mode)
  *	p_offset	- partition offset
  *	mode		- mode of operation open/close of file
  * Returns:
- *	FBOK/FAILURE/BUGCHECK/ERROR.
+ *	FB_SUCCESS/FB_FAILURE/BUGCHECK/ERROR.
  *
  **************************************/
 
@@ -567,7 +567,7 @@ int JRN_put_old_start(
  *	p_offset	- partition offset
  *	dump_id		- address of dump id.
  * Returns:
- *	FBOK/FAILURE/BUGCHECK/ERROR.
+ *	FB_SUCCESS/FB_FAILURE/BUGCHECK/ERROR.
  *	For start online dump, returns the dump id.
  *
  **************************************/
@@ -598,7 +598,7 @@ int JRN_put_old_end(
  *	p_offset	- partition offset
  *	dump_id		- id of dump.
  * Returns:
- *	FBOK/FAILURE/BUGCHECK/ERROR.
+ *	FB_SUCCESS/FB_FAILURE/BUGCHECK/ERROR.
  **************************************/
 
 	return JRN_put_wal_info(status_vector, journal, (TEXT *) 0, 0, seqno,
@@ -630,7 +630,7 @@ SLONG file_size, USHORT file_seqno, USHORT dump_id)
  *	file_count	- sequence number of file.
  *	dump_id		- id of dump.
  * Returns:
- *	FBOK/FAILURE/BUGCHECK/ERROR.
+ *	FB_SUCCESS/FB_FAILURE/BUGCHECK/ERROR.
  *	For start online dump, returns the dump id.
  *
  **************************************/
@@ -671,7 +671,7 @@ SLONG p_offset, USHORT mode, USHORT file_count, USHORT * dump_id, USHORT type)
  *	type		- type of record (JRN_WAL_NAME/JRN_CNTRL_PT etc.)
  *			  JNR_START_ONLINE_DMP/JRN_ONLINE_DUMP_FILE
  * Returns:
- *	FBOK/FAILURE/BUGCHECK/ERROR.
+ *	FB_SUCCESS/FB_FAILURE/BUGCHECK/ERROR.
  *	For start online dump, returns the dump id.
  *
  **************************************/
@@ -691,10 +691,10 @@ SLONG p_offset, USHORT mode, USHORT file_count, USHORT * dump_id, USHORT type)
 
 	if ((ret_val = jrn_put(status_vector, journal, (JRNH *) & jrnwal,
 						   LTJW_SIZE, (UCHAR *) walname,
-						   w_length)) != FBOK) return ret_val;
+						   w_length)) != FB_SUCCESS) return ret_val;
 
 #ifndef VMS
-	if ((ret_val = get_reply(status_vector, journal, &reply)) != FBOK)
+	if ((ret_val = get_reply(status_vector, journal, &reply)) != FB_SUCCESS)
 		return ret_val;
 
 	switch (reply.jrnr_response) {
@@ -715,7 +715,7 @@ SLONG p_offset, USHORT mode, USHORT file_count, USHORT * dump_id, USHORT type)
 	}
 #endif
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -755,7 +755,7 @@ USHORT control_length, UCHAR * data, USHORT d_length, USHORT retry)
  *	Connect to a journal server and get response.  Return the journal
  *	block.
  * Returns
- *	FBOK/FAILURE/BUGCHECK/ERROR.
+ *	FB_SUCCESS/FB_FAILURE/BUGCHECK/ERROR.
  *
  **************************************/
 #ifdef BSD_SOCKETS
@@ -825,7 +825,7 @@ USHORT control_length, UCHAR * data, USHORT d_length, USHORT retry)
 /* FREE: by error returns from this module, otherwise by JRN_fini & friends */
 	if (!journal) {				/* NOMEM: */
 		error(status_vector, NULL, 0, "gds__alloc");
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 	strcpy(journal->jrn_server, name);
@@ -839,7 +839,7 @@ USHORT control_length, UCHAR * data, USHORT d_length, USHORT retry)
 			if (!SYSCALL_INTERRUPTED(errno)) {
 				error(status_vector, journal, errno, "socket");
 				gds__free(journal);
-				return FAILURE;
+				return FB_FAILURE;
 			}
 		}
 
@@ -852,7 +852,7 @@ USHORT control_length, UCHAR * data, USHORT d_length, USHORT retry)
 		while (--l);
 
 		if ((ret_val = find_address(status_vector, journal, &address)) !=
-			FBOK) {
+			FB_SUCCESS) {
 			gds__free(journal);
 			return ret_val;
 		}
@@ -871,11 +871,11 @@ USHORT control_length, UCHAR * data, USHORT d_length, USHORT retry)
 				close((int) journal->jrn_channel);
 				gds__free(journal);
 				*ret_jrn = (JRN) NULL;
-				return FBOK;
+				return FB_SUCCESS;
 			}
 			error(status_vector, journal, errno, "connect (journal server)");
 			gds__free(journal);
-			return FAILURE;
+			return FB_FAILURE;
 		}
 		close((int) journal->jrn_channel);
 	}
@@ -894,21 +894,21 @@ USHORT control_length, UCHAR * data, USHORT d_length, USHORT retry)
 	if (journal->jrn_channel == INVALID_HANDLE_VALUE) {
 		error(status_vector, journal, GetLastError(), "CreateFile");
 		gds__free(journal);
-		return FAILURE;
+		return FB_FAILURE;
 	}
 #endif
 
 /* Send an enable message */
 
 	if ((ret_val = jrn_put(status_vector, journal, (JRNH *) control,
-						   control_length, data, d_length)) != FBOK) {
+						   control_length, data, d_length)) != FB_SUCCESS) {
 		gds__free(journal);
 		return ret_val;
 	}
 
 
 #ifndef VMS
-	if ((ret_val = get_reply(status_vector, journal, &reply)) != FBOK) {
+	if ((ret_val = get_reply(status_vector, journal, &reply)) != FB_SUCCESS) {
 		gds__free(journal);
 		return ret_val;
 	}
@@ -945,7 +945,7 @@ USHORT control_length, UCHAR * data, USHORT d_length, USHORT retry)
 #endif
 			gds__free(journal);
 			*ret_jrn = (JRN) NULL;
-			return FBOK;
+			return FB_SUCCESS;
 		}
 		gds__free(journal);
 		return (-170);			/* msg 170 unexpected reply from journal server */
@@ -954,7 +954,7 @@ USHORT control_length, UCHAR * data, USHORT d_length, USHORT retry)
 
 	*ret_jrn = journal;
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -1011,26 +1011,26 @@ static int find_address(
 
 	if (!(file = ib_fopen(filename, "r"))) {
 		error(status_vector, journal, errno, "ib_fopen");
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 	if (ib_fscanf(file, "%ld %ld %ld %ld", &version, &addr, &family, &port) !=
 		4) {
 		error(status_vector, journal, 0, "journal socket file format");
-		return FAILURE;
+		return FB_FAILURE;
 	}
 	ib_fclose(file);
 
 	if (version != JOURNAL_VERSION) {
 		error(status_vector, journal, 0, " address version");
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 	address->sin_addr.s_addr = addr;
 	address->sin_family = family;
 	address->sin_port = port;
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 #endif
 
@@ -1059,7 +1059,7 @@ static int get_reply(STATUS * status_vector, JRN journal, JRNR * reply)
 
 	if (l < 0) {
 		error(status_vector, journal, errno, "socket recv");
-		return FAILURE;
+		return FB_FAILURE;
 	}
 #endif
 
@@ -1070,11 +1070,11 @@ static int get_reply(STATUS * status_vector, JRN journal, JRNR * reply)
 				  reinterpret_cast < DWORD * >(&l),
 				  NULL) || l != sizeof(struct jrnr)) {
 		error(status_vector, journal, GetLastError(), "ReadFile");
-		return FAILURE;
+		return FB_FAILURE;
 	}
 #endif
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -1095,7 +1095,7 @@ static int journal_close(STATUS * status_vector, JRN journal)
 #ifdef BSD_SOCKETS
 	if (close((int) journal->jrn_channel) < 0) {
 		error(status_vector, journal, errno, "close");
-		return FAILURE;
+		return FB_FAILURE;
 	}
 #endif
 
@@ -1108,7 +1108,7 @@ static int journal_close(STATUS * status_vector, JRN journal)
 	CloseHandle((HANDLE) journal->jrn_channel);
 #endif
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -1169,12 +1169,12 @@ static int jrn_put(
 
 	if (l < 0) {
 		error(status_vector, journal, errno, "journal send");
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 	if (l != length) {
 		error(status_vector, journal, 0, "journal send truncated");
-		return FAILURE;
+		return FB_FAILURE;
 	}
 #endif
 
@@ -1188,11 +1188,11 @@ static int jrn_put(
 		((HANDLE) journal->jrn_channel, buffer, (SLONG) length,
 		 reinterpret_cast < DWORD * >(&l), NULL) || l != length) {
 		error(status_vector, journal, GetLastError(), "WriteFile");
-		return FAILURE;
+		return FB_FAILURE;
 	}
 #endif
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -1211,7 +1211,7 @@ LTJC * control, USHORT control_length, UCHAR * data, USHORT d_length)
  *
  * Functional description
  *      Wrapper around do_connect ().  Tries to connect 5 times.
- *	If FBOK and journal handle is still null, keep trying.
+ *	If FB_SUCCESS and journal handle is still null, keep trying.
  *
  **************************************/
 	SSHORT count;
@@ -1220,12 +1220,12 @@ LTJC * control, USHORT control_length, UCHAR * data, USHORT d_length)
 	for (count = 4; count >= 0; count--) {
 		if ((ret_val = do_connect(journal, status_vector, journal_name,
 								  j_length, control, control_length, data,
-								  d_length, count)) != FBOK)
+								  d_length, count)) != FB_SUCCESS)
 			return ret_val;
 
 		if (*journal != (JRN) NULL)
 			break;
 	}
 
-	return FBOK;
+	return FB_SUCCESS;
 }

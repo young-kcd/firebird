@@ -1493,7 +1493,7 @@ else /* operation == op_get_segment_buf */
 	if (status_vector [1] == gds__segstr_eof)
 	    {
 	    state = 2;
-	    status_vector [1] = FBOK;
+	    status_vector [1] = FB_SUCCESS;
 	    p -= 2;
 	    break;
 	    }
@@ -1509,7 +1509,7 @@ else /* operation == op_get_segment_buf */
 	if (status_vector [1] == gds__segment)
 	    {
 	    state = 1;
-	    status_vector [1] = FBOK;
+	    status_vector [1] = FB_SUCCESS;
 	    break;
 	    }
 	}
@@ -2525,7 +2525,7 @@ if (!(code = status_vector [1]))
     PUT_WORD ((SLONG) *status_vector++);
     PUT_WORD ((SLONG) *status_vector++);
     PUT_WORD (gds_arg_end);
-    return FBOK;
+    return FB_SUCCESS;
     }
 
 /* Start by translating the status vector into "generic" form */

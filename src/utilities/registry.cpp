@@ -62,7 +62,7 @@ USHORT REGISTRY_install(HKEY hkey_node,
 								 "",
 								 REG_OPTION_NON_VOLATILE,
 								 KEY_WRITE,
-								 NULL, &hkey_kit, &disp)) != ERROR_FBOK) {
+								 NULL, &hkey_kit, &disp)) != ERROR_SUCCESS) {
 		return (*err_handler) (status, "RegCreateKeyEx", NULL);
 	}
 
@@ -74,15 +74,15 @@ USHORT REGISTRY_install(HKEY hkey_node,
 
 	if ((status = RegSetValueEx(hkey_kit, "RootDirectory", 0,
 								REG_SZ, reinterpret_cast<UCHAR*>(path_name),
-								(DWORD) (len + 1))) != ERROR_FBOK
+								(DWORD) (len + 1))) != ERROR_SUCCESS
 		|| (status =
 			RegSetValueEx(hkey_kit, "Version", 0, REG_SZ,
 						  reinterpret_cast<UCHAR*>(GDS_VERSION),
-						  (DWORD) sizeof(GDS_VERSION))) != ERROR_FBOK) {
+						  (DWORD) sizeof(GDS_VERSION))) != ERROR_SUCCESS) {
 		(*err_handler) (status, "RegSetValueEx", hkey_kit);
 		if (disp == REG_CREATED_NEW_KEY)
 			REGISTRY_remove(hkey_node, TRUE, err_handler);
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 	/* We might as well add ServerDirectory here */
@@ -96,25 +96,25 @@ USHORT REGISTRY_install(HKEY hkey_node,
 
 	if ((status = RegSetValueEx(hkey_kit, "ServerDirectory", 0,
 								REG_SZ, reinterpret_cast<UCHAR*>(path_name),
-								(DWORD)(len + 1))) != ERROR_FBOK) {
+								(DWORD)(len + 1))) != ERROR_SUCCESS) {
 	    (*err_handler) (status, "RegSetValueEx", hkey_kit);
     	if (disp == REG_CREATED_NEW_KEY)
 			REGISTRY_remove(hkey_node, TRUE, err_handler);
-    	return FAILURE;
+    	return FB_FAILURE;
     }
 
 	if ((status = RegSetValueEx(hkey_kit, "GuardianOptions", 0,
 								REG_SZ, reinterpret_cast<UCHAR*>("1"),
-								1)) != ERROR_FBOK) {
+								1)) != ERROR_SUCCESS) {
 	    (*err_handler) (status, "RegSetValueEx", hkey_kit);
     	if (disp == REG_CREATED_NEW_KEY)
 			REGISTRY_remove(hkey_node, TRUE, err_handler);
-    	return FAILURE;
+    	return FB_FAILURE;
     }
 */
 	RegCloseKey(hkey_kit);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -139,9 +139,9 @@ USHORT REGISTRY_remove(HKEY hkey_node,
                                REG_KEY_ROOT,
 							   0,
 							   KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE |
-							   KEY_WRITE, &hkey_kit)) != ERROR_FBOK) {
+							   KEY_WRITE, &hkey_kit)) != ERROR_SUCCESS) {
 		if (silent_flag)
-			return FAILURE;
+			return FB_FAILURE;
 		return (*err_handler) (status, "RegOpenKeyEx", NULL);
 	}
 
@@ -149,16 +149,16 @@ USHORT REGISTRY_remove(HKEY hkey_node,
 
 	RegCloseKey(hkey_kit);
 
-	if (ret == FAILURE)
-		return FAILURE;
+	if (ret == FB_FAILURE)
+		return FB_FAILURE;
 
 	if (status = RegDeleteKey(hkey_node, REG_KEY_ROOT)) {
 		if (silent_flag)
-			return FAILURE;
+			return FB_FAILURE;
 		return (*err_handler) (status, "RegDeleteKey", NULL);
 	}
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -189,9 +189,9 @@ static USHORT remove_subkeys(
 							 &n_sub_keys,
 							 &max_sub_key,
 							 &i, &i, &i, &i, &i, &last_write_time);
-	if (status != ERROR_FBOK && status != ERROR_MORE_DATA) {
+	if (status != ERROR_SUCCESS && status != ERROR_MORE_DATA) {
 		if (silent_flag)
-			return FAILURE;
+			return FB_FAILURE;
 		return (*err_handler) (status, "RegQueryInfoKey", NULL);
 	}
 
@@ -202,22 +202,22 @@ static USHORT remove_subkeys(
 		sub_key_len = max_sub_key;
 		if ((status = RegEnumKeyEx(hkey, i, sub_key, &sub_key_len,
 								   NULL, NULL, NULL,
-								   &last_write_time)) != ERROR_FBOK) {
+								   &last_write_time)) != ERROR_SUCCESS) {
 			p = "RegEnumKeyEx";
 			break;
 		}
 		if ((status = RegOpenKeyEx(hkey, sub_key,
 								   0,
 								   KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE |
-								   KEY_WRITE, &hkey_sub)) != ERROR_FBOK) {
+								   KEY_WRITE, &hkey_sub)) != ERROR_SUCCESS) {
 			p = "RegOpenKeyEx";
 			break;
 		}
 		ret = remove_subkeys(hkey_sub, silent_flag, err_handler);
 		RegCloseKey(hkey_sub);
-		if (ret == FAILURE)
-			return FAILURE;
-		if ((status = RegDeleteKey(hkey, sub_key)) != ERROR_FBOK) {
+		if (ret == FB_FAILURE)
+			return FB_FAILURE;
+		if ((status = RegDeleteKey(hkey, sub_key)) != ERROR_SUCCESS) {
 			p = "RegDeleteKey";
 			break;
 		}
@@ -228,9 +228,9 @@ static USHORT remove_subkeys(
 
 	if (p) {
 		if (silent_flag)
-			return FAILURE;
+			return FB_FAILURE;
 		return (*err_handler) (status, p, NULL);
 	}
 
-	return FBOK;
+	return FB_SUCCESS;
 }

@@ -766,7 +766,7 @@ void DYN_modify_global_field(
 								new_dom->dyn_dsc.dsc_sub_type,
 								new_dom->dyn_charset, new_dom->dyn_collation);
 			if ((retval = check_update_fld_type(orig_dom, new_dom)) !=
-				FBOK) modify_err_punt(tdbb, retval, orig_dom, new_dom);
+				FB_SUCCESS) modify_err_punt(tdbb, retval, orig_dom, new_dom);
 		}
 
 		MODIFY FLD USING
@@ -2519,7 +2519,7 @@ void DYN_modify_sql_field(GBL		gbl,
 			*/
 
 			if ((retval = check_update_fld_type(orig_fld, dom_fld)) !=
-				FBOK) modify_err_punt(tdbb, retval, orig_fld, dom_fld);
+				FB_SUCCESS) modify_err_punt(tdbb, retval, orig_fld, dom_fld);
 
 			/* if the original definition was a base field type, remove the entries from RDB$FIELDS */
 			if (!strncmp(orig_fld->dyn_fld_source, "RDB$", 4)) {
@@ -2550,7 +2550,7 @@ void DYN_modify_sql_field(GBL		gbl,
 								new_fld->dyn_charset, new_fld->dyn_collation);
 
 			if ((retval = check_update_fld_type(orig_fld, new_fld)) !=
-				FBOK) modify_err_punt(tdbb, retval, orig_fld, new_fld);
+				FB_SUCCESS) modify_err_punt(tdbb, retval, orig_fld, new_fld);
 
 			/* check to see if the original data type for the field was based on a domain.  If it
 			 * was (and now it isn't), remove the domain information and replace it with a generated
@@ -2776,7 +2776,7 @@ static ULONG check_update_fld_type(DYN_FLD orig_fld, DYN_FLD new_fld)
  *        Anything to Array
  *
  *  This function returns an error code if the conversion can not be
- *  made.  If the conversion can be made, FBOK is returned
+ *  made.  If the conversion can be made, FB_SUCCESS is returned
  **************************************/
 
 
@@ -3005,7 +3005,7 @@ static ULONG check_update_fld_type(DYN_FLD orig_fld, DYN_FLD new_fld)
 		assert(FALSE);
 		return 87;				/* MODIFY RDB$FIELDS FAILED */
 	}
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 static void modify_err_punt(TDBB tdbb,

@@ -388,7 +388,7 @@ int REBUILD_start_restore(int argc, SCHAR ** argv)
 					p[i - 1] = ' ';
 			}
 
-			if (MISC_time_convert(p, strlen(p), until) == FAILURE)
+			if (MISC_time_convert(p, strlen(p), until) == FB_FAILURE)
 				rebuild_abort(19);
 			break;
 
@@ -1121,11 +1121,11 @@ static void close_database(DRB database)
 	ret_val = SUCCESS;
 
 	for (fil = database->drb_file; fil; fil = fil->fil_next) {
-		if (LLIO_close(status, fil->fil_desc) == FAILURE)
-			ret_val = FAILURE;
+		if (LLIO_close(status, fil->fil_desc) == FB_FAILURE)
+			ret_val = FB_FAILURE;
 	}
 
-	if (ret_val == FAILURE)
+	if (ret_val == FB_FAILURE)
 		rebuild_abort(233);
 
 	MISC_free_jrnl(database->drb_buffers);
@@ -2017,12 +2017,12 @@ static BOOLEAN open_database_file(DRB database,
 
 	if (new_file) {
 		if (LLIO_open(status, name, LLIO_OPEN_NEW_RW, TRUE,
-					  file_handle) == FAILURE) return FALSE;
+					  file_handle) == FB_FAILURE) return FALSE;
 	}
 	else {
 		if (LLIO_open
 			(status, name, LLIO_OPEN_EXISTING_RW, TRUE,
-			 file_handle) == FAILURE) return FALSE;
+			 file_handle) == FB_FAILURE) return FALSE;
 	}
 
 	return TRUE;
@@ -2120,8 +2120,8 @@ static int process_online_dump(SCHAR * dbname,
 		count++;
 
 		if (OLDR_open(&OLD_handle, dbname, num_files, files)
-			== FAILURE)
-			return FAILURE;
+			== FB_FAILURE)
+			return FB_FAILURE;
 
 		/* get start time */
 
@@ -2192,7 +2192,7 @@ static int process_journal(SCHAR * dbname,
 	if (
 		(open_journal
 		 (dbname, files, num_files, start_offset,
-		  start_p_offset)) < 0) return FAILURE;
+		  start_p_offset)) < 0) return FB_FAILURE;
 
 	seqno = offset = 0;
 
@@ -2813,7 +2813,7 @@ static void read_page(DRB database, CACHE buffer)
 		(status, fil->fil_desc,
 		 fil->fil_string, new_offset,
 		 LLIO_SEEK_NONE,
-		 buffer->cache_page, database->drb_page_size, &len_read) == FAILURE) {
+		 buffer->cache_page, database->drb_page_size, &len_read) == FB_FAILURE) {
 		gds__print_status(status);
 		rebuild_abort(234);
 	}
@@ -3428,7 +3428,7 @@ static void rec_restore_manual(SCHAR * dbn)
 	else {
 		/* Need to get page size before starting online dump */
 
-		if (OLDR_open(&OLD_handle, old_db_name, num_files, files) == FAILURE)
+		if (OLDR_open(&OLD_handle, old_db_name, num_files, files) == FB_FAILURE)
 			rebuild_abort(187);
 		OLDR_get_info(OLD_handle,
 					  &page_size, &dump_id,
@@ -3569,7 +3569,7 @@ static FIL seek_file(DRB database, FIL fil, CACHE buffer, SLONG * new_offset)
 	*new_offset = page * database->drb_page_size;
 	if (LLIO_seek
 		(status, fil->fil_desc,
-		 fil->fil_string, *new_offset, LLIO_SEEK_BEGIN) == FAILURE) {
+		 fil->fil_string, *new_offset, LLIO_SEEK_BEGIN) == FB_FAILURE) {
 		gds__print_status(status);
 		return (FIL) NULL;
 	}
@@ -3704,7 +3704,7 @@ static void write_page(DRB database, CACHE buffer)
 		rebuild_abort(49);
 	if (LLIO_write(status, fil->fil_desc, fil->fil_string, new_offset,
 				   LLIO_SEEK_NONE, buffer->cache_page,
-				   database->drb_page_size, &len_written) == FAILURE) {
+				   database->drb_page_size, &len_written) == FB_FAILURE) {
 		gds__print_status(status);
 		rebuild_abort(49);
 	}

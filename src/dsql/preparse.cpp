@@ -566,7 +566,7 @@ SCHAR * stmt_end, SCHAR * token, USHORT * token_length)
 	case NO_MORE_TOKENS:
 		*stmt = temp_stmt;
 		generate_error(status, token, UNEXPECTED_END_OF_COMMAND, 0);
-		return FAILURE;
+		return FB_FAILURE;
 
 	case UNEXPECTED_END_OF_COMMAND:
 	case TOKEN_TOO_LONG:
@@ -575,25 +575,25 @@ SCHAR * stmt_end, SCHAR * token, USHORT * token_length)
 		/* generate error here */
 
 		generate_error(status, token, result, 0);
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 /* Some token was found */
 
 	if (result == token_type) {
 		*stmt = temp_stmt;
-		return FBOK;
+		return FB_SUCCESS;
 	}
 
 	if (optional)
-		return FBOK;
+		return FB_SUCCESS;
 
 /* generate error here and return failure; */
 
 	*stmt = temp_stmt;
 	generate_error(status, token, UNEXPECTED_TOKEN,
 				   (result == STRING) ? *(temp_stmt - 1) : 0);
-	return FAILURE;
+	return FB_FAILURE;
 }
 
 

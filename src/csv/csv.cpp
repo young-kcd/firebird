@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: csv.cpp,v 1.7 2002-11-13 15:00:47 kkuznetsov Exp $
+$Id: csv.cpp,v 1.8 2002-11-14 08:17:23 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -1405,7 +1405,7 @@ static void get_segment( MSG_SEG message)
 			THREAD_ENTER;
 			if (status_vector[1] == gds__segstr_eof) {
 				state = (HANDLE) 2;
-				status_vector[1] = FBOK;
+				status_vector[1] = FB_SUCCESS;
 				p -= 2;
 				break;
 			}
@@ -1419,7 +1419,7 @@ static void get_segment( MSG_SEG message)
 			buffer_length -= length;
 			if (status_vector[1] == gds__segment) {
 				state = (HANDLE) 1;
-				status_vector[1] = FBOK;
+				status_vector[1] = FB_SUCCESS;
 				break;
 			}
 		}

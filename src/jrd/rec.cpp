@@ -1048,7 +1048,7 @@ USHORT activate_shadow, SLONG * timestamp, SLONG page_no, PAG page)
 				  timestamp, FALSE);
 	if (ret_val == -1)
 		return;					/* reached EOF */
-	else if (ret_val != FBOK)
+	else if (ret_val != FB_SUCCESS)
 		ERR_punt();
 	else if (!WALRS_handle)
 		ERR_post(gds_wal_failure, 0);
@@ -1065,7 +1065,7 @@ USHORT activate_shadow, SLONG * timestamp, SLONG page_no, PAG page)
 					 reinterpret_cast < long *>(&offset));
 		if (ret_val == -1)		/* done processing */
 			break;
-		else if (ret_val != FBOK) {
+		else if (ret_val != FB_SUCCESS) {
 			WALR_close(tdbb->tdbb_status_vector,
 					   reinterpret_cast < walrs ** >(&WALRS_handle));
 			delete string;

@@ -140,7 +140,7 @@ SSHORT WAL_attach( STATUS * status_vector, WAL * WAL_handle, SCHAR * dbname)
  * Functional description
  *	Attach to an already intitalized WAL segment for the given
  *	database.
- *	Return FBOK if attachment succeeds else return FAILURE.
+ *	Return FB_SUCCESS if attachment succeeds else return FB_FAILURE.
  *
  **************************************/
 	int ret;
@@ -148,12 +148,12 @@ SSHORT WAL_attach( STATUS * status_vector, WAL * WAL_handle, SCHAR * dbname)
 
 	ret = WALC_init(status_vector, WAL_handle, dbname, 0,
 					NULL, 0L, FALSE, 1L, 0, NULL, FALSE);
-	if (ret == FBOK) {
-		if ((ret = WALC_check_writer(*WAL_handle)) != FBOK)
+	if (ret == FB_SUCCESS) {
+		if ((ret = WALC_check_writer(*WAL_handle)) != FB_SUCCESS)
 			ret = fork_writer(status_vector, *WAL_handle);
 		else
 			ret = sync_with_wal_writer(status_vector, *WAL_handle);
-		if (ret != FBOK)
+		if (ret != FB_SUCCESS)
 			WALC_fini(local_status, WAL_handle);
 	}
 
@@ -196,7 +196,7 @@ SSHORT WAL_checkpoint_finish(STATUS * status_vector,
 		/* Cannot finish checkpointing, if not already started. */
 
 		WALC_release(WAL_handle);
-		return FBOK;
+		return FB_SUCCESS;
 	}
 	WALC_release(WAL_handle);
 
@@ -227,7 +227,7 @@ SSHORT WAL_checkpoint_finish(STATUS * status_vector,
 	*log_offset = WAL_segment->wals_ckpted_offset;
 	WALC_release(WAL_handle);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -275,7 +275,7 @@ SSHORT WAL_checkpoint_start(STATUS * status_vector,
  *	To inform the caller if checkpoint needs to be started.
  *	Returns TRUE or FASLE through ckpt_start parameter.
  *
- *	Returns FBOK or FAILURE.
+ *	Returns FB_SUCCESS or FB_FAILURE.
  *
  ***************************************/
 	WALS WAL_segment;
@@ -288,7 +288,7 @@ SSHORT WAL_checkpoint_start(STATUS * status_vector,
 		*ckpt_start = TRUE;
 	WALC_release(WAL_handle);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -305,7 +305,7 @@ SSHORT WAL_checkpoint_recorded(STATUS * status_vector, WAL WAL_handle)
  *	been recorded in the stable storage and so it can reuse
  *	earlier log files if possible.
  *
- *	Returns FBOK or FAILURE.
+ *	Returns FB_SUCCESS or FB_FAILURE.
  *
  ***************************************/
 	WALS WAL_segment;
@@ -316,12 +316,12 @@ SSHORT WAL_checkpoint_recorded(STATUS * status_vector, WAL WAL_handle)
 		/* Cannot record checkpointing, if not already started. */
 
 		WALC_release(WAL_handle);
-		return FBOK;
+		return FB_SUCCESS;
 	}
 	WAL_segment->wals_flags |= WALS_CKPT_RECORDED;
 	WALC_release(WAL_handle);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -345,7 +345,7 @@ SSHORT WAL_commit(STATUS * status_vector,
  *	Return the sequence number of the log file in the log file
  *	series and the offset of this commit record in that file.
  *
- *	Return FBOK or FAILURE.
+ *	Return FB_SUCCESS or FB_FAILURE.
  *
  **************************************/
 	WALS WAL_segment;
@@ -356,10 +356,10 @@ SSHORT WAL_commit(STATUS * status_vector,
 	SLONG dummy_offset;
 
 	if (len && wal_put2(status_vector, WAL_handle, commit_logrec, len,
-						(UCHAR *) 0, 0, log_seqno, log_offset, 0) != FBOK)
-		return FAILURE;
+						(UCHAR *) 0, 0, log_seqno, log_offset, 0) != FB_SUCCESS)
+		return FB_FAILURE;
 
-	ret = FBOK;
+	ret = FB_SUCCESS;
 
 	WALC_acquire(WAL_handle, &WAL_segment);
 	if (!len) {
@@ -461,7 +461,7 @@ SSHORT WAL_flush(
 	if (conditional)
 		if (*log_seqno < WAL_handle->wal_flushed_seqno ||
 			(*log_seqno == WAL_handle->wal_flushed_seqno &&
-			 *log_offset <= WAL_handle->wal_flushed_offset)) return FBOK;
+			 *log_offset <= WAL_handle->wal_flushed_offset)) return FB_SUCCESS;
 
 	WALC_acquire(WAL_handle, &WAL_segment);
 	WAL_CHECK_BUG(WAL_handle, WAL_segment);
@@ -514,7 +514,7 @@ SSHORT WAL_flush(
 		*log_offset = WAL_handle->wal_flushed_offset;
 	}
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -544,7 +544,7 @@ SSHORT WAL_init(STATUS * status_vector,
  *	files.
  *
  *	Start the WAL writer.
- *	Return FBOK if initialization succeeds else return FAILURE.
+ *	Return FB_SUCCESS if initialization succeeds else return FB_FAILURE.
  *
  **************************************/
 	SSHORT ret;
@@ -559,8 +559,8 @@ SSHORT WAL_init(STATUS * status_vector,
 					first_time_log,
 					new_log_seqno,
 					wpb_length, reinterpret_cast < UCHAR * >(wpb), TRUE);
-	if (ret == FBOK) {
-		if ((ret = fork_writer(status_vector, *WAL_handle)) != FBOK)
+	if (ret == FB_SUCCESS) {
+		if ((ret = fork_writer(status_vector, *WAL_handle)) != FB_SUCCESS)
 			WALC_fini(local_status, WAL_handle);
 	}
 
@@ -581,7 +581,7 @@ SSHORT WAL_journal_disable(STATUS * status_vector, WAL WAL_handle)
  *	Before returning from this procedure make sure that the WAL
  *	writer has severed its ties with the journal server.
  *
- *	Returns FBOK or FAILURE.
+ *	Returns FB_SUCCESS or FB_FAILURE.
  *
  ***************************************/
 	WALS WAL_segment;
@@ -592,7 +592,7 @@ SSHORT WAL_journal_disable(STATUS * status_vector, WAL WAL_handle)
 		/* Journalling is already disabled. */
 
 		WALC_release(WAL_handle);
-		return FBOK;
+		return FB_SUCCESS;
 	}
 	WAL_segment->wals_flags |= WALS_DISABLE_JOURNAL;
 	inform_wal_writer(WAL_handle);
@@ -608,7 +608,7 @@ SSHORT WAL_journal_disable(STATUS * status_vector, WAL WAL_handle)
 	}
 
 	WALC_release(WAL_handle);
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -628,7 +628,7 @@ SSHORT WAL_journal_enable(STATUS * status_vector,
  *	Before returning from this procedure make sure that the WAL
  *	writer has established a connection with the journal server.
  *
- *	Returns FBOK or FAILURE.
+ *	Returns FB_SUCCESS or FB_FAILURE.
  *
  ***************************************/
 	WALS WAL_segment;
@@ -639,7 +639,7 @@ SSHORT WAL_journal_enable(STATUS * status_vector,
 		/* Journalling is already enabled. */
 
 		WALC_release(WAL_handle);
-		return FBOK;
+		return FB_SUCCESS;
 	}
 
 	strcpy(WAL_segment->wals_jrn_dirname, jrn_dirname);
@@ -660,7 +660,7 @@ SSHORT WAL_journal_enable(STATUS * status_vector,
 
 	WALC_release(WAL_handle);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -695,7 +695,7 @@ SSHORT WAL_put(STATUS * status_vector,
  *	series and the offset of this logrec in that file where
  *	this log record would eventually be written.
  *
- *	Returns FBOK or FAILURE.
+ *	Returns FB_SUCCESS or FB_FAILURE.
  *
  **************************************/
 
@@ -785,7 +785,7 @@ SSHORT WAL_set_checkpoint_length(
 	WALS WAL_segment;
 
 	if (ckpt_length < MIN_CKPT_INTRVL)
-		return FAILURE;			/* Should set the status vector also */
+		return FB_FAILURE;			/* Should set the status vector also */
 	WALC_acquire(WAL_handle, &WAL_segment);
 	WAL_CHECK_BUG(WAL_handle, WAL_segment);
 
@@ -795,7 +795,7 @@ SSHORT WAL_set_checkpoint_length(
 
 	WALC_release(WAL_handle);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -836,7 +836,7 @@ SSHORT WAL_set_grpc_wait_time(
 	WALS WAL_segment;
 
 	if (wait_usecs < 0)
-		return FAILURE;			/* Should set the status vector also */
+		return FB_FAILURE;			/* Should set the status vector also */
 	WALC_acquire(WAL_handle, &WAL_segment);
 	WAL_CHECK_BUG(WAL_handle, WAL_segment);
 
@@ -844,7 +844,7 @@ SSHORT WAL_set_grpc_wait_time(
 	WAL_segment->wals_grpc_wait_usecs = wait_usecs;
 	WALC_release(WAL_handle);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -884,7 +884,7 @@ SSHORT WAL_set_rollover_log(STATUS * status_vector,
 
 	WALC_release(WAL_handle);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -947,15 +947,15 @@ SSHORT WAL_shutdown_old_writer(STATUS * status_vector, SCHAR * dbname)
 
 	WAL_handle = NULL;
 
-	if (WAL_attach(local_status, &WAL_handle, dbname) != FBOK)
-		return FBOK;			/* Nobody is attached to the shared WAL segment */
+	if (WAL_attach(local_status, &WAL_handle, dbname) != FB_SUCCESS)
+		return FB_SUCCESS;			/* Nobody is attached to the shared WAL segment */
 
-	if (WALC_check_writer(WAL_handle) == FBOK)
+	if (WALC_check_writer(WAL_handle) == FB_SUCCESS)
 		shutdown_writer(status_vector, WAL_handle, (SSHORT) 0);
 
 	WAL_fini(status_vector, &WAL_handle);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -1002,7 +1002,7 @@ SSHORT WAL_status(STATUS * status_vector,
 		*ckpt_offset = WAL_segment->wals_ckpted_offset;
 	WALC_release(WAL_handle);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -1079,7 +1079,7 @@ static SSHORT fork_writer( STATUS * status_vector, WAL WAL_handle)
  *	Fork the WAL writer process (thread) and give it enough time
  *	to initialize itself.
  *
- *	Returns FBOK if successful in forking the WAL writer.
+ *	Returns FB_SUCCESS if successful in forking the WAL writer.
  *
  **************************************/
 	WALS WAL_segment;
@@ -1095,7 +1095,7 @@ static SSHORT fork_writer( STATUS * status_vector, WAL WAL_handle)
 		WALC_release(WAL_handle);
 		IBERR_build_status(status_vector, gds_bug_check,
 						   gds_arg_string, "cannot start thread", 0);
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 	WALC_release(WAL_handle);
@@ -1118,7 +1118,7 @@ static SSHORT fork_writer( STATUS * status_vector, WAL WAL_handle)
  *	Fork the WAL writer process (thread) and give it enough time
  *	to initialize itself.
  *
- *	Returns FBOK if successful in forking the WAL writer.
+ *	Returns FB_SUCCESS if successful in forking the WAL writer.
  *
  **************************************/
 	WALS WAL_segment;
@@ -1166,7 +1166,7 @@ static SSHORT fork_writer( STATUS * status_vector, WAL WAL_handle)
 	{
 		WALC_bug(status_vector, WAL_handle->wal_dbname,
 				 "Can't start WAL writer");
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 	return sync_with_wal_writer(status_vector, WAL_handle);
@@ -1200,18 +1200,18 @@ static SSHORT grpc_do_group_commit(
    to be available. */
 
 	ret = grpc_wait_for_grouping(status_vector, WAL_handle, grpc_blknum);
-	if (ret != FBOK)
+	if (ret != FB_SUCCESS)
 		return ret;
 
 	ret =
 		WAL_flush(status_vector, WAL_handle, &dummy_seqno, &dummy_offset,
 				  FALSE);
-	if (ret != FBOK)
+	if (ret != FB_SUCCESS)
 		return ret;
 
 	grpc_finish_group_commit(WAL_handle, grpc_blknum);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -1327,7 +1327,7 @@ static SSHORT grpc_wait_for_grouping(
 		(grpc_blknum + 1) % MAX_GRP_COMMITTERS;
 	WALC_release(WAL_handle);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -1368,7 +1368,7 @@ GRP_COMMIT * grpc)
 	while (ISC_event_wait
 		   (1, &ptr, &value, WAL_handle->wal_grpc_wait_coord_usecs,
 			reinterpret_cast < void (*)() > (WALC_alarm_handler),
-			ptr) != FBOK) {
+			ptr) != FB_SUCCESS) {
 		/* Check to make sure that the coordinator is still alive. */
 
 		WALC_acquire(WAL_handle, &WAL_segment);
@@ -1381,12 +1381,12 @@ GRP_COMMIT * grpc)
 			grpc->grp_commit_size--;
 			grpc->grp_commit_coordinator = WAL_handle->wal_pid;
 			grpc_do_group_commit(status_vector, WAL_handle, grpc_blknum);
-			return FBOK;
+			return FB_SUCCESS;
 		}
 		WALC_release(WAL_handle);
 	}
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -1510,7 +1510,7 @@ static SSHORT shutdown_writer(
 	WALC_release(WAL_handle);
 	WAL_handle->wal_flags |= WAL_SHUTDOWN_HANDLE;
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -1527,20 +1527,20 @@ static SSHORT sync_with_wal_writer( STATUS * status_vector, WAL WAL_handle)
  *	the WAL segment).  This is to avoid some race conditions when
  *	other processes may use the info regarding the log file in
  *	the WAL segment before the WAL writer got a chance to initialize
- *	that.  Returns FAILURE after some number (10) of retries.
+ *	that.  Returns FB_FAILURE after some number (10) of retries.
  *
  **************************************/
 	SSHORT done;
 	SSHORT count;
 	WALS WAL_segment;
 
-	done = FAILURE;
+	done = FB_FAILURE;
 	sleep(1);
 	for (count = 0; count < 10; count++) {
 		WALC_acquire(WAL_handle, &WAL_segment);
 		WAL_CHECK_BUG_ERROR(WAL_handle, WAL_segment);
 		if (WAL_segment->wals_flags & WALS_WRITER_INITIALIZED) {
-			done = FBOK;		/* WAL_writer has initialized itself. */
+			done = FB_SUCCESS;		/* WAL_writer has initialized itself. */
 			WALC_release(WAL_handle);
 			break;
 		}
@@ -1548,7 +1548,7 @@ static SSHORT sync_with_wal_writer( STATUS * status_vector, WAL WAL_handle)
 		sleep(3);
 	}
 
-	if (done != FBOK)
+	if (done != FB_SUCCESS)
 		WAL_ERROR(status_vector, gds_wal_err_ww_sync,
 				  WAL_handle->wal_dbname);
 
@@ -1584,12 +1584,12 @@ static SSHORT wait_for_writer( STATUS * status_vector, WAL WAL_handle)
 		ISC_event_wait(1, &ptr, &value, WAIT_TIME,
 					   reinterpret_cast < void (*)() > (WALC_alarm_handler),
 					   ptr);
-	if (ret == FAILURE) {
+	if (ret == FB_FAILURE) {
 		/* We got out because of timeout.  May be our condition is
 		   already met.  Let the caller decide that.  In any case, make
 		   sure that the WAL_writer process is alive. */
 
-		if ((ret = WALC_check_writer(WAL_handle)) != FBOK)
+		if ((ret = WALC_check_writer(WAL_handle)) != FB_SUCCESS)
 			ret = fork_writer(status_vector, WAL_handle);
 	}
 
@@ -1636,7 +1636,7 @@ USHORT len2, SLONG * log_seqno, SLONG * log_offset, SSHORT ckpt)
  *	The WAL writer will handle this checkpointed buffer in a special
  *	way.
  *
- *	Returns FBOK or FAILURE.
+ *	Returns FB_SUCCESS or FB_FAILURE.
  *
  **************************************/
 	int available_bytes;
@@ -1654,7 +1654,7 @@ USHORT len2, SLONG * log_seqno, SLONG * log_offset, SSHORT ckpt)
 		WALC_release(WAL_handle);
 		WALC_bug(status_vector, WAL_handle->wal_dbname,
 				 "log record too long");
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 	WAL_segment->wals_put_count++;
@@ -1717,7 +1717,7 @@ USHORT len2, SLONG * log_seqno, SLONG * log_offset, SSHORT ckpt)
 	*log_seqno = lsn;
 	*log_offset = offset;
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 

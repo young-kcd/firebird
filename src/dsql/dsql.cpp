@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: dsql.cpp,v 1.30 2002-11-13 15:00:49 kkuznetsov Exp $
+$Id: dsql.cpp,v 1.31 2002-11-14 08:18:20 dimitr Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -2772,7 +2772,7 @@ static STATUS execute_request(REQ				request,
 	tdsql = GET_THREAD_DATA;
 
 	request->req_trans = (int *) *trans_handle;
-	return_status = FBOK;
+	return_status = FB_SUCCESS;
 
 	switch (request->req_type) {
 	case REQ_START_TRANS:
@@ -2787,7 +2787,7 @@ static STATUS execute_request(REQ				request,
 		if (s)
 			punt();
 		*trans_handle = request->req_trans;
-		return FBOK;
+		return FB_SUCCESS;
 
 	case REQ_COMMIT:
 		THREAD_EXIT;
@@ -2797,7 +2797,7 @@ static STATUS execute_request(REQ				request,
 		if (s)
 			punt();
 		*trans_handle = NULL;
-		return FBOK;
+		return FB_SUCCESS;
 
 	case REQ_COMMIT_RETAIN:
 		THREAD_EXIT;
@@ -2806,7 +2806,7 @@ static STATUS execute_request(REQ				request,
 		THREAD_ENTER;
 		if (s)
 			punt();
-		return FBOK;
+		return FB_SUCCESS;
 
 	case REQ_ROLLBACK:
 		THREAD_EXIT;
@@ -2816,11 +2816,11 @@ static STATUS execute_request(REQ				request,
 		if (s)
 			punt();
 		*trans_handle = NULL;
-		return FBOK;
+		return FB_SUCCESS;
 
 	case REQ_DDL:
 		DDL_execute(request);
-		return FBOK;
+		return FB_SUCCESS;
 
 	case REQ_GET_SEGMENT:
 		execute_blob(	request,
@@ -2832,7 +2832,7 @@ static STATUS execute_request(REQ				request,
 						out_blr,
 						out_msg_length,
 						out_msg);
-		return FBOK;
+		return FB_SUCCESS;
 
 	case REQ_PUT_SEGMENT:
 		execute_blob(	request,
@@ -2844,7 +2844,7 @@ static STATUS execute_request(REQ				request,
 						out_blr,
 						out_msg_length,
 						out_msg);
-		return FBOK;
+		return FB_SUCCESS;
 
 	case REQ_EXEC_PROCEDURE:
 		if (message = (MSG) request->req_send) {
@@ -2890,7 +2890,7 @@ static STATUS execute_request(REQ				request,
 			punt();
 		if (out_msg_length && message)
 			map_in_out(NULL, message, 0, out_blr, out_msg_length, out_msg);
-		return FBOK;
+		return FB_SUCCESS;
 
 	default:
 		/* Catch invalid request types */
@@ -3122,9 +3122,9 @@ static BOOLEAN get_indices(
 	case gds_info_rsb_and:
 	case gds_info_rsb_or:
 		if (get_indices(&explain_length, &explain, &plan_length, &plan))
-			return FAILURE;
+			return FB_FAILURE;
 		if (get_indices(&explain_length, &explain, &plan_length, &plan))
-			return FAILURE;
+			return FB_FAILURE;
 		break;
 
 	case gds_info_rsb_dbkey:
@@ -3138,21 +3138,21 @@ static BOOLEAN get_indices(
 
 		if (plan[-1] != '(' && plan[-1] != ' ') {
 			if (--plan_length < 0)
-				return FAILURE;
+				return FB_FAILURE;
 			*plan++ = ',';
 		}
 
 		/* now put out the index name */
 
 		if ((plan_length -= length) < 0)
-			return FAILURE;
+			return FB_FAILURE;
 		explain_length -= length;
 		while (length--)
 			*plan++ = *explain++;
 		break;
 
 	default:
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 	*explain_length_ptr = explain_length;
@@ -3160,7 +3160,7 @@ static BOOLEAN get_indices(
 	*plan_length_ptr = plan_length;
 	*plan_ptr = plan;
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -3382,7 +3382,7 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 
 			p = "\nPLAN ";
 			if ((plan_length -= strlen(p)) < 0)
-				return FAILURE;
+				return FB_FAILURE;
 			while (*p)
 				*plan++ = *p++;
 		}
@@ -3404,7 +3404,7 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 
 		if (!*parent_join_count) {
 			if (--plan_length < 0)
-				return FAILURE;
+				return FB_FAILURE;
 			*plan++ = '(';
 		}
 
@@ -3412,7 +3412,7 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 
 		if (plan[-1] != '(') {
 			if (--plan_length < 0)
-				return FAILURE;
+				return FB_FAILURE;
 			*plan++ = ',';
 		}
 
@@ -3421,7 +3421,7 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 		explain_length--;
 		explain_length -= (length = (UCHAR) * explain++);
 		if ((plan_length -= length) < 0)
-			return FAILURE;
+			return FB_FAILURE;
 		while (length--)
 			*plan++ = *explain++;
 		break;
@@ -3447,7 +3447,7 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 			while (TRUE) {
 				if (get_rsb_item
 					(&explain_length, &explain, &plan_length, &plan,
-					 &union_join_count, &union_level)) return FAILURE;
+					 &union_join_count, &union_level)) return FB_FAILURE;
 				if (union_level == *level_ptr)
 					break;
 			}
@@ -3461,7 +3461,7 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 				while (TRUE) {
 					if (get_rsb_item
 						(&explain_length, &explain, &plan_length, &plan,
-						 &union_join_count, &union_level)) return FAILURE;
+						 &union_join_count, &union_level)) return FB_FAILURE;
 					if (!union_level)
 						break;
 				}
@@ -3478,7 +3478,7 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 
 			if (*parent_join_count && plan[-1] != '(') {
 				if (--plan_length < 0)
-					return FAILURE;
+					return FB_FAILURE;
 				*plan++ = ',';
 			}
 
@@ -3493,7 +3493,7 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
             }
 
 			if ((plan_length -= strlen(p)) < 0)
-				return FAILURE;
+				return FB_FAILURE;
 			while (*p)
 				*plan++ = *p++;
 
@@ -3504,7 +3504,7 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 			while (join_count) {
 				if (get_rsb_item(&explain_length, &explain, &plan_length,
 								 &plan, &join_count, level_ptr))
-					return FAILURE;
+					return FB_FAILURE;
                 /* CVC: Here's the additional stop condition. */
                 if (!*level_ptr) {
                     break;
@@ -3515,7 +3515,7 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 			/* put out the final parenthesis for the join */
 
 			if (--plan_length < 0)
-				return FAILURE;
+				return FB_FAILURE;
 			else
 				*plan++ = ')';
 
@@ -3538,7 +3538,7 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 				p = " NATURAL";
 
 			if ((plan_length -= strlen(p)) < 0)
-				return FAILURE;
+				return FB_FAILURE;
 			while (*p)
 				*plan++ = *p++;
 
@@ -3549,13 +3549,13 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 				rsb_type == gds_info_rsb_ext_indexed) {
 				if (get_indices
 					(&explain_length, &explain, &plan_length,
-					 &plan)) return FAILURE;
+					 &plan)) return FB_FAILURE;
 			}
 
 			if (rsb_type == gds_info_rsb_indexed ||
 				rsb_type == gds_info_rsb_ext_indexed) {
 				if (--plan_length < 0)
-					return FAILURE;
+					return FB_FAILURE;
 				*plan++ = ')';
 			}
 
@@ -3563,7 +3563,7 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 
 			if (!*parent_join_count)
 				if (--plan_length < 0)
-					return FAILURE;
+					return FB_FAILURE;
 				else
 					*plan++ = ')';
 
@@ -3589,14 +3589,14 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 
 			if (*parent_join_count && plan[-1] != '(') {
 				if (--plan_length < 0)
-					return FAILURE;
+					return FB_FAILURE;
 				*plan++ = ',';
 			}
 
 			p = "SORT (";
 
 			if ((plan_length -= strlen(p)) < 0)
-				return FAILURE;
+				return FB_FAILURE;
 			while (*p)
 				*plan++ = *p++;
 
@@ -3607,13 +3607,13 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 			while (explain_length > 0 && plan_length > 0) {
 				if (get_rsb_item(&explain_length, &explain, &plan_length,
 								 &plan, parent_join_count, level_ptr))
-					return FAILURE;
+					return FB_FAILURE;
 				if (*level_ptr == save_level)
 					break;
 			}
 
 			if (--plan_length < 0)
-				return FAILURE;
+				return FB_FAILURE;
 			*plan++ = ')';
 			break;
 
@@ -3631,7 +3631,7 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 	*plan_length_ptr = plan_length;
 	*plan_ptr = plan;
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -4464,7 +4464,7 @@ static STATUS return_success(void)
 
 	STATUS*p = tdsql->tsql_status;
 	*p++ = gds_arg_gds;
-	*p++ = FBOK;
+	*p++ = FB_SUCCESS;
 
 	// do not overwrite warnings
 	if (*p != isc_arg_warning) {
@@ -4473,7 +4473,7 @@ static STATUS return_success(void)
 
 	RESTORE_THREAD_DATA;
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 

@@ -60,7 +60,7 @@ int OLDR_close( OLD * OLD_handle)
 
 	if (old->old_fd) {
 		if (LLIO_close(0, old->old_fd))
-			return FAILURE;
+			return FB_FAILURE;
 	}
 
 	if (old) {
@@ -71,7 +71,7 @@ int OLDR_close( OLD * OLD_handle)
 
 	*OLD_handle = NULL;
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -181,10 +181,10 @@ int OLDR_open(
 
 /* Open the first file */
 
-	if (open_next_file(old) == FAILURE)
-		return FAILURE;
+	if (open_next_file(old) == FB_FAILURE)
+		return FB_FAILURE;
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -197,18 +197,18 @@ static int close_cur_file( OLD old)
  **************************************
  *
  * Functional description
- *	returns FBOK - if things work
- *		FAILURE - close fails
+ *	returns FB_SUCCESS - if things work
+ *		FB_FAILURE - close fails
  *
  **************************************/
 
 	if (LLIO_close(0, old->old_fd))
-		return FAILURE;
+		return FB_FAILURE;
 
 	old->old_fd = 0;
 	old->old_cur_size = 0;
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -223,29 +223,29 @@ static int open_next_file( OLD old)
  * Functional description
  *	Opens the next OnLine Dump file and writes out the header.
  *
- *	returns FBOK - if things work
- *		FAILURE - open fails, no more file etc.
+ *	returns FB_SUCCESS - if things work
+ *		FB_FAILURE - open fails, no more file etc.
  *
  **************************************/
 	int fd;
 
 	if (old->old_fd) {
-		if (close_cur_file(old) == FAILURE)
-			return FAILURE;
+		if (close_cur_file(old) == FB_FAILURE)
+			return FB_FAILURE;
 	}
 
 	if (old->old_cur_file >= old->old_num_files)
-		return FAILURE;
+		return FB_FAILURE;
 
-	if ((fd = oldr_open_file(old)) == FAILURE)
-		return FAILURE;
+	if ((fd = oldr_open_file(old)) == FB_FAILURE)
+		return FB_FAILURE;
 
 	old->old_cur_file++;
 	old->old_file_seqno++;
 
 	old->old_fd = fd;
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -260,8 +260,8 @@ static SLONG oldr_open_file( OLD old)
  * Functional description
  *	Open next file and read header 
  *
- *	returns FBOK - if things work
- *		FAILURE - open fails/out of sequence etc.
+ *	returns FB_SUCCESS - if things work
+ *		FB_FAILURE - open fails/out of sequence etc.
  *
  **************************************/
 	OLD_HDR hdr;
@@ -276,11 +276,11 @@ static SLONG oldr_open_file( OLD old)
 	hdr = ob->ob_hdr;
 
 	if (LLIO_open(0, old->old_files[old->old_cur_file], LLIO_OPEN_R,
-				  TRUE, &fd)) return FAILURE;
+				  TRUE, &fd)) return FB_FAILURE;
 
 	if (LLIO_read(0, fd, 0, 0L, LLIO_SEEK_NONE,
 				  (SCHAR *) hdr, OLD_HEADER_SIZE, &len) ||
-		len != OLD_HEADER_SIZE) return FAILURE;
+		len != OLD_HEADER_SIZE) return FB_FAILURE;
 
 	hp = (OLD_HDR_PAGE) hdr->oh_buf;
 	memcpy((SCHAR *) & header, (SCHAR *) hp, sizeof(struct hdr_page));
@@ -288,16 +288,16 @@ static SLONG oldr_open_file( OLD old)
 	old->old_file_size = header.hp_file_size;
 
 	if (header.hp_file_seqno != old->old_cur_file)
-		return FAILURE;
+		return FB_FAILURE;
 
 	if (header.hp_version != OLD_VERSION)
-		return FAILURE;
+		return FB_FAILURE;
 
 	if (header.hp_start_block != old->old_cur_seqno)
-		return FAILURE;
+		return FB_FAILURE;
 
 	if (old->old_block->ob_hdr->oh_type != OLD_HEADER)
-		return FAILURE;
+		return FB_FAILURE;
 
 	old->old_rec_size = header.hp_rec_size;
 	old->old_dump_id = header.hp_dump_id;
@@ -308,14 +308,14 @@ static SLONG oldr_open_file( OLD old)
 
 	len = strlen(old->old_db);
 	if (len != header.hp_length)
-		return FAILURE;
+		return FB_FAILURE;
 
 /* compare database name */
 
 	memcpy(buf, hp->hp_db, len);
 	buf[len] = 0;
 	if (strcmp(buf, old->old_db))
-		return FAILURE;
+		return FB_FAILURE;
 
 	old->old_cur_size = OLD_HEADER_SIZE;
 

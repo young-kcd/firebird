@@ -227,7 +227,7 @@ STATUS API_ROUTINE SDL_info(STATUS * status_vector,
 					|| (((SCHAR) * p) != gds_sdl_eoc))
 					info->sdl_info_dimensions = 0;
 			}
-			return FBOK;
+			return FB_SUCCESS;
 		}
 }
 
@@ -368,16 +368,16 @@ ADS array_desc, SLONG * variables, void (*callback) (), SLICE argument)
 				(IPTR *) ((SCHAR *) arg.sdl_arg_compiled +
 						  sizeof(arg.sdl_arg_compiled));
 			if (!(p = compile(p - 1, &arg)))
-				return FAILURE;
+				return FB_FAILURE;
 			if (!stuff((IPTR) op_exit, &arg))
-				return FAILURE;
+				return FB_FAILURE;
 			if (!execute(&arg))
-				return FAILURE;
+				return FB_FAILURE;
 			break;
 		}
     }
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 

@@ -62,7 +62,7 @@
 #define GET_WIN_ENTRYPOINT(funcp,funcname) \
 			    funcp = GetProcAddress (hlib, funcname); \
 			    if (funcp == NULL) {FreeLibrary (hlib); \
-						hlib = 0; return FAILURE; }
+						hlib = 0; return FB_FAILURE; }
 
 typedef struct tag_wnpport {
 	HANDLE hFile;
@@ -134,14 +134,14 @@ int initWNP(void)
 			gds__register_cleanup(wfwnp_cleanup, (void *) hlib);
 		}
 		else {
-			return FAILURE;
+			return FB_FAILURE;
 		}
 	}
 
 	WNPSetBlockingHook(blocking_stub);
 	SetLastError(NO_ERROR);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 

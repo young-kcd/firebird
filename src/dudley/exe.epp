@@ -2923,7 +2923,7 @@ static void get_log_names(SCHAR * db_name,
 		if (WALF_get_linked_logs_info(gds_status, expanded_name, cur_log,
 									  part_offset, &log_count, next_log,
 									  &next_offset, &last_log_flag,
-									  &not_archived) != FBOK)
+									  &not_archived) != FB_SUCCESS)
 			DDL_error_abort(gds_status, 328, NULL, NULL, NULL, NULL, NULL);
 		/* msg 328: error in reading list of log files */
 
@@ -2956,7 +2956,7 @@ static void get_log_names(SCHAR * db_name,
 										 &log_seqno, &log_length,
 										 &last_log_flag, 1);
 
-		if (ret_val == FAILURE)
+		if (ret_val == FB_FAILURE)
 			DDL_error_abort(gds_status, 328, NULL, NULL, NULL, NULL, NULL);	/* msg 328: error in reading list of log files */
 		if (ret_val < 0)
 			break;

@@ -49,7 +49,7 @@ SSHORT WALF_delink_log(STATUS * status_vector,
  *        making the previous log name for the next log empty,
  *        i.e., after this call, the header of the next log has a
  *        'null' previous pointer. 
- *        If there is any error, return FAILURE else return FBOK.
+ *        If there is any error, return FB_FAILURE else return FB_SUCCESS.
  *        In case of an error, status_vector would be updated.
  *
  **************************************/
@@ -64,13 +64,13 @@ SSHORT WALF_delink_log(STATUS * status_vector,
 	log_header = (WALFH) gds__alloc(WALFH_LENGTH);
 /* NOMEM: error return, FREE: by error returns & WALF_dispose_log_header() */
 	if (!log_header)
-		return FAILURE;
+		return FB_FAILURE;
 	ret =
 		WALF_open_log_file(status_vector, dbname, logname,
 						   log_partition_offset, log_header, &log_fd);
-	if (ret != FBOK) {
+	if (ret != FB_SUCCESS) {
 		gds__free((SLONG *) log_header);
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 	if ((log_header->walfh_next_logname != NULL) &&
@@ -88,13 +88,13 @@ SSHORT WALF_delink_log(STATUS * status_vector,
 		next_log_header = (WALFH) gds__alloc(WALFH_LENGTH);
 		/* NOMEM: error return, FREE: by error returns & WALF_dispose_log_header() */
 		if (!next_log_header)
-			return FAILURE;
+			return FB_FAILURE;
 		ret = WALF_open_log_file(status_vector, dbname, next_logname,
 								 next_log_partition_offset, next_log_header,
 								 &next_log_fd);
-		if (ret != FBOK) {
+		if (ret != FB_SUCCESS) {
 			gds__free((SLONG *) next_log_header);
-			return FAILURE;
+			return FB_FAILURE;
 		}
 		*next_log_header->walfh_prev_logname = 0;
 		WALF_update_log_header(status_vector, next_logname,
@@ -108,7 +108,7 @@ SSHORT WALF_delink_log(STATUS * status_vector,
 		LLIO_close(0, log_fd);
 	}
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -126,7 +126,7 @@ SSHORT WALF_delink_prev_log(STATUS * status_vector,
  *        Make the previous log name for the given logname empty,
  *        i.e., after this call, the header of the logname has a
  *        'null' previous pointer. 
- *        If there is any error, return FAILURE else return FBOK.
+ *        If there is any error, return FB_FAILURE else return FB_SUCCESS.
  *        In case of an error, status_vector would be updated.
  *
  **************************************/
@@ -139,13 +139,13 @@ SSHORT WALF_delink_prev_log(STATUS * status_vector,
 	log_header = (WALFH) gds__alloc(WALFH_LENGTH);
 /* NOMEM: error return, FREE: by error returns & WALF_dispose_log_header() */
 	if (!log_header)
-		return FAILURE;
+		return FB_FAILURE;
 	ret =
 		WALF_open_log_file(status_vector, dbname, logname,
 						   log_partition_offset, log_header, &log_fd);
-	if (ret != FBOK) {
+	if (ret != FB_SUCCESS) {
 		gds__free((SLONG *) log_header);
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 	if ((log_header->walfh_prev_logname != NULL) &&
@@ -212,7 +212,7 @@ SSHORT WALF_get_linked_logs_info(STATUS * status_vector,
  *        is set), the parameter any_log_to_be_archived would be set to 
  *        TRUE else it would be set to FALSE.
  *
- *        If there is any error, return FAILURE else return FBOK. 
+ *        If there is any error, return FB_FAILURE else return FB_SUCCESS. 
  *        In case of error, status_vector would be updated.
  *
  **************************************/
@@ -233,7 +233,7 @@ SSHORT WALF_get_linked_logs_info(STATUS * status_vector,
 	if ((ret = WALF_get_log_info(status_vector, dbname, starting_logname,
 								 starting_log_partition_offset,
 								 &log_seqno, &log_length,
-								 &log_flags)) != FBOK) return FAILURE;
+								 &log_flags)) != FB_SUCCESS) return FB_FAILURE;
 	*any_log_to_be_archived =
 		((log_flags & WALFH_KEEP_FOR_LONG_TERM_RECV) ? TRUE : FALSE);
 	strcpy(log_name1, starting_logname);
@@ -246,7 +246,7 @@ SSHORT WALF_get_linked_logs_info(STATUS * status_vector,
 		if (WALF_get_next_log_info
 			(status_vector, dbname, curr_name, curr_log_partition_offset,
 			 prev_name, &prev_log_partition_offset, &log_seqno, &log_length,
-			 &log_flags, -1) != FBOK)
+			 &log_flags, -1) != FB_SUCCESS)
 			break;
 		log_count++;
 		temp_name = prev_name;
@@ -265,7 +265,7 @@ SSHORT WALF_get_linked_logs_info(STATUS * status_vector,
 	*last_log_partition_offset = curr_log_partition_offset;
 	*last_log_flags = log_flags;
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -285,7 +285,7 @@ SSHORT WALF_get_log_info(STATUS * status_vector,
  * Functional description
  *       Get the seqno, length and the header flag of the given log file.
  *
- *       If there is any error, return FAILURE else return FBOK.
+ *       If there is any error, return FB_FAILURE else return FB_SUCCESS.
  *       In case of error, status_vector would be updated.
  *
  **************************************/
@@ -296,13 +296,13 @@ SSHORT WALF_get_log_info(STATUS * status_vector,
 	log_header = (WALFH) gds__alloc(WALFH_LENGTH);
 /* NOMEM: error return, FREE: by error returns & WALF_dispose_log_header() */
 	if (!log_header)
-		return FAILURE;
+		return FB_FAILURE;
 	ret =
 		WALF_open_log_file(status_vector, dbname, logname,
 						   log_partition_offset, log_header, &log_fd);
-	if (ret != FBOK) {
+	if (ret != FB_SUCCESS) {
 		gds__free((SLONG *) log_header);
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 	*log_seqno = log_header->walfh_seqno;
@@ -339,7 +339,7 @@ SSHORT WALF_get_next_log_info(STATUS * status_vector,
  *        chronologically previous log file.
  *
  *        If the 'next' logfile name is empty, return -1.  If there
- *        is any error, return FAILURE else return FBOK.  In case 
+ *        is any error, return FB_FAILURE else return FB_SUCCESS.  In case 
  *        of error, status_vector would be updated.
  *
  **************************************/
@@ -352,14 +352,14 @@ SSHORT WALF_get_next_log_info(STATUS * status_vector,
 	log_header = (WALFH) gds__alloc(WALFH_LENGTH);
 /* NOMEM: error return, FREE: by error returns & WALF_dispose_log_header() */
 	if (!log_header)
-		return FAILURE;
+		return FB_FAILURE;
 
 	ret =
 		WALF_open_log_file(status_vector, dbname, logname,
 						   log_partition_offset, log_header, &log_fd);
-	if (ret != FBOK) {
+	if (ret != FB_SUCCESS) {
 		gds__free((SLONG *) log_header);
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 	if ((direction == 1) &&
@@ -432,7 +432,7 @@ SSHORT WALF_get_all_next_logs_info(STATUS * status_vector,
  *        the user may call this routine again with the last
  *        logname and with new or extended buffers.
  *
- *        If there is any error, return FAILURE else return FBOK. 
+ *        If there is any error, return FB_FAILURE else return FB_SUCCESS. 
  *        In case of error, status_vector would be updated.
  *
  **************************************/
@@ -468,7 +468,7 @@ SSHORT WALF_get_all_next_logs_info(STATUS * status_vector,
 								   curr_log_partition_offset, next_name,
 								   &next_log_partition_offset,
 								   &next_log_seqno, &next_log_length,
-								   &next_log_flags, direction) != FBOK)
+								   &next_log_flags, direction) != FB_SUCCESS)
 			break;
 
 		if (direction == 1) {
@@ -492,7 +492,7 @@ SSHORT WALF_get_all_next_logs_info(STATUS * status_vector,
 				while (log_info =
 					   reinterpret_cast < log_info_stru * >(MISC_pop(&stack)))
 					gds__free(log_info);
-				return FAILURE;
+				return FB_FAILURE;
 			}
 			log_info->log_name = next_name;
 			log_info->log_partition_offset = next_log_partition_offset;
@@ -506,7 +506,7 @@ SSHORT WALF_get_all_next_logs_info(STATUS * status_vector,
 				while (log_info =
 					   reinterpret_cast < log_info_stru * >(MISC_pop(&stack)))
 					gds__free(log_info);
-				return FAILURE;
+				return FB_FAILURE;
 			}
 		}
 
@@ -522,7 +522,7 @@ SSHORT WALF_get_all_next_logs_info(STATUS * status_vector,
 	*next_logs_count = log_count;
 
 	if (direction == 1)
-		return FBOK;			/* We are all set */
+		return FB_SUCCESS;			/* We are all set */
 
 	while (stack) {
 		/* By creating the correct ordering of information from the stack,    
@@ -537,7 +537,7 @@ SSHORT WALF_get_all_next_logs_info(STATUS * status_vector,
 		gds__free((SLONG *) log_info);
 	}
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -559,7 +559,7 @@ SSHORT WALF_init_p_log(STATUS * status_vector,
  *        If num_partitions = 0, just allocate logsize bytes for the 
  *        given logfile and return.
  *
- *        If there is any error, return FAILURE else return FBOK.
+ *        If there is any error, return FB_FAILURE else return FB_SUCCESS.
  *        In case of error, status_vector would be updated.
  *
  **************************************/
@@ -572,19 +572,19 @@ SSHORT WALF_init_p_log(STATUS * status_vector,
 
 	if (LLIO_allocate_file_space(status_vector, logname, logsize,
 								 (UCHAR) WAL_TERMINATOR_CHAR,
-								 (num_partitions) ? TRUE : FALSE) != FBOK)
-		return FAILURE;
+								 (num_partitions) ? TRUE : FALSE) != FB_SUCCESS)
+		return FB_FAILURE;
 
 	if (num_partitions <= 0)
-		return FBOK;
+		return FB_SUCCESS;
 
 	if (LLIO_open(status_vector, logname, LLIO_OPEN_RW, FALSE, &p_log_fd))
-		return FAILURE;
+		return FB_FAILURE;
 
 	p_log_header = (P_LOGFH) gds__alloc(P_LOGFH_LENGTH);
 /* NOMEM: error return, FREE: end of routine */
 	if (!p_log_header)
-		return FAILURE;
+		return FB_FAILURE;
 
 	p_log_header->p_logfh_version1 = P_LOGFH_VERSION;
 	p_log_header->p_logfh_version2 = 0;
@@ -603,13 +603,13 @@ SSHORT WALF_init_p_log(STATUS * status_vector,
 				   (UCHAR *) p_log_header, P_LOGFH_LENGTH, 0)) {
 		LLIO_close(0, p_log_fd);
 		gds__free((SLONG *) p_log_header);
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 	LLIO_close(0, p_log_fd);
 	gds__free((SLONG *) p_log_header);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -627,20 +627,20 @@ SSHORT WALF_open_partitioned_log_file(STATUS * status_vector,
  * Functional description
  *        Open and read the header of the given partioiotned log file.
  *        Return the file handle through the parameter p_log_fd.
- *        If there is any error, return FAILURE else return FBOK.
+ *        If there is any error, return FB_FAILURE else return FB_SUCCESS.
  *        In case of error, status_vector would be updated.
  *
  **************************************/
 	SLONG fd, read_len;
 #define ERROR_RETURN(error) {if (fd>0) LLIO_close(0,fd); \
                       WAL_ERROR (status_vector, error, logname);\
-                      return FAILURE;}
-#define IO_ERROR_RETURN	{if (fd>0) LLIO_close(0,fd); return FAILURE;}
+                      return FB_FAILURE;}
+#define IO_ERROR_RETURN	{if (fd>0) LLIO_close(0,fd); return FB_FAILURE;}
 
 /* Open and position at the beginning of the partitioned log file. */
 
 	if (LLIO_open(status_vector, logname, LLIO_OPEN_EXISTING_RW, FALSE, &fd))
-		return FAILURE;
+		return FB_FAILURE;
 
 	*p_log_fd = fd;
 
@@ -665,7 +665,7 @@ SSHORT WALF_open_partitioned_log_file(STATUS * status_vector,
 	if (strcmp(dbname, p_log_header->p_logfh_dbname) != 0)
 		ERROR_RETURN(gds_logh_diff_dbname);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -684,18 +684,18 @@ SSHORT WALF_open_log_file(STATUS * status_vector,
  * Functional description
  *        Open and read the header of the given log file.  Return the 
  *        file handle through the parameter log_fd.
- *        If there is any error, return FAILURE else return FBOK.
+ *        If there is any error, return FB_FAILURE else return FB_SUCCESS.
  *        In case of error, status_vector would be updated.
  *
  **************************************/
 	SLONG fd, read_len;
 #define ERROR_RETURN(error) {if (fd>0) LLIO_close(0,fd); \
                       WAL_ERROR (status_vector, error, logname);\
-                      return FAILURE;}
-#define IO_ERROR_RETURN	{if (fd>0) LLIO_close(0,fd); return FAILURE;}
+                      return FB_FAILURE;}
+#define IO_ERROR_RETURN	{if (fd>0) LLIO_close(0,fd); return FB_FAILURE;}
 
 	if (LLIO_open(0, logname, LLIO_OPEN_EXISTING_RW, FALSE, &fd))
-		return FAILURE;
+		return FB_FAILURE;
 
 	*log_fd = fd;
 
@@ -728,7 +728,7 @@ SSHORT WALF_open_log_file(STATUS * status_vector,
 		ERROR_RETURN(gds_logh_diff_dbname);
 	}
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -748,7 +748,7 @@ SSHORT WALF_set_log_header_flag(STATUS * status_vector,
  *        Update the walfh_flags field of the log header in the log 
  *        file by the passed flag setting(s).  If the parameter 'set'
  *        is TRUE, the flag bit(s) would be set else they would be reset.
- *        If there is any error, return FAILURE else return FBOK.
+ *        If there is any error, return FB_FAILURE else return FB_SUCCESS.
  *        In case of error, status_vector would be updated.
  *
  **************************************/
@@ -761,14 +761,14 @@ SSHORT WALF_set_log_header_flag(STATUS * status_vector,
 	log_header = (WALFH) gds__alloc(WALFH_LENGTH);
 /* NOMEM: error return, FREE: error return or WALF_dispose_log_header() */
 	if (!log_header)
-		return FAILURE;
+		return FB_FAILURE;
 
 	ret =
 		WALF_open_log_file(status_vector, dbname, logname,
 						   log_partition_offset, log_header, &log_fd);
-	if (ret != FBOK) {
+	if (ret != FB_SUCCESS) {
 		gds__free((SLONG *) log_header);
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 /* Now set or reset the bits */
@@ -800,7 +800,7 @@ SSHORT WALF_update_log_header(STATUS * status_vector,
  *
  * Functional description
  *        Rewrite the log header in the log file.
- *        If there is any error, return FAILURE else return FBOK.
+ *        If there is any error, return FB_FAILURE else return FB_SUCCESS.
  *        In case of error, status_vector would be updated.
  *
  **************************************/
@@ -823,9 +823,9 @@ SSHORT WALF_update_log_header(STATUS * status_vector,
 	if (LLIO_write(status_vector, log_fd, logname,
 				   log_header->walfh_log_partition_offset, LLIO_SEEK_BEGIN,
 				   (UCHAR *) log_header, WALFH_LENGTH, 0))
-		return FAILURE;
+		return FB_FAILURE;
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -841,7 +841,7 @@ SSHORT WALF_update_partitioned_log_hdr(STATUS * status_vector,
  *
  * Functional description
  *        Rewrite the header of the log file containing partitions.
- *        If there is any error, return FAILURE else return FBOK.
+ *        If there is any error, return FB_FAILURE else return FB_SUCCESS.
  *        In case of error, status_vector would be updated.
  *
  **************************************/
@@ -850,9 +850,9 @@ SSHORT WALF_update_partitioned_log_hdr(STATUS * status_vector,
 
 	if (LLIO_write(status_vector, p_log_fd, logname, 0L, LLIO_SEEK_BEGIN,
 				   (UCHAR *) p_log_header, (ULONG) P_LOGFH_LENGTH, 0))
-		return FAILURE;
+		return FB_FAILURE;
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 

@@ -101,7 +101,7 @@ int CLIB_ROUTINE main( int argc, SCHAR ** argv)
 
 	WAL_handle = NULL;
 	ret = WAL_attach(status_vector, &WAL_handle, dbname);
-	if (ret != FBOK) {
+	if (ret != FB_SUCCESS) {
 		gds__print_status(status_vector);
 		exit(FINI_ERROR);
 	}

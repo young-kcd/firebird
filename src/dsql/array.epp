@@ -286,7 +286,7 @@ STATUS API_ROUTINE isc_array_set_desc(STATUS * status,
 					 (STATUS) gds_arg_string,
 					 (STATUS) "data type not understood");
 
-	return error(status, 1, (STATUS) FBOK);
+	return error(status, 1, (STATUS) FB_SUCCESS);
 }
 
 
@@ -482,7 +482,7 @@ static STATUS gen_sdl(STATUS * status,
 	STUFF_SDL(gds_sdl_eoc);
 	*sdl_length = gen->gen_sdl - *gen->gen_sdl_ptr;
 
-	return error(status, 1, (STATUS) FBOK);
+	return error(status, 1, (STATUS) FB_SUCCESS);
 }
 
 
@@ -546,7 +546,7 @@ SCHAR * relation_name, ISC_ARRAY_DESC * desc, SCHAR * global)
 					 (STATUS) gds_arg_string,
 					 (STATUS) desc->array_desc_relation_name);
 
-	return error(status, 1, (STATUS) FBOK);
+	return error(status, 1, (STATUS) FB_SUCCESS);
 }
 
 
@@ -627,7 +627,7 @@ static STATUS stuff_literal( GEN gen, SLONG literal)
 	STUFF_SDL(gds_sdl_long_integer);
 	STUFF_SDL_LONG(literal);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -653,5 +653,5 @@ static STATUS stuff_string( GEN gen, SCHAR sdl, SCHAR * string)
 	while (*string)
 		STUFF_SDL(*string++);
 
-	return FBOK;
+	return FB_SUCCESS;
 }

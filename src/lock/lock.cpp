@@ -29,7 +29,7 @@
  *
  */
 /*
-$Id: lock.cpp,v 1.23 2002-11-13 15:01:02 kkuznetsov Exp $
+$Id: lock.cpp,v 1.24 2002-11-14 08:25:29 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -786,7 +786,7 @@ int LOCK_init(
  *
  *	Return the offset of the owner block through owner_handle.
  *
- *	Return FBOK or FAILURE.
+ *	Return FB_SUCCESS or FB_FAILURE.
  *
  **************************************/
 	OWN owner;
@@ -801,19 +801,19 @@ int LOCK_init(
 	if (*owner_handle) {
 		owner = (OWN) ABS_PTR(*owner_handle);
 		owner->own_count++;
-		return FBOK;
+		return FB_SUCCESS;
 	}
 
 	if (!LOCK_header) {
 		/* We haven't yet mapped the shared region.  Do so now. */
 
 		start_manager = FALSE;
-		if (init_lock_table(status_vector) != FBOK)
-			return FAILURE;
+		if (init_lock_table(status_vector) != FB_SUCCESS)
+			return FB_FAILURE;
 	}
 	if (owner_flag &&
 		create_owner(status_vector, owner_id, owner_type,
-					 owner_handle) != FBOK) return FAILURE;
+					 owner_handle) != FB_SUCCESS) return FB_FAILURE;
 
 #ifndef  SUPERSERVER
 #if defined(SCO_EV) || defined(LINUX) || defined(FREEBSD) || defined(NETBSD) || defined(AIX_PPC) || defined(DARWIN) || defined(SINIXZ)
@@ -864,7 +864,7 @@ If this happens on another classic platform add that platform too. - Shailesh
 		*status_vector++ = gds_arg_end;
 		CloseHandle(blocking_event[0]);
 		CloseHandle(wakeup_event[0]);
-		return FAILURE;
+		return FB_FAILURE;
 	}
 #endif
 
@@ -878,7 +878,7 @@ If this happens on another classic platform add that platform too. - Shailesh
 	if (!(LOCK_owner = (OWN) ISC_map_object(status_vector, &LOCK_data,
 											LOCK_owner_offset,
 											sizeof(struct own)))) return
-			FAILURE;
+			FB_FAILURE;
 	AST_ALLOC;
 	if (status = gds__thread_start( reinterpret_cast < FPTR_INT_VOID_PTR > ( blocking_action_thread ),
 				   &LOCK_owner_offset, THREAD_high, 0, 0)) {
@@ -891,7 +891,7 @@ If this happens on another classic platform add that platform too. - Shailesh
 		*status_vector++ = gds_arg_unix;
 		*status_vector++ = status;
 		*status_vector++ = gds_arg_end;
-		return FAILURE;
+		return FB_FAILURE;
 	}
 #else
 #if defined(SCO_EV) || defined(LINUX) || defined(FREEBSD) || defined(NETBSD) || defined(AIX_PPC) || defined(DARWIN) || defined(SINIXZ)
@@ -900,7 +900,7 @@ If this happens on another classic platform add that platform too. - Shailesh
 		if (!(LOCK_owner = (OWN) ISC_map_object(status_vector, &LOCK_data,
 												LOCK_owner_offset,
 												sizeof(struct own)))) return
-				FAILURE;
+				FB_FAILURE;
 #endif
 #endif
 #endif
@@ -909,11 +909,11 @@ If this happens on another classic platform add that platform too. - Shailesh
 	if (start_manager) {
 		start_manager = FALSE;
 		if (!fork_lock_manager(status_vector))
-			return FAILURE;
+			return FB_FAILURE;
 	}
 #endif
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -936,7 +936,7 @@ void LOCK_manager( PTR manager_owner_offset)
  **************************************/
 	OWN manager_owner, owner;
 	SRQ que;
-	int ret = FAILURE;
+	int ret = FB_FAILURE;
 	STATUS local_status[ISC_STATUS_LENGTH];
 	SLONG value;
 	USHORT semaphore;
@@ -1034,7 +1034,7 @@ void LOCK_manager( PTR manager_owner_offset)
 							 event_ptr);
 
 #ifdef DEBUG
-		if (ret == FAILURE)
+		if (ret == FB_FAILURE)
 			DEBUG_MSG(1, ("LOCK_manager timer wakeup\n"));
 #endif
 
@@ -1456,16 +1456,16 @@ static void acquire( PTR owner_offset)
 /* Perform a spin wait on the lock table mutex. This should only
    be used on SMP machines; it doesn't make much sense otherwise. */
 
-	status = FAILURE;
+	status = FB_FAILURE;
 #if (defined UNIX || defined WIN_NT)
 	for (spins = 0; spins < LOCK_acquire_spins; ++spins)
-		if ((status = ISC_mutex_lock_cond(MUTEX)) == FBOK)
+		if ((status = ISC_mutex_lock_cond(MUTEX)) == FB_SUCCESS)
 			break;
 #endif
 
 /* If the spin wait didn't succeed then wait forever. */
 
-	if (status != FBOK)
+	if (status != FB_SUCCESS)
 		if (ISC_mutex_lock(MUTEX))
 			bug(NULL, "semop failed (acquire)");
 
@@ -1581,7 +1581,7 @@ static void acquire( PTR owner_offset)
 								LOCK_solaris_stall * 1000000,
 								(void(*)()) lock_alarm_handler, event_ptr);
 #ifdef DEV_BUILD
-					if (ret != FBOK)
+					if (ret != FB_SUCCESS)
 						gds__log
 							("LOCK: owner %d timed out while stalling for benefit of owner %d",
 							 owner_offset, REL_PTR(first_owner));
@@ -2219,7 +2219,7 @@ static USHORT create_owner(STATUS*	status_vector,
 				"inconsistent lock table version number; found %d, expected %d",
 				LOCK_version, LHB_VERSION);
 		bug(status_vector, LOCK_bug_buffer);
-		return FAILURE;
+		return FB_FAILURE;
 	}
 
 	acquire(DUMMY_OWNER_CREATE);	/* acquiring owner is being created */
@@ -2244,7 +2244,7 @@ static USHORT create_owner(STATUS*	status_vector,
 		if (!(owner = (OWN) alloc(sizeof(struct own), status_vector)))
 		{
 			release_mutex();
-			return FAILURE;
+			return FB_FAILURE;
 		}
 		new_block = OWN_BLOCK_new;
 	}
@@ -2274,7 +2274,7 @@ static USHORT create_owner(STATUS*	status_vector,
 
 	release(*owner_handle);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -3109,7 +3109,7 @@ static STATUS init_lock_table( STATUS * status_vector)
 	init_owner_block(&LOCK_process_owner, 255 /*LCK_OWNER_dummy_process */ ,
 					 LOCK_header->lhb_process_count++, OWN_BLOCK_dummy);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -4214,7 +4214,7 @@ static int signal_owner( OWN blocking_owner, PTR blocked_owner_offset)
 		DEBUG_MSG(1,
 				  ("signal_owner (%ld) - skipped OWN_signaled\n",
 				   blocking_owner->own_process_id));
-		return FBOK;
+		return FB_SUCCESS;
 	}
 
 	blocking_owner->own_ast_flags |= OWN_signaled;
@@ -4229,7 +4229,7 @@ static int signal_owner( OWN blocking_owner, PTR blocked_owner_offset)
 		DEBUG_DELAY;
 		ISC_enable();
 		DEBUG_DELAY;
-		return FBOK;
+		return FB_SUCCESS;
 	}
 #endif
 
@@ -4250,19 +4250,19 @@ static int signal_owner( OWN blocking_owner, PTR blocked_owner_offset)
 
 #if !(defined WIN_NT || defined SOLARIS_MT || POSIX_THREADS)
 		if (ISC_kill(blocking_owner->own_process_id, LOCK_block_signal) != -1)
-			return FBOK;
+			return FB_SUCCESS;
 #endif
 
 #if (defined WIN_NT && !defined SUPERSERVER)
 		if (ISC_kill
 			(blocking_owner->own_process_id, LOCK_block_signal,
 			 blocking_owner->own_blocking_hndl) != -1)
-			return FBOK;
+			return FB_SUCCESS;
 #endif
 
 #if (defined SOLARIS_MT && !defined SUPERSERVER)
 		if (!(errno = ISC_event_post(blocking_owner->own_blocking)))
-			return FBOK;
+			return FB_SUCCESS;
 #endif
 
 #ifdef MANAGER_PROCESS
@@ -4282,12 +4282,12 @@ static int signal_owner( OWN blocking_owner, PTR blocked_owner_offset)
 
 	if (!(LOCK_process_owner.own_flags & OWN_manager)) {
 		LOCK_post_manager = TRUE;
-		return FBOK;
+		return FB_SUCCESS;
 	}
 #endif
 
 /* Conclude that the owning process is dead */
-	return FAILURE;
+	return FB_FAILURE;
 }
 
 
@@ -4861,8 +4861,8 @@ static USHORT wait_for_request(
  *	the lock gets poked.  When we wake up, see if somebody else has
  *	cleared the pending flag.  If not, go back to sleep.
  * Returns
- *	FBOK	- we waited until the request was granted or rejected
- * 	FAILURE - Insufficient resouces to wait (eg: no semaphores)
+ *	FB_SUCCESS	- we waited until the request was granted or rejected
+ * 	FB_FAILURE - Insufficient resouces to wait (eg: no semaphores)
  *
  **************************************/
 
@@ -4912,7 +4912,7 @@ static USHORT wait_for_request(
 
 	if (!semaphore)
 		if (!(semaphore = alloc_semaphore(owner, status_vector)))
-			return FAILURE;
+			return FB_FAILURE;
 #else
 /* On non-static semaphore systems, set a flag to indicate that we're
    in wait_for_request.  Post_wakeup will check this flag. */
@@ -5051,9 +5051,9 @@ static USHORT wait_for_request(
 #endif
 		AST_DISABLE;
 		if (!ret || ret == WAIT_ABANDONED)
-			ret = FBOK;
+			ret = FB_SUCCESS;
 		else					/* if (ret == WAIT_TIMEOUT) */
-			ret = FAILURE;
+			ret = FB_FAILURE;
 #endif
 
 		/* We've worken up from the wait - now look around and see
@@ -5070,11 +5070,11 @@ static USHORT wait_for_request(
 		ISC_enable();
 
 		/* See if we wokeup due to another owner deliberately waking us up
-		   ret==FBOK --> we were deliberately worken up
-		   ret==FAILURE --> we still don't know why we work up */
+		   ret==FB_SUCCESS --> we were deliberately worken up
+		   ret==FB_FAILURE --> we still don't know why we work up */
 
 		/* Only if we came out of the ISC_event_wait() because of a post_wakeup()
-		   by another owner is OWN_wakeup set.  This is the only FBOK case. */
+		   by another owner is OWN_wakeup set.  This is the only FB_SUCCESS case. */
 
 #if (defined HAVE_MMAP && !defined SUPERSERVER)
 		if (LOCK_owner->own_flags & OWN_wakeup)
@@ -5082,10 +5082,10 @@ static USHORT wait_for_request(
 		owner = (OWN) ABS_PTR(owner_offset);
 		if (owner->own_flags & OWN_wakeup)
 #endif
-			ret = FBOK;
+			ret = FB_SUCCESS;
 #ifdef USE_EVENTS
 		else
-			ret = FAILURE;
+			ret = FB_FAILURE;
 #endif
 
 		current_time = GET_TIME;
@@ -5101,7 +5101,7 @@ static USHORT wait_for_request(
 		   wakeup due to timing differences (we use seconds here,
 		   ISC_event_wait() uses finer granularity) */
 
-		if ((ret != FBOK) && (current_time + 1 < timeout)) {
+		if ((ret != FB_SUCCESS) && (current_time + 1 < timeout)) {
 			continue;
 		}
 
@@ -5146,7 +5146,7 @@ static USHORT wait_for_request(
 
 
 		/* Handle lock event first */
-		if (ret == FBOK)
+		if (ret == FB_SUCCESS)
 		{
 			/* Someone posted our wakeup event, but DIDN'T grant our request.
 			   Re-post what we're blocking on and continue to wait.
@@ -5251,6 +5251,6 @@ static USHORT wait_for_request(
 	owner->own_semaphore = 0;
 #endif
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 

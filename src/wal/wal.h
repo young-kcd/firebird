@@ -482,7 +482,7 @@ typedef struct walrs {
     IBERR_build_status (status_vector, gds_wal_subsys_corrupt,             \
                         gds_arg_gds, WAL_segment->wals_last_bug, 0);        \
     WALC_release(WAL_handle);                                               \
-    return FAILURE;                                                         \
+    return FB_FAILURE;                                                         \
     }
 
 #define WAL_CHECK_BUG_ERROR(WAL_handle, WAL_segment) if (WAL_segment->wals_flags & WALS_BUG_OR_ERROR_HAPPENED) \
@@ -494,7 +494,7 @@ typedef struct walrs {
         IBERR_build_status (status_vector, gds_wal_subsys_error,           \
                             gds_arg_gds, WAL_segment->wals_last_err, 0);    \
     WALC_release(WAL_handle);                                               \
-    return FAILURE;                                                         \
+    return FB_FAILURE;                                                         \
     }
 
 #define STRING_DUP(s1,s2)	{s1 = (SCHAR*) gds__alloc (strlen (s2) + 1); if (s1) strcpy (s1, s2);}

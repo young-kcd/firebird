@@ -203,7 +203,7 @@ SLONG LOCK_enq(PTR prior_request;
  *
  **************************************/
 
-			   return FBOK;}
+			   return FB_SUCCESS;}
 
 
 			   int LOCK_init(STATUS * status_vector,
@@ -221,7 +221,7 @@ SLONG LOCK_enq(PTR prior_request;
  *
  **************************************/
 
-			   return FBOK;}
+			   return FB_SUCCESS;}
 
 
 			   SLONG LOCK_read_data(PTR lock_id) {

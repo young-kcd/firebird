@@ -86,15 +86,15 @@ int CLIB_ROUTINE main( int argc,
 /* Attach with journal server */
 
 	if (JRN_archive_begin(status, &journal, db_id, file_id, j_dir, j_length)
-		!= FBOK)
+		!= FB_SUCCESS)
 		error_exit(status, &journal, db_id, file_id, 235);	/* msg 235: Archive process unable to attach to journal server. */
 
 /* Check in with database */
 
-	if (open_file(s_file, p_offset, LLIO_OPEN_R, &s_fd) == FAILURE)
+	if (open_file(s_file, p_offset, LLIO_OPEN_R, &s_fd) == FB_FAILURE)
 		error_exit(status, &journal, db_id, file_id, 236);	/* msg 236: Archive process unable to open log file. */
 
-	if (open_file(d_file, 0L, LLIO_OPEN_NEW_RW, &d_fd) == FAILURE) {
+	if (open_file(d_file, 0L, LLIO_OPEN_NEW_RW, &d_fd) == FB_FAILURE) {
 		LLIO_close(0, s_fd);
 		error_exit(status, &journal, db_id, file_id, 237);	/* msg 237: Archive process unable to create archive file. */
 	}
@@ -141,13 +141,13 @@ static USHORT copy_file( SLONG s_fd, SLONG d_fd, SLONG size)
 		len -= l;
 
 		if (LLIO_read(0, s_fd, 0, 0L, LLIO_SEEK_NONE, buff, l, &read) ||
-			l != read) return FAILURE;
+			l != read) return FB_FAILURE;
 		if (LLIO_write(0, d_fd, 0, 0L, LLIO_SEEK_NONE, buff, l, &written) ||
 			l != written)
-			return FAILURE;
+			return FB_FAILURE;
 	}
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
@@ -188,12 +188,12 @@ static USHORT open_file(
  **************************************/
 
 	if (LLIO_open(0, full_name, mode, FALSE, fd))
-		return FAILURE;
+		return FB_FAILURE;
 
 	if (p_offset) {
 		if (LLIO_seek(0, *fd, 0, p_offset, LLIO_SEEK_BEGIN))
-			return FAILURE;
+			return FB_FAILURE;
 	}
 
-	return FBOK;
+	return FB_SUCCESS;
 }

@@ -30,7 +30,7 @@
  */
 
 /*
-$Id: utld.cpp,v 1.8 2002-11-13 15:00:50 kkuznetsov Exp $
+$Id: utld.cpp,v 1.9 2002-11-14 08:18:20 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -214,7 +214,7 @@ XSQLDA * xsqlda, USHORT * return_index)
 	if (*info != gds_info_end)
 		return error_dsql_804(status, gds_dsql_sqlda_err);
 
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 

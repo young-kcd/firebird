@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.15 2002-11-13 15:00:59 kkuznetsov Exp $
+ * $Id: sort.cpp,v 1.16 2002-11-14 08:23:53 dimitr Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -1072,7 +1072,7 @@ int SORT_sort(STATUS * status_vector, SCB scb)
 		scb->scb_flags |= scb_initialized;
 #endif
 		scb->scb_flags |= scb_sorted;
-		return FBOK;
+		return FB_SUCCESS;
 	}
 
 /* Write the last records as a run */
@@ -1229,7 +1229,7 @@ int SORT_sort(STATUS * status_vector, SCB scb)
 	}
 
 	scb->scb_flags |= scb_sorted;
-	return FBOK;
+	return FB_SUCCESS;
 }
 
 
