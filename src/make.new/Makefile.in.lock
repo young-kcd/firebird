@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.lock,v 1.1 2001-07-29 23:43:23 skywalker Exp $
+#   $Id: Makefile.in.lock,v 1.2 2001-08-01 04:18:37 skywalker Exp $
 # 
 
 ROOT=../..
@@ -137,4 +137,4 @@ $(BIN)/lock_driver: $(LOCKDRIVER_OBJECTS) $(LIBGDS_LA)
 	$(CHMOD_S7) $@
 
 
-include $(Dependencies)
+-include $(Dependencies)

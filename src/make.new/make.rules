@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.rules,v 1.2 2001-07-31 18:34:05 skywalker Exp $
+#   $Id: make.rules,v 1.3 2001-08-01 04:18:37 skywalker Exp $
 # 
 
 #____________________________________________________________________________
@@ -64,7 +64,10 @@ SRC=$(SRC_ROOT)/$(ModuleName)
 OBJ=$(GEN_ROOT)/$(ModuleName)
 DEP=$(OBJ)
 
-GEN_SRC=$(SRC)   # I would like to change this into generated area.
+GEN_SRC=$(OBJ)
+
+  # This one is not so widely used at the momement.
+  # but I would like it to become so.
 
 
 FIREBIRD=$(GEN_ROOT)/firebird
@@ -154,16 +157,31 @@ endif
 
 # Here we have definitions for using the preprocessor.
 
+# The GPRE_FLAGS is overwritten in Makefile.in.jrd Makefile.in.gpre and 
+# since they do something extra to allow the boot build to work.
+#
+# One other point is that sometimes a failure in compile with gpre does not 
+# result in an error being generated.  The generated source file still
+# compiles and throws the make off the path.
+#
+# This bit of code is part of unfinished bit to let make determine if
+# gpre gpre_static or gpre_boot should be used based on which ones exist.
+#
+# testgpre = $(shell if [ -f $(GPRE) ]; then; echo $(GPRE); else; echo ""; fi)
+#test1:
+#	echo $(testgpre)
+
+
 GPRE_FLAGS=	-r -m -z -n
 
 .SUFFIXES: .c .e .epp .cpp
 
 .e.c:
-	$(GPRE_STATIC) $(GPRE_FLAGS) $< $@
+	$(GPRE_CURRENT) $(GPRE_FLAGS) $< $@
 
 
 .epp.cpp:
-	$(GPRE_STATIC) $(GPRE_FLAGS) $< $@
+	$(GPRE_CURRENT) $(GPRE_FLAGS) $< $@
 
 
 

@@ -1,6 +1,5 @@
+#include "firebird.h"
 #include "FirebirdConfig.h"
-
-#include "fred.h"
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>

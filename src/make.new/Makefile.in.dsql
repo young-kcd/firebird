@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.dsql,v 1.1 2001-07-29 23:43:23 skywalker Exp $
+#   $Id: Makefile.in.dsql,v 1.2 2001-08-01 04:18:37 skywalker Exp $
 # 
 
 ROOT=../..
@@ -37,6 +37,19 @@ include     $(ROOT)/src/make.platform
 include     $(ROOT)/src/make.shared.variables
 
 @SET_MAKE@
+
+
+# Overwrite the GPRE_FLAGS to allow for building using boot gpre compiler
+
+GPRE_FLAGS=     -lang_internal -r -m -z -n
+
+
+
+
+AllObjects = $(DSQL_Objects)
+
+Dependencies = $(AllObjects:.o=.d)
+
 
 
 .PHONY: jrd_static
@@ -58,10 +71,7 @@ jrdlib_dependencies: $(DSQL_Objects)
 
 
 
-#DSQL_P_OBJECTS=	alld.bin array.bin blob.bin ddl.bin dsql.bin \
-#	errd.bin gen.bin hsh.bin make.bin metd.bin \
-#	movd.bin parse.bin pass1.bin preparse.bin \
-#	user_dsql.bin utld.bin
+#___ left to help resolve super server___________________________________
 
 DSQL_J_OBJECTS=	array.j blob.j preparse.j user_dsql.j utld.j
 
@@ -79,7 +89,4 @@ parse.cpp:	parse.sed y.tab.c
 	sed -f $< y.tab.c > $@
 #	-$(RM) y.tab.c
 
-
-Dependencies = $(DSQL_Objects:.o=.d) 
-
-include $(Dependencies)
+-include $(Dependencies)

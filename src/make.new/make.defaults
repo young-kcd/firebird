@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.1 2001-07-29 23:43:23 skywalker Exp $
+#   $Id: make.defaults,v 1.2 2001-08-01 04:18:37 skywalker Exp $
 # 
 
 
@@ -60,7 +60,7 @@ QUIET_ECHO=		@echo
 CD=			cd
 CAT=			cat
 AR=			ar crsu
-
+LN=    ln -s 
 
 # Default extensions
 
@@ -119,10 +119,11 @@ GBAK_STATIC     = $(BIN)/gbak_static$(EXEC_EXT)
 GBAK            = $(BIN)/gbak$(EXEC_EXT)
 
 # From gpre
+# (gpre current is a link to one of the others)
 GPRE_BOOT       = $(BIN)/gpre_boot$(EXEC_EXT)
 GPRE_STATIC     = $(BIN)/gpre_static$(EXEC_EXT)
 GPRE            = $(BIN)/gpre$(EXEC_EXT)
-
+GPRE_CURRENT    = $(BIN)/gpre_current$(EXEC_EXT)
 
 # From intl
 LIBGDSINTL_LA      = $(FIREBIRD)/intl/libgdsintl.so
