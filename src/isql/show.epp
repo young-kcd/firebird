@@ -954,6 +954,7 @@ void SHOW_print_metadata_text_blob(FILE* fp,
 
 	SCHAR* buffer = (SCHAR*) ISQL_ALLOC(BUFFER_LENGTH512);
 	if (!buffer) {
+		isc_close_blob(isc_status, &blob_handle);
 		isc_status[0] = isc_arg_gds;
 		isc_status[1] = isc_virmemexh;
 		isc_status[2] = isc_arg_end;
