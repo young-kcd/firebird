@@ -282,12 +282,15 @@
 			Name="UTILITIES files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\gen\utilities\gsec\security.cpp">
+				RelativePath="..\..\..\src\utilities\gsec\call_service.cpp">
 			</File>
 		</Filter>
 		<Filter
 			Name="Header files"
 			Filter="h;hpp;hxx;hm;inl">
+			<File
+				RelativePath="..\..\..\src\utilities\gsec\call_service.h">
+			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\cvt_proto.h">
 			</File>

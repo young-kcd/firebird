@@ -129,6 +129,9 @@
 			Name="UTILITIES files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
+				RelativePath="..\..\..\src\utilities\gsec\call_service.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\utilities\common\cmd_util.cpp">
 			</File>
 			<File

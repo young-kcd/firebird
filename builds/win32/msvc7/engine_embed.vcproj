@@ -361,6 +361,9 @@
 				RelativePath="..\..\..\src\jrd\sdw.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\os\win32\sha.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\shut.cpp">
 			</File>
 			<File
@@ -536,10 +539,10 @@
 				RelativePath="..\..\..\src\jrd\dsc.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\dsc_pub.h">
+				RelativePath="..\..\..\src\jrd\dsc_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\dsc_proto.h">
+				RelativePath="..\..\..\src\jrd\dsc_pub.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\dyn.h">
@@ -659,10 +662,10 @@
 				RelativePath="..\..\..\src\jrd\idx_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\inf_pub.h">
+				RelativePath="..\..\..\src\jrd\inf_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\inf_proto.h">
+				RelativePath="..\..\..\src\jrd\inf_pub.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\ini.h">
@@ -930,6 +933,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\seg_proto.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\os\sha.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\shdef.h">
