@@ -81,10 +81,6 @@ TEXT *DLL_EXPORT ENC_crypt(TEXT *string, TEXT *salt)
  * SUCH DAMAGE.
  */
 
-#ifndef NULL
-#define NULL		((char*) 0)
-#endif
-
 int des_setkey(const char *key);
 int des_cipher(const char *in, char *out, long salt, int num_iter);
 
