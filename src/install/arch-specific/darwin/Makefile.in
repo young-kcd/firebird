@@ -38,6 +38,8 @@ package packages dist:
 			's/_SMFB_BUILD_SUFFIX_/$(FB_VER_SUFFIX_SM)/g' \
 			install/arch-specific/darwin/Description.plist \
 			> $(DIR)/$(INST_NM).pkg/Contents/Resources/Description.plist
+	cp install/arch-specific/darwin/installer_background.pdf \
+			$(DIR)/$(INST_NM).pkg/Contents/Resources/background.pdf
 	cp install/arch-specific/darwin/install-script \
 			$(DIR)/$(INST_NM).pkg/Contents/Resources/postinstall
 	cp install/arch-specific/darwin/install-script \
