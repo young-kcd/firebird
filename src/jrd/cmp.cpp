@@ -134,7 +134,7 @@ static void pass1_modify(thread_db*, CompilerScratch*, jrd_nod*);
 static RecordSelExpr* pass1_rse(thread_db*, CompilerScratch*, RecordSelExpr*, jrd_rel*, USHORT);
 static void pass1_source(thread_db*, CompilerScratch*, RecordSelExpr*, jrd_nod*, jrd_nod**, NodeStack&, jrd_rel*, USHORT);
 static jrd_nod* pass1_store(thread_db*, CompilerScratch*, jrd_nod*);
-static jrd_nod* pass1_update(thread_db*, CompilerScratch*, jrd_rel*, trig_vec*, USHORT, USHORT,
+static jrd_nod* pass1_update(thread_db*, CompilerScratch*, jrd_rel*, const trig_vec*, USHORT, USHORT,
 	SecurityClass::flags_t, jrd_rel*, USHORT);
 static jrd_nod* pass2(thread_db*, CompilerScratch*, jrd_nod* const, jrd_nod*);
 static void pass2_rse(thread_db*, CompilerScratch*, RecordSelExpr*);
@@ -3697,9 +3697,8 @@ static void pass1_erase(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 		// if this is a view trigger operation, get an extra stream to play with
 
-		trig_vec* trigger =
-			(relation->rel_pre_erase) ? relation->
-			rel_pre_erase : relation->rel_post_erase;
+		const trig_vec* trigger = (relation->rel_pre_erase) ?
+			relation->rel_pre_erase : relation->rel_post_erase;
 
 		if (relation->rel_view_rse && trigger) {
 			new_stream = csb->nextStream();
@@ -3733,10 +3732,6 @@ static void pass1_erase(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 		UCHAR* map = csb->csb_rpt[stream].csb_map;
 		if (trigger) {
-			// dimitr: remains of the old updatable view semantics,
-			//		   we should never get here
-			fb_assert(false);
-
 			jrd_nod* view_node = copy(tdbb, csb, node, map, 0, NULL, false);
 			node->nod_arg[e_erase_sub_erase] = view_node;
 			node->nod_count =
@@ -3864,9 +3859,8 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			parent = tail->csb_view;
 		post_trigger_access(csb, relation, ExternalAccess::exa_update, view);
 
-		trig_vec* trigger =
-			(relation->rel_pre_modify) ? relation->
-			rel_pre_modify : relation->rel_post_modify;
+		const trig_vec* trigger = (relation->rel_pre_modify) ?
+			relation->rel_pre_modify : relation->rel_post_modify;
 
 		// Check out update. If this is an update thru a view, verify the
 		// view by checking for read access on the base table. If field-level select
@@ -3890,10 +3884,6 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		parent = relation;
 		parent_stream = stream;
 		if (trigger) {
-			// dimitr: remains of the old updatable view semantics,
-			//		   we should never get here
-			fb_assert(false);
-
 			node->nod_arg[e_mod_map_view] =
 				pass1_expand_view(tdbb, csb, stream, new_stream, false);
 			node->nod_count =
@@ -4383,9 +4373,8 @@ static jrd_nod* pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node
 		}
 		post_trigger_access(csb, relation, ExternalAccess::exa_insert, view);
 
-		trig_vec* trigger =
-			(relation->rel_pre_store) ? relation->
-			rel_pre_store : relation->rel_post_store;
+		const trig_vec* trigger = (relation->rel_pre_store) ?
+			relation->rel_pre_store : relation->rel_post_store;
 
 		// Check out insert. If this is an insert thru a view, verify the
 		// view by checking for read access on the base table. If field-level select
@@ -4418,10 +4407,6 @@ static jrd_nod* pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node
 			}
 		}
 		else {
-			// dimitr: remains of the old updatable view semantics,
-			//		   we should never get here
-			fb_assert(false);
-
 			CMP_post_resource(&csb->csb_resources, relation,
 							  Resource::rsc_relation, relation->rel_id);
 			trigger_seen = true;
@@ -4453,7 +4438,7 @@ static jrd_nod* pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node
 static jrd_nod* pass1_update(thread_db* tdbb,
 							CompilerScratch* csb,
 							jrd_rel* relation,
-							trig_vec* trigger,
+							const trig_vec* trigger,
 							USHORT stream,
 							USHORT update_stream,
 							SecurityClass::flags_t priv,
@@ -4502,9 +4487,22 @@ static jrd_nod* pass1_update(thread_db* tdbb,
 
 	// a view with triggers is always updatable
 
-	if (trigger) {
-		csb->csb_rpt[update_stream].csb_flags |= csb_view_update;
-		return NULL;
+	if (trigger)
+	{
+		bool user_triggers = false;
+		for (int i = 0; i < trigger->getCount(); i++)
+		{
+			if (!(*trigger)[i].sys_trigger)
+			{
+				user_triggers = true;
+				break;
+			}
+		}
+		if (user_triggers)
+		{
+			csb->csb_rpt[update_stream].csb_flags |= csb_view_update;
+			return NULL;
+		}
 	}
 
 	// we've got a view without triggers, let's check whether it's updateable
@@ -5852,4 +5850,3 @@ static bool stream_in_rse(USHORT stream, RecordSelExpr* rse)
 
 	return false;				// mark this RecordSelExpr as variant
 }
-
