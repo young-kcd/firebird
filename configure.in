@@ -863,7 +863,11 @@ case "$PLATFORM" in
                      gen/install/scripts/rpmheader.txt:${INSTALL_SRC_DIR}/rpmheader.txt.in
                      gen/install/scripts/rpmfiles.txt:${INSTALL_SRC_DIR}/rpmfiles.txt.in
                      gen/firebird/misc/firebird.xinetd:builds/install/arch-specific/linux/misc/firebird.xinetd.in
+                     gen/firebird/misc/aliases.conf:builds/install/misc/aliases.conf.in
                      gen/firebird/bin/changeDBAPassword.sh:builds/install/arch-specific/linux/misc/changeDBAPassword.sh.in
+                     gen/firebird/bin/changeGdsLibraryCompatibleLink.sh:builds/install/arch-specific/linux/misc/changeGdsLibraryCompatibleLink.sh.in
+                     gen/firebird/bin/createAliasDB.sh:builds/install/arch-specific/linux/misc/createAliasDB.sh.in
+                     gen/firebird/bin/fb_config:builds/install/misc/fb_config.in
             	     gen/firebird/bin/CSchangeRunUser.sh:builds/install/misc/CSchangeRunUser.sh.in
                      gen/firebird/bin/CSrestoreRootRunUser.sh:builds/install/misc/CSrestoreRootRunUser.sh.in
                      gen/firebird/bin/SSchangeRunUser.sh:builds/install/misc/SSchangeRunUser.sh.in
