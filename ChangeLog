@@ -1,3 +1,15 @@
+2004-10-18 02:28  skidder
+
+	* firebird2/src/misc/src_bundle.sh (1.2.2.2):
+	
+	Add support for daily builds
+
+2004-10-17 19:41  hvlad
+
+	* firebird2/src/jrd/fun.epp (1.22.2.5):
+	
+	Fix server ability to report failed UDF name
+
 2004-10-15 13:02  paul_reeves
 
 	* firebird2/src/install/arch-specific/win32/i18n_readme.txt
