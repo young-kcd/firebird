@@ -214,7 +214,6 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 #ifdef SUPERSERVER
 		server_flag |= SRVR_ipc;
 #endif
-		server_flag |= SRVR_listener;
 	}
 
 /* CVC: Honor -b for SS on Win32. */
