@@ -1142,8 +1142,14 @@ JRD_REL partner_relation, SSHORT index_id)
 		retrieval.irb_generic = irb_equality;
 		retrieval.irb_relation = partner_relation;
 		retrieval.irb_key = &key;
-		retrieval.irb_upper_count = idx->idx_count;
-		retrieval.irb_lower_count = idx->idx_count;
+		if (partner_idx.idx_flags & idx_descending) {
+			retrieval.irb_generic |= irb_descending;
+			retrieval.irb_upper_count = retrieval.irb_lower_count = 0;
+		}
+		else {
+			retrieval.irb_upper_count = 
+				retrieval.irb_lower_count = idx->idx_count;
+		}
 		BTR_evaluate(tdbb, &retrieval, &bitmap);
 
 		/* if there is a bitmap, it means duplicates were found */
