@@ -3198,12 +3198,7 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
  *      expressions, and validation expressions.
  *
  **************************************/
-	USHORT length, view_context, field_id;
-	ArrayField* array;
 	trig_vec* triggers[TRIGGER_MAX];
-	vec* vector;
-	jrd_fld* field;
-	blb* blob;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -3239,6 +3234,7 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 		triggers[itr] = NULL;
 	}
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
+	blb* blob = 0;
 
 /* If anything errors, catch it to reset the scan flag.  This will
    make sure that the error will be caught if the operation is tried
@@ -3258,7 +3254,7 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
             REQUEST(irq_r_fields) = request;
 		}
 		relation->rel_current_fmt = REL.RDB$FORMAT;
-		vector = relation->rel_fields =
+		vec* vector = relation->rel_fields =
 			vec::newVector(*dbb->dbb_permanent, relation->rel_fields,
 						   REL.RDB$FIELD_ID + 1);
 		if (!REL.RDB$SECURITY_CLASS.NULL) {
@@ -3313,12 +3309,15 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 
 		blob = BLB_open(tdbb, dbb->dbb_sys_trans, &REL.RDB$RUNTIME);
 		Firebird::HalfStaticArray<UCHAR, 256> temp;
-		UCHAR *buffer = temp.getBuffer(blob->blb_max_segment);
+		UCHAR* const buffer = temp.getBuffer(blob->blb_max_segment);
 
-		field = NULL;
+		jrd_fld* field = NULL;
+		ArrayField* array = 0;
+		USHORT view_context = 0;
+		USHORT field_id = 0;
 		for (;;)
 		{
-			length =
+			USHORT length =
 				BLB_get_segment(tdbb, blob, buffer, blob->blb_max_segment);
 			if (blob->blb_flags & BLB_eof)
 			{
@@ -3439,6 +3438,8 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 				break;
 			}
 		}
+		BLB_close(tdbb, blob);
+		blob = 0;
 		if (field && !field->fld_security_name && !REL.RDB$DEFAULT_CLASS.NULL)
 		{
 			field->fld_security_name =
@@ -3507,6 +3508,8 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 		if (sys_triggers) {
 			relation->rel_flags |= REL_sys_triggers;
 		}
+		if (blob)
+			BLB_close(tdbb, blob);
 #ifdef SUPERSERVER
 		THD_rec_mutex_unlock(&dbb->dbb_sp_rec_mutex);
 #endif
