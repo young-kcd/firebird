@@ -365,7 +365,7 @@ int UTIL_gsec(
 	}
 
 	if (db_handle) {
-		ISC_STATUS loc_status[ISC_STATUS_LENGTH];
+		ISC_STATUS_ARRAY loc_status;
 		if (isc_detach_database(loc_status, &db_handle))
 			UTIL_error_redirect(loc_status, 0, NULL, NULL);
 	}

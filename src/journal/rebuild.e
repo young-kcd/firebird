@@ -242,7 +242,7 @@ static COUNTER totals[JRNP_MAX + 1 - JRN_PAGE];
 
 static UCHAR wal_buff[MAX_WALBUFLEN];
 static WALRS WALR_handle;
-static ISC_STATUS wal_status[ISC_STATUS_LENGTH];
+static ISC_STATUS_ARRAY wal_status;
 
 
 #ifndef FILE_OPEN_WRITE
@@ -1102,7 +1102,7 @@ static void close_database(DRB database)
 	FIL fil;
 	SLONG *tr2 = 0;
 	SSHORT ret_val;
-	ISC_STATUS status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status;
 
 	if (sw_trace)
 		return;
@@ -1305,7 +1305,8 @@ static int error(TEXT * filename,
  *	We've had an unexpected error -- punt.
  *
  **************************************/
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH], *s;
+	ISC_STATUS_ARRAY status_vector;
+	ISC_STATUS *s;
 
 	s = status_vector;
 	*s++ = isc_arg_gds;
@@ -2013,7 +2014,7 @@ static BOOLEAN open_database_file(DRB database,
  *	Open database and create blocks.
  *
  **************************************/ SSHORT ret_val;
-	ISC_STATUS status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status;
 
 	if (new_file) {
 		if (LLIO_open(status, name, LLIO_OPEN_NEW_RW, TRUE,
@@ -2804,7 +2805,7 @@ static void read_page(DRB database, CACHE buffer)
  *
  **************************************/
 	FIL fil;
-	ISC_STATUS status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status;
 	SLONG len_read, new_offset;
 	fil = seek_file(database, database->drb_file, buffer, &new_offset);
 	if (!fil)
@@ -3558,7 +3559,7 @@ static FIL seek_file(DRB database, FIL fil, CACHE buffer, SLONG * new_offset)
  *
  **************************************/
 	ULONG page;
-	ISC_STATUS status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status;
 	page = buffer->cache_page_number;
 	for (;; fil = fil->fil_next)
 		if (!fil)
@@ -3696,7 +3697,7 @@ static void write_page(DRB database, CACHE buffer)
 	PAG page;
 	FIL fil;
 	SLONG len_written, new_offset;
-	ISC_STATUS status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status;
 	page = buffer->cache_page;
 	page->pag_checksum = checksum(database, page);
 	fil = seek_file(database, database->drb_file, buffer, &new_offset);

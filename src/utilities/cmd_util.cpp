@@ -73,7 +73,7 @@ void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
  *
  **************************************/
 
-	ISC_STATUS tmp_status[ISC_STATUS_LENGTH], warning_status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY tmp_status, warning_status;
 	int i, tmp_status_len = 0, status_len = 0, err_status_len = 0;
 	int warning_count = 0, warning_indx = 0;
 	BOOLEAN duplicate = FALSE;

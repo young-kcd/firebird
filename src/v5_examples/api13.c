@@ -51,7 +51,7 @@ ARGLIST(char **argv)
     isc_db_handle       db1 = NULL,        /* handle for database 1 */
                         db2 = NULL;        /* handle for database 2 */
     isc_tr_handle       trans1 = NULL;     /* transaction handle */
-    ISC_STATUS          status[ISC_STATUS_LENGTH];
+    ISC_STATUS_ARRAY    status;
     XSQLDA *            sel_sqlda;
     isc_stmt_handle     stmt = NULL;
     long                stat1, stat2, stat3;

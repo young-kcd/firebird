@@ -96,7 +96,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
  * Functional description
  *
  **************************************/
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	WAL WAL_handle;
 	SCHAR dbname[256];
 	SCHAR local_dbname[256];

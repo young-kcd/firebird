@@ -125,7 +125,8 @@ void ExecuteStatement::Open(TDBB tdbb, JRD_NOD sql, SSHORT nVars, bool SingleTon
 	THREAD_EXIT;
 
 // this check uses local error handler for local status vector
-	ISC_STATUS local[ISC_STATUS_LENGTH], *status = local;
+	ISC_STATUS_ARRAY local;
+	ISC_STATUS *status = local;
 	memset(local, 0, sizeof(local));
 #	define Chk(x) if ((x) != 0) goto err_handler
 
@@ -173,7 +174,8 @@ bool ExecuteStatement::Fetch(TDBB tdbb, JRD_NOD * JrdVar) {
 	if (! Statement)
 		return false;
 
-	ISC_STATUS local[ISC_STATUS_LENGTH], *status = local;
+	ISC_STATUS_ARRAY local;
+	ISC_STATUS *status = local;
 	memset(local, 0, sizeof(local));
 	status = local;
 	tdbb->tdbb_transaction->tra_callback_count++;

@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.50 2003-04-13 13:22:23 dimitr Exp $
+$Id: exe.cpp,v 1.51 2003-04-16 10:17:40 aafemt Exp $
 */
 
 #include "firebird.h"
@@ -1376,7 +1376,8 @@ static void exec_sql(TDBB tdbb, JRD_REQ request, DSC* dsc)
 		FB_NEW(*tdbb->tdbb_transaction->tra_pool) char[BUFFER_LARGE + sizeof(vary)]);
 	v->vary_length = BUFFER_LARGE;
 	SSHORT l;
-	ISC_STATUS *status, local[ISC_STATUS_LENGTH];
+	ISC_STATUS *status;
+	ISC_STATUS_ARRAY local;
 	static char *cba = "Callback Argument";
 
 	memset(local, 0, sizeof(local));

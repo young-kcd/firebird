@@ -773,7 +773,7 @@ typedef struct tgbl
     isc_tr_handle global_trans;
     DESC    	file_desc;
     ISC_STATUS	*status;		/* points to either the tdgbl status or service status */
-    ISC_STATUS  status_vector[ISC_STATUS_LENGTH];
+    ISC_STATUS_ARRAY status_vector;
     int     	exit_code;
     UCHAR   	*head_of_mem_list;
     OUTPUTPROC  output_proc;

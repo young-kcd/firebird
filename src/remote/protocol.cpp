@@ -1461,7 +1461,7 @@ static bool_t xdr_slice(
  *	Move a slice of an array under
  *
  **************************************/
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	PORT port;
 	ULONG n;
 	BLOB_PTR *p;

@@ -72,7 +72,7 @@ ARGLIST(char **argv)
     isc_blob_handle     blob_handle = NULL;
     isc_db_handle       DB = NULL;           /* database handle */
     isc_tr_handle       trans = NULL;        /* transaction handle */
-    ISC_STATUS          status[ISC_STATUS_LENGTH]; /* status vector */
+    ISC_STATUS_ARRAY    status;              /* status vector */
     XSQLDA *            sqlda;
     unsigned short      len;
     char *              line;

@@ -42,7 +42,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 *************************************************************************/
 	char buffer[512];
 	char fname[512];
-	ISC_STATUS status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status;
 	isc_svc_handle svc_handle = NULL;
 	char svc_name[256];
 	char *sptr, sendbuf[512];

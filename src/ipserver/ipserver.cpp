@@ -856,7 +856,7 @@ static void allocate_statement( ICC icc)
 	IDB idb;
 	IPSERVER_ISR statement;
 	FRBRD* handle;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	ISC_STATUS result;
 	ips_dsql *ips;
 	ips_comm_area *comm;
@@ -910,7 +910,7 @@ static void attach_database( ICC icc, P_OP operation)
 	UCHAR *file_name, file_buf[256], *dpb, dpb_buf[256];
 	UCHAR *expanded, expanded_buf[256];
 	FRBRD* handle;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	ISC_STATUS result;
 	IDB idb;
 	ips_object *ips;
@@ -1009,7 +1009,7 @@ static void cancel_events( ICC icc)
  *      Cancel an outstanding event call.
  *
  **************************************/
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	IDB idb;
 	IVNT event;
 	SLONG id;
@@ -1056,7 +1056,7 @@ static USHORT check_statement_type( IPSERVER_ISR statement)
  **************************************/
 	UCHAR buffer[16], *info;
 	USHORT l, type;
-	ISC_STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY local_status;
 	ISC_STATUS result;
 	USHORT ret;
 	BOOLEAN done;
@@ -1118,7 +1118,7 @@ static void compile( ICC icc)
 	USHORT blr_length;
 	UCHAR *blr;
 	FRBRD* handle;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	ISC_STATUS result;
 	ips_compile_req *ips;
 	ips_string *ips_blr;
@@ -1182,7 +1182,7 @@ static void ddl( ICC icc)
  *      Pass thru a DDL call.
  *
  **************************************/
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	ITR transaction;
 	IDB idb;
 	UCHAR *buffer;
@@ -1235,7 +1235,7 @@ static void drop_database( ICC icc)
  *
  **************************************/
 	IDB idb, *ptr;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	ISC_STATUS code;
 	ips_object *ips;
 	ips_comm_area *comm;
@@ -1289,7 +1289,7 @@ static void end_blob( ICC icc, P_OP operation)
  *
  **************************************/
 	IBL blob;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	UCHAR *buffer;
 	USHORT length;
 	ips_object *ips;
@@ -1342,7 +1342,7 @@ static void end_database( ICC icc)
  *
  **************************************/
 	IDB idb, *ptr;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	ISC_STATUS result;
 	ips_object *ips;
 	ips_comm_area *comm;
@@ -1396,7 +1396,7 @@ static void end_request( ICC icc)
  *
  **************************************/
 	IRQ request;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	ips_object *ips;
 	ips_comm_area *comm;
 	TEXT *comm_ptr;
@@ -1431,7 +1431,7 @@ static void end_statement( ICC icc)
  **************************************/
 	IPSERVER_ISR statement;
 	USHORT option;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	ips_object *ips;
 	ips_comm_area *comm;
 	TEXT *comm_ptr;
@@ -1477,7 +1477,7 @@ static void end_transaction( ICC icc, P_OP operation)
 	ITR transaction;
 	UCHAR *msg;
 	USHORT msg_length;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	ISC_STATUS result;
 	ips_object *ips;
 	ips_string *ips_prep;
@@ -1591,7 +1591,7 @@ static void execute_immediate( ICC icc, P_OP operation)
 	USHORT length, dialect, in_blr_length, in_msg_type, in_msg_length,
 		out_blr_length, out_msg_type, out_msg_length, parser_version;
 	UCHAR *string, *in_blr, *in_msg, *out_blr, *out_msg;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	ips_dsql *ips;
 	ips_string *ips_blr;
 	ips_string *ips_msg;
@@ -1745,7 +1745,7 @@ static void execute_statement( ICC icc, P_OP operation)
 	USHORT in_blr_length, in_msg_type, in_msg_length,
 		out_blr_length, out_msg_type, out_msg_length;
 	UCHAR *in_blr, *in_msg, *out_blr, *out_msg;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	ips_dsql *ips;
 	ips_string *ips_blr;
 	ips_string *ips_msg;
@@ -1855,7 +1855,8 @@ static void fetch( ICC icc)
 	IPSERVER_ISR statement;
 	USHORT records, total_length, blr_length, msg_type, msg_length;
 	UCHAR *blr, *msg;
-	ISC_STATUS s, status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS s;
+	ISC_STATUS_ARRAY status_vector;
 	ips_dsql *ips;
 	ips_string *ips_blr;
 	ips_string *ips_msg;
@@ -1958,7 +1959,7 @@ static void get_segment( ICC icc)
 	IBL blob;
 	USHORT buffer_length, length;
 	UCHAR *buffer;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	ips_segment *ips;
 	ips_string *ips_seg;
 	ips_comm_area *comm;
@@ -2013,7 +2014,7 @@ static void get_slice( ICC icc)
  **************************************/
 	IDB idb;
 	ITR transaction;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	SSHORT sdl_length, param_length;
 	ULONG slice_length, return_length, *params, parameters[32];
 	UCHAR *sdl, sdl_buf[256], *slice;
@@ -2115,7 +2116,7 @@ static void info( ICC icc, P_OP operation)
  *
  **************************************/
 	FRBRD* handle;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	USHORT item_length, recv_item_length, buffer_length, incarnation;
 	UCHAR *buffer, *items, *recv_items;
 	UCHAR items_buf[128], recv_items_buf[128];
@@ -2269,7 +2270,7 @@ static void insert( ICC icc)
 	IPSERVER_ISR statement;
 	USHORT blr_length, msg_type, msg_length;
 	UCHAR *blr, *msg;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	ips_dsql *ips;
 	ips_string *ips_blr;
 	ips_string *ips_msg;
@@ -2424,7 +2425,7 @@ static void open_blob( ICC icc, P_OP op)
 	IBL blob;
 	ITR transaction;
 	FRBRD * handle;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	ISC_STATUS result;
 	USHORT bpb_length;
 	UCHAR *bpb, bpb_buf[128];
@@ -2540,7 +2541,7 @@ static void prepare_statement( ICC icc)
 	IPSERVER_ISR statement;
 	USHORT length, item_length, buffer_length, dialect, parser_version;
 	UCHAR *string, *items, items_buf[128], *buffer;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	FRBRD * handle;
 	ips_dsql *ips;
 	ips_string *ips_prep_string;
@@ -2650,7 +2651,7 @@ static void put_segment( ICC icc)
 	IBL blob;
 	USHORT buffer_length;
 	UCHAR *buffer;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	ips_segment *ips;
 	ips_string *ips_seg;
 	ips_comm_area *comm;
@@ -2698,7 +2699,7 @@ static void put_slice( ICC icc)
  **************************************/
 	IDB idb;
 	ITR transaction;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	USHORT sdl_length, param_length;
 	ULONG slice_length, *params, parameters[32];
 	UCHAR *sdl, sdl_buf[256], *slice;
@@ -2802,7 +2803,7 @@ static void que_events( ICC icc)
 	IDB idb;
 	USHORT length;
 	UCHAR *events;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	ISC_STATUS result;
 	IVNT event;
 	ips_que_events *ips;
@@ -2878,7 +2879,7 @@ static void receive_msg( ICC icc)
  *      Receive a message.
  *
  **************************************/
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	IRQ request;
 	USHORT length, number, level;
 #ifdef SCROLLABLE_CURSORS
@@ -2944,7 +2945,7 @@ static void reconnect( ICC icc)
 	USHORT length;
 	UCHAR *buffer;
 	FRBRD * handle;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	ips_reconnect *ips;
 	ips_string *ips_recon;
 	ips_comm_area *comm;
@@ -3151,7 +3152,7 @@ static void seek_blob( ICC icc)
 	IBL blob;
 	SSHORT mode;
 	SLONG offset, result;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	ips_seek_blob *ips;
 	ips_comm_area *comm;
 	TEXT *comm_ptr;
@@ -3239,7 +3240,7 @@ static void send_msg( ICC icc)
  * Functional description
  *
  **************************************/
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	IRQ request;
 	UCHAR *buffer;
 	USHORT length, number, level;
@@ -3494,7 +3495,7 @@ static void service_attach( ICC icc)
 	USHORT service_length, spb_length;
 	UCHAR service_name[256], *spb, spb_buf[256];
 	FRBRD * handle;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	ISC_STATUS result;
 	IDB idb;
 	ips_object *ips;
@@ -3568,7 +3569,7 @@ static void service_end( ICC icc)
  *
  **************************************/
 	IDB idb, *ptr;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	ISC_STATUS result;
 	ips_object *ips;
 	ips_comm_area *comm;
@@ -3612,7 +3613,7 @@ static void service_start( ICC icc)
  *
  **************************************/
 	IDB idb;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	ISC_STATUS result;
 	ips_object *ips;
 	ips_comm_area *comm;
@@ -3669,7 +3670,7 @@ static void set_cursor( ICC icc)
 	IPSERVER_ISR statement;
 	USHORT length, type;
 	UCHAR *cursor;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	ips_dsql *ips;
 	ips_string *ips_name;
 	ips_comm_area *comm;
@@ -3717,7 +3718,7 @@ static void shutdown_attachments( ICC icc)
  *
  **************************************/
 	IDB idb, nextidb;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	ips_comm_area *comm;
 	USHORT i;
 
@@ -3780,7 +3781,7 @@ static void start( ICC icc)
  * Functional description
  *
  **************************************/
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	IRQ request;
 	ITR transaction;
 	USHORT level;
@@ -3819,7 +3820,7 @@ static void start_and_send( ICC icc)
  * Functional description
  *
  **************************************/
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	IRQ request;
 	ITR transaction;
 	UCHAR *buffer;
@@ -3881,7 +3882,7 @@ static void start_transaction( ICC icc)
 	UCHAR *buffer;
 	FRBRD * handle;
 	ULONG **v, *vector[3 * 16];
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	ips_start_trans *ips;
 	ips_comm_area *comm;
 	TEXT *comm_ptr;
@@ -3941,7 +3942,7 @@ static void transact_request( ICC icc)
 	ITR transaction;
 	USHORT blr_length, in_msg_length, out_msg_length;
 	UCHAR *blr, *in_buffer, *out_buffer;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	ips_transact_request *ips;
 	ips_string *ips_blr;
 	ips_string *ips_in_msg;
@@ -4075,7 +4076,7 @@ static void unwind( ICC icc)
  **************************************/
 	IRQ request;
 	USHORT level;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	ips_object *ips;
 	ips_comm_area *comm;
 	TEXT *comm_ptr;

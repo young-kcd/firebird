@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: restore.epp,v 1.27 2003-04-10 06:06:43 aafemt Exp $
+$Id: restore.epp,v 1.28 2003-04-16 10:16:40 aafemt Exp $
 */
 
 #include "firebird.h"
@@ -246,7 +246,7 @@ UINT64	cumul_count;
 BURP_REL		relation;
 BURP_PRC		procedure;
 isc_req_handle  req_handle1 = NULL, req_handle2 = NULL, req_handle4 = NULL;
-ISC_STATUS	req_status[ISC_STATUS_LENGTH];
+ISC_STATUS_ARRAY req_status;
 TGBL		tdgbl;
 long		db_handle;
 UCHAR		dpb[128], *d, *q;
@@ -650,7 +650,7 @@ static void add_files (
 SLONG		start, count;
 FIL		file;
 isc_req_handle  req_handle1 = NULL;
-ISC_STATUS	req_status[ISC_STATUS_LENGTH];
+ISC_STATUS_ARRAY	req_status;
 TGBL		tdgbl;
 
 tdgbl = GET_THREAD_DATA;
@@ -781,7 +781,7 @@ static USHORT check_db_version (void)
  **************************************/
 USHORT	db_version;
 isc_req_handle  req_handle1 = NULL, req_handle2 = NULL;
-ISC_STATUS	req_status[ISC_STATUS_LENGTH];
+ISC_STATUS_ARRAY	req_status;
 TGBL	        tdgbl;
 
 tdgbl = GET_THREAD_DATA;
@@ -827,7 +827,7 @@ static void create_database (
  *
  **************************************/
 SSHORT		l;
-ISC_STATUS	status_vector[ISC_STATUS_LENGTH];
+ISC_STATUS_ARRAY	status_vector;
 REC_TYPE	record;
 ATT_TYPE	attribute;
 UCHAR		dpb [128], *d, *q;
@@ -1192,7 +1192,7 @@ static int get_acl (
 static const SCHAR blr_items [] = {isc_info_blob_max_segment, 
 			     isc_info_blob_total_length,
 			     isc_info_blob_num_segments};
-ISC_STATUS	status_vector[ISC_STATUS_LENGTH];
+ISC_STATUS_ARRAY	status_vector;
 SLONG	length, n;
 FRBRD	*blob;
 UCHAR	*p, blob_info [32], item, *buffer, static_buffer [1024], 
@@ -1395,7 +1395,7 @@ static void get_array (
  **************************************/
 BURP_FLD		field;
 ATT_TYPE	attribute;
-ISC_STATUS	status_vector[ISC_STATUS_LENGTH];
+ISC_STATUS_ARRAY	status_vector;
 SLONG		last_element_dim[MAX_DIMENSION];
 SLONG		fld_ranges[2*MAX_DIMENSION];
 SLONG		*blob_id, return_length, slice_length, *range, *end_ranges,
@@ -1889,7 +1889,7 @@ static void get_blob (
  **************************************/
 BURP_FLD		field;
 ATT_TYPE	attribute;
-ISC_STATUS	status_vector[ISC_STATUS_LENGTH];
+ISC_STATUS_ARRAY	status_vector;
 ULONG		segments;
 ISC_QUAD	*blob_id;
 FRBRD	*blob;
@@ -2001,7 +2001,7 @@ static void get_blr_blob (
  *	shiney, new blob.
  *
  **************************************/
-ISC_STATUS	status_vector[ISC_STATUS_LENGTH];
+ISC_STATUS_ARRAY	status_vector;
 FRBRD	*blob;
 USHORT		length, l;
 UCHAR		*buffer, static_buffer [1024], *p;
@@ -2322,7 +2322,7 @@ ULONG		length, old_length;
 SSHORT		count, blr_length, alignment, dtype;
 SSHORT		*buffer;
 LSTRING		data;
-ISC_STATUS	status_vector[ISC_STATUS_LENGTH];
+ISC_STATUS_ARRAY	status_vector;
 SLONG		*blob_id;
 REC_TYPE	record;
 TGBL	    tdgbl;
@@ -4422,7 +4422,7 @@ static void get_misc_blob (
  *	shiney, new blob.
  *
  **************************************/
-ISC_STATUS	status_vector[ISC_STATUS_LENGTH];
+ISC_STATUS_ARRAY	status_vector;
 FRBRD	*blob;
 USHORT		length;
 UCHAR		*buffer, static_buffer [1024];
@@ -5394,7 +5394,7 @@ static void get_source_blob (
  *	input file to nice, shiney, new blob.
  *
  **************************************/
-ISC_STATUS	status_vector[ISC_STATUS_LENGTH];
+ISC_STATUS_ARRAY	status_vector;
 SLONG		length;
 FRBRD	*blob;
 USHORT		seg_len;
@@ -6544,7 +6544,7 @@ ATT_TYPE	attribute;
 USHORT		db_version;
 isc_req_handle  req_handle1 = NULL, req_handle2 = NULL, req_handle3 = NULL,
                 req_handle5 = NULL;
-ISC_STATUS	req_status[ISC_STATUS_LENGTH];
+ISC_STATUS_ARRAY	req_status;
 TGBL		tdgbl;
 SSHORT		flag_norel=TRUE;	/* To fix bug 10098 */
 
@@ -6882,7 +6882,7 @@ static void restore_security_class (
 isc_tr_handle   local_trans;
 isc_req_handle  req_handle2 = NULL;
 ISC_QUAD	new_blob_id;
-ISC_STATUS	req_status[ISC_STATUS_LENGTH];
+ISC_STATUS_ARRAY	req_status;
 TGBL            tdgbl;
 
 tdgbl = GET_THREAD_DATA;
@@ -6934,7 +6934,7 @@ UCHAR	*blr;
 UCHAR	blr_buffer [100];  /* enough to fit blr */
 SSHORT	blr_length;
 FRBRD	*gen_id_reqh;
-ISC_STATUS	status_vector[ISC_STATUS_LENGTH];
+ISC_STATUS_ARRAY	status_vector;
 TGBL	tdgbl;
 
 tdgbl = GET_THREAD_DATA;
@@ -7068,7 +7068,7 @@ GFLD		n_gfld, gfld;
 USHORT		length;
 UCHAR		*p, *q;
 isc_req_handle  req_handle1 = NULL;
-ISC_STATUS	req_status[ISC_STATUS_LENGTH];
+ISC_STATUS_ARRAY	req_status;
 TGBL		tdgbl;
 
 tdgbl = GET_THREAD_DATA;

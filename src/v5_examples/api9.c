@@ -59,7 +59,7 @@ ARGLIST(char **argv)
     char                blob_segment[401];
     isc_db_handle       DB = NULL;
     isc_tr_handle       trans = NULL;
-    ISC_STATUS          status[ISC_STATUS_LENGTH];
+    ISC_STATUS_ARRAY    status;
     isc_stmt_handle     stmt = NULL;
     XSQLDA *            sqlda;
     long                fetch_stat;

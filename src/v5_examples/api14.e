@@ -76,7 +76,7 @@ ARGLIST(char **argv)
 	float	rate;
 	void	*trans1 = NULL;			/* transaction handle */
 	void	*trans2 = NULL;			/* transaction handle */
-	long	status[20];
+	ISC_STATUS_ARRAY status;
 	XSQLDA	*sqlda;
         char    empdb2[128];
 

@@ -36,7 +36,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.46 2003-04-10 10:08:31 aafemt Exp $
+$Id: lock.cpp,v 1.47 2003-04-16 10:18:05 aafemt Exp $
 */
 
 #include "firebird.h"
@@ -909,7 +909,7 @@ void LOCK_manager( PTR manager_owner_offset)
 	OWN manager_owner, owner;
 	SRQ que;
 	int ret = FB_FAILURE;
-	ISC_STATUS local_status[ISC_STATUS_LENGTH];
+	local_status;
 	SLONG value;
 	USHORT semaphore;
 	EVENT event_ptr;
@@ -1481,7 +1481,7 @@ static void acquire( PTR owner_offset)
 /* Do not do Lock table remapping for SUPERSERVER. Specify required
    lock table size in the configuration file */
 #if !defined SUPERSERVER && defined HAVE_MMAP
-		ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+		ISC_STATUS_ARRAY status_vector;
 		header =
 			(LHB) ISC_remap_file(status_vector, &LOCK_data, length, FALSE);
 		if (!header)
@@ -2656,7 +2656,7 @@ static void exit_handler( void *arg)
  *	by the cleanup handler.
  *
  **************************************/
-	ISC_STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY local_status;
 
 	if (!LOCK_header) {
 		return;

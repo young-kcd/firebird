@@ -3597,7 +3597,7 @@ static void event_thread(void)
 	IVNT ivnt;
 	IVNT event;
 	EVENTQ queued;
-	ISC_STATUS status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status;
 
 
 	/* loop to wait for events */

@@ -2123,7 +2123,7 @@ static void close_blob(FRBRD *blob)
  *	Close a blob.
  *
  **************************************/
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
     
 	if (gds__close_blob(status_vector, GDS_REF(blob)))
 		DDL_db_error(status_vector, 58, NULL, NULL, NULL, NULL, NULL);	/* msg 58: gds__close_blob failed */
@@ -2142,7 +2142,7 @@ static FRBRD *create_blob( SLONG * blob_id, USHORT bpb_length, UCHAR * bpb)
  *	Create a new blob.
  *
  **************************************/
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	FRBRD *blob;
     
 	blob = NULL;
@@ -4065,7 +4065,7 @@ static void store_acl( SCL scl_class, SLONG * blob_id)
  **************************************/
 	TEXT buffer[4096];
 	USHORT length;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	FRBRD *blob;
 
 /* Generate access control list */
@@ -4098,7 +4098,7 @@ static void store_blr( DUDLEY_NOD node, SLONG * blob_id, DUDLEY_REL relation)
  **************************************/
 	struct str blr;
 	USHORT length;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	FRBRD *handle;
 
 	blr.str_current = blr.str_start = (SCHAR *) gds__alloc((SLONG) 4096);
@@ -4140,7 +4140,7 @@ static void store_query_header( DUDLEY_NOD node, SLONG * blob_id)
  **************************************/
 	DUDLEY_NOD *ptr, *end;
 	SYM symbol;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	FRBRD *blob;
 	USHORT bpb_length;
 	UCHAR bpb[20];

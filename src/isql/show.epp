@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.16 2003-04-10 06:29:04 aafemt Exp $
+ * $Id: show.epp,v 1.17 2003-04-16 10:17:14 aafemt Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -309,7 +309,7 @@ BOOLEAN SHOW_dbb_parameters(FRBRD * db_handle,
 	SCHAR *d, *buffer, item, *info;
 	int length;
 	SLONG value_out;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	TEXT *msg;
 
 	buffer = (SCHAR *) ISQL_ALLOC(BUFFER_LENGTH128);

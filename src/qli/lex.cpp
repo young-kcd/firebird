@@ -743,7 +743,7 @@ void LEX_put_procedure( FRBRD *blob, SLONG start, SLONG stop)
  *	Write text from the scratch trace file into a blob.
  *
  **************************************/
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	int length;
 	SSHORT l, c;
 	TEXT buffer[1024], *p;

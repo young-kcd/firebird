@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: all.cpp,v 1.13 2003-04-10 10:16:06 aafemt Exp $
+$Id: all.cpp,v 1.14 2003-04-16 10:18:15 aafemt Exp $
 */
 
 /***************************************************
@@ -243,7 +243,7 @@ void ALLQ_init(void)
  *	Initialize the pool system.
  *
  **************************************/
-	ISC_STATUS temp_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY temp_vector;
 	PLB pool;
 
 	pools = (VEC) temp_vector;

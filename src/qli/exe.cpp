@@ -105,7 +105,7 @@ void EXEC_abort(void)
  *	requests be unwound and set flag.
  *
  **************************************/
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	QLI_REQ request;
 
 	for (request = QLI_requests; request; request = request->req_next)
@@ -232,7 +232,7 @@ FRBRD *EXEC_open_blob( QLI_NOD node)
 	UCHAR bpb[20], *p;
 	USHORT bpb_length;
 	FRBRD *blob;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 
 	desc = EVAL_value(node);
 	if (!desc)
@@ -401,7 +401,7 @@ DSC *EXEC_receive(QLI_MSG message, PAR parameter)
  *
  **************************************/
 	QLI_REQ request;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 
 	request = message->msg_request;
 
@@ -433,7 +433,7 @@ void EXEC_send( QLI_MSG message)
  *
  **************************************/
 	QLI_REQ request;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 
 	request = message->msg_request;
 
@@ -460,7 +460,7 @@ void EXEC_start_request( QLI_REQ request, QLI_MSG message)
  *	a start and send.
  *
  **************************************/
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 
 	if (message) {
 		map_data(message);
@@ -667,7 +667,7 @@ static int copy_blob( QLI_NOD value, PAR parameter)
 	DSC *from_desc, *to_desc;
 	FRBRD *from_blob, *to_blob;
 	SLONG size, segment_count, max_segment;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	USHORT bpb_length, length, buffer_length;
 	UCHAR bpb[20], *p, fixed_buffer[4096], *buffer;
 #ifdef PYXIS
@@ -1134,7 +1134,7 @@ static void print_counts( QLI_REQ request)
 	UCHAR item;
 	int length;
 	ULONG number;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	SCHAR count_buffer[COUNT_ITEMS * 7 + 1], *c;
 
 	if (gds__request_info(status_vector,
@@ -1225,7 +1225,7 @@ static void transaction_state( QLI_NOD node, DBB database)
  *	committed.
  *
  **************************************/
-	ISC_STATUS status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status;
 
 	if (database->dbb_transaction) {
 		if (node->nod_type == nod_commit_retaining) {

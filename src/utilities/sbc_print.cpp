@@ -143,7 +143,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
  **************************************/
 	SLONG length;
 	SCHAR *p, c;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	TEXT expanded_filename[256];
 	SH_MEM_T shmem_data;
 	SLONG cache_buffers;

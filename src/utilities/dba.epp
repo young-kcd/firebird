@@ -213,7 +213,7 @@ typedef struct tdba {
 	IB_FILE *sw_outfile;
 #endif
 	ISC_STATUS *dba_status;
-	ISC_STATUS dba_status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY dba_status_vector;
 } *TDBA;
 
 #ifdef GET_THREAD_DATA

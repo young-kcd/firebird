@@ -46,7 +46,7 @@ ARGLIST(char **argv)
 {
     isc_db_handle   newdb = NULL;          /* database handle */
     isc_tr_handle   trans = NULL;          /* transaction handle */
-    ISC_STATUS      status[ISC_STATUS_LENGTH];            /* status vector */
+    ISC_STATUS_ARRAY status;               /* status vector */
     long            sqlcode;               /* SQLCODE  */
     char            create_db[160];        /* 'create database' statement */
     char            new_dbname[128];

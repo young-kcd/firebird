@@ -214,7 +214,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	JMP_BUF env;
 	isc_tr_handle transact1;
 	isc_req_handle request1, request2, request3;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 #if defined (WIN95)
 	BOOL fAnsiCP;
 #endif

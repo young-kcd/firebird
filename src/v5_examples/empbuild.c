@@ -66,9 +66,9 @@ isc_db_handle
 
 isc_tr_handle
    gds__trans = 0;		/* default transaction handle */
-ISC_STATUS
-   isc_status [ISC_STATUS_LENGTH],	/* status vector */
-   isc_status2 [ISC_STATUS_LENGTH];	/* status vector */
+ISC_STATUS_ARRAY 
+   isc_status,	/* status vector */
+   isc_status2;	/* status vector */
 long
    isc_array_length, 	/* array return size */
    SQLCODE;		/* SQL status code */

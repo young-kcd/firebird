@@ -593,7 +593,7 @@ static EVH acquire(void)
 #endif /* WIN_NT */
 
 #if (!(defined SUPERSERVER) && (defined HAVE_MMAP))
-		ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+		ISC_STATUS_ARRAY status_vector;
 		header = (evh*) ISC_remap_file(status_vector, &EVENT_data, length, FALSE);
 #endif
 		if (!header) {
@@ -628,7 +628,7 @@ static FRB alloc_global(UCHAR type, ULONG length, BOOLEAN recurse)
 	PTR *ptr, *best;
 	FRB free;
 	SLONG tail, best_tail, ev_length, old_length;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 #ifdef WIN_NT
 	PRB process;
 	EVENT event;
@@ -755,7 +755,7 @@ static SLONG create_process(void)
 #ifdef MULTI_THREAD
 
 #ifdef SOLARIS_MT
-	ISC_STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY local_status;
 	ISC_event_init(process->prb_event, 0, EVENT_SIGNAL);
 	EVENT_process = (PRB) ISC_map_object(local_status, &EVENT_data,
 										 EVENT_process_offset,
@@ -1125,7 +1125,7 @@ static void exit_handler(void *arg)
  *	Cleanup on exit.
  *
  **************************************/
-	ISC_STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY local_status;
 
 	if (EVENT_process_offset) {
 		if (EVENT_header->evh_current_process != EVENT_process_offset)

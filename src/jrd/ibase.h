@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.35 2003-04-10 06:03:26 aafemt Exp $
+$Id: ibase.h,v 1.36 2003-04-16 10:17:41 aafemt Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -61,7 +61,6 @@ typedef	unsigned long	ISC_ULONG;
 
 typedef	signed short	ISC_SHORT;
 typedef	unsigned short	ISC_USHORT;
-#define  ISC_STATUS_LENGTH	20
 
 typedef	unsigned char	ISC_UCHAR;
 

@@ -607,7 +607,7 @@ void AIL_get_file_list(LLS * stack)
  **************************************/
 	DBB dbb;
 	WALS WAL_segment;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	SCHAR *curr_name;
 	SLONG curr_log_partition_offset;
 	SCHAR *prev_name;
@@ -1361,7 +1361,7 @@ static void delete_log_files(
 	TDBB tdbb;
 	DBB dbb;
 	STR fname;
-	ISC_STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY local_status;
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;

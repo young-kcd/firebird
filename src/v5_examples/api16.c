@@ -58,7 +58,7 @@ ARGLIST(char **argv)
 	isc_db_handle	DB = NULL;  	/* database handle */
 	isc_tr_handle 	trans = NULL; 	/* transaction handle */
 	isc_stmt_handle stmt = NULL; 	/* transaction handle */
-	ISC_STATUS		status[ISC_STATUS_LENGTH];	/* status vector */
+	ISC_STATUS_ARRAY 	status;		/* status vector */
 	char *			event_buffer; 
 	char *			result_buffer;
 	long		event_id;
@@ -69,7 +69,7 @@ ARGLIST(char **argv)
 	short		nullind = 0;
 	char		query[128], update[128];
 	long		count[2], i = 0;
-	ISC_STATUS	Vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY Vector;
 	char		ids[2][15];
         int             first = 1;
 	int	 	ret = 0;

@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: srvrmgr.cpp,v 1.12 2003-04-10 10:38:38 aafemt Exp $
+ * $Id: srvrmgr.cpp,v 1.13 2003-04-16 10:18:37 aafemt Exp $
  */
 
 #include "firebird.h"
@@ -313,7 +313,7 @@ static BOOLEAN attach_service( IBMGR_DATA * data)
  *	service depending on thr user name.
  *
  **************************************/
-	ISC_STATUS status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status;
 	TEXT spb[SPB_BUFLEN], *p;
 	TEXT svc_name[128];
 
@@ -375,7 +375,7 @@ static BOOLEAN detach_service( IBMGR_DATA * data)
  *      before, shutdowns the server.
  *
  **************************************/
-	ISC_STATUS status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status;
 
 /* We should be attached if we want to detach
 */
@@ -412,7 +412,7 @@ static BOOLEAN start_shutdown( IBMGR_DATA * data)
  *      Initiate shutdown process
  *
  **************************************/
-	ISC_STATUS status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status;
 	char sendbuf[SEND_BUFLEN];
 	char respbuf[2];
 
@@ -562,7 +562,7 @@ static BOOLEAN server_is_ok( IBMGR_DATA * data)
  *	security database.
  *
  **************************************/
-	ISC_STATUS status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status;
 	TEXT path[MAXPATHLEN];
 	TEXT db_name[128];
 	isc_db_handle db_handle = 0L;
@@ -606,7 +606,7 @@ static BOOLEAN server_is_up( IBMGR_DATA * data)
  *	trying to attach to "anonymous" service.
  *
  **************************************/
-	ISC_STATUS status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status;
 	TEXT svc_name[128];
 	isc_svc_handle svc_handle = NULL;
 	BOOLEAN up;
@@ -657,7 +657,7 @@ static BOOLEAN print_pool( IBMGR_DATA * data)
  *      Make the server print memory pools
  *
  **************************************/
-	ISC_STATUS status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status;
 	char *sptr, sendbuf[512];
 	USHORT path_length;
 	char respbuf[2];

@@ -158,7 +158,7 @@ public:
 	struct user_action ALICE_data;
 	AliceMemoryPool	*ALICE_permanent_pool;
 	AliceMemoryPool *ALICE_default_pool;
-	ISC_STATUS		status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY	status_vector;
 	typedef			std::vector<AliceMemoryPool*, Firebird::allocator<AliceMemoryPool*> > pool_vec_t;
 	pool_vec_t		pools;
 	int				exit_code;

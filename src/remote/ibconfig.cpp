@@ -316,7 +316,7 @@ BOOL ReadIBSettings(HWND hDlg)
  *****************************************************************************/
 	BOOL bSuccess;
 	char pchTmp[TEMP_BUFLEN];
-	ISC_STATUS pdwStatus[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY pdwStatus;
 	isc_svc_handle hService = NULL;
 	char pchRcvBuf[SEND_BUFLEN], pchResBuf[RESP_BUFLEN];
 	char *pchPtr;
@@ -469,7 +469,7 @@ BOOL WriteIBSettings(HWND hDlg)
  *  Description: This method calls the ISC_set_config() function to write the
  *               current OS settings in the config file.
  *****************************************************************************/
-	ISC_STATUS pdwStatus[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY pdwStatus;
 	isc_svc_handle hService = NULL;
 	char pchSendBuf[SEND_BUFLEN];
 	char *pchPtr;
@@ -636,7 +636,7 @@ BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam,
 	case WM_COMMAND:
 		if (wParam == IDOK) {
 			char szPassword[PASSWORD_LEN];
-			ISC_STATUS pdwStatus[ISC_STATUS_LENGTH];
+			ISC_STATUS_ARRAY pdwStatus;
 			isc_svc_handle hService = NULL;
 			char szSpb[SPB_BUFLEN];
 			HCURSOR hOldCursor = NULL;

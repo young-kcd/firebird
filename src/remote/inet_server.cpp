@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: inet_server.cpp,v 1.23 2003-04-10 10:31:27 aafemt Exp $
+$Id: inet_server.cpp,v 1.24 2003-04-16 10:18:27 aafemt Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -381,7 +381,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			divorce_terminal((int) &mask);
 		}
 		{
-			ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+			ISC_STATUS_ARRAY status_vector;
 			THREAD_ENTER;
 			port = INET_connect(protocol, 0, status_vector, INET_SERVER_flag,
 								0, 0);
@@ -424,7 +424,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 */
 	{
 		TEXT path[MAXPATHLEN];
-		ISC_STATUS status[ISC_STATUS_LENGTH];
+		ISC_STATUS_ARRAY status;
 		isc_db_handle db_handle = 0L;
 
 		gds__prefix(path, USER_INFO_NAME);

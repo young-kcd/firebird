@@ -451,7 +451,7 @@ void FMT_print( QLI_NOD list, PRT print)
 	TEXT *p, *q, *buffer;
 	QLI_NOD *ptr, *end;
 	RPT report;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 
 /* Now go thru and make up the first line */
 
@@ -1277,7 +1277,8 @@ static int print_line( ITM item, TEXT ** ptr)
  **************************************/
 	USHORT l, length;
 	TEXT *p;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH], status;
+	ISC_STATUS_ARRAY status_vector;
+	ISC_STATUS status;
 
 	EXEC_poll_abort();
 

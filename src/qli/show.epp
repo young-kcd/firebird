@@ -463,7 +463,8 @@ static void display_blob(
 	USHORT length, buffer_length;
 	TEXT buffer[256], *b;
 	FRBRD *blob;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH], status;
+	ISC_STATUS_ARRAY status_vector;
+	ISC_STATUS status;
 
 	blob = NULL;
 
@@ -804,7 +805,7 @@ static void show_dbb_parameters( DBB database)
 	UCHAR *d, buffer[127], item;
 	int length;
 	SLONG allocation, page_size;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 
 	if (!database)
 		return;

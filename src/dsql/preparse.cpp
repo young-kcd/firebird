@@ -123,7 +123,7 @@ USHORT stmt_length, SCHAR * stmt, BOOLEAN * stmt_eaten, USHORT dialect)
 	USHORT dpb_len = 0, token_length;
 	SSHORT i, l, result;
 	BOOLEAN matched, get_out;
-	ISC_STATUS temp_status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY temp_status;
 	FRBRD *temp_db_handle = NULL;
 
 	token = (SCHAR *) gds__alloc((SLONG) MAX_TOKEN_SIZE + 1);

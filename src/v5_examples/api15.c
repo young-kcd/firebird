@@ -46,7 +46,7 @@ ARGLIST(char **argv)
     isc_db_handle   db = NULL;      /* database handle */
     isc_tr_handle   trans = NULL;     /* transaction handle */
     isc_stmt_handle stmt = NULL;
-    ISC_STATUS      status[ISC_STATUS_LENGTH];     /* status vector */
+    ISC_STATUS_ARRAY status;         /* status vector */
     char            dbname[128];
     char            user_name[31], uname[81];
     short           nullind;

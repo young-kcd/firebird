@@ -47,7 +47,7 @@ char *updstr =
 
 isc_db_handle    DB = NULL;                       /* database handle */
 isc_tr_handle    trans = NULL;                    /* transaction handle */
-ISC_STATUS       status[ISC_STATUS_LENGTH];       /* status vector */
+ISC_STATUS_ARRAY status;                          /* status vector */
 
 int main (ARG(int, argc), ARG(char **, argv))
 ARGLIST(int argc)

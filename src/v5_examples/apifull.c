@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: apifull.c,v 1.5 2003-02-28 13:20:00 brodsom Exp $
+$Id: apifull.c,v 1.6 2003-04-16 10:18:44 aafemt Exp $
 */
 
 #include <stdlib.h>
@@ -56,7 +56,7 @@ typedef struct vary {
 isc_db_handle      db = NULL;
 isc_tr_handle      trans = NULL;
 isc_stmt_handle    stmt = NULL;
-ISC_STATUS         status[ISC_STATUS_LENGTH];
+ISC_STATUS_ARRAY   status;
 int                ret;
 
 #ifndef ISC_INT64_FORMAT

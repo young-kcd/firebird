@@ -49,7 +49,7 @@ ARGLIST(char **argv)
     char            dept_no[6];
     isc_db_handle   DB = NULL;
     isc_tr_handle   trans = NULL;
-    ISC_STATUS      status[ISC_STATUS_LENGTH];
+    ISC_STATUS_ARRAY status;
     short           flag0 = 0, flag1 = 0;
     isc_stmt_handle stmt = NULL;
     isc_stmt_handle ustmt = NULL;

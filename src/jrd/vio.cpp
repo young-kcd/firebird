@@ -3409,7 +3409,7 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
  *
  **************************************/
 	struct tdbb thd_context, *tdbb;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	SLONG count, dp_sequence, last;
 	ULONG id;
 	JRD_REL relation;

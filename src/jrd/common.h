@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.70 2003-04-13 08:21:49 fsg Exp $
+$Id: common.h,v 1.71 2003-04-16 10:17:36 aafemt Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -1006,8 +1006,6 @@ void GDS_breakpoint(int);
 #ifndef ISC_EXT_LIB_PATH_ENV
 #define ISC_EXT_LIB_PATH_ENV	"INTERBASE_EXT_LIB_PATH"
 #endif
-
-#define ISC_STATUS_LENGTH	20
 
 /* switch name and state table.  This structure should be used in all
  * command line tools to facilitate parsing options.*/

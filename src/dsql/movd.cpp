@@ -70,7 +70,8 @@ void MOVD_move( DSC * from, DSC * to)
 static void post_error( ISC_STATUS status, ...)
 {
 	TSQL tdsql;
-	ISC_STATUS *v, *v_end, *temp, temp_status[ISC_STATUS_LENGTH];
+	ISC_STATUS *v, *v_end, *temp;
+	ISC_STATUS_ARRAY temp_status;
 
 	tdsql = GET_THREAD_DATA;
 

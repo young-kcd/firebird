@@ -805,7 +805,7 @@ static void post_event(RNG refresh_range)
  **************************************/
 	DBB dbb;
 	LCK dbb_lock;
-	ISC_STATUS status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status;
 
 	dbb = GET_DBB;
 	dbb_lock = dbb->dbb_lock;

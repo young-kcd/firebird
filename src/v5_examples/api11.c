@@ -44,7 +44,7 @@ ARGLIST(char **argv)
     int             emp_no;
     char            proj_id[PROJLEN + 2];
     isc_db_handle    db = NULL;
-    ISC_STATUS      status[ISC_STATUS_LENGTH];
+    ISC_STATUS_ARRAY    status;
     char            empdb[128];
 
     if (argc > 1)
@@ -105,7 +105,7 @@ ARGLIST(int     emp_no)
     char            selstr[BUFLEN];
     short           flag0 = 0;
     isc_tr_handle   trans = NULL;
-    ISC_STATUS      status[ISC_STATUS_LENGTH];
+    ISC_STATUS_ARRAY    status;
     isc_stmt_handle stmt = NULL;
     XSQLDA          *sqlda;
     long            fetch_stat;
@@ -178,7 +178,7 @@ ARGLIST(char    *proj_id)
 {
     char            exec_str[BUFLEN];
     isc_tr_handle   trans = NULL;
-    ISC_STATUS      status[ISC_STATUS_LENGTH];
+    ISC_STATUS_ARRAY    status;
 
     sprintf(exec_str, "EXECUTE PROCEDURE add_emp_proj %d, \"%s\"",
             emp_no, proj_id);
@@ -212,7 +212,7 @@ ARGLIST(int     *emp_no)
 ARGLIST(char    *proj_id)
 {
     isc_tr_handle   trans = NULL;
-    ISC_STATUS      status[ISC_STATUS_LENGTH];
+    ISC_STATUS_ARRAY    status;
 
     *emp_no = 8;
     strcpy(proj_id, "MAPDB");

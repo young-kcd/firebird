@@ -55,7 +55,7 @@ private:
 	static const UCHAR PWD_REQUEST[256];
 	static const UCHAR TPB[4];
 
-	ISC_STATUS status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status;
 
 	isc_db_handle lookup_db;
 	isc_req_handle lookup_req;

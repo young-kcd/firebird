@@ -535,7 +535,7 @@ ISC_STATUS DLL_EXPORT GDS_DSQL_EXECUTE_CPP(ISC_STATUS*		user_status,
 {
 	DSQL_REQ request;
 	OPN open_cursor;
-	ISC_STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY local_status;
 	struct tsql thd_context, *tdsql;
 	USHORT singleton;
 	ISC_STATUS sing_status;
@@ -2542,7 +2542,6 @@ static void cleanup( void *arg)
 static void cleanup_database(FRBRD ** db_handle, SLONG flag)
 {
 	DBB *dbb_ptr, dbb;
-//	ISC_STATUS user_status[ISC_STATUS_LENGTH];
 
 	if (flag)
 		Firebird::fatal_exception::raise("Illegal call to cleanup_database");
@@ -2605,7 +2604,7 @@ static void cleanup_database(FRBRD ** db_handle, SLONG flag)
  **/
 static void cleanup_transaction (FRBRD * tra_handle, SLONG arg)
 {
-	ISC_STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY local_status;
 	OPN *open_cursor_ptr, open_cursor;
 
 /* find this transaction/request pair in the list of pairs */
@@ -2653,7 +2652,7 @@ static void cleanup_transaction (FRBRD * tra_handle, SLONG arg)
 static void close_cursor( DSQL_REQ request)
 {
 	OPN *open_cursor_ptr, open_cursor;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 
 	if (request->req_handle) {
 		THREAD_EXIT; //ttt
@@ -2889,7 +2888,8 @@ static ISC_STATUS execute_request(DSQL_REQ			request,
 	USHORT use_msg_length;
 	UCHAR *use_msg;
 	UCHAR buffer[20];
-	ISC_STATUS s, local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS s;
+	ISC_STATUS_ARRAY local_status;
 	TSQL tdsql;
 	ISC_STATUS return_status;
 
@@ -3831,7 +3831,7 @@ static DBB init(FRBRD** db_handle)
 	database->dbb_database_handle = *db_handle;
 	THD_MUTEX_UNLOCK(&databases_mutex);
 
-	ISC_STATUS user_status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY user_status;
 
 	THREAD_EXIT;
 	gds__database_cleanup(user_status,
@@ -4283,7 +4283,7 @@ static DSQL_REQ prepare(
 	USHORT length;
 	TSQL tdsql;
 	BOOLEAN stmt_ambiguous = FALSE;
-	ISC_STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY local_status;
 
 	tdsql = GET_THREAD_DATA;
 
@@ -4556,7 +4556,7 @@ static UCHAR* put_item(	UCHAR	item,
 static void release_request(DSQL_REQ request, USHORT top_level)
 {
 
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 
 	tsql* tdsql = GET_THREAD_DATA;
 

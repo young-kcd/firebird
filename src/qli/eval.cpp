@@ -949,7 +949,7 @@ static int sleuth( QLI_NOD node, DSC * desc1, DSC * desc2, DSC * desc3)
 		fixed_buffer[512], control[256];
 	FRBRD *blob;
 	USHORT buffer_length;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	SSHORT l1, l2, result;
 	QLI_CTX context;
 	QLI_REQ request;
@@ -1267,7 +1267,7 @@ static int string_boolean( QLI_NOD node)
 	FRBRD *blob;
 	SSHORT l1, l2, result;
 	USHORT buffer_length;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	QLI_CTX context;
 	QLI_REQ request;
 	DBB dbb;

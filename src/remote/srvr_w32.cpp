@@ -151,7 +151,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
  *      pipes and/or TCP/IP sockets.
  *
  **************************************/
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	HANDLE connection_handle;
 	PORT port;
 	int nReturnValue = 0;
@@ -364,7 +364,7 @@ static void THREAD_ROUTINE inet_connect_wait_thread( void *dummy)
  *
  **************************************/
 	void *thread;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	PORT port;
 
 	if (!(server_flag & SRVR_non_service))
@@ -395,7 +395,7 @@ static void THREAD_ROUTINE wnet_connect_wait_thread( void *dummy)
  *
  **************************************/
 	void *thread;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 
 	if (!(server_flag & SRVR_non_service)) {
 		thread = CNTL_insert_thread();

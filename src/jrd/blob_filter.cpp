@@ -420,7 +420,7 @@ USHORT bpb_length, UCHAR * bpb, PTR callback, USHORT action, BLF filter)
 	END_CHECK_FOR_EXCEPTIONS((TEXT*)control->ctl_exception_message)
 
 		if (status) {
-		ISC_STATUS local_status[ISC_STATUS_LENGTH];
+		ISC_STATUS_ARRAY local_status;
 		ISC_STATUS *tmp_status;
 		tmp_status = tdbb->tdbb_status_vector;
 		tdbb->tdbb_status_vector = local_status;

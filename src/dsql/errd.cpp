@@ -268,8 +268,7 @@ BOOLEAN ERRD_post_warning(ISC_STATUS status, ...)
 void ERRD_post(ISC_STATUS status, ...)
 {
 
-	ISC_STATUS tmp_status[ISC_STATUS_LENGTH];
-	ISC_STATUS warning_status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY tmp_status, warning_status;
 	int tmp_status_len = 0;
 	int status_len = 0;
 	int warning_indx = 0;

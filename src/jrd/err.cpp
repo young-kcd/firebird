@@ -408,7 +408,7 @@ void DLL_EXPORT ERR_post(ISC_STATUS status, ...)
  *
  **************************************/
 	ISC_STATUS *status_vector;
-	ISC_STATUS tmp_status[ISC_STATUS_LENGTH], warning_status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY tmp_status, warning_status;
 	int i, tmp_status_len = 0, status_len = 0, err_status_len = 0;
 	int warning_count = 0, warning_indx = 0;
 

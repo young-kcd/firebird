@@ -348,7 +348,7 @@ int API_ROUTINE gds__blob_size(
  *	if it happens to succeed.
  *
  **************************************/
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	SLONG n;
 	SSHORT l;
 	SCHAR *p, item, buffer[64];
@@ -1275,10 +1275,10 @@ int API_ROUTINE gds__version(
  *	Obtain and print information about a database.
  *
  **************************************/
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH], count;
+	ISC_STATUS_ARRAY status_vector;
 	USHORT buf_len, len, implementation, class_, ods_version,
 		ods_minor_version;
-	UCHAR item, l, *buf, buffer[256], *p;
+	UCHAR count, item, l, *buf, buffer[256], *p;
 	TEXT *versions, *implementations,
 		*class_string, *implementation_string, s[128];
 	BOOLEAN redo;
@@ -1349,7 +1349,7 @@ int API_ROUTINE gds__version(
 	++versions;
 	++implementations;
 
-	while (--count >= 0) {
+	while (count-- > 0) {
 		implementation = *implementations++;
 		class_ = *implementations++;
 		l = *versions++;
@@ -1494,7 +1494,7 @@ int API_ROUTINE BLOB_close(BSTREAM * bstream)
  *	Close a blob stream.
  *
  **************************************/
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	USHORT l;
 
 	if (!bstream->bstr_blob)
@@ -1744,7 +1744,7 @@ int API_ROUTINE BLOB_get(BSTREAM * bstream)
  *	EOF.
  *
  **************************************/
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 
 	if (!bstream->bstr_buffer)
 		return EOF;
@@ -1877,7 +1877,7 @@ BSTREAM *API_ROUTINE Bopen(GDS_QUAD * blob_id,
  *
  **************************************/
 	FRBRD *blob;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	BSTREAM *bstream;
 	USHORT bpb_length;
 	UCHAR *bpb;
@@ -1997,7 +1997,7 @@ int API_ROUTINE BLOB_put(SCHAR x, BSTREAM * bstream)
  *	block and retun TRUE if all is well. 
  *
  **************************************/
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	USHORT l;
 
 	if (!bstream->bstr_buffer)
@@ -2031,7 +2031,7 @@ static display(GDS_QUAD * blob_id, void *database, void *transaction)
  **************************************/
 	SCHAR buffer[256], *p;
 	SSHORT short_length, l;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	int *blob;
 	struct dsc$descriptor_s desc;
 
@@ -2087,7 +2087,7 @@ static int dump(
  **************************************/
 	SCHAR buffer[256], *p;
 	SSHORT short_length, l;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	FRBRD *blob;
 	USHORT bpb_length;
 	UCHAR *bpb;
@@ -2244,7 +2244,7 @@ static int get_ods_version(
  *	of the database.
  *
  **************************************/
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	USHORT n, l;
 	UCHAR item, buffer[16], *p;
 
@@ -2300,7 +2300,7 @@ static int load(
  **************************************/
 	TEXT buffer[512], *p, *buffer_end;
 	SSHORT l, c;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	FRBRD *blob;
 
 /* Open the blob.  If it failed, what the hell -- just return failure */

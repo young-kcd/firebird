@@ -887,7 +887,7 @@ static void delete_wal(void)
  *
  **************************************/
 	DJB database;
-	ISC_STATUS status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status;
 
 	commit();
 
@@ -1848,7 +1848,7 @@ static void process_archive_end(CNCT connection, LTJA * msg)
 	DJB database;
 	SLONG file_id, db_id;
 	SCHAR name[MAX_PATH_LENGTH], file_name[MAX_PATH_LENGTH];
-	ISC_STATUS status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status;
 	SCHAR db[MAX_PATH_LENGTH], arch[MAX_PATH_LENGTH];
 
 	db_id = msg->ltja_db_id;
@@ -3229,7 +3229,7 @@ static int start_server(UCHAR * journal_dir,
 	TEXT logfile[MAX_PATH_LENGTH], journal_db[MAX_PATH_LENGTH];
 	SLONG message_buffer[(MAX_RECORD + 6 + sizeof(SLONG) - 1) /
 						 sizeof(SLONG)];
-	ISC_STATUS status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status;
 	SSHORT msg_count;
 
 #ifdef SIGQUIT

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gener.cpp,v 1.16 2003-04-10 10:16:08 aafemt Exp $
+$Id: gener.cpp,v 1.17 2003-04-16 10:18:17 aafemt Exp $
 */
 
 #include "firebird.h"
@@ -106,7 +106,7 @@ void GEN_release(void)
  *	of a request.  Just recurse around and release requests.
  *
  **************************************/
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	RLB rlb;
 
 	for (; QLI_requests; QLI_requests = QLI_requests->req_next) {
@@ -595,7 +595,7 @@ static void gen_compile( QLI_REQ request)
  *
  **************************************/
 	DBB dbb;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	USHORT length;
 	RLB rlb;
 #ifdef DEV_BUILD

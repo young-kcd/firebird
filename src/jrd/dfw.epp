@@ -290,7 +290,7 @@ USHORT DFW_assign_index_type(DFW work, SSHORT field_type, SSHORT ttype)
 
 	if (field_type == dtype_varying || field_type == dtype_text)
 	{
-		ISC_STATUS status[ISC_STATUS_LENGTH];
+		ISC_STATUS_ARRAY status;
 
 		if (ttype == ttype_none)
 			return idx_string;
@@ -605,7 +605,7 @@ void DFW_perform_post_commit_work(JRD_TRA transaction)
  **************************************/
 	DBB dbb;
 	LCK lock;
-	ISC_STATUS status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status;
 	DFW work, *ptr;
 
 	if (!transaction->tra_deferred_work)
@@ -3485,7 +3485,7 @@ static bool make_version(TDBB tdbb, SSHORT phase, DFW work, JRD_TRA transaction)
 	BLK temp;
 	USHORT version, n, external_flag;
 	BOOLEAN null_view, computed_field;
-	ISC_STATUS status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status;
 	SSHORT collation;
 	TRIG_VEC triggers[TRIGGER_MAX];
 

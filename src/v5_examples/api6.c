@@ -70,7 +70,7 @@ ARGLIST(char **argv)
                         flag3 = 0;
     isc_db_handle       DB = NULL;              /* Database handle */
     isc_tr_handle       trans = NULL;           /* transaction handle */
-    ISC_STATUS          status[ISC_STATUS_LENGTH]; /* status vector */
+    ISC_STATUS_ARRAY    status;                 /* status vector */
     char                *cursor = "budget";     /* dynamic cursor name */
     isc_stmt_handle     stmt = NULL;            /* statement handle */
     XSQLDA  *           osqlda;                 /* output SQLDA */

@@ -411,7 +411,7 @@ static int start_disable( int argc, SCHAR ** argv)
 	SLONG *handle;
 	USHORT dpb_length, error;
 	UCHAR *database, string[512], *dpb;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	SCHAR db_name[MAXPATHLEN];
 	USHORT sw_v, sw_i;
 	TEXT msg[128];
@@ -502,7 +502,7 @@ static int start_dump( int argc, SCHAR ** argv)
 	USHORT dpb_length, error, i;
 	UCHAR *database, string[512], *p, *q, *dpb;
 	SCHAR db_name[MAXPATHLEN];
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	USHORT old_num_files;
 	SLONG old_file_size;
 	UCHAR *old_files[20];
@@ -728,7 +728,7 @@ static int start_enable( int argc, SCHAR ** argv)
 	UCHAR journal[JOURNAL_PATH_LENGTH + 1];
 	UCHAR db_name[JOURNAL_PATH_LENGTH + 1];
 	UCHAR backup[MAXPATHLEN];
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	USHORT sw_d, sw_v, sw_i;
 	USHORT a_flag, j_flag;
 	TEXT msg[128];

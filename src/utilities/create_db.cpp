@@ -7,7 +7,7 @@
 
 int main(int argc, char **argv)
 {
-    ISC_STATUS sv[ISC_STATUS_LENGTH];
+    ISC_STATUS_ARRAY sv;
     isc_db_handle db = 0;
     isc_tr_handle tr = 0;
     UCHAR 	dpb[128], *d;

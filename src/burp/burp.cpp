@@ -1438,7 +1438,7 @@ static void close_out_transaction(volatile  SSHORT action,
  *	returned to the system.
  *
  **************************************/
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 
 	if (*handle != 0) {
 		if (action == RESTORE) {
@@ -1512,7 +1512,7 @@ static SSHORT open_files(TEXT * file1,
  *	and db handle.
  *
  **************************************/
-	ISC_STATUS *status_vector, status_vector2[ISC_STATUS_LENGTH];
+	ISC_STATUS *status_vector;
 	TGBL tdgbl;
 	FIL fil;
 	int seq, total;
@@ -1858,6 +1858,7 @@ static SSHORT open_files(TEXT * file1,
 		else {
 			isc_drop_database(status_vector, &tdgbl->db_handle);
 			if (tdgbl->db_handle) {
+				ISC_STATUS_ARRAY status_vector2;
 				if (isc_detach_database(status_vector2, &tdgbl->db_handle)) {
 					BURP_print_status(status_vector2);
 				}
@@ -2023,7 +2024,7 @@ static int api_gbak(int argc,
  *	Run gbak using services APIs
  *
  **********************************************/
-	ISC_STATUS status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status;
 	TEXT **begin, **end, *x, *p, *usr, *pswd;
 	USHORT spblen, thdlen;
 	char sendbuf[] = { isc_info_svc_line };

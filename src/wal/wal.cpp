@@ -144,7 +144,7 @@ SSHORT WAL_attach( ISC_STATUS * status_vector, WAL * WAL_handle, SCHAR * dbname)
  *
  **************************************/
 	int ret;
-	ISC_STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY local_status;
 
 	ret = WALC_init(status_vector, WAL_handle, dbname, 0,
 					NULL, 0L, FALSE, 1L, 0, NULL, FALSE);
@@ -548,7 +548,7 @@ SSHORT WAL_init(ISC_STATUS * status_vector,
  *
  **************************************/
 	SSHORT ret;
-	ISC_STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY local_status;
 
 	ret = WALC_init(status_vector,
 					WAL_handle,
@@ -943,7 +943,7 @@ SSHORT WAL_shutdown_old_writer(ISC_STATUS * status_vector, SCHAR * dbname)
  *
  ************************************/
 	WAL WAL_handle;
-	ISC_STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY local_status;
 
 	WAL_handle = NULL;
 

@@ -267,7 +267,7 @@ void LEX_put_text (FRBRD *blob, TXT text)
  *
  **************************************/
 	SLONG start;
-	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status_vector;
 	int length;
 	SSHORT l, c;
 	TEXT buffer[1024], *p;

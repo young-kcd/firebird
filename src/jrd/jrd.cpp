@@ -628,7 +628,8 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	extern bool ResolveDatabaseAlias(const char*, char*);
 
 	SSHORT first;
-	ISC_STATUS temp_status[ISC_STATUS_LENGTH], *status;
+	ISC_STATUS *status;
+	ISC_STATUS_ARRAY temp_status;
 	DPB options;
 	ATT attachment;
 	USHORT d_len, jd_len;
@@ -1816,7 +1817,8 @@ ISC_STATUS DLL_EXPORT GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	TEXT *opt_ptr;
 	USHORT length, page_size;
 	ATT attachment;
-	ISC_STATUS temp_status[ISC_STATUS_LENGTH], *status;
+	ISC_STATUS *status;
+	ISC_STATUS_ARRAY temp_status;
 	DPB options;
 	struct tdbb thd_context;
 	FIL first_dbb_file;
@@ -2211,7 +2213,7 @@ ISC_STATUS DLL_EXPORT GDS_DDL(ISC_STATUS * user_status,
 	ATT attachment;
 	JRD_TRA transaction;
 	struct tdbb thd_context;
-	ISC_STATUS temp_status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY temp_status;
 
 	api_entry_point_init(user_status);
 
@@ -3729,7 +3731,7 @@ ISC_STATUS DLL_EXPORT GDS_START_MULTIPLE(ISC_STATUS * user_status,
  *
  **************************************/
 	volatile JRD_TRA transaction, prior;
-	ISC_STATUS temp_status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY temp_status;
 	TEB *v, *end;
 	ATT attachment;
 	struct tdbb thd_context;
@@ -4878,7 +4880,7 @@ static BOOLEAN drop_files(FIL file)
  *
  **************************************/
 	DBB dbb;
-	ISC_STATUS status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY status;
 
 	status[1] = FB_SUCCESS;
 
@@ -5003,7 +5005,7 @@ static void find_intl_charset(TDBB tdbb, ATT attachment, DPB * options)
 	}
 
 	SSHORT id;
-	ISC_STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY local_status;
 
 	if (MET_get_char_subtype(tdbb,
 							&id,
@@ -5991,7 +5993,7 @@ static BOOLEAN rollback(TDBB	tdbb,
  **************************************/
 	DBB dbb;
 	JRD_TRA transaction;
-	ISC_STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY local_status;
 
 	SET_TDBB(tdbb);
 
@@ -6436,7 +6438,7 @@ ULONG JRD_shutdown_all()
  *	and shutdown every database.
  *
  **************************************/
-	ISC_STATUS user_status[ISC_STATUS_LENGTH];
+	ISC_STATUS_ARRAY user_status;
 	ATT att, att_next;
 	DBB dbb, dbb_next;
 	struct tdbb thd_context;

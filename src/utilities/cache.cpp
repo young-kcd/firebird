@@ -53,7 +53,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
  **************************************/
 	TEXT *sw_database, c, *p, **end;
 	SLONG db_handle;
-	ISC_STATUS status, status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status;
+	ISC_STATUS_ARRAY status_vector;
 	SLONG redir_in, redir_out, redir_err;
 
 #ifdef VMS
