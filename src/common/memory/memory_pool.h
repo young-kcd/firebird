@@ -22,6 +22,8 @@
  * 2001.11.29 John Bellardo: Reworked all routines to create the MemoryPool
  *   class as part of the C++ conversion.  Additionally the class now handles
  *   generic memory allocations instead of typed-only allocations.
+ * 2002.09.23 Nickolay Samofatov: Added file name/line number debug info to
+ *   memory manager
  */
 
 #ifndef MEMORY_POOL_H
@@ -93,7 +95,11 @@ public:
 
 	/// Allocates at least the given number of bytes from the pool and
 	///  returns a pointer to the memory.
+#ifdef DEBUG_GDS_ALLOC
+	void* allocate(size_t, short = 0, char* = NULL, int = 0);
+#else
 	void* allocate(size_t, short = 0);
+#endif
 
 	/// Deallocates memory that has been allocated from ANY MemoryPool.
 	static int deallocate(void*);

@@ -23,6 +23,8 @@
  * 2001.11.29 John Bellardo: Reworked all routines to create the MemoryPool
  *   class as part of the C++ conversion.  Additionally the class now handles 
  *   generic memory allocations instead of typed-only allocations.
+ * 2002.09.23 Nickolay Samofatov: Added file name/line number debug info
+ * 	 to memory manager
  */
 
 #ifdef _MSC_VER
@@ -206,6 +208,10 @@ private:
 		Segment*	segment;
 		SSHORT		type;
 		SSHORT		length;
+#ifdef DEBUG_GDS_ALLOC
+		char*		file;
+		int			line;
+#endif
 	};
 	struct ExtendedHeader
 	{
@@ -216,6 +222,10 @@ private:
 		Segment*	segment;
 		SSHORT		type;
 		size_t		length;
+#ifdef DEBUG_GDS_ALLOC
+		char*		file;
+		int			line;
+#endif
 	};
 
 	friend class MemoryPool;
@@ -227,7 +237,11 @@ private:
 	void operator delete(void*);
 
 	void release_pool(void);
+#ifdef DEBUG_GDS_ALLOC
+	void* allocate(size_t, SSHORT, char*, int);
+#else
 	void* allocate(size_t, SSHORT);
+#endif
 	int deallocate(void*);
 
 	void verify_pool(bool);
@@ -392,7 +406,11 @@ void MemoryPool::release_pool(void)
 	an unknown type.  Other than that they type can be any value that fits in
 	a signed short.
 **/
-void *MemoryPool::allocate(size_t size, SSHORT type)
+#ifdef DEBUG_GDS_ALLOC
+void* MemoryPool::allocate(size_t size, SSHORT type, char* file, int line)
+#else
+void* MemoryPool::allocate(size_t size, SSHORT type)
+#endif
 {
 	if (type < 0)
 		type = 0;
@@ -402,7 +420,11 @@ void *MemoryPool::allocate(size_t size, SSHORT type)
 		pimpl = new(parent, seg, extend_inc)
 				FBMemoryPool(parent, seg, extend_inc, this);
 	}
+#ifdef DEBUG_GDS_ALLOC
+	return pimpl->allocate(size, type, file, line);
+#else
 	return pimpl->allocate(size, type);
+#endif
 }
 
 void *MemoryPool::allocate_int(size_t size, SSHORT type)
@@ -413,7 +435,11 @@ void *MemoryPool::allocate_int(size_t size, SSHORT type)
 		pimpl = new(parent, seg, extend_inc)
 				FBMemoryPool(parent, seg, extend_inc, this);
 	}
-	return pimpl->allocate(size, type);
+	return pimpl->allocate(size, type
+#ifdef DEBUG_GDS_ALLOC
+						   ,__FILE__, __LINE__
+#endif
+	);
 }
 
 /**	Deallocate memory that has been allocated from any MemoryPool.  This
@@ -620,7 +646,11 @@ FBMemoryPool::~FBMemoryPool()
 	of the FBMemoryPool class for a discussion on the different data structures
 	used to manage the pool.  This function is thread safe.
 **/
+#ifdef DEBUG_GDS_ALLOC
+void* FBMemoryPool::allocate(size_t size, SSHORT type, char* file, int line)
+#else
 void* FBMemoryPool::allocate(size_t size, SSHORT type)
+#endif
 {
 	Segment::FreeBlock** best;
 	Segment::FreeBlock** ptr;
@@ -711,6 +741,10 @@ void* FBMemoryPool::allocate(size_t size, SSHORT type)
 	header.length	= units - headerUnits;
 	header.type		= type;
 	header.segment	= bestSeg;
+#ifdef DEBUG_GDS_ALLOC
+	header.file		= file;
+	header.line		= line;
+#endif
 	bestSeg->overhead += headerUnits;
 	bestSeg->allocated += units - headerUnits;
 	if (ENABLE_RED_ZONES)
@@ -757,7 +791,7 @@ void* FBMemoryPool::operator new(size_t		s,
 	// We assume there will be free space left in the segment, so we need to
 	// add it now.  1 unit is a waste because the object header takes that much
 	// room.  So we need to add at least 2 units to be useful.
-	size += 2;
+	size += /*2*/4;
 	
 	// Make sure we put a red zone around the pool.  We aren't very worried about the pool
 	// code, but it prevents us from adding a bunch of special cases to handle mixed
@@ -821,6 +855,10 @@ void* FBMemoryPool::operator new(size_t		s,
 	header.type    = -1;
 	header.length  = s_units;
 	header.segment = seg;
+#ifdef DEBUG_GDS_ALLOC
+	header.file		= NULL;
+	header.line		= 0;
+#endif
 	write_header(result, header);
 	return result;
 }
@@ -966,6 +1004,9 @@ void FBMemoryPool::print_pool_callback(void * mem, int type, void *cook)
 				FullHeader header;
 				read_header(mem, &header);
 				ib_fprintf(cookie->out, "\t\t%9p ", mem);
+#ifdef DEBUG_GDS_ALLOC
+				ib_fprintf(cookie->out, " %s:%d ", header.file?header.file:"Unknown", header.line);
+#endif
 				switch(header.type)
 				{
 					case 0:
@@ -1339,6 +1380,10 @@ void FBMemoryPool::write_header(void* obj, const FullHeader& header)
             ((UCHAR*)obj - (SMALL_HEADER_ALLOC_UNITS << ALLOC_ALIGN_SHIFT));
         smHeader->segment = header.segment;
         smHeader->type = header.type;
+#ifdef DEBUG_GDS_ALLOC
+		smHeader->file = header.file;
+		smHeader->line = header.line;
+#endif
         if (header.length <= MAX_SSHORT)
             smHeader->length = header.length;
         else

@@ -35,7 +35,7 @@
  * 2002.04.16  Paul Beach - HP10 and unistd.h
  */
 /*
-$Id: common.h,v 1.30 2002-09-19 10:51:30 eku Exp $
+$Id: common.h,v 1.31 2002-09-22 20:41:55 skidder Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -641,11 +641,6 @@ typedef unsigned __int64 UINT64;
 //#define BOOLEAN_DEFINED
 //typedef unsigned char BOOLEAN;
 
-#ifdef DEV_BUILD
-#define DEBUG_GDS_ALLOC
-#define ALLOC_LIB_MEMORY(size)   gds__alloc_debug ((size),(TEXT *)__FILE__,(ULONG)__LINE__)
-#endif
-
 #ifndef MAXPATHLEN
 #define MAXPATHLEN	260
 #endif
@@ -653,7 +648,14 @@ typedef unsigned __int64 UINT64;
 typedef RETSIGTYPE (CLIB_ROUTINE * SIG_FPTR) ();
 #endif /* WIN_NT */
 
-
+// 23 Sep 2002, skidder, ALLOC_LIB_MEMORY moved here,
+// DEBUG_GDS_ALLOC definition removed because allocators 
+// do not (and can not) include this file,
+// but use DEBUG_GDS_ALLOC. Hence DEBUG_GDS_ALLOC should be defined
+// globally by now and moved to autoconf-generated header later
+#ifdef DEBUG_GDS_ALLOC
+#define ALLOC_LIB_MEMORY(size)   gds__alloc_debug ((size),(TEXT *)__FILE__,(ULONG)__LINE__)
+#endif
 
 /* SCO */
 

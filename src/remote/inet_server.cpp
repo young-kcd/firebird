@@ -23,7 +23,7 @@
  * FSG 16.03.2001 
  */
 /*
-$Id: inet_server.cpp,v 1.10 2002-09-18 12:50:04 eku Exp $
+$Id: inet_server.cpp,v 1.11 2002-09-22 20:41:55 skidder Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -31,6 +31,7 @@ $Id: inet_server.cpp,v 1.10 2002-09-18 12:50:04 eku Exp $
 #include "../jrd/common.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/divorce.h"
+#include "../common/memory/memory_pool.h"
 #if !(defined VMS || defined sgi || defined PC_PLATFORM)
 #include <sys/param.h>
 #endif
@@ -476,7 +477,15 @@ int CLIB_ROUTINE main( int argc, char **argv)
 /* In Debug mode - this will report all server-side memory leaks
  * due to remote access
  */
-	gds_alloc_report(0, __FILE__, __LINE__);
+	//gds_alloc_report(0, __FILE__, __LINE__);
+	char name[MAXPATHLEN];
+	gds__prefix(name, "memdebug.log");
+	FILE* file = fopen(name, "w+b");
+	if (file) {
+	  fprintf(file,"Global memory pool allocated objects\n");
+	  getDefaultMemoryPool()->print_contents(file);
+	  fclose(file);
+	}
 #endif
 
 	exit(FINI_OK);
