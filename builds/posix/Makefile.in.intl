@@ -29,7 +29,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.intl,v 1.3 2002-09-19 15:25:38 skidder Exp $
+#  $Id: Makefile.in.intl,v 1.4 2002-09-24 13:01:12 eku Exp $
 #
 ROOT=..
 ObjModuleName=intl
@@ -80,7 +80,8 @@ all : libfbintl
 libfbintl : $(LIBFBINTL_SO)
 
 $(LIBFBINTL_SO):	$(INTL_Objects)
-	$(LIB_LINK) -Wl,-soname,libintl.so.1 -Wl,-rpath,/usr/lib -o $@ $^
+#	$(LIB_LINK) -Wl,-soname,libintl.so.1 -Wl,-rpath,/usr/lib -o $@ $^
+	$(LIB_LINK) -Wl,-soname,libintl.so.1 -Wl,-rpath,$(FirebirdInstallPrefix)/lib -o $@ $^
 #	-$(LN) $(@F) $(LIBFBINTL_SOBASENAME) 
 #	-$(LN) $(notdir $(LIBFBINTL_SOBASENAME)) $(LIBFBINTL_SONAME)
 

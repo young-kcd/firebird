@@ -26,7 +26,7 @@
 #   Contributor(s):
 #
 #
-#   $Id: make.rules,v 1.5 2002-09-19 15:25:38 skidder Exp $
+#   $Id: make.rules,v 1.6 2002-09-24 13:01:12 eku Exp $
 #
 
 #____________________________________________________________________________
@@ -103,6 +103,7 @@ CXXFLAGS:= $(CXXFLAGS) $(CFLAGS)
 
 CC =	@CC@
 CXX =	@CXX@
+LD =	@CXX@
 
 
 
@@ -128,7 +129,8 @@ ifdef UseLibToolForLink
 
     LIB_LINK= libtool @CC@
     STATICLIB_LINK = libtool @CC@ -all-static
-    LIB_LINK_OPTIONS = -version-info 0:0:0 -release 1.5.0.0 -rpath /usr/lib
+#    LIB_LINK_OPTIONS = -version-info 0:0:0 -release 1.5.0.0 -rpath /usr/lib
+    LIB_LINK_OPTIONS = -version-info 0:0:0 -release 1.5.0.0 -rpath $(FirebirdInstallPrefix)/lib
 
     EXE_LINK = libtool @CC@
     STATICEXE_LINK = libtool @CC@ -all-static
@@ -138,7 +140,7 @@ else
     STATICLIB_LINK= ar cruvs
 #    LIB_LINK_OPTIONS = -soname libgds.so -rpath /usr/lib
 #    LIB_LINK_OPTIONS = -soname libgds.so.2 -rpath /usr/lib
-    LIB_LINK_OPTIONS =
+    LIB_LINK_OPTIONS = -rpath $(FirebirdInstallPrefix)/lib
 
 #    EXE_LINK = g++
 #    STATICEXE_LINK = g++

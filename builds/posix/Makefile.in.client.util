@@ -29,7 +29,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.util,v 1.2 2002-09-19 15:25:38 skidder Exp $
+#  $Id: Makefile.in.client.util,v 1.3 2002-09-24 13:01:12 eku Exp $
 #
 ROOT=..
 ObjModuleName=client.util
@@ -96,43 +96,43 @@ all: gstat gds_drop gds_relay gsec fbguard fbmgr_bin
 create_db: $(CREATE_DB)
 
 $(CREATE_DB):	$(CREATEDB_Objects) 
-	$(CC) $(LINK_OPTS) $(CREATEDB_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(CREATEDB_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
 
 
 
 gstat : $(GSTAT)
 
 $(GSTAT):	$(GSTAT_Objects) $(LIBFBCLIENT_SO)  
-	$(CC) $(LINK_OPTS) $(GSTAT_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(GSTAT_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
 
 
 
 gds_drop: $(GDS_DROP)
 
 $(GDS_DROP):	$(DROP_Objects) $(LIBFBCLIENT_SO)  
-	$(CC) $(LINK_OPTS) $(DROP_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(DROP_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
 
 
 gds_relay: $(GDS_RELAY)
 
 $(GDS_RELAY):	$(RELAY_Objects) $(LIBFBCLIENT_SO)  
-	$(CC) $(LINK_OPTS) $(RELAY_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(RELAY_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
 
 
 gsec: $(GSEC)
 
 $(GSEC):	$(GSEC_Objects) $(LIBFBCLIENT_SO)  
-	$(CC) $(LINK_OPTS) $(GSEC_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(GSEC_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
 
 fbguard: $(FBGUARD)
 
 $(FBGUARD):	$(FBGUARD_Objects) $(LIBFBCLIENT_SO)  
-	$(CC) $(LINK_OPTS) $(FBGUARD_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(FBGUARD_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
 
 fbmgr_bin: $(FBMGR_BIN)
 
 $(FBMGR_BIN):	$(FBMGR_Objects) $(LIBFBCLIENT_SO)  
-	$(CC) $(LINK_OPTS) $(FBMGR_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(FBMGR_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
 
 
 # This one needs a bit of work.
@@ -140,7 +140,7 @@ $(FBMGR_BIN):	$(FBMGR_Objects) $(LIBFBCLIENT_SO)
 rebuild: $(GDS_REBUILD)
 
 $(GDS_REBUILD):	$(REBUILD_Objects) $(LIBFBCLIENT_SO)  
-	$(CC) $(LINK_OPTS) $(REBUILD_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(REBUILD_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
 
 FORCE:
 

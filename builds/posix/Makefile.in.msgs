@@ -29,7 +29,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.msgs,v 1.4 2002-09-20 10:23:14 eku Exp $
+#  $Id: Makefile.in.msgs,v 1.5 2002-09-24 13:01:12 eku Exp $
 #
 ROOT=..
 ObjModuleName=msgs
@@ -101,35 +101,35 @@ do_check: $(CHECK_MESSAGES) $(BUILD_FILE)
 check_messages : $(CHECK_MESSAGES) 
 
 $(CHECK_MESSAGES):	$(CHECK_Objects) $(LIBFBSTATIC_A) $(LIBFBCOMMON_A)
-	$(CC) $(LINK_OPTS) $(CHECK_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(CHECK_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
 	$(CHMOD_7) $@
 
 
 build_file : $(BUILD_FILE) 
 
 $(BUILD_FILE):	$(BUILD_Objects) $(LIBFBSTATIC_A) $(LIBFBCOMMON_A)
-	$(CC) $(LINK_OPTS) $(BUILD_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(BUILD_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
 	$(CHMOD_7) $@
 
 
 enter_messages : $(ENTER_MESSAGES)
 
 $(ENTER_MESSAGES):	$(ENTER_Objects) $(LIBFBSTATIC_A) $(LIBFBCOMMON_A)
-	$(CC) $(LINK_OPTS) $(ENTER_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(ENTER_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
 	$(CHMOD_7) $@
 
 
 modify_messages: $(MODIFY_MESSAGES) 
 
 $(MODIFY_MESSAGES):	$(MODIFY_Objects) $(LIBFBSTATIC_A) $(LIBFBCOMMON_A)
-	$(CC) $(LINK_OPTS) $(MODIFY_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(MODIFY_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
 	$(CHMOD_7) $@
 
 
 change_messages: $(CHANGE_MESSAGES)
 
 $(CHANGE_MESSAGES):	$(CHANGE_Objects) $(LIBFBSTATIC_A) $(LIBFBCOMMON_A)
-	$(CC) $(LINK_OPTS) $(CHANGE_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(CHANGE_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
 	$(CHMOD_7) $@
 
 

@@ -29,7 +29,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.static.isql,v 1.2 2002-09-19 15:25:38 skidder Exp $
+#  $Id: Makefile.in.static.isql,v 1.3 2002-09-24 13:01:12 eku Exp $
 #
 ROOT=..
 ObjModuleName=static.isql
@@ -61,7 +61,7 @@ Dependencies = $(AllObjects:.o=.d)
 isql_static : $(ISQL_STATIC)
 
 $(ISQL_STATIC):	$(ISQL_Objects) $(LIBFBCOMMON_A) $(LIBBSTATIC_A) 
-	$(CC) $(LINK_OPTS) $(ISQL_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(ISQL_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
 
 
 FORCE:

@@ -29,7 +29,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.util,v 1.2 2002-09-19 15:25:38 skidder Exp $
+#  $Id: Makefile.in.embed.util,v 1.3 2002-09-24 13:01:12 eku Exp $
 #
 ROOT=..
 ObjModuleName=embed.util
@@ -105,43 +105,43 @@ all: gstat gds_drop gds_relay gsec
 create_db: $(CREATE_DB)
 
 $(CREATE_DB):	$(CREATEDB_Objects) $(LIBFBSTATIC_A) $(LIBFBCOMMON_A)
-	$(CC) $(LINK_OPTS) $(CREATEDB_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(CREATEDB_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
 
 
 
 gstat : $(GSTAT)
 
 $(GSTAT):	$(GSTAT_Objects) $(LIBFBEMBED_SO)  
-	$(CC) $(LINK_OPTS) $(GSTAT_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(GSTAT_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
 
 
 
 gds_drop: $(GDS_DROP)
 
 $(GDS_DROP):	$(DROP_Objects) $(LIBFBEMBED_SO)  
-	$(CC) $(LINK_OPTS) $(DROP_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(DROP_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
 
 
 gds_relay: $(GDS_RELAY)
 
 $(GDS_RELAY):	$(RELAY_Objects) $(LIBFBEMBED_SO)  
-	$(CC) $(LINK_OPTS) $(RELAY_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(RELAY_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
 
 
 gsec: $(GSEC)
 
 $(GSEC):	$(GSEC_Objects) $(LIBFBEMBED_SO)  
-	$(CC) $(LINK_OPTS) $(GSEC_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(GSEC_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
 
 ibguard: $(IBGUARD)
 
 $(IBGUARD):	$(IBGUARD_Objects) $(LIBFBEMBED_SO)  
-	$(CC) $(LINK_OPTS) $(IBGUARD_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(IBGUARD_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
 
 ibmgr_bin: $(IBMGR_BIN)
 
 $(IBMGR_BIN):	$(IBMGR_Objects) $(LIBFBEMBED_SO)  
-	$(CC) $(LINK_OPTS) $(IBMGR_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(IBMGR_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
 
 
 # This one needs a bit of work.
@@ -149,7 +149,7 @@ $(IBMGR_BIN):	$(IBMGR_Objects) $(LIBFBEMBED_SO)
 rebuild: $(GDS_REBUILD)
 
 $(GDS_REBUILD):	$(REBUILD_Objects) $(LIBFBEMBED_SO)  
-	$(CC) $(LINK_OPTS) $(REBUILD_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(REBUILD_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
 
 FORCE:
 

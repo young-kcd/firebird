@@ -29,7 +29,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.jrd,v 1.2 2002-09-19 15:25:38 skidder Exp $
+#  $Id: Makefile.in.jrd,v 1.3 2002-09-24 13:01:12 eku Exp $
 #
 ROOT=../..
 
@@ -537,10 +537,10 @@ gds32_os2_ibm.dll: $(WHY_O) $(JRD_OBJECTS)
 	$(TOUCH) gds32_os2_ibm.dll
 
 event_print:	print.o $(GDSLIB_BACKEND)
-	$(CC) $(LINK_OPTS) -g print.o -o event_print $(GDSLIB_LINK)
+	$(LD) $(LINK_OPTS) -g print.o -o event_print $(GDSLIB_LINK)
 
 event_print.exe:	print.o
-	$(CC) $(DEBUG_LINK_OPTS) $(O_EXE_SWITCH)event_print print.o $(GDSLIB_LINK)
+	$(LD) $(DEBUG_LINK_OPTS) $(O_EXE_SWITCH)event_print print.o $(GDSLIB_LINK)
 
 gds.a:		$(HEAD_OBJECTS) $(NOLINK_MACHINES)
 	-$(RM) gds.a
@@ -583,7 +583,7 @@ gds.a.solaris:	$(HEAD_J_OBJECTS)
 gds_pipe:	$(FOOT_OBJECTS) $(WHYPS_O) $(GDSSHR) \
 		$(GDSLIB_BACKEND) $(NOLINK_MACHINES)
 	-$(RM) gds_pipe gdsshr_pipe
-	$(CC) $(LINK_OPTS) $(FOOT_OBJECT) \
+	$(LD) $(LINK_OPTS) $(FOOT_OBJECT) \
 		$(T_SWITCH) $(T_SWITCH) \
 		$(WHYPS_O) -o gds_pipe $(SERVER_LINK)
 	$(CHMOD_7) gds_pipe
@@ -593,7 +593,7 @@ gds_pipe:	$(FOOT_OBJECTS) $(WHYPS_O) $(GDSSHR) \
 
 bridge.unix:	gds_pipe
 	-$(RM) gds_pipe5
-	$(CC) $(LINK_OPTS) $(FOOT_OBJECTS) -o gds_pipe5 $(GDSLIB_LINK)
+	$(LD) $(LINK_OPTS) $(FOOT_OBJECTS) -o gds_pipe5 $(GDSLIB_LINK)
 	$(CHMOD_7) gds_pipe5
 
 gds_pipe.a:	$(FOOT_OBJECTS) $(NOLINK_MACHINES)

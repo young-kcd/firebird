@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.extlib,v 1.2 2002-09-19 15:25:38 skidder Exp $
+#  $Id: Makefile.in.extlib,v 1.3 2002-09-24 13:01:12 eku Exp $
 #
 ROOT=..
 ObjModuleName=extlib
@@ -84,7 +84,8 @@ lib_ib_udf: $(UDF)/ib_udf.so
 #	ar crv $@  $%
 
 $(UDF)/ib_udf.so:	$(UDF_Objects)
-	$(LIB_LINK) -Wl,-soname,ib_udf.so -Wl,-rpath,/usr/lib -o $@ $^
+#	$(LIB_LINK) -Wl,-soname,ib_udf.so -Wl,-rpath,/usr/lib -o $@ $^
+	$(LIB_LINK) -Wl,-soname,ib_udf.so -Wl,-rpath,$(FirebirdInstallPrefix)/lib -o $@ $^
 #	-$(LN) $(@F) $(LIBFBINTL_SOBASENAME) 
 #	-$(LN) $(notdir $(LIBFBINTL_SOBASENAME)) $(LIBFBINTL_SONAME)
 
@@ -94,7 +95,7 @@ $(UDF)/ib_udf.so:	$(UDF_Objects)
 lib_fb_udf: $(UDF)/fb_udf.so
 
 $(UDF)/fb_udf.so:	$(FBUDF_Objects)
-	$(LIB_LINK) -Wl,-soname,fb_udf.so -Wl,-rpath,/usr/lib -o $@ $^
+	$(LIB_LINK) -Wl,-soname,fb_udf.so -Wl,-rpath,$(FirebirdInstallPrefix)/lib -o $@ $^
 #	-$(LN) $(@F) $(LIBFBINTL_SOBASENAME) 
 #	-$(LN) $(notdir $(LIBFBINTL_SOBASENAME)) $(LIBFBINTL_SONAME)
 
@@ -104,7 +105,7 @@ $(UDF)/fb_udf.so:	$(FBUDF_Objects)
 lib_ib_util: $(LIB)/ib_util.so
 
 $(LIB)/ib_util.so:	$(UTIL_Objects)
-	$(LIB_LINK) -Wl,-soname,ib_util.so -Wl,-rpath,/usr/lib -o $@ $^
+	$(LIB_LINK) -Wl,-soname,ib_util.so -Wl,-rpath,$(FirebirdInstallPrefix)/lib -o $@ $^
 #	-$(LN) $(@F) $(LIBFBINTL_SOBASENAME) 
 #	-$(LN) $(notdir $(LIBFBINTL_SOBASENAME)) $(LIBFBINTL_SONAME)
 
