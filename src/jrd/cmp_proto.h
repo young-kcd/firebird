@@ -41,7 +41,7 @@ void			CMP_get_desc(TDBB, Csb*, jrd_nod*, dsc*);
 idl*			CMP_get_index_lock(TDBB, jrd_rel*, USHORT);
 SLONG			CMP_impure(Csb*, USHORT);
 jrd_req*		CMP_make_request(TDBB, Csb*);
-int				CMP_post_access(TDBB, Csb*, /* INOUT */ TEXT*, SLONG,
+void			CMP_post_access(TDBB, Csb*, /* INOUT */ TEXT*, SLONG,
 								const TEXT*, const TEXT*, USHORT, const TEXT*,
 								const TEXT*);
 void			CMP_post_resource(TDBB, Rsc**, blk*, enum rsc_s, USHORT);

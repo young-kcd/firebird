@@ -1859,15 +1859,15 @@ JRD_REQ CMP_make_request(TDBB tdbb, CSB csb)
 }
 
 
-int CMP_post_access(TDBB tdbb,
-					CSB csb,
-					TEXT* security_name,
-					SLONG view_id,
-					const TEXT* trig,
-					const TEXT* proc,
-					USHORT mask,
-					const TEXT* type_name,
-					const TEXT* name)
+void CMP_post_access(TDBB tdbb,
+					 CSB csb,
+					 TEXT* security_name,
+					 SLONG view_id,
+					 const TEXT* trig,
+					 const TEXT* proc,
+					 USHORT mask,
+					 const TEXT* type_name,
+					 const TEXT* name)
 {
 /**************************************
  *
@@ -1881,19 +1881,17 @@ int CMP_post_access(TDBB tdbb,
  *      security classes for that request.
  *
  **************************************/
-	ACC access, last_entry;
-
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(view, type_rel);
 
-	SET_TDBB(tdbb);
-
-/* allow all access to internal requests */
+	// allow all access to internal requests
 
 	if (csb->csb_g_flags & (csb_internal | csb_ignore_perm))
-		return TRUE;
+		return;
 
-	last_entry = NULL;
+	SET_TDBB(tdbb);
+
+	ACC access, last_entry = NULL;
 
 	for (access = csb->csb_access; access; access = access->acc_next)
 	{
@@ -1905,7 +1903,7 @@ int CMP_post_access(TDBB tdbb,
 			!strcmp(access->acc_type, type_name) &&
 			!strcmp(access->acc_name, name))
 		{
-			return FALSE;
+			return;
 		}
 		if (!access->acc_next)
 		{
@@ -1913,10 +1911,10 @@ int CMP_post_access(TDBB tdbb,
 		}
 	}
 
-
 	access = FB_NEW(*tdbb->tdbb_default) acc;
 
-/* append the security class to the existing list */
+	// append the security class to the existing list
+
 	if (last_entry)
 	{
 		access->acc_next = NULL;
@@ -1928,13 +1926,13 @@ int CMP_post_access(TDBB tdbb,
 		csb->csb_access = access;
 	}
 
-	access->acc_security_name	= clone_cstring(tdbb->tdbb_default, security_name);
-	access->acc_view_id			= view_id;
-	access->acc_trg_name		= clone_cstring(tdbb->tdbb_default, trig);
-	access->acc_prc_name		= clone_cstring(tdbb->tdbb_default, proc);
-	access->acc_mask			= mask;
-	access->acc_type			= type_name; // No need to clone, should be static
-	access->acc_name			= clone_cstring(tdbb->tdbb_default, name);
+	access->acc_security_name = clone_cstring(tdbb->tdbb_default, security_name);
+	access->acc_view_id = view_id;
+	access->acc_trg_name = clone_cstring(tdbb->tdbb_default, trig);
+	access->acc_prc_name = clone_cstring(tdbb->tdbb_default, proc);
+	access->acc_mask = mask;
+	access->acc_type = type_name;	// no need to clone, should be static
+	access->acc_name = clone_cstring(tdbb->tdbb_default, name);
 
 #ifdef DEBUG_TRACE
 	ib_printf("%x: require %05X access to %s %s (sec %s view %ld trg %s prc %s)\n",
@@ -1944,8 +1942,6 @@ int CMP_post_access(TDBB tdbb,
 		 access->acc_trg_name ? access->acc_trg_name : "NULL",
 		 access->acc_prc_name ? access->acc_prc_name : "NULL");
 #endif
-
-	return TRUE;
 }
 
 
@@ -3467,7 +3463,6 @@ static JRD_NOD pass1_expand_view(
 
 	SET_TDBB(tdbb);
 
-
 	DEV_BLKCHK(csb, type_csb);
 
 	stack = NULL;
@@ -4545,9 +4540,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 
 	case nod_dcl_variable:
 		{
-			DSC *desc;
-
-			desc = (DSC *) (node->nod_arg + e_dcl_desc);
+			DSC* desc = (DSC*) (node->nod_arg + e_dcl_desc);
 			csb->csb_impure += sizeof(vlu) + desc->dsc_length;
 		}
 		break;
