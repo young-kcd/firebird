@@ -1,3 +1,4 @@
+#error This is an obsolete port.
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		os2.c
@@ -19,9 +20,12 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - obsolete "OS/2" port
+ *
  */
 
-#define 
+#define
 #include "firebird.h"INCL_DOSFILEMGR
 #include <os2.h>
 #include <string.h>

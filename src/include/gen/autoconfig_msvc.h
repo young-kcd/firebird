@@ -7,6 +7,7 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "NeXT" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "M88K" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Cray" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  */
 
 #ifndef AUTOCONFIG_H
@@ -73,7 +74,6 @@
 #undef WINDOWS_ONLY
 #undef VMS
 #undef AIX
-#undef OS2_ONLY
 #define WIN_NT
 #undef SCO_EV
 #undef DGUX

@@ -22,12 +22,13 @@
  * FSG 16.03.2001
  */
 /*
-$Id: ibase.h,v 1.7 2002-02-16 04:04:45 seanleyne Exp $
+$Id: ibase.h,v 1.8 2002-02-16 04:16:08 seanleyne Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "MAC" (MAC_AUX) port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Cray" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
  */
 
@@ -72,7 +73,7 @@ $Id: ibase.h,v 1.7 2002-02-16 04:04:45 seanleyne Exp $
 #define ISC_FAR
 
 #if (defined(_MSC_VER) && defined(_WIN32)) || \
-    (defined(__BORLANDC__) && (defined(__WIN32__) || defined(__OS2__)))
+    (defined(__BORLANDC__) && defined(__WIN32__))
 #  define  ISC_FAR
 #  define  ISC_EXPORT_VARARG	__cdecl
 	typedef __int64 ISC_INT64;
@@ -1515,7 +1516,6 @@ ISC_STATUS ISC_EXPORT isc_suspend_window(ISC_STATUS ISC_FAR*,
 #define isc_info_db_impl_isc_vax_ultr     26
 #define isc_info_db_impl_isc_vms          27
 #define isc_info_db_impl_isc_sun_68k      28
-#define isc_info_db_impl_isc_os2          29
 #define isc_info_db_impl_isc_sun4         30
 #define isc_info_db_impl_isc_hp_ux        31
 #define isc_info_db_impl_isc_sun_386i     32

@@ -17,6 +17,7 @@
  * Contributor(s): ______________________________________.
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "MAC" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
  */
 /*
@@ -565,7 +566,6 @@ const char gds_info_db_impl_isc_apl_68K    = 25;
 const char gds_info_db_impl_isc_vax_ultr   = 26;
 const char gds_info_db_impl_isc_vms        = 27;
 const char gds_info_db_impl_isc_sun_68k    = 28;
-const char gds_info_db_impl_isc_os2        = 29;
 const char gds_info_db_impl_isc_sun4       = 30;
 const char gds_info_db_impl_isc_hp_ux      = 31;
 const char gds_info_db_impl_isc_sun_386i   = 32;

@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
+ *
  */
 
 #ifndef JRD_PERF_H
@@ -31,9 +34,6 @@
 #define NOTIME
 #endif
 #if defined (NETWARE_386) || defined (PC_PLATFORM)
-#define NOTIME
-#endif
-#if defined (__OS2__)
 #define NOTIME
 #endif
 

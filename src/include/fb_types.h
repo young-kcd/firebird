@@ -27,7 +27,9 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.3 2001-12-24 02:50:49 tamlin Exp $
+ *  $Id: fb_types.h,v 1.4 2002-02-16 04:16:08 seanleyne Exp $
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
  */
 
@@ -46,7 +48,7 @@
 
 
 #if (defined(_MSC_VER) && defined(_WIN32)) || \
-    (defined(__BORLANDC__) && (defined(__WIN32__) || defined(__OS2__)))
+    (defined(__BORLANDC__) && defined(__WIN32__))
 #  define  GDS_EXPORT	__stdcall
 #else
 #  define  GDS_EXPORT
@@ -57,7 +59,7 @@
 #endif
 
 
-#if (defined(__osf__) && defined(__alpha))  
+#if (defined(__osf__) && defined(__alpha))
 /* It appears the alpha has a 32 bit int and a 64 bit long. */
 #   define LONG_DEFINED
     typedef int SLONG;
