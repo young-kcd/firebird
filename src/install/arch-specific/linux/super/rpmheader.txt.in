@@ -1,0 +1,17 @@
+Summary: Firebird Relational Database Server and Client tools.
+Name: Firebird@ARCH_TYPE_SUFFIX@
+Version: @FIREBIRD_VERSION@.@FB_BUILD_NUM@
+Release: @FIREBIRD_PACKAGE_VERSION@
+Copyright: Distributable 
+Group: Applications/Databases 
+Source: FirebirdSS1.5src.tar.gz 
+URL: http://firebird.sourceforge.net 
+# Prefix: /
+AutoReqProv: no 
+BuildArchitectures: @CPU_TYPE@
+# BuildRoot: /var/tmp/%{name}-buildroot
+BuildRoot: @BUILD_ROOT_DIR@/gen/buildroot
+
+%description
+Firebird is a powerful, high-performance relational database designed to be embedded into
+applications on multiple platforms.  

@@ -1,0 +1,13 @@
+/usr/local/firebird
+
+/usr/lib/libfbclient.so.1.5.0
+/usr/lib/libfbclient.so.1
+/usr/lib/libfbclient.so
+/usr/lib/libib_util.so
+
+/usr/include/gds.h
+/usr/include/ibase.h
+/usr/include/iberror.h
+/usr/include/ib_util.h
+
+/etc/init.d/firebird
