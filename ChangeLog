@@ -1,3 +1,25 @@
+2005-02-07 09:01  robocop
+
+	* firebird2/src/isql/isql.epp (1.32.2.11):
+	
+	sqldaid and sqldabc are unused crap borrowed from IBM 15 years ago.
+	 Don't show them as they contain garbage.
+
+2005-02-07 08:39  robocop
+
+	* firebird2/src/isql/isql.epp (1.32.2.10):
+	
+	fb-checkins shows that Continuation, a var that doens't exist in
+	FB2's isql, was set always after process_statement, in v1.5 so
+	let's keep it this way.
+
+2005-02-07 08:29  robocop
+
+	* firebird2/src/isql/isql.epp (1.32.2.9):
+	
+	Backport -bail command line option in isql at request by Paul
+	Beach.	Help wasn't updated.  Did a few minor fixes, too.
+
 2005-02-06 11:50  alexpeshkoff
 
 	* firebird2/src/dsql/ddl.cpp (1.50.2.4):
