@@ -1539,7 +1539,7 @@ int API_ROUTINE blob__display(
 	TEXT *p, *q, temp[32];
 	USHORT l;
 
-	if ((l = *name_length) != NULL) {
+	if ((l = *name_length) != 0) {
 		p = temp;
 		q = field_name;
 		do
@@ -1604,7 +1604,7 @@ int API_ROUTINE blob__dump(
 	TEXT *p, *q, temp[129];
 	USHORT l;
 
-	if ((l = *name_length) != NULL) {
+	if ((l = *name_length) != 0) {
 		p = temp;
 		q = file_name;
 		do
@@ -1695,7 +1695,7 @@ int API_ROUTINE blob__edit(
 	TEXT *p, *q, temp[32];
 	USHORT l;
 
-	if ((l = *name_length) != NULL) {
+	if ((l = *name_length) != 0) {
 		p = temp;
 		q = field_name;
 		do
@@ -1790,7 +1790,7 @@ int API_ROUTINE blob__load(
 	TEXT *p, *q, temp[129];
 	USHORT l;
 
-	if ((l = *name_length) != NULL) {
+	if ((l = *name_length) != 0) {
 		p = temp;
 		q = file_name;
 		do
@@ -2339,7 +2339,7 @@ static int load(
 		p = buffer;
 	}
 
-	if ((l = p - buffer) != NULL)
+	if ((l = p - buffer) != 0)
 		if (gds__put_segment
 			(status_vector, GDS_REF(blob), l,
 			 buffer)) {
