@@ -1,3 +1,24 @@
+2003-11-14 14:48  paul_reeves
+
+	* firebird2/src/:
+	install/arch-specific/darwin/installer_background.pdf,
+	install/arch-specific/darwin/installer_background.psd,
+	install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc,
+	install/arch-specific/win32/FirebirdInstallSupportFunctions.inc,
+	install/arch-specific/win32/FirebirdInstall_15.iss,
+	install/arch-specific/win32/Readme.txt,
+	install/arch-specific/win32/installation_readme.txt,
+	jrd/isc_version.h:
+	
+	Add some refinements to Win32 install script. Update build_no for
+	1.5.
+
+2003-11-14 12:11  aafemt
+
+	* firebird2/src/: jrd/ibase.h, include/fb_types.h:
+	
+	return isc_quad_high and _low
+
 2003-11-14 03:43  bellardo
 
 	* firebird2/builds/posix/postfix.darwin:
