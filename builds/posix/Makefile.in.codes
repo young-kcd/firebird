@@ -29,7 +29,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.codes,v 1.13 2003-08-04 15:33:28 skidder Exp $
+#  $Id: Makefile.in.codes,v 1.14 2003-11-08 07:39:06 bellardo Exp $
 #
 ROOT=..
 ObjModuleName=codes
@@ -72,7 +72,7 @@ $(SRC_ROOT)/misc/codes.cpp: $(SRC_ROOT)/misc/codes.epp
 	$(GPRE_CURRENT) $(GPRE_FLAGS) $< $@
 
 $(BIN)/codes: $(CODES_Objects) $(LIBFBCOMMON_A) $(LIBFBSTATIC_A)
-	$(CXX) $(LINK_OPTS) $(CODES_Objects) -o $@ -L $(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
+	$(CXX) $(LINK_OPTS) $(CODES_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
 
 
 # Rebuild ids.h
