@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.32.2.10 2005-02-07 07:39:30 robocop Exp $
+  $Id: isql.epp,v 1.32.2.11 2005-02-07 08:01:10 robocop Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -6365,9 +6365,11 @@ static int process_statement( TEXT * string, XSQLDA ** sqldap)
 			SCHAR buffer[100];
 			USHORT i;
 			sprintf(buffer,
-					"\nINPUT  SQLDA version: %d sqldaid: %s sqldabc: %ld sqln: %d sqld: %d\n",
-					input_sqlda->version, input_sqlda->sqldaid,
-					input_sqlda->sqldabc, input_sqlda->sqln,
+					//"\nINPUT  SQLDA version: %d sqldaid: %s sqldabc: %ld sqln: %d sqld: %d\n",
+					"\nINPUT  SQLDA version: %d sqln: %d sqld: %d\n",
+					//input_sqlda->version, input_sqlda->sqldaid,
+					//input_sqlda->sqldabc, input_sqlda->sqln,
+					input_sqlda->version, input_sqlda->sqln,
 					input_sqlda->sqld);
 			ISQL_printf(Out, (TEXT*) buffer);
 			for (i = 0, var = input_sqlda->sqlvar, end =
@@ -6586,8 +6588,10 @@ static int process_statement( TEXT * string, XSQLDA ** sqldap)
 		SCHAR buffer[100];
 		USHORT i;
 		sprintf(buffer,
-				"\nOUTPUT SQLDA version: %d sqldaid: %s sqldabc: %ld sqln: %d sqld: %d\n",
-				sqlda->version, sqlda->sqldaid, sqlda->sqldabc, sqlda->sqln,
+				//"\nOUTPUT SQLDA version: %d sqldaid: %s sqldabc: %ld sqln: %d sqld: %d\n",
+				"\nOUTPUT SQLDA version: %d sqln: %d sqld: %d\n",
+				//sqlda->version, sqlda->sqldaid, sqlda->sqldabc, sqlda->sqln,
+				sqlda->version, sqlda->sqln,
 				sqlda->sqld);
 		ISQL_printf(Out, (TEXT*) buffer);
 		for (i = 0, var = sqlda->sqlvar, end = var + sqlda->sqld; var < end;
