@@ -50,6 +50,7 @@
 #include "../jrd/tra.h"
 #include "../jrd/req.h"
 #include "../jrd/constants.h"
+#include "../common/utils_proto.h"
 
 using namespace Jrd;
 
@@ -787,10 +788,12 @@ void CVT2_get_name(const dsc* desc, TEXT* string, FPTR_ERROR err)
 
 	USHORT length = CVT_make_string(desc, ttype_metadata, &p,
 							 (vary*) & temp, sizeof(temp), err);
-	for (; length && *p != ' '; --length)
+	TEXT* const orig_string = string;
+	for (; length; --length)
 		*string++ = *p++;
 
 	*string = 0;
+	fb_utils::exact_name(orig_string);
 }
 
 
