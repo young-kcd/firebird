@@ -21,7 +21,6 @@
  * Contributor(s): ______________________________________.
  */
 
-#define STRICT
 #include "firebird.h"
 #include <windows.h>
 #pragma hdrstop
@@ -48,7 +47,7 @@
 #include "../jrd/common.h"
 #include "../isql/isql.h"
 #include "../isql/isql_win.h"
-#include "../isql/isql_res.h"
+#include "../isql/isql.rh"
 #include "../jrd/ibase.h"
 #include "../isql/isqlw_proto.h"
 #include "../isql/isql_proto.h"
@@ -94,12 +93,12 @@ static FILE *sss;			// SQL session
 
 static SSHORT gflags;
 
-#define DBINITED	1			// database initilized flag 
-#define DEFINPUT	2			// default input file exists flag 
-#define DEFOUTPUT	4			// default output file exists flag 
-#define COMHIST		8			// command history file exists flag 
-#define OVERWRITE	16			// overwrite/append to window 
-#define SESSFILE	32			// SQL session file exists flag 
+const SSHORT DBINITED	= 1;			// database initilized flag 
+const SSHORT DEFINPUT	= 2;			// default input file exists flag 
+const SSHORT DEFOUTPUT	= 4;			// default output file exists flag 
+const SSHORT COMHIST	= 8;			// command history file exists flag 
+const SSHORT OVERWRITE	= 16;			// overwrite/append to window 
+const SSHORT SESSFILE	= 32;			// SQL session file exists flag 
 
 SETUPDATA SetUpData;
 

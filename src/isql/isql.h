@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.29 2004-05-09 05:47:55 robocop Exp $
+ * $Id: isql.h,v 1.30 2004-05-18 16:21:39 brodsom Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -218,14 +218,6 @@ const int HLP_SETSQLDIALECT			= 106;		//\tSET SQL DIALECT <n>    -- set sql dial
 const int NO_GRANT_ON_ANY			= 107;		// There is no privilege granted in this database. 
 const int HLP_SETPLANONLY			= 108;		// Toggle display of query plan without executing 
 
-#ifndef DEBUG
-#define Trace		0
-#endif
-
-#ifdef DEBUG
-#define Trace		1
-#endif
-
 #ifdef ISQL_MAIN
 #define EXTERN
 #else
@@ -271,16 +263,6 @@ const int BLOB			= 261;
 
 #ifdef VMS
 #include <descrip.h>
-#define LIB$_INPSTRTRU	0x15821c
-#endif
-
-#ifdef UNIX
-#define UNIX_LINE	1
-#endif
-
-#if (defined WIN_NT)
-#define UNIX_LINE	1
-#define PC_FILE_SEEK
 #endif
 
 #ifdef SMALL_FILE_NAMES
@@ -304,11 +286,8 @@ static const char* SCRATCH		= "fb_query_";
 #define ISQL_FREE(x)     {isc_free ((char*) x); x = NULL;}
 #endif
 
-#ifndef NEWLINE
-#define NEWLINE 	"\n"
-#endif
-
-#define TAB_AS_SPACES "        "
+static const char* NEWLINE			= "\n";
+static const char* TAB_AS_SPACES	= "        ";
 
 const char BLANK		= '\040';
 const char DBL_QUOTE	= '\042';

@@ -18,7 +18,7 @@
  */
 // Borland C++ - (C) Copyright 1994 by Borland International
 
-// isql_res.h
+// isql.rh
 
 // Cursor definition
 #define ISQLCURSOR              1
@@ -142,4 +142,4 @@
 #define	CREATE_DB		13
 #define	DROP_DB			14
 
-// end isql_res.h
+// end isql.rh
