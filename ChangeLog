@@ -1,3 +1,167 @@
+2003-02-18 00:12  brodsom
+
+	* firebird2/src/jrd/: gds.def, thin.asm:
+	
+	Remove old asm file (remains from thin.c?)
+
+2003-02-17 20:51  brodsom
+
+	* firebird2/src/: jrd/mmov.mar, jrd/rdbcodes.mar, jrd/gdsentry.mar,
+	jrd/gds5entry.mar, remote/isc_tcpent.mar:
+	
+	Remove old vax mars files
+
+2003-02-17 20:48  brodsom
+
+	* firebird2/src/: remote/pcbdefv5.mar, remote/zap.mar,
+	remote/jibdef.mar, remote/pcbdefv4.mar, jrd/thread.mar,
+	jrd/rdbgentry.mar:
+	
+	Remove old vax mars files
+
+2003-02-17 20:33  brodsom
+
+	* firebird2/src/remote/: winvx.cpp, multivx.cpp, tcptypes.h,
+	types.h, ucx.cpp, winerr.h, in.h, inet.cpp, inetiodef.h, xdr.h:
+	
+	Remove multinet and wollongong vms protocols
+
+2003-02-17 15:56  skidder
+
+	* firebird2/src/dsql/parse.y:
+	
+	Fixed bug with line number tracking introduced recently + some
+	cleanup
+
+2003-02-17 15:52  brodsom
+
+	* firebird2/src/include/gen/autoconfig_msvc.h:
+	
+	Disable another level 4 warning.
+
+2003-02-17 14:43  brodsom
+
+	* firebird2/builds/win32/: msvc6/utilities.dsp,
+	msvc6/utilities_classic.dsp, msvc6/wal.dsp, msvc6/wal_classic.dsp,
+	msvc6/dsql_server_classic.dsp, msvc6/engine.dsp,
+	msvc6/engine_classic.dsp, msvc6/fb_inet_server.dsp,
+	msvc6/fb_lock_print.dsp, msvc6/fbclient.dsp, msvc6/fbembed.dsp,
+	msvc6/fbguard.dsp, msvc6/fbserver.dsp, msvc6/fbudf.dsp,
+	msvc6/gbak.dsp, msvc6/gdef.dsp, msvc6/gds32.dsp, msvc6/gfix.dsp,
+	msvc6/gpre.dsp, msvc6/gpre_boot.dsp, msvc6/gsec.dsp,
+	msvc6/gstat.dsp, msvc6/ib_udf.dsp, msvc6/ib_util.dsp,
+	msvc6/instreg.dsp, msvc6/instsvc.dsp, msvc6/intl.dsp,
+	msvc6/ipserver.dsp, msvc6/isql.dsp, msvc6/lock.dsp,
+	msvc6/lock_classic.dsp, msvc6/qli.dsp, msvc6/remote.dsp,
+	msvc6/remote_classic.dsp, msvc6/alice.dsp, msvc6/alice_classic.dsp,
+	msvc6/burp.dsp, msvc6/burp_classic.dsp, msvc6/common.dsp,
+	msvc6/common_classic.dsp, msvc6/dsql_server.dsp, common_boot.mak,
+	fbclient_boot.mak, gpre.mak, gpre_boot.mak:
+	
+	Return warning level in msvc6 to 3 until there is a solution to the
+	Q167355 bug.
+
+2003-02-17 14:35  brodsom
+
+	* firebird2/: builds/win32/msvc7/engine_classic.vcproj,
+	builds/win32/msvc7/fb_lock_print.vcproj,
+	builds/win32/msvc7/fbclient.vcproj,
+	builds/win32/msvc7/fbembed.vcproj,
+	builds/win32/msvc7/fbguard.vcproj, builds/win32/msvc7/fbudf.vcproj,
+	builds/win32/msvc7/gbak.vcproj, builds/win32/msvc7/gdef.vcproj,
+	builds/win32/msvc7/gds32.vcproj, builds/win32/msvc7/gfix.vcproj,
+	builds/win32/msvc7/gpre.vcproj,
+	builds/win32/msvc7/gpre_boot.vcproj,
+	builds/win32/msvc7/gsec.vcproj, builds/win32/msvc7/gstat.vcproj,
+	builds/win32/msvc7/ib_udf.vcproj,
+	builds/win32/msvc7/ib_util.vcproj,
+	builds/win32/msvc7/instreg.vcproj,
+	builds/win32/msvc7/instsvc.vcproj, builds/win32/msvc7/intl.vcproj,
+	builds/win32/msvc7/ipserver.vcproj, builds/win32/msvc7/isql.vcproj,
+	builds/win32/msvc7/lock.vcproj,
+	builds/win32/msvc7/lock_classic.vcproj,
+	builds/win32/msvc7/qli.vcproj, builds/win32/msvc7/remote.vcproj,
+	builds/win32/msvc7/remote_classic.vcproj,
+	builds/win32/msvc7/utilities.vcproj,
+	builds/win32/msvc7/utilities_classic.vcproj,
+	builds/win32/msvc7/wal.vcproj,
+	builds/win32/msvc7/wal_classic.vcproj,
+	builds/win32/msvc7/alice.vcproj,
+	builds/win32/msvc7/alice_classic.vcproj,
+	builds/win32/msvc7/burp.vcproj,
+	builds/win32/msvc7/burp_classic.vcproj,
+	builds/win32/msvc7/common.vcproj,
+	builds/win32/msvc7/common_classic.vcproj,
+	builds/win32/msvc7/dsql_server.vcproj,
+	builds/win32/msvc7/dsql_server_classic.vcproj,
+	builds/win32/msvc7/engine.vcproj,
+	src/include/removed_msvc_warnings.h:
+	
+	Warning control from autoconfig_msvc.h
+
+2003-02-17 14:28  brodsom
+
+	* firebird2/src/: include/gen/autoconfig_msvc.h,
+	common/fb_exception.cpp:
+	
+	Warning control from autoconfig_msvc.h
+
+2003-02-17 14:22  dimitr
+
+	* firebird2/builds/win32/msvc6/: alice.dsp, alice_classic.dsp,
+	burp.dsp, burp_classic.dsp, common.dsp, common_classic.dsp,
+	dsql_server.dsp, dsql_server_classic.dsp, engine.dsp,
+	engine_classic.dsp, fb_inet_server.dsp, fb_lock_print.dsp,
+	fbclient.dsp, fbembed.dsp, fbguard.dsp, fbserver.dsp, fbudf.dsp,
+	gbak.dsp, gdef.dsp, gds32.dsp, gfix.dsp, gpre.dsp, gpre_boot.dsp,
+	gsec.dsp, gstat.dsp, ib_udf.dsp, ib_util.dsp, instreg.dsp,
+	instsvc.dsp, intl.dsp, ipserver.dsp, isql.dsp, lock.dsp,
+	lock_classic.dsp, qli.dsp, remote.dsp, remote_classic.dsp,
+	utilities.dsp, utilities_classic.dsp, wal.dsp, wal_classic.dsp:
+	
+	/W4 -> /W3
+
+2003-02-17 11:38  brodsom
+
+	* firebird2/src/jrd/db_alias.cpp:
+	
+	Add firebird header
+
+2003-02-17 11:37  brodsom
+
+	* firebird2/src/intl/: cs_big5.c, cs_gb2312.c, cs_jis.c, cs_ksc.c,
+	cs_narrow.c, cs_unicode_fss.c, cs_unicode_ucs2.c, cv_big5.c,
+	cv_gb2312.c, cv_jis.c, cv_ksc.c, cv_narrow.c, lc_ascii.c,
+	lc_big5.c, lc_dos.c, lc_gb2312.c, lc_iso8859_1.c, lc_iso8859_2.c,
+	lc_jis.c, lc_ksc.c, lc_narrow.c, lc_unicode_ucs2.c:
+	
+	Add firebird header to intl
+
+2003-02-17 10:58  brodsom
+
+	* firebird2/src/v5_examples/example.h:
+	
+	Patch wrong previous commit
+
+2003-02-17 09:42  dimitr
+
+	* firebird2/src/intl/utils/maptest2.c:
+	
+	Cleanup.
+
+2003-02-17 09:41  eku
+
+	* firebird2/src/jrd/: cvt.cpp, enc.cpp, flu.cpp, fun.epp, gds.cpp,
+	par.cpp, plugin_manager.h, sort.cpp:
+	
+	Fixed a "search and replace" error from my previous check-in.
+
+2003-02-17 09:26  eku
+
+	* firebird2/builds/posix/: Makefile.in.jrd, make.shared.variables:
+	
+	Fixed POSIX build after removal of pipe/csv directories.
+
 2003-02-16 20:25  dimitr
 
 	* firebird2/src/install/misc/firebird.conf:
