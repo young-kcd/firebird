@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.9 2003-05-24 13:44:10 fsg Exp $
+//	$Id: pas.cpp,v 1.10 2003-06-01 17:02:22 fsg Exp $
 //
 
 #include "firebird.h"
@@ -883,8 +883,8 @@ static void gen_blob_close( ACT action, USHORT column)
 	else
 		blob = (BLB) action->act_object;
 
-	command = (action->act_type == ACT_blob_cancel) ? (TEXT*)"CANCEL" : 
-	                                                          (TEXT*)"CLOSE";
+	command = (action->act_type == ACT_blob_cancel) ? (TEXT*) "CANCEL" : 
+	                                                          (TEXT*) "CLOSE";
 	printa(column, "GDS__%s_BLOB (%s, gds__%d);",
 		   command, status_vector(action), blob->blb_ident);
 
@@ -1696,7 +1696,7 @@ static void gen_dyn_execute( ACT action, int column)
 
 	printa(column,
 		   (statement->dyn_sqlda2) ?
-		  (TEXT*) "isc_embed_dsql_execute2 (gds__status, %s, %s, %d, %s %s, %s %s);"
+		   (TEXT*) "isc_embed_dsql_execute2 (gds__status, %s, %s, %d, %s %s, %s %s);"
 		   : (TEXT*) "isc_embed_dsql_execute (gds__status, %s, %s, %d, %s %s);",
 		   transaction, make_name(s, statement->dyn_statement_name),
 		   sw_sql_dialect, REF_PAR,
@@ -4282,7 +4282,7 @@ static TEXT *request_trans( ACT action, GPRE_REQ request)
 
 	if (action->act_type == ACT_open) {
 		if (!(trname = ((OPN) action->act_object)->opn_trans))
-			trname =(TEXT*) "gds__trans";
+			trname = (TEXT*) "gds__trans";
 		return trname;
 	}
 	else
