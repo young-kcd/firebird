@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Data Definition Utility
- *	MODULE:		dyn_modify.e
+ *	MODULE:		dyn_mod.epp
  *	DESCRIPTION:	Dynamic data definition - DYN_modify_<x>
  *
  * The contents of this file are subject to the Interbase Public

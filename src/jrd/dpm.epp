@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		dpm.e
+ *	MODULE:		dpm.epp
  *	DESCRIPTION:	Data page manager
  *
  * The contents of this file are subject to the Interbase Public
