@@ -566,6 +566,23 @@ int INF_database_info(
 				}
 			continue;
 
+		case isc_info_active_transactions:
+			if (!transaction)
+				transaction = TRA_start(tdbb, 0, NULL);
+			for (id = transaction->tra_oldest_active;
+				 id < transaction->tra_number; id++)
+				if (TRA_snapshot_state(tdbb, transaction, id) == tra_active) {
+					length = INF_convert(id, buffer);
+					if (!
+						(info =
+						 INF_put_item(item, length, buffer, info, end))) {
+						if (transaction)
+							TRA_commit(tdbb, transaction, FALSE);
+						return FALSE;
+					}
+				}
+			continue;
+
 		case isc_info_user_names:
 			for (att = dbb->dbb_attachments; att; att = att->att_next) {
 				if (att->att_flags & ATT_shutdown)

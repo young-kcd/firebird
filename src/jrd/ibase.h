@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.27 2003-02-20 00:10:09 brodsom Exp $
+$Id: ibase.h,v 1.28 2003-02-22 21:54:10 skidder Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -1639,6 +1639,7 @@ enum db_info_types
 	isc_info_oldest_snapshot = 106,
 	isc_info_next_transaction = 107,
 	isc_info_db_provider = 108,
+	isc_info_active_transactions = 109,
 
 	isc_info_db_last_value   /* Leave this LAST! */
     };
