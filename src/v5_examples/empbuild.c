@@ -3,7 +3,7 @@
 /*********** Preprocessed module -- do not edit ***************/
 /*********** Preprocessed module -- do not edit ***************/
 /*********** Preprocessed module -- do not edit ***************/
-/***************** gpre version LI-T2.0.0.485 Firebird2 Dev1 **********************/
+/***************** gpre version WI-T1.5.0.3656 Firebird 1.5 Release Candidate 4 **********************/
 /*
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -58,41 +58,41 @@ static FILE	*Fp;
 #include <ibase.h>
 #endif
 
-static ISC_QUAD
+static const ISC_QUAD
    isc_blob_null = {0,0};	/* initializer for blobs */
-static long *gds__null = 0;	/* dummy status vector */
+static const long *gds__null = 0;	/* dummy status vector */
 isc_db_handle
    DB = 0;		/* database handle */
 
 isc_tr_handle
    gds__trans = 0;		/* default transaction handle */
-ISC_STATUS_ARRAY 
-   isc_status,	/* status vector */
-   isc_status2;	/* status vector */
+long
+   isc_status [20],	/* status vector */
+   isc_status2 [20];	/* status vector */
 long
    isc_array_length, 	/* array return size */
    SQLCODE;		/* SQL status code */
-static char
+static const char
    isc_tpb_6 [4] = {1,9,2,6};
 
-static char
+static const char
    isc_tpb_5 [4] = {1,9,2,6};
 
-static char
+static const char
    isc_tpb_4 [4] = {1,9,2,6};
 
-static char
+static const char
    isc_tpb_1 [4] = {1,9,2,6};
 
-static char
+static const char
    isc_tpb_0 [4] = {1,9,2,6};
 
 static isc_req_handle
    isc_9 = 0;		/* request handle */
 
-static short
+static const short
    isc_10l = 163;
-static char
+static const char
    isc_10 [] = {
    4,2,4,1,1,0,8,0,4,0,4,0,9,0,40,4,0,8,0,40,6,0,12,0,14,1,2,1,
    21,8,0,0,0,0,0,25,1,0,0,7,'C',1,'J',16,'P','R','O','J','_','D',
@@ -104,9 +104,9 @@ static char
    21,8,0,1,0,0,0,25,1,0,0,25,1,0,0,-1,-1,-1,'L'
    };	/* end of blr string for request isc_10 */
 
-static short
+static const short
    isc_18l = 51;
-static char
+static const char
    isc_18 [] = {
    1,6,1,8,0,2,16,'P','R','O','J','_','D','E','P','T','_','B','U',
    'D','G','E','T',4,14,'Q','U','A','R','T','_','H','E','A','D',
@@ -116,9 +116,9 @@ static char
 static isc_req_handle
    isc_20 = 0;		/* request handle */
 
-static short
+static const short
    isc_21l = 108;
-static char
+static const char
    isc_21 [] = {
    4,2,4,1,1,0,8,0,4,0,2,0,9,0,40,6,0,12,0,14,1,2,1,21,8,0,0,0,
    0,0,25,1,0,0,7,'C',1,'J',7,'P','R','O','J','E','C','T',0,'G',
@@ -132,9 +132,9 @@ static isc_stmt_handle
 static isc_req_handle
    isc_34 = 0;		/* request handle */
 
-static short
+static const short
    isc_35l = 154;
-static char
+static const char
    isc_35 [] = {
    4,2,4,1,1,0,8,0,4,0,4,0,40,16,0,9,0,7,0,40,6,0,12,0,14,1,2,1,
    21,8,0,0,0,0,0,25,1,0,0,7,'C',1,'J',3,'J','O','B',0,'G',58,47,
@@ -151,9 +151,9 @@ static isc_stmt_handle
 static isc_req_handle
    isc_50 = 0;		/* request handle */
 
-static short
+static const short
    isc_51l = 151;
-static char
+static const char
    isc_51 [] = {
    4,2,4,1,1,0,8,0,4,0,4,0,40,16,0,9,0,7,0,40,6,0,12,0,14,1,2,1,
    21,8,0,0,0,0,0,25,1,0,0,7,'C',1,'J',3,'J','O','B',0,'G',58,47,
@@ -165,9 +165,9 @@ static char
    
    };	/* end of blr string for request isc_51 */
 
-static short
+static const short
    isc_59l = 37;
-static char
+static const char
    isc_59 [] = {
    1,6,1,40,16,0,2,3,'J','O','B',4,12,'L','A','N','G','U','A','G',
    'E','_','R','E','Q',35,0,9,5,'$',1,8,0,1,7,0,-1
@@ -274,7 +274,7 @@ if (SQLCODE)
 
 /*EXEC SQL SET TRANSACTION;*/
 {
-isc_start_transaction (isc_status, (void**) &gds__trans, (short) 1, &DB, (short) 4, isc_tpb_0);
+isc_start_transaction (isc_status, (FRBRD**) &gds__trans, (short) 1, &DB, (short) 4, isc_tpb_0);
 SQLCODE = isc_sqlcode (isc_status);
 }
 
@@ -289,7 +289,7 @@ addqtr();
 
 exit (FINI_OK);
 }
-
+
 static int addlang (void)
 {
    struct {
@@ -318,12 +318,16 @@ int	i, job_grade, rec_cnt = 0;
 
 /*EXEC SQL SET TRANSACTION;*/
 {
-isc_start_transaction (isc_status, (void**) &gds__trans, (short) 1, &DB, (short) 4, isc_tpb_1);
+isc_start_transaction (isc_status, (FRBRD**) &gds__trans, (short) 1, &DB, (short) 4, isc_tpb_1);
 SQLCODE = isc_sqlcode (isc_status);
 }
 /*EXEC SQL WHENEVER SQLERROR GO TO Error;*/
 
 Fp = fopen ("lang.inp", "r");
+if (Fp == NULL){
+	printf ("lang.inp not found\n");
+	exit(FINI_ERROR);
+	}
 
 while (fgets (line, 100, Fp) != NULL)
     {
@@ -344,7 +348,7 @@ while (fgets (line, 100, Fp) != NULL)
 		job_country = :job_country;*/
     {
     if (!isc_50)
-       isc_compile_request2 (isc_status, (void**) &DB, (void**) &isc_50, (short) sizeof (isc_51), (char *) isc_51);
+       isc_compile_request2 (isc_status, (FRBRD**) &DB, (FRBRD**) &isc_50, (short) sizeof (isc_51), (char *) isc_51);
     isc_vtov ((char*)job_country, (char*)isc_52.isc_53, 16);
     isc_52.isc_54 = isc_blob_null;
     isc_put_slice (isc_status, &DB, &gds__trans, &isc_52.isc_54, (short) 37, (char *) isc_59, 0, (long*) 0, (long) 80, (void *)lang_array);
@@ -353,11 +357,11 @@ while (fgets (line, 100, Fp) != NULL)
     isc_52.isc_55 = job_grade;
     isc_vtov ((char*)job_code, (char*)isc_52.isc_56, 6);
     if (isc_50)
-       isc_start_and_send (isc_status, (void**) &isc_50, (void**) &gds__trans, (short) 0, (short) 32, &isc_52, (short) 0);
+       isc_start_and_send (isc_status, (FRBRD**) &isc_50, (FRBRD**) &gds__trans, (short) 0, (short) 32, &isc_52, (short) 0);
     SQLCODE = isc_sqlcode (isc_status);
     if (!SQLCODE) 
        {
-       isc_receive (isc_status, (void**) &isc_50, (short) 1, (short) 4, &isc_57, (short) 0);
+       isc_receive (isc_status, (FRBRD**) &isc_50, (short) 1, (short) 4, &isc_57, (short) 0);
        SQLCODE = isc_sqlcode (isc_status);
        if (!SQLCODE && !isc_57.isc_58)
 	  SQLCODE = 100;
@@ -376,7 +380,7 @@ while (fgets (line, 100, Fp) != NULL)
 
 /*EXEC SQL COMMIT;*/
 {
-isc_commit_transaction (isc_status, (void**) &gds__trans);
+isc_commit_transaction (isc_status, (FRBRD**) &gds__trans);
 SQLCODE = isc_sqlcode (isc_status);
 if (SQLCODE < 0) goto Error;
 }
@@ -387,11 +391,11 @@ return (0);
 		
 Error:
 
-printf ("SQLCODE=%d\n", SQLCODE);
+printf ("SQLCODE=%ld\n", SQLCODE);
 isc_print_status (gds__status);
 return (1);
 }
-
+
 static int addjob (void)
 {
    struct {
@@ -427,7 +431,7 @@ int		job_grade, rec_cnt = 0;
 
 /*EXEC SQL SET TRANSACTION;*/
 {
-isc_start_transaction (isc_status, (void**) &gds__trans, (short) 1, &DB, (short) 4, isc_tpb_4);
+isc_start_transaction (isc_status, (FRBRD**) &gds__trans, (short) 1, &DB, (short) 4, isc_tpb_4);
 SQLCODE = isc_sqlcode (isc_status);
 if (SQLCODE < 0) goto Error;
 }
@@ -438,6 +442,10 @@ if (SQLCODE < 0) goto Error;
 isc_45 = 0;
 
 Fp = fopen ("job.inp", "r");
+if (Fp == NULL){
+	printf ("job.inp not found\n");
+	exit(FINI_ERROR);
+	}
 
 while (fgets (line, 100, Fp) != NULL)
     {
@@ -499,17 +507,17 @@ while (fgets (line, 100, Fp) != NULL)
 		job_country = :job_country;*/
     {
     if (!isc_34)
-       isc_compile_request2 (isc_status, (void**) &DB, (void**) &isc_34, (short) sizeof (isc_35), (char *) isc_35);
+       isc_compile_request2 (isc_status, (FRBRD**) &DB, (FRBRD**) &isc_34, (short) sizeof (isc_35), (char *) isc_35);
     isc_vtov ((char*)job_country, (char*)isc_36.isc_37, 16);
     isc_36.isc_38 = job_blob;
     isc_36.isc_39 = job_grade;
     isc_vtov ((char*)job_code, (char*)isc_36.isc_40, 6);
     if (isc_34)
-       isc_start_and_send (isc_status, (void**) &isc_34, (void**) &gds__trans, (short) 0, (short) 32, &isc_36, (short) 0);
+       isc_start_and_send (isc_status, (FRBRD**) &isc_34, (FRBRD**) &gds__trans, (short) 0, (short) 32, &isc_36, (short) 0);
     SQLCODE = isc_sqlcode (isc_status);
     if (!SQLCODE) 
        {
-       isc_receive (isc_status, (void**) &isc_34, (short) 1, (short) 4, &isc_41, (short) 0);
+       isc_receive (isc_status, (FRBRD**) &isc_34, (short) 1, (short) 4, &isc_41, (short) 0);
        SQLCODE = isc_sqlcode (isc_status);
        if (!SQLCODE && !isc_41.isc_42)
 	  SQLCODE = 100;
@@ -528,7 +536,7 @@ while (fgets (line, 100, Fp) != NULL)
 
 /*EXEC SQL COMMIT;*/
 {
-isc_commit_transaction (isc_status, (void**) &gds__trans);
+isc_commit_transaction (isc_status, (FRBRD**) &gds__trans);
 SQLCODE = isc_sqlcode (isc_status);
 if (SQLCODE < 0) goto Error;
 }
@@ -539,12 +547,12 @@ return (0);
 	
 Error:
 
-printf ("SQLCODE=%d\n", SQLCODE);
+printf ("SQLCODE=%ld\n", SQLCODE);
 isc_print_status (gds__status);
 
 return (1);
 }
-
+
 static int addproj (void)
 {
    struct {
@@ -578,7 +586,7 @@ int		rec_cnt = 0;
 
 /*EXEC SQL SET TRANSACTION;*/
 {
-isc_start_transaction (isc_status, (void**) &gds__trans, (short) 1, &DB, (short) 4, isc_tpb_5);
+isc_start_transaction (isc_status, (FRBRD**) &gds__trans, (short) 1, &DB, (short) 4, isc_tpb_5);
 SQLCODE = isc_sqlcode (isc_status);
 if (SQLCODE < 0) goto Error;
 }
@@ -589,6 +597,10 @@ if (SQLCODE < 0) goto Error;
 isc_29 = 0;
 
 Fp = fopen ("proj.inp", "r");
+if (Fp == NULL){
+	printf ("proj.inp not found\n");
+	exit(FINI_ERROR);
+	}
 
 while (fgets (line, 100, Fp) != NULL)
     {
@@ -648,15 +660,15 @@ while (fgets (line, 100, Fp) != NULL)
 	    WHERE proj_id = :proj_id;*/
     {
     if (!isc_20)
-       isc_compile_request2 (isc_status, (void**) &DB, (void**) &isc_20, (short) sizeof (isc_21), (char *) isc_21);
+       isc_compile_request2 (isc_status, (FRBRD**) &DB, (FRBRD**) &isc_20, (short) sizeof (isc_21), (char *) isc_21);
     isc_22.isc_23 = proj_blob;
     isc_vtov ((char*)proj_id, (char*)isc_22.isc_24, 6);
     if (isc_20)
-       isc_start_and_send (isc_status, (void**) &isc_20, (void**) &gds__trans, (short) 0, (short) 14, &isc_22, (short) 0);
+       isc_start_and_send (isc_status, (FRBRD**) &isc_20, (FRBRD**) &gds__trans, (short) 0, (short) 14, &isc_22, (short) 0);
     SQLCODE = isc_sqlcode (isc_status);
     if (!SQLCODE) 
        {
-       isc_receive (isc_status, (void**) &isc_20, (short) 1, (short) 4, &isc_25, (short) 0);
+       isc_receive (isc_status, (FRBRD**) &isc_20, (short) 1, (short) 4, &isc_25, (short) 0);
        SQLCODE = isc_sqlcode (isc_status);
        if (!SQLCODE && !isc_25.isc_26)
 	  SQLCODE = 100;
@@ -674,7 +686,7 @@ while (fgets (line, 100, Fp) != NULL)
 
 /*EXEC SQL COMMIT;*/
 {
-isc_commit_transaction (isc_status, (void**) &gds__trans);
+isc_commit_transaction (isc_status, (FRBRD**) &gds__trans);
 SQLCODE = isc_sqlcode (isc_status);
 if (SQLCODE < 0) goto Error;
 }
@@ -685,12 +697,12 @@ return (0);
 		
 Error:
 
-printf ("SQLCODE=%d\n", SQLCODE);
+printf ("SQLCODE=%ld\n", SQLCODE);
 isc_print_status (gds__status);
 
 return (1);
 }
-
+
 static int addqtr (void)
 {
    struct {
@@ -720,13 +732,17 @@ int		rec_cnt = 0;
 
 /*EXEC SQL SET TRANSACTION;*/
 {
-isc_start_transaction (isc_status, (void**) &gds__trans, (short) 1, &DB, (short) 4, isc_tpb_6);
+isc_start_transaction (isc_status, (FRBRD**) &gds__trans, (short) 1, &DB, (short) 4, isc_tpb_6);
 SQLCODE = isc_sqlcode (isc_status);
 if (SQLCODE < 0) goto Error;
 }
 /*EXEC SQL WHENEVER SQLERROR GO TO Error;*/
 
 Fp = fopen ("qtr.inp", "r");
+if (Fp == NULL){
+	printf ("qtr.inp not found\n");
+	exit(FINI_ERROR);
+	}
 
 while (fgets (line, 100, Fp) != NULL)
     {
@@ -739,7 +755,7 @@ while (fgets (line, 100, Fp) != NULL)
 	    WHERE fiscal_year = :yr AND proj_id = :proj_id AND dept_no = :dept_no;*/
     {
     if (!isc_9)
-       isc_compile_request2 (isc_status, (void**) &DB, (void**) &isc_9, (short) sizeof (isc_10), (char *) isc_10);
+       isc_compile_request2 (isc_status, (FRBRD**) &DB, (FRBRD**) &isc_9, (short) sizeof (isc_10), (char *) isc_10);
     isc_11.isc_12 = isc_blob_null;
     isc_put_slice (isc_status, &DB, &gds__trans, &isc_11.isc_12, (short) 51, (char *) isc_18, 0, (long*) 0, (long) 16, (void *)hcnt);
     SQLCODE = isc_sqlcode (isc_status);
@@ -748,11 +764,11 @@ while (fgets (line, 100, Fp) != NULL)
     isc_11.isc_14 = yr;
     isc_vtov ((char*)proj_id, (char*)isc_11.isc_15, 6);
     if (isc_9)
-       isc_start_and_send (isc_status, (void**) &isc_9, (void**) &gds__trans, (short) 0, (short) 22, &isc_11, (short) 0);
+       isc_start_and_send (isc_status, (FRBRD**) &isc_9, (FRBRD**) &gds__trans, (short) 0, (short) 22, &isc_11, (short) 0);
     SQLCODE = isc_sqlcode (isc_status);
     if (!SQLCODE) 
        {
-       isc_receive (isc_status, (void**) &isc_9, (short) 1, (short) 4, &isc_16, (short) 0);
+       isc_receive (isc_status, (FRBRD**) &isc_9, (short) 1, (short) 4, &isc_16, (short) 0);
        SQLCODE = isc_sqlcode (isc_status);
        if (!SQLCODE && !isc_16.isc_17)
 	  SQLCODE = 100;
@@ -772,7 +788,7 @@ while (fgets (line, 100, Fp) != NULL)
 /*EXEC SQL COMMIT RELEASE;*/
 {
 if (gds__trans)
-    isc_commit_transaction (isc_status, (void**) &gds__trans);
+    isc_commit_transaction (isc_status, (FRBRD**) &gds__trans);
 if (DB)
    isc_detach_database (isc_status, &DB);
 SQLCODE = isc_sqlcode (isc_status);
@@ -785,7 +801,7 @@ return (0);
 		
 Error:
 
-printf ("SQLCODE=%d\n", SQLCODE);
+printf ("SQLCODE=%ld\n", SQLCODE);
 isc_print_status (gds__status);
 
 return (1);

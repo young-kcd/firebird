@@ -130,7 +130,7 @@ addqtr();
 
 exit (FINI_OK);
 }
-
+
 static int addlang (void)
 {
 /**************************************
@@ -152,6 +152,10 @@ EXEC SQL SET TRANSACTION;
 EXEC SQL WHENEVER SQLERROR GO TO Error;
 
 Fp = fopen ("lang.inp", "r");
+if (Fp == NULL){
+	printf ("lang.inp not found\n");
+	exit(FINI_ERROR);
+	}
 
 while (fgets (line, 100, Fp) != NULL)
     {
@@ -188,11 +192,11 @@ return (0);
 		
 Error:
 
-printf ("SQLCODE=%d\n", SQLCODE);
+printf ("SQLCODE=%ld\n", SQLCODE);
 isc_print_status (gds__status);
 return (1);
 }
-
+
 static int addjob (void)
 {
 /**************************************
@@ -218,6 +222,10 @@ EXEC SQL DECLARE be CURSOR FOR
     INSERT BLOB job_requirement INTO job;
 
 Fp = fopen ("job.inp", "r");
+if (Fp == NULL){
+	printf ("job.inp not found\n");
+	exit(FINI_ERROR);
+	}
 
 while (fgets (line, 100, Fp) != NULL)
     {
@@ -260,12 +268,12 @@ return (0);
 	
 Error:
 
-printf ("SQLCODE=%d\n", SQLCODE);
+printf ("SQLCODE=%ld\n", SQLCODE);
 isc_print_status (gds__status);
 
 return (1);
 }
-
+
 static int addproj (void)
 {
 /**************************************
@@ -291,6 +299,10 @@ EXEC SQL DECLARE bd CURSOR FOR
     INSERT BLOB proj_desc INTO project;
 
 Fp = fopen ("proj.inp", "r");
+if (Fp == NULL){
+	printf ("proj.inp not found\n");
+	exit(FINI_ERROR);
+	}
 
 while (fgets (line, 100, Fp) != NULL)
     {
@@ -330,12 +342,12 @@ return (0);
 		
 Error:
 
-printf ("SQLCODE=%d\n", SQLCODE);
+printf ("SQLCODE=%ld\n", SQLCODE);
 isc_print_status (gds__status);
 
 return (1);
 }
-
+
 static int addqtr (void)
 {
 /**************************************
@@ -358,6 +370,10 @@ EXEC SQL SET TRANSACTION;
 EXEC SQL WHENEVER SQLERROR GO TO Error;
 
 Fp = fopen ("qtr.inp", "r");
+if (Fp == NULL){
+	printf ("qtr.inp not found\n");
+	exit(FINI_ERROR);
+	}
 
 while (fgets (line, 100, Fp) != NULL)
     {
@@ -386,7 +402,7 @@ return (0);
 		
 Error:
 
-printf ("SQLCODE=%d\n", SQLCODE);
+printf ("SQLCODE=%ld\n", SQLCODE);
 isc_print_status (gds__status);
 
 return (1);
