@@ -1,3 +1,15 @@
+2003-01-04 18:18  skidder
+
+	* firebird2/src/jrd/why.cpp:
+	
+	Make engine compile on POSIX again
+
+2003-01-04 18:10  skidder
+
+	* firebird2/builds/posix/Makefile.in.firebird:
+	
+	Make engine compile on POSIX again
+
 2003-01-03 17:03  skidder
 
 	* firebird2/src/common/classes/: alloc.cpp, alloc.h,
