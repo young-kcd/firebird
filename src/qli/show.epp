@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
- *	MODULE:		show.e
+ *	MODULE:		show.epp
  *	DESCRIPTION:	Show environment commands
  *
  * The contents of this file are subject to the Interbase Public
@@ -41,21 +41,21 @@
 
 extern USHORT QLI_columns, QLI_name_columns;
 
-static void array_dimensions(DBB, TEXT *);
+static void array_dimensions(DBB, const TEXT *);
 static void display_acl(DBB, SLONG[2]);
-static void display_blob(DBB, SLONG[2], TEXT *, USHORT, UCHAR *, int);
+static void display_blob(DBB, SLONG[2], const TEXT *, USHORT, UCHAR *, bool);
 static void display_blr(DBB, SLONG[2]);
-static void display_text(DBB, SLONG[2], TEXT *, int);
+static void display_text(DBB, SLONG[2], const TEXT *, bool);
 static void display_procedure(DBB, UCHAR *, FRBRD *);
 static USHORT get_window_size(int);
-static void show_blob_info(SLONG *, SLONG *, USHORT, USHORT, DBB, TEXT *);
+static void show_blob_info(SLONG *, SLONG *, USHORT, USHORT, DBB, const TEXT *);
 static void show_blr(DBB, USHORT, SLONG *, USHORT, SLONG *);
 static void show_datatype(DBB, USHORT, USHORT, SSHORT, SSHORT, USHORT,
 						  USHORT);
 static void show_dbb(DBB);
 static void show_dbb_parameters(DBB);
-static int show_field_detail(DBB, TEXT *, TEXT *, SYN);
-static int show_field_instances(DBB, TEXT *);
+static int show_field_detail(DBB, const TEXT *, const TEXT *, SYN);
+static int show_field_instances(DBB, const TEXT *);
 static void show_fields(QLI_REL, QLI_FLD);
 static void show_filt(QFL);
 static int show_filter_detail(DBB, TEXT *);
@@ -66,31 +66,30 @@ static void show_func(QFN);
 static int show_func_detail(DBB, TEXT *);
 static void show_funcs(DBB);
 static int show_funcs_detail(DBB);
-static int show_insecure_fields(DBB, TEXT *, TEXT *);
+static int show_insecure_fields(DBB, const TEXT *, const TEXT *);
 static void show_forms_db(DBB);
 static void show_gbl_field(SYN);
-static int show_gbl_field_detail(DBB, TEXT *);
+static int show_gbl_field_detail(DBB, const TEXT *);
 static void show_gbl_fields(DBB);
 static int show_gbl_fields_detail(DBB);
 static int show_indices_detail(QLI_REL);
 static void show_matching(void);
-static void show_names(TEXT *, USHORT, TEXT *);
+static void show_names(const TEXT *, USHORT, TEXT *);
 static void show_proc(QPR);
 static void show_procs(DBB);
 static void show_rel(QLI_REL);
 static void show_rel_detail(QLI_REL);
 static void show_rels(DBB, enum show_t, SSHORT);
-static int show_security_class_detail(DBB, TEXT *);
-static int show_security_classes_detail(DBB);
+static USHORT show_security_class_detail(DBB, const TEXT *);
+static USHORT show_security_classes_detail(DBB);
 static void show_string(USHORT, TEXT *, USHORT, TEXT *);
 static void show_sys_trigs(DBB);
-static void show_text_blob(DBB, TEXT *, USHORT, SLONG *, USHORT, SLONG *,
-						   int);
+static void show_text_blob(DBB, const TEXT *, USHORT, SLONG *, USHORT, SLONG *, bool);
 static void show_trig(QLI_REL);
-static int show_trigger_detail(DBB, TEXT *);
-static void show_trigger_header(TEXT *, USHORT, USHORT, USHORT, SLONG *, DBB,
-								TEXT *);
-static void show_trigger_messages(DBB, TEXT *);
+static int show_trigger_detail(DBB, const TEXT *);
+static void show_trigger_header(TEXT *, USHORT, USHORT, USHORT, SLONG *,
+								DBB, const TEXT *);
+static void show_trigger_messages(DBB, const TEXT *);
 static void show_trigger_status(TEXT *, USHORT, USHORT, USHORT);
 static void show_trigs(DBB);
 static int show_triggers_detail(DBB);
@@ -100,7 +99,7 @@ static void show_versions(void);
 static void show_view(QLI_REL);
 static int show_views_detail(DBB);
 static int truncate_string(TEXT *);
-static void view_info(DBB, TEXT *, TEXT *, SSHORT, SSHORT);
+static void view_info(DBB, const TEXT *, const TEXT *, SSHORT, SSHORT);
 
 static const SCHAR db_items[] =
 	{ gds_info_page_size, isc_info_db_size_in_pages, gds_info_end };
@@ -111,7 +110,9 @@ gds_bpb_version1, gds_bpb_source_type, 1, 3,
 		gds_bpb_target_type, 1, 1}, blr_bpb[] = {
 gds_bpb_version1, gds_bpb_source_type, 1, 2, gds_bpb_target_type, 1, 1};
 
-#define NULL_BLOB(id)	(!id [0] && !id [1])
+// It's not the exact definition of blob_id, but since show_blob_info uses
+// pointers to SLONG's...
+inline bool isNullBlob(const SLONG* id)	{return !id [0] && !id [1];}
 
 DATABASE DB = EXTERN FILENAME "yachts.lnk";
 
@@ -128,6 +129,9 @@ DATABASE DB = EXTERN FILENAME "yachts.lnk";
 #define PRE_ERASE   5
 #define POST_ERASE  6
 
+const int buf_len = 256;
+typedef TEXT buf_type[buf_len];
+
 
 void SHOW_stuff( SYN node)
 {
@@ -141,21 +145,18 @@ void SHOW_stuff( SYN node)
  *	Show various stuffs.
  *
  **************************************/
-	SYN *ptr, value;
 	QLI_REL relation;
 	DBB dbb;
-	enum show_t sw;
-	USHORT i, count;
+	USHORT count;
 	NAM name;
-	TEXT buffer[256];
 	SSHORT width;
 
 	QLI_skip_line = TRUE;
-	ptr = node->syn_arg;
+	SYN *ptr = node->syn_arg;
 
-	for (i = 0; i < node->syn_count; i++) {
-		sw = (enum show_t) (int) * ptr++;
-		value = *ptr++;
+	for (USHORT i = 0; i < node->syn_count; i++) {
+		show_t sw = (enum show_t) (int) * ptr++;
+		SYN value = *ptr++;
 		if (sw != show_matching_language &&
 			sw != show_version &&
 			sw != show_variable && sw != show_variables && CMD_check_ready())
@@ -202,7 +203,8 @@ void SHOW_stuff( SYN node)
 
 		case show_relations:
 		case show_system_relations:
-			width = get_window_size(sizeof(buffer) - 1);
+			// No need to define a buffer here; we are interested in its length.
+			width = get_window_size(buf_len - 1);
 			if (dbb = (DBB) value)
 				show_rels(dbb, sw, width);
 			else
@@ -387,7 +389,7 @@ void SHOW_stuff( SYN node)
 }
 
 
-static void array_dimensions( DBB database, TEXT * field_name)
+static void array_dimensions( DBB database, const TEXT * field_name)
 {
 /**************************************
  *
@@ -399,13 +401,10 @@ static void array_dimensions( DBB database, TEXT * field_name)
  *	Display the dimensions of an array
  *
  **************************************/
-	TEXT s[128], *p;
-
 	MET_meta_transaction(database, FALSE);
 
+	TEXT s[128], *p = s;
 	s[0] = 0;
-
-	p = s;
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_dimensions])
 		D IN RDB$FIELD_DIMENSIONS WITH D.RDB$FIELD_NAME = field_name
@@ -440,15 +439,16 @@ static void display_acl( DBB dbb, SLONG blob_id[2])
  *
  **************************************/
 
-	display_blob(dbb, blob_id, "\t    ", sizeof(acl_bpb), const_cast<UCHAR*>(acl_bpb), TRUE);
+	display_blob(dbb, blob_id, "\t    ", sizeof(acl_bpb), const_cast<UCHAR*>(acl_bpb), true);
 }
 
 
 static void display_blob(
 						 DBB dbb,
 						 SLONG blob_id[2],
-						 TEXT * prefix,
-						 USHORT bpb_length, UCHAR * bpb, int strip_line)
+						 const TEXT * prefix,
+						 USHORT bpb_length, UCHAR * bpb,
+						 bool strip_line)
 {
 /**************************************
  *
@@ -460,13 +460,10 @@ static void display_blob(
  *	Display the contents of a security class
  *
  **************************************/
-	USHORT length, buffer_length;
-	TEXT buffer[256], *b;
-	FRBRD *blob;
+	buf_type buffer;
 	ISC_STATUS_ARRAY status_vector;
-	ISC_STATUS status;
 
-	blob = NULL;
+	FRBRD *blob = NULL;
 
 	if (gds__open_blob2(status_vector,
 						GDS_REF(dbb->dbb_handle),
@@ -477,16 +474,17 @@ static void display_blob(
 						(char*) GDS_VAL(bpb)))
 			ERRQ_database_error(dbb, status_vector);
 
+	const USHORT buffer_length = sizeof(buffer) - 1;
 	for (;;) {
-		buffer_length = sizeof(buffer) - 1;
-		status = gds__get_segment(status_vector,
+		USHORT length;
+		ISC_STATUS status = gds__get_segment(status_vector,
 								  GDS_REF(blob),
 								  GDS_REF(length), buffer_length, buffer);
 		if (status && status != gds_segment)
 			break;
 		buffer[length--] = 0;
 		if (strip_line) {
-			for (b = buffer + length; b >= buffer;) {
+			for (TEXT *b = buffer + length; b >= buffer;) {
 				if (*b == '\n' || *b == '\t' || *b == ' ')
 					*b-- = 0;
 				else
@@ -518,11 +516,11 @@ static void display_blr( DBB dbb, SLONG blob_id[2])
  *
  **************************************/
 
-	display_blob(dbb, blob_id, "\t    ", sizeof(blr_bpb), const_cast<UCHAR*>(blr_bpb), TRUE);
+	display_blob(dbb, blob_id, "\t    ", sizeof(blr_bpb), const_cast<UCHAR*>(blr_bpb), true);
 }
 
 
-static void display_text( DBB dbb, SLONG blob_id[2], TEXT * prefix, int strip)
+static void display_text( DBB dbb, SLONG blob_id[2], const TEXT * prefix, bool strip)
 {
 /**************************************
  *
@@ -579,9 +577,7 @@ static USHORT get_window_size( int max_width)
  *	Get the display window size.
  *
  **************************************/
-	SSHORT result;
-
-	result = QLI_columns;
+	SSHORT result = QLI_columns;
 
 	if (max_width < result)
 		result = max_width;
@@ -593,7 +589,8 @@ static void show_blob_info(
 						   SLONG * blob_blr,
 						   SLONG * blob_src,
 						   USHORT msg_blr,
-						   USHORT msg_src, DBB database, TEXT * relation_name)
+						   USHORT msg_src, DBB database,
+						   const TEXT * relation_name)
 {
 /*****************************************************
  *
@@ -606,13 +603,13 @@ static void show_blob_info(
  *
  *****************************************************/
 
-	if (NULL_BLOB(blob_src)) {
+	if (isNullBlob(blob_src)) {
 		ERRQ_msg_put(msg_blr, NULL, NULL, NULL, NULL, NULL);
 		display_blr(database, blob_blr);
 	}
 	else {
 		ERRQ_msg_put(msg_src, relation_name, NULL, NULL, NULL, NULL);
-		show_text_blob(database, "\t", 0, blob_src, 0, (SLONG*) NULL_PTR, TRUE);
+		show_text_blob(database, "\t", 0, blob_src, 0, NULL, true);
 	}
 }
 
@@ -636,8 +633,8 @@ static void show_blr(
  **************************************/
 
 	if (source[0] || source[1])
-		show_text_blob(database, "\t", source_msg, source, 0, (SLONG*) NULL_PTR,
-					   FALSE);
+		show_text_blob(database, "\t", source_msg, source, 0, NULL,
+					   false);
 	else if (blr[0] || blr[1]) {
 		if (blr_msg)
 			ERRQ_msg_put(blr_msg, NULL, NULL, NULL, NULL, NULL);
@@ -652,7 +649,8 @@ static void show_datatype(
 						  USHORT length,
 						  SSHORT scale,
 						  SSHORT sub_type,
-USHORT segment_length, USHORT dimensions)
+						  USHORT segment_length,
+						  USHORT dimensions)
 {
 /**************************************
  *
@@ -664,10 +662,9 @@ USHORT segment_length, USHORT dimensions)
  *	Display datatype information.
  *
  **************************************/
-	SSHORT msg;
-	TEXT *p, *q, subtype[32];
-
-	msg = 0;
+ 	TEXT subtype[32];
+ 	SSHORT msg = 0;
+ 	
 	switch (dtype) {
 	case dtype_text:
 		msg = 97;
@@ -708,16 +705,17 @@ USHORT segment_length, USHORT dimensions)
 			ERRQ_msg_partial(106, (TEXT *) (ULONG) segment_length, NULL, NULL,
 							 NULL, NULL);	/* Msg106 , segment length %d */
 		if (sub_type) {
+			// Only the number in case there's no text name for the type.
 			sprintf(subtype, "%d", sub_type);
 			if (database && (database->dbb_capabilities & DBB_cap_types))
 			FOR(REQUEST_HANDLE database->dbb_requests[REQ_fld_subtype])
-				TYPE IN RDB$TYPES WITH TYPE.
-					RDB$FIELD_NAME EQ "RDB$FIELD_SUB_TYPE" AND TYPE.
-					RDB$TYPE EQ sub_type 
+				TYPE IN RDB$TYPES WITH TYPE.RDB$FIELD_NAME EQ "RDB$FIELD_SUB_TYPE"
+				AND TYPE.RDB$TYPE EQ sub_type
 
-                for (p = subtype, q =  TYPE.RDB$TYPE_NAME; *q && *q != ' ';)
+				TEXT *p = subtype;
+				for (const TEXT *q = TYPE.RDB$TYPE_NAME; *q && *q != ' ';)
 					*p++ = *q++;
-                *p = 0;
+				*p = 0;
 			END_FOR;
 			ERRQ_msg_partial(107, subtype, NULL, NULL, NULL, NULL);
 		}
@@ -753,12 +751,15 @@ USHORT segment_length, USHORT dimensions)
 			ERRQ_msg_partial(111, (TEXT *) (SLONG) scale, NULL, NULL, NULL, NULL);	/* Msg111 , scale %d */
 
 	if (dtype == dtype_text ||
-		dtype == dtype_varying || dtype == dtype_cstring) if (sub_type == 1)
+		dtype == dtype_varying || dtype == dtype_cstring)
+	{
+		if (sub_type == 1)
 			ERRQ_msg_partial(112, NULL, NULL, NULL, NULL, NULL);	/* Msg112 , subtype fixed */
 		else if (sub_type != 0) {
 			sprintf(subtype, "%d", sub_type);
 			ERRQ_msg_partial(107, subtype, NULL, NULL, NULL, NULL);
-		};
+		}
+	}
 }
 
 
@@ -802,9 +803,7 @@ static void show_dbb_parameters( DBB database)
  *	Print stuff about a database.
  *
  **************************************/
-	UCHAR *d, buffer[127], item;
-	int length;
-	SLONG allocation, page_size;
+	UCHAR buffer[127];
 	ISC_STATUS_ARRAY status_vector;
 
 	if (!database)
@@ -818,11 +817,11 @@ static void show_dbb_parameters( DBB database)
 						   (char*) buffer))
 			ERRQ_database_error(database, status_vector);
 
-	page_size = allocation = 0;
+	SLONG page_size = 0, allocation = 0;
 
-	for (d = buffer; *d != gds_info_end;) {
-		item = *d++;
-		length = gds__vax_integer(d, 2);
+	for (UCHAR *d = buffer; *d != gds_info_end;) {
+		UCHAR item = *d++;
+		int length = gds__vax_integer(d, 2);
 		d += 2;
 		switch (item) {
 		case (isc_info_db_size_in_pages):
@@ -849,14 +848,14 @@ static void show_dbb_parameters( DBB database)
 			D IN RDB$DATABASE
 				show_string(260, D.RDB$SECURITY_CLASS, 0, (TEXT*) NULL_PTR);
 			show_text_blob(database, "\t", 261, (SLONG*) &D.RDB$DESCRIPTION, 0,
-						   (SLONG*) NULL_PTR, FALSE);
+						   NULL, false);
 		END_FOR;
 	}
 	else {
 		FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_dbb])
 			D IN RDB$DATABASE
             show_text_blob(database, "\t", 262, (SLONG*) &D.RDB$DESCRIPTION, 0,
-							   (SLONG*) NULL_PTR, FALSE);
+							   NULL, false);
 		END_FOR;
 	}
 
@@ -892,8 +891,9 @@ static void show_dbb_parameters( DBB database)
 
 static int show_field_detail(
 							 DBB database,
-							 TEXT * relation_name,
-							 TEXT * field_name, SYN idx_node)
+							 const TEXT * relation_name,
+							 const TEXT * field_name,
+							 SYN idx_node)
 {
 /**************************************
  *
@@ -957,7 +957,7 @@ static int show_field_detail(
 		}
 
 		show_text_blob(database, "\t", 266, (SLONG*) &RFR.RDB$DESCRIPTION, 339,
-					   (SLONG*) &F.RDB$DESCRIPTION, FALSE);
+					   (SLONG*) &F.RDB$DESCRIPTION, false);
 		ERRQ_msg_put(267, NULL, NULL, NULL, NULL, NULL);	/* Msg267 Datatype information: */
 		ib_printf("\t");
 
@@ -975,14 +975,14 @@ static int show_field_detail(
 		show_string(271, RFR.RDB$QUERY_NAME, 271, F.RDB$QUERY_NAME);
 		show_string(273, RFR.RDB$EDIT_STRING, 273, F.RDB$EDIT_STRING);
 		show_text_blob(database, "\t", 275, (SLONG*) &RFR.RDB$QUERY_HEADER, 275,
-					   (SLONG*) &F.RDB$QUERY_HEADER, FALSE);
+					   (SLONG*) &F.RDB$QUERY_HEADER, false);
 	END_FOR;
 
 	return count;
 }
 
 
-static int show_field_instances( DBB database, TEXT * field_name)
+static int show_field_instances( DBB database, const TEXT * field_name)
 {
 /**************************************
  *
@@ -1029,9 +1029,8 @@ static void show_fields( QLI_REL relation, QLI_FLD fields)
  *
  **************************************/
 	DBB database;
-	QLI_FLD field;
 	SYM symbol;
-	USHORT max_name, l;
+	USHORT l;
 
 /* Find the long field name (including query name) */
 
@@ -1045,7 +1044,8 @@ static void show_fields( QLI_REL relation, QLI_FLD fields)
 	else
 		database = NULL;
 
-	max_name = 0;
+	USHORT max_name = 0;
+	QLI_FLD field;
 
 	for (field = fields; field; field = field->fld_next) {
 		l = field->fld_name->sym_length;
@@ -1076,7 +1076,7 @@ static void show_fields( QLI_REL relation, QLI_FLD fields)
 					   dtype_varying) ? field->fld_length -
 					  2 : field->fld_length, field->fld_scale,
 					  field->fld_sub_type, field->fld_segment_length,
-					  (field->fld_flags & FLD_array) ? TRUE : FALSE);
+					  (field->fld_flags & FLD_array) ? 1 : 0);
 		if (database && field->fld_flags & FLD_array)
 			array_dimensions(database, field->fld_name->sym_string);
 		if (field->fld_flags & FLD_computed)
@@ -1101,12 +1101,10 @@ static void show_filt( QFL filter)
  *	with that name.
  *
  **************************************/
-	int count, any_supported;
 	DBB database;
-	NAM name;
 
-	count = 0;
-	name = filter->qfl_name;
+	int count = 0;
+	NAM name = filter->qfl_name;
 
 	if (database = filter->qfl_database) {
 		if (!(database->dbb_capabilities & DBB_cap_filters)) {
@@ -1122,12 +1120,10 @@ static void show_filt( QFL filter)
 						 database->dbb_symbol->sym_string, NULL, NULL, NULL);
 	}
 	else {
-		any_supported = 0;
-		for (database = QLI_databases; database;
-			 database =
-			 database->dbb_next) if (database->
-									 dbb_capabilities & DBB_cap_filters) {
-				any_supported++;
+		bool any_supported = false;
+		for (database = QLI_databases; database; database = database->dbb_next)
+			if (database->dbb_capabilities & DBB_cap_filters) {
+				any_supported = true;
 				count += show_filter_detail(database, name->nam_string);
 			}
 		if (!count) {
@@ -1157,10 +1153,9 @@ static int show_filter_detail( DBB database, TEXT * filter_name)
  *	output sub-types, and description.
  *
  **************************************/
-	int count;
-
 	MET_meta_transaction(database, FALSE);
-	count = 0;
+	
+	int count = 0;
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_filter_detail])
 		F IN RDB$FILTERS WITH F.RDB$FUNCTION_NAME = filter_name 
@@ -1174,8 +1169,8 @@ static int show_filter_detail( DBB database, TEXT * filter_name)
 		ERRQ_msg_put(445, F.RDB$MODULE_NAME, NULL, NULL, NULL, NULL);	/* Msg445 Filter library is %s */
 		ERRQ_msg_put(446, (TEXT *)(SLONG) F.RDB$INPUT_SUB_TYPE, NULL, NULL, NULL, NULL);	/* Msg446 Input sub-type is %d */
 		ERRQ_msg_put(447, (TEXT *)(SLONG) F.RDB$OUTPUT_SUB_TYPE, NULL, NULL, NULL, NULL);	/* Msg447 Output sub-type is %d */
-		show_text_blob(database, "\t", 448, (SLONG*) &F.RDB$DESCRIPTION, 0, (SLONG*) NULL_PTR,
-					   FALSE);
+		show_text_blob(database, "\t", 448, (SLONG*) &F.RDB$DESCRIPTION, 0, NULL,
+					   false);
 	END_FOR;
 	return count;
 }
@@ -1215,15 +1210,13 @@ static int show_filters_detail( DBB database)
  *	Show filter names in a database.
  *
  **************************************/
-	SSHORT width;
-	TEXT buffer[256];
-	int count;
-
-	count = 0;
-	width = get_window_size(sizeof(buffer) - 1);
+	buf_type buffer;
+	SSHORT width = get_window_size(sizeof(buffer) - 1);
 	buffer[0] = 0;
+	
 	MET_meta_transaction(database, FALSE);
 
+	int count = 0;
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_filters]) F IN RDB$FILTERS
 		SORTED BY F.RDB$FUNCTION_NAME 
 
@@ -1258,52 +1251,49 @@ static void show_fld( SYN field_node)
  *	got and let somebody else  do all the work.
  *
  **************************************/
-	DBB database;
-	NAM field_name, relation_name;
-	SYN *ptr;
-	SYM symbol;
-	TEXT *string, s[65];
-	int count;
-	SYN idx_node;
-
-	count = 0;
-	database = NULL;
-	field_name = NULL;
-	relation_name = NULL;
-	idx_node = NULL;
+	SYN idx_node = NULL;
 
 	if (field_node->syn_type == nod_index) {
 		idx_node = field_node;
 		field_node = idx_node->syn_arg[s_idx_field];
 	}
 
-	for (ptr = field_node->syn_arg + field_node->syn_count;
-		 --ptr >= field_node->syn_arg;) {
+	DBB database = NULL;
+	NAM field_name = NULL;
+	NAM relation_name = NULL;
+	for (SYN *ptr = field_node->syn_arg + field_node->syn_count;
+		 --ptr >= field_node->syn_arg;)
+	{
 		if (!field_name)
 			field_name = (NAM) * ptr;
 		else if (!relation_name)
 			relation_name = (NAM) * ptr;
 		else
-			for (symbol = ((NAM) * ptr)->nam_symbol; symbol;
+			for (SYM symbol = ((NAM) * ptr)->nam_symbol; symbol;
 				 symbol = symbol->sym_homonym)
-					if (symbol->sym_type = SYM_database) {
+			{
+				if (symbol->sym_type = SYM_database) {
 					database = (DBB) symbol->sym_object;
 					break;
 				}
+			}
 	}
 
-	string = (relation_name) ? relation_name->nam_string : NULL;
+	TEXT *string = (relation_name) ? relation_name->nam_string : NULL;
+	TEXT s[65];
 
 	if (string)
 		sprintf(s, "%s.%s", string, field_name->nam_string);
 	else
 		sprintf(s, "%s", field_name->nam_string);
 
+	int count = 0;
 	if (database) {
 		count += show_field_detail(database, string,
 								   field_name->nam_string, (SYN) NULL_PTR);
 		if (!count)
-			ERRQ_msg_put(117, s, database->dbb_symbol->sym_string, NULL, NULL, NULL);	/* Msg117 Field %s does not exist in database %s */
+			ERRQ_msg_put(117, s, database->dbb_symbol->sym_string, NULL, NULL, NULL);
+			// Msg117 Field %s does not exist in database %s
 	}
 	else {
 		for (database = QLI_databases; database;
@@ -1311,7 +1301,8 @@ static void show_fld( SYN field_node)
 				show_field_detail(database, string, field_name->nam_string,
 								  idx_node);
 		if (!count)
-			ERRQ_msg_put(118, s, NULL, NULL, NULL, NULL);	/* Msg118 Field %s does not exist in any open database */
+			ERRQ_msg_put(118, s, NULL, NULL, NULL, NULL);
+			// Msg118 Field %s does not exist in any open database
 	}
 }
 
@@ -1330,12 +1321,10 @@ static void show_func( QFN func)
  *	with that name.
  *
  **************************************/
-	int count, any_supported;
 	DBB database;
-	NAM name;
 
-	count = 0;
-	name = func->qfn_name;
+	int count = 0;
+	NAM name = func->qfn_name;
 
 	if (database = func->qfn_database) {
 		if (!(database->dbb_capabilities & DBB_cap_functions)) {
@@ -1351,12 +1340,10 @@ static void show_func( QFN func)
 						 database->dbb_symbol->sym_string, NULL, NULL, NULL);
 	}
 	else {
-		any_supported = 0;
-		for (database = QLI_databases; database;
-			 database =
-			 database->dbb_next) if (database->
-									 dbb_capabilities & DBB_cap_functions) {
-				any_supported++;
+		bool any_supported = false;
+		for (database = QLI_databases; database; database = database->dbb_next)
+		    if (database->dbb_capabilities & DBB_cap_functions) {
+				any_supported = true;
 				count += show_func_detail(database, name->nam_string);
 			}
 		if (!count) {
@@ -1387,11 +1374,8 @@ static int show_func_detail( DBB database, TEXT * func_name)
  *	description.
  *
  **************************************/
-	int count;
-	USHORT array;
-
 	MET_meta_transaction(database, FALSE);
-	count = 0;
+	int count = 0;
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_func_detail])
 		F IN RDB$FUNCTIONS WITH
@@ -1423,15 +1407,15 @@ static int show_func_detail( DBB database, TEXT * func_name)
 								 (TEXT *) (SLONG) FA.RDB$ARGUMENT_POSITION,
 								 NULL, NULL, NULL, NULL);	/* Msg428 Argument %d is */
 
-			array = (FA.RDB$MECHANISM == 2);
+			USHORT array = (FA.RDB$MECHANISM == 2); // funct below wants USHORT
 			show_datatype(database, MET_get_datatype(FA.RDB$FIELD_TYPE),
 						  FA.RDB$FIELD_LENGTH, FA.RDB$FIELD_SCALE,
 						  FA.RDB$FIELD_SUB_TYPE, 0, array);
 			ib_printf("\n");
 		END_FOR;
 
-		show_text_blob(database, "\t", 421, (SLONG*) &F.RDB$DESCRIPTION, 0, (SLONG*) NULL_PTR,
-					   FALSE);
+		show_text_blob(database, "\t", 421, (SLONG*) &F.RDB$DESCRIPTION, 0, NULL,
+					   false);
 
 	END_FOR;
 	return count;
@@ -1475,14 +1459,13 @@ static int show_funcs_detail( DBB database)
  *	Show function names in a database.
  *
  **************************************/
-	SSHORT width;
-	TEXT buffer[256];
-	int count = 0;
-
-	width = get_window_size(sizeof(buffer) - 1);
+	buf_type buffer;
+	SSHORT width = get_window_size(sizeof(buffer) - 1);
 	buffer[0] = 0;
+
 	MET_meta_transaction(database, FALSE);
 
+	int count = 0;
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_functions]) F IN RDB$FUNCTIONS
 		SORTED BY F.RDB$FUNCTION_NAME 
         if (!count++)
@@ -1501,7 +1484,8 @@ static int show_funcs_detail( DBB database)
 
 static int show_insecure_fields(
 								DBB database,
-								TEXT * relation_name, TEXT * field_name)
+								const TEXT * relation_name,
+								const TEXT * field_name)
 {
 /**************************************
  *
@@ -1551,7 +1535,7 @@ static int show_insecure_fields(
 		}
 
 		show_text_blob(database, "\t", 339, (SLONG*) &RFR.RDB$DESCRIPTION, 339,
-					   (SLONG*) &F.RDB$DESCRIPTION, FALSE);
+					   (SLONG*) &F.RDB$DESCRIPTION, false);
 		ERRQ_msg_partial(340, NULL, NULL, NULL, NULL, NULL);	/* Msg340 Datatype information: */
 		ib_printf("\t");
 		show_datatype(database, MET_get_datatype(F.RDB$FIELD_TYPE),
@@ -1566,7 +1550,7 @@ static int show_insecure_fields(
 		show_string(343, RFR.RDB$QUERY_NAME, 343, F.RDB$QUERY_NAME);
 		show_string(346, RFR.RDB$EDIT_STRING, 346, F.RDB$EDIT_STRING);
 		show_text_blob(database, "\t", 345, (SLONG*) &RFR.RDB$QUERY_HEADER, 345,
-					   (SLONG*) &F.RDB$QUERY_HEADER, FALSE);
+					   (SLONG*) &F.RDB$QUERY_HEADER, false);
 	END_FOR;
 
 	return count;
@@ -1608,22 +1592,16 @@ static void show_gbl_field( SYN field_node)
  *	otherwise show them all.
  *
  **************************************/
-	DBB database;
-	SYN *ptr;
-	NAM field_name, name;
+	NAM field_name = NULL, name;
 	SYM symbol;
-	int count;
+	DBB database = NULL;
 
-	count = 0;
-	field_name = NULL;
-	database = NULL;
-
-	for (ptr = field_node->syn_arg + field_node->syn_count - 1;
+	for (SYN *ptr = field_node->syn_arg + field_node->syn_count - 1;
 		 ptr >= field_node->syn_arg; ptr--) {
 		if (!field_name)
 			field_name = (NAM) * ptr;
 		else
-			for (name = (NAM) * ptr, symbol = name->nam_symbol;
+			for (name = (NAM) *ptr, symbol = name->nam_symbol;
 				 symbol; symbol = symbol->sym_homonym)
 				if (symbol->sym_type = SYM_database) {
 					database = (DBB) symbol->sym_object;
@@ -1631,6 +1609,7 @@ static void show_gbl_field( SYN field_node)
 				}
 	}
 
+	int count = 0;
 	if (database) {
 		count += show_gbl_field_detail(database, field_name->nam_string);
 		if (!count)
@@ -1639,9 +1618,8 @@ static void show_gbl_field( SYN field_node)
 						 database->dbb_symbol->sym_string, NULL, NULL, NULL);
 	}
 	else {
-		for (database = QLI_databases; database;
-			 database = database->dbb_next) count +=
-				show_gbl_field_detail(database, field_name->nam_string);
+		for (database = QLI_databases; database; database = database->dbb_next)
+			count += show_gbl_field_detail(database, field_name->nam_string);
 		if (!count)
 			ERRQ_msg_put(123, field_name->nam_string, NULL, NULL, NULL, NULL);	/* Msg123 Global field %s does not exist in any open database */
 	}
@@ -1649,7 +1627,7 @@ static void show_gbl_field( SYN field_node)
 }
 
 
-static int show_gbl_field_detail( DBB database, TEXT * field_name)
+static int show_gbl_field_detail( DBB database, const TEXT * field_name)
 {
 /**************************************
  *
@@ -1677,8 +1655,8 @@ static int show_gbl_field_detail( DBB database, TEXT * field_name)
 		ERRQ_msg_put(276, F.RDB$FIELD_NAME, database->dbb_symbol->sym_string,
 					 NULL, NULL, NULL);	/* Msg276 Global field %s in database %s */
 
-		show_text_blob(database, "\t", 277, (SLONG*) &F.RDB$DESCRIPTION, 0, (SLONG*) NULL_PTR,
-					   FALSE);
+		show_text_blob(database, "\t", 277, (SLONG*) &F.RDB$DESCRIPTION, 0, NULL,
+					   false);
 		ERRQ_msg_put(278, NULL, NULL, NULL, NULL, NULL);	/* Msg278 Datatype information: */
 		ib_printf("\t");
 		show_datatype(database, MET_get_datatype(F.RDB$FIELD_TYPE),
@@ -1692,8 +1670,8 @@ static int show_gbl_field_detail( DBB database, TEXT * field_name)
 				 (SLONG*) &F.RDB$VALIDATION_BLR);
 		show_string(281, F.RDB$QUERY_NAME, 0, (TEXT*) NULL_PTR);
 		show_string(282, F.RDB$EDIT_STRING, 0, (TEXT*) NULL_PTR);
-		show_text_blob(database, "\t", 283, (SLONG*) &F.RDB$QUERY_HEADER, 0, (SLONG*) NULL_PTR,
-					   FALSE);
+		show_text_blob(database, "\t", 283, (SLONG*) &F.RDB$QUERY_HEADER, 0, NULL,
+					   false);
 	END_FOR;
 
 	if (count && !(show_field_instances(database, field_name)))
@@ -1720,9 +1698,7 @@ static void show_gbl_fields( DBB database)
  *	otherwise show them all.
  *
  **************************************/
-	int count;
-
-	count = 0;
+	int count = 0;
 	if (database) {
 		count += show_gbl_fields_detail(database);
 		if (!count)
@@ -1772,8 +1748,8 @@ static int show_gbl_fields_detail( DBB database)
 					  F.RDB$FIELD_LENGTH, F.RDB$FIELD_SCALE,
 					  F.RDB$FIELD_SUB_TYPE, F.RDB$SEGMENT_LENGTH,
 					  MET_dimensions(database, F.RDB$FIELD_NAME));
-		show_text_blob(database, "\t", 262, (SLONG*) &F.RDB$DESCRIPTION, 0, (SLONG*) NULL_PTR,
-					   FALSE);
+		show_text_blob(database, "\t", 262, (SLONG*) &F.RDB$DESCRIPTION, 0, NULL,
+					   false);
 		ib_printf("\n");
 	END_FOR;
 
@@ -1793,12 +1769,9 @@ static int show_indices_detail( QLI_REL relation)
  *	Show indices for a relation.  If none, return 0.
  *
  **************************************/
-	USHORT count, type;
-	TEXT *p;
-	DBB database;
-
-	type = count = 0;
-	database = relation->rel_database;
+	USHORT count = 0;
+	
+	DBB database = relation->rel_database;
 	MET_meta_transaction(database, FALSE);
 
 	if (database->dbb_capabilities & DBB_cap_idx_inactive) {
@@ -1806,17 +1779,22 @@ static int show_indices_detail( QLI_REL relation)
 			X IN RDB$INDICES CROSS Z IN RDB$RELATIONS
 				WITH X.RDB$RELATION_NAME EQ relation->rel_symbol->sym_string
 				AND Z.RDB$RELATION_NAME EQ X.RDB$RELATION_NAME
-				AND Z.RDB$VIEW_BLR MISSING SORTED BY X.RDB$INDEX_NAME++ count;
-        if (database->dbb_capabilities & DBB_cap_index_type)
-			FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_index_type])
-				Y IN RDB$INDICES WITH Y.RDB$INDEX_NAME = X.RDB$INDEX_NAME
+				AND Z.RDB$VIEW_BLR MISSING SORTED BY X.RDB$INDEX_NAME
+			++count;
+			USHORT type = 0; // this wasn't reset for each index!
+			if (database->dbb_capabilities & DBB_cap_index_type)
+			{
+				FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_index_type])
+					Y IN RDB$INDICES WITH Y.RDB$INDEX_NAME = X.RDB$INDEX_NAME
 
-                type = Y.RDB$INDEX_TYPE;
-			END_FOR;
+					type = Y.RDB$INDEX_TYPE;
+				END_FOR;
+			}
 
-			for (p = X.RDB$INDEX_NAME; *p && *p != ' '; p++);
-			*p = 0;
-
+			// Index name can have spaces, we need something like MET_exact_name()
+			// to replace the custom loops that get rid of trailing spaces.
+			// I found truncate_string().
+			truncate_string(X.RDB$INDEX_NAME);
 			ERRQ_msg_put(450, X.RDB$INDEX_NAME,
 						 (X.RDB$UNIQUE_FLAG) ? (char*) " (unique)" : (char*) "",
 						 (type == 1) ? (char*) " (descending)" : (char*) "",
@@ -1827,13 +1805,13 @@ static int show_indices_detail( QLI_REL relation)
 					Y.RDB$INDEX_NAME EQ X.RDB$INDEX_NAME
 					SORTED BY Y.RDB$FIELD_POSITION
 
-                for (p = Y.RDB$FIELD_NAME; *p && *p != ' '; p++);
+				truncate_string(Y.RDB$FIELD_NAME);
 				ib_printf("            %s\n", Y.RDB$FIELD_NAME);
 			END_FOR;
 
 #ifdef PC_ENGINE
 /***	if (!X.RDB$EXPRESSION_SOURCE.NULL)
-	    show_text_blob (database, "\t    ", 0, &X.RDB$EXPRESSION_SOURCE, 0, (SLONG*) NULL_PTR, TRUE);
+	    show_text_blob (database, "\t    ", 0, &X.RDB$EXPRESSION_SOURCE, 0, NULL, true);
 	else if (!X.RDB$EXPRESSION_BLR.NULL)
 	    {
 	    ERRQ_msg_put (485, NULL, NULL, NULL, NULL, NULL);
@@ -1849,16 +1827,15 @@ static int show_indices_detail( QLI_REL relation)
 				AND Z.RDB$RELATION_NAME EQ X.RDB$RELATION_NAME
 				AND Z.RDB$VIEW_BLR MISSING SORTED BY X.RDB$INDEX_NAME
 
-            ++count;
-            for (p = X.RDB$INDEX_NAME; *p && *p != ' '; p++);
-			*p = 0;
+			++count;
+			truncate_string(X.RDB$INDEX_NAME);
 			ERRQ_msg_put(290, X.RDB$INDEX_NAME,
 						 (X.RDB$UNIQUE_FLAG) ? (char*) " (unique)" : (char*) "", NULL, NULL, NULL);	/* Msg290 Index %s%s */
 			FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_index])
 				Y IN RDB$INDEX_SEGMENTS WITH
 					Y.RDB$INDEX_NAME EQ X.RDB$INDEX_NAME
 					SORTED BY Y.RDB$FIELD_POSITION
-                for (p = Y.RDB$FIELD_NAME; *p && *p != ' '; p++);
+				truncate_string(Y.RDB$FIELD_NAME);
 				ib_printf("            %s\n", Y.RDB$FIELD_NAME);
 			END_FOR;
 		END_FOR;
@@ -1880,7 +1857,7 @@ static void show_matching(void)
  *	Just print the QLI matching language string.
  *
  **************************************/
-	TEXT buffer[256];
+	buf_type buffer;
 
 	if (QLI_abort)
 		return;
@@ -1893,7 +1870,7 @@ static void show_matching(void)
 }
 
 
-static void show_names( TEXT * name, USHORT width, TEXT * buffer)
+static void show_names( const TEXT * name, USHORT width, TEXT * buffer)
 {
 /**************************************
  *
@@ -1905,12 +1882,10 @@ static void show_names( TEXT * name, USHORT width, TEXT * buffer)
  *
  **************************************/
 	BASED ON QLI$PROCEDURES.QLI$PROCEDURE_NAME padded_name;
-	TEXT *s;
-	SSHORT len, l1;
 
-	s = buffer + strlen(buffer);
-	len = sizeof(padded_name) - 1;
-	l1 = s - buffer;
+	TEXT *s = buffer + strlen(buffer);
+	SSHORT len = sizeof(padded_name) - 1;
+	SSHORT l1 = s - buffer;
 	if ((s != buffer) && ((l1 + len + 4) > width)) {
 		ib_printf("%s\n", buffer);
 		buffer[0] = 0;
@@ -1946,14 +1921,10 @@ static void show_proc( QPR proc)
  *
  **************************************/
 	FRBRD *blob;
-	int count;
-	DBB database;
-	NAM name;
+	NAM name = proc->qpr_name;
 
-	count = 0;
-	name = proc->qpr_name;
-
-	if (database = proc->qpr_database) {
+	DBB database = proc->qpr_database;
+	if (database) {
 		if (blob = PRO_fetch_procedure(database, (TEXT*) name->nam_string))
 			display_procedure(database, (UCHAR*) name->nam_string, blob);
 		else
@@ -1963,6 +1934,7 @@ static void show_proc( QPR proc)
 		return;
 	}
 
+	int count = 0;
 	for (database = QLI_databases; database; database = database->dbb_next)
 		if (blob = PRO_fetch_procedure(database, (TEXT*) name->nam_string)) {
 			display_procedure(database, (UCHAR*) name->nam_string, blob);
@@ -1970,7 +1942,8 @@ static void show_proc( QPR proc)
 		}
 
 	if (!count) {
-		ERRQ_msg_put(127, name->nam_string, NULL, NULL, NULL, NULL);	/* Msg127 Procedure %s not found */
+		ERRQ_msg_put(127, name->nam_string, NULL, NULL, NULL, NULL);
+		// Msg127 Procedure %s not found
 		return;
 	}
 }
@@ -1988,10 +1961,9 @@ static void show_procs( DBB database)
  *	Show procedures in a database
  *
  **************************************/
-	SSHORT width;
-	TEXT buffer[256];
+	buf_type buffer;
 
-	width = get_window_size(sizeof(buffer) - 1);
+	SSHORT width = get_window_size(sizeof(buffer) - 1);
 
 	PRO_setup(database);
 	ERRQ_msg_put(128, database->dbb_filename,	/* Msg128 Procedures in database %s (%s): */
@@ -2039,19 +2011,15 @@ static void show_rel_detail( QLI_REL relation)
  *	security class, etc.
  *
  **************************************/
-	DBB database;
-	TEXT *relation_name;
-	USHORT msg;
-
-	relation_name = relation->rel_symbol->sym_string;
-	database = relation->rel_database;
+	const TEXT *relation_name = relation->rel_symbol->sym_string;
+	DBB database = relation->rel_database;
 	MET_meta_transaction(database, FALSE);
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_rel_detail])
 		R IN RDB$RELATIONS WITH
 			R.RDB$RELATION_NAME = relation_name
-        show_text_blob(database, "\t", 291, (SLONG*) &R.RDB$DESCRIPTION, 0,
-						   (SLONG*) NULL_PTR, FALSE);
+		show_text_blob(database, "\t", 291, (SLONG*) &R.RDB$DESCRIPTION, 0,
+						   NULL, false);
 
 		if (database->dbb_capabilities & DBB_cap_security)
 		FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_rel_secur])
@@ -2073,16 +2041,17 @@ static void show_rel_detail( QLI_REL relation)
 /* OBSOLETE - Msg296 A store trigger is defined for %s */
 
 		if (database->dbb_capabilities & DBB_cap_new_triggers) {
-			msg = 380;
+			USHORT msg = 380;
 			FOR(REQUEST_HANDLE database->dbb_requests[REQ_new_trig_exists])
 				X IN RDB$TRIGGERS WITH X.RDB$RELATION_NAME EQ relation->
 					rel_symbol->sym_string 
-                if (!X.RDB$TRIGGER_BLR.NULL) {
+				if (!X.RDB$TRIGGER_BLR.NULL) {
 					if (msg) {
-						ERRQ_msg_put(msg, NULL, NULL, NULL, NULL, NULL);	/* Msg380 Trigger defined for this relation */
+						ERRQ_msg_put(msg, NULL, NULL, NULL, NULL, NULL);
+						// Msg380 Trigger defined for this relation
 						msg = 0;
 					} 
-                    ib_printf("\t");
+					ib_printf("\t");
 					show_trigger_status(X.RDB$TRIGGER_NAME,
 										X.RDB$TRIGGER_TYPE,
 										X.RDB$TRIGGER_INACTIVE,
@@ -2108,7 +2077,7 @@ static void show_rels( DBB dbb, enum show_t sw, SSHORT width)
  *
  **************************************/
 	QLI_REL relation;
-	TEXT buffer[256];
+	buf_type buffer;
 
 	switch (sw) {
 	case show_relations:
@@ -2142,7 +2111,7 @@ static void show_rels( DBB dbb, enum show_t sw, SSHORT width)
 }
 
 
-static int show_security_class_detail( DBB database, TEXT * name)
+static USHORT show_security_class_detail( DBB database, const TEXT * name)
 {
 /**************************************
  *
@@ -2154,14 +2123,12 @@ static int show_security_class_detail( DBB database, TEXT * name)
  *	Show security classes for a databases.
  *
  **************************************/
-	SSHORT count;
-
-	count = 0;
 	MET_meta_transaction(database, FALSE);
 
 	if (!(database->dbb_capabilities & DBB_cap_security))
-		return FALSE;
+		return 0;
 
+	USHORT count = 0;
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_secur_class])
 		S IN RDB$SECURITY_CLASSES WITH S.RDB$SECURITY_CLASS = name
         if (truncate_string(S.RDB$SECURITY_CLASS)) {
@@ -2175,7 +2142,7 @@ static int show_security_class_detail( DBB database, TEXT * name)
 }
 
 
-static int show_security_classes_detail( DBB database)
+static USHORT show_security_classes_detail( DBB database)
 {
 /**************************************
  *
@@ -2187,14 +2154,12 @@ static int show_security_classes_detail( DBB database)
  *	Show security classes for a databases.
  *
  **************************************/
-	SSHORT count;
-
-	count = 0;
 	MET_meta_transaction(database, FALSE);
 
 	if (!(database->dbb_capabilities & DBB_cap_security))
-		return FALSE;
+		return 0;
 
+	USHORT count = 0;
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_secur])
 		S IN RDB$SECURITY_CLASSES 
         if (!count)	
@@ -2255,10 +2220,8 @@ static void show_sys_trigs( DBB database)
  *	is the right one.
  *
  **************************************/
-	USHORT count;
-
 	MET_meta_transaction(database, FALSE);
-	count = 0;
+	USHORT count = 0;
 
 	if (database->dbb_capabilities & DBB_cap_new_triggers)
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_sys_triggers])
@@ -2288,10 +2251,11 @@ static void show_sys_trigs( DBB database)
 
 static void show_text_blob(
 						   DBB database,
-						   TEXT * column,
+						   const TEXT * column,
 						   USHORT msg1,
 						   SLONG * blob1,
-						   USHORT msg2, SLONG * blob2, int strip)
+						   USHORT msg2, SLONG * blob2,
+						   bool strip)
 {
 /**************************************
  *
@@ -2343,7 +2307,7 @@ static void show_trig( QLI_REL relation)
 }
 
 
-static int show_trigger_detail( DBB database, TEXT * relation_name)
+static int show_trigger_detail( DBB database, const TEXT * relation_name)
 {
 /**************************************
  *
@@ -2356,13 +2320,11 @@ static int show_trigger_detail( DBB database, TEXT * relation_name)
  *	relation.
  *
  **************************************/
-	USHORT count;
-
 	if (!(database->dbb_capabilities & DBB_cap_new_triggers))
 		return 0;
 
 	MET_meta_transaction(database, FALSE);
-	count = 0;
+	int count = 0;
 
 /* New style triggers */
 
@@ -2410,7 +2372,9 @@ static void show_trigger_header(
 								USHORT type,
 								USHORT sequence,
 								USHORT inactive,
-SLONG * description, DBB database, TEXT * relation_name)
+								SLONG * description,
+								DBB database,
+								const TEXT * relation_name) // unused param
 {
 /*****************************************************
  *
@@ -2425,11 +2389,11 @@ SLONG * description, DBB database, TEXT * relation_name)
  *****************************************************/
 
 	show_trigger_status(name, type, inactive, sequence);
-	show_text_blob(database, "\t    ", 375, description, 0, (SLONG*) NULL_PTR, TRUE);
+	show_text_blob(database, "\t    ", 375, description, 0, NULL, true);
 }
 
 
-static void show_trigger_messages( DBB database, TEXT * name)
+static void show_trigger_messages( DBB database, const TEXT * name)
 {
 /*****************************************************
  *
@@ -2441,9 +2405,7 @@ static void show_trigger_messages( DBB database, TEXT * name)
  *       a new style (V3) trigger
  *
  *****************************************************/
-	int first;
-
-	first = TRUE;
+	bool first = true;
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_trig_message])
 		M IN RDB$TRIGGER_MESSAGES WITH M.RDB$TRIGGER_NAME = name
@@ -2452,7 +2414,7 @@ static void show_trigger_messages( DBB database, TEXT * name)
         if (first) {
 			ERRQ_msg_put(456, name, NULL, NULL, NULL, NULL);
 			/* msg 456: Messages associated with %s:\n */
-			first = FALSE;
+			first = false;
 		}
 			ERRQ_msg_put(457, (TEXT *)(SLONG) M.RDB$MESSAGE_NUMBER, M.RDB$MESSAGE,
 						 NULL, NULL, NULL);
@@ -2531,16 +2493,14 @@ static void show_trigs( DBB database)
  **************************************/
 
 	if (database) {
-		if (!(show_triggers_detail(database)))
+		if (!show_triggers_detail(database))
 			ERRQ_msg_put(130, database->dbb_symbol->sym_string, NULL, NULL,
 						 NULL, NULL);	/* Msg130 No triggers are defined in database %s */
 	}
 	else
-		for (database = QLI_databases; database;
-			 database =
-			 database->
-			 dbb_next) if (!(show_triggers_detail(database)))
-		  ERRQ_msg_put(131, database->dbb_symbol->sym_string, NULL, NULL,
+		for (database = QLI_databases; database; database = database->dbb_next)
+			if (!show_triggers_detail(database))
+				ERRQ_msg_put(131, database->dbb_symbol->sym_string, NULL, NULL,
 					   NULL, NULL);	/* Msg131 No triggers are defined in database %s */
 }
 
@@ -2558,10 +2518,8 @@ static int show_triggers_detail( DBB database)
  *	database
  *
  **************************************/
-	USHORT count;
-
 	MET_meta_transaction(database, FALSE);
-	count = 0;
+	int count = 0;
 
 	if (!(database->dbb_capabilities & DBB_cap_new_triggers))
 		return count;
@@ -2682,11 +2640,9 @@ static void show_versions(void)
  *	Show the version for QLI and all databases.
  *
  **************************************/
-	DBB dbb;
-
 	ERRQ_msg_put(133, GDS_VERSION, NULL, NULL, NULL, NULL);	/* Msg133 QLI, version %s */
 
-	for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next) {
+	for (DBB dbb = QLI_databases; dbb; dbb = dbb->dbb_next) {
 		ERRQ_msg_put(134, dbb->dbb_filename, NULL, NULL, NULL, NULL);	/* Msg134 Version(s) for database %s */
 		gds__version(&dbb->dbb_handle, (FPTR_VOID) NULL_PTR, NULL_PTR);
 	}
@@ -2706,9 +2662,7 @@ static void show_view( QLI_REL relation)
  *	if there is one.
  *
  **************************************/
-	DBB database;
-
-	database = relation->rel_database;
+	DBB database = relation->rel_database;
 	MET_meta_transaction(database, FALSE);
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_view])
@@ -2723,8 +2677,8 @@ static void show_view( QLI_REL relation)
 		else {
 			ERRQ_msg_put(313, relation->rel_symbol->sym_string, NULL, NULL,
 						 NULL, NULL);	/* Msg313 Relation %s is a view defined as: */
-			show_text_blob(database, "\t", 0, (SLONG*) &X.RDB$VIEW_SOURCE, 0, (SLONG*) NULL_PTR,
-						   FALSE);
+			show_text_blob(database, "\t", 0, (SLONG*) &X.RDB$VIEW_SOURCE, 0, NULL,
+						   false);
 		}
 	END_FOR;
 }
@@ -2742,10 +2696,8 @@ static int show_views_detail( DBB database)
  *	Show the view definitions.  If none, return 0.
  *
  **************************************/
-	int count;
-
 	MET_meta_transaction(database, FALSE);
-	count = 0;
+	int count = 0;
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_views])
 		X IN RDB$RELATIONS WITH X.RDB$VIEW_BLR NOT MISSING
@@ -2803,8 +2755,10 @@ static int truncate_string( TEXT * string)
 
 static void view_info(
 					  DBB dbb,
-					  TEXT * view,
-					  TEXT * base_field, SSHORT context, SSHORT level)
+					  const TEXT * view,
+					  const TEXT * base_field,
+					  SSHORT context,
+					  SSHORT level)
 {
 /**************************************
  *
@@ -2818,7 +2772,7 @@ static void view_info(
  *	expand on this phenomenon.
  *
  **************************************/
-	TEXT spaces[64], *p, *end;
+	TEXT spaces[64];
 
 	FOR(REQUEST_HANDLE dbb->dbb_requests[REQ_show_view_field] LEVEL level)
 		RFR IN RDB$RELATION_FIELDS CROSS VR IN RDB$VIEW_RELATIONS
@@ -2828,11 +2782,10 @@ static void view_info(
 			VR.RDB$VIEW_CONTEXT = context
         truncate_string(RFR.RDB$RELATION_NAME);
 
-		/* create some space according to how many levels deep we are;
-		   this is to avoid using %*s in the ib_printf, which doesn't work for OS/2 */
-
-		for (p = spaces, end =
-			 spaces + MIN((level + 2) * 4, sizeof(spaces) - 1); p < end;)
+		// create some space according to how many levels deep we are;
+		// this is to avoid using %*s in the ib_printf, which doesn't work for OS/2
+		TEXT *p = spaces;
+		for (TEXT *end = spaces + MIN((level + 2) * 4, sizeof(spaces) - 1); p < end;)
 			*p++ = ' ';
 		*p = '\0';
 
@@ -2844,13 +2797,13 @@ static void view_info(
 			ERRQ_msg_put(508, spaces, base_field, RFR.RDB$RELATION_NAME, NULL,
 						 NULL);
 		/* Msg508 %s Based on field %s of view %s */
-		show_text_blob(dbb, "\t", 349, (SLONG*) &RFR.RDB$DESCRIPTION, 0, (SLONG*) NULL_PTR,
-					   FALSE);
+		show_text_blob(dbb, "\t", 349, (SLONG*) &RFR.RDB$DESCRIPTION, 0, NULL,
+					   false);
 
 		if (!RFR.RDB$DESCRIPTION.NULL) {
 			ERRQ_msg_put(349, spaces, base_field, NULL, NULL, NULL);	/* Msg349 %sBase field description for %s: */
-			show_text_blob(dbb, "\t\t", 0, (SLONG*) &RFR.RDB$DESCRIPTION, 0, (SLONG*) NULL_PTR,
-						   FALSE);
+			show_text_blob(dbb, "\t\t", 0, (SLONG*) &RFR.RDB$DESCRIPTION, 0, NULL,
+						   false);
 		}
 
 		if (!RFR.RDB$BASE_FIELD.NULL
@@ -2861,3 +2814,4 @@ static void view_info(
 		}
 	END_FOR;
 }
+
