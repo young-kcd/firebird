@@ -29,7 +29,7 @@
 #include "../jrd/req.h"
 
 USHORT	BTR_all(TDBB, jrd_rel*, idx**, idx**, str**, SLONG*);
-void	BTR_create(TDBB, jrd_rel*, idx*, USHORT, scb*, float*);
+void	BTR_create(TDBB, jrd_rel*, idx*, USHORT, scb*, SelectivityList&);
 void	BTR_delete_index(TDBB, win*, USHORT);
 bool	BTR_description(JRD_REL, irt*, idx*, SSHORT);
 void	BTR_evaluate(tdbb*, irb*, sbm**);
@@ -47,7 +47,7 @@ btn*	BTR_next_node(btn*, btx**);
 btn*	BTR_previous_node(btn*, btx**);
 void	BTR_remove(tdbb*, win*, iib*);
 void	BTR_reserve_slot(TDBB, jrd_rel*, jrd_tra*, idx*);
-float	BTR_selectivity(TDBB, jrd_rel*, USHORT);
+void	BTR_selectivity(TDBB, jrd_rel*, USHORT, SelectivityList&);
 
 #endif // JRD_BTR_PROTO_H
 

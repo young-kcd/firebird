@@ -682,7 +682,7 @@ void DFW_post_work_arg( JRD_TRA transaction, DFW work, DSC * desc, USHORT id)
 }
 
 
-void DFW_update_index( DFW work, USHORT id, float selectivity)
+void DFW_update_index(const TEXT* name, USHORT id, const SelectivityList& selectivity)
 {
 /**************************************
  *
@@ -702,15 +702,35 @@ void DFW_update_index( DFW work, USHORT id, float selectivity)
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
 
+	if (dbb->dbb_ods_version >= ODS_VERSION11) {
+
+		request = (BLK) CMP_find_request(tdbb, irq_m_index_seg, IRQ_REQUESTS);
+
+		FOR(REQUEST_HANDLE request)
+			SEG IN RDB$INDEX_SEGMENTS WITH SEG.RDB$INDEX_NAME EQ name
+				SORTED BY SEG.RDB$FIELD_POSITION
+	        if (!REQUEST(irq_m_index_seg))
+		        REQUEST(irq_m_index_seg) = (BLK)request;
+			MODIFY SEG USING
+				SEG.RDB$STATISTICS =
+					selectivity.getCount() ? selectivity[SEG.RDB$FIELD_POSITION] : 0.0;
+			END_MODIFY;
+		END_FOR;
+
+		if (!REQUEST(irq_m_index_seg))
+			REQUEST(irq_m_index_seg) = (BLK)request;
+	}
+
 	request = (BLK) CMP_find_request(tdbb, irq_m_index, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request)
-		IDX IN RDB$INDICES WITH IDX.RDB$INDEX_NAME EQ work->dfw_name
+		IDX IN RDB$INDICES WITH IDX.RDB$INDEX_NAME EQ name
         if (!REQUEST(irq_m_index))
             REQUEST(irq_m_index) = (BLK)request;
 		MODIFY IDX USING
 			IDX.RDB$INDEX_ID = id + 1;
-			IDX.RDB$STATISTICS = selectivity;
+			IDX.RDB$STATISTICS =
+				selectivity.getCount() ? selectivity.back() : 0.0;
 		END_MODIFY;
 	END_FOR;
 
@@ -1502,7 +1522,6 @@ static bool create_index(	TDBB	tdbb,
 	JRD_REL relation, partner_relation;
 	IDX idx;
 	int key_count;
-	float selectivity;
 	SSHORT text_type;
 	SSHORT collate;
 	BLK handle;
@@ -1597,12 +1616,11 @@ static bool create_index(	TDBB	tdbb,
 				}
 				if (IDX.RDB$INDEX_ID && IDX.RDB$STATISTICS < 0.0)
 				{
-					MODIFY IDX
-						IDX.RDB$STATISTICS =
-							IDX_statistics(	tdbb,
-											relation,
-											(USHORT)(IDX.RDB$INDEX_ID - 1));
-					END_MODIFY;
+					SelectivityList selectivity(tdbb->tdbb_default);
+					const USHORT id = IDX.RDB$INDEX_ID - 1;
+					IDX_statistics(tdbb, relation, id, selectivity);
+					DFW_update_index(work->dfw_name, id, selectivity);
+
 					EXE_unwind(tdbb, (JRD_REQ)request);
 					return false;
 				}
@@ -1782,15 +1800,11 @@ static bool create_index(	TDBB	tdbb,
 		}
 
 		fb_assert(work->dfw_id == dbb->dbb_max_idx);
-		IDX_create_index(	tdbb,
-							relation,
-							&idx,
-							(UCHAR*) work->dfw_name,
-							&work->dfw_id,
-							transaction,
-							&selectivity);
+		SelectivityList selectivity(tdbb->tdbb_default);
+		IDX_create_index(tdbb, relation, &idx, (UCHAR*) work->dfw_name,
+						 &work->dfw_id, transaction, selectivity);
 		fb_assert(work->dfw_id == idx.idx_id);
-		DFW_update_index(work, idx.idx_id, selectivity);
+		DFW_update_index(work->dfw_name, idx.idx_id, selectivity);
 
 		if (partner_relation)
 		{

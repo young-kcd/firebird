@@ -32,6 +32,6 @@ void DFW_perform_work(jrd_tra*);
 void DFW_perform_post_commit_work(jrd_tra*);
 dfw* DFW_post_work(jrd_tra*, enum dfw_t, dsc*, USHORT);
 void DFW_post_work_arg(jrd_tra*, dfw*, dsc*, USHORT);
-void DFW_update_index(dfw*, USHORT, float);
+void DFW_update_index(const TEXT*, USHORT, const SelectivityList&);
 
 #endif // JRD_DFW_PROTO_H

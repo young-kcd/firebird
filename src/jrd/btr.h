@@ -27,11 +27,10 @@
 #ifndef JRD_BTR_H
 #define JRD_BTR_H
 
+#include "../common/classes/array.h"
 #include "../jrd/jrd_blks.h"
 #include "../jrd/constants.h"
 #include "../include/fb_blk.h"
-
-#include <vector>
 
 #include "../jrd/err_proto.h"    /* Index error types */
 
@@ -208,6 +207,8 @@ typedef struct jrd_exp {
 #define LAST_NODE(page)	(BTN) ((UCHAR*) page + page->btr_length)
 
 #define NEXT_EXPANDED(xxx,yyy)	(BTX) ((UCHAR*) xxx->btx_data + (yyy)->btn_prefix + (yyy)->btn_length)
+
+typedef Firebird::HalfStaticArray<float, 1> SelectivityList;
 
 #endif /* JRD_BTR_H */
 

@@ -160,7 +160,7 @@ static void copy_key(KEY *, KEY *);
 static CONTENTS delete_node(TDBB, WIN *, BTN);
 static void delete_tree(TDBB, USHORT, USHORT, SLONG, SLONG);
 static DSC *eval(TDBB, JRD_NOD, DSC *, bool *);
-static SLONG fast_load(TDBB, JRD_REL, IDX *, USHORT, SCB, float *);
+static SLONG fast_load(TDBB, JRD_REL, IDX *, USHORT, SCB, SelectivityList&);
 static IRT fetch_root(TDBB, WIN *, JRD_REL);
 static SLONG find_node(BTR, KEY *, bool);
 static CONTENTS garbage_collect(TDBB, WIN *, SLONG);
@@ -241,7 +241,9 @@ USHORT BTR_all(TDBB    tdbb,
 void BTR_create(TDBB tdbb,
 				JRD_REL relation,
 				IDX * idx,
-				USHORT key_length, SCB sort_handle, float *selectivity)
+				USHORT key_length,
+				SCB sort_handle,
+				SelectivityList& selectivity)
 {
 /**************************************
  *
@@ -270,7 +272,7 @@ void BTR_create(TDBB tdbb,
 	IRT root = (IRT) CCH_FETCH(tdbb, &window, LCK_write, pag_root);
 	CCH_MARK(tdbb, &window);
 	root->irt_rpt[idx->idx_id].irt_root = idx->idx_root;
-	root->irt_rpt[idx->idx_id].irt_stuff.irt_selectivity = *selectivity;
+	root->irt_rpt[idx->idx_id].irt_stuff.irt_selectivity = selectivity.back();
 	root->irt_rpt[idx->idx_id].irt_flags &= ~irt_in_progress;
 
 	if (dbb->dbb_wal) {
@@ -1573,7 +1575,7 @@ retry:
 }
 
 
-float BTR_selectivity(TDBB tdbb, JRD_REL relation, USHORT id)
+void BTR_selectivity(TDBB tdbb, JRD_REL relation, USHORT id, SelectivityList& selectivity)
 {
 /**************************************
  *
@@ -1596,13 +1598,13 @@ float BTR_selectivity(TDBB tdbb, JRD_REL relation, USHORT id)
 
 	IRT root = fetch_root(tdbb, &window, relation);
 	if (!root) {
-		return 0.0;
+		return;
 	}
 
 	SLONG page = root->irt_rpt[id].irt_root;
 	if (root->irt_count <= id || !page) {
 		CCH_RELEASE(tdbb, &window);
-		return 0.0;
+		return;
 	}
 	window.win_flags = WIN_large_scan;
 	window.win_scans = 1;
@@ -1667,15 +1669,16 @@ float BTR_selectivity(TDBB tdbb, JRD_REL relation, USHORT id)
 	CCH_RELEASE_TAIL(tdbb, &window);
 
 	// calculate the selectivity and store it on the root page
-	float selectivity = (float) ((nodes) ? 1.0 / (float) (nodes - duplicates) : 0.0);
+	const USHORT count = root->irt_rpt[id].irt_keys;
+	selectivity.grow(count);
+	selectivity.back() =
+		(float) ((nodes) ? 1.0 / (float) (nodes - duplicates) : 0.0);
 	window.win_page = relation->rel_index_root;
 	window.win_flags = 0;
 	root = (IRT) CCH_FETCH(tdbb, &window, LCK_write, pag_root);
 	CCH_MARK(tdbb, &window);
-	root->irt_rpt[id].irt_stuff.irt_selectivity = selectivity;
+	root->irt_rpt[id].irt_stuff.irt_selectivity = selectivity.back();
 	CCH_RELEASE(tdbb, &window);
-
-	return selectivity;
 }
 
 
@@ -2449,7 +2452,9 @@ static DSC *eval(TDBB tdbb, JRD_NOD node, DSC * temp, bool *missing)
 static SLONG fast_load(TDBB tdbb,
 					   JRD_REL relation,
 					   IDX * idx,
-					   USHORT key_length, SCB sort_handle, float *selectivity)
+					   USHORT key_length,
+					   SCB sort_handle,
+					   SelectivityList& selectivity)
 {
 /**************************************
  *
@@ -2794,7 +2799,9 @@ static SLONG fast_load(TDBB tdbb,
 		}
 
 		CCH_flush(tdbb, (USHORT) FLUSH_ALL, 0);
-		*selectivity = (float) ((count) ? (1. / (double) (count - duplicates)) : 0);
+		selectivity.grow(idx->idx_count);
+		selectivity.back() =
+			(float) ((count) ? (1. / (double) (count - duplicates)) : 0);
 
 		return window->win_page;
 

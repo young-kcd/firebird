@@ -154,6 +154,7 @@
 #define f_seg_name 0  
 #define f_seg_field 1  
 #define f_seg_position 2  
+#define f_seg_statistics 3  
 #define f_idx_name 0  
 #define f_idx_relation 1  
 #define f_idx_id 2  

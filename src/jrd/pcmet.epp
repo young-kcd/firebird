@@ -70,7 +70,6 @@ int PCMET_expression_index(
 	DBB dbb;
 	JRD_REL relation;
 	IDX idx;
-	float selectivity;
 	PLB default_pool, new_pool = NULL;
 	CSB csb;
 	JRD_REQ current_request;
@@ -101,12 +100,13 @@ int PCMET_expression_index(
 					relation->rel_name =
 						MET_save_name(tdbb, REL.RDB$RELATION_NAME);
 					relation->rel_length = strlen(relation->rel_name);
-				} if (IDX.RDB$INDEX_ID && IDX.RDB$STATISTICS < 0.0) {
-					MODIFY IDX
-						IDX.RDB$STATISTICS =
-							IDX_statistics(tdbb, relation,
-										   IDX.RDB$INDEX_ID - 1);
-					END_MODIFY;
+				}
+				if (IDX.RDB$INDEX_ID && IDX.RDB$STATISTICS < 0.0) {
+					SelectivityList selectivity(tdbb->tdbb_default);
+					const USHORT id = IDX.RDB$INDEX_ID - 1;
+					IDX_statistics(tdbb, relation, id, selectivity);
+					DFW_update_index(work->dfw_name, id, selectivity);
+
 					EXE_unwind(tdbb, REQUEST(irq_c_exp_index));
 					return FALSE;
 				}
@@ -173,6 +173,8 @@ int PCMET_expression_index(
 		/* Msg308: can't create index %s */
 
 		/* Actually create the index */
+
+		SelectivityList selectivity(tdbb->tdbb_default);
 
 		current_request = tdbb->tdbb_request;
 		tdbb->tdbb_request = idx.idx_expression_request;

@@ -169,7 +169,9 @@ void IDX_create_index(
 					  JRD_REL relation,
 					  IDX * idx,
 					  UCHAR * index_name,
-					  USHORT * index_id, JRD_TRA transaction, float *selectivity)
+					  USHORT * index_id,
+					  JRD_TRA transaction,
+					  SelectivityList& selectivity)
 {
 /**************************************
  *
@@ -791,7 +793,7 @@ IDX_E IDX_modify_check_constraints(TDBB tdbb,
 }
 
 
-float IDX_statistics(TDBB tdbb, JRD_REL relation, USHORT id)
+void IDX_statistics(TDBB tdbb, JRD_REL relation, USHORT id, SelectivityList& selectivity)
 {
 /**************************************
  *
@@ -807,7 +809,7 @@ float IDX_statistics(TDBB tdbb, JRD_REL relation, USHORT id)
 
 	SET_TDBB(tdbb);
 
-	return BTR_selectivity(tdbb, relation, id);
+	BTR_selectivity(tdbb, relation, id, selectivity);
 }
 
 

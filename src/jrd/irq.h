@@ -108,7 +108,8 @@
 #define irq_r_gen_id_num	72	/* lookup generator by ID. */
 #define irq_verify_role_name	73	/* ensure role exists in roles & user_privileges. */
 #define irq_l_relation_defsec	74	/* check the default sec class name against rel. */
+#define irq_m_index_seg		75	/* modify per-segment index selectivity */
 
-#define irq_MAX		75
+#define irq_MAX		76
 
 #endif /* JRD_IRQ_H */
