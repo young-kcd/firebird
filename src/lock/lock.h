@@ -177,18 +177,18 @@ typedef struct srq {
 
 // STATIC_SEMAPHORES - preallocate semaphores for UNIX events
 // if undefined UNIX events allocate semaphores dynamically
-#if defined UNIX && !defined SUPERSERVER
+#if defined UNIX && (!defined SUPERSERVER && !defined MULTI_THREAD)
 #define USE_STATIC_SEMAPHORES
 #endif
 
 // USE_BLOCKING_THREAD - use thread to handle blocking ASTs
-//   real UNIX guys use signals instead
-#if defined WIN_NT && !defined SUPERSERVER
+//   real UNIX guys use signals instead  - but their CS is not MT
+#if (defined WIN_NT || defined SOLARIS_MT) && !defined SUPERSERVER
 #define USE_BLOCKING_THREAD
 #endif
 
 // USE_BLOCKING_SIGNALS - use UNIX signals to deliver blocking ASTs
-#if !defined WIN_NT && !defined SUPERSERVER
+#if !defined WIN_NT && !defined SOLARIS_MT && !defined SUPERSERVER
 #define USE_BLOCKING_SIGNALS
 #endif
 

@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.89 2003-10-14 13:10:03 eku Exp $
+$Id: common.h,v 1.90 2003-10-27 18:42:45 skidder Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -411,16 +411,6 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
      between non-overlapping areas.
 
 **********/
-
-#ifndef SOLARIS26
-
-/* If our build platform is at least Solaris release 2.6, then unistd.h
-   declares these functions, so we must not define them with macros. 
-*/
-
-#define setreuid(ruid,euid)     ((setuid (ruid) == -1 || seteuid (euid) == -1) ? -1 : 0)
-#define setregid(rgid,egid)     ((setgid (rgid) == -1 || setegid (egid) == -1) ? -1 : 0)
-#endif
 
 /* The following define is the prefix to go in front of a "d" or "u"
    format item in a ib_printf() format string, to indicate that the argument
