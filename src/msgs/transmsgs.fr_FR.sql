@@ -1,5 +1,3 @@
-CONNECT "msg.fdb";
-
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('scalar operator used on field which is not an array', NULL, NULL, 15, 261, 'fr_FR', 'Opération d''échelle effectuée sur une zone qui n''est pas un tableau', NULL, NULL, 'daves', '1993-07-16 12:11:26');
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('invalid blob type for operation', 'Program attempted a seek on a non-stream (i.e. segmented) blob.', 'Program attempted to a blob seek operation on a non-stream (i.e.
 segmented) blob.', 0, 145, 'fr_FR', 'Type de blob non valide pour l''opération', 'Program attempted a seek on a non-stream (i.e. segmented) blob.', 'Program attempted to a blob seek operation on a non-stream (i.e.

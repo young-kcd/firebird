@@ -1,5 +1,3 @@
-CONNECT "msg.fdb";
-
 INSERT INTO TEMPLATES (LANGUAGE, "FILE", TEMPLATE) VALUES ('C', 'gds.h',
 '/*
  *	PROGRAM:	C preprocessor

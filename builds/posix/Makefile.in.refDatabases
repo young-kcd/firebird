@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.refDatabases,v 1.22 2004-08-23 09:53:54 aafemt Exp $
+#  $Id: Makefile.in.refDatabases,v 1.23 2004-09-01 11:53:28 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -91,7 +91,8 @@ ref_databases : msg.timestamp help.fdb metadata.fdb security.fdb
 
 msg.timestamp:	$(MSG_FILES)
 	$(RM) msg.fdb
-	for sn in $(MSG_FILES); do $(ISQL_STATIC) -i $$sn || exit; done
+	echo create database \'msg.fdb\'\; | $(ISQL_STATIC)
+	for sn in $(MSG_FILES); do (echo $$sn; $(ISQL_STATIC) -i $$sn msg.fdb) || exit; done
 #	$(CHMOD) 444 msg.fdb
 	$(TOUCH) $@
 

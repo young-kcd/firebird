@@ -1,5 +1,3 @@
-CONNECT "msg.fdb";
-
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('key length (%d) for compound index %s exceeds 202', NULL, NULL, 2, 312, 'de_DE', 'Die Schlüssellänge (%d) für den zusammengesetzten Index %s überschreitet 202', NULL, NULL, 'daves', '1993-07-16 12:15:53');
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('next transaction older than oldest active transaction', NULL, NULL, 15, 266, 'de_DE', 'Die nächste Transaktionsnummer ist niedriger als die älteste aktive Transaktionsnummer', NULL, NULL, 'daves', '1993-07-16 12:15:53');
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('next transaction older than oldest transaction', NULL, NULL, 15, 267, 'de_DE', 'Die nächste Transaktionsnummer ist niedriger als die älteste Transaktionsnummer', NULL, NULL, 'daves', '1993-07-16 12:15:53');

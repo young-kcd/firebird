@@ -1,5 +1,3 @@
-CONNECT "msg.fdb";
-
 INSERT INTO LOCALES (LOCALE, DESCRIPTION) VALUES ('pg_PG', 'Pig Latin, testing locale only.');
 INSERT INTO LOCALES (LOCALE, DESCRIPTION) VALUES ('fr_FR', 'French as used in France, Latin 1 codeset');
 INSERT INTO LOCALES (LOCALE, DESCRIPTION) VALUES ('de_DE', 'German as used in Germany, Latin 1 codeset');

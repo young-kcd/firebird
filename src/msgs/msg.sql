@@ -1,5 +1,3 @@
-CREATE DATABASE 'msg.fdb';
-
 CREATE GENERATOR CHANGE_NUM;
 
 /* Domain definitions */
