@@ -75,10 +75,6 @@
 #include "../jrd/vio_proto.h"
 #include "../jrd/sch_proto.h"
 
-#ifdef SUPERSERVER
-#define V4_THREADING
-#endif
-
 #define BLANK	'\040'
 
 DATABASE DB = STATIC "ODS.RDB";
