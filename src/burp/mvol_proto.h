@@ -24,10 +24,6 @@
 #ifndef BURP_MVOL_PROTO_H
 #define BURP_MVOL_PROTO_H
 
-#ifndef __cplusplus
-#error This is a C++ only header file
-#endif
-
 #include "../burp/burp.h"
 
 

@@ -26,10 +26,6 @@
 #ifndef DSQL_METD_PROTO_H
 #define DSQL_METD_PROTO_H
 
-#ifndef __cplusplus
-#error This header file can only be used from C++
-#endif
-
 // forward declarations
 class dsql_req;
 class dsql_str;
