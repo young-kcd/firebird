@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.38 2003-07-06 07:04:03 dimitr Exp $
+ * $Id: sort.cpp,v 1.39 2003-08-11 01:19:16 brodsom Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -2942,7 +2942,8 @@ static void sort(SCB scb)
 			q++;
 			tl--;
 		}
-		if ( ((p - *i) >= scb->scb_key_length) ) {
+		// p is >= *i always
+		if ((ULONG) (p - *i) >= scb->scb_key_length ) {
 #ifdef SCROLLABLE_CURSORS
 			SORT_diddle_key((UCHAR *) * i, scb, FALSE);
 			SORT_diddle_key((UCHAR *) * j, scb, FALSE);
