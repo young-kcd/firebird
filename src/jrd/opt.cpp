@@ -3834,7 +3834,8 @@ static RSB gen_retrieval(TDBB tdbb,
 				if (idx->idx_runtime_flags & idx_plan_dont_use) {
 					continue;
 				}
-				if (idx_field_count[i] == max_field_count) {
+				if ((idx_field_count[i] == max_field_count) ||
+					((csb_tail->csb_plan) && !(idx->idx_runtime_flags & idx_plan_dont_use)) ) {
 					j = 0;
 					clear_bounds(opt, idx);
 					for (tail = opt->opt_rpt; tail < opt_end; tail++) {
@@ -4598,12 +4599,17 @@ static IRL indexed_relationship(TDBB tdbb, OPT opt, USHORT stream)
 		for (tail = opt->opt_rpt; tail < opt_end; tail++) {
 			node = tail->opt_conjunct;
 			if (!(tail->opt_flags & opt_used)
-				&& computable(csb, node, -1, FALSE))
+				&& computable(csb, node, -1, FALSE)) {
 				/* AB: Why only check for and-structures ? 
 				   Added match_indices for support of "OR" with INNER JOINs */
 
 				/* match_index(tdbb, opt, stream, node, idx); */
 				match_indices(tdbb, opt, stream, node, idx);
+				/* AB: Why should we look further ? */
+				if (tail->opt_lower || tail->opt_upper) {
+					break;
+				}
+			}
 		}
 
 		tail = opt->opt_rpt;
@@ -5870,6 +5876,7 @@ static void sort_indices(csb_repeat * csb_tail)
 	USHORT i, j;
 	IDX idx_sort[MAX_IDX];
 	float selectivity;
+	BOOLEAN same_selectivity;
 
 	if (csb_tail->csb_plan) {
 		return;
@@ -5884,8 +5891,16 @@ static void sort_indices(csb_repeat * csb_tail)
 			selectivity = 1000; /* Maximum selectivity is 1 (when all keys are the same) */
 			idx = csb_tail->csb_idx;
 			for (i = 0; i < csb_tail->csb_indices; i++) {
+				/* By alomst same selectivity's use ASC as first */
+				if (selectivity > idx->idx_selectivity) {
+					same_selectivity = ((selectivity - idx->idx_selectivity) <= 0.00001);
+				}
+				else {
+					same_selectivity = ((idx->idx_selectivity - selectivity) <= 0.00001);
+				}
 				if (!(idx->idx_runtime_flags & idx_marker) && 
-					 (idx->idx_selectivity <= selectivity)) {
+					 (idx->idx_selectivity <= selectivity) &&
+					 !((idx->idx_flags & idx_descending) && same_selectivity)) {
 					selectivity = idx->idx_selectivity;
 					selected_idx = idx;
 				}
