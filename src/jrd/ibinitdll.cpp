@@ -63,9 +63,11 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID reserved)
 		strcpy(++p, FBDLLNAME);
 		p += strlen(FBDLLNAME);
 		*p = 0;
-		hFBDLLInstance = LoadLibrary(buffer);
-		if (!hFBDLLInstance) {
-			hFBDLLInstance = LoadLibrary(FBDLLNAME);
+		if (!GetModuleHandle(buffer) && !GetModuleHandle(FBDLLNAME)) {
+			hFBDLLInstance = LoadLibrary(buffer);
+			if (!hFBDLLInstance) {
+				hFBDLLInstance = LoadLibrary(FBDLLNAME);
+			}
 		}
 		break;
 	case DLL_PROCESS_DETACH:
