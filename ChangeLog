@@ -1,3 +1,233 @@
+2003-07-11 18:49  brodsom
+
+	* firebird2/builds/win32/make_all.bat:
+	
+	-Build fbudf -Copy ib_udf and fb_udf sql to output/udf -Copy
+	ib_udf/* and fb_udf/* to examples/udf
+
+2003-07-11 18:47  brodsom
+
+	* firebird2/builds/win32/msvc6/: Firebird2.dsw, v5_examples.dsp:
+	
+	Remove v5_examples dsp
+
+2003-07-11 18:47  brodsom
+
+	* firebird2/builds/win32/make_boot.bat:
+	
+	Remove gen/v5_examples directory
+
+2003-07-11 15:34  brodsom
+
+	* firebird2/examples/build_win32/make_stat.bat:
+	
+	Correction
+
+2003-07-11 15:31  brodsom
+
+	* firebird2/builds/posix/: Makefile.in.example5,
+	Makefile.in.v5_examples:
+	
+	Move examples builds to examples directory
+
+2003-07-11 15:28  brodsom
+
+	* firebird2/: configure.in, builds/posix/Makefile.in.firebird,
+	examples/build_unix/Makefile.in.example5,
+	examples/build_unix/Makefile.in.v5_examples:
+	
+	Move examples builds to examples directory
+
+2003-07-11 12:59  brodsom
+
+	* firebird2/doc/README.build.msvc.html:
+	
+	Update examples info
+
+2003-07-11 12:53  brodsom
+
+	* firebird2/: examples/api/winevent.c, examples/api/winevent.def,
+	examples/api/winevent.rc, examples/winevent/winevent.c,
+	examples/winevent/winevent.def, examples/winevent/winevent.rc,
+	examples/build_win32/clean_all.bat,
+	examples/build_win32/clean_winevent.bat,
+	examples/build_win32/make_all.bat,
+	examples/build_win32/make_api.bat,
+	examples/build_win32/make_winevent.bat, builds/win32/make_all.bat:
+	
+	Let winevent with api examples
+
+2003-07-11 12:07  brodsom
+
+	* firebird2/examples/build_win32/: clean_all.bat, clean_udf.bat,
+	clean_winevent.bat, make_all.bat, make_dyn.bat, make_udf.bat,
+	make_winevent.bat:
+	
+	Update.
+
+2003-07-11 12:01  brodsom
+
+	* firebird2/doc/README.build.msvc.html:
+	
+	Update
+
+2003-07-11 05:22  brodsom
+
+	* firebird2/: builds/win32/make_all.bat,
+	examples/build_win32/clean_empbuild.bat, clean.sh:
+	
+	Correction
+
+2003-07-11 05:10  brodsom
+
+	* firebird2/examples/empbuild/empbuild.c:
+	
+	Remove generated source
+
+2003-07-11 05:09  brodsom
+
+	* firebird2/examples/empbuild/intlddl.sql:
+	
+	Change DATE to TIMESTAMP
+
+2003-07-11 05:08  brodsom
+
+	* firebird2/examples/: api/apifull.c, dyn/dynfull.e:
+	
+	Win32 code patches
+
+2003-07-11 05:05  brodsom
+
+	* firebird2/examples/build_win32/: clean_api.bat, clean_dyn.bat,
+	clean_empbuild.bat, clean_stat.bat, make_api.bat, make_dyn.bat,
+	make_empbuild.bat, make_stat.bat, setenvvar.bat:
+	
+	Win32 examples build scripts
+
+2003-07-11 04:28  brodsom
+
+	* firebird2/configure.in:
+	
+	Updates
+
+2003-07-11 04:23  brodsom
+
+	* firebird2/builds/posix/: Makefile.in.codes, Makefile.in.firebird,
+	Makefile.in.refDatabases, make.defaults, make.shared.targets:
+	
+	Updates
+
+2003-07-11 02:03  brodsom
+
+	* firebird2/builds/: win32/make_all.bat, win32/make_boot.bat,
+	win32/make_examples.bat, win32/prepare.bat,
+	install/arch-specific/win32/FirebirdInstall_15.iss:
+	
+	Updated scripts
+
+2003-07-11 01:29  brodsom
+
+	* firebird2/: src/jrd/gds.pas, src/jrd/gds.pli, src/jrd/gds.vpas,
+	src/jrd/perf.pas, src/jrd/gds.bas, src/jrd/gds_aix.f,
+	src/jrd/gds_hp.f, src/jrd/gds_sun.f, src/jrd/gds_vms.f,
+	src/include/gen/gds_codes.ftn, src/include/gen/gds_codes.pas,
+	src/extlib/ib_util.pas, lang_helpers/README.txt,
+	lang_helpers/gds.bas, lang_helpers/gds.pas, lang_helpers/gds.pli,
+	lang_helpers/gds.vpas, lang_helpers/gds_aix.f,
+	lang_helpers/gds_codes.ftn, lang_helpers/gds_codes.pas,
+	lang_helpers/gds_hp.f, lang_helpers/gds_sun.f,
+	lang_helpers/gds_vms.f, lang_helpers/ib_util.pas,
+	lang_helpers/perf.pas:
+	
+	Moving fortran, pascal etc helpers to lang_helpers
+
+2003-07-11 01:07  brodsom
+
+	* firebird2/: src/misc/help.gbak, src/misc/metadata.gbak,
+	src/misc/security.gbak, src/msgs/msg.gbak, builds/misc/help.gbak,
+	builds/misc/metadata.gbak, builds/misc/msg.gbak,
+	builds/misc/security.gbak:
+	
+	Moving .gbak to firebird2/builds/misc
+
+2003-07-11 01:02  brodsom
+
+	* firebird2/examples/: winevent/winevent.c, winevent/winevent.def,
+	winevent/winevent.rc, udf/udf.sql, udf/udflib.c, udf/udflib.def,
+	stat/stat1.e, stat/stat10.e, stat/stat11.e, stat/stat12.e,
+	stat/stat12t.e, stat/stat2.e, stat/stat3.e, stat/stat4.e,
+	stat/stat5.e, stat/stat6.e, stat/stat7.e, stat/stat8.e,
+	stat/stat9.e, include/align.h, include/example.h:
+	
+	Moving firebird/src/v5_examples to firebird/examples
+
+2003-07-11 00:59  brodsom
+
+	* firebird2/examples/: api/api1.c, api/api10.c, api/api11.c,
+	api/api12.c, api/api13.c, api/api14.e, api/api15.c, api/api16.c,
+	api/api16t.c, api/api2.c, api/api3.c, api/api4.c, api/api5.c,
+	api/api6.c, api/api7.c, api/api8.c, api/api9.c, api/api9f.c,
+	api/api9f.def, api/api9f.sql, api/apifull.c, api/example.def,
+	build_win32/old/example.mak, build_win32/old/prefix.win32_bc,
+	build_win32/old/prefix.win32_msc,
+	build_win32/old/sfx.win32_makefile,
+	build_unix/old/sfx.unix_makefile, build_unix/old/makefile.old,
+	build_unix/old/prefix.hp10, build_unix/old/prefix.linux,
+	build_unix/old/prefix.sco_ev, build_unix/old/prefix.solaris,
+	empbuild/empbld.sql, empbuild/empbuild.c, empbuild/empbuild.e,
+	empbuild/empddl.sql, empbuild/empdml.sql, empbuild/employe2.sql,
+	empbuild/indexoff.sql, empbuild/indexon.sql, empbuild/intlbld.e,
+	empbuild/intlbld.sql, empbuild/intlddl.sql, empbuild/intldml.sql,
+	empbuild/job.inp, empbuild/lang.inp, empbuild/proj.inp,
+	empbuild/qtr.inp, dyn/dyn1.e, dyn/dyn2.e, dyn/dyn3.e, dyn/dyn4.e,
+	dyn/dyn5.e, dyn/dynfull.e:
+	
+	Moving firebird/src/v5_examples to firebird/examples
+
+2003-07-11 00:55  brodsom
+
+	* firebird2/: src/v5_examples/udflib.c, src/v5_examples/udflib.def,
+	src/v5_examples/winevent.c, src/v5_examples/winevent.def,
+	src/v5_examples/winevent.rc, src/v5_examples/api9f.sql,
+	src/v5_examples/apifull.c, src/v5_examples/dyn1.e,
+	src/v5_examples/dyn2.e, src/v5_examples/dyn3.e,
+	src/v5_examples/dyn4.e, src/v5_examples/dyn5.e,
+	src/v5_examples/dynfull.e, src/v5_examples/empbld.sql,
+	src/v5_examples/empbuild.c, src/v5_examples/empbuild.e,
+	src/v5_examples/empddl.sql, src/v5_examples/empdml.sql,
+	src/v5_examples/employe2.sql, src/v5_examples/example.def,
+	src/v5_examples/example.h, src/v5_examples/example.mak,
+	src/v5_examples/functions.c, src/v5_examples/indexoff.sql,
+	src/v5_examples/indexon.sql, src/v5_examples/intlbld.e,
+	src/v5_examples/intlbld.sql, src/v5_examples/intlddl.sql,
+	src/v5_examples/intldml.sql, src/v5_examples/job.inp,
+	src/v5_examples/lang.inp, src/v5_examples/makefile.old,
+	src/v5_examples/prefix.hp10, src/v5_examples/prefix.linux,
+	src/v5_examples/prefix.sco_ev, src/v5_examples/prefix.solaris,
+	src/v5_examples/prefix.win32_bc, src/v5_examples/prefix.win32_msc,
+	src/v5_examples/proj.inp, src/v5_examples/qtr.inp,
+	src/v5_examples/readme, src/v5_examples/sfx.unix_makefile,
+	src/v5_examples/sfx.win32_makefile, src/v5_examples/stat1.e,
+	src/v5_examples/stat10.e, src/v5_examples/stat11.e,
+	src/v5_examples/stat12.e, src/v5_examples/stat12t.e,
+	src/v5_examples/stat2.e, src/v5_examples/stat3.e,
+	src/v5_examples/stat4.e, src/v5_examples/stat5.e,
+	src/v5_examples/stat6.e, src/v5_examples/stat7.e,
+	src/v5_examples/stat8.e, src/v5_examples/stat9.e,
+	src/v5_examples/udf.sql, src/v5_examples/align.h,
+	src/v5_examples/api1.c, src/v5_examples/api10.c,
+	src/v5_examples/api11.c, src/v5_examples/api12.c,
+	src/v5_examples/api13.c, src/v5_examples/api14.e,
+	src/v5_examples/api15.c, src/v5_examples/api16.c,
+	src/v5_examples/api16t.c, src/v5_examples/api2.c,
+	src/v5_examples/api3.c, src/v5_examples/api4.c,
+	src/v5_examples/api5.c, src/v5_examples/api6.c,
+	src/v5_examples/api7.c, src/v5_examples/api8.c,
+	src/v5_examples/api9.c, src/v5_examples/api9f.c,
+	src/v5_examples/api9f.def, examples/readme, examples/functions.c:
+	
+	Moving firebird/src/v5_examples to firebird/examples
+
 2003-07-10 17:36  brodsom
 
 	* firebird2/doc/README.build.msvc.html:
