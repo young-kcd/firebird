@@ -104,8 +104,7 @@
 
 #endif /* VMS */
 
-
-#include "../fbutil/FirebirdConfig.h"
+#include "../common/config/config.h"
 
 /* Turn on V4 mutex protection for gds__alloc/free */
 
@@ -2395,7 +2394,7 @@ void API_ROUTINE gds__prefix(TEXT * resultString, TEXT * root)
 #endif
 			{
               // Try and get value from config file.
-              const Firebird::string regPrefix = FirebirdConfig::getSysString("RootDirectory");
+              const Firebird::string regPrefix = Config::getRootDirectory();
 
               size_t len = regPrefix.length();
               if ( len > 0) {
