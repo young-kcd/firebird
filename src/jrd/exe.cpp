@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.40 2003-02-10 13:28:22 eku Exp $
+$Id: exe.cpp,v 1.41 2003-02-12 19:12:15 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -893,43 +893,58 @@ void EXE_start(TDBB tdbb, JRD_REQ request, JRD_TRA transaction)
 	request->req_top_view_modify = NULL;
 	request->req_top_view_erase = NULL;
 
-/* Store request start time for timestamp work */
-	if (!request->req_timestamp)
+	// Store request start time for timestamp work
+	if (!request->req_timestamp) {
 		request->req_timestamp = time(NULL);
-
-	if (request->req_invariants) {
-		/* Set all invariants to not computed. */
-
-		vec::iterator ptr, end;
-		VLU impure;
-
-		for (ptr = request->req_invariants->begin(),
-			end = request->req_invariants->end(); ptr < end; ptr++)
-			if (*ptr) {
-				impure = (VLU) ((SCHAR *) request + ((JRD_NOD)(*ptr))->nod_impure);
-				impure->vlu_flags = 0;
-			}
 	}
 
-/* Start a save point if not in middle of one  */
+	if (request->req_invariants)
+	{
+		// Set all invariants to not computed.
+		vec::iterator ptr, end;
+		for (ptr = request->req_invariants->begin(),
+			end = request->req_invariants->end(); ptr < end;
+			++ptr)
+		{
+			if (*ptr) {
+				VLU impure = (VLU) ((SCHAR *) request + ((JRD_NOD)(*ptr))->nod_impure);
+				impure->vlu_flags = 0;
+			}
+		}
+	}
+
+	// Start a save point if not in middle of one
 	if (transaction && (transaction != dbb->dbb_sys_trans)) {
 		VIO_start_save_point(tdbb, transaction);
 	}
+
 #ifdef WIN_NT
 	START_CHECK_FOR_EXCEPTIONS(NULL);
 #endif
+	// TODO:
+	// 1. Try to fix the problem with MSVC C++ runtime library, making
+	// even C++ exceptions that are implemented in terms of Win32 SEH
+	// getting catched by the SEH handler below.
+	// 2. Check if it really is correct that only Win32 catches CPU
+	// exceptions (such as SEH) here. Shouldn't any platform capable
+	// of handling signals use this stuff?
+	// (see jrd/ibsetjmp.h for implementation of these macros)
+
 	looper(tdbb, request, request->req_top_node);
+
 #ifdef WIN_NT
 	END_CHECK_FOR_EXCEPTIONS(NULL);
 #endif
 
-/* If any requested modify/delete/insert ops have completed, forget them */
+	// If any requested modify/delete/insert ops have completed, forget them
 
-	if (transaction && (transaction != dbb->dbb_sys_trans) &&
-		transaction->tra_save_point &&
-		!(transaction->tra_save_point->sav_flags & SAV_user) &&
-		!transaction->tra_save_point->sav_verb_count) {
-		/* Forget about any undo for this verb */
+	if (transaction &&
+	    (transaction != dbb->dbb_sys_trans) &&
+	    transaction->tra_save_point &&
+	    !(transaction->tra_save_point->sav_flags & SAV_user) &&
+	    !transaction->tra_save_point->sav_verb_count)
+	{
+		// Forget about any undo for this verb
 
 		VIO_verb_cleanup(tdbb, transaction);
 	}
