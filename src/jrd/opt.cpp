@@ -5024,6 +5024,7 @@ static JRD_NOD make_inversion(TDBB tdbb,
 	/* AB: If the boolean is a part of an earlier created index 
 	   retrieval check with the compound_selectivity if it's 
 	   really interresting to use. */
+	inversion = NULL;
 	accept_starts = TRUE;
 	accept_missing = TRUE;
 	used_in_compound = FALSE;
@@ -5112,7 +5113,6 @@ static JRD_NOD make_inversion(TDBB tdbb,
 
 	accept = TRUE;
 	idx = csb_tail->csb_idx;
-	inversion = NULL;
 	if (opt->opt_count) {
 		for (i = 0; i < idx_walk_count; i++) {
 
