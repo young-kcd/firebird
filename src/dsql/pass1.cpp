@@ -1495,8 +1495,11 @@ static BOOLEAN aggregate_found( DSQL_REQ request, DSQL_NOD node)
  	aggregate_found2
   
     @brief	Check for an aggregate expression in an 
- 	rse select list.  It could be buried in 
- 	an expression tree.
+ 	expression. It could be buried in an expression 
+	tree and therefore call itselfs again. The level
+	parameters (current_level & deepest_level) are used
+	to see how deep we are with passing sub-queries
+	(= scope_level).
  
  	field is true if a non-aggregate field reference is seen.
  
@@ -1520,7 +1523,7 @@ static BOOLEAN aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT * curren
 
 	switch (node->nod_type) {
 
-		/* handle the simple case of a straightforward aggregate */
+		// handle the simple case of a straightforward aggregate
 
 		case nod_agg_average:
 		case nod_agg_average2:
@@ -1531,8 +1534,9 @@ static BOOLEAN aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT * curren
 		case nod_agg_count:
 			if (node->nod_count) {
 				*deepest_level = request->req_scope_level;
-				/* If we are already in a aggregate function don't search inside sub-selects for
-				   the deepest field used else we would have a wrong deepest_level value */
+				// If we are already in a aggregate function don't search inside 
+				// sub-selects for the deepest field used else we would have a 
+				// wrong deepest_level value
 				aggregate_found2(request, node->nod_arg[0], current_level, deepest_level, TRUE);
 				if (*deepest_level == request->req_scope_level) {
 					aggregate = TRUE;
@@ -1552,12 +1556,6 @@ static BOOLEAN aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT * curren
 				*deepest_level = lcontext->ctx_scope_level;
 			}
 			return FALSE;
-			/*if (lcontext->ctx_scope_level == request->req_scope_level) {
-				return TRUE;			
-			}
-			else {
-				return FALSE;
-			}*/
 
 		case nod_alias:
 			aggregate = aggregate_found2(request, node->nod_arg[e_alias_value], current_level, deepest_level, ignore_sub_selects);
@@ -1572,8 +1570,8 @@ static BOOLEAN aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT * curren
 				return FALSE;
 			}
 
-			/* for expressions in which an aggregate might
-			  be buried, recursively check for one */
+			// for expressions in which an aggregate might
+			// be buried, recursively check for one
 
 		case nod_via:
 			if (!ignore_sub_selects) {
@@ -1677,7 +1675,7 @@ static BOOLEAN aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT * curren
 			lrelation_context = reinterpret_cast<DSQL_CTX>(node->nod_arg[e_rel_context]);
 			// Check if relation is a procedure
 			if (lrelation_context->ctx_procedure) {
-				// If input parameters exists check if a aggregate is burried inside
+				// If input parameters exists check if a aggregate is buried inside
 				if (lrelation_context->ctx_proc_inputs) {
 					aggregate |= aggregate_found2(request, lrelation_context->ctx_proc_inputs, current_level, deepest_level, ignore_sub_selects);
 				}
@@ -4326,7 +4324,7 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 		}
 
 		LLS_PUSH(parent_context, &request->req_context);
-		/* replace original contexts with parent context */
+		// replace original contexts with parent context
 		remap_streams_to_parent_context(rse->nod_arg[e_rse_streams], parent_context);
 	}
 
@@ -5225,9 +5223,12 @@ static DSQL_NOD post_map( DSQL_NOD node, DSQL_CTX context)
   
  	remap_field
   
-    @brief	Copy a field list for a SELECT, ORDER BY
-   against an artificial context.
- 
+    @brief	Called to map fields used in an aggregate-context
+	after all pass1 calls (SELECT-, ORDER BY-lists).	
+    Walk completly through the given node 'field' and
+	map the fields with same scope_level as the given context
+	to the given context with the post_map function.
+	
 
     @param request
     @param field
@@ -5405,7 +5406,8 @@ static DSQL_NOD remap_field(DSQL_REQ request, DSQL_NOD field, DSQL_CTX context, 
   
  	remap_fields
   
-    @brief	Copy a field list for a SELECT against an artificial context.
+    @brief	Remap fields inside a field list against 
+	an artificial context.
  
 
     @param request
