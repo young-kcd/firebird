@@ -743,7 +743,7 @@ void SCL_init(bool create,
 	if (sql_role) {
         if (!preODS9 && strcmp (role_name, NULL_ROLE)) {
             strncpy(role_name, sql_role, MAX_SQL_IDENTIFIER_LEN);
-            role_name[MAX_SQL_IDENTIFIER_LEN];
+            role_name[MAX_SQL_IDENTIFIER_LEN] = 0;
         }
         /* CVC: Role is an identifier, it may have embedded blanks. */
         fb_utils::exact_name(role_name);
