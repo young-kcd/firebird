@@ -29,7 +29,10 @@ stopServerIfRunning() {
 
     if [ ! -z "$checkString" ] 
       then
-        if [ -f /etc/rc.d/init.d/firebird ]
+        if [ -f /etc/init.d/firebird ]
+          then
+            /etc/init.d/firebird stop
+        elif [ -f /etc/rc.d/init.d/firebird ]
           then
             /etc/rc.d/init.d/firebird stop
         fi
@@ -51,8 +54,9 @@ checkIfServerRunning() {
 
     if [ ! -z "$checkString" ] 
       then
-        echo "An instance of the Firebird super server seems to be running." 
-        echo "Please quit all firebird applications and then proceed"
+        echo "An instance of the Firebird/InterBase Super server seems to be running." 
+        echo "(the ibserver or ibguard process was detected running on your system)"
+        echo "Please quit all Firebird applications and then proceed"
         exit 1 
     fi
 
@@ -60,20 +64,27 @@ checkIfServerRunning() {
 
     if [ ! -z "$checkString" ] 
       then
-        echo "An instance of the Firebird  server seems to be running." 
+        echo "An instance of the Firebird/InterBase classic server seems to be running." 
+        echo "(the gds_inet_server or gds_pipe process was detected running on your system)"
         echo "Please quit all Firebird applications and then proceed." 
         exit 1 
     fi
 
-    checkString=`netstat -an | egrep '3050.*LISTEN'`
 
-    if [ ! -z "$checkString" ]
-      then
-        echo "An instance of the Firebird server seems to be running."
-        echo "Please quit all Firebird applications and then proceed."
-        exit 1
-    fi
-
+#  This one is commented out, since it usually works out ok, we have
+#  checked that no procesers are active, but inetd/xinetd is still listening
+#  the best thing would be to turn the service off, but I don't have time
+#  to do all the xinetd/inetd stuff, see the preunistall.sh script for details
+#
+#    checkString=`netstat -an | egrep '3050.*LISTEN'`
+#
+#    if [ ! -z "$checkString" ] 
+#      then
+#        echo "An instance of the Firebird/InterBase server seems to be running." 
+#        echo "(netstat -an reports a process is already listening on port 3050)"
+#        echo "Please quit all Firebird applications and then proceed." 
+#        exit 1 
+#    fi
 
 
 # Stop lock manager if it is the only thing running.
@@ -82,7 +93,6 @@ checkIfServerRunning() {
      do
         kill $i
      done
-
 
 }
 
@@ -135,15 +145,15 @@ archivePriorInstallSystemFiles() {
     cd /
 
 
-    DestFile="$FBRootDir"
+    DestFile="opt/interbase"
     if [ -e "$DestFile"  ]
       then
         echo ""
         echo ""
         echo ""
         echo "--- Warning ----------------------------------------------"
-        echo "    The installation target directory: $FBRootDir"
-        echo "    Already contains a prior installation of Firebird."
+        echo "    The installation target directory: $IBRootDir"
+        echo "    Already contains a prior installation of InterBase/Firebird."
         echo "    This and files found in /usr/include and /usr/lib will be"
         echo "    archived in the file : ${ArchiveMainFile}"
         echo "" 
@@ -169,9 +179,18 @@ archivePriorInstallSystemFiles() {
         fi
       done
 
-    for i in gds.a @FIREBIRD_LIBGDS_SO@ ib_util.so
+    for i in gds_pyxis.a gds.a libgds.so.0 libgds.so libib_util.so libgds.a
       do
         DestFile=usr/lib/$i
+        if [ -e $DestFile ]
+          then
+            archiveFileList="$archiveFileList $DestFile"
+        fi
+      done
+
+    for i in usr/sbin/rcfirebird etc/init.d/firebird etc/rc.d/init.d/firebird
+      do
+        DestFile=$i
         if [ -e $DestFile ]
           then
             archiveFileList="$archiveFileList $DestFile"
@@ -205,6 +224,11 @@ archivePriorInstallSystemFiles() {
 #------------------------------------------------------------------------
 #  Check for installed RPM package
 
+# (Pavel I've left this in since originally I could test for other packages,
+# even if they did not conflict with current ones, ie we can test InterBase
+# and CS/SS  The package manager does not allow it currently but I've left
+# this in in case that sort of thing gets allowed again
+
 checkForRPMInstall() {
     PackageName=$1
 
@@ -224,15 +248,10 @@ checkForRPMInstall() {
 
 #= Main Pre ================================================================
 
-
-    if  [ -z "$FirebirdInstallPrefix" ]
-       then
-        FirebirdInstallPrefix=@prefix@
-    fi
-    FBRootDir=$FirebirdInstallPrefix
-    FBBin=$FBRootDir/bin
+    IBRootDir=/opt/interbase
+    IBBin=$IBRootDir/bin
     ArchiveDateTag=`date +"%Y%m%d_%H%M"`
-    ArchiveMainFile="${FBRootDir}_${ArchiveDateTag}.tar.gz"
+    ArchiveMainFile="${IBRootDir}_${ArchiveDateTag}.tar.gz"
 
 
 

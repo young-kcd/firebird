@@ -15,6 +15,7 @@ checkIfServerRunning() {
     if [ ! -z "$checkString" ] 
       then
         echo "An instance of the Firebird/InterBase server seems to be running." 
+        echo "(the gds_inet_server or gds_pipe process was detected running on your system)"
         echo "Please quit all interbase applications and then proceed." 
         exit 1 
     fi
@@ -35,18 +36,12 @@ checkIfServerRunning() {
 # This is a bit simple, but should work for now.  
 # cron will remove files in /tmp after a while. 
 
-
-    if  [ -z "$FirebirdInstallPrefix" ]
-       then
-        FirebirdInstallPrefix=%prefix%
-    fi
-
-    FBRootDir=$FirebirdInstallPrefix/firebird
-    FBBin=$FBRootDir/bin
+    IBRootDir=/opt/interbase
+    IBBin=$IBRootDir/bin
 
     checkIfServerRunning
 
-    cd $FBRootDir
+    cd $IBRootDir
     
     if [ -f isc4.gdb ] 
       then 
@@ -54,7 +49,7 @@ checkIfServerRunning() {
         echo "Saved a copy of isc4.gdb in /tmp" 
     fi 
     
-    for i in isc_init1* isc_event1* isc_lock1* interbase.log SYSDBA.password
+    for i in isc_init1* isc_event1* isc_lock1* isc_guard* interbase.log SYSDBA.password
       do
         if [ -f $i ]
           then

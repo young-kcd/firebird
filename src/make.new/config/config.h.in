@@ -1,4 +1,4 @@
-#ident "$Id: config.h.in,v 1.44 2002-11-05 13:48:42 kkuznetsov Exp $"
+#ident "$Id: config.h.in,v 1.45 2002-11-05 16:49:05 skywalker Exp $"
 
  /*
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
@@ -74,6 +74,7 @@
 #undef HAVE_GETPAGESIZE
 #undef HAVE_XDR_HYPER
 
+
 /* Types */
 #undef socklen_t
 
@@ -107,6 +108,10 @@
 
 /* Support databases on Raw Devices (UNIX only) */
 #undef SUPPORT_RAW_DEVICES
+
+/* Support /etc/proc/exe as link to current executable 
+ * enables us to find path to install directory (Linux only) */
+#undef HAVE__PROC_SELF_EXE
 
 /* CPU types */
 #undef PowerPC

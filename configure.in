@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.62 2002-11-05 13:15:47 kkuznetsov Exp $
+dnl $Id: configure.in,v 1.63 2002-11-05 16:48:59 skywalker Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -237,6 +237,14 @@ AC_CHECK_TYPE(socklen_t,int)
 AC_SYS_LARGEFILE
 AC_CHECK_SIZEOF(void*)
 
+dnl MOD: Check for /proc/self/exe mainly used on linux systems
+dnl      this is used to determine path to executable file.
+
+AC_MSG_CHECKING(for file /proc/self/exe)
+AC_CHECK_FILES(/proc/self/exe)
+
+
+
 dnl EKU: try to determine the alignment of long and double
 dnl      replaces ALIGNMENT and DOUBLE_ALIGN in src/jrd/common.h
 AC_MSG_CHECKING(alignment of long)
@@ -462,6 +470,8 @@ mkdir -p gen/libfbembed/common/memory
 
 MAKE_SRC_DIR=builds/posix
 
+INSTALL_SRC_DIR=src/install/${FIREBIRD_ARCH_TYPE}
+
 AC_DEFINE_UNQUOTED(ISC_PREFIX,$(if test "x$prefix" = "xNONE" ; then echo \"$ac_default_prefix\"; else echo \"$prefix\"; fi))
 
 AC_OUTPUT(
@@ -505,12 +515,13 @@ gen/Makefile.embed.gpre:${MAKE_SRC_DIR}/Makefile.in.embed.gpre
 src/v5_examples/Makefile:${MAKE_SRC_DIR}/Makefile.in.example5
 gen/Makefile.install:${MAKE_SRC_DIR}/Makefile.in.install
 Makefile:Makefile.in
-gen/install/scripts/preinstall.sh:src/install/${FIREBIRD_ARCH_TYPE}/preinstall.sh.in
-gen/install/scripts/install.sh:src/install/${FIREBIRD_ARCH_TYPE}/install.sh.in
-gen/install/scripts/postinstall.sh:src/install/${FIREBIRD_ARCH_TYPE}/postinstall.sh.in
-gen/install/scripts/preuninstall.sh:src/install/${FIREBIRD_ARCH_TYPE}/preuninstall.sh.in
-gen/install/scripts/postuninstall.sh:src/install/${FIREBIRD_ARCH_TYPE}/postuninstall.sh.in
-gen/install/install.sh:src/install/${FIREBIRD_ARCH_TYPE}/tarInstall.sh.in
+gen/install/makeInstallImage.sh:${INSTALL_SRC_DIR}/makeInstallImage.sh.in
+gen/install/scripts/preinstall.sh:${INSTALL_SRC_DIR}/preinstall.sh.in
+gen/install/scripts/install.sh:${INSTALL_SRC_DIR}/install.sh.in
+gen/install/scripts/postinstall.sh:${INSTALL_SRC_DIR}/postinstall.sh.in
+gen/install/scripts/preuninstall.sh:${INSTALL_SRC_DIR}/preuninstall.sh.in
+gen/install/scripts/postuninstall.sh:${INSTALL_SRC_DIR}/postuninstall.sh.in
+gen/install/install.sh:${INSTALL_SRC_DIR}/tarInstall.sh.in
 src/install/misc/firebird.xinetd
 dnl SINIX-Z start
 gen/install/sinixz/Makefile:src/install/arch-specific/sinixz/Makefile.in
