@@ -30,7 +30,7 @@
  * 2003.08.10 Claudio Valderrama: Fix SF Bugs #544132 and #728839.
  */
 /*
-$Id: fun.epp,v 1.55 2004-05-17 22:27:56 brodsom Exp $
+$Id: fun.epp,v 1.56 2004-05-18 01:20:04 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -954,6 +954,8 @@ static void invoke(UserFunction* function,
  *	use CHECK_FOR_EXCEPTIONS macros without conflicts with destructors
  *
  **************************************/
+	thread_db* tdbb = GET_THREAD_DATA;
+
 	START_CHECK_FOR_EXCEPTIONS(function->fun_exception_message.c_str());
 	if (function->fun_return_arg)
 	{
