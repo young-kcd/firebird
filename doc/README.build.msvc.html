@@ -11,7 +11,7 @@
 <BODY>
 <H2>VisualStudio build Notes</H2>
 <hr/>
-Last Update: June 4 2003<br>
+Last Update: June 7 2003<br>
 Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 
 <h3>0.-Introduction</h3>
@@ -59,7 +59,7 @@ Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 <p>If you intend to prepare an installable build, you will need innosetup and the sed utility.</p>
 <p>To download the utilities use the following links</p>
 <ul>
-<li>Inno setup <a href="http://www.jrsoftware.org/">http://www.jrsoftware.org/</a></li>
+<li>My Inno setup extensions 3.0.6.2 <a href="http://www.jrsoftware.org/">http://www.wintax.nl/isx/</a></li>
 <li>Sed and Bison 1.35 <a href="http://gnuwin32.sourceforge.net/">http://gnuwin32.sourceforge.net/</a></li>
 <li>Byacc 1.9 <a href="ftp://garbo.uwasa.fi/pc/unix/">ftp://garbo.uwasa.fi/pc/unix/</a></li>
 </ul>
@@ -105,12 +105,14 @@ Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 <p>If you change parser.cpp or parser.sed you will need to rebuild parser.cpp, to do so use parser.bat</p>
 <h4>4.3.-Installer build</h4>
 <p>Remember, you need sed and innosetup in the path to build the installer</p>
+<ul>
 <li>Open a command line window.</li>
 <li>Go to the firebird2 src\install\arch-specific\win32 directory.</li>
 <li>The batch to build the installer is<br>
 BuildExecutableInstall.bat [DEBUG] [CS]<br>
 Where DEBUG means if the build is a debug one or not and CS means classic server installer.</li>
-
+<li>After you start the batch, you will get a InnoSetup window. To build the install exe select the option compile, and a new exe will appear in builds/win32/install_image
+</ul>
 </blockquote>
 </BODY>
 </HTML>

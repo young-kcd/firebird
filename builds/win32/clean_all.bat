@@ -17,3 +17,4 @@
 
 @Echo Cleaning install files
 @del %ROOT_PATH%\src\install\arch-specific\win32\*.dll 2>nul
+@rmdir /s /q %ROOT_PATH%\builds\win32\install_image
