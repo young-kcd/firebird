@@ -326,11 +326,11 @@ static USHORT do_msgs( TEXT * filename, TEXT * locale, USHORT sw_warning)
 			END_FOR;
 			if (!found_one && sw_warning)
 				ib_printf
-					("build_file: Warning - no %s translation of msg# %d\n",
+					("build_file: Warning - no %s translation of msg# %ld\n",
 					 locale, X.CODE);
 			if (found_one > 1 && sw_warning)
 				ib_printf
-					("build_file: Warning - multiple %s translations of msg# %d\n",
+					("build_file: Warning - multiple %s translations of msg# %ld\n",
 					 locale, X.CODE);
 			if (found_one != 1)
 				warning_counter++;
