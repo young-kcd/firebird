@@ -79,13 +79,13 @@ are actually locked and DO fall under search condition specified in WHERE clause
 if this search condition depends only on a record to be returned (for example, it 
 contains no subqueries reading mutable tables, etc). It also guaranties that
 no rows not falling under search condition are locked by the statement. It doesn't 
-guaranty that there is no rows falling under search condition, but not locked 
+guaranty that there are no rows falling under search condition, but not locked 
 (this may happen if other parallel transactions commit their changes during 
 execution of locking statement).
 
 Engine locks rows at fetch time. This has important consequences if you lock
 several rows at once. By default, access methods for Firebird databases
-fetch results is packs of a few hundred rows. Most access components may not 
+fetch results in packs of a few hundred rows. Most access components may not 
 give you the rows contained in the last fetched packed where error happened.
 You may use FOR UPDATE clause to prevent usage of buffered fetches (and may
 use positioned updates feature) or set fetch buffer size to 1 in your access
