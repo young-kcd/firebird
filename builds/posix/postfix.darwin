@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: postfix.darwin,v 1.1.2.6 2003-11-14 02:43:01 bellardo Exp $
+#$Id: postfix.darwin,v 1.1.2.7 2003-11-25 23:09:06 bellardo Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 
@@ -78,4 +78,44 @@ darwin_finish_cs_framework: extlib
 	cp install/arch-specific/darwin/FrameworkInfo.plist \
 			$(FB_FW)/Resources/Info.plist
 	cp install/misc/firebird.conf $(FB_FW)/Resources/English.lproj/var
+	#sed "s/__VERSION__/`$(VERS_UTIL)`/g" source/firebird/bellardo/darwin/FrameworkInfo.plist > source/interbase/Firebird.framework/Resources/Info.plist
+
+darwin_finish_ss_framework: FB_FW = ../gen/firebird/frameworks/FirebirdSS.framework
+darwin_finish_ss_framework: extlib
+	-$(RM) -rf $(FB_FW)
+	mkdir -p $(FB_FW)/Versions/A/Resources/English.lproj/var
+	ln -s Versions/Current/Firebird $(FB_FW)/Firebird
+	ln -s Versions/Current/Headers $(FB_FW)/Headers
+	ln -s Versions/Current/Resources $(FB_FW)/Resources
+	ln -s A $(FB_FW)/Versions/Current
+	cp -r ../gen/firebird/include $(FB_FW)/Versions/A/Headers
+	cp ../gen/firebird/lib/libfbclient.dylib $(FB_FW)/Versions/A/Firebird
+	cp ../gen/firebird/firebird.msg \
+			$(FB_FW)/Resources/English.lproj/var/firebird.msg
+	cp -r ../gen/firebird/UDF $(FB_FW)/Resources/English.lproj/var/UDF
+	mkdir -p $(FB_FW)/Resources/English.lproj/var/intl
+	cp -r ../gen/firebird/intl/libfbintl.dylib \
+		$(FB_FW)/Resources/English.lproj/var/intl/fbintl.dylib
+	chmod a+rx $(FB_FW)/Resources/English.lproj/var/intl/fbintl.dylib
+	cp -r ../gen/firebird/help $(FB_FW)/Resources/English.lproj/var/help
+	cp ../gen/firebird/security.fdb $(FB_FW)/Resources/English.lproj/var
+	mkdir -p $(FB_FW)/Resources/bin
+	ln -s ../../bin $(FB_FW)/Resources/English.lproj/var/bin
+	cp ../gen/firebird/bin/fbserver $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/gfix $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/gbak $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/isql $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/gpre $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/fb_lock_print $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/gds_drop $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/gds_relay $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/gsec $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/gstat $(FB_FW)/Resources/bin
+	cp -r ../gen/firebird/examples/v5 $(FB_FW)/Resources/examples
+	cp ../src/extlib/ib_udf.sql $(FB_FW)/Resources/examples
+	cp install/arch-specific/darwin/FrameworkInfo.plist \
+			$(FB_FW)/Resources/Info.plist
+	cp install/misc/firebird.conf $(FB_FW)/Resources/English.lproj/var
+	#cp ../gen/firebird/bin/qli $(FB_FW)/Resources/bin
+	#cp ../gen/firebird/bin/gdef $(FB_FW)/Resources/bin
 	#sed "s/__VERSION__/`$(VERS_UTIL)`/g" source/firebird/bellardo/darwin/FrameworkInfo.plist > source/interbase/Firebird.framework/Resources/Info.plist

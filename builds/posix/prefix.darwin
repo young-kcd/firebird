@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin,v 1.8.2.15 2003-11-13 04:46:45 tmcsys Exp $
+#$Id: prefix.darwin,v 1.8.2.16 2003-11-25 23:09:07 bellardo Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 LD=@CXX@
@@ -31,6 +31,8 @@ LIB_LINK_OPTIONS:=-bundle -flat_namespace -undefined suppress
 LIB_SHLIB_LINK_OPTIONS:=-dynamiclib -flat_namespace
 LIB_EMBED_LINK_OPTIONS:=-install_name Firebird.framework/Versions/A/Firebird \
 	-current_version 1.0.0 -compatibility_version 1.0.0 -seg1addr 0x30000000
+LIB_CLIENT_LINK_OPTIONS:=-install_name Firebird.framework/Versions/A/Firebird \
+	-current_version 1.0.0 -compatibility_version 1.0.0 -seg1addr 0x30000000
 #LIB_LINK_RPATH:=-Wl,-rpath,
 #LIB_LINK_SONAME:=-Wl,-soname,
 LIB_LINK_RPATH_LINE:=
@@ -45,3 +47,6 @@ PLATFORM_PATH := jrd/os/darwin
 
 PLAT_CLASSIC_PRE_TARGET=darwin_setup_framework
 PLAT_CLASSIC_POST_TARGET=darwin_finish_cs_framework
+
+PLAT_SUPER_PRE_TARGET=darwin_setup_framework
+PLAT_SUPER_POST_TARGET=darwin_finish_ss_framework
