@@ -181,7 +181,7 @@ static struct nod_types {
 	{ KW_COUNT, nod_count, nod_rpt_count, nod_agg_count },
 	{ KW_AVERAGE, nod_average, nod_rpt_average, nod_agg_average },
 	{ KW_TOTAL, nod_total, nod_rpt_total, nod_agg_total },
-	{ KW_none, nod_any, nod_any }
+	{ KW_none, nod_any, nod_any, nod_any }
 };
 
 static NOD_T relationals[] = {
