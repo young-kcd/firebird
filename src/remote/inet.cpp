@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.35 2002-11-06 12:36:06 eku Exp $
+$Id: inet.cpp,v 1.36 2002-11-10 14:29:00 kkuznetsov Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -3139,7 +3139,7 @@ static void inet_handler( PORT port)
  *
  **************************************/
 	int n;
-	UCHAR junk;
+	SCHAR junk;
 
 /* If there isn't any out of band data, this signal isn't for us */
 

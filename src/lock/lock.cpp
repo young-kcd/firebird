@@ -29,7 +29,7 @@
  *
  */
 /*
-$Id: lock.cpp,v 1.21 2002-11-06 07:08:46 eku Exp $
+$Id: lock.cpp,v 1.22 2002-11-10 14:28:59 kkuznetsov Exp $
 */
 
 #include "firebird.h"
@@ -880,8 +880,8 @@ If this happens on another classic platform add that platform too. - Shailesh
 											sizeof(struct own)))) return
 			FAILURE;
 	AST_ALLOC;
-	if (status = gds__thread_start((FPTR_INT) blocking_action_thread,
-								   &LOCK_owner_offset, THREAD_high, 0, 0)) {
+	if (status = gds__thread_start( reinterpret_cast < FPTR_INT_VOID_PTR > ( blocking_action_thread ),
+				   &LOCK_owner_offset, THREAD_high, 0, 0)) {
 		*status_vector++ = gds_arg_gds;
 		*status_vector++ = gds_lockmanerr;
 		*status_vector++ = gds_arg_gds;
@@ -1578,8 +1578,8 @@ static void acquire( PTR owner_offset)
 					value = ISC_event_clear(event_ptr);
 					release_mutex();
 					ret = ISC_event_wait(1, &event_ptr, &value,
-										 LOCK_solaris_stall * 1000000,
-										 lock_alarm_handler, event_ptr);
+								LOCK_solaris_stall * 1000000,
+								(void(*)()) lock_alarm_handler, event_ptr);
 #ifdef DEV_BUILD
 					if (ret != SUCCESS)
 						gds__log
@@ -4165,12 +4165,12 @@ static void shutdown_blocking_thread( STATUS * status_vector)
 
 		/* Wait for the AST thread to finish cleanup or for 10 seconds */
 		ISC_event_wait(1, &event_ptr, &value, 10 * 1000000,
-					   lock_alarm_handler, event_ptr);
+					  (void(*)()) lock_alarm_handler, event_ptr);
 
 		/* Either AST thread terminated, or our timeout expired */
 
 		/* Finish our cleanup */
-		ISC_unmap_object(status_vector, &LOCK_data, &LOCK_owner,
+		ISC_unmap_object(status_vector,  &LOCK_data, (UCHAR**) &LOCK_owner,
 						 sizeof(struct own));
 	}
 #endif
