@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.71 2004-11-29 20:27:34 skidder Exp $
+$Id: backup.epp,v 1.72 2004-11-30 20:17:31 skidder Exp $
 */
 
 #include "firebird.h"
@@ -202,7 +202,8 @@ const SCHAR blob_items[] =
 {
 	isc_info_blob_max_segment,
 	isc_info_blob_num_segments,
-	isc_info_blob_type
+	isc_info_blob_type,
+	isc_info_blob_total_length
 };
 const SCHAR blr_items[] =
 {
@@ -1367,8 +1368,9 @@ void put_blob( burp_fld* field, ISC_QUAD* blob_id, ULONG count)
 	put(tdgbl, (UCHAR) (rec_blob));
 	put_numeric(att_blob_field_number, field->fld_number);
 
-	ULONG segments = 0;
+	ULONG segments = 0, total_length = 0;
 	USHORT max_segment = 0;
+	int blob_type = 0; // 0 - segmented, 1 - stream
 	const UCHAR* p = blob_info;
 
 	UCHAR item;
@@ -1381,17 +1383,19 @@ void put_blob( burp_fld* field, ISC_QUAD* blob_id, ULONG count)
 		switch (item)
 		{
 		case isc_info_blob_max_segment:
-			put_numeric(att_blob_max_segment, (int) n);
 			max_segment = n;
 			break;
 
 		case isc_info_blob_type:
-			put_numeric(att_blob_type, (int) n);
+			blob_type = n;
 			break;
 
 		case isc_info_blob_num_segments:
-			put_numeric(att_blob_number_segments, (int) n);
 			segments = n;
+			break;
+
+		case isc_info_blob_total_length:
+			total_length = n;
 			break;
 
 		default:
@@ -1400,8 +1404,19 @@ void put_blob( burp_fld* field, ISC_QUAD* blob_id, ULONG count)
 		}
 	}
 
-// Allocate a buffer large enough for the largest segment and start grinding. 
+	// NS: Compute number of chunks we are going to write for stream blob based
+	// on total blob length and maximum segment size. This way we tend to 
+	// preserve maximum internal segment size over backup/restore. I'm not sure
+	// this is beneficial, but let's do it for the moment instead of inventing
+	// our own chunk size.
+	if (blob_type == 1 && total_length != 0)
+		segments = (total_length + max_segment - 1) / max_segment;
 
+	put_numeric(att_blob_max_segment, max_segment);
+	put_numeric(att_blob_number_segments, segments);
+	put_numeric(att_blob_type, blob_type);
+
+	// Allocate a buffer large enough for the largest segment and start grinding. 
 	UCHAR* buffer;
 	if (!max_segment || max_segment <= sizeof(static_buffer))
 		buffer = static_buffer;
@@ -1413,12 +1428,17 @@ void put_blob( burp_fld* field, ISC_QUAD* blob_id, ULONG count)
 	while (segments > 0)
 	{
 		USHORT segment_length;
-		if (isc_get_segment(status_vector, &blob, &segment_length, max_segment,
-							(char*) buffer))
+
+		ISC_STATUS status =
+			isc_get_segment(status_vector, &blob, &segment_length, max_segment,
+							(char*) buffer);
+
+		// Handle the errors. For stream blob isc_segment is not error here.
+		if (status && (status != isc_segment || blob_type == 0))
 		{
 			BURP_error_redirect(status_vector, 22, NULL, NULL);
+			// msg 22 isc_get_segment failed 
 		}
-		// msg 22 isc_get_segment failed 
 
 		put(tdgbl, (UCHAR) (segment_length));
 		put(tdgbl, (UCHAR) (segment_length >> 8));
