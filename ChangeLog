@@ -1,3 +1,59 @@
+2004-09-01 18:11  alexpeshkoff
+
+	* firebird2/: builds/install/misc/firebird.conf (1.7),
+	src/common/config/config.cpp (1.53), src/common/config/config.h
+	(1.30), src/jrd/os/win32/thd_priority.cpp (1.22):
+	
+	Partially removed DeadThreadsCollection parameter from
+	firebird.conf.	Concerning complete removal of it I wait for
+	response on my letter to devel list.
+
+2004-09-01 16:55  alexpeshkoff
+
+	* firebird2/builds/win32/msvc6/alice.dsp (1.17):
+	
+	Removed alice\lls.h as absolutely unneeded during alice cleanup. 
+	Other non-posix platforms may also need fix.
+
+2004-09-01 16:51  alexpeshkoff
+
+	* firebird2/src/alice/: alice.cpp (1.71), alice.h (1.44), all.cpp
+	(1.29), all.h (1.12), exe.cpp (1.38), lls.h (1.6):
+	
+	Fixed my bug in alice. Also some style changes and cleanup.
+
+2004-09-01 14:06  alexpeshkoff
+
+	* firebird2/builds/win32/prepare.bat (1.35):
+	
+	fixed bug in previous commit
+
+2004-09-01 13:53  alexpeshkoff
+
+	* firebird2/: builds/posix/Makefile.in.refDatabases (1.23),
+	builds/win32/prepare.bat (1.34), src/msgs/facilities.sql (1.4),
+	src/msgs/history.sql (1.2), src/msgs/locales.sql (1.2),
+	src/msgs/messages.sql (1.6), src/msgs/msg.sql (1.3),
+	src/msgs/symbols.sql (1.2), src/msgs/system_errors.sql (1.3),
+	src/msgs/templates.sql (1.2), src/msgs/transmsgs.de_DE.sql (1.2),
+	src/msgs/transmsgs.fr_FR.sql (1.2):
+	
+	fixed msg.fdb build on windows terminal server remote session posix
+	is also in sync
+
+2004-09-01 11:36  skidder
+
+	* firebird2/src/common/classes/alloc.cpp (1.68):
+	
+	Look up Valgrind header in more appropriate place
+
+2004-09-01 03:08  skidder
+
+	* firebird2/src/: include/gen/msgs.h (1.17), jrd/pag.cpp (1.80),
+	msgs/messages.sql (1.5):
+	
+	Add notion of ODS type to wrong_ods error message
+
 2004-09-01 00:29  skidder
 
 	* firebird2/: lang_helpers/gds_codes.ftn (1.8),
