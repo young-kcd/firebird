@@ -21,6 +21,7 @@ o Before installation
 o Installing on systems with older versions of Firebird
 o Installing on systems with Firebird 2.0
 o New features of the installer
+o Known installation problems
 o Deprecated features related to installation
 o Uninstallation
 o Other Notes
@@ -62,86 +63,33 @@ will receive no warning until the installer attempts
 to overwrite an active file.
 
 
-New features of the installer in Firebird 2.0.0 Alpha 1
--------------------------------------------------------
+New features of the installer
+-----------------------------
 
-There are no new installer features in Alpha 1.
+o If an existing firebird.conf is detected the
+  installer will install the default conf file
+  as:
 
+  firebird.conf.default.
 
-New features of the installer in Firebird 1.5.2
------------------------------------------------
-
-Support for several languages has been added to the
-installer. This support extends ONLY to the
-installation process.
-
-
-New features of the installer in Firebird 1.5
----------------------------------------------
-
-o This installer now combines the super server and
-  classic server binaries into a single installation
-  package. You can choose to install one or the other,
-  but not both. To switch server type you need to
-  uninstall and re-install.
-
-o The rules for library installation have changed
-  considerably. They are explained in detail in
-    .\docs\README.Win32LibraryInstallation.txt
-  which will be available to you after installation.
-
-  As a result of these new rules the installer
-  checks for an existing install of Firebird or
-  InterBase.
-
-  - If Firebird 1.5 is already installed
-    it will attempt to install over it. If
-    the server is running it will halt the install.
-
-  - If another version of Firebird or InterBase is
-    already installed it will warn the user. If
-    the user continues the installer will install
-    Firebird and set up registry entries but it
-    will not configure Firebird to run, either as
-    a service or as an application. This must
-    be done manually.
-
-  - The installer has a new commandline option
-      /force
-    which allows those with a 'devil may care'
-    attitude to override the above.
+  The existing firebird.conf file will be untouched.
+  This is to ensure that access restrictions are
+  maintained after an upgrade.
 
 
-o If an amended firebird.conf exists in the
-  installation directory it is saved as:
-    firebird.conf.saved.n
-  where n is a number. The installer always installs
-  the default firebird.conf file. This is to guarantee
-  consistency to the installation process. Otherwise
-  the installer would have to parse the existing (and
-  possibly broken) configuration file.
+o Support for several languages has been added to the
+  installer. This support extends ONLY to the
+  installation process.
 
 
-Deprecated Features related to installation
--------------------------------------------
+Known installation problems
+---------------------------
 
-o Firebird 1.0 reserved a new registry key for
-  Firebird use. It was:
-
-    HKLM\SOFTWARE\FirebirdSQL
-  This is now deprecated and will be deleted by the
-  installer. If you have applications which rely
-  on this key you should add it back manually.
-  However, it is preferable if you rebuild your
-  application to read the new key.
-
-o Earlier Firebird 1.5 release candidates installed
-  fbclient.dll in the <system> directory. This
-  practice is now deprecated. An option to install
-  it into the <system> directory is available at
-  install time. However, it is preferable if you
-  rebuild your applications to conform  to the new
-  usage of fbclient.
+A client-only install is in fact installing the
+server executable. This will be fixed in a future
+beta release. In the meantime the work-around is
+to delete the .exe. This can be automated by using
+a scripted install.
 
 
 Uninstallation
@@ -161,6 +109,19 @@ o If Firebird is running as an application (instead of
   application. If a server is running during the
   uninstall the uninstall will complete with errors.
   You will have to delete the remnants by hand.
+
+o Uninstallation leaves four files in the install
+  directory:
+
+  - aliases.conf
+  - firebird.conf
+  - firebird.log
+  - security2.fdb
+
+  This is intentional. These files are all
+  potentially modifiable by users and may be required
+  if Firebird is re-installed in the future. They can
+  be deleted if no longer required.
 
 
 Other Notes
