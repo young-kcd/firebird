@@ -1,3 +1,23 @@
+2004-03-12 21:19  skidder
+
+	* firebird2/src/: include/fb_blk.h, jrd/cmp.cpp, jrd/exe.h,
+	jrd/nbak.cpp, jrd/nbak.h, jrd/req.h, utilities/nbackup.cpp:
+	
+	Fix issues in my code spotted by Claudio
+
+2004-03-12 07:59  skidder
+
+	* firebird2/: examples/empbuild/empbuild.e, src/burp/mvol.cpp,
+	src/dsql/dsql.cpp, src/dsql/parse.y, src/dsql/preparse.cpp,
+	src/gpre/gpre.cpp, src/include/fb_exception.h, src/isql/isql.epp,
+	src/jrd/cch.h, src/jrd/cmp.cpp, src/jrd/common.h, src/jrd/dfw.epp,
+	src/jrd/event.cpp, src/jrd/event.h, src/jrd/exe.cpp, src/jrd/exe.h,
+	src/jrd/req.h, src/jrd/os/posix/unix.cpp, src/remote/allr.cpp,
+	src/remote/divorce.cpp, src/remote/inet_server.cpp:
+	
+	Fix some warnings from GCC/Linux build. Some of them were subtle
+	errors
+
 2004-03-11 06:47  skidder
 
 	* firebird2/src/jrd/: dyn_util.epp, sdw.cpp:
