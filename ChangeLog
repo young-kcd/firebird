@@ -1,3 +1,29 @@
+2005-02-22 23:12  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp (1.228):
+	
+	Fix bug with index navigation were both dependent streams and free
+	streams are performed in a inner join list
+
+2005-02-22 22:04  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp (1.227):
+	
+	Fix, aggregate functions were also delivered from HAVING to the
+	WHERE clause
+
+2005-02-22 07:32  dimitr
+
+	* firebird2/src/jrd/btr.cpp (1.139):
+	
+	More complete fix for DESC indices.
+
+2005-02-22 06:51  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.10):
+	
+	Fixed more issues with explicit plans.
+
 2005-02-21 21:32  dimitr
 
 	* firebird2/src/jrd/opt.cpp (1.226):
