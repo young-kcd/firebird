@@ -122,4 +122,4 @@ private:
 
 }	// namespace Firebird
 
-#endif CLASSES_TIMESTAMP_H
+#endif // CLASSES_TIMESTAMP_H
