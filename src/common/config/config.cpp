@@ -92,7 +92,7 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_STRING,		"RemotePipeName",			(ConfigValue) FB_PIPE_NAME},
 	{TYPE_STRING,		"IpcName",					(ConfigValue) FB_IPC_NAME},
 	{TYPE_STRING,		"MaxUnflushedWrites",		(ConfigValue) 100},
-	{TYPE_STRING,		"MaxUnflushedWriteTime",	(ConfigValue) 30}
+	{TYPE_STRING,		"MaxUnflushedWriteTime",	(ConfigValue) 5}
 };
 
 /******************************************************************************
