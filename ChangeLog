@@ -1,3 +1,16 @@
+2003-05-13 14:04  alexpeshkoff
+
+	* firebird2/src/jrd/: ExecuteStatement.cpp, exe.cpp:
+	
+	Fixed bug with NULL argument
+
+2003-05-13 12:13  aafemt
+
+	* firebird2/src/remote/srvr_w32.cpp:
+	
+	Win32 SS doesn't ignore protocol command-line switches anymore. CS
+	doesn't support IPC
+
 2003-05-11 21:38  skidder
 
 	* firebird2/src/jrd/rse.cpp:
