@@ -50,7 +50,7 @@ using namespace Jrd;
 WHY_DBB GetWhyAttachment(ISC_STATUS* status,
 						  Attachment* jrd_attachment_handle);
 
-const static struct {
+static const struct {
 	SSHORT SqlType;
 	SSHORT DataLength;
 } DscType2SqlType[] =
