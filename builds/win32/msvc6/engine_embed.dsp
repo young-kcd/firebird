@@ -477,7 +477,7 @@ SOURCE=..\..\..\src\jrd\utl.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\val.cpp
+SOURCE=..\..\..\src\jrd\validation.cpp
 # End Source File
 # Begin Source File
 

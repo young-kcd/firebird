@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		val.cpp
+ *	MODULE:		validation.cpp
  *	DESCRIPTION:	Validation and garbage collection
  *
  * The contents of this file are subject to the Interbase Public

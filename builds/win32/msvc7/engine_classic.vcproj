@@ -403,7 +403,7 @@
 				RelativePath="..\..\..\src\jrd\utl.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\val.cpp">
+				RelativePath="..\..\..\src\jrd\validation.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\vio.cpp">

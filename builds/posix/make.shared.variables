@@ -41,7 +41,7 @@ JRD_ServerFiles=  blob_filter.cpp dpm.epp dyn.epp dyn_def.epp \
 		plugin_manager.cpp pwd.cpp rlck.cpp \
 		rng.cpp rpb_chain.cpp rse.cpp \
 		sdw.cpp shut.cpp sort.cpp sort_mem.cpp sqz.cpp \
-		svc.cpp sym.cpp tpc.cpp tra.cpp val.cpp vio.cpp \
+		svc.cpp sym.cpp tpc.cpp tra.cpp validation.cpp vio.cpp \
 		nodebug.cpp nbak.cpp sha.cpp $(Physical_IO_Module)
 
 
