@@ -214,8 +214,7 @@ USHORT BTR_all(thread_db*    tdbb,
 			   jrd_rel* relation,
 			   index_desc**   start_buffer,
 			   index_desc**   csb_idx,
-			   STR*    csb_idx_allocation,
-			   SLONG*  idx_size)
+			   CompilerScratch::IndexDescAlloc* csb_idx_allocation)
 {
 /**************************************
  *
@@ -234,20 +233,14 @@ USHORT BTR_all(thread_db*    tdbb,
 	CHECK_DBB(dbb);
 	WIN window(-1);
 
-	index_desc* buffer = *start_buffer;
+	
 	index_root_page* root = fetch_root(tdbb, &window, relation);
 	if (!root) {
 		return 0;
 	}
 
-	if ((SLONG) (root->irt_count * sizeof(index_desc)) > *idx_size) {
-		const SLONG size = (sizeof(index_desc) * dbb->dbb_max_idx) + ALIGNMENT;
-		str* new_buffer = FB_NEW_RPT(*dbb->dbb_permanent, size) str();
-		*csb_idx_allocation = new_buffer;
-		buffer = *start_buffer =
-			(index_desc*) FB_ALIGN((U_IPTR) new_buffer->str_data, ALIGNMENT);
-		*idx_size = size - ALIGNMENT;
-	}
+	fb_assert(csb_idx_allocation);
+	index_desc* buffer = *start_buffer = csb_idx_allocation->getBuffer(root->irt_count);
 	USHORT count = 0;
 	for (USHORT i = 0; i < root->irt_count; i++) {
 		if (BTR_description(relation, root, buffer, i)) {
@@ -256,7 +249,6 @@ USHORT BTR_all(thread_db*    tdbb,
 		}
 	}
 	*csb_idx = *start_buffer;
-	*idx_size = *idx_size - ((UCHAR*)buffer - (UCHAR*) *start_buffer);
 	*start_buffer = buffer;
 
 	CCH_RELEASE(tdbb, &window);

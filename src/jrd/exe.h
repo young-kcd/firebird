@@ -595,6 +595,8 @@ public:
 	USHORT			csb_g_flags;
 	MemoryPool&		csb_pool;				/* Memory pool to be used by csb */
 
+	typedef Firebird::HalfStaticArray<index_desc, 8> IndexDescAlloc;
+
     struct csb_repeat
 	{
 		// We must zero-initialize this one
@@ -629,7 +631,7 @@ public:
 		jrd_rel* csb_view;		/* parent view */
 
 		index_desc* csb_idx;		/* Packed description of indices */
-		str* csb_idx_allocation;	/* Memory allocated to hold index descriptions */
+		IndexDescAlloc *csb_idx_allocation;	/* Memory allocated to hold index descriptions */
 		jrd_nod* csb_message;			/* Msg for send/receive */
 		Format* csb_format;		/* Default Format for stream */
 		SparseBitmap* csb_fields;		/* Fields referenced */

@@ -27,11 +27,12 @@
 #include "../jrd/btr.h"
 #include "../jrd/ods.h"
 #include "../jrd/req.h"
+#include "../jrd/exe.h"
 
 struct btree_exp;
 struct exp_index_buf;
 
-USHORT	BTR_all(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::index_desc**, Jrd::index_desc**, str**, SLONG*);
+USHORT	BTR_all(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::index_desc**, Jrd::index_desc**, Jrd::CompilerScratch::IndexDescAlloc*);
 void	BTR_create(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::index_desc*, USHORT, Jrd::sort_context*, Jrd::SelectivityList&);
 void	BTR_delete_index(Jrd::thread_db*, Jrd::win*, USHORT);
 //USHORT	BTR_delete_node(Jrd::thread_db*, Ods::btree_page*, USHORT);
