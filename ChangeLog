@@ -1,3 +1,15 @@
+2003-07-30 17:14  skidder
+
+	* firebird2/src/lock/lock.cpp:
+	
+	Apply changes to HEAD too
+
+2003-07-30 16:51  skidder
+
+	* firebird2/src/lock/lock.cpp:
+	
+	Fix Win32 CS lock manager issue
+
 2003-07-29 15:31  skidder
 
 	* firebird2/doc/sql.extensions/README.execute_statement:
