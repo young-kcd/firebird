@@ -2,7 +2,7 @@
 #
 # Run this to generate all the initial makefiles, etc.
 #
-# $Id: autogen.sh,v 1.6 2003-03-07 07:41:13 eku Exp $
+# $Id: autogen.sh,v 1.7 2003-03-13 06:50:04 eku Exp $
 
 PKG_NAME=Firebird2
 SRCDIR=`dirname $0`
@@ -20,7 +20,7 @@ case "$VER" in
   ;;
 esac
 
-VER=`libtool --version|grep ' libtool)' | sed 's/.*) \([0-9][0-9.]*\) .*/\1/'`
+VER=`libtool --version|grep ' libtool)'|sed 's/.*) \([0-9][0-9.]*\) .*/\1/'`
 case "$VER" in
  0* | 1\.[0-2] | 1\.[0-2][a-z]* | \
  1\.3\.[0-2] | 1\.3\.[0-2][a-z]* )
@@ -50,13 +50,18 @@ fi
 
 # Generate configure from configure.in
 echo "Running libtoolize ..."
+LIBTOOL_M4=`libtoolize --copy --force --dry-run|grep 'You should add the contents of'|sed "s,^[^/]*\(/[^']*\).*$,\1,"`
+if test "x$LIBTOOL_M4" != "x"; then
+ rm -f aclocal.m4
+ cp $LIBTOOL_M4 aclocal.m4
+fi
 libtoolize --copy --force || exit 1
+
 echo "Running autoconf ..."
 autoconf || exit 1
 
 # If NOCONFIGURE is set, skip the call to configure
-if test x$NOCONFIGURE = x
-then
+if test "x$NOCONFIGURE" = "x"; then
   echo Running $SRCDIR/configure $conf_flags "$@" ...
   rm -f config.cache config.log
   $SRCDIR/configure $conf_flags "$@" \
