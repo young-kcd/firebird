@@ -36,6 +36,7 @@
 /* Include some apollo include files for tasking */
 
 #if !(defined VMS || defined WIN_NT)
+#include <signal.h>
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
