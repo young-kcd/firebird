@@ -1326,12 +1326,8 @@ static void print_header( HDR header)
 
 	FPRINTF(sw_outfile, "Database header page information:\n");
 	FPRINTF(sw_outfile, "    Page size\t\t%d\n", header->hdr_page_size);
-#ifdef gds_version3
 	FPRINTF(sw_outfile, "    ODS version\t\t%d.%d\n", header->hdr_ods_version,
 			header->hdr_ods_minor);
-#else
-	FPRINTF(sw_outfile, "    ODS version\t\t%d\n", header->hdr_ods_version);
-#endif
 	FPRINTF(sw_outfile, "    Oldest transaction\t%ld\n",
 			header->hdr_oldest_transaction);
 	FPRINTF(sw_outfile, "    Oldest active\t\t%ld\n",
@@ -1341,7 +1337,6 @@ static void print_header( HDR header)
 	FPRINTF(sw_outfile, "    Next transaction\t%ld\n",
 			header->hdr_next_transaction);
 
-#ifdef gds_version3
 
 /*
 FPRINTF (sw_outfile, "    Sequence number    %d\n", header->hdr_sequence);
@@ -1353,7 +1348,6 @@ FPRINTF (sw_outfile, "    Creation date    \n", header->hdr_creation_date);
 	FPRINTF(sw_outfile, "    Implementation ID\t%ld\n",
 			header->hdr_implementation);
 	FPRINTF(sw_outfile, "    Shadow count\t%ld\n", header->hdr_shadow_count);
-#endif
 
 	gds__decode_date(header->hdr_creation_date, &time);
 	FPRINTF(sw_outfile, "    Creation date\t%s %d, %d %d:%02d:%02d\n",
@@ -1399,7 +1393,6 @@ FPRINTF (sw_outfile, "    Creation date    \n", header->hdr_creation_date);
 			FPRINTF(sw_outfile, "\tUnlicensed accesses: %ld\n", number);
 			break;
 
-#ifdef gds_version3
 		case HDR_sweep_interval:
 			move(p + 2, &number, sizeof(number));
 			FPRINTF(sw_outfile, "\tSweep interval: %ld\n", number);
@@ -1408,8 +1401,6 @@ FPRINTF (sw_outfile, "    Creation date    \n", header->hdr_creation_date);
 		case HDR_log_name:
 			FPRINTF(sw_outfile, "\tReplay logging file: %*s\n", p[1], p + 2);
 			break;
-
-#endif
 
 		default:
 			FPRINTF(sw_outfile, "\tUnrecognized option %d, length %d\n", p[0],

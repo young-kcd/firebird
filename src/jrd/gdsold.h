@@ -31,9 +31,6 @@
 
 #include "fb_types.h"
 
-#define gds_version3
-
-
 #ifndef GDS_VAL /* duplicate definition in gds_proto.h */
 #define GDS_VAL(val)	val
 #define GDS_REF(val)	&val

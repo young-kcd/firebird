@@ -22,10 +22,6 @@
 #include "../jrd/common.h"
 #include "../jrd/ods.h"
 
-#ifndef gds_version3
-#define ODS_4		1
-#endif
-
 #define BIG_NUMBER	(ULONG) -1
 
 typedef struct fil {

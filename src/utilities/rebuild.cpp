@@ -222,9 +222,7 @@ int main( int argc, char *argv[])
 
 	gdbb = &tdbb_struct;
 	gdbb->tdbb_database = &dbb_struct;
-#ifndef ODS_4
 	gdbb->tdbb_transaction = &dull;
-#endif
 	dull.tra_number = header->hdr_next_transaction;
 	gdbb->tdbb_database->dbb_max_records = (rbdb->rbdb_page_size
 											- sizeof(struct dpg)) /
@@ -477,7 +475,6 @@ static void checksum( RBDB rbdb, ULONG lower, ULONG upper, UCHAR sw_fix)
 }
 
 
-#ifndef ODS_4
 static USHORT compute_checksum( RBDB rbdb, PAG page)
 {
 /**************************************
@@ -526,65 +523,6 @@ static USHORT compute_checksum( RBDB rbdb, PAG page)
 
 	return 12345;
 }
-
-
-#else
-static USHORT compute_checksum( RBDB rbdb, PAG page)
-{
-/**************************************
- *
- *	c o m p u t e _ c h e c k s u m
- *
- **************************************
- *
- * Functional description
- *	compute checksum for a V2 database
- *	page.
- *
- **************************************/
-	ULONG x;
-	USHORT old_checksum, *p, *end;
-	union {
-		USHORT words[2];
-		ULONG whole;
-	} sum;
-
-#ifndef WORDS_BIGENDIAN
-#define LOW_WORD	0
-#define HIGH_WORD	1
-#else
-#define LOW_WORD	1
-#define HIGH_WORD	0
-#endif
-
-	end = (USHORT *) ((SCHAR *) page + rbdb->rbdb_page_size);
-	old_checksum = page->pag_checksum;
-	page->pag_checksum = 0;
-	sum.whole = 1;
-	p = (USHORT *) page;
-
-	do {
-		x = sum.whole;
-		x += x + *p++;
-		x += x + *p++;
-		x += x + *p++;
-		x += x + *p++;
-		x += x + *p++;
-		x += x + *p++;
-		x += x + *p++;
-		x += x + *p++;
-		sum.whole = x;
-		sum.words[LOW_WORD] += sum.words[HIGH_WORD];
-		sum.words[HIGH_WORD] = 0;
-	}
-	while (p < end);
-
-	page->pag_checksum = old_checksum;
-
-	return sum.words[LOW_WORD];
-}
-#endif
-
 
 static void db_error( int status)
 {
@@ -711,9 +649,7 @@ static void format_header(
 	page->hdr_oldest_transaction = oldest;
 	page->hdr_oldest_active = active;
 	page->hdr_next_transaction = next;
-#ifndef ODS_4
 	page->hdr_implementation = imp;
-#endif
 	page->hdr_header.pag_checksum = compute_checksum(rbdb, page);
 }
 
@@ -1085,8 +1021,6 @@ static void print_db_header( IB_FILE * file, HDR header)
 	ib_fprintf(file, "    Max records per page\t%ld\n",
 			   gdbb->tdbb_database->dbb_max_records);
 
-#ifdef gds_version3
-
 /*
 ib_fprintf ("    Sequence number    %d\n", header->hdr_sequence);
 ib_fprintf ("    Creation date    \n", header->hdr_creation_date);
@@ -1097,8 +1031,6 @@ ib_fprintf ("    Creation date    \n", header->hdr_creation_date);
 	ib_fprintf(file, "    Implementation ID\t\t%ld\n",
 			   header->hdr_implementation);
 	ib_fprintf(file, "    Shadow count\t\t%ld\n", header->hdr_shadow_count);
-
-#endif
 
 	gds__decode_date(header->hdr_creation_date, &time);
 
@@ -1136,7 +1068,6 @@ ib_fprintf ("    Creation date    \n", header->hdr_creation_date);
 			ib_fprintf(file, "\tUnlicensed accesses: %ld\n", number);
 			break;
 
-#ifdef gds_version3
 		case HDR_sweep_interval:
 			move(p + 2, &number, sizeof(number));
 			ib_fprintf(file, "\tSweep interval: %ld\n", number);
@@ -1161,7 +1092,6 @@ ib_fprintf ("    Creation date    \n", header->hdr_creation_date);
 		case HDR_cache_file:
 			ib_fprintf(file, "\tShared cache file: %*s\n", p[1], p + 2);
 			break;
-#endif
 
 		default:
 			ib_fprintf(file, "\tUnrecognized option %d, length %d\n", p[0],
@@ -1318,7 +1248,6 @@ static void write_headers(
 					   (blob->blp_header.
 						pag_flags & blp_pointers) ? "pointers" : "data");
 			break;
-#ifndef ODS_4
 		case pag_ids:
 			ib_fprintf(file, "generator page, checksum %d\n\n",
 					   page->pag_checksum);
@@ -1329,8 +1258,6 @@ static void write_headers(
 					   page->pag_checksum);
 			break;
 
-
-#endif
 		default:
 			ib_fprintf(file, "unknown page type\n\n");
 			break;

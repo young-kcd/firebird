@@ -100,9 +100,7 @@ static void store_headers( RBDB rbdb)
 				P.TYPE = page->pag_type;
 				P.FLAGS = page->pag_flags;
 				P.CHECKSUM = page->pag_checksum;
-#ifndef ODS_4
 				P.GENERATION = page->pag_generation;
-#endif
 				P.RELATION.NULL = TRUE;
 				P.SEQUENCE.NULL = TRUE;
 				P.BLP_LEAD_PAGE.NULL = TRUE;
@@ -121,11 +119,9 @@ static void store_headers( RBDB rbdb)
 				P.HDR_NEXT_TRANS.NULL = TRUE;
 				P.HDR_FLAGS.NULL = TRUE;
 				P.HDR_CREATION_DATE.NULL = TRUE;
-#ifndef ODS_4
 				P.HDR_ATTACHMENT_ID.NULL = TRUE;
 				P.HDR_IMPLEMENTATION.NULL = TRUE;
 				P.HDR_SHADOW_COUNT.NULL = TRUE;
-#endif
 				P.PIP_MIN.NULL = TRUE;
 				P.PPG_NEXT.NULL = TRUE;
 				P.PPG_COUNT.NULL = TRUE;
@@ -146,11 +142,9 @@ static void store_headers( RBDB rbdb)
 					P.SEQUENCE.NULL = FALSE;
 					P.HDR_FLAGS.NULL = FALSE;
 					P.HDR_CREATION_DATE.NULL = FALSE;
-#ifndef ODS_4
 					P.HDR_ATTACHMENT_ID.NULL = FALSE;
 					P.HDR_IMPLEMENTATION.NULL = FALSE;
 					P.HDR_SHADOW_COUNT.NULL = FALSE;
-#endif
 					P.HDR_PAGE_SIZE = header->hdr_page_size;
 					P.HDR_ODS_VERSION = header->hdr_ods_version;
 					P.HDR_PAGES = header->hdr_PAGES;
@@ -162,11 +156,9 @@ static void store_headers( RBDB rbdb)
 					temp.gds_quad_high = header->hdr_creation_date[0];
 					temp.gds_quad_low = header->hdr_creation_date[1];
 					P.HDR_CREATION_DATE = temp;
-#ifndef ODS_4
 					P.HDR_ATTACHMENT_ID = header->hdr_attachment_id;
 					P.HDR_IMPLEMENTATION = header->hdr_implementation;
 					P.HDR_SHADOW_COUNT = header->hdr_shadow_count;
-#endif
 					break;
 
 				case pag_pages:
@@ -238,9 +230,7 @@ static void store_headers( RBDB rbdb)
 					P.BLP_LENGTH = blob->blp_length;
 					break;
 
-#ifndef ODS_4
 				case pag_ids:
-#endif
 				default:
 					break;
 				}
