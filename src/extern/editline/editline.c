@@ -1,4 +1,4 @@
-/*  $Revision: 1.2 $
+/*  $Revision: 1.3 $
 **
 **  Main editing routines for editline library.
 */
@@ -175,7 +175,7 @@ TTYstring(p)
 	TTYshow(*p++);
 }
 
-STATIC unsigned int
+STATIC int
 TTYget()
 {
     CHAR	c;
@@ -347,7 +347,7 @@ ring_bell()
 
 STATIC STATUS
 do_macro(c)
-    unsigned int	c;
+    int	c;
 {
     CHAR		name[4];
 
@@ -849,7 +849,7 @@ insert_char(c)
 STATIC STATUS
 meta()
 {
-    unsigned int	c;
+    int	c;
     KEYMAP		*kp;
 
     if ((c = TTYget()) == EOF)
@@ -857,7 +857,7 @@ meta()
 #if	defined(ANSI_ARROWS)
     /* Also include VT-100 arrows. */
     if (c == '[' || c == 'O')
-	switch ((int)(c = TTYget())) {
+	switch ((c = TTYget())) {
 	default:	return ring_bell();
 	case EOF:	return CSeof;
 	case 'A':	return h_prev();
@@ -886,7 +886,7 @@ meta()
 
 STATIC STATUS
 emacs(c)
-    unsigned int	c;
+    int	c;
 {
     STATUS		s;
     KEYMAP		*kp;
@@ -903,7 +903,7 @@ emacs(c)
     for (kp = Map; kp < &Map[MAPSIZE]; kp++)
 	if (kp->Key == c && kp->Active)
 	    break;
-    s = kp < &Map[MAPSIZE] ? (*kp->Function)() : insert_char((int)c);
+    s = kp < &Map[MAPSIZE] ? (*kp->Function)() : insert_char(c);
     if (!Pushed)
 	/* No pushback means no repeat count; hacky, but true. */
 	Repeat = NO_ARG;
@@ -912,7 +912,7 @@ emacs(c)
 
 STATIC STATUS
 TTYspecial(c)
-    unsigned int	c;
+    int	c;
 {
     if (rl_meta_chars && ISMETA(c))
 	return CSdispatch;
@@ -950,7 +950,7 @@ TTYspecial(c)
 STATIC CHAR *
 editinput()
 {
-    unsigned int	c;
+    int	c;
 
     Repeat = NO_ARG;
     OldPoint = Point = Mark = End = 0;
@@ -1269,9 +1269,9 @@ transpose()
 STATIC STATUS
 quote()
 {
-    unsigned int	c;
+    int	c;
 
-    return (c = TTYget()) == EOF ? CSeof : insert_char((int)c);
+    return (c = TTYget()) == EOF ? CSeof : insert_char(c);
 }
 
 STATIC STATUS
@@ -1302,7 +1302,7 @@ mk_set()
 STATIC STATUS
 exchange()
 {
-    unsigned int	c;
+    int	c;
 
     if ((c = TTYget()) != CTL('X'))
 	return c == EOF ? CSeof : ring_bell();
@@ -1340,7 +1340,7 @@ copy_region()
 STATIC STATUS
 move_to_char()
 {
-    unsigned int	c;
+    int	c;
     int			i;
     CHAR		*p;
 
