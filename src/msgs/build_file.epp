@@ -236,7 +236,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	COMMIT;
 	FINISH;
 
-	exit(FINI_OK);
+	return(FINI_OK);
 }
 
 
