@@ -15,8 +15,10 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.linux:	$(VERSION)	$(PLATFORM)
-#$Id: prefix.linux,v 1.18 2003-06-06 09:31:48 alexpeshkoff Exp $
+#$Id: prefix.linux,v 1.18.2.1 2003-08-04 21:21:30 skidder Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major cleanup
+
+LD=@CXX@
 
 # -fno-builtin is used because GCC 3.0-3.2.2 had bug with builtins expansion
 # you may remove it if engine is getting compiled with any other GCC version
