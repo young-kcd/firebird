@@ -165,7 +165,7 @@ isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 		stuffSpb(spb, isc_spb_password, password);
 	}
 
-	fb_assert(spb - spb_buffer <= sizeof(spb_buffer));
+	fb_assert((size_t)(spb - spb_buffer) <= sizeof(spb_buffer));
 	isc_svc_handle svc_handle = 0;
 	isc_service_attach(status, 
 		static_cast<USHORT>(strlen(service)),
@@ -265,7 +265,7 @@ void callRemoteServiceManager(ISC_STATUS* status,
 		return;
 	}
 
-	fb_assert(spb - spb_buffer <= sizeof(spb_buffer));
+	fb_assert((size_t)(spb - spb_buffer) <= sizeof(spb_buffer));
 	isc_service_start(status, &handle, 0, 
 		static_cast<USHORT>(spb - spb_buffer), spb_buffer);
 	if (status[1] || userInfo.operation != DIS_OPER || !outputFunction)
@@ -286,7 +286,7 @@ void callRemoteServiceManager(ISC_STATUS* status,
 
 	for (;;)
 	{
-		long reserved = 0;
+		isc_resv_handle reserved = 0;
 		isc_service_query(status, &handle, &reserved, spb - spb_buffer, 
 			spb, 1, &request, resultBufSize - startQuery, 
 			&resultBuffer[startQuery]);
