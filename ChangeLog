@@ -1,3 +1,79 @@
+2002-12-06 23:14  hippoman
+
+	* firebird2/src/remote/ibconfig.cpp:
+	
+	Bug: Fixed a buffer overrun in the isc_service_query API call at
+	WriteIBSettings  function
+
+2002-12-06 22:35  dimitr
+
+	* firebird2/src/remote/: remote.cpp, window.cpp:
+	
+	More usage of the new config stuff.
+
+2002-12-06 22:20  dimitr
+
+	* firebird2/src/jrd/cmp.cpp:
+	
+	Restored the check - just to be safe from infinite recursions etc.
+
+2002-12-06 22:11  dimitr
+
+	* firebird2/src/: common/config/config.cpp, common/config/config.h,
+	jrd/jrd.cpp:
+	
+	More usage of the new config stuff.
+
+2002-12-06 21:55  hippoman
+
+	* firebird2/builds/win32/msvc7/: gpre.vcproj, gpre_boot.vcproj:
+	
+	Fixing the build, added pascal and ada to gpre salad.
+
+2002-12-06 15:30  dimitr
+
+	* firebird2/builds/posix/make.defaults:
+	
+	Changes by Dimitry Sibiryakov.
+
+2002-12-06 14:43  eku
+
+	* firebird2/: src/gpre/ada.cpp, src/gpre/cmp.cpp, src/gpre/cob.cpp,
+	src/gpre/exp.cpp, src/gpre/ftn.cpp, src/gpre/gpre.cpp,
+	src/gpre/gpre.h, src/gpre/gpre_meta.epp, src/gpre/gpreswi.h,
+	src/gpre/par.cpp, src/gpre/pat.cpp, src/gpre/sql.cpp, configure.in,
+	src/include/gen/autoconfig_msvc.h, src/make.new/config/config.h.in:
+	
+	Removed hooks for BASIC/PL1 in gpre, as the support has been
+	dropped before IB4.
+
+2002-12-06 13:34  dimitr
+
+	* firebird2/src/: common/config/config.cpp, common/config/config.h,
+	remote/inet.cpp:
+	
+	More usage of the new config stuff.
+
+2002-12-06 13:07  dimitr
+
+	* firebird2/src/iscguard/iscguard.cpp:
+	
+	Cleanup.
+
+2002-12-06 13:04  dimitr
+
+	* firebird2/src/: common/config/config.cpp,
+	jrd/os/posix/config_root.cpp, jrd/os/config_root.h,
+	jrd/os/win32/config_root.cpp:
+	
+	Corrected config implementation.
+
+2002-12-06 12:43  dimitr
+
+	* firebird2/src/: include/gen/autoconfig_msvc.h, jrd/winnt.cpp:
+	
+	Cleanup.
+
 2002-12-05 23:28  arnobrinkman
 
 	* firebird2/src/jrd/cmp.cpp:
