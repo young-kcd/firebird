@@ -58,7 +58,7 @@ namespace {
 //	--- Public Functions ---
 //
 
-USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
+USHORT CLIENT_install(const TEXT * bindir, USHORT client, bool sw_force,
 	USHORT(*err_handler)(ULONG, const TEXT *))
 {
 /**************************************
@@ -95,8 +95,8 @@ USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
 	// Compute newverMS and newverLS. They will contain the full client version
 	// number that we intend to install to WinSysDir.
 	TEXT fbdll[MAXPATHLEN];
-	lstrcpy(fbdll, rootdir);
-	lstrcat(fbdll, "\\bin\\");
+	lstrcpy(fbdll, bindir);
+	lstrcat(fbdll, "\\");
 	lstrcat(fbdll, FBCLIENT_NAME);
 
 	DWORD newverMS = 0, newverLS = 0;
@@ -135,19 +135,19 @@ USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
 			return FB_INSTALL_SAME_VERSION_FOUND;
 	}
 
-	// Copy FBCLIENT.DLL as _FBCLIENT.DLL (in WinSysDir).
+	// Copy FBCLIENT.DLL as _FBCLIENT.DLL or _GDS32.DLL (in WinSysDir).
 	// Such a step is needed because the MoveFile techniques used later
 	// can't span different volumes. So the intermediate target has to be
 	// already on the same final destination volume as the final target.
 	TEXT workfile[MAXPATHLEN];
 	lstrcpy(workfile, sysdir);
 	lstrcat(workfile, "\\_");
-	lstrcat(workfile, FBCLIENT_NAME);
+	lstrcat(workfile, client == CLIENT_GDS ? GDS32_NAME : FBCLIENT_NAME);
 	
 	if (CopyFile(fbdll, workfile, FALSE) == 0)
 	{
 		return (*err_handler) (GetLastError(),
-			"CopyFile(FBCLIENT.DLL, WinSysDir\\_FBCLIENT.DLL)");
+			"Can't CopyFile() to temp copy of FBCLIENT.DLL");
 	}
 
 	if (client == CLIENT_GDS)
@@ -167,7 +167,7 @@ USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
 		{
 			DeleteFile(workfile);
 			return (*err_handler) (werr,
-				"MoveFile(_FBCLIENT.DLL, 'target')");
+				"MoveFile(temporary, 'target')");
 		}
 		
 		// Failed moving because a destination target file already exists
@@ -267,7 +267,7 @@ USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
 	}
 }
 
-USHORT CLIENT_remove(const TEXT * rootdir, USHORT client, bool sw_force,
+USHORT CLIENT_remove(const TEXT * bindir, USHORT client, bool sw_force,
 	USHORT(*err_handler)(ULONG, const TEXT *))
 {
 /**************************************
@@ -304,8 +304,8 @@ USHORT CLIENT_remove(const TEXT * rootdir, USHORT client, bool sw_force,
 	// Compute ourverMS and ourverLS. They will contain the full client version
 	// number that we could have installed to WinSysDir.
 	TEXT fbdll[MAXPATHLEN];
-	lstrcpy(fbdll, rootdir);
-	lstrcat(fbdll, "\\bin\\");
+	lstrcpy(fbdll, bindir);
+	lstrcat(fbdll, "\\");
 	lstrcat(fbdll, FBCLIENT_NAME);
 
 	DWORD ourverMS = 0, ourverLS = 0;
@@ -560,7 +560,14 @@ USHORT PatchVersion(const TEXT* filename, DWORD verMS,
 	ib_printf("ProductVersionLS : %8.8x\n", ffi->dwProductVersionLS);
 	*/
 	
-	/*
+	// The remaining is about patching the version in the versions 'strings'.
+	// The versions 'numbers' have been patched above.
+	// Theorically no one would rely on checking the strings for the version,
+	// except for display matters. So patching them is most probably uneeded.
+	// Just to play it safe, we patch the FileVersion string info.
+	// But the ProductVersion string is left untouched (commented out) below.
+	// OM - Jan 2004
+	//
 	// The start of the full VS_VERSIONINFO pseudo structure is located 6 bytes
 	// before the above "lookup" value. This "vi" (versioninfo) pointer points
 	// to the same block of bytes that would have been returned by the
@@ -599,9 +606,12 @@ USHORT PatchVersion(const TEXT* filename, DWORD verMS,
 		}
 		else i = 0;
 	}
-	*/
-	
+
 	/*
+	// This is commented out. This is working code. But probably uneeded.
+	// Keep it in the source until FB 1.5 is out for some months. Thanks.
+	// OM - Jan 2004.
+	//
 	// Let's patch the ProductVersion strings.
 	// This patch assumes the original version string has a major version and
 	// a minor version made of a single digit, like 1.5.x.y. It would need
@@ -632,7 +642,7 @@ USHORT PatchVersion(const TEXT* filename, DWORD verMS,
 		else i = 0;
 	}
 	*/
-	
+
 	UnmapViewOfFile(mem);
 	CloseHandle(hmap);
 	CloseHandle(hfile);

@@ -36,7 +36,7 @@
 #include "../utilities/install_proto.h"
 
 static USHORT inst_error(ULONG, const TEXT *);
-static void usage(void);
+static void usage_exit(void);
 
 static struct
 {
@@ -93,10 +93,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	// always one after a call to GetModuleFileName().
 	TEXT* p = directory + len;
 	do {--p;} while (*p != '\\');
-
-	// Get to the previous '\' (this one should precede the supposed 'bin\\' part).
-	// There is always an additional '\' OR a ':'.
-	do {--p;} while (*p != '\\' && *p != ':');
 	*p = '\0';
 
 	TEXT** end = argv + argc;
@@ -118,7 +114,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				if (!cmd)
 				{
 					ib_printf("Unknown command \"%s\"\n", *argv);
-					usage();
+					usage_exit();
 				}
 				sw_command = commands[i].code;
 			}
@@ -136,7 +132,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				if (!cln)
 				{
 					ib_printf("Unknown library \"%s\"\n", *argv);
-					usage();
+					usage_exit();
 				}
 				sw_client = clients[i].code;
 			}
@@ -156,7 +152,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 				default:
 					ib_printf("Unknown switch \"%s\"\n", p);
-					usage();
+					usage_exit();
 			}
 		}
 	}
@@ -164,9 +160,22 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	if (sw_version)
 		ib_printf("instclient version %s\n", GDS_VERSION);
 
+	TEXT fbdll[MAXPATHLEN];
+	lstrcpy(fbdll, directory);
+	lstrcat(fbdll, "\\");
+	lstrcat(fbdll, FBCLIENT_NAME);
+	HANDLE hfile = CreateFile(fbdll, GENERIC_READ,
+		FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+	if (hfile == INVALID_HANDLE_VALUE)
+	{
+		inst_error(0, "FBCLIENT.DLL not found in instclient.exe directory");
+		return FINI_ERROR;
+	}
+	CloseHandle(hfile);
+
 	if (sw_command == COMMAND_NONE || sw_client == CLIENT_NONE)
 	{
-		usage();
+		usage_exit();
 	}
 
 	TEXT* clientname = sw_client == CLIENT_GDS ? GDS32_NAME : FBCLIENT_NAME;
@@ -299,7 +308,7 @@ static USHORT inst_error(ULONG status, const TEXT * string)
 	return FB_FAILURE;
 }
 
-static void usage(void)
+static void usage_exit(void)
 {
 /**************************************
  *
