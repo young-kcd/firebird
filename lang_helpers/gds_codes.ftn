@@ -1078,8 +1078,8 @@ C --
       PARAMETER (GDS__wrong_backup_state               = 335544832)
       INTEGER*4 GDS__wal_backup_err                  
       PARAMETER (GDS__wal_backup_err                   = 335544833)
-      INTEGER*4 GDS__invalid_cursor_state            
-      PARAMETER (GDS__invalid_cursor_state             = 335544834)
+      INTEGER*4 GDS__cursor_not_open                 
+      PARAMETER (GDS__cursor_not_open                  = 335544834)
       INTEGER*4 GDS__bad_shutdown_mode               
       PARAMETER (GDS__bad_shutdown_mode                = 335544835)
       INTEGER*4 GDS__concat_overflow                 
@@ -1092,6 +1092,10 @@ C --
       PARAMETER (GDS__foreign_key_references_present   = 335544839)
       INTEGER*4 GDS__no_update                       
       PARAMETER (GDS__no_update                        = 335544840)
+      INTEGER*4 GDS__cursor_already_open             
+      PARAMETER (GDS__cursor_already_open              = 335544841)
+      INTEGER*4 GDS__stack_trace                     
+      PARAMETER (GDS__stack_trace                      = 335544842)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
@@ -1176,6 +1180,20 @@ C --
       PARAMETER (GDS__dsql_invalid_label               = 336003087)
       INTEGER*4 GDS__dsql_datatypes_not_comparable   
       PARAMETER (GDS__dsql_datatypes_not_comparable    = 336003088)
+      INTEGER*4 GDS__dsql_cursor_invalid             
+      PARAMETER (GDS__dsql_cursor_invalid              = 336003089)
+      INTEGER*4 GDS__dsql_cursor_redefined           
+      PARAMETER (GDS__dsql_cursor_redefined            = 336003090)
+      INTEGER*4 GDS__dsql_cursor_not_found           
+      PARAMETER (GDS__dsql_cursor_not_found            = 336003091)
+      INTEGER*4 GDS__dsql_cursor_exists              
+      PARAMETER (GDS__dsql_cursor_exists               = 336003092)
+      INTEGER*4 GDS__dsql_cursor_rel_ambiguous       
+      PARAMETER (GDS__dsql_cursor_rel_ambiguous        = 336003093)
+      INTEGER*4 GDS__dsql_cursor_rel_not_found       
+      PARAMETER (GDS__dsql_cursor_rel_not_found        = 336003094)
+      INTEGER*4 GDS__dsql_cursor_not_open            
+      PARAMETER (GDS__dsql_cursor_not_open             = 336003095)
       INTEGER*4 GDS__dyn_role_does_not_exist         
       PARAMETER (GDS__dyn_role_does_not_exist          = 336068796)
       INTEGER*4 GDS__dyn_no_grant_admin_opt          
