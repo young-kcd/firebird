@@ -1,3 +1,37 @@
+2004-01-16 14:05  hvlad
+
+	* firebird2/src/dsql/: dsql.tab.h, parse.cpp:
+	
+	Added support for default parameters and EXECUTE BLOCK statement
+
+2004-01-16 13:59  hvlad
+
+	* firebird2/src/jrd/: dyn_def.epp, jrd.h, met.epp, par.cpp:
+	
+	Added support for default parameters
+
+2004-01-16 12:13  stryqx
+
+	* firebird2/src/install/arch-specific/freebsd/install.sh.in:
+	
+	Make it easier for PHP users to get up and running.
+
+2004-01-16 11:43  hvlad
+
+	* firebird2/src/dsql/: ddl.cpp, ddl_proto.h, dsql.cpp, dsql.h,
+	gen.cpp, keywords.cpp, metd.epp, metd_proto.h, misc_func.cpp,
+	node.h, parse.y, pass1.cpp:
+	
+	Added support for default parameters and EXECUTE BLOCK statement
+
+2004-01-16 10:32  hvlad
+
+	* firebird2/doc/sql.extensions/: README.default_parameters,
+	README.execute_block:
+	
+	1. Added new EXECUTE BLOCK statement 2. Added	default paremeters
+	in stored procedures
+
 2004-01-15 15:07  alexpeshkoff
 
 	* firebird2/src/install/arch-specific/linux/super/preinstall.sh.in:
