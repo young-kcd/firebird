@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.90 2003-10-27 18:42:45 skidder Exp $
+$Id: common.h,v 1.91 2003-10-28 13:43:45 eku Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -941,12 +941,8 @@ void routine(const char* message, ...) { \
 
 #define TRACE(msg)				gds__trace (msg)
 
-#ifdef WIN_NT
-#define DEV_REPORT(msg)         gds__log (msg)
-#endif
-
 #ifndef DEV_REPORT
-#define DEV_REPORT(msg)         ib_fprintf (ib_stderr, (msg))
+#define DEV_REPORT(msg)         gds__log (msg)
 #endif
 
 #ifndef BREAKPOINT
