@@ -98,7 +98,7 @@ goto :EOF
 @echo   If you do not have these utilities they may be downloaded
 @echo   via ftp from the Firebird Project on Sourceforge:
 @echo:
-@echo     http://firebird.sourceforge.net/downloads
+@echo     http://prdownloads.sourceforge.net/firebird/
 @echo:
 @echo   filename:  Firebird_Unix_Tools_for_Win32.zip
 @echo:
