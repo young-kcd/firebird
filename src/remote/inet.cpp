@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.64 2003-03-27 10:39:56 paul_reeves Exp $
+$Id: inet.cpp,v 1.65 2003-04-01 11:35:44 brodsom Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -2172,7 +2172,7 @@ static int fork( SOCKET old_handle, USHORT flag)
 					GetCurrentProcess(), &new_handle, 0, TRUE,
 					DUPLICATE_SAME_ACCESS);
 
-	sprintf(INET_p, " -s -i -h %d", (SLONG) new_handle);
+	sprintf(INET_p, " -s -i -h %"SLONGFORMAT, (SLONG) new_handle);
 	start_crud.cb = sizeof(STARTUPINFO);
 	start_crud.lpReserved = NULL;
 	start_crud.lpReserved2 = NULL;

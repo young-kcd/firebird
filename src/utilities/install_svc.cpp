@@ -340,7 +340,7 @@ static USHORT svc_error( SLONG status, TEXT * string, SC_HANDLE service)
 							buffer,
 							sizeof(buffer),
 							NULL)))
-			ib_printf("Windows NT error %d\n", status);
+			ib_printf("Windows NT error %"SLONGFORMAT"\n", status);
 	else
 		ib_printf("%s\n", buffer);
 

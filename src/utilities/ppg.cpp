@@ -96,32 +96,35 @@ void PPG_print_header( HDR header, SLONG page,
 		FPRINTF(outfile, "\tFlags\t\t\t%d\n", header->hdr_header.pag_flags);
 		FPRINTF(outfile, "\tChecksum\t\t%d\n",
 				header->hdr_header.pag_checksum);
-		FPRINTF(outfile, "\tGeneration\t\t%d\n",
+		FPRINTF(outfile, "\tGeneration\t\t%"ULONGFORMAT"\n",
 				header->hdr_header.pag_generation);
 		FPRINTF(outfile, "\tPage size\t\t%d\n", header->hdr_page_size);
 		FPRINTF(outfile, "\tODS version\t\t%d.%d\n", header->hdr_ods_version,
 				header->hdr_ods_minor);
-		FPRINTF(outfile, "\tOldest transaction\t%ld\n",
+		FPRINTF(outfile, "\tOldest transaction\t%"SLONGFORMAT"\n",
 				header->hdr_oldest_transaction);
-		FPRINTF(outfile, "\tOldest active\t\t%ld\n",
+		FPRINTF(outfile, "\tOldest active\t\t%"SLONGFORMAT"\n",
 				header->hdr_oldest_active);
-		FPRINTF(outfile, "\tOldest snapshot\t\t%ld\n",
+		FPRINTF(outfile, "\tOldest snapshot\t\t%"SLONGFORMAT"\n",
 				header->hdr_oldest_snapshot);
-		FPRINTF(outfile, "\tNext transaction\t%ld\n",
+		FPRINTF(outfile, "\tNext transaction\t%"SLONGFORMAT"\n",
 				header->hdr_next_transaction);
-		FPRINTF(outfile, "\tBumped transaction\t%ld\n",
+		FPRINTF(outfile, "\tBumped transaction\t%"SLONGFORMAT"\n",
 				header->hdr_bumped_transaction);
 		FPRINTF(outfile, "\tSequence number\t\t%d\n", header->hdr_sequence);
 
-		FPRINTF(outfile, "\tNext attachment ID\t%ld\n",
+		FPRINTF(outfile, "\tNext attachment ID\t%"SLONGFORMAT"\n",
 				header->hdr_attachment_id);
-		FPRINTF(outfile, "\tImplementation ID\t%ld\n",
+		FPRINTF(outfile, "\tImplementation ID\t%d\n",
 				header->hdr_implementation);
-		FPRINTF(outfile, "\tShadow count\t\t%ld\n", header->hdr_shadow_count);
-		FPRINTF(outfile, "\tPage buffers\t\t%d\n", header->hdr_page_buffers);
+		FPRINTF(outfile, "\tShadow count\t\t%"SLONGFORMAT"\n"
+				, header->hdr_shadow_count);
+		FPRINTF(outfile, "\tPage buffers\t\t%"ULONGFORMAT"\n"
+				, header->hdr_page_buffers);
 	}
 
-	FPRINTF(outfile, "\tNext header page\t%d\n", header->hdr_next_page);
+	FPRINTF(outfile, "\tNext header page\t%"ULONGFORMAT"\n"
+				, header->hdr_next_page);
 #ifdef DEV_BUILD
 	FPRINTF(outfile, "\tClumplet End\t\t%d\n", header->hdr_end);
 #endif
