@@ -306,6 +306,10 @@ SOURCE=..\..\..\src\gpre\sql_proto.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\common\utils_proto.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\gpre\words.h
 # End Source File
 # End Group
@@ -315,6 +319,14 @@ SOURCE=..\..\..\src\gpre\words.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\version.rc
+# End Source File
+# End Group
+# Begin Group "COMMON files"
+
+# PROP Default_Filter "cpp"
+# Begin Source File
+
+SOURCE=..\..\..\src\common\utils.cpp
 # End Source File
 # End Group
 # End Target
