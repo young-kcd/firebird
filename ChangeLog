@@ -1,3 +1,31 @@
+2004-08-02 23:17  dimitr
+
+	* firebird2/builds/misc/msg.gbak (1.8):
+	
+	Added two new error messages.
+
+2004-08-02 21:53  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.140):
+	
+	Prevent any modifications of the OLD context in triggers.
+
+2004-08-02 21:47  dimitr
+
+	* firebird2/src/: dsql/make.cpp (1.70), jrd/cmp.cpp (1.139),
+	jrd/evl.cpp (1.99):
+	
+	Fixed implementations of concatenation and SUBSTRING function. 
+	Used new messages for error reporting. Changes should be fully
+	SQLDA-compatible.
+
+2004-08-02 21:43  dimitr
+
+	* firebird2/src/include/gen/: codetext.h (1.12), iberror.h (1.11),
+	msgs.h (1.15), rdb_codes.h (1.12), sql_code.h (1.14):
+	
+	Added two new error messages.
+
 2004-08-01 20:01  dimitr
 
 	* firebird2/src/dsql/pass1.cpp (1.153):
