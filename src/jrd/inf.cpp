@@ -538,9 +538,11 @@ int INF_database_info(
 				if (att->att_flags & ATT_shutdown)
 					continue;
 				if ( (user = att->att_user) ) {
+					char *user_name = user->usr_user_name ? 
+						user->usr_user_name : "(SQL Server)";
 					p = buffer;
-					*p++ = l = strlen(user->usr_user_name);
-					for (q = user->usr_user_name; l; l--)
+					*p++ = l = strlen (user_name);
+					for (q = user_name; l; l--)
 						*p++ = *q++;
 					length = p - buffer;
 					if (!
