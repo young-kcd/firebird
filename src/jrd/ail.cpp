@@ -1353,7 +1353,8 @@ static void build_wal_param(
 
 static void delete_log_files(
 							 TEXT * latest_logname,
-							 SLONG latest_log_p_offset, LLS stack)
+							 SLONG latest_log_p_offset,
+							 LLS stack)
 {
 /**************************************
  *
@@ -1437,7 +1438,8 @@ static void initialize_wal(
 						   WIN * window,
 						   LIP logp,
 						   SSHORT release,
-USHORT activate_shadow, SBM * sbm_rec)
+						   USHORT activate_shadow,
+						   SBM * sbm_rec)
 {
 /**************************************
  *
@@ -1452,24 +1454,11 @@ USHORT activate_shadow, SBM * sbm_rec)
  *	after it is called.  The page is released.
  *
  **************************************/
-	DBB dbb;
-	SSHORT i;
-	SLONG first_time, number;
-	LGFILE *log_files[MAX_LOG_FILES];
-	LGFILE *log_ovflow;
-	SCHAR walname[MAXPATHLEN];
-	UCHAR wpb[2 * MAXPATHLEN];	/* This size is pure guess ! */
-	SLONG wpb_len, wal_p_offset;
-	SLONG seqno, offset, p_offset;
-	USHORT save_flag;
-
 	SET_TDBB(tdbb);
-
-	dbb = tdbb->tdbb_database;
 
 /* Get WAL file name */
 
-	dbb->dbb_wal = 0;
+	tdbb->tdbb_database->dbb_wal = 0;
 
 /* If there is no log, just return */
 
