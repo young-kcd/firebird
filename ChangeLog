@@ -1,3 +1,54 @@
+2004-08-13 01:28  skidder
+
+	*
+	
+	Cosmetic changes
+	firebird2/builds/install/arch-specific/linux/misc/firebird.xinetd.i
+	n (1.2):
+
+2004-08-12 23:18  skidder
+
+	* firebird2/src/jrd/dpm.epp (1.53):
+	
+	Do not write rubbish from uninitialized stack variable into pad
+	space of data pages
+
+2004-08-12 21:51  skidder
+
+	* firebird2/src/jrd/intlobj_new.h (1.4):
+	
+	Further clarification of new INTL interface
+
+2004-08-12 21:44  skidder
+
+	* firebird2/src/jrd/intlobj_new.h (1.3):
+	
+	Clarify string comparison interface
+
+2004-08-12 21:21  skidder
+
+	* firebird2/src/jrd/intlobj_new.h (1.2):
+	
+	Some small changes in INTL interface
+
+2004-08-12 07:17  skidder
+
+	* firebird2/src/jrd/intlobj_new.h (1.1):
+	
+	Draft of new INTL interface
+
+2004-08-12 05:13  skidder
+
+	* firebird2/src/jrd/intlobj.h (1.25):
+	
+	Switch back to C-language comments
+
+2004-08-12 05:01  skidder
+
+	* firebird2/src/jrd/intlobj.h (1.24):
+	
+	Make header C-language
+
 2004-08-12 02:31  skidder
 
 	* firebird2/src/jrd/: dfw.epp (1.120), ini.epp (1.53), pcmet.epp
