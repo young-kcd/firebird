@@ -2102,7 +2102,7 @@ ISC_STATUS port::fetch(P_SQLDATA * sqldata, PACKET* send)
 		statement->rsr_msgs_waiting++;
 	}
 
-	return true;
+	return TRUE;
 }
 
 

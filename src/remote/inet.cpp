@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.74 2003-09-11 18:59:34 brodsom Exp $
+$Id: inet.cpp,v 1.75 2003-09-13 09:15:06 brodsom Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -1773,7 +1773,8 @@ static int check_host(PORT port,
 		return FALSE;
 
 	gethosts(hosts_file);
-	if (parse_hosts(hosts_file, host_name, user_name) == -1)
+	result = parse_hosts(hosts_file, host_name, user_name);
+	if (result == -1)
 		result = FALSE;
 
 	return result;
@@ -1836,7 +1837,8 @@ static int check_host(
 		if (fp)
 			ib_fclose(fp);
 
-		if (parse_hosts(hosts_file, host_name, user) == -1)
+		result = parse_hosts(hosts_file, host_name, user);
+		if (result == -1)
 			result = FALSE;
 	}
 	return result;
