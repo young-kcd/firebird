@@ -1,3 +1,13 @@
+2004-12-13 11:31  paul_reeves
+
+	* firebird2/src/: jrd/isc_version.h (1.1.2.27),
+	install/arch-specific/win32/BuildExecutableInstall.bat (1.10.2.21),
+	install/arch-specific/win32/si/custom_messages_si.inc (1.1.2.2),
+	install/arch-specific/win32/si/instalacija_precitajMe.txt
+	(1.1.2.2):
+	
+	Minor Win32 packaging updates for RC5
+
 2004-12-10 06:34  skidder
 
 	* firebird2/doc/WhatsNew (1.36.2.38):
