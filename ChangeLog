@@ -1,3 +1,18 @@
+2005-02-11 10:09  robocop
+
+	* firebird2/builds/win32/msvc6/: engine_classic.dsp (1.52),
+	engine_embed.dsp (1.31):
+	
+	Misc.
+
+2005-02-11 08:05  robocop
+
+	* firebird2/: builds/win32/make_examples.bat (1.13),
+	builds/win32/prepare.bat (1.39),
+	doc/sql.extensions/README.context_variables2 (1.3):
+	
+	Misc.
+
 2005-02-11 00:05  arnobrinkman
 
 	* firebird2/src/jrd/opt.cpp (1.219):
