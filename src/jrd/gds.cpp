@@ -2063,9 +2063,9 @@ USHORT API_ROUTINE gds__parse_bpb2(USHORT bpb_length,
 
 
 SLONG API_ROUTINE gds__ftof(SCHAR * string,
-							USHORT GDS_VAL(length1),
+							USHORT length1,
 							SCHAR * field,
-							USHORT GDS_VAL(length2))
+							USHORT length2)
 {
 /**************************************
  *
@@ -2081,9 +2081,9 @@ SLONG API_ROUTINE gds__ftof(SCHAR * string,
  **************************************/
 	USHORT l, fill;
 
-	fill = GDS_VAL(length2) - GDS_VAL(length1);
+	fill = length2 - length1;
 
-	if ((l = MIN(GDS_VAL(length1), GDS_VAL(length2))) > 0)
+	if ((l = MIN(length1, length2)) > 0)
 		do
 			*field++ = *string++;
 		while (--l);

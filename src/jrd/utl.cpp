@@ -355,9 +355,7 @@ int API_ROUTINE gds__blob_size(
 
 #pragma FB_COMPILER_MESSAGE("Fix! Bad casts.")
 
-	if (gds__blob_info(status_vector,
-					   GDS_VAL(b),
-					   sizeof(blob_items),
+	if (gds__blob_info(status_vector, b, sizeof(blob_items),
 					   const_cast < char *>(blob_items),
 					   sizeof(buffer), buffer)) {
 		gds__print_status(status_vector);
@@ -768,7 +766,7 @@ SLONG API_ROUTINE gds__event_block(SCHAR ** event_buffer,
    and counts for each argument */
 
 	length = 1;
-	i = GDS_VAL(count);
+	i = count;
 	while (i--) {
 		q = va_arg(ptr, SCHAR *);
 		length += strlen(q) + 5;
@@ -800,7 +798,7 @@ SLONG API_ROUTINE gds__event_block(SCHAR ** event_buffer,
 
 	VA_START(ptr, count);
 
-	i = GDS_VAL(count);
+	i = count;
 	while (i--) {
 		q = va_arg(ptr, SCHAR *);
 
@@ -822,7 +820,7 @@ SLONG API_ROUTINE gds__event_block(SCHAR ** event_buffer,
 
 USHORT API_ROUTINE gds__event_block_a(SCHAR ** event_buffer,
 									  SCHAR ** result_buffer,
-									  SSHORT GDS_VAL(count),
+									  SSHORT count,
 									  SCHAR ** name_buffer)
 {
 /**************************************
@@ -847,7 +845,7 @@ USHORT API_ROUTINE gds__event_block_a(SCHAR ** event_buffer,
    setting initial length to include version
    and counts for each argument */
 
-	i = GDS_VAL(count);
+	i = count;
 	nb = name_buffer;
 	length = 0;
 	while (i--) {
@@ -859,7 +857,7 @@ USHORT API_ROUTINE gds__event_block_a(SCHAR ** event_buffer,
 		length += end - q + 1 + 5;
 	}
 
-	i = GDS_VAL(count);
+	i = count;
 	p = *event_buffer =
 		(SCHAR *) gds__alloc((SLONG) (sizeof(SCHAR) * length));
 /* FREE: unknown */
@@ -928,7 +926,7 @@ SCHAR ** name_buffer, SSHORT * return_count)
 
 void API_ROUTINE gds__event_counts(
 								   ULONG * result_vector,
-								   SSHORT GDS_VAL(buffer_length),
+								   SSHORT buffer_length,
 								   SCHAR * event_buffer,
 SCHAR * result_buffer)
 {
@@ -952,7 +950,7 @@ SCHAR * result_buffer)
 	vec = result_vector;
 	p = event_buffer;
 	q = result_buffer;
-	length = GDS_VAL(buffer_length);
+	length = buffer_length;
 	end = p + length;
 
 /* analyze the event blocks, getting the delta for each event */
@@ -1068,7 +1066,7 @@ void API_ROUTINE gds__map_blobs(int *handle1, int *handle2)
 
 
 #if !(defined REQUESTER)
-void API_ROUTINE gds__set_debug(int GDS_VAL(value))
+void API_ROUTINE gds__set_debug(int value)
 {
 /**************************************
  *
@@ -1503,13 +1501,12 @@ int API_ROUTINE BLOB_close(BSTREAM * bstream)
 	if (bstream->bstr_mode & BSTR_output) {
 		l = (bstream->bstr_ptr - bstream->bstr_buffer);
 		if (l > 0)
-			if (gds__put_segment(status_vector,
-								 GDS_REF(bstream->bstr_blob),
-								 l,
-								 GDS_VAL(bstream->bstr_buffer))) return FALSE;
+			if (gds__put_segment(status_vector, &bstream->bstr_blob, l,
+								 bstream->bstr_buffer)) 
+				return FALSE;
 	}
 
-	gds__close_blob(status_vector, GDS_REF(bstream->bstr_blob));
+	gds__close_blob(status_vector, &bstream->bstr_blob);
 
 	if (bstream->bstr_mode & BSTR_alloc)
 		gds__free(bstream->bstr_buffer);
@@ -1753,11 +1750,9 @@ int API_ROUTINE BLOB_get(BSTREAM * bstream)
 		if (--bstream->bstr_cnt >= 0)
 			return *bstream->bstr_ptr++ & 0377;
 
-		gds__get_segment(status_vector,
-						 GDS_REF(bstream->bstr_blob),
-						 reinterpret_cast <
-						 USHORT * >(GDS_REF(bstream->bstr_cnt)),
-						 bstream->bstr_length, GDS_VAL(bstream->bstr_buffer));
+		gds__get_segment(status_vector, &bstream->bstr_blob,
+						 reinterpret_cast <USHORT *>(&bstream->bstr_cnt),
+						 bstream->bstr_length, bstream->bstr_buffer);
 		if (status_vector[1] && status_vector[1] != gds_segment) {
 			bstream->bstr_ptr = 0;
 			bstream->bstr_cnt = 0;
@@ -1888,22 +1883,16 @@ BSTREAM *API_ROUTINE Bopen(GDS_QUAD * blob_id,
 	blob = NULL;
 
 	if (*mode == 'w' || *mode == 'W') {
-		if (gds__create_blob2(status_vector,
-							  GDS_REF(database),
-							  GDS_REF(transaction),
-							  GDS_REF(blob),
-							  GDS_VAL(blob_id),
-							  bpb_length,
-							  reinterpret_cast < char *>(bpb))) return NULL;
+		if (gds__create_blob2(status_vector, &database, &transaction, &blob,
+							  blob_id, bpb_length,
+							  reinterpret_cast < char *>(bpb))) 
+			return NULL;
 	}
 	else if (*mode == 'r' || *mode == 'R') {
-		if (gds__open_blob2(status_vector,
-							GDS_REF(database),
-							GDS_REF(transaction),
-							GDS_REF(blob),
-							GDS_VAL(blob_id),
-							bpb_length,
-							reinterpret_cast < char *>(bpb))) return NULL;
+		if (gds__open_blob2(status_vector, &database, &transaction, &blob,
+							blob_id, bpb_length,
+							reinterpret_cast < char *>(bpb))) 
+			return NULL;
 	}
 	else
 		return NULL;
@@ -2005,9 +1994,8 @@ int API_ROUTINE BLOB_put(SCHAR x, BSTREAM * bstream)
 
 	*bstream->bstr_ptr++ = (x & 0377);
 	l = (bstream->bstr_ptr - bstream->bstr_buffer);
-	if (gds__put_segment(status_vector,
-						 GDS_REF(bstream->bstr_blob),
-						 l, GDS_VAL(bstream->bstr_buffer))) {
+	if (gds__put_segment(status_vector, &bstream->bstr_blob,
+						 l, bstream->bstr_buffer)) {
 		return FALSE;
 	}
 	bstream->bstr_cnt = bstream->bstr_length;
@@ -2038,9 +2026,7 @@ static display(GDS_QUAD * blob_id, void *database, void *transaction)
 /* Open the blob.  If it failed, what the hell -- just return failure */
 
 	blob = NULL;
-	if (gds__open_blob(status_vector,
-					   GDS_REF(database),
-					   GDS_REF(transaction), GDS_REF(blob), GDS_VAL(blob_id))) {
+	if (gds__open_blob(status_vector, &database, &transaction, &blob, blob_id)) {
 		gds__print_status(status_vector);
 		return FALSE;
 	}
@@ -2050,8 +2036,7 @@ static display(GDS_QUAD * blob_id, void *database, void *transaction)
 	short_length = sizeof(buffer);
 
 	for (;;) {
-		gds__get_segment(status_vector,
-						 GDS_REF(blob), GDS_REF(l), short_length, buffer);
+		gds__get_segment(status_vector, &blob, &l, short_length, buffer);
 		if (status_vector[1] && status_vector[1] != gds_segment) {
 			if (status_vector[1] != gds_segstr_eof)
 				gds__print_status(status_vector);
@@ -2064,7 +2049,7 @@ static display(GDS_QUAD * blob_id, void *database, void *transaction)
 
 /* Close the blob */
 
-	gds__close_blob(status_vector, GDS_REF(blob));
+	gds__close_blob(status_vector, &blob);
 
 	return TRUE;
 }
@@ -2098,11 +2083,7 @@ static int dump(
 /* Open the blob.  If it failed, what the hell -- just return failure */
 
 	blob = NULL;
-	if (gds__open_blob2(status_vector,
-						GDS_REF(database),
-						GDS_REF(transaction),
-						GDS_REF(blob),
-						GDS_VAL(blob_id),
+	if (gds__open_blob2(status_vector, &database, &transaction, &blob, blob_id,
 						bpb_length, reinterpret_cast < char *>(bpb))) {
 		gds__print_status(status_vector);
 		return FALSE;
@@ -2113,9 +2094,8 @@ static int dump(
 	short_length = sizeof(buffer);
 
 	for (;;) {
-		gds__get_segment(status_vector,
-						 GDS_REF(blob),
-						 reinterpret_cast < USHORT * >(GDS_REF(l)),
+		gds__get_segment(status_vector, &blob,
+						 reinterpret_cast < USHORT * >(&l),
 						 short_length, buffer);
 		if (status_vector[1] && status_vector[1] != gds_segment) {
 			if (status_vector[1] != gds_segstr_eof)
@@ -2131,8 +2111,7 @@ static int dump(
 
 /* Close the blob */
 
-	gds__close_blob(status_vector,
-					GDS_REF(blob));
+	gds__close_blob(status_vector, &blob);
 
 	return TRUE;
 }
@@ -2306,11 +2285,8 @@ static int load(
 /* Open the blob.  If it failed, what the hell -- just return failure */
 
 	blob = NULL;
-	if (gds__create_blob(status_vector,
-						 GDS_REF(database),
-						 GDS_REF(transaction),
-						 GDS_REF(blob),
-						 GDS_VAL(blob_id))) {
+	if (gds__create_blob(status_vector, &database, &transaction, &blob,
+						 blob_id)) {
 		gds__print_status(status_vector);
 		return FALSE;
 	}
@@ -2328,28 +2304,22 @@ static int load(
 		if ((c != '\n') && p < buffer_end)
 			continue;
 		l = p - buffer;
-		if (gds__put_segment
-			(status_vector, GDS_REF(blob), l,
-			 buffer)) {
+		if (gds__put_segment(status_vector, &blob, l, buffer)) {
 			gds__print_status(status_vector);
-			gds__close_blob(status_vector,
-							GDS_REF(blob));
+			gds__close_blob(status_vector, &blob);
 			return FALSE;
 		}
 		p = buffer;
 	}
 
 	if ((l = p - buffer) != 0)
-		if (gds__put_segment
-			(status_vector, GDS_REF(blob), l,
-			 buffer)) {
+		if (gds__put_segment(status_vector, &blob, l, buffer)) {
 			gds__print_status(status_vector);
-			gds__close_blob(status_vector, GDS_REF(blob));
+			gds__close_blob(status_vector, &blob);
 			return FALSE;
 		}
 
-	gds__close_blob(status_vector,
-					GDS_REF(blob));
+	gds__close_blob(status_vector, &blob);
 
 	return TRUE;
 }

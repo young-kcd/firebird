@@ -300,10 +300,8 @@ ISC_STATUS API_ROUTINE gds__attach_database(ISC_STATUS * status_vector,
 										FRBRD **db_handle,
 										SSHORT dpb_length, SCHAR * dpb)
 {
-	return isc_attach_database(GDS_VAL(status_vector),
-							   file_length,
-							   GDS_VAL(file_name),
-							   GDS_VAL(db_handle), dpb_length, GDS_VAL(dpb));
+	return isc_attach_database(status_vector, file_length, file_name,
+							   db_handle, dpb_length, dpb);
 }
 
 ISC_STATUS API_ROUTINE gds__blob_info(ISC_STATUS * status_vector,
@@ -312,41 +310,37 @@ ISC_STATUS API_ROUTINE gds__blob_info(ISC_STATUS * status_vector,
 								  SCHAR * msg,
 								  SSHORT buffer_length, SCHAR * buffer)
 {
-	return isc_blob_info(GDS_VAL(status_vector),
-						 GDS_VAL(blob_handle),
-						 msg_length,
-						 GDS_VAL(msg), buffer_length, GDS_VAL(buffer));
+	return isc_blob_info(status_vector, blob_handle, msg_length,
+						 msg, buffer_length, buffer);
 }
 
 ISC_STATUS API_ROUTINE gds__cancel_blob(ISC_STATUS * status_vector,
 									FRBRD **blob_handle)
 {
-	return isc_cancel_blob(GDS_VAL(status_vector), GDS_VAL(blob_handle));
+	return isc_cancel_blob(status_vector, blob_handle);
 }
 
 ISC_STATUS API_ROUTINE gds__cancel_events(ISC_STATUS * status_vector,
 									  FRBRD **db_handle, SLONG * event_id)
 {
-	return isc_cancel_events(GDS_VAL(status_vector),
-							 GDS_VAL(db_handle), GDS_VAL(event_id));
+	return isc_cancel_events(status_vector, db_handle, event_id);
 }
 
 ISC_STATUS API_ROUTINE gds__close_blob(ISC_STATUS * status_vector, FRBRD **blob_handle)
 {
-	return isc_close_blob(GDS_VAL(status_vector), GDS_VAL(blob_handle));
+	return isc_close_blob(status_vector, blob_handle);
 }
 
 ISC_STATUS API_ROUTINE gds__commit_retaining(ISC_STATUS * status_vector,
 										 FRBRD **tra_handle)
 {
-	return isc_commit_retaining(GDS_VAL(status_vector), GDS_VAL(tra_handle));
+	return isc_commit_retaining(status_vector, tra_handle);
 }
 
 ISC_STATUS API_ROUTINE gds__commit_transaction(ISC_STATUS * status_vector,
 										   FRBRD **tra_handle)
 {
-	return isc_commit_transaction(GDS_VAL(status_vector),
-								  GDS_VAL(tra_handle));
+	return isc_commit_transaction(status_vector, tra_handle);
 }
 
 ISC_STATUS API_ROUTINE gds__compile_request(ISC_STATUS * status_vector,
@@ -354,9 +348,8 @@ ISC_STATUS API_ROUTINE gds__compile_request(ISC_STATUS * status_vector,
 										FRBRD **req_handle,
 										SSHORT blr_length, SCHAR * blr)
 {
-	return isc_compile_request(GDS_VAL(status_vector),
-							   GDS_VAL(db_handle),
-							   GDS_VAL(req_handle), blr_length, GDS_VAL(blr));
+	return isc_compile_request(status_vector, db_handle, req_handle, blr_length,
+							   blr);
 }
 
 ISC_STATUS API_ROUTINE gds__compile_request2(ISC_STATUS * status_vector,
@@ -364,10 +357,8 @@ ISC_STATUS API_ROUTINE gds__compile_request2(ISC_STATUS * status_vector,
 										 FRBRD **req_handle,
 										 SSHORT blr_length, SCHAR * blr)
 {
-	return isc_compile_request2(GDS_VAL(status_vector),
-								GDS_VAL(db_handle),
-								GDS_VAL(req_handle),
-								blr_length, GDS_VAL(blr));
+	return isc_compile_request2(status_vector, db_handle, req_handle, blr_length,
+								blr);
 }
 
 ISC_STATUS API_ROUTINE gds__create_blob(ISC_STATUS * status_vector,
@@ -375,10 +366,8 @@ ISC_STATUS API_ROUTINE gds__create_blob(ISC_STATUS * status_vector,
 									FRBRD **tra_handle,
 									FRBRD **blob_handle, GDS_QUAD * blob_id)
 {
-	return isc_create_blob(GDS_VAL(status_vector),
-						   GDS_VAL(db_handle),
-						   GDS_VAL(tra_handle),
-						   GDS_VAL(blob_handle), GDS_VAL(blob_id));
+	return isc_create_blob(status_vector, db_handle, tra_handle, blob_handle, 
+						   blob_id);
 }
 
 ISC_STATUS API_ROUTINE gds__create_blob2(ISC_STATUS * status_vector,
@@ -388,11 +377,8 @@ ISC_STATUS API_ROUTINE gds__create_blob2(ISC_STATUS * status_vector,
 									 GDS_QUAD * blob_id,
 									 SSHORT bpb_length, SCHAR * bpb)
 {
-	return isc_create_blob2(GDS_VAL(status_vector),
-							GDS_VAL(db_handle),
-							GDS_VAL(tra_handle),
-							GDS_VAL(blob_handle),
-							GDS_VAL(blob_id), bpb_length, GDS_VAL(bpb));
+	return isc_create_blob2(status_vector, db_handle, tra_handle, blob_handle,
+							blob_id, bpb_length, bpb);
 }
 
 ISC_STATUS API_ROUTINE gds__create_database(ISC_STATUS * status_vector,
@@ -402,11 +388,8 @@ ISC_STATUS API_ROUTINE gds__create_database(ISC_STATUS * status_vector,
 										SSHORT dpb_length,
 										SCHAR * dpb, SSHORT db_type)
 {
-	return isc_create_database(GDS_VAL(status_vector),
-							   file_length,
-							   GDS_VAL(file_name),
-							   GDS_VAL(db_handle),
-							   dpb_length, GDS_VAL(dpb), db_type);
+	return isc_create_database(status_vector, file_length, file_name, db_handle,
+							   dpb_length, dpb, db_type);
 }
 
 ISC_STATUS API_ROUTINE isc_database_cleanup(ISC_STATUS * status_vector,
@@ -414,8 +397,7 @@ ISC_STATUS API_ROUTINE isc_database_cleanup(ISC_STATUS * status_vector,
 										DatabaseCleanupRoutine *routine, SCHAR * arg)
 {
 
-	return gds__database_cleanup(GDS_VAL(status_vector),
-								 (FRBRD **) db_handle,
+	return gds__database_cleanup(status_vector, (FRBRD **) db_handle,
 								 routine, (SLONG) arg);
 }
 
@@ -425,16 +407,14 @@ ISC_STATUS API_ROUTINE gds__database_info(ISC_STATUS * status_vector,
 									  SCHAR * msg,
 									  SSHORT buffer_length, SCHAR * buffer)
 {
-	return isc_database_info(GDS_VAL(status_vector),
-							 GDS_VAL(db_handle),
-							 msg_length,
-							 GDS_VAL(msg), buffer_length, GDS_VAL(buffer));
+	return isc_database_info(status_vector, db_handle, msg_length,
+							 msg, buffer_length, buffer);
 }
 
 ISC_STATUS API_ROUTINE gds__detach_database(ISC_STATUS * status_vector,
 										FRBRD **db_handle)
 {
-	return isc_detach_database(GDS_VAL(status_vector), GDS_VAL(db_handle));
+	return isc_detach_database(status_vector, db_handle);
 }
 
 ISC_STATUS API_ROUTINE gds__get_segment(ISC_STATUS * status_vector,
@@ -442,10 +422,8 @@ ISC_STATUS API_ROUTINE gds__get_segment(ISC_STATUS * status_vector,
 									USHORT * return_length,
 									USHORT buffer_length, SCHAR * buffer)
 {
-	return isc_get_segment(GDS_VAL(status_vector),
-						   GDS_VAL(blob_handle),
-						   GDS_VAL(return_length),
-						   buffer_length, GDS_VAL(buffer));
+	return isc_get_segment(status_vector, blob_handle, return_length,
+						   buffer_length, buffer);
 }
 
 ISC_STATUS API_ROUTINE gds__get_slice(ISC_STATUS * status_vector,
@@ -459,16 +437,9 @@ ISC_STATUS API_ROUTINE gds__get_slice(ISC_STATUS * status_vector,
 								  SLONG slice_length,
 								  void *slice, SLONG * return_length)
 {
-	return isc_get_slice(GDS_VAL(status_vector),
-						 GDS_VAL(db_handle),
-						 GDS_VAL(tra_handle),
-						 GDS_VAL(array_id),
-						 sdl_length,
-						 GDS_VAL(sdl),
-						 parameters_leng,
-						 GDS_VAL(parameters),
-						 slice_length,
-						 GDS_VAL((SCHAR *) slice), GDS_VAL(return_length));
+	return isc_get_slice(status_vector, db_handle, tra_handle, array_id,
+						 sdl_length, sdl, parameters_leng, parameters,
+						 slice_length, (SCHAR *) slice, return_length);
 }
 
 ISC_STATUS API_ROUTINE gds__open_blob(ISC_STATUS * status_vector,
@@ -476,10 +447,8 @@ ISC_STATUS API_ROUTINE gds__open_blob(ISC_STATUS * status_vector,
 								  FRBRD **tra_handle,
 								  FRBRD **blob_handle, GDS_QUAD * blob_id)
 {
-	return isc_open_blob(GDS_VAL(status_vector),
-						 GDS_VAL(db_handle),
-						 GDS_VAL(tra_handle),
-						 GDS_VAL(blob_handle), GDS_VAL(blob_id));
+	return isc_open_blob(status_vector, db_handle, tra_handle, blob_handle,
+						 blob_id);
 }
 
 ISC_STATUS API_ROUTINE gds__open_blob2(ISC_STATUS * status_vector,
@@ -489,39 +458,30 @@ ISC_STATUS API_ROUTINE gds__open_blob2(ISC_STATUS * status_vector,
 								   GDS_QUAD * blob_id,
 								   SSHORT bpb_length, SCHAR * bpb)
 {
-	return isc_open_blob2(GDS_VAL(status_vector),
-						  GDS_VAL(db_handle),
-						  GDS_VAL(tra_handle),
-						  GDS_VAL(blob_handle),
-						  GDS_VAL(blob_id),
-						  bpb_length,
-						  reinterpret_cast<UCHAR*>(GDS_VAL(bpb)));
+	return isc_open_blob2(status_vector, db_handle, tra_handle, blob_handle,
+						  blob_id, bpb_length,
+						  reinterpret_cast<UCHAR*>(bpb));
 }
 
 ISC_STATUS API_ROUTINE gds__prepare_transaction(ISC_STATUS * status_vector,
 											FRBRD **tra_handle)
 {
-	return isc_prepare_transaction(GDS_VAL(status_vector),
-								   GDS_VAL(tra_handle));
+	return isc_prepare_transaction(status_vector, tra_handle);
 }
 
 ISC_STATUS API_ROUTINE gds__prepare_transaction2(ISC_STATUS * status_vector,
 											 FRBRD **tra_handle,
 											 SSHORT msg_length, SCHAR * msg)
 {
-	return isc_prepare_transaction2(GDS_VAL(status_vector),
-									GDS_VAL(tra_handle),
-									msg_length,
-									reinterpret_cast<UCHAR*>(GDS_VAL(msg)));
+	return isc_prepare_transaction2(status_vector, tra_handle, msg_length,
+									reinterpret_cast<UCHAR*>(msg));
 }
 
 ISC_STATUS API_ROUTINE gds__put_segment(ISC_STATUS * status_vector,
 									FRBRD **blob_handle,
 									USHORT segment_length, SCHAR * segment)
 {
-	return isc_put_segment(GDS_VAL(status_vector),
-						   GDS_VAL(blob_handle),
-						   segment_length, GDS_VAL(segment));
+	return isc_put_segment(status_vector, blob_handle, segment_length, segment);
 }
 
 ISC_STATUS API_ROUTINE gds__put_slice(ISC_STATUS * status_vector,
@@ -534,15 +494,9 @@ ISC_STATUS API_ROUTINE gds__put_slice(ISC_STATUS * status_vector,
 								  SLONG * parameters,
 								  SLONG slice_length, void *slice)
 {
-	return isc_put_slice(GDS_VAL(status_vector),
-						 GDS_VAL(db_handle),
-						 GDS_VAL(tra_handle),
-						 GDS_VAL(array_id),
-						 sdl_length,
-						 GDS_VAL(sdl),
-						 parameters_leng,
-						 GDS_VAL(parameters),
-						 slice_length, GDS_VAL((SCHAR *) slice));
+	return isc_put_slice(status_vector, db_handle, tra_handle, array_id, 
+						 sdl_length, sdl, parameters_leng, parameters,
+						 slice_length, (SCHAR *) slice);
 }
 
 ISC_STATUS API_ROUTINE gds__que_events(ISC_STATUS * status_vector,
@@ -552,13 +506,8 @@ ISC_STATUS API_ROUTINE gds__que_events(ISC_STATUS * status_vector,
 								   SCHAR * events,
 								   void (*ast_address) (), void *ast_argument)
 {
-	return isc_que_events(GDS_VAL(status_vector),
-						  GDS_VAL(db_handle),
-						  GDS_VAL(event_id),
-						  events_length,
-						  GDS_VAL(events),
-						  GDS_VAL(ast_address),
-						  GDS_VAL((int *) ast_argument));
+	return isc_que_events(status_vector, db_handle, event_id, events_length,
+						  events, ast_address, (int *) ast_argument);
 }
 
 ISC_STATUS API_ROUTINE gds__receive(ISC_STATUS * status_vector,
@@ -567,10 +516,8 @@ ISC_STATUS API_ROUTINE gds__receive(ISC_STATUS * status_vector,
 								SSHORT msg_length,
 								void *msg, SSHORT req_level)
 {
-	return isc_receive(GDS_VAL(status_vector),
-					   GDS_VAL(req_handle),
-					   msg_type,
-					   msg_length, GDS_VAL((SCHAR *) msg), req_level);
+	return isc_receive(status_vector, req_handle, msg_type,
+					   msg_length, (SCHAR *) msg, req_level);
 }
 
 ISC_STATUS API_ROUTINE gds__reconnect_transaction(ISC_STATUS * status_vector,
@@ -578,16 +525,14 @@ ISC_STATUS API_ROUTINE gds__reconnect_transaction(ISC_STATUS * status_vector,
 											  FRBRD **tra_handle,
 											  SSHORT msg_length, SCHAR * msg)
 {
-	return isc_reconnect_transaction(GDS_VAL(status_vector),
-									 GDS_VAL(db_handle),
-									 GDS_VAL(tra_handle),
-									 msg_length, GDS_VAL(msg));
+	return isc_reconnect_transaction(status_vector, db_handle, tra_handle,
+									 msg_length, msg);
 }
 
 ISC_STATUS API_ROUTINE gds__release_request(ISC_STATUS * status_vector,
 										FRBRD **req_handle)
 {
-	return isc_release_request(GDS_VAL(status_vector), GDS_VAL(req_handle));
+	return isc_release_request(status_vector, req_handle);
 }
 
 ISC_STATUS API_ROUTINE gds__request_info(ISC_STATUS * status_vector,
@@ -597,26 +542,21 @@ ISC_STATUS API_ROUTINE gds__request_info(ISC_STATUS * status_vector,
 									 SCHAR * msg,
 									 SSHORT buffer_length, SCHAR * buffer)
 {
-	return isc_request_info(GDS_VAL(status_vector),
-							GDS_VAL(req_handle),
-							req_level,
-							msg_length,
-							GDS_VAL(msg), buffer_length, GDS_VAL(buffer));
+	return isc_request_info(status_vector, req_handle, req_level, msg_length,
+							msg, buffer_length, buffer);
 }
 
 ISC_STATUS API_ROUTINE gds__rollback_transaction(ISC_STATUS * status_vector,
 											 FRBRD **tra_handle)
 {
-	return isc_rollback_transaction(GDS_VAL(status_vector),
-									GDS_VAL(tra_handle));
+	return isc_rollback_transaction(status_vector, tra_handle);
 }
 
 ISC_STATUS API_ROUTINE gds__seek_blob(ISC_STATUS * status_vector,
 								  FRBRD **blob_handle,
 								  SSHORT mode, SLONG offset, SLONG * result)
 {
-	return isc_seek_blob(GDS_VAL(status_vector),
-						 GDS_VAL(blob_handle), mode, offset, GDS_VAL(result));
+	return isc_seek_blob(status_vector, blob_handle, mode, offset, result);
 }
 
 ISC_STATUS API_ROUTINE gds__send(ISC_STATUS * status_vector,
@@ -624,9 +564,8 @@ ISC_STATUS API_ROUTINE gds__send(ISC_STATUS * status_vector,
 							 SSHORT msg_type,
 							 SSHORT msg_length, void *msg, SSHORT req_level)
 {
-	return isc_send(GDS_VAL(status_vector),
-					GDS_VAL(req_handle),
-					msg_type, msg_length, GDS_VAL((SCHAR *) msg), req_level);
+	return isc_send(status_vector, req_handle, msg_type, msg_length, 
+					(SCHAR *) msg, req_level);
 }
 
 ISC_STATUS API_ROUTINE gds__start_and_send(ISC_STATUS * status_vector,
@@ -636,29 +575,23 @@ ISC_STATUS API_ROUTINE gds__start_and_send(ISC_STATUS * status_vector,
 									   SSHORT msg_length,
 									   void *msg, SSHORT req_level)
 {
-	return isc_start_and_send(GDS_VAL(status_vector),
-							  GDS_VAL(req_handle),
-							  GDS_VAL(tra_handle),
-							  msg_type,
-							  msg_length, GDS_VAL((SCHAR *) msg), req_level);
+	return isc_start_and_send(status_vector, req_handle, tra_handle, msg_type,
+							  msg_length, (SCHAR *) msg, req_level);
 }
 
 ISC_STATUS API_ROUTINE gds__start_multiple(ISC_STATUS * status_vector,
 									   FRBRD **tra_handle,
 									   SSHORT db_count, void *teb_vector)
 {
-	return isc_start_multiple(GDS_VAL(status_vector),
-							  GDS_VAL(tra_handle),
-							  db_count, GDS_VAL((SCHAR *) teb_vector));
+	return isc_start_multiple(status_vector, tra_handle, db_count, 
+							  (SCHAR *) teb_vector);
 }
 
 ISC_STATUS API_ROUTINE gds__start_request(ISC_STATUS * status_vector,
 									  FRBRD **req_handle,
 									  FRBRD **tra_handle, SSHORT req_level)
 {
-	return isc_start_request(GDS_VAL(status_vector),
-							 GDS_VAL(req_handle),
-							 GDS_VAL(tra_handle), req_level);
+	return isc_start_request(status_vector, req_handle, tra_handle, req_level);
 }
 
 ISC_STATUS API_ROUTINE gds__transaction_info(ISC_STATUS * status_vector,
@@ -667,26 +600,21 @@ ISC_STATUS API_ROUTINE gds__transaction_info(ISC_STATUS * status_vector,
 										 SCHAR * msg,
 										 SSHORT buffer_length, SCHAR * buffer)
 {
-	return isc_transaction_info(GDS_VAL(status_vector),
-								GDS_VAL(tra_handle),
-								msg_length,
-								GDS_VAL(msg), buffer_length, GDS_VAL(buffer));
+	return isc_transaction_info(status_vector, tra_handle, msg_length,
+								msg, buffer_length, buffer);
 }
 
 ISC_STATUS API_ROUTINE gds__unwind_request(ISC_STATUS * status_vector,
 									   FRBRD **req_handle, SSHORT req_level)
 {
-	return isc_unwind_request(GDS_VAL(status_vector),
-							  GDS_VAL(req_handle), req_level);
+	return isc_unwind_request(status_vector, req_handle, req_level);
 }
 
 ISC_STATUS API_ROUTINE gds__ddl(ISC_STATUS * status_vector,
 							FRBRD **db_handle,
 							FRBRD **tra_handle, SSHORT ddl_length, SCHAR * ddl)
 {
-	return isc_ddl(GDS_VAL(status_vector),
-				   GDS_VAL(db_handle),
-				   GDS_VAL(tra_handle), ddl_length, GDS_VAL(ddl));
+	return isc_ddl(status_vector, db_handle, tra_handle, ddl_length, ddl);
 }
 
 void API_ROUTINE isc_event_counts(
@@ -694,8 +622,7 @@ void API_ROUTINE isc_event_counts(
 								  SSHORT length,
 								  SCHAR * before, SCHAR * after)
 {
-	gds__event_counts(GDS_VAL(result_vector),
-					  length, GDS_VAL(before), GDS_VAL(after));
+	gds__event_counts(result_vector, length, before, after);
 }
 
 SLONG API_ROUTINE isc_free(SCHAR * blk)
@@ -707,12 +634,12 @@ SLONG API_ROUTINE isc_free(SCHAR * blk)
 SLONG API_ROUTINE isc_ftof(SCHAR * string1,
 						   USHORT length1, SCHAR * string2, USHORT length2)
 {
-	return gds__ftof(GDS_VAL(string1), length1, GDS_VAL(string2), length2);
+	return gds__ftof(string1, length1, string2, length2);
 }
 
 void API_ROUTINE isc_get_client_version(SCHAR * buffer)
 {
-	gds__get_client_version(GDS_VAL(buffer));
+	gds__get_client_version(buffer);
 }
 
 int API_ROUTINE isc_get_client_major_version()
@@ -735,7 +662,7 @@ ISC_STATUS API_ROUTINE isc_print_blr(SCHAR * blr,
 
 ISC_STATUS API_ROUTINE isc_print_status(ISC_STATUS * status_vector)
 {
-	return gds__print_status(GDS_VAL(status_vector));
+	return gds__print_status(status_vector);
 }
 
 void API_ROUTINE isc_qtoq(GDS_QUAD * quad1, GDS_QUAD * quad2)
@@ -745,7 +672,7 @@ void API_ROUTINE isc_qtoq(GDS_QUAD * quad1, GDS_QUAD * quad2)
 
 SLONG API_ROUTINE isc_sqlcode(ISC_STATUS * status_vector)
 {
-	return gds__sqlcode(GDS_VAL(status_vector));
+	return gds__sqlcode(status_vector);
 }
 
 void API_ROUTINE isc_sqlcode_s(ISC_STATUS * status_vector, ULONG * sqlcode)
@@ -785,10 +712,8 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS * status_vector,
 									  SSHORT events_length,
 									  SCHAR * events, SCHAR * events_update)
 {
-	return gds__event_wait(GDS_VAL(status_vector),
-						   GDS_VAL(db_handle),
-						   events_length,
-						   GDS_VAL(events), GDS_VAL(events_update));
+	return gds__event_wait(status_vector, db_handle, events_length,
+						   events, events_update);
 }
 #endif
 

@@ -27,11 +27,6 @@
 #ifndef JRD_GDS_PROTO_H
 #define JRD_GDS_PROTO_H
 
-#ifndef GDS_VAL
-#define GDS_VAL(val)	(val)
-#define GDS_REF(val)	(&val)
-#endif
-
 #ifndef IB_PREFIX_TYPE
 #define IB_PREFIX_TYPE 0
 #define IB_PREFIX_LOCK_TYPE 1
@@ -114,8 +109,8 @@ ISC_STATUS	API_ROUTINE gds__print_status(ISC_STATUS*);
 USHORT	API_ROUTINE gds__parse_bpb(USHORT, UCHAR*, USHORT*, USHORT*);
 USHORT	API_ROUTINE gds__parse_bpb2(USHORT, UCHAR*, SSHORT*, SSHORT*,
 									  USHORT*, USHORT*);
-SLONG	API_ROUTINE gds__ftof(SCHAR*, USHORT GDS_VAL(length1), SCHAR*,
-							   USHORT GDS_VAL(length2));
+SLONG	API_ROUTINE gds__ftof(SCHAR*, USHORT length1, SCHAR*,
+							   USHORT length2);
 int		API_ROUTINE gds__print_blr(UCHAR*, FPTR_VOID, SCHAR*, SSHORT);
 void	API_ROUTINE gds__put_error(TEXT*);
 void	API_ROUTINE gds__qtoq(void*, void*);

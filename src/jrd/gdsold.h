@@ -31,11 +31,6 @@
 
 #include "fb_types.h"
 
-#ifndef GDS_VAL /* duplicate definition in gds_proto.h */
-#define GDS_VAL(val)	val
-#define GDS_REF(val)	&val
-#endif
-
 #define GDS_EXPORT ISC_EXPORT
 #define GDS_EXPORT_VARARG ISC_EXPORT_VARARG
 

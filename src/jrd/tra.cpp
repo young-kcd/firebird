@@ -2904,20 +2904,16 @@ static void THREAD_ROUTINE sweep_database(UCHAR* database)
 	}
 	THREAD_EXIT;
 
-	gds__attach_database(status_vector,
-						 0,
-						 reinterpret_cast<char*>(GDS_VAL(database)),
-						 GDS_REF(db_handle),
-						 dpb_length,
-						 reinterpret_cast<char*>(GDS_VAL(sweep_dpb)));
+	gds__attach_database(status_vector, 0, reinterpret_cast<char*>(database),
+						 &db_handle, dpb_length,
+						 reinterpret_cast<char*>(sweep_dpb));
 
 	assert (ihandle->ihndl_object == &db_handle);
 	ihandle->ihndl_object = NULL;
 
 	if (db_handle)
 	{
-		gds__detach_database(status_vector,
-							 GDS_REF(db_handle));
+		gds__detach_database(status_vector, &db_handle);
 	}
 
 	gds__free(database);
