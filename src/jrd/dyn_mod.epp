@@ -711,7 +711,7 @@ void DYN_modify_global_field(
 								new_dom->dyn_dsc.dsc_length,
 								new_dom->dyn_dsc.dsc_sub_type,
 								new_dom->dyn_charset, new_dom->dyn_collation);
-            ULONG retval = check_update_fld_type(orig_dom, new_dom);
+            const ULONG retval = check_update_fld_type(orig_dom, new_dom);
 			if (retval != FB_SUCCESS)
 				modify_err_punt(tdbb, retval, orig_dom, new_dom);
 		}
@@ -2446,7 +2446,7 @@ void DYN_modify_sql_field(Global*		gbl,
 								dom_fld->dyn_charset, dom_fld->dyn_collation);
 			*/
 
-			ULONG retval = check_update_fld_type(orig_fld, dom_fld);
+			const ULONG retval = check_update_fld_type(orig_fld, dom_fld);
 			if (retval != FB_SUCCESS)
 				modify_err_punt(tdbb, retval, orig_fld, dom_fld);
 
@@ -2477,7 +2477,7 @@ void DYN_modify_sql_field(Global*		gbl,
 								new_fld->dyn_dsc.dsc_length,
 								new_fld->dyn_dsc.dsc_sub_type,
 								new_fld->dyn_charset, new_fld->dyn_collation);
-			ULONG retval = check_update_fld_type(orig_fld, new_fld);
+			const ULONG retval = check_update_fld_type(orig_fld, new_fld);
 			if (retval != FB_SUCCESS)
 				modify_err_punt(tdbb, retval, orig_fld, new_fld);
 
@@ -2751,12 +2751,12 @@ static ULONG check_update_fld_type(const dyn_fld* orig_fld,
 						we should have the added bytes for varchar. For cstring, we are used, since
 						DSC_make_descriptor(DSC_string_length) != DSC_string_length(DSC_make_descriptor). */
 
-				USHORT maxflen = DSC_string_length(&orig_fld->dyn_dsc);
+				const USHORT maxflen = DSC_string_length(&orig_fld->dyn_dsc);
 
 				/* We can have this assertion since this case is for both string fields. */
 				fb_assert(DSC_string_length(&new_fld->dyn_dsc) - maxflen
 					== new_fld->dyn_charbytelen - orig_fld->dyn_charbytelen);
-				/* if (new_fld->dyn_dsc.dsc_length < maxflen) */
+				// if (new_fld->dyn_dsc.dsc_length < maxflen)
 				if (DSC_string_length(&new_fld->dyn_dsc) < maxflen)
 					return isc_dyn_char_fld_too_small;
 				/* New size specified for column %s must be greater than %d characters. */
@@ -2809,9 +2809,11 @@ static ULONG check_update_fld_type(const dyn_fld* orig_fld,
 		case blr_cstring:
 		case blr_cstring2:
 			{
-				USHORT maxflen = DSC_string_length(&orig_fld->dyn_dsc);
+				const USHORT maxflen = DSC_string_length(&orig_fld->dyn_dsc);
 
-				if (new_fld->dyn_dsc.dsc_length < maxflen)
+				// CVC: Solve bug #910423, missing DSC_string_length call.
+				// if (new_fld->dyn_dsc.dsc_length < maxflen)
+                if (DSC_string_length(&new_fld->dyn_dsc) < maxflen)
 					return isc_dyn_char_fld_too_small;
 				/* New size specified for column %s must be greater than %d characters. */
 			}
@@ -2916,9 +2918,11 @@ static ULONG check_update_fld_type(const dyn_fld* orig_fld,
 		case blr_varying:
 		case blr_cstring:
 			{
-				USHORT maxflen = DSC_string_length(&orig_fld->dyn_dsc);
+				const USHORT maxflen = DSC_string_length(&orig_fld->dyn_dsc);
 
-				if (new_fld->dyn_dsc.dsc_length < maxflen)
+				// CVC: Solve bug #910423, missing DSC_string_length call.
+				// if (new_fld->dyn_dsc.dsc_length < maxflen)
+                if (DSC_string_length(&new_fld->dyn_dsc) < maxflen)
 					return isc_dyn_char_fld_too_small;
 				/* New size specified for column %s must be greater than %d characters. */
 			}
