@@ -106,6 +106,10 @@ SOURCE=..\..\..\src\jrd\blob_filter.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\btn.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\btr.cpp
 
 !IF  "$(CFG)" == "engine_embed - Win32 Release"

@@ -106,6 +106,10 @@ SOURCE=..\..\..\src\jrd\blob_filter.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\btn.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\btr.cpp
 
 !IF  "$(CFG)" == "engine - Win32 Release"
@@ -614,6 +618,10 @@ SOURCE=..\..\..\src\include\gen\blrtable.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\bookmark.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\btn.h
 # End Source File
 # Begin Source File
 
