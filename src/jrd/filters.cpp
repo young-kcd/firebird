@@ -227,7 +227,7 @@ ISC_STATUS filter_blr(USHORT action, BlobControl* control)
 	UCHAR buffer[512];
 	const SLONG l = 1 + control->ctl_handle->ctl_total_length;
 	UCHAR* const temp =
-		(l <=(SLONG) sizeof(buffer)) ? buffer : (UCHAR*) gds__alloc((SLONG) l);
+		(l <= (SLONG) sizeof(buffer)) ? buffer : (UCHAR*) gds__alloc((SLONG) l);
 /* FREE: at procedure exit */
 	if (!temp)					/* NOMEM: */
 		return isc_virmemexh;

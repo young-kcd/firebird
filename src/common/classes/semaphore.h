@@ -24,8 +24,6 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: semaphore.h,v 1.17 2004-12-24 09:35:39 kkuznetsov Exp $
- *
  */
 
 #ifndef CLASSES_SEMAPHORE_H
@@ -313,7 +311,7 @@ public:
 
 } // namespace Firebird
 
-#endif /*Solaris*/
+#endif /* SOLARIS_MT */
 #endif /*MULTI_THREAD*/
 
 #endif /*!WIN_NT*/

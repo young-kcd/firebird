@@ -124,7 +124,7 @@ static const double pow10_table[] =
 	1.e30, 1.e31, 1.e32, 1.e33, 1.e34, 1.e35, 1.e36
 };
 
-#define powerof10(s) ((s) <= 0 ? pow10_table[-(s)] : 1./pow10_table[-(s)])
+#define powerof10(s) ((s) <= 0 ? pow10_table[-(s)] : 1. / pow10_table[-(s)])
 
 static const struct {			/* Used in make_int64_key() */
 	UINT64 limit;

@@ -383,7 +383,7 @@ static bool detach_service( ibmgr_data_t* data)
 */
 	fb_assert(data->attached);
 
-	isc_service_detach(status, &(data->attached));
+	isc_service_detach(status, &data->attached);
 	data->attached = NULL;
 
 	if (status[0] == 1 && status[1] > 0) {
@@ -505,15 +505,10 @@ static bool start_server( ibmgr_data_t* data)
    while linking with libthreads, fork1 - fork one thread
 */
 	if (!(pid = fork1())) {
-		if (execv(path, argv)== -1){
+		if (execv(path, argv) == -1) {
 			ib_fprintf(OUTFILE, "Could not create child process %s with args %s\n",
 				   path, argv);
-
-		    }
-		
-		
-		
-		
+		}
 		_exit(FINI_ERROR);
 	}
 
@@ -549,12 +544,13 @@ static bool start_server( ibmgr_data_t* data)
 		   means in our case that the server is running).
 		 */
 #if (defined SOLARIS_MT)
-/* Trying to understand why it dead */
-		if ((ret_value == pid)&&( WIFEXITED(exit_status)
-					||WCOREDUMP(exit_status)
-					||WIFSIGNALED(exit_status))) {
+		// Trying to understand why it died
+		if ((ret_value == pid) && ( WIFEXITED(exit_status)
+					|| WCOREDUMP(exit_status)
+					|| WIFSIGNALED(exit_status)))
+		{
 			ib_printf("Guardian process %ld terminated with code %ld\n",
-			 pid,WEXITSTATUS(exit_status)); 
+				pid,WEXITSTATUS(exit_status)); 
 			break;
 		}
 
@@ -568,7 +564,7 @@ static bool start_server( ibmgr_data_t* data)
 			break;
 		}
 
-#endif /*SOLARIS_MT*/
+#endif /* SOLARIS_MT */
 
 #ifdef DEBUG
 		else if (ret_value == -1) {

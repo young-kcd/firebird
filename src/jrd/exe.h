@@ -395,7 +395,7 @@ const int e_var_length		= 2;
 
 const int e_dcl_id			= 0;
 const int e_dcl_desc		= 1;
-const int e_dcl_length		= (1 + sizeof (DSC)/sizeof (::Jrd::jrd_nod*));	/* Room for descriptor */
+const int e_dcl_length		= (1 + sizeof (DSC) / sizeof(::Jrd::jrd_nod*));	/* Room for descriptor */
 
 const int e_dep_object		= 0;	/* node for registering dependencies */
 const int e_dep_object_type	= 1;

@@ -5337,7 +5337,7 @@ static processing_state parse_arg(int argc,
 			}
 			// number of cache buffers
 			else if (c == 'C'
-				&& (!s[2] || UPPER(s[2])== 'A'))
+				&& (!s[2] || UPPER(s[2]) == 'A'))
 			{
 				if ((s = argv[++i]) && *s) {
 					STRARGCPY(global_Numbufs, s);

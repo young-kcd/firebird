@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: nbak.cpp,v 1.44 2004-10-16 12:52:09 dimitr Exp $
+ *  $Id: nbak.cpp,v 1.45 2004-12-25 09:43:50 robocop Exp $
  *
  */
 
@@ -955,7 +955,7 @@ BackupManager::BackupManager(Database* _database, int ini_state) :
 	temp_buffers_space = FB_NEW(*database->dbb_permanent) BYTE[database->dbb_page_size * 3 + MIN_PAGE_SIZE];
 	// Align it at sector boundary for faster IO
 	BYTE *temp_buffers = reinterpret_cast<BYTE*>(
-		FB_ALIGN(reinterpret_cast<U_IPTR>(temp_buffers_space),	MIN_PAGE_SIZE));
+		FB_ALIGN(reinterpret_cast<U_IPTR>(temp_buffers_space), MIN_PAGE_SIZE));
 	memset(temp_buffers, 0, database->dbb_page_size * 3);
 		
 	empty_buffer = reinterpret_cast<ULONG*>(temp_buffers);

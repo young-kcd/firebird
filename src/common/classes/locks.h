@@ -24,8 +24,6 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: locks.h,v 1.19 2004-12-24 09:35:39 kkuznetsov Exp $
- *
  */
 
 #ifndef CLASSES_LOCKS_H

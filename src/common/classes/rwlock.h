@@ -24,8 +24,6 @@
  *  Contributor(s): ______________________________________.
  * 
  *
- *  $Id: rwlock.h,v 1.24 2004-12-24 09:35:39 kkuznetsov Exp $
- *
  */
 
 #ifndef CLASSES_RWLOCK_H

@@ -872,14 +872,14 @@ struct ISC_TIMESTAMP
 #define MIN(a, b)                (((a) < (b)) ? (a) : (b))
 #endif
 
-#define UPPER(c)                (((c) >= 'a' && (c)<= 'z') ? (c) - 'a' + 'A' : (c))
-#define LOWWER(c)               (((c) >= 'A' && (c)<= 'Z') ? (c) - 'A' + 'a' : (c))
+#define UPPER(c)                (((c) >= 'a' && (c) <= 'z') ? (c) - 'a' + 'A' : (c))
+#define LOWWER(c)               (((c) >= 'A' && (c) <= 'Z') ? (c) - 'A' + 'a' : (c))
 
 /* UPPER7 & LOWWER7 are to be used when the data is known to
    be 7-bit ASCII, eg: internal data, OS data.  NOT user data.  */
 
-#define UPPER7(c)               (((c) >= 'a' && (c)<= 'z') ? (c) - 'a' + 'A' : (c))
-#define LOWWER7(c)              (((c) >= 'A' && (c)<= 'Z') ? (c) - 'A' + 'a' : (c))
+#define UPPER7(c)               (((c) >= 'a' && (c) <= 'z') ? (c) - 'a' + 'A' : (c))
+#define LOWWER7(c)              (((c) >= 'A' && (c) <= 'Z') ? (c) - 'A' + 'a' : (c))
 
 #ifndef ROUNDUP
 #define ROUNDUP(n, b)            (((n) + (b) - 1) & ~((b) - 1))

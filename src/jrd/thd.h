@@ -25,9 +25,6 @@
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
  */
-/*
-$Id: thd.h,v 1.40 2004-12-24 09:35:42 kkuznetsov Exp $
-*/
 
 #ifndef JRD_THD_H
 #define JRD_THD_H
