@@ -58,6 +58,7 @@
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/jrd_proto.h"
 
+#include "../common/config/config.h"
 
 /* VMS Specific Stuff */
 
@@ -71,6 +72,8 @@
 #include <secdef.h>
 #include <lckdef.h>
 #include "../jrd/lnmdef.h"
+
+
 #define LOGICAL_NAME_TABLE	"LNM$FILE_DEV"
 #define DEFAULT_FILE_NAME	".gdb"
 #define INET_FLAG		'^'
@@ -307,6 +310,8 @@ int ISC_analyze_nfs(TEXT * expanded_filename, TEXT * node_name)
  *	decompose into node name and remote file name.
  *
  **************************************/
+
+
 #ifdef STACK_EFFICIENT
 	TEXT *mnt_buffer, *remote_filename, *max_node, *max_path, *expand_mount;
 #else /* STACK_EFFICIENT */
@@ -320,6 +325,13 @@ int ISC_analyze_nfs(TEXT * expanded_filename, TEXT * node_name)
 
 	IB_FILE *mtab;
 	int context, len;
+
+
+    // If we are ignoring NFS remote mounts then do not bother checking here
+    // and pretend it's only local. MOD 16-Nov-2002
+    if (! Config::getRemoteFileOpenAbility()) {
+        return FALSE;
+    }
 
 #ifdef STACK_EFFICIENT
 /* allocate all strings in one block */
