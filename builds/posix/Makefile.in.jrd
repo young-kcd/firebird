@@ -29,7 +29,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.jrd,v 1.4 2002-12-16 21:19:17 skidder Exp $
+#  $Id: Makefile.in.jrd,v 1.5 2003-02-17 08:26:10 eku Exp $
 #
 ROOT=../..
 
@@ -111,9 +111,6 @@ $(LIBGDS_A) : $(GDSLIB_Objects)
 # It comes from the original sfx.jrd file and I've left it here for now
 # for reference until I finish rewriting the super server make.
 
-CSI_FILES=	$(OBJS)/csv/csi.o $(OBJS)/csv/css.o
-CSI_P_FILES=	$(OBJS)/csv/csi.bin $(OBJS)/csv/css.bin
-
 
 DSQL_HEAD_MISC=	$(OBJS)/dsql/array.o $(OBJS)/dsql/blob.o \
 		$(OBJS)/dsql/preparse.o \
@@ -157,16 +154,13 @@ SUPER_OBJECTS=	$(DSQL_MISC) $(LOCK_MISC) \
 		$(SECURITY_MISC) $(GSTAT_MISC) $(GSEC_MISC) $(UTIL_MISC) \
 		$(STDIO)
 
-HEAD_OBJECTS=	$(OBJS)/pipe/head.o $(OBJS)/pipe/head5.o $(OBJS)/pipe/allp.o \
-		whyp.o utlp.o dls.o enc.o \
+HEAD_OBJECTS= whyp.o utlp.o dls.o enc.o \
 		$(JRD_MISC) $(JRD_HEAD_MISC) $(DSQL_HEAD_MISC) \
 		$(PYXIS_MISC_OBJS) $(MERGE_MISC) $(SECURITY_MISC)
 
-HEAD_J_OBJECTS=	head.j head5.j allp.j whyp.j utlp.j \
+HEAD_J_OBJECTS=	whyp.j utlp.j \
 		$(JRD_J_MISC) $(JRD_J_HEAD_MISC) $(DSQL_J_HEAD_MISC) \
 		$(MERGE_J_MISC)
-
-BRIDGE_P_MISC=	$(OBJS)/pipe/head5.bin $(OBJS)/pipe/allp.bin
 
 FOOT_OBJECTS=	$(FOOT_OBJECT) $(ALLP_OBJECT)
 ALLP_OBJECT=	$(OBJS)/pipe/allp.o
@@ -233,11 +227,11 @@ bridge.apollo:	gdslib
 gds.sl $(HP_GDSSHR): $(JRD_P_OBJECTS) flu.bin $(DSQL_P_MISC) $(LOCK_P_MISC) \
 		$(PYXIS_P_MISC_OBJS) \
 		$(REMOTE_P_MISC) $(WAL_P_MISC) \
-		$(HM300_BRIDGE_P_MISC) $(SECURITY_P_MISC) functions.bin gds.bind
+		$(SECURITY_P_MISC) functions.bin gds.bind
 	-$(RM) gds.sl
 	ld -b $(LD_OPTS) $(JRD_P_OBJECTS) flu.bin $(DSQL_P_MISC) \
 		$(LOCK_P_MISC) $(PYXIS_P_MISC_OBJS) $(REMOTE_P_MISC) \
-		$(WAL_P_MISC) $(HM300_BRIDGE_P_MISC) \
+		$(WAL_P_MISC) \
 		$(SECURITY_P_MISC) functions.bin -o gds.sl
 	$(CHMOD_7) gds.sl
 	$(MV) gds.sl $(GDSSHR)
@@ -287,7 +281,7 @@ bridge.shared_bin:	$(GDSSHR)
 gds_s.a $(IMP_GDSSHR) $(SCO_GDSSHR): \
 		$(JRD_P_OBJECTS) flu.bin $(IMP_FUNCSHR) \
 		$(SCO_FUNCSHR) $(DSQL_P_MISC) \
-		$(LOCK_P_MISC) $(REMOTE_P_MISC) $(SECURITY_P_MISC) $(BRIDGE_P_MISC) \
+		$(LOCK_P_MISC) $(REMOTE_P_MISC) $(SECURITY_P_MISC) \
 		$(INTL_P_MISC) $(WAL_P_MISC) gds_s.bind
 	-$(RM) gds_s.a source/interbase/lib/gds_s
 	mkshlib -q -s gds_s.bind -h gds_s.a -t $(GDSSHR)
@@ -309,11 +303,11 @@ gdsf_s.a $(IMP_FUNCSHR) $(SCO_FUNCSHR):	functions.bin \
 
 gdslib.so.1.0 $(SUN_GDSSHR):	$(JRD_P_OBJECTS) flu.bin $(CSI_P_MISC) \
 		$(DSQL_P_MISC) $(LOCK_P_MISC) $(REMOTE_P_MISC) $(SECURITY_P_MISC) \
-		$(BRIDGE_P_MISC) $(WAL_P_MISC) functions.bin gdslib.so.0.1
+		$(WAL_P_MISC) functions.bin gdslib.so.0.1
 	-$(RM) gdslib.so.1.0
 	ld -assert pure-text $(JRD_P_OBJECTS) flu.bin $(CSI_P_MISC) \
 		$(DSQL_P_MISC) $(LOCK_P_MISC) $(REMOTE_P_MISC) $(SECURITY_P_MISC) \
-		$(BRIDGE_P_MISC) $(WAL_P_MISC) functions.bin -o gdslib.so.1.0
+		$(WAL_P_MISC) functions.bin -o gdslib.so.1.0
 	$(CHMOD_6) gdslib.so.1.0
 	$(MV) gdslib.so.1.0 $(GDSSHR)
 	$(TOUCH) gdslib.so.1.0
@@ -324,13 +318,13 @@ gdslib.so.1.0 $(SUN_GDSSHR):	$(JRD_P_OBJECTS) flu.bin $(CSI_P_MISC) \
 #JRD_P_OBJECTS := $(subst flu.bin, flu_non_dl.bin, $JRD_P_OBJECTS)
 
 #gdslib.so.0.1:	$(JRD_P_OBJECTS) flu_non_dl.bin $(CSI_P_MISC) $(DSQL_P_MISC) \
-#		$(LOCK_P_MISC) $(REMOTE_P_MISC) $(BRIDGE_P_MISC) $(WAL_P_MISC) \
+#		$(LOCK_P_MISC) $(REMOTE_P_MISC) $(WAL_P_MISC) \
 #		$(SECURITY_P_MISC) \
 #		gdsflib.so.0.0
 #	-$(RM) gdslib.so.0.1
 #	ld -assert pure-text $(JRD_P_OBJECTS) flu_non_dl.bin $(CSI_P_MISC) \
 #		$(DSQL_P_MISC) $(LOCK_P_MISC) $(REMOTE_P_MISC) $(SECURITY_P_MISC) \
-#		$(BRIDGE_P_MISC) $(WAL_P_MISC) -lgdsflib -o gdslib.so.0.1
+#		$(WAL_P_MISC) -lgdsflib -o gdslib.so.0.1
 #	$(CHMOD_6) gdslib.so.0.1
 #	$(MV) gdslib.so.0.1 source/interbase/lib
 #	$(TOUCH) gdslib.so.0.1
@@ -375,13 +369,13 @@ gds.so.O $(SCO_EV_GDSSHR): \
 
 libgds.so gds.so.linux: \
 		$(JRD_P_OBJECTS) flu.bin $(CSI_P_MISC) $(DSQL_P_MISC) \
-		$(LOCK_P_MISC) $(REMOTE_P_MISC) $(SECURITY_P_MISC) $(BRIDGE_P_MISC) \
+		$(LOCK_P_MISC) $(REMOTE_P_MISC) $(SECURITY_P_MISC) \
 		$(INTL_P_MISC) $(WAL_P_MISC) \
 		$(FUNCTIONS)
 	-$(RM) gds.so
 	ld $(LD_OPTS) $(ZDEFS) $(JRD_P_OBJECTS) flu.bin \
 		$(CSI_P_MISC) $(DSQL_P_MISC) $(LOCK_P_MISC) \
-		$(REMOTE_P_MISC) $(SECURITY_P_MISC) $(BRIDGE_P_MISC) $(INTL_P_MISC) \
+		$(REMOTE_P_MISC) $(SECURITY_P_MISC) $(INTL_P_MISC) \
 		$(WAL_P_MISC) $(FUNCTIONS) $(GDSF_LIB) \
 		$(LD_LIBS) -o libgds.so
 	$(CHMOD_6) libgds.so
@@ -391,13 +385,13 @@ libgds.so gds.so.linux: \
 
 gds.so.0 $(DG_GDSSHR) $(DG_X86_GDSSHR) $(UNIXWARE_GDSSHR) $(NCR3000_GDSSHR): \
 		$(JRD_P_OBJECTS) flu.bin $(CSI_P_MISC) $(DSQL_P_MISC) \
-		$(LOCK_P_MISC) $(REMOTE_P_MISC) $(SECURITY_P_MISC) $(BRIDGE_P_MISC) \
+		$(LOCK_P_MISC) $(REMOTE_P_MISC) $(SECURITY_P_MISC) \
 		$(INTL_P_MISC) $(WAL_P_MISC) \
 		$(FUNCTIONS)
 	-$(RM) gds.so.0
 	ld $(LD_OPTS) libgds.so.0 $(ZDEFS) $(JRD_P_OBJECTS) flu.bin \
 		$(CSI_P_MISC) $(DSQL_P_MISC) $(LOCK_P_MISC) \
-		$(REMOTE_P_MISC) $(SECURITY_P_MISC) $(BRIDGE_P_MISC) $(INTL_P_MISC) \
+		$(REMOTE_P_MISC) $(SECURITY_P_MISC) $(INTL_P_MISC) \
 		$(WAL_P_MISC) $(FUNCTIONS) $(GDSF_LIB) \
 		$(LD_LIBS) -o gds.so.0
 	$(CHMOD_6) gds.so.0
@@ -408,7 +402,7 @@ gds.so.0 $(DG_GDSSHR) $(DG_X86_GDSSHR) $(UNIXWARE_GDSSHR) $(NCR3000_GDSSHR): \
 # For the Darwin port
 gds.dylib: $(DO_FORCE) \
 		$(JRD_P_OBJECTS) flu.bin $(CSI_P_MISC) $(DSQL_P_MISC) \
-		$(LOCK_P_MISC) $(REMOTE_P_MISC) $(SECURITY_P_MISC) $(BRIDGE_P_MISC) \
+		$(LOCK_P_MISC) $(REMOTE_P_MISC) $(SECURITY_P_MISC) \
 		$(INTL_P_MISC) $(WAL_P_MISC) \
 		$(FUNCTIONS)  $(PYXIS_P_OBJECTS) $(PYXIS_P_MISC)
 
@@ -418,7 +412,7 @@ gds.dylib: $(DO_FORCE) \
 		-install_name $(FW_NAME)/Versions/A/$(FBFW_PREFIX) \
 		$(ZDEFS) $(JRD_P_OBJECTS) flu.bin \
 		$(CSI_P_MISC) $(DSQL_P_MISC) $(LOCK_P_MISC) \
-		$(REMOTE_P_MISC) $(SECURITY_P_MISC) $(BRIDGE_P_MISC) $(INTL_P_MISC) \
+		$(REMOTE_P_MISC) $(SECURITY_P_MISC) $(INTL_P_MISC) \
 		$(WAL_P_MISC) $(FUNCTIONS) $(GDSF_LIB) \
 		$(PYXIS_P_OBJECTS) $(PYXIS_P_MISC) \
 		$(LD_LIBS) -framework System -framework CoreFoundation
@@ -439,13 +433,13 @@ gds.so.solaris $(SOL_GDSSHR):  gdsmt.so.0 gdspipe.so.0
 gdsmt.so.0: \
 		$(JRD_P_OBJECTS) flu.bin $(CSI_P_MISC) $(DSQL_P_MISC) \
 		$(LOCK_P_MISC) \
-		$(REMOTE_P_MISC) $(SECURITY_P_MISC) $(BRIDGE_P_MISC) \
+		$(REMOTE_P_MISC) $(SECURITY_P_MISC) \
 		$(INTL_P_MISC) $(WAL_P_MISC) \
 		$(FUNCTIONS)
 	-$(RM) gdsmt.so.0
 	ld $(LD_OPTS) libgdsmt.so.0 $(ZDEFS) $(JRD_P_OBJECTS) flu.bin \
 		$(CSI_P_MISC) $(DSQL_P_MISC) $(LOCK_P_MISC) \
-		$(REMOTE_P_MISC) $(SECURITY_P_MISC) $(BRIDGE_P_MISC) \
+		$(REMOTE_P_MISC) $(SECURITY_P_MISC) \
 		$(INTL_P_MISC) $(WAL_P_MISC) $(FUNCTIONS) \
 		$(GDSF_LIB) $(LD_LIBS) -o gdsmt.so.0
 	$(CHMOD_6) gdsmt.so.0
@@ -790,10 +784,6 @@ flu_non_dl.bin:	flu.cpp
 	$(CXX) -c $(PIC_FLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) -DNON_DL_COMPATIBLE -c $< -o flu_non_dl.cpp
 	$(MV) flu_non_dl.o flu_non_dl.bin
 	-$(RM) flu_non_dl.cpp
-
-head5.bin:	head.cpp
-	$(CXX) -c $(PIC_FLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) -DGDS_PIPE=\"bin/gds_pipe5\" $< -o $@
-
 
 AllObjects = $(BOOT_Objects) $(JRD_Objects) $(OS_SPECIFIC_Objects)
 

@@ -106,17 +106,6 @@ INTERFACE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(INTERFACE_
 
 #________________________________________________________________________
 #
-# pipe
-
-PIPE_Files=	head5.cpp allp.cpp
-
-PIPE_Sources = $(addprefix pipe/, $(PIPE_Files))
-PIPE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(PIPE_Sources))))
-
-
-
-#________________________________________________________________________
-#
 # intl
 
 # none currently.
@@ -262,7 +251,6 @@ LIBFBEMBED_Objects =$(OS_SPECIFIC_Objects) \
                 $(DSQL_Objects) \
                 $(LOCK_Objects) \
                 $(INTERFACE_Objects) \
-                $(PIPE_Objects) \
                 $(WAL_Objects) \
                 $(GPRELIB_Objects) \
                 $(SECURITY_Objects) \
@@ -294,7 +282,6 @@ LIBFBSTATIC_Objects = $(OS_SPECIFIC_Objects) \
                 $(DSQL_Objects) \
                 $(LOCK_Objects) \
                 $(INTERFACE_Objects) \
-                $(PIPE_Objects) \
                 $(WAL_Objects) \
                 $(GPRELIB_Objects) \
 				$(FBCONFIG_Objects)
