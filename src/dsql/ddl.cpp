@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.41 2003-02-25 00:03:38 brodsom Exp $
+ * $Id: ddl.cpp,v 1.42 2003-03-03 08:29:18 brodsom Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -117,7 +117,9 @@ static void define_filter(DSQL_REQ);
 static void define_generator(DSQL_REQ);
 static void define_role(DSQL_REQ);
 static void define_index(DSQL_REQ);
+#ifdef NOT_USED_OR_REPLACED
 static DSQL_NOD define_insert_action(DSQL_REQ);
+#endif
 static void define_procedure(DSQL_REQ, NOD_TYPE);
 static void define_rel_constraint(DSQL_REQ, DSQL_NOD);
 static void define_relation(DSQL_REQ);
@@ -2123,7 +2125,7 @@ static void define_index(DSQL_REQ request)
 	request->append_uchar(gds_dyn_end);			/* of begin */
 }
 
-
+#ifdef NOT_USED_OR_REPLACED
 static DSQL_NOD define_insert_action( DSQL_REQ request)
 {
 /**************************************
@@ -2234,7 +2236,7 @@ static DSQL_NOD define_insert_action( DSQL_REQ request)
 
 	return action_node;
 }
-
+#endif
 
 static void define_procedure( DSQL_REQ request, NOD_TYPE op)
 {

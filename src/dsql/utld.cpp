@@ -30,7 +30,7 @@
  */
 
 /*
-$Id: utld.cpp,v 1.10 2003-02-15 03:01:51 hippoman Exp $
+$Id: utld.cpp,v 1.11 2003-03-03 08:29:18 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -53,8 +53,10 @@ static void cleanup(void *);
 static STATUS error_dsql_804(STATUS *, STATUS);
 static SLONG get_numeric_info(SCHAR **);
 static SLONG get_string_info(SCHAR **, SCHAR *, int);
+#ifdef NOT_USED_OR_REPLACED
 #ifdef DEV_BUILD
 static void print_xsqlda(XSQLDA *);
+#endif
 #endif
 static void sqlvar_to_xsqlvar(SQLVAR *, XSQLVAR *);
 static void xsqlvar_to_sqlvar(XSQLVAR *, SQLVAR *);
@@ -832,7 +834,7 @@ static SLONG get_string_info( SCHAR ** ptr, SCHAR * buffer, int buffer_len)
 	return len;
 }
 
-
+#ifdef NOT_USED_OR_REPLACED
 #ifdef DEV_BUILD
 static void print_xsqlda( XSQLDA * xsqlda)
 {
@@ -863,7 +865,7 @@ static void print_xsqlda( XSQLDA * xsqlda)
 			   xvar->sqlscale, xvar->sqllen, xvar->sqlsubtype);
 }
 #endif
-
+#endif
 
 /**
   
