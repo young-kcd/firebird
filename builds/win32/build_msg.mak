@@ -69,7 +69,7 @@ LINK32_OBJS= \
 
 RSC_PROJ=/l 0x41d /fo"$(INTDIR)\version.res" /d "NDEBUG" 
 
-SOURCE=..\..\generated\msgs\build_file.cpp
+SOURCE=..\..\gen\msgs\build_file.cpp
 
 "$(INTDIR)\build_file.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)

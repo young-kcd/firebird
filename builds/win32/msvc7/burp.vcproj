@@ -134,10 +134,10 @@
 				Name="Generated files"
 				Filter="">
 				<File
-					RelativePath="..\..\..\generated\burp\backup.cpp">
+					RelativePath="..\..\..\gen\burp\backup.cpp">
 				</File>
 				<File
-					RelativePath="..\..\..\generated\burp\restore.cpp">
+					RelativePath="..\..\..\gen\burp\restore.cpp">
 				</File>
 			</Filter>
 		</Filter>

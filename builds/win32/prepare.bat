@@ -51,12 +51,6 @@ for /f "tokens=*" %%a in ('@echo %ROOT_PATH:\=/%') do (set DB_PATH=%%a)
 @%FIREBIRD%\bin\gbak -r %ROOT_PATH%\src\misc\help.gbak localhost:%DB_PATH%\builds\win32\dbs\qli\help.fdb
 @cd ..
 
-::provisional, copy all fdbs to the same directory to be used from preprocess
-copy dbs\metadata.fdb %ROOT_PATH%\generated\yachts.lnk > nul
-copy dbs\jrd\security.fdb %ROOT_PATH%\generated\security.fdb > nul
-copy dbs\msgs\msg.fdb %ROOT_PATH%\generated\msg.fdb > nul
-copy dbs\qli\help.fdb %ROOT_PATH%\generated\help.fdb > nul
-
 @echo.
 @echo Completed Preparations for build
 @echo You many now continue by running BUILD_ALL.BAT

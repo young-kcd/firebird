@@ -206,7 +206,7 @@
 				Name="Generated files"
 				Filter="">
 				<File
-					RelativePath="..\..\..\generated\gpre\gpre_meta.cpp">
+					RelativePath="..\..\..\gen\gpre\gpre_meta.cpp">
 				</File>
 			</Filter>
 		</Filter>

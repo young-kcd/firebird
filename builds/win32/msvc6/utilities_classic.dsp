@@ -109,7 +109,7 @@ SOURCE=..\..\..\src\utilities\security.epp
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\generated\utilities\security.cpp
+SOURCE=..\..\..\gen\utilities\security.cpp
 # End Source File
 # End Group
 # Begin Source File

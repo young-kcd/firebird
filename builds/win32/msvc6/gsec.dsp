@@ -97,7 +97,7 @@ SOURCE=..\..\..\src\utilities\gsec.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\generated\utilities\security.cpp
+SOURCE=..\..\..\gen\utilities\security.cpp
 # End Source File
 # End Group
 # Begin Group "JRD files"

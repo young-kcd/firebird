@@ -93,7 +93,7 @@ SOURCE=..\..\..\src\dudley\ddl.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\generated\dudley\exe.cpp
+SOURCE=..\..\..\gen\dudley\exe.cpp
 # End Source File
 # Begin Source File
 
@@ -105,7 +105,7 @@ SOURCE=..\..\..\src\dudley\expr.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\generated\dudley\extract.cpp
+SOURCE=..\..\..\gen\dudley\extract.cpp
 # End Source File
 # Begin Source File
 

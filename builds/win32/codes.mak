@@ -69,7 +69,7 @@ LINK32_OBJS= \
 
 RSC_PROJ=/l 0x41d /fo"$(INTDIR)\version.res" /d "NDEBUG" 
 
-SOURCE=..\..\generated\jrd\codes.cpp
+SOURCE=..\..\gen\jrd\codes.cpp
 
 "$(INTDIR)\codes.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)

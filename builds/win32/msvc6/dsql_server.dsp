@@ -104,15 +104,15 @@ SOURCE=..\..\..\src\dsql\metd.epp
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\generated\dsql\array.cpp
+SOURCE=..\..\..\gen\dsql\array.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\generated\dsql\blob.cpp
+SOURCE=..\..\..\gen\dsql\blob.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\generated\dsql\metd.cpp
+SOURCE=..\..\..\gen\dsql\metd.cpp
 # End Source File
 # End Group
 # Begin Source File

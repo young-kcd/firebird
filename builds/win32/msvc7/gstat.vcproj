@@ -126,7 +126,7 @@
 			Name="UTILITIES files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
-				RelativePath="..\..\..\generated\utilities\dba.cpp">
+				RelativePath="..\..\..\gen\utilities\dba.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\enc.cpp">

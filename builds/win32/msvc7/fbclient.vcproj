@@ -206,10 +206,10 @@
 			Name="DSQL files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\generated\dsql\array.cpp">
+				RelativePath="..\..\..\gen\dsql\array.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\generated\dsql\blob.cpp">
+				RelativePath="..\..\..\gen\dsql\blob.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\keywords.cpp">
@@ -275,7 +275,7 @@
 			Name="UTILITIES files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\generated\utilities\security.cpp">
+				RelativePath="..\..\..\gen\utilities\security.cpp">
 			</File>
 		</Filter>
 		<Filter

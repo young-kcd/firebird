@@ -105,7 +105,7 @@ SOURCE=..\..\..\src\isql\show.epp
 # End Group
 # Begin Source File
 
-SOURCE=..\..\..\generated\isql\extract.cpp
+SOURCE=..\..\..\gen\isql\extract.cpp
 # End Source File
 # Begin Source File
 
@@ -113,11 +113,11 @@ SOURCE=..\..\..\src\common\fb_exception.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\generated\isql\isql.cpp
+SOURCE=..\..\..\gen\isql\isql.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\generated\isql\show.cpp
+SOURCE=..\..\..\gen\isql\show.cpp
 # End Source File
 # End Group
 # Begin Group "Header files"

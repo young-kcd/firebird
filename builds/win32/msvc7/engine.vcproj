@@ -156,7 +156,7 @@
 				RelativePath="..\..\..\src\jrd\db_alias.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\generated\jrd\dfw.cpp">
+				RelativePath="..\..\..\gen\jrd\dfw.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\divorce.cpp">
@@ -165,25 +165,25 @@
 				RelativePath="..\..\..\src\jrd\dls.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\generated\jrd\dpm.cpp">
+				RelativePath="..\..\..\gen\jrd\dpm.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\dsc.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\generated\jrd\dyn.cpp">
+				RelativePath="..\..\..\gen\jrd\dyn.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\generated\jrd\dyn_def.cpp">
+				RelativePath="..\..\..\gen\jrd\dyn_def.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\generated\jrd\dyn_del.cpp">
+				RelativePath="..\..\..\gen\jrd\dyn_del.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\generated\jrd\dyn_mod.cpp">
+				RelativePath="..\..\..\gen\jrd\dyn_mod.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\generated\jrd\dyn_util.cpp">
+				RelativePath="..\..\..\gen\jrd\dyn_util.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\enc.cpp">
@@ -210,7 +210,7 @@
 				RelativePath="..\..\..\src\jrd\flu.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\generated\jrd\fun.cpp">
+				RelativePath="..\..\..\gen\jrd\fun.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\functions.cpp">
@@ -219,7 +219,7 @@
 				RelativePath="..\..\..\src\jrd\gds.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\generated\jrd\grant.cpp">
+				RelativePath="..\..\..\gen\jrd\grant.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\iberr.cpp">
@@ -238,7 +238,7 @@
 				RelativePath="..\..\..\src\jrd\inf.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\generated\jrd\ini.cpp">
+				RelativePath="..\..\..\gen\jrd\ini.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\intl.cpp">
@@ -277,7 +277,7 @@
 				RelativePath="..\..\..\src\jrd\log.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\generated\jrd\met.cpp">
+				RelativePath="..\..\..\gen\jrd\met.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\misc.cpp">
@@ -316,7 +316,7 @@
 				RelativePath="..\..\..\src\jrd\par.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\generated\jrd\pcmet.cpp">
+				RelativePath="..\..\..\gen\jrd\pcmet.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\plugin_manager.cpp">
@@ -346,7 +346,7 @@
 				RelativePath="..\..\..\src\jrd\sch.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\generated\jrd\scl.cpp">
+				RelativePath="..\..\..\gen\jrd\scl.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\sdl.cpp">

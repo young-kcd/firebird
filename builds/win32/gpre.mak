@@ -175,7 +175,7 @@ LINK32_OBJS= \
 
 RSC_PROJ=/l 0x41d /fo"$(INTDIR)\version.res"
 
-SOURCE=..\..\generated\gpre\gpre_meta.cpp
+SOURCE=..\..\gen\gpre\gpre_meta.cpp
 
 "$(INTDIR)\gpre_meta.obj"	"$(INTDIR)\gpre_meta.sbr" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)

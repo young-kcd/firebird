@@ -341,13 +341,13 @@ SOURCE=..\..\src\jrd\why.cpp
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
-SOURCE=..\..\generated\dsql\array.cpp
+SOURCE=..\..\gen\dsql\array.cpp
 
 "$(INTDIR)\array.obj"	"$(INTDIR)\array.sbr" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
-SOURCE=..\..\generated\dsql\blob.cpp
+SOURCE=..\..\gen\dsql\blob.cpp
 
 "$(INTDIR)\blob.obj"	"$(INTDIR)\blob.sbr" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)

@@ -134,7 +134,7 @@
 				Name="Generated files"
 				Filter="">
 				<File
-					RelativePath="..\..\..\generated\utilities\security.cpp">
+					RelativePath="..\..\..\gen\utilities\security.cpp">
 				</File>
 			</Filter>
 		</Filter>

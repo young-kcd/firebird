@@ -105,11 +105,11 @@ SOURCE=..\..\..\src\burp\restore.epp
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\generated\burp\backup.cpp
+SOURCE=..\..\..\gen\burp\backup.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\generated\burp\restore.cpp
+SOURCE=..\..\..\gen\burp\restore.cpp
 # End Source File
 # End Group
 # Begin Source File

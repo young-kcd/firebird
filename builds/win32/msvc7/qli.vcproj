@@ -196,16 +196,16 @@
 				Name="Generated files"
 				Filter="">
 				<File
-					RelativePath="..\..\..\generated\qli\help.cpp">
+					RelativePath="..\..\..\gen\qli\help.cpp">
 				</File>
 				<File
-					RelativePath="..\..\..\generated\qli\meta.cpp">
+					RelativePath="..\..\..\gen\qli\meta.cpp">
 				</File>
 				<File
-					RelativePath="..\..\..\generated\qli\proc.cpp">
+					RelativePath="..\..\..\gen\qli\proc.cpp">
 				</File>
 				<File
-					RelativePath="..\..\..\generated\qli\show.cpp">
+					RelativePath="..\..\..\gen\qli\show.cpp">
 				</File>
 			</Filter>
 		</Filter>

@@ -25,7 +25,7 @@
 ::===========
 :PREPROCESS
 @echo Processing %1/%2.epp
-@del ..\..\generated\%1\%2.cpp 2>nul
+@del ..\..\gen\%1\%2.cpp 2>nul
 @echo Calling GPRE for %1/%2.epp
 @if "%3"=="" (call :GPRE_M %1 %2) else (call :GPRE_GDS %1 %2)
 @echo.
@@ -33,12 +33,12 @@
 
 ::===========
 :GPRE_M
-@%GPRE% -n -m -raw ..\..\src\%1\%2.epp ..\..\generated\%1\%2.cpp -b localhost:%DB_PATH%/generated/
+@%GPRE% -n -m -raw ..\..\src\%1\%2.epp ..\..\gen\%1\%2.cpp -b localhost:%DB_PATH%/gen/
 @goto :EOF
 
 ::===========
 :GPRE_GDS
-@%GPRE% -n -gds -raw -ids ..\..\src\%1\%2.epp ..\..\generated\%1\%2.cpp -b localhost:%DB_PATH%/generated/
+@%GPRE% -n -gds -raw -ids ..\..\src\%1\%2.epp ..\..\gen\%1\%2.cpp -b localhost:%DB_PATH%/gen/
 goto :EOF
 
 ::===========

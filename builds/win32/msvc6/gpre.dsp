@@ -101,7 +101,7 @@ SOURCE=..\..\..\src\gpre\gpre_meta.epp
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\generated\gpre\gpre_meta.cpp
+SOURCE=..\..\..\gen\gpre\gpre_meta.cpp
 # End Source File
 # End Group
 # Begin Source File

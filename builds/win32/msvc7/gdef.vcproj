@@ -129,7 +129,7 @@
 				RelativePath="..\..\..\src\dudley\ddl.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\generated\dudley\exe.cpp">
+				RelativePath="..\..\..\gen\dudley\exe.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\dudley\expand.cpp">
@@ -138,7 +138,7 @@
 				RelativePath="..\..\..\src\dudley\expr.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\generated\dudley\extract.cpp">
+				RelativePath="..\..\..\gen\dudley\extract.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\fb_exception.cpp">

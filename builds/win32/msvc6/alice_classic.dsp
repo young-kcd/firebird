@@ -97,7 +97,7 @@ SOURCE=..\..\..\src\alice\alice_meta.epp
 # PROP Default_Filter "c"
 # Begin Source File
 
-SOURCE=..\..\..\generated\alice\alice_meta.cpp
+SOURCE=..\..\..\gen\alice\alice_meta.cpp
 # End Source File
 # End Group
 # Begin Source File

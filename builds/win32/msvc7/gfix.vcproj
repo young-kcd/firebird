@@ -129,7 +129,7 @@
 				RelativePath="..\..\..\src\alice\alice.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\generated\alice\alice_meta.cpp">
+				RelativePath="..\..\..\gen\alice\alice_meta.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\alice\all.cpp">

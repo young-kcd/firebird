@@ -10,6 +10,28 @@
 @echo.
 @del ..\..\src\include\gen\autoconfig.h 2> nul
 @copy ..\..\src\include\gen\autoconfig_msvc.h ..\..\src\include\gen\autoconfig.h > nul
+@echo Creating directories
+@cd ..\..
+@rmdir gen 2>nul
+@mkdir gen\alice
+@mkdir gen\burp
+@mkdir gen\dsql
+@mkdir gen\dudley
+@mkdir gen\gpre
+@mkdir gen\isql
+@mkdir gen\jrd
+@mkdir gen\msgs
+@mkdir gen\qli
+@mkdir gen\utilities
+@mkdir gen\v5_examples
+@cd builds\win32
+
+::provisional, copy all fdbs to the same directory to be used from preprocess
+copy dbs\metadata.fdb %ROOT_PATH%\gen\yachts.lnk > nul
+copy dbs\jrd\security.fdb %ROOT_PATH%\gen\security.fdb > nul
+copy dbs\msgs\msg.fdb %ROOT_PATH%\gen\msg.fdb > nul
+copy dbs\qli\help.fdb %ROOT_PATH%\gen\help.fdb > nul
+
 @echo Preprocessing files required to do a boot-build...
 @cd msvc6
 @msdev Firebird2Boot.dsw /MAKE "common_static - Win32 Release" "gpre_boot - Win32 Release"  /REBUILD /OUT boot1.log
@@ -36,7 +58,7 @@
 @move msvc6\release\build_msg\build_msg.exe .
 @del codes.exe 2> nul
 @move msvc6\release\codes\codes.exe .
-@build_msg -D %DB_PATH%/generated/msg.fdb
+@build_msg -D %DB_PATH%/gen/msg.fdb
 @codes %ROOT_PATH%\src\include\gen
 @echo Building BLR Table
 @call blrtable.bat

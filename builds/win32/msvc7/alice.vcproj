@@ -131,7 +131,7 @@
 				Name="Generated files"
 				Filter="c">
 				<File
-					RelativePath="..\..\..\generated\alice\alice_meta.cpp">
+					RelativePath="..\..\..\gen\alice\alice_meta.cpp">
 				</File>
 			</Filter>
 		</Filter>

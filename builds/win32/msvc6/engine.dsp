@@ -143,7 +143,7 @@ SOURCE=..\..\..\src\jrd\db_alias.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\generated\jrd\dfw.cpp
+SOURCE=..\..\..\gen\jrd\dfw.cpp
 # End Source File
 # Begin Source File
 
@@ -155,7 +155,7 @@ SOURCE=..\..\..\src\jrd\dls.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\generated\jrd\dpm.cpp
+SOURCE=..\..\..\gen\jrd\dpm.cpp
 # End Source File
 # Begin Source File
 
@@ -163,23 +163,23 @@ SOURCE=..\..\..\src\jrd\dsc.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\generated\jrd\dyn.cpp
+SOURCE=..\..\..\gen\jrd\dyn.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\generated\jrd\dyn_def.cpp
+SOURCE=..\..\..\gen\jrd\dyn_def.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\generated\jrd\dyn_del.cpp
+SOURCE=..\..\..\gen\jrd\dyn_del.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\generated\jrd\dyn_mod.cpp
+SOURCE=..\..\..\gen\jrd\dyn_mod.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\generated\jrd\dyn_util.cpp
+SOURCE=..\..\..\gen\jrd\dyn_util.cpp
 # End Source File
 # Begin Source File
 
@@ -228,7 +228,7 @@ SOURCE=..\..\..\src\jrd\flu.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\generated\jrd\fun.cpp
+SOURCE=..\..\..\gen\jrd\fun.cpp
 # End Source File
 # Begin Source File
 
@@ -240,7 +240,7 @@ SOURCE=..\..\..\src\jrd\gds.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\generated\jrd\grant.cpp
+SOURCE=..\..\..\gen\jrd\grant.cpp
 # End Source File
 # Begin Source File
 
@@ -265,7 +265,7 @@ SOURCE=..\..\..\src\jrd\inf.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\generated\jrd\ini.cpp
+SOURCE=..\..\..\gen\jrd\ini.cpp
 # End Source File
 # Begin Source File
 
@@ -326,7 +326,7 @@ SOURCE=..\..\..\src\jrd\log.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\generated\jrd\met.cpp
+SOURCE=..\..\..\gen\jrd\met.cpp
 # End Source File
 # Begin Source File
 
@@ -380,7 +380,7 @@ SOURCE=..\..\..\src\jrd\par.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\generated\jrd\pcmet.cpp
+SOURCE=..\..\..\gen\jrd\pcmet.cpp
 # End Source File
 # Begin Source File
 
@@ -429,7 +429,7 @@ SOURCE=..\..\..\src\jrd\sch.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\generated\jrd\scl.cpp
+SOURCE=..\..\..\gen\jrd\scl.cpp
 # End Source File
 # Begin Source File
 

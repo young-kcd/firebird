@@ -112,19 +112,19 @@ SOURCE=..\..\..\src\qli\show.epp
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\generated\qli\help.cpp
+SOURCE=..\..\..\gen\qli\help.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\generated\qli\meta.cpp
+SOURCE=..\..\..\gen\qli\meta.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\generated\qli\proc.cpp
+SOURCE=..\..\..\gen\qli\proc.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\generated\qli\show.cpp
+SOURCE=..\..\..\gen\qli\show.cpp
 # End Source File
 # End Group
 # Begin Source File

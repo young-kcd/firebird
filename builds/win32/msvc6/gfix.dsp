@@ -93,7 +93,7 @@ SOURCE=..\..\..\src\alice\alice.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\generated\alice\alice_meta.cpp
+SOURCE=..\..\..\gen\alice\alice_meta.cpp
 # End Source File
 # Begin Source File
 

@@ -200,11 +200,11 @@ SOURCE=..\..\..\src\jrd\why.cpp
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\generated\dsql\array.cpp
+SOURCE=..\..\..\gen\dsql\array.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\generated\dsql\blob.cpp
+SOURCE=..\..\..\gen\dsql\blob.cpp
 # End Source File
 # Begin Source File
 
@@ -288,7 +288,7 @@ SOURCE=..\..\..\src\remote\xnet.cpp
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\generated\utilities\security.cpp
+SOURCE=..\..\..\gen\utilities\security.cpp
 # End Source File
 # End Group
 # Begin Group "Header files"

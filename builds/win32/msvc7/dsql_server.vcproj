@@ -170,13 +170,13 @@
 				Name="Generated files"
 				Filter="">
 				<File
-					RelativePath="..\..\..\generated\dsql\array.cpp">
+					RelativePath="..\..\..\gen\dsql\array.cpp">
 				</File>
 				<File
-					RelativePath="..\..\..\generated\dsql\blob.cpp">
+					RelativePath="..\..\..\gen\dsql\blob.cpp">
 				</File>
 				<File
-					RelativePath="..\..\..\generated\dsql\metd.cpp">
+					RelativePath="..\..\..\gen\dsql\metd.cpp">
 				</File>
 			</Filter>
 		</Filter>
