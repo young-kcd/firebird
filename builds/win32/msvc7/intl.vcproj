@@ -561,7 +561,7 @@
 			</File>
 		</Filter>
 		<File
-			RelativePath="..\..\..\src\intl\intl.def">
+			RelativePath="..\defs\intl.def">
 		</File>
 	</Files>
 	<Globals>

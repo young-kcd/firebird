@@ -143,9 +143,9 @@ BSC32_SBRS= \
 <<
 
 LINK32=link.exe
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib shell32.lib comctl32.lib advapi32.lib ws2_32.lib mpr.lib version.lib /nologo /dll /incremental:no /pdb:"$(OUTDIR)\fbclient.pdb" /machine:I386 /def:"fbclient.def" /out:"fbclient.dll" /implib:"$(OUTDIR)\fbclient.lib" /pdbtype:sept 
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib shell32.lib comctl32.lib advapi32.lib ws2_32.lib mpr.lib version.lib /nologo /dll /incremental:no /pdb:"$(OUTDIR)\fbclient.pdb" /machine:I386 /def:"defs/fbclient.def" /out:"fbclient.dll" /implib:"$(OUTDIR)\fbclient.lib" /pdbtype:sept 
 DEF_FILE= \
-	"fbclient.def"
+	"defs/fbclient.def"
 LINK32_OBJS= \
 	"$(INTDIR)\alt.obj" \
 	"$(INTDIR)\cvt.obj" \

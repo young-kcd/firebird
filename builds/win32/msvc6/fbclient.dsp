@@ -390,7 +390,7 @@ SOURCE=..\..\..\src\jrd\version.rc
 # End Group
 # Begin Source File
 
-SOURCE=..\fbclient.def
+SOURCE=..\defs\fbclient.def
 
 !IF  "$(CFG)" == "fbclient - Win32 Debug"
 
@@ -403,7 +403,7 @@ SOURCE=..\fbclient.def
 # End Source File
 # Begin Source File
 
-SOURCE=..\fbclient_debug.def
+SOURCE=..\defs\fbclient_debug.def
 
 !IF  "$(CFG)" == "fbclient - Win32 Debug"
 

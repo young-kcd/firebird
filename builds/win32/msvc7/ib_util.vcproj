@@ -46,7 +46,7 @@
 				OutputFile="release/firebird/bin/ib_util.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ModuleDefinitionFile="..\ib_util.def"
+				ModuleDefinitionFile="..\defs\ib_util.def"
 				ProgramDatabaseFile=".\release\ib_util/ib_util.pdb"
 				ImportLibrary=".\release\ib_util/ib_util.lib"/>
 			<Tool
@@ -103,7 +103,7 @@
 				OutputFile="debug/firebird/bin/ib_util.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ModuleDefinitionFile="..\ib_util.def"
+				ModuleDefinitionFile="..\defs\ib_util.def"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\debug\ib_util/ib_util.pdb"
 				ImportLibrary=".\debug\ib_util/ib_util.lib"/>
@@ -165,7 +165,7 @@
 			</File>
 		</Filter>
 		<File
-			RelativePath="..\ib_util.def">
+			RelativePath="..\defs\ib_util.def">
 		</File>
 	</Files>
 	<Globals>

@@ -42,7 +42,7 @@
 				OutputFile="debug/firebird/udf/ib_udf.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ModuleDefinitionFile="..\ib_udf.def"
+				ModuleDefinitionFile="..\defs\ib_udf.def"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\debug\ib_udf/ib_udf.pdb"
 				ImportLibrary=".\debug\ib_udf/ib_udf.lib"/>
@@ -104,7 +104,7 @@
 				OutputFile="release/firebird/udf/ib_udf.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ModuleDefinitionFile="..\ib_udf.def"
+				ModuleDefinitionFile="..\defs\ib_udf.def"
 				ProgramDatabaseFile=".\release\ib_udf/ib_udf.pdb"
 				ImportLibrary=".\release\ib_udf/ib_udf.lib"/>
 			<Tool
@@ -165,7 +165,7 @@
 			</File>
 		</Filter>
 		<File
-			RelativePath="..\ib_udf.def">
+			RelativePath="..\defs\ib_udf.def">
 		</File>
 	</Files>
 	<Globals>

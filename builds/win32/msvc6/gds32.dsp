@@ -108,7 +108,7 @@ SOURCE=..\..\..\src\jrd\isc_version.rc
 # End Group
 # Begin Source File
 
-SOURCE=..\gds32.def
+SOURCE=..\defs\gds32.def
 
 !IF  "$(CFG)" == "gds32 - Win32 Debug"
 

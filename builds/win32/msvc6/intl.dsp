@@ -642,7 +642,7 @@ SOURCE=..\..\..\src\jrd\version.rc
 # End Group
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\intl.def
+SOURCE=..\defs\intl.def
 
 !IF  "$(CFG)" == "intl - Win32 Debug"
 

@@ -42,7 +42,7 @@
 				OutputFile="debug/firebird/bin/fbembed.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ModuleDefinitionFile="..\fbclient_debug.def"
+				ModuleDefinitionFile="..\defs\fbclient_debug.def"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\debug\fbembed/fbembed.pdb"
 				ImportLibrary=".\debug\fbembed/fbembed.lib"/>
@@ -103,7 +103,7 @@
 				OutputFile="release/firebird/bin/fbembed.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ModuleDefinitionFile="..\fbclient.def"
+				ModuleDefinitionFile="..\defs\fbclient.def"
 				ProgramDatabaseFile=".\release\fbembed/fbembed.pdb"
 				ImportLibrary=".\release\fbembed/fbembed.lib"/>
 			<Tool
@@ -183,10 +183,10 @@
 			</File>
 		</Filter>
 		<File
-			RelativePath="..\fbclient.def">
+			RelativePath="..\defs\fbclient.def">
 		</File>
 		<File
-			RelativePath="..\fbclient_debug.def">
+			RelativePath="..\defs\fbclient_debug.def">
 		</File>
 	</Files>
 	<Globals>

@@ -115,7 +115,7 @@ SOURCE=..\..\..\src\jrd\version.rc
 # End Group
 # Begin Source File
 
-SOURCE=..\ib_util.def
+SOURCE=..\defs\ib_util.def
 # End Source File
 # End Target
 # End Project

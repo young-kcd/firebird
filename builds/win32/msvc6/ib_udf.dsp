@@ -115,7 +115,7 @@ SOURCE=..\..\..\src\jrd\version.rc
 # End Group
 # Begin Source File
 
-SOURCE=..\ib_udf.def
+SOURCE=..\defs\ib_udf.def
 # End Source File
 # End Target
 # End Project

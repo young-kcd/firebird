@@ -150,7 +150,7 @@ SOURCE=..\..\..\src\jrd\version.rc
 # End Group
 # Begin Source File
 
-SOURCE=..\fbclient.def
+SOURCE=..\defs\fbclient.def
 
 !IF  "$(CFG)" == "fbembed - Win32 Release"
 
