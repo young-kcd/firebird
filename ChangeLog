@@ -1,3 +1,28 @@
+2003-07-29 15:31  skidder
+
+	* firebird2/doc/sql.extensions/README.execute_statement:
+	
+	Fix typo
+
+2003-07-29 13:33  skidder
+
+	* firebird2/doc/sql.extensions/README.savepoints:
+	
+	Added docs for savepoints
+
+2003-07-29 02:55  arnobrinkman
+
+	* firebird2/doc/sql.extensions/README.aggregate_tracking:
+	
+	Please give some comments
+
+2003-07-29 02:29  arnobrinkman
+
+	* firebird2/src/dsql/: pass1.cpp, pass1.cpp:
+	
+	2nd RC4 bugfix, but much better tracking of supported nested
+	aggregates.
+
 2003-07-28 21:20  arnobrinkman
 
 	* firebird2/src/dsql/: pass1.cpp, pass1.cpp:
