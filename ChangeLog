@@ -1,3 +1,27 @@
+2003-11-25 23:13  bellardo
+
+	* firebird2/builds/posix/Makefile.in.firebird:
+	
+	Build hooks to allow proper packaging for darwin
+
+2003-11-25 17:55  bellardo
+
+	* firebird2/src/lock/lock.cpp:
+	
+	POSIX standard says you can only call an exec* function or exit
+	after a vfork().  This precludes nested vfork()s, which caused the
+	lock manager not to launch in darwin.  This fix removes the nested
+	vfork()s.
+
+2003-11-25 07:37  bellardo
+
+	* firebird2/src/lock/lock.cpp:
+	
+	POSIX standard says you can only call an exec* function or exit
+	after a vfork().  This precludes nested vfork()s, which caused the
+	lock manager not to launch in darwin.  This fix removes the nested
+	vfork()s.
+
 2003-11-24 19:02  alexpeshkoff
 
 	* firebird2/src/jrd/: svc.cpp, svc.cpp:
