@@ -38,7 +38,7 @@ namespace fb_utils
 		str.rtrim();
 	}
 	char* exact_name_limit(char* const str, size_t bufsize);
-	USHORT name_length(const TEXT* const name);
+	int name_length(const TEXT* const name);
 } // namespace fb_utils
 
 #endif // INCLUDE_UTILS_PROTO_H
