@@ -1,4 +1,163 @@
   **************
+  * v1.5 Beta 1
+  **************
+
+    * CREATE VIEW changes.
+        Disallowed PLAN subclause.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Improved optimizer.
+        Better optimizations of "complex" JOIN queries (LEFT JOIN, views, SPs, etc).
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Fixed Alpha 5 bug.
+        Major memory leaks are fixed.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * New API functions.
+        IB7-compliant functions to return version of the client library.
+        isc_get_client_version(), isc_get_client_major_version(), isc_get_client_minor_version()
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Sort/merge improvement.
+        Merging (SORT MERGE plans) is now done via in-memory sorting module.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed Alpha 5 bug.
+        "Invalid transaction handle (expecting explicit transaction start)" error.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * New memory manager.
+        Internal implementation of the memory manager has been changed to give us better performance.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Win32 build changes.
+        1. Changed names of USER32 objects to allow the server run simultaneously with IB/FB1.
+        2. Map name for local (IPC) protocol is changed, so v1.5 client library is no longer compatible with the previous versions via IPC.
+        3. All transport protocol names (INET port and service, WNET pipe, IPC map) are now configurable via firebird.conf.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed unregistered bug.
+        Trashed RDB$FIELD_LENGTH for views that contain concatenation of long CHAR/VARCHAR fields.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Triggers improvement.
+        Added runtime action checks (INSERTING/UPDATING/DELETING predicates).
+      Example:
+        if (INSERTING) then
+          new.OPER_TYPE = 'I';
+        else
+          new.OPER_TYPE = 'U';
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed unregistered bug.
+        Cursors (WHERE CURRENT OF clause) cannot be used in triggers.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed Alpha 5 bug.
+        SAVEPOINT-related statements are allowed in PSQL via EXECUTE STATEMENT.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed bug SF #221921.
+        ORDER BY has no effect.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Fixed bug SF #213859.
+        Subquery connected with 'IN' clause.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Fixed Alpha 5 bug.
+        Wrong plan is used in the case of compound indices.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>,
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed Alpha 5 bug.
+        Backward compatibility with explicit plans is broken.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * ORDER BY improvement.
+        Allowed arbitrary expressions in the ORDER BY clause.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Fixed unregistered bug.
+        When UNIONS where used in a VIEW and that VIEW was used in the WHERE clause inside an sub-select then the engine crashed.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Fixed unregistered bug.
+        Fixed FB XDR double representation for Linux server and client.
+        This fixes numerous bugs with double precision columns and UDF's when using Linux server and Jaybird or Windows client.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Fixed Alpha 5 bug.
+        PLAN wasn't correctly returned.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Fixed Alpha 5 bug.
+        Server crash or "deadlock" error during execution of ALTER PROCEDURE statement.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Generic code cleanup.
+        Structures within Y-valve.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff@hotmail.ru>
+
+    * Comments improvement.
+        Single-line comments (--) are now allowed in any position of the SQL statement.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed unregistered bug.
+        "Request sycnhronization error" with BREAK statement.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed bug SF #625899.
+        Bugcheck 291.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff@hotmail.ru>
+
+    * PSQL change.
+        EXECUTE VARCHAR is renamed to EXECUTE STATEMENT.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff@hotmail.ru>
+
+    * Fixed Alpha 5 bug and SF #219525.
+        No current record for fetch operation.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Fixed unregistered bug.
+        QLI doesn't understand BIGINT (aka INT64) datatype.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed unregistered bug.
+        Length of text variables inside procs/triggers wasn't copied to descriptor structure.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+  **************
   * v1.5 Alpha 5
   **************
 
