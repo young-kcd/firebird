@@ -27,7 +27,7 @@
  *
  */
 /*
-$Id: fun.epp,v 1.19 2003-03-24 13:35:33 brodsom Exp $
+$Id: fun.epp,v 1.20 2003-05-30 11:48:59 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -100,6 +100,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 	UCHAR	temp[800];
 	STR		temp_string;
 	SSHORT	unsup_datatype = 0;
+	SLONG	l, *lp;
 
 	TDBB tdbb = GET_THREAD_DATA;
 
@@ -242,35 +243,37 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 				}
 				break;
 
-			case dtype_sql_time:
-			case dtype_sql_date:
 			case dtype_long:
+				l = MOV_get_long(input, (SSHORT) tail->fun_desc.dsc_scale);
+				if (tail->fun_mechanism == FUN_value)
 				{
-					SLONG l;
-					/* this check added for bug 74193 */
-					if (tail->fun_desc.dsc_dtype == dtype_long)
-					{
-						l =
-							MOV_get_long(input,
-										 (SSHORT) tail->fun_desc.dsc_scale);
-					}
-					else
-					{
-						/* for sql_date and sql_time just move the value to a long, 
-						   scale does not mean anything for it */
-						l = *((SLONG *) (input->dsc_address));
-					}
-
-					if (tail->fun_mechanism == FUN_value)
-					{
-						*arg_ptr++ = l;
-						continue;
-					}
-					{
-						SLONG* lp = (SLONG *) temp_ptr;
-						*lp = l;
-					}
+					*arg_ptr++ = l;
+					continue;
 				}
+				lp = (SLONG *) temp_ptr;
+				*lp = l;
+				break;
+
+			case dtype_sql_time:
+				l = MOV_get_sql_time(input);
+				if (tail->fun_mechanism == FUN_value)
+				{
+					*arg_ptr++ = l;
+					continue;
+				}
+				lp = (SLONG *) temp_ptr;
+				*lp = l;
+				break;
+			
+			case dtype_sql_date:
+				l = MOV_get_sql_date(input);
+				if (tail->fun_mechanism == FUN_value)
+				{
+					*arg_ptr++ = l;
+					continue;
+				}
+				lp = (SLONG *) temp_ptr;
+				*lp = l;
 				break;
 
 			case dtype_int64:
