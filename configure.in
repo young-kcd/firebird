@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.20 2003-12-23 23:23:54 skywalker Exp $
+dnl $Id: configure.in,v 1.141.2.21 2004-03-29 03:49:17 skidder Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -31,6 +31,11 @@ dnl EKU: set appropiate defaults for each platform
 dnl      LOCK_MANAGER_FLG : build lock manager (CS only)
 dnl      EDITLINE_FLG     : support fancy command line editing in isql
 
+INSTALL_PREFIX=""
+
+dnl Use /usr/lib for library links on most platforms except some 64-bit ones
+libdir=/usr/lib
+
 case "$target" in
   *-*-darwin*)
     MAKEFILE_PREFIX=darwin
@@ -51,8 +56,21 @@ case "$target" in
     SHRLIB_EXT=so
     ;;
 
+  x86_64*-*-linux-*)
+    MAKEFILE_PREFIX=linux_amd64
+    INSTALL_PREFIX=linux
+    PLATFORM=LINUX
+    AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
+    LOCK_MANAGER_FLG=Y
+    EDITLINE_FLG=Y
+    SHRLIB_EXT=so
+    libdir=/usr/lib64
+    CPU_TYPE=amd64
+    ;;
+
   sparc*-*-linux-*)
     MAKEFILE_PREFIX=linux_sparc32
+    INSTALL_PREFIX=linux
     PLATFORM=LINUX
     AC_DEFINE(LINUX)
     LOCK_MANAGER_FLG=Y
@@ -127,6 +145,10 @@ case "$target" in
     AC_MSG_ERROR(unsupported platform ${target})
     ;;
 esac
+
+if test "$INSTALL_PREFIX" = ""; then
+  INSTALL_PREFIX=$MAKEFILE_PREFIX
+fi
 
 AC_SUBST(MAKEFILE_PREFIX)
 AC_SUBST(PLATFORM)
@@ -811,7 +833,7 @@ gen/Makefile.embed.gdef:${MAKE_SRC_DIR}/Makefile.in.embed.gdef
 gen/Makefile.embed.qli:${MAKE_SRC_DIR}/Makefile.in.embed.qli
 gen/Makefile.embed.gpre:${MAKE_SRC_DIR}/Makefile.in.embed.gpre
 src/v5_examples/Makefile:${MAKE_SRC_DIR}/Makefile.in.example5
-gen/Makefile.install:src/install/arch-specific/${MAKEFILE_PREFIX}/Makefile.in
+gen/Makefile.install:src/install/arch-specific/${INSTALL_PREFIX}/Makefile.in
 Makefile:Makefile.in
 gen/Makefile.extern.editline:${MAKE_SRC_DIR}/Makefile.in.extern.editline
 )

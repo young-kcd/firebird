@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.gpre,v 1.9.2.1 2003-11-10 23:28:40 bellardo Exp $
+#  $Id: Makefile.in.embed.gpre,v 1.9.2.2 2004-03-29 03:49:24 skidder Exp $
 #
 ROOT=..
 ObjModuleName=embed.gpre
@@ -42,7 +42,7 @@ include     $(ROOT)/gen/make.shared.variables
 
 GPRE_Files = gpre_meta.epp \
 		cmd.cpp cme.cpp cmp.cpp c_cxx.cpp exp.cpp gpre.cpp \
-		hsh.cpp int.cpp int_cxx.cpp jrdmet.cpp movg.cpp msc.cpp par.cpp \
+		hsh.cpp int_cxx.cpp jrdmet.cpp movg.cpp msc.cpp par.cpp \
 		pat.cpp pretty.cpp sqe.cpp sql.cpp noform.cpp \
 		@GPRE_LANGUAGE_MODULES@
 

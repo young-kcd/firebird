@@ -254,7 +254,8 @@ static const TEXT *const impl_implementation[] = {
     "Firebird/NetBSD/i386",	/* 62 */
     "Firebird/Darwin/PowerPC",	/* 63 */
     "Firebird/SINIX-Z",	/* 64 */
-    "Firebird/linux Sparc"	/* 65 */
+    "Firebird/linux Sparc",	/* 65 */
+    "Firebird/linux AMD64"	/* 66 */
 };
 
 
@@ -1202,6 +1203,10 @@ BOOLEAN API_ROUTINE isc_set_path(TEXT * file_name,
 	return TRUE;
 }
 
+static void print_version(void* dummy, const char* version) {
+	ib_printf("\t%s\n", version);
+}
+
 
 void API_ROUTINE isc_set_single_user(UCHAR ** dpb,
 									 SSHORT * dpb_size, TEXT * single_user)
@@ -1278,10 +1283,8 @@ int API_ROUTINE gds__version(
 		*class_string, *implementation_string, s[128];
 	BOOLEAN redo;
 
-	if (!routine) {
-		routine = (FPTR_VOID) ib_printf;
-		user_arg = (void*)"\t%s\n";
-	}
+ 	if (!routine)
+ 		routine = reinterpret_cast<FPTR_VOID>(print_version);
 
 	buf = buffer;
 	buf_len = sizeof(buffer);

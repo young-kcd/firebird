@@ -253,7 +253,7 @@ ISC_STATUS GDS_EXPORT gds__unwind_request(ISC_STATUS  *,
 										  FRBRD  **,
 										  short);
 
-ISC_STATUS GDS_EXPORT gds__ftof(char  *,
+SLONG GDS_EXPORT gds__ftof(char  *,
 							  unsigned short,
 							  char  *,
 							  unsigned short);
@@ -270,7 +270,7 @@ int GDS_EXPORT gds__enable_subsystem(char  *);
 
 ISC_STATUS GDS_EXPORT gds__print_status(ISC_STATUS  *);
 
-ISC_STATUS GDS_EXPORT gds__sqlcode(ISC_STATUS  *);
+SLONG GDS_EXPORT gds__sqlcode(ISC_STATUS  *);
 
 ISC_STATUS GDS_EXPORT gds__ddl(ISC_STATUS  *,
 							   FRBRD  **,
@@ -307,9 +307,9 @@ void GDS_EXPORT gds__event_counts(ULONG  *,
 								  char  *,
 								  char  *);
 
-ISC_STATUS GDS_EXPORT gds__event_block(char  **,
-									 char  **,
-									 unsigned short, ...);
+SLONG GDS_EXPORT gds__event_block(char  **,
+								  char  **,
+								  unsigned short, ...);
 
 ISC_STATUS GDS_EXPORT gds__get_slice(ISC_STATUS  *,
 									 FRBRD  **,

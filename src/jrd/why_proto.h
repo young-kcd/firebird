@@ -126,17 +126,15 @@ extern ISC_STATUS API_ROUTINE_VARARG isc_start_transaction(ISC_STATUS *,
 extern ISC_STATUS API_ROUTINE gds__cancel_operation(ISC_STATUS *, FRBRD **,
 												USHORT);
 #endif
-
-
-typedef void DatabaseCleanupRoutine(FRBRD **, SLONG);
+typedef void DatabaseCleanupRoutine(FRBRD **, void*);
 extern ISC_STATUS API_ROUTINE gds__database_cleanup(ISC_STATUS *, FRBRD **,
-												DatabaseCleanupRoutine *, SLONG);
+												DatabaseCleanupRoutine *, void*);
 extern int API_ROUTINE gds__disable_subsystem(TEXT *);
 extern int API_ROUTINE gds__enable_subsystem(TEXT *);
 extern ISC_STATUS gds__handle_cleanup(ISC_STATUS *, FRBRD **);
-typedef void TransactionCleanupRoutine(FRBRD *, SLONG);
+typedef void TransactionCleanupRoutine(FRBRD *, void*);
 extern ISC_STATUS API_ROUTINE gds__transaction_cleanup(ISC_STATUS *, FRBRD **,
-												   TransactionCleanupRoutine *, SLONG);
+												   TransactionCleanupRoutine *, void*);
 void WHY_cleanup_transaction(FRBRD * transaction);
 
 #ifdef SERVER_SHUTDOWN

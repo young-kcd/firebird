@@ -552,8 +552,8 @@ void AIL_enable(
 				  reinterpret_cast < UCHAR * >(journal_name), CLUMP_ADD, 0);
 	PAG_add_clump(HEADER_PAGE, HDR_backup_info, d_len, data, CLUMP_ADD, 1);
 	WAL_flush(tdbb->tdbb_status_vector, dbb->dbb_wal,
-			  reinterpret_cast < long *>(&seqno),
-			  reinterpret_cast < long *>(&offset), FALSE);
+			  reinterpret_cast<SLONG*>(&seqno),
+			  reinterpret_cast<SLONG*>(&offset), FALSE);
 }
 
 
@@ -995,8 +995,8 @@ ULONG prev_seqno, ULONG prev_offset, ULONG * seqno, ULONG * offset)
 			h_length,
 			data,
 			d_length,
-			reinterpret_cast < long *>(seqno),
-			reinterpret_cast < long *>(offset));
+			reinterpret_cast<SLONG*>(seqno),
+			reinterpret_cast<SLONG*>(offset));
 	THREAD_ENTER;
 }
 

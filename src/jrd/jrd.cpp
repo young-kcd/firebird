@@ -1762,7 +1762,7 @@ ISC_STATUS DLL_EXPORT GDS_CREATE_BLOB2(ISC_STATUS * user_status,
 	
 	#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 		LOG_call(log_handle_returned, *blob_handle);
-		LOG_call(log_handle_returned, blob_id->bid_stuff.bid_blob);
+		LOG_call(log_handle_returned, blob_id->bid_stuff.bid_temp_id);
 	#endif
 	}
 	catch (const std::exception&)
@@ -2693,7 +2693,7 @@ ISC_STATUS DLL_EXPORT GDS_GET_SLICE(ISC_STATUS * user_status,
 									   reinterpret_cast < BID > (array_id),
 									   sdl,
 									   param_length,
-									   reinterpret_cast < long *>(param),
+									   reinterpret_cast<SLONG*>(param),
 									   slice_length, slice);
 	}
 	catch (const std::exception&)
@@ -2885,7 +2885,7 @@ ISC_STATUS DLL_EXPORT GDS_PUT_SLICE(ISC_STATUS * user_status,
 				  reinterpret_cast < BID > (array_id),
 				  sdl,
 				  param_length,
-				  reinterpret_cast < long *>(param), slice_length, slice);
+				  reinterpret_cast<SLONG*>(param), slice_length, slice);
 	}
 	catch (const std::exception&)
 	{

@@ -43,7 +43,7 @@ extern bool_t	xdr_opaque (XDR *, SCHAR *, u_int);
 extern bool_t	xdr_short (XDR *, SSHORT *);
 extern bool_t	xdr_string (XDR *, SCHAR * *, u_int);
 extern bool_t	xdr_u_int (XDR *, u_int *);
-extern bool_t	xdr_u_long (XDR *, u_long *);
+extern bool_t	xdr_u_long (XDR *, ULONG *);
 extern bool_t	xdr_u_short (XDR *, u_short *);
 extern int		xdr_union (XDR *, enum xdr_op *, SCHAR *, struct xdr_discrim *, xdrproc_t);
 extern bool_t	xdr_wrapstring (XDR *, SCHAR **);

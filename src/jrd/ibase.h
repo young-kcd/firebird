@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.40.2.5 2003-12-27 23:06:25 skidder Exp $
+$Id: ibase.h,v 1.40.2.6 2004-03-29 03:50:10 skidder Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -54,7 +54,10 @@ $Id: ibase.h,v 1.40.2.5 2003-12-27 23:06:25 skidder Exp $
 
 #define ISC_FAR
 
-#if SIZEOF_LONG == 8
+// It is difficult to detect 64-bit long from the redistributable header
+// we do not care of 16-bit platforms anymore thus we may use plain "int"
+// which is 32-bit on all platforms we support
+#if defined(_LP64) || defined(__LP64__) || defined(__arch64__)
 typedef	int		ISC_LONG;
 typedef	unsigned int	ISC_ULONG;
 #else
@@ -94,8 +97,8 @@ typedef ISC_LONG isc_resv_handle;
 /*******************************************************************/
 
 #ifndef ISC_TIMESTAMP_DEFINED
-typedef long			ISC_DATE;
-typedef unsigned long	ISC_TIME;
+typedef int			ISC_DATE;
+typedef unsigned int	ISC_TIME;
 typedef struct
 {
 	ISC_DATE timestamp_date;
@@ -1572,6 +1575,7 @@ enum  info_db_implementations
 	isc_info_db_impl_sinixz = 64,
 
 	isc_info_db_impl_linux_sparc = 65,
+	isc_info_db_impl_linux_amd64 = 66,
 
 	isc_info_db_impl_last_value   /* Leave this LAST! */
     };

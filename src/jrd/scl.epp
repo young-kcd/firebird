@@ -1150,7 +1150,7 @@ static SLONG compute_access(TDBB		tdbb,
 			REQUEST(irq_l_security) = request;
 
 		privileges |= SCL_exists;
-		blob = BLB_open(tdbb, dbb->dbb_sys_trans, (BID) & X.RDB$ACL);
+		blob = BLB_open(tdbb, dbb->dbb_sys_trans, &X.RDB$ACL);
 		acl = buffer;
 		while (TRUE)
 		{

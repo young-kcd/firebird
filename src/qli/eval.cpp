@@ -405,7 +405,7 @@ DSC *EVAL_value(QLI_NOD node)
 		desc->dsc_missing = FALSE;
 		if (node->nod_flags & nod_date) {
 			d1 = MOVQ_date_to_double(values[0]) + MOVQ_get_double(values[1]);
-			MOVQ_double_to_date(d1, (long*) desc->dsc_address);
+			MOVQ_double_to_date(d1, (SLONG*) desc->dsc_address);
 		}
 		else if (desc->dsc_dtype == dtype_long)
 			*((SLONG *) desc->dsc_address) =

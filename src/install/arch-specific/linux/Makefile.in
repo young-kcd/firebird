@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in,v 1.9.2.3 2003-12-30 00:26:14 skidder Exp $
+#  $Id: Makefile.in,v 1.9.2.4 2004-03-29 03:49:44 skidder Exp $
 #
 ROOT=..
 
@@ -49,7 +49,7 @@ export -n FIREBIRD
 export -n INTERBASE
 
 .PHONY: install dist packages tarfile rpmfile 
-.PHONY: buildTarDir buildImageDir
+.PHONY: buildTarDir buildImageDir buildRoot buildDebugInfo
 
 # Some of these targets are run from the root tree of the build.
 # those need to know where the install subdirectory is kept.
@@ -130,8 +130,10 @@ $(DebugFile) :  buildImageDir
 #
 #     28-Dec-2003. Nickolay Samofatov
 
-buildImageDir:
+buildRoot:
 	(cd $(GEN_ROOT); ./install/makeInstallImage.sh)
+
+buildDebugInfo: buildRoot
 	mkdir -p $(GEN_ROOT)/$(DebugDir)
 	for x in `(cd $(GEN_ROOT)/buildroot; find)`; do \
         FIL=$(GEN_ROOT)/buildroot/$$x; \
@@ -154,10 +156,14 @@ buildImageDir:
         fi; \
     done
 # Work around GDB 6.0 bug
-	mkdir -p $(GEN_ROOT)/$(DebugDir)/usr/lib/.debug
+	mkdir -p $(GEN_ROOT)/$(DebugDir)@libdir@/.debug
 	for x in `ls $(GEN_ROOT)/$(DebugDir)@prefix@/lib/.debug`; do \
-        ln -f -s @prefix@/lib/.debug/`basename $$x` $(GEN_ROOT)/$(DebugDir)/usr/lib/.debug; \
+        ln -f -s @prefix@/lib/.debug/`basename $$x` $(GEN_ROOT)/$(DebugDir)@libdir@/.debug; \
     done
+
+# Use this line if you don't want to use separate debug info
+#buildImageDir: buildRoot
+buildImageDir: buildDebugInfo
 
 
 buildTarDir: buildImageDir
@@ -179,7 +185,7 @@ rpmfile: $(RPMFile)
 $(RPMFile) : $(GEN_ROOT)/install/rpmscript buildImageDir
 	rpmbuild --define='_topdir @BUILD_ROOT_DIR@/gen/RPM' -bb $(GEN_ROOT)/install/rpmscript
 #	rpmbuild -bb --buildroot `pwd`/buildroot $(GEN_ROOT)/rpmscript
-	cp @BUILD_ROOT_DIR@/gen/RPM/RPMS/i686/$(RPMFile) $(GEN_ROOT)
+	cp @BUILD_ROOT_DIR@/gen/RPM/RPMS/@CPU_TYPE@/$(RPMFile) $(GEN_ROOT)
 
 
 .PHONY: $(GEN_ROOT)/install/rpmscript

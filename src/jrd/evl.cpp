@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.34.2.3 2004-03-24 21:27:54 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.34.2.4 2004-03-29 03:50:10 skidder Exp $ 
  */
 
 /*
@@ -1654,7 +1654,7 @@ USHORT DLL_EXPORT EVL_group(TDBB tdbb, BLK rsb, JRD_NOD node, USHORT state)
 				asb_impure = (IASB) ((SCHAR *) request + asb->nod_impure);
 				if (SORT_put(tdbb->tdbb_status_vector,
 							 reinterpret_cast<scb*>(asb_impure->iasb_sort_handle),
-							 reinterpret_cast<unsigned long**>(&data)))
+							 reinterpret_cast<ULONG**>(&data)))
 				{
 					  ERR_punt();
 				}

@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.1.2.9 2004-02-21 23:04:03 skidder Exp $
+#   $Id: makeInstallImage.sh.in,v 1.1.2.10 2004-03-29 03:50:07 skidder Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -93,7 +93,7 @@ copyFiles() {
     mkdir $DestDir/UDF 
     mkdir $DestDir/misc
 
-    mkdir -p $TargetDir/usr/lib
+    mkdir -p $TargetDir@libdir@
     mkdir -p $TargetDir/usr/include
 
 #    mkdir $TargetDir/var
@@ -169,12 +169,12 @@ copyFiles() {
     cp $BuildRootDir/gen/install/misc/rc.config.firebird $DestDir/misc
     cp $BuildRootDir/gen/install/misc/aliases.conf $DestDir/
 
-# Create links from /usr/lib to install area.
+# Create links from @libdir@ to install area.
     origDir=`pwd`
-    cd $DestDir
-    for i in lib/libfb*.so*; do ln -s ../../$FBRootDir/$i $origDir/$TargetDir/usr/$i; done
+    cd $DestDir/lib
+    for i in libfb*.so*; do ln -s /$FBRootDir/lib/$i $origDir/$TargetDir@libdir@/$i; done
     cd $origDir
-    ln -s ../../$FBRootDir/lib/libib_util.so $TargetDir/usr/lib/libib_util.so
+    ln -s ../../$FBRootDir/lib/libib_util.so $TargetDir@libdir@/libib_util.so
 
 
 # link include files to /usr/include 

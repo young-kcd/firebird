@@ -117,8 +117,8 @@ extern "C" {
 #define FREE_MEM_RETURN		return
 
 static void		cleanup(void*);
-static void		cleanup_database(FRBRD**, SLONG);
-static void		cleanup_transaction(FRBRD*, SLONG);
+static void		cleanup_database(FRBRD**, void*);
+static void		cleanup_transaction(FRBRD*, void*);
 static void		close_cursor(DSQL_REQ);
 static USHORT	convert(SLONG, UCHAR*);
 static ISC_STATUS	error();
@@ -631,7 +631,7 @@ ISC_STATUS DLL_EXPORT GDS_DSQL_EXECUTE_CPP(ISC_STATUS*		user_status,
 			THREAD_EXIT;
 			gds__transaction_cleanup(local_status,
 								 trans_handle,
-								 cleanup_transaction, 0);
+								 cleanup_transaction, NULL);
 			THREAD_ENTER;
 		}
 
@@ -1858,7 +1858,7 @@ void DSQL_pretty(DSQL_NOD node, int column)
 	TEXT s[64];
 
 	TEXT* p = buffer;
-	p += sprintf(p, "%.7X ", (unsigned int) node);
+	p += sprintf(p, "%p ", node);
 
 	if (column) {
 		USHORT l = column * 3;
@@ -2551,7 +2551,7 @@ static void cleanup( void *arg)
     @param flag
 
  **/
-static void cleanup_database(FRBRD ** db_handle, SLONG flag)
+static void cleanup_database(FRBRD ** db_handle, void* flag)
 {
 	DBB *dbb_ptr, dbb;
 
@@ -2614,7 +2614,7 @@ static void cleanup_database(FRBRD ** db_handle, SLONG flag)
     @param arg
 
  **/
-static void cleanup_transaction (FRBRD * tra_handle, SLONG arg)
+static void cleanup_transaction (FRBRD * tra_handle, void* arg)
 {
 	ISC_STATUS_ARRAY local_status;
 	OPN *open_cursor_ptr, open_cursor;

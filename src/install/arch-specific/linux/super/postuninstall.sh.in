@@ -25,13 +25,13 @@ removeLineFromFile() {
 
 removeLinksForBackCompatibility() {
 
-    if [ -L /usr/lib/libgds.so ]
+    if [ -L @libdir@/libgds.so ]
       then
-        rm -f /usr/lib/libgds.so
+        rm -f @libdir@/libgds.so
     fi
-    if [ -L /usr/lib/libgds.so.0 ]
+    if [ -L @libdir@/libgds.so.0 ]
       then
-        rm -f /usr/lib/libgds.so.0
+        rm -f @libdir@/libgds.so.0
     fi
 
 }

@@ -461,25 +461,25 @@ createLinksForBackCompatibility() {
     #newLibrary=$FBRootDir/lib/libfbembed.so
 
     # Remove if only a link
-    if [ -L /usr/lib/libgds.so ]
+    if [ -L @libdir@/libgds.so ]
       then
-        rm -f /usr/lib/libgds.so
+        rm -f @libdir@/libgds.so
     fi
 
-    if [ ! -e /usr/lib/libgds.so ]
+    if [ ! -e @libdir@/libgds.so ]
       then
-        ln -s $newLibrary /usr/lib/libgds.so
+        ln -s $newLibrary @libdir@/libgds.so
     fi
 
     # Remove if only a link
-    if [ -L /usr/lib/libgds.so.0 ]
+    if [ -L @libdir@/libgds.so.0 ]
       then
-        rm -f /usr/lib/libgds.so.0
+        rm -f @libdir@/libgds.so.0
     fi
 
-    if [ ! -e /usr/lib/libgds.so.0 ]
+    if [ ! -e @libdir@/libgds.so.0 ]
       then
-        ln -s $newLibrary /usr/lib/libgds.so.0
+        ln -s $newLibrary @libdir@/libgds.so.0
     fi
 
 }

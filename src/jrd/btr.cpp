@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.33.2.1 2003-08-18 21:44:06 skidder Exp $
+$Id: btr.cpp,v 1.33.2.2 2004-03-29 03:50:09 skidder Exp $
 */
 
 #include "firebird.h"
@@ -191,7 +191,7 @@ static BOOLEAN scan(TDBB, BTN, SBM *, UCHAR, KEY *, USHORT);
 //
 inline SLONG BTR_get_quad(const UCHAR* p)
 {
-#if defined(i386) || defined(I386) || defined(_M_IX86)
+#if defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64)
 	// For IA32 (little-endian) this optimization is a _very_ large speed-up!
 	return *reinterpret_cast<const SLONG*>(p);
 #else

@@ -2500,7 +2500,7 @@ ISC_STATUS port::get_slice(P_SLC * stuff, PACKET* send)
 				  (ISC_LONG *) GDS_VAL(stuff->p_slc_parameters.cstr_address),
 				  stuff->p_slc_length,
 				  GDS_VAL(slice),
-				  reinterpret_cast<long*>(GDS_REF(response->p_slr_length)));
+				  reinterpret_cast<SLONG*>(GDS_REF(response->p_slr_length)));
 	THREAD_ENTER;
 
 	if (status_vector[1])
@@ -4344,8 +4344,12 @@ static void server_ast( RVNT event, USHORT length, UCHAR * items)
 	p_event->p_event_database = rdb->rdb_id;
 	p_event->p_event_items.cstr_length = length;
 	p_event->p_event_items.cstr_address = items;
+
+	// Nickolay Samofatov: We keep this values and even pass them to the client
+	// (as 32-bit values) when event is fired, but client ignores them.
 	p_event->p_event_ast = (SLONG) event->rvnt_ast;
-	p_event->p_event_arg = (SLONG) event->rvnt_arg;
+	p_event->p_event_arg = (SLONG)(IPTR) event->rvnt_arg;
+
 	p_event->p_event_rid = event->rvnt_rid;
 
 	port->send(&packet);
@@ -4480,7 +4484,7 @@ ISC_STATUS port::service_start(P_INFO * stuff, PACKET* send)
 	THREAD_EXIT;
 	isc_service_start(status_vector,
 					  &rdb->rdb_handle,
-					  reinterpret_cast<long*>(reserved),
+					  reinterpret_cast<SLONG*>(reserved),
 					  stuff->p_info_items.cstr_length,
 					  reinterpret_cast<char*>(stuff->p_info_items.cstr_address));
 	THREAD_ENTER;

@@ -2093,7 +2093,7 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS * user_status, RSR * stmt_handle, USHORT opt
 			return error(user_status);
 		}
 
-		statement->rsr_handle = (FRBRD *)(ULONG) packet->p_resp.p_resp_object;
+		statement->rsr_handle = (FRBRD *)(IPTR) packet->p_resp.p_resp_object;
 		if (packet->p_resp.p_resp_object == 0xFFFF) {
 			release_sql_request(statement);
 			*stmt_handle = NULL;
@@ -3218,8 +3218,13 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS * user_status,
 		event->p_event_database = rdb->rdb_id;
 		event->p_event_items.cstr_length = length;
 		event->p_event_items.cstr_address = items;
+
+ 		// Nickolay Samofatov: We pass this value to the server (as 32-bit value)
+ 		// then it returns it to us and we do not use it. Maybe pass zero here
+ 		// to avoid client-side security risks?
 		event->p_event_ast = (SLONG) ast;
-		event->p_event_arg = (SLONG) arg;
+		event->p_event_arg = (SLONG)(IPTR) arg;
+
 		event->p_event_rid = rem_event->rvnt_id;
 
 		if (!send_packet(port, packet, user_status) ||

@@ -137,7 +137,7 @@ archivePriorInstallSystemFiles() {
         echo "--- Warning ----------------------------------------------"
         echo "    The installation target directory: $FBRootDir"
         echo "    Already contains a prior installation of InterBase/Firebird."
-        echo "    This and files found in /usr/include and /usr/lib will be"
+        echo "    This and files found in /usr/include and @libdir@ will be"
         echo "    archived in the file : ${ArchiveMainFile}"
         echo "" 
 

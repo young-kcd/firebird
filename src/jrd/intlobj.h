@@ -36,9 +36,9 @@ extern "C" {
 #define UCHAR unsigned char
 #define CHAR char
 #define SCHAR char
-#define ULONG unsigned long
-#define LONG long
-#define SLONG signed long
+#define ULONG unsigned int
+#define LONG int
+#define SLONG signed int
 #define VEC	void*
 #define BYTE unsigned char
 

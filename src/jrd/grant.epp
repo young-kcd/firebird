@@ -511,8 +511,7 @@ TEXT * s_class, TEXT * default_class, USHORT * view)
 			strcpy(default_class, REL.RDB$DEFAULT_CLASS);
 			DYN_terminate(REL.RDB$OWNER_NAME, sizeof(REL.RDB$OWNER_NAME));
 			strcpy(owner, REL.RDB$OWNER_NAME);
-			*view = (REL.RDB$VIEW_BLR.gds_quad_high ||
-					 REL.RDB$VIEW_BLR.gds_quad_low) ? TRUE : FALSE;
+			*view = !REL.RDB$VIEW_BLR.isEmpty();
 		END_FOR;
 
 		if (!REQUEST(irq_grant1))
@@ -1066,13 +1065,13 @@ static void save_security_class(TDBB	tdbb,
 	DBB dbb;
 	BLK request;
 	USHORT found;
-	GDS__QUAD blob_id;
+	bid blob_id;
 	BLB blob;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
 
-	blob = BLB_create(tdbb, dbb->dbb_sys_trans, (BID)&blob_id);
+	blob = BLB_create(tdbb, dbb->dbb_sys_trans, &blob_id);
 	BLB_put_segment(tdbb, blob, buffer, length);
 	BLB_close(tdbb, blob);
 

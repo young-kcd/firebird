@@ -28,7 +28,7 @@
  *
  */
 /*
-$Id: canonical.cpp,v 1.20 2003-04-16 10:16:39 aafemt Exp $
+$Id: canonical.cpp,v 1.20.2.1 2004-03-29 03:49:30 skidder Exp $
 */
 
 #include "firebird.h"
@@ -673,7 +673,7 @@ static bool_t xdr_slice(XDR* xdrs,
 	DSC *desc;
 	struct sdl_info info;
 
-	if (!xdr_long(xdrs, reinterpret_cast<long*>(&slice->lstr_length)))
+	if (!xdr_long(xdrs, reinterpret_cast<SLONG*>(&slice->lstr_length)))
 		  return FALSE;
 
 /* Handle operation specific stuff, particularly memory allocation/deallocation */

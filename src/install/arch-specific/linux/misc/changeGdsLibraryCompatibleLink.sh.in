@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: changeGdsLibraryCompatibleLink.sh.in,v 1.1.2.1 2003-12-23 23:13:55 skywalker Exp $
+#   $Id: changeGdsLibraryCompatibleLink.sh.in,v 1.1.2.2 2004-03-29 03:50:06 skidder Exp $
 # 
 
 
@@ -106,8 +106,8 @@ quitIfRealFile() {
 # Remove the backward comparibility links for libgds.so
 
 removeLinks() {
-    removeLink /usr/lib/libgds.so
-    removeLink /usr/lib/libgds.so.0
+    removeLink @libdir@/libgds.so
+    removeLink @libdir@/libgds.so.0
 }
 
 
@@ -127,8 +127,8 @@ createLinksForBackCompatibility() {
 
     removeLinks
 
-    ln -s $newLibrary /usr/lib/libgds.so
-    ln -s $newLibrary /usr/lib/libgds.so.0
+    ln -s $newLibrary @libdir@/libgds.so
+    ln -s $newLibrary @libdir@/libgds.so.0
 
 
 }
@@ -137,7 +137,7 @@ createLinksForBackCompatibility() {
 #  printStatus
 
 printStatus() {
-    printStatus=`ls -l /usr/lib/libgds.so | sed 's@^.* /usr@/usr@'`
+    printStatus=`ls -l @libdir@/libgds.so | sed 's@^.* /usr@/usr@'`
     echo $printStatus
 
 }
@@ -164,8 +164,8 @@ EOF
 
     echo ""
 
-    quitIfRealFile /usr/lib/libgds.so
-    quitIfRealFile /usr/lib/libgds.so.0
+    quitIfRealFile @libdir@/libgds.so
+    quitIfRealFile @libdir@/libgds.so.0
 
     
     AskQuestion "Which option would you like to choose (client|embed|remove) [client] " "client"

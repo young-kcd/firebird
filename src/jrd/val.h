@@ -172,6 +172,7 @@ class arr : public pool_alloc_rpt<ads::ads_repeat, type_arr>
 	SLONG		arr_effective_length;	/* Length of array instance */
 	USHORT		arr_desc_length;		/* Length of array descriptor */
 	struct ads	arr_desc;		/* Array descriptor */
+	ULONG arr_temp_id;          // Temporary ID for open array inside the transaction
 };
 typedef arr *ARR;
 

@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.50 2003-06-30 10:47:19 brodsom Exp $
+ * $Id: ddl.cpp,v 1.50.2.1 2004-03-29 03:49:33 skidder Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -2678,7 +2678,7 @@ static void define_shadow(DSQL_REQ request)
 				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -607,
 						  gds_arg_gds, gds_dsql_command_err,
 						  gds_arg_gds, gds_dsql_file_length_err,
-						  gds_arg_number, (SLONG) file->fil_name->str_data,
+						  gds_arg_number, file->fil_name->str_data,
 						  /* Preceding file did not specify length, so %s must include starting page number */
 						  0);
 			}

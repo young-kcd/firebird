@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.73.2.3 2003-10-27 18:30:37 skidder Exp $
+$Id: common.h,v 1.73.2.4 2004-03-29 03:50:10 skidder Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -97,10 +97,14 @@ $Id: common.h,v 1.73.2.3 2003-10-27 18:30:37 skidder Exp $
 #ifdef LINUX
 #define QUADFORMAT "ll"
 #define QUADCONST(n) (n##LL)
+
+// SLONG is a 32-bit integer on 64-bit platforms
+#if SIZEOF_LONG == 4
 #define SLONGFORMAT "ld"
 #define ULONGFORMAT "lu"
 #define XLONGFORMAT "lX"
 #define xLONGFORMAT "lx"
+#endif
 
 
 #define __LINE__IS_INT
@@ -114,6 +118,10 @@ $Id: common.h,v 1.73.2.3 2003-10-27 18:30:37 skidder Exp $
 #define VA_START(list,parmN)    va_start (list, parmN)
 #define UNIX    1
 #define IEEE    1
+
+#ifdef AMD64
+#define IMPLEMENTATION  isc_info_db_impl_linux_amd64 /* 66  next higher unique number, See you later  */
+#endif
 
 #ifdef i386
 #define I386    1
@@ -239,7 +247,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define QUADFORMAT "q"
 #define MAP_ANONYMOUS
 #define MAP_ANNON
-#define LSEEK_OFFSET_CAST (off_t)
 
 #define MEMMOVE(from,to,length)		memmove ((void *)to, (void *)from, (size_t)length)
 #define MOVE_FAST(from,to,length)	memcpy (to, from, (int) (length))
@@ -351,10 +358,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 */
 #if (!defined(SFIO) && defined(SUPERSERVER))
 #error "need to use SFIO"
-#endif
-
-#ifdef SOLX86
-#define LSEEK_OFFSET_CAST (off_t)
 #endif
 
 #define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)

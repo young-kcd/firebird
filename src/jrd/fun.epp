@@ -27,7 +27,7 @@
  *
  */
 /*
-$Id: fun.epp,v 1.22 2003-06-30 12:48:09 alexpeshkoff Exp $
+$Id: fun.epp,v 1.22.2.1 2004-03-29 03:50:10 skidder Exp $
 */
 
 #include "firebird.h"
@@ -61,6 +61,7 @@ $Id: fun.epp,v 1.22 2003-06-30 12:48:09 alexpeshkoff Exp $
 #include "../jrd/thd_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/isc_s_proto.h"
+#include "../jrd/blb.h"
 
 #ifdef VMS
 #define CALL_UDF(ptr, udftype)     (*(udftype (*)(SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG))(ptr)) (args [0], args[1], args[2], args[3], args [4], args [5], args [6], args [7], args [8], args [9]) 
@@ -381,14 +382,8 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 				}
 				else
 				{
-					SLONG* blob_id;
-					if (request->req_flags & req_null)
-					{
-						SLONG null_quad[2];
-						null_quad[0] = null_quad[1] = 0;
-						blob_id = null_quad;
-					}
-					else
+					bid blob_id = {0, 0};
+					if (!(request->req_flags & req_null))
 					{
 						if (input->dsc_dtype != dtype_quad &&
 							input->dsc_dtype != dtype_blob)
@@ -397,11 +392,11 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 									 gds_arg_gds, gds_blobnotsup,
 									 gds_arg_string, "conversion", 0);
 						}
-						blob_id = (SLONG *) input->dsc_address;
+						blob_id = *(BID) input->dsc_address;
 					}
 					blob = BLB_open(tdbb,
 									tdbb->tdbb_request->req_transaction,
-									(BID)blob_id);
+									&blob_id);
 				}
 				LLS_PUSH(blob, &blob_stack);
 				blob_desc->blob_get_segment = (SSHORT (*)())blob_get_segment;

@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.25 2003-06-05 10:12:37 aafemt Exp $
+ *  $Id: fb_types.h,v 1.25.2.1 2004-03-29 03:49:42 skidder Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -66,16 +66,19 @@ typedef long long int			ISC_INT64;
 typedef unsigned long long int	ISC_UINT64;
 #endif
 
-#if SIZEOF_LONG == 8
+// Nickolay: it is easier to assume that integer is at least 32-bit.
+// This comes from limitation that we cannot reliably detect datatype size at
+// compile time in cases when we do not control compilation (public headers) 
+// We are not going to support 16-bit platforms, right?
+//
+// Temporarly restrict new definition until ULONG clash with Windows
+// type is solved. Win64 port is not possible before that point.
+// Cannot use SIZEOF_LONG define here because we are in a public header
+#if defined(_LP64) || defined(__LP64__) || defined(__arch64__)
 	/* EKU: Firebird requires (S)LONG to be 32 bit */
 #   define LONG_DEFINED
     typedef int SLONG;
     typedef unsigned int ULONG;
-
-#   define SQUAD_DEFINED
-    typedef long SQUAD;
-    typedef unsigned long UQUAD;
-#   define NATIVE_QUAD
 #endif /* SIZEOF_LONG == 8 */
 
 

@@ -5542,8 +5542,8 @@ static BOOLEAN write_page(
 		if (dbb->dbb_wal)
 			WAL_flush(status,
 					  dbb->dbb_wal,
-					  reinterpret_cast < long *>(&page->pag_seqno),
-					  reinterpret_cast < long *>(&page->pag_offset), TRUE);
+					  reinterpret_cast<SLONG*>(&page->pag_seqno),
+					  reinterpret_cast<SLONG*>(&page->pag_offset), TRUE);
 
 #ifdef DEBUG_SAVE_BDB_PAGE
 		/* Save page number into page->pag_offset before computing the checksum */

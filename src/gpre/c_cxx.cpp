@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.20 2003-04-01 11:49:33 brodsom Exp $
+//	$Id: c_cxx.cpp,v 1.20.2.1 2004-03-29 03:49:39 skidder Exp $
 //
 
 #include "firebird.h"
@@ -185,7 +185,7 @@ static TEXT *status_name;
 #endif
 
 #ifndef DCL_LONG
-#define DCL_LONG	"long"
+#define DCL_LONG	"int"
 #endif
 
 #ifndef DCL_QUAD

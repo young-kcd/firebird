@@ -1061,8 +1061,8 @@ USHORT activate_shadow, SLONG * timestamp, SLONG page_no, PAG page)
 			WALR_get(tdbb->tdbb_status_vector,
 					 reinterpret_cast < walrs * >(WALRS_handle), wal_buff,
 					 reinterpret_cast < USHORT * >(&len),
-					 reinterpret_cast < long *>(&seqno),
-					 reinterpret_cast < long *>(&offset));
+					 reinterpret_cast<SLONG*>(&seqno),
+					 reinterpret_cast<SLONG*>(&offset));
 		if (ret_val == -1)		/* done processing */
 			break;
 		else if (ret_val != FB_SUCCESS) {

@@ -568,8 +568,13 @@ bool_t xdr_protocol(XDR * xdrs, PACKET * p)
 		MAP(xdr_short,
 			reinterpret_cast < SSHORT & >(event->p_event_database));
 		MAP(xdr_cstring, event->p_event_items);
+
+		// Nickolay Samofatov: this values are parsed, but are ignored by the client.
+		// Values are useful only for debugging, anyway since upper words of pointers
+		// are trimmed for 64-bit clients
 		MAP(xdr_long, event->p_event_ast);
 		MAP(xdr_long, event->p_event_arg);
+
 		MAP(xdr_long, event->p_event_rid);
 		DEBUG_PRINTSIZE(p->p_operation);
 		return P_TRUE;

@@ -970,11 +970,9 @@ static FIL seek_file(FIL file, BDB bdb, UINT64 * offset, ISC_STATUS * status_vec
     lseek_offset = page;
     lseek_offset *= dbb->dbb_page_size;
 
-#if _FILE_OFFSET_BITS != 64
-    if (lseek_offset > MAX_SLONG) {
-        return (FIL) unix_error ("lseek", file, isc_io_32bit_exceeded_err, status_vector);
-    }
-#endif
+     if (lseek_offset != LSEEK_OFFSET_CAST lseek_offset) {
+         return (FIL)(IPTR) unix_error ("lseek", file, isc_io_32bit_exceeded_err, status_vector);
+     }
 
 #ifdef PREAD_PWRITE
 	*offset = lseek_offset;
