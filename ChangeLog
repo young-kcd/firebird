@@ -1,3 +1,24 @@
+2004-08-01 20:01  dimitr
+
+	* firebird2/src/dsql/pass1.cpp (1.153):
+	
+	Fixed minor issue.
+
+2004-08-01 19:44  dimitr
+
+	* firebird2/src/remote/inet.cpp (1.118):
+	
+	Applied patch by Chris Waters to support NAT by the events
+	mechanism.
+
+2004-08-01 09:00  robocop
+
+	* firebird2/src/jrd/fun.epp (1.62):
+	
+	Fix subtle bug introduced by Alex during fun.epp refactoring that
+	prevented the engine to detect when the invoked UDF has returned
+	NULL.
+
 2004-07-31 00:37  skidder
 
 	* firebird2/: builds/posix/make.rules (1.23),
