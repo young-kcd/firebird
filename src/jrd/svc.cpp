@@ -3140,8 +3140,24 @@ static void service_fork(TEXT * service_path, SVC service)
    and size of the command line arguments. */
 
 	for (argc = 2, p = service->svc_switches; *p;)
-		if (*p++ == ' ')
+	{
+		if (*p == ' ')
+		{
 			argc++;
+			while (*p == ' ')
+				p++;
+		}
+		else
+		{
+			if (*p == SVC_TRMNTR)
+			{
+				while (*p++ && *p != SVC_TRMNTR);
+				assert (*p == SVC_TRMNTR);
+			}
+			p++;
+		}
+	}
+
 	if (argc > sizeof(argv_buf) / sizeof(TEXT *))
 		argv = (TEXT **) gds__alloc((SLONG) (argc * sizeof(TEXT *)));
 	else
@@ -3172,18 +3188,38 @@ static void service_fork(TEXT * service_path, SVC service)
 
 	while (*q == ' ')
 		q++;
-	while (*q) {
-		*arg++ = p;
-		while ((*p = *q++) && *p != ' ') {
-			if (*p == '\\' && *q == ' ') {
+	while (*q)
+	{
+		*arg = p;
+		while (*p = *q++)
+		{
+			if (*p == ' ') break;
+
+			if (*p == SVC_TRMNTR)
+			{
+				*arg = ++p;	/* skip terminator */
+				while (*p = *q++)
+						/* If *q points to the last argument, then terminate the argument */
+					if ((*q == 0 || *q == ' ') && *p == SVC_TRMNTR)
+					{
+						*p = '\0';
+						break;
+					}
+					else
+						p++;
+			}
+
+			if (*p == '\\' && *q == ' ')
+			{
 				*p = ' ';
 				q++;
 			}
 			p++;
 		}
+		arg++;
 		if (!*p)
 			break;
-		*p++ = 0;
+		*p++ = '\0';
 		while (*q == ' ')
 			q++;
 	}
@@ -3222,6 +3258,21 @@ static void service_fork(TEXT * service_path, SVC service)
 		}
 		close(2);
 		dup(1);
+#ifdef DEV_BUILD
+		{
+			char buf[2 * MAXPATHLEN];
+			char **s = argv;
+
+			strcpy (buf, "service_fork:");
+			while (*s != (char *)0)
+			{
+				strcat (buf, " ");
+				strcat (buf, *s);
+				s++;
+			}
+			gds__log (buf);
+		}
+#endif
 		execvp(argv[0], argv);
 		_exit(FINI_ERROR);
 	}

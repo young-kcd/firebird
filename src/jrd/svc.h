@@ -81,7 +81,11 @@ extern "C" {
  */
 #define USERNAME_SWITCH "-USER"
 #define PASSWORD_SWITCH "-PASSWORD"
+#ifdef SUPERSERVER
 #define SERVICE_THD_PARAM "-svc_thd"
+#else
+#define SERVICE_THD_PARAM "-svc"
+#endif
 
 /* Macro used to store services thread specific data */
 /* Currently we store empty string, see bug #10394 */
